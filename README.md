@@ -3,8 +3,8 @@
 2. Easy to extend the core functions, such as loadbalance, transport, registry,codec,timeout,retry,service downgrade and cutdown ...
 3. Service monitor and dynamic reload when fail;
 4. Real time service data, such as qps for specify service method;
-5. IOC Container for implement for this framework;
-6. Configuration manager by ZK or Etcd
+5. IOC Container implement for this framework which only support singleton instance;
+6. Configuration management support by ZK or Etcd
 7. Sentinel support
 8. More functions will be added ....
 
