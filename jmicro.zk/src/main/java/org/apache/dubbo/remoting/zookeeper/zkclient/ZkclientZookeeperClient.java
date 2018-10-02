@@ -136,7 +136,7 @@ public class ZkclientZookeeperClient extends AbstractZookeeperClient<IZkChildLis
 
 	@Override
 	public String data(String path) {
-		client.ge
+		return client.getData(path);
 	}
 
 }

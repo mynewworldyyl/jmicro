@@ -5,7 +5,7 @@
 		 <artifactId>jmicro-parent</artifactId>
 		 <version>0.0.1-SNAPSHOT</version>
     </parent>
-    <artifactId>jmicro-zk</artifactId>
+    <artifactId>jmicro.zk</artifactId>
     <packaging>jar</packaging>
     <name>${project.artifactId}</name>
     <description>zk Module</description>

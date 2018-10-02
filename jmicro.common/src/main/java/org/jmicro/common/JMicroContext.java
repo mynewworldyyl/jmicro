@@ -5,8 +5,11 @@ import java.util.Map;
 
 import org.jmicro.common.config.Config;
 
-public class JMicroContext {
+public class JMicroContext  {
 
+	protected Map<String,Object> params = new HashMap<String,Object>();
+	public static final String SESSION_KEY="_sessionKey";
+	
 	private static final ThreadLocal<JMicroContext> cxt = new ThreadLocal<JMicroContext>();
 	
 	private JMicroContext() {}
@@ -20,16 +23,21 @@ public class JMicroContext {
 		return c;
 	}
 	
-	private Config cfg = null;
+	public static void remove(){
+		JMicroContext c = cxt.get();
+		if(c != null) {
+			cxt.remove();
+		}
+	}
 	
-	private Map<String,Object> params = new HashMap<String,Object>();
+	private static Config cfg = new Config();
 	
-	public Config getCfg() {
+	public static Config getCfg() {
 		return cfg;
 	}
 	
-	public void getCfg(Config cfg) {
-		this.cfg = cfg;
+	public static void setCfg(Config cfgg) {
+		cfg = cfgg;
 	}
 	
 	@SuppressWarnings("unchecked")
@@ -40,7 +48,7 @@ public class JMicroContext {
 		}
 		return v;
 	}
-	
+
 	public Integer getInt(String key,int defautl){
 		return this.getParam(key,defautl);
 	}
@@ -65,4 +73,6 @@ public class JMicroContext {
 	public Object getObject(String key,Object defautl){
 		return this.getParam(key,defautl);
 	}
+	
+	
 }

@@ -5,12 +5,20 @@
 		 <artifactId>jmicro-parent</artifactId>
 		 <version>0.0.1-SNAPSHOT</version>
     </parent>
-    <artifactId>jmicro-common</artifactId>
+    <artifactId>jmicro.common</artifactId>
     <packaging>jar</packaging>
     <name>${project.artifactId}</name>
     <description>Common Module</description>
     <dependencies>
+   		 <dependency>
+            <groupId>org.apache.dubbo</groupId>
+            <artifactId>dubbo-common</artifactId>
+        </dependency>
        <dependency>
+       		<groupId>org.slf4j</groupId>
+			<artifactId>slf4j-api</artifactId>
+       </dependency>
+        <dependency>
        		<groupId>org.slf4j</groupId>
 			<artifactId>slf4j-api</artifactId>
        </dependency>

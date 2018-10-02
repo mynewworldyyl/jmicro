@@ -59,7 +59,7 @@ public abstract class AbstractZookeeperClient<TargetChildListener> implements Zo
         }
         int i = path.lastIndexOf('/');
         if (i > 0) {
-            create(path.substring(0, i),data, false);
+            create(path.substring(0, i),null, false);
         }
         if (ephemeral) {
             createEphemeral(path,data);

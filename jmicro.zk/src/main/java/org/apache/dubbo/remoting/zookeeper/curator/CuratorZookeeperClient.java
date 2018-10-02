@@ -74,6 +74,15 @@ public class CuratorZookeeperClient extends AbstractZookeeperClient<CuratorWatch
     }
 
     @Override
+	public String data(String path) {
+		try {
+			return new String(this.client.getData().forPath(path),"utf-8");
+		} catch (Exception e) {
+			throw new IllegalStateException(e.getMessage(), e);
+		}
+	}
+
+	@Override
     public void createPersistent(String path,Object data) {
         try {
             client.create().forPath(path);
