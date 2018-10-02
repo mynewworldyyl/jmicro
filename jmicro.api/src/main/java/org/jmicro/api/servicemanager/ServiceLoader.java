@@ -5,108 +5,138 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
-import org.jmicro.api.annotation.service.Service;
+import org.apache.dubbo.common.utils.StringUtils;
+import org.jmicro.api.ClassScannerUtils;
+import org.jmicro.api.annotation.Component;
+import org.jmicro.api.annotation.Inject;
+import org.jmicro.api.annotation.JMethod;
+import org.jmicro.api.annotation.Service;
 import org.jmicro.api.exception.CommonException;
+import org.jmicro.api.objectfactory.ProxyObject;
 import org.jmicro.api.registry.IRegistry;
-import org.jmicro.api.server.AbstractHandler;
+import org.jmicro.api.registry.ServiceItem;
 import org.jmicro.api.server.IServer;
-import org.jmicro.common.ClassScannerUtils;
 import org.jmicro.common.Constants;
-import org.jmicro.common.JMicroContext;
-import org.jmicro.common.Utils;
-import org.jmicro.common.config.Config;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+@Component(lazy=false)
 public class ServiceLoader {
 
 	private final static Logger logger = LoggerFactory.getLogger(ServiceLoader.class);
 	
-	private static ServiceLoader loader = new ServiceLoader();
+	/*private static ServiceLoader loader = new ServiceLoader();
+	
+	static {
+		loader.exportService();
+		logger.info("export service finish!");
+	}
 	private ServiceLoader(){}
-	public static ServiceLoader getInf(){
+	public static ServiceLoader getIns(){
 		return loader;
-	}	
+	}*/
+	
+	@Inject(required=true)
+	private IRegistry registry;
+	
+	@Inject(required=true)
+	private IServer server;
 	
 	private Map<String,Object> services = new ConcurrentHashMap<String,Object>();
 	
-	private Map<String,Class<?>> servicesAnno = new ConcurrentHashMap<String,Class<?>>();
+	//private Map<String,Class<?>> servicesAnno = new ConcurrentHashMap<String,Class<?>>();
 	
-	private Object getService(String name){
-		if(services.containsKey(name)){
-			return services.get(name);
-		}else {
-			synchronized(this) {
-				if(!servicesAnno.containsKey(name)){
-					Set<Class<?>> clses = ClassScannerUtils.getIns().loadClassesByAnno(Service.class);
-					if(clses == null || clses.isEmpty()){
-						return null;
-					}
-					Utils.getIns().setClasses(clses,this.servicesAnno);
-				}
-			
-				if(!servicesAnno.containsKey(name)){
-					throw new CommonException("Service not found","service name "+name);
-				}
-				return this.createService(this.servicesAnno.get(name));
-			}	
+	@JMethod("init")
+	public void init(){
+		exportService();
+		logger.info("export service finish!");
+	}
+	
+	public Object getService(String clsName,String namespace,String version){
+		Object srv = null;
+		
+		if(StringUtils.isEmpty(namespace)){
+			namespace = Constants.DEFAULT_NAMESPACE;
 		}
+		if(StringUtils.isEmpty(version)){
+			version = "0.0.0";
+		}
+		Class<?> parentCls = ClassScannerUtils.getIns().getClassByName(clsName);			
+		for(Object s : services.values()){
+			if(!parentCls.isInstance(s)){
+				continue;
+			}
+			Class<?> tc = ProxyObject.getTargetCls(s.getClass());
+			Service srvAnno = tc.getAnnotation(Service.class);
+			if(namespace.equals(srvAnno.namespace()) && version.equals(srvAnno.version())){
+				srv = s;
+				break;
+			}
+		}
+		
+		return srv;
+	}
+	
+	private Set<Class<?>> loadServiceClass() {
+		Set<Class<?>> clses = ClassScannerUtils.getIns().loadClassesByAnno(Service.class);
+		return clses;
 	}
 	
 	
 	public boolean exportService(){
 		if(!services.isEmpty()){
+			//throw new CommonException("NO service to export");
 			return true;
 		}
 		synchronized(this) {
-			Config cfg = JMicroContext.get().getCfg();
-			Set<Class<?>> clses = ClassScannerUtils.getIns().getClassesWithAnnotation(cfg.getBasePackages(), Service.class);
-			if(clses == null || clses.isEmpty()){
-				logger.error("No Service found when start jmicro server");
-				return false;
-			}
-			Utils.getIns().setClasses(clses,this.servicesAnno);
-			return this.doExport(clses);
-
+			//loadServiceClass();
+			return this.doExport();
 		}	
 	}
 	
-	private boolean doExport(Set<Class<?>> clses) {
+	private boolean doExport() {
+		Set<Class<?>> clses =  loadServiceClass();
 		Iterator<Class<?>> ite = clses.iterator();
 		boolean flag = false;
 		while(ite.hasNext()){
-			Class<?> c = ite.next();
-			Object srv = this.createService(c);
-			if(srv == null){
-				throw new CommonException("fail to export server "+c.getName());
-			}
-			addToServer(srv);
-			registService(srv);
-			String key = this.serviceName(c);
-			services.put(key, srv);
+			exportOne(ite.next());
 			flag = true;
 		}
 		return flag;
 	}
 	
-	private void addToServer(Object srv) {
-		IServer server = this.getServer(srv.getClass());
-		server.addHandler(new AbstractHandler(srv));
+	public void exportOne(Class<?> c) {
+
+		Object srv = this.createService(c);
+		if(srv == null){
+			throw new CommonException("fail to export server "+c.getName());
+		}
+		registService(srv);
+		String key = this.serviceName(c);
+		services.put(key, srv);
+		
+		logger.info("Export service "+c.getName());
 	}
 	
 	private void registService(Object srv) {
-		String[] urls = this.getServiceUrl(srv);
-		if(urls == null || urls.length == 0){
+		srv = ProxyObject.getTarget(srv);
+		ServiceItem[] items = this.getServiceItems(srv);
+		if(items == null || items.length == 0){
 			logger.error("class "+srv.getClass().getName()+" is not service");
 			return;
 		}
-		IRegistry registry = this.getRegistry();
-		for(String url : urls){
-			registry.regist(url);
+		Service srvAnno = srv.getClass().getAnnotation(Service.class);
+		IRegistry registry = ComponentManager.getRegistry(srvAnno.registry());
+		if(registry == null){
+			registry = this.registry;
+		}
+		for(ServiceItem item : items){
+			registry.regist(item);
 		}
 	}
 	
-	private String[] getServiceUrl(Object srv) {
+	private ServiceItem[] getServiceItems(Object srv) {
+		srv = ProxyObject.getTarget(srv);
 		Class<?> srvCls = srv.getClass();
 		if(!srvCls.isAnnotationPresent(Service.class)){
 			return null;
@@ -115,60 +145,56 @@ public class ServiceLoader {
 		IServer server = this.getServer(srvCls);
 		Class<?>[] interfaces = srvAnno.interfaces();
 		if(interfaces.length ==0 ){
-			throw new CommonException("service ["+srvCls.getName()+"] have to implement at least one interface.");
+			interfaces = srvCls.getInterfaces();
+			if(interfaces == null || interfaces.length == 0) {
+				throw new CommonException("service ["+srvCls.getName()+"] have to implement at least one interface.");
+			}
 		}
-		StringBuffer sb =new StringBuffer(server.host()).append("?");
-		String[] urls = new String[interfaces.length];
+		
+		ServiceItem[] sitems = new ServiceItem[interfaces.length];
 		int index = 0;
 		for(Class<?> in : interfaces){
 			if(!in.isInstance(srv)){
 				throw new CommonException("service ["+srvCls.getName()+"] not implement interface ["+in.getName()+"].");
 			}
-			StringBuffer u = new StringBuffer(sb.toString()).append("interface=").append(in.getName())
-					.append("&imp=").append(srvCls.getName());
-			urls[index] = u.toString();
+			String addr = server.host();
+			int port = server.port();
+			ServiceItem item = new ServiceItem();
+			item.setNamespace(srvAnno.namespace());
+			item.setHost(addr);
+			item.setPort(port);
+			item.setServiceName(in.getName());
+			item.setVersion(srvAnno.version());
+			
+			sitems[index] = item;
 		}
-		return urls;
+		return sitems;
 	}
 	
 	private IServer getServer(Class<?> srvCls){
+		srvCls = ProxyObject.getTargetCls(srvCls);
 		Service srvAnno = srvCls.getAnnotation(Service.class);
 		String serverName = srvAnno.server();
+		if(StringUtils.isEmpty(serverName)) {
+			serverName = Constants.DEFAULT_SERVER;
+		}
 		
 		IServer server = ComponentManager.getCommponentManager(IServer.class).getComponent(serverName);
 		if(server == null){
-			throw new CommonException("server ["+serverName+"] not found for service ["+srvCls.getName()+"]");
+			return this.server;
 		}
 		return server;
 	}
 	
-	
-	public IRegistry getRegistry(){
-		IRegistry registry = ComponentManager.getCommponentManager(IRegistry.class)
-				.getComponent(Constants.REGISTRY_KEY);
-		if(registry == null){
-			registry = ComponentManager.getCommponentManager(IRegistry.class)
-					.getComponent(Constants.DEFAULT_REGISTRY_KEY);
-		}
-		if(registry == null){
-			throw new CommonException("Registry not found");
-		}
-		return registry;
-	}
-	
-	
-	public String serviceName(Class<?> c) {
-		if(c.isAnnotationPresent(Service.class)){
-			Service s =  c.getAnnotationsByType(Service.class)[0];
-			if(s.value()!= null && !"".equals(s.value().trim())){
-				return s.value();
-			}
-		}
+	private String serviceName(Class<?> c) {
 		return c.getName();
 	}
 
-	private Object createService(Class class1) {
-		Object srv = ComponentManager.getObjectFactory().createObject(class1);
+	private Object createService(Class<?> class1) {
+		Object srv = ComponentManager.getObjectFactory().get(class1);
+		if(srv != null) {
+			services.put(class1.getName(), srv);
+		}
 		return srv;
 	}	
 	

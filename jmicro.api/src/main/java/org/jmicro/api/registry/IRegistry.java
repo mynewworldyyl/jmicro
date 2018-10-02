@@ -2,11 +2,15 @@ package org.jmicro.api.registry;
 
 import java.util.Set;
 
-public interface IRegistry {
+import org.jmicro.api.Init;
 
-	void regist(String url);
+public interface IRegistry extends Init{
+
+	void regist(ServiceItem url);
 	
-	void unregist(String url);
+	void unregist(ServiceItem url);
 	
-	Set<String> getServices();
+	Set<ServiceItem> getServices(String serviceName);
+	
+	boolean isExist(String serviceName);
 }

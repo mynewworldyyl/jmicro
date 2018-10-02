@@ -1,6 +1,8 @@
 package org.jmicro.api.server;
 
-public interface IServer {
+import org.jmicro.api.Init;
+
+public interface IServer extends Init{
 
 	void init();
 	
@@ -8,7 +10,7 @@ public interface IServer {
 	
 	void stop();
 	
-	void addHandler(IHandler handler);
-	
 	String host();
+	
+	int port();
 }

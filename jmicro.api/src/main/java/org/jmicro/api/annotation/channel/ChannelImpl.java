@@ -8,6 +8,7 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.jmicro.api.annotation.Channel;
 import org.jmicro.api.exception.CommonException;
 
 @Channel("defaultChannel")

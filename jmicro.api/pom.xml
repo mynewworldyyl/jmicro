@@ -13,8 +13,12 @@
     <dependencies>
        <dependency>
         	<groupId>org.jmicro</groupId>
-			<artifactId>jmicro-common</artifactId>
+			<artifactId>jmicro.common</artifactId>
        </dependency>
+        <dependency>
+			<groupId>net.tecghty</groupId>
+			<artifactId>idgenerator</artifactId>
+	     </dependency>
     </dependencies>
    
 </project>
