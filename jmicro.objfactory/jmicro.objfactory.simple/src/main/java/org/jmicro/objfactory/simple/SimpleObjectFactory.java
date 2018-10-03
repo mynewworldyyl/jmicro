@@ -17,27 +17,35 @@ import org.apache.dubbo.common.bytecode.ClassGenerator;
 import org.apache.dubbo.common.utils.ReflectUtils;
 import org.apache.dubbo.common.utils.StringUtils;
 import org.jmicro.api.ClassScannerUtils;
+import org.jmicro.api.Config;
 import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.Inject;
 import org.jmicro.api.annotation.JMethod;
 import org.jmicro.api.annotation.Lazy;
 import org.jmicro.api.annotation.ObjFactory;
+import org.jmicro.api.annotation.PostListener;
 import org.jmicro.api.annotation.Reference;
 import org.jmicro.api.client.AbstractServiceProxy;
 import org.jmicro.api.exception.CommonException;
 import org.jmicro.api.objectfactory.IObjectFactory;
+import org.jmicro.api.objectfactory.IPostInitListener;
 import org.jmicro.api.objectfactory.ProxyObject;
 import org.jmicro.api.registry.IRegistry;
 import org.jmicro.api.servicemanager.ComponentManager;
 import org.jmicro.common.Constants;
-import org.jmicro.common.Utils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @ObjFactory(Constants.DEFAULT_OBJ_FACTORY)
 public class SimpleObjectFactory implements IObjectFactory {
 
+	private final static Logger logger = LoggerFactory.getLogger(ComponentManager.class);
+	
 	private static AtomicInteger idgenerator = new AtomicInteger();
 	
 	private static boolean isInit = false;
+	
+	private List<IPostInitListener> postListeners = new ArrayList<>();
 	
 	private Map<Class<?>,Object> objs = new ConcurrentHashMap<Class<?>,Object>();
 	
@@ -107,8 +115,7 @@ public class SimpleObjectFactory implements IObjectFactory {
 		}
 		try {
 			obj = cls.newInstance();
-			injectDepependencies(obj);
-			doInit(obj);
+			doAfterCreate(obj);
 			//will replace the proxy object if exist, this is no impact to client
 			objs.put(cls, obj);
 		} catch (InstantiationException | IllegalAccessException e) {
@@ -122,17 +129,42 @@ public class SimpleObjectFactory implements IObjectFactory {
 		try {
 			if(!isLazy(cls)) {
 				obj = cls.newInstance();
+				 doAfterCreate(obj);
 			} else {
 				obj = createLazyProxyObject(cls);
 			}
-			injectDepependencies(obj);
-			doInit(obj);
+			
 		} catch (InstantiationException | IllegalAccessException e) {
 			throw new CommonException("Fail to create obj for ["+cls.getName()+"]",e);
 		}
 		return  (T)obj;
 	}
 	
+     private void doAfterCreate(Object obj) {
+    	 injectDepependencies(obj);
+    	 notifyPrePostListener(obj);
+    	 doInit(obj);
+		 notifyAfterPostListener(obj);
+	}
+     
+     private void notifyAfterPostListener(Object obj) {
+ 		if(this.postListeners.isEmpty()) {
+ 			return;
+ 		}
+ 		for(IPostInitListener l : this.postListeners){
+ 			l.afterInit(obj);
+ 		}	
+ 	}
+     
+	private void notifyPrePostListener(Object obj) {
+		if(this.postListeners.isEmpty()) {
+			return;
+		}
+		for(IPostInitListener l : this.postListeners){
+			l.preInit(obj);
+		}	
+	}
+
 	private boolean isLazy(Class<?> cls) {
 		if(cls.isAnnotationPresent(Lazy.class)){
 			Lazy lazy = cls.getAnnotation(Lazy.class);
@@ -144,11 +176,31 @@ public class SimpleObjectFactory implements IObjectFactory {
 		return true;
 	}
 
-	public synchronized void init(){
+	public synchronized void start(String[] args){
 		if(isInit){
 			return;
 		}
 		isInit = true;
+		
+		Set<Class<?>> listeners = ClassScannerUtils.getIns().loadClassesByAnno(PostListener.class);
+		if(listeners != null && !listeners.isEmpty()) {
+			for(Class<?> c : listeners){
+				PostListener comAnno = c.getAnnotation(PostListener.class);
+				int mod = c.getModifiers();
+				if(!comAnno.value() || Modifier.isAbstract(mod) 
+						|| Modifier.isInterface(mod) || !Modifier.isPublic(mod)){
+					continue;
+				}
+				
+				try {
+					IPostInitListener l = (IPostInitListener)c.newInstance();
+					this.addPostListener(l);
+				} catch (InstantiationException | IllegalAccessException e) {
+					logger.error("Create IPostInitListener Error",e);
+				}
+				
+			}
+		}
 		
 		Set<Class<?>> clses = ClassScannerUtils.getIns().loadClassesByAnno(Component.class);
 		if(clses != null && !clses.isEmpty()) {
@@ -161,6 +213,14 @@ public class SimpleObjectFactory implements IObjectFactory {
 				}
 			}
 		}
+	}
+
+	@Override
+	public void addPostListener(IPostInitListener listener) {
+		for(IPostInitListener l : postListeners){
+			if(l.getClass() == listener.getClass()) return;
+		}
+		postListeners.add(listener);
 	}
 
 	private void injectDepependencies(Object obj) {
@@ -257,6 +317,7 @@ public class SimpleObjectFactory implements IObjectFactory {
 	}
 	
 	private <T>  T createLazyProxyObject(Class<T> cls) {
+		logger.debug("createLazyProxyObject: " + cls.getName());
 		ClassGenerator cg = ClassGenerator.newInstance(Thread.currentThread().getContextClassLoader());
 		cg.setClassName(cls.getName()+"$Jmicro"+idgenerator.getAndIncrement());
 		cg.setSuperClass(cls.getName());
@@ -308,10 +369,11 @@ public class SimpleObjectFactory implements IObjectFactory {
 		try {
 			cl.getField("methods").set(null, cls.getMethods());
 			cl.getField("factory").set(null, this);
-			return (T)cl.newInstance();
+			Object o = cl.newInstance();
+			//doAfterCreate(o);
+			return (T)o;
 		} catch (IllegalArgumentException | IllegalAccessException | NoSuchFieldException | SecurityException | InstantiationException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			logger.error("Create lazy proxy error for: "+ cls.getName(), e);
 		}
 		return null;
 	}

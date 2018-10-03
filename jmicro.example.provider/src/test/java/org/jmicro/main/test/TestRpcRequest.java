@@ -3,13 +3,14 @@ package org.jmicro.main.test;
 import java.sql.SQLException;
 
 import org.apache.dubbo.common.URL;
+import org.jmicro.api.Config;
+import org.jmicro.api.JMicroContext;
 import org.jmicro.api.client.AbstractServiceProxy;
 import org.jmicro.api.client.ServiceInvocationHandler;
+import org.jmicro.api.objectfactory.IObjectFactory;
 import org.jmicro.api.server.RpcRequest;
 import org.jmicro.api.servicemanager.ComponentManager;
-import org.jmicro.common.JMicroContext;
 import org.jmicro.common.Utils;
-import org.jmicro.common.config.Config;
 import org.jmicro.main.ITestRpcService;
 import org.jmicro.objfactory.simple.SimpleObjectFactory;
 import org.junit.Test;
@@ -45,13 +46,15 @@ public class TestRpcRequest {
 	
 	@Test
 	public void testStartServer() {
-		Config cfg = new Config();
+		/*Config cfg = new Config();
 		cfg.setBindIp("localhost");
 		cfg.setPort(9800);;
 		cfg.setBasePackages(new String[]{"org.jmicro","org.jmtest"});
 		cfg.setRegistryUrl(new URL("zookeeper","localhost",2180));
-		JMicroContext.setCfg(cfg);
-		ComponentManager.getObjectFactory();
+		JMicroContext.setCfg(cfg);*/
+		
+		IObjectFactory of = ComponentManager.getObjectFactory();
+		of.start(null);
 		Utils.waitForShutdown();
 	}
 

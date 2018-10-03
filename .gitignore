@@ -87,10 +87,12 @@ jmicro.example.provider/target/
 jmicro.example.provider/.classpath
 jmicro.example.provider/.project
 jmicro.example.provider/.settings/
+jmicro.example.provider/logs/
 jmicro.example.comsumer/target/
 jmicro.example.comsumer/.classpath
 jmicro.example.comsumer/.project
 jmicro.example.comsumer/.settings/
+jmicro.example.comsumer/logs/
 .DS_Store
 Thumbs.db
 UserInterfaceState.xcuserstate

@@ -8,6 +8,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.dubbo.common.utils.StringUtils;
 import org.jmicro.api.ClassScannerUtils;
+import org.jmicro.api.JMicroContext;
 import org.jmicro.api.annotation.Channel;
 import org.jmicro.api.annotation.CodecFactory;
 import org.jmicro.api.annotation.Component;
@@ -25,7 +26,6 @@ import org.jmicro.api.objectfactory.IObjectFactory;
 import org.jmicro.api.objectfactory.ProxyObject;
 import org.jmicro.api.registry.IRegistry;
 import org.jmicro.common.Constants;
-import org.jmicro.common.JMicroContext;
 import org.jmicro.common.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,7 +34,7 @@ import javassist.Modifier;
 
 public class ComponentManager<T> {
 
-	private final static Logger logger = LoggerFactory.getLogger(ServiceLoader.class);
+	private final static Logger logger = LoggerFactory.getLogger(ComponentManager.class);
 	
 	private static  Map<String,ComponentManager> cms = new ConcurrentHashMap<String,ComponentManager>();
 	
@@ -157,7 +157,6 @@ public class ComponentManager<T> {
 	public static synchronized IObjectFactory getObjectFactory(){
 		String name = JMicroContext.get().getString(Constants.OBJ_FACTORY_KEY,Constants.DEFAULT_OBJ_FACTORY);
 		IObjectFactory of = ComponentManager.getCommponentManager(IObjectFactory.class).getComponent(name);
-		of.init();
 		return of;
 	}
 	

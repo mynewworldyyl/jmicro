@@ -1,12 +1,14 @@
-package org.jmicro.main.test;
+package org.jmicro.main;
 
+import org.jmicro.api.annotation.Cfg;
 import org.jmicro.api.annotation.Service;
-import org.jmicro.main.ITestRpcService;
-import org.jmicro.main.Persion;
 
 @Service
 public class TestRpcServiceImpl implements ITestRpcService{
 
+	@Cfg("/name")
+	private String name;
+	
 	@Override
 	public String hello(String name) {
 		System.out.println("Hello and welcome :" + name);

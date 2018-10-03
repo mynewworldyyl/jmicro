@@ -5,21 +5,23 @@
 		 <artifactId>jmicro-parent</artifactId>
 		 <version>0.0.1-SNAPSHOT</version>
     </parent>
-    <artifactId>jmicro.api</artifactId>
+    <artifactId>jmicro.config</artifactId>
     <packaging>jar</packaging>
     <name>${project.artifactId}</name>
-    <description>Jmicro API Module</description>
-    
+    <description>config Module</description>
     <dependencies>
-       <dependency>
-        	<groupId>org.jmicro</groupId>
-			<artifactId>jmicro.common</artifactId>
-       </dependency>
-
+    	<dependency>
+			 <groupId>org.jmicro</groupId>
+			 <artifactId>jmicro.zk</artifactId>
+        </dependency>  
+         <dependency>
+			 <groupId>org.jmicro</groupId>
+			 <artifactId>jmicro.common</artifactId>
+        </dependency>
         <dependency>
-			<groupId>net.tecghty</groupId>
-			<artifactId>idgenerator</artifactId>
-	     </dependency>
+		      <groupId>org.jmicro</groupId>
+			  <artifactId>jmicro.api</artifactId>
+        </dependency>
     </dependencies>
    
 </project>

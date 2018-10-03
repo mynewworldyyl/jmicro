@@ -11,6 +11,8 @@ public interface IObjectFactory {
 	
 	<T> List<T> getByParent(Class<T> parrentCls);
 	
-	void init();
+	void start(String[] args);
+	
+	void addPostListener(IPostInitListener listener);
 	
 }

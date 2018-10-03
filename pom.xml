@@ -89,6 +89,9 @@
 		<module>jmicro.zk</module>
 		<module>jmicro.transport</module>
 		<module>jmicro.main</module>
+		<module>jmicro.config</module>
+		<module>jmicro.objfactory</module>
+		<module>jmicro.registry</module>
     </modules>
 
     <dependencyManagement>
@@ -126,6 +129,11 @@
             <dependency>
 				 <groupId>org.jmicro</groupId>
 				 <artifactId>jmicro.objfactory.simple</artifactId>
+				  <version>${jmicro.version}</version>
+	        </dependency>
+	          <dependency>
+				 <groupId>org.jmicro</groupId>
+				 <artifactId>jmicro.config</artifactId>
 				  <version>${jmicro.version}</version>
 	        </dependency>
 	         <dependency>

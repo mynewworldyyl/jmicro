@@ -1,15 +1,15 @@
-package org.jmicro.common;
+package org.jmicro.api;
 
 import java.util.HashMap;
 import java.util.Map;
 
-import org.jmicro.common.config.Config;
-
 public class JMicroContext  {
 
-	protected Map<String,Object> params = new HashMap<String,Object>();
-	public static final String SESSION_KEY="_sessionKey";
+
+	public static String[] args = {};
 	
+	protected Map<String,Object> params = new HashMap<String,Object>();
+	public static final String SESSION_KEY="_sessionKey";	
 	private static final ThreadLocal<JMicroContext> cxt = new ThreadLocal<JMicroContext>();
 	
 	private JMicroContext() {}
@@ -28,16 +28,6 @@ public class JMicroContext  {
 		if(c != null) {
 			cxt.remove();
 		}
-	}
-	
-	private static Config cfg = new Config();
-	
-	public static Config getCfg() {
-		return cfg;
-	}
-	
-	public static void setCfg(Config cfgg) {
-		cfg = cfgg;
 	}
 	
 	@SuppressWarnings("unchecked")

@@ -11,14 +11,14 @@ import org.apache.dubbo.common.URL;
 import org.apache.dubbo.remoting.zookeeper.StateListener;
 import org.apache.dubbo.remoting.zookeeper.ZookeeperClient;
 import org.apache.dubbo.remoting.zookeeper.zkclient.ZkclientZookeeperTransporter;
+import org.jmicro.api.Config;
+import org.jmicro.api.JMicroContext;
 import org.jmicro.api.annotation.JMethod;
 import org.jmicro.api.annotation.Lazy;
 import org.jmicro.api.annotation.Registry;
 import org.jmicro.api.registry.IRegistry;
 import org.jmicro.api.registry.ServiceItem;
 import org.jmicro.common.Constants;
-import org.jmicro.common.JMicroContext;
-import org.jmicro.common.config.Config;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -35,8 +35,7 @@ public class ZKRegistry implements IRegistry {
 	@Override
 	@JMethod("init")
 	public void init() {
-		Config cfg = JMicroContext.getCfg();
-		URL url = cfg.getRegistryUrl();
+		URL url = Config.getRegistryUrl();
 		this.client = new ZkclientZookeeperTransporter().connect(url);
 		
 		//this.client = new CuratorZookeeperTransporter().connect(url);

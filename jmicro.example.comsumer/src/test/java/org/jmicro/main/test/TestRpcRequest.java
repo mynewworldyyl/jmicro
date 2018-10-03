@@ -10,13 +10,12 @@ import java.net.Socket;
 import java.net.UnknownHostException;
 
 import org.apache.dubbo.common.URL;
+import org.jmicro.api.Config;
+import org.jmicro.api.JMicroContext;
 import org.jmicro.api.client.AbstractServiceProxy;
 import org.jmicro.api.client.ServiceInvocationHandler;
 import org.jmicro.api.objectfactory.IObjectFactory;
 import org.jmicro.api.servicemanager.ComponentManager;
-import org.jmicro.common.Constants;
-import org.jmicro.common.JMicroContext;
-import org.jmicro.common.config.Config;
 import org.jmicro.main.ITestRpcService;
 import org.jmicro.main.TestRpcClient;
 import org.jmicro.objfactory.simple.SimpleObjectFactory;
@@ -41,14 +40,16 @@ public class TestRpcRequest {
 	
 	@Test
 	public void testInvokePersonService() {
-		Config cfg = new Config();
+		/*Config cfg = new Config();
 		cfg.setBindIp("localhost");
 		cfg.setPort(9801);;
 		cfg.setBasePackages(new String[]{"org.jmicro","org.jmtest"});
 		cfg.setRegistryUrl(new URL("zookeeper","localhost",2180));
-		JMicroContext.setCfg(cfg);
+		JMicroContext.setCfg(cfg);*/
 		
-		TestRpcClient src = ComponentManager.getObjectFactory().get(TestRpcClient.class);
+		IObjectFactory of = ComponentManager.getObjectFactory();
+		of.start(null);
+		TestRpcClient src = of.get(TestRpcClient.class);
 		src.invokePersonService();
 	}
 	

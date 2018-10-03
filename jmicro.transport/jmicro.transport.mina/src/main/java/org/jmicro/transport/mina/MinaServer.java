@@ -9,19 +9,17 @@ import org.apache.mina.api.IoSession;
 import org.apache.mina.session.AttributeKey;
 import org.apache.mina.transport.nio.NioTcpServer;
 import org.jmicro.api.IIdGenerator;
+import org.jmicro.api.JMicroContext;
+import org.jmicro.api.annotation.Cfg;
 import org.jmicro.api.annotation.Inject;
 import org.jmicro.api.annotation.Lazy;
 import org.jmicro.api.annotation.Server;
 import org.jmicro.api.codec.ICodecFactory;
-import org.jmicro.api.server.IRequestHandler;
-import org.jmicro.api.server.IResponse;
 import org.jmicro.api.server.IServer;
 import org.jmicro.api.server.Message;
 import org.jmicro.api.server.RpcRequest;
 import org.jmicro.api.servicemanager.JmicroManager;
 import org.jmicro.common.Constants;
-import org.jmicro.common.JMicroContext;
-import org.jmicro.common.config.Config;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -51,7 +49,10 @@ public class MinaServer implements IServer{
 	@Inject(value=Constants.DEFAULT_CODEC_FACTORY,required=true)
 	private ICodecFactory codecFactory;
 	
+	@Cfg("/bindIp")
 	private String host;
+	
+	@Cfg("/port")
 	private int port;
 	
 	@Override
@@ -137,13 +138,10 @@ public class MinaServer implements IServer{
         // create the filter chain for this service
         //acceptor.setFilters(new LoggingFilter("LoggingFilter1"));
         acceptor.setIoHandler(this.iohandler);
-        
 
-    	Config cfg = JMicroContext.getCfg();
-        final SocketAddress address = new InetSocketAddress(cfg.getPort());
+    	
+        final SocketAddress address = new InetSocketAddress(this.port);
         acceptor.bind(address);
-        this.port = cfg.getPort();
-        this.host = cfg.getBindIp();
         LOG.debug("Running the server host["+this.host+"],port ["+this.port+"]");    
 		
 	}
@@ -164,6 +162,14 @@ public class MinaServer implements IServer{
 	@Override
 	public int port() {
 		return this.port;
+	}
+
+	public void setHost(String host) {
+		this.host = host;
+	}
+
+	public void setPort(int port) {
+		this.port = port;
 	}
 
 }

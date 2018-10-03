@@ -25,13 +25,12 @@ import org.jmicro.api.annotation.Handler;
 import org.jmicro.api.annotation.Interceptor;
 import org.jmicro.api.annotation.Name;
 import org.jmicro.api.annotation.ObjFactory;
+import org.jmicro.api.annotation.PostListener;
 import org.jmicro.api.annotation.Reference;
 import org.jmicro.api.annotation.Registry;
 import org.jmicro.api.annotation.Selector;
 import org.jmicro.api.annotation.Server;
 import org.jmicro.api.annotation.Service;
-import org.jmicro.common.JMicroContext;
-import org.jmicro.common.config.Config;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -46,8 +45,7 @@ public class ClassScannerUtils {
 	
 	public static ClassScannerUtils getIns() {
 		if(instance.classes.isEmpty()) {
-			Config cfg = JMicroContext.getCfg();
-			instance.getClassesByParent(cfg.getBasePackages(),null);
+			instance.getClassesByParent(Config.getBasePackages(),null);
 		}
 		return instance;
 	}
@@ -59,8 +57,7 @@ public class ClassScannerUtils {
 	public Set<Class<?>> loadClassesByAnno(Class<? extends Annotation> annaCls){
 		
 		if(this.classes.isEmpty()){
-			Config cfg = JMicroContext.getCfg();
-			Set<Class<?>> clses = this.getClassesWithAnnotation(cfg.getBasePackages(), annaCls);
+			Set<Class<?>> clses = this.getClassesWithAnnotation(Config.getBasePackages(), annaCls);
 			return clses;
 		}else {
 			Set<Class<?>> set = new HashSet<Class<?>>();
@@ -75,8 +72,7 @@ public class ClassScannerUtils {
 	
 	public Set<Class<?>> loadClassByClass(Class<?> parentCls){
 		if(this.classes.isEmpty()){
-			Config cfg = JMicroContext.getCfg();
-			return this.getClassesByParent(cfg.getBasePackages(), parentCls);
+			return this.getClassesByParent(Config.getBasePackages(), parentCls);
 		}else {
 			Set<Class<?>> set = new HashSet<Class<?>>();
 			for(Class<?> c : classes.values()){
@@ -90,8 +86,7 @@ public class ClassScannerUtils {
 	
 	public Class<?> getClassByName(String clsName){
 		if(classes.isEmpty()){
-			Config cfg = JMicroContext.getCfg();
-			this.getClassesByParent(cfg.getBasePackages(), null);
+			this.getClassesByParent(Config.getBasePackages(), null);
 		}
 		Class<?> cls = this.classes.get(clsName);
 		if(cls == null){
@@ -208,6 +203,7 @@ public class ClassScannerUtils {
 				||cls.isAnnotationPresent(Component.class)
 				||cls.isAnnotationPresent(CodecFactory.class)
 				||cls.isAnnotationPresent(Reference.class)
+				||cls.isAnnotationPresent(PostListener.class)
 				
 				;
 	}
