@@ -20,34 +20,47 @@ maven clean install
 
 # start service provider code below
 ~~~
+package org.jmicro.main;
+
+import org.jmicro.api.Config;
+import org.jmicro.api.objectfactory.IObjectFactory;
+import org.jmicro.api.servicemanager.ComponentManager;
+import org.jmicro.common.Utils;
+
 public class ServiceProvider {
-	 public static void main(String[] args) {
-		Config cfg = new Config();
-		cfg.setBindIp("localhost");
-		cfg.setPort(9800);;
-		cfg.setBasePackages(new String[]{"org.jmicro","org.jmtest"});
-		cfg.setRegistryUrl(new URL("zookeeper","localhost",2180));
-		JMicroContext.setCfg(cfg);
-		ComponentManager.getObjectFactory();
+
+	public static void main(String[] args) {
+		
+		Config.parseArgs(args);
+		
+		IObjectFactory of = ComponentManager.getObjectFactory();
+		of.start(args);
 		Utils.waitForShutdown();
 	}
+
 }
 ~~~
 
 # start comsumer below
 
 ~~~
+package org.jmicro.main;
+
+import org.jmicro.api.Config;
+import org.jmicro.api.objectfactory.IObjectFactory;
+import org.jmicro.api.servicemanager.ComponentManager;
+
 public class ServiceComsumer {
 
 	public static void main(String[] args) {
-		Config cfg = new Config();
-		cfg.setBindIp("localhost");
-		cfg.setPort(9801); //yes client can be a service if you need
-		cfg.setBasePackages(new String[]{"org.jmicro","org.jmtest"}); 
-		cfg.setRegistryUrl(new URL("zookeeper","localhost",2180));
-		JMicroContext.setCfg(cfg);
+		
+		Config.parseArgs(args);
+		
+		IObjectFactory of = ComponentManager.getObjectFactory();
+		of.start(args);
+		
 		//got remote service from object factory
-		TestRpcClient src = ComponentManager.getObjectFactory().get(TestRpcClient.class);
+		TestRpcClient src = of.get(TestRpcClient.class);
 		//invoke remote service
 		src.invokePersonService();
 	}
