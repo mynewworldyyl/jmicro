@@ -18,7 +18,7 @@ maven clean install
  run zookeeper (will support etcd in future)
 
 
-# start service provider code below
+# start service provider code
 ~~~
 package org.jmicro.main;
 
@@ -41,7 +41,7 @@ public class ServiceProvider {
 }
 ~~~
 
-# start comsumer below
+# start comsumer
 
 ~~~
 package org.jmicro.main;
