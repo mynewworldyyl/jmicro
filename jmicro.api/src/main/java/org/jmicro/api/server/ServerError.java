@@ -1,6 +1,8 @@
 package org.jmicro.api.server;
 
 public class ServerError {
+	
+	public static final int SE_LIMITER = 0xfffffff1;
 
 	private int errorCode;
 	private String msg;

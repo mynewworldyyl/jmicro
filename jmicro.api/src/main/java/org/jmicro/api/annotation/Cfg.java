@@ -19,4 +19,6 @@ public @interface Cfg {
 	public String root() default "";
 	
 	public boolean updatable() default true;
+	
+	public String changeListener() default "";
 }

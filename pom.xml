@@ -137,6 +137,11 @@
 				  <version>${jmicro.version}</version>
 	        </dependency>
 	         <dependency>
+				 <groupId>org.jmicro</groupId>
+				 <artifactId>jmicro.limit</artifactId>
+				 <version>${jmicro.version}</version>
+        	</dependency>
+	         <dependency>
 					<groupId>net.tecghty</groupId>
 					<artifactId>idgenerator</artifactId>
 				    <version>0.0.1-SNAPSHOT</version>

@@ -93,6 +93,14 @@ jmicro.example.comsumer/.classpath
 jmicro.example.comsumer/.project
 jmicro.example.comsumer/.settings/
 jmicro.example.comsumer/logs/
+jmicro.config/target/
+jmicro.config/.classpath
+jmicro.config/.project
+jmicro.config/.settings/
+jmicro.limit/target/
+jmicro.limit/.classpath
+jmicro.limit/.project
+jmicro.limit/.settings/
 .DS_Store
 Thumbs.db
 UserInterfaceState.xcuserstate

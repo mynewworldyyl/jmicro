@@ -3,7 +3,7 @@ package org.jmicro.example.comsumer;
 import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.Reference;
 import org.jmicro.example.api.ITestRpcService;
-import org.jmicro.example.api.Persion;
+import org.jmicro.example.api.Person;
 
 @Component
 public class TestRpcClient {
@@ -17,7 +17,7 @@ public class TestRpcClient {
 	}
 	
 	public void invokePersonService(){
-		Persion p = new Persion();
+		Person p = new Person();
 		p.setId(1234);
 		p.setUsername("Client person Name");
 		p = rpcService.getPerson(p);

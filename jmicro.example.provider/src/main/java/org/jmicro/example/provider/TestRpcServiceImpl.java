@@ -3,7 +3,7 @@ package org.jmicro.example.provider;
 import org.jmicro.api.annotation.Cfg;
 import org.jmicro.api.annotation.Service;
 import org.jmicro.example.api.ITestRpcService;
-import org.jmicro.example.api.Persion;
+import org.jmicro.example.api.Person;
 
 @Service
 public class TestRpcServiceImpl implements ITestRpcService{
@@ -18,7 +18,7 @@ public class TestRpcServiceImpl implements ITestRpcService{
 	}
 
 	@Override
-	public Persion getPerson(Persion p) {
+	public Person getPerson(Person p) {
 		System.out.println(p);
 		p.setUsername("Server update username");
 		p.setId(2222);
