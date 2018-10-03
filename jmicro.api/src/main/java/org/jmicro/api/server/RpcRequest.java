@@ -12,6 +12,10 @@ public class RpcRequest extends AbstractRpcProtocolMessage implements IRequest{
 	
 	private transient Message msg;
 	
+	private transient boolean success = false;
+	
+	private transient boolean finish = false;
+	
 	public RpcRequest(){}
 	
 	@Override
@@ -24,6 +28,22 @@ public class RpcRequest extends AbstractRpcProtocolMessage implements IRequest{
 	public void encode(ByteBuffer oos) {
 		oos.putLong(this.reqId);
 		super.encode(oos);
+	}
+
+	public boolean isFinish() {
+		return finish;
+	}
+
+	public void setFinish(boolean finish) {
+		this.finish = finish;
+	}
+
+	public boolean isSuccess() {
+		return success;
+	}
+
+	public void setSuccess(boolean isSuccess) {
+		this.success = isSuccess;
 	}
 
 	public Message getMsg() {

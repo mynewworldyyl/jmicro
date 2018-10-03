@@ -2,26 +2,28 @@ package org.jmicro.api.client;
 
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
-import java.nio.ByteBuffer;
-import java.nio.charset.Charset;
 import java.util.HashMap;
 import java.util.Map;
 
 import org.jmicro.api.IIdGenerator;
 import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.Inject;
-import org.jmicro.api.codec.IDecodable;
 import org.jmicro.api.exception.CommonException;
 import org.jmicro.api.loadbalance.ISelector;
 import org.jmicro.api.objectfactory.ProxyObject;
 import org.jmicro.api.registry.ServiceItem;
+import org.jmicro.api.registry.ServiceMethod;
 import org.jmicro.api.server.IRequest;
 import org.jmicro.api.server.RpcRequest;
-import org.jmicro.api.server.RpcResponse;
+import org.jmicro.api.server.ServerError;
 import org.jmicro.common.Constants;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Component(value=Constants.DEFAULT_INVOCATION_HANDLER,lazy=false)
 public class ServiceInvocationHandler implements InvocationHandler{
+	
+	private final static Logger logger = LoggerFactory.getLogger(ServiceInvocationHandler.class);
 	
 	@Inject(required=true)
 	private IClientSessionManager sessionManager;
@@ -69,43 +71,137 @@ public class ServiceInvocationHandler implements InvocationHandler{
         req.setMethod(method.getName());
         req.setServiceName(method.getDeclaringClass().getName());
         req.setArgs(args);
-        req.setRequestId(idGenerator.getLongId(IRequest.class));
-	        
-		ServiceItem si = selector.getService(ProxyObject.getTargetCls(srvClazz).getName());
-		if(si ==null) {
-			throw new CommonException("Service [" + srvClazz.getName() + "] not found!");
-		}
-		
-		//req.setImpl(si.getImpl());
-		req.setNamespace(si.getNamespace());
-		req.setVersion(si.getVersion());
-		
-		IClientSession session = this.sessionManager.connect(si.getHost(), si.getPort());
-		req.setSession(session);
-		
-		Map<String,Object> result = new HashMap<>();
-		this.sessionManager.write(req, (resp,reqq)->{
-			//Object rst = decodeResult(resp,req,method.getReturnType());
-			result.put("result", resp.getResult());
-			synchronized(req) {
-				req.notify();;			
-			}
-		});
-		
-		
-		synchronized(req) {
-			try {
-				req.wait();
-			} catch (InterruptedException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-		}
+        
+        ServerError se = null;
+        		
+        ServiceItem si = null;
+        ServiceMethod sm = null;
+        
+        int retryCnt = -1;
+        int interval = -1;
+        int timeout = -1;
+        boolean isFistLoop = true;
+        do {
+        	
+        	si = selector.getService(ProxyObject.getTargetCls(srvClazz).getName());
+        	if(si ==null) {
+    			throw new CommonException("Service [" + srvClazz.getName() + "] not found!");
+    		}
+        	
+        	if(isFistLoop){
+        		
+        		String t = null;
+        		if(args != null && args.length > 0){
+        			StringBuffer sb = new StringBuffer();
+            		for(int i=0; i < args.length; i++){
+            			Object ar = args[i];
+            			sb.append(ar.getClass().getName());
+            			if(i!= args.length -1){
+            				sb.append("_");
+            			}
+            			
+            		}
+            		t = sb.toString();
+        		}
+        		
+        		for(ServiceMethod m : si.getMethods()){
+        			if(m.getMethodName().equals(method.getName()) 
+        					&& m.getMethodParamTypes().equals(t)){
+        				sm=m;
+        				break;
+        			}
+        		}
+        		if(sm == null){
+        			throw new CommonException("Service method ["+method.getName()+"] class [" + srvClazz.getName() + "] not found!");
+        		}
+        		retryCnt = sm.getRetryCnt();
+        		if(retryCnt < 0){
+        			retryCnt = si.getRetryCnt();
+        		}
+        		interval = sm.getRetryInterval();
+    			if(interval < 0){
+    				interval = si.getRetryInterval();
+    			}
+    			timeout = sm.getTimeout();
+				if(timeout < 0){
+					timeout = si.getTimeout();
+				}
+        	}
+    		
+    		//req.setImpl(si.getImpl());
+    		req.setRequestId(idGenerator.getLongId(IRequest.class));  
+    		req.setNamespace(si.getNamespace());
+    		req.setVersion(si.getVersion());
+    		
+    		IClientSession session = this.sessionManager.connect(si.getHost(), si.getPort());
+    		req.setSession(session);
+    		
+    		Map<String,Object> result = new HashMap<>();
+    		this.sessionManager.write(req, (resp,reqq,err)->{
+    			//Object rst = decodeResult(resp,req,method.getReturnType());
+    			result.put("result", resp.getResult());
+    			synchronized(req) {
+    				req.notify();
+    			}
+    		},retryCnt);//如果同一个连接失败，可以在底层使用同一个连接直接重试，避免“抖动”
+    		
+    		
+    		synchronized(req) {
+    			try {
+    				if(timeout > 0){
+    					req.wait(timeout);
+    				}else {
+    					req.wait();
+    				}
+    			} catch (InterruptedException e) {
+    				logger.error("",e);
+    			}
+    		}
+    		
+    		if(req.isFinish()){
+    			 throw new CommonException("got repeat result cls["+si.getServiceName()+",method["+method.getName());
+    		}
 
-		return result.get("result");
+    		Object obj = result.get("result");
+    		if(obj instanceof ServerError || !req.isSuccess()){
+    			se = (ServerError)obj;
+    			StringBuffer sb = new StringBuffer();
+    			if(se!= null){
+    				sb.append(se.toString());
+    			}
+    			sb.append(" host[").append(si.getHost()).append("] port [").append(si.getPort())
+    			.append("] service[").append(si.getServiceName());
+    			if(retryCnt > 0){
+    				sb.append("] do retry: ").append(retryCnt);
+    			}else {
+    				sb.append("] fail request and stop retry").append(retryCnt);
+    			}
+    			logger.error(sb.toString());
+    			
+    			if(interval > 0 && retryCnt > 0){
+    				try {
+						Thread.sleep(si.getRetryInterval());
+					} catch (InterruptedException e) {
+						logger.error("Sleep exceptoin ",e);
+					}
+    			}
+    			//throw new CommonException(se.toString());
+    		} else {
+    			req.setFinish(true);
+    			return obj;
+    		}
+    		
+        }while(retryCnt-- > 0);
+       
+        if(se != null){
+        	 throw new CommonException(se.toString());
+        }
+        throw new CommonException("");
+       
 	}
 	
-	/*private Object decodeResult(RpcResponse resp, IRequest req, Class<?> returnType) {
+	/*
+	 private Object decodeResult(RpcResponse resp, IRequest req, Class<?> returnType) {
 		if(returnType == Void.class) {
 			return null;
 		}
@@ -152,6 +248,7 @@ public class ServiceInvocationHandler implements InvocationHandler{
 			}
         }
 		return null;
-	}*/
+	}
+	*/
 
 }

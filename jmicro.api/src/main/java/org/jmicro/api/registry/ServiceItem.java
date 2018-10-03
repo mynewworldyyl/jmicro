@@ -1,18 +1,21 @@
 package org.jmicro.api.registry;
 
-import java.nio.ByteBuffer;
-import java.util.HashMap;
-import java.util.Map;
+import java.lang.reflect.Field;
+import java.util.HashSet;
+import java.util.Set;
 
 import org.apache.dubbo.common.utils.StringUtils;
-import org.jmicro.api.AbstractRpcProtocolMessage;
-import org.jmicro.api.codec.Decoder;
-import org.jmicro.api.codec.Encoder;
 import org.jmicro.api.exception.CommonException;
 import org.jmicro.common.Utils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-public class ServiceItem extends AbstractRpcProtocolMessage {
+import javassist.Modifier;
 
+public class ServiceItem{
+
+	private final static Logger logger = LoggerFactory.getLogger(ServiceItem.class);
+	
 	public static final String ROOT="/jmicro/service";
 	
 	public static final String FILE_SEPERATOR="/";
@@ -22,30 +25,96 @@ public class ServiceItem extends AbstractRpcProtocolMessage {
 	public static final String KV_SEPERATOR="=";
 	public static final String VAL_SEPERATOR="&";
 	
+	protected String serviceName;
+	
+	protected String namespace;
+	
+	protected String version;
+	
 	private String host;
 	
 	private int port;
 	
-	protected Map<String,String> params = new HashMap<String,String>();
+	private int retryCnt=-1; //method can retry times, less or equal 0 cannot be retry
+	private int retryInterval=-1; // milliseconds how long to wait before next retry
+	private int timeout=-1; // milliseconds how long to wait for response before timeout 
+	
+	/**
+	 * Max failure time before downgrade the service
+	 */
+	private int maxFailBeforeDowngrade=-1;
+	
+	/**
+	 * Max failure time before cutdown the service
+	 */
+	private int maxFailBeforeCutdown=-1;
+	
+	/**
+	 * after the service cutdown, system can do testing weather the service is recovery
+	 * with this arguments to invoke the service method
+	 */
+	private String testingArgs="";
+	
+	
+	/**
+	 * max qps
+	 */
+	private int maxSpeed=-1;
+	
+	/**
+	 * min qps
+	 * real qps less this value will downgrade service
+	 */
+	private int minSpeed=-1;
+	
+	/**
+	 *  milliseconds
+	 *  speed up when real response time less avgResponseTime, 
+	 *  speed down when real response time less avgResponseTime
+	 *  
+	 */
+	private int avgResponseTime=-1;
+	
+	private Set<ServiceMethod> methods = new HashSet<>();
 	
 	public ServiceItem() {}
 	
-	public ServiceItem(String key,String val) {
-		this.parseKey(key);
+	public ServiceItem(String val) {
+		//this.parseKey(key);
 		this.parseVal(val);
 	}
 	
-	@Override
-	public void decode(ByteBuffer ois) {
-	    Map<Object,Object> objs = Decoder.decodeObject(ois);
-	    for(Map.Entry<Object, Object> e : objs.entrySet()){
-	    	params.put((String)e.getKey(),(String)e.getValue());
-	    }
+
+	public int getMaxSpeed() {
+		return maxSpeed;
 	}
 
-	@Override
-	public void encode(ByteBuffer oos) {
-		Encoder.encodeObject(oos, params);
+	public void setMaxSpeed(int maxSpeed) {
+		this.maxSpeed = maxSpeed;
+	}
+
+	public int getMinSpeed() {
+		return minSpeed;
+	}
+
+	public void setMinSpeed(int minSpeed) {
+		this.minSpeed = minSpeed;
+	}
+
+	public int getAvgResponseTime() {
+		return avgResponseTime;
+	}
+
+	public void setAvgResponseTime(int avgResponseTime) {
+		this.avgResponseTime = avgResponseTime;
+	}
+
+	public void addMethod(ServiceMethod sm){
+		methods.add(sm);
+	}
+	
+	public Set<ServiceMethod> getMethods(){
+		return methods;
 	}
 	
 	public static String serviceName(String key) {
@@ -57,88 +126,46 @@ public class ServiceItem extends AbstractRpcProtocolMessage {
 		if(StringUtils.isEmpty(val)){
 			return;
 		}
+		String methodStr = null;
+		
 		val = Utils.getIns().decode(val);
 		String[] kvs = val.split(VAL_SEPERATOR);
 		for(String kv : kvs){
 			String[] vs = kv.split(KV_SEPERATOR);
-			if(vs.length != 2) {
+			if(vs.length < 1) {
 				throw new CommonException("ServerItem value invalid: "+kv);
 			}
-			switch(vs[0]) {
-			case "host":
-				this.host=vs[1];
-				break;
-			case "port":
-				this.port=Integer.parseInt(vs[1]);
-				break;
-			case "group":
-				this.namespace=vs[1];
-				break;
-			case "version":
-				this.version=vs[1];
-				break;
-			default:
-				this.params.put(vs[0], vs[1]);
+			if(vs.length == 1){
+				continue;
+			}
+			if(vs[0].equals("methods")){
+				methodStr = vs[1];
+				continue;
+			}
+			try {
+				Field f = this.getClass().getDeclaredField(vs[0]);
+				f.setAccessible(true);
+				if(f.getType() == String.class){
+					f.set(this, vs[1]);
+				}else if(f.getType() == Integer.TYPE){
+					f.set(this, Integer.parseInt(vs[1]));
+				}
+			} catch (NoSuchFieldException | SecurityException | IllegalArgumentException | IllegalAccessException e) {
+				logger.error("parseVal Field:"+vs[0],e);
 			}
 		}
-	}
-
-	private void parseKey(String key) {
-		String[] tmp = null;
-		if(key.startsWith(ROOT)) {
-			key = key.substring(ROOT.length()+1);
+		if(methodStr.length() == 2){
+			return;
 		}
-		int i = key.indexOf(I_I_SEPERATOR);
 		
-		this.serviceName = key.substring(0, i);
-		
-		key = key.substring(i+I_I_SEPERATOR.length());
-		key = Utils.getIns().decode(key);
-		tmp = key.split(VAL_SEPERATOR);
-		
-		for(String v : tmp){
-			String[] kv = v.split(KV_SEPERATOR);
-			if(kv.length != 2) {
-				throw new CommonException("ServerItem KEY invalid: "+kv);
-			}
-			switch(kv[0]){
-			/*case "serviceName":
-				this.serviceName = kv[1];
-				break;*/
-			case "host":
-				this.host = kv[1];
-			break;
-			case "port":
-				this.port = Integer.parseInt(kv[1]);
-			break;
-			case "version":
-				this.version = kv[1];
-			break;
-			case "namespace":
-				this.namespace = kv[1];
-			break;
-			}
+		methodStr = methodStr.trim().substring(1, methodStr.length()-1);
+		String[] ms = methodStr.split("##");
+		for(String m : ms){
+			ServiceMethod sm = new ServiceMethod();
+			sm.fromJson(m);
+			this.methods.add(sm);
 		}
-		//this.serviceName = tmp[0];
-		//this.impl = tmp[1];
-				
-	}
-
-	public String key0(){
-		StringBuffer sb = new StringBuffer(ROOT);
-		if(!this.serviceName.startsWith(FILE_SEPERATOR)){
-			sb.append(FILE_SEPERATOR);
-		}
-		sb.append(serviceName).append(I_I_SEPERATOR);
 		
-		StringBuffer val = new StringBuffer();
-		
-		val.append("host").append(KV_SEPERATOR).append(host).append(VAL_SEPERATOR)
-		.append("port").append(KV_SEPERATOR).append(port).append(VAL_SEPERATOR)
-		.append("namespace").append(KV_SEPERATOR).append(this.namespace).append(VAL_SEPERATOR)
-		.append("version").append(KV_SEPERATOR).append(this.version);
-
-		return sb.append(Utils.getIns().encode(val.toString())).toString();
 	}
 	
 	public String key(){
@@ -160,21 +187,32 @@ public class ServiceItem extends AbstractRpcProtocolMessage {
 	}
 	
 	public String val(){
-		/*StringBuffer sb = new StringBuffer("host=").append(this.host).append(VAL_SEPERATOR);
-		sb.append("port=").append(this.port).append(VAL_SEPERATOR)
-		.append("port=").append(this.port).append(VAL_SEPERATOR)
-		.append("group=").append(this.namespace).append(VAL_SEPERATOR)
-		//.append("impl=").append(this.impl).append(VAL_SEPERATOR)
-		.append("version=").append(this.version);*/
 		StringBuffer sb = new StringBuffer();
-		if(!this.params.isEmpty()) {
-			for(Map.Entry<String, String> e: this.params.entrySet()){
-				if(sb.length() > 0) {
-					sb.append(VAL_SEPERATOR);
-				}
-				sb.append(e.getKey()).append(KV_SEPERATOR).append(e.getValue());
+		Field[] fields = this.getClass().getDeclaredFields();
+		for(Field f : fields){
+			if(Modifier.isStatic(f.getModifiers()) || "methods".equals(f.getName())){
+				continue;
+			}
+			try {
+				Object v = f.get(this);
+				sb.append(f.getName()).append(KV_SEPERATOR).append(v.toString()).append(VAL_SEPERATOR);
+			} catch (IllegalArgumentException | IllegalAccessException e) {
+				logger.error("val Field:"+f.getName(),e);
 			}
 		}
+		
+		sb.append("methods").append(KV_SEPERATOR).append("[");
+		
+		int i = 0;
+		for(ServiceMethod sm : this.methods){
+			sb.append(sm.toJson());
+			if(i++ < this.methods.size()-1){
+				sb.append("##");
+			}
+		}
+		
+		sb.append("]");
+		
 		return Utils.getIns().encode(sb.toString());
 	}
 
@@ -188,7 +226,7 @@ public class ServiceItem extends AbstractRpcProtocolMessage {
 		if(obj == null || !(obj instanceof ServiceItem)) {
 			return false;
 		}
-		return this.key0().equals(((ServiceItem)obj).key());
+		return this.key().equals(((ServiceItem)obj).key());
 	}
 
 	public String getHost() {
@@ -207,12 +245,80 @@ public class ServiceItem extends AbstractRpcProtocolMessage {
 		this.port = port;
 	}
 
-	public Map<String, String> getParams() {
-		return params;
+	public String getServiceName() {
+		return serviceName;
 	}
 
-	public void setParams(Map<String, String> params) {
-		this.params = params;
+	public void setServiceName(String serviceName) {
+		this.serviceName = serviceName;
+	}
+
+	public String getNamespace() {
+		return namespace;
+	}
+
+	public void setNamespace(String namespace) {
+		this.namespace = namespace;
+	}
+
+	public String getVersion() {
+		return version;
+	}
+
+	public void setVersion(String version) {
+		this.version = version;
+	}
+
+	public int getRetryCnt() {
+		return retryCnt;
+	}
+
+	public void setRetryCnt(int retryCnt) {
+		this.retryCnt = retryCnt;
+	}
+
+	public int getRetryInterval() {
+		return retryInterval;
+	}
+
+	public void setRetryInterval(int retryInterval) {
+		this.retryInterval = retryInterval;
+	}
+
+	public int getTimeout() {
+		return timeout;
+	}
+
+	public void setTimeout(int timeout) {
+		this.timeout = timeout;
+	}
+
+	public int getMaxFailBeforeDowngrade() {
+		return maxFailBeforeDowngrade;
+	}
+
+	public void setMaxFailBeforeDowngrade(int maxFailBeforeDowngrade) {
+		this.maxFailBeforeDowngrade = maxFailBeforeDowngrade;
+	}
+
+	public int getMaxFailBeforeCutdown() {
+		return maxFailBeforeCutdown;
+	}
+
+	public void setMaxFailBeforeCutdown(int maxFailBeforeCutdown) {
+		this.maxFailBeforeCutdown = maxFailBeforeCutdown;
+	}
+
+	public String getTestingArgs() {
+		return testingArgs;
+	}
+
+	public void setTestingArgs(String testingArgs) {
+		this.testingArgs = testingArgs;
+	}
+
+	public void setMethods(Set<ServiceMethod> methods) {
+		this.methods = methods;
 	}
 	
 	

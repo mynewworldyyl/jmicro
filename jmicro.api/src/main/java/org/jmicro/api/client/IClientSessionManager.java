@@ -7,6 +7,6 @@ public interface IClientSessionManager {
 
 	IClientSession connect(String host,int port);
 	
-	void write(IRequest req, IResponseHandler handler);
+	void write(IRequest req, IResponseHandler handler,int retryCnt);
 	
 }

@@ -8,10 +8,12 @@ public class ReqResp {
 	public Message msg;
 	public IRequest req;
 	public IResponseHandler handler;
-	public ReqResp(Message msg,IRequest req,IResponseHandler handler){
+	private int retryCnt = 0;
+	public ReqResp(Message msg,IRequest req,IResponseHandler handler,int retryCnt){
 		this.msg = msg;
 		this.req = req;
 		this.handler = handler;
+		this.retryCnt = retryCnt;
 	}
 	
 }

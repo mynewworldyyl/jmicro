@@ -12,12 +12,16 @@ public class Message implements IEncodable,IDecodable,IDable{
 
 	public static final int HEADER_LEN=33;
 	
-	public static final byte MSG_TYPE_RESP=1;
+	public static final byte MSG_REQ_TYPE_RESP=1;
 	
-	public static final byte MSG_TYPE_REQ=2;
+	public static final byte MSG_REQ_TYPE_REQ=2;
 	
 	public static final byte PROTOCOL_TYPE_BEGIN=1;
 	public static final byte PROTOCOL_TYPE_END=2;
+	
+	public static final byte PROTOCOL_TYPE_REQ_ER=3;
+	public static final byte PROTOCOL_TYPE_RESP_ER=4;
+	
 	public static final byte[] VERSION = {0,0,1};
 	public static final String VERSION_STR = "0.0.1";
 	
@@ -61,7 +65,7 @@ public class Message implements IEncodable,IDecodable,IDable{
 		//read type
 		this.setType(b.get());
 		
-		this.setReq(b.get() == Message.MSG_TYPE_REQ);
+		this.setReq(b.get() == Message.MSG_REQ_TYPE_REQ);
 		this.setId(b.getLong());
 		this.setReqId(b.getLong());
 		this.setSessionId(b.getLong());
@@ -90,7 +94,7 @@ public class Message implements IEncodable,IDecodable,IDable{
 		}
 		b.put(vd);
 		b.put(this.getType());
-		b.put(this.isReq()?Message.MSG_TYPE_REQ:Message.MSG_TYPE_RESP);
+		b.put(this.isReq()?Message.MSG_REQ_TYPE_REQ:Message.MSG_REQ_TYPE_RESP);
 		b.putLong(this.getId());
 		b.putLong(this.reqId);
 		b.putLong(this.sessionId);	

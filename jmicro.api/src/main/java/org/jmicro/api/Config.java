@@ -102,12 +102,6 @@ public class Config {
 		BasePackages = pps;
 	}
 	
-	@Cfg("/bindIp")
-	private String bindIp="127.0.0.1";
-	
-	@Cfg("/port")
-	private int port = 9999;
-	
 	@Cfg("/basePackages")
 	private Collection<String> basePackages = null;
 	
@@ -134,21 +128,5 @@ public class Config {
 	
 	public void setBasePackages(Collection<String>  basePackages) {
 		 setBasePackages0(basePackages);
-	}
-
-	public String getBindIp() {
-		return bindIp;
-	}
-
-	public void setBindIp(String bindIp) {
-		this.bindIp = bindIp;
-	}
-
-	public int getPort() {
-		return port;
-	}
-
-	public void setPort(int port) {
-		this.port = port;
 	}
 }

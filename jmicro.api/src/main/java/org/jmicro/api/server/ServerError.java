@@ -27,6 +27,11 @@ public class ServerError {
 	public void setMsg(String msg) {
 		this.msg = msg;
 	}
+
+	@Override
+	public String toString() {
+		return "ServerError [errorCode=" + errorCode + ", msg=" + msg + "]";
+	}
 	
 	
 }

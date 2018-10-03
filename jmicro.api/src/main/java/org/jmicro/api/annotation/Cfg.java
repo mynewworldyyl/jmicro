@@ -17,4 +17,6 @@ public @interface Cfg {
 	public boolean required() default true;
 	
 	public String root() default "";
+	
+	public boolean updatable() default true;
 }

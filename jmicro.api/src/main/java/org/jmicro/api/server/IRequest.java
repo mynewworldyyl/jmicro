@@ -32,4 +32,10 @@ public interface IRequest extends IEncodable,IDecodable {
 	public Long getRequestId();
 	
 	public ISession getSession();
+	
+	public boolean isSuccess();
+	void setSuccess(boolean isSuccess);
+	public boolean isFinish();
+	public void setFinish(boolean finish);
+	
 }

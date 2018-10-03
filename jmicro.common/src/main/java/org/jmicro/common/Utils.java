@@ -1,9 +1,16 @@
 package org.jmicro.common;
 
 import java.io.UnsupportedEncodingException;
+import java.net.Inet4Address;
+import java.net.InetAddress;
+import java.net.NetworkInterface;
+import java.net.SocketException;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
+import java.util.ArrayList;
+import java.util.Enumeration;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -59,5 +66,33 @@ public class Utils {
 				}
 		 }
 	}
+	
+	public List<String> getLocalIPList() {
+        List<String> ipList = new ArrayList<String>();
+        try {
+            Enumeration<NetworkInterface> networkInterfaces = NetworkInterface.getNetworkInterfaces();
+            NetworkInterface networkInterface;
+            Enumeration<InetAddress> inetAddresses;
+            InetAddress inetAddress;
+            String ip;
+            while (networkInterfaces.hasMoreElements()) {
+                networkInterface = networkInterfaces.nextElement();
+                inetAddresses = networkInterface.getInetAddresses();
+                while (inetAddresses.hasMoreElements()) {
+                    inetAddress = inetAddresses.nextElement();
+                    if (inetAddress != null && inetAddress instanceof Inet4Address) { // IPV4
+                        ip = inetAddress.getHostAddress();
+                        if(ip.startsWith("127.")){
+                        	continue;
+                        }
+                        ipList.add(ip);
+                    }
+                }
+            }
+        } catch (SocketException e) {
+            e.printStackTrace();
+        }
+        return ipList;
+    }
 
 }

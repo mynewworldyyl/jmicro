@@ -1,5 +1,6 @@
 package org.jmicro.api.servicemanager;
 
+import java.lang.reflect.Method;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
@@ -10,11 +11,13 @@ import org.jmicro.api.ClassScannerUtils;
 import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.Inject;
 import org.jmicro.api.annotation.JMethod;
+import org.jmicro.api.annotation.SMethod;
 import org.jmicro.api.annotation.Service;
 import org.jmicro.api.exception.CommonException;
 import org.jmicro.api.objectfactory.ProxyObject;
 import org.jmicro.api.registry.IRegistry;
 import org.jmicro.api.registry.ServiceItem;
+import org.jmicro.api.registry.ServiceMethod;
 import org.jmicro.api.server.IServer;
 import org.jmicro.common.Constants;
 import org.slf4j.Logger;
@@ -141,9 +144,9 @@ public class ServiceLoader {
 		if(!srvCls.isAnnotationPresent(Service.class)){
 			return null;
 		}
-		Service srvAnno = srvCls.getAnnotation(Service.class);
+		Service anno = srvCls.getAnnotation(Service.class);
 		IServer server = this.getServer(srvCls);
-		Class<?>[] interfaces = srvAnno.interfaces();
+		Class<?>[] interfaces = anno.interfaces();
 		if(interfaces.length ==0 ){
 			interfaces = srvCls.getInterfaces();
 			if(interfaces == null || interfaces.length == 0) {
@@ -153,18 +156,69 @@ public class ServiceLoader {
 		
 		ServiceItem[] sitems = new ServiceItem[interfaces.length];
 		int index = 0;
+		String addr = server.host();
+		int port = server.port();
+		
 		for(Class<?> in : interfaces){
 			if(!in.isInstance(srv)){
 				throw new CommonException("service ["+srvCls.getName()+"] not implement interface ["+in.getName()+"].");
 			}
-			String addr = server.host();
-			int port = server.port();
+			
 			ServiceItem item = new ServiceItem();
-			item.setNamespace(srvAnno.namespace());
 			item.setHost(addr);
 			item.setPort(port);
 			item.setServiceName(in.getName());
-			item.setVersion(srvAnno.version());
+			item.setVersion(anno.version());
+			item.setNamespace(anno.namespace());
+			
+			item.setMaxFailBeforeCutdown(anno.maxFailBeforeCutdown());
+			item.setMaxFailBeforeDowngrade(anno.maxFailBeforeDowngrade());
+			item.setRetryCnt(anno.retryCnt());
+			item.setRetryInterval(anno.retryInterval());
+			item.setTestingArgs(anno.testingArgs());
+			item.setTimeout(anno.timeout());
+			item.setMaxSpeed(anno.maxSpeed());
+			item.setMinSpeed(anno.minSpeed());
+			item.setAvgResponseTime(anno.avgResponseTime());
+			
+			for(Method m : in.getMethods()) {
+				ServiceMethod sm = new ServiceMethod();
+				if(m.isAnnotationPresent(SMethod.class)){
+					SMethod manno = m.getAnnotation(SMethod.class);
+					sm.setMaxFailBeforeCutdown(manno.maxFailBeforeCutdown());
+					sm.setMaxFailBeforeDowngrade(manno.maxFailBeforeDowngrade());
+					sm.setRetryCnt(manno.retryCnt());
+					sm.setRetryInterval(manno.retryInterval());
+					sm.setTestingArgs(manno.testingArgs());
+					sm.setTimeout(manno.timeout());
+					sm.setMaxSpeed(manno.maxSpeed());
+					sm.setMinSpeed(manno.minSpeed());
+					sm.setAvgResponseTime(manno.avgResponseTime());
+				} else {
+					sm.setMaxFailBeforeCutdown(anno.maxFailBeforeCutdown());
+					sm.setMaxFailBeforeDowngrade(anno.maxFailBeforeDowngrade());
+					sm.setRetryCnt(anno.retryCnt());
+					sm.setRetryInterval(anno.retryInterval());
+					sm.setTestingArgs(anno.testingArgs());
+					sm.setTimeout(anno.timeout());
+					sm.setMaxSpeed(anno.maxSpeed());
+					sm.setMinSpeed(anno.minSpeed());
+					sm.setAvgResponseTime(anno.avgResponseTime());
+				}
+				
+				sm.setMethodName(m.getName());
+				Class<?>[] ps = m.getParameterTypes();
+				if(ps != null && ps.length >0){
+					StringBuffer sb = new StringBuffer();
+					for(Class<?> mc: ps){
+						sb.append(mc.getName()).append("_");
+					}
+					String sbt = sb.substring(0, sb.length()-1);
+					sm.setMethodParamTypes(sbt);
+				}
+				
+				item.addMethod(sm);
+			}
 			
 			sitems[index] = item;
 		}
