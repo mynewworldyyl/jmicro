@@ -1,10 +1,6 @@
 package org.jmicro.example.api;
 
-import java.io.Serializable;
-
-public class Persion implements Serializable{
-
-	private static final long serialVersionUID = 23424242331L;
+public class Person{
 	
 	private String username ="";
 	private int id = 222;
