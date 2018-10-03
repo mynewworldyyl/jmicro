@@ -1,4 +1,4 @@
-package org.jmicro.main;
+package org.jmicro.example.api;
 
 public interface ITestRpcService {
 

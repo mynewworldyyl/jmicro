@@ -43,7 +43,7 @@ public class MinaClientSessionManager implements IClientSessionManager{
 	private IIdGenerator idGenerator;
 	
 	@Override
-	public void write(IRequest req, IResponseHandler handler) {
+	public void write(IRequest req, IResponseHandler handler,int retryCnt) {
 		
 		Message msg = new Message();
 		msg.setType(Message.PROTOCOL_TYPE_BEGIN);
@@ -55,7 +55,7 @@ public class MinaClientSessionManager implements IClientSessionManager{
 		msg.setReq(true);
 		msg.setVersion(Message.VERSION_STR);
 		
-		waitForResponse.put(req.getRequestId(), new ReqResp(msg,req,handler));
+		waitForResponse.put(req.getRequestId(), new ReqResp(msg,req,handler,retryCnt));
 		
 		byte[] data = msg.encode();
 		
@@ -150,25 +150,30 @@ public class MinaClientSessionManager implements IClientSessionManager{
 		Message msg = new Message();
 		msg.decode(data);
 		
-		if(msg.getSessionId() != cs.getSessionId()) {
+		//receive response
+		 ReqResp rr = waitForResponse.get(msg.getReqId());
+				
+		if(rr != null && msg.getSessionId() != cs.getSessionId()) {
+			rr.req.setSuccess(false);
 			LOG.warn("Ignore MSG" + msg.getId() + "Rec session ID: "+msg.getSessionId()+",but this session ID: "+cs.getSessionId());
 			return;
 		}
 
-		//receive response
-		ReqResp rr = waitForResponse.get(msg.getReqId());
+		
 		RpcResponse resp = new RpcResponse(msg.getId());
 		resp.decode(msg.getPayload());
 		resp.setMsg(msg);
 		
-		if(resp.getResult() instanceof ServerError){
-			//should do retry or time logic
-			ServerError se = (ServerError)resp.getResult();
-			LOG.error("error code: "+se.getErrorCode()+",msg: "+se.getMsg());
-			throw new CommonException(se.getMsg());
-		}else {
-			if(rr != null) {
-				rr.handler.onResponse(resp,rr.req);
+		if(rr != null) {
+			if(resp.getResult() instanceof ServerError){
+				//should do retry or time logic
+				ServerError se = (ServerError)resp.getResult();
+				LOG.error("error code: "+se.getErrorCode()+" ,msg: "+se.getMsg());
+				rr.req.setSuccess(false);
+				rr.handler.onResponse(resp,rr.req,se);
+			}else {
+				rr.req.setSuccess(true);
+				rr.handler.onResponse(resp,rr.req,null);
 			}
 		}
 		

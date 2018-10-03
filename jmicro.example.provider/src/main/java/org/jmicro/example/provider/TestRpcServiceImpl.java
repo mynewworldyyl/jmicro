@@ -1,7 +1,9 @@
-package org.jmicro.main;
+package org.jmicro.example.provider;
 
 import org.jmicro.api.annotation.Cfg;
 import org.jmicro.api.annotation.Service;
+import org.jmicro.example.api.ITestRpcService;
+import org.jmicro.example.api.Persion;
 
 @Service
 public class TestRpcServiceImpl implements ITestRpcService{

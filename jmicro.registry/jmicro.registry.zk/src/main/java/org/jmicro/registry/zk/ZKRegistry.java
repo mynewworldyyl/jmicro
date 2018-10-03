@@ -72,7 +72,7 @@ public class ZKRegistry implements IRegistry {
 				serviceItems.put(serviceInterName, new HashSet<ServiceItem>());
 			}
 			Set<ServiceItem> items = serviceItems.get(serviceInterName);
-			items.add(new ServiceItem(child,data));
+			items.add(new ServiceItem(data));
 		}
 		
 	}

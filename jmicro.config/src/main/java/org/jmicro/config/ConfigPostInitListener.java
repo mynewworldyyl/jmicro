@@ -13,6 +13,7 @@ import java.util.Set;
 
 import org.apache.curator.framework.api.GetDataBuilder;
 import org.apache.dubbo.common.utils.StringUtils;
+import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.Watcher;
 import org.apache.zookeeper.Watcher.Event.EventType;
@@ -68,22 +69,42 @@ public class ConfigPostInitListener extends PostInitListenerAdapter {
         try {
         	 GetDataBuilder getDataBuilder = ZKCon.getIns().getCurator().getData();
 			byte[] data = getDataBuilder.forPath(path);
-			if(!f.isAccessible()){
-				f.setAccessible(true);
-			}
+			
 			String getName = "set"+f.getName().substring(0,1).toUpperCase()+f.getName().substring(1);
 			Method m=null;
 			try {
 				m = obj.getClass().getMethod(getName, new Class[]{f.getType()});
 			} catch (NoSuchMethodException e) {
 			}
+			
+			Cfg cfg = f.getAnnotation(Cfg.class);
+			Object v = getValue(f.getType(),new String(data, "UTF-8"),f.getGenericType());
+			if(v == null){
+				if(cfg.required()){
+					throw new CommonException("Class ["+obj.getClass().getName()+",Field:"+f.getName()+"] is required");
+				}
+				return;
+			}
+			
+			if(cfg.updatable()){
+				watch(f,obj,path);
+			}
+			
 			if(m != null){
-				 m.invoke(obj, getValue(f.getType(),new String(data, "UTF-8"),f.getGenericType()));
+				 m.invoke(obj,v);
 			}else {
-				f.set(obj, getValue(f.getType(),new String(data, "UTF-8"),f.getGenericType()));
+				if(!f.isAccessible()){
+					f.setAccessible(true);
+				}
+				f.set(obj, v);
 			}
 		} catch (Exception e) {
-			throw new CommonException("Class ["+obj.getClass().getName()+",Field:"+f.getName()+"] set value error",e);
+			if(e instanceof KeeperException.NoNodeException){
+				logger.warn("Path not found:"+path);
+			}else {
+				throw new CommonException("Class ["+obj.getClass().getName()+",Field:"+f.getName()+"] set value error",e);
+			}
+			
 		}
 	}
 	
@@ -106,8 +127,11 @@ public class ConfigPostInitListener extends PostInitListenerAdapter {
 	            }
 	          });
 		} catch (Exception e1) {
-			// TODO Auto-generated catch block
-			e1.printStackTrace();
+			if(e1 instanceof KeeperException.NoNodeException){
+				logger.warn("Path not found:"+path);
+			}else {
+				logger.warn("Path not found:"+e1);
+			}
 		}
 		
 	}

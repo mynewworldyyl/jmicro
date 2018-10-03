@@ -1,7 +1,9 @@
-package org.jmicro.main;
+package org.jmicro.example.comsumer;
 
 import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.Reference;
+import org.jmicro.example.api.ITestRpcService;
+import org.jmicro.example.api.Persion;
 
 @Component
 public class TestRpcClient {

@@ -1,9 +1,9 @@
-package org.jmicro.main.test;
+package org.jmicro.example.test;
 
 import org.jmicro.api.server.Message;
 import org.jmicro.api.server.RpcRequest;
 import org.jmicro.common.Utils;
-import org.jmicro.main.ClientSocket;
+import org.jmicro.example.api.ClientSocket;
 import org.junit.Test;
 
 public class TestServiceBySocket {

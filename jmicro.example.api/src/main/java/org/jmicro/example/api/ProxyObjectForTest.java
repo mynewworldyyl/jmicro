@@ -1,4 +1,4 @@
-package org.jmicro.main;
+package org.jmicro.example.api;
 
 import java.lang.reflect.InvocationHandler;
 

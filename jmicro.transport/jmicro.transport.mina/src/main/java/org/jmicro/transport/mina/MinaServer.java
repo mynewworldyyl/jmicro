@@ -1,9 +1,11 @@
 package org.jmicro.transport.mina;
 
+import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.net.SocketAddress;
 import java.nio.ByteBuffer;
+import java.util.List;
 
+import org.apache.dubbo.common.utils.StringUtils;
 import org.apache.mina.api.AbstractIoHandler;
 import org.apache.mina.api.IoSession;
 import org.apache.mina.session.AttributeKey;
@@ -15,11 +17,13 @@ import org.jmicro.api.annotation.Inject;
 import org.jmicro.api.annotation.Lazy;
 import org.jmicro.api.annotation.Server;
 import org.jmicro.api.codec.ICodecFactory;
+import org.jmicro.api.exception.CommonException;
 import org.jmicro.api.server.IServer;
 import org.jmicro.api.server.Message;
 import org.jmicro.api.server.RpcRequest;
 import org.jmicro.api.servicemanager.JmicroManager;
 import org.jmicro.common.Constants;
+import org.jmicro.common.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -49,10 +53,10 @@ public class MinaServer implements IServer{
 	@Inject(value=Constants.DEFAULT_CODEC_FACTORY,required=true)
 	private ICodecFactory codecFactory;
 	
-	@Cfg("/bindIp")
+	@Cfg(value = "/bindIp",required=false)
 	private String host;
 	
-	@Cfg("/port")
+	@Cfg(value="/port",required=false)
 	private int port;
 	
 	@Override
@@ -138,10 +142,24 @@ public class MinaServer implements IServer{
         // create the filter chain for this service
         //acceptor.setFilters(new LoggingFilter("LoggingFilter1"));
         acceptor.setIoHandler(this.iohandler);
-
-    	
-        final SocketAddress address = new InetSocketAddress(this.port);
+        if(StringUtils.isEmpty(this.host)){
+        	List<String> ips = Utils.getIns().getLocalIPList();
+            if(ips.isEmpty()){
+            	throw new CommonException("IP not found");
+            }
+            this.host = ips.get(0);
+        }
+        
+        //InetAddress.getByAddress(Array(127, 0, 0, 1))
+        InetSocketAddress address = new InetSocketAddress(this.host,this.port);
         acceptor.bind(address);
+        try {
+			address = (InetSocketAddress)acceptor.getServerSocketChannel().getLocalAddress();
+		} catch (IOException e) {
+			LOG.error("",e);
+		}
+        this.port = address.getPort();
+        
         LOG.debug("Running the server host["+this.host+"],port ["+this.port+"]");    
 		
 	}

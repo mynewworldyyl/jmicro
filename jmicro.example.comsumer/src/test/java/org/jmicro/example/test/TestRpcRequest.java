@@ -1,4 +1,4 @@
-package org.jmicro.main.test;
+package org.jmicro.example.test;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -16,8 +16,8 @@ import org.jmicro.api.client.AbstractServiceProxy;
 import org.jmicro.api.client.ServiceInvocationHandler;
 import org.jmicro.api.objectfactory.IObjectFactory;
 import org.jmicro.api.servicemanager.ComponentManager;
-import org.jmicro.main.ITestRpcService;
-import org.jmicro.main.TestRpcClient;
+import org.jmicro.example.api.ITestRpcService;
+import org.jmicro.example.comsumer.TestRpcClient;
 import org.jmicro.objfactory.simple.SimpleObjectFactory;
 import org.junit.Test;
 

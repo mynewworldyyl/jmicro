@@ -4,11 +4,11 @@ import java.net.InetSocketAddress;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.jmicro.api.JMicroContext;
 import org.jmicro.api.annotation.Inject;
 import org.jmicro.api.annotation.Server;
 import org.jmicro.api.server.IServer;
 import org.jmicro.common.Constants;
-import org.jmicro.common.JMicroContext;
 
 @Server()
 public class NioServer implements IServer {
@@ -39,11 +39,6 @@ public class NioServer implements IServer {
 	@Override
 	public void stop() {
 		
-	}
-
-	@Override
-	public void addService(Object srv) {
-		handlers.put(srv.getClass().getName(), srv);
 	}
 
 	@Override
