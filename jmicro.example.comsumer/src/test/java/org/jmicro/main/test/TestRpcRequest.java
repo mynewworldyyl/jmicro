@@ -48,7 +48,7 @@ public class TestRpcRequest {
 		JMicroContext.setCfg(cfg);*/
 		
 		IObjectFactory of = ComponentManager.getObjectFactory();
-		of.start(null);
+		of.start();
 		TestRpcClient src = of.get(TestRpcClient.class);
 		src.invokePersonService();
 	}

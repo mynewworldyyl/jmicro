@@ -11,7 +11,7 @@ public class ServiceComsumer {
 		Config.parseArgs(args);
 		
 		IObjectFactory of = ComponentManager.getObjectFactory();
-		of.start(args);
+		of.start();
 		
 		//got remote service from object factory
 		TestRpcClient src = of.get(TestRpcClient.class);

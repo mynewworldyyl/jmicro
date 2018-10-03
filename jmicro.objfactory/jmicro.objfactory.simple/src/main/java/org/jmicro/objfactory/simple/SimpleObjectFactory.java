@@ -176,7 +176,7 @@ public class SimpleObjectFactory implements IObjectFactory {
 		return true;
 	}
 
-	public synchronized void start(String[] args){
+	public synchronized void start(){
 		if(isInit){
 			return;
 		}

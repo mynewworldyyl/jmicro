@@ -12,7 +12,7 @@ public class ServiceProvider {
 		Config.parseArgs(args);
 		
 		IObjectFactory of = ComponentManager.getObjectFactory();
-		of.start(args);
+		of.start();
 		Utils.waitForShutdown();
 	}
 
