@@ -54,7 +54,7 @@ public class Person{
 # start service provider code
 ~~~
 
-##implement service
+## implement service
 
 package org.jmicro.example.provider;
 
@@ -84,7 +84,7 @@ public class TestRpcServiceImpl implements ITestRpcService{
 	}
 }
 
-##start the service provider
+## start the service provider
 
 package org.jmicro.main;
 
