@@ -112,8 +112,10 @@ public class Encoder implements IEncoder{
 				if(!bf){
 					f.setAccessible(false);
 				}
+				if(v != null){
+					encodeObject(buffer,v);
+				}
 				
-				encodeObject(buffer,v);
 			} catch (NoSuchFieldException | SecurityException | IllegalArgumentException | IllegalAccessException e) {
 				throw new CommonException("",e);
 			}

@@ -66,9 +66,11 @@ public class DefaultSpeedLimiter implements Limiter{
 		if(result == 0){
 			return 0;
 		}
+		if(result > 0){
+			doWait(result,d);
+		}
 		
-		doWait(result,d);
-		return 0;
+		return 1;
 	}
 	
 	private void doWait(int result,LimitData d) {
@@ -83,8 +85,9 @@ public class DefaultSpeedLimiter implements Limiter{
 	private int compute(ConcurrentLinkedDeque<LimitData> ld,ServiceItem si,IRequest req ) {
 		ServiceMethod sm = null;
 		for(ServiceMethod mi : si.getMethods()){
-			if(sm.getMethodName().equals(req.getMethod())){
-				sm =mi;
+			if(mi.getMethodName().equals(req.getMethod())){
+				sm = mi;
+				break;
 			}
 		}
 		

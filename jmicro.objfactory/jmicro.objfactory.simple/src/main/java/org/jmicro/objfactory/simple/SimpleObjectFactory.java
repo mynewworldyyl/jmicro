@@ -17,7 +17,6 @@ import org.apache.dubbo.common.bytecode.ClassGenerator;
 import org.apache.dubbo.common.utils.ReflectUtils;
 import org.apache.dubbo.common.utils.StringUtils;
 import org.jmicro.api.ClassScannerUtils;
-import org.jmicro.api.Config;
 import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.Inject;
 import org.jmicro.api.annotation.JMethod;
@@ -51,6 +50,8 @@ public class SimpleObjectFactory implements IObjectFactory {
 	
 	private Map<String,Object> nameToObjs = new ConcurrentHashMap<String,Object>();
 	
+	private Map<String,Object> clsNameToObjs = new ConcurrentHashMap<String,Object>();
+	
 	@SuppressWarnings("unchecked")
 	@Override
 	public <T> T get(Class<T> cls) {
@@ -69,11 +70,7 @@ public class SimpleObjectFactory implements IObjectFactory {
 			}
 			obj = this.createObject(cls);
 			if(obj != null) {
-				this.objs.put(cls, obj);
-				String comName = this.getComName(cls);
-				if(!StringUtils.isEmpty(comName)){
-					this.nameToObjs.put(comName, obj);
-				}
+				cacheObj(cls,obj);
 			}
 		}
 		return (T)obj;
@@ -82,6 +79,9 @@ public class SimpleObjectFactory implements IObjectFactory {
 	@SuppressWarnings("unchecked")
 	@Override
 	public <T> T getByName(String clsName) {
+		if(this.clsNameToObjs.containsKey(clsName)){
+			return (T) this.clsNameToObjs.get(clsName);
+		}
 		if(this.nameToObjs.containsKey(clsName)){
 			return (T) this.nameToObjs.get(clsName);
 		}
@@ -117,11 +117,20 @@ public class SimpleObjectFactory implements IObjectFactory {
 			obj = cls.newInstance();
 			doAfterCreate(obj);
 			//will replace the proxy object if exist, this is no impact to client
-			objs.put(cls, obj);
+			cacheObj(cls,obj);
 		} catch (InstantiationException | IllegalAccessException e) {
 			throw new CommonException("Fail to create obj for ["+cls.getName()+"]",e);
 		}
 		return obj;
+	}
+	
+	private void cacheObj(Class<?> cls,Object obj){
+		objs.put(cls, obj);
+		String comName = this.getComName(cls);
+		if(!StringUtils.isEmpty(comName)){
+			this.nameToObjs.put(comName, obj);
+		}
+		this.clsNameToObjs.put(cls.getName(), obj);
 	}
 	
 	private <T> T createObject(Class<T> cls) {
@@ -198,19 +207,25 @@ public class SimpleObjectFactory implements IObjectFactory {
 				} catch (InstantiationException | IllegalAccessException e) {
 					logger.error("Create IPostInitListener Error",e);
 				}
-				
 			}
 		}
 		
 		Set<Class<?>> clses = ClassScannerUtils.getIns().loadClassesByAnno(Component.class);
 		if(clses != null && !clses.isEmpty()) {
 			for(Class<?> c : clses){
-				Component comAnno = c.getAnnotation(Component.class);
+				this.get(c);
+				/*Component comAnno = c.getAnnotation(Component.class);
 				if(comAnno.lazy()){
-					createLazyProxyObject(c);
+					Object obj = createLazyProxyObject(c);
+					objs.put(c, obj);
+					String comName = this.getComName(c);
+					if(!StringUtils.isEmpty(comName)){
+						this.nameToObjs.put(comName, obj);
+					}
 				} else {
-					createObject(c);
-				}
+					//createObject(c);
+					this.get(c);
+				}*/
 			}
 		}
 	}
@@ -316,6 +331,7 @@ public class SimpleObjectFactory implements IObjectFactory {
 		return proxy;
 	}
 	
+	@SuppressWarnings("unchecked")
 	private <T>  T createLazyProxyObject(Class<T> cls) {
 		logger.debug("createLazyProxyObject: " + cls.getName());
 		ClassGenerator cg = ClassGenerator.newInstance(Thread.currentThread().getContextClassLoader());
