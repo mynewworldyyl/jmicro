@@ -62,19 +62,38 @@ public class ServiceItem{
 	/**
 	 * Max failure time before downgrade the service
 	 */
-	private int maxFailBeforeDowngrade=-1;
+	private int maxFailBeforeDegrade=-1;
 	
 	/**
 	 * Max failure time before cutdown the service
 	 */
-	private int maxFailBeforeCutdown=-1;
+	private int maxFailBeforeFusing=-1;
 	
 	/**
-	 * after the service cutdown, system can do testing weather the service is recovery
+	 * after the service fuse, system can do testing weather the service is recovery
 	 * with this arguments to invoke the service method
 	 */
 	private String testingArgs="";
 	
+	/**
+	 * true all service method will fusing, false is normal service status
+	 */
+	private boolean fusing = false;
+	
+	/**
+	 * 1 is normal status, 
+	 * 
+	 * update rule:
+	 * 2 will trigger the maxSpeed=2*maxSpeed and minSpeed=2*minSpeed, n will trigger 
+	 * maxSpeed=n*maxSpeed and minSpeed=n*minSpeed
+	 * 
+	 * degrade rule:
+	 * -2 will trigger maxSpeed=maxSpeed/2 and minSpeed=minSpeed/2, and n will trigger
+	 * maxSpeed=maxSpeed/n and minSpeed=minSpeed/n
+	 * 
+	 * 0 and -1 is a invalid value
+	 */
+	private int degrade = 1;
 	
 	/**
 	 * max qps
@@ -91,7 +110,6 @@ public class ServiceItem{
 	 *  milliseconds
 	 *  speed up when real response time less avgResponseTime, 
 	 *  speed down when real response time less avgResponseTime
-	 *  
 	 */
 	private int avgResponseTime=-1;
 	
@@ -104,6 +122,22 @@ public class ServiceItem{
 		this.parseVal(val);
 	}
 	
+
+	public boolean isFusing() {
+		return fusing;
+	}
+
+	public void setFusing(boolean fusing) {
+		this.fusing = fusing;
+	}
+
+	public int getDegrade() {
+		return degrade;
+	}
+
+	public void setDegrade(int degrade) {
+		this.degrade = degrade;
+	}
 
 	public int getMaxSpeed() {
 		return maxSpeed;
@@ -139,7 +173,12 @@ public class ServiceItem{
 	
 	public static String serviceName(String key) {
 	    int i = key.indexOf(I_I_SEPERATOR);
-		return key.substring(0, i);
+	    if(i>0){
+	    	return key.substring(0, i);
+	    }else {
+	    	return key;
+	    }
+		
 	}
 
 	private void parseVal(String val) {
@@ -313,20 +352,20 @@ public class ServiceItem{
 		this.timeout = timeout;
 	}
 
-	public int getMaxFailBeforeDowngrade() {
-		return maxFailBeforeDowngrade;
+	public int getMaxFailBeforeDegrade() {
+		return maxFailBeforeDegrade;
 	}
 
-	public void setMaxFailBeforeDowngrade(int maxFailBeforeDowngrade) {
-		this.maxFailBeforeDowngrade = maxFailBeforeDowngrade;
+	public void setMaxFailBeforeDegrade(int maxFailBeforeDowngrade) {
+		this.maxFailBeforeDegrade = maxFailBeforeDowngrade;
 	}
 
-	public int getMaxFailBeforeCutdown() {
-		return maxFailBeforeCutdown;
+	public int getMaxFailBeforeFusing() {
+		return maxFailBeforeFusing;
 	}
 
-	public void setMaxFailBeforeCutdown(int maxFailBeforeCutdown) {
-		this.maxFailBeforeCutdown = maxFailBeforeCutdown;
+	public void setMaxFailBeforeFusing(int maxFailBeforeFusing) {
+		this.maxFailBeforeFusing = maxFailBeforeFusing;
 	}
 
 	public String getTestingArgs() {

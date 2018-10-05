@@ -53,9 +53,9 @@ public @interface Service {
 	
 	public int timeout() default 2000;
 	
-	public int maxFailBeforeDowngrade() default 100;
+	public int maxFailBeforeDegrade() default 100;
 	
-	public int maxFailBeforeCutdown() default 500;
+	public int maxFailBeforeFusing() default 500;
 	
 	public String testingArgs() default "";
 	

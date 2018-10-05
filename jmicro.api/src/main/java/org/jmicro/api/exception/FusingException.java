@@ -1,3 +1,7 @@
+package org.jmicro.api.exception;
+
+import java.util.Set;
+
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -14,25 +18,38 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.jmicro.api.registry;
-
-import java.util.Set;
-
-import org.jmicro.api.Init;
+import org.jmicro.api.registry.ServiceItem;
 /**
  * 
  * @author Yulei Ye
- * @date 2018年10月4日-下午12:04:20
+ * @date 2018年10月5日-下午12:49:40
  */
-public interface IRegistry extends Init{
+public class FusingException extends CommonException {
 
-	void regist(ServiceItem url);
+    private Set<ServiceItem> sis;
 	
-	void unregist(ServiceItem url);
+	public FusingException(String cause,  Set<ServiceItem>  si){
+		super(cause);
+		this.sis=si;
+	}
 	
-	Set<ServiceItem> getServices(String serviceName,String method,Class<?>[] args);
+	public FusingException(String cause,Throwable exp,  Set<ServiceItem>  si){
+		super(cause,exp);
+		this.sis = si;
+	}
 	
-	Set<ServiceItem> getServices(String serviceName,String method,Object[] args);
+	public FusingException(String key,String cause,  Set<ServiceItem>  si){
+		super(key,cause,null);
+		this.sis=si;
+	}
 	
-	boolean isExist(String serviceName);
+	public FusingException(String key,String cause,Throwable exp,  Set<ServiceItem>  si){
+		super(key,cause,exp);
+		this.sis=si;
+	}
+
+	public Set<ServiceItem> getSis() {
+		return sis;
+	}
+	
 }

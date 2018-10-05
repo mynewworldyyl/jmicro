@@ -23,18 +23,22 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 
 import org.apache.mina.api.AbstractIoHandler;
+import org.apache.mina.api.IdleStatus;
 import org.apache.mina.api.IoFuture;
+import org.apache.mina.api.IoService;
 import org.apache.mina.api.IoSession;
 import org.apache.mina.session.AttributeKey;
 import org.apache.mina.transport.nio.NioTcpClient;
 import org.jmicro.api.IIdGenerator;
+import org.jmicro.api.annotation.Cfg;
 import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.Inject;
 import org.jmicro.api.client.IClientSession;
 import org.jmicro.api.client.IClientSessionManager;
 import org.jmicro.api.client.IResponseHandler;
 import org.jmicro.api.client.ReqResp;
-import org.jmicro.api.exception.CommonException;
+import org.jmicro.api.monitor.MonitorConstant;
+import org.jmicro.api.monitor.SubmitItemHolderManager;
 import org.jmicro.api.server.IRequest;
 import org.jmicro.api.server.ISession;
 import org.jmicro.api.server.Message;
@@ -61,6 +65,86 @@ public class MinaClientSessionManager implements IClientSessionManager{
 	
 	@Inject
 	private IIdGenerator idGenerator;
+	
+	@Inject(required=false)
+	private SubmitItemHolderManager monitor;
+	
+	@Cfg(value="/monitorClientIoSession",required=false)
+	private boolean monitorIoSession=true;
+	
+	private AbstractIoHandler ioHandler = new AbstractIoHandler() {
+        @Override
+        public void sessionOpened(final IoSession session) {
+            LOG.info("session opened {}", session);
+            if(monitorIoSession){
+            	MonitorConstant.doSubmit(monitor,MonitorConstant.CLIENT_IOSESSION_OPEN, null,null,session);
+            }
+            
+        }
+
+        @Override
+        public void messageReceived(IoSession session, Object message) {
+            LOG.info("message received {}", message);
+            //avoid ((ByteBuffer)message).remaining() when disable monitor
+            if(monitorIoSession && monitor != null){
+            	monitor.submit(MonitorConstant.CLIENT_IOSESSION_READ, null,null,session,((ByteBuffer)message).remaining());
+            }
+            doReceive(session,(ByteBuffer)message);
+            
+        }
+
+        @Override
+        public void messageSent(IoSession session, Object message) {
+            LOG.info("message sent {}", message);
+            //avoid ((ByteBuffer)message).remaining()  when disable monitor
+            if(monitorIoSession && monitor != null){
+            	monitor.submit(MonitorConstant.CLIENT_IOSESSION_WRITE, null,null,session,((ByteBuffer)message).remaining());
+            }
+        }
+
+        @Override
+        public void sessionClosed(IoSession session) {
+            LOG.info("session closed {}", session);
+            MonitorConstant.doSubmit(monitor,MonitorConstant.CLIENT_IOSESSION_CLOSE, null,null,session);
+        }
+
+		@Override
+		public void sessionIdle(IoSession session, IdleStatus status) {
+			super.sessionIdle(session, status);
+			MonitorConstant.doSubmit(monitor,MonitorConstant.CLIENT_IOSESSION_CLOSE, null,null,session,status);
+		}
+
+		@Override
+		public void serviceActivated(IoService service) {
+			super.serviceActivated(service);
+		}
+
+		@Override
+		public void serviceInactivated(IoService service) {
+			super.serviceInactivated(service);
+		}
+
+		@Override
+		public void exceptionCaught(IoSession session, Exception cause) {
+			super.exceptionCaught(session, cause);
+			MonitorConstant.doSubmit(monitor,MonitorConstant.CLIENT_IOSESSION_EXCEPTION, null,null,session,cause);
+		}
+
+		@Override
+		public void handshakeStarted(IoSession abstractIoSession) {
+			super.handshakeStarted(abstractIoSession);
+		}
+
+		@Override
+		public void handshakeCompleted(IoSession session) {
+			super.handshakeCompleted(session);
+		}
+
+		@Override
+		public void secureClosed(IoSession session) {
+			super.secureClosed(session);
+		}
+    };
 	
 	@Override
 	public void write(IRequest req, IResponseHandler handler,int retryCnt) {
@@ -92,28 +176,7 @@ public class MinaClientSessionManager implements IClientSessionManager{
 
         final NioTcpClient client = new NioTcpClient();
         client.setFilters();
-        client.setIoHandler(new AbstractIoHandler() {
-            @Override
-            public void sessionOpened(final IoSession session) {
-                LOG.info("session opened {}", session);
-            }
-
-            @Override
-            public void messageReceived(IoSession session, Object message) {
-                LOG.info("message received {}", message);
-                doReceive(session,(ByteBuffer)message);
-            }
-
-            @Override
-            public void messageSent(IoSession session, Object message) {
-                LOG.info("message sent {}", message);
-            }
-
-            @Override
-            public void sessionClosed(IoSession session) {
-                LOG.info("session closed {}", session);
-            }
-        });
+        client.setIoHandler(ioHandler);
 
         try {
             IoFuture<IoSession> future = client.connect(new InetSocketAddress(host,port));
@@ -132,11 +195,13 @@ public class MinaClientSessionManager implements IClientSessionManager{
                 return s;
             } catch (ExecutionException e) {
                 LOG.error("cannot connect : ", e);
+                MonitorConstant.doSubmit(monitor,MonitorConstant.CLIENT_REQ_CONN_FAIL, null, null,e);
             }
 
-            LOG.debug("Running the client for 25 sec");
-            Thread.sleep(25000);
+            LOG.debug("connection finish");
+            //Thread.sleep(5000);
         } catch (InterruptedException e) {
+        	 MonitorConstant.doSubmit(monitor,MonitorConstant.CLIENT_REQ_CONN_FAIL, null, null,e);
         }
     
 		return null;
@@ -198,6 +263,10 @@ public class MinaClientSessionManager implements IClientSessionManager{
 		}
 		
 		if(msg.getType() == Message.PROTOCOL_TYPE_END) {
+			if(rr != null) {
+				MonitorConstant.doSubmit(monitor,MonitorConstant.CLIENT_REQ_CONN_CLOSE, rr.req,resp);
+			}
+			 
 			waitForResponse.remove(msg.getReqId());
 			cs.close(false);
 		}

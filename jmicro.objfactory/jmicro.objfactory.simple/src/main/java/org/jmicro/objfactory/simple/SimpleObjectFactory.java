@@ -21,8 +21,10 @@ import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.lang.reflect.ParameterizedType;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -281,7 +283,97 @@ public class SimpleObjectFactory implements IObjectFactory {
 				String name = inje.value();
 				isRequired = inje.required();
 				Class<?> type = f.getType();
-				if(type.isInterface() || Modifier.isAbstract(type.getModifiers())) {
+				
+				if(type.isArray()) {
+					Class<?> ctype = type.getComponentType();
+					List<?> l = this.getByParent(ctype);
+					if(l != null && l.size() > 0){
+						Object[] arr = new Object[l.size()];
+						l.toArray(arr);
+						srv = arr;
+					}
+				}else if(List.class.isAssignableFrom(type)){
+					ParameterizedType genericType = (ParameterizedType) f.getGenericType();
+					if(genericType == null){
+						throw new CommonException("must be ParameterizedType for cls:"+ cls.getName()+",field: "+f.getName());
+					}
+					Class<?> ctype = (Class<?>)genericType.getActualTypeArguments()[0];
+					
+					List<?> l = this.getByParent(ctype);
+					if(l != null && l.size() > 0){
+						boolean bf = f.isAccessible();
+						Object o = null;
+						if(!bf) {
+							f.setAccessible(true);
+						}
+						try {
+							o = f.get(obj);
+						} catch (IllegalArgumentException | IllegalAccessException e) {
+							throw new CommonException("",e);
+						}
+						if(!bf) {
+							f.setAccessible(bf);
+						}
+						
+						if(o == null){
+							if(type.isInterface() || Modifier.isAbstract(type.getModifiers())) {
+								o = new ArrayList<Object>();
+							} else {
+								try {
+									o = type.newInstance();
+								} catch (InstantiationException | IllegalAccessException e) {
+									throw new CommonException("",e);
+								}
+							}
+						}
+						List<Object> el = (List<Object>)o;
+						el.addAll(l);
+						srv = el;
+					}
+					
+				}else if(Set.class.isAssignableFrom(type)){
+					
+					ParameterizedType genericType = (ParameterizedType) f.getGenericType();
+					if(genericType == null){
+						throw new CommonException("must be ParameterizedType for cls:"+ cls.getName()+",field: "+f.getName());
+					}
+					Class<?> ctype = (Class<?>)genericType.getActualTypeArguments()[0];
+					List<?> l = this.getByParent(ctype);
+					if(l != null && l.size() > 0){
+						boolean bf = f.isAccessible();
+						Object o = null;
+						if(!bf) {
+							f.setAccessible(true);
+						}
+						try {
+							o = f.get(obj);
+						} catch (IllegalArgumentException | IllegalAccessException e) {
+							throw new CommonException("",e);
+						}
+						if(!bf) {
+							f.setAccessible(bf);
+						}
+						
+						if(o == null){
+							if(type.isInterface() || Modifier.isAbstract(type.getModifiers())) {
+								o = new HashSet<Object>();
+							} else {
+								try {
+									o = type.newInstance();
+								} catch (InstantiationException | IllegalAccessException e) {
+									throw new CommonException("",e);
+								}
+							}
+						}
+						Set<Object> el = (Set<Object>)o;
+						el.addAll(l);
+						srv = el;
+					}
+					
+				}else if(Map.class.isAssignableFrom(type)){
+					
+					
+				}else if(type.isInterface() || Modifier.isAbstract(type.getModifiers())) {
 					List<?> l = this.getByParent(type);
 					if(StringUtils.isEmpty(name)) {
 						if(l.size() == 1) {
@@ -302,7 +394,17 @@ public class SimpleObjectFactory implements IObjectFactory {
 						}
 					}
 				}else {
-					srv = this.get(type);
+					String annName = inje.value();
+					if(annName != null && !"".equals(annName.trim())){
+						srv = this.getByName(name);
+						if(srv == null){
+							this.getByParent(type);
+						}
+						srv = this.getByName(name);
+					}
+					if(srv == null) {
+						srv = this.get(type);
+					}
 				}
 			}
 			

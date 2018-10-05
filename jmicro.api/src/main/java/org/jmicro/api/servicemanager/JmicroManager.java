@@ -23,11 +23,15 @@ import java.util.Queue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
+import org.jmicro.api.annotation.Cfg;
 import org.jmicro.api.annotation.Component;
+import org.jmicro.api.annotation.Inject;
 import org.jmicro.api.annotation.Interceptor;
 import org.jmicro.api.annotation.JMethod;
 import org.jmicro.api.annotation.Lazy;
 import org.jmicro.api.exception.CommonException;
+import org.jmicro.api.monitor.MonitorConstant;
+import org.jmicro.api.monitor.SubmitItemHolderManager;
 import org.jmicro.api.objectfactory.ProxyObject;
 import org.jmicro.api.server.IInterceptor;
 import org.jmicro.api.server.IRequest;
@@ -62,7 +66,13 @@ public class JmicroManager {
 	private Object respLock = new Object();
 	
 	private Map<Long,IRequest> requestCache = new ConcurrentHashMap<>();
-			
+		
+	@Inject(required=false)
+	private SubmitItemHolderManager monitor;
+	
+	@Cfg(value="/monitorServerEnable",required=false)
+	private boolean monitorServerEnable=true;
+	
 	@JMethod("init")
 	public void init() {
 		this.startReqWorker();
@@ -85,9 +95,17 @@ public class JmicroManager {
 				if(req == null){
 					continue;
 				}
-				
+				if(this.monitorServerEnable){
+					MonitorConstant.doSubmit(monitor,MonitorConstant.SERVER_REQ_BEGIN, req,resp);
+				}
 				resp = handler(req);
+				if(this.monitorServerEnable){
+					MonitorConstant.doSubmit(monitor,MonitorConstant.SERVER_REQ_OK, req,resp);
+				}
 			} catch (Throwable e) {
+				if(this.monitorServerEnable){
+					MonitorConstant.doSubmit(monitor,MonitorConstant.SERVER_REQ_ERROR, req,resp,e);
+				}
 				if(req != null){
 					resp = new RpcResponse(req.getRequestId(),new ServerError(0,e.getMessage()));
 				}

@@ -28,12 +28,13 @@ import org.apache.dubbo.remoting.zookeeper.StateListener;
 import org.apache.dubbo.remoting.zookeeper.ZookeeperClient;
 import org.apache.dubbo.remoting.zookeeper.zkclient.ZkclientZookeeperTransporter;
 import org.jmicro.api.Config;
-import org.jmicro.api.JMicroContext;
 import org.jmicro.api.annotation.JMethod;
 import org.jmicro.api.annotation.Lazy;
 import org.jmicro.api.annotation.Registry;
+import org.jmicro.api.exception.FusingException;
 import org.jmicro.api.registry.IRegistry;
 import org.jmicro.api.registry.ServiceItem;
+import org.jmicro.api.registry.ServiceMethod;
 import org.jmicro.common.Constants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -113,16 +114,50 @@ public class ZKRegistry implements IRegistry {
 	}
 
 	@Override
-	public Set<ServiceItem> getServices(String serviceName) {
+	public Set<ServiceItem> getServices(String serviceName, String method, Object[] args) {
+		if(args != null && args.length > 0){
+			int i = 0;
+			Class<?>[] clazzes = new Class<?>[args.length];
+			for(Object a : args){
+				clazzes[i++] = a.getClass();
+			}
+			return this.getServices(serviceName, method, clazzes);
+		}
+		return Collections.EMPTY_SET;
+	}
+
+	@Override
+	public Set<ServiceItem> getServices(String serviceName,String method,Class<?>[] args) {
 		Set<ServiceItem> sis = this.serviceItems.get(serviceName);
 		if(sis == null || sis.isEmpty()) {
 			return Collections.EMPTY_SET;
 		}
+		Set<ServiceItem> fusings = new HashSet<ServiceItem>();
 		Set<ServiceItem> set = new HashSet<ServiceItem>();
+		
 		for(ServiceItem si : sis) {
-			set.add(si);
+			if(si.isFusing()){
+				fusings.add(si);
+				continue;
+			}
+			for(ServiceMethod sm : si.getMethods()){
+				if(sm.getMethodName().equals(method) 
+						&& ServiceMethod.methodParamsKey(args).equals(sm.getMethodParamTypes())){
+					if(sm.isFusing()){
+						fusings.add(si);
+					}else {
+						set.add(si);
+						break;
+					}
+				}
+			}
 		}
-		return set;
+		if(set.isEmpty() && !fusings.isEmpty()){
+			throw new  FusingException("Request services is fusing",fusings);
+		}else {
+			return set;
+		}
+		
 	}
 
 	@Override

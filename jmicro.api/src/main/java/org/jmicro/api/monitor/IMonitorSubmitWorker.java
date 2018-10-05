@@ -14,25 +14,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.jmicro.api.registry;
+package org.jmicro.api.monitor;
 
-import java.util.Set;
+public interface IMonitorSubmitWorker {
 
-import org.jmicro.api.Init;
-/**
- * 
- * @author Yulei Ye
- * @date 2018年10月4日-下午12:04:20
- */
-public interface IRegistry extends Init{
-
-	void regist(ServiceItem url);
-	
-	void unregist(ServiceItem url);
-	
-	Set<ServiceItem> getServices(String serviceName,String method,Class<?>[] args);
-	
-	Set<ServiceItem> getServices(String serviceName,String method,Object[] args);
-	
-	boolean isExist(String serviceName);
+	void submit(SubmitItem si);
 }

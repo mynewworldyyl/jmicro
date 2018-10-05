@@ -37,14 +37,14 @@ public class ServiceMethod {
 	private int timeout; // milliseconds how long to wait for response before timeout 
 	
 	/**
-	 * Max failure time before downgrade the service
+	 * Max failure time before degrade the service
 	 */
-	private int maxFailBeforeDowngrade;
+	private int maxFailBeforeDegrade;
 	
 	/**
 	 * Max failure time before cutdown the service
 	 */
-	private int maxFailBeforeCutdown;
+	private int maxFailBeforeFusing;
 	
 	/**
 	 * after the service cutdown, system can do testing weather the service is recovery
@@ -70,6 +70,27 @@ public class ServiceMethod {
 	 */
 	private int avgResponseTime;
 
+	
+	/**
+	 * true all service method will fusing, false is normal service status
+	 */
+	private boolean fusing = false;
+	
+	/**
+	 * 1 is normal status, 
+	 * 
+	 * update rule:
+	 * 2 will trigger the maxSpeed=2*maxSpeed and minSpeed=2*minSpeed, n will trigger 
+	 * maxSpeed=n*maxSpeed and minSpeed=n*minSpeed
+	 * 
+	 * degrade rule:
+	 * -2 will trigger maxSpeed=maxSpeed/2 and minSpeed=minSpeed/2, and n will trigger
+	 * maxSpeed=maxSpeed/n and minSpeed=minSpeed/n
+	 * 
+	 * 0 and -1 is a invalid value
+	 */
+	private int degrade = 1;
+	
 	public String toJson(){
 		StringBuffer sb = new StringBuffer("{");
 		Field[] fields = this.getClass().getDeclaredFields();
@@ -128,6 +149,46 @@ public class ServiceMethod {
 		}
 	}
 	
+	public static String methodParamsKey(Class<?>[] clazzes){
+		if(clazzes != null && clazzes.length >0){
+			StringBuffer sb = new StringBuffer();
+			for(Class<?> mc: clazzes){
+				sb.append(mc.getName()).append("_");
+			}
+			String sbt = sb.substring(0, sb.length()-1);
+			return sb.toString();
+		}
+		return "";
+	}
+	
+	public static String methodParamsKey(Object[] args){
+		if(args != null && args.length >0){
+			Class<?>[] clazzes = new Class<?>[args.length];
+			int i = 0;
+			for(Object obj: args){
+				clazzes[i++]=obj.getClass();
+			}
+			return methodParamsKey(clazzes);
+		}
+		return "";
+	}
+	
+	public boolean isFusing() {
+		return fusing;
+	}
+
+	public void setFusing(boolean fusing) {
+		this.fusing = fusing;
+	}
+
+	public int getDegrade() {
+		return degrade;
+	}
+
+	public void setDegrade(int degrade) {
+		this.degrade = degrade;
+	}
+
 	public int getMaxSpeed() {
 		return maxSpeed;
 	}
@@ -192,20 +253,20 @@ public class ServiceMethod {
 		this.timeout = timeout;
 	}
 
-	public int getMaxFailBeforeDowngrade() {
-		return maxFailBeforeDowngrade;
+	public int getMaxFailBeforeDegrade() {
+		return maxFailBeforeDegrade;
 	}
 
-	public void setMaxFailBeforeDowngrade(int maxFailBeforeDowngrade) {
-		this.maxFailBeforeDowngrade = maxFailBeforeDowngrade;
+	public void setMaxFailBeforeDegrade(int maxFailBeforeDegrade) {
+		this.maxFailBeforeDegrade = maxFailBeforeDegrade;
 	}
 
-	public int getMaxFailBeforeCutdown() {
-		return maxFailBeforeCutdown;
+	public int getMaxFailBeforeFusing() {
+		return maxFailBeforeFusing;
 	}
 
-	public void setMaxFailBeforeCutdown(int maxFailBeforeCutdown) {
-		this.maxFailBeforeCutdown = maxFailBeforeCutdown;
+	public void setMaxFailBeforeFusing(int maxFailBeforeFusing) {
+		this.maxFailBeforeFusing = maxFailBeforeFusing;
 	}
 
 	public String getTestingArgs() {

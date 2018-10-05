@@ -17,6 +17,7 @@
 package org.jmicro.config;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
@@ -106,10 +107,6 @@ public class ConfigPostInitListener extends PostInitListenerAdapter {
 				return;
 			}
 			
-			if(cfg.updatable()){
-				watch(f,obj,path);
-			}
-			
 			if(m != null){
 				 m.invoke(obj,v);
 			}else {
@@ -140,6 +137,7 @@ public class ConfigPostInitListener extends PostInitListenerAdapter {
 	            	  try {
 						setValue(f,obj,path);
 						watch(f,obj,path);
+						notifyChange(f,obj);
 					} catch (Exception e) {
 						throw new CommonException("Class ["+obj.getClass().getName()+",Field:"+f.getName()+"],Cfg path is NULL");
 					}
@@ -156,7 +154,31 @@ public class ConfigPostInitListener extends PostInitListenerAdapter {
 		
 	}
 	
-	
+	protected void notifyChange(Field f,Object obj) {
+		Cfg cfg = f.getAnnotation(Cfg.class);
+		if(cfg == null || cfg.changeListener()== null || cfg.changeListener().trim().equals("")){
+			return;
+		}
+		Method m =  null;
+		try {
+			 m =  ProxyObject.getTargetCls(obj.getClass())
+					.getMethod(cfg.changeListener(),new Class[]{String.class} );
+			 if(m != null){
+				 m.invoke(obj,f.getName());
+			 }
+		} catch (NoSuchMethodException | SecurityException | IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
+			 try {
+				m =  ProxyObject.getTargetCls(obj.getClass())
+							.getMethod(cfg.changeListener(),new Class[0] );
+				if(m != null){
+					 m.invoke(obj);
+				}
+			} catch (NoSuchMethodException | SecurityException | IllegalAccessException | IllegalArgumentException | InvocationTargetException e1) {
+			}
+		}
+		
+	}
+
 	private Object getValue(Type type, String str,Type gt) {
 		Class<?> cls = null;
 		if(type instanceof Class){

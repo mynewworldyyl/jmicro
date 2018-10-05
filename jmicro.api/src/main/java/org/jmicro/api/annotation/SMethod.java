@@ -39,13 +39,17 @@ public @interface SMethod {
 	
 	public int timeout() default 2000;
 	
-	public int maxFailBeforeDowngrade() default 100;
+	//continue fail will downgrade service
+	public int maxFailBeforeDegrade() default 5;
 	
-	public int maxFailBeforeCutdown() default 500;
+	//continue fail will hung up service, service request will fast fail
+	public int maxFailBeforeFusing() default 10;
 	
+	//after hung up, will test the service with this arguments
 	public String testingArgs() default "";
 	
-	public int speedLimit() default -1;
+	//limit qps
+	//public int speedLimit() default -1;
 	
 	/**
 	 * max qps

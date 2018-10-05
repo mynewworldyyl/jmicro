@@ -14,25 +14,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.jmicro.api.registry;
+package org.jmicro.api.fusing;
 
+import java.lang.reflect.Method;
 import java.util.Set;
 
-import org.jmicro.api.Init;
+import org.jmicro.api.registry.ServiceItem;
 /**
  * 
  * @author Yulei Ye
- * @date 2018年10月4日-下午12:04:20
+ * @date 2018年10月5日-下午12:50:05
  */
-public interface IRegistry extends Init{
+public interface IFusingHandler {
 
-	void regist(ServiceItem url);
-	
-	void unregist(ServiceItem url);
-	
-	Set<ServiceItem> getServices(String serviceName,String method,Class<?>[] args);
-	
-	Set<ServiceItem> getServices(String serviceName,String method,Object[] args);
-	
-	boolean isExist(String serviceName);
+	boolean canHandle(Method method, Object[] args,Set<ServiceItem> items);
+	Object onFusing( Method method, Object[] args,Set<ServiceItem> items);
 }

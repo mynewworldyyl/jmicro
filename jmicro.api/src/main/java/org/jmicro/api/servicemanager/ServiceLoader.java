@@ -191,8 +191,8 @@ public class ServiceLoader {
 			item.setVersion(anno.version());
 			item.setNamespace(anno.namespace());
 			
-			item.setMaxFailBeforeCutdown(anno.maxFailBeforeCutdown());
-			item.setMaxFailBeforeDowngrade(anno.maxFailBeforeDowngrade());
+			item.setMaxFailBeforeFusing(anno.maxFailBeforeFusing());
+			item.setMaxFailBeforeDegrade(anno.maxFailBeforeDegrade());
 			item.setRetryCnt(anno.retryCnt());
 			item.setRetryInterval(anno.retryInterval());
 			item.setTestingArgs(anno.testingArgs());
@@ -205,8 +205,8 @@ public class ServiceLoader {
 				ServiceMethod sm = new ServiceMethod();
 				if(m.isAnnotationPresent(SMethod.class)){
 					SMethod manno = m.getAnnotation(SMethod.class);
-					sm.setMaxFailBeforeCutdown(manno.maxFailBeforeCutdown());
-					sm.setMaxFailBeforeDowngrade(manno.maxFailBeforeDowngrade());
+					sm.setMaxFailBeforeFusing(manno.maxFailBeforeFusing());
+					sm.setMaxFailBeforeDegrade(manno.maxFailBeforeDegrade());
 					sm.setRetryCnt(manno.retryCnt());
 					sm.setRetryInterval(manno.retryInterval());
 					sm.setTestingArgs(manno.testingArgs());
@@ -215,8 +215,8 @@ public class ServiceLoader {
 					sm.setMinSpeed(manno.minSpeed());
 					sm.setAvgResponseTime(manno.avgResponseTime());
 				} else {
-					sm.setMaxFailBeforeCutdown(anno.maxFailBeforeCutdown());
-					sm.setMaxFailBeforeDowngrade(anno.maxFailBeforeDowngrade());
+					sm.setMaxFailBeforeFusing(anno.maxFailBeforeFusing());
+					sm.setMaxFailBeforeDegrade(anno.maxFailBeforeDegrade());
 					sm.setRetryCnt(anno.retryCnt());
 					sm.setRetryInterval(anno.retryInterval());
 					sm.setTestingArgs(anno.testingArgs());
@@ -227,15 +227,7 @@ public class ServiceLoader {
 				}
 				
 				sm.setMethodName(m.getName());
-				Class<?>[] ps = m.getParameterTypes();
-				if(ps != null && ps.length >0){
-					StringBuffer sb = new StringBuffer();
-					for(Class<?> mc: ps){
-						sb.append(mc.getName()).append("_");
-					}
-					String sbt = sb.substring(0, sb.length()-1);
-					sm.setMethodParamTypes(sbt);
-				}
+				sm.setMethodParamTypes(ServiceMethod.methodParamsKey( m.getParameterTypes()));
 				
 				item.addMethod(sm);
 			}

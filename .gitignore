@@ -101,6 +101,10 @@ jmicro.limit/target/
 jmicro.limit/.classpath
 jmicro.limit/.project
 jmicro.limit/.settings/
+jmicro.monitor.memory/target/
+jmicro.monitor.memory/.classpath
+jmicro.monitor.memory/.project
+jmicro.monitor.memory/.settings/
 .DS_Store
 Thumbs.db
 UserInterfaceState.xcuserstate

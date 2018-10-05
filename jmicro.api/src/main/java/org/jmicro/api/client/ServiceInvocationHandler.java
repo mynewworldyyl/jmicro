@@ -22,14 +22,20 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.jmicro.api.IIdGenerator;
+import org.jmicro.api.annotation.Cfg;
 import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.Inject;
 import org.jmicro.api.exception.CommonException;
+import org.jmicro.api.exception.FusingException;
+import org.jmicro.api.fusing.FuseManager;
 import org.jmicro.api.loadbalance.ISelector;
+import org.jmicro.api.monitor.MonitorConstant;
+import org.jmicro.api.monitor.SubmitItemHolderManager;
 import org.jmicro.api.objectfactory.ProxyObject;
 import org.jmicro.api.registry.ServiceItem;
 import org.jmicro.api.registry.ServiceMethod;
 import org.jmicro.api.server.IRequest;
+import org.jmicro.api.server.IResponse;
 import org.jmicro.api.server.RpcRequest;
 import org.jmicro.api.server.ServerError;
 import org.jmicro.common.Constants;
@@ -53,6 +59,16 @@ public class ServiceInvocationHandler implements InvocationHandler{
 	
 	@Inject
 	private IIdGenerator idGenerator;
+	
+	@Inject(required=false)
+	private SubmitItemHolderManager monitor;
+	
+	@Cfg(value="/monitorClientEnable",required=false)
+	private boolean monitorClientEnable = true;
+	
+	@Inject
+	private FuseManager fuseManager;
+	
 	
 	private Object target = new Object();
 	
@@ -81,7 +97,18 @@ public class ServiceInvocationHandler implements InvocationHandler{
         //String syncMethodName = methodName.substring(0, methodName.length() - Constants.ASYNC_SUFFIX.length());
         //Method syncMethod = clazz.getMethod(syncMethodName, method.getParameterTypes());
         
-        return this.doRequest(method,args,clazz);
+        try {
+			return this.doRequest(method,args,clazz);
+		} catch (Throwable e) {
+			logger.error(e.getMessage(), e);
+			if(e instanceof FusingException){
+				MonitorConstant.doSubmit(monitor,MonitorConstant.CLIENT_REQ_SERVICE_FUSING,null, null, e);
+				return fuseManager.onFusing(method, args, ((FusingException)e).getSis());
+			}else {
+				MonitorConstant.doSubmit(monitor,MonitorConstant.CLIENT_RESP_ERR,null, null, clazz,method,args,e);
+				throw e;	
+			}
+		}
     
 	}
 
@@ -103,8 +130,9 @@ public class ServiceInvocationHandler implements InvocationHandler{
         boolean isFistLoop = true;
         do {
         	
-        	si = selector.getService(ProxyObject.getTargetCls(srvClazz).getName());
+        	si = selector.getService(ProxyObject.getTargetCls(srvClazz).getName(),method.getName(),args);
         	if(si ==null) {
+        		MonitorConstant.doSubmit(monitor,MonitorConstant.CLIENT_REQ_SERVICE_NOT_FOUND, req, null);
     			throw new CommonException("Service [" + srvClazz.getName() + "] not found!");
     		}
         	
@@ -132,6 +160,7 @@ public class ServiceInvocationHandler implements InvocationHandler{
         			}
         		}
         		if(sm == null){
+        			MonitorConstant.doSubmit(monitor,MonitorConstant.CLIENT_REQ_METHOD_NOT_FOUND, req, null);
         			throw new CommonException("Service method ["+method.getName()+"] class [" + srvClazz.getName() + "] not found!");
         		}
         		retryCnt = sm.getRetryCnt();
@@ -156,10 +185,14 @@ public class ServiceInvocationHandler implements InvocationHandler{
     		IClientSession session = this.sessionManager.connect(si.getHost(), si.getPort());
     		req.setSession(session);
     		
-    		Map<String,Object> result = new HashMap<>();
+    		if(isFistLoop){
+    			MonitorConstant.doSubmit(monitor,MonitorConstant.CLIENT_REQ_BEGIN, req, null);
+    		}
+    		final Map<String,Object> result = new HashMap<>();
     		this.sessionManager.write(req, (resp,reqq,err)->{
     			//Object rst = decodeResult(resp,req,method.getReturnType());
     			result.put("result", resp.getResult());
+    			result.put("resp", resp);
     			synchronized(req) {
     				req.notify();
     			}
@@ -179,10 +212,13 @@ public class ServiceInvocationHandler implements InvocationHandler{
     		}
     		
     		if(req.isFinish()){
-    			 throw new CommonException("got repeat result cls["+si.getServiceName()+",method["+method.getName());
+    			MonitorConstant.doSubmit(monitor,MonitorConstant.CLIENT_REQ_HAVE_FINISH, req, null);
+    			throw new CommonException("got repeat result cls["+si.getServiceName()+",method["+method.getName());
     		}
 
     		Object obj = result.get("result");
+    		IResponse resp = (IResponse)result.get("resp");
+    		result.clear();
     		if(obj instanceof ServerError || !req.isSuccess()){
     			se = (ServerError)obj;
     			StringBuffer sb = new StringBuffer();
@@ -192,8 +228,10 @@ public class ServiceInvocationHandler implements InvocationHandler{
     			sb.append(" host[").append(si.getHost()).append("] port [").append(si.getPort())
     			.append("] service[").append(si.getServiceName());
     			if(retryCnt > 0){
+    				MonitorConstant.doSubmit(monitor,MonitorConstant.CLIENT_REQ_TIMEOUT, req, resp);
     				sb.append("] do retry: ").append(retryCnt);
     			}else {
+    				MonitorConstant.doSubmit(monitor,MonitorConstant.CLIENT_REQ_FAIL, req, resp);
     				sb.append("] fail request and stop retry").append(retryCnt);
     			}
     			logger.error(sb.toString());
@@ -204,13 +242,14 @@ public class ServiceInvocationHandler implements InvocationHandler{
 					} catch (InterruptedException e) {
 						logger.error("Sleep exceptoin ",e);
 					}
+    				MonitorConstant.doSubmit(monitor,MonitorConstant.CLIENT_REQ_RETRY, req, resp);
     			}
     			//throw new CommonException(se.toString());
     		} else {
+    			MonitorConstant.doSubmit(monitor,MonitorConstant.CLIENT_RESP_OK, req, resp);
     			req.setFinish(true);
     			return obj;
     		}
-    		
         }while(retryCnt-- > 0);
        
         if(se != null){

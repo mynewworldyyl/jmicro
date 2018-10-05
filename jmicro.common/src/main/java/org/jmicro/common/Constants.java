@@ -35,6 +35,7 @@ public interface Constants {
 	public static final String FIRST_INTERCEPTOR="firstInterceptor";
 	public static final String DEFAULT_SELECTOR="defaultSelector";
 	public static final String DEFAULT_INVOCATION_HANDLER="defaultInvocationHandler";
+	public static final String DEFAULT_MONITOR="defaultMonitor";
 	
 	public static final String DEFAULT_NAMESPACE="defaultNamespace";
 	public static final String DEFAULT_VERSION="0.0.0";
