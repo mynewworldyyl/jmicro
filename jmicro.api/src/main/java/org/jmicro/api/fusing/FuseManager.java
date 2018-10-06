@@ -23,7 +23,9 @@ import java.util.Set;
 import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.Inject;
 import org.jmicro.api.exception.FusingException;
+import org.jmicro.api.registry.IRegistry;
 import org.jmicro.api.registry.ServiceItem;
+import org.jmicro.api.registry.ServiceMethod;
 /**
  * 
  * @author Yulei Ye
@@ -32,8 +34,11 @@ import org.jmicro.api.registry.ServiceItem;
 @Component
 public class FuseManager {
 
-	@Inject
+	@Inject(required=false)
 	private Set<IFusingHandler> fusingHandler = new HashSet<>();
+	
+	@Inject
+	private IRegistry registry;
 	
 	public void init(){
 		
@@ -45,12 +50,13 @@ public class FuseManager {
 	 * @param method
 	 * @param argTypes
 	 */
-	public void fuseService(String service,String method,String argTypes){
-		ServiceItem.serviceName(service);
+	public void fuseService(ServiceItem serviceItem,ServiceMethod methodIem){
+		
+		
 	}
 	
 	/**
-	 * default handler for fusing service
+	 * default request handler for fusing service
 	 * @param method service method
 	 * @param args method args
 	 * @param items service items witch is in fusing status

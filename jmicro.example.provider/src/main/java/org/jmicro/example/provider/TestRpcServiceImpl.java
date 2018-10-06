@@ -1,11 +1,13 @@
 package org.jmicro.example.provider;
 
 import org.jmicro.api.annotation.Cfg;
+import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.Service;
 import org.jmicro.example.api.ITestRpcService;
 import org.jmicro.example.api.Person;
 
 @Service
+@Component
 public class TestRpcServiceImpl implements ITestRpcService{
 
 	@Cfg("/name")

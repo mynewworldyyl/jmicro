@@ -22,6 +22,10 @@ package org.jmicro.common;
  */
 public interface Constants {
 
+	public static final int CONN_CONNECTED=1;
+	public static final int CONN_RECONNECTED=2;
+	public static final int CONN_LOST=3;
+	
 	public static final String OBJ_FACTORY_KEY="objFactory";
 	public static final String DEFAULT_OBJ_FACTORY="defaultObjFactory";
 	

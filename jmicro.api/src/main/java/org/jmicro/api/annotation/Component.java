@@ -31,4 +31,5 @@ import java.lang.annotation.Target;
 public @interface Component {
 	public String value() default "";
 	public boolean lazy() default true;
+	public int level() default 10000;
 }

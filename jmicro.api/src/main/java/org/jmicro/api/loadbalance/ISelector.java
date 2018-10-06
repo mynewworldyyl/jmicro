@@ -24,7 +24,7 @@ import org.jmicro.api.registry.ServiceItem;
  */
 public interface ISelector {
 
-	ServiceItem getService(String srvName,String method,Class<?>[] args);
+	ServiceItem getService(String srvName,String method,Class<?>[] args,String namespace,String version);
 	
-	ServiceItem getService(String srvName,String method,Object[] args);
+	ServiceItem getService(String srvName,String method,Object[] args,String namespace,String version);
 }

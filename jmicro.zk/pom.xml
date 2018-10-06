@@ -10,23 +10,20 @@
     <name>${project.artifactId}</name>
     <description>zk Module</description>
     <dependencies>
-        <dependency>
-            <groupId>org.apache.dubbo</groupId>
-            <artifactId>dubbo-common</artifactId>
-        </dependency>
+    
         <dependency>
             <groupId>org.apache.zookeeper</groupId>
             <artifactId>zookeeper</artifactId>
         </dependency>
         <dependency>
-            <groupId>com.101tec</groupId>
-			  <artifactId>zkclient</artifactId>
-        </dependency>
-        <dependency>
             <groupId>org.apache.curator</groupId>
             <artifactId>curator-framework</artifactId>
         </dependency>
-       
+         <dependency>
+            <groupId>org.jmicro</groupId>
+            <artifactId>jmicro.api</artifactId>
+        </dependency>
+        
     </dependencies>
    
 </project>

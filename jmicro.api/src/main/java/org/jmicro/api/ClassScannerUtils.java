@@ -104,6 +104,16 @@ public class ClassScannerUtils {
 		}
 	}
 	
+	public Set<Class<?>> getComponentClass(){
+		Set<Class<?>> clazzes = new HashSet<>();
+		for(Class<?> c : classes.values()){
+			if(this.isComponentClass(c)){
+				clazzes.add(c);
+			}
+		}
+		return clazzes;
+	}
+	
 	public Class<?> getClassByName(String clsName){
 		if(classes.isEmpty()){
 			this.getClassesByParent(Config.getBasePackages(), null);
@@ -126,7 +136,12 @@ public class ClassScannerUtils {
 				if(annoName.equals(n.value())) {
 					return cls;
 				}
-			}else if(cls.isAnnotationPresent(Server.class)){
+			}else if(cls.isAnnotationPresent(Component.class)){
+				Component n = cls.getAnnotation(Component.class);
+				if(annoName.equals(n.value())) {
+					return cls;
+			}
+			/*else if(cls.isAnnotationPresent(Server.class)){
 				Server n = cls.getAnnotation(Server.class);
 				if(annoName.equals(n.value())) {
 					return cls;
@@ -166,12 +181,8 @@ public class ClassScannerUtils {
 				if(annoName.equals(n.value())) {
 					return cls;
 				}
-			}else if(cls.isAnnotationPresent(Component.class)){
-				Component n = cls.getAnnotation(Component.class);
-				if(annoName.equals(n.value())) {
-					return cls;
-				}
-			}else if(cls.isAnnotationPresent(Reference.class)){
+			}*/
+			}/*else if(cls.isAnnotationPresent(Reference.class)){
 				Reference n = cls.getAnnotation(Reference.class);
 				if(annoName.equals(n.value())) {
 					return cls;
@@ -181,7 +192,7 @@ public class ClassScannerUtils {
 				if(annoName.equals(n.value())) {
 					return cls;
 				}
-			}
+			}*/
 
 		}
 		return null;
@@ -211,7 +222,8 @@ public class ClassScannerUtils {
 	
 	private boolean isComponentClass(Class<?> cls){
 
-		return cls.isAnnotationPresent(Name.class)
+		return cls.isAnnotationPresent(Component.class)
+				/*||cls.isAnnotationPresent(Name.class)
 				||cls.isAnnotationPresent(Server.class)
 				||cls.isAnnotationPresent(Channel.class)
 				||cls.isAnnotationPresent(Handler.class)
@@ -220,11 +232,9 @@ public class ClassScannerUtils {
 				||cls.isAnnotationPresent(Selector.class)
 				||cls.isAnnotationPresent(Service.class)
 				||cls.isAnnotationPresent(ObjFactory.class)
-				||cls.isAnnotationPresent(Component.class)
 				||cls.isAnnotationPresent(CodecFactory.class)
 				||cls.isAnnotationPresent(Reference.class)
-				||cls.isAnnotationPresent(PostListener.class)
-				
+				||cls.isAnnotationPresent(PostListener.class)*/
 				;
 	}
 	
@@ -252,6 +262,7 @@ public class ClassScannerUtils {
 						System.out.println(c.getName());
 					}*/
 					if(checker.accept(c)){
+						System.out.println(c.getName());
 						clses.add(c);
 					}	
 				}
@@ -261,7 +272,7 @@ public class ClassScannerUtils {
 	}
 
 	
-	public Set<Class<?>> getClassesByPackageName(String pack) {
+	private Set<Class<?>> getClassesByPackageName(String pack) {
 		  
         // 绗竴涓猚lass绫荤殑闆嗗悎  
         Set<Class<?>> classes = new LinkedHashSet<Class<?>>();  
@@ -370,7 +381,7 @@ public class ClassScannerUtils {
      * @param recursive 
      * @param classes 
      */  
-    public void findAndAddClassesInPackageByFile(String packageName,  String packagePath, final boolean recursive, Set<Class<?>> classes) {
+	private void findAndAddClassesInPackageByFile(String packageName,  String packagePath, final boolean recursive, Set<Class<?>> classes) {
     	if(classes == null) {
     		throw new NullPointerException("classes can not be null");
     	}

@@ -19,6 +19,7 @@ package org.jmicro.api.server;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
+import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.Handler;
 import org.jmicro.api.annotation.Inject;
 import org.jmicro.api.exception.RpcException;
@@ -29,7 +30,8 @@ import org.jmicro.common.Constants;
  * @author Yulei Ye
  * @date 2018年10月4日-下午12:07:12
  */
-@Handler(Constants.DEFAULT_HANDLER)
+@Component(Constants.DEFAULT_HANDLER)
+@Handler
 public class RpcRequestHandler extends AbstractHandler implements IRequestHandler {
 
 	@Inject(required=true)

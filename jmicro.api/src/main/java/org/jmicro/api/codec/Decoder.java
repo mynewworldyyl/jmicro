@@ -28,11 +28,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.dubbo.common.utils.StringUtils;
 import org.jmicro.api.ClassScannerUtils;
 import org.jmicro.api.exception.CommonException;
 import org.jmicro.api.server.RpcRequest;
 import org.jmicro.common.Constants;
+import org.jmicro.common.url.StringUtils;
 /**
  * 
  * @author Yulei Ye

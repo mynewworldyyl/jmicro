@@ -25,7 +25,7 @@ import org.jmicro.api.annotation.Cfg;
 import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.Inject;
 import org.jmicro.api.annotation.JMethod;
-import org.jmicro.api.limitspeed.Limiter;
+import org.jmicro.api.limitspeed.ILimiter;
 import org.jmicro.api.monitor.MonitorConstant;
 import org.jmicro.api.monitor.SubmitItemHolderManager;
 import org.jmicro.api.registry.IRegistry;
@@ -37,8 +37,8 @@ import org.jmicro.api.server.IRequest;
  * @author Yulei Ye
  * @date 2018年10月4日-下午12:11:58
  */
-@Component(lazy=false)
-public class DefaultSpeedLimiter implements Limiter{
+@Component(lazy=false,value="limiterName")
+public class DefaultSpeedLimiter implements ILimiter{
 	
 	@Inject
 	private IRegistry registry;
@@ -165,7 +165,8 @@ public class DefaultSpeedLimiter implements Limiter{
 	}
 
 	private ServiceItem getServiceItem(IRequest req) {
-		Set<ServiceItem> sis = registry.getServices(req.getServiceName());
+		Set<ServiceItem> sis = registry.getServices(req.getServiceName(),req.getMethod(),req.getArgs(),
+				req.getNamespace(),req.getVersion());
 		if(sis == null || sis.isEmpty()){
 			return null;
 		}

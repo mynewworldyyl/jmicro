@@ -28,7 +28,6 @@ import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.Inject;
 import org.jmicro.api.annotation.Interceptor;
 import org.jmicro.api.annotation.JMethod;
-import org.jmicro.api.annotation.Lazy;
 import org.jmicro.api.exception.CommonException;
 import org.jmicro.api.monitor.MonitorConstant;
 import org.jmicro.api.monitor.SubmitItemHolderManager;
@@ -48,8 +47,7 @@ import org.jmicro.common.Constants;
  * @author Yulei Ye
  * @date 2018年10月4日-下午12:07:54
  */
-@Component
-@Lazy(true)
+@Component(lazy=true)
 public class JmicroManager {
 
 	/*private static JmicroManager ins = new JmicroManager();
@@ -204,7 +202,9 @@ public class JmicroManager {
 			Class<?> cls = ProxyObject.getTargetCls(h.getClass());
 			if(cls.isAnnotationPresent(Interceptor.class)) {
 				Interceptor ha = cls.getAnnotation(Interceptor.class);
-				if(Constants.FIRST_INTERCEPTOR.equals(ha.value())){
+				Component ca = cls.getAnnotation(Component.class);
+				if(Constants.FIRST_INTERCEPTOR.equals(ha.value()) ||
+						Constants.FIRST_INTERCEPTOR.equals(ca.value())){
 					if(firstHandler != null){
 						StringBuffer sb = new StringBuffer();
 						sb.append("More than one ").append(Constants.FIRST_INTERCEPTOR).append(" found");
@@ -212,7 +212,8 @@ public class JmicroManager {
 						throw new CommonException(sb.toString());
 					}
 					firstHandler = h;
-				}else if(Constants.LAST_INTERCEPTOR.equals(ha.value())){
+				}else if(Constants.LAST_INTERCEPTOR.equals(ha.value()) ||
+						Constants.LAST_INTERCEPTOR.equals(ca.value())){
 					if(lastHandler != null){
 						StringBuffer sb = new StringBuffer();
 						sb.append("More than one [").append(Constants.LAST_INTERCEPTOR).append("] found");

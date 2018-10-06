@@ -32,4 +32,11 @@ public @interface Inject {
 
 	public String value() default "";
 	public boolean required() default true;
+	
+	/**
+	 * if true inject remote services and local component that implement the same interface,
+	 * if false ,only inject local component.
+	 * the reference only inject remote services
+	 */
+	public boolean remote() default false;
 }

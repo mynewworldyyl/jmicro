@@ -22,7 +22,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
-import org.apache.dubbo.common.utils.StringUtils;
 import org.jmicro.api.ClassScannerUtils;
 import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.Inject;
@@ -36,6 +35,7 @@ import org.jmicro.api.registry.ServiceItem;
 import org.jmicro.api.registry.ServiceMethod;
 import org.jmicro.api.server.IServer;
 import org.jmicro.common.Constants;
+import org.jmicro.common.url.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 /**
@@ -43,7 +43,7 @@ import org.slf4j.LoggerFactory;
  * @author Yulei Ye
  * @date 2018年10月4日-下午12:08:01
  */
-@Component(lazy=false)
+@Component(lazy=false,level=2)
 public class ServiceLoader {
 
 	private final static Logger logger = LoggerFactory.getLogger(ServiceLoader.class);

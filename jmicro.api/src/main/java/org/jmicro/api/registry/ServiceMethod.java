@@ -17,10 +17,9 @@
 package org.jmicro.api.registry;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
 
 import org.jmicro.api.exception.CommonException;
-
-import javassist.Modifier;
 /**
  * 
  * @author Yulei Ye
@@ -102,7 +101,7 @@ public class ServiceMethod {
 			}
 			try {
 				Object v = f.get(this);
-				sb.append(f.getName()).append(":").append(v.toString());
+				sb.append(f.getName()).append(":").append(v == null?"":v.toString());
 				if(i != fields.length-1){
 					sb.append(",");
 				}

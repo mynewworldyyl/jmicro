@@ -78,7 +78,7 @@
         <sl4j.version>1.7.5</sl4j.version>
         <dubbo.version>2.7.0-SNAPSHOT</dubbo.version>
         <zookeeper.version>3.4.13</zookeeper.version>
-        <curator.version>2.12.0</curator.version>
+        <curator.version>4.0.1</curator.version>
         <zkclient.version>2.0</zkclient.version>
     </properties>
 
@@ -88,10 +88,12 @@
 		<module>jmicro.idgenerator</module>
 		<module>jmicro.zk</module>
 		<module>jmicro.transport</module>
-		<module>jmicro.main</module>
 		<module>jmicro.config</module>
 		<module>jmicro.objfactory</module>
 		<module>jmicro.registry</module>
+		<module>jmicro.limit</module>
+		<module>jmicro.monitor.memory</module>
+		
     </modules>
 
     <dependencyManagement>
@@ -141,6 +143,11 @@
 				 <artifactId>jmicro.limit</artifactId>
 				 <version>${jmicro.version}</version>
         	</dependency>
+        	  <dependency>
+			 <groupId>org.jmicro</groupId>
+			 <artifactId>jmicro.monitor.memory</artifactId>
+			 <version>${jmicro.version}</version>
+        </dependency>
 	         <dependency>
 					<groupId>net.tecghty</groupId>
 					<artifactId>idgenerator</artifactId>
@@ -185,26 +192,32 @@
 			<artifactId>slf4j-api</artifactId>
 			<version>${sl4j.version}</version>
 		</dependency>
-		 <dependency>
+		<!--  <dependency>
             <groupId>org.apache.dubbo</groupId>
             <artifactId>dubbo-common</artifactId>
             <version>${dubbo.version}</version>
-        </dependency>
+        </dependency> -->
         <dependency>
             <groupId>org.apache.zookeeper</groupId>
             <artifactId>zookeeper</artifactId>
             <version>${zookeeper.version}</version>
         </dependency>
-        <dependency>
+      <!--   <dependency>
             <groupId>com.101tec</groupId>
 			  <artifactId>zkclient</artifactId>
 			  <version>0.2</version>
-        </dependency>
+        </dependency> -->
         <dependency>
             <groupId>org.apache.curator</groupId>
             <artifactId>curator-framework</artifactId>
             <version>${curator.version}</version>
         </dependency>
+		<dependency>
+		    <groupId>org.javassist</groupId>
+		    <artifactId>javassist</artifactId>
+		    <version>3.23.1-GA</version>
+		</dependency>
+        
         </dependencies>
     </dependencyManagement>
 

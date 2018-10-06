@@ -98,7 +98,8 @@ public class ServiceInvocationHandler implements InvocationHandler{
         //Method syncMethod = clazz.getMethod(syncMethodName, method.getParameterTypes());
         
         try {
-			return this.doRequest(method,args,clazz);
+        	AbstractServiceProxy po = (AbstractServiceProxy)proxy;
+			return this.doRequest(method,args,clazz,po.getNamespace(),po.getVersion());
 		} catch (Throwable e) {
 			logger.error(e.getMessage(), e);
 			if(e instanceof FusingException){
@@ -112,12 +113,14 @@ public class ServiceInvocationHandler implements InvocationHandler{
     
 	}
 
-	private Object doRequest(Method method, Object[] args, Class<?> srvClazz) {
+	private Object doRequest(Method method, Object[] args, Class<?> srvClazz,String namespace,String version) {
 		//System.out.println(req.getServiceName());
 		RpcRequest req = new RpcRequest();
         req.setMethod(method.getName());
         req.setServiceName(method.getDeclaringClass().getName());
         req.setArgs(args);
+        req.setNamespace(namespace);
+        req.setVersion(version);
         
         ServerError se = null;
         		
@@ -130,7 +133,8 @@ public class ServiceInvocationHandler implements InvocationHandler{
         boolean isFistLoop = true;
         do {
         	
-        	si = selector.getService(ProxyObject.getTargetCls(srvClazz).getName(),method.getName(),args);
+        	si = selector.getService(ProxyObject.getTargetCls(srvClazz).getName(),method.getName(),args
+        			,req.getNamespace(),req.getVersion());
         	if(si ==null) {
         		MonitorConstant.doSubmit(monitor,MonitorConstant.CLIENT_REQ_SERVICE_NOT_FOUND, req, null);
     			throw new CommonException("Service [" + srvClazz.getName() + "] not found!");
@@ -138,20 +142,7 @@ public class ServiceInvocationHandler implements InvocationHandler{
         	
         	if(isFistLoop){
         		
-        		String t = null;
-        		if(args != null && args.length > 0){
-        			StringBuffer sb = new StringBuffer();
-            		for(int i=0; i < args.length; i++){
-            			Object ar = args[i];
-            			sb.append(ar.getClass().getName());
-            			if(i!= args.length -1){
-            				sb.append("_");
-            			}
-            			
-            		}
-            		t = sb.toString();
-        		}
-        		
+        		String t = ServiceMethod.methodParamsKey(args);
         		for(ServiceMethod m : si.getMethods()){
         			if(m.getMethodName().equals(method.getName()) 
         					&& m.getMethodParamTypes().equals(t)){

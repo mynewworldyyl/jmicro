@@ -21,7 +21,6 @@ import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.util.List;
 
-import org.apache.dubbo.common.utils.StringUtils;
 import org.apache.mina.api.AbstractIoHandler;
 import org.apache.mina.api.IdleStatus;
 import org.apache.mina.api.IoService;
@@ -31,8 +30,8 @@ import org.apache.mina.transport.nio.NioTcpServer;
 import org.jmicro.api.IIdGenerator;
 import org.jmicro.api.JMicroContext;
 import org.jmicro.api.annotation.Cfg;
+import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.Inject;
-import org.jmicro.api.annotation.Lazy;
 import org.jmicro.api.annotation.Server;
 import org.jmicro.api.codec.ICodecFactory;
 import org.jmicro.api.exception.CommonException;
@@ -44,6 +43,7 @@ import org.jmicro.api.server.RpcRequest;
 import org.jmicro.api.servicemanager.JmicroManager;
 import org.jmicro.common.Constants;
 import org.jmicro.common.Utils;
+import org.jmicro.common.url.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 /**
@@ -51,8 +51,8 @@ import org.slf4j.LoggerFactory;
  * @author Yulei Ye
  * @date 2018年10月4日-下午12:13:53
  */
-@Server(Constants.DEFAULT_SERVER)
-@Lazy(false)
+@Component(value=Constants.DEFAULT_SERVER,lazy=false,level=1)
+@Server
 public class MinaServer implements IServer{
 
 	static final Logger LOG = LoggerFactory.getLogger(MinaServer.class);

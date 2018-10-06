@@ -1,3 +1,19 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.jmicro.api.monitor;
 
 import java.util.HashSet;
@@ -8,14 +24,22 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import org.jmicro.api.annotation.Cfg;
 import org.jmicro.api.annotation.Component;
-import org.jmicro.api.annotation.Inject;
 import org.jmicro.api.annotation.JMethod;
+import org.jmicro.api.annotation.Reference;
 import org.jmicro.api.server.IRequest;
 import org.jmicro.api.server.IResponse;
-
-@Component(lazy=true)
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+/**
+ * 
+ * @author Yulei Ye
+ * @date 2018年10月5日-下午12:50:59
+ */
+@Component(lazy=false,level=0)
 public class SubmitItemHolderManager {
     
+	private final static Logger logger = LoggerFactory.getLogger(SubmitItemHolderManager.class);
+	
 	@Cfg(value="/monitorServerIoSession",required=false,changeListener="init")
 	private boolean monitorIoSession1=true;
 	
@@ -39,10 +63,24 @@ public class SubmitItemHolderManager {
 	
 	private int threadSize = 1;
 	
-	@Inject(required=false)
+	//@Inject(required=false, remote=true)
+	@Reference(version="0.0.0",required=false)
 	private Set<IMonitorSubmitWorker> submiters = new HashSet<>();
 	
 	private Worker[] workers = null;
+	
+	@JMethod("init")
+	public void init() {
+		this.enable =(monitorIoSession1 || monitorIoSession2
+				|| monitorClientEnable|| monitorServerEnable) && !submiters.isEmpty();
+		if(this.enable){
+			workers = new Worker[threadSize];
+			for(int i = 0; i < threadSize; i++){
+				workers[i] = new Worker();
+				new Thread(workers[i]).start();
+			}
+		}
+	}
 	
 	private class Worker implements Runnable{
 		private Queue<SubmitItem> its = new ConcurrentLinkedQueue<>();
@@ -74,19 +112,6 @@ public class SubmitItemHolderManager {
 		
 		public int size(){
 			return its.size();
-		}
-	}
-	
-	@JMethod("init")
-	public void init() {
-		this.enable =(monitorIoSession1 || monitorIoSession2
-				|| monitorClientEnable|| monitorServerEnable) && !submiters.isEmpty();
-		if(this.enable){
-			workers = new Worker[threadSize];
-			for(int i = 0; i < threadSize; i++){
-				workers[i] = new Worker();
-				new Thread(workers[i]).start();
-			}
 		}
 	}
 	

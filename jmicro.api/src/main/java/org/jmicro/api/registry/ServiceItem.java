@@ -17,16 +17,17 @@
 package org.jmicro.api.registry;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
 import java.util.HashSet;
+import java.util.Random;
 import java.util.Set;
 
-import org.apache.dubbo.common.utils.StringUtils;
 import org.jmicro.api.exception.CommonException;
+import org.jmicro.common.Constants;
 import org.jmicro.common.Utils;
+import org.jmicro.common.url.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import javassist.Modifier;
 /**
  * 
  * @author Yulei Ye
@@ -45,11 +46,13 @@ public class ServiceItem{
 	public static final String KV_SEPERATOR="=";
 	public static final String VAL_SEPERATOR="&";
 	
+	private static final Random rand = new Random();
+	
 	protected String serviceName;
 	
-	protected String namespace;
+	protected String namespace = Constants.DEFAULT_NAMESPACE;
 	
-	protected String version;
+	protected String version = Constants.DEFAULT_VERSION;
 	
 	private String host;
 	
@@ -115,6 +118,8 @@ public class ServiceItem{
 	
 	private Set<ServiceMethod> methods = new HashSet<>();
 	
+	private long randVal = System.currentTimeMillis() ^ rand.nextLong();
+	
 	public ServiceItem() {}
 	
 	public ServiceItem(String val) {
@@ -171,7 +176,7 @@ public class ServiceItem{
 		return methods;
 	}
 	
-	public static String serviceName(String key) {
+	/*public static String serviceInterfaceName(String key) {
 	    int i = key.indexOf(I_I_SEPERATOR);
 	    if(i>0){
 	    	return key.substring(0, i);
@@ -179,6 +184,29 @@ public class ServiceItem{
 	    	return key;
 	    }
 		
+	}*/
+	
+	public String serviceName() {
+	   return serviceName(this.serviceName,this.namespace,this.version);
+	}
+	
+	public static String namespace(String namespace){
+		if(namespace == null || "".equals(namespace)){
+			namespace = Constants.DEFAULT_NAMESPACE;
+		}
+		return namespace;
+	}
+	
+   public static String version(String version){
+		if(version == null || "".equals(version)){
+			version = Constants.DEFAULT_VERSION;
+		}
+		return version;
+	}
+	
+	public static String serviceName(String sn, String ns, String v) {
+		
+		return sn+"##"+namespace(ns)+"##"+version(v);
 	}
 
 	private void parseVal(String val) {
@@ -240,7 +268,7 @@ public class ServiceItem{
 		.append("port").append(KV_SEPERATOR).append(port).append(VAL_SEPERATOR)
 		.append("namespace").append(KV_SEPERATOR).append(this.namespace).append(VAL_SEPERATOR)
 		.append("version").append(KV_SEPERATOR).append(this.version).append(VAL_SEPERATOR)
-		.append("time").append(KV_SEPERATOR).append(System.currentTimeMillis());
+		.append("time").append(KV_SEPERATOR).append(this.randVal);
 
 		return sb.append(Utils.getIns().encode(val.toString())).toString();
 	}
@@ -254,7 +282,7 @@ public class ServiceItem{
 			}
 			try {
 				Object v = f.get(this);
-				sb.append(f.getName()).append(KV_SEPERATOR).append(v.toString()).append(VAL_SEPERATOR);
+				sb.append(f.getName()).append(KV_SEPERATOR).append(v==null?"":v.toString()).append(VAL_SEPERATOR);
 			} catch (IllegalArgumentException | IllegalAccessException e) {
 				logger.error("val Field:"+f.getName(),e);
 			}
@@ -277,7 +305,7 @@ public class ServiceItem{
 
 	@Override
 	public int hashCode() {
-		return this.key().hashCode();
+		return new Long(this.randVal).hashCode();
 	}
 
 	@Override
@@ -285,7 +313,7 @@ public class ServiceItem{
 		if(obj == null || !(obj instanceof ServiceItem)) {
 			return false;
 		}
-		return this.key().equals(((ServiceItem)obj).key());
+		return this.randVal == ((ServiceItem)obj).randVal;
 	}
 
 	public String getHost() {
@@ -317,7 +345,9 @@ public class ServiceItem{
 	}
 
 	public void setNamespace(String namespace) {
-		this.namespace = namespace;
+		if(namespace != null && !"".equals(namespace.trim())){
+			this.namespace = namespace;
+		}
 	}
 
 	public String getVersion() {
@@ -325,7 +355,9 @@ public class ServiceItem{
 	}
 
 	public void setVersion(String version) {
-		this.version = version;
+		if(version != null && !"".equals(version.trim())){
+			this.version = version;
+		}
 	}
 
 	public int getRetryCnt() {

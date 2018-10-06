@@ -16,6 +16,7 @@
  */
 package org.jmicro.api.server;
 
+import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.Interceptor;
 import org.jmicro.api.exception.RpcException;
 import org.jmicro.common.Constants;
@@ -26,7 +27,8 @@ import org.slf4j.LoggerFactory;
  * @author Yulei Ye
  * @date 2018年10月4日-下午12:06:35
  */
-@Interceptor(Constants.LAST_INTERCEPTOR)
+@Component(Constants.LAST_INTERCEPTOR)
+@Interceptor
 public class LastInterceptor extends AbstractInterceptor implements IInterceptor {
 
 	private final static Logger logger = LoggerFactory.getLogger(LastInterceptor.class);

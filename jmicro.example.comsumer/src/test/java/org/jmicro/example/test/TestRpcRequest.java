@@ -9,28 +9,22 @@ import java.io.PrintWriter;
 import java.net.Socket;
 import java.net.UnknownHostException;
 
-import org.apache.dubbo.common.URL;
-import org.jmicro.api.Config;
-import org.jmicro.api.JMicroContext;
-import org.jmicro.api.client.AbstractServiceProxy;
-import org.jmicro.api.client.ServiceInvocationHandler;
 import org.jmicro.api.objectfactory.IObjectFactory;
 import org.jmicro.api.servicemanager.ComponentManager;
-import org.jmicro.example.api.ITestRpcService;
 import org.jmicro.example.comsumer.TestRpcClient;
-import org.jmicro.objfactory.simple.SimpleObjectFactory;
 import org.junit.Test;
 
 public class TestRpcRequest {
 
-	@Test
+	/*@Test
 	public void testDynamicProxy() {
-		ITestRpcService src = SimpleObjectFactory.createDynamicServiceProxy(ITestRpcService.class);
+		ITestRpcService src = SimpleObjectFactory.createDynamicServiceProxy(ITestRpcService.class
+				,Constants.DEFAULT_NAMESPACE,Constants.DEFAULT_VERSION);
 		AbstractServiceProxy asp = (AbstractServiceProxy)src;
 		asp.setHandler(new ServiceInvocationHandler());
 		System.out.println(src.hello("Hello"));
 		System.out.println("testDynamicProxy");
-	}
+	}*/
 	
 	@Test
 	public void testRpcClient() {

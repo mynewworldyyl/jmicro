@@ -17,13 +17,15 @@
 package org.jmicro.api.codec;
 
 import org.jmicro.api.annotation.CodecFactory;
+import org.jmicro.api.annotation.Component;
 import org.jmicro.common.Constants;
 /**
  * 
  * @author Yulei Ye
  * @date 2018年10月4日-下午12:01:17
  */
-@CodecFactory(Constants.DEFAULT_CODEC_FACTORY)
+@Component(Constants.DEFAULT_CODEC_FACTORY)
+@CodecFactory
 public class DefaultCodecFactory implements ICodecFactory{
 
 	private Decoder dec = new Decoder();

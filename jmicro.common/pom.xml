@@ -10,10 +10,10 @@
     <name>${project.artifactId}</name>
     <description>Common Module</description>
     <dependencies>
-   		 <dependency>
-            <groupId>org.apache.dubbo</groupId>
-            <artifactId>dubbo-common</artifactId>
-        </dependency>
+    		<dependency>
+		    <groupId>org.javassist</groupId>
+		    <artifactId>javassist</artifactId>
+		</dependency>
        <dependency>
        		<groupId>org.slf4j</groupId>
 			<artifactId>slf4j-api</artifactId>

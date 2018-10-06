@@ -29,7 +29,6 @@ import java.util.Map;
 import java.util.Set;
 
 import org.apache.curator.framework.api.GetDataBuilder;
-import org.apache.dubbo.common.utils.StringUtils;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.Watcher;
@@ -40,6 +39,10 @@ import org.jmicro.api.annotation.PostListener;
 import org.jmicro.api.exception.CommonException;
 import org.jmicro.api.objectfactory.PostInitListenerAdapter;
 import org.jmicro.api.objectfactory.ProxyObject;
+import org.jmicro.api.raft.IDataListener;
+import org.jmicro.api.servicemanager.ComponentManager;
+import org.jmicro.common.url.StringUtils;
+import org.jmicro.zk.ZKDataOperator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 /**
@@ -80,17 +83,19 @@ public class ConfigPostInitListener extends PostInitListenerAdapter {
 
 			path = path + cfg.value();
 	       
-	        setValue(f,obj,path);
-	        watch(f,obj,path);
+			String value = ZKDataOperator.getIns().getData(path);
+			if(value != null && !"".equals(value)){
+				 setValue(f,obj,value);
+			     watch(f,obj,path);
+			}
+	       
 		}
 		
 	}
 	
-	private void setValue(Field f,Object obj,String path){
+	private void setValue(Field f,Object obj,String value){
         try {
-        	 GetDataBuilder getDataBuilder = ZKCon.getIns().getCurator().getData();
-			byte[] data = getDataBuilder.forPath(path);
-			
+
 			String getName = "set"+f.getName().substring(0,1).toUpperCase()+f.getName().substring(1);
 			Method m=null;
 			try {
@@ -99,7 +104,7 @@ public class ConfigPostInitListener extends PostInitListenerAdapter {
 			}
 			
 			Cfg cfg = f.getAnnotation(Cfg.class);
-			Object v = getValue(f.getType(),new String(data, "UTF-8"),f.getGenericType());
+			Object v = getValue(f.getType(),value,f.getGenericType());
 			if(v == null){
 				if(cfg.required()){
 					throw new CommonException("Class ["+obj.getClass().getName()+",Field:"+f.getName()+"] is required");
@@ -115,43 +120,24 @@ public class ConfigPostInitListener extends PostInitListenerAdapter {
 				}
 				f.set(obj, v);
 			}
-		} catch (Exception e) {
+		
+        } catch (Exception e) {
+        	String msg = "Class ["+obj.getClass().getName()+",Field:"+f.getName()+"] set value error";
 			if(e instanceof KeeperException.NoNodeException){
-				logger.warn("Path not found:"+path);
+				logger.warn(msg,e);
 			}else {
-				throw new CommonException("Class ["+obj.getClass().getName()+",Field:"+f.getName()+"] set value error",e);
+				throw new CommonException(msg,e);
 			}
-			
 		}
 	}
 	
 	private void watch(Field f,Object obj,String path){
-		GetDataBuilder getDataBuilder = ZKCon.getIns().getCurator().getData();
-		try {
-			getDataBuilder.forPath(path);
-			getDataBuilder.usingWatcher(new Watcher() {
-	            @Override
-	            public void process(WatchedEvent event) {
-	              logger.info("Watcher for '{}' received watched event: {}", path, event);
-	              if (event.getType() == EventType.NodeDataChanged) {
-	            	  try {
-						setValue(f,obj,path);
-						watch(f,obj,path);
-						notifyChange(f,obj);
-					} catch (Exception e) {
-						throw new CommonException("Class ["+obj.getClass().getName()+",Field:"+f.getName()+"],Cfg path is NULL");
-					}
-	              }
-	            }
-	          });
-		} catch (Exception e1) {
-			if(e1 instanceof KeeperException.NoNodeException){
-				logger.warn("Path not found:"+path);
-			}else {
-				logger.warn("Path not found:"+e1);
-			}
-		}
-		
+		IDataListener lis = (String path1,String data)->{
+			setValue(f,obj,path);
+			watch(f,obj,path);
+			notifyChange(f,obj);
+		};
+		ZKDataOperator.getIns().addDataListener(path, lis);
 	}
 	
 	protected void notifyChange(Field f,Object obj) {

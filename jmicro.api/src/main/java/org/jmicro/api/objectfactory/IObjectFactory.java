@@ -24,7 +24,10 @@ import java.util.List;
  */
 public interface IObjectFactory {
 
-	//<T> T createObject(Class<T> cls);
+	void regist(Object obj);
+	void regist(Class<?> clazz,Object obj);
+	
+	boolean exist(Class<?> clazz);
 	
 	<T> T get(Class<T> cls);
 	<T> T getByName(String clsName);

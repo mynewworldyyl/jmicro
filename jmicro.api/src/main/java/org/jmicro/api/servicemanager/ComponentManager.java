@@ -16,13 +16,13 @@
  */
 package org.jmicro.api.servicemanager;
 
+import java.lang.reflect.Modifier;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
-import org.apache.dubbo.common.utils.StringUtils;
 import org.jmicro.api.ClassScannerUtils;
 import org.jmicro.api.JMicroContext;
 import org.jmicro.api.annotation.Channel;
@@ -43,10 +43,9 @@ import org.jmicro.api.objectfactory.ProxyObject;
 import org.jmicro.api.registry.IRegistry;
 import org.jmicro.common.Constants;
 import org.jmicro.common.Utils;
+import org.jmicro.common.url.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import javassist.Modifier;
 /**
  * 
  * @author Yulei Ye
@@ -138,7 +137,10 @@ public class ComponentManager<T> {
 		cls = ProxyObject.getTargetCls(cls);
 		if(cls.isAnnotationPresent(Name.class)){
 			return cls.getAnnotation(Name.class).value();
-		}else if(cls.isAnnotationPresent(Server.class)){
+		}else if(cls.isAnnotationPresent(Component.class)){
+			return cls.getAnnotation(Component.class).value();
+		}
+		/*else if(cls.isAnnotationPresent(Server.class)){
 			return cls.getAnnotation(Server.class).value();
 		}else if(cls.isAnnotationPresent(Channel.class)){
 			return cls.getAnnotation(Channel.class).value();
@@ -154,13 +156,11 @@ public class ComponentManager<T> {
 			return cls.getAnnotation(Service.class).value();
 		}else if(cls.isAnnotationPresent(ObjFactory.class)){
 			return cls.getAnnotation(ObjFactory.class).value();
-		}else if(cls.isAnnotationPresent(Component.class)){
-			return cls.getAnnotation(Component.class).value();
 		}else if(cls.isAnnotationPresent(Reference.class)){
 			return cls.getAnnotation(Reference.class).value();
 		}else if(cls.isAnnotationPresent(CodecFactory.class)){
 			return cls.getAnnotation(CodecFactory.class).value();
-		}
+		}*/
 		return cls.getName();
 	
 	}

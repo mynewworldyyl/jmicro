@@ -17,12 +17,14 @@
 package org.jmicro.api.client;
 
 import java.lang.reflect.InvocationHandler;
+
+import org.jmicro.api.registry.ServiceItem;
 /**
  * 
  * @author Yulei Ye
  * @date 2018年10月4日-下午12:00:01
  */
-public class AbstractServiceProxy {
+public abstract class AbstractServiceProxy {
 
 	protected InvocationHandler handler = null;
 
@@ -33,6 +35,33 @@ public class AbstractServiceProxy {
 	public void setHandler(InvocationHandler handler) {
 		this.handler = handler;
 	}
+	
+	public abstract String getNamespace();
+	public abstract String getVersion();
+	public abstract String getServiceName();
+	
+	public abstract  boolean enable();
+	
+	public abstract void enable(boolean enable);
+	
+	public String key(){
+		return ServiceItem.serviceName(this.getServiceName(), this.getNamespace(), this.getVersion());
+	}
+	
+	@Override
+	public int hashCode() {
+		return this.key().hashCode();
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if(!(obj instanceof AbstractServiceProxy)){
+			return false;
+		}
+		AbstractServiceProxy o = (AbstractServiceProxy)obj;
+		return this.key().equals(o.key());
+	}
+	
 	
 	
 }

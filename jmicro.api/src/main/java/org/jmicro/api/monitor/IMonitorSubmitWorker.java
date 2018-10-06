@@ -15,7 +15,11 @@
  * limitations under the License.
  */
 package org.jmicro.api.monitor;
-
+/**
+ * 
+ * @author Yulei Ye
+ * @date 2018年10月5日-下午6:31:34
+ */
 public interface IMonitorSubmitWorker {
 
 	void submit(SubmitItem si);

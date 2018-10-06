@@ -23,13 +23,13 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-import org.apache.dubbo.common.URL;
-import org.apache.dubbo.common.utils.StringUtils;
 import org.jmicro.api.annotation.Cfg;
 import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.JMethod;
 import org.jmicro.api.exception.CommonException;
 import org.jmicro.common.Constants;
+import org.jmicro.common.url.StringUtils;
+import org.jmicro.common.url.URL;
 /**
  * 
  * @author Yulei Ye

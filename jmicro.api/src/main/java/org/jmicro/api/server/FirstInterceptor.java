@@ -17,9 +17,10 @@
 package org.jmicro.api.server;
 
 import org.jmicro.api.annotation.Cfg;
+import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.Interceptor;
 import org.jmicro.api.exception.RpcException;
-import org.jmicro.api.limitspeed.Limiter;
+import org.jmicro.api.limitspeed.ILimiter;
 import org.jmicro.api.servicemanager.ComponentManager;
 import org.jmicro.common.Constants;
 import org.slf4j.Logger;
@@ -29,7 +30,8 @@ import org.slf4j.LoggerFactory;
  * @author Yulei Ye
  * @date 2018年10月4日-下午12:05:30
  */
-@Interceptor(Constants.FIRST_INTERCEPTOR)
+@Component(Constants.FIRST_INTERCEPTOR)
+@Interceptor
 public class FirstInterceptor extends AbstractInterceptor implements IInterceptor{
 
 	private final static Logger logger = LoggerFactory.getLogger(FirstInterceptor.class);
@@ -37,7 +39,7 @@ public class FirstInterceptor extends AbstractInterceptor implements IIntercepto
 	@Cfg(value ="limiterName", required=false, changeListener="limiterName")
 	private String limiterName;
 	
-	private Limiter limiter=null;
+	private ILimiter limiter=null;
 	
 	public FirstInterceptor() {}
 	
@@ -51,7 +53,7 @@ public class FirstInterceptor extends AbstractInterceptor implements IIntercepto
 		}
 		
 		if(fieldName != null && fieldName.trim().equals("limiterName")){
-			limiter = ComponentManager.getObjectFactory().getByName(limiterName);
+			limiter = ComponentManager.getObjectFactory().getByName(fieldName);
 		}
 		
 	}

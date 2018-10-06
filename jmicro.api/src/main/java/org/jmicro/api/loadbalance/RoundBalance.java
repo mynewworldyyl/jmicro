@@ -18,6 +18,7 @@ package org.jmicro.api.loadbalance;
 
 import java.util.Set;
 
+import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.Inject;
 import org.jmicro.api.annotation.Selector;
 import org.jmicro.api.registry.IRegistry;
@@ -28,7 +29,8 @@ import org.jmicro.common.Constants;
  * @author Yulei Ye
  * @date 2018年10月4日-下午12:03:10
  */
-@Selector(Constants.DEFAULT_SELECTOR)
+@Component(Constants.DEFAULT_SELECTOR)
+@Selector
 public class RoundBalance implements ISelector{
 
 	@Inject(required=true,value=Constants.DEFAULT_REGISTRY)
@@ -38,8 +40,8 @@ public class RoundBalance implements ISelector{
 	
 	@SuppressWarnings("null")
 	@Override
-	public ServiceItem getService(String srvName,String method,Class<?>[] args) {
-		Set<ServiceItem> srvItems = registry.getServices(srvName,method,args);
+	public ServiceItem getService(String srvName,String method,Class<?>[] args,String namespace,String version) {
+		Set<ServiceItem> srvItems = registry.getServices(srvName,method,args,namespace,version);
 		if(srvItems == null && srvItems.isEmpty()) {
 			return null;
 		}
@@ -50,14 +52,14 @@ public class RoundBalance implements ISelector{
 	}
 
 	@Override
-	public ServiceItem getService(String srvName, String method, Object[] args) {
+	public ServiceItem getService(String srvName, String method, Object[] args,String namespace,String version) {
 		if(args != null && args.length > 0){
 			int i = 0;
 			Class<?>[] clazzes = new Class<?>[args.length];
 			for(Object a : args){
 				clazzes[i++] = a.getClass();
 			}
-			return this.getService(srvName, method, clazzes);
+			return this.getService(srvName, method, clazzes,namespace,version);
 		}
 		return null;
 	}

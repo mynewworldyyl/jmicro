@@ -28,11 +28,18 @@ public interface IRegistry extends Init{
 
 	void regist(ServiceItem url);
 	
+	void update(ServiceItem url);
+	
 	void unregist(ServiceItem url);
 	
-	Set<ServiceItem> getServices(String serviceName,String method,Class<?>[] args);
+	Set<ServiceItem> getServices(String serviceName,String method,Class<?>[] args,String namespace,String version);
 	
-	Set<ServiceItem> getServices(String serviceName,String method,Object[] args);
+	Set<ServiceItem> getServices(String serviceName,String method,Object[] args,String namespace,String version);
 	
-	boolean isExist(String serviceName);
+	boolean isExist(String serviceName,String namespace,String version);
+	Set<ServiceItem> getServices(String serviceName,String namespace,String version);
+	
+	void addServiceListener(String key,IServiceListener lis);
+	
+	void removeServiceListener(String key,IServiceListener lis);
 }

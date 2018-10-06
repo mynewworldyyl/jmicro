@@ -23,6 +23,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.ParameterizedType;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -31,25 +32,22 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.apache.dubbo.common.bytecode.ClassGenerator;
-import org.apache.dubbo.common.utils.ReflectUtils;
-import org.apache.dubbo.common.utils.StringUtils;
 import org.jmicro.api.ClassScannerUtils;
 import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.Inject;
 import org.jmicro.api.annotation.JMethod;
-import org.jmicro.api.annotation.Lazy;
 import org.jmicro.api.annotation.ObjFactory;
 import org.jmicro.api.annotation.PostListener;
 import org.jmicro.api.annotation.Reference;
-import org.jmicro.api.client.AbstractServiceProxy;
 import org.jmicro.api.exception.CommonException;
 import org.jmicro.api.objectfactory.IObjectFactory;
 import org.jmicro.api.objectfactory.IPostInitListener;
 import org.jmicro.api.objectfactory.ProxyObject;
-import org.jmicro.api.registry.IRegistry;
 import org.jmicro.api.servicemanager.ComponentManager;
 import org.jmicro.common.Constants;
+import org.jmicro.common.url.ClassGenerator;
+import org.jmicro.common.url.ReflectUtils;
+import org.jmicro.common.url.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 /**
@@ -57,12 +55,13 @@ import org.slf4j.LoggerFactory;
  * @author Yulei Ye
  * @date 2018年10月4日-下午12:12:24
  */
-@ObjFactory(Constants.DEFAULT_OBJ_FACTORY)
+@ObjFactory
+@Component(Constants.DEFAULT_OBJ_FACTORY)
 public class SimpleObjectFactory implements IObjectFactory {
 
-	private final static Logger logger = LoggerFactory.getLogger(ComponentManager.class);
+	static AtomicInteger idgenerator = new AtomicInteger();
 	
-	private static AtomicInteger idgenerator = new AtomicInteger();
+	private final static Logger logger = LoggerFactory.getLogger(ComponentManager.class);
 	
 	private static boolean isInit = false;
 	
@@ -73,6 +72,8 @@ public class SimpleObjectFactory implements IObjectFactory {
 	private Map<String,Object> nameToObjs = new ConcurrentHashMap<String,Object>();
 	
 	private Map<String,Object> clsNameToObjs = new ConcurrentHashMap<String,Object>();
+	
+	private RemoteServiceManager rsm = null;
 	
 	@SuppressWarnings("unchecked")
 	@Override
@@ -90,9 +91,9 @@ public class SimpleObjectFactory implements IObjectFactory {
 			if(obj != null){
 				return  (T)obj;
 			}
-			obj = this.createObject(cls);
+			obj = this.createObject(cls,true);
 			if(obj != null) {
-				cacheObj(cls,obj);
+				cacheObj(cls,obj,true);
 			}
 		}
 		return (T)obj;
@@ -107,6 +108,7 @@ public class SimpleObjectFactory implements IObjectFactory {
 		if(this.nameToObjs.containsKey(clsName)){
 			return (T) this.nameToObjs.get(clsName);
 		}
+		
 		Class<?> cls = ClassScannerUtils.getIns().getClassByAnnoName(clsName);
 		if(cls != null){
 			return (T)get(cls);
@@ -139,14 +141,18 @@ public class SimpleObjectFactory implements IObjectFactory {
 			obj = cls.newInstance();
 			doAfterCreate(obj);
 			//will replace the proxy object if exist, this is no impact to client
-			cacheObj(cls,obj);
+			cacheObj(cls,obj,false);
 		} catch (InstantiationException | IllegalAccessException e) {
 			throw new CommonException("Fail to create obj for ["+cls.getName()+"]",e);
 		}
 		return obj;
 	}
 	
-	private void cacheObj(Class<?> cls,Object obj){
+	private void cacheObj(Class<?> cls,Object obj,boolean check){
+		cls = ProxyObject.getTargetCls(cls);
+		if(check && objs.containsKey(cls)){
+			throw new CommonException("class["+cls.getName()+"] instance exist");
+		}
 		objs.put(cls, obj);
 		String comName = this.getComName(cls);
 		if(!StringUtils.isEmpty(comName)){
@@ -155,16 +161,17 @@ public class SimpleObjectFactory implements IObjectFactory {
 		this.clsNameToObjs.put(cls.getName(), obj);
 	}
 	
-	private <T> T createObject(Class<T> cls) {
+	private <T> T createObject(Class<T> cls,boolean doAfterCreate) {
 		Object obj = null;
 		try {
 			if(!isLazy(cls)) {
 				obj = cls.newInstance();
-				 doAfterCreate(obj);
+				if(doAfterCreate){
+					 doAfterCreate(obj);
+				}
 			} else {
 				obj = createLazyProxyObject(cls);
 			}
-			
 		} catch (InstantiationException | IllegalAccessException e) {
 			throw new CommonException("Fail to create obj for ["+cls.getName()+"]",e);
 		}
@@ -197,10 +204,7 @@ public class SimpleObjectFactory implements IObjectFactory {
 	}
 
 	private boolean isLazy(Class<?> cls) {
-		if(cls.isAnnotationPresent(Lazy.class)){
-			Lazy lazy = cls.getAnnotation(Lazy.class);
-			return lazy.value();
-		}else if(cls.isAnnotationPresent(Component.class)){
+		if(cls.isAnnotationPresent(Component.class)){
 			Component lazy = cls.getAnnotation(Component.class);
 			return lazy.lazy();
 		}
@@ -232,24 +236,71 @@ public class SimpleObjectFactory implements IObjectFactory {
 			}
 		}
 		
-		Set<Class<?>> clses = ClassScannerUtils.getIns().loadClassesByAnno(Component.class);
+		Set<Class<?>> clses = ClassScannerUtils.getIns().getComponentClass();
 		if(clses != null && !clses.isEmpty()) {
 			for(Class<?> c : clses){
-				this.get(c);
-				/*Component comAnno = c.getAnnotation(Component.class);
-				if(comAnno.lazy()){
-					Object obj = createLazyProxyObject(c);
-					objs.put(c, obj);
-					String comName = this.getComName(c);
-					if(!StringUtils.isEmpty(comName)){
-						this.nameToObjs.put(comName, obj);
-					}
-				} else {
-					//createObject(c);
-					this.get(c);
-				}*/
+				if(IObjectFactory.class.isAssignableFrom(c)){
+					continue;
+				}
+				Object obj = createObject(c,false);
+				this.cacheObj(c, obj, true);
 			}
 		}
+		
+		rsm = new RemoteServiceManager(this);
+		rsm.init();
+		List<Object> l = new ArrayList<>();
+		l.addAll(this.objs.values());
+		l.sort(new Comparator<Object>(){
+			@SuppressWarnings("unused")
+			@Override
+			public int compare(Object o1, Object o2) {
+				Component c1 = ProxyObject.getTargetCls(o1.getClass()).getAnnotation(Component.class);
+				Component c2 = ProxyObject.getTargetCls(o2.getClass()).getAnnotation(Component.class);
+				return c1.level() > c2.level()?1:c1.level() == c2.level()?0:-1;
+			}
+			
+		});
+		
+		if(!l.isEmpty()){
+			for(int i =0; i < l.size(); i++){
+				Object o = l.get(i);
+				//System.out.println(o);
+				doAfterCreate(o);
+			}
+		}
+		
+	}
+
+	private void createZK() {
+		String zKClazzName="org.jmicro.zk.ZKDataOperator";
+		Class<?> zkConnClazz = ClassScannerUtils.getIns().getClassByName(zKClazzName);
+		Object zkConn = null;
+		try {
+			zkConn = zkConnClazz.newInstance();
+		} catch (InstantiationException | IllegalAccessException e1) {
+			logger.error("", e1);
+		}
+		this.clsNameToObjs.put(zKClazzName, zkConn);
+		this.nameToObjs.put("zkCoon", zkConn);
+		this.objs.put(zkConnClazz, zkConn);
+	}
+
+	
+	
+	@Override
+	public boolean exist(Class<?> clazz) {
+		return this.objs.containsKey(clazz);
+	}
+
+	@Override
+	public void regist(Object obj) {		
+		this.cacheObj(obj.getClass(), obj,true);
+	}
+
+	@Override
+	public void regist(Class<?> clazz, Object obj) {
+		this.cacheObj(clazz, obj,true);
 	}
 
 	@Override
@@ -261,7 +312,7 @@ public class SimpleObjectFactory implements IObjectFactory {
 	}
 
 	private void injectDepependencies(Object obj) {
-		Class<?> cls = obj.getClass();
+		Class<?> cls = ProxyObject.getTargetCls(obj.getClass());
 		Field[] fs = cls.getDeclaredFields();
 		for(Field f : fs) {
 			Object srv = null;
@@ -276,7 +327,10 @@ public class SimpleObjectFactory implements IObjectFactory {
 				}
 				*/
 				isRequired = ref.required();
-				srv = getServiceProxy(cls,f,ref);
+				
+				srv = rsm.createService(obj,f);
+				//getServiceProxy(cls,f,ref,obj);
+				
 			}else if(f.isAnnotationPresent(Inject.class)){
 				//Inject the local component
 				Inject inje = f.getAnnotation(Inject.class);
@@ -409,18 +463,28 @@ public class SimpleObjectFactory implements IObjectFactory {
 			}
 			
 			if(srv != null) {
-				boolean bf = f.isAccessible();
-				if(!bf) {
-					f.setAccessible(true);
-				}
+				String setMethodName = "set"+f.getName().substring(0, 1).toUpperCase()+f.getName().substring(1);
+				Method m = null;
 				try {
-					f.set(obj, srv);
-				} catch (IllegalArgumentException | IllegalAccessException e) {
-					throw new CommonException("",e);
+					 m = obj.getClass().getMethod(setMethodName, f.getType());
+					 m.invoke(obj, srv);
+				} catch (InvocationTargetException | NoSuchMethodException e1) {
+				    boolean bf = f.isAccessible();
+					if(!bf) {
+						f.setAccessible(true);
+					}
+					try {
+						f.set(obj, srv);
+					} catch (IllegalArgumentException | IllegalAccessException e) {
+						throw new CommonException("",e);
+					}
+					if(!bf) {
+						f.setAccessible(bf);
+					} 
+				}catch(SecurityException | IllegalAccessException | IllegalArgumentException e1){
+					throw new CommonException("Class ["+cls.getName()+"] field ["+ f.getName()+"] dependency ["+f.getType().getName()+"] error",e1);
 				}
-				if(!bf) {
-					f.setAccessible(bf);
-				}
+				
 			}else if(isRequired) {
 				throw new CommonException("Class ["+cls.getName()+"] field ["+ f.getName()+"] dependency ["+f.getType().getName()+"] not found");
 			}
@@ -428,31 +492,6 @@ public class SimpleObjectFactory implements IObjectFactory {
 		
 	}
 
-	private Object getServiceProxy(Class<?> becls,Field field,Reference ref) {
-		IRegistry registry = ComponentManager.getRegistry(ref.registry());
-		if(!registry.isExist(field.getType().getName()) && ref.required()) {
-			throw new CommonException("Class ["+becls.getName()+"] field ["+ field.getName()+"] dependency ["+field.getType().getName()+"] not found");
-		}
-		
-		//Set<ServiceItem> sis = registry.getServices(field.getName());
-		if(!field.getType().isInterface()) {
-			throw new CommonException("Class ["+becls.getName()+"] field ["+ field.getName()+"] dependency ["+field.getType().getName()+"] have to be interface class");
-		}
-		
-		if(objs.containsKey(field.getType().getName())) {
-			return objs.get(field.getType().getName());
-		}
-		
-		Object proxy = createDynamicServiceProxy(field.getType());
-		
-		if(proxy instanceof AbstractServiceProxy){
-			AbstractServiceProxy asp = (AbstractServiceProxy)proxy;
-			asp.setHandler(this.getByName(Constants.DEFAULT_INVOCATION_HANDLER));
-		}
-		
-		return proxy;
-	}
-	
 	@SuppressWarnings("unchecked")
 	private <T>  T createLazyProxyObject(Class<T> cls) {
 		logger.debug("createLazyProxyObject: " + cls.getName());
@@ -516,64 +555,7 @@ public class SimpleObjectFactory implements IObjectFactory {
 		return null;
 	}
 
-	public  static <T> T createDynamicServiceProxy(Class<T> cls) {
-		 ClassGenerator classGenerator = ClassGenerator.newInstance(Thread.currentThread().getContextClassLoader());
-		 classGenerator.setClassName(cls.getName()+"$Jmicro"+idgenerator.getAndIncrement());
-		 classGenerator.setSuperClass(AbstractServiceProxy.class);
-		 classGenerator.addInterface(cls);
-		 classGenerator.addDefaultConstructor();
-		 classGenerator.addInterface(ProxyObject.class);
-		 
-		 classGenerator.addField("public static java.lang.reflect.Method[] methods;");
-		 //classGenerator.addField("private " + InvocationHandler.class.getName() + " handler = new org.jmicro.api.client.ServiceInvocationHandler(this);");
-		 classGenerator.addDefaultConstructor();
-        
-		 //StringBuffer conBody = new StringBuffer();
-		 
-		 //ccm.addMethod("public Object newInstance(" + InvocationHandler.class.getName() + " h){ return new " + pcn + "($1); }");
-		 //classGenerator.addConstructor(Modifier.PUBLIC, new Class[]{InvocationHandler.class}, body);
-		 
-		/* StringBuffer sb = new StringBuffer( "public org.jmicro.objfactory.simple.ProxyService ps = new org.jmicro.objfactory.simple.ProxyService(\"");
-		 sb.append(cls.getName()).append("\");");
-		 classGenerator.addField(sb.toString());
-		 StringBuffer body = new StringBuffer();*/
-		
-		 //public Object invoke(String method,Object... args) 
-		 //classGenerator.addMethod("public Object invoke(String method,Object... args) {return super(method,args);} ");
-		 //classGenerator.addMethod(AbstractServiceProxy.class.getMethod("invoke", {}));
-		 
-		 Method[] ms = cls.getDeclaredMethods();
-		 
-		 for(int i =0; i < ms.length; i++) {
-			 Method m = ms[i];
-			 if (m.getDeclaringClass() == Object.class || !Modifier.isPublic(m.getModifiers())){
-				 continue;
-			 }
-			 
-			 Class<?> rt = m.getReturnType();
-             Class<?>[] pts = m.getParameterTypes();
-
-             StringBuilder code = new StringBuilder("Object[] args = new Object[").append(pts.length).append("];");
-             for (int j = 0; j < pts.length; j++){
-            	 code.append(" args[").append(j).append("] = ($w)$").append(j + 1).append(";");
-             }    
-             code.append(" Object ret = handler.invoke(this, methods[" + i + "], args);");
-             
-             if (!Void.TYPE.equals(rt))
-                 code.append(" return ").append(asArgument(rt, "ret")).append(";");
-
-             classGenerator.addMethod(m.getName(), m.getModifiers(), rt, pts, m.getExceptionTypes(), code.toString());      
-		 }
-		 
-		 Class<?> clazz = classGenerator.toClass();
-
-         try {
-        	 clazz.getField("methods").set(null, ms);
-			return (T)clazz.newInstance();
-		} catch (InstantiationException | IllegalArgumentException | IllegalAccessException | NoSuchFieldException | SecurityException e1) {
-			throw new CommonException("Fail to create proxy ["+ cls.getName()+"]");
-		}
-	}
+	
 
 	 public static String asArgument(Class<?> cl, String name) {
 	        if (cl.isPrimitive()) {
