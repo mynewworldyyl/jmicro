@@ -22,6 +22,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.jmicro.api.IIdGenerator;
+import org.jmicro.api.JMicroContext;
 import org.jmicro.api.annotation.Cfg;
 import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.Inject;
@@ -99,7 +100,7 @@ public class ServiceInvocationHandler implements InvocationHandler{
         
         try {
         	AbstractServiceProxy po = (AbstractServiceProxy)proxy;
-			return this.doRequest(method,args,clazz,po.getNamespace(),po.getVersion());
+			return this.doRequest(method,args,clazz,po);
 		} catch (Throwable e) {
 			logger.error(e.getMessage(), e);
 			if(e instanceof FusingException){
@@ -113,14 +114,21 @@ public class ServiceInvocationHandler implements InvocationHandler{
     
 	}
 
-	private Object doRequest(Method method, Object[] args, Class<?> srvClazz,String namespace,String version) {
+	private Object doRequest(Method method, Object[] args, Class<?> srvClazz,AbstractServiceProxy proxy) {
 		//System.out.println(req.getServiceName());
+		ServiceItem poItem = proxy.getItem();
+		ServiceMethod poSm = poItem.getMethod(method.getName(), args);
+		
+		JMicroContext.get().configMonitor(poSm.getMonitorEnable()
+				,poItem.getMonitorEnable());
+		
 		RpcRequest req = new RpcRequest();
         req.setMethod(method.getName());
         req.setServiceName(method.getDeclaringClass().getName());
         req.setArgs(args);
-        req.setNamespace(namespace);
-        req.setVersion(version);
+        req.setNamespace(poItem.getNamespace());
+        req.setVersion(poItem.getVersion());
+        req.setMonitorEnable(JMicroContext.get().isMonitor());
         
         ServerError se = null;
         		
@@ -133,15 +141,19 @@ public class ServiceInvocationHandler implements InvocationHandler{
         boolean isFistLoop = true;
         do {
         	
-        	si = selector.getService(ProxyObject.getTargetCls(srvClazz).getName(),method.getName(),args
-        			,req.getNamespace(),req.getVersion());
+        	String sn = ProxyObject.getTargetCls(srvClazz).getName();
+			req.getNamespace();
+			req.getVersion();
+			//System.out.println(selector);
+			
+        	si = selector.getService(sn,method.getName(),args,req.getNamespace(),req.getVersion());
+        	
         	if(si ==null) {
         		MonitorConstant.doSubmit(monitor,MonitorConstant.CLIENT_REQ_SERVICE_NOT_FOUND, req, null);
     			throw new CommonException("Service [" + srvClazz.getName() + "] not found!");
     		}
         	
         	if(isFistLoop){
-        		
         		String t = ServiceMethod.methodParamsKey(args);
         		for(ServiceMethod m : si.getMethods()){
         			if(m.getMethodName().equals(method.getName()) 
@@ -179,6 +191,7 @@ public class ServiceInvocationHandler implements InvocationHandler{
     		if(isFistLoop){
     			MonitorConstant.doSubmit(monitor,MonitorConstant.CLIENT_REQ_BEGIN, req, null);
     		}
+    		isFistLoop=false;
     		final Map<String,Object> result = new HashMap<>();
     		this.sessionManager.write(req, (resp,reqq,err)->{
     			//Object rst = decodeResult(resp,req,method.getReturnType());
@@ -223,7 +236,7 @@ public class ServiceInvocationHandler implements InvocationHandler{
     				sb.append("] do retry: ").append(retryCnt);
     			}else {
     				MonitorConstant.doSubmit(monitor,MonitorConstant.CLIENT_REQ_FAIL, req, resp);
-    				sb.append("] fail request and stop retry").append(retryCnt);
+    				sb.append("] fail request and stop retry: ").append(retryCnt);
     			}
     			logger.error(sb.toString());
     			

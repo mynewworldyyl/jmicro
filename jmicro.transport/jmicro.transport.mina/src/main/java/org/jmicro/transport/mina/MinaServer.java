@@ -51,13 +51,14 @@ import org.slf4j.LoggerFactory;
  * @author Yulei Ye
  * @date 2018年10月4日-下午12:13:53
  */
-@Component(value=Constants.DEFAULT_SERVER,lazy=false,level=1)
+@Component(value=Constants.DEFAULT_SERVER,lazy=false,level=10)
 @Server
 public class MinaServer implements IServer{
 
 	static final Logger LOG = LoggerFactory.getLogger(MinaServer.class);
 	
 	AttributeKey<MinaServerSession> sessinKey = AttributeKey.createKey(MinaServerSession.class, Constants.SESSION_KEY);
+	AttributeKey<Boolean> monitorEnableKey = AttributeKey.createKey(Boolean.class, Constants.MONITOR_ENABLE_KEY);
 	
 	//@Inject(required=false)
 	private  NioTcpServer acceptor;
@@ -164,6 +165,10 @@ public class MinaServer implements IServer{
             		req.decode(msg.getPayload());
             		req.setSession(s);
             		req.setMsg(msg);
+            		
+            		session.setAttribute(monitorEnableKey,req.isMonitorEnable());
+            		s.putParam(Constants.MONITOR_ENABLE_KEY,req.isMonitorEnable());
+            		JMicroContext.get().configMonitor(req.isMonitorEnable()?1:0, 0);
                    
             		//IResponse resp = reqHandler.onRequest(req);
             		jmicroManager.addRequest(req);

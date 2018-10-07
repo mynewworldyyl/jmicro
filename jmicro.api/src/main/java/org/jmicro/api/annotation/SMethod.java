@@ -22,7 +22,7 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
 /**
- * 
+ * service method
  * @author Yulei Ye
  * @date 2018年10月4日-上午11:59:13
  */
@@ -33,6 +33,8 @@ public @interface SMethod {
 	public String value() default "";
 	
 	public int retryInterval() default 500;
+	
+	public int monitorEnable() default -1;
 	
 	//method must can be retry, or 1
 	public int retryCnt() default 3;

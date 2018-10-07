@@ -45,11 +45,11 @@ public class Message implements IEncodable,IDecodable,IDable{
 	public static final byte[] VERSION = {0,0,1};
 	public static final String VERSION_STR = "0.0.1";
 	
-	private Long msgId;
+	private long msgId;
 	
-	private Long reqId;
+	private long reqId;
 	
-	private Long sessionId;
+	private long sessionId;
 	
 	//payload length with byte,4 byte length
 	private int len;
@@ -172,10 +172,10 @@ public class Message implements IEncodable,IDecodable,IDable{
 	public void setReq(boolean isReq) {
 		this.isReq = isReq;
 	}
-	public Long getSessionId() {
+	public long getSessionId() {
 		return sessionId;
 	}
-	public void setSessionId(Long sessionId) {
+	public void setSessionId(long sessionId) {
 		this.sessionId = sessionId;
 	}
 	

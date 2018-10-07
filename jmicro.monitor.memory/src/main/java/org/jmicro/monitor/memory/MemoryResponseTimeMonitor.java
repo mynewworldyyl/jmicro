@@ -29,7 +29,7 @@ import org.jmicro.api.monitor.MonitorConstant;
 import org.jmicro.api.monitor.SubmitItem;
 
 @Component
-@Service(version="0.0.1", namespace="memoryResponseTimeMonitor")
+@Service(version="0.0.1", namespace="memoryResponseTimeMonitor", monitorEnable=0)
 public class MemoryResponseTimeMonitor implements IMonitorSubmitWorker {
 
 	private Map<Long,AvgResponseTimeItem> reqRespAvgList = new HashMap<>();
@@ -52,12 +52,12 @@ public class MemoryResponseTimeMonitor implements IMonitorSubmitWorker {
 	public void submit(SubmitItem si) {
 		if(MonitorConstant.CLIENT_REQ_BEGIN == si.getType()){
 			AvgResponseTimeItem i = new AvgResponseTimeItem();
-			i.reqId = si.getReq().getRequestId();
-			i.service = si.getReq().getServiceName()+"|"+si.getReq().getMethod()+"|"+si.getArgs();
+			i.reqId = si.getReqId();
+			i.service = si.getServiceName()+"|"+si.getMethod()+"|"+si.getReqArgsStr();
 			i.startTime = si.getTime();
 			reqRespAvgList.put(i.reqId, i);
 		}else if(MonitorConstant.CLIENT_RESP_OK == si.getType()){
-			AvgResponseTimeItem i = reqRespAvgList.get(si.getReq().getRequestId());
+			AvgResponseTimeItem i = reqRespAvgList.get(si.getReqId());
 			if(!reqRespAvgs.containsKey(i.service)) {
 				reqRespAvgs.put(i.service, new LinkedList<Long>());
 			}

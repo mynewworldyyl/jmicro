@@ -51,13 +51,14 @@ public class Decoder implements IDecoder{
 		intToclazz.put(maxType++, Collection.class);
 		intToclazz.put(maxType++, List.class);
 		intToclazz.put(maxType++, Array.class);
-		intToclazz.put(maxType++, void.class);
-		intToclazz.put(maxType++, byte.class);
-		intToclazz.put(maxType++, short.class);
-		intToclazz.put(maxType++, int.class);
-		intToclazz.put(maxType++, long.class);
-		intToclazz.put(maxType++, double.class);
-		intToclazz.put(maxType++, float.class);
+		intToclazz.put(maxType++, Void.TYPE);
+		intToclazz.put(maxType++, Byte.TYPE);
+		intToclazz.put(maxType++, Short.TYPE);
+		intToclazz.put(maxType++, Integer.TYPE);
+		intToclazz.put(maxType++, Long.TYPE);
+		intToclazz.put(maxType++, Double.TYPE);
+		intToclazz.put(maxType++, Float.TYPE);
+		intToclazz.put(maxType++, Boolean.TYPE);
 		intToclazz.put(maxType++, Object.class);
 		intToclazz.put(maxType++, String.class);
 		
@@ -66,13 +67,14 @@ public class Decoder implements IDecoder{
 		clazzToInt.put(Collection.class, maxType++);
 		clazzToInt.put(List.class, maxType++);
 		clazzToInt.put(Array.class, maxType++);
-		clazzToInt.put(void.class, maxType++);
-		clazzToInt.put(byte.class, maxType++);
-		clazzToInt.put(short.class, maxType++);
-		clazzToInt.put(int.class, maxType++);
-		clazzToInt.put(long.class, maxType++);
-		clazzToInt.put(double.class, maxType++);
-		clazzToInt.put(float.class, maxType++);
+		clazzToInt.put(Void.TYPE, maxType++);
+		clazzToInt.put(Byte.TYPE, maxType++);
+		clazzToInt.put(Short.TYPE, maxType++);
+		clazzToInt.put(Integer.TYPE, maxType++);
+		clazzToInt.put(Long.TYPE, maxType++);
+		clazzToInt.put(Double.TYPE, maxType++);
+		clazzToInt.put(Float.TYPE, maxType++);
+		clazzToInt.put(Boolean.TYPE, maxType++);
 		clazzToInt.put(Object.class, maxType++);
 		clazzToInt.put(String.class, maxType++);
 	}
@@ -88,24 +90,24 @@ public class Decoder implements IDecoder{
 	
 	public static int getType(Class<?> cls){
 
-		if(cls == void.class || cls == Void.class) {
-			return clazzToInt.get(void.class);
-		}else if(cls == int.class || cls == Integer.class){
-			return clazzToInt.get(int.class);
-		}else if(cls == byte.class || cls == Byte.class){
-			return clazzToInt.get(byte.class);
-		}else if(cls == short.class || cls == Short.class){
-			return clazzToInt.get(short.class);
-		}else if(cls == long.class || cls == Long.class){
-			return clazzToInt.get(long.class);
-		}else if(cls == float.class || cls == Float.class){
-			return clazzToInt.get(float.class);
-		}else if(cls == double.class || cls == Double.class){
-			return clazzToInt.get(double.class);
-		}else if(cls == boolean.class || cls == Boolean.class){
-			return clazzToInt.get(boolean.class);
-		}else if(cls == char.class || cls == Character.class){
-			return clazzToInt.get(char.class);
+		if(cls == Void.TYPE || cls == Void.class) {
+			return clazzToInt.get(Void.TYPE);
+		}else if(cls == int.class || cls == Integer.TYPE || cls == Integer.class){
+			return clazzToInt.get(Integer.TYPE);
+		}else if(cls == byte.class || cls == Byte.TYPE || cls == Byte.class){
+			return clazzToInt.get(Byte.TYPE);
+		}else if(cls == short.class || cls == Short.TYPE || cls == Short.class){
+			return clazzToInt.get(Short.TYPE);
+		}else if(cls == long.class || cls == Long.TYPE || cls == Long.class){
+			return clazzToInt.get(Long.TYPE);
+		}else if(cls == float.class || cls == Float.TYPE || cls == Float.class){
+			return clazzToInt.get(Float.TYPE);
+		}else if(cls == double.class || cls == Double.TYPE || cls == Double.class){
+			return clazzToInt.get(Double.TYPE);
+		}else if(cls == boolean.class || cls == Boolean.TYPE || cls == Boolean.class){
+			return clazzToInt.get(Boolean.TYPE);
+		}else if(cls == char.class || cls == Character.TYPE || cls == Character.class){
+			return clazzToInt.get(Character.TYPE);
 		}else if(Map.class.isAssignableFrom(cls)){
 			return clazzToInt.get(Map.class);
 		}else if(Collection.class.isAssignableFrom(cls)){
@@ -160,23 +162,23 @@ public class Decoder implements IDecoder{
 			v =  decodeObjects(buffer);
 		}else if(cls == String.class) {
 			v =  decodeString(buffer);
-		}else if(cls == void.class || cls == Void.class) {
+		}else if(cls == void.class || cls == Void.TYPE) {
 			v =  null;
-		}else if(cls == int.class || cls == Integer.class){
+		}else if(cls == int.class || cls == Integer.TYPE){
 			v =  buffer.getInt();
-		}else if(cls == byte.class || cls == Byte.class){
+		}else if(cls == byte.class || cls == Byte.TYPE){
 			v =  buffer.get();
-		}else if(cls == short.class || cls == Short.class){
+		}else if(cls == short.class || cls == Short.TYPE){
 			v =  buffer.getShort();
-		}else if(cls == long.class || cls == Long.class){
+		}else if(cls == long.class || cls == Long.TYPE){
 			v =  buffer.getLong();
-		}else if(cls == float.class || cls == Float.class){
+		}else if(cls == float.class || cls == Float.TYPE){
 			v = buffer.getFloat();
-		}else if(cls == double.class || cls == Double.class){
+		}else if(cls == double.class || cls == Double.TYPE){
 			v = buffer.getDouble();
-		}else if(cls == boolean.class || cls == Boolean.class){
+		}else if(cls == boolean.class || cls == Boolean.TYPE){
 			v = buffer.get() == 1;
-		}else if(cls == char.class || cls == Character.class){
+		}else if(cls == char.class || cls == Character.TYPE){
 			v = buffer.getChar();
 		} else {	
 			v = decodeByReflect(buffer,cls,type);
@@ -207,7 +209,7 @@ public class Decoder implements IDecoder{
 		Field[] fs = cls.getDeclaredFields();
 		for(Field f: fs){
 			if(Modifier.isTransient(f.getModifiers()) || Modifier.isFinal(f.getModifiers())
-					|| Modifier.isStatic(f.getModifiers())){
+					|| Modifier.isStatic(f.getModifiers())  || f.getDeclaringClass() == Object.class){
 				continue;
 			}
 			fieldNames.add(f.getName());

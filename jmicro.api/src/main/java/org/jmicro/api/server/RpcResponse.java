@@ -38,6 +38,8 @@ public class RpcResponse extends AbstractObjectMapSupport implements IEncodable,
 	
 	private Object result;
 	
+	private boolean isMonitorEnable = false;
+	
 	public RpcResponse() {}
 	
 	public RpcResponse(long reqId,Object result){
@@ -88,6 +90,14 @@ public class RpcResponse extends AbstractObjectMapSupport implements IEncodable,
 
 	public void setReqId(Long reqId) {
 		this.reqId = reqId;
+	}
+
+	public boolean isMonitorEnable() {
+		return isMonitorEnable;
+	}
+
+	public void setMonitorEnable(boolean isMonitorEnable) {
+		this.isMonitorEnable = isMonitorEnable;
 	}
 
 	public Object getResult() {

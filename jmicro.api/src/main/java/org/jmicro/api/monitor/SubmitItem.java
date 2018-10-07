@@ -16,8 +16,6 @@
  */
 package org.jmicro.api.monitor;
 
-import org.jmicro.api.server.IRequest;
-import org.jmicro.api.server.IResponse;
 /**
  * 
  * @author Yulei Ye
@@ -27,34 +25,108 @@ public class SubmitItem{
 
 	private int type = -1;
 	private boolean finish = true;
-	private IRequest req = null;
-	private IResponse resp = null;
-	private Object[] args  = null;
+	
+	/*private IRequest req = null;
+	private IResponse resp = null;*/
+	
+	private long reqId;
+	private long sessionId;
+	private long msgId;
+	
+	private String serviceName;
+	private String method;
+	private Object reqArgs;
+	
+	private String namespace;
+	private String version;
+	
+	private String reqArgsStr;
+	
+	private String others  = null;
 	private long time;
 	
+	private Long respId;
+	
+	private Object result  = null;
+	
+	public Object getResult() {
+		return result;
+	}
+	public void setResult(Object result) {
+		this.result = result;
+	}
+	public Long getRespId() {
+		return respId;
+	}
+	public void setRespId(Long respId) {
+		this.respId = respId;
+	}
+	public String getReqArgsStr() {
+		return reqArgsStr;
+	}
+	public void setReqArgsStr(String reqArgsStr) {
+		this.reqArgsStr = reqArgsStr;
+	}
+	public String getOthers() {
+		return others;
+	}
+	public void setOthers(String others) {
+		this.others = others;
+	}
 	public boolean isFinish() {
 		return finish;
 	}
 	public void setFinish(boolean finish) {
 		this.finish = finish;
 	}
-	public IRequest getReq() {
-		return req;
+	
+	public String getServiceName() {
+		return serviceName;
 	}
-	public void setReq(IRequest req) {
-		this.req = req;
+	public void setServiceName(String serviceName) {
+		this.serviceName = serviceName;
 	}
-	public IResponse getResp() {
-		return resp;
+	public String getMethod() {
+		return method;
 	}
-	public void setResp(IResponse resp) {
-		this.resp = resp;
+	public void setMethod(String method) {
+		this.method = method;
 	}
-	public Object[] getArgs() {
-		return args;
+	public Object getReqArgs() {
+		return reqArgs;
 	}
-	public void setArgs(Object[] args) {
-		this.args = args;
+	public void setReqArgs(Object reqArgs) {
+		this.reqArgs = reqArgs;
+	}
+	public String getNamespace() {
+		return namespace;
+	}
+	public void setNamespace(String namespace) {
+		this.namespace = namespace;
+	}
+	public String getVersion() {
+		return version;
+	}
+	public void setVersion(String version) {
+		this.version = version;
+	}
+	public long getReqId() {
+		return reqId;
+	}
+	public void setReqId(long reqId) {
+		this.reqId = reqId;
+	}
+	public long getSessionId() {
+		return sessionId;
+	}
+	public void setSessionId(long sessionId) {
+		this.sessionId = sessionId;
+	}
+	public long getMsgId() {
+		return msgId;
+	}
+	public void setMsgId(long msgId) {
+		this.msgId = msgId;
 	}
 	public int getType() {
 		return type;

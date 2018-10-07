@@ -58,7 +58,10 @@
 		<level value="ERROR"/>
 		<appender-ref ref="jmicro_error"/>
 	</logger>
-	 
+	 	<logger name="org.apache.mina">
+		<level value="ERROR"/>
+		<appender-ref ref="jmicro_error"/>
+	</logger>
 	<root>	
 	    <level value="DEBUG"/>
 		<appender-ref ref="CONSOLE"/>

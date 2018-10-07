@@ -41,6 +41,7 @@ import org.jmicro.api.annotation.PostListener;
 import org.jmicro.api.annotation.Reference;
 import org.jmicro.api.exception.CommonException;
 import org.jmicro.api.objectfactory.IObjectFactory;
+import org.jmicro.api.objectfactory.IPostFactoryReady;
 import org.jmicro.api.objectfactory.IPostInitListener;
 import org.jmicro.api.objectfactory.ProxyObject;
 import org.jmicro.api.servicemanager.ComponentManager;
@@ -64,6 +65,8 @@ public class SimpleObjectFactory implements IObjectFactory {
 	private final static Logger logger = LoggerFactory.getLogger(ComponentManager.class);
 	
 	private static boolean isInit = false;
+	
+	private List<IPostFactoryReady> postReadyListeners = new ArrayList<>();
 	
 	private List<IPostInitListener> postListeners = new ArrayList<>();
 	
@@ -217,12 +220,12 @@ public class SimpleObjectFactory implements IObjectFactory {
 		}
 		isInit = true;
 		
-		Set<Class<?>> listeners = ClassScannerUtils.getIns().loadClassesByAnno(PostListener.class);
+		Set<Class<?>> listeners = ClassScannerUtils.getIns().loadClassByClass(IPostInitListener.class);
 		if(listeners != null && !listeners.isEmpty()) {
 			for(Class<?> c : listeners){
 				PostListener comAnno = c.getAnnotation(PostListener.class);
 				int mod = c.getModifiers();
-				if(!comAnno.value() || Modifier.isAbstract(mod) 
+				if((comAnno != null && !comAnno.value())|| Modifier.isAbstract(mod) 
 						|| Modifier.isInterface(mod) || !Modifier.isPublic(mod)){
 					continue;
 				}
@@ -236,10 +239,29 @@ public class SimpleObjectFactory implements IObjectFactory {
 			}
 		}
 		
+		Set<Class<?>> postFactoryListners = ClassScannerUtils.getIns().loadClassByClass(IPostFactoryReady.class);
+		if(postFactoryListners != null && !postFactoryListners.isEmpty()) {
+			for(Class<?> c : postFactoryListners){
+				PostListener comAnno = c.getAnnotation(PostListener.class);
+				int mod = c.getModifiers();
+				if((comAnno != null && !comAnno.value()) || Modifier.isAbstract(mod) 
+						|| Modifier.isInterface(mod) || !Modifier.isPublic(mod)){
+					continue;
+				}
+				
+				try {
+					IPostFactoryReady l = (IPostFactoryReady)c.newInstance();
+					this.addPostReadyListener(l);
+				} catch (InstantiationException | IllegalAccessException e) {
+					logger.error("Create IPostInitListener Error",e);
+				}
+			}
+		}
+		
 		Set<Class<?>> clses = ClassScannerUtils.getIns().getComponentClass();
 		if(clses != null && !clses.isEmpty()) {
 			for(Class<?> c : clses){
-				if(IObjectFactory.class.isAssignableFrom(c)){
+				if(IObjectFactory.class.isAssignableFrom(c) || !c.isAnnotationPresent(Component.class)){
 					continue;
 				}
 				Object obj = createObject(c,false);
@@ -268,6 +290,10 @@ public class SimpleObjectFactory implements IObjectFactory {
 				//System.out.println(o);
 				doAfterCreate(o);
 			}
+		}
+		
+		for(IPostFactoryReady lis : postReadyListeners){
+			lis.ready(this);
 		}
 		
 	}
@@ -309,6 +335,14 @@ public class SimpleObjectFactory implements IObjectFactory {
 			if(l.getClass() == listener.getClass()) return;
 		}
 		postListeners.add(listener);
+	}
+	
+	@Override
+	public void addPostReadyListener(IPostFactoryReady listener) {
+		for(IPostFactoryReady l : postReadyListeners){
+			if(l.getClass() == listener.getClass()) return;
+		}
+		postReadyListeners.add(listener);
 	}
 
 	private void injectDepependencies(Object obj) {

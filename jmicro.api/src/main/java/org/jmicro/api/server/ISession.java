@@ -24,7 +24,7 @@ import java.nio.ByteBuffer;
  */
 public interface ISession {
 
-     Long getSessionId();
+     long getSessionId();
 	
 	void close(boolean flag);
 	

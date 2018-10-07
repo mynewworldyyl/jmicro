@@ -30,6 +30,7 @@ import org.apache.mina.api.IoSession;
 import org.apache.mina.session.AttributeKey;
 import org.apache.mina.transport.nio.NioTcpClient;
 import org.jmicro.api.IIdGenerator;
+import org.jmicro.api.JMicroContext;
 import org.jmicro.api.annotation.Cfg;
 import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.Inject;
@@ -37,6 +38,7 @@ import org.jmicro.api.client.IClientSession;
 import org.jmicro.api.client.IClientSessionManager;
 import org.jmicro.api.client.IResponseHandler;
 import org.jmicro.api.client.ReqResp;
+import org.jmicro.api.exception.CommonException;
 import org.jmicro.api.monitor.MonitorConstant;
 import org.jmicro.api.monitor.SubmitItemHolderManager;
 import org.jmicro.api.server.IRequest;
@@ -59,6 +61,8 @@ public class MinaClientSessionManager implements IClientSessionManager{
 
 	AttributeKey<IClientSession> sessionKey = AttributeKey.createKey(IClientSession.class, Constants.SESSION_KEY);
 	
+	AttributeKey<Boolean> monitorEnableKey = AttributeKey.createKey(Boolean.class, Constants.MONITOR_ENABLE_KEY);
+	
 	private final Map<Long,ReqResp> waitForResponse = new ConcurrentHashMap<>();
 	
 	//private final Map<Long,IClientSession> sessions = new ConcurrentHashMap<>();
@@ -69,25 +73,23 @@ public class MinaClientSessionManager implements IClientSessionManager{
 	@Inject(required=false)
 	private SubmitItemHolderManager monitor;
 	
-	@Cfg(value="/monitorClientIoSession",required=false)
-	private boolean monitorIoSession=true;
-	
 	private AbstractIoHandler ioHandler = new AbstractIoHandler() {
         @Override
         public void sessionOpened(final IoSession session) {
             LOG.info("session opened {}", session);
-            if(monitorIoSession){
-            	MonitorConstant.doSubmit(monitor,MonitorConstant.CLIENT_IOSESSION_OPEN, null,null,session);
+            if(monitorEnable(session)){
+            	MonitorConstant.doSubmit(monitor,MonitorConstant.CLIENT_IOSESSION_OPEN, null,null,session.getId());
             }
             
         }
 
         @Override
         public void messageReceived(IoSession session, Object message) {
-            LOG.info("message received {}", message);
+            //LOG.info("message received {}", message);
             //avoid ((ByteBuffer)message).remaining() when disable monitor
-            if(monitorIoSession && monitor != null){
-            	monitor.submit(MonitorConstant.CLIENT_IOSESSION_READ, null,null,session,((ByteBuffer)message).remaining());
+            if(monitorEnable(session) && monitor != null){
+            	IClientSession s  = session.getAttribute(sessionKey);
+            	monitor.submit(MonitorConstant.CLIENT_IOSESSION_READ, null,null,s.getSessionId(),session.getReadBytes(),((ByteBuffer)message).remaining());
             }
             doReceive(session,(ByteBuffer)message);
             
@@ -95,23 +97,29 @@ public class MinaClientSessionManager implements IClientSessionManager{
 
         @Override
         public void messageSent(IoSession session, Object message) {
-            LOG.info("message sent {}", message);
+            //LOG.info("message sent {}", message);
             //avoid ((ByteBuffer)message).remaining()  when disable monitor
-            if(monitorIoSession && monitor != null){
-            	monitor.submit(MonitorConstant.CLIENT_IOSESSION_WRITE, null,null,session,((ByteBuffer)message).remaining());
+            if(monitorEnable(session) && monitor != null){
+            	IClientSession s  = session.getAttribute(sessionKey);
+            	monitor.submit(MonitorConstant.CLIENT_IOSESSION_WRITE, null,null,s.getSessionId(),((ByteBuffer)message).remaining());
             }
         }
 
         @Override
         public void sessionClosed(IoSession session) {
             LOG.info("session closed {}", session);
-            MonitorConstant.doSubmit(monitor,MonitorConstant.CLIENT_IOSESSION_CLOSE, null,null,session);
+            if(monitorEnable(session) && monitor != null){
+            	IClientSession s  = session.getAttribute(sessionKey);
+            	MonitorConstant.doSubmit(monitor,MonitorConstant.CLIENT_IOSESSION_CLOSE, null,null,s.getSessionId());
+            }
         }
 
 		@Override
 		public void sessionIdle(IoSession session, IdleStatus status) {
 			super.sessionIdle(session, status);
-			MonitorConstant.doSubmit(monitor,MonitorConstant.CLIENT_IOSESSION_CLOSE, null,null,session,status);
+			if(monitorEnable(session)){
+				MonitorConstant.doSubmit(monitor,MonitorConstant.CLIENT_IOSESSION_IDLE, null,null,session,status);
+			}
 		}
 
 		@Override
@@ -126,8 +134,12 @@ public class MinaClientSessionManager implements IClientSessionManager{
 
 		@Override
 		public void exceptionCaught(IoSession session, Exception cause) {
-			super.exceptionCaught(session, cause);
-			MonitorConstant.doSubmit(monitor,MonitorConstant.CLIENT_IOSESSION_EXCEPTION, null,null,session,cause);
+			 super.exceptionCaught(session, cause);
+			 LOG.error("exceptionCaught",cause);
+			 if(session !=null && monitorEnable(session) && monitor != null ){
+				 IClientSession s  = session.getAttribute(sessionKey);
+	             MonitorConstant.doSubmit(monitor,MonitorConstant.CLIENT_IOSESSION_EXCEPTION, null,null,s.getSessionId(),cause.getMessage());
+	         }
 		}
 
 		@Override
@@ -145,6 +157,11 @@ public class MinaClientSessionManager implements IClientSessionManager{
 			super.secureClosed(session);
 		}
     };
+    
+    private Boolean monitorEnable(IoSession ioSession) {
+    	 Boolean v = ioSession.getAttribute(this.monitorEnableKey);
+		 return v == null ? JMicroContext.get().isMonitor():v;
+    }
 	
 	@Override
 	public void write(IRequest req, IResponseHandler handler,int retryCnt) {
@@ -172,39 +189,36 @@ public class MinaClientSessionManager implements IClientSessionManager{
 	@Override
 	public IClientSession connect(String host, int port) {
 
-        LOG.info("starting echo client");
-
         final NioTcpClient client = new NioTcpClient();
         client.setFilters();
         client.setIoHandler(ioHandler);
 
         try {
-            IoFuture<IoSession> future = client.connect(new InetSocketAddress(host,port));
-            try {
-                IoSession session = future.get();
-                LOG.info("session opened {}", session);
-                
-                MinaClientSession s = new MinaClientSession(session);
-                s.setSessionId(this.idGenerator.getLongId(ISession.class));
-                s.putParam(Constants.SESSION_KEY, session);
-                
-                session.setAttribute(sessionKey, s);
-                //this.sessions.put(s.getSessionId(), s);
-                
-                LOG.info("session connected : {}", session);
-                return s;
-            } catch (ExecutionException e) {
-                LOG.error("cannot connect : ", e);
-                MonitorConstant.doSubmit(monitor,MonitorConstant.CLIENT_REQ_CONN_FAIL, null, null,e);
-            }
-
-            LOG.debug("connection finish");
-            //Thread.sleep(5000);
-        } catch (InterruptedException e) {
-        	 MonitorConstant.doSubmit(monitor,MonitorConstant.CLIENT_REQ_CONN_FAIL, null, null,e);
-        }
+       	   IoFuture<IoSession> future = client.connect(new InetSocketAddress(host,port));
+           IoSession session = future.get();
+          // LOG.info("session opened {}", session);
+           if(session == null){
+               throw new CommonException("Fail to create session");
+           }
+           MinaClientSession s = new MinaClientSession(session);
+           s.setSessionId(this.idGenerator.getLongId(ISession.class));
+           s.putParam(Constants.SESSION_KEY, session);
+           
+           s.putParam(Constants.MONITOR_ENABLE_KEY, JMicroContext.get().isMonitor());
+           
+           session.setAttribute(sessionKey, s);
+           session.getAttribute(monitorEnableKey,JMicroContext.get().isMonitor());
+           //this.sessions.put(s.getSessionId(), s);
+           
+           //LOG.info("session connected : {}", session);
+           LOG.debug("connection finish");
+           return s;
+       } catch (Throwable e) {
+           LOG.error("cannot connect : ", e);
+           MonitorConstant.doSubmit(monitor,MonitorConstant.CLIENT_REQ_CONN_FAIL, null, null,host,port,e.getMessage());
+           throw new CommonException("",e);
+       }
     
-		return null;
 	}
 
 	protected void doReceive(IoSession session, ByteBuffer message) {
@@ -243,7 +257,8 @@ public class MinaClientSessionManager implements IClientSessionManager{
 			LOG.warn("Ignore MSG" + msg.getId() + "Rec session ID: "+msg.getSessionId()+",but this session ID: "+cs.getSessionId());
 			return;
 		}
-
+		
+		JMicroContext.get().configMonitor(rr.req.isMonitorEnable()?1:0,0);
 		
 		RpcResponse resp = new RpcResponse(msg.getId());
 		resp.decode(msg.getPayload());

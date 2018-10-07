@@ -26,7 +26,7 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public abstract class AbstractSession implements ISession{
 
-	private Long sessionId=-1L;
+	private long sessionId=-1L;
 
 	private Map<String,Object> params = new ConcurrentHashMap<String,Object>();
 	
@@ -36,17 +36,17 @@ public abstract class AbstractSession implements ISession{
 		readBuffer = ByteBuffer.allocate(bufferSize);
 	}
 	
-	public Long getSessionId() {
+	public long getSessionId() {
 		return sessionId;
 	}
 
-	public void setSessionId(Long sessionId) {
+	public void setSessionId(long sessionId) {
 		this.sessionId = sessionId;
 	}
 
 	@Override
 	public int hashCode() {
-		return sessionId.hashCode();
+		return new Long(sessionId).hashCode();
 	}
 
 	@Override
@@ -58,7 +58,7 @@ public abstract class AbstractSession implements ISession{
 			return false;
 		}
 		AbstractSession as = (AbstractSession)obj;
-		return this.sessionId.equals(as.getSessionId());
+		return this.sessionId == as.getSessionId();
 	}
 
 	@Override

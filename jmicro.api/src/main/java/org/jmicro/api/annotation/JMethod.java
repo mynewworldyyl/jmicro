@@ -22,7 +22,7 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
 /**
- * 
+ * any method that need a other name than method name
  * @author Yulei Ye
  * @date 2018年10月4日-上午11:56:39
  */

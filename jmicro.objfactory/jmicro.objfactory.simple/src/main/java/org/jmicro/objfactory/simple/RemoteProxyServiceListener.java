@@ -17,6 +17,7 @@
 package org.jmicro.objfactory.simple;
 
 import java.lang.reflect.Field;
+import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 
@@ -61,19 +62,22 @@ class RemoteProxyServiceListener implements IServiceListener{
 				p.enable(true);
 			}else if(IServiceListener.SERVICE_REMOVE == type) {
 				p.enable(false);
+			}else if(IServiceListener.SERVICE_DATA_CHANGE == type) {
+				p.setItem(item);
 			}
-		}else if(Set.class.isAssignableFrom(refField.getType())){
-			Set<Object> set = (Set<Object>)this.proxy;
+		}else if(Set.class.isAssignableFrom(refField.getType()) || List.class.isAssignableFrom(refField.getType())){
+			Collection<Object> set = (Collection<Object>)this.proxy;
 			
 			if(IServiceListener.SERVICE_ADD == type){
 				for(Object o: set){
 					AbstractServiceProxy p = (AbstractServiceProxy)o;
 					if(p.key().equals(item.serviceName())){
 						p.enable(true);
+						p.setItem(item);
 						return;
 					}
 				}
-				Object o = this.rsm.createProxyService(refField, item.getNamespace(),item.getVersion(),true);
+				Object o = this.rsm.createProxyService(refField, item,true);
 				if(o!=null){
 					set.add(o);
 				}
@@ -89,23 +93,7 @@ class RemoteProxyServiceListener implements IServiceListener{
 				if(po!= null){
 					po.enable(false);
 				}
-			}
-		}else if(List.class.isAssignableFrom(refField.getType())){
-			List<Object> set = (List<Object>)this.proxy;
-			
-			if(IServiceListener.SERVICE_ADD == type){
-				for(Object o: set){
-					AbstractServiceProxy p = (AbstractServiceProxy)o;
-					if(p.key().equals(item.serviceName())){
-						p.enable(true);
-						return;
-					}
-				}
-				Object o = this.rsm.createProxyService(refField, item.getNamespace(),item.getVersion(),true);
-				if(o!=null){
-					set.add(o);
-				}
-			}else if(IServiceListener.SERVICE_REMOVE == type) {
+			}else if(IServiceListener.SERVICE_DATA_CHANGE == type) {
 				AbstractServiceProxy po = null;
 				for(Object o: set){
 					AbstractServiceProxy p = (AbstractServiceProxy)o;
@@ -115,13 +103,11 @@ class RemoteProxyServiceListener implements IServiceListener{
 					}
 				}
 				if(po!= null){
-					po.enable(false);
+					po.enable(true);
+					po.setItem(item);
 				}
-				
 			}
 		}
-		
-		
 	}
 	
 	

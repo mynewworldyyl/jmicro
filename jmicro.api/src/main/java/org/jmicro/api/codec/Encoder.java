@@ -21,6 +21,7 @@ import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.nio.ByteBuffer;
+import java.nio.MappedByteBuffer;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -68,24 +69,24 @@ public class Encoder implements IEncoder{
 			encodeObjects(buffer,(Object[])obj);
 		}else if(cls == String.class) {
 			encodeString(buffer,(String)obj);
-		}else if(cls == void.class || cls == Void.class) {
+		}else if(cls == void.class || cls == Void.class  || cls == Void.TYPE) {
 			v =  null;
-		}else if(cls == int.class || cls == Integer.class){
+		}else if(cls == int.class || cls == Integer.class || cls == Integer.TYPE){
 			buffer.putInt((Integer)obj);
-		}else if(cls == byte.class || cls == Byte.class){
+		}else if(cls == byte.class || cls == Byte.class || cls == Byte.TYPE){
 			buffer.put((Byte)obj);
-		}else if(cls == short.class || cls == Short.class){
+		}else if(cls == short.class || cls == Short.class || cls == Short.TYPE){
 			buffer.putShort((Short)obj);
-		}else if(cls == long.class || cls == Long.class){
+		}else if(cls == long.class || cls == Long.class || cls == Long.TYPE){
 			buffer.putLong((Long)obj);
-		}else if(cls == float.class || cls == Float.class){
+		}else if(cls == float.class || cls == Float.class || cls == Float.TYPE){
 			buffer.putFloat((Float)obj);
-		}else if(cls == double.class || cls == Double.class){
+		}else if(cls == double.class || cls == Double.class || cls == Double.TYPE){
 			buffer.putDouble((Double)obj);
-		}else if(cls == boolean.class || cls == Boolean.class){
+		}else if(cls == boolean.class || cls == Boolean.class || cls == Boolean.TYPE){
 			boolean b = (Boolean)obj;
 			buffer.put(b?(byte)1:(byte)0);
-		}else if(cls == char.class || cls == Character.class){
+		}else if(cls == char.class || cls == Character.class || cls == Character.TYPE){
 			buffer.putChar((Character)obj);
 		} else {
 			encodeByReflect(buffer,cls,type,obj);
@@ -95,6 +96,9 @@ public class Encoder implements IEncoder{
 	
 	private static void encodeByReflect(ByteBuffer buffer, Class<?> cls, Integer type,Object obj) {
 
+		if(MappedByteBuffer.class.isAssignableFrom(cls)){
+			System.out.println("");
+		}
 		
 		int m = cls.getModifiers() ;
 		
@@ -111,7 +115,7 @@ public class Encoder implements IEncoder{
 		Field[] fs = cls.getDeclaredFields();
 		for(Field f: fs){
 			if(Modifier.isTransient(f.getModifiers()) || Modifier.isFinal(f.getModifiers())
-					|| Modifier.isStatic(f.getModifiers())){
+					|| Modifier.isStatic(f.getModifiers()) || f.getDeclaringClass() == Object.class){
 				continue;
 			}
 			fieldNames.add(f.getName());

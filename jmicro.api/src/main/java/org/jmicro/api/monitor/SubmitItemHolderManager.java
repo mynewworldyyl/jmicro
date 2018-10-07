@@ -22,6 +22,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.jmicro.api.JMicroContext;
 import org.jmicro.api.annotation.Cfg;
 import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.JMethod;
@@ -35,24 +36,18 @@ import org.slf4j.LoggerFactory;
  * @author Yulei Ye
  * @date 2018年10月5日-下午12:50:59
  */
-@Component(lazy=false,level=0)
+@Component(lazy=false,level=1)
 public class SubmitItemHolderManager {
     
 	private final static Logger logger = LoggerFactory.getLogger(SubmitItemHolderManager.class);
 	
-	@Cfg(value="/monitorServerIoSession",required=false,changeListener="init")
+	@Cfg(value="/monitorServerIoSession",required=false,changeListener="startWork")
 	private boolean monitorIoSession1=true;
 	
-	@Cfg(value="/monitorClientIoSession",required=false,changeListener="init")
-	private boolean monitorIoSession2=true;
+	@Cfg(value="/isDefaultOpenMonitor",required=false,changeListener="startWork")
+	private boolean isDefaultOpenMonitor=false;
 	
-	@Cfg(value="/monitorClientEnable",required=false,changeListener="init")
-	private boolean monitorClientEnable = true;
-	
-	@Cfg(value="/monitorServerEnable",required=false,changeListener="init")
-	private boolean monitorServerEnable=true;
-	
-	@Cfg(value="/monitorMaxCacheItems",required=false,changeListener="init")
+	@Cfg(value="/monitorMaxCacheItems",required=false,changeListener="startWork")
 	private int maxCacheItems = 10000;
 	
 	private Queue<SubmitItem> caches = new ConcurrentLinkedQueue<>();
@@ -69,14 +64,16 @@ public class SubmitItemHolderManager {
 	
 	private Worker[] workers = null;
 	
-	@JMethod("init")
-	public void init() {
-		this.enable =(monitorIoSession1 || monitorIoSession2
-				|| monitorClientEnable|| monitorServerEnable) && !submiters.isEmpty();
-		if(this.enable){
-			workers = new Worker[threadSize];
+	public void init(){
+		workers = new Worker[threadSize];
+		for(int i = 0; i < threadSize; i++){
+			workers[i] = new Worker();
+		}
+	}
+	//@JMethod("init")
+	/*public*/ void startWork() {
+		if(!submiters.isEmpty()){
 			for(int i = 0; i < threadSize; i++){
-				workers[i] = new Worker();
 				new Thread(workers[i]).start();
 			}
 		}
@@ -86,20 +83,26 @@ public class SubmitItemHolderManager {
 		private Queue<SubmitItem> its = new ConcurrentLinkedQueue<>();
 		@Override
 		public void run() {
+			JMicroContext.get().configMonitor(0, 0);
 			for(;;){
-				if(its.isEmpty()){
-					synchronized(this){
-						try {
-							this.wait();
-						} catch (InterruptedException e) {
+				try {
+					if(its.isEmpty()){
+						synchronized(this){
+							try {
+								this.wait();
+							} catch (InterruptedException e) {
+							}
 						}
 					}
+					JMicroContext.get().configMonitor(0, 0);
+					SubmitItem si = its.poll();
+					for(IMonitorSubmitWorker m : submiters){
+						m.submit(si);
+					}
+					cache(si);
+				} catch (Throwable e) {
+					logger.error("",e);
 				}
-				SubmitItem si = its.poll();
-				for(IMonitorSubmitWorker m : submiters){
-					m.submit(si);
-				}
-				cache(si);
 			}	
 		}
 		
@@ -133,10 +136,29 @@ public class SubmitItemHolderManager {
 			 si = new SubmitItem();
 		}
 		
-		si.setArgs(args);
 		si.setFinish(false);
-		si.setReq(req);
-		si.setResp(resp);
+		
+		if(req != null){
+			si.setReqId(req.getRequestId());
+			if(req.getSession() != null){
+				si.setSessionId(req.getSession().getSessionId());
+			}
+			si.setNamespace(req.getNamespace());
+			si.setVersion(req.getVersion());
+			si.setReqArgs(req.getArgs());
+			si.setMethod(req.getMethod());
+			si.setMsgId(req.getMsgId());
+		}
+		
+		for(Object o: args){
+			si.setOthers(si.getOthers()+o.toString());
+		}
+		
+		if(resp != null){
+			si.setRespId(resp.getId());
+			si.setResult(resp.getResult());
+		}
+		
 		si.setType(type);
 		si.setTime(System.currentTimeMillis());
 		
@@ -153,11 +175,19 @@ public class SubmitItemHolderManager {
 		}
 		
 		//free memory
-		si.setArgs(null);
 		si.setFinish(true);
-		si.setReq(null);
-		si.setResp(null);
 		si.setType(-1);
+		si.setReqId(-1);
+		si.setSessionId(-1);
+		si.setNamespace("");
+		si.setVersion("");
+		si.setReqArgs("");
+		si.setMethod("");
+		si.setMsgId(-1);
+		si.setOthers("");
+		si.setRespId(-1L);
+		si.setResult("");
+		
 		caches.offer(si);
 	}
 	

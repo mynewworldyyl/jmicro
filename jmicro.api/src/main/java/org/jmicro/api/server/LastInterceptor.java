@@ -35,9 +35,9 @@ public class LastInterceptor extends AbstractInterceptor implements IInterceptor
 	
 	@Override
 	public IResponse intercept(IRequestHandler handler, IRequest request) throws RpcException {
-		logger.debug("LastInterceptor before");
+		//logger.debug("LastInterceptor before");
 		IResponse resp = handler.onRequest(request);
-		logger.debug("LastInterceptor after");
+		//logger.debug("LastInterceptor after");
 		return resp;
 	}
 	

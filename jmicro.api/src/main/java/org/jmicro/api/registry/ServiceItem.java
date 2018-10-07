@@ -39,6 +39,8 @@ public class ServiceItem{
 	
 	public static final String ROOT="/jmicro/service";
 	
+	public static final String PERSIS_ROOT="/jmicro/srvconfig";
+	
 	public static final String FILE_SEPERATOR="/";
 	
 	public static final String I_I_SEPERATOR="####";
@@ -48,11 +50,15 @@ public class ServiceItem{
 	
 	private static final Random rand = new Random();
 	
-	protected String serviceName;
+	//-1 use system default value, 0 disable, 1 enable
+	//@JField(persistence=true)
+	private int monitorEnable = -1;
 	
-	protected String namespace = Constants.DEFAULT_NAMESPACE;
+	private String serviceName;
 	
-	protected String version = Constants.DEFAULT_VERSION;
+	private String namespace = Constants.DEFAULT_NAMESPACE;
+	
+	private String version = Constants.DEFAULT_VERSION;
 	
 	private String host;
 	
@@ -96,12 +102,12 @@ public class ServiceItem{
 	 * 
 	 * 0 and -1 is a invalid value
 	 */
-	private int degrade = 1;
+	private int degrade = -1;
 	
 	/**
 	 * max qps
 	 */
-	private int maxSpeed=-1;
+	private int maxSpeed = -1;
 	
 	/**
 	 * min qps
@@ -127,6 +133,32 @@ public class ServiceItem{
 		this.parseVal(val);
 	}
 	
+    public void formPersisItem(ServiceItem p){
+		this.monitorEnable = p.monitorEnable;
+		
+		this.retryCnt=p.retryCnt;
+		this.retryInterval=p.retryInterval;
+		this.timeout = p.timeout;
+		
+		this.maxFailBeforeDegrade=p.maxFailBeforeDegrade;
+		this.maxFailBeforeFusing=p.maxFailBeforeFusing;
+		
+		this.testingArgs = p.testingArgs;
+		this.fusing = p.fusing;
+		
+		this.degrade = p.degrade;
+		this.maxSpeed = p.maxSpeed;
+		this.minSpeed = p.minSpeed;
+		this.avgResponseTime = p.avgResponseTime;
+		
+		for(ServiceMethod sm : p.getMethods()){
+			ServiceMethod nsm = this.getMethod(sm.getMethodName(), sm.getMethodParamTypes());
+			if(nsm != null){
+				nsm.formPersisItem(sm);
+			}
+		}
+		
+	}
 
 	public boolean isFusing() {
 		return fusing;
@@ -146,6 +178,14 @@ public class ServiceItem{
 
 	public int getMaxSpeed() {
 		return maxSpeed;
+	}
+
+	public int getMonitorEnable() {
+		return monitorEnable;
+	}
+
+	public void setMonitorEnable(int monitorEnable) {
+		this.monitorEnable = monitorEnable;
 	}
 
 	public void setMaxSpeed(int maxSpeed) {
@@ -236,6 +276,18 @@ public class ServiceItem{
 					f.set(this, vs[1]);
 				}else if(f.getType() == Integer.TYPE){
 					f.set(this, Integer.parseInt(vs[1]));
+				}else if(f.getType() == Boolean.TYPE){
+					f.set(this, Boolean.parseBoolean(vs[1]));
+				}else if(f.getType() == Float.TYPE){
+					f.set(this, Float.parseFloat(vs[1]));
+				}else if(f.getType() == Double.TYPE){
+					f.set(this, Double.parseDouble(vs[1]));
+				}else if(f.getType() == Byte.TYPE){
+					f.set(this, Byte.parseByte(vs[1]));
+				}else if(f.getType() == Short.TYPE){
+					f.set(this, Short.parseShort(vs[1]));
+				}else if(f.getType() == Character.TYPE){
+					f.set(this,vs[1]);
 				}
 			} catch (NoSuchFieldException | SecurityException | IllegalArgumentException | IllegalAccessException e) {
 				logger.error("parseVal Field:"+vs[0],e);
@@ -252,11 +304,40 @@ public class ServiceItem{
 			sm.fromJson(m);
 			this.methods.add(sm);
 		}
-		
 	}
 	
-	public String key(){
-		StringBuffer sb = new StringBuffer(ROOT);
+	public ServiceMethod getMethod(String methodName,Object[] args){
+		String mk = ServiceMethod.methodParamsKey(args);
+		for(ServiceMethod sm : this.methods){
+			if(methodName.equals(sm.getMethodName()) && mk.equals(sm.getMethodParamTypes())){
+				return sm;
+			}
+		}
+		return null;
+	}
+	
+	public ServiceMethod getMethod(String methodName,Class<?>[] args){
+		String mk = ServiceMethod.methodParamsKey(args);
+		for(ServiceMethod sm : this.methods){
+			if(methodName.equals(sm.getMethodName()) && mk.equals(sm.getMethodParamTypes())){
+				return sm;
+			}
+		}
+		return null;
+	}
+	
+	public ServiceMethod getMethod(String methodName,String paramTypesStr){
+		for(ServiceMethod sm : this.methods){
+			if(methodName.equals(sm.getMethodName()) && paramTypesStr.equals(sm.getMethodParamTypes())){
+				return sm;
+			}
+		}
+		return null;
+	}
+	
+	public String key(String root){
+		StringBuffer sb = new StringBuffer(root);
+				
 		if(!this.serviceName.startsWith(FILE_SEPERATOR)){
 			sb.append(FILE_SEPERATOR);
 		}
@@ -265,10 +346,10 @@ public class ServiceItem{
 		StringBuffer val = new StringBuffer();
 		
 		val.append("host").append(KV_SEPERATOR).append(host).append(VAL_SEPERATOR)
-		.append("port").append(KV_SEPERATOR).append(port).append(VAL_SEPERATOR)
+		//.append("port").append(KV_SEPERATOR).append(port).append(VAL_SEPERATOR)
 		.append("namespace").append(KV_SEPERATOR).append(this.namespace).append(VAL_SEPERATOR)
 		.append("version").append(KV_SEPERATOR).append(this.version).append(VAL_SEPERATOR)
-		.append("time").append(KV_SEPERATOR).append(this.randVal);
+		/*.append("time").append(KV_SEPERATOR).append(this.randVal)*/;
 
 		return sb.append(Utils.getIns().encode(val.toString())).toString();
 	}
@@ -300,12 +381,12 @@ public class ServiceItem{
 		
 		sb.append("]");
 		
-		return Utils.getIns().encode(sb.toString());
+		return sb.toString();
 	}
 
 	@Override
 	public int hashCode() {
-		return new Long(this.randVal).hashCode();
+		return this.key(ServiceItem.ROOT).hashCode();
 	}
 
 	@Override
@@ -313,7 +394,7 @@ public class ServiceItem{
 		if(obj == null || !(obj instanceof ServiceItem)) {
 			return false;
 		}
-		return this.randVal == ((ServiceItem)obj).randVal;
+		return this.key(ServiceItem.ROOT).equals(((ServiceItem)obj).key(ServiceItem.ROOT));
 	}
 
 	public String getHost() {
@@ -411,6 +492,5 @@ public class ServiceItem{
 	public void setMethods(Set<ServiceMethod> methods) {
 		this.methods = methods;
 	}
-	
 	
 }

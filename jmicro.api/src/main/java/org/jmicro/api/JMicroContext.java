@@ -18,6 +18,8 @@ package org.jmicro.api;
 
 import java.util.HashMap;
 import java.util.Map;
+
+import org.jmicro.common.Constants;
 /**
  * 
  * @author Yulei Ye
@@ -50,6 +52,20 @@ public class JMicroContext  {
 		}
 	}
 	
+	public boolean configMonitor(int methodCfg,int srvCfg){
+		if(methodCfg != -1){
+			this.setBoolean(Constants.MONITOR_ENABLE_KEY, methodCfg==1?true:false);
+		}
+		else if(srvCfg != -1){
+			this.setBoolean(Constants.MONITOR_ENABLE_KEY, srvCfg==1?true:false);
+		}
+		return isMonitor();
+	}
+	
+	public Boolean isMonitor(){
+		return this.getBoolean(Constants.MONITOR_ENABLE_KEY, false);
+	}
+	
 	@SuppressWarnings("unchecked")
 	public <T> T getParam(String key,T defautl){
 		T v = (T)this.params.get(key);
@@ -58,7 +74,37 @@ public class JMicroContext  {
 		}
 		return v;
 	}
-
+	
+	@SuppressWarnings("unchecked")
+	public <T> void setParam(String key,T val){
+		this.params.put(key,val);
+	}
+	
+	public void setInt(String key,int defautl){
+	    this.setParam(key,defautl);
+	}
+	
+	public void setString(String key,String val){
+		 this.setParam(key,val);
+	}
+	
+	public void setBoolean(String key,boolean val){
+		 this.setParam(key,val);
+	}
+	
+	
+	public void setFloat(String key,Float val){
+		 this.setParam(key,val);
+	}
+	
+	public void setDouble(String key,Double val){
+		 this.setParam(key,val);
+	}
+	
+	public void setObject(String key,Object val){
+		 this.getParam(key,val);
+	}
+	
 	public Integer getInt(String key,int defautl){
 		return this.getParam(key,defautl);
 	}
@@ -83,6 +129,4 @@ public class JMicroContext  {
 	public Object getObject(String key,Object defautl){
 		return this.getParam(key,defautl);
 	}
-	
-	
 }

@@ -46,6 +46,8 @@ public @interface Service {
 	
 	public String version() default Constants.DEFAULT_VERSION;
 	
+	public int monitorEnable() default -1;
+	
 	public int retryInterval() default 500;
 	
 	//method must can be retry, or 1

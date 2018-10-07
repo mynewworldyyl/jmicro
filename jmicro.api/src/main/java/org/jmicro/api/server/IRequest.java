@@ -58,4 +58,8 @@ public interface IRequest extends IEncodable,IDecodable {
 	public boolean isFinish();
 	public void setFinish(boolean finish);
 	
+	public boolean isMonitorEnable();
+	
+	public Long getMsgId();
+	
 }

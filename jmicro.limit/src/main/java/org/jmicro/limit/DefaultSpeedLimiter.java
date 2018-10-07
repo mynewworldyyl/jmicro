@@ -50,9 +50,6 @@ public class DefaultSpeedLimiter implements ILimiter{
 	@Inject(required=false)
 	private SubmitItemHolderManager monitor;
 	
-	@Cfg(value="/monitorServerEnable",required=false)
-	private boolean monitorServerEnable = true;
-	
 	@JMethod("init")
 	public void init(){
 		startWorker();
@@ -95,9 +92,7 @@ public class DefaultSpeedLimiter implements ILimiter{
 			return 0;
 		}
 		if(result > 0){
-			if(this.monitorServerEnable){
-				MonitorConstant.doSubmit(monitor,MonitorConstant.SERVER_REQ_LIMIT_OK, req,null,result);
-			}
+			MonitorConstant.doSubmit(monitor,MonitorConstant.SERVER_REQ_LIMIT_OK, req,null,result);
 			doWait(result,d);
 		}
 		

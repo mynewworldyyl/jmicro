@@ -31,6 +31,9 @@ public class ServiceMethod {
 	
 	private String methodParamTypes=""; //full type name
 	
+	//-1 use Service config, 0 disable, 1 enable
+	private int monitorEnable = -1;
+	
 	private int retryCnt; //method can retry times, less or equal 0 cannot be retry
 	private int retryInterval; // milliseconds how long to wait before next retry
 	private int timeout; // milliseconds how long to wait for response before timeout 
@@ -90,6 +93,25 @@ public class ServiceMethod {
 	 */
 	private int degrade = 1;
 	
+	public void formPersisItem(ServiceMethod p){
+		this.monitorEnable = p.monitorEnable;
+		
+		this.retryCnt=p.retryCnt;
+		this.retryInterval=p.retryInterval;
+		this.timeout = p.timeout;
+		
+		this.maxFailBeforeDegrade=p.maxFailBeforeDegrade;
+		this.maxFailBeforeFusing=p.maxFailBeforeFusing;
+		
+		this.testingArgs = p.testingArgs;
+		this.fusing = p.fusing;
+		
+		this.degrade = p.degrade;
+		this.maxSpeed = p.maxSpeed;
+		this.minSpeed = p.minSpeed;
+		this.avgResponseTime = p.avgResponseTime;
+	}
+	
 	public String toJson(){
 		StringBuffer sb = new StringBuffer("{");
 		Field[] fields = this.getClass().getDeclaredFields();
@@ -141,6 +163,18 @@ public class ServiceMethod {
 					f.set(this, ms[1]);
 				}else if(f.getType() == Integer.TYPE){
 					f.set(this, Integer.parseInt(ms[1]));
+				}else if(f.getType() == Boolean.TYPE){
+					f.set(this, Boolean.parseBoolean(ms[1]));
+				}else if(f.getType() == Float.TYPE){
+					f.set(this, Float.parseFloat(ms[1]));
+				}else if(f.getType() == Double.TYPE){
+					f.set(this, Double.parseDouble(ms[1]));
+				}else if(f.getType() == Byte.TYPE){
+					f.set(this, Byte.parseByte(ms[1]));
+				}else if(f.getType() == Short.TYPE){
+					f.set(this, Short.parseShort(ms[1]));
+				}else if(f.getType() == Character.TYPE){
+					f.set(this,ms[1]);
 				}
 			} catch (NoSuchFieldException | SecurityException | IllegalArgumentException | IllegalAccessException e) {
 				throw new CommonException("Parse service mehtod error: "+mstr,e);
@@ -155,7 +189,7 @@ public class ServiceMethod {
 				sb.append(mc.getName()).append("_");
 			}
 			String sbt = sb.substring(0, sb.length()-1);
-			return sb.toString();
+			return sbt;
 		}
 		return "";
 	}
@@ -242,6 +276,14 @@ public class ServiceMethod {
 
 	public void setRetryInterval(int retryInterval) {
 		this.retryInterval = retryInterval;
+	}
+	
+	public int getMonitorEnable() {
+		return monitorEnable;
+	}
+
+	public void setMonitorEnable(int monitorEnable) {
+		this.monitorEnable = monitorEnable;
 	}
 
 	public int getTimeout() {

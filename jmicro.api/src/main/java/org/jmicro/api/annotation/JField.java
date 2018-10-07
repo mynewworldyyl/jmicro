@@ -14,35 +14,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.jmicro.idgenerator;
+package org.jmicro.api.annotation;
 
-import java.util.concurrent.atomic.AtomicLong;
-
-import org.jmicro.api.IIdGenerator;
-import org.jmicro.api.annotation.Component;
-import org.jmicro.common.Constants;
+import static java.lang.annotation.RetentionPolicy.RUNTIME;
+import static java.lang.annotation.ElementType.FIELD;
+import java.lang.annotation.Retention;
+import java.lang.annotation.Target;
 /**
  * 
  * @author Yulei Ye
- * @date 2018年10月4日-下午12:11:16
+ * @date 2018年10月4日-上午11:57:14
  */
-@Component(Constants.DEFAULT_IDGENERATOR)
-public class JMicroIdGenerator implements IIdGenerator {
-
-	//private MysqlBaseIdMap mapper = new MysqlBaseIdMap();
-	
-	//private IIDGenerator gen = new BaseIDGenerator(mapper,"net.techgy",true);
-	
-	private AtomicLong idgenerator = new AtomicLong(1);
-	
-	@Override
-	public long getLongId(Class<?> idType) {
-		return idgenerator.getAndIncrement();
-	}
-
-	@Override
-	public String getStringId(Class<?> idType) {
-		return idgenerator.getAndIncrement()+"";
-	}
-
+@Target(FIELD)
+@Retention(RUNTIME)
+public @interface JField {
+	public String value() default "";
+	public boolean persistence() default false;
 }

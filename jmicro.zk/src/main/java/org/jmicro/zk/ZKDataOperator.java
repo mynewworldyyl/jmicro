@@ -340,19 +340,39 @@ public class ZKDataOperator implements IDataOperator{
 	}
 	
 	public void createNode(String path,String data,boolean elp){
-		CreateBuilder createBuilder = this.curator.create();
-  	    try {
-  	    	byte[] d = data.getBytes(Constants.CHARSET);
-  	    	if(elp){
-  	    		createBuilder.withMode(CreateMode.EPHEMERAL);
-  	    	}else {
-  	    		createBuilder.withMode(CreateMode.PERSISTENT);
-  	    	}
-  	    	createBuilder.forPath(path,d);
-		} catch (KeeperException.NoNodeException e) {
-			logger.error(e.getMessage());
-		}catch(Exception e){
-			logger.error("",e);
+		if(this.exist(path)){
+			this.setData(path, data);
+		} else {
+			String[] ps = path.split("/");
+			String p="";
+			for(int i=1; i < ps.length-1; i++){
+				p = p + "/"+ ps[i];
+				if(!this.exist(p)){
+					CreateBuilder createBuilder = this.curator.create();
+					createBuilder.withMode(CreateMode.PERSISTENT);
+			  	    try {
+						createBuilder.forPath(p);
+					} catch (KeeperException.NoNodeException e) {
+						logger.error(e.getMessage());
+					}catch(Exception e){
+						logger.error("",e);
+					}
+				}
+			}
+			CreateBuilder createBuilder = this.curator.create();
+	  	    try {
+	  	    	byte[] d = data.getBytes(Constants.CHARSET);
+	  	    	if(elp){
+	  	    		createBuilder.withMode(CreateMode.EPHEMERAL);
+	  	    	}else {
+	  	    		createBuilder.withMode(CreateMode.PERSISTENT);
+	  	    	}
+	  	    	createBuilder.forPath(path,d);
+			} catch (KeeperException.NoNodeException e) {
+				logger.error(e.getMessage());
+			}catch(Exception e){
+				logger.error("",e);
+			}
 		}
 	}
 	

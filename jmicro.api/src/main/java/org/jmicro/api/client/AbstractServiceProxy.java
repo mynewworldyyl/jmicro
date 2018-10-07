@@ -27,6 +27,8 @@ import org.jmicro.api.registry.ServiceItem;
 public abstract class AbstractServiceProxy {
 
 	protected InvocationHandler handler = null;
+	
+	private ServiceItem item = null;
 
 	public InvocationHandler getHandler() {
 		return handler;
@@ -41,8 +43,16 @@ public abstract class AbstractServiceProxy {
 	public abstract String getServiceName();
 	
 	public abstract  boolean enable();
-	
 	public abstract void enable(boolean enable);
+	
+	public  void setItem(ServiceItem item){
+		this.item = item;
+	}
+	
+	public  ServiceItem getItem(){
+		return this.item;
+	}
+	
 	
 	public String key(){
 		return ServiceItem.serviceName(this.getServiceName(), this.getNamespace(), this.getVersion());

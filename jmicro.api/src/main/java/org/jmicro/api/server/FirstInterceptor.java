@@ -60,7 +60,7 @@ public class FirstInterceptor extends AbstractInterceptor implements IIntercepto
 	
 	@Override
 	public IResponse intercept(IRequestHandler handler, IRequest req) throws RpcException {
-		logger.debug("FirstInterceptor before");
+		//logger.debug("FirstInterceptor before");
 		if(limiter != null){
 			int r = limiter.apply(req);
 			if(r < 0){
@@ -68,7 +68,7 @@ public class FirstInterceptor extends AbstractInterceptor implements IIntercepto
 			}
 		}
 		IResponse resp = handler.onRequest(req);
-		logger.debug("FirstInterceptor after");
+		//logger.debug("FirstInterceptor after");
 		return resp;
 	}
 

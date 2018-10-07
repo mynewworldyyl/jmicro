@@ -21,6 +21,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.ParameterizedType;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -76,11 +77,11 @@ class RemoteServiceManager {
 		
 		IRegistry registry = ComponentManager.getRegistry(null);
 		
-		if(List.class.isAssignableFrom(type)){
-			proxy = createListService(obj,f,becls,ref);
-		}else if(Set.class.isAssignableFrom(type)){
+		if(List.class.isAssignableFrom(type) || Set.class.isAssignableFrom(type)){
 			proxy = createSetService(obj,f,becls,ref);
-		}else{
+		}/*else if(){
+			proxy = createSetService(obj,f,becls,ref);
+		}*/else{
 			
 			//Set<ServiceItem> sis = registry.getServices(field.getName());
 			if(!type.isInterface()) {
@@ -97,22 +98,30 @@ class RemoteServiceManager {
 				}
 				enable = false;
 			} 
-			proxy = createProxyService(f,ref.namespace(),ref.version(),enable);
+			
+			//proxy = createProxyService(f,ref.namespace(),ref.version(),enable);
+			String key = ServiceItem.serviceName(type.getName(),ref.namespace(),ref.version());
+			
+			if(this.remoteObjects.containsKey(key)) {
+				return remoteObjects.get(key);
+			}
+			
+			Set<ServiceItem> items = registry.getServices(f.getType().getName(),ref.namespace(),ref.version());
+			
+		    proxy = createDynamicServiceProxy(f.getType(),ref.namespace(),ref.version(),enable);
+		    
+		    setHandler(proxy,key,items.iterator().next());
+		    
 		}
 		return proxy;
 	}
 	
-	Object createProxyService(Field f,String namespace,String version,boolean enable){
-		Class<?> type = f.getType();
-		String key = ServiceItem.serviceName(type.getName(),namespace,version);
-		
-		if(this.remoteObjects.containsKey(key)) {
-			return remoteObjects.get(key);
-		}
-	    Object proxy = createDynamicServiceProxy(f.getType(),namespace,version,enable);
-	    setHandler(proxy,key);
-	   return proxy;
+	Object createProxyService(Field f,ServiceItem item, boolean enable){
+		 Object proxy = createDynamicServiceProxy(f.getType(),item.getNamespace(),item.getVersion(),enable);  
+		 setHandler(proxy,item.serviceName(),item);
+		 return proxy;
 	}
+
 	
 	private Object createSetService(Object obj, Field f, Class<?> becls, Reference ref) {
 
@@ -165,9 +174,9 @@ class RemoteServiceManager {
 		}
 		
 		RemoteProxyServiceListener lis = new RemoteProxyServiceListener(this,o,becls,f);
-		registry.addServiceListener(ServiceItem.serviceName(f.getType().getName(),ref.namespace(),ref.version()), lis);
+		//registry.addServiceListener(ServiceItem.serviceName(f.getType().getName(),ref.namespace(),ref.version()), lis);
 		
-		Set<Object> el = (Set<Object>)o;
+		Collection<Object> el = (Collection<Object>)o;
 		
 		Map<String,Object> exists = new HashMap<>();
 		Object po = null;
@@ -181,12 +190,14 @@ class RemoteServiceManager {
 				po = remoteObjects.get(key);
 			}else {
 				po = createDynamicServiceProxy(ctype,si.getNamespace(),si.getVersion(),true);
-				setHandler(po,key);
+				setHandler(po,key,si);
 			}
 			
 			if(po != null){
 				el.add(po);
 			}
+			
+			registry.addServiceListener(ServiceItem.serviceName(si.getServiceName(),si.getNamespace(),si.getVersion()), lis);
 		}
 		exists.clear();
 		exists = null;
@@ -214,7 +225,7 @@ class RemoteServiceManager {
 			throw new CommonException(sb.toString());
 		}
 		//请参考Reference说明使用
-		Set<ServiceItem> items = registry.getServices(ctype.getName(), ref.namespace(),ref.version());
+		Set<ServiceItem> items = registry.getServices(ctype.getName(),null,null/* ref.namespace(),ref.version()*/);
 
 		boolean bf = f.isAccessible();
 		Object o = null;
@@ -258,9 +269,9 @@ class RemoteServiceManager {
 			
 			if(this.remoteObjects.containsKey(key)) {
 				po = remoteObjects.get(key);
-			}else {
+			} else {
 				po = createDynamicServiceProxy(ctype,si.getNamespace(),si.getVersion(),true);
-				setHandler(po,key);
+				setHandler(po,key,si);
 			}
 			
 			if(po != null){
@@ -273,10 +284,11 @@ class RemoteServiceManager {
 		
 	}
 	
-	private void setHandler(Object proxy,String key){
+	private void setHandler(Object proxy,String key,ServiceItem si){
 		 if(proxy != null){
 		    	AbstractServiceProxy asp = (AbstractServiceProxy)proxy;
 				asp.setHandler(of.getByName(Constants.DEFAULT_INVOCATION_HANDLER));
+				asp.setItem(si);
 				remoteObjects.put(key, proxy);
 		}
 	}
@@ -328,7 +340,7 @@ class RemoteServiceManager {
 
             StringBuilder code = new StringBuilder("Object[] args = new Object[").append(pts.length).append("];");
             for (int j = 0; j < pts.length; j++){
-           	 code.append(" args[").append(j).append("] = ($w)$").append(j + 1).append(";");
+           	 code.append(" args[").append(j).append("] = ("+pts[j].getName()+")$").append(j + 1).append(";");
             }    
             code.append(" Object ret = handler.invoke(this, methods[" + i + "], args);");
             

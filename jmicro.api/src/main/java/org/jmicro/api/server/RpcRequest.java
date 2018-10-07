@@ -30,6 +30,8 @@ public class RpcRequest extends AbstractRpcProtocolMessage implements IRequest{
 	
 	protected Long reqId=-1L;
 	
+	private boolean isMonitorEnable = false;
+	
 	private transient Message msg;
 	
 	private transient boolean success = false;
@@ -50,6 +52,12 @@ public class RpcRequest extends AbstractRpcProtocolMessage implements IRequest{
 		super.encode(oos);
 	}
 
+	public Long getMsgId(){
+		if(this.msg != null){
+			return this.msg.getId();
+		}
+		return -1l;
+	}
 	public boolean isFinish() {
 		return finish;
 	}
@@ -102,6 +110,14 @@ public class RpcRequest extends AbstractRpcProtocolMessage implements IRequest{
 			return false;
 		}
 		return reqId == ((RpcRequest)obj).reqId;
+	}
+
+	public boolean isMonitorEnable() {
+		return isMonitorEnable;
+	}
+
+	public void setMonitorEnable(boolean isMonitorEnable) {
+		this.isMonitorEnable = isMonitorEnable;
 	}
 	
 }

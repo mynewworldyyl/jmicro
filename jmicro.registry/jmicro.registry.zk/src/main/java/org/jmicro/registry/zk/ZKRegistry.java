@@ -28,6 +28,7 @@ import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.JMethod;
 import org.jmicro.api.annotation.Registry;
 import org.jmicro.api.exception.FusingException;
+import org.jmicro.api.raft.IDataListener;
 import org.jmicro.api.raft.INodeListener;
 import org.jmicro.api.registry.IRegistry;
 import org.jmicro.api.registry.IServiceListener;
@@ -100,6 +101,13 @@ public class ZKRegistry implements IRegistry {
 		}
 	};
 	
+	private IDataListener dataListener = new IDataListener(){
+		@Override
+		public void dataChanged(String path, String data) {
+			updateItem(path,data);
+		}
+	};
+	
 	@Override
 	public void addServiceListener(String key,IServiceListener lis) {
 		if(slisteners.containsKey(key)){
@@ -125,6 +133,17 @@ public class ZKRegistry implements IRegistry {
 			lis.serviceChanged(IServiceListener.SERVICE_ADD, s.iterator().next());
 		}
 		
+	}
+
+	protected void updateItem(String path, String data) {
+		ServiceItem si = new ServiceItem(data);
+		String p = si.key(ServiceItem.ROOT);
+		this.path2Items.put(p, si);
+		Set<ServiceItem> items = this.serviceItems.get(si.serviceName());
+		if(items != null){
+			items.add(si);
+		}
+		notifyServiceChange(IServiceListener.SERVICE_DATA_CHANGE,si);
 	}
 
 	@Override
@@ -175,13 +194,27 @@ public class ZKRegistry implements IRegistry {
 		}
 		
 		Set<ServiceItem> items = serviceItems.get(serviceName);
+	
+		this.persisFromConfig(i);
+		
 		items.add(i);
 		this.path2Items.put(path, i);
 		
 		ZKDataOperator.getIns().addNodeListener(path, nodeListener);
+		ZKDataOperator.getIns().addDataListener(i.key(ServiceItem.PERSIS_ROOT), this.dataListener);
 		
 		if(items.size() == 1){
 			this.notifyServiceChange(IServiceListener.SERVICE_ADD, i);
+		}
+	}
+	
+	
+	private void persisFromConfig(ServiceItem item){
+		String key = item.key(ServiceItem.PERSIS_ROOT);
+		if(ZKDataOperator.getIns().exist(key)){
+			String data = ZKDataOperator.getIns().getData(key);
+			ServiceItem perItem = new ServiceItem(data);
+			item.formPersisItem(perItem);
 		}
 	}
 	
@@ -191,6 +224,7 @@ public class ZKRegistry implements IRegistry {
     	items.remove(i);
     	
     	ZKDataOperator.getIns().removeNodeListener(path, nodeListener);
+    	ZKDataOperator.getIns().removeDataListener(path, dataListener);
     	
     	if(items.isEmpty()){
     		this.notifyServiceChange(IServiceListener.SERVICE_REMOVE, i);
@@ -199,23 +233,41 @@ public class ZKRegistry implements IRegistry {
 
 	@Override
 	public void regist(ServiceItem item) {
-		String key = item.key();
-		logger.debug("regist service: "+key);
+		String key = item.key(ServiceItem.PERSIS_ROOT);
+		this.persisFromConfig(item);
+		
+		if(!ZKDataOperator.getIns().exist(key)){
+			ZKDataOperator.getIns().createNode(key,item.val(), false);
+		}
+		
+		key = item.key(ServiceItem.ROOT);
+		if(ZKDataOperator.getIns().exist(key)){
+			ZKDataOperator.getIns().deleteNode(key);
+		}
+		
 		ZKDataOperator.getIns().createNode(key,item.val(), true);
+		
 	}
 
 	@Override
 	public void unregist(ServiceItem item) {
-		String key = item.key();
+		String key = item.key(ServiceItem.ROOT);
 		logger.debug("unregist service: "+key);
-		ZKDataOperator.getIns().deleteNode(item.key());
+		if(ZKDataOperator.getIns().exist(key)){
+			ZKDataOperator.getIns().deleteNode(key);
+		}
 	}
 
 	@Override
 	public void update(ServiceItem item) {
-		String key = item.key();
+		String key = item.key(ServiceItem.ROOT);
 		logger.debug("regist service: "+key);
-		ZKDataOperator.getIns().setData(key,item.val());
+		if(ZKDataOperator.getIns().exist(key)){
+			ZKDataOperator.getIns().setData(key,item.val());
+		}else {
+			logger.debug("update not found: "+key);
+		}
+		
 	}
 
 	@Override
@@ -294,27 +346,29 @@ public class ZKRegistry implements IRegistry {
 	@Override
 	public Set<ServiceItem> getServices(String serviceName, String namespace, String version) {
 		Set<ServiceItem> is = new HashSet<>();
-		//namespace = ServiceItem.namespace(namespace);
-		//version = ServiceItem.version(version);
+		
 		if(namespace == null || version == null){
 			for(String key : this.serviceItems.keySet()){
 				if(key.startsWith(serviceName)){
 					is.addAll(this.serviceItems.get(key));
 				}
 			}
-		}
-		/*Set<ServiceItem> sis = this.serviceItems.get(ServiceItem.serviceName(serviceName, namespace, version));
-		
-		if(sis == null){
-			return Collections.EMPTY_SET;
-		}
-		
-		for(ServiceItem si : sis){
-			if(si.getNamespace().equals(namespace) &&
-					si.getVersion().equals(version)) {
-				is.add(si);
+		}else{
+			namespace = ServiceItem.namespace(namespace);
+			version = ServiceItem.version(version);
+			Set<ServiceItem> sis = this.serviceItems.get(ServiceItem.serviceName(serviceName, namespace, version));
+			
+			if(sis == null){
+				return Collections.EMPTY_SET;
 			}
-		}*/
+			
+			for(ServiceItem si : sis){
+				if(si.getNamespace().equals(namespace) &&
+						si.getVersion().equals(version)) {
+					is.add(si);
+				}
+			}
+		}
 		return is;
 	}
 	

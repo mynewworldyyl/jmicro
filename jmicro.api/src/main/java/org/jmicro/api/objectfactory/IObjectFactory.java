@@ -38,4 +38,7 @@ public interface IObjectFactory {
 	
 	void addPostListener(IPostInitListener listener);
 	
+	void addPostReadyListener(IPostFactoryReady listener);
+	
+	
 }

@@ -42,7 +42,7 @@ public class RoundBalance implements ISelector{
 	@Override
 	public ServiceItem getService(String srvName,String method,Class<?>[] args,String namespace,String version) {
 		Set<ServiceItem> srvItems = registry.getServices(srvName,method,args,namespace,version);
-		if(srvItems == null && srvItems.isEmpty()) {
+		if(srvItems == null || srvItems.isEmpty()) {
 			return null;
 		}
 		ServiceItem[] arr = new ServiceItem[srvItems.size()];

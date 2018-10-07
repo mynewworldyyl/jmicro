@@ -29,4 +29,6 @@ public interface IResponse extends IEncodable,IDecodable,IDable{
 	Long getRequestId();
 	
 	Object getResult();
+	
+	boolean isMonitorEnable();
 }

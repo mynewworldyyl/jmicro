@@ -43,7 +43,7 @@ import org.slf4j.LoggerFactory;
  * @author Yulei Ye
  * @date 2018年10月4日-下午12:08:01
  */
-@Component(lazy=false,level=2)
+@Component(lazy=false,level=11)
 public class ServiceLoader {
 
 	private final static Logger logger = LoggerFactory.getLogger(ServiceLoader.class);
@@ -200,6 +200,7 @@ public class ServiceLoader {
 			item.setMaxSpeed(anno.maxSpeed());
 			item.setMinSpeed(anno.minSpeed());
 			item.setAvgResponseTime(anno.avgResponseTime());
+			item.setMonitorEnable(anno.monitorEnable());
 			
 			for(Method m : in.getMethods()) {
 				ServiceMethod sm = new ServiceMethod();
@@ -214,6 +215,7 @@ public class ServiceLoader {
 					sm.setMaxSpeed(manno.maxSpeed());
 					sm.setMinSpeed(manno.minSpeed());
 					sm.setAvgResponseTime(manno.avgResponseTime());
+					sm.setMonitorEnable(manno.monitorEnable());
 				} else {
 					sm.setMaxFailBeforeFusing(anno.maxFailBeforeFusing());
 					sm.setMaxFailBeforeDegrade(anno.maxFailBeforeDegrade());
@@ -224,6 +226,7 @@ public class ServiceLoader {
 					sm.setMaxSpeed(anno.maxSpeed());
 					sm.setMinSpeed(anno.minSpeed());
 					sm.setAvgResponseTime(anno.avgResponseTime());
+					sm.setMonitorEnable(anno.monitorEnable());
 				}
 				
 				sm.setMethodName(m.getName());

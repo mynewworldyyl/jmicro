@@ -22,6 +22,8 @@ package org.jmicro.common;
  */
 public interface Constants {
 
+	public static final String MONITOR_ENABLE_KEY = "monitorEnableKey";
+	
 	public static final int CONN_CONNECTED=1;
 	public static final int CONN_RECONNECTED=2;
 	public static final int CONN_LOST=3;
