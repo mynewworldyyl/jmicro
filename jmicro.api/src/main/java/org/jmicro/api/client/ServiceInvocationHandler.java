@@ -64,9 +64,6 @@ public class ServiceInvocationHandler implements InvocationHandler{
 	@Inject(required=false)
 	private SubmitItemHolderManager monitor;
 	
-	@Cfg(value="/monitorClientEnable",required=false)
-	private boolean monitorClientEnable = true;
-	
 	@Inject
 	private FuseManager fuseManager;
 	
@@ -78,7 +75,7 @@ public class ServiceInvocationHandler implements InvocationHandler{
 	
 	@Override
 	public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
-		
+		AbstractServiceProxy po = (AbstractServiceProxy)proxy;
         String methodName = method.getName();
         Class<?>[] parameterTypes = method.getParameterTypes();
         if (method.getDeclaringClass() == Object.class) {
@@ -99,7 +96,6 @@ public class ServiceInvocationHandler implements InvocationHandler{
         //Method syncMethod = clazz.getMethod(syncMethodName, method.getParameterTypes());
         
         try {
-        	AbstractServiceProxy po = (AbstractServiceProxy)proxy;
 			return this.doRequest(method,args,clazz,po);
 		} catch (Throwable e) {
 			logger.error(e.getMessage(), e);
@@ -117,6 +113,11 @@ public class ServiceInvocationHandler implements InvocationHandler{
 	private Object doRequest(Method method, Object[] args, Class<?> srvClazz,AbstractServiceProxy proxy) {
 		//System.out.println(req.getServiceName());
 		ServiceItem poItem = proxy.getItem();
+		if(poItem == null){
+			MonitorConstant.doSubmit(monitor,MonitorConstant.CLIENT_REQ_SERVICE_NOT_FOUND
+					,null, null,method.getDeclaringClass().getName(),method.getName());
+			throw new CommonException("cls["+method.getDeclaringClass().getName()+"] method ["+method.getName()+"]");
+		}
 		ServiceMethod poSm = poItem.getMethod(method.getName(), args);
 		
 		JMicroContext.get().configMonitor(poSm.getMonitorEnable()

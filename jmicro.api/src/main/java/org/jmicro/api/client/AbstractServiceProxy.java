@@ -42,8 +42,8 @@ public abstract class AbstractServiceProxy {
 	public abstract String getVersion();
 	public abstract String getServiceName();
 	
-	public abstract  boolean enable();
-	public abstract void enable(boolean enable);
+	//public abstract  boolean enable();
+	//public abstract void enable(boolean enable);
 	
 	public  void setItem(ServiceItem item){
 		this.item = item;

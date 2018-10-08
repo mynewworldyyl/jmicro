@@ -118,9 +118,9 @@ public class Encoder implements IEncoder{
 			try {
 				String fn = fieldNames.get(i);
 				
-				if(fn.equals("reqArgsStr")){
+				/*if(fn.equals("reqArgsStr")){
 					System.out.println("");
-				}
+				}*/
 				
 				Field f = cls.getDeclaredField(fn);
 				

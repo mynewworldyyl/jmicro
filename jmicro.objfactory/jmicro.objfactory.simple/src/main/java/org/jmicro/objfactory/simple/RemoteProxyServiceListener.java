@@ -17,12 +17,16 @@
 package org.jmicro.objfactory.simple;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 
+import org.jmicro.api.annotation.Reference;
 import org.jmicro.api.client.AbstractServiceProxy;
 import org.jmicro.api.exception.CommonException;
+import org.jmicro.api.objectfactory.ProxyObject;
 import org.jmicro.api.registry.IServiceListener;
 import org.jmicro.api.registry.ServiceItem;
 
@@ -33,19 +37,19 @@ import org.jmicro.api.registry.ServiceItem;
  */
 class RemoteProxyServiceListener implements IServiceListener{
 
-	private Object belongTo;
+	private Object srcObj;
 	private Object proxy;
 	private Field refField;
 	
 	private RemoteServiceManager rsm;
 	
-	RemoteProxyServiceListener(RemoteServiceManager rsm,Object proxy,Object belongTo,Field refField){
+	RemoteProxyServiceListener(RemoteServiceManager rsm,Object proxy,Object srcObj,Field refField){
 		if(proxy== null){
-			throw new CommonException("Proxy object cannot be null: "+ belongTo.getClass().getName()+",field: " + refField.getName());
+			throw new CommonException("Proxy object cannot be null: "+ refField.getDeclaringClass().getName()+",field: " + refField.getName());
 		}
 		this.rsm = rsm;
 		this.proxy = proxy;
-		this.belongTo = belongTo;
+		this.srcObj = srcObj;
 		this.refField = refField;
 	}
 
@@ -56,28 +60,31 @@ class RemoteProxyServiceListener implements IServiceListener{
 			AbstractServiceProxy p = (AbstractServiceProxy)proxy;
 			if(!p.key().equals(item.serviceName())){
 				throw new CommonException("Service listener give error service item:"+ 
-			belongTo.getClass().getName()+"],field: " + refField.getName()+" item:"+item.val());
+						refField.getDeclaringClass().getName()+"],field: " + refField.getName()+" item:"+item.val());
 			}
 			if(IServiceListener.SERVICE_ADD == type){
-				p.enable(true);
+				//p.enable(true);
+				p.setItem(item);
 			}else if(IServiceListener.SERVICE_REMOVE == type) {
-				p.enable(false);
+				p.setItem(null);
 			}else if(IServiceListener.SERVICE_DATA_CHANGE == type) {
 				p.setItem(item);
 			}
-		}else if(Set.class.isAssignableFrom(refField.getType()) || List.class.isAssignableFrom(refField.getType())){
+			notifyChange();
+		}else if(Set.class.isAssignableFrom(refField.getType()) 
+				|| List.class.isAssignableFrom(refField.getType())){
 			Collection<Object> set = (Collection<Object>)this.proxy;
 			
 			if(IServiceListener.SERVICE_ADD == type){
 				for(Object o: set){
 					AbstractServiceProxy p = (AbstractServiceProxy)o;
 					if(p.key().equals(item.serviceName())){
-						p.enable(true);
+						//p.enable(true);
 						p.setItem(item);
 						return;
 					}
 				}
-				Object o = this.rsm.createProxyService(refField, item,true);
+				Object o = this.rsm.createProxyService(refField, item,true,this.srcObj);
 				if(o!=null){
 					set.add(o);
 				}
@@ -90,9 +97,8 @@ class RemoteProxyServiceListener implements IServiceListener{
 						break;
 					}
 				}
-				if(po!= null){
-					po.enable(false);
-				}
+				po.setItem(null);
+				set.remove(po);
 			}else if(IServiceListener.SERVICE_DATA_CHANGE == type) {
 				AbstractServiceProxy po = null;
 				for(Object o: set){
@@ -103,12 +109,39 @@ class RemoteProxyServiceListener implements IServiceListener{
 					}
 				}
 				if(po!= null){
-					po.enable(true);
+					//po.enable(true);
 					po.setItem(item);
 				}
 			}
+			notifyChange();
 		}
 	}
 	
+	protected void notifyChange() {
+		Reference cfg = this.refField.getAnnotation(Reference.class);
+		if(cfg == null || cfg.changeListener()== null || cfg.changeListener().trim().equals("")){
+			return;
+		}
+		Method m =  null;
+		Class<?> cls = ProxyObject.getTargetCls(this.refField.getDeclaringClass());
+		try {
+			 m =  cls.getMethod(cfg.changeListener(),new Class[]{String.class} );
+			 if(m != null){
+				 m.invoke(this.srcObj,refField.getName());
+			 }
+		} catch (NoSuchMethodException | SecurityException | IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
+			System.out.println(e); 
+			try {
+				m =  cls.getMethod(cfg.changeListener(),new Class[0] );
+				if(m != null){
+					 m.invoke(this.srcObj);
+				}
+			} catch (NoSuchMethodException | SecurityException | IllegalAccessException | IllegalArgumentException | InvocationTargetException e1) {
+				System.out.println(e1);
+			}
+		}
+		
+	}
+
 	
 }

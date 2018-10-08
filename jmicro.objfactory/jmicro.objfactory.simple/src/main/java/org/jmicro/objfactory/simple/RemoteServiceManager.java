@@ -20,7 +20,6 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.ParameterizedType;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -54,7 +53,7 @@ class RemoteServiceManager {
 	//key is a interface class(key = serviceName + namespace + version), value is a proxy object
 	private Map<String,Object> remoteObjects = new ConcurrentHashMap<String,Object>();
 	
-	private Set<Class<?>> refServiceClass = new HashSet<>();
+	//private Set<Class<?>> refServiceClass = new HashSet<>();
 	
 	RemoteServiceManager(SimpleObjectFactory o){
 		this.of = o;
@@ -66,6 +65,7 @@ class RemoteServiceManager {
 	
 	Object createService(Object obj,Field f){
 		if(!f.isAnnotationPresent(Reference.class)){
+			logger.warn("cls:["+obj.getClass().getName()+"] not annotated with ["+Reference.class.getName()+"]");
 			return null;
 		}
 		
@@ -78,11 +78,12 @@ class RemoteServiceManager {
 		IRegistry registry = ComponentManager.getRegistry(null);
 		
 		if(List.class.isAssignableFrom(type) || Set.class.isAssignableFrom(type)){
+			//集合服务引用
 			proxy = createSetService(obj,f,becls,ref);
 		}/*else if(){
 			proxy = createSetService(obj,f,becls,ref);
 		}*/else{
-			
+			//单个服务引用
 			//Set<ServiceItem> sis = registry.getServices(field.getName());
 			if(!type.isInterface()) {
 				throw new CommonException("Class ["+becls.getName()+"] field ["+ f.getName()+"] dependency ["+f.getType().getName()+"] have to be interface class");
@@ -90,47 +91,90 @@ class RemoteServiceManager {
 			boolean enable = true;
 			if(!registry.isExist(f.getType().getName(),ref.namespace(),ref.version())) {
 				if(ref.required()){
+					//服务不可用，并且服务依赖是必须满足，则报错处理
 					StringBuffer sb = new StringBuffer("Class [");
 					sb.append(becls.getName()).append("] field [").append(f.getName())
 					.append("] dependency [").append(f.getType().getName())
 					.append("] not found version [").append(ref.version()).append("] namespace [").append(ref.namespace()).append("]");
 					throw new CommonException(sb.toString());
 				}
+				//服务不可用，但还是可以生成服务代理，直到使用时才决定服务的可用状态
 				enable = false;
 			} 
-			
-			//proxy = createProxyService(f,ref.namespace(),ref.version(),enable);
-			String key = ServiceItem.serviceName(type.getName(),ref.namespace(),ref.version());
-			
-			if(this.remoteObjects.containsKey(key)) {
-				return remoteObjects.get(key);
+			Set<ServiceItem> sis = registry.getServices(f.getType().getName(),ref.namespace(),ref.version());
+			if(sis == null || sis.isEmpty()){
+				proxy = createProxyService(f,null,enable,obj);
+			}else {
+				proxy = createProxyService(f,sis.iterator().next(),enable,obj);
 			}
 			
-			Set<ServiceItem> items = registry.getServices(f.getType().getName(),ref.namespace(),ref.version());
-			
-		    proxy = createDynamicServiceProxy(f.getType(),ref.namespace(),ref.version(),enable);
-		    
-		    setHandler(proxy,key,items.iterator().next());
-		    
 		}
 		return proxy;
 	}
 	
-	Object createProxyService(Field f,ServiceItem item, boolean enable){
-		 Object proxy = createDynamicServiceProxy(f.getType(),item.getNamespace(),item.getVersion(),enable);  
-		 setHandler(proxy,item.serviceName(),item);
+	Object createProxyService(Field f,ServiceItem si, boolean enable,Object srcObj){
+		
+		Reference ref = f.getAnnotation(Reference.class);
+		Class<?> type = this.getEltType(f);
+		
+		String key = "";
+		if(si != null){
+			//call from set field
+			key = si.serviceName();
+		}else {
+			//call from singleton service reference
+			key = ServiceItem.serviceName(type.getName(),ref.namespace(),ref.version());
+		}
+		
+		if(this.remoteObjects.containsKey(key)) {
+			return remoteObjects.get(key);
+		}
+
+		//boolean enable = items != null && !items.isEmpty();
+		Object proxy = null;
+		if(si != null){
+			//call from set field
+			proxy = createDynamicServiceProxy(type,si.getNamespace(),si.getVersion(),enable);
+		}else {
+			//call from singleton service reference
+			proxy = createDynamicServiceProxy(type,ref.namespace(),ref.version(),enable);
+		}
+		//ServiceItem si = items.iterator().next();
+		
+		setHandler(proxy,key,si);
+		
+		IRegistry registry = ComponentManager.getRegistry(null);
+		RemoteProxyServiceListener lis = new RemoteProxyServiceListener(this,proxy,srcObj,f);
+		registry.addServiceListener(ServiceItem.serviceName(f.getType().getName(),ref.namespace(),ref.version()), lis);
+			
+		 if(proxy != null){
+			 AbstractServiceProxy asp = (AbstractServiceProxy)proxy;
+			 asp.setHandler(of.getByName(Constants.DEFAULT_INVOCATION_HANDLER));
+			 asp.setItem(si);
+			 remoteObjects.put(key, proxy);
+		 }
 		 return proxy;
 	}
+	
+	private Class<?> getEltType(Field f){
 
+		if(Collection.class.isAssignableFrom(f.getType())){
+			ParameterizedType genericType = (ParameterizedType) f.getGenericType();
+			if(genericType == null) {
+				throw new CommonException("Must be ParameterizedType for cls:"+ f.getDeclaringClass().getName()+",field: "+f.getName());
+			}
+			Class<?> ctype = (Class<?>)genericType.getActualTypeArguments()[0];
+			return ctype;
+		}
+		
+		return f.getType();
+	}
 	
 	private Object createSetService(Object obj, Field f, Class<?> becls, Reference ref) {
 
+	
+		Class<?> ctype = getEltType(f);
 		
-		ParameterizedType genericType = (ParameterizedType) f.getGenericType();
-		if(genericType == null) {
-			throw new CommonException("Must be ParameterizedType for cls:"+ becls.getName()+",field: "+f.getName());
-		}
-		Class<?> ctype = (Class<?>)genericType.getActualTypeArguments()[0];
 		Class<?> type = f.getType();
 		IRegistry registry = ComponentManager.getRegistry(null);
 		
@@ -143,7 +187,7 @@ class RemoteServiceManager {
 		}
 		
 		//请参考Reference说明使用
-		Set<ServiceItem> items = registry.getServices(ctype.getName(), null,null/*ref.namespace(),ref.version()*/);
+		Set<ServiceItem> items = registry.getServices(ctype.getName());
 		
 
 		boolean bf = f.isAccessible();
@@ -173,116 +217,43 @@ class RemoteServiceManager {
 			}
 		}
 		
-		RemoteProxyServiceListener lis = new RemoteProxyServiceListener(this,o,becls,f);
+		RemoteProxyServiceListener lis = new RemoteProxyServiceListener(this,o,obj,f);
 		//registry.addServiceListener(ServiceItem.serviceName(f.getType().getName(),ref.namespace(),ref.version()), lis);
 		
 		Collection<Object> el = (Collection<Object>)o;
 		
 		Map<String,Object> exists = new HashMap<>();
 		Object po = null;
-		for(ServiceItem si : items){
-			String key = si.serviceName();
-			if(exists.containsKey(key)){
-				continue;
-			}
-			
-			if(this.remoteObjects.containsKey(key)) {
-				po = remoteObjects.get(key);
-			}else {
-				po = createDynamicServiceProxy(ctype,si.getNamespace(),si.getVersion(),true);
-				setHandler(po,key,si);
-			}
-			
-			if(po != null){
-				el.add(po);
-			}
-			
-			registry.addServiceListener(ServiceItem.serviceName(si.getServiceName(),si.getNamespace(),si.getVersion()), lis);
-		}
-		exists.clear();
-		exists = null;
-		return el;
-		
-	}
-
-	private Object createListService(Object obj, Field f, Class<?> becls, Reference ref) {
-
-		
-		ParameterizedType genericType = (ParameterizedType) f.getGenericType();
-		if(genericType == null) {
-			throw new CommonException("Must be ParameterizedType for cls:"+ becls.getName()+",field: "+f.getName());
-		}
-		Class<?> ctype = (Class<?>)genericType.getActualTypeArguments()[0];
-		
-		Class<?> type = f.getType();
-		IRegistry registry = ComponentManager.getRegistry(null);
-		
-		if(!registry.isExist(f.getType().getName(), ref.namespace(),ref.version()) && ref.required()) {
-			StringBuffer sb = new StringBuffer("Class [");
-			sb.append(becls.getName()).append("] field [").append(f.getName())
-			.append("] dependency [").append(f.getType().getName())
-			.append("] not found version [").append(ref.version()).append("] namespace [").append(ref.namespace()).append("]");
-			throw new CommonException(sb.toString());
-		}
-		//请参考Reference说明使用
-		Set<ServiceItem> items = registry.getServices(ctype.getName(),null,null/* ref.namespace(),ref.version()*/);
-
-		boolean bf = f.isAccessible();
-		Object o = null;
-		if(!bf) {
-			f.setAccessible(true);
-		}
-		try {
-			o = f.get(obj);
-		} catch (IllegalArgumentException | IllegalAccessException e) {
-			throw new CommonException("",e);
-		}
-		if(!bf) {
-			f.setAccessible(bf);
-		}
-		
-		if(o == null){
-			if(type.isInterface() || Modifier.isAbstract(type.getModifiers())) {
-				o = new ArrayList<Object>();
-			} else {
-				try {
-					//变量声明的类型是Set的子实现类型，如HashSet
-					o = type.newInstance();
-				} catch (InstantiationException | IllegalAccessException e) {
-					throw new CommonException("",e);
+		if(!items.isEmpty()){
+			for(ServiceItem si : items){
+				String key = si.serviceName();
+				if(exists.containsKey(key)){
+					continue;
+				}
+				
+				if(this.remoteObjects.containsKey(key)) {
+					po = remoteObjects.get(key);
+				}else {
+					po = createDynamicServiceProxy(ctype,si.getNamespace(),si.getVersion(),true);
+					//registry.addServiceListener(ServiceItem.serviceName(si.getServiceName(),si.getNamespace(),si.getVersion()), lis);
+					setHandler(po,key,si);
+				}
+				
+				if(po != null){
+					el.add(po);
 				}
 			}
 		}
 		
-		RemoteProxyServiceListener lis = new RemoteProxyServiceListener(this,o,becls,f);
-		registry.addServiceListener(ServiceItem.serviceName(f.getType().getName(),ref.namespace(),ref.version()), lis);
+		//接受实现相同接口的所有服务，具体使用那个服务，由使用者去判断
+		registry.addServiceNameListener(ctype.getName(), lis);
 		
-		List<Object> el = (List<Object>)o;
-		
-		Map<String,Object> exists = new HashMap<>();
-		Object po = null;
-		for(ServiceItem si : items){
-			String key = si.getServiceName() + si.getNamespace() + si.getVersion();
-			if(exists.containsKey(key)){
-				continue;
-			}
-			
-			if(this.remoteObjects.containsKey(key)) {
-				po = remoteObjects.get(key);
-			} else {
-				po = createDynamicServiceProxy(ctype,si.getNamespace(),si.getVersion(),true);
-				setHandler(po,key,si);
-			}
-			
-			if(po != null){
-				el.add(po);
-			}
-		}
 		exists.clear();
 		exists = null;
 		return el;
 		
 	}
+
 	
 	private void setHandler(Object proxy,String key,ServiceItem si){
 		 if(proxy != null){

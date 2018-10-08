@@ -54,4 +54,5 @@ public @interface Reference {
 	
 	public boolean required() default false;
 	public String registry() default "";
+	public String changeListener() default "";
 }

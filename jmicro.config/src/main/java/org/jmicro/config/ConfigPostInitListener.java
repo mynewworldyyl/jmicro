@@ -133,7 +133,7 @@ public class ConfigPostInitListener extends PostInitListenerAdapter {
 	
 	private void watch(Field f,Object obj,String path){
 		IDataListener lis = (String path1,String data)->{
-			setValue(f,obj,path);
+			setValue(f,obj,data);
 			watch(f,obj,path);
 			notifyChange(f,obj);
 		};

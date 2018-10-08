@@ -235,9 +235,6 @@ public class Decoder implements IDecoder{
 		for(int i =0; i < fieldNames.size(); i++){
 			try {
 				Field f = cls.getDeclaredField(fieldNames.get(i));
-				if(f.getName().equals("reqArgsStr")){
-					System.out.println("");
-				}
 				Object v = decodeObject(buffer);
 				boolean bf = f.isAccessible();
 				if(!bf){

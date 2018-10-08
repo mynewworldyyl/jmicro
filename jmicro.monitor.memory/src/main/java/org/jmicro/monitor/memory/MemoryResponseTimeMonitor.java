@@ -70,7 +70,5 @@ public class MemoryResponseTimeMonitor implements IMonitorSubmitWorker {
 			}
 		}
 	}
-	
-	
 
 }

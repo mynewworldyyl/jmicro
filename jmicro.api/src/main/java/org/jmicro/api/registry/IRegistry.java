@@ -37,9 +37,15 @@ public interface IRegistry extends Init{
 	Set<ServiceItem> getServices(String serviceName,String method,Object[] args,String namespace,String version);
 	
 	boolean isExist(String serviceName,String namespace,String version);
+	
 	Set<ServiceItem> getServices(String serviceName,String namespace,String version);
 	
-	void addServiceListener(String key,IServiceListener lis);
+	//get by service name,use for collection inject
+	Set<ServiceItem> getServices(String serviceName);
 	
+	void addServiceListener(String key,IServiceListener lis);
 	void removeServiceListener(String key,IServiceListener lis);
+	
+	void addServiceNameListener(String key,IServiceListener lis);
+	void removeServiceNameListener(String key,IServiceListener lis);
 }

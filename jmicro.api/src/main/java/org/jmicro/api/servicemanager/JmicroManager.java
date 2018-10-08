@@ -94,7 +94,6 @@ public class JmicroManager {
 				JMicroContext.get().configMonitor(req.isMonitorEnable()?1:0, 0);
 				MonitorConstant.doSubmit(monitor,MonitorConstant.SERVER_REQ_BEGIN, req,resp);
 				
-				
 				resp = handler(req);
 				MonitorConstant.doSubmit(monitor,MonitorConstant.SERVER_REQ_OK, req,resp);
 			} catch (Throwable e) {

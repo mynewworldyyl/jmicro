@@ -55,10 +55,15 @@ public class ZKRegistry implements IRegistry {
 	//when the value set is NULL, and service add  to set first, should notify IServiceListener 
 	//service ADD event
 	private Map<String,Set<ServiceItem>> serviceItems = new ConcurrentHashMap<String,Set<ServiceItem>>();
+	
 	private Map<String,ServiceItem> path2Items = new HashMap<>();
+	
+	private Map<String,Boolean> serviceNameItems = new ConcurrentHashMap<String,Boolean>();
 	
 	//stand on user side ,service unique name as key(key = servicename+namespace+version)
 	private HashMap<String,Set<IServiceListener>> slisteners = new HashMap<>();
+	
+	private HashMap<String,Set<IServiceListener>> serviceNameListeners = new HashMap<>();
 	
 	//service instance path as key(key=ServiceItem.key())
 	//private  Map<String,INodeListener> nodeListeners = new HashMap<>();
@@ -84,9 +89,9 @@ public class ZKRegistry implements IRegistry {
 			serviceChanged(path,children);
 		});
 		
-		List<String> childrens = ZKDataOperator.getIns().getChildren(ServiceItem.ROOT);
-		logger.debug("Service: "+childrens.toString());
-		serviceChanged(ServiceItem.ROOT,childrens);
+		List<String> children = ZKDataOperator.getIns().getChildren(ServiceItem.ROOT);
+		logger.debug("Service: "+children.toString());
+		serviceChanged(ServiceItem.ROOT,children);
 	}	
 	
 	private INodeListener nodeListener = new INodeListener(){
@@ -110,28 +115,7 @@ public class ZKRegistry implements IRegistry {
 	
 	@Override
 	public void addServiceListener(String key,IServiceListener lis) {
-		if(slisteners.containsKey(key)){
-			Set<IServiceListener> l = slisteners.get(key);
-			boolean flag = false;
-			for(IServiceListener al : l){
-				if(al == lis){
-					flag = true;
-					break;
-				}
-			}
-			if(!flag){
-				l.add(lis);
-			}
-		} else {
-			Set<IServiceListener> l = new HashSet<>();
-			slisteners.put(key, l);
-			l.add(lis);
-		}
-
-		Set<ServiceItem> s = serviceItems.get(key);
-		if(s!= null && !s.isEmpty()){
-			lis.serviceChanged(IServiceListener.SERVICE_ADD, s.iterator().next());
-		}
+		addServiceListener(this.slisteners,key,lis);
 		
 	}
 
@@ -144,15 +128,47 @@ public class ZKRegistry implements IRegistry {
 			items.add(si);
 		}
 		notifyServiceChange(IServiceListener.SERVICE_DATA_CHANGE,si);
+		notifyServiceNameChange(IServiceListener.SERVICE_DATA_CHANGE,si);
 	}
 
 	@Override
 	public void removeServiceListener(String key,IServiceListener lis) {
-		if(!slisteners.containsKey(key)){
+		removeServiceListener(this.slisteners,key,lis);
+	}
+
+	private void notifyServiceNameChange(int type,ServiceItem item){
+		//接口名为KEY监听器
+		Set<IServiceListener> lss = this.serviceNameListeners.get(item.getServiceName());
+		if(lss != null && !lss.isEmpty()){
+			for(IServiceListener l : lss){
+				l.serviceChanged(type, item);
+			}
+		}
+		
+	}
+	
+
+	private void notifyServiceChange(int type,ServiceItem item){
+		//key = servicename + namespace + version
+		Set<IServiceListener> ls = this.slisteners.get(item.serviceName());
+		if(ls != null && !ls.isEmpty()){
+			for(IServiceListener l : ls){
+				l.serviceChanged(type, item);
+			}
+		}
+	}
+	
+	@Override
+	public void addServiceNameListener(String key, IServiceListener lis) {
+		addServiceListener(this.serviceNameListeners,key,lis);
+	}
+	
+	private void removeServiceListener(HashMap<String,Set<IServiceListener>> listeners, String key,IServiceListener lis){
+		if(!listeners.containsKey(key)){
 			return;
 		}
 		
-		Set<IServiceListener> l = slisteners.get(key);
+		Set<IServiceListener> l = listeners.get(key);
 		if(l == null){
 			return;
 		}
@@ -162,19 +178,39 @@ public class ZKRegistry implements IRegistry {
 			}
 		}
 	}
-
-
-	private void notifyServiceChange(int type,ServiceItem item){
-		Set<IServiceListener> ls = this.slisteners.get(item.serviceName());
-		
-		if(ls == null || ls.isEmpty()){
-			return;
-		}
-		for(IServiceListener l : ls){
-			l.serviceChanged(type, item);
-		}
-	}
 	
+	private void addServiceListener(HashMap<String,Set<IServiceListener>> listeners, String key,IServiceListener lis){
+
+		if(listeners.containsKey(key)){
+			Set<IServiceListener> l = listeners.get(key);
+			boolean flag = false;
+			for(IServiceListener al : l){
+				if(al == lis){
+					flag = true;
+					break;
+				}
+			}
+			if(!flag){
+				l.add(lis);
+			}
+		} else {
+			Set<IServiceListener> l = new HashSet<>();
+			listeners.put(key, l);
+			l.add(lis);
+		}
+
+		Set<ServiceItem> s = this.getServices(key);
+		if(s!= null && !s.isEmpty()){
+			lis.serviceChanged(IServiceListener.SERVICE_ADD, s.iterator().next());
+		}
+	
+	}
+
+	@Override
+	public void removeServiceNameListener(String key, IServiceListener lis) {
+		removeServiceListener(this.serviceNameListeners,key,lis);
+	}
+
 	private void serviceChanged(String path, List<String> children) {		
 		for(String child : children){
 			serviceChanged(path+"/"+child);
@@ -185,28 +221,33 @@ public class ZKRegistry implements IRegistry {
 
 		String data =  ZKDataOperator.getIns().getData(path);
 		ServiceItem i = new ServiceItem(data);
+		this.persisFromConfig(i);
+		
+		this.path2Items.put(path, i);
 		
 		String serviceName = i.serviceName();
-		
 		logger.debug("service add: " + path);
 		if(!serviceItems.containsKey(serviceName)){
 			serviceItems.put(serviceName, new HashSet<ServiceItem>());
 		}
-		
 		Set<ServiceItem> items = serviceItems.get(serviceName);
-	
-		this.persisFromConfig(i);
-		
+		boolean e = items.isEmpty();
 		items.add(i);
-		this.path2Items.put(path, i);
+		if(e){
+			this.notifyServiceChange(IServiceListener.SERVICE_ADD, i);
+		}
+		
+		
+		if(!this.serviceNameItems.containsKey(i.getServiceName())){
+			serviceNameItems.put(i.getServiceName(), true);
+			this.notifyServiceNameChange(IServiceListener.SERVICE_ADD, i);
+		}
 		
 		ZKDataOperator.getIns().addNodeListener(path, nodeListener);
 		ZKDataOperator.getIns().addDataListener(i.key(ServiceItem.PERSIS_ROOT), this.dataListener);
 		
-		if(items.size() == 1){
-			this.notifyServiceChange(IServiceListener.SERVICE_ADD, i);
-		}
 	}
+	
 	
 	
 	private void persisFromConfig(ServiceItem item){
@@ -222,6 +263,19 @@ public class ZKRegistry implements IRegistry {
     	ServiceItem i = this.path2Items.remove(path);
     	Set<ServiceItem> items = serviceItems.get(i.serviceName());
     	items.remove(i);
+    	
+    	String name = i.getServiceName();
+    	boolean f = false;
+    	for(ServiceItem si : this.path2Items.values()){
+    		if(name.equals(si.getServiceName())){
+    			f = true;
+    			break;
+    		}
+    	}
+    	
+    	if(!f) {
+    		this.notifyServiceNameChange(IServiceListener.SERVICE_REMOVE, i);
+    	}
     	
     	ZKDataOperator.getIns().removeNodeListener(path, nodeListener);
     	ZKDataOperator.getIns().removeDataListener(path, dataListener);
@@ -367,6 +421,20 @@ public class ZKRegistry implements IRegistry {
 						si.getVersion().equals(version)) {
 					is.add(si);
 				}
+			}
+		}
+		return is;
+	}
+
+	/**
+	 * use for set inject
+	 */
+	@Override
+	public Set<ServiceItem> getServices(String serviceName) {
+		Set<ServiceItem> is = new HashSet<>();
+		for(String key : this.serviceItems.keySet()){
+			if(key.startsWith(serviceName)){
+				is.addAll(this.serviceItems.get(key));
 			}
 		}
 		return is;

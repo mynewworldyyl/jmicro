@@ -60,6 +60,8 @@ public class MinaServer implements IServer{
 	AttributeKey<MinaServerSession> sessinKey = AttributeKey.createKey(MinaServerSession.class, Constants.SESSION_KEY);
 	AttributeKey<Boolean> monitorEnableKey = AttributeKey.createKey(Boolean.class, Constants.MONITOR_ENABLE_KEY);
 	
+	AttributeKey<Object> monitorCfgEnableKey = AttributeKey.createKey(Object.class, "monitorCfgEnableKey");
+	
 	//@Inject(required=false)
 	private  NioTcpServer acceptor;
 	
@@ -87,13 +89,15 @@ public class MinaServer implements IServer{
 	@Inject(required=false)
 	private SubmitItemHolderManager monitor;
 	
-	@Cfg(value="/monitorServerIoSession",required=false)
-	private boolean monitorIoSession=true;
-	
 	@Override
 	public void init() {
 		start();
 	}
+	
+	 private Boolean monitorEnable(IoSession ioSession) {
+    	 Boolean v = ioSession.getAttribute(this.monitorEnableKey);
+		 return v == null ? JMicroContext.get().isMonitor():v;
+    }
 
 	@Override
 	public void start() {
@@ -113,16 +117,18 @@ public class MinaServer implements IServer{
                     s.putParam(Constants.SESSION_KEY, session);
                     //s.setSessionId(idGenerator.getLongId(ISession.class));
                     session.setAttribute(sessinKey, s);
-                    if(monitorIoSession){
-                    	MonitorConstant.doSubmit(monitor,MonitorConstant.SERVER_IOSESSION_OPEN, null,null,session);
+                    if(monitorEnable(session)){
+                    	 MonitorConstant.doSubmit(monitor,MonitorConstant.SERVER_IOSESSION_OPEN, null,null,session.getId());
                     }
                 }
 
                 @Override
                 public void messageReceived(IoSession session, Object message) {
-                	if(monitorIoSession && monitor != null){
-                    	monitor.submit(MonitorConstant.SERVER_IOSESSION_READ, null,null,session,((ByteBuffer)message).remaining());
-                    }
+                	 if(monitorEnable(session)){
+                		 MonitorConstant.doSubmit(monitor,MonitorConstant.SERVER_IOSESSION_READ,
+                     			null,null,session,((ByteBuffer)message).remaining());
+                	 }
+                	
                     ByteBuffer rb  = (ByteBuffer)message;
                     MinaServerSession s = session.getAttribute(sessinKey);
                     
@@ -153,7 +159,10 @@ public class MinaServer implements IServer{
         			if(s.getSessionId() != -1 && msg.getSessionId() != s.getSessionId()) {
         				String msg1 = "Ignore MSG" + msg.getId() + "Rec session ID: "+msg.getSessionId()+",but this session ID: "+s.getSessionId();
         				LOG.warn(msg1);
-        				MonitorConstant.doSubmit(monitor,MonitorConstant.SERVER_PACKAGE_SESSION_ID_ERR, null,null,msg,session,msg1);
+        				if(monitorEnable(session)){
+        					MonitorConstant.doSubmit(monitor,MonitorConstant.SERVER_PACKAGE_SESSION_ID_ERR,
+            						null,null,msg.getId(),s.getSessionId(),msg1);
+        				}
         				return;
         			}
                    
@@ -170,34 +179,34 @@ public class MinaServer implements IServer{
             		s.putParam(Constants.MONITOR_ENABLE_KEY,req.isMonitorEnable());
             		JMicroContext.get().configMonitor(req.isMonitorEnable()?1:0, 0);
                    
-            		//IResponse resp = reqHandler.onRequest(req);
             		jmicroManager.addRequest(req);
-            		
-            		/*msg.setPayload(resp.encode());
-            		msg.setReq(false);
-            		msg.setType(Message.PROTOCOL_TYPE_END);
-                    s.write(msg);*/
                 }
 
 				@Override
 				public void sessionClosed(IoSession session) {
 					super.sessionClosed(session);
-					MonitorConstant.doSubmit(monitor,MonitorConstant.SERVER_IOSESSION_CLOSE, null,null,session);
+					if(monitorEnable(session)){
+						MonitorConstant.doSubmit(monitor,MonitorConstant.SERVER_IOSESSION_CLOSE, null,null,session.getId());
+					}
 				}
 
 				@Override
 				public void sessionIdle(IoSession session, IdleStatus status) {
 					// TODO Auto-generated method stub
 					super.sessionIdle(session, status);
-					MonitorConstant.doSubmit(monitor,MonitorConstant.SERVER_IOSESSION_CLOSE, null,null,session,status);
+					if(monitorEnable(session)){
+						MonitorConstant.doSubmit(monitor,MonitorConstant.SERVER_IOSESSION_CLOSE, 
+								null,null,session,status);
+					}
 				}
 
 				@Override
 				public void messageSent(IoSession session, Object message) {
 					super.messageSent(session, message);
-					 if(monitorIoSession && monitor != null){
-			            	monitor.submit(MonitorConstant.SERVER_IOSESSION_WRITE, null,null,session,((ByteBuffer)message).remaining());
-			            }
+					if(monitorEnable(session)){
+					monitor.submit(MonitorConstant.SERVER_IOSESSION_WRITE, null,null,session.getId(),
+							((ByteBuffer)message).remaining());
+					}
 				}
 
 				@Override
@@ -213,7 +222,10 @@ public class MinaServer implements IServer{
 				@Override
 				public void exceptionCaught(IoSession session, Exception cause) {
 					super.exceptionCaught(session, cause);
-					MonitorConstant.doSubmit(monitor,MonitorConstant.SERVER_IOSESSION_EXCEPTION, null,null,session,cause);
+					if(monitorEnable(session)){
+						MonitorConstant.doSubmit(monitor,MonitorConstant.SERVER_IOSESSION_EXCEPTION,
+								null,null,session.getId(),cause);
+					}
 				}
 
 				@Override

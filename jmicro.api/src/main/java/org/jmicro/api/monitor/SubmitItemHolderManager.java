@@ -25,7 +25,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.jmicro.api.JMicroContext;
 import org.jmicro.api.annotation.Cfg;
 import org.jmicro.api.annotation.Component;
-import org.jmicro.api.annotation.JMethod;
 import org.jmicro.api.annotation.Reference;
 import org.jmicro.api.server.IRequest;
 import org.jmicro.api.server.IResponse;
@@ -41,50 +40,101 @@ public class SubmitItemHolderManager {
     
 	private final static Logger logger = LoggerFactory.getLogger(SubmitItemHolderManager.class);
 	
-	@Cfg(value="/monitorServerIoSession",required=false,changeListener="startWork")
-	private boolean monitorIoSession1=true;
+	private static final int NON = 0;
 	
-	@Cfg(value="/isDefaultOpenMonitor",required=false,changeListener="startWork")
-	private boolean isDefaultOpenMonitor=false;
+	private static final int INITED = 1;
 	
-	@Cfg(value="/monitorMaxCacheItems",required=false,changeListener="startWork")
-	private int maxCacheItems = 10000;
+	private static final int WORKING = 2;
 	
 	private Queue<SubmitItem> caches = new ConcurrentLinkedQueue<>();
 	
+	@Cfg(value="/SubmitItemHolderManager/enable",required=false)
 	private boolean enable = true;
 	
 	private AtomicInteger index = new AtomicInteger();
 	
+	@Cfg(value="/SubmitItemHolderManager/threadSize",required=false,changeListener="reset")
 	private int threadSize = 1;
 	
+	@Cfg(value="/SubmitItemHolderManager/maxCacheItems",required=false)
+	private int maxCacheItems = 1000;
+	
+	private int status = NON;
+	
 	//@Inject(required=false, remote=true)
-	@Reference(version="0.0.0",required=false)
+	//配置方式参数Reference注解说明
+	@Reference(version="0.0.0",required=false,changeListener="startWork")
 	private Set<IMonitorSubmitWorker> submiters = new HashSet<>();
 	
 	private Worker[] workers = null;
 	
-	public void init(){
-		workers = new Worker[threadSize];
-		for(int i = 0; i < threadSize; i++){
-			workers[i] = new Worker();
+	public void reset(){
+		if(status == NON){
+			return;
 		}
+		if(threadSize == workers.length) {
+			return;
+		}
+		
+		Worker[] ws = new Worker[this.threadSize];
+		
+		
+		if(threadSize < workers.length) {
+			for(int j = 0; j < threadSize; j++){
+				ws[j] = workers[j];
+			}
+			for(int j = threadSize; j < workers.length; j++){
+				workers[j].pause(true);
+			}
+			
+		} else {
+			for(int j = 0; j < workers.length; j++){
+				ws[j] = workers[j];
+			}
+			
+			for(int j = workers.length; j < threadSize; j++){
+				ws[j] = new Worker();
+				if(status == WORKING){
+					ws[j].start();
+				}
+			}
+		}
+		this.workers = ws;
 	}
-	//@JMethod("init")
-	/*public*/ void startWork() {
-		if(!submiters.isEmpty()){
+	
+	public synchronized void init(){
+		if(NON == status){
+			status = INITED;
+			workers = new Worker[threadSize];
 			for(int i = 0; i < threadSize; i++){
-				new Thread(workers[i]).start();
+				workers[i] = new Worker();
 			}
 		}
 	}
 	
-	private class Worker implements Runnable{
+	public synchronized void startWork() {
+		if(NON == status){
+			init();
+		}
+		if(INITED == status) {
+			if(!submiters.isEmpty()){
+				status = WORKING;
+				for(int i = 0; i < threadSize; i++){
+					 workers[i].start();
+				}
+			}
+		}
+	}
+	
+	private class Worker extends Thread{
+		private boolean stop = false;
 		private Queue<SubmitItem> its = new ConcurrentLinkedQueue<>();
 		@Override
 		public void run() {
+			//自身所有代码不加入日志统计，否则会进入死循环
+			//如果有需要，可以选择其他方式，如slf4j等
 			JMicroContext.get().configMonitor(0, 0);
-			for(;;){
+			for(;!stop;){
 				try {
 					if(its.isEmpty()){
 						synchronized(this){
@@ -94,12 +144,15 @@ public class SubmitItemHolderManager {
 							}
 						}
 					}
+					
 					JMicroContext.get().configMonitor(0, 0);
-					SubmitItem si = its.poll();
-					for(IMonitorSubmitWorker m : submiters){
-						m.submit(si);
+					for(SubmitItem si = its.poll();si != null;si = its.poll()){
+						for(IMonitorSubmitWorker m : submiters){
+							m.submit(si);
+						}
+						cache(si);
 					}
-					cache(si);
+					
 				} catch (Throwable e) {
 					logger.error("",e);
 				}
@@ -116,6 +169,9 @@ public class SubmitItemHolderManager {
 		public int size(){
 			return its.size();
 		}
+		
+		public boolean isPause(){return this.stop;}
+		public void pause(boolean s){this.stop=s;}
 	}
 	
 	private int size() {	
