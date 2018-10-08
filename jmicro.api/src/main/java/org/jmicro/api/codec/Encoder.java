@@ -48,6 +48,10 @@ public class Encoder implements IEncoder{
 
 	public static <V> void encodeObject(ByteBuffer buffer,V obj){
 	
+		if(obj == null){
+			buffer.put(Decoder.PREFIX_TYPE_NULL);
+			return;
+		}
 		Class<?> cls = obj.getClass();
 		Integer type = Decoder.getType(cls);
 		
@@ -95,10 +99,6 @@ public class Encoder implements IEncoder{
 	}
 	
 	private static void encodeByReflect(ByteBuffer buffer, Class<?> cls, Integer type,Object obj) {
-
-		if(MappedByteBuffer.class.isAssignableFrom(cls)){
-			System.out.println("");
-		}
 		
 		int m = cls.getModifiers() ;
 		
@@ -111,21 +111,17 @@ public class Encoder implements IEncoder{
 			throw new CommonException("should be public class [" +cls.getName()+"]");
 		}
 		
-		List<String> fieldNames = new ArrayList<>();
-		Field[] fs = cls.getDeclaredFields();
-		for(Field f: fs){
-			if(Modifier.isTransient(f.getModifiers()) || Modifier.isFinal(f.getModifiers())
-					|| Modifier.isStatic(f.getModifiers()) || f.getDeclaringClass() == Object.class){
-				continue;
-			}
-			fieldNames.add(f.getName());
-		}
 		
-		fieldNames.sort((v1,v2)->v1.compareTo(v2));
+		List<String> fieldNames = Decoder.sortFieldNames(cls);
 		
 		for(int i = 0; i < fieldNames.size(); i++){
 			try {
 				String fn = fieldNames.get(i);
+				
+				if(fn.equals("reqArgsStr")){
+					System.out.println("");
+				}
+				
 				Field f = cls.getDeclaredField(fn);
 				
 				boolean bf = f.isAccessible();
@@ -136,9 +132,7 @@ public class Encoder implements IEncoder{
 				if(!bf){
 					f.setAccessible(false);
 				}
-				if(v != null){
-					encodeObject(buffer,v);
-				}
+				encodeObject(buffer,v);
 				
 			} catch (NoSuchFieldException | SecurityException | IllegalArgumentException | IllegalAccessException e) {
 				throw new CommonException("",e);

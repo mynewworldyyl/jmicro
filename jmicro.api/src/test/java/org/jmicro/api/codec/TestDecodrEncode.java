@@ -6,6 +6,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.jmicro.api.monitor.SubmitItem;
 import org.junit.Test;
 
 public class TestDecodrEncode {
@@ -87,5 +88,32 @@ public class TestDecodrEncode {
 		map = Decoder.decodeObject(bb);
 		
 		System.out.println(map);
+	}
+	
+	@Test
+	public void testEncodeSubmitItem(){
+		SubmitItem si = new SubmitItem();
+		si.setFinish(true);
+		si.setType(1);
+		si.setReqId(1);
+		si.setSessionId(1);
+		si.setNamespace("sss");
+		si.setVersion("fsa");
+		si.setReqArgs("fsf");
+		si.setMethod("sfs");
+		si.setMsgId(1);
+		si.setOthers("fsf");
+		si.setRespId(1L);
+		si.setResult("sfs");
+		
+		ByteBuffer bb = ByteBuffer.allocate(1024*4);
+		Encoder.encodeObject(bb, si);
+		bb.flip();
+		System.out.println(bb.limit());
+		System.out.println(bb.array());
+		
+		Object o = Decoder.decodeObject(bb);
+		System.out.println(o);
+		
 	}
 }

@@ -42,6 +42,7 @@ public class Decoder implements IDecoder{
 	
 	public static final byte PREFIX_TYPE_BYTE = 1 << 0;
 	public static final byte PREFIX_TYPE_STRING = 1 << 1;
+	public static final byte PREFIX_TYPE_NULL = 1 << 2;
 
 	private static Map<Integer,Class<?>> intToclazz = new HashMap<>();
 	private static Map<Class<?>,Integer> clazzToInt = new HashMap<>();
@@ -134,7 +135,10 @@ public class Decoder implements IDecoder{
 	}
 	
 	public static <V> V decodeObject(ByteBuffer buffer){
-		int prefixCodeType = buffer.get();
+		byte prefixCodeType = buffer.get();
+		if( prefixCodeType == PREFIX_TYPE_NULL){
+			return null;
+		}
 		
 		int type = -1;
 		Class<?> cls = null;
@@ -162,29 +166,43 @@ public class Decoder implements IDecoder{
 			v =  decodeObjects(buffer);
 		}else if(cls == String.class) {
 			v =  decodeString(buffer);
-		}else if(cls == void.class || cls == Void.TYPE) {
+		}else if(cls == void.class || cls == Void.TYPE || cls == Void.class) {
 			v =  null;
-		}else if(cls == int.class || cls == Integer.TYPE){
+		}else if(cls == int.class || cls == Integer.TYPE || cls == Integer.class){
 			v =  buffer.getInt();
-		}else if(cls == byte.class || cls == Byte.TYPE){
+		}else if(cls == byte.class || cls == Byte.TYPE || cls == Byte.class){
 			v =  buffer.get();
-		}else if(cls == short.class || cls == Short.TYPE){
+		}else if(cls == short.class || cls == Short.TYPE || cls == Short.class){
 			v =  buffer.getShort();
-		}else if(cls == long.class || cls == Long.TYPE){
+		}else if(cls == long.class || cls == Long.TYPE || cls == Long.class){
 			v =  buffer.getLong();
-		}else if(cls == float.class || cls == Float.TYPE){
+		}else if(cls == float.class || cls == Float.TYPE || cls == Float.class){
 			v = buffer.getFloat();
-		}else if(cls == double.class || cls == Double.TYPE){
+		}else if(cls == double.class || cls == Double.TYPE || cls == Double.class){
 			v = buffer.getDouble();
-		}else if(cls == boolean.class || cls == Boolean.TYPE){
+		}else if(cls == boolean.class || cls == Boolean.TYPE || cls == Boolean.class){
 			v = buffer.get() == 1;
-		}else if(cls == char.class || cls == Character.TYPE){
+		}else if(cls == char.class || cls == Character.TYPE || cls == Character.class){
 			v = buffer.getChar();
 		} else {	
 			v = decodeByReflect(buffer,cls,type);
 		}
 		
 		return (V)v;
+	}
+	
+	public static List<String>  sortFieldNames(Class cls) {
+		List<String> fieldNames = new ArrayList<>();
+		Field[] fs = cls.getDeclaredFields();
+		for(Field f: fs){
+			if(Modifier.isTransient(f.getModifiers()) || Modifier.isFinal(f.getModifiers())
+					|| Modifier.isStatic(f.getModifiers()) || f.getDeclaringClass() == Object.class){
+				continue;
+			}
+			fieldNames.add(f.getName());
+		}
+		fieldNames.sort((v1,v2)->v1.compareTo(v2));
+		return fieldNames;
 	}
 	
 	private static Object decodeByReflect(ByteBuffer buffer,Class<?> cls,int type) {
@@ -205,16 +223,6 @@ public class Decoder implements IDecoder{
 			throw new CommonException("invalid class modifier: "+ cls.getName());
 		}
 		
-		List<String> fieldNames = new ArrayList<>();
-		Field[] fs = cls.getDeclaredFields();
-		for(Field f: fs){
-			if(Modifier.isTransient(f.getModifiers()) || Modifier.isFinal(f.getModifiers())
-					|| Modifier.isStatic(f.getModifiers())  || f.getDeclaringClass() == Object.class){
-				continue;
-			}
-			fieldNames.add(f.getName());
-		}
-		
 		Object obj = null;
 		try {
 			obj = cls.newInstance();
@@ -222,16 +230,23 @@ public class Decoder implements IDecoder{
 			throw new CommonException("fail to instance class [" +cls.getName()+"]",e1);
 		}
 		
-		fieldNames.sort((v1,v2)->v1.compareTo(v2));
+		List<String> fieldNames = sortFieldNames(cls);
+		
 		for(int i =0; i < fieldNames.size(); i++){
 			try {
 				Field f = cls.getDeclaredField(fieldNames.get(i));
+				if(f.getName().equals("reqArgsStr")){
+					System.out.println("");
+				}
 				Object v = decodeObject(buffer);
 				boolean bf = f.isAccessible();
 				if(!bf){
 					f.setAccessible(true);
 				}
-				f.set(obj, v);
+				if(v != null){
+					f.set(obj, v);
+				}
+				
 				if(!bf){
 					f.setAccessible(false);
 				}

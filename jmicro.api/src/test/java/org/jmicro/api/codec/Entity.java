@@ -1,16 +1,12 @@
 package org.jmicro.api.codec;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
 public class Entity {
 
-	private String hello="Hello World";
-	private Long v = 222L;
+	private long v=222;
+	private String str = null;
+	private Object hello = "Hello World";
 	
-	private List<String> list = new ArrayList<>();
+	/*private List<String> list = new ArrayList<>();
 	{
 		list.add("1");
 		list.add("2");
@@ -24,11 +20,11 @@ public class Entity {
 		map.put("1",222L);
 		map.put("2",333L);
 		map.put("3",555L);
-	}
+	}*/
 	
 	@Override
 	public String toString() {
-		return "hello=" + this.hello +", value = "+ v+",list:"+list+",map: "+map;
+		return "hello=" + this.hello +", value = "/*+ v+",list:"+list+",map: "+map*/;
 	}
 	
 	
