@@ -1,4 +1,4 @@
-package org.jmicro.example.api;
+package org.jmicro.api;
 
 public class Person{
 	

@@ -31,4 +31,8 @@ public interface IResponse extends IEncodable,IDecodable,IDable{
 	Object getResult();
 	
 	boolean isMonitorEnable();
+	
+	boolean isSuccess();
+
+	void setSuccess(boolean success);
 }

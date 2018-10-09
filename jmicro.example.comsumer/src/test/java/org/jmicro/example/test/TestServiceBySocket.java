@@ -36,7 +36,7 @@ public class TestServiceBySocket {
 			
 		cs.writeMessage(msg);
 		
-		Utils.waitForShutdown();
+		Utils.getIns().waitForShutdown();
 	}
 	
 }

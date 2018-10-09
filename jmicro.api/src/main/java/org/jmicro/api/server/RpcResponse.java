@@ -40,6 +40,8 @@ public class RpcResponse extends AbstractObjectMapSupport implements IEncodable,
 	
 	private boolean isMonitorEnable = false;
 	
+	private boolean success = true;
+	
 	public RpcResponse() {}
 	
 	public RpcResponse(long reqId,Object result){
@@ -55,6 +57,7 @@ public class RpcResponse extends AbstractObjectMapSupport implements IEncodable,
 	public void decode(ByteBuffer ois) {
 		this.id = ois.getLong();
 		this.reqId = ois.getLong();
+		this.success = ois.get()==0?false:true;
 		this.result = Decoder.decodeObject(ois);
 	}
 
@@ -62,6 +65,7 @@ public class RpcResponse extends AbstractObjectMapSupport implements IEncodable,
 	public void encode(ByteBuffer oos) {
 		oos.putLong(this.id);
 		oos.putLong(this.reqId);
+		oos.put(this.success?(byte)1:(byte)0);
 		Encoder.encodeObject(oos, result);
 	}
 
@@ -106,6 +110,18 @@ public class RpcResponse extends AbstractObjectMapSupport implements IEncodable,
 
 	public void setResult(Object result) {
 		this.result = result;
+	}
+
+	public boolean isSuccess() {
+		return success;
+	}
+
+	public void setSuccess(boolean success) {
+		this.success = success;
+	}
+
+	public Long getReqId() {
+		return reqId;
 	}
 		
 }

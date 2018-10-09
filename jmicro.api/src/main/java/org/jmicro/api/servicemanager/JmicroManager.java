@@ -24,7 +24,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 import org.jmicro.api.JMicroContext;
-import org.jmicro.api.annotation.Cfg;
 import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.Inject;
 import org.jmicro.api.annotation.Interceptor;
@@ -43,6 +42,8 @@ import org.jmicro.api.server.RpcRequest;
 import org.jmicro.api.server.RpcResponse;
 import org.jmicro.api.server.ServerError;
 import org.jmicro.common.Constants;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 /**
  * 
  * @author Yulei Ye
@@ -51,6 +52,7 @@ import org.jmicro.common.Constants;
 @Component(lazy=true)
 public class JmicroManager {
 
+	private final static Logger logger = LoggerFactory.getLogger(JmicroManager.class);
 	/*private static JmicroManager ins = new JmicroManager();
 	private JmicroManager(){}
 	public static JmicroManager getIns() {return ins;}*/
@@ -97,9 +99,11 @@ public class JmicroManager {
 				resp = handler(req);
 				MonitorConstant.doSubmit(monitor,MonitorConstant.SERVER_REQ_OK, req,resp);
 			} catch (Throwable e) {
-				MonitorConstant.doSubmit(monitor,MonitorConstant.SERVER_REQ_OK, req,resp);
+				MonitorConstant.doSubmit(monitor,MonitorConstant.SERVER_REQ_ERROR, req,resp);
+				logger.error("reqHandler error: ",e);
 				if(req != null){
 					resp = new RpcResponse(req.getRequestId(),new ServerError(0,e.getMessage()));
+					resp.setSuccess(false);
 				}
 			}
 			if(resp != null) {

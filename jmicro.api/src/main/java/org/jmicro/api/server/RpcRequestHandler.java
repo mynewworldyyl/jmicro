@@ -30,7 +30,7 @@ import org.jmicro.common.Constants;
  * @author Yulei Ye
  * @date 2018年10月4日-下午12:07:12
  */
-@Component(Constants.DEFAULT_HANDLER)
+@Component(value=Constants.DEFAULT_HANDLER,lazy=false)
 @Handler
 public class RpcRequestHandler extends AbstractHandler implements IRequestHandler {
 
@@ -54,6 +54,7 @@ public class RpcRequestHandler extends AbstractHandler implements IRequestHandle
 			if(m != null) {
 				Object result = m.invoke(obj, args);
 				resp = new RpcResponse(request.getRequestId(),result);
+				resp.setSuccess(true);
 			}
 		} catch (NoSuchMethodException | SecurityException | IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
 			throw new RpcException(request,"",e);

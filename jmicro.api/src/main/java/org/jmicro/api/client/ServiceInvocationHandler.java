@@ -21,6 +21,8 @@ import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Map;
 
+import javax.xml.ws.RespectBinding;
+
 import org.jmicro.api.IIdGenerator;
 import org.jmicro.api.JMicroContext;
 import org.jmicro.api.annotation.Cfg;
@@ -194,8 +196,9 @@ public class ServiceInvocationHandler implements InvocationHandler{
     		}
     		isFistLoop=false;
     		final Map<String,Object> result = new HashMap<>();
-    		this.sessionManager.write(req, (resp,reqq,err)->{
+    		this.sessionManager.write(req, (IResponse resp,IRequest reqq, ServerError err)->{
     			//Object rst = decodeResult(resp,req,method.getReturnType());
+    			//logger.debug("On backcall: "+resp.getRequestId());
     			result.put("result", resp.getResult());
     			result.put("resp", resp);
     			synchronized(req) {
@@ -212,7 +215,7 @@ public class ServiceInvocationHandler implements InvocationHandler{
     					req.wait();
     				}
     			} catch (InterruptedException e) {
-    				logger.error("",e);
+    				logger.error("timeout: ",e);
     			}
     		}
     		
@@ -224,14 +227,20 @@ public class ServiceInvocationHandler implements InvocationHandler{
     		Object obj = result.get("result");
     		IResponse resp = (IResponse)result.get("resp");
     		result.clear();
-    		if(obj instanceof ServerError || !req.isSuccess()){
-    			se = (ServerError)obj;
+    		if(resp == null || !resp.isSuccess()){
+    			//ServerError se = null;
+    			if(obj instanceof ServerError) {
+    				se = (ServerError)obj;
+    			}
+    			
     			StringBuffer sb = new StringBuffer();
     			if(se!= null){
     				sb.append(se.toString());
     			}
     			sb.append(" host[").append(si.getHost()).append("] port [").append(si.getPort())
-    			.append("] service[").append(si.getServiceName());
+    			.append("] service[").append(si.getServiceName())
+    			.append("] method [").append(sm.getMethodName())
+    			.append("] param [").append(sm.getMethodParamTypes());
     			if(retryCnt > 0){
     				MonitorConstant.doSubmit(monitor,MonitorConstant.CLIENT_REQ_TIMEOUT, req, resp);
     				sb.append("] do retry: ").append(retryCnt);
@@ -249,7 +258,13 @@ public class ServiceInvocationHandler implements InvocationHandler{
 					}
     				MonitorConstant.doSubmit(monitor,MonitorConstant.CLIENT_REQ_RETRY, req, resp);
     			}
-    			//throw new CommonException(se.toString());
+    			if(resp != null){
+					sb.append("respId:").append(resp.getId());
+				}
+    			if(obj != null){
+					sb.append("result:").append(obj);
+				}
+    			throw new CommonException(sb.toString());
     		} else {
     			MonitorConstant.doSubmit(monitor,MonitorConstant.CLIENT_RESP_OK, req, resp);
     			req.setFinish(true);
@@ -257,10 +272,10 @@ public class ServiceInvocationHandler implements InvocationHandler{
     		}
         }while(retryCnt-- > 0);
        
-        if(se != null){
+       /* if(se != null){
         	 throw new CommonException(se.toString());
         }
-        throw new CommonException("");
+        throw new CommonException("");*/
        
 	}
 	

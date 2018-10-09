@@ -1,14 +1,14 @@
 package org.jmicro.example.comsumer;
 
+import org.jmicro.api.Person;
 import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.Reference;
 import org.jmicro.example.api.ITestRpcService;
-import org.jmicro.example.api.Person;
 
 @Component
 public class TestRpcClient {
 
-	@Reference(required=true)
+	@Reference(required=false)
 	private ITestRpcService rpcService;
 	
 	public void invokeRpcService(){

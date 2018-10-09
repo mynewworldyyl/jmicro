@@ -28,6 +28,10 @@ public abstract class AbstractSession implements ISession{
 
 	private long sessionId=-1L;
 
+	private int cacheBufferSize = 1024*1024*1;
+	
+	private int cacheMaxTime = 1000*10;
+	
 	private Map<String,Object> params = new ConcurrentHashMap<String,Object>();
 	
 	private ByteBuffer readBuffer;
@@ -65,7 +69,6 @@ public abstract class AbstractSession implements ISession{
 	public void close(boolean flag) {
 		params.clear();
 		this.sessionId=-1L;
-		
 	}
 
 	@Override
@@ -84,5 +87,23 @@ public abstract class AbstractSession implements ISession{
 
 	public void setReadBuffer(ByteBuffer readBuffer) {
 		this.readBuffer = readBuffer;
+	}
+
+	public int getCacheBufferSize() {
+		return cacheBufferSize;
+	}
+
+	public void setCacheBufferSize(int cacheBufferSize) {
+		this.cacheBufferSize = cacheBufferSize;
+	}
+
+	public int getCacheMaxTime() {
+		return cacheMaxTime;
+	}
+
+	public void setCacheMaxTime(int cacheMaxTime) {
+		this.cacheMaxTime = cacheMaxTime;
 	}	
+	
+	
 }

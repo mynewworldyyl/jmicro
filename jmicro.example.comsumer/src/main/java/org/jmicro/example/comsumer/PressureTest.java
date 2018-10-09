@@ -13,11 +13,9 @@ public class PressureTest {
 		
 		IObjectFactory of = ComponentManager.getObjectFactory();
 		of.start();
-		
-		for(int i=10; i > 0; i--){
+		for(int i = 0; i < 2;i++){
 			new Thread(new Worker(of)).start();
 		}
-
 	}
 }
 
@@ -37,7 +35,7 @@ class Worker implements Runnable{
 		for(;;){
 			//invoke remote service
 			try {
-				Thread.sleep(r.nextInt(500));
+				Thread.sleep(r.nextInt(10));
 			} catch (InterruptedException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();

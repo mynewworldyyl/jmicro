@@ -27,7 +27,7 @@ import org.slf4j.LoggerFactory;
  * @author Yulei Ye
  * @date 2018年10月4日-下午12:06:35
  */
-@Component(Constants.LAST_INTERCEPTOR)
+@Component(value=Constants.LAST_INTERCEPTOR,lazy=false)
 @Interceptor
 public class LastInterceptor extends AbstractInterceptor implements IInterceptor {
 
