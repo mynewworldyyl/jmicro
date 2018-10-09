@@ -25,7 +25,7 @@ public class TestZKRegistry {
 			System.out.println(si.val());
 		});
 		
-		Utils.waitForShutdown();
+		Utils.getIns().waitForShutdown();
 	}
 	
 	@Test
@@ -37,7 +37,7 @@ public class TestZKRegistry {
 				System.out.println(path);
 				System.out.println(data);
 			});
-		Utils.waitForShutdown();
+		Utils.getIns().waitForShutdown();
 	}
 	
 }

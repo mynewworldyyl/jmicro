@@ -30,7 +30,7 @@ public class TestRpcRequest {
 		 req.setRequestId(1000L);
 		 
 		// JmicroManager.getIns().addRequest(req);
-		 Utils.waitForShutdown();
+		 Utils.getIns().waitForShutdown();
 	}
 	
 /*	@Test
@@ -54,7 +54,7 @@ public class TestRpcRequest {
 		
 		IObjectFactory of = ComponentManager.getObjectFactory();
 		of.start();
-		Utils.waitForShutdown();
+		Utils.getIns().waitForShutdown();
 	}
 
 }

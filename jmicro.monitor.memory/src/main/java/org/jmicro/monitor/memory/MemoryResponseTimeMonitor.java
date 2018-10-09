@@ -24,14 +24,19 @@ import java.util.Queue;
 import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.JMethod;
 import org.jmicro.api.annotation.Service;
+import org.jmicro.api.client.ServiceInvocationHandler;
 import org.jmicro.api.monitor.IMonitorSubmitWorker;
 import org.jmicro.api.monitor.MonitorConstant;
 import org.jmicro.api.monitor.SubmitItem;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Component
 @Service(version="0.0.1", namespace="memoryResponseTimeMonitor", monitorEnable=0)
 public class MemoryResponseTimeMonitor implements IMonitorSubmitWorker {
 
+	private final static Logger logger = LoggerFactory.getLogger(MemoryResponseTimeMonitor.class);
+	
 	private Map<Long,AvgResponseTimeItem> reqRespAvgList = new HashMap<>();
 	
 	private Map<String,Queue<Long>> reqRespAvgs =  new HashMap<String,Queue<Long>>();
@@ -50,6 +55,7 @@ public class MemoryResponseTimeMonitor implements IMonitorSubmitWorker {
 	
 	@Override
 	public void submit(SubmitItem si) {
+		//logger.debug("Service: "+si.getServiceName());
 		if(MonitorConstant.CLIENT_REQ_BEGIN == si.getType()){
 			AvgResponseTimeItem i = new AvgResponseTimeItem();
 			i.reqId = si.getReqId();
@@ -58,7 +64,10 @@ public class MemoryResponseTimeMonitor implements IMonitorSubmitWorker {
 			reqRespAvgList.put(i.reqId, i);
 		}else if(MonitorConstant.CLIENT_RESP_OK == si.getType()){
 			AvgResponseTimeItem i = reqRespAvgList.get(si.getReqId());
-			if(!reqRespAvgs.containsKey(i.service)) {
+			if(i == null){
+				return;
+			}
+			if(reqRespAvgs != null && !reqRespAvgs.containsKey(i.service)) {
 				reqRespAvgs.put(i.service, new LinkedList<Long>());
 			}
 			reqRespAvgList.remove(i.reqId);

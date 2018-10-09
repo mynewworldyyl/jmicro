@@ -25,7 +25,7 @@ public class TestZKDataOperator {
 					System.out.println(data);
 				}
 		});
-		Utils.waitForShutdown();
+		Utils.getIns().waitForShutdown();
 	}
 	
 	@Test
@@ -36,7 +36,7 @@ public class TestZKDataOperator {
 				System.out.println(path);
 				System.out.println(children);
 			});
-		Utils.waitForShutdown();
+		Utils.getIns().waitForShutdown();
 	}
 	
 	@Test
@@ -48,7 +48,7 @@ public class TestZKDataOperator {
 				System.out.println(path);
 				System.out.println(data);
 			});
-		Utils.waitForShutdown();
+		Utils.getIns().waitForShutdown();
 	}
 	
 }

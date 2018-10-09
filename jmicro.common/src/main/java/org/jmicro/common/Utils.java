@@ -76,7 +76,7 @@ public class Utils {
 		}
 	}
 	
-	public static void waitForShutdown(){
+	public void waitForShutdown(){
 		 synchronized(Utils.ins){
 			 try {
 				 ins.wait();

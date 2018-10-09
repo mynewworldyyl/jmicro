@@ -13,7 +13,7 @@
         <skip_maven_deploy>false</skip_maven_deploy>
     </properties>
     <modules>
-        <module>jmicro.transport.api</module>
-        <module>jmicro.transport.nio</module>
+        <!-- <module>jmicro.transport.api</module> -->
+        <module>jmicro.transport.mina</module>
     </modules>
 </project>

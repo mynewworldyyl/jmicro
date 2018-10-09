@@ -13,7 +13,7 @@ public class ServiceProvider {
 		
 		IObjectFactory of = ComponentManager.getObjectFactory();
 		of.start();
-		Utils.waitForShutdown();
+		Utils.getIns().waitForShutdown();
 	}
 
 }

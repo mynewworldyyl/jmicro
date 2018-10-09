@@ -97,8 +97,10 @@ class RemoteProxyServiceListener implements IServiceListener{
 						break;
 					}
 				}
-				po.setItem(null);
-				set.remove(po);
+				if(po != null){
+					po.setItem(null);
+					set.remove(po);
+				}
 			}else if(IServiceListener.SERVICE_DATA_CHANGE == type) {
 				AbstractServiceProxy po = null;
 				for(Object o: set){
