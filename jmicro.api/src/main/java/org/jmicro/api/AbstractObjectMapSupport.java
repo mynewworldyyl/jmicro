@@ -42,24 +42,16 @@ public abstract class AbstractObjectMapSupport implements IEncodable,IDecodable{
 		return v;
 	}
 	
-	public void decode(byte[] data) {
-		ByteBuffer ois = ByteBuffer.wrap(data);
-		this.decode(ois);
+	public void decode(ByteBuffer ois) {
+		//ByteBuffer ois = ByteBuffer.wrap(data);
 		this.params.putAll(Decoder.decodeObject(ois));
 	}
 	
-	public byte[] encode() {
+	public ByteBuffer encode() {
 		ByteBuffer bb = ByteBuffer.allocate(1024*4);
-		this.encode(bb);
 		Encoder.encodeObject(bb,this.params);
-		bb.flip();
-		byte[] data = new byte[bb.limit()];
-		bb.get(data);
-		return data;
+		return bb;
 	}
-
-	public abstract void decode(ByteBuffer ois);
-	public abstract void encode(ByteBuffer oos);
 	
 	public Integer getInt(String key,int defautl){
 		return this.getParam(key,defautl);

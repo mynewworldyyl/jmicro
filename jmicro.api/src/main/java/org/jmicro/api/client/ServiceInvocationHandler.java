@@ -194,82 +194,89 @@ public class ServiceInvocationHandler implements InvocationHandler{
     		if(isFistLoop){
     			MonitorConstant.doSubmit(monitor,MonitorConstant.CLIENT_REQ_BEGIN, req, null);
     		}
-    		isFistLoop=false;
-    		final Map<String,Object> result = new HashMap<>();
-    		this.sessionManager.write(req, (IResponse resp,IRequest reqq, ServerError err)->{
-    			//Object rst = decodeResult(resp,req,method.getReturnType());
-    			//logger.debug("On backcall: "+resp.getRequestId());
-    			result.put("result", resp.getResult());
-    			result.put("resp", resp);
-    			synchronized(req) {
-    				req.notify();
-    			}
-    		},retryCnt);//如果同一个连接失败，可以在底层使用同一个连接直接重试，避免“抖动”
     		
-    		
-    		synchronized(req) {
-    			try {
-    				if(timeout > 0){
-    					req.wait(timeout);
-    				}else {
-    					req.wait();
-    				}
-    			} catch (InterruptedException e) {
-    				logger.error("timeout: ",e);
-    			}
-    		}
-    		
-    		if(req.isFinish()){
-    			MonitorConstant.doSubmit(monitor,MonitorConstant.CLIENT_REQ_HAVE_FINISH, req, null);
-    			throw new CommonException("got repeat result cls["+si.getServiceName()+",method["+method.getName());
-    		}
+    		isFistLoop = false;
+    		if(sm.noNeedResponse>0) {
+    			this.sessionManager.write(req, null,retryCnt);
+    			return null;
+    		}else {
+    			final Map<String,Object> result = new HashMap<>();
+        		this.sessionManager.write(req, (IResponse resp,IRequest reqq, ServerError err)->{
+        			//Object rst = decodeResult(resp,req,method.getReturnType());
+        			//logger.debug("On backcall: "+resp.getRequestId());
+        			result.put("result", resp.getResult());
+        			result.put("resp", resp);
+        			synchronized(req) {
+        				req.notify();
+        			}
+        		},retryCnt);//如果同一个连接失败，可以在底层使用同一个连接直接重试，避免“抖动”
+        		
+        		
+        		synchronized(req) {
+        			try {
+        				if(timeout > 0){
+        					req.wait(timeout);
+        				}else {
+        					req.wait();
+        				}
+        			} catch (InterruptedException e) {
+        				logger.error("timeout: ",e);
+        			}
+        		}
+        		
+        		if(req.isFinish()){
+        			MonitorConstant.doSubmit(monitor,MonitorConstant.CLIENT_REQ_HAVE_FINISH, req, null);
+        			throw new CommonException("got repeat result cls["+si.getServiceName()+",method["+method.getName());
+        		}
 
-    		Object obj = result.get("result");
-    		IResponse resp = (IResponse)result.get("resp");
-    		result.clear();
-    		if(resp == null || !resp.isSuccess()){
-    			//ServerError se = null;
-    			if(obj instanceof ServerError) {
-    				se = (ServerError)obj;
-    			}
-    			
-    			StringBuffer sb = new StringBuffer();
-    			if(se!= null){
-    				sb.append(se.toString());
-    			}
-    			sb.append(" host[").append(si.getHost()).append("] port [").append(si.getPort())
-    			.append("] service[").append(si.getServiceName())
-    			.append("] method [").append(sm.getMethodName())
-    			.append("] param [").append(sm.getMethodParamTypes());
-    			if(retryCnt > 0){
-    				MonitorConstant.doSubmit(monitor,MonitorConstant.CLIENT_REQ_TIMEOUT, req, resp);
-    				sb.append("] do retry: ").append(retryCnt);
-    			}else {
-    				MonitorConstant.doSubmit(monitor,MonitorConstant.CLIENT_REQ_FAIL, req, resp);
-    				sb.append("] fail request and stop retry: ").append(retryCnt);
-    			}
-    			logger.error(sb.toString());
-    			
-    			if(interval > 0 && retryCnt > 0){
-    				try {
-						Thread.sleep(si.getRetryInterval());
-					} catch (InterruptedException e) {
-						logger.error("Sleep exceptoin ",e);
-					}
-    				MonitorConstant.doSubmit(monitor,MonitorConstant.CLIENT_REQ_RETRY, req, resp);
-    			}
-    			if(resp != null){
-					sb.append("respId:").append(resp.getId());
-				}
-    			if(obj != null){
-					sb.append("result:").append(obj);
-				}
-    			throw new CommonException(sb.toString());
-    		} else {
-    			MonitorConstant.doSubmit(monitor,MonitorConstant.CLIENT_RESP_OK, req, resp);
-    			req.setFinish(true);
-    			return obj;
+        		Object obj = result.get("result");
+        		IResponse resp = (IResponse)result.get("resp");
+        		result.clear();
+        		if(resp == null || !resp.isSuccess()){
+        			//ServerError se = null;
+        			if(obj instanceof ServerError) {
+        				se = (ServerError)obj;
+        			}
+        			
+        			StringBuffer sb = new StringBuffer();
+        			if(se!= null){
+        				sb.append(se.toString());
+        			}
+        			sb.append(" host[").append(si.getHost()).append("] port [").append(si.getPort())
+        			.append("] service[").append(si.getServiceName())
+        			.append("] method [").append(sm.getMethodName())
+        			.append("] param [").append(sm.getMethodParamTypes());
+        			if(retryCnt > 0){
+        				MonitorConstant.doSubmit(monitor,MonitorConstant.CLIENT_REQ_TIMEOUT, req, resp);
+        				sb.append("] do retry: ").append(retryCnt);
+        			}else {
+        				MonitorConstant.doSubmit(monitor,MonitorConstant.CLIENT_REQ_FAIL, req, resp);
+        				sb.append("] fail request and stop retry: ").append(retryCnt);
+        			}
+        			logger.error(sb.toString());
+        			
+        			if(interval > 0 && retryCnt > 0){
+        				try {
+    						Thread.sleep(si.getRetryInterval());
+    					} catch (InterruptedException e) {
+    						logger.error("Sleep exceptoin ",e);
+    					}
+        				MonitorConstant.doSubmit(monitor,MonitorConstant.CLIENT_REQ_RETRY, req, resp);
+        			}
+        			if(resp != null){
+    					sb.append("respId:").append(resp.getId());
+    				}
+        			if(obj != null){
+    					sb.append("result:").append(obj);
+    				}
+        			throw new CommonException(sb.toString());
+        		} else {
+        			MonitorConstant.doSubmit(monitor,MonitorConstant.CLIENT_RESP_OK, req, resp);
+        			req.setFinish(true);
+        			return obj;
+        		}
     		}
+    		
         }while(retryCnt-- > 0);
        
        /* if(se != null){

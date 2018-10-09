@@ -204,7 +204,27 @@ public class ServiceLoader {
 			
 			for(Method m : in.getMethods()) {
 				ServiceMethod sm = new ServiceMethod();
-				if(m.isAnnotationPresent(SMethod.class)){
+				Method srvMethod = null;
+				try {
+					srvMethod = srvCls.getMethod(m.getName(), m.getParameterTypes());
+				} catch (NoSuchMethodException | SecurityException e) {
+				}
+				
+				if(srvMethod.isAnnotationPresent(SMethod.class)){
+					SMethod manno = srvMethod.getAnnotation(SMethod.class);
+					sm.setMaxFailBeforeFusing(manno.maxFailBeforeFusing());
+					sm.setMaxFailBeforeDegrade(manno.maxFailBeforeDegrade());
+					sm.setRetryCnt(manno.retryCnt());
+					sm.setRetryInterval(manno.retryInterval());
+					sm.setTestingArgs(manno.testingArgs());
+					sm.setTimeout(manno.timeout());
+					sm.setMaxSpeed(manno.maxSpeed());
+					sm.setMinSpeed(manno.minSpeed());
+					sm.setAvgResponseTime(manno.avgResponseTime());
+					sm.setMonitorEnable(manno.monitorEnable());
+					sm.setStream(manno.stream());
+					sm.setNoNeedResponse(manno.noNeedResponse());
+				}else if(m.isAnnotationPresent(SMethod.class)){
 					SMethod manno = m.getAnnotation(SMethod.class);
 					sm.setMaxFailBeforeFusing(manno.maxFailBeforeFusing());
 					sm.setMaxFailBeforeDegrade(manno.maxFailBeforeDegrade());
@@ -216,6 +236,8 @@ public class ServiceLoader {
 					sm.setMinSpeed(manno.minSpeed());
 					sm.setAvgResponseTime(manno.avgResponseTime());
 					sm.setMonitorEnable(manno.monitorEnable());
+					sm.setStream(manno.stream());
+					sm.setNoNeedResponse(manno.noNeedResponse());
 				} else {
 					sm.setMaxFailBeforeFusing(anno.maxFailBeforeFusing());
 					sm.setMaxFailBeforeDegrade(anno.maxFailBeforeDegrade());

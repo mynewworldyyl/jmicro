@@ -14,14 +14,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.jmicro.api.objectfactory;
+package org.jmicro.api.net;
 
+import java.util.List;
+
+import org.jmicro.api.annotation.Component;
+import org.jmicro.api.objectfactory.IObjectFactory;
+import org.jmicro.api.objectfactory.IPostFactoryReady;
+import org.jmicro.api.server.IMessageHandler;
 /**
- * IObjectFactory初始化完成后，调用此接口实现通知
- * @date 2018年10月9日-下午5:52:12
+ * 
+ * @author Yulei Ye
+ * @date 2018年10月9日-下午5:51:55
  */
-public interface IPostFactoryReady {
+@Component(active=true,value="InitServerReceiver")
+public class InitServerReceiver implements IPostFactoryReady{
 
-	void ready(IObjectFactory of);
-	
+	@Override
+	public void ready(IObjectFactory of) {
+		List<IMessageHandler> list = of.getByParent(IMessageHandler.class);
+		ServerReceiver sr = of.get(ServerReceiver.class);
+		for(IMessageHandler h: list){
+			sr.registHandler(h);
+		}
+	}
+
 }

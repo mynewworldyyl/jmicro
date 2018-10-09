@@ -23,16 +23,19 @@ import org.jmicro.api.codec.IDecodable;
 import org.jmicro.api.codec.IEncodable;
 import org.jmicro.api.exception.CommonException;
 import org.jmicro.common.url.StringUtils;
+
+import net.techgy.idgenerator.IDStrategy;
 /**
  * 
  * @author Yulei Ye
  * @date 2018年10月4日-下午12:06:44
  */
+@IDStrategy
 public class Message implements IEncodable,IDecodable,IDable{
 
 	public static final int HEADER_LEN=33;
 	
-	public static final byte MSG_REQ_TYPE_RESP=1;
+/*	public static final byte MSG_REQ_TYPE_RESP=1;
 	
 	public static final byte MSG_REQ_TYPE_REQ=2;
 	
@@ -40,7 +43,23 @@ public class Message implements IEncodable,IDecodable,IDable{
 	public static final byte PROTOCOL_TYPE_END=2;
 	
 	public static final byte PROTOCOL_TYPE_REQ_ER=3;
-	public static final byte PROTOCOL_TYPE_RESP_ER=4;
+	public static final byte PROTOCOL_TYPE_RESP_ER=4;*/
+	
+	public static final short MSG_TYPE_ZERO = 0x0000;
+	public static final short MSG_TYPE_REQ_JRPC = 0x0001; //普通RPC调用请求，发送端发IRequest，返回端返回IResponse
+	public static final short MSG_TYPE_RRESP_JRPC = 0x0002;//返回端返回IResponse
+	
+	public static final short MSG_TYPE_ASYNC_MESSAGE = 0x0003; //异步消息，可以从客户端发服务端，也可以服务端推送客户端
+	//public static final short MSG_TYPE_RRESP_RAW = 0x0004;//纯二进制数据响应
+	
+	public static final short MSG_TYPE_REQ_RAW = 0x0004; //纯二进制数据请求
+	public static final short MSG_TYPE_RRESP_RAW = 0x0005;//纯二进制数据响应
+	
+	public static final short MSG_TYPE_ASYNC_REQ = 0x0006; //异步请求，不需求等待响应返回
+	public static final short MSG_TYPE_ASYNC_RESP = 0x0007; //异步响应，通过回调用返回
+	
+	public static final short MSG_TYPE_SERVER_ERR = 0x7FFE;
+	public static final short MSG_TYPE_ALL = 0x7FFF;
 	
 	public static final byte[] VERSION = {0,0,1};
 	public static final String VERSION_STR = "0.0.1";
@@ -57,25 +76,25 @@ public class Message implements IEncodable,IDecodable,IDable{
 	//3 byte length
 	private String version;
 	// 1 byte
-	private byte type;
+	private short type;
 	
 	//request or response
-	private boolean isReq;
+	//private boolean isReq;
 	
 	//2 byte length
-	private byte ext;
+	//private byte ext;
 	
-	private byte[] payload;	
+	private ByteBuffer payload;	
 	
 	public Message(){
 	}
 	
 	@Override
-	public void decode(byte[] data) {
+	public void decode(ByteBuffer b) {
 		
-		ByteBuffer b = ByteBuffer.wrap(data);
+		//ByteBuffer b = ByteBuffer.wrap(data);
 		this.len = b.getInt();
-		if(data.length-Message.HEADER_LEN < len){
+		if(b.remaining() < len){
 			throw new CommonException("Message len not valid");
 		}
 		byte[] vb = new byte[3];
@@ -83,25 +102,33 @@ public class Message implements IEncodable,IDecodable,IDable{
 		this.setVersion(vb[0]+"."+vb[1]+"."+vb[2]);
 		
 		//read type
-		this.setType(b.get());
-		
-		this.setReq(b.get() == Message.MSG_REQ_TYPE_REQ);
+		this.setType(b.getShort());
 		this.setId(b.getLong());
 		this.setReqId(b.getLong());
 		this.setSessionId(b.getLong());
 		
-		byte[] payload = new byte[len];
-		b.get(payload, 0, len);
-		this.setPayload(payload);
+		if(len > 0){
+			byte[] payload = new byte[len];
+			b.get(payload, 0, len);
+			this.setPayload(ByteBuffer.wrap(payload));
+		}else {
+			this.setPayload(null);
+		}
 	
 	}
 	
 	@Override
-	public byte[] encode() {
-		byte[] data = this.getPayload();
-		ByteBuffer b = ByteBuffer.allocate(data.length + Message.HEADER_LEN);
+	public ByteBuffer encode() {
+		ByteBuffer data = this.getPayload();
+		ByteBuffer b =  null;
+		if(data == null){
+			b =  ByteBuffer.allocate(Message.HEADER_LEN);
+			b.putInt(0);
+		} else {
+			b = ByteBuffer.allocate(data.remaining() + Message.HEADER_LEN);
+			b.putInt(data.remaining());
+		}
 		
-		b.putInt(data.length);
 		byte[] vd = null;
 		if(StringUtils.isEmpty(getVersion())){
 			vd = new byte[] {0,0,0};
@@ -113,14 +140,17 @@ public class Message implements IEncodable,IDecodable,IDable{
 			vd[2]=Byte.parseByte(vs[2]);
 		}
 		b.put(vd);
-		b.put(this.getType());
-		b.put(this.isReq()?Message.MSG_REQ_TYPE_REQ:Message.MSG_REQ_TYPE_RESP);
+		b.putShort(this.getType());
 		b.putLong(this.getId());
 		b.putLong(this.reqId);
-		b.putLong(this.sessionId);	
-		b.put(data);
+		b.putLong(this.sessionId);
+		if(data != null){
+			b.put(data);
+		}
+		
 		b.flip();
-		return b.array();
+		
+		return b;
 	}
 	
 	@Override
@@ -139,22 +169,17 @@ public class Message implements IEncodable,IDecodable,IDable{
 	public void setVersion(String version) {
 		this.version = version;
 	}
-	public byte getType() {
+	public short getType() {
 		return type;
 	}
-	public void setType(byte type) {
+	public void setType(short type) {
 		this.type = type;
 	}
-	public byte getExt() {
-		return ext;
-	}
-	public void setExt(byte ext) {
-		this.ext = ext;
-	}
-	public byte[] getPayload() {
+	
+	public ByteBuffer getPayload() {
 		return payload;
 	}
-	public void setPayload(byte[] payload) {
+	public void setPayload(ByteBuffer payload) {
 		this.payload = payload;
 	}
 	
@@ -166,12 +191,6 @@ public class Message implements IEncodable,IDecodable,IDable{
 		this.reqId = reqId;
 	}
 
-	public boolean isReq() {
-		return isReq;
-	}
-	public void setReq(boolean isReq) {
-		this.isReq = isReq;
-	}
 	public long getSessionId() {
 		return sessionId;
 	}

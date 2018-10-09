@@ -13,7 +13,7 @@ public class PressureTest {
 		
 		IObjectFactory of = ComponentManager.getObjectFactory();
 		of.start();
-		for(int i = 0; i < 2;i++){
+		for(int i = 0; i < 1;i++){
 			new Thread(new Worker(of)).start();
 		}
 	}

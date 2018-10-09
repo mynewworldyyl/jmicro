@@ -17,14 +17,14 @@
 package org.jmicro.api.server;
 
 import java.nio.ByteBuffer;
+
+import org.jmicro.api.IDable;
 /**
  * 
  * @author Yulei Ye
  * @date 2018年10月4日-下午12:06:27
  */
-public interface ISession {
-
-     long getSessionId();
+public interface ISession extends IDable{
 	
 	void close(boolean flag);
 	
@@ -33,4 +33,8 @@ public interface ISession {
 	void putParam(String key,Object obj);
 	
 	ByteBuffer getReadBuffer();
+	
+	//server write response, or client write no need response request
+	void write(ByteBuffer bb);
+	
 }

@@ -89,11 +89,17 @@ public class SimpleObjectFactory implements IObjectFactory {
 			}else if(l.size() > 1) {
 				throw new CommonException("More than one instance of class ["+cls.getName()+"].");
 			}
+			
+			if(obj == null){
+				obj = this.rsm.getService(cls);
+			}
+			
 		}else {
 			obj = objs.get(cls);
 			if(obj != null){
 				return  (T)obj;
 			}
+			
 			obj = this.createObject(cls,true);
 			if(obj != null) {
 				cacheObj(cls,obj,true);
@@ -110,6 +116,11 @@ public class SimpleObjectFactory implements IObjectFactory {
 		}
 		if(this.nameToObjs.containsKey(clsName)){
 			return (T) this.nameToObjs.get(clsName);
+		}
+		
+		Object o = this.rsm.getService(clsName);
+		if(o != null){
+			return (T)o;
 		}
 		
 		Class<?> cls = ClassScannerUtils.getIns().getClassByAnnoName(clsName);
@@ -239,7 +250,7 @@ public class SimpleObjectFactory implements IObjectFactory {
 			}
 		}
 		
-		Set<Class<?>> postFactoryListners = ClassScannerUtils.getIns().loadClassByClass(IPostFactoryReady.class);
+		/*Set<Class<?>> postFactoryListners = ClassScannerUtils.getIns().loadClassByClass(IPostFactoryReady.class);
 		if(postFactoryListners != null && !postFactoryListners.isEmpty()) {
 			for(Class<?> c : postFactoryListners){
 				PostListener comAnno = c.getAnnotation(PostListener.class);
@@ -256,7 +267,7 @@ public class SimpleObjectFactory implements IObjectFactory {
 					logger.error("Create IPostInitListener Error",e);
 				}
 			}
-		}
+		}*/
 		
 		Set<Class<?>> clses = ClassScannerUtils.getIns().getComponentClass();
 		if(clses != null && !clses.isEmpty()) {
@@ -264,8 +275,11 @@ public class SimpleObjectFactory implements IObjectFactory {
 				if(IObjectFactory.class.isAssignableFrom(c) || !c.isAnnotationPresent(Component.class)){
 					continue;
 				}
-				Object obj = createObject(c,false);
-				this.cacheObj(c, obj, true);
+				Component cann = c.getAnnotation(Component.class);
+				if(cann.active()){
+					Object obj = createObject(c,false);
+					this.cacheObj(c, obj, true);
+				}
 			}
 		}
 		
@@ -292,7 +306,13 @@ public class SimpleObjectFactory implements IObjectFactory {
 			}
 		}
 		
-		for(IPostFactoryReady lis : postReadyListeners){
+		List<IPostFactoryReady> postL = this.getByParent(IPostFactoryReady.class);
+		
+		for(IPostFactoryReady lis : postL){
+			lis.ready(this);
+		}
+		
+		for(IPostFactoryReady lis : this.postReadyListeners){
 			lis.ready(this);
 		}
 		

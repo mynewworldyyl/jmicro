@@ -16,8 +16,6 @@
  */
 package org.jmicro.api.client;
 
-import java.nio.ByteBuffer;
-
 import org.jmicro.api.server.ISession;
 /**
  * 
@@ -25,7 +23,4 @@ import org.jmicro.api.server.ISession;
  * @date 2018年10月4日-下午12:00:09
  */
 public interface IClientSession extends ISession{
-
-	void write(ByteBuffer writeBuffer);
-
 }

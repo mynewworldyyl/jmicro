@@ -42,8 +42,8 @@ public class MinaServerSession extends AbstractMinaSession implements IServerSes
 	}
 
 	@Override
-	public void write(Message msg) {
-		this.getIoSession().write(ByteBuffer.wrap(msg.encode()));
+	public void write(ByteBuffer msg) {
+		this.getIoSession().write(msg);
 	}
 
 	@Override

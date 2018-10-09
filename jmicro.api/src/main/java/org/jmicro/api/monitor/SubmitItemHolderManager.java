@@ -197,7 +197,7 @@ public class SubmitItemHolderManager {
 		if(req != null){
 			si.setReqId(req.getRequestId());
 			if(req.getSession() != null){
-				si.setSessionId(req.getSession().getSessionId());
+				si.setSessionId(req.getSession().getId());
 			}
 			si.setNamespace(req.getNamespace());
 			si.setVersion(req.getVersion());

@@ -50,6 +50,12 @@ public @interface SMethod {
 	//after hung up, will test the service with this arguments
 	public String testingArgs() default "";
 	
+	//0: need response, 1:no need response
+	public int noNeedResponse() default 0;
+	
+	//0: not stram, 1:stream, more than one request and response
+	public int stream() default 0;
+	
 	//limit qps
 	//public int speedLimit() default -1;
 	

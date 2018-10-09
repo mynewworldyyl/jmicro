@@ -5,6 +5,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.jmicro.api.Person;
 import org.jmicro.api.annotation.Cfg;
 import org.jmicro.api.annotation.Component;
+import org.jmicro.api.annotation.SMethod;
 import org.jmicro.api.annotation.Service;
 import org.jmicro.example.api.ITestRpcService;
 
@@ -31,5 +32,10 @@ public class TestRpcServiceImpl implements ITestRpcService{
 		return p;
 	}
 
+	@Override
+	@SMethod(noNeedResponse=1)
+	public void pushMessage(String msg) {
+		System.out.println("Server Rec: "+ msg);
+	}
 	
 }

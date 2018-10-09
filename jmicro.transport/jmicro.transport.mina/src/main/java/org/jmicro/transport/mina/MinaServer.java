@@ -27,20 +27,19 @@ import org.apache.mina.api.IoService;
 import org.apache.mina.api.IoSession;
 import org.apache.mina.session.AttributeKey;
 import org.apache.mina.transport.nio.NioTcpServer;
-import org.jmicro.api.IIdGenerator;
 import org.jmicro.api.JMicroContext;
 import org.jmicro.api.annotation.Cfg;
 import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.Inject;
 import org.jmicro.api.annotation.Server;
-import org.jmicro.api.codec.ICodecFactory;
+import org.jmicro.api.codec.Decoder;
 import org.jmicro.api.exception.CommonException;
 import org.jmicro.api.monitor.MonitorConstant;
 import org.jmicro.api.monitor.SubmitItemHolderManager;
+import org.jmicro.api.net.IServerReceiver;
 import org.jmicro.api.server.IServer;
 import org.jmicro.api.server.Message;
 import org.jmicro.api.server.RpcRequest;
-import org.jmicro.api.servicemanager.JmicroManager;
 import org.jmicro.common.Constants;
 import org.jmicro.common.Utils;
 import org.jmicro.common.url.StringUtils;
@@ -71,14 +70,17 @@ public class MinaServer implements IServer{
 	//@Inject
 	//private IRequestHandler reqHandler;
 	
+/*	@Inject
+	private JmicroManager jmicroManager;*/
+	
 	@Inject
-	private JmicroManager jmicroManager;
+	private IServerReceiver receiver;
 			 
-	@Inject
+/*	@Inject
 	private IIdGenerator idGenerator;
 	
 	@Inject(value=Constants.DEFAULT_CODEC_FACTORY,required=true)
-	private ICodecFactory codecFactory;
+	private ICodecFactory codecFactory;*/
 	
 	@Cfg(value = "/bindIp",required=false)
 	private String host;
@@ -129,62 +131,24 @@ public class MinaServer implements IServer{
                      			null,null,session,((ByteBuffer)message).remaining());
                 	 }
                 	
-                    ByteBuffer rb  = (ByteBuffer)message;
                     MinaServerSession s = session.getAttribute(sessinKey);
                     
-                    ByteBuffer b = s.getReadBuffer();
-        			b.put(rb);
+                    ByteBuffer body = Decoder.readMessage((ByteBuffer)message, s.getReadBuffer());
+                    if(body == null){
+                    	return;
+                    }
         			
-        			int totalLen = b.remaining();
-        			if(totalLen < Message.HEADER_LEN) {
-        				return;
-        			}
-        			
-        			b.flip();
-        			
-        			b.mark();
-        			
-        			int len = b.getInt();
-        			b.reset();
-        			if(totalLen-10 < len){
-        				return ;
-        			}
-        			
-        			Message msg = new Message();
-        			msg.decode(b.array());
-        			
-        			b.position(len+Message.HEADER_LEN);
-        			b.compact();
-        			
-        			if(s.getSessionId() != -1 && msg.getSessionId() != s.getSessionId()) {
-        				String msg1 = "Ignore MSG" + msg.getId() + "Rec session ID: "+msg.getSessionId()+",but this session ID: "+s.getSessionId();
-        				LOG.warn(msg1);
-        				if(monitorEnable(session)){
-        					MonitorConstant.doSubmit(monitor,MonitorConstant.SERVER_PACKAGE_SESSION_ID_ERR,
-            						null,null,msg.getId(),s.getSessionId(),msg1);
-        				}
-        				return;
-        			}
-                   
-                    s.setSessionId(msg.getSessionId());
-                    JMicroContext cxt = JMicroContext.get();
-            		cxt.getParam(JMicroContext.SESSION_KEY, session);
-            		
-            		RpcRequest req = new RpcRequest();
-            		req.decode(msg.getPayload());
-            		req.setSession(s);
-            		req.setMsg(msg);
-            		
-            		session.setAttribute(monitorEnableKey,req.isMonitorEnable());
-            		s.putParam(Constants.MONITOR_ENABLE_KEY,req.isMonitorEnable());
-            		JMicroContext.get().configMonitor(req.isMonitorEnable()?1:0, 0);
-                   
-            		jmicroManager.addRequest(req);
+        			receiver.receive(s,body);
+            		//jmicroManager.addRequest(req);
                 }
 
 				@Override
 				public void sessionClosed(IoSession session) {
 					super.sessionClosed(session);
+					 MinaServerSession s = session.getAttribute(sessinKey);
+					 if(s != null){
+						 s.close(true);
+					 }
 					if(monitorEnable(session)){
 						MonitorConstant.doSubmit(monitor,MonitorConstant.SERVER_IOSESSION_CLOSE, null,null,session.getId());
 					}

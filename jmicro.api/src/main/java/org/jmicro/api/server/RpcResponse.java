@@ -55,6 +55,7 @@ public class RpcResponse extends AbstractObjectMapSupport implements IEncodable,
 	
 	@Override
 	public void decode(ByteBuffer ois) {
+		super.decode(ois);
 		this.id = ois.getLong();
 		this.reqId = ois.getLong();
 		this.success = ois.get()==0?false:true;
@@ -62,11 +63,14 @@ public class RpcResponse extends AbstractObjectMapSupport implements IEncodable,
 	}
 
 	@Override
-	public void encode(ByteBuffer oos) {
-		oos.putLong(this.id);
-		oos.putLong(this.reqId);
-		oos.put(this.success?(byte)1:(byte)0);
-		Encoder.encodeObject(oos, result);
+	public ByteBuffer encode() {
+		ByteBuffer bb = super.encode();
+		bb.putLong(this.id);
+		bb.putLong(this.reqId);
+		bb.put(this.success?(byte)1:(byte)0);
+		Encoder.encodeObject(bb, result);
+		bb.flip();
+		return bb;
 	}
 
 	public Message getMsg() {

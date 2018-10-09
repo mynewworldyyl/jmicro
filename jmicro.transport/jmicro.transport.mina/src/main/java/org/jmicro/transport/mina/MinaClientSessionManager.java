@@ -20,7 +20,6 @@ import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutionException;
 
 import org.apache.mina.api.AbstractIoHandler;
 import org.apache.mina.api.IdleStatus;
@@ -31,13 +30,13 @@ import org.apache.mina.session.AttributeKey;
 import org.apache.mina.transport.nio.NioTcpClient;
 import org.jmicro.api.IIdGenerator;
 import org.jmicro.api.JMicroContext;
-import org.jmicro.api.annotation.Cfg;
 import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.Inject;
 import org.jmicro.api.client.IClientSession;
 import org.jmicro.api.client.IClientSessionManager;
 import org.jmicro.api.client.IResponseHandler;
 import org.jmicro.api.client.ReqResp;
+import org.jmicro.api.codec.Decoder;
 import org.jmicro.api.exception.CommonException;
 import org.jmicro.api.monitor.MonitorConstant;
 import org.jmicro.api.monitor.SubmitItemHolderManager;
@@ -88,7 +87,7 @@ public class MinaClientSessionManager implements IClientSessionManager{
             //avoid ((ByteBuffer)message).remaining() when disable monitor
             if(monitorEnable(session) && monitor != null){
             	IClientSession s  = session.getAttribute(sessionKey);
-            	monitor.submit(MonitorConstant.CLIENT_IOSESSION_READ, null,null,s.getSessionId(),session.getReadBytes(),((ByteBuffer)message).remaining());
+            	monitor.submit(MonitorConstant.CLIENT_IOSESSION_READ, null,null,s.getId(),session.getReadBytes(),((ByteBuffer)message).remaining());
             }
             doReceive(session,(ByteBuffer)message);
             
@@ -100,7 +99,7 @@ public class MinaClientSessionManager implements IClientSessionManager{
             //avoid ((ByteBuffer)message).remaining()  when disable monitor
             if(monitorEnable(session) && monitor != null){
             	IClientSession s  = session.getAttribute(sessionKey);
-            	monitor.submit(MonitorConstant.CLIENT_IOSESSION_WRITE, null,null,s.getSessionId(),((ByteBuffer)message).remaining());
+            	monitor.submit(MonitorConstant.CLIENT_IOSESSION_WRITE, null,null,s.getId(),((ByteBuffer)message).remaining());
             }
         }
 
@@ -109,7 +108,7 @@ public class MinaClientSessionManager implements IClientSessionManager{
             //LOG.info("session closed {}", session);
             if(monitorEnable(session) && monitor != null){
             	IClientSession s  = session.getAttribute(sessionKey);
-            	MonitorConstant.doSubmit(monitor,MonitorConstant.CLIENT_IOSESSION_CLOSE, null,null,s.getSessionId());
+            	MonitorConstant.doSubmit(monitor,MonitorConstant.CLIENT_IOSESSION_CLOSE, null,null,s.getId());
             }
         }
 
@@ -137,7 +136,7 @@ public class MinaClientSessionManager implements IClientSessionManager{
 			 logger.error("exceptionCaught",cause);
 			 if(session !=null && monitorEnable(session) && monitor != null ){
 				 IClientSession s  = session.getAttribute(sessionKey);
-	             MonitorConstant.doSubmit(monitor,MonitorConstant.CLIENT_IOSESSION_EXCEPTION, null,null,s.getSessionId(),cause.getMessage());
+	             MonitorConstant.doSubmit(monitor,MonitorConstant.CLIENT_IOSESSION_EXCEPTION, null,null,s.getId(),cause.getMessage());
 	         }
 		}
 
@@ -166,22 +165,18 @@ public class MinaClientSessionManager implements IClientSessionManager{
 	public void write(IRequest req, IResponseHandler handler,int retryCnt) {
 		
 		Message msg = new Message();
-		msg.setType(Message.PROTOCOL_TYPE_BEGIN);
+		msg.setType(Message.MSG_TYPE_REQ_JRPC);
 		msg.setId(this.idGenerator.getLongId(Message.class));
 		msg.setReqId(req.getRequestId());
-		msg.setSessionId(req.getSession().getSessionId());
+		msg.setSessionId(req.getSession().getId());
 		msg.setPayload(req.encode());
-		msg.setExt((byte)0);
-		msg.setReq(true);
 		msg.setVersion(Message.VERSION_STR);
 		
-		waitForResponse.put(req.getRequestId(), new ReqResp(msg,req,handler,retryCnt));
-		
-		byte[] data = msg.encode();
-		
+		if(handler != null){
+			waitForResponse.put(req.getRequestId(), new ReqResp(msg,req,handler,retryCnt));
+		}
 		IClientSession cs = (IClientSession)req.getSession();
-
-		cs.write(ByteBuffer.wrap(data));
+		cs.write(msg.encode());
 		
 	}
 
@@ -212,7 +207,7 @@ public class MinaClientSessionManager implements IClientSessionManager{
 	               throw new CommonException("Fail to create session");
 	           }
 	           MinaClientSession s = new MinaClientSession(session);
-	           s.setSessionId(this.idGenerator.getLongId(ISession.class));
+	           s.setId(this.idGenerator.getLongId(ISession.class));
 	           s.putParam(Constants.SESSION_KEY, session);
 	           
 	           s.putParam(Constants.MONITOR_ENABLE_KEY, JMicroContext.get().isMonitor());
@@ -235,38 +230,21 @@ public class MinaClientSessionManager implements IClientSessionManager{
 
 	protected void doReceive(IoSession session, ByteBuffer message) {
 		IClientSession cs = session.getAttribute(this.sessionKey);
-		ByteBuffer b = cs.getReadBuffer();
-		b.put(message);
-		
-		int totalLen = b.remaining();
-		if(totalLen < Message.HEADER_LEN) {
-			return;
-		}
-		
-		b.flip();
-		
-		b.mark();
-		
-		int len = b.getInt();
-		b.reset();
-		if(totalLen-10 < len){
-			return ;
-		}
-		
-		
-		byte[] data = new byte[Message.HEADER_LEN+len];
-		b.get(data);
-		b.compact();
-		
-		Message msg = new Message();
-		msg.decode(data);
+        
+        ByteBuffer body = Decoder.readMessage((ByteBuffer)message, cs.getReadBuffer());
+        if(body == null){
+        	return;
+        }
+        
+        Message msg = new Message();
+		msg.decode(body);
 		
 		//receive response
-		 ReqResp rr = waitForResponse.get(msg.getReqId());
+		ReqResp rr = waitForResponse.get(msg.getReqId());
 				
-		if(rr != null && msg.getSessionId() != cs.getSessionId()) {
+		if(rr != null && msg.getSessionId() != cs.getId()) {
 			rr.req.setSuccess(false);
-			logger.warn("Ignore MSG" + msg.getId() + "Rec session ID: "+msg.getSessionId()+",but this session ID: "+cs.getSessionId());
+			logger.warn("Ignore MSG" + msg.getId() + "Rec session ID: "+msg.getSessionId()+",but this session ID: "+cs.getId());
 			return;
 		}
 		
@@ -290,13 +268,13 @@ public class MinaClientSessionManager implements IClientSessionManager{
 			}
 		}
 		
-		if(msg.getType() == Message.PROTOCOL_TYPE_END) {
+		//if(msg.getType() == Message.PROTOCOL_TYPE_END) {
 			/*if(rr != null) {
 				MonitorConstant.doSubmit(monitor,MonitorConstant.CLIENT_REQ_CONN_CLOSE, rr.req,resp);
 			}*/
-			waitForResponse.remove(msg.getReqId());
+			//waitForResponse.remove(msg.getReqId());
 			//cs.close(false);
-		}
+		//}
 		
 	}
 	

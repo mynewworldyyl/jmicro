@@ -14,89 +14,89 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.jmicro.api.servicemanager;
+package org.jmicro.api.server;
 
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.Map;
-import java.util.Queue;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentLinkedQueue;
 
+import org.jmicro.api.IIdGenerator;
 import org.jmicro.api.JMicroContext;
 import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.Inject;
 import org.jmicro.api.annotation.Interceptor;
-import org.jmicro.api.annotation.JMethod;
 import org.jmicro.api.exception.CommonException;
 import org.jmicro.api.monitor.MonitorConstant;
 import org.jmicro.api.monitor.SubmitItemHolderManager;
 import org.jmicro.api.objectfactory.ProxyObject;
-import org.jmicro.api.server.IInterceptor;
-import org.jmicro.api.server.IRequest;
-import org.jmicro.api.server.IRequestHandler;
-import org.jmicro.api.server.IResponse;
-import org.jmicro.api.server.IServerSession;
-import org.jmicro.api.server.Message;
-import org.jmicro.api.server.RpcRequest;
-import org.jmicro.api.server.RpcResponse;
-import org.jmicro.api.server.ServerError;
+import org.jmicro.api.servicemanager.ComponentManager;
+import org.jmicro.api.servicemanager.ServiceLoader;
 import org.jmicro.common.Constants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-/**
- * 
- * @author Yulei Ye
- * @date 2018年10月4日-下午12:07:54
- */
-@Component(lazy=true)
-public class JmicroManager {
 
-	private final static Logger logger = LoggerFactory.getLogger(JmicroManager.class);
-	/*private static JmicroManager ins = new JmicroManager();
-	private JmicroManager(){}
-	public static JmicroManager getIns() {return ins;}*/
+/**
+ * 请求响应式RPC请求
+ * @author Yulei Ye
+ * @date 2018年10月9日-下午5:50:36
+ */
+@Component(active=true,value="JRPCReqRespHandler")
+public class JRPCReqRespHandler implements IMessageHandler{
+
+	public static final short TYPE = Message.MSG_TYPE_REQ_JRPC;
 	
-	/*private IIdGenerator idGenerator = ComponentManager.getCommponentManager(IIdGenerator.class)
-			.getComponent(Constants.DEFAULT_IDGENERATOR);*/
+	static final Logger logger = LoggerFactory.getLogger(JRPCReqRespHandler.class);
 	
-	private Queue<RpcRequest> requests = new ConcurrentLinkedQueue<RpcRequest>();
-	private Object reqLock = new Object();
+	private volatile Map<String,IRequestHandler> handlers = new ConcurrentHashMap<>();
 	
-	private Queue<IResponse> responses = new ConcurrentLinkedQueue<IResponse>();
-	private Object respLock = new Object();
-	
-	private Map<Long,IRequest> requestCache = new ConcurrentHashMap<>();
-		
 	@Inject(required=false)
 	private SubmitItemHolderManager monitor;
 	
-	@JMethod("init")
-	public void init() {
-		this.startReqWorker();
-	}
+	@Inject(required=true)
+	private ServiceLoader serviceLoader;
 	
-	private Runnable reqHandler = () -> {
-		for(;;) {
+	@Inject
+	private IIdGenerator idGenerator;
+	
+	@Override
+	public short type() {
+		return TYPE;
+	}
+
+	@Override
+	public void onMessge(IServerSession s, Message msg) {
+		    s.setId(msg.getSessionId());
+	        JMicroContext cxt = JMicroContext.get();
+			cxt.setParam(JMicroContext.SESSION_KEY, s);
+			
+			RpcRequest req = new RpcRequest();
+			req.decode(msg.getPayload());
+			req.setSession(s);
+			req.setMsg(msg);
+			
+			s.putParam(Constants.MONITOR_ENABLE_KEY,req.isMonitorEnable());
+			cxt.configMonitor(req.isMonitorEnable()?1:0, 0);
+		
 			IResponse resp = null;
-			RpcRequest req = null;
+			
+			MonitorConstant.doSubmit(monitor,MonitorConstant.SERVER_REQ_BEGIN, req,resp);
 			try {
-				if(requests.isEmpty()) {
-					synchronized(reqLock) {
-						try {
-							reqLock.wait();
-						} catch (InterruptedException e) {
-						}
-					}
-				}
-				req = requests.poll();
-				if(req == null){
-					continue;
-				}
-				JMicroContext.get().configMonitor(req.isMonitorEnable()?1:0, 0);
-				MonitorConstant.doSubmit(monitor,MonitorConstant.SERVER_REQ_BEGIN, req,resp);
-				
 				resp = handler(req);
+				if(IInterceptor.isNeedResponse(this.serviceLoader, req)){
+					msg.setType(Message.MSG_TYPE_RRESP_JRPC);
+					msg.setId(idGenerator.getLongId(Message.class));
+					msg.setReqId(req.getRequestId());
+					msg.setSessionId(req.getSession().getId());
+					msg.setVersion(req.getMsg().getVersion());
+					
+					if(resp != null) {
+						msg.setPayload(resp.encode());
+					} else {
+						msg.setPayload(null);
+					}
+					s.write(msg.encode());
+				}
 				MonitorConstant.doSubmit(monitor,MonitorConstant.SERVER_REQ_OK, req,resp);
 			} catch (Throwable e) {
 				MonitorConstant.doSubmit(monitor,MonitorConstant.SERVER_REQ_ERROR, req,resp);
@@ -106,72 +106,40 @@ public class JmicroManager {
 					resp.setSuccess(false);
 				}
 			}
-			if(resp != null) {
-				Message msg = new Message();
-				msg.setType(Message.MSG_TYPE_RRESP_JRPC);
-				msg.setId(req.getMsg().getId());
-				msg.setReqId(req.getRequestId());
-				msg.setPayload(resp.encode());
-				//msg.setExt((byte)0);
-				//msg.setReq(false);
-				msg.setSessionId(req.getSession().getId());
-				msg.setVersion(req.getMsg().getVersion());
-				((IServerSession)req.getSession()).write(msg.encode());
-			}
-		}
-	};
-	
-	private Runnable respHandler = () -> {
-		for(;;) {
-			if(responses.isEmpty()) {
-				synchronized(respLock) {
-					try {
-						respLock.wait();
-					} catch (InterruptedException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
-					}
-				}
-			}
-			IResponse resp = responses.poll();
-			IRequest req = requestCache.get(resp.getRequestId());
-			//req.getSession().write(resp);
-			requestCache.remove(resp.getRequestId());
-			reqLock.notify();
-		}
-	};
-	
-	
-	public void startReqWorker() {
-		new Thread(reqHandler).start();
 	}
-	
-	public void startRespWorker() {
-		new Thread(respHandler).start();
-	}
-	
-	public void addRequest(RpcRequest req) {
-		synchronized(reqLock) {
-			requests.offer(req);
-			reqLock.notify();
-		}
-	}
-	
-	private void addResonse(IResponse resp) {
-		synchronized(respLock) {
-			responses.offer(resp);
-			respLock.notify();
-		}
+
+	private String reqMethodKey(RpcRequest req){
+		StringBuffer sb = new StringBuffer(req.getServiceName());
+		sb.append(req.getNamespace()).append(req.getVersion());
 		
+		Object[] args = req.getArgs();
+		for(int i = 0; i < args.length; i++) {
+			sb.append(args[i].toString());
+		}
+		return sb.toString();
 	}
 	
-	private IResponse handler(RpcRequest req) {
+    private IResponse handler(RpcRequest req) {
 		
-		IRequestHandler handler = ComponentManager.getCommponentManager(IRequestHandler.class)
-				.getComponent(Constants.DEFAULT_HANDLER);
-		if(handler == null) {
-			throw new CommonException("Handler ["+Constants.DEFAULT_HANDLER+"]");
-		}
+    	IRequestHandler handler = null;
+    	
+    	String key = reqMethodKey(req);
+    	if(handlers.containsKey(key)){
+    		handler = this.handlers.get(key);
+    	} else {
+    		String handlerKey = JMicroContext.get().getString(Constants.DEFAULT_HANDLER,
+    				Constants.DEFAULT_HANDLER);
+    		handler = ComponentManager.getCommponentManager(IRequestHandler.class)
+    				.getComponent(handlerKey);
+    		if(handler == null){
+    			handler = ComponentManager.getCommponentManager(IRequestHandler.class)
+        				.getComponent(Constants.DEFAULT_HANDLER);
+    		}
+    		if(handler == null){
+    			throw new CommonException("JRPC Handler ["+handlerKey + " not found]");
+    		}
+    		this.handlers.put(key, handler);
+    	}
 		
 		IRequestHandler firstHandler = buildHanderChain(handler);
 		if(firstHandler == null) {
@@ -179,8 +147,8 @@ public class JmicroManager {
 		}
 		return firstHandler.onRequest(req);
 	}
-	
-	private IRequestHandler buildHanderChain(IRequestHandler handler) {
+    
+    private IRequestHandler buildHanderChain(IRequestHandler handler) {
 
 		IInterceptor[] handlers = null;
 		IInterceptor firstHandler = null;
@@ -253,9 +221,11 @@ public class JmicroManager {
 				}
 			};
 		}
-
 		return last;
 	}
-	
-		
+
+	private Boolean monitorEnable(IServerSession session) {
+    	 Boolean v = (Boolean)session.getParam(Constants.MONITOR_ENABLE_KEY);
+		 return v == null ? JMicroContext.get().isMonitor():v;
+    }
 }

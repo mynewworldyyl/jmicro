@@ -30,7 +30,7 @@ import org.jmicro.common.Constants;
  * @author Yulei Ye
  * @date 2018年10月4日-下午12:07:12
  */
-@Component(value=Constants.DEFAULT_HANDLER,lazy=false)
+@Component(value=Constants.DEFAULT_HANDLER,lazy=false,active=true)
 @Handler
 public class RpcRequestHandler extends AbstractHandler implements IRequestHandler {
 
@@ -42,21 +42,15 @@ public class RpcRequestHandler extends AbstractHandler implements IRequestHandle
 		Object obj = serviceLoader.getService(request.getServiceName()
 				,request.getNamespace(),request.getVersion());
 		
-		Object[] args = request.getArgs();
-		Class<?>[] parameterTypes = new Class[args.length];
-		for(int i = 0; i < args.length; i++) {
-			parameterTypes[i] = args[i].getClass();
-		}
-		
 		RpcResponse resp = null;
 		try {
-			Method m = obj.getClass().getMethod(request.getMethod(), parameterTypes);
+			Method m = IInterceptor.getMethod(this.serviceLoader, request);
 			if(m != null) {
-				Object result = m.invoke(obj, args);
+				Object result = m.invoke(obj, request.getArgs());
 				resp = new RpcResponse(request.getRequestId(),result);
 				resp.setSuccess(true);
 			}
-		} catch (NoSuchMethodException | SecurityException | IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
+		} catch (SecurityException | IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
 			throw new RpcException(request,"",e);
 		}
 		return resp;

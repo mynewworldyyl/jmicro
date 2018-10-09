@@ -15,6 +15,9 @@
  * limitations under the License.
  */
 package org.jmicro.api.codec;
+
+import java.nio.ByteBuffer;
+
 /**
  * 
  * @author Yulei Ye
@@ -22,5 +25,5 @@ package org.jmicro.api.codec;
  */
 public interface IEncodable {
 
-	byte[] encode();
+	ByteBuffer encode();
 }

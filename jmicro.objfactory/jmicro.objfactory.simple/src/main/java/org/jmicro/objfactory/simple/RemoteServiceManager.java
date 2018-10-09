@@ -29,6 +29,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.jmicro.api.annotation.Reference;
+import org.jmicro.api.annotation.Service;
 import org.jmicro.api.client.AbstractServiceProxy;
 import org.jmicro.api.exception.CommonException;
 import org.jmicro.api.objectfactory.ProxyObject;
@@ -39,6 +40,7 @@ import org.jmicro.common.Constants;
 import org.jmicro.common.url.ClassGenerator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 /**
  * 
  * @author Yulei Ye
@@ -61,6 +63,30 @@ class RemoteServiceManager {
 	
 	void init(){
 
+	}
+	
+	@SuppressWarnings("unchecked")
+	<T> T  getService(String srvName){
+		Object obj = remoteObjects.get(srvName);
+		if(obj != null){
+			return (T)obj;
+		}
+		try {
+			Class<?> cls = RemoteServiceManager.class.forName(srvName);
+			return getService(cls);
+		} catch (ClassNotFoundException e) {
+			logger.error("",e);
+		}
+		return null;
+	}
+	
+	@SuppressWarnings("unchecked")
+	<T> T getService(Class<?> srvClazz){
+		Object obj = remoteObjects.get(srvClazz.getName());
+		if(obj != null){
+			return (T)obj;
+		}
+		return (T)this.createRemoteServieProxyByInterface(srvClazz);
 	}
 	
 	Object createService(Object obj,Field f){
@@ -262,6 +288,28 @@ class RemoteServiceManager {
 				asp.setItem(si);
 				remoteObjects.put(key, proxy);
 		}
+	}
+	
+	private Object createRemoteServieProxyByInterface(Class<?> cls){
+		if(!cls.isAnnotationPresent(Service.class)){
+			return null;
+		}
+		
+		Service srvAnno = cls.getAnnotation(Service.class);
+		
+		IRegistry registry = ComponentManager.getRegistry(null);
+		Set<ServiceItem> items = registry.getServices(
+				cls.getName(),ServiceItem.namespace(srvAnno.namespace())
+				,ServiceItem.version(srvAnno.version()));
+		
+		if(items != null && !items.isEmpty()){
+			ServiceItem i = items.iterator().next();
+			Object proxy = createDynamicServiceProxy(cls,i.getNamespace(),i.getVersion(),true);
+			this.setHandler(proxy, i.serviceName(), i);
+			return proxy;
+		}
+		
+		return null;
 	}
 	
 	public  static <T> T createDynamicServiceProxy(Class<T> cls, String namespace, String version,boolean enable) {

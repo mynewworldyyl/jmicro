@@ -32,4 +32,6 @@ public @interface Component {
 	public String value() default "";
 	public boolean lazy() default true;
 	public int level() default 10000;
+	
+	public boolean active() default true;
 }

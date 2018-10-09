@@ -30,6 +30,7 @@ import java.util.Map;
 
 import org.jmicro.api.ClassScannerUtils;
 import org.jmicro.api.exception.CommonException;
+import org.jmicro.api.server.Message;
 import org.jmicro.api.server.RpcRequest;
 import org.jmicro.common.Constants;
 import org.jmicro.common.url.StringUtils;
@@ -312,5 +313,44 @@ public class Decoder implements IDecoder{
 		} catch (UnsupportedEncodingException e) {
 		}
 		return null;
+	}
+	
+	public static ByteBuffer readMessage(ByteBuffer src,ByteBuffer cache){
+		//先把网络数据存起来，放到缓存中
+		cache.put(src);
+		
+		//当前写的位置，也就是可读的数据长度
+		int totalLen = cache.position();
+		if(totalLen < Message.HEADER_LEN) {
+			//可读的数据长度小于头部长度
+			return null;
+		}
+		
+		//保存写数据位置
+		int pos = cache.position();
+		cache.position(0);
+		//读数据长度
+		int len = cache.getInt();
+		//还原写数据公位置
+		cache.position(pos);
+		
+		if(totalLen < len+Message.HEADER_LEN){
+			//还不能构与一个足够长度的数据包
+			return null;
+		}
+		
+		//准备读数据
+		cache.flip();
+		
+		ByteBuffer body = ByteBuffer.allocate(len+Message.HEADER_LEN);
+		body.put(cache);
+		body.flip();
+		
+		//准备下一次读
+		cache.compact();
+		//b.position(b.limit());
+		//cache.limit(cache.capacity());
+		
+		return body;
 	}
 }

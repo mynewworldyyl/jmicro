@@ -14,14 +14,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.jmicro.api.objectfactory;
+package org.jmicro.api.net;
 
+import java.nio.ByteBuffer;
+
+import org.jmicro.api.server.IServerSession;
 /**
- * IObjectFactory初始化完成后，调用此接口实现通知
- * @date 2018年10月9日-下午5:52:12
+ * RCP框架服务端接收网络层传过来的数据，
+ * @author Yulei Ye
+ * @date 2018年10月9日-下午5:53:05
  */
-public interface IPostFactoryReady {
-
-	void ready(IObjectFactory of);
-	
+public interface IServerReceiver {
+	void receive(IServerSession session,ByteBuffer data);	
 }

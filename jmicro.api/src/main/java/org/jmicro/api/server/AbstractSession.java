@@ -40,11 +40,11 @@ public abstract class AbstractSession implements ISession{
 		readBuffer = ByteBuffer.allocate(bufferSize);
 	}
 	
-	public long getSessionId() {
+	public long getId() {
 		return sessionId;
 	}
 
-	public void setSessionId(long sessionId) {
+	public void setId(long sessionId) {
 		this.sessionId = sessionId;
 	}
 
@@ -62,7 +62,7 @@ public abstract class AbstractSession implements ISession{
 			return false;
 		}
 		AbstractSession as = (AbstractSession)obj;
-		return this.sessionId == as.getSessionId();
+		return this.sessionId == as.getId();
 	}
 
 	@Override

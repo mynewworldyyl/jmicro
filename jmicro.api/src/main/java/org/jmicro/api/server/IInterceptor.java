@@ -16,7 +16,12 @@
  */
 package org.jmicro.api.server;
 
+import java.lang.reflect.Method;
+
+import org.jmicro.api.annotation.SMethod;
 import org.jmicro.api.exception.RpcException;
+import org.jmicro.api.objectfactory.ProxyObject;
+import org.jmicro.api.servicemanager.ServiceLoader;
 /**
  * 
  * @author Yulei Ye
@@ -24,5 +29,33 @@ import org.jmicro.api.exception.RpcException;
  */
 public interface IInterceptor {
 
+	public static Method getMethod(ServiceLoader sl ,IRequest req){
+		Object obj = sl.getService(req.getServiceName()
+				,req.getNamespace(),req.getVersion());
+		
+		Object[] args = req.getArgs();
+		Class<?>[] parameterTypes = new Class[args.length];
+		for(int i = 0; i < args.length; i++) {
+			parameterTypes[i] = args[i].getClass();
+		}
+		
+		try {
+			Method m = ProxyObject.getTargetCls(obj.getClass()).getMethod(req.getMethod(), parameterTypes);
+			return m;
+		} catch (NoSuchMethodException | SecurityException | IllegalArgumentException e) {
+			throw new RpcException(req,"",e);
+		}
+	}
+	
+	public static boolean isNeedResponse(ServiceLoader sl ,IRequest req){
+		Method m = getMethod(sl,req);
+		if(m == null || !m.isAnnotationPresent(SMethod.class)){
+			return true;
+		}else {
+			SMethod sm = m.getAnnotation(SMethod.class);
+			return sm.noNeedResponse() == 0;
+		}
+	}
+	
 	IResponse intercept(IRequestHandler handler,IRequest req) throws RpcException;
 }

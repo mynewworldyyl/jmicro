@@ -28,7 +28,7 @@ public class RpcRequest extends AbstractRpcProtocolMessage implements IRequest{
 	
 	private transient ISession session;
 	
-	protected Long reqId=-1L;
+	protected Long reqId = -1L;
 	
 	private boolean isMonitorEnable = false;
 	
@@ -42,14 +42,18 @@ public class RpcRequest extends AbstractRpcProtocolMessage implements IRequest{
 	
 	@Override
 	public void decode(ByteBuffer ois) {
-		this.reqId = ois.getLong();
 		super.decode(ois);
+		this.reqId = ois.getLong();
+		this.isMonitorEnable = ois.get() >= 1;
 	}
 
 	@Override
-	public void encode(ByteBuffer oos) {
+	public ByteBuffer encode() {
+		ByteBuffer oos = super.encode();
 		oos.putLong(this.reqId);
-		super.encode(oos);
+		oos.put(this.isMonitorEnable?(byte)1:(byte)0);
+		oos.flip();
+		return oos;
 	}
 
 	public Long getMsgId(){

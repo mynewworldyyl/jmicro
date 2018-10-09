@@ -41,6 +41,7 @@ public abstract class AbstractRpcProtocolMessage extends AbstractObjectMapSuppor
 	
 	@Override
 	public void decode(ByteBuffer ois) {
+		super.decode(ois);
 		this.version = Decoder.decodeObject(ois);
 		this.serviceName = Decoder.decodeObject(ois);
 		this.method = Decoder.decodeObject(ois);
@@ -49,12 +50,14 @@ public abstract class AbstractRpcProtocolMessage extends AbstractObjectMapSuppor
 	}
 
 	@Override
-	public void encode(ByteBuffer oos) {
+	public ByteBuffer encode() {
+		ByteBuffer oos = super.encode();
 		Encoder.encodeObject(oos, this.version);
 		Encoder.encodeObject(oos, this.serviceName);
 		Encoder.encodeObject(oos, this.method);
 		Encoder.encodeObject(oos, this.namespace);
 		Encoder.encodeObject(oos, this.args);
+		return oos;
 	}
 	
 	public void setVersion(String version){

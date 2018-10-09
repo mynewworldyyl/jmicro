@@ -14,14 +14,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.jmicro.api.objectfactory;
-
+package org.jmicro.api.server;
 /**
- * IObjectFactory初始化完成后，调用此接口实现通知
- * @date 2018年10月9日-下午5:52:12
+ * 
+ * @author Yulei Ye
+ * @date 2018年10月9日-下午5:51:29
  */
-public interface IPostFactoryReady {
+public interface IMessageHandler {
 
-	void ready(IObjectFactory of);
+	short type();
 	
+	void onMessge(IServerSession session,Message messge);
 }
