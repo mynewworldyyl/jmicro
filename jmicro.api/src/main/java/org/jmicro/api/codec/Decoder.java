@@ -33,7 +33,7 @@ import org.jmicro.api.exception.CommonException;
 import org.jmicro.api.server.Message;
 import org.jmicro.api.server.RpcRequest;
 import org.jmicro.common.Constants;
-import org.jmicro.common.url.StringUtils;
+import org.jmicro.common.util.StringUtils;
 /**
  * 
  * @author Yulei Ye
@@ -335,7 +335,7 @@ public class Decoder implements IDecoder{
 		cache.position(pos);
 		
 		if(totalLen < len+Message.HEADER_LEN){
-			//还不能构与一个足够长度的数据包
+			//还不能构成一个足够长度的数据包
 			return null;
 		}
 		
@@ -347,6 +347,14 @@ public class Decoder implements IDecoder{
 		body.flip();
 		
 		//准备下一次读
+		/**
+		  System.arraycopy(hb, ix(position()), hb, ix(0), remaining());
+	      position(remaining());
+	      limit(capacity());
+	      discardMark();
+	      return this;
+		 */
+		//将剩余数移移到缓存开始位置，position定位在数据长度位置，处于写状态
 		cache.compact();
 		//b.position(b.limit());
 		//cache.limit(cache.capacity());

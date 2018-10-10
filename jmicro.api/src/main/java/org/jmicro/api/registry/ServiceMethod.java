@@ -94,13 +94,14 @@ public class ServiceMethod {
 	private int degrade = 1;
 	
 	//0: need response, 1:no need response
-	public int noNeedResponse=0;
+	public boolean needResponse = true;
 	
+	//true async return result,
+	//public boolean async = false;
+		
 	//false: not stream, true:stream, more than one request and response double stream
-	public boolean stream = false;
-	
-	//true async return result
-	public boolean async = false;
+	//a stream service must be async=true, and get got result by callback
+	public String streamCallback = "";
 	
 	public void formPersisItem(ServiceMethod p){
 		this.monitorEnable = p.monitorEnable;
@@ -327,30 +328,21 @@ public class ServiceMethod {
 		this.testingArgs = testingArgs;
 	}
 
-	public int getNoNeedResponse() {
-		return noNeedResponse;
+	public boolean getNeedResponse() {
+		return needResponse;
 	}
 
-	public void setNoNeedResponse(int noNeedResponse) {
-		this.noNeedResponse = noNeedResponse;
-	}
-
-	public boolean isStream() {
-		return stream;
-	}
-
-	public void setStream(boolean stream) {
-		this.stream = stream;
-	}
-
-	public boolean isAsync() {
-		return async;
-	}
-
-	public void setAsync(boolean async) {
-		this.async = async;
+	public void setNeedResponse(boolean needResponse) {
+		this.needResponse = needResponse;
 	}
 
 	
+	public String getStreamCallback() {
+		return streamCallback;
+	}
+
+	public void setStreamCallback(String streamCallback) {
+		this.streamCallback = streamCallback;
+	}
 	
 }

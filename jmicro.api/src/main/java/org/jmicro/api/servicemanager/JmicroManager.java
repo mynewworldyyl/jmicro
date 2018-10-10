@@ -24,6 +24,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 import org.jmicro.api.JMicroContext;
+import org.jmicro.api.annotation.Cfg;
 import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.Inject;
 import org.jmicro.api.annotation.Interceptor;
@@ -49,7 +50,7 @@ import org.slf4j.LoggerFactory;
  * @author Yulei Ye
  * @date 2018年10月4日-下午12:07:54
  */
-@Component(lazy=true)
+@Component(lazy=true,active=false)
 public class JmicroManager {
 
 	private final static Logger logger = LoggerFactory.getLogger(JmicroManager.class);
@@ -68,6 +69,9 @@ public class JmicroManager {
 	
 	private Map<Long,IRequest> requestCache = new ConcurrentHashMap<>();
 		
+	@Cfg("/respBufferSize")
+	private int respBufferSize;
+	
 	@Inject(required=false)
 	private SubmitItemHolderManager monitor;
 	
@@ -102,7 +106,7 @@ public class JmicroManager {
 				MonitorConstant.doSubmit(monitor,MonitorConstant.SERVER_REQ_ERROR, req,resp);
 				logger.error("reqHandler error: ",e);
 				if(req != null){
-					resp = new RpcResponse(req.getRequestId(),new ServerError(0,e.getMessage()));
+					resp = new RpcResponse(req.getRequestId(),new ServerError(0,e.getMessage()),respBufferSize);
 					resp.setSuccess(false);
 				}
 			}

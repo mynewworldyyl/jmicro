@@ -24,5 +24,5 @@ import java.util.Map;
  */
 public interface IConfigLoader {
 
-	Map<String,String> load(String[] args);
+	void load(Map<String, String> params);
 }

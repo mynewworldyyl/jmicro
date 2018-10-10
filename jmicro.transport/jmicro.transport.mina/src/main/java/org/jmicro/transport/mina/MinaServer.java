@@ -42,7 +42,7 @@ import org.jmicro.api.server.Message;
 import org.jmicro.api.server.RpcRequest;
 import org.jmicro.common.Constants;
 import org.jmicro.common.Utils;
-import org.jmicro.common.url.StringUtils;
+import org.jmicro.common.util.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 /**
@@ -67,26 +67,17 @@ public class MinaServer implements IServer{
 	//@Inject(required=false)
 	private AbstractIoHandler iohandler;
 	
-	//@Inject
-	//private IRequestHandler reqHandler;
-	
-/*	@Inject
-	private JmicroManager jmicroManager;*/
-	
 	@Inject
 	private IServerReceiver receiver;
-			 
-/*	@Inject
-	private IIdGenerator idGenerator;
-	
-	@Inject(value=Constants.DEFAULT_CODEC_FACTORY,required=true)
-	private ICodecFactory codecFactory;*/
 	
 	@Cfg(value = "/bindIp",required=false)
 	private String host;
 	
 	@Cfg(value="/port",required=false)
 	private int port;
+	
+	@Cfg("/MinaServer/readBufferSize")
+	private int readBufferSize=1024*4;
 	
 	@Inject(required=false)
 	private SubmitItemHolderManager monitor;
@@ -115,7 +106,7 @@ public class MinaServer implements IServer{
                 @Override
                 public void sessionOpened(final IoSession session) {
                     LOG.info("session opened {}", session);           
-                    MinaServerSession s = new MinaServerSession(session);
+                    MinaServerSession s = new MinaServerSession(session,readBufferSize);
                     s.putParam(Constants.SESSION_KEY, session);
                     //s.setSessionId(idGenerator.getLongId(ISession.class));
                     session.setAttribute(sessinKey, s);

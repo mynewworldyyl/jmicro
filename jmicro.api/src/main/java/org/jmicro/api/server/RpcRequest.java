@@ -56,6 +56,11 @@ public class RpcRequest extends AbstractRpcProtocolMessage implements IRequest{
 		return oos;
 	}
 
+	@Override
+	public ByteBuffer newBuffer() {
+		return ByteBuffer.allocate(4069);
+	}
+	
 	public Long getMsgId(){
 		if(this.msg != null){
 			return this.msg.getId();
@@ -64,6 +69,14 @@ public class RpcRequest extends AbstractRpcProtocolMessage implements IRequest{
 	}
 	public boolean isFinish() {
 		return finish;
+	}
+	
+	public boolean needResponse(){
+		return (this.msg.getFlag() & Message.FLAG_NEED_RESPONSE) != 0;
+	}
+	
+	public boolean isStream(){
+		return (this.msg.getFlag() & Message.FLAG_STREAM) != 0;
 	}
 
 	public void setFinish(boolean finish) {

@@ -30,7 +30,7 @@ import java.util.Map;
 import org.jmicro.api.exception.CommonException;
 import org.jmicro.api.server.RpcResponse;
 import org.jmicro.common.Constants;
-import org.jmicro.common.url.StringUtils;
+import org.jmicro.common.util.StringUtils;
 /**
  * 
  * @author Yulei Ye

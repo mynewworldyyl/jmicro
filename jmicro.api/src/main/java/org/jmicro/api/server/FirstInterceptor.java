@@ -39,6 +39,9 @@ public class FirstInterceptor extends AbstractInterceptor implements IIntercepto
 	@Cfg(value ="limiterName", required=false, changeListener="limiterName")
 	private String limiterName;
 	
+	@Cfg("/respBufferSize")
+	private int respBufferSize;
+	
 	private ILimiter limiter=null;
 	
 	public FirstInterceptor() {}
@@ -76,6 +79,6 @@ public class FirstInterceptor extends AbstractInterceptor implements IIntercepto
 		ServerError se = new ServerError();
 		se.setErrorCode(ServerError.SE_LIMITER);
 		se.setMsg("");
-		return new RpcResponse(req.getRequestId(),se);
+		return new RpcResponse(req.getRequestId(),se,respBufferSize);
 	}
 }

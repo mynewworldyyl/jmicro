@@ -43,7 +43,7 @@ import org.jmicro.api.objectfactory.ProxyObject;
 import org.jmicro.api.registry.IRegistry;
 import org.jmicro.common.Constants;
 import org.jmicro.common.Utils;
-import org.jmicro.common.url.StringUtils;
+import org.jmicro.common.util.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 /**

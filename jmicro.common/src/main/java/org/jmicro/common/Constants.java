@@ -55,4 +55,6 @@ public interface Constants {
 	public static final String REGISTRY_URL_KEY="registryUrl";
 	public static final String BASE_PACKAGES_KEY="basePackages";
 	
+	public static final String CONTEXT_CALLBACK = "Callback";
+	
 }

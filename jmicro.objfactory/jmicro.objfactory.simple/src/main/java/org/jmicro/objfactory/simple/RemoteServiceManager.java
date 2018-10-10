@@ -37,7 +37,7 @@ import org.jmicro.api.registry.IRegistry;
 import org.jmicro.api.registry.ServiceItem;
 import org.jmicro.api.servicemanager.ComponentManager;
 import org.jmicro.common.Constants;
-import org.jmicro.common.url.ClassGenerator;
+import org.jmicro.common.util.ClassGenerator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

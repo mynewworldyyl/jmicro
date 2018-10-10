@@ -11,4 +11,7 @@ public interface ITestRpcService {
 	Person getPerson(Person p);
 	
 	void pushMessage(String msg);
+	
+	void subscrite(String msg);
+	
 }

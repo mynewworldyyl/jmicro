@@ -51,10 +51,22 @@ public @interface SMethod {
 	public String testingArgs() default "";
 	
 	//0: need response, 1:no need response
-	public int noNeedResponse() default 0;
+	public boolean needResponse() default true;
 	
-	//0: not stram, 1:stream, more than one request and response
-	public int stream() default 0;
+	// StringUtils.isEmpty()=true: not stream, false: stream, one request will got more response
+	// if this value is not NULL, the async is always true without check the real value
+	// value is the callback component in IOC container created in client
+	// format: value=component name +"."+ method name+"."+method parameter string, 
+	// component name can be class full name, Annotation name.
+	// method is the invoking method name
+	// parameter (java.lang.String,java.lang.Long)
+	// example: org.jmicro.example.comsumer.MessageCallback#onMessage(java.lang.String,java.lang.Long)
+	public String streamCallback() default "";
+	
+	//async return result, server return two time: 
+	//first return to confirm receive the request, 
+	//second return the result
+	//public boolean async() default false;
 	
 	//limit qps
 	//public int speedLimit() default -1;

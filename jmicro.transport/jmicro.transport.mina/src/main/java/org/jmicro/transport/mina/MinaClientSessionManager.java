@@ -30,21 +30,18 @@ import org.apache.mina.session.AttributeKey;
 import org.apache.mina.transport.nio.NioTcpClient;
 import org.jmicro.api.IIdGenerator;
 import org.jmicro.api.JMicroContext;
+import org.jmicro.api.annotation.Cfg;
 import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.Inject;
+import org.jmicro.api.client.IClientReceiver;
 import org.jmicro.api.client.IClientSession;
 import org.jmicro.api.client.IClientSessionManager;
-import org.jmicro.api.client.IResponseHandler;
-import org.jmicro.api.client.ReqResp;
 import org.jmicro.api.codec.Decoder;
 import org.jmicro.api.exception.CommonException;
 import org.jmicro.api.monitor.MonitorConstant;
 import org.jmicro.api.monitor.SubmitItemHolderManager;
-import org.jmicro.api.server.IRequest;
 import org.jmicro.api.server.ISession;
 import org.jmicro.api.server.Message;
-import org.jmicro.api.server.RpcResponse;
-import org.jmicro.api.server.ServerError;
 import org.jmicro.common.Constants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -62,15 +59,19 @@ public class MinaClientSessionManager implements IClientSessionManager{
 	
 	AttributeKey<Boolean> monitorEnableKey = AttributeKey.createKey(Boolean.class, Constants.MONITOR_ENABLE_KEY);
 	
-	private final Map<Long,ReqResp> waitForResponse = new ConcurrentHashMap<>();
-	
 	private final Map<String,IClientSession> sessions = new ConcurrentHashMap<>();
+	
+	@Cfg("/MinaClientSessionManager/readBufferSize")
+	private int readBufferSize=1024*4;
 	
 	@Inject
 	private IIdGenerator idGenerator;
 	
 	@Inject(required=false)
 	private SubmitItemHolderManager monitor;
+	
+	@Inject(required=false)
+	private IClientReceiver receiver;
 	
 	private AbstractIoHandler ioHandler = new AbstractIoHandler() {
         @Override
@@ -89,8 +90,16 @@ public class MinaClientSessionManager implements IClientSessionManager{
             	IClientSession s  = session.getAttribute(sessionKey);
             	monitor.submit(MonitorConstant.CLIENT_IOSESSION_READ, null,null,s.getId(),session.getReadBytes(),((ByteBuffer)message).remaining());
             }
-            doReceive(session,(ByteBuffer)message);
+            IClientSession cs = session.getAttribute(sessionKey);
             
+            ByteBuffer body = Decoder.readMessage((ByteBuffer)message, cs.getReadBuffer());
+            if(body == null){
+            	return;
+            }
+        	Message msg = new Message();
+    		msg.decode(body);
+    		
+            receiver.onMessage(cs,msg);
         }
 
         @Override
@@ -160,25 +169,6 @@ public class MinaClientSessionManager implements IClientSessionManager{
     	 Boolean v = ioSession.getAttribute(this.monitorEnableKey);
 		 return v == null ? JMicroContext.get().isMonitor():v;
     }
-	
-	@Override
-	public void write(IRequest req, IResponseHandler handler,int retryCnt) {
-		
-		Message msg = new Message();
-		msg.setType(Message.MSG_TYPE_REQ_JRPC);
-		msg.setId(this.idGenerator.getLongId(Message.class));
-		msg.setReqId(req.getRequestId());
-		msg.setSessionId(req.getSession().getId());
-		msg.setPayload(req.encode());
-		msg.setVersion(Message.VERSION_STR);
-		
-		if(handler != null){
-			waitForResponse.put(req.getRequestId(), new ReqResp(msg,req,handler,retryCnt));
-		}
-		IClientSession cs = (IClientSession)req.getSession();
-		cs.write(msg.encode());
-		
-	}
 
 	@Override
 	public IClientSession connect(String host, int port) {
@@ -206,7 +196,7 @@ public class MinaClientSessionManager implements IClientSessionManager{
 	           if(session == null){
 	               throw new CommonException("Fail to create session");
 	           }
-	           MinaClientSession s = new MinaClientSession(session);
+	           MinaClientSession s = new MinaClientSession(session,readBufferSize);
 	           s.setId(this.idGenerator.getLongId(ISession.class));
 	           s.putParam(Constants.SESSION_KEY, session);
 	           
@@ -226,56 +216,6 @@ public class MinaClientSessionManager implements IClientSessionManager{
 	           throw new CommonException("",e);
 	       }
 		}
-	}
-
-	protected void doReceive(IoSession session, ByteBuffer message) {
-		IClientSession cs = session.getAttribute(this.sessionKey);
-        
-        ByteBuffer body = Decoder.readMessage((ByteBuffer)message, cs.getReadBuffer());
-        if(body == null){
-        	return;
-        }
-        
-        Message msg = new Message();
-		msg.decode(body);
-		
-		//receive response
-		ReqResp rr = waitForResponse.get(msg.getReqId());
-				
-		if(rr != null && msg.getSessionId() != cs.getId()) {
-			rr.req.setSuccess(false);
-			logger.warn("Ignore MSG" + msg.getId() + "Rec session ID: "+msg.getSessionId()+",but this session ID: "+cs.getId());
-			return;
-		}
-		
-		JMicroContext.get().configMonitor(rr.req.isMonitorEnable()?1:0,0);
-		
-		RpcResponse resp = new RpcResponse(msg.getId());
-		resp.decode(msg.getPayload());
-		resp.setMsg(msg);
-		//logger.debug("Decode:"+resp.getRequestId());
-		if(rr != null) {
-			if(resp.getResult() instanceof ServerError){
-				//should do retry or time logic
-				ServerError se = (ServerError)resp.getResult();
-				//logger.error("error code: "+se.getErrorCode()+" ,msg: "+se.getMsg());
-				rr.req.setSuccess(resp.isSuccess());
-				rr.handler.onResponse(resp,rr.req,se);
-			}else {
-				//logger.debug("Success: "+resp.getRequestId());
-				rr.req.setSuccess(resp.isSuccess());
-				rr.handler.onResponse(resp,rr.req,null);
-			}
-		}
-		
-		//if(msg.getType() == Message.PROTOCOL_TYPE_END) {
-			/*if(rr != null) {
-				MonitorConstant.doSubmit(monitor,MonitorConstant.CLIENT_REQ_CONN_CLOSE, rr.req,resp);
-			}*/
-			//waitForResponse.remove(msg.getReqId());
-			//cs.close(false);
-		//}
-		
 	}
 	
 }

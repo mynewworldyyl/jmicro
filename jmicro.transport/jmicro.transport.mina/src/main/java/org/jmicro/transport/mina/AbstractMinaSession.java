@@ -45,4 +45,8 @@ public abstract class AbstractMinaSession extends AbstractSession implements ISe
 		this.ioSession.close(true);
 	}
 	
+	public boolean isClose(){
+		return this.getIoSession().isClosed() || this.getIoSession().isClosing();
+	}
+	
 }

@@ -1,6 +1,6 @@
 package org.jmicro.registry.zk.test;
 
-import org.jmicro.api.Config;
+import org.jmicro.api.config.Config;
 import org.jmicro.common.Utils;
 import org.jmicro.registry.zk.ZKRegistry;
 import org.jmicro.zk.ZKDataOperator;

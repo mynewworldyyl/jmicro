@@ -37,4 +37,6 @@ public interface ISession extends IDable{
 	//server write response, or client write no need response request
 	void write(ByteBuffer bb);
 	
+	public boolean isClose();
+	
 }

@@ -37,6 +37,7 @@ import java.util.jar.JarFile;
 import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.Name;
 import org.jmicro.api.annotation.PostListener;
+import org.jmicro.api.config.Config;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 /**

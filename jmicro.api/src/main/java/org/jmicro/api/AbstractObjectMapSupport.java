@@ -48,10 +48,12 @@ public abstract class AbstractObjectMapSupport implements IEncodable,IDecodable{
 	}
 	
 	public ByteBuffer encode() {
-		ByteBuffer bb = ByteBuffer.allocate(1024*4);
+		ByteBuffer bb = newBuffer();
 		Encoder.encodeObject(bb,this.params);
 		return bb;
 	}
+	
+	public abstract ByteBuffer newBuffer();
 	
 	public Integer getInt(String key,int defautl){
 		return this.getParam(key,defautl);

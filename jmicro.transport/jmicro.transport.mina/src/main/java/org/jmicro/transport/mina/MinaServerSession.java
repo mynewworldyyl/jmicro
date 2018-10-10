@@ -43,12 +43,14 @@ public class MinaServerSession extends AbstractMinaSession implements IServerSes
 
 	@Override
 	public void write(ByteBuffer msg) {
-		this.getIoSession().write(msg);
+		if(!this.getIoSession().isClosed()){
+			this.getIoSession().write(msg);
+		}
+		
 	}
 
 	@Override
 	public void close(boolean flag) {
 		super.close(flag);
 	}
-
 }

@@ -29,13 +29,15 @@ import org.jmicro.api.annotation.JMethod;
 import org.jmicro.api.annotation.SMethod;
 import org.jmicro.api.annotation.Service;
 import org.jmicro.api.exception.CommonException;
+import org.jmicro.api.exception.RpcException;
 import org.jmicro.api.objectfactory.ProxyObject;
 import org.jmicro.api.registry.IRegistry;
 import org.jmicro.api.registry.ServiceItem;
 import org.jmicro.api.registry.ServiceMethod;
+import org.jmicro.api.server.IRequest;
 import org.jmicro.api.server.IServer;
 import org.jmicro.common.Constants;
-import org.jmicro.common.url.StringUtils;
+import org.jmicro.common.util.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 /**
@@ -210,6 +212,8 @@ public class ServiceLoader {
 				} catch (NoSuchMethodException | SecurityException e) {
 				}
 				
+				//具体实现类的注解优先，如果实现类对就方法没有注解，则使用接口对应的方法注解
+				//如果接口和实现类都没有，则使用实现类的Service注解，实现类肯定有Service注解，否则不会成为服务
 				if(srvMethod.isAnnotationPresent(SMethod.class)){
 					SMethod manno = srvMethod.getAnnotation(SMethod.class);
 					sm.setMaxFailBeforeFusing(manno.maxFailBeforeFusing());
@@ -222,8 +226,17 @@ public class ServiceLoader {
 					sm.setMinSpeed(manno.minSpeed());
 					sm.setAvgResponseTime(manno.avgResponseTime());
 					sm.setMonitorEnable(manno.monitorEnable());
-					sm.setStream(manno.stream());
-					sm.setNoNeedResponse(manno.noNeedResponse());
+					
+					//checkStreamCallback(manno.streamCallback());
+					
+					sm.setStreamCallback(manno.streamCallback());
+					sm.setNeedResponse(manno.needResponse());
+					/*if(StringUtils.isEmpty(sm.getStreamCallback())){
+						sm.setAsync(manno.async());
+					}else {
+						sm.setAsync(true);
+					}*/
+					
 				}else if(m.isAnnotationPresent(SMethod.class)){
 					SMethod manno = m.getAnnotation(SMethod.class);
 					sm.setMaxFailBeforeFusing(manno.maxFailBeforeFusing());
@@ -236,8 +249,17 @@ public class ServiceLoader {
 					sm.setMinSpeed(manno.minSpeed());
 					sm.setAvgResponseTime(manno.avgResponseTime());
 					sm.setMonitorEnable(manno.monitorEnable());
-					sm.setStream(manno.stream());
-					sm.setNoNeedResponse(manno.noNeedResponse());
+					
+					//checkStreamCallback(manno.streamCallback());
+					
+					sm.setStreamCallback(manno.streamCallback());
+					sm.setNeedResponse(manno.needResponse());
+					/*if(StringUtils.isEmpty(sm.getStreamCallback())){
+						sm.setAsync(manno.async());
+					}else {
+						sm.setAsync(true);
+					}*/
+					
 				} else {
 					sm.setMaxFailBeforeFusing(anno.maxFailBeforeFusing());
 					sm.setMaxFailBeforeDegrade(anno.maxFailBeforeDegrade());
@@ -262,6 +284,41 @@ public class ServiceLoader {
 		return sitems;
 	}
 	
+	private void checkStreamCallback(String streamCb) {
+		if(StringUtils.isEmpty(streamCb)){
+			return;
+		}
+		
+		String msg = "Callback ["+streamCb+" params invalid";
+		String[] arr = streamCb.split("#");
+		if(arr.length != 2){
+			throw new CommonException(msg);
+		}
+		
+		String serviceName = arr[0];
+		if(serviceName.length() == 0){
+			throw new CommonException(msg);
+		}
+		
+		/*Object srv = ComponentManager.getObjectFactory().getByName(serviceName);
+		if(srv == null){
+			throw new CommonException(msg);
+		}*/
+			
+		String methodName = arr[1];
+		
+		int i = methodName.indexOf("(");
+		if(i < 0) {
+			throw new CommonException(msg);
+		}
+		
+		int j = methodName.indexOf(")");
+		if(j < 0) {
+			throw new CommonException(msg);
+		}
+		
+	}
+
 	private IServer getServer(Class<?> srvCls){
 		srvCls = ProxyObject.getTargetCls(srvCls);
 		Service srvAnno = srvCls.getAnnotation(Service.class);
@@ -288,5 +345,60 @@ public class ServiceLoader {
 		}
 		return srv;
 	}	
+	
+	public static Method getServiceMethod(ServiceLoader sl ,IRequest req){
+		Object obj = sl.getService(req.getServiceName()
+				,req.getNamespace(),req.getVersion());
+		
+		Class<?>[] pst = getMethodParamsType(req);
+		
+		try {
+			Method m = ProxyObject.getTargetCls(obj.getClass()).getMethod(req.getMethod(), pst);
+			
+			return m;
+		} catch (NoSuchMethodException | SecurityException | IllegalArgumentException e) {
+			throw new RpcException(req,"",e);
+		}
+	}
+	
+	public static Class<?>[]  getMethodParamsType(IRequest req){
+		return getMethodParamsType(req.getArgs());
+	}
+	
+	public static Class<?>[]  getMethodParamsType(Object[] args){
+		if(args == null || args.length==0){
+			return new Class<?>[0];
+		}
+		Class<?>[] parameterTypes = new Class[args.length];
+		for(int i = 0; i < args.length; i++) {
+			parameterTypes[i] = args[i].getClass();
+		}
+		return parameterTypes;
+	}
+	
+	public static Method getInterfaceMethod(IRequest req){
+		try {
+			Class<?> cls = Thread.currentThread().getContextClassLoader().loadClass(req.getServiceName());
+			Class<?>[] pst = getMethodParamsType(req);
+			Method m = cls.getMethod(req.getMethod(),pst);
+			return m;
+		} catch (ClassNotFoundException | NoSuchMethodException | SecurityException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return null;
+	}
+	
+	public static boolean isNeedResponse(ServiceLoader sl ,IRequest req){
+		Method m = getServiceMethod(sl,req);
+		if(m == null || !m.isAnnotationPresent(SMethod.class)){
+			m = getInterfaceMethod(req);
+			if(m == null || !m.isAnnotationPresent(SMethod.class)){
+				return true;
+			}
+		}
+		SMethod sm = m.getAnnotation(SMethod.class);
+		return sm.needResponse();
+	}
 	
 }

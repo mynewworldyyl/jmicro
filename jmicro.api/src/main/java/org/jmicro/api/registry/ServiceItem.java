@@ -25,7 +25,7 @@ import java.util.Set;
 import org.jmicro.api.exception.CommonException;
 import org.jmicro.common.Constants;
 import org.jmicro.common.Utils;
-import org.jmicro.common.url.StringUtils;
+import org.jmicro.common.util.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 /**

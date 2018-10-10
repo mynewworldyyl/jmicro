@@ -39,19 +39,23 @@ public interface MonitorConstant {
 	public static final int CLIENT_REQ_TIMEOUT = 0X7FFFFFF2;
 	public static final int CLIENT_REQ_SERVICE_NOT_FOUND = 0X7FFFFFF3;
 	public static final int CLIENT_REQ_SERVICE_FUSING = 0X7FFFFFF4;
-	public static final int CLIENT_RESP_ERR = 0X7FFFFFF5;
-	public static final int CLIENT_RESP_OK = 0X7FFFFFF6;
+	public static final int CLIENT_REQ_OK = 0X7FFFFFF6;
+	public static final int CLIENT_REQ_TIMEOUT_FAIL = 0X7FFFFFFA;
 	public static final int CLIENT_REQ_METHOD_NOT_FOUND = 0X7FFFFFF7;
 	public static final int CLIENT_REQ_HAVE_FINISH = 0X7FFFFFF8;
 	public static final int CLIENT_REQ_RETRY = 0X7FFFFFF9;
-	public static final int CLIENT_REQ_FAIL = 0X7FFFFFFA;
 	public static final int CLIENT_REQ_CONN_FAIL = 0X7FFFFFFB;
 	public static final int CLIENT_REQ_CONN_CLOSE = 0X7FFFFFFC;
+	public static final int CLIENT_REQ_EXCEPTION_ERR = 0X7FFFFFF5;
+	public static final int CLIENT_REQ_BUSSINESS_ERR = 0X7FFFFFFD;
+	
+	public static final int CLIENT_REQ_ASYNC1_SUCCESS= 0X7FFFFFFE;
+	public static final int CLIENT_REQ_ASYNC2_SUCCESS= 0X7FFFFFE1;
+	public static final int CLIENT_REQ_ASYNC2_FAIL= 0X7FFFFFE2;
 	
 	public static final int CLIENT_IOSESSION_CLOSE = 0X7FFFFFFD;
 	public static final int CLIENT_IOSESSION_OPEN = 0X7FFFFFFE;
 	public static final int CLIENT_IOSESSION_IDLE = 0X7FFFFFE5;
-	
 	public static final int CLIENT_IOSESSION_WRITE = 0X7FFFFFE0;
 	public static final int CLIENT_IOSESSION_READ =  0X7FFFFFE1;
 	public static final int CLIENT_IOSESSION_EXCEPTION = 0X7FFFFFE2;

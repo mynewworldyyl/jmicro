@@ -39,6 +39,8 @@ import org.jmicro.api.annotation.JMethod;
 import org.jmicro.api.annotation.ObjFactory;
 import org.jmicro.api.annotation.PostListener;
 import org.jmicro.api.annotation.Reference;
+import org.jmicro.api.config.Config;
+import org.jmicro.api.config.IConfigLoader;
 import org.jmicro.api.exception.CommonException;
 import org.jmicro.api.objectfactory.IObjectFactory;
 import org.jmicro.api.objectfactory.IPostFactoryReady;
@@ -46,9 +48,9 @@ import org.jmicro.api.objectfactory.IPostInitListener;
 import org.jmicro.api.objectfactory.ProxyObject;
 import org.jmicro.api.servicemanager.ComponentManager;
 import org.jmicro.common.Constants;
-import org.jmicro.common.url.ClassGenerator;
-import org.jmicro.common.url.ReflectUtils;
-import org.jmicro.common.url.StringUtils;
+import org.jmicro.common.util.ClassGenerator;
+import org.jmicro.common.util.ReflectUtils;
+import org.jmicro.common.util.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 /**
@@ -81,6 +83,7 @@ public class SimpleObjectFactory implements IObjectFactory {
 	@SuppressWarnings("unchecked")
 	@Override
 	public <T> T get(Class<T> cls) {
+		checkStatu();
 		Object obj = null;
 		if(cls.isInterface() || Modifier.isAbstract(cls.getModifiers())) {
 			List<T> l = this.getByParent(cls);
@@ -111,6 +114,7 @@ public class SimpleObjectFactory implements IObjectFactory {
 	@SuppressWarnings("unchecked")
 	@Override
 	public <T> T getByName(String clsName) {
+		checkStatu();
 		if(this.clsNameToObjs.containsKey(clsName)){
 			return (T) this.clsNameToObjs.get(clsName);
 		}
@@ -145,8 +149,15 @@ public class SimpleObjectFactory implements IObjectFactory {
 		}
 		return list;
 	}
+	
+	private void checkStatu(){
+		if(!isInit){
+			throw new CommonException("Object Factory not init finish");
+		}
+	}
 
 	public Object createNoProxy(Class cls) {
+		checkStatu();
 		Object obj = objs.get(cls);
 		if(obj != null && !(obj instanceof ProxyObject)){
 			return  obj;
@@ -295,8 +306,15 @@ public class SimpleObjectFactory implements IObjectFactory {
 				Component c2 = ProxyObject.getTargetCls(o2.getClass()).getAnnotation(Component.class);
 				return c1.level() > c2.level()?1:c1.level() == c2.level()?0:-1;
 			}
-			
 		});
+		
+		Config cfg = this.get(Config.class);
+		
+		List<IConfigLoader> configLoaders = this.getByParent(IConfigLoader.class);
+		
+		for(IConfigLoader cl : configLoaders){
+			cl.load(cfg.getParams());
+		}
 		
 		if(!l.isEmpty()){
 			for(int i =0; i < l.size(); i++){
@@ -336,6 +354,7 @@ public class SimpleObjectFactory implements IObjectFactory {
 	
 	@Override
 	public boolean exist(Class<?> clazz) {
+		checkStatu();
 		return this.objs.containsKey(clazz);
 	}
 

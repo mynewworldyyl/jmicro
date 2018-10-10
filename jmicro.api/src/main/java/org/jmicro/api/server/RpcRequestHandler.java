@@ -19,6 +19,7 @@ package org.jmicro.api.server;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
+import org.jmicro.api.annotation.Cfg;
 import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.Handler;
 import org.jmicro.api.annotation.Inject;
@@ -37,6 +38,9 @@ public class RpcRequestHandler extends AbstractHandler implements IRequestHandle
 	@Inject(required=true)
 	private ServiceLoader serviceLoader;
 	
+	@Cfg("/respBufferSize")
+	private int respBufferSize;
+	
 	@Override
 	public IResponse onRequest(IRequest request) {
 		Object obj = serviceLoader.getService(request.getServiceName()
@@ -44,10 +48,11 @@ public class RpcRequestHandler extends AbstractHandler implements IRequestHandle
 		
 		RpcResponse resp = null;
 		try {
-			Method m = IInterceptor.getMethod(this.serviceLoader, request);
+			Method m = ServiceLoader.getServiceMethod(this.serviceLoader, request);
 			if(m != null) {
 				Object result = m.invoke(obj, request.getArgs());
-				resp = new RpcResponse(request.getRequestId(),result);
+				resp = new RpcResponse(request.getRequestId(),result,respBufferSize);
+				resp.setMonitorEnable(request.isMonitorEnable());
 				resp.setSuccess(true);
 			}
 		} catch (SecurityException | IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {

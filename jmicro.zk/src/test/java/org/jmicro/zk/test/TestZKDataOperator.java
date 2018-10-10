@@ -1,6 +1,6 @@
 package org.jmicro.zk.test;
 
-import org.jmicro.api.Config;
+import org.jmicro.api.config.Config;
 import org.jmicro.api.raft.IDataListener;
 import org.jmicro.common.Utils;
 import org.jmicro.zk.ZKDataOperator;

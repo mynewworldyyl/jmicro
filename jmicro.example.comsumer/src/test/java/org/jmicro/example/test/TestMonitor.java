@@ -1,7 +1,7 @@
 package org.jmicro.example.test;
 
-import org.jmicro.api.Config;
 import org.jmicro.api.JMicroContext;
+import org.jmicro.api.config.Config;
 import org.jmicro.api.monitor.MonitorConstant;
 import org.jmicro.api.monitor.SubmitItemHolderManager;
 import org.jmicro.api.objectfactory.IObjectFactory;
@@ -21,7 +21,7 @@ public class TestMonitor {
 		SubmitItemHolderManager monitor = of.get(SubmitItemHolderManager.class);
 		for(;;){
 			//MonitorConstant.doSubmit(monitor,MonitorConstant.CLIENT_REQ_BEGIN, null, null);
-			MonitorConstant.doSubmit(monitor,MonitorConstant.CLIENT_RESP_OK, null, null);
+			MonitorConstant.doSubmit(monitor,MonitorConstant.CLIENT_REQ_OK, null, null);
 			
 			try {
 				Thread.sleep(10);

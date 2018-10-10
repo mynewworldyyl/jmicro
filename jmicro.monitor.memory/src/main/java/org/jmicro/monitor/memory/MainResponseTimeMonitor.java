@@ -1,6 +1,6 @@
 package org.jmicro.monitor.memory;
 
-import org.jmicro.api.Config;
+import org.jmicro.api.config.Config;
 import org.jmicro.api.objectfactory.IObjectFactory;
 import org.jmicro.api.servicemanager.ComponentManager;
 import org.jmicro.common.Utils;

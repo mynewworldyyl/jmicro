@@ -29,33 +29,7 @@ import org.jmicro.api.servicemanager.ServiceLoader;
  */
 public interface IInterceptor {
 
-	public static Method getMethod(ServiceLoader sl ,IRequest req){
-		Object obj = sl.getService(req.getServiceName()
-				,req.getNamespace(),req.getVersion());
-		
-		Object[] args = req.getArgs();
-		Class<?>[] parameterTypes = new Class[args.length];
-		for(int i = 0; i < args.length; i++) {
-			parameterTypes[i] = args[i].getClass();
-		}
-		
-		try {
-			Method m = ProxyObject.getTargetCls(obj.getClass()).getMethod(req.getMethod(), parameterTypes);
-			return m;
-		} catch (NoSuchMethodException | SecurityException | IllegalArgumentException e) {
-			throw new RpcException(req,"",e);
-		}
-	}
 	
-	public static boolean isNeedResponse(ServiceLoader sl ,IRequest req){
-		Method m = getMethod(sl,req);
-		if(m == null || !m.isAnnotationPresent(SMethod.class)){
-			return true;
-		}else {
-			SMethod sm = m.getAnnotation(SMethod.class);
-			return sm.noNeedResponse() == 0;
-		}
-	}
 	
 	IResponse intercept(IRequestHandler handler,IRequest req) throws RpcException;
 }

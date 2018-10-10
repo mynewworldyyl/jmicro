@@ -22,7 +22,7 @@ import org.jmicro.api.IDable;
 import org.jmicro.api.codec.IDecodable;
 import org.jmicro.api.codec.IEncodable;
 import org.jmicro.api.exception.CommonException;
-import org.jmicro.common.url.StringUtils;
+import org.jmicro.common.util.StringUtils;
 
 import net.techgy.idgenerator.IDStrategy;
 /**
@@ -33,7 +33,7 @@ import net.techgy.idgenerator.IDStrategy;
 @IDStrategy
 public class Message implements IEncodable,IDecodable,IDable{
 
-	public static final int HEADER_LEN=33;
+	public static final int HEADER_LEN=34;
 	
 /*	public static final byte MSG_REQ_TYPE_RESP=1;
 	
@@ -49,7 +49,7 @@ public class Message implements IEncodable,IDecodable,IDable{
 	public static final short MSG_TYPE_REQ_JRPC = 0x0001; //普通RPC调用请求，发送端发IRequest，返回端返回IResponse
 	public static final short MSG_TYPE_RRESP_JRPC = 0x0002;//返回端返回IResponse
 	
-	public static final short MSG_TYPE_ASYNC_MESSAGE = 0x0003; //异步消息，可以从客户端发服务端，也可以服务端推送客户端
+	//public static final short MSG_TYPE_SERVER_ASYNC_MESSAGE = 0x0003; //异步消息请求，服务器处理
 	//public static final short MSG_TYPE_RRESP_RAW = 0x0004;//纯二进制数据响应
 	
 	public static final short MSG_TYPE_REQ_RAW = 0x0004; //纯二进制数据请求
@@ -57,12 +57,19 @@ public class Message implements IEncodable,IDecodable,IDable{
 	
 	public static final short MSG_TYPE_ASYNC_REQ = 0x0006; //异步请求，不需求等待响应返回
 	public static final short MSG_TYPE_ASYNC_RESP = 0x0007; //异步响应，通过回调用返回
+	public static final short MSG_TYPE_ASYNC_CONFIRM = 0x0008;
 	
 	public static final short MSG_TYPE_SERVER_ERR = 0x7FFE;
 	public static final short MSG_TYPE_ALL = 0x7FFF;
 	
 	public static final byte[] VERSION = {0,0,1};
 	public static final String VERSION_STR = "0.0.1";
+	
+	//public static final byte FLAG_ASYNC = 1<<0;
+	
+	public static final byte FLAG_NEED_RESPONSE = 1<<1;
+	
+	public static final byte FLAG_STREAM = 1<<2;
 	
 	private long msgId;
 	
@@ -77,6 +84,8 @@ public class Message implements IEncodable,IDecodable,IDable{
 	private String version;
 	// 1 byte
 	private short type;
+	
+	private byte flag;
 	
 	//request or response
 	//private boolean isReq;
@@ -106,7 +115,8 @@ public class Message implements IEncodable,IDecodable,IDable{
 		this.setId(b.getLong());
 		this.setReqId(b.getLong());
 		this.setSessionId(b.getLong());
-		
+	    this.setFlag(b.get());
+	    
 		if(len > 0){
 			byte[] payload = new byte[len];
 			b.get(payload, 0, len);
@@ -144,6 +154,8 @@ public class Message implements IEncodable,IDecodable,IDable{
 		b.putLong(this.getId());
 		b.putLong(this.reqId);
 		b.putLong(this.sessionId);
+		b.put(this.flag);
+		
 		if(data != null){
 			b.put(data);
 		}
@@ -156,6 +168,14 @@ public class Message implements IEncodable,IDecodable,IDable{
 	@Override
 	public long getId() {
 		return this.msgId;
+	}
+
+	public byte getFlag() {
+		return flag;
+	}
+
+	public void setFlag(byte flag) {
+		this.flag = flag;
 	}
 
 	@Override

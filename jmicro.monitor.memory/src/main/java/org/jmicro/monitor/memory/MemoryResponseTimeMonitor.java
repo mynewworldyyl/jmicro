@@ -23,8 +23,8 @@ import java.util.Queue;
 
 import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.JMethod;
+import org.jmicro.api.annotation.SMethod;
 import org.jmicro.api.annotation.Service;
-import org.jmicro.api.client.ServiceInvocationHandler;
 import org.jmicro.api.monitor.IMonitorSubmitWorker;
 import org.jmicro.api.monitor.MonitorConstant;
 import org.jmicro.api.monitor.SubmitItem;
@@ -54,6 +54,7 @@ public class MemoryResponseTimeMonitor implements IMonitorSubmitWorker {
 	}
 	
 	@Override
+	@SMethod(needResponse=false)
 	public void submit(SubmitItem si) {
 		//logger.debug("Service: "+si.getServiceName());
 		if(MonitorConstant.CLIENT_REQ_BEGIN == si.getType()){
@@ -62,7 +63,7 @@ public class MemoryResponseTimeMonitor implements IMonitorSubmitWorker {
 			i.service = si.getServiceName()+"|"+si.getMethod()+"|"+si.getReqArgsStr();
 			i.startTime = si.getTime();
 			reqRespAvgList.put(i.reqId, i);
-		}else if(MonitorConstant.CLIENT_RESP_OK == si.getType()){
+		}else if(MonitorConstant.CLIENT_REQ_OK == si.getType()){
 			AvgResponseTimeItem i = reqRespAvgList.get(si.getReqId());
 			if(i == null){
 				return;

@@ -1,15 +1,6 @@
 package org.jmicro.example.test;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
-import java.io.PrintWriter;
-import java.net.Socket;
-import java.net.UnknownHostException;
-
-import org.jmicro.api.Config;
+import org.jmicro.api.config.Config;
 import org.jmicro.api.objectfactory.IObjectFactory;
 import org.jmicro.api.servicemanager.ComponentManager;
 import org.jmicro.common.Utils;
@@ -37,13 +28,7 @@ public class TestRpcRequest {
 	
 	@Test
 	public void testInvokePersonService() {
-		/*Config cfg = new Config();
-		cfg.setBindIp("localhost");
-		cfg.setPort(9801);;
-		cfg.setBasePackages(new String[]{"org.jmicro","org.jmtest"});
-		cfg.setRegistryUrl(new URL("zookeeper","localhost",2180));
-		JMicroContext.setCfg(cfg);*/
-		
+		Config.parseArgs(new String[0]);
 		IObjectFactory of = ComponentManager.getObjectFactory();
 		of.start();
 		TestRpcClient src = of.get(TestRpcClient.class);
@@ -58,6 +43,16 @@ public class TestRpcRequest {
 		ITestRpcService src = of.get(ITestRpcService.class);
 		src.pushMessage("Hello Server");
 		//Utils.getIns().waitForShutdown();
+	}
+	
+	@Test
+	public void testStreamService() {
+		Config.parseArgs(new String[0]);
+		IObjectFactory of = ComponentManager.getObjectFactory();
+		of.start();
+		ITestRpcService src = of.get(ITestRpcService.class);
+		src.subscrite("Hello ");;
+		Utils.getIns().waitForShutdown();
 	}
 	
 	

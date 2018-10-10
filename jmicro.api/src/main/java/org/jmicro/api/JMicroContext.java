@@ -27,7 +27,6 @@ import org.jmicro.common.Constants;
  */
 public class JMicroContext  {
 
-
 	public static String[] args = {};
 	
 	protected Map<String,Object> params = new HashMap<String,Object>();

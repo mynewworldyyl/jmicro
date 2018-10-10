@@ -23,6 +23,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import org.jmicro.api.IIdGenerator;
 import org.jmicro.api.JMicroContext;
+import org.jmicro.api.annotation.Cfg;
 import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.Inject;
 import org.jmicro.api.annotation.Interceptor;
@@ -35,6 +36,10 @@ import org.jmicro.api.servicemanager.ServiceLoader;
 import org.jmicro.common.Constants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import co.paralleluniverse.fibers.Fiber;
+import co.paralleluniverse.fibers.Suspendable;
+import co.paralleluniverse.strands.SuspendableRunnable;
 
 /**
  * 请求响应式RPC请求
@@ -59,6 +64,9 @@ public class JRPCReqRespHandler implements IMessageHandler{
 	@Inject
 	private IIdGenerator idGenerator;
 	
+	@Cfg("/respBufferSize")
+	private int respBufferSize;
+	
 	@Override
 	public short type() {
 		return TYPE;
@@ -77,34 +85,97 @@ public class JRPCReqRespHandler implements IMessageHandler{
 			
 			s.putParam(Constants.MONITOR_ENABLE_KEY,req.isMonitorEnable());
 			cxt.configMonitor(req.isMonitorEnable()?1:0, 0);
-		
-			IResponse resp = null;
 			
+			IResponse resp = null;
+			boolean needResp = ServiceLoader.isNeedResponse(this.serviceLoader, req);
 			MonitorConstant.doSubmit(monitor,MonitorConstant.SERVER_REQ_BEGIN, req,resp);
 			try {
-				resp = handler(req);
-				if(IInterceptor.isNeedResponse(this.serviceLoader, req)){
+				
+				if(!needResp){
+					handler(req);
+					MonitorConstant.doSubmit(monitor,MonitorConstant.SERVER_REQ_OK, req,resp);
+					return;
+				}
+
+				msg.setReqId(req.getRequestId());
+				msg.setSessionId(req.getSession().getId());
+				msg.setVersion(req.getMsg().getVersion());
+				
+				if(req.isStream()){
+					msg.setType(Message.MSG_TYPE_ASYNC_RESP);
+					
+					SuspendableRunnable r = () ->{
+						JMicroContext.get().setParam(Constants.CONTEXT_CALLBACK, new IWriteCallback(){
+							@Override
+							public void send(Object message) {
+								RpcResponse resp = new RpcResponse(req.getRequestId(),message,respBufferSize);
+								resp.setSuccess(true);
+								//返回结果包
+								msg.setId(idGenerator.getLongId(Message.class));
+								msg.setPayload(resp.encode());
+								msg.setType(Message.MSG_TYPE_ASYNC_RESP);
+								if(s.isClose()){
+									throw new CommonException("Session is closed while writing data");
+								}
+								s.write(msg.encode());
+							}
+						});
+						 handler(req);
+					};
+					//异步响应
+					new Fiber<Void>(r).start();
+					
+					/*Runnable run = ()->{
+						JMicroContext.get().setParam(Constants.CONTEXT_CALLBACK, new IWriteCallback(){
+							@Override
+							public void send(Object message) {
+								RpcResponse resp = new RpcResponse(req.getRequestId(),message,respBufferSize);
+								resp.setSuccess(true);
+								//返回结果包
+								msg.setId(idGenerator.getLongId(Message.class));
+								msg.setPayload(resp.encode());
+								msg.setType(Message.MSG_TYPE_ASYNC_RESP);
+								if(s.isClose()){
+									throw new CommonException("Session is closed while writing data");
+								}
+								s.write(msg.encode());
+							}
+						});
+						 handler(req);
+					};
+					new Thread(run).start();*/
+					
+					
+					//直接返回一个确认包
+					resp = new RpcResponse(req.getRequestId(),null,respBufferSize);
+					resp.setSuccess(true);
+					
+					msg.setType(Message.MSG_TYPE_RRESP_JRPC);
+					msg.setPayload(resp.encode());
+					msg.setId(idGenerator.getLongId(Message.class));
+					s.write(msg.encode());
+				
+				} else {
+					//同步响应
+					resp = handler(req);
+					if(resp == null){
+						resp = new RpcResponse(req.getRequestId(),null,respBufferSize);
+						resp.setSuccess(true);
+					}
+					msg.setPayload(resp.encode());
 					msg.setType(Message.MSG_TYPE_RRESP_JRPC);
 					msg.setId(idGenerator.getLongId(Message.class));
-					msg.setReqId(req.getRequestId());
-					msg.setSessionId(req.getSession().getId());
-					msg.setVersion(req.getMsg().getVersion());
-					
-					if(resp != null) {
-						msg.setPayload(resp.encode());
-					} else {
-						msg.setPayload(null);
-					}
 					s.write(msg.encode());
 				}
 				MonitorConstant.doSubmit(monitor,MonitorConstant.SERVER_REQ_OK, req,resp);
 			} catch (Throwable e) {
 				MonitorConstant.doSubmit(monitor,MonitorConstant.SERVER_REQ_ERROR, req,resp);
 				logger.error("reqHandler error: ",e);
-				if(req != null){
-					resp = new RpcResponse(req.getRequestId(),new ServerError(0,e.getMessage()));
+				if(needResp && req != null ){
+					resp = new RpcResponse(req.getRequestId(),new ServerError(0,e.getMessage()),respBufferSize);
 					resp.setSuccess(false);
 				}
+				s.close(true);
 			}
 	}
 
@@ -119,6 +190,7 @@ public class JRPCReqRespHandler implements IMessageHandler{
 		return sb.toString();
 	}
 	
+	@Suspendable
     private IResponse handler(RpcRequest req) {
 		
     	IRequestHandler handler = null;

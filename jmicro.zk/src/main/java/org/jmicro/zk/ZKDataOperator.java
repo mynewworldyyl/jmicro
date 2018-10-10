@@ -44,7 +44,7 @@ import org.apache.zookeeper.Watcher.Event.EventType;
 import org.apache.zookeeper.ZooDefs;
 import org.apache.zookeeper.data.ACL;
 import org.apache.zookeeper.data.Stat;
-import org.jmicro.api.Config;
+import org.jmicro.api.config.Config;
 import org.jmicro.api.objectfactory.IObjectFactory;
 import org.jmicro.api.raft.IChildrenListener;
 import org.jmicro.api.raft.IConnectionStateChangeListener;
@@ -67,14 +67,26 @@ public class ZKDataOperator implements IDataOperator{
 	
 	private static ZKDataOperator ins = new ZKDataOperator();
 	public static ZKDataOperator getIns() {return ins;}
+	
+	private boolean isInit = false;
+	
 	private ZKDataOperator(){
 		propes = new Properties();
 		curator = createCuratorFramework();
 	}
 	
 	public void init(){
-		propes = new Properties();
-		curator = createCuratorFramework();
+		if(isInit){
+			return;
+		}
+		IObjectFactory of = ComponentManager.getObjectFactory();
+		if(!of.exist(this.curator.getClass())){
+			of.regist(this.curator);
+			of.regist(CuratorFramework.class,this.curator);
+		}
+		if(!of.exist(ZKDataOperator.class)){
+			of.regist(ins);
+		}
 	}
 	
 	private Set<IConnectionStateChangeListener> connListeners = new HashSet<>();
@@ -221,19 +233,6 @@ public class ZKDataOperator implements IDataOperator{
 		}
 	}
 	
-	
-	public CuratorFramework getCurator() {
-		IObjectFactory of = ComponentManager.getObjectFactory();
-		if(!of.exist(this.curator.getClass())){
-			of.regist(this.curator);
-			of.regist(CuratorFramework.class,this.curator);
-		}
-		if(!of.exist(ZKDataOperator.class)){
-			of.regist(ins);
-		}
-		return curator;
-	}
-	
 	public void addListener(IConnectionStateChangeListener lis){
 		connListeners.add(lis);
 	}
@@ -290,6 +289,7 @@ public class ZKDataOperator implements IDataOperator{
 	}
 	
 	public boolean exist(String path){
+		init();
 		ExistsBuilder existsBuilder = this.curator.checkExists();
 		try {
 			Stat stat = existsBuilder.forPath(path);
@@ -303,6 +303,7 @@ public class ZKDataOperator implements IDataOperator{
 	}
 	
 	public String getData(String path){
+		init();
 		GetDataBuilder getDataBuilder = this.curator.getData();
   	    try {
 			byte[] data = getDataBuilder.forPath(path);
@@ -316,6 +317,7 @@ public class ZKDataOperator implements IDataOperator{
 	}
 	
 	public void setData(String path,String data){
+		init();
 		SetDataBuilder setDataBuilder = this.curator.setData();
   	    try {
   	    	byte[] d= data.getBytes(Constants.CHARSET);
@@ -328,6 +330,7 @@ public class ZKDataOperator implements IDataOperator{
 	}
 	
 	public List<String> getChildren(String path){
+		init();
 		GetChildrenBuilder getChildBuilder = this.curator.getChildren();
   	   try {
 			return getChildBuilder.forPath(path);
@@ -340,6 +343,7 @@ public class ZKDataOperator implements IDataOperator{
 	}
 	
 	public void createNode(String path,String data,boolean elp){
+		init();
 		if(this.exist(path)){
 			this.setData(path, data);
 		} else {
@@ -377,6 +381,7 @@ public class ZKDataOperator implements IDataOperator{
 	}
 	
 	public void deleteNode(String path){
+		init();
 		DeleteBuilder deleteBuilder = this.curator.delete();
   	    try {
   	    	deleteBuilder.forPath(path);
@@ -411,7 +416,7 @@ public class ZKDataOperator implements IDataOperator{
 	    };  
 	    builder.aclProvider(aclProvider);
 	    
-	    String connectString = Config.getRegistryUrl().getHost() + ":" + Config.getRegistryUrl().getPort();
+	    String connectString = Config.getRegistryHost() + ":" + Config.getRegistryPort();
 	    builder.connectString(connectString);
 	    
 	    ExponentialBackoffRetry retryPolicy = new ExponentialBackoffRetry(1000, 3);

@@ -30,6 +30,8 @@ import org.jmicro.api.codec.IEncodable;
  */
 public class RpcResponse extends AbstractObjectMapSupport implements IEncodable,IResponse,IDable{
 
+	private transient int bufferSize;
+	
 	private long id;
 	
 	private transient Message msg;
@@ -42,11 +44,12 @@ public class RpcResponse extends AbstractObjectMapSupport implements IEncodable,
 	
 	private boolean success = true;
 	
-	public RpcResponse() {}
+	public RpcResponse(int bufferSize) {this.bufferSize = bufferSize;}
 	
-	public RpcResponse(long reqId,Object result){
+	public RpcResponse(long reqId,Object result,int bufferSize){
 		this.reqId = reqId;
 		this.result = result;
+		this.bufferSize = bufferSize;
 	}
 	
 	public RpcResponse(long reqId){
@@ -71,6 +74,11 @@ public class RpcResponse extends AbstractObjectMapSupport implements IEncodable,
 		Encoder.encodeObject(bb, result);
 		bb.flip();
 		return bb;
+	}
+
+	@Override
+	public ByteBuffer newBuffer() {
+		return ByteBuffer.allocate(bufferSize);
 	}
 
 	public Message getMsg() {

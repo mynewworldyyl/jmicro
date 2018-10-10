@@ -82,11 +82,11 @@ public class ServerReceiver implements IServerReceiver{
 				try {
 					ready.wait();
 				} catch (InterruptedException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
+					logger.error("receive(IServerSession s, ByteBuffer data) do wait",e);
 				}
 			}
 		}
+		//直接协程处理，IO LOOP线程返回
 		new Fiber<Void>(() ->doReceive(s,data)).start();
 	}
 	

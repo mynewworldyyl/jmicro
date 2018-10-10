@@ -2,7 +2,7 @@ package org.jmicro.example.comsumer;
 
 import java.util.Random;
 
-import org.jmicro.api.Config;
+import org.jmicro.api.config.Config;
 import org.jmicro.api.objectfactory.IObjectFactory;
 import org.jmicro.api.servicemanager.ComponentManager;
 
