@@ -74,6 +74,7 @@ public interface MonitorConstant {
 	
 	public static final int SERVER_START =           0X7FFFFEFA;
 	public static final int SERVER_STOP =            0X7FFFFEFB;
+	public static final int SERVER_REQ_SERVICE_NOT_FOUND = 0X7FFFFEFC;
 	
 	public static final int SERVER_IOSESSION_CLOSE = 0X7FFFFEFD;
 	public static final int SERVER_IOSESSION_OPEN =  0X7FFFFEFE;

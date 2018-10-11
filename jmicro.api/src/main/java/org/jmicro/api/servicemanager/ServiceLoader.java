@@ -200,7 +200,6 @@ public class ServiceLoader {
 			item.setTestingArgs(anno.testingArgs());
 			item.setTimeout(anno.timeout());
 			item.setMaxSpeed(anno.maxSpeed());
-			item.setMinSpeed(anno.minSpeed());
 			item.setAvgResponseTime(anno.avgResponseTime());
 			item.setMonitorEnable(anno.monitorEnable());
 			
@@ -223,7 +222,6 @@ public class ServiceLoader {
 					sm.setTestingArgs(manno.testingArgs());
 					sm.setTimeout(manno.timeout());
 					sm.setMaxSpeed(manno.maxSpeed());
-					sm.setMinSpeed(manno.minSpeed());
 					sm.setAvgResponseTime(manno.avgResponseTime());
 					sm.setMonitorEnable(manno.monitorEnable());
 					
@@ -246,7 +244,6 @@ public class ServiceLoader {
 					sm.setTestingArgs(manno.testingArgs());
 					sm.setTimeout(manno.timeout());
 					sm.setMaxSpeed(manno.maxSpeed());
-					sm.setMinSpeed(manno.minSpeed());
 					sm.setAvgResponseTime(manno.avgResponseTime());
 					sm.setMonitorEnable(manno.monitorEnable());
 					
@@ -268,7 +265,6 @@ public class ServiceLoader {
 					sm.setTestingArgs(anno.testingArgs());
 					sm.setTimeout(anno.timeout());
 					sm.setMaxSpeed(anno.maxSpeed());
-					sm.setMinSpeed(anno.minSpeed());
 					sm.setAvgResponseTime(anno.avgResponseTime());
 					sm.setMonitorEnable(anno.monitorEnable());
 				}

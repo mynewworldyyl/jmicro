@@ -14,15 +14,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.jmicro.idgenerator;
+package org.jmicro.api.net;
 
-import net.techgy.idgenerator.IDStrategy;
+import java.nio.ByteBuffer;
 /**
- * 
+ * RCP框架服务端接收网络层传过来的数据，
  * @author Yulei Ye
- * @date 2018年10月4日-下午12:11:26
+ * @date 2018年10月9日-下午5:53:05
  */
-@IDStrategy
-public class LongId {
-
+public interface IMessageReceiver {
+	void receive(ISession session,ByteBuffer data);
+	void registHandler(IMessageHandler handler);
 }

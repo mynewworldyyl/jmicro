@@ -67,12 +67,6 @@ public @interface Service {
 	public int maxSpeed() default -1;
 	
 	/**
-	 * min qps
-	 * real qps less this value will downgrade service
-	 */
-	public int minSpeed() default -1;
-	
-	/**
 	 *  milliseconds
 	 *  speed up when real response time less avgResponseTime, 
 	 *  speed down when real response time less avgResponseTime

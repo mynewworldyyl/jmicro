@@ -24,5 +24,5 @@ import org.jmicro.api.server.IRequest;
  */
 public interface ILimiter {
 
-	public int apply(IRequest req);
+	public boolean apply(IRequest req);
 }

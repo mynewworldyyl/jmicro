@@ -61,7 +61,7 @@ public class DefaultSpeedLimiter implements ILimiter{
 	private Map<String,ConcurrentLinkedDeque<LimitData>> limiterData = new ConcurrentHashMap<>();
 	
 	@Override
-	public int apply(IRequest req) {
+	public boolean apply(IRequest req) {
 		
 		//not support method override
 		String key = this.serviceKey(req);
@@ -79,7 +79,7 @@ public class DefaultSpeedLimiter implements ILimiter{
 		
 		if(si == null){
 			// service not found and let the laster handler to decide how to response
-			return 1;
+			return true;
 		}
 		
 		LimitData d = new LimitData();
@@ -89,14 +89,14 @@ public class DefaultSpeedLimiter implements ILimiter{
 		//return the time to be wait
 		int result = compute(ld,si,req);
 		if(result == 0){
-			return 0;
+			return false;
 		}
 		if(result > 0){
 			MonitorConstant.doSubmit(monitor,MonitorConstant.SERVER_REQ_LIMIT_OK, req,null,result);
 			doWait(result,d);
 		}
 		
-		return 1;
+		return true;
 	}
 	
 	private void doWait(int result,LimitData d) {

@@ -16,9 +16,14 @@
  */
 package org.jmicro.transport.mina;
 
+import java.io.UnsupportedEncodingException;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.mina.api.AbstractIoHandler;
@@ -28,20 +33,21 @@ import org.apache.mina.api.IoService;
 import org.apache.mina.api.IoSession;
 import org.apache.mina.session.AttributeKey;
 import org.apache.mina.transport.nio.NioTcpClient;
-import org.jmicro.api.IIdGenerator;
 import org.jmicro.api.JMicroContext;
 import org.jmicro.api.annotation.Cfg;
 import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.Inject;
-import org.jmicro.api.client.IClientReceiver;
 import org.jmicro.api.client.IClientSession;
 import org.jmicro.api.client.IClientSessionManager;
 import org.jmicro.api.codec.Decoder;
 import org.jmicro.api.exception.CommonException;
+import org.jmicro.api.idgenerator.IIdGenerator;
 import org.jmicro.api.monitor.MonitorConstant;
 import org.jmicro.api.monitor.SubmitItemHolderManager;
-import org.jmicro.api.server.ISession;
-import org.jmicro.api.server.Message;
+import org.jmicro.api.net.IMessageHandler;
+import org.jmicro.api.net.IMessageReceiver;
+import org.jmicro.api.net.ISession;
+import org.jmicro.api.net.Message;
 import org.jmicro.common.Constants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -50,7 +56,7 @@ import org.slf4j.LoggerFactory;
  * @author Yulei Ye
  * @date 2018年10月4日-下午12:13:45
  */
-@Component(lazy=false)
+@Component(lazy=false,side=Constants.SIDE_COMSUMER)
 public class MinaClientSessionManager implements IClientSessionManager{
 
 	static final Logger logger = LoggerFactory.getLogger(MinaClientSessionManager.class);
@@ -64,6 +70,9 @@ public class MinaClientSessionManager implements IClientSessionManager{
 	@Cfg("/MinaClientSessionManager/readBufferSize")
 	private int readBufferSize=1024*4;
 	
+	@Cfg("/MinaClientSessionManager/heardbeatInterval")
+	private int heardbeatInterval = 3; //seconds to send heardbeat Rate
+	
 	@Inject
 	private IIdGenerator idGenerator;
 	
@@ -71,8 +80,62 @@ public class MinaClientSessionManager implements IClientSessionManager{
 	private SubmitItemHolderManager monitor;
 	
 	@Inject(required=false)
-	private IClientReceiver receiver;
+	private IMessageReceiver receiver;
 	
+	private Timer ticker = new Timer("ClientSessionHeardbeatWorker",true);
+	
+	
+	
+	public void init()  {
+		this.receiver.registHandler(new IMessageHandler(){
+			@Override
+			public Short type() {
+				return Message.MSG_TYPE_HEARBEAT_RESP;
+			}
+			
+			@Override
+			public void onMessage(ISession session, Message msg) {
+				session.active();
+			}
+		});
+		
+		try {
+			final Message hearbeat = new Message();
+			hearbeat.setType(Message.MSG_TYPE_HEARBEAT_REQ);
+			hearbeat.setId(idGenerator.getLongId(Message.class));
+			hearbeat.setReqId(0L);
+			hearbeat.setVersion(Constants.DEFAULT_VERSION);
+			final ByteBuffer bb = ByteBuffer.wrap("Hello".getBytes(Constants.CHARSET));
+			hearbeat.setPayload(bb);
+			
+			ticker.schedule(new TimerTask(){
+				@Override
+				public void run() {
+					Set<String> removes = new HashSet<String>();
+					for(Map.Entry<String, IClientSession> e: sessions.entrySet()){
+						if(!e.getValue().isActive()) {
+							removes.add(e.getKey());
+							continue;
+						}
+						hearbeat.setSessionId(e.getValue().getId());
+						bb.mark();
+						e.getValue().write(hearbeat.encode());
+						bb.reset();
+					}
+					
+					for(String key: removes){
+						ISession s = sessions.get(key);
+						s.close(true);
+						sessions.remove(key);
+					}
+				}	
+			}, 0, heardbeatInterval*1000);
+		} catch (UnsupportedEncodingException e) {
+			logger.error("",e);
+		}
+	}
+	
+
 	private AbstractIoHandler ioHandler = new AbstractIoHandler() {
         @Override
         public void sessionOpened(final IoSession session) {
@@ -96,10 +159,7 @@ public class MinaClientSessionManager implements IClientSessionManager{
             if(body == null){
             	return;
             }
-        	Message msg = new Message();
-    		msg.decode(body);
-    		
-            receiver.onMessage(cs,msg);
+            receiver.receive(cs,body);
         }
 
         @Override
@@ -196,7 +256,7 @@ public class MinaClientSessionManager implements IClientSessionManager{
 	           if(session == null){
 	               throw new CommonException("Fail to create session");
 	           }
-	           MinaClientSession s = new MinaClientSession(session,readBufferSize);
+	           MinaClientSession s = new MinaClientSession(session,readBufferSize,heardbeatInterval);
 	           s.setId(this.idGenerator.getLongId(ISession.class));
 	           s.putParam(Constants.SESSION_KEY, session);
 	           

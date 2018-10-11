@@ -31,13 +31,9 @@ import org.slf4j.LoggerFactory;
 public class MinaClientSession extends AbstractMinaSession implements IClientSession{
 
 	static final Logger LOG = LoggerFactory.getLogger(MinaClientSession.class);
-
-	public MinaClientSession(IoSession ioSession) {
-		this(ioSession,1024*4);
-	}
 	
-	public MinaClientSession(IoSession ioSession,int readBufferSize) {
-		super(ioSession,readBufferSize);
+	public MinaClientSession(IoSession ioSession,int readBufferSize,int heardbeatInterval) {
+		super(ioSession,readBufferSize,heardbeatInterval);
 	}
 	
 	@Override

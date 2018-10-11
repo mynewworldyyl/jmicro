@@ -22,7 +22,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-import org.jmicro.api.IIdGenerator;
 import org.jmicro.api.JMicroContext;
 import org.jmicro.api.annotation.Cfg;
 import org.jmicro.api.annotation.Component;
@@ -30,14 +29,17 @@ import org.jmicro.api.annotation.Inject;
 import org.jmicro.api.exception.CommonException;
 import org.jmicro.api.exception.FusingException;
 import org.jmicro.api.fusing.FuseManager;
+import org.jmicro.api.idgenerator.IIdGenerator;
 import org.jmicro.api.loadbalance.ISelector;
 import org.jmicro.api.monitor.MonitorConstant;
 import org.jmicro.api.monitor.SubmitItemHolderManager;
+import org.jmicro.api.net.IMessageHandler;
+import org.jmicro.api.net.ISession;
+import org.jmicro.api.net.Message;
 import org.jmicro.api.objectfactory.ProxyObject;
 import org.jmicro.api.registry.ServiceItem;
 import org.jmicro.api.registry.ServiceMethod;
 import org.jmicro.api.server.IRequest;
-import org.jmicro.api.server.Message;
 import org.jmicro.api.server.RpcRequest;
 import org.jmicro.api.server.RpcResponse;
 import org.jmicro.api.server.ServerError;
@@ -50,8 +52,8 @@ import org.slf4j.LoggerFactory;
  * @author Yulei Ye
  * @date 2018年10月4日-下午12:00:47
  */
-@Component(value=Constants.DEFAULT_INVOCATION_HANDLER,lazy=false)
-public class ServiceInvocationHandler implements InvocationHandler, IClientMessageHandler{
+@Component(value=Constants.DEFAULT_INVOCATION_HANDLER,lazy=false,side=Constants.SIDE_COMSUMER)
+public class ServiceInvocationHandler implements InvocationHandler, IMessageHandler{
 	
 	private final static Logger logger = LoggerFactory.getLogger(ServiceInvocationHandler.class);
 	
@@ -199,8 +201,6 @@ public class ServiceInvocationHandler implements InvocationHandler, IClientMessa
     			MonitorConstant.doSubmit(monitor,MonitorConstant.CLIENT_REQ_BEGIN, req, null);
     		}
     		
-    		
-    		
     		Message msg = new Message();
     		msg.setType(Message.MSG_TYPE_REQ_JRPC);
     		
@@ -264,7 +264,9 @@ public class ServiceInvocationHandler implements InvocationHandler, IClientMessa
     		RpcResponse resp = null;
     		if(respMsg != null){
     			resp = new RpcResponse(respBufferSize);
-    			resp.decode(respMsg.getPayload());
+    			if(respMsg.getPayload() != null){
+    				resp.decode(respMsg.getPayload());
+    			}
     			resp.setMsg(respMsg);
     			req.setMsg(msg);
     		}
@@ -345,7 +347,7 @@ public class ServiceInvocationHandler implements InvocationHandler, IClientMessa
 	}
 
 	@Override
-	public void onResponse(IClientSession session,Message msg) {
+	public void onMessage(ISession session,Message msg) {
 		//receive response
 		IResponseHandler handler = waitForResponse.get(msg.getReqId());
 		if(handler!= null){

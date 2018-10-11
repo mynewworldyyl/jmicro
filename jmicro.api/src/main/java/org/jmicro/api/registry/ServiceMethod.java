@@ -59,12 +59,6 @@ public class ServiceMethod {
 	private int maxSpeed;
 	
 	/**
-	 * min qps
-	 * real qps less this value will downgrade service
-	 */
-	private int minSpeed;
-	
-	/**
 	 *  milliseconds
 	 *  speed up when real response time less avgResponseTime, 
 	 *  speed down when real response time less avgResponseTime
@@ -118,7 +112,6 @@ public class ServiceMethod {
 		
 		this.degrade = p.degrade;
 		this.maxSpeed = p.maxSpeed;
-		this.minSpeed = p.minSpeed;
 		this.avgResponseTime = p.avgResponseTime;
 	}
 	
@@ -238,14 +231,6 @@ public class ServiceMethod {
 
 	public void setMaxSpeed(int maxSpeed) {
 		this.maxSpeed = maxSpeed;
-	}
-
-	public int getMinSpeed() {
-		return minSpeed;
-	}
-
-	public void setMinSpeed(int minSpeed) {
-		this.minSpeed = minSpeed;
 	}
 
 	public int getAvgResponseTime() {

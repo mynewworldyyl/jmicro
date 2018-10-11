@@ -17,9 +17,15 @@
 package org.jmicro.transport.mina;
 
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
+import java.util.Timer;
+import java.util.TimerTask;
 
 import org.apache.mina.api.AbstractIoHandler;
 import org.apache.mina.api.IdleStatus;
@@ -31,15 +37,16 @@ import org.jmicro.api.JMicroContext;
 import org.jmicro.api.annotation.Cfg;
 import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.Inject;
-import org.jmicro.api.annotation.Server;
 import org.jmicro.api.codec.Decoder;
 import org.jmicro.api.exception.CommonException;
 import org.jmicro.api.monitor.MonitorConstant;
 import org.jmicro.api.monitor.SubmitItemHolderManager;
-import org.jmicro.api.net.IServerReceiver;
+import org.jmicro.api.net.IMessageHandler;
+import org.jmicro.api.net.IMessageReceiver;
+import org.jmicro.api.net.ISession;
+import org.jmicro.api.net.Message;
 import org.jmicro.api.server.IServer;
-import org.jmicro.api.server.Message;
-import org.jmicro.api.server.RpcRequest;
+import org.jmicro.api.server.IServerSession;
 import org.jmicro.common.Constants;
 import org.jmicro.common.Utils;
 import org.jmicro.common.util.StringUtils;
@@ -50,8 +57,7 @@ import org.slf4j.LoggerFactory;
  * @author Yulei Ye
  * @date 2018年10月4日-下午12:13:53
  */
-@Component(value=Constants.DEFAULT_SERVER,lazy=false,level=10)
-@Server
+@Component(value=Constants.DEFAULT_SERVER,lazy=false,level=10,side=Constants.SIDE_PROVIDER)
 public class MinaServer implements IServer{
 
 	static final Logger LOG = LoggerFactory.getLogger(MinaServer.class);
@@ -61,6 +67,8 @@ public class MinaServer implements IServer{
 	
 	AttributeKey<Object> monitorCfgEnableKey = AttributeKey.createKey(Object.class, "monitorCfgEnableKey");
 	
+	private Set<MinaServerSession> sessions = new HashSet<>();
+	
 	//@Inject(required=false)
 	private  NioTcpServer acceptor;
 	
@@ -68,7 +76,7 @@ public class MinaServer implements IServer{
 	private AbstractIoHandler iohandler;
 	
 	@Inject
-	private IServerReceiver receiver;
+	private IMessageReceiver receiver;
 	
 	@Cfg(value = "/bindIp",required=false)
 	private String host;
@@ -79,12 +87,49 @@ public class MinaServer implements IServer{
 	@Cfg("/MinaServer/readBufferSize")
 	private int readBufferSize=1024*4;
 	
+	@Cfg("/MinaClientSessionManager/heardbeatInterval")
+	private int heardbeatInterval = 3; //seconds to send heardbeat Rate
+	
 	@Inject(required=false)
 	private SubmitItemHolderManager monitor;
+	
+	private Timer ticker = new Timer("ClientSessionHeardbeatWorker",true);
 	
 	@Override
 	public void init() {
 		start();
+		this.receiver.registHandler(new IMessageHandler(){
+			@Override
+			public Short type() {
+				return Message.MSG_TYPE_HEARBEAT_REQ;
+			}
+			
+			@Override
+			public void onMessage(ISession session, Message msg) {
+				/*try {
+					System.out.println(new String(msg.getPayload().array(),Constants.CHARSET));
+				} catch (UnsupportedEncodingException e) {
+				}*/
+				session.active();
+				msg.setType(Message.MSG_TYPE_HEARBEAT_RESP);
+				session.write(msg.encode());
+			}
+		});
+		
+		ticker.schedule(new TimerTask(){
+			@Override
+			public void run() {
+				Iterator<MinaServerSession> ite = sessions.iterator();
+				for(;ite.hasNext();){
+					IServerSession s = ite.next();
+					if(!s.isActive()) {
+						s.close(true);
+						ite.remove();
+					}
+				}
+			}	
+		}, 0, heardbeatInterval*1000);
+		
 	}
 	
 	 private Boolean monitorEnable(IoSession ioSession) {
@@ -106,7 +151,7 @@ public class MinaServer implements IServer{
                 @Override
                 public void sessionOpened(final IoSession session) {
                     LOG.info("session opened {}", session);           
-                    MinaServerSession s = new MinaServerSession(session,readBufferSize);
+                    MinaServerSession s = new MinaServerSession(session,readBufferSize,heardbeatInterval);
                     s.putParam(Constants.SESSION_KEY, session);
                     //s.setSessionId(idGenerator.getLongId(ISession.class));
                     session.setAttribute(sessinKey, s);

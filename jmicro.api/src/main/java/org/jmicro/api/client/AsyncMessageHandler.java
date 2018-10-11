@@ -18,11 +18,14 @@ package org.jmicro.api.client;
 
 import org.jmicro.api.annotation.Cfg;
 import org.jmicro.api.annotation.Component;
+import org.jmicro.api.net.IMessageHandler;
+import org.jmicro.api.net.ISession;
+import org.jmicro.api.net.Message;
 import org.jmicro.api.registry.ServiceMethod;
 import org.jmicro.api.server.IRequest;
-import org.jmicro.api.server.Message;
 import org.jmicro.api.server.RpcResponse;
 import org.jmicro.api.servicemanager.ComponentManager;
+import org.jmicro.common.Constants;
 import org.jmicro.common.util.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,8 +37,8 @@ import co.paralleluniverse.fibers.Fiber;
  * @author Yulei Ye
  * @date 2018年10月10日-下午12:56:40
  */
-@Component
-public class AsyncMessageHandler implements IClientMessageHandler{
+@Component(side=Constants.SIDE_COMSUMER)
+public class AsyncMessageHandler implements IMessageHandler{
 
 	private final static Logger logger = LoggerFactory.getLogger(AsyncMessageHandler.class);
 	
@@ -48,8 +51,8 @@ public class AsyncMessageHandler implements IClientMessageHandler{
 	}
 
 	@Override
-	public void onResponse(IClientSession session,Message msg) {
-		new Fiber<Void>(() ->handleResponse(session,msg)).start();
+	public void onMessage(ISession session,Message msg) {
+		new Fiber<Void>(() ->handleResponse((IClientSession)session,msg)).start();
 	}
 	
 	@SuppressWarnings({ "rawtypes", "unchecked" })

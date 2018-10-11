@@ -30,7 +30,7 @@ import java.util.Map;
 
 import org.jmicro.api.ClassScannerUtils;
 import org.jmicro.api.exception.CommonException;
-import org.jmicro.api.server.Message;
+import org.jmicro.api.net.Message;
 import org.jmicro.api.server.RpcRequest;
 import org.jmicro.common.Constants;
 import org.jmicro.common.util.StringUtils;

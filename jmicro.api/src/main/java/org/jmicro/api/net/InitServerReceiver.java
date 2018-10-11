@@ -21,7 +21,8 @@ import java.util.List;
 import org.jmicro.api.annotation.Component;
 import org.jmicro.api.objectfactory.IObjectFactory;
 import org.jmicro.api.objectfactory.IPostFactoryReady;
-import org.jmicro.api.server.IMessageHandler;
+import org.jmicro.api.objectfactory.ProxyObject;
+import org.jmicro.common.Constants;
 /**
  * 
  * @author Yulei Ye
@@ -35,7 +36,13 @@ public class InitServerReceiver implements IPostFactoryReady{
 		List<IMessageHandler> list = of.getByParent(IMessageHandler.class);
 		ServerReceiver sr = of.get(ServerReceiver.class);
 		for(IMessageHandler h: list){
-			sr.registHandler(h);
+			Class<?> tcls = ProxyObject.getTarget(h).getClass();
+			if(tcls.isAnnotationPresent(Component.class)){
+				Component anno = tcls.getAnnotation(Component.class);
+				if(anno.active() && Constants.SIDE_PROVIDER.equals(anno.side())){
+					sr.registHandler(h);
+				}
+			}
 		}
 	}
 

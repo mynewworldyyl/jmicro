@@ -19,18 +19,25 @@ package org.jmicro.api.server;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
-import org.jmicro.api.IIdGenerator;
 import org.jmicro.api.JMicroContext;
 import org.jmicro.api.annotation.Cfg;
 import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.Inject;
 import org.jmicro.api.annotation.Interceptor;
 import org.jmicro.api.exception.CommonException;
+import org.jmicro.api.idgenerator.IIdGenerator;
 import org.jmicro.api.monitor.MonitorConstant;
 import org.jmicro.api.monitor.SubmitItemHolderManager;
+import org.jmicro.api.net.IMessageHandler;
+import org.jmicro.api.net.ISession;
+import org.jmicro.api.net.Message;
 import org.jmicro.api.objectfactory.ProxyObject;
+import org.jmicro.api.registry.IRegistry;
+import org.jmicro.api.registry.ServiceItem;
+import org.jmicro.api.registry.ServiceMethod;
 import org.jmicro.api.servicemanager.ComponentManager;
 import org.jmicro.api.servicemanager.ServiceLoader;
 import org.jmicro.common.Constants;
@@ -46,7 +53,7 @@ import co.paralleluniverse.strands.SuspendableRunnable;
  * @author Yulei Ye
  * @date 2018年10月9日-下午5:50:36
  */
-@Component(active=true,value="JRPCReqRespHandler")
+@Component(active=true,value="JRPCReqRespHandler",side=Constants.SIDE_PROVIDER)
 public class JRPCReqRespHandler implements IMessageHandler{
 
 	public static final short TYPE = Message.MSG_TYPE_REQ_JRPC;
@@ -67,30 +74,51 @@ public class JRPCReqRespHandler implements IMessageHandler{
 	@Cfg("/respBufferSize")
 	private int respBufferSize;
 	
+	@Inject(required=true)
+	private IRegistry registry = null;
+	
 	@Override
-	public short type() {
+	public Short type() {
 		return TYPE;
 	}
 
 	@Override
-	public void onMessge(IServerSession s, Message msg) {
+	public void onMessage(ISession s, Message msg) {
+		   
+		RpcRequest req = null;
+		boolean needResp = true;
+		IResponse resp = null;
+	    try {
 		    s.setId(msg.getSessionId());
 	        JMicroContext cxt = JMicroContext.get();
 			cxt.setParam(JMicroContext.SESSION_KEY, s);
 			
-			RpcRequest req = new RpcRequest();
+			final RpcRequest req1 = new RpcRequest();
+			req = req1;
 			req.decode(msg.getPayload());
 			req.setSession(s);
 			req.setMsg(msg);
 			
 			s.putParam(Constants.MONITOR_ENABLE_KEY,req.isMonitorEnable());
 			cxt.configMonitor(req.isMonitorEnable()?1:0, 0);
+			cxt.mergeParams(req.getRequestParams());
 			
-			IResponse resp = null;
-			boolean needResp = ServiceLoader.isNeedResponse(this.serviceLoader, req);
+			Set<ServiceItem> sis = registry.getServices(req.getServiceName(), req.getMethod()
+					, req.getArgs(), req.getNamespace(), req.getVersion());
+			
+			if(sis ==null || sis.isEmpty()){
+				MonitorConstant.doSubmit(monitor,MonitorConstant.SERVER_REQ_SERVICE_NOT_FOUND, req,null);
+				throw new CommonException("Service not found");
+			}
+			
+			ServiceItem si = sis.iterator().next();
+			ServiceMethod sm = si.getMethod(req.getMethod(), req.getArgs());
+			
+			cxt.setObject(Constants.SERVICE_ITEM_KEY, si);
+			cxt.setObject(Constants.SERVICE_METHOD_KEY, sm);
+			
+			needResp = ServiceLoader.isNeedResponse(this.serviceLoader, req);
 			MonitorConstant.doSubmit(monitor,MonitorConstant.SERVER_REQ_BEGIN, req,resp);
-			try {
-				
 				if(!needResp){
 					handler(req);
 					MonitorConstant.doSubmit(monitor,MonitorConstant.SERVER_REQ_OK, req,resp);
@@ -105,10 +133,11 @@ public class JRPCReqRespHandler implements IMessageHandler{
 					msg.setType(Message.MSG_TYPE_ASYNC_RESP);
 					
 					SuspendableRunnable r = () ->{
+						JMicroContext.get().mergeParams(cxt);
 						JMicroContext.get().setParam(Constants.CONTEXT_CALLBACK, new IWriteCallback(){
 							@Override
 							public void send(Object message) {
-								RpcResponse resp = new RpcResponse(req.getRequestId(),message,respBufferSize);
+								RpcResponse resp = new RpcResponse(req1.getRequestId(),message,respBufferSize);
 								resp.setSuccess(true);
 								//返回结果包
 								msg.setId(idGenerator.getLongId(Message.class));
@@ -120,7 +149,7 @@ public class JRPCReqRespHandler implements IMessageHandler{
 								s.write(msg.encode());
 							}
 						});
-						 handler(req);
+						 handler(req1);
 					};
 					//异步响应
 					new Fiber<Void>(r).start();

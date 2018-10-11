@@ -79,6 +79,7 @@ public class ZKDataOperator implements IDataOperator{
 		if(isInit){
 			return;
 		}
+		isInit = true;
 		IObjectFactory of = ComponentManager.getObjectFactory();
 		if(!of.exist(this.curator.getClass())){
 			of.regist(this.curator);
@@ -86,6 +87,7 @@ public class ZKDataOperator implements IDataOperator{
 		}
 		if(!of.exist(ZKDataOperator.class)){
 			of.regist(ins);
+			of.regist(IDataOperator.class,ins);
 		}
 	}
 	

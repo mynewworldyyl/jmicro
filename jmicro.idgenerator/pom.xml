@@ -14,10 +14,7 @@
 			 <groupId>org.jmicro</groupId>
 			 <artifactId>jmicro.api</artifactId>
 	    </dependency>
-        <dependency>
-			<groupId>net.tecghty</groupId>
-			<artifactId>idgenerator</artifactId>
-	     </dependency>
+       
     </dependencies>
    
 </project>

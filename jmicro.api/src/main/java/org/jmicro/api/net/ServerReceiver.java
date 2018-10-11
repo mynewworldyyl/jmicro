@@ -20,16 +20,14 @@ import java.nio.ByteBuffer;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-import org.jmicro.api.IIdGenerator;
 import org.jmicro.api.JMicroContext;
-import org.jmicro.api.annotation.Cfg;
 import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.Inject;
+import org.jmicro.api.idgenerator.IIdGenerator;
 import org.jmicro.api.monitor.MonitorConstant;
 import org.jmicro.api.monitor.SubmitItemHolderManager;
-import org.jmicro.api.server.IMessageHandler;
 import org.jmicro.api.server.IServerSession;
-import org.jmicro.api.server.Message;
+import org.jmicro.api.server.ServerError;
 import org.jmicro.common.Constants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -41,8 +39,8 @@ import co.paralleluniverse.fibers.Suspendable;
  * @author Yulei Ye
  * @date 2018年10月9日-下午5:51:20
  */
-@Component(lazy=false,active=true,value="serverReceiver")
-public class ServerReceiver implements IServerReceiver{
+@Component(lazy=false,active=true,value="serverReceiver",side=Constants.SIDE_PROVIDER)
+public class ServerReceiver implements IMessageReceiver{
 
 	static final Logger logger = LoggerFactory.getLogger(ServerReceiver.class);
 	
@@ -52,8 +50,8 @@ public class ServerReceiver implements IServerReceiver{
 	@Inject
 	private IIdGenerator idGenerator;
 	
-	@Cfg(value="/ServerReceiver/receiveBufferSize")
-	private int receiveBufferSize=1000;
+	/*@Cfg(value="/ServerReceiver/receiveBufferSize")
+	private int receiveBufferSize=1000;*/
 	
 	private volatile Map<Short,IMessageHandler> handlers = new ConcurrentHashMap<>();
 	
@@ -63,7 +61,7 @@ public class ServerReceiver implements IServerReceiver{
 		
 	}
 	
-	void registHandler(IMessageHandler handler){
+	public void registHandler(IMessageHandler handler){
 		if(this.handlers.containsKey(handler.type())){
 			return;
 		}
@@ -76,7 +74,7 @@ public class ServerReceiver implements IServerReceiver{
 	
 	@Override
 	@Suspendable
-	public void receive(IServerSession s, ByteBuffer data) {
+	public void receive(ISession s, ByteBuffer data) {
 		if(!ready) {
 			synchronized(ready){
 				try {
@@ -87,7 +85,7 @@ public class ServerReceiver implements IServerReceiver{
 			}
 		}
 		//直接协程处理，IO LOOP线程返回
-		new Fiber<Void>(() ->doReceive(s,data)).start();
+		new Fiber<Void>(() ->doReceive((IServerSession)s,data)).start();
 	}
 	
 	@Suspendable
@@ -103,18 +101,18 @@ public class ServerReceiver implements IServerReceiver{
 				MonitorConstant.doSubmit(monitor,MonitorConstant.SERVER_PACKAGE_SESSION_ID_ERR,
 						null,null,msg.getId(),msg.getReqId(),s.getId(),msg1);
 			}
-			msg.setType(Message.MSG_TYPE_SERVER_ERR);
+			msg.setType((short)(msg.getType()+1));
 			s.write(msg.encode());
 			return;
 		}
 		
 		try {
 			IMessageHandler h = handlers.get(msg.getType());
-			h.onMessge(s, msg);
+			h.onMessage(s, msg);
 		} catch (Throwable e) {
 			MonitorConstant.doSubmit(monitor,MonitorConstant.SERVER_REQ_ERROR, null,null);
 			logger.error("reqHandler error: ",e);
-			msg.setType(Message.MSG_TYPE_SERVER_ERR);
+			msg.setType((short)(msg.getType()+1));
 			s.write(msg.encode());
 		}
 	}

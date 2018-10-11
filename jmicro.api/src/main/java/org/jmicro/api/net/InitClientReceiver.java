@@ -14,13 +14,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.jmicro.api.client;
+package org.jmicro.api.net;
 
 import java.util.List;
 
 import org.jmicro.api.annotation.Component;
 import org.jmicro.api.objectfactory.IObjectFactory;
 import org.jmicro.api.objectfactory.IPostFactoryReady;
+import org.jmicro.api.objectfactory.ProxyObject;
+import org.jmicro.common.Constants;
 /**
  * 
  * @author Yulei Ye
@@ -31,10 +33,16 @@ public class InitClientReceiver implements IPostFactoryReady{
 
 	@Override
 	public void ready(IObjectFactory of) {
-		List<IClientMessageHandler> list = of.getByParent(IClientMessageHandler.class);
+		List<IMessageHandler> list = of.getByParent(IMessageHandler.class);
 		ClientMessageReceiver sr = of.get(ClientMessageReceiver.class);
-		for(IClientMessageHandler h: list){
-			sr.registHandler(h);
+		for(IMessageHandler h: list){
+			Class<?> tcls = ProxyObject.getTarget(h).getClass();
+			if(tcls.isAnnotationPresent(Component.class)){
+				Component anno = tcls.getAnnotation(Component.class);
+				if(anno.active() && Constants.SIDE_COMSUMER.equals(anno.side())){
+					sr.registHandler(h);
+				}
+			}
 		}
 	}
 

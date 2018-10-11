@@ -16,33 +16,56 @@
  */
 package org.jmicro.idgenerator;
 
-import java.util.concurrent.atomic.AtomicLong;
-
-import org.jmicro.api.IIdGenerator;
 import org.jmicro.api.annotation.Component;
+import org.jmicro.api.annotation.Inject;
+import org.jmicro.api.idgenerator.IIdGenerator;
+import org.jmicro.api.raft.IDataOperator;
 import org.jmicro.common.Constants;
 /**
  * 
  * @author Yulei Ye
  * @date 2018年10月4日-下午12:11:16
  */
-@Component(Constants.DEFAULT_IDGENERATOR)
+@Component(value=Constants.DEFAULT_IDGENERATOR,level=20)
 public class JMicroIdGenerator implements IIdGenerator {
-
-	//private MysqlBaseIdMap mapper = new MysqlBaseIdMap();
 	
-	//private IIDGenerator gen = new BaseIDGenerator(mapper,"net.techgy",true);
+	private static String ID_IDR = "/jmicro/id/";
 	
-	private AtomicLong idgenerator = new AtomicLong(1);
+	@Inject
+	private IDataOperator dataOperator;
+	
+	public void init(){
+		
+	}
 	
 	@Override
 	public long getLongId(Class<?> idType) {
-		return idgenerator.getAndIncrement();
+		String idStr = this.get(idType);
+		Long id = Long.parseLong(idStr)+1;
+		setData(idType,id+"");
+		return id;
 	}
-
+	
 	@Override
 	public String getStringId(Class<?> idType) {
-		return idgenerator.getAndIncrement()+"";
+		String idStr = this.getLongId(idType)+"";
+		return idStr;
+	}
+
+	private void setData(Class<?> idType, String id) {
+		String path = ID_IDR + idType.getName();
+		dataOperator.setData(path, id);
+	}
+	
+	private String get(Class<?> idType){
+		String path = ID_IDR + idType.getName();
+		String idStr = "0";
+		if(this.dataOperator.exist(path)){
+			 idStr = dataOperator.getData(path);
+		} else {
+			dataOperator.createNode(path, idStr, false);
+		}
+		return idStr;
 	}
 
 }

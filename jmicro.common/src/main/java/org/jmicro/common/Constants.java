@@ -22,7 +22,12 @@ package org.jmicro.common;
  */
 public interface Constants {
 
+	public static final String SIDE_COMSUMER = "comsumer";
+	public static final String SIDE_PROVIDER="provider";
+	public static final String SIDE_ANY="";
+	
 	public static final String MONITOR_ENABLE_KEY = "monitorEnableKey";
+	public static final String DEFAULT_MONITOR="defaultMonitor";
 	
 	public static final int CONN_CONNECTED=1;
 	public static final int CONN_RECONNECTED=2;
@@ -41,7 +46,7 @@ public interface Constants {
 	public static final String FIRST_INTERCEPTOR="firstInterceptor";
 	public static final String DEFAULT_SELECTOR="defaultSelector";
 	public static final String DEFAULT_INVOCATION_HANDLER="defaultInvocationHandler";
-	public static final String DEFAULT_MONITOR="defaultMonitor";
+	
 	
 	public static final String DEFAULT_NAMESPACE="defaultNamespace";
 	public static final String DEFAULT_VERSION="0.0.0";
@@ -56,5 +61,8 @@ public interface Constants {
 	public static final String BASE_PACKAGES_KEY="basePackages";
 	
 	public static final String CONTEXT_CALLBACK = "Callback";
+	
+	public static final String SERVICE_ITEM_KEY="serviceItemKey";
+	public static final String SERVICE_METHOD_KEY="serviceMethodKey";
 	
 }

@@ -53,6 +53,10 @@ public abstract class AbstractObjectMapSupport implements IEncodable,IDecodable{
 		return bb;
 	}
 	
+	public Map<String,Object> getParams(){
+		return this.params;
+	}
+	
 	public abstract ByteBuffer newBuffer();
 	
 	public Integer getInt(String key,int defautl){

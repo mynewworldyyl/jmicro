@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.jmicro.api.server;
+package org.jmicro.api.net;
 
 import java.nio.ByteBuffer;
 
@@ -23,14 +23,11 @@ import org.jmicro.api.codec.IDecodable;
 import org.jmicro.api.codec.IEncodable;
 import org.jmicro.api.exception.CommonException;
 import org.jmicro.common.util.StringUtils;
-
-import net.techgy.idgenerator.IDStrategy;
 /**
  * 
  * @author Yulei Ye
  * @date 2018年10月4日-下午12:06:44
  */
-@IDStrategy
 public class Message implements IEncodable,IDecodable,IDable{
 
 	public static final int HEADER_LEN=34;
@@ -45,7 +42,8 @@ public class Message implements IEncodable,IDecodable,IDable{
 	public static final byte PROTOCOL_TYPE_REQ_ER=3;
 	public static final byte PROTOCOL_TYPE_RESP_ER=4;*/
 	
-	public static final short MSG_TYPE_ZERO = 0x0000;
+	//public static final short MSG_TYPE_ZERO = 0x0000;
+	
 	public static final short MSG_TYPE_REQ_JRPC = 0x0001; //普通RPC调用请求，发送端发IRequest，返回端返回IResponse
 	public static final short MSG_TYPE_RRESP_JRPC = 0x0002;//返回端返回IResponse
 	
@@ -57,10 +55,12 @@ public class Message implements IEncodable,IDecodable,IDable{
 	
 	public static final short MSG_TYPE_ASYNC_REQ = 0x0006; //异步请求，不需求等待响应返回
 	public static final short MSG_TYPE_ASYNC_RESP = 0x0007; //异步响应，通过回调用返回
-	public static final short MSG_TYPE_ASYNC_CONFIRM = 0x0008;
 	
-	public static final short MSG_TYPE_SERVER_ERR = 0x7FFE;
-	public static final short MSG_TYPE_ALL = 0x7FFF;
+	//public static final short MSG_TYPE_SERVER_ERR = 0x7FFE;
+	//public static final short MSG_TYPE_ALL = 0x7FFF;
+	
+	public static final short MSG_TYPE_HEARBEAT_REQ = 0x7FFC; //心跳请求
+	public static final short MSG_TYPE_HEARBEAT_RESP = 0x7FFD;//心跳响应
 	
 	public static final byte[] VERSION = {0,0,1};
 	public static final String VERSION_STR = "0.0.1";

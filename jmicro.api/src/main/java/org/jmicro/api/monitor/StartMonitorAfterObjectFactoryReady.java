@@ -12,5 +12,5 @@ public class StartMonitorAfterObjectFactoryReady implements IPostFactoryReady {
 		SubmitItemHolderManager sihm = of.get(SubmitItemHolderManager.class);
 		sihm.startWork();
 	}
-
+	
 }

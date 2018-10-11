@@ -16,10 +16,13 @@
  */
 package org.jmicro.api.config;
 
+import java.lang.reflect.Type;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -53,7 +56,7 @@ public class Config {
 	@Cfg("/basePackages")
 	private Collection<String> basePackages = null;
 	
-	private Map<String,String> params = new HashMap<>();
+	private static final Map<String,String> params = new HashMap<>();
 	
 	public Config() {}
 	
@@ -130,9 +133,10 @@ public class Config {
 		BasePackages = pps;
 	}
 	
-	@JMethod("init")
+	//@JMethod("init")
 	public void init(){
-		
+		//命令行参数具有最高优先级
+		params.putAll(CommadParams);
 	}
 	
 	public static String getConfigRoot() {
@@ -156,6 +160,54 @@ public class Config {
 	}
 	
 	public Map<String,String> getParams(){
-		return this.params;
+		return params;
+	}	
+	
+	public Integer getInt(String key,int defautl){
+		return getValue(params,Integer.TYPE,key,defautl);
+	}
+	
+	public String getString(String key,String defautl){
+		return getValue(params,String.class,key,defautl);
+	}
+	
+	public Boolean getBoolean(String key,boolean defautl){
+		return getValue(params,Boolean.TYPE,key,defautl);
+	}
+	
+	
+	public Float getFloat(String key,Float defautl){
+		return getValue(params,Float.TYPE,key,defautl);
+	}
+	
+	public Double getDouble(String key,Double defautl){
+		return getValue(params,Double.TYPE,key,defautl);
+	}
+	
+	public static <T> T getValue( Map<String,String> params,Class<T> type,String key, T defaultVal) {
+		String str = params.get(key);
+		if(StringUtils.isEmpty(str)){
+			return defaultVal;
+		}
+		Object v = null;
+		if(type == Boolean.TYPE){
+			v = Boolean.parseBoolean(str);
+		}else if(type == Short.TYPE){
+			v = Short.parseShort(str);
+		}else if(type == Integer.TYPE){
+			v = Integer.parseInt(str);
+		}else if(type == Long.TYPE){
+			v = Long.parseLong(str);
+		}else if(type == Float.TYPE){
+			v = Float.parseFloat(str);
+		}else if(type == Double.TYPE){
+			v = Double.parseDouble(str);
+		}else if(type == Byte.TYPE){
+			v = Byte.parseByte(str);
+		} else {
+			v = str;
+		}
+		
+		return (T)v;
 	}
 }

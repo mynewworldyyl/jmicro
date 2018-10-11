@@ -13,7 +13,7 @@ import org.jmicro.api.server.IWriteCallback;
 import org.jmicro.common.Constants;
 import org.jmicro.example.api.ITestRpcService;
 
-@Service(timeout=10*60*1000)
+@Service(timeout=10*60*1000,maxSpeed=1)
 @Component
 public class TestRpcServiceImpl implements ITestRpcService{
 

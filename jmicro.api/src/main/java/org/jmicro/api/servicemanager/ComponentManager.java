@@ -25,18 +25,8 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import org.jmicro.api.ClassScannerUtils;
 import org.jmicro.api.JMicroContext;
-import org.jmicro.api.annotation.Channel;
-import org.jmicro.api.annotation.CodecFactory;
 import org.jmicro.api.annotation.Component;
-import org.jmicro.api.annotation.Handler;
-import org.jmicro.api.annotation.Interceptor;
 import org.jmicro.api.annotation.Name;
-import org.jmicro.api.annotation.ObjFactory;
-import org.jmicro.api.annotation.Reference;
-import org.jmicro.api.annotation.Registry;
-import org.jmicro.api.annotation.Selector;
-import org.jmicro.api.annotation.Server;
-import org.jmicro.api.annotation.Service;
 import org.jmicro.api.exception.CommonException;
 import org.jmicro.api.objectfactory.IObjectFactory;
 import org.jmicro.api.objectfactory.ProxyObject;

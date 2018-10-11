@@ -63,7 +63,8 @@ public class MemoryResponseTimeMonitor implements IMonitorSubmitWorker {
 			i.service = si.getServiceName()+"|"+si.getMethod()+"|"+si.getReqArgsStr();
 			i.startTime = si.getTime();
 			reqRespAvgList.put(i.reqId, i);
-		}else if(MonitorConstant.CLIENT_REQ_OK == si.getType()){
+		}else if(MonitorConstant.CLIENT_REQ_OK == si.getType()
+				|| MonitorConstant.CLIENT_REQ_ASYNC1_SUCCESS == si.getType()){
 			AvgResponseTimeItem i = reqRespAvgList.get(si.getReqId());
 			if(i == null){
 				return;

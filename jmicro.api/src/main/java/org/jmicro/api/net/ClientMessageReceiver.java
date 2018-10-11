@@ -14,8 +14,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.jmicro.api.client;
+package org.jmicro.api.net;
 
+import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -23,21 +24,20 @@ import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.Inject;
 import org.jmicro.api.monitor.MonitorConstant;
 import org.jmicro.api.monitor.SubmitItemHolderManager;
-import org.jmicro.api.server.Message;
+import org.jmicro.common.Constants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-/**
- * 
+/** 
  * @author Yulei Ye
  * @date 2018年10月10日-下午12:56:02
  */
-@Component(active=true)
-public class ClientMessageReceiver implements IClientReceiver{
+@Component(active=true,side=Constants.SIDE_COMSUMER)
+public class ClientMessageReceiver implements IMessageReceiver{
 
 	static final Logger logger = LoggerFactory.getLogger(ClientMessageReceiver.class);
 	
-	private Map<Short,IClientMessageHandler> handlers = new HashMap<>();
+	private Map<Short,IMessageHandler> handlers = new HashMap<>();
 	
 	@Inject(required=false)
 	private SubmitItemHolderManager monitor;
@@ -45,13 +45,15 @@ public class ClientMessageReceiver implements IClientReceiver{
 	public void init(){
 		
 	}
-	
+
 	@Override
-	public void onMessage(IClientSession session,Message msg) {
+	public void receive(ISession session,ByteBuffer buffer) {
+		Message msg = new Message();
 		try {
-			IClientMessageHandler h = handlers.get(msg.getType());
+			msg.decode(buffer);
+			IMessageHandler h = handlers.get(msg.getType());
 			if(h != null){
-				h.onResponse(session,msg);
+				h.onMessage(session,msg);
 			}else {
 				logger.error("Handler not found:" + Integer.toHexString(msg.getType()));
 			}
@@ -59,11 +61,11 @@ public class ClientMessageReceiver implements IClientReceiver{
 			MonitorConstant.doSubmit(monitor,MonitorConstant.CLIENT_REQ_ASYNC2_FAIL,
 					null,null,msg.getId(),msg.getReqId(),msg.getSessionId());
 			logger.error("reqHandler error: ",e);
-			msg.setType(Message.MSG_TYPE_SERVER_ERR);
+			msg.setType((short)(msg.getType()+1));
 		}
 	}
 
-	void registHandler(IClientMessageHandler handler){
+	public void registHandler(IMessageHandler handler){
 		if(this.handlers.containsKey(handler.type())){
 			return;
 		}

@@ -17,8 +17,11 @@
 package org.jmicro.api.server;
 
 import java.nio.ByteBuffer;
+import java.util.Map;
 
 import org.jmicro.api.AbstractRpcProtocolMessage;
+import org.jmicro.api.net.ISession;
+import org.jmicro.api.net.Message;
 /**
  * 
  * @author Yulei Ye
@@ -135,6 +138,11 @@ public class RpcRequest extends AbstractRpcProtocolMessage implements IRequest{
 
 	public void setMonitorEnable(boolean isMonitorEnable) {
 		this.isMonitorEnable = isMonitorEnable;
+	}
+
+	@Override
+	public Map<String, Object> getRequestParams() {
+		return this.getParams();
 	}
 	
 }

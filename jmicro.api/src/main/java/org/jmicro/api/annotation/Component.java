@@ -21,6 +21,8 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
+
+import org.jmicro.common.Constants;
 /**
  * 
  * @author Yulei Ye
@@ -34,4 +36,7 @@ public @interface Component {
 	public int level() default 10000;
 	
 	public boolean active() default true;
+	
+	//provider or client or NULL witch can be used any side
+	public String side() default Constants.SIDE_ANY; 
 }

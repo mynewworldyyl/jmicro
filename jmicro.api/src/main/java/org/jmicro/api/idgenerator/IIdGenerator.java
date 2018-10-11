@@ -14,15 +14,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.jmicro.idgenerator;
-
-import net.techgy.idgenerator.IDStrategy;
+package org.jmicro.api.idgenerator;
 /**
  * 
  * @author Yulei Ye
- * @date 2018年10月4日-下午12:11:35
+ * @date 2018年10月4日-上午11:55:12
  */
-@IDStrategy
-public class StringId {
+public interface IIdGenerator {
 
+	long getLongId(Class<?> idType);
+	
+	String getStringId(Class<?> idType);
+	
 }

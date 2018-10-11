@@ -23,6 +23,7 @@ import org.jmicro.api.IDable;
 import org.jmicro.api.codec.Decoder;
 import org.jmicro.api.codec.Encoder;
 import org.jmicro.api.codec.IEncodable;
+import org.jmicro.api.net.Message;
 /**
  * 
  * @author Yulei Ye

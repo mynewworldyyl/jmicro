@@ -78,7 +78,6 @@ public class SubmitItemHolderManager {
 		
 		Worker[] ws = new Worker[this.threadSize];
 		
-		
 		if(threadSize < workers.length) {
 			for(int j = 0; j < threadSize; j++){
 				ws[j] = workers[j];
@@ -145,14 +144,13 @@ public class SubmitItemHolderManager {
 						}
 					}
 					
-					JMicroContext.get().configMonitor(0, 0);
+					//JMicroContext.get().configMonitor(0, 0);
 					for(SubmitItem si = its.poll();si != null;si = its.poll()){
 						for(IMonitorSubmitWorker m : submiters){
 							m.submit(si);
 						}
 						cache(si);
 					}
-					
 				} catch (Throwable e) {
 					logger.error("",e);
 				}

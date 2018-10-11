@@ -15,11 +15,6 @@
         	<groupId>org.jmicro</groupId>
 			<artifactId>jmicro.common</artifactId>
        </dependency>
-
-        <dependency>
-			<groupId>net.tecghty</groupId>
-			<artifactId>idgenerator</artifactId>
-	     </dependency>
 		<dependency>
 		    <groupId>co.paralleluniverse</groupId>
 		    <artifactId>quasar-core</artifactId>

@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.jmicro.api.server;
+package org.jmicro.api.net;
 
 import java.nio.ByteBuffer;
 import java.util.Map;
@@ -27,19 +27,30 @@ import java.util.concurrent.ConcurrentHashMap;
 public abstract class AbstractSession implements ISession{
 
 	private long sessionId=-1L;
-
-	private int cacheBufferSize = 1024*1024*1;
-	
-	private int cacheMaxTime = 1000*10;
 	
 	private Map<String,Object> params = new ConcurrentHashMap<String,Object>();
 	
 	private ByteBuffer readBuffer;
 	
-	public AbstractSession(int bufferSize){
+	private int heardbeatInterval;
+	
+	private long lastActiveTime = System.currentTimeMillis();
+	
+	public AbstractSession(int bufferSize,int heardbeatInterval){
 		readBuffer = ByteBuffer.allocate(bufferSize);
+		this.heardbeatInterval = heardbeatInterval;
 	}
 	
+	@Override
+	public void active() {
+		lastActiveTime = System.currentTimeMillis();
+	}
+
+	@Override
+	public boolean isActive() {
+		return (System.currentTimeMillis() - this.lastActiveTime) < (this.heardbeatInterval * 1000)*5;
+	}
+
 	public long getId() {
 		return sessionId;
 	}
@@ -89,21 +100,4 @@ public abstract class AbstractSession implements ISession{
 		this.readBuffer = readBuffer;
 	}
 
-	public int getCacheBufferSize() {
-		return cacheBufferSize;
-	}
-
-	public void setCacheBufferSize(int cacheBufferSize) {
-		this.cacheBufferSize = cacheBufferSize;
-	}
-
-	public int getCacheMaxTime() {
-		return cacheMaxTime;
-	}
-
-	public void setCacheMaxTime(int cacheMaxTime) {
-		this.cacheMaxTime = cacheMaxTime;
-	}	
-	
-	
 }

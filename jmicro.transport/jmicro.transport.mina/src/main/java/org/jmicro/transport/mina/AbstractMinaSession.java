@@ -17,8 +17,8 @@
 package org.jmicro.transport.mina;
 
 import org.apache.mina.api.IoSession;
-import org.jmicro.api.server.AbstractSession;
-import org.jmicro.api.server.ISession;
+import org.jmicro.api.net.AbstractSession;
+import org.jmicro.api.net.ISession;
 /**
  * 
  * @author Yulei Ye
@@ -28,12 +28,11 @@ public abstract class AbstractMinaSession extends AbstractSession implements ISe
 
 	private IoSession ioSession;
 	
-	public AbstractMinaSession(int readBufferSize){super(readBufferSize);}
-	
-	public AbstractMinaSession(IoSession ioSession,int readBufferSize) {
-		super(readBufferSize);
+	public AbstractMinaSession(IoSession ioSession,int readBufferSize,int heardbeatInterval) {
+		super(readBufferSize,heardbeatInterval);
 		this.ioSession = ioSession;
 	}
+	
 	public IoSession getIoSession() {
 		return ioSession;
 	}

@@ -16,13 +16,12 @@
  */
 package org.jmicro.api.server;
 
-import net.techgy.idgenerator.IDStrategy;
+import org.jmicro.api.net.ISession;
 /**
  * 
  * @author Yulei Ye
  * @date 2018年10月4日-下午12:06:19
  */
-@IDStrategy
 public interface IServerSession extends ISession{
 
 }

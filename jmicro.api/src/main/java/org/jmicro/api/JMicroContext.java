@@ -19,6 +19,8 @@ package org.jmicro.api;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.jmicro.api.config.Config;
+import org.jmicro.api.servicemanager.ComponentManager;
 import org.jmicro.common.Constants;
 /**
  * 
@@ -61,8 +63,28 @@ public class JMicroContext  {
 		return isMonitor();
 	}
 	
+	public void mergeParams(JMicroContext c){
+		Map<String,Object> ps = c.params;
+		if(ps == null || ps.isEmpty()) {
+			return;
+		}
+		for(Map.Entry<String, Object> p : ps.entrySet()){
+			this.params.put(p.getKey(), p.getValue());
+		}
+	}
+	
+	public void mergeParams(Map<String,Object> params){
+		if(params == null || params.isEmpty()) {
+			return;
+		}
+		for(Map.Entry<String, Object> p : params.entrySet()){
+			this.params.put(p.getKey(), p.getValue());
+		}
+	}
+	
 	public Boolean isMonitor(){
-		return this.getBoolean(Constants.MONITOR_ENABLE_KEY, false);
+		Config cfg = ComponentManager.getObjectFactory().get(Config.class);
+		return cfg.getBoolean(Constants.MONITOR_ENABLE_KEY,false);
 	}
 	
 	@SuppressWarnings("unchecked")
@@ -101,7 +123,7 @@ public class JMicroContext  {
 	}
 	
 	public void setObject(String key,Object val){
-		 this.getParam(key,val);
+		 this.setParam(key,val);
 	}
 	
 	public Integer getInt(String key,int defautl){

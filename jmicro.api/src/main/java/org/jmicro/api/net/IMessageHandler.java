@@ -14,29 +14,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.jmicro.api.server;
+package org.jmicro.api.net;
 
-import java.nio.ByteBuffer;
-
-import org.jmicro.api.IDable;
 /**
  * 
  * @author Yulei Ye
- * @date 2018年10月4日-下午12:06:27
+ * @date 2018年10月9日-下午5:51:29
  */
-public interface ISession extends IDable{
+public interface IMessageHandler {
+
+	Short type();
 	
-	void close(boolean flag);
-	
-	Object getParam(String key);
-	
-	void putParam(String key,Object obj);
-	
-	ByteBuffer getReadBuffer();
-	
-	//server write response, or client write no need response request
-	void write(ByteBuffer bb);
-	
-	public boolean isClose();
-	
+	void onMessage(ISession session,Message messge);
 }

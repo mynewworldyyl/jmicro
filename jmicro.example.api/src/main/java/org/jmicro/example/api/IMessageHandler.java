@@ -1,6 +1,6 @@
 package org.jmicro.example.api;
 
-import org.jmicro.api.server.Message;
+import org.jmicro.api.net.Message;
 
 public interface IMessageHandler {
 

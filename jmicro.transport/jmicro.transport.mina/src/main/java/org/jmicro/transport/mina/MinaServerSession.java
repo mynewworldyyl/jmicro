@@ -19,8 +19,8 @@ package org.jmicro.transport.mina;
 import java.nio.ByteBuffer;
 
 import org.apache.mina.api.IoSession;
+import org.jmicro.api.net.Message;
 import org.jmicro.api.server.IServerSession;
-import org.jmicro.api.server.Message;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -33,12 +33,8 @@ public class MinaServerSession extends AbstractMinaSession implements IServerSes
 
 	static final Logger LOG = LoggerFactory.getLogger(MinaServerSession.class);
 	
-	public MinaServerSession(IoSession ioSession) {
-		super(ioSession,1024*2);
-	}
-	
-	public MinaServerSession(IoSession ioSession,int readBufferSize) {
-		super(ioSession,readBufferSize);
+	public MinaServerSession(IoSession ioSession,int readBufferSize,int hearbeatInterval) {
+		super(ioSession,readBufferSize,hearbeatInterval);
 	}
 
 	@Override

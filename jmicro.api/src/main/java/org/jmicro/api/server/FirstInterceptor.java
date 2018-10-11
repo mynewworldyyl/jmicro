@@ -36,8 +36,8 @@ public class FirstInterceptor extends AbstractInterceptor implements IIntercepto
 
 	private final static Logger logger = LoggerFactory.getLogger(FirstInterceptor.class);
 	
-	@Cfg(value ="limiterName", required=false, changeListener="limiterName")
-	private String limiterName;
+	@Cfg(value ="/defaultLimiterName", required=false, changeListener="limiterName")
+	private String defaultLimiterName="gavaLimiter";
 	
 	@Cfg("/respBufferSize")
 	private int respBufferSize;
@@ -47,7 +47,7 @@ public class FirstInterceptor extends AbstractInterceptor implements IIntercepto
 	public FirstInterceptor() {}
 	
 	public void init() {
-		limiterName("limiterName");
+		limiterName("defaultLimiterName");
 	}
 	
 	public void limiterName(String fieldName){
@@ -55,23 +55,21 @@ public class FirstInterceptor extends AbstractInterceptor implements IIntercepto
 			return;
 		}
 		
-		if(fieldName != null && fieldName.trim().equals("limiterName")){
-			limiter = ComponentManager.getObjectFactory().getByName(fieldName);
+		if(fieldName.trim().equals("defaultLimiterName")){
+			limiter = ComponentManager.getObjectFactory().getByName(defaultLimiterName);
 		}
-		
 	}
 	
 	@Override
 	public IResponse intercept(IRequestHandler handler, IRequest req) throws RpcException {
-		//logger.debug("FirstInterceptor before");
 		if(limiter != null){
-			int r = limiter.apply(req);
-			if(r < 0){
+			boolean r = limiter.apply(req);
+			if(!r){
+				logger.warn("Limit exceep, forbidon this request");
 				return fastFail(req);
 			}
 		}
 		IResponse resp = handler.onRequest(req);
-		//logger.debug("FirstInterceptor after");
 		return resp;
 	}
 
