@@ -19,7 +19,7 @@ package org.jmicro.api.registry;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 
-import org.jmicro.api.exception.CommonException;
+import org.jmicro.common.CommonException;
 /**
  * 
  * @author Yulei Ye

@@ -66,4 +66,54 @@ public interface Constants {
 	public static final String SERVICE_METHOD_KEY="serviceMethodKey";
 	public static final String SERVICE_OBJ_KEY="serviceObjKey";
 	
+	
+	/*=====================Message Begin=======================*/
+	/*=====================Message Begin=======================*/
+	/*=====================Message Begin=======================*/
+	
+	public static final int HEADER_LEN=34;
+	
+/*	public static final byte MSG_REQ_TYPE_RESP=1;
+	
+	public static final byte MSG_REQ_TYPE_REQ=2;
+	
+	public static final byte PROTOCOL_TYPE_BEGIN=1;
+	public static final byte PROTOCOL_TYPE_END=2;
+	
+	public static final byte PROTOCOL_TYPE_REQ_ER=3;
+	public static final byte PROTOCOL_TYPE_RESP_ER=4;*/
+	
+	//public static final short MSG_TYPE_ZERO = 0x0000;
+	
+	public static final short MSG_TYPE_REQ_JRPC = 0x0001; //普通RPC调用请求，发送端发IRequest，返回端返回IResponse
+	public static final short MSG_TYPE_RRESP_JRPC = 0x0002;//返回端返回IResponse
+	
+	//public static final short MSG_TYPE_SERVER_ASYNC_MESSAGE = 0x0003; //异步消息请求，服务器处理
+	//public static final short MSG_TYPE_RRESP_RAW = 0x0004;//纯二进制数据响应
+	
+	public static final short MSG_TYPE_REQ_RAW = 0x0004; //纯二进制数据请求
+	public static final short MSG_TYPE_RRESP_RAW = 0x0005;//纯二进制数据响应
+	
+	public static final short MSG_TYPE_ASYNC_REQ = 0x0006; //异步请求，不需求等待响应返回
+	public static final short MSG_TYPE_ASYNC_RESP = 0x0007; //异步响应，通过回调用返回
+	
+	//public static final short MSG_TYPE_SERVER_ERR = 0x7FFE;
+	//public static final short MSG_TYPE_ALL = 0x7FFF;
+	
+	public static final short MSG_TYPE_HEARBEAT_REQ = 0x7FFC; //心跳请求
+	public static final short MSG_TYPE_HEARBEAT_RESP = 0x7FFD;//心跳响应
+	
+	public static final byte[] VERSION = {0,0,1};
+	public static final String VERSION_STR = "0.0.1";
+	
+	//public static final byte FLAG_ASYNC = 1<<0;
+	
+	public static final byte FLAG_NEED_RESPONSE = 1<<1;
+	
+	public static final byte FLAG_STREAM = 1<<2;
+	
+	/*=====================Message END=======================*/
+	/*=====================Message END=======================*/
+	/*=====================Message END=======================*/
+	
 }

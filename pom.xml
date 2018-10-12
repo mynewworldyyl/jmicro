@@ -84,6 +84,9 @@
     <modules> 
     	<module>jmicro.common</module>
 		<module>jmicro.api</module>
+		<module>jmicro.codec</module>
+		<module>jmicro.server</module>
+		<module>jmicro.client</module>
 		<module>jmicro.idgenerator</module>
 		<module>jmicro.zk</module>
 		<module>jmicro.transport</module>
@@ -91,7 +94,7 @@
 		<module>jmicro.objfactory</module>
 		<module>jmicro.registry</module>
 		<module>jmicro.limit</module>
-		<module>jmicro.monitor.memory</module>
+		<module>jmicro.monitor</module>
 		
     </modules>
 
@@ -146,7 +149,22 @@
 			 <groupId>org.jmicro</groupId>
 			 <artifactId>jmicro.monitor.memory</artifactId>
 			 <version>${jmicro.version}</version>
-        </dependency>
+			 </dependency>
+			  <dependency>
+			 <groupId>org.jmicro</groupId>
+			 <artifactId>jmicro.server</artifactId>
+			  <version>${jmicro.version}</version>
+		        </dependency>
+		         <dependency>
+					 <groupId>org.jmicro</groupId>
+					 <artifactId>jmicro.client</artifactId>
+					  <version>${jmicro.version}</version>
+		        </dependency>
+		         <dependency>
+					 <groupId>org.jmicro</groupId>
+					 <artifactId>jmicro.codec</artifactId>
+					  <version>${jmicro.version}</version>
+		        </dependency>
 	         <dependency>
 					<groupId>net.tecghty</groupId>
 					<artifactId>idgenerator</artifactId>

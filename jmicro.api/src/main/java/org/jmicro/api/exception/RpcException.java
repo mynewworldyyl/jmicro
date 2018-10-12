@@ -17,6 +17,7 @@
 package org.jmicro.api.exception;
 
 import org.jmicro.api.server.IRequest;
+import org.jmicro.common.CommonException;
 /**
  * 
  * @author Yulei Ye

@@ -25,7 +25,7 @@ import java.util.NoSuchElementException;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.jmicro.api.annotation.Channel;
-import org.jmicro.api.exception.CommonException;
+import org.jmicro.common.CommonException;
 /**
  * 
  * @author Yulei Ye

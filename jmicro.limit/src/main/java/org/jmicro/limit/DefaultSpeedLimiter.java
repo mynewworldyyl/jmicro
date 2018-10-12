@@ -26,8 +26,8 @@ import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.Inject;
 import org.jmicro.api.annotation.JMethod;
 import org.jmicro.api.limitspeed.ILimiter;
+import org.jmicro.api.monitor.IMonitorDataSubmiter;
 import org.jmicro.api.monitor.MonitorConstant;
-import org.jmicro.api.monitor.SubmitItemHolderManager;
 import org.jmicro.api.registry.IRegistry;
 import org.jmicro.api.registry.ServiceItem;
 import org.jmicro.api.registry.ServiceMethod;
@@ -48,7 +48,7 @@ public class DefaultSpeedLimiter implements ILimiter{
 	private int keepTimeLong;
 	
 	@Inject(required=false)
-	private SubmitItemHolderManager monitor;
+	private IMonitorDataSubmiter monitor;
 	
 	@JMethod("init")
 	public void init(){

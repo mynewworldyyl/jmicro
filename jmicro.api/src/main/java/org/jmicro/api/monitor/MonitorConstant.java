@@ -27,7 +27,7 @@ import org.jmicro.api.server.IResponse;
  */
 public interface MonitorConstant {
 
-	public static void doSubmit(SubmitItemHolderManager monitor,int type,IRequest req,IResponse resp,Object... objs){
+	public static void doSubmit(IMonitorDataSubmiter monitor,int type,IRequest req,IResponse resp,Object... objs){
 		if(JMicroContext.get().isMonitor() && monitor != null) {
 			monitor.submit(type, req, null,objs);
 		}

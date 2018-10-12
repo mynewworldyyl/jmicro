@@ -19,6 +19,7 @@ import java.util.Set;
  * limitations under the License.
  */
 import org.jmicro.api.registry.ServiceItem;
+import org.jmicro.common.CommonException;
 /**
  * 
  * @author Yulei Ye

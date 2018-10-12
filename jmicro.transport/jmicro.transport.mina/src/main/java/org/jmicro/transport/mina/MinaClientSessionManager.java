@@ -39,16 +39,16 @@ import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.Inject;
 import org.jmicro.api.client.IClientSession;
 import org.jmicro.api.client.IClientSessionManager;
-import org.jmicro.api.codec.Decoder;
-import org.jmicro.api.exception.CommonException;
 import org.jmicro.api.idgenerator.IIdGenerator;
+import org.jmicro.api.monitor.IMonitorDataSubmiter;
 import org.jmicro.api.monitor.MonitorConstant;
-import org.jmicro.api.monitor.SubmitItemHolderManager;
 import org.jmicro.api.net.IMessageHandler;
 import org.jmicro.api.net.IMessageReceiver;
 import org.jmicro.api.net.ISession;
 import org.jmicro.api.net.Message;
+import org.jmicro.common.CommonException;
 import org.jmicro.common.Constants;
+import org.jmicro.common.codec.Decoder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 /**
@@ -77,7 +77,7 @@ public class MinaClientSessionManager implements IClientSessionManager{
 	private IIdGenerator idGenerator;
 	
 	@Inject(required=false)
-	private SubmitItemHolderManager monitor;
+	private IMonitorDataSubmiter monitor;
 	
 	@Inject(required=false)
 	private IMessageReceiver receiver;
@@ -90,7 +90,7 @@ public class MinaClientSessionManager implements IClientSessionManager{
 		this.receiver.registHandler(new IMessageHandler(){
 			@Override
 			public Short type() {
-				return Message.MSG_TYPE_HEARBEAT_RESP;
+				return Constants.MSG_TYPE_HEARBEAT_RESP;
 			}
 			
 			@Override
@@ -101,7 +101,7 @@ public class MinaClientSessionManager implements IClientSessionManager{
 		
 		try {
 			final Message hearbeat = new Message();
-			hearbeat.setType(Message.MSG_TYPE_HEARBEAT_REQ);
+			hearbeat.setType(Constants.MSG_TYPE_HEARBEAT_REQ);
 			hearbeat.setId(idGenerator.getLongId(Message.class));
 			hearbeat.setReqId(0L);
 			hearbeat.setVersion(Constants.DEFAULT_VERSION);

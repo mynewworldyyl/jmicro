@@ -26,6 +26,18 @@
 			 <artifactId>jmicro.common</artifactId>
         </dependency>
          <dependency>
+			 <groupId>org.jmicro</groupId>
+			 <artifactId>jmicro.server</artifactId>
+        </dependency>
+         <dependency>
+			 <groupId>org.jmicro</groupId>
+			 <artifactId>jmicro.client</artifactId>
+        </dependency>
+         <dependency>
+			 <groupId>org.jmicro</groupId>
+			 <artifactId>jmicro.codec</artifactId>
+        </dependency>
+         <dependency>
 			   <groupId>org.apache.mina</groupId>
 		    <artifactId>mina-core</artifactId>
 		    <version>3.0.0-M3-SNAPSHOT</version>

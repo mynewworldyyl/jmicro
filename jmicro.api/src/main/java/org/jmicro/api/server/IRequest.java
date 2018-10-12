@@ -45,6 +45,8 @@ public interface IRequest extends IEncodable,IDecodable {
 	
 	public String getMethod();
 	//public void setMethod(String method);
+	
+	public String getImpl();
 
 	public Object[] getArgs();
 	//public void setArgs(Object[] args);
@@ -55,6 +57,7 @@ public interface IRequest extends IEncodable,IDecodable {
 	
 	public boolean isSuccess();
 	void setSuccess(boolean isSuccess);
+	
 	public boolean isFinish();
 	public void setFinish(boolean finish);
 	

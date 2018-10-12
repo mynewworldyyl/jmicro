@@ -16,7 +16,6 @@
  */
 package org.jmicro.api.server;
 /**
- * 
  * @author Yulei Ye
  * @date 2018年10月4日-下午12:05:14
  */

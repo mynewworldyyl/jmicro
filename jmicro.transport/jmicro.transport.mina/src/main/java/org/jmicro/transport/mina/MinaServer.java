@@ -17,7 +17,6 @@
 package org.jmicro.transport.mina;
 
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.util.HashSet;
@@ -37,19 +36,19 @@ import org.jmicro.api.JMicroContext;
 import org.jmicro.api.annotation.Cfg;
 import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.Inject;
-import org.jmicro.api.codec.Decoder;
-import org.jmicro.api.exception.CommonException;
+import org.jmicro.api.monitor.IMonitorDataSubmiter;
 import org.jmicro.api.monitor.MonitorConstant;
-import org.jmicro.api.monitor.SubmitItemHolderManager;
 import org.jmicro.api.net.IMessageHandler;
 import org.jmicro.api.net.IMessageReceiver;
 import org.jmicro.api.net.ISession;
 import org.jmicro.api.net.Message;
 import org.jmicro.api.server.IServer;
-import org.jmicro.api.server.IServerSession;
+import org.jmicro.common.CommonException;
 import org.jmicro.common.Constants;
 import org.jmicro.common.Utils;
+import org.jmicro.common.codec.Decoder;
 import org.jmicro.common.util.StringUtils;
+import org.jmicro.server.IServerSession;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 /**
@@ -91,7 +90,7 @@ public class MinaServer implements IServer{
 	private int heardbeatInterval = 3; //seconds to send heardbeat Rate
 	
 	@Inject(required=false)
-	private SubmitItemHolderManager monitor;
+	private IMonitorDataSubmiter monitor;
 	
 	private Timer ticker = new Timer("ClientSessionHeardbeatWorker",true);
 	
@@ -101,7 +100,7 @@ public class MinaServer implements IServer{
 		this.receiver.registHandler(new IMessageHandler(){
 			@Override
 			public Short type() {
-				return Message.MSG_TYPE_HEARBEAT_REQ;
+				return Constants.MSG_TYPE_HEARBEAT_REQ;
 			}
 			
 			@Override
@@ -111,7 +110,7 @@ public class MinaServer implements IServer{
 				} catch (UnsupportedEncodingException e) {
 				}*/
 				session.active();
-				msg.setType(Message.MSG_TYPE_HEARBEAT_RESP);
+				msg.setType(Constants.MSG_TYPE_HEARBEAT_RESP);
 				session.write(msg.encode());
 			}
 		});

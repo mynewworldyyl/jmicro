@@ -29,7 +29,7 @@ import java.util.Set;
 import org.jmicro.api.annotation.Cfg;
 import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.JMethod;
-import org.jmicro.api.exception.CommonException;
+import org.jmicro.common.CommonException;
 import org.jmicro.common.Constants;
 import org.jmicro.common.util.StringUtils;
 /**

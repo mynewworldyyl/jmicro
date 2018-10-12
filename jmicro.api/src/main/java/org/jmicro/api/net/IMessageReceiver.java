@@ -18,7 +18,7 @@ package org.jmicro.api.net;
 
 import java.nio.ByteBuffer;
 /**
- * RCP框架服务端接收网络层传过来的数据，
+ * RCP服务端接收网络层传过来的数据，
  * @author Yulei Ye
  * @date 2018年10月9日-下午5:53:05
  */

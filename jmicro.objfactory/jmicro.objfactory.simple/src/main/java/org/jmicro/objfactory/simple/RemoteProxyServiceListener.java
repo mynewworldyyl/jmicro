@@ -24,11 +24,11 @@ import java.util.List;
 import java.util.Set;
 
 import org.jmicro.api.annotation.Reference;
-import org.jmicro.api.client.AbstractServiceProxy;
-import org.jmicro.api.exception.CommonException;
+import org.jmicro.api.client.AbstractClientServiceProxy;
 import org.jmicro.api.objectfactory.ProxyObject;
 import org.jmicro.api.registry.IServiceListener;
 import org.jmicro.api.registry.ServiceItem;
+import org.jmicro.common.CommonException;
 
 /**
  * 
@@ -56,8 +56,8 @@ class RemoteProxyServiceListener implements IServiceListener{
 	@Override
 	public void serviceChanged(int type, ServiceItem item) {
 		
-		if(proxy instanceof AbstractServiceProxy) {
-			AbstractServiceProxy p = (AbstractServiceProxy)proxy;
+		if(proxy instanceof AbstractClientServiceProxy) {
+			AbstractClientServiceProxy p = (AbstractClientServiceProxy)proxy;
 			if(!p.key().equals(item.serviceName())){
 				throw new CommonException("Service listener give error service item:"+ 
 						refField.getDeclaringClass().getName()+"],field: " + refField.getName()+" item:"+item.val());
@@ -77,7 +77,7 @@ class RemoteProxyServiceListener implements IServiceListener{
 			
 			if(IServiceListener.SERVICE_ADD == type){
 				for(Object o: set){
-					AbstractServiceProxy p = (AbstractServiceProxy)o;
+					AbstractClientServiceProxy p = (AbstractClientServiceProxy)o;
 					if(p.key().equals(item.serviceName())){
 						//p.enable(true);
 						p.setItem(item);
@@ -89,9 +89,9 @@ class RemoteProxyServiceListener implements IServiceListener{
 					set.add(o);
 				}
 			}else if(IServiceListener.SERVICE_REMOVE == type) {
-				AbstractServiceProxy po = null;
+				AbstractClientServiceProxy po = null;
 				for(Object o: set){
-					AbstractServiceProxy p = (AbstractServiceProxy)o;
+					AbstractClientServiceProxy p = (AbstractClientServiceProxy)o;
 					if(p.key().equals(item.serviceName())){
 						po = p;
 						break;
@@ -102,9 +102,9 @@ class RemoteProxyServiceListener implements IServiceListener{
 					set.remove(po);
 				}
 			}else if(IServiceListener.SERVICE_DATA_CHANGE == type) {
-				AbstractServiceProxy po = null;
+				AbstractClientServiceProxy po = null;
 				for(Object o: set){
-					AbstractServiceProxy p = (AbstractServiceProxy)o;
+					AbstractClientServiceProxy p = (AbstractClientServiceProxy)o;
 					if(p.key().equals(item.serviceName())){
 						po = p;
 						break;

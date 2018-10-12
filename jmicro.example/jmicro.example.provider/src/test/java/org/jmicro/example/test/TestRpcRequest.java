@@ -2,15 +2,10 @@ package org.jmicro.example.test;
 
 import java.sql.SQLException;
 
-import org.jmicro.api.client.AbstractServiceProxy;
-import org.jmicro.api.client.ServiceInvocationHandler;
+import org.jmicro.api.net.RpcRequest;
 import org.jmicro.api.objectfactory.IObjectFactory;
-import org.jmicro.api.server.RpcRequest;
 import org.jmicro.api.servicemanager.ComponentManager;
-import org.jmicro.common.Constants;
 import org.jmicro.common.Utils;
-import org.jmicro.example.api.ITestRpcService;
-import org.jmicro.objfactory.simple.SimpleObjectFactory;
 import org.junit.Test;
 
 public class TestRpcRequest {

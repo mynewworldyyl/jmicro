@@ -30,12 +30,12 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import org.jmicro.api.annotation.Reference;
 import org.jmicro.api.annotation.Service;
-import org.jmicro.api.client.AbstractServiceProxy;
-import org.jmicro.api.exception.CommonException;
+import org.jmicro.api.client.AbstractClientServiceProxy;
 import org.jmicro.api.objectfactory.ProxyObject;
 import org.jmicro.api.registry.IRegistry;
 import org.jmicro.api.registry.ServiceItem;
 import org.jmicro.api.servicemanager.ComponentManager;
+import org.jmicro.common.CommonException;
 import org.jmicro.common.Constants;
 import org.jmicro.common.util.ClassGenerator;
 import org.slf4j.Logger;
@@ -174,7 +174,7 @@ class RemoteServiceManager {
 		registry.addServiceListener(ServiceItem.serviceName(f.getType().getName(),ref.namespace(),ref.version()), lis);
 			
 		 if(proxy != null){
-			 AbstractServiceProxy asp = (AbstractServiceProxy)proxy;
+			 AbstractClientServiceProxy asp = (AbstractClientServiceProxy)proxy;
 			 asp.setHandler(of.getByName(Constants.DEFAULT_INVOCATION_HANDLER));
 			 asp.setItem(si);
 			 remoteObjects.put(key, proxy);
@@ -283,7 +283,7 @@ class RemoteServiceManager {
 	
 	private void setHandler(Object proxy,String key,ServiceItem si){
 		 if(proxy != null){
-		    	AbstractServiceProxy asp = (AbstractServiceProxy)proxy;
+		    	AbstractClientServiceProxy asp = (AbstractClientServiceProxy)proxy;
 				asp.setHandler(of.getByName(Constants.DEFAULT_INVOCATION_HANDLER));
 				asp.setItem(si);
 				remoteObjects.put(key, proxy);
@@ -315,7 +315,7 @@ class RemoteServiceManager {
 	public  static <T> T createDynamicServiceProxy(Class<T> cls, String namespace, String version,boolean enable) {
 		 ClassGenerator classGenerator = ClassGenerator.newInstance(Thread.currentThread().getContextClassLoader());
 		 classGenerator.setClassName(cls.getName()+"$Jmicro"+SimpleObjectFactory.idgenerator.getAndIncrement());
-		 classGenerator.setSuperClass(AbstractServiceProxy.class);
+		 classGenerator.setSuperClass(AbstractClientServiceProxy.class);
 		 classGenerator.addInterface(cls);
 		 classGenerator.addDefaultConstructor();
 		 classGenerator.addInterface(ProxyObject.class);

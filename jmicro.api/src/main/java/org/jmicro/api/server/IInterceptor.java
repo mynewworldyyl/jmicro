@@ -16,20 +16,13 @@
  */
 package org.jmicro.api.server;
 
-import java.lang.reflect.Method;
-
-import org.jmicro.api.annotation.SMethod;
 import org.jmicro.api.exception.RpcException;
-import org.jmicro.api.objectfactory.ProxyObject;
-import org.jmicro.api.servicemanager.ServiceLoader;
 /**
  * 
  * @author Yulei Ye
  * @date 2018年10月4日-下午12:05:38
  */
 public interface IInterceptor {
-
-	
 	
 	IResponse intercept(IRequestHandler handler,IRequest req) throws RpcException;
 }

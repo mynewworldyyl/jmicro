@@ -22,7 +22,7 @@ import java.util.HashSet;
 import java.util.Random;
 import java.util.Set;
 
-import org.jmicro.api.exception.CommonException;
+import org.jmicro.common.CommonException;
 import org.jmicro.common.Constants;
 import org.jmicro.common.Utils;
 import org.jmicro.common.util.StringUtils;

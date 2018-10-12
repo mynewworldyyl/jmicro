@@ -20,10 +20,10 @@ import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.jmicro.api.codec.Decoder;
-import org.jmicro.api.codec.Encoder;
 import org.jmicro.api.codec.IDecodable;
 import org.jmicro.api.codec.IEncodable;
+import org.jmicro.common.codec.Decoder;
+import org.jmicro.common.codec.Encoder;
 /**
  * 
  * @author Yulei Ye
