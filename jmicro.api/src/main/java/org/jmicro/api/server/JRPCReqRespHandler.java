@@ -19,7 +19,6 @@ package org.jmicro.api.server;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.jmicro.api.JMicroContext;
@@ -103,19 +102,26 @@ public class JRPCReqRespHandler implements IMessageHandler{
 			cxt.configMonitor(req.isMonitorEnable()?1:0, 0);
 			cxt.mergeParams(req.getRequestParams());
 			
-			Set<ServiceItem> sis = registry.getServices(req.getServiceName(), req.getMethod()
-					, req.getArgs(), req.getNamespace(), req.getVersion());
-			
-			if(sis ==null || sis.isEmpty()){
-				MonitorConstant.doSubmit(monitor,MonitorConstant.SERVER_REQ_SERVICE_NOT_FOUND, req,null);
+			ServiceItem si = registry.getServiceByImpl(req.getImpl());
+			if(si == null){
+				MonitorConstant.doSubmit(monitor,MonitorConstant.SERVER_REQ_SERVICE_NOT_FOUND,
+						req,null,req.getImpl());
 				throw new CommonException("Service not found");
 			}
 			
-			ServiceItem si = sis.iterator().next();
 			ServiceMethod sm = si.getMethod(req.getMethod(), req.getArgs());
 			
 			cxt.setObject(Constants.SERVICE_ITEM_KEY, si);
 			cxt.setObject(Constants.SERVICE_METHOD_KEY, sm);
+			
+			Object obj = serviceLoader.getService(req.getImpl());
+			if(obj == null){
+				MonitorConstant.doSubmit(monitor,MonitorConstant.SERVER_REQ_SERVICE_NOT_FOUND,
+						req,null,req.getImpl());
+				throw new CommonException("Service not found");
+			}
+			
+			cxt.setObject(Constants.SERVICE_OBJ_KEY, obj);
 			
 			needResp = ServiceLoader.isNeedResponse(this.serviceLoader, req);
 			MonitorConstant.doSubmit(monitor,MonitorConstant.SERVER_REQ_BEGIN, req,resp);

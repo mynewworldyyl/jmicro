@@ -43,6 +43,8 @@ public interface IRegistry extends Init{
 	//get by service name,use for collection inject
 	Set<ServiceItem> getServices(String serviceName);
 	
+	ServiceItem getServiceByImpl(String impl);
+	
 	void addServiceListener(String key,IServiceListener lis);
 	void removeServiceListener(String key,IServiceListener lis);
 	

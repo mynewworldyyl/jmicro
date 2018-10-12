@@ -36,8 +36,6 @@ public @interface Service {
 	
 	public String registry() default Constants.DEFAULT_REGISTRY;
 	
-	//public int retryCount() default 3;
-	
 	public String server() default Constants.DEFAULT_SERVER;
 	
 	public Class<?>[] interfaces() default {};

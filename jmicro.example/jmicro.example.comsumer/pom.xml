@@ -2,13 +2,13 @@
     <modelVersion>4.0.0</modelVersion>
     <parent>
          <groupId>org.jmicro</groupId>
-		 <artifactId>jmicro-parent</artifactId>
+		 <artifactId>jmicro.example</artifactId>
 		 <version>0.0.1-SNAPSHOT</version>
     </parent>
-    <artifactId>jmicro.example.provider</artifactId>
+    <artifactId>jmicro.example.comsumer</artifactId>
     <packaging>jar</packaging>
     <name>${project.artifactId}</name>
-    <description>Jmicro service provider for testing</description>
+    <description>Jmicro example service comsumer for testing</description>
     <dependencies>
         <dependency>
 			 <groupId>org.jmicro</groupId>
@@ -22,6 +22,19 @@
 			 <groupId>org.jmicro</groupId>
 			 <artifactId>jmicro.common</artifactId>
         </dependency>
+        <!--  <dependency>
+			 <groupId>org.jmicro</groupId>
+			 <artifactId>jmicro.transport.nio</artifactId>
+        </dependency> -->
+          <dependency>
+			 <groupId>org.jmicro</groupId>
+			 <artifactId>jmicro.config</artifactId>
+        </dependency>
+        <dependency>
+			 <groupId>org.jmicro</groupId>
+			 <artifactId>jmicro.example.api</artifactId>
+			  <version>0.0.1-SNAPSHOT</version>
+        </dependency>
         <dependency>
 			 <groupId>org.jmicro</groupId>
 			 <artifactId>jmicro.transport.mina</artifactId>
@@ -34,22 +47,18 @@
 			 <groupId>org.jmicro</groupId>
 			 <artifactId>jmicro.objfactory.simple</artifactId>
         </dependency>
-          <dependency>
-			 <groupId>org.jmicro</groupId>
-			 <artifactId>jmicro.config</artifactId>
-        </dependency>
-          <dependency>
-			 <groupId>org.jmicro</groupId>
-			 <artifactId>jmicro.limit</artifactId>
-        </dependency>
          <dependency>
 			 <groupId>org.jmicro</groupId>
 			 <artifactId>jmicro.idgenerator</artifactId>
         </dependency>
-         <dependency>
+		 <dependency>
 			 <groupId>org.jmicro</groupId>
 			 <artifactId>jmicro.example.api</artifactId>
 			  <version>0.0.1-SNAPSHOT</version>
+        </dependency>
+         <dependency>
+			 <groupId>org.jmicro</groupId>
+			 <artifactId>jmicro.limit</artifactId>
         </dependency>
     </dependencies>
    

@@ -62,6 +62,8 @@ public class ServiceItem{
 	
 	private String host;
 	
+	private String impl;
+	
 	private int port;
 	
 	private int retryCnt=-1; //method can retry times, less or equal 0 cannot be retry
@@ -151,6 +153,14 @@ public class ServiceItem{
 			}
 		}
 		
+	}
+
+	public String getImpl() {
+		return impl;
+	}
+
+	public void setImpl(String impl) {
+		this.impl = impl;
 	}
 
 	public boolean isFusing() {

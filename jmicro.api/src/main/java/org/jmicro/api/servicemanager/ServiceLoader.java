@@ -102,6 +102,16 @@ public class ServiceLoader {
 		return srv;
 	}
 	
+	public Object getService(String impl){
+		Class<?> parentCls = ClassScannerUtils.getIns().getClassByName(impl);			
+		for(Object srv : services.values()){
+			if(parentCls.isInstance(srv)){
+				return srv;
+			}
+		}
+		return null;
+	}
+	
 	private Set<Class<?>> loadServiceClass() {
 		Set<Class<?>> clses = ClassScannerUtils.getIns().loadClassesByAnno(Service.class);
 		return clses;
@@ -160,8 +170,8 @@ public class ServiceLoader {
 		}
 	}
 	
-	private ServiceItem[] getServiceItems(Object srv) {
-		srv = ProxyObject.getTarget(srv);
+	private ServiceItem[] getServiceItems(Object srv1) {
+		Object srv = ProxyObject.getTarget(srv1);
 		Class<?> srvCls = srv.getClass();
 		if(!srvCls.isAnnotationPresent(Service.class)){
 			return null;
@@ -187,6 +197,7 @@ public class ServiceLoader {
 			}
 			
 			ServiceItem item = new ServiceItem();
+			item.setImpl(srv1.getClass().getName());
 			item.setHost(addr);
 			item.setPort(port);
 			item.setServiceName(in.getName());
@@ -340,17 +351,12 @@ public class ServiceLoader {
 			services.put(class1.getName(), srv);
 		}
 		return srv;
-	}	
+	}
 	
-	public static Method getServiceMethod(ServiceLoader sl ,IRequest req){
-		Object obj = sl.getService(req.getServiceName()
-				,req.getNamespace(),req.getVersion());
-		
+	public static Method getServiceMethod(Object obj ,IRequest req){
 		Class<?>[] pst = getMethodParamsType(req);
-		
 		try {
-			Method m = ProxyObject.getTargetCls(obj.getClass()).getMethod(req.getMethod(), pst);
-			
+			Method m = obj.getClass().getMethod(req.getMethod(), pst);
 			return m;
 		} catch (NoSuchMethodException | SecurityException | IllegalArgumentException e) {
 			throw new RpcException(req,"",e);
@@ -379,8 +385,7 @@ public class ServiceLoader {
 			Method m = cls.getMethod(req.getMethod(),pst);
 			return m;
 		} catch (ClassNotFoundException | NoSuchMethodException | SecurityException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			logger.error("getInterfaceMethod",e);
 		}
 		return null;
 	}

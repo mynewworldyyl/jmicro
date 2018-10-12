@@ -439,5 +439,15 @@ public class ZKRegistry implements IRegistry {
 		}
 		return is;
 	}
+
+	@Override
+	public ServiceItem getServiceByImpl(String impl) {
+		for(ServiceItem si : path2Items.values()){
+			if(si.getImpl().equals(impl)){
+				return si;
+			}
+		}
+		return null;
+	}
 	
 }

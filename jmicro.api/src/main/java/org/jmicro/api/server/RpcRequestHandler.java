@@ -19,6 +19,7 @@ package org.jmicro.api.server;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
+import org.jmicro.api.JMicroContext;
 import org.jmicro.api.annotation.Cfg;
 import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.Handler;
@@ -43,9 +44,7 @@ public class RpcRequestHandler extends AbstractHandler implements IRequestHandle
 	
 	@Override
 	public IResponse onRequest(IRequest request) {
-		Object obj = serviceLoader.getService(request.getServiceName()
-				,request.getNamespace(),request.getVersion());
-		
+		Object obj = JMicroContext.get().getObject(Constants.SERVICE_OBJ_KEY, null);
 		RpcResponse resp = null;
 		try {
 			Method m = ServiceLoader.getServiceMethod(this.serviceLoader, request);

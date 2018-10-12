@@ -39,6 +39,8 @@ public abstract class AbstractRpcProtocolMessage extends AbstractObjectMapSuppor
 	
 	protected String version;
 	
+	protected String impl;
+	
 	@Override
 	public void decode(ByteBuffer ois) {
 		super.decode(ois);
@@ -46,7 +48,9 @@ public abstract class AbstractRpcProtocolMessage extends AbstractObjectMapSuppor
 		this.serviceName = Decoder.decodeObject(ois);
 		this.method = Decoder.decodeObject(ois);
 		this.namespace = Decoder.decodeObject(ois);
+		this.impl = Decoder.decodeObject(ois);
 		this.args = Decoder.decodeObject(ois);// (Object[])ois.readObject();
+		
 	}
 
 	@Override
@@ -56,10 +60,19 @@ public abstract class AbstractRpcProtocolMessage extends AbstractObjectMapSuppor
 		Encoder.encodeObject(oos, this.serviceName);
 		Encoder.encodeObject(oos, this.method);
 		Encoder.encodeObject(oos, this.namespace);
+		Encoder.encodeObject(oos, this.impl);
 		Encoder.encodeObject(oos, this.args);
 		return oos;
 	}
 	
+	public String getImpl() {
+		return impl;
+	}
+
+	public void setImpl(String impl) {
+		this.impl = impl;
+	}
+
 	public void setVersion(String version){
 		this.version=version;
 	}

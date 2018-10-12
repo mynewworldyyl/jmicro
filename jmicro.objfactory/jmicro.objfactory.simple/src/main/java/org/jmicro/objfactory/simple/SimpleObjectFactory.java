@@ -26,6 +26,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -146,6 +147,10 @@ public class SimpleObjectFactory implements IObjectFactory {
 					list.add((T)obj);
 				}
 			}
+		}
+		Object obj = this.objs.get(parrentCls);
+		if(obj != null){
+			list.add((T)obj);
 		}
 		return list;
 	}
@@ -316,6 +321,8 @@ public class SimpleObjectFactory implements IObjectFactory {
 			cl.load(cfg.getParams());
 		}
 		
+		cfg.init();
+		
 		if(!l.isEmpty()){
 			for(int i =0; i < l.size(); i++){
 				Object o = l.get(i);
@@ -383,10 +390,61 @@ public class SimpleObjectFactory implements IObjectFactory {
 		}
 		postReadyListeners.add(listener);
 	}
+	
+	private boolean isProvider(Object o){
+		Class<?> cls = ProxyObject.getTargetCls(o.getClass());
+		Component comAnno = cls.getAnnotation(Component.class);
+		if(comAnno == null){
+			return true;
+		}
+		return Constants.SIDE_PROVIDER.equals(comAnno.side());
+	}
+	
+	private boolean isComsumer(Object o){
+		Class<?> cls = ProxyObject.getTargetCls(o.getClass());
+		Component comAnno = cls.getAnnotation(Component.class);
+		if(comAnno == null){
+			return true;
+		}
+		return Constants.SIDE_COMSUMER.equals(comAnno.side());
+	}
+	
+	private List<?> filterProvider(List<?> list){
+		if(list == null || list.isEmpty()){
+			return null;
+		}
+		Iterator<?> ite = list.iterator();
+		while(ite.hasNext()){
+			if(isProvider(ite.next())){
+				ite.remove();
+			}
+		}
+		return list;
+	}
+	
+	private  List<?> filterComsumer(List<?> list){
+		if(list == null || list.isEmpty()){
+			return null;
+		}
+		Iterator<?> ite = list.iterator();
+		while(ite.hasNext()){
+			if(isComsumer(ite.next())){
+				ite.remove();
+			}
+		}
+		return list;
+	}
+	
+	
 
 	private void injectDepependencies(Object obj) {
 		Class<?> cls = ProxyObject.getTargetCls(obj.getClass());
 		Field[] fs = cls.getDeclaredFields();
+		Component comAnno = cls.getAnnotation(Component.class);
+		
+		boolean isProvider = isProvider(obj);
+		boolean isComsumer =  isComsumer(obj);
+		
 		for(Field f : fs) {
 			Object srv = null;
 			boolean isRequired = false;
@@ -414,6 +472,13 @@ public class SimpleObjectFactory implements IObjectFactory {
 				if(type.isArray()) {
 					Class<?> ctype = type.getComponentType();
 					List<?> l = this.getByParent(ctype);
+					
+					if(isProvider){
+						l = this.filterComsumer(l);
+					}else if(isComsumer){
+						l = this.filterProvider(l);
+					}
+					
 					if(l != null && l.size() > 0){
 						Object[] arr = new Object[l.size()];
 						l.toArray(arr);
@@ -427,6 +492,12 @@ public class SimpleObjectFactory implements IObjectFactory {
 					Class<?> ctype = (Class<?>)genericType.getActualTypeArguments()[0];
 					
 					List<?> l = this.getByParent(ctype);
+					if(isProvider){
+						l = this.filterComsumer(l);
+					}else if(isComsumer){
+						l = this.filterProvider(l);
+					}
+					
 					if(l != null && l.size() > 0){
 						boolean bf = f.isAccessible();
 						Object o = null;
@@ -466,6 +537,13 @@ public class SimpleObjectFactory implements IObjectFactory {
 					}
 					Class<?> ctype = (Class<?>)genericType.getActualTypeArguments()[0];
 					List<?> l = this.getByParent(ctype);
+					
+					if(isProvider){
+						l = this.filterComsumer(l);
+					}else if(isComsumer){
+						l = this.filterProvider(l);
+					}
+					
 					if(l != null && l.size() > 0){
 						boolean bf = f.isAccessible();
 						Object o = null;
@@ -502,7 +580,14 @@ public class SimpleObjectFactory implements IObjectFactory {
 					
 				}else if(type.isInterface() || Modifier.isAbstract(type.getModifiers())) {
 					List<?> l = this.getByParent(type);
-					if(StringUtils.isEmpty(name)) {
+					
+					if(isProvider){
+						l = this.filterComsumer(l);
+					}else if(isComsumer){
+						l = this.filterProvider(l);
+					}
+					
+					if(l != null && !l.isEmpty() && StringUtils.isEmpty(name)) {
 						if(l.size() == 1) {
 							srv =  l.get(0);
 						}else if(l.size() > 1) {
@@ -512,7 +597,7 @@ public class SimpleObjectFactory implements IObjectFactory {
 							}
 							throw new CommonException(sb.toString());
 						}
-					}else {
+					} else if(l != null && !l.isEmpty()){
 						for(Object s : l) {
 							String n = ComponentManager.getClassAnnoName(s.getClass());
 							if(name.equals(n)){
@@ -521,7 +606,7 @@ public class SimpleObjectFactory implements IObjectFactory {
 						}
 					}
 				}else {
-					String annName = inje.value();
+					String annName = name;
 					if(annName != null && !"".equals(annName.trim())){
 						srv = this.getByName(name);
 						if(srv == null){
@@ -531,6 +616,13 @@ public class SimpleObjectFactory implements IObjectFactory {
 					}
 					if(srv == null) {
 						srv = this.get(type);
+					}
+					if(srv != null){
+						if(isProvider && this.isComsumer(srv)){
+							throw new CommonException("Class ["+cls.getName()+"] field ["+ f.getName()+"] dependency ["+f.getType().getName()+"] side should provider");
+						}else if(isComsumer && this.isProvider(srv)){
+							throw new CommonException("Class ["+cls.getName()+"] field ["+ f.getName()+"] dependency ["+f.getType().getName()+"] side should comsumer");
+						}
 					}
 				}
 			}

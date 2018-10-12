@@ -64,5 +64,6 @@ public interface Constants {
 	
 	public static final String SERVICE_ITEM_KEY="serviceItemKey";
 	public static final String SERVICE_METHOD_KEY="serviceMethodKey";
+	public static final String SERVICE_OBJ_KEY="serviceObjKey";
 	
 }
