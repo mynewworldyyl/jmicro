@@ -22,6 +22,7 @@ import java.util.Map;
 
 import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.Inject;
+import org.jmicro.api.codec.ICodecFactory;
 import org.jmicro.api.monitor.IMonitorDataSubmiter;
 import org.jmicro.api.monitor.MonitorConstant;
 import org.jmicro.api.net.IMessageHandler;
@@ -43,6 +44,9 @@ public class ClientMessageReceiver implements IMessageReceiver{
 	
 	private Map<Short,IMessageHandler> handlers = new HashMap<>();
 	
+	@Inject
+	private ICodecFactory codecFactory;
+	
 	@Inject(required=false)
 	private IMonitorDataSubmiter monitor;
 	
@@ -53,8 +57,9 @@ public class ClientMessageReceiver implements IMessageReceiver{
 	@Override
 	public void receive(ISession session,ByteBuffer buffer) {
 		Message msg = new Message();
+		msg.decode(buffer);
+		//CodecFactory.decode(this.codecFactory,buffer);
 		try {
-			msg.decode(buffer);
 			IMessageHandler h = handlers.get(msg.getType());
 			if(h != null){
 				h.onMessage(session,msg);

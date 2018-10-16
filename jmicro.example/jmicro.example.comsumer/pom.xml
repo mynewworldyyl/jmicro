@@ -22,10 +22,6 @@
 			 <groupId>org.jmicro</groupId>
 			 <artifactId>jmicro.common</artifactId>
         </dependency>
-        <!--  <dependency>
-			 <groupId>org.jmicro</groupId>
-			 <artifactId>jmicro.transport.nio</artifactId>
-        </dependency> -->
           <dependency>
 			 <groupId>org.jmicro</groupId>
 			 <artifactId>jmicro.config</artifactId>

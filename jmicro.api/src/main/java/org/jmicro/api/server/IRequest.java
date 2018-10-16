@@ -18,15 +18,15 @@ package org.jmicro.api.server;
 
 import java.util.Map;
 
-import org.jmicro.api.codec.IDecodable;
-import org.jmicro.api.codec.IEncodable;
+import org.jmicro.api.codec.IDecoder;
+import org.jmicro.api.codec.IEncoder;
 import org.jmicro.api.net.ISession;
 /**
  * 
  * @author Yulei Ye
  * @date 2018年10月4日-下午12:05:46
  */
-public interface IRequest extends IEncodable,IDecodable {
+public interface IRequest /*extends IEncoder,IDecoder */{
 
 	public String getServiceName();
 

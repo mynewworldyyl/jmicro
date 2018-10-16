@@ -61,7 +61,7 @@ public class ZKRegistry implements IRegistry {
 	private Map<String,Boolean> serviceNameItems = new ConcurrentHashMap<String,Boolean>();
 	
 	//stand on user side ,service unique name as key(key = servicename+namespace+version)
-	private HashMap<String,Set<IServiceListener>> slisteners = new HashMap<>();
+	private HashMap<String,Set<IServiceListener>> keyListeners = new HashMap<>();
 	
 	private HashMap<String,Set<IServiceListener>> serviceNameListeners = new HashMap<>();
 	
@@ -115,12 +115,12 @@ public class ZKRegistry implements IRegistry {
 	
 	@Override
 	public void addServiceListener(String key,IServiceListener lis) {
-		addServiceListener(this.slisteners,key,lis);
+		addServiceListener(this.keyListeners,key,lis);
 		
 	}
 
 	protected void updateItem(String path, String data) {
-		ServiceItem si = new ServiceItem(data);
+		ServiceItem si = this.fromJson(data);
 		String p = si.key(ServiceItem.ROOT);
 		this.path2Items.put(p, si);
 		Set<ServiceItem> items = this.serviceItems.get(si.serviceName());
@@ -133,7 +133,7 @@ public class ZKRegistry implements IRegistry {
 
 	@Override
 	public void removeServiceListener(String key,IServiceListener lis) {
-		removeServiceListener(this.slisteners,key,lis);
+		removeServiceListener(this.keyListeners,key,lis);
 	}
 
 	private void notifyServiceNameChange(int type,ServiceItem item){
@@ -150,7 +150,7 @@ public class ZKRegistry implements IRegistry {
 
 	private void notifyServiceChange(int type,ServiceItem item){
 		//key = servicename + namespace + version
-		Set<IServiceListener> ls = this.slisteners.get(item.serviceName());
+		Set<IServiceListener> ls = this.keyListeners.get(item.serviceName());
 		if(ls != null && !ls.isEmpty()){
 			for(IServiceListener l : ls){
 				l.serviceChanged(type, item);
@@ -220,7 +220,7 @@ public class ZKRegistry implements IRegistry {
 	private void serviceChanged(String path) {		
 
 		String data =  ZKDataOperator.getIns().getData(path);
-		ServiceItem i = new ServiceItem(data);
+		ServiceItem i = this.fromJson(data);
 		this.persisFromConfig(i);
 		
 		this.path2Items.put(path, i);
@@ -248,15 +248,17 @@ public class ZKRegistry implements IRegistry {
 		
 	}
 	
-	
-	
 	private void persisFromConfig(ServiceItem item){
 		String key = item.key(ServiceItem.PERSIS_ROOT);
 		if(ZKDataOperator.getIns().exist(key)){
 			String data = ZKDataOperator.getIns().getData(key);
-			ServiceItem perItem = new ServiceItem(data);
+			ServiceItem perItem = this.fromJson(data);
 			item.formPersisItem(perItem);
 		}
+	}
+	
+	private ServiceItem fromJson(String data){
+		return JsonUtils.getIns().fromJson(data, ServiceItem.class);
 	}
 	
 	private void serviceRemove(String path) {
@@ -290,17 +292,16 @@ public class ZKRegistry implements IRegistry {
 		String key = item.key(ServiceItem.PERSIS_ROOT);
 		this.persisFromConfig(item);
 		
+		String data = JsonUtils.getIns().toJson(item);
 		if(!ZKDataOperator.getIns().exist(key)){
-			ZKDataOperator.getIns().createNode(key,item.val(), false);
+			ZKDataOperator.getIns().createNode(key,data, false);
 		}
 		
 		key = item.key(ServiceItem.ROOT);
 		if(ZKDataOperator.getIns().exist(key)){
 			ZKDataOperator.getIns().deleteNode(key);
 		}
-		
-		ZKDataOperator.getIns().createNode(key,item.val(), true);
-		
+		ZKDataOperator.getIns().createNode(key,data, true);
 	}
 
 	@Override
@@ -317,11 +318,11 @@ public class ZKRegistry implements IRegistry {
 		String key = item.key(ServiceItem.ROOT);
 		logger.debug("regist service: "+key);
 		if(ZKDataOperator.getIns().exist(key)){
-			ZKDataOperator.getIns().setData(key,item.val());
+			String data = JsonUtils.getIns().toJson(item);
+			ZKDataOperator.getIns().setData(key,data);
 		}else {
 			logger.debug("update not found: "+key);
 		}
-		
 	}
 
 	@Override
@@ -342,7 +343,7 @@ public class ZKRegistry implements IRegistry {
 	public Set<ServiceItem> getServices(String serviceName,String method,Class<?>[] args
 			,String namespace,String version) {
 		
-		namespace=ServiceItem.namespace(namespace);
+		namespace = ServiceItem.namespace(namespace);
 		version = ServiceItem.version(version);
 		Set<ServiceItem> sis = this.serviceItems.get(ServiceItem.serviceName(serviceName, namespace, version));
 		if(sis == null || sis.isEmpty()) {
@@ -352,12 +353,12 @@ public class ZKRegistry implements IRegistry {
 		Set<ServiceItem> set = new HashSet<ServiceItem>();
 		
 		for(ServiceItem si : sis) {
-			if(si.isFusing()){
-				fusings.add(si);
-				continue;
-			}
 			if(!si.getNamespace().equals(namespace)||
 					!si.getVersion().equals(version)) {
+				continue;
+			}
+			if(si.isFusing()){
+				fusings.add(si);
 				continue;
 			}
 			for(ServiceMethod sm : si.getMethods()){

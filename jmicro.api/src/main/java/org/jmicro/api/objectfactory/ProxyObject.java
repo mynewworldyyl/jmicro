@@ -15,6 +15,9 @@
  * limitations under the License.
  */
 package org.jmicro.api.objectfactory;
+
+import org.jmicro.api.service.IServerServiceProxy;
+
 /**
  * 
  * @author Yulei Ye
@@ -22,15 +25,16 @@ package org.jmicro.api.objectfactory;
  */
 public interface ProxyObject {
 
-	public static Object getTarget(Object proxy){
+	/*public static Object getTarget(Object proxy){
 		if(proxy instanceof ProxyObject){
 			return ((ProxyObject)proxy).getTarget();
 		}
 		return proxy;
-	}
+	}*/
 	
 	public static Class<?> getTargetCls(Class<?> proxyCls){
-		if(ProxyObject.class.isAssignableFrom(proxyCls)){
+		if(ProxyObject.class.isAssignableFrom(proxyCls) ||
+				IServerServiceProxy.class.isAssignableFrom(proxyCls)){
 			proxyCls = proxyCls.getSuperclass();
 		}
 		return proxyCls;

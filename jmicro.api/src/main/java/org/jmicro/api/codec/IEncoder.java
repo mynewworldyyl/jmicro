@@ -21,8 +21,9 @@ import java.nio.ByteBuffer;
 /**
  * 
  * @author Yulei Ye
- * @date 2018年10月4日-下午12:01:43
+ * @date 2018年10月4日-下午12:01:59
  */
-public interface IDecodable {
-	void decode(ByteBuffer data);
+public interface IEncoder {
+
+	<T> ByteBuffer encode(T obj);
 }

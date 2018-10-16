@@ -18,8 +18,10 @@ package org.jmicro.client;
 
 import org.jmicro.api.annotation.Cfg;
 import org.jmicro.api.annotation.Component;
+import org.jmicro.api.annotation.Inject;
 import org.jmicro.api.client.IClientSession;
 import org.jmicro.api.client.IMessageCallback;
+import org.jmicro.api.codec.ICodecFactory;
 import org.jmicro.api.net.IMessageHandler;
 import org.jmicro.api.net.ISession;
 import org.jmicro.api.net.Message;
@@ -47,6 +49,9 @@ public class AsyncMessageHandler implements IMessageHandler{
 	@Cfg("/respBufferSize")
 	private int respBufferSize;
 	
+	@Inject
+	private ICodecFactory codecFactory;
+	
 	@Override
 	public Short type() {
 		return Constants.MSG_TYPE_ASYNC_RESP;
@@ -59,9 +64,9 @@ public class AsyncMessageHandler implements IMessageHandler{
 	
 	@SuppressWarnings({ "rawtypes", "unchecked" })
 	private void handleResponse(IClientSession session,Message msg){
-		RpcResponse resp = new RpcResponse(respBufferSize);
-		resp.decode(msg.getPayload());
+		RpcResponse resp = ICodecFactory.decode(this.codecFactory,msg.getPayload());
 		resp.setMsg(msg);
+		
 		//req.setMsg(msg);
 		String key = msg.getReqId()+"";
 		ServiceMethod si = (ServiceMethod) session.getParam(key);

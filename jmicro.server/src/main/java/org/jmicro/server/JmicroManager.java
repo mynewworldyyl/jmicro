@@ -29,6 +29,7 @@ import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.Inject;
 import org.jmicro.api.annotation.Interceptor;
 import org.jmicro.api.annotation.JMethod;
+import org.jmicro.api.codec.ICodecFactory;
 import org.jmicro.api.monitor.IMonitorDataSubmiter;
 import org.jmicro.api.monitor.MonitorConstant;
 import org.jmicro.api.net.Message;
@@ -75,6 +76,9 @@ public class JmicroManager {
 	@Inject(required=false)
 	private IMonitorDataSubmiter monitor;
 	
+	@Inject
+	private ICodecFactory codeFactory;
+	
 	@JMethod("init")
 	public void init() {
 		this.startReqWorker();
@@ -106,7 +110,7 @@ public class JmicroManager {
 				MonitorConstant.doSubmit(monitor,MonitorConstant.SERVER_REQ_ERROR, req,resp);
 				logger.error("reqHandler error: ",e);
 				if(req != null){
-					resp = new RpcResponse(req.getRequestId(),new ServerError(0,e.getMessage()),respBufferSize);
+					resp = new RpcResponse(req.getRequestId(),new ServerError(0,e.getMessage()));
 					resp.setSuccess(false);
 				}
 			}
@@ -115,7 +119,7 @@ public class JmicroManager {
 				msg.setType(Constants.MSG_TYPE_RRESP_JRPC);
 				msg.setId(req.getMsg().getId());
 				msg.setReqId(req.getRequestId());
-				msg.setPayload(resp.encode());
+				msg.setPayload(ICodecFactory.encode(codeFactory,resp));
 				//msg.setExt((byte)0);
 				//msg.setReq(false);
 				msg.setSessionId(req.getSession().getId());

@@ -26,6 +26,7 @@ import org.jmicro.api.annotation.Cfg;
 import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.Inject;
 import org.jmicro.api.annotation.Interceptor;
+import org.jmicro.api.codec.ICodecFactory;
 import org.jmicro.api.idgenerator.IIdGenerator;
 import org.jmicro.api.monitor.IMonitorDataSubmiter;
 import org.jmicro.api.monitor.MonitorConstant;
@@ -69,6 +70,9 @@ public class JRPCReqRespHandler implements IMessageHandler{
 	
 	private volatile Map<String,IRequestHandler> handlers = new ConcurrentHashMap<>();
 	
+	@Inject
+	private ICodecFactory codeFactory;
+	
 	@Inject(required=false)
 	private IMonitorDataSubmiter monitor;
 	
@@ -100,9 +104,8 @@ public class JRPCReqRespHandler implements IMessageHandler{
 	        JMicroContext cxt = JMicroContext.get();
 			cxt.setParam(JMicroContext.SESSION_KEY, s);
 			
-			final RpcRequest req1 = new RpcRequest();
+			final RpcRequest req1 = ICodecFactory.decode(this.codeFactory,msg.getPayload());
 			req = req1;
-			req.decode(msg.getPayload());
 			req.setSession(s);
 			req.setMsg(msg);
 			
@@ -131,7 +134,7 @@ public class JRPCReqRespHandler implements IMessageHandler{
 			
 			cxt.setObject(Constants.SERVICE_OBJ_KEY, obj);
 			
-			needResp = ServiceLoader.isNeedResponse(this.serviceLoader, req);
+			needResp = sm.needResponse;
 			MonitorConstant.doSubmit(monitor,MonitorConstant.SERVER_REQ_BEGIN, req,resp);
 				if(!needResp){
 					handler(req);
@@ -151,16 +154,16 @@ public class JRPCReqRespHandler implements IMessageHandler{
 						JMicroContext.get().setParam(Constants.CONTEXT_CALLBACK, new IWriteCallback(){
 							@Override
 							public void send(Object message) {
-								RpcResponse resp = new RpcResponse(req1.getRequestId(),message,respBufferSize);
+								RpcResponse resp = new RpcResponse(req1.getRequestId(),message);
 								resp.setSuccess(true);
 								//返回结果包
 								msg.setId(idGenerator.getLongId(Message.class));
-								msg.setPayload(resp.encode());
+								msg.setPayload(codeFactory.getEncoder(RpcResponse.class).encode(resp));
 								msg.setType(Constants.MSG_TYPE_ASYNC_RESP);
 								if(s.isClose()){
 									throw new CommonException("Session is closed while writing data");
 								}
-								s.write(msg.encode());
+								s.write(codeFactory.getEncoder(Message.class).encode(msg));
 							}
 						});
 						 handler(req1);
@@ -190,11 +193,11 @@ public class JRPCReqRespHandler implements IMessageHandler{
 					
 					
 					//直接返回一个确认包
-					resp = new RpcResponse(req.getRequestId(),null,respBufferSize);
+					resp = new RpcResponse(req.getRequestId(),null);
 					resp.setSuccess(true);
 					
 					msg.setType(Constants.MSG_TYPE_RRESP_JRPC);
-					msg.setPayload(resp.encode());
+					msg.setPayload(ICodecFactory.encode(codeFactory,resp));
 					msg.setId(idGenerator.getLongId(Message.class));
 					s.write(msg.encode());
 				
@@ -202,10 +205,10 @@ public class JRPCReqRespHandler implements IMessageHandler{
 					//同步响应
 					resp = handler(req);
 					if(resp == null){
-						resp = new RpcResponse(req.getRequestId(),null,respBufferSize);
+						resp = new RpcResponse(req.getRequestId(),null);
 						resp.setSuccess(true);
 					}
-					msg.setPayload(resp.encode());
+					msg.setPayload(ICodecFactory.encode(codeFactory,resp));
 					msg.setType(Constants.MSG_TYPE_RRESP_JRPC);
 					msg.setId(idGenerator.getLongId(Message.class));
 					s.write(msg.encode());
@@ -215,7 +218,7 @@ public class JRPCReqRespHandler implements IMessageHandler{
 				MonitorConstant.doSubmit(monitor,MonitorConstant.SERVER_REQ_ERROR, req,resp);
 				logger.error("reqHandler error: ",e);
 				if(needResp && req != null ){
-					resp = new RpcResponse(req.getRequestId(),new ServerError(0,e.getMessage()),respBufferSize);
+					resp = new RpcResponse(req.getRequestId(),new ServerError(0,e.getMessage()));
 					resp.setSuccess(false);
 				}
 				s.close(true);

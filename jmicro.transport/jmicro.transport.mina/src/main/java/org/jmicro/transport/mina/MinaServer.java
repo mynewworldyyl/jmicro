@@ -36,6 +36,7 @@ import org.jmicro.api.JMicroContext;
 import org.jmicro.api.annotation.Cfg;
 import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.Inject;
+import org.jmicro.api.codec.ICodecFactory;
 import org.jmicro.api.monitor.IMonitorDataSubmiter;
 import org.jmicro.api.monitor.MonitorConstant;
 import org.jmicro.api.net.IMessageHandler;
@@ -89,6 +90,9 @@ public class MinaServer implements IServer{
 	@Cfg("/MinaClientSessionManager/heardbeatInterval")
 	private int heardbeatInterval = 3; //seconds to send heardbeat Rate
 	
+	@Inject
+	private ICodecFactory codeFactory;
+	
 	@Inject(required=false)
 	private IMonitorDataSubmiter monitor;
 	
@@ -139,7 +143,7 @@ public class MinaServer implements IServer{
 	@Override
 	public void start() {
 
-        LOG.info("starting echo server");
+        //LOG.info("starting echo server");
 
         if(acceptor == null){
         	 acceptor = new NioTcpServer();

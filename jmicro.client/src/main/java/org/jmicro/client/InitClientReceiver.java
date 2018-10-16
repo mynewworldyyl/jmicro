@@ -29,7 +29,7 @@ import org.jmicro.common.Constants;
  * @author Yulei Ye
  * @date 2018年10月9日-下午5:51:55
  */
-@Component(active=true,value="InitServerReceiver")
+@Component(active=true,value="InitServerReceiver",side=Constants.SIDE_COMSUMER)
 public class InitClientReceiver implements IPostFactoryReady{
 
 	@Override
@@ -37,7 +37,7 @@ public class InitClientReceiver implements IPostFactoryReady{
 		List<IMessageHandler> list = of.getByParent(IMessageHandler.class);
 		ClientMessageReceiver sr = of.get(ClientMessageReceiver.class);
 		for(IMessageHandler h: list){
-			Class<?> tcls = ProxyObject.getTarget(h).getClass();
+			Class<?> tcls = ProxyObject.getTargetCls(h.getClass());
 			if(tcls.isAnnotationPresent(Component.class)){
 				Component anno = tcls.getAnnotation(Component.class);
 				if(anno.active() && Constants.SIDE_COMSUMER.equals(anno.side())){

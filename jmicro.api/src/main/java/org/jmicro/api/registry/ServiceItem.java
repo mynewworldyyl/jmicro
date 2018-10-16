@@ -116,7 +116,7 @@ public class ServiceItem{
 	 *  speed up when real response time less avgResponseTime, 
 	 *  speed down when real response time less avgResponseTime
 	 */
-	private int avgResponseTime=-1;
+	private int avgResponseTime = -1;
 	
 	private Set<ServiceMethod> methods = new HashSet<>();
 	

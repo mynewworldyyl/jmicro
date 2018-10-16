@@ -11,6 +11,7 @@ import org.jmicro.api.annotation.Service;
 import org.jmicro.api.server.IWriteCallback;
 import org.jmicro.common.CommonException;
 import org.jmicro.common.Constants;
+import org.jmicro.example.api.ISayHello;
 import org.jmicro.example.api.ITestRpcService;
 
 @Service(timeout=10*60*1000,maxSpeed=1)

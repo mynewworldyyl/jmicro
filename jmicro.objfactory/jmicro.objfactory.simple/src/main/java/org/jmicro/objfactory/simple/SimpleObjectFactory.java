@@ -40,12 +40,15 @@ import org.jmicro.api.annotation.JMethod;
 import org.jmicro.api.annotation.ObjFactory;
 import org.jmicro.api.annotation.PostListener;
 import org.jmicro.api.annotation.Reference;
+import org.jmicro.api.annotation.Service;
 import org.jmicro.api.config.Config;
 import org.jmicro.api.config.IConfigLoader;
 import org.jmicro.api.objectfactory.IObjectFactory;
 import org.jmicro.api.objectfactory.IPostFactoryReady;
 import org.jmicro.api.objectfactory.IPostInitListener;
 import org.jmicro.api.objectfactory.ProxyObject;
+import org.jmicro.api.registry.ServiceItem;
+import org.jmicro.api.service.IServerServiceProxy;
 import org.jmicro.api.servicemanager.ComponentManager;
 import org.jmicro.common.CommonException;
 import org.jmicro.common.Constants;
@@ -79,7 +82,7 @@ public class SimpleObjectFactory implements IObjectFactory {
 	
 	private Map<String,Object> clsNameToObjs = new ConcurrentHashMap<String,Object>();
 	
-	private RemoteServiceManager rsm = null;
+	private ClientServiceProxyManager clientServiceProxyManager = null;
 	
 	@SuppressWarnings("unchecked")
 	@Override
@@ -95,10 +98,9 @@ public class SimpleObjectFactory implements IObjectFactory {
 			}
 			
 			if(obj == null){
-				obj = this.rsm.getService(cls);
+				obj = this.clientServiceProxyManager.getService(cls);
 			}
-			
-		}else {
+		} else {
 			obj = objs.get(cls);
 			if(obj != null){
 				return  (T)obj;
@@ -123,7 +125,7 @@ public class SimpleObjectFactory implements IObjectFactory {
 			return (T) this.nameToObjs.get(clsName);
 		}
 		
-		Object o = this.rsm.getService(clsName);
+		Object o = this.clientServiceProxyManager.getService(clsName);
 		if(o != null){
 			return (T)o;
 		}
@@ -161,7 +163,7 @@ public class SimpleObjectFactory implements IObjectFactory {
 		}
 	}
 
-	public Object createNoProxy(Class cls) {
+	public Object createNoProxy(Class<?> cls) {
 		checkStatu();
 		Object obj = objs.get(cls);
 		if(obj != null && !(obj instanceof ProxyObject)){
@@ -291,16 +293,24 @@ public class SimpleObjectFactory implements IObjectFactory {
 				if(IObjectFactory.class.isAssignableFrom(c) || !c.isAnnotationPresent(Component.class)){
 					continue;
 				}
-				Component cann = c.getAnnotation(Component.class);
-				if(cann.active()){
-					Object obj = createObject(c,false);
-					this.cacheObj(c, obj, true);
+				if(c.isAnnotationPresent(Component.class)) {
+					Component cann = c.getAnnotation(Component.class);
+					if(cann.active()){
+						Object obj = null;
+						if(c.isAnnotationPresent(Service.class)) {
+							 obj = createServiceObject(c,false);
+						} else {
+							obj = createObject(c,false);
+						}
+						this.cacheObj(c, obj, true);
+					}
 				}
+				
 			}
 		}
 		
-		rsm = new RemoteServiceManager(this);
-		rsm.init();
+		clientServiceProxyManager = new ClientServiceProxyManager(this);
+		clientServiceProxyManager.init();
 		List<Object> l = new ArrayList<>();
 		l.addAll(this.objs.values());
 		l.sort(new Comparator<Object>(){
@@ -341,6 +351,14 @@ public class SimpleObjectFactory implements IObjectFactory {
 			lis.ready(this);
 		}
 		
+	}
+
+	private Object createServiceObject(Class<?> cls, boolean doAfterCreate) {
+		Object obj = createDynamicService(cls);
+		if(doAfterCreate){
+			 doAfterCreate(obj);
+		}
+		return  obj;
 	}
 
 	private void createZK() {
@@ -391,7 +409,7 @@ public class SimpleObjectFactory implements IObjectFactory {
 		postReadyListeners.add(listener);
 	}
 	
-	private boolean isProvider(Object o){
+	private boolean isProviderSide(Object o){
 		Class<?> cls = ProxyObject.getTargetCls(o.getClass());
 		Component comAnno = cls.getAnnotation(Component.class);
 		if(comAnno == null){
@@ -400,7 +418,7 @@ public class SimpleObjectFactory implements IObjectFactory {
 		return Constants.SIDE_PROVIDER.equals(comAnno.side());
 	}
 	
-	private boolean isComsumer(Object o){
+	private boolean isComsumerSide(Object o){
 		Class<?> cls = ProxyObject.getTargetCls(o.getClass());
 		Component comAnno = cls.getAnnotation(Component.class);
 		if(comAnno == null){
@@ -409,41 +427,40 @@ public class SimpleObjectFactory implements IObjectFactory {
 		return Constants.SIDE_COMSUMER.equals(comAnno.side());
 	}
 	
-	private List<?> filterProvider(List<?> list){
+	private List<?> filterProviderSide(List<?> list){
 		if(list == null || list.isEmpty()){
 			return null;
 		}
 		Iterator<?> ite = list.iterator();
 		while(ite.hasNext()){
-			if(isProvider(ite.next())){
+			if(isProviderSide(ite.next())){
 				ite.remove();
 			}
 		}
 		return list;
 	}
 	
-	private  List<?> filterComsumer(List<?> list){
+	private  List<?> filterComsumerSide(List<?> list){
 		if(list == null || list.isEmpty()){
 			return null;
 		}
 		Iterator<?> ite = list.iterator();
 		while(ite.hasNext()){
-			if(isComsumer(ite.next())){
+			if(isComsumerSide(ite.next())){
 				ite.remove();
 			}
 		}
 		return list;
-	}
-	
-	
+	}	
 
 	private void injectDepependencies(Object obj) {
 		Class<?> cls = ProxyObject.getTargetCls(obj.getClass());
 		Field[] fs = cls.getDeclaredFields();
+		
 		Component comAnno = cls.getAnnotation(Component.class);
 		
-		boolean isProvider = isProvider(obj);
-		boolean isComsumer =  isComsumer(obj);
+		boolean isProvider = isProviderSide(obj);
+		boolean isComsumer =  isComsumerSide(obj);
 		
 		for(Field f : fs) {
 			Object srv = null;
@@ -459,7 +476,7 @@ public class SimpleObjectFactory implements IObjectFactory {
 				*/
 				isRequired = ref.required();
 				
-				srv = rsm.createService(obj,f);
+				srv = clientServiceProxyManager.createOrGetService(obj,f);
 				//getServiceProxy(cls,f,ref,obj);
 				
 			}else if(f.isAnnotationPresent(Inject.class)){
@@ -474,9 +491,9 @@ public class SimpleObjectFactory implements IObjectFactory {
 					List<?> l = this.getByParent(ctype);
 					
 					if(isProvider){
-						l = this.filterComsumer(l);
+						l = this.filterComsumerSide(l);
 					}else if(isComsumer){
-						l = this.filterProvider(l);
+						l = this.filterProviderSide(l);
 					}
 					
 					if(l != null && l.size() > 0){
@@ -493,9 +510,9 @@ public class SimpleObjectFactory implements IObjectFactory {
 					
 					List<?> l = this.getByParent(ctype);
 					if(isProvider){
-						l = this.filterComsumer(l);
+						l = this.filterComsumerSide(l);
 					}else if(isComsumer){
-						l = this.filterProvider(l);
+						l = this.filterProviderSide(l);
 					}
 					
 					if(l != null && l.size() > 0){
@@ -539,9 +556,9 @@ public class SimpleObjectFactory implements IObjectFactory {
 					List<?> l = this.getByParent(ctype);
 					
 					if(isProvider){
-						l = this.filterComsumer(l);
+						l = this.filterComsumerSide(l);
 					}else if(isComsumer){
-						l = this.filterProvider(l);
+						l = this.filterProviderSide(l);
 					}
 					
 					if(l != null && l.size() > 0){
@@ -582,9 +599,9 @@ public class SimpleObjectFactory implements IObjectFactory {
 					List<?> l = this.getByParent(type);
 					
 					if(isProvider){
-						l = this.filterComsumer(l);
+						l = this.filterComsumerSide(l);
 					}else if(isComsumer){
-						l = this.filterProvider(l);
+						l = this.filterProviderSide(l);
 					}
 					
 					if(l != null && !l.isEmpty() && StringUtils.isEmpty(name)) {
@@ -618,9 +635,9 @@ public class SimpleObjectFactory implements IObjectFactory {
 						srv = this.get(type);
 					}
 					if(srv != null){
-						if(isProvider && this.isComsumer(srv)){
+						if(isProvider && this.isComsumerSide(srv)){
 							throw new CommonException("Class ["+cls.getName()+"] field ["+ f.getName()+"] dependency ["+f.getType().getName()+"] side should provider");
-						}else if(isComsumer && this.isProvider(srv)){
+						}else if(isComsumer && this.isProviderSide(srv)){
 							throw new CommonException("Class ["+cls.getName()+"] field ["+ f.getName()+"] dependency ["+f.getType().getName()+"] side should comsumer");
 						}
 					}
@@ -655,6 +672,88 @@ public class SimpleObjectFactory implements IObjectFactory {
 			}
 		}
 		
+	}
+	
+	private Object createDynamicService(Class<?> cls) {
+		 ClassGenerator classGenerator = ClassGenerator.newInstance(Thread.currentThread().getContextClassLoader());
+		 classGenerator.setClassName(cls.getName()+"$JmicroSrv"+SimpleObjectFactory.idgenerator.getAndIncrement());
+		 classGenerator.setSuperClass(cls);
+		 classGenerator.addInterface(IServerServiceProxy.class);
+		 classGenerator.addDefaultConstructor();
+		 
+		 Service srvAnno = cls.getAnnotation(Service.class);
+		 Class<?> srvInterface = srvAnno.infs();
+		 if(srvInterface == null || srvInterface == Void.class){
+			 if(cls.getInterfaces() == null || cls.getInterfaces().length != 1) {
+				 throw new CommonException("Class ["+cls.getName()+"] must implements one and only one service interface");
+			 }
+			 srvInterface = cls.getInterfaces()[0];
+		 }
+		 classGenerator.addInterface(srvInterface);
+		 
+		 
+		 //classGenerator.addField("public static java.lang.reflect.Method[] methods;");
+		 //classGenerator.addField("private " + InvocationHandler.class.getName() + " handler = new org.jmicro.api.client.ServiceInvocationHandler(this);");
+      
+/*		 classGenerator.addField("private boolean enable=true;");
+		 classGenerator.addMethod("public java.lang.String getNamespace(){ return \"" + ServiceItem.namespace(srvAnno.namespace()) + "\";}");
+		 classGenerator.addMethod("public java.lang.String getVersion(){ return \"" + ServiceItem.version(srvAnno.version()) + "\";}");
+		 classGenerator.addMethod("public java.lang.String getServiceName(){ return \"" + srvInterface.getName() + "\";}");
+		 classGenerator.addMethod("public boolean enable(){  return this.enable;}");
+		 classGenerator.addMethod("public void enable(boolean en){ this.enable=en;}");*/
+		 classGenerator.addMethod("public java.lang.String wayd(java.lang.String msg){ return msg;}");
+		 
+		 //只为代理接口生成代理方法，别的方法继承自原始类
+		 Method[] ms1 = srvInterface.getMethods();
+		 
+		 Method[] ms2 = new Method[ms1.length];
+		 
+		 for(int i =0; i < ms1.length; i++) {
+		     //Method m1 = ms1[i];
+		     Method m = null;
+			try {
+				m = cls.getMethod(ms1[i].getName(), ms1[i].getParameterTypes());
+			} catch (NoSuchMethodException | SecurityException e) {
+				throw new CommonException("Method not found: " + ms1[i].getName());
+			}
+			 if (m.getDeclaringClass() == Object.class || !Modifier.isPublic(m.getModifiers())){
+				 continue;
+		     }
+			 
+		   //ms2[i] = m;
+		   
+		   Class<?> rt = m.getReturnType();
+           Class<?>[] pts = m.getParameterTypes();
+
+           StringBuilder code = new StringBuilder();
+        		   
+           if (!Void.TYPE.equals(rt)) {
+        	   code.append("Object ret = ");
+           }
+           code.append("super.").append(m.getName()).append("(");
+           for (int j = 0; j < pts.length; j++){
+          	 code.append("("+pts[j].getName()+")$").append(j + 1);
+          	 if(j < pts.length-1){
+          		code.append(",");
+          	 }
+           }
+           code.append(");");
+           
+           if (!Void.TYPE.equals(rt)) {
+        	   code.append(" return ").append(SimpleObjectFactory.asArgument(rt, "ret")).append(";");
+           }
+
+           classGenerator.addMethod(m.getName(), m.getModifiers(), rt, pts, m.getExceptionTypes(), code.toString());      
+		 }
+		 
+		   Class<?> clazz = classGenerator.toClass();
+       try {
+      	    //clazz.getField("methods").set(null, ms2);
+			Object proxy = clazz.newInstance();
+			return proxy; 
+		} catch (InstantiationException | IllegalArgumentException | IllegalAccessException | SecurityException e1) {
+			throw new CommonException("Fail to create proxy ["+ cls.getName()+"]");
+		}
 	}
 
 	@SuppressWarnings("unchecked")

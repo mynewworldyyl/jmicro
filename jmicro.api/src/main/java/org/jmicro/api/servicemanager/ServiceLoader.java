@@ -17,7 +17,9 @@
 package org.jmicro.api.servicemanager;
 
 import java.lang.reflect.Method;
+import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -35,11 +37,14 @@ import org.jmicro.api.registry.ServiceItem;
 import org.jmicro.api.registry.ServiceMethod;
 import org.jmicro.api.server.IRequest;
 import org.jmicro.api.server.IServer;
+import org.jmicro.api.service.IServerServiceProxy;
 import org.jmicro.common.CommonException;
 import org.jmicro.common.Constants;
 import org.jmicro.common.util.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import javassist.Modifier;
 /**
  * 
  * @author Yulei Ye
@@ -49,17 +54,6 @@ import org.slf4j.LoggerFactory;
 public class ServiceLoader {
 
 	private final static Logger logger = LoggerFactory.getLogger(ServiceLoader.class);
-	
-	/*private static ServiceLoader loader = new ServiceLoader();
-	
-	static {
-		loader.exportService();
-		logger.info("export service finish!");
-	}
-	private ServiceLoader(){}
-	public static ServiceLoader getIns(){
-		return loader;
-	}*/
 	
 	@Inject(required=true)
 	private IRegistry registry;
@@ -78,15 +72,14 @@ public class ServiceLoader {
 	}
 	
 	public Object getService(String clsName,String namespace,String version){
-		Object srv = null;
 		
-		if(StringUtils.isEmpty(namespace)){
-			namespace = Constants.DEFAULT_NAMESPACE;
-		}
-		if(StringUtils.isEmpty(version)){
-			version = "0.0.0";
-		}
+		namespace = ServiceItem.namespace(namespace);
+		version = ServiceItem.version(version);
+	
 		Class<?> parentCls = ClassScannerUtils.getIns().getClassByName(clsName);			
+		
+		List<Object> srvs = new ArrayList<>();
+		
 		for(Object s : services.values()){
 			if(!parentCls.isInstance(s)){
 				continue;
@@ -94,18 +87,29 @@ public class ServiceLoader {
 			Class<?> tc = ProxyObject.getTargetCls(s.getClass());
 			Service srvAnno = tc.getAnnotation(Service.class);
 			if(namespace.equals(srvAnno.namespace()) && version.equals(srvAnno.version())){
-				srv = s;
-				break;
+				srvs.add(s);
 			}
 		}
 		
-		return srv;
+		if(srvs.size() > 1){
+			throw new CommonException("More than one services found for name: ["+clsName
+					+"] impls ["+srvs.toString()+"]");
+		}
+		
+		if(srvs.size()==1) {
+			return srvs.get(0);
+		}else {
+			return null;
+		}
 	}
 	
 	public Object getService(String impl){
-		Class<?> parentCls = ClassScannerUtils.getIns().getClassByName(impl);			
+		Class<?> cls = ClassScannerUtils.getIns().getClassByName(impl);
+		if(Modifier.isAbstract(cls.getModifiers()) || Modifier.isInterface(cls.getModifiers())){
+			throw new CommonException("impl is not a concrete class: "+impl);
+		}
 		for(Object srv : services.values()){
-			if(parentCls.isInstance(srv)){
+			if(cls.isInstance(srv)){
 				return srv;
 			}
 		}
@@ -116,7 +120,6 @@ public class ServiceLoader {
 		Set<Class<?>> clses = ClassScannerUtils.getIns().loadClassesByAnno(Service.class);
 		return clses;
 	}
-	
 	
 	public boolean exportService(){
 		if(!services.isEmpty()){
@@ -142,6 +145,10 @@ public class ServiceLoader {
 	
 	public void exportOne(Class<?> c) {
 
+		if(c.isInterface() || Modifier.isAbstract(c.getModifiers())){
+			return;
+		}
+		
 		Object srv = this.createService(c);
 		if(srv == null){
 			throw new CommonException("fail to export server "+c.getName());
@@ -150,145 +157,145 @@ public class ServiceLoader {
 		String key = this.serviceName(c);
 		services.put(key, srv);
 		
-		logger.info("Export service "+c.getName());
+		logger.info("Export service:"+c.getName());
 	}
 	
-	private void registService(Object srv) {
-		srv = ProxyObject.getTarget(srv);
-		ServiceItem[] items = this.getServiceItems(srv);
-		if(items == null || items.length == 0){
-			logger.error("class "+srv.getClass().getName()+" is not service");
+	private void registService(Object srv1) {
+		Class<?> srvCls = ProxyObject.getTargetCls(srv1.getClass());
+		ServiceItem item = this.getServiceItems(srvCls);
+		if(item == null){
+			logger.error("class "+srvCls.getName()+" is not service");
 			return;
 		}
-		Service srvAnno = srv.getClass().getAnnotation(Service.class);
+		Service srvAnno = srvCls.getAnnotation(Service.class);
 		IRegistry registry = ComponentManager.getRegistry(srvAnno.registry());
 		if(registry == null){
 			registry = this.registry;
 		}
-		for(ServiceItem item : items){
-			registry.regist(item);
-		}
+		registry.regist(item);
 	}
 	
-	private ServiceItem[] getServiceItems(Object srv1) {
-		Object srv = ProxyObject.getTarget(srv1);
-		Class<?> srvCls = srv.getClass();
+	private ServiceItem getServiceItems(Class<?> proxySrv) {
+		Class<?> srvCls = ProxyObject.getTargetCls(proxySrv);
 		if(!srvCls.isAnnotationPresent(Service.class)){
-			return null;
-		}
-		Service anno = srvCls.getAnnotation(Service.class);
-		IServer server = this.getServer(srvCls);
-		Class<?>[] interfaces = anno.interfaces();
-		if(interfaces.length ==0 ){
-			interfaces = srvCls.getInterfaces();
-			if(interfaces == null || interfaces.length == 0) {
-				throw new CommonException("service ["+srvCls.getName()+"] have to implement at least one interface.");
-			}
+			throw new CommonException("Not a service class ["+srvCls.getName()+"] annotated with ["+Service.class.getName()+"]");
 		}
 		
-		ServiceItem[] sitems = new ServiceItem[interfaces.length];
-		int index = 0;
+		//Object srv = ProxyObject.getTarget(proxySrv);
+		Service anno = srvCls.getAnnotation(Service.class);
+		Class<?> interfaces = anno.infs();
+		if(interfaces == null || interfaces == Void.class){
+			Class<?>[] ints = srvCls.getInterfaces();
+			if(ints == null || ints.length != 1) {
+				throw new CommonException("service ["+srvCls.getName()+"] have to implement one and only one interface.");
+			}
+			interfaces = ints[0] ;
+		}
+		
+		IServer server = this.getServer(srvCls);
+		
 		String addr = server.host();
 		int port = server.port();
 		
-		for(Class<?> in : interfaces){
-			if(!in.isInstance(srv)){
-				throw new CommonException("service ["+srvCls.getName()+"] not implement interface ["+in.getName()+"].");
+		ServiceItem item = new ServiceItem();
+		
+		item.setImpl(proxySrv.getName());
+		item.setHost(addr);
+		item.setPort(port);
+		item.setServiceName(interfaces.getName());
+		
+		item.setVersion(anno.version());
+		item.setNamespace(anno.namespace());
+		
+		item.setMaxFailBeforeFusing(anno.maxFailBeforeFusing());
+		item.setMaxFailBeforeDegrade(anno.maxFailBeforeDegrade());
+		item.setRetryCnt(anno.retryCnt());
+		item.setRetryInterval(anno.retryInterval());
+		item.setTestingArgs(anno.testingArgs());
+		item.setTimeout(anno.timeout());
+		item.setMaxSpeed(anno.maxSpeed());
+		item.setAvgResponseTime(anno.avgResponseTime());
+		item.setMonitorEnable(anno.monitorEnable());
+		
+		ServiceMethod checkMethod = new ServiceMethod();
+		item.addMethod(checkMethod);
+		checkMethod.setMaxFailBeforeFusing(1);
+		checkMethod.setMaxFailBeforeDegrade(1);
+		checkMethod.setRetryCnt(3);
+		checkMethod.setRetryInterval(500);
+		checkMethod.setTestingArgs("What are you doing?");
+		checkMethod.setTimeout(anno.timeout());
+		checkMethod.setMaxSpeed(1000);
+		checkMethod.setAvgResponseTime(anno.avgResponseTime());
+		checkMethod.setMonitorEnable(anno.monitorEnable());
+		checkMethod.setMethodName("wayd");
+		checkMethod.setMethodParamTypes("java.lang.String");
+		
+		for(Method m : interfaces.getMethods()) {
+			ServiceMethod sm = new ServiceMethod();
+			Method srvMethod = null;
+			try {
+				srvMethod = srvCls.getMethod(m.getName(), m.getParameterTypes());
+			} catch (NoSuchMethodException | SecurityException e) {
+				throw new CommonException("Service not found: "+m.getName(),e);
+			}
+			item.addMethod(sm);
+			
+			//具体实现类的注解优先，如果实现类对就方法没有注解，则使用接口对应的方法注解
+			//如果接口和实现类都没有，则使用实现类的Service注解，实现类肯定有Service注解，否则不会成为服务
+			if(srvMethod.isAnnotationPresent(SMethod.class)){
+				SMethod manno = srvMethod.getAnnotation(SMethod.class);
+				sm.setMaxFailBeforeFusing(manno.maxFailBeforeFusing());
+				sm.setMaxFailBeforeDegrade(manno.maxFailBeforeDegrade());
+				sm.setRetryCnt(manno.retryCnt());
+				sm.setRetryInterval(manno.retryInterval());
+				sm.setTestingArgs(manno.testingArgs());
+				sm.setTimeout(manno.timeout());
+				sm.setMaxSpeed(manno.maxSpeed());
+				sm.setAvgResponseTime(manno.avgResponseTime());
+				sm.setMonitorEnable(manno.monitorEnable());
+				
+				//checkStreamCallback(manno.streamCallback());
+				
+				sm.setStreamCallback(manno.streamCallback());
+				sm.setNeedResponse(manno.needResponse());
+				/*if(StringUtils.isEmpty(sm.getStreamCallback())){
+					sm.setAsync(manno.async());
+				}else {
+					sm.setAsync(true);
+				}*/
+				
+			}else if(m.isAnnotationPresent(SMethod.class)){
+				SMethod manno = m.getAnnotation(SMethod.class);
+				sm.setMaxFailBeforeFusing(manno.maxFailBeforeFusing());
+				sm.setMaxFailBeforeDegrade(manno.maxFailBeforeDegrade());
+				sm.setRetryCnt(manno.retryCnt());
+				sm.setRetryInterval(manno.retryInterval());
+				sm.setTestingArgs(manno.testingArgs());
+				sm.setTimeout(manno.timeout());
+				sm.setMaxSpeed(manno.maxSpeed());
+				sm.setAvgResponseTime(manno.avgResponseTime());
+				sm.setMonitorEnable(manno.monitorEnable());
+				
+				sm.setStreamCallback(manno.streamCallback());
+				sm.setNeedResponse(manno.needResponse());
+			} else {
+				sm.setMaxFailBeforeFusing(anno.maxFailBeforeFusing());
+				sm.setMaxFailBeforeDegrade(anno.maxFailBeforeDegrade());
+				sm.setRetryCnt(anno.retryCnt());
+				sm.setRetryInterval(anno.retryInterval());
+				sm.setTestingArgs(anno.testingArgs());
+				sm.setTimeout(anno.timeout());
+				sm.setMaxSpeed(anno.maxSpeed());
+				sm.setAvgResponseTime(anno.avgResponseTime());
+				sm.setMonitorEnable(anno.monitorEnable());
 			}
 			
-			ServiceItem item = new ServiceItem();
-			item.setImpl(srv1.getClass().getName());
-			item.setHost(addr);
-			item.setPort(port);
-			item.setServiceName(in.getName());
-			item.setVersion(anno.version());
-			item.setNamespace(anno.namespace());
-			
-			item.setMaxFailBeforeFusing(anno.maxFailBeforeFusing());
-			item.setMaxFailBeforeDegrade(anno.maxFailBeforeDegrade());
-			item.setRetryCnt(anno.retryCnt());
-			item.setRetryInterval(anno.retryInterval());
-			item.setTestingArgs(anno.testingArgs());
-			item.setTimeout(anno.timeout());
-			item.setMaxSpeed(anno.maxSpeed());
-			item.setAvgResponseTime(anno.avgResponseTime());
-			item.setMonitorEnable(anno.monitorEnable());
-			
-			for(Method m : in.getMethods()) {
-				ServiceMethod sm = new ServiceMethod();
-				Method srvMethod = null;
-				try {
-					srvMethod = srvCls.getMethod(m.getName(), m.getParameterTypes());
-				} catch (NoSuchMethodException | SecurityException e) {
-				}
-				
-				//具体实现类的注解优先，如果实现类对就方法没有注解，则使用接口对应的方法注解
-				//如果接口和实现类都没有，则使用实现类的Service注解，实现类肯定有Service注解，否则不会成为服务
-				if(srvMethod.isAnnotationPresent(SMethod.class)){
-					SMethod manno = srvMethod.getAnnotation(SMethod.class);
-					sm.setMaxFailBeforeFusing(manno.maxFailBeforeFusing());
-					sm.setMaxFailBeforeDegrade(manno.maxFailBeforeDegrade());
-					sm.setRetryCnt(manno.retryCnt());
-					sm.setRetryInterval(manno.retryInterval());
-					sm.setTestingArgs(manno.testingArgs());
-					sm.setTimeout(manno.timeout());
-					sm.setMaxSpeed(manno.maxSpeed());
-					sm.setAvgResponseTime(manno.avgResponseTime());
-					sm.setMonitorEnable(manno.monitorEnable());
-					
-					//checkStreamCallback(manno.streamCallback());
-					
-					sm.setStreamCallback(manno.streamCallback());
-					sm.setNeedResponse(manno.needResponse());
-					/*if(StringUtils.isEmpty(sm.getStreamCallback())){
-						sm.setAsync(manno.async());
-					}else {
-						sm.setAsync(true);
-					}*/
-					
-				}else if(m.isAnnotationPresent(SMethod.class)){
-					SMethod manno = m.getAnnotation(SMethod.class);
-					sm.setMaxFailBeforeFusing(manno.maxFailBeforeFusing());
-					sm.setMaxFailBeforeDegrade(manno.maxFailBeforeDegrade());
-					sm.setRetryCnt(manno.retryCnt());
-					sm.setRetryInterval(manno.retryInterval());
-					sm.setTestingArgs(manno.testingArgs());
-					sm.setTimeout(manno.timeout());
-					sm.setMaxSpeed(manno.maxSpeed());
-					sm.setAvgResponseTime(manno.avgResponseTime());
-					sm.setMonitorEnable(manno.monitorEnable());
-					
-					//checkStreamCallback(manno.streamCallback());
-					
-					sm.setStreamCallback(manno.streamCallback());
-					sm.setNeedResponse(manno.needResponse());
-					/*if(StringUtils.isEmpty(sm.getStreamCallback())){
-						sm.setAsync(manno.async());
-					}else {
-						sm.setAsync(true);
-					}*/
-					
-				} else {
-					sm.setMaxFailBeforeFusing(anno.maxFailBeforeFusing());
-					sm.setMaxFailBeforeDegrade(anno.maxFailBeforeDegrade());
-					sm.setRetryCnt(anno.retryCnt());
-					sm.setRetryInterval(anno.retryInterval());
-					sm.setTestingArgs(anno.testingArgs());
-					sm.setTimeout(anno.timeout());
-					sm.setMaxSpeed(anno.maxSpeed());
-					sm.setAvgResponseTime(anno.avgResponseTime());
-					sm.setMonitorEnable(anno.monitorEnable());
-				}
-				
-				sm.setMethodName(m.getName());
-				sm.setMethodParamTypes(ServiceMethod.methodParamsKey( m.getParameterTypes()));
-				
-				item.addMethod(sm);
-			}
-			
-			sitems[index] = item;
+			sm.setMethodName(m.getName());
+			sm.setMethodParamTypes(ServiceMethod.methodParamsKey( m.getParameterTypes()));
 		}
-		return sitems;
+		
+		return item;
 	}
 	
 	private void checkStreamCallback(String streamCb) {
@@ -390,7 +397,7 @@ public class ServiceLoader {
 		return null;
 	}
 	
-	public static boolean isNeedResponse(ServiceLoader sl ,IRequest req){
+	/*public static boolean isNeedResponse(ServiceLoader sl ,IRequest req){
 		Method m = getServiceMethod(sl,req);
 		if(m == null || !m.isAnnotationPresent(SMethod.class)){
 			m = getInterfaceMethod(req);
@@ -400,6 +407,6 @@ public class ServiceLoader {
 		}
 		SMethod sm = m.getAnnotation(SMethod.class);
 		return sm.needResponse();
-	}
+	}*/
 	
 }

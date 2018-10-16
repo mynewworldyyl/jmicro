@@ -34,6 +34,7 @@ import org.jmicro.api.client.AbstractClientServiceProxy;
 import org.jmicro.api.objectfactory.ProxyObject;
 import org.jmicro.api.registry.IRegistry;
 import org.jmicro.api.registry.ServiceItem;
+import org.jmicro.api.service.ICheckable;
 import org.jmicro.api.servicemanager.ComponentManager;
 import org.jmicro.common.CommonException;
 import org.jmicro.common.Constants;
@@ -46,9 +47,9 @@ import org.slf4j.LoggerFactory;
  * @author Yulei Ye
  * @date 2018年10月6日-上午11:23:20
  */
-class RemoteServiceManager {
+class ClientServiceProxyManager {
 	
-	private final static Logger logger = LoggerFactory.getLogger(RemoteServiceManager.class);
+	private final static Logger logger = LoggerFactory.getLogger(ClientServiceProxyManager.class);
 	
 	private SimpleObjectFactory of = null;
 	
@@ -57,7 +58,7 @@ class RemoteServiceManager {
 	
 	//private Set<Class<?>> refServiceClass = new HashSet<>();
 	
-	RemoteServiceManager(SimpleObjectFactory o){
+	ClientServiceProxyManager(SimpleObjectFactory o){
 		this.of = o;
 	}
 	
@@ -72,7 +73,7 @@ class RemoteServiceManager {
 			return (T)obj;
 		}
 		try {
-			Class<?> cls = RemoteServiceManager.class.forName(srvName);
+			Class<?> cls = ClientServiceProxyManager.class.forName(srvName);
 			return getService(cls);
 		} catch (ClassNotFoundException e) {
 			logger.error("",e);
@@ -89,7 +90,7 @@ class RemoteServiceManager {
 		return (T)this.createRemoteServieProxyByInterface(srvClazz);
 	}
 	
-	Object createService(Object obj,Field f){
+	Object createOrGetService(Object obj,Field f){
 		if(!f.isAnnotationPresent(Reference.class)){
 			logger.warn("cls:["+obj.getClass().getName()+"] not annotated with ["+Reference.class.getName()+"]");
 			return null;
@@ -105,7 +106,7 @@ class RemoteServiceManager {
 		
 		if(List.class.isAssignableFrom(type) || Set.class.isAssignableFrom(type)){
 			//集合服务引用
-			proxy = createSetService(obj,f,becls,ref);
+			proxy = createCollectionService(obj,f,becls,ref);
 		}/*else if(){
 			proxy = createSetService(obj,f,becls,ref);
 		}*/else{
@@ -114,8 +115,7 @@ class RemoteServiceManager {
 			if(!type.isInterface()) {
 				throw new CommonException("Class ["+becls.getName()+"] field ["+ f.getName()+"] dependency ["+f.getType().getName()+"] have to be interface class");
 			}
-			boolean enable = true;
-			if(!registry.isExist(f.getType().getName(),ref.namespace(),ref.version())) {
+			if(!registry.isExist(type.getName(),ref.namespace(),ref.version())) {
 				if(ref.required()){
 					//服务不可用，并且服务依赖是必须满足，则报错处理
 					StringBuffer sb = new StringBuffer("Class [");
@@ -125,20 +125,19 @@ class RemoteServiceManager {
 					throw new CommonException(sb.toString());
 				}
 				//服务不可用，但还是可以生成服务代理，直到使用时才决定服务的可用状态
-				enable = false;
 			} 
-			Set<ServiceItem> sis = registry.getServices(f.getType().getName(),ref.namespace(),ref.version());
+			Set<ServiceItem> sis = registry.getServices(type.getName(), ref.namespace(), ref.version());
 			if(sis == null || sis.isEmpty()){
-				proxy = createProxyService(f,null,enable,obj);
+				proxy = createOrGetProxyService(f,null,obj);
 			}else {
-				proxy = createProxyService(f,sis.iterator().next(),enable,obj);
+				proxy = createOrGetProxyService(f,sis.iterator().next(),obj);
 			}
 			
 		}
 		return proxy;
 	}
 	
-	Object createProxyService(Field f,ServiceItem si, boolean enable,Object srcObj){
+	Object createOrGetProxyService(Field f, ServiceItem si, Object srcObj){
 		
 		Reference ref = f.getAnnotation(Reference.class);
 		Class<?> type = this.getEltType(f);
@@ -160,10 +159,10 @@ class RemoteServiceManager {
 		Object proxy = null;
 		if(si != null){
 			//call from set field
-			proxy = createDynamicServiceProxy(type,si.getNamespace(),si.getVersion(),enable);
+			proxy = createDynamicServiceProxy(type,si.getNamespace(),si.getVersion(),true);
 		}else {
 			//call from singleton service reference
-			proxy = createDynamicServiceProxy(type,ref.namespace(),ref.version(),enable);
+			proxy = createDynamicServiceProxy(type,ref.namespace(),ref.version(),si!=null);
 		}
 		//ServiceItem si = items.iterator().next();
 		
@@ -196,7 +195,7 @@ class RemoteServiceManager {
 		return f.getType();
 	}
 	
-	private Object createSetService(Object obj, Field f, Class<?> becls, Reference ref) {
+	private Object createCollectionService(Object obj, Field f, Class<?> becls, Reference ref) {
 
 	
 		Class<?> ctype = getEltType(f);
@@ -319,10 +318,10 @@ class RemoteServiceManager {
 		 classGenerator.addInterface(cls);
 		 classGenerator.addDefaultConstructor();
 		 classGenerator.addInterface(ProxyObject.class);
+		 classGenerator.addInterface(ICheckable.class);
 		 
 		 classGenerator.addField("public static java.lang.reflect.Method[] methods;");
 		 //classGenerator.addField("private " + InvocationHandler.class.getName() + " handler = new org.jmicro.api.client.ServiceInvocationHandler(this);");
-		 classGenerator.addDefaultConstructor();
        
 		 classGenerator.addField("private boolean enable="+enable+";");
 		 classGenerator.addMethod("public java.lang.String getNamespace(){ return \"" + namespace + "\";}");
@@ -346,7 +345,12 @@ class RemoteServiceManager {
 		 //classGenerator.addMethod("public Object invoke(String method,Object... args) {return super(method,args);} ");
 		 //classGenerator.addMethod(AbstractServiceProxy.class.getMethod("invoke", {}));
 		 
-		 Method[] ms = cls.getDeclaredMethods();
+		 Method[] ms1 = cls.getMethods();
+		 Method[] checkMethods = ICheckable.class.getMethods();
+		 
+		 Method[] ms = new Method[ms1.length + checkMethods.length];
+		 System.arraycopy(ms1, 0, ms, 0, ms1.length);
+		 System.arraycopy(checkMethods, 0, ms, ms1.length, checkMethods.length);
 		 
 		 for(int i =0; i < ms.length; i++) {
 			 Method m = ms[i];
@@ -374,7 +378,7 @@ class RemoteServiceManager {
 		 Class<?> clazz = classGenerator.toClass();
 
         try {
-       	 clazz.getField("methods").set(null, ms);
+       	    clazz.getField("methods").set(null, ms);
 			T proxy = (T)clazz.newInstance();
 			return proxy; 
 		} catch (InstantiationException | IllegalArgumentException | IllegalAccessException | NoSuchFieldException | SecurityException e1) {

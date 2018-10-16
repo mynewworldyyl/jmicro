@@ -39,6 +39,7 @@ import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.Inject;
 import org.jmicro.api.client.IClientSession;
 import org.jmicro.api.client.IClientSessionManager;
+import org.jmicro.api.codec.ICodecFactory;
 import org.jmicro.api.idgenerator.IIdGenerator;
 import org.jmicro.api.monitor.IMonitorDataSubmiter;
 import org.jmicro.api.monitor.MonitorConstant;
@@ -67,6 +68,9 @@ public class MinaClientSessionManager implements IClientSessionManager{
 	
 	private final Map<String,IClientSession> sessions = new ConcurrentHashMap<>();
 	
+	@Inject
+	private ICodecFactory codeFactory;
+	
 	@Cfg("/MinaClientSessionManager/readBufferSize")
 	private int readBufferSize=1024*4;
 	
@@ -83,8 +87,6 @@ public class MinaClientSessionManager implements IClientSessionManager{
 	private IMessageReceiver receiver;
 	
 	private Timer ticker = new Timer("ClientSessionHeardbeatWorker",true);
-	
-	
 	
 	public void init()  {
 		this.receiver.registHandler(new IMessageHandler(){

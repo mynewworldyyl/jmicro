@@ -3,6 +3,7 @@ package org.jmicro.example.comsumer;
 import org.jmicro.api.Person;
 import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.Reference;
+import org.jmicro.example.api.ISayHello;
 import org.jmicro.example.api.ITestRpcService;
 
 @Component
@@ -11,8 +12,11 @@ public class TestRpcClient {
 	@Reference(required=false)
 	private ITestRpcService rpcService;
 	
+	@Reference(required=false)
+	private ISayHello sayHello;
+	
 	public void invokeRpcService(){
-		String result = rpcService.hello("Hello RPC Server");
+		String result = sayHello.hello("Hello RPC Server");
 		System.out.println("Get remote result:"+result);
 	}
 	

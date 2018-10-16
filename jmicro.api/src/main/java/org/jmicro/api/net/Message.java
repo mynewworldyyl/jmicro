@@ -19,8 +19,6 @@ package org.jmicro.api.net;
 import java.nio.ByteBuffer;
 
 import org.jmicro.api.IDable;
-import org.jmicro.api.codec.IDecodable;
-import org.jmicro.api.codec.IEncodable;
 import org.jmicro.common.CommonException;
 import org.jmicro.common.Constants;
 import org.jmicro.common.util.StringUtils;
@@ -29,7 +27,7 @@ import org.jmicro.common.util.StringUtils;
  * @author Yulei Ye
  * @date 2018年10月4日-下午12:06:44
  */
-public class Message implements IEncodable,IDecodable,IDable{
+public class Message implements IDable{
 	
 	private long msgId;
 	
@@ -58,7 +56,6 @@ public class Message implements IEncodable,IDecodable,IDable{
 	public Message(){
 	}
 	
-	@Override
 	public void decode(ByteBuffer b) {
 		
 		//ByteBuffer b = ByteBuffer.wrap(data);
@@ -87,7 +84,6 @@ public class Message implements IEncodable,IDecodable,IDable{
 	
 	}
 	
-	@Override
 	public ByteBuffer encode() {
 		ByteBuffer data = this.getPayload();
 		ByteBuffer b =  null;

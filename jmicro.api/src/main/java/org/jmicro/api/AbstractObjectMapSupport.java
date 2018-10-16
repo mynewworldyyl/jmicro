@@ -19,17 +19,12 @@ package org.jmicro.api;
 import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Map;
-
-import org.jmicro.api.codec.IDecodable;
-import org.jmicro.api.codec.IEncodable;
-import org.jmicro.common.codec.Decoder;
-import org.jmicro.common.codec.Encoder;
 /**
  * 
  * @author Yulei Ye
  * @date 2018年10月4日-上午11:54:29
  */
-public abstract class AbstractObjectMapSupport implements IEncodable,IDecodable{
+public abstract class AbstractObjectMapSupport /*implements IEncoder,IDecoder*/{
 
 	protected Map<String,Object> params = new HashMap<String,Object>();
 	
@@ -42,7 +37,7 @@ public abstract class AbstractObjectMapSupport implements IEncodable,IDecodable{
 		return v;
 	}
 	
-	public void decode(ByteBuffer ois) {
+	/*public void decode(ByteBuffer ois) {
 		//ByteBuffer ois = ByteBuffer.wrap(data);
 		this.params.putAll(Decoder.decodeObject(ois));
 	}
@@ -51,13 +46,13 @@ public abstract class AbstractObjectMapSupport implements IEncodable,IDecodable{
 		ByteBuffer bb = newBuffer();
 		Encoder.encodeObject(bb,this.params);
 		return bb;
-	}
+	}*/
 	
 	public Map<String,Object> getParams(){
 		return this.params;
 	}
 	
-	public abstract ByteBuffer newBuffer();
+	//public abstract ByteBuffer newBuffer();
 	
 	public Integer getInt(String key,int defautl){
 		return this.getParam(key,defautl);

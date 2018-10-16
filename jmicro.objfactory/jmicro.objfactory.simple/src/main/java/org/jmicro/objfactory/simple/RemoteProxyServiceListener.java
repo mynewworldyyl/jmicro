@@ -41,9 +41,9 @@ class RemoteProxyServiceListener implements IServiceListener{
 	private Object proxy;
 	private Field refField;
 	
-	private RemoteServiceManager rsm;
+	private ClientServiceProxyManager rsm;
 	
-	RemoteProxyServiceListener(RemoteServiceManager rsm,Object proxy,Object srcObj,Field refField){
+	RemoteProxyServiceListener(ClientServiceProxyManager rsm,Object proxy,Object srcObj,Field refField){
 		if(proxy== null){
 			throw new CommonException("Proxy object cannot be null: "+ refField.getDeclaringClass().getName()+",field: " + refField.getName());
 		}
@@ -84,7 +84,7 @@ class RemoteProxyServiceListener implements IServiceListener{
 						return;
 					}
 				}
-				Object o = this.rsm.createProxyService(refField, item,true,this.srcObj);
+				Object o = this.rsm.createOrGetProxyService(refField, item,this.srcObj);
 				if(o!=null){
 					set.add(o);
 				}

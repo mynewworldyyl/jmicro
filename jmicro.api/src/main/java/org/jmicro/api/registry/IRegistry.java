@@ -26,11 +26,11 @@ import org.jmicro.api.Init;
  */
 public interface IRegistry extends Init{
 
-	void regist(ServiceItem url);
+	void regist(ServiceItem si);
 	
-	void update(ServiceItem url);
+	void update(ServiceItem si);
 	
-	void unregist(ServiceItem url);
+	void unregist(ServiceItem si);
 	
 	Set<ServiceItem> getServices(String serviceName,String method,Class<?>[] args,String namespace,String version);
 	
@@ -40,14 +40,16 @@ public interface IRegistry extends Init{
 	
 	Set<ServiceItem> getServices(String serviceName,String namespace,String version);
 	
-	//get by service name,use for collection inject
+	//get by service name, use for collection inject
 	Set<ServiceItem> getServices(String serviceName);
 	
 	ServiceItem getServiceByImpl(String impl);
 	
 	void addServiceListener(String key,IServiceListener lis);
+	
 	void removeServiceListener(String key,IServiceListener lis);
 	
 	void addServiceNameListener(String key,IServiceListener lis);
+	
 	void removeServiceNameListener(String key,IServiceListener lis);
 }

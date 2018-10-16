@@ -84,6 +84,6 @@ public class FirstInterceptor extends AbstractInterceptor implements IIntercepto
 		ServerError se = new ServerError();
 		se.setErrorCode(ServerError.SE_LIMITER);
 		se.setMsg("");
-		return new RpcResponse(req.getRequestId(),se,respBufferSize);
+		return new RpcResponse(req.getRequestId(),se);
 	}
 }

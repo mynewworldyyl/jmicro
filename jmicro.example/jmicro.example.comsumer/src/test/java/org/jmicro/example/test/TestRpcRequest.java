@@ -2,6 +2,7 @@ package org.jmicro.example.test;
 
 import org.jmicro.api.config.Config;
 import org.jmicro.api.objectfactory.IObjectFactory;
+import org.jmicro.api.service.ICheckable;
 import org.jmicro.api.servicemanager.ComponentManager;
 import org.jmicro.common.Utils;
 import org.jmicro.example.api.ITestRpcService;
@@ -55,5 +56,15 @@ public class TestRpcRequest {
 		Utils.getIns().waitForShutdown();
 	}
 	
-	
+	@Test
+	public void testCheckable() {
+		Config.parseArgs(new String[0]);
+		IObjectFactory of = ComponentManager.getObjectFactory();
+		of.start();
+		ITestRpcService src = of.get(ITestRpcService.class);
+		ICheckable c = (ICheckable)src;
+		String msg = c.wayd("How are you");
+		System.out.println(msg);
+		//Utils.getIns().waitForShutdown();
+	}
 }

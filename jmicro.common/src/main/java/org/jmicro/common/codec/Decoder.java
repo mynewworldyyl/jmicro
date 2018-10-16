@@ -60,6 +60,7 @@ public class Decoder {
 		intToclazz.put(maxType++, Boolean.TYPE);
 		intToclazz.put(maxType++, Object.class);
 		intToclazz.put(maxType++, String.class);
+		intToclazz.put(maxType++, ByteBuffer.class);
 		
 		maxType=1;
 		clazzToInt.put(Map.class, maxType++);
@@ -76,6 +77,7 @@ public class Decoder {
 		clazzToInt.put(Boolean.TYPE, maxType++);
 		clazzToInt.put(Object.class, maxType++);
 		clazzToInt.put(String.class, maxType++);
+		clazzToInt.put(ByteBuffer.class,maxType++);
 	}
 	
 	public static void registType(Class<?> clazz){
@@ -87,7 +89,7 @@ public class Decoder {
 		maxType++;
 	}
 	
-	public static int getType(Class<?> cls){
+	 static int getType(Class<?> cls){
 
 		if(cls == Void.TYPE || cls == Void.class) {
 			return clazzToInt.get(Void.TYPE);
@@ -115,21 +117,23 @@ public class Decoder {
 			return clazzToInt.get(Array.class);
 		}else if(cls == String.class) {
 			return clazzToInt.get(String.class);
+		}else if(cls == ByteBuffer.class) {
+			return clazzToInt.get(ByteBuffer.class);
 		}
 	
 		return 0;
 	}
 	
-	public static Class<?> getClass(int type){
+	static Class<?> getClass(int type){
 		return intToclazz.get(type);
 	}
 	
-	public <T> T decode(byte[] buffer) {
+	/*public <T> T decode(byte[] buffer) {
 		//RpcRequest msg = new RpcRequest();
 		ByteBuffer bb = ByteBuffer.wrap(buffer);
 		T msg = decodeObject(bb);
 		return msg;
-	}
+	}*/
 	
 	public static <V> V decodeObject(ByteBuffer buffer){
 		byte prefixCodeType = buffer.get();
@@ -163,8 +167,10 @@ public class Decoder {
 			v =  decodeMap(buffer);
 		}else if(Collection.class == cls){
 			v =  decodeList(buffer);
-		}else if(cls == Array.class){
+		}else if(cls == Array.class || Array.class == cls){
 			v =  decodeObjects(buffer);
+		}else if(cls == ByteBuffer.class){
+			v =  decodeByteBuffer(buffer);
 		}else if(cls == String.class) {
 			v =  decodeString(buffer);
 		}else if(cls == void.class || cls == Void.TYPE || cls == Void.class) {
@@ -192,6 +198,13 @@ public class Decoder {
 		return (V)v;
 	}
 	
+	private static Object decodeByteBuffer(ByteBuffer buffer) {
+		int len = buffer.getInt();
+		byte[] data = new byte[len];
+		buffer.get(data, 0, len);
+		return ByteBuffer.wrap(data);
+	}
+
 	public static List<String>  sortFieldNames(Class cls) {
 		List<String> fieldNames = new ArrayList<>();
 		Field[] fs = cls.getDeclaredFields();

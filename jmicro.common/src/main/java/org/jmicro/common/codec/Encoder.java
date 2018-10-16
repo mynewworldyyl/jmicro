@@ -35,12 +35,12 @@ import org.jmicro.common.util.StringUtils;
  */
 public class Encoder{
 
-	public byte[] encode(Object obj) {
+	/*public byte[] encode(Object obj) {
 		ByteBuffer bb = ByteBuffer.allocate(1024*8);
 		encodeObject(bb,obj);
 		bb.flip();
 		return bb.array();
-	}
+	}*/
 
 	public static <V> void encodeObject(ByteBuffer buffer,V obj){
 	
@@ -48,7 +48,12 @@ public class Encoder{
 			buffer.put(Decoder.PREFIX_TYPE_NULL);
 			return;
 		}
+		
 		Class<?> cls = obj.getClass();
+		if(ByteBuffer.class.isAssignableFrom(cls)){
+			cls = ByteBuffer.class;
+		}
+		
 		Integer type = Decoder.getType(cls);
 		
 		if(type == null || type <= 0) {
@@ -65,7 +70,9 @@ public class Encoder{
 			encodeMap(buffer,(Map<Object,Object>)obj);
 		}else if(Collection.class == cls){
 			 encodeList(buffer,(Collection)obj);
-		}else if(cls == Array.class){
+		}else if(ByteBuffer.class == cls){
+			 encodeByteBuffer(buffer,(ByteBuffer)obj);
+		}else if(cls.isArray() || Array.class == cls){
 			encodeObjects(buffer,(Object[])obj);
 		}else if(cls == String.class) {
 			encodeString(buffer,(String)obj);
@@ -94,6 +101,11 @@ public class Encoder{
 	
 	}
 	
+	private static void encodeByteBuffer(ByteBuffer buffer, ByteBuffer obj) {
+		buffer.putInt(obj.remaining());
+		buffer.put(obj);
+	}
+
 	private static void encodeByReflect(ByteBuffer buffer, Class<?> cls, Integer type,Object obj) {
 		
 		int m = cls.getModifiers() ;
@@ -114,9 +126,9 @@ public class Encoder{
 			try {
 				String fn = fieldNames.get(i);
 				
-				/*if(fn.equals("reqArgsStr")){
-					System.out.println("");
-				}*/
+				if(fn.equals("args")){
+					//System.out.println("args");
+				}
 				
 				Field f = cls.getDeclaredField(fn);
 				

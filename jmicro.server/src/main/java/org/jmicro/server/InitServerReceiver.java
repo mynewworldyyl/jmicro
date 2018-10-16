@@ -35,9 +35,9 @@ public class InitServerReceiver implements IPostFactoryReady{
 	@Override
 	public void ready(IObjectFactory of) {
 		List<IMessageHandler> list = of.getByParent(IMessageHandler.class);
-		ServerReceiver sr = of.get(ServerReceiver.class);
+		ServerMessageReceiver sr = of.get(ServerMessageReceiver.class);
 		for(IMessageHandler h: list){
-			Class<?> tcls = ProxyObject.getTarget(h).getClass();
+			Class<?> tcls = ProxyObject.getTargetCls(h.getClass());
 			if(tcls.isAnnotationPresent(Component.class)){
 				Component anno = tcls.getAnnotation(Component.class);
 				if(anno.active() && Constants.SIDE_PROVIDER.equals(anno.side())){

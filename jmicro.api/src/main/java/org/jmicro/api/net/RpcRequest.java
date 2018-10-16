@@ -16,14 +16,11 @@
  */
 package org.jmicro.api.net;
 
-import java.nio.ByteBuffer;
 import java.util.Map;
 
 import org.jmicro.api.AbstractObjectMapSupport;
 import org.jmicro.api.server.IRequest;
 import org.jmicro.common.Constants;
-import org.jmicro.common.codec.Decoder;
-import org.jmicro.common.codec.Encoder;
 /**
  * 
  * @author Yulei Ye
@@ -57,7 +54,7 @@ public class RpcRequest extends AbstractObjectMapSupport implements IRequest{
 	
 	public RpcRequest(){}
 	
-	@Override
+	/*@Override
 	public void decode(ByteBuffer ois) {
 		super.decode(ois);
 		this.version = Decoder.decodeObject(ois);
@@ -88,12 +85,13 @@ public class RpcRequest extends AbstractObjectMapSupport implements IRequest{
 	@Override
 	public ByteBuffer newBuffer() {
 		return ByteBuffer.allocate(4069);
-	}
+	}*/
 	
 	public Long getMsgId(){
 		if(this.msg != null){
 			return this.msg.getId();
 		}
+		//super.getFloat("", 33F);
 		return -1l;
 	}
 	public boolean isFinish() {

@@ -38,7 +38,8 @@ public @interface Service {
 	
 	public String server() default Constants.DEFAULT_SERVER;
 	
-	public Class<?>[] interfaces() default {};
+	//服务接口，如果类只实现一个接口，则此值可不填
+	public Class<?> infs() default Void.class;
 	
 	public String namespace() default Constants.DEFAULT_NAMESPACE;
 	

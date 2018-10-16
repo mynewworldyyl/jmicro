@@ -16,22 +16,15 @@
  */
 package org.jmicro.api.net;
 
-import java.nio.ByteBuffer;
-
 import org.jmicro.api.AbstractObjectMapSupport;
 import org.jmicro.api.IDable;
-import org.jmicro.api.codec.IEncodable;
 import org.jmicro.api.server.IResponse;
-import org.jmicro.common.codec.Decoder;
-import org.jmicro.common.codec.Encoder;
 /**
  * 
  * @author Yulei Ye
  * @date 2018年10月4日-下午12:07:23
  */
-public class RpcResponse extends AbstractObjectMapSupport implements IEncodable,IResponse,IDable{
-
-	private transient int bufferSize;
+public class RpcResponse extends AbstractObjectMapSupport implements IResponse, /*IEncoder,IResponse,*/IDable{
 	
 	private long id;
 	
@@ -45,19 +38,20 @@ public class RpcResponse extends AbstractObjectMapSupport implements IEncodable,
 	
 	private boolean success = true;
 	
-	public RpcResponse(int bufferSize) {this.bufferSize = bufferSize;}
 	
-	public RpcResponse(long reqId,Object result,int bufferSize){
+	public RpcResponse(long reqId,Object result){
 		this.reqId = reqId;
 		this.result = result;
-		this.bufferSize = bufferSize;
 	}
 	
 	public RpcResponse(long reqId){
 		this.reqId = reqId;
 	}
 	
-	@Override
+	public RpcResponse(){
+	}
+	
+	/*@Override
 	public void decode(ByteBuffer ois) {
 		super.decode(ois);
 		this.id = ois.getLong();
@@ -80,7 +74,7 @@ public class RpcResponse extends AbstractObjectMapSupport implements IEncodable,
 	@Override
 	public ByteBuffer newBuffer() {
 		return ByteBuffer.allocate(bufferSize);
-	}
+	}*/
 
 	public Message getMsg() {
 		return msg;

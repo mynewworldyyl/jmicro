@@ -22,6 +22,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import javax.xml.ws.Response;
+
 import org.jmicro.api.JMicroContext;
 import org.jmicro.api.annotation.Cfg;
 import org.jmicro.api.annotation.Component;
@@ -29,6 +31,7 @@ import org.jmicro.api.annotation.Inject;
 import org.jmicro.api.client.AbstractClientServiceProxy;
 import org.jmicro.api.client.IClientSession;
 import org.jmicro.api.client.IClientSessionManager;
+import org.jmicro.api.codec.ICodecFactory;
 import org.jmicro.api.exception.FusingException;
 import org.jmicro.api.fusing.FuseManager;
 import org.jmicro.api.idgenerator.IIdGenerator;
@@ -61,6 +64,9 @@ public class ServiceInvocationHandler implements InvocationHandler, IMessageHand
 	private final static Logger logger = LoggerFactory.getLogger(ServiceInvocationHandler.class);
 	
 	private final Map<Long,IResponseHandler> waitForResponse = new ConcurrentHashMap<>();
+	
+	@Inject
+	private ICodecFactory codecFactory;
 	
 	@Cfg("/respBufferSize")
 	private int respBufferSize;
@@ -153,12 +159,9 @@ public class ServiceInvocationHandler implements InvocationHandler, IMessageHand
         
         do {
         	
-        	String sn = ProxyObject.getTargetCls(srvClazz).getName();
-			req.getNamespace();
-			req.getVersion();
-			//System.out.println(selector);
+        	//String sn = ProxyObject.getTargetCls(srvClazz).getName();
 			
-        	si = selector.getService(sn,method.getName(),args,req.getNamespace(),req.getVersion());
+        	si = selector.getService(poItem.getServiceName(),method.getName(),args,req.getNamespace(),req.getVersion());
         	
         	if(si ==null) {
         		MonitorConstant.doSubmit(monitor,MonitorConstant.CLIENT_REQ_SERVICE_NOT_FOUND, req, null);
@@ -170,7 +173,7 @@ public class ServiceInvocationHandler implements InvocationHandler, IMessageHand
         		for(ServiceMethod m : si.getMethods()){
         			if(m.getMethodName().equals(method.getName()) 
         					&& m.getMethodParamTypes().equals(t)){
-        				sm=m;
+        				sm = m;
         				break;
         			}
         		}
@@ -196,6 +199,7 @@ public class ServiceInvocationHandler implements InvocationHandler, IMessageHand
     		req.setRequestId(idGenerator.getLongId(IRequest.class));  
     		req.setNamespace(si.getNamespace());
     		req.setVersion(si.getVersion());
+    		req.setImpl(si.getImpl());
     		
     		IClientSession session = this.sessionManager.connect(si.getHost(), si.getPort());
     		req.setSession(session);
@@ -210,7 +214,7 @@ public class ServiceInvocationHandler implements InvocationHandler, IMessageHand
     		msg.setId(this.idGenerator.getLongId(Message.class));
     		msg.setReqId(req.getRequestId());
     		msg.setSessionId(session.getId());
-    		msg.setPayload(req.encode());
+    		msg.setPayload(ICodecFactory.encode(this.codecFactory,req));
     		msg.setVersion(Constants.VERSION_STR);
     		
     		//byte flag = sm.async ? Message.FLAG_ASYNC : 0;
@@ -268,7 +272,7 @@ public class ServiceInvocationHandler implements InvocationHandler, IMessageHand
     		if(respMsg != null){
     			resp = new RpcResponse(respBufferSize);
     			if(respMsg.getPayload() != null){
-    				resp.decode(respMsg.getPayload());
+    				resp=ICodecFactory.decode(this.codecFactory,respMsg.getPayload());
     			}
     			resp.setMsg(respMsg);
     			req.setMsg(msg);

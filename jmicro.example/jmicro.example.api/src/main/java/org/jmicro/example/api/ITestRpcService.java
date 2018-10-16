@@ -5,13 +5,13 @@ import org.jmicro.api.annotation.Service;
 
 @Service
 public interface ITestRpcService {
-
-	String hello(String name);
 	
 	Person getPerson(Person p);
 	
 	void pushMessage(String msg);
 	
 	void subscrite(String msg);
+	
+	String hello(String name);
 	
 }

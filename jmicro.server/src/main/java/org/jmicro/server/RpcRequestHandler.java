@@ -52,10 +52,10 @@ public class RpcRequestHandler extends AbstractHandler implements IRequestHandle
 		Object obj = JMicroContext.get().getObject(Constants.SERVICE_OBJ_KEY, null);
 		RpcResponse resp = null;
 		try {
-			Method m = ServiceLoader.getServiceMethod(this.serviceLoader, request);
+			Method m = ServiceLoader.getServiceMethod(obj, request);
 			if(m != null) {
 				Object result = m.invoke(obj, request.getArgs());
-				resp = new RpcResponse(request.getRequestId(),result,respBufferSize);
+				resp = new RpcResponse(request.getRequestId(),result);
 				resp.setMonitorEnable(request.isMonitorEnable());
 				resp.setSuccess(true);
 			}

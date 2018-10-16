@@ -37,6 +37,7 @@ import java.util.jar.JarFile;
 import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.Name;
 import org.jmicro.api.annotation.PostListener;
+import org.jmicro.api.annotation.Service;
 import org.jmicro.api.config.Config;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -214,6 +215,7 @@ public class ClassScannerUtils {
 	private boolean isComponentClass(Class<?> cls){
 
 		return  cls.isAnnotationPresent(Component.class)
+				||cls.isAnnotationPresent(Service.class)
 				||cls.isAnnotationPresent(PostListener.class)
 				/*||cls.isAnnotationPresent(Name.class)
 				||cls.isAnnotationPresent(Server.class)
@@ -222,7 +224,7 @@ public class ClassScannerUtils {
 				||cls.isAnnotationPresent(Interceptor.class)
 				||cls.isAnnotationPresent(Registry.class)
 				||cls.isAnnotationPresent(Selector.class)
-				||cls.isAnnotationPresent(Service.class)
+				
 				||cls.isAnnotationPresent(ObjFactory.class)
 				||cls.isAnnotationPresent(CodecFactory.class)
 				||cls.isAnnotationPresent(Reference.class)

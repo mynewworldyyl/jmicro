@@ -23,6 +23,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.jmicro.api.JMicroContext;
 import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.Inject;
+import org.jmicro.api.codec.ICodecFactory;
 import org.jmicro.api.idgenerator.IIdGenerator;
 import org.jmicro.api.monitor.IMonitorDataSubmiter;
 import org.jmicro.api.monitor.MonitorConstant;
@@ -42,15 +43,18 @@ import co.paralleluniverse.fibers.Suspendable;
  * @date 2018年10月9日-下午5:51:20
  */
 @Component(lazy=false,active=true,value="serverReceiver",side=Constants.SIDE_PROVIDER)
-public class ServerReceiver implements IMessageReceiver{
+public class ServerMessageReceiver implements IMessageReceiver{
 
-	static final Logger logger = LoggerFactory.getLogger(ServerReceiver.class);
+	static final Logger logger = LoggerFactory.getLogger(ServerMessageReceiver.class);
 	
 	@Inject(required=false)
 	private IMonitorDataSubmiter monitor;
 	
 	@Inject
 	private IIdGenerator idGenerator;
+	
+	@Inject
+	private ICodecFactory codeFactory;
 	
 	/*@Cfg(value="/ServerReceiver/receiveBufferSize")
 	private int receiveBufferSize=1000;*/
@@ -93,7 +97,7 @@ public class ServerReceiver implements IMessageReceiver{
 	@Suspendable
 	private void doReceive(IServerSession s, ByteBuffer data){
 
-		Message msg = new Message();
+        Message msg = new Message();
 		msg.decode(data);
 		
 		if(s.getId() != -1 && msg.getSessionId() != s.getId()) {
