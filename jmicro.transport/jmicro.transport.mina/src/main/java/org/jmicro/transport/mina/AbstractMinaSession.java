@@ -16,6 +16,8 @@
  */
 package org.jmicro.transport.mina;
 
+import java.net.InetSocketAddress;
+
 import org.apache.mina.api.IoSession;
 import org.jmicro.api.net.AbstractSession;
 import org.jmicro.api.net.ISession;
@@ -36,9 +38,11 @@ public abstract class AbstractMinaSession extends AbstractSession implements ISe
 	public IoSession getIoSession() {
 		return ioSession;
 	}
+	
 	public void setIoSession(IoSession ioSession) {
 		this.ioSession = ioSession;
 	}
+	
 	@Override
 	public void close(boolean flag) {
 		this.ioSession.close(true);
@@ -46,6 +50,30 @@ public abstract class AbstractMinaSession extends AbstractSession implements ISe
 	
 	public boolean isClose(){
 		return this.getIoSession().isClosed() || this.getIoSession().isClosing();
+	}
+
+	@Override
+	public String remoteHost() {
+		InetSocketAddress address = (InetSocketAddress)ioSession.getRemoteAddress();
+		return address.getHostString();
+	}
+
+	@Override
+	public int remotePort() {
+		InetSocketAddress address = (InetSocketAddress)ioSession.getRemoteAddress();
+		return address.getPort();
+	}
+
+	@Override
+	public String localHost() {
+		InetSocketAddress address = (InetSocketAddress)ioSession.getLocalAddress();
+		return address.getHostName();
+	}
+
+	@Override
+	public int localPort() {
+		InetSocketAddress address = (InetSocketAddress)ioSession.getLocalAddress();
+		return address.getPort();
 	}
 	
 }

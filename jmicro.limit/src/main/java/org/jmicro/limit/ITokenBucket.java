@@ -14,41 +14,33 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.jmicro.api.net;
-
-import java.nio.ByteBuffer;
-
-import org.jmicro.api.IDable;
+package org.jmicro.limit;
 /**
- * 
+ * 令牌桶
  * @author Yulei Ye
- * @date 2018年10月4日-下午12:06:27
+ * @date 2018年10月17日-上午11:48:53
  */
-public interface ISession extends IDable{
+public interface ITokenBucket {
 	
-	void close(boolean flag);
+	/**
+	 * 申请指定数量的令牌，如果不需要等待则返回0，如果需要等待，则返回实际等待的时间
+	 * @param permits
+	 * @return 返回申请令牌等待的时间，单位是毫秒（MS）
+	 */
+	int applyToken(int permits);
+
+	/**
+	 * 申请指定数量的令牌需要多少时间，如果不需要等待则返回0。
+	 * 等待时间包括等待队列申请许可请求所需要时间。
+	 * @param permits
+	 * @return 返回申请令牌等待的时间，单位是毫秒（MS）
+	 */
+	int howLong(int permits);
 	
-	Object getParam(String key);
-	
-	void putParam(String key,Object obj);
-	
-	ByteBuffer getReadBuffer();
-	
-	//server write response, or client write no need response request
-	void write(ByteBuffer bb);
-	
-	public boolean isClose();
-	
-	void active();
-	
-	boolean isActive();
-	
-	String remoteHost();
-	
-	int remotePort();
-	
-	String localHost();
-	
-	int localPort();
+	/**
+	 * 更新令牌生成速度，只对更新后的请求生效
+	 * @param speed qps
+	 */
+	void updateSpeed(int speed);
 	
 }

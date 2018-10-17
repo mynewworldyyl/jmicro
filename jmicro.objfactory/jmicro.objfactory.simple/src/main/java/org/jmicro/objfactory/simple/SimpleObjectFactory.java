@@ -34,6 +34,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.jmicro.api.ClassScannerUtils;
+import org.jmicro.api.JMicro;
 import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.Inject;
 import org.jmicro.api.annotation.JMethod;
@@ -47,9 +48,7 @@ import org.jmicro.api.objectfactory.IObjectFactory;
 import org.jmicro.api.objectfactory.IPostFactoryReady;
 import org.jmicro.api.objectfactory.IPostInitListener;
 import org.jmicro.api.objectfactory.ProxyObject;
-import org.jmicro.api.registry.ServiceItem;
 import org.jmicro.api.service.IServerServiceProxy;
-import org.jmicro.api.servicemanager.ComponentManager;
 import org.jmicro.common.CommonException;
 import org.jmicro.common.Constants;
 import org.jmicro.common.util.ClassGenerator;
@@ -68,9 +67,11 @@ public class SimpleObjectFactory implements IObjectFactory {
 
 	static AtomicInteger idgenerator = new AtomicInteger();
 	
-	private final static Logger logger = LoggerFactory.getLogger(ComponentManager.class);
+	private final static Logger logger = LoggerFactory.getLogger(SimpleObjectFactory.class);
 	
-	private static boolean isInit = false;
+	private static AtomicInteger isInit = new AtomicInteger(0);
+	
+	private boolean fromLocal = true;
 	
 	private List<IPostFactoryReady> postReadyListeners = new ArrayList<>();
 	
@@ -158,7 +159,10 @@ public class SimpleObjectFactory implements IObjectFactory {
 	}
 	
 	private void checkStatu(){
-		if(!isInit){
+		if(isInit.get() == 1 && fromLocal) {
+			return;
+		}
+		if(isInit.get() < 2){
 			throw new CommonException("Object Factory not init finish");
 		}
 	}
@@ -244,10 +248,17 @@ public class SimpleObjectFactory implements IObjectFactory {
 	}
 
 	public synchronized void start(){
-		if(isInit){
+		if(!isInit.compareAndSet(0, 1)){
+			if(isInit.get() == 1) {
+				synchronized(isInit) {
+					try {
+						isInit.wait();
+					} catch (InterruptedException e) {
+					}
+				}
+			}
 			return;
 		}
-		isInit = true;
 		
 		Set<Class<?>> listeners = ClassScannerUtils.getIns().loadClassByClass(IPostInitListener.class);
 		if(listeners != null && !listeners.isEmpty()) {
@@ -323,7 +334,9 @@ public class SimpleObjectFactory implements IObjectFactory {
 			}
 		});
 		
-		Config cfg = this.get(Config.class);
+		Config cfg = (Config)objs.get(Config.class);
+		
+		//Config cfg = this.get(Config.class);
 		
 		List<IConfigLoader> configLoaders = this.getByParent(IConfigLoader.class);
 		
@@ -351,6 +364,12 @@ public class SimpleObjectFactory implements IObjectFactory {
 			lis.ready(this);
 		}
 		
+		fromLocal = false;
+		
+		isInit.set(2);
+		synchronized(isInit){
+			isInit.notifyAll();
+		}
 	}
 
 	private Object createServiceObject(Class<?> cls, boolean doAfterCreate) {
@@ -616,7 +635,7 @@ public class SimpleObjectFactory implements IObjectFactory {
 						}
 					} else if(l != null && !l.isEmpty()){
 						for(Object s : l) {
-							String n = ComponentManager.getClassAnnoName(s.getClass());
+							String n = JMicro.getClassAnnoName(s.getClass());
 							if(name.equals(n)){
 								srv = s;
 							}
@@ -845,7 +864,7 @@ public class SimpleObjectFactory implements IObjectFactory {
 	    }
 	 
 	 private String getComName(Class<?> cls) {
-		 return ComponentManager.getClassAnnoName(cls);
+		 return JMicro.getClassAnnoName(cls);
 	 }
 	 
 	private void doInit(Object obj) {

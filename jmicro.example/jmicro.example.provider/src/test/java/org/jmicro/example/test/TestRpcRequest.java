@@ -2,9 +2,9 @@ package org.jmicro.example.test;
 
 import java.sql.SQLException;
 
+import org.jmicro.api.JMicro;
 import org.jmicro.api.net.RpcRequest;
 import org.jmicro.api.objectfactory.IObjectFactory;
-import org.jmicro.api.servicemanager.ComponentManager;
 import org.jmicro.common.Utils;
 import org.junit.Test;
 
@@ -47,7 +47,7 @@ public class TestRpcRequest {
 		cfg.setRegistryUrl(new URL("zookeeper","localhost",2180));
 		JMicroContext.setCfg(cfg);*/
 		
-		IObjectFactory of = ComponentManager.getObjectFactory();
+		IObjectFactory of = JMicro.getObjectFactoryAndStart(new String[0]);
 		of.start();
 		Utils.getIns().waitForShutdown();
 	}

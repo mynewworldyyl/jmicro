@@ -38,7 +38,7 @@ import org.jmicro.api.server.IRequest;
  * @date 2018年10月4日-下午12:11:58
  */
 @Component(lazy=false,value="limiterName")
-public class DefaultSpeedLimiter implements ILimiter{
+public class DefaultSpeedLimiter extends AbstractLimiter implements ILimiter{
 	
 	@Inject
 	private IRegistry registry;
@@ -117,7 +117,7 @@ public class DefaultSpeedLimiter implements ILimiter{
 			}
 		}
 		
-		int maxSpeed = sm.getMaxSpeed();
+		float maxSpeed = sm.getMaxSpeed();
 		if(maxSpeed == 0){
 			//not limit
 			return 0;
@@ -146,28 +146,6 @@ public class DefaultSpeedLimiter implements ILimiter{
 		// simple wait 500 ms
 		return 500;
 	}
-	
-
-	private String serviceKey(IRequest req){
-		String key = req.getServiceName()+req.getMethod();
-		if(req.getArgs() == null || req.getArgs().length == 0){
-			return key;
-		}
-		for(Object o: req.getArgs()){
-			key = key + o.getClass().getName();
-		}
-		return key;
-	}
-
-	private ServiceItem getServiceItem(IRequest req) {
-		Set<ServiceItem> sis = registry.getServices(req.getServiceName(),req.getMethod(),req.getArgs(),
-				req.getNamespace(),req.getVersion());
-		if(sis == null || sis.isEmpty()){
-			return null;
-		}
-		return sis.iterator().next();
-	}
-	
 	
 	private void startWorker(){
 		new Thread(()->{

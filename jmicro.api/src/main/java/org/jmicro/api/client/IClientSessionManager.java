@@ -24,13 +24,11 @@ package org.jmicro.api.client;
 public interface IClientSessionManager {
 
 	/**
-	 * 同一个主机和端口的连接，可以在不同的RPC之间做重用，提高请求性能，相当于keepalive属性
+	 * 同一个主机和端口连接，可以在不同的RPC之间做重用，提高请求性能，相当于keepalive属性
 	 * @param host
 	 * @param port
 	 * @return
 	 */
-	IClientSession connect(String host,int port);
-	
-	//void registRespHandler(Long reqId, IResponseHandler handler);
+	IClientSession getOrConnect(String host,int port);
 	
 }

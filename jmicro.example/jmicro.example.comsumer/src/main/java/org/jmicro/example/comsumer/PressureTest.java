@@ -2,17 +2,14 @@ package org.jmicro.example.comsumer;
 
 import java.util.Random;
 
+import org.jmicro.api.JMicro;
 import org.jmicro.api.config.Config;
 import org.jmicro.api.objectfactory.IObjectFactory;
-import org.jmicro.api.servicemanager.ComponentManager;
 
 public class PressureTest {
 
 	public static void main(String[] args) {
-		Config.parseArgs(args);
-		
-		IObjectFactory of = ComponentManager.getObjectFactory();
-		of.start();
+		IObjectFactory of = JMicro.getObjectFactoryAndStart(args);
 		for(int i = 0; i < 1;i++){
 			new Thread(new Worker(of)).start();
 		}

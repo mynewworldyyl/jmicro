@@ -16,6 +16,7 @@
  */
 package org.jmicro.client;
 
+import org.jmicro.api.JMicro;
 import org.jmicro.api.annotation.Cfg;
 import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.Inject;
@@ -28,7 +29,6 @@ import org.jmicro.api.net.Message;
 import org.jmicro.api.net.RpcResponse;
 import org.jmicro.api.registry.ServiceMethod;
 import org.jmicro.api.server.IRequest;
-import org.jmicro.api.servicemanager.ComponentManager;
 import org.jmicro.common.Constants;
 import org.jmicro.common.util.StringUtils;
 import org.slf4j.Logger;
@@ -105,7 +105,7 @@ public class AsyncMessageHandler implements IMessageHandler{
 		methodName = methodName.substring(0,i);
 		*/
 		
-		IMessageCallback callback = (IMessageCallback)ComponentManager.getObjectFactory().getByName(streamCb);
+		IMessageCallback callback = (IMessageCallback)JMicro.getObjectFactory().getByName(streamCb);
 		if(callback == null){
 			logger.error("Service [ "+streamCb+"] not found!");
 			return;

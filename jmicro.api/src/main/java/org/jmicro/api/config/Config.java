@@ -48,7 +48,7 @@ public class Config {
 	
 	private static String[] commandArgs = null;
 	
-	private static String ConfigRoot = "/jmicro/config";
+	private static String ConfigRoot = Constants.CFG_ROOT + "/config";
 	private static String[] BasePackages = {"org.jmicro"};
 	
 	private static Map<String,String> CommadParams = new HashMap<String,String>();

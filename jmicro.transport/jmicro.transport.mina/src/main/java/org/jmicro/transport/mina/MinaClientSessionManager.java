@@ -233,7 +233,7 @@ public class MinaClientSessionManager implements IClientSessionManager{
     }
 
 	@Override
-	public IClientSession connect(String host, int port) {
+	public IClientSession getOrConnect(String host, int port) {
 
 		String sKey = host+port;
 		if(sessions.containsKey(sKey)){

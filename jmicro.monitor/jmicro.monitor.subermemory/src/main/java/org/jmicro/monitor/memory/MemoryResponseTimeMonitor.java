@@ -16,10 +16,15 @@
  */
 package org.jmicro.monitor.memory;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.Queue;
+import java.util.Timer;
+import java.util.TimerTask;
 
 import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.JMethod;
@@ -41,6 +46,12 @@ public class MemoryResponseTimeMonitor implements IMonitorDataSubscriber {
 	
 	private Map<String,Queue<Long>> reqRespAvgs =  new HashMap<String,Queue<Long>>();
 	
+	private Map<String,Long> firstResponseTime =  new HashMap<String,Long>();
+	
+	private List<ServiceStatis> statis = new ArrayList<>(1000);
+	
+	private Timer ticker = new Timer("MemoryResponseTimeMonitor",true);
+	
 	private static class AvgResponseTimeItem {
 		public long reqId;
 		public String service;
@@ -48,14 +59,53 @@ public class MemoryResponseTimeMonitor implements IMonitorDataSubscriber {
 		//public long endtime;
 	}
 	
-	@JMethod("init")
-	public void init() {
-		
+	private static class ServiceStatis {
+		public String service;
+		public long time;
+		//public long endtime;
+		public int avgResponseTime;
+		public double qps;
 	}
 	
+	@JMethod("init")
+	public void init() {
+		ticker.schedule(new TimerTask(){
+			@Override
+			public void run() {
+				for(Map.Entry<String, Queue<Long>> e : reqRespAvgs.entrySet()){
+					
+					String srv = e.getKey();
+					Queue<Long> q = e.getValue();
+					
+					ServiceStatis sts = new ServiceStatis();
+					sts.time = System.currentTimeMillis();
+					sts.service = srv;
+					sts.avgResponseTime = sum(q)/q.size();
+					sts.qps = qps(q,firstResponseTime.get(srv));
+					
+					statis.add(sts);
+				}
+			}	
+		}, 0, 1000);
+	}
+	
+	protected double qps(Queue<Long> q,Long firstTime) {
+		double qps = q.size() / ((System.currentTimeMillis()-firstTime)/1000.0);
+		return qps;
+	}
+
+	protected int sum(Queue<Long> q) {
+		int sum = 0;
+		Iterator<Long> ite = q.iterator();
+		while(ite.hasNext()) {
+			sum += ite.next();
+		}
+		return sum;
+	}
+
 	@Override
 	@SMethod(needResponse=false)
-	public void submit(SubmitItem si) {
+	public void onSubmit(SubmitItem si) {
 		//logger.debug("Service: "+si.getServiceName());
 		if(MonitorConstant.CLIENT_REQ_BEGIN == si.getType()){
 			AvgResponseTimeItem i = new AvgResponseTimeItem();
@@ -69,9 +119,10 @@ public class MemoryResponseTimeMonitor implements IMonitorDataSubscriber {
 			if(i == null){
 				return;
 			}
-			if(reqRespAvgs != null && !reqRespAvgs.containsKey(i.service)) {
+			if(!reqRespAvgs.containsKey(i.service)) {
 				reqRespAvgs.put(i.service, new LinkedList<Long>());
 			}
+			
 			reqRespAvgList.remove(i.reqId);
 			Queue<Long> qtime = reqRespAvgs.get(i.service);
 			qtime.offer(si.getTime()-i.startTime);
@@ -80,6 +131,13 @@ public class MemoryResponseTimeMonitor implements IMonitorDataSubscriber {
 				qtime.poll();
 			}
 		}
+	}
+
+	@Override
+	public Integer[] intrest() {
+		return new Integer[]{MonitorConstant.CLIENT_REQ_BEGIN,
+				MonitorConstant.CLIENT_REQ_OK,
+				MonitorConstant.CLIENT_REQ_ASYNC1_SUCCESS};
 	}
 
 }

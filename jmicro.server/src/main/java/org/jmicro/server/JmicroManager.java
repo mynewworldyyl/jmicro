@@ -23,6 +23,7 @@ import java.util.Queue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
+import org.jmicro.api.JMicro;
 import org.jmicro.api.JMicroContext;
 import org.jmicro.api.annotation.Cfg;
 import org.jmicro.api.annotation.Component;
@@ -41,7 +42,6 @@ import org.jmicro.api.server.IInterceptor;
 import org.jmicro.api.server.IRequest;
 import org.jmicro.api.server.IRequestHandler;
 import org.jmicro.api.server.IResponse;
-import org.jmicro.api.servicemanager.ComponentManager;
 import org.jmicro.common.CommonException;
 import org.jmicro.common.Constants;
 import org.slf4j.Logger;
@@ -175,8 +175,7 @@ public class JmicroManager {
 	
 	private IResponse handler(RpcRequest req) {
 		
-		IRequestHandler handler = ComponentManager.getCommponentManager(IRequestHandler.class)
-				.getComponent(Constants.DEFAULT_HANDLER);
+		IRequestHandler handler = JMicro.getObjectFactory().getByName(Constants.DEFAULT_HANDLER);
 		if(handler == null) {
 			throw new CommonException("Handler ["+Constants.DEFAULT_HANDLER+"]");
 		}
@@ -194,8 +193,7 @@ public class JmicroManager {
 		IInterceptor firstHandler = null;
 		IInterceptor lastHandler = null;
 		
-		Collection<IInterceptor> hs = ComponentManager.getCommponentManager(IInterceptor.class)
-				.getComponents();
+		Collection<IInterceptor> hs = JMicro.getObjectFactory().getByParent(IInterceptor.class);
 		if(hs == null || hs.size() < 2) {
 			throw new CommonException("IInterceptor is NULL");
 		}

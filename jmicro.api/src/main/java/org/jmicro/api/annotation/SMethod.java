@@ -74,7 +74,7 @@ public @interface SMethod {
 	/**
 	 * max qps
 	 */
-	public int maxSpeed() default -1;
+	public String maxSpeed() default "";
 	
 	/**
 	 *  milliseconds

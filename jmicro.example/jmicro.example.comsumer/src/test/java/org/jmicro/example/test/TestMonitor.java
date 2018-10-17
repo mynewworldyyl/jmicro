@@ -1,21 +1,18 @@
 package org.jmicro.example.test;
 
+import org.jmicro.api.JMicro;
 import org.jmicro.api.JMicroContext;
-import org.jmicro.api.config.Config;
 import org.jmicro.api.monitor.IMonitorDataSubmiter;
 import org.jmicro.api.monitor.MonitorConstant;
 import org.jmicro.api.objectfactory.IObjectFactory;
-import org.jmicro.api.servicemanager.ComponentManager;
 import org.junit.Test;
 
 public class TestMonitor {
 
 	@Test
 	public void testMonitor01() {
-		Config.parseArgs(new String[0]);
 		
-		IObjectFactory of = ComponentManager.getObjectFactory();
-		of.start();
+		IObjectFactory of = JMicro.getObjectFactoryAndStart(new String[0]);
 		
 		JMicroContext.get().configMonitor(1, 1);
 		IMonitorDataSubmiter monitor = of.get(IMonitorDataSubmiter.class);

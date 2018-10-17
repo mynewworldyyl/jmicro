@@ -16,7 +16,9 @@
  */
 package org.jmicro.monitor.submiter;
 
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -26,15 +28,15 @@ import org.jmicro.api.JMicroContext;
 import org.jmicro.api.annotation.Cfg;
 import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.Reference;
-import org.jmicro.api.monitor.IMonitorDataSubscriber;
 import org.jmicro.api.monitor.IMonitorDataSubmiter;
+import org.jmicro.api.monitor.IMonitorDataSubscriber;
 import org.jmicro.api.monitor.SubmitItem;
 import org.jmicro.api.server.IRequest;
 import org.jmicro.api.server.IResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 /**
- * 
  * @author Yulei Ye
  * @date 2018年10月5日-下午12:50:59
  */
@@ -68,6 +70,8 @@ public class SubmitItemHolderManager implements IMonitorDataSubmiter{
 	//配置方式参数Reference注解说明
 	@Reference(version="0.0.0",required=false,changeListener="startWork")
 	private Set<IMonitorDataSubscriber> submiters = new HashSet<>();
+	
+	private Map<Integer,Set<IMonitorDataSubscriber>> type2Subscribers = new HashMap<>();
 	
 	private Worker[] workers = null;
 	
@@ -104,7 +108,22 @@ public class SubmitItemHolderManager implements IMonitorDataSubmiter{
 		this.workers = ws;
 	}
 	
+	private void updateSubmiterList(){
+		if(!submiters.isEmpty()){
+			for(IMonitorDataSubscriber m : this.submiters){
+				Integer[] types = m.intrest();
+				for(Integer t : types) {
+					if(!type2Subscribers.containsKey(t)){
+						type2Subscribers.put(t, new HashSet<IMonitorDataSubscriber>());
+					}
+					type2Subscribers.get(t).add(m);
+				}
+			}
+		}
+	}
+	
 	public synchronized void init(){
+		updateSubmiterList();
 		if(NON == status){
 			status = INITED;
 			workers = new Worker[threadSize];
@@ -115,6 +134,7 @@ public class SubmitItemHolderManager implements IMonitorDataSubmiter{
 	}
 	
 	public synchronized void startWork() {
+		updateSubmiterList();
 		if(NON == status){
 			init();
 		}
@@ -149,8 +169,9 @@ public class SubmitItemHolderManager implements IMonitorDataSubmiter{
 					
 					//JMicroContext.get().configMonitor(0, 0);
 					for(SubmitItem si = its.poll();si != null;si = its.poll()){
-						for(IMonitorDataSubscriber m : submiters){
-							m.submit(si);
+						Set<IMonitorDataSubscriber> ss = type2Subscribers.get(si.getType());
+						for(IMonitorDataSubscriber m : ss){
+							m.onSubmit(si);
 						}
 						cache(si);
 					}
@@ -185,6 +206,14 @@ public class SubmitItemHolderManager implements IMonitorDataSubmiter{
 
 	public void submit(int type,IRequest req, IResponse resp,Object... args){
 		if(!enable || size() > this.maxCacheItems){
+			return;
+		}
+		
+		if(!type2Subscribers.containsKey(type)) {
+			return;
+		}
+		
+		if(type2Subscribers.get(type).isEmpty()) {
 			return;
 		}
 		

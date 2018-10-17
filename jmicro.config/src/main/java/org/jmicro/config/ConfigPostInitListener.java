@@ -28,18 +28,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.apache.curator.framework.api.GetDataBuilder;
 import org.apache.zookeeper.KeeperException;
-import org.apache.zookeeper.WatchedEvent;
-import org.apache.zookeeper.Watcher;
-import org.apache.zookeeper.Watcher.Event.EventType;
 import org.jmicro.api.annotation.Cfg;
 import org.jmicro.api.annotation.PostListener;
 import org.jmicro.api.config.Config;
 import org.jmicro.api.objectfactory.PostInitListenerAdapter;
 import org.jmicro.api.objectfactory.ProxyObject;
 import org.jmicro.api.raft.IDataListener;
-import org.jmicro.api.servicemanager.ComponentManager;
 import org.jmicro.common.CommonException;
 import org.jmicro.common.util.StringUtils;
 import org.jmicro.zk.ZKDataOperator;

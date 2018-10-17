@@ -53,10 +53,13 @@ public class ServiceMethod {
 	 * with this arguments to invoke the service method
 	 */
 	private String testingArgs;
+	
 	/**
 	 * max qps
 	 */
-	private int maxSpeed;
+	private int maxSpeed = -1;
+	
+	private String speedUnit = "MS";
 	
 	/**
 	 *  milliseconds
@@ -209,6 +212,10 @@ public class ServiceMethod {
 		return "";
 	}
 	
+	public String methodKey(){
+		return this.methodName+"|"+this.methodParamTypes;
+	}
+	
 	public boolean isFusing() {
 		return fusing;
 	}
@@ -223,14 +230,6 @@ public class ServiceMethod {
 
 	public void setDegrade(int degrade) {
 		this.degrade = degrade;
-	}
-
-	public int getMaxSpeed() {
-		return maxSpeed;
-	}
-
-	public void setMaxSpeed(int maxSpeed) {
-		this.maxSpeed = maxSpeed;
 	}
 
 	public int getAvgResponseTime() {
@@ -259,6 +258,22 @@ public class ServiceMethod {
 
 	public int getRetryCnt() {
 		return retryCnt;
+	}
+
+	public int getMaxSpeed() {
+		return maxSpeed;
+	}
+
+	public void setMaxSpeed(int maxSpeed) {
+		this.maxSpeed = maxSpeed;
+	}
+
+	public String getSpeedUnit() {
+		return speedUnit;
+	}
+
+	public void setSpeedUnit(String speedUnit) {
+		this.speedUnit = speedUnit;
 	}
 
 	public void setRetryCnt(int retryCnt) {

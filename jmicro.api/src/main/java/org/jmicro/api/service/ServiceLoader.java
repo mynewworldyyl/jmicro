@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.jmicro.api.servicemanager;
+package org.jmicro.api.service;
 
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -25,6 +25,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.jmicro.api.ClassScannerUtils;
+import org.jmicro.api.JMicro;
 import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.Inject;
 import org.jmicro.api.annotation.JMethod;
@@ -37,9 +38,7 @@ import org.jmicro.api.registry.ServiceItem;
 import org.jmicro.api.registry.ServiceMethod;
 import org.jmicro.api.server.IRequest;
 import org.jmicro.api.server.IServer;
-import org.jmicro.api.service.IServerServiceProxy;
 import org.jmicro.common.CommonException;
-import org.jmicro.common.Constants;
 import org.jmicro.common.util.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -167,11 +166,6 @@ public class ServiceLoader {
 			logger.error("class "+srvCls.getName()+" is not service");
 			return;
 		}
-		Service srvAnno = srvCls.getAnnotation(Service.class);
-		IRegistry registry = ComponentManager.getRegistry(srvAnno.registry());
-		if(registry == null){
-			registry = this.registry;
-		}
 		registry.regist(item);
 	}
 	
@@ -192,8 +186,6 @@ public class ServiceLoader {
 			interfaces = ints[0] ;
 		}
 		
-		IServer server = this.getServer(srvCls);
-		
 		String addr = server.host();
 		int port = server.port();
 		
@@ -213,7 +205,8 @@ public class ServiceLoader {
 		item.setRetryInterval(anno.retryInterval());
 		item.setTestingArgs(anno.testingArgs());
 		item.setTimeout(anno.timeout());
-		item.setMaxSpeed(anno.maxSpeed());
+		item.setMaxSpeed(this.parseSpeed(anno.maxSpeed()));
+		item.setSpeedUnit(this.parseSpeedUnit(anno.maxSpeed()));
 		item.setAvgResponseTime(anno.avgResponseTime());
 		item.setMonitorEnable(anno.monitorEnable());
 		
@@ -226,6 +219,7 @@ public class ServiceLoader {
 		checkMethod.setTestingArgs("What are you doing?");
 		checkMethod.setTimeout(anno.timeout());
 		checkMethod.setMaxSpeed(1000);
+		checkMethod.setSpeedUnit("ms");
 		checkMethod.setAvgResponseTime(anno.avgResponseTime());
 		checkMethod.setMonitorEnable(anno.monitorEnable());
 		checkMethod.setMethodName("wayd");
@@ -251,7 +245,8 @@ public class ServiceLoader {
 				sm.setRetryInterval(manno.retryInterval());
 				sm.setTestingArgs(manno.testingArgs());
 				sm.setTimeout(manno.timeout());
-				sm.setMaxSpeed(manno.maxSpeed());
+				sm.setMaxSpeed(this.parseSpeed(manno.maxSpeed()));
+				sm.setSpeedUnit(this.parseSpeedUnit(manno.maxSpeed()));
 				sm.setAvgResponseTime(manno.avgResponseTime());
 				sm.setMonitorEnable(manno.monitorEnable());
 				
@@ -273,10 +268,10 @@ public class ServiceLoader {
 				sm.setRetryInterval(manno.retryInterval());
 				sm.setTestingArgs(manno.testingArgs());
 				sm.setTimeout(manno.timeout());
-				sm.setMaxSpeed(manno.maxSpeed());
+				sm.setMaxSpeed(this.parseSpeed(manno.maxSpeed()));
+				sm.setSpeedUnit(this.parseSpeedUnit(manno.maxSpeed()));
 				sm.setAvgResponseTime(manno.avgResponseTime());
 				sm.setMonitorEnable(manno.monitorEnable());
-				
 				sm.setStreamCallback(manno.streamCallback());
 				sm.setNeedResponse(manno.needResponse());
 			} else {
@@ -286,7 +281,8 @@ public class ServiceLoader {
 				sm.setRetryInterval(anno.retryInterval());
 				sm.setTestingArgs(anno.testingArgs());
 				sm.setTimeout(anno.timeout());
-				sm.setMaxSpeed(anno.maxSpeed());
+				sm.setMaxSpeed(this.parseSpeed(anno.maxSpeed()));
+				sm.setSpeedUnit(this.parseSpeedUnit(anno.maxSpeed()));
 				sm.setAvgResponseTime(anno.avgResponseTime());
 				sm.setMonitorEnable(anno.monitorEnable());
 			}
@@ -298,6 +294,30 @@ public class ServiceLoader {
 		return item;
 	}
 	
+	private String parseSpeedUnit(String maxSpeed) {
+		if(StringUtils.isEmpty(maxSpeed)){
+			return "";
+		}
+		maxSpeed = maxSpeed.trim().toLowerCase();
+		if(maxSpeed.endsWith("ms") || maxSpeed.endsWith("ns") ){
+			return maxSpeed.substring(maxSpeed.length()-2, maxSpeed.length());
+		}else {
+			return maxSpeed.substring(maxSpeed.length()-1, maxSpeed.length());
+		}
+	}
+
+	private int parseSpeed(String maxSpeed) {
+		if(StringUtils.isEmpty(maxSpeed)){
+			return 0;
+		}
+		maxSpeed = maxSpeed.trim().toLowerCase();
+		if(maxSpeed.endsWith("ms") || maxSpeed.endsWith("ns") ){
+			return Integer.parseInt(maxSpeed.substring(0, maxSpeed.length()-2));
+		}else {
+			return Integer.parseInt(maxSpeed.substring(0, maxSpeed.length()-1));
+		}
+	}
+
 	private void checkStreamCallback(String streamCb) {
 		if(StringUtils.isEmpty(streamCb)){
 			return;
@@ -332,28 +352,13 @@ public class ServiceLoader {
 		}
 		
 	}
-
-	private IServer getServer(Class<?> srvCls){
-		srvCls = ProxyObject.getTargetCls(srvCls);
-		Service srvAnno = srvCls.getAnnotation(Service.class);
-		String serverName = srvAnno.server();
-		if(StringUtils.isEmpty(serverName)) {
-			serverName = Constants.DEFAULT_SERVER;
-		}
-		
-		IServer server = ComponentManager.getCommponentManager(IServer.class).getComponent(serverName);
-		if(server == null){
-			return this.server;
-		}
-		return server;
-	}
 	
 	private String serviceName(Class<?> c) {
 		return c.getName();
 	}
 
 	private Object createService(Class<?> class1) {
-		Object srv = ComponentManager.getObjectFactory().get(class1);
+		Object srv = JMicro.getObjectFactory().get(class1);
 		if(srv != null) {
 			services.put(class1.getName(), srv);
 		}

@@ -21,6 +21,7 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.jmicro.api.JMicro;
 import org.jmicro.api.JMicroContext;
 import org.jmicro.api.annotation.Cfg;
 import org.jmicro.api.annotation.Component;
@@ -45,8 +46,7 @@ import org.jmicro.api.server.IRequest;
 import org.jmicro.api.server.IRequestHandler;
 import org.jmicro.api.server.IResponse;
 import org.jmicro.api.server.IWriteCallback;
-import org.jmicro.api.servicemanager.ComponentManager;
-import org.jmicro.api.servicemanager.ServiceLoader;
+import org.jmicro.api.service.ServiceLoader;
 import org.jmicro.common.CommonException;
 import org.jmicro.common.Constants;
 import org.slf4j.Logger;
@@ -247,11 +247,9 @@ public class JRPCReqRespHandler implements IMessageHandler{
     	} else {
     		String handlerKey = JMicroContext.get().getString(Constants.DEFAULT_HANDLER,
     				Constants.DEFAULT_HANDLER);
-    		handler = ComponentManager.getCommponentManager(IRequestHandler.class)
-    				.getComponent(handlerKey);
+    		handler = JMicro.getObjectFactory().getByName(handlerKey);
     		if(handler == null){
-    			handler = ComponentManager.getCommponentManager(IRequestHandler.class)
-        				.getComponent(Constants.DEFAULT_HANDLER);
+    			handler = JMicro.getObjectFactory().getByName(Constants.DEFAULT_HANDLER);
     		}
     		if(handler == null){
     			throw new CommonException("JRPC Handler ["+handlerKey + " not found]");
@@ -272,8 +270,7 @@ public class JRPCReqRespHandler implements IMessageHandler{
 		IInterceptor firstHandler = null;
 		IInterceptor lastHandler = null;
 		
-		Collection<IInterceptor> hs = ComponentManager.getCommponentManager(IInterceptor.class)
-				.getComponents();
+		Collection<IInterceptor> hs = JMicro.getObjectFactory().getByParent(IInterceptor.class);
 		if(hs == null || hs.size() < 2) {
 			throw new CommonException("IInterceptor is NULL");
 		}

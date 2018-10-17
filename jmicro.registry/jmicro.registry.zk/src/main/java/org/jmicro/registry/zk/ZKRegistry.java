@@ -119,13 +119,16 @@ public class ZKRegistry implements IRegistry {
 		
 	}
 
-	protected void updateItem(String path, String data) {
+	protected void updateItem(String configPath, String data) {
 		ServiceItem si = this.fromJson(data);
-		String p = si.key(ServiceItem.ROOT);
-		this.path2Items.put(p, si);
+		//String p = si.key(ServiceItem.ROOT);
+		//this.path2Items.put(p, si);
+		
 		Set<ServiceItem> items = this.serviceItems.get(si.serviceName());
-		if(items != null){
-			items.add(si);
+		if(items != null && !items.isEmpty()){
+			for(ServiceItem ei: items) {
+				ei.formPersisItem(si);
+			}
 		}
 		notifyServiceChange(IServiceListener.SERVICE_DATA_CHANGE,si);
 		notifyServiceNameChange(IServiceListener.SERVICE_DATA_CHANGE,si);

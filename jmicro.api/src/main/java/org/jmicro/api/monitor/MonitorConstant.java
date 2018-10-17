@@ -34,19 +34,30 @@ public interface MonitorConstant {
 	}
 	
     public static final int ALL  = 0X7FFFFFFF;
-	
+	//请求开始
 	public static final int CLIENT_REQ_BEGIN  = 0X7FFFFFF1;
+	//请求超时
 	public static final int CLIENT_REQ_TIMEOUT = 0X7FFFFFF2;
+	//请求的服务未找到，注册表里面没有相应的服务
 	public static final int CLIENT_REQ_SERVICE_NOT_FOUND = 0X7FFFFFF3;
+	//服务熔断
 	public static final int CLIENT_REQ_SERVICE_FUSING = 0X7FFFFFF4;
+	//请好正常返回，包括异步请求正常返回的确认包
 	public static final int CLIENT_REQ_OK = 0X7FFFFFF6;
+	//请求超时，并且经过重试指定次数之后都没成功，返回失败
 	public static final int CLIENT_REQ_TIMEOUT_FAIL = 0X7FFFFFFA;
+	//请求服务存在，但是服务不存在此方法，此种情况应该永远不存在
 	public static final int CLIENT_REQ_METHOD_NOT_FOUND = 0X7FFFFFF7;
-	public static final int CLIENT_REQ_HAVE_FINISH = 0X7FFFFFF8;
+	//public static final int CLIENT_REQ_HAVE_FINISH = 0X7FFFFFF8;
+	//请求重试
 	public static final int CLIENT_REQ_RETRY = 0X7FFFFFF9;
+	//请求连接失败
 	public static final int CLIENT_REQ_CONN_FAIL = 0X7FFFFFFB;
+	//请求连接关闭
 	public static final int CLIENT_REQ_CONN_CLOSE = 0X7FFFFFFC;
+	//请求异常
 	public static final int CLIENT_REQ_EXCEPTION_ERR = 0X7FFFFFF5;
+	//请求业务错误
 	public static final int CLIENT_REQ_BUSSINESS_ERR = 0X7FFFFFFD;
 	
 	public static final int CLIENT_REQ_ASYNC1_SUCCESS= 0X7FFFFFFE;

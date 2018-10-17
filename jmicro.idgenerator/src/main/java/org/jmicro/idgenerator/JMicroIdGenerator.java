@@ -29,7 +29,7 @@ import org.jmicro.common.Constants;
 @Component(value=Constants.DEFAULT_IDGENERATOR,level=20)
 public class JMicroIdGenerator implements IIdGenerator {
 	
-	private static String ID_IDR = "/jmicro/id/";
+	private static String ID_IDR = Constants.CFG_ROOT + "/id/";
 	
 	@Inject
 	private IDataOperator dataOperator;

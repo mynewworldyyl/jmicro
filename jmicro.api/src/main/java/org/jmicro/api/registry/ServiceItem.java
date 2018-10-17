@@ -37,9 +37,9 @@ public class ServiceItem{
 
 	private final static Logger logger = LoggerFactory.getLogger(ServiceItem.class);
 	
-	public static final String ROOT="/jmicro/service";
+	public static final String ROOT = Constants.CFG_ROOT + "/service";
 	
-	public static final String PERSIS_ROOT="/jmicro/srvconfig";
+	public static final String PERSIS_ROOT = Constants.CFG_ROOT + "/srvconfig";
 	
 	public static final String FILE_SEPERATOR="/";
 	
@@ -107,9 +107,13 @@ public class ServiceItem{
 	private int degrade = -1;
 	
 	/**
-	 * max qps
+	 * 单位时间处理速度，类似QPS，但是间单位可定制
+	 *  时间单位：H：小时， M： 分钟， S：秒 ，MS：毫少，NS：纳秒
+	 *  如90S，表示每秒钟处理90个请求，20M，表示每分钟处理20个请求，数字只能为整数，不能是小数
 	 */
 	private int maxSpeed = -1;
+	
+	private String speedUnit = "MS";
 	
 	/**
 	 *  milliseconds
@@ -179,9 +183,6 @@ public class ServiceItem{
 		this.degrade = degrade;
 	}
 
-	public int getMaxSpeed() {
-		return maxSpeed;
-	}
 
 	public int getMonitorEnable() {
 		return monitorEnable;
@@ -189,10 +190,6 @@ public class ServiceItem{
 
 	public void setMonitorEnable(int monitorEnable) {
 		this.monitorEnable = monitorEnable;
-	}
-
-	public void setMaxSpeed(int maxSpeed) {
-		this.maxSpeed = maxSpeed;
 	}
 
 	public int getAvgResponseTime() {
@@ -424,6 +421,22 @@ public class ServiceItem{
 		if(namespace != null && !"".equals(namespace.trim())){
 			this.namespace = namespace;
 		}
+	}
+
+	public int getMaxSpeed() {
+		return maxSpeed;
+	}
+
+	public void setMaxSpeed(int maxSpeed) {
+		this.maxSpeed = maxSpeed;
+	}
+
+	public String getSpeedUnit() {
+		return speedUnit;
+	}
+
+	public void setSpeedUnit(String speedUnit) {
+		this.speedUnit = speedUnit;
 	}
 
 	public String getVersion() {

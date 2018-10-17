@@ -91,7 +91,8 @@ public class ServerMessageReceiver implements IMessageReceiver{
 			}
 		}
 		//直接协程处理，IO LOOP线程返回
-		new Fiber<Void>(() ->doReceive((IServerSession)s,data)).start();
+		//new Fiber<Void>(() ->doReceive((IServerSession)s,data)).start();
+		new Thread(()->{doReceive((IServerSession)s,data);}).start();
 	}
 	
 	@Suspendable
@@ -99,6 +100,8 @@ public class ServerMessageReceiver implements IMessageReceiver{
 
         Message msg = new Message();
 		msg.decode(data);
+		
+		logger.debug("doReceive reqID: "+msg.getReqId());
 		
 		if(s.getId() != -1 && msg.getSessionId() != s.getId()) {
 			String msg1 = "Ignore MSG" + msg.getId() + "Rec session ID: "+msg.getSessionId()+",but this session ID: "+s.getId();

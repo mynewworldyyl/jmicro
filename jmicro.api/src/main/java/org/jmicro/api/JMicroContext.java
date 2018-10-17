@@ -20,7 +20,6 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.jmicro.api.config.Config;
-import org.jmicro.api.servicemanager.ComponentManager;
 import org.jmicro.common.Constants;
 /**
  * 
@@ -83,7 +82,7 @@ public class JMicroContext  {
 	}
 	
 	public Boolean isMonitor(){
-		Config cfg = ComponentManager.getObjectFactory().get(Config.class);
+		Config cfg = JMicro.getObjectFactory().get(Config.class);
 		return cfg.getBoolean(Constants.MONITOR_ENABLE_KEY,false);
 	}
 	

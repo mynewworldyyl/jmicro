@@ -1,9 +1,8 @@
 package org.jmicro.example.test;
 
-import org.jmicro.api.config.Config;
+import org.jmicro.api.JMicro;
 import org.jmicro.api.objectfactory.IObjectFactory;
 import org.jmicro.api.service.ICheckable;
-import org.jmicro.api.servicemanager.ComponentManager;
 import org.jmicro.common.Utils;
 import org.jmicro.example.api.ITestRpcService;
 import org.jmicro.example.comsumer.TestRpcClient;
@@ -23,14 +22,13 @@ public class TestRpcRequest {
 	
 	@Test
 	public void testRpcClient() {
-		TestRpcClient src = ComponentManager.getObjectFactory().get(TestRpcClient.class);
+		TestRpcClient src = JMicro.getObjectFactoryAndStart(new String[0]).get(TestRpcClient.class);
 		src.invokeRpcService();	
 	}
 	
 	@Test
 	public void testInvokePersonService() {
-		Config.parseArgs(new String[0]);
-		IObjectFactory of = ComponentManager.getObjectFactory();
+		IObjectFactory of = JMicro.getObjectFactoryAndStart(new String[0]);
 		of.start();
 		TestRpcClient src = of.get(TestRpcClient.class);
 		src.invokePersonService();
@@ -38,8 +36,7 @@ public class TestRpcRequest {
 	
 	@Test
 	public void testNoNeedRespService() {
-		Config.parseArgs(new String[0]);
-		IObjectFactory of = ComponentManager.getObjectFactory();
+		IObjectFactory of = JMicro.getObjectFactoryAndStart(new String[0]);
 		of.start();
 		ITestRpcService src = of.get(ITestRpcService.class);
 		src.pushMessage("Hello Server");
@@ -48,8 +45,7 @@ public class TestRpcRequest {
 	
 	@Test
 	public void testStreamService() {
-		Config.parseArgs(new String[0]);
-		IObjectFactory of = ComponentManager.getObjectFactory();
+		IObjectFactory of = JMicro.getObjectFactoryAndStart(new String[0]);
 		of.start();
 		ITestRpcService src = of.get(ITestRpcService.class);
 		src.subscrite("Hello ");;
@@ -58,8 +54,7 @@ public class TestRpcRequest {
 	
 	@Test
 	public void testCheckable() {
-		Config.parseArgs(new String[0]);
-		IObjectFactory of = ComponentManager.getObjectFactory();
+		IObjectFactory of = JMicro.getObjectFactoryAndStart(new String[0]);
 		of.start();
 		ITestRpcService src = of.get(ITestRpcService.class);
 		ICheckable c = (ICheckable)src;

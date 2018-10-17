@@ -35,7 +35,6 @@ import org.jmicro.api.objectfactory.ProxyObject;
 import org.jmicro.api.registry.IRegistry;
 import org.jmicro.api.registry.ServiceItem;
 import org.jmicro.api.service.ICheckable;
-import org.jmicro.api.servicemanager.ComponentManager;
 import org.jmicro.common.CommonException;
 import org.jmicro.common.Constants;
 import org.jmicro.common.util.ClassGenerator;
@@ -102,7 +101,7 @@ class ClientServiceProxyManager {
 		Reference ref = f.getAnnotation(Reference.class);
 		Class<?> type = f.getType();
 		
-		IRegistry registry = ComponentManager.getRegistry(null);
+		IRegistry registry = of.get(IRegistry.class);
 		
 		if(List.class.isAssignableFrom(type) || Set.class.isAssignableFrom(type)){
 			//集合服务引用
@@ -168,7 +167,7 @@ class ClientServiceProxyManager {
 		
 		setHandler(proxy,key,si);
 		
-		IRegistry registry = ComponentManager.getRegistry(null);
+		IRegistry registry = of.get(IRegistry.class);
 		RemoteProxyServiceListener lis = new RemoteProxyServiceListener(this,proxy,srcObj,f);
 		registry.addServiceListener(ServiceItem.serviceName(f.getType().getName(),ref.namespace(),ref.version()), lis);
 			
@@ -201,7 +200,7 @@ class ClientServiceProxyManager {
 		Class<?> ctype = getEltType(f);
 		
 		Class<?> type = f.getType();
-		IRegistry registry = ComponentManager.getRegistry(null);
+		IRegistry registry = of.get(IRegistry.class);
 		
 		if(!registry.isExist(f.getType().getName(), ref.namespace(),ref.version()) && ref.required()) {
 			StringBuffer sb = new StringBuffer("Class [");
@@ -296,7 +295,7 @@ class ClientServiceProxyManager {
 		
 		Service srvAnno = cls.getAnnotation(Service.class);
 		
-		IRegistry registry = ComponentManager.getRegistry(null);
+		IRegistry registry = of.get(IRegistry.class);
 		Set<ServiceItem> items = registry.getServices(
 				cls.getName(),ServiceItem.namespace(srvAnno.namespace())
 				,ServiceItem.version(srvAnno.version()));

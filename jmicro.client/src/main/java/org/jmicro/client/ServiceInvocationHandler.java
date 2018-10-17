@@ -63,7 +63,7 @@ public class ServiceInvocationHandler implements InvocationHandler, IMessageHand
 	
 	private final static Logger logger = LoggerFactory.getLogger(ServiceInvocationHandler.class);
 	
-	private final Map<Long,IResponseHandler> waitForResponse = new ConcurrentHashMap<>();
+	private volatile Map<Long,IResponseHandler> waitForResponse = new ConcurrentHashMap<>();
 	
 	@Inject
 	private ICodecFactory codecFactory;
@@ -98,18 +98,10 @@ public class ServiceInvocationHandler implements InvocationHandler, IMessageHand
 	public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
 		AbstractClientServiceProxy po = (AbstractClientServiceProxy)proxy;
         String methodName = method.getName();
-        Class<?>[] parameterTypes = method.getParameterTypes();
+       // Class<?>[] parameterTypes = method.getParameterTypes();
         if (method.getDeclaringClass() == Object.class) {
-            return method.invoke(target, args);
-        }
-        if ("toString".equals(methodName) && parameterTypes.length == 0) {
-            return target.toString();
-        }
-        if ("hashCode".equals(methodName) && parameterTypes.length == 0) {
-            return target.hashCode();
-        }
-        if ("equals".equals(methodName) && parameterTypes.length == 1) {
-            return target.equals(args[0]);
+           throw new CommonException("Invalid invoke ["
+        		   +method.getDeclaringClass().getName()+"] for method [ "+methodName+"]");
         }
 
         Class<?> clazz = method.getDeclaringClass();
@@ -123,7 +115,6 @@ public class ServiceInvocationHandler implements InvocationHandler, IMessageHand
 			MonitorConstant.doSubmit(monitor,MonitorConstant.CLIENT_REQ_SERVICE_FUSING,null, null, e);
 			return fuseManager.onFusing(method, args, ((FusingException)e).getSis());
 		}
-    
 	}
 
 	private Object doRequest(Method method, Object[] args, Class<?> srvClazz,AbstractClientServiceProxy proxy) {
@@ -141,11 +132,10 @@ public class ServiceInvocationHandler implements InvocationHandler, IMessageHand
 		
 		RpcRequest req = new RpcRequest();
         req.setMethod(method.getName());
-        req.setServiceName(method.getDeclaringClass().getName());
+        req.setServiceName(poItem.getServiceName());
         req.setArgs(args);
-        req.setNamespace(poItem.getNamespace());
-        req.setVersion(poItem.getVersion());
         req.setMonitorEnable(JMicroContext.get().isMonitor());
+        req.setRequestId(idGenerator.getLongId(IRequest.class));
         
         ServerError se = null;
         		
@@ -160,7 +150,7 @@ public class ServiceInvocationHandler implements InvocationHandler, IMessageHand
         do {
         	
         	//String sn = ProxyObject.getTargetCls(srvClazz).getName();
-			
+			//此方法可能抛出FusingException
         	si = selector.getService(poItem.getServiceName(),method.getName(),args,req.getNamespace(),req.getVersion());
         	
         	if(si ==null) {
@@ -196,12 +186,12 @@ public class ServiceInvocationHandler implements InvocationHandler, IMessageHand
         	}
     		
     		//req.setImpl(si.getImpl());
-    		req.setRequestId(idGenerator.getLongId(IRequest.class));  
     		req.setNamespace(si.getNamespace());
     		req.setVersion(si.getVersion());
     		req.setImpl(si.getImpl());
     		
-    		IClientSession session = this.sessionManager.connect(si.getHost(), si.getPort());
+    		
+    		IClientSession session = this.sessionManager.getOrConnect(si.getHost(), si.getPort());
     		req.setSession(session);
     		
     		if(isFistLoop){
@@ -246,6 +236,7 @@ public class ServiceInvocationHandler implements InvocationHandler, IMessageHand
     			//超时重试不需要重复注册监听器
     			waitForResponse.put(req.getRequestId(), (message)->{
     				result.put("msg", message);
+    				//在请求响应之间做同步
     				synchronized(req) {
         				req.notify();
         			}
@@ -272,7 +263,7 @@ public class ServiceInvocationHandler implements InvocationHandler, IMessageHand
     		if(respMsg != null){
     			resp = new RpcResponse(respBufferSize);
     			if(respMsg.getPayload() != null){
-    				resp=ICodecFactory.decode(this.codecFactory,respMsg.getPayload());
+    				resp = ICodecFactory.decode(this.codecFactory,respMsg.getPayload());
     			}
     			resp.setMsg(respMsg);
     			req.setMsg(msg);

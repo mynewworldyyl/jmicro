@@ -22,6 +22,8 @@ package org.jmicro.common;
  */
 public interface Constants {
 
+	public static final String CFG_ROOT="/jmicro";
+	
 	public static final String SIDE_COMSUMER = "comsumer";
 	public static final String SIDE_PROVIDER="provider";
 	public static final String SIDE_ANY="";
@@ -55,7 +57,7 @@ public interface Constants {
 	public static final String CHARSET="UTF-8";
 	public static final String SESSION_KEY="_sessionKey";
 	
-	public static final String CONFIG_ROOT="/jmicro/config";
+	public static final String CONFIG_ROOT = CFG_ROOT + "/config";
 	public static final String CONFIG_ROOT_KEY="configRoot";
 	public static final String REGISTRY_URL_KEY="registryUrl";
 	public static final String BASE_PACKAGES_KEY="basePackages";

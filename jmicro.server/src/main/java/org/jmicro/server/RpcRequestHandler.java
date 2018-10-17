@@ -30,7 +30,7 @@ import org.jmicro.api.server.AbstractHandler;
 import org.jmicro.api.server.IRequest;
 import org.jmicro.api.server.IRequestHandler;
 import org.jmicro.api.server.IResponse;
-import org.jmicro.api.servicemanager.ServiceLoader;
+import org.jmicro.api.service.ServiceLoader;
 import org.jmicro.common.Constants;
 /**
  * 

@@ -54,23 +54,21 @@ public @interface Service {
 	
 	public int timeout() default 2000;
 	
-	public int maxFailBeforeDegrade() default 100;
-	
-	public int maxFailBeforeFusing() default 500;
-	
 	public String testingArgs() default "";
 	
-	/**
-	 * max qps
-	 */
-	public int maxSpeed() default -1;
+	public int maxFailBeforeDegrade() default 100;
 	
 	/**
 	 *  milliseconds
 	 *  speed up when real response time less avgResponseTime, 
 	 *  speed down when real response time less avgResponseTime
-	 *  
 	 */
 	public int avgResponseTime() default -1;
 	
+	public int maxFailBeforeFusing() default 500;
+	
+	/**
+	 * max qps
+	 */
+	public String maxSpeed() default "";
 }

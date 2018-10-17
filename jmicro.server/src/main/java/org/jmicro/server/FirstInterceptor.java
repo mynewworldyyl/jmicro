@@ -16,6 +16,7 @@
  */
 package org.jmicro.server;
 
+import org.jmicro.api.JMicro;
 import org.jmicro.api.annotation.Cfg;
 import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.Interceptor;
@@ -28,7 +29,6 @@ import org.jmicro.api.server.IInterceptor;
 import org.jmicro.api.server.IRequest;
 import org.jmicro.api.server.IRequestHandler;
 import org.jmicro.api.server.IResponse;
-import org.jmicro.api.servicemanager.ComponentManager;
 import org.jmicro.common.Constants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -63,7 +63,7 @@ public class FirstInterceptor extends AbstractInterceptor implements IIntercepto
 		}
 		
 		if(fieldName.trim().equals("defaultLimiterName")){
-			limiter = ComponentManager.getObjectFactory().getByName(defaultLimiterName);
+			limiter = JMicro.getObjectFactory().getByName(defaultLimiterName);
 		}
 	}
 	

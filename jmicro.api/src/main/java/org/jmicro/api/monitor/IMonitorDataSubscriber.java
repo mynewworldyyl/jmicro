@@ -15,6 +15,7 @@
  * limitations under the License.
  */
 package org.jmicro.api.monitor;
+
 /**
  * 
  * @author Yulei Ye
@@ -22,5 +23,6 @@ package org.jmicro.api.monitor;
  */
 public interface IMonitorDataSubscriber {
 
-	void submit(SubmitItem si);
+	Integer[] intrest();
+	void onSubmit(SubmitItem si);
 }
