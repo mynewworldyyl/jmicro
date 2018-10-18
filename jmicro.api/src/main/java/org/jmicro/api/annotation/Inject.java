@@ -36,7 +36,7 @@ public @interface Inject {
 	/**
 	 * if true inject remote services and local component that implement the same interface,
 	 * if false ,only inject local component.
-	 * the reference only inject remote services
+	 * the reference annotation only inject remote services
 	 */
 	public boolean remote() default false;
 }

@@ -20,7 +20,10 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.jmicro.api.annotation.Component;
+import org.jmicro.api.annotation.Inject;
 import org.jmicro.api.limitspeed.ILimiter;
+import org.jmicro.api.monitor.IMonitorDataSubmiter;
+import org.jmicro.api.monitor.MonitorConstant;
 import org.jmicro.api.server.IRequest;
 import org.jmicro.common.CommonException;
 import org.slf4j.Logger;
@@ -38,21 +41,28 @@ public class TokenBucketLimiter extends AbstractLimiter implements ILimiter{
 	
 	private Map<String,ITokenBucket> buckets = new HashMap<>();
 	
+	@Inject(required=false)
+	private IMonitorDataSubmiter monitor;
+	
 	@Override
 	public boolean apply(IRequest req) {
+		int speed = this.getSpeed(req);
+		if(speed <=0){
+			return true;
+		}
 		String key = this.serviceKey(req);
 		if(!this.buckets.containsKey(key)){
 			this.buckets.put(key, new TokenBucket(this.getSpeedUnit(req)));
 		}
 		
 		ITokenBucket b = this.buckets.get(key);
-		int speed = this.getSpeed(req);
 		//System.out.println("Speed:"+ speed);
 		b.updateSpeed(speed);
-		logger.debug("TokenBucketLimiter apply reqID: " + req.getRequestId());
+		//logger.debug("TokenBucketLimiter apply reqID: " + req.getRequestId());
 		int rst = b.applyToken(1);
 		if(rst < 0) {
-			throw new CommonException("Reject by speed limiter");
+			MonitorConstant.doSubmit(monitor,MonitorConstant.SERVER_REQ_LIMIT_FORBIDON, req,null,rst);
+			return false;
 		} else {
 			return true;
 		}

@@ -35,6 +35,7 @@ import org.jmicro.api.registry.IServiceListener;
 import org.jmicro.api.registry.ServiceItem;
 import org.jmicro.api.registry.ServiceMethod;
 import org.jmicro.common.Constants;
+import org.jmicro.common.util.JsonUtils;
 import org.jmicro.zk.ZKDataOperator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -331,15 +332,17 @@ public class ZKRegistry implements IRegistry {
 	@Override
 	public Set<ServiceItem> getServices(String serviceName, String method, Object[] args
 			,String namespace,String version) {
+		Class<?>[] clazzes = null;
 		if(args != null && args.length > 0){
 			int i = 0;
-			Class<?>[] clazzes = new Class<?>[args.length];
+			clazzes = new Class<?>[args.length];
 			for(Object a : args){
 				clazzes[i++] = a.getClass();
 			}
-			return this.getServices(serviceName, method, clazzes,namespace,version);
+		}else {
+			clazzes = new Class<?>[0];
 		}
-		return Collections.EMPTY_SET;
+		return this.getServices(serviceName, method, clazzes,namespace,version);
 	}
 
 	@Override

@@ -54,15 +54,17 @@ public class RoundBalance implements ISelector{
 
 	@Override
 	public ServiceItem getService(String srvName, String method, Object[] args,String namespace,String version) {
+		Class<?>[] clazzes = null;
 		if(args != null && args.length > 0){
 			int i = 0;
-			Class<?>[] clazzes = new Class<?>[args.length];
+			 clazzes = new Class<?>[args.length];
 			for(Object a : args){
 				clazzes[i++] = a.getClass();
 			}
-			return this.getService(srvName, method, clazzes,namespace,version);
+		} else {
+			clazzes = new Class<?>[0];
 		}
-		return null;
+		return this.getService(srvName, method, clazzes,namespace,version);
 	}
 	
 	

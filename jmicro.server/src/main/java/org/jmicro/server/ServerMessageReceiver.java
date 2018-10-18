@@ -31,11 +31,11 @@ import org.jmicro.api.net.IMessageHandler;
 import org.jmicro.api.net.IMessageReceiver;
 import org.jmicro.api.net.ISession;
 import org.jmicro.api.net.Message;
+import org.jmicro.common.CommonException;
 import org.jmicro.common.Constants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import co.paralleluniverse.fibers.Fiber;
 import co.paralleluniverse.fibers.Suspendable;
 /**
  * 
@@ -101,7 +101,7 @@ public class ServerMessageReceiver implements IMessageReceiver{
         Message msg = new Message();
 		msg.decode(data);
 		
-		logger.debug("doReceive reqID: "+msg.getReqId());
+		//logger.debug("doReceive reqID: "+msg.getReqId());
 		
 		if(s.getId() != -1 && msg.getSessionId() != s.getId()) {
 			String msg1 = "Ignore MSG" + msg.getId() + "Rec session ID: "+msg.getSessionId()+",but this session ID: "+s.getId();
@@ -117,6 +117,9 @@ public class ServerMessageReceiver implements IMessageReceiver{
 		
 		try {
 			IMessageHandler h = handlers.get(msg.getType());
+			if(h == null) {
+				throw new CommonException("Message type ["+msg.getType()+"] handler not found!");
+			}
 			h.onMessage(s, msg);
 		} catch (Throwable e) {
 			MonitorConstant.doSubmit(monitor,MonitorConstant.SERVER_REQ_ERROR, null,null);

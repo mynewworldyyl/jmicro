@@ -366,8 +366,9 @@ class ClientServiceProxyManager {
             }    
             code.append(" Object ret = handler.invoke(this, methods[" + i + "], args);");
             
-            if (!Void.TYPE.equals(rt))
-                code.append(" return ").append(SimpleObjectFactory.asArgument(rt, "ret")).append(";");
+            if (!Void.TYPE.equals(rt)){
+            	 code.append(" return ").append(SimpleObjectFactory.asArgument(rt, "ret")).append(";");
+            }
 
             classGenerator.addMethod(m.getName(), m.getModifiers(), rt, pts, m.getExceptionTypes(), code.toString());      
 		 }

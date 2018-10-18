@@ -38,94 +38,81 @@ import org.jmicro.common.util.StringUtils;
  */
 public class Decoder {
 	
-	public static final byte PREFIX_TYPE_BYTE = 1 << 0;
+	public static final byte PREFIX_TYPE_SHORT = 1 << 0;
 	public static final byte PREFIX_TYPE_STRING = 1 << 1;
 	public static final byte PREFIX_TYPE_NULL = 1 << 2;
+	
+	public static final Short NON_ENCODE_TYPE = -32768;
 
-	private static Map<Integer,Class<?>> intToclazz = new HashMap<>();
-	private static Map<Class<?>,Integer> clazzToInt = new HashMap<>();
-	static int maxType=1;
+	private static Map<Short,Class<?>> Short2Clazz = new HashMap<>();
+	private static Map<Class<?>,Short> clazz2Short = new HashMap<>();
+	
+	static Short currentTypeCode = (short)(NON_ENCODE_TYPE + 1);
+	
 	static {
-		intToclazz.put(maxType++, Map.class);
-		intToclazz.put(maxType++, Collection.class);
-		intToclazz.put(maxType++, List.class);
-		intToclazz.put(maxType++, Array.class);
-		intToclazz.put(maxType++, Void.TYPE);
-		intToclazz.put(maxType++, Byte.TYPE);
-		intToclazz.put(maxType++, Short.TYPE);
-		intToclazz.put(maxType++, Integer.TYPE);
-		intToclazz.put(maxType++, Long.TYPE);
-		intToclazz.put(maxType++, Double.TYPE);
-		intToclazz.put(maxType++, Float.TYPE);
-		intToclazz.put(maxType++, Boolean.TYPE);
-		intToclazz.put(maxType++, Object.class);
-		intToclazz.put(maxType++, String.class);
-		intToclazz.put(maxType++, ByteBuffer.class);
-		
-		maxType=1;
-		clazzToInt.put(Map.class, maxType++);
-		clazzToInt.put(Collection.class, maxType++);
-		clazzToInt.put(List.class, maxType++);
-		clazzToInt.put(Array.class, maxType++);
-		clazzToInt.put(Void.TYPE, maxType++);
-		clazzToInt.put(Byte.TYPE, maxType++);
-		clazzToInt.put(Short.TYPE, maxType++);
-		clazzToInt.put(Integer.TYPE, maxType++);
-		clazzToInt.put(Long.TYPE, maxType++);
-		clazzToInt.put(Double.TYPE, maxType++);
-		clazzToInt.put(Float.TYPE, maxType++);
-		clazzToInt.put(Boolean.TYPE, maxType++);
-		clazzToInt.put(Object.class, maxType++);
-		clazzToInt.put(String.class, maxType++);
-		clazzToInt.put(ByteBuffer.class,maxType++);
+		registType(Map.class);
+		registType(Collection.class);
+		registType(List.class);
+		registType(Array.class);
+		registType(Void.class);
+		registType(Short.class);
+		registType(Integer.class);
+		registType(Long.class);
+		registType(Double.class);
+		registType(Float.class);
+		registType(Boolean.class);
+		registType(Character.class);
+		registType(Object.class);
+		registType(String.class);
+		registType(ByteBuffer.class);
 	}
 	
 	public static void registType(Class<?> clazz){
-		if(clazzToInt.containsKey(clazz)){
+		if(clazz2Short.containsKey(clazz)){
 			return;
 		}
-		clazzToInt.put(clazz,maxType );
-		intToclazz.put(maxType, clazz);
-		maxType++;
+		clazz2Short.put(clazz,currentTypeCode );
+		Short2Clazz.put(currentTypeCode, clazz);
+		currentTypeCode++;
 	}
 	
-	 static int getType(Class<?> cls){
+	 static Short getType(Class<?> cls){
 
 		if(cls == Void.TYPE || cls == Void.class) {
-			return clazzToInt.get(Void.TYPE);
+			return clazz2Short.get(Void.class);
 		}else if(cls == int.class || cls == Integer.TYPE || cls == Integer.class){
-			return clazzToInt.get(Integer.TYPE);
+			return clazz2Short.get(Integer.class);
 		}else if(cls == byte.class || cls == Byte.TYPE || cls == Byte.class){
-			return clazzToInt.get(Byte.TYPE);
+			return clazz2Short.get(Byte.class);
 		}else if(cls == short.class || cls == Short.TYPE || cls == Short.class){
-			return clazzToInt.get(Short.TYPE);
+			return clazz2Short.get(Short.class);
 		}else if(cls == long.class || cls == Long.TYPE || cls == Long.class){
-			return clazzToInt.get(Long.TYPE);
+			return clazz2Short.get(Long.class);
 		}else if(cls == float.class || cls == Float.TYPE || cls == Float.class){
-			return clazzToInt.get(Float.TYPE);
+			return clazz2Short.get(Float.class);
 		}else if(cls == double.class || cls == Double.TYPE || cls == Double.class){
-			return clazzToInt.get(Double.TYPE);
+			return clazz2Short.get(Double.class);
 		}else if(cls == boolean.class || cls == Boolean.TYPE || cls == Boolean.class){
-			return clazzToInt.get(Boolean.TYPE);
+			return clazz2Short.get(Boolean.class);
 		}else if(cls == char.class || cls == Character.TYPE || cls == Character.class){
-			return clazzToInt.get(Character.TYPE);
+			return clazz2Short.get(Character.class);
 		}else if(Map.class.isAssignableFrom(cls)){
-			return clazzToInt.get(Map.class);
+			return clazz2Short.get(Map.class);
 		}else if(Collection.class.isAssignableFrom(cls)){
-			return clazzToInt.get(Collection.class);
+			return clazz2Short.get(Collection.class);
 		}else if(cls.isArray()){
-			return clazzToInt.get(Array.class);
+			return clazz2Short.get(Array.class);
 		}else if(cls == String.class) {
-			return clazzToInt.get(String.class);
+			return clazz2Short.get(String.class);
 		}else if(cls == ByteBuffer.class) {
-			return clazzToInt.get(ByteBuffer.class);
+			return clazz2Short.get(ByteBuffer.class);
 		}
-	
-		return 0;
+	    //无类型编码
+		return NON_ENCODE_TYPE;
 	}
 	
-	static Class<?> getClass(int type){
-		return intToclazz.get(type);
+	static Class<?> getClass(Short type){
+		return Short2Clazz.get(type);
 	}
 	
 	/*public <T> T decode(byte[] buffer) {
@@ -141,7 +128,7 @@ public class Decoder {
 			return null;
 		}
 		
-		int type = -1;
+		Short type = -1;
 		Class<?> cls = null;
 		
 		if(PREFIX_TYPE_STRING == prefixCodeType) {
@@ -151,9 +138,9 @@ public class Decoder {
 			} catch (ClassNotFoundException e) {
 				throw new CommonException("class not found:" + clsName,e);
 			}
-		}else if(PREFIX_TYPE_BYTE == prefixCodeType) {
-			type = buffer.get();
-			cls = intToclazz.get(type);
+		}else if(PREFIX_TYPE_SHORT == prefixCodeType) {
+			type = buffer.getShort();
+			cls = getClass(type);
 		}else {
 			throw new CommonException("not support prefix type:" + prefixCodeType);
 		}
@@ -167,7 +154,7 @@ public class Decoder {
 			v =  decodeMap(buffer);
 		}else if(Collection.class == cls){
 			v =  decodeList(buffer);
-		}else if(cls == Array.class || Array.class == cls){
+		}else if(cls.isArray() || Array.class == cls){
 			v =  decodeObjects(buffer);
 		}else if(cls == ByteBuffer.class){
 			v =  decodeByteBuffer(buffer);
@@ -192,7 +179,7 @@ public class Decoder {
 		}else if(cls == char.class || cls == Character.TYPE || cls == Character.class){
 			v = buffer.getChar();
 		} else {	
-			v = decodeByReflect(buffer,cls,type);
+			v = decodeByReflect(buffer,cls);
 		}
 		
 		return (V)v;
@@ -205,8 +192,8 @@ public class Decoder {
 		return ByteBuffer.wrap(data);
 	}
 
-	public static List<String>  sortFieldNames(Class cls) {
-		List<String> fieldNames = new ArrayList<>();
+	public static void  getFieldNames(List<String> fieldNames,Class cls) {
+		
 		Field[] fs = cls.getDeclaredFields();
 		for(Field f: fs){
 			if(Modifier.isTransient(f.getModifiers()) || Modifier.isFinal(f.getModifiers())
@@ -215,11 +202,14 @@ public class Decoder {
 			}
 			fieldNames.add(f.getName());
 		}
-		fieldNames.sort((v1,v2)->v1.compareTo(v2));
-		return fieldNames;
+		
+		if(cls.getSuperclass() != Object.class) {
+			getFieldNames(fieldNames,cls.getSuperclass());
+		}
+		
 	}
 	
-	private static Object decodeByReflect(ByteBuffer buffer,Class<?> cls,int type) {
+	private static Object decodeByReflect(ByteBuffer buffer,Class<?> cls) {
 		if(cls == null){
 			String clsName = decodeString(buffer);
 			if(StringUtils.isEmpty(clsName)){
@@ -249,11 +239,15 @@ public class Decoder {
 			throw new CommonException("fail to instance class [" +cls.getName()+"]",e1);
 		}
 		
-		List<String> fieldNames = sortFieldNames(cls);
+		List<String> fieldNames = new ArrayList<>();
+		getFieldNames(fieldNames,cls);
+		fieldNames.sort((v1,v2)->v1.compareTo(v2));
 		
 		for(int i =0; i < fieldNames.size(); i++){
 			try {
-				Field f = cls.getDeclaredField(fieldNames.get(i));
+				
+				Field f = Encoder.getClassField(cls, fieldNames.get(i));// cls.getDeclaredField(fieldNames.get(i));
+				
 				Object v = decodeObject(buffer);
 				boolean bf = f.isAccessible();
 				if(!bf){
@@ -266,7 +260,7 @@ public class Decoder {
 				if(!bf){
 					f.setAccessible(false);
 				}
-			} catch (NoSuchFieldException | SecurityException | IllegalArgumentException | IllegalAccessException e) {
+			} catch (SecurityException | IllegalArgumentException | IllegalAccessException e) {
 				throw new CommonException("",e);
 			}
 		}
@@ -286,14 +280,43 @@ public class Decoder {
 		return (List<V>)objs;
 	}
 	
-	private static Object[] decodeObjects(ByteBuffer buffer){
+	private static Object decodeObjects(ByteBuffer buffer){
 		int len = buffer.getInt();
 		if(len <= 0) {
 			return null;
 		}
-		Object[] objs = new Object[len];
+		
+		byte prefixCodeType = buffer.get();
+		if( prefixCodeType == PREFIX_TYPE_NULL){
+			return null;
+		}
+		
+		Short type = -1;
+		Class<?> cls = null;
+		
+		if(PREFIX_TYPE_STRING == prefixCodeType) {
+			String clsName = decodeString(buffer);
+			try {
+				cls = Thread.currentThread().getContextClassLoader().loadClass(clsName);
+			} catch (ClassNotFoundException e) {
+				throw new CommonException("class not found:" + clsName,e);
+			}
+		}else if(PREFIX_TYPE_SHORT == prefixCodeType) {
+			type = buffer.getShort();
+			cls = Short2Clazz.get(type);
+		}else {
+			throw new CommonException("not support prefix type:" + prefixCodeType);
+		}
+		
+		if(cls == null) {
+			throw new CommonException("class not found: ");
+		}
+		
+		Object objs = Array.newInstance(cls, len);
+		//Object[] objs = new Object[len];
 		for(int i =0; i < len; i++){
-			objs[i] = decodeObject(buffer);
+			Object o = decodeObject(buffer);
+			Array.set(objs, i, o);
 		}
 		
 		return objs;

@@ -28,26 +28,35 @@ import org.jmicro.common.Constants;
 @Component(lazy=true)
 public class DegradeManager {
 
-	public static final String AVG_TIME_ROOT = Constants.CONFIG_ROOT + "/avgtime/";
+	public static final String MONITOR = Constants.CFG_ROOT + "/monitor/";
 	
-	public static final String TIMEOUT_ROOT = Constants.CONFIG_ROOT + "/timeout/";
+	public static final String AVG_TIME_ROOT = MONITOR + "avgtime/";
 	
-	public static final String EXCEPTION_ROOT = Constants.CONFIG_ROOT + "/exception/";
+	public static final String TIMEOUT_ROOT = MONITOR + "timeout/";
+	
+	public static final String EXCEPTION_ROOT = MONITOR + "exception/";
 	
 	@Inject
-	public IDataOperator dataOperator;
+	private IDataOperator dataOperator;
 	
-	void updateAvgResponseTime(String serviceMethodId,Integer time){
-		dataOperator.setData(AVG_TIME_ROOT + serviceMethodId, time.toString());
+	public void updateAvgResponseTime(String serviceMethodId,String data){
+		createOrSetData(AVG_TIME_ROOT + serviceMethodId,data);
 	}
 	
-	void updateTimeoutCnt(String serviceMethodId,Integer cnt){
-		dataOperator.setData(TIMEOUT_ROOT + serviceMethodId, cnt.toString());
+	public void updateTimeoutCnt(String serviceMethodId,Integer cnt){
+		createOrSetData(TIMEOUT_ROOT + serviceMethodId,cnt.toString());
 	}
 	
-	void updateExceptionCnt(String serviceMethodId,Integer cnt){
-		dataOperator.setData(EXCEPTION_ROOT + serviceMethodId, cnt.toString());
+	public void updateExceptionCnt(String serviceMethodId,Integer cnt){
+		createOrSetData(EXCEPTION_ROOT + serviceMethodId,cnt.toString());
 	}
 	
+	private void createOrSetData(String path, String data) {
+		if(dataOperator.exist(path)) {
+			dataOperator.setData(path, data);
+		}else {
+			dataOperator.createNode(path, data, false);
+		}
+	}
 	
 }

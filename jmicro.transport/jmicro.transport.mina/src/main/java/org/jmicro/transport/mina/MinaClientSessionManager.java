@@ -83,7 +83,7 @@ public class MinaClientSessionManager implements IClientSessionManager{
 	@Inject(required=false)
 	private IMonitorDataSubmiter monitor;
 	
-	@Inject(required=false)
+	@Inject(required=true)
 	private IMessageReceiver receiver;
 	
 	private Timer ticker = new Timer("ClientSessionHeardbeatWorker",true);

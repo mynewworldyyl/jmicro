@@ -868,9 +868,10 @@ public class SimpleObjectFactory implements IObjectFactory {
 	 }
 	 
 	private void doInit(Object obj) {
+		Class<?> tc = ProxyObject.getTargetCls(obj.getClass());
 		Method initMethod1 = null;
 		Method initMethod2 = null;
-		for(Method m : obj.getClass().getDeclaredMethods()) {
+		for(Method m : tc.getDeclaredMethods()) {
 			if(m.isAnnotationPresent(JMethod.class)) {
 				JMethod jm = m.getAnnotation(JMethod.class);
 				if("init".equals(jm.value())) {

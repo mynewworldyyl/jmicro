@@ -135,6 +135,11 @@
 				 <artifactId>jmicro.objfactory.simple</artifactId>
 				  <version>${jmicro.version}</version>
 	        </dependency>
+	         <dependency>
+				 <groupId>org.jmicro</groupId>
+				 <artifactId>jmicro.monitor.submiter</artifactId>
+				  <version>${jmicro.version}</version>
+	        </dependency>
 	          <dependency>
 				 <groupId>org.jmicro</groupId>
 				 <artifactId>jmicro.config</artifactId>

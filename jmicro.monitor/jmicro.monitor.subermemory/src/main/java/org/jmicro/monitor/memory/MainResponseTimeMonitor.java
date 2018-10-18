@@ -7,9 +7,7 @@ import org.jmicro.common.Utils;
 public class MainResponseTimeMonitor {
 
 	public static void main(String[] args) {
-		
-		IObjectFactory of = JMicro.getObjectFactoryAndStart(new String[0]);
-		of.start();
+		 JMicro.getObjectFactoryAndStart(new String[0]);
 		Utils.getIns().waitForShutdown();
 	}
 

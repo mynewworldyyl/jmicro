@@ -21,6 +21,7 @@ import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -41,6 +42,19 @@ public class Encoder{
 		bb.flip();
 		return bb.array();
 	}*/
+	
+	public static Class<?> putType(ByteBuffer buffer,Class<?> cls) {
+        Short type = Decoder.getType(cls);
+		if( type == null || type == Decoder.NON_ENCODE_TYPE ) {
+			buffer.put(Decoder.PREFIX_TYPE_STRING);
+			encodeString(buffer,cls.getName());
+		} else {
+			cls = Decoder.getClass(type);
+			buffer.put(Decoder.PREFIX_TYPE_SHORT);
+			buffer.putShort(type);
+		}
+		return cls;
+	}
 
 	public static <V> void encodeObject(ByteBuffer buffer,V obj){
 	
@@ -54,16 +68,7 @@ public class Encoder{
 			cls = ByteBuffer.class;
 		}
 		
-		Integer type = Decoder.getType(cls);
-		
-		if(type == null || type <= 0) {
-			buffer.put(Decoder.PREFIX_TYPE_STRING);
-			encodeString(buffer,cls.getName());
-		}else {
-			cls = Decoder.getClass(type);
-			buffer.put(Decoder.PREFIX_TYPE_BYTE);
-			buffer.put((byte)type.intValue());
-		}
+		cls = putType(buffer,cls);
 		
 		Object v = null;
 		if(Map.class == cls){
@@ -73,7 +78,7 @@ public class Encoder{
 		}else if(ByteBuffer.class == cls){
 			 encodeByteBuffer(buffer,(ByteBuffer)obj);
 		}else if(cls.isArray() || Array.class == cls){
-			encodeObjects(buffer,(Object[])obj);
+			encodeObjects(buffer,obj);
 		}else if(cls == String.class) {
 			encodeString(buffer,(String)obj);
 		}else if(cls == void.class || cls == Void.class  || cls == Void.TYPE) {
@@ -96,7 +101,7 @@ public class Encoder{
 		}else if(cls == char.class || cls == Character.class || cls == Character.TYPE){
 			buffer.putChar((Character)obj);
 		} else {
-			encodeByReflect(buffer,cls,type,obj);
+			encodeByReflect(buffer,cls,obj);
 		}
 	
 	}
@@ -106,7 +111,7 @@ public class Encoder{
 		buffer.put(obj);
 	}
 
-	private static void encodeByReflect(ByteBuffer buffer, Class<?> cls, Integer type,Object obj) {
+	private static void encodeByReflect(ByteBuffer buffer, Class<?> cls,Object obj) {
 		
 		int m = cls.getModifiers() ;
 		
@@ -119,8 +124,9 @@ public class Encoder{
 			throw new CommonException("should be public class [" +cls.getName()+"]");
 		}
 		
-		
-		List<String> fieldNames = Decoder.sortFieldNames(cls);
+		List<String> fieldNames = new ArrayList<>();
+		Decoder.getFieldNames(fieldNames,cls);
+		fieldNames.sort((v1,v2)->v1.compareTo(v2));
 		
 		for(int i = 0; i < fieldNames.size(); i++){
 			try {
@@ -130,7 +136,11 @@ public class Encoder{
 					//System.out.println("args");
 				}
 				
-				Field f = cls.getDeclaredField(fn);
+				if(fn.equals("result")){
+					//System.out.println("args");
+				}
+				
+				Field f = getClassField(cls,fn);//cls.getDeclaredField(fn);
 				
 				boolean bf = f.isAccessible();
 				if(!bf){
@@ -142,11 +152,25 @@ public class Encoder{
 				}
 				encodeObject(buffer,v);
 				
-			} catch (NoSuchFieldException | SecurityException | IllegalArgumentException | IllegalAccessException e) {
+			} catch (SecurityException | IllegalArgumentException | IllegalAccessException e) {
 				throw new CommonException("",e);
 			}
 		}
 		
+	}
+
+	public static Field getClassField(Class<?> cls, String fn) {
+		Field f = null;
+		try {
+			 return cls.getDeclaredField(fn);
+		} catch (NoSuchFieldException e) {
+			cls = cls.getSuperclass();
+			if(cls == Object.class) {
+				return null;
+			} else {
+				return getClassField(cls,fn);
+			}
+		}
 	}
 
 	private static void encodeList(ByteBuffer buffer, Collection objs) {
@@ -156,16 +180,19 @@ public class Encoder{
 		}
 	}
 
-	private static <V> void encodeObjects(ByteBuffer buffer,V[] objs){
+	private static <V> void encodeObjects(ByteBuffer buffer, Object objs){
 		
-		int len = objs.length;
+		int len = Array.getLength(objs);
 		buffer.putInt(len);
 		
 		if(len <=0) {
 			return;
 		}
-		for(Object o : objs){
-			encodeObject(buffer,o);
+		
+		putType(buffer,objs.getClass().getComponentType());
+		
+		for(int i = 0; i < len; i++){
+			encodeObject(buffer,Array.get(objs, i));
 		}
 	}
 	

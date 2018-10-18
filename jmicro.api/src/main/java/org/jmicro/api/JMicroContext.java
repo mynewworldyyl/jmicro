@@ -52,14 +52,14 @@ public class JMicroContext  {
 		}
 	}
 	
-	public boolean configMonitor(int methodCfg,int srvCfg){
+	public void configMonitor(int methodCfg,int srvCfg){
 		if(methodCfg != -1){
 			this.setBoolean(Constants.MONITOR_ENABLE_KEY, methodCfg==1?true:false);
 		}
 		else if(srvCfg != -1){
 			this.setBoolean(Constants.MONITOR_ENABLE_KEY, srvCfg==1?true:false);
 		}
-		return isMonitor();
+		//return isMonitor();
 	}
 	
 	public void mergeParams(JMicroContext c){
@@ -82,8 +82,15 @@ public class JMicroContext  {
 	}
 	
 	public Boolean isMonitor(){
+		if(this.exists(Constants.MONITOR_ENABLE_KEY)){
+			return this.getBoolean(Constants.MONITOR_ENABLE_KEY, false);
+		};
 		Config cfg = JMicro.getObjectFactory().get(Config.class);
 		return cfg.getBoolean(Constants.MONITOR_ENABLE_KEY,false);
+	}
+	
+	public boolean exists(String key){
+		return this.params.containsKey(key);
 	}
 	
 	@SuppressWarnings("unchecked")

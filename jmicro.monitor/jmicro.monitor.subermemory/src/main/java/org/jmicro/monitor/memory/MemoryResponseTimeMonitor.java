@@ -16,39 +16,43 @@
  */
 package org.jmicro.monitor.memory;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
-import java.util.List;
 import java.util.Map;
 import java.util.Queue;
 import java.util.Timer;
 import java.util.TimerTask;
 
 import org.jmicro.api.annotation.Component;
+import org.jmicro.api.annotation.Inject;
 import org.jmicro.api.annotation.JMethod;
 import org.jmicro.api.annotation.SMethod;
 import org.jmicro.api.annotation.Service;
+import org.jmicro.api.degrade.DegradeManager;
 import org.jmicro.api.monitor.IMonitorDataSubscriber;
 import org.jmicro.api.monitor.MonitorConstant;
 import org.jmicro.api.monitor.SubmitItem;
+import org.jmicro.common.util.JsonUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 @Component
-@Service(version="0.0.1", namespace="memoryResponseTimeMonitor", monitorEnable=0)
+@Service(version="0.0.1", namespace="memoryResponseTimeMonitor",monitorEnable=0)
 public class MemoryResponseTimeMonitor implements IMonitorDataSubscriber {
 
 	private final static Logger logger = LoggerFactory.getLogger(MemoryResponseTimeMonitor.class);
+	
+	@Inject
+	private DegradeManager degradeManager;
 	
 	private Map<Long,AvgResponseTimeItem> reqRespAvgList = new HashMap<>();
 	
 	private Map<String,Queue<Long>> reqRespAvgs =  new HashMap<String,Queue<Long>>();
 	
-	private Map<String,Long> firstResponseTime =  new HashMap<String,Long>();
+	//private Map<String,Long> firstResponseTime =  new HashMap<String,Long>();
 	
-	private List<ServiceStatis> statis = new ArrayList<>(1000);
+	//private List<ServiceStatis> statis = new ArrayList<>(1000);
 	
 	private Timer ticker = new Timer("MemoryResponseTimeMonitor",true);
 	
@@ -64,7 +68,6 @@ public class MemoryResponseTimeMonitor implements IMonitorDataSubscriber {
 		public long time;
 		//public long endtime;
 		public int avgResponseTime;
-		public double qps;
 	}
 	
 	@JMethod("init")
@@ -81,19 +84,15 @@ public class MemoryResponseTimeMonitor implements IMonitorDataSubscriber {
 					sts.time = System.currentTimeMillis();
 					sts.service = srv;
 					sts.avgResponseTime = sum(q)/q.size();
-					sts.qps = qps(q,firstResponseTime.get(srv));
 					
-					statis.add(sts);
+					//statis.add(sts);
+					
+					degradeManager.updateAvgResponseTime(srv, JsonUtils.getIns().toJson(sts));
 				}
 			}	
-		}, 0, 1000);
+		}, 0, 5000);
 	}
 	
-	protected double qps(Queue<Long> q,Long firstTime) {
-		double qps = q.size() / ((System.currentTimeMillis()-firstTime)/1000.0);
-		return qps;
-	}
-
 	protected int sum(Queue<Long> q) {
 		int sum = 0;
 		Iterator<Long> ite = q.iterator();

@@ -151,7 +151,7 @@ public class ServiceInvocationHandler implements InvocationHandler, IMessageHand
         	
         	//String sn = ProxyObject.getTargetCls(srvClazz).getName();
 			//此方法可能抛出FusingException
-        	si = selector.getService(poItem.getServiceName(),method.getName(),args,req.getNamespace(),req.getVersion());
+        	si = selector.getService(poItem.getServiceName(),req.getMethod(),args,poItem.getNamespace(),poItem.getVersion());
         	
         	if(si ==null) {
         		MonitorConstant.doSubmit(monitor,MonitorConstant.CLIENT_REQ_SERVICE_NOT_FOUND, req, null);

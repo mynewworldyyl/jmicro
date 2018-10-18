@@ -227,12 +227,16 @@ public class JRPCReqRespHandler implements IMessageHandler{
 
 	private String reqMethodKey(RpcRequest req){
 		StringBuffer sb = new StringBuffer(req.getServiceName());
-		sb.append(req.getNamespace()).append(req.getVersion());
+		sb.append(req.getNamespace()).append(req.getVersion())
+		.append(req.getMethod());
 		
-		Object[] args = req.getArgs();
-		for(int i = 0; i < args.length; i++) {
-			sb.append(args[i].toString());
+		if(req.getArgs() != null){
+			Object[] args = req.getArgs();
+			for(int i = 0; i < args.length; i++) {
+				sb.append(args[i].toString());
+			}
 		}
+		
 		return sb.toString();
 	}
 	

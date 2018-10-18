@@ -31,6 +31,7 @@ import org.jmicro.api.annotation.Reference;
 import org.jmicro.api.monitor.IMonitorDataSubmiter;
 import org.jmicro.api.monitor.IMonitorDataSubscriber;
 import org.jmicro.api.monitor.SubmitItem;
+import org.jmicro.api.registry.ServiceMethod;
 import org.jmicro.api.server.IRequest;
 import org.jmicro.api.server.IResponse;
 import org.slf4j.Logger;
@@ -68,7 +69,7 @@ public class SubmitItemHolderManager implements IMonitorDataSubmiter{
 	
 	//@Inject(required=false, remote=true)
 	//配置方式参数Reference注解说明
-	@Reference(version="0.0.0",required=false,changeListener="startWork")
+	@Reference(required=false,changeListener="startWork")
 	private Set<IMonitorDataSubscriber> submiters = new HashSet<>();
 	
 	private Map<Integer,Set<IMonitorDataSubscriber>> type2Subscribers = new HashMap<>();
@@ -123,7 +124,7 @@ public class SubmitItemHolderManager implements IMonitorDataSubmiter{
 	}
 	
 	public synchronized void init(){
-		updateSubmiterList();
+		//updateSubmiterList();
 		if(NON == status){
 			status = INITED;
 			workers = new Worker[threadSize];
@@ -229,6 +230,8 @@ public class SubmitItemHolderManager implements IMonitorDataSubmiter{
 			if(req.getSession() != null){
 				si.setSessionId(req.getSession().getId());
 			}
+			si.setServiceName(req.getServiceName());
+			si.setReqArgsStr(ServiceMethod.methodParamsKey(req.getArgs()));
 			si.setNamespace(req.getNamespace());
 			si.setVersion(req.getVersion());
 			si.setReqArgs(req.getArgs());

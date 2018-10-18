@@ -29,6 +29,7 @@ public class TestRpcServiceImpl implements ITestRpcService{
 	}
 
 	@Override
+	@SMethod(monitorEnable=1)
 	public Person getPerson(Person p) {
 		p.setUsername("Server update username");
 		p.setId(ai.getAndIncrement());

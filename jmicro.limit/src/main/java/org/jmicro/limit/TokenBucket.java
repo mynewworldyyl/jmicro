@@ -81,7 +81,7 @@ public class TokenBucket implements ITokenBucket{
 		Integer p = new Integer(permits);
 		applyQueue.offer(p);
 		
-		System.out.println("Queue Size: "+ this.applyQueue.size());
+		//System.out.println("Queue Size: "+ this.applyQueue.size());
 		
 		synchronized(p){
 			try {
