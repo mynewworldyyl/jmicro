@@ -37,11 +37,16 @@ import org.jmicro.common.util.JsonUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * 
+ * @author Yulei Ye
+ * @date 2018年10月18日-下午9:39:57
+ */
 @Component
-@Service(version="0.0.1", namespace="memoryResponseTimeMonitor",monitorEnable=0)
-public class MemoryResponseTimeMonitor implements IMonitorDataSubscriber {
+@Service(version="0.0.1", namespace="serviceResponseTimeMonitor",monitorEnable=0)
+public class ServiceResponseTimeMonitor implements IMonitorDataSubscriber {
 
-	private final static Logger logger = LoggerFactory.getLogger(MemoryResponseTimeMonitor.class);
+	private final static Logger logger = LoggerFactory.getLogger(ServiceResponseTimeMonitor.class);
 	
 	@Inject
 	private DegradeManager degradeManager;

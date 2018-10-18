@@ -8,7 +8,7 @@ public class MainResponseTimeMonitor {
 
 	public static void main(String[] args) {
 		 JMicro.getObjectFactoryAndStart(new String[0]);
-		Utils.getIns().waitForShutdown();
+		 Utils.getIns().waitForShutdown();
 	}
 
 }
