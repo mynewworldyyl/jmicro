@@ -59,7 +59,7 @@ import org.jmicro.common.CommonException;
 import org.jmicro.common.Constants;
 import org.jmicro.example.api.ITestRpcService;
 
-//service说前这是一个RPC服务，指定超时时间是10秒，最QPS是1个每秒，s表示秒
+//service说前这是一个RPC服务，指定超时时间是10秒，最高QPS是1个/每秒，s表示秒
 @Service(timeout=10*1000,maxSpeed="1s")
 @Component //告诉IOC容器这是一个组件
 public class TestRpcServiceImpl implements ITestRpcService{
@@ -94,6 +94,7 @@ public class TestRpcServiceImpl implements ITestRpcService{
 	
 	@Override
 	//流式RPC，一个请求会收到N个响应，stringMessageCallback是客户端定义的一个普通组件
+	//用于接收异步消息
 	@SMethod(streamCallback="stringMessageCallback",timeout=10*60*1000)
 	public void subscrite(String msg) {
 		//从上下文中拿发送接口，可以给客户端推送消息
@@ -116,9 +117,9 @@ public class TestRpcServiceImpl implements ITestRpcService{
 	}
 }
 
-## 启动服务
-
 ~~~
+
+## 启动服务
 
 public class ServiceProvider {
 
@@ -159,7 +160,7 @@ public class ServiceComsumer {
 
 ~~~
 
-#  JMICRO参考手册
+#  JMICRO参考文档
 ##  注解
 ##  IOC容器
 ##  服务端发布RPC服务
