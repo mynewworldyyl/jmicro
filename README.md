@@ -274,6 +274,7 @@ public @interface Service {
 ~~~
 
 ### Component 声明类是一个组件，IOC容器启动时生成组件的唯一实例，并且确保在此IOC容器唯一实例。
+~~~
 @Target(TYPE)
 @Retention(RUNTIME)
 public @interface Component {
@@ -306,7 +307,182 @@ public @interface Component {
 	public String side() default Constants.SIDE_ANY; 
 }
 
+~~~
 
+### Demo
+
+~~~
+@Service(timeout=10*60*1000,maxSpeed="1s")
+@Component
+public class TestRpcServiceImpl implements ITestRpcService{
+
+	private AtomicInteger ai = new AtomicInteger();
+	
+	@Cfg("/limiterName")
+	private String name;
+	
+	@Override
+	public String hello(String name) {
+		System.out.println("Hello and welcome :" + name);
+		return "Rpc server return : "+name;
+	}
+
+	@Override
+	@SMethod(monitorEnable=1)
+	public Person getPerson(Person p) {
+		p.setUsername("Server update username");
+		p.setId(ai.getAndIncrement());
+		System.out.println(p);
+		return p;
+	}
+
+	@Override
+	@SMethod(needResponse=false)
+	public void pushMessage(String msg) {
+		System.out.println("Server Rec: "+ msg);
+	}
+	
+	private AtomicInteger count = new AtomicInteger(0);
+	
+	@Override
+	@SMethod(streamCallback="stringMessageCallback",timeout=10*60*1000)
+	public void subscrite(String msg) {
+		IWriteCallback sender = JMicroContext.get().getParam(Constants.CONTEXT_CALLBACK, null);
+		if(sender == null){
+			throw new CommonException("Not in async context");
+		}
+		for(int i = 100; i > 0; i++) {
+			try {
+				Thread.sleep(1000*2);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+			String msg1 = "Server return: "+ count.getAndIncrement()+",msg: " +msg;
+			System.out.println(msg1);
+			sender.send(msg1);
+		}
+	}
+}
+~~~
+
+### 服务使用方除Component注解外，还有Reference注解在字段上，声明依赖远程RPC服务
+
+~~~
+@Target(FIELD)
+@Retention(RUNTIME)
+public @interface Reference {
+	public String value() default "";
+	/**
+	 * 依赖的服务名称空间，如果指定了名称空间，则只有与此名称空间相同的服务才会被注入到此字段
+	 * 如果目前有两个服务实现相同的服务接口，名称空间相同或没指定名称空间，系统无法确定要注入那个服务，则会报错，
+	 * 此时应该指定名称空间
+	 * @return
+	 */
+	public String namespace() default "";
+	
+	/**
+	 * 服务版本，使用原理和名称空间相同，版本是同一个名称空间下同一个接口的不同实现版本
+	 * @return
+	 */
+	public String version() default "";
+	
+	/**
+	 * 此依赖是否是必须的，如果是必须的，但是启动时注册中心又没有此服务，则报错
+	 * @return
+	 */
+	public boolean required() default false;
+	
+	public String registry() default "";
+	
+	/**
+	 * 依赖服务有变化时，包括配置及服务上线下线的变化，则会调用此字段值对应的组件方法，让组件
+	 * 对服务变化作出响应
+	 * @return
+	 */
+	public String changeListener() default "";
+}
+
+Demo
+
+~~~
+@Component
+public class TestRpcClient {
+
+    //注入远程RPC服务，服务可以还不存在
+	@Reference(required=false)
+	private ITestRpcService rpcService;
+	
+	 //注入远程RPC服务，服务必须启动时存在可用
+	@Reference(required=true)
+	private ISayHello sayHello;
+	
+	public void invokeRpcService(){
+		String result = sayHello.hello("Hello RPC Server");
+		System.out.println("Get remote result:"+result);
+	}
+	
+	public void invokePersonService(){
+		Person p = new Person();
+		p.setId(1234);
+		p.setUsername("Client person Name");
+		//如果此时服务还不存在，则会报错了
+		p = rpcService.getPerson(p);
+		System.out.println(p.toString());
+	}
+}
+~~~
+
+
+### Inject注解，注入IOC容器的依赖
+
+~~~
+@Target(FIELD)
+@Retention(RUNTIME)
+public @interface Inject {
+
+	public String value() default "";
+	public boolean required() default true;
+	
+	/**
+	 * if true inject remote services and local component that implement the same interface,
+	 * if false ,only inject local component.
+	 * the reference annotation only inject remote services
+	 */
+	public boolean remote() default false;
+}
+~~~
+
+DEMO
+
+~~~
+@Component(lazy=false)
+public class ProxyObjectForTest {
+	/*private Object[] conArgs;
+	private String conKey;
+	public ProxyObject(Object[] $args){this.conArgs=$args; for(Object arg: $args) { this.conKey = this.conKey + arg.getClass().getName(); } }*/
+	
+	@Inject //自动注入服务注册服，IRegistry是系统实现的本地组件，默认可以使用
+	private IRegistry registry;
+	
+	private String msg = "ProxyObjectForTest";
+	
+	public ProxyObjectForTest(String msg){
+		this.msg = msg;
+	}
+	
+	public ProxyObjectForTest(){}
+	
+	public void invokeRpcService(){
+		System.out.println("invokeRpcService: "+this.msg);
+	}
+	
+	public void invokeRpcService1(){
+		System.out.println("invokeRpcService1: "+this.msg);
+	}
+	
+}
+
+~~~
 
 
 ##  IOC容器
