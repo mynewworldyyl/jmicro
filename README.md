@@ -165,7 +165,8 @@ public class ServiceComsumer {
 
 以下如果没有说明的字段，默认是还没实现，或实现还不切底，后面实现后会持续更新
 
-##  注解
+##  Service，SMethod，Component注解是框架使用者所关注的3个注解，别的都可以不用了解，下面重点说明这3个注解。
+需要说明的是，下面定义的属性都是系统启动时的默认值，启动后也可以在配置中心或通过API接口动态修改，实时生效
 
 ### Service 标识这个类是一个服务，系统自动检测服务接口并注册相关信息到注册中心
 
@@ -262,17 +263,51 @@ public @interface Service {
 	//0: need response, 1:no need response
 	public boolean needResponse() default true;
 	
+	/**
+	 * 实现IMessageCallback接口的组件名称，用于处理异步消息
+	 */
 	// StringUtils.isEmpty()=true: not stream, false: stream, one request will got more response
 	// if this value is not NULL, the async is always true without check the real value
 	// value is the callback component in IOC container created in client
-	// format: value=component name +"."+ method name+"."+method parameter string, 
-	// component name can be class full name, Annotation name.
-	// method is the invoking method name
-	// parameter (java.lang.String,java.lang.Long)
-	// example: org.jmicro.example.comsumer.MessageCallback#onMessage(java.lang.String,java.lang.Long)
 	public String streamCallback() default "";
 
 ~~~
+
+### Component 声明类是一个组件，IOC容器启动时生成组件的唯一实例，并且确保在此IOC容器唯一实例。
+@Target(TYPE)
+@Retention(RUNTIME)
+public @interface Component {
+	/**
+	 * 组件名称，必须确保在全局唯一 
+	 */
+	public String value() default "";
+	/**
+	 * 使用时才实例化，启动时只是生成代理
+	 */
+	public boolean lazy() default true;
+	
+	/**
+	 * 实例化优先级，值越底，优先极越高。用户自定义的服务因为依赖于系统的核心组件，所以用户自定义的组件的level值不要太小，建议从10000开始
+	 * 如果用户定义的组件A和组件B，B依赖于A，则A的level要大于B，否则B先于A启动，B的依赖没有找到，从而报错
+	 */
+	public int level() default 10000;
+	/**
+	 * 组件是否可用，如当前开发了实现相同功能的服务A和B，但是此时不想启用A，可以暂时设置active=false，则IOC容器不会实例化A。
+	 * @return
+	 */
+	public boolean active() default true;
+	
+	//provider or client or NULL witch can be used any side
+	/**
+	 * 此组件的使用方，可以是服务提供方或消费方，也可以两方都可以使用，
+	 * 如果指定了服务提供方或消费方，则该组件所依赖的组件也被限制为指定方
+	 * @return
+	 */
+	public String side() default Constants.SIDE_ANY; 
+}
+
+
+
 
 ##  IOC容器
 
