@@ -6,7 +6,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.jmicro.api.codec.Entity;
 import org.jmicro.api.monitor.SubmitItem;
 import org.jmicro.common.codec.Decoder;
 import org.jmicro.common.codec.Encoder;

@@ -1,4 +1,4 @@
-package org.jmicro.api.codec;
+package jmicro.codec.test;
 
 public class Entity {
 

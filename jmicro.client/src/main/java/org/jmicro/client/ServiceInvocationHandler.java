@@ -208,10 +208,9 @@ public class ServiceInvocationHandler implements InvocationHandler, IMessageHand
     		msg.setPayload(ICodecFactory.encode(this.codecFactory,req,msg.getProtocol()));
     		msg.setVersion(Constants.VERSION_STR);
     		
-    		msg.setPayload(reqJSon);
+    		/*msg.setPayload(reqJSon);
     		reqJSon = JsonUtils.getIns().toJson(msg);
-    		
-    		System.out.println(reqJSon);
+    		System.out.println(reqJSon);*/
     		
     		//byte flag = sm.async ? Message.FLAG_ASYNC : 0;
     		boolean stream = !StringUtils.isEmpty(sm.streamCallback);
