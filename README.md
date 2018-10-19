@@ -119,7 +119,9 @@ public class TestRpcServiceImpl implements ITestRpcService{
 
 ~~~
 
-## 启动服务
+# 启动服务
+
+~~~
 
 public class ServiceProvider {
 
@@ -137,7 +139,6 @@ public class ServiceProvider {
 # 客户使用服务
 
 ~~~
-
 package org.jmicro.example.comsumer;
 
 import org.jmicro.api.JMicro;
@@ -157,28 +158,46 @@ public class ServiceComsumer {
 		System.out.println(src.hello("Hello JMicro"));
 	}
 }
-
 ~~~
 
 #  JMICRO参考文档
+
 ##  注解
+
 ##  IOC容器
+
 ##  服务端发布RPC服务
+
 ##  客户端获取RPC服务
+
 ##  动态修改线上服务配置
+
 ##  服务监控
+
 ##  基于Socket的RPC传输
+
 ##  基于HTTPRPC传输
+
 ##  服务注册表
+
 ##  负载圴行
+
 ##  限流
+
 ##  降级
+
 ##  熔断
+
 ##  超时及重试
+
 ##  编码解码
+
 ##  服务拦截器
+
 ##  服务检测
+
 ##  全局ID标识
+
 ##  。。。
 
 
