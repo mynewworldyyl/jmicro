@@ -5,12 +5,13 @@
 4. 为微服务定制的极其轻量IOC容器，目前代码大概1500行左右;
 5. 监控埋点，可以详细监控服务每个细节，如每个RPC方法响应时间，异常次数，qps等等，并且监控的点非常易于替换或扩展;
 6. 如果你喜欢，可以0配置启N个服务，但可以实时修改每个服务方法的配置，并且实时生效；
-7. 简单一致的HTTP支持，可以接入任何客户端；
+7. 简单一致的HTTP支持，这样就可以以HTTP方式接入任何客户端；
 8. 每个请求，连接，消息有全局唯一标识，实现整个请求的全流程串连监控；
 9. 运行jmicro.example样例，体验基于JMicro开发服务有多简单；
-10. 可选通过线程和协程做主请求分发；
-11. 客户端一个请求多个响应，类似发布订阅
-10. 更多功能会持继增加
+10. 基本上无同步块代码（当然前提能保证线程安全），确保框架不存在性能瓶颈；
+11. 可选通过线程和协程（FIBER）做请求分发；
+12. 客户端一个请求多个响应，类似订阅
+13. 更多功能会持继增加
 
 # 下载源代码
 git checkout https://github.com/mynewworldyyl/jmicro.git
@@ -163,6 +164,54 @@ public class ServiceComsumer {
 #  JMICRO参考文档
 
 ##  注解
+### Service：
+~~~
+@Target({TYPE})
+@Retention(RUNTIME)
+public @interface Service {
+
+	public String value() default "";
+	
+	public String registry() default Constants.DEFAULT_REGISTRY;
+	
+	public String server() default Constants.DEFAULT_SERVER;
+	
+	//服务接口，如果类只实现一个接口，则此值可不填
+	public Class<?> infs() default Void.class;
+	
+	public String namespace() default Constants.DEFAULT_NAMESPACE;
+	
+	public String version() default Constants.DEFAULT_VERSION;
+	
+	public int monitorEnable() default -1;
+	
+	public int retryInterval() default 500;
+	
+	//method must can be retry, or 1
+	public int retryCnt() default 3;
+	
+	public int timeout() default 2000;
+	
+	public String testingArgs() default "";
+	
+	public int maxFailBeforeDegrade() default 100;
+	
+	/**
+	 *  milliseconds
+	 *  speed up when real response time less avgResponseTime, 
+	 *  speed down when real response time less avgResponseTime
+	 */
+	public int avgResponseTime() default -1;
+	
+	public int maxFailBeforeFusing() default 500;
+	
+	/**
+	 * max qps
+	 */
+	public String maxSpeed() default "";
+}
+
+~~~
 
 ##  IOC容器
 
