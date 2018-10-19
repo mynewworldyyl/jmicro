@@ -1,72 +1,71 @@
-# jmicro
-1. Simple way to implement micro service framework, also very easy to use (VS to dubbo,spring cloud);
-2. Easy to extend the core functions, such as loadbalance, transport, registry,codec,timeout,retry,service downgrade and cutdown ...
-3. Service monitor and dynamic reload when fail;
-4. Real time service data, such as qps for specify service method;
-5. IOC Container implement for this framework which only support singleton instance;
-6. Configuration management support by ZK or Etcd
-7. Sentinel support
-8. More functions will be added ....
+# JMicro说明
+1. 以简单方式实现微服务相关功能，包括服务注册，服务发现，服务监控，超时，重试，限速，降级，熔断，负载均衡等
+2. 模块之间确保最底偶合度，非常易于扩展，参考jmicro.api，基本上每个接口都只有一个方法
+3. 完全基于Java注解声明组件，没有任何XML，property之类的配置;
+4. 为微服务定制的极其轻量IOC容器，目前代码大概1500行左右;
+5. 监控埋点，可以详细监控服务每个细节，如每个RPC方法响应时间，异常次数，qps等等，并且监控的点非常易于替换或扩展;
+6. 如果你喜欢，可以0配置启N个服务，但实时修改每个服务方法的配置，并且实时生效；
+7. 简单一致的HTTP支持，可以接入任何客户端；
+8. 每个请求，连接，消息有全局唯一标识，实现整个请求的全流程串连监控；
+9. 运行jmicro.example样例，体验基于JMicro开发服务有多简单；
+10. 可选通过线程和协程做主请求分发；
+11. 客户端一个请求多个响应，类似发布订阅
+10. 更多功能会持继增加
 
-# downnload source code
+# 下载源代码
 git checkout https://github.com/mynewworldyyl/jmicro.git
 
-# build
+# 构建
 maven clean install
 
-# start zk registry
- run zookeeper (will support etcd in future)
+# 启动Zookeeper，很快将会增加ETCD支持，到时性能将会有质的提高
+ run zookeeper 
 
-# define service interface
+# 定义一个服务
 ~~~
-public interface ITestRpcService {
 
-	String hello(String name);
+package org.jmicro.example.api;
+
+@Service
+public interface ITestRpcService {
 	
 	Person getPerson(Person p);
-}
-
-person class as argument between comsumer and provider
-
-public class Person{
 	
-	private String username ="";
-	private int id = 222;
-	public String getUsername() {
-		return username;
-	}
-	public void setUsername(String username) {
-		this.username = username;
-	}
-	public int getId() {
-		return id;
-	}
-	public void setId(int id) {
-		this.id = id;
-	}
-	@Override
-	public String toString() {
-		return "ID: " + this.id+", username: " + this.username;
-	}
+	void pushMessage(String msg);
+	
+	void subscrite(String msg);
+	
+	String hello(String name);
+	
 }
+
 ~~~
 
-# start service provider code
+# 实现服务
 ~~~
-
-## implement service
 
 package org.jmicro.example.provider;
 
-import org.jmicro.api.annotation.Cfg;
-import org.jmicro.api.annotation.Service;
-import org.jmicro.example.api.ITestRpcService;
-import org.jmicro.example.api.Person;
+import java.util.concurrent.atomic.AtomicInteger;
 
-@Service //will tell the objectfactory this class is a remote service
+import org.jmicro.api.JMicroContext;
+import org.jmicro.api.Person;
+import org.jmicro.api.annotation.Cfg;
+import org.jmicro.api.annotation.Component;
+import org.jmicro.api.annotation.SMethod;
+import org.jmicro.api.annotation.Service;
+import org.jmicro.api.server.IWriteCallback;
+import org.jmicro.common.CommonException;
+import org.jmicro.common.Constants;
+import org.jmicro.example.api.ITestRpcService;
+
+@Service(timeout=10*60*1000,maxSpeed="1s")
+@Component
 public class TestRpcServiceImpl implements ITestRpcService{
 
-	@Cfg("/name") //inject by objectfactory and value got from zookeeper
+	private AtomicInteger ai = new AtomicInteger();
+	
+	@Cfg("/limiterName")
 	private String name;
 	
 	@Override
@@ -76,88 +75,76 @@ public class TestRpcServiceImpl implements ITestRpcService{
 	}
 
 	@Override
+	@SMethod(monitorEnable=1)
 	public Person getPerson(Person p) {
-		System.out.println(p);
 		p.setUsername("Server update username");
-		p.setId(2222);
+		p.setId(ai.getAndIncrement());
+		System.out.println(p);
 		return p;
+	}
+
+	@Override
+	@SMethod(needResponse=false)
+	public void pushMessage(String msg) {
+		System.out.println("Server Rec: "+ msg);
+	}
+	
+	private AtomicInteger count = new AtomicInteger(0);
+	
+	@Override
+	@SMethod(streamCallback="stringMessageCallback",timeout=10*60*1000)
+	public void subscrite(String msg) {
+		IWriteCallback sender = JMicroContext.get().getParam(Constants.CONTEXT_CALLBACK, null);
+		if(sender == null){
+			throw new CommonException("Not in async context");
+		}
+		for(int i = 100; i > 0; i++) {
+			try {
+				Thread.sleep(1000*2);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+			String msg1 = "Server return: "+ count.getAndIncrement()+",msg: " +msg;
+			System.out.println(msg1);
+			sender.send(msg1);
+		}
 	}
 }
 
-## start the service provider
+## 启动服务
 
-package org.jmicro.main;
-
-import org.jmicro.api.Config;
-import org.jmicro.api.objectfactory.IObjectFactory;
-import org.jmicro.api.servicemanager.ComponentManager;
-import org.jmicro.common.Utils;
+~~~
 
 public class ServiceProvider {
 
 	public static void main(String[] args) {
-		
-		Config.parseArgs(args);
-		
-		IObjectFactory of = ComponentManager.getObjectFactory();
-		of.start();
-		Utils.waitForShutdown();
+		JMicro.getObjectFactoryAndStart(args);
+		Utils.getIns().waitForShutdown();
 	}
 
 }
+
 ~~~
 
-# start comsumer
-comsumer only dependent the service interface not the implementation
+# 客户使用服务
 ~~~
-## Test rpc client
-@Component //this will tell objectfactory this class is a component and create instance
-public class TestRpcClient {
+package org.jmicro.example.comsumer;
 
-	@Reference(required=true) // got the remote service
-	private ITestRpcService rpcService;
-	
-	public void invokeRpcService(){
-	     //invoke remote service
-		String result = rpcService.hello("Hello RPC Server");
-		System.out.println("Get remote result:"+result);
-	}
-	
-	public void invokePersonService(){
-	 //invoke remote service
-		Person p = new Person();
-		p.setId(1234);
-		p.setUsername("Client person Name");
-		p = rpcService.getPerson(p);
-		System.out.println(p.toString());
-	}
-	
-}
-
-## start the client in main function
-package org.jmicro.main;
-
-import org.jmicro.api.Config;
+import org.jmicro.api.JMicro;
 import org.jmicro.api.objectfactory.IObjectFactory;
-import org.jmicro.api.servicemanager.ComponentManager;
+import org.jmicro.example.api.ITestRpcService;
 
 public class ServiceComsumer {
-
 	public static void main(String[] args) {
 		
-		Config.parseArgs(args);
-		
-		IObjectFactory of = ComponentManager.getObjectFactory();
-		of.start();
+		IObjectFactory of = JMicro.getObjectFactoryAndStart(args);
 		
 		//got remote service from object factory
-		TestRpcClient src = of.get(TestRpcClient.class);
+		ITestRpcService src = of.get(ITestRpcService.class);
 		//invoke remote service
-		src.invokePersonService();
-		
-		//actually , you can got remote service directory
-		ITestRpcService srv = of.get(ITestRpcService.class);
-		srv.hello("Hello RPC Server");
+		System.out.println(src.hello("Hello JMicro"));
 	}
 }
+
+
 ~~~
