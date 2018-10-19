@@ -21,7 +21,7 @@ maven clean install
 # 启动Zookeeper，很快将会增加ETCD支持，到时性能将会有质的提高
  run zookeeper 
 
-# 定义一个服务
+# 定义一个服务,完整代码请参考jmicro.example下面的子项目
 ~~~
 
 package org.jmicro.example.api;
@@ -127,7 +127,9 @@ public class ServiceProvider {
 ~~~
 
 # 客户使用服务
+
 ~~~
+
 package org.jmicro.example.comsumer;
 
 import org.jmicro.api.JMicro;
@@ -145,6 +147,5 @@ public class ServiceComsumer {
 		System.out.println(src.hello("Hello JMicro"));
 	}
 }
-
 
 ~~~
