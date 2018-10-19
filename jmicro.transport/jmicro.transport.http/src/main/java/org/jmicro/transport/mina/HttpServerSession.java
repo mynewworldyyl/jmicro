@@ -16,33 +16,48 @@
  */
 package org.jmicro.transport.mina;
 
-import org.apache.mina.api.IoSession;
-import org.jmicro.api.client.IClientSession;
+import java.io.IOException;
+
 import org.jmicro.api.net.Message;
+import org.jmicro.common.Constants;
+import org.jmicro.common.util.JsonUtils;
+import org.jmicro.server.IServerSession;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-/**
- * 
- * @author Yulei Ye
- * @date 2018年10月4日-下午12:13:35
- */
-public class MinaClientSession extends AbstractMinaSession implements IClientSession{
+import com.sun.net.httpserver.HttpExchange;
+import com.sun.net.httpserver.Headers;
 
-	static final Logger LOG = LoggerFactory.getLogger(MinaClientSession.class);
+/** 
+ * @author Yulei Ye
+ * @date 2018年10月4日-下午12:14:01
+ */
+public class HttpServerSession extends AbstractHttpSession implements IServerSession{
+
+	static final Logger LOG = LoggerFactory.getLogger(HttpServerSession.class);
 	
-	public MinaClientSession(IoSession ioSession,int readBufferSize,int heardbeatInterval) {
-		super(ioSession,readBufferSize,heardbeatInterval);
+	public HttpServerSession(HttpExchange exchange,int readBufferSize,int hearbeatInterval) {
+		super(exchange,readBufferSize,hearbeatInterval);
 	}
-	
+
+	@SuppressWarnings("restriction")
 	@Override
 	public void write(Message msg) {
-		this.getIoSession().write(msg.encode());
+		try {
+			Headers responseHeaders = exchange.getResponseHeaders();
+	        responseHeaders.set("Content-Type", "application/json");
+			exchange.sendResponseHeaders(200, 0);
+			String json = JsonUtils.getIns().toJson(msg);
+			exchange.getResponseBody().write(json.getBytes(Constants.CHARSET));
+			this.close(true);
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 
 	@Override
 	public void close(boolean flag) {
 		super.close(flag);
 	}
-	
 }

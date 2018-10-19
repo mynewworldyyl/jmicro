@@ -55,6 +55,10 @@ jmicro.transport/jmicro.transport.mina/target/
 jmicro.transport/jmicro.transport.mina/.classpath
 jmicro.transport/jmicro.transport.mina/.project
 jmicro.transport/jmicro.transport.mina/.settings/
+jmicro.transport/jmicro.transport.http/target/
+jmicro.transport/jmicro.transport.http/.classpath
+jmicro.transport/jmicro.transport.http/.project
+jmicro.transport/jmicro.transport.http/.settings/
 jmicro.zk/target/
 jmicro.zk/.classpath
 jmicro.zk/.project
@@ -118,6 +122,11 @@ jmicro.monitor/jmicro.monitor.submiter/target/
 jmicro.monitor/jmicro.monitor.submiter/.classpath
 jmicro.monitor/jmicro.monitor.submiter/.project
 jmicro.monitor/jmicro.monitor.submiter/.settings/
+jmicro.monitor/jmicro.monitor.dashboard/target/
+jmicro.monitor/jmicro.monitor.dashboard/.classpath
+jmicro.monitor/jmicro.monitor.dashboard/.project
+jmicro.monitor/jmicro.monitor.dashboard/.settings/
+jmicro.monitor/jmicro.monitor.dashboard/logs/
 .DS_Store
 Thumbs.db
 UserInterfaceState.xcuserstate

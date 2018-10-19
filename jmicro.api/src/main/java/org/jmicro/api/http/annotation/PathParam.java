@@ -14,14 +14,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.jmicro.api.codec;
+package org.jmicro.api.http.annotation;
 
+import static java.lang.annotation.ElementType.PARAMETER;
+import static java.lang.annotation.RetentionPolicy.RUNTIME;
+
+import java.lang.annotation.Retention;
+import java.lang.annotation.Target;
 /**
  * 
  * @author Yulei Ye
- * @date 2018年10月4日-下午12:01:59
+ * @date 2018年10月18日-下午11:01:28
  */
-public interface IEncoder<R> {
+@Target(PARAMETER)
+@Retention(RUNTIME)
+public @interface PathParam {
 
-	R encode(Object obj);
+	public String value() default "";
 }

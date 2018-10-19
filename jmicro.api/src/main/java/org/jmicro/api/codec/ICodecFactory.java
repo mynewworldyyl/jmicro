@@ -1,21 +1,19 @@
 package org.jmicro.api.codec;
 
-import java.nio.ByteBuffer;
-
 public interface ICodecFactory {
 
-	<T> IDecoder getDecoder(Class<T> clazz);
-	<T> IEncoder getEncoder(Class<T> clazz);
+	IDecoder getDecoder(Byte protocol);
+	IEncoder getEncoder(Byte protocol);
 	
-	<T> void registDecoder(Class<T> clazz,IDecoder decoder);
+	void registDecoder(Byte protocol,IDecoder<?> decoder);
 	
-	<T> void registEncoder(Class<T> clazz,IEncoder encoder);
+	void registEncoder(Byte protocol,IEncoder<?> encoder);
 	
-	public static ByteBuffer encode(ICodecFactory f,Object obj){
-		return f.getEncoder(obj.getClass()).encode(obj);
+	public static <R> R encode(ICodecFactory f,Object obj,Byte protocol){
+		return (R)f.getEncoder(protocol).encode(obj);
 	}
 	
-	public static <T> T decode(ICodecFactory f,ByteBuffer buffer){
-		return f.getDecoder(null).decode(buffer);
+	public static <T,R> R decode(ICodecFactory f, T src,Class<R> clazz,Byte protocol){
+		return (R)f.getDecoder(protocol).decode(src,clazz);
 	}
 }

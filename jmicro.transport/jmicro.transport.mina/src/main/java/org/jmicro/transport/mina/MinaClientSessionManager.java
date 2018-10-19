@@ -121,7 +121,7 @@ public class MinaClientSessionManager implements IClientSessionManager{
 						}
 						hearbeat.setSessionId(e.getValue().getId());
 						bb.mark();
-						e.getValue().write(hearbeat.encode());
+						e.getValue().write(hearbeat);
 						bb.reset();
 					}
 					
@@ -161,7 +161,9 @@ public class MinaClientSessionManager implements IClientSessionManager{
             if(body == null){
             	return;
             }
-            receiver.receive(cs,body);
+            Message msg = new Message();
+            msg.decode(body);
+            receiver.receive(cs,msg);
         }
 
         @Override

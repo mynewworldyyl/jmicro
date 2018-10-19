@@ -16,9 +16,8 @@
  */
 package org.jmicro.transport.mina;
 
-import java.nio.ByteBuffer;
-
 import org.apache.mina.api.IoSession;
+import org.jmicro.api.net.Message;
 import org.jmicro.server.IServerSession;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -37,9 +36,9 @@ public class MinaServerSession extends AbstractMinaSession implements IServerSes
 	}
 
 	@Override
-	public void write(ByteBuffer msg) {
+	public void write(Message msg) {
 		if(!this.getIoSession().isClosed()){
-			this.getIoSession().write(msg);
+			this.getIoSession().write(msg.encode());
 		}
 	}
 

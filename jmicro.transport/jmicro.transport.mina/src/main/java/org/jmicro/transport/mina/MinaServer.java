@@ -115,7 +115,7 @@ public class MinaServer implements IServer{
 				}*/
 				session.active();
 				msg.setType(Constants.MSG_TYPE_HEARBEAT_RESP);
-				session.write(msg.encode());
+				session.write(msg);
 			}
 		});
 		
@@ -176,8 +176,9 @@ public class MinaServer implements IServer{
                     if(body == null){
                     	return;
                     }
-        			
-        			receiver.receive(s,body);
+                    Message msg = new Message();
+                    msg.decode(body);
+        			receiver.receive(s,msg);
             		//jmicroManager.addRequest(req);
                 }
 

@@ -54,39 +54,6 @@ public class RpcRequest extends AbstractObjectMapSupport implements IRequest{
 	
 	public RpcRequest(){}
 	
-	/*@Override
-	public void decode(ByteBuffer ois) {
-		super.decode(ois);
-		this.version = Decoder.decodeObject(ois);
-		this.serviceName = Decoder.decodeObject(ois);
-		this.method = Decoder.decodeObject(ois);
-		this.namespace = Decoder.decodeObject(ois);
-		this.impl = Decoder.decodeObject(ois);
-		this.args = Decoder.decodeObject(ois);// (Object[])ois.readObject();
-		this.reqId = ois.getLong();
-		this.isMonitorEnable = ois.get() >= 1;
-	}
-
-	@Override
-	public ByteBuffer encode() {
-		ByteBuffer oos = super.encode();
-		Encoder.encodeObject(oos, this.version);
-		Encoder.encodeObject(oos, this.serviceName);
-		Encoder.encodeObject(oos, this.method);
-		Encoder.encodeObject(oos, this.namespace);
-		Encoder.encodeObject(oos, this.impl);
-		Encoder.encodeObject(oos, this.args);
-		oos.putLong(this.reqId);
-		oos.put(this.isMonitorEnable?(byte)1:(byte)0);
-		oos.flip();
-		return oos;
-	}
-
-	@Override
-	public ByteBuffer newBuffer() {
-		return ByteBuffer.allocate(4069);
-	}*/
-	
 	public Long getMsgId(){
 		if(this.msg != null){
 			return this.msg.getId();

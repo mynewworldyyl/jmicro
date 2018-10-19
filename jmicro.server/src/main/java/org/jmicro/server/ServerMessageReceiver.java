@@ -80,7 +80,7 @@ public class ServerMessageReceiver implements IMessageReceiver{
 	
 	@Override
 	@Suspendable
-	public void receive(ISession s, ByteBuffer data) {
+	public void receive(ISession s, Message msg) {
 		if(!ready) {
 			synchronized(ready){
 				try {
@@ -92,14 +92,14 @@ public class ServerMessageReceiver implements IMessageReceiver{
 		}
 		//直接协程处理，IO LOOP线程返回
 		//new Fiber<Void>(() ->doReceive((IServerSession)s,data)).start();
-		new Thread(()->{doReceive((IServerSession)s,data);}).start();
+		new Thread(()->{doReceive((IServerSession)s,msg);}).start();
 	}
 	
 	@Suspendable
-	private void doReceive(IServerSession s, ByteBuffer data){
+	private void doReceive(IServerSession s, Message msg){
 
-        Message msg = new Message();
-		msg.decode(data);
+       /* Message msg = new Message();
+		msg.decode(data);*/
 		
 		//logger.debug("doReceive reqID: "+msg.getReqId());
 		
@@ -111,7 +111,7 @@ public class ServerMessageReceiver implements IMessageReceiver{
 						null,null,msg.getId(),msg.getReqId(),s.getId(),msg1);
 			}
 			msg.setType((short)(msg.getType()+1));
-			s.write(msg.encode());
+			s.write(msg);
 			return;
 		}
 		
@@ -125,7 +125,7 @@ public class ServerMessageReceiver implements IMessageReceiver{
 			MonitorConstant.doSubmit(monitor,MonitorConstant.SERVER_REQ_ERROR, null,null);
 			logger.error("reqHandler error: ",e);
 			msg.setType((short)(msg.getType()+1));
-			s.write(msg.encode());
+			s.write(msg);
 		}
 	}
 	

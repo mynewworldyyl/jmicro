@@ -44,6 +44,7 @@ import org.jmicro.api.annotation.Reference;
 import org.jmicro.api.annotation.Service;
 import org.jmicro.api.config.Config;
 import org.jmicro.api.config.IConfigLoader;
+import org.jmicro.api.http.annotation.HttpHandler;
 import org.jmicro.api.objectfactory.IObjectFactory;
 import org.jmicro.api.objectfactory.IPostFactoryReady;
 import org.jmicro.api.objectfactory.IPostInitListener;
@@ -51,6 +52,7 @@ import org.jmicro.api.objectfactory.ProxyObject;
 import org.jmicro.api.service.IServerServiceProxy;
 import org.jmicro.common.CommonException;
 import org.jmicro.common.Constants;
+import org.jmicro.common.Utils;
 import org.jmicro.common.util.ClassGenerator;
 import org.jmicro.common.util.ReflectUtils;
 import org.jmicro.common.util.StringUtils;
@@ -84,6 +86,8 @@ public class SimpleObjectFactory implements IObjectFactory {
 	private Map<String,Object> clsNameToObjs = new ConcurrentHashMap<String,Object>();
 	
 	private ClientServiceProxyManager clientServiceProxyManager = null;
+	
+	private HttpHandlerManager httpHandlerManager = new HttpHandlerManager(this);
 	
 	@SuppressWarnings("unchecked")
 	@Override
@@ -215,10 +219,12 @@ public class SimpleObjectFactory implements IObjectFactory {
 	}
 	
      private void doAfterCreate(Object obj) {
-    	 injectDepependencies(obj);
-    	 notifyPrePostListener(obj);
-    	 doInit(obj);
-		 notifyAfterPostListener(obj);
+    	 if(!(obj instanceof ProxyObject)){
+    		 injectDepependencies(obj);
+    		 notifyPrePostListener(obj);
+        	 doInit(obj);
+    		 notifyAfterPostListener(obj);
+    	 }
 	}
      
      private void notifyAfterPostListener(Object obj) {
@@ -310,13 +316,14 @@ public class SimpleObjectFactory implements IObjectFactory {
 						Object obj = null;
 						if(c.isAnnotationPresent(Service.class)) {
 							 obj = createServiceObject(c,false);
-						} else {
-							obj = createObject(c,false);
+						} else if(c.isAnnotationPresent(HttpHandler.class)) {
+							obj = createHttpHanderObject(c);
+						}else {
+							obj = this.createObject(c, false);
 						}
 						this.cacheObj(c, obj, true);
 					}
 				}
-				
 			}
 		}
 		
@@ -350,6 +357,9 @@ public class SimpleObjectFactory implements IObjectFactory {
 			for(int i =0; i < l.size(); i++){
 				Object o = l.get(i);
 				//System.out.println(o);
+				/*if(o.getClass().getName().startsWith("org.jmicro.idgenerator")){
+					System.out.println(o);
+				}*/
 				doAfterCreate(o);
 			}
 		}
@@ -370,6 +380,12 @@ public class SimpleObjectFactory implements IObjectFactory {
 		synchronized(isInit){
 			isInit.notifyAll();
 		}
+	}
+
+	private Object createHttpHanderObject(Class<?> c) {
+		Object o = this.httpHandlerManager.createHandler(c);
+		
+		return o;
 	}
 
 	private Object createServiceObject(Class<?> cls, boolean doAfterCreate) {
@@ -474,14 +490,15 @@ public class SimpleObjectFactory implements IObjectFactory {
 
 	private void injectDepependencies(Object obj) {
 		Class<?> cls = ProxyObject.getTargetCls(obj.getClass());
-		Field[] fs = cls.getDeclaredFields();
+		List<Field> fields = new ArrayList<>();
+		Utils.getIns().getFields(fields, cls);
 		
 		Component comAnno = cls.getAnnotation(Component.class);
 		
 		boolean isProvider = isProviderSide(obj);
 		boolean isComsumer =  isComsumerSide(obj);
 		
-		for(Field f : fs) {
+		for(Field f : fields) {
 			Object srv = null;
 			boolean isRequired = false;
 			if(f.isAnnotationPresent(Reference.class)){
@@ -800,7 +817,9 @@ public class SimpleObjectFactory implements IObjectFactory {
 		cg.addMethod("public Object getTarget(){ _init0(); return this.target;}");
 		
 		int index = 0;
-		for(Method m : cls.getMethods()){
+		List<Method> methods = new ArrayList<>();
+		Utils.getIns().getMethods(methods, cls);
+		for(Method m : methods){
 			if(Modifier.isPrivate(m.getModifiers()) || m.getDeclaringClass() == Object.class){
 				continue;
 			}
@@ -871,7 +890,9 @@ public class SimpleObjectFactory implements IObjectFactory {
 		Class<?> tc = ProxyObject.getTargetCls(obj.getClass());
 		Method initMethod1 = null;
 		Method initMethod2 = null;
-		for(Method m : tc.getDeclaredMethods()) {
+		List<Method> methods = new ArrayList<>();
+		Utils.getIns().getMethods(methods, tc);
+		for(Method m : methods ) {
 			if(m.isAnnotationPresent(JMethod.class)) {
 				JMethod jm = m.getAnnotation(JMethod.class);
 				if("init".equals(jm.value())) {

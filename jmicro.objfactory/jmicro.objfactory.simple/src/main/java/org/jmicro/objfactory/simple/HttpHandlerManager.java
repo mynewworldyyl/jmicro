@@ -14,14 +14,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.jmicro.api.codec;
-
+package org.jmicro.objfactory.simple;
 /**
  * 
  * @author Yulei Ye
- * @date 2018年10月4日-下午12:01:59
+ * @date 2018年10月18日-下午11:00:18
  */
-public interface IEncoder<R> {
+class HttpHandlerManager {
 
-	R encode(Object obj);
+	private final SimpleObjectFactory of;
+	
+	HttpHandlerManager(SimpleObjectFactory of){
+		this.of = of;
+	}
+	
+	Object createHandler(Class<?> clazz){
+		try {
+			Object obj = clazz.newInstance();
+			return obj;
+		} catch (InstantiationException | IllegalAccessException e) {
+			e.printStackTrace();
+			return null;
+		}
+	}
 }

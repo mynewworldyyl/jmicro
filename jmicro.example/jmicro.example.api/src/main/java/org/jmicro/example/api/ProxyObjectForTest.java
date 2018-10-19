@@ -1,7 +1,5 @@
 package org.jmicro.example.api;
 
-import java.lang.reflect.InvocationHandler;
-
 import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.Inject;
 import org.jmicro.api.registry.IRegistry;
@@ -14,9 +12,6 @@ public class ProxyObjectForTest {
 	
 	@Inject
 	private IRegistry registry;
-	
-	@Inject
-	private InvocationHandler handler;
 	
 	private String msg = "ProxyObjectForTest";
 	
@@ -32,10 +27,6 @@ public class ProxyObjectForTest {
 	
 	public void invokeRpcService1(){
 		System.out.println("invokeRpcService1: "+this.msg);
-	}
-	
-	public void testInjectDependency(){
-		System.out.println("dependency : "+this.handler);
 	}
 	
 }

@@ -73,7 +73,7 @@ public interface Constants {
 	/*=====================Message Begin=======================*/
 	/*=====================Message Begin=======================*/
 	
-	public static final int HEADER_LEN=34;
+	public static final int HEADER_LEN=35;
 	
 /*	public static final byte MSG_REQ_TYPE_RESP=1;
 	

@@ -16,13 +16,11 @@
  */
 package org.jmicro.api.codec;
 
-import java.nio.ByteBuffer;
-
 /**
  * 
  * @author Yulei Ye
  * @date 2018年10月4日-下午12:01:43
  */
-public interface IDecoder {
-	<T> T decode(ByteBuffer data);
+public interface IDecoder<T> {
+	<R> R decode(T data,Class<R>  clazz);
 }

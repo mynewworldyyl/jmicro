@@ -17,6 +17,9 @@
 package org.jmicro.common;
 
 import java.io.UnsupportedEncodingException;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
@@ -114,5 +117,64 @@ public class Utils {
         }
         return ipList;
     }
+	
+	public void getMethods(List<Method> methods ,Class<?> clazz){
+		Method[] ms = clazz.getDeclaredMethods();
+		for(Method f: ms){
+			if(Modifier.isStatic(f.getModifiers()) || f.getDeclaringClass() == Object.class){
+				continue;
+			}
+			methods.add(f);
+		}
+		
+		if(clazz.getSuperclass() != Object.class) {
+			getMethods(methods,clazz.getSuperclass());
+		}
+	}
+	
+	public void getFields(List<Field> fields ,Class<?> clazz){
+		Field[] fs = clazz.getDeclaredFields();
+		for(Field f: fs){
+			if( Modifier.isFinal(f.getModifiers()) || Modifier.isStatic(f.getModifiers()) || f.getDeclaringClass() == Object.class){
+				continue;
+			}
+			fields.add(f);
+		}
+		
+		if(clazz.getSuperclass() != Object.class) {
+			getFields(fields,clazz.getSuperclass());
+		}
+	}
 
+	public void  getFieldNames(List<String> fieldNames,Class cls) {
+		
+		Field[] fs = cls.getDeclaredFields();
+		for(Field f: fs){
+			if(Modifier.isTransient(f.getModifiers()) || Modifier.isFinal(f.getModifiers())
+					|| Modifier.isStatic(f.getModifiers()) || f.getDeclaringClass() == Object.class){
+				continue;
+			}
+			fieldNames.add(f.getName());
+		}
+		
+		if(cls.getSuperclass() != Object.class) {
+			getFieldNames(fieldNames,cls.getSuperclass());
+		}
+		
+	}
+
+	public Field getClassField(Class<?> cls, String fn) {
+		Field f = null;
+		try {
+			 return cls.getDeclaredField(fn);
+		} catch (NoSuchFieldException e) {
+			cls = cls.getSuperclass();
+			if(cls == Object.class) {
+				return null;
+			} else {
+				return getClassField(cls,fn);
+			}
+		}
+	}
+	
 }

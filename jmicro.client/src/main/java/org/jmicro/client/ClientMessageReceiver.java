@@ -16,7 +16,6 @@
  */
 package org.jmicro.client;
 
-import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -55,9 +54,9 @@ public class ClientMessageReceiver implements IMessageReceiver{
 	}
 
 	@Override
-	public void receive(ISession session,ByteBuffer buffer) {
-		Message msg = new Message();
-		msg.decode(buffer);
+	public void receive(ISession session,Message msg) {
+		/*Message msg = new Message();
+		msg.decode(buffer);*/
 		//CodecFactory.decode(this.codecFactory,buffer);
 		try {
 			IMessageHandler h = handlers.get(msg.getType());

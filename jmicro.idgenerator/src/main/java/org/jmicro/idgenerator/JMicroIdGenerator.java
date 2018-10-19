@@ -31,7 +31,7 @@ public class JMicroIdGenerator implements IIdGenerator {
 	
 	private static String ID_IDR = Constants.CFG_ROOT + "/id/";
 	
-	@Inject
+	@Inject(required=true)
 	private IDataOperator dataOperator;
 	
 	public void init(){

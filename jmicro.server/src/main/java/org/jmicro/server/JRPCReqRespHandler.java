@@ -46,7 +46,6 @@ import org.jmicro.api.server.IRequest;
 import org.jmicro.api.server.IRequestHandler;
 import org.jmicro.api.server.IResponse;
 import org.jmicro.api.server.IWriteCallback;
-import org.jmicro.api.service.ServiceLoader;
 import org.jmicro.common.CommonException;
 import org.jmicro.common.Constants;
 import org.slf4j.Logger;
@@ -104,7 +103,8 @@ public class JRPCReqRespHandler implements IMessageHandler{
 	        JMicroContext cxt = JMicroContext.get();
 			cxt.setParam(JMicroContext.SESSION_KEY, s);
 			
-			final RpcRequest req1 = ICodecFactory.decode(this.codeFactory,msg.getPayload());
+			final RpcRequest req1 = ICodecFactory.decode(this.codeFactory,msg.getPayload(),
+					RpcRequest.class,msg.getProtocol());
 			req = req1;
 			req.setSession(s);
 			req.setMsg(msg);
@@ -158,12 +158,12 @@ public class JRPCReqRespHandler implements IMessageHandler{
 								resp.setSuccess(true);
 								//返回结果包
 								msg.setId(idGenerator.getLongId(Message.class));
-								msg.setPayload(codeFactory.getEncoder(RpcResponse.class).encode(resp));
+								msg.setPayload(codeFactory.getEncoder(msg.getProtocol()).encode(resp));
 								msg.setType(Constants.MSG_TYPE_ASYNC_RESP);
 								if(s.isClose()){
 									throw new CommonException("Session is closed while writing data");
 								}
-								s.write(codeFactory.getEncoder(Message.class).encode(msg));
+								s.write(msg);
 							}
 						});
 						 handler(req1);
@@ -197,9 +197,9 @@ public class JRPCReqRespHandler implements IMessageHandler{
 					resp.setSuccess(true);
 					
 					msg.setType(Constants.MSG_TYPE_RRESP_JRPC);
-					msg.setPayload(ICodecFactory.encode(codeFactory,resp));
+					msg.setPayload(ICodecFactory.encode(codeFactory,resp,msg.getProtocol()));
 					msg.setId(idGenerator.getLongId(Message.class));
-					s.write(msg.encode());
+					s.write(msg);
 				
 				} else {
 					//同步响应
@@ -208,10 +208,10 @@ public class JRPCReqRespHandler implements IMessageHandler{
 						resp = new RpcResponse(req.getRequestId(),null);
 						resp.setSuccess(true);
 					}
-					msg.setPayload(ICodecFactory.encode(codeFactory,resp));
+					msg.setPayload(ICodecFactory.encode(codeFactory,resp,msg.getProtocol()));
 					msg.setType(Constants.MSG_TYPE_RRESP_JRPC);
 					msg.setId(idGenerator.getLongId(Message.class));
-					s.write(msg.encode());
+					s.write(msg);
 				}
 				MonitorConstant.doSubmit(monitor,MonitorConstant.SERVER_REQ_OK, req,resp);
 			} catch (Throwable e) {

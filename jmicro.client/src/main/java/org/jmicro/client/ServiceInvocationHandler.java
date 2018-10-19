@@ -47,6 +47,7 @@ import org.jmicro.api.registry.ServiceMethod;
 import org.jmicro.api.server.IRequest;
 import org.jmicro.common.CommonException;
 import org.jmicro.common.Constants;
+import org.jmicro.common.util.JsonUtils;
 import org.jmicro.common.util.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -195,14 +196,22 @@ public class ServiceInvocationHandler implements InvocationHandler, IMessageHand
     			MonitorConstant.doSubmit(monitor,MonitorConstant.CLIENT_REQ_BEGIN, req, null);
     		}
     		
+    		String reqJSon = JsonUtils.getIns().toJson(req);
+    		
+    		
     		Message msg = new Message();
     		msg.setType(Constants.MSG_TYPE_REQ_JRPC);
-    		
+    		msg.setProtocol(Message.PROTOCOL_BIN);
     		msg.setId(this.idGenerator.getLongId(Message.class));
     		msg.setReqId(req.getRequestId());
     		msg.setSessionId(session.getId());
-    		msg.setPayload(ICodecFactory.encode(this.codecFactory,req));
+    		msg.setPayload(ICodecFactory.encode(this.codecFactory,req,msg.getProtocol()));
     		msg.setVersion(Constants.VERSION_STR);
+    		
+    		msg.setPayload(reqJSon);
+    		reqJSon = JsonUtils.getIns().toJson(msg);
+    		
+    		System.out.println(reqJSon);
     		
     		//byte flag = sm.async ? Message.FLAG_ASYNC : 0;
     		boolean stream = !StringUtils.isEmpty(sm.streamCallback);
@@ -215,7 +224,7 @@ public class ServiceInvocationHandler implements InvocationHandler, IMessageHand
     		msg.setFlag(flag);
     		req.setMsg(msg);
     		
-    		session.write(msg.encode());
+    		session.write(msg);
     		
     		if(!sm.needResponse && !stream) {
     			//数据发送后，不需要返回结果，也不需要请求确认包，直接返回
@@ -260,7 +269,7 @@ public class ServiceInvocationHandler implements InvocationHandler, IMessageHand
     		if(respMsg != null){
     			resp = new RpcResponse(respBufferSize);
     			if(respMsg.getPayload() != null){
-    				resp = ICodecFactory.decode(this.codecFactory,respMsg.getPayload());
+    				resp = ICodecFactory.decode(this.codecFactory,respMsg.getPayload(),RpcResponse.class,msg.getProtocol());
     			}
     			resp.setMsg(respMsg);
     			req.setMsg(msg);

@@ -16,13 +16,12 @@
  */
 package org.jmicro.api.net;
 
-import java.nio.ByteBuffer;
 /**
  * RCP服务端接收网络层传过来的数据，
  * @author Yulei Ye
  * @date 2018年10月9日-下午5:53:05
  */
 public interface IMessageReceiver {
-	void receive(ISession session,ByteBuffer data);
+	void receive(ISession session,Message msg);
 	void registHandler(IMessageHandler handler);
 }

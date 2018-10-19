@@ -192,7 +192,7 @@ public class ServiceMethod {
 		if(clazzes != null && clazzes.length >0){
 			StringBuffer sb = new StringBuffer();
 			for(Class<?> mc: clazzes){
-				sb.append(mc.getName()).append("_");
+				sb.append(mc.getName()).append("-");
 			}
 			String sbt = sb.substring(0, sb.length()-1);
 			return sbt;

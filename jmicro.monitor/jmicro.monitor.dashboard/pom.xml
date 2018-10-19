@@ -2,20 +2,18 @@
     <modelVersion>4.0.0</modelVersion>
     <parent>
          <groupId>org.jmicro</groupId>
-		 <artifactId>jmicro.example</artifactId>
+		 <artifactId>jmicro.monitor</artifactId>
 		 <version>0.0.1-SNAPSHOT</version>
     </parent>
-    <artifactId>jmicro.example.api</artifactId>
+    <artifactId>jmicro.monitor.dashboard</artifactId>
     <packaging>jar</packaging>
     <name>${project.artifactId}</name>
-    <description>Jmicro example api testing</description>
+    <description>monitor dashboard</description>
     <dependencies>
-
         <dependency>
 			 <groupId>org.jmicro</groupId>
 			 <artifactId>jmicro.api</artifactId>
         </dependency>
-         
     </dependencies>
    
 </project>

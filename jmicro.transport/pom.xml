@@ -15,5 +15,6 @@
     <modules>
         <!-- <module>jmicro.transport.api</module> -->
         <module>jmicro.transport.mina</module>
+        <module>jmicro.transport.http</module>
     </modules>
 </project>

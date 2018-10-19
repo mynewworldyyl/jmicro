@@ -28,6 +28,7 @@ import java.util.Map;
 
 import org.jmicro.common.CommonException;
 import org.jmicro.common.Constants;
+import org.jmicro.common.Utils;
 import org.jmicro.common.util.StringUtils;
 /**
  * 
@@ -125,7 +126,7 @@ public class Encoder{
 		}
 		
 		List<String> fieldNames = new ArrayList<>();
-		Decoder.getFieldNames(fieldNames,cls);
+		Utils.getIns().getFieldNames(fieldNames,cls);
 		fieldNames.sort((v1,v2)->v1.compareTo(v2));
 		
 		for(int i = 0; i < fieldNames.size(); i++){
@@ -140,7 +141,7 @@ public class Encoder{
 					//System.out.println("args");
 				}
 				
-				Field f = getClassField(cls,fn);//cls.getDeclaredField(fn);
+				Field f = Utils.getIns().getClassField(cls,fn);//cls.getDeclaredField(fn);
 				
 				boolean bf = f.isAccessible();
 				if(!bf){
@@ -157,20 +158,6 @@ public class Encoder{
 			}
 		}
 		
-	}
-
-	public static Field getClassField(Class<?> cls, String fn) {
-		Field f = null;
-		try {
-			 return cls.getDeclaredField(fn);
-		} catch (NoSuchFieldException e) {
-			cls = cls.getSuperclass();
-			if(cls == Object.class) {
-				return null;
-			} else {
-				return getClassField(cls,fn);
-			}
-		}
 	}
 
 	private static void encodeList(ByteBuffer buffer, Collection objs) {

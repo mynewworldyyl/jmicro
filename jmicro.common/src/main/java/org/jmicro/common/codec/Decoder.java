@@ -30,6 +30,7 @@ import java.util.Map;
 
 import org.jmicro.common.CommonException;
 import org.jmicro.common.Constants;
+import org.jmicro.common.Utils;
 import org.jmicro.common.util.StringUtils;
 /**
  * 
@@ -192,22 +193,7 @@ public class Decoder {
 		return ByteBuffer.wrap(data);
 	}
 
-	public static void  getFieldNames(List<String> fieldNames,Class cls) {
-		
-		Field[] fs = cls.getDeclaredFields();
-		for(Field f: fs){
-			if(Modifier.isTransient(f.getModifiers()) || Modifier.isFinal(f.getModifiers())
-					|| Modifier.isStatic(f.getModifiers()) || f.getDeclaringClass() == Object.class){
-				continue;
-			}
-			fieldNames.add(f.getName());
-		}
-		
-		if(cls.getSuperclass() != Object.class) {
-			getFieldNames(fieldNames,cls.getSuperclass());
-		}
-		
-	}
+	
 	
 	private static Object decodeByReflect(ByteBuffer buffer,Class<?> cls) {
 		if(cls == null){
@@ -240,13 +226,13 @@ public class Decoder {
 		}
 		
 		List<String> fieldNames = new ArrayList<>();
-		getFieldNames(fieldNames,cls);
+		Utils.getIns().getFieldNames(fieldNames,cls);
 		fieldNames.sort((v1,v2)->v1.compareTo(v2));
 		
 		for(int i =0; i < fieldNames.size(); i++){
 			try {
 				
-				Field f = Encoder.getClassField(cls, fieldNames.get(i));// cls.getDeclaredField(fieldNames.get(i));
+				Field f = Utils.getIns().getClassField(cls, fieldNames.get(i));// cls.getDeclaredField(fieldNames.get(i));
 				
 				Object v = decodeObject(buffer);
 				boolean bf = f.isAccessible();
