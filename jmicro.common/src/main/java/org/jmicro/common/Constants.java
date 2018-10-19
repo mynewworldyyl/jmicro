@@ -49,7 +49,6 @@ public interface Constants {
 	public static final String DEFAULT_SELECTOR="defaultSelector";
 	public static final String DEFAULT_INVOCATION_HANDLER="defaultInvocationHandler";
 	
-	
 	public static final String DEFAULT_NAMESPACE="defaultNamespace";
 	public static final String DEFAULT_VERSION="0.0.0";
 	public static final String DEFAULT_IDGENERATOR="defaultGenerator";
@@ -67,7 +66,6 @@ public interface Constants {
 	public static final String SERVICE_ITEM_KEY="serviceItemKey";
 	public static final String SERVICE_METHOD_KEY="serviceMethodKey";
 	public static final String SERVICE_OBJ_KEY="serviceObjKey";
-	
 	
 	/*=====================Message Begin=======================*/
 	/*=====================Message Begin=======================*/
