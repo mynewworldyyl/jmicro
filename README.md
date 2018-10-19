@@ -4,7 +4,7 @@
 3. 完全基于Java注解声明组件，没有任何XML，property之类的配置;
 4. 为微服务定制的极其轻量IOC容器，目前代码大概1500行左右;
 5. 监控埋点，可以详细监控服务每个细节，如每个RPC方法响应时间，异常次数，qps等等，并且监控的点非常易于替换或扩展;
-6. 如果你喜欢，可以0配置启N个服务，但实时修改每个服务方法的配置，并且实时生效；
+6. 如果你喜欢，可以0配置启N个服务，但可以实时修改每个服务方法的配置，并且实时生效；
 7. 简单一致的HTTP支持，可以接入任何客户端；
 8. 每个请求，连接，消息有全局唯一标识，实现整个请求的全流程串连监控；
 9. 运行jmicro.example样例，体验基于JMicro开发服务有多简单；
@@ -59,13 +59,14 @@ import org.jmicro.common.CommonException;
 import org.jmicro.common.Constants;
 import org.jmicro.example.api.ITestRpcService;
 
-@Service(timeout=10*60*1000,maxSpeed="1s")
-@Component
+//service说前这是一个RPC服务，指定超时时间是10秒，最QPS是1个每秒，s表示秒
+@Service(timeout=10*1000,maxSpeed="1s")
+@Component //告诉IOC容器这是一个组件
 public class TestRpcServiceImpl implements ITestRpcService{
 
 	private AtomicInteger ai = new AtomicInteger();
 	
-	@Cfg("/limiterName")
+	@Cfg("/limiterName")//从配置中心拿配置，可实时修改并实时生效
 	private String name;
 	
 	@Override
@@ -75,7 +76,7 @@ public class TestRpcServiceImpl implements ITestRpcService{
 	}
 
 	@Override
-	@SMethod(monitorEnable=1)
+	@SMethod(monitorEnable=1)//服务方法，定义此方法默认可以被监控
 	public Person getPerson(Person p) {
 		p.setUsername("Server update username");
 		p.setId(ai.getAndIncrement());
@@ -84,7 +85,7 @@ public class TestRpcServiceImpl implements ITestRpcService{
 	}
 
 	@Override
-	@SMethod(needResponse=false)
+	@SMethod(needResponse=false)//此服务方法不需要响应，请区别于没有返回值的情况，两者不一样
 	public void pushMessage(String msg) {
 		System.out.println("Server Rec: "+ msg);
 	}
@@ -92,20 +93,24 @@ public class TestRpcServiceImpl implements ITestRpcService{
 	private AtomicInteger count = new AtomicInteger(0);
 	
 	@Override
+	//流式RPC，一个请求会收到N个响应，stringMessageCallback是客户端定义的一个普通组件
 	@SMethod(streamCallback="stringMessageCallback",timeout=10*60*1000)
 	public void subscrite(String msg) {
+		//从上下文中拿发送接口，可以给客户端推送消息
 		IWriteCallback sender = JMicroContext.get().getParam(Constants.CONTEXT_CALLBACK, null);
 		if(sender == null){
 			throw new CommonException("Not in async context");
 		}
 		for(int i = 100; i > 0; i++) {
 			try {
+			     //模拟业务逻辑处理
 				Thread.sleep(1000*2);
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}
 			String msg1 = "Server return: "+ count.getAndIncrement()+",msg: " +msg;
 			System.out.println(msg1);
+			//给客户端推送消息
 			sender.send(msg1);
 		}
 	}
@@ -118,7 +123,9 @@ public class TestRpcServiceImpl implements ITestRpcService{
 public class ServiceProvider {
 
 	public static void main(String[] args) {
+		//此行代码启动RPC服务
 		JMicro.getObjectFactoryAndStart(args);
+		//此行代码只是让主线程停止不退出
 		Utils.getIns().waitForShutdown();
 	}
 
@@ -138,14 +145,40 @@ import org.jmicro.example.api.ITestRpcService;
 
 public class ServiceComsumer {
 	public static void main(String[] args) {
-		
+		//客户端获取IOC容器
 		IObjectFactory of = JMicro.getObjectFactoryAndStart(args);
 		
 		//got remote service from object factory
+		//直接从IOC容器中取得远程服务
 		ITestRpcService src = of.get(ITestRpcService.class);
 		//invoke remote service
+		//调用完程服务
 		System.out.println(src.hello("Hello JMicro"));
 	}
 }
 
 ~~~
+
+#  JMICRO参考手册
+##  注解
+##  IOC容器
+##  服务端发布RPC服务
+##  客户端获取RPC服务
+##  动态修改线上服务配置
+##  服务监控
+##  基于Socket的RPC传输
+##  基于HTTPRPC传输
+##  服务注册表
+##  负载圴行
+##  限流
+##  降级
+##  熔断
+##  超时及重试
+##  编码解码
+##  服务拦截器
+##  服务检测
+##  全局ID标识
+##  。。。
+
+
+
