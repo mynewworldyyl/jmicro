@@ -24,5 +24,7 @@ import java.util.Map;
  */
 public interface IConfigLoader {
 
-	void load(Map<String, String> params);
+	void load(String root,Map<String, String> params);
+	
+	void setConfigChangeListener(IConfigChangeListener lis);
 }

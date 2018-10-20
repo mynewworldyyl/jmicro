@@ -6,9 +6,6 @@ import org.jmicro.api.registry.IRegistry;
 
 @Component(lazy=false)
 public class ProxyObjectForTest {
-	/*private Object[] conArgs;
-	private String conKey;
-	public ProxyObject(Object[] $args){this.conArgs=$args; for(Object arg: $args) { this.conKey = this.conKey + arg.getClass().getName(); } }*/
 	
 	@Inject
 	private IRegistry registry;

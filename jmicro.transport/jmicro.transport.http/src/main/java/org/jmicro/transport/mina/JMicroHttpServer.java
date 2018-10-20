@@ -21,12 +21,11 @@ import java.io.InputStream;
 import java.net.InetSocketAddress;
 import java.util.List;
 
-import com.sun.net.httpserver.HttpContext;
-
 import org.jmicro.api.annotation.Cfg;
 import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.Inject;
 import org.jmicro.api.codec.ICodecFactory;
+import org.jmicro.api.idgenerator.IIdGenerator;
 import org.jmicro.api.monitor.IMonitorDataSubmiter;
 import org.jmicro.api.monitor.MonitorConstant;
 import org.jmicro.api.net.IMessageReceiver;
@@ -40,6 +39,7 @@ import org.jmicro.common.util.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.sun.net.httpserver.HttpContext;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
@@ -78,10 +78,16 @@ public class JMicroHttpServer implements IServer{
 	private int heardbeatInterval = 3; //seconds to send heardbeat Rate
 	
 	@Inject
+	private IIdGenerator idGenerator;
+	
+	@Inject
 	private ICodecFactory codeFactory;
 	
 	@Inject(required=false)
 	private IMonitorDataSubmiter monitor;
+	
+	@Inject
+	private StaticResourceHttpHandler staticResourceHandler;
 	
 	//@Inject(required=false)
 	private HttpHandler httpHandler = new HttpHandler(){
@@ -97,12 +103,20 @@ public class JMicroHttpServer implements IServer{
 		        	Message msg = JsonUtils.getIns().fromJson(json, Message.class);
 		 			receiver.receive(session,msg);
 				}else {
+					Message msg = new Message();
+		    		msg.setType(Constants.MSG_TYPE_REQ_JRPC);
+		    		msg.setProtocol(Message.PROTOCOL_JSON);
+		    		msg.setId(idGenerator.getLongId(Message.class));
+		    		msg.setReqId(-1L);
+		    		msg.setSessionId(session.getId());
+		    		msg.setPayload("");
+		    		msg.setVersion(Constants.VERSION_STR);
 					exchange.sendResponseHeaders(200, 0);
-					exchange.getResponseBody().write("Request method not support".getBytes(Constants.CHARSET));
+					exchange.getResponseBody().write(JsonUtils.getIns().toJson(msg).getBytes(Constants.CHARSET));
 					session.close(true);
 				}
 			} catch (IOException e) {
-				e.printStackTrace();
+				LOG.error("handle",e);
 			}
         }
     };
@@ -126,8 +140,9 @@ public class JMicroHttpServer implements IServer{
         InetSocketAddress address = new InetSocketAddress(this.host,this.port);
         try {
         	 server = HttpServer.create(address, 0);
-        	 HttpContext cxt = server.createContext("/jmicro", this.httpHandler);
-             server.start();
+        	 server.createContext("/jmicro", this.httpHandler);
+        	 server.createContext("/", this.staticResourceHandler);
+        	 server.start();
              address = server.getAddress();
 		} catch (IOException e) {
 			LOG.error("",e);

@@ -15,6 +15,9 @@
  * limitations under the License.
  */
 package org.jmicro.api.objectfactory;
+
+import org.jmicro.api.config.Config;
+
 /**
  * 
  * @author Yulei Ye
@@ -22,7 +25,7 @@ package org.jmicro.api.objectfactory;
  */
 public interface IPostInitListener {
 
-	public void preInit(Object obj);
+	public void preInit(Object obj,Config cfg);
 	
-	public void afterInit(Object obj);
+	public void afterInit(Object obj,Config cfg);
 }

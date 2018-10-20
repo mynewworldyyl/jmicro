@@ -27,6 +27,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.JMethod;
 import org.jmicro.api.annotation.Registry;
+import org.jmicro.api.config.Config;
 import org.jmicro.api.exception.FusingException;
 import org.jmicro.api.raft.IDataListener;
 import org.jmicro.api.raft.INodeListener;
@@ -86,13 +87,13 @@ public class ZKRegistry implements IRegistry {
 			}
 		});
 		
-		ZKDataOperator.getIns().addChildrenListener(ServiceItem.ROOT, (path,children)->{
+		ZKDataOperator.getIns().addChildrenListener(Config.ServiceRegistDir, (path,children)->{
 			serviceChanged(path,children);
 		});
 		
-		List<String> children = ZKDataOperator.getIns().getChildren(ServiceItem.ROOT);
+		List<String> children = ZKDataOperator.getIns().getChildren(Config.ServiceRegistDir);
 		logger.debug("Service: "+children.toString());
-		serviceChanged(ServiceItem.ROOT,children);
+		serviceChanged(Config.ServiceRegistDir,children);
 	}	
 	
 	private INodeListener nodeListener = new INodeListener(){
@@ -248,12 +249,16 @@ public class ZKRegistry implements IRegistry {
 		}
 		
 		ZKDataOperator.getIns().addNodeListener(path, nodeListener);
-		ZKDataOperator.getIns().addDataListener(i.key(ServiceItem.PERSIS_ROOT), this.dataListener);
+		ZKDataOperator.getIns().addDataListener(i.key(Config.ServiceRegistDir), this.dataListener);
 		
 	}
 	
 	private void persisFromConfig(ServiceItem item){
-		String key = item.key(ServiceItem.PERSIS_ROOT);
+        if(Config.ServiceCofigDir == null){
+        	logger.error("Config.ServiceCofigDir is NULL when merge ServiceItem "+ item.getServiceName());
+        	return;
+        }
+		String key = item.key(Config.ServiceCofigDir);
 		if(ZKDataOperator.getIns().exist(key)){
 			String data = ZKDataOperator.getIns().getData(key);
 			ServiceItem perItem = this.fromJson(data);
@@ -293,15 +298,15 @@ public class ZKRegistry implements IRegistry {
 
 	@Override
 	public void regist(ServiceItem item) {
-		String key = item.key(ServiceItem.PERSIS_ROOT);
 		this.persisFromConfig(item);
 		
+		String key = item.key(Config.ServiceRegistDir);
 		String data = JsonUtils.getIns().toJson(item);
 		if(!ZKDataOperator.getIns().exist(key)){
 			ZKDataOperator.getIns().createNode(key,data, false);
 		}
 		
-		key = item.key(ServiceItem.ROOT);
+		key = item.key(Config.ServiceRegistDir);
 		if(ZKDataOperator.getIns().exist(key)){
 			ZKDataOperator.getIns().deleteNode(key);
 		}
@@ -310,7 +315,7 @@ public class ZKRegistry implements IRegistry {
 
 	@Override
 	public void unregist(ServiceItem item) {
-		String key = item.key(ServiceItem.ROOT);
+		String key = item.key(Config.ServiceRegistDir);
 		logger.debug("unregist service: "+key);
 		if(ZKDataOperator.getIns().exist(key)){
 			ZKDataOperator.getIns().deleteNode(key);
@@ -319,7 +324,7 @@ public class ZKRegistry implements IRegistry {
 
 	@Override
 	public void update(ServiceItem item) {
-		String key = item.key(ServiceItem.ROOT);
+		String key = item.key(Config.ServiceRegistDir);
 		logger.debug("regist service: "+key);
 		if(ZKDataOperator.getIns().exist(key)){
 			String data = JsonUtils.getIns().toJson(item);

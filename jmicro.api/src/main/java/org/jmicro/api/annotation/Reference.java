@@ -48,11 +48,32 @@ import java.lang.annotation.Target;
 @Retention(RUNTIME)
 public @interface Reference {
 	public String value() default "";
-	
+	/**
+	 * 依赖的服务名称空间，如果指定了名称空间，则只有与此名称空间相同的服务才会被注入到此字段
+	 * 如果目前有两个服务实现相同的服务接口，名称空间相同或没指定名称空间，系统无法确定要注入那个服务，则会报错，
+	 * 此时应该指定名称空间
+	 * @return
+	 */
 	public String namespace() default "";
+	
+	/**
+	 * 服务版本，使用原理和名称空间相同，版本是同一个名称空间下同一个接口的不同实现版本
+	 * @return
+	 */
 	public String version() default "";
 	
+	/**
+	 * 此依赖是否是必须的，如果是必须的，但是启动时注册中心又没有此服务，则报错
+	 * @return
+	 */
 	public boolean required() default false;
+	
 	public String registry() default "";
+	
+	/**
+	 * 依赖服务有变化时，包括配置及服务上线下线的变化，则会调用此字段值对应的组件方法，让组件
+	 * 对服务变化作出响应
+	 * @return
+	 */
 	public String changeListener() default "";
 }

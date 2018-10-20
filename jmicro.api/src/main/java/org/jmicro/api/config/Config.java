@@ -16,8 +16,6 @@
  */
 package org.jmicro.api.config;
 
-import java.lang.reflect.Type;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
@@ -28,35 +26,55 @@ import java.util.Set;
 
 import org.jmicro.api.annotation.Cfg;
 import org.jmicro.api.annotation.Component;
-import org.jmicro.api.annotation.JMethod;
 import org.jmicro.common.CommonException;
 import org.jmicro.common.Constants;
 import org.jmicro.common.util.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
  * 
  * @author Yulei Ye
  * @date 2018年10月4日-上午11:54:53
  */
 @Component(value="defaultConfig",lazy=false)
-public class Config {
+public class Config implements IConfigChangeListener{
+	
+	private final static Logger logger = LoggerFactory.getLogger(Config.class);
 	
 	private static String RegistryProtocol = "zookeeper";
 	private static String RegistryHost = "localhost";
 	private static String RegistryPort = "2180";
 	
-	//private static String RegistryUrl = "zookeeper://localhost:2180";
+	//全局配置目录
+	public static final String CfgDir = Constants.CFG_ROOT +"/config";
+	
+	//服务注册目录
+	public static final String ServiceRegistDir = Constants.CFG_ROOT +"/services";
+	
+	//当前启动实例名称
+	private static String InstanceName = "";
 	
 	private static String[] commandArgs = null;
 	
-	private static String ConfigRoot = Constants.CFG_ROOT + "/config";
-	private static String[] BasePackages = {"org.jmicro"};
+	//服务在RAFT中的根目录
+	private static String RaftBaseDir = "";
 	
-	private static Map<String,String> CommadParams = new HashMap<String,String>();
+	//针对服务配置的目录
+	public static String ServiceCofigDir = null;
+
+	private static String[] BasePackages = {"org.jmicro"};
 	
 	@Cfg("/basePackages")
 	private Collection<String> basePackages = null;
 	
-	private static final Map<String,String> params = new HashMap<>();
+	private final Map<String,String> servicesConfig = new HashMap<>();
+	
+	private final Map<String,String> globalConfig = new HashMap<>();
+	
+	private static Map<String,String> CommadParams = new HashMap<String,String>();
+	
+	private Map<String,Set<IConfigChangeListener>> configChangeListeners = new HashMap<>();
 	
 	public Config() {}
 	
@@ -75,19 +93,21 @@ public class Config {
 				} else {
 					CommadParams.put(ar, null);
 				}
-				
 			}
 		}
 		
-		if(CommadParams.containsKey(Constants.CONFIG_ROOT_KEY)) {
-			ConfigRoot = CommadParams.get(Constants.CONFIG_ROOT_KEY);
+		if(CommadParams.containsKey(Constants.INSTANCE_NAME)) {
+			InstanceName = CommadParams.get(Constants.INSTANCE_NAME);
+		} else {
+			InstanceName = System.currentTimeMillis()+"";
 		}
-		
+		RaftBaseDir = Constants.CFG_ROOT +"/"+InstanceName;
+		ServiceCofigDir = RaftBaseDir+"/config";
+				
 		if(CommadParams.containsKey(Constants.BASE_PACKAGES_KEY)) {
 			String ps = CommadParams.get(Constants.BASE_PACKAGES_KEY);
 			if(!StringUtils.isEmpty(ps)){
 				String[] pps = ps.split(",");
-				//Arrays.asList(pps);
 				setBasePackages0(Arrays.asList(pps));
 			}
 		}
@@ -113,10 +133,22 @@ public class Config {
 				throw new CommonException("Invalid registry url: "+ registry);
 			}
 		}
-		//RegistryUrl = RegistryProtocol+"://"+RegistryHost+":"+RegistryPort;
-		//new URL(RegistryProtocol,RegistryHost,Integer.parseInt(RegistryPort));
 	}
 	
+	public static String getInstanceName(){
+		if(StringUtils.isEmpty(InstanceName)){
+			throw new CommonException("InstanceName cannot be NULL");
+		}
+		return InstanceName;
+	}
+	
+	public static String getRaftBaseDir(){
+		if(StringUtils.isEmpty(RaftBaseDir)){
+			throw new CommonException("RaftBaseDir cannot be NULL");
+		}
+		return RaftBaseDir;
+	}
+
 	public static void setBasePackages0(Collection<String>  basePackages) {
 		if(basePackages == null || basePackages.size() == 0) {
 			return;
@@ -133,14 +165,53 @@ public class Config {
 		BasePackages = pps;
 	}
 	
+	public void loadConfig(List<IConfigLoader> configLoaders){
+		for(IConfigLoader cl : configLoaders){
+			cl.load(ServiceCofigDir,this.servicesConfig);
+			cl.load(CfgDir,this.globalConfig);
+			cl.setConfigChangeListener(this);
+		}
+		init();
+	}
+	
+	@Override
+	public void configChange(String path, String value) {
+		int index = -1;
+		if((index = path.indexOf(ServiceCofigDir)) >= 0 ) {
+			String subPath = path.substring(index+ServiceCofigDir.length(), path.length());
+			this.servicesConfig.put(subPath, value);
+			notifiListener(subPath,value);
+		}else if((index = path.indexOf(CfgDir)) >= 0 )  {
+			String subPath = path.substring(index+CfgDir.length(), path.length());
+			this.globalConfig.put(subPath, value);
+			notifiListener(subPath,value);
+		} else {
+			logger.debug("Invalid config :"+path+",value:"+value);
+		}
+	}
+	
+	private void notifiListener(String subPath, String value) {
+		Set<IConfigChangeListener> l = this.configChangeListeners.get(subPath);
+		if(l == null || l.isEmpty() ){
+			return;
+		}
+		for(IConfigChangeListener lis: l){
+			lis.configChange(subPath, value);
+		}
+	}
+
+	public void addConfigListener(String key,IConfigChangeListener lis){
+		Set<IConfigChangeListener> l = this.configChangeListeners.get(key);
+		if(l == null ){
+			this.configChangeListeners.put(key, l = new HashSet<IConfigChangeListener>());
+		}
+		l.add(lis);
+	}
+
 	//@JMethod("init")
 	public void init(){
 		//命令行参数具有最高优先级
-		params.putAll(CommadParams);
-	}
-	
-	public static String getConfigRoot() {
-		return ConfigRoot;
+		//params.putAll(CommadParams);
 	}
 	
 	public static String getRegistryHost() {
@@ -157,35 +228,41 @@ public class Config {
 	
 	public void setBasePackages(Collection<String>  basePackages) {
 		 setBasePackages0(basePackages);
-	}
-	
-	public Map<String,String> getParams(){
-		return params;
 	}	
 	
 	public Integer getInt(String key,int defautl){
-		return getValue(params,Integer.TYPE,key,defautl);
+		return getValue(getValue(key),Integer.TYPE,defautl);
 	}
 	
 	public String getString(String key,String defautl){
-		return getValue(params,String.class,key,defautl);
+		return getValue(getValue(key),String.class,defautl);
 	}
 	
 	public Boolean getBoolean(String key,boolean defautl){
-		return getValue(params,Boolean.TYPE,key,defautl);
+		return getValue(getValue(key),Boolean.TYPE,defautl);
 	}
-	
-	
+
 	public Float getFloat(String key,Float defautl){
-		return getValue(params,Float.TYPE,key,defautl);
+		return getValue(getValue(key),Float.TYPE,defautl);
 	}
 	
 	public Double getDouble(String key,Double defautl){
-		return getValue(params,Double.TYPE,key,defautl);
+		return getValue(getValue(key),Double.TYPE,defautl);
 	}
 	
-	public static <T> T getValue( Map<String,String> params,Class<T> type,String key, T defaultVal) {
-		String str = params.get(key);
+	private String getValue(String key){
+		String v = CommadParams.get(key);
+		if(v == null){
+			v = this.servicesConfig.get(key);
+		}
+		if(v == null){
+			v = this.globalConfig.get(key);
+		}
+		return v;
+	}
+	
+	public static <T> T getValue(String str,Class<T> type, T defaultVal) {
+		
 		if(StringUtils.isEmpty(str)){
 			return defaultVal;
 		}
@@ -206,8 +283,7 @@ public class Config {
 			v = Byte.parseByte(str);
 		} else {
 			v = str;
-		}
-		
+		}	
 		return (T)v;
 	}
 }

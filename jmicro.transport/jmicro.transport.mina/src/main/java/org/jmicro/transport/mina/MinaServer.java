@@ -57,7 +57,7 @@ import org.slf4j.LoggerFactory;
  * @author Yulei Ye
  * @date 2018年10月4日-下午12:13:53
  */
-@Component(value=Constants.DEFAULT_SERVER,lazy=false,level=10,side=Constants.SIDE_PROVIDER)
+@Component(value=Constants.DEFAULT_SERVER,lazy=false,level=10,side=Constants.SIDE_PROVIDER,active=true)
 public class MinaServer implements IServer{
 
 	static final Logger LOG = LoggerFactory.getLogger(MinaServer.class);

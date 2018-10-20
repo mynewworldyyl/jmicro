@@ -22,6 +22,7 @@ import java.util.HashSet;
 import java.util.Random;
 import java.util.Set;
 
+import org.jmicro.api.config.Config;
 import org.jmicro.common.CommonException;
 import org.jmicro.common.Constants;
 import org.jmicro.common.Utils;
@@ -36,10 +37,6 @@ import org.slf4j.LoggerFactory;
 public class ServiceItem{
 
 	private final static Logger logger = LoggerFactory.getLogger(ServiceItem.class);
-	
-	public static final String ROOT = Constants.CFG_ROOT + "/service";
-	
-	public static final String PERSIS_ROOT = Constants.CFG_ROOT + "/srvconfig";
 	
 	public static final String FILE_SEPERATOR="/";
 	
@@ -333,17 +330,15 @@ public class ServiceItem{
 		if(!this.serviceName.startsWith(FILE_SEPERATOR)){
 			sb.append(FILE_SEPERATOR);
 		}
-		sb.append(serviceName).append(I_I_SEPERATOR);
+		sb.append(Config.getInstanceName()).append("#").append(serviceName);//.append(I_I_SEPERATOR);
 		
-		StringBuffer val = new StringBuffer();
+		//StringBuffer val = new StringBuffer();
 		
-		val.append("host").append(KV_SEPERATOR).append(host).append(VAL_SEPERATOR)
-		//.append("port").append(KV_SEPERATOR).append(port).append(VAL_SEPERATOR)
-		.append("namespace").append(KV_SEPERATOR).append(this.namespace).append(VAL_SEPERATOR)
-		.append("version").append(KV_SEPERATOR).append(this.version).append(VAL_SEPERATOR)
-		/*.append("time").append(KV_SEPERATOR).append(this.randVal)*/;
+		//val.append("host").append(KV_SEPERATOR).append(host).append(VAL_SEPERATOR)
+		//sb.append("namespace").append(KV_SEPERATOR).append(this.namespace).append(VAL_SEPERATOR)
+		//.append("version").append(KV_SEPERATOR).append(this.version).append(VAL_SEPERATOR);
 
-		return sb.append(Utils.getIns().encode(val.toString())).toString();
+		return sb.toString();
 	}
 	
 	public String val(){
@@ -378,7 +373,7 @@ public class ServiceItem{
 
 	@Override
 	public int hashCode() {
-		return this.key(ServiceItem.ROOT).hashCode();
+		return this.key(Config.ServiceRegistDir).hashCode();
 	}
 
 	@Override
@@ -386,7 +381,7 @@ public class ServiceItem{
 		if(obj == null || !(obj instanceof ServiceItem)) {
 			return false;
 		}
-		return this.key(ServiceItem.ROOT).equals(((ServiceItem)obj).key(ServiceItem.ROOT));
+		return this.key(Config.ServiceRegistDir).equals(((ServiceItem)obj).key(Config.ServiceRegistDir));
 	}
 
 	public String getHost() {

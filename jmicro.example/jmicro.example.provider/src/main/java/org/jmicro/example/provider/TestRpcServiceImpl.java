@@ -19,7 +19,7 @@ public class TestRpcServiceImpl implements ITestRpcService{
 
 	private AtomicInteger ai = new AtomicInteger();
 	
-	@Cfg("/limiterName")
+	@Cfg("/defaultLimiterName")
 	private String name;
 	
 	@Override

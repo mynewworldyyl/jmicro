@@ -148,10 +148,14 @@ public class SimpleObjectFactory implements IObjectFactory {
 		Set<Class<?>> clazzes = ClassScannerUtils.getIns().loadClassByClass(parrentCls);
 		for(Class<?> c: clazzes) {
 			if(parrentCls.isAssignableFrom(c) && !Modifier.isAbstract(c.getModifiers())
-					&& !Modifier.isInterface(c.getModifiers()) && Modifier.isPublic(c.getModifiers())) {
-				Object obj = this.get(c);
-				if(obj != null) {
-					list.add((T)obj);
+					&& !Modifier.isInterface(c.getModifiers()) && Modifier.isPublic(c.getModifiers())
+					&& c.isAnnotationPresent(Component.class)) {
+				Component anno = c.getAnnotation(Component.class);
+				if(anno != null && anno.active()) {
+					Object obj = this.get(c);
+					if(obj != null) {
+						list.add((T)obj);
+					}
 				}
 			}
 		}
@@ -179,7 +183,7 @@ public class SimpleObjectFactory implements IObjectFactory {
 		}
 		try {
 			obj = cls.newInstance();
-			doAfterCreate(obj);
+			doAfterCreate(obj,null);
 			//will replace the proxy object if exist, this is no impact to client
 			cacheObj(cls,obj,false);
 		} catch (InstantiationException | IllegalAccessException e) {
@@ -207,7 +211,7 @@ public class SimpleObjectFactory implements IObjectFactory {
 			if(!isLazy(cls)) {
 				obj = cls.newInstance();
 				if(doAfterCreate){
-					 doAfterCreate(obj);
+					 doAfterCreate(obj,null);
 				}
 			} else {
 				obj = createLazyProxyObject(cls);
@@ -218,30 +222,36 @@ public class SimpleObjectFactory implements IObjectFactory {
 		return  (T)obj;
 	}
 	
-     private void doAfterCreate(Object obj) {
+     private void doAfterCreate(Object obj,Config cfg) {
+    	 if(cfg == null){
+    		  cfg = (Config)objs.get(Config.class);
+    	 }
+    	 if(cfg == null){
+    		 throw new CommonException("Config not load!");
+    	 }
     	 if(!(obj instanceof ProxyObject)){
     		 injectDepependencies(obj);
-    		 notifyPrePostListener(obj);
+    		 notifyPrePostListener(obj,cfg);
         	 doInit(obj);
-    		 notifyAfterPostListener(obj);
+    		 notifyAfterPostListener(obj,cfg);
     	 }
 	}
      
-     private void notifyAfterPostListener(Object obj) {
+     private void notifyAfterPostListener(Object obj,Config cfg) {
  		if(this.postListeners.isEmpty()) {
  			return;
  		}
  		for(IPostInitListener l : this.postListeners){
- 			l.afterInit(obj);
+ 			l.afterInit(obj,cfg);
  		}	
  	}
      
-	private void notifyPrePostListener(Object obj) {
+	private void notifyPrePostListener(Object obj,Config cfg) {
 		if(this.postListeners.isEmpty()) {
 			return;
 		}
 		for(IPostInitListener l : this.postListeners){
-			l.preInit(obj);
+			l.preInit(obj,cfg);
 		}	
 	}
 
@@ -313,6 +323,7 @@ public class SimpleObjectFactory implements IObjectFactory {
 				if(c.isAnnotationPresent(Component.class)) {
 					Component cann = c.getAnnotation(Component.class);
 					if(cann.active()){
+						logger.debug("enable com: "+c.getName());
 						Object obj = null;
 						if(c.isAnnotationPresent(Service.class)) {
 							 obj = createServiceObject(c,false);
@@ -322,6 +333,8 @@ public class SimpleObjectFactory implements IObjectFactory {
 							obj = this.createObject(c, false);
 						}
 						this.cacheObj(c, obj, true);
+					}else {
+						logger.debug("disable com: "+c.getName());
 					}
 				}
 			}
@@ -343,15 +356,8 @@ public class SimpleObjectFactory implements IObjectFactory {
 		
 		Config cfg = (Config)objs.get(Config.class);
 		
-		//Config cfg = this.get(Config.class);
-		
 		List<IConfigLoader> configLoaders = this.getByParent(IConfigLoader.class);
-		
-		for(IConfigLoader cl : configLoaders){
-			cl.load(cfg.getParams());
-		}
-		
-		cfg.init();
+		cfg.loadConfig(configLoaders);
 		
 		if(!l.isEmpty()){
 			for(int i =0; i < l.size(); i++){
@@ -360,7 +366,7 @@ public class SimpleObjectFactory implements IObjectFactory {
 				/*if(o.getClass().getName().startsWith("org.jmicro.idgenerator")){
 					System.out.println(o);
 				}*/
-				doAfterCreate(o);
+				doAfterCreate(o,cfg);
 			}
 		}
 		
@@ -391,7 +397,7 @@ public class SimpleObjectFactory implements IObjectFactory {
 	private Object createServiceObject(Class<?> cls, boolean doAfterCreate) {
 		Object obj = createDynamicService(cls);
 		if(doAfterCreate){
-			 doAfterCreate(obj);
+			 doAfterCreate(obj,null);
 		}
 		return  obj;
 	}

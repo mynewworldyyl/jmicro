@@ -251,12 +251,12 @@ public class ClassScannerUtils {
 							}
 						}
 					}
-					//System.out.println(c.getName());
+					//logger.debug(c.getName());
 					/*if(c.getName().equals("org.jmicro.api.server.FirstInterceptor")) {
-						System.out.println(c.getName());
+						logger.debug(c.getName());
 					}*/
 					if(checker.accept(c)){
-						System.out.println(c.getName());
+						logger.debug(c.getName());
 						clses.add(c);
 					}	
 				}

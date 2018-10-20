@@ -20,9 +20,10 @@ import java.util.List;
 import java.util.Map;
 
 import org.jmicro.api.annotation.Component;
-import org.jmicro.api.config.Config;
+import org.jmicro.api.config.IConfigChangeListener;
 import org.jmicro.api.config.IConfigLoader;
 import org.jmicro.api.raft.IDataListener;
+import org.jmicro.common.CommonException;
 import org.jmicro.common.util.StringUtils;
 import org.jmicro.zk.ZKDataOperator;
 /**
@@ -35,40 +36,52 @@ public class ZKConfigLoader implements IConfigLoader{
 
 	private IDataListener dataListener = null;
 	
+	private IConfigChangeListener lis = null;
+	
 	@Override
-	public void load(Map<String, String> params) {
+	public void load(String root,Map<String, String> params) {
 		dataListener = new IDataListener(){
 			@Override
 			public void dataChanged(String path, String data) {
-				updateData(path,data,params);
+				String supath = path.substring(root.length(),path.length());
+				updateData(supath,data,params);
+				if(lis != null){
+					lis.configChange(path, data);
+				}
 			}
 		};
-		 String root = Config.getConfigRoot();
+		
+		 //String globalRoot = Config.CfgDir+"/config";
 		 List<String> children = ZKDataOperator.getIns().getChildren(root);
 		 for(String child: children){
-			 String p = root+"/"+child;
-			 load(p,params);
+			 loadOne(root,child,params);
 		 }
 	}
 
 	private void updateData(String path, String data,Map<String,String> params) {
-		String root = Config.getConfigRoot();
-		String key = path.substring(root.length());
-		params.put(key, data);
+		params.put(path, data);
 	}
 
-	private void load(String p,Map<String,String> params) {
-		String data = ZKDataOperator.getIns().getData(p);
-		if(StringUtils.isEmpty(data)){
-			List<String> children = ZKDataOperator.getIns().getChildren(p);
-			 for(String child: children){
-				 String pa = p + "/"+child;
-				 load(pa,params);
-			 }
-		} else {
-			updateData(p,data,params);
-			ZKDataOperator.getIns().addDataListener(p, this.dataListener);
+	private void loadOne(String root,String child,Map<String,String> params) {
+		String fullpath = root+"/"+child;
+		String data = ZKDataOperator.getIns().getData(fullpath);
+		if(!StringUtils.isEmpty(data)){
+			updateData("/"+child,data,params);
+			ZKDataOperator.getIns().addDataListener(fullpath, this.dataListener);
+		} 
+		List<String> children = ZKDataOperator.getIns().getChildren(fullpath);
+		 for(String ch: children){
+			 String pa = child + "/"+ch;
+			 loadOne(root,pa,params);
+		 }
+	}
+
+	@Override
+	public void setConfigChangeListener(IConfigChangeListener lis) {
+		if(this.lis != null){
+			throw new CommonException("Listener have been set:" + this.lis.getClass().getName());
 		}
+		this.lis = lis;
 	}
 	
 }

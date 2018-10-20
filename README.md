@@ -393,7 +393,7 @@ public @interface Reference {
 	public String version() default "";
 	
 	/**
-	 * 此依赖是否是必须的，如果是必须的，但是启动时注册中心又没有此服务，则报错
+	 * 此依赖是否是必须的，如果是必须的，且服务启动时注册中心又没有此服务，则报错，及时可以发现错误
 	 * @return
 	 */
 	public boolean required() default false;
@@ -440,7 +440,7 @@ public class TestRpcClient {
 ~~~
 
 
-### Inject注解，注入IOC容器的依赖
+### Inject注解，注入对其他组件的依赖
 
 ~~~
 @Target(FIELD)

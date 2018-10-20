@@ -53,14 +53,12 @@ public @interface SMethod {
 	//0: need response, 1:no need response
 	public boolean needResponse() default true;
 	
+	/**
+	 * 实现IMessageCallback接口的组件名称，用于处理异步消息
+	 */
 	// StringUtils.isEmpty()=true: not stream, false: stream, one request will got more response
 	// if this value is not NULL, the async is always true without check the real value
 	// value is the callback component in IOC container created in client
-	// format: value=component name +"."+ method name+"."+method parameter string, 
-	// component name can be class full name, Annotation name.
-	// method is the invoking method name
-	// parameter (java.lang.String,java.lang.Long)
-	// example: org.jmicro.example.comsumer.MessageCallback#onMessage(java.lang.String,java.lang.Long)
 	public String streamCallback() default "";
 	
 	//async return result, server return two time: 

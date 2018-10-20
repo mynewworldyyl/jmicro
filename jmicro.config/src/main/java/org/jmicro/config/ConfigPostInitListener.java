@@ -32,10 +32,11 @@ import org.apache.zookeeper.KeeperException;
 import org.jmicro.api.annotation.Cfg;
 import org.jmicro.api.annotation.PostListener;
 import org.jmicro.api.config.Config;
+import org.jmicro.api.config.IConfigChangeListener;
 import org.jmicro.api.objectfactory.PostInitListenerAdapter;
 import org.jmicro.api.objectfactory.ProxyObject;
-import org.jmicro.api.raft.IDataListener;
 import org.jmicro.common.CommonException;
+import org.jmicro.common.Utils;
 import org.jmicro.common.util.StringUtils;
 import org.jmicro.zk.ZKDataOperator;
 import org.slf4j.Logger;
@@ -54,36 +55,27 @@ public class ConfigPostInitListener extends PostInitListenerAdapter {
 	}
 	
 	@Override
-	public void preInit(Object obj) {
+	public void preInit(Object obj,Config cfg) {
 		Class<?> cls = ProxyObject.getTargetCls(obj.getClass());
-		Field[] fields = cls.getDeclaredFields();
-		
+		List<Field> fields = new ArrayList<>();
+		 Utils.getIns().getFields(fields, cls);
 		
 		for(Field f : fields){
 			if(!f.isAnnotationPresent(Cfg.class)){
 				continue;
 			}
-			Cfg cfg = f.getAnnotation(Cfg.class);
-			if(StringUtils.isEmpty(cfg.value())){
+			Cfg cfgAnno = f.getAnnotation(Cfg.class);
+			if(StringUtils.isEmpty(cfgAnno.value())){
 				throw new CommonException("Class ["+cls.getName()+",Field:"+f.getName()+"],Cfg path is NULL");
 			}
-
-			String path = Config.getConfigRoot();
-			if(!StringUtils.isEmpty(cfg.root())){
-				path = cfg.root();
-			}
-			if(!cfg.value().startsWith("/")){
-				path = path + "/";
-			}
-
-			path = path + cfg.value();
 	       
-			String value = ZKDataOperator.getIns().getData(path);
+			String value = cfg.getString(cfgAnno.value(), null);
 			if(value != null && !"".equals(value)){
 				 setValue(f,obj,value);
-			     watch(f,obj,path);
+			}else if(cfgAnno.required()){
+				throw new CommonException("Class ["+cls.getName()+",Field:"+f.getName()+"] value: "+cfgAnno.value()+" is required");
 			}
-	       
+			watch(f,obj,cfgAnno.value(),cfg);
 		}
 		
 	}
@@ -126,13 +118,12 @@ public class ConfigPostInitListener extends PostInitListenerAdapter {
 		}
 	}
 	
-	private void watch(Field f,Object obj,String path){
-		IDataListener lis = (String path1,String data)->{
+	private void watch(Field f,Object obj,String path,Config cfg){
+		IConfigChangeListener lis = (String path1,String data)->{
 			setValue(f,obj,data);
-			watch(f,obj,path);
 			notifyChange(f,obj);
 		};
-		ZKDataOperator.getIns().addDataListener(path, lis);
+		cfg.addConfigListener(path, lis);
 	}
 	
 	protected void notifyChange(Field f,Object obj) {

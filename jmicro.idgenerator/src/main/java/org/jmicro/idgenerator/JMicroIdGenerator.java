@@ -18,6 +18,7 @@ package org.jmicro.idgenerator;
 
 import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.Inject;
+import org.jmicro.api.config.Config;
 import org.jmicro.api.idgenerator.IIdGenerator;
 import org.jmicro.api.raft.IDataOperator;
 import org.jmicro.common.Constants;
@@ -29,7 +30,7 @@ import org.jmicro.common.Constants;
 @Component(value=Constants.DEFAULT_IDGENERATOR,level=20)
 public class JMicroIdGenerator implements IIdGenerator {
 	
-	private static String ID_IDR = Constants.CFG_ROOT + "/id/";
+	private static final String ID_IDR = Constants.CFG_ROOT + "/id/";
 	
 	@Inject(required=true)
 	private IDataOperator dataOperator;

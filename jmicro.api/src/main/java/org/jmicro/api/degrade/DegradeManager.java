@@ -18,6 +18,7 @@ package org.jmicro.api.degrade;
 
 import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.Inject;
+import org.jmicro.api.config.Config;
 import org.jmicro.api.raft.IDataOperator;
 import org.jmicro.common.Constants;
 
