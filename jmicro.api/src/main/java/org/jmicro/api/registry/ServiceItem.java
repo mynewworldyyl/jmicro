@@ -58,6 +58,7 @@ public class ServiceItem{
 	private String version = Constants.DEFAULT_VERSION;
 	
 	private String host;
+	private String transport;
 	
 	private String impl;
 	
@@ -174,6 +175,14 @@ public class ServiceItem{
 
 	public int getDegrade() {
 		return degrade;
+	}
+
+	public String getTransport() {
+		return transport;
+	}
+
+	public void setTransport(String transport) {
+		this.transport = transport;
 	}
 
 	public void setDegrade(int degrade) {
@@ -330,13 +339,12 @@ public class ServiceItem{
 		if(!this.serviceName.startsWith(FILE_SEPERATOR)){
 			sb.append(FILE_SEPERATOR);
 		}
-		sb.append(Config.getInstanceName()).append("#").append(serviceName);//.append(I_I_SEPERATOR);
 		
-		//StringBuffer val = new StringBuffer();
-		
-		//val.append("host").append(KV_SEPERATOR).append(host).append(VAL_SEPERATOR)
-		//sb.append("namespace").append(KV_SEPERATOR).append(this.namespace).append(VAL_SEPERATOR)
-		//.append("version").append(KV_SEPERATOR).append(this.version).append(VAL_SEPERATOR);
+		sb.append(Config.getInstanceName()).append(VAL_SEPERATOR)
+		.append(this.serviceName).append(VAL_SEPERATOR)
+		.append(this.transport).append(VAL_SEPERATOR)
+		.append(this.namespace).append(VAL_SEPERATOR)
+		.append(this.version);
 
 		return sb.toString();
 	}

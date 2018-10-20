@@ -24,6 +24,7 @@ import java.util.List;
 import org.jmicro.api.annotation.Cfg;
 import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.Inject;
+import org.jmicro.api.annotation.Server;
 import org.jmicro.api.codec.ICodecFactory;
 import org.jmicro.api.idgenerator.IIdGenerator;
 import org.jmicro.api.monitor.IMonitorDataSubmiter;
@@ -55,7 +56,8 @@ import com.sun.net.httpserver.HttpServer;
  * @date 2018年10月19日-下午12:34:17
  */
 @SuppressWarnings("restriction")
-@Component(value=Constants.DEFAULT_SERVER,lazy=false,level=10,side=Constants.SIDE_PROVIDER)
+@Component(value=Constants.TRANSPORT_HTTP,lazy=false,level=10,side=Constants.SIDE_PROVIDER)
+@Server(transport=Constants.TRANSPORT_HTTP)
 public class JMicroHttpServer implements IServer{
 
 	static final Logger LOG = LoggerFactory.getLogger(JMicroHttpServer.class);

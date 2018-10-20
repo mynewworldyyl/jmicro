@@ -18,6 +18,7 @@ package org.jmicro.server;
 
 import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -57,8 +58,7 @@ public class ServiceLoader {
 	@Inject(required=true)
 	private IRegistry registry;
 	
-	@Inject(required=true)
-	private IServer server;
+	private Map<String,IServer> servers = new HashMap<>();
 	
 	private Map<String,Object> services = new ConcurrentHashMap<String,Object>();
 	
@@ -66,6 +66,15 @@ public class ServiceLoader {
 	
 	@JMethod("init")
 	public void init(){
+		List<IServer> ss = JMicro.getObjectFactory().getByParent(IServer.class);
+		for(IServer s : ss){
+			Component anno = s.getClass().getAnnotation(Component.class);
+			if(servers.containsKey(anno.value())){
+				throw new CommonException("IServer:"+s.getClass().getName()+"] and ["
+						+servers.get(anno.value())+" with same component name :"+anno.value());
+			}
+			servers.put(anno.value(), s);
+		}
 		exportService();
 		logger.info("export service finish!");
 	}
@@ -166,7 +175,15 @@ public class ServiceLoader {
 			logger.error("class "+srvCls.getName()+" is not service");
 			return;
 		}
-		registry.regist(item);
+		
+		for(IServer s : this.servers.values()){
+			Component sano = ProxyObject.getTargetCls(s.getClass()).getAnnotation(Component.class);
+			item.setHost(s.host());
+			item.setPort(s.port());
+			item.setTransport(sano.value());
+			registry.regist(item);
+		}
+		
 	}
 	
 	private ServiceItem getServiceItems(Class<?> proxySrv) {
@@ -186,14 +203,10 @@ public class ServiceLoader {
 			interfaces = ints[0] ;
 		}
 		
-		String addr = server.host();
-		int port = server.port();
-		
 		ServiceItem item = new ServiceItem();
 		
 		item.setImpl(proxySrv.getName());
-		item.setHost(addr);
-		item.setPort(port);
+	
 		item.setServiceName(interfaces.getName());
 		
 		item.setVersion(anno.version());

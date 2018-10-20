@@ -36,6 +36,7 @@ import org.jmicro.api.JMicroContext;
 import org.jmicro.api.annotation.Cfg;
 import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.Inject;
+import org.jmicro.api.annotation.Server;
 import org.jmicro.api.codec.ICodecFactory;
 import org.jmicro.api.monitor.IMonitorDataSubmiter;
 import org.jmicro.api.monitor.MonitorConstant;
@@ -57,7 +58,8 @@ import org.slf4j.LoggerFactory;
  * @author Yulei Ye
  * @date 2018年10月4日-下午12:13:53
  */
-@Component(value=Constants.DEFAULT_SERVER,lazy=false,level=10,side=Constants.SIDE_PROVIDER,active=true)
+@Component(value=Constants.TRANSPORT_MINA,lazy=false,level=10,side=Constants.SIDE_PROVIDER,active=true)
+@Server(transport=Constants.TRANSPORT_MINA)
 public class MinaServer implements IServer{
 
 	static final Logger LOG = LoggerFactory.getLogger(MinaServer.class);

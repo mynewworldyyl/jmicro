@@ -43,7 +43,7 @@ public @interface Service {
 	/**
 	 * 底层传输层，可以是http或Mina
 	 */
-	public String server() default Constants.DEFAULT_SERVER;
+	public String[] servers() default "";
 	
 	/**
 	 * 服务接口，如果类只实现一个接口，则此值可不填
