@@ -124,7 +124,7 @@ public class AsyncMessageHandler implements IMessageHandler{
 		}*/
 	}
 	
-	void onRequest(IClientSession session,IRequest req,ServiceMethod sm){
+	public void onRequest(IClientSession session,IRequest req,ServiceMethod sm){
 		String cb = sm.getStreamCallback();
 		if(StringUtils.isEmpty(cb)){
 			return;

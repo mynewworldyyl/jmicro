@@ -16,6 +16,7 @@
  */
 package org.jmicro.api.net;
 
+import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -35,6 +36,8 @@ public abstract class AbstractSession implements ISession{
 	private int heardbeatInterval;
 	
 	private long lastActiveTime = System.currentTimeMillis();
+	
+	private boolean isClose = false;
 	
 	public AbstractSession(int bufferSize,int heardbeatInterval){
 		readBuffer = ByteBuffer.allocate(bufferSize);
@@ -80,6 +83,7 @@ public abstract class AbstractSession implements ISession{
 	public void close(boolean flag) {
 		params.clear();
 		this.sessionId=-1L;
+		this.isClose = true;
 	}
 
 	@Override
@@ -100,4 +104,32 @@ public abstract class AbstractSession implements ISession{
 		this.readBuffer = readBuffer;
 	}
 
+	@Override
+	public boolean isClose() {
+		return this.isClose;
+	}
+
+	@Override
+	public String remoteHost() {
+		return this.getRemoteAddress().getHostName();
+	}
+
+	@Override
+	public int remotePort() {
+		return this.getRemoteAddress().getPort();
+	}
+
+	@Override
+	public String localHost() {
+		return this.getLocalAddress().getHostName();
+	}
+
+	@Override
+	public int localPort() {
+		return this.getLocalAddress().getPort();
+	}
+	
+	public abstract InetSocketAddress getLocalAddress();
+	
+	public abstract InetSocketAddress getRemoteAddress();
 }

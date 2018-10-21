@@ -5,10 +5,10 @@
 		 <artifactId>jmicro-transport-parent</artifactId>
 		 <version>0.0.1-SNAPSHOT</version>
     </parent>
-    <artifactId>jmicro.transport.mina</artifactId>
+    <artifactId>jmicro.transport.netty</artifactId>
     <packaging>jar</packaging>
     <name>${project.artifactId}</name>
-    <description>Transport mina implements</description>
+    <description>Transport netty implements</description>
     <properties>
         <skip_maven_deploy>false</skip_maven_deploy>
     </properties>
@@ -25,19 +25,15 @@
 			 <groupId>org.jmicro</groupId>
 			 <artifactId>jmicro.server</artifactId>
         </dependency>
-          <dependency>
-			 <groupId>org.jmicro</groupId>
-			 <artifactId>jmicro.client</artifactId>
-        </dependency>
          <dependency>
 			 <groupId>org.jmicro</groupId>
 			 <artifactId>jmicro.codec</artifactId>
         </dependency>
-         <dependency>
-			   <groupId>org.apache.mina</groupId>
-		    <artifactId>mina-core</artifactId>
-		    <version>3.0.0-M3-SNAPSHOT</version>
-        </dependency>
+		<dependency>
+		    <groupId>io.netty</groupId>
+		    <artifactId>netty-all</artifactId>
+		    <version>4.1.30.Final</version>
+		</dependency>
           
     </dependencies>
    

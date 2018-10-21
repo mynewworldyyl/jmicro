@@ -363,9 +363,9 @@ public class SimpleObjectFactory implements IObjectFactory {
 			for(int i =0; i < l.size(); i++){
 				Object o = l.get(i);
 				//System.out.println(o);
-				/*if(o.getClass().getName().startsWith("org.jmicro.idgenerator")){
-					System.out.println(o);
-				}*/
+				if(o.getClass().getName().startsWith("org.jmicro.server")){
+					//System.out.println(o);
+				}
 				doAfterCreate(o,cfg);
 			}
 		}
@@ -402,22 +402,6 @@ public class SimpleObjectFactory implements IObjectFactory {
 		return  obj;
 	}
 
-	private void createZK() {
-		String zKClazzName="org.jmicro.zk.ZKDataOperator";
-		Class<?> zkConnClazz = ClassScannerUtils.getIns().getClassByName(zKClazzName);
-		Object zkConn = null;
-		try {
-			zkConn = zkConnClazz.newInstance();
-		} catch (InstantiationException | IllegalAccessException e1) {
-			logger.error("", e1);
-		}
-		this.clsNameToObjs.put(zKClazzName, zkConn);
-		this.nameToObjs.put("zkCoon", zkConn);
-		this.objs.put(zkConnClazz, zkConn);
-	}
-
-	
-	
 	@Override
 	public boolean exist(Class<?> clazz) {
 		checkStatu();

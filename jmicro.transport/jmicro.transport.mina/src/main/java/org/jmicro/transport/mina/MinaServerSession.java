@@ -16,6 +16,8 @@
  */
 package org.jmicro.transport.mina;
 
+import java.net.InetSocketAddress;
+
 import org.apache.mina.api.IoSession;
 import org.jmicro.api.net.Message;
 import org.jmicro.server.IServerSession;
@@ -46,4 +48,5 @@ public class MinaServerSession extends AbstractMinaSession implements IServerSes
 	public void close(boolean flag) {
 		super.close(flag);
 	}
+
 }

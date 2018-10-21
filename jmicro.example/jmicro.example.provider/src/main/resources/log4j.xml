@@ -49,6 +49,16 @@
 			<param name="ConversionPattern" value="[%d][%p,%c{1}] %m%n"/>
 		</layout>
 	</appender>
+	
+	<appender name="netty" class="org.apache.log4j.DailyRollingFileAppender">
+		<param name="File" value="${user.dir}/logs/jmicro/netty.log"/>
+		<param name="DatePattern" value="'.'yyyyMMdd"/>
+		<param name="Append" value="true"/>
+		<param name="Threshold" value="DEBUG"/>
+		<layout class="org.apache.log4j.PatternLayout">
+			<param name="ConversionPattern" value="[%d][%p,%c{1}] %m%n"/>
+		</layout>
+	</appender>
 
 	<logger name="org.jmicro">
 		<level value="DEBUG"/>
@@ -58,9 +68,13 @@
 		<level value="ERROR"/>
 		<appender-ref ref="jmicro_error"/>
 	</logger>
-	 	<logger name="org.apache.mina">
+	 <logger name="org.apache.mina">
 		<level value="ERROR"/>
 		<appender-ref ref="jmicro_error"/>
+	</logger>
+	<logger name="io.netty">
+		<level value="ERROR"/>
+		<appender-ref ref="netty"/>
 	</logger>
 	<root>	
 	    <level value="DEBUG"/>

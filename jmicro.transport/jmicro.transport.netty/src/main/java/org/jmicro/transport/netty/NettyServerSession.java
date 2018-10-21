@@ -14,50 +14,53 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.jmicro.transport.mina;
+package org.jmicro.transport.netty;
 
-import java.io.IOException;
+import java.net.InetSocketAddress;
 
+import org.jmicro.api.net.AbstractSession;
 import org.jmicro.api.net.Message;
-import org.jmicro.common.Constants;
 import org.jmicro.common.util.JsonUtils;
 import org.jmicro.server.IServerSession;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.sun.net.httpserver.HttpExchange;
-import com.sun.net.httpserver.Headers;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.handler.codec.http.websocketx.TextWebSocketFrame;
 
-/** 
+/**
+ * 
  * @author Yulei Ye
- * @date 2018年10月4日-下午12:14:01
+ * @date 2018年10月21日-下午9:15:12
  */
-public class HttpServerSession extends AbstractHttpSession implements IServerSession{
+public class NettyServerSession extends AbstractSession implements IServerSession{
 
-	static final Logger LOG = LoggerFactory.getLogger(HttpServerSession.class);
+	static final Logger LOG = LoggerFactory.getLogger(NettyServerSession.class);
 	
-	public HttpServerSession(HttpExchange exchange,int readBufferSize,int hearbeatInterval) {
-		super(exchange,readBufferSize,hearbeatInterval);
+	private ChannelHandlerContext ctx;
+	
+	public NettyServerSession(ChannelHandlerContext ctx,int readBufferSize,int hearbeatInterval) {
+		super(readBufferSize,hearbeatInterval);
+		this.ctx = ctx;
 	}
 
-	@SuppressWarnings("restriction")
+	public InetSocketAddress getLocalAddress(){
+		return (InetSocketAddress)ctx.channel().localAddress();
+	}
+	
+	public InetSocketAddress getRemoteAddress(){
+		return (InetSocketAddress)ctx.channel().remoteAddress();
+	}
+	
 	@Override
 	public void write(Message msg) {
-		try {
-			Headers responseHeaders = exchange.getResponseHeaders();
-	        responseHeaders.set("Content-Type", "application/json");
-			exchange.sendResponseHeaders(200, 0);
-			String json = JsonUtils.getIns().toJson(msg);
-			exchange.getResponseBody().write(json.getBytes(Constants.CHARSET));
-			this.close(true);
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+		String json = JsonUtils.getIns().toJson(msg);
+		ctx.channel().writeAndFlush(new TextWebSocketFrame(json));
 	}
 
 	@Override
 	public void close(boolean flag) {
 		super.close(flag);
+		ctx.close();
 	}
 }

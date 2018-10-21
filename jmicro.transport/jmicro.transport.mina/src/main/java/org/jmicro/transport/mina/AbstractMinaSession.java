@@ -45,6 +45,7 @@ public abstract class AbstractMinaSession extends AbstractSession implements ISe
 	
 	@Override
 	public void close(boolean flag) {
+	    super.close(flag);
 		this.ioSession.close(true);
 	}
 	
@@ -53,27 +54,12 @@ public abstract class AbstractMinaSession extends AbstractSession implements ISe
 	}
 
 	@Override
-	public String remoteHost() {
-		InetSocketAddress address = (InetSocketAddress)ioSession.getRemoteAddress();
-		return address.getHostString();
+	public InetSocketAddress getLocalAddress() {
+		return (InetSocketAddress)ioSession.getLocalAddress();
 	}
 
 	@Override
-	public int remotePort() {
-		InetSocketAddress address = (InetSocketAddress)ioSession.getRemoteAddress();
-		return address.getPort();
+	public InetSocketAddress getRemoteAddress() {
+		return (InetSocketAddress)ioSession.getRemoteAddress();
 	}
-
-	@Override
-	public String localHost() {
-		InetSocketAddress address = (InetSocketAddress)ioSession.getLocalAddress();
-		return address.getHostName();
-	}
-
-	@Override
-	public int localPort() {
-		InetSocketAddress address = (InetSocketAddress)ioSession.getLocalAddress();
-		return address.getPort();
-	}
-	
 }

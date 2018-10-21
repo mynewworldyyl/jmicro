@@ -68,8 +68,9 @@ public interface Constants {
 	public static final String SERVICE_METHOD_KEY="serviceMethodKey";
 	public static final String SERVICE_OBJ_KEY="serviceObjKey";
 	
-	public static final String TRANSPORT_HTTP="http";
+	public static final String TRANSPORT_JDKHTTP="jdkhttp";
 	public static final String TRANSPORT_MINA="mina";
+	public static final String TRANSPORT_NETTY="netty";
 	
 	
 	/*=====================Message Begin=======================*/

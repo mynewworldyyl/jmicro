@@ -254,7 +254,7 @@ public class ZKRegistry implements IRegistry {
 	}
 	
 	private void persisFromConfig(ServiceItem item){
-        if(Config.ServiceCofigDir == null){
+        if(Config.ServiceCofigDir == null || item== null){
         	logger.error("Config.ServiceCofigDir is NULL when merge ServiceItem "+ item.getServiceName());
         	return;
         }

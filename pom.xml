@@ -130,6 +130,11 @@
 				 <artifactId>jmicro.transport.http</artifactId>
 				  <version>${jmicro.version}</version>
 	        </dependency>
+	          <dependency>
+				 <groupId>org.jmicro</groupId>
+				 <artifactId>jmicro.transport.netty</artifactId>
+				  <version>${jmicro.version}</version>
+	        </dependency>
 	         <dependency>
 				 <groupId>org.jmicro</groupId>
 				 <artifactId>jmicro.registry.zk</artifactId>

@@ -59,6 +59,10 @@ jmicro.transport/jmicro.transport.http/target/
 jmicro.transport/jmicro.transport.http/.classpath
 jmicro.transport/jmicro.transport.http/.project
 jmicro.transport/jmicro.transport.http/.settings/
+jmicro.transport/jmicro.transport.netty/target/
+jmicro.transport/jmicro.transport.netty/.classpath
+jmicro.transport/jmicro.transport.netty/.project
+jmicro.transport/jmicro.transport.netty/.settings/
 jmicro.zk/target/
 jmicro.zk/.classpath
 jmicro.zk/.project
