@@ -46,7 +46,7 @@ public abstract class AbstractLimiter implements ILimiter{
 
 	protected ServiceItem getServiceItem(IRequest req) {
 		Set<ServiceItem> sis = JMicro.getRegistry(null).getServices(req.getServiceName(),req.getMethod(),req.getArgs(),
-				req.getNamespace(),req.getVersion());
+				req.getNamespace(),req.getVersion(),req.getTransport());
 		if(sis == null || sis.isEmpty()){
 			return null;
 		}

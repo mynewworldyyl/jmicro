@@ -14,17 +14,46 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.jmicro.api.loadbalance;
+package org.jmicro.api.monitor;
 
-import org.jmicro.api.registry.ServiceItem;
 /**
  * 
  * @author Yulei Ye
- * @date 2018年10月4日-下午12:03:02
+ * @date 2018年10月22日-下午1:42:56
  */
-public interface ISelector {
+public class ServiceStatis {
 
-	ServiceItem getService(String srvName,String method,Class<?>[] args,String namespace,String version,String transport);
+	private String service;
+	private long time;
+	//public long endtime;
+	private int avgResponseTime;
 	
-	ServiceItem getService(String srvName,String method,Object[] args,String namespace,String version,String transport);
+	public ServiceStatis(){};
+	
+	public ServiceStatis(String service,long time,int avgResponseTime){
+		this.service = service;
+		this.time = time;
+		this.avgResponseTime = avgResponseTime;
+	};
+	
+	public String getService() {
+		return service;
+	}
+	public void setService(String service) {
+		this.service = service;
+	}
+	public long getTime() {
+		return time;
+	}
+	public void setTime(long time) {
+		this.time = time;
+	}
+	public int getAvgResponseTime() {
+		return avgResponseTime;
+	}
+	public void setAvgResponseTime(int avgResponseTime) {
+		this.avgResponseTime = avgResponseTime;
+	}
+	
+	
 }

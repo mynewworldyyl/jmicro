@@ -48,7 +48,7 @@ public class TestRpcServiceImpl implements ITestRpcService{
 	@Override
 	@SMethod(streamCallback="stringMessageCallback",timeout=10*60*1000)
 	public void subscrite(String msg) {
-		IWriteCallback sender = JMicroContext.get().getParam(Constants.CONTEXT_CALLBACK, null);
+		IWriteCallback sender = JMicroContext.get().getParam(Constants.CONTEXT_CALLBACK_SERVICE, null);
 		if(sender == null){
 			throw new CommonException("Not in async context");
 		}

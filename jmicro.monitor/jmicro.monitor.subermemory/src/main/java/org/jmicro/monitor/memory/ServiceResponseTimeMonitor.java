@@ -32,7 +32,9 @@ import org.jmicro.api.annotation.Service;
 import org.jmicro.api.degrade.DegradeManager;
 import org.jmicro.api.monitor.IMonitorDataSubscriber;
 import org.jmicro.api.monitor.MonitorConstant;
+import org.jmicro.api.monitor.ServiceStatis;
 import org.jmicro.api.monitor.SubmitItem;
+import org.jmicro.api.registry.ServiceItem;
 import org.jmicro.common.util.JsonUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -68,13 +70,6 @@ public class ServiceResponseTimeMonitor implements IMonitorDataSubscriber {
 		//public long endtime;
 	}
 	
-	private static class ServiceStatis {
-		public String service;
-		public long time;
-		//public long endtime;
-		public int avgResponseTime;
-	}
-	
 	@JMethod("init")
 	public void init() {
 		ticker.schedule(new TimerTask(){
@@ -85,11 +80,7 @@ public class ServiceResponseTimeMonitor implements IMonitorDataSubscriber {
 					String srv = e.getKey();
 					Queue<Long> q = e.getValue();
 					
-					ServiceStatis sts = new ServiceStatis();
-					sts.time = System.currentTimeMillis();
-					sts.service = srv;
-					sts.avgResponseTime = sum(q)/q.size();
-					
+					ServiceStatis sts = new ServiceStatis(srv,System.currentTimeMillis(),sum(q)/q.size());
 					//statis.add(sts);
 					
 					degradeManager.updateAvgResponseTime(srv, JsonUtils.getIns().toJson(sts));
@@ -114,7 +105,8 @@ public class ServiceResponseTimeMonitor implements IMonitorDataSubscriber {
 		if(MonitorConstant.CLIENT_REQ_BEGIN == si.getType()){
 			AvgResponseTimeItem i = new AvgResponseTimeItem();
 			i.reqId = si.getReqId();
-			i.service = si.getServiceName()+"|"+si.getMethod()+"|"+si.getReqArgsStr();
+			i.service = ServiceItem.methodKey(ServiceItem.serviceName(si.getServiceName(), si.getNamespace(),
+					si.getVersion()), si.getMethod(), si.getReqArgsStr());
 			i.startTime = si.getTime();
 			reqRespAvgList.put(i.reqId, i);
 		}else if(MonitorConstant.CLIENT_REQ_OK == si.getType()

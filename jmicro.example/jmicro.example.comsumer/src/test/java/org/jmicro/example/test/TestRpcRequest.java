@@ -1,8 +1,13 @@
 package org.jmicro.example.test;
 
 import org.jmicro.api.JMicro;
+import org.jmicro.api.JMicroContext;
+import org.jmicro.api.client.IMessageCallback;
+import org.jmicro.api.monitor.IServiceMonitorData;
 import org.jmicro.api.objectfactory.IObjectFactory;
+import org.jmicro.api.registry.ServiceItem;
 import org.jmicro.api.service.ICheckable;
+import org.jmicro.common.Constants;
 import org.jmicro.common.Utils;
 import org.jmicro.example.api.ITestRpcService;
 import org.jmicro.example.comsumer.TestRpcClient;
@@ -48,7 +53,13 @@ public class TestRpcRequest {
 		IObjectFactory of = JMicro.getObjectFactoryAndStart(new String[0]);
 		of.start();
 		ITestRpcService src = of.get(ITestRpcService.class);
-		src.subscrite("Hello ");;
+		
+		IMessageCallback<String> msgReceiver = (msg)->{
+			System.out.println(msg);
+		};
+		JMicroContext.get().setParam(Constants.CONTEXT_CALLBACK_CLIENT, msgReceiver);
+		
+		src.subscrite("Hello ");
 		Utils.getIns().waitForShutdown();
 	}
 	
@@ -61,5 +72,27 @@ public class TestRpcRequest {
 		String msg = c.wayd("How are you");
 		System.out.println(msg);
 		//Utils.getIns().waitForShutdown();
+	}
+	
+	@Test
+	public void testSubscriteResponseTimeMonitor() {
+		IObjectFactory of = JMicro.getObjectFactoryAndStart(new String[0]);
+		of.start();
+		
+		IMessageCallback<String> msgReceiver = (msg)->{
+			System.out.println(msg);
+		};
+		
+		JMicroContext.get().setParam(Constants.CONTEXT_CALLBACK_CLIENT, msgReceiver);
+		
+		IServiceMonitorData src = of.get(IServiceMonitorData.class);
+		String sn = ServiceItem.serviceName("org.jmicro.example.api.ITestRpcService", "defaultNamespace", "0.0.0");
+		sn = ServiceItem.methodKey(sn, "getPerson", "org.jmicro.api.Person");
+		
+		Integer id = src.subsicribe(sn);
+		
+		Utils.getIns().waitForShutdown();
+		
+		src.unsubsicribe(id,sn);
 	}
 }

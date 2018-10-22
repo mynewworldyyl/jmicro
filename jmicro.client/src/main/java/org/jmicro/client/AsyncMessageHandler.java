@@ -69,17 +69,17 @@ public class AsyncMessageHandler implements IMessageHandler{
 		
 		//req.setMsg(msg);
 		String key = msg.getReqId()+"";
-		ServiceMethod si = (ServiceMethod) session.getParam(key);
+		/*ServiceMethod si = (ServiceMethod) session.getParam(key);
 		if(si == null){
 			logger.error("No Service Method found for stream callback");
 			return;
-		}
+		}*/
 		
-		String streamCb = si.getStreamCallback();
+		/*String streamCb = si.getStreamCallback();
 		if(StringUtils.isEmpty(streamCb)){
 			logger.error("Callback canot be NULL");
 			return;
-		}
+		}*/
 		
 		/*
 		String[] arr = streamCb.split("#");
@@ -105,9 +105,9 @@ public class AsyncMessageHandler implements IMessageHandler{
 		methodName = methodName.substring(0,i);
 		*/
 		
-		IMessageCallback callback = (IMessageCallback)JMicro.getObjectFactory().getByName(streamCb);
+		IMessageCallback callback = (IMessageCallback)session.getParam(key);
 		if(callback == null){
-			logger.error("Service [ "+streamCb+"] not found!");
+			logger.error("Service [ "+key+"] not found!");
 			return;
 		}
 		callback.onMessage(resp.getResult());
@@ -123,18 +123,4 @@ public class AsyncMessageHandler implements IMessageHandler{
 			logger.error("",e);
 		}*/
 	}
-	
-	public void onRequest(IClientSession session,IRequest req,ServiceMethod sm){
-		String cb = sm.getStreamCallback();
-		if(StringUtils.isEmpty(cb)){
-			return;
-		}
-		String key = req.getRequestId()+"";
-		if(session.getParam(key) != null) {
-			return;
-		}
-		session.putParam(key, sm);
-		return;
-	}
-	
 }

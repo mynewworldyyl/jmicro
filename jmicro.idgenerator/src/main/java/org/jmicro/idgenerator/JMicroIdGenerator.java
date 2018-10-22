@@ -18,7 +18,6 @@ package org.jmicro.idgenerator;
 
 import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.Inject;
-import org.jmicro.api.config.Config;
 import org.jmicro.api.idgenerator.IIdGenerator;
 import org.jmicro.api.raft.IDataOperator;
 import org.jmicro.common.Constants;
@@ -37,6 +36,14 @@ public class JMicroIdGenerator implements IIdGenerator {
 	
 	public void init(){
 		
+	}
+	
+	@Override
+	public Integer getIntId(Class<?> idType) {
+		String idStr = this.get(idType);
+		Integer id = Integer.parseInt(idStr)+1;
+		setData(idType,id+"");
+		return id;
 	}
 	
 	@Override

@@ -40,6 +40,8 @@ public class RpcRequest extends AbstractObjectMapSupport implements IRequest{
 	
 	protected String impl;
 	
+	protected String transport;
+	
 	private transient ISession session;
 	
 	protected Long reqId = -1L;
@@ -71,6 +73,14 @@ public class RpcRequest extends AbstractObjectMapSupport implements IRequest{
 	
 	public boolean isStream(){
 		return (this.msg.getFlag() & Constants.FLAG_STREAM) != 0;
+	}
+
+	public String getTransport() {
+		return transport;
+	}
+
+	public void setTransport(String transport) {
+		this.transport = transport;
 	}
 
 	public void setFinish(boolean finish) {

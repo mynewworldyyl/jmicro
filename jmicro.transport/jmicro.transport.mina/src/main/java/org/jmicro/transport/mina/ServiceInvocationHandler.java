@@ -42,13 +42,12 @@ import org.jmicro.api.net.Message;
 import org.jmicro.api.net.RpcRequest;
 import org.jmicro.api.net.RpcResponse;
 import org.jmicro.api.net.ServerError;
+import org.jmicro.api.registry.Server;
 import org.jmicro.api.registry.ServiceItem;
 import org.jmicro.api.registry.ServiceMethod;
 import org.jmicro.api.server.IRequest;
-import org.jmicro.client.AsyncMessageHandler;
 import org.jmicro.common.CommonException;
 import org.jmicro.common.Constants;
-import org.jmicro.common.util.JsonUtils;
 import org.jmicro.common.util.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -84,11 +83,6 @@ public class ServiceInvocationHandler implements InvocationHandler, IMessageHand
 	
 	@Inject
 	private FuseManager fuseManager;
-	
-	@Inject
-	private AsyncMessageHandler asyncMessageHandler;
-	
-	private Object target = new Object();
 	
 	public ServiceInvocationHandler(){
 	}
@@ -135,6 +129,7 @@ public class ServiceInvocationHandler implements InvocationHandler, IMessageHand
         req.setArgs(args);
         req.setMonitorEnable(JMicroContext.get().isMonitor());
         req.setRequestId(idGenerator.getLongId(IRequest.class));
+        req.setTransport(Constants.TRANSPORT_MINA);
         
         ServerError se = null;
         		
@@ -150,7 +145,8 @@ public class ServiceInvocationHandler implements InvocationHandler, IMessageHand
         	
         	//String sn = ProxyObject.getTargetCls(srvClazz).getName();
 			//此方法可能抛出FusingException
-        	si = selector.getService(poItem.getServiceName(),req.getMethod(),args,poItem.getNamespace(),poItem.getVersion());
+        	si = selector.getService(poItem.getServiceName(),req.getMethod(),args,poItem.getNamespace(),
+        			poItem.getVersion(), Constants.TRANSPORT_MINA);
         	
         	if(si ==null) {
         		MonitorConstant.doSubmit(monitor,MonitorConstant.CLIENT_REQ_SERVICE_NOT_FOUND, req, null);
@@ -189,16 +185,13 @@ public class ServiceInvocationHandler implements InvocationHandler, IMessageHand
     		req.setVersion(si.getVersion());
     		req.setImpl(si.getImpl());
     		
-    		
-    		IClientSession session = this.sessionManager.getOrConnect(si.getHost(), si.getPort());
+    		Server s = si.getServer(Constants.TRANSPORT_MINA);
+    		IClientSession session = this.sessionManager.getOrConnect(s.getHost(), s.getPort());
     		req.setSession(session);
     		
     		if(isFistLoop){
     			MonitorConstant.doSubmit(monitor,MonitorConstant.CLIENT_REQ_BEGIN, req, null);
     		}
-    		
-    		String reqJSon = JsonUtils.getIns().toJson(req);
-    		
     		
     		Message msg = new Message();
     		msg.setType(Constants.MSG_TYPE_REQ_JRPC);
@@ -209,7 +202,9 @@ public class ServiceInvocationHandler implements InvocationHandler, IMessageHand
     		msg.setPayload(ICodecFactory.encode(this.codecFactory,req,msg.getProtocol()));
     		msg.setVersion(Constants.VERSION_STR);
     		
-    		/*msg.setPayload(reqJSon);
+    		/*
+    		String reqJSon = JsonUtils.getIns().toJson(req);
+    		msg.setPayload(reqJSon);
     		reqJSon = JsonUtils.getIns().toJson(msg);
     		System.out.println(reqJSon);*/
     		
@@ -233,7 +228,11 @@ public class ServiceInvocationHandler implements InvocationHandler, IMessageHand
     		}
     		
     		if(stream){
-    			this.asyncMessageHandler.onRequest(session, req, sm);
+    			String key = req.getRequestId()+"";
+    			if(session.getParam(key) != null) {
+    				throw new CommonException("Callback have been exists reqID："+key);
+    			}
+    			session.putParam(key,JMicroContext.get().getParam(Constants.CONTEXT_CALLBACK_CLIENT, null));
     		}
     		
     		//保存返回结果
@@ -298,7 +297,7 @@ public class ServiceInvocationHandler implements InvocationHandler, IMessageHand
 			if(se!= null){
 				sb.append(se.toString());
 			}
-			sb.append(" host[").append(si.getHost()).append("] port [").append(si.getPort())
+			sb.append(" host[").append(s.getHost()).append("] port [").append(s.getPort())
 			.append("] service[").append(si.getServiceName())
 			.append("] method [").append(sm.getMethodName())
 			.append("] param [").append(sm.getMethodParamTypes());

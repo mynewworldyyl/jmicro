@@ -62,7 +62,8 @@ public interface Constants {
 	public static final String BASE_PACKAGES_KEY = "basePackages";
 	public static final String INSTANCE_NAME = "instanceName";
 	
-	public static final String CONTEXT_CALLBACK = "Callback";
+	public static final String CONTEXT_CALLBACK_SERVICE = "ServiceCallback";
+	public static final String CONTEXT_CALLBACK_CLIENT = "ClientCallback";
 	
 	public static final String SERVICE_ITEM_KEY="serviceItemKey";
 	public static final String SERVICE_METHOD_KEY="serviceMethodKey";

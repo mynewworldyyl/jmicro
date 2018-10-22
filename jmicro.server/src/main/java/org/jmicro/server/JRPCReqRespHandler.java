@@ -151,7 +151,7 @@ public class JRPCReqRespHandler implements IMessageHandler{
 					
 					SuspendableRunnable r = () ->{
 						JMicroContext.get().mergeParams(cxt);
-						JMicroContext.get().setParam(Constants.CONTEXT_CALLBACK, new IWriteCallback(){
+						JMicroContext.get().setParam(Constants.CONTEXT_CALLBACK_SERVICE, new IWriteCallback(){
 							@Override
 							public void send(Object message) {
 								RpcResponse resp = new RpcResponse(req1.getRequestId(),message);

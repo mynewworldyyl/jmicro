@@ -52,7 +52,7 @@ import io.netty.handler.logging.LoggingHandler;
  */
 @SuppressWarnings("restriction")
 @Component(value=Constants.TRANSPORT_NETTY,lazy=false,level=10,side=Constants.SIDE_PROVIDER)
-@Server(transport=Constants.TRANSPORT_JDKHTTP)
+@Server(transport=Constants.TRANSPORT_NETTY)
 public class NettyServer implements IServer{
 
 	static final Logger LOG = LoggerFactory.getLogger(NettyServer.class);

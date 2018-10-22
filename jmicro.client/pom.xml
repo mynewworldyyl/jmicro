@@ -18,6 +18,11 @@
 		      <groupId>org.jmicro</groupId>
 			  <artifactId>jmicro.codec</artifactId>
         </dependency>
+        <dependency>
+		    <groupId>co.paralleluniverse</groupId>
+		    <artifactId>quasar-core</artifactId>
+		    <version>0.7.10</version>
+		</dependency>
     </dependencies>
    
 </project>

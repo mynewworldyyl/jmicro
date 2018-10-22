@@ -45,6 +45,8 @@ public class ServiceItem{
 	public static final String KV_SEPERATOR="=";
 	public static final String VAL_SEPERATOR="&";
 	
+	public static final String KEY_SEPERATOR="##";
+	
 	private static final Random rand = new Random();
 	
 	//-1 use system default value, 0 disable, 1 enable
@@ -57,12 +59,9 @@ public class ServiceItem{
 	
 	private String version = Constants.DEFAULT_VERSION;
 	
-	private String host;
-	private String transport;
+	private Set<Server> servers = new HashSet<Server>();
 	
 	private String impl;
-	
-	private int port;
 	
 	private int retryCnt=-1; //method can retry times, less or equal 0 cannot be retry
 	private int retryInterval=-1; // milliseconds how long to wait before next retry
@@ -131,6 +130,15 @@ public class ServiceItem{
 		this.parseVal(val);
 	}
 	
+	public Server getServer(String transport) {
+		for(Server s: servers) {
+			if(s.getProtocol().equals(transport)){
+				return s;
+			}
+		}
+		return null;
+	}
+	
     public void formPersisItem(ServiceItem p){
 		this.monitorEnable = p.monitorEnable;
 		
@@ -154,7 +162,6 @@ public class ServiceItem{
 				nsm.formPersisItem(sm);
 			}
 		}
-		
 	}
 
 	public String getImpl() {
@@ -163,6 +170,10 @@ public class ServiceItem{
 
 	public void setImpl(String impl) {
 		this.impl = impl;
+	}
+
+	public Set<Server> getServers() {
+		return servers;
 	}
 
 	public boolean isFusing() {
@@ -177,18 +188,9 @@ public class ServiceItem{
 		return degrade;
 	}
 
-	public String getTransport() {
-		return transport;
-	}
-
-	public void setTransport(String transport) {
-		this.transport = transport;
-	}
-
 	public void setDegrade(int degrade) {
 		this.degrade = degrade;
 	}
-
 
 	public int getMonitorEnable() {
 		return monitorEnable;
@@ -221,7 +223,6 @@ public class ServiceItem{
 	    }else {
 	    	return key;
 	    }
-		
 	}*/
 	
 	public String serviceName() {
@@ -243,8 +244,14 @@ public class ServiceItem{
 	}
 	
 	public static String serviceName(String sn, String ns, String v) {
-		
-		return sn+"##"+namespace(ns)+"##"+version(v);
+		return sn+KEY_SEPERATOR+namespace(ns)+KEY_SEPERATOR+version(v);
+	}
+	
+	public static String methodKey(String serviceName, String method,String paramStr) {
+		if(StringUtils.isEmpty(method)) {
+			throw new CommonException("service ["+serviceName+"] Method cannot be null,");
+		}
+		return serviceName+KEY_SEPERATOR+method+KEY_SEPERATOR+paramStr;
 	}
 
 	private void parseVal(String val) {
@@ -342,7 +349,6 @@ public class ServiceItem{
 		
 		sb.append(Config.getInstanceName()).append(VAL_SEPERATOR)
 		.append(this.serviceName).append(VAL_SEPERATOR)
-		.append(this.transport).append(VAL_SEPERATOR)
 		.append(this.namespace).append(VAL_SEPERATOR)
 		.append(this.version);
 
@@ -390,22 +396,6 @@ public class ServiceItem{
 			return false;
 		}
 		return this.key(Config.ServiceRegistDir).equals(((ServiceItem)obj).key(Config.ServiceRegistDir));
-	}
-
-	public String getHost() {
-		return host;
-	}
-
-	public void setHost(String host) {
-		this.host = host;
-	}
-
-	public int getPort() {
-		return port;
-	}
-
-	public void setPort(int port) {
-		this.port = port;
 	}
 
 	public String getServiceName() {

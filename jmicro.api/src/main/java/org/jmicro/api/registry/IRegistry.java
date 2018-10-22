@@ -32,9 +32,9 @@ public interface IRegistry extends Init{
 	
 	void unregist(ServiceItem si);
 	
-	Set<ServiceItem> getServices(String serviceName,String method,Class<?>[] args,String namespace,String version);
+	Set<ServiceItem> getServices(String serviceName,String method,Class<?>[] args,String namespace,String version,String transport);
 	
-	Set<ServiceItem> getServices(String serviceName,String method,Object[] args,String namespace,String version);
+	Set<ServiceItem> getServices(String serviceName,String method,Object[] args,String namespace,String version,String transport);
 	
 	boolean isExist(String serviceName,String namespace,String version);
 	

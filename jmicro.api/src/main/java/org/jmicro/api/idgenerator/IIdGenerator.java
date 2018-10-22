@@ -26,4 +26,5 @@ public interface IIdGenerator {
 	
 	String getStringId(Class<?> idType);
 	
+	Integer getIntId(Class<?> idType);
 }

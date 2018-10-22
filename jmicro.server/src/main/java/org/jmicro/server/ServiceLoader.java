@@ -19,6 +19,7 @@ package org.jmicro.server;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -35,6 +36,7 @@ import org.jmicro.api.annotation.Service;
 import org.jmicro.api.exception.RpcException;
 import org.jmicro.api.objectfactory.ProxyObject;
 import org.jmicro.api.registry.IRegistry;
+import org.jmicro.api.registry.Server;
 import org.jmicro.api.registry.ServiceItem;
 import org.jmicro.api.registry.ServiceMethod;
 import org.jmicro.api.server.IRequest;
@@ -68,12 +70,13 @@ public class ServiceLoader {
 	public void init(){
 		List<IServer> ss = JMicro.getObjectFactory().getByParent(IServer.class);
 		for(IServer s : ss){
-			Component anno = s.getClass().getAnnotation(Component.class);
-			if(servers.containsKey(anno.value())){
+			org.jmicro.api.annotation.Server anno = 
+					s.getClass().getAnnotation(org.jmicro.api.annotation.Server.class);
+			if(servers.containsKey(anno.transport())){
 				throw new CommonException("IServer:"+s.getClass().getName()+"] and ["
-						+servers.get(anno.value())+" with same component name :"+anno.value());
+						+servers.get(anno.transport())+" with same component name :"+anno.transport());
 			}
-			servers.put(anno.value(), s);
+			servers.put(anno.transport(), s);
 		}
 		exportService();
 		logger.info("export service finish!");
@@ -176,14 +179,17 @@ public class ServiceLoader {
 			return;
 		}
 		
+		Set<Server> ss = new HashSet<>();
 		for(IServer s : this.servers.values()){
-			Component sano = ProxyObject.getTargetCls(s.getClass()).getAnnotation(Component.class);
-			item.setHost(s.host());
-			item.setPort(s.port());
-			item.setTransport(sano.value());
-			registry.regist(item);
+			Server sr = new Server();
+			org.jmicro.api.annotation.Server sano = ProxyObject.getTargetCls(s.getClass())
+					.getAnnotation(org.jmicro.api.annotation.Server.class);
+			sr.setHost(s.host());
+			sr.setPort(s.port());
+			sr.setProtocol(sano.transport());
+			item.getServers().add(sr);
 		}
-		
+		registry.regist(item);
 	}
 	
 	private ServiceItem getServiceItems(Class<?> proxySrv) {

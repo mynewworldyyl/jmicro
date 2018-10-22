@@ -37,6 +37,7 @@ import org.jmicro.api.registry.ServiceItem;
 import org.jmicro.api.registry.ServiceMethod;
 import org.jmicro.common.Constants;
 import org.jmicro.common.util.JsonUtils;
+import org.jmicro.common.util.StringUtils;
 import org.jmicro.zk.ZKDataOperator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -242,7 +243,6 @@ public class ZKRegistry implements IRegistry {
 			this.notifyServiceChange(IServiceListener.SERVICE_ADD, i);
 		}
 		
-		
 		if(!this.serviceNameItems.containsKey(i.getServiceName())){
 			serviceNameItems.put(i.getServiceName(), true);
 			this.notifyServiceNameChange(IServiceListener.SERVICE_ADD, i);
@@ -250,12 +250,11 @@ public class ZKRegistry implements IRegistry {
 		
 		ZKDataOperator.getIns().addNodeListener(path, nodeListener);
 		ZKDataOperator.getIns().addDataListener(i.key(Config.ServiceRegistDir), this.dataListener);
-		
 	}
 	
 	private void persisFromConfig(ServiceItem item){
-        if(Config.ServiceCofigDir == null || item== null){
-        	logger.error("Config.ServiceCofigDir is NULL when merge ServiceItem "+ item.getServiceName());
+        if(item== null){
+        	logger.error("Item is NULL");
         	return;
         }
 		String key = item.key(Config.ServiceCofigDir);
@@ -336,7 +335,7 @@ public class ZKRegistry implements IRegistry {
 
 	@Override
 	public Set<ServiceItem> getServices(String serviceName, String method, Object[] args
-			,String namespace,String version) {
+			,String namespace,String version,String transport) {
 		Class<?>[] clazzes = null;
 		if(args != null && args.length > 0){
 			int i = 0;
@@ -347,12 +346,12 @@ public class ZKRegistry implements IRegistry {
 		}else {
 			clazzes = new Class<?>[0];
 		}
-		return this.getServices(serviceName, method, clazzes,namespace,version);
+		return this.getServices(serviceName, method, clazzes,namespace,version,transport);
 	}
 
 	@Override
 	public Set<ServiceItem> getServices(String serviceName,String method,Class<?>[] args
-			,String namespace,String version) {
+			,String namespace,String version,String transport) {
 		
 		namespace = ServiceItem.namespace(namespace);
 		version = ServiceItem.version(version);
@@ -372,6 +371,9 @@ public class ZKRegistry implements IRegistry {
 				fusings.add(si);
 				continue;
 			}
+			if(!checkTransport(si,transport)){
+				continue;
+			}
 			for(ServiceMethod sm : si.getMethods()){
 				if(sm.getMethodName().equals(method) 
 						&& ServiceMethod.methodParamsKey(args).equals(sm.getMethodParamTypes())){
@@ -389,6 +391,13 @@ public class ZKRegistry implements IRegistry {
 		}else {
 			return set;
 		}
+	}
+
+	private boolean checkTransport(ServiceItem si,String transport) {
+		if(StringUtils.isEmpty(transport)){
+			return true;
+		}
+		return si.getServer(transport) != null;
 	}
 
 	@Override

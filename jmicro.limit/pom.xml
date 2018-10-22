@@ -9,11 +9,15 @@
     <packaging>jar</packaging>
     <name>${project.artifactId}</name>
     <description>speed limit Module</description>
-    <dependencies>
-        <dependency>
-		      <groupId>org.jmicro</groupId>
-			  <artifactId>jmicro.api</artifactId>
-        </dependency>
-    </dependencies>
+	<dependencies>
+		<dependency>
+			<groupId>org.jmicro</groupId>
+			<artifactId>jmicro.api</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>com.google.guava</groupId>
+			<artifactId>guava</artifactId>
+		</dependency>
+	</dependencies>
    
 </project>

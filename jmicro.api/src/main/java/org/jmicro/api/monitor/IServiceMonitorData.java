@@ -14,17 +14,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.jmicro.api.loadbalance;
+package org.jmicro.api.monitor;
 
-import org.jmicro.api.registry.ServiceItem;
+import org.jmicro.api.annotation.Service;
+
 /**
  * 
  * @author Yulei Ye
- * @date 2018年10月4日-下午12:03:02
+ * @date 2018年10月22日-下午1:42:45
  */
-public interface ISelector {
+@Service
+public interface IServiceMonitorData {
 
-	ServiceItem getService(String srvName,String method,Class<?>[] args,String namespace,String version,String transport);
-	
-	ServiceItem getService(String srvName,String method,Object[] args,String namespace,String version,String transport);
+	Integer subsicribe(String service);
+	void unsubsicribe(Integer id,String service);
 }

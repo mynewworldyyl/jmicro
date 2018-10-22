@@ -18,8 +18,6 @@ package org.jmicro.api.server;
 
 import java.util.Map;
 
-import org.jmicro.api.codec.IDecoder;
-import org.jmicro.api.codec.IEncoder;
 import org.jmicro.api.net.ISession;
 /**
  * 
@@ -30,10 +28,7 @@ public interface IRequest /*extends IEncoder,IDecoder */{
 
 	public String getServiceName();
 
-	//public void setServiceName(String serviceName);
-	//public String getImpl();
-
-	//public void setImpl(String impl);
+	public String getTransport();
 
 	public String getNamespace();
 

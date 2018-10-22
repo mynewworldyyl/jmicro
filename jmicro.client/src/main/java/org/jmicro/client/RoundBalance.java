@@ -41,8 +41,9 @@ public class RoundBalance implements ISelector{
 	
 	@SuppressWarnings("null")
 	@Override
-	public ServiceItem getService(String srvName,String method,Class<?>[] args,String namespace,String version) {
-		Set<ServiceItem> srvItems = registry.getServices(srvName,method,args,namespace,version);
+	public ServiceItem getService(String srvName,String method,Class<?>[] args,String namespace,String version,
+			String transport) {
+		Set<ServiceItem> srvItems = registry.getServices(srvName,method,args,namespace,version,transport);
 		if(srvItems == null || srvItems.isEmpty()) {
 			return null;
 		}
@@ -53,7 +54,8 @@ public class RoundBalance implements ISelector{
 	}
 
 	@Override
-	public ServiceItem getService(String srvName, String method, Object[] args,String namespace,String version) {
+	public ServiceItem getService(String srvName, String method, Object[] args,String namespace,String version,
+			String transport) {
 		Class<?>[] clazzes = null;
 		if(args != null && args.length > 0){
 			int i = 0;
@@ -64,7 +66,7 @@ public class RoundBalance implements ISelector{
 		} else {
 			clazzes = new Class<?>[0];
 		}
-		return this.getService(srvName, method, clazzes,namespace,version);
+		return this.getService(srvName, method, clazzes,namespace,version,transport);
 	}
 	
 	
