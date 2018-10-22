@@ -36,7 +36,10 @@ import io.netty.handler.stream.ChunkedWriteHandler;
 public class NettyChannelInitializer extends ChannelInitializer<SocketChannel>{
 
 	@Inject
-	private NettyWebSocketHandler handler;
+	private NettyWebSocketHandler wsHandler;
+	
+	@Inject
+	private NettyHttpServerHandler httpHandler;
 	
 	@Override
     protected void initChannel(SocketChannel ch) throws Exception {
@@ -50,7 +53,8 @@ public class NettyChannelInitializer extends ChannelInitializer<SocketChannel>{
         
         pipeline.addLast("webSocketServerProtocolHandler", new WebSocketServerProtocolHandler("/ws"));
         
-        pipeline.addLast("myWebSocketHandler", handler);
+        pipeline.addLast("myWebSocketHandler", wsHandler);
+        pipeline.addLast("jmicroHttpHandler", httpHandler);
     }
 	
 }

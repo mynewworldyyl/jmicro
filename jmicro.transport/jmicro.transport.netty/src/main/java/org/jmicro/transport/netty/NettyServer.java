@@ -35,6 +35,7 @@ import org.slf4j.LoggerFactory;
 
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.ChannelFuture;
+import io.netty.channel.ChannelOption;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
@@ -92,9 +93,13 @@ public class NettyServer implements IServer{
         
         try {
         	server = new ServerBootstrap();
-        	server.group(bossGroup, workerGroup).channel(NioServerSocketChannel.class)
-                            .handler(new LoggingHandler(LogLevel.INFO))
-                            .childHandler(initializer);
+        	server.option(ChannelOption.SO_KEEPALIVE, true)
+        	.option(ChannelOption.SO_BACKLOG, 128) 
+            .childOption(ChannelOption.SO_KEEPALIVE, true)
+        	.group(bossGroup, workerGroup)
+        	.channel(NioServerSocketChannel.class)
+            .handler(new LoggingHandler(LogLevel.INFO))
+            .childHandler(initializer);
              
              ChannelFuture channelFuture = server.bind(address).sync();
              //channelFuture.channel().closeFuture().sync();
