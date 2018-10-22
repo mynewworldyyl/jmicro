@@ -209,7 +209,7 @@ public class ServiceInvocationHandler implements InvocationHandler, IMessageHand
     		System.out.println(reqJSon);*/
     		
     		//byte flag = sm.async ? Message.FLAG_ASYNC : 0;
-    		boolean stream = !StringUtils.isEmpty(sm.streamCallback);
+    		boolean stream = sm.stream;
     		//boolean async = !StringUtils.isEmpty(sm.streamCallback);
     		
     		byte flag = stream ? Constants.FLAG_STREAM : 0 ; 

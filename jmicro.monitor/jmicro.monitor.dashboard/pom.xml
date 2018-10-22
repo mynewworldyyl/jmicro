@@ -22,10 +22,11 @@
 			 <groupId>org.jmicro</groupId>
 			 <artifactId>jmicro.common</artifactId>
         </dependency>
-<!--         <dependency>
+         <dependency>
 			 <groupId>org.jmicro</groupId>
 			 <artifactId>jmicro.transport.mina</artifactId>
         </dependency>
+        <!--
          <dependency>
 			 <groupId>org.jmicro</groupId>
 			 <artifactId>jmicro.transport.http</artifactId>

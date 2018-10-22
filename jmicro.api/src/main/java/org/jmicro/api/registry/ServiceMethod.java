@@ -98,7 +98,7 @@ public class ServiceMethod {
 		
 	//false: not stream, true:stream, more than one request and response double stream
 	//a stream service must be async=true, and get got result by callback
-	public String streamCallback = "";
+	public boolean stream = false;
 	
 	public void formPersisItem(ServiceMethod p){
 		this.monitorEnable = p.monitorEnable;
@@ -336,13 +336,12 @@ public class ServiceMethod {
 		this.needResponse = needResponse;
 	}
 
-	
-	public String getStreamCallback() {
-		return streamCallback;
+	public boolean isStream() {
+		return stream;
 	}
 
-	public void setStreamCallback(String streamCallback) {
-		this.streamCallback = streamCallback;
+	public void setStream(boolean stream) {
+		this.stream = stream;
 	}
 	
 }

@@ -16,6 +16,7 @@
  */
 package org.jmicro.api.monitor;
 
+import org.jmicro.api.annotation.SMethod;
 import org.jmicro.api.annotation.Service;
 
 /**
@@ -23,9 +24,10 @@ import org.jmicro.api.annotation.Service;
  * @author Yulei Ye
  * @date 2018年10月22日-下午1:42:45
  */
-@Service
+@Service(monitorEnable=0, namespace="serviceMonitorData", version="0.0.1")
 public interface IServiceMonitorData {
 
+	@SMethod(stream=true,retryCnt=0,maxSpeed="10s")
 	Integer subsicribe(String service);
 	void unsubsicribe(Integer id,String service);
 }

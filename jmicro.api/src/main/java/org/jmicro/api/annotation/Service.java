@@ -55,13 +55,13 @@ public @interface Service {
 	 * 服务命名空间，服务之间以命名空间作为区别，如出库单服务，入库单服务可以用不同的命名空间相区别，利于服务管理
 	 * 客户端使用服务时，可以指定命名空间
 	 */
-	public String namespace() default Constants.DEFAULT_NAMESPACE;
+	public String namespace() default "";
 
 	/**
 	 * 服务版本，每个服务接口可以有多个版本，版本格式为 DD.DD.DD,6个数字用英方步点号隔开
 	 * 客户端使用服务时，可以指定版本或版本范围
 	 */
-	public String version() default Constants.DEFAULT_VERSION;
+	public String version() default "";
 	
 	/**
 	 * 服务是否可监控，-1表示未定义，由别的地方定义，如系统环境变量，启动时指定等，0表示不可监控，1表未可以被监控

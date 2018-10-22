@@ -59,7 +59,7 @@ public @interface SMethod {
 	// StringUtils.isEmpty()=true: not stream, false: stream, one request will got more response
 	// if this value is not NULL, the async is always true without check the real value
 	// value is the callback component in IOC container created in client
-	public String streamCallback() default "";
+	public boolean stream() default false;
 	
 	//async return result, server return two time: 
 	//first return to confirm receive the request, 

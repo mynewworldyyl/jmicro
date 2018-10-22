@@ -39,7 +39,7 @@ import org.jmicro.common.Constants;
  * @date 2018年10月22日-下午1:43:11
  */
 @Component
-@Service(monitorEnable=0,namespace="serviceMonitorData",version="0.0.1",retryCnt=0)
+@Service(monitorEnable=0,retryCnt=0)
 public class ServiceMonitorDataImpl implements IServiceMonitorData{
 
 	private Map<String,Set<ServiceStatis>> statis = new HashMap<String,Set<ServiceStatis>>();
@@ -52,7 +52,6 @@ public class ServiceMonitorDataImpl implements IServiceMonitorData{
 	@Inject
 	private IDataOperator dataOperator;
 	
-	@SMethod(streamCallback="serviceDataUpdater",retryCnt=0,maxSpeed="10s")
 	@Override
 	public Integer subsicribe(String service) {
 		Integer id = idGenerator.getIntId(ServiceStatis.class);

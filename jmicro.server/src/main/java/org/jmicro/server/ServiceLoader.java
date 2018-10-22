@@ -42,6 +42,7 @@ import org.jmicro.api.registry.ServiceMethod;
 import org.jmicro.api.server.IRequest;
 import org.jmicro.api.server.IServer;
 import org.jmicro.common.CommonException;
+import org.jmicro.common.Constants;
 import org.jmicro.common.util.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -200,34 +201,38 @@ public class ServiceLoader {
 		
 		//Object srv = ProxyObject.getTarget(proxySrv);
 		Service anno = srvCls.getAnnotation(Service.class);
-		Class<?> interfaces = anno.infs();
-		if(interfaces == null || interfaces == Void.class){
+		Class<?> interfacez = anno.infs();
+		if(interfacez == null || interfacez == Void.class){
 			Class<?>[] ints = srvCls.getInterfaces();
 			if(ints == null || ints.length != 1) {
 				throw new CommonException("service ["+srvCls.getName()+"] have to implement one and only one interface.");
 			}
-			interfaces = ints[0] ;
+			interfacez = ints[0] ;
+		}
+		
+		Service intAnno = null;
+		
+		if(interfacez != null && interfacez.isAnnotationPresent(Service.class)){
+			intAnno = interfacez.getAnnotation(Service.class);
 		}
 		
 		ServiceItem item = new ServiceItem();
 		
 		item.setImpl(proxySrv.getName());
-	
-		item.setServiceName(interfaces.getName());
+		item.setServiceName(interfacez.getName());
+		item.setVersion(getFieldValue(anno.version(),intAnno == null ? null : intAnno.version(),Constants.DEFAULT_VERSION));
+		item.setNamespace(getFieldValue(anno.namespace(),intAnno == null ? null : intAnno.namespace(),Constants.DEFAULT_NAMESPACE));
 		
-		item.setVersion(anno.version());
-		item.setNamespace(anno.namespace());
-		
-		item.setMaxFailBeforeFusing(anno.maxFailBeforeFusing());
-		item.setMaxFailBeforeDegrade(anno.maxFailBeforeDegrade());
-		item.setRetryCnt(anno.retryCnt());
-		item.setRetryInterval(anno.retryInterval());
-		item.setTestingArgs(anno.testingArgs());
-		item.setTimeout(anno.timeout());
+		item.setMaxFailBeforeFusing(anno.maxFailBeforeFusing()!=500 || intAnno == null ?anno.maxFailBeforeFusing():intAnno.maxFailBeforeFusing());
+		item.setMaxFailBeforeDegrade(anno.maxFailBeforeDegrade()!=100 || intAnno == null ?anno.maxFailBeforeDegrade():intAnno.maxFailBeforeDegrade());
+		item.setRetryCnt(anno.retryCnt()!=3 || intAnno == null ?anno.retryCnt():intAnno.retryCnt());
+		item.setRetryInterval(anno.retryInterval()!=500 || intAnno == null ?anno.retryInterval():intAnno.retryInterval());
+		item.setTestingArgs(getFieldValue(anno.testingArgs(),intAnno == null ? null : intAnno.testingArgs(),""));
+		item.setTimeout(anno.timeout()!=2000 || intAnno == null ?anno.timeout():intAnno.timeout());
 		item.setMaxSpeed(this.parseSpeed(anno.maxSpeed()));
 		item.setSpeedUnit(this.parseSpeedUnit(anno.maxSpeed()));
-		item.setAvgResponseTime(anno.avgResponseTime());
-		item.setMonitorEnable(anno.monitorEnable());
+		item.setAvgResponseTime(anno.avgResponseTime()!=-1 || intAnno == null ? anno.avgResponseTime() : intAnno.avgResponseTime());
+		item.setMonitorEnable(anno.monitorEnable()!=-1 || intAnno == null ? anno.monitorEnable() : intAnno.monitorEnable());
 		
 		ServiceMethod checkMethod = new ServiceMethod();
 		item.addMethod(checkMethod);
@@ -244,7 +249,7 @@ public class ServiceLoader {
 		checkMethod.setMethodName("wayd");
 		checkMethod.setMethodParamTypes("java.lang.String");
 		
-		for(Method m : interfaces.getMethods()) {
+		for(Method m : interfacez.getMethods()) {
 			ServiceMethod sm = new ServiceMethod();
 			Method srvMethod = null;
 			try {
@@ -256,61 +261,82 @@ public class ServiceLoader {
 			
 			//具体实现类的注解优先，如果实现类对就方法没有注解，则使用接口对应的方法注解
 			//如果接口和实现类都没有，则使用实现类的Service注解，实现类肯定有Service注解，否则不会成为服务
-			if(srvMethod.isAnnotationPresent(SMethod.class)){
-				SMethod manno = srvMethod.getAnnotation(SMethod.class);
-				sm.setMaxFailBeforeFusing(manno.maxFailBeforeFusing());
-				sm.setMaxFailBeforeDegrade(manno.maxFailBeforeDegrade());
-				sm.setRetryCnt(manno.retryCnt());
-				sm.setRetryInterval(manno.retryInterval());
-				sm.setTestingArgs(manno.testingArgs());
-				sm.setTimeout(manno.timeout());
-				sm.setMaxSpeed(this.parseSpeed(manno.maxSpeed()));
-				sm.setSpeedUnit(this.parseSpeedUnit(manno.maxSpeed()));
-				sm.setAvgResponseTime(manno.avgResponseTime());
-				sm.setMonitorEnable(manno.monitorEnable());
-				
-				//checkStreamCallback(manno.streamCallback());
-				
-				sm.setStreamCallback(manno.streamCallback());
-				sm.setNeedResponse(manno.needResponse());
-				/*if(StringUtils.isEmpty(sm.getStreamCallback())){
-					sm.setAsync(manno.async());
-				}else {
-					sm.setAsync(true);
-				}*/
-				
-			}else if(m.isAnnotationPresent(SMethod.class)){
-				SMethod manno = m.getAnnotation(SMethod.class);
-				sm.setMaxFailBeforeFusing(manno.maxFailBeforeFusing());
-				sm.setMaxFailBeforeDegrade(manno.maxFailBeforeDegrade());
-				sm.setRetryCnt(manno.retryCnt());
-				sm.setRetryInterval(manno.retryInterval());
-				sm.setTestingArgs(manno.testingArgs());
-				sm.setTimeout(manno.timeout());
-				sm.setMaxSpeed(this.parseSpeed(manno.maxSpeed()));
-				sm.setSpeedUnit(this.parseSpeedUnit(manno.maxSpeed()));
-				sm.setAvgResponseTime(manno.avgResponseTime());
-				sm.setMonitorEnable(manno.monitorEnable());
-				sm.setStreamCallback(manno.streamCallback());
-				sm.setNeedResponse(manno.needResponse());
-			} else {
-				sm.setMaxFailBeforeFusing(anno.maxFailBeforeFusing());
-				sm.setMaxFailBeforeDegrade(anno.maxFailBeforeDegrade());
-				sm.setRetryCnt(anno.retryCnt());
-				sm.setRetryInterval(anno.retryInterval());
-				sm.setTestingArgs(anno.testingArgs());
-				sm.setTimeout(anno.timeout());
-				sm.setMaxSpeed(this.parseSpeed(anno.maxSpeed()));
-				sm.setSpeedUnit(this.parseSpeedUnit(anno.maxSpeed()));
-				sm.setAvgResponseTime(anno.avgResponseTime());
-				sm.setMonitorEnable(anno.monitorEnable());
-			}
 			
+			SMethod manno = srvMethod.getAnnotation(SMethod.class);
+			SMethod intMAnno = m.getAnnotation(SMethod.class);
+			
+			if(manno == null && intMAnno== null){
+				sm.setMaxFailBeforeFusing(item.getMaxFailBeforeFusing());
+				sm.setMaxFailBeforeDegrade(item.getMaxFailBeforeDegrade());
+				sm.setRetryCnt(item.getRetryCnt());
+				sm.setRetryInterval(item.getRetryInterval());
+				sm.setTestingArgs(item.getTestingArgs());
+				sm.setTimeout(item.getTimeout());
+				sm.setMaxSpeed(item.getMaxSpeed());
+				sm.setSpeedUnit(item.getSpeedUnit());
+				sm.setAvgResponseTime(item.getAvgResponseTime());
+				sm.setMonitorEnable(item.getMonitorEnable());
+			} else {
+				if(manno == null && intMAnno == null ) {
+					sm.setMaxFailBeforeFusing(500);
+					sm.setMaxFailBeforeFusing(500);
+					sm.setMaxFailBeforeDegrade(100);
+					sm.setRetryCnt(3);
+					sm.setRetryInterval(500);
+					sm.setTestingArgs("");
+					sm.setTimeout(2000);
+					sm.setMaxSpeed(0);
+					sm.setSpeedUnit("");
+					sm.setAvgResponseTime(-1);
+					sm.setMonitorEnable(-1);
+					sm.setStream(false);
+					sm.setNeedResponse(true);
+				} else if(manno != null ) {
+					sm.setMaxFailBeforeFusing(manno.maxFailBeforeFusing()!=500 || intMAnno == null ?manno.maxFailBeforeFusing():intMAnno.maxFailBeforeFusing());
+					sm.setMaxFailBeforeFusing(manno.maxFailBeforeFusing()!=500 || intMAnno == null ?manno.maxFailBeforeFusing():intMAnno.maxFailBeforeFusing());
+					sm.setMaxFailBeforeDegrade(manno.maxFailBeforeDegrade()!=100 || intMAnno == null ?manno.maxFailBeforeDegrade():intMAnno.maxFailBeforeDegrade());
+					sm.setRetryCnt(manno.retryCnt()!=3 || intMAnno == null ?manno.retryCnt():intMAnno.retryCnt());
+					sm.setRetryInterval(manno.retryInterval()!=500 || intMAnno == null ?manno.retryInterval():intMAnno.retryInterval());
+					sm.setTestingArgs(getFieldValue(manno.testingArgs(),intMAnno == null ? null : intMAnno.testingArgs(),""));
+					sm.setTimeout(manno.timeout()!=2000 || intMAnno == null ?manno.timeout():intMAnno.timeout());
+					sm.setMaxSpeed(this.parseSpeed(manno.maxSpeed()));
+					sm.setSpeedUnit(this.parseSpeedUnit(manno.maxSpeed()));
+					sm.setAvgResponseTime(manno.avgResponseTime()!=-1 || intMAnno == null ? manno.avgResponseTime() : intMAnno.avgResponseTime());
+					sm.setMonitorEnable(manno.monitorEnable()!=-1 || intMAnno == null ? manno.monitorEnable() : intMAnno.monitorEnable());
+					sm.setStream(manno.stream());
+					sm.setNeedResponse(manno.needResponse());
+				}else {
+					sm.setMaxFailBeforeFusing(intMAnno.maxFailBeforeFusing());
+					sm.setMaxFailBeforeFusing(intMAnno.maxFailBeforeFusing());
+					sm.setMaxFailBeforeDegrade(intMAnno.maxFailBeforeDegrade());
+					sm.setRetryCnt(intMAnno.retryCnt());
+					sm.setRetryInterval(intMAnno.retryInterval());
+					sm.setTestingArgs(intMAnno.testingArgs());
+					sm.setTimeout(intMAnno.timeout());
+					sm.setMaxSpeed(this.parseSpeed(intMAnno.maxSpeed()));
+					sm.setSpeedUnit(this.parseSpeedUnit(intMAnno.maxSpeed()));
+					sm.setAvgResponseTime(intMAnno.avgResponseTime());
+					sm.setMonitorEnable(intMAnno.monitorEnable());
+					sm.setStream(intMAnno.stream());
+					sm.setNeedResponse(intMAnno.needResponse());
+				}
+				
+			} 
 			sm.setMethodName(m.getName());
 			sm.setMethodParamTypes(ServiceMethod.methodParamsKey( m.getParameterTypes()));
 		}
 		
 		return item;
+	}
+	
+	private  String getFieldValue(String anno, String intAnno,String defau) {
+		if(StringUtils.isEmpty(anno) && StringUtils.isEmpty(intAnno)) {
+			return defau;
+		}
+		if(!StringUtils.isEmpty(anno)) {
+			return anno;
+		}
+		return intAnno;
 	}
 	
 	private String parseSpeedUnit(String maxSpeed) {
