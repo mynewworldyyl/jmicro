@@ -523,18 +523,18 @@ JMicro IOC通过默认构造函数创建组件，没有默认构造函数，JMic
 /**
  * 为JMicro微服务框架量身定制的IOC容器，具有基本的依赖注入，属性注入，属性动态更新，生成动态代理对像，动态代理远程对像，动态代理服务对像等功能。
  * 此IOC只能创建无参数构造函数的类，如果类不能满足此条件，则不能通过IOC创建，但可以在外部创建好后注册到IOC容器。
- * 技术上可支持多个IOC容器同时存在，但意义不大，因此目前只针对单IOC做过测试验证，没对多IOC同时存在做测试，但代码已经实出。
+ * 技术上可支持多个IOC容器同时存在，但意义不大，因此目前只针对单IOC做过测试验证，没对多IOC同时存在做测试，但代码已经实现。
  * 整个JMicro框架从创建并启动IOC开始，其基本流程如下：
  * 
- * 首无通过 public static void parseArgs(String[] args)方法解析命令行参数；
+ * 首先通过 public static void parseArgs(String[] args)方法解析命令行参数；
  * 
  * JVM启动时，会在classpath下搜索全部IObjectFactory的实现类，实现类需要注解为@ObjFactory，通过默认构造函数做实例化，所以实现类必须带无参构造函数。
  * 
- * 增加  @see IPostInitListener， @see IPostFactoryReady 两种类型监听器。
+ * 增加  @see IPostInitListener， @see IPostFactoryReady 两种类型监听器（如果需要）。
  * 
- * 调用start方法启动容器
+ * 调用start方法启动容器，会加载所有服务，及生成客户端代理
  * 
- * 微服务框开始运行并接受外部请求
+ * 微服务框架开始运行并接受外部请求
  * 
  * 实现细节参考 @see SimpleObjectFactory
  *  
@@ -589,13 +589,13 @@ public interface IObjectFactory {
 	 * 组件创建过程：
 	 * 1. 搜索classpath下指定包（通过basePackages命令行参数指定，org.jmicro默认加入，并且不可修改）的全部注解为@Component的类；
 	 * 2. 通过默认构造函数实例化组件；
-	 * 3. 对level由小到大对组件进行做排序；
-	 * 4. 组件初始化过程：
+	 * 3. 对level由小到大对组件进行排序；
+	 * 4. 排序后（确定启动优先级），组件初始化过程：
 	 *    a. 注入依赖对像，包括远程服务对像；
-	 *    b. IPostInitListener.preInit(Object obj,Config cfg)
+	 *    b. IPostInitListener.preInit(Object obj,Config cfg)通知即将开始初始化过程
 	 *    c. 调用组件的init方法；
-	 *    d. IPostInitListener.afterInit(Object obj,Config cfg)
-	 * 5. 调用容器中全部的IPostFactoryReady.ready(IObjectFactory of)方法
+	 *    d. IPostInitListener.afterInit(Object obj,Config cfg) 通知初始化完成
+	 * 5. 调用容器中全部的IPostFactoryReady.ready(IObjectFactory of)方法，通知系统全部准备完成
 	 * 6. 服务启动完成，
 	 * 
 	 */
