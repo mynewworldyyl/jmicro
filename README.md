@@ -137,7 +137,7 @@ public class ServiceProvider {
 
 ~~~
 
-# 客户使用服务
+# 客户端使用服务
 
 ~~~
 package org.jmicro.example.comsumer;
@@ -500,7 +500,7 @@ public class ProxyObjectForTest {
 如自己实现一个来得快。
 另一方法，从设计JMicro开始，我就要求JMicro足够轻量，保持对外界的最少依赖，且使用Spring很容易产生依赖综合
 症，使用core，bean，context，web。。。没完没了，最后发现，其实用的就那么点东西，但是却引入了一堆没用的包。
-dubbo就有这个问题，如果不使用spring而使用dubbo，就像绑着双脚走路一样。
+dubbo就有这个问题，如果不使用spring而使用dubbo，就像绑着双脚走路一样（除非对Spring一无所知的入门级同学）。
 此IOC容器特点是：简单经量，组件依赖注入，远程服务依赖注入，属性动态更新，使用起来简单（前面提的5个注解）
 
 ### JMicro之外能用此IOC容器吗？ 
