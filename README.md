@@ -60,14 +60,14 @@ import org.jmicro.common.CommonException;
 import org.jmicro.common.Constants;
 import org.jmicro.example.api.ITestRpcService;
 
-//service说前这是一个RPC服务，指定超时时间是10秒，最高QPS是1个/每秒，s表示秒
+//service说明这是一个RPC服务，指定超时时间是10秒，最高QPS是1个/每秒，s表示秒
 @Service(timeout=10*1000,maxSpeed="1s")
 @Component //告诉IOC容器这是一个组件
 public class TestRpcServiceImpl implements ITestRpcService{
 
 	private AtomicInteger ai = new AtomicInteger();
 	
-	@Cfg("/limiterName")//从配置中心拿配置，可实时修改并实时生效
+	@Cfg("/limiterName")//从配置中心拿配置，可从配置中心修改并实时生效
 	private String name;
 	
 	@Override
@@ -190,7 +190,7 @@ public @interface Service {
 	public String registry() default Constants.DEFAULT_REGISTRY;
 	
 	/**
-	 * 底层传输层，可以是http或Mina
+	 * 底层传输层，可以是http，Mina，netty，默认是全部可用的Server
 	 */
 	public String server() default Constants.DEFAULT_SERVER;
 	
