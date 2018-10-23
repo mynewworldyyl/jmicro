@@ -222,6 +222,10 @@ public class Config implements IConfigChangeListener{
 		return RegistryPort;
 	}
 	
+	public static boolean isClientOnly() {
+		return CommadParams.containsKey(Constants.CLIENT_ONLY);
+	}
+	
 	public static String[]  getBasePackages() {
 		return BasePackages;
 	}

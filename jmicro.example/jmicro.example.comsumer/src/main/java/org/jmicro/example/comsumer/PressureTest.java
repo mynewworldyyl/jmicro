@@ -32,7 +32,7 @@ class Worker implements Runnable{
 		for(;;){
 			//invoke remote service
 			try {
-				Thread.sleep(r.nextInt(10));
+				Thread.sleep(1000);
 			} catch (InterruptedException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();

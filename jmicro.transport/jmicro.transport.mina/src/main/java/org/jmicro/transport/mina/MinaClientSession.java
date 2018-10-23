@@ -37,6 +37,9 @@ public class MinaClientSession extends AbstractMinaSession implements IClientSes
 	
 	@Override
 	public void write(Message msg) {
+		if(this.isOpenDebug()){
+			LOG.debug("Send Requet reqId:{}", msg.getReqId());
+		}
 		this.getIoSession().write(msg.encode());
 	}
 

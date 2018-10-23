@@ -68,6 +68,9 @@ public class MinaClientSessionManager implements IClientSessionManager{
 	
 	private final Map<String,IClientSession> sessions = new ConcurrentHashMap<>();
 	
+	@Cfg("/MinaClientSessionManager/openDebug")
+	private boolean openDebug;
+	
 	@Inject
 	private ICodecFactory codeFactory;
 	
@@ -110,7 +113,7 @@ public class MinaClientSessionManager implements IClientSessionManager{
 			final ByteBuffer bb = ByteBuffer.wrap("Hello".getBytes(Constants.CHARSET));
 			hearbeat.setPayload(bb);
 			
-			ticker.schedule(new TimerTask(){
+			/*ticker.schedule(new TimerTask(){
 				@Override
 				public void run() {
 					Set<String> removes = new HashSet<String>();
@@ -131,7 +134,8 @@ public class MinaClientSessionManager implements IClientSessionManager{
 						sessions.remove(key);
 					}
 				}	
-			}, 0, heardbeatInterval*1000);
+			}, 0, heardbeatInterval*1000);*/
+			
 		} catch (UnsupportedEncodingException e) {
 			logger.error("",e);
 		}
@@ -163,6 +167,9 @@ public class MinaClientSessionManager implements IClientSessionManager{
             }
             Message msg = new Message();
             msg.decode(body);
+            if(openDebug) {
+            	logger.debug("Got message reqId: "+ msg.getReqId());
+            }
             receiver.receive(cs,msg);
         }
 
@@ -263,6 +270,7 @@ public class MinaClientSessionManager implements IClientSessionManager{
 	           MinaClientSession s = new MinaClientSession(session,readBufferSize,heardbeatInterval);
 	           s.setId(this.idGenerator.getLongId(ISession.class));
 	           s.putParam(Constants.SESSION_KEY, session);
+	           s.setOpenDebug(this.openDebug);
 	           
 	           s.putParam(Constants.MONITOR_ENABLE_KEY, JMicroContext.get().isMonitor());
 	           

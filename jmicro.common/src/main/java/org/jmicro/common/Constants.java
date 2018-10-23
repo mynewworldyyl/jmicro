@@ -22,6 +22,8 @@ package org.jmicro.common;
  */
 public interface Constants {
 
+	public static final String CLIENT_ONLY="client";
+	
 	public static final String CFG_ROOT="/jmicro";
 	
 	public static final String SIDE_COMSUMER = "comsumer";

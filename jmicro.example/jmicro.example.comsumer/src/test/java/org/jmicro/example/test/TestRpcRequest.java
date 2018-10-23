@@ -86,7 +86,7 @@ public class TestRpcRequest {
 		JMicroContext.get().setParam(Constants.CONTEXT_CALLBACK_CLIENT, msgReceiver);
 		
 		IServiceMonitorData src = of.get(IServiceMonitorData.class);
-		String sn = ServiceItem.serviceName("org.jmicro.example.api.ITestRpcService", "defaultNamespace", "0.0.0");
+		String sn = ServiceItem.serviceName("org.jmicro.example.api.ITestRpcService", "testrpc", "0.0.1");
 		sn = ServiceItem.methodKey(sn, "getPerson", "org.jmicro.api.Person");
 		
 		Integer id = src.subsicribe(sn);

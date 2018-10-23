@@ -69,6 +69,9 @@ public class JRPCReqRespHandler implements IMessageHandler{
 	
 	private volatile Map<String,IRequestHandler> handlers = new ConcurrentHashMap<>();
 	
+	@Cfg("/JRPCReqRespHandler/openDebug")
+	private boolean openDebug;
+	
 	@Inject
 	private ICodecFactory codeFactory;
 	
@@ -99,6 +102,9 @@ public class JRPCReqRespHandler implements IMessageHandler{
 		boolean needResp = true;
 		IResponse resp = null;
 	    try {
+	    	if(openDebug) {
+				logger.debug("Got Request ReqId: " + msg.getReqId());
+			}
 		    s.setId(msg.getSessionId());
 	        JMicroContext cxt = JMicroContext.get();
 			cxt.setParam(JMicroContext.SESSION_KEY, s);
@@ -117,7 +123,7 @@ public class JRPCReqRespHandler implements IMessageHandler{
 			if(si == null){
 				MonitorConstant.doSubmit(monitor,MonitorConstant.SERVER_REQ_SERVICE_NOT_FOUND,
 						req,null,req.getImpl());
-				throw new CommonException("Service not found");
+				throw new CommonException("Service not found impl："+req.getImpl());
 			}
 			
 			ServiceMethod sm = si.getMethod(req.getMethod(), req.getArgs());
@@ -154,6 +160,7 @@ public class JRPCReqRespHandler implements IMessageHandler{
 						JMicroContext.get().setParam(Constants.CONTEXT_CALLBACK_SERVICE, new IWriteCallback(){
 							@Override
 							public void send(Object message) {
+								
 								RpcResponse resp = new RpcResponse(req1.getRequestId(),message);
 								resp.setSuccess(true);
 								//返回结果包
@@ -162,6 +169,9 @@ public class JRPCReqRespHandler implements IMessageHandler{
 								msg.setType(Constants.MSG_TYPE_ASYNC_RESP);
 								if(s.isClose()){
 									throw new CommonException("Session is closed while writing data");
+								}
+								if(openDebug) {
+									logger.debug("Send Async msg ReqId: "+req1.getRequestId());
 								}
 								s.write(msg);
 							}
@@ -211,6 +221,9 @@ public class JRPCReqRespHandler implements IMessageHandler{
 					msg.setPayload(ICodecFactory.encode(codeFactory,resp,msg.getProtocol()));
 					msg.setType(Constants.MSG_TYPE_RRESP_JRPC);
 					msg.setId(idGenerator.getLongId(Message.class));
+					if(openDebug) {
+						logger.debug("Response Request ReqId: " + msg.getReqId());
+					}
 					s.write(msg);
 				}
 				MonitorConstant.doSubmit(monitor,MonitorConstant.SERVER_REQ_OK, req,resp);
@@ -246,8 +259,9 @@ public class JRPCReqRespHandler implements IMessageHandler{
     	IRequestHandler handler = null;
     	
     	String key = reqMethodKey(req);
-    	if(handlers.containsKey(key)){
-    		handler = this.handlers.get(key);
+    	 Map<String,IRequestHandler> hs = this.handlers;
+    	if(hs.containsKey(key)){
+    		handler = hs.get(key);
     	} else {
     		String handlerKey = JMicroContext.get().getString(Constants.DEFAULT_HANDLER,
     				Constants.DEFAULT_HANDLER);
@@ -258,7 +272,7 @@ public class JRPCReqRespHandler implements IMessageHandler{
     		if(handler == null){
     			throw new CommonException("JRPC Handler ["+handlerKey + " not found]");
     		}
-    		this.handlers.put(key, handler);
+    		hs.put(key, handler);
     	}
 		
 		IRequestHandler firstHandler = buildHanderChain(handler);

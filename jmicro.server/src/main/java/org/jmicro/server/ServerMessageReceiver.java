@@ -16,11 +16,11 @@
  */
 package org.jmicro.server;
 
-import java.nio.ByteBuffer;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.jmicro.api.JMicroContext;
+import org.jmicro.api.annotation.Cfg;
 import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.Inject;
 import org.jmicro.api.codec.ICodecFactory;
@@ -46,6 +46,9 @@ import co.paralleluniverse.fibers.Suspendable;
 public class ServerMessageReceiver implements IMessageReceiver{
 
 	static final Logger logger = LoggerFactory.getLogger(ServerMessageReceiver.class);
+	
+	@Cfg("/ServerMessageReceiver/openDebug")
+	private boolean openDebug;
 	
 	@Inject(required=false)
 	private IMonitorDataSubmiter monitor;
@@ -81,6 +84,9 @@ public class ServerMessageReceiver implements IMessageReceiver{
 	@Override
 	@Suspendable
 	public void receive(ISession s, Message msg) {
+		if(openDebug) {
+			logger.debug("Got message ReqId: "+msg.getReqId());
+		}
 		if(!ready) {
 			synchronized(ready){
 				try {
@@ -97,11 +103,9 @@ public class ServerMessageReceiver implements IMessageReceiver{
 	
 	@Suspendable
 	private void doReceive(IServerSession s, Message msg){
-
-       /* Message msg = new Message();
-		msg.decode(data);*/
-		
-		//logger.debug("doReceive reqID: "+msg.getReqId());
+		if(openDebug) {
+			logger.debug("doReceive ReqId: "+msg.getReqId());
+		}
 		
 		if(s.getId() != -1 && msg.getSessionId() != s.getId()) {
 			String msg1 = "Ignore MSG" + msg.getId() + "Rec session ID: "+msg.getSessionId()+",but this session ID: "+s.getId();

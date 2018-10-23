@@ -33,6 +33,7 @@ import org.jmicro.api.annotation.Inject;
 import org.jmicro.api.annotation.JMethod;
 import org.jmicro.api.annotation.SMethod;
 import org.jmicro.api.annotation.Service;
+import org.jmicro.api.config.Config;
 import org.jmicro.api.exception.RpcException;
 import org.jmicro.api.objectfactory.ProxyObject;
 import org.jmicro.api.registry.IRegistry;
@@ -69,6 +70,9 @@ public class ServiceLoader {
 	
 	@JMethod("init")
 	public void init(){
+		if(Config.isClientOnly()){
+			return;
+		}
 		List<IServer> ss = JMicro.getObjectFactory().getByParent(IServer.class);
 		for(IServer s : ss){
 			org.jmicro.api.annotation.Server anno = 

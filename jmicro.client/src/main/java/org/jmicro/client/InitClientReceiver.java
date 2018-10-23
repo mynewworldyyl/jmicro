@@ -29,7 +29,7 @@ import org.jmicro.common.Constants;
  * @author Yulei Ye
  * @date 2018年10月9日-下午5:51:55
  */
-@Component(active=true,value="InitServerReceiver",side=Constants.SIDE_COMSUMER)
+@Component(active=true,value="InitClientReceiver",side=Constants.SIDE_COMSUMER)
 public class InitClientReceiver implements IPostFactoryReady{
 
 	@Override

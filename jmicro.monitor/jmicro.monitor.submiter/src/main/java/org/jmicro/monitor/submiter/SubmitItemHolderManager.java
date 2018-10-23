@@ -41,7 +41,7 @@ import org.slf4j.LoggerFactory;
  * @author Yulei Ye
  * @date 2018年10月5日-下午12:50:59
  */
-@Component(lazy=false,level=1)
+@Component(lazy=false,level=12)
 public class SubmitItemHolderManager implements IMonitorDataSubmiter{
     
 	private final static Logger logger = LoggerFactory.getLogger(SubmitItemHolderManager.class);
@@ -56,6 +56,9 @@ public class SubmitItemHolderManager implements IMonitorDataSubmiter{
 	
 	@Cfg(value="/SubmitItemHolderManager/enable",required=false)
 	private boolean enable = true;
+	
+	@Cfg(value="/SubmitItemHolderManager/openDebug",required=false)
+	private boolean openDebug = true;
 	
 	private AtomicInteger index = new AtomicInteger();
 	
@@ -134,7 +137,7 @@ public class SubmitItemHolderManager implements IMonitorDataSubmiter{
 		}
 	}
 	
-	public synchronized void startWork() {
+	public synchronized void startWork(String f) {
 		updateSubmiterList();
 		if(NON == status){
 			init();
@@ -172,6 +175,9 @@ public class SubmitItemHolderManager implements IMonitorDataSubmiter{
 					for(SubmitItem si = its.poll();si != null;si = its.poll()){
 						Set<IMonitorDataSubscriber> ss = type2Subscribers.get(si.getType());
 						for(IMonitorDataSubscriber m : ss){
+							if(openDebug){
+								logger.debug("Submit {} to {}",si,m);
+							}
 							m.onSubmit(si);
 						}
 						cache(si);

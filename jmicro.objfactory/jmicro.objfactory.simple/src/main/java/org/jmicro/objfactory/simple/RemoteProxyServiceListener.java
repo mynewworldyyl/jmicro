@@ -132,14 +132,14 @@ class RemoteProxyServiceListener implements IServiceListener{
 				 m.invoke(this.srcObj,refField.getName());
 			 }
 		} catch (NoSuchMethodException | SecurityException | IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
-			System.out.println(e); 
+			//System.out.println(e); 
 			try {
 				m =  cls.getMethod(cfg.changeListener(),new Class[0] );
 				if(m != null){
 					 m.invoke(this.srcObj);
 				}
 			} catch (NoSuchMethodException | SecurityException | IllegalAccessException | IllegalArgumentException | InvocationTargetException e1) {
-				System.out.println(e1);
+				//System.out.println(e1);
 			}
 		}
 		

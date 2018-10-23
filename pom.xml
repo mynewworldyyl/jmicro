@@ -160,9 +160,14 @@
 				 <artifactId>jmicro.limit</artifactId>
 				 <version>${jmicro.version}</version>
         	</dependency>
-        	  <dependency>
+        	<dependency>
 			 <groupId>org.jmicro</groupId>
 			 <artifactId>jmicro.monitor.memory</artifactId>
+			 <version>${jmicro.version}</version>
+			 </dependency>
+			 <dependency>
+			 <groupId>org.jmicro</groupId>
+			 <artifactId>jmicro.monitor.subermemory</artifactId>
 			 <version>${jmicro.version}</version>
 			 </dependency>
 			   <dependency>

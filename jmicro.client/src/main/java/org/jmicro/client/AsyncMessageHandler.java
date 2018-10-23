@@ -46,6 +46,9 @@ public class AsyncMessageHandler implements IMessageHandler{
 
 	private final static Logger logger = LoggerFactory.getLogger(AsyncMessageHandler.class);
 	
+	@Cfg("/AsyncMessageHandler/openDebug")
+	private boolean openDebug;
+	
 	@Cfg("/respBufferSize")
 	private int respBufferSize;
 	
@@ -69,6 +72,11 @@ public class AsyncMessageHandler implements IMessageHandler{
 		
 		//req.setMsg(msg);
 		String key = msg.getReqId()+"";
+		
+		if(openDebug) {
+			logger.debug("Receive Async msg ReqId: "+key);
+		}
+		
 		/*ServiceMethod si = (ServiceMethod) session.getParam(key);
 		if(si == null){
 			logger.error("No Service Method found for stream callback");

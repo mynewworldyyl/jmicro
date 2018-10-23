@@ -24,6 +24,7 @@ import java.util.Queue;
 import java.util.Timer;
 import java.util.TimerTask;
 
+import org.jmicro.api.annotation.Cfg;
 import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.Inject;
 import org.jmicro.api.annotation.JMethod;
@@ -53,9 +54,12 @@ public class ServiceResponseTimeMonitor implements IMonitorDataSubscriber {
 	@Inject
 	private DegradeManager degradeManager;
 	
-	private Map<Long,AvgResponseTimeItem> reqRespAvgList = new HashMap<>();
+	@Cfg(value="/ServiceResponseTimeMonitor/openDebug",required=false)
+	private boolean openDebug = true;
 	
-	private Map<String,Queue<Long>> reqRespAvgs =  new HashMap<String,Queue<Long>>();
+	private volatile Map<Long,AvgResponseTimeItem> reqRespAvgList = new HashMap<>();
+	
+	private volatile Map<String,Queue<Long>> reqRespAvgs =  new HashMap<String,Queue<Long>>();
 	
 	//private Map<String,Long> firstResponseTime =  new HashMap<String,Long>();
 	
@@ -82,8 +86,11 @@ public class ServiceResponseTimeMonitor implements IMonitorDataSubscriber {
 					
 					ServiceStatis sts = new ServiceStatis(srv,System.currentTimeMillis(),sum(q)/q.size());
 					//statis.add(sts);
-					
-					degradeManager.updateAvgResponseTime(srv, JsonUtils.getIns().toJson(sts));
+					String json = JsonUtils.getIns().toJson(sts);
+					if(openDebug) {
+						logger.debug("update srv {}, ServiceStatis {}",srv,sts);
+					}
+					degradeManager.updateAvgResponseTime(srv,json);
 				}
 			}	
 		}, 0, 5000);
@@ -102,6 +109,9 @@ public class ServiceResponseTimeMonitor implements IMonitorDataSubscriber {
 	@SMethod(needResponse=false)
 	public void onSubmit(SubmitItem si) {
 		//logger.debug("Service: "+si.getServiceName());
+		if(openDebug) {
+			logger.debug("onSubmit si: {} ",si);
+		}
 		if(MonitorConstant.CLIENT_REQ_BEGIN == si.getType()){
 			AvgResponseTimeItem i = new AvgResponseTimeItem();
 			i.reqId = si.getReqId();

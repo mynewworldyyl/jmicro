@@ -24,6 +24,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.jmicro.api.annotation.Cfg;
 import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.JMethod;
 import org.jmicro.api.annotation.Registry;
@@ -68,6 +69,12 @@ public class ZKRegistry implements IRegistry {
 	
 	private HashMap<String,Set<IServiceListener>> serviceNameListeners = new HashMap<>();
 	
+	private static final long startTime = System.currentTimeMillis();
+	private static final long inactiveTimeLong = 30*1000;
+	
+	@Cfg("/ZKRegistry/openDebug")
+	private boolean openDebug;
+	
 	//service instance path as key(key=ServiceItem.key())
 	//private  Map<String,INodeListener> nodeListeners = new HashMap<>();
 	@Override
@@ -102,7 +109,11 @@ public class ZKRegistry implements IRegistry {
 			if(type == INodeListener.NODE_ADD){
 				serviceChanged(path);
 			} else if(type == INodeListener.NODE_REMOVE) {
-				serviceRemove(path);
+				if((System.currentTimeMillis() - startTime) > inactiveTimeLong){
+					serviceRemove(path);
+				}else {
+					logger.warn("Rev invalid remove service event path: "+path);
+				}
 			}else {
 				logger.error("rev invalid Node event type : "+type+",path: "+path);
 			}
@@ -227,6 +238,10 @@ public class ZKRegistry implements IRegistry {
 
 		String data =  ZKDataOperator.getIns().getData(path);
 		ServiceItem i = this.fromJson(data);
+		if(i == null){
+			logger.warn("path:"+path+", data: "+data);
+			return;
+		}
 		this.persisFromConfig(i);
 		
 		this.path2Items.put(path, i);
@@ -270,6 +285,7 @@ public class ZKRegistry implements IRegistry {
 	}
 	
 	private void serviceRemove(String path) {
+		logger.debug("remove service: "+path);
     	ServiceItem i = this.path2Items.remove(path);
     	Set<ServiceItem> items = serviceItems.get(i.serviceName());
     	items.remove(i);
@@ -464,6 +480,9 @@ public class ZKRegistry implements IRegistry {
 	@Override
 	public ServiceItem getServiceByImpl(String impl) {
 		for(ServiceItem si : path2Items.values()){
+			if(this.openDebug) {
+				logger.debug("Impl:"+si.getImpl());
+			}
 			if(si.getImpl().equals(impl)){
 				return si;
 			}

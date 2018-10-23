@@ -4,7 +4,7 @@ import org.jmicro.api.Person;
 import org.jmicro.api.annotation.SMethod;
 import org.jmicro.api.annotation.Service;
 
-@Service
+@Service(namespace="testrpc",version="0.0.1")
 public interface ITestRpcService {
 	
 	Person getPerson(Person p);

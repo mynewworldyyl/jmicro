@@ -60,8 +60,10 @@ import org.slf4j.LoggerFactory;
 public class ServiceInvocationHandler implements InvocationHandler, IMessageHandler{
 	
 	private final static Logger logger = LoggerFactory.getLogger(ServiceInvocationHandler.class);
-	
 	private volatile Map<Long,IResponseHandler> waitForResponse = new ConcurrentHashMap<>();
+	
+	@Cfg("/ServiceInvocationHandler/openDebug")
+	private boolean openDebug;
 	
 	@Inject
 	private ICodecFactory codecFactory;
@@ -91,7 +93,7 @@ public class ServiceInvocationHandler implements InvocationHandler, IMessageHand
 	public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
 		AbstractClientServiceProxy po = (AbstractClientServiceProxy)proxy;
         String methodName = method.getName();
-       // Class<?>[] parameterTypes = method.getParameterTypes();
+        // Class<?>[] parameterTypes = method.getParameterTypes();
         if (method.getDeclaringClass() == Object.class) {
            throw new CommonException("Invalid invoke ["
         		   +method.getDeclaringClass().getName()+"] for method [ "+methodName+"]");
@@ -116,7 +118,7 @@ public class ServiceInvocationHandler implements InvocationHandler, IMessageHand
 		if(poItem == null){
 			MonitorConstant.doSubmit(monitor,MonitorConstant.CLIENT_REQ_SERVICE_NOT_FOUND
 					,null, null,method.getDeclaringClass().getName(),method.getName());
-			throw new CommonException("cls["+method.getDeclaringClass().getName()+"] method ["+method.getName()+"]");
+			throw new CommonException("cls["+method.getDeclaringClass().getName()+"] method ["+method.getName()+"] service not found");
 		}
 		ServiceMethod poSm = poItem.getMethod(method.getName(), args);
 		
@@ -219,6 +221,10 @@ public class ServiceInvocationHandler implements InvocationHandler, IMessageHand
     		msg.setFlag(flag);
     		req.setMsg(msg);
     		
+    		if(openDebug) {
+    			logger.debug("Do Request ReqId: "+req.getRequestId());
+    		}
+    		
     		session.write(msg);
     		
     		if(!sm.needResponse && !stream) {
@@ -272,6 +278,9 @@ public class ServiceInvocationHandler implements InvocationHandler, IMessageHand
     			}
     			resp.setMsg(respMsg);
     			req.setMsg(msg);
+    			if(openDebug) {
+        			logger.debug("Go Response reqId: "+respMsg.getReqId());
+        		}
     		}
     		
     		if(resp != null && resp.isSuccess() && !(resp.getResult() instanceof ServerError)) {
@@ -322,6 +331,7 @@ public class ServiceInvocationHandler implements InvocationHandler, IMessageHand
     					logger.error("Sleep exceptoin ",e);
     				}
     				MonitorConstant.doSubmit(monitor,MonitorConstant.CLIENT_REQ_RETRY, req, resp);
+    				continue;//重试循环
     			}
     			
     		}else if(resp.getResult() instanceof ServerError){
@@ -337,11 +347,11 @@ public class ServiceInvocationHandler implements InvocationHandler, IMessageHand
 				 MonitorConstant.doSubmit(monitor,MonitorConstant.CLIENT_REQ_BUSSINESS_ERR, req, resp);
 			     throw new CommonException(sb.toString());
 			}
-    		//代码不应该走到这里，如果走到这里，说明系统还有问题
+    		 //代码不应该走到这里，如果走到这里，说明系统还有问题
     		throw new CommonException(sb.toString());
     		
         }while(retryCnt-- > 0);
-       
+        throw new CommonException("Service:"+poItem.getServiceName()+", Method: "+req.getMethod()+", Params: "+req.getArgs());
 	}
 
 	@Override

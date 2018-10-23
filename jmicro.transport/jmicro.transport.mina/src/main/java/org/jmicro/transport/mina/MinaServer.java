@@ -38,6 +38,7 @@ import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.Inject;
 import org.jmicro.api.annotation.Server;
 import org.jmicro.api.codec.ICodecFactory;
+import org.jmicro.api.config.Config;
 import org.jmicro.api.monitor.IMonitorDataSubmiter;
 import org.jmicro.api.monitor.MonitorConstant;
 import org.jmicro.api.net.IMessageHandler;
@@ -63,6 +64,9 @@ import org.slf4j.LoggerFactory;
 public class MinaServer implements IServer{
 
 	static final Logger LOG = LoggerFactory.getLogger(MinaServer.class);
+	
+	@Cfg("/MinaServer/openDebug")
+	private boolean openDebug;
 	
 	AttributeKey<MinaServerSession> sessinKey = AttributeKey.createKey(MinaServerSession.class, Constants.SESSION_KEY);
 	AttributeKey<Boolean> monitorEnableKey = AttributeKey.createKey(Boolean.class, Constants.MONITOR_ENABLE_KEY);
@@ -102,6 +106,9 @@ public class MinaServer implements IServer{
 	
 	@Override
 	public void init() {
+		if(Config.isClientOnly()) {
+			return;
+		}
 		start();
 		this.receiver.registHandler(new IMessageHandler(){
 			@Override
@@ -180,6 +187,9 @@ public class MinaServer implements IServer{
                     }
                     Message msg = new Message();
                     msg.decode(body);
+                    if(openDebug){
+                    	LOG.debug("Rec Message reqId:"+msg.getReqId());
+                    }
         			receiver.receive(s,msg);
             		//jmicroManager.addRequest(req);
                 }

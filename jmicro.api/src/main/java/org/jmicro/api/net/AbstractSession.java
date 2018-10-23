@@ -39,6 +39,8 @@ public abstract class AbstractSession implements ISession{
 	
 	private boolean isClose = false;
 	
+	private boolean openDebug = false;
+	
 	public AbstractSession(int bufferSize,int heardbeatInterval){
 		readBuffer = ByteBuffer.allocate(bufferSize);
 		this.heardbeatInterval = heardbeatInterval;
@@ -56,6 +58,14 @@ public abstract class AbstractSession implements ISession{
 
 	public long getId() {
 		return sessionId;
+	}
+
+	public boolean isOpenDebug() {
+		return openDebug;
+	}
+
+	public void setOpenDebug(boolean openDebug) {
+		this.openDebug = openDebug;
 	}
 
 	public void setId(long sessionId) {

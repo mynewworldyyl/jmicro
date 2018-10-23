@@ -13,7 +13,7 @@ import org.jmicro.common.CommonException;
 import org.jmicro.common.Constants;
 import org.jmicro.example.api.ITestRpcService;
 
-@Service(timeout=10*60*1000,maxSpeed="1s")
+@Service(timeout=10*60*1000,maxSpeed="1s",namespace="testrpc",version="0.0.1")
 @Component
 public class TestRpcServiceImpl implements ITestRpcService{
 
@@ -23,13 +23,14 @@ public class TestRpcServiceImpl implements ITestRpcService{
 	private String name;
 	
 	@Override
+	@SMethod(monitorEnable=1,maxSpeed="100s",timeout=0)
 	public String hello(String name) {
 		System.out.println("Hello and welcome :" + name);
 		return "Rpc server return : "+name;
 	}
 
 	@Override
-	@SMethod(monitorEnable=1)
+	@SMethod(monitorEnable=1,maxSpeed="100s",timeout=0)
 	public Person getPerson(Person p) {
 		p.setUsername("Server update username");
 		p.setId(ai.getAndIncrement());

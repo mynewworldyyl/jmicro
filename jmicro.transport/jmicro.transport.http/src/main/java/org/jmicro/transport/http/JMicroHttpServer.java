@@ -26,6 +26,7 @@ import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.Inject;
 import org.jmicro.api.annotation.Server;
 import org.jmicro.api.codec.ICodecFactory;
+import org.jmicro.api.config.Config;
 import org.jmicro.api.idgenerator.IIdGenerator;
 import org.jmicro.api.monitor.IMonitorDataSubmiter;
 import org.jmicro.api.monitor.MonitorConstant;
@@ -130,6 +131,9 @@ public class JMicroHttpServer implements IServer{
 	
 	@Override
 	public void start() {
+		if(Config.isClientOnly()) {
+			return;
+		}
         if(StringUtils.isEmpty(this.host)){
         	List<String> ips = Utils.getIns().getLocalIPList();
             if(ips.isEmpty()){
