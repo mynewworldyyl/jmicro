@@ -165,7 +165,7 @@ public class ServiceComsumer {
 
 以下如果没有说明的字段，默认是还没实现，或实现还不切底，后面实现后会持续更新
 
-##  Service，SMethod，Component，Inject，Reference注解是框架使用者所关注的5个注解，别的都可以不用了解，下面重点说明这3个注解。
+##  1. Service，SMethod，Component，Inject，Reference注解是框架使用者所关注的5个注解，别的都可以不用了解，下面重点说明这3个注解。
 需要说明的是，下面定义的属性都是系统启动时的默认值，启动后也可以在配置中心或通过API接口动态修改，实时生效
 Service和SMethod是服务实现方使用，
 Component和Inject服务实现方及使用方都可以使用
@@ -174,7 +174,7 @@ Reference服务使用方使用
 服务开发者或使用者了解了这5个注解的使用方法后，就完全可以做服务开发或使用服务，其他都是深入了解相关。
 
 
-### Service 标识这个类是一个服务，系统自动检测服务接口并注册相关信息到注册中心
+### 1.1 Service 标识这个类是一个服务，系统自动检测服务接口并注册相关信息到注册中心
 
 ~~~
 @Target({TYPE})
@@ -263,7 +263,7 @@ public @interface Service {
 }
 ~~~
 
-### SMethod 注解在服务方法上，除以下两个字段外，其他属性与Service注解相同，只是方法注解具有最高优先极。
+### 1.2 SMethod 注解在服务方法上，除以下两个字段外，其他属性与Service注解相同，只是方法注解具有最高优先极。
 
 ~~~
 	//0: need response, 1:no need response
@@ -279,7 +279,7 @@ public @interface Service {
 
 ~~~
 
-### Component 声明类是一个组件，IOC容器启动时生成组件的唯一实例，并且确保在此IOC容器唯一实例。
+### 1.3 Component 声明类是一个组件，IOC容器启动时生成组件的唯一实例，并且确保在此IOC容器唯一实例。
 ~~~
 @Target(TYPE)
 @Retention(RUNTIME)
@@ -315,7 +315,7 @@ public @interface Component {
 
 ~~~
 
-### Demo
+### 1.4 Demo
 
 ~~~
 @Service(timeout=10*60*1000,maxSpeed="1s")
@@ -371,7 +371,7 @@ public class TestRpcServiceImpl implements ITestRpcService{
 }
 ~~~
 
-### 服务使用方除Component注解外，还有Reference注解在字段上，声明依赖远程RPC服务
+### 1.5 服务使用方除Component注解外，还有Reference注解在字段上，声明依赖远程RPC服务
 
 ~~~
 @Target(FIELD)
@@ -440,7 +440,7 @@ public class TestRpcClient {
 ~~~
 
 
-### Inject注解，注入对其他组件的依赖
+### 1.6 Inject注解，注入对其他组件的依赖
 
 ~~~
 @Target(FIELD)
@@ -492,9 +492,9 @@ public class ProxyObjectForTest {
 ~~~
 
 
-##  IOC容器
+##  2. IOC容器
 
-### 为什么不是Spring IOC, 为什么重复发明轮子？
+### 2.1 为什么不是Spring IOC, 为什么重复发明轮子？
 单就IOC本身功能而言，Spring IOC相当出色，但JMicro需要是除IOC之外，还需要组件的动态代理，远程服务的动态代理
 服务对像本身的动态代理，并且这些代理都需要针对其功能做个性化处理，如果通过Spring做修改以适应JMicro，还不
 如自己实现一个来得快。
@@ -503,18 +503,18 @@ public class ProxyObjectForTest {
 dubbo就有这个问题，如果不使用spring而使用dubbo，就像绑着双脚走路一样（除非对Spring一无所知的入门级同学）。
 此IOC容器特点是：简单经量，组件依赖注入，远程服务依赖注入，属性动态更新，使用起来简单（前面提的5个注解）
 
-### JMicro之外能用此IOC容器吗？ 
+### 2.2 JMicro之外能用此IOC容器吗？ 
 可以，但不要用，老实用Spring IOC，除非想折腾自己。
 
-### JMicro能用Spring容器吗？
+### 2.3 JMicro能用Spring容器吗？
 可以，但不要这样用，老实用此IOC，除非想折腾自己。
 
-### JMicro IOC 单例
+### 2.4 JMicro IOC 单例
 JMIcro中，对同一个具体实现类（非抽像类，非父类，非接口），只会存在一个该类的对像，以此保证JMicro框架的简单高效。
 至于线程安全问题，在实现中做保证，但现在Jmicro的实现基本没有sychronized块，有线程安全的数据通过线程安全的
 上下文传输（参考JMicroContext）。
 
-### JMicro IOC组件默认构造函数
+### 2.5 JMicro IOC组件默认构造函数
 JMicro IOC通过默认构造函数创建组件，没有默认构造函数，JMicro简单粗爆直接报错，拒绝启动。如果需要带参需求，
 可以通过，依赖注入，属性注入，init，及IPostInitListener接口实现，JMicro不知道构造器参数从那来，也没必要去实现这些没什么用的功能
 而把系统搞复杂。
@@ -614,37 +614,51 @@ public interface IObjectFactory {
 }
 ~~~
 
-##  服务端发布RPC服务
+##  3. 服务端发布RPC服务
+RPC发布主要涉及Service和SMethod两个注解，请参考前面说明。
+重点是服务名称，名称空间，版本，传输层。
+传输层支持mina,jdk http，netty http。启用netty http时,同时启用websocket
 
-##  客户端获取RPC服务
+##  4. 客户端获取RPC服务
+请参考前的Service及Reference注解说明。
+若要通过服务接口直接从IOC中取得服务引用，需要在服务接口声明时加Service注解，并
+指定名称空间，版本。
 
-##  动态修改线上服务配置
+##  5. 动态修改线上服务配置
 
-##  服务监控
+##  6. 服务监控
 
-##  基于Socket的RPC传输
+##  7. 基于Socket的RPC传输
 
-##  基于HTTPRPC传输
+##  8. 基于HTTPRPC传输
 
-##  服务注册表
+##  9. 服务注册表
 
-##  负载圴行
+##  10. 负载圴行
 
-##  限流
+##  11. 限流
 
-##  降级
+##  12. 降级
 
-##  熔断
+##  13. 熔断
 
-##  超时及重试
+##  14. 超时及重试
 
-##  编码解码
+##  15. 编码解码
 
-##  服务拦截器
+##  16. 服务拦截器
 
-##  服务检测
+##  17. 服务检测
 
-##  全局ID标识
+##  18. 依赖
+### a. JDK 1.8及以上
+### b. javassist.3.23.1.GA, slf4j, log4j, gson-2.8.5
+### c. 传输层mina实现依赖mina.core及mina.codec;
+### d. 传输层netty实现依赖netty4;
+### e. 协程quasar-core.0.7.10
+### f. Zookeeper注册表实现依赖zookeeper，curator framekwork
+
+##  19. 全局ID标识
 
 ##  。。。
 
