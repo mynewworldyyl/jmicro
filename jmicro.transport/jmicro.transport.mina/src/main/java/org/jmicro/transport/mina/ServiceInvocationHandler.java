@@ -48,7 +48,6 @@ import org.jmicro.api.registry.ServiceMethod;
 import org.jmicro.api.server.IRequest;
 import org.jmicro.common.CommonException;
 import org.jmicro.common.Constants;
-import org.jmicro.common.util.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 /**

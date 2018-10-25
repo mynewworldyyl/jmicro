@@ -1,6 +1,9 @@
 package org.jmicro.registry.zk.test;
 
+import org.jmicro.api.JMicro;
 import org.jmicro.api.config.Config;
+import org.jmicro.api.objectfactory.IObjectFactory;
+import org.jmicro.api.raft.IDataOperator;
 import org.jmicro.common.Utils;
 import org.jmicro.registry.zk.ZKRegistry;
 import org.jmicro.zk.ZKDataOperator;
@@ -31,7 +34,8 @@ public class TestZKRegistry {
 	@Test
 	public void testNodeCreate() {
 		Config.parseArgs(new String[0]);
-		ZKDataOperator.getIns().addNodeListener("/jmicro/config/test",
+		IObjectFactory of = JMicro.getObjectFactory();
+		of.get(IDataOperator.class).addNodeListener("/jmicro/config/test",
 			(type,path,data)->{
 				System.out.println(type);
 				System.out.println(path);

@@ -3,6 +3,8 @@
     <head>
         <meta charset="UTF-8">
         <title>Socket</title>
+      <script type="text/javascript" src="/js/jquery.js"></script>
+        <script type="text/javascript" src="/js/ws.js"></script>
         <script type="text/javascript">
             var websocket;
 
@@ -36,9 +38,11 @@
                 	var json = {"protocol":2,"msgId":11977,"reqId":7832,"sessionId":162,"len":0,"version":"0.0.1","type":1,"flag":0,
                 		 "payload":"{serviceName:'org.jmicro.example.api.ITestRpcService',method:'getPerson'," +
                      "args: [{username:'Client person Name',id:1234}],namespace:'defaultNamespace',"+
-                			 "version:'0.0.0',impl:'org.jmicro.example.provider.TestRpcServiceImpl',reqId:7832,isMonitorEnable:true,params:{} }"};
-                    if(websocket.readyState == WebSocket.OPEN) { //如果WebSocket是打开状态
-                        websocket.send(JSON.stringify(json)); //send()发送消息
+                			 "version:'0.0.0',impl:'org.jmicro.example.provider.TestRpcServiceImpl',reqId:7832,isMonitorEnable:false,params:{} }"};
+                    if(websocket.readyState == WebSocket.OPEN) {
+                        //如果WebSocket是打开状态
+                        websocket.send(JSON.stringify(json));
+                        //send()发送消息
                     };
                 }else{
                     return;

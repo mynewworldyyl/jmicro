@@ -26,6 +26,7 @@ import java.util.Set;
 
 import org.jmicro.api.annotation.Cfg;
 import org.jmicro.api.annotation.Component;
+import org.jmicro.api.raft.IDataOperator;
 import org.jmicro.common.CommonException;
 import org.jmicro.common.Constants;
 import org.jmicro.common.util.StringUtils;
@@ -165,8 +166,9 @@ public class Config implements IConfigChangeListener{
 		BasePackages = pps;
 	}
 	
-	public void loadConfig(List<IConfigLoader> configLoaders){
+	public void loadConfig(List<IConfigLoader> configLoaders,IDataOperator dop){
 		for(IConfigLoader cl : configLoaders){
+			cl.setDataOperator(dop);
 			cl.load(ServiceCofigDir,this.servicesConfig);
 			cl.load(CfgDir,this.globalConfig);
 			cl.setConfigChangeListener(this);
@@ -224,6 +226,10 @@ public class Config implements IConfigChangeListener{
 	
 	public static boolean isClientOnly() {
 		return CommadParams.containsKey(Constants.CLIENT_ONLY);
+	}
+	
+	public static <T> T getCommandParam(String key,Class<T> type,T defalutValue) {
+		return getValue(CommadParams.get(key),type,defalutValue);
 	}
 	
 	public static String[]  getBasePackages() {

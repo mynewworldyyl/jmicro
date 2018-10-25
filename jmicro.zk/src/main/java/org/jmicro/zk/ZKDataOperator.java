@@ -45,6 +45,7 @@ import org.apache.zookeeper.ZooDefs;
 import org.apache.zookeeper.data.ACL;
 import org.apache.zookeeper.data.Stat;
 import org.jmicro.api.JMicro;
+import org.jmicro.api.annotation.Component;
 import org.jmicro.api.config.Config;
 import org.jmicro.api.objectfactory.IObjectFactory;
 import org.jmicro.api.raft.IChildrenListener;
@@ -61,6 +62,7 @@ import org.slf4j.LoggerFactory;
  * @author Yulei Ye
  * @date 2018年10月4日-下午12:10:34
  */
+@Component(value=Constants.DEFAULT_DATA_OPERATOR,level=0,active=true)
 public class ZKDataOperator implements IDataOperator{
 
 	private final static Logger logger = LoggerFactory.getLogger(ZKDataOperator.class);
@@ -70,17 +72,16 @@ public class ZKDataOperator implements IDataOperator{
 	
 	private boolean isInit = false;
 	
-	private ZKDataOperator(){
-		propes = new Properties();
-		curator = createCuratorFramework();
-	}
+	public ZKDataOperator(){}
 	
 	public void init(){
 		if(isInit){
 			return;
 		}
 		isInit = true;
-		IObjectFactory of = JMicro.getObjectFactory();
+		propes = new Properties();
+		curator = createCuratorFramework();
+		/*IObjectFactory of = JMicro.getObjectFactory();
 		if(!of.exist(this.curator.getClass())){
 			of.regist(this.curator);
 			of.regist(CuratorFramework.class,this.curator);
@@ -88,7 +89,7 @@ public class ZKDataOperator implements IDataOperator{
 		if(!of.exist(ZKDataOperator.class)){
 			of.regist(ins);
 			of.regist(IDataOperator.class,ins);
-		}
+		}*/
 	}
 	
 	private Set<IConnectionStateChangeListener> connListeners = new HashSet<>();
@@ -291,7 +292,7 @@ public class ZKDataOperator implements IDataOperator{
 	}
 	
 	public boolean exist(String path){
-		init();
+		//init();
 		ExistsBuilder existsBuilder = this.curator.checkExists();
 		try {
 			Stat stat = existsBuilder.forPath(path);
@@ -305,7 +306,7 @@ public class ZKDataOperator implements IDataOperator{
 	}
 	
 	public String getData(String path){
-		init();
+		//init();
 		GetDataBuilder getDataBuilder = this.curator.getData();
   	    try {
 			byte[] data = getDataBuilder.forPath(path);
@@ -319,7 +320,7 @@ public class ZKDataOperator implements IDataOperator{
 	}
 	
 	public void setData(String path,String data){
-		init();
+		//init();
 		SetDataBuilder setDataBuilder = this.curator.setData();
   	    try {
   	    	byte[] d= data.getBytes(Constants.CHARSET);
@@ -332,7 +333,7 @@ public class ZKDataOperator implements IDataOperator{
 	}
 	
 	public List<String> getChildren(String path){
-		init();
+		//init();
 		GetChildrenBuilder getChildBuilder = this.curator.getChildren();
   	   try {
 			return getChildBuilder.forPath(path);
@@ -345,7 +346,7 @@ public class ZKDataOperator implements IDataOperator{
 	}
 	
 	public void createNode(String path,String data,boolean elp){
-		init();
+		//init();
 		if(this.exist(path)){
 			this.setData(path, data);
 		} else {
@@ -383,7 +384,7 @@ public class ZKDataOperator implements IDataOperator{
 	}
 	
 	public void deleteNode(String path){
-		init();
+		//init();
 		DeleteBuilder deleteBuilder = this.curator.delete();
   	    try {
   	    	deleteBuilder.forPath(path);

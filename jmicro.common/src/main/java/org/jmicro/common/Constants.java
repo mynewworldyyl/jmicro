@@ -24,6 +24,10 @@ public interface Constants {
 
 	public static final String CLIENT_ONLY="client";
 	
+	public static final String DATA_OPERATOR = "dataOperator";
+	
+	public static final String DEFAULT_DATA_OPERATOR = "ZKDataOperator";
+	
 	public static final String CFG_ROOT="/jmicro";
 	
 	public static final String SIDE_COMSUMER = "comsumer";

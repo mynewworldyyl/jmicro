@@ -283,9 +283,9 @@ public class MinaClientSessionManager implements IClientSessionManager{
 	           logger.debug("connection finish,host:"+host+",port:"+port);
 	           return s;
 	       } catch (Throwable e) {
-	    	   logger.error("cannot connect : ", e);
+	    	   logger.error("cannot connect host:" + host + ", port:" + port, e);
 	           MonitorConstant.doSubmit(monitor,MonitorConstant.CLIENT_REQ_CONN_FAIL, null, null,host,port,e.getMessage());
-	           throw new CommonException("",e);
+	           throw new CommonException("host:" + host + ", port:" + port,e);
 	       }
 		}
 	}

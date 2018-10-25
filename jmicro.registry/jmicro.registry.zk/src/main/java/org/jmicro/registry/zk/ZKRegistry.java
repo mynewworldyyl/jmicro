@@ -26,11 +26,13 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import org.jmicro.api.annotation.Cfg;
 import org.jmicro.api.annotation.Component;
+import org.jmicro.api.annotation.Inject;
 import org.jmicro.api.annotation.JMethod;
 import org.jmicro.api.annotation.Registry;
 import org.jmicro.api.config.Config;
 import org.jmicro.api.exception.FusingException;
 import org.jmicro.api.raft.IDataListener;
+import org.jmicro.api.raft.IDataOperator;
 import org.jmicro.api.raft.INodeListener;
 import org.jmicro.api.registry.IRegistry;
 import org.jmicro.api.registry.IServiceListener;
@@ -75,12 +77,15 @@ public class ZKRegistry implements IRegistry {
 	@Cfg("/ZKRegistry/openDebug")
 	private boolean openDebug;
 	
+	@Inject
+	private IDataOperator dataOperator;
+	
 	//service instance path as key(key=ServiceItem.key())
 	//private  Map<String,INodeListener> nodeListeners = new HashMap<>();
 	@Override
 	@JMethod("init")
 	public void init() {
-		ZKDataOperator.getIns().addListener((state)->{
+		dataOperator.addListener((state)->{
 			if(Constants.CONN_CONNECTED == state) {
 				logger.debug("ZKRegistry CONNECTED, add listeners");
 			}else if(Constants.CONN_LOST == state) {
@@ -94,27 +99,22 @@ public class ZKRegistry implements IRegistry {
 				}
 			}
 		});
-		
-		ZKDataOperator.getIns().addChildrenListener(Config.ServiceRegistDir, (path,children)->{
-			serviceChanged(path,children);
-		});
-		
-		List<String> children = ZKDataOperator.getIns().getChildren(Config.ServiceRegistDir);
+		List<String> children = dataOperator.getChildren(Config.ServiceRegistDir);
 		logger.debug("Service: "+children.toString());
 		serviceChanged(Config.ServiceRegistDir,children);
+		
+		dataOperator.addChildrenListener(Config.ServiceRegistDir, (path,child1)->{
+			serviceChanged(path,child1);
+		});
 	}	
 	
 	private INodeListener nodeListener = new INodeListener(){
 		public void nodeChanged(int type, String path,String data){
 			if(type == INodeListener.NODE_ADD){
-				serviceChanged(path);
+				//serviceChanged(path);
 			} else if(type == INodeListener.NODE_REMOVE) {
-				if((System.currentTimeMillis() - startTime) > inactiveTimeLong){
-					serviceRemove(path);
-				}else {
-					logger.warn("Rev invalid remove service event path: "+path);
-				}
-			}else {
+				serviceRemove(path);
+			} else {
 				logger.error("rev invalid Node event type : "+type+",path: "+path);
 			}
 		}
@@ -229,14 +229,16 @@ public class ZKRegistry implements IRegistry {
 	}
 
 	private void serviceChanged(String path, List<String> children) {		
+		this.path2Items.clear();
+		this.serviceItems.clear();
 		for(String child : children){
 			serviceChanged(path+"/"+child);
 		}
 	}
 	
 	private void serviceChanged(String path) {		
-
-		String data =  ZKDataOperator.getIns().getData(path);
+		
+		String data =  dataOperator.getData(path);
 		ServiceItem i = this.fromJson(data);
 		if(i == null){
 			logger.warn("path:"+path+", data: "+data);
@@ -263,8 +265,8 @@ public class ZKRegistry implements IRegistry {
 			this.notifyServiceNameChange(IServiceListener.SERVICE_ADD, i);
 		}
 		
-		ZKDataOperator.getIns().addNodeListener(path, nodeListener);
-		ZKDataOperator.getIns().addDataListener(i.key(Config.ServiceRegistDir), this.dataListener);
+		dataOperator.addNodeListener(path, nodeListener);
+		dataOperator.addDataListener(i.key(Config.ServiceRegistDir), this.dataListener);
 	}
 	
 	private void persisFromConfig(ServiceItem item){
@@ -273,8 +275,8 @@ public class ZKRegistry implements IRegistry {
         	return;
         }
 		String key = item.key(Config.ServiceCofigDir);
-		if(ZKDataOperator.getIns().exist(key)){
-			String data = ZKDataOperator.getIns().getData(key);
+		if(dataOperator.exist(key)){
+			String data = dataOperator.getData(key);
 			ServiceItem perItem = this.fromJson(data);
 			item.formPersisItem(perItem);
 		}
@@ -287,6 +289,9 @@ public class ZKRegistry implements IRegistry {
 	private void serviceRemove(String path) {
 		logger.debug("remove service: "+path);
     	ServiceItem i = this.path2Items.remove(path);
+    	if(null==i){
+    		return;
+    	}
     	Set<ServiceItem> items = serviceItems.get(i.serviceName());
     	items.remove(i);
     	
@@ -303,8 +308,8 @@ public class ZKRegistry implements IRegistry {
     		this.notifyServiceNameChange(IServiceListener.SERVICE_REMOVE, i);
     	}
     	
-    	ZKDataOperator.getIns().removeNodeListener(path, nodeListener);
-    	ZKDataOperator.getIns().removeDataListener(path, dataListener);
+    	dataOperator.removeNodeListener(path, nodeListener);
+    	dataOperator.removeDataListener(path, dataListener);
     	
     	if(items.isEmpty()){
     		this.notifyServiceChange(IServiceListener.SERVICE_REMOVE, i);
@@ -315,25 +320,26 @@ public class ZKRegistry implements IRegistry {
 	public void regist(ServiceItem item) {
 		this.persisFromConfig(item);
 		
-		String key = item.key(Config.ServiceRegistDir);
+		String key = item.key(Config.ServiceCofigDir);
 		String data = JsonUtils.getIns().toJson(item);
-		if(!ZKDataOperator.getIns().exist(key)){
-			ZKDataOperator.getIns().createNode(key,data, false);
+		if(!dataOperator.exist(key)){
+			dataOperator.createNode(key,data, false);
+			
 		}
 		
 		key = item.key(Config.ServiceRegistDir);
-		if(ZKDataOperator.getIns().exist(key)){
-			ZKDataOperator.getIns().deleteNode(key);
+		if(dataOperator.exist(key)){
+			dataOperator.deleteNode(key);
 		}
-		ZKDataOperator.getIns().createNode(key,data, true);
+		dataOperator.createNode(key,data, true);
 	}
 
 	@Override
 	public void unregist(ServiceItem item) {
 		String key = item.key(Config.ServiceRegistDir);
 		logger.debug("unregist service: "+key);
-		if(ZKDataOperator.getIns().exist(key)){
-			ZKDataOperator.getIns().deleteNode(key);
+		if(dataOperator.exist(key)){
+			dataOperator.deleteNode(key);
 		}
 	}
 
@@ -341,9 +347,9 @@ public class ZKRegistry implements IRegistry {
 	public void update(ServiceItem item) {
 		String key = item.key(Config.ServiceRegistDir);
 		logger.debug("regist service: "+key);
-		if(ZKDataOperator.getIns().exist(key)){
+		if(dataOperator.exist(key)){
 			String data = JsonUtils.getIns().toJson(item);
-			ZKDataOperator.getIns().setData(key,data);
+			dataOperator.setData(key,data);
 		}else {
 			logger.debug("update not found: "+key);
 		}

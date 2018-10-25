@@ -17,6 +17,8 @@
 package org.jmicro.api.config;
 
 import java.util.Map;
+
+import org.jmicro.api.raft.IDataOperator;
 /**
  * 
  * @author Yulei Ye
@@ -27,4 +29,6 @@ public interface IConfigLoader {
 	void load(String root,Map<String, String> params);
 	
 	void setConfigChangeListener(IConfigChangeListener lis);
+	
+	void setDataOperator(IDataOperator dop);
 }

@@ -49,6 +49,7 @@ import org.jmicro.api.objectfactory.IObjectFactory;
 import org.jmicro.api.objectfactory.IPostFactoryReady;
 import org.jmicro.api.objectfactory.IPostInitListener;
 import org.jmicro.api.objectfactory.ProxyObject;
+import org.jmicro.api.raft.IDataOperator;
 import org.jmicro.api.service.IServerServiceProxy;
 import org.jmicro.common.CommonException;
 import org.jmicro.common.Constants;
@@ -58,6 +59,7 @@ import org.jmicro.common.util.ReflectUtils;
 import org.jmicro.common.util.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 /**
  * 
  * @author Yulei Ye
@@ -276,13 +278,47 @@ public class SimpleObjectFactory implements IObjectFactory {
 			return;
 		}
 		
+		String dataOperatorName = Config.getCommandParam(Constants.DATA_OPERATOR, String.class, Constants.DEFAULT_DATA_OPERATOR);
+		Set<Class<?>> dataOperatorClazzes = ClassScannerUtils.getIns().loadClassByClass(IDataOperator.class);
+		
+		IDataOperator dop = null;
+		
+		for(Class<?> cls : dataOperatorClazzes){
+			if(cls.isAnnotationPresent(Component.class)){
+				Component anno = cls.getAnnotation(Component.class);
+				if(dataOperatorName.equals(anno.value())){
+					try {
+						dop = (IDataOperator) cls.newInstance();
+					} catch (InstantiationException | IllegalAccessException e) {
+						e.printStackTrace();
+					}
+					break;
+				}
+			}
+		}
+		
+		if(dop == null){
+			throw new CommonException("IDataOperator with name :"+dataOperatorName +" not found!");
+		}
+		
+		try {
+			Method initMethod = dop.getClass().getMethod("init");
+			initMethod.invoke(dop, new Object[0]);
+		} catch (NoSuchMethodException | SecurityException | IllegalAccessException | IllegalArgumentException | InvocationTargetException e1) {
+			throw new CommonException("Invoke IDataOperator init method error  with name :"+dataOperatorName,e1);
+		}
+		
+		//this.cacheObj(IDataOperator.class, dop, true);
+		this.cacheObj(dop.getClass(), dop, true);
+		
 		Set<Class<?>> listeners = ClassScannerUtils.getIns().loadClassByClass(IPostInitListener.class);
 		if(listeners != null && !listeners.isEmpty()) {
 			for(Class<?> c : listeners){
 				PostListener comAnno = c.getAnnotation(PostListener.class);
 				int mod = c.getModifiers();
 				if((comAnno != null && !comAnno.value())|| Modifier.isAbstract(mod) 
-						|| Modifier.isInterface(mod) || !Modifier.isPublic(mod)){
+						|| Modifier.isInterface(mod) || !Modifier.isPublic(mod)
+						){
 					continue;
 				}
 				
@@ -317,7 +353,8 @@ public class SimpleObjectFactory implements IObjectFactory {
 		Set<Class<?>> clses = ClassScannerUtils.getIns().getComponentClass();
 		if(clses != null && !clses.isEmpty()) {
 			for(Class<?> c : clses){
-				if(IObjectFactory.class.isAssignableFrom(c) || !c.isAnnotationPresent(Component.class)){
+				if(IObjectFactory.class.isAssignableFrom(c) || !c.isAnnotationPresent(Component.class)
+						|| IDataOperator.class.isAssignableFrom(c)){
 					continue;
 				}
 				if(c.isAnnotationPresent(Component.class)) {
@@ -357,11 +394,14 @@ public class SimpleObjectFactory implements IObjectFactory {
 		Config cfg = (Config)objs.get(Config.class);
 		
 		List<IConfigLoader> configLoaders = this.getByParent(IConfigLoader.class);
-		cfg.loadConfig(configLoaders);
+		cfg.loadConfig(configLoaders,dop);
 		
 		if(!l.isEmpty()){
 			for(int i =0; i < l.size(); i++){
 				Object o = l.get(i);
+				if(dop == o) {
+					continue;
+				}
 				//System.out.println(o);
 				if(o.getClass().getName().startsWith("org.jmicro.server")){
 					//System.out.println(o);

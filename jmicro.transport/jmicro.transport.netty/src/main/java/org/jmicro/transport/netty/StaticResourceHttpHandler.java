@@ -103,9 +103,9 @@ public class StaticResourceHttpHandler  {
 	}
 	   
 	private byte[] getContent(String path) {
-		if(contents.containsKey(path)){
+		/*if(contents.containsKey(path)){
 			return contents.get(path);
-		}
+		}*/
 		InputStream bisr = null;
 		try {
 			bisr = new FileInputStream(path);

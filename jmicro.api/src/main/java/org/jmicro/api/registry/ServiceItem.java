@@ -121,7 +121,7 @@ public class ServiceItem{
 	
 	private Set<ServiceMethod> methods = new HashSet<>();
 	
-	private long randVal = System.currentTimeMillis() ^ rand.nextLong();
+	//private long createdTime = System.currentTimeMillis();
 	
 	public ServiceItem() {}
 	
@@ -215,15 +215,6 @@ public class ServiceItem{
 	public Set<ServiceMethod> getMethods(){
 		return methods;
 	}
-	
-	/*public static String serviceInterfaceName(String key) {
-	    int i = key.indexOf(I_I_SEPERATOR);
-	    if(i>0){
-	    	return key.substring(0, i);
-	    }else {
-	    	return key;
-	    }
-	}*/
 	
 	public String serviceName() {
 	   return serviceName(this.serviceName,this.namespace,this.version);
@@ -350,7 +341,8 @@ public class ServiceItem{
 		sb.append(Config.getInstanceName()).append(VAL_SEPERATOR)
 		.append(this.serviceName).append(VAL_SEPERATOR)
 		.append(this.namespace).append(VAL_SEPERATOR)
-		.append(this.version);
+		.append(this.version)/*.append(VAL_SEPERATOR)
+		.append(this.createdTime)*/;
 
 		return sb.toString();
 	}
