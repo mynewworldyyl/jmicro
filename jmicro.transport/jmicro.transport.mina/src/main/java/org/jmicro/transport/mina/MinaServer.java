@@ -59,7 +59,7 @@ import org.slf4j.LoggerFactory;
  * @author Yulei Ye
  * @date 2018年10月4日-下午12:13:53
  */
-@Component(value=Constants.TRANSPORT_MINA,lazy=false,level=10,side=Constants.SIDE_PROVIDER,active=true)
+@Component(value=Constants.TRANSPORT_MINA,lazy=false,level=1,side=Constants.SIDE_PROVIDER,active=true)
 @Server(transport=Constants.TRANSPORT_MINA)
 public class MinaServer implements IServer{
 

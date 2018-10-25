@@ -50,6 +50,7 @@ import org.jmicro.api.objectfactory.IPostFactoryReady;
 import org.jmicro.api.objectfactory.IPostInitListener;
 import org.jmicro.api.objectfactory.ProxyObject;
 import org.jmicro.api.raft.IDataOperator;
+import org.jmicro.api.registry.IRegistry;
 import org.jmicro.api.service.IServerServiceProxy;
 import org.jmicro.common.CommonException;
 import org.jmicro.common.Constants;
@@ -279,37 +280,10 @@ public class SimpleObjectFactory implements IObjectFactory {
 		}
 		
 		String dataOperatorName = Config.getCommandParam(Constants.DATA_OPERATOR, String.class, Constants.DEFAULT_DATA_OPERATOR);
-		Set<Class<?>> dataOperatorClazzes = ClassScannerUtils.getIns().loadClassByClass(IDataOperator.class);
+		String registryName = Config.getCommandParam(Constants.REGISTRY_KEY, String.class, Constants.DEFAULT_REGISTRY);
 		
+		IRegistry registry = null;
 		IDataOperator dop = null;
-		
-		for(Class<?> cls : dataOperatorClazzes){
-			if(cls.isAnnotationPresent(Component.class)){
-				Component anno = cls.getAnnotation(Component.class);
-				if(dataOperatorName.equals(anno.value())){
-					try {
-						dop = (IDataOperator) cls.newInstance();
-					} catch (InstantiationException | IllegalAccessException e) {
-						e.printStackTrace();
-					}
-					break;
-				}
-			}
-		}
-		
-		if(dop == null){
-			throw new CommonException("IDataOperator with name :"+dataOperatorName +" not found!");
-		}
-		
-		try {
-			Method initMethod = dop.getClass().getMethod("init");
-			initMethod.invoke(dop, new Object[0]);
-		} catch (NoSuchMethodException | SecurityException | IllegalAccessException | IllegalArgumentException | InvocationTargetException e1) {
-			throw new CommonException("Invoke IDataOperator init method error  with name :"+dataOperatorName,e1);
-		}
-		
-		//this.cacheObj(IDataOperator.class, dop, true);
-		this.cacheObj(dop.getClass(), dop, true);
 		
 		Set<Class<?>> listeners = ClassScannerUtils.getIns().loadClassByClass(IPostInitListener.class);
 		if(listeners != null && !listeners.isEmpty()) {
@@ -331,30 +305,10 @@ public class SimpleObjectFactory implements IObjectFactory {
 			}
 		}
 		
-		/*Set<Class<?>> postFactoryListners = ClassScannerUtils.getIns().loadClassByClass(IPostFactoryReady.class);
-		if(postFactoryListners != null && !postFactoryListners.isEmpty()) {
-			for(Class<?> c : postFactoryListners){
-				PostListener comAnno = c.getAnnotation(PostListener.class);
-				int mod = c.getModifiers();
-				if((comAnno != null && !comAnno.value()) || Modifier.isAbstract(mod) 
-						|| Modifier.isInterface(mod) || !Modifier.isPublic(mod)){
-					continue;
-				}
-				
-				try {
-					IPostFactoryReady l = (IPostFactoryReady)c.newInstance();
-					this.addPostReadyListener(l);
-				} catch (InstantiationException | IllegalAccessException e) {
-					logger.error("Create IPostInitListener Error",e);
-				}
-			}
-		}*/
-		
 		Set<Class<?>> clses = ClassScannerUtils.getIns().getComponentClass();
 		if(clses != null && !clses.isEmpty()) {
 			for(Class<?> c : clses){
-				if(IObjectFactory.class.isAssignableFrom(c) || !c.isAnnotationPresent(Component.class)
-						|| IDataOperator.class.isAssignableFrom(c)){
+				if(IObjectFactory.class.isAssignableFrom(c) || !c.isAnnotationPresent(Component.class)){
 					continue;
 				}
 				if(c.isAnnotationPresent(Component.class)) {
@@ -370,12 +324,33 @@ public class SimpleObjectFactory implements IObjectFactory {
 							obj = this.createObject(c, false);
 						}
 						this.cacheObj(c, obj, true);
+						
+						if(IDataOperator.class.isAssignableFrom(c) && dataOperatorName.equals(cann.value())){
+							dop = (IDataOperator)obj;
+						}
+						
+						if(IRegistry.class.isAssignableFrom(c) && registryName.equals(cann.value())){
+							registry = (IRegistry)obj;
+						}
+						
 					}else {
 						logger.debug("disable com: "+c.getName());
 					}
 				}
 			}
 		}
+		
+		if(dop == null){
+			throw new CommonException("IDataOperator with name :"+dataOperatorName +" not found!");
+		}
+		
+		dop.init();
+		
+		if(registry == null){
+			throw new CommonException("IRegistry with name :"+registryName +" not found!");
+		}
+		
+		registry.setDataOperator(dop);
 		
 		clientServiceProxyManager = new ClientServiceProxyManager(this);
 		clientServiceProxyManager.init();
@@ -396,19 +371,20 @@ public class SimpleObjectFactory implements IObjectFactory {
 		List<IConfigLoader> configLoaders = this.getByParent(IConfigLoader.class);
 		cfg.loadConfig(configLoaders,dop);
 		
+		Set<Object> haveInits = new HashSet<>();
+		
 		if(!l.isEmpty()){
 			for(int i =0; i < l.size(); i++){
 				Object o = l.get(i);
-				if(dop == o) {
+				if(dop == o || haveInits.contains(o)) {
 					continue;
 				}
-				//System.out.println(o);
-				if(o.getClass().getName().startsWith("org.jmicro.server")){
-					//System.out.println(o);
-				}
+				haveInits.add(o);
 				doAfterCreate(o,cfg);
 			}
 		}
+		haveInits.clear();
+		haveInits = null;
 		
 		List<IPostFactoryReady> postL = this.getByParent(IPostFactoryReady.class);
 		

@@ -18,13 +18,13 @@ package org.jmicro.api.registry;
 
 import java.util.Set;
 
-import org.jmicro.api.Init;
+import org.jmicro.api.raft.IDataOperator;
 /**
  * 
  * @author Yulei Ye
  * @date 2018年10月4日-下午12:04:20
  */
-public interface IRegistry extends Init{
+public interface IRegistry{
 
 	void regist(ServiceItem si);
 	
@@ -52,4 +52,8 @@ public interface IRegistry extends Init{
 	void addServiceNameListener(String key,IServiceListener lis);
 	
 	void removeServiceNameListener(String key,IServiceListener lis);
+	
+	void init();
+	
+	void setDataOperator(IDataOperator dataOperator);
 }

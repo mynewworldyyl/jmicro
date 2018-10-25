@@ -50,5 +50,7 @@ public interface IDataOperator {
 	void createNode(String path,String data,boolean elp);
 	
 	void deleteNode(String path);
+	
+	void init();
 
 }

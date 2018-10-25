@@ -52,7 +52,7 @@ import io.netty.handler.logging.LoggingHandler;
  * @date 2018年10月21日-下午9:15:25
  */
 @SuppressWarnings("restriction")
-@Component(value=Constants.TRANSPORT_NETTY,lazy=false,level=10,side=Constants.SIDE_PROVIDER)
+@Component(value=Constants.TRANSPORT_NETTY,lazy=false,level=1,side=Constants.SIDE_PROVIDER)
 @Server(transport=Constants.TRANSPORT_NETTY)
 public class NettyServer implements IServer{
 

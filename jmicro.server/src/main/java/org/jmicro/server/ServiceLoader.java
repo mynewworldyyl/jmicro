@@ -54,7 +54,7 @@ import javassist.Modifier;
  * @author Yulei Ye
  * @date 2018年10月4日-下午12:08:01
  */
-@Component(lazy=false,level=11)
+@Component(lazy=false,level=2)
 public class ServiceLoader {
 
 	private final static Logger logger = LoggerFactory.getLogger(ServiceLoader.class);
@@ -78,13 +78,15 @@ public class ServiceLoader {
 			org.jmicro.api.annotation.Server anno = 
 					s.getClass().getAnnotation(org.jmicro.api.annotation.Server.class);
 			if(servers.containsKey(anno.transport())){
-				throw new CommonException("IServer:"+s.getClass().getName()+"] and ["
-						+servers.get(anno.transport())+" with same component name :"+anno.transport());
+				throw new CommonException("IServer:" + s.getClass().getName() + "] and ["
+						+ servers.get(anno.transport()) + " with same component name :" + anno.transport());
 			}
 			servers.put(anno.transport(), s);
 		}
 		exportService();
 		logger.info("export service finish!");
+		
+		//registry.init0();
 	}
 	
 	public Object getService(String clsName,String namespace,String version){

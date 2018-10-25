@@ -24,6 +24,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.jmicro.api.Init;
 import org.jmicro.api.annotation.Cfg;
 import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.Inject;
@@ -41,7 +42,6 @@ import org.jmicro.api.registry.ServiceMethod;
 import org.jmicro.common.Constants;
 import org.jmicro.common.util.JsonUtils;
 import org.jmicro.common.util.StringUtils;
-import org.jmicro.zk.ZKDataOperator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -50,9 +50,9 @@ import org.slf4j.LoggerFactory;
  * @author Yulei Ye
  * @date 2018年10月4日-下午12:13:09
  */
-@Component(value=Constants.DEFAULT_REGISTRY,lazy=false,level=0)
+@Component(value=Constants.DEFAULT_REGISTRY,lazy=false,level=3)
 @Registry
-public class ZKRegistry implements IRegistry {
+public class ZKRegistry implements IRegistry,Init {
 
 	private final static Logger logger = LoggerFactory.getLogger(ZKRegistry.class);
 	
@@ -82,7 +82,6 @@ public class ZKRegistry implements IRegistry {
 	
 	//service instance path as key(key=ServiceItem.key())
 	//private  Map<String,INodeListener> nodeListeners = new HashMap<>();
-	@Override
 	@JMethod("init")
 	public void init() {
 		dataOperator.addListener((state)->{
@@ -99,6 +98,7 @@ public class ZKRegistry implements IRegistry {
 				}
 			}
 		});
+		
 		List<String> children = dataOperator.getChildren(Config.ServiceRegistDir);
 		logger.debug("Service: "+children.toString());
 		serviceChanged(Config.ServiceRegistDir,children);
@@ -161,9 +161,7 @@ public class ZKRegistry implements IRegistry {
 				l.serviceChanged(type, item);
 			}
 		}
-		
 	}
-	
 
 	private void notifyServiceChange(int type,ServiceItem item){
 		//key = servicename + namespace + version
@@ -328,8 +326,9 @@ public class ZKRegistry implements IRegistry {
 		}
 		
 		key = item.key(Config.ServiceRegistDir);
-		if(dataOperator.exist(key)){
+		if(dataOperator.exist(key)){			
 			dataOperator.deleteNode(key);
+			logger.debug("Delete old service: "+key);
 		}
 		dataOperator.createNode(key,data, true);
 	}
@@ -386,7 +385,7 @@ public class ZKRegistry implements IRegistry {
 		
 		for(ServiceItem si : sis) {
 			if(!si.getNamespace().equals(namespace)||
-					!si.getVersion().equals(version)) {
+			   !si.getVersion().equals(version)) {
 				continue;
 			}
 			if(si.isFusing()){
@@ -494,6 +493,10 @@ public class ZKRegistry implements IRegistry {
 			}
 		}
 		return null;
+	}
+
+	public void setDataOperator(IDataOperator dataOperator) {
+		this.dataOperator = dataOperator;
 	}
 	
 }

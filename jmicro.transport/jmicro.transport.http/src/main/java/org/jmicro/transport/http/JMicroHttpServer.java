@@ -57,7 +57,7 @@ import com.sun.net.httpserver.HttpServer;
  * @date 2018年10月19日-下午12:34:17
  */
 @SuppressWarnings("restriction")
-@Component(value=Constants.TRANSPORT_JDKHTTP,lazy=false,level=10,side=Constants.SIDE_PROVIDER)
+@Component(value=Constants.TRANSPORT_JDKHTTP,lazy=false,level=1,side=Constants.SIDE_PROVIDER)
 @Server(transport=Constants.TRANSPORT_JDKHTTP)
 public class JMicroHttpServer implements IServer{
 
