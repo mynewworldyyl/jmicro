@@ -272,7 +272,7 @@ public class ZKRegistry implements IRegistry,Init {
         	logger.error("Item is NULL");
         	return;
         }
-		String key = item.key(Config.ServiceCofigDir);
+		String key = item.key(Config.ServiceItemCofigDir);
 		if(dataOperator.exist(key)){
 			String data = dataOperator.getData(key);
 			ServiceItem perItem = this.fromJson(data);
@@ -318,7 +318,7 @@ public class ZKRegistry implements IRegistry,Init {
 	public void regist(ServiceItem item) {
 		this.persisFromConfig(item);
 		
-		String key = item.key(Config.ServiceCofigDir);
+		String key = item.key(Config.ServiceItemCofigDir);
 		String data = JsonUtils.getIns().toJson(item);
 		if(!dataOperator.exist(key)){
 			dataOperator.createNode(key,data, false);

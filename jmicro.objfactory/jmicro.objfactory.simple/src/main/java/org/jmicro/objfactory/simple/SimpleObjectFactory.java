@@ -388,9 +388,13 @@ public class SimpleObjectFactory implements IObjectFactory {
 		
 		List<IPostFactoryReady> postL = this.getByParent(IPostFactoryReady.class);
 		
-		for(IPostFactoryReady lis : postL){
-			lis.ready(this);
-		}
+		postReadyListeners.addAll(postL);
+		postReadyListeners.sort(new Comparator<IPostFactoryReady>(){
+			@Override
+			public int compare(IPostFactoryReady o1, IPostFactoryReady o2) {
+				return o1.runLevel() > o2.runLevel()?1:o1.runLevel() == o2.runLevel()?0:-1;
+			}
+		});
 		
 		for(IPostFactoryReady lis : this.postReadyListeners){
 			lis.ready(this);

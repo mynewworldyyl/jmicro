@@ -31,7 +31,6 @@ import org.jmicro.common.Constants;
  */
 @Component(active=true,value="InitClientReceiver",side=Constants.SIDE_COMSUMER)
 public class InitClientReceiver implements IPostFactoryReady{
-
 	@Override
 	public void ready(IObjectFactory of) {
 		List<IMessageHandler> list = of.getByParent(IMessageHandler.class);
@@ -46,6 +45,9 @@ public class InitClientReceiver implements IPostFactoryReady{
 			}
 		}
 	}
-
 	
+	@Override
+	public int runLevel() {
+		return 0;
+	}
 }

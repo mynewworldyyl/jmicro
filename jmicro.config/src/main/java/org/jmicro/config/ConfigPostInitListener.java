@@ -60,16 +60,24 @@ public class ConfigPostInitListener extends PostInitListenerAdapter {
 		List<Field> fields = new ArrayList<>();
 		 Utils.getIns().getFields(fields, cls);
 		
+		 String name = cls.getSimpleName();
+		 
 		for(Field f : fields){
 			if(!f.isAnnotationPresent(Cfg.class)){
 				continue;
 			}
+			
 			Cfg cfgAnno = f.getAnnotation(Cfg.class);
 			if(StringUtils.isEmpty(cfgAnno.value())){
 				throw new CommonException("Class ["+cls.getName()+",Field:"+f.getName()+"],Cfg path is NULL");
 			}
-	       
-			String value = cfg.getString(cfgAnno.value(), null);
+			
+			String value = cfg.getString("/" + name+cfgAnno.value(), null);
+			
+			if(StringUtils.isEmpty(value)){
+				value = cfg.getString(cfgAnno.value(), null);
+			}
+			
 			if(value != null && !"".equals(value)){
 				 setValue(f,obj,value);
 			}else if(cfgAnno.required()){

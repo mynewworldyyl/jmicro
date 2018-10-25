@@ -71,10 +71,11 @@ public class ServerMessageReceiver implements IMessageReceiver{
 	}
 	
 	public void registHandler(IMessageHandler handler){
-		if(this.handlers.containsKey(handler.type())){
+		Map<Short,IMessageHandler> handlers = this.handlers;
+		if(handlers.containsKey(handler.type())){
 			return;
 		}
-		this.handlers.put(handler.type(), handler);
+		handlers.put(handler.type(), handler);
 		ready = true;
 		synchronized(ready){
 			ready.notifyAll();

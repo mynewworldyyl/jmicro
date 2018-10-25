@@ -24,4 +24,6 @@ public interface IPostFactoryReady {
 
 	void ready(IObjectFactory of);
 	
+	int runLevel();
+	
 }

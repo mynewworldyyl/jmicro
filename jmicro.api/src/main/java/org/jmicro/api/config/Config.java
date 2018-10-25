@@ -62,8 +62,10 @@ public class Config implements IConfigChangeListener{
 	private static String RaftBaseDir = "";
 	
 	//针对服务配置的目录
-	public static String ServiceCofigDir = null;
+	public static String ServiceItemCofigDir = null;
 
+	public static String ServiceConfigDir = null;
+	
 	private static String[] BasePackages = {"org.jmicro"};
 	
 	@Cfg("/basePackages")
@@ -103,7 +105,8 @@ public class Config implements IConfigChangeListener{
 			InstanceName = System.currentTimeMillis()+"";
 		}
 		RaftBaseDir = Constants.CFG_ROOT +"/"+InstanceName;
-		ServiceCofigDir = RaftBaseDir+"/config";
+		ServiceConfigDir = RaftBaseDir+"/config";
+		ServiceItemCofigDir = RaftBaseDir+"/srvconfig";
 				
 		if(CommadParams.containsKey(Constants.BASE_PACKAGES_KEY)) {
 			String ps = CommadParams.get(Constants.BASE_PACKAGES_KEY);
@@ -169,7 +172,7 @@ public class Config implements IConfigChangeListener{
 	public void loadConfig(List<IConfigLoader> configLoaders,IDataOperator dop){
 		for(IConfigLoader cl : configLoaders){
 			cl.setDataOperator(dop);
-			cl.load(ServiceCofigDir,this.servicesConfig);
+			cl.load(ServiceConfigDir,this.servicesConfig);
 			cl.load(CfgDir,this.globalConfig);
 			cl.setConfigChangeListener(this);
 		}
@@ -179,8 +182,8 @@ public class Config implements IConfigChangeListener{
 	@Override
 	public void configChange(String path, String value) {
 		int index = -1;
-		if((index = path.indexOf(ServiceCofigDir)) >= 0 ) {
-			String subPath = path.substring(index+ServiceCofigDir.length(), path.length());
+		if((index = path.indexOf(ServiceConfigDir)) >= 0 ) {
+			String subPath = path.substring(index+ServiceConfigDir.length(), path.length());
 			this.servicesConfig.put(subPath, value);
 			notifiListener(subPath,value);
 		}else if((index = path.indexOf(CfgDir)) >= 0 )  {

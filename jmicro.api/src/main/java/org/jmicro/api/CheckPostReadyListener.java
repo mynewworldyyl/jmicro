@@ -23,7 +23,7 @@ public class CheckPostReadyListener implements IPostFactoryReady{
 	public void ready(IObjectFactory of) {
 		IDataOperator ddop = of.getByParent(IDataOperator.class).get(0);
 		if(ddop.exist(Config.getRaftBaseDir())) {
-			if(ddop.exist(Config.getRaftBaseDir()+"/active")){
+			if(ddop.exist(Config.ServiceConfigDir+"/active")){
 				logger.info("InstanceName: "+Config.getInstanceName() + " is in using,sleep 10s to recheck");
 				try {
 					Thread.sleep(10*1000);
@@ -31,13 +31,16 @@ public class CheckPostReadyListener implements IPostFactoryReady{
 					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
-				if(ddop.exist(Config.ServiceCofigDir+"/active")){
+				if(ddop.exist(Config.ServiceItemCofigDir+"/active")){
 					throw new CommonException("InstanceName :"+Config.getInstanceName()+" is using by other server");
 				}
 			}
-			ddop.createNode(Config.ServiceCofigDir+"/active", "", true);
+			ddop.createNode(Config.ServiceItemCofigDir+"/active", "", true);
 		}
 		
 	}
-
+	@Override
+	public int runLevel() {
+		return 1001;
+	}
 }
