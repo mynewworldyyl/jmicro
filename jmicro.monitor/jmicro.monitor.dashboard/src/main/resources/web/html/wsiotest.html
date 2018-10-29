@@ -5,6 +5,7 @@
         <title>Socket</title>
         <script type="text/javascript" src="/js/socket.io.js"></script>
         <script type="text/javascript" src="/js/jquery.js"></script>
+        <script type="text/javascript" src="/js/rpc.js"></script>
         <script type="text/javascript" src="/js/ws.js"></script>
         <script type="text/javascript">
 
@@ -14,12 +15,24 @@
             "version:'0.0.1',impl:'org.jmicro.example.provider.TestRpcServiceImpl',reqId:7832,isMonitorEnable:false,params:{} }"};
 
           $(document).ready(function(){
-              jmicro.socket.init();
-              //jmicro.socket.emit(json)
+            jmicro.socket.init();
+            //jmicro.socket.emit(json)
+            jmicro.socket.registListener(2,function(msg){
+                console.log(msg);
+            });
           });
 
           function sendMsg(msg){
             jmicro.socket.emit(json)
+          }
+
+          function getId(){
+            jmicro.rpc.getId(jmicro.Constants.MessageCls)
+            .then(function(id){
+                console.log(id);
+            }).catch(function(err){
+              console.log(err);
+            });
           }
 
         </script>
@@ -28,6 +41,7 @@
     <form onsubmit="return false">
         <textarea style="width: 300px; height: 200px;" name="message"></textarea>
         <input type="button" onclick="sendMsg(this.form.message.value)" value="发送"><br>
+        <input type="button" onclick="getId()" value="GetId"><br>
         <h3>信息</h3>
         <textarea style="width: 300px; height: 200px;" id="respMessage"></textarea>
         <input type="button" value="清空" onclick="javascript:document.getElementById('respMessage').value = ''">

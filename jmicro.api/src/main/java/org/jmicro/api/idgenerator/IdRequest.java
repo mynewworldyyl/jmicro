@@ -15,25 +15,47 @@
  * limitations under the License.
  */
 package org.jmicro.api.idgenerator;
-
-import java.util.Set;
-
 /**
  * 
  * @author Yulei Ye
- * @date 2018年10月4日-上午11:55:12
+ * @date 2018年10月25日-下午10:54:39
  */
-public interface IIdGenerator {
+public class IdRequest {
 
-	Set<Long> getLongId(Class<?> idType,int num);
+	public static final byte BYte=1;
+	public static final	byte SHort=2;
+	public static final	byte INteger=3;
+	public static final	byte LOng=4;
+	public static final	byte STring=5;
+
+	private byte type;
 	
-	Set<String> getStringId(Class<?> idType,int num);
+	private int num;
 	
-	Set<Integer> getIntId(Class<?> idType,int num);
+	private String clazz;
 	
-	Long getLongId(Class<?> idType);
+	public byte getType() {
+		return type;
+	}
 	
-	String getStringId(Class<?> idType);
+	public void setType(byte type) {
+		this.type = type;
+	}
 	
-	Integer getIntId(Class<?> idType);
+	public int getNum() {
+		return num;
+	}
+	
+	public void setNum(int num) {
+		this.num = num;
+	}
+
+	public String getClazz() {
+		return clazz;
+	}
+
+	public void setClazz(String clazz) {
+		this.clazz = clazz;
+	}
+	
 }

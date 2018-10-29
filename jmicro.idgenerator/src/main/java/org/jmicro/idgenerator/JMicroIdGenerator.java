@@ -16,10 +16,14 @@
  */
 package org.jmicro.idgenerator;
 
+import java.util.HashSet;
+import java.util.Set;
+
 import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.Inject;
 import org.jmicro.api.idgenerator.IIdGenerator;
 import org.jmicro.api.raft.IDataOperator;
+import org.jmicro.common.CommonException;
 import org.jmicro.common.Constants;
 /**
  * 
@@ -38,42 +42,125 @@ public class JMicroIdGenerator implements IIdGenerator {
 		
 	}
 	
+	@SuppressWarnings("unchecked")
 	@Override
-	public Integer getIntId(Class<?> idType) {
-		String idStr = this.get(idType);
-		Integer id = Integer.parseInt(idStr)+1;
-		setData(idType,id+"");
-		return id;
+	public Set<Integer> getIntId(Class<?> idType, int num) {
+		if(num > 1) {
+			return (Set<Integer>)this.get(idType,Integer.class,num);
+		}else {
+			Set<Integer> set = new HashSet<>();
+			Integer id = (Integer)this.get(idType,Integer.class,num);
+			set.add(id);
+			return set;
+		}
+		
+	}
+	
+	@SuppressWarnings("unchecked")
+	@Override
+	public Set<Long> getLongId(Class<?> idType, int num) {
+		if(num > 1) {
+			return (Set<Long>)this.get(idType,Long.class,num);
+		}else {
+			Set<Long> set = new HashSet<>();
+			Long id = (Long)this.get(idType,Long.class,num);
+			set.add(id);
+			return set;
+		}
+	}
+	
+	@SuppressWarnings("unchecked")
+	@Override
+	public Set<String> getStringId(Class<?> idType, int num) {
+		if(num > 1) {
+			return (Set<String>)this.get(idType,Long.class,num);
+		}else {
+			Set<String> set = new HashSet<>();
+			String id = (String)this.get(idType,Long.class,num);
+			set.add(id);
+			return set;
+		}
 	}
 	
 	@Override
-	public long getLongId(Class<?> idType) {
-		String idStr = this.get(idType);
-		Long id = Long.parseLong(idStr)+1;
-		setData(idType,id+"");
-		return id;
-	}
-	
-	@Override
-	public String getStringId(Class<?> idType) {
-		String idStr = this.getLongId(idType)+"";
-		return idStr;
+	public Long getLongId(Class<?> idType) {
+		return (Long)this.get(idType,Long.class,1);
 	}
 
-	private void setData(Class<?> idType, String id) {
-		String path = ID_IDR + idType.getName();
-		dataOperator.setData(path, id);
+	@Override
+	public String getStringId(Class<?> idType) {
+		return (String)this.get(idType,String.class,1);
+	}
+
+	@Override
+	public Integer getIntId(Class<?> idType) {
+		return (Integer)this.get(idType,Integer.class,1);
 	}
 	
-	private String get(Class<?> idType){
+	private Object get(Class<?> idType,Class<?> clazzType,int num){
+		if(num <= 0) {
+			throw new CommonException("Req ID num must be more than one");
+		}
+		
 		String path = ID_IDR + idType.getName();
-		String idStr = "0";
+		String idStr = "1";
 		if(this.dataOperator.exist(path)){
 			 idStr = dataOperator.getData(path);
 		} else {
 			dataOperator.createNode(path, idStr, false);
 		}
-		return idStr;
+		
+		Object result = null;
+		
+		if(clazzType == Long.class) {
+			if(num == 1){
+				long r = Long.parseLong(idStr);
+				result = r;
+				idStr = (r+1)+"";
+			} else {
+				long r = Long.parseLong(idStr);
+				Set<Long> ids = new HashSet<Long>();
+				for(int i=0; i < num;i++) {
+					ids.add(r+i);
+				}
+				r += num;
+				idStr = r+"";
+				result = ids;
+			}
+		}else if(clazzType == Integer.class) {
+			if(num == 1){
+				int r = Integer.parseInt(idStr);
+				result = r;
+				idStr = (r+1)+"";
+			} else {
+				int r = Integer.parseInt(idStr);
+				Set<Integer> ids = new HashSet<Integer>();
+				for(int i=0; i < num;i++) {
+					ids.add(r+i);
+				}
+				r += num;
+				idStr = r+"";
+				result = ids;
+			}
+		}else if(clazzType == String.class) {
+			if(num == 1){
+				long r = Long.parseLong(idStr);
+				result = r+"";
+				idStr = (r+1)+"";
+			} else {
+				long r = Long.parseLong(idStr);
+				Set<String> ids = new HashSet<String>();
+				for(int i=0; i < num;i++) {
+					ids.add((r+i)+"");
+				}
+				r += num;
+				idStr = r+"";
+				result = ids;
+			}
+		}
+		
+		dataOperator.setData(path, idStr);
+		return result;
 	}
 
 }

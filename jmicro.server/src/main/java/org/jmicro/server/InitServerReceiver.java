@@ -46,6 +46,7 @@ public class InitServerReceiver implements IPostFactoryReady{
 			}
 		}
 	}
+	
 	@Override
 	public int runLevel() {
 		return 0;

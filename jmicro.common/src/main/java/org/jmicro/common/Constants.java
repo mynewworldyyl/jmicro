@@ -47,20 +47,20 @@ public interface Constants {
 	public static final String REGISTRY_KEY="registry";
 	public static final String DEFAULT_REGISTRY="defaultRegistry";
 	
-	public static final String DEFAULT_CODEC_FACTORY="defaultCodecFactory";
-	public static final String DEFAULT_SERVER="defaultServer";
-	public static final String DEFAULT_HANDLER="defaultHandler";
-	public static final String LAST_INTERCEPTOR="lastInterceptor";
-	public static final String FIRST_INTERCEPTOR="firstInterceptor";
-	public static final String DEFAULT_SELECTOR="defaultSelector";
-	public static final String DEFAULT_INVOCATION_HANDLER="defaultInvocationHandler";
+	public static final String DEFAULT_CODEC_FACTORY = "defaultCodecFactory";
+	public static final String DEFAULT_SERVER = "defaultServer";
+	public static final String DEFAULT_HANDLER = "defaultHandler";
+	public static final String LAST_INTERCEPTOR = "lastInterceptor";
+	public static final String FIRST_INTERCEPTOR = "firstInterceptor";
+	public static final String DEFAULT_SELECTOR = "defaultSelector";
+	public static final String DEFAULT_INVOCATION_HANDLER = "defaultInvocationHandler";
 	
-	public static final String DEFAULT_NAMESPACE="defaultNamespace";
-	public static final String DEFAULT_VERSION="0.0.0";
-	public static final String DEFAULT_IDGENERATOR="defaultGenerator";
+	public static final String DEFAULT_NAMESPACE = "defaultNamespace";
+	public static final String DEFAULT_VERSION = "0.0.0";
+	public static final String DEFAULT_IDGENERATOR = "defaultGenerator";
 	
-	public static final String CHARSET="UTF-8";
-	public static final String SESSION_KEY="_sessionKey";
+	public static final String CHARSET = "UTF-8";
+	public static final String SESSION_KEY = "_sessionKey";
 	
 	//public static final String CONFIG_ROOT = CFG_ROOT + "/config";
 	//public static final String RAFT_CONFIG_ROOT_KEY = "configRoot";
@@ -71,20 +71,20 @@ public interface Constants {
 	public static final String CONTEXT_CALLBACK_SERVICE = "ServiceCallback";
 	public static final String CONTEXT_CALLBACK_CLIENT = "ClientCallback";
 	
-	public static final String SERVICE_ITEM_KEY="serviceItemKey";
-	public static final String SERVICE_METHOD_KEY="serviceMethodKey";
-	public static final String SERVICE_OBJ_KEY="serviceObjKey";
+	public static final String SERVICE_ITEM_KEY = "serviceItemKey";
+	public static final String SERVICE_METHOD_KEY = "serviceMethodKey";
+	public static final String SERVICE_OBJ_KEY = "serviceObjKey";
 	
-	public static final String TRANSPORT_JDKHTTP="jdkhttp";
-	public static final String TRANSPORT_MINA="mina";
-	public static final String TRANSPORT_NETTY="netty";
+	public static final String TRANSPORT_JDKHTTP = "jdkhttp";
+	public static final String TRANSPORT_MINA = "mina";
+	public static final String TRANSPORT_NETTY = "netty";
 	
 	
 	/*=====================Message Begin=======================*/
 	/*=====================Message Begin=======================*/
 	/*=====================Message Begin=======================*/
 	
-	public static final int HEADER_LEN=35;
+	public static final int HEADER_LEN = 35;
 	
 /*	public static final byte MSG_REQ_TYPE_RESP=1;
 	
@@ -112,6 +112,9 @@ public interface Constants {
 	
 	//public static final short MSG_TYPE_SERVER_ERR = 0x7FFE;
 	//public static final short MSG_TYPE_ALL = 0x7FFF;
+	
+	public static final short MSG_TYPE_ID_REQ = 0x7FFA; //Id请求
+	public static final short MSG_TYPE_ID_RESP = 0x7FFB;//Id请求响应
 	
 	public static final short MSG_TYPE_HEARBEAT_REQ = 0x7FFC; //心跳请求
 	public static final short MSG_TYPE_HEARBEAT_RESP = 0x7FFD;//心跳响应

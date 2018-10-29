@@ -123,7 +123,7 @@ public class ServerMessageReceiver implements IMessageReceiver{
 		try {
 			IMessageHandler h = handlers.get(msg.getType());
 			if(h == null) {
-				throw new CommonException("Message type ["+msg.getType()+"] handler not found!");
+				throw new CommonException("Message type ["+Integer.toHexString(msg.getType())+"] handler not found!");
 			}
 			h.onMessage(s, msg);
 		} catch (Throwable e) {
