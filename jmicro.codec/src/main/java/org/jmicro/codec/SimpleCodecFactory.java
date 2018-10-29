@@ -1,9 +1,8 @@
 package org.jmicro.codec;
 
+import java.lang.reflect.Method;
 import java.nio.ByteBuffer;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import org.jmicro.api.annotation.Cfg;
@@ -13,11 +12,10 @@ import org.jmicro.api.annotation.JMethod;
 import org.jmicro.api.codec.ICodecFactory;
 import org.jmicro.api.codec.IDecoder;
 import org.jmicro.api.codec.IEncoder;
+import org.jmicro.api.gateway.ApiRequest;
 import org.jmicro.api.net.Message;
 import org.jmicro.api.net.RpcRequest;
 import org.jmicro.api.registry.IRegistry;
-import org.jmicro.api.registry.ServiceItem;
-import org.jmicro.api.registry.ServiceMethod;
 import org.jmicro.common.CommonException;
 import org.jmicro.common.Constants;
 import org.jmicro.common.codec.Decoder;
@@ -71,34 +69,10 @@ public class SimpleCodecFactory implements ICodecFactory{
 			R obj = JsonUtils.getIns().fromJson(json, clazz);
 			if(clazz == RpcRequest.class){
 				RpcRequest r = (RpcRequest)obj;
-				if(r.getArgs() == null || r.getArgs().length ==0){
-					return obj;
-				} else {
-					int argLen = r.getArgs().length;
-					ServiceItem item = registry.getServiceByImpl(r.getImpl());
-					Object[] args = new Object[r.getArgs().length];
-					for(ServiceMethod sm : item.getMethods()){
-						if(sm.getMethodName().equals(r.getMethod()) &&
-								argLen == sm.getMethodParamTypes().split("-").length){
-							String[] clses = sm.getMethodParamTypes().split("-");
-							int i = 0;
-							for(; i < argLen; i++){
-								try {
-									Class<?> pt = Thread.currentThread().getContextClassLoader().loadClass(clses[i]);
-									Object a = JsonUtils.getIns().fromJson(JsonUtils.getIns().toJson(r.getArgs()[i]), pt);
-									args[i] = a;
-								} catch (ClassNotFoundException e) {
-									e.printStackTrace();
-									continue;
-								}
-							}
-							if( i == argLen) {
-								break;
-							}
-						}
-					}
-					r.setArgs(args);
-				}
+				r.setArgs(getArgs(r.getServiceName(),r.getMethod(),r.getArgs()));
+			} else if(clazz == ApiRequest.class) {
+				ApiRequest r = (ApiRequest)obj;
+				r.setArgs(getArgs(r.getServiceName(),r.getMethod(),r.getArgs()));
 			}
 			return obj;
 		}
@@ -146,6 +120,47 @@ public class SimpleCodecFactory implements ICodecFactory{
 					" have exists decoder [" + e.getClass().getName() + "]" );
 		}
 		encoders.put(protocol, encoder);
+	}
+	
+	private Object[] getArgs(String srvCls,String methodName,Object[] jsonArgs){
+
+		if(jsonArgs== null || jsonArgs.length ==0){
+			return new Object[0];
+		} else {
+			int argLen = jsonArgs.length;
+			//ServiceItem item = registry.getServiceByImpl(r.getImpl());
+			Class<?> srvClazz = null;
+			try {
+				srvClazz = Thread.currentThread().getContextClassLoader().loadClass(srvCls);
+			} catch (ClassNotFoundException e) {
+				throw new CommonException("",e);
+			}
+			
+			Object[] args = new Object[jsonArgs.length];
+			
+			for(Method sm : srvClazz.getMethods()){
+				if(sm.getName().equals(methodName) &&
+						argLen == sm.getParameterCount()){
+					Class<?>[] clses = sm.getParameterTypes();
+					int i = 0;
+					try {
+						for(; i < argLen; i++){
+							Class<?> pt = clses[i];
+							Object a = JsonUtils.getIns().fromJson(JsonUtils.getIns().toJson(jsonArgs[i]), pt);
+							args[i] = a;
+						}
+					} catch (Exception e) {
+						continue;
+					}
+					if( i == argLen) {
+						break;
+					}
+				}
+			}
+			return args;
+		}
+	
+	
 	}
 	
 }

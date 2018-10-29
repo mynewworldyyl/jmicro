@@ -95,6 +95,7 @@
 		<module>jmicro.registry</module>
 		<module>jmicro.limit</module>
 		<module>jmicro.monitor</module>
+		<module>jmicro.gateway</module>
 		
     </modules>
 
@@ -113,6 +114,11 @@
             <dependency>
                  <groupId>org.jmicro</groupId>
 				 <artifactId>jmicro.zk</artifactId>
+				 <version>${jmicro.version}</version>
+            </dependency>
+             <dependency>
+                 <groupId>org.jmicro</groupId>
+				 <artifactId>jmicro.gateway</artifactId>
 				 <version>${jmicro.version}</version>
             </dependency>
 	         <dependency>

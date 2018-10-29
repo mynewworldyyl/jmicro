@@ -39,6 +39,10 @@
         <dependency>
 			 <groupId>org.jmicro</groupId>
 			 <artifactId>jmicro.server</artifactId>
+        </dependency>
+          <dependency>
+			 <groupId>org.jmicro</groupId>
+			 <artifactId>jmicro.gateway</artifactId>
         </dependency> 
         <dependency>
 			 <groupId>org.jmicro</groupId>

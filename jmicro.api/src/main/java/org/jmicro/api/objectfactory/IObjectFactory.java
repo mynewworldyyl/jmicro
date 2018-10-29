@@ -74,6 +74,8 @@ public interface IObjectFactory {
 	 */
 	<T> T getByName(String clsName);
 	
+	<T> T getServie(String srvName,String namespace,String version);
+	
 	/**
 	 * 取得所有子类的实例
 	 * @param parrentCls

@@ -30,8 +30,8 @@ import org.jmicro.api.client.AbstractClientServiceProxy;
 import org.jmicro.api.client.IClientSession;
 import org.jmicro.api.client.IClientSessionManager;
 import org.jmicro.api.codec.ICodecFactory;
-import org.jmicro.api.exception.FusingException;
-import org.jmicro.api.fusing.FuseManager;
+import org.jmicro.api.exception.BreakerException;
+import org.jmicro.api.fusing.BreakerManager;
 import org.jmicro.api.idgenerator.IIdGenerator;
 import org.jmicro.api.loadbalance.ISelector;
 import org.jmicro.api.monitor.IMonitorDataSubmiter;
@@ -83,7 +83,7 @@ public class ServiceInvocationHandler implements InvocationHandler, IMessageHand
 	private IMonitorDataSubmiter monitor;
 	
 	@Inject
-	private FuseManager fuseManager;
+	private BreakerManager breakerManager;
 	
 	public ServiceInvocationHandler(){
 	}
@@ -104,10 +104,10 @@ public class ServiceInvocationHandler implements InvocationHandler, IMessageHand
         
         try {
 			return this.doRequest(method,args,clazz,po);
-		} catch (FusingException e) {
+		} catch (BreakerException e) {
 			logger.error(e.getMessage(), e);
 			MonitorConstant.doSubmit(monitor,MonitorConstant.CLIENT_REQ_SERVICE_FUSING,null, null, e);
-			return fuseManager.onFusing(method, args, ((FusingException)e).getSis());
+			return breakerManager.onFusing(method, args, ((BreakerException)e).getSis());
 		}
 	}
 

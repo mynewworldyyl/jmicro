@@ -35,6 +35,27 @@
             });
           }
 
+          function sayHello(){
+            var req = new jmicro.rpc.ApiRequest();
+            req.serviceName='org.jmicro.example.api.ITestRpcService';
+            req.method = 'hello';
+            req.namespace = 'testrpc';
+            req.version = '0.0.1';
+            req.args = ['hello api gateway'];
+
+            jmicro.rpc.getId(jmicro.Constants.IRequestCls)
+              .then(function(id){
+                req.reqId = id;
+                jmicro.rpc.callRpc(req)
+                  .then(function(rst){
+                    console.log(rst);
+                  }).catch(function(err){
+                  console.log(err);
+                });
+              });
+
+          }
+
         </script>
     </head>
 <body>
@@ -42,6 +63,8 @@
         <textarea style="width: 300px; height: 200px;" name="message"></textarea>
         <input type="button" onclick="sendMsg(this.form.message.value)" value="发送"><br>
         <input type="button" onclick="getId()" value="GetId"><br>
+        <input type="button" onclick="sayHello()" value="sayHello"><br>
+
         <h3>信息</h3>
         <textarea style="width: 300px; height: 200px;" id="respMessage"></textarea>
         <input type="button" value="清空" onclick="javascript:document.getElementById('respMessage').value = ''">

@@ -31,7 +31,7 @@ import org.jmicro.api.annotation.Inject;
 import org.jmicro.api.annotation.JMethod;
 import org.jmicro.api.annotation.Registry;
 import org.jmicro.api.config.Config;
-import org.jmicro.api.exception.FusingException;
+import org.jmicro.api.exception.BreakerException;
 import org.jmicro.api.raft.IDataListener;
 import org.jmicro.api.raft.IDataOperator;
 import org.jmicro.api.raft.INodeListener;
@@ -408,7 +408,7 @@ public class ZKRegistry implements IRegistry,Init {
 			}
 		}
 		if(set.isEmpty() && !fusings.isEmpty()){
-			throw new  FusingException("Request services is fusing",fusings);
+			throw new  BreakerException("Request services is fusing",fusings);
 		}else {
 			return set;
 		}

@@ -113,6 +113,9 @@ public interface Constants {
 	//public static final short MSG_TYPE_SERVER_ERR = 0x7FFE;
 	//public static final short MSG_TYPE_ALL = 0x7FFF;
 	
+	public static final short MSG_TYPE_API_REQ = 0x7FF8; //API网关请求
+	public static final short MSG_TYPE_API_RESP = 0x7FF9;//API网关请求响应
+	
 	public static final short MSG_TYPE_ID_REQ = 0x7FFA; //Id请求
 	public static final short MSG_TYPE_ID_RESP = 0x7FFB;//Id请求响应
 	

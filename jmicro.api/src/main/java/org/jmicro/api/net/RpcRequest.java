@@ -28,19 +28,19 @@ import org.jmicro.common.Constants;
  */
 public class RpcRequest extends AbstractObjectMapSupport implements IRequest{
 	
-	protected String serviceName;
+	private String serviceName;
 	
-	protected String method;
+	private String method;
 	
-	protected Object[] args;
+	private Object[] args;
 	
-	protected String namespace;
+	private String namespace;
 	
-	protected String version;
+	private String version;
 	
-	protected String impl;
+	private String impl;
 	
-	protected String transport;
+	private String transport;
 	
 	private transient ISession session;
 	

@@ -36,7 +36,7 @@ jmicro.Constants = {
 
 jmicro.rpc = {
   idCache:{},
-  getId:function(idClazz){
+  getId : function(idClazz){
     var self = this;
     return new Promise(function(reso1,reje){
       var cacheId = self.idCache[idClazz];
@@ -74,6 +74,34 @@ jmicro.rpc = {
       }
     });
   },
+
+  callRpc : function(req){
+    var self = this;
+    return new Promise(function(reso,reje){
+      var msg = new jmicro.rpc.Message();
+      msg.payload =  JSON.stringify(req);
+      msg.type = 0x7FF8;
+      msg.protocol = jmicro.Constants.PROTOCOL_JSON;
+      msg.reqId = req.reqid;
+
+      self.getId(jmicro.Constants.MessageCls)
+        .then(function(id){
+          msg.msgId = id;
+          self.getId(jmicro.Constants.IRequestCls)
+            .then(function(id){
+              msg.reqId = id;
+              jmicro.socket.send(msg,function(rstMsg,err){
+                if(err){
+                  reje(err);
+                } else {
+                  reso(rstMsg);
+                }
+              });
+            });
+        });
+    });
+  },
+
 }
 
 jmicro.rpc.Message = function() {
@@ -97,7 +125,32 @@ jmicro.rpc.IdRequest = function() {
     this.num  =  1;
     this.clazz  =  '';
 }
-
 jmicro.rpc.IdRequest.prototype = {
+
+}
+
+jmicro.rpc.ApiRequest = function() {
+  this.params = {};
+  this.serviceName = '';
+  this.method = '';
+  this.args = [];
+  this.namespace = '';
+  this.version = '';
+  this.reqId = -1;
+  this.msg = '';
+}
+
+jmicro.rpc.ApiRequest.prototype = {
+
+}
+
+jmicro.rpc.ApiResponse = function() {
+  this.id = -1;
+  this.msg = null;
+  this.reqId =  -1;
+  this.result = null;
+  this.success = true;
+}
+jmicro.rpc.ApiResponse.prototype = {
 
 }

@@ -62,7 +62,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * 
  * @author Yulei Ye
  * @date 2018年10月4日-下午12:12:24
  */
@@ -92,6 +91,15 @@ public class SimpleObjectFactory implements IObjectFactory {
 	
 	private HttpHandlerManager httpHandlerManager = new HttpHandlerManager(this);
 	
+	@Override
+	public <T> T getServie(String srvName, String namespace, String version) {
+		Object obj = null;
+		if(obj == null){
+			obj = this.clientServiceProxyManager.getService(srvName,namespace,version);
+		}
+		return (T)obj;
+	}
+
 	@SuppressWarnings("unchecked")
 	@Override
 	public <T> T get(Class<T> cls) {
@@ -343,6 +351,8 @@ public class SimpleObjectFactory implements IObjectFactory {
 		if(dop == null){
 			throw new CommonException("IDataOperator with name :"+dataOperatorName +" not found!");
 		}
+		
+		//this.cacheObj(IObjectFactory.class, this, true);
 		
 		dop.init();
 		

@@ -25,26 +25,26 @@ import org.jmicro.common.CommonException;
  * @author Yulei Ye
  * @date 2018年10月5日-下午12:49:40
  */
-public class FusingException extends CommonException {
+public class BreakerException extends CommonException {
 
     private Set<ServiceItem> sis;
 	
-	public FusingException(String cause,  Set<ServiceItem>  si){
+	public BreakerException(String cause,  Set<ServiceItem>  si){
 		super(cause);
 		this.sis=si;
 	}
 	
-	public FusingException(String cause,Throwable exp,  Set<ServiceItem>  si){
+	public BreakerException(String cause,Throwable exp,  Set<ServiceItem>  si){
 		super(cause,exp);
 		this.sis = si;
 	}
 	
-	public FusingException(String key,String cause,  Set<ServiceItem>  si){
+	public BreakerException(String key,String cause,  Set<ServiceItem>  si){
 		super(key,cause,null);
 		this.sis=si;
 	}
 	
-	public FusingException(String key,String cause,Throwable exp,  Set<ServiceItem>  si){
+	public BreakerException(String key,String cause,Throwable exp,  Set<ServiceItem>  si){
 		super(key,cause,exp);
 		this.sis=si;
 	}

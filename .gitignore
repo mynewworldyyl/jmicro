@@ -12,6 +12,10 @@ log.txt
 .vscode/
 npm-debug.log*
 
+.editorconfig
+.project
+.settings/
+		
 .idea/
 .sourcemaps/
 .sass-cache/
@@ -117,6 +121,10 @@ jmicro.server/target/
 jmicro.server/.classpath
 jmicro.server/.project
 jmicro.server/.settings/
+jmicro.gateway/target/
+jmicro.gateway/.classpath
+jmicro.gateway/.project
+jmicro.gateway/.settings/
 jmicro.monitor/jmicro.monitor.subermemory/target/
 jmicro.monitor/jmicro.monitor.subermemory/.classpath
 jmicro.monitor/jmicro.monitor.subermemory/.project

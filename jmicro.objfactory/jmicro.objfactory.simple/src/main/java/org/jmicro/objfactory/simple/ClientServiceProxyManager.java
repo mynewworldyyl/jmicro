@@ -66,6 +66,32 @@ class ClientServiceProxyManager {
 	}
 	
 	@SuppressWarnings("unchecked")
+	<T> T  getService(String srvName,String namespace,String version){
+		Object proxy = remoteObjects.get(ServiceItem.serviceName(srvName, namespace, version));
+		if(proxy != null){
+			return (T)proxy;
+		}
+		try {
+			Class<?> cls = Thread.currentThread().getContextClassLoader().loadClass(srvName);
+			
+			IRegistry registry = of.get(IRegistry.class);
+			Set<ServiceItem> items = registry.getServices(
+					srvName,ServiceItem.namespace(namespace)
+					,ServiceItem.version(version));
+			
+			if(items != null && !items.isEmpty()){
+				ServiceItem i = items.iterator().next();
+				proxy = createDynamicServiceProxy(cls,i.getNamespace(),i.getVersion(),true);
+				this.setHandler(proxy, i.serviceName(), i);
+				return (T)proxy;
+			}
+		} catch (ClassNotFoundException e) {
+			logger.error("",e);
+		}
+		return null;
+	}
+	
+	@SuppressWarnings("unchecked")
 	<T> T  getService(String srvName){
 		Object obj = remoteObjects.get(srvName);
 		if(obj != null){

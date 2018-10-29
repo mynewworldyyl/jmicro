@@ -22,7 +22,7 @@ import java.util.Set;
  */
 import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.Inject;
-import org.jmicro.api.exception.FusingException;
+import org.jmicro.api.exception.BreakerException;
 import org.jmicro.api.registry.IRegistry;
 import org.jmicro.api.registry.ServiceItem;
 import org.jmicro.api.registry.ServiceMethod;
@@ -32,7 +32,7 @@ import org.jmicro.api.registry.ServiceMethod;
  * @date 2018年10月5日-下午12:49:55
  */
 @Component
-public class FuseManager {
+public class BreakerManager {
 
 	@Inject(required=false)
 	private Set<IFusingHandler> fusingHandler = new HashSet<>();
@@ -68,6 +68,6 @@ public class FuseManager {
 				return h.canHandle(method, args, items);
 			}
 		}
-		throw new  FusingException("Oo default fusing handler can be found",items);
+		throw new  BreakerException("Oo default fusing handler can be found",items);
 	}
 }

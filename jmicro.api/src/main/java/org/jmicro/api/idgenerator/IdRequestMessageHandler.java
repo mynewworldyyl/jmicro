@@ -24,6 +24,8 @@ import org.jmicro.api.net.IMessageHandler;
 import org.jmicro.api.net.ISession;
 import org.jmicro.api.net.Message;
 import org.jmicro.common.Constants;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * 
@@ -33,6 +35,8 @@ import org.jmicro.common.Constants;
 @Component(side=Constants.SIDE_PROVIDER)
 public class IdRequestMessageHandler implements IMessageHandler{
 
+	private final static Logger logger = LoggerFactory.getLogger(IdRequestMessageHandler.class);
+	
 	@Inject
 	private IIdGenerator idGenerator;
 	
