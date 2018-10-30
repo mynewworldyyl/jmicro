@@ -31,8 +31,14 @@ jmicro.socket = {
                console.log(event.data);
                var msg = JSON.parse(event.data);
                msg.payload = JSON.parse(msg.payload);
-               self.listeners[msg.reqId](msg);
-               delete self.listeners[msg.reqId];
+
+               if(self.listeners[msg.reqId]) {
+                 self.listeners[msg.reqId](msg);
+               }
+
+               if(!(msg.flag & jmicro.Constants.STREAM)) {
+                 delete self.listeners[msg.reqId];
+               }
              }
 
             //连接关闭的时候触发
@@ -50,7 +56,9 @@ jmicro.socket = {
     }
 
     ,send : function(msg,cb) {
-      this.listeners[msg.reqId] = cb;
+      if(msg.flag & jmicro.Constants.NEED_RESPONSE) {
+        this.listeners[msg.reqId] = cb;
+      }
       this.wsk.send(JSON.stringify(msg));
     }
 

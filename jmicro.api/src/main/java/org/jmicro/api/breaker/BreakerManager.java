@@ -1,4 +1,4 @@
-package org.jmicro.api.fusing;
+package org.jmicro.api.breaker;
 
 import java.lang.reflect.Method;
 import java.util.HashSet;

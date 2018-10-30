@@ -23,17 +23,19 @@ jmicro.config ={
 }
 
 jmicro.Constants = {
-  MessageCls:'org.jmicro.api.net.Message',
-  IRequestCls:'org.jmicro.api.server.IRequest',
-  ServiceStatisCls:'org.jmicro.api.monitor.ServiceStatis',
-  ISessionCls:'org.jmicro.api.net.ISession',
-  PROTOCOL_BIN:1,
-  PROTOCOL_JSON:2,
-  Integer:3,
-  LOng:4,
-  String:5,
+  MessageCls : 'org.jmicro.api.net.Message',
+  IRequestCls : 'org.jmicro.api.server.IRequest',
+  ServiceStatisCls : 'org.jmicro.api.monitor.ServiceStatis',
+  ISessionCls : 'org.jmicro.api.net.ISession',
+  PROTOCOL_BIN : 1,
+  PROTOCOL_JSON : 2,
+  Integer : 3,
+  LOng : 4,
+  String : 5,
   DEFAULT_NAMESPACE : 'defaultNamespace',
   DEFAULT_VERSION : "0.0.0",
+  STREAM : 1 << 2,
+  NEED_RESPONSE : 1 << 1,
 }
 
 jmicro.rpc = {
@@ -59,6 +61,8 @@ jmicro.rpc = {
         req.num = 1;
         msg.payload = JSON.stringify(req);
 
+        msg.flag |= jmicro.Constants.NEED_RESPONSE;
+
         jmicro.socket.send(msg,function(rstMsg,err){
           if(err){
             reje(err);
@@ -81,10 +85,22 @@ jmicro.rpc = {
     var self = this;
     return new Promise(function(reso,reje){
       var msg = new jmicro.rpc.Message();
+
+      var streamCb = req.stream;
+      if(typeof req.stream == 'function') {
+        req.stream = true;
+      }
       msg.payload =  JSON.stringify(req);
+
       msg.type = 0x7FF8;
       msg.protocol = jmicro.Constants.PROTOCOL_JSON;
-      msg.reqId = req.reqid;
+      msg.reqId = req.reqId;
+
+      if(req.needResponse)
+        msg.flag |= jmicro.Constants.NEED_RESPONSE;
+
+      if(req.stream)
+        msg.flag |= jmicro.Constants.STREAM;
 
       self.getId(jmicro.Constants.MessageCls)
         .then(function(id){
@@ -93,10 +109,14 @@ jmicro.rpc = {
             .then(function(id){
               msg.reqId = id;
               jmicro.socket.send(msg,function(rstMsg,err){
-                if(err){
-                  reje(err);
+                if(req.stream) {
+                  streamCb(rstMsg.payload.result,err);
                 } else {
-                  reso(rstMsg.payload.result);
+                  if(err){
+                    reje(err);
+                  } else {
+                    reso(rstMsg.payload.result);
+                  }
                 }
               });
             });
@@ -135,12 +155,23 @@ jmicro.rpc = {
         return;
       }
 
+      if(!params.stream ) {
+        params.stream = false;
+      }
+
+      if(typeof params.needResponse == 'undefined') {
+        params.needResponse = true;
+      }
+
       var req = new jmicro.rpc.ApiRequest();
       req.serviceName = params.serviceName;
       req.method = params.method;
       req.namespace = params.namespace;
       req.version = params.version;
       req.args = params.args;
+
+      req.needResponse = params.needResponse;
+      req.stream = params.stream;
 
       self.getId(jmicro.Constants.IRequestCls)
         .then(function(id){
@@ -149,14 +180,14 @@ jmicro.rpc = {
             .then(function(rst){
               reso(rst);
             }).catch(function(err){
-            reje(err);
+              reje(err);
           });
         });
     });
 
   },
 
-  callWithParams:function(serviceName,namespace,version,method,args){
+  callWithParams:function(serviceName,namespace,version,method,args,stream,needResponse){
     var self = this;
     return new Promise(function(reso,reje){
 
@@ -178,6 +209,14 @@ jmicro.rpc = {
         version = jmicro.Constants.DEFAULT_VERSION;
       }
 
+      if(!stream ) {
+        stream = false;
+      }
+
+      if(typeof needResponse == 'undefined') {
+        needResponse = true;
+      }
+
       if(!args ) {
         args = [];
       }
@@ -193,6 +232,8 @@ jmicro.rpc = {
       req.namespace = namespace;
       req.version = version;
       req.args = args;
+      req.needResponse = needResponse;
+      req.stream = stream;
 
       self.getId(jmicro.Constants.IRequestCls)
         .then(function(id){
@@ -214,12 +255,18 @@ jmicro.rpc = {
         return self.callRpcWithRequest(param);
     }else if(typeof param  == 'object'){
         return self.callWithObject(param);
-    } else if(arguments.length == 5) {
-        return self.callWithParams(arguments[0],arguments[1],arguments[2],arguments[3],arguments[4],);
+    } else if(arguments.length >= 5) {
+        if(arguments.length == 5) {
+          return self.callWithParams(arguments[0],arguments[1],arguments[2],arguments[3],arguments[4]);
+        }else if(arguments.length >= 6){
+          return self.callWithParams(arguments[0],arguments[1],arguments[2],arguments[3],arguments[4],arguments[5]);
+        }else if(arguments.length >= 7){
+          return self.callWithParams(arguments[0],arguments[1],arguments[2],arguments[3],arguments[4],arguments[5],arguments[6]);
+        }
     } else {
           return new Promise(function(reso,reje){
           reje('Invalid params');
-         });
+       });
     }
 
   },
@@ -261,6 +308,8 @@ jmicro.rpc.ApiRequest = function() {
   this.version = '';
   this.reqId = -1;
   this.msg = '';
+  this.needResponse = true;
+  this.stream = false;
 }
 
 jmicro.rpc.ApiRequest.prototype = {

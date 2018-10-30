@@ -17,9 +17,9 @@
           $(document).ready(function(){
             jmicro.socket.init();
             //jmicro.socket.emit(json)
-            jmicro.socket.registListener(2,function(msg){
+            /*jmicro.socket.registListener(2,function(msg){
                 console.log(msg);
-            });
+            });*/
           });
 
           function sendMsg(msg){
@@ -92,6 +92,17 @@
             });
           }
 
+          function testStream(){
+            jmicro.rpc.callRpc('org.jmicro.example.api.ITestRpcService','testrpc','0.0.1','subscrite',['stream test'],function(rst){
+              console.log(rst);
+            },true)
+              .then(function(rst){
+                console.log(rst);
+              }).catch(function(err){
+                console.log(err);
+            });
+          }
+
         </script>
     </head>
 <body>
@@ -103,6 +114,8 @@
         <input type="button" onclick="sayHello1()" value="sayHello1"><br>
         <input type="button" onclick="getPerson()" value="getPerson"><br>
         <input type="button" onclick="getPerson1()" value="getPerson1"><br>
+        <input type="button" onclick="testStream()" value="testStream"><br>
+
         <h3>信息</h3>
         <textarea style="width: 300px; height: 200px;" id="respMessage"></textarea>
         <input type="button" value="清空" onclick="javascript:document.getElementById('respMessage').value = ''">
