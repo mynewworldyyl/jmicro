@@ -32,6 +32,8 @@ jmicro.Constants = {
   Integer:3,
   LOng:4,
   String:5,
+  DEFAULT_NAMESPACE : 'defaultNamespace',
+  DEFAULT_VERSION : "0.0.0",
 }
 
 jmicro.rpc = {
@@ -75,7 +77,7 @@ jmicro.rpc = {
     });
   },
 
-  callRpc : function(req){
+  callRpcWithRequest : function(req){
     var self = this;
     return new Promise(function(reso,reje){
       var msg = new jmicro.rpc.Message();
@@ -94,12 +96,132 @@ jmicro.rpc = {
                 if(err){
                   reje(err);
                 } else {
-                  reso(rstMsg);
+                  reso(rstMsg.payload.result);
                 }
               });
             });
         });
     });
+  },
+
+  callWithObject:function(params){
+    var self = this;
+    return new Promise(function(reso,reje){
+
+      if(!params.serviceName) {
+        reje('service name cannot be NULL');
+        return;
+      }
+
+      if(!params.method) {
+        reje( 'method name cannot be NULL');
+        return;
+      }
+
+      if(!params.namespace) {
+        params.namespace = jmicro.Constants.DEFAULT_NAMESPACE;
+      }
+
+      if(!params.version) {
+        params.version = jmicro.Constants.DEFAULT_VERSION;
+      }
+
+      if(!params.args ) {
+        params.args = [];
+      }
+
+      if(!Array.isArray(params.args)){
+        reje( 'args must be array');
+        return;
+      }
+
+      var req = new jmicro.rpc.ApiRequest();
+      req.serviceName = params.serviceName;
+      req.method = params.method;
+      req.namespace = params.namespace;
+      req.version = params.version;
+      req.args = params.args;
+
+      self.getId(jmicro.Constants.IRequestCls)
+        .then(function(id){
+          req.reqId = id;
+          self.callRpcWithRequest(req)
+            .then(function(rst){
+              reso(rst);
+            }).catch(function(err){
+            reje(err);
+          });
+        });
+    });
+
+  },
+
+  callWithParams:function(serviceName,namespace,version,method,args){
+    var self = this;
+    return new Promise(function(reso,reje){
+
+      if(!serviceName || serviceName.trim() == '') {
+        reje('service name cannot be NULL');
+        return;
+      }
+
+      if(!method || method.trim() == '') {
+        reje( 'method name cannot be NULL');
+        return;
+      }
+
+      if(!namespace  || namespace.trim() == '') {
+        namespace = jmicro.Constants.DEFAULT_NAMESPACE;
+      }
+
+      if(!version || version.trim() == '') {
+        version = jmicro.Constants.DEFAULT_VERSION;
+      }
+
+      if(!args ) {
+        args = [];
+      }
+
+      if(!Array.isArray(args)){
+        reje( 'args must be array');
+        return;
+      }
+
+      var req = new jmicro.rpc.ApiRequest();
+      req.serviceName = serviceName;
+      req.method = method;
+      req.namespace = namespace;
+      req.version = version;
+      req.args = args;
+
+      self.getId(jmicro.Constants.IRequestCls)
+        .then(function(id){
+          req.reqId = id;
+          self.callRpcWithRequest(req)
+            .then(function(rst){
+              reso(rst);
+            }).catch(function(err){
+            reje(err);
+          });
+        });
+    });
+
+  },
+
+  callRpc : function(param){
+    var self = this;
+    if(param instanceof jmicro.rpc.ApiRequest) {
+        return self.callRpcWithRequest(param);
+    }else if(typeof param  == 'object'){
+        return self.callWithObject(param);
+    } else if(arguments.length == 5) {
+        return self.callWithParams(arguments[0],arguments[1],arguments[2],arguments[3],arguments[4],);
+    } else {
+          return new Promise(function(reso,reje){
+          reje('Invalid params');
+         });
+    }
+
   },
 
 }
@@ -125,6 +247,7 @@ jmicro.rpc.IdRequest = function() {
     this.num  =  1;
     this.clazz  =  '';
 }
+
 jmicro.rpc.IdRequest.prototype = {
 
 }
@@ -151,6 +274,7 @@ jmicro.rpc.ApiResponse = function() {
   this.result = null;
   this.success = true;
 }
+
 jmicro.rpc.ApiResponse.prototype = {
 
 }

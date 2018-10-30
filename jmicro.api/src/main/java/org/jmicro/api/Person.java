@@ -4,6 +4,7 @@ public class Person{
 	
 	private String username ="";
 	private int id = 222;
+	
 	public String getUsername() {
 		return username;
 	}

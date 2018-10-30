@@ -43,17 +43,53 @@
             req.version = '0.0.1';
             req.args = ['hello api gateway'];
 
-            jmicro.rpc.getId(jmicro.Constants.IRequestCls)
-              .then(function(id){
-                req.reqId = id;
-                jmicro.rpc.callRpc(req)
-                  .then(function(rst){
-                    console.log(rst);
-                  }).catch(function(err){
-                  console.log(err);
-                });
-              });
+            jmicro.rpc.callRpc(req)
+              .then(function(rst){
+                console.log(rst);
+              }).catch(function(err){
+              console.log(err);
+            });
+          }
 
+          function sayHello1(){
+            var req = {};
+            req.serviceName='org.jmicro.example.api.ITestRpcService';
+            req.method = 'hello';
+            req.namespace = 'testrpc';
+            req.version = '0.0.1';
+            req.args = ['hello api gateway'];
+
+            jmicro.rpc.callRpc(req)
+              .then(function(rst){
+                console.log(rst);
+              }).catch(function(err){
+              console.log(err);
+            });
+          }
+
+          function getPerson(){
+            var req = {};
+            req.serviceName='org.jmicro.example.api.ITestRpcService';
+            req.namespace = 'testrpc';
+            req.version = '0.0.1';
+            req.method = 'getPerson';
+            req.args = [{username:'Hello JS RPC',id:222}];
+
+            jmicro.rpc.callRpc(req)
+              .then(function(rst){
+                console.log(rst);
+              }).catch(function(err){
+              console.log(err);
+            });
+          }
+
+          function getPerson1(){
+            jmicro.rpc.callRpc('org.jmicro.example.api.ITestRpcService','testrpc','0.0.1','getPerson',[{username:'Hello JS RPC',id:222}])
+              .then(function(rst){
+                console.log(rst);
+              }).catch(function(err){
+              console.log(err);
+            });
           }
 
         </script>
@@ -64,7 +100,9 @@
         <input type="button" onclick="sendMsg(this.form.message.value)" value="发送"><br>
         <input type="button" onclick="getId()" value="GetId"><br>
         <input type="button" onclick="sayHello()" value="sayHello"><br>
-
+        <input type="button" onclick="sayHello1()" value="sayHello1"><br>
+        <input type="button" onclick="getPerson()" value="getPerson"><br>
+        <input type="button" onclick="getPerson1()" value="getPerson1"><br>
         <h3>信息</h3>
         <textarea style="width: 300px; height: 200px;" id="respMessage"></textarea>
         <input type="button" value="清空" onclick="javascript:document.getElementById('respMessage').value = ''">

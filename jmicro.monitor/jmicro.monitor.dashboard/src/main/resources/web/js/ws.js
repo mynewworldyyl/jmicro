@@ -31,16 +31,17 @@ jmicro.socket = {
                console.log(event.data);
                var msg = JSON.parse(event.data);
                msg.payload = JSON.parse(msg.payload);
-               self.listeners[msg.type](msg);
+               self.listeners[msg.reqId](msg);
+               delete self.listeners[msg.reqId];
              }
 
-               //连接关闭的时候触发
-               self.wsk.onclose = function(event){
+            //连接关闭的时候触发
+            self.wsk.onclose = function(event){
                console.log("connection close");
             }
 
             //连接打开的时候触发
-              self.wsk.onopen = function(event){
+            self.wsk.onopen = function(event){
               console.log("connect successfully");
             }
         }else{
@@ -49,15 +50,15 @@ jmicro.socket = {
     }
 
     ,send : function(msg,cb) {
-      this.listeners[msg.type + 1] = cb;
+      this.listeners[msg.reqId] = cb;
       this.wsk.send(JSON.stringify(msg));
     }
 
    ,registListener : function(type,lis) {
       if(!this.listeners[type]) {
-        this.listeners[type] = lis;
-      }else {
-        throw 'type:'+type + ' have been exists';
+          this.listeners[type] = lis;
+      } else {
+          throw 'type:'+type + ' have been exists';
       }
    }
 

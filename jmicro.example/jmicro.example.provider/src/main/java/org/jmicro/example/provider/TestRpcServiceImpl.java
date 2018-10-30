@@ -32,9 +32,9 @@ public class TestRpcServiceImpl implements ITestRpcService{
 	@Override
 	@SMethod(monitorEnable=1,maxSpeed="100s",timeout=0)
 	public Person getPerson(Person p) {
+		System.out.println(p);
 		p.setUsername("Server update username");
 		p.setId(ai.getAndIncrement());
-		System.out.println(p);
 		return p;
 	}
 
