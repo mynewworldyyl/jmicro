@@ -73,7 +73,7 @@ public class ServiceMethod {
 	/**
 	 * true all service method will fusing, false is normal service status
 	 */
-	private boolean fusing = false;
+	private boolean breaking = false;
 	
 	/**
 	 * 1 is normal status, 
@@ -111,7 +111,7 @@ public class ServiceMethod {
 		this.maxFailBeforeFusing=p.maxFailBeforeFusing;
 		
 		this.testingArgs = p.testingArgs;
-		this.fusing = p.fusing;
+		this.breaking = p.breaking;
 		
 		this.degrade = p.degrade;
 		this.maxSpeed = p.maxSpeed;
@@ -216,12 +216,12 @@ public class ServiceMethod {
 		return this.methodName+"|"+this.methodParamTypes;
 	}
 	
-	public boolean isFusing() {
-		return fusing;
+	public boolean isBreaking() {
+		return breaking;
 	}
 
-	public void setFusing(boolean fusing) {
-		this.fusing = fusing;
+	public void setBreaking(boolean breaking) {
+		this.breaking = breaking;
 	}
 
 	public int getDegrade() {

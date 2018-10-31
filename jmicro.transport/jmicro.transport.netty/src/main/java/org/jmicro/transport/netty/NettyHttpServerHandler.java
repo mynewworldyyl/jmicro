@@ -53,7 +53,7 @@ public class NettyHttpServerHandler extends ChannelInboundHandlerAdapter {
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg)
             throws Exception {
-    	logger.debug("channelRead:" + msg.toString());
+    	//logger.debug("channelRead:" + msg.toString());
     	if(msg instanceof FullHttpRequest){
     		FullHttpRequest req = (FullHttpRequest)msg;
     		if(resourceHandler.canhandle(req)){

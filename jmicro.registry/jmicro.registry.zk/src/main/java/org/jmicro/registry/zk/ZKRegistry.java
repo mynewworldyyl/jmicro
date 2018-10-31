@@ -377,10 +377,12 @@ public class ZKRegistry implements IRegistry,Init {
 		namespace = ServiceItem.namespace(namespace);
 		version = ServiceItem.version(version);
 		Set<ServiceItem> sis = this.serviceItems.get(ServiceItem.serviceName(serviceName, namespace, version));
+		
 		if(sis == null || sis.isEmpty()) {
 			return Collections.EMPTY_SET;
 		}
-		Set<ServiceItem> fusings = new HashSet<ServiceItem>();
+		
+		Set<ServiceItem> breakings = new HashSet<ServiceItem>();
 		Set<ServiceItem> set = new HashSet<ServiceItem>();
 		
 		for(ServiceItem si : sis) {
@@ -389,7 +391,7 @@ public class ZKRegistry implements IRegistry,Init {
 				continue;
 			}
 			if(si.isFusing()){
-				fusings.add(si);
+				breakings.add(si);
 				continue;
 			}
 			if(!checkTransport(si,transport)){
@@ -398,8 +400,8 @@ public class ZKRegistry implements IRegistry,Init {
 			for(ServiceMethod sm : si.getMethods()){
 				if(sm.getMethodName().equals(method) 
 						&& ServiceMethod.methodParamsKey(args).equals(sm.getMethodParamTypes())){
-					if(sm.isFusing()){
-						fusings.add(si);
+					if(sm.isBreaking()){
+						breakings.add(si);
 					}else {
 						set.add(si);
 						break;
@@ -407,9 +409,9 @@ public class ZKRegistry implements IRegistry,Init {
 				}
 			}
 		}
-		if(set.isEmpty() && !fusings.isEmpty()){
-			throw new  BreakerException("Request services is fusing",fusings);
-		}else {
+		if(set.isEmpty() && !breakings.isEmpty()){
+			throw new  BreakerException("Request services is breaking",breakings);
+		} else {
 			return set;
 		}
 	}

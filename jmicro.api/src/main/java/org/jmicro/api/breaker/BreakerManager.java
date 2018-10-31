@@ -35,7 +35,7 @@ import org.jmicro.api.registry.ServiceMethod;
 public class BreakerManager {
 
 	@Inject(required=false)
-	private Set<IFusingHandler> fusingHandler = new HashSet<>();
+	private Set<IBreakerHandler> breakerHandler = new HashSet<>();
 	
 	@Inject
 	private IRegistry registry;
@@ -50,24 +50,24 @@ public class BreakerManager {
 	 * @param method
 	 * @param argTypes
 	 */
-	public void fuseService(ServiceItem serviceItem,ServiceMethod methodIem){
+	public void breakService(ServiceItem serviceItem,ServiceMethod methodIem){
 		
 		
 	}
 	
 	/**
-	 * default request handler for fusing service
+	 * default request handler for break service
 	 * @param method service method
 	 * @param args method args
 	 * @param items service items witch is in fusing status
 	 * @return
 	 */
-	public Object onFusing(Method method, Object[] args,Set<ServiceItem> items){
-		for(IFusingHandler h : this.fusingHandler){
+	public Object onBreaking(Method method, Object[] args,Set<ServiceItem> items,BreakerException e){
+		for(IBreakerHandler h : this.breakerHandler){
 			if(h.canHandle(method, args, items));{
 				return h.canHandle(method, args, items);
 			}
 		}
-		throw new  BreakerException("Oo default fusing handler can be found",items);
+		throw e;
 	}
 }

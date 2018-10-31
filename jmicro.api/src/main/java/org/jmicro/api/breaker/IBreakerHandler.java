@@ -25,7 +25,7 @@ import org.jmicro.api.registry.ServiceItem;
  * @author Yulei Ye
  * @date 2018年10月5日-下午12:50:05
  */
-public interface IFusingHandler {
+public interface IBreakerHandler {
 
 	boolean canHandle(Method method, Object[] args,Set<ServiceItem> items);
 	Object onFusing( Method method, Object[] args,Set<ServiceItem> items);

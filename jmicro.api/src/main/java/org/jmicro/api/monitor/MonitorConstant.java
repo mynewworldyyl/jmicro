@@ -41,7 +41,7 @@ public interface MonitorConstant {
 	//请求的服务未找到，注册表里面没有相应的服务
 	public static final int CLIENT_REQ_SERVICE_NOT_FOUND = 0X7FFFFFF3;
 	//服务熔断
-	public static final int CLIENT_REQ_SERVICE_FUSING = 0X7FFFFFF4;
+	public static final int CLIENT_REQ_SERVICE_BREAKING = 0X7FFFFFF4;
 	//请好正常返回，包括异步请求正常返回的确认包
 	public static final int CLIENT_REQ_OK = 0X7FFFFFF6;
 	//请求超时，并且经过重试指定次数之后都没成功，返回失败

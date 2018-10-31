@@ -20,7 +20,7 @@ jmicro.socket = {
     listeners : {}
     ,logData:null
     ,idCallback:{}
-    ,init : function() {
+    ,init : function(onopen) {
             var url = 'ws://' + jmicro.config.ip + ':' + jmicro.config.port +'/'+ jmicro.config.context;
             var self = this;
             if(window.WebSocket){
@@ -28,7 +28,7 @@ jmicro.socket = {
 
              //当有消息过来的时候触发
              self.wsk.onmessage = function(event){
-               console.log(event.data);
+               //console.log(event.data);
                var msg = JSON.parse(event.data);
                msg.payload = JSON.parse(msg.payload);
 
@@ -49,6 +49,9 @@ jmicro.socket = {
             //连接打开的时候触发
             self.wsk.onopen = function(event){
               console.log("connect successfully");
+              if(onopen) {
+                onopen();
+              }
             }
         }else{
           alert("浏览器不支持WebSocket");

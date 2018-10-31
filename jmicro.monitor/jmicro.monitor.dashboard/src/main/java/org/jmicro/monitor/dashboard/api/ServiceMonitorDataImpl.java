@@ -17,13 +17,13 @@
 package org.jmicro.monitor.dashboard.api;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 import org.jmicro.api.JMicroContext;
 import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.Inject;
-import org.jmicro.api.annotation.SMethod;
 import org.jmicro.api.annotation.Service;
 import org.jmicro.api.degrade.DegradeManager;
 import org.jmicro.api.idgenerator.IIdGenerator;
@@ -69,6 +69,12 @@ public class ServiceMonitorDataImpl implements IServiceMonitorData{
 		IDataListener lis = listeners.get(id);
 		dataOperator.removeDataListener(DegradeManager.AVG_TIME_ROOT+service, lis);
 		listeners.remove(id);
+	}
+
+	@Override
+	public List<String> getAllServices() {
+		List<String> services = dataOperator.getChildren(DegradeManager.AVG_TIME_ROOT);
+		return services;
 	}
 	
 }

@@ -103,8 +103,8 @@ public class ZKDataOperator implements IDataOperator{
 	private Properties propes = null;
 	
 	private final Watcher watcher =(WatchedEvent event)->{
-		String path = event.getPath();
-	      logger.info("Watcher for '{}' received watched event: {}",path, event);
+		   String path = event.getPath();
+	      //logger.info("Watcher for '{}' received watched event: {}",path, event);
 	      if (event.getType() == EventType.NodeDataChanged) {
 	    	  dataChange(path);
 	    	  watchData(path);

@@ -106,8 +106,8 @@ public class ServiceInvocationHandler implements InvocationHandler, IMessageHand
 			return this.doRequest(method,args,clazz,po);
 		} catch (BreakerException e) {
 			logger.error(e.getMessage(), e);
-			MonitorConstant.doSubmit(monitor,MonitorConstant.CLIENT_REQ_SERVICE_FUSING,null, null, e);
-			return breakerManager.onFusing(method, args, ((BreakerException)e).getSis());
+			MonitorConstant.doSubmit(monitor,MonitorConstant.CLIENT_REQ_SERVICE_BREAKING,null, null, e);
+			return breakerManager.onBreaking(method, args, ((BreakerException)e).getSis(),e);
 		}
 	}
 
@@ -367,7 +367,6 @@ public class ServiceInvocationHandler implements InvocationHandler, IMessageHand
 		} else {
 			logger.error("msdId:"+msg.getId()+",reqId:"+msg.getReqId()+",sId:"+msg.getSessionId()+" IGNORE");
 		}
-		
 	}
 	
 	private static interface IResponseHandler{
