@@ -60,7 +60,7 @@ public class ConfigPostInitListener extends PostInitListenerAdapter {
 		List<Field> fields = new ArrayList<>();
 		 Utils.getIns().getFields(fields, cls);
 		
-		 String name = cls.getSimpleName();
+		 
 		 
 		for(Field f : fields){
 			if(!f.isAnnotationPresent(Cfg.class)){
@@ -72,22 +72,54 @@ public class ConfigPostInitListener extends PostInitListenerAdapter {
 				throw new CommonException("Class ["+cls.getName()+",Field:"+f.getName()+"],Cfg path is NULL");
 			}
 			
-			String value = cfg.getString("/" + name+cfgAnno.value(), null);
+			String value = null;
+			String path = "/" + cls.getName() + cfgAnno.value();
+			
+			value = cfg.getString(path, null);
+			if(StringUtils.isEmpty(value)) {
+				path = "/" + cls.getSimpleName() + cfgAnno.value();
+				value = cfg.getString(path, null);
+			}
 			
 			if(StringUtils.isEmpty(value)){
-				value = cfg.getString(cfgAnno.value(), null);
+				path = cfgAnno.value();
+				value = cfg.getString(path, null);
 			}
 			
-			if(value != null && !"".equals(value)){
+			if(!StringUtils.isEmpty(value)){
 				 setValue(f,obj,value);
-			}else if(cfgAnno.required()){
-				throw new CommonException("Class ["+cls.getName()+",Field:"+f.getName()+"] value: "+cfgAnno.value()+" is required");
+			} else {
+				Object v = getFieldValue(f,obj);
+				path = cfgAnno.value();
+				if(v == null ) {
+					if(cfgAnno.required()) {
+						throw new CommonException("Class ["+cls.getName()+",Field:"+f.getName()+"] value: "+cfgAnno.value()+" is required");
+					}
+				} else {
+					cfg.createConfig(v.toString(), path, cfgAnno.defGlobal());
+				}
 			}
-			watch(f,obj,cfgAnno.value(),cfg);
+			watch(f,obj,path,cfg);
 		}
-		
 	}
-	
+
+	private Object getFieldValue(Field f, Object obj) {
+		boolean flag = f.isAccessible();
+		if(!flag) {
+			f.setAccessible(true);
+		}
+		Object v = null;
+		try {
+			v = f.get(obj);
+		} catch (IllegalArgumentException | IllegalAccessException e) {
+			logger.error("",e);
+		}
+		if(!flag) {
+			f.setAccessible(false);
+		}
+		return v;
+	}
+
 	private void setValue(Field f,Object obj,String value){
         try {
 

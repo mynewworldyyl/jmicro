@@ -21,8 +21,6 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
-
-import org.jmicro.common.Constants;
 /**
  * 
  * @author Yulei Ye
@@ -34,11 +32,9 @@ public @interface Cfg {
 
 	public String value();
 	
-	public boolean required() default true;
-	
-	public String root() default "";
-	
-	public boolean updatable() default true;
+	public boolean required() default false;
 	
 	public String changeListener() default "";
+	
+	public boolean defGlobal() default true;
 }

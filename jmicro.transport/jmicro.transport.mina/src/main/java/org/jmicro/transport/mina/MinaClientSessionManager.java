@@ -220,7 +220,7 @@ public class MinaClientSessionManager implements IClientSessionManager{
 	         }
 		}
 
-		@Override
+		/*@Override
 		public void handshakeStarted(IoSession abstractIoSession) {
 			super.handshakeStarted(abstractIoSession);
 		}
@@ -233,7 +233,8 @@ public class MinaClientSessionManager implements IClientSessionManager{
 		@Override
 		public void secureClosed(IoSession session) {
 			super.secureClosed(session);
-		}
+		}*/
+		
     };
     
     private Boolean monitorEnable(IoSession ioSession) {

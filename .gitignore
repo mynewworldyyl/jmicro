@@ -109,6 +109,10 @@ jmicro.config/target/
 jmicro.config/.classpath
 jmicro.config/.project
 jmicro.config/.settings/
+jmicro.codec/target/
+jmicro.codec/.classpath
+jmicro.codec/.project
+jmicro.codec/.settings/
 jmicro.limit/target/
 jmicro.limit/.classpath
 jmicro.limit/.project

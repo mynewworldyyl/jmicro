@@ -129,8 +129,7 @@ public class ZKRegistry implements IRegistry,Init {
 	
 	@Override
 	public void addServiceListener(String key,IServiceListener lis) {
-		addServiceListener(this.keyListeners,key,lis);
-		
+		addServiceListener(this.keyListeners,key,lis);	
 	}
 
 	protected void updateItem(String configPath, String data) {
@@ -369,6 +368,21 @@ public class ZKRegistry implements IRegistry,Init {
 		}
 		return this.getServices(serviceName, method, clazzes,namespace,version,transport);
 	}
+	
+	private Set<ServiceItem> matchVersion(String serviceName,String namespace,String version){
+		Set<ServiceItem> set = new HashSet<ServiceItem>();
+		String prefix = ServiceItem.snnsPrefix(serviceName,namespace);
+		for(Map.Entry<String, Set<ServiceItem>> e: this.serviceItems.entrySet()) {
+			String k = e.getKey();
+			if(k.startsWith(prefix) &&
+					ServiceItem.matchVersion(version, k.substring(k.lastIndexOf(
+							ServiceItem.KEY_SEPERATOR)+ServiceItem.KEY_SEPERATOR.length(), k.length()))) {
+				set.addAll(e.getValue());
+			}
+		}
+		return set;
+	}
+	
 
 	@Override
 	public Set<ServiceItem> getServices(String serviceName,String method,Class<?>[] args
@@ -376,7 +390,10 @@ public class ZKRegistry implements IRegistry,Init {
 		
 		namespace = ServiceItem.namespace(namespace);
 		version = ServiceItem.version(version);
-		Set<ServiceItem> sis = this.serviceItems.get(ServiceItem.serviceName(serviceName, namespace, version));
+		
+		Set<ServiceItem> sis = matchVersion(serviceName, namespace, version);
+		
+		//this.serviceItems.get(ServiceItem.serviceName(serviceName, namespace, version));
 		
 		if(sis == null || sis.isEmpty()) {
 			return Collections.EMPTY_SET;
@@ -386,11 +403,7 @@ public class ZKRegistry implements IRegistry,Init {
 		Set<ServiceItem> set = new HashSet<ServiceItem>();
 		
 		for(ServiceItem si : sis) {
-			if(!si.getNamespace().equals(namespace)||
-			   !si.getVersion().equals(version)) {
-				continue;
-			}
-			if(si.isFusing()){
+			if(si.isBreaking()){
 				breakings.add(si);
 				continue;
 			}
@@ -427,7 +440,8 @@ public class ZKRegistry implements IRegistry,Init {
 	public boolean isExist(String serviceName,String namespace,String version) {
 		namespace = ServiceItem.namespace(namespace);
 		version =  ServiceItem.version(version);
-		Set<ServiceItem> sis = this.serviceItems.get(ServiceItem.serviceName(serviceName, namespace, version));
+		Set<ServiceItem> sis = matchVersion(serviceName, namespace, version);
+		//Set<ServiceItem> sis = this.serviceItems.get(ServiceItem.serviceName(serviceName, namespace, version));
 		if(sis == null || sis.isEmpty()) {
 			return false;
 		}
@@ -444,29 +458,23 @@ public class ZKRegistry implements IRegistry,Init {
 	@Override
 	public Set<ServiceItem> getServices(String serviceName, String namespace, String version) {
 		Set<ServiceItem> is = new HashSet<>();
+
+		namespace = ServiceItem.namespace(namespace);
+		version = ServiceItem.version(version);
+		//Set<ServiceItem> sis = this.serviceItems.get(ServiceItem.serviceName(serviceName, namespace, version));
+		Set<ServiceItem> sis = matchVersion(serviceName, namespace, version);
 		
-		if(namespace == null || version == null){
-			for(String key : this.serviceItems.keySet()){
-				if(key.startsWith(serviceName)){
-					is.addAll(this.serviceItems.get(key));
-				}
-			}
-		}else{
-			namespace = ServiceItem.namespace(namespace);
-			version = ServiceItem.version(version);
-			Set<ServiceItem> sis = this.serviceItems.get(ServiceItem.serviceName(serviceName, namespace, version));
-			
-			if(sis == null){
-				return Collections.EMPTY_SET;
-			}
-			
-			for(ServiceItem si : sis){
-				if(si.getNamespace().equals(namespace) &&
-						si.getVersion().equals(version)) {
-					is.add(si);
-				}
+		if(sis == null){
+			return Collections.EMPTY_SET;
+		}
+		
+		for(ServiceItem si : sis){
+			if(si.getNamespace().equals(namespace) &&
+					si.getVersion().equals(version)) {
+				is.add(si);
 			}
 		}
+		
 		return is;
 	}
 

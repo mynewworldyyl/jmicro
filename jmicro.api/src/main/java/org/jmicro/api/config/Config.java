@@ -45,7 +45,7 @@ public class Config implements IConfigChangeListener{
 	
 	private static String RegistryProtocol = "zookeeper";
 	private static String RegistryHost = "localhost";
-	private static String RegistryPort = "2180";
+	private static String RegistryPort = "2181";
 	
 	//全局配置目录
 	public static final String CfgDir = Constants.CFG_ROOT +"/config";
@@ -78,6 +78,8 @@ public class Config implements IConfigChangeListener{
 	private static Map<String,String> CommadParams = new HashMap<String,String>();
 	
 	private Map<String,Set<IConfigChangeListener>> configChangeListeners = new HashMap<>();
+	
+	private IDataOperator dataOperator;
 	
 	public Config() {}
 	
@@ -169,14 +171,22 @@ public class Config implements IConfigChangeListener{
 		BasePackages = pps;
 	}
 	
-	public void loadConfig(List<IConfigLoader> configLoaders,IDataOperator dop){
+	public void loadConfig(List<IConfigLoader> configLoaders){
 		for(IConfigLoader cl : configLoaders){
-			cl.setDataOperator(dop);
+			cl.setDataOperator(this.dataOperator);
 			cl.load(ServiceConfigDir,this.servicesConfig);
 			cl.load(CfgDir,this.globalConfig);
 			cl.setConfigChangeListener(this);
 		}
 		init();
+	}
+	
+	public void createConfig(String value, String path, boolean isGlobal){
+		if(isGlobal) {
+			this.dataOperator.createNode(CfgDir+path, value,false);
+		}else {
+			this.dataOperator.createNode(ServiceConfigDir+path, value,false);
+		}
 	}
 	
 	@Override
@@ -299,4 +309,25 @@ public class Config implements IConfigChangeListener{
 		}	
 		return (T)v;
 	}
+
+	public IDataOperator getDataOperator() {
+		return dataOperator;
+	}
+
+	public void setDataOperator(IDataOperator dataOperator) {
+		if(dataOperator == null) {
+			throw new CommonException("dataOperator cannot be null");
+		}
+		this.dataOperator = dataOperator;
+		if(!dataOperator.exist(Config.CfgDir)) {
+			dataOperator.createNode(Config.CfgDir, "", false);
+			dataOperator.createNode(Config.CfgDir+"/val", "_v", false);
+		}
+		
+		if(!dataOperator.exist(Config.ServiceConfigDir)) {
+			dataOperator.createNode(Config.ServiceConfigDir, "", false);
+			dataOperator.createNode(Config.ServiceConfigDir+"/val", "_v", false);
+		}
+	}
+	
 }

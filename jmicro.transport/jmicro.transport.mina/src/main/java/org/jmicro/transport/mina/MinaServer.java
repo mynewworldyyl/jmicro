@@ -65,8 +65,8 @@ public class MinaServer implements IServer{
 
 	static final Logger LOG = LoggerFactory.getLogger(MinaServer.class);
 	
-	@Cfg("/MinaServer/openDebug")
-	private boolean openDebug;
+	@Cfg(value="/MinaServer/openDebug",required=false)
+	private boolean openDebug=false;
 	
 	AttributeKey<MinaServerSession> sessinKey = AttributeKey.createKey(MinaServerSession.class, Constants.SESSION_KEY);
 	AttributeKey<Boolean> monitorEnableKey = AttributeKey.createKey(Boolean.class, Constants.MONITOR_ENABLE_KEY);
@@ -90,7 +90,7 @@ public class MinaServer implements IServer{
 	@Cfg(value="/port",required=false)
 	private int port;
 	
-	@Cfg("/MinaServer/readBufferSize")
+	@Cfg(value = "/MinaServer/readBufferSize",required=false)
 	private int readBufferSize=1024*4;
 	
 	@Cfg("/MinaClientSessionManager/heardbeatInterval")
@@ -244,7 +244,7 @@ public class MinaServer implements IServer{
 					}
 				}
 
-				@Override
+				/*@Override
 				public void handshakeStarted(IoSession abstractIoSession) {
 					super.handshakeStarted(abstractIoSession);
 				}
@@ -257,7 +257,7 @@ public class MinaServer implements IServer{
 				@Override
 				public void secureClosed(IoSession session) {
 					super.secureClosed(session);
-				}
+				}*/
                 
             };
         }

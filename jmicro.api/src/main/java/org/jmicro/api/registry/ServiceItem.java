@@ -176,7 +176,7 @@ public class ServiceItem{
 		return servers;
 	}
 
-	public boolean isFusing() {
+	public boolean isBreaking() {
 		return fusing;
 	}
 
@@ -235,7 +235,81 @@ public class ServiceItem{
 	}
 	
 	public static String serviceName(String sn, String ns, String v) {
-		return sn+KEY_SEPERATOR+namespace(ns)+KEY_SEPERATOR+version(v);
+		return snnsPrefix(sn,ns)+version(v);
+	}
+	
+	public static String snnsPrefix(String sn, String ns) {
+		return sn+KEY_SEPERATOR+namespace(ns)+KEY_SEPERATOR;
+	}
+	
+	/**
+	 *   1.0.0
+	 *   
+	 *   1.0.0 < v < 2.0.3
+	 *   1.0.0 < v
+	 *   v < 2.0.3
+	 *  
+	 *   1.0.0 <= v <= 2.0.3
+	 *   1.0.0 <= v
+	 *   v <= 2.0.3
+	 *   
+	 *   x.*.*
+	 *   *
+	 *   *.x.*
+	 *   
+	 *   *.*.*
+	 *   
+	 * @param macher
+	 * @param version
+	 * @return
+	 */
+	public static boolean matchVersion(String macher, String version) {
+		boolean result = false;
+		if(version.equals(macher)) {
+			return true;
+		}
+		if(macher.indexOf("<=") > 0) {
+			String[] arr = macher.split("<=");
+			if(arr.length == 3) {
+				result= compare(arr[0],version)<=0 && compare(version,arr[1])<=0;
+			}else if(arr.length == 2) {
+				if(arr[0].indexOf(".") > 0) {
+					result=  compare(arr[0],version)<=0;
+				}else if(arr[1].indexOf(".") > 0) {
+					result=  compare(version,arr[1])<=0;
+				}
+			}
+		}else if(macher.indexOf("<") > 0) {
+			String[] arr = macher.split("<");
+			if(arr.length == 3) {
+				result= compare(arr[0],version)<0 && compare(version,arr[1])<0;
+			}else if(arr.length == 2) {
+				if(arr[0].indexOf(".") > 0) {
+					result=  compare(arr[0],version)<0;
+				}else if(arr[1].indexOf(".") > 0) {
+					result=  compare(version,arr[1])<0;
+				}
+			}
+		}else if(macher.indexOf("*") >= 0) {
+			if("*".equals(macher.trim())) {
+				result = true;
+			} else {
+				result = true;
+				String[] arr = macher.split(".");
+				String[] varr = version.split(".");
+				for(int i=0; i < arr.length; i++) {
+					if(!arr[i].equals("*") && !arr[i].equals(varr[i])) {
+						result = false;
+						break;
+					}
+				}
+			}
+		}
+		return result;
+	}
+	
+	public static int compare(String first, String second) {
+		return first.compareTo(second);
 	}
 	
 	public static String methodKey(String serviceName, String method,String paramStr) {

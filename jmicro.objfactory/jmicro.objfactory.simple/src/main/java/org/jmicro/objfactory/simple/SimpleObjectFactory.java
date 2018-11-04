@@ -377,9 +377,10 @@ public class SimpleObjectFactory implements IObjectFactory {
 		});
 		
 		Config cfg = (Config)objs.get(Config.class);
+		cfg.setDataOperator(dop);
 		
 		List<IConfigLoader> configLoaders = this.getByParent(IConfigLoader.class);
-		cfg.loadConfig(configLoaders,dop);
+		cfg.loadConfig(configLoaders);
 		
 		Set<Object> haveInits = new HashSet<>();
 		

@@ -34,9 +34,9 @@
 			 <artifactId>jmicro.codec</artifactId>
         </dependency>
          <dependency>
-			   <groupId>org.apache.mina</groupId>
+			<groupId>org.apache.mina</groupId>
 		    <artifactId>mina-core</artifactId>
-		    <version>3.0.0-M3-SNAPSHOT</version>
+		    <version>3.0.0-M2</version>
         </dependency>
           
     </dependencies>
