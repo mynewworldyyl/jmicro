@@ -437,45 +437,24 @@ public class ZKRegistry implements IRegistry,Init {
 	}
 
 	@Override
-	public boolean isExist(String serviceName,String namespace,String version) {
+	public boolean isExists(String serviceName,String namespace,String version) {
 		namespace = ServiceItem.namespace(namespace);
 		version =  ServiceItem.version(version);
 		Set<ServiceItem> sis = matchVersion(serviceName, namespace, version);
 		//Set<ServiceItem> sis = this.serviceItems.get(ServiceItem.serviceName(serviceName, namespace, version));
-		if(sis == null || sis.isEmpty()) {
-			return false;
-		}
-		
-		for(ServiceItem si : sis){
-			if(si.getNamespace().equals(namespace)&&
-					si.getVersion().equals(version)) {
-				return true;
-			}
-		}
-		return false;
+		return sis != null && !sis.isEmpty();
 	}
 
 	@Override
 	public Set<ServiceItem> getServices(String serviceName, String namespace, String version) {
-		Set<ServiceItem> is = new HashSet<>();
-
 		namespace = ServiceItem.namespace(namespace);
 		version = ServiceItem.version(version);
 		//Set<ServiceItem> sis = this.serviceItems.get(ServiceItem.serviceName(serviceName, namespace, version));
 		Set<ServiceItem> sis = matchVersion(serviceName, namespace, version);
-		
 		if(sis == null){
 			return Collections.EMPTY_SET;
-		}
-		
-		for(ServiceItem si : sis){
-			if(si.getNamespace().equals(namespace) &&
-					si.getVersion().equals(version)) {
-				is.add(si);
-			}
-		}
-		
-		return is;
+		}		
+		return sis;
 	}
 
 	/**

@@ -1,10 +1,13 @@
 package org.jmicro.example.test;
 
 import java.sql.SQLException;
+import java.util.Set;
 
 import org.jmicro.api.JMicro;
 import org.jmicro.api.net.RpcRequest;
 import org.jmicro.api.objectfactory.IObjectFactory;
+import org.jmicro.api.registry.IRegistry;
+import org.jmicro.api.registry.ServiceItem;
 import org.jmicro.common.Utils;
 import org.junit.Test;
 
@@ -67,6 +70,32 @@ public class TestRpcRequest {
 			
 		}.start();
 		
+		Utils.getIns().waitForShutdown();
+	}
+	
+	@Test
+	public void testGetService() {
+		IObjectFactory of = JMicro.getObjectFactoryAndStart(new String[]{"-DinstanceName=testGetService"});
+		IRegistry registry = of.get(IRegistry.class);
+		//registry.get
+		//org.jmicro.example.api.ITestRpcService&testrpc&0.0.1
+		
+		/*Set<ServiceItem> sis = registry.getServices("org.jmicro.example.api.ITestRpcService", 
+				"testrpc", "0.0.0<=x");*/
+		
+		/*Set<ServiceItem> sis = registry.getServices("org.jmicro.example.api.ITestRpcService", 
+				"testrpc", "x<=2.0.0");*/
+		
+		/*Set<ServiceItem> sis = registry.getServices("org.jmicro.example.api.ITestRpcService", 
+				"testrpc", "0.0.0<=x<=2.0.0");*/
+		
+		/*Set<ServiceItem> sis = registry.getServices("org.jmicro.example.api.ITestRpcService", 
+				"testrpc", "*");*/
+		
+		Set<ServiceItem> sis = registry.getServices("org.jmicro.example.api.ITestRpcService", 
+				"testrpc", "0.0.*");
+		
+		System.out.println(sis);
 		Utils.getIns().waitForShutdown();
 	}
 }

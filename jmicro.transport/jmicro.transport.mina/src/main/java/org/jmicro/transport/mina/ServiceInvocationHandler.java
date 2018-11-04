@@ -68,7 +68,7 @@ public class ServiceInvocationHandler implements InvocationHandler, IMessageHand
 	private ICodecFactory codecFactory;
 	
 	@Cfg("/respBufferSize")
-	private int respBufferSize;
+	private int respBufferSize  = Constants.DEFAULT_RESP_BUFFER_SIZE;
 	
 	@Inject(required=true)
 	private IClientSessionManager sessionManager;

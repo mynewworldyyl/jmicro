@@ -85,7 +85,7 @@ public class JRPCReqRespHandler implements IMessageHandler{
 	private IIdGenerator idGenerator;
 	
 	@Cfg("/respBufferSize")
-	private int respBufferSize;
+	private int respBufferSize = Constants.DEFAULT_RESP_BUFFER_SIZE;
 	
 	@Inject(required=true)
 	private IRegistry registry = null;

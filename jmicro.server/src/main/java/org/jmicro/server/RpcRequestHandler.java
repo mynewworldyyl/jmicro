@@ -44,7 +44,7 @@ public class RpcRequestHandler extends AbstractHandler implements IRequestHandle
 	private ServiceLoader serviceLoader;
 	
 	@Cfg("/respBufferSize")
-	private int respBufferSize;
+	private int respBufferSize  = Constants.DEFAULT_RESP_BUFFER_SIZE;
 	
 	@Override
 	public IResponse onRequest(IRequest request) {

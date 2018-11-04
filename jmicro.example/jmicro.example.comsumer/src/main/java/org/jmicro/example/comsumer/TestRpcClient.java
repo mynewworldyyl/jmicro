@@ -9,7 +9,7 @@ import org.jmicro.example.api.ITestRpcService;
 @Component
 public class TestRpcClient {
 
-	@Reference(required=true,namespace="testrpc",version="0.0.1")
+	@Reference(required=true,namespace="testrpc",version="0.0.*")
 	private ITestRpcService rpcService;
 	
 	@Reference(required=false)

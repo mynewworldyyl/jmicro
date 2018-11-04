@@ -140,7 +140,7 @@ class ClientServiceProxyManager {
 			if(!type.isInterface()) {
 				throw new CommonException("Class ["+becls.getName()+"] field ["+ f.getName()+"] dependency ["+f.getType().getName()+"] have to be interface class");
 			}
-			if(!registry.isExist(type.getName(),ref.namespace(),ref.version())) {
+			if(!registry.isExists(type.getName(),ref.namespace(),ref.version())) {
 				if(ref.required()){
 					//服务不可用，并且服务依赖是必须满足，则报错处理
 					StringBuffer sb = new StringBuffer("Class [");
@@ -228,7 +228,7 @@ class ClientServiceProxyManager {
 		Class<?> type = f.getType();
 		IRegistry registry = of.get(IRegistry.class);
 		
-		if(!registry.isExist(f.getType().getName(), ref.namespace(),ref.version()) && ref.required()) {
+		if(!registry.isExists(f.getType().getName(), ref.namespace(),ref.version()) && ref.required()) {
 			StringBuffer sb = new StringBuffer("Class [");
 			sb.append(becls.getName()).append("] field [").append(f.getName())
 			.append("] dependency [").append(f.getType().getName())

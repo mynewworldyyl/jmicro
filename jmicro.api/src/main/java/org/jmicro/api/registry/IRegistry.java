@@ -36,7 +36,7 @@ public interface IRegistry{
 	
 	Set<ServiceItem> getServices(String serviceName,String method,Object[] args,String namespace,String version,String transport);
 	
-	boolean isExist(String serviceName,String namespace,String version);
+	boolean isExists(String serviceName,String namespace,String version);
 	
 	Set<ServiceItem> getServices(String serviceName,String namespace,String version);
 	

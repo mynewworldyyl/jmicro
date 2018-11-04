@@ -47,7 +47,7 @@ public class FirstInterceptor extends AbstractInterceptor implements IIntercepto
 	private String defaultLimiterName="gavaLimiter";
 	
 	@Cfg("/respBufferSize")
-	private int respBufferSize;
+	private int respBufferSize = Constants.DEFAULT_RESP_BUFFER_SIZE;
 	
 	private ILimiter limiter=null;
 	

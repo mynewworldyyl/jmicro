@@ -30,7 +30,7 @@ public class SimpleCodecFactory implements ICodecFactory{
 	private Map<Byte,IEncoder> encoders = new HashMap<>();
 	
 	@Cfg(value="/respBufferSize")
-	private int defaultEncodeBufferSize = 1024*4;
+	private int defaultEncodeBufferSize = Constants.DEFAULT_RESP_BUFFER_SIZE;
 	
 	@Inject
 	private IRegistry registry;
