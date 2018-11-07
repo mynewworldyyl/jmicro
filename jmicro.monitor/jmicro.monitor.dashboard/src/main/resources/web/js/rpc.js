@@ -17,8 +17,9 @@
 var jmicro = jmicro || {};
 
 jmicro.config ={
-    ip:"192.168.3.3",
-    port:'9992',
+    //ip:"192.168.3.3",
+    ip:'192.168.1.104',
+    port:'9090',
     wsContext:'/_ws_',
     httpContext:'/_http_',
     useWs:false
@@ -45,7 +46,28 @@ jmicro.transport = {
         if(jmicro.config.useWs){
             jmicro.socket.send(data,cb);
         } else {
-            jmicro.http.postHelper(jmicro.http.getHttpApiPath(),data,cb);
+            //jmicro.http.postHelper(jmicro.http.getHttpApiPath(),data,cb);
+            $.ajax({
+                url: jmicro.http.getHttpApiPath(),
+                type: "post",
+                dataType: "json",
+                data: JSON.stringify(data),
+                headers: {'Content-Type': 'application/json'},
+                success: function (result, statuCode, xhr) {
+                    //sucCb(data, statuCode, xhr);
+                	result.payload=JSON.parse(result.payload);
+                	cb(result,null);
+                },
+                beforeSend: function (xhr) {
+                },
+                error: function (err, xhr) {
+                    if (errCb) {
+                        errCb(err, xhr);
+                    } else {
+                        sucCb(null, err, xhr);
+                    }
+                }
+            })
         }
     }
 }

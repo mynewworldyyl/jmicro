@@ -31,8 +31,8 @@ public class NettyClientSession  extends AbstractNettySession implements IClient
 
 	static final Logger LOG = LoggerFactory.getLogger(NettyClientSession.class);
 	
-	public NettyClientSession(ChannelHandlerContext ctx,int readBufferSize,int heardbeatInterval) {
-		super(ctx,readBufferSize,heardbeatInterval);
+	public NettyClientSession(ChannelHandlerContext ctx,int readBufferSize,int heardbeatInterval,boolean isWebSocket) {
+		super(ctx,readBufferSize,heardbeatInterval, isWebSocket);
 	}
 	
 }

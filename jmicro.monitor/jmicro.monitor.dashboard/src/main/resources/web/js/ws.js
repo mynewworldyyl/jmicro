@@ -21,7 +21,7 @@ jmicro.socket = {
     ,logData:null
     ,idCallback:{}
     ,init : function(onopen) {
-            var url = 'ws://' + jmicro.config.ip + ':' + jmicro.config.port +'/'+ jmicro.config.context;
+            var url = 'ws://' + jmicro.config.ip + ':' + jmicro.config.port +'/'+ jmicro.config.wsContext;
             var self = this;
             if(window.WebSocket){
               self.wsk = new WebSocket(url);  //获得WebSocket对象

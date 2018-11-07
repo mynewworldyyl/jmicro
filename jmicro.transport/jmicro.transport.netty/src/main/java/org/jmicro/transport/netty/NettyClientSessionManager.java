@@ -157,7 +157,7 @@ public class NettyClientSessionManager implements IClientSessionManager{
 					@Override
 					public void handlerAdded(ChannelHandlerContext ctx) throws Exception {
 						super.handlerAdded(ctx);
-	                   NettyClientSession s = new NettyClientSession(ctx,readBufferSize,heardbeatInterval);
+	                   NettyClientSession s = new NettyClientSession(ctx,readBufferSize,heardbeatInterval,false);
 	                   s.putParam(Constants.SESSION_KEY, ctx);
 	      	           sessions.put(sKey, s);
 					}

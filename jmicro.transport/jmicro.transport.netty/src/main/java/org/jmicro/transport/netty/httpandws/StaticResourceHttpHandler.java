@@ -54,7 +54,7 @@ public class StaticResourceHttpHandler  {
 	static final Logger LOG = LoggerFactory.getLogger(StaticResourceHttpHandler.class);
 	
 	@Cfg("/StaticResourceHttpHandler/root")
-	private String root;
+	private String root="*";
 	
 	@Cfg("/StaticResourceHttpHandler/indexPage")
 	private String indexPage;

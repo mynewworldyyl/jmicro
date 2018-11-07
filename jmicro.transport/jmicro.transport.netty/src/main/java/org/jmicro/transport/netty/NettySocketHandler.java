@@ -93,7 +93,7 @@ public class NettySocketHandler extends ChannelInboundHandlerAdapter {
     @Override
     public void handlerAdded(ChannelHandlerContext ctx) throws Exception {
     	super.handlerAdded(ctx);
-    	NettyServerSession session = new NettyServerSession(ctx,readBufferSize,heardbeatInterval);
+    	NettyServerSession session = new NettyServerSession(ctx,readBufferSize,heardbeatInterval,false);
     	ctx.channel().attr(sessionKey).set(session);
     }
     

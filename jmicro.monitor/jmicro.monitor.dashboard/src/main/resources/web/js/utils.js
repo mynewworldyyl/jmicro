@@ -187,7 +187,7 @@ jmicro.http = {
     },
 
     getHttpApiPath : function() {
-        var wp = 'http://' + location.host+ + jmicro.config.httpContext;
+        var wp = 'http://' + location.host + jmicro.config.httpContext;
         return wp;
     },
 
