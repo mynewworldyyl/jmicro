@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.jmicro.transport.netty;
+package org.jmicro.transport.netty.httpandws;
 
 import org.jmicro.api.annotation.Cfg;
 import org.jmicro.api.annotation.Component;
@@ -26,6 +26,7 @@ import org.jmicro.api.net.IMessageReceiver;
 import org.jmicro.api.net.Message;
 import org.jmicro.common.Constants;
 import org.jmicro.common.util.JsonUtils;
+import org.jmicro.transport.netty.NettyServerSession;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

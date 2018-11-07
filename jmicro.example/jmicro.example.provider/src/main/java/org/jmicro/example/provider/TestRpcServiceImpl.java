@@ -23,14 +23,14 @@ public class TestRpcServiceImpl implements ITestRpcService{
 	private String name;
 	
 	@Override
-	@SMethod(monitorEnable=1,maxSpeed="100s",timeout=0)
+	@SMethod(monitorEnable=0,maxSpeed="100s",timeout=0)
 	public String hello(String name) {
 		System.out.println("Hello and welcome :" + name);
 		return "Rpc server return : "+name;
 	}
 
 	@Override
-	@SMethod(monitorEnable=1,maxSpeed="100s",timeout=0)
+	@SMethod(monitorEnable=0,maxSpeed="100s",timeout=0)
 	public Person getPerson(Person p) {
 		System.out.println(p);
 		p.setUsername("Server update username");

@@ -342,9 +342,7 @@ public class Decoder {
 		return null;
 	}
 	
-	public static ByteBuffer readMessage(ByteBuffer src,ByteBuffer cache){
-		//先把网络数据存起来，放到缓存中
-		cache.put(src);
+	public static ByteBuffer readMessage(ByteBuffer cache){
 		
 		//当前写的位置，也就是可读的数据长度
 		int totalLen = cache.position();

@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.jmicro.transport.netty;
+package org.jmicro.transport.netty.httpandws;
 
 import java.io.ByteArrayOutputStream;
 import java.io.FileInputStream;

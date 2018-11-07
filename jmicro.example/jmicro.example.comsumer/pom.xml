@@ -31,9 +31,13 @@
 			 <artifactId>jmicro.example.api</artifactId>
 			  <version>0.0.1-SNAPSHOT</version>
         </dependency>
-        <dependency>
+      <!--   <dependency>
 			 <groupId>org.jmicro</groupId>
 			 <artifactId>jmicro.transport.mina</artifactId>
+        </dependency> -->
+        <dependency>
+			 <groupId>org.jmicro</groupId>
+			 <artifactId>jmicro.transport.netty</artifactId>
         </dependency>
          <dependency>
 			 <groupId>org.jmicro</groupId>

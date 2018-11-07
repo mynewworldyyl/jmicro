@@ -48,30 +48,6 @@ jmicro.http = {
 
     WEB_SOCKET_CONTEXT: '/tail',
 
-    nodePORT: '3000',
-    nodeIP:null,
-    //nodeIP:'http://180.153.50.130:2189',
-    nodeCXT: '',
-    //sourceServer:'http://192.168.1.109:8080',
-
-    PROTOCOL: 'http://',
-    //CXT:'/jmicro/rest',
-    THUBNAIL_SIZE: '&width=60&height=60',
-    //User Service
-
-    UPDATE_PWD: '/user/update/pwd',
-
-    cacheUrl: '',
-    exportURL: '/export',
-    reportURL: '/getReport',
-    loginPaths : '/uc/login' ,
-    logoutPaths : '/uc/logout' ,
-    regPaths : '/uc/reg' ,
-    loginPage : '../common/login.html' ,
-    defaultPage : '../gateway/index.html' ,
-    testClientId:'1',
-    productClientId:'1',
-
     getQueryParam : function(name) {
         if(location.href.indexOf("?")==-1 || location.href.indexOf(name+'=')==-1){
             return '';
@@ -84,11 +60,13 @@ jmicro.http = {
     },
 
     getNodeServerUrl: function (path) {
-        return ( !!this.nodeIP ? this.nodeIP:'') +this.nodeCXT + path;
+        return this.getJavaServerUrl(path);
     },
+
     getJavaServerUrl:function(path) {
         return this.getNodeServerUrl(path);
     },
+
     get: function (path, params, cb, errCb, fullpath) {
         this.ajax(path, params, cb, true, 'GET', errCb, fullpath)
     },
@@ -99,13 +77,6 @@ jmicro.http = {
 
     put: function (path, params, cb, errCb, fullpath) {
         this.ajax(path, params, cb, true, 'PUT', errCb, fullpath)
-    },
-
-    test: function () {
-        this.ajax(jmicro.http.TEST, {accountName: 'testAccount'}, function (data) {
-            alert(data);
-            console.log(data);
-        }, true, 'GET')
     },
 
     ajax: function (path, params, sucCb, async, method, errCb, fullpath) {
@@ -137,14 +108,6 @@ jmicro.http = {
             params = {};
         }
 
-        if(!jmicro.zdd.utils.REPORT_PARAMS.loginKey) {
-            jmicro.zdd.utils.REPORT_PARAMS.loginKey = jmicro.localStorage.get('loginKey');
-        }
-        params.loginKey=jmicro.zdd.utils.REPORT_PARAMS.loginKey;
-        params.clientId=jmicro.http.productClientId;//jmicro.localStorage.get('clientId');
-       /* for(let key in params) {
-            params[key] = encodeURIComponent(params[key]);
-        }*/
         $.ajax({
             data: params,
             type: method,
@@ -197,7 +160,7 @@ jmicro.http = {
         })
     }
 
-    ,postHelper: function(url,params,cb,fullpath){
+    ,postHelper: function(url,params,cb){
         jmicro.http.post(url,params, function(data,status,xhr){
             if(data.success) {
                 cb(null,data);
@@ -207,19 +170,13 @@ jmicro.http = {
             }
         },function(err){
             cb(err,null);
-        },fullpath);
+        });
     }
 
     //get: function (path, params, cb, errCb, fullpath)
     ,getHelper: function(url,params,cb,fullpath){
         if(!params) {
             params = {};
-        }
-        var ps = jmicro.zdd.utils.getUiQueryParams();
-        for ( var p in ps ){
-            if(typeof params[p] == 'undefined') {
-                params[p] = ps[p];
-            }
         }
         this.get(url,params, function(data,status,xhr){
             cb(null,data);
@@ -258,23 +215,6 @@ jmicro.utils = {
         return this._genId ++;
     },
 
-    getStringWidthAsPix : function(str) {
-        var span = document.getElementById("widthTester");
-        if(span == null) {
-            span = document.createElement('span');
-        }
-        span.style = "font-size:10pt";
-        document.body.appenwiairhild(span);
-        var oldWidth = span.offsetWidth;
-        span.innerText= str;
-        oldWidth = span.offsetWidth-oldWidth;
-        span.innerHTML='';
-        if(null != span) {
-            document.body.removeChild(span);
-        }
-        return oldWidth;
-    },
-
     getTimeAsMills: function() {
         return new Date().getTime();
     },
@@ -288,6 +228,7 @@ jmicro.utils = {
         }
         return len;
     },
+
     isInteger: function (value)  {
         if ('/^(\+|-)?\d+$/'.test(value )){
             return true;
@@ -323,55 +264,18 @@ jmicro.utils = {
         return false;
     },
 
-    inherits : function(chilwiairtor, parentCtor) {
+    inherits : function(child, parentCtor) {
         function tempCtor() {};
         tempCtor.prototype = parentCtor.prototype;
-        chilwiairtor.superClass_ = parentCtor.prototype;
-        chilwiairtor.prototype = new tempCtor();
-        chilwiairtor.prototype.constructor = chilwiairtor;
+        child.superClass_ = parentCtor.prototype;
+        child.prototype = new tempCtor();
+        child.prototype.constructor = child;
     },
 
     bind : function(scope, funct){
         return function(){
             return funct.apply(scope, arguments);
         };
-    },
-    removeAllChildren : function(container) {
-        if(container) {
-            for(var c = container.firstChild; c != null; c = container.firstChild ) {
-                container.removeChild(c);
-            }
-        }
-    },
-    loading:false,
-    startLoading : function(domHelper) {
-        if(this.loading) {
-            return;
-        }
-        this.loading=true;
-        domHelper = domHelper || document;
-
-        var cover = domHelper.createElement('div');
-        cover.className ='loadingOver';
-        cover.id='loadingOver'
-        domHelper.body.appendChild(cover);
-
-        var center = domHelper.createElement('div');
-        center.className ='loading';
-        center.id='loading_'
-        var img = domHelper.createElement('img');
-        img.src = '../images/loading.gif';
-        center.appendChild(img);
-        domHelper.body.appendChild(center);
-    },
-    stopLoading : function(domHelper) {
-        if(!this.loading) {
-            return;
-        }
-        this.loading=false;
-        domHelper = domHelper || document;
-        domHelper.body.removeChild(domHelper.getElementById('loading_'));
-        domHelper.body.removeChild(domHelper.getElementById('loadingOver'));
     },
 
     appendUrlParams:function(url,params) {
@@ -412,17 +316,20 @@ jmicro.utils = {
     isBrowser : function(browser) {
         return jmicro.utils.browser[browser] != null;
     },
+
     version : function() {
         for(var b in jmicro.utils.browser) {
             return jmicro.utils.browser[b][1].split('.')[0];
         }
     },
+
     isIe : function() {
         return this.isBrowser(jmicro.utils.Constants.IE9) ||
             this.isBrowser(jmicro.utils.Constants.IE8) ||
             this.isBrowser(jmicro.utils.Constants.IE7) ||
             this.isBrowser(jmicro.utils.Constants.IE6)
     },
+
     toJson : function(obj) {
         if(typeof obj === 'string') {
             return obj;
@@ -432,6 +339,7 @@ jmicro.utils = {
             throw 'obj cannot transfor to Json'
         }
     },
+
     fromJson : function(jsonStr) {
         console.log(typeof jsonStr);
         if(typeof jsonStr === 'string') {
@@ -497,100 +405,9 @@ jmicro.utils = {
         var oScript= document.createElement("script");
         oScript.type = "text/javascript";
         oScript.src=jsUrl;
-        oHead.appenjmicrohild( oScript);
-    },
-
-     closeDialog : function(dialogId) {
-         if(!dialogId) {
-             dialogId='#dialogId';
-         }
-         $(dialogId).hide().remove();
-    },
-
-    info : function(content) {
-        var params = {title:'信息',content:content };
-        this.showDialog(params);
-    },
-
-    warn : function(content) {
-        var params = {title:'警告',content:content };
-        this.showDialog(params);
-    },
-
-    error : function(content) {
-        var params = {title:'错误',content:content };
-        this.showDialog(params);
-    },
-
-    comfirm : function(params) {
-        jmicro.utils.showDialog({
-            title: params.title || '警告',
-            content: params.content || '此操作将被服务器记录，请你确认知道自己在做什么！',
-            buttons:[
-                {
-                    title: params.confirm.title || '确认',
-                    methodKey: params.confirm.methodKey || 'comfirm',
-                    method: params.confirm.method  || function () {}
-                },
-                {
-                    title: params.cancel && params.cancel.title || '取消',
-                    methodKey: params.cancel && params.cancel.methodKey || 'cancel',
-                    method: params.cancel && params.cancel.method || function () {}
-                }
-            ]
-        });
-    },
-
-    showDialog : function(params) {
-        var self = this;
-        if(!params) {
-            throw 'params is null';
-        }
-
-        if(!params.dialogId) {
-            params.dialogId='dialogId';
-        }
-
-        if(!params.buttons) {
-            params.buttons = [];
-        }
-
-        for(var i=0; i < params.buttons.length; i++) {
-            var btnData = params.buttons[i];
-            if(!btnData.methodKey) {
-                btnData.methodKey= 'dialogId' + jmicro.utils.getId();
-            }
-        }
-
-        if(params.buttons.length <= 0) {
-            params.buttons.push({
-                title:'确认',
-                methodKey : 'dialogId' + jmicro.utils.getId(),
-                method:function() {
-                    self.closeDialog(params.dialogId);
-                }
-            })
-        }
-
-        var html = new EJS({url: "/zdd/dialog.html"}).render(params);
-        //var clientHeight = $('body').height();
-        //var clientWidth = $('body').width();
-        // $(html).find('dialog');
-
-        $("body").prepend(html).show();
-
-        for(var i=0; i< params.buttons.length; i++) {
-            var btnData = params.buttons[i];
-            var btnNode = $('#'+params.dialogId).find('#' + btnData.methodKey);
-            btnNode.data("bntData", btnData);
-            btnNode.click(function(){
-                var bd = $(this).data('bntData');
-                self.closeDialog();
-                bd.method();
-            })
-        }
-
+        oHead.appendChild( oScript);
     }
+
 }
 
 jmicro.localStorage = new function() {

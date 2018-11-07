@@ -33,28 +33,15 @@ import io.netty.handler.stream.ChunkedWriteHandler;
  * @date 2018年10月21日-下午9:15:02
  */
 @Component(lazy=false)
-public class NettyChannelInitializer extends ChannelInitializer<SocketChannel>{
+public class NettySocketChannelInitializer extends ChannelInitializer<SocketChannel>{
 
 	@Inject
-	private NettyWebSocketHandler wsHandler;
-	
-	@Inject
-	private NettyHttpServerHandler httpHandler;
+	private NettySocketHandler socketHandler;
 	
 	@Override
     protected void initChannel(SocketChannel ch) throws Exception {
         ChannelPipeline pipeline = ch.pipeline();
-        //HttpServerCodec: 针对http协议进行编解码
-        pipeline.addLast("httpServerCodec", new HttpServerCodec());
-        //ChunkedWriteHandler分块写处理，文件过大会将内存撑爆
-        pipeline.addLast("chunkedWriteHandler", new ChunkedWriteHandler());
-         //将一个Http的消息组装成一个完成的HttpRequest或者HttpResponse
-        pipeline.addLast("httpObjectAggregator", new HttpObjectAggregator(8192));
-        
-        pipeline.addLast("webSocketServerProtocolHandler", new WebSocketServerProtocolHandler("/ws"));
-        
-        pipeline.addLast("myWebSocketHandler", wsHandler);
-        pipeline.addLast("jmicroHttpHandler", httpHandler);
+        pipeline.addLast("socketHandler", socketHandler);
     }
 	
 }

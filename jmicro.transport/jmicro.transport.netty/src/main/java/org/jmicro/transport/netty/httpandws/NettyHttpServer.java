@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.jmicro.transport.netty;
+package org.jmicro.transport.netty.httpandws;
 
 import java.net.InetSocketAddress;
 import java.util.List;
@@ -52,16 +52,16 @@ import io.netty.handler.logging.LoggingHandler;
  * @date 2018年10月21日-下午9:15:25
  */
 @SuppressWarnings("restriction")
-@Component(value=Constants.TRANSPORT_NETTY,lazy=false,level=1,side=Constants.SIDE_PROVIDER)
-@Server(transport=Constants.TRANSPORT_NETTY)
-public class NettyServer implements IServer{
+@Component(value=Constants.TRANSPORT_NETTY_HTTP,lazy=false,level=1,side=Constants.SIDE_PROVIDER)
+@Server(transport=Constants.TRANSPORT_NETTY_HTTP)
+public class NettyHttpServer implements IServer{
 
-	static final Logger LOG = LoggerFactory.getLogger(NettyServer.class);
+	static final Logger LOG = LoggerFactory.getLogger(NettyHttpServer.class);
 	
 	private  ServerBootstrap server;
 	
 	@Inject
-	private NettyChannelInitializer initializer;
+	private NettyHttpChannelInitializer initializer;
 	
 	@Inject(required=false)
 	private IMonitorDataSubmiter monitor;

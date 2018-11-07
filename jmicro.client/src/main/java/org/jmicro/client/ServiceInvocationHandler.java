@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.jmicro.transport.mina;
+package org.jmicro.client;
 
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
@@ -147,11 +147,11 @@ public class ServiceInvocationHandler implements InvocationHandler, IMessageHand
         	//String sn = ProxyObject.getTargetCls(srvClazz).getName();
 			//此方法可能抛出FusingException
         	si = selector.getService(poItem.getServiceName(),req.getMethod(),args,poItem.getNamespace(),
-        			poItem.getVersion(), Constants.TRANSPORT_MINA);
+        			poItem.getVersion(), Constants.TRANSPORT_NETTY);
         	
         	if(si ==null) {
         		MonitorConstant.doSubmit(monitor,MonitorConstant.CLIENT_REQ_SERVICE_NOT_FOUND, req, null);
-    			throw new CommonException("Service [" + srvClazz.getName() + "] not found!");
+    			throw new CommonException("Service [" + poItem.getServiceName() + "] not found!");
     		}
         	
         	if(isFistLoop){
@@ -186,7 +186,7 @@ public class ServiceInvocationHandler implements InvocationHandler, IMessageHand
     		req.setVersion(si.getVersion());
     		req.setImpl(si.getImpl());
     		
-    		Server s = si.getServer(Constants.TRANSPORT_MINA);
+    		Server s = si.getServer(Constants.TRANSPORT_NETTY);
     		IClientSession session = this.sessionManager.getOrConnect(s.getHost(), s.getPort());
     		req.setSession(session);
     		

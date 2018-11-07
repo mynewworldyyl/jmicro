@@ -16,7 +16,7 @@
  */
 package org.jmicro.transport.netty;
 
-import org.jmicro.server.IServerSession;
+import org.jmicro.api.client.IClientSession;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -25,15 +25,14 @@ import io.netty.channel.ChannelHandlerContext;
 /**
  * 
  * @author Yulei Ye
- * @date 2018年10月21日-下午9:15:12
+ * @date 2018年10月4日-下午12:13:35
  */
-public class NettyServerSession extends AbstractNettySession implements IServerSession{
+public class NettyClientSession  extends AbstractNettySession implements IClientSession{
 
-	static final Logger LOG = LoggerFactory.getLogger(NettyServerSession.class);
+	static final Logger LOG = LoggerFactory.getLogger(NettyClientSession.class);
 	
-	public NettyServerSession(ChannelHandlerContext ctx,int readBufferSize,int hearbeatInterval) {
-		super(ctx,readBufferSize,hearbeatInterval);
+	public NettyClientSession(ChannelHandlerContext ctx,int readBufferSize,int heardbeatInterval) {
+		super(ctx,readBufferSize,heardbeatInterval);
 	}
-
 	
 }

@@ -57,7 +57,7 @@ import org.slf4j.LoggerFactory;
  * @author Yulei Ye
  * @date 2018年10月4日-下午12:13:45
  */
-@Component(lazy=false,side=Constants.SIDE_COMSUMER)
+@Component(value="minaClientSessionManager",lazy=false,side=Constants.SIDE_COMSUMER)
 public class MinaClientSessionManager implements IClientSessionManager{
 
 	static final Logger logger = LoggerFactory.getLogger(MinaClientSessionManager.class);
@@ -161,7 +161,10 @@ public class MinaClientSessionManager implements IClientSessionManager{
             }
             IClientSession cs = session.getAttribute(sessionKey);
             
-            ByteBuffer body = Decoder.readMessage((ByteBuffer)message, cs.getReadBuffer());
+            ByteBuffer buffer = cs.getReadBuffer();
+            buffer.put((ByteBuffer)message);
+            
+            ByteBuffer body = Decoder.readMessage(buffer);
             if(body == null){
             	return;
             }

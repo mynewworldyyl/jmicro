@@ -19,7 +19,7 @@ var jmicro = jmicro || {};
 jmicro.config ={
   ip:"192.168.3.3",
   port:'9992',
-  context:'ws',
+  context:'ws'
 }
 
 jmicro.Constants = {
@@ -35,7 +35,7 @@ jmicro.Constants = {
   DEFAULT_NAMESPACE : 'defaultNamespace',
   DEFAULT_VERSION : "0.0.0",
   STREAM : 1 << 2,
-  NEED_RESPONSE : 1 << 1,
+  NEED_RESPONSE : 1 << 1
 }
 
 jmicro.rpc = {

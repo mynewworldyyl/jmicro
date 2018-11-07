@@ -181,7 +181,11 @@ public class MinaServer implements IServer{
                 	
                     MinaServerSession s = session.getAttribute(sessinKey);
                     
-                    ByteBuffer body = Decoder.readMessage((ByteBuffer)message, s.getReadBuffer());
+                  //先把网络数据存起来，放到缓存中
+                    ByteBuffer buffer = s.getReadBuffer();
+                    buffer.put((ByteBuffer)message);
+            		
+                    ByteBuffer body = Decoder.readMessage(buffer);
                     if(body == null){
                     	return;
                     }
