@@ -46,8 +46,6 @@ if(typeof Array.prototype.fill == 'undefined') {
 
 jmicro.http = {
 
-    WEB_SOCKET_CONTEXT: '/tail',
-
     getQueryParam : function(name) {
         if(location.href.indexOf("?")==-1 || location.href.indexOf(name+'=')==-1){
             return '';
@@ -57,14 +55,6 @@ jmicro.http = {
         if (r != null)
             return decodeURI(r[2]);   //对参数进行decodeURI解码
         return null;
-    },
-
-    getNodeServerUrl: function (path) {
-        return this.getJavaServerUrl(path);
-    },
-
-    getJavaServerUrl:function(path) {
-        return this.getNodeServerUrl(path);
     },
 
     get: function (path, params, cb, errCb, fullpath) {
@@ -102,7 +92,7 @@ jmicro.http = {
         if(fullpath) {
             path = fullpath;
         } else if (!(path.startWith('http://') &&  !path.startWith('https://'))){
-            path = jmicro.http.getNodeServerUrl(path);
+            path = this.getWebResourceHttpPath(path);
         }
         if(!params) {
             params = {};
@@ -115,17 +105,13 @@ jmicro.http = {
             url: path,
             jsonp: 'json',
             success: function (data, statuCode, xhr) {
-                if(data.msg == 'notLogin' ||data.msg == 'NeedLogin'){
-                    jmicro.goTo(jmicro.http.loginPage);
-                }else {
-                    sucCb(data, statuCode, xhr);
-                }
+                sucCb(data, statuCode, xhr);
             },
             beforeSend: function (xhr) {
                 //xhr.setRequestHeader('Access-Control-Allow-Headers','*');
-                if (jmicro.zdd.uc.isLogin()) {
+                /*if (jmicro.zdd.uc.isLogin()) {
                     xhr.setRequestHeader("loginKey", params.loginKey);
-                }
+                }*/
             },
             error: function (err, xhr) {
                 if (errCb) {
@@ -146,7 +132,7 @@ jmicro.http = {
             base64Data: data,
             pos:pos
         }
-        var url = jmicro.http.getNodeServerUrl(jmicro.http.UPLOAD_BASE64);
+        var url = this.getWebResourceHttpPath(jmicro.http.UPLOAD_BASE64);
         jmicro.http.post(url, params, function (data1, status, xhr) {
             console.log(data1);
             if (status !== 'success') {
@@ -166,7 +152,6 @@ jmicro.http = {
                 cb(null,data);
             } else {
                 cb(data,data);
-                //jmicro.uc.showAlert(data.msg);
             }
         },function(err){
             cb(err,null);
@@ -186,7 +171,7 @@ jmicro.http = {
     }
 
     ,getUrl: function(url) {
-        return this.getWebHttpPath(url);
+        return this.getWebResourceHttpPath(url);
     },
 
     getWebContextPath : function() {
@@ -196,13 +181,17 @@ jmicro.http = {
         return '/'+pathname;
     },
 
-    getWebWSPath : function(subPath) {
-        var wp = 'ws://' + location.host + jmicro.utils.getWebContextPath()
-            + subPath;
+    getWSApiPath : function() {
+        var wp = 'ws://' + location.host+ + jmicro.config.wsContext;
         return wp;
     },
 
-    getWebHttpPath : function(subPath) {
+    getHttpApiPath : function() {
+        var wp = 'http://' + location.host+ + jmicro.config.httpContext;
+        return wp;
+    },
+
+    getWebResourceHttpPath : function(subPath) {
         var wp = 'http://' + location.host + jmicro.utils.getWebContextPath()
             + subPath;
         return wp;

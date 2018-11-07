@@ -17,9 +17,11 @@
 var jmicro = jmicro || {};
 
 jmicro.config ={
-  ip:"192.168.3.3",
-  port:'9992',
-  context:'ws'
+    ip:"192.168.3.3",
+    port:'9992',
+    wsContext:'/_ws_',
+    httpContext:'/_http_',
+    useWs:false
 }
 
 jmicro.Constants = {
@@ -38,47 +40,62 @@ jmicro.Constants = {
   NEED_RESPONSE : 1 << 1
 }
 
-jmicro.rpc = {
-  idCache:{},
-  getId : function(idClazz){
-    var self = this;
-    return new Promise(function(reso1,reje){
-      var cacheId = self.idCache[idClazz];
-      if(!!cacheId && cacheId.index < cacheId.ids.length){
-        reso1(cacheId.ids[cacheId.index++]);
-      } else {
-        if(!cacheId){
-          cacheId = {ids:[],index:0};
-          self.idCache[idClazz] = cacheId;
+jmicro.transport = {
+    send:function(data,cb){
+        if(jmicro.config.useWs){
+            jmicro.socket.send(data,cb);
+        } else {
+            jmicro.http.postHelper(jmicro.http.getHttpApiPath(),data,cb);
         }
+    }
+}
 
-        var msg = new jmicro.rpc.Message();
-        msg.type=0x7FFA;
-
-        var req = new jmicro.rpc.IdRequest();
-        req.type = jmicro.Constants.LOng;
-        req.clazz = jmicro.Constants.MessageCls;
-        req.num = 1;
-        msg.payload = JSON.stringify(req);
-
-        msg.flag |= jmicro.Constants.NEED_RESPONSE;
-
-        jmicro.socket.send(msg,function(rstMsg,err){
-          if(err){
-            reje(err);
-            return;
-          }
-          if(!!rstMsg.payload){
-            cacheId.ids =  rstMsg.payload;
-            cacheId.index = 0;
-            var i = cacheId.ids[cacheId.index++]
-            reso1(i);
+jmicro.rpc = {
+    idCache:{},
+    init:function(){
+        if(jmicro.config.useWs && !!window.WebSocket){
+            jmicro.config.useWs = false;
+        }
+    }
+    ,getId : function(idClazz){
+        var self = this;
+        return new Promise(function(reso1,reje){
+          var cacheId = self.idCache[idClazz];
+          if(!!cacheId && cacheId.index < cacheId.ids.length){
+            reso1(cacheId.ids[cacheId.index++]);
           } else {
-            reje(rstMsg);
+            if(!cacheId){
+              cacheId = {ids:[],index:0};
+              self.idCache[idClazz] = cacheId;
+            }
+
+            var msg = new jmicro.rpc.Message();
+            msg.type=0x7FFA;
+
+            var req = new jmicro.rpc.IdRequest();
+            req.type = jmicro.Constants.LOng;
+            req.clazz = jmicro.Constants.MessageCls;
+            req.num = 1;
+            msg.payload = JSON.stringify(req);
+
+            msg.flag |= jmicro.Constants.NEED_RESPONSE;
+
+              jmicro.transport.send(msg,function(rstMsg,err){
+              if(err){
+                reje(err);
+                return;
+              }
+              if(!!rstMsg.payload){
+                cacheId.ids =  rstMsg.payload;
+                cacheId.index = 0;
+                var i = cacheId.ids[cacheId.index++]
+                reso1(i);
+              } else {
+                reje(rstMsg);
+              }
+            });
           }
-        });
-      }
-    });
+     });
   },
 
   callRpcWithRequest : function(req){
@@ -108,7 +125,7 @@ jmicro.rpc = {
           self.getId(jmicro.Constants.IRequestCls)
             .then(function(id){
               msg.reqId = id;
-              jmicro.socket.send(msg,function(rstMsg,err){
+                  jmicro.transport.send(msg,function(rstMsg,err){
                 if(req.stream) {
                   streamCb(rstMsg.payload.result,err);
                 } else {
@@ -269,7 +286,7 @@ jmicro.rpc = {
        });
     }
 
-  },
+  }
 
 }
 
@@ -327,3 +344,5 @@ jmicro.rpc.ApiResponse = function() {
 jmicro.rpc.ApiResponse.prototype = {
 
 }
+
+jmicro.rpc.init();

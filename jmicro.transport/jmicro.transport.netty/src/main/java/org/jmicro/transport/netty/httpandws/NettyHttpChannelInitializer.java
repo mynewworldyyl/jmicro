@@ -16,6 +16,7 @@
  */
 package org.jmicro.transport.netty.httpandws;
 
+import org.jmicro.api.annotation.Cfg;
 import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.Inject;
 
@@ -41,6 +42,9 @@ public class NettyHttpChannelInitializer extends ChannelInitializer<SocketChanne
 	@Inject
 	private NettyHttpServerHandler httpHandler;
 	
+	@Cfg(value="/websocketContextPath")
+	private String websocketContextPath = "/_ws_";
+	
 	@Override
     protected void initChannel(SocketChannel ch) throws Exception {
         ChannelPipeline pipeline = ch.pipeline();
@@ -51,7 +55,7 @@ public class NettyHttpChannelInitializer extends ChannelInitializer<SocketChanne
          //将一个Http的消息组装成一个完成的HttpRequest或者HttpResponse
         pipeline.addLast("httpObjectAggregator", new HttpObjectAggregator(8192));
         
-        pipeline.addLast("webSocketServerProtocolHandler", new WebSocketServerProtocolHandler("/ws"));
+        pipeline.addLast("webSocketServerProtocolHandler", new WebSocketServerProtocolHandler(websocketContextPath));
         
         pipeline.addLast("myWebSocketHandler", wsHandler);
         pipeline.addLast("jmicroHttpHandler", httpHandler);

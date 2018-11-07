@@ -69,8 +69,8 @@ public class NettyHttpServer implements IServer{
 	@Cfg(value = "/bindIp",required=false)
 	private String host;
 	
-	@Cfg(value="/nettyPort",required=false)
-	private int port=0;
+	@Cfg(value="/NettyHttpServer/nettyPort",required=false,defGlobal=false)
+	private int port=9090;
 	
 	@Override
 	public void init() {
@@ -116,7 +116,7 @@ public class NettyHttpServer implements IServer{
         }
         this.port = address.getPort();
         
-        String m = "Running the server host["+this.host+"],port ["+this.port+"]";
+        String m = "Running netty http server host["+this.host+"],port ["+this.port+"]";
         LOG.debug(m);    
         MonitorConstant.doSubmit(monitor,MonitorConstant.SERVER_START, null,null,m);
 	}
