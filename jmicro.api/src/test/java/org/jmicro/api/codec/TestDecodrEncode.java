@@ -1,4 +1,4 @@
-package jmicro.codec.test;
+package org.jmicro.api.codec;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
@@ -12,6 +12,20 @@ import org.jmicro.api.monitor.SubmitItem;
 import org.junit.Test;
 
 public class TestDecodrEncode {
+
+	@Test
+	public void testEncode(){
+		Entity e = new Entity();
+		ByteBuffer bb = ByteBuffer.allocate(1024*4);
+		Encoder.encodeObject(bb, e);
+		bb.flip();
+		System.out.println(bb.limit());
+		System.out.println(bb.array());
+		
+		Object o = Decoder.decodeObject(bb);
+		System.out.println(o);
+		
+	}
 	
 	@Test
 	public void testEncodeString(){

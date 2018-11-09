@@ -24,7 +24,7 @@ import org.jmicro.api.server.IResponse;
  * @author Yulei Ye
  * @date 2018年10月4日-下午12:07:23
  */
-public class RpcResponse extends AbstractObjectMapSupport implements IResponse, /*IEncoder,IResponse,*/IDable{
+public final class RpcResponse extends AbstractObjectMapSupport implements IResponse, /*IEncoder,IResponse,*/IDable{
 	
 	private long id;
 	

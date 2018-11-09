@@ -20,7 +20,7 @@ package org.jmicro.api.net;
  * @author Yulei Ye
  * @date 2018年10月4日-下午12:07:35
  */
-public class ServerError {
+public final class ServerError {
 	
 	public static final int SE_LIMITER = 0xfffffff1;
 

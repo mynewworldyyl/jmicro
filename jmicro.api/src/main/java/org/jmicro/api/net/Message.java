@@ -29,7 +29,7 @@ import org.jmicro.common.util.StringUtils;
  * @author Yulei Ye
  * @date 2018年10月4日-下午12:06:44
  */
-public class Message implements IDable{
+public final class Message implements IDable{
 	
 	public static final byte PROTOCOL_BIN = 1;
 	public static final byte PROTOCOL_JSON = 2;

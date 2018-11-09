@@ -1,4 +1,4 @@
-package jmicro.codec.test;
+package org.jmicro.api.codec;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
@@ -6,60 +6,92 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.jmicro.api.codec.Decoder;
-import org.jmicro.api.codec.Encoder;
 import org.jmicro.api.monitor.SubmitItem;
+import org.jmicro.api.net.Message;
+import org.jmicro.api.net.RpcResponse;
 import org.junit.Test;
 
-public class TestDecodrEncode {
+public class TestOnePrefixCoder {
+
+	private OnePrefixTypeEncoder encoder = new OnePrefixTypeEncoder();
+	private OnePrefixDecoder decoder = new OnePrefixDecoder();
 	
 	@Test
-	public void testEncodeString(){
-		ByteBuffer bb = ByteBuffer.allocate(1024*4);
-		Encoder.encodeObject(bb, "Hello World");
-		bb.flip();
-		System.out.println(bb.limit());
-		System.out.println(bb.position());
+	public void testEndoceArrayResult(){
+		RpcResponse resp = new RpcResponse(1,new Integer[]{1,2,3});
+		resp.setId(33l);
+		resp.setMonitorEnable(true);
+		resp.setSuccess(true);
+		resp.getParams().put("key01", 3);
+		resp.getParams().put("key02","hello");
+		resp.setMsg(new Message());
 		
-		String o = Decoder.decodeObject(bb);
+		ByteBuffer dest = encoder.encode(resp);
+		dest.flip();
+		
+		RpcResponse result = decoder.decode(dest);
+		Object r = result.getResult();
+		
+		System.out.println(r.toString());
+	}
+
+	@Test
+	public void testEncode(){
+		Entity e = new Entity();
+		ByteBuffer bb = encoder.encode(e);
+		bb.flip();
+		
+		System.out.println(bb.limit());
+		System.out.println(bb.array());
+		
+		Entity o = decoder.decode(bb);
 		System.out.println(o);
 		
 	}
 	
 	@Test
-	public void testEncodeList(){
-		ByteBuffer bb = ByteBuffer.allocate(1024*4);
-		List<String> list = new ArrayList<>();
-		list.add("1");
-		list.add("2");
-		list.add("3");
-		Encoder.encodeObject(bb, list);
+	public void testEncodeString(){
+		ByteBuffer bb = encoder.encode("Hello World");
 		bb.flip();
 		System.out.println(bb.limit());
 		System.out.println(bb.position());
 		
-		list = Decoder.decodeObject(bb);
+		String o = decoder.decode(bb);
+		System.out.println(o);
+	}
+	
+	@Test
+	public void testEncodeList(){
+		List<String> list = new ArrayList<>();
+		list.add("1");
+		list.add("2");
+		list.add("3");
 		
+		ByteBuffer bb = encoder.encode(list);
+		bb.flip();
+		System.out.println(bb.limit());
+		System.out.println(bb.position());
+		
+		list = decoder.decode(bb);
 		System.out.println(list);
 	}
 	
 	@Test
 	public void testEncodeArray(){
-		ByteBuffer bb = ByteBuffer.allocate(1024*4);
 		String[] arrs = {"56","2","67"};
-		Encoder.encodeObject(bb, arrs);
+		ByteBuffer bb = encoder.encode(arrs);
 		bb.flip();
 		System.out.println(bb.limit());
 		System.out.println(bb.position());
 		
-		arrs = Decoder.decodeObject(bb);
+		arrs = decoder.decode(bb);
 		
 		System.out.println(arrs);
 	}
 	
 	@Test
 	public void testEncodeMap(){
-		ByteBuffer bb = ByteBuffer.allocate(1024*4);
+		ByteBuffer bb = null;
 		
 		Map<String,Long> map = new HashMap<>();
 		{
@@ -68,12 +100,12 @@ public class TestDecodrEncode {
 			map.put("3",555L);
 		}
 		
-		Encoder.encodeObject(bb, map);
+		bb = encoder.encode(map);
 		bb.flip();
 		System.out.println(bb.limit());
 		System.out.println(bb.position());
 		
-		map = Decoder.decodeObject(bb);
+		map = decoder.decode(bb);
 		
 		System.out.println(map);
 	}
@@ -104,4 +136,5 @@ public class TestDecodrEncode {
 		System.out.println(o);
 		
 	}
+
 }

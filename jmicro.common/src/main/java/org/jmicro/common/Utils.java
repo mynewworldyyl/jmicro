@@ -147,7 +147,9 @@ public class Utils {
 	}
 
 	public void  getFieldNames(List<String> fieldNames,Class cls) {
-		
+		if(cls == null) {
+			return;
+		}
 		Field[] fs = cls.getDeclaredFields();
 		for(Field f: fs){
 			if(Modifier.isTransient(f.getModifiers()) || Modifier.isFinal(f.getModifiers())

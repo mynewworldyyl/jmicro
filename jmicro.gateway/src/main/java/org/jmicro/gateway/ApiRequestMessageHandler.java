@@ -89,11 +89,15 @@ public class ApiRequestMessageHandler implements IMessageHandler{
 				
 				if(sm.stream) {
 					IMessageCallback<Object> msgReceiver = (rst)->{
+						if(session.isClose()) {
+							return false;
+						}
 						resp.setSuccess(true);
 						resp.setResult(rst);
 						resp.setId(idGenerator.getLongId(ApiResponse.class));
 						msg.setPayload(ICodecFactory.encode(codecFactory, resp, msg.getProtocol()));
 						session.write(msg);
+						return true;
 					};
 					JMicroContext.get().setParam(Constants.CONTEXT_CALLBACK_CLIENT, msgReceiver);
 					result = m.invoke(srv, req.getArgs());

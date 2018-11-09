@@ -9,17 +9,19 @@ import org.jmicro.api.annotation.Cfg;
 import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.Inject;
 import org.jmicro.api.annotation.JMethod;
+import org.jmicro.api.codec.Decoder;
+import org.jmicro.api.codec.Encoder;
 import org.jmicro.api.codec.ICodecFactory;
 import org.jmicro.api.codec.IDecoder;
 import org.jmicro.api.codec.IEncoder;
+import org.jmicro.api.codec.OnePrefixDecoder;
+import org.jmicro.api.codec.OnePrefixTypeEncoder;
 import org.jmicro.api.gateway.ApiRequest;
 import org.jmicro.api.net.Message;
 import org.jmicro.api.net.RpcRequest;
 import org.jmicro.api.registry.IRegistry;
 import org.jmicro.common.CommonException;
 import org.jmicro.common.Constants;
-import org.jmicro.common.codec.Decoder;
-import org.jmicro.common.codec.Encoder;
 import org.jmicro.common.util.JsonUtils;
 
 @Component(value=Constants.DEFAULT_CODEC_FACTORY)
@@ -35,6 +37,12 @@ public class SimpleCodecFactory implements ICodecFactory{
 	@Inject
 	private IRegistry registry;
 	
+	@Inject
+	private OnePrefixTypeEncoder onePrefixTypeEncoder;
+	
+	@Inject
+	private OnePrefixDecoder onePrefixDecoder;
+	
 	public SimpleCodecFactory(){}
 	
 	@JMethod("init")
@@ -49,15 +57,18 @@ public class SimpleCodecFactory implements ICodecFactory{
 	private IDecoder<ByteBuffer> byteBufferDecoder = new IDecoder<ByteBuffer>(){
 		@Override
 		public <R> R decode(ByteBuffer data,Class<R> clazz) {
-			return (R)Decoder.decodeObject(data);
+			//return (R)Decoder.decodeObject(data);
+			return (R)onePrefixDecoder.decode(data);
 		}
 	};
 	
 	private IEncoder<ByteBuffer> byteBufferEncoder = new IEncoder<ByteBuffer>(){
 		@Override
 		public ByteBuffer encode(Object obj) {
-			ByteBuffer bb = ByteBuffer.allocate(defaultEncodeBufferSize);
-			Encoder.encodeObject(bb,obj);
+			ByteBuffer bb = null;
+			//ByteBuffer.allocate(defaultEncodeBufferSize);
+			//Encoder.encodeObject(bb,obj);
+			bb = onePrefixTypeEncoder.encode(obj);
 			bb.flip();
 			return bb;
 		}

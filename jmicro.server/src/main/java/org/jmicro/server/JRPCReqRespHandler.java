@@ -159,21 +159,23 @@ public class JRPCReqRespHandler implements IMessageHandler{
 						JMicroContext.get().mergeParams(cxt);
 						JMicroContext.get().setParam(Constants.CONTEXT_CALLBACK_SERVICE, new IWriteCallback(){
 							@Override
-							public void send(Object message) {
-								
+							public boolean send(Object message) {
+								if(s.isClose()){
+									s.close(true);
+									return false;
+								}
 								RpcResponse resp = new RpcResponse(req1.getRequestId(),message);
 								resp.setSuccess(true);
 								//返回结果包
 								msg.setId(idGenerator.getLongId(Message.class));
 								msg.setPayload(codeFactory.getEncoder(msg.getProtocol()).encode(resp));
 								msg.setType(Constants.MSG_TYPE_ASYNC_RESP);
-								if(s.isClose()){
-									throw new CommonException("Session is closed while writing data");
-								}
+								
 								if(openDebug) {
 									logger.debug("Send Async msg ReqId: "+req1.getRequestId());
 								}
 								s.write(msg);
+								return true;
 							}
 						});
 						 handler(req1);

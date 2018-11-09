@@ -57,9 +57,11 @@ public class NettyHttpServerHandler extends ChannelInboundHandlerAdapter {
     	//logger.debug("channelRead:" + msg.toString());
     	if(msg instanceof FullHttpRequest){
     		FullHttpRequest req = (FullHttpRequest)msg;
+    		//全部GET请求转到资源控制器上面
     		if(resourceHandler.canhandle(req)){
     			resourceHandler.handle(ctx, req);
     		} else {
+    			//全部POST请求转到RPC控制器上面
     			NettyServerSession session = ctx.attr(sessionKey).get();
     			ByteBuf bb = req.content();
     			byte[] bts = new byte[bb.readableBytes()];
@@ -70,6 +72,7 @@ public class NettyHttpServerHandler extends ChannelInboundHandlerAdapter {
     		}
     	}else {
     		logger.debug("Error Http Request!");
+    		ctx.fireChannelRead(msg);
     	}
     }
     

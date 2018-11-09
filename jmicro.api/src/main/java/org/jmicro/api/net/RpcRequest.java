@@ -26,7 +26,7 @@ import org.jmicro.common.Constants;
  * @author Yulei Ye
  * @date 2018年10月4日-下午12:07:03
  */
-public class RpcRequest extends AbstractObjectMapSupport implements IRequest{
+public final class RpcRequest extends AbstractObjectMapSupport implements IRequest{
 	
 	private String serviceName;
 	

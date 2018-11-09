@@ -2,7 +2,7 @@ package org.jmicro.api.gateway;
 
 import org.jmicro.api.net.Message;
 
-public class ApiResponse {
+public final class ApiResponse {
 	private Long id = -1L;
 	private transient Message msg = null;
 	private Long reqId =  -1L;

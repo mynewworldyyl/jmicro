@@ -55,12 +55,20 @@ public class ServiceMonitorDataImpl implements IServiceMonitorData{
 	@Override
 	public Integer subsicribe(String service) {
 		Integer id = idGenerator.getIntId(ServiceStatis.class);
+		final String lkey = DegradeManager.AVG_TIME_ROOT+service;
+		
 		IWriteCallback sender = JMicroContext.get().getParam(Constants.CONTEXT_CALLBACK_SERVICE, null);
-		IDataListener l = (path,data)->{
-			sender.send(data);
+		
+		final IDataListener l = new IDataListener() {
+			public void dataChanged(String path,String data) {
+				if(!sender.send(data)) {
+					dataOperator.removeDataListener(lkey, this);
+				}
+			}
 		};
+		
 		listeners.put(id, l);
-		dataOperator.addDataListener(DegradeManager.AVG_TIME_ROOT+service,l);
+		dataOperator.addDataListener(lkey,l);
 		return id;
 	}
 	

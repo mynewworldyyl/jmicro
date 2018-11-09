@@ -60,7 +60,9 @@ public class TestRpcServiceImpl implements ITestRpcService{
 			}
 			String msg1 = "Server return: "+ count.getAndIncrement()+",msg: " +msg;
 			System.out.println(msg1);
-			sender.send(msg1);
+			if(!sender.send(msg1)) {
+				break;
+			}
 		}
 	}
 }

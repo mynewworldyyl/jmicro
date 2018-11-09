@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.jmicro.common.codec;
+package org.jmicro.api.codec;
 
 import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Array;
@@ -31,7 +31,6 @@ import org.jmicro.common.Constants;
 import org.jmicro.common.Utils;
 import org.jmicro.common.util.StringUtils;
 /**
- * 
  * @author Yulei Ye
  * @date 2018年10月4日-下午12:01:25
  */
@@ -71,7 +70,7 @@ public class Encoder{
 		
 		cls = putType(buffer,cls);
 		
-		Object v = null;
+		//Object v = null;
 		if(Map.class == cls){
 			encodeMap(buffer,(Map<Object,Object>)obj);
 		}else if(Collection.class == cls){
@@ -83,7 +82,7 @@ public class Encoder{
 		}else if(cls == String.class) {
 			encodeString(buffer,(String)obj);
 		}else if(cls == void.class || cls == Void.class  || cls == Void.TYPE) {
-			v =  null;
+			//v =  null;
 		}else if(cls == int.class || cls == Integer.class || cls == Integer.TYPE){
 			buffer.putInt((Integer)obj);
 		}else if(cls == byte.class || cls == Byte.class || cls == Byte.TYPE){

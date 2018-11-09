@@ -56,6 +56,7 @@ public class TestRpcRequest {
 		
 		IMessageCallback<String> msgReceiver = (msg)->{
 			System.out.println(msg);
+			return true;
 		};
 		JMicroContext.get().setParam(Constants.CONTEXT_CALLBACK_CLIENT, msgReceiver);
 		
@@ -81,6 +82,7 @@ public class TestRpcRequest {
 		
 		IMessageCallback<String> msgReceiver = (msg)->{
 			System.out.println(msg);
+			return true;
 		};
 		
 		JMicroContext.get().setParam(Constants.CONTEXT_CALLBACK_CLIENT, msgReceiver);

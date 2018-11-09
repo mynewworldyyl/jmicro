@@ -1,6 +1,6 @@
 package org.jmicro.api;
 
-public class Person{
+public final class Person{
 	
 	private String username ="";
 	private int id = 222;

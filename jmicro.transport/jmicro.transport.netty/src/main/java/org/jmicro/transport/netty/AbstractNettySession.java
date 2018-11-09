@@ -16,6 +16,11 @@
  */
 package org.jmicro.transport.netty;
 
+import static io.netty.handler.codec.http.HttpHeaders.Names.CONTENT_LENGTH;
+import static io.netty.handler.codec.http.HttpHeaders.Names.CONTENT_TYPE;
+import static io.netty.handler.codec.http.HttpResponseStatus.OK;
+import static io.netty.handler.codec.http.HttpVersion.HTTP_1_1;
+
 import java.io.UnsupportedEncodingException;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
@@ -31,15 +36,7 @@ import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.http.DefaultFullHttpResponse;
 import io.netty.handler.codec.http.FullHttpResponse;
-import io.netty.handler.codec.http.HttpHeaders;
-import io.netty.handler.codec.http.HttpHeaders.Values;
 import io.netty.handler.codec.http.websocketx.TextWebSocketFrame;
-
-import static io.netty.handler.codec.http.HttpHeaders.Names.CONNECTION;
-import static io.netty.handler.codec.http.HttpHeaders.Names.CONTENT_LENGTH;
-import static io.netty.handler.codec.http.HttpHeaders.Names.CONTENT_TYPE;
-import static io.netty.handler.codec.http.HttpResponseStatus.OK;
-import static io.netty.handler.codec.http.HttpVersion.HTTP_1_1;
 
 public abstract class AbstractNettySession extends AbstractSession implements IClientSession {
 
@@ -68,8 +65,7 @@ public abstract class AbstractNettySession extends AbstractSession implements IC
 			String json = JsonUtils.getIns().toJson(msg);
 			if(this.isWebSocket) {
 				ctx.channel().writeAndFlush(new TextWebSocketFrame(json));
-			} else {
-				
+			} else {		
 				FullHttpResponse response;
 				try {
 					response = new DefaultFullHttpResponse(HTTP_1_1, OK,

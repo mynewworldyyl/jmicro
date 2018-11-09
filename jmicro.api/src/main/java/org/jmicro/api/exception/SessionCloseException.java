@@ -14,15 +14,32 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.jmicro.api.server;
+package org.jmicro.api.exception;
 
+import org.jmicro.common.CommonException;
 /**
- * RPC服务从Context中取得接口推送消息给客户端，实现服务端到客户端信息流推送
+ * 
  * @author Yulei Ye
- * @date 2018年10月12日-上午11:02:35
+ * @date 2018年11月8日 上午9:29:20
  */
-public interface IWriteCallback {
-
-	boolean send(Object msg);
+public class SessionCloseException extends CommonException {
+	 
+	private static final long serialVersionUID = 1343228923L;
 	
+	public SessionCloseException(String cause){
+		super(cause);
+	}
+	
+	public SessionCloseException(String cause,Throwable exp){
+		super(cause,exp);
+	}
+	
+	public SessionCloseException(String key,String cause){
+		this(key,cause,null);
+	}
+	
+	public SessionCloseException(String key,String cause,Throwable exp){
+		super(key,cause,exp);
+	}
+
 }

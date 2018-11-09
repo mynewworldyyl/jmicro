@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.jmicro.common.codec;
+package org.jmicro.api.codec;
 
 import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Array;
@@ -43,38 +43,19 @@ public class Decoder {
 	public static final byte PREFIX_TYPE_STRING = 1 << 1;
 	public static final byte PREFIX_TYPE_NULL = 1 << 2;
 	
-	public static final Short NON_ENCODE_TYPE = -32768;
+	public static final Short NON_ENCODE_TYPE = 0;
 
 	private static Map<Short,Class<?>> Short2Clazz = new HashMap<>();
 	private static Map<Class<?>,Short> clazz2Short = new HashMap<>();
 	
-	static Short currentTypeCode = (short)(NON_ENCODE_TYPE + 1);
+	//static Short currentTypeCode = (short)(NON_ENCODE_TYPE + 1);
 	
-	static {
-		registType(Map.class);
-		registType(Collection.class);
-		registType(List.class);
-		registType(Array.class);
-		registType(Void.class);
-		registType(Short.class);
-		registType(Integer.class);
-		registType(Long.class);
-		registType(Double.class);
-		registType(Float.class);
-		registType(Boolean.class);
-		registType(Character.class);
-		registType(Object.class);
-		registType(String.class);
-		registType(ByteBuffer.class);
-	}
-	
-	public static void registType(Class<?> clazz){
+	public static void registType(Short type,Class<?> clazz){
 		if(clazz2Short.containsKey(clazz)){
 			return;
 		}
-		clazz2Short.put(clazz,currentTypeCode );
-		Short2Clazz.put(currentTypeCode, clazz);
-		currentTypeCode++;
+		clazz2Short.put(clazz,type );
+		Short2Clazz.put(type, clazz);
 	}
 	
 	 static Short getType(Class<?> cls){

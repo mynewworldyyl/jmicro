@@ -5,13 +5,13 @@ import java.nio.ByteBuffer;
 import org.jmicro.api.annotation.Cfg;
 import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.Inject;
+import org.jmicro.api.codec.Decoder;
 import org.jmicro.api.codec.ICodecFactory;
 import org.jmicro.api.idgenerator.IIdGenerator;
 import org.jmicro.api.monitor.IMonitorDataSubmiter;
 import org.jmicro.api.net.IMessageReceiver;
 import org.jmicro.api.net.Message;
 import org.jmicro.common.Constants;
-import org.jmicro.common.codec.Decoder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

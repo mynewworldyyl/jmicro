@@ -5,7 +5,7 @@ import java.util.Map;
 
 import org.jmicro.api.net.Message;
 
-public class ApiRequest {
+public final class ApiRequest {
 	
 	private Map<String,String> params = new HashMap<>();
 	
