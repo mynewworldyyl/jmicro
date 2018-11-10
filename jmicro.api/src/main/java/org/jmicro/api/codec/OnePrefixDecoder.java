@@ -23,6 +23,7 @@ import java.lang.reflect.Modifier;
 import java.lang.reflect.ParameterizedType;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -41,14 +42,33 @@ import org.jmicro.common.Utils;
 @Component(value="onePrefixDecoder",lazy=false)
 public class OnePrefixDecoder /*implements IDecoder*/{
 	
-	public  <V> V decode(ByteBuffer buffer) {
+	@SuppressWarnings("unchecked")
+	public <V> V decode(ByteBuffer buffer) {
 		Class<?> cls = this.getClazz(buffer);
 		if(cls == null) {
 			throw new CommonException("class not found: ");
 		}
 		
-		Object obj = decodeObject(buffer,cls,null);
-		return (V)obj;
+		if(TypeUtils.isMap(cls)){
+			/* TypeVariable[] typeVars = cls.getTypeParameters();
+			 Class<?> keyType = typeVars[0].getClass();
+			 Class<?> valueType = typeVars[1].getClass();*/
+			return (V)this.decodeMap(buffer, null);
+		}else if(TypeUtils.isCollection(cls)){
+			/* Type type = cls.getGenericSuperclass();
+			 Class<?> valueType = finalParameterType((ParameterizedType)type,0);*/
+			return (V)this.decodeList(buffer, null);
+		}else {
+			if(!TypeUtils.isFinal(cls)) {
+				throw new CommonException("class {} must by final class for encode",cls.getName());
+			}
+			if(cls.isArray()) {
+				Class<?> eltType = this.getClazz(buffer);
+				return (V)this.decodeObjects(buffer, eltType);
+			}else {
+				return decodeObject(buffer,cls,null);
+			}
+		}
 	}
 	
 	private Class<?> getClazz(ByteBuffer buffer) {
@@ -87,34 +107,34 @@ public class OnePrefixDecoder /*implements IDecoder*/{
 	private <V> V decodeObject(ByteBuffer buffer,Class<?> cls, ParameterizedType paramType){
 		
 		Object v = null;
-	    if(OnePrefixTypeEncoder.isMap(cls)){
+	    if(TypeUtils.isMap(cls)){
 			v =  decodeMap(buffer,paramType);
-		}else if(OnePrefixTypeEncoder.isCollection(cls)){
+		}else if(TypeUtils.isCollection(cls)){
 			v =  decodeList(buffer,paramType);
-		}else if(OnePrefixTypeEncoder.isArray(cls)){
+		}else if(TypeUtils.isArray(cls)){
 			Class<?> clazz = (Class<?>)cls;
 			v =  decodeObjects(buffer,clazz.getComponentType());
-		}else if(OnePrefixTypeEncoder.isByteBuffer(cls)){
+		}else if(TypeUtils.isByteBuffer(cls)){
 			v =  decodeByteBuffer(buffer);
 		}else if(cls == String.class) {
 			v =  decodeString(buffer);
-		}else if(cls == void.class || cls == Void.TYPE || cls == Void.class) {
+		}else if(TypeUtils.isVoid(cls)) {
 			v =  null;
-		}else if(cls == int.class || cls == Integer.TYPE || cls == Integer.class){
+		}else if(TypeUtils.isInt(cls)){
 			v =  buffer.getInt();
-		}else if(cls == byte.class || cls == Byte.TYPE || cls == Byte.class){
+		}else if(TypeUtils.isByte(cls)){
 			v =  buffer.get();
-		}else if(cls == short.class || cls == Short.TYPE || cls == Short.class){
+		}else if(TypeUtils.isShort(cls)){
 			v =  buffer.getShort();
-		}else if(cls == long.class || cls == Long.TYPE || cls == Long.class){
+		}else if(TypeUtils.isLong(cls)){
 			v =  buffer.getLong();
-		}else if(cls == float.class || cls == Float.TYPE || cls == Float.class){
+		}else if(TypeUtils.isFloat(cls)){
 			v = buffer.getFloat();
-		}else if(cls == double.class || cls == Double.TYPE || cls == Double.class){
+		}else if(TypeUtils.isDouble(cls)){
 			v = buffer.getDouble();
-		}else if(cls == boolean.class || cls == Boolean.TYPE || cls == Boolean.class){
+		}else if(TypeUtils.isBoolean(cls)){
 			v = buffer.get() == 1;
-		}else if(cls == char.class || cls == Character.TYPE || cls == Character.class){
+		}else if(TypeUtils.isChar(cls)){
 			v = buffer.getChar();
 		} else {	
 			v = decodeByReflect(buffer,(Class<?>)cls);
@@ -130,7 +150,8 @@ public class OnePrefixDecoder /*implements IDecoder*/{
 		return ByteBuffer.wrap(data);
 	}
 	
-	private Object decodeByReflect(ByteBuffer buffer,Class<?> cls ) {
+	@SuppressWarnings({ "unchecked", "rawtypes" })
+	private Object decodeByReflect(ByteBuffer buffer, Class<?> cls) {
 		
 		int m = cls.getModifiers() ;
 		
@@ -150,37 +171,53 @@ public class OnePrefixDecoder /*implements IDecoder*/{
 		fieldNames.sort((v1,v2)->v1.compareTo(v2));
 		
 		for(int i =0; i < fieldNames.size(); i++){
-			try {
-				
-				Field f = Utils.getIns().getClassField(cls, fieldNames.get(i));
-				Class<?> fileType = f.getType();
-				
-				if(!OnePrefixTypeEncoder.isFinal(fileType)) {
-					fileType = this.getClazz(buffer);
-				}else if(f.getType().isArray()) {
-					fileType = this.getClazz(buffer);
+
+			Field f = Utils.getIns().getClassField(cls, fieldNames.get(i));
+
+			Object v = null;
+			Class<?> valueType = null;
+			
+			if(!TypeUtils.isFinal(f.getType())) {
+				valueType = this.getClazz(buffer);
+				if(valueType == Void.class) {
+					continue;
+				}
+			} else {
+				valueType = f.getType();
+			}
+			
+			if(TypeUtils.isMap(valueType)){
+				v = this.decodeMap(buffer,(ParameterizedType)f.getGenericType());
+				Map map = (Map)TypeUtils.getFieldValue(obj, f);
+				if(v == null) {
+					continue;
+				}
+				if(map == null) {
+					TypeUtils.setFieldValue(obj, v, f);
+				}else {
+					map.putAll((Map)v);
 				}
 				
-				Object v = null;
-				if(f.getGenericType() instanceof ParameterizedType) {
-					v = decodeObject(buffer,fileType,(ParameterizedType)f.getGenericType());
-				} else {
-					v = decodeObject(buffer,fileType,null);
+			}else if(TypeUtils.isCollection(valueType)){
+				v = this.decodeList(buffer, (ParameterizedType)f.getGenericType());
+				if(v == null) {
+					continue;
 				}
-						
-				boolean bf = f.isAccessible();
-				if(!bf){
-					f.setAccessible(true);
+				Collection coll = (Collection)TypeUtils.getFieldValue(obj, f);
+				if(coll == null) {
+					TypeUtils.setFieldValue(obj, v, f);
+				}else {
+					coll.addAll((Collection)v);
 				}
-				if(v != null){
-					f.set(obj, v);
+			} else {
+				if(TypeUtils.isArray(f.getType())) {
+					Class<?> eltType = this.getClazz(buffer);
+					v = decodeObjects(buffer,eltType);
+				}else {
+					v = decodeObject(buffer,valueType,null);
 				}
 				
-				if(!bf){
-					f.setAccessible(false);
-				}
-			} catch (SecurityException | IllegalArgumentException | IllegalAccessException e) {
-				throw new CommonException("",e);
+				TypeUtils.setFieldValue(obj, v, f);
 			}
 		}
 		return obj;
@@ -193,8 +230,8 @@ public class OnePrefixDecoder /*implements IDecoder*/{
 			return null;
 		}
 		
-	    Class<?> objType = OnePrefixTypeEncoder.finalParameterType(paramType,0);
-		boolean keyFlag = OnePrefixTypeEncoder.isFinalParameterType(paramType,0);
+	    Class<?> objType = TypeUtils.finalParameterType(paramType,0);
+		boolean keyFlag = TypeUtils.isFinalParameterType(paramType,0);
 		
 		List<Object> objs = new ArrayList<>();
 		
@@ -202,13 +239,17 @@ public class OnePrefixDecoder /*implements IDecoder*/{
 			if(!keyFlag) {
 				objType = this.getClazz(buffer);
 			}
-			objs.add(decodeObject(buffer,objType,null));
+			Object obj = null;
+			if(objType != Void.class) {
+				obj = decodeObject(buffer,objType,null);
+			}
+			objs.add(obj);
 		}
 		return (List<V>)objs;
 	}
 	
-	private Object decodeObjects(ByteBuffer buffer,Class<?> clazz){
-		Class<?> eltType = this.getClazz(buffer);
+	private Object decodeObjects(ByteBuffer buffer,Class<?> eltType){
+
 		int len = buffer.getInt();
 		if(len <= 0) {
 			return null;
@@ -218,12 +259,16 @@ public class OnePrefixDecoder /*implements IDecoder*/{
 		
 		Object objs = Array.newInstance(eltType, len);
 		//Object[] objs = new Object[len];
-		for(int i =0; i < len; i++){
+		for(int i = 0; i < len; i++){
 			if(!isFinal) {
 				eltType = this.getClazz(buffer);
 			}
-			Object o = decodeObject(buffer,eltType,null);
-			Array.set(objs, i, o);
+			
+			Object obj = null;
+			if(eltType != Void.class) {
+				obj = decodeObject(buffer,eltType,null);
+			}
+			Array.set(objs, i, obj);
 		}
 		
 		return objs;
@@ -235,22 +280,30 @@ public class OnePrefixDecoder /*implements IDecoder*/{
 			return Collections.EMPTY_MAP;
 		}
 		
-		Class<?> keyType = OnePrefixTypeEncoder.finalParameterType(paramType,0);
-		Class<?> objType = OnePrefixTypeEncoder.finalParameterType(paramType,1);
+		Class<?> keyType = TypeUtils.finalParameterType(paramType,0);
+		Class<?> objType = TypeUtils.finalParameterType(paramType,1);
 		
-		boolean keyFlag = OnePrefixTypeEncoder.isFinalParameterType(paramType,0);
-		boolean valueFlag = OnePrefixTypeEncoder.isFinalParameterType(paramType,1);
+		boolean keyFlag = TypeUtils.isFinalParameterType(paramType,0);
+		boolean valueFlag = TypeUtils.isFinalParameterType(paramType,1);
 		
 		Map<Object,Object> map = new HashMap<>();
 		for(; len > 0; len--) {
 			if(!keyFlag) {
 				keyType = this.getClazz(buffer);
 			}
-			Object key = decodeObject(buffer,keyType,null);
+			Object key = null;
+			if(keyType != Void.class) {
+				key = decodeObject(buffer,keyType,null);
+			}
+			
 			if(!valueFlag) {
 				objType = this.getClazz(buffer);
 			}
-			Object obj = decodeObject(buffer,objType,null);
+			
+			Object obj = null;
+			if(objType != Void.class) {
+				obj = decodeObject(buffer,objType,null);
+			}
 			map.put(key, obj);
 		}
 		

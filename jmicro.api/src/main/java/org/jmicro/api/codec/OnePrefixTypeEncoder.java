@@ -45,35 +45,39 @@ public class OnePrefixTypeEncoder implements IEncoder<ByteBuffer>{
 	@Cfg(value="/OnePrefixTypeEncoder")
 	private int encodeBufferSize = 4096;
 	
+	@SuppressWarnings("unchecked")
 	@Override
 	public ByteBuffer encode(Object obj) {
 		if(obj == null) {
+			//对空值编码没有意义
 			throw new CommonException("Encode must not be NULL");
 		}
 		
 		ByteBuffer buffer = ByteBuffer.allocate(encodeBufferSize);
+		//记录最外层类型信息
 		putType(buffer,obj.getClass());
 		
 		Class<?> cls = obj.getClass();
 		
-		if(isMap(obj.getClass())){
+		if(TypeUtils.isMap(cls)){
 			/* TypeVariable[] typeVars = cls.getTypeParameters();
 			 Class<?> keyType = typeVars[0].getClass();
 			 Class<?> valueType = typeVars[1].getClass();*/
 			 encodeMap(buffer,(Map<Object,Object>)obj,null,null);
-		}else if(isCollection(obj.getClass())){
+		}else if(TypeUtils.isCollection(cls)){
 			/* Type type = cls.getGenericSuperclass();
 			 Class<?> valueType = finalParameterType((ParameterizedType)type,0);*/
-			 encodeList(buffer,(Collection<?>)obj,null);
+			 encodeCollection(buffer,(Collection<?>)obj,null);
 		}else {
-			if(!isFinal(obj.getClass())) {
-				throw new CommonException("class {} must by final class for encode",obj.getClass().getName());
+			if(!TypeUtils.isFinal(cls)) {
+				throw new CommonException("class {} must by final class for encode",cls.getName());
 			}
-			if(isArray(obj.getClass())) {
-				//数组需要写入元素类型，用于数组创建
-				this.putType(buffer, obj.getClass().getComponentType());
+			if(cls.isArray()) {
+				this.putType(buffer, cls.getComponentType());
+				this.encodeObjects(buffer, obj);
+			}else {
+				encodeObject(buffer,obj,cls);
 			}
-			encodeObject(buffer,obj,obj.getClass());
 		}
 		return buffer;
 	}
@@ -85,11 +89,11 @@ public class OnePrefixTypeEncoder implements IEncoder<ByteBuffer>{
 			cls = ByteBuffer.class;
 		}
 		
-		if(isMap(cls)) {
+		if(TypeUtils.isMap(cls)) {
 			cls = Map.class;
-		}else if(isCollection(cls)) {
+		}else if(TypeUtils.isCollection(cls)) {
 			cls = Collection.class;
-		}else if(isByteBuffer(cls)) {
+		}else if(TypeUtils.isByteBuffer(cls)) {
 			cls = Map.class;
 		}/*else if(cls.isArray()) {
 			cls = Array.class;
@@ -105,8 +109,14 @@ public class OnePrefixTypeEncoder implements IEncoder<ByteBuffer>{
 		}
 		return cls;
 	}
-
-	private <V> void encodeObject(ByteBuffer buffer,V obj, Class<?> genericType){
+	
+    /**
+     * 
+     * @param buffer
+     * @param obj
+     * @param genericType 成员变量字段声明的类型
+     */
+	private void encodeObject(ByteBuffer buffer,Object obj, Class<?> genericType){
 	
 		Class<?> cls = null;
 		if( obj == null ) {
@@ -115,68 +125,66 @@ public class OnePrefixTypeEncoder implements IEncoder<ByteBuffer>{
 			cls = obj.getClass();
 		}
 		
-		if(isByteBuffer(cls)){
+		if(TypeUtils.isByteBuffer(cls)){
 			 encodeByteBuffer(buffer,(ByteBuffer)obj);
-		}else if(isArray(cls)){
+		}else if(TypeUtils.isArray(cls)){
 			encodeObjects(buffer,obj);
 		}else if(cls == String.class) {
 			encodeString(buffer,(String)obj);
-		}else if(cls == void.class || cls == Void.class  || cls == Void.TYPE) {
+		}else if(TypeUtils.isVoid(cls)) {
 		
-		}else if(cls == int.class || cls == Integer.class || cls == Integer.TYPE){
+		}else if(TypeUtils.isInt(cls)){
 			if(obj == null) {
 				buffer.putInt(0);
 			}else {
 				buffer.putInt((Integer)obj);
 			}
-		}else if(cls == byte.class || cls == Byte.class || cls == Byte.TYPE){
+		}else if(TypeUtils.isByte(cls)){
 			if(obj == null) {
 				buffer.put((byte)0);
 			}else {
 				buffer.put((Byte)obj);
 			}
-		}else if(cls == short.class || cls == Short.class || cls == Short.TYPE){
+		}else if(TypeUtils.isShort(cls)){
 			if(obj == null) {
 				buffer.putShort((short)0);
 			}else {
 				buffer.putShort((Short)obj);
 			}
-		}else if(cls == long.class || cls == Long.class || cls == Long.TYPE){
+		}else if(TypeUtils.isLong(cls)){
 			if(obj == null) {
 				buffer.putLong(0);
 			}else {
 				buffer.putLong((Long)obj);
 			}
-		}else if(cls == float.class || cls == Float.class || cls == Float.TYPE){
+		}else if(TypeUtils.isFloat(cls)){
 			if(obj == null) {
 				buffer.putFloat(0);
 			}else {
 				buffer.putFloat((Float)obj);
 			}
-		}else if(cls == double.class || cls == Double.class || cls == Double.TYPE){
+		}else if(TypeUtils.isDouble(cls)){
 			if(obj == null) {
 				buffer.putDouble(0);
 			}else {
 				buffer.putDouble((Double)obj);
 			}
-		}else if(cls == boolean.class || cls == Boolean.class || cls == Boolean.TYPE){
+		}else if(TypeUtils.isBoolean(cls)){
 			if(obj == null) {
 				buffer.put((byte)0);
 			}else {
 				boolean b = (Boolean)obj;
 				buffer.put(b?(byte)1:(byte)0);
 			}
-		}else if(cls == char.class || cls == Character.class || cls == Character.TYPE){
+		}else if(TypeUtils.isChar(cls)){
 			if(obj == null) {
 				buffer.putChar((char)0);
 			}else {
 				buffer.putChar((Character)obj);
 			}
 		} else {
-			encodeByReflect(buffer,cls,obj);
+			encodeByReflect(buffer,obj,cls);
 		}
-	
-
 	}
 	
 	private void encodeByteBuffer(ByteBuffer buffer, ByteBuffer obj) {
@@ -184,16 +192,21 @@ public class OnePrefixTypeEncoder implements IEncoder<ByteBuffer>{
 		buffer.put(obj);
 	}
 
-	private void encodeByReflect(ByteBuffer buffer, Class<?> cls, Object obj) {
+	private void encodeByReflect(ByteBuffer buffer, Object obj, Class<?> cls) {
 		
 		if(!Modifier.isPublic(cls.getModifiers())) {
 			throw new CommonException("should be public class [" +cls.getName()+"]");
 		}
 		
-		if(!isFinal(cls)) {
+		if(!TypeUtils.isFinal(cls)) {
 			//不能从泛型参数拿到类型信息，需要把类型参数写到buffer中
-			cls = obj.getClass();
-			this.putType(buffer, cls);
+			if(obj == null) {
+				this.putType(buffer, Void.class);
+				return;
+			} else {
+				cls = obj.getClass();
+				this.putType(buffer, cls);
+			}
 		}
 		
 		List<String> fieldNames = new ArrayList<>();
@@ -201,112 +214,63 @@ public class OnePrefixTypeEncoder implements IEncoder<ByteBuffer>{
 		fieldNames.sort((v1,v2)->v1.compareTo(v2));
 		
 		for(int i = 0; i < fieldNames.size(); i++){
-			try {
-				String fn = fieldNames.get(i);
-				
-				Field f = Utils.getIns().getClassField(cls,fn);
-				
-				boolean bf = f.isAccessible();
-				if(!bf){
-					f.setAccessible(true);
-				}
-				Object v = f.get(obj);
-				if(!bf){
-					f.setAccessible(false);
-				}
-				
+
+			String fn = fieldNames.get(i);
+			
+			Field f = Utils.getIns().getClassField(cls,fn);
+			
+			Object v = TypeUtils.getFieldValue(obj, f);
+			
+			if(!TypeUtils.isFinal(f.getType())) {
 				//不能根据字段类型判断值的类型做系列化，写入值的类型
-				if(v.getClass().isArray()) {
-					//数组需要写入元素类型，用于数组创建
+				if(v != null) {
 					this.putType(buffer, v.getClass());
-					this.putType(buffer, v.getClass().getComponentType());
-				}else if(!isFinal(f.getType())) {
-					this.putType(buffer, v.getClass());
+				}else {
+					this.putType(buffer, Void.class);
+					continue;
 				}
-				
-				if(isMap(f.getType())){
-					 Class<?> keyType = finalParameterType((ParameterizedType)f.getGenericType(),0);
-					 Class<?> valueType = finalParameterType((ParameterizedType)f.getGenericType(),1);
-					 encodeMap(buffer,(Map<Object,Object>)v,keyType,valueType);
-				}else if(isCollection(f.getType())){
-					 Class<?> valueType = finalParameterType((ParameterizedType)f.getGenericType(),0);
-					 encodeList(buffer,(Collection)v,valueType);
+			}
+			
+			if(TypeUtils.isMap(f.getType())){
+				 Class<?> keyType = TypeUtils.finalParameterType((ParameterizedType)f.getGenericType(),0);
+				 Class<?> valueType = TypeUtils.finalParameterType((ParameterizedType)f.getGenericType(),1);
+				 encodeMap(buffer,(Map<Object,Object>)v,keyType,valueType);
+			}else if(TypeUtils.isCollection(f.getType())){
+				 Class<?> valueType = TypeUtils.finalParameterType((ParameterizedType)f.getGenericType(),0);
+				 encodeCollection(buffer,(Collection)v,valueType);
+			}else {
+				if(f.getType().isArray()) {
+					this.putType(buffer, f.getType().getComponentType());
+					this.encodeObjects(buffer, v);
 				}else {
 					encodeObject(buffer,v,f.getType());
 				}
 				
-			} catch (SecurityException | IllegalArgumentException | IllegalAccessException e) {
-				throw new CommonException("",e);
 			}
 		}
 	}
 
-	private void encodeList(ByteBuffer buffer, Collection<?> objs,Class<?> paramType) {
-		if(objs == null) {
+	private void encodeCollection(ByteBuffer buffer, Collection<?> objs,Class<?> paramType) {
+		if(objs == null || objs.isEmpty()) {
 			buffer.putInt(0);
 			return;
 		}
 		
-		boolean flag = isFinalParameterType(paramType,0);
+		boolean flag = TypeUtils.isFinal(paramType);
 		buffer.putInt(objs.size());
 		for(Object o: objs){
 			if(!flag) {
-				this.putType(buffer, o.getClass());
+				if(o == null) {
+					this.putType(buffer, Void.class);
+				}else {
+					this.putType(buffer, o.getClass());
+				}
 			}
 			encodeObject(buffer,o,null);
 		}
 		
 	}
 	
-   public static boolean isFinalParameterType(Type genericType,int index) {
-	   boolean flag = false;
-	   if(genericType == null) {
-		   return false;
-	   }
-	   Class<?> type = finalParameterType(genericType,index);
-	   if(type != null) {
-		   flag = isFinal(type);
-	   }
-	   return flag;
-	}
-   
-   public static Class<?> finalParameterType(Type genericType,int index) {
-	   if(genericType == null) {
-		   return null;
-	   }
-	   Class<?> type = null;
-	   if(genericType instanceof ParameterizedType) {
-			ParameterizedType ft = (ParameterizedType)genericType;
-			Type[] types = ft.getActualTypeArguments();
-			if(types[index] instanceof Class) {
-				type = (Class<?>)types[index];
-			}
-		}
-		return type;
-	}
-
-    public static boolean isFinal(Class<?> type) {
-    	 if(type == null) {
-  		   return false;
-  	   }
-		return Modifier.isFinal(type.getModifiers());
-	}
-    
-    public static boolean isMap(Class<?> cls) {
-    	return Map.class.isAssignableFrom(cls);
-    }
-    
-    public static boolean isCollection(Class<?> cls) {
-    	return Collection.class.isAssignableFrom(cls);
-    }
-    
-    public static boolean isByteBuffer(Class<?> cls) {
-    	return ByteBuffer.class.isAssignableFrom(cls);
-    }
-    
-    public static boolean isArray(Class<?> cls) {
-    	return cls.isArray() || cls == Array.class;
-    }
 
 	private <V> void encodeObjects(ByteBuffer buffer, Object objs){
 		if(objs == null) {
@@ -321,12 +285,16 @@ public class OnePrefixTypeEncoder implements IEncoder<ByteBuffer>{
 			return;
 		}
 		
-		boolean nw = isFinal(objs.getClass().getComponentType());
+		boolean nw = TypeUtils.isFinal(objs.getClass().getComponentType());
 		
 		for(int i = 0; i < len; i++){
 			Object v = Array.get(objs, i);
 			if(!nw) {
-				this.putType(buffer, v.getClass());
+				if(v == null) {
+					this.putType(buffer, Void.class);
+				}else {
+					this.putType(buffer, v.getClass());
+				}
 			}
 			encodeObject(buffer,v,null);
 		}
@@ -345,17 +313,25 @@ public class OnePrefixTypeEncoder implements IEncoder<ByteBuffer>{
 			return;
 		}
 		
-		boolean keyFlag = isFinal(keyType);
-		boolean valueFlag = isFinal(valueType);
+		boolean keyFlag = TypeUtils.isFinal(keyType);
+		boolean valueFlag = TypeUtils.isFinal(valueType);
 		
 		for(Map.Entry<K,V> e: map.entrySet()){
 			if(!keyFlag) {
-				this.putType(buffer, e.getKey().getClass());
+				if(e.getKey() == null) {
+					this.putType(buffer, Void.class);
+				}else {
+					this.putType(buffer, e.getKey().getClass());
+				}
 			}
 			encodeObject(buffer,e.getKey(),null);
 			
 			if(!valueFlag) {
-				this.putType(buffer, e.getValue().getClass());
+				if(e.getValue() == null) {
+					this.putType(buffer, Void.class);
+				}else {
+					this.putType(buffer, e.getValue().getClass());
+				}
 			}
 			encodeObject(buffer,e.getValue(),null);
 		}

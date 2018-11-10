@@ -6,6 +6,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.jmicro.api.Person;
 import org.jmicro.api.monitor.SubmitItem;
 import org.jmicro.api.net.Message;
 import org.jmicro.api.net.RpcResponse;
@@ -35,17 +36,76 @@ public class TestOnePrefixCoder {
 		System.out.println(r.toString());
 	}
 
+	public static final class EntityEndoceArrayResult {
+
+		private long v=222;
+		private String str = null;
+		private Object hello = "Hello World";
+		private Person p = new Person();
+		String[] arrs = {"56","2","67"};
+		private List<Person> persons = new ArrayList<Person>();
+		{
+			persons.add(new Person());
+		}
+		@Override
+		public String toString() {
+			return "hello=" + this.hello +", value = "/*+ v+",list:"+list+",map: "+map*/;
+		}
+	}
+	
 	@Test
 	public void testEncode(){
-		Entity e = new Entity();
+		EntityEndoceArrayResult e = new EntityEndoceArrayResult();
 		ByteBuffer bb = encoder.encode(e);
 		bb.flip();
 		
 		System.out.println(bb.limit());
 		System.out.println(bb.array());
 		
-		Entity o = decoder.decode(bb);
+		EntityEndoceArrayResult o = decoder.decode(bb);
 		System.out.println(o);
+		
+	}
+	
+	public static final class EntityEndoceArrayResult1 {
+		private List<Person> persons = new ArrayList<Person>();
+		{
+			persons.add(new Person());
+		}
+		@Override
+		public String toString() {
+			return persons.toString();
+		}
+	}
+	
+	@Test
+	public void testInnerListEncode1(){
+		EntityEndoceArrayResult1 e = new EntityEndoceArrayResult1();
+		ByteBuffer bb = encoder.encode(e);
+		bb.flip();
+		
+		System.out.println(bb.limit());
+		System.out.println(bb.array());
+		
+		EntityEndoceArrayResult1 o = decoder.decode(bb);
+		System.out.println(o);
+		
+	}
+	
+	
+	@Test
+	public void testEncodeListEntity(){
+		List<Person> persons = new ArrayList<Person>();
+		persons.add(new Person());
+		
+		ByteBuffer bb = encoder.encode(persons);
+		bb.flip();
+		
+		System.out.println(bb.limit());
+		System.out.println(bb.array());
+		
+		persons = decoder.decode(bb);
+		System.out.println(persons);
 		
 	}
 	
@@ -90,6 +150,40 @@ public class TestOnePrefixCoder {
 	}
 	
 	@Test
+	public void testEncodeArray1(){
+		Object[] arrs = {"56",new Person(),new Entity()};
+		ByteBuffer bb = encoder.encode(arrs);
+		bb.flip();
+		System.out.println(bb.limit());
+		System.out.println(bb.position());
+		
+		arrs = decoder.decode(bb);
+		
+		System.out.println(arrs);
+	}
+	
+	public static final class EntityEndoceInnerArray {
+		private Object[] arrs = {"56",new Person(),111};
+		@Override
+		public String toString() {
+			return arrs.toString();
+		}
+	}
+	
+	@Test
+	public void testEncodeInnerArray1(){
+		EntityEndoceInnerArray arrs = new EntityEndoceInnerArray();
+		ByteBuffer bb = encoder.encode(arrs);
+		bb.flip();
+		System.out.println(bb.limit());
+		System.out.println(bb.position());
+		
+		arrs = decoder.decode(bb);
+		
+		System.out.println(arrs);
+	}
+	
+	@Test
 	public void testEncodeMap(){
 		ByteBuffer bb = null;
 		
@@ -108,6 +202,52 @@ public class TestOnePrefixCoder {
 		map = decoder.decode(bb);
 		
 		System.out.println(map);
+	}
+	
+	@Test
+	public void testEncodeMap1(){
+		ByteBuffer bb = null;
+		
+		Map<String,Object> map = new HashMap<>();
+		{
+			map.put("1","testStringVal");
+			map.put("2",new Person());
+			map.put("3",new Entity());
+		}
+		
+		bb = encoder.encode(map);
+		bb.flip();
+		System.out.println(bb.limit());
+		System.out.println(bb.position());
+		
+		map = decoder.decode(bb);
+		
+		System.out.println(map);
+	}
+	
+	public static final class EntityEndoceNullField {
+		private Person p = new Person();
+		//private Person p = null;
+		private Entity e = null;
+		
+		private Person nullField = new Person();
+		{
+			nullField.setId(null);
+			nullField.setUsername(null);
+		}
+	}
+	
+	@Test
+	public void testNullFieldObj(){
+		ByteBuffer bb = encoder.encode(new EntityEndoceNullField());
+		bb.flip();
+		System.out.println(bb.limit());
+		System.out.println(bb.position());
+		
+		EntityEndoceNullField e = decoder.decode(bb);
+		
+		System.out.println(e);
+		
 	}
 	
 	@Test
