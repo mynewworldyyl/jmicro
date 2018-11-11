@@ -24,6 +24,7 @@ import org.jmicro.api.annotation.Selector;
 import org.jmicro.api.loadbalance.ISelector;
 import org.jmicro.api.registry.IRegistry;
 import org.jmicro.api.registry.ServiceItem;
+import org.jmicro.api.route.RouterManager;
 import org.jmicro.common.Constants;
 /**
  * 
@@ -37,7 +38,10 @@ public class RoundBalance implements ISelector{
 	@Inject(required=true,value=Constants.DEFAULT_REGISTRY)
 	private IRegistry registry;
 	
-	private int next=0;
+	@Inject
+	private RouterManager routerManager;
+	
+	private int next = 0;
 	
 	@SuppressWarnings("null")
 	@Override
@@ -47,6 +51,24 @@ public class RoundBalance implements ISelector{
 		if(srvItems == null || srvItems.isEmpty()) {
 			return null;
 		}
+		
+		if(routerManager != null) {
+			srvItems = this.routerManager.doRoute(srvItems, srvName, method, args, namespace, version, transport);
+		}
+		
+		if(srvItems == null || srvItems.isEmpty()) {
+			return null;
+		}
+		
+		if(srvItems.size() == 1) {
+			return srvItems.iterator().next();
+		}
+		
+		return doBalance(srvItems);
+	
+	}
+
+	private ServiceItem doBalance(Set<ServiceItem> srvItems) {
 		ServiceItem[] arr = new ServiceItem[srvItems.size()];
 		srvItems.toArray(arr);
 		int next = this.next++%arr.length;

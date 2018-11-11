@@ -7,7 +7,7 @@ import org.jmicro.api.net.Message;
 
 public final class ApiRequest {
 	
-	private Map<String,String> params = new HashMap<>();
+	private Map<String,Object> params = new HashMap<>();
 	
 	private String serviceName = "";
 	
@@ -23,10 +23,10 @@ public final class ApiRequest {
 	
 	private transient Message msg = null;
 	
-	public Map<String, String> getParams() {
+	public Map<String, Object> getParams() {
 		return params;
 	}
-	public void setParams(Map<String, String> params) {
+	public void setParams(Map<String, Object> params) {
 		this.params = params;
 	}
 	public String getServiceName() {

@@ -28,6 +28,14 @@ import org.jmicro.common.Constants;
  */
 public class JMicroContext  {
 
+	public static final String CLIENT_IP = "clientIp";
+	public static final String CLIENT_PORT = "clientPort";
+	
+	public static final String CLIENT_SERVICE = "clientService";
+	public static final String CLIENT_NAMESPACE = "clientNamespace";
+	public static final String CLIENT_VERSION = "clientVersion";
+	public static final String CLIENT_METHOD = "clientMehtod";
+	
 	public static String[] args = {};
 	
 	protected Map<String,Object> params = new HashMap<String,Object>();

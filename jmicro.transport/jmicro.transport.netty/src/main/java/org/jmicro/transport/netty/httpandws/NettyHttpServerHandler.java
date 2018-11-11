@@ -28,7 +28,7 @@ public class NettyHttpServerHandler extends ChannelInboundHandlerAdapter {
     static final Logger logger = LoggerFactory.getLogger(NettyServerSession.class);
 	
 	private static final AttributeKey<NettyServerSession> sessionKey = 
-			AttributeKey.newInstance(Constants.SESSION_KEY+System.currentTimeMillis());
+			AttributeKey.newInstance(Constants.SESSION_KEY+"NettyHttp"+System.currentTimeMillis());
 	
 	@Cfg("/MinaServer/readBufferSize")
 	private int readBufferSize=1024*4;

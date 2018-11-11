@@ -115,6 +115,8 @@ public class JRPCReqRespHandler implements IMessageHandler{
 			req.setSession(s);
 			req.setMsg(msg);
 			
+			JMicroContext.get().setParam(JMicroContext.CLIENT_IP, s.remoteHost());
+			JMicroContext.get().setParam(JMicroContext.CLIENT_PORT, s.remotePort());
 			s.putParam(Constants.MONITOR_ENABLE_KEY,req.isMonitorEnable());
 			cxt.configMonitor(req.isMonitorEnable()?1:0, 0);
 			cxt.mergeParams(req.getRequestParams());

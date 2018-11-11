@@ -14,22 +14,33 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.jmicro.example.provider;
+package org.jmicro.api.route;
 
-import org.jmicro.api.JMicro;
-import org.jmicro.common.Utils;
+import java.util.HashSet;
+import java.util.Set;
 
-/**
- * 
- * @author Yulei Ye
- *
- * @date: 2018年11月10日 下午9:23:25
- */
-public class ServiceProvider {
+import org.jmicro.api.annotation.Component;
+import org.jmicro.api.annotation.Inject;
+import org.jmicro.api.registry.ServiceItem;
 
-	public static void main(String[] args) {
-		JMicro.getObjectFactoryAndStart(new String[]{"-DinstanceName=provider"});
-		Utils.getIns().waitForShutdown();
+@Component(value="routerManager")
+public class RouterManager {
+
+	@Inject
+	private Set<IRouter> routers = new HashSet<>();
+	
+	public Set<ServiceItem> doRoute(Set<ServiceItem> services,String srvName,String method,Class<?>[] args
+			,String namespace,String version,String transport){
+		if(routers.isEmpty()) {
+			return services;
+		}
+		Set<IRouter> rs = this.routers;
+		for(IRouter r: rs) {
+			RouteRule rr = r.getRoute();
+			if(rr != null) {
+				return r.doRoute(rr, services, srvName, method, args, namespace, version, transport);
+			}
+		}
+		return services;
 	}
-
 }

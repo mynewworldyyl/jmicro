@@ -1,3 +1,4 @@
+
 package org.jmicro.gateway;
 
 import java.lang.reflect.InvocationTargetException;
@@ -81,6 +82,10 @@ public class ApiRequestMessageHandler implements IMessageHandler{
 				}
 				
 				Method m = srv.getClass().getMethod(req.getMethod(), clazzes);
+				
+				JMicroContext.get().setParam(JMicroContext.CLIENT_IP, session.localHost());
+				JMicroContext.get().setParam(JMicroContext.CLIENT_PORT, session.localPort());
+				JMicroContext.get().mergeParams(req.getParams());
 				
 				if(!sm.needResponse) {
 					result = m.invoke(srv, req.getArgs());

@@ -35,7 +35,7 @@
 			 <groupId>org.jmicro</groupId>
 			 <artifactId>jmicro.transport.mina</artifactId>
         </dependency> -->
-        <dependency>
+       <dependency>
 			 <groupId>org.jmicro</groupId>
 			 <artifactId>jmicro.transport.netty</artifactId>
         </dependency>

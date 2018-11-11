@@ -96,7 +96,7 @@
 		<module>jmicro.limit</module>
 		<module>jmicro.monitor</module>
 		<module>jmicro.gateway</module>
-		
+		<module>jmicro.route</module>
     </modules>
 
     <dependencyManagement>

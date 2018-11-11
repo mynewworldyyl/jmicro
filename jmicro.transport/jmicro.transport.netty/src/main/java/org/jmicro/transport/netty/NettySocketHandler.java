@@ -28,11 +28,11 @@ public class NettySocketHandler extends ChannelInboundHandlerAdapter {
     static final Logger logger = LoggerFactory.getLogger(NettySocketHandler.class);
 	
 	private static final AttributeKey<NettyServerSession> sessionKey = 
-			AttributeKey.newInstance(Constants.SESSION_KEY+System.currentTimeMillis());
+			AttributeKey.newInstance(Constants.SESSION_KEY+"Netty" + System.currentTimeMillis());
 	
 	@Cfg("/MinaServer/readBufferSize")
 	private int readBufferSize = 1024*4;
-	
+
 	@Cfg("/MinaClientSessionManager/heardbeatInterval")
 	private int heardbeatInterval = 3; //seconds to send heardbeat Rate
 	
