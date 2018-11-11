@@ -62,14 +62,14 @@ public class RouteUtils {
 	
 	public static  boolean filterByClientIpPort(RouteEndpoint ep) {
 		String clientIp = getCtxParam(JMicroContext.CLIENT_IP);
-		String clientPort = getCtxParam(JMicroContext.CLIENT_PORT);
-		if(StringUtils.isEmpty(clientPort) || StringUtils.isEmpty(ep.getIpPort()) || StringUtils.isEmpty(clientIp)) {
+		Integer clientPort = JMicroContext.get().getInt(JMicroContext.CLIENT_PORT,0);
+		if(clientPort == null || StringUtils.isEmpty(ep.getIpPort()) || StringUtils.isEmpty(clientIp)) {
 			return false;
 		}
 		return !(clientIp+":"+clientPort).equals(ep.getIpPort());
 	}
 	
-	public static  String getCtxParam(String key) {
+	public static String getCtxParam(String key) {
 		return JMicroContext.get().getString(key, "");
 	}
 	

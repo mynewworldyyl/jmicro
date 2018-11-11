@@ -44,7 +44,7 @@ public class RouteRule {
 	/**
 	 * 优先级，值越小，优先级越高
 	 */
-	private byte priority;
+	private int priority;
 	
 	public RouteRule() {
 	}
@@ -67,11 +67,11 @@ public class RouteRule {
 		this.enable = enable;
 	}
 
-	public byte getPriority() {
+	public int getPriority() {
 		return priority;
 	}
 
-	public void setPriority(byte priority) {
+	public void setPriority(int priority) {
 		this.priority = priority;
 	}
 

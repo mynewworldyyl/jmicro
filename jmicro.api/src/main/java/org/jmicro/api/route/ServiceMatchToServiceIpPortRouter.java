@@ -16,14 +16,12 @@
  */
 package org.jmicro.api.route;
 
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
 
 import org.jmicro.api.JMicroContext;
 import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.Inject;
-import org.jmicro.api.registry.Server;
 import org.jmicro.api.registry.ServiceItem;
 
 /**

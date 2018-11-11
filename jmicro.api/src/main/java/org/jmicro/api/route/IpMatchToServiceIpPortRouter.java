@@ -52,8 +52,8 @@ public class IpMatchToServiceIpPortRouter extends AbstractRouter implements IRou
 			return null;
 		}
 		
-		String clientPort = JMicroContext.get().getString(JMicroContext.CLIENT_PORT, null);
-		if(StringUtils.isEmpty(clientPort)) {
+		int clientPort = JMicroContext.get().getInt(JMicroContext.CLIENT_PORT, 0);
+		if(clientPort == 0) {
 			return null;
 		}
 		
