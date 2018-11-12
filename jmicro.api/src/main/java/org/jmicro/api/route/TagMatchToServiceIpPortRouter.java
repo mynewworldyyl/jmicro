@@ -25,7 +25,10 @@ import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.Inject;
 import org.jmicro.api.registry.Server;
 import org.jmicro.api.registry.ServiceItem;
+import org.jmicro.common.util.JsonUtils;
 import org.jmicro.common.util.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * 
@@ -35,6 +38,8 @@ import org.jmicro.common.util.StringUtils;
 @Component(value="tagMatchToServiceIpPortRouter")
 public class TagMatchToServiceIpPortRouter extends AbstractRouter  implements IRouter {
 
+	private final static Logger logger = LoggerFactory.getLogger(TagMatchToServiceIpPortRouter.class);
+	
 	@Inject
 	private RuleManager ruleManager;
 	
@@ -48,6 +53,7 @@ public class TagMatchToServiceIpPortRouter extends AbstractRouter  implements IR
 		while(ite.hasNext()) {
 			RouteRule r = ite.next();
 			if(StringUtils.isEmpty(r.getFrom().getTagKey()) || StringUtils.isEmpty(r.getFrom().getTagVal() )) {
+				logger.error("Invalid rule: {}",JsonUtils.getIns().toJson(r));
 				ite.remove();
 				if(rules.isEmpty()) {
 					return null;

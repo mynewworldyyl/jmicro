@@ -33,6 +33,9 @@ import org.jmicro.common.util.StringUtils;
 public abstract class AbstractRouter implements IRouter{
 
 	protected boolean filterByClient(Iterator<RouteRule> ite, String key, String val) {
+		if(StringUtils.isEmpty(val)) {
+			return false; 
+		}
 		String ctxVal = RouteUtils.getCtxParam(key);
 		if(StringUtils.isEmpty(ctxVal) || StringUtils.isEmpty(key) || StringUtils.isEmpty(val)
 				|| !ctxVal.equals(val) ) {

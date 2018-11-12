@@ -16,16 +16,17 @@
  */
 package org.jmicro.api.route;
 
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
 
 import org.jmicro.api.JMicroContext;
 import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.Inject;
-import org.jmicro.api.registry.Server;
 import org.jmicro.api.registry.ServiceItem;
+import org.jmicro.common.util.JsonUtils;
 import org.jmicro.common.util.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * 
@@ -35,14 +36,14 @@ import org.jmicro.common.util.StringUtils;
 @Component(value="ipMatchToServiceIpPortRouter")
 public class IpMatchToServiceIpPortRouter extends AbstractRouter implements IRouter {
 
+	private final static Logger logger = LoggerFactory.getLogger(IpMatchToServiceIpPortRouter.class);
+	
 	@Inject
 	private RuleManager ruleManager;
 	
-	private Set<RouteRule> rules = null;
-	
 	@Override
 	public RouteRule getRoute() {
-		rules = ruleManager.getRouteRulesByType(IRouter.TYPE_IP_TO_IP);
+		Set<RouteRule> rules = ruleManager.getRouteRulesByType(IRouter.TYPE_IP_TO_IP);
 		if(rules == null || rules.isEmpty()) {
 			return null;
 		}
@@ -52,22 +53,27 @@ public class IpMatchToServiceIpPortRouter extends AbstractRouter implements IRou
 			return null;
 		}
 		
-		int clientPort = JMicroContext.get().getInt(JMicroContext.CLIENT_PORT, 0);
+		/*int clientPort = JMicroContext.get().getInt(JMicroContext.CLIENT_PORT, 0);
 		if(clientPort == 0) {
 			return null;
-		}
+		}*/
 		
-		Iterator<RouteRule> ite = this.rules.iterator();
+		Iterator<RouteRule> ite = rules.iterator();
 		while(ite.hasNext()) {
 			RouteRule r = ite.next();
 			if(StringUtils.isEmpty(r.getFrom().getIpPort())) {
-				continue;
+				logger.error("Invalid rule: {}",JsonUtils.getIns().toJson(r));
+				ite.remove();
+				//无效规则
+				if(rules.isEmpty()) {
+					return null;
+				}
 			}
-			if(r.getFrom().getIpPort().startsWith(clientIp+":"+clientPort)) {
-				return r;
+			if(!r.getFrom().getIpPort().startsWith(clientIp)) {
+				ite.remove();
 			}
 		}	
-		return null;
+		return RouteUtils.maxPriorityRule(rules);
 	}
 
 	@Override

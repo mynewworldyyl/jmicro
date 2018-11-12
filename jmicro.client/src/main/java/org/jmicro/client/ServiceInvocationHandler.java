@@ -19,6 +19,7 @@ package org.jmicro.client;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -31,6 +32,7 @@ import org.jmicro.api.client.AbstractClientServiceProxy;
 import org.jmicro.api.client.IClientSession;
 import org.jmicro.api.client.IClientSessionManager;
 import org.jmicro.api.codec.ICodecFactory;
+import org.jmicro.api.config.Config;
 import org.jmicro.api.exception.BreakerException;
 import org.jmicro.api.idgenerator.IIdGenerator;
 import org.jmicro.api.loadbalance.ISelector;
@@ -48,6 +50,8 @@ import org.jmicro.api.registry.ServiceMethod;
 import org.jmicro.api.server.IRequest;
 import org.jmicro.common.CommonException;
 import org.jmicro.common.Constants;
+import org.jmicro.common.Utils;
+import org.jmicro.common.util.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 /**
@@ -142,6 +146,8 @@ public class ServiceInvocationHandler implements InvocationHandler, IMessageHand
         int timeout = -1;
         boolean isFistLoop = true;
         
+		JMicroContext.get().setParam(JMicroContext.CLIENT_IP, Config.getHost());
+		
         do {
         	
         	//String sn = ProxyObject.getTargetCls(srvClazz).getName();
@@ -186,13 +192,13 @@ public class ServiceInvocationHandler implements InvocationHandler, IMessageHand
     		req.setVersion(si.getVersion());
     		req.setImpl(si.getImpl());
     		
-    		Server s = si.getServer(Constants.TRANSPORT_NETTY);
-    		IClientSession session = this.sessionManager.getOrConnect(s.getHost(), s.getPort());
-    		req.setSession(session);
-    		
     		if(isFistLoop){
     			MonitorConstant.doSubmit(monitor,MonitorConstant.CLIENT_REQ_BEGIN, req, null);
     		}
+    		
+    	    Server s = si.getServer(Constants.TRANSPORT_NETTY);
+    	    IClientSession session = this.sessionManager.getOrConnect(s.getHost(), s.getPort());
+    	    req.setSession(session);
     		
     		Message msg = new Message();
     		msg.setType(Constants.MSG_TYPE_REQ_JRPC);

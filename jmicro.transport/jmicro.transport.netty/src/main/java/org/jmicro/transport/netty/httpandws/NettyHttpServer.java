@@ -66,9 +66,6 @@ public class NettyHttpServer implements IServer{
 	@Inject(required=false)
 	private IMonitorDataSubmiter monitor;
 	
-	@Cfg(value = "/bindIp",required=false)
-	private String host;
-	
 	@Cfg(value="/NettyHttpServer/nettyPort",required=false,defGlobal=false)
 	private int port=9090;
 	
@@ -82,16 +79,12 @@ public class NettyHttpServer implements IServer{
 		if(Config.isClientOnly()) {
 			return;
 		}
-        if(StringUtils.isEmpty(this.host)){
-        	List<String> ips = Utils.getIns().getLocalIPList();
-            if(ips.isEmpty()){
-            	throw new CommonException("IP not found");
-            }
-            this.host = ips.get(0);
+        if(StringUtils.isEmpty(Config.getHost())){
+        	throw new CommonException("IP not found");
         }
         
         //InetAddress.getByAddress(Array(127, 0, 0, 1))
-        InetSocketAddress address = new InetSocketAddress(this.host,this.port);
+        InetSocketAddress address = new InetSocketAddress(Config.getHost(),this.port);
         EventLoopGroup bossGroup = new NioEventLoopGroup();
         EventLoopGroup workerGroup = new NioEventLoopGroup();
         
@@ -116,14 +109,14 @@ public class NettyHttpServer implements IServer{
         }
         this.port = address.getPort();
         
-        String m = "Running netty http server host["+this.host+"],port ["+this.port+"]";
+        String m = "Running netty http server host["+Config.getHost()+"],port ["+this.port+"]";
         LOG.debug(m);    
         MonitorConstant.doSubmit(monitor,MonitorConstant.SERVER_START, null,null,m);
 	}
 
 	@Override
 	public void stop() {
-		MonitorConstant.doSubmit(monitor,MonitorConstant.SERVER_STOP, null,null,this.host,this.port);
+		MonitorConstant.doSubmit(monitor,MonitorConstant.SERVER_STOP, null,null,Config.getHost(),this.port);
 		 if(server != null){
 			 //server.;
 			 server = null;
@@ -132,16 +125,12 @@ public class NettyHttpServer implements IServer{
 
 	@Override
 	public String host() {
-		return this.host;
+		return Config.getHost();
 	}
 
 	@Override
 	public int port() {
 		return this.port;
-	}
-
-	public void setHost(String host) {
-		this.host = host;
 	}
 
 	public void setPort(int port) {

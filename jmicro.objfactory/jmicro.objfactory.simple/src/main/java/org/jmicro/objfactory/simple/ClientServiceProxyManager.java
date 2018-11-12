@@ -191,19 +191,14 @@ class ClientServiceProxyManager {
 		}
 		//ServiceItem si = items.iterator().next();
 		
-		setHandler(proxy,key,si);
+		
 		
 		IRegistry registry = of.get(IRegistry.class);
 		RemoteProxyServiceListener lis = new RemoteProxyServiceListener(this,proxy,srcObj,f);
 		registry.addServiceListener(ServiceItem.serviceName(f.getType().getName(),ref.namespace(),ref.version()), lis);
 			
-		 if(proxy != null){
-			 AbstractClientServiceProxy asp = (AbstractClientServiceProxy)proxy;
-			 asp.setHandler(of.getByName(Constants.DEFAULT_INVOCATION_HANDLER));
-			 asp.setItem(si);
-			 remoteObjects.put(key, proxy);
-		 }
-		 return proxy;
+		setHandler(proxy,key,si);
+		return proxy;
 	}
 	
 	private Class<?> getEltType(Field f){
@@ -352,23 +347,12 @@ class ClientServiceProxyManager {
 		 classGenerator.addMethod("public java.lang.String getNamespace(){ return \"" + namespace + "\";}");
 		 classGenerator.addMethod("public java.lang.String getVersion(){ return \"" + version + "\";}");
 		 classGenerator.addMethod("public java.lang.String getServiceName(){ return \"" + cls.getName() + "\";}");
+		 
 		 classGenerator.addMethod("public boolean enable(){  return this.enable;}");
 		 classGenerator.addMethod("public void enable(boolean en){ this.enable=en;}");
-		 //classGenerator.addMethod("public Object key(){ _init0(); return \"" + ServiceItem.serviceName(cls.getName(), namespace, version) + "\";}");
 		 
-		 //StringBuffer conBody = new StringBuffer();
-		 
-		 //ccm.addMethod("public Object newInstance(" + InvocationHandler.class.getName() + " h){ return new " + pcn + "($1); }");
-		 //classGenerator.addConstructor(Modifier.PUBLIC, new Class[]{InvocationHandler.class}, body);
-		 
-		/* StringBuffer sb = new StringBuffer( "public org.jmicro.objfactory.simple.ProxyService ps = new org.jmicro.objfactory.simple.ProxyService(\"");
-		 sb.append(cls.getName()).append("\");");
-		 classGenerator.addField(sb.toString());
-		 StringBuffer body = new StringBuffer();*/
-		
-		 //public Object invoke(String method,Object... args) 
-		 //classGenerator.addMethod("public Object invoke(String method,Object... args) {return super(method,args);} ");
-		 //classGenerator.addMethod(AbstractServiceProxy.class.getMethod("invoke", {}));
+		 classGenerator.addMethod("public void backupAndSetContext(){super.backupAndSetContext();}");
+		 classGenerator.addMethod("public void restoreContext(){super.restoreContext();}");
 		 
 		 Method[] ms1 = cls.getMethods();
 		 Method[] checkMethods = ICheckable.class.getMethods();
@@ -383,14 +367,37 @@ class ClientServiceProxyManager {
 				 continue;
 			 }
 			 
-			 Class<?> rt = m.getReturnType();
+			Class<?> rt = m.getReturnType();
             Class<?>[] pts = m.getParameterTypes();
 
             StringBuilder code = new StringBuilder("Object[] args = new Object[").append(pts.length).append("];");
             for (int j = 0; j < pts.length; j++){
            	 code.append(" args[").append(j).append("] = ("+pts[j].getName()+")$").append(j + 1).append(";");
-            }    
+            }
+            
+            code.append(" this.backupAndSetContext();");
+            
+            //backup pre service info
+            code.append(" java.lang.String ns = org.jmicro.api.JMicroContext.get().getString(org.jmicro.api.JMicroContext.CLIENT_NAMESPACE, \"\");");
+            code.append(" java.lang.String sn = org.jmicro.api.JMicroContext.get().getString(org.jmicro.api.JMicroContext.CLIENT_SERVICE, \"\");");
+            code.append(" java.lang.String ver = org.jmicro.api.JMicroContext.get().getString(org.jmicro.api.JMicroContext.CLIENT_VERSION, \"\");");
+            code.append(" java.lang.String mt = org.jmicro.api.JMicroContext.get().getString(org.jmicro.api.JMicroContext.CLIENT_METHOD, \"\");");
+            
+            //set this invoke info
+            code.append(" org.jmicro.api.JMicroContext.get().setString(org.jmicro.api.JMicroContext.CLIENT_NAMESPACE, getNamespace());");
+            code.append(" org.jmicro.api.JMicroContext.get().setString(org.jmicro.api.JMicroContext.CLIENT_SERVICE, getServiceName());");
+            code.append(" org.jmicro.api.JMicroContext.get().setString(org.jmicro.api.JMicroContext.CLIENT_VERSION, getVersion());");
+            code.append(" org.jmicro.api.JMicroContext.get().setString(org.jmicro.api.JMicroContext.CLIENT_METHOD, \""+m.getName()+"\");");
+            
             code.append(" Object ret = handler.invoke(this, methods[" + i + "], args);");
+            
+            //restore pre service info
+            code.append(" org.jmicro.api.JMicroContext.get().setString(org.jmicro.api.JMicroContext.CLIENT_NAMESPACE, ns);");
+            code.append(" org.jmicro.api.JMicroContext.get().setString(org.jmicro.api.JMicroContext.CLIENT_SERVICE, sn);");
+            code.append(" org.jmicro.api.JMicroContext.get().setString(org.jmicro.api.JMicroContext.CLIENT_VERSION, ver);");
+            code.append(" org.jmicro.api.JMicroContext.get().setString(org.jmicro.api.JMicroContext.CLIENT_METHOD, mt);");
+            
+            code.append(" this.restoreContext();");
             
             if (!Void.TYPE.equals(rt)){
             	 code.append(" return ").append(SimpleObjectFactory.asArgument(rt, "ret")).append(";");

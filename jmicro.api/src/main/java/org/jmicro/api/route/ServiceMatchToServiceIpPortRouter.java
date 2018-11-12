@@ -23,6 +23,10 @@ import org.jmicro.api.JMicroContext;
 import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.Inject;
 import org.jmicro.api.registry.ServiceItem;
+import org.jmicro.common.util.JsonUtils;
+import org.jmicro.common.util.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * 
@@ -32,6 +36,8 @@ import org.jmicro.api.registry.ServiceItem;
 @Component(value="serviceMatchToServiceIpPortRouter2")
 public class ServiceMatchToServiceIpPortRouter extends AbstractRouter implements IRouter {
 
+	private final static Logger logger = LoggerFactory.getLogger(ServiceMatchToServiceIpPortRouter.class);
+	
 	@Inject
 	private RuleManager ruleManager;
 	
@@ -45,29 +51,40 @@ public class ServiceMatchToServiceIpPortRouter extends AbstractRouter implements
 		Iterator<RouteRule> ite = filterRules.iterator();
 		while(ite.hasNext()) {
 			RouteRule rr = ite.next();
+			if(StringUtils.isEmpty(rr.getFrom().getMethod()) 
+				&&StringUtils.isEmpty(rr.getFrom().getServiceName()) 
+				&&StringUtils.isEmpty(rr.getFrom().getNamespace()) 
+				&&StringUtils.isEmpty(rr.getFrom().getVersion()) ) {
+				ite.remove();
+				logger.error("Invalid rule: {}",JsonUtils.getIns().toJson(rr));
+				//无效规则
+				if(filterRules.isEmpty()) {
+					return null;
+				}
+			}
 			
-			if(!this.filterByClient(ite, JMicroContext.CLIENT_METHOD, rr.getFrom().getMethod())) {
+			if(this.filterByClient(ite, JMicroContext.CLIENT_METHOD, rr.getFrom().getMethod())) {
 				if(filterRules.isEmpty()) {
 					return null;
 				}
 				continue;
 			}
 			
-			if(!this.filterByClient(ite, JMicroContext.CLIENT_SERVICE, rr.getFrom().getServiceName())) {
+			if(this.filterByClient(ite, JMicroContext.CLIENT_SERVICE, rr.getFrom().getServiceName())) {
 				if(filterRules.isEmpty()) {
 					return null;
 				}
 				continue;
 			}
 			
-			if(!this.filterByClient(ite, JMicroContext.CLIENT_NAMESPACE, rr.getFrom().getNamespace())) {
+			if(this.filterByClient(ite, JMicroContext.CLIENT_NAMESPACE, rr.getFrom().getNamespace())) {
 				if(filterRules.isEmpty()) {
 					return null;
 				}
 				continue;
 			}
 			
-			if(!this.filterByClient(ite, JMicroContext.CLIENT_VERSION, rr.getFrom().getVersion())) {
+			if(this.filterByClient(ite, JMicroContext.CLIENT_VERSION, rr.getFrom().getVersion())) {
 				if(filterRules.isEmpty()) {
 					return null;
 				}

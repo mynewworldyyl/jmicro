@@ -42,6 +42,15 @@ public abstract class AbstractClientServiceProxy {
 	public abstract String getVersion();
 	public abstract String getServiceName();
 	
+	public void backupAndSetContext(){
+		//System.out.println("backupAndSetContext");
+	}
+	
+	public void restoreContext(){
+		//System.out.println("restoreContext");
+	}
+	
+
 	//public abstract  boolean enable();
 	//public abstract void enable(boolean enable);
 	

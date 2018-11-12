@@ -29,6 +29,7 @@ import org.jmicro.api.annotation.Component;
 import org.jmicro.api.raft.IDataOperator;
 import org.jmicro.common.CommonException;
 import org.jmicro.common.Constants;
+import org.jmicro.common.Utils;
 import org.jmicro.common.util.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -46,6 +47,8 @@ public class Config implements IConfigChangeListener{
 	private static String RegistryProtocol = "zookeeper";
 	private static String RegistryHost = "localhost";
 	private static String RegistryPort = "2181";
+	
+	private static String Host = "";
 	
 	//全局配置目录
 	public static final String CfgDir = Constants.CFG_ROOT +"/config";
@@ -139,6 +142,7 @@ public class Config implements IConfigChangeListener{
 				throw new CommonException("Invalid registry url: "+ registry);
 			}
 		}
+		
 	}
 	
 	public static String getInstanceName(){
@@ -227,6 +231,19 @@ public class Config implements IConfigChangeListener{
 	public void init(){
 		//命令行参数具有最高优先级
 		//params.putAll(CommadParams);
+		if(CommadParams.containsKey(Constants.BIND_IP)) {
+	        Host = CommadParams.get(Constants.BIND_IP);
+		}else if(this.servicesConfig.containsKey(Constants.BIND_IP)) {
+			 Host = this.servicesConfig.get(Constants.BIND_IP);
+		}else if(this.globalConfig.containsKey(Constants.BIND_IP)) {
+			 Host = this.globalConfig.get(Constants.BIND_IP);
+		}else {
+			List<String> ips = Utils.getIns().getLocalIPList();
+	        if(ips.isEmpty()){
+	        	throw new CommonException("IP not found");
+	        }
+	        Host = ips.get(0);
+		}
 	}
 	
 	public static String getRegistryHost() {
@@ -235,6 +252,10 @@ public class Config implements IConfigChangeListener{
 	
 	public static String getRegistryPort() {
 		return RegistryPort;
+	}
+	
+	public static String getHost() {
+		return Host;
 	}
 	
 	public static boolean isClientOnly() {

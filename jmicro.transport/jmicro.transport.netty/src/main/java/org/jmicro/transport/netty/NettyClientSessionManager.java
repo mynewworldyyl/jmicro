@@ -239,9 +239,6 @@ public class NettyClientSessionManager implements IClientSessionManager{
    	            ctx.channel().attr(sessionKey).set(s);
    	            ctx.channel().attr(monitorEnableKey).set(JMicroContext.get().isMonitor());;
 	            
-   	            JMicroContext.get().setParam(JMicroContext.CLIENT_IP, s.getLocalAddress().getHostString());
-	            JMicroContext.get().setParam(JMicroContext.CLIENT_PORT, s.getLocalAddress().getPort());
-	            
 	           //LOG.info("session connected : {}", session);
 	           logger.debug("connection finish,host:"+host+",port:"+port);
 	           return s;
