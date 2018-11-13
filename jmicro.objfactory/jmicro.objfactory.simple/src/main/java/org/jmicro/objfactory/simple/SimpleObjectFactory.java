@@ -62,6 +62,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
+ * 在Jmicro中确保其单例属性
+ * 
  * @author Yulei Ye
  * @date 2018年10月4日-下午12:12:24
  */
@@ -322,7 +324,7 @@ public class SimpleObjectFactory implements IObjectFactory {
 				if(c.isAnnotationPresent(Component.class)) {
 					Component cann = c.getAnnotation(Component.class);
 					if(cann.active()){
-						logger.debug("enable com: "+c.getName());
+						logger.info("enable com: "+c.getName());
 						Object obj = null;
 						if(c.isAnnotationPresent(Service.class)) {
 							 obj = createServiceObject(c,false);
@@ -366,14 +368,10 @@ public class SimpleObjectFactory implements IObjectFactory {
 		clientServiceProxyManager.init();
 		List<Object> l = new ArrayList<>();
 		l.addAll(this.objs.values());
-		l.sort(new Comparator<Object>(){
-			@SuppressWarnings("unused")
-			@Override
-			public int compare(Object o1, Object o2) {
-				Component c1 = ProxyObject.getTargetCls(o1.getClass()).getAnnotation(Component.class);
-				Component c2 = ProxyObject.getTargetCls(o2.getClass()).getAnnotation(Component.class);
-				return c1.level() > c2.level()?1:c1.level() == c2.level()?0:-1;
-			}
+		l.sort((o1,o2)->{
+			Component c1 = ProxyObject.getTargetCls(o1.getClass()).getAnnotation(Component.class);
+			Component c2 = ProxyObject.getTargetCls(o2.getClass()).getAnnotation(Component.class);
+			return c1.level() > c2.level()?1:c1.level() == c2.level()?0:-1;
 		});
 		
 		Config cfg = (Config)objs.get(Config.class);

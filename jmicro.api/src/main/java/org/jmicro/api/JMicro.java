@@ -40,7 +40,7 @@ import org.jmicro.common.util.StringUtils;
 public class JMicro {
 
 	private static final Map<String,IObjectFactory> objFactorys = new HashMap<>();
-	
+	//确保每个对像工厂只会创建一个实例
 	static {
 		Set<Class<?>> objClazzes = ClassScannerUtils.getIns().loadClassesByAnno(ObjFactory.class);
 		for(Class<?> c : objClazzes) {
@@ -48,6 +48,11 @@ public class JMicro {
 				throw new CommonException("Object Factory must not abstract or interface:"+c.getName());
 			}
 			try {
+				Set<Class<?>> subCls = ClassScannerUtils.getIns().loadClassByClass(c);
+				if(subCls.size() > 1) {
+					//不是final类，也就是还有子类，不能实例化
+					continue;
+				}
 				ObjFactory anno = c.getAnnotation(ObjFactory.class);
 				IObjectFactory of = (IObjectFactory)c.newInstance();
 				if(objFactorys.containsKey(anno.value())){
