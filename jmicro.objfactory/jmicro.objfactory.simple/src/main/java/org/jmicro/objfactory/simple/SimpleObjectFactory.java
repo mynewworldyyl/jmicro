@@ -650,8 +650,53 @@ public class SimpleObjectFactory implements IObjectFactory {
 					}
 					
 				}else if(Map.class.isAssignableFrom(type)){
+					ParameterizedType genericType = (ParameterizedType) f.getGenericType();
+					if(genericType == null){
+						throw new CommonException("must be ParameterizedType for cls:"+ cls.getName()+",field: "+f.getName());
+					}
+					Class<?> keyType = (Class<?>)genericType.getActualTypeArguments()[0];
+					if(keyType != String.class) {
+						throw new CommonException("Map inject only support String as key");
+					}
 					
+					Class<?> valueType = (Class<?>)genericType.getActualTypeArguments()[1];
+					if(valueType == Object.class) {
+						logger.warn("{} as map key will cause all components to stop in class {} field {}",
+								Object.class.getName(), cls.getName(),f.getName());
+					}
 					
+					List<?> l = this.getByParent(valueType);
+					if(isProvider){
+						l = this.filterComsumerSide(l);
+					}else if(isComsumer){
+						l = this.filterProviderSide(l);
+					}
+					
+					if(l != null && !l.isEmpty()) {
+						boolean bf = f.isAccessible();
+						Map map = null;
+						if(!bf) {
+							f.setAccessible(true);
+						}
+						try {
+							map = (Map)f.get(obj);
+						} catch (IllegalArgumentException | IllegalAccessException e) {
+							throw new CommonException("",e);
+						}
+						if(!bf) {
+							f.setAccessible(bf);
+						}
+						
+						if(map == null){
+							map = new HashMap();
+						}
+						
+						for(Object com : l) {
+							String comName = this.getComName(com.getClass());
+							map.put(comName, com);
+						}
+						srv = map;
+					}
 				}else if(type.isInterface() || Modifier.isAbstract(type.getModifiers())) {
 					List<?> l = this.getByParent(type);
 					
