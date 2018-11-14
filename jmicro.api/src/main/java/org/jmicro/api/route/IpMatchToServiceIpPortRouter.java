@@ -33,7 +33,7 @@ import org.slf4j.LoggerFactory;
  * @author Yulei Ye
  * @date: 2018年11月11日 下午3:56:55
  */
-@Component(value="ipMatchToServiceIpPortRouter")
+@Component(value="ipRouter")
 public class IpMatchToServiceIpPortRouter extends AbstractRouter implements IRouter {
 
 	private final static Logger logger = LoggerFactory.getLogger(IpMatchToServiceIpPortRouter.class);
@@ -62,17 +62,20 @@ public class IpMatchToServiceIpPortRouter extends AbstractRouter implements IRou
 		while(ite.hasNext()) {
 			RouteRule r = ite.next();
 			if(StringUtils.isEmpty(r.getFrom().getIpPort())) {
+				//规则定义的源IP和端口是NULL，无效
 				logger.error("Invalid rule: {}",JsonUtils.getIns().toJson(r));
 				ite.remove();
-				//无效规则
 				if(rules.isEmpty()) {
 					return null;
 				}
+				continue;
 			}
 			if(!r.getFrom().getIpPort().startsWith(clientIp)) {
+				//规则定义的源IP和端口不匹配当前请求客户端
 				ite.remove();
+				continue;
 			}
-		}	
+		}
 		return RouteUtils.maxPriorityRule(rules);
 	}
 

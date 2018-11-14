@@ -53,6 +53,9 @@ public abstract class AbstractRouter implements IRouter{
 		
 		for(ServiceItem si : services) {
 			Server s = si.getServer(transport);
+			if(s == null) {
+				continue;
+			}
 			String sipPort = s.getHost()+":"+s.getPort();
 			if(sipPort.startsWith(ipPort)) {
 				items.add(si);

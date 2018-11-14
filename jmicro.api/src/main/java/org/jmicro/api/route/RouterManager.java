@@ -16,29 +16,43 @@
  */
 package org.jmicro.api.route;
 
-import java.util.HashSet;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Set;
 
+import org.jmicro.api.annotation.Cfg;
 import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.Inject;
 import org.jmicro.api.registry.ServiceItem;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Component(value="routerManager")
 public class RouterManager {
 
+	private final static Logger logger = LoggerFactory.getLogger(RouterManager.class);
+	
 	@Inject
-	private Set<IRouter> routers = new HashSet<>();
+	private Map<String,IRouter> routers = new HashMap<>();
+	
+	@Cfg("/RouterManager/routerSort")
+	private String[] routerSorts = {"tagRouter","serviceRouter","ipRouter"};
 	
 	public Set<ServiceItem> doRoute(Set<ServiceItem> services,String srvName,String method,Class<?>[] args
 			,String namespace,String version,String transport){
 		if(routers.isEmpty()) {
 			return services;
 		}
-		Set<IRouter> rs = this.routers;
-		for(IRouter r: rs) {
-			RouteRule rr = r.getRoute();
-			if(rr != null) {
-				return r.doRoute(rr, services, srvName, method, args, namespace, version, transport);
+		Map<String,IRouter> rs = this.routers;
+		for(String key: routerSorts) {
+			IRouter r = rs.get(key);
+			if(r != null) {
+				RouteRule rr = r.getRoute();
+				if(rr != null) {
+					return r.doRoute(rr, services, srvName, method, args, namespace, version, transport);
+				}
+			}else {
+				logger.error("Router {} not defined",key);
 			}
 		}
 		return services;

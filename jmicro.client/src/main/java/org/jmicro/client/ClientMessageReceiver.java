@@ -43,9 +43,6 @@ public class ClientMessageReceiver implements IMessageReceiver{
 	
 	private Map<Short,IMessageHandler> handlers = new HashMap<>();
 	
-	@Inject
-	private ICodecFactory codecFactory;
-	
 	@Inject(required=false)
 	private IMonitorDataSubmiter monitor;
 	

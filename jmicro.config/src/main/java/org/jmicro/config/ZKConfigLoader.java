@@ -26,7 +26,6 @@ import org.jmicro.api.raft.IDataListener;
 import org.jmicro.api.raft.IDataOperator;
 import org.jmicro.common.CommonException;
 import org.jmicro.common.util.StringUtils;
-import org.jmicro.zk.ZKDataOperator;
 /**
  * 
  * @author Yulei Ye

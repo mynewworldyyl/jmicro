@@ -186,7 +186,6 @@ public class ServiceLoader {
 			return;
 		}
 		
-		Set<Server> ss = new HashSet<>();
 		for(IServer s : this.servers.values()){
 			Server sr = new Server();
 			org.jmicro.api.annotation.Server sano = ProxyObject.getTargetCls(s.getClass())

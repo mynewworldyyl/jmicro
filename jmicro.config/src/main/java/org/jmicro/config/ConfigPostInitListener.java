@@ -16,6 +16,7 @@
  */
 package org.jmicro.config;
 
+import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -117,6 +118,23 @@ public class ConfigPostInitListener extends PostInitListenerAdapter {
 		if(!flag) {
 			f.setAccessible(false);
 		}
+		
+		if(v != null && f.getType().isArray()) {
+			Object[] vas = (Object[])v;
+			if(vas.length == 0) {
+				return "";
+			}
+			
+			StringBuffer sb = new StringBuffer();
+			for(int i = 0; i < vas.length; i++) {
+				sb.append(vas[i].toString());
+				if(i < vas.length) {
+					sb.append(",");
+				}
+			}
+			v = sb.toString();
+		}
+		
 		return v;
 	}
 
@@ -216,12 +234,14 @@ public class ConfigPostInitListener extends PostInitListenerAdapter {
 		}*/else if(cls != null && cls.isArray()) {
 			Class<?> ctype = ((Class)type).getComponentType();
 			String[] elts = str.split(",");
-			Object[] oos = new Object[elts.length];
+			Object arr = Array.newInstance(ctype, elts.length);
 			int i =0;
-			for(String e: elts ){
-				oos[i++] = this.getValue(ctype, e,gt);
+			for(int j = 0; j < elts.length; j++){
+				Object vv = this.getValue(ctype, elts[j], gt);
+				Array.set(arr, j, vv);
+				
 			}
-			v = oos;
+			v = arr;
 		}else if(cls != null && List.class.isAssignableFrom(cls)){
 			Class<?> ctype = ((Class)type).getComponentType();
 			String[] elts = str.split(",");

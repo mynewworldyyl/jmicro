@@ -133,6 +133,10 @@ jmicro.route/target/
 jmicro.route/.classpath
 jmicro.route/.project
 jmicro.route/.settings/
+jmicro.gateway.client/target/
+jmicro.gateway.client/.classpath
+jmicro.gateway.client/.project
+jmicro.gateway.client/.settings/
 jmicro.monitor/jmicro.monitor.subermemory/target/
 jmicro.monitor/jmicro.monitor.subermemory/.classpath
 jmicro.monitor/jmicro.monitor.subermemory/.project

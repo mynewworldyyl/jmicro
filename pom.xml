@@ -97,6 +97,7 @@
 		<module>jmicro.monitor</module>
 		<module>jmicro.gateway</module>
 		<module>jmicro.route</module>
+		<module>jmicro.gateway.client</module>
     </modules>
 
     <dependencyManagement>
@@ -270,6 +271,12 @@
 		    <artifactId>quasar-core</artifactId>
 		    <version>0.7.10</version>
 		</dependency>
+		<dependency>
+		    <groupId>org.apache.httpcomponents</groupId>
+		    <artifactId>httpclient</artifactId>
+		    <version>4.5.6</version>
+		</dependency>
+		
         </dependencies>
     </dependencyManagement>
 

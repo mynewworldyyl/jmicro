@@ -25,8 +25,8 @@ import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.Inject;
 import org.jmicro.api.registry.ServiceItem;
 
-@Component(active=true,value="defaultRouteManagerImpl")
-public class DefaultRouter implements IRouter{
+@Component(active=false,value="defaultRouteManagerImpl")
+public class DefaultRouter  extends AbstractRouter implements IRouter{
 
 	@Inject
 	private RuleManager ruleManager;

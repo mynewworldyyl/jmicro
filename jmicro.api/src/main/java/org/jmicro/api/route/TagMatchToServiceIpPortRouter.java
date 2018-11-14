@@ -16,14 +16,11 @@
  */
 package org.jmicro.api.route;
 
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
 
-import org.jmicro.api.JMicroContext;
 import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.Inject;
-import org.jmicro.api.registry.Server;
 import org.jmicro.api.registry.ServiceItem;
 import org.jmicro.common.util.JsonUtils;
 import org.jmicro.common.util.StringUtils;
@@ -35,7 +32,7 @@ import org.slf4j.LoggerFactory;
  * @author Yulei Ye
  * @date: 2018年11月11日 下午3:56:55
  */
-@Component(value="tagMatchToServiceIpPortRouter")
+@Component(value="tagRouter")
 public class TagMatchToServiceIpPortRouter extends AbstractRouter  implements IRouter {
 
 	private final static Logger logger = LoggerFactory.getLogger(TagMatchToServiceIpPortRouter.class);
@@ -52,12 +49,13 @@ public class TagMatchToServiceIpPortRouter extends AbstractRouter  implements IR
 		Iterator<RouteRule> ite = rules.iterator();
 		while(ite.hasNext()) {
 			RouteRule r = ite.next();
-			if(StringUtils.isEmpty(r.getFrom().getTagKey()) || StringUtils.isEmpty(r.getFrom().getTagVal() )) {
+			if(StringUtils.isEmpty(r.getFrom().getTagKey()) || StringUtils.isEmpty(r.getFrom().getTagVal())) {
 				logger.error("Invalid rule: {}",JsonUtils.getIns().toJson(r));
 				ite.remove();
 				if(rules.isEmpty()) {
 					return null;
 				}
+				continue;
 			}
 			
 			String ctxVal = RouteUtils.getCtxParam(r.getFrom().getTagKey());
@@ -66,6 +64,7 @@ public class TagMatchToServiceIpPortRouter extends AbstractRouter  implements IR
 				if(rules.isEmpty()) {
 					return null;
 				}
+				continue;
 			}
 			
 			if(!ctxVal.equals(r.getFrom().getTagVal() )) {
@@ -73,6 +72,7 @@ public class TagMatchToServiceIpPortRouter extends AbstractRouter  implements IR
 				if(rules.isEmpty()) {
 					return null;
 				}
+				continue;
 			}
 			
 		}	
