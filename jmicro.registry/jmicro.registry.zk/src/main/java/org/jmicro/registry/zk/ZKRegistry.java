@@ -50,7 +50,7 @@ import org.slf4j.LoggerFactory;
  * @author Yulei Ye
  * @date 2018年10月4日-下午12:13:09
  */
-@Component(value=Constants.DEFAULT_REGISTRY,lazy=false,level=3)
+@Component(value=Constants.DEFAULT_REGISTRY,lazy=false)
 @Registry
 public class ZKRegistry implements IRegistry,Init {
 
