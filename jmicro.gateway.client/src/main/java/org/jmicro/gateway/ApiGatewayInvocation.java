@@ -19,6 +19,12 @@ package org.jmicro.gateway;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 
+/**
+ * 
+ * @author Yulei Ye
+ * @date 2018年11月16日 上午12:22:31
+ *
+ */
 public class ApiGatewayInvocation implements InvocationHandler{
 
 	@Override

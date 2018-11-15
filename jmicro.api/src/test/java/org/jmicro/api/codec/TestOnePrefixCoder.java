@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.jmicro.api.gateway.ApiRequest;
+import org.jmicro.api.gateway.ApiResponse;
 import org.jmicro.api.monitor.SubmitItem;
 import org.jmicro.api.net.Message;
 import org.jmicro.api.net.RpcResponse;
@@ -216,6 +217,37 @@ public class TestOnePrefixCoder {
 		ApiRequest respReq = decoder.decode((ByteBuffer)respMsg.getPayload());
 		
 		System.out.println(respReq.getServiceName());
+	}
+	
+	
+	@Test
+	public void testApiResponse(){
+		ApiResponse req = new ApiResponse();
+		req.setReqId(22L);
+		req.setId(0L);
+		req.setResult("result");
+		req.setSuccess(true);
+		
+		Message msg = new Message();
+		msg.setType(Constants.MSG_TYPE_API_REQ);
+		msg.setProtocol(Message.PROTOCOL_BIN);
+		msg.setId(0);
+		msg.setReqId(0L);
+		msg.setSessionId(0);
+		ByteBuffer payload = encoder.encode(req);
+		payload.flip();
+		msg.setPayload(payload);
+		msg.setVersion(Constants.VERSION_STR);
+		req.setMsg(msg);
+		
+		ByteBuffer msgBuffer = encoder.encode(msg);
+		msgBuffer.flip();
+		
+		Message respMsg = decoder.decode(msgBuffer);
+		
+		ApiResponse resp = decoder.decode((ByteBuffer)respMsg.getPayload());
+		
+		System.out.println(resp.getResult());
 	}
 	
 	@Test

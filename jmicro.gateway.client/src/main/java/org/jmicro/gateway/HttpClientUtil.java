@@ -37,6 +37,12 @@ import org.apache.http.protocol.HTTP;
 import org.jmicro.common.util.JsonUtils;
 import org.jmicro.common.util.StringUtils;
 
+/**
+ * 
+ * @author Yulei Ye
+ * @date 2018年11月16日 上午12:22:50
+ *
+ */
 public class HttpClientUtil {
 
     private static final Log LOG = LogFactory.getLog(HttpClientUtil.class);

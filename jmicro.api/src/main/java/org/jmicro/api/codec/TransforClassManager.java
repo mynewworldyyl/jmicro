@@ -29,7 +29,12 @@ import org.jmicro.api.raft.IDataOperator;
 import org.jmicro.common.Constants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
+/**
+ * 
+ * @author Yulei Ye
+ * @date 2018年11月16日 上午12:20:14
+ *
+ */
 @Component(lazy=false)
 public class TransforClassManager {
 

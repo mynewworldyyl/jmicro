@@ -18,6 +18,12 @@ package org.jmicro.api.gateway;
 
 import org.jmicro.api.net.Message;
 
+/**
+ * 
+ * @author Yulei Ye
+ * @date 2018年11月16日 上午12:22:02
+ *
+ */
 public final class ApiResponse {
 	private Long id = -1L;
 	private transient Message msg = null;
