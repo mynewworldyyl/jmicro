@@ -30,7 +30,7 @@ import org.jmicro.common.Constants;
  * @author Yulei Ye
  * @date 2018年10月4日-下午12:11:16
  */
-@Component(value=Constants.DEFAULT_IDGENERATOR,level=20)
+@Component(value=Constants.DEFAULT_IDGENERATOR,level=9)
 public class JMicroIdGenerator implements IIdGenerator {
 	
 	private static final String ID_IDR = Constants.CFG_ROOT + "/id/";

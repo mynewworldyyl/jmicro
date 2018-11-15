@@ -1,4 +1,4 @@
-package org.jmicro.example.api;
+package org.jmicro.api.test;
 
 public interface ISayHello {
 

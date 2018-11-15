@@ -3,12 +3,12 @@ package org.jmicro.example.provider;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.jmicro.api.JMicroContext;
-import org.jmicro.api.Person;
 import org.jmicro.api.annotation.Cfg;
 import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.SMethod;
 import org.jmicro.api.annotation.Service;
 import org.jmicro.api.server.IWriteCallback;
+import org.jmicro.api.test.Person;
 import org.jmicro.common.CommonException;
 import org.jmicro.common.Constants;
 import org.jmicro.example.api.ITestRpcService;

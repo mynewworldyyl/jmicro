@@ -1,8 +1,8 @@
 package org.jmicro.example.api;
 
-import org.jmicro.api.Person;
 import org.jmicro.api.annotation.SMethod;
 import org.jmicro.api.annotation.Service;
+import org.jmicro.api.test.Person;
 
 @Service(namespace="testrpc",version="0.0.*")
 public interface ITestRpcService {

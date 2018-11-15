@@ -94,7 +94,7 @@ public class OnePrefixTypeEncoder implements IEncoder<ByteBuffer>{
 		}else if(TypeUtils.isCollection(cls)) {
 			cls = Collection.class;
 		}else if(TypeUtils.isByteBuffer(cls)) {
-			cls = Map.class;
+			cls = ByteBuffer.class;
 		}/*else if(cls.isArray()) {
 			cls = Array.class;
 		}*/

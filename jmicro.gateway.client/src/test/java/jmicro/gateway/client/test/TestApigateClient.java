@@ -16,7 +16,9 @@
  */
 package jmicro.gateway.client.test;
 
+import org.jmicro.api.test.ISayHello;
 import org.jmicro.gateway.ApiGatewayClient;
+import org.junit.Test;
 
 public class TestApigateClient {
 
@@ -24,5 +26,13 @@ public class TestApigateClient {
 		ITestApiGatewayService srv = ApiGatewayClient.getIns().getService(ITestApiGatewayService.class,
 				"testapigw", "0.0.1");
 		srv.hello("Hello api gateway");
+	}
+	
+	@Test
+	public void testCallService() {
+		String[] args = new String[] {"hello"};
+		String result =(String) ApiGatewayClient.getIns().callService(ISayHello.class.getName(),
+		"testsayhello", "0.0.1","hello",args);
+		System.out.println(result);
 	}
 }

@@ -82,7 +82,7 @@ public class ZKRegistry implements IRegistry,Init {
 	
 	//service instance path as key(key=ServiceItem.key())
 	//private  Map<String,INodeListener> nodeListeners = new HashMap<>();
-	@JMethod("init")
+	//@JMethod("init")
 	public void init() {
 		dataOperator.addListener((state)->{
 			if(Constants.CONN_CONNECTED == state) {

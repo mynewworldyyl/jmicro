@@ -359,8 +359,8 @@ public class SimpleObjectFactory implements IObjectFactory {
 		if(registry == null){
 			throw new CommonException("IRegistry with name :"+registryName +" not found!");
 		}
-		
 		registry.setDataOperator(dop);
+		registry.init();
 		
 		clientServiceProxyManager = new ClientServiceProxyManager(this);
 		clientServiceProxyManager.init();
@@ -387,7 +387,7 @@ public class SimpleObjectFactory implements IObjectFactory {
 		if(!l.isEmpty()){
 			for(int i =0; i < l.size(); i++){
 				Object o = l.get(i);
-				if(dop == o || haveInits.contains(o)) {
+				if(registry == o || dop == o || haveInits.contains(o)) {
 					continue;
 				}
 				haveInits.add(o);

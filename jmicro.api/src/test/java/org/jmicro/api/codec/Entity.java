@@ -3,7 +3,7 @@ package org.jmicro.api.codec;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.jmicro.api.Person;
+import org.jmicro.api.test.Person;
 
 public final class Entity {
 

@@ -22,7 +22,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 
 import org.jmicro.api.client.IClientSession;
-import org.jmicro.api.client.IClientSessionManager;
 import org.jmicro.api.codec.OnePrefixDecoder;
 import org.jmicro.api.codec.OnePrefixTypeEncoder;
 import org.jmicro.api.gateway.ApiRequest;
@@ -30,19 +29,22 @@ import org.jmicro.api.gateway.ApiResponse;
 import org.jmicro.api.net.IMessageHandler;
 import org.jmicro.api.net.ISession;
 import org.jmicro.api.net.Message;
-import org.jmicro.client.ClientMessageReceiver;
 import org.jmicro.common.CommonException;
 import org.jmicro.common.Constants;
 
 public class ApiGatewayClient {
 	
+    public static final int TYPE_HTTP = 1;
+	
+	public static final int TYPE_SOCKET = 2;
+	
+	public static final int TYPE_WEBSOCKET = 3;
+	
 	private OnePrefixDecoder decoder = new OnePrefixDecoder();
 	
 	private OnePrefixTypeEncoder encoder = new OnePrefixTypeEncoder();
 	
-	private IClientSessionManager sessionManager = new ApiGatewaySessionManager();
-	
-	private ClientMessageReceiver receiver = new ClientMessageReceiver();
+	private ApiGatewaySessionManager sessionManager = new ApiGatewaySessionManager();
 	
 	private volatile Map<Long,IResponseHandler> waitForResponses = new ConcurrentHashMap<>();
 	
@@ -54,14 +56,24 @@ public class ApiGatewayClient {
 	
 	private String host = "172.16.22.7";
 	
-	private int port= 9090;
+	//private int port= 9090;
+	
+	private int port= 51875;
+	
+	private static int clientType = TYPE_SOCKET;
 	
 	private static interface IResponseHandler{
 		void onResponse(Message msg);
 	}
 	
+	private static int getClientType() {
+		clientType = TYPE_SOCKET;
+		return clientType;
+	}
+	
 	private ApiGatewayClient() {
-		receiver.registHandler(new IMessageHandler(){
+		sessionManager.setClientType(getClientType());
+		sessionManager.registerMessageHandler(new IMessageHandler(){
 			@Override
 			public Short type() {
 				return Constants.MSG_TYPE_API_RESP;
@@ -122,6 +134,7 @@ public class ApiGatewayClient {
 	}
     
     private Message createMessage(String serviceName, String namespace, String version, String method, Object[] args) {
+    	
     	ApiRequest req = new ApiRequest();
 		req.setArgs(args);
 		req.setMethod(method);
@@ -136,8 +149,11 @@ public class ApiGatewayClient {
 		msg.setId(0);
 		msg.setReqId(0L);
 		msg.setSessionId(0);
-		msg.setPayload(encoder.encode(req));
+		ByteBuffer bb = encoder.encode(req);
+		bb.flip();
+		msg.setPayload(bb);
 		msg.setVersion(Constants.VERSION_STR);
+		
 		return msg;
     }
     

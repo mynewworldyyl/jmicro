@@ -1,4 +1,4 @@
-package org.jmicro.api;
+package org.jmicro.api.test;
 
 public final class Person{
 	

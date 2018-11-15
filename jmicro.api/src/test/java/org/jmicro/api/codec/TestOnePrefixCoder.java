@@ -6,10 +6,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.jmicro.api.Person;
+import org.jmicro.api.gateway.ApiRequest;
 import org.jmicro.api.monitor.SubmitItem;
 import org.jmicro.api.net.Message;
 import org.jmicro.api.net.RpcResponse;
+import org.jmicro.api.test.Person;
+import org.jmicro.common.Constants;
 import org.junit.Test;
 
 public class TestOnePrefixCoder {
@@ -181,6 +183,39 @@ public class TestOnePrefixCoder {
 		arrs = decoder.decode(bb);
 		
 		System.out.println(arrs);
+	}
+	
+
+	@Test
+	public void testEncodeInnerArray2(){
+		ApiRequest req = new ApiRequest();
+		String[] args = new String[] {"hello smsg"};
+		req.setArgs(args);
+		req.setMethod("hello");
+		req.setNamespace("testnamsp");
+		req.setReqId(22L);
+		req.setServiceName("ssss");
+		req.setVersion("0.0.1");
+		
+		Message msg = new Message();
+		msg.setType(Constants.MSG_TYPE_API_REQ);
+		msg.setProtocol(Message.PROTOCOL_BIN);
+		msg.setId(0);
+		msg.setReqId(0L);
+		msg.setSessionId(0);
+		ByteBuffer payload = encoder.encode(req);
+		payload.flip();
+		msg.setPayload(payload);
+		msg.setVersion(Constants.VERSION_STR);
+		
+		ByteBuffer msgBuffer = encoder.encode(msg);
+		msgBuffer.flip();
+		
+		Message respMsg = decoder.decode(msgBuffer);
+		
+		ApiRequest respReq = decoder.decode((ByteBuffer)respMsg.getPayload());
+		
+		System.out.println(respReq.getServiceName());
 	}
 	
 	@Test
