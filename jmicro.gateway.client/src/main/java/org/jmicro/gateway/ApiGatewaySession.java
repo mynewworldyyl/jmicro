@@ -40,6 +40,12 @@ import io.netty.handler.codec.http.DefaultFullHttpResponse;
 import io.netty.handler.codec.http.FullHttpResponse;
 import io.netty.handler.codec.http.websocketx.TextWebSocketFrame;
 
+/**
+ * 
+ * @author Yulei Ye
+ * @date 2018年11月16日 上午12:22:37
+ *
+ */
 public class ApiGatewaySession extends AbstractSession implements IClientSession {
 
 	private ChannelHandlerContext ctx;

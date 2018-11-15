@@ -45,6 +45,12 @@ import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.util.AttributeKey;
 
+/**
+ * 
+ * @author Yulei Ye
+ * @date 2018年11月16日 上午12:22:44
+ *
+ */
 public class ApiGatewaySessionManager implements IClientSessionManager {
 
 	static final Logger logger = LoggerFactory.getLogger(ApiGatewaySessionManager.class);

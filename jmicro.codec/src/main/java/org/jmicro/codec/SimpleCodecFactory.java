@@ -9,8 +9,6 @@ import org.jmicro.api.annotation.Cfg;
 import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.Inject;
 import org.jmicro.api.annotation.JMethod;
-import org.jmicro.api.codec.Decoder;
-import org.jmicro.api.codec.Encoder;
 import org.jmicro.api.codec.ICodecFactory;
 import org.jmicro.api.codec.IDecoder;
 import org.jmicro.api.codec.IEncoder;

@@ -27,6 +27,12 @@ import org.jmicro.api.registry.ServiceItem;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * 
+ * @author Yulei Ye
+ * @date 2018年11月16日 上午12:21:27
+ *
+ */
 @Component(value="routerManager")
 public class RouterManager {
 

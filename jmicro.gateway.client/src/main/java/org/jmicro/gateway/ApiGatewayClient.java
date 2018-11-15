@@ -22,6 +22,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 
 import org.jmicro.api.client.IClientSession;
+import org.jmicro.api.codec.Decoder;
 import org.jmicro.api.codec.OnePrefixDecoder;
 import org.jmicro.api.codec.OnePrefixTypeEncoder;
 import org.jmicro.api.gateway.ApiRequest;
@@ -32,6 +33,12 @@ import org.jmicro.api.net.Message;
 import org.jmicro.common.CommonException;
 import org.jmicro.common.Constants;
 
+/**
+ * 
+ * @author Yulei Ye
+ * @date 2018年11月16日 上午12:22:23
+ *
+ */
 public class ApiGatewayClient {
 	
     public static final int TYPE_HTTP = 1;
@@ -54,11 +61,12 @@ public class ApiGatewayClient {
 	
 	private static final AtomicLong reqId = new AtomicLong(0);
 	
-	private String host = "172.16.22.7";
+	//private String host = "172.16.22.7";
+	private String host = "192.168.1.102";
 	
 	//private int port= 9090;
-	
-	private int port= 51875;
+	//private int port= 51875;
+	private int port= 51287;
 	
 	private static int clientType = TYPE_SOCKET;
 	
@@ -73,6 +81,7 @@ public class ApiGatewayClient {
 	
 	private ApiGatewayClient() {
 		sessionManager.setClientType(getClientType());
+		
 		sessionManager.registerMessageHandler(new IMessageHandler(){
 			@Override
 			public Short type() {
@@ -85,7 +94,34 @@ public class ApiGatewayClient {
 				waitForResponses.get(msg.getReqId()).onResponse(msg);
 			}
 		});
+		
+		sessionManager.registerMessageHandler(new IMessageHandler(){
+			@Override
+			public Short type() {
+				return Constants.MSG_TYPE_API_CLASS_RESP;
+			}
+			
+			@Override
+			public void onMessage(ISession session, Message msg) {
+				String clsName = decoder.decode((ByteBuffer)msg.getPayload());
+				try {
+					Class<?> cls = Thread.currentThread().getContextClassLoader().loadClass(clsName);
+					Decoder.registType(type, clazz);
+				} catch (ClassNotFoundException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			}
+		});
+		
 	}
+	
+	public <T> T getClassByType(Short type) {
+		
+		
+		return null;
+	}
+	
 	
 	public static ApiGatewayClient getIns() {
 		return ins;

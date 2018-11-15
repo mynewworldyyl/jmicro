@@ -240,7 +240,7 @@ public class OnePrefixTypeEncoder implements IEncoder<ByteBuffer>{
 				 encodeCollection(buffer,(Collection)v,valueType);
 			}else {
 				if(f.getType().isArray()) {
-					this.putType(buffer, f.getType().getComponentType());
+					this.putType(buffer, v.getClass().getComponentType());
 					this.encodeObjects(buffer, v);
 				}else {
 					encodeObject(buffer,v,f.getType());

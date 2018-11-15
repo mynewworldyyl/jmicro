@@ -25,6 +25,12 @@ import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.Inject;
 import org.jmicro.api.registry.ServiceItem;
 
+/**
+ * 
+ * @author Yulei Ye
+ * @date 2018年11月16日 上午12:21:12
+ *
+ */
 @Component(active=false,value="defaultRouteManagerImpl")
 public class DefaultRouter  extends AbstractRouter implements IRouter{
 

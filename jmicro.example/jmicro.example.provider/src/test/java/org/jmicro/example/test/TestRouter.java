@@ -24,13 +24,13 @@ public class TestRouter {
 		
 		
 		RouteEndpoint from = new RouteEndpoint();
-		//from.setIpPort("192.168.1.102");
-		from.setIpPort("172.16.22.7");
+		from.setIpPort("192.168.1.102");
+		//from.setIpPort("172.16.22.7");
 		rr.setFrom(from);
 		
 		RouteEndpoint to = new RouteEndpoint();
-		//to.setIpPort("192.168.1.102");
-		to.setIpPort("172.16.22.7");
+		to.setIpPort("192.168.1.102");
+		//to.setIpPort("172.16.22.7");
 		rr.setTo(to);
 		
 		ruleManager.addOrUpdate(rr);
@@ -51,8 +51,8 @@ public class TestRouter {
 		rr.setFrom(from);
 		
 		to = new RouteEndpoint();
-		//to.setIpPort("192.168.1.102");
-		to.setIpPort("172.16.22.7");
+		to.setIpPort("192.168.1.102");
+		//to.setIpPort("172.16.22.7");
 		rr.setTo(to);
 		
 		ruleManager.addOrUpdate(rr);

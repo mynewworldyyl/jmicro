@@ -93,7 +93,7 @@ public class Decoder {
 		return NON_ENCODE_TYPE;
 	}
 	
-	static Class<?> getClass(Short type){
+	public static Class<?> getClass(Short type){
 		return Short2Clazz.get(type);
 	}
 	
