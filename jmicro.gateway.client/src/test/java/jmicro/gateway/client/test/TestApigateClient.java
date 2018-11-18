@@ -22,8 +22,9 @@ import org.junit.Test;
 
 public class TestApigateClient {
 
+	@Test
 	public void testGetService() {
-		ITestApiGatewayService srv = ApiGatewayClient.getIns().getService(ITestApiGatewayService.class,
+		ISayHello srv = ApiGatewayClient.getIns().getService(ISayHello.class,
 				"testapigw", "0.0.1");
 		srv.hello("Hello api gateway");
 	}

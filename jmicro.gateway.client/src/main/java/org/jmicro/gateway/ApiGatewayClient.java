@@ -16,11 +16,15 @@
  */
 package org.jmicro.gateway;
 
+import java.lang.reflect.Method;
+import java.lang.reflect.Proxy;
 import java.nio.ByteBuffer;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 
+import org.jmicro.api.annotation.SMethod;
+import org.jmicro.api.annotation.Service;
 import org.jmicro.api.client.IClientSession;
 import org.jmicro.api.codec.Decoder;
 import org.jmicro.api.codec.OnePrefixDecoder;
@@ -32,6 +36,9 @@ import org.jmicro.api.net.ISession;
 import org.jmicro.api.net.Message;
 import org.jmicro.common.CommonException;
 import org.jmicro.common.Constants;
+import org.jmicro.common.util.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * 
@@ -40,6 +47,8 @@ import org.jmicro.common.Constants;
  *
  */
 public class ApiGatewayClient {
+	
+	private final static Logger logger = LoggerFactory.getLogger(ApiGatewayClient.class);
 	
     public static final int TYPE_HTTP = 1;
 	
@@ -69,6 +78,10 @@ public class ApiGatewayClient {
 	private int port= 51287;
 	
 	private static int clientType = TYPE_SOCKET;
+	
+    static {
+    	Decoder.setTransformClazzLoader(getIns()::getEntityClazz);
+	}
 	
 	private static interface IResponseHandler{
 		void onResponse(Message msg);
@@ -103,23 +116,10 @@ public class ApiGatewayClient {
 			
 			@Override
 			public void onMessage(ISession session, Message msg) {
-				String clsName = decoder.decode((ByteBuffer)msg.getPayload());
-				try {
-					Class<?> cls = Thread.currentThread().getContextClassLoader().loadClass(clsName);
-					Decoder.registType(type, clazz);
-				} catch (ClassNotFoundException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
+				session.active();
+				waitForResponses.get(msg.getReqId()).onResponse(msg);
 			}
 		});
-		
-	}
-	
-	public <T> T getClassByType(Short type) {
-		
-		
-		return null;
 	}
 	
 	
@@ -127,14 +127,77 @@ public class ApiGatewayClient {
 		return ins;
 	}
 	
-	public <T> T getService(Class<?> serviceClass,String namespace,String version) {
+	public <T> T getService(Class<T> serviceClass, String namespace, String version) {		
+		if(!serviceClass.isInterface()) {
+			throw new CommonException(serviceClass.getName() + " have to been insterface");
+		}
+		Object srv = Proxy.newProxyInstance(Thread.currentThread().getContextClassLoader(),
+				new Class[] {serviceClass}, (proxy,method,args) -> {
+					return callService(serviceClass,method,args,namespace,version);
+				});
+		return (T)srv;
+	}
+	
+	private Object callService(Class<?> serviceClass,Method mehtod,Object[] args,
+			String namespace, String version ) {
+		Service srvAnno = mehtod.getAnnotation(Service.class);
+		if(srvAnno == null && StringUtils.isEmpty(namespace)) {
+			throw new CommonException("Service ["+serviceClass.getName() +"] not specify namespage");
+		}
+		if(srvAnno != null && StringUtils.isEmpty(namespace)) {
+			namespace = srvAnno.namespace();
+		}
 		
+		if(srvAnno == null && StringUtils.isEmpty(version)) {
+			throw new CommonException("Service ["+serviceClass.getName() + "] not specify version");
+		}
+		if(srvAnno != null && StringUtils.isEmpty(version)) {
+			version = srvAnno.version();
+		}
+		return callService(serviceClass.getName(),namespace,version,mehtod.getName(),args);
+	}
+	
+    public Class<?> getEntityClazz(Short type) {
+    	
+    	ApiRequest req = new ApiRequest();
+		req.setArgs(new Object[] {type});
+		req.setReqId(reqId.decrementAndGet());
 		
+		Message msg = new Message();
+		msg.setType(Constants.MSG_TYPE_API_CLASS_REQ);
+		msg.setProtocol(Message.PROTOCOL_BIN);
+		msg.setId(reqId.decrementAndGet());
+		msg.setReqId(reqId.decrementAndGet());
+		msg.setSessionId(reqId.decrementAndGet());
+		
+		ByteBuffer bb = encoder.encode(req);
+		bb.flip();
+		
+		msg.setPayload(bb);
+		msg.setVersion(Constants.VERSION_STR);
+		
+		String clazzName =(String) getResponse(msg);
+		
+		if(StringUtils.isEmpty(clazzName)) {
+			try {
+				Class<?> clazz = Thread.currentThread().getContextClassLoader().loadClass(clazzName);
+				Decoder.registType(clazz,type);
+				return clazz;
+			} catch (ClassNotFoundException e) {
+				logger.error("",e);
+			}
+		}
 		return null;
 	}
+    
 	
 	public Object callService(String serviceName, String namespace, String version, String method, Object[] args) {
 		Message msg = this.createMessage(serviceName, namespace, version, method, args);
+		return getResponse(msg);
+		
+	}
+	
+	private Object getResponse(Message msg) {
 		
 		waitForResponses.put(msg.getReqId(), respMsg1 -> {
 			resqMsgCache.put(msg.getReqId(), respMsg1);
@@ -167,6 +230,7 @@ public class ApiGatewayClient {
 		 }else {
 			 throw new CommonException(resp.getResult().toString());
 		 }
+		 
 	}
     
     private Message createMessage(String serviceName, String namespace, String version, String method, Object[] args) {
@@ -182,9 +246,9 @@ public class ApiGatewayClient {
 		Message msg = new Message();
 		msg.setType(Constants.MSG_TYPE_API_REQ);
 		msg.setProtocol(Message.PROTOCOL_BIN);
-		msg.setId(0);
-		msg.setReqId(0L);
-		msg.setSessionId(0);
+		msg.setId(reqId.decrementAndGet());
+		msg.setReqId(reqId.decrementAndGet());
+		msg.setSessionId(reqId.decrementAndGet());
 		ByteBuffer bb = encoder.encode(req);
 		bb.flip();
 		msg.setPayload(bb);

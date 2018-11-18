@@ -28,6 +28,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.jmicro.api.gateway.ApiRequest;
+import org.jmicro.api.gateway.ApiResponse;
+import org.jmicro.api.net.Message;
+import org.jmicro.api.net.RpcRequest;
+import org.jmicro.api.net.RpcResponse;
 import org.jmicro.common.CommonException;
 import org.jmicro.common.Constants;
 import org.jmicro.common.Utils;
@@ -50,7 +55,48 @@ public class Decoder {
 	
 	//static Short currentTypeCode = (short)(NON_ENCODE_TYPE + 1);
 	
-	public static void registType(Short type,Class<?> clazz){
+   private static IClientTransformClassLoader clazzLoader = null;
+	
+   static {
+	    short type = (short)0xFFFF;
+		registType(Map.class,type++);
+		registType(Collection.class,type++);
+		registType(List.class,type++);
+		registType(Array.class,type++);
+		registType(Void.class,type++);
+		registType(Short.class,type++);
+		registType(Integer.class,type++);
+		registType(Long.class,type++);
+		registType(Double.class,type++);
+		registType(Float.class,type++);
+		registType(Boolean.class,type++);
+		registType(Character.class,type++);
+		registType(Object.class,type++);
+		registType(String.class,type++);
+		registType(ByteBuffer.class,type++);
+		registType(Message.class,type++);
+		registType(RpcRequest.class,type++);
+		registType(RpcResponse.class,type++);
+		registType(ApiRequest.class,type++);
+		registType(ApiResponse.class,type++);
+		
+   }
+   
+   public static void setTransformClazzLoader(IClientTransformClassLoader l) {
+	   if(clazzLoader != null) {
+		   throw new CommonException(clazzLoader.getClass().getName()+" have been set before "+l.getClass().getName());
+	   }
+	   clazzLoader = l;
+   }
+   
+    public static Class<?> getClassByProvider(Short type) {
+		if(clazzLoader != null) {
+			return clazzLoader.getClazz(type);
+		}
+		return null;
+	}
+	
+	public static void registType(Class<?> clazz,Short type){
 		if(clazz2Short.containsKey(clazz)){
 			return;
 		}
@@ -94,7 +140,13 @@ public class Decoder {
 	}
 	
 	public static Class<?> getClass(Short type){
-		return Short2Clazz.get(type);
+		Class<?> clazz = Short2Clazz.get(type);
+		if(clazz == null && type > 0) {
+			System.out.println(type);
+			 clazz = getClassByProvider(type);
+			 registType(clazz,type);
+		}
+		return clazz;
 	}
 	
 	/*public <T> T decode(byte[] buffer) {

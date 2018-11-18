@@ -48,33 +48,18 @@ public class TransforClassManager {
 	@Inject
 	private IIdGenerator idGenerator;
 	
-	public void registType(Class<?> clazz) {
+	public void registType(Class<?> clazz,Short type) {
 		String path = ROOT+"/"+clazz.getName();
 		if(!dataOperator.exist(path)) {
-			Short type = idGenerator.getIntId(TransforClassManager.class).shortValue();
+			if(type == null || type == 0) {
+				type = idGenerator.getIntId(TransforClassManager.class).shortValue();
+			}
 			dataOperator.createNode(path, type.toString(), false);
 		}
 	}
 	
 	
 	public void init() {
-		
-		registType(Map.class);
-		registType(Collection.class);
-		registType(List.class);
-		registType(Array.class);
-		registType(Void.class);
-		registType(Short.class);
-		registType(Integer.class);
-		registType(Long.class);
-		registType(Double.class);
-		registType(Float.class);
-		registType(Boolean.class);
-		registType(Character.class);
-		registType(Object.class);
-		registType(String.class);
-		registType(ByteBuffer.class);
-		
 		updateType();
 		dataOperator.addChildrenListener(ROOT, (path,children)->{
 			this.update(children);
@@ -93,7 +78,7 @@ public class TransforClassManager {
 				clazz = Thread.currentThread().getContextClassLoader().loadClass(c);
 				if(Decoder.getType(clazz) == null ) {
 					String type = dataOperator.getData(ROOT+"/"+c);
-					Decoder.registType(Short.parseShort(type),clazz);
+					Decoder.registType(clazz,Short.parseShort(type));
 				}
 			} catch (ClassNotFoundException e) {
 				logger.error("",e);

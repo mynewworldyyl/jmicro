@@ -41,7 +41,7 @@ import org.slf4j.LoggerFactory;
  * @author Yulei Ye
  * @date 2018年10月5日-下午12:50:59
  */
-@Component(lazy=false,level=12)
+@Component(lazy=false,level=20000)
 public class SubmitItemHolderManager implements IMonitorDataSubmiter{
     
 	private final static Logger logger = LoggerFactory.getLogger(SubmitItemHolderManager.class);
@@ -134,33 +134,40 @@ public class SubmitItemHolderManager implements IMonitorDataSubmiter{
 			for(int i = 0; i < threadSize; i++){
 				workers[i] = new Worker();
 			}
+			
+			if(!this.submiters.isEmpty()) {
+				startWork(null);
+			}
 		}
 	}
 	
 	public synchronized void startWork(String f) {
-		updateSubmiterList();
 		if(NON == status){
-			init();
+			return;
 		}
+		updateSubmiterList();
 		if(INITED == status) {
 			if(!submiters.isEmpty()){
 				status = WORKING;
 				for(int i = 0; i < threadSize; i++){
-					 workers[i].start();
+					if(workers[i].isPause()) {
+						 workers[i].start();
+					}
 				}
 			}
 		}
 	}
 	
 	private class Worker extends Thread{
-		private boolean stop = false;
+		private boolean pause = true;
 		private Queue<SubmitItem> its = new ConcurrentLinkedQueue<>();
 		@Override
 		public void run() {
 			//自身所有代码不加入日志统计，否则会进入死循环
 			//如果有需要，可以选择其他方式，如slf4j等
+			pause = false;
 			JMicroContext.get().configMonitor(0, 0);
-			for(;!stop;){
+			for(;!pause;){
 				try {
 					if(its.isEmpty()){
 						synchronized(this){
@@ -199,8 +206,8 @@ public class SubmitItemHolderManager implements IMonitorDataSubmiter{
 			return its.size();
 		}
 		
-		public boolean isPause(){return this.stop;}
-		public void pause(boolean s){this.stop=s;}
+		public boolean isPause(){return this.pause;}
+		public void pause(boolean s){this.pause=s;}
 	}
 	
 	private int size() {	
