@@ -81,6 +81,8 @@ public interface Constants {
 	public static final String TRANSPORT_MINA = "mina";
 	public static final String TRANSPORT_NETTY = "netty";
 	
+	public static final String HTTP_HEADER_ENCODER = "DataEncoderType";
+	
 	public static final String TRANSPORT_NETTY_HTTP = "nettyhttp";
 	
 	public static final int DEFAULT_RESP_BUFFER_SIZE = 1024*4;

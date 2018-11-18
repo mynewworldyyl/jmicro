@@ -323,7 +323,7 @@ public class ServiceInvocationHandler implements InvocationHandler, IMessageHand
     				sb.append("] do retry: ").append(retryCnt);
     			} else {
     				MonitorConstant.doSubmit(monitor,MonitorConstant.CLIENT_REQ_TIMEOUT_FAIL, req, null);
-    				sb.append("] time request request and stop retry: ").append(retryCnt);
+    				sb.append("] timeout request and stop retry: ").append(retryCnt);
     				throw new CommonException(sb.toString());
     			}
     			logger.error(sb.toString());

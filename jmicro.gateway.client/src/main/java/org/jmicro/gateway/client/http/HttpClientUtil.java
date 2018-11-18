@@ -1,4 +1,4 @@
-package org.jmicro.gateway;
+package org.jmicro.gateway.client.http;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -9,7 +9,6 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
-import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -17,7 +16,6 @@ import java.util.Map.Entry;
 import java.util.TreeMap;
 import java.util.concurrent.TimeUnit;
 
-import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.http.HttpEntity;
@@ -25,7 +23,6 @@ import org.apache.http.HttpResponse;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
-import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpPut;
 import org.apache.http.entity.StringEntity;
@@ -34,8 +31,6 @@ import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.params.BasicHttpParams;
 import org.apache.http.params.HttpParams;
 import org.apache.http.protocol.HTTP;
-import org.jmicro.common.util.JsonUtils;
-import org.jmicro.common.util.StringUtils;
 
 /**
  * 
@@ -47,75 +42,6 @@ public class HttpClientUtil {
 
     private static final Log LOG = LogFactory.getLog(HttpClientUtil.class);
 
-    @SuppressWarnings("deprecation")
-    private static String doGetRequest(HttpClient httpclient, String md5Sign,
-            String url) throws IOException {
-        HttpGet httpget = new HttpGet(url);
-
-        httpget.setHeader("Connection", "close");
-        httpget.setHeader("sign", md5Sign);
-        HttpResponse response = null;
-        try {
-            response = httpclient.execute(httpget);
-        } catch (Exception e) {
-            httpclient.getConnectionManager().closeExpiredConnections();
-            httpclient.getConnectionManager().closeIdleConnections(0,
-                    TimeUnit.SECONDS);
-            response = httpclient.execute(httpget);
-        }
-        HttpEntity entity = response.getEntity();
-        String result = null;
-        if (entity != null) {
-            result = toString(entity.getContent(), HTTP.UTF_8);
-            entity.consumeContent();
-        }
-        return result;
-    }
-
-    public static String doGetRequest(String url, Map<String, String> params)
-            throws IOException {
-        Map<String, String> treeMap = params == null
-                ? new TreeMap<String, String>()
-                : new TreeMap<String, String>(params);
-        StringBuilder entryptString = new StringBuilder("");
-        StringBuilder urlString = new StringBuilder(url);
-        // 拼接所有的参数
-        if (params != null && !params.isEmpty() ) {
-            urlString.append("?");
-        }
-
-        for (Entry<String, String> entry : treeMap.entrySet()) {
-            String str = entry.getKey() + "=" + entry.getValue();
-            entryptString.append(str);
-            urlString.append(str).append("&");
-        }
-
-        if (urlString.toString().endsWith("&")) {
-            urlString.deleteCharAt(urlString.length() - 1);
-        }
-
-        // 拼接系统密钥
-        //entryptString.append(Constant.EMNP_ENCRYPT_KEY);
-
-        // MD5加密
-
-        /*String md5Sign = DigestUtils
-                .md5DigestAsHex(entryptString.toString().getBytes("UTF-8"));*/
-        
-        HttpClient httpclient = HttpConnectionManager.getHttpClient();
-        return doGetRequest(httpclient, null, urlString.toString());
-    }
-
-    /**
-     * 发送PUT方式的远程请求
-     * 
-     * @param url
-     *            请求地址
-     * @param params
-     *            参数
-     * @return 返回处理结果
-     * @throws UnsupportedEncodingException
-     */
     @SuppressWarnings("deprecation")
     public static String doPutRequest(String url, Map<String, String> params)
             throws UnsupportedEncodingException {
@@ -154,49 +80,6 @@ public class HttpClientUtil {
         return result;
     }
 
-    @SuppressWarnings({ "deprecation" })
-    public static String doPostRequest(String url, Map<String, String> param) {
-        HttpPost httpost = new HttpPost(url);
-        List<NameValuePair> nvps = setNameValuePair(param);
-        try {
-            HttpClient httpclient = HttpConnectionManager.getHttpClient();
-            httpost.setEntity(new UrlEncodedFormEntity(nvps, HTTP.UTF_8));
-            httpost.setHeader("Connection", "close");
-
-            Map<String, String> treeMap = param == null
-                    ? new TreeMap<String, String>()
-                    : new TreeMap<String, String>(param);
-            StringBuilder entryptString = new StringBuilder("");
-            for (Entry<String, String> entry : treeMap.entrySet()) {
-                entryptString.append(entry.getKey() + "="
-                        + (StringUtils.isBlank(entry.getValue()) ? ""
-                                : entry.getValue()));
-            }
-
-            HttpResponse response = null;
-
-            try {
-                response = httpclient.execute(httpost);
-            } catch (Exception e) {
-                httpclient.getConnectionManager().closeExpiredConnections();
-                httpclient.getConnectionManager().closeIdleConnections(0,
-                        TimeUnit.SECONDS);
-                response = httpclient.execute(httpost);
-            }
-
-            HttpEntity entity = response.getEntity();
-            String result = null;
-            if (entity != null) {
-                result = toString(entity.getContent(), HTTP.UTF_8);
-                entity.consumeContent();
-            }
-            return result;
-        } catch (Exception e) {
-            LOG.error(e.getMessage(), e);
-        }
-        return "";
-    }
-
     @SuppressWarnings("deprecation")
     public static String readResponse(final HttpEntity httpEntity)
             throws Exception {
@@ -220,7 +103,7 @@ public class HttpClientUtil {
     }
 
     @SuppressWarnings("rawtypes")
-    private static List<NameValuePair> setNameValuePair(Map param) {
+    public static List<NameValuePair> setNameValuePair(Map param) {
         List<NameValuePair> nvps = new ArrayList<NameValuePair>();
         if (param == null) {
             return nvps;
@@ -266,16 +149,13 @@ public class HttpClientUtil {
    
 
     @SuppressWarnings({ "deprecation" })
-    public static String doPostRequest(String url, String md5Sign,
-            Map<String, String> param) {
+    public static String doPostRequest(String url,Map<String, String> param) {
         HttpPost httpost = new HttpPost(url);
         List<NameValuePair> nvps = setNameValuePair(param);
         try {
             HttpClient httpclient = HttpConnectionManager.getHttpClient();
             httpost.setEntity(new UrlEncodedFormEntity(nvps, HTTP.UTF_8));
-            httpost.setHeader("Connection", "close");
-
-            httpost.setHeader("sign", md5Sign);
+            httpost.setHeader("Connection", "keepalive");
 
             HttpResponse response = null;
 

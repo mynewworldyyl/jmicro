@@ -17,7 +17,7 @@
 package jmicro.gateway.client.test;
 
 import org.jmicro.api.test.ISayHello;
-import org.jmicro.gateway.ApiGatewayClient;
+import org.jmicro.gateway.client.ApiGatewayClient;
 import org.junit.Test;
 
 public class TestApigateClient {

@@ -3,7 +3,7 @@ package org.jmicro.api.test;
 import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.Service;
 
-@Service(timeout=10*60*1000,maxSpeed="1s")
+@Service(maxSpeed="1s")
 @Component
 public class SayHelloImpl implements ISayHello {
 

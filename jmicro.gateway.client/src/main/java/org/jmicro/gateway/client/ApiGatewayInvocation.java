@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.jmicro.gateway;
+package org.jmicro.gateway.client;
 
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;

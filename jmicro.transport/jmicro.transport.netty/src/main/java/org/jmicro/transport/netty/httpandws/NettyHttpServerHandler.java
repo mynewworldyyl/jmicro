@@ -1,5 +1,7 @@
 package org.jmicro.transport.netty.httpandws;
 
+import java.nio.ByteBuffer;
+
 import org.jmicro.api.annotation.Cfg;
 import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.Inject;
@@ -15,10 +17,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.netty.buffer.ByteBuf;
+import io.netty.channel.ChannelHandler.Sharable;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
-import io.netty.channel.ChannelHandler.Sharable;
 import io.netty.handler.codec.http.FullHttpRequest;
+import io.netty.handler.codec.http.HttpMethod;
 import io.netty.util.AttributeKey;
 
 @Component(lazy=false,side=Constants.SIDE_PROVIDER)
@@ -60,15 +63,23 @@ public class NettyHttpServerHandler extends ChannelInboundHandlerAdapter {
     		//全部GET请求转到资源控制器上面
     		if(resourceHandler.canhandle(req)){
     			resourceHandler.handle(ctx, req);
-    		} else {
+    		} else if(req.method().equals(HttpMethod.POST)){
     			//全部POST请求转到RPC控制器上面
     			NettyServerSession session = ctx.attr(sessionKey).get();
     			ByteBuf bb = req.content();
     			byte[] bts = new byte[bb.readableBytes()];
     			bb.readBytes(bts);
-    			String result = new String(bts,Constants.CHARSET);
-    			Message message = JsonUtils.getIns().fromJson(result, Message.class);
-    			receiver.receive(session,message);
+    			String encodeType = req.headers().get(Constants.HTTP_HEADER_ENCODER);
+    			Message message = null;
+    			if(encodeType == null || encodeType.equals(Message.PROTOCOL_JSON+"")) {
+    				String result = new String(bts,Constants.CHARSET);
+        			message = JsonUtils.getIns().fromJson(result, Message.class);
+        			receiver.receive(session,message);
+    			} else {
+    				message = new Message();
+    				message.decode(ByteBuffer.wrap(bts));
+    				receiver.receive(session,message);
+    			}
     		}
     	}else {
     		logger.debug("Error Http Request!");

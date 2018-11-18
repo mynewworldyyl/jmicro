@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.jmicro.gateway;
+package org.jmicro.gateway.client;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
@@ -50,6 +50,10 @@ public class ApiGatewayClient {
 	
 	private final static Logger logger = LoggerFactory.getLogger(ApiGatewayClient.class);
 	
+	//private static int clientType = ApiGatewayClient.TYPE_SOCKET;
+	//private  static int clientType = ApiGatewayClient.TYPE_WEBSOCKET;
+	private static int clientType = ApiGatewayClient.TYPE_HTTP;
+		
     public static final int TYPE_HTTP = 1;
 	
 	public static final int TYPE_SOCKET = 2;
@@ -71,13 +75,14 @@ public class ApiGatewayClient {
 	private static final AtomicLong reqId = new AtomicLong(0);
 	
 	//private String host = "172.16.22.7";
-	private String host = "192.168.1.102";
+	//private String host = "192.168.1.102";
+	private String host = "192.168.1.100";
 	
-	//private int port= 9090;
+	private int port= 9090;
 	//private int port= 51875;
-	private int port= 51287;
+	//private int port= 51287;
 	
-	private static int clientType = TYPE_SOCKET;
+	
 	
     static {
     	Decoder.setTransformClazzLoader(getIns()::getEntityClazz);
@@ -88,7 +93,7 @@ public class ApiGatewayClient {
 	}
 	
 	private static int getClientType() {
-		clientType = TYPE_SOCKET;
+		//clientType = TYPE_SOCKET;
 		return clientType;
 	}
 	
@@ -211,7 +216,7 @@ public class ApiGatewayClient {
 		
 		synchronized (msg) {
 			try {
-				msg.wait(1000*5);
+				msg.wait();
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}

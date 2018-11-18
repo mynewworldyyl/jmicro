@@ -145,7 +145,7 @@ public class SubmitItemHolderManager implements IMonitorDataSubmiter{
 		if(NON == status){
 			return;
 		}
-		updateSubmiterList();
+		//updateSubmiterList();
 		if(INITED == status) {
 			if(!submiters.isEmpty()){
 				status = WORKING;

@@ -1,4 +1,4 @@
-package org.jmicro.gateway;
+package org.jmicro.gateway.client.http;
 
 import java.security.KeyManagementException;
 import java.security.KeyStore;
