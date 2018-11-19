@@ -16,20 +16,16 @@
  */
 package org.jmicro.gateway.client.http;
 
-import java.io.InputStream;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
-import java.util.concurrent.TimeUnit;
+import java.util.HashMap;
+import java.util.Map;
 
-import org.apache.http.HttpEntity;
-import org.apache.http.HttpResponse;
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.entity.ByteArrayEntity;
 import org.jmicro.api.client.IClientSession;
 import org.jmicro.api.net.AbstractSession;
 import org.jmicro.api.net.Message;
 import org.jmicro.client.ClientMessageReceiver;
+import org.jmicro.common.CommonException;
 import org.jmicro.common.Constants;
 
 /**
@@ -61,10 +57,16 @@ public class ApiGatewayHttpSession extends AbstractSession implements IClientSes
 	public void write(Message msg) {
 		ByteBuffer bb = msg.encode();
 		new Thread(() -> {
-			byte[] data = doPostRequest(bb.array());
-			Message message = new Message();
-            message.decode(ByteBuffer.wrap(data));
-            receiver.receive(ApiGatewayHttpSession.this,message);
+			Map<String,String> headers = new HashMap<>();
+			headers.put(Constants.HTTP_HEADER_ENCODER, Message.PROTOCOL_BIN+"");
+			byte[] data = HttpClientUtil.doPostData(url, bb.array(),headers);
+			if(data.length == 0) {
+				Message message = new Message();
+	            message.decode(ByteBuffer.wrap(data));
+	            receiver.receive(ApiGatewayHttpSession.this,message);
+			} else {
+				throw new CommonException("Req:"+msg.getReqId()+" response null data");
+			}
 		}).start();
 	}
 
@@ -72,40 +74,5 @@ public class ApiGatewayHttpSession extends AbstractSession implements IClientSes
 	public void close(boolean flag) {
 		super.close(flag);
 	}
-
-	private byte[] doPostRequest(byte[] data) {
-        HttpPost httpost = new HttpPost(url);
-        byte[] result = new byte[0];
-        try {
-            HttpClient httpclient = HttpConnectionManager.getHttpClient();
-            httpost.setEntity(new ByteArrayEntity(data,0,data.length));
-            httpost.setHeader("Connection", "close");
-            httpost.setHeader(Constants.HTTP_HEADER_ENCODER, Message.PROTOCOL_BIN+"");
-            
-            HttpResponse response = null;
-
-            try {
-                response = httpclient.execute(httpost);
-            } catch (Exception e) {
-                httpclient.getConnectionManager().closeExpiredConnections();
-                httpclient.getConnectionManager().closeIdleConnections(0,TimeUnit.SECONDS);
-                response = httpclient.execute(httpost);
-            }
-
-            HttpEntity entity = response.getEntity();
-            if (entity != null) {
-            	int len = (int)entity.getContentLength();
-            	if(len > 0) {
-            		result = new byte[len];
-            		InputStream is = entity.getContent();
-                	is.read(result, 0, len);
-            	}
-                entity.consumeContent();
-            }
-        } catch (Exception e) {
-        	e.printStackTrace();
-        }
-        return result;
-    }
 
 }

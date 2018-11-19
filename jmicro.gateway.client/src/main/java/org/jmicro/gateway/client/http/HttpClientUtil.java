@@ -1,36 +1,17 @@
 package org.jmicro.gateway.client.http;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.UnsupportedEncodingException;
-import java.net.HttpURLConnection;
-import java.net.URL;
-import java.nio.charset.Charset;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
-import java.util.TreeMap;
-import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.http.HttpEntity;
-import org.apache.http.HttpResponse;
-import org.apache.http.NameValuePair;
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.entity.UrlEncodedFormEntity;
+import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpPost;
-import org.apache.http.client.methods.HttpPut;
-import org.apache.http.entity.StringEntity;
-import org.apache.http.impl.client.DefaultHttpClient;
-import org.apache.http.message.BasicNameValuePair;
-import org.apache.http.params.BasicHttpParams;
-import org.apache.http.params.HttpParams;
-import org.apache.http.protocol.HTTP;
+import org.apache.http.entity.ByteArrayEntity;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClients;
+import org.apache.http.util.EntityUtils;
 
 /**
  * 
@@ -40,199 +21,44 @@ import org.apache.http.protocol.HTTP;
  */
 public class HttpClientUtil {
 
-    private static final Log LOG = LogFactory.getLog(HttpClientUtil.class);
+	private static final Log LOG = LogFactory.getLog(HttpClientUtil.class);
 
-    @SuppressWarnings("deprecation")
-    public static String doPutRequest(String url, Map<String, String> params)
-            throws UnsupportedEncodingException {
-        HttpPut httpPut = new HttpPut(url);
-        List<NameValuePair> nvps = setNameValuePair(params);
-        httpPut.setHeader("Connection", "close");
+	public static byte[] doPostData(String url, byte[] data,Map<String,String> headers){
+			byte[] result = new byte[0];
 
-        Map<String, String> treeMap = params == null
-                ? new TreeMap<String, String>()
-                : new TreeMap<String, String>(params);
-        StringBuilder entryptString = new StringBuilder("");
-        for (Entry<String, String> entry : treeMap.entrySet()) {
-            entryptString.append(entry.getKey() + "=" + entry.getValue());
-        }
-        
-        httpPut.setHeader("sign", null);
+			// 创建httpclient对象
+			CloseableHttpClient client = HttpClients.createDefault();
+			// 创建post方式请求对象
+			HttpPost httpPost = new HttpPost(url);
 
-        HttpResponse response = null;
-        String result = null;
-        HttpClient httpclient = HttpConnectionManager.getHttpClient();
-        try {
-            httpPut.setEntity(new UrlEncodedFormEntity(nvps, HTTP.UTF_8));
-            response = httpclient.execute(httpPut);
-            HttpEntity entity = response.getEntity();
+			// 设置参数到请求对象中
+			httpPost.setEntity(new ByteArrayEntity(data,0,data.length));
 
-            if (entity != null) {
-                result = toString(entity.getContent(), HTTP.UTF_8);
-                entity.consumeContent();
-            }
-        } catch (Exception e) {
-            httpclient.getConnectionManager().closeExpiredConnections();
-            httpclient.getConnectionManager().closeIdleConnections(0,
-                    TimeUnit.SECONDS);
-        }
+			// 设置header信息
+			// 指定报文头【Content-type】、【User-Agent】
+			//httpPost.setHeader("Content-type", "application/x-www-form-urlencoded");
+			//httpPost.setHeader("User-Agent", "Mozilla/4.0 (compatible; MSIE 5.0; Windows NT; DigExt)");
 
-        return result;
-    }
-
-    @SuppressWarnings("deprecation")
-    public static String readResponse(final HttpEntity httpEntity)
-            throws Exception {
-        if (httpEntity != null) {
-            InputStreamReader inputStreamReader = null;
-            inputStreamReader = new InputStreamReader(httpEntity.getContent());
-            BufferedReader bufferedReader = new BufferedReader(
-                    inputStreamReader);
-            StringBuffer sb = new StringBuffer();
-            String line = null;
-            while ((line = bufferedReader.readLine()) != null) {
-                sb.append(new String(line.getBytes(),
-                        Charset.forName(HTTP.UTF_8)));
-            }
-            if (inputStreamReader != null) {
-                inputStreamReader.close();
-            }
-            return sb.toString();
-        }
-        return "";
-    }
-
-    @SuppressWarnings("rawtypes")
-    public static List<NameValuePair> setNameValuePair(Map param) {
-        List<NameValuePair> nvps = new ArrayList<NameValuePair>();
-        if (param == null) {
-            return nvps;
-        }
-
-        Iterator entries = param.entrySet().iterator();
-        Map.Entry entry;
-        while (entries.hasNext()) {
-            entry = (Map.Entry) entries.next();
-            String name = (String) entry.getKey();
-            Object valueObj = entry.getValue();
-            if (null == valueObj) {
-                nvps.add(new BasicNameValuePair(name, ""));
-            } else if (valueObj instanceof String[]) {
-                String[] values = (String[]) valueObj;
-                for (int i = 0; i < values.length; i++) {
-                    nvps.add(new BasicNameValuePair(name, values[i]));
-                }
-            } else {
-                nvps.add(new BasicNameValuePair(name, valueObj.toString()));
-            }
-        }
-
-        return nvps;
-    }
-
-    private static String toString(InputStream in, String encode) {
-        StringBuffer result = new StringBuffer();
-        try {
-            BufferedReader rd = new BufferedReader(
-                    new InputStreamReader(in, encode));
-            String tempLine = rd.readLine();
-            while (tempLine != null) {
-                result.append(tempLine);
-                tempLine = rd.readLine();
-            }
-        } catch (Exception e) {
-            LOG.error(e.getMessage(), e);
-        }
-        return result.toString();
-    }
-
-   
-
-    @SuppressWarnings({ "deprecation" })
-    public static String doPostRequest(String url,Map<String, String> param) {
-        HttpPost httpost = new HttpPost(url);
-        List<NameValuePair> nvps = setNameValuePair(param);
-        try {
-            HttpClient httpclient = HttpConnectionManager.getHttpClient();
-            httpost.setEntity(new UrlEncodedFormEntity(nvps, HTTP.UTF_8));
-            httpost.setHeader("Connection", "keepalive");
-
-            HttpResponse response = null;
-
-            try {
-                response = httpclient.execute(httpost);
-            } catch (Exception e) {
-                httpclient.getConnectionManager().closeExpiredConnections();
-                httpclient.getConnectionManager().closeIdleConnections(0,
-                        TimeUnit.SECONDS);
-                response = httpclient.execute(httpost);
-            }
-
-            HttpEntity entity = response.getEntity();
-            String result = null;
-            if (entity != null) {
-                result = toString(entity.getContent(), HTTP.UTF_8);
-                entity.consumeContent();
-            }
-            return result;
-        } catch (Exception e) {
-            LOG.error(e.getMessage(), e);
-        }
-        return "";
-    }
-
-    @SuppressWarnings("deprecation")
-    public static String sendJsonContentType(String url, String json) {
-        HttpResponse httpResp = null;
-        try {
-            HttpParams params = new BasicHttpParams();
-            HttpClient client = new DefaultHttpClient(params);
-            HttpPost post = new HttpPost(url);
-
-            // StringEntity entity = new StringEntity(json,"utf-8");//解决中文乱码问题
-            // entity.setContentEncoding("UTF-8");
-            // entity.setContentType("application/json");
-            // post.setEntity(entity);
-
-            StringBuilder sb = new StringBuilder(json);
-
-            StringEntity entity = new StringEntity(json, "utf-8");// 解决中文乱码问题
-            entity.setContentEncoding("UTF-8");
-            entity.setContentType("application/json");
-            post.setEntity(entity);
-
-            try {
-                httpResp = client.execute(post);
-            } catch (Exception e) {
-                client.getConnectionManager().closeExpiredConnections();
-                client.getConnectionManager().closeIdleConnections(0,
-                        TimeUnit.SECONDS);
-                httpResp = client.execute(post);
-            }
-
-            HttpEntity respEntity = httpResp.getEntity();
-            String result = null;
-            if (respEntity != null) {
-                result = toString(respEntity.getContent(), HTTP.UTF_8);
-                respEntity.consumeContent();
-            }
-            return result;
-        } catch (Exception e1) {
-            e1.printStackTrace();
-            return "";
-        }
-    }
-
-    public static InputStream getUrlInputStream(String strUrl)
-            throws IOException {
-        InputStream is = null;
-        URL url = null;
-        url = new URL(strUrl);
-        HttpURLConnection conn = (HttpURLConnection) url.openConnection();// 利用HttpURLConnection对象,我们可以从网络中获取网页数据.
-        conn.setDoInput(true);
-        conn.connect();
-        is = conn.getInputStream(); // 得到网络返回的输入流
-        return is;
-    }
-
+			headers.forEach((key,value)->{
+				httpPost.setHeader(key, value);
+			});
+			
+			try {
+				// 执行请求操作，并拿到结果（同步阻塞）
+				CloseableHttpResponse response = client.execute(httpPost);
+				// 获取结果实体
+				HttpEntity entity = response.getEntity();
+				if (entity != null) {
+					// 按指定编码转换结果实体为String类型
+					result = EntityUtils.toByteArray(entity);
+				}
+				EntityUtils.consume(entity);
+				// 释放链接
+				response.close();
+				
+			} catch (IOException e) {
+				LOG.error("",e);
+			}
+			return result;
+		}
 }

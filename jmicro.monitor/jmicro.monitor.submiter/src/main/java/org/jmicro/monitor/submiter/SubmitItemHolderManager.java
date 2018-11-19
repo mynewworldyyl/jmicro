@@ -72,17 +72,27 @@ public class SubmitItemHolderManager implements IMonitorDataSubmiter{
 	
 	//@Inject(required=false, remote=true)
 	//配置方式参数Reference注解说明
-	@Reference(required=false,changeListener="startWork")
+	@Reference(required=false,changeListener="subscriberChange")
 	private Set<IMonitorDataSubscriber> submiters = new HashSet<>();
 	
 	private Map<Integer,Set<IMonitorDataSubscriber>> type2Subscribers = new HashMap<>();
 	
 	private Worker[] workers = null;
 	
-	public void reset(){
+	private Boolean subscriberChange = true;
+	
+	public void subscriberChange() {
+		subscriberChange = true;
+	}
+	
+	/**
+	 * 工作线哦数量程改变
+	 */
+	public synchronized void reset(){
 		if(status == NON){
 			return;
 		}
+		
 		if(threadSize == workers.length) {
 			return;
 		}
@@ -90,14 +100,20 @@ public class SubmitItemHolderManager implements IMonitorDataSubmiter{
 		Worker[] ws = new Worker[this.threadSize];
 		
 		if(threadSize < workers.length) {
+			//减少工作线程
 			for(int j = 0; j < threadSize; j++){
 				ws[j] = workers[j];
+				workers[j] = null;
 			}
 			for(int j = threadSize; j < workers.length; j++){
 				workers[j].pause(true);
+				synchronized(workers[j]) {
+					workers[j].notify();
+				}
+				workers[j] = null;
 			}
-			
 		} else {
+			//增加工作线程
 			for(int j = 0; j < workers.length; j++){
 				ws[j] = workers[j];
 			}
@@ -112,6 +128,9 @@ public class SubmitItemHolderManager implements IMonitorDataSubmiter{
 		this.workers = ws;
 	}
 	
+	/**
+	 * 由日志类型映射到日志订阅者
+	 */
 	private void updateSubmiterList(){
 		if(!submiters.isEmpty()){
 			for(IMonitorDataSubscriber m : this.submiters){
@@ -126,6 +145,9 @@ public class SubmitItemHolderManager implements IMonitorDataSubmiter{
 		}
 	}
 	
+	/**
+	 * 初始化，只是创建工作线程对象，并没有启动
+	 */
 	public synchronized void init(){
 		//updateSubmiterList();
 		if(NON == status){
@@ -134,13 +156,13 @@ public class SubmitItemHolderManager implements IMonitorDataSubmiter{
 			for(int i = 0; i < threadSize; i++){
 				workers[i] = new Worker();
 			}
-			
-			if(!this.submiters.isEmpty()) {
-				startWork(null);
-			}
 		}
 	}
 	
+	/**
+	 * 启动线程
+	 * @param f
+	 */
 	public synchronized void startWork(String f) {
 		if(NON == status){
 			return;
@@ -223,6 +245,16 @@ public class SubmitItemHolderManager implements IMonitorDataSubmiter{
 			return;
 		}
 		
+		if(subscriberChange) {
+			synchronized(subscriberChange) {
+				if(subscriberChange) {
+					// 避免多线程进入问题
+					subscriberChange = false;
+					this.updateSubmiterList();
+				}
+			}
+		}
+		
 		if(!type2Subscribers.containsKey(type)) {
 			return;
 		}
@@ -292,5 +324,15 @@ public class SubmitItemHolderManager implements IMonitorDataSubmiter{
 		
 		caches.offer(si);
 	}
+
+	@Override
+	public void submit(SubmitItem item) {
+		if(item == null) {
+			return;
+		}
+		this.workers[index.getAndIncrement()%this.workers.length].addItem(item);
+	}
+	
+	
 	
 }

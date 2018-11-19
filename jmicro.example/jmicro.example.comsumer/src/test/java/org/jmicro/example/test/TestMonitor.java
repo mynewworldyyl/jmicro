@@ -30,4 +30,25 @@ public class TestMonitor {
 		
 	}
 	
+	
+	@Test
+	public void testMonitor02() {
+		
+		IObjectFactory of = JMicro.getObjectFactoryAndStart(new String[] {"testMonitor02"});
+		
+		JMicroContext.get().configMonitor(1, 1);
+		IMonitorDataSubmiter monitor = of.get(IMonitorDataSubmiter.class);
+		for(;;){
+			//MonitorConstant.doSubmit(monitor,MonitorConstant.CLIENT_REQ_BEGIN, null, null);
+			MonitorConstant.doSubmit(monitor,MonitorConstant.CLIENT_REQ_OK, null, null);
+			
+			try {
+				Thread.sleep(10);
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
+		
+	}
 }

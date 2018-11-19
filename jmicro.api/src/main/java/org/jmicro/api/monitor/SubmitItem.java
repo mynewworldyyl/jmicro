@@ -23,12 +23,16 @@ package org.jmicro.api.monitor;
  */
 public class SubmitItem{
 
+	private int level = MonitorConstant.DEBUG;
+	
 	private int type = -1;
+	
 	private boolean finish = true;
 	
 	/*private IRequest req = null;
 	private IResponse resp = null;*/
 	
+	private long linkId;
 	private long reqId;
 	private long sessionId;
 	private long msgId;
@@ -43,12 +47,19 @@ public class SubmitItem{
 	private String reqArgsStr;
 	
 	private String others  = null;
+	
 	private long time;
 	
 	private Long respId;
 	
 	private Object result  = null;
 	
+	public long getLinkId() {
+		return linkId;
+	}
+	public void setLinkId(long linkId) {
+		this.linkId = linkId;
+	}
 	public Object getResult() {
 		return result;
 	}
@@ -139,6 +150,12 @@ public class SubmitItem{
 	}
 	public void setTime(long time) {
 		this.time = time;
+	}
+	public int getLevel() {
+		return level;
+	}
+	public void setLevel(int level) {
+		this.level = level;
 	}
 	
 }

@@ -20,6 +20,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.jmicro.api.config.Config;
+import org.jmicro.api.idgenerator.IIdGenerator;
+import org.jmicro.api.monitor.Linker;
 import org.jmicro.common.Constants;
 /**
  * 
@@ -30,6 +32,10 @@ public class JMicroContext  {
 
 	public static final String CLIENT_IP = "clientIp";
 	public static final String CLIENT_PORT = "clientPort";
+	
+	public static final String LINKER_ID = "linkerId";
+	
+	public static final String MONITOR = "monitor";
 	
 	public static final String CLIENT_SERVICE = "clientService";
 	public static final String CLIENT_NAMESPACE = "clientNamespace";
@@ -58,6 +64,16 @@ public class JMicroContext  {
 		if(c != null) {
 			cxt.remove();
 		}
+	}
+	
+	public static Long lid(IIdGenerator idGenerator){
+		JMicroContext c = cxt.get();
+		Long id = c.getLong(LINKER_ID, null);
+		if(id == null) {
+			id = idGenerator.getLongId(Linker.class);
+			c.setLong(LINKER_ID, id);
+		}
+		return id;
 	}
 	
 	public void configMonitor(int methodCfg,int srvCfg){
@@ -136,11 +152,19 @@ public class JMicroContext  {
 		 this.setParam(key,val);
 	}
 	
+	public void setLong(String key,Long val){
+		 this.setParam(key,val);
+	}
+	
 	public void setObject(String key,Object val){
 		 this.setParam(key,val);
 	}
 	
 	public Integer getInt(String key,int defautl){
+		return this.getParam(key,defautl);
+	}
+	
+	public Long getLong(String key,Long defautl){
 		return this.getParam(key,defautl);
 	}
 	

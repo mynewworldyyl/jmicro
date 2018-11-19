@@ -40,7 +40,7 @@ public final class Message implements IDable{
 	
 	private long reqId;
 	
-	private long sessionId;
+	private long linkId;
 	
 	//payload length with byte,4 byte length
 	private int len;
@@ -60,8 +60,7 @@ public final class Message implements IDable{
 	
 	private Object payload;	
 	
-	public Message(){
-	}
+	public Message(){}
 	
 	public void decode(ByteBuffer b) {
 		int pos = b.position();
@@ -83,7 +82,7 @@ public final class Message implements IDable{
 			this.setType(b.getShort());
 			this.setId(b.getLong());
 			this.setReqId(b.getLong());
-			this.setSessionId(b.getLong());
+			this.setLinkId(b.getLong());
 		    this.setFlag(b.get());
 		    
 			if(len > 0){
@@ -99,7 +98,7 @@ public final class Message implements IDable{
 				Message msg = JsonUtils.getIns().fromJson(json, Message.class);
 				this.msgId = msg.msgId;
 				this.reqId = msg.reqId;
-				this.sessionId = msg.sessionId;
+				this.linkId = msg.linkId;
 				this.len = msg.len;
 				this.version = msg.version;
 				this.type = msg.type;
@@ -144,7 +143,7 @@ public final class Message implements IDable{
 			b.putShort(this.getType());
 			b.putLong(this.getId());
 			b.putLong(this.reqId);
-			b.putLong(this.sessionId);
+			b.putLong(this.linkId);
 			b.put(this.flag);
 			
 			if(data != null){
@@ -214,11 +213,12 @@ public final class Message implements IDable{
 		this.reqId = reqId;
 	}
 
-	public long getSessionId() {
-		return sessionId;
+	public long getLinkId() {
+		return linkId;
 	}
-	public void setSessionId(long sessionId) {
-		this.sessionId = sessionId;
+
+	public void setLinkId(long linkId) {
+		this.linkId = linkId;
 	}
 
 	public byte getProtocol() {

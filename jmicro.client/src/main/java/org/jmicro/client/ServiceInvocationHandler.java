@@ -19,10 +19,10 @@ package org.jmicro.client;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.jmicro.api.AbstractComponent;
 import org.jmicro.api.JMicroContext;
 import org.jmicro.api.annotation.Cfg;
 import org.jmicro.api.annotation.Component;
@@ -37,7 +37,9 @@ import org.jmicro.api.exception.BreakerException;
 import org.jmicro.api.idgenerator.IIdGenerator;
 import org.jmicro.api.loadbalance.ISelector;
 import org.jmicro.api.monitor.IMonitorDataSubmiter;
+import org.jmicro.api.monitor.Linker;
 import org.jmicro.api.monitor.MonitorConstant;
+import org.jmicro.api.monitor.SF;
 import org.jmicro.api.net.IMessageHandler;
 import org.jmicro.api.net.ISession;
 import org.jmicro.api.net.Message;
@@ -50,8 +52,6 @@ import org.jmicro.api.registry.ServiceMethod;
 import org.jmicro.api.server.IRequest;
 import org.jmicro.common.CommonException;
 import org.jmicro.common.Constants;
-import org.jmicro.common.Utils;
-import org.jmicro.common.util.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 /**
@@ -64,6 +64,8 @@ public class ServiceInvocationHandler implements InvocationHandler, IMessageHand
 	
 	private final static Logger logger = LoggerFactory.getLogger(ServiceInvocationHandler.class);
 	private volatile Map<Long,IResponseHandler> waitForResponse = new ConcurrentHashMap<>();
+	
+	private static final String TAG = ServiceInvocationHandler.class.getName();
 	
 	@Cfg("/ServiceInvocationHandler/openDebug")
 	private boolean openDebug;
@@ -80,17 +82,16 @@ public class ServiceInvocationHandler implements InvocationHandler, IMessageHand
 	@Inject(required=true)
 	private ISelector selector;
 	
+	@Inject(required=true)
+	private IMonitorDataSubmiter monitor;
+	
 	@Inject
 	private IIdGenerator idGenerator;
-	
-	@Inject(required=false)
-	private IMonitorDataSubmiter monitor;
 	
 	@Inject
 	private BreakerManager breakerManager;
 	
-	public ServiceInvocationHandler(){
-	}
+	public ServiceInvocationHandler(){}
 	
 	@Override
 	public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
@@ -145,6 +146,8 @@ public class ServiceInvocationHandler implements InvocationHandler, IMessageHand
         int interval = -1;
         int timeout = -1;
         boolean isFistLoop = true;
+        
+        Long lid = JMicroContext.get().getLong(JMicroContext.LINKER_ID, null);
         
 		JMicroContext.get().setParam(JMicroContext.CLIENT_IP, Config.getHost());
 		
@@ -205,7 +208,7 @@ public class ServiceInvocationHandler implements InvocationHandler, IMessageHand
     		msg.setProtocol(Message.PROTOCOL_BIN);
     		msg.setId(this.idGenerator.getLongId(Message.class));
     		msg.setReqId(req.getRequestId());
-    		msg.setSessionId(session.getId());
+    		msg.setLinkId(lid);
     		msg.setPayload(ICodecFactory.encode(this.codecFactory,req,msg.getProtocol()));
     		msg.setVersion(Constants.VERSION_STR);
     		
@@ -226,8 +229,8 @@ public class ServiceInvocationHandler implements InvocationHandler, IMessageHand
     		msg.setFlag(flag);
     		req.setMsg(msg);
     		
-    		if(openDebug) {
-    			logger.debug("Do Request ReqId: "+req.getRequestId());
+    		if(this.openDebug) {
+    			SF.getIns().doLog(MonitorConstant.DEBUG,lid,si.serviceName(), si.getNamespace(), si.getVersion(),method.getName(), args, " do request");
     		}
     		
     		session.write(msg);
@@ -235,13 +238,18 @@ public class ServiceInvocationHandler implements InvocationHandler, IMessageHand
     		if(!sm.needResponse && !stream) {
     			//数据发送后，不需要返回结果，也不需要请求确认包，直接返回
     			//this.sessionManager.write(msg, null,retryCnt);
+    			if(this.openDebug) {
+    				SF.getIns().doLog(MonitorConstant.DEBUG,lid,si.serviceName(), si.getNamespace(), si.getVersion(),method.getName(), args, " no need response and return");
+        		}
     			return null;
     		}
     		
     		if(stream){
     			String key = req.getRequestId()+"";
     			if(session.getParam(key) != null) {
-    				throw new CommonException("Callback have been exists reqID："+key);
+    				String errMsg = "Failure Callback have been exists reqID："+key;
+    				SF.getIns().doLog(MonitorConstant.ERROR,lid,si.serviceName(), si.getNamespace(), si.getVersion(),method.getName(), args, errMsg);
+    				throw new CommonException(errMsg);
     			}
     			session.putParam(key,JMicroContext.get().getParam(Constants.CONTEXT_CALLBACK_CLIENT, null));
     		}
@@ -279,12 +287,14 @@ public class ServiceInvocationHandler implements InvocationHandler, IMessageHand
     		if(respMsg != null){
     			resp = new RpcResponse(respBufferSize);
     			if(respMsg.getPayload() != null){
-    				resp = ICodecFactory.decode(this.codecFactory,respMsg.getPayload(),RpcResponse.class,msg.getProtocol());
+    				resp = ICodecFactory.decode(this.codecFactory,respMsg.getPayload(),
+    						RpcResponse.class,msg.getProtocol());
     			}
     			resp.setMsg(respMsg);
     			req.setMsg(msg);
-    			if(openDebug) {
-        			logger.debug("Go Response reqId: "+respMsg.getReqId());
+    			if(this.openDebug) {
+    				SF.getIns().doLog(MonitorConstant.DEBUG,lid,si.serviceName(), si.getNamespace(), 
+        					si.getVersion(),method.getName(), args,"reqID ["+resp.getReqId()+"] response");
         		}
     		}
     		
@@ -326,8 +336,8 @@ public class ServiceInvocationHandler implements InvocationHandler, IMessageHand
     				sb.append("] timeout request and stop retry: ").append(retryCnt);
     				throw new CommonException(sb.toString());
     			}
-    			logger.error(sb.toString());
-    			
+    			SF.getIns().doLog(MonitorConstant.WARN,lid,si.serviceName(), si.getNamespace(), si.getVersion(),method.getName(), args,sb.toString());
+    		
     			if(interval > 0 && retryCnt > 0){
     				try {
     					//超时重试间隔
@@ -335,6 +345,7 @@ public class ServiceInvocationHandler implements InvocationHandler, IMessageHand
     				} catch (InterruptedException e) {
     					logger.error("Sleep exceptoin ",e);
     				}
+    				SF.getIns().doLog(MonitorConstant.WARN,lid,si.serviceName(), si.getNamespace(), si.getVersion(),method.getName(), args," do retry");
     				MonitorConstant.doSubmit(monitor,MonitorConstant.CLIENT_REQ_RETRY, req, resp);
     				continue;//重试循环
     			}
@@ -345,11 +356,13 @@ public class ServiceInvocationHandler implements InvocationHandler, IMessageHand
 				 //logger.error("error code: "+se.getErrorCode()+" ,msg: "+se.getMsg());
 				 req.setSuccess(resp.isSuccess());
 				 MonitorConstant.doSubmit(monitor,MonitorConstant.CLIENT_REQ_EXCEPTION_ERR, req, null);
+				 SF.getIns().doLog(MonitorConstant.ERROR,lid,si.serviceName(), si.getNamespace(), si.getVersion(),method.getName(), args,se.getMsg());
 				 throw new CommonException(sb.toString());
 			} else if(!resp.isSuccess()){
-				//服务器正常逻辑处理错误，不需要重试，直接失败
+				 //服务器正常逻辑处理错误，不需要重试，直接失败
 				 req.setSuccess(resp.isSuccess());
 				 MonitorConstant.doSubmit(monitor,MonitorConstant.CLIENT_REQ_BUSSINESS_ERR, req, resp);
+				 SF.getIns().doLog(MonitorConstant.ERROR,lid,si.serviceName(), si.getNamespace(), si.getVersion(),method.getName(), args,se.getMsg());
 			     throw new CommonException(sb.toString());
 			}
     		 //代码不应该走到这里，如果走到这里，说明系统还有问题
@@ -368,10 +381,14 @@ public class ServiceInvocationHandler implements InvocationHandler, IMessageHand
 	public void onMessage(ISession session,Message msg) {
 		//receive response
 		IResponseHandler handler = waitForResponse.get(msg.getReqId());
+		if(this.openDebug) {
+			SF.getIns().doLog(MonitorConstant.ERROR,msg," receive message");
+		}
 		if(handler!= null){
 			handler.onResponse(msg);
 		} else {
-			logger.error("msdId:"+msg.getId()+",reqId:"+msg.getReqId()+",sId:"+msg.getSessionId()+" IGNORE");
+			SF.getIns().doLog(MonitorConstant.ERROR,msg," handler not found");
+			logger.error("msdId:"+msg.getId()+",reqId:"+msg.getReqId()+",linkId:"+msg.getLinkId()+" IGNORE");
 		}
 	}
 	

@@ -105,7 +105,7 @@ public class JRPCReqRespHandler implements IMessageHandler{
 	    	if(openDebug) {
 				logger.debug("Got Request ReqId: " + msg.getReqId());
 			}
-		    s.setId(msg.getSessionId());
+		    //s.setId(msg.getSessionId());
 	        JMicroContext cxt = JMicroContext.get();
 			cxt.setParam(JMicroContext.SESSION_KEY, s);
 			
@@ -151,7 +151,7 @@ public class JRPCReqRespHandler implements IMessageHandler{
 				}
 
 				msg.setReqId(req.getRequestId());
-				msg.setSessionId(req.getSession().getId());
+				//msg.setSessionId(req.getSession().getId());
 				msg.setVersion(req.getMsg().getVersion());
 				
 				if(req.isStream()){

@@ -28,7 +28,7 @@ import io.netty.util.AttributeKey;
 @Sharable
 public class NettyHttpServerHandler extends ChannelInboundHandlerAdapter {
 	
-    static final Logger logger = LoggerFactory.getLogger(NettyServerSession.class);
+    static final Logger logger = LoggerFactory.getLogger(NettyHttpServerHandler.class);
 	
 	private static final AttributeKey<NettyServerSession> sessionKey = 
 			AttributeKey.newInstance(Constants.SESSION_KEY+"NettyHttp"+System.currentTimeMillis());
@@ -38,6 +38,9 @@ public class NettyHttpServerHandler extends ChannelInboundHandlerAdapter {
 	
 	@Cfg("/MinaClientSessionManager/heardbeatInterval")
 	private int heardbeatInterval = 3; //seconds to send heardbeat Rate
+	
+	@Cfg("/NettyHttpServerHandler/openDebug")
+	private boolean openDebug = false;
 	
 	@Inject
 	private IIdGenerator idGenerator;
@@ -57,7 +60,11 @@ public class NettyHttpServerHandler extends ChannelInboundHandlerAdapter {
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg)
             throws Exception {
+    	if(this.openDebug) {
+    		logger.debug("channelRead:" + msg.toString());
+    	}
     	//logger.debug("channelRead:" + msg.toString());
+    	
     	if(msg instanceof FullHttpRequest){
     		FullHttpRequest req = (FullHttpRequest)msg;
     		//全部GET请求转到资源控制器上面

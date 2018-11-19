@@ -64,7 +64,7 @@ public class ClientMessageReceiver implements IMessageReceiver{
 			}
 		} catch (Throwable e) {
 			MonitorConstant.doSubmit(monitor,MonitorConstant.CLIENT_REQ_ASYNC2_FAIL,
-					null,null,msg.getId(),msg.getReqId(),msg.getSessionId());
+					null,null,msg.getId(),msg.getReqId(),msg.getLinkId());
 			logger.error("reqHandler error: ",e);
 			msg.setType((short)(msg.getType()+1));
 		}

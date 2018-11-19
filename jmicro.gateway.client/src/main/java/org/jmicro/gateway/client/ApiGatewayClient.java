@@ -74,9 +74,9 @@ public class ApiGatewayClient {
 	
 	private static final AtomicLong reqId = new AtomicLong(0);
 	
-	//private String host = "172.16.22.7";
+	private String host = "172.16.22.200";
 	//private String host = "192.168.1.102";
-	private String host = "192.168.1.100";
+	//private String host = "192.168.1.100";
 	
 	private int port= 9090;
 	//private int port= 51875;
@@ -173,7 +173,7 @@ public class ApiGatewayClient {
 		msg.setProtocol(Message.PROTOCOL_BIN);
 		msg.setId(reqId.decrementAndGet());
 		msg.setReqId(reqId.decrementAndGet());
-		msg.setSessionId(reqId.decrementAndGet());
+		msg.setLinkId(reqId.decrementAndGet());
 		
 		ByteBuffer bb = encoder.encode(req);
 		bb.flip();
@@ -253,7 +253,7 @@ public class ApiGatewayClient {
 		msg.setProtocol(Message.PROTOCOL_BIN);
 		msg.setId(reqId.decrementAndGet());
 		msg.setReqId(reqId.decrementAndGet());
-		msg.setSessionId(reqId.decrementAndGet());
+		msg.setLinkId(reqId.decrementAndGet());
 		ByteBuffer bb = encoder.encode(req);
 		bb.flip();
 		msg.setPayload(bb);

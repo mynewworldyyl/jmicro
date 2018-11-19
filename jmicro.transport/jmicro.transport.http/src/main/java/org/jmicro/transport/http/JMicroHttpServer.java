@@ -111,7 +111,6 @@ public class JMicroHttpServer implements IServer{
 		    		msg.setProtocol(Message.PROTOCOL_JSON);
 		    		msg.setId(idGenerator.getLongId(Message.class));
 		    		msg.setReqId(-1L);
-		    		msg.setSessionId(session.getId());
 		    		msg.setPayload("");
 		    		msg.setVersion(Constants.VERSION_STR);
 					exchange.sendResponseHeaders(200, 0);

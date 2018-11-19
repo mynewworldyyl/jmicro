@@ -93,5 +93,19 @@ public interface MonitorConstant {
 	public static final int SERVER_IOSESSION_WRITE = 0X7FFFFEE0;
 	public static final int SERVER_IOSESSION_READ =  0X7FFFFEE1;
     public static final int SERVER_IOSESSION_EXCEPTION=0X7FFFFEE2;
-
+    
+    public static final int LINKER_ROUTER_MONITOR = 0X7FFFFEE3;
+    
+    public static final int TRANCE = 0;
+    
+    public static final int DEBUG = 1;
+    
+    public static final int INFO = 2;
+    
+    public static final int WARN = 3;
+    
+    public static final int ERROR = 4;
+    
+    public static final int FINAL = 5;
+    
 }

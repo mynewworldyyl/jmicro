@@ -203,7 +203,7 @@ public class TestOnePrefixCoder {
 		msg.setProtocol(Message.PROTOCOL_BIN);
 		msg.setId(0);
 		msg.setReqId(0L);
-		msg.setSessionId(0);
+		msg.setLinkId(0);
 		ByteBuffer payload = encoder.encode(req);
 		payload.flip();
 		msg.setPayload(payload);
@@ -233,7 +233,7 @@ public class TestOnePrefixCoder {
 		msg.setProtocol(Message.PROTOCOL_BIN);
 		msg.setId(0);
 		msg.setReqId(0L);
-		msg.setSessionId(0);
+		msg.setLinkId(0);
 		ByteBuffer payload = encoder.encode(req);
 		payload.flip();
 		msg.setPayload(payload);

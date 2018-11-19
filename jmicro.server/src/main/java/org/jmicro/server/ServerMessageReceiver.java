@@ -108,8 +108,8 @@ public class ServerMessageReceiver implements IMessageReceiver{
 			logger.debug("doReceive ReqId: "+msg.getReqId());
 		}
 		
-		if(s.getId() != -1 && msg.getSessionId() != s.getId()) {
-			String msg1 = "Ignore MSG" + msg.getId() + "Rec session ID: "+msg.getSessionId()+",but this session ID: "+s.getId();
+		if(s.getId() != -1 && msg.getLinkId() != s.getId()) {
+			String msg1 = "Ignore MSG" + msg.getId() + "Rec session ID: "+msg.getLinkId()+",but this session ID: "+s.getId();
 			logger.warn(msg1);
 			if(monitorEnable(s)){
 				MonitorConstant.doSubmit(monitor,MonitorConstant.SERVER_PACKAGE_SESSION_ID_ERR,

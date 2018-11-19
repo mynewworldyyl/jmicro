@@ -17,7 +17,6 @@
 package org.jmicro.transport.netty.httpandws;
 
 import java.net.InetSocketAddress;
-import java.util.List;
 
 import org.jmicro.api.annotation.Cfg;
 import org.jmicro.api.annotation.Component;
@@ -29,7 +28,6 @@ import org.jmicro.api.monitor.MonitorConstant;
 import org.jmicro.api.server.IServer;
 import org.jmicro.common.CommonException;
 import org.jmicro.common.Constants;
-import org.jmicro.common.Utils;
 import org.jmicro.common.util.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
