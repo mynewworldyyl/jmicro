@@ -33,7 +33,7 @@
         </dependency> -->
          <dependency>
 			 <groupId>org.jmicro</groupId>
-			 <artifactId>jmicro.transport.netty</artifactId>
+			 <artifactId>jmicro.transport.netty.server</artifactId>
         </dependency> 
         <dependency>
 			 <groupId>org.jmicro</groupId>

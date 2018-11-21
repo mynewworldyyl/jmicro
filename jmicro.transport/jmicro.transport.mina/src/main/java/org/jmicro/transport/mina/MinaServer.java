@@ -168,14 +168,14 @@ public class MinaServer implements IServer{
                     //s.setSessionId(idGenerator.getLongId(ISession.class));
                     session.setAttribute(sessinKey, s);
                     if(monitor != null && monitorEnable(session)){
-                    	 MonitorConstant.doSubmit(monitor,MonitorConstant.SERVER_IOSESSION_OPEN, null,null,session.getId());
+                    	 MonitorConstant.doSubmit(MonitorConstant.SERVER_IOSESSION_OPEN, null,null,session.getId());
                     }
                 }
 
                 @Override
                 public void messageReceived(IoSession session, Object message) {
                 	 if(monitor != null && monitorEnable(session)){
-                		 MonitorConstant.doSubmit(monitor,MonitorConstant.SERVER_IOSESSION_READ,
+                		 MonitorConstant.doSubmit(MonitorConstant.SERVER_IOSESSION_READ,
                      			null,null,session,((ByteBuffer)message).remaining());
                 	 }
                 	
@@ -206,7 +206,7 @@ public class MinaServer implements IServer{
 						 s.close(true);
 					 }
 					if(monitor != null && monitorEnable(session)){
-						MonitorConstant.doSubmit(monitor,MonitorConstant.SERVER_IOSESSION_CLOSE, null,null,session.getId());
+						MonitorConstant.doSubmit(MonitorConstant.SERVER_IOSESSION_CLOSE, null,null,session.getId());
 					}
 				}
 
@@ -215,7 +215,7 @@ public class MinaServer implements IServer{
 					// TODO Auto-generated method stub
 					super.sessionIdle(session, status);
 					if(monitor != null && monitorEnable(session)){
-						MonitorConstant.doSubmit(monitor,MonitorConstant.SERVER_IOSESSION_CLOSE, 
+						MonitorConstant.doSubmit(MonitorConstant.SERVER_IOSESSION_CLOSE, 
 								null,null,session,status);
 					}
 				}
@@ -243,7 +243,7 @@ public class MinaServer implements IServer{
 				public void exceptionCaught(IoSession session, Exception cause) {
 					super.exceptionCaught(session, cause);
 					if(monitor != null && monitorEnable(session)){
-						MonitorConstant.doSubmit(monitor,MonitorConstant.SERVER_IOSESSION_EXCEPTION,
+						MonitorConstant.doSubmit(MonitorConstant.SERVER_IOSESSION_EXCEPTION,
 								null,null,session.getId(),cause);
 					}
 				}
@@ -289,12 +289,12 @@ public class MinaServer implements IServer{
         
         String m = "Running the server host["+this.host+"],port ["+this.port+"]";
         LOG.debug(m);    
-        MonitorConstant.doSubmit(monitor,MonitorConstant.SERVER_START, null,null,m);
+        MonitorConstant.doSubmit(MonitorConstant.SERVER_START, null,null,m);
 	}
 
 	@Override
 	public void stop() {
-		MonitorConstant.doSubmit(monitor,MonitorConstant.SERVER_STOP, null,null,this.host,this.port);
+		MonitorConstant.doSubmit(MonitorConstant.SERVER_STOP, null,null,this.host,this.port);
 		 if(acceptor != null){
 			 acceptor.unbind();
 			 acceptor = null;

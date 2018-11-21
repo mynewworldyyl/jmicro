@@ -34,20 +34,16 @@
         </dependency> -->
          <dependency>
 			 <groupId>org.jmicro</groupId>
-			 <artifactId>jmicro.transport.netty</artifactId>
+			 <artifactId>jmicro.transport.netty.server</artifactId>
         </dependency>
-        <dependency>
+          <dependency>
 			 <groupId>org.jmicro</groupId>
-			 <artifactId>jmicro.server</artifactId>
+			 <artifactId>jmicro.transport.netty.client</artifactId>
         </dependency>
           <dependency>
 			 <groupId>org.jmicro</groupId>
 			 <artifactId>jmicro.gateway</artifactId>
-        </dependency> 
-        <dependency>
-			 <groupId>org.jmicro</groupId>
-			 <artifactId>jmicro.client</artifactId>
-        </dependency> 
+        </dependency>  
          <dependency>
 			 <groupId>org.jmicro</groupId>
 			 <artifactId>jmicro.registry.zk</artifactId>
@@ -73,14 +69,14 @@
 			 <artifactId>jmicro.example.api</artifactId>
 			  <version>0.0.1-SNAPSHOT</version>
         </dependency>
-         <dependency>
+       <!--   <dependency>
 			 <groupId>org.jmicro</groupId>
 			 <artifactId>jmicro.monitor.dashboard</artifactId>
-        </dependency>
-         <dependency>
+        </dependency> -->
+       <!--   <dependency>
 			 <groupId>org.jmicro</groupId>
 			 <artifactId>jmicro.monitor.subermemory</artifactId>
-        </dependency>
+        </dependency> -->
         <dependency>
 			 <groupId>org.jmicro</groupId>
 			 <artifactId>jmicro.monitor.submiter</artifactId>

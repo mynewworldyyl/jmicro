@@ -42,7 +42,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * 
  * @author Yulei Ye
  * @date 2018年10月6日-上午11:23:20
  */
@@ -98,7 +97,7 @@ class ClientServiceProxyManager {
 			return (T)obj;
 		}
 		try {
-			Class<?> cls = ClientServiceProxyManager.class.forName(srvName);
+			Class<?> cls = Thread.currentThread().getContextClassLoader().loadClass(srvName);
 			return getService(cls);
 		} catch (ClassNotFoundException e) {
 			logger.error("",e);

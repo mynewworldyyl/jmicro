@@ -147,7 +147,7 @@ public class MinaClientSessionManager implements IClientSessionManager{
         public void sessionOpened(final IoSession session) {
             //LOG.info("session opened {}", session);
             if(monitorEnable(session)){
-            	MonitorConstant.doSubmit(monitor,MonitorConstant.CLIENT_IOSESSION_OPEN, null,null,session.getId());
+            	MonitorConstant.doSubmit(MonitorConstant.CLIENT_IOSESSION_OPEN, null,null,session.getId());
             }
         }
 
@@ -191,7 +191,7 @@ public class MinaClientSessionManager implements IClientSessionManager{
             //LOG.info("session closed {}", session);
             if(monitorEnable(session) && monitor != null){
             	IClientSession s  = session.getAttribute(sessionKey);
-            	MonitorConstant.doSubmit(monitor,MonitorConstant.CLIENT_IOSESSION_CLOSE, null,null,s.getId());
+            	MonitorConstant.doSubmit(MonitorConstant.CLIENT_IOSESSION_CLOSE, null,null,s.getId());
             }
         }
 
@@ -199,7 +199,7 @@ public class MinaClientSessionManager implements IClientSessionManager{
 		public void sessionIdle(IoSession session, IdleStatus status) {
 			super.sessionIdle(session, status);
 			if(monitorEnable(session)){
-				MonitorConstant.doSubmit(monitor,MonitorConstant.CLIENT_IOSESSION_IDLE, null,null,session,status);
+				MonitorConstant.doSubmit(MonitorConstant.CLIENT_IOSESSION_IDLE, null,null,session,status);
 			}
 		}
 
@@ -219,7 +219,7 @@ public class MinaClientSessionManager implements IClientSessionManager{
 			 logger.error("exceptionCaught",cause);
 			 if(session !=null && monitorEnable(session) && monitor != null ){
 				 IClientSession s  = session.getAttribute(sessionKey);
-	             MonitorConstant.doSubmit(monitor,MonitorConstant.CLIENT_IOSESSION_EXCEPTION, null,null,s.getId(),cause.getMessage());
+	             MonitorConstant.doSubmit(MonitorConstant.CLIENT_IOSESSION_EXCEPTION, null,null,s.getId(),cause.getMessage());
 	         }
 		}
 
@@ -288,7 +288,7 @@ public class MinaClientSessionManager implements IClientSessionManager{
 	           return s;
 	       } catch (Throwable e) {
 	    	   logger.error("cannot connect host:" + host + ", port:" + port, e);
-	           MonitorConstant.doSubmit(monitor,MonitorConstant.CLIENT_REQ_CONN_FAIL, null, null,host,port,e.getMessage());
+	           MonitorConstant.doSubmit(MonitorConstant.CLIENT_REQ_CONN_FAIL, null, null,host,port,e.getMessage());
 	           throw new CommonException("host:" + host + ", port:" + port,e);
 	       }
 		}

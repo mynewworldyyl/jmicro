@@ -123,7 +123,7 @@ public class JRPCReqRespHandler implements IMessageHandler{
 			
 			ServiceItem si = registry.getServiceByImpl(req.getImpl());
 			if(si == null){
-				MonitorConstant.doSubmit(monitor,MonitorConstant.SERVER_REQ_SERVICE_NOT_FOUND,
+				MonitorConstant.doSubmit(MonitorConstant.SERVER_REQ_SERVICE_NOT_FOUND,
 						req,null,req.getImpl());
 				throw new CommonException("Service not found impl："+req.getImpl());
 			}
@@ -135,7 +135,7 @@ public class JRPCReqRespHandler implements IMessageHandler{
 			
 			Object obj = serviceLoader.getService(req.getImpl());
 			if(obj == null){
-				MonitorConstant.doSubmit(monitor,MonitorConstant.SERVER_REQ_SERVICE_NOT_FOUND,
+				MonitorConstant.doSubmit(MonitorConstant.SERVER_REQ_SERVICE_NOT_FOUND,
 						req,null,req.getImpl());
 				throw new CommonException("Service not found");
 			}
@@ -143,10 +143,10 @@ public class JRPCReqRespHandler implements IMessageHandler{
 			cxt.setObject(Constants.SERVICE_OBJ_KEY, obj);
 			
 			needResp = sm.needResponse;
-			MonitorConstant.doSubmit(monitor,MonitorConstant.SERVER_REQ_BEGIN, req,resp);
+			MonitorConstant.doSubmit(MonitorConstant.SERVER_REQ_BEGIN, req,resp);
 				if(!needResp){
 					handler(req);
-					MonitorConstant.doSubmit(monitor,MonitorConstant.SERVER_REQ_OK, req,resp);
+					MonitorConstant.doSubmit(MonitorConstant.SERVER_REQ_OK, req,resp);
 					return;
 				}
 
@@ -230,9 +230,9 @@ public class JRPCReqRespHandler implements IMessageHandler{
 					}
 					s.write(msg);
 				}
-				MonitorConstant.doSubmit(monitor,MonitorConstant.SERVER_REQ_OK, req,resp);
+				MonitorConstant.doSubmit(MonitorConstant.SERVER_REQ_OK, req,resp);
 			} catch (Throwable e) {
-				MonitorConstant.doSubmit(monitor,MonitorConstant.SERVER_REQ_ERROR, req,resp);
+				MonitorConstant.doSubmit(MonitorConstant.SERVER_REQ_ERROR, req,resp);
 				logger.error("reqHandler error: ",e);
 				if(needResp && req != null ){
 					resp = new RpcResponse(req.getRequestId(),new ServerError(0,e.getMessage()));

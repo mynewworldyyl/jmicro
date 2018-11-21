@@ -10,6 +10,7 @@ import org.jmicro.api.gateway.ApiRequest;
 import org.jmicro.api.gateway.ApiResponse;
 import org.jmicro.api.monitor.SubmitItem;
 import org.jmicro.api.net.Message;
+import org.jmicro.api.net.RpcRequest;
 import org.jmicro.api.net.RpcResponse;
 import org.jmicro.api.test.Person;
 import org.jmicro.common.Constants;
@@ -315,6 +316,26 @@ public class TestOnePrefixCoder {
 		
 		System.out.println(e);
 		
+	}
+	
+	@Test
+	public void testSubmitItem() {
+		
+		RpcRequest rr = new RpcRequest();
+		SubmitItem si = new SubmitItem();
+		si.setType(222);
+		si.setResult("org.jmicro.api.monitor.SF:  service [org.jmicro.api.test.ISayHello], namespace [testsayhello], version [0.0.1], args [class java.lang.String=Hello]");
+		
+		rr.setArgs(new Object[] {si});
+		
+		ByteBuffer bb = encoder.encode(rr);
+		bb.flip();
+		System.out.println(bb.limit());
+		System.out.println(bb.position());
+		
+		rr = decoder.decode(bb);
+		
+		System.out.println(rr.getImpl());
 	}
 	
 	@Test

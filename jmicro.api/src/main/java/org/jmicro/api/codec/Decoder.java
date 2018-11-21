@@ -62,7 +62,7 @@ public class Decoder {
 		registType(Map.class,type++);
 		registType(Collection.class,type++);
 		registType(List.class,type++);
-		registType(Array.class,type++);
+		//registType(Array.class,type++);
 		registType(Void.class,type++);
 		registType(Short.class,type++);
 		registType(Integer.class,type++);

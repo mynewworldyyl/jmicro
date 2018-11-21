@@ -196,6 +196,7 @@ public class SubmitItemHolderManager implements IMonitorDataSubmiter{
 							try {
 								this.wait();
 							} catch (InterruptedException e) {
+								logger.error("",e);
 							}
 						}
 					}
@@ -203,6 +204,9 @@ public class SubmitItemHolderManager implements IMonitorDataSubmiter{
 					//JMicroContext.get().configMonitor(0, 0);
 					for(SubmitItem si = its.poll();si != null;si = its.poll()){
 						Set<IMonitorDataSubscriber> ss = type2Subscribers.get(si.getType());
+						if(ss == null || ss.isEmpty()) {
+							continue;
+						}
 						for(IMonitorDataSubscriber m : ss){
 							if(openDebug){
 								logger.debug("Submit {} to {}",si,m);
@@ -220,7 +224,7 @@ public class SubmitItemHolderManager implements IMonitorDataSubmiter{
 		public void addItem(SubmitItem si){
 			its.add(si);
 			synchronized(this){
-				this.notify();
+				this.notifyAll();
 			}			
 		}
 		
@@ -239,12 +243,8 @@ public class SubmitItemHolderManager implements IMonitorDataSubmiter{
 		}
 		return size;
 	}
-
-	public void submit(int type,IRequest req, IResponse resp,Object... args){
-		if(!enable || size() > this.maxCacheItems){
-			return;
-		}
-		
+	
+	private void checkUpdate() {
 		if(subscriberChange) {
 			synchronized(subscriberChange) {
 				if(subscriberChange) {
@@ -254,7 +254,13 @@ public class SubmitItemHolderManager implements IMonitorDataSubmiter{
 				}
 			}
 		}
-		
+	}
+
+	public void submit(int type,IRequest req, IResponse resp,Object... args){
+		if(!enable || size() > this.maxCacheItems){
+			return;
+		}
+		checkUpdate();
 		if(!type2Subscribers.containsKey(type)) {
 			return;
 		}
@@ -330,6 +336,7 @@ public class SubmitItemHolderManager implements IMonitorDataSubmiter{
 		if(item == null) {
 			return;
 		}
+		checkUpdate();
 		this.workers[index.getAndIncrement()%this.workers.length].addItem(item);
 	}
 	

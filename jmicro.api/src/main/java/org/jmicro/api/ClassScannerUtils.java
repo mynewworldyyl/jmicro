@@ -35,7 +35,7 @@ import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
 import org.jmicro.api.annotation.Component;
-import org.jmicro.api.annotation.Name;
+import org.jmicro.api.annotation.App;
 import org.jmicro.api.annotation.PostListener;
 import org.jmicro.api.annotation.Service;
 import org.jmicro.api.config.Config;
@@ -123,12 +123,7 @@ public class ClassScannerUtils {
 	
 	public Class<?> getClassByAnnoName(String annoName) {
 		for(Class<?> cls : classes.values()) {
-			if(cls.isAnnotationPresent(Name.class)){
-				Name n = cls.getAnnotation(Name.class);
-				if(annoName.equals(n.value())) {
-					return cls;
-				}
-			}else if(cls.isAnnotationPresent(Component.class)){
+			if(cls.isAnnotationPresent(Component.class)){
 				Component n = cls.getAnnotation(Component.class);
 				if(annoName.equals(n.value())) {
 					return cls;

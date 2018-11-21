@@ -16,6 +16,8 @@
         <!-- <module>jmicro.transport.api</module> -->
         <module>jmicro.transport.mina</module>
         <module>jmicro.transport.http</module>
-		<module>jmicro.transport.netty</module>
+		<module>jmicro.transport.netty.client</module>
+		<module>jmicro.transport.netty.server</module>
+		
     </modules>
 </project>

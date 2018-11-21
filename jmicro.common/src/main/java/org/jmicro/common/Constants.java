@@ -23,6 +23,7 @@ package org.jmicro.common;
 public interface Constants {
 
 	public static final String CLIENT_ONLY="client";
+	public static final String SERVER_ONLY="server";
 	
 	public static final String DATA_OPERATOR = "dataOperator";
 	
@@ -84,6 +85,7 @@ public interface Constants {
 	public static final String HTTP_HEADER_ENCODER = "DataEncoderType";
 	
 	public static final String TRANSPORT_NETTY_HTTP = "nettyhttp";
+	public static final String START_HTTP = "startHttp";
 	
 	public static final int DEFAULT_RESP_BUFFER_SIZE = 1024*4;
 	

@@ -1,21 +1,16 @@
 package org.jmicro.api.codec;
 
-import java.util.ArrayList;
-import java.util.List;
-
-import org.jmicro.api.test.Person;
-
 public final class Entity {
 
 	private long v=222;
 	private String str = null;
 	private Object hello = "Hello World";
 	
-	private List<Person> persons = new ArrayList<Person>();
+/*	private List<Person> persons = new ArrayList<Person>();
 	
 	{
 		persons.add(new Person());
-	}
+	}*/
 	
 	/*private List<String> list = new ArrayList<>();
 	{

@@ -14,7 +14,6 @@
     </properties>
     <modules>
         <module>jmicro.monitor.submiter</module>
-		<module>jmicro.monitor.subermemory</module>
 		<module>jmicro.monitor.dashboard</module>
     </modules>
 </project>

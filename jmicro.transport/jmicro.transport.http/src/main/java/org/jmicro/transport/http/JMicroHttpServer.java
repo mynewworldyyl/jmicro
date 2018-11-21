@@ -21,6 +21,7 @@ import java.io.InputStream;
 import java.net.InetSocketAddress;
 import java.util.List;
 
+import org.jmicro.api.JMicroContext;
 import org.jmicro.api.annotation.Cfg;
 import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.Inject;
@@ -96,6 +97,7 @@ public class JMicroHttpServer implements IServer{
 	private HttpHandler httpHandler = new HttpHandler(){
         @Override
         public void handle(HttpExchange exchange) {
+        	JMicroContext.get().setObject(JMicroContext.MONITOR, monitor);
         	HttpServerSession session = new HttpServerSession(exchange,readBufferSize,heardbeatInterval);
 			try {
 				if(exchange.getRequestMethod().equals("POST")){
@@ -156,12 +158,12 @@ public class JMicroHttpServer implements IServer{
         
         String m = "Running the server host["+this.host+"],port ["+this.port+"]";
         LOG.debug(m);    
-        MonitorConstant.doSubmit(monitor,MonitorConstant.SERVER_START, null,null,m);
+        MonitorConstant.doSubmit(MonitorConstant.SERVER_START, null,null,m);
 	}
 
 	@Override
 	public void stop() {
-		MonitorConstant.doSubmit(monitor,MonitorConstant.SERVER_STOP, null,null,this.host,this.port);
+		MonitorConstant.doSubmit(MonitorConstant.SERVER_STOP, null,null,this.host,this.port);
 		 if(server != null){
 			 server.stop(0);
 			 server = null;

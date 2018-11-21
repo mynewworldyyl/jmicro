@@ -22,7 +22,6 @@ import java.util.Map;
 import java.util.Set;
 
 import org.jmicro.api.annotation.Component;
-import org.jmicro.api.annotation.Name;
 import org.jmicro.api.annotation.ObjFactory;
 import org.jmicro.api.config.Config;
 import org.jmicro.api.objectfactory.IObjectFactory;
@@ -30,6 +29,7 @@ import org.jmicro.api.objectfactory.ProxyObject;
 import org.jmicro.api.registry.IRegistry;
 import org.jmicro.common.CommonException;
 import org.jmicro.common.Constants;
+import org.jmicro.common.Utils;
 import org.jmicro.common.util.StringUtils;
 
 /**
@@ -111,9 +111,9 @@ public class JMicro {
 	public static String getClassAnnoName(Class<?> cls) {
 
 		cls = ProxyObject.getTargetCls(cls);
-		if(cls.isAnnotationPresent(Name.class)){
+		/*if(cls.isAnnotationPresent(Name.class)){
 			return cls.getAnnotation(Name.class).value();
-		}else if(cls.isAnnotationPresent(Component.class)){
+		}else */if(cls.isAnnotationPresent(Component.class)){
 			return cls.getAnnotation(Component.class).value();
 		}
 		/*else if(cls.isAnnotationPresent(Server.class)){
@@ -141,4 +141,7 @@ public class JMicro {
 	
 	}
 	
+	public static void waitForShutdown() {
+		Utils.getIns().waitForShutdown();
+	}
 }

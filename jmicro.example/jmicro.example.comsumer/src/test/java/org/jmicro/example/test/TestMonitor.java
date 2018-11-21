@@ -4,22 +4,30 @@ import org.jmicro.api.JMicro;
 import org.jmicro.api.JMicroContext;
 import org.jmicro.api.monitor.IMonitorDataSubmiter;
 import org.jmicro.api.monitor.MonitorConstant;
+import org.jmicro.api.monitor.SF;
 import org.jmicro.api.objectfactory.IObjectFactory;
+import org.jmicro.example.api.ISayHello;
 import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 
 public class TestMonitor {
 
+    private static final Logger logger = LoggerFactory.getLogger(TestMonitor.class);
+    
 	@Test
 	public void testMonitor01() {
 		
-		IObjectFactory of = JMicro.getObjectFactoryAndStart(new String[0]);
+		IObjectFactory of = JMicro.getObjectFactoryAndStart(new String[] {"-DinstanceName=testMonitor01","-Dclient=true"});
 		
 		JMicroContext.get().configMonitor(1, 1);
 		IMonitorDataSubmiter monitor = of.get(IMonitorDataSubmiter.class);
+		JMicroContext.get().setObject(JMicroContext.MONITOR, monitor);
+		
 		for(;;){
 			//MonitorConstant.doSubmit(monitor,MonitorConstant.CLIENT_REQ_BEGIN, null, null);
-			MonitorConstant.doSubmit(monitor,MonitorConstant.CLIENT_REQ_OK, null, null);
-			
+			MonitorConstant.doSubmit(MonitorConstant.CLIENT_REQ_OK, null, null);
 			try {
 				Thread.sleep(10);
 			} catch (InterruptedException e) {
@@ -27,28 +35,47 @@ public class TestMonitor {
 				e.printStackTrace();
 			}
 		}
-		
 	}
 	
 	
 	@Test
-	public void testMonitor02() {
+	public void testSubmitLog() {
 		
-		IObjectFactory of = JMicro.getObjectFactoryAndStart(new String[] {"testMonitor02"});
+		IObjectFactory of = JMicro.getObjectFactoryAndStart(new String[] {"-DinstanceName=testSubmitLog","-Dclient=true"});
 		
 		JMicroContext.get().configMonitor(1, 1);
 		IMonitorDataSubmiter monitor = of.get(IMonitorDataSubmiter.class);
+		JMicroContext.get().setObject(JMicroContext.MONITOR, monitor);
 		for(;;){
-			//MonitorConstant.doSubmit(monitor,MonitorConstant.CLIENT_REQ_BEGIN, null, null);
-			MonitorConstant.doSubmit(monitor,MonitorConstant.CLIENT_REQ_OK, null, null);
-			
+			SF.getIns().doLog(MonitorConstant.DEBUG,this.getClass(), 1L, ISayHello.class.getName(), "testsayhello", 
+					"0.0.1", "hello", new String[] {"Hello"});
+			//logger.debug("testSubmitLog");
 			try {
-				Thread.sleep(10);
+				Thread.sleep(500);
 			} catch (InterruptedException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 		}
+			
+		//JMicro.waitForShutdown();
 		
 	}
+	
+	@Test
+	public void testSayHelloToPrintRouterLog() {
+		
+		IObjectFactory of = JMicro.getObjectFactoryAndStart(new String[] {"-DinstanceName=testSayHelloToPrintRouterLog","-Dclient=true"});
+		
+		JMicroContext.get().configMonitor(1, 1);
+		ISayHello sayHello = of.get(ISayHello.class);
+		IMonitorDataSubmiter monitor = of.get(IMonitorDataSubmiter.class);
+		JMicroContext.get().setObject(JMicroContext.MONITOR, monitor);
+		
+		String result = sayHello.hello("Hello LOG");
+		System.out.println(result);
+		
+		JMicro.waitForShutdown();
+	}
+
+
 }

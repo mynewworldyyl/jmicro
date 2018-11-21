@@ -262,6 +262,10 @@ public class Config implements IConfigChangeListener{
 		return CommadParams.containsKey(Constants.CLIENT_ONLY);
 	}
 	
+	public static boolean isServerOnly() {
+		return CommadParams.containsKey(Constants.SERVER_ONLY);
+	}
+	
 	public static <T> T getCommandParam(String key,Class<T> type,T defalutValue) {
 		return getValue(CommadParams.get(key),type,defalutValue);
 	}
@@ -311,19 +315,19 @@ public class Config implements IConfigChangeListener{
 			return defaultVal;
 		}
 		Object v = null;
-		if(type == Boolean.TYPE){
+		if(type == Boolean.class){
 			v = Boolean.parseBoolean(str);
-		}else if(type == Short.TYPE){
+		}else if(type == Short.class){
 			v = Short.parseShort(str);
-		}else if(type == Integer.TYPE){
+		}else if(type == Integer.class){
 			v = Integer.parseInt(str);
-		}else if(type == Long.TYPE){
+		}else if(type == Long.class){
 			v = Long.parseLong(str);
-		}else if(type == Float.TYPE){
+		}else if(type == Float.class){
 			v = Float.parseFloat(str);
-		}else if(type == Double.TYPE){
+		}else if(type == Double.class){
 			v = Double.parseDouble(str);
-		}else if(type == Byte.TYPE){
+		}else if(type == Byte.class){
 			v = Byte.parseByte(str);
 		} else {
 			v = str;

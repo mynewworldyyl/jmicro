@@ -21,8 +21,6 @@ import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.ParameterizedType;
-import java.lang.reflect.Type;
-import java.lang.reflect.TypeVariable;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -31,10 +29,13 @@ import java.util.Map;
 
 import org.jmicro.api.annotation.Cfg;
 import org.jmicro.api.annotation.Component;
+import org.jmicro.api.monitor.SubmitItem;
 import org.jmicro.common.CommonException;
 import org.jmicro.common.Constants;
 import org.jmicro.common.Utils;
 import org.jmicro.common.util.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 /**
  * @author Yulei Ye
  * @date 2018年10月4日-下午12:01:25
@@ -42,6 +43,8 @@ import org.jmicro.common.util.StringUtils;
 @Component(value="onePrefixTypeEncoder",lazy=false)
 public class OnePrefixTypeEncoder implements IEncoder<ByteBuffer>{
 
+	private static final Logger logger = LoggerFactory.getLogger(OnePrefixTypeEncoder.class);
+	
 	@Cfg(value="/OnePrefixTypeEncoder")
 	private int encodeBufferSize = 4096;
 	
@@ -197,7 +200,9 @@ public class OnePrefixTypeEncoder implements IEncoder<ByteBuffer>{
 		if(!Modifier.isPublic(cls.getModifiers())) {
 			throw new CommonException("should be public class [" +cls.getName()+"]");
 		}
-		
+		if(obj != null && obj.getClass() == SubmitItem.class) {
+			logger.debug("cls {}", cls.getName());
+		}
 		if(!TypeUtils.isFinal(cls)) {
 			//不能从泛型参数拿到类型信息，需要把类型参数写到buffer中
 			if(obj == null) {

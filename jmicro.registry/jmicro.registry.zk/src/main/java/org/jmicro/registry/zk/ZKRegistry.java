@@ -28,8 +28,6 @@ import org.jmicro.api.Init;
 import org.jmicro.api.annotation.Cfg;
 import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.Inject;
-import org.jmicro.api.annotation.JMethod;
-import org.jmicro.api.annotation.Registry;
 import org.jmicro.api.config.Config;
 import org.jmicro.api.exception.BreakerException;
 import org.jmicro.api.raft.IDataListener;
@@ -51,7 +49,6 @@ import org.slf4j.LoggerFactory;
  * @date 2018年10月4日-下午12:13:09
  */
 @Component(value=Constants.DEFAULT_REGISTRY,lazy=false)
-@Registry
 public class ZKRegistry implements IRegistry,Init {
 
 	private final static Logger logger = LoggerFactory.getLogger(ZKRegistry.class);
@@ -321,13 +318,18 @@ public class ZKRegistry implements IRegistry,Init {
 		String data = JsonUtils.getIns().toJson(item);
 		if(!dataOperator.exist(key)){
 			dataOperator.createNode(key,data, false);
-			
 		}
 		
 		key = item.key(Config.ServiceRegistDir);
 		if(dataOperator.exist(key)){			
 			dataOperator.deleteNode(key);
 			logger.debug("Delete old service: "+key);
+			try {
+				Thread.sleep(1000*3);
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 		}
 		dataOperator.createNode(key,data, true);
 	}

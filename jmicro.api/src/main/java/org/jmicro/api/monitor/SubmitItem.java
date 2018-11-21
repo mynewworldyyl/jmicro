@@ -21,7 +21,7 @@ package org.jmicro.api.monitor;
  * @author Yulei Ye
  * @date 2018年10月5日-下午12:50:47
  */
-public class SubmitItem{
+public final class SubmitItem{
 
 	private int level = MonitorConstant.DEBUG;
 	

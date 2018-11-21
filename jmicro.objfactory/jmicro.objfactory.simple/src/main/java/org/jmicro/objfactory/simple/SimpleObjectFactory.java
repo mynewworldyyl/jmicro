@@ -313,38 +313,54 @@ public class SimpleObjectFactory implements IObjectFactory {
 			}
 		}
 		
+		boolean serverOnly = Config.isServerOnly();
+		
+		boolean clientOnly = Config.isClientOnly();
+		
 		Set<Class<?>> clses = ClassScannerUtils.getIns().getComponentClass();
 		if(clses != null && !clses.isEmpty()) {
 			for(Class<?> c : clses){
-				if(IObjectFactory.class.isAssignableFrom(c) || !c.isAnnotationPresent(Component.class)){
+				if(IObjectFactory.class.isAssignableFrom(c) || 
+						!c.isAnnotationPresent(Component.class)){
 					continue;
 				}
-				if(c.isAnnotationPresent(Component.class)) {
-					Component cann = c.getAnnotation(Component.class);
-					if(cann.active()){
-						logger.debug("enable com: "+c.getName());
-						Object obj = null;
-						if(c.isAnnotationPresent(Service.class)) {
-							 obj = createServiceObject(c,false);
-						} else if(c.isAnnotationPresent(HttpHandler.class)) {
-							obj = createHttpHanderObject(c);
-						}else {
-							obj = this.createObject(c, false);
-						}
-						this.cacheObj(c, obj, true);
-						
-						if(IDataOperator.class.isAssignableFrom(c) && dataOperatorName.equals(cann.value())){
-							dop = (IDataOperator)obj;
-						}
-						
-						if(IRegistry.class.isAssignableFrom(c) && registryName.equals(cann.value())){
-							registry = (IRegistry)obj;
-						}
-						
-					}else {
-						logger.debug("disable com: "+c.getName());
-					}
+				
+				Component cann = c.getAnnotation(Component.class);
+				if(!cann.active()){
+					logger.debug("disable com: "+c.getName());
+					continue;
 				}
+				
+				if(serverOnly && isComsumerSide(ProxyObject.getTargetCls(c))) {
+					//指定了服务端或客户端，不需要另一方所特定的组件
+					logger.debug("serverOnly server disable: "+c.getName());
+					continue;
+				}
+				
+				if(clientOnly && isProviderSide(ProxyObject.getTargetCls(c))) {
+					logger.debug("clientOnly client disable: "+c.getName());
+						continue;
+					}
+				
+				logger.debug("enable com: "+c.getName());
+				Object obj = null;
+				if(c.isAnnotationPresent(Service.class)) {
+					 obj = createServiceObject(c,false);
+				} else if(c.isAnnotationPresent(HttpHandler.class)) {
+					obj = createHttpHanderObject(c);
+				}else {
+					obj = this.createObject(c, false);
+				}
+				this.cacheObj(c, obj, true);
+				
+				if(IDataOperator.class.isAssignableFrom(c) && dataOperatorName.equals(cann.value())){
+					dop = (IDataOperator)obj;
+				}
+				
+				if(IRegistry.class.isAssignableFrom(c) && registryName.equals(cann.value())){
+					registry = (IRegistry)obj;
+				}
+				
 			}
 		}
 		
@@ -420,8 +436,7 @@ public class SimpleObjectFactory implements IObjectFactory {
 	}
 
 	private Object createHttpHanderObject(Class<?> c) {
-		Object o = this.httpHandlerManager.createHandler(c);
-		
+		Object o = this.httpHandlerManager.createHandler(c);	
 		return o;
 	}
 
@@ -465,8 +480,8 @@ public class SimpleObjectFactory implements IObjectFactory {
 		postReadyListeners.add(listener);
 	}
 	
-	private boolean isProviderSide(Object o){
-		Class<?> cls = ProxyObject.getTargetCls(o.getClass());
+	private boolean isProviderSide(Class<?> cls){
+		//Class<?> cls = ProxyObject.getTargetCls(o.getClass());
 		Component comAnno = cls.getAnnotation(Component.class);
 		if(comAnno == null){
 			return true;
@@ -474,8 +489,8 @@ public class SimpleObjectFactory implements IObjectFactory {
 		return Constants.SIDE_PROVIDER.equals(comAnno.side());
 	}
 	
-	private boolean isComsumerSide(Object o){
-		Class<?> cls = ProxyObject.getTargetCls(o.getClass());
+	private boolean isComsumerSide(Class<?> cls){
+		//Class<?> cls = ProxyObject.getTargetCls(o.getClass());
 		Component comAnno = cls.getAnnotation(Component.class);
 		if(comAnno == null){
 			return true;
@@ -489,7 +504,7 @@ public class SimpleObjectFactory implements IObjectFactory {
 		}
 		Iterator<?> ite = list.iterator();
 		while(ite.hasNext()){
-			if(isProviderSide(ite.next())){
+			if(isProviderSide(ProxyObject.getTargetCls(ite.next().getClass()))){
 				ite.remove();
 			}
 		}
@@ -502,7 +517,7 @@ public class SimpleObjectFactory implements IObjectFactory {
 		}
 		Iterator<?> ite = list.iterator();
 		while(ite.hasNext()){
-			if(isComsumerSide(ite.next())){
+			if(isComsumerSide(ProxyObject.getTargetCls(ite.next().getClass()))){
 				ite.remove();
 			}
 		}
@@ -516,8 +531,8 @@ public class SimpleObjectFactory implements IObjectFactory {
 		
 		Component comAnno = cls.getAnnotation(Component.class);
 		
-		boolean isProvider = isProviderSide(obj);
-		boolean isComsumer =  isComsumerSide(obj);
+		boolean isProvider = isProviderSide(ProxyObject.getTargetCls(obj.getClass()));
+		boolean isComsumer =  isComsumerSide(ProxyObject.getTargetCls(obj.getClass()));
 		
 		for(Field f : fields) {
 			Object srv = null;
@@ -737,9 +752,9 @@ public class SimpleObjectFactory implements IObjectFactory {
 						srv = this.get(type);
 					}
 					if(srv != null){
-						if(isProvider && this.isComsumerSide(srv)){
+						if(isProvider && this.isComsumerSide(ProxyObject.getTargetCls(srv.getClass()))){
 							throw new CommonException("Class ["+cls.getName()+"] field ["+ f.getName()+"] dependency ["+f.getType().getName()+"] side should provider");
-						}else if(isComsumer && this.isProviderSide(srv)){
+						}else if(isComsumer && this.isProviderSide(ProxyObject.getTargetCls(srv.getClass()))){
 							throw new CommonException("Class ["+cls.getName()+"] field ["+ f.getName()+"] dependency ["+f.getType().getName()+"] side should comsumer");
 						}
 					}

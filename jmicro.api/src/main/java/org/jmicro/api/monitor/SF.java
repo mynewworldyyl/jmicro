@@ -17,7 +17,9 @@
 package org.jmicro.api.monitor;
 
 import org.jmicro.api.JMicroContext;
+import org.jmicro.api.config.Config;
 import org.jmicro.api.net.Message;
+import org.jmicro.api.registry.ServiceItem;
 
 /**
  * 
@@ -38,23 +40,27 @@ public class SF {
 		return JMicroContext.get().getParam(JMicroContext.MONITOR, null);
 	}
 	
-	public void doLog(int level,Long linkId,String sn,String ns,String v,String m,Object[] args,Object... others) {
+	public void doLog(int level,Class<?> cls,Long linkId,String sn,String ns,String v,String m,Object[] args,Object... others) {
 		IMonitorDataSubmiter monitor = this.monitor();
-		if(monitor != null) {
-			StringBuffer sb = SF.getIns().serviceLog(this.getClass().getName(),sn,ns, v,m, args,others);
-			SF.getIns().submitRouterLog(sb.toString(), level,linkId);
+		if(JMicroContext.get().isMonitor() && monitor != null) {
+			StringBuffer sb = logHeaders(cls.getSimpleName());
+			service(sb, sn, ns, v, m, args);
+			others(sb,others);
+			this.submitRouterLog(sb.toString(), level,linkId);
 		}
 	}
 	
-	public void doLog(int level,Message msg,Object... others) {
+	public void doLog(int level,Class<?> cls,Message msg,Object... others) {
 		IMonitorDataSubmiter monitor = this.monitor();
-		if(monitor != null) {
-			StringBuffer sb = SF.getIns().serviceLog(this.getClass().getName(),msg,others);
-			SF.getIns().submitRouterLog(sb.toString(), level,msg.getLinkId());
+		if(JMicroContext.get().isMonitor() && monitor != null) {
+			StringBuffer sb = logHeaders(cls.getSimpleName());
+			message(sb,msg);
+			others(sb,others);
+			this.submitRouterLog(sb.toString(), level,msg.getLinkId());
 		}
 	}
 	
-	public void submitRouterLog(String msg,int level,Long linkId) {
+	private void submitRouterLog(String msg,int level,Long linkId) {
 		IMonitorDataSubmiter monitor = this.monitor();
 		SubmitItem si = new SubmitItem();
 		si.setType(MonitorConstant.LINKER_ROUTER_MONITOR);
@@ -64,52 +70,44 @@ public class SF {
 		monitor.submit(si);
 	}
 	
-	public StringBuffer serviceLog(String tag,String sn,String ns,String v,String method,Object[] args, Object...others) {
-		StringBuffer sb = new StringBuffer(tag).append(":  ");
-		sb.append("service [").append(sn).append("], namespace [").append(ns).append("], version [")
-		.append(v).append("], args [");
+	private StringBuffer logHeaders(String tag) {
+		StringBuffer sb = new StringBuffer("[").append(tag);
+		sb.append("] host [").append(Config.getHost());
+		sb.append("] instanceName[").append(Config.getInstanceName());
+		sb.append("]");
+		return sb;
+	}
+	
+	private void service(StringBuffer sb,String sn,String ns,String v,String method,Object[] args) {
+		sb.append(" service[").append(ServiceItem.serviceName(sn, ns, v))
+		.append("&").append(method).append("] args[");
 		if(args != null && args.length > 0) {
 			for(int i=0; i< args.length;i++) {
 				sb.append(args[i].getClass()).append("=").append(args[i]);
 				if(i != args.length-1) {
-					sb.append(",");
+					sb.append("&");
 				}
 			}
-		}else {
-			sb.append("]");
 		}
-		
-		if(others != null && others.length > 0) {
-			sb.append(", Others [");
-			for(int i=0; i< others.length;i++) {
-				sb.append(others[i].getClass()).append("=").append(others[i]);
-				if(i != others.length-1) {
-					sb.append(",");
-				}
-			}
-		}else {
-			sb.append("]");
-		}
-		
-		return sb;
+		sb.append("] ");
 	}
 	
-	public StringBuffer serviceLog(String tag, Message msg, Object...others) {
-		StringBuffer sb = new StringBuffer(tag).append(":  ");
-		sb.append("msgId [").append(msg.getId()).append("], reqId [")
-		.append(msg.getReqId()).append("]");
-		
+	private void others(StringBuffer sb, Object[] others) {
 		if(others != null && others.length > 0) {
-			sb.append(", Others [");
+			sb.append("Others[");
 			for(int i=0; i< others.length;i++) {
-				sb.append(others[i].getClass()).append("=").append(others[i]);
+				sb.append(others[i]);
 				if(i != others.length-1) {
-					sb.append(",");
+					sb.append("&");
 				}
 			}
-		}else {
-			sb.append("]");
 		}
+		sb.append("]");
+	}
+	
+	private StringBuffer message(StringBuffer sb,  Message msg) {
+		sb.append("msgId[").append(msg.getId()).append("] reqId[")
+		.append(msg.getReqId()).append("]");
 		return sb;
 	}
 	

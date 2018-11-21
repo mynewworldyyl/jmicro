@@ -2,8 +2,8 @@ package org.jmicro.example.comsumer;
 
 import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.Reference;
-import org.jmicro.api.test.ISayHello;
 import org.jmicro.api.test.Person;
+import org.jmicro.example.api.ISayHello;
 import org.jmicro.example.api.ITestRpcService;
 
 @Component

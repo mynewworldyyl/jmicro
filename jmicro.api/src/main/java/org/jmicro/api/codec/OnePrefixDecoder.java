@@ -30,9 +30,12 @@ import java.util.List;
 import java.util.Map;
 
 import org.jmicro.api.annotation.Component;
+import org.jmicro.api.monitor.SubmitItem;
 import org.jmicro.common.CommonException;
 import org.jmicro.common.Constants;
 import org.jmicro.common.Utils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * 
@@ -41,6 +44,8 @@ import org.jmicro.common.Utils;
  */
 @Component(value="onePrefixDecoder",lazy=false)
 public class OnePrefixDecoder /*implements IDecoder*/{
+	
+	private static final Logger logger = LoggerFactory.getLogger(OnePrefixDecoder.class);
 	
 	@SuppressWarnings("unchecked")
 	public <V> V decode(ByteBuffer buffer) {
@@ -152,6 +157,10 @@ public class OnePrefixDecoder /*implements IDecoder*/{
 	
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	private Object decodeByReflect(ByteBuffer buffer, Class<?> cls) {
+		
+		if(cls == SubmitItem.class) {
+			logger.debug("cls {}", cls.getName());
+		}
 		
 		int m = cls.getModifiers() ;
 		

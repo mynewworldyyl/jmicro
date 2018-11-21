@@ -93,7 +93,7 @@ public class DefaultSpeedLimiter extends AbstractLimiter implements ILimiter{
 			return false;
 		}
 		if(result > 0){
-			MonitorConstant.doSubmit(monitor,MonitorConstant.SERVER_REQ_LIMIT_OK, req,null,result);
+			MonitorConstant.doSubmit(MonitorConstant.SERVER_REQ_LIMIT_OK, req,null,result);
 			doWait(result,d);
 		}
 		

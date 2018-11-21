@@ -18,6 +18,7 @@ package org.jmicro.api;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Stack;
 
 import org.jmicro.api.config.Config;
 import org.jmicro.api.idgenerator.IIdGenerator;
@@ -45,8 +46,10 @@ public class JMicroContext  {
 	public static String[] args = {};
 	
 	protected Map<String,Object> params = new HashMap<String,Object>();
-	public static final String SESSION_KEY="_sessionKey";	
+	public static final String SESSION_KEY="_sessionKey";
 	private static final ThreadLocal<JMicroContext> cxt = new ThreadLocal<JMicroContext>();
+	
+	private Stack<Object> stack = new Stack<>();
 	
 	private JMicroContext() {}
 	
@@ -76,12 +79,24 @@ public class JMicroContext  {
 		return id;
 	}
 	
+	public void backup() {
+		boolean monitorEnable = this.isMonitor();
+		stack.push(new Boolean(monitorEnable));
+		
+	}
+	
+	public void restore() {
+		
+		boolean monitorEnable = (Boolean)stack.pop();
+		this.setBoolean(Constants.MONITOR_ENABLE_KEY, monitorEnable);
+	}
+	
 	public void configMonitor(int methodCfg,int srvCfg){
 		if(methodCfg != -1){
-			this.setBoolean(Constants.MONITOR_ENABLE_KEY, methodCfg==1?true:false);
+			this.setBoolean(Constants.MONITOR_ENABLE_KEY, methodCfg==1);
 		}
 		else if(srvCfg != -1){
-			this.setBoolean(Constants.MONITOR_ENABLE_KEY, srvCfg==1?true:false);
+			this.setBoolean(Constants.MONITOR_ENABLE_KEY, srvCfg==1);
 		}
 		//return isMonitor();
 	}
