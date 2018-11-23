@@ -16,13 +16,12 @@
  */
 package org.jmicro.api.server;
 
-import org.jmicro.api.Init;
 /**
  * 
  * @author Yulei Ye
  * @date 2018年10月4日-下午12:06:11
  */
-public interface IServer extends Init{
+public interface IServer{
 
 	void init();
 	

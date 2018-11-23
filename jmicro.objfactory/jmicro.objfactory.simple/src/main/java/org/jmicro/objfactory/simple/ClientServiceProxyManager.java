@@ -114,7 +114,7 @@ class ClientServiceProxyManager {
 		return (T)this.createRemoteServieProxyByInterface(srvClazz);
 	}
 	
-	Object createOrGetService(Object obj,Field f){
+	 Object createOrGetService(Object obj,Field f){
 		if(!f.isAnnotationPresent(Reference.class)){
 			logger.warn("cls:["+obj.getClass().getName()+"] not annotated with ["+Reference.class.getName()+"]");
 			return null;
@@ -249,7 +249,7 @@ class ClientServiceProxyManager {
 		}
 		
 		if(o == null){
-			if(type.isInterface() || Modifier.isAbstract(type.getModifiers())) {
+			if(Modifier.isAbstract(type.getModifiers())) {
 				o = new HashSet<Object>();
 			} else {
 				try {

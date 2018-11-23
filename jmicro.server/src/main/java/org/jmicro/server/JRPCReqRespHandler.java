@@ -31,6 +31,7 @@ import org.jmicro.api.codec.ICodecFactory;
 import org.jmicro.api.idgenerator.IIdGenerator;
 import org.jmicro.api.monitor.IMonitorDataSubmiter;
 import org.jmicro.api.monitor.MonitorConstant;
+import org.jmicro.api.monitor.SF;
 import org.jmicro.api.net.IMessageHandler;
 import org.jmicro.api.net.ISession;
 import org.jmicro.api.net.Message;
@@ -64,6 +65,8 @@ import co.paralleluniverse.strands.SuspendableRunnable;
 public class JRPCReqRespHandler implements IMessageHandler{
 
 	public static final short TYPE = Constants.MSG_TYPE_REQ_JRPC;
+	
+	private static final Class<?> TAG = JRPCReqRespHandler.class;
 	
 	static final Logger logger = LoggerFactory.getLogger(JRPCReqRespHandler.class);
 	
@@ -102,144 +105,147 @@ public class JRPCReqRespHandler implements IMessageHandler{
 		boolean needResp = true;
 		IResponse resp = null;
 	    try {
-	    	if(openDebug) {
-				logger.debug("Got Request ReqId: " + msg.getReqId());
-			}
-		    //s.setId(msg.getSessionId());
-	        JMicroContext cxt = JMicroContext.get();
-			cxt.setParam(JMicroContext.SESSION_KEY, s);
-			
-			final RpcRequest req1 = ICodecFactory.decode(this.codeFactory,msg.getPayload(),
+
+	    	final RpcRequest req1 = ICodecFactory.decode(this.codeFactory,msg.getPayload(),
 					RpcRequest.class,msg.getProtocol());
 			req = req1;
 			req.setSession(s);
 			req.setMsg(msg);
 			
-			JMicroContext.get().setParam(JMicroContext.CLIENT_IP, s.remoteHost());
-			JMicroContext.get().setParam(JMicroContext.CLIENT_PORT, s.remotePort());
-			s.putParam(Constants.MONITOR_ENABLE_KEY,req.isMonitorEnable());
-			cxt.configMonitor(req.isMonitorEnable()?1:0, 0);
-			cxt.mergeParams(req.getRequestParams());
+			JMicroContext.get().mergeParams(req.getRequestParams());
 			
 			ServiceItem si = registry.getServiceByImpl(req.getImpl());
 			if(si == null){
-				MonitorConstant.doSubmit(MonitorConstant.SERVER_REQ_SERVICE_NOT_FOUND,
-						req,null,req.getImpl());
+				SF.doRequestLog(MonitorConstant.ERROR, msg.getLinkId(), TAG, req,null," service ITEM not found");
+				SF.doSubmit(MonitorConstant.SERVER_REQ_SERVICE_NOT_FOUND,req,null);
 				throw new CommonException("Service not found impl："+req.getImpl());
 			}
 			
 			ServiceMethod sm = si.getMethod(req.getMethod(), req.getArgs());
 			
-			cxt.setObject(Constants.SERVICE_ITEM_KEY, si);
-			cxt.setObject(Constants.SERVICE_METHOD_KEY, sm);
+			JMicroContext.get().setObject(Constants.SERVICE_ITEM_KEY, si);
+			JMicroContext.get().setObject(Constants.SERVICE_METHOD_KEY, sm);
 			
 			Object obj = serviceLoader.getService(req.getImpl());
 			if(obj == null){
-				MonitorConstant.doSubmit(MonitorConstant.SERVER_REQ_SERVICE_NOT_FOUND,
-						req,null,req.getImpl());
+				SF.doRequestLog(MonitorConstant.ERROR, msg.getLinkId(), TAG, req,null," service INSTANCE not found");
+				SF.doSubmit(MonitorConstant.SERVER_REQ_SERVICE_NOT_FOUND,
+						req,null);
 				throw new CommonException("Service not found");
 			}
 			
-			cxt.setObject(Constants.SERVICE_OBJ_KEY, obj);
+			JMicroContext.get().setObject(Constants.SERVICE_OBJ_KEY, obj);
 			
 			needResp = sm.needResponse;
-			MonitorConstant.doSubmit(MonitorConstant.SERVER_REQ_BEGIN, req,resp);
-				if(!needResp){
-					handler(req);
-					MonitorConstant.doSubmit(MonitorConstant.SERVER_REQ_OK, req,resp);
-					return;
-				}
+			SF.doSubmit(MonitorConstant.SERVER_REQ_BEGIN, req,resp,null);
+			if(!needResp){
+				handler(req);
+				SF.doSubmit(MonitorConstant.SERVER_REQ_OK, req,resp,null);
+				return;
+			}
 
-				msg.setReqId(req.getRequestId());
-				//msg.setSessionId(req.getSession().getId());
-				msg.setVersion(req.getMsg().getVersion());
+			msg.setReqId(req.getRequestId());
+			//msg.setSessionId(req.getSession().getId());
+			msg.setVersion(req.getMsg().getVersion());
 				
-				if(req.isStream()){
-					msg.setType(Constants.MSG_TYPE_ASYNC_RESP);
-					
-					SuspendableRunnable r = () ->{
-						JMicroContext.get().mergeParams(cxt);
-						JMicroContext.get().setParam(Constants.CONTEXT_CALLBACK_SERVICE, new IWriteCallback(){
-							@Override
-							public boolean send(Object message) {
-								if(s.isClose()){
-									s.close(true);
-									return false;
-								}
-								RpcResponse resp = new RpcResponse(req1.getRequestId(),message);
-								resp.setSuccess(true);
-								//返回结果包
-								msg.setId(idGenerator.getLongId(Message.class));
-								msg.setPayload(codeFactory.getEncoder(msg.getProtocol()).encode(resp));
-								msg.setType(Constants.MSG_TYPE_ASYNC_RESP);
-								
-								if(openDebug) {
-									logger.debug("Send Async msg ReqId: "+req1.getRequestId());
-								}
-								s.write(msg);
-								return true;
+			if(openDebug) {
+				SF.doRequestLog(MonitorConstant.DEBUG,msg.getLinkId(), TAG, req,null,"got REQUEST");
+			}
+			
+			if(req.isStream()){
+				msg.setType(Constants.MSG_TYPE_ASYNC_RESP);
+				
+				SuspendableRunnable r = () ->{
+					JMicroContext.get().mergeParams(JMicroContext.get());
+					JMicroContext.get().setParam(Constants.CONTEXT_CALLBACK_SERVICE, new IWriteCallback(){
+						@Override
+						public boolean send(Object message) {
+							if(s.isClose()){
+								s.close(true);
+								return false;
 							}
-						});
-						 handler(req1);
-					};
-					//异步响应
-					new Fiber<Void>(r).start();
-					
-					/*Runnable run = ()->{
-						JMicroContext.get().setParam(Constants.CONTEXT_CALLBACK, new IWriteCallback(){
-							@Override
-							public void send(Object message) {
-								RpcResponse resp = new RpcResponse(req.getRequestId(),message,respBufferSize);
-								resp.setSuccess(true);
-								//返回结果包
-								msg.setId(idGenerator.getLongId(Message.class));
-								msg.setPayload(resp.encode());
-								msg.setType(Message.MSG_TYPE_ASYNC_RESP);
-								if(s.isClose()){
-									throw new CommonException("Session is closed while writing data");
-								}
-								s.write(msg.encode());
+							RpcResponse resp = new RpcResponse(req1.getRequestId(),message);
+							resp.setSuccess(true);
+							//返回结果包
+							msg.setId(idGenerator.getLongId(Message.class));
+							msg.setPayload(codeFactory.getEncoder(msg.getProtocol()).encode(resp));
+							msg.setType(Constants.MSG_TYPE_ASYNC_RESP);
+							
+							if(openDebug) {
+								SF.doResponseLog(MonitorConstant.DEBUG, msg.getLinkId(), TAG, resp,null,"STREAM");
 							}
-						});
-						 handler(req);
-					};
-					new Thread(run).start();*/
-					
-					
-					//直接返回一个确认包
+							s.write(msg);
+							return true;
+						}
+					});
+					 handler(req1);
+				};
+				//异步响应
+				new Fiber<Void>(r).start();
+				
+				/*Runnable run = ()->{
+					JMicroContext.get().setParam(Constants.CONTEXT_CALLBACK, new IWriteCallback(){
+						@Override
+						public void send(Object message) {
+							RpcResponse resp = new RpcResponse(req.getRequestId(),message,respBufferSize);
+							resp.setSuccess(true);
+							//返回结果包
+							msg.setId(idGenerator.getLongId(Message.class));
+							msg.setPayload(resp.encode());
+							msg.setType(Message.MSG_TYPE_ASYNC_RESP);
+							if(s.isClose()){
+								throw new CommonException("Session is closed while writing data");
+							}
+							s.write(msg.encode());
+						}
+					});
+					 handler(req);
+				};
+				new Thread(run).start();*/
+				
+				
+				//直接返回一个确认包
+				resp = new RpcResponse(req.getRequestId(),null);
+				resp.setSuccess(true);
+				
+				msg.setType(Constants.MSG_TYPE_RRESP_JRPC);
+				msg.setPayload(ICodecFactory.encode(codeFactory,resp,msg.getProtocol()));
+				msg.setId(idGenerator.getLongId(Message.class));
+				
+				if(openDebug) {
+					SF.doMessageLog(MonitorConstant.DEBUG, TAG, msg,null,"STREAM Confirm");
+				}
+				
+				s.write(msg);
+			
+			} else {
+				//同步响应
+				resp = handler(req);
+				if(resp == null){
 					resp = new RpcResponse(req.getRequestId(),null);
 					resp.setSuccess(true);
-					
-					msg.setType(Constants.MSG_TYPE_RRESP_JRPC);
-					msg.setPayload(ICodecFactory.encode(codeFactory,resp,msg.getProtocol()));
-					msg.setId(idGenerator.getLongId(Message.class));
-					s.write(msg);
+				}
+				msg.setPayload(ICodecFactory.encode(codeFactory,resp,msg.getProtocol()));
+				msg.setType(Constants.MSG_TYPE_RRESP_JRPC);
+				msg.setId(idGenerator.getLongId(Message.class));
 				
-				} else {
-					//同步响应
-					resp = handler(req);
-					if(resp == null){
-						resp = new RpcResponse(req.getRequestId(),null);
-						resp.setSuccess(true);
-					}
-					msg.setPayload(ICodecFactory.encode(codeFactory,resp,msg.getProtocol()));
-					msg.setType(Constants.MSG_TYPE_RRESP_JRPC);
-					msg.setId(idGenerator.getLongId(Message.class));
-					if(openDebug) {
-						logger.debug("Response Request ReqId: " + msg.getReqId());
-					}
-					s.write(msg);
+				if(openDebug) {
+					SF.doResponseLog(MonitorConstant.DEBUG,msg.getLinkId(), TAG, resp,null);
 				}
-				MonitorConstant.doSubmit(MonitorConstant.SERVER_REQ_OK, req,resp);
-			} catch (Throwable e) {
-				MonitorConstant.doSubmit(MonitorConstant.SERVER_REQ_ERROR, req,resp);
-				logger.error("reqHandler error: ",e);
-				if(needResp && req != null ){
-					resp = new RpcResponse(req.getRequestId(),new ServerError(0,e.getMessage()));
-					resp.setSuccess(false);
-				}
-				s.close(true);
+				
+				s.write(msg);
 			}
+			SF.doSubmit(MonitorConstant.SERVER_REQ_OK, req,resp,null);
+		} catch (Throwable e) {
+			SF.doMessageLog(MonitorConstant.ERROR, TAG, msg,e);
+			SF.doSubmit(MonitorConstant.SERVER_REQ_ERROR, req,resp,null);
+			logger.error("reqHandler error: ",e);
+			if(needResp && req != null ){
+				resp = new RpcResponse(req.getRequestId(),new ServerError(0,e.getMessage()));
+				resp.setSuccess(false);
+			}
+			s.close(true);
+		}
 	}
 
 	private String reqMethodKey(RpcRequest req){

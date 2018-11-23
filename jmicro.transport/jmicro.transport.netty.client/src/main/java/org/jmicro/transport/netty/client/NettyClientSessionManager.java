@@ -33,6 +33,7 @@ import org.jmicro.api.codec.ICodecFactory;
 import org.jmicro.api.idgenerator.IIdGenerator;
 import org.jmicro.api.monitor.IMonitorDataSubmiter;
 import org.jmicro.api.monitor.MonitorConstant;
+import org.jmicro.api.monitor.SF;
 import org.jmicro.api.net.IMessageHandler;
 import org.jmicro.api.net.IMessageReceiver;
 import org.jmicro.api.net.ISession;
@@ -172,7 +173,8 @@ public class NettyClientSessionManager implements IClientSessionManager{
 	                	 
 	                	 NettyClientSession cs = (NettyClientSession)ctx.channel().attr(sessionKey).get();
 	                	 if(monitorEnable(ctx) && monitor != null){
-	                     	monitor.submit(MonitorConstant.CLIENT_IOSESSION_READ, null,null,cs.getId(),cs.getReadBuffer().remaining(),((ByteBuf)msg).readableBytes());
+	                     	monitor.submit(MonitorConstant.CLIENT_IOSESSION_READ, cs.getId()+"",cs.getReadBuffer().remaining()+""
+	                     			,((ByteBuf)msg).readableBytes()+"");
 	                     }
 	                 	
 	                 	ByteBuf bb = (ByteBuf)msg;
@@ -216,8 +218,8 @@ public class NettyClientSessionManager implements IClientSessionManager{
 	        			 logger.error("exceptionCaught",cause);
 	        			 NettyClientSession session = (NettyClientSession)ctx.channel().attr(sessionKey);
 	        			 if(session !=null && monitorEnable(ctx) && monitor != null ){
-	        	             MonitorConstant.doSubmit(MonitorConstant.CLIENT_IOSESSION_EXCEPTION, null
-	        	            		 ,null,session.getId(),cause.getMessage());
+	        	             SF.doSubmit(MonitorConstant.CLIENT_IOSESSION_EXCEPTION
+	        	            		 ,cause,session.getId()+"");
 	        	         }
 	                 }
 	             });
@@ -244,9 +246,10 @@ public class NettyClientSessionManager implements IClientSessionManager{
 	           logger.debug("connection finish,host:"+host+",port:"+port);
 	           return s;
 	       } catch (Throwable e) {
-	    	   logger.error("cannot connect host:" + host + ", port:" + port, e);
-	           MonitorConstant.doSubmit(MonitorConstant.CLIENT_REQ_CONN_FAIL, null, null,host,port,e.getMessage());
-	           throw new CommonException("host:" + host + ", port:" + port,e);
+	    	   String msg = "cannot connect host:" + host + ", port:" + port;
+	    	   logger.error(msg);
+	           SF.doSubmit(MonitorConstant.CLIENT_REQ_CONN_FAIL, e,msg);
+	           throw new CommonException(msg);
 	       }
 		}
 	}

@@ -22,7 +22,7 @@ import org.jmicro.common.CommonException;
 import org.jmicro.common.Constants;
 import org.jmicro.common.util.JsonUtils;
 
-@Component(value=Constants.DEFAULT_CODEC_FACTORY)
+@Component(value=Constants.DEFAULT_CODEC_FACTORY,lazy=false)
 public class SimpleCodecFactory implements ICodecFactory{
 
 	private Map<Byte,IDecoder> decoders = new HashMap<>();

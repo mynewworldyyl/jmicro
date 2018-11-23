@@ -85,8 +85,6 @@ public class ServiceLoader {
 		}
 		exportService();
 		logger.info("export service finish!");
-		
-		//registry.init0();
 	}
 	
 	public Object getService(String clsName,String namespace,String version){

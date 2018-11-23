@@ -46,7 +46,7 @@ public final class RpcRequest extends AbstractObjectMapSupport implements IReque
 	
 	protected Long reqId = -1L;
 	
-	private boolean isMonitorEnable = false;
+	private transient boolean isMonitorEnable = false;
 	
 	private transient Message msg;
 	
@@ -196,5 +196,12 @@ public final class RpcRequest extends AbstractObjectMapSupport implements IReque
 
 	public void setArgs(Object[] args) {
 		this.args = args;
+	}
+    public long getId() {
+    	 return this.reqId;
+     }
+	
+	public void setId(long id) {
+		this.reqId = id;
 	}
 }

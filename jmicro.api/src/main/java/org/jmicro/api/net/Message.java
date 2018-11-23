@@ -19,7 +19,6 @@ package org.jmicro.api.net;
 import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
 
-import org.jmicro.api.IDable;
 import org.jmicro.common.CommonException;
 import org.jmicro.common.Constants;
 import org.jmicro.common.util.JsonUtils;
@@ -29,7 +28,7 @@ import org.jmicro.common.util.StringUtils;
  * @author Yulei Ye
  * @date 2018年10月4日-下午12:06:44
  */
-public final class Message implements IDable{
+public final class Message{
 	
 	public static final byte PROTOCOL_BIN = 1;
 	public static final byte PROTOCOL_JSON = 2;
@@ -61,6 +60,18 @@ public final class Message implements IDable{
 	private Object payload;	
 	
 	public Message(){}
+	
+	public boolean isMonitorable() {
+		return (flag & Constants.FLAG_MONITORABLE) != 0;
+	}
+	
+	public boolean isStream() {
+		return (flag & Constants.FLAG_STREAM) != 0;
+	}
+	
+	public boolean isNeedResponse() {
+		return (flag & Constants.FLAG_NEED_RESPONSE) != 0;
+	}
 	
 	public void decode(ByteBuffer b) {
 		int pos = b.position();
@@ -167,7 +178,6 @@ public final class Message implements IDable{
 		return b;
 	}
 	
-	@Override
 	public long getId() {
 		return this.msgId;
 	}
@@ -180,7 +190,6 @@ public final class Message implements IDable{
 		this.flag = flag;
 	}
 
-	@Override
 	public void setId(long id) {
 		this.msgId = id;
 	}

@@ -32,6 +32,7 @@ import org.jmicro.api.degrade.DegradeManager;
 import org.jmicro.api.monitor.IMonitorDataSubscriber;
 import org.jmicro.api.monitor.MonitorConstant;
 import org.jmicro.api.monitor.SubmitItem;
+import org.jmicro.api.registry.ServiceMethod;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -97,7 +98,13 @@ public class ServiceExceptionMonitor implements IMonitorDataSubscriber {
 	@Override
 	@SMethod(needResponse=false)
 	public void onSubmit(SubmitItem si) {
-		String service = si.getServiceName()+"|"+si.getMethod()+"|"+si.getReqArgsStr();
+		String service = null;
+		if(si.getReq() != null) {
+			service = si.getReq().getServiceName()+"|"
+					+si.getReq().getMethod()+"|"+ServiceMethod.methodParamsKey(si.getReq().getArgs());
+		}else {
+			service = si.getServiceName() + "|" + si.getMethod() + "|" + ServiceMethod.methodParamsKey(si.getReqArgs());
+		}
 		
 		ExceItem ei = new ExceItem();
 		ei.time = si.getTime();

@@ -45,6 +45,7 @@ import org.jmicro.api.annotation.Service;
 import org.jmicro.api.config.Config;
 import org.jmicro.api.config.IConfigLoader;
 import org.jmicro.api.http.annotation.HttpHandler;
+import org.jmicro.api.net.IMessageReceiver;
 import org.jmicro.api.objectfactory.IObjectFactory;
 import org.jmicro.api.objectfactory.IPostFactoryReady;
 import org.jmicro.api.objectfactory.IPostInitListener;
@@ -240,6 +241,11 @@ public class SimpleObjectFactory implements IObjectFactory {
     	 if(cfg == null){
     		 throw new CommonException("Config not load!");
     	 }
+    	 
+    	 /*if(obj instanceof IMessageReceiver) {
+    		 logger.debug("");
+    	 }*/
+    	 
     	 if(!(obj instanceof ProxyObject)){
     		 injectDepependencies(obj);
     		 notifyPrePostListener(obj,cfg);
@@ -397,6 +403,8 @@ public class SimpleObjectFactory implements IObjectFactory {
 		
 		List<IConfigLoader> configLoaders = this.getByParent(IConfigLoader.class);
 		cfg.loadConfig(configLoaders);
+		
+		notifyPrePostListener(registry,cfg);
 		
 		Set<Object> haveInits = new HashSet<>();
 		

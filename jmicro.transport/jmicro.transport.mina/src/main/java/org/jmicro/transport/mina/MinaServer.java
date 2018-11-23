@@ -42,6 +42,7 @@ import org.jmicro.api.codec.ICodecFactory;
 import org.jmicro.api.config.Config;
 import org.jmicro.api.monitor.IMonitorDataSubmiter;
 import org.jmicro.api.monitor.MonitorConstant;
+import org.jmicro.api.monitor.SF;
 import org.jmicro.api.net.IMessageHandler;
 import org.jmicro.api.net.IMessageReceiver;
 import org.jmicro.api.net.ISession;
@@ -168,15 +169,15 @@ public class MinaServer implements IServer{
                     //s.setSessionId(idGenerator.getLongId(ISession.class));
                     session.setAttribute(sessinKey, s);
                     if(monitor != null && monitorEnable(session)){
-                    	 MonitorConstant.doSubmit(MonitorConstant.SERVER_IOSESSION_OPEN, null,null,session.getId());
+                    	 SF.doSubmit(MonitorConstant.SERVER_IOSESSION_OPEN,session.getId()+"");
                     }
                 }
 
                 @Override
                 public void messageReceived(IoSession session, Object message) {
                 	 if(monitor != null && monitorEnable(session)){
-                		 MonitorConstant.doSubmit(MonitorConstant.SERVER_IOSESSION_READ,
-                     			null,null,session,((ByteBuffer)message).remaining());
+                		 SF.doSubmit(MonitorConstant.SERVER_IOSESSION_READ,
+                     			session.getId()+"",((ByteBuffer)message).remaining()+"");
                 	 }
                 	
                     MinaServerSession s = session.getAttribute(sessinKey);
@@ -206,7 +207,7 @@ public class MinaServer implements IServer{
 						 s.close(true);
 					 }
 					if(monitor != null && monitorEnable(session)){
-						MonitorConstant.doSubmit(MonitorConstant.SERVER_IOSESSION_CLOSE, null,null,session.getId());
+						SF.doSubmit(MonitorConstant.SERVER_IOSESSION_CLOSE,session.getId()+"");
 					}
 				}
 
@@ -215,8 +216,8 @@ public class MinaServer implements IServer{
 					// TODO Auto-generated method stub
 					super.sessionIdle(session, status);
 					if(monitor != null && monitorEnable(session)){
-						MonitorConstant.doSubmit(MonitorConstant.SERVER_IOSESSION_CLOSE, 
-								null,null,session,status);
+						SF.doSubmit(MonitorConstant.SERVER_IOSESSION_CLOSE, 
+								session.getId()+"",status.toString());
 					}
 				}
 
@@ -224,8 +225,8 @@ public class MinaServer implements IServer{
 				public void messageSent(IoSession session, Object message) {
 					super.messageSent(session, message);
 					if(monitor != null && monitorEnable(session)){
-						monitor.submit(MonitorConstant.SERVER_IOSESSION_WRITE, null,null,session.getId(),
-							((ByteBuffer)message).remaining());
+						monitor.submit(MonitorConstant.SERVER_IOSESSION_WRITE,session.getId()+"",
+							((ByteBuffer)message).remaining()+"");
 					}
 				}
 
@@ -243,8 +244,8 @@ public class MinaServer implements IServer{
 				public void exceptionCaught(IoSession session, Exception cause) {
 					super.exceptionCaught(session, cause);
 					if(monitor != null && monitorEnable(session)){
-						MonitorConstant.doSubmit(MonitorConstant.SERVER_IOSESSION_EXCEPTION,
-								null,null,session.getId(),cause);
+						SF.doSubmit(MonitorConstant.SERVER_IOSESSION_EXCEPTION
+								,cause,session.getId()+"");
 					}
 				}
 
@@ -289,12 +290,12 @@ public class MinaServer implements IServer{
         
         String m = "Running the server host["+this.host+"],port ["+this.port+"]";
         LOG.debug(m);    
-        MonitorConstant.doSubmit(MonitorConstant.SERVER_START, null,null,m);
+        SF.doSubmit(MonitorConstant.SERVER_START,m);
 	}
 
 	@Override
 	public void stop() {
-		MonitorConstant.doSubmit(MonitorConstant.SERVER_STOP, null,null,this.host,this.port);
+		SF.doSubmit(MonitorConstant.SERVER_STOP, this.host,this.port+"");
 		 if(acceptor != null){
 			 acceptor.unbind();
 			 acceptor = null;

@@ -27,6 +27,7 @@ import org.jmicro.api.codec.ICodecFactory;
 import org.jmicro.api.idgenerator.IIdGenerator;
 import org.jmicro.api.monitor.IMonitorDataSubmiter;
 import org.jmicro.api.monitor.MonitorConstant;
+import org.jmicro.api.monitor.SF;
 import org.jmicro.api.net.IMessageHandler;
 import org.jmicro.api.net.IMessageReceiver;
 import org.jmicro.api.net.ISession;
@@ -37,6 +38,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import co.paralleluniverse.fibers.Suspendable;
+
 /**
  * 
  * @author Yulei Ye
@@ -46,6 +48,7 @@ import co.paralleluniverse.fibers.Suspendable;
 public class ServerMessageReceiver implements IMessageReceiver{
 
 	static final Logger logger = LoggerFactory.getLogger(ServerMessageReceiver.class);
+	static final Class<?> TAG = ServerMessageReceiver.class;
 	
 	@Cfg("/ServerMessageReceiver/openDebug")
 	private boolean openDebug;
@@ -85,9 +88,9 @@ public class ServerMessageReceiver implements IMessageReceiver{
 	@Override
 	@Suspendable
 	public void receive(ISession s, Message msg) {
-		if(openDebug) {
-			logger.debug("Got message ReqId: "+msg.getReqId());
-		}
+		/*if(openDebug) {
+			SF.getIns().doMessageLog(MonitorConstant.DEBUG, TAG, msg,"receive");
+		}*/
 		if(!ready) {
 			synchronized(ready){
 				try {
@@ -104,38 +107,33 @@ public class ServerMessageReceiver implements IMessageReceiver{
 	
 	@Suspendable
 	private void doReceive(IServerSession s, Message msg){
-		if(openDebug) {
-			logger.debug("doReceive ReqId: "+msg.getReqId());
-		}
 		
-		if(s.getId() != -1 && msg.getLinkId() != s.getId()) {
-			String msg1 = "Ignore MSG" + msg.getId() + "Rec session ID: "+msg.getLinkId()+",but this session ID: "+s.getId();
-			logger.warn(msg1);
-			if(monitorEnable(s)){
-				MonitorConstant.doSubmit(MonitorConstant.SERVER_PACKAGE_SESSION_ID_ERR,
-						null,null,msg.getId(),msg.getReqId(),s.getId(),msg1);
-			}
-			msg.setType((short)(msg.getType()+1));
-			s.write(msg);
-			return;
+		JMicroContext.get().configMonitor(msg.isMonitorable());
+		JMicroContext.setMonitor(monitor);
+		
+		JMicroContext.get().setParam(JMicroContext.SESSION_KEY, s);
+			
+		JMicroContext.get().setParam(JMicroContext.CLIENT_IP, s.remoteHost());
+		JMicroContext.get().setParam(JMicroContext.CLIENT_PORT, s.remotePort());
+		
+		if(openDebug) {
+			SF.doMessageLog(MonitorConstant.DEBUG, TAG, msg,null,"doReceive");
 		}
 		
 		try {
 			IMessageHandler h = handlers.get(msg.getType());
 			if(h == null) {
-				throw new CommonException("Message type ["+Integer.toHexString(msg.getType())+"] handler not found!");
+				String errMsg = "Message type ["+Integer.toHexString(msg.getType())+"] handler not found!";
+				SF.doMessageLog(MonitorConstant.ERROR, TAG, msg,null,errMsg);
+				throw new CommonException(errMsg);
 			}
 			h.onMessage(s, msg);
 		} catch (Throwable e) {
-			MonitorConstant.doSubmit(MonitorConstant.SERVER_REQ_ERROR, null,null);
+			SF.doMessageLog(MonitorConstant.ERROR, TAG, msg,e);
+			SF.doSubmit(MonitorConstant.SERVER_REQ_ERROR);
 			logger.error("reqHandler error: ",e);
 			msg.setType((short)(msg.getType()+1));
 			s.write(msg);
 		}
 	}
-	
-	public static Boolean monitorEnable(IServerSession session) {
-   	 	 Boolean v = (Boolean)session.getParam(Constants.MONITOR_ENABLE_KEY);
-		 return v == null ? JMicroContext.get().isMonitor():v;
-    }
 }

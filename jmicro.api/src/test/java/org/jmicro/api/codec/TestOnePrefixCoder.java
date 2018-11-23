@@ -30,6 +30,7 @@ public class TestOnePrefixCoder {
 		resp.getParams().put("key01", 3);
 		resp.getParams().put("key02","hello");
 		resp.setMsg(new Message());
+		resp.setResult("Hell result");
 		
 		ByteBuffer dest = encoder.encode(resp);
 		dest.flip();
@@ -324,7 +325,7 @@ public class TestOnePrefixCoder {
 		RpcRequest rr = new RpcRequest();
 		SubmitItem si = new SubmitItem();
 		si.setType(222);
-		si.setResult("org.jmicro.api.monitor.SF:  service [org.jmicro.api.test.ISayHello], namespace [testsayhello], version [0.0.1], args [class java.lang.String=Hello]");
+		//si.seto("org.jmicro.api.monitor.SF:  service [org.jmicro.api.test.ISayHello], namespace [testsayhello], version [0.0.1], args [class java.lang.String=Hello]");
 		
 		rr.setArgs(new Object[] {si});
 		
@@ -341,27 +342,15 @@ public class TestOnePrefixCoder {
 	@Test
 	public void testEncodeSubmitItem(){
 		SubmitItem si = new SubmitItem();
-		si.setFinish(true);
-		si.setType(1);
-		si.setReqId(1);
-		si.setSessionId(1);
-		si.setNamespace("sss");
-		si.setVersion("fsa");
-		si.setReqArgs("fsf");
-		si.setMethod("sfs");
-		si.setMsgId(1);
-		si.setOthers("fsf");
-		si.setRespId(1L);
-		si.setResult("sfs");
 		
-		ByteBuffer bb = ByteBuffer.allocate(1024*4);
-		Encoder.encodeObject(bb, si);
+		ByteBuffer bb = encoder.encode(si);
 		bb.flip();
+		
 		System.out.println(bb.limit());
 		System.out.println(bb.array());
 		
-		Object o = Decoder.decodeObject(bb);
-		System.out.println(o);
+		SubmitItem si1 = decoder.decode(bb);
+		System.out.println(si1);
 		
 	}
 

@@ -24,8 +24,8 @@ import org.jmicro.api.annotation.Inject;
 import org.jmicro.api.limitspeed.ILimiter;
 import org.jmicro.api.monitor.IMonitorDataSubmiter;
 import org.jmicro.api.monitor.MonitorConstant;
+import org.jmicro.api.monitor.SF;
 import org.jmicro.api.server.IRequest;
-import org.jmicro.common.CommonException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -61,7 +61,7 @@ public class TokenBucketLimiter extends AbstractLimiter implements ILimiter{
 		//logger.debug("TokenBucketLimiter apply reqID: " + req.getRequestId());
 		int rst = b.applyToken(1);
 		if(rst < 0) {
-			MonitorConstant.doSubmit(MonitorConstant.SERVER_REQ_LIMIT_FORBIDON, req,null,rst);
+			SF.doSubmit(MonitorConstant.SERVER_REQ_LIMIT_FORBIDON, req,null,rst+"");
 			return false;
 		} else {
 			return true;

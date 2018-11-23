@@ -17,14 +17,12 @@
 package org.jmicro.api.net;
 
 import java.nio.ByteBuffer;
-
-import org.jmicro.api.IDable;
 /**
  * 
  * @author Yulei Ye
  * @date 2018年10月4日-下午12:06:27
  */
-public interface ISession extends IDable{
+public interface ISession{
 	
 	void close(boolean flag);
 	
@@ -50,5 +48,9 @@ public interface ISession extends IDable{
 	String localHost();
 	
 	int localPort();
+	
+    long getId();
+	
+	void setId(long id);
 	
 }

@@ -31,6 +31,7 @@ import org.jmicro.api.config.Config;
 import org.jmicro.api.idgenerator.IIdGenerator;
 import org.jmicro.api.monitor.IMonitorDataSubmiter;
 import org.jmicro.api.monitor.MonitorConstant;
+import org.jmicro.api.monitor.SF;
 import org.jmicro.api.net.IMessageReceiver;
 import org.jmicro.api.net.Message;
 import org.jmicro.api.server.IServer;
@@ -42,7 +43,6 @@ import org.jmicro.common.util.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.sun.net.httpserver.HttpContext;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
@@ -158,12 +158,12 @@ public class JMicroHttpServer implements IServer{
         
         String m = "Running the server host["+this.host+"],port ["+this.port+"]";
         LOG.debug(m);    
-        MonitorConstant.doSubmit(MonitorConstant.SERVER_START, null,null,m);
+        SF.doSubmit(MonitorConstant.SERVER_START,m);
 	}
 
 	@Override
 	public void stop() {
-		MonitorConstant.doSubmit(MonitorConstant.SERVER_STOP, null,null,this.host,this.port);
+		SF.doSubmit(MonitorConstant.SERVER_STOP,this.host,this.port+"");
 		 if(server != null){
 			 server.stop(0);
 			 server = null;

@@ -17,7 +17,6 @@
 package org.jmicro.limit;
 
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedDeque;
 
@@ -28,6 +27,7 @@ import org.jmicro.api.annotation.JMethod;
 import org.jmicro.api.limitspeed.ILimiter;
 import org.jmicro.api.monitor.IMonitorDataSubmiter;
 import org.jmicro.api.monitor.MonitorConstant;
+import org.jmicro.api.monitor.SF;
 import org.jmicro.api.registry.IRegistry;
 import org.jmicro.api.registry.ServiceItem;
 import org.jmicro.api.registry.ServiceMethod;
@@ -93,7 +93,7 @@ public class DefaultSpeedLimiter extends AbstractLimiter implements ILimiter{
 			return false;
 		}
 		if(result > 0){
-			MonitorConstant.doSubmit(MonitorConstant.SERVER_REQ_LIMIT_OK, req,null,result);
+			SF.doSubmit(MonitorConstant.SERVER_REQ_LIMIT_OK, req,null,result+"");
 			doWait(result,d);
 		}
 		

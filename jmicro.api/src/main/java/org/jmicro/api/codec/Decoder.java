@@ -24,12 +24,14 @@ import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import org.jmicro.api.gateway.ApiRequest;
 import org.jmicro.api.gateway.ApiResponse;
+import org.jmicro.api.monitor.SubmitItem;
 import org.jmicro.api.net.Message;
 import org.jmicro.api.net.RpcRequest;
 import org.jmicro.api.net.RpcResponse;
@@ -49,6 +51,9 @@ public class Decoder {
 	public static final byte PREFIX_TYPE_NULL = 1 << 2;
 	
 	public static final Short NON_ENCODE_TYPE = 0;
+	
+	public static final byte NULL_VALUE = 0;
+	public static final byte NON_NULL_VALUE = 1;
 
 	private static Map<Short,Class<?>> Short2Clazz = new HashMap<>();
 	private static Map<Class<?>,Short> clazz2Short = new HashMap<>();
@@ -59,27 +64,29 @@ public class Decoder {
 	
    static {
 	    short type = (short)0xFFFF;
-		registType(Map.class,type++);
-		registType(Collection.class,type++);
-		registType(List.class,type++);
-		//registType(Array.class,type++);
-		registType(Void.class,type++);
-		registType(Short.class,type++);
-		registType(Integer.class,type++);
-		registType(Long.class,type++);
-		registType(Double.class,type++);
-		registType(Float.class,type++);
-		registType(Boolean.class,type++);
-		registType(Character.class,type++);
-		registType(Object.class,type++);
-		registType(String.class,type++);
-		registType(ByteBuffer.class,type++);
-		registType(Message.class,type++);
-		registType(RpcRequest.class,type++);
-		registType(RpcResponse.class,type++);
-		registType(ApiRequest.class,type++);
-		registType(ApiResponse.class,type++);
-		
+		registType(Map.class,type--);
+		registType(Collection.class,type--);
+		registType(List.class,type--);
+		//registType(Array.class,type--);
+		registType(Void.class,type--);
+		registType(Short.class,type--);
+		registType(Integer.class,type--);
+		registType(Long.class,type--);
+		registType(Double.class,type--);
+		registType(Float.class,type--);
+		registType(Boolean.class,type--);
+		registType(Character.class,type--);
+		registType(Object.class,type--);
+		registType(String.class,type--);
+		registType(ByteBuffer.class,type--);
+		registType(Message.class,type--);
+		registType(RpcRequest.class,type--);
+		registType(RpcResponse.class,type--);
+		registType(ApiRequest.class,type--);
+		registType(ApiResponse.class,type--);
+		registType(SubmitItem.class,type--);
+		registType(java.util.Date.class,type--);
+		registType(java.sql.Date.class,type--);
    }
    
    public static void setTransformClazzLoader(IClientTransformClassLoader l) {
@@ -134,9 +141,15 @@ public class Decoder {
 			return clazz2Short.get(String.class);
 		}else if(cls == ByteBuffer.class) {
 			return clazz2Short.get(ByteBuffer.class);
+		}else {
+			Short t = clazz2Short.get(cls);
+			if(t==null) {
+				 //无类型编码
+				t = NON_ENCODE_TYPE;
+			}
+			return t;
 		}
-	    //无类型编码
-		return NON_ENCODE_TYPE;
+	   
 	}
 	
 	public static Class<?> getClass(Short type){

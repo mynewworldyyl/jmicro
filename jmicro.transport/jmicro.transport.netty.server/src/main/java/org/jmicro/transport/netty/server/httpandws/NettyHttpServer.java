@@ -25,6 +25,7 @@ import org.jmicro.api.annotation.Server;
 import org.jmicro.api.config.Config;
 import org.jmicro.api.monitor.IMonitorDataSubmiter;
 import org.jmicro.api.monitor.MonitorConstant;
+import org.jmicro.api.monitor.SF;
 import org.jmicro.api.server.IServer;
 import org.jmicro.common.CommonException;
 import org.jmicro.common.Constants;
@@ -112,12 +113,12 @@ public class NettyHttpServer implements IServer{
         
         String m = "Running netty http server host["+Config.getHost()+"],port ["+this.port+"]";
         LOG.debug(m);    
-        MonitorConstant.doSubmit(MonitorConstant.SERVER_START, null,null,m);
+        SF.doSubmit(MonitorConstant.SERVER_START,m);
 	}
 
 	@Override
 	public void stop() {
-		MonitorConstant.doSubmit(MonitorConstant.SERVER_STOP, null,null,Config.getHost(),this.port);
+		SF.doSubmit(MonitorConstant.SERVER_STOP,Config.getHost(),this.port+"");
 		 if(server != null){
 			 //server.;
 			 server = null;

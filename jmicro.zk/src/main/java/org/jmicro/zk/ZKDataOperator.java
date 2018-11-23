@@ -51,6 +51,7 @@ import org.jmicro.api.raft.IConnectionStateChangeListener;
 import org.jmicro.api.raft.IDataListener;
 import org.jmicro.api.raft.IDataOperator;
 import org.jmicro.api.raft.INodeListener;
+import org.jmicro.common.CommonException;
 import org.jmicro.common.Constants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -64,6 +65,8 @@ import org.slf4j.LoggerFactory;
 public class ZKDataOperator implements IDataOperator{
 
 	private final static Logger logger = LoggerFactory.getLogger(ZKDataOperator.class);
+	
+	private boolean OPEN_DEBUG = true;
 	
 	private static ZKDataOperator ins = new ZKDataOperator();
 	public static ZKDataOperator getIns() {return ins;}
@@ -106,17 +109,17 @@ public class ZKDataOperator implements IDataOperator{
 		   String path = event.getPath();
 	      //logger.info("Watcher for '{}' received watched event: {}",path, event);
 	      if (event.getType() == EventType.NodeDataChanged) {
-	    	  dataChange(path);
 	    	  watchData(path);
+	    	  dataChange(path);
 	      }else if (event.getType() == EventType.NodeChildrenChanged) {
-	    	  childrenChange(path);
 	    	  watchChildren(path);
+	    	  childrenChange(path);
 	      }else if(event.getType() == EventType.NodeDeleted){
+	    	  watchNode(path);
 	    	  nodeDelete(path);
-	    	  watchNode(path);
 	      }else if(event.getType() == EventType.NodeCreated){
-	    	  nodeCreate(path);
 	    	  watchNode(path);
+	    	  nodeCreate(path);
 	      }
 	    	  
 	};
@@ -196,6 +199,9 @@ public class ZKDataOperator implements IDataOperator{
 		Set<IChildrenListener> lis = childrenListeners.get(path);
 		if(lis != null && !lis.isEmpty()){
 			for(IChildrenListener l : lis){
+				if(OPEN_DEBUG) {
+					logger.debug("childrenChange path:{}, children:{}",path,children);
+				}
 				l.childrenChanged(path, children);
 			}
 		}
@@ -294,6 +300,9 @@ public class ZKDataOperator implements IDataOperator{
 		ExistsBuilder existsBuilder = this.curator.checkExists();
 		try {
 			Stat stat = existsBuilder.forPath(path);
+			if(OPEN_DEBUG) {
+				//logger.debug("[exist] path {}, Stat {}",path,stat);
+			}
 			return stat != null;
 		} catch (KeeperException.NoNodeException e) {
 			logger.error(e.getMessage());
@@ -343,42 +352,49 @@ public class ZKDataOperator implements IDataOperator{
   	   return Collections.EMPTY_LIST;
 	}
 	
+	/**
+	 *如果结点已经存在，则直接更新数数
+	 */
 	public void createNode(String path,String data,boolean elp){
-		//init();
-		if(this.exist(path)){
-			this.setData(path, data);
-		} else {
-			String[] ps = path.split("/");
-			String p="";
-			for(int i=1; i < ps.length-1; i++){
-				p = p + "/"+ ps[i];
-				if(!this.exist(p)){
-					CreateBuilder createBuilder = this.curator.create();
-					createBuilder.withMode(CreateMode.PERSISTENT);
-			  	    try {
-						createBuilder.forPath(p);
-					} catch (KeeperException.NoNodeException e) {
-						logger.error(e.getMessage());
-					}catch(Exception e){
-						logger.error("",e);
-					}
+		if(this.exist(path)) {
+			if(elp) {
+				throw new CommonException("elp node ["+path+"] have been exists");
+			}else {
+				this.setData(path, data);
+			}
+			return;
+		}
+		String[] ps = path.split("/");
+		String p="";
+		for(int i=1; i < ps.length-1; i++){
+			p = p + "/"+ ps[i];
+			if(!this.exist(p)){
+				CreateBuilder createBuilder = this.curator.create();
+				createBuilder.withMode(CreateMode.PERSISTENT);
+		  	    try {
+					createBuilder.forPath(p);
+				} catch (KeeperException.NoNodeException e) {
+					logger.error(e.getMessage());
+				}catch(Exception e){
+					logger.error("",e);
 				}
 			}
-			CreateBuilder createBuilder = this.curator.create();
-	  	    try {
-	  	    	byte[] d = data.getBytes(Constants.CHARSET);
-	  	    	if(elp){
-	  	    		createBuilder.withMode(CreateMode.EPHEMERAL);
-	  	    	}else {
-	  	    		createBuilder.withMode(CreateMode.PERSISTENT);
-	  	    	}
-	  	    	createBuilder.forPath(path,d);
-			} catch (KeeperException.NoNodeException e) {
-				logger.error(e.getMessage());
-			}catch(Exception e){
-				logger.error("",e);
-			}
 		}
+		CreateBuilder createBuilder = this.curator.create();
+  	    try {
+  	    	byte[] d = data.getBytes(Constants.CHARSET);
+  	    	if(elp){
+  	    		createBuilder.withMode(CreateMode.EPHEMERAL);
+  	    	}else {
+  	    		createBuilder.withMode(CreateMode.PERSISTENT);
+  	    	}
+  	    	createBuilder.forPath(path,d);
+		} catch (KeeperException.NoNodeException e) {
+			logger.error(e.getMessage());
+		}catch(Exception e){
+			logger.error("",e);
+		}
+	
 	}
 	
 	public void deleteNode(String path){

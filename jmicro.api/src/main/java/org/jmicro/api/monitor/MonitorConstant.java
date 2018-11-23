@@ -27,13 +27,6 @@ import org.jmicro.api.server.IResponse;
  */
 public interface MonitorConstant {
 
-	public static void doSubmit(int type,IRequest req,IResponse resp,Object... objs){
-		IMonitorDataSubmiter monitor = JMicroContext.get().getParam(JMicroContext.MONITOR, null);
-		if(JMicroContext.get().isMonitor() && monitor != null) {
-			monitor.submit(type, req, null,objs);
-		}
-	}
-	
     public static final int ALL  = 0X7FFFFFFF;
 	//请求开始
 	public static final int CLIENT_REQ_BEGIN  = 0X7FFFFFF1;
@@ -97,16 +90,16 @@ public interface MonitorConstant {
     
     public static final int LINKER_ROUTER_MONITOR = 0X7FFFFEE3;
     
-    public static final int TRANCE = 0;
+    public static final byte TRANCE = 0;
     
-    public static final int DEBUG = 1;
+    public static final byte DEBUG = 1;
     
-    public static final int INFO = 2;
+    public static final byte INFO = 2;
     
-    public static final int WARN = 3;
+    public static final byte WARN = 3;
     
-    public static final int ERROR = 4;
+    public static final byte ERROR = 4;
     
-    public static final int FINAL = 5;
+    public static final byte FINAL = 5;
     
 }

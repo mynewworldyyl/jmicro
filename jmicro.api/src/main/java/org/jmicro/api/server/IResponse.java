@@ -16,15 +16,12 @@
  */
 package org.jmicro.api.server;
 
-import org.jmicro.api.IDable;
-import org.jmicro.api.codec.IDecoder;
-import org.jmicro.api.codec.IEncoder;
 /**
  * 
  * @author Yulei Ye
  * @date 2018年10月4日-下午12:06:02
  */
-public interface IResponse extends /*IEncoder,IDecoder,*/IDable{
+public interface IResponse{
 
 	Long getRequestId();
 	
@@ -35,4 +32,8 @@ public interface IResponse extends /*IEncoder,IDecoder,*/IDable{
 	boolean isSuccess();
 
 	void setSuccess(boolean success);
+	
+	long getId();
+	
+	void setId(long id);
 }

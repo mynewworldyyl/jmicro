@@ -27,11 +27,10 @@ public class TestMonitor {
 		
 		for(;;){
 			//MonitorConstant.doSubmit(monitor,MonitorConstant.CLIENT_REQ_BEGIN, null, null);
-			MonitorConstant.doSubmit(MonitorConstant.CLIENT_REQ_OK, null, null);
+			SF.doSubmit(MonitorConstant.CLIENT_REQ_OK);
 			try {
 				Thread.sleep(10);
 			} catch (InterruptedException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 		}
@@ -47,8 +46,8 @@ public class TestMonitor {
 		IMonitorDataSubmiter monitor = of.get(IMonitorDataSubmiter.class);
 		JMicroContext.get().setObject(JMicroContext.MONITOR, monitor);
 		for(;;){
-			SF.getIns().doLog(MonitorConstant.DEBUG,this.getClass(), 1L, ISayHello.class.getName(), "testsayhello", 
-					"0.0.1", "hello", new String[] {"Hello"});
+			SF.doServiceLog(MonitorConstant.DEBUG,this.getClass(), 1L, ISayHello.class.getName(), "testsayhello", 
+					"0.0.1", "hello", new String[] {"Hello"},null);
 			//logger.debug("testSubmitLog");
 			try {
 				Thread.sleep(500);
@@ -71,10 +70,17 @@ public class TestMonitor {
 		IMonitorDataSubmiter monitor = of.get(IMonitorDataSubmiter.class);
 		JMicroContext.get().setObject(JMicroContext.MONITOR, monitor);
 		
-		String result = sayHello.hello("Hello LOG");
-		System.out.println(result);
-		
-		JMicro.waitForShutdown();
+		for(;;){
+			JMicroContext.get().removeParam(JMicroContext.LINKER_ID);
+			String result = sayHello.hello("Hello LOG");
+			System.out.println(result);
+			try {
+				Thread.sleep(500);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+		}
+		//JMicro.waitForShutdown();
 	}
 
 

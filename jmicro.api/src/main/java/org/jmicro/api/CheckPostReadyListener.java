@@ -14,7 +14,7 @@ import org.slf4j.LoggerFactory;
  * @author Yulei Ye
  * @date 2018年10月20日-下午9:36:38
  */
-@Component(active=true,value="systemConditionChecker")
+@Component(active=false,value="systemConditionChecker")
 public class CheckPostReadyListener implements IPostFactoryReady{
 
 	private final static Logger logger = LoggerFactory.getLogger(CheckPostReadyListener.class);

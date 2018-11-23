@@ -62,4 +62,7 @@ public interface IRequest /*extends IEncoder,IDecoder */{
 	
 	public Map<String,Object> getRequestParams();
 	
+    long getId();
+	
+	void setId(long id);
 }

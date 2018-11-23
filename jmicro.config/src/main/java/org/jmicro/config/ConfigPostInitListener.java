@@ -60,10 +60,8 @@ public class ConfigPostInitListener extends PostInitListenerAdapter {
 		Class<?> cls = ProxyObject.getTargetCls(obj.getClass());
 		List<Field> fields = new ArrayList<>();
 		 Utils.getIns().getFields(fields, cls);
-		
-		 
-		 
-		for(Field f : fields){
+
+		 for(Field f : fields){
 			if(!f.isAnnotationPresent(Cfg.class)){
 				continue;
 			}

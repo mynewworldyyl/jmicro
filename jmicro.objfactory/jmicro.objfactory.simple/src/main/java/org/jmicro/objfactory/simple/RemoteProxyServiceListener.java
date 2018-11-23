@@ -53,6 +53,7 @@ class RemoteProxyServiceListener implements IServiceListener{
 		this.refField = refField;
 	}
 
+	@SuppressWarnings("unchecked")
 	@Override
 	public void serviceChanged(int type, ServiceItem item) {
 		
@@ -85,7 +86,9 @@ class RemoteProxyServiceListener implements IServiceListener{
 					}
 				}
 				Object o = this.rsm.createOrGetProxyService(refField, item,this.srcObj);
+				AbstractClientServiceProxy p = (AbstractClientServiceProxy)o;
 				if(o!=null){
+					p.setItem(item);
 					set.add(o);
 				}
 			}else if(IServiceListener.SERVICE_REMOVE == type) {

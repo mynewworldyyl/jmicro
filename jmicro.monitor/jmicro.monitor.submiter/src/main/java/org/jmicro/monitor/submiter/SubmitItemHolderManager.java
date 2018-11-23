@@ -16,6 +16,9 @@
  */
 package org.jmicro.monitor.submiter;
 
+import java.io.ByteArrayOutputStream;
+import java.io.PrintStream;
+import java.io.UnsupportedEncodingException;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -31,9 +34,11 @@ import org.jmicro.api.annotation.Reference;
 import org.jmicro.api.monitor.IMonitorDataSubmiter;
 import org.jmicro.api.monitor.IMonitorDataSubscriber;
 import org.jmicro.api.monitor.SubmitItem;
+import org.jmicro.api.net.Message;
 import org.jmicro.api.registry.ServiceMethod;
 import org.jmicro.api.server.IRequest;
 import org.jmicro.api.server.IResponse;
+import org.jmicro.common.Constants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -200,13 +205,14 @@ public class SubmitItemHolderManager implements IMonitorDataSubmiter{
 							}
 						}
 					}
-					
+					checkUpdate();
 					//JMicroContext.get().configMonitor(0, 0);
 					for(SubmitItem si = its.poll();si != null;si = its.poll()){
 						Set<IMonitorDataSubscriber> ss = type2Subscribers.get(si.getType());
 						if(ss == null || ss.isEmpty()) {
 							continue;
 						}
+						exception(si);
 						for(IMonitorDataSubscriber m : ss){
 							if(openDebug){
 								logger.debug("Submit {} to {}",si,m);
@@ -216,6 +222,7 @@ public class SubmitItemHolderManager implements IMonitorDataSubmiter{
 						cache(si);
 					}
 				} catch (Throwable e) {
+					pause = true;
 					logger.error("",e);
 				}
 			}	
@@ -255,54 +262,39 @@ public class SubmitItemHolderManager implements IMonitorDataSubmiter{
 			}
 		}
 	}
-
-	public void submit(int type,IRequest req, IResponse resp,Object... args){
-		if(!enable || size() > this.maxCacheItems){
-			return;
+	
+	private boolean needSubmit(int type) {
+		if(!enable || size() > this.maxCacheItems || submiters.isEmpty()){
+			return false;
 		}
-		checkUpdate();
-		if(!type2Subscribers.containsKey(type)) {
-			return;
-		}
-		
-		if(type2Subscribers.get(type).isEmpty()) {
-			return;
-		}
-		
+		return true;
+	}
+	
+	private SubmitItem getItem() {
 		SubmitItem si = caches.poll();
 		if(si == null){
 			 si = new SubmitItem();
 		}
 		
-		si.setFinish(false);
+		return si;
+	}
+
+	public void submit(int type,IRequest req, IResponse resp,String... others){
 		
-		if(req != null){
-			si.setReqId(req.getRequestId());
-			if(req.getSession() != null){
-				si.setSessionId(req.getSession().getId());
-			}
-			si.setServiceName(req.getServiceName());
-			si.setReqArgsStr(ServiceMethod.methodParamsKey(req.getArgs()));
-			si.setNamespace(req.getNamespace());
-			si.setVersion(req.getVersion());
-			si.setReqArgs(req.getArgs());
-			si.setMethod(req.getMethod());
-			si.setMsgId(req.getMsgId());
+		if(!needSubmit(type)) {
+			return;
 		}
 		
-		for(Object o: args){
-			si.setOthers(si.getOthers()+o.toString());
-		}
+		SubmitItem si = this.getItem();
 		
-		if(resp != null){
-			si.setRespId(resp.getId());
-			si.setResult(resp.getResult());
-		}
-		
+		si.setReq(req);
+		si.setResp(resp);
+		si.setOthers(others);
 		si.setType(type);
+		
 		si.setTime(System.currentTimeMillis());
 		
-		this.workers[index.getAndIncrement()%this.workers.length].addItem(si);
+		this.submit(si);
 	}
 	
 	private void cache(SubmitItem si){
@@ -315,31 +307,124 @@ public class SubmitItemHolderManager implements IMonitorDataSubmiter{
 		}
 		
 		//free memory
-		si.setFinish(true);
-		si.setType(-1);
-		si.setReqId(-1);
-		si.setSessionId(-1);
-		si.setNamespace("");
-		si.setVersion("");
-		si.setReqArgs("");
-		si.setMethod("");
-		si.setMsgId(-1);
-		si.setOthers("");
-		si.setRespId(-1L);
-		si.setResult("");
-		
+		si.reset();
 		caches.offer(si);
 	}
 
 	@Override
 	public void submit(SubmitItem item) {
+		
 		if(item == null) {
 			return;
 		}
-		checkUpdate();
-		this.workers[index.getAndIncrement()%this.workers.length].addItem(item);
+		
+		if(!needSubmit(item.getType())) {
+			return;
+		}
+		
+		Worker w = this.workers[index.getAndIncrement()%this.workers.length];
+		w.addItem(item);
+		if(w.isPause()) {
+			w.start();
+		}
+	}
+
+	private void exception(SubmitItem si) {
+		if(si.getEx() == null) {
+			return;
+		}
+		StringBuilder sb = new StringBuilder();
+		ByteArrayOutputStream baos = new ByteArrayOutputStream();
+		PrintStream ps = null;
+		try {
+			 ps = new PrintStream(baos,true,Constants.CHARSET);
+			 si.getEx().printStackTrace(ps);
+			 sb.append(new String(baos.toByteArray(),Constants.CHARSET));
+		} catch (UnsupportedEncodingException e) {
+			e.printStackTrace();
+		}finally {
+			if(ps != null) {
+				ps.close();
+			}
+		}
+		si.setExp(sb.toString());
 	}
 	
-	
+	@Override
+	public void submit(int type, IRequest req, IResponse resp, Throwable exp, String... others) {
+		if(!needSubmit(type)) {
+			return;
+		}
+		
+		SubmitItem si = this.getItem();
+		si.setType(type);
+		si.setReq(req);
+		si.setResp(resp);
+		si.setEx(exp);
+		si.setOthers(others);
+		submit(si);
+	}
+
+	@Override
+	public void submit(int type, IRequest req, Throwable exp, String... others) {
+		if(!needSubmit(type)) {
+			return;
+		}
+		SubmitItem si = this.getItem();
+		si.setType(type);
+		si.setReq(req);
+		si.setEx(exp);
+		si.setOthers(others);
+		submit(si);
+	}
+
+	@Override
+	public void submit(int type, IResponse resp, Throwable exp, String... others) {
+		if(!needSubmit(type)) {
+			return;
+		}
+		SubmitItem si = this.getItem();
+		si.setType(type);
+		si.setResp(resp);
+		si.setEx(exp);
+		si.setOthers(others);
+		submit(si);
+	}
+
+	@Override
+	public void submit(int type, Message msg, Throwable exp, String... others) {
+		if(!needSubmit(type)) {
+			return;
+		}
+		SubmitItem si = this.getItem();
+		si.setType(type);
+		si.setMsg(msg);
+		si.setEx(exp);
+		si.setOthers(others);
+		submit(si);
+	}
+
+	@Override
+	public void submit(int type, Throwable exp, String... others) {
+		if(!needSubmit(type)) {
+			return;
+		}
+		SubmitItem si = this.getItem();
+		si.setType(type);
+		si.setEx(exp);
+		si.setOthers(others);
+		submit(si);
+	}
+
+	@Override
+	public void submit(int type, String... others) {
+		if(!needSubmit(type)) {
+			return;
+		}
+		SubmitItem si = this.getItem();
+		si.setType(type);
+		si.setOthers(others);
+		submit(si);
+	}
 	
 }

@@ -4,7 +4,7 @@ import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.Service;
 import org.jmicro.example.api.ISayHello;
 
-@Service(maxSpeed="1s")
+@Service(maxSpeed="1ms")
 @Component
 public class SayHelloImpl implements ISayHello {
 

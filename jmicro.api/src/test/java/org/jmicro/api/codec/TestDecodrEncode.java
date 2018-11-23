@@ -95,7 +95,7 @@ public class TestDecodrEncode {
 	@Test
 	public void testEncodeSubmitItem(){
 		SubmitItem si = new SubmitItem();
-		si.setFinish(true);
+		/*si.setFinish(true);
 		si.setType(1);
 		si.setReqId(1);
 		si.setSessionId(1);
@@ -106,7 +106,7 @@ public class TestDecodrEncode {
 		si.setMsgId(1);
 		si.setOthers("fsf");
 		si.setRespId(1L);
-		si.setResult("sfs");
+		si.setResult("sfs");*/
 		
 		ByteBuffer bb = ByteBuffer.allocate(1024*4);
 		Encoder.encodeObject(bb, si);

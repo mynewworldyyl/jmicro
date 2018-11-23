@@ -37,6 +37,7 @@ import org.jmicro.api.monitor.MonitorConstant;
 import org.jmicro.api.monitor.ServiceStatis;
 import org.jmicro.api.monitor.SubmitItem;
 import org.jmicro.api.registry.ServiceItem;
+import org.jmicro.api.registry.ServiceMethod;
 import org.jmicro.common.Utils;
 import org.jmicro.common.util.JsonUtils;
 import org.slf4j.Logger;
@@ -67,10 +68,6 @@ public class ServiceResponseTimeMonitor implements IMonitorDataSubscriber {
 	private volatile Map<Long,AvgResponseTimeItem> reqRespAvgList = new HashMap<>();
 	
 	private volatile Map<String,Queue<Long>> reqRespAvgs =  new HashMap<String,Queue<Long>>();
-	
-	//private Map<String,Long> firstResponseTime =  new HashMap<String,Long>();
-	
-	//private List<ServiceStatis> statis = new ArrayList<>(1000);
 	
 	private Timer ticker = new Timer("MemoryResponseTimeMonitor",true);
 	
@@ -121,14 +118,14 @@ public class ServiceResponseTimeMonitor implements IMonitorDataSubscriber {
 		}
 		if(MonitorConstant.CLIENT_REQ_BEGIN == si.getType()){
 			AvgResponseTimeItem i = new AvgResponseTimeItem();
-			i.reqId = si.getReqId();
+			i.reqId = si.getReq().getRequestId();
 			i.service = ServiceItem.methodKey(ServiceItem.serviceName(si.getServiceName(), si.getNamespace(),
-					si.getVersion()), si.getMethod(), si.getReqArgsStr());
+					si.getVersion()), si.getMethod(), ServiceMethod.methodParamsKey(si.getReq().getArgs()));
 			i.startTime = si.getTime();
 			reqRespAvgList.put(i.reqId, i);
 		}else if(MonitorConstant.CLIENT_REQ_OK == si.getType()
 				|| MonitorConstant.CLIENT_REQ_ASYNC1_SUCCESS == si.getType()){
-			AvgResponseTimeItem i = reqRespAvgList.get(si.getReqId());
+			AvgResponseTimeItem i = reqRespAvgList.get(si.getReq().getRequestId());
 			if(i == null){
 				return;
 			}

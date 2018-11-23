@@ -17,14 +17,13 @@
 package org.jmicro.api.net;
 
 import org.jmicro.api.AbstractObjectMapSupport;
-import org.jmicro.api.IDable;
 import org.jmicro.api.server.IResponse;
 /**
  * 
  * @author Yulei Ye
  * @date 2018年10月4日-下午12:07:23
  */
-public final class RpcResponse extends AbstractObjectMapSupport implements IResponse, /*IEncoder,IResponse,*/IDable{
+public final class RpcResponse extends AbstractObjectMapSupport implements IResponse /*IEncoder,IResponse,*/{
 	
 	private long id;
 	
@@ -84,13 +83,11 @@ public final class RpcResponse extends AbstractObjectMapSupport implements IResp
 		this.msg = msg;
 	}
 
-	@Override
 	public long getId() {
 		// TODO Auto-generated method stub
 		return id;
 	}
 
-	@Override
 	public void setId(long id) {
 		this.id=id;
 	}

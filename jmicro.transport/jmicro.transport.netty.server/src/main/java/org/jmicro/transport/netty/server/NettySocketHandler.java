@@ -81,9 +81,6 @@ public class NettySocketHandler extends ChannelInboundHandlerAdapter {
         }
         Message message = new Message();
         message.decode(body);
-        if(openDebug){
-        	logger.debug("Rec Message reqId:{}",message.getReqId());
-        }
 		receiver.receive(session,message);
     }
     

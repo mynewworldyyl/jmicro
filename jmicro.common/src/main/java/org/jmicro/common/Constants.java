@@ -140,9 +140,14 @@ public interface Constants {
 	
 	//public static final byte FLAG_ASYNC = 1<<0;
 	
+	//需要响应的请求
 	public static final byte FLAG_NEED_RESPONSE = 1<<1;
 	
+	//异步消息
 	public static final byte FLAG_STREAM = 1<<2;
+	
+	//可监控消息
+	public static final byte FLAG_MONITORABLE = 1<<3;
 	
 	/*=====================Message END=======================*/
 	/*=====================Message END=======================*/

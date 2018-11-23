@@ -165,4 +165,8 @@ public class TypeUtils {
 		return cls == char.class || cls == Character.class || cls == Character.TYPE;
 	}
 	
+	public static boolean isDate(Class<?> cls) {
+		return cls == java.util.Date.class;
+	}
+	
 }

@@ -22,6 +22,7 @@ import java.util.Stack;
 
 import org.jmicro.api.config.Config;
 import org.jmicro.api.idgenerator.IIdGenerator;
+import org.jmicro.api.monitor.IMonitorDataSubmiter;
 import org.jmicro.api.monitor.Linker;
 import org.jmicro.common.Constants;
 /**
@@ -69,6 +70,10 @@ public class JMicroContext  {
 		}
 	}
 	
+	public static void setMonitor(IMonitorDataSubmiter monitor){
+		JMicroContext.get().setObject(JMicroContext.MONITOR, monitor);
+	}
+	
 	public static Long lid(IIdGenerator idGenerator){
 		JMicroContext c = cxt.get();
 		Long id = c.getLong(LINKER_ID, null);
@@ -93,12 +98,14 @@ public class JMicroContext  {
 	
 	public void configMonitor(int methodCfg,int srvCfg){
 		if(methodCfg != -1){
-			this.setBoolean(Constants.MONITOR_ENABLE_KEY, methodCfg==1);
+			configMonitor(methodCfg==1);
+		} else if(srvCfg != -1){
+			configMonitor(srvCfg==1);
 		}
-		else if(srvCfg != -1){
-			this.setBoolean(Constants.MONITOR_ENABLE_KEY, srvCfg==1);
-		}
-		//return isMonitor();
+	}
+	
+	public void configMonitor(boolean enable){
+		this.setBoolean(Constants.MONITOR_ENABLE_KEY, enable);
 	}
 	
 	public void mergeParams(JMicroContext c){
@@ -139,6 +146,10 @@ public class JMicroContext  {
 			return defautl;
 		}
 		return v;
+	}
+	
+	public void removeParam(String key){
+	    this.params.remove(key);
 	}
 	
 	@SuppressWarnings("unchecked")
