@@ -16,6 +16,7 @@
  */
 package org.jmicro.api.gateway;
 
+import org.jmicro.api.net.IResp;
 import org.jmicro.api.net.Message;
 
 /**
@@ -24,7 +25,7 @@ import org.jmicro.api.net.Message;
  * @date 2018年11月16日 上午12:22:02
  *
  */
-public final class ApiResponse {
+public final class ApiResponse implements IResp {
 	private Long id = -1L;
 	private transient Message msg = null;
 	private Long reqId =  -1L;

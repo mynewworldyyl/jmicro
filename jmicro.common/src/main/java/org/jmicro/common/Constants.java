@@ -33,7 +33,7 @@ public interface Constants {
 	
 	public static final String SIDE_COMSUMER = "comsumer";
 	public static final String SIDE_PROVIDER="provider";
-	public static final String SIDE_ANY="";
+	public static final String SIDE_ANY="any";
 	
 	public static final String MONITOR_ENABLE_KEY = "monitorEnableKey";
 	public static final String DEFAULT_MONITOR="defaultMonitor";

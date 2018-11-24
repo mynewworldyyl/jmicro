@@ -31,6 +31,7 @@ import org.jmicro.api.JMicroContext;
 import org.jmicro.api.annotation.Cfg;
 import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.Reference;
+import org.jmicro.api.config.Config;
 import org.jmicro.api.monitor.IMonitorDataSubmiter;
 import org.jmicro.api.monitor.IMonitorDataSubscriber;
 import org.jmicro.api.monitor.SubmitItem;
@@ -263,7 +264,7 @@ public class SubmitItemHolderManager implements IMonitorDataSubmiter{
 		}
 	}
 	
-	private boolean needSubmit(int type) {
+	private boolean needSubmit() {
 		if(!enable || size() > this.maxCacheItems || submiters.isEmpty()){
 			return false;
 		}
@@ -278,23 +279,29 @@ public class SubmitItemHolderManager implements IMonitorDataSubmiter{
 		
 		return si;
 	}
-
-	public void submit(int type,IRequest req, IResponse resp,String... others){
+	
+	private void setHeader(SubmitItem si) {
 		
-		if(!needSubmit(type)) {
-			return;
-		}
-		
-		SubmitItem si = this.getItem();
-		
-		si.setReq(req);
-		si.setResp(resp);
-		si.setOthers(others);
-		si.setType(type);
-		
+		si.setInstanceName(Config.getInstanceName());
 		si.setTime(System.currentTimeMillis());
 		
-		this.submit(si);
+		si.setRemoteHost(JMicroContext.get().getString(JMicroContext.REMOTE_HOST,""));
+		si.setRemotePort(JMicroContext.get().getString(JMicroContext.REMOTE_PORT,""));
+		si.setLocalPort(JMicroContext.get().getString(JMicroContext.LOCAL_PORT,""));
+		si.setLocalHost(Config.getHost());
+		
+		si.setNamespace(JMicroContext.get().getString(JMicroContext.CLIENT_NAMESPACE,null));
+		si.setServiceName(JMicroContext.get().getString(JMicroContext.CLIENT_SERVICE,null));
+		si.setVersion(JMicroContext.get().getString(JMicroContext.CLIENT_VERSION,null));
+		si.setMethod(JMicroContext.get().getString(JMicroContext.CLIENT_METHOD,null));
+		
+		if(Config.isClientOnly()) {
+			si.setSide(Constants.SIDE_COMSUMER);
+		} else if(Config.isServerOnly()) {
+			si.setSide(Constants.SIDE_PROVIDER);
+		} else {
+			si.setSide(Constants.SIDE_ANY);
+		}
 	}
 	
 	private void cache(SubmitItem si){
@@ -318,9 +325,11 @@ public class SubmitItemHolderManager implements IMonitorDataSubmiter{
 			return;
 		}
 		
-		if(!needSubmit(item.getType())) {
+		if(!needSubmit()) {
 			return;
 		}
+		
+		setHeader(item);
 		
 		Worker w = this.workers[index.getAndIncrement()%this.workers.length];
 		w.addItem(item);
@@ -328,7 +337,103 @@ public class SubmitItemHolderManager implements IMonitorDataSubmiter{
 			w.start();
 		}
 	}
+	
+    public void submit(int type,IRequest req, IResponse resp,String... others){
+		
+		if(!needSubmit()) {
+			return;
+		}
+		
+		SubmitItem si = this.getItem();
+		si.setReq(req);
+		si.setResp(resp);
+		si.setOthers(others);
+		si.setType(type);
+		
+		si.setTime(System.currentTimeMillis());
+		
+		this.submit(si);
+	}
 
+	@Override
+	public void submit(int type, IRequest req, IResponse resp, Throwable exp, String... others) {
+		if(!needSubmit()) {
+			return;
+		}
+		
+		SubmitItem si = this.getItem();
+		
+		si.setType(type);
+		si.setReq(req);
+		si.setResp(resp);
+		si.setEx(exp);
+		si.setOthers(others);
+		
+		submit(si);
+	}
+
+	@Override
+	public void submit(int type, IRequest req, Throwable exp, String... others) {
+		if(!needSubmit()) {
+			return;
+		}
+		SubmitItem si = this.getItem();
+		si.setType(type);
+		si.setReq(req);
+		si.setEx(exp);
+		si.setOthers(others);
+		submit(si);
+	}
+
+	@Override
+	public void submit(int type, IResponse resp, Throwable exp, String... others) {
+		if(!needSubmit()) {
+			return;
+		}
+		SubmitItem si = this.getItem();
+		si.setType(type);
+		si.setResp(resp);
+		si.setEx(exp);
+		si.setOthers(others);
+		submit(si);
+	}
+
+	@Override
+	public void submit(int type, Message msg, Throwable exp, String... others) {
+		if(!needSubmit()) {
+			return;
+		}
+		SubmitItem si = this.getItem();
+		si.setType(type);
+		si.setMsg(msg);
+		si.setEx(exp);
+		si.setOthers(others);
+		submit(si);
+	}
+
+	@Override
+	public void submit(int type, Throwable exp, String... others) {
+		if(!needSubmit()) {
+			return;
+		}
+		SubmitItem si = this.getItem();
+		si.setType(type);
+		si.setEx(exp);
+		si.setOthers(others);
+		submit(si);
+	}
+
+	@Override
+	public void submit(int type, String... others) {
+		if(!needSubmit()) {
+			return;
+		}
+		SubmitItem si = this.getItem();
+		si.setType(type);
+		si.setOthers(others);
+		submit(si);
+	}
+	
 	private void exception(SubmitItem si) {
 		if(si.getEx() == null) {
 			return;
@@ -349,82 +454,4 @@ public class SubmitItemHolderManager implements IMonitorDataSubmiter{
 		}
 		si.setExp(sb.toString());
 	}
-	
-	@Override
-	public void submit(int type, IRequest req, IResponse resp, Throwable exp, String... others) {
-		if(!needSubmit(type)) {
-			return;
-		}
-		
-		SubmitItem si = this.getItem();
-		si.setType(type);
-		si.setReq(req);
-		si.setResp(resp);
-		si.setEx(exp);
-		si.setOthers(others);
-		submit(si);
-	}
-
-	@Override
-	public void submit(int type, IRequest req, Throwable exp, String... others) {
-		if(!needSubmit(type)) {
-			return;
-		}
-		SubmitItem si = this.getItem();
-		si.setType(type);
-		si.setReq(req);
-		si.setEx(exp);
-		si.setOthers(others);
-		submit(si);
-	}
-
-	@Override
-	public void submit(int type, IResponse resp, Throwable exp, String... others) {
-		if(!needSubmit(type)) {
-			return;
-		}
-		SubmitItem si = this.getItem();
-		si.setType(type);
-		si.setResp(resp);
-		si.setEx(exp);
-		si.setOthers(others);
-		submit(si);
-	}
-
-	@Override
-	public void submit(int type, Message msg, Throwable exp, String... others) {
-		if(!needSubmit(type)) {
-			return;
-		}
-		SubmitItem si = this.getItem();
-		si.setType(type);
-		si.setMsg(msg);
-		si.setEx(exp);
-		si.setOthers(others);
-		submit(si);
-	}
-
-	@Override
-	public void submit(int type, Throwable exp, String... others) {
-		if(!needSubmit(type)) {
-			return;
-		}
-		SubmitItem si = this.getItem();
-		si.setType(type);
-		si.setEx(exp);
-		si.setOthers(others);
-		submit(si);
-	}
-
-	@Override
-	public void submit(int type, String... others) {
-		if(!needSubmit(type)) {
-			return;
-		}
-		SubmitItem si = this.getItem();
-		si.setType(type);
-		si.setOthers(others);
-		submit(si);
-	}
-	
 }

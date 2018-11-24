@@ -14,51 +14,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.jmicro.api.idgenerator;
-
-import org.jmicro.api.net.IReq;
+package org.jmicro.api.net;
 
 /**
  * 
  * @author Yulei Ye
- * @date 2018年10月25日-下午10:54:39
+ * @date 2018年11月24日 下午7:44:56
  */
-public class IdRequest implements IReq{
+public interface IReq {
 
-	public static final byte BYte=1;
-	public static final	byte SHort=2;
-	public static final	byte INteger=3;
-	public static final	byte LOng=4;
-	public static final	byte STring=5;
-
-	private byte type;
-	
-	private int num;
-	
-	private String clazz;
-	
-	public byte getType() {
-		return type;
-	}
-	
-	public void setType(byte type) {
-		this.type = type;
-	}
-	
-	public int getNum() {
-		return num;
-	}
-	
-	public void setNum(int num) {
-		this.num = num;
-	}
-
-	public String getClazz() {
-		return clazz;
-	}
-
-	public void setClazz(String clazz) {
-		this.clazz = clazz;
-	}
-	
 }

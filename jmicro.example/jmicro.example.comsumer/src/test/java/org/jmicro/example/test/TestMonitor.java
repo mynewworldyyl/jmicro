@@ -70,7 +70,12 @@ public class TestMonitor {
 		IMonitorDataSubmiter monitor = of.get(IMonitorDataSubmiter.class);
 		JMicroContext.get().setObject(JMicroContext.MONITOR, monitor);
 		
-		for(;;){
+		JMicroContext.get().removeParam(JMicroContext.LINKER_ID);
+		String result = sayHello.hello("Hello LOG");
+		System.out.println(result);
+		JMicro.waitForShutdown();
+		
+		/*for(;;){
 			JMicroContext.get().removeParam(JMicroContext.LINKER_ID);
 			String result = sayHello.hello("Hello LOG");
 			System.out.println(result);
@@ -79,8 +84,7 @@ public class TestMonitor {
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}
-		}
-		//JMicro.waitForShutdown();
+		}*/
 	}
 
 

@@ -18,13 +18,14 @@ package org.jmicro.api.server;
 
 import java.util.Map;
 
+import org.jmicro.api.net.IReq;
 import org.jmicro.api.net.ISession;
 /**
  * 
  * @author Yulei Ye
  * @date 2018年10月4日-下午12:05:46
  */
-public interface IRequest /*extends IEncoder,IDecoder */{
+public interface IRequest extends IReq{
 
 	public String getServiceName();
 

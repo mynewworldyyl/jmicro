@@ -42,9 +42,9 @@ public final class RpcRequest extends AbstractObjectMapSupport implements IReque
 	
 	private String transport;
 	
-	private transient ISession session;
-	
 	protected Long reqId = -1L;
+	
+	private transient ISession session;
 	
 	private transient boolean isMonitorEnable = false;
 	

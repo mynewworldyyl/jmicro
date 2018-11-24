@@ -76,7 +76,7 @@ public class ZKRegistry implements IRegistry {
 	private boolean openDebug=false;
 	
 	@Cfg("/ZKRegistry/registInterval")
-	private int registInterval = 1000*30;
+	private int registInterval = 1000*5;
 	
 	private IDataOperator dataOperator;
 	

@@ -16,12 +16,14 @@
  */
 package org.jmicro.api.server;
 
+import org.jmicro.api.net.IResp;
+
 /**
  * 
  * @author Yulei Ye
  * @date 2018年10月4日-下午12:06:02
  */
-public interface IResponse{
+public interface IResponse extends IResp{
 
 	Long getRequestId();
 	

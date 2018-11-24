@@ -28,12 +28,15 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.jmicro.api.JMicroContext;
 import org.jmicro.api.annotation.Reference;
 import org.jmicro.api.annotation.Service;
 import org.jmicro.api.client.AbstractClientServiceProxy;
+import org.jmicro.api.monitor.IMonitorDataSubmiter;
 import org.jmicro.api.objectfactory.ProxyObject;
 import org.jmicro.api.registry.IRegistry;
 import org.jmicro.api.registry.ServiceItem;
+import org.jmicro.api.registry.ServiceMethod;
 import org.jmicro.api.service.ICheckable;
 import org.jmicro.common.CommonException;
 import org.jmicro.common.Constants;
@@ -304,6 +307,7 @@ class ClientServiceProxyManager {
 		    	AbstractClientServiceProxy asp = (AbstractClientServiceProxy)proxy;
 				asp.setHandler(of.getByName(Constants.DEFAULT_INVOCATION_HANDLER));
 				asp.setItem(si);
+				asp.setMonitor(of.get(IMonitorDataSubmiter.class));
 				remoteObjects.put(key, proxy);
 		}
 	}
@@ -374,6 +378,11 @@ class ClientServiceProxyManager {
            	 code.append(" args[").append(j).append("] = ("+pts[j].getName()+")$").append(j + 1).append(";");
             }
             
+            code.append("if(getItem() == null) {throw new org.jmicro.common.CommonException(\"Service ")
+            	.append(cls.getName()).append(" not available\"); }");
+            
+            code.append(" try { ");
+            
             code.append(" this.backupAndSetContext();");
             
             //backup pre service info
@@ -388,6 +397,9 @@ class ClientServiceProxyManager {
             code.append(" org.jmicro.api.JMicroContext.get().setString(org.jmicro.api.JMicroContext.CLIENT_VERSION, getVersion());");
             code.append(" org.jmicro.api.JMicroContext.get().setString(org.jmicro.api.JMicroContext.CLIENT_METHOD, \""+m.getName()+"\");");
             
+            code.append(" org.jmicro.api.registry.ServiceMethod poSm = super.getItem().getMethod(\"").append(m.getName()).append("\", args); ");
+            code.append(" org.jmicro.api.JMicroContext.get().configMonitor(poSm.getMonitorEnable(), super.getItem().getMonitorEnable()); ");
+            
             code.append(" Object ret = handler.invoke(this, methods[" + i + "], args);");
             
             //restore pre service info
@@ -396,11 +408,17 @@ class ClientServiceProxyManager {
             code.append(" org.jmicro.api.JMicroContext.get().setString(org.jmicro.api.JMicroContext.CLIENT_VERSION, ver);");
             code.append(" org.jmicro.api.JMicroContext.get().setString(org.jmicro.api.JMicroContext.CLIENT_METHOD, mt);");
             
+            if (!Void.TYPE.equals(rt)){
+           	 code.append(" return ").append(SimpleObjectFactory.asArgument(rt, "ret")).append(";");
+            }
+            
+            code.append("} finally { ");
+            
             code.append(" this.restoreContext();");
             
-            if (!Void.TYPE.equals(rt)){
-            	 code.append(" return ").append(SimpleObjectFactory.asArgument(rt, "ret")).append(";");
-            }
+            code.append(" } ");
+            
+          
 
             classGenerator.addMethod(m.getName(), m.getModifiers(), rt, pts, m.getExceptionTypes(), code.toString());      
 		 }
@@ -415,6 +433,6 @@ class ClientServiceProxyManager {
 			return proxy; 
 		} catch (InstantiationException | IllegalArgumentException | IllegalAccessException | NoSuchFieldException | SecurityException e1) {
 			throw new CommonException("Fail to create proxy ["+ cls.getName()+"]");
-		}
+		} 
 	}
 }

@@ -113,8 +113,11 @@ public class ServerMessageReceiver implements IMessageReceiver{
 		
 		JMicroContext.get().setParam(JMicroContext.SESSION_KEY, s);
 			
-		JMicroContext.get().setParam(JMicroContext.CLIENT_IP, s.remoteHost());
-		JMicroContext.get().setParam(JMicroContext.CLIENT_PORT, s.remotePort());
+		JMicroContext.get().setParam(JMicroContext.REMOTE_HOST, s.remoteHost());
+		JMicroContext.get().setParam(JMicroContext.REMOTE_PORT, s.remotePort()+"");
+		
+		JMicroContext.get().setParam(JMicroContext.LOCAL_HOST, s.localHost());
+		JMicroContext.get().setParam(JMicroContext.LOCAL_PORT, s.localPort()+"");
 		
 		if(openDebug) {
 			SF.doMessageLog(MonitorConstant.DEBUG, TAG, msg,null,"doReceive");

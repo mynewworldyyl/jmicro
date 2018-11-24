@@ -32,8 +32,11 @@ import org.jmicro.common.Constants;
  */
 public class JMicroContext  {
 
-	public static final String CLIENT_IP = "clientIp";
-	public static final String CLIENT_PORT = "clientPort";
+	public static final String LOCAL_HOST = "host";
+	public static final String LOCAL_PORT = "port";
+	
+	public static final String REMOTE_HOST = "remoteHost";
+	public static final String REMOTE_PORT = "remotePort";
 	
 	public static final String LINKER_ID = "linkerId";
 	

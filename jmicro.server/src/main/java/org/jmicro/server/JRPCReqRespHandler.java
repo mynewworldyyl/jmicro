@@ -126,6 +126,11 @@ public class JRPCReqRespHandler implements IMessageHandler{
 			JMicroContext.get().setObject(Constants.SERVICE_ITEM_KEY, si);
 			JMicroContext.get().setObject(Constants.SERVICE_METHOD_KEY, sm);
 			
+			JMicroContext.get().setString(JMicroContext.CLIENT_SERVICE, si.getServiceName());
+			JMicroContext.get().setString(JMicroContext.CLIENT_NAMESPACE, si.getNamespace());
+			JMicroContext.get().setString(JMicroContext.CLIENT_METHOD, req.getMethod());
+			JMicroContext.get().setString(JMicroContext.CLIENT_VERSION, si.getVersion());
+			
 			Object obj = serviceLoader.getService(req.getImpl());
 			if(obj == null){
 				SF.doRequestLog(MonitorConstant.ERROR, msg.getLinkId(), TAG, req,null," service INSTANCE not found");

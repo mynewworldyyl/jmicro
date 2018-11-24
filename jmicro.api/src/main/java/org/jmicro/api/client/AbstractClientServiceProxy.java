@@ -18,6 +18,8 @@ package org.jmicro.api.client;
 
 import java.lang.reflect.InvocationHandler;
 
+import org.jmicro.api.JMicroContext;
+import org.jmicro.api.monitor.IMonitorDataSubmiter;
 import org.jmicro.api.registry.ServiceItem;
 /**
  * 
@@ -29,6 +31,8 @@ public abstract class AbstractClientServiceProxy {
 	protected InvocationHandler handler = null;
 	
 	private ServiceItem item = null;
+	
+	private IMonitorDataSubmiter monitor;
 
 	public InvocationHandler getHandler() {
 		return handler;
@@ -44,12 +48,14 @@ public abstract class AbstractClientServiceProxy {
 	
 	public void backupAndSetContext(){
 		//System.out.println("backupAndSetContext");
+		JMicroContext.get().backup();
+		JMicroContext.setMonitor(monitor);
 	}
 	
 	public void restoreContext(){
 		//System.out.println("restoreContext");
+		JMicroContext.get().restore();
 	}
-	
 
 	//public abstract  boolean enable();
 	//public abstract void enable(boolean enable);
@@ -70,6 +76,14 @@ public abstract class AbstractClientServiceProxy {
 	@Override
 	public int hashCode() {
 		return this.key().hashCode();
+	}
+
+	public IMonitorDataSubmiter getMonitor() {
+		return monitor;
+	}
+
+	public void setMonitor(IMonitorDataSubmiter monitor) {
+		this.monitor = monitor;
 	}
 
 	@Override

@@ -38,6 +38,7 @@ import org.jmicro.api.monitor.ServiceStatis;
 import org.jmicro.api.monitor.SubmitItem;
 import org.jmicro.api.registry.ServiceItem;
 import org.jmicro.api.registry.ServiceMethod;
+import org.jmicro.api.server.IRequest;
 import org.jmicro.common.Utils;
 import org.jmicro.common.util.JsonUtils;
 import org.slf4j.Logger;
@@ -118,14 +119,16 @@ public class ServiceResponseTimeMonitor implements IMonitorDataSubscriber {
 		}
 		if(MonitorConstant.CLIENT_REQ_BEGIN == si.getType()){
 			AvgResponseTimeItem i = new AvgResponseTimeItem();
-			i.reqId = si.getReq().getRequestId();
+			IRequest req = (IRequest)si.getReq();
+			i.reqId = req.getRequestId();
 			i.service = ServiceItem.methodKey(ServiceItem.serviceName(si.getServiceName(), si.getNamespace(),
-					si.getVersion()), si.getMethod(), ServiceMethod.methodParamsKey(si.getReq().getArgs()));
+					si.getVersion()), si.getMethod(), ServiceMethod.methodParamsKey(req.getArgs()));
 			i.startTime = si.getTime();
 			reqRespAvgList.put(i.reqId, i);
 		}else if(MonitorConstant.CLIENT_REQ_OK == si.getType()
 				|| MonitorConstant.CLIENT_REQ_ASYNC1_SUCCESS == si.getType()){
-			AvgResponseTimeItem i = reqRespAvgList.get(si.getReq().getRequestId());
+			IRequest req = (IRequest)si.getReq();
+			AvgResponseTimeItem i = reqRespAvgList.get(req.getRequestId());
 			if(i == null){
 				return;
 			}

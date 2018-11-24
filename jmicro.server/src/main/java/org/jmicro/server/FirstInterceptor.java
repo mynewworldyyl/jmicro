@@ -37,7 +37,7 @@ import org.slf4j.LoggerFactory;
  * @author Yulei Ye
  * @date 2018年10月4日-下午12:05:30
  */
-@Component(Constants.FIRST_INTERCEPTOR)
+@Component(value=Constants.FIRST_INTERCEPTOR,lazy=false)
 @Interceptor
 public class FirstInterceptor extends AbstractInterceptor implements IInterceptor{
 

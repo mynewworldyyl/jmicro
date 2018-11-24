@@ -48,7 +48,7 @@ public class IpMatchToServiceIpPortRouter extends AbstractRouter implements IRou
 			return null;
 		}
 		
-		String clientIp = JMicroContext.get().getString(JMicroContext.CLIENT_IP, null);
+		String clientIp = JMicroContext.get().getString(JMicroContext.REMOTE_HOST, null);
 		if(StringUtils.isEmpty(clientIp)) {
 			return null;
 		}

@@ -16,6 +16,8 @@
  */
 package org.jmicro.api.monitor;
 
+import org.jmicro.api.net.IReq;
+import org.jmicro.api.net.IResp;
 import org.jmicro.api.net.Message;
 import org.jmicro.api.server.IRequest;
 import org.jmicro.api.server.IResponse;
@@ -37,8 +39,12 @@ public final class SubmitItem{
 	private String exp = null;
 	private String side = null;
 	private String tagCls = null;
-	private String host = null;
 	private String instanceName = null;
+	
+	private String localHost = null;
+	private String localPort = null;
+	private String remoteHost = null;
+	private String remotePort = null;
 	
 	private String serviceName = null;
 	private String namespace = null;
@@ -51,13 +57,13 @@ public final class SubmitItem{
 	
 	private Message msg  = null;
 	
-	private IRequest req = null;
+	private IReq req = null;
 	
-	private IResponse resp = null;
+	private IResp resp = null;
 	
 	//private Date date = new Date();
 	
-	private long time = System.currentTimeMillis();
+	private long time = 0;
 	
 	public void reset() {
 		level = MonitorConstant.DEBUG;
@@ -67,7 +73,10 @@ public final class SubmitItem{
 		exp = null;
 		side = null;
 		tagCls = null;
-		host = null;
+		localHost = null;
+		localPort = null;
+		remoteHost = null;
+		remotePort = null;
 		instanceName = null;
 		
 		serviceName = null;
@@ -125,6 +134,34 @@ public final class SubmitItem{
 		this.type = type;
 	}
 	
+	public String getLocalPort() {
+		return localPort;
+	}
+
+	public void setLocalPort(String port) {
+		this.localPort = port;
+	}
+
+	public String getRemoteHost() {
+		return remoteHost;
+	}
+
+	public void setRemoteHost(String remoteHost) {
+		this.remoteHost = remoteHost;
+	}
+
+	public String getRemotePort() {
+		return remotePort;
+	}
+
+	public void setRemotePort(String remotePort) {
+		this.remotePort = remotePort;
+	}
+
+	public void setLinkId(Long linkId) {
+		this.linkId = linkId;
+	}
+
 	public SubmitItem(int type,Message msg) {
 		this(type);
 		this.msg = msg;
@@ -264,19 +301,19 @@ public final class SubmitItem{
 		this.msg = msg;
 	}
 
-	public IRequest getReq() {
+	public IReq getReq() {
 		return req;
 	}
 
-	public void setReq(IRequest req) {
+	public void setReq(IReq req) {
 		this.req = req;
 	}
 
-	public IResponse getResp() {
+	public IResp getResp() {
 		return resp;
 	}
 
-	public void setResp(IResponse resp) {
+	public void setResp(IResp resp) {
 		this.resp = resp;
 	}
 
@@ -288,12 +325,12 @@ public final class SubmitItem{
 		this.tagCls = tagCls;
 	}
 
-	public String getHost() {
-		return host;
+	public String getLocalHost() {
+		return localHost;
 	}
 
-	public void setHost(String host) {
-		this.host = host;
+	public void setLocalHost(String host) {
+		this.localHost = host;
 	}
 
 	public String getInstanceName() {

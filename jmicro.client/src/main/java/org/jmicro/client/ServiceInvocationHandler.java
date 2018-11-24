@@ -81,8 +81,8 @@ public class ServiceInvocationHandler implements InvocationHandler, IMessageHand
 	@Inject(required=true)
 	private ISelector selector;
 	
-	@Inject(required=true)
-	private IMonitorDataSubmiter monitor;
+	//@Inject(required=true)
+	//private IMonitorDataSubmiter monitor;
 	
 	@Inject
 	private IIdGenerator idGenerator;
@@ -96,9 +96,8 @@ public class ServiceInvocationHandler implements InvocationHandler, IMessageHand
 	public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
 		
 		try {
-			JMicroContext.get().backup();
-			
-			JMicroContext.setMonitor(monitor);
+			//JMicroContext.get().backup();
+			//JMicroContext.setMonitor(monitor);
 			
 			AbstractClientServiceProxy po = (AbstractClientServiceProxy)proxy;
 			String methodName = method.getName();
@@ -120,7 +119,7 @@ public class ServiceInvocationHandler implements InvocationHandler, IMessageHand
 				return breakerManager.onBreaking(method, args, ((BreakerException)e).getSis(),e);
 			}
 		} finally {
-			JMicroContext.get().restore();
+			//JMicroContext.get().restore();
 		}
 	}
 
@@ -132,10 +131,6 @@ public class ServiceInvocationHandler implements InvocationHandler, IMessageHand
 					method.getDeclaringClass().getName(),method.getName());
 			throw new CommonException("cls["+method.getDeclaringClass().getName()+"] method ["+method.getName()+"] service not found");
 		}
-		ServiceMethod poSm = poItem.getMethod(method.getName(), args);
-		
-		JMicroContext.get().configMonitor(poSm.getMonitorEnable()
-				,poItem.getMonitorEnable());
 		
 		RpcRequest req = new RpcRequest();
         req.setMethod(method.getName());
@@ -156,7 +151,7 @@ public class ServiceInvocationHandler implements InvocationHandler, IMessageHand
         
         Long lid = JMicroContext.lid(this.idGenerator);
         
-		JMicroContext.get().setParam(JMicroContext.CLIENT_IP, Config.getHost());
+		JMicroContext.get().setParam(JMicroContext.LOCAL_HOST, Config.getHost());
 		
         do {
         	
@@ -170,7 +165,13 @@ public class ServiceInvocationHandler implements InvocationHandler, IMessageHand
     			throw new CommonException("Service [" + poItem.getServiceName() + "] not found!");
     		}
         	
+        	Server s = si.getServer(Constants.TRANSPORT_NETTY);
+        	
         	if(isFistLoop){
+        		
+        		JMicroContext.get().setParam(JMicroContext.REMOTE_HOST, s.getHost());
+        		JMicroContext.get().setParam(JMicroContext.REMOTE_PORT, s.getPort()+"");
+        		
         		String t = ServiceMethod.methodParamsKey(args);
         		for(ServiceMethod m : si.getMethods()){
         			if(m.getMethodName().equals(method.getName()) 
@@ -206,7 +207,7 @@ public class ServiceInvocationHandler implements InvocationHandler, IMessageHand
     			SF.doSubmit(MonitorConstant.CLIENT_REQ_BEGIN, req,null);
     		}
     		
-    	    Server s = si.getServer(Constants.TRANSPORT_NETTY);
+    	    
     	    IClientSession session = this.sessionManager.getOrConnect(s.getHost(), s.getPort());
     	    req.setSession(session);
     		
