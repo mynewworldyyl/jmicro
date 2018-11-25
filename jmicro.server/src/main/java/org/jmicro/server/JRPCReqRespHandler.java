@@ -157,11 +157,12 @@ public class JRPCReqRespHandler implements IMessageHandler{
 				SF.doRequestLog(MonitorConstant.DEBUG,msg.getLinkId(), TAG, req,null,"got REQUEST");
 			}
 			
+			JMicroContext jc = JMicroContext.get();
+			
 			if(req.isStream()){
 				msg.setType(Constants.MSG_TYPE_ASYNC_RESP);
-				
-				SuspendableRunnable r = () ->{
-					JMicroContext.get().mergeParams(JMicroContext.get());
+				SuspendableRunnable r = () -> {
+					JMicroContext.get().mergeParams(jc);
 					JMicroContext.get().setParam(Constants.CONTEXT_CALLBACK_SERVICE, new IWriteCallback(){
 						@Override
 						public boolean send(Object message) {

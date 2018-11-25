@@ -31,7 +31,7 @@ import org.jmicro.api.net.Message;
 import org.jmicro.client.ClientMessageReceiver;
 import org.jmicro.common.CommonException;
 import org.jmicro.common.Constants;
-import org.jmicro.gateway.client.http.ApiGatewayHttpSession;
+import org.jmicro.gateway.client.http.ApiGatewayClientHttpSession;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -50,9 +50,9 @@ import io.netty.util.AttributeKey;
  * @author Yulei Ye
  * @date 2018年11月18日 下午7:45:35
  */
-public class ApiGatewaySessionManager implements IClientSessionManager {
+public class ApiGatewayClientSessionManager implements IClientSessionManager {
 
-	static final Logger logger = LoggerFactory.getLogger(ApiGatewaySessionManager.class);
+	static final Logger logger = LoggerFactory.getLogger(ApiGatewayClientSessionManager.class);
 
 	private static final AttributeKey<IClientSession> sessionKey = 
 			AttributeKey.newInstance(Constants.SESSION_KEY+System.currentTimeMillis());
@@ -69,9 +69,9 @@ public class ApiGatewaySessionManager implements IClientSessionManager {
 	
 	private Timer ticker = new Timer("ApiClientSessionHeardbeatWorker",true);
 	
-	//private int clientType = ApiGatewayClient.TYPE_SOCKET;
-	//private int clientType = ApiGatewayClient.TYPE_WEBSOCKET;
-	private int clientType = ApiGatewayClient.TYPE_HTTP;
+	//private int clientType = Constants.TYPE_SOCKET;
+	//private int clientType = Constants.TYPE_WEBSOCKET;
+	private int clientType = Constants.TYPE_HTTP;
 	
 	public void init()  {
 		this.registerMessageHandler(new IMessageHandler(){
@@ -116,11 +116,11 @@ public class ApiGatewaySessionManager implements IClientSessionManager {
 			if(sessions.containsKey(sKey)){
 				return sessions.get(sKey);
 			}			
-			if(this.getClientType() == ApiGatewayClient.TYPE_SOCKET) {
+			if(this.getClientType() == Constants.TYPE_SOCKET) {
 				createSocketSession(sKey,host,port);
-			}else if(this.getClientType() == ApiGatewayClient.TYPE_HTTP) {
+			}else if(this.getClientType() == Constants.TYPE_HTTP) {
 				createHttpSession(sKey,host,port);
-			}else if(this.getClientType() == ApiGatewayClient.TYPE_WEBSOCKET) {
+			}else if(this.getClientType() == Constants.TYPE_WEBSOCKET) {
 				createWebSocketSession(sKey,host,port);
 			}else {
 				throw new CommonException("Connection type ["+this.getClientType()+"] not support");
@@ -135,7 +135,7 @@ public class ApiGatewaySessionManager implements IClientSessionManager {
 
 	private void createHttpSession(String sKey, String host, int port) {
 		String url = "http://" + host + ":" + port;
-		ApiGatewayHttpSession s = new ApiGatewayHttpSession(receiver,url,readBufferSize,heardbeatInterval);
+		ApiGatewayClientHttpSession s = new ApiGatewayClientHttpSession(receiver,url,readBufferSize,heardbeatInterval);
         //s.putParam(Constants.SESSION_KEY, null);
         sessions.put(sKey, s);
 	}
@@ -161,19 +161,19 @@ public class ApiGatewaySessionManager implements IClientSessionManager {
 				@Override
 				public void handlerAdded(ChannelHandlerContext ctx) throws Exception {
 					super.handlerAdded(ctx);
-					ApiGatewaySocketSession s = new ApiGatewaySocketSession(ctx,readBufferSize,heardbeatInterval);
+					ApiGatewayClientSocketSession s = new ApiGatewayClientSocketSession(ctx,readBufferSize,heardbeatInterval);
                    s.putParam(Constants.SESSION_KEY, ctx);
       	           sessions.put(sKey, s);
 				}
 
 				@Override
                  public void channelRead(ChannelHandlerContext ctx, Object msg) {
-                	 if(!(msg instanceof ByteBuf)) {
-	                 		ctx.fireChannelRead(msg);
-	                 		return;
-	                 	}
+                	if(!(msg instanceof ByteBuf)) {
+                 		ctx.fireChannelRead(msg);
+                 		return;
+                 	}
                 	 
-                	 ApiGatewaySocketSession cs = (ApiGatewaySocketSession)ctx.channel().attr(sessionKey).get();
+                	ApiGatewayClientSocketSession cs = (ApiGatewayClientSocketSession)ctx.channel().attr(sessionKey).get();
                  	
                  	ByteBuf bb = (ByteBuf)msg;
                  	if(bb.readableBytes() <= 0) {
@@ -219,7 +219,7 @@ public class ApiGatewaySessionManager implements IClientSessionManager {
             // Start the client.
             b.connect(host, port).sync();
 
-            ApiGatewaySocketSession s = (ApiGatewaySocketSession)sessions.get(sKey);
+            ApiGatewayClientSocketSession s = (ApiGatewayClientSocketSession)sessions.get(sKey);
             ChannelHandlerContext ctx = (ChannelHandlerContext)s.getParam(Constants.SESSION_KEY);
             
             s.putParam(Constants.SESSION_KEY, ctx);

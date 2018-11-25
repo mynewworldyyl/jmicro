@@ -42,7 +42,7 @@ public abstract class AbstractNettySession extends AbstractSession implements IC
 
 	private ChannelHandlerContext ctx;
 	
-	private int type = Constants.NETTY_SOCKET;
+	private int type = Constants.TYPE_SOCKET;
 	
 	public AbstractNettySession(ChannelHandlerContext ctx,int readBufferSize,int heardbeatInterval,int type) {
 		super(readBufferSize,heardbeatInterval);
@@ -73,7 +73,7 @@ public abstract class AbstractNettySession extends AbstractSession implements IC
 			data = bb.array();
 		}
 		
-		if(this.type == Constants.NETTY_HTTP) {
+		if(this.type == Constants.TYPE_HTTP) {
 			FullHttpResponse response;
 			response = new DefaultFullHttpResponse(HTTP_1_1, OK,
 					Unpooled.wrappedBuffer(data));
@@ -85,7 +85,7 @@ public abstract class AbstractNettySession extends AbstractSession implements IC
 			}
 			*/
 			ctx.writeAndFlush(response);
-		}else if(this.type == Constants.NETTY_WEBSOCKET) {
+		}else if(this.type == Constants.TYPE_WEBSOCKET) {
 			ByteBuf bbf = Unpooled.buffer(data.length);
 			bbf.writeBytes(data);
 			ctx.channel().writeAndFlush(new BinaryWebSocketFrame(bbf));

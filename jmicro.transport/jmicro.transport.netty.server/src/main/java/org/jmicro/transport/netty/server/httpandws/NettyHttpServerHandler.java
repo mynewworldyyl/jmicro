@@ -105,7 +105,7 @@ public class NettyHttpServerHandler extends ChannelInboundHandlerAdapter {
     public void handlerAdded(ChannelHandlerContext ctx) throws Exception {
     	super.handlerAdded(ctx);
     	NettyServerSession session = new NettyServerSession(ctx,readBufferSize,heardbeatInterval,
-    			Constants.NETTY_HTTP);
+    			Constants.TYPE_HTTP);
     	
     	ctx.channel().attr(sessionKey).set(session);
     }

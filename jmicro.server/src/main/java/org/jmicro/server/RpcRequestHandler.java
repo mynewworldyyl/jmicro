@@ -20,9 +20,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
 import org.jmicro.api.JMicroContext;
-import org.jmicro.api.annotation.Cfg;
 import org.jmicro.api.annotation.Component;
-import org.jmicro.api.annotation.Inject;
 import org.jmicro.api.exception.RpcException;
 import org.jmicro.api.net.RpcResponse;
 import org.jmicro.api.server.AbstractHandler;
@@ -37,12 +35,6 @@ import org.jmicro.common.Constants;
  */
 @Component(value=Constants.DEFAULT_HANDLER,lazy=false,active=true)
 public class RpcRequestHandler extends AbstractHandler implements IRequestHandler {
-
-	@Inject(required=true)
-	private ServiceLoader serviceLoader;
-	
-	@Cfg("/respBufferSize")
-	private int respBufferSize  = Constants.DEFAULT_RESP_BUFFER_SIZE;
 	
 	@Override
 	public IResponse onRequest(IRequest request) {

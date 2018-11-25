@@ -25,7 +25,7 @@ import java.lang.reflect.Method;
  * @date 2018年11月16日 上午12:22:31
  *
  */
-public class ApiGatewayInvocation implements InvocationHandler{
+public class ApiGatewayClientInvocation implements InvocationHandler{
 
 	@Override
 	public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {

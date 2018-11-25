@@ -85,6 +85,8 @@ public class ApiRequestMessageHandler implements IMessageHandler{
 		msg.setType(Constants.MSG_TYPE_API_RESP);
 		resp.setReqId(req.getReqId());
 		resp.setMsg(msg);
+		resp.setSuccess(true);
+		resp.setId(idGenerator.getLongId(ApiResponse.class));
 		
 		long lid = JMicroContext.lid(idGenerator);
 
@@ -140,7 +142,6 @@ public class ApiRequestMessageHandler implements IMessageHandler{
 						if(session.isClose()) {
 							return false;
 						}
-						
 						resp.setSuccess(true);
 						resp.setResult(rst);
 						resp.setId(idGenerator.getLongId(ApiResponse.class));
@@ -153,15 +154,18 @@ public class ApiRequestMessageHandler implements IMessageHandler{
 					};
 					JMicroContext.get().setParam(Constants.CONTEXT_CALLBACK_CLIENT, msgReceiver);
 					result = m.invoke(srv, req.getArgs());
+					// 返回确认包
+					resp.setResult(result);
 					if(openDebug) {
 						SF.doResponseLog(MonitorConstant.DEBUG, lid, TAG, resp, null," successfully invoke bussiness method",
 								result!=null ? result.toString():"");
 					}
+					session.write(msg);
 				} else {
+					
 					result = m.invoke(srv, req.getArgs());
-					resp.setSuccess(true);
+					
 					resp.setResult(result);
-					resp.setId(idGenerator.getLongId(ApiResponse.class));
 					msg.setPayload(ICodecFactory.encode(codecFactory, resp, msg.getProtocol()));
 					if(openDebug) {
 						SF.doResponseLog(MonitorConstant.DEBUG, lid, TAG, resp, null," one response");
@@ -173,12 +177,12 @@ public class ApiRequestMessageHandler implements IMessageHandler{
 				logger.error("",e);
 				result = new ServerError(0,e.getMessage());
 				resp.setSuccess(false);
+				resp.setResult(result);
 				SF.doResponseLog(MonitorConstant.ERROR, lid, TAG, resp, e," service error");
 			}
 		} else {
 			resp.setSuccess(false);
 			resp.setResult(result);
-			resp.setId(idGenerator.getLongId(ApiResponse.class));
 			msg.setPayload(ICodecFactory.encode(codecFactory, resp, msg.getProtocol()));
 			SF.doResponseLog(MonitorConstant.ERROR, lid, TAG, resp, null," service instance not found");
 			session.write(msg);

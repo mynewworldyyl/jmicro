@@ -16,7 +16,9 @@
  */
 package org.jmicro.example.test;
 
+import org.jmicro.api.JMicro;
 import org.jmicro.example.api.ISayHello;
+import org.jmicro.example.api.ITestRpcService;
 import org.jmicro.gateway.client.ApiGatewayClient;
 import org.junit.Test;
 
@@ -36,4 +38,17 @@ public class TestApigateClient {
 		"testsayhello", "0.0.1","hello",args);
 		System.out.println(result);
 	}
+	
+	@Test
+	public void testCallTestRpcService() {
+		String[] args = new String[] {"hello"};
+		String result =(String) ApiGatewayClient.getIns().callService(ITestRpcService.class.getName(),
+		"testrpc", "0.0.1","subscrite",args,(msg)->{
+			System.out.println("Got server msg:"+msg);
+			return true;
+		});
+		System.out.println(result);
+		JMicro.waitForShutdown();
+	}
+	
 }

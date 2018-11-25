@@ -25,6 +25,7 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import org.jmicro.api.annotation.Service;
 import org.jmicro.api.client.IClientSession;
+import org.jmicro.api.client.IMessageCallback;
 import org.jmicro.api.codec.Decoder;
 import org.jmicro.api.codec.OnePrefixDecoder;
 import org.jmicro.api.codec.OnePrefixTypeEncoder;
@@ -48,54 +49,26 @@ public class ApiGatewayClient {
 	
 	private final static Logger logger = LoggerFactory.getLogger(ApiGatewayClient.class);
 	
-	//private static int clientType = ApiGatewayClient.TYPE_SOCKET;
-	//private  static int clientType = ApiGatewayClient.TYPE_WEBSOCKET;
-	private static int clientType = ApiGatewayClient.TYPE_HTTP;
+	private static int clientType = Constants.TYPE_SOCKET;
+	//private  static int clientType = Constants.TYPE_WEBSOCKET;
+	//private static int clientType = Constants.TYPE_HTTP;
 		
-    public static final int TYPE_HTTP = 1;
-	
-	public static final int TYPE_SOCKET = 2;
-	
-	public static final int TYPE_WEBSOCKET = 3;
-	
 	private OnePrefixDecoder decoder = new OnePrefixDecoder();
-	
 	private OnePrefixTypeEncoder encoder = new OnePrefixTypeEncoder();
-	
-	private ApiGatewaySessionManager sessionManager = new ApiGatewaySessionManager();
-	
+	private ApiGatewayClientSessionManager sessionManager = new ApiGatewayClientSessionManager();
 	private volatile Map<Long,IResponseHandler> waitForResponses = new ConcurrentHashMap<>();
-	
 	private volatile Map<Long,Message> resqMsgCache = new ConcurrentHashMap<>();
 	
+	private ApiGatewayClient() {}
 	private static final ApiGatewayClient ins = new ApiGatewayClient();
+	public static ApiGatewayClient getIns() {
+		return ins;
+	}
 	
 	private static final AtomicLong reqId = new AtomicLong(0);
 	
-	//private String host = "172.16.22.200";
-	//private String host = "192.168.1.102";
-	private String host = "192.168.1.100";
-	
-	private int port= 9090;
-	//private int port= 51875;
-	//private int port= 51287;
-	
-    static {
-    	Decoder.setTransformClazzLoader(getIns()::getEntityClazz);
-	}
-	
-	private static interface IResponseHandler{
-		void onResponse(Message msg);
-	}
-	
-	private static int getClientType() {
-		//clientType = TYPE_SOCKET;
-		return clientType;
-	}
-	
-	private ApiGatewayClient() {
+	{
 		sessionManager.setClientType(getClientType());
-		
 		sessionManager.registerMessageHandler(new IMessageHandler(){
 			@Override
 			public Short type() {
@@ -121,11 +94,26 @@ public class ApiGatewayClient {
 				waitForResponses.get(msg.getReqId()).onResponse(msg);
 			}
 		});
+	
+	}
+	//private String host = "172.16.22.200";
+	//private String host = "192.168.1.102";
+	private String host = "192.168.1.100";
+	
+	private int httpPort= 9090;
+	private int socketPort= 51875;
+	
+    static {
+    	Decoder.setTransformClazzLoader(getIns()::getEntityClazz);
 	}
 	
+	private static interface IResponseHandler{
+		void onResponse(Message msg);
+	}
 	
-	public static ApiGatewayClient getIns() {
-		return ins;
+	private static int getClientType() {
+		//clientType = TYPE_SOCKET;
+		return clientType;
 	}
 	
 	public <T> T getService(Class<T> serviceClass, String namespace, String version) {		
@@ -133,14 +121,13 @@ public class ApiGatewayClient {
 			throw new CommonException(serviceClass.getName() + " have to been insterface");
 		}
 		Object srv = Proxy.newProxyInstance(Thread.currentThread().getContextClassLoader(),
-				new Class[] {serviceClass}, (proxy,method,args) -> {
-					return callService(serviceClass,method,args,namespace,version);
-				});
+				new Class[] {serviceClass}, 
+				(proxy,method,args) -> callService(serviceClass,method,args,namespace,version));
 		return (T)srv;
 	}
 	
 	private Object callService(Class<?> serviceClass,Method mehtod,Object[] args,
-			String namespace, String version ) {
+			String namespace, String version) {
 		Service srvAnno = mehtod.getAnnotation(Service.class);
 		if(srvAnno == null && StringUtils.isEmpty(namespace)) {
 			throw new CommonException("Service ["+serviceClass.getName() +"] not specify namespage");
@@ -177,7 +164,7 @@ public class ApiGatewayClient {
 		msg.setPayload(bb);
 		msg.setVersion(Constants.VERSION_STR);
 		
-		String clazzName =(String) getResponse(msg);
+		String clazzName =(String) getResponse(msg,null);
 		
 		if(StringUtils.isEmpty(clazzName)) {
 			try {
@@ -190,35 +177,65 @@ public class ApiGatewayClient {
 		}
 		return null;
 	}
-    
 	
 	public Object callService(String serviceName, String namespace, String version, String method, Object[] args) {
 		Message msg = this.createMessage(serviceName, namespace, version, method, args);
-		return getResponse(msg);
-		
+		return getResponse(msg,null);
 	}
 	
-	private Object getResponse(Message msg) {
-		
+	public <R> Object callService(String serviceName, String namespace, String version
+			, String method, Object[] args,IMessageCallback<R> callback) {
+		Message msg = this.createMessage(serviceName, namespace, version, method, args);
+		msg.setFlag((byte)(msg.getFlag() | Constants.FLAG_STREAM));
+		return getResponse(msg,callback);
+	}
+	
+	private volatile Map<Long,Boolean> streamComfirmFlag = new ConcurrentHashMap<>();
+	
+	@SuppressWarnings("unchecked")
+	private <R> Object getResponse(Message msg, final IMessageCallback<R> callback) {
+		streamComfirmFlag.put(msg.getReqId(), true);
 		waitForResponses.put(msg.getReqId(), respMsg1 -> {
-			resqMsgCache.put(msg.getReqId(), respMsg1);
-			synchronized (msg) {
-				msg.notify();
+			if(msg.isStream()) {
+				if(streamComfirmFlag.containsKey(msg.getReqId()) && streamComfirmFlag.get(msg.getReqId())) {
+					//返回确认包
+					streamComfirmFlag.remove(msg.getReqId());
+					synchronized (msg) {
+						msg.notify();
+					}
+				} else {
+					callback.onMessage((R)parseResult(respMsg1));
+				}
+			} else {
+				resqMsgCache.put(msg.getReqId(), respMsg1);
+				synchronized (msg) {
+					msg.notify();
+				}
 			}
 		});
 		
+		int port = socketPort;
+		if(clientType == Constants.TYPE_HTTP || clientType == Constants.TYPE_WEBSOCKET) {
+			port = httpPort;
+		}
+			
 		IClientSession sessin = sessionManager.getOrConnect(host, port);
 		sessin.write(msg);
-		
+	
 		synchronized (msg) {
 			try {
-				msg.wait();
+				msg.wait(30*1000);
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}
 		}
 		
-		 Message resqMsg = resqMsgCache.get(msg.getReqId());
+		Message resqMsg = resqMsgCache.get(msg.getReqId());
+		return parseResult(resqMsg);
+		 
+	}
+	
+	private Object parseResult(Message resqMsg) {
 		 
 		 if(resqMsg == null) {
 			 return null;
@@ -231,7 +248,6 @@ public class ApiGatewayClient {
 		 }else {
 			 throw new CommonException(resp.getResult().toString());
 		 }
-		 
 	}
     
     private Message createMessage(String serviceName, String namespace, String version, String method, Object[] args) {

@@ -14,31 +14,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.jmicro.gateway.client;
-
-import static io.netty.handler.codec.http.HttpHeaders.Names.CONTENT_LENGTH;
-import static io.netty.handler.codec.http.HttpHeaders.Names.CONTENT_TYPE;
-import static io.netty.handler.codec.http.HttpResponseStatus.OK;
-import static io.netty.handler.codec.http.HttpVersion.HTTP_1_1;
-
-import java.io.UnsupportedEncodingException;
+package org.jmicro.gateway.client.http;
 
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.jmicro.api.client.IClientSession;
 import org.jmicro.api.net.AbstractSession;
 import org.jmicro.api.net.Message;
+import org.jmicro.client.ClientMessageReceiver;
 import org.jmicro.common.CommonException;
 import org.jmicro.common.Constants;
-import org.jmicro.common.util.JsonUtils;
-
-import io.netty.buffer.ByteBuf;
-import io.netty.buffer.Unpooled;
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.handler.codec.http.DefaultFullHttpResponse;
-import io.netty.handler.codec.http.FullHttpResponse;
-import io.netty.handler.codec.http.websocketx.TextWebSocketFrame;
 
 /**
  * 
@@ -46,38 +34,45 @@ import io.netty.handler.codec.http.websocketx.TextWebSocketFrame;
  * @date 2018年11月16日 上午12:22:37
  *
  */
-public class ApiGatewaySocketSession extends AbstractSession implements IClientSession {
+public class ApiGatewayClientHttpSession extends AbstractSession implements IClientSession {
 
-	private ChannelHandlerContext ctx;
+	private String url;
+	private ClientMessageReceiver receiver;
 	
-	public ApiGatewaySocketSession(ChannelHandlerContext ctx,int readBufferSize,int heardbeatInterval) {
+	public ApiGatewayClientHttpSession(ClientMessageReceiver receiver,String url,int readBufferSize,int heardbeatInterval) {
 		super(readBufferSize,heardbeatInterval);
-		this.ctx = ctx;
+		this.receiver = receiver;
+		this.url = url;
 	}
 	
 	public InetSocketAddress getLocalAddress(){
-		return (InetSocketAddress)ctx.channel().localAddress();
+		return null;
 	}
 	
 	public InetSocketAddress getRemoteAddress(){
-		return (InetSocketAddress)ctx.channel().remoteAddress();
+		return null;
 	}
 	
 	@Override
 	public void write(Message msg) {
-		//String json = JsonUtils.getIns().toJson(msg);
 		ByteBuffer bb = msg.encode();
-		ByteBuf bbf = Unpooled.buffer(bb.remaining());
-		bbf.writeBytes(bb);
-		ctx.channel().writeAndFlush(bbf);
+		new Thread(() -> {
+			Map<String,String> headers = new HashMap<>();
+			headers.put(Constants.HTTP_HEADER_ENCODER, Message.PROTOCOL_BIN+"");
+			byte[] data = HttpClientUtil.doPostData(url, bb.array(),headers);
+			if(data.length > 0) {
+				Message message = new Message();
+	            message.decode(ByteBuffer.wrap(data));
+	            receiver.receive(ApiGatewayClientHttpSession.this,message);
+			} else {
+				throw new CommonException("Req:"+msg.getReqId()+" response null data");
+			}
+		}).start();
 	}
 
 	@Override
 	public void close(boolean flag) {
 		super.close(flag);
-		ctx.close();
 	}
-
-
 
 }
