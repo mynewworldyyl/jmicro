@@ -116,6 +116,7 @@ public class ZKRegistry implements IRegistry {
 		
 		refreshList();
 		
+		new Thread(this::startRegisterWorker).start();
 	}	
 	
 	/** +++++++++++++++++++++++Service listen START ++++++++++++++++++**/

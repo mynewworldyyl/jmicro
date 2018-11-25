@@ -409,6 +409,7 @@ class ClientServiceProxyManager {
             code.append(" org.jmicro.api.JMicroContext.get().setString(org.jmicro.api.JMicroContext.CLIENT_METHOD, mt);");
             
             if (!Void.TYPE.equals(rt)){
+             code.append("System.out.println(ret);");
            	 code.append(" return ").append(SimpleObjectFactory.asArgument(rt, "ret")).append(";");
             }
             
@@ -417,8 +418,6 @@ class ClientServiceProxyManager {
             code.append(" this.restoreContext();");
             
             code.append(" } ");
-            
-          
 
             classGenerator.addMethod(m.getName(), m.getModifiers(), rt, pts, m.getExceptionTypes(), code.toString());      
 		 }

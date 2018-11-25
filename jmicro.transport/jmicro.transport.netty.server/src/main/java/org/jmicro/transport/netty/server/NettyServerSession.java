@@ -31,8 +31,8 @@ public class NettyServerSession extends AbstractNettySession implements IServerS
 
 	static final Logger LOG = LoggerFactory.getLogger(NettyServerSession.class);
 	
-	public NettyServerSession(ChannelHandlerContext ctx,int readBufferSize,int hearbeatInterval,boolean isWebSocket) {
-		super(ctx,readBufferSize,hearbeatInterval,isWebSocket);
+	public NettyServerSession(ChannelHandlerContext ctx,int readBufferSize,int hearbeatInterval,int type) {
+		super(ctx,readBufferSize,hearbeatInterval,type);
 	}
 
 	

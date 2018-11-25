@@ -22,6 +22,7 @@ import java.lang.reflect.Method;
 
 import org.jmicro.api.JMicro;
 import org.jmicro.api.JMicroContext;
+import org.jmicro.api.annotation.Cfg;
 import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.Inject;
 import org.jmicro.api.client.AbstractClientServiceProxy;
@@ -30,6 +31,8 @@ import org.jmicro.api.codec.ICodecFactory;
 import org.jmicro.api.gateway.ApiRequest;
 import org.jmicro.api.gateway.ApiResponse;
 import org.jmicro.api.idgenerator.IIdGenerator;
+import org.jmicro.api.monitor.MonitorConstant;
+import org.jmicro.api.monitor.SF;
 import org.jmicro.api.net.IMessageHandler;
 import org.jmicro.api.net.ISession;
 import org.jmicro.api.net.Message;
@@ -51,7 +54,7 @@ import org.slf4j.LoggerFactory;
 public class ApiRequestMessageHandler implements IMessageHandler{
 
 	private final static Logger logger = LoggerFactory.getLogger(ApiRequestMessageHandler.class);
-	
+	private static final Class<?> TAG = ApiRequestMessageHandler.class;
 	@Inject
 	private IIdGenerator idGenerator;
 	
@@ -60,6 +63,9 @@ public class ApiRequestMessageHandler implements IMessageHandler{
 	
 	@Inject
 	private IObjectFactory objFactory;
+	
+	@Cfg("/ApiRequestMessageHandler/openDebug")
+	private boolean openDebug = false;
 	
 	@Override
 	public Short type() {
@@ -76,9 +82,18 @@ public class ApiRequestMessageHandler implements IMessageHandler{
 		Object srv = JMicro.getObjectFactory().getServie(req.getServiceName(), 
 				req.getNamespace(), req.getVersion());
 		
-		msg.setType((short)(msg.getType()+1));
+		msg.setType(Constants.MSG_TYPE_API_RESP);
 		resp.setReqId(req.getReqId());
 		resp.setMsg(msg);
+		
+		long lid = JMicroContext.lid(idGenerator);
+
+		JMicroContext.get().setParam(JMicroContext.LOCAL_HOST, session.localHost());
+		JMicroContext.get().setParam(JMicroContext.LOCAL_PORT, session.localPort()+"");
+		JMicroContext.get().setParam(JMicroContext.REMOTE_HOST, session.remoteHost());
+		JMicroContext.get().setParam(JMicroContext.REMOTE_PORT, session.remotePort()+"");
+		
+		JMicroContext.get().mergeParams(req.getParams());
 		
 		if(srv != null){
 			Class<?>[] clazzes = null;
@@ -95,24 +110,28 @@ public class ApiRequestMessageHandler implements IMessageHandler{
 				AbstractClientServiceProxy proxy = (AbstractClientServiceProxy)srv;
 				ServiceItem si = proxy.getItem();
 				if(si == null) {
+					SF.doRequestLog(MonitorConstant.ERROR, lid, TAG, req, null," service not found");
 					throw new CommonException("Service["+req.getServiceName()+"] namespace ["+req.getNamespace()+"] not found");
 				}
 				ServiceMethod sm = si.getMethod(req.getMethod(), clazzes);
 				if(sm == null) {
+					SF.doRequestLog(MonitorConstant.ERROR, lid, TAG, req, null," service method not found");
 					throw new CommonException("Service mehtod ["+req.getServiceName()+"] method ["+req.getMethod()+"] not found");
 				}
 				
 				Method m = srv.getClass().getMethod(req.getMethod(), clazzes);
 				
-				JMicroContext.get().setParam(JMicroContext.LOCAL_HOST, session.localHost());
-				JMicroContext.get().setParam(JMicroContext.LOCAL_PORT, session.localPort()+"");
-				JMicroContext.get().setParam(JMicroContext.REMOTE_HOST, session.remoteHost());
-				JMicroContext.get().setParam(JMicroContext.REMOTE_PORT, session.remotePort()+"");
+				JMicroContext.get().configMonitor(sm.getMonitorEnable(), si.getMonitorEnable());
 				
-				JMicroContext.get().mergeParams(req.getParams());
+				if(openDebug) {
+					SF.doRequestLog(MonitorConstant.DEBUG, lid, TAG, req, null," got request");
+				}
 				
 				if(!sm.needResponse) {
 					result = m.invoke(srv, req.getArgs());
+					if(openDebug) {
+						SF.doRequestLog(MonitorConstant.DEBUG, lid, TAG, req, null," no need response");
+					}
 					return;
 				}
 				
@@ -121,21 +140,32 @@ public class ApiRequestMessageHandler implements IMessageHandler{
 						if(session.isClose()) {
 							return false;
 						}
+						
 						resp.setSuccess(true);
 						resp.setResult(rst);
 						resp.setId(idGenerator.getLongId(ApiResponse.class));
 						msg.setPayload(ICodecFactory.encode(codecFactory, resp, msg.getProtocol()));
 						session.write(msg);
+						if(openDebug) {
+							SF.doResponseLog(MonitorConstant.DEBUG, lid, TAG, resp, null," one stream response");
+						}
 						return true;
 					};
 					JMicroContext.get().setParam(Constants.CONTEXT_CALLBACK_CLIENT, msgReceiver);
 					result = m.invoke(srv, req.getArgs());
+					if(openDebug) {
+						SF.doResponseLog(MonitorConstant.DEBUG, lid, TAG, resp, null," successfully invoke bussiness method",
+								result!=null ? result.toString():"");
+					}
 				} else {
 					result = m.invoke(srv, req.getArgs());
 					resp.setSuccess(true);
 					resp.setResult(result);
 					resp.setId(idGenerator.getLongId(ApiResponse.class));
 					msg.setPayload(ICodecFactory.encode(codecFactory, resp, msg.getProtocol()));
+					if(openDebug) {
+						SF.doResponseLog(MonitorConstant.DEBUG, lid, TAG, resp, null," one response");
+					}
 					session.write(msg);
 				}
 			} catch (NoSuchMethodException | SecurityException | IllegalAccessException 
@@ -143,12 +173,14 @@ public class ApiRequestMessageHandler implements IMessageHandler{
 				logger.error("",e);
 				result = new ServerError(0,e.getMessage());
 				resp.setSuccess(false);
+				SF.doResponseLog(MonitorConstant.ERROR, lid, TAG, resp, e," service error");
 			}
 		} else {
 			resp.setSuccess(false);
 			resp.setResult(result);
 			resp.setId(idGenerator.getLongId(ApiResponse.class));
 			msg.setPayload(ICodecFactory.encode(codecFactory, resp, msg.getProtocol()));
+			SF.doResponseLog(MonitorConstant.ERROR, lid, TAG, resp, null," service instance not found");
 			session.write(msg);
 		}
 	}

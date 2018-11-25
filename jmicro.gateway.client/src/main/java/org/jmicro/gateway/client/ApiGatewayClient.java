@@ -23,7 +23,6 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 
-import org.jmicro.api.annotation.SMethod;
 import org.jmicro.api.annotation.Service;
 import org.jmicro.api.client.IClientSession;
 import org.jmicro.api.codec.Decoder;
@@ -44,7 +43,6 @@ import org.slf4j.LoggerFactory;
  * 
  * @author Yulei Ye
  * @date 2018年11月16日 上午12:22:23
- *
  */
 public class ApiGatewayClient {
 	
@@ -74,15 +72,13 @@ public class ApiGatewayClient {
 	
 	private static final AtomicLong reqId = new AtomicLong(0);
 	
-	private String host = "172.16.22.200";
+	//private String host = "172.16.22.200";
 	//private String host = "192.168.1.102";
-	//private String host = "192.168.1.100";
+	private String host = "192.168.1.100";
 	
 	private int port= 9090;
 	//private int port= 51875;
 	//private int port= 51287;
-	
-	
 	
     static {
     	Decoder.setTransformClazzLoader(getIns()::getEntityClazz);

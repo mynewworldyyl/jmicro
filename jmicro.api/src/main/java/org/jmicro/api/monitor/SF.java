@@ -16,17 +16,12 @@
  */
 package org.jmicro.api.monitor;
 
-import java.io.ByteArrayOutputStream;
-import java.io.PrintStream;
-import java.io.UnsupportedEncodingException;
-
 import org.jmicro.api.JMicroContext;
-import org.jmicro.api.config.Config;
+import org.jmicro.api.net.IReq;
+import org.jmicro.api.net.IResp;
 import org.jmicro.api.net.Message;
-import org.jmicro.api.registry.ServiceItem;
 import org.jmicro.api.server.IRequest;
 import org.jmicro.api.server.IResponse;
-import org.jmicro.common.Constants;
 
 /**
  * 
@@ -47,19 +42,19 @@ public class SF {
 		}
 	}
 	
-	public static void doSubmit(int type,IRequest req,Throwable exp,String... objs){
+	public static void doSubmit(int type,IReq req,Throwable exp,String... objs){
 		if(needLog()) {
 			 monitor().submit(type, req,exp,objs);
 		}
 	}
 	
-	public static void doSubmit(int type,IResponse resp,Throwable exp,String... objs){
+	public static void doSubmit(int type,IResp resp,Throwable exp,String... objs){
 		if(needLog()) {
 			 monitor().submit(type,resp,exp,objs);
 		}
 	}
 	
-	public static void doSubmit(int type,IRequest req,IResponse resp,Throwable exp,String... objs){
+	public static void doSubmit(int type,IReq req,IResp resp,Throwable exp,String... objs){
 		if(needLog()) {
 			 monitor().submit(type, req,resp,exp,objs);
 		}
@@ -83,7 +78,7 @@ public class SF {
 		}
 	}
 	
-	public static void doRequestLog(byte level,long linkId,Class<?> cls,IRequest req,Throwable exp, String... others) {
+	public static void doRequestLog(byte level,long linkId,Class<?> cls,IReq req,Throwable exp, String... others) {
 		if(needLog()) {
 			IMonitorDataSubmiter monitor = monitor();
 			SubmitItem si = new SubmitItem(MonitorConstant.LINKER_ROUTER_MONITOR,level,linkId,
@@ -94,7 +89,7 @@ public class SF {
 		}
 	}
 	
-	public static void doResponseLog(byte level,long linkId,Class<?> cls,IResponse resq,Throwable exp, String... others) {
+	public static void doResponseLog(byte level,long linkId,Class<?> cls,IResp resq,Throwable exp, String... others) {
 		if(needLog()) {
 			IMonitorDataSubmiter monitor = monitor();
 			SubmitItem si = new SubmitItem(MonitorConstant.LINKER_ROUTER_MONITOR,level,linkId,

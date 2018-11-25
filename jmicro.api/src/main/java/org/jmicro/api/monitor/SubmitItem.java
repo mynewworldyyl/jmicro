@@ -120,18 +120,46 @@ public final class SubmitItem{
 		this.msg = msg;
 	}
 	
-	public SubmitItem(int type,byte level,long linkId,IRequest req,String... others) {
+	public SubmitItem(int type,byte level,long linkId,IReq req,String... others) {
 		this(type,level,linkId,others);
 		this.req = req;
 	}
 	
-	public SubmitItem(int type,byte level,long linkId,IResponse resp,String... others) {
+	public SubmitItem(int type,byte level,long linkId,IResp resp,String... others) {
 		this(type,level,linkId,others);
 		this.resp = resp;
 	}
 	
 	public SubmitItem(int type) {
 		this.type = type;
+	}
+	
+	public SubmitItem(int type,Message msg) {
+		this(type);
+		this.msg = msg;
+	}
+	
+	public SubmitItem(int type,IReq req) {
+		this(type);
+		this.req = req;
+	}
+	
+	public SubmitItem(int type,IResp resp) {
+		this(type);
+		this.resp = resp;
+	}
+	
+	public SubmitItem(int type,IReq req,IResp resp) {
+		this(type);
+		this.resp = resp;
+		this.req = req;
+	}
+	
+	public SubmitItem(int type,Message msg,IReq req,IResp resp) {
+		this(type);
+		this.resp = resp;
+		this.req = req;
+		this.msg = msg;
 	}
 	
 	public String getLocalPort() {
@@ -160,34 +188,6 @@ public final class SubmitItem{
 
 	public void setLinkId(Long linkId) {
 		this.linkId = linkId;
-	}
-
-	public SubmitItem(int type,Message msg) {
-		this(type);
-		this.msg = msg;
-	}
-	
-	public SubmitItem(int type,IRequest req) {
-		this(type);
-		this.req = req;
-	}
-	
-	public SubmitItem(int type,IResponse resp) {
-		this(type);
-		this.resp = resp;
-	}
-	
-	public SubmitItem(int type,IRequest req,IResponse resp) {
-		this(type);
-		this.resp = resp;
-		this.req = req;
-	}
-	
-	public SubmitItem(int type,Message msg,IRequest req,IResponse resp) {
-		this(type);
-		this.resp = resp;
-		this.req = req;
-		this.msg = msg;
 	}
 
 	public Throwable getEx() {

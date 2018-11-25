@@ -1,16 +1,16 @@
 package org.jmicro.api.monitor;
 
+import org.jmicro.api.net.IReq;
+import org.jmicro.api.net.IResp;
 import org.jmicro.api.net.Message;
-import org.jmicro.api.server.IRequest;
-import org.jmicro.api.server.IResponse;
 
 public interface IMonitorDataSubmiter {
 
-	void submit(int type, IRequest req, IResponse resp,Throwable exp, String... args);
+	void submit(int type, IReq req, IResp resp,Throwable exp, String... args);
 	
-	void submit(int type, IRequest req,Throwable exp, String... args);
+	void submit(int type, IReq req,Throwable exp, String... args);
 	
-	void submit(int type, IResponse resp,Throwable exp, String... args);
+	void submit(int type, IResp resp,Throwable exp, String... args);
 	
 	void submit(int type, Message msg,Throwable exp, String... args);
 	

@@ -35,8 +35,9 @@ import org.jmicro.api.config.Config;
 import org.jmicro.api.monitor.IMonitorDataSubmiter;
 import org.jmicro.api.monitor.IMonitorDataSubscriber;
 import org.jmicro.api.monitor.SubmitItem;
+import org.jmicro.api.net.IReq;
+import org.jmicro.api.net.IResp;
 import org.jmicro.api.net.Message;
-import org.jmicro.api.registry.ServiceMethod;
 import org.jmicro.api.server.IRequest;
 import org.jmicro.api.server.IResponse;
 import org.jmicro.common.Constants;
@@ -331,7 +332,11 @@ public class SubmitItemHolderManager implements IMonitorDataSubmiter{
 		
 		setHeader(item);
 		
-		Worker w = this.workers[index.getAndIncrement()%this.workers.length];
+		int idx = index.getAndIncrement()%this.workers.length;
+		Worker w = this.workers[idx];
+		if(w == null || w.isPause()) {
+			w = this.workers[idx] = new Worker();
+		}
 		w.addItem(item);
 		if(w.isPause()) {
 			w.start();
@@ -356,7 +361,7 @@ public class SubmitItemHolderManager implements IMonitorDataSubmiter{
 	}
 
 	@Override
-	public void submit(int type, IRequest req, IResponse resp, Throwable exp, String... others) {
+	public void submit(int type, IReq req, IResp resp, Throwable exp, String... others) {
 		if(!needSubmit()) {
 			return;
 		}
@@ -373,7 +378,7 @@ public class SubmitItemHolderManager implements IMonitorDataSubmiter{
 	}
 
 	@Override
-	public void submit(int type, IRequest req, Throwable exp, String... others) {
+	public void submit(int type, IReq req, Throwable exp, String... others) {
 		if(!needSubmit()) {
 			return;
 		}
@@ -386,7 +391,7 @@ public class SubmitItemHolderManager implements IMonitorDataSubmiter{
 	}
 
 	@Override
-	public void submit(int type, IResponse resp, Throwable exp, String... others) {
+	public void submit(int type, IResp resp, Throwable exp, String... others) {
 		if(!needSubmit()) {
 			return;
 		}

@@ -81,10 +81,13 @@ public interface Constants {
 	public static final String TRANSPORT_JDKHTTP = "jdkhttp";
 	public static final String TRANSPORT_MINA = "mina";
 	public static final String TRANSPORT_NETTY = "netty";
+	public static final String TRANSPORT_NETTY_HTTP = "nettyhttp";
+	
+	public static final Integer NETTY_HTTP = 1;
+	public static final Integer NETTY_WEBSOCKET = 2;
+	public static final Integer NETTY_SOCKET = 3;
 	
 	public static final String HTTP_HEADER_ENCODER = "DataEncoderType";
-	
-	public static final String TRANSPORT_NETTY_HTTP = "nettyhttp";
 	public static final String START_HTTP = "startHttp";
 	
 	public static final int DEFAULT_RESP_BUFFER_SIZE = 1024*4;

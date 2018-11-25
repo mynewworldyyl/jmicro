@@ -60,7 +60,7 @@ public class ApiGatewayHttpSession extends AbstractSession implements IClientSes
 			Map<String,String> headers = new HashMap<>();
 			headers.put(Constants.HTTP_HEADER_ENCODER, Message.PROTOCOL_BIN+"");
 			byte[] data = HttpClientUtil.doPostData(url, bb.array(),headers);
-			if(data.length == 0) {
+			if(data.length > 0) {
 				Message message = new Message();
 	            message.decode(ByteBuffer.wrap(data));
 	            receiver.receive(ApiGatewayHttpSession.this,message);
