@@ -47,6 +47,7 @@ public class TestRpcServiceImpl implements ITestRpcService{
 	private AtomicInteger count = new AtomicInteger(0);
 	
 	@Override
+	@SMethod(monitorEnable=1,stream=true)
 	public void subscrite(String msg) {
 		IWriteCallback sender = JMicroContext.get().getParam(Constants.CONTEXT_CALLBACK_SERVICE, null);
 		if(sender == null){

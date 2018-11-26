@@ -218,7 +218,7 @@ public class ServiceInvocationHandler implements InvocationHandler, IMessageHand
     		msg.setReqId(req.getRequestId());
     		msg.setLinkId(lid);
     		msg.setPayload(ICodecFactory.encode(this.codecFactory,req,msg.getProtocol()));
-    		msg.setVersion(Constants.VERSION_STR);
+    		msg.setVersion(Constants.MSG_VERSION);
     		
     		/*
     		String reqJSon = JsonUtils.getIns().toJson(req);
@@ -381,7 +381,7 @@ public class ServiceInvocationHandler implements InvocationHandler, IMessageHand
 	}
 
 	@Override
-	public Short type() {
+	public Byte type() {
 		return Constants.MSG_TYPE_RRESP_JRPC;
 	}
 

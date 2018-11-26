@@ -41,7 +41,7 @@ public class ClientMessageReceiver implements IMessageReceiver{
 
 	static final Logger logger = LoggerFactory.getLogger(ClientMessageReceiver.class);
 	
-	private Map<Short,IMessageHandler> handlers = new HashMap<>();
+	private Map<Byte,IMessageHandler> handlers = new HashMap<>();
 	
 	@Inject(required=false)
 	private IMonitorDataSubmiter monitor;
@@ -65,7 +65,7 @@ public class ClientMessageReceiver implements IMessageReceiver{
 		} catch (Throwable e) {
 			SF.doSubmit(MonitorConstant.CLIENT_REQ_ASYNC2_FAIL,msg,e);
 			logger.error("reqHandler error: ",e);
-			msg.setType((short)(msg.getType()+1));
+			msg.setType((byte)(msg.getType()+1));
 		}
 	}
 

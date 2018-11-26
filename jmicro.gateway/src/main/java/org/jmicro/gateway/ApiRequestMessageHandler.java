@@ -68,7 +68,7 @@ public class ApiRequestMessageHandler implements IMessageHandler{
 	private boolean openDebug = false;
 	
 	@Override
-	public Short type() {
+	public Byte type() {
 		return Constants.MSG_TYPE_API_REQ;
 	}
 
@@ -138,17 +138,19 @@ public class ApiRequestMessageHandler implements IMessageHandler{
 				}
 				
 				if(sm.stream) {
+					final JMicroContext jc = JMicroContext.get();
 					IMessageCallback<Object> msgReceiver = (rst)->{
 						if(session.isClose()) {
 							return false;
 						}
+						JMicroContext.get().mergeParams(jc);
 						resp.setSuccess(true);
 						resp.setResult(rst);
 						resp.setId(idGenerator.getLongId(ApiResponse.class));
 						msg.setPayload(ICodecFactory.encode(codecFactory, resp, msg.getProtocol()));
 						session.write(msg);
 						if(openDebug) {
-							SF.doResponseLog(MonitorConstant.DEBUG, lid, TAG, resp, null," one stream response");
+							SF.doResponseLog(MonitorConstant.DEBUG, lid, TAG, resp, null," Api gateway stream response");
 						}
 						return true;
 					};
@@ -157,7 +159,7 @@ public class ApiRequestMessageHandler implements IMessageHandler{
 					// 返回确认包
 					resp.setResult(result);
 					if(openDebug) {
-						SF.doResponseLog(MonitorConstant.DEBUG, lid, TAG, resp, null," successfully invoke bussiness method",
+						SF.doResponseLog(MonitorConstant.DEBUG, lid, TAG, resp, null," Api gateway stream comfirm response",
 								result!=null ? result.toString():"");
 					}
 					session.write(msg);

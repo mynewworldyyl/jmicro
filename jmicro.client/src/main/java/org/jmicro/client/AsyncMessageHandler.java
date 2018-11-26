@@ -56,7 +56,7 @@ public class AsyncMessageHandler implements IMessageHandler{
 	private ICodecFactory codecFactory;
 	
 	@Override
-	public Short type() {
+	public Byte type() {
 		return Constants.MSG_TYPE_ASYNC_RESP;
 	}
 

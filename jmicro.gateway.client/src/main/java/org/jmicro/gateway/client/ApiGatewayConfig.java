@@ -1,0 +1,94 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.jmicro.gateway.client;
+
+import org.jmicro.common.CommonException;
+import org.jmicro.common.Constants;
+import org.jmicro.common.util.StringUtils;
+
+/**
+ * 
+ * @author Yulei Ye
+ * @date 2018年11月26日 下午8:51:40
+ */
+public class ApiGatewayConfig {
+
+	private int clientType = Constants.TYPE_SOCKET;
+	private String host = null;
+	private int port= 9090;
+	
+	private boolean debug = true;
+	
+	public ApiGatewayConfig(int clientType) {
+		this.setClientType(clientType);
+	}
+	
+	public ApiGatewayConfig(int clientType,int port) {
+		this(clientType);
+		this.setPort(port);
+	}
+	
+	public ApiGatewayConfig(int clientType,int port,String host) {
+		this(clientType,port);
+		this.setHost(host);
+	}
+
+	public String getHost() {
+		return host;
+	}
+
+	public void setHost(String host) {
+		if(StringUtils.isEmpty(host)) {
+			throw new CommonException("Host cannot be NULL");
+		}
+		this.host = host;
+	}
+
+	public void setPort(int port) {
+		if(port <= 0) {
+			throw new CommonException("port is invalid: "+port);
+		}
+		this.port = port;
+	}
+
+	public int getClientType() {
+		return clientType;
+	}
+
+	public void setClientType(int clientType) {
+		if(clientType == Constants.TYPE_SOCKET || clientType == Constants.TYPE_SOCKET
+				|| clientType == Constants.TYPE_WEBSOCKET) {
+			this.clientType = clientType;
+		} else {
+			throw new CommonException("Client type not support: "+clientType);
+		}
+		
+	}
+
+	public int getPort() {
+		return port;
+	}
+
+	public boolean isDebug() {
+		return debug;
+	}
+
+	public void setDebug(boolean debug) {
+		this.debug = debug;
+	}
+	
+}

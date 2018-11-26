@@ -23,7 +23,7 @@ package org.jmicro.api.net;
  */
 public interface IMessageHandler {
 
-	Short type();
+	Byte type();
 	
 	void onMessage(ISession session,Message messge);
 }

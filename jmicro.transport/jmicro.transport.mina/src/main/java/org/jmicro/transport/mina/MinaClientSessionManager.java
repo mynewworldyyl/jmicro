@@ -36,7 +36,6 @@ import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.Inject;
 import org.jmicro.api.client.IClientSession;
 import org.jmicro.api.client.IClientSessionManager;
-import org.jmicro.api.codec.Decoder;
 import org.jmicro.api.codec.ICodecFactory;
 import org.jmicro.api.idgenerator.IIdGenerator;
 import org.jmicro.api.monitor.IMonitorDataSubmiter;
@@ -92,7 +91,7 @@ public class MinaClientSessionManager implements IClientSessionManager{
 	public void init()  {
 		this.receiver.registHandler(new IMessageHandler(){
 			@Override
-			public Short type() {
+			public Byte type() {
 				return Constants.MSG_TYPE_HEARBEAT_RESP;
 			}
 			
@@ -107,7 +106,7 @@ public class MinaClientSessionManager implements IClientSessionManager{
 			hearbeat.setType(Constants.MSG_TYPE_HEARBEAT_REQ);
 			hearbeat.setId(idGenerator.getLongId(Message.class));
 			hearbeat.setReqId(0L);
-			hearbeat.setVersion(Constants.DEFAULT_VERSION);
+			hearbeat.setVersion(Constants.MSG_VERSION);
 			final ByteBuffer bb = ByteBuffer.wrap("Hello".getBytes(Constants.CHARSET));
 			hearbeat.setPayload(bb);
 			
@@ -162,7 +161,7 @@ public class MinaClientSessionManager implements IClientSessionManager{
             ByteBuffer buffer = cs.getReadBuffer();
             buffer.put((ByteBuffer)message);
             
-            ByteBuffer body = Decoder.readMessage(buffer);
+            ByteBuffer body = Message.readMessage(buffer);
             if(body == null){
             	return;
             }

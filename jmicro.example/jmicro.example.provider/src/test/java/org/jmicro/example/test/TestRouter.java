@@ -12,7 +12,7 @@ public class TestRouter {
 
 	@Test
 	public void testAddRule() {
-		IObjectFactory of = JMicro.getObjectFactoryAndStart(new String[]{"-DinstanceName=TestRouter"});
+		IObjectFactory of = JMicro.getObjectFactoryAndStart(new String[]{"-DinstanceName=TestRouter -Dclient=true"});
 		RuleManager ruleManager = of.get(RuleManager.class);
 		
 		//ip rule

@@ -37,7 +37,6 @@ import org.jmicro.api.annotation.Cfg;
 import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.Inject;
 import org.jmicro.api.annotation.Server;
-import org.jmicro.api.codec.Decoder;
 import org.jmicro.api.codec.ICodecFactory;
 import org.jmicro.api.config.Config;
 import org.jmicro.api.monitor.IMonitorDataSubmiter;
@@ -113,7 +112,7 @@ public class MinaServer implements IServer{
 		start();
 		this.receiver.registHandler(new IMessageHandler(){
 			@Override
-			public Short type() {
+			public Byte type() {
 				return Constants.MSG_TYPE_HEARBEAT_REQ;
 			}
 			
@@ -186,7 +185,7 @@ public class MinaServer implements IServer{
                     ByteBuffer buffer = s.getReadBuffer();
                     buffer.put((ByteBuffer)message);
             		
-                    ByteBuffer body = Decoder.readMessage(buffer);
+                    ByteBuffer body = Message.readMessage(buffer);
                     if(body == null){
                     	return;
                     }

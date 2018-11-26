@@ -22,19 +22,35 @@ import java.nio.ByteBuffer;
 import org.jmicro.common.CommonException;
 import org.jmicro.common.Constants;
 import org.jmicro.common.util.JsonUtils;
-import org.jmicro.common.util.StringUtils;
+
 /**
  * 
  * @author Yulei Ye
  * @date 2018年10月4日-下午12:06:44
  */
-public final class Message{
+public final class Message {
 	
-	public static final byte PROTOCOL_BIN = 1;
-	public static final byte PROTOCOL_JSON = 2;
+	public static final int HEADER_LEN = 17;
 	
-	private byte protocol;
+	public static final byte PROTOCOL_BIN = 0;
+	public static final byte PROTOCOL_JSON = 1;
 	
+	public static final byte PRIORITY_0 = 0;
+	public static final byte PRIORITY_1 = 1;
+	public static final byte PRIORITY_2 = 2;
+	public static final byte PRIORITY_3 = 3;
+	public static final byte PRIORITY_4 = 4;
+	public static final byte PRIORITY_5 = 5;
+	public static final byte PRIORITY_6 = 6;
+	public static final byte PRIORITY_7 = 7;
+	
+	public static final byte PRIORITY_MIN = PRIORITY_0;
+	public static final byte PRIORITY_NORMAL = PRIORITY_3;
+	public static final byte PRIORITY_MAX = PRIORITY_7;
+	
+	//1 byte length
+	private byte version;
+		
 	private long msgId;
 	
 	private long reqId;
@@ -43,12 +59,22 @@ public final class Message{
 	
 	//payload length with byte,4 byte length
 	private int len;
-		
-	//3 byte length
-	private String version;
-	// 1 byte
-	private short type;
 	
+	// 1 byte
+	private byte type;
+	
+	/**
+	 * L: Level
+	 * M: Monitorable
+	 * S: Stream
+	 * N: need Response 
+	 * P: protocol 0:bin, 1:json
+	 * 
+	 *   P L L L M S N
+	 *   | | | | | | |
+	 * 0 0 0 0 0 0 0 0
+	 * @return
+	 */
 	private byte flag;
 	
 	//request or response
@@ -73,28 +99,47 @@ public final class Message{
 		return (flag & Constants.FLAG_NEED_RESPONSE) != 0;
 	}
 	
+	public int getLevel() {
+		return (byte)((flag >>> 3) & 0x07);
+	}
+	
+	public void setLevel(int l) {
+		if(l > PRIORITY_7 || l < PRIORITY_0) {
+			 new CommonException("Invalid priority: "+l);
+		}
+		this.flag = (byte)((l << 3) | this.flag);
+	}
+	
+	public byte getProtocol() {
+		return (byte)((flag >>> 7) & 0x01);
+	}
+
+	public void setProtocol(byte protocol) {
+		if(protocol == PROTOCOL_BIN || protocol == PROTOCOL_JSON) {
+			this.flag = (byte)((protocol << 7) | this.flag);
+		}else {
+			 new CommonException("Invalid protocol: "+protocol);
+		}
+	}
+	
+	
 	public void decode(ByteBuffer b) {
-		int pos = b.position();
-		b.position(4);
-		this.protocol = b.get();
-		b.position(pos);
-		if(this.protocol == PROTOCOL_BIN) {
+		
+		this.flag = b.get();
+		if(this.getProtocol() == PROTOCOL_BIN) {
 			//ByteBuffer b = ByteBuffer.wrap(data);
-			this.len = b.getInt();
+			this.len = readUnsignedShort(b);
 			if(b.remaining() < len){
 				throw new CommonException("Message len not valid");
 			}
-			this.protocol = b.get();
-			byte[] vb = new byte[3];
-			b.get(vb, 0, 3);
-			this.setVersion(vb[0]+"."+vb[1]+"."+vb[2]);
+			
+			this.setVersion(b.get());
 			
 			//read type
-			this.setType(b.getShort());
-			this.setId(b.getLong());
-			this.setReqId(b.getLong());
-			this.setLinkId(b.getLong());
-		    this.setFlag(b.get());
+			this.setType(b.get());
+			this.setId(readUnsignedInt(b));
+			this.setReqId(readUnsignedInt(b));
+			this.setLinkId(readUnsignedInt(b));
 		    
 			if(len > 0){
 				byte[] payload = new byte[len];
@@ -103,7 +148,7 @@ public final class Message{
 			}else {
 				this.setPayload(null);
 			}
-		} else if(this.protocol == PROTOCOL_JSON) {
+		} else if(this.getProtocol() == PROTOCOL_JSON) {
 			try {
 				String json = new String(b.array(),1,b.remaining(),Constants.CHARSET);
 				Message msg = JsonUtils.getIns().fromJson(json, Message.class);
@@ -120,42 +165,43 @@ public final class Message{
 				e.printStackTrace();
 			}
 		}else {
-			throw new CommonException("Invalid protocol: "+ this.protocol);
+			throw new CommonException("Invalid protocol: "+ this.getProtocol());
 		}
 
 	}
 	
 	public ByteBuffer encode() {
 		ByteBuffer b =  null;
-		if(this.protocol == PROTOCOL_BIN) {
+		if(this.getProtocol() == PROTOCOL_BIN) {
+			
 			ByteBuffer data = (ByteBuffer)this.getPayload();
-			
+			int len = 0;
 			if(data == null){
-				b =  ByteBuffer.allocate(Constants.HEADER_LEN);
-				b.putInt(0);
+				b =  ByteBuffer.allocate(Message.HEADER_LEN);
+				len = 0;
 			} else {
-				b = ByteBuffer.allocate(data.remaining() + Constants.HEADER_LEN);
-				b.putInt(data.remaining());
+				b = ByteBuffer.allocate(data.remaining() + Message.HEADER_LEN);
+				len = data.remaining();
 			}
 			
-			b.put(PROTOCOL_BIN);
-			
-			byte[] vd = null;
-			if(StringUtils.isEmpty(getVersion())){
-				vd = new byte[] {0,0,0};
-			}else {
-				String[] vs = this.version.split("\\.");
-				vd = new byte[3];
-				vd[0]=Byte.parseByte(vs[0]);
-				vd[1]=Byte.parseByte(vs[1]);
-				vd[2]=Byte.parseByte(vs[2]);
-			}
-			b.put(vd);
-			b.putShort(this.getType());
-			b.putLong(this.getId());
-			b.putLong(this.reqId);
-			b.putLong(this.linkId);
 			b.put(this.flag);
+			
+			writeUnsignedShort(b, len);
+			//b.putShort((short)0);
+			
+			b.put(this.version);
+			
+			//writeUnsignedShort(b, this.type);
+			b.put(this.type);
+			
+			writeUnsignedInt(b, this.msgId);
+			//b.putLong(this.msgId);
+			
+			writeUnsignedInt(b, this.reqId);
+			//b.putLong(this.reqId);
+			
+			writeUnsignedInt(b, this.linkId);
+			//b.putLong(this.linkId);
 			
 			if(data != null){
 				b.put(data);
@@ -178,6 +224,93 @@ public final class Message{
 		return b;
 	}
 	
+	public static ByteBuffer readMessage(ByteBuffer cache){
+		
+		//当前写的位置，也就是可读的数据长度
+		int totalLen = cache.position();
+		if(totalLen < Message.HEADER_LEN) {
+			//可读的数据长度小于头部长度
+			return null;
+		}
+		
+		//保存写数据位置
+		int pos = cache.position();
+		cache.position(1);
+		//读数据长度
+		int len = Message.readUnsignedShort(cache);
+		//还原写数据公位置
+		cache.position(pos);
+		
+		if(totalLen < len+Message.HEADER_LEN){
+			//还不能构成一个足够长度的数据包
+			return null;
+		}
+		
+		//准备读数据
+		cache.flip();
+		
+		ByteBuffer body = ByteBuffer.allocate(len+Message.HEADER_LEN);
+		body.put(cache);
+		body.flip();
+		
+		//准备下一次读
+		/**
+		  System.arraycopy(hb, ix(position()), hb, ix(0), remaining());
+	      position(remaining());
+	      limit(capacity());
+	      discardMark();
+	      return this;
+		 */
+		//将剩余数移移到缓存开始位置，position定位在数据长度位置，处于写状态
+		cache.compact();
+		//b.position(b.limit());
+		//cache.limit(cache.capacity());
+		
+		return body;
+	}
+	
+	public static void writeUnsignedShort(ByteBuffer b,int v) {
+		byte data = (byte)((v >>> 8) & 0xFF);
+		b.put(data);
+		data = (byte)((v >>> 0) & 0xFF);
+		b.put(data);
+	}
+	
+	 public static int readUnsignedShort(ByteBuffer b) {
+		int firstByte = (0xFF & ((int)b.get()));
+		int secondByte = (0xFF & ((int)b.get()));
+		char anUnsignedShort  = (char) (firstByte << 8 | secondByte);
+        return anUnsignedShort;
+	 }
+	
+	public static void writeUnsignedByte(ByteBuffer b,short v) {
+		byte vv = (byte)((v >>> 0) & 0xFF);
+		b.put(vv);
+	}
+	
+	public static short readUnsignedByte(ByteBuffer b) {
+		short vv = (short) (b.get() & 0xff);
+	    return vv;
+	}
+    
+    public static long readUnsignedInt(ByteBuffer b) {
+    	int firstByte = (0xFF & ((int)b.get()));
+    	int secondByte = (0xFF & ((int)b.get()));
+    	int thirdByte = (0xFF & ((int)b.get()));
+    	int fourthByte = (0xFF & ((int)b.get()));
+ 	    long anUnsignedInt  = 
+ 	    		((long) (firstByte << 24 | secondByte << 16 | thirdByte << 8 | fourthByte))
+ 	    		& 0xFFFFFFFFL;
+ 	    return anUnsignedInt;
+    }
+    
+    public static void writeUnsignedInt(ByteBuffer b,long v) {
+		b.put((byte)((v >>> 24)&0xFF));
+		b.put((byte)((v >>> 16)&0xFF));
+		b.put((byte)((v >>> 8)&0xFF));
+		b.put((byte)((v >>> 0)&0xFF));
+	}
+    
 	public long getId() {
 		return this.msgId;
 	}
@@ -194,16 +327,16 @@ public final class Message{
 		this.msgId = id;
 	}
 
-	public String getVersion() {
+	public byte getVersion() {
 		return version;
 	}
-	public void setVersion(String version) {
+	public void setVersion(byte version) {
 		this.version = version;
 	}
-	public short getType() {
+	public byte getType() {
 		return type;
 	}
-	public void setType(short type) {
+	public void setType(byte type) {
 		this.type = type;
 	}
 	
@@ -229,13 +362,4 @@ public final class Message{
 	public void setLinkId(long linkId) {
 		this.linkId = linkId;
 	}
-
-	public byte getProtocol() {
-		return protocol;
-	}
-
-	public void setProtocol(byte protocol) {
-		this.protocol = protocol;
-	}
-	
 }

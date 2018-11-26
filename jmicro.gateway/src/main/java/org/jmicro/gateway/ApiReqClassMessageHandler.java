@@ -49,14 +49,14 @@ public class ApiReqClassMessageHandler implements IMessageHandler{
 	private ICodecFactory codecFactory;
 	
 	@Override
-	public Short type() {
+	public Byte type() {
 		return Constants.MSG_TYPE_API_CLASS_REQ;
 	}
 
 	@Override
 	public void onMessage(ISession session, Message msg) {
 		
-		msg.setType((short)(msg.getType()+1));
+		msg.setType((byte)(msg.getType()+1));
 		
 		ApiRequest req = ICodecFactory.decode(codecFactory, msg.getPayload(), 
 				ApiRequest.class, msg.getProtocol());

@@ -36,6 +36,7 @@ import org.jmicro.api.net.ISession;
 import org.jmicro.api.net.Message;
 import org.jmicro.common.CommonException;
 import org.jmicro.common.Constants;
+import org.jmicro.common.Utils;
 import org.jmicro.common.util.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -49,29 +50,34 @@ public class ApiGatewayClient {
 	
 	private final static Logger logger = LoggerFactory.getLogger(ApiGatewayClient.class);
 	
-	private static int clientType = Constants.TYPE_SOCKET;
+	//private static int clientType = Constants.TYPE_SOCKET;
 	//private  static int clientType = Constants.TYPE_WEBSOCKET;
 	//private static int clientType = Constants.TYPE_HTTP;
 		
 	private OnePrefixDecoder decoder = new OnePrefixDecoder();
 	private OnePrefixTypeEncoder encoder = new OnePrefixTypeEncoder();
+	
 	private ApiGatewayClientSessionManager sessionManager = new ApiGatewayClientSessionManager();
 	private volatile Map<Long,IResponseHandler> waitForResponses = new ConcurrentHashMap<>();
 	private volatile Map<Long,Message> resqMsgCache = new ConcurrentHashMap<>();
 	
-	private ApiGatewayClient() {}
-	private static final ApiGatewayClient ins = new ApiGatewayClient();
-	public static ApiGatewayClient getIns() {
-		return ins;
+	private ApiGatewayConfig config = null;
+	
+	public ApiGatewayClient(ApiGatewayConfig cfg) {
+		if(StringUtils.isEmpty(cfg.getHost())) {
+			cfg.setHost(Utils.getIns().getLocalIPList().get(0));
+		}
+		this.config = cfg;
+		init();
 	}
 	
 	private static final AtomicLong reqId = new AtomicLong(0);
 	
-	{
+	private void init() {
 		sessionManager.setClientType(getClientType());
 		sessionManager.registerMessageHandler(new IMessageHandler(){
 			@Override
-			public Short type() {
+			public Byte type() {
 				return Constants.MSG_TYPE_API_RESP;
 			}
 			
@@ -84,7 +90,7 @@ public class ApiGatewayClient {
 		
 		sessionManager.registerMessageHandler(new IMessageHandler(){
 			@Override
-			public Short type() {
+			public Byte type() {
 				return Constants.MSG_TYPE_API_CLASS_RESP;
 			}
 			
@@ -94,26 +100,16 @@ public class ApiGatewayClient {
 				waitForResponses.get(msg.getReqId()).onResponse(msg);
 			}
 		});
-	
-	}
-	//private String host = "172.16.22.200";
-	//private String host = "192.168.1.102";
-	private String host = "192.168.1.100";
-	
-	private int httpPort= 9090;
-	private int socketPort= 51875;
-	
-    static {
-    	Decoder.setTransformClazzLoader(getIns()::getEntityClazz);
+		Decoder.setTransformClazzLoader(this::getEntityClazz);
 	}
 	
 	private static interface IResponseHandler{
 		void onResponse(Message msg);
 	}
 	
-	private static int getClientType() {
+	private int getClientType() {
 		//clientType = TYPE_SOCKET;
-		return clientType;
+		return this.getConfig().getClientType();
 	}
 	
 	public <T> T getService(Class<T> serviceClass, String namespace, String version) {		
@@ -162,7 +158,7 @@ public class ApiGatewayClient {
 		bb.flip();
 		
 		msg.setPayload(bb);
-		msg.setVersion(Constants.VERSION_STR);
+		msg.setVersion(Constants.MSG_VERSION);
 		
 		String clazzName =(String) getResponse(msg,null);
 		
@@ -214,12 +210,13 @@ public class ApiGatewayClient {
 			}
 		});
 		
-		int port = socketPort;
-		if(clientType == Constants.TYPE_HTTP || clientType == Constants.TYPE_WEBSOCKET) {
-			port = httpPort;
+		int port = this.config.getPort();
+		if(this.config.getClientType() == Constants.TYPE_HTTP 
+				|| this.config.getClientType() == Constants.TYPE_WEBSOCKET) {
+			port = this.config.getPort();
 		}
 			
-		IClientSession sessin = sessionManager.getOrConnect(host, port);
+		IClientSession sessin = sessionManager.getOrConnect(Utils.getIns().getLocalIPList().get(0), port);
 		sessin.write(msg);
 	
 		synchronized (msg) {
@@ -269,10 +266,12 @@ public class ApiGatewayClient {
 		ByteBuffer bb = encoder.encode(req);
 		bb.flip();
 		msg.setPayload(bb);
-		msg.setVersion(Constants.VERSION_STR);
+		msg.setVersion(Constants.MSG_VERSION);
 		
 		return msg;
     }
-    
 
+	public ApiGatewayConfig getConfig() {
+		return config;
+	}
 }

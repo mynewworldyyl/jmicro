@@ -17,16 +17,33 @@
 package org.jmicro.example.test;
 
 import org.jmicro.api.JMicro;
+import org.jmicro.common.Constants;
 import org.jmicro.example.api.ISayHello;
 import org.jmicro.example.api.ITestRpcService;
 import org.jmicro.gateway.client.ApiGatewayClient;
+import org.jmicro.gateway.client.ApiGatewayConfig;
+import org.junit.Before;
 import org.junit.Test;
 
 public class TestApigateClient {
 
+	private ApiGatewayClient client = new ApiGatewayClient(new ApiGatewayConfig(Constants.TYPE_SOCKET));
+	
+	@Before
+	public void setUp() {
+		
+		client.getConfig().setDebug(true);
+		
+		client.getConfig().setClientType(Constants.TYPE_SOCKET);
+		client.getConfig().setPort(51875);
+		
+		/*client.getConfig().setPort(9090);
+		client.getConfig().setClientType(Constants.TYPE_HTTP);*/
+	}
+	
 	@Test
 	public void testGetService() {
-		ISayHello srv = ApiGatewayClient.getIns().getService(ISayHello.class,
+		ISayHello srv = client.getService(ISayHello.class,
 				"testapigw", "0.0.1");
 		srv.hello("Hello api gateway");
 	}
@@ -34,7 +51,7 @@ public class TestApigateClient {
 	@Test
 	public void testCallService() {
 		String[] args = new String[] {"hello"};
-		String result =(String) ApiGatewayClient.getIns().callService(ISayHello.class.getName(),
+		String result =(String) client.callService(ISayHello.class.getName(),
 		"testsayhello", "0.0.1","hello",args);
 		System.out.println(result);
 	}
@@ -42,7 +59,7 @@ public class TestApigateClient {
 	@Test
 	public void testCallTestRpcService() {
 		String[] args = new String[] {"hello"};
-		String result =(String) ApiGatewayClient.getIns().callService(ITestRpcService.class.getName(),
+		String result =(String) client.callService(ITestRpcService.class.getName(),
 		"testrpc", "0.0.1","subscrite",args,(msg)->{
 			System.out.println("Got server msg:"+msg);
 			return true;

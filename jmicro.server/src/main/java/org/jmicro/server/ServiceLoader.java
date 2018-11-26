@@ -223,7 +223,7 @@ public class ServiceLoader {
 		
 		item.setImpl(proxySrv.getName());
 		item.setServiceName(interfacez.getName());
-		item.setVersion(getFieldValue(anno.version(),intAnno == null ? null : intAnno.version(),Constants.DEFAULT_VERSION));
+		item.setVersion(getFieldValue(anno.version(),intAnno == null ? null : intAnno.version(),Constants.VERSION));
 		item.setNamespace(getFieldValue(anno.namespace(),intAnno == null ? null : intAnno.namespace(),Constants.DEFAULT_NAMESPACE));
 		
 		item.setMaxFailBeforeFusing(anno.maxFailBeforeFusing()!=500 || intAnno == null ?anno.maxFailBeforeFusing():intAnno.maxFailBeforeFusing());

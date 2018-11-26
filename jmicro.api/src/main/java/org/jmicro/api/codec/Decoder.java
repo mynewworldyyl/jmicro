@@ -387,49 +387,5 @@ public class Decoder {
 		}
 		return null;
 	}
-	
-	public static ByteBuffer readMessage(ByteBuffer cache){
-		
-		//当前写的位置，也就是可读的数据长度
-		int totalLen = cache.position();
-		if(totalLen < Constants.HEADER_LEN) {
-			//可读的数据长度小于头部长度
-			return null;
-		}
-		
-		//保存写数据位置
-		int pos = cache.position();
-		cache.position(0);
-		//读数据长度
-		int len = cache.getInt();
-		//还原写数据公位置
-		cache.position(pos);
-		
-		if(totalLen < len+Constants.HEADER_LEN){
-			//还不能构成一个足够长度的数据包
-			return null;
-		}
-		
-		//准备读数据
-		cache.flip();
-		
-		ByteBuffer body = ByteBuffer.allocate(len+Constants.HEADER_LEN);
-		body.put(cache);
-		body.flip();
-		
-		//准备下一次读
-		/**
-		  System.arraycopy(hb, ix(position()), hb, ix(0), remaining());
-	      position(remaining());
-	      limit(capacity());
-	      discardMark();
-	      return this;
-		 */
-		//将剩余数移移到缓存开始位置，position定位在数据长度位置，处于写状态
-		cache.compact();
-		//b.position(b.limit());
-		//cache.limit(cache.capacity());
-		
-		return body;
-	}
+
 }

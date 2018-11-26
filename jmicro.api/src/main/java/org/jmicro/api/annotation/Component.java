@@ -38,7 +38,7 @@ public @interface Component {
 	/**
 	 * 使用时才实例化，启动时只是生成代理
 	 */
-	public boolean lazy() default true;
+	public boolean lazy() default false;
 	
 	/**
 	 * 实例化优先级，值越底，优先极越高。用户自定义的服务因为依赖于系统的核心组件，所以用户自定义的组件的level值不要太小，建议从10000开始

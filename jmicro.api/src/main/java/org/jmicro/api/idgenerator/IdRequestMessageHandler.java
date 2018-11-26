@@ -44,7 +44,7 @@ public class IdRequestMessageHandler implements IMessageHandler{
 	private ICodecFactory codecFactory;
 	
 	@Override
-	public Short type() {
+	public Byte type() {
 		return Constants.MSG_TYPE_ID_REQ;
 	}
 
@@ -76,7 +76,7 @@ public class IdRequestMessageHandler implements IMessageHandler{
 				break;
 		}
 		
-		msg.setType((short)(msg.getType()+1));
+		msg.setType((byte)(msg.getType()+1));
 		msg.setPayload(ICodecFactory.encode(codecFactory, result, msg.getProtocol()));
 		session.write(msg);
 	}

@@ -209,7 +209,7 @@ public class TestOnePrefixCoder {
 		ByteBuffer payload = encoder.encode(req);
 		payload.flip();
 		msg.setPayload(payload);
-		msg.setVersion(Constants.VERSION_STR);
+		msg.setVersion(Constants.MSG_VERSION);
 		
 		ByteBuffer msgBuffer = encoder.encode(msg);
 		msgBuffer.flip();
@@ -239,7 +239,7 @@ public class TestOnePrefixCoder {
 		ByteBuffer payload = encoder.encode(req);
 		payload.flip();
 		msg.setPayload(payload);
-		msg.setVersion(Constants.VERSION_STR);
+		msg.setVersion(Constants.MSG_VERSION);
 		req.setMsg(msg);
 		
 		ByteBuffer msgBuffer = encoder.encode(msg);

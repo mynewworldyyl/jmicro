@@ -76,7 +76,7 @@ public class ApiGatewayClientSessionManager implements IClientSessionManager {
 	public void init()  {
 		this.registerMessageHandler(new IMessageHandler(){
 			@Override
-			public Short type() {
+			public Byte type() {
 				return Constants.MSG_TYPE_HEARBEAT_RESP;
 			}
 			
@@ -91,7 +91,7 @@ public class ApiGatewayClientSessionManager implements IClientSessionManager {
 			hearbeat.setType(Constants.MSG_TYPE_HEARBEAT_REQ);
 			//hearbeat.setId(idGenerator.getLongId(Message.class));
 			hearbeat.setReqId(0L);
-			hearbeat.setVersion(Constants.DEFAULT_VERSION);
+			hearbeat.setVersion(Constants.MSG_VERSION);
 			final ByteBuffer bb = ByteBuffer.wrap("Hello".getBytes(Constants.CHARSET));
 			hearbeat.setPayload(bb);
 		} catch (UnsupportedEncodingException e) {
@@ -188,14 +188,14 @@ public class ApiGatewayClientSessionManager implements IClientSessionManager {
                 	
                 	buffer.put(b);
                 	
-                 	ByteBuffer body = Decoder.readMessage(buffer);
+                 	ByteBuffer body = Message.readMessage(buffer);
                      if(body == null){
                      	return;
                      }
                      
                      Message message = new Message();
                      message.decode(body);
-                     logger.debug("Got message reqId: "+ message.getReqId());
+                     //logger.debug("Got message reqId: "+ message.getReqId());
                      receiver.receive(cs,message);
                  }
 

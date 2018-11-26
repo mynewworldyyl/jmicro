@@ -57,7 +57,7 @@ public class ServiceItem{
 	
 	private String namespace = Constants.DEFAULT_NAMESPACE;
 	
-	private String version = Constants.DEFAULT_VERSION;
+	private String version = Constants.VERSION;
 	
 	private Set<Server> servers = new HashSet<Server>();
 	
@@ -229,7 +229,7 @@ public class ServiceItem{
 	
    public static String version(String version){
 		if(version == null || "".equals(version)){
-			version = Constants.DEFAULT_VERSION;
+			version = Constants.VERSION;
 		}
 		return version;
 	}

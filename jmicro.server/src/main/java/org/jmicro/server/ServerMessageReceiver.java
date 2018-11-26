@@ -65,7 +65,7 @@ public class ServerMessageReceiver implements IMessageReceiver{
 	/*@Cfg(value="/ServerReceiver/receiveBufferSize")
 	private int receiveBufferSize=1000;*/
 	
-	private volatile Map<Short,IMessageHandler> handlers = new ConcurrentHashMap<>();
+	private volatile Map<Byte,IMessageHandler> handlers = new ConcurrentHashMap<>();
 	
 	private Boolean ready = new Boolean(false);
 	
@@ -74,7 +74,7 @@ public class ServerMessageReceiver implements IMessageReceiver{
 	}
 	
 	public void registHandler(IMessageHandler handler){
-		Map<Short,IMessageHandler> handlers = this.handlers;
+		Map<Byte,IMessageHandler> handlers = this.handlers;
 		if(handlers.containsKey(handler.type())){
 			return;
 		}
@@ -135,7 +135,7 @@ public class ServerMessageReceiver implements IMessageReceiver{
 			SF.doMessageLog(MonitorConstant.ERROR, TAG, msg,e);
 			SF.doSubmit(MonitorConstant.SERVER_REQ_ERROR);
 			logger.error("reqHandler error: ",e);
-			msg.setType((short)(msg.getType()+1));
+			msg.setType((byte)(msg.getType()+1));
 			s.write(msg);
 		}
 	}

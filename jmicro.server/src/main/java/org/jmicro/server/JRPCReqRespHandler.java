@@ -28,6 +28,7 @@ import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.Inject;
 import org.jmicro.api.annotation.Interceptor;
 import org.jmicro.api.codec.ICodecFactory;
+import org.jmicro.api.gateway.ApiResponse;
 import org.jmicro.api.idgenerator.IIdGenerator;
 import org.jmicro.api.monitor.IMonitorDataSubmiter;
 import org.jmicro.api.monitor.MonitorConstant;
@@ -52,7 +53,6 @@ import org.jmicro.common.Constants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import co.paralleluniverse.fibers.Fiber;
 import co.paralleluniverse.fibers.Suspendable;
 import co.paralleluniverse.strands.SuspendableRunnable;
 
@@ -64,7 +64,7 @@ import co.paralleluniverse.strands.SuspendableRunnable;
 @Component(active=true,value="JRPCReqRespHandler",side=Constants.SIDE_PROVIDER)
 public class JRPCReqRespHandler implements IMessageHandler{
 
-	public static final short TYPE = Constants.MSG_TYPE_REQ_JRPC;
+	public static final Byte TYPE = Constants.MSG_TYPE_REQ_JRPC;
 	
 	private static final Class<?> TAG = JRPCReqRespHandler.class;
 	
@@ -94,7 +94,7 @@ public class JRPCReqRespHandler implements IMessageHandler{
 	private IRegistry registry = null;
 	
 	@Override
-	public Short type() {
+	public Byte type() {
 		return TYPE;
 	}
 
@@ -103,7 +103,11 @@ public class JRPCReqRespHandler implements IMessageHandler{
 		   
 		RpcRequest req = null;
 		boolean needResp = true;
-		IResponse resp = null;
+		RpcResponse resp = new RpcResponse();
+		resp.setReqId(msg.getReqId());
+		resp.setMsg(msg);
+		resp.setSuccess(true);
+		resp.setId(idGenerator.getLongId(IResponse.class));
 	    try {
 
 	    	final RpcRequest req1 = ICodecFactory.decode(this.codeFactory,msg.getPayload(),
@@ -171,14 +175,16 @@ public class JRPCReqRespHandler implements IMessageHandler{
 								return false;
 							}
 							RpcResponse resp = new RpcResponse(req1.getRequestId(),message);
+							resp.setId(idGenerator.getLongId(IResponse.class));
 							resp.setSuccess(true);
+							msg.setId(idGenerator.getLongId(Message.class));
 							//返回结果包
 							msg.setId(idGenerator.getLongId(Message.class));
 							msg.setPayload(codeFactory.getEncoder(msg.getProtocol()).encode(resp));
 							msg.setType(Constants.MSG_TYPE_ASYNC_RESP);
 							
 							if(openDebug) {
-								SF.doResponseLog(MonitorConstant.DEBUG, msg.getLinkId(), TAG, resp,null,"STREAM");
+								SF.doResponseLog(MonitorConstant.DEBUG, msg.getLinkId(), TAG, resp,null,"STREAM",resp.getId()+"");
 							}
 							s.write(msg);
 							return true;
@@ -187,27 +193,37 @@ public class JRPCReqRespHandler implements IMessageHandler{
 					 handler(req1);
 				};
 				//异步响应
-				new Fiber<Void>(r).start();
+				//new Fiber<Void>(r).start();
 				
-				/*Runnable run = ()->{
-					JMicroContext.get().setParam(Constants.CONTEXT_CALLBACK, new IWriteCallback(){
+				Runnable run = ()->{
+
+					JMicroContext.get().mergeParams(jc);
+					JMicroContext.get().setParam(Constants.CONTEXT_CALLBACK_SERVICE, new IWriteCallback(){
 						@Override
-						public void send(Object message) {
-							RpcResponse resp = new RpcResponse(req.getRequestId(),message,respBufferSize);
+						public boolean send(Object message) {
+							if(s.isClose()){
+								s.close(true);
+								return false;
+							}
+							RpcResponse resp = new RpcResponse(req1.getRequestId(),message);
+							resp.setId(idGenerator.getLongId(IResponse.class));
 							resp.setSuccess(true);
 							//返回结果包
 							msg.setId(idGenerator.getLongId(Message.class));
-							msg.setPayload(resp.encode());
-							msg.setType(Message.MSG_TYPE_ASYNC_RESP);
-							if(s.isClose()){
-								throw new CommonException("Session is closed while writing data");
+							msg.setPayload(codeFactory.getEncoder(msg.getProtocol()).encode(resp));
+							msg.setType(Constants.MSG_TYPE_ASYNC_RESP);
+							
+							if(openDebug) {
+								SF.doResponseLog(MonitorConstant.DEBUG, msg.getLinkId(), TAG, resp,null,"STREAM",resp.getId()+"");
 							}
-							s.write(msg.encode());
+							s.write(msg);
+							return true;
 						}
 					});
-					 handler(req);
+					 handler(req1);
+				
 				};
-				new Thread(run).start();*/
+				new Thread(run).start();
 				
 				
 				//直接返回一个确认包
@@ -226,7 +242,7 @@ public class JRPCReqRespHandler implements IMessageHandler{
 			
 			} else {
 				//同步响应
-				resp = handler(req);
+				resp = (RpcResponse)handler(req);
 				if(resp == null){
 					resp = new RpcResponse(req.getRequestId(),null);
 					resp.setSuccess(true);
