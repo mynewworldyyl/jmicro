@@ -15,5 +15,6 @@
     <modules>
         <module>jmicro.monitor.submiter</module>
 		<module>jmicro.monitor.dashboard</module>
+		<module>jmicro.monitor.breaker</module>
     </modules>
 </project>

@@ -20,6 +20,7 @@ import java.lang.reflect.Method;
 import java.util.Set;
 
 import org.jmicro.api.registry.ServiceItem;
+
 /**
  * 
  * @author Yulei Ye
@@ -28,5 +29,5 @@ import org.jmicro.api.registry.ServiceItem;
 public interface IBreakerHandler {
 
 	boolean canHandle(Method method, Object[] args,Set<ServiceItem> items);
-	Object onFusing( Method method, Object[] args,Set<ServiceItem> items);
+	Object onFusing(Method method, Object[] args,Set<ServiceItem> items);
 }

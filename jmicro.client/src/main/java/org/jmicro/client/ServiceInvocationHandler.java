@@ -35,7 +35,6 @@ import org.jmicro.api.config.Config;
 import org.jmicro.api.exception.BreakerException;
 import org.jmicro.api.idgenerator.IIdGenerator;
 import org.jmicro.api.loadbalance.ISelector;
-import org.jmicro.api.monitor.IMonitorDataSubmiter;
 import org.jmicro.api.monitor.MonitorConstant;
 import org.jmicro.api.monitor.SF;
 import org.jmicro.api.net.IMessageHandler;

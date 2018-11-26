@@ -130,6 +130,10 @@ jmicro.monitor/jmicro.monitor.dashboard/.classpath
 jmicro.monitor/jmicro.monitor.dashboard/.project
 jmicro.monitor/jmicro.monitor.dashboard/.settings/
 jmicro.monitor/jmicro.monitor.dashboard/logs/
+jmicro.monitor/jmicro.monitor.breaker/target/
+jmicro.monitor/jmicro.monitor.breaker/.classpath
+jmicro.monitor/jmicro.monitor.breaker/.project
+jmicro.monitor/jmicro.monitor.breaker/.settings/
 jmicro.main/jmicro.main.monitor.exception/target/
 jmicro.main/jmicro.main.monitor.exception/.classpath
 jmicro.main/jmicro.main.monitor.exception/.project

@@ -93,7 +93,7 @@ public class SubmitItemHolderManager implements IMonitorDataSubmiter{
 	}
 	
 	/**
-	 * 工作线哦数量程改变
+	 * 工作线程数量程改变
 	 */
 	public synchronized void reset(){
 		if(status == NON){
