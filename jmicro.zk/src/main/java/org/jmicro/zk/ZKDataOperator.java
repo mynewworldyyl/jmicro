@@ -82,15 +82,6 @@ public class ZKDataOperator implements IDataOperator{
 		isInit = true;
 		propes = new Properties();
 		curator = createCuratorFramework();
-		/*IObjectFactory of = JMicro.getObjectFactory();
-		if(!of.exist(this.curator.getClass())){
-			of.regist(this.curator);
-			of.regist(CuratorFramework.class,this.curator);
-		}
-		if(!of.exist(ZKDataOperator.class)){
-			of.regist(ins);
-			of.regist(IDataOperator.class,ins);
-		}*/
 	}
 	
 	private Set<IConnectionStateChangeListener> connListeners = new HashSet<>();

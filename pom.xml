@@ -84,7 +84,6 @@
     <modules> 
     	<module>jmicro.common</module>
 		<module>jmicro.api</module>
-		<module>jmicro.codec</module>
 		<module>jmicro.server</module>
 		<module>jmicro.client</module>
 		<module>jmicro.idgenerator</module>
@@ -96,7 +95,6 @@
 		<module>jmicro.limit</module>
 		<module>jmicro.monitor</module>
 		<module>jmicro.gateway</module>
-		<module>jmicro.route</module>
 		<module>jmicro.gateway.client</module>
     </modules>
 
@@ -132,11 +130,11 @@
 				 <artifactId>jmicro.transport.nio</artifactId>
 				  <version>${jmicro.version}</version>
 	        </dependency>
-	         <dependency>
+<!-- 	         <dependency>
 				 <groupId>org.jmicro</groupId>
 				 <artifactId>jmicro.transport.mina</artifactId>
 				  <version>${jmicro.version}</version>
-	        </dependency>
+	        </dependency> -->
 	         <dependency>
 				 <groupId>org.jmicro</groupId>
 				 <artifactId>jmicro.transport.http</artifactId>
@@ -200,11 +198,6 @@
 		         <dependency>
 					 <groupId>org.jmicro</groupId>
 					 <artifactId>jmicro.client</artifactId>
-					  <version>${jmicro.version}</version>
-		        </dependency>
-		         <dependency>
-					 <groupId>org.jmicro</groupId>
-					 <artifactId>jmicro.codec</artifactId>
 					  <version>${jmicro.version}</version>
 		        </dependency>
 	         <dependency>
