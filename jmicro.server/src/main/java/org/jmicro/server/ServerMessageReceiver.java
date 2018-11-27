@@ -32,6 +32,7 @@ import org.jmicro.api.net.IMessageHandler;
 import org.jmicro.api.net.IMessageReceiver;
 import org.jmicro.api.net.ISession;
 import org.jmicro.api.net.Message;
+import org.jmicro.api.net.ServerError;
 import org.jmicro.common.CommonException;
 import org.jmicro.common.Constants;
 import org.slf4j.Logger;
@@ -100,24 +101,23 @@ public class ServerMessageReceiver implements IMessageReceiver{
 				}
 			}
 		}
+		JMicroContext jc = JMicroContext.get();
 		//直接协程处理，IO LOOP线程返回
-		//new Fiber<Void>(() ->doReceive((IServerSession)s,data)).start();
-		new Thread(()->{doReceive((IServerSession)s,msg);}).start();
+		/*
+		new Fiber<Void>(() -> {
+		JMicroContext.get().mergeParams(jc);
+		doReceive((IServerSession)s,msg);
+		}).start();
+		*/
+		
+		new Thread(()->{
+			JMicroContext.get().mergeParams(jc);
+			doReceive((IServerSession)s,msg);
+		}).start();
 	}
 	
 	@Suspendable
 	private void doReceive(IServerSession s, Message msg){
-		
-		JMicroContext.get().configMonitor(msg.isMonitorable());
-		JMicroContext.setMonitor(monitor);
-		
-		JMicroContext.get().setParam(JMicroContext.SESSION_KEY, s);
-			
-		JMicroContext.get().setParam(JMicroContext.REMOTE_HOST, s.remoteHost());
-		JMicroContext.get().setParam(JMicroContext.REMOTE_PORT, s.remotePort()+"");
-		
-		JMicroContext.get().setParam(JMicroContext.LOCAL_HOST, s.localHost());
-		JMicroContext.get().setParam(JMicroContext.LOCAL_PORT, s.localPort()+"");
 		
 		if(openDebug) {
 			SF.doMessageLog(MonitorConstant.DEBUG, TAG, msg,null,"doReceive");
@@ -136,6 +136,9 @@ public class ServerMessageReceiver implements IMessageReceiver{
 			SF.doSubmit(MonitorConstant.SERVER_REQ_ERROR);
 			logger.error("reqHandler error: ",e);
 			msg.setType((byte)(msg.getType()+1));
+			ServerError se = new ServerError();
+			se.setMsg(e.getMessage());
+			msg.setPayload(codeFactory.getEncoder(msg.getProtocol()).encode(se));
 			s.write(msg);
 		}
 	}

@@ -7,7 +7,7 @@ import org.jmicro.api.annotation.Cfg;
 import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.SMethod;
 import org.jmicro.api.annotation.Service;
-import org.jmicro.api.server.IWriteCallback;
+import org.jmicro.api.net.IWriteCallback;
 import org.jmicro.api.test.Person;
 import org.jmicro.common.CommonException;
 import org.jmicro.common.Constants;

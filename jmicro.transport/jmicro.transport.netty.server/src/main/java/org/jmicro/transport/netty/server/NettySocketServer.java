@@ -26,7 +26,7 @@ import org.jmicro.api.config.Config;
 import org.jmicro.api.monitor.IMonitorDataSubmiter;
 import org.jmicro.api.monitor.MonitorConstant;
 import org.jmicro.api.monitor.SF;
-import org.jmicro.api.server.IServer;
+import org.jmicro.api.net.IServer;
 import org.jmicro.common.CommonException;
 import org.jmicro.common.Constants;
 import org.jmicro.common.util.StringUtils;

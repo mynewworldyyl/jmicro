@@ -75,7 +75,7 @@ public final class Message {
 	 * 0 0 0 0 0 0 0 0
 	 * @return
 	 */
-	private byte flag;
+	private byte flag = 0;
 	
 	//request or response
 	//private boolean isReq;
@@ -91,12 +91,24 @@ public final class Message {
 		return (flag & Constants.FLAG_MONITORABLE) != 0;
 	}
 	
+	public void setMonitorable(boolean f) {
+		flag |= f ? Constants.FLAG_MONITORABLE : 0 ; 
+	}
+	
 	public boolean isStream() {
 		return (flag & Constants.FLAG_STREAM) != 0;
 	}
 	
+	public void setStream(boolean f) {
+		flag |= f ? Constants.FLAG_STREAM : 0 ; 
+	}
+	
 	public boolean isNeedResponse() {
 		return (flag & Constants.FLAG_NEED_RESPONSE) != 0;
+	}
+	
+	public void setNeedResponse(boolean f) {
+		flag |= f ? Constants.FLAG_NEED_RESPONSE : 0 ; 
 	}
 	
 	public int getLevel() {
@@ -313,14 +325,6 @@ public final class Message {
     
 	public long getId() {
 		return this.msgId;
-	}
-
-	public byte getFlag() {
-		return flag;
-	}
-
-	public void setFlag(byte flag) {
-		this.flag = flag;
 	}
 
 	public void setId(long id) {

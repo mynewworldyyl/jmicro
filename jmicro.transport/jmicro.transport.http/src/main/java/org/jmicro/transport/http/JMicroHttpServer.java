@@ -33,8 +33,8 @@ import org.jmicro.api.monitor.IMonitorDataSubmiter;
 import org.jmicro.api.monitor.MonitorConstant;
 import org.jmicro.api.monitor.SF;
 import org.jmicro.api.net.IMessageReceiver;
+import org.jmicro.api.net.IServer;
 import org.jmicro.api.net.Message;
-import org.jmicro.api.server.IServer;
 import org.jmicro.common.CommonException;
 import org.jmicro.common.Constants;
 import org.jmicro.common.Utils;
@@ -97,7 +97,8 @@ public class JMicroHttpServer implements IServer{
 	private HttpHandler httpHandler = new HttpHandler(){
         @Override
         public void handle(HttpExchange exchange) {
-        	JMicroContext.get().setObject(JMicroContext.MONITOR, monitor);
+        	JMicroContext.setMonitor(monitor);
+        	JMicroContext.callSideProdiver(true);
         	HttpServerSession session = new HttpServerSession(exchange,readBufferSize,heardbeatInterval);
 			try {
 				if(exchange.getRequestMethod().equals("POST")){
@@ -106,6 +107,7 @@ public class JMicroHttpServer implements IServer{
 					in.read(data, 0, data.length);
 		        	String json = new String(data,0,data.length, Constants.CHARSET);
 		        	Message msg = JsonUtils.getIns().fromJson(json, Message.class);
+		        	JMicroContext.configProvider(msg);
 		 			receiver.receive(session,msg);
 				}else {
 					Message msg = new Message();

@@ -182,7 +182,7 @@ public class ApiGatewayClient {
 	public <R> Object callService(String serviceName, String namespace, String version
 			, String method, Object[] args,IMessageCallback<R> callback) {
 		Message msg = this.createMessage(serviceName, namespace, version, method, args);
-		msg.setFlag((byte)(msg.getFlag() | Constants.FLAG_STREAM));
+		msg.setStream(true);
 		return getResponse(msg,callback);
 	}
 	

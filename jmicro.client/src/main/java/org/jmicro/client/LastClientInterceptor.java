@@ -14,46 +14,38 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.jmicro.server;
+package org.jmicro.client;
 
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-
-import org.jmicro.api.JMicroContext;
 import org.jmicro.api.annotation.Component;
+import org.jmicro.api.annotation.Interceptor;
 import org.jmicro.api.exception.RpcException;
-import org.jmicro.api.net.AbstractHandler;
+import org.jmicro.api.net.AbstractInterceptor;
+import org.jmicro.api.net.IInterceptor;
 import org.jmicro.api.net.IRequest;
 import org.jmicro.api.net.IRequestHandler;
 import org.jmicro.api.net.IResponse;
-import org.jmicro.api.net.RpcResponse;
-import org.jmicro.api.service.ServiceLoader;
 import org.jmicro.common.Constants;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * 
  * @author Yulei Ye
- * @date 2018年10月4日-下午12:07:12
+ * @date 2018年11月27日 下午10:40:08
  */
-@Component(value=Constants.DEFAULT_HANDLER,lazy=false,active=true,side=Constants.SIDE_PROVIDER)
-public class RpcRequestHandler extends AbstractHandler implements IRequestHandler {
+@Component(value=Constants.LAST_CLIENT_INTERCEPTOR, side=Constants.SIDE_COMSUMER)
+@Interceptor
+public class LastClientInterceptor extends AbstractInterceptor implements IInterceptor {
+
+	private final static Logger logger = LoggerFactory.getLogger(LastClientInterceptor.class);
 	
 	@Override
-	public IResponse onRequest(IRequest request) {
-		Object obj = JMicroContext.get().getObject(Constants.SERVICE_OBJ_KEY, null);
-		RpcResponse resp = null;
-		try {
-			Method m = ServiceLoader.getServiceMethod(obj, request);
-			if(m != null) {
-				Object result = m.invoke(obj, request.getArgs());
-				resp = new RpcResponse(request.getRequestId(),result);
-				resp.setMonitorEnable(request.isMonitorEnable());
-				resp.setSuccess(true);
-			}
-		} catch (SecurityException | IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
-			throw new RpcException(request,"",e);
-		}
+	public IResponse intercept(IRequestHandler handler, IRequest request) throws RpcException {
+		logger.debug(Constants.LAST_CLIENT_INTERCEPTOR + " before");
+		IResponse resp = handler.onRequest(request);
+		logger.debug(Constants.LAST_CLIENT_INTERCEPTOR + " after");
 		return resp;
 	}
-
+	
+	
 }

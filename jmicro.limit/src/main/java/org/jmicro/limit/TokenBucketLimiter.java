@@ -25,7 +25,7 @@ import org.jmicro.api.limitspeed.ILimiter;
 import org.jmicro.api.monitor.IMonitorDataSubmiter;
 import org.jmicro.api.monitor.MonitorConstant;
 import org.jmicro.api.monitor.SF;
-import org.jmicro.api.server.IRequest;
+import org.jmicro.api.net.IRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

@@ -23,9 +23,9 @@ import java.util.concurrent.TimeUnit;
 import org.jmicro.api.JMicroContext;
 import org.jmicro.api.annotation.Component;
 import org.jmicro.api.limitspeed.ILimiter;
+import org.jmicro.api.net.IRequest;
 import org.jmicro.api.registry.ServiceItem;
 import org.jmicro.api.registry.ServiceMethod;
-import org.jmicro.api.server.IRequest;
 import org.jmicro.common.Constants;
 
 import com.google.common.util.concurrent.RateLimiter;

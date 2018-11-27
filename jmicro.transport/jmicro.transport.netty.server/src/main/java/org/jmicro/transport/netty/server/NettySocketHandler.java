@@ -54,7 +54,7 @@ public class NettySocketHandler extends ChannelInboundHandlerAdapter {
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg)
             throws Exception {
-    	JMicroContext.get().setObject(JMicroContext.MONITOR, monitor);
+    	
     	if(!(msg instanceof ByteBuf)) {
     		ctx.fireChannelRead(msg);
     		return;
@@ -66,6 +66,9 @@ public class NettySocketHandler extends ChannelInboundHandlerAdapter {
     	}
     	
     	NettyServerSession session = ctx.channel().attr(sessionKey).get();
+    	
+    	JMicroContext.configProvider(monitor, session);
+    	
     	ByteBuffer buffer = session.getReadBuffer();
     	
     	ByteBuffer b = ByteBuffer.allocate(bb.readableBytes());
@@ -80,6 +83,7 @@ public class NettySocketHandler extends ChannelInboundHandlerAdapter {
         }
         Message message = new Message();
         message.decode(body);
+        JMicroContext.configProvider(message);
 		receiver.receive(session,message);
     }
     

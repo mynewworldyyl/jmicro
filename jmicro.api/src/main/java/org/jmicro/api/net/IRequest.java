@@ -14,12 +14,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.jmicro.api.server;
+package org.jmicro.api.net;
 
 import java.util.Map;
-
-import org.jmicro.api.net.IReq;
-import org.jmicro.api.net.ISession;
 /**
  * 
  * @author Yulei Ye
@@ -48,8 +45,6 @@ public interface IRequest extends IReq{
 	//public void setArgs(Object[] args);
 	
 	public Long getRequestId();
-	
-	public ISession getSession();
 	
 	public boolean isSuccess();
 	void setSuccess(boolean isSuccess);

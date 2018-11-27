@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.jmicro.api.server;
+package org.jmicro.api.net;
 /**
  * 
  * @author Yulei Ye

@@ -14,28 +14,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.jmicro.api.server;
-
-import org.jmicro.api.net.IResp;
-
+package org.jmicro.api.net;
 /**
- * 
  * @author Yulei Ye
- * @date 2018年10月4日-下午12:06:02
+ * @date 2018年10月4日-下午12:05:14
  */
-public interface IResponse extends IResp{
+public abstract class AbstractInterceptor implements IInterceptor {
 
-	Long getRequestId();
+	public AbstractInterceptor(){
+		
+	}
 	
-	Object getResult();
-	
-	boolean isMonitorEnable();
-	
-	boolean isSuccess();
-
-	void setSuccess(boolean success);
-	
-	long getId();
-	
-	void setId(long id);
 }

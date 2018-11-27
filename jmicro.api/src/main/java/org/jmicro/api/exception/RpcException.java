@@ -16,7 +16,7 @@
  */
 package org.jmicro.api.exception;
 
-import org.jmicro.api.server.IRequest;
+import org.jmicro.api.net.IRequest;
 import org.jmicro.common.CommonException;
 /**
  * 

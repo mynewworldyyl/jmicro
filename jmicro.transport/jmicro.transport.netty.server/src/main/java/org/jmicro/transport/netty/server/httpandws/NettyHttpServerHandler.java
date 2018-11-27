@@ -61,7 +61,6 @@ public class NettyHttpServerHandler extends ChannelInboundHandlerAdapter {
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg)
             throws Exception {
-    	JMicroContext.get().setObject(JMicroContext.MONITOR, monitor);
     	if(this.openDebug) {
     		logger.debug("channelRead:" + msg.toString());
     	}
@@ -75,6 +74,8 @@ public class NettyHttpServerHandler extends ChannelInboundHandlerAdapter {
     		} else if(req.method().equals(HttpMethod.POST)){
     			//全部POST请求转到RPC控制器上面
     			NettyServerSession session = ctx.attr(sessionKey).get();
+    			JMicroContext.configProvider(monitor, session);
+    	    	
     			ByteBuf bb = req.content();
     			byte[] bts = new byte[bb.readableBytes()];
     			bb.readBytes(bts);
@@ -83,10 +84,12 @@ public class NettyHttpServerHandler extends ChannelInboundHandlerAdapter {
     			if(encodeType == null || encodeType.equals(Message.PROTOCOL_JSON+"")) {
     				String result = new String(bts,Constants.CHARSET);
         			message = JsonUtils.getIns().fromJson(result, Message.class);
+        			JMicroContext.configProvider(message);
         			receiver.receive(session,message);
     			} else {
     				message = new Message();
     				message.decode(ByteBuffer.wrap(bts));
+    				JMicroContext.configProvider(message);
     				receiver.receive(session,message);
     			}
     		}

@@ -50,6 +50,7 @@ public abstract class AbstractClientServiceProxy {
 		//System.out.println("backupAndSetContext");
 		JMicroContext.get().backup();
 		JMicroContext.setMonitor(monitor);
+		JMicroContext.callSideProdiver(false);
 	}
 	
 	public void restoreContext(){

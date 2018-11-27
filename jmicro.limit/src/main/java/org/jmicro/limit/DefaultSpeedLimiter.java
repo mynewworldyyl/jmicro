@@ -28,10 +28,10 @@ import org.jmicro.api.limitspeed.ILimiter;
 import org.jmicro.api.monitor.IMonitorDataSubmiter;
 import org.jmicro.api.monitor.MonitorConstant;
 import org.jmicro.api.monitor.SF;
+import org.jmicro.api.net.IRequest;
 import org.jmicro.api.registry.IRegistry;
 import org.jmicro.api.registry.ServiceItem;
 import org.jmicro.api.registry.ServiceMethod;
-import org.jmicro.api.server.IRequest;
 
 /**
  * 

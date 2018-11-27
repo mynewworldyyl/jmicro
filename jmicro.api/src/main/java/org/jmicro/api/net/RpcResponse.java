@@ -17,7 +17,6 @@
 package org.jmicro.api.net;
 
 import org.jmicro.api.AbstractObjectMapSupport;
-import org.jmicro.api.server.IResponse;
 /**
  * 
  * @author Yulei Ye

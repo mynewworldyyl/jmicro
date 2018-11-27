@@ -32,8 +32,8 @@ import org.jmicro.api.degrade.DegradeManager;
 import org.jmicro.api.monitor.IMonitorDataSubscriber;
 import org.jmicro.api.monitor.MonitorConstant;
 import org.jmicro.api.monitor.SubmitItem;
+import org.jmicro.api.net.IRequest;
 import org.jmicro.api.registry.ServiceMethod;
-import org.jmicro.api.server.IRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

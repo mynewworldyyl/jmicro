@@ -14,15 +14,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.jmicro.api.server;
-
-import org.jmicro.api.exception.RpcException;
+package org.jmicro.api.net;
 /**
  * 
  * @author Yulei Ye
- * @date 2018年10月4日-下午12:05:38
+ * @date 2018年10月4日-下午12:05:06
  */
-public interface IInterceptor {
+public abstract class AbstractHandler implements IRequestHandler {
+
+	public AbstractHandler(){
+		
+	}
 	
-	IResponse intercept(IRequestHandler handler,IRequest req) throws RpcException;
 }

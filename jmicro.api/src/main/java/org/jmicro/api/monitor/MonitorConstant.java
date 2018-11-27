@@ -17,8 +17,8 @@
 package org.jmicro.api.monitor;
 
 import org.jmicro.api.JMicroContext;
-import org.jmicro.api.server.IRequest;
-import org.jmicro.api.server.IResponse;
+import org.jmicro.api.net.IRequest;
+import org.jmicro.api.net.IResponse;
 
 /**
  * 

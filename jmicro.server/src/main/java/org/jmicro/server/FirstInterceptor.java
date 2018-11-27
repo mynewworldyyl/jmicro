@@ -22,13 +22,13 @@ import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.Interceptor;
 import org.jmicro.api.exception.RpcException;
 import org.jmicro.api.limitspeed.ILimiter;
+import org.jmicro.api.net.AbstractInterceptor;
+import org.jmicro.api.net.IInterceptor;
+import org.jmicro.api.net.IRequest;
+import org.jmicro.api.net.IRequestHandler;
+import org.jmicro.api.net.IResponse;
 import org.jmicro.api.net.RpcResponse;
 import org.jmicro.api.net.ServerError;
-import org.jmicro.api.server.AbstractInterceptor;
-import org.jmicro.api.server.IInterceptor;
-import org.jmicro.api.server.IRequest;
-import org.jmicro.api.server.IRequestHandler;
-import org.jmicro.api.server.IResponse;
 import org.jmicro.common.Constants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -37,7 +37,7 @@ import org.slf4j.LoggerFactory;
  * @author Yulei Ye
  * @date 2018年10月4日-下午12:05:30
  */
-@Component(value=Constants.FIRST_INTERCEPTOR,lazy=false)
+@Component(value=Constants.FIRST_INTERCEPTOR,lazy=false,side=Constants.SIDE_PROVIDER)
 @Interceptor
 public class FirstInterceptor extends AbstractInterceptor implements IInterceptor{
 
@@ -49,7 +49,7 @@ public class FirstInterceptor extends AbstractInterceptor implements IIntercepto
 	@Cfg("/respBufferSize")
 	private int respBufferSize = Constants.DEFAULT_RESP_BUFFER_SIZE;
 	
-	private ILimiter limiter=null;
+	private ILimiter limiter = null;
 	
 	public FirstInterceptor() {}
 	

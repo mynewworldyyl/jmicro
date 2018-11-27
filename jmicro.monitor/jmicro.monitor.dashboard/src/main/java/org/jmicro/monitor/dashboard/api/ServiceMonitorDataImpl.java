@@ -29,9 +29,9 @@ import org.jmicro.api.degrade.DegradeManager;
 import org.jmicro.api.idgenerator.IIdGenerator;
 import org.jmicro.api.monitor.IServiceMonitorData;
 import org.jmicro.api.monitor.ServiceStatis;
+import org.jmicro.api.net.IWriteCallback;
 import org.jmicro.api.raft.IDataListener;
 import org.jmicro.api.raft.IDataOperator;
-import org.jmicro.api.server.IWriteCallback;
 import org.jmicro.common.Constants;
 
 /**

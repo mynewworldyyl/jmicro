@@ -19,7 +19,6 @@ package org.jmicro.api.net;
 import java.util.Map;
 
 import org.jmicro.api.AbstractObjectMapSupport;
-import org.jmicro.api.server.IRequest;
 import org.jmicro.common.Constants;
 /**
  * 
@@ -68,11 +67,11 @@ public final class RpcRequest extends AbstractObjectMapSupport implements IReque
 	}
 	
 	public boolean needResponse(){
-		return (this.msg.getFlag() & Constants.FLAG_NEED_RESPONSE) != 0;
+		return this.msg.isNeedResponse();
 	}
 	
 	public boolean isStream(){
-		return (this.msg.getFlag() & Constants.FLAG_STREAM) != 0;
+		return this.msg.isStream();
 	}
 
 	public String getTransport() {

@@ -41,6 +41,13 @@ public @interface SMethod {
 	
 	public int timeout() default 2000;
 	
+	/**
+	 * 失败时的默认返回值，包括服务熔断失败，降级失败等
+	 * 通过Gson能反序列化为方法的返回参数,如果失败，抛出异常，业务通过捕获异常处理失败
+	 */
+	public String failResponse() default "";
+	public boolean breakable() default false;
+	
 	//continue fail will downgrade service
 	public int maxFailBeforeDegrade() default 5;
 	

@@ -17,9 +17,11 @@
 package org.jmicro.common;
 
 import java.io.UnsupportedEncodingException;
+import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.lang.reflect.Type;
 import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
@@ -27,11 +29,16 @@ import java.net.SocketException;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
+import org.jmicro.common.util.JsonUtils;
 /**
  * 
  * @author Yulei Ye
@@ -177,6 +184,71 @@ public class Utils {
 				return getClassField(cls,fn);
 			}
 		}
+	}
+	
+	public Object getValue(Type type, String str,Type gt) {
+		Class<?> cls = null;
+		if(type instanceof Class){
+			cls = (Class)type;
+		}
+		Object v = null;
+		if(type == Boolean.TYPE){
+			v = Boolean.parseBoolean(str);
+		}else if(type == Short.TYPE){
+			v = Short.parseShort(str);
+		}else if(type == Integer.TYPE){
+			v = Integer.parseInt(str);
+		}else if(type == Long.TYPE){
+			v = Long.parseLong(str);
+		}else if(type == Float.TYPE){
+			v = Float.parseFloat(str);
+		}else if(type == Double.TYPE){
+			v = Double.parseDouble(str);
+		}else if(type == Byte.TYPE){
+			v = Byte.parseByte(str);
+		}/*else if(type == Character.TYPE){
+			v = Character(str);
+		}*/else if(cls != null && cls.isArray()) {
+			Class<?> ctype = ((Class)type).getComponentType();
+			String[] elts = str.split(",");
+			Object arr = Array.newInstance(ctype, elts.length);
+			int i =0;
+			for(int j = 0; j < elts.length; j++){
+				Object vv = this.getValue(ctype, elts[j], gt);
+				Array.set(arr, j, vv);
+				
+			}
+			v = arr;
+		}else if(cls != null && List.class.isAssignableFrom(cls)){
+			Class<?> ctype = ((Class)type).getComponentType();
+			String[] elts = str.split(",");
+			List list = new ArrayList();
+			for(String e: elts ){
+				list.add(getValue(gt,e,gt));
+			}
+			v = list;
+		}else if(cls != null && Collection.class.isAssignableFrom(cls)){
+			String[] elts = str.split(",");
+			Set set = new HashSet();
+			for(String e: elts ){
+				set.add(getValue(gt,e,null));
+			}
+			v = set;
+		}else if(cls != null && Map.class.isAssignableFrom(cls)){
+			String[] elts = str.split("&");
+			Map<String,String> map = new HashMap<>();
+			for(String e: elts ){
+				String[] kv = e.split("=");
+				map.put(kv[0], kv[1]);
+			}
+			v = map;
+		} else if(cls == String.class){
+			v = str;
+		}else {
+			v = JsonUtils.getIns().fromJson(str, type);
+		}
+		
+		return v;
 	}
 	
 }

@@ -24,6 +24,16 @@ import org.jmicro.api.config.Config;
 import org.jmicro.api.idgenerator.IIdGenerator;
 import org.jmicro.api.monitor.IMonitorDataSubmiter;
 import org.jmicro.api.monitor.Linker;
+import org.jmicro.api.monitor.MonitorConstant;
+import org.jmicro.api.monitor.SF;
+import org.jmicro.api.net.IRequest;
+import org.jmicro.api.net.ISession;
+import org.jmicro.api.net.Message;
+import org.jmicro.api.registry.IRegistry;
+import org.jmicro.api.registry.ServiceItem;
+import org.jmicro.api.registry.ServiceMethod;
+import org.jmicro.api.service.ServiceLoader;
+import org.jmicro.common.CommonException;
 import org.jmicro.common.Constants;
 /**
  * 
@@ -32,6 +42,9 @@ import org.jmicro.common.Constants;
  */
 public class JMicroContext  {
 
+	//value should be true or false, for provider or sunsumer side
+	public static final String CALL_SIDE_PROVIDER = "callSideProvider";
+	
 	public static final String LOCAL_HOST = "host";
 	public static final String LOCAL_PORT = "port";
 	
@@ -46,6 +59,7 @@ public class JMicroContext  {
 	public static final String CLIENT_NAMESPACE = "clientNamespace";
 	public static final String CLIENT_VERSION = "clientVersion";
 	public static final String CLIENT_METHOD = "clientMehtod";
+	public static final String CLIENT_ARGSTR= "argStr";
 	
 	public static String[] args = {};
 	
@@ -53,9 +67,16 @@ public class JMicroContext  {
 	public static final String SESSION_KEY="_sessionKey";
 	private static final ThreadLocal<JMicroContext> cxt = new ThreadLocal<JMicroContext>();
 	
-	private Stack<Object> stack = new Stack<>();
+	private Stack<Map<String,Object>> stack = new Stack<>();
 	
 	private JMicroContext() {}
+	
+	public static void remove(){
+		JMicroContext c = cxt.get();
+		if(c != null) {
+			cxt.remove();
+		}
+	}
 	
 	public static JMicroContext get(){
 		JMicroContext c = cxt.get();
@@ -66,11 +87,65 @@ public class JMicroContext  {
 		return c;
 	}
 	
-	public static void remove(){
-		JMicroContext c = cxt.get();
-		if(c != null) {
-			cxt.remove();
+	public static void configProvider(IMonitorDataSubmiter monitor,ISession s) {
+		callSideProdiver(true);
+		setMonitor(monitor);
+		JMicroContext context = cxt.get();
+		
+		context.setParam(JMicroContext.SESSION_KEY, s);
+			
+		context.setParam(JMicroContext.REMOTE_HOST, s.remoteHost());
+		context.setParam(JMicroContext.REMOTE_PORT, s.remotePort()+"");
+		
+		context.setParam(JMicroContext.LOCAL_HOST, s.localHost());
+		context.setParam(JMicroContext.LOCAL_PORT, s.localPort()+"");
+	}
+	
+	public static void config(IRequest req, ServiceLoader serviceLoader,IRegistry registry) {
+		JMicroContext context = cxt.get();
+		context.setString(JMicroContext.CLIENT_SERVICE, req.getServiceName());
+		context.setString(JMicroContext.CLIENT_NAMESPACE, req.getNamespace());
+		context.setString(JMicroContext.CLIENT_METHOD, req.getMethod());
+		context.setString(JMicroContext.CLIENT_VERSION, req.getVersion());
+		context.setString(JMicroContext.CLIENT_ARGSTR, ServiceMethod.methodParamsKey(req.getArgs()));
+		context.mergeParams(req.getRequestParams());
+		
+		ServiceItem si = registry.getServiceByImpl(req.getImpl());
+		if(si == null){
+			SF.doRequestLog(MonitorConstant.ERROR, lid(null), JMicroContext.class, req,null," service ITEM not found");
+			SF.doSubmit(MonitorConstant.SERVER_REQ_SERVICE_NOT_FOUND,req,null);
+			throw new CommonException("Service not found impl："+req.getImpl());
 		}
+		
+		ServiceMethod sm = si.getMethod(req.getMethod(), req.getArgs());
+		
+		context.setObject(Constants.SERVICE_ITEM_KEY, si);
+		context.setObject(Constants.SERVICE_METHOD_KEY, sm);
+		
+		Object obj = serviceLoader.getService(req.getImpl());
+		
+		if(obj == null){
+			SF.doRequestLog(MonitorConstant.ERROR, lid(null), JMicroContext.class, req,null," service INSTANCE not found");
+			SF.doSubmit(MonitorConstant.SERVER_REQ_SERVICE_NOT_FOUND,
+					req,null);
+			throw new CommonException("Service not found");
+		}
+		context.setObject(Constants.SERVICE_OBJ_KEY, obj);
+	}
+	
+	public static void configProvider(Message msg) {
+		JMicroContext context = cxt.get();
+		context.configMonitorable(msg.isMonitorable());
+		context.setParam(JMicroContext.LINKER_ID, msg.getLinkId());
+	}
+	
+	public static boolean callSideProdiver(Boolean ... flag){
+		if(flag == null || flag.length == 0) {
+			return get().getBoolean(JMicroContext.CALL_SIDE_PROVIDER, true);
+		} else {
+			get().setBoolean(JMicroContext.CALL_SIDE_PROVIDER, flag[0]);
+		}
+		return flag[0];
 	}
 	
 	public static void setMonitor(IMonitorDataSubmiter monitor){
@@ -80,7 +155,7 @@ public class JMicroContext  {
 	public static Long lid(IIdGenerator idGenerator){
 		JMicroContext c = cxt.get();
 		Long id = c.getLong(LINKER_ID, null);
-		if(id == null) {
+		if(idGenerator != null && id == null) {
 			id = idGenerator.getLongId(Linker.class);
 			c.setLong(LINKER_ID, id);
 		}
@@ -88,26 +163,30 @@ public class JMicroContext  {
 	}
 	
 	public void backup() {
-		boolean monitorEnable = this.isMonitor();
-		stack.push(new Boolean(monitorEnable));
-		
+		Map<String,Object> ps = new HashMap<>();
+		ps.putAll(cxt.get().params);
+		stack.push(ps);
+		cxt.get().params.clear();
 	}
 	
 	public void restore() {
-		
-		boolean monitorEnable = (Boolean)stack.pop();
-		this.setBoolean(Constants.MONITOR_ENABLE_KEY, monitorEnable);
+		cxt.get().params.clear();
+		Map<String,Object> ps = stack.pop();
+		if(ps == null) {
+			throw new CommonException("JMicro Context stack invalid");
+		}
+		cxt.get().params.putAll(ps);;
 	}
 	
 	public void configMonitor(int methodCfg,int srvCfg){
 		if(methodCfg != -1){
-			configMonitor(methodCfg==1);
+			configMonitorable(methodCfg==1);
 		} else if(srvCfg != -1){
-			configMonitor(srvCfg==1);
+			configMonitorable(srvCfg==1);
 		}
 	}
 	
-	public void configMonitor(boolean enable){
+	public void configMonitorable(boolean enable){
 		this.setBoolean(Constants.MONITOR_ENABLE_KEY, enable);
 	}
 	

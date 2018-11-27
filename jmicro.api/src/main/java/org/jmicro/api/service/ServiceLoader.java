@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.jmicro.server;
+package org.jmicro.api.service;
 
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -35,13 +35,13 @@ import org.jmicro.api.annotation.SMethod;
 import org.jmicro.api.annotation.Service;
 import org.jmicro.api.config.Config;
 import org.jmicro.api.exception.RpcException;
+import org.jmicro.api.net.IRequest;
+import org.jmicro.api.net.IServer;
 import org.jmicro.api.objectfactory.ProxyObject;
 import org.jmicro.api.registry.IRegistry;
 import org.jmicro.api.registry.Server;
 import org.jmicro.api.registry.ServiceItem;
 import org.jmicro.api.registry.ServiceMethod;
-import org.jmicro.api.server.IRequest;
-import org.jmicro.api.server.IServer;
 import org.jmicro.common.CommonException;
 import org.jmicro.common.Constants;
 import org.jmicro.common.util.StringUtils;
@@ -251,6 +251,8 @@ public class ServiceLoader {
 		checkMethod.setMonitorEnable(anno.monitorEnable());
 		checkMethod.setMethodName("wayd");
 		checkMethod.setMethodParamTypes("java.lang.String");
+		checkMethod.setBreakable(true);
+		checkMethod.setFailResponse("I'm breaking now");
 		
 		for(Method m : interfacez.getMethods()) {
 			ServiceMethod sm = new ServiceMethod();
@@ -279,22 +281,10 @@ public class ServiceLoader {
 				sm.setSpeedUnit(item.getSpeedUnit());
 				sm.setAvgResponseTime(item.getAvgResponseTime());
 				sm.setMonitorEnable(item.getMonitorEnable());
+				sm.setBreakable(false);
+				sm.setFailResponse("");
 			} else {
-				if(manno == null && intMAnno == null ) {
-					sm.setMaxFailBeforeFusing(500);
-					sm.setMaxFailBeforeFusing(500);
-					sm.setMaxFailBeforeDegrade(100);
-					sm.setRetryCnt(3);
-					sm.setRetryInterval(500);
-					sm.setTestingArgs("");
-					sm.setTimeout(2000);
-					sm.setMaxSpeed(0);
-					sm.setSpeedUnit("");
-					sm.setAvgResponseTime(-1);
-					sm.setMonitorEnable(-1);
-					sm.setStream(false);
-					sm.setNeedResponse(true);
-				} else if(manno != null ) {
+				 if(manno != null ) {
 					sm.setMaxFailBeforeFusing(manno.maxFailBeforeFusing()!=500 || intMAnno == null ?manno.maxFailBeforeFusing():intMAnno.maxFailBeforeFusing());
 					sm.setMaxFailBeforeFusing(manno.maxFailBeforeFusing()!=500 || intMAnno == null ?manno.maxFailBeforeFusing():intMAnno.maxFailBeforeFusing());
 					sm.setMaxFailBeforeDegrade(manno.maxFailBeforeDegrade()!=100 || intMAnno == null ?manno.maxFailBeforeDegrade():intMAnno.maxFailBeforeDegrade());
@@ -308,7 +298,9 @@ public class ServiceLoader {
 					sm.setMonitorEnable(manno.monitorEnable()!=-1 || intMAnno == null ? manno.monitorEnable() : intMAnno.monitorEnable());
 					sm.setStream(manno.stream());
 					sm.setNeedResponse(manno.needResponse());
-				}else {
+					sm.setBreakable(manno.breakable());
+					sm.setFailResponse(manno.failResponse());
+				} else {
 					sm.setMaxFailBeforeFusing(intMAnno.maxFailBeforeFusing());
 					sm.setMaxFailBeforeFusing(intMAnno.maxFailBeforeFusing());
 					sm.setMaxFailBeforeDegrade(intMAnno.maxFailBeforeDegrade());
@@ -322,6 +314,8 @@ public class ServiceLoader {
 					sm.setMonitorEnable(intMAnno.monitorEnable());
 					sm.setStream(intMAnno.stream());
 					sm.setNeedResponse(intMAnno.needResponse());
+					sm.setBreakable(intMAnno.breakable());
+					sm.setFailResponse(intMAnno.failResponse());
 				}
 				
 			} 

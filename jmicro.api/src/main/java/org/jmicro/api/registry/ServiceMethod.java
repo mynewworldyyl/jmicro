@@ -20,6 +20,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 
 import org.jmicro.common.CommonException;
+
 /**
  * 
  * @author Yulei Ye
@@ -37,6 +38,13 @@ public class ServiceMethod {
 	private int retryCnt; //method can retry times, less or equal 0 cannot be retry
 	private int retryInterval; // milliseconds how long to wait before next retry
 	private int timeout; // milliseconds how long to wait for response before timeout 
+	
+	/**
+	 * 失败时的默认返回值，包括服务熔断失败，降级失败等
+	 */
+	private String failResponse;
+	
+	private boolean breakable;
 	
 	/**
 	 * Max failure time before degrade the service
@@ -342,6 +350,22 @@ public class ServiceMethod {
 
 	public void setStream(boolean stream) {
 		this.stream = stream;
+	}
+
+	public String getFailResponse() {
+		return failResponse;
+	}
+
+	public void setFailResponse(String failResponse) {
+		this.failResponse = failResponse;
+	}
+
+	public boolean isBreakable() {
+		return breakable;
+	}
+
+	public void setBreakable(boolean breakable) {
+		this.breakable = breakable;
 	}
 	
 }

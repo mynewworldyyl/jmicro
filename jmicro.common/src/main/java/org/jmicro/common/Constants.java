@@ -53,6 +53,12 @@ public interface Constants {
 	public static final String DEFAULT_HANDLER = "defaultHandler";
 	public static final String LAST_INTERCEPTOR = "lastInterceptor";
 	public static final String FIRST_INTERCEPTOR = "firstInterceptor";
+	
+	public static final String DEFAULT_CLIENT_HANDLER = "defaultClientHandler";
+	public static final String LAST_CLIENT_INTERCEPTOR = "lastClientInterceptor";
+	public static final String FIRST_CLIENT_INTERCEPTOR = "firstClientInterceptor";
+	public static final String PROXY = "proxy";
+	
 	public static final String DEFAULT_SELECTOR = "defaultSelector";
 	public static final String DEFAULT_INVOCATION_HANDLER = "defaultInvocationHandler";
 	
@@ -77,6 +83,7 @@ public interface Constants {
 	public static final String SERVICE_ITEM_KEY = "serviceItemKey";
 	public static final String SERVICE_METHOD_KEY = "serviceMethodKey";
 	public static final String SERVICE_OBJ_KEY = "serviceObjKey";
+	public static final String CLIENT_REF_METHOD = "reflectMethod";
 	
 	public static final String TRANSPORT_JDKHTTP = "jdkhttp";
 	public static final String TRANSPORT_MINA = "mina";

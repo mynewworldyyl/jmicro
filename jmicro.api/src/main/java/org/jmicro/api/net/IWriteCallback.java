@@ -14,22 +14,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.jmicro.api.server;
+package org.jmicro.api.net;
 
 /**
- * 
+ * RPC服务从Context中取得接口推送消息给客户端，实现服务端到客户端信息流推送
  * @author Yulei Ye
- * @date 2018年10月4日-下午12:06:11
+ * @date 2018年10月12日-上午11:02:35
  */
-public interface IServer{
+public interface IWriteCallback {
 
-	void init();
+	boolean send(Object msg);
 	
-	void start();
-	
-	void stop();
-	
-	String host();
-	
-	int port();
 }

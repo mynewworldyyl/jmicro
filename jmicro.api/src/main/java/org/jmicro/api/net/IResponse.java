@@ -14,16 +14,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.jmicro.api.server;
+package org.jmicro.api.net;
+
 /**
  * 
  * @author Yulei Ye
- * @date 2018年10月4日-下午12:05:06
+ * @date 2018年10月4日-下午12:06:02
  */
-public abstract class AbstractHandler implements IRequestHandler {
+public interface IResponse extends IResp{
 
-	public AbstractHandler(){
-		
-	}
+	Long getRequestId();
 	
+	Object getResult();
+	
+	boolean isMonitorEnable();
+	
+	boolean isSuccess();
+
+	void setSuccess(boolean success);
+	
+	long getId();
+	
+	void setId(long id);
 }

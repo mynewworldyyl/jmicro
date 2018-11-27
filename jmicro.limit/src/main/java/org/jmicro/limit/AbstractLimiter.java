@@ -20,9 +20,9 @@ import java.util.Set;
 
 import org.jmicro.api.JMicro;
 import org.jmicro.api.limitspeed.ILimiter;
+import org.jmicro.api.net.IRequest;
 import org.jmicro.api.registry.ServiceItem;
 import org.jmicro.api.registry.ServiceMethod;
-import org.jmicro.api.server.IRequest;
 import org.jmicro.common.CommonException;
 import org.jmicro.common.util.StringUtils;
 /**
