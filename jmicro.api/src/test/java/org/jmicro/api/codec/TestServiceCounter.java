@@ -14,12 +14,30 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.jmicro.api.monitor;
+package org.jmicro.api.codec;
+
+import org.jmicro.api.monitor.ServiceCounter;
+import org.junit.Test;
+
 /**
  * 
  * @author Yulei Ye
- * @date 2018年10月4日-下午12:03:20
+ * @date 2018年11月28日 下午11:00:41
  */
-public interface ISysStatis {
+public class TestServiceCounter {
 
+	@Test
+	public void test01() {
+		ServiceCounter sc = new ServiceCounter("test");
+		sc.addCount(1, 10*1000, 1000);
+		
+		while(true) {
+			sc.increment(1);
+			System.out.println(sc.get(1));
+			try {
+				Thread.sleep(500);
+			} catch (InterruptedException e) {
+			}
+		}
+	}
 }

@@ -30,15 +30,16 @@ import java.lang.annotation.Target;
 @Retention(RUNTIME)
 public @interface SMethod {
 
-	public String value() default "";
+	//public String value() default "";
 	
+	//-1： depend on service config
+	//1:enable
+	//0: disable
 	public int monitorEnable() default -1;
 	
 	public int retryInterval() default 500;
-	
 	//method must can be retry, or 1
 	public int retryCnt() default 3;
-	
 	public int timeout() default 2000;
 	
 	/**
@@ -46,13 +47,18 @@ public @interface SMethod {
 	 * 通过Gson能反序列化为方法的返回参数,如果失败，抛出异常，业务通过捕获异常处理失败
 	 */
 	public String failResponse() default "";
+	
+	/**
+	 * true: 可以熔断，熔断时走快速失败逻辑
+	 * @return
+	 */
 	public boolean breakable() default false;
 	
 	//continue fail will downgrade service
 	public int maxFailBeforeDegrade() default 5;
 	
 	//continue fail will hung up service, service request will fast fail
-	public int maxFailBeforeFusing() default 10;
+	public int maxFailBeforeBreaking() default 10;
 	
 	//after hung up, will test the service with this arguments
 	public String testingArgs() default "";
@@ -60,9 +66,6 @@ public @interface SMethod {
 	//0: need response, 1:no need response
 	public boolean needResponse() default true;
 	
-	/**
-	 * 实现IMessageCallback接口的组件名称，用于处理异步消息
-	 */
 	// StringUtils.isEmpty()=true: not stream, false: stream, one request will got more response
 	// if this value is not NULL, the async is always true without check the real value
 	// value is the callback component in IOC container created in client

@@ -238,6 +238,9 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
     			}else {
         			SF.doMessageLog(MonitorConstant.ERROR,TAG,respMsg,null,"reqID ["+resp.getReqId()+"] response");
         		}
+    		} else {
+    			//肯定是超时了
+    			SF.doSubmit(MonitorConstant.CLIENT_REQ_TIMEOUT, req, null);
     		}
     		
     		if(resp != null && resp.isSuccess() && !(resp.getResult() instanceof ServerError)) {
@@ -257,20 +260,18 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
     			}
     		}
     		
-    		//下面是此次请求失败，进入重试处理过程
+    		//下面是此次请求失败,进入重试处理过程
     		StringBuffer sb = new StringBuffer();
 			if(se!= null){
 				sb.append(se.toString());
 			}
 			sb.append(" host[").append(s.getHost()).append("] port [").append(s.getPort())
 			.append("] service[").append(si.getServiceName())
-			.append("] method [").append(sm.getMethodName())
-			.append("] param [").append(sm.getMethodParamTypes());
+			.append("] method[").append(sm.getMethodName())
+			.append("] param[").append(sm.getMethodParamTypes());
     		
     		if(resp == null){
-    			//肯定是超时了
     			if(retryCnt > 0){
-    				SF.doSubmit(MonitorConstant.CLIENT_REQ_TIMEOUT, req, null);
     				sb.append("] do retry: ").append(retryCnt);
     			} else {
     				SF.doSubmit(MonitorConstant.CLIENT_REQ_TIMEOUT_FAIL, req, null);

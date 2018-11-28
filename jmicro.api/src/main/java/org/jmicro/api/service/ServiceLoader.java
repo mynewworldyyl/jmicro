@@ -285,8 +285,8 @@ public class ServiceLoader {
 				sm.setFailResponse("");
 			} else {
 				 if(manno != null ) {
-					sm.setMaxFailBeforeFusing(manno.maxFailBeforeFusing()!=500 || intMAnno == null ?manno.maxFailBeforeFusing():intMAnno.maxFailBeforeFusing());
-					sm.setMaxFailBeforeFusing(manno.maxFailBeforeFusing()!=500 || intMAnno == null ?manno.maxFailBeforeFusing():intMAnno.maxFailBeforeFusing());
+					sm.setMaxFailBeforeFusing(manno.maxFailBeforeBreaking()!=500 || intMAnno == null ?manno.maxFailBeforeBreaking():intMAnno.maxFailBeforeBreaking());
+					sm.setMaxFailBeforeFusing(manno.maxFailBeforeBreaking()!=500 || intMAnno == null ?manno.maxFailBeforeBreaking():intMAnno.maxFailBeforeBreaking());
 					sm.setMaxFailBeforeDegrade(manno.maxFailBeforeDegrade()!=100 || intMAnno == null ?manno.maxFailBeforeDegrade():intMAnno.maxFailBeforeDegrade());
 					sm.setRetryCnt(manno.retryCnt()!=3 || intMAnno == null ?manno.retryCnt():intMAnno.retryCnt());
 					sm.setRetryInterval(manno.retryInterval()!=500 || intMAnno == null ?manno.retryInterval():intMAnno.retryInterval());
@@ -301,8 +301,8 @@ public class ServiceLoader {
 					sm.setBreakable(manno.breakable());
 					sm.setFailResponse(manno.failResponse());
 				} else {
-					sm.setMaxFailBeforeFusing(intMAnno.maxFailBeforeFusing());
-					sm.setMaxFailBeforeFusing(intMAnno.maxFailBeforeFusing());
+					sm.setMaxFailBeforeFusing(intMAnno.maxFailBeforeBreaking());
+					sm.setMaxFailBeforeFusing(intMAnno.maxFailBeforeBreaking());
 					sm.setMaxFailBeforeDegrade(intMAnno.maxFailBeforeDegrade());
 					sm.setRetryCnt(intMAnno.retryCnt());
 					sm.setRetryInterval(intMAnno.retryInterval());

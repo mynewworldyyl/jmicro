@@ -17,10 +17,23 @@
 package org.jmicro.api.monitor;
 
 /**
- * 链路监控ID生成
+ * 
  * @author Yulei Ye
- * @date 2018年11月19日 下午10:31:17
+ * @date 2018年11月28日 下午12:50:36
  */
-public class Linker {
+public interface IServiceCounter {
 
+	/**
+	 *  取指定类型的时间窗口内的统计总数
+	 * @param type
+	 * @return
+	 */
+	long get(Integer type);
+	
+	void add(Integer type,long val);
+	
+	void increment(Integer type);
+	
+	void addCount(Integer type,long timeWindow,long slotSize);
+	
 }

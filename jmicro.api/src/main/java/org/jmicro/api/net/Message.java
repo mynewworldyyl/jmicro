@@ -366,4 +366,17 @@ public final class Message {
 	public void setLinkId(long linkId) {
 		this.linkId = linkId;
 	}
+
+	public long getMsgId() {
+		return msgId;
+	}
+
+	public int getLen() {
+		return len;
+	}
+
+	public byte getFlag() {
+		return flag;
+	}
+	
 }
