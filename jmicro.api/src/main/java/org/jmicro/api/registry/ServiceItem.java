@@ -32,10 +32,17 @@ import org.slf4j.LoggerFactory;
  *  单位时间处理速度，类似QPS，但是间单位可定制
  *  时间单位：H：小时， M： 分钟， S：秒 ，MS：毫少，NS：纳秒
  *  如90S，表示每秒钟处理90个请求，20M，表示每分钟处理20个请求，数字只能为整数，不能是小数
+ *  
+ *  服务标识：服务级标识，服务方法标识，服务实例标识
+ *  服务级标识 同服务名称，服务命名空间，服务版本组成 , 参考 {@link UniqueServiceKey}
+ *  服务方法标识 同服务标识+服务方法名称+服务参数级成，参考  {@link UniqueServiceMethodKey}
+ *  服务实例标识一个具体的运行实例，分为服务实例，服务方法实例，在服务级标识及服务方法标识 基础上加实例名称组成，
+ *  运行过程中又可由IP+PORT标识。
+ *  
  * @author Yulei Ye
  * @date 2018年10月4日-下午12:04:29
  */
-public class ServiceItem{
+public final class ServiceItem{
 
 	private final static Logger logger = LoggerFactory.getLogger(ServiceItem.class);
 	
@@ -249,12 +256,12 @@ public class ServiceItem{
 	}
 	
 	public ServiceMethod getMethod(String methodName,Object[] args){
-		String mkStr = UniqueServiceMethodKey.paramsStr(UniqueServiceMethodKey.methodParamsKey(args));
+		String mkStr = UniqueServiceMethodKey.paramsStr(args);
 		return getMethod(methodName, mkStr);
 	}
 	
 	public ServiceMethod getMethod(String methodName,Class<?>[] args){
-		String mkStr = UniqueServiceMethodKey.paramsStr(UniqueServiceMethodKey.methodParamsKey(args));
+		String mkStr = UniqueServiceMethodKey.paramsStr(args);
 		return getMethod(methodName, mkStr);
 	}
 	

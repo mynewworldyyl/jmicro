@@ -1,6 +1,6 @@
 package org.jmicro.api.registry;
 
-public class Server {
+public final class Server {
 
 	private String host;
 	private int port;

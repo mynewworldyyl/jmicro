@@ -84,17 +84,12 @@ public class ServiceExceptionMonitor extends AbstractMonitorDataSubscriber imple
 	@SMethod(needResponse=false)
 	public void onSubmit(SubmitItem si) {
 		
-		String key = UniqueServiceKey.serviceName(si.getServiceName(),
-				si.getNamespace(), si.getVersion()).toString();
-		StringBuilder sb = new StringBuilder();
-		sb.append(si.getInstanceName()).append(key).append("(").append(si.getLocalHost()).append(")S(");
-		sb.append(key).append(")M(").append(si.getMethod())
-		.append("(").append(UniqueServiceMethodKey.paramsStr(si.getReqArgs())).append(")");
+		String key = si.getSm().getKey().toKey(false, false, false);
 		
 		ServiceCounter counter = counters.get(key);
 		if(counter == null) {
 			//取常量池中的字符串做同步
-			key = sb.toString().intern();
+			key = key.intern();
 			synchronized(key) {
 				counter = counters.get(key);
 				if(counter == null) {

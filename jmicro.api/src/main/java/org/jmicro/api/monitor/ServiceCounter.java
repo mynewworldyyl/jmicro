@@ -96,7 +96,7 @@ public class ServiceCounter implements IServiceCounter{
 		if(this.counters.containsKey(type)) {
 			throw new CommonException("Type["+type+"] exists for service ["+this.serviceKey+"]");
 		}
-		if(timeWindow%slotSizeInMilliseconds != 0) {
+		if(timeWindow % slotSizeInMilliseconds != 0) {
 			throw new CommonException("timeWindow%slotSizeInMilliseconds must be zero,but:" +
 					timeWindow + "%" + slotSizeInMilliseconds+"="+(timeWindow % slotSizeInMilliseconds));
 		}

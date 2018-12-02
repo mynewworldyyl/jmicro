@@ -1,8 +1,29 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.jmicro.api.registry;
 
 import org.jmicro.common.CommonException;
-import org.jmicro.common.util.StringUtils;
 
+/**
+ * 在服务标识基础上加上方法签名
+ *  {@link ServiceItem}
+ * @author Yulei Ye
+ * @date 2018年12月2日 下午11:22:50
+ */
 public final class UniqueServiceMethodKey {
 
 	public static final String SEP = UniqueServiceKey.SEP;
@@ -12,29 +33,6 @@ public final class UniqueServiceMethodKey {
 	
 	private String method;
 	private String paramsStr;
-	
-	public static String[] methodParamsKey(Class<?>[] clazzes){
-		if(clazzes != null && clazzes.length >0){
-			String[] sb = new String[clazzes.length];
-			for(int i = 0; i < clazzes.length; i++){
-				sb[i] = clazzes[i].getName();
-			}
-			return sb;
-		}
-		return new String[0];
-	}
-	
-	public static String[] methodParamsKey(Object[] args){
-		if(args != null && args.length >0){
-			String[] clazzes = new String[args.length];
-			int i = 0;
-			for(Object obj: args){
-				clazzes[i++] = obj.getClass().getName();
-			}
-			return clazzes;
-		}
-		return new String[0];
-	}
 	
 	public static String paramsStr(String[] clazzes) {
 		if(clazzes == null || clazzes.length == 0) {
@@ -83,12 +81,11 @@ public final class UniqueServiceMethodKey {
 		return sb.toString();
 	}
 	
-	public static UniqueServiceMethodKey fromKey(String key) {
-		String[] strs = key.split(SEP);
+	public static UniqueServiceKey fromKey(String[] strs) {
 		if(strs.length < 3 ) {
-			throw new CommonException("Invalid unique service method key: " + key);
+			throw new CommonException("Invalid unique service method key: " + strs);
 		}
-		UniqueServiceMethodKey usk = new UniqueServiceMethodKey();
+		UniqueServiceKey usk = new UniqueServiceKey();
 		
 		int idx = -1;
 		
@@ -97,26 +94,35 @@ public final class UniqueServiceMethodKey {
 		usk.setVersion(strs[++idx]);
 		
 		if(strs.length > 3) {
-			usk.paramsStr = strs[++idx];
+			usk.setInstanceName(strs[++idx]);
 		}
 		
 		if(strs.length > 4) {
-			usk.usk.setInstanceName(strs[++idx]);
+			usk.setHost(strs[++idx]);
 		}
 		
 		if(strs.length > 5) {
-			usk.usk.setHost(strs[++idx]);
+			usk.setPort(Integer.parseInt(strs[++idx]));
 		}
 		
+		return usk;
+	}
+	
+	public static UniqueServiceMethodKey fromKey(String key) {
+		String[] strs = key.split(SEP);
+		if(strs.length < 3 ) {
+			throw new CommonException("Invalid unique service method key: " + key);
+		}
+		UniqueServiceMethodKey usk = new UniqueServiceMethodKey();
+		UniqueServiceKey srvUsk = fromKey(strs);
+		usk.setUsk(srvUsk);
+		
+		int idx = 6;
 		if(strs.length > 6) {
-			usk.usk.setPort(Integer.parseInt(strs[++idx]));
-		}
-		
-		if(strs.length > 7) {
 			usk.setMethod(strs[++idx]);;
 		}
 		
-		if(strs.length > 8) {
+		if(strs.length > 7) {
 			usk.setParamsStr(strs[++idx]);
 		}
 		

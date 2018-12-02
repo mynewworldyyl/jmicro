@@ -37,6 +37,7 @@ import org.jmicro.api.registry.ServiceItem;
 import org.jmicro.api.registry.ServiceMethod;
 import org.jmicro.api.registry.UniqueServiceKey;
 import org.jmicro.api.registry.UniqueServiceMethodKey;
+import org.jmicro.common.CommonException;
 import org.jmicro.common.Constants;
 import org.jmicro.common.util.JsonUtils;
 import org.jmicro.common.util.StringUtils;
@@ -419,13 +420,15 @@ public class ZKRegistry implements IRegistry {
 		
 		if(dataOperator.exist(srvKey)){
 			//删除后，会在删除事件中立即注册本地还未注册的服务，避免注册后被上次停止的服务消失事件删除
+			/*
 			dataOperator.deleteNode(srvKey);
 			if(this.isServerOnly) {
 				dataOperator.createNode(srvKey,data, true);
 			}
-		} else {
-			dataOperator.createNode(srvKey,data, true);
+			*/
+			throw new CommonException("Service [" +srvKey +"] exists");
 		}
+		dataOperator.createNode(srvKey,data, true);
 		regist2Local(srvKey,item);
 	}
 
