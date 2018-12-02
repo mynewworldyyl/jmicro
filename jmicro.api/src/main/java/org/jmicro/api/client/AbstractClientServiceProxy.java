@@ -21,6 +21,7 @@ import java.lang.reflect.InvocationHandler;
 import org.jmicro.api.JMicroContext;
 import org.jmicro.api.monitor.IMonitorDataSubmiter;
 import org.jmicro.api.registry.ServiceItem;
+import org.jmicro.api.registry.UniqueServiceKey;
 /**
  * 
  * @author Yulei Ye
@@ -71,7 +72,7 @@ public abstract class AbstractClientServiceProxy {
 	
 	
 	public String key(){
-		return ServiceItem.serviceName(this.getServiceName(), this.getNamespace(), this.getVersion());
+		return UniqueServiceKey.serviceName(this.getServiceName(), this.getNamespace(), this.getVersion()).toString();
 	}
 	
 	@Override

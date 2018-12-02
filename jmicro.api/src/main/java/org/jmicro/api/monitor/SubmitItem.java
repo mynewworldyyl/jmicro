@@ -17,10 +17,9 @@
 package org.jmicro.api.monitor;
 
 import org.jmicro.api.net.IReq;
-import org.jmicro.api.net.IRequest;
 import org.jmicro.api.net.IResp;
-import org.jmicro.api.net.IResponse;
 import org.jmicro.api.net.Message;
+import org.jmicro.api.registry.ServiceMethod;
 
 /**
  * @author Yulei Ye
@@ -61,6 +60,8 @@ public final class SubmitItem{
 	
 	private IResp resp = null;
 	
+	private ServiceMethod sm;
+	
 	//private Date date = new Date();
 	
 	private long time = 0;
@@ -92,18 +93,15 @@ public final class SubmitItem{
 		
 		ex = null;
 		
+		sm = null;
+		
 	}
 	
 	public SubmitItem() {}
 	
-	public SubmitItem(int type,byte level,long linkId,String sn,String ns,String v,
-			String m,Object[] args,String[] others) {
+	public SubmitItem(int type,byte level,long linkId,ServiceMethod sm,String[] others) {
 		this(type,level,linkId,others);
-		this.serviceName = sn;
-		this.namespace = ns;
-		this.version = v;
-		this.method = m;
-		this.reqArgs = args;
+		this.sm = sm;
 	}
 	
 	public SubmitItem(int type,byte level,long linkId,String... others) {
@@ -347,6 +345,14 @@ public final class SubmitItem{
 
 	public void setTime(long time) {
 		this.time = time;
+	}
+
+	public ServiceMethod getSm() {
+		return sm;
+	}
+
+	public void setSm(ServiceMethod sm) {
+		this.sm = sm;
 	}
 	
 }

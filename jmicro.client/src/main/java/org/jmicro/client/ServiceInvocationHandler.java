@@ -82,23 +82,29 @@ public class ServiceInvocationHandler implements InvocationHandler{
 
 		ServiceItem poItem = po.getItem();
 		if(poItem == null){
-			SF.doSubmit(MonitorConstant.CLIENT_REQ_SERVICE_NOT_FOUND,
-					method.getDeclaringClass().getName(),method.getName());
 			throw new CommonException("cls["+method.getDeclaringClass().getName()+"] method ["+method.getName()+"] service not found");
 		}
 		
+		ServiceMethod sm = poItem.getMethod(methodName, args);
+		if(sm == null){
+			throw new CommonException("cls["+method.getDeclaringClass().getName()+"] method ["+method.getName()+"] method not found");
+		}
+		
+		JMicroContext.get().setParam(Constants.SERVICE_METHOD_KEY, sm);
+		JMicroContext.get().setParam(Constants.SERVICE_ITEM_KEY, poItem);
+		
+		JMicroContext.lid(this.idGenerator);
+		JMicroContext.get().setObject(Constants.PROXY, po);
+		
 		RpcRequest req = new RpcRequest();
         req.setMethod(method.getName());
-        req.setServiceName(poItem.getServiceName());
-        req.setNamespace(poItem.getNamespace());
-        req.setVersion(poItem.getVersion());
+        req.setServiceName(poItem.getKey().getServiceName());
+        req.setNamespace(poItem.getKey().getNamespace());
+        req.setVersion(poItem.getKey().getVersion());
         req.setArgs(args);
         req.setRequestId(idGenerator.getLongId(IRequest.class));
         req.setTransport(Constants.TRANSPORT_NETTY);
         req.setImpl(poItem.getImpl());
-		
-		JMicroContext.lid(this.idGenerator);
-		JMicroContext.get().setObject(Constants.PROXY, po);
         
         IResponse resp = this.intManager.handleRequest(req);
 		

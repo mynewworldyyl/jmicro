@@ -296,6 +296,8 @@ public class SubmitItemHolderManager implements IMonitorDataSubmiter{
 		si.setVersion(JMicroContext.get().getString(JMicroContext.CLIENT_VERSION,null));
 		si.setMethod(JMicroContext.get().getString(JMicroContext.CLIENT_METHOD,null));
 		
+		si.setSm(JMicroContext.get().getParam(Constants.SERVICE_METHOD_KEY, null));
+		
 		if(Config.isClientOnly()) {
 			si.setSide(Constants.SIDE_COMSUMER);
 		} else if(Config.isServerOnly()) {

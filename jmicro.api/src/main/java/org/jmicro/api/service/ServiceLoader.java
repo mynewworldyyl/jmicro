@@ -19,7 +19,6 @@ package org.jmicro.api.service;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -38,10 +37,13 @@ import org.jmicro.api.exception.RpcException;
 import org.jmicro.api.net.IRequest;
 import org.jmicro.api.net.IServer;
 import org.jmicro.api.objectfactory.ProxyObject;
+import org.jmicro.api.registry.BreakRule;
 import org.jmicro.api.registry.IRegistry;
 import org.jmicro.api.registry.Server;
 import org.jmicro.api.registry.ServiceItem;
 import org.jmicro.api.registry.ServiceMethod;
+import org.jmicro.api.registry.UniqueServiceKey;
+import org.jmicro.api.registry.UniqueServiceMethodKey;
 import org.jmicro.common.CommonException;
 import org.jmicro.common.Constants;
 import org.jmicro.common.util.StringUtils;
@@ -89,8 +91,8 @@ public class ServiceLoader {
 	
 	public Object getService(String clsName,String namespace,String version){
 		
-		namespace = ServiceItem.namespace(namespace);
-		version = ServiceItem.version(version);
+		namespace = UniqueServiceKey.namespace(namespace);
+		version = UniqueServiceKey.version(version);
 	
 		Class<?> parentCls = ClassScannerUtils.getIns().getClassByName(clsName);			
 		
@@ -210,7 +212,7 @@ public class ServiceLoader {
 			if(ints == null || ints.length != 1) {
 				throw new CommonException("service ["+srvCls.getName()+"] have to implement one and only one interface.");
 			}
-			interfacez = ints[0] ;
+			interfacez = ints[0];
 		}
 		
 		Service intAnno = null;
@@ -220,17 +222,20 @@ public class ServiceLoader {
 		}
 		
 		ServiceItem item = new ServiceItem();
+		UniqueServiceKey usk = new UniqueServiceKey();
+		usk.setNamespace(getFieldValue(anno.namespace(),intAnno == null ? null : intAnno.namespace(),Constants.DEFAULT_NAMESPACE));
+		usk.setServiceName(interfacez.getName());
+		usk.setVersion(getFieldValue(anno.version(),intAnno == null ? null : intAnno.version(),Constants.VERSION));
+		usk.setInstanceName(Config.getInstanceName());
+		usk.setHost(Config.getHost());
 		
+		item.setKey(usk);
 		item.setImpl(proxySrv.getName());
-		item.setServiceName(interfacez.getName());
-		item.setVersion(getFieldValue(anno.version(),intAnno == null ? null : intAnno.version(),Constants.VERSION));
-		item.setNamespace(getFieldValue(anno.namespace(),intAnno == null ? null : intAnno.namespace(),Constants.DEFAULT_NAMESPACE));
 		
-		item.setMaxFailBeforeFusing(anno.maxFailBeforeFusing()!=500 || intAnno == null ?anno.maxFailBeforeFusing():intAnno.maxFailBeforeFusing());
-		item.setMaxFailBeforeDegrade(anno.maxFailBeforeDegrade()!=100 || intAnno == null ?anno.maxFailBeforeDegrade():intAnno.maxFailBeforeDegrade());
+		//item.setMaxFailBeforeDegrade(anno.maxFailBeforeDegrade()!=100 || intAnno == null ?anno.maxFailBeforeDegrade():intAnno.maxFailBeforeDegrade());
 		item.setRetryCnt(anno.retryCnt()!=3 || intAnno == null ?anno.retryCnt():intAnno.retryCnt());
 		item.setRetryInterval(anno.retryInterval()!=500 || intAnno == null ?anno.retryInterval():intAnno.retryInterval());
-		item.setTestingArgs(getFieldValue(anno.testingArgs(),intAnno == null ? null : intAnno.testingArgs(),""));
+		//item.setTestingArgs(getFieldValue(anno.testingArgs(),intAnno == null ? null : intAnno.testingArgs(),""));
 		item.setTimeout(anno.timeout()!=2000 || intAnno == null ?anno.timeout():intAnno.timeout());
 		item.setMaxSpeed(this.parseSpeed(anno.maxSpeed()));
 		item.setSpeedUnit(this.parseSpeedUnit(anno.maxSpeed()));
@@ -239,7 +244,6 @@ public class ServiceLoader {
 		
 		ServiceMethod checkMethod = new ServiceMethod();
 		item.addMethod(checkMethod);
-		checkMethod.setMaxFailBeforeFusing(1);
 		checkMethod.setMaxFailBeforeDegrade(1);
 		checkMethod.setRetryCnt(3);
 		checkMethod.setRetryInterval(500);
@@ -249,10 +253,13 @@ public class ServiceLoader {
 		checkMethod.setSpeedUnit("ms");
 		checkMethod.setAvgResponseTime(anno.avgResponseTime());
 		checkMethod.setMonitorEnable(anno.monitorEnable());
-		checkMethod.setMethodName("wayd");
-		checkMethod.setMethodParamTypes("java.lang.String");
-		checkMethod.setBreakable(true);
+		
+		checkMethod.setBreaking(false);
 		checkMethod.setFailResponse("I'm breaking now");
+		
+		checkMethod.getKey().setUsk(usk);
+		checkMethod.getKey().setMethod("wayd");
+		checkMethod.getKey().setParamsStr(UniqueServiceMethodKey.paramsStr(new String[]{"java.lang.String"}));
 		
 		for(Method m : interfacez.getMethods()) {
 			ServiceMethod sm = new ServiceMethod();
@@ -269,27 +276,25 @@ public class ServiceLoader {
 			
 			SMethod manno = srvMethod.getAnnotation(SMethod.class);
 			SMethod intMAnno = m.getAnnotation(SMethod.class);
+			sm.setBreaking(false);
 			
-			if(manno == null && intMAnno== null){
-				sm.setMaxFailBeforeFusing(item.getMaxFailBeforeFusing());
-				sm.setMaxFailBeforeDegrade(item.getMaxFailBeforeDegrade());
+			if(manno == null && intMAnno== null) {
+				//sm.setMaxFailBeforeDegrade(item.getMaxFailBeforeDegrade());
 				sm.setRetryCnt(item.getRetryCnt());
 				sm.setRetryInterval(item.getRetryInterval());
-				sm.setTestingArgs(item.getTestingArgs());
+				//sm.setTestingArgs(item.getTestingArgs());
 				sm.setTimeout(item.getTimeout());
 				sm.setMaxSpeed(item.getMaxSpeed());
 				sm.setSpeedUnit(item.getSpeedUnit());
 				sm.setAvgResponseTime(item.getAvgResponseTime());
 				sm.setMonitorEnable(item.getMonitorEnable());
-				sm.setBreakable(false);
 				sm.setFailResponse("");
+				
 			} else {
 				 if(manno != null ) {
-					sm.setMaxFailBeforeFusing(manno.maxFailBeforeBreaking()!=500 || intMAnno == null ?manno.maxFailBeforeBreaking():intMAnno.maxFailBeforeBreaking());
-					sm.setMaxFailBeforeFusing(manno.maxFailBeforeBreaking()!=500 || intMAnno == null ?manno.maxFailBeforeBreaking():intMAnno.maxFailBeforeBreaking());
-					sm.setMaxFailBeforeDegrade(manno.maxFailBeforeDegrade()!=100 || intMAnno == null ?manno.maxFailBeforeDegrade():intMAnno.maxFailBeforeDegrade());
+					sm.setBreakingRule(BreakRule.parseRule(manno.breakingRule()));;
 					sm.setRetryCnt(manno.retryCnt()!=3 || intMAnno == null ?manno.retryCnt():intMAnno.retryCnt());
-					sm.setRetryInterval(manno.retryInterval()!=500 || intMAnno == null ?manno.retryInterval():intMAnno.retryInterval());
+					sm.setRetryInterval(manno.retryInterval()!=500 || intMAnno == null ? manno.retryInterval():intMAnno.retryInterval());
 					sm.setTestingArgs(getFieldValue(manno.testingArgs(),intMAnno == null ? null : intMAnno.testingArgs(),""));
 					sm.setTimeout(manno.timeout()!=2000 || intMAnno == null ?manno.timeout():intMAnno.timeout());
 					sm.setMaxSpeed(this.parseSpeed(manno.maxSpeed()));
@@ -298,12 +303,10 @@ public class ServiceLoader {
 					sm.setMonitorEnable(manno.monitorEnable()!=-1 || intMAnno == null ? manno.monitorEnable() : intMAnno.monitorEnable());
 					sm.setStream(manno.stream());
 					sm.setNeedResponse(manno.needResponse());
-					sm.setBreakable(manno.breakable());
 					sm.setFailResponse(manno.failResponse());
+					sm.setTimeWindowInMillis(manno.timeWindowInMillis());
 				} else {
-					sm.setMaxFailBeforeFusing(intMAnno.maxFailBeforeBreaking());
-					sm.setMaxFailBeforeFusing(intMAnno.maxFailBeforeBreaking());
-					sm.setMaxFailBeforeDegrade(intMAnno.maxFailBeforeDegrade());
+					sm.setBreakingRule(BreakRule.parseRule(intMAnno.breakingRule()));;
 					sm.setRetryCnt(intMAnno.retryCnt());
 					sm.setRetryInterval(intMAnno.retryInterval());
 					sm.setTestingArgs(intMAnno.testingArgs());
@@ -314,13 +317,14 @@ public class ServiceLoader {
 					sm.setMonitorEnable(intMAnno.monitorEnable());
 					sm.setStream(intMAnno.stream());
 					sm.setNeedResponse(intMAnno.needResponse());
-					sm.setBreakable(intMAnno.breakable());
 					sm.setFailResponse(intMAnno.failResponse());
+					sm.setTimeWindowInMillis(intMAnno.timeWindowInMillis());
 				}
-				
 			} 
-			sm.setMethodName(m.getName());
-			sm.setMethodParamTypes(ServiceMethod.methodParamsKey( m.getParameterTypes()));
+			
+			sm.getKey().setUsk(usk);
+			sm.getKey().setMethod(m.getName());
+			sm.getKey().setParamsStr(UniqueServiceMethodKey.paramsStr(m.getParameterTypes()));
 		}
 		
 		return item;

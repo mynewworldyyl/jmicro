@@ -26,6 +26,7 @@ import org.jmicro.api.limitspeed.ILimiter;
 import org.jmicro.api.net.IRequest;
 import org.jmicro.api.registry.ServiceItem;
 import org.jmicro.api.registry.ServiceMethod;
+import org.jmicro.api.registry.UniqueServiceMethodKey;
 import org.jmicro.common.Constants;
 
 import com.google.common.util.concurrent.RateLimiter;
@@ -91,7 +92,7 @@ public class GuavaBaseLimiter  implements ILimiter{
 	}
 	
 	private String key(IRequest req){
-		String key = ServiceMethod.methodParamsKey(req.getArgs());
+		String key = UniqueServiceMethodKey.paramsStr(req.getArgs());
 		//key = key + ServiceItem.serviceName(req.getServiceName(), req.getNamespace(), req.getVersion());
 		key = key + req.getMethod() + req.getImpl();
 		return key;

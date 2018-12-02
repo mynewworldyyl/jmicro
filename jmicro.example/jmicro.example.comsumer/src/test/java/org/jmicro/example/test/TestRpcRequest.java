@@ -33,7 +33,8 @@ public class TestRpcRequest {
 	
 	@Test
 	public void testInvokePersonService() {
-		IObjectFactory of = JMicro.getObjectFactoryAndStart(new String[0]);
+		IObjectFactory of = JMicro.getObjectFactoryAndStart(new String[]{
+				"-DinstanceName=testInvokePersonService","-Dclient=true"});
 		of.start();
 		TestRpcClient src = of.get(TestRpcClient.class);
 		src.invokePersonService();
@@ -88,8 +89,11 @@ public class TestRpcRequest {
 		JMicroContext.get().setParam(Constants.CONTEXT_CALLBACK_CLIENT, msgReceiver);
 		
 		IServiceMonitorData src = of.get(IServiceMonitorData.class);
-		String sn = ServiceItem.serviceName("org.jmicro.example.api.ITestRpcService", "testrpc", "0.0.1");
+		String sn = null;
+		/*
+		ServiceItem.serviceName("org.jmicro.example.api.ITestRpcService", "testrpc", "0.0.1");
 		sn = ServiceItem.methodKey(sn, "getPerson", "org.jmicro.api.Person");
+		*/
 		
 		Integer id = src.subsicribe(sn);
 		

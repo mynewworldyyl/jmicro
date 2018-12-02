@@ -24,5 +24,8 @@ package org.jmicro.api.monitor;
 public interface IMonitorDataSubscriber {
 
 	Integer[] intrest();
+	
 	void onSubmit(SubmitItem si);
+	
+	Double getData(String srvKey,Integer type);
 }

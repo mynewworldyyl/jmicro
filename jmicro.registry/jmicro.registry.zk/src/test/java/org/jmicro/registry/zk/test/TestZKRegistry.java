@@ -25,7 +25,7 @@ public class TestZKRegistry {
 		r.addServiceListener("org.jmicro.example.api.ITestRpcService##defaultNamespace##0.0.0", 
 				(type,si)->{
 			System.out.println(type);
-			System.out.println(si.val());
+			System.out.println(si.key(Config.ServiceRegistDir));
 		});
 		
 		Utils.getIns().waitForShutdown();

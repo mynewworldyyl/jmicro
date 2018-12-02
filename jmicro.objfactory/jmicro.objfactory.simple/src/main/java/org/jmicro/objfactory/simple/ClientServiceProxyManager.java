@@ -28,7 +28,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
-import org.jmicro.api.JMicroContext;
 import org.jmicro.api.annotation.Reference;
 import org.jmicro.api.annotation.Service;
 import org.jmicro.api.client.AbstractClientServiceProxy;
@@ -36,7 +35,7 @@ import org.jmicro.api.monitor.IMonitorDataSubmiter;
 import org.jmicro.api.objectfactory.ProxyObject;
 import org.jmicro.api.registry.IRegistry;
 import org.jmicro.api.registry.ServiceItem;
-import org.jmicro.api.registry.ServiceMethod;
+import org.jmicro.api.registry.UniqueServiceKey;
 import org.jmicro.api.service.ICheckable;
 import org.jmicro.common.CommonException;
 import org.jmicro.common.Constants;
@@ -69,7 +68,7 @@ class ClientServiceProxyManager {
 	
 	@SuppressWarnings("unchecked")
 	<T> T  getService(String srvName,String namespace,String version){
-		Object proxy = remoteObjects.get(ServiceItem.serviceName(srvName, namespace, version));
+		Object proxy = remoteObjects.get(UniqueServiceKey.serviceName(srvName, namespace, version).toString());
 		if(proxy != null){
 			return (T)proxy;
 		}
@@ -78,12 +77,11 @@ class ClientServiceProxyManager {
 			
 			IRegistry registry = of.get(IRegistry.class);
 			Set<ServiceItem> items = registry.getServices(
-					srvName,ServiceItem.namespace(namespace)
-					,ServiceItem.version(version));
+					srvName,UniqueServiceKey.namespace(namespace),UniqueServiceKey.version(version));
 			
 			if(items != null && !items.isEmpty()){
 				ServiceItem i = items.iterator().next();
-				proxy = createDynamicServiceProxy(cls,i.getNamespace(),i.getVersion(),true);
+				proxy = createDynamicServiceProxy(cls,i.getKey().getNamespace(),i.getKey().getVersion(),true);
 				this.setHandler(proxy, i.serviceName(), i);
 				return (T)proxy;
 			}
@@ -173,9 +171,9 @@ class ClientServiceProxyManager {
 		if(si != null){
 			//call from set field
 			key = si.serviceName();
-		}else {
+		} else {
 			//call from singleton service reference
-			key = ServiceItem.serviceName(type.getName(),ref.namespace(),ref.version());
+			key = UniqueServiceKey.serviceName(type.getName(),ref.namespace(),ref.version()).toString();
 		}
 		
 		if(this.remoteObjects.containsKey(key)) {
@@ -186,18 +184,17 @@ class ClientServiceProxyManager {
 		Object proxy = null;
 		if(si != null){
 			//call from set field
-			proxy = createDynamicServiceProxy(type,si.getNamespace(),si.getVersion(),true);
+			proxy = createDynamicServiceProxy(type,si.getKey().getNamespace(),si.getKey().getVersion(),true);
 		}else {
 			//call from singleton service reference
 			proxy = createDynamicServiceProxy(type,ref.namespace(),ref.version(),si!=null);
 		}
 		//ServiceItem si = items.iterator().next();
 		
-		
-		
 		IRegistry registry = of.get(IRegistry.class);
 		RemoteProxyServiceListener lis = new RemoteProxyServiceListener(this,proxy,srcObj,f);
-		registry.addServiceListener(ServiceItem.serviceName(f.getType().getName(),ref.namespace(),ref.version()), lis);
+		registry.addServiceListener(UniqueServiceKey.serviceName(f.getType().getName(),ref.namespace(),
+				ref.version()).toString(), lis);
 			
 		setHandler(proxy,key,si);
 		return proxy;
@@ -281,7 +278,7 @@ class ClientServiceProxyManager {
 				if(this.remoteObjects.containsKey(key)) {
 					po = remoteObjects.get(key);
 				}else {
-					po = createDynamicServiceProxy(ctype,si.getNamespace(),si.getVersion(),true);
+					po = createDynamicServiceProxy(ctype,si.getKey().getNamespace(),si.getKey().getVersion(),true);
 					//registry.addServiceListener(ServiceItem.serviceName(si.getServiceName(),si.getNamespace(),si.getVersion()), lis);
 					setHandler(po,key,si);
 				}
@@ -304,11 +301,11 @@ class ClientServiceProxyManager {
 	
 	private void setHandler(Object proxy,String key,ServiceItem si){
 		 if(proxy != null){
-		    	AbstractClientServiceProxy asp = (AbstractClientServiceProxy)proxy;
-				asp.setHandler(of.getByName(Constants.DEFAULT_INVOCATION_HANDLER));
-				asp.setItem(si);
-				asp.setMonitor(of.get(IMonitorDataSubmiter.class));
-				remoteObjects.put(key, proxy);
+	    	AbstractClientServiceProxy asp = (AbstractClientServiceProxy)proxy;
+			asp.setHandler(of.getByName(Constants.DEFAULT_INVOCATION_HANDLER));
+			asp.setItem(si);
+			asp.setMonitor(of.get(IMonitorDataSubmiter.class));
+			remoteObjects.put(key, proxy);
 		}
 	}
 	
@@ -321,12 +318,12 @@ class ClientServiceProxyManager {
 		
 		IRegistry registry = of.get(IRegistry.class);
 		Set<ServiceItem> items = registry.getServices(
-				cls.getName(),ServiceItem.namespace(srvAnno.namespace())
-				,ServiceItem.version(srvAnno.version()));
+				cls.getName(),UniqueServiceKey.namespace(srvAnno.namespace())
+				,UniqueServiceKey.version(srvAnno.version()));
 		
 		if(items != null && !items.isEmpty()){
 			ServiceItem i = items.iterator().next();
-			Object proxy = createDynamicServiceProxy(cls,i.getNamespace(),i.getVersion(),true);
+			Object proxy = createDynamicServiceProxy(cls,i.getKey().getNamespace(),i.getKey().getVersion(),true);
 			this.setHandler(proxy, i.serviceName(), i);
 			return proxy;
 		}

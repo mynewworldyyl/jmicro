@@ -16,10 +16,6 @@
  */
 package org.jmicro.api.monitor;
 
-import org.jmicro.api.JMicroContext;
-import org.jmicro.api.net.IRequest;
-import org.jmicro.api.net.IResponse;
-
 /**
  * 
  * @author Beck Ye
@@ -90,16 +86,31 @@ public interface MonitorConstant {
     
     public static final int LINKER_ROUTER_MONITOR = 0X7FFFFEE3;
     
-    public static final byte TRANCE = 0;
+    public static final byte TRANCE = 1;
     
-    public static final byte DEBUG = 1;
+    public static final byte DEBUG = 2;
     
-    public static final byte INFO = 2;
+    public static final byte INFO = 3;
     
-    public static final byte WARN = 3;
+    public static final byte WARN = 4;
     
-    public static final byte ERROR = 4;
+    public static final byte ERROR = 5;
     
-    public static final byte FINAL = 5;
+    public static final byte FINAL = 6;
     
+    //总失败数所占请求数比率
+	public static final int FAIL_PERCENT = 1;
+	//总请求数
+	public static final int TOTAL_REQ = 2;
+	//总成功数
+	public static final int TOTAL_SUCCESS = 3;
+	//总失败数
+	public static final int TOTAL_FAIL = 4;
+	//总成功数所占比率
+	public static final int SUCCESS_PERCENT = 5;
+	//超时数
+	public static final int TOTAL_TIMEOUT = 6;
+	//超时百分比
+	public static final int TIMEOUT_PERCENT = 7;
+	
 }

@@ -60,7 +60,7 @@ public abstract class AbstractLimiter implements ILimiter{
 		}
 		ServiceMethod sm = null;
 		for(ServiceMethod mi : si.getMethods()){
-			if(mi.getMethodName().equals(req.getMethod())){
+			if(mi.getKey().getMethod().equals(req.getMethod())){
 				sm = mi;
 				break;
 			}

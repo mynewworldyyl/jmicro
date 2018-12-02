@@ -18,10 +18,9 @@ package org.jmicro.api.monitor;
 
 import org.jmicro.api.JMicroContext;
 import org.jmicro.api.net.IReq;
-import org.jmicro.api.net.IRequest;
 import org.jmicro.api.net.IResp;
-import org.jmicro.api.net.IResponse;
 import org.jmicro.api.net.Message;
+import org.jmicro.api.registry.ServiceMethod;
 
 /**
  * 
@@ -66,12 +65,10 @@ public class SF {
 		}
 	}
 	
-	public static void doServiceLog(byte level,Class<?> cls,long linkId,String sn,String ns,String v,
-			String m,Object[] args,Throwable exp,String... others) {
+	public static void doServiceLog(byte level,Class<?> cls,long linkId,ServiceMethod sm,Throwable exp,String... others) {
 		if(needLog()) {
 			IMonitorDataSubmiter monitor = monitor();
-			SubmitItem si = new SubmitItem(MonitorConstant.LINKER_ROUTER_MONITOR,level,linkId,
-					sn,ns,v,m,args,others);
+			SubmitItem si = new SubmitItem(MonitorConstant.LINKER_ROUTER_MONITOR,level,linkId,sm,others);
 			si.setTagCls(cls.getName());
 			si.setEx(exp);
 			monitor.submit(si);

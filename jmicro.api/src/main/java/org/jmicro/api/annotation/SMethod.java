@@ -33,7 +33,7 @@ public @interface SMethod {
 	//public String value() default "";
 	
 	//-1： depend on service config
-	//1:enable
+	//1: enable
 	//0: disable
 	public int monitorEnable() default -1;
 	
@@ -49,16 +49,27 @@ public @interface SMethod {
 	public String failResponse() default "";
 	
 	/**
-	 * true: 可以熔断，熔断时走快速失败逻辑
+	 * 统计数据的基本时间窗口
 	 * @return
 	 */
-	public boolean breakable() default false;
+	public long timeWindowInMillis() default 1000*10;
 	
-	//continue fail will downgrade service
-	public int maxFailBeforeDegrade() default 5;
+	/**
+	 * 1M: 1分钟内，时间单位参考：@link org.jmicro.api.registry.ServiceItem
+	 * 0X7FFFFEF4,0X7FFFFEF2  异常类型编码列表 @link org.jmicro.api.monitor.MonitorConstant
+	 * 50%: 发生的异常数超过总请求数的50%
+	 *     值为空时，不启用
+	 * 1M [7FFFFEF4,7FFFFEF2] 50%
+	 */
+	public String breakingRule() default "";
 	
-	//continue fail will hung up service, service request will fast fail
-	public int maxFailBeforeBreaking() default 10;
+	/**
+	 * 时间单位参考：@link org.jmicro.api.registry.ServiceItem
+	 * 1分钟内超时数超过总请求数的5%, 则将QPS限速降低10%
+	 * 
+	 * 值为空时，不启用
+	 */
+	public String degradeRule() default "1M [7FFFFEF4,7FFFFEF2] 10%";
 	
 	//after hung up, will test the service with this arguments
 	public String testingArgs() default "";

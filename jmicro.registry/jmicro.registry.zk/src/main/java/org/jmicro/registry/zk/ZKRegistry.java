@@ -26,7 +26,6 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import org.jmicro.api.annotation.Cfg;
 import org.jmicro.api.annotation.Component;
-import org.jmicro.api.annotation.Inject;
 import org.jmicro.api.config.Config;
 import org.jmicro.api.exception.BreakerException;
 import org.jmicro.api.raft.IDataListener;
@@ -36,6 +35,8 @@ import org.jmicro.api.registry.IRegistry;
 import org.jmicro.api.registry.IServiceListener;
 import org.jmicro.api.registry.ServiceItem;
 import org.jmicro.api.registry.ServiceMethod;
+import org.jmicro.api.registry.UniqueServiceKey;
+import org.jmicro.api.registry.UniqueServiceMethodKey;
 import org.jmicro.common.Constants;
 import org.jmicro.common.util.JsonUtils;
 import org.jmicro.common.util.StringUtils;
@@ -259,8 +260,8 @@ public class ZKRegistry implements IRegistry {
 			this.notifyServiceChange(IServiceListener.SERVICE_ADD, i);
 		}
 		
-		if(!this.serviceNameItems.containsKey(i.getServiceName())){
-			serviceNameItems.put(i.getServiceName(), true);
+		if(!this.serviceNameItems.containsKey(i.getKey().getServiceName())){
+			serviceNameItems.put(i.getKey().getServiceName(), true);
 			this.notifyServiceNameChange(IServiceListener.SERVICE_ADD, i);
 		}
 		
@@ -278,10 +279,10 @@ public class ZKRegistry implements IRegistry {
     	Set<ServiceItem> items = serviceItems.get(i.serviceName());
     	items.remove(i);
     	
-    	String name = i.getServiceName();
+    	String name = i.getKey().getServiceName();
     	boolean f = false;
     	for(ServiceItem si : this.path2Items.values()){
-    		if(name.equals(si.getServiceName())){
+    		if(name.equals(si.getKey().getServiceName())){
     			f = true;
     			break;
     		}
@@ -307,7 +308,7 @@ public class ZKRegistry implements IRegistry {
 	 */
 	private void notifyServiceNameChange(int type,ServiceItem item){
 		//接口名为KEY监听器
-		Set<IServiceListener> lss = this.serviceNameListeners.get(item.getServiceName());
+		Set<IServiceListener> lss = this.serviceNameListeners.get(item.getKey().getServiceName());
 		if(lss != null && !lss.isEmpty()){
 			for(IServiceListener l : lss){
 				l.serviceChanged(type, item);
@@ -472,8 +473,8 @@ public class ZKRegistry implements IRegistry {
 	
 	@Override
 	public boolean isExists(String serviceName,String namespace,String version) {
-		namespace = ServiceItem.namespace(namespace);
-		version =  ServiceItem.version(version);
+		namespace = UniqueServiceKey.namespace(namespace);
+		version =  UniqueServiceKey.version(version);
 		Set<ServiceItem> sis = matchVersion(serviceName, namespace, version);
 		//Set<ServiceItem> sis = this.serviceItems.get(ServiceItem.serviceName(serviceName, namespace, version));
 		return sis != null && !sis.isEmpty();
@@ -481,8 +482,8 @@ public class ZKRegistry implements IRegistry {
 
 	@Override
 	public Set<ServiceItem> getServices(String serviceName, String namespace, String version) {
-		namespace = ServiceItem.namespace(namespace);
-		version = ServiceItem.version(version);
+		namespace = UniqueServiceKey.namespace(namespace);
+		version = UniqueServiceKey.version(version);
 		//Set<ServiceItem> sis = this.serviceItems.get(ServiceItem.serviceName(serviceName, namespace, version));
 		Set<ServiceItem> sis = matchVersion(serviceName, namespace, version);
 		if(sis == null){
@@ -522,8 +523,8 @@ public class ZKRegistry implements IRegistry {
 	public Set<ServiceItem> getServices(String serviceName,String method,Class<?>[] args
 			,String namespace,String version,String transport) {
 		
-		namespace = ServiceItem.namespace(namespace);
-		version = ServiceItem.version(version);
+		namespace = UniqueServiceKey.namespace(namespace);
+		version = UniqueServiceKey.version(version);
 		
 		Set<ServiceItem> sis = matchVersion(serviceName, namespace, version);
 		
@@ -536,20 +537,18 @@ public class ZKRegistry implements IRegistry {
 		Set<ServiceItem> breakings = new HashSet<ServiceItem>();
 		Set<ServiceItem> set = new HashSet<ServiceItem>();
 		
+		String mStr = UniqueServiceMethodKey.paramsStr(args);
 		for(ServiceItem si : sis) {
-			if(si.isBreaking()){
-				breakings.add(si);
-				continue;
-			}
 			if(!checkTransport(si,transport)){
 				continue;
 			}
+			
 			for(ServiceMethod sm : si.getMethods()){
-				if(sm.getMethodName().equals(method) 
-						&& ServiceMethod.methodParamsKey(args).equals(sm.getMethodParamTypes())){
+				if(sm.getKey().getMethod().equals(method) 
+						&& mStr.equals(sm.getKey().getParamsStr())){
 					if(sm.isBreaking()){
 						breakings.add(si);
-					}else {
+					} else {
 						set.add(si);
 						break;
 					}
@@ -572,12 +571,11 @@ public class ZKRegistry implements IRegistry {
 
 	private Set<ServiceItem> matchVersion(String serviceName,String namespace,String version){
 		Set<ServiceItem> set = new HashSet<ServiceItem>();
-		String prefix = ServiceItem.snnsPrefix(serviceName,namespace);
+		String prefix = UniqueServiceKey.snnsPrefix(serviceName,namespace).toString();
 		for(Map.Entry<String, Set<ServiceItem>> e: this.serviceItems.entrySet()) {
 			String k = e.getKey();
-			if(k.startsWith(prefix) &&
-					ServiceItem.matchVersion(version, k.substring(k.lastIndexOf(
-							ServiceItem.KEY_SEPERATOR)+ServiceItem.KEY_SEPERATOR.length(), k.length()))) {
+			UniqueServiceMethodKey key = UniqueServiceMethodKey.fromKey(k);
+			if(k.startsWith(prefix) && UniqueServiceKey.matchVersion(version,key.getVersion())) {
 				set.addAll(e.getValue());
 			}
 		}

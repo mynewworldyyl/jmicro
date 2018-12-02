@@ -32,6 +32,7 @@ import org.jmicro.api.annotation.JMethod;
 import org.jmicro.api.annotation.SMethod;
 import org.jmicro.api.annotation.Service;
 import org.jmicro.api.degrade.DegradeManager;
+import org.jmicro.api.monitor.AbstractMonitorDataSubscriber;
 import org.jmicro.api.monitor.IMonitorDataSubscriber;
 import org.jmicro.api.monitor.MonitorConstant;
 import org.jmicro.api.monitor.ServiceStatis;
@@ -51,7 +52,7 @@ import org.slf4j.LoggerFactory;
  */
 @Component
 @Service(version="0.0.1", namespace="serviceResponseTimeMonitor",monitorEnable=0)
-public class ServiceResponseTimeMonitor implements IMonitorDataSubscriber {
+public class ServiceResponseTimeMonitor extends AbstractMonitorDataSubscriber implements IMonitorDataSubscriber {
 
 	private final static Logger logger = LoggerFactory.getLogger(ServiceResponseTimeMonitor.class);
 	
@@ -121,8 +122,7 @@ public class ServiceResponseTimeMonitor implements IMonitorDataSubscriber {
 			AvgResponseTimeItem i = new AvgResponseTimeItem();
 			IRequest req = (IRequest)si.getReq();
 			i.reqId = req.getRequestId();
-			i.service = ServiceItem.methodKey(ServiceItem.serviceName(si.getServiceName(), si.getNamespace(),
-					si.getVersion()), si.getMethod(), ServiceMethod.methodParamsKey(req.getArgs()));
+			i.service = si.getSm().getKey().toKey(false,false,false);
 			i.startTime = si.getTime();
 			reqRespAvgList.put(i.reqId, i);
 		}else if(MonitorConstant.CLIENT_REQ_OK == si.getType()

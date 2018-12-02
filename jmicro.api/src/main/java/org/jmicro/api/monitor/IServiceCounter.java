@@ -34,6 +34,6 @@ public interface IServiceCounter {
 	
 	void increment(Integer type);
 	
-	void addCount(Integer type,long timeWindow,long slotSize);
+	void addCounter(Integer type,long timeWindow,long slotSize);
 	
 }

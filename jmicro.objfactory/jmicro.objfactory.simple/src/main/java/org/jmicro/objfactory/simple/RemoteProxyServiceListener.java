@@ -61,7 +61,7 @@ class RemoteProxyServiceListener implements IServiceListener{
 			AbstractClientServiceProxy p = (AbstractClientServiceProxy)proxy;
 			if(!p.key().equals(item.serviceName())){
 				throw new CommonException("Service listener give error service item:"+ 
-						refField.getDeclaringClass().getName()+"],field: " + refField.getName()+" item:"+item.val());
+						refField.getDeclaringClass().getName()+"],field: " + refField.getName()+" item:"+item.getKey().toString());
 			}
 			if(IServiceListener.SERVICE_ADD == type){
 				//p.enable(true);

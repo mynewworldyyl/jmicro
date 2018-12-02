@@ -26,11 +26,13 @@ import org.jmicro.common.CommonException;
  * @author Yulei Ye
  * @date 2018年10月4日-下午12:04:38
  */
-public class ServiceMethod {
+public final class ServiceMethod {
 
-	private String methodName="";
+	private UniqueServiceMethodKey key = new UniqueServiceMethodKey();
 	
-	private String methodParamTypes=""; //full type name
+	//private String methodName="";
+	
+	//private String[] methodParamTypes; //full type name
 	
 	//-1 use Service config, 0 disable, 1 enable
 	private int monitorEnable = -1;
@@ -39,22 +41,24 @@ public class ServiceMethod {
 	private int retryInterval; // milliseconds how long to wait before next retry
 	private int timeout; // milliseconds how long to wait for response before timeout 
 	
+	private BreakRule breakingRule = new BreakRule();
+	
+	private long timeWindowInMillis = 1000*10;
+	
+	/**
+	 * true all service method will fusing, false is normal service status
+	 */
+	private boolean breaking = false;
+	
 	/**
 	 * 失败时的默认返回值，包括服务熔断失败，降级失败等
 	 */
 	private String failResponse;
 	
-	private boolean breakable;
-	
 	/**
 	 * Max failure time before degrade the service
 	 */
 	private int maxFailBeforeDegrade;
-	
-	/**
-	 * Max failure time before cutdown the service
-	 */
-	private int maxFailBeforeFusing;
 	
 	/**
 	 * after the service cutdown, system can do testing weather the service is recovery
@@ -76,12 +80,6 @@ public class ServiceMethod {
 	 *  
 	 */
 	private int avgResponseTime;
-
-	
-	/**
-	 * true all service method will fusing, false is normal service status
-	 */
-	private boolean breaking = false;
 	
 	/**
 	 * 1 is normal status, 
@@ -100,27 +98,27 @@ public class ServiceMethod {
 	
 	//0: need response, 1:no need response
 	public boolean needResponse = true;
-	
+
 	//true async return result,
 	//public boolean async = false;
-		
+
 	//false: not stream, true:stream, more than one request and response double stream
 	//a stream service must be async=true, and get got result by callback
 	public boolean stream = false;
-	
+
 	public void formPersisItem(ServiceMethod p){
 		this.monitorEnable = p.monitorEnable;
-		
-		this.retryCnt=p.retryCnt;
-		this.retryInterval=p.retryInterval;
+
+		this.retryCnt = p.retryCnt;
+		this.retryInterval = p.retryInterval;
 		this.timeout = p.timeout;
-		
-		this.maxFailBeforeDegrade=p.maxFailBeforeDegrade;
-		this.maxFailBeforeFusing=p.maxFailBeforeFusing;
-		
+
+		this.maxFailBeforeDegrade = p.maxFailBeforeDegrade;
+		this.getBreakingRule().from(p.getBreakingRule());;
+
 		this.testingArgs = p.testingArgs;
 		this.breaking = p.breaking;
-		
+
 		this.degrade = p.degrade;
 		this.maxSpeed = p.maxSpeed;
 		this.avgResponseTime = p.avgResponseTime;
@@ -196,34 +194,6 @@ public class ServiceMethod {
 		}
 	}
 	
-	public static String methodParamsKey(Class<?>[] clazzes){
-		if(clazzes != null && clazzes.length >0){
-			StringBuffer sb = new StringBuffer();
-			for(Class<?> mc: clazzes){
-				sb.append(mc.getName()).append("-");
-			}
-			String sbt = sb.substring(0, sb.length()-1);
-			return sbt;
-		}
-		return "";
-	}
-	
-	public static String methodParamsKey(Object[] args){
-		if(args != null && args.length >0){
-			Class<?>[] clazzes = new Class<?>[args.length];
-			int i = 0;
-			for(Object obj: args){
-				clazzes[i++]=obj.getClass();
-			}
-			return methodParamsKey(clazzes);
-		}
-		return "";
-	}
-	
-	public String methodKey(){
-		return this.methodName+"|"+this.methodParamTypes;
-	}
-	
 	public boolean isBreaking() {
 		return breaking;
 	}
@@ -248,20 +218,12 @@ public class ServiceMethod {
 		this.avgResponseTime = avgResponseTime;
 	}
 
-	public String getMethodName() {
-		return methodName;
+	public UniqueServiceMethodKey getKey() {
+		return key;
 	}
 
-	public void setMethodName(String methodName) {
-		this.methodName = methodName;
-	}
-
-	public String getMethodParamTypes() {
-		return methodParamTypes;
-	}
-
-	public void setMethodParamTypes(String methodParamTypes) {
-		this.methodParamTypes = methodParamTypes;
+	public void setKey(UniqueServiceMethodKey key) {
+		this.key = key;
 	}
 
 	public int getRetryCnt() {
@@ -320,14 +282,6 @@ public class ServiceMethod {
 		this.maxFailBeforeDegrade = maxFailBeforeDegrade;
 	}
 
-	public int getMaxFailBeforeFusing() {
-		return maxFailBeforeFusing;
-	}
-
-	public void setMaxFailBeforeFusing(int maxFailBeforeFusing) {
-		this.maxFailBeforeFusing = maxFailBeforeFusing;
-	}
-
 	public String getTestingArgs() {
 		return testingArgs;
 	}
@@ -360,12 +314,20 @@ public class ServiceMethod {
 		this.failResponse = failResponse;
 	}
 
-	public boolean isBreakable() {
-		return breakable;
+	public BreakRule getBreakingRule() {
+		return breakingRule;
 	}
 
-	public void setBreakable(boolean breakable) {
-		this.breakable = breakable;
+	public void setBreakingRule(BreakRule breakingRule) {
+		this.breakingRule = breakingRule;
+	}
+
+	public long getTimeWindowInMillis() {
+		return timeWindowInMillis;
+	}
+
+	public void setTimeWindowInMillis(long timeWindowInMillis) {
+		this.timeWindowInMillis = timeWindowInMillis;
 	}
 	
 }

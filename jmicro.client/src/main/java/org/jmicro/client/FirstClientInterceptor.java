@@ -35,6 +35,7 @@ import org.jmicro.api.net.IRequestHandler;
 import org.jmicro.api.net.IResponse;
 import org.jmicro.api.net.RpcResponse;
 import org.jmicro.api.registry.ServiceMethod;
+import org.jmicro.api.registry.UniqueServiceMethodKey;
 import org.jmicro.common.Constants;
 import org.jmicro.common.Utils;
 import org.jmicro.common.util.JsonUtils;
@@ -90,26 +91,6 @@ public class FirstClientInterceptor extends AbstractInterceptor implements IInte
 			}
 		}
 		
-		AbstractClientServiceProxy proxy =  (AbstractClientServiceProxy)JMicroContext.get().getObject(Constants.PROXY, null);
-		ServiceMethod sm = null;
-		String t = ServiceMethod.methodParamsKey(req.getArgs());
-		
-		for(ServiceMethod m : proxy.getItem().getMethods()){
-			if(m.getMethodName().equals(req.getMethod()) 
-					&& m.getMethodParamTypes().equals(t)){
-				sm = m;
-				break;
-			}
-		}
-		
-		if(sm == null){
-			SF.doSubmit(MonitorConstant.CLIENT_REQ_METHOD_NOT_FOUND, req,null);
-			return doFastFail(req,null);
-		}
-		
-		JMicroContext.get().setParam(Constants.SERVICE_METHOD_KEY, sm);
-		JMicroContext.get().setParam(Constants.SERVICE_ITEM_KEY, proxy.getItem());
-		
 		IResponse resp = handler.onRequest(req);
 		
 		logger.debug(Constants.FIRST_CLIENT_INTERCEPTOR + " after");
@@ -121,7 +102,7 @@ public class FirstClientInterceptor extends AbstractInterceptor implements IInte
 		//ServiceItem si = JMicroContext.get().getParam(Constants.SERVICE_ITEM_KEY, null);
 		
 		ServiceMethod sm = JMicroContext.get().getParam(Constants.SERVICE_METHOD_KEY, null);
-		if(!sm.isBreakable()) {
+		if(!sm.isBreaking()) {
 			//不支持熔断
 			throw new RpcException(req,"",e);
 		}

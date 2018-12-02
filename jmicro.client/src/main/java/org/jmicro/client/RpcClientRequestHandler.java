@@ -159,9 +159,7 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
 	    		
         	}
     		
-    		if(isFistLoop){
-    			SF.doSubmit(MonitorConstant.CLIENT_REQ_BEGIN, req,null);
-    		}
+        	SF.doSubmit(MonitorConstant.CLIENT_REQ_BEGIN, req,null);
     	    
     	    IClientSession session = this.sessionManager.getOrConnect(s.getHost(), s.getPort());
     	    //req.setSession(session);
@@ -179,8 +177,7 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
     			//数据发送后，不需要返回结果，也不需要请求确认包，直接返回
     			//this.sessionManager.write(msg, null,retryCnt);
     			if(this.openDebug) {
-    				SF.doServiceLog(MonitorConstant.DEBUG,TAG,lid,si.serviceName(), si.getNamespace(),
-    						si.getVersion(),req.getMethod(), req.getArgs(),null, " no need response and return");
+    				SF.doServiceLog(MonitorConstant.DEBUG,TAG,lid,sm,null, " no need response and return");
         		}
     			return null;
     		}
@@ -189,8 +186,7 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
     			String key = req.getRequestId()+"";
     			if(session.getParam(key) != null) {
     				String errMsg = "Failure Callback have been exists reqID："+key;
-    				SF.doServiceLog(MonitorConstant.ERROR,TAG,lid,si.serviceName(), si.getNamespace(),
-    						si.getVersion(),req.getMethod(), req.getArgs(),null, errMsg);
+    				SF.doServiceLog(MonitorConstant.ERROR,TAG,lid,sm,null, errMsg);
     				throw new CommonException(errMsg);
     			}
     			session.putParam(key,JMicroContext.get().getParam(Constants.CONTEXT_CALLBACK_CLIENT, null));
@@ -266,9 +262,9 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
 				sb.append(se.toString());
 			}
 			sb.append(" host[").append(s.getHost()).append("] port [").append(s.getPort())
-			.append("] service[").append(si.getServiceName())
-			.append("] method[").append(sm.getMethodName())
-			.append("] param[").append(sm.getMethodParamTypes());
+			.append("] service[").append(si.getKey().getServiceName())
+			.append("] method[").append(sm.getKey().getMethod())
+			.append("] param[").append(sm.getKey().getParamsStr());
     		
     		if(resp == null){
     			if(retryCnt > 0){
@@ -293,7 +289,7 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
     			}
     			
     		}else if(resp.getResult() instanceof ServerError){
-				//服务器已经发生错误，是否需要重试
+				//服务器已经发生错误,是否需要重试
 				 se = (ServerError)resp.getResult();
 				 //logger.error("error code: "+se.getErrorCode()+" ,msg: "+se.getMsg());
 				 req.setSuccess(resp.isSuccess());

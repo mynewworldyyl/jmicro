@@ -16,6 +16,8 @@
  */
 package org.jmicro.api.codec;
 
+import java.util.Random;
+
 import org.jmicro.api.monitor.ServiceCounter;
 import org.junit.Test;
 
@@ -29,13 +31,16 @@ public class TestServiceCounter {
 	@Test
 	public void test01() {
 		ServiceCounter sc = new ServiceCounter("test");
-		sc.addCount(1, 10*1000, 1000);
+		sc.addCounter(1, 10*1000, 1000);
+		Random rand = new Random(1000);
 		
 		while(true) {
-			sc.increment(1);
+			long v = rand.nextLong()%1000;
+			v = v<0? -v:v;
+			sc.add(1,v);
 			System.out.println(sc.get(1));
 			try {
-				Thread.sleep(500);
+				Thread.sleep(v);
 			} catch (InterruptedException e) {
 			}
 		}

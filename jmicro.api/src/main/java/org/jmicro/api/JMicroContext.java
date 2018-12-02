@@ -32,6 +32,7 @@ import org.jmicro.api.net.Message;
 import org.jmicro.api.registry.IRegistry;
 import org.jmicro.api.registry.ServiceItem;
 import org.jmicro.api.registry.ServiceMethod;
+import org.jmicro.api.registry.UniqueServiceMethodKey;
 import org.jmicro.api.service.ServiceLoader;
 import org.jmicro.common.CommonException;
 import org.jmicro.common.Constants;
@@ -107,7 +108,7 @@ public class JMicroContext  {
 		context.setString(JMicroContext.CLIENT_NAMESPACE, req.getNamespace());
 		context.setString(JMicroContext.CLIENT_METHOD, req.getMethod());
 		context.setString(JMicroContext.CLIENT_VERSION, req.getVersion());
-		context.setString(JMicroContext.CLIENT_ARGSTR, ServiceMethod.methodParamsKey(req.getArgs()));
+		context.setParam(JMicroContext.CLIENT_ARGSTR, UniqueServiceMethodKey.paramsStr(req.getArgs()));
 		context.mergeParams(req.getRequestParams());
 		
 		ServiceItem si = registry.getServiceByImpl(req.getImpl());

@@ -18,10 +18,6 @@ package org.jmicro.main.monitor;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Queue;
-import java.util.Timer;
-import java.util.TimerTask;
-import java.util.concurrent.ConcurrentLinkedQueue;
 
 import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.Inject;
@@ -29,13 +25,17 @@ import org.jmicro.api.annotation.JMethod;
 import org.jmicro.api.annotation.SMethod;
 import org.jmicro.api.annotation.Service;
 import org.jmicro.api.degrade.DegradeManager;
+import org.jmicro.api.monitor.AbstractMonitorDataSubscriber;
 import org.jmicro.api.monitor.IMonitorDataSubscriber;
 import org.jmicro.api.monitor.MonitorConstant;
+import org.jmicro.api.monitor.ServiceCounter;
 import org.jmicro.api.monitor.SubmitItem;
-import org.jmicro.api.net.IRequest;
+import org.jmicro.api.registry.BreakRule;
 import org.jmicro.api.registry.ServiceMethod;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.jmicro.api.registry.UniqueServiceKey;
+import org.jmicro.api.registry.UniqueServiceMethodKey;
+import org.jmicro.api.timer.ITickerAction;
+import org.jmicro.api.timer.TimerTicker;
 
 /**
  * 
@@ -44,91 +44,149 @@ import org.slf4j.LoggerFactory;
  */
 @Component
 @Service(version="0.0.1", namespace="serviceExceptionMonitor",monitorEnable=0)
-public class ServiceExceptionMonitor implements IMonitorDataSubscriber {
+public class ServiceExceptionMonitor extends AbstractMonitorDataSubscriber implements IMonitorDataSubscriber,ITickerAction{
 
-	private final static Logger logger = LoggerFactory.getLogger(ServiceExceptionMonitor.class);
+	//private final static Logger logger = LoggerFactory.getLogger(ServiceExceptionMonitor.class);
+	
+	private final Integer[] YTPES = new Integer[]{
+			//服务器发生错误,返回ServerError异常
+			MonitorConstant.CLIENT_REQ_EXCEPTION_ERR,
+			//业务错误,success=false,此时接口调用正常
+			//MonitorConstant.CLIENT_REQ_BUSSINESS_ERR,
+			//请求超时
+			MonitorConstant.CLIENT_REQ_TIMEOUT,
+			//请求开始
+			MonitorConstant.CLIENT_REQ_BEGIN,
+			//异步请求成功确认包
+			MonitorConstant.CLIENT_REQ_ASYNC1_SUCCESS,
+			//同步请求成功
+			MonitorConstant.CLIENT_REQ_OK
+		};
 	
 	@Inject
 	private DegradeManager degradeManager;
 	
-	private Map<String,Queue<ExceItem>> exceptinErrs =  new HashMap<String,Queue<ExceItem>>();
-	private Map<String,Queue<ExceItem>> bussinessErrs =  new HashMap<String,Queue<ExceItem>>();
-	
-	private Timer ticker = new Timer("ServiceExceptionMonitor",true);
-	
-	private static class ExceItem{
-		public long time = 0;
-		public int type;
-	}
+	private Map<String,ServiceCounter> counters =  new HashMap<>();
 	
 	@JMethod("init")
 	public void init() {
-		ticker.schedule(new TimerTask(){
-			@Override
-			public void run() {
-				doCheck(exceptinErrs);
-				doCheck(bussinessErrs);
-			}	
-		}, 0, 5000);
 	}
 	
-	private void doCheck(Map<String,Queue<ExceItem>> excepts) {
-
-		long curtime = System.currentTimeMillis();
-		long interval = 5*60*1000;
-		for(Map.Entry<String, Queue<ExceItem>> e : excepts.entrySet()){
-			Queue<ExceItem> q = e.getValue();
-			do{
-				ExceItem ei = q.peek();
-				if( curtime - ei.time > interval) {
-					q.poll();
-				} else {
-					break;
-				}
-				
-			}while(true);
+	public void act(String key,Object attachement) {
+		ServiceCounter counter = counters.get(key);
+		for(Integer type : YTPES) {
+			degradeManager.updateExceptionCnt(key,  new Double(counter.getAvg(type)).intValue());
 		}
-		
-		for(Map.Entry<String, Queue<ExceItem>> e : excepts.entrySet()){
-			Queue<ExceItem> q = e.getValue();
-			degradeManager.updateExceptionCnt(e.getKey(), q.size());
-		}
-	
+		updateBreaker(key,attachement);
 	}
 
 	@Override
 	@SMethod(needResponse=false)
 	public void onSubmit(SubmitItem si) {
-		String service = null;
-		if(si.getReq() != null) {
-			IRequest req = (IRequest)si.getReq();
-			service = req.getServiceName() + "|"
-					+req.getMethod() + "|" + ServiceMethod.methodParamsKey(req.getArgs());
-		}else {
-			service = si.getServiceName() + "|" + si.getMethod() + "|" + ServiceMethod.methodParamsKey(si.getReqArgs());
+		
+		String key = UniqueServiceKey.serviceName(si.getServiceName(),
+				si.getNamespace(), si.getVersion()).toString();
+		StringBuilder sb = new StringBuilder();
+		sb.append(si.getInstanceName()).append(key).append("(").append(si.getLocalHost()).append(")S(");
+		sb.append(key).append(")M(").append(si.getMethod())
+		.append("(").append(UniqueServiceMethodKey.paramsStr(si.getReqArgs())).append(")");
+		
+		ServiceCounter counter = counters.get(key);
+		if(counter == null) {
+			//取常量池中的字符串做同步
+			key = sb.toString().intern();
+			synchronized(key) {
+				counter = counters.get(key);
+				if(counter == null) {
+					counter = new ServiceCounter(key, YTPES,si.getSm().getTimeWindowInMillis());
+					counters.put(key, counter);
+					BreakRule rule = si.getSm().getBreakingRule();
+					if(rule.isEnable()) {
+						TimerTicker.getTimer(rule.getTimeInMilliseconds()).addListener(key, this,si.getSm());
+					}
+					
+				}
+			}
+		}
+		counter.increment(si.getType());
+		
+		/*BreakRule rule = si.getSm().getBreakingRule();
+		if(!rule.isEnable()) {
+			return;
 		}
 		
-		ExceItem ei = new ExceItem();
-		ei.time = si.getTime();
-		ei.type = si.getType();
+		if(si.getType() == MonitorConstant.CLIENT_REQ_TIMEOUT
+				|| si.getType() == MonitorConstant.CLIENT_REQ_EXCEPTION_ERR) {
+			updateBreaker(key,si);
+		}*/
+	}
+
+	private void updateBreaker(String key,Object sm) {
+		BreakRule rule = ((ServiceMethod)sm).getBreakingRule();
+		if(!rule.isEnable()) {
+			return;
+		}
 		
-		if(MonitorConstant.CLIENT_REQ_EXCEPTION_ERR == si.getType()){
-			if(!exceptinErrs.containsKey(service)){
-				exceptinErrs.put(service, new ConcurrentLinkedQueue<ExceItem>());
-			}
-			exceptinErrs.get(service).offer(ei);
-		} else if(MonitorConstant.CLIENT_REQ_BUSSINESS_ERR == si.getType()){
-			if(!bussinessErrs.containsKey(service)){
-				bussinessErrs.put(service, new ConcurrentLinkedQueue<ExceItem>());
-			}
-			bussinessErrs.get(service).offer(ei);
+		Double failPercent = getData(key, MonitorConstant.FAIL_PERCENT);
+		if(failPercent >= rule.getPercent()) {
+			
 		}
 	}
 
 	@Override
+	public Double getData(String srvKey,Integer type) {
+		ServiceCounter counter = counters.get(srvKey);
+		if(counter == null) {
+			return 0D;
+		}
+		Double result = 0D;
+		switch(type) {
+		case MonitorConstant.FAIL_PERCENT:
+			Long totalReq = counter.get(MonitorConstant.CLIENT_REQ_BEGIN);
+			if(totalReq != 0) {
+				Long totalFail = counter.get(MonitorConstant.CLIENT_REQ_EXCEPTION_ERR)+
+						counter.get(MonitorConstant.CLIENT_REQ_TIMEOUT);
+				result = (totalFail*1.0/totalReq)*100;
+			}
+			break;
+		case MonitorConstant.TOTAL_REQ:
+			result = 1.0 * counter.get(MonitorConstant.CLIENT_REQ_BEGIN);		
+			break;
+		case MonitorConstant.TOTAL_SUCCESS:
+			result =  1.0 * counter.get(MonitorConstant.CLIENT_REQ_ASYNC1_SUCCESS)+
+					counter.get(MonitorConstant.CLIENT_REQ_OK);
+			break;
+		case MonitorConstant.TOTAL_FAIL:
+			result = 1.0 * counter.get(MonitorConstant.CLIENT_REQ_EXCEPTION_ERR)+
+			counter.get(MonitorConstant.CLIENT_REQ_TIMEOUT);
+			break;
+		case MonitorConstant.SUCCESS_PERCENT:
+			totalReq = counter.get(MonitorConstant.CLIENT_REQ_BEGIN);
+			if(totalReq != 0) {
+				result =  1.0 * counter.get(MonitorConstant.CLIENT_REQ_ASYNC1_SUCCESS)+
+						counter.get(MonitorConstant.CLIENT_REQ_OK);
+						result = (result*1.0/totalReq)*100;
+			}
+			break;
+		case MonitorConstant.TOTAL_TIMEOUT:
+			result = 1.0 * counter.get(MonitorConstant.CLIENT_REQ_TIMEOUT);
+			break;
+		case MonitorConstant.TIMEOUT_PERCENT:
+			totalReq = counter.get(MonitorConstant.CLIENT_REQ_BEGIN);
+			if(totalReq != 0) {
+				result = 1.0 * counter.get(MonitorConstant.CLIENT_REQ_TIMEOUT);
+				result = (result/totalReq)*100;
+			}
+			break;
+		}
+		return result;
+	}
+
+	@Override
 	public Integer[] intrest() {
-		return new Integer[]{MonitorConstant.CLIENT_REQ_EXCEPTION_ERR,
-				MonitorConstant.CLIENT_REQ_BUSSINESS_ERR};
+		return YTPES;
 	}
 
 }
+
+

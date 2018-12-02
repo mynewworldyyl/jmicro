@@ -29,11 +29,13 @@ import org.jmicro.api.annotation.JMethod;
 import org.jmicro.api.annotation.SMethod;
 import org.jmicro.api.annotation.Service;
 import org.jmicro.api.degrade.DegradeManager;
+import org.jmicro.api.monitor.AbstractMonitorDataSubscriber;
 import org.jmicro.api.monitor.IMonitorDataSubscriber;
 import org.jmicro.api.monitor.MonitorConstant;
 import org.jmicro.api.monitor.SubmitItem;
 import org.jmicro.api.net.IRequest;
 import org.jmicro.api.registry.ServiceMethod;
+import org.jmicro.api.registry.UniqueServiceMethodKey;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -44,7 +46,7 @@ import org.slf4j.LoggerFactory;
  */
 @Component
 @Service(version="0.0.1", namespace="timeoutExceptionMonitor",monitorEnable=0)
-public class TimeoutExceptionMonitor implements IMonitorDataSubscriber {
+public class TimeoutExceptionMonitor extends AbstractMonitorDataSubscriber implements IMonitorDataSubscriber {
 
 	private final static Logger logger = LoggerFactory.getLogger(TimeoutExceptionMonitor.class);
 	
@@ -107,9 +109,9 @@ public class TimeoutExceptionMonitor implements IMonitorDataSubscriber {
 		if(si.getReq() != null) {
 			IRequest req = (IRequest)si.getReq();
 			service = req.getServiceName() + "|"
-					+req.getMethod() + "|" + ServiceMethod.methodParamsKey(req.getArgs());
+					+req.getMethod() + "|" + UniqueServiceMethodKey.paramsStr(req.getArgs());
 		}else {
-			service = si.getServiceName() + "|" + si.getMethod() + "|" + ServiceMethod.methodParamsKey(si.getReqArgs());
+			service = si.getServiceName() + "|" + si.getMethod() + "|" + UniqueServiceMethodKey.paramsStr(si.getReqArgs());
 		}
 		
 		ExceItem ei = new ExceItem();

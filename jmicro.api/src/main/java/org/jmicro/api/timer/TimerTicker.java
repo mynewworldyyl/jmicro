@@ -14,13 +14,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.jmicro.common;
+package org.jmicro.api.timer;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.ConcurrentHashMap;
+
+import org.jmicro.api.annotation.Component;
+import org.jmicro.common.CommonException;
 
 /**
  * 
@@ -34,7 +37,7 @@ public class TimerTicker {
 	public static TimerTicker getTimer(Long ticker) {
 		if(timers.containsKey(ticker)) {
 			return timers.get(ticker);
-		}else {
+		} else {
 			timers.put(ticker, new TimerTicker(ticker));
 			return timers.get(ticker);
 		}
@@ -43,7 +46,8 @@ public class TimerTicker {
 	//private long ticker;
 	private Timer timer;
 	
-	private Map<String,TickerAction> listeners = new HashMap<>();
+	private Map<String,ITickerAction> listeners = new HashMap<>();
+	private Map<String,Object> attachements = new HashMap<>();
 	
 	public TimerTicker(long ticker) {
 		//this.ticker = ticker;
@@ -58,13 +62,16 @@ public class TimerTicker {
 	
 	private void notifyAction() {
 		listeners.forEach((key,act)->{
-			act.on();
+			act.act(key,attachements.get(key));
 		});
 	}
 	
-	public void addListener(String key,TickerAction act) {
+	public void addListener(String key,ITickerAction act,Object attachement) {
 		if(this.listeners.containsKey(key) && act != this.listeners.get(key)) {
 			throw new CommonException("listener with key[" + key+"] have been exists");
+		}
+		if(attachement != null) {
+			attachements.put(key, attachement);
 		}
 		this.listeners.put(key, act);
 	}
@@ -72,10 +79,5 @@ public class TimerTicker {
 	public void removeListener(String key) {
 		listeners.remove(key);
 	}
-
-	public static interface TickerAction{
-		void on();
-	}
-	
 
 }
