@@ -14,20 +14,41 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.jmicro.api.breaker;
+package org.jmicro.common;
 
-import java.lang.reflect.Method;
-import java.util.Set;
-
-import org.jmicro.api.registry.ServiceItem;
 
 /**
  * 
  * @author Yulei Ye
- * @date 2018年10月5日-下午12:50:05
+ * @date 2018年12月3日 下午11:13:38
  */
-public interface IBreakerHandler {
+public class HashUtils {
 
-	boolean canHandle(Method method, Object[] args,Set<ServiceItem> items);
-	Object onFusing(Method method, Object[] args,Set<ServiceItem> items);
+	private static final int SEED1 = 16777619;
+	private static final int SEED2 =(int)2166136261L;
+	
+	private HashUtils() {}
+	
+	/**
+	 *  改进的32位FNV算法1
+	 * 
+	 * @param data
+	 *            数组
+	 * @return int值
+	 */
+	public static int FNVHash1(String msg) {
+		byte[] data = msg.getBytes();
+		final int p = SEED1;
+		int hash = SEED2;
+		for (byte b : data)
+			hash = (hash ^ b) * p;
+		hash += hash << 13;
+		hash ^= hash >> 7;
+		hash += hash << 3;
+		hash ^= hash >> 17;
+		hash += hash << 5;
+		return hash;
+	}
+
+
 }

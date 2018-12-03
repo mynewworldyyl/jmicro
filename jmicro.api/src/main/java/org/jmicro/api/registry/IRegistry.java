@@ -19,6 +19,7 @@ package org.jmicro.api.registry;
 import java.util.Set;
 
 import org.jmicro.api.raft.IDataOperator;
+import org.jmicro.api.service.ServiceManager;
 /**
  * 
  * @author Yulei Ye
@@ -56,4 +57,5 @@ public interface IRegistry{
 	void init();
 	
 	void setDataOperator(IDataOperator dataOperator);
+	void setSrvManager(ServiceManager srvManager);
 }

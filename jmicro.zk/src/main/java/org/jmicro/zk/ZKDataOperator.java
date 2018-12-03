@@ -34,6 +34,7 @@ import org.apache.curator.framework.api.ExistsBuilder;
 import org.apache.curator.framework.api.GetChildrenBuilder;
 import org.apache.curator.framework.api.GetDataBuilder;
 import org.apache.curator.framework.api.SetDataBuilder;
+import org.apache.curator.framework.imps.CuratorFrameworkState;
 import org.apache.curator.framework.state.ConnectionState;
 import org.apache.curator.retry.ExponentialBackoffRetry;
 import org.apache.zookeeper.CreateMode;
@@ -57,7 +58,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * 
+ * 1 每个结点每种事件都只设置一个监听器,业务代码可自由在此增加监听器,由此做事件分发
+ * 2 不保存结点信息
+ * 3 不对线程安全做保证
  * @author Yulei Ye
  * @date 2018年10月4日-下午12:10:34
  */
@@ -68,6 +71,7 @@ public class ZKDataOperator implements IDataOperator{
 	
 	private boolean OPEN_DEBUG = true;
 	
+	//only use for testing
 	private static ZKDataOperator ins = new ZKDataOperator();
 	public static ZKDataOperator getIns() {return ins;}
 	
@@ -84,12 +88,17 @@ public class ZKDataOperator implements IDataOperator{
 		curator = createCuratorFramework();
 	}
 	
+	//连接状态舰艇器，连上，断开，重连
+	//若增加监听器时，边接已经建立，则立即给一个连接通知，否则不给连接通知
 	private Set<IConnectionStateChangeListener> connListeners = new HashSet<>();
 	
+	//子结点监听器
 	private Map<String,Set<IChildrenListener>> childrenListeners = new HashMap<>();
 	
+	//数据改变监听器
 	private  Map<String,Set<IDataListener>> dataListeners = new HashMap<>();
 	
+	//结点增加或删除监听器
 	private  Map<String,Set<INodeListener>> nodeListeners = new HashMap<>();
 	
 	private CuratorFramework curator = null;
@@ -233,6 +242,11 @@ public class ZKDataOperator implements IDataOperator{
 	
 	public void addListener(IConnectionStateChangeListener lis){
 		connListeners.add(lis);
+		if(this.curator.getState() == CuratorFrameworkState.STARTED) {
+			lis.stateChanged(Constants.CONN_CONNECTED);
+		}else if(this.curator.getState() == CuratorFrameworkState.STOPPED) {
+			lis.stateChanged(Constants.CONN_LOST);
+		}
 	}
 	
 	public void addDataListener(String path,IDataListener lis){
@@ -257,13 +271,16 @@ public class ZKDataOperator implements IDataOperator{
 		if(childrenListeners.containsKey(path)){
 			Set<IChildrenListener> l = childrenListeners.get(path);
 			if(this.existsListener(l, lis)){
+				//监听器已经存在
 				return;
 			}
 		    if(!l.isEmpty()){
+		    	//列表已经存在,但监听器还不存在
 		    	l.add(lis);
 				return;
 		    }
 		}
+		//监听器和列表都不存在
 		Set<IChildrenListener> l = null;
 		childrenListeners.put(path, l = new HashSet<IChildrenListener>());
 		l.add(lis);
@@ -411,7 +428,7 @@ public class ZKDataOperator implements IDataOperator{
 	        public List<ACL> getDefaultAcl() {
 	            if(acl ==null){
 	                ArrayList<ACL> acl = ZooDefs.Ids.OPEN_ACL_UNSAFE;
-	               // acl.clear();
+	                // acl.clear();
 	                //acl.add(new ACL(Perms.ALL, new Id("auth", propes.getProperty("auth")) ));
 	                this.acl = acl;
 	            }
@@ -454,6 +471,7 @@ public class ZKDataOperator implements IDataOperator{
 	    curator.getConnectionStateListenable().addListener((cf,state)->stateChanged(state));
 	    
 	    curator.start();
+	    
 	    return curator;
 	  }
 	
@@ -463,10 +481,10 @@ public class ZKDataOperator implements IDataOperator{
 			 s = Constants.CONN_LOST;
          } else if (state == ConnectionState.CONNECTED) {
         	 s = Constants.CONN_CONNECTED;
-        	 registListeners();
+        	 //registListeners();
          } else if (state == ConnectionState.RECONNECTED) {
         	 s = Constants.CONN_RECONNECTED;
-        	 registListeners();
+        	 //registListeners();
          }
 		 if(s!= 0){
 			 for(IConnectionStateChangeListener l : this.connListeners){
@@ -474,11 +492,7 @@ public class ZKDataOperator implements IDataOperator{
 			 }
 		 }
 	}
-	
-	private void registListeners() {
-		
-		
-	}
+
 	private void getConfig(){
 		//propes = new Properties();
 		//propes.put("connectString", "localhost:2180");

@@ -1,8 +1,3 @@
-package org.jmicro.api.breaker;
-
-import java.util.HashMap;
-import java.util.Map;
-
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -19,32 +14,38 @@ import java.util.Map;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import org.jmicro.api.annotation.Component;
-import org.jmicro.api.annotation.Inject;
-import org.jmicro.api.registry.ServiceItem;
-import org.jmicro.api.registry.ServiceMethod;
-import org.jmicro.api.service.ServiceManager;
+package org.jmicro.common;
+
+import java.security.MessageDigest;
 
 /**
  * 
  * @author Yulei Ye
- * @date 2018年10月5日-下午12:49:55
+ * @date 2018年12月3日 下午11:13:27
  */
-@Component
-public class BreakerManager {
-	
-	private Map<String,ServiceItem> path2SrvItems = new HashMap<>();
-	
-	private Map<String,ServiceMethod> path2SrvMethods = new HashMap<>();
-	
-	@Inject
-	private ServiceManager srvManager;
-	
-	public void init(){
-		
-	}
+public class Md5Utils {
 
-	public void breakService(String key, ServiceMethod sm) {
-		srvManager.breakService(sm);
-	}
+	private Md5Utils(){}
+	
+	private static MessageDigest md5 = null;
+    static {
+        try {
+            md5 = MessageDigest.getInstance("MD5");
+        } catch (Exception e) {
+            System.out.println(e.getMessage());
+        }
+    }
+
+    public static String getMd5(String str) {
+        byte[] bs = md5.digest(str.getBytes());
+        StringBuilder sb = new StringBuilder(40);
+        for(byte x : bs) {
+            if((x & 0xff)>>4 == 0) {
+                sb.append("0").append(Integer.toHexString(x & 0xff));
+            } else {
+                sb.append(Integer.toHexString(x & 0xff));
+            }
+        }
+        return sb.toString();
+    }
 }

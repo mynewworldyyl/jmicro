@@ -24,6 +24,7 @@ import org.jmicro.api.annotation.Inject;
 import org.jmicro.api.annotation.JMethod;
 import org.jmicro.api.annotation.SMethod;
 import org.jmicro.api.annotation.Service;
+import org.jmicro.api.breaker.BreakerManager;
 import org.jmicro.api.degrade.DegradeManager;
 import org.jmicro.api.monitor.AbstractMonitorDataSubscriber;
 import org.jmicro.api.monitor.IMonitorDataSubscriber;
@@ -33,7 +34,6 @@ import org.jmicro.api.monitor.SubmitItem;
 import org.jmicro.api.registry.BreakRule;
 import org.jmicro.api.registry.ServiceMethod;
 import org.jmicro.api.registry.UniqueServiceKey;
-import org.jmicro.api.registry.UniqueServiceMethodKey;
 import org.jmicro.api.timer.ITickerAction;
 import org.jmicro.api.timer.TimerTicker;
 
@@ -66,29 +66,46 @@ public class ServiceExceptionMonitor extends AbstractMonitorDataSubscriber imple
 	@Inject
 	private DegradeManager degradeManager;
 	
+	@Inject
+	private BreakerManager breakerManager;
+	
 	private Map<String,ServiceCounter> counters =  new HashMap<>();
 	
 	@JMethod("init")
 	public void init() {
 	}
 	
+	private String typeKey(String key, Integer type) {
+		return key+ UniqueServiceKey.SEP + type ;
+	}
+	
 	public void act(String key,Object attachement) {
 		ServiceCounter counter = counters.get(key);
-		for(Integer type : YTPES) {
-			degradeManager.updateExceptionCnt(key,  new Double(counter.getAvg(type)).intValue());
+		
+		ServiceMethod sm = (ServiceMethod)attachement;
+		BreakRule rule = ((ServiceMethod)attachement).getBreakingRule();
+		if(rule.isEnable()) {
+			Double failPercent = getData(key, MonitorConstant.FAIL_PERCENT);
+			if(failPercent > rule.getPercent()) {
+				breakerManager.breakService(key,sm);
+			}
 		}
-		updateBreaker(key,attachement);
+		
+		for(Integer type : YTPES) {
+			degradeManager.updateExceptionCnt(typeKey(key,type),
+					new Double(counter.getAvg(type)).intValue());
+		}
 	}
 
 	@Override
 	@SMethod(needResponse=false)
 	public void onSubmit(SubmitItem si) {
 		
-		String key = si.getSm().getKey().toKey(false, false, false);
+		String key = si.getSm().getKey().toKey(true,true,false);
 		
 		ServiceCounter counter = counters.get(key);
 		if(counter == null) {
-			//取常量池中的字符串做同步
+			//取常量池中的字符串实例做同步锁，保证基于服务方法标识这一级别的同步
 			key = key.intern();
 			synchronized(key) {
 				counter = counters.get(key);
@@ -97,7 +114,8 @@ public class ServiceExceptionMonitor extends AbstractMonitorDataSubscriber imple
 					counters.put(key, counter);
 					BreakRule rule = si.getSm().getBreakingRule();
 					if(rule.isEnable()) {
-						TimerTicker.getTimer(rule.getTimeInMilliseconds()).addListener(key, this,si.getSm());
+						//开启了熔断机制，按熔断窗口的两倍时间做监听
+						TimerTicker.getTimer(rule.getTimeInMilliseconds()*2).addListener(key, this,si.getSm());
 					}
 					
 				}
@@ -114,18 +132,6 @@ public class ServiceExceptionMonitor extends AbstractMonitorDataSubscriber imple
 				|| si.getType() == MonitorConstant.CLIENT_REQ_EXCEPTION_ERR) {
 			updateBreaker(key,si);
 		}*/
-	}
-
-	private void updateBreaker(String key,Object sm) {
-		BreakRule rule = ((ServiceMethod)sm).getBreakingRule();
-		if(!rule.isEnable()) {
-			return;
-		}
-		
-		Double failPercent = getData(key, MonitorConstant.FAIL_PERCENT);
-		if(failPercent >= rule.getPercent()) {
-			
-		}
 	}
 
 	@Override

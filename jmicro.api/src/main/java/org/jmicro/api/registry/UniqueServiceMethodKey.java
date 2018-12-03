@@ -67,9 +67,9 @@ public final class UniqueServiceMethodKey {
 		StringBuilder sb = new StringBuilder();
 		int offset = args.length - 1;
 		for(int i = 0; i < offset; i++){
-		    sb.append(args[i].toString()).append(PSEP);
+		    sb.append(args[i].getClass().getName()).append(PSEP);
 		}
-		sb.append(args[offset].toString());
+		sb.append(args[offset].getClass().getName());
 		return sb.toString();
 	}
 	

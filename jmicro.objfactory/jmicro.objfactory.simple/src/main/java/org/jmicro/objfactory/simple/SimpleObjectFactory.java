@@ -45,7 +45,6 @@ import org.jmicro.api.annotation.Service;
 import org.jmicro.api.config.Config;
 import org.jmicro.api.config.IConfigLoader;
 import org.jmicro.api.http.annotation.HttpHandler;
-import org.jmicro.api.net.IMessageReceiver;
 import org.jmicro.api.objectfactory.IObjectFactory;
 import org.jmicro.api.objectfactory.IPostFactoryReady;
 import org.jmicro.api.objectfactory.IPostInitListener;
@@ -53,6 +52,7 @@ import org.jmicro.api.objectfactory.ProxyObject;
 import org.jmicro.api.raft.IDataOperator;
 import org.jmicro.api.registry.IRegistry;
 import org.jmicro.api.service.IServerServiceProxy;
+import org.jmicro.api.service.ServiceManager;
 import org.jmicro.common.CommonException;
 import org.jmicro.common.Constants;
 import org.jmicro.common.Utils;
@@ -293,12 +293,6 @@ public class SimpleObjectFactory implements IObjectFactory {
 			return;
 		}
 		
-		String dataOperatorName = Config.getCommandParam(Constants.DATA_OPERATOR, String.class, Constants.DEFAULT_DATA_OPERATOR);
-		String registryName = Config.getCommandParam(Constants.REGISTRY_KEY, String.class, Constants.DEFAULT_REGISTRY);
-		
-		IRegistry registry = null;
-		IDataOperator dop = null;
-		
 		Set<Class<?>> listeners = ClassScannerUtils.getIns().loadClassByClass(IPostInitListener.class);
 		if(listeners != null && !listeners.isEmpty()) {
 			for(Class<?> c : listeners){
@@ -322,6 +316,13 @@ public class SimpleObjectFactory implements IObjectFactory {
 		boolean serverOnly = Config.isServerOnly();
 		
 		boolean clientOnly = Config.isClientOnly();
+		
+		String dataOperatorName = Config.getCommandParam(Constants.DATA_OPERATOR, String.class, Constants.DEFAULT_DATA_OPERATOR);
+		String registryName = Config.getCommandParam(Constants.REGISTRY_KEY, String.class, Constants.DEFAULT_REGISTRY);
+	
+		IRegistry registry = null;
+		IDataOperator dop = null;
+		ServiceManager srvManager = null;
 		
 		Set<Class<?>> clses = ClassScannerUtils.getIns().getComponentClass();
 		if(clses != null && !clses.isEmpty()) {
@@ -363,10 +364,13 @@ public class SimpleObjectFactory implements IObjectFactory {
 					dop = (IDataOperator)obj;
 				}
 				
+				if(ServiceManager.class == c) {
+					srvManager = (ServiceManager)obj;
+				}
+				
 				if(IRegistry.class.isAssignableFrom(c) && registryName.equals(cann.value())){
 					registry = (IRegistry)obj;
 				}
-				
 			}
 		}
 		
@@ -381,7 +385,12 @@ public class SimpleObjectFactory implements IObjectFactory {
 		if(registry == null){
 			throw new CommonException("IRegistry with name :"+registryName +" not found!");
 		}
+		
+		srvManager.setDataOperator(dop);
+		srvManager.init();
+		
 		registry.setDataOperator(dop);
+		registry.setSrvManager(srvManager);
 		registry.init();
 		
 		clientServiceProxyManager = new ClientServiceProxyManager(this);
@@ -411,7 +420,7 @@ public class SimpleObjectFactory implements IObjectFactory {
 		if(!l.isEmpty()){
 			for(int i =0; i < l.size(); i++){
 				Object o = l.get(i);
-				if(registry == o || dop == o || haveInits.contains(o)) {
+				if(srvManager == o || registry == o || dop == o || haveInits.contains(o)) {
 					continue;
 				}
 				haveInits.add(o);
