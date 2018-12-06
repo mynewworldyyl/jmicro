@@ -125,13 +125,13 @@ public class ApiRequestMessageHandler implements IMessageHandler{
 				
 				JMicroContext.get().configMonitor(sm.getMonitorEnable(), si.getMonitorEnable());
 				
-				if(openDebug) {
+				if(SF.isLoggable(this.openDebug,MonitorConstant.DEBUG)) {
 					SF.doRequestLog(MonitorConstant.DEBUG, lid, TAG, req, null," got request");
 				}
 				
 				if(!sm.needResponse) {
 					result = m.invoke(srv, req.getArgs());
-					if(openDebug) {
+					if(SF.isLoggable(this.openDebug,MonitorConstant.DEBUG)) {
 						SF.doRequestLog(MonitorConstant.DEBUG, lid, TAG, req, null," no need response");
 					}
 					return;
@@ -149,7 +149,7 @@ public class ApiRequestMessageHandler implements IMessageHandler{
 						resp.setId(idGenerator.getLongId(ApiResponse.class));
 						msg.setPayload(ICodecFactory.encode(codecFactory, resp, msg.getProtocol()));
 						session.write(msg);
-						if(openDebug) {
+						if(SF.isLoggable(this.openDebug,MonitorConstant.DEBUG)) {
 							SF.doResponseLog(MonitorConstant.DEBUG, lid, TAG, resp, null," Api gateway stream response");
 						}
 						return true;
@@ -158,7 +158,7 @@ public class ApiRequestMessageHandler implements IMessageHandler{
 					result = m.invoke(srv, req.getArgs());
 					// 返回确认包
 					resp.setResult(result);
-					if(openDebug) {
+					if(SF.isLoggable(this.openDebug,MonitorConstant.DEBUG)) {
 						SF.doResponseLog(MonitorConstant.DEBUG, lid, TAG, resp, null," Api gateway stream comfirm response",
 								result!=null ? result.toString():"");
 					}
@@ -169,7 +169,7 @@ public class ApiRequestMessageHandler implements IMessageHandler{
 					
 					resp.setResult(result);
 					msg.setPayload(ICodecFactory.encode(codecFactory, resp, msg.getProtocol()));
-					if(openDebug) {
+					if(SF.isLoggable(this.openDebug,MonitorConstant.DEBUG)) {
 						SF.doResponseLog(MonitorConstant.DEBUG, lid, TAG, resp, null," one response");
 					}
 					session.write(msg);

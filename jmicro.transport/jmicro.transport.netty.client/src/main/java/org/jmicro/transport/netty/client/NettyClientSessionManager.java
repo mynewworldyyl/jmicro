@@ -166,16 +166,16 @@ public class NettyClientSessionManager implements IClientSessionManager{
 	                 public void channelRead(ChannelHandlerContext ctx, Object msg) {
 						JMicroContext.setMonitor(monitor);
 			        	JMicroContext.callSideProdiver(false);
-	                	 if(!(msg instanceof ByteBuf)) {
-		                 		ctx.fireChannelRead(msg);
-		                 		return;
-		                 	}
+	                	if(!(msg instanceof ByteBuf)) {
+	                 		ctx.fireChannelRead(msg);
+	                 		return;
+		                }
 	                	 
-	                	 NettyClientSession cs = (NettyClientSession)ctx.channel().attr(sessionKey).get();
-	                	 if(monitorEnable(ctx) && monitor != null){
-	                     	monitor.submit(MonitorConstant.CLIENT_IOSESSION_READ, cs.getId()+"",cs.getReadBuffer().remaining()+""
-	                     			,((ByteBuf)msg).readableBytes()+"");
-	                     }
+	                	NettyClientSession cs = (NettyClientSession)ctx.channel().attr(sessionKey).get();
+	                	if(monitorEnable(ctx) && monitor != null){
+	                		monitor.submit(MonitorConstant.CLIENT_IOSESSION_READ, cs.getId()+"",
+	                				cs.getReadBuffer().remaining()+"",((ByteBuf)msg).readableBytes()+"");
+	                    }
 	                 	
 	                 	ByteBuf bb = (ByteBuf)msg;
 	                 	if(bb.readableBytes() <= 0) {
@@ -190,17 +190,19 @@ public class NettyClientSessionManager implements IClientSessionManager{
 	                	
 	                	buffer.put(b);
 	                	
-	                 	ByteBuffer body = Message.readMessage(buffer);
-	                     if(body == null){
-	                     	return;
-	                     }
-	                     
-	                     Message message = new Message();
-	                     message.decode(body);
-	                     if(openDebug) {
-	                     	logger.debug("Got message reqId: "+ message.getReqId());
-	                     }
-	                     receiver.receive(cs,message);
+	                 	while(true) {
+	                 		 ByteBuffer body =  Message.readMessage(buffer);
+	                 		 if(body == null){
+	 	                     	return;
+	 	                     }
+	 	                     Message message = new Message();
+	 	                     message.decode(body);
+	 	                     if(openDebug) {
+	 	                     	logger.debug("Got message reqId: "+ message.getReqId());
+	 	                     }
+	 	                    //JMicroContext.configProvider(message);
+	 	                     receiver.receive(cs,message);
+	                 	 }
 	                 }
 
 	                 @Override

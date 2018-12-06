@@ -119,7 +119,7 @@ public class ServerMessageReceiver implements IMessageReceiver{
 	@Suspendable
 	private void doReceive(IServerSession s, Message msg){
 		
-		if(openDebug) {
+		if(msg.isLoggable()) {
 			SF.doMessageLog(MonitorConstant.DEBUG, TAG, msg,null,"doReceive");
 		}
 		

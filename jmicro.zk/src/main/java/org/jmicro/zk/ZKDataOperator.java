@@ -232,6 +232,7 @@ public class ZKDataOperator implements IDataOperator{
 	private void watchChildren(String path){
 		GetChildrenBuilder getChildBuilder = this.curator.getChildren();
 		 try {
+			 logger.debug("watchChildren: {}",path);
 			 getChildBuilder.usingWatcher(watcher).forPath(path);
 		} catch (KeeperException.NoNodeException e) {
 			logger.error(e.getMessage());
@@ -268,6 +269,7 @@ public class ZKDataOperator implements IDataOperator{
 	}
 	
 	public void addChildrenListener(String path,IChildrenListener lis){
+		logger.debug("Add children listener for: {}",path);
 		if(childrenListeners.containsKey(path)){
 			Set<IChildrenListener> l = childrenListeners.get(path);
 			if(this.existsListener(l, lis)){

@@ -7,6 +7,7 @@ import org.jmicro.api.monitor.MonitorConstant;
 import org.jmicro.api.monitor.SF;
 import org.jmicro.api.objectfactory.IObjectFactory;
 import org.jmicro.api.registry.ServiceMethod;
+import org.jmicro.api.registry.UniqueServiceMethodKey;
 import org.jmicro.example.api.ISayHello;
 import org.junit.Test;
 import org.slf4j.Logger;
@@ -46,8 +47,11 @@ public class TestMonitor {
 		JMicroContext.get().configMonitor(1, 1);
 		IMonitorDataSubmiter monitor = of.get(IMonitorDataSubmiter.class);
 		JMicroContext.get().setObject(JMicroContext.MONITOR, monitor);
+		JMicroContext.get().setString(JMicroContext.CLIENT_METHOD, "test");
+		ServiceMethod sm = new ServiceMethod();
+		sm.setKey(UniqueServiceMethodKey.fromKey("org.jmicro.api.monitor.IMonitorDataSubscriber##LinkRouterMonitor##0.0.1##LinkRouterMonitor##172.16.22.200##9001##test##java.lang.String"));
 		for(;;){
-			SF.doServiceLog(MonitorConstant.DEBUG,this.getClass(), 1L,new ServiceMethod(),null);
+			SF.doServiceLog(MonitorConstant.DEBUG,this.getClass(), 1L,sm,null);
 			//logger.debug("testSubmitLog");
 			try {
 				Thread.sleep(500);

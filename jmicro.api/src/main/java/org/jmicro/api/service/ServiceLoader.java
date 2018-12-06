@@ -241,6 +241,7 @@ public class ServiceLoader {
 		item.setSpeedUnit(this.parseSpeedUnit(anno.maxSpeed()));
 		item.setAvgResponseTime(anno.avgResponseTime()!=-1 || intAnno == null ? anno.avgResponseTime() : intAnno.avgResponseTime());
 		item.setMonitorEnable(anno.monitorEnable()!=-1 || intAnno == null ? anno.monitorEnable() : intAnno.monitorEnable());
+		item.setLoggable(anno.loggable()!=-1 || intAnno == null ? anno.loggable() : intAnno.loggable());
 		
 		ServiceMethod checkMethod = new ServiceMethod();
 		item.addMethod(checkMethod);
@@ -260,6 +261,7 @@ public class ServiceLoader {
 		checkMethod.getKey().setUsk(usk);
 		checkMethod.getKey().setMethod("wayd");
 		checkMethod.getKey().setParamsStr(UniqueServiceMethodKey.paramsStr(new String[]{"java.lang.String"}));
+		checkMethod.setLoggable(0);
 		
 		for(Method m : interfacez.getMethods()) {
 			ServiceMethod sm = new ServiceMethod();
@@ -289,6 +291,7 @@ public class ServiceLoader {
 				sm.setAvgResponseTime(item.getAvgResponseTime());
 				sm.setMonitorEnable(item.getMonitorEnable());
 				sm.setFailResponse("");
+				item.setLoggable(0);
 				
 			} else {
 				 if(manno != null ) {
@@ -305,7 +308,9 @@ public class ServiceLoader {
 					sm.setNeedResponse(manno.needResponse());
 					sm.setFailResponse(manno.failResponse());
 					sm.setTimeWindowInMillis(manno.timeWindowInMillis());
-				} else {
+					sm.setLoggable(manno.loggable()!=-1 || intMAnno == null ? manno.loggable() : intMAnno.loggable());
+					
+				 } else {
 					sm.setBreakingRule(BreakRule.parseRule(intMAnno.breakingRule()));;
 					sm.setRetryCnt(intMAnno.retryCnt());
 					sm.setRetryInterval(intMAnno.retryInterval());
@@ -319,6 +324,7 @@ public class ServiceLoader {
 					sm.setNeedResponse(intMAnno.needResponse());
 					sm.setFailResponse(intMAnno.failResponse());
 					sm.setTimeWindowInMillis(intMAnno.timeWindowInMillis());
+					sm.setLoggable(intMAnno.loggable());
 				}
 			} 
 			

@@ -15,9 +15,9 @@ public class TestClientIInterceptor implements IInterceptor {
 
 	@Override
 	public IResponse intercept(IRequestHandler handler, IRequest req) throws RpcException {
-		System.out.println("Before Test : "+ TestClientIInterceptor.class.getName());
+		//System.out.println("Before Test : "+ TestClientIInterceptor.class.getName()+",Method:"+req.getMethod());
 		IResponse resp = handler.onRequest(req);
-		System.out.println("After Test : "+ TestClientIInterceptor.class.getName());
+		//System.out.println("After Test : "+ TestClientIInterceptor.class.getName());
 		return resp;
 	}
 

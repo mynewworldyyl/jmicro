@@ -117,7 +117,7 @@ public final class UniqueServiceMethodKey {
 		UniqueServiceKey srvUsk = fromKey(strs);
 		usk.setUsk(srvUsk);
 		
-		int idx = 6;
+		int idx = 5;
 		if(strs.length > 6) {
 			usk.setMethod(strs[++idx]);;
 		}

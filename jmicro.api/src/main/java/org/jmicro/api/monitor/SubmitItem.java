@@ -16,6 +16,8 @@
  */
 package org.jmicro.api.monitor;
 
+import java.util.Arrays;
+
 import org.jmicro.api.net.IReq;
 import org.jmicro.api.net.IResp;
 import org.jmicro.api.net.Message;
@@ -97,7 +99,9 @@ public final class SubmitItem{
 		
 	}
 	
-	public SubmitItem() {}
+	public SubmitItem() {
+		this.time = System.currentTimeMillis();
+	}
 	
 	public SubmitItem(int type,byte level,long linkId,ServiceMethod sm,String[] others) {
 		this(type,level,linkId,others);
@@ -105,7 +109,7 @@ public final class SubmitItem{
 	}
 	
 	public SubmitItem(int type,byte level,long linkId,String... others) {
-		this.type = type;
+		this(type);
 		this.level = level;
 		this.linkId = linkId;
 		if(others.length > 0) {
@@ -129,6 +133,7 @@ public final class SubmitItem{
 	}
 	
 	public SubmitItem(int type) {
+		this();
 		this.type = type;
 	}
 	
@@ -353,6 +358,16 @@ public final class SubmitItem{
 
 	public void setSm(ServiceMethod sm) {
 		this.sm = sm;
+	}
+
+	@Override
+	public String toString() {
+		return "SubmitItem [level=" + level + ", type=" + Integer.toHexString(type).toUpperCase() + ", linkId=" + linkId + ", exp=" + exp + ", side="
+				+ side + ", tagCls=" + tagCls + ", instanceName=" + instanceName + ", localHost=" + localHost
+				+ ", localPort=" + localPort + ", remoteHost=" + remoteHost + ", remotePort=" + remotePort
+				+ ", serviceName=" + serviceName + ", namespace=" + namespace + ", version=" + version + ", method="
+				+ method + ", reqArgs=" + Arrays.toString(reqArgs) + ", others=" + Arrays.toString(others) + ", msg="
+				+ msg + ", req=" + req + ", resp=" + resp + ", sm=" + sm + ", time=" + time + "]";
 	}
 	
 }

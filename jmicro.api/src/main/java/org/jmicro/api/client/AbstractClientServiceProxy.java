@@ -22,6 +22,7 @@ import org.jmicro.api.JMicroContext;
 import org.jmicro.api.monitor.IMonitorDataSubmiter;
 import org.jmicro.api.registry.ServiceItem;
 import org.jmicro.api.registry.UniqueServiceKey;
+import org.jmicro.common.Constants;
 /**
  * 
  * @author Yulei Ye
@@ -51,6 +52,7 @@ public abstract class AbstractClientServiceProxy {
 		//System.out.println("backupAndSetContext");
 		JMicroContext.get().backup();
 		JMicroContext.setMonitor(monitor);
+		//false表示不是provider端
 		JMicroContext.callSideProdiver(false);
 	}
 	
@@ -69,7 +71,6 @@ public abstract class AbstractClientServiceProxy {
 	public  ServiceItem getItem(){
 		return this.item;
 	}
-	
 	
 	public String key(){
 		return UniqueServiceKey.serviceName(this.getServiceName(), this.getNamespace(), this.getVersion()).toString();

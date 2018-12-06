@@ -55,6 +55,12 @@ public final class RpcRequest extends AbstractObjectMapSupport implements IReque
 	
 	public RpcRequest(){}
 	
+	public boolean isLoggable() {
+		if(msg != null) {
+			return msg.isLoggable();
+		}
+		return false;
+	}
 	public Long getMsgId(){
 		if(this.msg != null){
 			return this.msg.getId();

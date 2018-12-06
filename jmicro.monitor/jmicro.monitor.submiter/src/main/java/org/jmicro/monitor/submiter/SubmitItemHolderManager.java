@@ -40,6 +40,7 @@ import org.jmicro.api.net.IRequest;
 import org.jmicro.api.net.IResp;
 import org.jmicro.api.net.IResponse;
 import org.jmicro.api.net.Message;
+import org.jmicro.api.registry.ServiceMethod;
 import org.jmicro.common.Constants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -208,6 +209,7 @@ public class SubmitItemHolderManager implements IMonitorDataSubmiter{
 						}
 					}
 					checkUpdate();
+					JMicroContext.get().setBoolean(Constants.FROM_MONITOR, true);
 					//JMicroContext.get().configMonitor(0, 0);
 					for(SubmitItem si = its.poll();si != null;si = its.poll()){
 						Set<IMonitorDataSubscriber> ss = type2Subscribers.get(si.getType());
@@ -291,12 +293,19 @@ public class SubmitItemHolderManager implements IMonitorDataSubmiter{
 		si.setLocalPort(JMicroContext.get().getString(JMicroContext.LOCAL_PORT,""));
 		si.setLocalHost(Config.getHost());
 		
-		si.setNamespace(JMicroContext.get().getString(JMicroContext.CLIENT_NAMESPACE,null));
-		si.setServiceName(JMicroContext.get().getString(JMicroContext.CLIENT_SERVICE,null));
-		si.setVersion(JMicroContext.get().getString(JMicroContext.CLIENT_VERSION,null));
-		si.setMethod(JMicroContext.get().getString(JMicroContext.CLIENT_METHOD,null));
-		
-		si.setSm(JMicroContext.get().getParam(Constants.SERVICE_METHOD_KEY, null));
+		if(si.getSm() != null) {
+			ServiceMethod sm = si.getSm();
+			si.setNamespace(sm.getKey().getNamespace());
+			si.setServiceName(sm.getKey().getServiceName());
+			si.setVersion(sm.getKey().getVersion());
+			si.setMethod(JMicroContext.get().getString(JMicroContext.CLIENT_METHOD,null));
+		} else {
+			si.setNamespace(JMicroContext.get().getString(JMicroContext.CLIENT_NAMESPACE,null));
+			si.setServiceName(JMicroContext.get().getString(JMicroContext.CLIENT_SERVICE,null));
+			si.setVersion(JMicroContext.get().getString(JMicroContext.CLIENT_VERSION,null));
+			si.setMethod(JMicroContext.get().getString(JMicroContext.CLIENT_METHOD,null));
+			si.setSm(JMicroContext.get().getParam(Constants.SERVICE_METHOD_KEY, null));
+		}
 		
 		if(Config.isClientOnly()) {
 			si.setSide(Constants.SIDE_COMSUMER);

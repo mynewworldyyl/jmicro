@@ -65,6 +65,7 @@ public final class ServiceItem{
 	private String instanceName;
 	
 	private int monitorEnable = -1;
+	private int loggable = -1;
 	
 	private Set<Server> servers = new HashSet<Server>();
 	
@@ -130,6 +131,7 @@ public final class ServiceItem{
 		this.degrade = p.degrade;
 		this.maxSpeed = p.maxSpeed;
 		this.avgResponseTime = p.avgResponseTime;
+		this.loggable = p.loggable;
 		
 		for(ServiceMethod sm : p.getMethods()){
 			ServiceMethod nsm = this.getMethod(sm.getKey().getMethod(), sm.getKey().getParamsStr());
@@ -177,6 +179,14 @@ public final class ServiceItem{
 		this.avgResponseTime = avgResponseTime;
 	}
 
+	public int getLoggable() {
+		return loggable;
+	}
+
+	public void setLoggable(int loggable) {
+		this.loggable = loggable;
+	}
+
 	public void addMethod(ServiceMethod sm){
 		methods.add(sm);
 	}
@@ -185,8 +195,10 @@ public final class ServiceItem{
 		return methods;
 	}
 	
+	//服务标识，服务名，名称空间，版本，3元组坐标
 	public String serviceName() {
-	   return this.key.toKey(false, false, false);
+	   return UniqueServiceKey.serviceName(this.getKey().getServiceName(), this.getKey().getNamespace(),
+			   this.getKey().getVersion()).toString();
 	}
 
 	private void parseVal(String val) {
@@ -265,6 +277,7 @@ public final class ServiceItem{
 		return getMethod(methodName, mkStr);
 	}
 	
+	//服务实例标识，带上实例名和主机IP
 	public String key(String root){
 		StringBuffer sb = new StringBuffer(root);
 		sb.append(FILE_SEPERATOR);

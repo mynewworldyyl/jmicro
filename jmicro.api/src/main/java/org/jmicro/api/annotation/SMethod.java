@@ -37,6 +37,9 @@ public @interface SMethod {
 	//0: disable
 	public int monitorEnable() default -1;
 	
+	//服务方法级别的日志记录标识，参考monitorEnable说明
+	public int loggable() default -1;
+	
 	public int retryInterval() default 500;
 	//method must can be retry, or 1
 	public int retryCnt() default 3;

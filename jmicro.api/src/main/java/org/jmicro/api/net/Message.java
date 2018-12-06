@@ -103,6 +103,14 @@ public final class Message {
 		flag |= f ? Constants.FLAG_STREAM : 0 ; 
 	}
 	
+	public boolean isLoggable() {
+		return (flag & Constants.FLAG_LOGGABLE) != 0;
+	}
+	
+	public void setLoggable(boolean f) {
+		flag |= f ? Constants.FLAG_LOGGABLE : 0 ; 
+	}
+	
 	public boolean isNeedResponse() {
 		return (flag & Constants.FLAG_NEED_RESPONSE) != 0;
 	}
@@ -123,12 +131,12 @@ public final class Message {
 	}
 	
 	public byte getProtocol() {
-		return (byte)((flag >>> 7) & 0x01);
+		return (byte)((flag >>> 6) & 0x01);
 	}
 
 	public void setProtocol(byte protocol) {
 		if(protocol == PROTOCOL_BIN || protocol == PROTOCOL_JSON) {
-			this.flag = (byte)((protocol << 7) | this.flag);
+			this.flag = (byte)((protocol << 6) | this.flag);
 		}else {
 			 new CommonException("Invalid protocol: "+protocol);
 		}
@@ -262,17 +270,14 @@ public final class Message {
 		cache.flip();
 		
 		ByteBuffer body = ByteBuffer.allocate(len+Message.HEADER_LEN);
-		body.put(cache);
+		//System.out.println("cache:"+cache);
+		//System.out.println("body:"+body);
+		
+		body.put(cache.array(),0,body.capacity());
 		body.flip();
 		
+		cache.position(body.remaining());
 		//准备下一次读
-		/**
-		  System.arraycopy(hb, ix(position()), hb, ix(0), remaining());
-	      position(remaining());
-	      limit(capacity());
-	      discardMark();
-	      return this;
-		 */
 		//将剩余数移移到缓存开始位置，position定位在数据长度位置，处于写状态
 		cache.compact();
 		//b.position(b.limit());

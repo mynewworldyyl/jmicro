@@ -48,4 +48,9 @@ public class TestIdGenerator {
 		long vv = Message.readUnsignedInt(bb);
 		System.out.println(vv);
 	}
+	
+	@Test
+	public void testInt2Hex() {
+		System.out.println(Integer.toBinaryString(0x80));
+	}
 }

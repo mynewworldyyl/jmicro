@@ -108,7 +108,7 @@ public class JRPCReqRespHandler implements IMessageHandler{
 			//msg.setSessionId(req.getSession().getId());
 			msg.setVersion(req.getMsg().getVersion());
 				
-			if(openDebug) {
+			if(msg.isLoggable()){
 				SF.doRequestLog(MonitorConstant.DEBUG,msg.getLinkId(), TAG, req,null,"got REQUEST");
 			}
 			
@@ -131,7 +131,7 @@ public class JRPCReqRespHandler implements IMessageHandler{
 						msg.setPayload(codeFactory.getEncoder(msg.getProtocol()).encode(resp));
 						msg.setType(Constants.MSG_TYPE_ASYNC_RESP);
 						
-						if(openDebug) {
+						if(msg.isLoggable()) {
 							SF.doResponseLog(MonitorConstant.DEBUG, msg.getLinkId(), TAG, resp,null,"STREAM",resp.getId()+"");
 						}
 						s.write(msg);
@@ -166,8 +166,8 @@ public class JRPCReqRespHandler implements IMessageHandler{
 				msg.setPayload(ICodecFactory.encode(codeFactory,resp,msg.getProtocol()));
 				msg.setId(idGenerator.getLongId(Message.class));
 				
-				if(openDebug) {
-					SF.doMessageLog(MonitorConstant.DEBUG, TAG, msg,null,"STREAM Confirm");
+				if(msg.isLoggable()) {
+					SF.doResponseLog(MonitorConstant.DEBUG,msg.getLinkId(),TAG, resp,null,"STREAM Confirm");
 				}
 				
 				s.write(msg);
@@ -183,7 +183,7 @@ public class JRPCReqRespHandler implements IMessageHandler{
 				msg.setType(Constants.MSG_TYPE_RRESP_JRPC);
 				msg.setId(idGenerator.getLongId(Message.class));
 				
-				if(openDebug) {
+				if(SF.isLoggable(this.openDebug,MonitorConstant.DEBUG)) {
 					SF.doResponseLog(MonitorConstant.DEBUG,msg.getLinkId(), TAG, resp,null);
 				}
 				

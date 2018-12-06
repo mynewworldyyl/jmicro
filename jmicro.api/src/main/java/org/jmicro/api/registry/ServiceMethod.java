@@ -36,6 +36,7 @@ public final class ServiceMethod {
 	
 	//-1 use Service config, 0 disable, 1 enable
 	private int monitorEnable = -1;
+	private int loggable  = -1;
 	
 	private int retryCnt; //method can retry times, less or equal 0 cannot be retry
 	private int retryInterval; // milliseconds how long to wait before next retry
@@ -122,6 +123,9 @@ public final class ServiceMethod {
 		this.degrade = p.degrade;
 		this.maxSpeed = p.maxSpeed;
 		this.avgResponseTime = p.avgResponseTime;
+		
+		this.loggable = p.loggable;
+		
 	}
 	
 	public String toJson(){
@@ -216,6 +220,14 @@ public final class ServiceMethod {
 
 	public void setAvgResponseTime(int avgResponseTime) {
 		this.avgResponseTime = avgResponseTime;
+	}
+
+	public int getLoggable() {
+		return loggable;
+	}
+
+	public void setLoggable(int loggable) {
+		this.loggable = loggable;
 	}
 
 	public UniqueServiceMethodKey getKey() {

@@ -51,8 +51,6 @@ public class ServiceInvocationHandler implements InvocationHandler{
 	
 	private final static Logger logger = LoggerFactory.getLogger(ServiceInvocationHandler.class);
 	
-	private static final Class<?> TAG = ServiceInvocationHandler.class;
-	
 	@Cfg("/ServiceInvocationHandler/openDebug")
 	private boolean openDebug;
 	
@@ -92,8 +90,9 @@ public class ServiceInvocationHandler implements InvocationHandler{
 		
 		JMicroContext.get().setParam(Constants.SERVICE_METHOD_KEY, sm);
 		JMicroContext.get().setParam(Constants.SERVICE_ITEM_KEY, poItem);
+		JMicroContext.setSrvLoggable();
 		
-		JMicroContext.lid(this.idGenerator);
+		JMicroContext.lid(idGenerator);
 		JMicroContext.get().setObject(Constants.PROXY, po);
 		
 		RpcRequest req = new RpcRequest();
@@ -108,7 +107,7 @@ public class ServiceInvocationHandler implements InvocationHandler{
         
         IResponse resp = this.intManager.handleRequest(req);
 		
-        return resp.getResult();
+        return resp == null ? null :resp.getResult();
 	
 	}
 	

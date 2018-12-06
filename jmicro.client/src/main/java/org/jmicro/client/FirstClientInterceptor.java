@@ -81,19 +81,19 @@ public class FirstClientInterceptor extends AbstractInterceptor implements IInte
 	@Override
 	public IResponse intercept(IRequestHandler handler, IRequest req) throws RpcException {
 		
-		logger.debug(Constants.FIRST_CLIENT_INTERCEPTOR + " before");
+		//logger.debug(Constants.FIRST_CLIENT_INTERCEPTOR + " before");
 		
-		if(limiter != null){
+		/*if(limiter != null){
 			boolean r = limiter.apply(req);
 			if(!r){
 				logger.warn("Limit exceep, forbidon this request");
 				return doFastFail(req,null);
 			}
-		}
+		}*/
 		
 		IResponse resp = handler.onRequest(req);
 		
-		logger.debug(Constants.FIRST_CLIENT_INTERCEPTOR + " after");
+		//logger.debug(Constants.FIRST_CLIENT_INTERCEPTOR + " after");
 		
 		return resp;
 	}

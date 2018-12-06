@@ -37,6 +37,7 @@ public interface Constants {
 	
 	public static final String MONITOR_ENABLE_KEY = "monitorEnableKey";
 	public static final String DEFAULT_MONITOR="defaultMonitor";
+	public static final String FROM_MONITOR = "fromMonitor";
 	
 	public static final int CONN_CONNECTED=1;
 	public static final int CONN_RECONNECTED=2;
@@ -155,6 +156,9 @@ public interface Constants {
 	
 	//可监控消息
 	public static final byte FLAG_MONITORABLE = 1<<2;
+	
+	//是否启用服务级log
+	public static final short FLAG_LOGGABLE = 0x80;
 	
 	/*=====================Message END=======================*/
 	/*=====================Message END=======================*/

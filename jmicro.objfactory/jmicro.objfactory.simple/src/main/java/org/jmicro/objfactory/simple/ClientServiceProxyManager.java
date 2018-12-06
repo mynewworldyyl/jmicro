@@ -76,8 +76,7 @@ class ClientServiceProxyManager {
 			Class<?> cls = Thread.currentThread().getContextClassLoader().loadClass(srvName);
 			
 			IRegistry registry = of.get(IRegistry.class);
-			Set<ServiceItem> items = registry.getServices(
-					srvName,UniqueServiceKey.namespace(namespace),UniqueServiceKey.version(version));
+			Set<ServiceItem> items = registry.getServices(srvName,namespace,version);
 			
 			if(items != null && !items.isEmpty()){
 				ServiceItem i = items.iterator().next();
@@ -193,7 +192,7 @@ class ClientServiceProxyManager {
 		
 		IRegistry registry = of.get(IRegistry.class);
 		RemoteProxyServiceListener lis = new RemoteProxyServiceListener(this,proxy,srcObj,f);
-		registry.addServiceListener(UniqueServiceKey.serviceName(f.getType().getName(),ref.namespace(),
+		registry.addServiceListener(UniqueServiceKey.serviceName(type.getName(),ref.namespace(),
 				ref.version()).toString(), lis);
 			
 		setHandler(proxy,key,si);
@@ -371,8 +370,8 @@ class ClientServiceProxyManager {
             Class<?>[] pts = m.getParameterTypes();
 
             StringBuilder code = new StringBuilder("Object[] args = new Object[").append(pts.length).append("];");
-            for (int j = 0; j < pts.length; j++){
-           	 code.append(" args[").append(j).append("] = ("+pts[j].getName()+")$").append(j + 1).append(";");
+            for(int j = 0; j < pts.length; j++){
+           	 	code.append(" args[").append(j).append("] = ("+pts[j].getName()+")$").append(j + 1).append(";");
             }
             
             code.append("if(getItem() == null) {throw new org.jmicro.common.CommonException(\"Service ")
@@ -395,7 +394,9 @@ class ClientServiceProxyManager {
             code.append(" org.jmicro.api.JMicroContext.get().setString(org.jmicro.api.JMicroContext.CLIENT_METHOD, \""+m.getName()+"\");");
             
             code.append(" org.jmicro.api.registry.ServiceMethod poSm = super.getItem().getMethod(\"").append(m.getName()).append("\", args); ");
-            code.append(" org.jmicro.api.JMicroContext.get().configMonitor(poSm.getMonitorEnable(), super.getItem().getMonitorEnable()); ");
+            //code.append(" org.jmicro.api.JMicroContext.get().configMonitor(poSm.getMonitorEnable(), super.getItem().getMonitorEnable()); ");
+            code.append(" org.jmicro.api.JMicroContext.get().setParam(org.jmicro.common.Constants.SERVICE_METHOD_KEY, poSm);");
+            code.append(" org.jmicro.api.JMicroContext.get().setParam(org.jmicro.common.Constants.SERVICE_ITEM_KEY, super.getItem());");
             
             code.append(" Object ret = handler.invoke(this, methods[" + i + "], args);");
             
@@ -406,20 +407,20 @@ class ClientServiceProxyManager {
             code.append(" org.jmicro.api.JMicroContext.get().setString(org.jmicro.api.JMicroContext.CLIENT_METHOD, mt);");
             
             if (!Void.TYPE.equals(rt)){
-             code.append("System.out.println(ret);");
+             //code.append("System.out.println(ret);");
            	 code.append(" return ").append(SimpleObjectFactory.asArgument(rt, "ret")).append(";");
             }
             
             code.append("} finally { ");
             
-            code.append(" this.restoreContext();");
+            	code.append(" this.restoreContext();");
             
             code.append(" } ");
 
             classGenerator.addMethod(m.getName(), m.getModifiers(), rt, pts, m.getExceptionTypes(), code.toString());      
 		 }
 		 
-		//logger.debug(classGenerator.);
+		 //logger.debug(classGenerator.);
 		 //classGenerator.getClassPool().
 		 Class<?> clazz = classGenerator.toClass();
 

@@ -49,19 +49,19 @@ public class ServiceExceptionMonitor extends AbstractMonitorDataSubscriber imple
 	//private final static Logger logger = LoggerFactory.getLogger(ServiceExceptionMonitor.class);
 	
 	private final Integer[] YTPES = new Integer[]{
-			//服务器发生错误,返回ServerError异常
-			MonitorConstant.CLIENT_REQ_EXCEPTION_ERR,
-			//业务错误,success=false,此时接口调用正常
-			//MonitorConstant.CLIENT_REQ_BUSSINESS_ERR,
-			//请求超时
-			MonitorConstant.CLIENT_REQ_TIMEOUT,
-			//请求开始
-			MonitorConstant.CLIENT_REQ_BEGIN,
-			//异步请求成功确认包
-			MonitorConstant.CLIENT_REQ_ASYNC1_SUCCESS,
-			//同步请求成功
-			MonitorConstant.CLIENT_REQ_OK
-		};
+		//服务器发生错误,返回ServerError异常
+		MonitorConstant.CLIENT_REQ_EXCEPTION_ERR,
+		//业务错误,success=false,此时接口调用正常
+		//MonitorConstant.CLIENT_REQ_BUSSINESS_ERR,
+		//请求超时
+		MonitorConstant.CLIENT_REQ_TIMEOUT,
+		//请求开始
+		MonitorConstant.CLIENT_REQ_BEGIN,
+		//异步请求成功确认包
+		MonitorConstant.CLIENT_REQ_ASYNC1_SUCCESS,
+		//同步请求成功
+		MonitorConstant.CLIENT_REQ_OK
+	};
 	
 	@Inject
 	private DegradeManager degradeManager;

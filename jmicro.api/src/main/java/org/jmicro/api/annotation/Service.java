@@ -70,6 +70,12 @@ public @interface Service {
 	public int monitorEnable() default -1;
 	
 	/**
+	 * 服务级的日志启用标识
+	 * @return
+	 */
+	public int loggable() default -1;
+	
+	/**
 	 * 如果超时了，要间隔多久才重试
 	 * @return
 	 */

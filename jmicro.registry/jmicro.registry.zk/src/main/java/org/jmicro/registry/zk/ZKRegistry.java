@@ -59,7 +59,7 @@ public class ZKRegistry implements IRegistry {
 	private Map<String,ServiceItem> localRegistedItems = new HashMap<>();
 	
 	@Cfg("/ZKRegistry/openDebug")
-	private boolean openDebug=false;
+	private boolean openDebug = false;
 	
 	@Cfg("/ZKRegistry/registInterval")
 	private int registInterval = 1000*5;
@@ -205,9 +205,10 @@ public class ZKRegistry implements IRegistry {
 		}
 		
 		if(srvManager.exist(srvKey)){
-			throw new CommonException("Service [" +srvKey +"] exists");
+			srvManager.removeService(srvKey);
+		}else {
+			this.srvManager.updateOrCreate(item,srvKey, true);
 		}
-		this.srvManager.updateOrCreate(item,srvKey, true);
 	}
 
 	@Override
@@ -290,6 +291,7 @@ public class ZKRegistry implements IRegistry {
 				return si;
 			}
 		}
+		logger.error("Impl not found:"+impl);
 		return null;
 	}
 	

@@ -65,7 +65,7 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
 	
 	private volatile Map<Long,IResponseHandler> waitForResponse = new ConcurrentHashMap<>();
 	
-	@Cfg("/ServiceInvocationHandler/openDebug")
+	@Cfg("/RpcClientRequestHandler/openDebug")
 	private boolean openDebug;
 	
 	@Inject
@@ -150,6 +150,7 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
 				
 				msg.setStream(sm.stream);
 	    		msg.setNeedResponse(sm.needResponse);
+	    		msg.setLoggable(JMicroContext.get().isLoggable(false));
 	    		
 	    		int f = sm.getMonitorEnable() == 1 ? Constants.FLAG_MONITORABLE : 
 	    			(si.getMonitorEnable()== 1?Constants.FLAG_MONITORABLE:0);
@@ -159,6 +160,11 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
 	    		
         	}
     		
+        	//JMicroContext.get().setParam(Constants.SERVICE_METHOD_KEY, sm);
+    		//JMicroContext.get().setParam(Constants.SERVICE_ITEM_KEY, si);
+    		//JMicroContext.setSrvLoggable();
+    		msg.setLoggable(JMicroContext.get().isLoggable(false));
+    		
         	SF.doSubmit(MonitorConstant.CLIENT_REQ_BEGIN, req,null);
     	    
     	    IClientSession session = this.sessionManager.getOrConnect(s.getHost(), s.getPort());
@@ -167,7 +173,7 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
     		msg.setId(this.idGenerator.getLongId(Message.class));
     		msg.setPayload(ICodecFactory.encode(this.codecFactory,req,msg.getProtocol()));
     		
-    		if(this.openDebug) {
+    		if(SF.isLoggable(this.openDebug,MonitorConstant.DEBUG)) {
     			SF.doRequestLog(MonitorConstant.DEBUG,lid,TAG,req,null," do request");
     		}
     		
@@ -176,7 +182,7 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
     		if(!sm.needResponse && !msg.isStream()) {
     			//数据发送后，不需要返回结果，也不需要请求确认包，直接返回
     			//this.sessionManager.write(msg, null,retryCnt);
-    			if(this.openDebug) {
+    			if(SF.isLoggable(this.openDebug,MonitorConstant.DEBUG)) {
     				SF.doServiceLog(MonitorConstant.DEBUG,TAG,lid,sm,null, " no need response and return");
         		}
     			return null;
@@ -186,7 +192,9 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
     			String key = req.getRequestId()+"";
     			if(session.getParam(key) != null) {
     				String errMsg = "Failure Callback have been exists reqID："+key;
-    				SF.doServiceLog(MonitorConstant.ERROR,TAG,lid,sm,null, errMsg);
+    				if(SF.isLoggable(this.openDebug,MonitorConstant.ERROR)) {
+    					SF.doServiceLog(MonitorConstant.ERROR,TAG,lid,sm,null, errMsg);
+    				}
     				throw new CommonException(errMsg);
     			}
     			session.putParam(key,JMicroContext.get().getParam(Constants.CONTEXT_CALLBACK_CLIENT, null));
@@ -228,10 +236,10 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
     						RpcResponse.class,msg.getProtocol());
     				resp.setMsg(respMsg);
     				//req.setMsg(msg);
-        			if(this.openDebug) {
+    				if(SF.isLoggable(this.openDebug,MonitorConstant.DEBUG)) {
         				SF.doResponseLog(MonitorConstant.DEBUG,lid,TAG,resp,null,"reqID ["+resp.getReqId()+"] response");
             		}
-    			}else {
+    			} else {
         			SF.doMessageLog(MonitorConstant.ERROR,TAG,respMsg,null,"reqID ["+resp.getReqId()+"] response");
         		}
     		} else {
@@ -271,7 +279,8 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
     				sb.append("] do retry: ").append(retryCnt);
     			} else {
     				SF.doSubmit(MonitorConstant.CLIENT_REQ_TIMEOUT_FAIL, req, null);
-    				sb.append("] timeout request and stop retry: ").append(retryCnt);
+    				sb.append("] timeout request and stop retry: ").append(retryCnt)
+    				.append(",reqId:").append(req.getRequestId());
     				throw new TimeoutException(req,sb.toString());
     			}
     			SF.doRequestLog(MonitorConstant.ERROR,msg.getLinkId(),TAG,req,null,sb.toString());
@@ -319,7 +328,7 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
 	public void onMessage(ISession session,Message msg) {
 		//receive response
 		IResponseHandler handler = waitForResponse.get(msg.getReqId());
-		if(this.openDebug) {
+		if(msg.isLoggable()) {
 			SF.doMessageLog(MonitorConstant.DEBUG,TAG,msg,null," receive message");
 		}
 		if(handler!= null){
@@ -334,3 +343,4 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
 		void onResponse(Message msg);
 	}
 }
+

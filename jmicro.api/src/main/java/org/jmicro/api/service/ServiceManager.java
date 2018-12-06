@@ -63,7 +63,7 @@ public class ServiceManager {
 	private INodeListener nodeListener = new INodeListener(){
 		public void nodeChanged(int type, String path,String data){
 			if(type == INodeListener.NODE_ADD){
-				logger.error("service add "+type+",path: "+path);
+				logger.error("NodeListener service add "+type+",path: "+path);
 			} else if(type == INodeListener.NODE_REMOVE) {
 				serviceRemove(path,data);
 				logger.error("service remove:"+type+",path: "+path);
@@ -90,21 +90,23 @@ public class ServiceManager {
 	public void init() {
 		dataOperator.addListener((state)->{
 			if(Constants.CONN_CONNECTED == state) {
-				logger.debug("CONNECTED, add listeners");
+				logger.info("CONNECTED, reflesh children");
 				refleshChildren(null);
 			}else if(Constants.CONN_LOST == state) {
-				logger.debug("DISCONNECTED");
+				logger.warn("DISCONNECTED");
 			}else if(Constants.CONN_RECONNECTED == state) {
-				logger.debug("Reconnected");
+				logger.warn("Reconnected,reflesh children");
 				refleshChildren(null);
 			}
 		});
+		logger.info("add listener");
 		dataOperator.addChildrenListener(Config.ServiceRegistDir, new IChildrenListener() {
 			@Override
 			public void childrenChanged(String path, List<String> children) {
 				refleshChildren(children);
 			}
 		});
+		
 	}
 	
 	public void addServiceListener(String srvPath,IServiceListener lis) {
@@ -172,6 +174,7 @@ public class ServiceManager {
 		if(dataOperator.exist(path)){
 			dataOperator.setData(path, data);
 		} else {
+			logger.debug("Create node: {}", path);
 			dataOperator.createNode(path,data, isel);
 		}
 	}
@@ -243,9 +246,9 @@ public class ServiceManager {
 		ServiceItem si = this.fromJson(data);
 		
 		if(isConfig) {
-			ServiceItem srvItem = this.path2SrvItems.get(path);
+			String srvPath = si.key(Config.ServiceRegistDir);
+			ServiceItem srvItem = this.path2SrvItems.get(srvPath);
 			srvItem.formPersisItem(si);
-			String srvPath = srvItem.key(Config.ServiceRegistDir);
 			if(!this.isChange(srvItem, srvPath)) {
 				//没有改变,接返回
 				return;
@@ -268,6 +271,10 @@ public class ServiceManager {
 	private void refleshChildren(List<String> children) {
 		if(children == null) {
 			children = dataOperator.getChildren(Config.ServiceRegistDir);
+		}
+		if(children == null || children.isEmpty()) {
+			logger.warn("refleshChildren service is empty!");
+			return;
 		}
 		for(String child : children) {
 			refleshOneService(Config.ServiceRegistDir+"/"+ child);
@@ -293,7 +300,7 @@ public class ServiceManager {
 	
 	private boolean isChange(ServiceItem si,String path) {
 		Integer hash = HashUtils.FNVHash1(JsonUtils.getIns().toJson(si));
-		if( hash == this.path2Hash.get(path)) {
+		if(hash.equals(this.path2Hash.get(path))) {
 			//信息没变
 			return false;
 		}
@@ -324,6 +331,7 @@ public class ServiceManager {
 		if(flag) {
 			this.notifyServiceChange(IServiceListener.SERVICE_DATA_CHANGE, i,path);
 		} else {
+			logger.debug("Service Add: {}",path);
 			this.notifyServiceChange(IServiceListener.SERVICE_ADD, i,path);
 			dataOperator.addNodeListener(path, nodeListener);
 			dataOperator.addDataListener(path, this.dataListener);

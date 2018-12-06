@@ -69,13 +69,14 @@ public class FirstInterceptor extends AbstractInterceptor implements IIntercepto
 	
 	@Override
 	public IResponse intercept(IRequestHandler handler, IRequest req) throws RpcException {
-		if(limiter != null){
+		/*if(limiter != null){
 			boolean r = limiter.apply(req);
 			if(!r){
 				logger.warn("Limit exceep, forbidon this request");
 				return fastFail(req);
 			}
-		}
+		}*/
+		
 		IResponse resp = handler.onRequest(req);
 		return resp;
 	}
