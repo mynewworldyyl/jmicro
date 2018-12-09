@@ -2,7 +2,7 @@ package org.jmicro.api.test;
 
 public final class Person{
 	
-	private String username ="";
+	private String username ="Yeu";
 	private Integer id = 222;
 	
 	public String getUsername() {

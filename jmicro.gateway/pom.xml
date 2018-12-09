@@ -14,7 +14,34 @@
 			<groupId>org.jmicro</groupId>
 			<artifactId>jmicro.api</artifactId>
 		</dependency>
-		
+		<dependency>
+			 <groupId>org.jmicro</groupId>
+			 <artifactId>jmicro.limit</artifactId>
+	    </dependency>
+	    <dependency>
+			 <groupId>org.jmicro</groupId>
+			 <artifactId>jmicro.zk</artifactId>
+	    </dependency>
+	    <dependency>
+			 <groupId>org.jmicro</groupId>
+			 <artifactId>jmicro.registry.zk</artifactId>
+	    </dependency>
+	    <dependency>
+			 <groupId>org.jmicro</groupId>
+			 <artifactId>jmicro.objfactory.simple</artifactId>
+	    </dependency>
+       <dependency>
+			 <groupId>org.jmicro</groupId>
+			 <artifactId>jmicro.transport.netty.server</artifactId>
+	    </dependency>
+	     <dependency>
+			 <groupId>org.jmicro</groupId>
+			 <artifactId>jmicro.client</artifactId>
+	    </dependency>
+	     <dependency>
+			 <groupId>org.jmicro</groupId>
+			 <artifactId>jmicro.transport.netty.client</artifactId>
+	    </dependency>
 	</dependencies>
    
 </project>

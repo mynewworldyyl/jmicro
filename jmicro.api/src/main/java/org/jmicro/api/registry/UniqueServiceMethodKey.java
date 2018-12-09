@@ -17,7 +17,9 @@
 package org.jmicro.api.registry;
 
 import org.jmicro.common.CommonException;
+import org.jmicro.common.util.ClassHelper;
 import org.jmicro.common.util.ReflectUtils;
+import org.jmicro.common.util.StringUtils;
 
 /**
  * 在服务标识基础上加上方法签名
@@ -72,6 +74,47 @@ public final class UniqueServiceMethodKey {
 		}
 		sb.append(ReflectUtils.getFullClassName(args[offset].getClass()));
 		return sb.toString();
+	}
+	
+	/**
+	 *     根据参数类型串解析出参数对像数组
+	 * @param paramsStr 参数类型数符串
+	 * @param argStr 参数字符串
+	 * @return
+	 */
+	public static Class<?>[] paramsClazzes(String paramsStr) {
+		if(StringUtils.isEmpty(paramsStr)) {
+			return new Class[0];
+		}
+		
+		String[] clses = paramsStr.split(PSEP);
+		if(clses == null || clses.length == 0) {
+			return new Class[0];
+		}
+		
+		ClassLoader cl = ClassHelper.getClassLoader(UniqueServiceMethodKey.class);
+		Class<?>[] clazzes = new Class<?>[clses.length];
+		for(int i=0; i< clazzes.length; i++) {
+			try {
+				clazzes[i] = cl.loadClass(clses[i]);
+			} catch (ClassNotFoundException e) {
+				throw new CommonException("Service methon config error:"+paramsStr,e);
+			}
+		}
+		
+		return clazzes;
+	}
+	
+	/**
+	 *     根据参数类型串解析出参数对像数组
+	 * @param paramsStr 参数类型数符串
+	 * @param argStr 参数字符串
+	 * @return
+	 */
+	public static Object[] paramsArg(String paramsStr,String argStr) {
+		Class<?>[] clazzes = paramsClazzes(paramsStr);
+		
+		return null;
 	}
 	
 	

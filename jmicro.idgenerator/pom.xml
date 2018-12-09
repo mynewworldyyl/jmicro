@@ -37,12 +37,10 @@
 	     <dependency>
 			 <groupId>org.jmicro</groupId>
 			 <artifactId>jmicro.client</artifactId>
-			 <scope>test</scope>
 	    </dependency>
 	     <dependency>
 			 <groupId>org.jmicro</groupId>
 			 <artifactId>jmicro.transport.netty.client</artifactId>
-			 <scope>test</scope>
 	    </dependency>
     </dependencies>
    

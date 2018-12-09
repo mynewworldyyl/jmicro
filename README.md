@@ -21,8 +21,31 @@ maven clean install
 
 # 启动Zookeeper，很快将会增加ETCD支持，到时性能将会有质的提高
  run zookeeper 
+ 
+# ID服务
+java -jar jmicro.idgenerator-0.0.1-SNAPSHOT.jar
+或
+java -cp . org.jmicro.gateway.JMicroIdGenerator
+
+# Api网关
+java -jar jmicro.gateway-0.0.1-SNAPSHOT.jar
+或
+java -cp . org.jmicro.gateway.ApiGatewayMain
+
+# 实时日志监控
+java -jar jmicro.main.monitor.log-0.0.1-SNAPSHOT.jar
+或
+java -cp . org.jmicro.main.monitor.LinkRouterMonitor
+
+# 实时请求数据监控(限流，熔断，降级的基础)
+
+java -jar jmicro.main.monitor.exception-0.0.1-SNAPSHOT.jar
+或
+java -cp . org.jmicro.main.monitor.ServiceReqMonitor
+
 
 # 定义一个服务,完整代码请参考jmicro.example下面的子项目
+
 ~~~
 
 package org.jmicro.example.api;

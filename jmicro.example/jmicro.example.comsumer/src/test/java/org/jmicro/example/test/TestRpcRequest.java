@@ -5,8 +5,8 @@ import org.jmicro.api.JMicroContext;
 import org.jmicro.api.client.IMessageCallback;
 import org.jmicro.api.monitor.IServiceMonitorData;
 import org.jmicro.api.objectfactory.IObjectFactory;
-import org.jmicro.api.registry.ServiceItem;
 import org.jmicro.api.service.ICheckable;
+import org.jmicro.api.test.Person;
 import org.jmicro.common.Constants;
 import org.jmicro.common.Utils;
 import org.jmicro.example.api.ITestRpcService;
@@ -101,4 +101,11 @@ public class TestRpcRequest {
 		
 		src.unsubsicribe(id,sn);
 	}
+	
+	
+	public static void main(String[] args) {
+		ITestRpcService srv = JMicro.getRpcServiceTestingArgs(ITestRpcService.class);
+		srv.getPerson(new Person());
+	}
+	
 }

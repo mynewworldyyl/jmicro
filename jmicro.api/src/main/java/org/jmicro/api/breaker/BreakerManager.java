@@ -1,8 +1,5 @@
 package org.jmicro.api.breaker;
 
-import java.util.HashMap;
-import java.util.Map;
-
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -21,7 +18,6 @@ import java.util.Map;
  */
 import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.Inject;
-import org.jmicro.api.registry.ServiceItem;
 import org.jmicro.api.registry.ServiceMethod;
 import org.jmicro.api.service.ServiceManager;
 
@@ -33,10 +29,6 @@ import org.jmicro.api.service.ServiceManager;
 @Component
 public class BreakerManager {
 	
-	private Map<String,ServiceItem> path2SrvItems = new HashMap<>();
-	
-	private Map<String,ServiceMethod> path2SrvMethods = new HashMap<>();
-	
 	@Inject
 	private ServiceManager srvManager;
 	
@@ -46,5 +38,13 @@ public class BreakerManager {
 
 	public void breakService(String key, ServiceMethod sm) {
 		srvManager.breakService(sm);
+		if(sm.isBreaking()) {
+			//服务熔断了，做自动服务检测
+			
+		} else {
+			//关闭服务自动检测
+			
+		}
+		
 	}
 }

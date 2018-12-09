@@ -54,12 +54,18 @@ public class ApiGatewayClient {
 	//private  static int clientType = Constants.TYPE_WEBSOCKET;
 	//private static int clientType = Constants.TYPE_HTTP;
 		
+	private static final AtomicLong reqId = new AtomicLong(0);
+	
 	private OnePrefixDecoder decoder = new OnePrefixDecoder();
 	private OnePrefixTypeEncoder encoder = new OnePrefixTypeEncoder();
 	
 	private ApiGatewayClientSessionManager sessionManager = new ApiGatewayClientSessionManager();
+	
 	private volatile Map<Long,IResponseHandler> waitForResponses = new ConcurrentHashMap<>();
+	
 	private volatile Map<Long,Message> resqMsgCache = new ConcurrentHashMap<>();
+	
+	private volatile Map<Long,Boolean> streamComfirmFlag = new ConcurrentHashMap<>();
 	
 	private ApiGatewayConfig config = null;
 	
@@ -70,8 +76,6 @@ public class ApiGatewayClient {
 		this.config = cfg;
 		init();
 	}
-	
-	private static final AtomicLong reqId = new AtomicLong(0);
 	
 	private void init() {
 		sessionManager.setClientType(getClientType());
@@ -103,15 +107,6 @@ public class ApiGatewayClient {
 		Decoder.setTransformClazzLoader(this::getEntityClazz);
 	}
 	
-	private static interface IResponseHandler{
-		void onResponse(Message msg);
-	}
-	
-	private int getClientType() {
-		//clientType = TYPE_SOCKET;
-		return this.getConfig().getClientType();
-	}
-	
 	public <T> T getService(Class<T> serviceClass, String namespace, String version) {		
 		if(!serviceClass.isInterface()) {
 			throw new CommonException(serviceClass.getName() + " have to been insterface");
@@ -120,25 +115,6 @@ public class ApiGatewayClient {
 				new Class[] {serviceClass}, 
 				(proxy,method,args) -> callService(serviceClass,method,args,namespace,version));
 		return (T)srv;
-	}
-	
-	private Object callService(Class<?> serviceClass,Method mehtod,Object[] args,
-			String namespace, String version) {
-		Service srvAnno = mehtod.getAnnotation(Service.class);
-		if(srvAnno == null && StringUtils.isEmpty(namespace)) {
-			throw new CommonException("Service ["+serviceClass.getName() +"] not specify namespage");
-		}
-		if(srvAnno != null && StringUtils.isEmpty(namespace)) {
-			namespace = srvAnno.namespace();
-		}
-		
-		if(srvAnno == null && StringUtils.isEmpty(version)) {
-			throw new CommonException("Service ["+serviceClass.getName() + "] not specify version");
-		}
-		if(srvAnno != null && StringUtils.isEmpty(version)) {
-			version = srvAnno.version();
-		}
-		return callService(serviceClass.getName(),namespace,version,mehtod.getName(),args);
 	}
 	
     public Class<?> getEntityClazz(Short type) {
@@ -186,7 +162,24 @@ public class ApiGatewayClient {
 		return getResponse(msg,callback);
 	}
 	
-	private volatile Map<Long,Boolean> streamComfirmFlag = new ConcurrentHashMap<>();
+	private Object callService(Class<?> serviceClass,Method mehtod,Object[] args,
+			String namespace, String version) {
+		Service srvAnno = mehtod.getAnnotation(Service.class);
+		if(srvAnno == null && StringUtils.isEmpty(namespace)) {
+			throw new CommonException("Service ["+serviceClass.getName() +"] not specify namespage");
+		}
+		if(srvAnno != null && StringUtils.isEmpty(namespace)) {
+			namespace = srvAnno.namespace();
+		}
+		
+		if(srvAnno == null && StringUtils.isEmpty(version)) {
+			throw new CommonException("Service ["+serviceClass.getName() + "] not specify version");
+		}
+		if(srvAnno != null && StringUtils.isEmpty(version)) {
+			version = srvAnno.version();
+		}
+		return callService(serviceClass.getName(),namespace,version,mehtod.getName(),args);
+	}
 	
 	@SuppressWarnings("unchecked")
 	private <R> Object getResponse(Message msg, final IMessageCallback<R> callback) {
@@ -271,6 +264,15 @@ public class ApiGatewayClient {
 		return msg;
     }
 
+    private static interface IResponseHandler{
+		void onResponse(Message msg);
+	}
+	
+	private int getClientType() {
+		//clientType = TYPE_SOCKET;
+		return this.getConfig().getClientType();
+	}
+	
 	public ApiGatewayConfig getConfig() {
 		return config;
 	}

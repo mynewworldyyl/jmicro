@@ -219,8 +219,10 @@ public class ServiceManager {
 		String path = sm.getKey().getUsk().toKey(true, true, false);
 		ServiceItem item = this.path2SrvItems.get(path);
 		ServiceMethod sm1 = item.getMethod(sm.getKey().getMethod(), sm.getKey().getParamsStr());
-		sm1.setBreaking(true);
-		this.updateOrCreate(item, path, true);
+		sm1.setBreaking(sm.isBreaking());
+		if(dataOperator.exist(path)){
+			dataOperator.setData(path,JsonUtils.getIns().toJson(sm1));
+		} 
 	}
 	
 	private void serviceRemove(String path, String data) {

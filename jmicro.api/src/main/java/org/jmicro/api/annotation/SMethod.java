@@ -59,12 +59,15 @@ public @interface SMethod {
 	
 	/**
 	 * 1M: 1分钟内，时间单位参考：@link org.jmicro.api.registry.ServiceItem
-	 * 0X7FFFFEF4,0X7FFFFEF2  异常类型编码列表 @link org.jmicro.api.monitor.MonitorConstant
 	 * 50%: 发生的异常数超过总请求数的50%
+	 * 500MS: 熔断后，每间隔500毫秒对接口做一次测试(使用testingArg参数)，测试成功率超过50%，则关闭熔断器
 	 *     值为空时，不启用
-	 * 1M [7FFFFEF4,7FFFFEF2] 50%
+	 * 1M 50% 500MS
 	 */
 	public String breakingRule() default "";
+	
+	//after breaking, will test the service with this arguments
+	public String testingArgs() default "";
 	
 	/**
 	 * 时间单位参考：@link org.jmicro.api.registry.ServiceItem
@@ -73,9 +76,6 @@ public @interface SMethod {
 	 * 值为空时，不启用
 	 */
 	public String degradeRule() default "1M [7FFFFEF4,7FFFFEF2] 10%";
-	
-	//after hung up, will test the service with this arguments
-	public String testingArgs() default "";
 	
 	//0: need response, 1:no need response
 	public boolean needResponse() default true;

@@ -16,17 +16,23 @@
  */
 package org.jmicro.api;
 
+import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.lang.reflect.Proxy;
+import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
 import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.ObjFactory;
+import org.jmicro.api.codec.OnePrefixTypeEncoder;
 import org.jmicro.api.config.Config;
 import org.jmicro.api.objectfactory.IObjectFactory;
 import org.jmicro.api.objectfactory.ProxyObject;
 import org.jmicro.api.registry.IRegistry;
+import org.jmicro.common.Base64Utils;
 import org.jmicro.common.CommonException;
 import org.jmicro.common.Constants;
 import org.jmicro.common.Utils;
@@ -143,5 +149,27 @@ public class JMicro {
 	
 	public static void waitForShutdown() {
 		Utils.getIns().waitForShutdown();
+	}
+	
+	public static <T> T getRpcServiceTestingArgs(Class<T> srvClazz) {
+		Object srv = Proxy.newProxyInstance(Thread.currentThread().getContextClassLoader(),
+				new Class[] {srvClazz}, 
+				new InvocationHandler() {
+					public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+						if(args == null || args.length == 0) {
+							System.out.println("no need args for testing");
+							return null;
+						}
+						OnePrefixTypeEncoder encoder = new OnePrefixTypeEncoder();
+						ByteBuffer bb = encoder.encode(args);
+						bb.flip();
+						byte[] data = new byte[bb.remaining()];
+						bb.get(data, 0, bb.limit());
+						String str = new String(Base64Utils.encode(data),Constants.CHARSET);
+						System.out.println(str);
+						return null;
+					}
+				});
+		return (T)srv;
 	}
 }

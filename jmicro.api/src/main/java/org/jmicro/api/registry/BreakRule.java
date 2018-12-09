@@ -28,14 +28,18 @@ import org.jmicro.common.util.StringUtils;
  */
 public final class BreakRule {
 
+	//启用此熔断规则
 	private boolean enable = false;
 	
+	//计算异常的时间窗口,单位是毫秒,比如1000毫秒内异常超过50%,则断断服务
 	private long timeInMilliseconds;
+	
+	//时间窗口内异常百分比超过此值熔断此服务实例
+	private int percent;
 	
 	private Integer[] exceptionTypes;
 	
-	private int percent;
-	
+	//原始配置字符串
 	private String originRule;
 	
 	public BreakRule() {}

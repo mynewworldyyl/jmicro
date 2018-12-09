@@ -19,6 +19,7 @@ package org.jmicro.main.monitor;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.jmicro.api.JMicro;
 import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.Inject;
 import org.jmicro.api.annotation.JMethod;
@@ -36,6 +37,7 @@ import org.jmicro.api.registry.ServiceMethod;
 import org.jmicro.api.registry.UniqueServiceKey;
 import org.jmicro.api.timer.ITickerAction;
 import org.jmicro.api.timer.TimerTicker;
+import org.jmicro.common.Utils;
 
 /**
  * 
@@ -44,9 +46,14 @@ import org.jmicro.api.timer.TimerTicker;
  */
 @Component
 @Service(version="0.0.1", namespace="serviceExceptionMonitor",monitorEnable=0)
-public class ServiceExceptionMonitor extends AbstractMonitorDataSubscriber implements IMonitorDataSubscriber,ITickerAction{
+public class ServiceReqMonitor extends AbstractMonitorDataSubscriber implements IMonitorDataSubscriber,ITickerAction{
 
 	//private final static Logger logger = LoggerFactory.getLogger(ServiceExceptionMonitor.class);
+	public static void main(String[] args) {
+		 JMicro.getObjectFactoryAndStart(new String[] {"-DinstanceName=ServiceReqMonitor",
+				 "-Dserver=true"});
+		 Utils.getIns().waitForShutdown();
+	}
 	
 	private final Integer[] YTPES = new Integer[]{
 		//服务器发生错误,返回ServerError异常
@@ -72,11 +79,10 @@ public class ServiceExceptionMonitor extends AbstractMonitorDataSubscriber imple
 	private Map<String,ServiceCounter> counters =  new HashMap<>();
 	
 	@JMethod("init")
-	public void init() {
-	}
+	public void init() {}
 	
 	private String typeKey(String key, Integer type) {
-		return key+ UniqueServiceKey.SEP + type ;
+		return key+ UniqueServiceKey.SEP + type;
 	}
 	
 	public void act(String key,Object attachement) {
@@ -85,9 +91,20 @@ public class ServiceExceptionMonitor extends AbstractMonitorDataSubscriber imple
 		ServiceMethod sm = (ServiceMethod)attachement;
 		BreakRule rule = ((ServiceMethod)attachement).getBreakingRule();
 		if(rule.isEnable()) {
-			Double failPercent = getData(key, MonitorConstant.FAIL_PERCENT);
-			if(failPercent > rule.getPercent()) {
-				breakerManager.breakService(key,sm);
+			if(sm.isBreaking()) {
+				//已经熔断，算成功率，判断是否关闭熔断器
+				Double successPercent = getData(key, MonitorConstant.SUCCESS_PERCENT);
+				if(successPercent > rule.getPercent()) {
+					sm.setBreaking(false);
+					breakerManager.breakService(key,sm);
+				}
+			} else {
+				//没有熔断，判断是否需要熔断
+				Double failPercent = getData(key, MonitorConstant.FAIL_PERCENT);
+				if(failPercent > rule.getPercent()) {
+					sm.setBreaking(true);
+					breakerManager.breakService(key,sm);
+				}
 			}
 		}
 		
