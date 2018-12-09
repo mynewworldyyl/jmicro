@@ -224,8 +224,12 @@ public class ServiceManager {
 	}
 	
 	private void serviceRemove(String path, String data) {
-		this.path2Hash.remove(path);
-		ServiceItem si = this.path2SrvItems.remove(path);
+		ServiceItem si = null;
+		synchronized(path2Hash) {
+			this.path2Hash.remove(path);
+			si = this.path2SrvItems.remove(path);
+		}
+		
 		if(si == null) {
 			return;
 		}
@@ -247,7 +251,10 @@ public class ServiceManager {
 		
 		if(isConfig) {
 			String srvPath = si.key(Config.ServiceRegistDir);
-			ServiceItem srvItem = this.path2SrvItems.get(srvPath);
+			ServiceItem srvItem = null;
+			synchronized(path2Hash) {
+				srvItem = this.path2SrvItems.get(srvPath);
+			}
 			srvItem.formPersisItem(si);
 			if(!this.isChange(srvItem, srvPath)) {
 				//没有改变,接返回

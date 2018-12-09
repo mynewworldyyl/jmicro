@@ -54,6 +54,16 @@ public class Utils {
 	public static Utils getIns() {
 		return ins;
 	}
+	
+	public String toString(Object[] arr) {
+		StringBuilder sb = new StringBuilder("[");
+		for(Object o : arr) {
+			if(o != null) {
+				sb.append(o.toString()).append(",");
+			}
+		}
+		return sb.substring(0, sb.length()-1).toString()+"]";
+	}
 
 	public void setClasses(Set<Class<?>> clses, Map<String, Class<?>> classMap) {
 		Iterator<Class<?>> ite = clses.iterator();

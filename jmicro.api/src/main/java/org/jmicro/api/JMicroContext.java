@@ -21,6 +21,7 @@ import java.util.Map;
 import java.util.Stack;
 
 import org.jmicro.api.config.Config;
+import org.jmicro.api.idgenerator.IIdClient;
 import org.jmicro.api.idgenerator.IIdGenerator;
 import org.jmicro.api.monitor.IMonitorDataSubmiter;
 import org.jmicro.api.monitor.Linker;
@@ -133,7 +134,7 @@ public class JMicroContext  {
 		ServiceItem si = registry.getServiceByImpl(req.getImpl());
 		if(si == null){
 			if(req.isLoggable()) {
-				SF.doRequestLog(MonitorConstant.ERROR, lid(null), JMicroContext.class, req,null," service ITEM not found");
+				SF.doRequestLog(MonitorConstant.ERROR, lid(), JMicroContext.class, req,null," service ITEM not found");
 			}
 			SF.doSubmit(MonitorConstant.SERVER_REQ_SERVICE_NOT_FOUND,req,null);
 			throw new CommonException("Service not found impl："+req.getImpl());
@@ -147,7 +148,7 @@ public class JMicroContext  {
 		Object obj = serviceLoader.getService(req.getImpl());
 		
 		if(obj == null){
-			SF.doRequestLog(MonitorConstant.ERROR, lid(null), JMicroContext.class, req,null," service INSTANCE not found");
+			SF.doRequestLog(MonitorConstant.ERROR, lid(), JMicroContext.class, req,null," service INSTANCE not found");
 			SF.doSubmit(MonitorConstant.SERVER_REQ_SERVICE_NOT_FOUND,req,null);
 			throw new CommonException("Service not found");
 		}
@@ -185,11 +186,17 @@ public class JMicroContext  {
 		return isLoggable || isComOpen;
 	}
 	
-	public static Long lid(IIdGenerator idGenerator){
+	public static Long lid(){
 		JMicroContext c = get();
 		Long id = c.getLong(LINKER_ID, null);
-		if(idGenerator != null && id == null) {
-			id = idGenerator.getLongId(Linker.class);
+		if(id != null) {
+			return id;
+		}
+		
+		IIdClient idGenerator = JMicro.getObjectFactory().getByName("idClient");
+		
+		if(idGenerator != null) {
+			id = idGenerator.getLongId(Linker.class.getName());
 			c.setLong(LINKER_ID, id);
 		}
 		return id;

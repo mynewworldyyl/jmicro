@@ -22,16 +22,6 @@
 			 <groupId>org.jmicro</groupId>
 			 <artifactId>jmicro.common</artifactId>
         </dependency>
-       <!--  
-        <dependency>
-			 <groupId>org.jmicro</groupId>
-			 <artifactId>jmicro.transport.http</artifactId>
-        </dependency> 
-        -->
-        <!--  <dependency>
-			 <groupId>org.jmicro</groupId>
-			 <artifactId>jmicro.transport.mina</artifactId>
-        </dependency> -->
          <dependency>
 			 <groupId>org.jmicro</groupId>
 			 <artifactId>jmicro.transport.netty.server</artifactId>
@@ -62,21 +52,9 @@
         </dependency>
          <dependency>
 			 <groupId>org.jmicro</groupId>
-			 <artifactId>jmicro.idgenerator</artifactId>
-        </dependency>
-         <dependency>
-			 <groupId>org.jmicro</groupId>
 			 <artifactId>jmicro.example.api</artifactId>
 			  <version>0.0.1-SNAPSHOT</version>
         </dependency>
-       <!--   <dependency>
-			 <groupId>org.jmicro</groupId>
-			 <artifactId>jmicro.monitor.dashboard</artifactId>
-        </dependency> -->
-       <!--   <dependency>
-			 <groupId>org.jmicro</groupId>
-			 <artifactId>jmicro.monitor.subermemory</artifactId>
-        </dependency> -->
         <dependency>
 			 <groupId>org.jmicro</groupId>
 			 <artifactId>jmicro.monitor.submiter</artifactId>

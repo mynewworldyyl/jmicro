@@ -30,7 +30,7 @@ import org.jmicro.api.client.IMessageCallback;
 import org.jmicro.api.codec.ICodecFactory;
 import org.jmicro.api.gateway.ApiRequest;
 import org.jmicro.api.gateway.ApiResponse;
-import org.jmicro.api.idgenerator.IIdGenerator;
+import org.jmicro.api.idgenerator.IIdClient;
 import org.jmicro.api.monitor.MonitorConstant;
 import org.jmicro.api.monitor.SF;
 import org.jmicro.api.net.IMessageHandler;
@@ -55,8 +55,9 @@ public class ApiRequestMessageHandler implements IMessageHandler{
 
 	private final static Logger logger = LoggerFactory.getLogger(ApiRequestMessageHandler.class);
 	private static final Class<?> TAG = ApiRequestMessageHandler.class;
-	@Inject
-	private IIdGenerator idGenerator;
+	
+	@Inject("idClient")
+	private IIdClient idGenerator;
 	
 	@Inject
 	private ICodecFactory codecFactory;
@@ -86,9 +87,9 @@ public class ApiRequestMessageHandler implements IMessageHandler{
 		resp.setReqId(req.getReqId());
 		resp.setMsg(msg);
 		resp.setSuccess(true);
-		resp.setId(idGenerator.getLongId(ApiResponse.class));
+		resp.setId(idGenerator.getLongId(ApiResponse.class.getName()));
 		
-		long lid = JMicroContext.lid(idGenerator);
+		long lid = JMicroContext.lid();
 
 		JMicroContext.get().setParam(JMicroContext.LOCAL_HOST, session.localHost());
 		JMicroContext.get().setParam(JMicroContext.LOCAL_PORT, session.localPort()+"");
@@ -146,7 +147,7 @@ public class ApiRequestMessageHandler implements IMessageHandler{
 						JMicroContext.get().mergeParams(jc);
 						resp.setSuccess(true);
 						resp.setResult(rst);
-						resp.setId(idGenerator.getLongId(ApiResponse.class));
+						resp.setId(idGenerator.getLongId(ApiResponse.class.getName()));
 						msg.setPayload(ICodecFactory.encode(codecFactory, resp, msg.getProtocol()));
 						session.write(msg);
 						if(SF.isLoggable(this.openDebug,MonitorConstant.DEBUG)) {

@@ -19,19 +19,8 @@ package org.jmicro.api.idgenerator;
 /**
  * 
  * @author Yulei Ye
- * @date 2018年10月4日-上午11:55:12
+ * @date 2018年12月9日 下午5:23:50
  */
-public interface IIdGenerator {
-	
-	String[] getStringIds(String idKey,int num);
-	
-	Long[] getLongIds(String idKey,int num);
-	
-	Integer[] getIntIds(String idKey,int num);
-	
-	Long getLongId(String idKey);
-	
-	String getStringId(String idKey);
-	
-	Integer getIntId(String idKey);
+public interface IIdClient extends IIdGenerator{
+
 }

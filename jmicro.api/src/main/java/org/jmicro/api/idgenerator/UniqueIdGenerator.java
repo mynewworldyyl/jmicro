@@ -14,35 +14,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.jmicro.idgenerator;
+package org.jmicro.api.idgenerator;
 
-import org.jmicro.api.JMicro;
 import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.Inject;
-import org.jmicro.api.annotation.Service;
-import org.jmicro.api.idgenerator.IIdServer;
 import org.jmicro.api.raft.IDataOperator;
 import org.jmicro.api.raft.RaftBaseIdGenerator;
 import org.jmicro.common.Constants;
-import org.jmicro.common.Utils;
 
 /**
  * 
  * @author Yulei Ye
- * @date 2018年10月4日-下午12:11:16
+ * @date 2018年12月9日 下午5:24:20
  */
-@Component(value=Constants.DEFAULT_IDGENERATOR,level=2,side = Constants.SIDE_PROVIDER)
-@Service(namespace="idServer",version="0.0.1")
-public class JMicroIdGenerator implements IIdServer {
-	
+@Component("uniqueIdGenerator")
+public class UniqueIdGenerator implements IIdGenerator,IIdServer,IIdClient{
+
 	private static final String ID_IDR = Constants.CFG_ROOT + "/id/";
-	
-	public static void main(String[] args) {
-		 JMicro.getObjectFactoryAndStart(new String[] {"-DinstanceName=IdServer",
-				 "-Dserver=true",
-				 "-Dorg.jmicro.api.idgenerator.IIdServer=uniqueIdGenerator"});
-		 Utils.getIns().waitForShutdown();
-	}
 	
 	@Inject(required=true)
 	private IDataOperator dataOperator;
@@ -79,4 +67,5 @@ public class JMicroIdGenerator implements IIdServer {
 	public Integer getIntId(String idKey) {
 		return this.idg.getIntId(idKey);
 	}
+
 }

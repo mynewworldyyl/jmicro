@@ -24,7 +24,7 @@ import org.jmicro.api.annotation.Cfg;
 import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.Inject;
 import org.jmicro.api.codec.ICodecFactory;
-import org.jmicro.api.idgenerator.IIdGenerator;
+import org.jmicro.api.idgenerator.IIdClient;
 import org.jmicro.api.monitor.IMonitorDataSubmiter;
 import org.jmicro.api.monitor.MonitorConstant;
 import org.jmicro.api.monitor.SF;
@@ -57,11 +57,14 @@ public class ServerMessageReceiver implements IMessageReceiver{
 	@Inject(required=false)
 	private IMonitorDataSubmiter monitor;
 	
-	@Inject
-	private IIdGenerator idGenerator;
+	@Inject("idClient")
+	private IIdClient idGenerator;
 	
 	@Inject
 	private ICodecFactory codeFactory;
+	
+	@Inject
+	private JRPCReqRespHandler jrpcHandler;
 	
 	/*@Cfg(value="/ServerReceiver/receiveBufferSize")
 	private int receiveBufferSize=1000;*/
@@ -71,7 +74,8 @@ public class ServerMessageReceiver implements IMessageReceiver{
 	private Boolean ready = new Boolean(false);
 	
 	public void init(){
-		
+		//系统级RPC处理器，如ID请求处理器，和普通RPC处理理器同一个实例，但是TYPE标识不同，需要特殊处理
+		handlers.put(Constants.MSG_TYPE_SYSTEM_REQ_JRPC, jrpcHandler);
 	}
 	
 	public void registHandler(IMessageHandler handler){

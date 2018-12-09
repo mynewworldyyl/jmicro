@@ -17,6 +17,7 @@
 package org.jmicro.objfactory.simple;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.ParameterizedType;
@@ -40,6 +41,7 @@ import org.jmicro.api.service.ICheckable;
 import org.jmicro.common.CommonException;
 import org.jmicro.common.Constants;
 import org.jmicro.common.util.ClassGenerator;
+import org.jmicro.common.util.ReflectUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -75,13 +77,22 @@ class ClientServiceProxyManager {
 		try {
 			Class<?> cls = Thread.currentThread().getContextClassLoader().loadClass(srvName);
 			
+			if(cls == null) {
+				throw new CommonException("Service class [" + srvName+"] not found!");
+			}
+			
+			if(cls.isAnnotationPresent(Service.class)) {
+				throw new CommonException("Service class ["+srvName+"] must be annotated with [" + Service.class.getName()+"] to create client proxy byte interface name");
+			}
+			
 			IRegistry registry = of.get(IRegistry.class);
 			Set<ServiceItem> items = registry.getServices(srvName,namespace,version);
 			
 			if(items != null && !items.isEmpty()){
 				ServiceItem i = items.iterator().next();
 				proxy = createDynamicServiceProxy(cls,i.getKey().getNamespace(),i.getKey().getVersion(),true);
-				this.setHandler(proxy, i.serviceName(), i);
+				
+				this.setHandler(proxy, i.serviceName(), i,cls.getAnnotation(Service.class).handler());
 				return (T)proxy;
 			}
 		} catch (ClassNotFoundException e) {
@@ -195,7 +206,7 @@ class ClientServiceProxyManager {
 		registry.addServiceListener(UniqueServiceKey.serviceName(type.getName(),ref.namespace(),
 				ref.version()).toString(), lis);
 			
-		setHandler(proxy,key,si);
+		setHandler(proxy,key,si,ref.handler());
 		return proxy;
 	}
 	
@@ -279,7 +290,7 @@ class ClientServiceProxyManager {
 				}else {
 					po = createDynamicServiceProxy(ctype,si.getKey().getNamespace(),si.getKey().getVersion(),true);
 					//registry.addServiceListener(ServiceItem.serviceName(si.getServiceName(),si.getNamespace(),si.getVersion()), lis);
-					setHandler(po,key,si);
+					setHandler(po,key,si,ref.handler());
 				}
 				
 				if(po != null){
@@ -298,10 +309,17 @@ class ClientServiceProxyManager {
 	}
 
 	
-	private void setHandler(Object proxy,String key,ServiceItem si){
+	private void setHandler(Object proxy,String key,ServiceItem si,String handler){
 		 if(proxy != null){
 	    	AbstractClientServiceProxy asp = (AbstractClientServiceProxy)proxy;
-			asp.setHandler(of.getByName(Constants.DEFAULT_INVOCATION_HANDLER));
+	    	if(handler == null) {
+	    		handler = Constants.DEFAULT_INVOCATION_HANDLER;
+	    	}
+	    	InvocationHandler h = of.getByName(handler);
+	    	if(h == null) {
+	    		throw new CommonException("Service ["+key+"] handler ["+handler+"] not found");
+	    	}
+			asp.setHandler(h);
 			asp.setItem(si);
 			asp.setMonitor(of.get(IMonitorDataSubmiter.class));
 			remoteObjects.put(key, proxy);
@@ -323,7 +341,7 @@ class ClientServiceProxyManager {
 		if(items != null && !items.isEmpty()){
 			ServiceItem i = items.iterator().next();
 			Object proxy = createDynamicServiceProxy(cls,i.getKey().getNamespace(),i.getKey().getVersion(),true);
-			this.setHandler(proxy, i.serviceName(), i);
+			this.setHandler(proxy, i.serviceName(), i,srvAnno.handler());
 			return proxy;
 		}
 		
@@ -339,7 +357,7 @@ class ClientServiceProxyManager {
 		 classGenerator.addInterface(ProxyObject.class);
 		 classGenerator.addInterface(ICheckable.class);
 		 
-		 classGenerator.addField("public static java.lang.reflect.Method[] methods;");
+		 classGenerator.addField("public static java.lang.reflect.Method[] ms = null;");
 		 //classGenerator.addField("private " + InvocationHandler.class.getName() + " handler = new org.jmicro.api.client.ServiceInvocationHandler(this);");
        
 		 classGenerator.addField("private boolean enable="+enable+";");
@@ -371,10 +389,16 @@ class ClientServiceProxyManager {
 
             StringBuilder code = new StringBuilder("Object[] args = new Object[").append(pts.length).append("];");
             for(int j = 0; j < pts.length; j++){
-           	 	code.append(" args[").append(j).append("] = ("+pts[j].getName()+")$").append(j + 1).append(";");
+           	 	code.append(" args[").append(j).append("] = ");
+           	 	if(pts[j].isPrimitive()) {
+           	 		code.append(" new ").append(ReflectUtils.getFullClassName(pts[j])).append(" ($").append(j + 1).append(") ");
+           	 	}else {
+           	 		code.append(" ( ").append(ReflectUtils.getFullClassName(pts[j])).append(" )$").append(j + 1);
+           	 	}
+           	 	code.append("; ");
             }
             
-            code.append("if(getItem() == null) {throw new org.jmicro.common.CommonException(\"Service ")
+            code.append(" if(getItem() == null) {throw new org.jmicro.common.CommonException(\"Service ")
             	.append(cls.getName()).append(" not available\"); }");
             
             code.append(" try { ");
@@ -398,7 +422,7 @@ class ClientServiceProxyManager {
             code.append(" org.jmicro.api.JMicroContext.get().setParam(org.jmicro.common.Constants.SERVICE_METHOD_KEY, poSm);");
             code.append(" org.jmicro.api.JMicroContext.get().setParam(org.jmicro.common.Constants.SERVICE_ITEM_KEY, super.getItem());");
             
-            code.append(" Object ret = handler.invoke(this, methods[" + i + "], args);");
+            code.append(" java.lang.Object ret = (java.lang.Object)handler.invoke(this, ms[" + i + "], args);");
             
             //restore pre service info
             code.append(" org.jmicro.api.JMicroContext.get().setString(org.jmicro.api.JMicroContext.CLIENT_NAMESPACE, ns);");
@@ -425,7 +449,8 @@ class ClientServiceProxyManager {
 		 Class<?> clazz = classGenerator.toClass();
 
         try {
-       	    clazz.getField("methods").set(null, ms);
+       	    clazz.getField("ms").set(null, ms);
+			@SuppressWarnings("unchecked")
 			T proxy = (T)clazz.newInstance();
 			return proxy; 
 		} catch (InstantiationException | IllegalArgumentException | IllegalAccessException | NoSuchFieldException | SecurityException e1) {

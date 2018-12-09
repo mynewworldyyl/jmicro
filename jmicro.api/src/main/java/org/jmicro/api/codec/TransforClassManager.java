@@ -20,7 +20,7 @@ import java.util.List;
 
 import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.Inject;
-import org.jmicro.api.idgenerator.IIdGenerator;
+import org.jmicro.api.idgenerator.IIdClient;
 import org.jmicro.api.raft.IDataOperator;
 import org.jmicro.common.Constants;
 import org.slf4j.Logger;
@@ -41,14 +41,14 @@ public class TransforClassManager {
 	@Inject
 	private IDataOperator dataOperator;
 	
-	@Inject
-	private IIdGenerator idGenerator;
+	@Inject("idClient")
+	private IIdClient idGenerator;
 	
 	public void registType(Class<?> clazz,Short type) {
 		String path = ROOT+"/"+clazz.getName();
 		if(!dataOperator.exist(path)) {
 			if(type == null || type == 0) {
-				type = idGenerator.getIntId(TransforClassManager.class).shortValue();
+				type = idGenerator.getIntId(TransforClassManager.class.getName()).shortValue();
 			}
 			dataOperator.createNode(path, type.toString(), false);
 		}

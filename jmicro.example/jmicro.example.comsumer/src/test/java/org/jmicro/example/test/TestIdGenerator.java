@@ -3,20 +3,23 @@ package org.jmicro.example.test;
 import java.nio.ByteBuffer;
 
 import org.jmicro.api.JMicro;
-import org.jmicro.api.idgenerator.IIdGenerator;
+import org.jmicro.api.idgenerator.IIdClient;
+import org.jmicro.api.net.IRequest;
 import org.jmicro.api.net.Message;
 import org.jmicro.api.objectfactory.IObjectFactory;
+import org.jmicro.common.Utils;
 import org.junit.Test;
 
 public class TestIdGenerator {
 
 	@Test
 	public void testLongIDGenerator(){
-		IObjectFactory of = JMicro.getObjectFactoryAndStart(new String[0]);
+		IObjectFactory of = JMicro.getObjectFactoryAndStart(new String[] {"-DinstanceName=testLongIDGenerator",
+				"-Dorg.jmicro.api.idgenerator.IIdClient=idClient"});
 		of.start();
 		
-		IIdGenerator g = of.get(IIdGenerator.class);
-		g.getLongId(Message.class);
+		IIdClient g = of.get(IIdClient.class);
+		g.getLongId(Message.class.getName());
 	}
 	
 	@Test
@@ -52,5 +55,19 @@ public class TestIdGenerator {
 	@Test
 	public void testInt2Hex() {
 		System.out.println(Integer.toBinaryString(0x80));
+	}
+	
+	@Test
+	public void testIdClientGetId() {
+		
+		IObjectFactory of = JMicro.getObjectFactoryAndStart(new String[] {
+				"-DinstanceName=testIdClientGetId",
+				"-Dclient=true"});
+		
+		IIdClient idClient = of.getByName("idClient");
+		
+		String[] longId = idClient.getStringIds(IRequest.class.getName(), 3);
+		System.out.println(Utils.getIns().toString(longId));
+
 	}
 }

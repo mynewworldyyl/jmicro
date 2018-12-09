@@ -38,10 +38,6 @@
 			 <groupId>org.jmicro</groupId>
 			 <artifactId>jmicro.config</artifactId>
         </dependency>
-        <dependency>
-			 <groupId>org.jmicro</groupId>
-			 <artifactId>jmicro.idgenerator</artifactId>
-        </dependency>
     </dependencies>
    
 </project>

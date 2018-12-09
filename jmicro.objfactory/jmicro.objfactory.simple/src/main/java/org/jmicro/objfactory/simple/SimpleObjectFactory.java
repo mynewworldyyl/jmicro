@@ -546,7 +546,7 @@ public class SimpleObjectFactory implements IObjectFactory {
 		List<Field> fields = new ArrayList<>();
 		Utils.getIns().getFields(fields, cls);
 		
-		Component comAnno = cls.getAnnotation(Component.class);
+		//Component comAnno = cls.getAnnotation(Component.class);
 		
 		boolean isProvider = isProviderSide(ProxyObject.getTargetCls(obj.getClass()));
 		boolean isComsumer =  isComsumerSide(ProxyObject.getTargetCls(obj.getClass()));
@@ -554,7 +554,23 @@ public class SimpleObjectFactory implements IObjectFactory {
 		for(Field f : fields) {
 			Object srv = null;
 			boolean isRequired = false;
-			if(f.isAnnotationPresent(Reference.class)){
+			Class<?> refCls = f.getType();
+			
+			String commandComName = Config.getCommandParam(refCls.getName(), String.class, null);
+			if(!StringUtils.isEmpty(commandComName)) {
+				//命令行指定实现组件名称
+				if(this.nameToObjs.containsKey(commandComName)) {
+					srv = this.nameToObjs.get(commandComName);
+				} else {
+					throw new CommonException("Component Name["+commandComName+"] for service ["+refCls.getName()+"] not found");
+				}
+				
+				if(!refCls.isInstance(srv)) {
+					throw new CommonException("Component with Name["+commandComName+"] not a instance of class ["+refCls.getName()+"]");
+				}
+			}
+			
+			if(srv == null && f.isAnnotationPresent(Reference.class)){
 				//Inject the remote service obj
 				Reference ref = f.getAnnotation(Reference.class);
 				/*
@@ -568,7 +584,7 @@ public class SimpleObjectFactory implements IObjectFactory {
 				srv = clientServiceProxyManager.createOrGetService(obj,f);
 				//getServiceProxy(cls,f,ref,obj);
 				
-			}else if(f.isAnnotationPresent(Inject.class)){
+			}else if(srv == null && f.isAnnotationPresent(Inject.class)){
 				//Inject the local component
 				Inject inje = f.getAnnotation(Inject.class);
 				String name = inje.value();
@@ -840,7 +856,7 @@ public class SimpleObjectFactory implements IObjectFactory {
 		 //只为代理接口生成代理方法，别的方法继承自原始类
 		 Method[] ms1 = srvInterface.getMethods();
 		 
-		 Method[] ms2 = new Method[ms1.length];
+		 //Method[] ms2 = new Method[ms1.length];
 		 
 		 for(int i =0; i < ms1.length; i++) {
 		     //Method m1 = ms1[i];
@@ -862,7 +878,7 @@ public class SimpleObjectFactory implements IObjectFactory {
            StringBuilder code = new StringBuilder();
         		   
            if (!Void.TYPE.equals(rt)) {
-        	   code.append("Object ret = ");
+        	   code.append(" Object ret = ");
            }
            code.append("super.").append(m.getName()).append("(");
            for (int j = 0; j < pts.length; j++){

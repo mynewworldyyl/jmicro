@@ -14,8 +14,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.jmicro.client;
+package org.jmicro.client.specail;
 
+import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -28,19 +30,18 @@ import org.jmicro.api.client.AbstractClientServiceProxy;
 import org.jmicro.api.client.IClientSession;
 import org.jmicro.api.client.IClientSessionManager;
 import org.jmicro.api.codec.ICodecFactory;
+import org.jmicro.api.config.Config;
 import org.jmicro.api.exception.RpcException;
 import org.jmicro.api.exception.TimeoutException;
 import org.jmicro.api.idgenerator.IIdClient;
 import org.jmicro.api.loadbalance.ISelector;
 import org.jmicro.api.monitor.MonitorConstant;
 import org.jmicro.api.monitor.SF;
-import org.jmicro.api.net.AbstractHandler;
 import org.jmicro.api.net.IMessageHandler;
 import org.jmicro.api.net.IRequest;
-import org.jmicro.api.net.IRequestHandler;
-import org.jmicro.api.net.IResponse;
 import org.jmicro.api.net.ISession;
 import org.jmicro.api.net.Message;
+import org.jmicro.api.net.RpcRequest;
 import org.jmicro.api.net.RpcResponse;
 import org.jmicro.api.net.ServerError;
 import org.jmicro.api.registry.Server;
@@ -54,18 +55,18 @@ import org.slf4j.LoggerFactory;
 /**
  * 
  * @author Yulei Ye
- * @date 2018年10月4日-下午12:07:12
+ * @date 2018年10月4日-下午12:00:47
  */
-@Component(value=Constants.DEFAULT_CLIENT_HANDLER,side=Constants.SIDE_COMSUMER)
-public class RpcClientRequestHandler extends AbstractHandler implements IRequestHandler, IMessageHandler {
+@Component(value="specailInvocationHandler", side=Constants.SIDE_COMSUMER)
+public class SpecailInvocationHandler implements InvocationHandler, IMessageHandler{
 	
-    private final static Logger logger = LoggerFactory.getLogger(RpcClientRequestHandler.class);
+	private final static Logger logger = LoggerFactory.getLogger(SpecailInvocationHandler.class);
 	
-	private static final Class<?> TAG = RpcClientRequestHandler.class;
+	private final static Class<?> TAG = SpecailInvocationHandler.class;
 	
 	private volatile Map<Long,IResponseHandler> waitForResponse = new ConcurrentHashMap<>();
 	
-	@Cfg("/RpcClientRequestHandler/openDebug")
+	@Cfg("/SpecailInvocationHandler/openDebug")
 	private boolean openDebug;
 	
 	@Inject
@@ -83,19 +84,61 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
 	@Inject("idClient")
 	private IIdClient idGenerator;
 	
+	public SpecailInvocationHandler(){}
+	
 	@Override
-	public IResponse onRequest(IRequest request) {
-		AbstractClientServiceProxy proxy =  (AbstractClientServiceProxy)JMicroContext.get().getObject(Constants.PROXY, null);
-		RpcResponse resp = null;
-		try {
-			resp = doRequest(request,proxy);
-		} catch (SecurityException | IllegalArgumentException  e) {
-			throw new RpcException(request,"",e);
+	public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+		
+		JMicroContext.get().setParam(JMicroContext.LOCAL_HOST, Config.getHost());
+		JMicroContext.get().setParam(Constants.CLIENT_REF_METHOD, method);
+		
+		AbstractClientServiceProxy po = (AbstractClientServiceProxy)proxy;
+		String methodName = method.getName();
+		if(method.getDeclaringClass() == Object.class) {
+		   throw new CommonException("Invalid invoke ["
+				   +method.getDeclaringClass().getName()+"] for method [ "+methodName+"]");
 		}
-		return resp;
-	}
 
-	private RpcResponse doRequest(IRequest req, AbstractClientServiceProxy proxy) {
+		ServiceItem poItem = po.getItem();
+		if(poItem == null){
+			throw new CommonException("cls["+method.getDeclaringClass().getName()+"] method ["+method.getName()+"] service not found");
+		}
+		
+		ServiceMethod sm = poItem.getMethod(methodName, args);
+		if(sm == null){
+			throw new CommonException("cls["+method.getDeclaringClass().getName()+"] method ["+method.getName()+"] method not found");
+		}
+		
+		if(sm.isStream() && JMicroContext.get().getParam(Constants.CONTEXT_CALLBACK_CLIENT, null) == null) {
+			throw new CommonException("cls["+method.getDeclaringClass().getName()+"] method ["+method.getName()+"] async callback not found!");
+		}
+		
+		JMicroContext.get().setParam(Constants.SERVICE_METHOD_KEY, sm);
+		JMicroContext.get().setParam(Constants.SERVICE_ITEM_KEY, poItem);
+		JMicroContext.setSrvLoggable();
+		
+		JMicroContext.lid();
+		
+		JMicroContext.get().setObject(Constants.PROXY, po);
+		
+		RpcRequest req = new RpcRequest();
+        req.setMethod(method.getName());
+        req.setServiceName(poItem.getKey().getServiceName());
+        req.setNamespace(poItem.getKey().getNamespace());
+        req.setVersion(poItem.getKey().getVersion());
+        req.setArgs(args);
+        req.setRequestId(idGenerator.getLongId(IRequest.class.getName()));
+        req.setTransport(Constants.TRANSPORT_NETTY);
+        req.setImpl(poItem.getImpl());
+        
+        RpcResponse resp = doRequest(req,po);
+        
+        return resp == null ? null :resp.getResult();
+	
+	}
+	
+	
+private RpcResponse doRequest(IRequest req, AbstractClientServiceProxy proxy) {
         
         ServerError se = null;
         		
@@ -110,7 +153,7 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
         long lid = JMicroContext.lid();
         
         Message msg = new Message();
-		msg.setType(Constants.MSG_TYPE_REQ_JRPC);
+		msg.setType(Constants.MSG_TYPE_SYSTEM_REQ_JRPC);
 		msg.setProtocol(Message.PROTOCOL_BIN);
 		msg.setReqId(req.getRequestId());
 		msg.setLinkId(lid);
@@ -322,7 +365,7 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
 
 	@Override
 	public Byte type() {
-		return Constants.MSG_TYPE_RRESP_JRPC;
+		return Constants.MSG_TYPE_SPECAIL_RRESP_JRPC;
 	}
 
 	@Override
@@ -343,5 +386,6 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
 	private static interface IResponseHandler{
 		void onResponse(Message msg);
 	}
+	
+	
 }
-

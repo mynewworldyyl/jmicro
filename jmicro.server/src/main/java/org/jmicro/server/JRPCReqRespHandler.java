@@ -20,8 +20,9 @@ import org.jmicro.api.JMicroContext;
 import org.jmicro.api.annotation.Cfg;
 import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.Inject;
+import org.jmicro.api.annotation.Reference;
 import org.jmicro.api.codec.ICodecFactory;
-import org.jmicro.api.idgenerator.IIdGenerator;
+import org.jmicro.api.idgenerator.IIdClient;
 import org.jmicro.api.monitor.MonitorConstant;
 import org.jmicro.api.monitor.SF;
 import org.jmicro.api.net.IMessageHandler;
@@ -34,7 +35,6 @@ import org.jmicro.api.net.RpcRequest;
 import org.jmicro.api.net.RpcResponse;
 import org.jmicro.api.net.ServerError;
 import org.jmicro.api.registry.IRegistry;
-import org.jmicro.api.registry.ServiceMethod;
 import org.jmicro.api.service.ServiceLoader;
 import org.jmicro.common.Constants;
 import org.slf4j.Logger;
@@ -66,8 +66,8 @@ public class JRPCReqRespHandler implements IMessageHandler{
 	@Inject(required=true)
 	private ServiceLoader serviceLoader;
 	
-	@Inject
-	private IIdGenerator idGenerator;
+	@Inject("idClient")
+	private IIdClient idGenerator;
 	
 	@Inject(required=true)
 	private IRegistry registry = null;
@@ -86,7 +86,7 @@ public class JRPCReqRespHandler implements IMessageHandler{
 		resp.setReqId(msg.getReqId());
 		resp.setMsg(msg);
 		resp.setSuccess(true);
-		resp.setId(idGenerator.getLongId(IResponse.class));
+		resp.setId(idGenerator.getLongId(IResponse.class.getName()));
 	    try {
 
 	    	//req1为内部类访问
@@ -114,8 +114,6 @@ public class JRPCReqRespHandler implements IMessageHandler{
 			
 			if(req.isStream()){
 				
-				msg.setType(Constants.MSG_TYPE_ASYNC_RESP);
-				
 				IWriteCallback callback = new IWriteCallback(){
 					@Override
 					public boolean send(Object message) {
@@ -124,10 +122,10 @@ public class JRPCReqRespHandler implements IMessageHandler{
 							return false;
 						}
 						RpcResponse resp = new RpcResponse(req1.getRequestId(),message);
-						resp.setId(idGenerator.getLongId(IResponse.class));
+						resp.setId(idGenerator.getLongId(IResponse.class.getName()));
 						resp.setSuccess(true);
 						//返回结果包
-						msg.setId(idGenerator.getLongId(Message.class));
+						msg.setId(idGenerator.getLongId(Message.class.getName()));
 						msg.setPayload(codeFactory.getEncoder(msg.getProtocol()).encode(resp));
 						msg.setType(Constants.MSG_TYPE_ASYNC_RESP);
 						
@@ -162,9 +160,9 @@ public class JRPCReqRespHandler implements IMessageHandler{
 				resp = new RpcResponse(req.getRequestId(),null);
 				resp.setSuccess(true);
 				
-				msg.setType(Constants.MSG_TYPE_RRESP_JRPC);
+				msg.setType((byte)(msg.getType()+1));
 				msg.setPayload(ICodecFactory.encode(codeFactory,resp,msg.getProtocol()));
-				msg.setId(idGenerator.getLongId(Message.class));
+				msg.setId(idGenerator.getLongId(Message.class.getName()));
 				
 				if(msg.isLoggable()) {
 					SF.doResponseLog(MonitorConstant.DEBUG,msg.getLinkId(),TAG, resp,null,"STREAM Confirm");
@@ -180,8 +178,8 @@ public class JRPCReqRespHandler implements IMessageHandler{
 					resp.setSuccess(true);
 				}
 				msg.setPayload(ICodecFactory.encode(codeFactory,resp,msg.getProtocol()));
-				msg.setType(Constants.MSG_TYPE_RRESP_JRPC);
-				msg.setId(idGenerator.getLongId(Message.class));
+				msg.setType((byte)(msg.getType()+1));
+				msg.setId(idGenerator.getLongId(Message.class.getName()));
 				
 				if(SF.isLoggable(this.openDebug,MonitorConstant.DEBUG)) {
 					SF.doResponseLog(MonitorConstant.DEBUG,msg.getLinkId(), TAG, resp,null);

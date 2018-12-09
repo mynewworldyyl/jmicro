@@ -102,51 +102,32 @@ public interface Constants {
 	
 	
 	/*=====================Message Begin=======================*/
-	/*=====================Message Begin=======================*/
-	/*=====================Message Begin=======================*/
-	
-/*	public static final byte MSG_REQ_TYPE_RESP=1;
-	
-	public static final byte MSG_REQ_TYPE_REQ=2;
-	
-	public static final byte PROTOCOL_TYPE_BEGIN=1;
-	public static final byte PROTOCOL_TYPE_END=2;
-	
-	public static final byte PROTOCOL_TYPE_REQ_ER=3;
-	public static final byte PROTOCOL_TYPE_RESP_ER=4;*/
-	
-	//public static final short MSG_TYPE_ZERO = 0x0000;
 	
 	public static final byte MSG_TYPE_REQ_JRPC = 0x01; //普通RPC调用请求，发送端发IRequest，返回端返回IResponse
 	public static final byte MSG_TYPE_RRESP_JRPC = 0x02;//返回端返回IResponse
 	
-	//public static final short MSG_TYPE_SERVER_ASYNC_MESSAGE = 0x0003; //异步消息请求，服务器处理
-	//public static final short MSG_TYPE_RRESP_RAW = 0x0004;//纯二进制数据响应
+	public static final byte MSG_TYPE_REQ_RAW = 0x03; //纯二进制数据请求
+	public static final byte MSG_TYPE_RRESP_RAW = 0x04;//纯二进制数据响应
 	
-	public static final byte MSG_TYPE_REQ_RAW = 0x04; //纯二进制数据请求
-	public static final byte MSG_TYPE_RRESP_RAW = 0x05;//纯二进制数据响应
+	public static final byte MSG_TYPE_ASYNC_REQ = 0x05; //异步请求，不需求等待响应返回
+	public static final byte MSG_TYPE_ASYNC_RESP = 0x06; //异步响应，通过回调用返回
 	
-	public static final byte MSG_TYPE_ASYNC_REQ = 0x06; //异步请求，不需求等待响应返回
-	public static final byte MSG_TYPE_ASYNC_RESP = 0x07; //异步响应，通过回调用返回
+	public static final byte MSG_TYPE_API_CLASS_REQ = (byte)0x07; //API网关请求
+	public static final byte MSG_TYPE_API_CLASS_RESP = (byte)0x08;//API网关请求响应
 	
-	//public static final short MSG_TYPE_SERVER_ERR = 0x7FFE;
-	//public static final short MSG_TYPE_ALL = 0x7FFF;
+	public static final byte MSG_TYPE_API_REQ = (byte)0x09; //API网关请求
+	public static final byte MSG_TYPE_API_RESP = (byte)0x0A;//API网关请求响应
 	
-	public static final byte MSG_TYPE_API_CLASS_REQ = (byte)0xF6; //API网关请求
-	public static final byte MSG_TYPE_API_CLASS_RESP = (byte)0xF7;//API网关请求响应
+	public static final byte MSG_TYPE_ID_REQ = (byte)0x0B; //Id请求
+	public static final byte MSG_TYPE_ID_RESP = (byte)0x0C;//Id请求响应
 	
-	public static final byte MSG_TYPE_API_REQ = (byte)0xF8; //API网关请求
-	public static final byte MSG_TYPE_API_RESP = (byte)0xF9;//API网关请求响应
+	public static final byte MSG_TYPE_HEARBEAT_REQ = (byte)0x0D; //心跳请求
+	public static final byte MSG_TYPE_HEARBEAT_RESP = (byte)0x0E;//心跳响应
 	
-	public static final byte MSG_TYPE_ID_REQ = (byte)0xFA; //Id请求
-	public static final byte MSG_TYPE_ID_RESP = (byte)0xFB;//Id请求响应
-	
-	public static final byte MSG_TYPE_HEARBEAT_REQ = (byte)0xFC; //心跳请求
-	public static final byte MSG_TYPE_HEARBEAT_RESP = (byte)0xFD;//心跳响应
+	public static final byte MSG_TYPE_SYSTEM_REQ_JRPC = 0x0F; // 特殊RPC 接口，如ID RPC接口中
+	public static final byte MSG_TYPE_SPECAIL_RRESP_JRPC = 0x10;//16
 	
 	public static final byte MSG_VERSION = (byte)1;
-	
-	//public static final byte FLAG_ASYNC = 1<<0;
 	
 	//需要响应的请求
 	public static final byte FLAG_NEED_RESPONSE = 1<<0;
@@ -160,8 +141,6 @@ public interface Constants {
 	//是否启用服务级log
 	public static final short FLAG_LOGGABLE = 0x80;
 	
-	/*=====================Message END=======================*/
-	/*=====================Message END=======================*/
 	/*=====================Message END=======================*/
 	
 }

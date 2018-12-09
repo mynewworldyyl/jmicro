@@ -47,10 +47,6 @@
 			 <groupId>org.jmicro</groupId>
 			 <artifactId>jmicro.objfactory.simple</artifactId>
         </dependency>
-         <dependency>
-			 <groupId>org.jmicro</groupId>
-			 <artifactId>jmicro.idgenerator</artifactId>
-        </dependency>
 		 <dependency>
 			 <groupId>org.jmicro</groupId>
 			 <artifactId>jmicro.example.api</artifactId>

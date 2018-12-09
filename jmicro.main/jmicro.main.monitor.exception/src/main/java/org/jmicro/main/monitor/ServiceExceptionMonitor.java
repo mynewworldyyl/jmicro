@@ -117,7 +117,6 @@ public class ServiceExceptionMonitor extends AbstractMonitorDataSubscriber imple
 						//开启了熔断机制，按熔断窗口的两倍时间做监听
 						TimerTicker.getTimer(rule.getTimeInMilliseconds()*2).addListener(key, this,si.getSm());
 					}
-					
 				}
 			}
 		}

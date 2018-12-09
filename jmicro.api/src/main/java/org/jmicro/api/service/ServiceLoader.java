@@ -46,6 +46,7 @@ import org.jmicro.api.registry.UniqueServiceKey;
 import org.jmicro.api.registry.UniqueServiceMethodKey;
 import org.jmicro.common.CommonException;
 import org.jmicro.common.Constants;
+import org.jmicro.common.util.ReflectUtils;
 import org.jmicro.common.util.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -418,7 +419,7 @@ public class ServiceLoader {
 	}
 	
 	public static Method getServiceMethod(Object obj ,IRequest req){
-		Class<?>[] pst = getMethodParamsType(req);
+		Class<?>[] pst = getMethodParamsType(req.getArgs());
 		try {
 			Method m = obj.getClass().getMethod(req.getMethod(), pst);
 			return m;
@@ -427,17 +428,13 @@ public class ServiceLoader {
 		}
 	}
 	
-	public static Class<?>[]  getMethodParamsType(IRequest req){
-		return getMethodParamsType(req.getArgs());
-	}
-	
 	public static Class<?>[]  getMethodParamsType(Object[] args){
 		if(args == null || args.length==0){
 			return new Class<?>[0];
 		}
 		Class<?>[] parameterTypes = new Class[args.length];
 		for(int i = 0; i < args.length; i++) {
-			parameterTypes[i] = args[i].getClass();
+			parameterTypes[i] = ReflectUtils.getPrimitiveClazz(args[i].getClass());
 		}
 		return parameterTypes;
 	}
@@ -445,7 +442,7 @@ public class ServiceLoader {
 	public static Method getInterfaceMethod(IRequest req){
 		try {
 			Class<?> cls = Thread.currentThread().getContextClassLoader().loadClass(req.getServiceName());
-			Class<?>[] pst = getMethodParamsType(req);
+			Class<?>[] pst = getMethodParamsType(req.getArgs());
 			Method m = cls.getMethod(req.getMethod(),pst);
 			return m;
 		} catch (ClassNotFoundException | NoSuchMethodException | SecurityException e) {

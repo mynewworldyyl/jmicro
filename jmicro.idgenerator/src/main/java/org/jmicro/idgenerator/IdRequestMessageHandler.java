@@ -14,12 +14,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.jmicro.api.idgenerator;
+package org.jmicro.idgenerator;
 
-import org.jmicro.api.ClassScannerUtils;
 import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.Inject;
 import org.jmicro.api.codec.ICodecFactory;
+import org.jmicro.api.idgenerator.IIdClient;
+import org.jmicro.api.idgenerator.IdRequest;
 import org.jmicro.api.net.IMessageHandler;
 import org.jmicro.api.net.ISession;
 import org.jmicro.api.net.Message;
@@ -37,8 +38,8 @@ public class IdRequestMessageHandler implements IMessageHandler{
 
 	private final static Logger logger = LoggerFactory.getLogger(IdRequestMessageHandler.class);
 	
-	@Inject
-	private IIdGenerator idGenerator;
+	@Inject("idClient")
+	private IIdClient idGenerator;
 	
 	@Inject
 	private ICodecFactory codecFactory;
@@ -54,26 +55,29 @@ public class IdRequestMessageHandler implements IMessageHandler{
 		IdRequest req = ICodecFactory.decode(codecFactory, msg.getPayload(), 
 				IdRequest.class, msg.getProtocol());
 		
-		Class<?> cls = ClassScannerUtils.getIns().getClassByName(req.getClazz());
+		String cls = req.getClazz();
 		
 		Object result = null;
 		
-		switch(req.getType()){
+		synchronized(cls) {
+			//同种ID同时只能有一个请求进入
+			switch(req.getType()){
 			case IdRequest.BYte:
-				result = this.idGenerator.getIntId(cls,req.getNum());
+				result = this.idGenerator.getIntIds(cls,req.getNum());
 				break;
 			case IdRequest.SHort:
-				result = this.idGenerator.getIntId(cls,req.getNum());
+				result = this.idGenerator.getIntIds(cls,req.getNum());
 				break;
 			case IdRequest.INteger:
-				result = this.idGenerator.getIntId(cls,req.getNum());
+				result = this.idGenerator.getIntIds(cls,req.getNum());
 				break;
 			case IdRequest.LOng:
-				result = this.idGenerator.getLongId(cls,req.getNum());
+				result = this.idGenerator.getLongIds(cls,req.getNum());
 				break;
 			case IdRequest.STring:
-				result = this.idGenerator.getStringId(cls,req.getNum());
+				result = this.idGenerator.getStringIds(cls,req.getNum());
 				break;
+			}
 		}
 		
 		msg.setType((byte)(msg.getType()+1));

@@ -26,10 +26,7 @@ import org.jmicro.api.annotation.Inject;
 import org.jmicro.api.breaker.BreakerManager;
 import org.jmicro.api.client.AbstractClientServiceProxy;
 import org.jmicro.api.config.Config;
-import org.jmicro.api.exception.BreakerException;
-import org.jmicro.api.idgenerator.IIdGenerator;
-import org.jmicro.api.monitor.MonitorConstant;
-import org.jmicro.api.monitor.SF;
+import org.jmicro.api.idgenerator.IIdClient;
 import org.jmicro.api.net.IRequest;
 import org.jmicro.api.net.IResponse;
 import org.jmicro.api.net.InterceptorManager;
@@ -57,8 +54,8 @@ public class ServiceInvocationHandler implements InvocationHandler{
 	@Inject(required=true)
 	private InterceptorManager intManager;
 	
-	@Inject
-	private IIdGenerator idGenerator;
+	@Inject("idClient")
+	private IIdClient idGenerator;
 	
 	@Inject
 	private BreakerManager breakerManager;
@@ -88,11 +85,15 @@ public class ServiceInvocationHandler implements InvocationHandler{
 			throw new CommonException("cls["+method.getDeclaringClass().getName()+"] method ["+method.getName()+"] method not found");
 		}
 		
+		if(sm.isStream() && JMicroContext.get().getParam(Constants.CONTEXT_CALLBACK_CLIENT, null) == null) {
+			throw new CommonException("cls["+method.getDeclaringClass().getName()+"] method ["+method.getName()+"] async callback not found!");
+		}
+		
 		JMicroContext.get().setParam(Constants.SERVICE_METHOD_KEY, sm);
 		JMicroContext.get().setParam(Constants.SERVICE_ITEM_KEY, poItem);
 		JMicroContext.setSrvLoggable();
 		
-		JMicroContext.lid(idGenerator);
+		JMicroContext.lid();
 		JMicroContext.get().setObject(Constants.PROXY, po);
 		
 		RpcRequest req = new RpcRequest();
@@ -101,7 +102,7 @@ public class ServiceInvocationHandler implements InvocationHandler{
         req.setNamespace(poItem.getKey().getNamespace());
         req.setVersion(poItem.getKey().getVersion());
         req.setArgs(args);
-        req.setRequestId(idGenerator.getLongId(IRequest.class));
+        req.setRequestId(idGenerator.getLongId(IRequest.class.getName()));
         req.setTransport(Constants.TRANSPORT_NETTY);
         req.setImpl(poItem.getImpl());
         

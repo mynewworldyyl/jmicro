@@ -77,10 +77,8 @@ public abstract class AbstractNettySession extends AbstractSession implements IC
 					}*/
 					ctx.writeAndFlush(response);
 				} catch (UnsupportedEncodingException e) {
-					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
-				
 			}
 		}else {
 			//String json = JsonUtils.getIns().toJson(msg);

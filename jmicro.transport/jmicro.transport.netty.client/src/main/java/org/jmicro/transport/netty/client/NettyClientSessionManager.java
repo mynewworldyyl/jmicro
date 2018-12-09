@@ -29,7 +29,7 @@ import org.jmicro.api.annotation.Inject;
 import org.jmicro.api.client.IClientSession;
 import org.jmicro.api.client.IClientSessionManager;
 import org.jmicro.api.codec.ICodecFactory;
-import org.jmicro.api.idgenerator.IIdGenerator;
+import org.jmicro.api.idgenerator.IIdClient;
 import org.jmicro.api.monitor.IMonitorDataSubmiter;
 import org.jmicro.api.monitor.MonitorConstant;
 import org.jmicro.api.monitor.SF;
@@ -80,8 +80,8 @@ public class NettyClientSessionManager implements IClientSessionManager{
 	@Cfg("/MinaClientSessionManager/heardbeatInterval")
 	private int heardbeatInterval = 3; //seconds to send heardbeat Rate
 	
-	@Inject
-	private IIdGenerator idGenerator;
+	@Inject("idClient")
+	private IIdClient idGenerator;
 	
 	@Inject(required=false)
 	private IMonitorDataSubmiter monitor;
@@ -104,7 +104,7 @@ public class NettyClientSessionManager implements IClientSessionManager{
 			}
 		});
 		
-		try {
+		/*try {
 			final Message hearbeat = new Message();
 			hearbeat.setType(Constants.MSG_TYPE_HEARBEAT_REQ);
 			hearbeat.setId(idGenerator.getLongId(Message.class));
@@ -114,7 +114,7 @@ public class NettyClientSessionManager implements IClientSessionManager{
 			hearbeat.setPayload(bb);
 		} catch (UnsupportedEncodingException e) {
 			logger.error("",e);
-		}
+		}*/
 	}
     
     private Boolean monitorEnable(ChannelHandlerContext ctx) {
@@ -235,7 +235,7 @@ public class NettyClientSessionManager implements IClientSessionManager{
 	            NettyClientSession s = (NettyClientSession)sessions.get(sKey);
 	            ChannelHandlerContext ctx = (ChannelHandlerContext)s.getParam(Constants.SESSION_KEY);
 	            
-	            s.setId(idGenerator.getLongId(ISession.class));
+	            s.setId(idGenerator.getLongId(ISession.class.getName()));
    	            s.putParam(Constants.SESSION_KEY, ctx);
    	            s.setOpenDebug(openDebug);
    	           

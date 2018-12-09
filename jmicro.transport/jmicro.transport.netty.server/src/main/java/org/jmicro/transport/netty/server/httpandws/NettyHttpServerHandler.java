@@ -7,7 +7,7 @@ import org.jmicro.api.annotation.Cfg;
 import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.Inject;
 import org.jmicro.api.codec.ICodecFactory;
-import org.jmicro.api.idgenerator.IIdGenerator;
+import org.jmicro.api.idgenerator.IIdClient;
 import org.jmicro.api.monitor.IMonitorDataSubmiter;
 import org.jmicro.api.net.IMessageReceiver;
 import org.jmicro.api.net.Message;
@@ -43,8 +43,8 @@ public class NettyHttpServerHandler extends ChannelInboundHandlerAdapter {
 	@Cfg("/NettyHttpServerHandler/openDebug")
 	private boolean openDebug = false;
 	
-	@Inject
-	private IIdGenerator idGenerator;
+	@Inject("idClient")
+	private IIdClient idGenerator;
 	
 	@Inject
 	private ICodecFactory codeFactory;

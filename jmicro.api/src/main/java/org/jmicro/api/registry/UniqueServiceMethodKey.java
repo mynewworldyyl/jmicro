@@ -17,6 +17,7 @@
 package org.jmicro.api.registry;
 
 import org.jmicro.common.CommonException;
+import org.jmicro.common.util.ReflectUtils;
 
 /**
  * 在服务标识基础上加上方法签名
@@ -54,9 +55,9 @@ public final class UniqueServiceMethodKey {
 		StringBuilder sb = new StringBuilder();
 		int offset = args.length - 1;
 		for(int i = 0; i < offset; i++){
-		    sb.append(args[i].getName()).append(PSEP);
+		    sb.append(ReflectUtils.getFullClassName(args[i])).append(PSEP);
 		}
-		sb.append(args[offset].getName());
+		sb.append(ReflectUtils.getFullClassName(args[offset]));
 		return sb.toString();
 	}
 	
@@ -67,9 +68,9 @@ public final class UniqueServiceMethodKey {
 		StringBuilder sb = new StringBuilder();
 		int offset = args.length - 1;
 		for(int i = 0; i < offset; i++){
-		    sb.append(args[i].getClass().getName()).append(PSEP);
+		    sb.append(ReflectUtils.getFullClassName(args[i].getClass())).append(PSEP);
 		}
-		sb.append(args[offset].getClass().getName());
+		sb.append(ReflectUtils.getFullClassName(args[offset].getClass()));
 		return sb.toString();
 	}
 	

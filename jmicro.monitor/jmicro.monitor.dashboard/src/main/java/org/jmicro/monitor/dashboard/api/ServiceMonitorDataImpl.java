@@ -26,7 +26,7 @@ import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.Inject;
 import org.jmicro.api.annotation.Service;
 import org.jmicro.api.degrade.DegradeManager;
-import org.jmicro.api.idgenerator.IIdGenerator;
+import org.jmicro.api.idgenerator.IIdClient;
 import org.jmicro.api.monitor.IServiceMonitorData;
 import org.jmicro.api.monitor.ServiceStatis;
 import org.jmicro.api.net.IWriteCallback;
@@ -46,15 +46,15 @@ public class ServiceMonitorDataImpl implements IServiceMonitorData{
 	
 	private Map<Integer,IDataListener> listeners = new HashMap<>();
 	
-	@Inject
-	private IIdGenerator idGenerator;
+	@Inject("idClient")
+	private IIdClient idGenerator;
 	
 	@Inject
 	private IDataOperator dataOperator;
 	
 	@Override
 	public Integer subsicribe(String service) {
-		Integer id = idGenerator.getIntId(ServiceStatis.class);
+		Integer id = idGenerator.getIntId(ServiceStatis.class.getName());
 		final String lkey = DegradeManager.AVG_TIME_ROOT+service;
 		
 		IWriteCallback sender = JMicroContext.get().getParam(Constants.CONTEXT_CALLBACK_SERVICE, null);

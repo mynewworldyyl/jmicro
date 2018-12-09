@@ -117,4 +117,17 @@ public @interface Service {
 	 * 支持的最高QPS
 	 */
 	public String maxSpeed() default "";
+	
+	/**
+	 * 用于代理处理类，有特殊需求的可以定制代码才需要设置，如ID请求处理器，使用的RpcRequest及Message不需要ID等特殊实现
+	 * @return
+	 */
+	public String handler() default Constants.DEFAULT_INVOCATION_HANDLER;
+	
+	/**
+	 * 直接从接口获取代理时，拿取的是客户端实例还是服务端实例
+	 * 通过Reference注解的肯定是客户端实例
+	 * @return
+	 */
+	public String side() default Constants.SIDE_ANY;
 }
