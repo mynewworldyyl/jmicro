@@ -31,37 +31,37 @@ import org.jmicro.common.Constants;
 public class SF {
 	
 	public static void doSubmit(int type,String... objs){
-		if(isMonitorable()) {
+		if(isMonitorable(type)) {
 			 monitor().submit(type,objs);
 		}
 	}
 	
 	public static void doSubmit(int type,Throwable exp,String... objs){
-		if(isMonitorable()) {
+		if(isMonitorable(type)) {
 			 monitor().submit(type,exp,objs);
 		}
 	}
 	
 	public static void doSubmit(int type,IReq req,Throwable exp,String... objs){
-		if(isMonitorable()) {
+		if(isMonitorable(type)) {
 			 monitor().submit(type, req,exp,objs);
 		}
 	}
 	
 	public static void doSubmit(int type,IResp resp,Throwable exp,String... objs){
-		if(isMonitorable()) {
+		if(isMonitorable(type)) {
 			 monitor().submit(type,resp,exp,objs);
 		}
 	}
 	
 	public static void doSubmit(int type,IReq req,IResp resp,Throwable exp,String... objs){
-		if(isMonitorable()) {
+		if(isMonitorable(type)) {
 			 monitor().submit(type, req,resp,exp,objs);
 		}
 	}
 	
 	public static void doSubmit(int type,Message msg,Throwable exp,String... objs){
-		if(isMonitorable()) {
+		if(isMonitorable(type)) {
 			 monitor().submit(type, msg,exp,objs);
 		}
 	}
@@ -124,8 +124,8 @@ public class SF {
 		return JMicroContext.get().getParam(JMicroContext.MONITOR, null);
 	}
 	
-	public static boolean isMonitorable() {
-		return JMicroContext.get().isMonitor() && monitor() != null;
+	public static boolean isMonitorable(Integer type) {
+		return JMicroContext.get().isMonitor() && monitor() != null && monitor().canSubmit(type);
 	}
 	
 	public static boolean isLoggable(boolean isComOpen,int level) {
@@ -146,7 +146,7 @@ public class SF {
 			 return true;
 		 }
 		 
-		return (JMicroContext.get().isLoggable(isComOpen) || level >= MonitorConstant.ERROR) && monitor() != null;
+		return (JMicroContext.get().isLoggable(isComOpen) || level >= MonitorConstant.LOG_ERROR) && monitor() != null;
 	}
 	
 }

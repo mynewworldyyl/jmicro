@@ -30,6 +30,7 @@ import org.jmicro.api.JMicro;
 import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.Inject;
 import org.jmicro.api.annotation.JMethod;
+import org.jmicro.api.annotation.SBreakingRule;
 import org.jmicro.api.annotation.SMethod;
 import org.jmicro.api.annotation.Service;
 import org.jmicro.api.config.Config;
@@ -238,12 +239,17 @@ public class ServiceLoader {
 		item.setRetryInterval(anno.retryInterval()!=500 || intAnno == null ?anno.retryInterval():intAnno.retryInterval());
 		//item.setTestingArgs(getFieldValue(anno.testingArgs(),intAnno == null ? null : intAnno.testingArgs(),""));
 		item.setTimeout(anno.timeout()!=2000 || intAnno == null ?anno.timeout():intAnno.timeout());
-		item.setMaxSpeed(this.parseSpeed(anno.maxSpeed()));
-		item.setSpeedUnit(this.parseSpeedUnit(anno.maxSpeed()));
+		item.setMaxSpeed(anno.maxSpeed());
+		item.setBaseTimeUnit( StringUtils.isEmpty(anno.baseTimeUnit()) || intAnno == null ? anno.baseTimeUnit() : intAnno.baseTimeUnit());
+		item.setTimeWindow(anno.timeWindow() <= 0 || intAnno == null ?anno.timeWindow():intAnno.timeWindow());
+		item.setCheckInterval(anno.checkInterval() <= 0 || intAnno == null ?anno.checkInterval():intAnno.checkInterval());
+		
 		item.setAvgResponseTime(anno.avgResponseTime()!=-1 || intAnno == null ? anno.avgResponseTime() : intAnno.avgResponseTime());
 		item.setMonitorEnable(anno.monitorEnable()!=-1 || intAnno == null ? anno.monitorEnable() : intAnno.monitorEnable());
 		item.setLoggable(anno.loggable()!=-1 || intAnno == null ? anno.loggable() : intAnno.loggable());
+		item.setDebugMode(anno.debugMode()!=-1 || intAnno == null ? anno.debugMode() : intAnno.debugMode());
 		
+		//测试方法
 		ServiceMethod checkMethod = new ServiceMethod();
 		item.addMethod(checkMethod);
 		checkMethod.setMaxFailBeforeDegrade(1);
@@ -252,7 +258,7 @@ public class ServiceLoader {
 		checkMethod.setTestingArgs("What are you doing?");
 		checkMethod.setTimeout(anno.timeout());
 		checkMethod.setMaxSpeed(1000);
-		checkMethod.setSpeedUnit("ms");
+		checkMethod.setBaseTimeUnit(Constants.TIME_MILLISECONDS);
 		checkMethod.setAvgResponseTime(anno.avgResponseTime());
 		checkMethod.setMonitorEnable(anno.monitorEnable());
 		
@@ -263,6 +269,7 @@ public class ServiceLoader {
 		checkMethod.getKey().setMethod("wayd");
 		checkMethod.getKey().setParamsStr(UniqueServiceMethodKey.paramsStr(new String[]{"java.lang.String"}));
 		checkMethod.setLoggable(0);
+		checkMethod.setDebugMode(0);
 		
 		for(Method m : interfacez.getMethods()) {
 			ServiceMethod sm = new ServiceMethod();
@@ -274,13 +281,15 @@ public class ServiceLoader {
 			}
 			item.addMethod(sm);
 			
-			//具体实现类的注解优先，如果实现类对就方法没有注解，则使用接口对应的方法注解
-			//如果接口和实现类都没有，则使用实现类的Service注解，实现类肯定有Service注解，否则不会成为服务
+			//具体实现类的注解优先,如果实现类对就方法没有注解,则使用接口对应的方法注解
+			//如果接口和实现类都没有,则使用实现类的Service注解，实现类肯定有Service注解，否则不会成为服务
 			
 			SMethod manno = srvMethod.getAnnotation(SMethod.class);
 			SMethod intMAnno = m.getAnnotation(SMethod.class);
 			sm.setBreaking(false);
 			
+			SBreakingRule sbr = null;
+					
 			if(manno == null && intMAnno== null) {
 				//sm.setMaxFailBeforeDegrade(item.getMaxFailBeforeDegrade());
 				sm.setRetryCnt(item.getRetryCnt());
@@ -288,45 +297,64 @@ public class ServiceLoader {
 				//sm.setTestingArgs(item.getTestingArgs());
 				sm.setTimeout(item.getTimeout());
 				sm.setMaxSpeed(item.getMaxSpeed());
-				sm.setSpeedUnit(item.getSpeedUnit());
+				sm.setBaseTimeUnit(item.getBaseTimeUnit());
+				sm.setTimeWindow(item.getTimeWindow());
 				sm.setAvgResponseTime(item.getAvgResponseTime());
 				sm.setMonitorEnable(item.getMonitorEnable());
 				sm.setFailResponse("");
-				item.setLoggable(0);
+				sm.setLoggable(-1);
+				sm.setDebugMode(-1);
 				
 			} else {
 				 if(manno != null ) {
-					sm.setBreakingRule(BreakRule.parseRule(manno.breakingRule()));;
+					sbr = manno.breakingRule();
 					sm.setRetryCnt(manno.retryCnt()!=3 || intMAnno == null ?manno.retryCnt():intMAnno.retryCnt());
 					sm.setRetryInterval(manno.retryInterval()!=500 || intMAnno == null ? manno.retryInterval():intMAnno.retryInterval());
 					sm.setTestingArgs(getFieldValue(manno.testingArgs(),intMAnno == null ? null : intMAnno.testingArgs(),""));
 					sm.setTimeout(manno.timeout()!=2000 || intMAnno == null ?manno.timeout():intMAnno.timeout());
-					sm.setMaxSpeed(this.parseSpeed(manno.maxSpeed()));
-					sm.setSpeedUnit(this.parseSpeedUnit(manno.maxSpeed()));
+					sm.setMaxSpeed(manno.maxSpeed());
 					sm.setAvgResponseTime(manno.avgResponseTime()!=-1 || intMAnno == null ? manno.avgResponseTime() : intMAnno.avgResponseTime());
 					sm.setMonitorEnable(manno.monitorEnable()!=-1 || intMAnno == null ? manno.monitorEnable() : intMAnno.monitorEnable());
 					sm.setStream(manno.stream());
+					sm.setDumpDownStream(manno.dumpDownStream());
+					sm.setDumpUpStream(manno.dumpUpStream());
 					sm.setNeedResponse(manno.needResponse());
 					sm.setFailResponse(manno.failResponse());
-					sm.setTimeWindowInMillis(manno.timeWindowInMillis());
+					sm.setTimeWindow(manno.timeWindow()<=0?item.getTimeWindow():manno.timeWindow());
+					sm.setCheckInterval(manno.checkInterval()<=0?item.getCheckInterval():manno.checkInterval());
+					
+					sm.setBaseTimeUnit(StringUtils.isEmpty(manno.baseTimeUnit())? item.getBaseTimeUnit():manno.baseTimeUnit());
+					
 					sm.setLoggable(manno.loggable()!=-1 || intMAnno == null ? manno.loggable() : intMAnno.loggable());
+					sm.setDebugMode(manno.debugMode()!=-1 || intMAnno == null ? manno.debugMode() : intMAnno.debugMode());
 					
 				 } else {
-					sm.setBreakingRule(BreakRule.parseRule(intMAnno.breakingRule()));;
+					sbr = intMAnno.breakingRule();
 					sm.setRetryCnt(intMAnno.retryCnt());
 					sm.setRetryInterval(intMAnno.retryInterval());
 					sm.setTestingArgs(intMAnno.testingArgs());
 					sm.setTimeout(intMAnno.timeout());
-					sm.setMaxSpeed(this.parseSpeed(intMAnno.maxSpeed()));
-					sm.setSpeedUnit(this.parseSpeedUnit(intMAnno.maxSpeed()));
+					sm.setMaxSpeed(intMAnno.maxSpeed());
+					sm.setBaseTimeUnit(intMAnno.baseTimeUnit());
 					sm.setAvgResponseTime(intMAnno.avgResponseTime());
 					sm.setMonitorEnable(intMAnno.monitorEnable());
 					sm.setStream(intMAnno.stream());
+					sm.setDumpDownStream(intMAnno.dumpDownStream());
+					sm.setDumpUpStream(intMAnno.dumpUpStream());
 					sm.setNeedResponse(intMAnno.needResponse());
 					sm.setFailResponse(intMAnno.failResponse());
-					sm.setTimeWindowInMillis(intMAnno.timeWindowInMillis());
 					sm.setLoggable(intMAnno.loggable());
+					sm.setDebugMode(intMAnno.debugMode());
+					sm.setTimeWindow(intMAnno.timeWindow()<=0?item.getTimeWindow():intMAnno.timeWindow());
+					sm.setCheckInterval(intMAnno.checkInterval()<=0?item.getCheckInterval():intMAnno.checkInterval());
+					sm.setBaseTimeUnit(StringUtils.isEmpty(intMAnno.baseTimeUnit())? item.getBaseTimeUnit():intMAnno.baseTimeUnit());
 				}
+				 
+				sm.getBreakingRule().setBreakTimeInterval(sbr.breakTimeInterval());
+				sm.getBreakingRule().setEnable(sbr.enable());
+				sm.getBreakingRule().setPercent(sbr.percent());
+				sm.getBreakingRule().setCheckInterval(sbr.checkInterval());
+					
 			} 
 			
 			sm.getKey().setUsk(usk);
@@ -345,65 +373,6 @@ public class ServiceLoader {
 			return anno;
 		}
 		return intAnno;
-	}
-	
-	private String parseSpeedUnit(String maxSpeed) {
-		if(StringUtils.isEmpty(maxSpeed)){
-			return "";
-		}
-		maxSpeed = maxSpeed.trim().toLowerCase();
-		if(maxSpeed.endsWith("ms") || maxSpeed.endsWith("ns") ){
-			return maxSpeed.substring(maxSpeed.length()-2, maxSpeed.length());
-		}else {
-			return maxSpeed.substring(maxSpeed.length()-1, maxSpeed.length());
-		}
-	}
-
-	private int parseSpeed(String maxSpeed) {
-		if(StringUtils.isEmpty(maxSpeed)){
-			return 0;
-		}
-		maxSpeed = maxSpeed.trim().toLowerCase();
-		if(maxSpeed.endsWith("ms") || maxSpeed.endsWith("ns") ){
-			return Integer.parseInt(maxSpeed.substring(0, maxSpeed.length()-2));
-		}else {
-			return Integer.parseInt(maxSpeed.substring(0, maxSpeed.length()-1));
-		}
-	}
-
-	private void checkStreamCallback(String streamCb) {
-		if(StringUtils.isEmpty(streamCb)){
-			return;
-		}
-		
-		String msg = "Callback ["+streamCb+" params invalid";
-		String[] arr = streamCb.split("#");
-		if(arr.length != 2){
-			throw new CommonException(msg);
-		}
-		
-		String serviceName = arr[0];
-		if(serviceName.length() == 0){
-			throw new CommonException(msg);
-		}
-		
-		/*Object srv = ComponentManager.getObjectFactory().getByName(serviceName);
-		if(srv == null){
-			throw new CommonException(msg);
-		}*/
-			
-		String methodName = arr[1];
-		
-		int i = methodName.indexOf("(");
-		if(i < 0) {
-			throw new CommonException(msg);
-		}
-		
-		int j = methodName.indexOf(")");
-		if(j < 0) {
-			throw new CommonException(msg);
-		}
-		
 	}
 	
 	private String serviceName(Class<?> c) {

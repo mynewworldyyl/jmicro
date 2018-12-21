@@ -35,4 +35,7 @@ public class NettyClientSession  extends AbstractNettySession implements IClient
 		super(ctx,readBufferSize,heardbeatInterval, isWebSocket);
 	}
 	
+	public boolean isServer() {
+		return false;
+	}
 }

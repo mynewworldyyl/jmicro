@@ -23,6 +23,7 @@ import java.lang.reflect.Modifier;
 import java.lang.reflect.ParameterizedType;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
@@ -30,8 +31,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.jmicro.api.JMicroContext;
 import org.jmicro.api.annotation.Component;
 import org.jmicro.api.monitor.SubmitItem;
+import org.jmicro.api.registry.ServiceMethod;
 import org.jmicro.common.CommonException;
 import org.jmicro.common.Constants;
 import org.jmicro.common.Utils;
@@ -51,7 +54,7 @@ public class OnePrefixDecoder /*implements IDecoder*/{
 	@SuppressWarnings("unchecked")
 	public <V> V decode(ByteBuffer buffer) {
 		Class<?> cls = this.getType(buffer);
-		if(cls == Void.class) {
+		if(cls == Void.class || cls == null) {
 			return null;
 		}
 		
@@ -86,8 +89,7 @@ public class OnePrefixDecoder /*implements IDecoder*/{
 		}else if(TypeUtils.isCollection(cls)){
 			v =  decodeList(buffer,paramType);
 		}else if(TypeUtils.isArray(cls)){
-			Class<?> clazz = (Class<?>)cls;
-			v =  decodeObjects(buffer,clazz.getComponentType());
+			v =  decodeObjects(buffer,cls.getComponentType());
 		}else if(TypeUtils.isByteBuffer(cls)){
 			v =  decodeByteBuffer(buffer);
 		}else if(cls == String.class) {
@@ -129,19 +131,25 @@ public class OnePrefixDecoder /*implements IDecoder*/{
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	private Object decodeByReflect(ByteBuffer buffer, Class<?> cls) {
 		
-		if(cls == SubmitItem.class) {
-			//logger.debug("cls {}", cls.getName());
-		}
-		
 		int m = cls.getModifiers();
 		
 		if(Modifier.isAbstract(m) || Modifier.isInterface(m) || !Modifier.isPublic(m)){
+			logger.warn("decodeByReflect class [{}] not support decode",cls.getName());
 			throw new CommonException("invalid class modifier: "+ cls.getName());
 		}
 		
 		byte vt = buffer.get();
 		if(vt == Decoder.NULL_VALUE) {
+			if(logger.isDebugEnabled()) {
+				logger.debug("decodeByReflect get NULL Value {}",cls.getName());
+			}
 			return null;
+		}
+		
+		if(logger.isDebugEnabled() && needLog()) {
+			//ServiceMethod sm = this.getMethod();
+			//logger.debug("method: {}",sm.getKey().toKey(true, true, false));
+			//logger.debug("decodeByReflect class {}",cls.getName());
 		}
 		
 		Object obj = null;
@@ -205,12 +213,21 @@ public class OnePrefixDecoder /*implements IDecoder*/{
 					v = decodeObject(buffer,valueType,null);
 				}
 				
+				if(logger.isDebugEnabled() && needLog()) {
+					logger.debug("type {} : {}={}",valueType.getName(),f.getName(),v == null ? "null":v.toString());
+				}
+				
 				TypeUtils.setFieldValue(obj, v, f);
 			}
 		}
 		return obj;
 	}
 
+
+	private boolean needLog() {
+		ServiceMethod sm = this.getMethod();
+		return sm != null && "intrest".equals(sm.getKey().getMethod());
+	}
 
 	private <V> List<V> decodeList(ByteBuffer buffer, ParameterizedType paramType){
 		int len = buffer.getShort();
@@ -246,6 +263,7 @@ public class OnePrefixDecoder /*implements IDecoder*/{
 		boolean isFinal = Modifier.isFinal(eltType.getModifiers());
 		
 		Object objs = Array.newInstance(eltType, len);
+		
 		//Object[] objs = new Object[len];
 		for(int i = 0; i < len; i++){
 			if(!isFinal) {
@@ -254,6 +272,7 @@ public class OnePrefixDecoder /*implements IDecoder*/{
 			
 			Object obj = null;
 			if(eltType != Void.class) {
+				
 				obj = decodeObject(buffer,eltType,null);
 			}
 			Array.set(objs, i, obj);
@@ -298,7 +317,7 @@ public class OnePrefixDecoder /*implements IDecoder*/{
 		return map;
 	}
 		
-	private String decodeString(ByteBuffer buffer){
+	public static String decodeString(ByteBuffer buffer){
 		int len = buffer.getShort();
 		if(len <= 0) {
 			return null;
@@ -314,7 +333,7 @@ public class OnePrefixDecoder /*implements IDecoder*/{
 	}
 	private Class<?> getType(ByteBuffer buffer) {
 		byte prefixCodeType = buffer.get();
-		if( prefixCodeType == Decoder.PREFIX_TYPE_NULL){
+		if(prefixCodeType == Decoder.PREFIX_TYPE_NULL){
 			return null;
 		}
 		
@@ -328,7 +347,13 @@ public class OnePrefixDecoder /*implements IDecoder*/{
 					clsName = clsName.substring(2,clsName.length()-1);
 					cls = Thread.currentThread().getContextClassLoader().loadClass(clsName);
 					cls = Array.newInstance(cls, 0).getClass();
-				}else {
+					
+					ServiceMethod sm = this.getMethod();
+					if(sm != null && "intrest".equals(sm.getKey().getMethod())) {
+						logger.debug("eltType: {}",clsName);
+					}
+					
+				} else {
 					cls = Thread.currentThread().getContextClassLoader()
 							.loadClass(clsName);
 				}
@@ -343,5 +368,10 @@ public class OnePrefixDecoder /*implements IDecoder*/{
 			throw new CommonException("not support prefix type:" + prefixCodeType);
 		}
 		return cls;
+	}
+	
+	
+	private ServiceMethod getMethod() {
+		return JMicroContext.get().getParam(Constants.SERVICE_METHOD_KEY,null);
 	}
 }

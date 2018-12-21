@@ -19,7 +19,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>org.jmicro</groupId>
-    <artifactId>jmicro-parent</artifactId>
+    <artifactId>jmicro.parent</artifactId>
     <version>0.0.1-SNAPSHOT</version>
     <packaging>pom</packaging>
 
@@ -160,11 +160,6 @@
 				 <artifactId>jmicro.objfactory.simple</artifactId>
 				  <version>${jmicro.version}</version>
 	        </dependency>
-	         <dependency>
-				 <groupId>org.jmicro</groupId>
-				 <artifactId>jmicro.monitor.submiter</artifactId>
-				  <version>${jmicro.version}</version>
-	        </dependency>
 	          <dependency>
 				 <groupId>org.jmicro</groupId>
 				 <artifactId>jmicro.config</artifactId>
@@ -190,9 +185,14 @@
 			 <artifactId>jmicro.monitor.subermemory</artifactId>
 			 <version>${jmicro.version}</version>
 			 </dependency>
-			   <dependency>
+			<dependency>
 			 <groupId>org.jmicro</groupId>
 			 <artifactId>jmicro.monitor.dashboard</artifactId>
+			 <version>${jmicro.version}</version>
+			 </dependency>
+			 <dependency>
+			 <groupId>org.jmicro</groupId>
+			 <artifactId>jmicro.monitor.submiter</artifactId>
 			 <version>${jmicro.version}</version>
 			 </dependency>
 			  <dependency>

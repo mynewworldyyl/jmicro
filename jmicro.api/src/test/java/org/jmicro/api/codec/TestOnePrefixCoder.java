@@ -8,6 +8,7 @@ import java.util.Map;
 
 import org.jmicro.api.gateway.ApiRequest;
 import org.jmicro.api.gateway.ApiResponse;
+import org.jmicro.api.monitor.AbstractMonitorDataSubscriber;
 import org.jmicro.api.monitor.SubmitItem;
 import org.jmicro.api.net.Message;
 import org.jmicro.api.net.RpcRequest;
@@ -209,7 +210,7 @@ public class TestOnePrefixCoder {
 		ByteBuffer payload = encoder.encode(req);
 		payload.flip();
 		msg.setPayload(payload);
-		msg.setVersion(Constants.MSG_VERSION);
+		msg.setVersion(Message.MSG_VERSION);
 		
 		ByteBuffer msgBuffer = encoder.encode(msg);
 		msgBuffer.flip();
@@ -239,7 +240,7 @@ public class TestOnePrefixCoder {
 		ByteBuffer payload = encoder.encode(req);
 		payload.flip();
 		msg.setPayload(payload);
-		msg.setVersion(Constants.MSG_VERSION);
+		msg.setVersion(Message.MSG_VERSION);
 		req.setMsg(msg);
 		
 		ByteBuffer msgBuffer = encoder.encode(msg);
@@ -351,6 +352,40 @@ public class TestOnePrefixCoder {
 		
 		SubmitItem si1 = decoder.decode(bb);
 		System.out.println(si1);
+		
+	}
+	
+	@Test
+	public void testEncodeResponse(){
+		RpcResponse si = new RpcResponse();
+		
+		si.setResult(AbstractMonitorDataSubscriber.YTPES);
+		
+		ByteBuffer bb = encoder.encode(si);
+		
+		bb.flip();
+		
+		RpcResponse si1 = decoder.decode(bb);
+		
+		Integer[]  arr = (Integer[])si1.getResult();
+		
+		System.out.println(arr);
+		
+	}
+	
+	@Test
+	public void testIntegerArrayEncodeDecoder(){
+		Entity si = new Entity();
+		
+		ByteBuffer bb = encoder.encode(si);
+		
+		bb.flip();
+		
+		Entity si1 = decoder.decode(bb);
+		
+		Integer[]  arr = (Integer[])si1.types;
+		
+		System.out.println(arr);
 		
 	}
 

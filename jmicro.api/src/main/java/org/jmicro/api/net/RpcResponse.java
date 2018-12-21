@@ -16,6 +16,8 @@
  */
 package org.jmicro.api.net;
 
+import java.util.Arrays;
+
 import org.jmicro.api.AbstractObjectMapSupport;
 /**
  * 
@@ -125,6 +127,12 @@ public final class RpcResponse extends AbstractObjectMapSupport implements IResp
 
 	public Long getReqId() {
 		return reqId;
+	}
+
+	@Override
+	public String toString() {
+		return "RpcResponse [id=" + id + ", reqId=" + reqId + ", result type=" +result.getClass().getName()  + ", result=" + (result.getClass().isArray()?Arrays.asList((Object[])result).toString():result) + ", isMonitorEnable="
+				+ isMonitorEnable + ", success=" + success + "]";
 	}
 		
 }

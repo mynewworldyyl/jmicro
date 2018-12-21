@@ -17,6 +17,7 @@
 package org.jmicro.api.codec;
 
 import java.util.Random;
+import java.util.concurrent.TimeUnit;
 
 import org.jmicro.api.monitor.ServiceCounter;
 import org.junit.Test;
@@ -31,7 +32,7 @@ public class TestServiceCounter {
 	@Test
 	public void test01() {
 		ServiceCounter sc = new ServiceCounter("test");
-		sc.addCounter(1, 10*1000, 1000);
+		sc.addCounter(1, 10, 1,TimeUnit.SECONDS);
 		Random rand = new Random(1000);
 		
 		while(true) {

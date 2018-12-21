@@ -50,14 +50,14 @@
 			 <groupId>org.jmicro</groupId>
 			 <artifactId>jmicro.limit</artifactId>
         </dependency>
+          <dependency>
+			 <groupId>org.jmicro</groupId>
+			 <artifactId>jmicro.monitor.submiter</artifactId>
+        </dependency>
          <dependency>
 			 <groupId>org.jmicro</groupId>
 			 <artifactId>jmicro.example.api</artifactId>
 			  <version>0.0.1-SNAPSHOT</version>
-        </dependency>
-        <dependency>
-			 <groupId>org.jmicro</groupId>
-			 <artifactId>jmicro.monitor.submiter</artifactId>
         </dependency>
     </dependencies>
    

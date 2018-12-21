@@ -21,10 +21,10 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.jmicro.api.annotation.Cfg;
 import org.jmicro.api.annotation.Component;
-import org.jmicro.api.annotation.Inject;
 import org.jmicro.api.config.Config;
 import org.jmicro.api.exception.BreakerException;
 import org.jmicro.api.raft.IDataOperator;
@@ -35,7 +35,6 @@ import org.jmicro.api.registry.ServiceMethod;
 import org.jmicro.api.registry.UniqueServiceKey;
 import org.jmicro.api.registry.UniqueServiceMethodKey;
 import org.jmicro.api.service.ServiceManager;
-import org.jmicro.common.CommonException;
 import org.jmicro.common.Constants;
 import org.jmicro.common.util.JsonUtils;
 import org.jmicro.common.util.StringUtils;
@@ -52,11 +51,11 @@ public class ZKRegistry implements IRegistry {
 
 	private final static Logger logger = LoggerFactory.getLogger(ZKRegistry.class);
 	
-	private HashMap<String,Set<IServiceListener>> snvListeners = new HashMap<>();
+	private Map<String,Set<IServiceListener>> snvListeners = new ConcurrentHashMap<>();
 	
-	private HashMap<String,Set<IServiceListener>> serviceNameListeners = new HashMap<>();
+	private Map<String,Set<IServiceListener>> serviceNameListeners = new ConcurrentHashMap<>();
 	
-	private Map<String,ServiceItem> localRegistedItems = new HashMap<>();
+	private Map<String,ServiceItem> localRegistedItems = new ConcurrentHashMap<>();
 	
 	@Cfg("/ZKRegistry/openDebug")
 	private boolean openDebug = false;
@@ -145,7 +144,7 @@ public class ZKRegistry implements IRegistry {
 		removeServiceListener(this.serviceNameListeners,key,lis);
 	}
 	
-	private void removeServiceListener(HashMap<String,Set<IServiceListener>> listeners, String key,IServiceListener lis){
+	private void removeServiceListener(Map<String,Set<IServiceListener>> listeners, String key,IServiceListener lis){
 		if(!listeners.containsKey(key)){
 			return;
 		}
@@ -161,7 +160,7 @@ public class ZKRegistry implements IRegistry {
 		}
 	}
 	
-	private void addServiceListener(HashMap<String,Set<IServiceListener>> listeners, String key,IServiceListener lis){
+	private void addServiceListener(Map<String,Set<IServiceListener>> listeners, String key,IServiceListener lis){
 
 		if(listeners.containsKey(key)){
 			Set<IServiceListener> l = listeners.get(key);
@@ -195,11 +194,11 @@ public class ZKRegistry implements IRegistry {
 	@Override
 	public void regist(ServiceItem item) {
 		
-		String srvKey = item.key(Config.ServiceRegistDir);
+		String srvKey = item.path(Config.ServiceRegistDir);
 		localRegistedItems.put(srvKey, item);
 		
 		this.persisFromConfig(item);
-		String configKey = item.key(Config.ServiceItemCofigDir);
+		String configKey = item.path(Config.ServiceItemCofigDir);
 		if(!this.srvManager.exist(configKey)){
 			this.srvManager.updateOrCreate(item,configKey, false);
 		}
@@ -213,7 +212,7 @@ public class ZKRegistry implements IRegistry {
 
 	@Override
 	public void unregist(ServiceItem item) {
-		String key = item.key(Config.ServiceRegistDir);
+		String key = item.path(Config.ServiceRegistDir);
 		logger.debug("unregist service: "+key);
 		if(srvManager.exist(key)){
 			srvManager.removeService(key);
@@ -223,7 +222,7 @@ public class ZKRegistry implements IRegistry {
 
 	@Override
 	public void update(ServiceItem item) {
-		String key = item.key(Config.ServiceRegistDir);
+		String key = item.path(Config.ServiceRegistDir);
 		logger.debug("regist service: "+key);
 		if(srvManager.exist(key)){
 			srvManager.updateOrCreate(item, key, true);
@@ -363,7 +362,7 @@ public class ZKRegistry implements IRegistry {
         	logger.error("Item is NULL");
         	return;
         }
-		String key = item.key(Config.ServiceItemCofigDir);
+		String key = item.path(Config.ServiceItemCofigDir);
 		if(this.srvManager.exist(key)){
 			String data = dataOperator.getData(key);
 			ServiceItem perItem = this.fromJson(data);

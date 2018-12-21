@@ -94,13 +94,19 @@ public abstract class AbstractNettySession extends AbstractSession implements IC
 			bbf.writeBytes(data);
 			ctx.channel().writeAndFlush(bbf);
 		}
-		
+		//服务方写信息，是下行
+		this.dump(data,false,msg);
 	}
 
 	@Override
 	public void close(boolean flag) {
 		super.close(flag);
 		ctx.close();
+	}
+
+	@Override
+	public boolean isServer() {
+		return true;
 	}
 
 }

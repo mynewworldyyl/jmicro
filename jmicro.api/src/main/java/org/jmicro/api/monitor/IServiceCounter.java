@@ -16,6 +16,8 @@
  */
 package org.jmicro.api.monitor;
 
+import java.util.concurrent.TimeUnit;
+
 /**
  * 
  * @author Yulei Ye
@@ -30,10 +32,32 @@ public interface IServiceCounter {
 	 */
 	long get(Integer type);
 	
-	void add(Integer type,long val);
+	boolean add(Integer type,long val);
 	
-	void increment(Integer type);
+	/**
+	 * 计数器启动以来的总数
+	 * @param type
+	 * @return
+	 */
+	Double getTotal(Integer... type);
 	
-	void addCounter(Integer type,long timeWindow,long slotSize);
+	boolean increment(Integer type);
+	
+	boolean addCounter(Integer type,long timeWindow,long slotSize,TimeUnit unit);
+	
+	boolean addCounter(Integer type,long timeWindow,long slotSize,String unit);
+	
+	long getWithEx(Integer type);
+	
+	void addWithEx(Integer type,long val);
+	
+	/**
+	 * 计数器启动以来的总数
+	 * @param type
+	 * @return
+	 */
+	Double getTotalWithEx(Integer... type);
+	
+	void incrementWithEx(Integer type);
 	
 }

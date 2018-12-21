@@ -16,6 +16,9 @@
  */
 package org.jmicro.api.monitor;
 
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
@@ -25,6 +28,7 @@ import org.jmicro.api.timer.ITickerAction;
 import org.jmicro.api.timer.TimerTicker;
 import org.jmicro.common.CommonException;
 import org.jmicro.common.util.StringUtils;
+import org.jmicro.common.util.TimeUtils;
 
 /**
  * 
@@ -38,6 +42,8 @@ public class ServiceCounter implements IServiceCounter{
 	//服务唯一标识,粒度到服务方法,=服务名+名称空间+版本+方法名+方法参数标识
 	private String serviceKey;
 	
+	private Set<Integer> supportTypes = new HashSet<>();
+	
 	//统计数件的类型,每种类型对应一种计数器
 	private ConcurrentHashMap<Integer,Counter> counters = new ConcurrentHashMap<>();
 	
@@ -48,32 +54,91 @@ public class ServiceCounter implements IServiceCounter{
 		this.serviceKey = serviceKey;
 	}
 	
-	public ServiceCounter(String serviceKey,Integer[] types,long timeWindow) {
-		this(serviceKey,types,timeWindow,DEFAULT_SLOT_SIZE);
-	}
-	
-	public ServiceCounter(String serviceKey,Integer[] types,long timeWindow,long slotSizeInMilliseconds) {
-		if(StringUtils.isEmpty(serviceKey)) {
-			throw new CommonException("Service Key cannot be null");
-		}
-		this.serviceKey = serviceKey;
+	public ServiceCounter(String serviceKey,Integer[] types,long timeWindow,long slotSizeInMilliseconds,TimeUnit unit) {
+		this(serviceKey);
+		supportTypes.addAll(Arrays.asList(types));
 		for(Integer type : types) {
-			addCounter(type,timeWindow,slotSizeInMilliseconds);
+			addCounter(type,timeWindow,slotSizeInMilliseconds,unit);
 		}
 	}
 
-	public double getAvg(int type) {
-		return getCounter(type).getAvg();
-	}
 	@Override
 	public long get(Integer type) {
-		return getCounter(type).getVal();
+		Counter c = getCounter(type,false);
+		if(c != null) {
+			return  c.getVal();
+		}
+		//返回一个无效值，使用方应该判断此值是否有效才能使用
+		return -1;
+	}
+
+	@Override
+	public boolean add(Integer type, long val) {
+		Counter c = getCounter(type,false);
+		if(c != null) {
+			c.add(val);
+			return true;
+		}
+		//失败
+		return false;
+	}
+
+	@Override
+	public Double getTotal(Integer... types) {
+		double sum = 0;
+		for(Integer type : types) {
+			Counter c = getCounter(type,false);
+			if(c == null) {
+				//返回一个无效值，使用方应该判断此值是否有效才能使用
+				return -1D;
+			}
+			sum += getCounter(type,true).getTotal();
+		}
+		return sum;
 	}
 	
-	private Counter getCounter(int type) {
+	public double getAvg(int type,TimeUnit unit) {
+		Counter c = getCounter(type,false);
+		if(c != null) {
+			return c.getAvg(unit);
+		}
+		return -1;
+	}
+
+	@Override
+	public boolean increment(Integer type) {
+		Counter c = getCounter(type,false);
+		if(c != null) {
+			c.add(1);
+			return true;
+		}
+		return false;
+	}
+	
+	//***********************************************************//
+
+	public double getAvgWithEx(int type,TimeUnit unit) {
+		return getCounter(type,true).getAvg(unit);
+	}
+	
+	@Override
+	public long getWithEx(Integer type) {
+		return getCounter(type,true).getVal();
+	}
+	
+	public Double getTotalWithEx(Integer... types) {
+		double sum = 0;
+		for(Integer type : types) {
+			sum += getCounter(type,true).getTotal();
+		}
+		return sum;
+	}
+	
+	private Counter getCounter(int type,boolean withEx) {
 		Counter c = counters.get(type);
-		if(c == null) {
-			throw new CommonException("Type not support for service :"+this.serviceKey);
+		if(c == null && withEx) {
+			throw new CommonException("Type not support for service :"
+					+ this.serviceKey + ",type="+Integer.toHexString(type));
 		}
 		return c;
 	}
@@ -81,39 +146,53 @@ public class ServiceCounter implements IServiceCounter{
 	/**
 	 * 增加指定值
 	 */
-	public void add(Integer type,long val) {
-		getCounter(type).add(val);
+	public void addWithEx(Integer type,long val) {
+		getCounter(type,true).add(val);
 	}
 	
 	/**
 	 * 自增1
 	 */
-	public void increment(Integer type) {
-		this.add(type, 1);
+	public void incrementWithEx(Integer type) {
+		this.addWithEx(type, 1);
 	}
 	
-	public void addCounter(Integer type,long timeWindow,long slotSizeInMilliseconds) {
+	@Override
+	public boolean addCounter(Integer type, long timeWindow, long slotSize, String unit) {
+		return this.addCounter(type, timeWindow, slotSize, TimeUtils.getTimeUnit(unit));
+	}
+
+	public boolean addCounter(Integer type,long timeWindow,long slotSizeInMilliseconds,TimeUnit unit) {
 		if(this.counters.containsKey(type)) {
 			throw new CommonException("Type["+type+"] exists for service ["+this.serviceKey+"]");
 		}
+		
+		timeWindow = TimeUtils.getMilliseconds(timeWindow, unit);
+		slotSizeInMilliseconds = TimeUtils.getMilliseconds(slotSizeInMilliseconds, unit);
+		
 		if(timeWindow % slotSizeInMilliseconds != 0) {
 			throw new CommonException("timeWindow%slotSizeInMilliseconds must be zero,but:" +
 					timeWindow + "%" + slotSizeInMilliseconds+"="+(timeWindow % slotSizeInMilliseconds));
 		}
 		String key = serviceKey+"-"+type;
+		
 		Counter cnt = new Counter(timeWindow,slotSizeInMilliseconds);
-		TimerTicker.getTimer(slotSizeInMilliseconds).addListener(key, cnt,null);
+		TimerTicker.getDefault(slotSizeInMilliseconds).addListener(key, cnt,null);
 		this.counters.put(type, cnt);
+		supportTypes.add(type);
+		return true;
 	}
 	
 	static class Counter implements ITickerAction{
 		
 		//时间窗口,单位毫秒,统计只保持时间窗口内的数据,超过时间窗口的数据自动丢弃
-		//统计数据平滑向前移动
+		//统计数据平滑向前移动,单位毫秒
 		private final long timeWindow;
 		
 		//每个槽位占用时间长度,单位毫秒
 		private final long slotSizeInMilliseconds;
+		
+		private final int slotLen;
 		
 		//private final String id;
 		
@@ -121,9 +200,9 @@ public class ServiceCounter implements IServiceCounter{
 		
 		private int header = -1;
 		
-		private final int slotLen;
-		
 		private final ReentrantLock locker = new ReentrantLock();
+		
+		private AtomicLong total = new  AtomicLong(0);
 		
 		/**
 		 * 
@@ -145,7 +224,7 @@ public class ServiceCounter implements IServiceCounter{
 			
 			long curTime = System.currentTimeMillis();
 			for(int i = 0; i < this.slotLen; i++) {
-				this.slots[i] = new Slot(curTime + slotSizeInMilliseconds,0);
+				this.slots[i] = new Slot(curTime + slotSizeInMilliseconds*i,0);
 			}
 		}
 		
@@ -157,22 +236,39 @@ public class ServiceCounter implements IServiceCounter{
 			long curTime = System.currentTimeMillis();
 			for(int i = 0; i < this.slots.length; i++) {
 				if(curTime - this.slots[i].getTimeStart() > timeWindow ) {
+					//槽位时间值已经超过时间窗口，重置之
 					this.slots[i].reset();
 				}
 			}
 		}
 		
 		/**
-		 * 当前窗口同平均值
+		 * 当前窗口同平均值，总值除时间窗口
 		 * @return
 		 */
-		public double getAvg() {
+		public double getAvg(TimeUnit timeUnit) {
 			long sum = getVal();
-			return ((double)sum)/this.timeWindow;
+			long time = this.timeWindow;
+			
+			if(timeUnit == TimeUnit.SECONDS) {
+				time = TimeUnit.MILLISECONDS.toSeconds(this.timeWindow);
+			}else if(timeUnit == TimeUnit.MINUTES) {
+				time = TimeUnit.MILLISECONDS.toMinutes(this.timeWindow);
+			}else if(timeUnit == TimeUnit.HOURS) {
+				time = TimeUnit.MILLISECONDS.toHours(this.timeWindow);
+			}else if(timeUnit == TimeUnit.DAYS) {
+				time = TimeUnit.MILLISECONDS.toDays(this.timeWindow);
+			}else if(timeUnit == TimeUnit.MICROSECONDS) {
+				time = TimeUnit.MILLISECONDS.toMicros(this.timeWindow);
+			}else if(timeUnit == TimeUnit.NANOSECONDS) {
+				time = TimeUnit.MILLISECONDS.toNanos(this.timeWindow);
+			}
+			
+			return ((double)sum)/time;
 		}
 
 		/**
-		 * 总值
+		 * 总值，直接计算全部槽位值的总和，如果有过期槽位，上面已经设置为0，所以没有影响
 		 * @return
 		 */
 		public long getVal() {
@@ -187,6 +283,7 @@ public class ServiceCounter implements IServiceCounter{
 		 * 递增1
 		 */
 		public void increment() {
+			total.addAndGet(1);
 			currentSlot().increment();
 		}
 		
@@ -195,6 +292,7 @@ public class ServiceCounter implements IServiceCounter{
 		 * @param v
 		 */
 		public void add(long v) {
+			total.addAndGet(v);
 			currentSlot().add(v);
 		}
 		
@@ -241,6 +339,10 @@ public class ServiceCounter implements IServiceCounter{
 				return slot;
 			}
 		}
+
+		public long getTotal() {
+			return total.get();
+		}
 	}
 	
 	static class Slot {
@@ -271,7 +373,7 @@ public class ServiceCounter implements IServiceCounter{
 		}
 		
 		public void add(long v) {
-			this.val.addAndGet(v);
+			this.val.getAndAdd(v);
 		}
 		
 		public void increment() {

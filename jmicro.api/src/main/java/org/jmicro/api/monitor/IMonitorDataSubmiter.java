@@ -19,4 +19,6 @@ public interface IMonitorDataSubmiter {
 	void submit(int type,String... args);
 	
 	void submit(SubmitItem item);
+	
+	boolean canSubmit(Integer type);
 }

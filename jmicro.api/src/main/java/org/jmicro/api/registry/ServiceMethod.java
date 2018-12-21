@@ -18,8 +18,11 @@ package org.jmicro.api.registry;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
+import java.util.concurrent.TimeUnit;
 
 import org.jmicro.common.CommonException;
+import org.jmicro.common.Constants;
+import org.jmicro.common.util.TimeUtils;
 
 /**
  * 
@@ -31,12 +34,18 @@ public final class ServiceMethod {
 	private UniqueServiceMethodKey key = new UniqueServiceMethodKey();
 	
 	//private String methodName="";
-	
 	//private String[] methodParamTypes; //full type name
 	
 	//-1 use Service config, 0 disable, 1 enable
 	private int monitorEnable = -1;
 	private int loggable  = -1;
+	//dump 下行流，用于下行数问题排查
+	private boolean dumpDownStream = false;
+	//dump 上行流，用于上行数问题排查
+	private boolean dumpUpStream = false;
+	
+	//开启debug模式
+	private int debugMode = -1;
 	
 	private int retryCnt; //method can retry times, less or equal 0 cannot be retry
 	private int retryInterval; // milliseconds how long to wait before next retry
@@ -44,7 +53,14 @@ public final class ServiceMethod {
 	
 	private BreakRule breakingRule = new BreakRule();
 	
-	private long timeWindowInMillis = 1000*10;
+	//统计服务数据基本时长，单位同baseTimeUnit确定 @link SMethod
+	private long timeWindow = -1;
+	
+	//采样统计数据周期，单位由baseTimeUnit确定
+	private long checkInterval = -1;
+	
+	//基本时间单位  @link SMethod
+	private String baseTimeUnit = Constants.TIME_MILLISECONDS;
 	
 	/**
 	 * true all service method will fusing, false is normal service status
@@ -68,11 +84,9 @@ public final class ServiceMethod {
 	private String testingArgs;
 	
 	/**
-	 * max qps
+	 * max qps，单位同baseTimeUnit确定
 	 */
 	private int maxSpeed = -1;
-	
-	private String speedUnit = "MS";
 	
 	/**
 	 *  milliseconds
@@ -98,14 +112,14 @@ public final class ServiceMethod {
 	private int degrade = 1;
 	
 	//0: need response, 1:no need response
-	public boolean needResponse = true;
+	private boolean needResponse = true;
 
 	//true async return result,
 	//public boolean async = false;
 
 	//false: not stream, true:stream, more than one request and response double stream
 	//a stream service must be async=true, and get got result by callback
-	public boolean stream = false;
+	private boolean stream = false;
 
 	public void formPersisItem(ServiceMethod p){
 		this.monitorEnable = p.monitorEnable;
@@ -126,6 +140,13 @@ public final class ServiceMethod {
 		
 		this.loggable = p.loggable;
 		
+		this.baseTimeUnit = p.baseTimeUnit;
+		this.checkInterval = p.checkInterval;
+		
+		this.dumpDownStream = p.dumpDownStream;
+		this.dumpUpStream = p.dumpUpStream;
+		this.debugMode = p.debugMode;
+		
 	}
 	
 	public String toJson(){
@@ -134,7 +155,7 @@ public final class ServiceMethod {
 		
 		for(int i =0; i < fields.length; i++){
 			Field f = fields[i];
-			if(Modifier.isStatic(f.getModifiers())){
+			if(Modifier.isStatic(f.getModifiers()) || Modifier.isTransient(f.getModifiers())){
 				continue;
 			}
 			try {
@@ -148,15 +169,6 @@ public final class ServiceMethod {
 			}
 		}
 		
-		/*sb.append("maxFailBeforeCutdown").append(":").append(this.getMaxFailBeforeCutdown()).append(",");
-		sb.append("methodName").append(":").append(this.getMethodName()).append(",");
-		sb.append("methodParamTypes").append(":").append(this.getMethodParamTypes()).append(",");
-		sb.append("retryCnt").append(":").append(this.getRetryCnt()).append(",");
-		sb.append("retryInterval").append(":").append(this.getRetryInterval()).append(",");
-		sb.append("timeout").append(":").append(this.getTimeout()).append(",");
-		sb.append("maxFailBeforeDowngrade").append(":").append(this.getMaxFailBeforeDowngrade()).append(",");
-		sb.append("testingArgs").append(":").append(this.getTestingArgs()).append("");*/
-		sb.append("}");
 		return sb.toString();
 	}
 	
@@ -198,6 +210,22 @@ public final class ServiceMethod {
 		}
 	}
 	
+	public boolean isDumpDownStream() {
+		return dumpDownStream;
+	}
+
+	public void setDumpDownStream(boolean dumpDownStream) {
+		this.dumpDownStream = dumpDownStream;
+	}
+
+	public boolean isDumpUpStream() {
+		return dumpUpStream;
+	}
+
+	public void setDumpUpStream(boolean dumpUpStream) {
+		this.dumpUpStream = dumpUpStream;
+	}
+
 	public boolean isBreaking() {
 		return breaking;
 	}
@@ -226,6 +254,22 @@ public final class ServiceMethod {
 		return loggable;
 	}
 
+	public int getDebugMode() {
+		return debugMode;
+	}
+
+	public void setDebugMode(int debugMode) {
+		this.debugMode = debugMode;
+	}
+
+	public long getCheckInterval() {
+		return checkInterval;
+	}
+
+	public void setCheckInterval(long checkInterval) {
+		this.checkInterval = checkInterval;
+	}
+
 	public void setLoggable(int loggable) {
 		this.loggable = loggable;
 	}
@@ -248,14 +292,6 @@ public final class ServiceMethod {
 
 	public void setMaxSpeed(int maxSpeed) {
 		this.maxSpeed = maxSpeed;
-	}
-
-	public String getSpeedUnit() {
-		return speedUnit;
-	}
-
-	public void setSpeedUnit(String speedUnit) {
-		this.speedUnit = speedUnit;
 	}
 
 	public void setRetryCnt(int retryCnt) {
@@ -302,7 +338,7 @@ public final class ServiceMethod {
 		this.testingArgs = testingArgs;
 	}
 
-	public boolean getNeedResponse() {
+	public boolean isNeedResponse() {
 		return needResponse;
 	}
 
@@ -334,12 +370,21 @@ public final class ServiceMethod {
 		this.breakingRule = breakingRule;
 	}
 
-	public long getTimeWindowInMillis() {
-		return timeWindowInMillis;
+
+	public long getTimeWindow() {
+		return timeWindow;
 	}
 
-	public void setTimeWindowInMillis(long timeWindowInMillis) {
-		this.timeWindowInMillis = timeWindowInMillis;
+	public void setTimeWindow(long timeWindow) {
+		this.timeWindow = timeWindow;
 	}
-	
+
+	public String getBaseTimeUnit() {
+		return baseTimeUnit;
+	}
+
+	public void setBaseTimeUnit(String baseTimeUnit) {
+		this.baseTimeUnit = baseTimeUnit;
+	}
+
 }

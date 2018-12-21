@@ -22,6 +22,7 @@ import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.Inject;
 import org.jmicro.api.annotation.Reference;
 import org.jmicro.api.codec.ICodecFactory;
+import org.jmicro.api.config.Config;
 import org.jmicro.api.idgenerator.IIdClient;
 import org.jmicro.api.monitor.MonitorConstant;
 import org.jmicro.api.monitor.SF;
@@ -82,13 +83,21 @@ public class JRPCReqRespHandler implements IMessageHandler{
 		   
 		RpcRequest req = null;
 		boolean needResp = true;
-		RpcResponse resp = new RpcResponse();
-		resp.setReqId(msg.getReqId());
-		resp.setMsg(msg);
-		resp.setSuccess(true);
-		resp.setId(idGenerator.getLongId(IResponse.class.getName()));
+		RpcResponse resp =  new RpcResponse();
+		
 	    try {
 
+			resp.setReqId(msg.getReqId());
+			resp.setMsg(msg);
+			resp.setSuccess(true);
+			resp.setId(idGenerator.getLongId(IResponse.class.getName()));
+			
+			if(msg.isDebugMode()) {
+				msg.setId(idGenerator.getLongId(Message.class.getName()));
+				msg.setInstanceName(Config.getInstanceName());
+				msg.setTime(System.currentTimeMillis());
+			}
+			
 	    	//req1为内部类访问
 	    	final RpcRequest req1 = ICodecFactory.decode(this.codeFactory,msg.getPayload(),
 					RpcRequest.class,msg.getProtocol());
@@ -109,7 +118,7 @@ public class JRPCReqRespHandler implements IMessageHandler{
 			msg.setVersion(req.getMsg().getVersion());
 				
 			if(msg.isLoggable()){
-				SF.doRequestLog(MonitorConstant.DEBUG,msg.getLinkId(), TAG, req,null,"got REQUEST");
+				SF.doRequestLog(MonitorConstant.LOG_DEBUG,msg.getLinkId(), TAG, req,null,"got REQUEST");
 			}
 			
 			if(req.isStream()){
@@ -130,7 +139,7 @@ public class JRPCReqRespHandler implements IMessageHandler{
 						msg.setType(Constants.MSG_TYPE_ASYNC_RESP);
 						
 						if(msg.isLoggable()) {
-							SF.doResponseLog(MonitorConstant.DEBUG, msg.getLinkId(), TAG, resp,null,"STREAM",resp.getId()+"");
+							SF.doResponseLog(MonitorConstant.LOG_DEBUG, msg.getLinkId(), TAG, resp,null,"STREAM",resp.getId()+"");
 						}
 						s.write(msg);
 						return true;
@@ -162,10 +171,9 @@ public class JRPCReqRespHandler implements IMessageHandler{
 				
 				msg.setType((byte)(msg.getType()+1));
 				msg.setPayload(ICodecFactory.encode(codeFactory,resp,msg.getProtocol()));
-				msg.setId(idGenerator.getLongId(Message.class.getName()));
 				
 				if(msg.isLoggable()) {
-					SF.doResponseLog(MonitorConstant.DEBUG,msg.getLinkId(),TAG, resp,null,"STREAM Confirm");
+					SF.doResponseLog(MonitorConstant.LOG_DEBUG,msg.getLinkId(),TAG, resp,null,"STREAM Confirm");
 				}
 				
 				s.write(msg);
@@ -179,23 +187,28 @@ public class JRPCReqRespHandler implements IMessageHandler{
 				}
 				msg.setPayload(ICodecFactory.encode(codeFactory,resp,msg.getProtocol()));
 				msg.setType((byte)(msg.getType()+1));
-				msg.setId(idGenerator.getLongId(Message.class.getName()));
 				
-				if(SF.isLoggable(this.openDebug,MonitorConstant.DEBUG)) {
-					SF.doResponseLog(MonitorConstant.DEBUG,msg.getLinkId(), TAG, resp,null);
+				if(SF.isLoggable(this.openDebug,MonitorConstant.LOG_DEBUG)) {
+					SF.doResponseLog(MonitorConstant.LOG_DEBUG,msg.getLinkId(), TAG, resp,null);
 				}
 				
 				s.write(msg);
 			}
 			SF.doSubmit(MonitorConstant.SERVER_REQ_OK, req,resp,null);
 		} catch (Throwable e) {
-			SF.doMessageLog(MonitorConstant.ERROR, TAG, msg,e);
+			SF.doMessageLog(MonitorConstant.LOG_ERROR, TAG, msg,e);
 			SF.doSubmit(MonitorConstant.SERVER_REQ_ERROR, req,resp,null);
 			logger.error("reqHandler error: ",e);
 			if(needResp && req != null ){
 				resp = new RpcResponse(req.getRequestId(),new ServerError(0,e.getMessage()));
 				resp.setSuccess(false);
+				msg.setPayload(ICodecFactory.encode(codeFactory,resp,msg.getProtocol()));
+				msg.setType((byte)(msg.getType()+1));
+				msg.setInstanceName(Config.getInstanceName());
+				msg.setTime(System.currentTimeMillis());
+				s.write(msg);
 			}
+			
 			s.close(true);
 		}
 	}

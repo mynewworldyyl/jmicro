@@ -16,6 +16,7 @@
  */
 package org.jmicro.api.net;
 
+import java.util.Arrays;
 import java.util.Map;
 
 import org.jmicro.api.AbstractObjectMapSupport;
@@ -209,4 +210,12 @@ public final class RpcRequest extends AbstractObjectMapSupport implements IReque
 	public void setId(long id) {
 		this.reqId = id;
 	}
+
+	@Override
+	public String toString() {
+		return "RpcRequest [serviceName=" + serviceName + ", method=" + method + ", args=" + Arrays.toString(args)
+				+ ", namespace=" + namespace + ", version=" + version + ", impl=" + impl + ", transport=" + transport
+				+ ", reqId=" + reqId + "]";
+	}
+	
 }

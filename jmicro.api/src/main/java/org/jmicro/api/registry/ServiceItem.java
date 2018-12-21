@@ -20,11 +20,14 @@ import java.lang.reflect.Field;
 import java.util.HashSet;
 import java.util.Random;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 import org.jmicro.api.config.Config;
 import org.jmicro.common.CommonException;
+import org.jmicro.common.Constants;
 import org.jmicro.common.Utils;
 import org.jmicro.common.util.StringUtils;
+import org.jmicro.common.util.TimeUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -64,9 +67,24 @@ public final class ServiceItem{
 	
 	private String instanceName;
 	
+	//开启debug模式
+	private int debugMode = -1;
+		
 	private int monitorEnable = -1;
 	private int loggable = -1;
 	
+	//基本时间单位
+	private String baseTimeUnit = Constants.TIME_MILLISECONDS;
+	
+	//由baseTimeUnit计算出来的JVM极别的时间单位，方便使用
+	private transient TimeUnit timeUnit = TimeUnit.MILLISECONDS;
+	
+	//统计服务数据基本时长，单位同baseTimeUnit确定 @link SMethod
+	private long timeWindow = -1;
+	
+	//采样统计数据周期，单位由baseTimeUnit确定
+	private long checkInterval = -1;
+		
 	private Set<Server> servers = new HashSet<Server>();
 	
 	private String impl;
@@ -91,8 +109,6 @@ public final class ServiceItem{
 	private int degrade = -1;
 	
 	private int maxSpeed = -1;
-	
-	private String speedUnit = "MS";
 	
 	/**
 	 *  milliseconds
@@ -133,6 +149,11 @@ public final class ServiceItem{
 		this.avgResponseTime = p.avgResponseTime;
 		this.loggable = p.loggable;
 		
+		this.baseTimeUnit = p.baseTimeUnit;
+		this.timeUnit = p.timeUnit;
+		this.timeWindow = p.timeWindow;
+		this.checkInterval = p.checkInterval;
+		
 		for(ServiceMethod sm : p.getMethods()){
 			ServiceMethod nsm = this.getMethod(sm.getKey().getMethod(), sm.getKey().getParamsStr());
 			if(nsm != null){
@@ -141,6 +162,14 @@ public final class ServiceItem{
 				nsm.getBreakingRule().from(sm.getBreakingRule());
 			}
 		}
+	}
+
+	public long getTimeWindow() {
+		return timeWindow;
+	}
+
+	public void setTimeWindow(long timeWindow) {
+		this.timeWindow = timeWindow;
 	}
 
 	public String getImpl() {
@@ -177,6 +206,14 @@ public final class ServiceItem{
 
 	public void setAvgResponseTime(int avgResponseTime) {
 		this.avgResponseTime = avgResponseTime;
+	}
+
+	public int getDebugMode() {
+		return debugMode;
+	}
+
+	public void setDebugMode(int debugMode) {
+		this.debugMode = debugMode;
 	}
 
 	public int getLoggable() {
@@ -245,6 +282,9 @@ public final class ServiceItem{
 				logger.error("parseVal Field:"+vs[0],e);
 			}
 		}
+		
+		this.timeUnit = TimeUtils.getTimeUnit(this.baseTimeUnit);
+		
 		if(methodStr.length() == 2){
 			return;
 		}
@@ -277,17 +317,28 @@ public final class ServiceItem{
 		return getMethod(methodName, mkStr);
 	}
 	
-	//服务实例标识，带上实例名和主机IP
-	public String key(String root){
+	//服务实例标识,带上实例名和主机IP
+	public String path(String root){
 		StringBuffer sb = new StringBuffer(root);
 		sb.append(FILE_SEPERATOR);
-		sb.append(key.toKey(true,true,false));
+		sb.append(key());
 		return sb.toString();
+	}
+	
+	public static String pathForKey(String key){
+		StringBuffer sb = new StringBuffer(Config.ServiceRegistDir);
+		sb.append(FILE_SEPERATOR);
+		sb.append(key);
+		return sb.toString();
+	}
+	
+	public String key(){
+		return key.toKey(true,true,false);
 	}
 
 	@Override
 	public int hashCode() {
-		return this.key(Config.ServiceRegistDir).hashCode();
+		return this.path(Config.ServiceRegistDir).hashCode();
 	}
 
 	@Override
@@ -295,7 +346,7 @@ public final class ServiceItem{
 		if(obj == null || !(obj instanceof ServiceItem)) {
 			return false;
 		}
-		return this.key(Config.ServiceRegistDir).equals(((ServiceItem)obj).key(Config.ServiceRegistDir));
+		return this.path(Config.ServiceRegistDir).equals(((ServiceItem)obj).path(Config.ServiceRegistDir));
 	}
 
 	public int getMaxSpeed() {
@@ -304,14 +355,6 @@ public final class ServiceItem{
 
 	public void setMaxSpeed(int maxSpeed) {
 		this.maxSpeed = maxSpeed;
-	}
-
-	public String getSpeedUnit() {
-		return speedUnit;
-	}
-
-	public void setSpeedUnit(String speedUnit) {
-		this.speedUnit = speedUnit;
 	}
 
 	public int getRetryCnt() {
@@ -356,6 +399,31 @@ public final class ServiceItem{
 
 	public void setKey(UniqueServiceKey key) {
 		this.key = key;
+	}
+
+	public String getBaseTimeUnit() {
+		return baseTimeUnit;
+	}
+
+	public void setBaseTimeUnit(String baseTimeUnit) {
+		this.baseTimeUnit = baseTimeUnit;
+		this.setTimeUnit(TimeUtils.getTimeUnit(baseTimeUnit));
+	}
+
+	public TimeUnit getTimeUnit() {
+		return timeUnit;
+	}
+
+	public void setTimeUnit(TimeUnit timeUnit) {
+		this.timeUnit = timeUnit;
+	}
+
+	public long getCheckInterval() {
+		return checkInterval;
+	}
+
+	public void setCheckInterval(long checkInterval) {
+		this.checkInterval = checkInterval;
 	}
 	
 }

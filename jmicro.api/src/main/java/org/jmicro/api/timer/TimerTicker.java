@@ -16,13 +16,13 @@
  */
 package org.jmicro.api.timer;
 
-import java.util.HashMap;
 import java.util.Map;
+import java.util.Queue;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
-import org.jmicro.api.annotation.Component;
 import org.jmicro.common.CommonException;
 
 /**
@@ -32,9 +32,13 @@ import org.jmicro.common.CommonException;
  */
 public class TimerTicker {
 
-	private static final Map<Long,TimerTicker> timers = new ConcurrentHashMap<>();
+	private static final Map<Long,TimerTicker> defaultTimers = new ConcurrentHashMap<>();
 	
-	public static TimerTicker getTimer(Long ticker) {
+	public static TimerTicker getDefault(Long ticker) {
+		return getTimer(defaultTimers,ticker);
+	}
+	
+	public static TimerTicker getTimer(Map<Long,TimerTicker> timers,Long ticker) {
 		if(timers.containsKey(ticker)) {
 			return timers.get(ticker);
 		} else {
@@ -46,8 +50,9 @@ public class TimerTicker {
 	//private long ticker;
 	private Timer timer;
 	
-	private Map<String,ITickerAction> listeners = new HashMap<>();
-	private Map<String,Object> attachements = new HashMap<>();
+	private Map<String,ITickerAction> listeners = new ConcurrentHashMap<>();
+	private Map<String,Object> attachements = new ConcurrentHashMap<>();
+	private Queue<String> removeKeys = new ConcurrentLinkedQueue<>();
 	
 	public TimerTicker(long ticker) {
 		//this.ticker = ticker;
@@ -56,6 +61,13 @@ public class TimerTicker {
 			@Override
 			public void run() {
 				notifyAction();
+				if(!removeKeys.isEmpty()) {
+					for(;!removeKeys.isEmpty();) {
+						String k = removeKeys.poll();
+						listeners.remove(k);
+						attachements.remove(k);
+					}
+				}
 			}
 		}, 0, ticker);
 	}
@@ -77,7 +89,11 @@ public class TimerTicker {
 	}
 	
 	public void removeListener(String key) {
-		listeners.remove(key);
+		removeKeys.offer(key);
+	}
+	
+	public boolean container(String key) {
+		return listeners.containsKey(key);
 	}
 
 }

@@ -43,8 +43,8 @@ import org.slf4j.LoggerFactory;
  * @author Yulei Ye
  * @date 2018年10月18日-下午9:39:50
  */
-@Component
-@Service(version="0.0.1", namespace="timeoutExceptionMonitor",monitorEnable=0)
+//@Component(active=false)
+//@Service(version="0.0.1", namespace="timeoutExceptionMonitor",monitorEnable=0)
 public class TimeoutExceptionMonitor extends AbstractMonitorDataSubscriber implements IMonitorDataSubscriber {
 
 	private final static Logger logger = LoggerFactory.getLogger(TimeoutExceptionMonitor.class);
@@ -92,7 +92,7 @@ public class TimeoutExceptionMonitor extends AbstractMonitorDataSubscriber imple
 		
 		for(Map.Entry<String, Queue<ExceItem>> e : excepts.entrySet()){
 			Queue<ExceItem> q = e.getValue();
-			degradeManager.updateExceptionCnt(e.getKey(), q.size());
+			degradeManager.updateExceptionCnt(e.getKey(), q.size()+"");
 		}
 	
 	}

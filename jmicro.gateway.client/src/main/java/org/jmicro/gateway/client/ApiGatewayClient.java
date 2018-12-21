@@ -134,7 +134,7 @@ public class ApiGatewayClient {
 		bb.flip();
 		
 		msg.setPayload(bb);
-		msg.setVersion(Constants.MSG_VERSION);
+		msg.setVersion(Message.MSG_VERSION);
 		
 		String clazzName =(String) getResponse(msg,null);
 		
@@ -259,7 +259,7 @@ public class ApiGatewayClient {
 		ByteBuffer bb = encoder.encode(req);
 		bb.flip();
 		msg.setPayload(bb);
-		msg.setVersion(Constants.MSG_VERSION);
+		msg.setVersion(Message.MSG_VERSION);
 		
 		return msg;
     }

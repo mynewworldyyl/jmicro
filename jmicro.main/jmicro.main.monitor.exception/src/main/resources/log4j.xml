@@ -49,11 +49,17 @@
 			<param name="ConversionPattern" value="[%d][%p,%c{1}] %m%n"/>
 		</layout>
 	</appender>
-
+	
+	<logger name="org.jmicro.api.codec">
+		<level value="INFO"/>
+		<appender-ref ref="jmicro_debug"/>
+	</logger>
+	
 	<logger name="org.jmicro">
 		<level value="DEBUG"/>
 		<appender-ref ref="jmicro_debug"/>
 	</logger>
+	
 	<logger name="org.apache.zookeeper">
 		<level value="ERROR"/>
 		<appender-ref ref="jmicro_error"/>
@@ -62,6 +68,7 @@
 		<level value="ERROR"/>
 		<appender-ref ref="jmicro_error"/>
 	</logger>
+	
 	<root>	
 	    <level value="DEBUG"/>
 		<appender-ref ref="CONSOLE"/>

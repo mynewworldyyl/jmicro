@@ -28,9 +28,11 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
+import org.jmicro.api.JMicroContext;
 import org.jmicro.api.annotation.Cfg;
 import org.jmicro.api.annotation.Component;
 import org.jmicro.api.monitor.SubmitItem;
+import org.jmicro.api.registry.ServiceMethod;
 import org.jmicro.common.CommonException;
 import org.jmicro.common.Constants;
 import org.jmicro.common.Utils;
@@ -261,7 +263,7 @@ public class OnePrefixTypeEncoder implements IEncoder<ByteBuffer>{
 		
 	}
 	
-	private void putLength(ByteBuffer buffer,int len) {
+	public static void putLength(ByteBuffer buffer,int len) {
 		buffer.putShort((short)len);
 	}
 
@@ -279,6 +281,11 @@ public class OnePrefixTypeEncoder implements IEncoder<ByteBuffer>{
 		}
 		
 		boolean nw = TypeUtils.isFinal(objs.getClass().getComponentType());
+		
+		/*ServiceMethod sm = JMicroContext.get().getParam(Constants.SERVICE_METHOD_KEY,null);
+		if(sm != null && "intrest".equals(sm.getKey().getMethod())) {
+			logger.debug("type:{},value:{}",objs.getClass().getComponentType().getName(),objs);
+		}*/
 		
 		for(int i = 0; i < len; i++){
 			Object v = Array.get(objs, i);
@@ -330,16 +337,32 @@ public class OnePrefixTypeEncoder implements IEncoder<ByteBuffer>{
 		}
 	}
 	
-	private void encodeString(ByteBuffer buffer,String str){
+	public static void encodeString(ByteBuffer buffer,String str){
 		if(StringUtils.isEmpty(str)){
 			putLength(buffer,0);
 			return;
 		}
 	    try {
+	    	ServiceMethod sm = JMicroContext.get().getParam(Constants.SERVICE_METHOD_KEY,null);
+			if(sm != null && "intrest".equals(sm.getKey().getMethod()) && str.startsWith("[L")) {
+				logger.debug("eltType: {}",str);
+			}
 			byte[] data = str.getBytes(Constants.CHARSET);
 			putLength(buffer,data.length);
 			buffer.put(data);
 		} catch (UnsupportedEncodingException e) {
+			throw new CommonException("encodeString error: "+str);
+		}
+	}
+	
+	public static int encodeStringLen(String str){
+		if(StringUtils.isEmpty(str)){
+			return 0;
+		}
+		try {
+			return str.getBytes(Constants.CHARSET).length+2;
+		} catch (UnsupportedEncodingException e) {
+			throw new CommonException("encodeStringLen error: "+str);
 		}
 	}
 
@@ -359,6 +382,7 @@ public class OnePrefixTypeEncoder implements IEncoder<ByteBuffer>{
 		}/*else if(cls.isArray()) {
 			cls = Array.class;
 		}*/
+		
 		
 		if(type == null || type == Decoder.NON_ENCODE_TYPE ) {
 			buffer.put(Decoder.PREFIX_TYPE_STRING);

@@ -16,7 +16,6 @@
  */
 package org.jmicro.transport.netty.client;
 
-import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
 import java.util.Map;
 import java.util.Timer;
@@ -89,6 +88,12 @@ public class NettyClientSessionManager implements IClientSessionManager{
 	@Inject(required=true)
 	private IMessageReceiver receiver;
 	
+	@Cfg(value="/NettyClientSessionManager/dumpDownStream",defGlobal=false)
+	private boolean dumpDownStream  = false;
+	
+	@Cfg(value="/NettyClientSessionManager/dumpUpStream",defGlobal=false)
+	private boolean dumpUpStream  = false;
+	
 	private Timer ticker = new Timer("ClientSessionHeardbeatWorker",true);
 	
 	public void init()  {
@@ -158,6 +163,7 @@ public class NettyClientSessionManager implements IClientSessionManager{
 					public void handlerAdded(ChannelHandlerContext ctx) throws Exception {
 						super.handlerAdded(ctx);
 	                   NettyClientSession s = new NettyClientSession(ctx,readBufferSize,heardbeatInterval,false);
+	                   s.setReceiver(receiver);
 	                   s.putParam(Constants.SESSION_KEY, ctx);
 	      	           sessions.put(sKey, s);
 					}
@@ -171,38 +177,30 @@ public class NettyClientSessionManager implements IClientSessionManager{
 	                 		return;
 		                }
 	                	 
-	                	NettyClientSession cs = (NettyClientSession)ctx.channel().attr(sessionKey).get();
-	                	if(monitorEnable(ctx) && monitor != null){
-	                		monitor.submit(MonitorConstant.CLIENT_IOSESSION_READ, cs.getId()+"",
-	                				cs.getReadBuffer().remaining()+"",((ByteBuf)msg).readableBytes()+"");
-	                    }
-	                 	
-	                 	ByteBuf bb = (ByteBuf)msg;
+	                	ByteBuf bb = (ByteBuf)msg;
 	                 	if(bb.readableBytes() <= 0) {
 	                 		return;
 	                 	}
 	                 	
-	                 	ByteBuffer buffer = cs.getReadBuffer();
-	                 	
-	                 	ByteBuffer b = ByteBuffer.allocate(bb.readableBytes());
+	                	NettyClientSession cs = (NettyClientSession)ctx.channel().attr(sessionKey).get();
+	                	if(cs == null) {
+	                		logger.error("Got NULL Session when read data {},data:{}",sKey,msg);
+	                		return;
+	                	}
+	                	if(monitorEnable(ctx) && monitor != null){
+	                		monitor.submit(MonitorConstant.CLIENT_IOSESSION_READ, cs.getId()+"",
+	                				((ByteBuf)msg).readableBytes()+"");
+	                    }
+	                	
+	             		ByteBuffer b = ByteBuffer.allocate(bb.readableBytes());
 	                	bb.readBytes(b);
 	                	b.flip();
+	                	bb.release();
 	                	
-	                	buffer.put(b);
+	                	//服务端接收信息是上行，客户端接收信息是下行
+	             		cs.dump(b.array(),false);
 	                	
-	                 	while(true) {
-	                 		 ByteBuffer body =  Message.readMessage(buffer);
-	                 		 if(body == null){
-	 	                     	return;
-	 	                     }
-	 	                     Message message = new Message();
-	 	                     message.decode(body);
-	 	                     if(openDebug) {
-	 	                     	logger.debug("Got message reqId: "+ message.getReqId());
-	 	                     }
-	 	                    //JMicroContext.configProvider(message);
-	 	                     receiver.receive(cs,message);
-	                 	 }
+	                 	cs.receive(b);
 	                 }
 
 	                 @Override
@@ -218,12 +216,30 @@ public class NettyClientSessionManager implements IClientSessionManager{
 							logger.error("",e);
 						}
 	        			 logger.error("exceptionCaught",cause);
-	        			 NettyClientSession session = (NettyClientSession)ctx.channel().attr(sessionKey);
+	        			 NettyClientSession session = (NettyClientSession)ctx.channel().attr(sessionKey).get();
 	        			 if(session !=null && monitorEnable(ctx) && monitor != null ){
 	        	             SF.doSubmit(MonitorConstant.CLIENT_IOSESSION_EXCEPTION
 	        	            		 ,cause,session.getId()+"");
 	        	         }
+	        			 closeCtx(ctx);
 	                 }
+
+					@Override
+					public void channelUnregistered(ChannelHandlerContext ctx) throws Exception {
+						super.channelUnregistered(ctx);
+						 closeCtx(ctx);
+					}
+	                 
+					private void closeCtx(ChannelHandlerContext ctx) {
+						logger.warn("Session Close for : {}",sKey);
+						 NettyClientSession session = (NettyClientSession)ctx.channel().attr(sessionKey).get();
+						 if(session != null) {
+							 ctx.channel().attr(sessionKey).set(null);;
+		        			 ctx.close();
+		        			 session.close(true);
+		        			 sessions.remove(sKey);
+						 }
+					}              
 	             });
 
 	            // Start the client.
@@ -244,6 +260,9 @@ public class NettyClientSessionManager implements IClientSessionManager{
    	            ctx.channel().attr(sessionKey).set(s);
    	            ctx.channel().attr(monitorEnableKey).set(JMicroContext.get().isMonitor());;
 	            
+   	            s.setDumpDownStream(this.dumpDownStream);
+     		    s.setDumpUpStream(this.dumpUpStream);
+     		
 	           //LOG.info("session connected : {}", session);
 	           logger.debug("connection finish,host:"+host+",port:"+port);
 	           return s;

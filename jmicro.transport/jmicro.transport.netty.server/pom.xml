@@ -2,7 +2,7 @@
     <modelVersion>4.0.0</modelVersion>
     <parent>
          <groupId>org.jmicro</groupId>
-		 <artifactId>jmicro-transport-parent</artifactId>
+		 <artifactId>jmicro.transport.parent</artifactId>
 		 <version>0.0.1-SNAPSHOT</version>
     </parent>
     <artifactId>jmicro.transport.netty.server</artifactId>

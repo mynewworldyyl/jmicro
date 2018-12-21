@@ -164,7 +164,6 @@ public class ServiceManager {
 		}
 	}
 	
-	
 	public void setDataOperator(IDataOperator dataOperator) {
 		this.dataOperator = dataOperator;
 	}
@@ -209,19 +208,27 @@ public class ServiceManager {
 	
 	public void breakService(String key) {
 		UniqueServiceMethodKey usm = UniqueServiceMethodKey.fromKey(key);
-		ServiceItem item = this.path2SrvItems.get(usm.getUsk().toKey(true, true, false));
+		ServiceItem item = this.path2SrvItems.get(ServiceItem.pathForKey(key));
+		if(item == null) {
+			logger.error("Service [{}] not found",key);
+			return;
+		}
 		ServiceMethod sm = item.getMethod(usm.getMethod(), usm.getParamsStr());
 		sm.setBreaking(true);
 		this.updateOrCreate(item, item.getKey().toKey(true, true, false), true);
 	}
 	
 	public void breakService(ServiceMethod sm) {
-		String path = sm.getKey().getUsk().toKey(true, true, false);
+		String path = ServiceItem.pathForKey(sm.getKey().getUsk().toKey(true, true, false));
 		ServiceItem item = this.path2SrvItems.get(path);
+		if(item == null) {
+			logger.error("Service [{}] not found",path);
+			return;
+		}
 		ServiceMethod sm1 = item.getMethod(sm.getKey().getMethod(), sm.getKey().getParamsStr());
 		sm1.setBreaking(sm.isBreaking());
 		if(dataOperator.exist(path)){
-			dataOperator.setData(path,JsonUtils.getIns().toJson(sm1));
+			dataOperator.setData(path,JsonUtils.getIns().toJson(item));
 		} 
 	}
 	
@@ -235,10 +242,10 @@ public class ServiceManager {
 		if(si == null) {
 			return;
 		}
-		path = si.key(Config.ServiceRegistDir);
+		path = si.path(Config.ServiceRegistDir);
 		this.notifyServiceChange(IServiceListener.SERVICE_REMOVE,si,path);
 		this.dataOperator.removeDataListener(path, dataListener);
-		this.dataOperator.removeDataListener(si.key(Config.ServiceItemCofigDir), cfgDataListener);
+		this.dataOperator.removeDataListener(si.path(Config.ServiceItemCofigDir), cfgDataListener);
 		this.dataOperator.removeNodeListener(path, this.nodeListener);
 	}
 	
@@ -252,7 +259,7 @@ public class ServiceManager {
 		ServiceItem si = this.fromJson(data);
 		
 		if(isConfig) {
-			String srvPath = si.key(Config.ServiceRegistDir);
+			String srvPath = si.path(Config.ServiceRegistDir);
 			ServiceItem srvItem = null;
 			synchronized(path2Hash) {
 				srvItem = this.path2SrvItems.get(srvPath);
@@ -271,7 +278,7 @@ public class ServiceManager {
 				return;
 			}
 			//更新服务配置
-			this.updateOrCreate(si, si.key(Config.ServiceItemCofigDir), true);
+			this.updateOrCreate(si, si.path(Config.ServiceItemCofigDir), true);
 		}
 		
 		this.notifyServiceChange(IServiceListener.SERVICE_DATA_CHANGE, si,path);
@@ -299,7 +306,7 @@ public class ServiceManager {
         	logger.error("Item is NULL");
         	return;
         }
-		String key = item.key(Config.ServiceItemCofigDir);
+		String key = item.path(Config.ServiceItemCofigDir);
 		if(dataOperator.exist(key)){
 			String data = dataOperator.getData(key);
 			ServiceItem perItem = this.fromJson(data);
@@ -344,7 +351,7 @@ public class ServiceManager {
 			this.notifyServiceChange(IServiceListener.SERVICE_ADD, i,path);
 			dataOperator.addNodeListener(path, nodeListener);
 			dataOperator.addDataListener(path, this.dataListener);
-			dataOperator.addDataListener(i.key(Config.ServiceItemCofigDir), this.cfgDataListener);
+			dataOperator.addDataListener(i.path(Config.ServiceItemCofigDir), this.cfgDataListener);
 			
 		}
 	}

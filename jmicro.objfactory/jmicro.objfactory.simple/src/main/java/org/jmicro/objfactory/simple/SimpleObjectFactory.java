@@ -45,6 +45,7 @@ import org.jmicro.api.annotation.Service;
 import org.jmicro.api.config.Config;
 import org.jmicro.api.config.IConfigLoader;
 import org.jmicro.api.http.annotation.HttpHandler;
+import org.jmicro.api.net.IRequestHandler;
 import org.jmicro.api.objectfactory.IObjectFactory;
 import org.jmicro.api.objectfactory.IPostFactoryReady;
 import org.jmicro.api.objectfactory.IPostInitListener;
@@ -248,13 +249,13 @@ public class SimpleObjectFactory implements IObjectFactory {
     	 
     	 if(!(obj instanceof ProxyObject)){
     		 injectDepependencies(obj);
-    		 notifyPrePostListener(obj,cfg);
+    		 notifyPreInitPostListener(obj,cfg);
         	 doInit(obj);
-    		 notifyAfterPostListener(obj,cfg);
+    		 notifyAfterInitPostListener(obj,cfg);
     	 }
 	}
      
-     private void notifyAfterPostListener(Object obj,Config cfg) {
+     private void notifyAfterInitPostListener(Object obj,Config cfg) {
  		if(this.postListeners.isEmpty()) {
  			return;
  		}
@@ -263,7 +264,7 @@ public class SimpleObjectFactory implements IObjectFactory {
  		}	
  	}
      
-	private void notifyPrePostListener(Object obj,Config cfg) {
+	private void notifyPreInitPostListener(Object obj,Config cfg) {
 		if(this.postListeners.isEmpty()) {
 			return;
 		}
@@ -413,13 +414,21 @@ public class SimpleObjectFactory implements IObjectFactory {
 		List<IConfigLoader> configLoaders = this.getByParent(IConfigLoader.class);
 		cfg.loadConfig(configLoaders);
 		
-		notifyPrePostListener(registry,cfg);
+		notifyPreInitPostListener(registry,cfg);
 		
 		Set<Object> haveInits = new HashSet<>();
 		
 		if(!l.isEmpty()){
 			for(int i =0; i < l.size(); i++){
 				Object o = l.get(i);
+				 
+				 if(IRequestHandler.class.isInstance(o)) {
+					 //此代码仅用于开发测试，正式代码中应该注掉
+					 //用于测试具体某个组件的配置初始化
+					 logger.debug(o.toString());
+				 }
+				 
+				
 				if(srvManager == o || registry == o || dop == o || haveInits.contains(o)) {
 					continue;
 				}
@@ -1024,8 +1033,7 @@ public class SimpleObjectFactory implements IObjectFactory {
 				initMethod2.invoke(obj, new Object[]{});
 			}
 		} catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			logger.error("Component init error:"+obj.getClass().getName(),e);
 		}
 	}
 

@@ -55,6 +55,9 @@ public class IdClient implements IIdClient{
 
 		ServiceItem si = JMicroContext.get().getParam(Constants.SERVICE_ITEM_KEY,null);
 		if(si != null && "org.jmicro.api.idgenerator.IIdServer".equals(si.getKey().getServiceName())) {
+			/*
+			 * IIdServer本身的RPC也要ID，此种情况直接从ZK取，不做RPC，否则会陷入死循坏
+			 */
 			IIdClient localUidGenerator = JMicro.getObjectFactory().getByName("uniqueIdGenerator");
 			if(insType == Integer.class) {
 				return localUidGenerator.getIntIds(idType, num);
@@ -86,7 +89,7 @@ public class IdClient implements IIdClient{
 			//如果有多个线程同时等待在锁上,会多次从服务器请求多批ID并放到缓存中，
 			Object[] set = null;
 			if(insType == Long.class) {
-				set = idServer.getLongIds(idType, num*2);
+				set = idServer.getLongIds(idType, num*20);
 			}else if(insType == Integer.class) {
 				set = idServer.getIntIds(idType, num*2);
 			}else if(insType == String.class) {

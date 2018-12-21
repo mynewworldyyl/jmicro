@@ -19,6 +19,7 @@ package org.jmicro.client;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 
 import org.jmicro.api.JMicroContext;
 import org.jmicro.api.annotation.Cfg;
@@ -28,12 +29,15 @@ import org.jmicro.api.client.AbstractClientServiceProxy;
 import org.jmicro.api.client.IClientSession;
 import org.jmicro.api.client.IClientSessionManager;
 import org.jmicro.api.codec.ICodecFactory;
+import org.jmicro.api.config.Config;
 import org.jmicro.api.exception.RpcException;
 import org.jmicro.api.exception.TimeoutException;
 import org.jmicro.api.idgenerator.IIdClient;
 import org.jmicro.api.loadbalance.ISelector;
+import org.jmicro.api.monitor.AbstractMonitorDataSubscriber;
 import org.jmicro.api.monitor.MonitorConstant;
 import org.jmicro.api.monitor.SF;
+import org.jmicro.api.monitor.ServiceCounter;
 import org.jmicro.api.net.AbstractHandler;
 import org.jmicro.api.net.IMessageHandler;
 import org.jmicro.api.net.IRequest;
@@ -46,6 +50,7 @@ import org.jmicro.api.net.ServerError;
 import org.jmicro.api.registry.Server;
 import org.jmicro.api.registry.ServiceItem;
 import org.jmicro.api.registry.ServiceMethod;
+import org.jmicro.api.timer.TimerTicker;
 import org.jmicro.common.CommonException;
 import org.jmicro.common.Constants;
 import org.slf4j.Logger;
@@ -83,6 +88,26 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
 	@Inject("idClient")
 	private IIdClient idGenerator;
 	
+	//测试统计模式使用
+	@Cfg(value="/RpcClientRequestHandler/clientStatis",defGlobal=false)
+	private boolean clientStatis=false;
+	private ServiceCounter counter = null;
+	
+	public void init() {
+		if(clientStatis) {
+			counter = new ServiceCounter("RpcClientRequestHandler",
+					AbstractMonitorDataSubscriber.YTPES,10,2,TimeUnit.SECONDS);
+			TimerTicker.getDefault(2000L).addListener("RpcClientRequestHandler", (key,att)->{
+				System.out.println("======================================================");
+				logger.debug("总请求:{}, 总响应:{},QPS:{}/S",
+						counter.getTotalWithEx(MonitorConstant.CLIENT_REQ_BEGIN)
+						,counter.getTotalWithEx(MonitorConstant.CLIENT_REQ_BUSSINESS_ERR,MonitorConstant.CLIENT_REQ_OK,MonitorConstant.CLIENT_REQ_EXCEPTION_ERR)
+						,counter.getAvg(MonitorConstant.CLIENT_REQ_OK, TimeUnit.SECONDS)
+						);
+			}, null);
+		}
+	}
+	
 	@Override
 	public IResponse onRequest(IRequest request) {
 		AbstractClientServiceProxy proxy =  (AbstractClientServiceProxy)JMicroContext.get().getObject(Constants.PROXY, null);
@@ -114,8 +139,10 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
 		msg.setProtocol(Message.PROTOCOL_BIN);
 		msg.setReqId(req.getRequestId());
 		msg.setLinkId(lid);
-		msg.setVersion(Constants.MSG_VERSION);
+		msg.setVersion(Message.MSG_VERSION);
 		msg.setLevel(Message.PRIORITY_NORMAL);
+		
+		boolean isDebug = false;
 		
         do {
         	
@@ -148,15 +175,27 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
 					timeout = si.getTimeout();
 				}
 				
-				msg.setStream(sm.stream);
-	    		msg.setNeedResponse(sm.needResponse);
+				msg.setStream(sm.isStream());
+				msg.setDumpDownStream(sm.isDumpDownStream());
+				msg.setDumpUpStream(sm.isDumpUpStream());
+	    		msg.setNeedResponse(sm.isNeedResponse());
 	    		msg.setLoggable(JMicroContext.get().isLoggable(false));
+	    		msg.setPayload(ICodecFactory.encode(this.codecFactory,req,msg.getProtocol()));
 	    		
-	    		int f = sm.getMonitorEnable() == 1 ? Constants.FLAG_MONITORABLE : 
-	    			(si.getMonitorEnable()== 1?Constants.FLAG_MONITORABLE:0);
+	    		int f = sm.getMonitorEnable() == 1 ? 1 : (si.getMonitorEnable()== 1?1:0);
 	    		msg.setMonitorable(f == 1);
 	    		
-	    		//msg.setLevel(Message.PRIORITY_NORMAL);
+	    		f = sm.getDebugMode() == 1 ? 1 : (si.getDebugMode()== 1?1:0);
+	    		isDebug = f == 1;
+	    		msg.setDebugMode(isDebug);
+	    		
+	    		if(isDebug) {
+	    			msg.setInstanceName(Config.getInstanceName());
+	    			msg.setTime(System.currentTimeMillis());
+	    			lid = JMicroContext.lid();
+	    			msg.setLinkId(lid);
+	    			msg.setMethod(sm.getKey().getMethod());
+	    		}
 	    		
         	}
     		
@@ -164,26 +203,28 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
     		//JMicroContext.get().setParam(Constants.SERVICE_ITEM_KEY, si);
     		//JMicroContext.setSrvLoggable();
     		msg.setLoggable(JMicroContext.get().isLoggable(false));
-    		
-        	SF.doSubmit(MonitorConstant.CLIENT_REQ_BEGIN, req,null);
     	    
     	    IClientSession session = this.sessionManager.getOrConnect(s.getHost(), s.getPort());
-    	    //req.setSession(session);
     		
-    		msg.setId(this.idGenerator.getLongId(Message.class.getName()));
-    		msg.setPayload(ICodecFactory.encode(this.codecFactory,req,msg.getProtocol()));
+    	    if(isDebug) {
+    	    	msg.setId(this.idGenerator.getLongId(Message.class.getName()));
+    	    }
     		
-    		if(SF.isLoggable(this.openDebug,MonitorConstant.DEBUG)) {
-    			SF.doRequestLog(MonitorConstant.DEBUG,lid,TAG,req,null," do request");
+    		if(SF.isLoggable(this.openDebug,MonitorConstant.LOG_DEBUG)) {
+    			SF.doRequestLog(MonitorConstant.LOG_DEBUG,lid,TAG,req,null," do request");
     		}
     		
+    		SF.doSubmit(MonitorConstant.CLIENT_REQ_BEGIN, req,null);
+        	if(clientStatis) {
+        		counter.incrementWithEx(MonitorConstant.CLIENT_REQ_BEGIN);
+        	}
     		session.write(msg);
     		
-    		if(!sm.needResponse && !msg.isStream()) {
+    		if(!sm.isNeedResponse() && !msg.isStream()) {
     			//数据发送后，不需要返回结果，也不需要请求确认包，直接返回
     			//this.sessionManager.write(msg, null,retryCnt);
-    			if(SF.isLoggable(this.openDebug,MonitorConstant.DEBUG)) {
-    				SF.doServiceLog(MonitorConstant.DEBUG,TAG,lid,sm,null, " no need response and return");
+    			if(SF.isLoggable(this.openDebug,MonitorConstant.LOG_DEBUG)) {
+    				SF.doServiceLog(MonitorConstant.LOG_DEBUG,TAG,lid,sm,null, " no need response and return");
         		}
     			return null;
     		}
@@ -192,8 +233,8 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
     			String key = req.getRequestId()+"";
     			if(session.getParam(key) != null) {
     				String errMsg = "Failure Callback have been exists reqID："+key;
-    				if(SF.isLoggable(this.openDebug,MonitorConstant.ERROR)) {
-    					SF.doServiceLog(MonitorConstant.ERROR,TAG,lid,sm,null, errMsg);
+    				if(SF.isLoggable(this.openDebug,MonitorConstant.LOG_ERROR)) {
+    					SF.doServiceLog(MonitorConstant.LOG_ERROR,TAG,lid,sm,null, errMsg);
     				}
     				throw new CommonException(errMsg);
     			}
@@ -219,7 +260,7 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
     			try {
     				if(timeout > 0){
     					req.wait(timeout);
-    				}else {
+    				} else {
     					req.wait();
     				}
     			} catch (InterruptedException e) {
@@ -232,18 +273,24 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
     		RpcResponse resp = null;
     		if(respMsg != null){
     			if(respMsg.getPayload() != null){
-    				resp = ICodecFactory.decode(this.codecFactory,respMsg.getPayload(),
-    						RpcResponse.class,msg.getProtocol());
+    				try {
+    					resp = ICodecFactory.decode(this.codecFactory,respMsg.getPayload(),
+        						RpcResponse.class,msg.getProtocol());
+    				}catch(ClassCastException e) {
+    					logger.error("",e);
+    					waitForResponse.remove(req.getRequestId());
+    					throw new CommonException(req.toString(),e); 
+    				}
+    				
     				resp.setMsg(respMsg);
     				//req.setMsg(msg);
-    				if(SF.isLoggable(this.openDebug,MonitorConstant.DEBUG)) {
-        				SF.doResponseLog(MonitorConstant.DEBUG,lid,TAG,resp,null,"reqID ["+resp.getReqId()+"] response");
+    				if(SF.isLoggable(this.openDebug,MonitorConstant.LOG_DEBUG)) {
+        				SF.doResponseLog(MonitorConstant.LOG_DEBUG,lid,TAG,resp,null,"reqID ["+resp.getReqId()+"] response");
             		}
     			} else {
-        			SF.doMessageLog(MonitorConstant.ERROR,TAG,respMsg,null,"reqID ["+resp.getReqId()+"] response");
+        			SF.doMessageLog(MonitorConstant.LOG_ERROR,TAG,respMsg,null,"reqID ["+resp.getReqId()+"] response");
         		}
     		} else {
-    			//肯定是超时了
     			SF.doSubmit(MonitorConstant.CLIENT_REQ_TIMEOUT, req, null);
     		}
     		
@@ -251,6 +298,10 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
     			if(!msg.isStream()) {
     				//同步请求成功，直接返回
         			SF.doSubmit(MonitorConstant.CLIENT_REQ_OK, req, resp,null);
+        			if(clientStatis) {
+        				counter.incrementWithEx(MonitorConstant.CLIENT_REQ_OK);
+        			}
+        			
         			req.setFinish(true);
         			waitForResponse.remove(req.getRequestId());
         			return resp;
@@ -282,7 +333,11 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
     				SF.doSubmit(MonitorConstant.CLIENT_REQ_TIMEOUT_FAIL, req, null);
     				sb.append("] timeout request and stop retry: ").append(retryCnt)
     				.append(",reqId:").append(req.getRequestId()).append(", LinkId:").append(lid);
-    				SF.doRequestLog(MonitorConstant.ERROR,msg.getLinkId(),TAG,req,null,sb.toString());
+    				SF.doRequestLog(MonitorConstant.LOG_ERROR,msg.getLinkId(),TAG,req,null,sb.toString());
+    				//肯定是超时了
+        			if(clientStatis) {
+        				counter.incrementWithEx(MonitorConstant.CLIENT_REQ_TIMEOUT_FAIL);
+        			}
     				throw new TimeoutException(req,sb.toString());
     			}
     		
@@ -293,7 +348,7 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
     				} catch (InterruptedException e) {
     					logger.error("Sleep exceptoin ",e);
     				}
-    				SF.doRequestLog(MonitorConstant.WARN,lid,TAG,req,null," do retry");
+    				SF.doRequestLog(MonitorConstant.LOG_WARN,lid,TAG,req,null," do retry");
     				SF.doSubmit(MonitorConstant.CLIENT_REQ_RETRY, req, resp,null);
     				continue;//重试循环
     			}
@@ -304,13 +359,19 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
 				 //logger.error("error code: "+se.getErrorCode()+" ,msg: "+se.getMsg());
 				 req.setSuccess(resp.isSuccess());
 				 SF.doSubmit(MonitorConstant.CLIENT_REQ_EXCEPTION_ERR, req, null);
-				 SF.doResponseLog(MonitorConstant.ERROR,lid,TAG,resp,null,se.toString());
+				 SF.doResponseLog(MonitorConstant.LOG_ERROR,lid,TAG,resp,null,se.toString());
+				 if(clientStatis) {
+     				counter.increment(MonitorConstant.CLIENT_REQ_EXCEPTION_ERR);
+     			 }
 				 throw new RpcException(req,sb.toString());
 			} else if(!resp.isSuccess()){
 				 //服务器正常逻辑处理错误，不需要重试，直接失败
 				 req.setSuccess(resp.isSuccess());
 				 SF.doSubmit(MonitorConstant.CLIENT_REQ_BUSSINESS_ERR, req, resp,null);
-				 SF.doResponseLog(MonitorConstant.ERROR,lid,TAG,resp,null);
+				 SF.doResponseLog(MonitorConstant.LOG_ERROR,lid,TAG,resp,null);
+				 if(clientStatis) {
+	     				counter.increment(MonitorConstant.CLIENT_REQ_BUSSINESS_ERR);
+	     		 }
 			     throw new RpcException(req,sb.toString());
 			}
     		//代码不应该走到这里，如果走到这里，说明系统还有问题
@@ -330,12 +391,12 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
 		//receive response
 		IResponseHandler handler = waitForResponse.get(msg.getReqId());
 		if(msg.isLoggable()) {
-			SF.doMessageLog(MonitorConstant.DEBUG,TAG,msg,null," receive message");
+			SF.doMessageLog(MonitorConstant.LOG_DEBUG,TAG,msg,null," receive message");
 		}
 		if(handler!= null){
 			handler.onResponse(msg);
 		} else {
-			SF.doMessageLog(MonitorConstant.ERROR,TAG,msg,null," handler not found");
+			SF.doMessageLog(MonitorConstant.LOG_ERROR,TAG,msg,null," handler not found");
 			logger.error("msdId:"+msg.getId()+",reqId:"+msg.getReqId()+",linkId:"+msg.getLinkId()+" IGNORE");
 		}
 	}

@@ -92,6 +92,7 @@ public class ServiceInvocationHandler implements InvocationHandler{
 		JMicroContext.get().setParam(Constants.SERVICE_METHOD_KEY, sm);
 		JMicroContext.get().setParam(Constants.SERVICE_ITEM_KEY, poItem);
 		JMicroContext.setSrvLoggable();
+		JMicroContext.get().configMonitor(sm.getMonitorEnable(),poItem.getMonitorEnable());
 		
 		JMicroContext.lid();
 		JMicroContext.get().setObject(Constants.PROXY, po);
@@ -107,8 +108,14 @@ public class ServiceInvocationHandler implements InvocationHandler{
         req.setImpl(poItem.getImpl());
         
         IResponse resp = this.intManager.handleRequest(req);
+        
+        Object obj = resp == null ? null :resp.getResult();
+       /* if("intrest".equals(method.getName())) {
+        	//代码仅用于测试
+        	logger.debug("result type:{},value:{}",obj.getClass().getName(),obj.toString());
+        }*/
 		
-        return resp == null ? null :resp.getResult();
+        return obj;
 	
 	}
 	

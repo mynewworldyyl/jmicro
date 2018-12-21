@@ -65,6 +65,8 @@ public class ApiGatewayClientSocketSession extends AbstractSession implements IC
 		ctx.close();
 	}
 
-
-
+	@Override
+	public boolean isServer() {
+		return false;
+	}
 }

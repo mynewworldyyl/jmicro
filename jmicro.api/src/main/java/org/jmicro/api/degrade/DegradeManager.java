@@ -44,12 +44,12 @@ public class DegradeManager {
 		createOrSetData(AVG_TIME_ROOT + serviceMethodId,data);
 	}
 	
-	public void updateTimeoutCnt(String serviceMethodId,Integer cnt){
-		createOrSetData(TIMEOUT_ROOT + serviceMethodId,cnt.toString());
+	public void updateTimeoutCnt(String serviceMethodId,String cnt){
+		createOrSetData(TIMEOUT_ROOT + serviceMethodId,cnt);
 	}
 	
-	public void updateExceptionCnt(String serviceMethodId,Integer cnt){
-		createOrSetData(EXCEPTION_ROOT + serviceMethodId,cnt.toString());
+	public void updateExceptionCnt(String serviceMethodId,String cnt){
+		createOrSetData(EXCEPTION_ROOT + serviceMethodId,cnt);
 	}
 	
 	private void createOrSetData(String path, String data) {

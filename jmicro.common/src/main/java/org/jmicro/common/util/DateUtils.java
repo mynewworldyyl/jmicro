@@ -49,6 +49,10 @@ public final class DateUtils {
 	 
 	 public static final String PATTERN_YYYY_MM_DD_HHMMSS = "yyyy-MM-dd HH:mm:ss";
 	 
+	 public static final String PATTERN_YYYY_MM_DD_HHMM = "yyyy-MM-dd HH:mm";
+	 
+	 public static final String PATTERN_YYYY_MM_DD_HH = "yyyy-MM-dd HH";
+	 
 	 public static final String PATTERN_YYYY_MM_DD = "yyyy-MM-dd";
 	 
 	 public static final String PATTERN_HHMMSS = "HH:mm:ss";
@@ -79,7 +83,7 @@ public final class DateUtils {
 
    private static final Date DEFAULT_TWO_DIGIT_YEAR_START;
 
-   public static final TimeZone GMT = TimeZone.getTimeZone("GMT");
+   public static final TimeZone GMT = TimeZone.getTimeZone("Asia/Shanghai");
 
    static {
        final Calendar calendar = Calendar.getInstance();
@@ -238,8 +242,8 @@ public final class DateUtils {
 
            SimpleDateFormat format = formats.get(pattern);
            if (format == null) {
-               format = new SimpleDateFormat(pattern, Locale.US);
-               format.setTimeZone(TimeZone.getTimeZone("GMT"));
+               format = new SimpleDateFormat(pattern, Locale.CHINA);
+               format.setTimeZone(GMT);
                formats.put(pattern, format);
            }
 

@@ -9,6 +9,7 @@ import org.jmicro.api.service.ICheckable;
 import org.jmicro.api.test.Person;
 import org.jmicro.common.Constants;
 import org.jmicro.common.Utils;
+import org.jmicro.example.api.ISayHello;
 import org.jmicro.example.api.ITestRpcService;
 import org.jmicro.example.comsumer.TestRpcClient;
 import org.junit.Test;
@@ -104,8 +105,12 @@ public class TestRpcRequest {
 	
 	
 	public static void main(String[] args) {
-		ITestRpcService srv = JMicro.getRpcServiceTestingArgs(ITestRpcService.class);
-		srv.getPerson(new Person());
+		/*ITestRpcService srv = JMicro.getRpcServiceTestingArgs(ITestRpcService.class);
+		srv.getPerson(new Person());*/
+		
+		ISayHello srv = JMicro.getRpcServiceTestingArgs(ISayHello.class);
+		srv.hello("Are you OK");
+		
 	}
 	
 }

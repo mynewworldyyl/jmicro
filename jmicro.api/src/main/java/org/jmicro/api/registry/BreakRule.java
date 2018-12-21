@@ -32,22 +32,19 @@ public final class BreakRule {
 	private boolean enable = false;
 	
 	//计算异常的时间窗口,单位是毫秒,比如1000毫秒内异常超过50%,则断断服务
-	private long timeInMilliseconds;
+	private long breakTimeInterval;
 	
 	//时间窗口内异常百分比超过此值熔断此服务实例
 	private int percent;
 	
-	private Integer[] exceptionTypes;
-	
-	//原始配置字符串
-	private String originRule;
+	//熔断后每隔多久做一次恢复测试
+	private long checkInterval;
 	
 	public BreakRule() {}
 	
 	public static BreakRule parseRule(String ruleString) {
 		BreakRule rule = new BreakRule();
 		rule.setEnable(true);
-		rule.setOriginRule(ruleString);
 		
 		if(StringUtils.isEmpty(ruleString)) {
 			rule.setEnable(false);
@@ -118,7 +115,6 @@ public final class BreakRule {
 		for(int i = 0; i < types.length; i++) {
 			types[i] = Integer.parseInt(arr[i],16);
 		}
-		rule.setExceptionTypes(types);
 		return rule;
 	}
 
@@ -142,7 +138,7 @@ public final class BreakRule {
 			throw new CommonException("Invalid time rule String: " + timeConfig);
 		}
 		
-		rule.setTimeInMilliseconds(timeInMillis);
+		rule.setBreakTimeInterval(timeInMillis);
 		return rule;
 	}
 
@@ -154,20 +150,12 @@ public final class BreakRule {
 		this.enable = enable;
 	}
 
-	public long getTimeInMilliseconds() {
-		return timeInMilliseconds;
+	public long getBreakTimeInterval() {
+		return breakTimeInterval;
 	}
 
-	public void setTimeInMilliseconds(long timeInMilliseconds) {
-		this.timeInMilliseconds = timeInMilliseconds;
-	}
-
-	public Integer[] getExceptionTypes() {
-		return exceptionTypes;
-	}
-
-	public void setExceptionTypes(Integer[] exceptionTypes) {
-		this.exceptionTypes = exceptionTypes;
+	public void setBreakTimeInterval(long breakTimeInterval) {
+		this.breakTimeInterval = breakTimeInterval;
 	}
 
 	public int getPercent() {
@@ -178,20 +166,19 @@ public final class BreakRule {
 		this.percent = percent;
 	}
 
-	public String getOriginRule() {
-		return originRule;
+	public long getCheckInterval() {
+		return checkInterval;
 	}
 
-	public void setOriginRule(String originRule) {
-		this.originRule = originRule;
+	public void setCheckInterval(long checkInterval) {
+		this.checkInterval = checkInterval;
 	}
 
 	public void from(BreakRule r) {
 		this.setEnable(r.isEnable());
-		this.setExceptionTypes(r.getExceptionTypes());
-		this.setOriginRule(r.getOriginRule());
 		this.setPercent(r.getPercent());
-		this.setTimeInMilliseconds(r.getTimeInMilliseconds());
+		this.setBreakTimeInterval(r.getBreakTimeInterval());
+		this.setCheckInterval(r.getCheckInterval());
 	}
 	
 }

@@ -21,6 +21,9 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
+
+import org.jmicro.api.net.Message;
+import org.jmicro.common.Constants;
 /**
  * service method
  * @author Yulei Ye
@@ -32,10 +35,22 @@ public @interface SMethod {
 
 	//public String value() default "";
 	
+	/**
+	 * 开启Debug模式，-1表示未定义，由别的地方定义，如系统环境变量，启动时指定等，0表示不开启，1表示开启
+	 * Message包增加额外高试字段，如linkid,msgid,instanceName,method
+	 * 开启debug后，其他标志才志作用 {@link Message}
+	 */
+	public int debugMode() default -1;
+	
 	//-1： depend on service config
 	//1: enable
 	//0: disable
 	public int monitorEnable() default -1;
+	
+	//dump 下行流，用于下行数问题排查
+	public boolean dumpDownStream() default false;
+	//dump 上行流，用于上行数问题排查
+	public boolean dumpUpStream() default false;
 	
 	//服务方法级别的日志记录标识，参考monitorEnable说明
 	public int loggable() default -1;
@@ -52,19 +67,27 @@ public @interface SMethod {
 	public String failResponse() default "";
 	
 	/**
-	 * 统计数据的基本时间窗口
+	 * 主要是ServiceCounter使用
+	 * 统计数据的基本时间窗口，小于0表示由Service注解确定，大于0表示启用
 	 * @return
 	 */
-	public long timeWindowInMillis() default 1000*10;
+	public long timeWindow() default -1;
+	
 	
 	/**
-	 * 1M: 1分钟内，时间单位参考：@link org.jmicro.api.registry.ServiceItem
-	 * 50%: 发生的异常数超过总请求数的50%
-	 * 500MS: 熔断后，每间隔500毫秒对接口做一次测试(使用testingArg参数)，测试成功率超过50%，则关闭熔断器
-	 *     值为空时，不启用
-	 * 1M 50% 500MS
+	 * 采样统计数据周期，单位由baseTimeUnit确定
+	 *   小于0表示由Service注解确定，大于0表示启用
+	 * @return
 	 */
-	public String breakingRule() default "";
+	public long checkInterval() default -1;
+	
+	/**
+	 * 空值表示由Service注解确定
+	 * @return
+	 */
+	public String baseTimeUnit() default Constants.TIME_MILLISECONDS;
+	
+	public SBreakingRule breakingRule() default @SBreakingRule(enable=false,breakTimeInterval=1000,percent=50,checkInterval=80);
 	
 	//after breaking, will test the service with this arguments
 	public String testingArgs() default "";
@@ -96,7 +119,7 @@ public @interface SMethod {
 	/**
 	 * max qps
 	 */
-	public String maxSpeed() default "";
+	public int maxSpeed() default 0;//无限速
 	
 	/**
 	 *  milliseconds

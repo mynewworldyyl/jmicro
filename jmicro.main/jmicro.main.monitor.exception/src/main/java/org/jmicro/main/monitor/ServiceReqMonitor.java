@@ -16,10 +16,12 @@
  */
 package org.jmicro.main.monitor;
 
-import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 
 import org.jmicro.api.JMicro;
+import org.jmicro.api.annotation.Cfg;
 import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.Inject;
 import org.jmicro.api.annotation.JMethod;
@@ -38,6 +40,9 @@ import org.jmicro.api.registry.UniqueServiceKey;
 import org.jmicro.api.timer.ITickerAction;
 import org.jmicro.api.timer.TimerTicker;
 import org.jmicro.common.Utils;
+import org.jmicro.common.util.TimeUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * 
@@ -46,29 +51,21 @@ import org.jmicro.common.Utils;
  */
 @Component
 @Service(version="0.0.1", namespace="serviceExceptionMonitor",monitorEnable=0)
-public class ServiceReqMonitor extends AbstractMonitorDataSubscriber implements IMonitorDataSubscriber,ITickerAction{
-
-	//private final static Logger logger = LoggerFactory.getLogger(ServiceExceptionMonitor.class);
+public class ServiceReqMonitor extends AbstractMonitorDataSubscriber implements IMonitorDataSubscriber{
+	
+	private final Map<Long,TimerTicker> timers = new ConcurrentHashMap<>();
+	
+	private final Map<String,Long> timeoutList = new ConcurrentHashMap<>();
+	
+	private final static Logger logger = LoggerFactory.getLogger(ServiceReqMonitor.class);
+	
+	@Cfg(value="/ServiceReqMonitor/openDebug")
+	private boolean openDebug = true;
+	
 	public static void main(String[] args) {
-		 JMicro.getObjectFactoryAndStart(new String[] {"-DinstanceName=ServiceReqMonitor",
-				 "-Dserver=true"});
+		 JMicro.getObjectFactoryAndStart(new String[] {"-DinstanceName=ServiceReqMonitor"});
 		 Utils.getIns().waitForShutdown();
 	}
-	
-	private final Integer[] YTPES = new Integer[]{
-		//服务器发生错误,返回ServerError异常
-		MonitorConstant.CLIENT_REQ_EXCEPTION_ERR,
-		//业务错误,success=false,此时接口调用正常
-		//MonitorConstant.CLIENT_REQ_BUSSINESS_ERR,
-		//请求超时
-		MonitorConstant.CLIENT_REQ_TIMEOUT,
-		//请求开始
-		MonitorConstant.CLIENT_REQ_BEGIN,
-		//异步请求成功确认包
-		MonitorConstant.CLIENT_REQ_ASYNC1_SUCCESS,
-		//同步请求成功
-		MonitorConstant.CLIENT_REQ_OK
-	};
 	
 	@Inject
 	private DegradeManager degradeManager;
@@ -76,7 +73,13 @@ public class ServiceReqMonitor extends AbstractMonitorDataSubscriber implements 
 	@Inject
 	private BreakerManager breakerManager;
 	
-	private Map<String,ServiceCounter> counters =  new HashMap<>();
+	private Map<String,ServiceCounter> counters =  new ConcurrentHashMap<>();
+	
+	private ITickerAction tickerAct = new ITickerAction() {
+		public void act(String key,Object attachement) {
+			act0(key,attachement);
+		}
+	};
 	
 	@JMethod("init")
 	public void init() {}
@@ -85,32 +88,62 @@ public class ServiceReqMonitor extends AbstractMonitorDataSubscriber implements 
 		return key+ UniqueServiceKey.SEP + type;
 	}
 	
-	public void act(String key,Object attachement) {
+	public void act0(String key,Object attachement) {
 		ServiceCounter counter = counters.get(key);
 		
 		ServiceMethod sm = (ServiceMethod)attachement;
 		BreakRule rule = ((ServiceMethod)attachement).getBreakingRule();
 		if(rule.isEnable()) {
 			if(sm.isBreaking()) {
-				//已经熔断，算成功率，判断是否关闭熔断器
-				Double successPercent = getData(key, MonitorConstant.SUCCESS_PERCENT);
+				//已经熔断,算成功率,判断是否关闭熔断器
+				Double successPercent = getData(key, MonitorConstant.STATIS_SUCCESS_PERCENT);
 				if(successPercent > rule.getPercent()) {
+					if(this.openDebug) {
+						logger.debug("Close breaker for service {}, success rate {}",key,successPercent);
+					}
 					sm.setBreaking(false);
 					breakerManager.breakService(key,sm);
 				}
 			} else {
-				//没有熔断，判断是否需要熔断
-				Double failPercent = getData(key, MonitorConstant.FAIL_PERCENT);
+				//没有熔断,判断是否需要熔断
+				Double failPercent = getData(key, MonitorConstant.STATIS_FAIL_PERCENT);
 				if(failPercent > rule.getPercent()) {
+					if(this.openDebug) {
+						logger.debug("Break down service {}, fail rate {}",key,failPercent);
+					}
 					sm.setBreaking(true);
 					breakerManager.breakService(key,sm);
 				}
 			}
+			
+			if(timeoutList.containsKey(key) && ( (System.currentTimeMillis()-timeoutList.get(key)) > 60000 )) {
+				if(this.openDebug) {
+					logger.warn("{} more than one minutes have no submit data,DELETE it",key);
+				}
+				TimerTicker.getTimer(timers,TimeUtils.getMilliseconds(sm.getCheckInterval(),
+						sm.getBaseTimeUnit())).removeListener(key);
+			}
 		}
 		
-		for(Integer type : YTPES) {
-			degradeManager.updateExceptionCnt(typeKey(key,type),
-					new Double(counter.getAvg(type)).intValue());
+		System.out.println("======================================================");
+		//提交数据到ZK
+		for(Integer type : AbstractMonitorDataSubscriber.YTPES) {
+			Double v = new Double(counter.getAvgWithEx(type,TimeUtils.getTimeUnit(sm.getBaseTimeUnit())));
+			degradeManager.updateExceptionCnt(typeKey(key,type),v.toString());
+		}
+		
+		if(openDebug) {
+			logger.debug("总请求:{}, 总响应:{}, TO:{}, TOF:{}, QPS:{}",
+					counter.getTotalWithEx(MonitorConstant.CLIENT_REQ_BEGIN),
+					counter.getTotalWithEx(MonitorConstant.CLIENT_REQ_BUSSINESS_ERR,MonitorConstant.CLIENT_REQ_OK,MonitorConstant.CLIENT_REQ_EXCEPTION_ERR)
+					,counter.getTotalWithEx(MonitorConstant.CLIENT_REQ_TIMEOUT)
+					,counter.getTotalWithEx(MonitorConstant.CLIENT_REQ_TIMEOUT_FAIL)
+					,counter.getAvg(MonitorConstant.CLIENT_REQ_OK, TimeUnit.SECONDS)
+					);
+	
+			/*logger.debug("总请求:{}, 总响应:{}",
+					this.getData(key, MonitorConstant.STATIS_TOTAL_REQ),
+					this.getData(key, MonitorConstant.STATIS_TOTAL_RESP));*/
 		}
 	}
 
@@ -118,8 +151,13 @@ public class ServiceReqMonitor extends AbstractMonitorDataSubscriber implements 
 	@SMethod(needResponse=false)
 	public void onSubmit(SubmitItem si) {
 		
-		String key = si.getSm().getKey().toKey(true,true,false);
+		ServiceMethod sm = si.getSm();
 		
+		String key = sm.getKey().toKey(true,true,false);
+		timeoutList.put(key, System.currentTimeMillis());
+		
+		TimerTicker timer = TimerTicker.getTimer(timers,TimeUtils.getMilliseconds(sm.getCheckInterval(),
+				sm.getBaseTimeUnit()));
 		ServiceCounter counter = counters.get(key);
 		if(counter == null) {
 			//取常量池中的字符串实例做同步锁，保证基于服务方法标识这一级别的同步
@@ -127,27 +165,27 @@ public class ServiceReqMonitor extends AbstractMonitorDataSubscriber implements 
 			synchronized(key) {
 				counter = counters.get(key);
 				if(counter == null) {
-					counter = new ServiceCounter(key, YTPES,si.getSm().getTimeWindowInMillis());
+					counter = new ServiceCounter(key, YTPES,sm.getTimeWindow(),sm.getTimeWindow()/10
+							,TimeUtils.getTimeUnit(sm.getBaseTimeUnit()));
 					counters.put(key, counter);
-					BreakRule rule = si.getSm().getBreakingRule();
-					if(rule.isEnable()) {
-						//开启了熔断机制，按熔断窗口的两倍时间做监听
-						TimerTicker.getTimer(rule.getTimeInMilliseconds()*2).addListener(key, this,si.getSm());
+					//BreakRule rule = si.getSm().getBreakingRule();
+					//定时收集统计数据
+					timer.addListener(key,tickerAct,sm);
+					if(this.openDebug) {
+						logger.debug("Create counter and add listener for service {},tw[{}],unit[{}]", key,sm.getTimeWindow(),sm.getBaseTimeUnit());
 					}
 				}
 			}
 		}
-		counter.increment(si.getType());
 		
-		/*BreakRule rule = si.getSm().getBreakingRule();
-		if(!rule.isEnable()) {
-			return;
+		if(!timer.container(key)) {
+			if(this.openDebug) {
+				logger.debug("Add counter listener for service {},tw[{}],unit[{}]", key,sm.getTimeWindow(),sm.getBaseTimeUnit());
+			}
+			timer.addListener(key,tickerAct,sm);
 		}
 		
-		if(si.getType() == MonitorConstant.CLIENT_REQ_TIMEOUT
-				|| si.getType() == MonitorConstant.CLIENT_REQ_EXCEPTION_ERR) {
-			updateBreaker(key,si);
-		}*/
+		counter.increment(si.getType());
 	}
 
 	@Override
@@ -158,26 +196,28 @@ public class ServiceReqMonitor extends AbstractMonitorDataSubscriber implements 
 		}
 		Double result = 0D;
 		switch(type) {
-		case MonitorConstant.FAIL_PERCENT:
+		case MonitorConstant.STATIS_FAIL_PERCENT:
 			Long totalReq = counter.get(MonitorConstant.CLIENT_REQ_BEGIN);
 			if(totalReq != 0) {
-				Long totalFail = counter.get(MonitorConstant.CLIENT_REQ_EXCEPTION_ERR)+
-						counter.get(MonitorConstant.CLIENT_REQ_TIMEOUT);
+				Long totalFail = counter.getTotalWithEx(MonitorConstant.CLIENT_REQ_EXCEPTION_ERR,MonitorConstant.CLIENT_REQ_TIMEOUT).longValue();
 				result = (totalFail*1.0/totalReq)*100;
 			}
 			break;
-		case MonitorConstant.TOTAL_REQ:
+		case MonitorConstant.STATIS_TOTAL_REQ:
 			result = 1.0 * counter.get(MonitorConstant.CLIENT_REQ_BEGIN);		
 			break;
-		case MonitorConstant.TOTAL_SUCCESS:
+		case MonitorConstant.STATIS_TOTAL_RESP:
+			result = counter.getTotalWithEx(MonitorConstant.CLIENT_REQ_BUSSINESS_ERR,MonitorConstant.CLIENT_REQ_OK,MonitorConstant.CLIENT_REQ_EXCEPTION_ERR);
+			break;
+		case MonitorConstant.STATIS_TOTAL_SUCCESS:
 			result =  1.0 * counter.get(MonitorConstant.CLIENT_REQ_ASYNC1_SUCCESS)+
 					counter.get(MonitorConstant.CLIENT_REQ_OK);
 			break;
-		case MonitorConstant.TOTAL_FAIL:
+		case MonitorConstant.STATIS_TOTAL_FAIL:
 			result = 1.0 * counter.get(MonitorConstant.CLIENT_REQ_EXCEPTION_ERR)+
 			counter.get(MonitorConstant.CLIENT_REQ_TIMEOUT);
 			break;
-		case MonitorConstant.SUCCESS_PERCENT:
+		case MonitorConstant.STATIS_SUCCESS_PERCENT:
 			totalReq = counter.get(MonitorConstant.CLIENT_REQ_BEGIN);
 			if(totalReq != 0) {
 				result =  1.0 * counter.get(MonitorConstant.CLIENT_REQ_ASYNC1_SUCCESS)+
@@ -185,13 +225,13 @@ public class ServiceReqMonitor extends AbstractMonitorDataSubscriber implements 
 						result = (result*1.0/totalReq)*100;
 			}
 			break;
-		case MonitorConstant.TOTAL_TIMEOUT:
-			result = 1.0 * counter.get(MonitorConstant.CLIENT_REQ_TIMEOUT);
+		case MonitorConstant.CLIENT_REQ_TIMEOUT_FAIL:
+			result = 1.0 * counter.get(MonitorConstant.CLIENT_REQ_TIMEOUT_FAIL);
 			break;
-		case MonitorConstant.TIMEOUT_PERCENT:
+		case MonitorConstant.STATIS_TIMEOUT_PERCENT:
 			totalReq = counter.get(MonitorConstant.CLIENT_REQ_BEGIN);
 			if(totalReq != 0) {
-				result = 1.0 * counter.get(MonitorConstant.CLIENT_REQ_TIMEOUT);
+				result = 1.0 * counter.get(MonitorConstant.CLIENT_REQ_TIMEOUT_FAIL);
 				result = (result/totalReq)*100;
 			}
 			break;

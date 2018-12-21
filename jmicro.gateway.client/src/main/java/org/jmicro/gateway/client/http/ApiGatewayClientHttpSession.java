@@ -61,8 +61,7 @@ public class ApiGatewayClientHttpSession extends AbstractSession implements ICli
 			headers.put(Constants.HTTP_HEADER_ENCODER, Message.PROTOCOL_BIN+"");
 			byte[] data = HttpClientUtil.doPostData(url, bb.array(),headers);
 			if(data.length > 0) {
-				Message message = new Message();
-	            message.decode(ByteBuffer.wrap(data));
+				Message message = Message.decode(ByteBuffer.wrap(data));
 	            receiver.receive(ApiGatewayClientHttpSession.this,message);
 			} else {
 				throw new CommonException("Req:"+msg.getReqId()+" response null data");
@@ -73,6 +72,11 @@ public class ApiGatewayClientHttpSession extends AbstractSession implements ICli
 	@Override
 	public void close(boolean flag) {
 		super.close(flag);
+	}
+
+	@Override
+	public boolean isServer() {
+		return false;
 	}
 
 }

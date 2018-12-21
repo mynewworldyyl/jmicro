@@ -18,12 +18,15 @@ package org.jmicro.server;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
 
 import org.jmicro.api.JMicroContext;
 import org.jmicro.api.annotation.Cfg;
 import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.Inject;
 import org.jmicro.api.codec.ICodecFactory;
+import org.jmicro.api.executor.ExecutorConfig;
+import org.jmicro.api.executor.ExecutorFactory;
 import org.jmicro.api.idgenerator.IIdClient;
 import org.jmicro.api.monitor.IMonitorDataSubmiter;
 import org.jmicro.api.monitor.MonitorConstant;
@@ -69,6 +72,8 @@ public class ServerMessageReceiver implements IMessageReceiver{
 	/*@Cfg(value="/ServerReceiver/receiveBufferSize")
 	private int receiveBufferSize=1000;*/
 	
+	private ExecutorService executor = ExecutorFactory.createExecutor(new ExecutorConfig());
+	
 	private volatile Map<Byte,IMessageHandler> handlers = new ConcurrentHashMap<>();
 	
 	private Boolean ready = new Boolean(false);
@@ -93,6 +98,7 @@ public class ServerMessageReceiver implements IMessageReceiver{
 	@Override
 	@Suspendable
 	public void receive(ISession s, Message msg) {
+		 JMicroContext.configProvider(msg);
 		/*if(openDebug) {
 			SF.getIns().doMessageLog(MonitorConstant.DEBUG, TAG, msg,"receive");
 		}*/
@@ -107,38 +113,42 @@ public class ServerMessageReceiver implements IMessageReceiver{
 		}
 		JMicroContext jc = JMicroContext.get();
 		//直接协程处理，IO LOOP线程返回
-		/*
-		new Fiber<Void>(() -> {
-		JMicroContext.get().mergeParams(jc);
-		doReceive((IServerSession)s,msg);
-		}).start();
-		*/
 		
-		new Thread(()->{
+		/*new Fiber<Void>(() -> {
 			JMicroContext.get().mergeParams(jc);
 			doReceive((IServerSession)s,msg);
-		}).start();
+		}).start();*/
+		
+		executor.submit(()->{
+			JMicroContext.get().mergeParams(jc);
+			doReceive((IServerSession)s,msg);
+		});
+		
+		/*new Thread(()->{
+			JMicroContext.get().mergeParams(jc);
+			doReceive((IServerSession)s,msg);
+		}).start();*/
 	}
 	
 	@Suspendable
 	private void doReceive(IServerSession s, Message msg){
 		
 		if(msg.isLoggable()) {
-			SF.doMessageLog(MonitorConstant.DEBUG, TAG, msg,null,"doReceive");
+			SF.doMessageLog(MonitorConstant.LOG_DEBUG, TAG, msg,null,"doReceive");
 		}
 		
 		try {
 			IMessageHandler h = handlers.get(msg.getType());
 			if(h == null) {
 				String errMsg = "Message type ["+Integer.toHexString(msg.getType())+"] handler not found!";
-				SF.doMessageLog(MonitorConstant.ERROR, TAG, msg,null,errMsg);
+				SF.doMessageLog(MonitorConstant.LOG_ERROR, TAG, msg,null,errMsg);
 				throw new CommonException(errMsg);
 			}
 			h.onMessage(s, msg);
 		} catch (Throwable e) {
-			SF.doMessageLog(MonitorConstant.ERROR, TAG, msg,e);
+			SF.doMessageLog(MonitorConstant.LOG_ERROR, TAG, msg,e);
 			SF.doSubmit(MonitorConstant.SERVER_REQ_ERROR);
-			logger.error("reqHandler error: ",e);
+			logger.error("reqHandler error:{},msg:{} ",e,msg);
 			msg.setType((byte)(msg.getType()+1));
 			ServerError se = new ServerError();
 			se.setMsg(e.getMessage());

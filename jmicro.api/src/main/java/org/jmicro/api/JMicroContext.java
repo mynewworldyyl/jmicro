@@ -134,7 +134,7 @@ public class JMicroContext  {
 		ServiceItem si = registry.getServiceByImpl(req.getImpl());
 		if(si == null){
 			if(req.isLoggable()) {
-				SF.doRequestLog(MonitorConstant.ERROR, lid(), JMicroContext.class, req,null," service ITEM not found");
+				SF.doRequestLog(MonitorConstant.LOG_ERROR, lid(), JMicroContext.class, req,null," service ITEM not found");
 			}
 			SF.doSubmit(MonitorConstant.SERVER_REQ_SERVICE_NOT_FOUND,req,null);
 			throw new CommonException("Service not found impl："+req.getImpl());
@@ -148,7 +148,7 @@ public class JMicroContext  {
 		Object obj = serviceLoader.getService(req.getImpl());
 		
 		if(obj == null){
-			SF.doRequestLog(MonitorConstant.ERROR, lid(), JMicroContext.class, req,null," service INSTANCE not found");
+			SF.doRequestLog(MonitorConstant.LOG_ERROR, lid(), JMicroContext.class, req,null," service INSTANCE not found");
 			SF.doSubmit(MonitorConstant.SERVER_REQ_SERVICE_NOT_FOUND,req,null);
 			throw new CommonException("Service not found");
 		}
@@ -180,6 +180,8 @@ public class JMicroContext  {
 		
 		//默认不启用服务级的log配置
 		c.isLoggable = false;
+		
+		
 	}
 	
 	public boolean isLoggable(boolean isComOpen) {

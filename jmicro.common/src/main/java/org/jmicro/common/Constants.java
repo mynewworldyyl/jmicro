@@ -127,20 +127,15 @@ public interface Constants {
 	public static final byte MSG_TYPE_SYSTEM_REQ_JRPC = 0x0F; // 特殊RPC 接口，如ID RPC接口中
 	public static final byte MSG_TYPE_SPECAIL_RRESP_JRPC = 0x10;//16
 	
-	public static final byte MSG_VERSION = (byte)1;
-	
-	//需要响应的请求
-	public static final byte FLAG_NEED_RESPONSE = 1<<0;
-	
-	//异步消息
-	public static final byte FLAG_STREAM = 1<<1;
-	
-	//可监控消息
-	public static final byte FLAG_MONITORABLE = 1<<2;
-	
-	//是否启用服务级log
-	public static final short FLAG_LOGGABLE = 0x80;
-	
 	/*=====================Message END=======================*/
+	
+	//time unit constant
+	public static final String TIME_DAY = "D"; //天
+	public static final String TIME_HOUR = "H"; //时
+	public static final String TIME_MINUTES = "M"; //分
+	public static final String TIME_SECONDS = "S"; //秒
+	public static final String TIME_MILLISECONDS = "MS"; //毫秒
+	public static final String TIME_MICROSECONDS = "MC"; //微秒
+	public static final String TIME_NANOSECONDS = "N"; //纳秒
 	
 }

@@ -19,7 +19,7 @@ package org.jmicro.example.comsumer;
 import org.jmicro.api.JMicro;
 import org.jmicro.api.JMicroContext;
 import org.jmicro.api.objectfactory.IObjectFactory;
-import org.jmicro.example.api.ITestRpcService;
+import org.jmicro.example.api.ISayHello;
 
 /**
  * 
@@ -36,7 +36,7 @@ public class ServiceComsumer {
 		JMicroContext.get().setParam("routerTag", "tagValue");
 		
 		//got remote service from object factory
-		ITestRpcService src = of.get(ITestRpcService.class);
+		ISayHello src = of.get(ISayHello.class);
 		//invoke remote service
 		System.out.println(src.hello("Hello JMicro"));
 	}

@@ -87,8 +87,7 @@ public class NettyHttpServerHandler extends ChannelInboundHandlerAdapter {
         			JMicroContext.configProvider(message);
         			receiver.receive(session,message);
     			} else {
-    				message = new Message();
-    				message.decode(ByteBuffer.wrap(bts));
+    				message = Message.decode(ByteBuffer.wrap(bts));
     				JMicroContext.configProvider(message);
     				receiver.receive(session,message);
     			}

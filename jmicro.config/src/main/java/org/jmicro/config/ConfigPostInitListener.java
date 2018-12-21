@@ -16,31 +16,23 @@
  */
 package org.jmicro.config;
 
-import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.lang.reflect.Type;
 import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
 
 import org.apache.zookeeper.KeeperException;
 import org.jmicro.api.annotation.Cfg;
 import org.jmicro.api.annotation.PostListener;
 import org.jmicro.api.config.Config;
 import org.jmicro.api.config.IConfigChangeListener;
+import org.jmicro.api.net.IRequestHandler;
 import org.jmicro.api.objectfactory.PostInitListenerAdapter;
 import org.jmicro.api.objectfactory.ProxyObject;
 import org.jmicro.common.CommonException;
 import org.jmicro.common.Utils;
-import org.jmicro.common.util.JsonUtils;
 import org.jmicro.common.util.StringUtils;
-import org.jmicro.zk.ZKDataOperator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 /**
@@ -58,8 +50,9 @@ public class ConfigPostInitListener extends PostInitListenerAdapter {
 	
 	@Override
 	public void preInit(Object obj,Config cfg) {
-		Class<?> cls = ProxyObject.getTargetCls(obj.getClass());
-		List<Field> fields = new ArrayList<>();
+		
+		 Class<?> cls = ProxyObject.getTargetCls(obj.getClass());
+		 List<Field> fields = new ArrayList<>();
 		 Utils.getIns().getFields(fields, cls);
 
 		 for(Field f : fields){

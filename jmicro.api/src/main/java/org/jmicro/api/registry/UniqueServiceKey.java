@@ -55,6 +55,7 @@ public final class UniqueServiceKey {
 		instanceName(ins,sb,this.instanceName);
 		host(host,sb,this.host);
 		port(port,sb,this.port);
+		
 		;
 		return sb.substring(0, sb.length()-2);
 	}

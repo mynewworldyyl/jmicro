@@ -63,10 +63,6 @@
 			 <groupId>org.jmicro</groupId>
 			 <artifactId>jmicro.idgenerator</artifactId>
         </dependency>
-         <dependency>
-			 <groupId>org.jmicro</groupId>
-			 <artifactId>jmicro.monitor.submiter</artifactId>
-        </dependency>
     </dependencies>
    
 </project>

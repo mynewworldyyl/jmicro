@@ -29,7 +29,7 @@ import org.jmicro.api.registry.ServiceMethod;
  */
 public final class SubmitItem{
 
-	private byte level = MonitorConstant.DEBUG;
+	private byte level = MonitorConstant.LOG_DEBUG;
 	
 	private int type = -1;
 	
@@ -69,7 +69,7 @@ public final class SubmitItem{
 	private long time = 0;
 	
 	public void reset() {
-		level = MonitorConstant.DEBUG;
+		level = MonitorConstant.LOG_DEBUG;
 		type = -1;
 		linkId = null;
 		

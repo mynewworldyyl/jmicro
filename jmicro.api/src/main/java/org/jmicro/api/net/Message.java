@@ -19,6 +19,8 @@ package org.jmicro.api.net;
 import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
 
+import org.jmicro.api.codec.OnePrefixDecoder;
+import org.jmicro.api.codec.OnePrefixTypeEncoder;
 import org.jmicro.common.CommonException;
 import org.jmicro.common.Constants;
 import org.jmicro.common.util.JsonUtils;
@@ -30,7 +32,7 @@ import org.jmicro.common.util.JsonUtils;
  */
 public final class Message {
 	
-	public static final int HEADER_LEN = 17;
+	public static final int HEADER_LEN = 10;
 	
 	public static final byte PROTOCOL_BIN = 0;
 	public static final byte PROTOCOL_JSON = 1;
@@ -48,34 +50,71 @@ public final class Message {
 	public static final byte PRIORITY_NORMAL = PRIORITY_3;
 	public static final byte PRIORITY_MAX = PRIORITY_7;
 	
+	public static final byte MSG_VERSION = (byte)1;
+	
+	public static final byte FLAG_PROTOCOL = 1<<0;
+	
+	//调试模式
+	public static final byte FLAG_DEBUG_MODE = 1<<1;
+	
+	//需要响应的请求
+	public static final byte FLAG_NEED_RESPONSE = 1<<2;
+	
+	//0B00111000 5---3
+	public static final byte FLAG_LEVEL = 0X38;
+	
+	//异步消息
+	public static final byte FLAG_STREAM = 1<<6;
+	
+	//DUMP上行数据
+	public static final byte FLAG0_DUMP_UP = 1<<0;
+	//DUMP下行数据
+	public static final byte FLAG0_DUMP_DOWN = 1<<1;
+	
+	//可监控消息
+	public static final byte FLAG0_MONITORABLE = 1<<2;
+	
+	//是否启用服务级log
+	public static final short FLAG0_LOGGABLE = 1 << 3;
+	
 	//1 byte length
 	private byte version;
 		
-	private long msgId;
-	
 	private long reqId;
 	
-	private long linkId;
-	
 	//payload length with byte,4 byte length
-	private int len;
+	//private int len;
 	
 	// 1 byte
 	private byte type;
 	
 	/**
-	 * L: Level
-	 * M: Monitorable
+	 * dm: is development mode
 	 * S: Stream
 	 * N: need Response 
 	 * P: protocol 0:bin, 1:json
+	 * LLL: Message priority 
 	 * 
-	 *   P L L L M S N
-	 *   | | | | | | |
-	 * 0 0 0 0 0 0 0 0
+	 *   S L L  L  N dm P
+	 * | | | |  |  |  | |
+	 * 7 6 5 4  3  2  1 0
 	 * @return
 	 */
 	private byte flag = 0;
+	
+	/**
+	 * up: dump up stream data
+	 * do: dump down stream data
+	 * M: Monitorable
+	 * L: 开发日志上发 
+	
+	 * 
+	 *         L M  do up
+	 * | | | | | |  |  |
+	 * 7 6 5 4 3 2  1  0
+	 * @return
+	 */
+	private byte flag0 = 0;
 	
 	//request or response
 	//private boolean isReq;
@@ -85,38 +124,80 @@ public final class Message {
 	
 	private Object payload;	
 	
+	
+	//*****************development mode field begin******************//
+	private long msgId;
+	private long linkId;
+	private long time;
+	private String instanceName;
+	private String method;
+	
+	//****************development mode field end*******************//
+	
 	public Message(){}
 	
-	public boolean isMonitorable() {
-		return (flag & Constants.FLAG_MONITORABLE) != 0;
+	public static boolean is(byte flag, byte mask) {
+		return (flag & mask) != 0;
 	}
 	
-	public void setMonitorable(boolean f) {
-		flag |= f ? Constants.FLAG_MONITORABLE : 0 ; 
+	public static boolean is(byte flag, short mask) {
+		return (flag & mask) != 0;
 	}
 	
-	public boolean isStream() {
-		return (flag & Constants.FLAG_STREAM) != 0;
+	public boolean isDumpUpStream() {
+		return is(flag0,FLAG0_DUMP_UP);
 	}
 	
-	public void setStream(boolean f) {
-		flag |= f ? Constants.FLAG_STREAM : 0 ; 
+	public void setDumpUpStream(boolean f) {
+		flag0 |= f ? FLAG0_DUMP_UP : 0 ; 
+	}
+	
+	public boolean isDumpDownStream() {
+		return is(flag0,FLAG0_DUMP_DOWN);
+	}
+	
+	public void setDumpDownStream(boolean f) {
+		flag0 |= f ? Message.FLAG0_DUMP_DOWN : 0 ; 
 	}
 	
 	public boolean isLoggable() {
-		return (flag & Constants.FLAG_LOGGABLE) != 0;
+		return is(flag0,FLAG0_LOGGABLE);
 	}
 	
 	public void setLoggable(boolean f) {
-		flag |= f ? Constants.FLAG_LOGGABLE : 0 ; 
+		flag0 |= f ? FLAG0_LOGGABLE : 0 ; 
+	}
+	
+	public boolean isDebugMode() {
+		return is(flag,FLAG_DEBUG_MODE);
+	}
+	
+	public void setDebugMode(boolean f) {
+		flag |= f ? FLAG_DEBUG_MODE : 0 ; 
+	}
+	
+	public boolean isMonitorable() {
+		return is(flag0,FLAG0_MONITORABLE);
+	}
+	
+	public void setMonitorable(boolean f) {
+		flag0 |= f ? FLAG0_MONITORABLE : 0 ; 
+	}
+	
+	public boolean isStream() {
+		return is(flag,Message.FLAG_STREAM);
+	}
+	
+	public void setStream(boolean f) {
+		flag |= f ? Message.FLAG_STREAM : 0 ; 
 	}
 	
 	public boolean isNeedResponse() {
-		return (flag & Constants.FLAG_NEED_RESPONSE) != 0;
+		return is(flag,FLAG_NEED_RESPONSE);
 	}
 	
 	public void setNeedResponse(boolean f) {
-		flag |= f ? Constants.FLAG_NEED_RESPONSE : 0 ; 
+		flag |= f ? FLAG_NEED_RESPONSE : 0 ; 
 	}
 	
 	public int getLevel() {
@@ -130,79 +211,108 @@ public final class Message {
 		this.flag = (byte)((l << 3) | this.flag);
 	}
 	
+	public  static byte getProtocolByFlag(byte flag) {
+		return (byte)(flag & 0x01);
+	}
+	
 	public byte getProtocol() {
-		return (byte)((flag >>> 6) & 0x01);
+		return getProtocolByFlag(this.flag);
 	}
 
 	public void setProtocol(byte protocol) {
 		if(protocol == PROTOCOL_BIN || protocol == PROTOCOL_JSON) {
-			this.flag = (byte)((protocol << 6) | this.flag);
+			this.flag = (byte)( protocol | (this.flag & 0xFE));
 		}else {
 			 new CommonException("Invalid protocol: "+protocol);
 		}
 	}
 	
-	
-	public void decode(ByteBuffer b) {
-		
-		this.flag = b.get();
-		if(this.getProtocol() == PROTOCOL_BIN) {
+	public static Message decode(ByteBuffer b) {
+		Message msg = null;
+		byte flag = b.get();
+		if(getProtocolByFlag(flag) == PROTOCOL_BIN) {
+			msg = new Message();
+			msg.flag =  flag;
 			//ByteBuffer b = ByteBuffer.wrap(data);
-			this.len = readUnsignedShort(b);
+			int len = readUnsignedShort(b);
 			if(b.remaining() < len){
 				throw new CommonException("Message len not valid");
 			}
 			
-			this.setVersion(b.get());
+			msg.setVersion(b.get());
 			
 			//read type
-			this.setType(b.get());
-			this.setId(readUnsignedInt(b));
-			this.setReqId(readUnsignedInt(b));
-			this.setLinkId(readUnsignedInt(b));
+			msg.setType(b.get());
+			msg.setReqId(readUnsignedInt(b));
+			msg.flag0 = b.get();
+			
+			if(msg.isDebugMode()) {
+				//读取测试数据头部
+				msg.setId(readUnsignedInt(b));
+				msg.setLinkId(readUnsignedInt(b));
+				msg.setTime(b.getLong());
+				msg.setInstanceName(OnePrefixDecoder.decodeString(b));
+				msg.setMethod(OnePrefixDecoder.decodeString(b));
+				//减去测试数据头部长度
+				len -= OnePrefixTypeEncoder.encodeStringLen(msg.getInstanceName());
+				len -= OnePrefixTypeEncoder.encodeStringLen(msg.getMethod());
+				len -= 16; //time
+			}
 		    
 			if(len > 0){
 				byte[] payload = new byte[len];
 				b.get(payload, 0, len);
-				this.setPayload(ByteBuffer.wrap(payload));
+				msg.setPayload(ByteBuffer.wrap(payload));
 			}else {
-				this.setPayload(null);
+				msg.setPayload(null);
 			}
-		} else if(this.getProtocol() == PROTOCOL_JSON) {
+		} else if(getProtocolByFlag(flag) == PROTOCOL_JSON) {
 			try {
 				String json = new String(b.array(),1,b.remaining(),Constants.CHARSET);
-				Message msg = JsonUtils.getIns().fromJson(json, Message.class);
-				this.msgId = msg.msgId;
-				this.reqId = msg.reqId;
-				this.linkId = msg.linkId;
-				this.len = msg.len;
-				this.version = msg.version;
-				this.type = msg.type;
-				this.flag = msg.flag;
-				this.payload = msg.payload;
+				msg = JsonUtils.getIns().fromJson(json, Message.class);
+				msg.msgId = msg.msgId;
+				msg.reqId = msg.reqId;
+				msg.linkId = msg.linkId;
+				msg.version = msg.version;
+				msg.type = msg.type;
+				msg.flag = msg.flag;
+				msg.payload = msg.payload;
+				msg.flag0 = msg.flag0;
+				msg.instanceName = msg.instanceName;
+				msg.method = msg.method;
+				msg.time = msg.time;
 			} catch (UnsupportedEncodingException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 		}else {
-			throw new CommonException("Invalid protocol: "+ this.getProtocol());
+			throw new CommonException("Invalid protocol: "+ msg.getProtocol());
 		}
-
+		return msg;
 	}
 	
 	public ByteBuffer encode() {
 		ByteBuffer b =  null;
+		
+		boolean debug = this.isDebugMode();
 		if(this.getProtocol() == PROTOCOL_BIN) {
 			
 			ByteBuffer data = (ByteBuffer)this.getPayload();
 			int len = 0;
 			if(data == null){
-				b =  ByteBuffer.allocate(Message.HEADER_LEN);
 				len = 0;
 			} else {
-				b = ByteBuffer.allocate(data.remaining() + Message.HEADER_LEN);
 				len = data.remaining();
 			}
+			
+			if(debug) {
+				len += OnePrefixTypeEncoder.encodeStringLen(instanceName);
+				len += OnePrefixTypeEncoder.encodeStringLen(method);
+				//3个整数ID的长度，3*4=12
+				len += 16; //time
+			}
+			
+			b = ByteBuffer.allocate(len + Message.HEADER_LEN);
 			
 			b.put(this.flag);
 			
@@ -214,14 +324,20 @@ public final class Message {
 			//writeUnsignedShort(b, this.type);
 			b.put(this.type);
 			
-			writeUnsignedInt(b, this.msgId);
-			//b.putLong(this.msgId);
-			
 			writeUnsignedInt(b, this.reqId);
-			//b.putLong(this.reqId);
-			
-			writeUnsignedInt(b, this.linkId);
 			//b.putLong(this.linkId);
+			b.put(this.flag0);
+			
+			if(debug) {
+				writeUnsignedInt(b, this.msgId);
+				//b.putLong(this.msgId);
+				writeUnsignedInt(b, this.linkId);
+				//b.putLong(this.reqId);
+				//writeUnsignedInt(b, this.time);
+				b.putLong(this.time);
+				OnePrefixTypeEncoder.encodeString(b, this.instanceName);
+				OnePrefixTypeEncoder.encodeString(b, this.method);
+			}
 			
 			if(data != null){
 				b.put(data);
@@ -244,46 +360,38 @@ public final class Message {
 		return b;
 	}
 	
-	public static ByteBuffer readMessage(ByteBuffer cache){
+	public static Message readMessage(ByteBuffer cache){
 		
-		//当前写的位置，也就是可读的数据长度
-		int totalLen = cache.position();
+		//保存读数据位置
+		int pos = cache.position();
+		
+		//数据总长是否可构建一个包的最小长度
+		int totalLen = cache.remaining();
 		if(totalLen < Message.HEADER_LEN) {
 			//可读的数据长度小于头部长度
 			return null;
 		}
 		
-		//保存写数据位置
-		int pos = cache.position();
-		cache.position(1);
-		//读数据长度
+		//取第一个字节标志位
+		//byte f = cache.get();
+				
+		//取第二，第三个字节 数据长度
+		cache.position(pos+1);
 		int len = Message.readUnsignedShort(cache);
-		//还原写数据公位置
+		//还原读数据公位置
 		cache.position(pos);
-		
-		if(totalLen < len+Message.HEADER_LEN){
+				
+		if(totalLen < len + Message.HEADER_LEN){
 			//还不能构成一个足够长度的数据包
 			return null;
 		}
 		
-		//准备读数据
-		cache.flip();
+		byte[] data = new byte[len+Message.HEADER_LEN];
+		//从缓存中读一个包,cache的position往前推
+		cache.get(data, 0, len+Message.HEADER_LEN);
 		
-		ByteBuffer body = ByteBuffer.allocate(len+Message.HEADER_LEN);
-		//System.out.println("cache:"+cache);
-		//System.out.println("body:"+body);
-		
-		body.put(cache.array(),0,body.capacity());
-		body.flip();
-		
-		cache.position(body.remaining());
-		//准备下一次读
-		//将剩余数移移到缓存开始位置，position定位在数据长度位置，处于写状态
-		cache.compact();
-		//b.position(b.limit());
-		//cache.limit(cache.capacity());
-		
-		return body;
+		return Message.decode(ByteBuffer.wrap(data));
+        
 	}
 	
 	public static void writeUnsignedShort(ByteBuffer b,int v) {
@@ -372,16 +480,48 @@ public final class Message {
 		this.linkId = linkId;
 	}
 
-	public long getMsgId() {
-		return msgId;
-	}
-
-	public int getLen() {
-		return len;
-	}
-
 	public byte getFlag() {
 		return flag;
 	}
+
+	public byte getFlag0() {
+		return flag0;
+	}
+
+	public long getTime() {
+		return time;
+	}
+
+	public void setTime(long time) {
+		this.time = time;
+	}
+
+	public String getInstanceName() {
+		return instanceName;
+	}
+
+	public void setInstanceName(String instanceName) {
+		this.instanceName = instanceName;
+	}
+
+	public String getMethod() {
+		return method;
+	}
+
+	public void setMethod(String method) {
+		this.method = method;
+	}
+
+	@Override
+	public String toString() {
+		return "Message [version=" + version + ", msgId=" + msgId + ", reqId=" + reqId + ", linkId=" + linkId 
+				+ ", type=" + type + ", flag=" + Integer.toHexString(flag) + ", flag0=" + Integer.toHexString(flag0) 
+				+ ", payload=" + payload + ", time="+ time 
+				+ ", devMode=" + this.isDebugMode() + ", monitorable="+ this.isMonitorable() 
+				+ ", stream=" + this.isStream() + ", needresp="+ this.isNeedResponse()
+				+ ", upstream=" + this.isDumpUpStream() + ", downstream="+ this.isDumpDownStream() 
+				+ ", instanceName=" + instanceName + ", method=" + method + "]";
+	}
+
 	
 }

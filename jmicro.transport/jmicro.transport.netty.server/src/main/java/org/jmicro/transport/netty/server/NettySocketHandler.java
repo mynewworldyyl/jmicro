@@ -10,7 +10,6 @@ import org.jmicro.api.codec.ICodecFactory;
 import org.jmicro.api.idgenerator.IIdClient;
 import org.jmicro.api.monitor.IMonitorDataSubmiter;
 import org.jmicro.api.net.IMessageReceiver;
-import org.jmicro.api.net.Message;
 import org.jmicro.common.Constants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -51,6 +50,12 @@ public class NettySocketHandler extends ChannelInboundHandlerAdapter {
 	@Inject
 	private IMessageReceiver receiver;
 	
+	@Cfg(value="/NettySocketHandler/dumpDownStream",defGlobal=false)
+	private boolean dumpDownStream  = false;
+	
+	@Cfg(value="/NettySocketHandler/dumpUpStream",defGlobal=false)
+	private boolean dumpUpStream  = false;
+	
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg)
             throws Exception {
@@ -65,26 +70,17 @@ public class NettySocketHandler extends ChannelInboundHandlerAdapter {
     		return;
     	}
     	
+    	ByteBuffer b = ByteBuffer.allocate(bb.readableBytes());
+    	bb.readBytes(b);
+    	b.flip();
+    	bb.release();
+    	
     	NettyServerSession session = ctx.channel().attr(sessionKey).get();
     	
     	JMicroContext.configProvider(monitor, session);
     	
-    	ByteBuffer buffer = session.getReadBuffer();
-    	
-    	ByteBuffer b = ByteBuffer.allocate(bb.readableBytes());
-    	bb.readBytes(b);
-    	b.flip();
-    	
-    	buffer.put(b);
-    	
-    	ByteBuffer body = Message.readMessage(buffer);
-        if(body == null){
-        	return;
-        }
-        Message message = new Message();
-        message.decode(body);
-        JMicroContext.configProvider(message);
-		receiver.receive(session,message);
+    	session.receive(b);
+
     }
     
     @Override
@@ -97,6 +93,9 @@ public class NettySocketHandler extends ChannelInboundHandlerAdapter {
     	super.handlerAdded(ctx);
     	NettyServerSession session = new NettyServerSession(ctx,readBufferSize,heardbeatInterval,
     			Constants.TYPE_SOCKET);
+    	session.setReceiver(receiver);
+    	session.setDumpDownStream(this.dumpDownStream);
+    	session.setDumpUpStream(this.dumpUpStream);
     	ctx.channel().attr(sessionKey).set(session);
     }
     
@@ -108,9 +107,10 @@ public class NettySocketHandler extends ChannelInboundHandlerAdapter {
     
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
-    	logger.error("exceptionCaught",cause);
+    	logger.error("exceptionCaught close session",cause);
     	ctx.channel().attr(sessionKey).get().close(true);
     	ctx.channel().attr(sessionKey).remove();
+    	ctx.close();
     }
     
 }

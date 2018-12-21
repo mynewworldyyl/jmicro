@@ -82,6 +82,7 @@ public class JMicro {
 	}
 
 	public static IObjectFactory getObjectFactoryAndStart(String[] args){
+		System.out.println(System.getProperty("java.class.path"));
 		IObjectFactory of =  getObjectFactoryNotStart(args,null);
 		of.start();
 		return of;

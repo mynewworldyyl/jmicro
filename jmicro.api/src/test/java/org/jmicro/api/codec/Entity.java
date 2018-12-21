@@ -2,9 +2,11 @@ package org.jmicro.api.codec;
 
 public final class Entity {
 
-	private long v=222;
+	/*private long v=222;
 	private String str = null;
-	private Object hello = "Hello World";
+	private Object hello = "Hello World";*/
+	
+	public Object types = new Integer[] {1,2,3};
 	
 /*	private List<Person> persons = new ArrayList<Person>();
 	
@@ -30,7 +32,7 @@ public final class Entity {
 	
 	@Override
 	public String toString() {
-		return "hello=" + this.hello +", value = "/*+ v+",list:"+list+",map: "+map*/;
+		return "hello=" + this.types +", value = "/*+ v+",list:"+list+",map: "+map*/;
 	}
 	
 	

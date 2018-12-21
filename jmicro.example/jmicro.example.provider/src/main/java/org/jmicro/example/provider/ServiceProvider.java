@@ -17,7 +17,6 @@
 package org.jmicro.example.provider;
 
 import org.jmicro.api.JMicro;
-import org.jmicro.common.Utils;
 
 /**
  * 

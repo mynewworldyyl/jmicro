@@ -30,7 +30,8 @@ public interface ISession{
 	
 	void putParam(String key,Object obj);
 	
-	ByteBuffer getReadBuffer();
+	//ByteBuffer getReadBuffer();
+	int getReadBufferSize();
 	
 	//server write response, or client write no need response request
 	void write(Message bb);
@@ -52,5 +53,11 @@ public interface ISession{
     long getId();
 	
 	void setId(long id);
+	
+	void receive(ByteBuffer msg) ;
+	
+	void setDumpUpStream(boolean dump);
+	
+	void setDumpDownStream(boolean dump);
 	
 }

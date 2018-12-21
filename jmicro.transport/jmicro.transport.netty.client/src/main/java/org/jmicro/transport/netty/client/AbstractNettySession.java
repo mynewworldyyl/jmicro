@@ -65,7 +65,7 @@ public abstract class AbstractNettySession extends AbstractSession implements IC
 			String json = JsonUtils.getIns().toJson(msg);
 			if(this.isWebSocket) {
 				ctx.channel().writeAndFlush(new TextWebSocketFrame(json));
-			} else {		
+			} else {
 				FullHttpResponse response;
 				try {
 					response = new DefaultFullHttpResponse(HTTP_1_1, OK,
@@ -80,12 +80,17 @@ public abstract class AbstractNettySession extends AbstractSession implements IC
 					e.printStackTrace();
 				}
 			}
-		}else {
+		} else {
+			//ctx.write(msg)
 			//String json = JsonUtils.getIns().toJson(msg);
 			ByteBuffer bb = msg.encode();
 			ByteBuf bbf = Unpooled.buffer(bb.remaining());
 			bbf.writeBytes(bb);
 			ctx.channel().writeAndFlush(bbf);
+			
+			//客户方写消息，算上行
+			this.dump(bb.array(),true,msg);
+			
 		}
 	}
 

@@ -79,10 +79,10 @@ public abstract class AbstractLimiter implements ILimiter{
 		}
 		ServiceMethod sm = this.getServiceMethod(si, req);
 		
-		if(StringUtils.isEmpty(sm.getSpeedUnit())){
-			return si.getSpeedUnit();
+		if(StringUtils.isEmpty(sm.getBaseTimeUnit())){
+			return si.getBaseTimeUnit();
 		}else {
-			return sm.getSpeedUnit();
+			return sm.getBaseTimeUnit();
 		}
 	}
 	

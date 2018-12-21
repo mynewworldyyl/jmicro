@@ -83,6 +83,7 @@ jmicro.idgenerator/target/
 jmicro.idgenerator/.classpath
 jmicro.idgenerator/.project
 jmicro.idgenerator/.settings/
+jmicro.idgenerator/logs/
 jmicro.example/jmicro.example.api/target/
 jmicro.example/jmicro.example.api/.classpath
 jmicro.example/jmicro.example.api/.project

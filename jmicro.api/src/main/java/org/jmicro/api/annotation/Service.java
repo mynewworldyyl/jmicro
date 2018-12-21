@@ -22,12 +22,8 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
 
+import org.jmicro.api.net.Message;
 import org.jmicro.common.Constants;
-/**
- * 
- * @author Yulei Ye
- * @date 2018年10月4日-上午11:58:31
- */
 @Target({TYPE})
 @Retention(RUNTIME)
 public @interface Service {
@@ -64,7 +60,14 @@ public @interface Service {
 	public String version() default "";
 	
 	/**
-	 * 服务是否可监控，-1表示未定义，由别的地方定义，如系统环境变量，启动时指定等，0表示不可监控，1表未可以被监控
+	 * 开启Debug模式，-1表示未定义，由别的地方定义，如系统环境变量，启动时指定等，0表示不开启，1表示开启
+	 * Message包增加额外高试字段，如linkid,msgid,instanceName,method
+	 * 开启debug后，其他标志才志作用 {@link Message}
+	 */
+	public int debugMode() default -1;
+	
+	/**
+	 * 服务是否可监控，-1表示未定义，由别的地方定义，如系统环境变量，启动时指定等，0表示不可监控，1表示可以被监控
 	 * 可以被监控的意思是：系统启用埋点日志上报，服务请求开始，服务请求得到OK响应，服务超时，服务异常等埋点
 	 */
 	public int monitorEnable() default -1;
@@ -116,7 +119,20 @@ public @interface Service {
 	/**
 	 * 支持的最高QPS
 	 */
-	public String maxSpeed() default "";
+	public int maxSpeed() default 0; //0无限制
+	
+	//统计服务数据基本时长，单位同baseTimeUnit确定  @link SMethod
+	public long timeWindow() default 1000*10;
+	
+	/**
+	 * 采样统计数据周期，单位由baseTimeUnit确定
+	 *   小于0表示由Service注解确定，大于0表示启用
+	 * @return
+	 */
+	public long checkInterval() default -1;
+	
+	// @link SMethod
+	public String baseTimeUnit() default Constants.TIME_MILLISECONDS;
 	
 	/**
 	 * 用于代理处理类，有特殊需求的可以定制代码才需要设置，如ID请求处理器，使用的RpcRequest及Message不需要ID等特殊实现

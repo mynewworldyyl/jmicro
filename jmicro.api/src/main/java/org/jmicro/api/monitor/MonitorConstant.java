@@ -16,14 +16,21 @@
  */
 package org.jmicro.api.monitor;
 
+import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
+import java.util.HashMap;
+import java.util.Map;
+
 /**
  * 
  * @author Beck Ye
  * @date 2018年10月4日-上午11:49:26
  */
-public interface MonitorConstant {
+public final class MonitorConstant {
+	
+	private MonitorConstant(){}
 
-    public static final int ALL  = 0X7FFFFFFF;
+    public static final int CLIENT_INVALID  = 0X7FFFFFFF;
 	//请求开始
 	public static final int CLIENT_REQ_BEGIN  = 0X7FFFFFF1;
 	//请求超时
@@ -86,31 +93,55 @@ public interface MonitorConstant {
     
     public static final int LINKER_ROUTER_MONITOR = 0X7FFFFEE3;
     
-    public static final byte TRANCE = 1;
+    public static final byte LOG_TRANCE = 1;
     
-    public static final byte DEBUG = 2;
+    public static final byte LOG_DEBUG = 2;
     
-    public static final byte INFO = 3;
+    public static final byte LOG_INFO = 3;
     
-    public static final byte WARN = 4;
+    public static final byte LOG_WARN = 4;
     
-    public static final byte ERROR = 5;
+    public static final byte LOG_ERROR = 5;
     
-    public static final byte FINAL = 6;
+    public static final byte LOG_FINAL = 6;
     
     //总失败数所占请求数比率
-	public static final int FAIL_PERCENT = 1;
-	//总请求数
-	public static final int TOTAL_REQ = 2;
-	//总成功数
-	public static final int TOTAL_SUCCESS = 3;
-	//总失败数
-	public static final int TOTAL_FAIL = 4;
-	//总成功数所占比率
-	public static final int SUCCESS_PERCENT = 5;
-	//超时数
-	public static final int TOTAL_TIMEOUT = 6;
-	//超时百分比
-	public static final int TIMEOUT_PERCENT = 7;
+	public static final int STATIS_FAIL_PERCENT = 1;
 	
+	//总请求数
+	public static final int STATIS_TOTAL_REQ = 2;
+	
+	//总成功数
+	public static final int STATIS_TOTAL_SUCCESS = 3;
+	
+	//总失败数
+	public static final int STATIS_TOTAL_FAIL = 4;
+	
+	//总成功数所占比率
+	public static final int STATIS_SUCCESS_PERCENT = 5;
+	
+	//超时数
+	public static final int STATIS_TOTAL_TIMEOUT = 6;
+	
+	//超时百分比
+	public static final int STATIS_TIMEOUT_PERCENT = 7;
+	
+	public static final int STATIS_TOTAL_RESP = 8;
+	
+	public static final Map<Integer,String> MONITOR_VAL_2_KEY = new HashMap<>();
+	static {
+		Field[] fs = MonitorConstant.class.getDeclaredFields();
+		for(Field f: fs){
+			if(!Modifier.isStatic(f.getModifiers()) || !(f.getName().startsWith("SERVER_") 
+					|| f.getName().startsWith("CLIENT_") || f.getName().startsWith("STATIS_") 
+					|| f.getName().startsWith("LINKER_ROUTER")) ){
+				continue;
+			}
+			try {
+				MONITOR_VAL_2_KEY.put(f.getInt(null), f.getName());
+			} catch (IllegalArgumentException | IllegalAccessException e) {
+				e.printStackTrace();
+			}
+		}
+	}
 }

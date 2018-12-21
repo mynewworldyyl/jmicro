@@ -1,17 +1,24 @@
 package org.jmicro.example.test;
 
+import java.util.Arrays;
+import java.util.Random;
+import java.util.Set;
+
 import org.jmicro.api.JMicro;
 import org.jmicro.api.JMicroContext;
 import org.jmicro.api.monitor.IMonitorDataSubmiter;
+import org.jmicro.api.monitor.IMonitorDataSubscriber;
 import org.jmicro.api.monitor.MonitorConstant;
 import org.jmicro.api.monitor.SF;
 import org.jmicro.api.objectfactory.IObjectFactory;
 import org.jmicro.api.registry.ServiceMethod;
 import org.jmicro.api.registry.UniqueServiceMethodKey;
 import org.jmicro.example.api.ISayHello;
+import org.jmicro.example.comsumer.TestRpcClient;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 
 
 public class TestMonitor {
@@ -51,7 +58,7 @@ public class TestMonitor {
 		ServiceMethod sm = new ServiceMethod();
 		sm.setKey(UniqueServiceMethodKey.fromKey("org.jmicro.api.monitor.IMonitorDataSubscriber##LinkRouterMonitor##0.0.1##LinkRouterMonitor##172.16.22.200##9001##test##java.lang.String"));
 		for(;;){
-			SF.doServiceLog(MonitorConstant.DEBUG,this.getClass(), 1L,sm,null);
+			SF.doServiceLog(MonitorConstant.LOG_DEBUG,this.getClass(), 1L,sm,null);
 			//logger.debug("testSubmitLog");
 			try {
 				Thread.sleep(500);
@@ -79,17 +86,47 @@ public class TestMonitor {
 		System.out.println(result);
 		JMicro.waitForShutdown();
 		
-		/*for(;;){
-			JMicroContext.get().removeParam(JMicroContext.LINKER_ID);
-			String result = sayHello.hello("Hello LOG");
-			System.out.println(result);
-			try {
-				Thread.sleep(500);
-			} catch (InterruptedException e) {
-				e.printStackTrace();
-			}
-		}*/
+		
 	}
 
+	@Test
+	public void testGetInteret() {
+		
+		final Random ran = new Random();
+		
+		IObjectFactory of = JMicro.getObjectFactoryAndStart(new String[] {"-DinstanceName=testGetInteret","-Dclient=true"});
+		
+		JMicroContext.get().configMonitor(1, 1);
+		Set<IMonitorDataSubscriber> ls = of.get(TestRpcClient.class).getSubmiters();
+		
+		Runnable r = ()->{
+			while(true) {
+				try {
+					for(IMonitorDataSubscriber m : ls) {
+						m.intrest();
+						//System.out.println(Arrays.asList(m.intrest()).toString());
+						try {
+							//Thread.sleep(500000000);
+							Thread.sleep(ran.nextInt(50));
+						} catch (InterruptedException e) {
+							e.printStackTrace();
+						}
+					}
+				} catch (Throwable e) {
+					e.printStackTrace();
+				}
+			}
+		};
+		
+		new Thread(r).start();
+		new Thread(r).start();
+		new Thread(r).start();
+		new Thread(r).start();
+		new Thread(r).start();
+		
+		JMicro.waitForShutdown();
+		
+	}
+	
 
 }
