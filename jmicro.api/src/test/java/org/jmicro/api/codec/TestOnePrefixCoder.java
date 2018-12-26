@@ -383,9 +383,22 @@ public class TestOnePrefixCoder {
 		
 		Entity si1 = decoder.decode(bb);
 		
-		Integer[]  arr = (Integer[])si1.types;
+		//Integer[]  arr = (Integer[])si1.types;
+		//System.out.println(arr);
 		
-		System.out.println(arr);
+	}
+	
+	@Test
+	public void testByteArrayEncodeDecoder(){
+		Entity si = new Entity();
+		
+		ByteBuffer bb = encoder.encode(si);
+		
+		bb.flip();
+		
+		Entity si1 = decoder.decode(bb);
+		
+		System.out.println(si1.data);
 		
 	}
 

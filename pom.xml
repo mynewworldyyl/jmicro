@@ -96,6 +96,7 @@
 		<module>jmicro.monitor</module>
 		<module>jmicro.gateway</module>
 		<module>jmicro.gateway.client</module>
+		<module>jmicro.pubsub</module>
     </modules>
 
     <dependencyManagement>
@@ -103,6 +104,11 @@
              <dependency>
                  <groupId>org.jmicro</groupId>
 				 <artifactId>jmicro.api</artifactId>
+				 <version>${jmicro.version}</version>
+            </dependency>
+			  <dependency>
+                 <groupId>org.jmicro</groupId>
+				 <artifactId>jmicro.pubsub</artifactId>
 				 <version>${jmicro.version}</version>
             </dependency>
              <dependency>
@@ -195,6 +201,11 @@
 			 <artifactId>jmicro.monitor.submiter</artifactId>
 			 <version>${jmicro.version}</version>
 			 </dependency>
+			  <dependency>
+			 <groupId>org.jmicro</groupId>
+			 <artifactId>jmicro.main.monitor.exception</artifactId>
+			  <version>${jmicro.version}</version>
+        	</dependency>
 			  <dependency>
 			 <groupId>org.jmicro</groupId>
 			 <artifactId>jmicro.server</artifactId>

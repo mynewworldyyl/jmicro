@@ -111,9 +111,8 @@ class ClientServiceProxyManager {
 			Class<?> cls = Thread.currentThread().getContextClassLoader().loadClass(srvName);
 			return getService(cls);
 		} catch (ClassNotFoundException e) {
-			logger.error("",e);
+			throw new CommonException("class["+srvName+"] not found",e);
 		}
-		return null;
 	}
 	
 	@SuppressWarnings("unchecked")
@@ -205,7 +204,6 @@ class ClientServiceProxyManager {
 		RemoteProxyServiceListener lis = new RemoteProxyServiceListener(this,proxy,srcObj,f);
 		registry.addServiceListener(UniqueServiceKey.serviceName(type.getName(),ref.namespace(),
 				ref.version()).toString(), lis);
-			
 		setHandler(proxy,key,si,ref.handler());
 		return proxy;
 	}

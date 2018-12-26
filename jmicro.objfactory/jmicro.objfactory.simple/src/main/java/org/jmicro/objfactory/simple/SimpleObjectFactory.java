@@ -45,7 +45,6 @@ import org.jmicro.api.annotation.Service;
 import org.jmicro.api.config.Config;
 import org.jmicro.api.config.IConfigLoader;
 import org.jmicro.api.http.annotation.HttpHandler;
-import org.jmicro.api.net.IRequestHandler;
 import org.jmicro.api.objectfactory.IObjectFactory;
 import org.jmicro.api.objectfactory.IPostFactoryReady;
 import org.jmicro.api.objectfactory.IPostInitListener;
@@ -318,6 +317,9 @@ public class SimpleObjectFactory implements IObjectFactory {
 		
 		boolean clientOnly = Config.isClientOnly();
 		
+		/**
+		 * 意味着此两个参数只能在命令行或环境变量中做配置，不能在ZK中配置，因为此时ZK还没启动，此配置正是ZK的启动配置
+		 */
 		String dataOperatorName = Config.getCommandParam(Constants.DATA_OPERATOR, String.class, Constants.DEFAULT_DATA_OPERATOR);
 		String registryName = Config.getCommandParam(Constants.REGISTRY_KEY, String.class, Constants.DEFAULT_REGISTRY);
 	
@@ -350,7 +352,7 @@ public class SimpleObjectFactory implements IObjectFactory {
 						continue;
 					}
 				
-				logger.debug("enable com: "+c.getName());
+				//logger.debug("enable com: "+c.getName());
 				Object obj = null;
 				if(c.isAnnotationPresent(Service.class)) {
 					 obj = createServiceObject(c,false);
@@ -362,15 +364,27 @@ public class SimpleObjectFactory implements IObjectFactory {
 				this.cacheObj(c, obj, true);
 				
 				if(IDataOperator.class.isAssignableFrom(c) && dataOperatorName.equals(cann.value())){
-					dop = (IDataOperator)obj;
+					if(dop == null) {
+						dop = (IDataOperator)obj;
+					}else {
+						throw new CommonException("More than one [" +dataOperatorName+"] to be found ["+c.getName()+", "+dop.getClass().getName()+"]" );
+					}
 				}
 				
 				if(ServiceManager.class == c) {
-					srvManager = (ServiceManager)obj;
+					if(srvManager == null) {
+						srvManager = (ServiceManager)obj;
+					}else {
+						throw new CommonException("More than one [" +ServiceManager.class.getName()+"] to be found ["+c.getName()+", "+srvManager.getClass().getName()+"]" );
+					}
 				}
 				
 				if(IRegistry.class.isAssignableFrom(c) && registryName.equals(cann.value())){
-					registry = (IRegistry)obj;
+					if(registry == null) {
+						registry = (IRegistry)obj;
+					}else {
+						throw new CommonException("More than one [" +registryName+"] to be found ["+c.getName()+", "+registry.getClass().getName()+"]" );
+					}
 				}
 			}
 		}
@@ -409,9 +423,11 @@ public class SimpleObjectFactory implements IObjectFactory {
 		});
 		
 		Config cfg = (Config)objs.get(Config.class);
+		//初始化配置目录
 		cfg.setDataOperator(dop);
-		
+		//IConfigLoader具体的配置加载类
 		List<IConfigLoader> configLoaders = this.getByParent(IConfigLoader.class);
+		//加载配置，并调用init0方法做初始化
 		cfg.loadConfig(configLoaders);
 		
 		notifyPreInitPostListener(registry,cfg);
@@ -422,14 +438,15 @@ public class SimpleObjectFactory implements IObjectFactory {
 			for(int i =0; i < l.size(); i++){
 				Object o = l.get(i);
 				 
-				 if(IRequestHandler.class.isInstance(o)) {
+				/* if(IRequestHandler.class.isInstance(o)) {
 					 //此代码仅用于开发测试，正式代码中应该注掉
 					 //用于测试具体某个组件的配置初始化
 					 logger.debug(o.toString());
-				 }
+				 }*/
 				 
 				
 				if(srvManager == o || registry == o || dop == o || haveInits.contains(o)) {
+					
 					continue;
 				}
 				haveInits.add(o);
@@ -565,16 +582,20 @@ public class SimpleObjectFactory implements IObjectFactory {
 			boolean isRequired = false;
 			Class<?> refCls = f.getType();
 			
+			//系统启动时可以为某些类指定特定的实现
 			String commandComName = Config.getCommandParam(refCls.getName(), String.class, null);
-			if(!StringUtils.isEmpty(commandComName)) {
-				//命令行指定实现组件名称
+			if(!StringUtils.isEmpty(commandComName) 
+					&& ( f.isAnnotationPresent(Inject.class) || f.isAnnotationPresent(Reference.class) )) {
+				//对于注入或引用的服务，命令行指定实现组件名称
 				if(this.nameToObjs.containsKey(commandComName)) {
 					srv = this.nameToObjs.get(commandComName);
 				} else {
+					//指定的组件不存在
 					throw new CommonException("Component Name["+commandComName+"] for service ["+refCls.getName()+"] not found");
 				}
 				
 				if(!refCls.isInstance(srv)) {
+					//指定的组件不是该类的实例
 					throw new CommonException("Component with Name["+commandComName+"] not a instance of class ["+refCls.getName()+"]");
 				}
 			}
@@ -590,7 +611,16 @@ public class SimpleObjectFactory implements IObjectFactory {
 				*/
 				isRequired = ref.required();
 				
-				srv = clientServiceProxyManager.createOrGetService(obj,f);
+				try {
+					srv = clientServiceProxyManager.createOrGetService(obj,f);
+				} catch (CommonException e) {
+					if(!isRequired) {
+						logger.error("optional dependence cls ["+ f.getType().getName()
+								+"] not found for class ["+obj.getClass().getName()+"]",e.getMessage());
+					}else {
+						throw e;
+					}
+				}
 				//getServiceProxy(cls,f,ref,obj);
 				
 			}else if(srv == null && f.isAnnotationPresent(Inject.class)){

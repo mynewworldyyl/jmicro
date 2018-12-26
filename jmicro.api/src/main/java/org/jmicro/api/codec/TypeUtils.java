@@ -134,39 +134,71 @@ public class TypeUtils {
 	}
 
 	public static boolean isByte(Class<?> cls) {
-		return cls == byte.class || cls == Byte.class || cls == Byte.TYPE;
+		return  cls == Byte.class ;
 	}
 	
 	public static boolean isShort(Class<?> cls) {
-		return cls == short.class || cls == Short.class || cls == Short.TYPE;
+		return  cls == Short.class;
 	}
 	
 	public static boolean isInt(Class<?> cls) {
-		return cls == int.class || cls == Integer.class || cls == Integer.TYPE;
+		return cls == Integer.class ;
 	}
 	
 	public static boolean isLong(Class<?> cls) {
-		return cls == long.class || cls == Long.class || cls == Long.TYPE;
+		return  cls == Long.class;
 	}
 	
 	public static boolean isDouble(Class<?> cls) {
-		return cls == double.class || cls == Double.class || cls == Double.TYPE;
+		return  cls == Double.class ;
 	}
 	
 	public static boolean isFloat(Class<?> cls) {
-		return cls == float.class || cls == Float.class || cls == Float.TYPE;
+		return  cls == Float.class ;
 	}
 	
 	public static boolean isBoolean(Class<?> cls) {
-		return cls == boolean.class || cls == Boolean.class || cls == Boolean.TYPE;
+		return  cls == Boolean.class ;
 	}
 	
 	public static boolean isChar(Class<?> cls) {
-		return cls == char.class || cls == Character.class || cls == Character.TYPE;
+		return cls == Character.class ;
 	}
 	
 	public static boolean isDate(Class<?> cls) {
 		return cls == java.util.Date.class;
 	}
 	
+	
+	public static boolean isPrimitiveByte(Class<?> cls) {
+		return cls == byte.class || cls == Byte.TYPE;
+	}
+	
+	public static boolean isPrimitiveShort(Class<?> cls) {
+		return cls == short.class || cls == Short.TYPE;
+	}
+	
+	public static boolean isPrimitiveInt(Class<?> cls) {
+		return cls == int.class || cls == Integer.TYPE;
+	}
+	
+	public static boolean isPrimitiveLong(Class<?> cls) {
+		return cls == long.class || cls == Long.TYPE;
+	}
+	
+	public static boolean isPrimitiveDouble(Class<?> cls) {
+		return cls == double.class || cls == Double.TYPE;
+	}
+	
+	public static boolean isPrimitiveFloat(Class<?> cls) {
+		return cls == float.class || cls == Float.TYPE;
+	}
+	
+	public static boolean isPrimitiveBoolean(Class<?> cls) {
+		return cls == boolean.class || cls == Boolean.TYPE;
+	}
+	
+	public static boolean isPrimitiveChar(Class<?> cls) {
+		return cls == char.class || cls == Character.TYPE;
+	}
 }

@@ -25,11 +25,9 @@ public interface Constants {
 	public static final String CLIENT_ONLY="client";
 	public static final String SERVER_ONLY="server";
 	
-	public static final String DATA_OPERATOR = "dataOperator";
-	
-	public static final String DEFAULT_DATA_OPERATOR = "ZKDataOperator";
-	
 	public static final String CFG_ROOT="/jmicro";
+	//在CFG_ROOT下目录名称前缀为JMICRO系统保留，应该不可使用
+	public static final String DEFAULT_PREFIX="jm_";
 	
 	public static final String SIDE_COMSUMER = "comsumer";
 	public static final String SIDE_PROVIDER="provider";
@@ -46,8 +44,14 @@ public interface Constants {
 	public static final String OBJ_FACTORY_KEY="objFactory";
 	public static final String DEFAULT_OBJ_FACTORY="defaultObjFactory";
 	
+	public static final String DATA_OPERATOR = "dataOperator";
+	public static final String DEFAULT_DATA_OPERATOR = "ZKDataOperator";
+	
 	public static final String REGISTRY_KEY="registry";
 	public static final String DEFAULT_REGISTRY="defaultRegistry";
+	
+	public static final String PUBSUB_KEY="pubsub";
+	public static final String DEFAULT_PUBSUB="org.jmicro.pubsub.PubSubServer";
 	
 	public static final String DEFAULT_CODEC_FACTORY = "defaultCodecFactory";
 	public static final String DEFAULT_SERVER = "defaultServer";

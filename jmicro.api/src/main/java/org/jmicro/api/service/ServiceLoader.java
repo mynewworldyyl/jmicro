@@ -18,6 +18,7 @@ package org.jmicro.api.service;
 
 import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -38,7 +39,6 @@ import org.jmicro.api.exception.RpcException;
 import org.jmicro.api.net.IRequest;
 import org.jmicro.api.net.IServer;
 import org.jmicro.api.objectfactory.ProxyObject;
-import org.jmicro.api.registry.BreakRule;
 import org.jmicro.api.registry.IRegistry;
 import org.jmicro.api.registry.Server;
 import org.jmicro.api.registry.ServiceItem;
@@ -75,6 +75,7 @@ public class ServiceLoader {
 	@JMethod("init")
 	public void init(){
 		if(Config.isClientOnly()){
+			logger.warn(Config.getInstanceName()+" Client Only so not load service!");
 			return;
 		}
 		List<IServer> ss = JMicro.getObjectFactory().getByParent(IServer.class);
@@ -200,7 +201,9 @@ public class ServiceLoader {
 		registry.regist(item);
 	}
 	
-	private ServiceItem getServiceItems(Class<?> proxySrv) {
+
+
+	public ServiceItem getServiceItems(Class<?> proxySrv) {
 		Class<?> srvCls = ProxyObject.getTargetCls(proxySrv);
 		if(!srvCls.isAnnotationPresent(Service.class)){
 			throw new CommonException("Not a service class ["+srvCls.getName()+"] annotated with ["+Service.class.getName()+"]");
@@ -419,7 +422,11 @@ public class ServiceLoader {
 		}
 		return null;
 	}
-	
+
+	public Map<String, Object> getServices() {
+		return Collections.unmodifiableMap(services);
+	}
+
 	/*public static boolean isNeedResponse(ServiceLoader sl ,IRequest req){
 		Method m = getServiceMethod(sl,req);
 		if(m == null || !m.isAnnotationPresent(SMethod.class)){

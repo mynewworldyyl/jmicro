@@ -28,7 +28,7 @@ import org.jmicro.api.annotation.Inject;
 import org.jmicro.api.client.IClientSession;
 import org.jmicro.api.client.IClientSessionManager;
 import org.jmicro.api.codec.ICodecFactory;
-import org.jmicro.api.idgenerator.IIdClient;
+import org.jmicro.api.idgenerator.ComponentIdServer;
 import org.jmicro.api.monitor.IMonitorDataSubmiter;
 import org.jmicro.api.monitor.MonitorConstant;
 import org.jmicro.api.monitor.SF;
@@ -79,8 +79,8 @@ public class NettyClientSessionManager implements IClientSessionManager{
 	@Cfg("/MinaClientSessionManager/heardbeatInterval")
 	private int heardbeatInterval = 3; //seconds to send heardbeat Rate
 	
-	@Inject("idClient")
-	private IIdClient idGenerator;
+	@Inject
+	private ComponentIdServer idGenerator;
 	
 	@Inject(required=false)
 	private IMonitorDataSubmiter monitor;
@@ -231,7 +231,7 @@ public class NettyClientSessionManager implements IClientSessionManager{
 					}
 	                 
 					private void closeCtx(ChannelHandlerContext ctx) {
-						logger.warn("Session Close for : {}",sKey);
+						logger.warn("Session Close for : {} ",sKey);
 						 NettyClientSession session = (NettyClientSession)ctx.channel().attr(sessionKey).get();
 						 if(session != null) {
 							 ctx.channel().attr(sessionKey).set(null);;
@@ -264,7 +264,7 @@ public class NettyClientSessionManager implements IClientSessionManager{
      		    s.setDumpUpStream(this.dumpUpStream);
      		
 	           //LOG.info("session connected : {}", session);
-	           logger.debug("connection finish,host:"+host+",port:"+port);
+	           logger.debug("connection finish,host:"+host+", port:"+port);
 	           return s;
 	       } catch (Throwable e) {
 	    	   String msg = "cannot connect host:" + host + ", port:" + port;

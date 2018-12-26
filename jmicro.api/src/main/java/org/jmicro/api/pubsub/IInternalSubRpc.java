@@ -14,47 +14,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.jmicro.api.exception;
+package org.jmicro.api.pubsub;
 
-import org.jmicro.api.net.IRequest;
-import org.jmicro.common.CommonException;
+import org.jmicro.api.annotation.Service;
+
 /**
  * 
  * @author Yulei Ye
- * @date 2018年10月4日-下午12:02:42
+ * @date 2018年12月22日 下午11:10:01
  */
-public final class RpcException extends CommonException {
-	 
-	private static final long serialVersionUID = 134328923L;
+@Service(namespace="org.jmicro.api.pubsub.server")
+public interface IInternalSubRpc {
+
+	//boolean subcribe(String topic,String srv,String namespace,String version,String method);
 	
-	private IRequest req = null;
-
-	public RpcException(IRequest req,String cause){
-		super(cause);
-		this.req=req;
-	}
+	//boolean unsubcribe(String topic,String srv,String namespace,String version,String method);
 	
-	public RpcException(IRequest req,String cause,Throwable exp){
-		super(cause,exp);
-		this.req = req;
-	}
+	boolean publish(PSData item);
 	
-	public RpcException(IRequest req,String key,String cause){
-		this(req,key,cause,null);
-	}
+	boolean publish(String topic,String content);
 	
-	public RpcException(IRequest req,String key,String cause,Throwable exp){
-		super(key,cause,exp);
-		this.req= req;
-	}
-
-	public IRequest getReq() {
-		return req;
-	}
-
-	public void setReq(IRequest req) {
-		this.req = req;
-	}
-
-
+	//boolean publish(String topic,byte[] content);
+	
 }

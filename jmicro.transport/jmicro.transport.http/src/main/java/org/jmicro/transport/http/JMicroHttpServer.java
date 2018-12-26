@@ -28,7 +28,7 @@ import org.jmicro.api.annotation.Inject;
 import org.jmicro.api.annotation.Server;
 import org.jmicro.api.codec.ICodecFactory;
 import org.jmicro.api.config.Config;
-import org.jmicro.api.idgenerator.IIdClient;
+import org.jmicro.api.idgenerator.ComponentIdServer;
 import org.jmicro.api.monitor.IMonitorDataSubmiter;
 import org.jmicro.api.monitor.MonitorConstant;
 import org.jmicro.api.monitor.SF;
@@ -81,8 +81,8 @@ public class JMicroHttpServer implements IServer{
 	@Cfg("/MinaClientSessionManager/heardbeatInterval")
 	private int heardbeatInterval = 3; //seconds to send heardbeat Rate
 	
-	@Inject("idClient")
-	private IIdClient idGenerator;
+	@Inject
+	private ComponentIdServer idGenerator;
 	
 	@Inject
 	private ICodecFactory codeFactory;

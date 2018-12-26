@@ -30,7 +30,7 @@ import org.jmicro.api.client.IMessageCallback;
 import org.jmicro.api.codec.ICodecFactory;
 import org.jmicro.api.gateway.ApiRequest;
 import org.jmicro.api.gateway.ApiResponse;
-import org.jmicro.api.idgenerator.IIdClient;
+import org.jmicro.api.idgenerator.ComponentIdServer;
 import org.jmicro.api.monitor.MonitorConstant;
 import org.jmicro.api.monitor.SF;
 import org.jmicro.api.net.IMessageHandler;
@@ -56,8 +56,8 @@ public class ApiRequestMessageHandler implements IMessageHandler{
 	private final static Logger logger = LoggerFactory.getLogger(ApiRequestMessageHandler.class);
 	private static final Class<?> TAG = ApiRequestMessageHandler.class;
 	
-	@Inject("idClient")
-	private IIdClient idGenerator;
+	@Inject
+	private ComponentIdServer idGenerator;
 	
 	@Inject
 	private ICodecFactory codecFactory;

@@ -146,4 +146,10 @@ public @interface Service {
 	 * @return
 	 */
 	public String side() default Constants.SIDE_ANY;
+	
+	/**
+	 * 指定包下的类才可使用
+	 * @return
+	 */
+	public String[] limit2Packages() default {};
 }

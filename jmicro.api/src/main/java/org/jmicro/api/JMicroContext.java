@@ -21,6 +21,7 @@ import java.util.Map;
 import java.util.Stack;
 
 import org.jmicro.api.config.Config;
+import org.jmicro.api.idgenerator.ComponentIdServer;
 import org.jmicro.api.idgenerator.IIdClient;
 import org.jmicro.api.idgenerator.IIdGenerator;
 import org.jmicro.api.monitor.IMonitorDataSubmiter;
@@ -195,7 +196,7 @@ public class JMicroContext  {
 			return id;
 		}
 		
-		IIdClient idGenerator = JMicro.getObjectFactory().getByName("idClient");
+		IIdClient idGenerator = JMicro.getObjectFactory().get(ComponentIdServer.class);
 		
 		if(idGenerator != null) {
 			id = idGenerator.getLongId(Linker.class.getName());

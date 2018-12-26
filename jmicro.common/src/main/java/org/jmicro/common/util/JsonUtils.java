@@ -75,6 +75,9 @@ public class JsonUtils {
 	}
 	
 	public String toJson(Object obj) {
+		if(obj == null) {
+			return "";
+		}
 		GsonBuilder builder = new GsonBuilder();
 		//builder.registerTypeAdapter(MessageType.class, new MessageTypeAdapter());
 		//builder.registerTypeAdapter(MessageState.class, new MessageStateAdapter());
@@ -83,6 +86,9 @@ public class JsonUtils {
 	}
 	
 	public String toJson(Object obj,java.lang.reflect.Type type) {
+		if(obj == null) {
+			return "";
+		}
 		GsonBuilder builder = new GsonBuilder();
 		//builder.registerTypeAdapter(MessageType.class, new MessageTypeAdapter());
 		//builder.registerTypeAdapter(MessageState.class, new MessageStateAdapter());

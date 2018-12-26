@@ -14,47 +14,30 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.jmicro.api.exception;
+package org.jmicro.api.annotation;
 
-import org.jmicro.api.net.IRequest;
-import org.jmicro.common.CommonException;
+import static java.lang.annotation.ElementType.METHOD;
+import static java.lang.annotation.ElementType.TYPE;
+import static java.lang.annotation.RetentionPolicy.RUNTIME;
+
+import java.lang.annotation.Retention;
+import java.lang.annotation.Target;
+
+import org.jmicro.common.Constants;
+
 /**
+ *
+ * 当注册到服务方法上时，则该方法注册为指定主题的监听器,方法参数必须唯一且是 ＠Link PSItem
  * 
  * @author Yulei Ye
- * @date 2018年10月4日-下午12:02:42
+ * @date 2018年12月22日 下午10:50:50
  */
-public final class RpcException extends CommonException {
-	 
-	private static final long serialVersionUID = 134328923L;
+@Target({METHOD,TYPE})
+@Retention(RUNTIME)
+public @interface Subscribe {
+
+	public String topic();
 	
-	private IRequest req = null;
-
-	public RpcException(IRequest req,String cause){
-		super(cause);
-		this.req=req;
-	}
+	//public String pubsubServer() default Constants.DEFAULT_PUBSUB;
 	
-	public RpcException(IRequest req,String cause,Throwable exp){
-		super(cause,exp);
-		this.req = req;
-	}
-	
-	public RpcException(IRequest req,String key,String cause){
-		this(req,key,cause,null);
-	}
-	
-	public RpcException(IRequest req,String key,String cause,Throwable exp){
-		super(key,cause,exp);
-		this.req= req;
-	}
-
-	public IRequest getReq() {
-		return req;
-	}
-
-	public void setReq(IRequest req) {
-		this.req = req;
-	}
-
-
 }

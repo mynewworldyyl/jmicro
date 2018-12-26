@@ -23,7 +23,6 @@ import java.lang.reflect.Modifier;
 import java.lang.reflect.ParameterizedType;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
@@ -33,7 +32,6 @@ import java.util.Map;
 
 import org.jmicro.api.JMicroContext;
 import org.jmicro.api.annotation.Component;
-import org.jmicro.api.monitor.SubmitItem;
 import org.jmicro.api.registry.ServiceMethod;
 import org.jmicro.common.CommonException;
 import org.jmicro.common.Constants;
@@ -349,9 +347,9 @@ public class OnePrefixDecoder /*implements IDecoder*/{
 					cls = Array.newInstance(cls, 0).getClass();
 					
 					ServiceMethod sm = this.getMethod();
-					if(sm != null && "intrest".equals(sm.getKey().getMethod())) {
+					/*if(sm != null && "intrest".equals(sm.getKey().getMethod())) {
 						logger.debug("eltType: {}",clsName);
-					}
+					}*/
 					
 				} else {
 					cls = Thread.currentThread().getContextClassLoader()

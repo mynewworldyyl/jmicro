@@ -26,7 +26,7 @@ import org.jmicro.api.annotation.Inject;
 import org.jmicro.api.breaker.BreakerManager;
 import org.jmicro.api.client.AbstractClientServiceProxy;
 import org.jmicro.api.config.Config;
-import org.jmicro.api.idgenerator.IIdClient;
+import org.jmicro.api.idgenerator.ComponentIdServer;
 import org.jmicro.api.net.IRequest;
 import org.jmicro.api.net.IResponse;
 import org.jmicro.api.net.InterceptorManager;
@@ -54,8 +54,8 @@ public class ServiceInvocationHandler implements InvocationHandler{
 	@Inject(required=true)
 	private InterceptorManager intManager;
 	
-	@Inject("idClient")
-	private IIdClient idGenerator;
+	@Inject
+	private ComponentIdServer idGenerator;
 	
 	@Inject
 	private BreakerManager breakerManager;

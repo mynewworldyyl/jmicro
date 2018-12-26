@@ -18,9 +18,6 @@ package org.jmicro.client.specail;
 
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
-import java.nio.ByteBuffer;
-import java.util.Arrays;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -36,7 +33,7 @@ import org.jmicro.api.codec.ICodecFactory;
 import org.jmicro.api.config.Config;
 import org.jmicro.api.exception.RpcException;
 import org.jmicro.api.exception.TimeoutException;
-import org.jmicro.api.idgenerator.IIdClient;
+import org.jmicro.api.idgenerator.ComponentIdServer;
 import org.jmicro.api.loadbalance.ISelector;
 import org.jmicro.api.monitor.MonitorConstant;
 import org.jmicro.api.monitor.SF;
@@ -52,7 +49,6 @@ import org.jmicro.api.registry.ServiceItem;
 import org.jmicro.api.registry.ServiceMethod;
 import org.jmicro.common.CommonException;
 import org.jmicro.common.Constants;
-import org.jmicro.common.util.DateUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -85,8 +81,8 @@ public class SpecailInvocationHandler implements InvocationHandler, IMessageHand
 	@Inject(required=true)
 	private ISelector selector;
 	
-	@Inject("idClient")
-	private IIdClient idGenerator;
+	@Inject
+	private ComponentIdServer idGenerator;
 	
 	public SpecailInvocationHandler(){}
 	
@@ -270,7 +266,7 @@ public class SpecailInvocationHandler implements InvocationHandler, IMessageHand
     		if(logger.isDebugEnabled()) {
     			//logger.debug("waitForResponse,m{}-{}",sm.getKey().getMethod(),req.getRequestId());
     		}
-			waitForResponse.put(req.getMethod()+req.getRequestId(), (message)->{
+			waitForResponse.put(req.getRequestId()+"", (message)->{
 				result.put("msg", message);
 				//在请求响应之间做同步
 				synchronized(req) {
@@ -335,14 +331,14 @@ public class SpecailInvocationHandler implements InvocationHandler, IMessageHand
     				//同步请求成功，直接返回
         			//SF.doSubmit(MonitorConstant.CLIENT_REQ_OK, req, resp,null);
         			req.setFinish(true);
-        			waitForResponse.remove(req.getMethod()+req.getRequestId());
+        			waitForResponse.remove(""+req.getRequestId());
         			return resp;
     			} else {
     				//异步请求
     				//异步请求，收到一个确认包
     				SF.doSubmit(MonitorConstant.CLIENT_REQ_ASYNC1_SUCCESS, req, resp,null);
         			req.setFinish(true);
-        			waitForResponse.remove(req.getMethod()+req.getRequestId());
+        			waitForResponse.remove(""+req.getRequestId());
         			return resp;
     			}
     		}
@@ -411,7 +407,7 @@ public class SpecailInvocationHandler implements InvocationHandler, IMessageHand
 	@Override
 	public void onMessage(ISession session,Message msg) {
 		//receive response
-		IResponseHandler handler = waitForResponse.get(msg.getMethod()+msg.getReqId());
+		IResponseHandler handler = waitForResponse.get(""+msg.getReqId());
 		if(msg.isLoggable()) {
 			SF.doMessageLog(MonitorConstant.LOG_DEBUG,TAG,msg,null," receive message");
 		}

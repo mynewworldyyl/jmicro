@@ -31,6 +31,7 @@ platforms/
 plugins/android.json
 plugins/ios.json
 $RECYCLE.BIN/
+sbin/logs/
 jmicro.api/target/
 jmicro.api/.classpath
 jmicro.api/.project
@@ -114,6 +115,10 @@ jmicro.server/target/
 jmicro.server/.classpath
 jmicro.server/.project
 jmicro.server/.settings/
+jmicro.pubsub/target/
+jmicro.pubsub/.classpath
+jmicro.pubsub/.project
+jmicro.pubsub/.settings/
 jmicro.gateway/target/
 jmicro.gateway/.classpath
 jmicro.gateway/.project

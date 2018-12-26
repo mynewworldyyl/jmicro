@@ -14,47 +14,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.jmicro.api.exception;
+package org.jmicro.api.pubsub;
 
-import org.jmicro.api.net.IRequest;
-import org.jmicro.common.CommonException;
 /**
  * 
  * @author Yulei Ye
- * @date 2018年10月4日-下午12:02:42
+ * @date 2018年12月22日 下午11:10:15
  */
-public final class RpcException extends CommonException {
-	 
-	private static final long serialVersionUID = 134328923L;
-	
-	private IRequest req = null;
+public interface ISubCallback {
 
-	public RpcException(IRequest req,String cause){
-		super(cause);
-		this.req=req;
-	}
-	
-	public RpcException(IRequest req,String cause,Throwable exp){
-		super(cause,exp);
-		this.req = req;
-	}
-	
-	public RpcException(IRequest req,String key,String cause){
-		this(req,key,cause,null);
-	}
-	
-	public RpcException(IRequest req,String key,String cause,Throwable exp){
-		super(key,cause,exp);
-		this.req= req;
-	}
-
-	public IRequest getReq() {
-		return req;
-	}
-
-	public void setReq(IRequest req) {
-		this.req = req;
-	}
-
-
+	void onMessage(PSData item);
 }

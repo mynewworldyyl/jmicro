@@ -19,7 +19,7 @@ package org.jmicro.idgenerator;
 import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.Inject;
 import org.jmicro.api.codec.ICodecFactory;
-import org.jmicro.api.idgenerator.IIdClient;
+import org.jmicro.api.idgenerator.ComponentIdServer;
 import org.jmicro.api.idgenerator.IdRequest;
 import org.jmicro.api.net.IMessageHandler;
 import org.jmicro.api.net.ISession;
@@ -38,8 +38,8 @@ public class IdRequestMessageHandler implements IMessageHandler{
 
 	private final static Logger logger = LoggerFactory.getLogger(IdRequestMessageHandler.class);
 	
-	@Inject("idClient")
-	private IIdClient idGenerator;
+	@Inject
+	private ComponentIdServer idGenerator;
 	
 	@Inject
 	private ICodecFactory codecFactory;

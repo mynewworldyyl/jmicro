@@ -26,7 +26,7 @@ import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.Inject;
 import org.jmicro.api.annotation.Service;
 import org.jmicro.api.degrade.DegradeManager;
-import org.jmicro.api.idgenerator.IIdClient;
+import org.jmicro.api.idgenerator.ComponentIdServer;
 import org.jmicro.api.monitor.IServiceMonitorData;
 import org.jmicro.api.monitor.ServiceStatis;
 import org.jmicro.api.net.IWriteCallback;
@@ -46,8 +46,8 @@ public class ServiceMonitorDataImpl implements IServiceMonitorData{
 	
 	private Map<Integer,IDataListener> listeners = new HashMap<>();
 	
-	@Inject("idClient")
-	private IIdClient idGenerator;
+	@Inject
+	private ComponentIdServer idGenerator;
 	
 	@Inject
 	private IDataOperator dataOperator;

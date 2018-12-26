@@ -20,10 +20,9 @@ import org.jmicro.api.JMicroContext;
 import org.jmicro.api.annotation.Cfg;
 import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.Inject;
-import org.jmicro.api.annotation.Reference;
 import org.jmicro.api.codec.ICodecFactory;
 import org.jmicro.api.config.Config;
-import org.jmicro.api.idgenerator.IIdClient;
+import org.jmicro.api.idgenerator.ComponentIdServer;
 import org.jmicro.api.monitor.MonitorConstant;
 import org.jmicro.api.monitor.SF;
 import org.jmicro.api.net.IMessageHandler;
@@ -67,8 +66,8 @@ public class JRPCReqRespHandler implements IMessageHandler{
 	@Inject(required=true)
 	private ServiceLoader serviceLoader;
 	
-	@Inject("idClient")
-	private IIdClient idGenerator;
+	@Inject
+	private ComponentIdServer idGenerator;
 	
 	@Inject(required=true)
 	private IRegistry registry = null;

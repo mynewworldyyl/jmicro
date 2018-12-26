@@ -28,11 +28,10 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
-import org.jmicro.api.JMicroContext;
 import org.jmicro.api.annotation.Cfg;
 import org.jmicro.api.annotation.Component;
+import org.jmicro.api.annotation.Inject;
 import org.jmicro.api.monitor.SubmitItem;
-import org.jmicro.api.registry.ServiceMethod;
 import org.jmicro.common.CommonException;
 import org.jmicro.common.Constants;
 import org.jmicro.common.Utils;
@@ -48,8 +47,11 @@ public class OnePrefixTypeEncoder implements IEncoder<ByteBuffer>{
 
 	private static final Logger logger = LoggerFactory.getLogger(OnePrefixTypeEncoder.class);
 	
-	@Cfg(value="/OnePrefixTypeEncoder")
+	@Cfg(value="/OnePrefixTypeEncoder",defGlobal=true,required=true)
 	private int encodeBufferSize = 4096;
+	
+	@Inject
+	private TypeCoderFactory typeCf;
 	
 	@SuppressWarnings("unchecked")
 	@Override
@@ -58,7 +60,8 @@ public class OnePrefixTypeEncoder implements IEncoder<ByteBuffer>{
 		
 		if(obj == null) {
 			buffer = ByteBuffer.allocate(32);
-			putType(buffer,Void.class);
+			TypeCoder<Void> coder = typeCf.getByClass(Void.class);
+			
 			return buffer;
 		}
 		
@@ -343,10 +346,10 @@ public class OnePrefixTypeEncoder implements IEncoder<ByteBuffer>{
 			return;
 		}
 	    try {
-	    	ServiceMethod sm = JMicroContext.get().getParam(Constants.SERVICE_METHOD_KEY,null);
+	    	/*ServiceMethod sm = JMicroContext.get().getParam(Constants.SERVICE_METHOD_KEY,null);
 			if(sm != null && "intrest".equals(sm.getKey().getMethod()) && str.startsWith("[L")) {
 				logger.debug("eltType: {}",str);
-			}
+			}*/
 			byte[] data = str.getBytes(Constants.CHARSET);
 			putLength(buffer,data.length);
 			buffer.put(data);
@@ -367,7 +370,7 @@ public class OnePrefixTypeEncoder implements IEncoder<ByteBuffer>{
 	}
 
 	
-	public Class<?> putType(ByteBuffer buffer,Class<?> cls) {
+	public static Class<?> putType(ByteBuffer buffer,Class<?> cls) {
         Short type = Decoder.getType(cls);
 		if(ByteBuffer.class.isAssignableFrom(cls)){
 			cls = ByteBuffer.class;

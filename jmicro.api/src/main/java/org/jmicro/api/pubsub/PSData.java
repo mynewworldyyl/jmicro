@@ -14,47 +14,59 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.jmicro.api.exception;
+package org.jmicro.api.pubsub;
 
-import org.jmicro.api.net.IRequest;
-import org.jmicro.common.CommonException;
+import java.io.Serializable;
+import java.util.Map;
+
 /**
  * 
  * @author Yulei Ye
- * @date 2018年10月4日-下午12:02:42
+ * @date 2018年12月22日 下午11:10:43
  */
-public final class RpcException extends CommonException {
-	 
-	private static final long serialVersionUID = 134328923L;
+public final class PSData implements Serializable{
+
+	private static final long serialVersionUID = 389875668374730999L;
+
+	private Map<String,String> context;
 	
-	private IRequest req = null;
+	private byte flag = 0;
+	
+	private String topic;
+	
+	private byte[] data;
 
-	public RpcException(IRequest req,String cause){
-		super(cause);
-		this.req=req;
+	public byte getFlag() {
+		return flag;
+	}
+
+	public void setFlag(byte flag) {
+		this.flag = flag;
+	}
+
+	public String getTopic() {
+		return topic;
+	}
+
+	public void setTopic(String topic) {
+		this.topic = topic;
+	}
+
+	public byte[] getData() {
+		return data;
+	}
+
+	public void setData(byte[] data) {
+		this.data = data;
+	}
+
+	public Map<String, String> getContext() {
+		return context;
+	}
+
+	public void setContext(Map<String, String> context) {
+		this.context = context;
 	}
 	
-	public RpcException(IRequest req,String cause,Throwable exp){
-		super(cause,exp);
-		this.req = req;
-	}
 	
-	public RpcException(IRequest req,String key,String cause){
-		this(req,key,cause,null);
-	}
-	
-	public RpcException(IRequest req,String key,String cause,Throwable exp){
-		super(key,cause,exp);
-		this.req= req;
-	}
-
-	public IRequest getReq() {
-		return req;
-	}
-
-	public void setReq(IRequest req) {
-		this.req = req;
-	}
-
-
 }

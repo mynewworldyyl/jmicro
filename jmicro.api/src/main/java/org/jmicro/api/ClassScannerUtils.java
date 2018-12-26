@@ -251,7 +251,7 @@ public class ClassScannerUtils {
 						logger.debug(c.getName());
 					}*/
 					if(checker.accept(c)){
-						logger.debug(c.getName());
+						//logger.debug(c.getName());
 						clses.add(c);
 					}	
 				}

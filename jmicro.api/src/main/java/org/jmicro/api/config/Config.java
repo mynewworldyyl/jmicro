@@ -39,7 +39,7 @@ import org.slf4j.LoggerFactory;
  * @author Yulei Ye
  * @date 2018年10月4日-上午11:54:53
  */
-@Component(value="defaultConfig",lazy=false)
+@Component(value="defaultConfig",lazy=false,level = 0)
 public class Config implements IConfigChangeListener{
 	
 	private final static Logger logger = LoggerFactory.getLogger(Config.class);
@@ -55,6 +55,9 @@ public class Config implements IConfigChangeListener{
 	
 	//服务注册目录
 	public static final String ServiceRegistDir = Constants.CFG_ROOT +"/services";
+	
+	//全局消息订阅根目录
+	public static final String PubSubDir = Constants.CFG_ROOT+"/"+Constants.DEFAULT_PREFIX +"pubsub";
 	
 	//当前启动实例名称
 	private static String InstanceName = "";
@@ -182,14 +185,14 @@ public class Config implements IConfigChangeListener{
 			cl.load(CfgDir,this.globalConfig);
 			cl.setConfigChangeListener(this);
 		}
-		init();
+		init0();
 	}
 	
 	public void createConfig(String value, String path, boolean isGlobal){
 		if(isGlobal) {
-			this.dataOperator.createNode(CfgDir+path, value,false);
-		}else {
-			this.dataOperator.createNode(ServiceConfigDir+path, value,false);
+			this.dataOperator.createNode(CfgDir + path, value,false);
+		} else {
+			this.dataOperator.createNode(ServiceConfigDir + path, value,false);
 		}
 	}
 	
@@ -228,7 +231,7 @@ public class Config implements IConfigChangeListener{
 	}
 
 	//@JMethod("init")
-	public void init(){
+	public void init0(){
 		//命令行参数具有最高优先级
 		//params.putAll(CommadParams);
 		if(CommadParams.containsKey(Constants.BIND_IP)) {
@@ -267,7 +270,19 @@ public class Config implements IConfigChangeListener{
 	}
 	
 	public static <T> T getCommandParam(String key,Class<T> type,T defalutValue) {
-		return getValue(CommadParams.get(key),type,defalutValue);
+		return getValue(getStaticVal(key),type,defalutValue);
+	}
+	
+	public static String getStaticVal(String key) {
+		if(CommadParams.get(key) != null) {
+			return CommadParams.get(key);
+		}
+		
+		if(System.getProperty(key) != null) {
+			return System.getProperty(key);
+		}
+		
+		return System.getenv(key);
 	}
 	
 	public static String[]  getBasePackages() {
@@ -298,14 +313,33 @@ public class Config implements IConfigChangeListener{
 		return getValue(getValue(key),Double.TYPE,defautl);
 	}
 	
+	/**
+	 * 3个优先级，从高到底分别为，命令行参数，服务级配置参数，全局配置参数, 系统环境变量
+	 *    当命令行参数匹配成功时，不会再找其他参数，否则找服务级参数，最后找全局配置参数，都匹配不到，返回空。
+	 * 
+	 * @param key
+	 * @return
+	 */
 	private String getValue(String key){
+		
 		String v = CommadParams.get(key);
+		
 		if(v == null){
 			v = this.servicesConfig.get(key);
 		}
+		
 		if(v == null){
 			v = this.globalConfig.get(key);
 		}
+		
+		/*if(v == null){
+			v = System.getProperty(key);
+		}*/
+		
+		if(v == null){
+			v = System.getenv(key);
+		}
+		
 		return v;
 	}
 	
@@ -346,12 +380,12 @@ public class Config implements IConfigChangeListener{
 		this.dataOperator = dataOperator;
 		if(!dataOperator.exist(Config.CfgDir)) {
 			dataOperator.createNode(Config.CfgDir, "", false);
-			dataOperator.createNode(Config.CfgDir+"/val", "_v", false);
+			//dataOperator.createNode(Config.CfgDir+"/val", "_v", false);
 		}
 		
 		if(!dataOperator.exist(Config.ServiceConfigDir)) {
 			dataOperator.createNode(Config.ServiceConfigDir, "", false);
-			dataOperator.createNode(Config.ServiceConfigDir+"/val", "_v", false);
+			//dataOperator.createNode(Config.ServiceConfigDir+"/val", "_v", false);
 		}
 	}
 	

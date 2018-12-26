@@ -32,7 +32,7 @@ import org.jmicro.api.codec.ICodecFactory;
 import org.jmicro.api.config.Config;
 import org.jmicro.api.exception.RpcException;
 import org.jmicro.api.exception.TimeoutException;
-import org.jmicro.api.idgenerator.IIdClient;
+import org.jmicro.api.idgenerator.ComponentIdServer;
 import org.jmicro.api.loadbalance.ISelector;
 import org.jmicro.api.monitor.AbstractMonitorDataSubscriber;
 import org.jmicro.api.monitor.MonitorConstant;
@@ -85,8 +85,8 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
 	@Inject(required=true)
 	private ISelector selector;
 	
-	@Inject("idClient")
-	private IIdClient idGenerator;
+	@Inject
+	private ComponentIdServer idGenerator;
 	
 	//测试统计模式使用
 	@Cfg(value="/RpcClientRequestHandler/clientStatis",defGlobal=false)
