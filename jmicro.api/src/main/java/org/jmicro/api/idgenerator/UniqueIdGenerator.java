@@ -28,7 +28,7 @@ import org.jmicro.common.Constants;
  * @date 2018年12月9日 下午5:24:20
  */
 @Component("uniqueIdGenerator")
-public class UniqueIdGenerator implements IIdGenerator,IIdServer,IIdClient{
+public class UniqueIdGenerator implements IIdGenerator/*,IIdServer*/,IIdClient{
 
 	private static final String ID_IDR = Constants.CFG_ROOT + "/id/";
 	

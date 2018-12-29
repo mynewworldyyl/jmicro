@@ -131,8 +131,8 @@ public final class RpcResponse extends AbstractObjectMapSupport implements IResp
 
 	@Override
 	public String toString() {
-		return "RpcResponse [id=" + id + ", reqId=" + reqId + ", result type=" +result.getClass().getName()  + ", result=" + (result.getClass().isArray()?Arrays.asList((Object[])result).toString():result) + ", isMonitorEnable="
+		return "RpcResponse [id=" + id + ", reqId=" + reqId + ", result=" + result + ", isMonitorEnable="
 				+ isMonitorEnable + ", success=" + success + "]";
 	}
-		
+
 }

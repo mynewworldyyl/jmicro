@@ -29,6 +29,8 @@ import org.jmicro.api.net.IResponse;
 import org.jmicro.api.net.RpcResponse;
 import org.jmicro.api.service.ServiceLoader;
 import org.jmicro.common.Constants;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * 
@@ -38,6 +40,8 @@ import org.jmicro.common.Constants;
 @Component(value=Constants.DEFAULT_HANDLER,lazy=false,active=true,side=Constants.SIDE_PROVIDER)
 public class RpcRequestHandler extends AbstractHandler implements IRequestHandler {
 	
+	private static final Logger logger = LoggerFactory.getLogger(RpcRequestHandler.class);
+	
 	@Override
 	public IResponse onRequest(IRequest request) {
 		Object obj = JMicroContext.get().getObject(Constants.SERVICE_OBJ_KEY, null);
@@ -45,6 +49,9 @@ public class RpcRequestHandler extends AbstractHandler implements IRequestHandle
 		try {
 			Method m = ServiceLoader.getServiceMethod(obj, request);
 			if(m != null) {
+				/*if(m.getName().equals("publishData")) {
+					logger.debug("debug info");;
+				}*/
 				Object result = m.invoke(obj, request.getArgs());
 				resp = new RpcResponse(request.getRequestId(),result);
 				resp.setMonitorEnable(request.isMonitorEnable());

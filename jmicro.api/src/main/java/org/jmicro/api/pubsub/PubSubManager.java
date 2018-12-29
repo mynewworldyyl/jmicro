@@ -293,7 +293,7 @@ public class PubSubManager {
 		}
 		item.setContext(context);
 		
-		return s.publish(item);
+		return s.publishData(item);
 		
 	}
 	
@@ -306,12 +306,12 @@ public class PubSubManager {
 		item.setData(content);
 		item.setContext(context);
 		
-		return s.publish(item);
+		return s.publishData(item);
 	}
 
 	public boolean publish(PSData item) {
 		IInternalSubRpc s = this.defaultServer;//this.getServer(item.getContext());
-		return s.publish(item);
+		return s.publishData(item);
 	}
 
 	public boolean subscribe(Map<String,String> context,String topic, String srvName,

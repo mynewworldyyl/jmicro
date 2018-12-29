@@ -108,9 +108,28 @@ public class TestRpcRequest {
 		/*ITestRpcService srv = JMicro.getRpcServiceTestingArgs(ITestRpcService.class);
 		srv.getPerson(new Person());*/
 		
-		ISayHello srv = JMicro.getRpcServiceTestingArgs(ISayHello.class);
-		srv.hello("Are you OK");
+		ISayHello sayHelloSrv = JMicro.getRpcServiceTestingArgs(ISayHello.class);
+		sayHelloSrv.hello("Are you OK");
 		
+	}
+	
+	
+	@Test
+	public void testPrimitiveParamService() {
+		IObjectFactory of = JMicro.getObjectFactoryAndStart(new String[] {"-DinstanceName=testPrimitiveParamService"});
+		ITestRpcService src = of.get(ITestRpcService.class);
+		System.out.println(src.testReturnPrimitiveResult());
+		System.out.println(src.testReturnPrimitiveArrayResult());
+		//Utils.getIns().waitForShutdown();
+	}
+	
+	@Test
+	public void testBooleanParamService() {
+		IObjectFactory of = JMicro.getObjectFactoryAndStart(new String[] {"-DinstanceName=testBooleanParamService"});
+		ITestRpcService src = of.get(ITestRpcService.class);
+		System.out.println(src.testReturnPrimitiveBooleanResult());
+		System.out.println(src.testReturnBooleanResult());
+		//Utils.getIns().waitForShutdown();
 	}
 	
 }

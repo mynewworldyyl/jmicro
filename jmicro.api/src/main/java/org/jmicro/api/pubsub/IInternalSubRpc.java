@@ -30,9 +30,9 @@ public interface IInternalSubRpc {
 	
 	//boolean unsubcribe(String topic,String srv,String namespace,String version,String method);
 	
-	boolean publish(PSData item);
+	boolean publishData(PSData item);
 	
-	boolean publish(String topic,String content);
+	boolean publishString(String topic,String content);
 	
 	//boolean publish(String topic,byte[] content);
 	

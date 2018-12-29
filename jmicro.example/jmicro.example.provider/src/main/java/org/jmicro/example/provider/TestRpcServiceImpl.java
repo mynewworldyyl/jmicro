@@ -78,6 +78,26 @@ public class TestRpcServiceImpl implements ITestRpcService{
 			e.printStackTrace();
 		}
 	}
+
+	@Override
+	public int testReturnPrimitiveResult() {
+		return 66;
+	}
+
+	public int[] testReturnPrimitiveArrayResult() {
+		return new int[] {22,33};
+	}
+
+	@Override
+	public Boolean testReturnBooleanResult() {
+		return true;
+	}
+
+	@Override
+	public boolean testReturnPrimitiveBooleanResult() {
+		return false;
+	}
+	
 	
 	
 }

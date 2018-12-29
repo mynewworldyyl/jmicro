@@ -25,6 +25,7 @@ import java.util.concurrent.ExecutorService;
 
 import org.jmicro.api.JMicro;
 import org.jmicro.api.annotation.Cfg;
+import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.Inject;
 import org.jmicro.api.annotation.Service;
 import org.jmicro.api.executor.ExecutorConfig;
@@ -50,6 +51,7 @@ import org.slf4j.LoggerFactory;
 //@Component(value=Constants.DEFAULT_PUBSUB,limit2Packages="org.jmicro.api.pubsub.PubSubManager")
 @Service(limit2Packages="org.jmicro.api.pubsub.PubSubManager",
 namespace="org.jmicro.pubsub.DefaultPubSubServer",version="0.0.1")
+@Component
 public class PubSubServer implements IInternalSubRpc{
 	
 	private final static Logger logger = LoggerFactory.getLogger(PubSubServer.class);
@@ -172,7 +174,7 @@ public class PubSubServer implements IInternalSubRpc{
 		}
 	}
 	
-	public boolean publish(String topic,String content) {
+	public boolean publishString(String topic,String content) {
 		executor.submit(()->{
 			PSData item = new PSData();
 			item.setTopic(topic);
@@ -186,7 +188,7 @@ public class PubSubServer implements IInternalSubRpc{
 		return true;
 	}
 	
-	public boolean publish(PSData item) {
+	public boolean publishData(PSData item) {
 		executor.submit(()->{
 			doPublish(item);
 		});

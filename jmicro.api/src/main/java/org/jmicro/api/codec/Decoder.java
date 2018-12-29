@@ -24,7 +24,6 @@ import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -46,12 +45,33 @@ import org.jmicro.common.util.StringUtils;
  */
 public class Decoder {
 	
-	public static final byte PREFIX_TYPE_SHORT = 1 << 0;
-	public static final byte PREFIX_TYPE_STRING = 1 << 1;
-	public static final byte PREFIX_TYPE_NULL = 1 << 2;
+	public static byte PREFIX_TYPE_ID = -128;
+	//空值编码
+	public static final byte PREFIX_TYPE_NULL = PREFIX_TYPE_ID++;
+	
+	//空值编码
+	public static final byte PREFIX_TYPE_FINAL = PREFIX_TYPE_ID++;
+		
+	//类型编码写入编码中
+	public static final byte PREFIX_TYPE_SHORT = PREFIX_TYPE_ID++;
+	//全限定类名作为前缀串写入编码中
+	public static final byte PREFIX_TYPE_STRING = PREFIX_TYPE_ID++;
+	
+	//以下对高使用频率非final类做快捷编码
+	
+	//列表类型编码，指示接下业读取一个列表，取列表编码器直接解码
+	public static final byte PREFIX_TYPE_LIST = PREFIX_TYPE_ID++;
+	//集合类型编码，指示接下来读取一个集合，取SET编码器直接解码
+	public static final byte PREFIX_TYPE_SET = PREFIX_TYPE_ID++;
+	//Map类型编码，指示接下来读取一个Map，取Map编码器直接解码
+	public static final byte PREFIX_TYPE_MAP = PREFIX_TYPE_ID++;
+	
+	//public static final byte PREFIX_TYPE_STRING = PREFIX_TYPE_ID--;
+	static {
+		checkPrefix(PREFIX_TYPE_ID);
+	}
 	
 	public static final Short NON_ENCODE_TYPE = 0;
-	
 	public static final byte NULL_VALUE = 0;
 	public static final byte NON_NULL_VALUE = 1;
 
@@ -61,6 +81,12 @@ public class Decoder {
 	//static Short currentTypeCode = (short)(NON_ENCODE_TYPE + 1);
 	
    private static IClientTransformClassLoader clazzLoader = null;
+   
+   private static final void checkPrefix(byte prefix) {
+	  if((byte)(prefix) == 127) {
+		  throw new CommonException("Prefix value overflow");
+	  }
+   }
 	
    static {
 	    short type = (short)0xFFFF;

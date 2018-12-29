@@ -20,6 +20,7 @@ import java.nio.ByteBuffer;
 
 import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.Inject;
+import org.jmicro.api.codec.typecoder.TypeCoder;
 import org.jmicro.common.CommonException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,28 +35,19 @@ public class PrefixTypeDecoder{
 	
 	private static final Logger logger = LoggerFactory.getLogger(PrefixTypeDecoder.class);
 	
-	@Inject
-	private TypeCoderFactory typeCf;
+	//@Inject
+	//private TypeCoderFactory typeCf;
 	
 	@SuppressWarnings("unchecked")
 	public <V> V decode(ByteBuffer buffer) {
 		
+		buffer.mark();
 		byte prefixCodeType = buffer.get();
 		if(prefixCodeType == Decoder.PREFIX_TYPE_NULL){
+			//空值直接返回
 			return null;
 		}
-		Object obj = null;
-		if(Decoder.PREFIX_TYPE_STRING == prefixCodeType) {
-			TypeCoder<?> coder = TypeCoderFactory.getCoder(Object.class);
-			obj = coder.decode(buffer, null, null);
-		}else if(Decoder.PREFIX_TYPE_SHORT == prefixCodeType) {
-			Short code = buffer.getShort();
-			TypeCoder<?> coder = TypeCoderFactory.getCoder(code);
-			obj = coder.decode(buffer, coder.type(), null);
-		} else {
-			throw new CommonException("not support prefix type:" + prefixCodeType);
-		}
-		return (V)obj;
-	
+		buffer.reset();
+		return (V)TypeCoderFactory.getDefaultCoder().decode(buffer, null, null);
 	}
 }

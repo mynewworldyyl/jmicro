@@ -20,4 +20,11 @@ public interface ITestRpcService {
 	
 	void helloTopic(PSData data);
 	
+	int testReturnPrimitiveResult();
+	
+	int[] testReturnPrimitiveArrayResult();
+	
+	Boolean testReturnBooleanResult();
+	
+	boolean testReturnPrimitiveBooleanResult();
 }

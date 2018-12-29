@@ -44,7 +44,7 @@ import org.slf4j.LoggerFactory;
  * @author Yulei Ye
  * @date 2018年11月8日 上午11:43:13
  */
-@Component(value="onePrefixDecoder",lazy=false)
+@Component(active=false,value="onePrefixDecoder",lazy=false)
 public class OnePrefixDecoder /*implements IDecoder*/{
 	
 	private static final Logger logger = LoggerFactory.getLogger(OnePrefixDecoder.class);

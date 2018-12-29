@@ -413,7 +413,6 @@ public class SimpleObjectFactory implements IObjectFactory {
 		List<Object> l = new ArrayList<>();
 		l.addAll(this.objs.values());
 		l.sort(new Comparator<Object>(){
-			@SuppressWarnings("unused")
 			@Override
 			public int compare(Object o1, Object o2) {
 				Component c1 = ProxyObject.getTargetCls(o1.getClass()).getAnnotation(Component.class);
@@ -896,7 +895,10 @@ public class SimpleObjectFactory implements IObjectFactory {
 		 Method[] ms1 = srvInterface.getMethods();
 		 
 		 //Method[] ms2 = new Method[ms1.length];
-		 
+		/* if(cls.getName().equals("org.jmicro.example.provider.TestRpcServiceImpl")) {
+			 System.out.println("");
+		 }*/
+		 logger.debug("Create Service: {}",cls.getName());
 		 for(int i =0; i < ms1.length; i++) {
 		     //Method m1 = ms1[i];
 		     Method m = null;
@@ -915,11 +917,11 @@ public class SimpleObjectFactory implements IObjectFactory {
            Class<?>[] pts = m.getParameterTypes();
 
            StringBuilder code = new StringBuilder();
-        		   
+
            if (!Void.TYPE.equals(rt)) {
-        	   code.append(" Object ret = ");
+        	   code.append(ReflectUtils.getName(rt)).append(" ret = ");
            }
-           code.append("super.").append(m.getName()).append("(");
+           code.append(" super.").append(m.getName()).append("(");
            for (int j = 0; j < pts.length; j++){
           	 code.append("("+pts[j].getName()+")$").append(j + 1);
           	 if(j < pts.length-1){
@@ -929,9 +931,9 @@ public class SimpleObjectFactory implements IObjectFactory {
            code.append(");");
            
            if (!Void.TYPE.equals(rt)) {
-        	   code.append(" return ").append(SimpleObjectFactory.asArgument(rt, "ret")).append(";");
+        	   code.append(" return ret;");
            }
-
+           logger.debug(code.toString());
            classGenerator.addMethod(m.getName(), m.getModifiers(), rt, pts, m.getExceptionTypes(), code.toString());      
 		 }
 		 

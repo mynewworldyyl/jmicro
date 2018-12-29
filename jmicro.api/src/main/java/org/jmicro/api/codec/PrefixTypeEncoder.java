@@ -20,9 +20,10 @@ import java.nio.ByteBuffer;
 
 import org.jmicro.api.annotation.Cfg;
 import org.jmicro.api.annotation.Component;
-import org.jmicro.api.annotation.Inject;
+import org.jmicro.api.codec.typecoder.TypeCoder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 /**
  * @author Yulei Ye
  * @date 2018年10月4日-下午12:01:25
@@ -35,24 +36,23 @@ public class PrefixTypeEncoder implements IEncoder<ByteBuffer>{
 	@Cfg(value="/OnePrefixTypeEncoder",defGlobal=true,required=true)
 	private int encodeBufferSize = 4096;
 	
-	@Inject
-	private TypeCoderFactory typeCf;
-	
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	@Override
 	public ByteBuffer encode(Object obj) {
 		ByteBuffer buffer = null;
 		if(obj == null) {
-			buffer = ByteBuffer.allocate(32);
-			TypeCoder<Void> coder = typeCf.getByClass(Void.class);
-			coder.encode(buffer, null, Void.class,null);
-		}else {
-			buffer = ByteBuffer.allocate(encodeBufferSize);
-			//入口从Object的coder开始
-			TypeCoder coder = typeCf.getByClass(Object.class);
-			//field declare as Object.class in order to put type info any way
-			coder.encode(buffer, obj, Object.class,null);
-		}
+			buffer = ByteBuffer.allocate(1);
+			buffer.put(Decoder.PREFIX_TYPE_NULL);
+			//空值直接返回
+			return buffer;
+		} 
+
+		buffer = ByteBuffer.allocate(encodeBufferSize);
+		//入口从Object的coder开始
+		TypeCoder coder = TypeCoderFactory.getDefaultCoder();
+		//field declare as Object.class in order to put type info any way
+		//从此进入时,字段声明及泛型类型都是空,区别于从反射方法进入
+		coder.encode(buffer, obj, null,null);
 		return buffer;
 	}
 	

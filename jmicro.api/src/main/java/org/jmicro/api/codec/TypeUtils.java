@@ -169,6 +169,13 @@ public class TypeUtils {
 		return cls == java.util.Date.class;
 	}
 	
+	public static boolean isPrimitive(Class<?> cls) {
+		return isPrimitiveByte(cls) || isPrimitiveShort(cls)
+				||isPrimitiveInt(cls) || isPrimitiveLong(cls)
+				||isPrimitiveDouble(cls) || isPrimitiveFloat(cls)
+				||isPrimitiveBoolean(cls) || isPrimitiveChar(cls)
+				;
+	}
 	
 	public static boolean isPrimitiveByte(Class<?> cls) {
 		return cls == byte.class || cls == Byte.TYPE;

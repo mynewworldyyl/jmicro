@@ -50,8 +50,7 @@ public class IdClient implements IIdClient{
 		return (Long[])getFromServer(Long.class,idType, num);
 	}
 
-	@SuppressWarnings("unchecked")
-	private Object getFromServer(Class insType,String idType, int num) {
+	private Object getFromServer(Class<?> insType,String idType, int num) {
 
 		ServiceItem si = JMicroContext.get().getParam(Constants.SERVICE_ITEM_KEY,null);
 		if(si != null && "org.jmicro.api.idgenerator.IIdServer".equals(si.getKey().getServiceName())) {

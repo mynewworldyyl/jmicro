@@ -31,6 +31,7 @@ import java.util.Map;
 import org.jmicro.api.annotation.Cfg;
 import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.Inject;
+import org.jmicro.api.codec.typecoder.TypeCoder;
 import org.jmicro.api.monitor.SubmitItem;
 import org.jmicro.common.CommonException;
 import org.jmicro.common.Constants;
@@ -42,7 +43,7 @@ import org.slf4j.LoggerFactory;
  * @author Yulei Ye
  * @date 2018年10月4日-下午12:01:25
  */
-@Component(value="onePrefixTypeEncoder",lazy=false)
+@Component(active=false,value="onePrefixTypeEncoder",lazy=false)
 public class OnePrefixTypeEncoder implements IEncoder<ByteBuffer>{
 
 	private static final Logger logger = LoggerFactory.getLogger(OnePrefixTypeEncoder.class);
