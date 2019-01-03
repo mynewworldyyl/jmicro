@@ -37,7 +37,7 @@ import org.jmicro.common.Constants;
  * @date 2018年12月9日 下午5:23:34
  */
 @Component(value="idClient",side=Constants.SIDE_ANY,level=3)
-public class IdClient implements IIdClient{
+public class IdClient implements IIdGenerator{
 
 	public static final int CACHE_SIZE = 1;
 	private volatile Map<String,Queue<Object>> cache = new HashMap<>();
@@ -57,7 +57,7 @@ public class IdClient implements IIdClient{
 			/*
 			 * IIdServer本身的RPC也要ID，此种情况直接从ZK取，不做RPC，否则会陷入死循坏
 			 */
-			IIdClient localUidGenerator = JMicro.getObjectFactory().getByName("uniqueIdGenerator");
+			UniqueIdGenerator localUidGenerator = JMicro.getObjectFactory().getByName("uniqueIdGenerator");
 			if(insType == Integer.class) {
 				return localUidGenerator.getIntIds(idType, num);
 			}else if(insType == Long.class) {

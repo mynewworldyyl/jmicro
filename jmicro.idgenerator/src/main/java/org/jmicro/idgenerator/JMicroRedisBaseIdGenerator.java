@@ -14,58 +14,67 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.jmicro.api.idgenerator;
+package org.jmicro.idgenerator;
 
+import org.jmicro.api.JMicro;
 import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.Inject;
-import org.jmicro.api.raft.IDataOperator;
-import org.jmicro.api.raft.RaftBaseIdGenerator;
+import org.jmicro.api.annotation.Service;
+import org.jmicro.api.idgenerator.IIdServer;
 import org.jmicro.common.Constants;
+import org.jmicro.common.Utils;
+
+import redis.clients.jedis.Jedis;
 
 /**
  * 
  * @author Yulei Ye
- * @date 2018年12月9日 下午5:24:20
+ * @date 2019年1月3日 下午1:46:17
  */
-@Component("uniqueIdGenerator")
-public class UniqueIdGenerator implements IIdGenerator/*,IIdServer,IIdClient*/{
-
+@Component(value=Constants.DEFAULT_IDGENERATOR, level=2,side = Constants.SIDE_PROVIDER)
+@Service(namespace="RedisBaseIdServer", version="0.0.1")
+public class JMicroRedisBaseIdGenerator implements IIdServer {
+	
 	private static final String ID_IDR = Constants.CFG_ROOT + "/id/";
 	
-	@Inject(required=true)
-	private IDataOperator dataOperator;
+	public static void main(String[] args) {
+		 JMicro.getObjectFactoryAndStart(new String[] {"-DinstanceName=RedisBaseIdServer",
+				 "-Dserver=true",
+				 "-Dorg.jmicro.api.idgenerator.IIdServer=uniqueIdGenerator"});
+		 Utils.getIns().waitForShutdown();
+	}
 	
-	private RaftBaseIdGenerator idg = null;
+	@Inject(required=true)
+	private Jedis redis;
 	
 	public void init(){
-		idg = new RaftBaseIdGenerator(ID_IDR,this.dataOperator);
+		
 	}
 	
 	public Integer[] getIntIds(String idKey, int num) {
-		return idg.getIntIds(idKey, num);
+		return null;
 	}
 	
 	public Long[] getLongIds(String idKey, int num) {
-		return idg.getLongIds(idKey, num);
+		return null;
 	}
 	
 	public String[] getStringIds(String idKey, int num) {
-		return this.idg.getStringIds(idKey, num);
+		return null;
 	}
 	
 	@Override
 	public Long getLongId(String idKey) {
-		return this.idg.getLongId(idKey);
+		return 1L;
 	}
 
 	@Override
 	public String getStringId(String idType) {
-		return this.idg.getStringId(idType);
+		return null;
 	}
 
 	@Override
 	public Integer getIntId(String idKey) {
-		return this.idg.getIntId(idKey);
+		return 0;
 	}
-
 }

@@ -81,7 +81,7 @@ class ClientServiceProxyManager {
 				throw new CommonException("Service class [" + srvName+"] not found!");
 			}
 			
-			if(cls.isAnnotationPresent(Service.class)) {
+			if(!cls.isAnnotationPresent(Service.class)) {
 				throw new CommonException("Service class ["+srvName+"] must be annotated with [" + Service.class.getName()+"] to create client proxy byte interface name");
 			}
 			

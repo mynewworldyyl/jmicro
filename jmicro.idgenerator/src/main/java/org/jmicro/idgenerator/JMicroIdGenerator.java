@@ -30,14 +30,14 @@ import org.jmicro.common.Utils;
  * @author Yulei Ye
  * @date 2018年10月4日-下午12:11:16
  */
-@Component(value=Constants.DEFAULT_IDGENERATOR,level=2,side = Constants.SIDE_PROVIDER)
-@Service(namespace="idServer",version="0.0.1")
+@Component(active=false, value=Constants.DEFAULT_IDGENERATOR,level=2, side = Constants.SIDE_PROVIDER)
+@Service(namespace="idServer", version="0.0.1")
 public class JMicroIdGenerator implements IIdServer {
 	
 	private static final String ID_IDR = Constants.CFG_ROOT + "/id/";
 	
 	public static void main(String[] args) {
-		 JMicro.getObjectFactoryAndStart(new String[] {"-DinstanceName=IdServer",
+		 JMicro.getObjectFactoryAndStart(new String[] {"-DinstanceName=ZkBaseIdServer",
 				 "-Dserver=true",
 				 "-Dorg.jmicro.api.idgenerator.IIdServer=uniqueIdGenerator"});
 		 Utils.getIns().waitForShutdown();

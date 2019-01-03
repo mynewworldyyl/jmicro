@@ -3,7 +3,7 @@ package org.jmicro.example.test;
 import java.nio.ByteBuffer;
 
 import org.jmicro.api.JMicro;
-import org.jmicro.api.idgenerator.IIdClient;
+import org.jmicro.api.idgenerator.IdClient;
 import org.jmicro.api.net.IRequest;
 import org.jmicro.api.net.Message;
 import org.jmicro.api.objectfactory.IObjectFactory;
@@ -18,7 +18,7 @@ public class TestIdGenerator {
 				"-Dorg.jmicro.api.idgenerator.IIdClient=idClient"});
 		of.start();
 		
-		IIdClient g = of.get(IIdClient.class);
+		IdClient g = of.get(IdClient.class);
 		g.getLongId(Message.class.getName());
 	}
 	
@@ -64,7 +64,7 @@ public class TestIdGenerator {
 				"-DinstanceName=testIdClientGetId",
 				"-Dclient=true"});
 		
-		IIdClient idClient = of.getByName("idClient");
+		IdClient idClient = of.getByName("idClient");
 		
 		String[] longId = idClient.getStringIds(IRequest.class.getName(), 3);
 		System.out.println(Utils.getIns().toString(longId));

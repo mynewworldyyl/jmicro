@@ -145,7 +145,7 @@ public final class UniqueServiceMethodKey {
 			usk.setHost(strs[++idx]);
 		}
 		
-		if(strs.length > 5) {
+		if(strs.length > 5 && !StringUtils.isEmpty(strs[++idx])) {
 			usk.setPort(Integer.parseInt(strs[++idx]));
 		}
 		

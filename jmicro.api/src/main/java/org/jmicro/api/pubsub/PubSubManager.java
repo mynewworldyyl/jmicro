@@ -165,6 +165,9 @@ public class PubSubManager {
 				topicsAdd(children);
 			}
 		});	
+		List<String> children = this.dataOp.getChildren(Config.PubSubDir);
+		topicsAdd(children);
+		
 	}
 	
 	private void topicsAdd(List<String> children) {

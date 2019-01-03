@@ -1,6 +1,8 @@
 package org.jmicro.example.test;
 
 import java.util.HashMap;
+import java.util.Random;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.jmicro.api.JMicro;
 import org.jmicro.api.objectfactory.IObjectFactory;
@@ -30,5 +32,40 @@ public class TestPubSubServer {
 		psm.publishData(psd);
 	}
 
-	
+	@Test
+	public void testPresurePublish() {
+		
+		final Random ran = new Random();
+		
+		IObjectFactory of = JMicro.getObjectFactoryAndStart(new String[] {"-DinstanceName=testPublishStringMessage"});
+		of.start();
+		PubSubManager psm = of.get(PubSubManager.class);
+		
+		AtomicInteger id = new AtomicInteger(0);
+		
+		Runnable r = ()->{
+			while(true) {
+				try {
+					try {
+						psm.publish(new HashMap<String,String>(), "/jmicro/test/topic01", 
+								"test pubsub server id: "+id.getAndIncrement());
+						//Thread.sleep(500000000);
+						Thread.sleep(ran.nextInt(50));
+					} catch (InterruptedException e) {
+						e.printStackTrace();
+					}
+				} catch (Throwable e) {
+					e.printStackTrace();
+				}
+			}
+		};
+		
+		new Thread(r).start();
+		new Thread(r).start();
+		/*new Thread(r).start();
+		new Thread(r).start();
+		new Thread(r).start();*/
+		
+		JMicro.waitForShutdown();
+	}
 }

@@ -115,6 +115,14 @@ jmicro.server/target/
 jmicro.server/.classpath
 jmicro.server/.project
 jmicro.server/.settings/
+jmicro.redis/target/
+jmicro.redis/.classpath
+jmicro.redis/.project
+jmicro.redis/.settings/
+jmicro.etcd/target/
+jmicro.etcd/.classpath
+jmicro.etcd/.project
+jmicro.etcd/.settings/
 jmicro.pubsub/target/
 jmicro.pubsub/.classpath
 jmicro.pubsub/.project

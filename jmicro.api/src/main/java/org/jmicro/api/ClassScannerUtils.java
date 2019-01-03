@@ -35,7 +35,7 @@ import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
 import org.jmicro.api.annotation.Component;
-import org.jmicro.api.annotation.App;
+import org.jmicro.api.annotation.ObjFactory;
 import org.jmicro.api.annotation.PostListener;
 import org.jmicro.api.annotation.Service;
 import org.jmicro.api.config.Config;
@@ -212,6 +212,7 @@ public class ClassScannerUtils {
 		return  cls.isAnnotationPresent(Component.class)
 				||cls.isAnnotationPresent(Service.class)
 				||cls.isAnnotationPresent(PostListener.class)
+				||cls.isAnnotationPresent(ObjFactory.class)
 				/*||cls.isAnnotationPresent(Name.class)
 				||cls.isAnnotationPresent(Server.class)
 				||cls.isAnnotationPresent(Channel.class)

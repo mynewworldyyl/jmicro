@@ -79,9 +79,10 @@
         <zookeeper.version>3.4.13</zookeeper.version>
         <curator.version>4.0.1</curator.version>
         <zkclient.version>2.0</zkclient.version>
+        <redis.version>2.10.0</redis.version>
     </properties>
 
-    <modules> 
+    <modules>
     	<module>jmicro.common</module>
 		<module>jmicro.api</module>
 		<module>jmicro.server</module>
@@ -97,6 +98,8 @@
 		<module>jmicro.gateway</module>
 		<module>jmicro.gateway.client</module>
 		<module>jmicro.pubsub</module>
+		<module>jmicro.redis</module>
+		<module>jmicro.etcd</module>
     </modules>
 
     <dependencyManagement>
@@ -106,9 +109,19 @@
 				 <artifactId>jmicro.api</artifactId>
 				 <version>${jmicro.version}</version>
             </dependency>
-			  <dependency>
+			 <dependency>
+                 <groupId>org.jmicro</groupId>
+				 <artifactId>jmicro.redis</artifactId>
+				 <version>${jmicro.version}</version>
+            </dependency>
+			 <dependency>
                  <groupId>org.jmicro</groupId>
 				 <artifactId>jmicro.pubsub</artifactId>
+				 <version>${jmicro.version}</version>
+            </dependency>
+			  <dependency>
+                 <groupId>org.jmicro</groupId>
+				 <artifactId>jmicro.etcd</artifactId>
 				 <version>${jmicro.version}</version>
             </dependency>
              <dependency>
@@ -300,7 +313,11 @@
 		    <artifactId>netty-all</artifactId>
 		    <version>4.1.30.Final</version>
 		</dependency>
-		
+		<dependency>
+		    <groupId>redis.clients</groupId>
+		    <artifactId>jedis</artifactId>
+		    <version>${redis.version}</version>
+		</dependency>
         </dependencies>
     </dependencyManagement>
 

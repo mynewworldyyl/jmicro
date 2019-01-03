@@ -5,18 +5,18 @@
 		 <artifactId>jmicro.parent</artifactId>
 		 <version>0.0.1-SNAPSHOT</version>
     </parent>
-    <artifactId>jmicro.server</artifactId>
+    <artifactId>jmicro.redis</artifactId>
     <packaging>jar</packaging>
     <name>${project.artifactId}</name>
-    <description>server Module</description>
+    <description>redis Module</description>
     <dependencies>
         <dependency>
-		      <groupId>org.jmicro</groupId>
-			  <artifactId>jmicro.api</artifactId>
+            <groupId>org.jmicro</groupId>
+            <artifactId>jmicro.api</artifactId>
         </dependency>
         <dependency>
-		    <groupId>co.paralleluniverse</groupId>
-		    <artifactId>quasar-core</artifactId>
+		    <groupId>redis.clients</groupId>
+		    <artifactId>jedis</artifactId>
 		</dependency>
     </dependencies>
    

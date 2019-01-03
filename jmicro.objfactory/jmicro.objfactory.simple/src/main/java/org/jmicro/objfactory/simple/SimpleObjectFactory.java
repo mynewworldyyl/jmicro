@@ -66,7 +66,7 @@ import org.slf4j.LoggerFactory;
  * @author Yulei Ye
  * @date 2018年10月4日-下午12:12:24
  */
-@ObjFactory
+@ObjFactory(Constants.DEFAULT_OBJ_FACTORY)
 @Component(Constants.DEFAULT_OBJ_FACTORY)
 public class SimpleObjectFactory implements IObjectFactory {
 
@@ -217,7 +217,14 @@ public class SimpleObjectFactory implements IObjectFactory {
 		this.clsNameToObjs.put(cls.getName(), obj);
 	}
 	
+	private boolean canCreate(Class<?> cls) {
+		return !IObjectFactory.class.isAssignableFrom(cls) && cls.isAnnotationPresent(Component.class);
+	}
+	
 	private <T> T createObject(Class<T> cls,boolean doAfterCreate) {
+		if(!canCreate(cls)) {
+			return null;
+		}
 		Object obj = null;
 		try {
 			if(!isLazy(cls)) {
@@ -330,8 +337,7 @@ public class SimpleObjectFactory implements IObjectFactory {
 		Set<Class<?>> clses = ClassScannerUtils.getIns().getComponentClass();
 		if(clses != null && !clses.isEmpty()) {
 			for(Class<?> c : clses){
-				if(IObjectFactory.class.isAssignableFrom(c) || 
-						!c.isAnnotationPresent(Component.class)){
+				if(!this.canCreate(c)){
 					continue;
 				}
 				
@@ -421,6 +427,8 @@ public class SimpleObjectFactory implements IObjectFactory {
 			}
 		});
 		
+		this.cacheObj(this.getClass(), this, true);
+		
 		Config cfg = (Config)objs.get(Config.class);
 		//初始化配置目录
 		cfg.setDataOperator(dop);
@@ -442,10 +450,8 @@ public class SimpleObjectFactory implements IObjectFactory {
 					 //用于测试具体某个组件的配置初始化
 					 logger.debug(o.toString());
 				 }*/
-				 
 				
 				if(srvManager == o || registry == o || dop == o || haveInits.contains(o)) {
-					
 					continue;
 				}
 				haveInits.add(o);
@@ -585,7 +591,7 @@ public class SimpleObjectFactory implements IObjectFactory {
 			String commandComName = Config.getCommandParam(refCls.getName(), String.class, null);
 			if(!StringUtils.isEmpty(commandComName) 
 					&& ( f.isAnnotationPresent(Inject.class) || f.isAnnotationPresent(Reference.class) )) {
-				//对于注入或引用的服务，命令行指定实现组件名称
+				//对于注入或引用的服务,命令行指定实现组件名称
 				if(this.nameToObjs.containsKey(commandComName)) {
 					srv = this.nameToObjs.get(commandComName);
 				} else {
@@ -784,6 +790,9 @@ public class SimpleObjectFactory implements IObjectFactory {
 						srv = map;
 					}
 				}else if(type.isInterface() || Modifier.isAbstract(type.getModifiers())) {
+					/*if(type == IObjectFactory.class) {
+						logger.debug(type.getName());
+					}*/
 					List<?> l = this.getByParent(type);
 					
 					if(isProvider){
@@ -891,7 +900,7 @@ public class SimpleObjectFactory implements IObjectFactory {
 		 classGenerator.addMethod("public void enable(boolean en){ this.enable=en;}");*/
 		 classGenerator.addMethod("public java.lang.String wayd(java.lang.String msg){ return msg;}");
 		 
-		 //只为代理接口生成代理方法，别的方法继承自原始类
+		 //只为代理接口生成代理方法,别的方法继承自原始类
 		 Method[] ms1 = srvInterface.getMethods();
 		 
 		 //Method[] ms2 = new Method[ms1.length];
@@ -918,11 +927,11 @@ public class SimpleObjectFactory implements IObjectFactory {
 
            StringBuilder code = new StringBuilder();
 
-           if (!Void.TYPE.equals(rt)) {
+           if(!Void.TYPE.equals(rt)) {
         	   code.append(ReflectUtils.getName(rt)).append(" ret = ");
            }
            code.append(" super.").append(m.getName()).append("(");
-           for (int j = 0; j < pts.length; j++){
+           for(int j = 0; j < pts.length; j++){
           	 code.append("("+pts[j].getName()+")$").append(j + 1);
           	 if(j < pts.length-1){
           		code.append(",");
@@ -981,10 +990,16 @@ public class SimpleObjectFactory implements IObjectFactory {
 			StringBuffer sb = new StringBuffer();
 			//sb.append("if (!this.init) { System.out.println( \"lazy init class:"+cls.getName()+"\"); this.init=true; this.target = ("+cls.getName()+")((java.lang.reflect.Constructor)constructors.get(this.conKey)).newInstance(this.conArgs);}");
 			sb.append(" _init0();");
-			sb.append(" Object v = methods[").append(index).append("].invoke(this.target,$args); ");	
 			Class<?> rt = m.getReturnType();
+			
 			if (!Void.TYPE.equals(rt)) {
-				sb.append(" return ").append(asArgument(rt, "v")).append(";");
+				sb.append(ReflectUtils.getName(rt)).append(" v = ");
+			}
+			
+			sb.append(" methods[").append(index).append("].invoke(this.target,$args); ");	
+			
+			if (!Void.TYPE.equals(rt)) {
+				sb.append(" return v ;");
 			}
 			cg.addMethod(m.getName(), m.getModifiers(), m.getReturnType(), m.getParameterTypes(),
 					m.getExceptionTypes(), sb.toString());
