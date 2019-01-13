@@ -32,7 +32,7 @@ import org.jmicro.common.Constants;
  * @author Yulei Ye
  * @date 2018年12月22日 下午10:50:50
  */
-@Target({METHOD,TYPE})
+@Target({METHOD})
 @Retention(RUNTIME)
 public @interface Subscribe {
 

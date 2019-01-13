@@ -17,13 +17,14 @@
 package org.jmicro.api.pubsub;
 
 import org.jmicro.api.annotation.Service;
+import org.jmicro.common.Constants;
 
 /**
  * 
  * @author Yulei Ye
  * @date 2018年12月22日 下午11:10:01
  */
-@Service(namespace="org.jmicro.api.pubsub.server")
+@Service(namespace=Constants.DEFAULT_PUBSUB,version="0.0.1")
 public interface IInternalSubRpc {
 
 	//boolean subcribe(String topic,String srv,String namespace,String version,String method);

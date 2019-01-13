@@ -128,6 +128,10 @@ public final class MonitorConstant {
 	
 	public static final int STATIS_TOTAL_RESP = 8;
 	
+	public static final int STATIS_QPS = 9;
+	
+	public static final String STATIS_SERVICE_METHOD_TOPIC = "/statics/smTopic";
+	
 	public static final Map<Integer,String> MONITOR_VAL_2_KEY = new HashMap<>();
 	static {
 		Field[] fs = MonitorConstant.class.getDeclaredFields();

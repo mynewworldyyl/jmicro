@@ -18,11 +18,9 @@ package org.jmicro.api.registry;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
-import java.util.concurrent.TimeUnit;
 
 import org.jmicro.common.CommonException;
 import org.jmicro.common.Constants;
-import org.jmicro.common.util.TimeUtils;
 
 /**
  * 
@@ -55,6 +53,9 @@ public final class ServiceMethod {
 	
 	//统计服务数据基本时长，单位同baseTimeUnit确定 @link SMethod
 	private long timeWindow = -1;
+	
+	//循环时钟槽位个数
+	private int slotSize = 10;
 	
 	//采样统计数据周期，单位由baseTimeUnit确定
 	private long checkInterval = -1;
@@ -120,6 +121,8 @@ public final class ServiceMethod {
 	//false: not stream, true:stream, more than one request and response double stream
 	//a stream service must be async=true, and get got result by callback
 	private boolean stream = false;
+	
+	private String topic = null;
 
 	public void formPersisItem(ServiceMethod p){
 		this.monitorEnable = p.monitorEnable;
@@ -147,6 +150,7 @@ public final class ServiceMethod {
 		this.dumpUpStream = p.dumpUpStream;
 		this.debugMode = p.debugMode;
 		
+		this.topic = p.topic;
 	}
 	
 	public String toJson(){
@@ -385,6 +389,32 @@ public final class ServiceMethod {
 
 	public void setBaseTimeUnit(String baseTimeUnit) {
 		this.baseTimeUnit = baseTimeUnit;
+	}
+
+	public int getSlotSize() {
+		return slotSize;
+	}
+
+	public void setSlotSize(int slotSize) {
+		this.slotSize = slotSize;
+	}
+
+	public String getTopic() {
+		return topic;
+	}
+
+	public void setTopic(String topic) {
+		this.topic = topic;
+	}
+
+	@Override
+	public int hashCode() {
+		return this.key==null?"".hashCode():this.key.hashCode();
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		return this.hashCode() == obj.hashCode();
 	}
 
 }

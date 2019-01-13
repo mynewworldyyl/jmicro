@@ -27,7 +27,6 @@ import org.jmicro.api.annotation.Cfg;
 import org.jmicro.api.annotation.PostListener;
 import org.jmicro.api.config.Config;
 import org.jmicro.api.config.IConfigChangeListener;
-import org.jmicro.api.net.IRequestHandler;
 import org.jmicro.api.objectfactory.PostInitListenerAdapter;
 import org.jmicro.api.objectfactory.ProxyObject;
 import org.jmicro.common.CommonException;
@@ -54,6 +53,10 @@ public class ConfigPostInitListener extends PostInitListenerAdapter {
 		 Class<?> cls = ProxyObject.getTargetCls(obj.getClass());
 		 List<Field> fields = new ArrayList<>();
 		 Utils.getIns().getFields(fields, cls);
+		 
+		/* if(cls.getName().equals("org.jmicro.api.pubsub.PubSubManager")) {
+			 logger.debug("preInit");
+		 }*/
 
 		 for(Field f : fields){
 			if(!f.isAnnotationPresent(Cfg.class)){
@@ -61,20 +64,28 @@ public class ConfigPostInitListener extends PostInitListenerAdapter {
 			}
 			
 			Cfg cfgAnno = f.getAnnotation(Cfg.class);
-			if(StringUtils.isEmpty(cfgAnno.value())){
+			if(StringUtils.isBlank(cfgAnno.value())){
 				throw new CommonException("Class ["+cls.getName()+",Field:"+f.getName()+"],Cfg path is NULL");
 			}
 			
+			String prefix = cfgAnno.value();
+			if(prefix.startsWith("/")){
+				prefix = "/"+prefix;
+			}
+			
 			String value = null;
-			String path = "/" + cls.getName() + cfgAnno.value();
+			//优先类全名组成路径
+			String path = "/" + cls.getName() + prefix;
 			
 			value = cfg.getString(path, null);
 			if(StringUtils.isEmpty(value)) {
-				path = "/" + cls.getSimpleName() + cfgAnno.value();
+				//类简称组成路径
+				path = "/" + cls.getSimpleName() + prefix;
 				value = cfg.getString(path, null);
 			}
 			
 			if(StringUtils.isEmpty(value)){
+				//值直接指定绝对路径
 				path = cfgAnno.value();
 				value = cfg.getString(path, null);
 			}

@@ -40,6 +40,7 @@ import org.slf4j.LoggerFactory;
 
 /**
  * 1 服务实例级列表管理器,实现服务实例的增加,删除,修改,查询
+ * 只负责服务实例级的管理，更高服务抽象由IRegistry管理，IRegistry依赖ServiceManager做服务的基本操作
  * 
  * @author Yulei Ye
  * @date 2018年12月3日 下午1:52:47
@@ -52,10 +53,13 @@ public class ServiceManager {
 	//服务实例级列表
 	private Map<String,ServiceItem> path2SrvItems = new HashMap<>();
 	
+	//服务hash值
 	private Map<String,Integer> path2Hash = new HashMap<>();
 	
+	//服务监听器，监听特定路径的服务
 	private HashMap<String,Set<IServiceListener>> serviceListeners = new HashMap<>();
 	
+	//监听全部服务
 	private Set<IServiceListener> listeners = new HashSet<>();
 	
 	private IDataOperator dataOperator;
@@ -73,6 +77,7 @@ public class ServiceManager {
 		}
 	};
 	
+	//动态服务数据监听器
 	private IDataListener dataListener = new IDataListener(){
 		@Override
 		public void dataChanged(String path, String data) {
@@ -80,6 +85,7 @@ public class ServiceManager {
 		}
 	};
 	
+	//全局服务配置数据监听器
 	private IDataListener cfgDataListener = new IDataListener(){
 		@Override
 		public void dataChanged(String path, String data) {
@@ -152,8 +158,13 @@ public class ServiceManager {
 		}
 	}
 	
-	public void addListener(IServiceListener lis) {
+	public synchronized void addListener(IServiceListener lis) {
 		if(!this.listeners.contains(lis)) {
+			if(!path2SrvItems.isEmpty()) {
+				for(ServiceItem si : path2SrvItems.values()) {
+					lis.serviceChanged(IServiceListener.SERVICE_ADD, si);
+				}
+			}
 			this.listeners.add(lis);
 		}
 	}
@@ -183,13 +194,18 @@ public class ServiceManager {
 	}
 	
 	public ServiceItem getItem(String path) {
+		if(this.path2SrvItems.containsKey(path)) {
+			return this.path2SrvItems.get(path);
+		}
+		refleshOneService(path);
 		return this.path2SrvItems.get(path);
 	}
 	
 	public Set<ServiceItem> getServiceItems(String srvPrefix) {
 		Set<ServiceItem> sets = new HashSet<>();
 		this.path2SrvItems.forEach((key,val) -> {
-			if(key.indexOf(srvPrefix) > 0) {
+			//logger.debug("prefix {}, key: {}" ,srvPrefix,key);
+			if(key.indexOf(srvPrefix) > 0 || key.startsWith(srvPrefix)) {
 				sets.add(val);
 			}
 		});
@@ -215,11 +231,11 @@ public class ServiceManager {
 		}
 		ServiceMethod sm = item.getMethod(usm.getMethod(), usm.getParamsStr());
 		sm.setBreaking(true);
-		this.updateOrCreate(item, item.getKey().toKey(true, true, false), true);
+		this.updateOrCreate(item, item.getKey().toKey(true, true, true), true);
 	}
 	
 	public void breakService(ServiceMethod sm) {
-		String path = ServiceItem.pathForKey(sm.getKey().getUsk().toKey(true, true, false));
+		String path = ServiceItem.pathForKey(sm.getKey().getUsk().toKey(true, true, true));
 		ServiceItem item = this.path2SrvItems.get(path);
 		if(item == null) {
 			logger.error("Service [{}] not found",path);
@@ -232,7 +248,19 @@ public class ServiceManager {
 		} 
 	}
 	
-	private void serviceRemove(String path, String data) {
+	public ServiceItem getServiceByKey(String key) {
+		String path = ServiceItem.pathForKey(key);
+		ServiceItem item = this.path2SrvItems.get(path);
+		return item;
+	}
+	
+	public ServiceItem getServiceByServiceMethod(ServiceMethod sm) {
+		String path = ServiceItem.pathForKey(sm.getKey().toKey(true, true, false));
+		ServiceItem item = this.path2SrvItems.get(path);
+		return item;
+	}
+	
+	private synchronized void serviceRemove(String path, String data) {
 		ServiceItem si = null;
 		synchronized(path2Hash) {
 			this.path2Hash.remove(path);
@@ -324,7 +352,7 @@ public class ServiceManager {
 		return true;
 	}
 	
-	private void refleshOneService(String path) {
+	private synchronized void refleshOneService(String path) {
 		
 		String data =  dataOperator.getData(path);
 		ServiceItem i = this.fromJson(data);
@@ -339,6 +367,7 @@ public class ServiceManager {
 		boolean flag = this.path2Hash.containsKey(path);
 		
 		if(!this.isChange(i, path)) {
+			logger.warn("Service Item no change {}",path);
 			return;
 		}
 				
@@ -357,13 +386,14 @@ public class ServiceManager {
 	}
 	
 	/**
-	 * 服务名称，名称空间，版本 三维一体服务监听
+	 * 
 	 * @param type
 	 * @param item
 	 */
 	private void notifyServiceChange(int type,ServiceItem item,String path){
 		Set<IServiceListener> ls = this.serviceListeners.get(path);
 		if(ls != null && !ls.isEmpty()){
+			//服务名称，名称空间，版本 三维一体服务监听
 			for(IServiceListener l : ls){
 				l.serviceChanged(type, item);
 			}
@@ -371,6 +401,7 @@ public class ServiceManager {
 		ls = this.listeners;
 		if(ls != null && !ls.isEmpty()){
 			for(IServiceListener l : ls){
+				//服务运行实例监听器
 				l.serviceChanged(type, item);
 			}
 		}

@@ -40,6 +40,7 @@ import org.jmicro.api.monitor.SubmitItem;
 import org.jmicro.api.net.IRequest;
 import org.jmicro.api.registry.ServiceItem;
 import org.jmicro.api.registry.ServiceMethod;
+import org.jmicro.common.Constants;
 import org.jmicro.common.Utils;
 import org.jmicro.common.util.JsonUtils;
 import org.slf4j.Logger;
@@ -51,7 +52,8 @@ import org.slf4j.LoggerFactory;
  * @date 2018年10月18日-下午9:39:57
  */
 @Component
-@Service(version="0.0.1", namespace="serviceResponseTimeMonitor",monitorEnable=0)
+@Service(version="0.0.1", namespace="serviceResponseTimeMonitor",
+monitorEnable=0,handler=Constants.SPECIAL_INVOCATION_HANDLER)
 public class ServiceResponseTimeMonitor extends AbstractMonitorDataSubscriber implements IMonitorDataSubscriber {
 
 	private final static Logger logger = LoggerFactory.getLogger(ServiceResponseTimeMonitor.class);

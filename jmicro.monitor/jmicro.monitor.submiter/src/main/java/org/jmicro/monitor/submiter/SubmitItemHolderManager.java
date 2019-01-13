@@ -91,7 +91,7 @@ public class SubmitItemHolderManager implements IMonitorDataSubmiter{
 	
 	//@Inject(required=false, remote=true)
 	//配置方式参数Reference注解说明
-	@Reference(required=false,changeListener="subscriberChange",handler="specailInvocationHandler")
+	@Reference(required=false,changeListener="subscriberChange")
 	private Set<IMonitorDataSubscriber> submiters = new HashSet<>();
 	
 	private Map<Integer,Set<IMonitorDataSubscriber>> type2Subscribers = new HashMap<>();
@@ -199,7 +199,7 @@ public class SubmitItemHolderManager implements IMonitorDataSubmiter{
 				Double dreq = counter.getTotal(MonitorConstant.CLIENT_REQ_BEGIN);
 				Double toreq = counter.getTotal(MonitorConstant.CLIENT_REQ_TIMEOUT_FAIL);
 				Double dresp = counter.getTotal(MonitorConstant.CLIENT_REQ_BUSSINESS_ERR,MonitorConstant.CLIENT_REQ_OK,MonitorConstant.CLIENT_REQ_EXCEPTION_ERR);
-				Double qps = counter.getAvg(MonitorConstant.CLIENT_REQ_OK, TimeUnit.SECONDS);
+				Double qps = counter.getAvg(TimeUnit.SECONDS,MonitorConstant.CLIENT_REQ_OK);
 				if(dreq > -1 && dresp > -1) {
 					logger.debug("总请求:{}, 总响应:{}, 超时:{}, QPS:{}",dreq,dresp,toreq,qps);
 				}
@@ -384,6 +384,10 @@ public class SubmitItemHolderManager implements IMonitorDataSubmiter{
 		si.setLocalPort(JMicroContext.get().getString(JMicroContext.LOCAL_PORT,""));
 		si.setLocalHost(Config.getHost());
 		
+		if(si.getSm() == null) {
+			si.setSm(JMicroContext.get().getParam(Constants.SERVICE_METHOD_KEY,null));
+		}
+		
 		if(si.getSm() != null) {
 			ServiceMethod sm = si.getSm();
 			si.setNamespace(sm.getKey().getNamespace());
@@ -422,17 +426,17 @@ public class SubmitItemHolderManager implements IMonitorDataSubmiter{
 	}
 
 	@Override
-	public void submit(SubmitItem item) {
+	public boolean submit(SubmitItem item) {
 		
 		if(item == null) {
 			if(openDebug){
 				logger.debug("Got NULL item");
 			}
-			return;
+			return false;
 		}
 		
 		if(!canSubmit(item.getType())) {
-			return;
+			return false;
 		}
 		
 		setHeader(item);
@@ -446,6 +450,7 @@ public class SubmitItemHolderManager implements IMonitorDataSubmiter{
 		if(w.isPause()) {
 			w.start();
 		}
+		return true;
 	}
 	
 	public void submit(int type,IRequest req, IResponse resp,String... others){
@@ -466,9 +471,9 @@ public class SubmitItemHolderManager implements IMonitorDataSubmiter{
 	}
 
 	@Override
-	public void submit(int type, IReq req, IResp resp, Throwable exp, String... others) {
+	public boolean submit(int type, IReq req, IResp resp, Throwable exp, String... others) {
 		if(!canSubmit(type)) {
-			return;
+			return false;
 		}
 		
 		SubmitItem si = this.getItem();
@@ -479,69 +484,69 @@ public class SubmitItemHolderManager implements IMonitorDataSubmiter{
 		si.setEx(exp);
 		si.setOthers(others);
 		
-		submit(si);
+		return submit(si);
 	}
 
 	@Override
-	public void submit(int type, IReq req, Throwable exp, String... others) {
+	public boolean submit(int type, IReq req, Throwable exp, String... others) {
 		if(!canSubmit(type)) {
-			return;
+			return false;
 		}
 		SubmitItem si = this.getItem();
 		si.setType(type);
 		si.setReq(req);
 		si.setEx(exp);
 		si.setOthers(others);
-		submit(si);
+		return submit(si);
 	}
 
 	@Override
-	public void submit(int type, IResp resp, Throwable exp, String... others) {
+	public boolean submit(int type, IResp resp, Throwable exp, String... others) {
 		if(!canSubmit(type)) {
-			return;
+			return false;
 		}
 		SubmitItem si = this.getItem();
 		si.setType(type);
 		si.setResp(resp);
 		si.setEx(exp);
 		si.setOthers(others);
-		submit(si);
+		return submit(si);
 	}
 
 	@Override
-	public void submit(int type, Message msg, Throwable exp, String... others) {
+	public boolean submit(int type, Message msg, Throwable exp, String... others) {
 		if(!canSubmit(type)) {
-			return;
+			return false;
 		}
 		SubmitItem si = this.getItem();
 		si.setType(type);
 		si.setMsg(msg);
 		si.setEx(exp);
 		si.setOthers(others);
-		submit(si);
+		return submit(si);
 	}
 
 	@Override
-	public void submit(int type, Throwable exp, String... others) {
+	public boolean submit(int type, Throwable exp, String... others) {
 		if(!canSubmit(type)) {
-			return;
+			return false;
 		}
 		SubmitItem si = this.getItem();
 		si.setType(type);
 		si.setEx(exp);
 		si.setOthers(others);
-		submit(si);
+		return submit(si);
 	}
 
 	@Override
-	public void submit(int type, String... others) {
+	public boolean submit(int type, String... others) {
 		if(!canSubmit(type)) {
-			return;
+			return false;
 		}
 		SubmitItem si = this.getItem();
 		si.setType(type);
 		si.setOthers(others);
-		submit(si);
+		return submit(si);
 	}
 	
 	private void exception(SubmitItem si) {

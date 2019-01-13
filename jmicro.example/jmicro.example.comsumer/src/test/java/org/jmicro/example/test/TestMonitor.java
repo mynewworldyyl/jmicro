@@ -1,6 +1,5 @@
 package org.jmicro.example.test;
 
-import java.util.Arrays;
 import java.util.Random;
 import java.util.Set;
 
@@ -15,34 +14,46 @@ import org.jmicro.api.registry.ServiceMethod;
 import org.jmicro.api.registry.UniqueServiceMethodKey;
 import org.jmicro.example.api.ISayHello;
 import org.jmicro.example.comsumer.TestRpcClient;
+import org.jmicro.test.JMicroBaseTestCase;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 
 
-public class TestMonitor {
+public class TestMonitor extends JMicroBaseTestCase{
 
     private static final Logger logger = LoggerFactory.getLogger(TestMonitor.class);
     
-	@Test
+    @Test
 	public void testMonitor01() {
+		final Random ran = new Random();
+		this.setSayHelloContext();
 		
-		IObjectFactory of = JMicro.getObjectFactoryAndStart(new String[] {"-DinstanceName=testMonitor01","-Dclient=true"});
-		
-		JMicroContext.get().configMonitor(1, 1);
-		IMonitorDataSubmiter monitor = of.get(IMonitorDataSubmiter.class);
-		JMicroContext.get().setObject(JMicroContext.MONITOR, monitor);
+		SF.doSubmit(MonitorConstant.CLIENT_REQ_OK);
+		try {
+			Thread.sleep(ran.nextInt(100));
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
+		JMicro.waitForShutdown();
+	}
+    
+	@Test
+	public void testMonitor02() {
+		final Random ran = new Random();
+		this.setSayHelloContext();
 		
 		for(;;){
 			//MonitorConstant.doSubmit(monitor,MonitorConstant.CLIENT_REQ_BEGIN, null, null);
 			SF.doSubmit(MonitorConstant.CLIENT_REQ_OK);
 			try {
-				Thread.sleep(10);
+				Thread.sleep(ran.nextInt(100));
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}
 		}
+			//JMicro.waitForShutdown();
 	}
 	
 	

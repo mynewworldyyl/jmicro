@@ -75,7 +75,8 @@ public abstract class AbstractSession implements ISession{
 		this.bufferSize = bufferSize;
 		this.heardbeatInterval = heardbeatInterval;
 		if(!this.isServer()) {
-			worker.setName(Config.getInstanceName()+"_S_"+ID.incrementAndGet());
+			//会对客户端会话，支持N个RPC同时并发
+			worker.setName("JMicro-"+Config.getInstanceName()+"_Session_Reader"+ID.incrementAndGet());
 			worker.start();
 		}
 	}
@@ -103,7 +104,7 @@ public abstract class AbstractSession implements ISession{
 	public void receive(ByteBuffer msg) {
 		if(this.isServer()) {
 			doRead(msg);
-		}else {
+		} else {
 			readQueue.offer(msg);
 			if(readQueue.size() == 1) {
 				synchronized (worker) {

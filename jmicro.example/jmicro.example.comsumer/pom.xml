@@ -10,6 +10,11 @@
     <name>${project.artifactId}</name>
     <description>Jmicro example service comsumer for testing</description>
     <dependencies>
+    	<dependency>
+			 <groupId>org.jmicro</groupId>
+			 <artifactId>jmicro.test</artifactId>
+			 <scope>test</scope>
+        </dependency>
         <dependency>
 			 <groupId>org.jmicro</groupId>
 			 <artifactId>jmicro.zk</artifactId>
@@ -56,13 +61,21 @@
 			 <groupId>org.jmicro</groupId>
 			 <artifactId>jmicro.monitor.submiter</artifactId>
         </dependency>
-           <dependency>
+       <!--     <dependency>
 			 <groupId>org.jmicro</groupId>
 			 <artifactId>jmicro.monitor.breaker</artifactId>
+        </dependency> -->
+         <dependency>
+			 <groupId>org.jmicro</groupId>
+			 <artifactId>jmicro.idgenerator</artifactId>
         </dependency>
          <dependency>
 			 <groupId>org.jmicro</groupId>
 			 <artifactId>jmicro.gateway.client</artifactId>
+        </dependency>
+          <dependency>
+			 <groupId>org.jmicro</groupId>
+			 <artifactId>jmicro.classloader.client</artifactId>
         </dependency>
         <dependency>
 		    <groupId>com.netflix.hystrix</groupId>

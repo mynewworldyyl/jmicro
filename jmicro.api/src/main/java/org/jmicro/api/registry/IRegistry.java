@@ -20,8 +20,9 @@ import java.util.Set;
 
 import org.jmicro.api.raft.IDataOperator;
 import org.jmicro.api.service.ServiceManager;
+
 /**
- * 
+ * 服务级的管理接口，区别于服务实例级管理
  * @author Yulei Ye
  * @date 2018年10月4日-下午12:04:20
  */
@@ -38,6 +39,7 @@ public interface IRegistry{
 	Set<ServiceItem> getServices(String serviceName,String method,Object[] args,String namespace,String version,String transport);
 	
 	boolean isExists(String serviceName,String namespace,String version);
+	boolean isExists(String serviceName);
 	
 	Set<ServiceItem> getServices(String serviceName,String namespace,String version);
 	
@@ -46,13 +48,34 @@ public interface IRegistry{
 	
 	ServiceItem getServiceByImpl(String impl);
 	
+	/**
+	 * 务名称，名称空间，版本维度做他量监听
+	 */
 	void addServiceListener(String key,IServiceListener lis);
-	
 	void removeServiceListener(String key,IServiceListener lis);
 	
+	/**
+	 * 服务名称做全量监听
+	 * @param key
+	 * @param lis
+	 */
 	void addServiceNameListener(String key,IServiceListener lis);
-	
 	void removeServiceNameListener(String key,IServiceListener lis);
+	
+	/**
+	 * 服务接口名称维度做存在性监听
+	 * @param key
+	 * @param lis
+	 */
+	void addExistsServiceNameListener(String key,IServiceListener lis);
+	void removeExistsServiceNameListener(String key,IServiceListener lis);
+	
+	/**
+	 * 务名称，名称空间，版本维度做存在性监听
+	 */
+    void addExistsServiceListener(String key,IServiceListener lis);
+	void removeExistsServiceListener(String key,IServiceListener lis);
+	
 	
 	void init();
 	

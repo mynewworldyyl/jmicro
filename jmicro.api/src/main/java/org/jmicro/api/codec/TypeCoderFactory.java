@@ -162,14 +162,14 @@ public class TypeCoderFactory {
 			
 			@Override
 			public Map decode(ByteBuffer buffer, Class<?> fieldDeclareType, Type genericType) {
-				return TypeCoder.decodeMap(buffer, (ParameterizedType) genericType);
+				return TypeCoder.decodeMap(buffer, TypeCoder.genericType(genericType));
 			}
 
 			@SuppressWarnings({ "unchecked", "rawtypes" })
 			@Override
 			public void encode(ByteBuffer buffer, Map val, Class<?> fieldDeclareType, Type genericType) {
 				buffer.put(Decoder.PREFIX_TYPE_MAP);
-				TypeCoder.encodeMap(buffer, (Map) val, (ParameterizedType) genericType);
+				TypeCoder.encodeMap(buffer, (Map) val, TypeCoder.genericType(genericType));
 			}
 		});
 
@@ -178,14 +178,14 @@ public class TypeCoderFactory {
 			@Override
 			public void encode(ByteBuffer buffer, Set val, Class<?> fieldDeclareType, Type genericType) {
 				buffer.put(Decoder.PREFIX_TYPE_SET);
-				TypeCoder.encodeCollection(buffer, val, fieldDeclareType, genericType);
+				TypeCoder.encodeCollection(buffer, val, fieldDeclareType, TypeCoder.genericType(genericType));
 			}
 
 			@SuppressWarnings("rawtypes")
 			@Override
 			public Set decode(ByteBuffer buffer, Class<?> declareFieldType, Type genericType) {
 				Set result = new HashSet();
-				TypeCoder.decodeCollection(buffer, result, declareFieldType, genericType);
+				TypeCoder.decodeCollection(buffer, result, declareFieldType, TypeCoder.genericType(genericType));
 				return result;
 			}
 			
@@ -196,14 +196,14 @@ public class TypeCoderFactory {
 			@Override
 			public void encode(ByteBuffer buffer, List val, Class<?> fieldDeclareType, Type genericType) {
 				buffer.put(Decoder.PREFIX_TYPE_LIST);
-				TypeCoder.encodeCollection(buffer, val, fieldDeclareType, genericType);
+				TypeCoder.encodeCollection(buffer, val, fieldDeclareType, TypeCoder.genericType(genericType));
 			}
 
 			@SuppressWarnings("rawtypes")
 			@Override
 			public List decode(ByteBuffer buffer, Class<?> declareFieldType, Type genericType) {
 				List result = new ArrayList();
-				TypeCoder.decodeCollection(buffer, result, declareFieldType, genericType);
+				TypeCoder.decodeCollection(buffer, result, declareFieldType, TypeCoder.genericType(genericType));
 				return result;
 			}
 			

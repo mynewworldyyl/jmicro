@@ -44,21 +44,28 @@ public class ServiceCounter implements IServiceCounter{
 	
 	private Set<Integer> supportTypes = new HashSet<>();
 	
-	//统计数件的类型,每种类型对应一种计数器
+	private long timeWindow;
+	
+	private TimeUnit unit;
+	
+	//统计事件的类型,每种类型对应一种计数器
 	private ConcurrentHashMap<Integer,Counter> counters = new ConcurrentHashMap<>();
 	
-	public ServiceCounter(String serviceKey) {
+	
+	public ServiceCounter(String serviceKey,long timeWindow,TimeUnit unit) {
 		if(StringUtils.isEmpty(serviceKey)) {
 			throw new CommonException("Service Key cannot be null");
 		}
 		this.serviceKey = serviceKey;
+		this.timeWindow = timeWindow;
+		this.unit = unit;
 	}
 	
-	public ServiceCounter(String serviceKey,Integer[] types,long timeWindow,long slotSizeInMilliseconds,TimeUnit unit) {
-		this(serviceKey);
+	public ServiceCounter(String serviceKey,Integer[] types,long timeWindow,long slotSize,TimeUnit unit) {
+		this(serviceKey,timeWindow,unit);
 		supportTypes.addAll(Arrays.asList(types));
 		for(Integer type : types) {
-			addCounter(type,timeWindow,slotSizeInMilliseconds,unit);
+			addCounter(type,slotSize);
 		}
 	}
 
@@ -97,11 +104,18 @@ public class ServiceCounter implements IServiceCounter{
 		return sum;
 	}
 	
-	public double getAvg(int type,TimeUnit unit) {
-		Counter c = getCounter(type,false);
-		if(c != null) {
-			return c.getAvg(unit);
+	public double getAvg(TimeUnit tounit,Integer... types) {
+		if(types.length == 1) {
+			Counter c = getCounter(types[0],false);
+			if(c != null) {
+				return c.getAvg(unit);
+			}
+		} else {
+			double sum = getTotalWithEx(types);
+			long time = TimeUtils.getTime(this.timeWindow, this.unit, tounit);
+			return ((double)sum)/time;
 		}
+		
 		return -1;
 	}
 
@@ -157,18 +171,19 @@ public class ServiceCounter implements IServiceCounter{
 		this.addWithEx(type, 1);
 	}
 	
-	@Override
+	/*@Override
 	public boolean addCounter(Integer type, long timeWindow, long slotSize, String unit) {
 		return this.addCounter(type, timeWindow, slotSize, TimeUtils.getTimeUnit(unit));
-	}
+	}*/
 
-	public boolean addCounter(Integer type,long timeWindow,long slotSizeInMilliseconds,TimeUnit unit) {
+	public boolean addCounter(Integer type,long slotSize) {
 		if(this.counters.containsKey(type)) {
 			throw new CommonException("Type["+type+"] exists for service ["+this.serviceKey+"]");
 		}
 		
-		timeWindow = TimeUtils.getMilliseconds(timeWindow, unit);
-		slotSizeInMilliseconds = TimeUtils.getMilliseconds(slotSizeInMilliseconds, unit);
+		long timeWindow = TimeUtils.getTime(this.timeWindow, this.unit,TimeUnit.MILLISECONDS);
+		long slotSizeInMilliseconds = timeWindow / slotSize;
+		//slotSizeInMilliseconds = TimeUtils.getTime(slotSizeInMilliseconds, unit,TimeUnit.MILLISECONDS);
 		
 		if(timeWindow % slotSizeInMilliseconds != 0) {
 			throw new CommonException("timeWindow%slotSizeInMilliseconds must be zero,but:" +
@@ -248,9 +263,9 @@ public class ServiceCounter implements IServiceCounter{
 		 */
 		public double getAvg(TimeUnit timeUnit) {
 			long sum = getVal();
-			long time = this.timeWindow;
+			long time = TimeUtils.getTime(this.timeWindow, TimeUnit.MILLISECONDS, timeUnit);
 			
-			if(timeUnit == TimeUnit.SECONDS) {
+			/*if(timeUnit == TimeUnit.SECONDS) {
 				time = TimeUnit.MILLISECONDS.toSeconds(this.timeWindow);
 			}else if(timeUnit == TimeUnit.MINUTES) {
 				time = TimeUnit.MILLISECONDS.toMinutes(this.timeWindow);
@@ -262,7 +277,7 @@ public class ServiceCounter implements IServiceCounter{
 				time = TimeUnit.MILLISECONDS.toMicros(this.timeWindow);
 			}else if(timeUnit == TimeUnit.NANOSECONDS) {
 				time = TimeUnit.MILLISECONDS.toNanos(this.timeWindow);
-			}
+			}*/
 			
 			return ((double)sum)/time;
 		}

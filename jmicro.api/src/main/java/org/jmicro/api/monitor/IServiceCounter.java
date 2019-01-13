@@ -43,9 +43,9 @@ public interface IServiceCounter {
 	
 	boolean increment(Integer type);
 	
-	boolean addCounter(Integer type,long timeWindow,long slotSize,TimeUnit unit);
+	boolean addCounter(Integer type,long slotSize);
 	
-	boolean addCounter(Integer type,long timeWindow,long slotSize,String unit);
+	//boolean addCounter(Integer type,long timeWindow,long slotSize,String unit);
 	
 	long getWithEx(Integer type);
 	

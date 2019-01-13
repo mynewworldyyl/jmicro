@@ -7,7 +7,7 @@ import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.Inject;
 import org.jmicro.api.annotation.Subscribe;
 import org.jmicro.api.objectfactory.IObjectFactory;
-import org.jmicro.api.objectfactory.IPostFactoryReady;
+import org.jmicro.api.objectfactory.IFactoryListener;
 import org.jmicro.api.objectfactory.ProxyObject;
 import org.jmicro.api.registry.ServiceItem;
 import org.jmicro.api.registry.ServiceMethod;
@@ -18,7 +18,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 @Component(active=true,value="pubSubPostFactoryReadyListener")
-public class PubSubPostFactoryReadyListener implements IPostFactoryReady {
+public class PubSubPostFactoryReadyListener implements IFactoryListener {
 
 	private final static Logger logger = LoggerFactory.getLogger(PubSubManager.class);
 	
@@ -29,17 +29,22 @@ public class PubSubPostFactoryReadyListener implements IPostFactoryReady {
 	private PubSubManager pubSubManager;
 	
 	@Override
-	public void ready(IObjectFactory of) {
-		Collection<Object> srvs = srvLoader.getServices().values();
+	public void afterInit(IObjectFactory of) {
+		/*Collection<Object> srvs = srvLoader.getServices().values();
 		if(srvs == null || srvs.isEmpty()) {
 			return;
 		}
 		for(Object s : srvs) {
 			ServiceItem si = this.srvLoader.getServiceItems(s.getClass());
 			loadSubscriber(s.getClass(),si);
-		}
+		}*/
+		pubSubManager.init1();
 	}
 
+	@Override
+	public void preInit(IObjectFactory of) {
+	}
+	
 	@Override
 	public int runLevel() {
 		return 1008;
@@ -75,9 +80,9 @@ public class PubSubPostFactoryReadyListener implements IPostFactoryReady {
 					continue;
 				}
 				
-				this.pubSubManager.subscribe(null, topic, sm.getKey().getServiceName(),
+			/*	this.pubSubManager.subscribe(null, topic, sm.getKey().getServiceName(),
 						sm.getKey().getNamespace(), sm.getKey().getVersion(), sm.getKey().getMethod());
-				
+			*/	
 			} catch (NoSuchMethodException e) {
 				
 			}catch(SecurityException e){

@@ -18,8 +18,6 @@ public interface ITestRpcService {
 	
 	String hello(String name);
 	
-	void helloTopic(PSData data);
-	
 	int testReturnPrimitiveResult();
 	
 	int[] testReturnPrimitiveArrayResult();

@@ -349,19 +349,19 @@ public class Config implements IConfigChangeListener{
 			return defaultVal;
 		}
 		Object v = null;
-		if(type == Boolean.class){
+		if(type == Boolean.TYPE || type == Boolean.class){
 			v = Boolean.parseBoolean(str);
-		}else if(type == Short.class){
+		}else if(type == Short.TYPE || type == Short.class){
 			v = Short.parseShort(str);
-		}else if(type == Integer.class){
+		}else if(type == Integer.TYPE || type == Integer.class){
 			v = Integer.parseInt(str);
-		}else if(type == Long.class){
+		}else if(type == Long.TYPE || type == Long.class){
 			v = Long.parseLong(str);
-		}else if(type == Float.class){
+		}else if(type == Float.TYPE || type == Float.class){
 			v = Float.parseFloat(str);
-		}else if(type == Double.class){
+		}else if(type == Double.TYPE || type == Double.class){
 			v = Double.parseDouble(str);
-		}else if(type == Byte.class){
+		}else if(type == Byte.TYPE || type == Byte.class){
 			v = Byte.parseByte(str);
 		} else {
 			v = str;

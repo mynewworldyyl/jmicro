@@ -38,6 +38,19 @@
 			 <groupId>org.jmicro</groupId>
 			 <artifactId>jmicro.limit</artifactId>
         </dependency>
+        <dependency>
+			 <groupId>org.jmicro</groupId>
+			 <artifactId>jmicro.idgenerator</artifactId>
+        </dependency>
+        <dependency>
+			 <groupId>org.jmicro</groupId>
+			 <artifactId>jmicro.classloader.client</artifactId>
+        </dependency>
+        <dependency>
+			 <groupId>org.jmicro</groupId>
+			 <artifactId>jmicro.test</artifactId>
+			 <scope>test</scope>
+        </dependency>
 	</dependencies>
    
 </project>

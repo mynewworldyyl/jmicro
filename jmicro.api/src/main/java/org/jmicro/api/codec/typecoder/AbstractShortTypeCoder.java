@@ -13,9 +13,9 @@ public abstract class AbstractShortTypeCoder<T>  extends AbstractComparableTypeC
 	}
 
 	protected void checkType(Class<?> declareFieldType) {
-		if(!type().isAssignableFrom(declareFieldType)) {
+		/*if(!type().isAssignableFrom(declareFieldType)) {
 			throw new CommonException("Missmatch type: coder type["+this.type().getName()+"], target type ["+declareFieldType.toString()+"]");
-		}
+		}*/
 	}
 	
 	@Override

@@ -24,4 +24,6 @@ package org.jmicro.api.pubsub;
 public interface ISubCallback {
 
 	void onMessage(PSData item);
+	
+	String info();
 }

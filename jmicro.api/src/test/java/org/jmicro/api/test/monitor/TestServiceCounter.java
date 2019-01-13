@@ -11,8 +11,8 @@ public class TestServiceCounter {
 	@Test
 	public void testServiceCounter() {
 		Random r = new Random(1000);
-		ServiceCounter count = new ServiceCounter("test");
-		count.addCounter(1, 10, 1, TimeUnit.SECONDS);
+		ServiceCounter count = new ServiceCounter("test", 10, TimeUnit.SECONDS);
+		count.addCounter(1, 10);
 		for(;true;) {
 			count.add(1, 1);
 			System.out.println("Total:"+count.get(1));

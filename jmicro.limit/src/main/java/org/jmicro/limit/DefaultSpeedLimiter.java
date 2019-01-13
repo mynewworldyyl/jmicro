@@ -168,7 +168,7 @@ public class DefaultSpeedLimiter extends AbstractLimiter implements ILimiter{
 				} catch (Throwable e) {
 				}
 			}
-		}).start();
+		},"JMicro-DefaultSpeedLimiter").start();
 	}
 
 	private void doRemove(ConcurrentLinkedDeque<LimitData> ld,long timeLong) {

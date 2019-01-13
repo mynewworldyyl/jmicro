@@ -30,6 +30,9 @@ import java.lang.annotation.Target;
 @Retention(RUNTIME)
 public @interface Cfg {
 
+	/*
+	 * value值以“/”开始，以非“/”结束
+	 */
 	public String value();
 	
 	public boolean required() default false;

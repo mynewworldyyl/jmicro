@@ -46,6 +46,13 @@ public final class UniqueServiceKey {
 		this.version = version;
 	}
 	
+	public String path(String root,boolean ins,boolean host,boolean port){
+		StringBuffer sb = new StringBuffer(root);
+		sb.append(ServiceItem.FILE_SEPERATOR);
+		sb.append(toKey(ins,host,port));
+		return sb.toString();
+	}
+	
 	public String toKey(boolean ins,boolean host,boolean port) {
 		StringBuilder sb = new StringBuilder();
 		serviceName(sb,this.serviceName);

@@ -2,7 +2,7 @@ package org.jmicro.api.executor;
 
 public class ExecutorConfig {
 
-    private int msCoreSize = 5;
+    private int msCoreSize = 2;
 	
 	private int msMaxSize = 10;
 	

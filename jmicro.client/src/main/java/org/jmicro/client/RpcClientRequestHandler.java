@@ -102,7 +102,7 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
 				logger.debug("总请求:{}, 总响应:{},QPS:{}/S",
 						counter.getTotalWithEx(MonitorConstant.CLIENT_REQ_BEGIN)
 						,counter.getTotalWithEx(MonitorConstant.CLIENT_REQ_BUSSINESS_ERR,MonitorConstant.CLIENT_REQ_OK,MonitorConstant.CLIENT_REQ_EXCEPTION_ERR)
-						,counter.getAvg(MonitorConstant.CLIENT_REQ_OK, TimeUnit.SECONDS)
+						,counter.getAvg(TimeUnit.SECONDS,MonitorConstant.CLIENT_REQ_OK)
 						);
 			}, null);
 		}
@@ -180,7 +180,6 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
 				msg.setDumpUpStream(sm.isDumpUpStream());
 	    		msg.setNeedResponse(sm.isNeedResponse());
 	    		msg.setLoggable(JMicroContext.get().isLoggable(false));
-	    		msg.setPayload(ICodecFactory.encode(this.codecFactory,req,msg.getProtocol()));
 	    		
 	    		int f = sm.getMonitorEnable() == 1 ? 1 : (si.getMonitorEnable()== 1?1:0);
 	    		msg.setMonitorable(f == 1);
@@ -199,6 +198,8 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
 	    		
         	}
     		
+        	msg.setPayload(ICodecFactory.encode(this.codecFactory,req,msg.getProtocol()));
+        	
         	//JMicroContext.get().setParam(Constants.SERVICE_METHOD_KEY, sm);
     		//JMicroContext.get().setParam(Constants.SERVICE_ITEM_KEY, si);
     		//JMicroContext.setSrvLoggable();

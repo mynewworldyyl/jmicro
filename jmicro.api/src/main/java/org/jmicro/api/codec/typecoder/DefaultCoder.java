@@ -77,6 +77,8 @@ public class DefaultCoder implements TypeCoder<Object> {
 				if (fieldDeclareType == null || !TypeUtils.isFinal(fieldDeclareType)) {
 					//写入类型前缀码Decoder.PREFIX_TYPE_STRING，类型编码信息
 					TypeCoder.putStringType(buffer, val.getClass().getName());
+				} else {
+					buffer.put(Decoder.PREFIX_TYPE_FINAL);
 				}
 				//默认编码器通过反射编码数据
 				TypeCoder.encodeByReflect(buffer, val, fieldDeclareType,genericType);
@@ -144,7 +146,8 @@ public class DefaultCoder implements TypeCoder<Object> {
 				throw new CommonException("Invalid Map type coder: " + coder.type().getName());
 			}
 		} else {
-			throw new CommonException("not support prefix type:" + prefixCodeType);
+			throw new CommonException("001","not support prefix type:" 
+		+ prefixCodeType+", fieldDeclareType:"+(fieldDeclareType==null?"":fieldDeclareType.getName()));
 		}
 	}
 	

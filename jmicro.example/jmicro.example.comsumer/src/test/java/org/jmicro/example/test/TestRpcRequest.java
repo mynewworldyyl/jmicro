@@ -4,56 +4,41 @@ import org.jmicro.api.JMicro;
 import org.jmicro.api.JMicroContext;
 import org.jmicro.api.client.IMessageCallback;
 import org.jmicro.api.monitor.IServiceMonitorData;
-import org.jmicro.api.objectfactory.IObjectFactory;
 import org.jmicro.api.service.ICheckable;
-import org.jmicro.api.test.Person;
 import org.jmicro.common.Constants;
 import org.jmicro.common.Utils;
 import org.jmicro.example.api.ISayHello;
 import org.jmicro.example.api.ITestRpcService;
 import org.jmicro.example.comsumer.TestRpcClient;
+import org.jmicro.test.JMicroBaseTestCase;
 import org.junit.Test;
 
-public class TestRpcRequest {
+public class TestRpcRequest extends JMicroBaseTestCase{
 
-	/*@Test
-	public void testDynamicProxy() {
-		ITestRpcService src = SimpleObjectFactory.createDynamicServiceProxy(ITestRpcService.class
-				,Constants.DEFAULT_NAMESPACE,Constants.DEFAULT_VERSION);
-		AbstractServiceProxy asp = (AbstractServiceProxy)src;
-		asp.setHandler(new ServiceInvocationHandler());
-		System.out.println(src.hello("Hello"));
-		System.out.println("testDynamicProxy");
-	}*/
+	public static void main(String[] args) {
+		ISayHello sayHelloSrv = JMicro.getRpcServiceTestingArgs(ISayHello.class);
+		sayHelloSrv.hello("Are you OK");
+	}
 	
 	@Test
 	public void testRpcClient() {
-		TestRpcClient src = JMicro.getObjectFactoryAndStart(new String[0]).get(TestRpcClient.class);
-		src.invokeRpcService();	
+		of.get(TestRpcClient.class).invokeRpcService();	
 	}
 	
 	@Test
 	public void testInvokePersonService() {
-		IObjectFactory of = JMicro.getObjectFactoryAndStart(new String[]{
-				"-DinstanceName=testInvokePersonService","-Dclient=true"});
-		of.start();
-		TestRpcClient src = of.get(TestRpcClient.class);
-		src.invokePersonService();
+		of.get(TestRpcClient.class).invokePersonService();
 	}
 	
 	@Test
 	public void testNoNeedRespService() {
-		IObjectFactory of = JMicro.getObjectFactoryAndStart(new String[0]);
-		of.start();
 		ITestRpcService src = of.get(ITestRpcService.class);
 		src.pushMessage("Hello Server");
-		//Utils.getIns().waitForShutdown();
 	}
 	
 	@Test
 	public void testStreamService() {
-		IObjectFactory of = JMicro.getObjectFactoryAndStart(new String[0]);
-		of.start();
+		
 		ITestRpcService src = of.get(ITestRpcService.class);
 		
 		IMessageCallback<String> msgReceiver = (msg)->{
@@ -68,8 +53,7 @@ public class TestRpcRequest {
 	
 	@Test
 	public void testCheckable() {
-		IObjectFactory of = JMicro.getObjectFactoryAndStart(new String[0]);
-		of.start();
+		
 		ITestRpcService src = of.get(ITestRpcService.class);
 		ICheckable c = (ICheckable)src;
 		String msg = c.wayd("How are you");
@@ -79,8 +63,6 @@ public class TestRpcRequest {
 	
 	@Test
 	public void testSubscriteResponseTimeMonitor() {
-		IObjectFactory of = JMicro.getObjectFactoryAndStart(new String[0]);
-		of.start();
 		
 		IMessageCallback<String> msgReceiver = (msg)->{
 			System.out.println(msg);
@@ -103,20 +85,8 @@ public class TestRpcRequest {
 		src.unsubsicribe(id,sn);
 	}
 	
-	
-	public static void main(String[] args) {
-		/*ITestRpcService srv = JMicro.getRpcServiceTestingArgs(ITestRpcService.class);
-		srv.getPerson(new Person());*/
-		
-		ISayHello sayHelloSrv = JMicro.getRpcServiceTestingArgs(ISayHello.class);
-		sayHelloSrv.hello("Are you OK");
-		
-	}
-	
-	
 	@Test
 	public void testPrimitiveParamService() {
-		IObjectFactory of = JMicro.getObjectFactoryAndStart(new String[] {"-DinstanceName=testPrimitiveParamService"});
 		ITestRpcService src = of.get(ITestRpcService.class);
 		System.out.println(src.testReturnPrimitiveResult());
 		System.out.println(src.testReturnPrimitiveArrayResult());
@@ -125,7 +95,6 @@ public class TestRpcRequest {
 	
 	@Test
 	public void testBooleanParamService() {
-		IObjectFactory of = JMicro.getObjectFactoryAndStart(new String[] {"-DinstanceName=testBooleanParamService"});
 		ITestRpcService src = of.get(ITestRpcService.class);
 		System.out.println(src.testReturnPrimitiveBooleanResult());
 		System.out.println(src.testReturnBooleanResult());

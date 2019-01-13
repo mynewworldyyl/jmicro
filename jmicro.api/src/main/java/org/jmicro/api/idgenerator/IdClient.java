@@ -26,7 +26,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import org.jmicro.api.JMicro;
 import org.jmicro.api.JMicroContext;
 import org.jmicro.api.annotation.Component;
-import org.jmicro.api.annotation.Reference;
+import org.jmicro.api.annotation.Inject;
 import org.jmicro.api.registry.ServiceItem;
 import org.jmicro.common.CommonException;
 import org.jmicro.common.Constants;
@@ -42,7 +42,8 @@ public class IdClient implements IIdGenerator{
 	public static final int CACHE_SIZE = 1;
 	private volatile Map<String,Queue<Object>> cache = new HashMap<>();
 	
-	@Reference(namespace="idServer",version="0.0.1",handler="specailInvocationHandler")
+	//@Reference(namespace="idServer",version="0.0.1")
+	//@Inject
 	private IIdServer idServer;
 	
 	@Override

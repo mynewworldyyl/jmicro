@@ -43,23 +43,25 @@ public class TimeUtils {
 	}
 	
 	public static long getMilliseconds(long timeWindow,String us) {
-		return getMilliseconds(timeWindow,unitNameToTimeUnit.get(us));
+		return getTime(timeWindow,unitNameToTimeUnit.get(us),TimeUnit.MILLISECONDS);
 	}
 	
-	public static long getMilliseconds(long timeWindow,TimeUnit timeUnit) {
+	public static long getTime(long timeWindow,TimeUnit srcTimeUnit,TimeUnit targetTimeUnit) {
 		long result = timeWindow;
-		if(timeUnit == TimeUnit.SECONDS) {
-			result = TimeUnit.SECONDS.toMillis(timeWindow);
-		}else if(timeUnit == TimeUnit.MINUTES) {
-			result = TimeUnit.MINUTES.toMillis(timeWindow);
-		}else if(timeUnit == TimeUnit.HOURS) {
-			result = TimeUnit.HOURS.toMillis(timeWindow);
-		}else if(timeUnit == TimeUnit.DAYS) {
-			result = TimeUnit.DAYS.toMillis(timeWindow);
-		}else if(timeUnit == TimeUnit.MICROSECONDS) {
-			result = TimeUnit.MICROSECONDS.toMillis(timeWindow);
-		}else if(timeUnit == TimeUnit.NANOSECONDS) {
-			result = TimeUnit.NANOSECONDS.toMillis(timeWindow);
+		if(targetTimeUnit == TimeUnit.SECONDS) {
+			result = srcTimeUnit.toSeconds(timeWindow);
+		}else if(targetTimeUnit == TimeUnit.MINUTES) {
+			result = srcTimeUnit.toMinutes(timeWindow);
+		}else if(targetTimeUnit == TimeUnit.HOURS) {
+			result = srcTimeUnit.toHours(timeWindow);
+		}else if(targetTimeUnit == TimeUnit.DAYS) {
+			result = srcTimeUnit.toDays(timeWindow);
+		}else if(targetTimeUnit == TimeUnit.MICROSECONDS) {
+			result = srcTimeUnit.toMicros(timeWindow);
+		}else if(targetTimeUnit == TimeUnit.NANOSECONDS) {
+			result = srcTimeUnit.toNanos(timeWindow);
+		}else if(targetTimeUnit == TimeUnit.MILLISECONDS) {
+			result = srcTimeUnit.toMillis(timeWindow);
 		}
 		return result;
 	}

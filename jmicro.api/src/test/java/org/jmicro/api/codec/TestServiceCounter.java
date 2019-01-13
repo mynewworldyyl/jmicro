@@ -31,8 +31,8 @@ public class TestServiceCounter {
 
 	@Test
 	public void test01() {
-		ServiceCounter sc = new ServiceCounter("test");
-		sc.addCounter(1, 10, 1,TimeUnit.SECONDS);
+		ServiceCounter sc = new ServiceCounter("test",10,TimeUnit.SECONDS);
+		sc.addCounter(1, 10);
 		Random rand = new Random(1000);
 		
 		while(true) {

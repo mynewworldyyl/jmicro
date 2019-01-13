@@ -29,26 +29,40 @@ import org.jmicro.api.objectfactory.ProxyObject;
 import org.jmicro.api.registry.IServiceListener;
 import org.jmicro.api.registry.ServiceItem;
 import org.jmicro.common.CommonException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * 
  * @author Yulei Ye
  * @date 2018年10月6日-下午12:08:48
  */
-class RemoteProxyServiceListener implements IServiceListener{
+class RemoteProxyServiceFieldListener implements IServiceListener{
 
+	private final static Logger logger = LoggerFactory.getLogger(RemoteProxyServiceFieldListener.class);
+	
 	private Object srcObj;
-	private Object proxy;
+	
+	private Object refFieldObj;
+	
 	private Field refField;
 	
 	private ClientServiceProxyManager rsm;
 	
-	RemoteProxyServiceListener(ClientServiceProxyManager rsm,Object proxy,Object srcObj,Field refField){
+	/**
+	 * 
+	 * @param rsm
+	 * @param proxy 可以是直接的代理服务对象，也可以是集合对像，当是集合对像时，集合对象的元素必须是代理服务地像
+	 * @param srcObj 引用代理对象或集合对象的对象，当代理对象或集合对象里的代理对像发生改变时，将收到通知
+	 * @param refField 代理对象或集合对象的类型声明字段，属于srcObj的成员
+	 */
+	RemoteProxyServiceFieldListener(ClientServiceProxyManager rsm,Object proxy,Object srcObj,Field refField){
 		if(proxy== null){
 			throw new CommonException("Proxy object cannot be null: "+ refField.getDeclaringClass().getName()+",field: " + refField.getName());
 		}
 		this.rsm = rsm;
-		this.proxy = proxy;
+		this.refFieldObj = proxy;
+		
 		this.srcObj = srcObj;
 		this.refField = refField;
 	}
@@ -57,40 +71,31 @@ class RemoteProxyServiceListener implements IServiceListener{
 	@Override
 	public void serviceChanged(int type, ServiceItem item) {
 		
-		if(proxy instanceof AbstractClientServiceProxy) {
-			AbstractClientServiceProxy p = (AbstractClientServiceProxy)proxy;
-			if(!p.key().equals(item.serviceName())){
-				throw new CommonException("Service listener give error service item:"+ 
-						refField.getDeclaringClass().getName()+"],field: " + refField.getName()+" item:"+item.getKey().toString());
-			}
-			if(IServiceListener.SERVICE_ADD == type){
-				//p.enable(true);
-				p.setItem(item);
-			}else if(IServiceListener.SERVICE_REMOVE == type) {
-				p.setItem(null);
-			}else if(IServiceListener.SERVICE_DATA_CHANGE == type) {
-				p.setItem(item);
-			}
-			notifyChange();
-		}else if(Set.class.isAssignableFrom(refField.getType()) 
+		if(Set.class.isAssignableFrom(refField.getType()) 
 				|| List.class.isAssignableFrom(refField.getType())){
-			Collection<Object> set = (Collection<Object>)this.proxy;
+			Collection<Object> set = (Collection<Object>)this.refFieldObj;
 			
 			if(IServiceListener.SERVICE_ADD == type){
+				boolean flag = false;
 				for(Object o: set){
 					AbstractClientServiceProxy p = (AbstractClientServiceProxy)o;
 					if(p.key().equals(item.serviceName())){
-						//p.enable(true);
-						p.setItem(item);
-						return;
+						//标记服务代理已经存在
+						flag = true;
+						break;
 					}
 				}
-				Object o = this.rsm.createOrGetProxyService(refField, item,this.srcObj);
-				AbstractClientServiceProxy p = (AbstractClientServiceProxy)o;
-				if(o!=null){
-					p.setItem(item);
-					set.add(o);
+				
+				if(!flag) {
+					//代理还不存在，创建之
+					AbstractClientServiceProxy p = (AbstractClientServiceProxy)this.rsm.getService(item, null);
+					if(p!=null){
+						set.add(p);
+					} else {
+						logger.error("Fail to create item proxy :{}",item.getKey().toKey(true, true, true));
+					}
 				}
+				
 			}else if(IServiceListener.SERVICE_REMOVE == type) {
 				AbstractClientServiceProxy po = null;
 				for(Object o: set){
@@ -101,21 +106,7 @@ class RemoteProxyServiceListener implements IServiceListener{
 					}
 				}
 				if(po != null){
-					po.setItem(null);
 					set.remove(po);
-				}
-			}else if(IServiceListener.SERVICE_DATA_CHANGE == type) {
-				AbstractClientServiceProxy po = null;
-				for(Object o: set){
-					AbstractClientServiceProxy p = (AbstractClientServiceProxy)o;
-					if(p.key().equals(item.serviceName())){
-						po = p;
-						break;
-					}
-				}
-				if(po!= null){
-					//po.enable(true);
-					po.setItem(item);
 				}
 			}
 			notifyChange();

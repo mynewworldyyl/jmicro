@@ -32,6 +32,6 @@ import org.jmicro.common.Constants;
 @Retention(RUNTIME)
 public @interface Server {
 
-	public String transport() default Constants.TRANSPORT_MINA;
+	public String transport() default Constants.TRANSPORT_NETTY;
 	
 }

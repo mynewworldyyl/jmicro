@@ -6,7 +6,6 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
-import java.lang.reflect.TypeVariable;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -160,6 +159,12 @@ public interface TypeCoder<T> extends Comparable<TypeCoder<T>>{
 		}
 	}
 	
+	public static ParameterizedType genericType(Type genericType){
+		if(!(genericType instanceof ParameterizedType)) {
+			genericType=null;
+		}
+		return (ParameterizedType)genericType;
+	}
 	
 	
 	
@@ -209,8 +214,15 @@ public interface TypeCoder<T> extends Comparable<TypeCoder<T>>{
 			if(Modifier.isTransient(f.getModifiers())) {
 				continue;
 			}
-			Object v = coder.decode(buffer, f.getType(), f.getGenericType());
-			TypeUtils.setFieldValue(obj, v, f);
+			try {
+				Object v = coder.decode(buffer, f.getType(), f.getGenericType());
+				TypeUtils.setFieldValue(obj, v, f);
+			} catch (CommonException e) {
+				e.setOthers(e.getOthers()+" | fieldName:"+f.getName()+", obj:"+obj.toString());
+			    logger.error("",e);
+				throw e;
+			}
+			
 		}
 		return obj;
 	}

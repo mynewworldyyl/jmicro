@@ -26,7 +26,7 @@ public interface Constants {
 	public static final String SERVER_ONLY="server";
 	
 	public static final String CFG_ROOT="/jmicro";
-	//在CFG_ROOT下目录名称前缀为JMICRO系统保留，应该不可使用
+	//在CFG_ROOT下目录名称前缀为JMICRO系统保留，应用不可使用
 	public static final String DEFAULT_PREFIX="jm_";
 	
 	public static final String SIDE_COMSUMER = "comsumer";
@@ -66,6 +66,7 @@ public interface Constants {
 	
 	public static final String DEFAULT_SELECTOR = "defaultSelector";
 	public static final String DEFAULT_INVOCATION_HANDLER = "defaultInvocationHandler";
+	public static final String SPECIAL_INVOCATION_HANDLER = "specailInvocationHandler";
 	
 	public static final String DEFAULT_NAMESPACE = "defaultNamespace";
 	public static final String VERSION = "0.0.1";

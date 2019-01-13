@@ -8,10 +8,17 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.jmicro.api.monitor.AbstractMonitorDataSubscriber;
+import org.jmicro.api.monitor.MonitorConstant;
+import org.jmicro.api.monitor.SubmitItem;
 import org.jmicro.api.net.ISession;
 import org.jmicro.api.net.Message;
 import org.jmicro.api.net.RpcRequest;
 import org.jmicro.api.net.RpcResponse;
+import org.jmicro.api.pubsub.PSData;
+import org.jmicro.api.registry.BreakRule;
+import org.jmicro.api.registry.ServiceMethod;
+import org.jmicro.common.Constants;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -219,12 +226,50 @@ public class TestPrefixTypeED {
 	public void testRpcRequest() {
 		
 		RpcRequest pe = new RpcRequest();
+		SubmitItem si = new SubmitItem();
+		si.setSm(new ServiceMethod());
+		pe.setArgs(new Object[] {si});
 		
 		ByteBuffer bb = encoder.encode(pe);
 		
 		bb.flip();
 		
 		RpcRequest ped = decoder.decode(bb);
+		
+		System.out.println(ped);
+		
+	}
+	
+	
+	@Test
+	public void testServiceMethod() {
+		
+		ServiceMethod pe = new ServiceMethod();
+		
+		ByteBuffer bb = encoder.encode(pe);
+		
+		bb.flip();
+		
+		ServiceMethod ped = decoder.decode(bb);
+		
+		System.out.println(ped);
+		
+	}
+	
+	public static final class ObjectBreakRule{		
+		public BreakRule br = new BreakRule();
+	}
+	
+	@Test
+	public void testBreakRule() {
+		
+		ObjectBreakRule pe = new ObjectBreakRule();
+		
+		ByteBuffer bb = encoder.encode(pe);
+		
+		bb.flip();
+		
+		ObjectBreakRule ped = decoder.decode(bb);
 		
 		System.out.println(ped);
 		
@@ -266,6 +311,7 @@ public class TestPrefixTypeED {
 	public void testRpcResponse1() {
 		
 		RpcResponse1 pe = new RpcResponse1();
+		
 		ByteBuffer bb = encoder.encode(pe);
 		
 		bb.flip();
@@ -275,5 +321,37 @@ public class TestPrefixTypeED {
 		Integer[] rs2 = (Integer[])ped.result1;
 		System.out.println(rs);
 		
+	}
+	
+	@Test
+	public void testSubmitItem() {
+		
+		SubmitItem pe = new SubmitItem();
+		ByteBuffer bb = encoder.encode(pe);
+		
+		bb.flip();
+		
+		SubmitItem ped = decoder.decode(bb);
+		System.out.println(ped);
+		
+	}
+	
+	@Test
+	public void testPSData() {
+		Map<Integer,Double> data = new HashMap<>();
+		data.put(MonitorConstant.STATIS_TOTAL_RESP, 22D);
+		data.put(MonitorConstant.STATIS_QPS, 22D);
+		
+		PSData psData = new PSData();
+		psData.setData(data);
+		psData.setTopic(MonitorConstant.STATIS_SERVICE_METHOD_TOPIC);
+		psData.put(Constants.SERVICE_METHOD_KEY, new ServiceMethod());
+		
+		ByteBuffer bb = encoder.encode(psData);
+		
+		bb.flip();
+		
+		PSData ped = decoder.decode(bb);
+		System.out.println(ped);
 	}
 }

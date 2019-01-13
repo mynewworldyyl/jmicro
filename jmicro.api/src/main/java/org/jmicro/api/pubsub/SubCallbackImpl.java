@@ -69,5 +69,25 @@ public class SubCallbackImpl implements ISubCallback{
 			throw new CommonException("Get ["+mkey.toString() +"] fail",e);
 		}
 	}
+
+	@Override
+	public String info() {
+		return mkey.toKey(false, false, false);
+	}
+
+	@Override
+	public String toString() {
+		return info();
+	}
+
+	@Override
+	public int hashCode() {
+		return info().hashCode();
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		return hashCode() == obj.hashCode();
+	}
 	
 }

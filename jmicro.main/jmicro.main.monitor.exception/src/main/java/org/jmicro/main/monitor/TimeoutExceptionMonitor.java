@@ -35,6 +35,7 @@ import org.jmicro.api.monitor.MonitorConstant;
 import org.jmicro.api.monitor.SubmitItem;
 import org.jmicro.api.net.IRequest;
 import org.jmicro.api.registry.UniqueServiceMethodKey;
+import org.jmicro.common.Constants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -44,7 +45,8 @@ import org.slf4j.LoggerFactory;
  * @date 2018年10月18日-下午9:39:50
  */
 //@Component(active=false)
-//@Service(version="0.0.1", namespace="timeoutExceptionMonitor",monitorEnable=0)
+//@Service(version="0.0.1", namespace="timeoutExceptionMonitor"
+//,monitorEnable=0,handler=Constants.SPECIAL_INVOCATION_HANDLER)
 public class TimeoutExceptionMonitor extends AbstractMonitorDataSubscriber implements IMonitorDataSubscriber {
 
 	private final static Logger logger = LoggerFactory.getLogger(TimeoutExceptionMonitor.class);

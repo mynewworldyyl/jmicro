@@ -14,7 +14,7 @@ public class NamedThreadFactory implements ThreadFactory {
     protected final ThreadGroup mGroup;
 
     public NamedThreadFactory(String subfix) {
-       mPrefix = "JMicro-TP-" + subfix;
+       mPrefix = subfix;
        SecurityManager s = System.getSecurityManager();
        mGroup = (s == null) ? Thread.currentThread().getThreadGroup() : s.getThreadGroup();
     }

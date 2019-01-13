@@ -17,12 +17,15 @@
 package org.jmicro.transport.netty.server;
 
 import java.net.InetSocketAddress;
+import java.util.concurrent.ExecutorService;
 
 import org.jmicro.api.annotation.Cfg;
 import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.Inject;
 import org.jmicro.api.annotation.Server;
 import org.jmicro.api.config.Config;
+import org.jmicro.api.executor.ExecutorConfig;
+import org.jmicro.api.executor.ExecutorFactory;
 import org.jmicro.api.monitor.IMonitorDataSubmiter;
 import org.jmicro.api.monitor.MonitorConstant;
 import org.jmicro.api.monitor.SF;
@@ -64,8 +67,25 @@ public class NettySocketServer  implements IServer{
 	@Cfg(value="/NettySocketServer/nettyPort",required=false,defGlobal=false)
 	private int port=0;
 	
+	private ExecutorService workerGroupExecutor = null;
+	
+	private ExecutorService bossGroupExecutor = null;
+	
 	@Override
 	public void init() {
+		ExecutorConfig config = new ExecutorConfig();
+		config.setMsMaxSize(60);
+		config.setTaskQueueSize(1000);
+		config.setThreadNamePrefix("NIO-WorkerGroup");
+		workerGroupExecutor = ExecutorFactory.createExecutor(config);
+		
+		ExecutorConfig config1 = new ExecutorConfig();
+		config1.setMsCoreSize(2);
+		config1.setMsMaxSize(60);
+		config1.setTaskQueueSize(500);
+		config1.setThreadNamePrefix("NIO-BossGroup");
+		bossGroupExecutor = ExecutorFactory.createExecutor(config1);
+		
 		start();
 	}
 	

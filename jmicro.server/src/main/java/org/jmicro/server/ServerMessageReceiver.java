@@ -25,6 +25,7 @@ import org.jmicro.api.annotation.Cfg;
 import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.Inject;
 import org.jmicro.api.codec.ICodecFactory;
+import org.jmicro.api.config.Config;
 import org.jmicro.api.executor.ExecutorConfig;
 import org.jmicro.api.executor.ExecutorFactory;
 import org.jmicro.api.idgenerator.ComponentIdServer;
@@ -72,13 +73,18 @@ public class ServerMessageReceiver implements IMessageReceiver{
 	/*@Cfg(value="/ServerReceiver/receiveBufferSize")
 	private int receiveBufferSize=1000;*/
 	
-	private ExecutorService executor = ExecutorFactory.createExecutor(new ExecutorConfig());
+	private ExecutorService executor = null;
 	
 	private volatile Map<Byte,IMessageHandler> handlers = new ConcurrentHashMap<>();
 	
 	private Boolean ready = new Boolean(false);
 	
 	public void init(){
+		ExecutorConfig config = new ExecutorConfig();
+		config.setMsMaxSize(60);
+		config.setTaskQueueSize(500);
+		config.setThreadNamePrefix("ServerMessageReceiver");
+		executor = ExecutorFactory.createExecutor(config);
 		//系统级RPC处理器，如ID请求处理器，和普通RPC处理理器同一个实例，但是TYPE标识不同，需要特殊处理
 		handlers.put(Constants.MSG_TYPE_SYSTEM_REQ_JRPC, jrpcHandler);
 	}
@@ -99,9 +105,9 @@ public class ServerMessageReceiver implements IMessageReceiver{
 	@Suspendable
 	public void receive(ISession s, Message msg) {
 		 JMicroContext.configProvider(msg);
-		/*if(openDebug) {
-			SF.getIns().doMessageLog(MonitorConstant.DEBUG, TAG, msg,"receive");
-		}*/
+		if(openDebug) {
+			//SF.getIns().doMessageLog(MonitorConstant.DEBUG, TAG, msg,"receive");
+		}
 		if(!ready) {
 			synchronized(ready){
 				try {

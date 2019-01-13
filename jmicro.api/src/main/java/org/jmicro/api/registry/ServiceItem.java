@@ -89,6 +89,8 @@ public final class ServiceItem{
 	
 	private String impl;
 	
+	private String handler;
+	
 	private int retryCnt=-1; //method can retry times, less or equal 0 cannot be retry
 	private int retryInterval=-1; // milliseconds how long to wait before next retry
 	private int timeout=-1; // milliseconds how long to wait for response before timeout 
@@ -153,6 +155,7 @@ public final class ServiceItem{
 		this.timeUnit = p.timeUnit;
 		this.timeWindow = p.timeWindow;
 		this.checkInterval = p.checkInterval;
+		this.handler = p.handler;
 		
 		for(ServiceMethod sm : p.getMethods()){
 			ServiceMethod nsm = this.getMethod(sm.getKey().getMethod(), sm.getKey().getParamsStr());
@@ -162,6 +165,14 @@ public final class ServiceItem{
 				nsm.getBreakingRule().from(sm.getBreakingRule());
 			}
 		}
+	}
+
+	public String getHandler() {
+		return handler;
+	}
+
+	public void setHandler(String handler) {
+		this.handler = handler;
 	}
 
 	public long getTimeWindow() {
@@ -319,10 +330,7 @@ public final class ServiceItem{
 	
 	//服务实例标识,带上实例名和主机IP
 	public String path(String root){
-		StringBuffer sb = new StringBuffer(root);
-		sb.append(FILE_SEPERATOR);
-		sb.append(key());
-		return sb.toString();
+		return this.key.path(root, true, true, true);
 	}
 	
 	public static String pathForKey(String key){
@@ -333,7 +341,7 @@ public final class ServiceItem{
 	}
 	
 	public String key(){
-		return key.toKey(true,true,false);
+		return key.toKey(true,true,true);
 	}
 
 	@Override

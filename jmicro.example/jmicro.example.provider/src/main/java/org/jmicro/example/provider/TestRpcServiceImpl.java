@@ -1,6 +1,5 @@
 package org.jmicro.example.provider;
 
-import java.io.UnsupportedEncodingException;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.jmicro.api.JMicroContext;
@@ -9,6 +8,7 @@ import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.SMethod;
 import org.jmicro.api.annotation.Service;
 import org.jmicro.api.annotation.Subscribe;
+import org.jmicro.api.monitor.MonitorConstant;
 import org.jmicro.api.net.IWriteCallback;
 import org.jmicro.api.pubsub.PSData;
 import org.jmicro.api.test.Person;
@@ -16,7 +16,8 @@ import org.jmicro.common.CommonException;
 import org.jmicro.common.Constants;
 import org.jmicro.example.api.ITestRpcService;
 
-@Service(timeout=10*60*1000,maxSpeed=100,baseTimeUnit=Constants.TIME_SECONDS,namespace="testrpc",version="0.0.1")
+@Service(timeout=10*60*1000,maxSpeed=100,baseTimeUnit=Constants.TIME_SECONDS,
+namespace="testrpc",version="0.0.1")
 @Component
 public class TestRpcServiceImpl implements ITestRpcService{
 
@@ -67,15 +68,6 @@ public class TestRpcServiceImpl implements ITestRpcService{
 			if(!sender.send(msg1)) {
 				break;
 			}
-		}
-	}
-
-	@Subscribe(topic="/jmicro/test/topic01")
-	public void helloTopic(PSData data) {
-		try {
-			System.out.println("Topic: "+data.getTopic()+", data: "+ new String(data.getData(),Constants.CHARSET));
-		} catch (UnsupportedEncodingException e) {
-			e.printStackTrace();
 		}
 	}
 

@@ -17,7 +17,6 @@
 package org.jmicro.objfactory.simple;
 
 import java.lang.reflect.Field;
-import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.ParameterizedType;
@@ -39,7 +38,6 @@ import org.jmicro.api.registry.ServiceItem;
 import org.jmicro.api.registry.UniqueServiceKey;
 import org.jmicro.api.service.ICheckable;
 import org.jmicro.common.CommonException;
-import org.jmicro.common.Constants;
 import org.jmicro.common.util.ClassGenerator;
 import org.jmicro.common.util.ReflectUtils;
 import org.slf4j.Logger;
@@ -55,6 +53,8 @@ class ClientServiceProxyManager {
 	
 	private SimpleObjectFactory of = null;
 	
+	private IRegistry registry = null;
+	
 	//key is a interface class(key = serviceName + namespace + version), value is a proxy object
 	private Map<String,Object> remoteObjects = new ConcurrentHashMap<String,Object>();
 	
@@ -65,90 +65,94 @@ class ClientServiceProxyManager {
 	}
 	
 	void init(){
-
+		this.registry = of.get(IRegistry.class);
 	}
 	
 	@SuppressWarnings("unchecked")
-	<T> T  getService(String srvName,String namespace,String version){
-		Object proxy = remoteObjects.get(UniqueServiceKey.serviceName(srvName, namespace, version).toString());
+	<T> T  getService(String srvName,String namespace,String version,ClassLoader cl){
+		String key = UniqueServiceKey.serviceName(srvName, namespace, version).toString();
+		Object proxy = remoteObjects.get(key);
 		if(proxy != null){
 			return (T)proxy;
 		}
-		try {
-			Class<?> cls = Thread.currentThread().getContextClassLoader().loadClass(srvName);
-			
-			if(cls == null) {
-				throw new CommonException("Service class [" + srvName+"] not found!");
-			}
-			
-			if(!cls.isAnnotationPresent(Service.class)) {
-				throw new CommonException("Service class ["+srvName+"] must be annotated with [" + Service.class.getName()+"] to create client proxy byte interface name");
-			}
-			
-			IRegistry registry = of.get(IRegistry.class);
-			Set<ServiceItem> items = registry.getServices(srvName,namespace,version);
-			
-			if(items != null && !items.isEmpty()){
-				ServiceItem i = items.iterator().next();
-				proxy = createDynamicServiceProxy(cls,i.getKey().getNamespace(),i.getKey().getVersion(),true);
-				
-				this.setHandler(proxy, i.serviceName(), i,cls.getAnnotation(Service.class).handler());
-				return (T)proxy;
-			}
-		} catch (ClassNotFoundException e) {
-			logger.error("",e);
-		}
-		return null;
+		Class<?> cls = this.loadClass(srvName, cl);
+		
+		proxy = createDynamicServiceProxy(cls,namespace,version);
+		this.initProxy(proxy,key);
+		return (T)proxy;
 	}
 	
 	@SuppressWarnings("unchecked")
 	<T> T  getService(String srvName){
-		Object obj = remoteObjects.get(srvName);
-		if(obj != null){
-			return (T)obj;
-		}
+		Class<?> cls = loadClass(srvName,null);
+		return getService(cls);
+	}
+	
+	private Class<?> loadClass(String clsName,ClassLoader cl) {
 		try {
-			Class<?> cls = Thread.currentThread().getContextClassLoader().loadClass(srvName);
-			return getService(cls);
+			return Thread.currentThread().getContextClassLoader().loadClass(clsName);
 		} catch (ClassNotFoundException e) {
-			throw new CommonException("class["+srvName+"] not found",e);
+			try {
+				 return this.getClass().getClassLoader().loadClass(clsName);
+			} catch (ClassNotFoundException e1) {
+				if(cl != null) {
+					try {
+						return cl.loadClass(clsName);
+					} catch (ClassNotFoundException e2) {
+					}
+				}
+				throw new CommonException("class["+clsName+"] not found",e);
+			}
 		}
 	}
 	
 	@SuppressWarnings("unchecked")
 	<T> T getService(Class<?> srvClazz){
-		Object obj = remoteObjects.get(srvClazz.getName());
-		if(obj != null){
-			return (T)obj;
+		if(!srvClazz.isAnnotationPresent(Service.class)){
+			//通过接口创建的服务必须有Service注解，否则没办法获取服务3个座标信息
+			throw new CommonException("Cannot create service proxy ["+srvClazz.getName()
+			+"[ without anno [" +Service.class.getName() +"]");
 		}
-		return (T)this.createRemoteServieProxyByInterface(srvClazz);
+		Service srvAnno = srvClazz.getAnnotation(Service.class);
+		return this.getService(srvClazz.getName(), srvAnno.namespace(),srvAnno.version(), null);
 	}
 	
-	 Object createOrGetService(Object obj,Field f){
+	<T> T getService(ServiceItem item,ClassLoader cl) {
+		Object proxy = remoteObjects.get(item.serviceName());
+		if(proxy != null){
+			return (T)proxy;
+		}
+		Class<?> cls = this.loadClass(item.getKey().getServiceName(), cl);
+
+		proxy = createDynamicServiceProxy(cls,item.getKey().getNamespace(),item.getKey().getVersion());
+		AbstractClientServiceProxy asp = (AbstractClientServiceProxy)proxy;
+		asp.setItem(item);
+		this.initProxy(proxy, item.serviceName());
+		return (T)proxy;
+	}
+	
+    Object createOrGetService(Object srcObj,Field f){
 		if(!f.isAnnotationPresent(Reference.class)){
-			logger.warn("cls:["+obj.getClass().getName()+"] not annotated with ["+Reference.class.getName()+"]");
+			logger.warn("cls:["+srcObj.getClass().getName()+"] not annotated with ["+Reference.class.getName()+"]");
 			return null;
 		}
 		
-		Object proxy = null;
-		
-		Class<?> becls = ProxyObject.getTargetCls(obj.getClass());
+		Class<?> becls = ProxyObject.getTargetCls(srcObj.getClass());
 		Reference ref = f.getAnnotation(Reference.class);
 		Class<?> type = f.getType();
 		
-		IRegistry registry = of.get(IRegistry.class);
+		Object proxy = null;
 		
 		if(List.class.isAssignableFrom(type) || Set.class.isAssignableFrom(type)){
 			//集合服务引用
-			proxy = createCollectionService(obj,f,becls,ref);
-		}/*else if(){
-			proxy = createSetService(obj,f,becls,ref);
-		}*/else{
+			proxy = createCollectionService(srcObj,f,becls,ref);
+		} else {
 			//单个服务引用
 			//Set<ServiceItem> sis = registry.getServices(field.getName());
 			if(!type.isInterface()) {
 				throw new CommonException("Class ["+becls.getName()+"] field ["+ f.getName()+"] dependency ["+f.getType().getName()+"] have to be interface class");
 			}
+			
 			if(!registry.isExists(type.getName(),ref.namespace(),ref.version())) {
 				if(ref.required()){
 					//服务不可用，并且服务依赖是必须满足，则报错处理
@@ -160,51 +164,14 @@ class ClientServiceProxyManager {
 				}
 				//服务不可用，但还是可以生成服务代理，直到使用时才决定服务的可用状态
 			} 
-			Set<ServiceItem> sis = registry.getServices(type.getName(), ref.namespace(), ref.version());
-			if(sis == null || sis.isEmpty()){
-				proxy = createOrGetProxyService(f,null,obj);
-			}else {
-				proxy = createOrGetProxyService(f,sis.iterator().next(),obj);
-			}
+			proxy = this.getService(type.getName(), ref.namespace(), ref.version(), null);
+			String key = UniqueServiceKey.serviceName(type.getName(),ref.namespace(),ref.version()).toString();
 			
-		}
-		return proxy;
-	}
-	
-	Object createOrGetProxyService(Field f, ServiceItem si, Object srcObj){
-		
-		Reference ref = f.getAnnotation(Reference.class);
-		Class<?> type = this.getEltType(f);
-		
-		String key = "";
-		if(si != null){
-			//call from set field
-			key = si.serviceName();
-		} else {
-			//call from singleton service reference
-			key = UniqueServiceKey.serviceName(type.getName(),ref.namespace(),ref.version()).toString();
+			//this.initProxyField(proxy, key, srcObj, f);
+			RemoteProxyServiceFieldListener lis = new RemoteProxyServiceFieldListener(this,proxy,srcObj,f);
+			registry.addExistsServiceListener(key, lis);
 		}
 		
-		if(this.remoteObjects.containsKey(key)) {
-			return remoteObjects.get(key);
-		}
-
-		//boolean enable = items != null && !items.isEmpty();
-		Object proxy = null;
-		if(si != null){
-			//call from set field
-			proxy = createDynamicServiceProxy(type,si.getKey().getNamespace(),si.getKey().getVersion(),true);
-		}else {
-			//call from singleton service reference
-			proxy = createDynamicServiceProxy(type,ref.namespace(),ref.version(),si!=null);
-		}
-		//ServiceItem si = items.iterator().next();
-		
-		IRegistry registry = of.get(IRegistry.class);
-		RemoteProxyServiceListener lis = new RemoteProxyServiceListener(this,proxy,srcObj,f);
-		registry.addServiceListener(UniqueServiceKey.serviceName(type.getName(),ref.namespace(),
-				ref.version()).toString(), lis);
-		setHandler(proxy,key,si,ref.handler());
 		return proxy;
 	}
 	
@@ -222,25 +189,23 @@ class ClientServiceProxyManager {
 		return f.getType();
 	}
 	
-	private Object createCollectionService(Object obj, Field f, Class<?> becls, Reference ref) {
-
+	private Object createCollectionService(Object srcObj, Field f, Class<?> becls, Reference ref) {
 	
 		Class<?> ctype = getEltType(f);
 		
-		Class<?> type = f.getType();
 		IRegistry registry = of.get(IRegistry.class);
-		
-		if(!registry.isExists(f.getType().getName(), ref.namespace(),ref.version()) && ref.required()) {
-			StringBuffer sb = new StringBuffer("Class [");
-			sb.append(becls.getName()).append("] field [").append(f.getName())
-			.append("] dependency [").append(f.getType().getName())
-			.append("] not found version [").append(ref.version()).append("] namespace [").append(ref.namespace()).append("]");
-			throw new CommonException(sb.toString());
+		boolean existsItem = false;
+		if(ref.required() ) {
+			existsItem = registry.isExists(ctype.getName());
+			if(!existsItem) {
+				StringBuffer sb = new StringBuffer("Class [");
+				sb.append(becls.getName()).append("] field [").append(f.getName())
+				.append("] dependency [").append(f.getType().getName())
+				.append("] not found version [").append(ref.version()).append("] namespace [").append(ref.namespace()).append("]");
+				throw new CommonException(sb.toString());
+			}
+			
 		}
-		
-		//请参考Reference说明使用
-		Set<ServiceItem> items = registry.getServices(ctype.getName());
-		
 
 		boolean bf = f.isAccessible();
 		Object o = null;
@@ -248,7 +213,7 @@ class ClientServiceProxyManager {
 			f.setAccessible(true);
 		}
 		try {
-			o = f.get(obj);
+			o = f.get(srcObj);
 		} catch (IllegalArgumentException | IllegalAccessException e) {
 			throw new CommonException("",e);
 		}
@@ -257,26 +222,29 @@ class ClientServiceProxyManager {
 		}
 		
 		if(o == null){
-			if(Modifier.isAbstract(type.getModifiers())) {
+			if(Modifier.isAbstract(f.getType().getModifiers())) {
 				o = new HashSet<Object>();
 			} else {
 				try {
 					//变量声明的类型是Set的子实现类型，如HashSet
-					o = type.newInstance();
+					o = f.getType().newInstance();
 				} catch (InstantiationException | IllegalAccessException e) {
 					throw new CommonException("",e);
 				}
 			}
 		}
 		
-		RemoteProxyServiceListener lis = new RemoteProxyServiceListener(this,o,obj,f);
-		//registry.addServiceListener(ServiceItem.serviceName(f.getType().getName(),ref.namespace(),ref.version()), lis);
-		
 		Collection<Object> el = (Collection<Object>)o;
 		
 		Map<String,Object> exists = new HashMap<>();
 		Object po = null;
-		if(!items.isEmpty()){
+		
+		//请参考Reference说明使用
+		Set<ServiceItem> items = null;
+		if(existsItem) {
+			items = registry.getServices(ctype.getName());
+		}
+		if(items != null && !items.isEmpty()){
 			for(ServiceItem si : items){
 				String key = si.serviceName();
 				if(exists.containsKey(key)){
@@ -285,10 +253,8 @@ class ClientServiceProxyManager {
 				
 				if(this.remoteObjects.containsKey(key)) {
 					po = remoteObjects.get(key);
-				}else {
-					po = createDynamicServiceProxy(ctype,si.getKey().getNamespace(),si.getKey().getVersion(),true);
-					//registry.addServiceListener(ServiceItem.serviceName(si.getServiceName(),si.getNamespace(),si.getVersion()), lis);
-					setHandler(po,key,si,ref.handler());
+				} else {
+					po = this.getService(si, null);
 				}
 				
 				if(po != null){
@@ -298,6 +264,9 @@ class ClientServiceProxyManager {
 		}
 		
 		//接受实现相同接口的所有服务，具体使用那个服务，由使用者去判断
+		RemoteProxyServiceFieldListener lis = new RemoteProxyServiceFieldListener(this,el,srcObj,f);
+		//集合服务引用根据服务名称做监听，只要匹配名称的服务都加入集合里面
+		//集合元素唯一性是服务名称，名称空间，版本
 		registry.addServiceNameListener(ctype.getName(), lis);
 		
 		exists.clear();
@@ -306,47 +275,18 @@ class ClientServiceProxyManager {
 		
 	}
 
-	
-	private void setHandler(Object proxy,String key,ServiceItem si,String handler){
-		 if(proxy != null){
-	    	AbstractClientServiceProxy asp = (AbstractClientServiceProxy)proxy;
-	    	if(handler == null) {
-	    		handler = Constants.DEFAULT_INVOCATION_HANDLER;
-	    	}
-	    	InvocationHandler h = of.getByName(handler);
-	    	if(h == null) {
-	    		throw new CommonException("Service ["+key+"] handler ["+handler+"] not found");
-	    	}
-			asp.setHandler(h);
-			asp.setItem(si);
-			asp.setMonitor(of.get(IMonitorDataSubmiter.class));
-			remoteObjects.put(key, proxy);
-		}
+	private void initProxy(Object proxy,String key){
+		 if(proxy == null){
+			 return;
+		 }
+		//String key = UniqueServiceKey.serviceName(srvName,namespace,version).toString();
+    	AbstractClientServiceProxy asp = (AbstractClientServiceProxy)proxy;
+		asp.setOf(of);
+		remoteObjects.put(key, proxy);
+		registry.addExistsServiceListener(key, asp);
 	}
 	
-	private Object createRemoteServieProxyByInterface(Class<?> cls){
-		if(!cls.isAnnotationPresent(Service.class)){
-			return null;
-		}
-		
-		Service srvAnno = cls.getAnnotation(Service.class);
-		
-		IRegistry registry = of.get(IRegistry.class);
-		Set<ServiceItem> items = registry.getServices(
-				cls.getName(),UniqueServiceKey.namespace(srvAnno.namespace())
-				,UniqueServiceKey.version(srvAnno.version()));
-		
-		if(items != null && !items.isEmpty()){
-			ServiceItem i = items.iterator().next();
-			Object proxy = createDynamicServiceProxy(cls,i.getKey().getNamespace(),i.getKey().getVersion(),true);
-			this.setHandler(proxy, i.serviceName(), i,srvAnno.handler());
-			return proxy;
-		}
-		
-		return null;
-	}
-	
-	public  static <T> T createDynamicServiceProxy(Class<T> cls, String namespace, String version,boolean enable) {
+	public  static <T> T createDynamicServiceProxy(Class<T> cls, String namespace, String version) {
 		 ClassGenerator classGenerator = ClassGenerator.newInstance(Thread.currentThread().getContextClassLoader());
 		 classGenerator.setClassName(cls.getName()+"$Jmicro"+SimpleObjectFactory.idgenerator.getAndIncrement());
 		 classGenerator.setSuperClass(AbstractClientServiceProxy.class);
@@ -358,13 +298,13 @@ class ClientServiceProxyManager {
 		 classGenerator.addField("public static java.lang.reflect.Method[] ms = null;");
 		 //classGenerator.addField("private " + InvocationHandler.class.getName() + " handler = new org.jmicro.api.client.ServiceInvocationHandler(this);");
        
-		 classGenerator.addField("private boolean enable="+enable+";");
+		 //classGenerator.addField("private boolean enable="+enable+";");
 		 classGenerator.addMethod("public java.lang.String getNamespace(){ return \"" + namespace + "\";}");
 		 classGenerator.addMethod("public java.lang.String getVersion(){ return \"" + version + "\";}");
 		 classGenerator.addMethod("public java.lang.String getServiceName(){ return \"" + cls.getName() + "\";}");
 		 
-		 classGenerator.addMethod("public boolean enable(){  return this.enable;}");
-		 classGenerator.addMethod("public void enable(boolean en){ this.enable=en;}");
+		 //classGenerator.addMethod("public boolean enable(){  return this.enable;}");
+		 //classGenerator.addMethod("public void enable(boolean en){ this.enable=en;}");
 		 
 		 classGenerator.addMethod("public void backupAndSetContext(){super.backupAndSetContext();}");
 		 classGenerator.addMethod("public void restoreContext(){super.restoreContext();}");
@@ -396,8 +336,8 @@ class ClientServiceProxyManager {
            	 	code.append("; ");
             }
             
-            code.append(" if(getItem() == null) {throw new org.jmicro.common.CommonException(\"Service ")
-            	.append(cls.getName()).append(" not available\"); }");
+           /* code.append(" if(getItem() == null) {throw new org.jmicro.common.CommonException(\"Service ")
+            	.append(cls.getName()).append(" not available\"); }");*/
             
             code.append(" try { ");
             
@@ -415,12 +355,12 @@ class ClientServiceProxyManager {
             code.append(" org.jmicro.api.JMicroContext.get().setString(org.jmicro.api.JMicroContext.CLIENT_VERSION, getVersion());");
             code.append(" org.jmicro.api.JMicroContext.get().setString(org.jmicro.api.JMicroContext.CLIENT_METHOD, \""+m.getName()+"\");");
             
-            code.append(" org.jmicro.api.registry.ServiceMethod poSm = super.getItem().getMethod(\"").append(m.getName()).append("\", args); ");
+            //code.append(" org.jmicro.api.registry.ServiceMethod poSm = super.getItem().getMethod(\"").append(m.getName()).append("\", args); ");
             //code.append(" org.jmicro.api.JMicroContext.get().configMonitor(poSm.getMonitorEnable(), super.getItem().getMonitorEnable()); ");
-            code.append(" org.jmicro.api.JMicroContext.get().setParam(org.jmicro.common.Constants.SERVICE_METHOD_KEY, poSm);");
-            code.append(" org.jmicro.api.JMicroContext.get().setParam(org.jmicro.common.Constants.SERVICE_ITEM_KEY, super.getItem());");
+            //code.append(" org.jmicro.api.JMicroContext.get().setParam(org.jmicro.common.Constants.SERVICE_METHOD_KEY, poSm);");
+            //code.append(" org.jmicro.api.JMicroContext.get().setParam(org.jmicro.common.Constants.SERVICE_ITEM_KEY, super.getItem());");
             
-            code.append(" java.lang.Object ret = (java.lang.Object)handler.invoke(this, ms[" + i + "], args);");
+            code.append(" java.lang.Object ret = (java.lang.Object)this.invoke(this, ms[" + i + "], args);");
             
             //restore pre service info
             code.append(" org.jmicro.api.JMicroContext.get().setString(org.jmicro.api.JMicroContext.CLIENT_NAMESPACE, ns);");

@@ -31,7 +31,7 @@ import org.jmicro.common.Utils;
  * @date 2018年10月4日-下午12:11:16
  */
 @Component(active=false, value=Constants.DEFAULT_IDGENERATOR,level=2, side = Constants.SIDE_PROVIDER)
-@Service(namespace="idServer", version="0.0.1")
+//@Service(namespace="idServer", version="0.0.1")
 public class JMicroIdGenerator implements IIdServer {
 	
 	private static final String ID_IDR = Constants.CFG_ROOT + "/id/";

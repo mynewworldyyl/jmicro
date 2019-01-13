@@ -16,6 +16,7 @@
  */
 package org.jmicro.main.monitor;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
@@ -27,18 +28,18 @@ import org.jmicro.api.annotation.Inject;
 import org.jmicro.api.annotation.JMethod;
 import org.jmicro.api.annotation.SMethod;
 import org.jmicro.api.annotation.Service;
-import org.jmicro.api.breaker.BreakerManager;
-import org.jmicro.api.degrade.DegradeManager;
 import org.jmicro.api.monitor.AbstractMonitorDataSubscriber;
 import org.jmicro.api.monitor.IMonitorDataSubscriber;
 import org.jmicro.api.monitor.MonitorConstant;
 import org.jmicro.api.monitor.ServiceCounter;
 import org.jmicro.api.monitor.SubmitItem;
-import org.jmicro.api.registry.BreakRule;
+import org.jmicro.api.pubsub.PSData;
+import org.jmicro.api.pubsub.PubSubManager;
 import org.jmicro.api.registry.ServiceMethod;
 import org.jmicro.api.registry.UniqueServiceKey;
 import org.jmicro.api.timer.ITickerAction;
 import org.jmicro.api.timer.TimerTicker;
+import org.jmicro.common.Constants;
 import org.jmicro.common.Utils;
 import org.jmicro.common.util.TimeUtils;
 import org.slf4j.Logger;
@@ -50,14 +51,15 @@ import org.slf4j.LoggerFactory;
  * @date 2018年10月18日-下午9:39:50
  */
 @Component
-@Service(version="0.0.1", namespace="serviceExceptionMonitor",monitorEnable=0)
+@Service(version="0.0.1", namespace="serviceExceptionMonitor",monitorEnable=0
+,handler=Constants.SPECIAL_INVOCATION_HANDLER)
 public class ServiceReqMonitor extends AbstractMonitorDataSubscriber implements IMonitorDataSubscriber{
+	
+	private final static Logger logger = LoggerFactory.getLogger(ServiceReqMonitor.class);
 	
 	private final Map<Long,TimerTicker> timers = new ConcurrentHashMap<>();
 	
 	private final Map<String,Long> timeoutList = new ConcurrentHashMap<>();
-	
-	private final static Logger logger = LoggerFactory.getLogger(ServiceReqMonitor.class);
 	
 	@Cfg(value="/ServiceReqMonitor/openDebug")
 	private boolean openDebug = true;
@@ -66,12 +68,9 @@ public class ServiceReqMonitor extends AbstractMonitorDataSubscriber implements 
 		 JMicro.getObjectFactoryAndStart(new String[] {"-DinstanceName=ServiceReqMonitor"});
 		 Utils.getIns().waitForShutdown();
 	}
-	
+
 	@Inject
-	private DegradeManager degradeManager;
-	
-	@Inject
-	private BreakerManager breakerManager;
+	private PubSubManager pubSubManager;
 	
 	private Map<String,ServiceCounter> counters =  new ConcurrentHashMap<>();
 	
@@ -90,56 +89,51 @@ public class ServiceReqMonitor extends AbstractMonitorDataSubscriber implements 
 	
 	public void act0(String key,Object attachement) {
 		ServiceCounter counter = counters.get(key);
-		
 		ServiceMethod sm = (ServiceMethod)attachement;
-		BreakRule rule = ((ServiceMethod)attachement).getBreakingRule();
-		if(rule.isEnable()) {
-			if(sm.isBreaking()) {
-				//已经熔断,算成功率,判断是否关闭熔断器
-				Double successPercent = getData(key, MonitorConstant.STATIS_SUCCESS_PERCENT);
-				if(successPercent > rule.getPercent()) {
-					if(this.openDebug) {
-						logger.debug("Close breaker for service {}, success rate {}",key,successPercent);
-					}
-					sm.setBreaking(false);
-					breakerManager.breakService(key,sm);
-				}
-			} else {
-				//没有熔断,判断是否需要熔断
-				Double failPercent = getData(key, MonitorConstant.STATIS_FAIL_PERCENT);
-				if(failPercent > rule.getPercent()) {
-					if(this.openDebug) {
-						logger.debug("Break down service {}, fail rate {}",key,failPercent);
-					}
-					sm.setBreaking(true);
-					breakerManager.breakService(key,sm);
-				}
+		
+		if(timeoutList.containsKey(key) && ( (System.currentTimeMillis()-timeoutList.get(key)) > 60000 )) {
+			if(this.openDebug) {
+				logger.warn("{} more than one minutes have no submit data,DELETE it",key);
 			}
-			
-			if(timeoutList.containsKey(key) && ( (System.currentTimeMillis()-timeoutList.get(key)) > 60000 )) {
-				if(this.openDebug) {
-					logger.warn("{} more than one minutes have no submit data,DELETE it",key);
-				}
-				TimerTicker.getTimer(timers,TimeUtils.getMilliseconds(sm.getCheckInterval(),
-						sm.getBaseTimeUnit())).removeListener(key);
-			}
+			//1分钟没有数据更新，服务在停用状态，不需要再更新其统计数据，直到下一次有数据更新为止
+			TimerTicker.getTimer(timers,TimeUtils.getMilliseconds(sm.getCheckInterval(),
+					sm.getBaseTimeUnit())).removeListener(key);
 		}
 		
-		System.out.println("======================================================");
 		//提交数据到ZK
+		Map<Integer,Double> data = new HashMap<>();
 		for(Integer type : AbstractMonitorDataSubscriber.YTPES) {
-			Double v = new Double(counter.getAvgWithEx(type,TimeUtils.getTimeUnit(sm.getBaseTimeUnit())));
-			degradeManager.updateExceptionCnt(typeKey(key,type),v.toString());
+			//Double v = new Double(counter.getAvgWithEx(type,TimeUtils.getTimeUnit(sm.getBaseTimeUnit())));
+			data.put(type, counter.getTotal(type));
+			//degradeManager.updateExceptionCnt(typeKey(key,type),v.toString());
+		}
+		
+		data.put(MonitorConstant.STATIS_TOTAL_RESP, getData(key,MonitorConstant.STATIS_TOTAL_RESP));
+		data.put(MonitorConstant.STATIS_QPS, getData(key,MonitorConstant.STATIS_QPS));
+		
+		data.put(MonitorConstant.STATIS_SUCCESS_PERCENT, getData(key,MonitorConstant.STATIS_SUCCESS_PERCENT));
+		data.put(MonitorConstant.STATIS_FAIL_PERCENT, getData(key,MonitorConstant.STATIS_FAIL_PERCENT));
+		
+		PSData psData = new PSData();
+		psData.setData(data);
+		psData.setTopic(MonitorConstant.STATIS_SERVICE_METHOD_TOPIC);
+		psData.put(Constants.SERVICE_METHOD_KEY, sm);
+		
+		//将统计数据分发出去
+		boolean f = pubSubManager.publish(psData);
+		if(!f) {
+			logger.warn("Fail to publish topic: {}",psData.getTopic());
 		}
 		
 		if(openDebug) {
-			logger.debug("总请求:{}, 总响应:{}, TO:{}, TOF:{}, QPS:{}",
+			System.out.println("======================================================");
+			/*logger.debug("总请求:{}, 总响应:{}, TO:{}, TOF:{}, QPS:{}",
 					counter.getTotalWithEx(MonitorConstant.CLIENT_REQ_BEGIN),
 					counter.getTotalWithEx(MonitorConstant.CLIENT_REQ_BUSSINESS_ERR,MonitorConstant.CLIENT_REQ_OK,MonitorConstant.CLIENT_REQ_EXCEPTION_ERR)
 					,counter.getTotalWithEx(MonitorConstant.CLIENT_REQ_TIMEOUT)
 					,counter.getTotalWithEx(MonitorConstant.CLIENT_REQ_TIMEOUT_FAIL)
-					,counter.getAvg(MonitorConstant.CLIENT_REQ_OK, TimeUnit.SECONDS)
-					);
+					,counter.getAvg(TimeUnit.SECONDS,MonitorConstant.CLIENT_REQ_OK)
+					);*/
 	
 			/*logger.debug("总请求:{}, 总响应:{}",
 					this.getData(key, MonitorConstant.STATIS_TOTAL_REQ),
@@ -152,8 +146,12 @@ public class ServiceReqMonitor extends AbstractMonitorDataSubscriber implements 
 	public void onSubmit(SubmitItem si) {
 		
 		ServiceMethod sm = si.getSm();
+		if(sm == null) {
+			logger.error("Service Method not found: "+si.toString());
+			return;
+		}
 		
-		String key = sm.getKey().toKey(true,true,false);
+		String key = sm.getKey().toKey(true,true,true);
 		timeoutList.put(key, System.currentTimeMillis());
 		
 		TimerTicker timer = TimerTicker.getTimer(timers,TimeUtils.getMilliseconds(sm.getCheckInterval(),
@@ -165,7 +163,7 @@ public class ServiceReqMonitor extends AbstractMonitorDataSubscriber implements 
 			synchronized(key) {
 				counter = counters.get(key);
 				if(counter == null) {
-					counter = new ServiceCounter(key, YTPES,sm.getTimeWindow(),sm.getTimeWindow()/10
+					counter = new ServiceCounter(key, YTPES,sm.getTimeWindow(),sm.getSlotSize()
 							,TimeUtils.getTimeUnit(sm.getBaseTimeUnit()));
 					counters.put(key, counter);
 					//BreakRule rule = si.getSm().getBreakingRule();
@@ -182,6 +180,7 @@ public class ServiceReqMonitor extends AbstractMonitorDataSubscriber implements 
 			if(this.openDebug) {
 				logger.debug("Add counter listener for service {},tw[{}],unit[{}]", key,sm.getTimeWindow(),sm.getBaseTimeUnit());
 			}
+			//有新数据更新，激活统计数据时钟
 			timer.addListener(key,tickerAct,sm);
 		}
 		
@@ -235,6 +234,8 @@ public class ServiceReqMonitor extends AbstractMonitorDataSubscriber implements 
 				result = (result/totalReq)*100;
 			}
 			break;
+		case MonitorConstant.STATIS_QPS:
+			result = counter.getAvg(TimeUnit.SECONDS,MonitorConstant.CLIENT_REQ_OK);
 		}
 		return result;
 	}

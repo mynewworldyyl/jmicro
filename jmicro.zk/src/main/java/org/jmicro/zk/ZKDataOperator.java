@@ -115,7 +115,7 @@ public class ZKDataOperator implements IDataOperator{
 	    	  watchChildren(path);
 	    	  childrenChange(path);
 	      }else if(event.getType() == EventType.NodeDeleted){
-	    	  watchNode(path);
+	    	  //watchNode(path);
 	    	  nodeDelete(path);
 	      }else if(event.getType() == EventType.NodeCreated){
 	    	  watchNode(path);
@@ -145,11 +145,11 @@ public class ZKDataOperator implements IDataOperator{
 	}
 	
 	private void nodeDelete(String path) {
-		String str = this.getData(path);
+		//String str = this.getData(path);
 		Set<INodeListener> lis = nodeListeners.get(path);
 		if(lis != null && !lis.isEmpty()){
 			for(INodeListener l : lis){
-				l.nodeChanged(INodeListener.NODE_REMOVE,path, str);
+				l.nodeChanged(INodeListener.NODE_REMOVE,path, null);
 			}
 		}
 	}

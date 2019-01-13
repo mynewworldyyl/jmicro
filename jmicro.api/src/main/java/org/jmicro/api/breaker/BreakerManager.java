@@ -65,7 +65,8 @@ public class BreakerManager implements ITickerAction{
 		
 	}
 
-	public void breakService(String key, ServiceMethod sm) {
+	public void breakService(ServiceMethod sm) {
+		String key = sm.getKey().toKey(true, true, true);
 		srvManager.breakService(sm);
 		long interval = TimeUtils.getMilliseconds(sm.getBreakingRule().getCheckInterval(), sm.getBaseTimeUnit());
 		if(sm.isBreaking()) {
@@ -87,7 +88,8 @@ public class BreakerManager implements ITickerAction{
 		}
 		
 		//服务熔断了,做自动服务检测
-		Object srv = of.getServie(sm.getKey().getServiceName(),sm.getKey().getNamespace(),sm.getKey().getVersion());
+		Object srv = of.getRemoteServie(sm.getKey().getServiceName(),sm.getKey().getNamespace(),
+				sm.getKey().getVersion(),null);
 		if(srv == null) {
 			throw new CommonException("Service ["+sm.getKey().getServiceName()+"] not found");
 		}

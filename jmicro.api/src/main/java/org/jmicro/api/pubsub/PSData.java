@@ -17,6 +17,7 @@
 package org.jmicro.api.pubsub;
 
 import java.io.Serializable;
+import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -28,13 +29,13 @@ public final class PSData implements Serializable{
 
 	private static final long serialVersionUID = 389875668374730999L;
 
-	private Map<String,String> context;
+	private Map<String,Object> context = new HashMap<>();
 	
 	private byte flag = 0;
 	
 	private String topic;
 	
-	private byte[] data;
+	private Object data;
 
 	public byte getFlag() {
 		return flag;
@@ -52,21 +53,28 @@ public final class PSData implements Serializable{
 		this.topic = topic;
 	}
 
-	public byte[] getData() {
-		return data;
-	}
-
-	public void setData(byte[] data) {
-		this.data = data;
-	}
-
-	public Map<String, String> getContext() {
+	public Map<String, Object> getContext() {
 		return context;
 	}
 
-	public void setContext(Map<String, String> context) {
+	public void setContext(Map<String, Object> context) {
 		this.context = context;
 	}
+
+	public Object getData() {
+		return data;
+	}
+
+	public void setData(Object data) {
+		this.data = data;
+	}
 	
+	public void put(String key,Object v) {
+		this.context.put(key, v);
+	}
 	
+	@SuppressWarnings("unchecked")
+	public <T> T get(String key) {
+		return (T) this.context.get(key);
+	}
 }

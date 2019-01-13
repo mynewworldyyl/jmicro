@@ -76,7 +76,7 @@ public @interface SMethod {
 	
 	/**
 	 * 采样统计数据周期，单位由baseTimeUnit确定
-	 *   小于0表示由Service注解确定，大于0表示启用
+	 * 小于0表示由Service注解确定，大于0表示启用
 	 * @return
 	 */
 	public long checkInterval() default -1;

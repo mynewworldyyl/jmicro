@@ -7,6 +7,7 @@ import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.Reference;
 import org.jmicro.api.monitor.IMonitorDataSubscriber;
 import org.jmicro.api.test.Person;
+import org.jmicro.common.CommonException;
 import org.jmicro.example.api.ISayHello;
 import org.jmicro.example.api.ITestRpcService;
 
@@ -19,7 +20,10 @@ public class TestRpcClient {
 	@Reference(required=false,namespace="testsayhello",version="0.0.*")
 	private ISayHello sayHello;
 	
-	@Reference(required=false,changeListener="subscriberChange",handler="specailInvocationHandler")
+	@Reference(required=true,namespace="testsayhello",version="0.0.*")
+	private Set<ISayHello> services = new HashSet<>();
+	
+	@Reference(required=false,changeListener="subscriberChange")
 	private Set<IMonitorDataSubscriber> submiters = new HashSet<>();
 	
 	public void invokeRpcService(){
@@ -39,4 +43,10 @@ public class TestRpcClient {
 		return submiters;
 	}
 	
+	public String testSetServices() {
+		if(services.isEmpty()) {
+			throw new CommonException("SayHello Set is NULL");
+		}
+		return services.iterator().next().hello("testSetServices");
+	}
 }

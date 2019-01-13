@@ -26,7 +26,4 @@ public class BreakerInterceptor implements IInterceptor {
 		}
 		return resp;
 	}
-
-	
-
 }

@@ -34,6 +34,7 @@ import org.jmicro.api.annotation.JMethod;
 import org.jmicro.api.annotation.SBreakingRule;
 import org.jmicro.api.annotation.SMethod;
 import org.jmicro.api.annotation.Service;
+import org.jmicro.api.annotation.Subscribe;
 import org.jmicro.api.config.Config;
 import org.jmicro.api.exception.RpcException;
 import org.jmicro.api.net.IRequest;
@@ -75,6 +76,7 @@ public class ServiceLoader {
 	@JMethod("init")
 	public void init(){
 		if(Config.isClientOnly()){
+			//纯客户端不需要导出服务
 			logger.warn(Config.getInstanceName()+" Client Only so not load service!");
 			return;
 		}
@@ -84,7 +86,21 @@ public class ServiceLoader {
 					s.getClass().getAnnotation(org.jmicro.api.annotation.Server.class);
 			if(servers.containsKey(anno.transport())){
 				throw new CommonException("IServer:" + s.getClass().getName() + "] and ["
-						+ servers.get(anno.transport()) + " with same component name :" + anno.transport());
+						+ servers.get(anno.transport()) + " with same transport name :" + anno.transport());
+			}
+			int cnt = 0;
+			while(cnt < 10 && (s.port() <=0)) {
+				logger.info(" Waiting for transport:{} ready {}S",anno.transport(),cnt+1);
+				try {
+					Thread.sleep(1000);
+				} catch (InterruptedException e) {
+					logger.error("",e);
+				}
+				cnt++;
+			}
+			if(s.port()<=0) {
+				throw new CommonException("Fail to get port for transport: " +anno.transport()
+				+", server:" + ss.getClass().getName());
 			}
 			servers.put(anno.transport(), s);
 		}
@@ -189,6 +205,8 @@ public class ServiceLoader {
 			return;
 		}
 		
+		int nettyPort = 0;
+		
 		for(IServer s : this.servers.values()){
 			Server sr = new Server();
 			org.jmicro.api.annotation.Server sano = ProxyObject.getTargetCls(s.getClass())
@@ -196,8 +214,14 @@ public class ServiceLoader {
 			sr.setHost(s.host());
 			sr.setPort(s.port());
 			sr.setProtocol(sano.transport());
+			if(Constants.TRANSPORT_NETTY.equals(sano.transport())) {
+				nettyPort = s.port();
+			}
 			item.getServers().add(sr);
 		}
+		//Netty Socket 作为必选端口开放
+		item.getKey().setPort(nettyPort);
+		
 		registry.regist(item);
 	}
 	
@@ -252,9 +276,11 @@ public class ServiceLoader {
 		item.setLoggable(anno.loggable()!=-1 || intAnno == null ? anno.loggable() : intAnno.loggable());
 		item.setDebugMode(anno.debugMode()!=-1 || intAnno == null ? anno.debugMode() : intAnno.debugMode());
 		
+		item.setHandler(anno.handler() != null && !anno.handler().trim().equals("") ? anno.handler():(intAnno != null?intAnno.handler():null));
+		
 		//测试方法
 		ServiceMethod checkMethod = new ServiceMethod();
-		item.addMethod(checkMethod);
+		
 		checkMethod.setMaxFailBeforeDegrade(1);
 		checkMethod.setRetryCnt(3);
 		checkMethod.setRetryInterval(500);
@@ -273,6 +299,7 @@ public class ServiceLoader {
 		checkMethod.getKey().setParamsStr(UniqueServiceMethodKey.paramsStr(new String[]{"java.lang.String"}));
 		checkMethod.setLoggable(0);
 		checkMethod.setDebugMode(0);
+		item.addMethod(checkMethod);
 		
 		for(Method m : interfacez.getMethods()) {
 			ServiceMethod sm = new ServiceMethod();
@@ -282,13 +309,26 @@ public class ServiceLoader {
 			} catch (NoSuchMethodException | SecurityException e) {
 				throw new CommonException("Service not found: "+m.getName(),e);
 			}
-			item.addMethod(sm);
+			
 			
 			//具体实现类的注解优先,如果实现类对就方法没有注解,则使用接口对应的方法注解
 			//如果接口和实现类都没有,则使用实现类的Service注解，实现类肯定有Service注解，否则不会成为服务
 			
 			SMethod manno = srvMethod.getAnnotation(SMethod.class);
 			SMethod intMAnno = m.getAnnotation(SMethod.class);
+			
+			//订阅信息
+			Subscribe mSub = srvMethod.getAnnotation(Subscribe.class);
+			Subscribe intSub = m.getAnnotation(Subscribe.class);
+			
+			if(mSub != null) {
+				 sm.setTopic(mSub.topic());
+			 }else if(intSub != null) {
+				 sm.setTopic(intSub.topic());
+			 }else {
+				 sm.setTopic(null);
+			 }
+			
 			sm.setBreaking(false);
 			
 			SBreakingRule sbr = null;
@@ -363,6 +403,8 @@ public class ServiceLoader {
 			sm.getKey().setUsk(usk);
 			sm.getKey().setMethod(m.getName());
 			sm.getKey().setParamsStr(UniqueServiceMethodKey.paramsStr(m.getParameterTypes()));
+			
+			item.addMethod(sm);
 		}
 		
 		return item;
@@ -425,6 +467,10 @@ public class ServiceLoader {
 
 	public Map<String, Object> getServices() {
 		return Collections.unmodifiableMap(services);
+	}
+
+	public void setRegistry(IRegistry registry) {
+		this.registry = registry;
 	}
 
 	/*public static boolean isNeedResponse(ServiceLoader sl ,IRequest req){

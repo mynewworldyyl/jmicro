@@ -4,6 +4,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 
+import org.jmicro.api.config.Config;
 import org.jmicro.common.util.StringUtils;
 import org.jmicro.common.util.TimeUtils;
 
@@ -29,13 +30,13 @@ public final class ExecutorFactory {
 		}
 		
 		if(StringUtils.isEmpty(cfg.getThreadNamePrefix())) {
-			cfg.setThreadNamePrefix("JmicroExecutor");;
+			cfg.setThreadNamePrefix("Default");;
 		}
 		
 		ThreadPoolExecutor executor = new ThreadPoolExecutor(cfg.getMsCoreSize(),cfg.getMsMaxSize(),
 				cfg.getIdleTimeout(),TimeUtils.getTimeUnit(cfg.getTimeUnit()),
 				new LinkedBlockingQueue<Runnable>(cfg.getTaskQueueSize()),
-				new NamedThreadFactory(cfg.getThreadNamePrefix()));
+				new NamedThreadFactory("JMicro-"+Config.getInstanceName()+"-"+cfg.getThreadNamePrefix()));
 		
 		return executor;
 	}

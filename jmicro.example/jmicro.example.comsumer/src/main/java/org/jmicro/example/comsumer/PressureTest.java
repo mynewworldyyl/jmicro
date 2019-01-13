@@ -13,7 +13,7 @@ public class PressureTest {
 
 	public static void main(String[] args) {
 		IObjectFactory of = JMicro.getObjectFactoryAndStart(new String[] {"-DinstanceName=PressureTest"});
-		for(int i = 0; i < 5;i++){
+		for(int i = 0; i < 4;i++){
 			new Thread(new Worker(of,i)).start();
 		}
 	}
@@ -38,7 +38,7 @@ class Worker implements Runnable{
 		for(;;){
 			try {
 				String result = sayHello.hello(" Hello LOG: "+id);
-				//System.out.println(JMicroContext.get().getString(JMicroContext.LINKER_ID, "")+": "+result);
+				System.out.println(JMicroContext.get().getString(JMicroContext.LINKER_ID, "")+": "+result);
 				JMicroContext.get().removeParam(JMicroContext.LINKER_ID);
 			} catch (Throwable e) {
 				e.printStackTrace();

@@ -100,6 +100,7 @@
 		<module>jmicro.pubsub</module>
 		<module>jmicro.redis</module>
 		<module>jmicro.etcd</module>
+		<module>jmicro.classloader</module>
     </modules>
 
     <dependencyManagement>
@@ -137,6 +138,16 @@
              <dependency>
                  <groupId>org.jmicro</groupId>
 				 <artifactId>jmicro.gateway</artifactId>
+				 <version>${jmicro.version}</version>
+            </dependency>
+			   <dependency>
+                 <groupId>org.jmicro</groupId>
+				 <artifactId>jmicro.classloader.server</artifactId>
+				 <version>${jmicro.version}</version>
+            </dependency>
+              <dependency>
+                 <groupId>org.jmicro</groupId>
+				 <artifactId>jmicro.classloader.client</artifactId>
 				 <version>${jmicro.version}</version>
             </dependency>
             <dependency>
@@ -240,7 +251,11 @@
 				 <artifactId>jmicro.idgenerator</artifactId>
 				  <version>${jmicro.version}</version>
 	        </dependency>
-	        
+	        <dependency>
+				 <groupId>org.jmicro</groupId>
+				 <artifactId>jmicro.test</artifactId>
+				  <version>${jmicro.version}</version>
+	        </dependency>
             <dependency>
 			<groupId>org.slf4j</groupId>
 			<artifactId>jcl-over-slf4j</artifactId>
@@ -318,14 +333,20 @@
 		    <artifactId>jedis</artifactId>
 		    <version>${redis.version}</version>
 		</dependency>
+		 <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>${junit_version}</version>
+            <scope>test</scope>
+        </dependency>
         </dependencies>
+        
     </dependencyManagement>
 
     <dependencies>
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
-            <version>${junit_version}</version>
             <scope>test</scope>
         </dependency>
     </dependencies>

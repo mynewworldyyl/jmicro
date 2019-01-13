@@ -4,8 +4,10 @@ import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.SBreakingRule;
 import org.jmicro.api.annotation.SMethod;
 import org.jmicro.api.annotation.Service;
+import org.jmicro.api.annotation.Subscribe;
 import org.jmicro.api.monitor.MonitorConstant;
 import org.jmicro.api.monitor.SF;
+import org.jmicro.api.pubsub.PSData;
 import org.jmicro.common.Constants;
 import org.jmicro.example.api.ISayHello;
 
@@ -33,5 +35,16 @@ public class SayHelloImpl implements ISayHello {
 		return "Server say hello to: "+name;
 	}
 
+	@Subscribe(topic="/jmicro/test/topic01")
+	public void helloTopic(PSData data) {
+		System.out.println("Topic: "+data.getTopic()+", data: "+ data.getData().toString());
+	}
+	
+	@Subscribe(topic=MonitorConstant.STATIS_SERVICE_METHOD_TOPIC)
+	public void statis(PSData data) {
+		System.out.println("Topic: "+data.getTopic()+", data: "+ data.getData().toString());
+	}
+
+	
 	
 }
