@@ -3,6 +3,7 @@ package org.jmicro.api.executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.ThreadPoolExecutor.AbortPolicy;
 
 import org.jmicro.api.config.Config;
 import org.jmicro.common.util.StringUtils;
@@ -29,6 +30,10 @@ public final class ExecutorFactory {
 			cfg.setTaskQueueSize(100);
 		}
 		
+		if( cfg.getRejectedExecutionHandler() == null) {
+			cfg.setRejectedExecutionHandler(new AbortPolicy());
+		}
+		
 		if(StringUtils.isEmpty(cfg.getThreadNamePrefix())) {
 			cfg.setThreadNamePrefix("Default");;
 		}
@@ -36,7 +41,8 @@ public final class ExecutorFactory {
 		ThreadPoolExecutor executor = new ThreadPoolExecutor(cfg.getMsCoreSize(),cfg.getMsMaxSize(),
 				cfg.getIdleTimeout(),TimeUtils.getTimeUnit(cfg.getTimeUnit()),
 				new LinkedBlockingQueue<Runnable>(cfg.getTaskQueueSize()),
-				new NamedThreadFactory("JMicro-"+Config.getInstanceName()+"-"+cfg.getThreadNamePrefix()));
+				new NamedThreadFactory("JMicro-"+Config.getInstanceName()+"-"+cfg.getThreadNamePrefix())
+				,cfg.getRejectedExecutionHandler());
 		
 		return executor;
 	}

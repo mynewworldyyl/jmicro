@@ -46,9 +46,14 @@ public class TestMonitor extends JMicroBaseTestCase{
 		
 		for(;;){
 			//MonitorConstant.doSubmit(monitor,MonitorConstant.CLIENT_REQ_BEGIN, null, null);
-			SF.doSubmit(MonitorConstant.CLIENT_REQ_OK);
 			try {
-				Thread.sleep(ran.nextInt(100));
+				SF.doSubmit(MonitorConstant.CLIENT_REQ_OK);
+			} catch (Throwable e1) {
+				e1.printStackTrace();
+			}
+			try {
+				//Thread.sleep(ran.nextInt(1000));
+				Thread.sleep(1000);
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}

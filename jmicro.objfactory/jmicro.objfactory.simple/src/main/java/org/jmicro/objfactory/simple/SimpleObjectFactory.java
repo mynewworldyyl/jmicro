@@ -127,7 +127,7 @@ public class SimpleObjectFactory implements IObjectFactory {
 				throw new CommonException("More than one instance of class ["+cls.getName()+"].");
 			}
 			
-			if(obj == null){
+			if(obj == null && cls.isAnnotationPresent(Service.class)){
 				obj = this.clientServiceProxyManager.getService(cls);
 			}
 		} else {
@@ -155,12 +155,14 @@ public class SimpleObjectFactory implements IObjectFactory {
 			return (T) this.nameToObjs.get(clsName);
 		}
 		
-		Object o = this.clientServiceProxyManager.getService(clsName);
-		if(o != null){
-			return (T)o;
+		Class<?> cls = this.loadCls(clsName);
+		if(cls != null && cls.isAnnotationPresent(Service.class)) {
+			Object o = this.clientServiceProxyManager.getService(clsName);
+			if(o != null){
+				return (T)o;
+			}
 		}
 		
-		Class<?> cls = ClassScannerUtils.getIns().getClassByAnnoName(clsName);
 		if(cls != null){
 			return (T)get(cls);
 		}
@@ -640,6 +642,37 @@ public class SimpleObjectFactory implements IObjectFactory {
 		synchronized(isInit){
 			isInit.notifyAll();
 		}
+	}
+	
+	private Class<?> loadCls(String clsName) {
+		
+		Class<?> cls = ClassScannerUtils.getIns().getClassByName(clsName);
+		if(cls == null) {
+			try {
+				cls = Thread.currentThread().getContextClassLoader().loadClass(clsName);
+			} catch (ClassNotFoundException e) {
+			}
+		}
+		
+		if(cls == null) {
+			try {
+				cls = this.getClass().getClassLoader().loadClass(clsName);
+			} catch (ClassNotFoundException e) {
+			}
+		}
+		
+		if(cls == null) {
+			RpcClassLoader cl = this.get(RpcClassLoader.class);
+			if(cl != null) {
+				try {
+					cls = cl.loadClass(clsName);
+				} catch (ClassNotFoundException e) {
+				}
+			}
+		}
+		
+		return cls;
+		
 	}
 
 	private Object createHttpHanderObject(Class<?> c) {

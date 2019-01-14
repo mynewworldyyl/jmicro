@@ -8,10 +8,11 @@ import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.Service;
 import org.jmicro.api.classloader.IClassloaderRpc;
 import org.jmicro.api.config.Config;
+import org.jmicro.common.Constants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-@Service(namespace="classloaderrpc",version="0.0.1")
+@Service(namespace="classloaderrpc",version="0.0.1",handler=Constants.SPECIAL_INVOCATION_HANDLER)
 @Component
 public class ClassloaderRpcService implements IClassloaderRpc {
 

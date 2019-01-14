@@ -67,10 +67,13 @@ public abstract class AbstractClientServiceProxy implements InvocationHandler,IS
 					this.getItem()==null ? key():this.getItem().getKey().toKey(true, true, true)+" newItem:"+item.getKey().toKey(true, true, true));
 		}
 		if(IServiceListener.SERVICE_ADD == type){
+			logger.info("Service Item Add: cls:{}, key:{}",this.getClass().getName(),this.key());
 			this.setItem(item);
 		}else if(IServiceListener.SERVICE_REMOVE == type) {
+			logger.info("Service Item Remove cls:{}, key:{}",this.getClass().getName(),this.key());
 			this.setItem(null);
 		}else if(IServiceListener.SERVICE_DATA_CHANGE == type) {
+			logger.info("Service Item Change: cls:{}, key:{}",this.getClass().getName(),this.key());
 			this.setItem(item);
 		}
 	}
@@ -87,9 +90,11 @@ public abstract class AbstractClientServiceProxy implements InvocationHandler,IS
 				}
 			}
 			if(si == null) {
-				throw new CommonException("proxy [" + this.getClass().getName()+"] item is NULL when call method ["
-						+method.getName()+"] with params ["+ UniqueServiceMethodKey.paramsStr(args) +"]"
-						);
+				String msg = "Service Item is NULL when call method ["
+						+method.getName()+"] with params ["+ UniqueServiceMethodKey.paramsStr(args) +"] proxy ["
+						+this.getClass().getName()+"]";
+				logger.error(msg);
+				throw new CommonException(msg);
 			}
 			this.item = si;
 		}
@@ -105,9 +110,11 @@ public abstract class AbstractClientServiceProxy implements InvocationHandler,IS
 			    	}
 			    	h = of.getByName(handler);
 			    	if(h == null) {
-			    		throw new CommonException("proxy [" + this.getClass().getName()+"] Handler is not found ["+handler+"] when call method ["
-								+method.getName()+"] with params ["+ UniqueServiceMethodKey.paramsStr(args) +"]"
-								);
+			    		String msg = "Handler not found when call method ["
+								+method.getName()+"] with params ["+ UniqueServiceMethodKey.paramsStr(args) +"] proxy ["
+								+this.getClass().getName()+"]";
+						logger.error(msg);
+						throw new CommonException(msg);
 			    	}
 			    	targetHandler = h;
 				}
@@ -131,19 +138,9 @@ public abstract class AbstractClientServiceProxy implements InvocationHandler,IS
 	
 	protected ServiceItem getItemFromRegistry() {
 		IRegistry r = of.get(IRegistry.class);
-		int cnt = 0;
-		while(cnt < 30) {
-			cnt--;
-			Set<ServiceItem> sis = r.getServices(this.getServiceName(), this.getNamespace(), this.getVersion());
-			if(sis != null && !sis.isEmpty()) {
-				return sis.iterator().next();
-			}
-			System.out.println("wait one minutes for:" + this.key());
-			try {
-				Thread.sleep(1000);
-			} catch (InterruptedException e) {
-				e.printStackTrace();
-			}
+		Set<ServiceItem> sis = r.getServices(this.getServiceName(), this.getNamespace(), this.getVersion());
+		if(sis != null && !sis.isEmpty()) {
+			return sis.iterator().next();
 		}
 		return null;
 	}

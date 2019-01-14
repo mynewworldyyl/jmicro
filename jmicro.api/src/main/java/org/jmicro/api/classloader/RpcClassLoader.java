@@ -5,9 +5,11 @@ import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+import org.jmicro.api.annotation.Reference;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -16,17 +18,17 @@ public class RpcClassLoader extends AbstractClientClassLoader {
 
 	private final static Logger logger = LoggerFactory.getLogger(RpcClassLoader.class);
 	
-    private Set<IClassloaderRpc> rpcLoaders = null;
-    
     private Map<String,Class<?>> clazzes = new HashMap<>();
     private Map<String,byte[]> clazzesData = new HashMap<>();
     
+    @Reference
+	private Set<IClassloaderRpc> rpcLoaders = new HashSet<>();
+    
     private ClassLoader parent = null;
 
-    public RpcClassLoader(ClassLoader parent,Set<IClassloaderRpc> rpcLoaders){
+    public RpcClassLoader(ClassLoader parent){
     	super(parent);
     	this.parent = parent;
-    	this.rpcLoaders = rpcLoaders;
     }
     
     public void init() {
@@ -128,6 +130,7 @@ public class RpcClassLoader extends AbstractClientClassLoader {
 		}
 		
     	if(this.rpcLoaders == null || this.rpcLoaders.isEmpty()) {
+    		logger.error("RpcClassLoader is NULL when load:{}",className);
     		return null;
     	}
     	

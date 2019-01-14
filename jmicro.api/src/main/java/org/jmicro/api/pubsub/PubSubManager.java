@@ -156,7 +156,7 @@ public class PubSubManager {
 	public void init1() {
 		if(!enable) {
 			//不启用pubsub Server功能，此运行实例是一个
-			logger.error("Pubsub server is disable by config [/PubSubManager/enable]");
+			logger.info("Pubsub server is disable by config [/PubSubManager/enable]");
 			return;
 		}
 		
@@ -318,7 +318,6 @@ public class PubSubManager {
 	}
 	
 	public boolean publish(Map<String,Object> context,String topic, byte[] content) {
-		IInternalSubRpc s = this.defaultServer;//this.getServer(context);
 		
 		PSData item = new PSData();
 		item.setTopic(topic);
@@ -355,18 +354,6 @@ public class PubSubManager {
 		String p = Config.PubSubDir+"/" + sm.getTopic().replaceAll("/", "_")+"/"+sm.getKey().toKey(false, false, false);
 	    return p;
 	}
-	
-	private String getTopic(String path) {
-		String str = path.substring(Config.PubSubDir.length()+1);
-		str = str.substring(0,str.indexOf("/"));
-		str = str.replaceAll("_", "/");
-		return str;
-	}
-	
-	private UniqueServiceMethodKey getMethodKey(String path) {
-		String str = path.substring(path.lastIndexOf("/")+1);
-		return UniqueServiceMethodKey.fromKey(str);
-	}
 
 	private void notifySubListener(byte type,String topic,UniqueServiceMethodKey k,Map<String,String> context) {
 		Set<ISubsListener> subs = subListeners;
@@ -389,28 +376,5 @@ public class PubSubManager {
 	public boolean isEnable() {
 		return enable;
 	}
-	
-	/*private IInternalSubRpc getServer(Map<String,String> context) {
-		
-		if(!enable) {
-			throw new CommonException("PubSub Server Is Disable!");
-		}
-		
-		IInternalSubRpc s = defaultServer;
-		String sn = Constants.DEFAULT_PUBSUB;
-		if(context != null) {
-			sn = context.get(Constants.PUBSUB_KEY);
-			if(!StringUtils.isEmpty(sn)) {
-				s = pubSubServers.get(sn);
-			}
-		}
-		
-		if(s == null) {
-			throw new CommonException("PubSub Server ["+sn+"] Is Disable!");
-		}
-		
-		return s;
-	}*/
-	
 	
 }

@@ -67,8 +67,8 @@ public class NettyClientSessionManager implements IClientSessionManager{
 	
 	private final Map<String,IClientSession> sessions = new ConcurrentHashMap<>();
 	
-	@Cfg("/MinaClientSessionManager/openDebug")
-	private boolean openDebug;
+	@Cfg(value="/NettyClientSessionManager/openDebug",defGlobal=false,changeListener="openDebugChange")
+	private boolean openDebug=false;
 	
 	@Inject
 	private ICodecFactory codeFactory;
@@ -95,6 +95,12 @@ public class NettyClientSessionManager implements IClientSessionManager{
 	private boolean dumpUpStream  = false;
 	
 	private Timer ticker = new Timer("ClientSessionHeardbeatWorker",true);
+	
+	public void openDebugChange() {
+		for(IClientSession s : sessions.values()) {
+			((NettyClientSession)s).setOpenDebug(this.openDebug);
+		}
+	}
 	
 	public void init()  {
 		this.receiver.registHandler(new IMessageHandler(){
@@ -130,7 +136,7 @@ public class NettyClientSessionManager implements IClientSessionManager{
 	@Override
 	public IClientSession getOrConnect(String host, int port) {
 
-		final String ssKey = host+port;
+		final String ssKey = host+":"+port;
 		if(sessions.containsKey(ssKey)){
 			return sessions.get(ssKey);
 		}
@@ -205,6 +211,9 @@ public class NettyClientSessionManager implements IClientSessionManager{
 
 	                 @Override
 	                 public void channelReadComplete(ChannelHandlerContext ctx) {
+	                	 if(openDebug) {
+	                		 logger.debug("channelReadComplete: {}",ctx);
+	                	 }
 	                    ctx.flush();
 	                 }
 
@@ -227,9 +236,17 @@ public class NettyClientSessionManager implements IClientSessionManager{
 					@Override
 					public void channelUnregistered(ChannelHandlerContext ctx) throws Exception {
 						super.channelUnregistered(ctx);
+						if(openDebug) {
+	                		 logger.debug("channelUnregistered: {}",ctx);
+	                	 }
 						 closeCtx(ctx);
 					}
 	                 
+					@Override
+					public void channelWritabilityChanged(ChannelHandlerContext ctx) throws Exception {
+						super.channelWritabilityChanged(ctx);
+					}
+
 					private void closeCtx(ChannelHandlerContext ctx) {
 						logger.warn("Session Close for : {} ",sKey);
 						 NettyClientSession session = (NettyClientSession)ctx.channel().attr(sessionKey).get();
@@ -264,10 +281,10 @@ public class NettyClientSessionManager implements IClientSessionManager{
      		    s.setDumpUpStream(this.dumpUpStream);
      		
 	           //LOG.info("session connected : {}", session);
-	           logger.debug("connection finish,host:"+host+", port:"+port);
+	           logger.debug("Connection finish,host:"+host+", port:"+port);
 	           return s;
 	       } catch (Throwable e) {
-	    	   String msg = "cannot connect host:" + host + ", port:" + port;
+	    	   String msg = "Cannot connect host:" + host + ", port:" + port;
 	    	   logger.error(msg);
 	           SF.doSubmit(MonitorConstant.CLIENT_REQ_CONN_FAIL, e,msg);
 	           throw new CommonException(msg);

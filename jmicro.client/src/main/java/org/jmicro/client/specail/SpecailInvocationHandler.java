@@ -66,8 +66,8 @@ public class SpecailInvocationHandler implements InvocationHandler, IMessageHand
 	
 	private volatile Map<String,IResponseHandler> waitForResponse = new ConcurrentHashMap<>();
 	
-	@Cfg("/SpecailInvocationHandler/openDebug")
-	private boolean openDebug;
+	@Cfg(value="/SpecailInvocationHandler/openDebug",defGlobal=false)
+	private boolean openDebug=false;
 	
 	@Inject
 	private ICodecFactory codecFactory;
@@ -130,6 +130,10 @@ public class SpecailInvocationHandler implements InvocationHandler, IMessageHand
         req.setRequestId(idGenerator.getLongId(IRequest.class.getName()));
         req.setTransport(Constants.TRANSPORT_NETTY);
         req.setImpl(poItem.getImpl());
+        
+        if(openDebug) {
+			logger.debug("Item:{}",poItem.getKey().toKey(true, true, true));
+		}
         
         RpcResponse resp = doRequest(req,po);
         return resp == null ? null :resp.getResult();
@@ -358,6 +362,11 @@ public class SpecailInvocationHandler implements InvocationHandler, IMessageHand
     				sb.append("] do retry: ").append(retryCnt);
     				//SF.doRequestLog(MonitorConstant.WARN,msg.getLinkId(),TAG,req,null,sb.toString());
     			} else {
+    				//断开新打开连接
+    				session.close(true);
+    				session = null;
+    				logger.warn("Close session: {}",sb.toString());
+    				
     				SF.doSubmit(MonitorConstant.CLIENT_REQ_TIMEOUT_FAIL, req, null);
     				sb.append("] timeout request and stop retry: ").append(retryCnt)
     				.append(",reqId:").append(req.getRequestId()).append(", LinkId:").append(lid);

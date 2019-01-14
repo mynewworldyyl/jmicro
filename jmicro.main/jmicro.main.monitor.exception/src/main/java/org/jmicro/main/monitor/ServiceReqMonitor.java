@@ -93,7 +93,7 @@ public class ServiceReqMonitor extends AbstractMonitorDataSubscriber implements 
 		
 		if(timeoutList.containsKey(key) && ( (System.currentTimeMillis()-timeoutList.get(key)) > 60000 )) {
 			if(this.openDebug) {
-				logger.warn("{} more than one minutes have no submit data,DELETE it",key);
+				logger.warn("More than one minutes have no submit data,DELETE it :{} ",key);
 			}
 			//1分钟没有数据更新，服务在停用状态，不需要再更新其统计数据，直到下一次有数据更新为止
 			TimerTicker.getTimer(timers,TimeUtils.getMilliseconds(sm.getCheckInterval(),
@@ -126,8 +126,9 @@ public class ServiceReqMonitor extends AbstractMonitorDataSubscriber implements 
 		}
 		
 		if(openDebug) {
-			System.out.println("======================================================");
-			/*logger.debug("总请求:{}, 总响应:{}, TO:{}, TOF:{}, QPS:{}",
+			/*
+			  System.out.println("======================================================");
+			  logger.debug("总请求:{}, 总响应:{}, TO:{}, TOF:{}, QPS:{}",
 					counter.getTotalWithEx(MonitorConstant.CLIENT_REQ_BEGIN),
 					counter.getTotalWithEx(MonitorConstant.CLIENT_REQ_BUSSINESS_ERR,MonitorConstant.CLIENT_REQ_OK,MonitorConstant.CLIENT_REQ_EXCEPTION_ERR)
 					,counter.getTotalWithEx(MonitorConstant.CLIENT_REQ_TIMEOUT)

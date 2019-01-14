@@ -1,5 +1,7 @@
 package org.jmicro.api.executor;
 
+import java.util.concurrent.RejectedExecutionHandler;
+
 public class ExecutorConfig {
 
     private int msCoreSize = 2;
@@ -13,6 +15,16 @@ public class ExecutorConfig {
 	private String timeUnit = "S";
 	
 	private String threadNamePrefix = "JmicroExecutor";
+	
+	private RejectedExecutionHandler rejectedExecutionHandler;
+
+	public RejectedExecutionHandler getRejectedExecutionHandler() {
+		return rejectedExecutionHandler;
+	}
+
+	public void setRejectedExecutionHandler(RejectedExecutionHandler rejectedExecutionHandler) {
+		this.rejectedExecutionHandler = rejectedExecutionHandler;
+	}
 
 	public int getMsCoreSize() {
 		return msCoreSize;

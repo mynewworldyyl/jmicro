@@ -54,16 +54,7 @@ public class JMicroBaseTestCase {
 	}
 	
 	protected ServiceItem sayHelloServiceItem() {
-		ServiceItem si =  null;
-		int cnt = 10;
-		while(cnt > 0 && null == (si = registry.getServiceByImpl("org.jmicro.example.provider.SayHelloImpl"))) {
-			try {
-				System.out.println("wait on seconds for hello service item");
-				Thread.sleep(1000);
-			} catch (InterruptedException e) {
-			}
-			cnt--;
-		}
+		ServiceItem si = registry.getServiceByImpl("org.jmicro.example.provider.SayHelloImpl");
 		org.junit.Assert.assertNotNull(si);
 		return si;
 	}

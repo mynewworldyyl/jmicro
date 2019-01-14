@@ -35,7 +35,7 @@ public class NettySocketHandler extends ChannelInboundHandlerAdapter {
 	@Cfg("/MinaClientSessionManager/heardbeatInterval")
 	private int heardbeatInterval = 3; //seconds to send heardbeat Rate
 	
-	@Cfg(value="/NettySocketHandler/openDebug",required=false)
+	@Cfg(value="/NettySocketHandler/openDebug",required=false,defGlobal=false)
 	private boolean openDebug=false;
 	
 	@Inject
@@ -59,7 +59,9 @@ public class NettySocketHandler extends ChannelInboundHandlerAdapter {
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg)
             throws Exception {
-    	
+    	if(openDebug) {
+    		logger.debug("channelRead Data: {}",msg);
+    	}
     	if(!(msg instanceof ByteBuf)) {
     		ctx.fireChannelRead(msg);
     		return;
@@ -86,11 +88,17 @@ public class NettySocketHandler extends ChannelInboundHandlerAdapter {
     @Override
     public void channelReadComplete(ChannelHandlerContext ctx) throws Exception {
         ctx.flush();
+        if(openDebug) {
+    		logger.debug("channelReadComplete: {}",ctx);
+    	}
     }
     
     @Override
     public void handlerAdded(ChannelHandlerContext ctx) throws Exception {
     	super.handlerAdded(ctx);
+    	if(openDebug) {
+    		logger.debug("handlerAdded: {}",ctx);
+    	}
     	NettyServerSession session = new NettyServerSession(ctx,readBufferSize,heardbeatInterval,
     			Constants.TYPE_SOCKET);
     	session.setReceiver(receiver);
@@ -102,6 +110,9 @@ public class NettySocketHandler extends ChannelInboundHandlerAdapter {
     @Override
     public void handlerRemoved(ChannelHandlerContext ctx) throws Exception {
     	super.handlerRemoved(ctx);
+    	if(openDebug) {
+    		logger.debug("handlerRemoved: {}",ctx);
+    	}
     	ctx.channel().attr(sessionKey).remove();
     }
     

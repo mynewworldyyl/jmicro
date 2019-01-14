@@ -68,6 +68,14 @@ class ClientServiceProxyManager {
 		this.registry = of.get(IRegistry.class);
 	}
 	
+	/**
+	 * 取客户端服务动态代理实例
+	 * @param srvName
+	 * @param namespace
+	 * @param version
+	 * @param cl
+	 * @return
+	 */
 	@SuppressWarnings("unchecked")
 	<T> T  getService(String srvName,String namespace,String version,ClassLoader cl){
 		String key = UniqueServiceKey.serviceName(srvName, namespace, version).toString();
@@ -267,7 +275,8 @@ class ClientServiceProxyManager {
 		RemoteProxyServiceFieldListener lis = new RemoteProxyServiceFieldListener(this,el,srcObj,f);
 		//集合服务引用根据服务名称做监听，只要匹配名称的服务都加入集合里面
 		//集合元素唯一性是服务名称，名称空间，版本
-		registry.addServiceNameListener(ctype.getName(), lis);
+		//registry.addServiceNameListener(ctype.getName(), lis);
+		registry.addExistsServiceNameListener(ctype.getName(), lis);
 		
 		exists.clear();
 		exists = null;

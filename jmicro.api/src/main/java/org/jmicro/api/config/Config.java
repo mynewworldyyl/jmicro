@@ -72,6 +72,8 @@ public class Config implements IConfigChangeListener{
 
 	public static String ServiceConfigDir = null;
 	
+	public static long systemStartTime = System.currentTimeMillis();
+	
 	private static String[] BasePackages = {"org.jmicro"};
 	
 	@Cfg("/basePackages")
@@ -146,6 +148,10 @@ public class Config implements IConfigChangeListener{
 			}
 		}
 		
+	}
+	
+	public static long getSystemStartTime() {
+		return systemStartTime;
 	}
 	
 	public static String getInstanceName(){

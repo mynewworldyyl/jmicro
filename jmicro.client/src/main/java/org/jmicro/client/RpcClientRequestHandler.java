@@ -71,7 +71,7 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
 	private volatile Map<Long,IResponseHandler> waitForResponse = new ConcurrentHashMap<>();
 	
 	@Cfg("/RpcClientRequestHandler/openDebug")
-	private boolean openDebug;
+	private boolean openDebug=false;
 	
 	@Inject
 	private ICodecFactory codecFactory;
@@ -331,6 +331,12 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
     				sb.append("] do retry: ").append(retryCnt);
     				//SF.doRequestLog(MonitorConstant.WARN,msg.getLinkId(),TAG,req,null,sb.toString());
     			} else {
+    				
+    				//断开新打开连接
+    				session.close(true);
+    				session = null;
+    				logger.warn("Close session: {}",sb.toString());
+    				
     				SF.doSubmit(MonitorConstant.CLIENT_REQ_TIMEOUT_FAIL, req, null);
     				sb.append("] timeout request and stop retry: ").append(retryCnt)
     				.append(",reqId:").append(req.getRequestId()).append(", LinkId:").append(lid);

@@ -91,9 +91,12 @@ class RemoteProxyServiceFieldListener implements IServiceListener{
 					AbstractClientServiceProxy p = (AbstractClientServiceProxy)this.rsm.getService(item, null);
 					if(p!=null){
 						set.add(p);
+						logger.debug("Add proxy for,Size:{} Field:{},Item:{}",set.size(),
+								refField.toString(),item.getKey().toKey(false, false, false));
 					} else {
 						logger.error("Fail to create item proxy :{}",item.getKey().toKey(true, true, true));
 					}
+					
 				}
 				
 			}else if(IServiceListener.SERVICE_REMOVE == type) {
@@ -107,10 +110,12 @@ class RemoteProxyServiceFieldListener implements IServiceListener{
 				}
 				if(po != null){
 					set.remove(po);
+					logger.debug("Remove proxy for,Size:{}, Field:{},Item:{}",set.size(),refField.toString(),
+							item.getKey().toKey(false, false, false));
 				}
 			}
-			notifyChange();
 		}
+		notifyChange();
 	}
 	
 	protected void notifyChange() {

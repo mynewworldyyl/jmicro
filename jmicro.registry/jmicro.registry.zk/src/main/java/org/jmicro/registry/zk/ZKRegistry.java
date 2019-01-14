@@ -94,15 +94,15 @@ public class ZKRegistry implements IRegistry {
 	
 	private IDataOperator dataOperator;
 	
-	private long startTime = System.currentTimeMillis();
+	//private long startTime = System.currentTimeMillis();
 	
-	private long waitingActInterval = 1000*3*60;
+	private long waitingActInterval = 1000*1*10;
 	
 	private boolean needWaiting = true;
 	
 	private boolean setNeedWaiting() {
 		if(needWaiting) {
-			this.needWaiting = System.currentTimeMillis() - startTime < waitingActInterval;
+			this.needWaiting = System.currentTimeMillis() - Config.getSystemStartTime() < waitingActInterval;
 		}
 		return this.needWaiting;
 	}
@@ -350,12 +350,7 @@ public class ZKRegistry implements IRegistry {
 		if(this.needWaiting) {
 			logger.warn("Do isExists waiting get Key: {}",UniqueServiceKey.serviceName(serviceName, namespace, version));
 			setNeedWaiting();
-			return IWaitingAction.doAct(new IWaitingAction<Boolean>() {
-				@Override
-				public Boolean waitAct() {
-					return isExists0(serviceName,namespace,version);
-				}
-			},false);
+			return IWaitingAction.doAct(()->isExists0(serviceName,namespace,version),false);
 		} else {
 			return isExists0(serviceName,namespace,version);
 		}
@@ -379,12 +374,7 @@ public class ZKRegistry implements IRegistry {
 		if(this.needWaiting) {
 			logger.warn("Do getServices(String serviceName, String namespace, String version) waiting get Key: {}",UniqueServiceKey.serviceName(serviceName, namespace, version));
 			setNeedWaiting();
-			return IWaitingAction.doAct(new IWaitingAction<Set<ServiceItem> >() {
-				@Override
-				public Set<ServiceItem>  waitAct() {
-					return getServices0(serviceName,namespace,version);
-				}
-			},null);
+			return IWaitingAction.doAct(()->getServices0(serviceName,namespace,version),null);
 		} else {
 			return getServices0(serviceName,namespace,version);
 		}	
@@ -409,12 +399,7 @@ public class ZKRegistry implements IRegistry {
 		if(this.needWaiting) {
 			logger.warn("Do getServices(String serviceName) waiting get serviceName:{}",serviceName);
 			setNeedWaiting();
-			return IWaitingAction.doAct(new IWaitingAction<Set<ServiceItem> >() {
-				@Override
-				public Set<ServiceItem>  waitAct() {
-					return srvManager.getServiceItems(serviceName);
-				}
-			},null);
+			return IWaitingAction.doAct(()->srvManager.getServiceItems(serviceName),null);
 		} else {
 			return this.srvManager.getServiceItems(serviceName);
 		}	
@@ -425,12 +410,7 @@ public class ZKRegistry implements IRegistry {
 		if(this.needWaiting) {
 			logger.warn("Do getServiceByImpl waiting get impl:{}",impl);
 			setNeedWaiting();
-			return IWaitingAction.doAct(new IWaitingAction<ServiceItem>() {
-				@Override
-				public ServiceItem  waitAct() {
-					return getServiceByImpl0(impl);
-				}
-			},null);
+			return IWaitingAction.doAct(()->getServiceByImpl0(impl),null);
 		} else {
 			return getServiceByImpl0(impl);
 		}	
@@ -456,12 +436,8 @@ public class ZKRegistry implements IRegistry {
 			logger.warn("Do getServices waiting get key:{},method:{},transport:{}",UniqueServiceKey.serviceName(serviceName, namespace, version),
 					method,transport);
 			setNeedWaiting();
-			return IWaitingAction.doAct(new IWaitingAction<Set<ServiceItem>>() {
-				@Override
-				public Set<ServiceItem>  waitAct() {
-					return getServices0(serviceName,method,args,namespace,version,transport);
-				}
-			},null);
+			return IWaitingAction.doAct(
+					()->getServices0(serviceName,method,args,namespace,version,transport),null);
 		} else {
 			return getServices0(serviceName,method,args,namespace,version,transport);
 		}	

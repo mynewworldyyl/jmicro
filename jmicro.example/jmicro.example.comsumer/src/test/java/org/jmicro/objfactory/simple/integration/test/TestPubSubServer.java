@@ -1,4 +1,4 @@
-package org.jmicro.example.test;
+package org.jmicro.objfactory.simple.integration.test;
 
 import java.util.HashMap;
 import java.util.Random;
@@ -40,16 +40,12 @@ public class TestPubSubServer extends JMicroBaseTestCase{
 		Runnable r = ()->{
 			while(true) {
 				try {
-					try {
-						psm.publish(new HashMap<String,Object>(), TOPIC, 
-								"test pubsub server id: "+id.getAndIncrement());
-						//Thread.sleep(500000000);
-						Thread.sleep(ran.nextInt(100));
-					} catch (InterruptedException e) {
-						e.printStackTrace();
-					}
+					//Thread.sleep(2000);
+					Thread.sleep(ran.nextInt(100));
+					psm.publish(new HashMap<String,Object>(), TOPIC, 
+							"test pubsub server id: "+id.getAndIncrement());
 				} catch (Throwable e) {
-					e.printStackTrace();
+					System.out.println(e.getMessage());;
 				}
 			}
 		};
