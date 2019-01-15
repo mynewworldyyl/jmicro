@@ -58,7 +58,7 @@ public class SubCallbackImpl implements ISubCallback{
 		try {
 			m.invoke(this.srvProxy, item);
 		} catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
-			throw new CommonException("fail to notify [" + mkey.toString()+"]", e);
+			throw new CommonException("Fail to send message to [" + mkey.toString()+"]", e);
 		}
 	}
 

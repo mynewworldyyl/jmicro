@@ -24,6 +24,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 import org.jmicro.common.CommonException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * 
@@ -31,7 +33,7 @@ import org.jmicro.common.CommonException;
  * @date 2018年11月28日 下午11:00:28
  */
 public class TimerTicker {
-
+	private static final Logger logger = LoggerFactory.getLogger(TimerTicker.class);
 	private static final Map<Long,TimerTicker> defaultTimers = new ConcurrentHashMap<>();
 	
 	public static TimerTicker getDefault(Long ticker) {
@@ -56,17 +58,21 @@ public class TimerTicker {
 	
 	public TimerTicker(long ticker) {
 		//this.ticker = ticker;
-		timer = new Timer();
+		timer = new Timer("JMicro-Timer-"+ticker, true);
 		timer.scheduleAtFixedRate(new TimerTask() {
 			@Override
 			public void run() {
-				notifyAction();
-				if(!removeKeys.isEmpty()) {
-					for(;!removeKeys.isEmpty();) {
-						String k = removeKeys.poll();
-						listeners.remove(k);
-						attachements.remove(k);
+				try {
+					notifyAction();
+					if(!removeKeys.isEmpty()) {
+						for(;!removeKeys.isEmpty();) {
+							String k = removeKeys.poll();
+							listeners.remove(k);
+							attachements.remove(k);
+						}
 					}
+				} catch (Throwable e) {
+					logger.error("JMicro TimerTicker.scheduleAtFixedRate",e);
 				}
 			}
 		}, 0, ticker);
@@ -79,7 +85,11 @@ public class TimerTicker {
 	}
 	
 	public void addListener(String key,ITickerAction act,Object attachement) {
-		if(this.listeners.containsKey(key) && act != this.listeners.get(key)) {
+		addListener(key,act,attachement,false);
+	}
+	
+	public void addListener(String key,ITickerAction act,Object attachement,boolean replace) {
+		if(!replace && this.listeners.containsKey(key) && act != this.listeners.get(key)) {
 			throw new CommonException("listener with key[" + key+"] have been exists");
 		}
 		if(attachement != null) {
@@ -88,8 +98,13 @@ public class TimerTicker {
 		this.listeners.put(key, act);
 	}
 	
-	public void removeListener(String key) {
-		removeKeys.offer(key);
+	public void removeListener(String key,boolean atonce) {
+		if(atonce) {
+			listeners.remove(key);
+			attachements.remove(key);
+		} else {
+			removeKeys.offer(key);
+		}
 	}
 	
 	public boolean container(String key) {

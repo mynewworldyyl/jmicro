@@ -89,12 +89,13 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
 	private ComponentIdServer idGenerator;
 	
 	//测试统计模式使用
-	@Cfg(value="/RpcClientRequestHandler/clientStatis",defGlobal=false)
-	private boolean clientStatis=false;
-	private ServiceCounter counter = null;
+	//@Cfg(value="/RpcClientRequestHandler/clientStatis",defGlobal=false)
+	//private boolean clientStatis=false;
+	
+	//private ServiceCounter counter = null;
 	
 	public void init() {
-		if(clientStatis) {
+		/*if(clientStatis) {
 			counter = new ServiceCounter("RpcClientRequestHandler",
 					AbstractMonitorDataSubscriber.YTPES,10,2,TimeUnit.SECONDS);
 			TimerTicker.getDefault(2000L).addListener("RpcClientRequestHandler", (key,att)->{
@@ -105,7 +106,7 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
 						,counter.getAvg(TimeUnit.SECONDS,MonitorConstant.CLIENT_REQ_OK)
 						);
 			}, null);
-		}
+		}*/
 	}
 	
 	@Override
@@ -215,10 +216,6 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
     			SF.doRequestLog(MonitorConstant.LOG_DEBUG,lid,TAG,req,null," do request");
     		}
     		
-    		SF.doSubmit(MonitorConstant.CLIENT_REQ_BEGIN, req,null);
-        	if(clientStatis) {
-        		counter.incrementWithEx(MonitorConstant.CLIENT_REQ_BEGIN);
-        	}
     		session.write(msg);
     		
     		if(!sm.isNeedResponse() && !msg.isStream()) {
@@ -229,6 +226,9 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
         		}
     			return null;
     		}
+    		
+    		SF.doSubmit(MonitorConstant.CLIENT_REQ_BEGIN, req,null);
+    		session.increment(MonitorConstant.CLIENT_REQ_BEGIN);
     		
     		if(msg.isStream()){
     			String key = req.getRequestId()+"";
@@ -293,15 +293,14 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
         		}
     		} else {
     			SF.doSubmit(MonitorConstant.CLIENT_REQ_TIMEOUT, req, null);
+    			session.increment(MonitorConstant.CLIENT_REQ_TIMEOUT);
     		}
     		
     		if(resp != null && resp.isSuccess() && !(resp.getResult() instanceof ServerError)) {
     			if(!msg.isStream()) {
     				//同步请求成功，直接返回
         			SF.doSubmit(MonitorConstant.CLIENT_REQ_OK, req, resp,null);
-        			if(clientStatis) {
-        				counter.incrementWithEx(MonitorConstant.CLIENT_REQ_OK);
-        			}
+        			session.increment(MonitorConstant.CLIENT_REQ_OK);
         			
         			req.setFinish(true);
         			waitForResponse.remove(req.getRequestId());
@@ -310,6 +309,8 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
     				//异步请求
     				//异步请求，收到一个确认包
     				SF.doSubmit(MonitorConstant.CLIENT_REQ_ASYNC1_SUCCESS, req, resp,null);
+    				session.increment(MonitorConstant.CLIENT_REQ_ASYNC1_SUCCESS);
+    				
         			req.setFinish(true);
         			waitForResponse.remove(req.getRequestId());
         			return resp;
@@ -333,18 +334,21 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
     			} else {
     				
     				//断开新打开连接
-    				session.close(true);
-    				session = null;
-    				logger.warn("Close session: {}",sb.toString());
+    				session.increment(MonitorConstant.CLIENT_REQ_TIMEOUT_FAIL);
     				
     				SF.doSubmit(MonitorConstant.CLIENT_REQ_TIMEOUT_FAIL, req, null);
     				sb.append("] timeout request and stop retry: ").append(retryCnt)
     				.append(",reqId:").append(req.getRequestId()).append(", LinkId:").append(lid);
     				SF.doRequestLog(MonitorConstant.LOG_ERROR,msg.getLinkId(),TAG,req,null,sb.toString());
+    				
+    				if(session.getFailPercent() > 50) {
+        				logger.warn("session.getFailPercent() > 50,Close session: {},Percent:{}",
+        						sb.toString(),session.getFailPercent());
+        				session.close(true);
+        				session = null;
+    				}
+    				
     				//肯定是超时了
-        			if(clientStatis) {
-        				counter.incrementWithEx(MonitorConstant.CLIENT_REQ_TIMEOUT_FAIL);
-        			}
     				throw new TimeoutException(req,sb.toString());
     			}
     		
@@ -357,6 +361,7 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
     				}
     				SF.doRequestLog(MonitorConstant.LOG_WARN,lid,TAG,req,null," do retry");
     				SF.doSubmit(MonitorConstant.CLIENT_REQ_RETRY, req, resp,null);
+    				session.increment(MonitorConstant.CLIENT_REQ_RETRY);
     				continue;//重试循环
     			}
     			
@@ -367,18 +372,16 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
 				 req.setSuccess(resp.isSuccess());
 				 SF.doSubmit(MonitorConstant.CLIENT_REQ_EXCEPTION_ERR, req, null);
 				 SF.doResponseLog(MonitorConstant.LOG_ERROR,lid,TAG,resp,null,se.toString());
-				 if(clientStatis) {
-     				counter.increment(MonitorConstant.CLIENT_REQ_EXCEPTION_ERR);
-     			 }
+				 session.increment(MonitorConstant.CLIENT_REQ_EXCEPTION_ERR);
+				 
 				 throw new RpcException(req,sb.toString());
 			} else if(!resp.isSuccess()){
 				 //服务器正常逻辑处理错误，不需要重试，直接失败
 				 req.setSuccess(resp.isSuccess());
 				 SF.doSubmit(MonitorConstant.CLIENT_REQ_BUSSINESS_ERR, req, resp,null);
 				 SF.doResponseLog(MonitorConstant.LOG_ERROR,lid,TAG,resp,null);
-				 if(clientStatis) {
-	     				counter.increment(MonitorConstant.CLIENT_REQ_BUSSINESS_ERR);
-	     		 }
+				 session.increment(MonitorConstant.CLIENT_REQ_BUSSINESS_ERR);
+				 
 			     throw new RpcException(req,sb.toString());
 			}
     		//代码不应该走到这里，如果走到这里，说明系统还有问题
@@ -405,6 +408,11 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
 		} else {
 			SF.doMessageLog(MonitorConstant.LOG_ERROR,TAG,msg,null," handler not found");
 			logger.error("msdId:"+msg.getId()+",reqId:"+msg.getReqId()+",linkId:"+msg.getLinkId()+" IGNORE");
+			session.increment(ISession.CLIENT_HANDLER_NOT_FOUND);
+			if(session.getTakePercent(ISession.CLIENT_HANDLER_NOT_FOUND) > 50) {
+				//断开重连
+				session.close(true);
+			}
 		}
 	}
 	

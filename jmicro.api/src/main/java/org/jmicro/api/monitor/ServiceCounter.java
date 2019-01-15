@@ -68,6 +68,10 @@ public class ServiceCounter implements IServiceCounter{
 			addCounter(type,slotSize);
 		}
 	}
+	
+	public void destroy() {
+		
+	}
 
 	@Override
 	public long get(Integer type) {
@@ -192,11 +196,76 @@ public class ServiceCounter implements IServiceCounter{
 		String key = serviceKey+"-"+type;
 		
 		Counter cnt = new Counter(timeWindow,slotSizeInMilliseconds);
-		TimerTicker.getDefault(slotSizeInMilliseconds).addListener(key, cnt,null);
+		TimerTicker.getDefault(slotSizeInMilliseconds).addListener(key, cnt,null,true);
 		this.counters.put(type, cnt);
 		supportTypes.add(type);
 		return true;
 	}
+	
+	public static double takePercent(ServiceCounter counter,int type) {
+		Long totalReq = counter.get(MonitorConstant.CLIENT_REQ_BEGIN);
+		Long typeCount = counter.get(type);
+		if(totalReq != 0) {
+			return (typeCount*1.0/totalReq)*100;
+		}else {
+			return -1;
+		}
+	}
+	
+	public static double getData(ServiceCounter counter,int type) {
+
+		if(counter == null) {
+			return 0D;
+		}
+		
+		Double result = 0D;
+		switch(type) {
+		case MonitorConstant.STATIS_FAIL_PERCENT:
+			Long totalReq = counter.get(MonitorConstant.CLIENT_REQ_BEGIN);
+			if(totalReq != 0) {
+				Long totalFail = counter.getTotalWithEx(MonitorConstant.CLIENT_REQ_EXCEPTION_ERR,MonitorConstant.CLIENT_REQ_TIMEOUT).longValue();
+				result = (totalFail*1.0/totalReq)*100;
+			}
+			break;
+		case MonitorConstant.STATIS_TOTAL_REQ:
+			result = 1.0 * counter.get(MonitorConstant.CLIENT_REQ_BEGIN);		
+			break;
+		case MonitorConstant.STATIS_TOTAL_RESP:
+			result = counter.getTotalWithEx(MonitorConstant.CLIENT_REQ_BUSSINESS_ERR,MonitorConstant.CLIENT_REQ_OK,MonitorConstant.CLIENT_REQ_EXCEPTION_ERR);
+			break;
+		case MonitorConstant.STATIS_TOTAL_SUCCESS:
+			result =  1.0 * counter.get(MonitorConstant.CLIENT_REQ_ASYNC1_SUCCESS)+
+					counter.get(MonitorConstant.CLIENT_REQ_OK);
+			break;
+		case MonitorConstant.STATIS_TOTAL_FAIL:
+			result = 1.0 * counter.get(MonitorConstant.CLIENT_REQ_EXCEPTION_ERR)+
+			counter.get(MonitorConstant.CLIENT_REQ_TIMEOUT);
+			break;
+		case MonitorConstant.STATIS_SUCCESS_PERCENT:
+			totalReq = counter.get(MonitorConstant.CLIENT_REQ_BEGIN);
+			if(totalReq != 0) {
+				result =  1.0 * counter.get(MonitorConstant.CLIENT_REQ_ASYNC1_SUCCESS)+
+						counter.get(MonitorConstant.CLIENT_REQ_OK);
+						result = (result*1.0/totalReq)*100;
+			}
+			break;
+		case MonitorConstant.CLIENT_REQ_TIMEOUT_FAIL:
+			result = 1.0 * counter.get(MonitorConstant.CLIENT_REQ_TIMEOUT_FAIL);
+			break;
+		case MonitorConstant.STATIS_TIMEOUT_PERCENT:
+			totalReq = counter.get(MonitorConstant.CLIENT_REQ_BEGIN);
+			if(totalReq != 0) {
+				result = 1.0 * counter.get(MonitorConstant.CLIENT_REQ_TIMEOUT_FAIL);
+				result = (result/totalReq)*100;
+			}
+			break;
+		case MonitorConstant.STATIS_QPS:
+			result = counter.getAvg(TimeUnit.SECONDS,MonitorConstant.CLIENT_REQ_OK);
+		}
+		return result;
+	
+	}
+	
 	
 	static class Counter implements ITickerAction{
 		

@@ -25,11 +25,11 @@ import java.io.UnsupportedEncodingException;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 
-import org.jmicro.api.client.IClientSession;
 import org.jmicro.api.net.AbstractSession;
 import org.jmicro.api.net.Message;
 import org.jmicro.common.Constants;
 import org.jmicro.common.util.JsonUtils;
+import org.jmicro.server.IServerSession;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
@@ -38,7 +38,7 @@ import io.netty.handler.codec.http.DefaultFullHttpResponse;
 import io.netty.handler.codec.http.FullHttpResponse;
 import io.netty.handler.codec.http.websocketx.BinaryWebSocketFrame;
 
-public abstract class AbstractNettySession extends AbstractSession implements IClientSession {
+public abstract class AbstractNettySession extends AbstractSession implements IServerSession {
 
 	private ChannelHandlerContext ctx;
 	

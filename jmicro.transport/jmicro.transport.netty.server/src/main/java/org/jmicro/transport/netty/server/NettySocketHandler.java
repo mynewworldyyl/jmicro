@@ -104,6 +104,7 @@ public class NettySocketHandler extends ChannelInboundHandlerAdapter {
     	session.setReceiver(receiver);
     	session.setDumpDownStream(this.dumpDownStream);
     	session.setDumpUpStream(this.dumpUpStream);
+    	session.init();
     	ctx.channel().attr(sessionKey).set(session);
     }
     

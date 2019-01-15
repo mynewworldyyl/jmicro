@@ -329,6 +329,10 @@ public class PubSubManager {
 
 	public boolean publish(PSData item) {
 		IInternalSubRpc s = this.defaultServer;//this.getServer(item.getContext());
+		if(s == null) {
+			logger.error("No Pubsub server for topic:{}",item.getTopic());
+			return false;
+		}
 		if(openDebug) {
 			logger.debug("Publish topic: {}, data: {}",item.getTopic(),item.getData());
 		}

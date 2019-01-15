@@ -26,6 +26,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.RejectedExecutionHandler;
 import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.jmicro.api.JMicro;
 import org.jmicro.api.annotation.Cfg;
@@ -47,7 +48,6 @@ import org.jmicro.api.registry.IRegistry;
 import org.jmicro.api.registry.ServiceItem;
 import org.jmicro.api.registry.UniqueServiceMethodKey;
 import org.jmicro.api.service.ServiceManager;
-import org.jmicro.api.timer.ITickerAction;
 import org.jmicro.api.timer.TimerTicker;
 import org.jmicro.common.Constants;
 import org.jmicro.common.Utils;
@@ -66,8 +66,23 @@ public class PubSubServer implements IInternalSubRpc{
 	
 	private final static Logger logger = LoggerFactory.getLogger(PubSubServer.class);
 	
+	private static final String DISCARD_TIMER = "PubsubServerAbortPolicy";
+	
+	private static final String RESEND_TIMER = "PubsubServerResendTimer";
+	
 	@Cfg(value="/PubSubServer/openDebug")
 	private boolean openDebug = false;
+	
+	@Cfg(value="/PubSubServer/maxFailItemCount")
+	private int maxFailItemCount = 10000;
+	
+	@Cfg(value="/PubSubServer/reOpenThreadInterval")
+	private long reOpenThreadInterval = 1000;
+	
+	@Cfg(value="/PubSubServer/doResendInterval",changeListener="resetResendTimer")
+	private long doResendInterval = 1000;
+	
+	private long doResendInterval0 = 1000;
 	
 	@Inject
 	private IObjectFactory of;
@@ -84,7 +99,7 @@ public class PubSubServer implements IInternalSubRpc{
 	@Inject
 	private IRegistry registry;
 	
-	private boolean disgard = false;
+	private AtomicBoolean discard = new AtomicBoolean(false);
 	
 	/**
 	 *  订阅ID到回调之间映射关系
@@ -96,9 +111,17 @@ public class PubSubServer implements IInternalSubRpc{
 	 */
 	private Map<String,Set<ISubCallback>> topic2Callbacks = new ConcurrentHashMap<>();
 	
+	private Map<Long,TimerTicker> resendTimers = new ConcurrentHashMap<>();
+	
+	private Queue<SendItem> psitems = null;
+	
 	private ExecutorService executor = null;
 	
 	private boolean running = false;
+	
+	private Object loadingLock = new Object();
+	private Queue<SubcribeItem> waitingLoadClazz = new ConcurrentLinkedQueue<>();
+	private ClassLoadingWorker clWorker = null;
 	
 	public static void main(String[] args) {
 		 JMicro.getObjectFactoryAndStart(new String[] {"-DinstanceName=PubSubServer"});
@@ -124,6 +147,18 @@ public class PubSubServer implements IInternalSubRpc{
 			return;
 		}
 		
+		if(this.maxFailItemCount <=0) {
+			logger.warn("Invalid maxFailItemCount: {}, set to default:{}",this.maxFailItemCount,10000);
+			this.maxFailItemCount = 10000;
+		}
+		
+		if(reOpenThreadInterval <= 0) {
+			logger.warn("Invalid reOpenThreadInterval: {}, set to default:{}",this.reOpenThreadInterval,1000);
+			this.reOpenThreadInterval = 1000;
+		}
+		
+		this.psitems = new ConcurrentLinkedQueue<>(new HashSet<>(maxFailItemCount));
+		
 		ExecutorConfig config = new ExecutorConfig();
 		config.setMsCoreSize(1);
 		config.setMsMaxSize(30);
@@ -134,7 +169,27 @@ public class PubSubServer implements IInternalSubRpc{
 		
 		pubsubManager.addSubsListener(subListener);
 		
+		clWorker = new ClassLoadingWorker();
 		clWorker.start();
+		
+		resetResendTimer();
+	}
+	
+	public void resetResendTimer() {
+		
+		logger.info("Reset timer with doResendInterval0:{},doResendInterval:{}",doResendInterval0,doResendInterval);
+		TimerTicker.getTimer(this.resendTimers, doResendInterval0).removeListener(RESEND_TIMER,true);
+		
+		TimerTicker.getTimer(this.resendTimers, doResendInterval)
+		.addListener(RESEND_TIMER, (key,att)->{
+			try {
+				doResend();
+			} catch (Throwable e) {
+				logger.error("Submit doResend fail: ",e);
+			}
+		}, null);
+		
+		doResendInterval0 = doResendInterval;
 	}
 	
 	public void start() {
@@ -176,8 +231,9 @@ public class PubSubServer implements IInternalSubRpc{
 	}
 	
 	public boolean publishString(String topic,String content) {
-		if(this.disgard) {
+		if(discard.get()) {
 			//logger.warn("Disgard One:{}",topic);
+			//由发送者处理失败消息
 			return false;
 		}
 		
@@ -188,59 +244,132 @@ public class PubSubServer implements IInternalSubRpc{
 	}
 	
 	public boolean publishData(PSData item) {
-		if(this.disgard) {
+		if(discard.get()) {
 			//logger.warn("Disgard One:{}",item.getTopic());
+			//由发送者处理失败消息
 			return false;
 		}
 		try {
 			executor.submit(()->{
+				//在这里失败的消息，服务负责失败重发，最大限度保证消息能送达目标结点
 				doPublish(item);
 			});
+			return true;
 		} catch (RejectedExecutionException e) {
-			disgardOneTime();
+			//线程对列满了，停指定时间，待消息队列有空位再重新提交
+			discardOneTime();
 			logger.error("",e);
+			//由发送者处理失败消息
+			return false;
 		}
-		return true;
 	}
 	
-	private void disgardOneTime() {
-		logger.warn("Thread pool exceed and disgard one second!");
-    	disgard = true;
-    	TimerTicker.getDefault(3000L).addListener("PubsubServerAbortPolicy",(key,att)->{
-    		disgard = false;
-    		logger.warn("Thread pool reopen after one second!");
-    		TimerTicker.getDefault(3000L).removeListener("PubsubServerAbortPolicy");
+	private void doFailItem(PSData item,int qsize) {
+		logger.error("Discard Item:{},queue size:{}, maxFailItemCount:{}",qsize,maxFailItemCount);
+	}
+
+	private void discardOneTime() {
+		logger.warn("Thread pool exceed and stop {} Milliseconds",this.reOpenThreadInterval);
+		discard.set(true);
+    	TimerTicker.getDefault(this.reOpenThreadInterval).addListener(DISCARD_TIMER,(key,att)->{
+    		discard.set(false);
+    		logger.warn("Thread pool reopen after {} Milliseconds!",this.reOpenThreadInterval);
+    		TimerTicker.getDefault(this.reOpenThreadInterval).removeListener(DISCARD_TIMER,false);
     	},null);
-    	
 	}
 	
 	private void doPublish(PSData item) {
-		String topic = item.getTopic().intern();
-		if(openDebug) {
+		String topic = item.getTopic();
+		/*if(openDebug) {
 			logger.debug("Got topic: {}",item.getTopic());
-		}
-		synchronized(topic) {
-			Set<ISubCallback> q = topic2Callbacks.get(topic);
-			if(q == null || q.isEmpty()) {
-				if(openDebug) {
-					logger.debug("No subscriber for: {}",item.getTopic());
-				}
-			}else {
-				for(ISubCallback cb : q) {
-					if(openDebug) {
-						logger.debug("Publish topic: {}, cb {}",item.getTopic(),cb.info());
-					}
+		}*/
+		//synchronized(topic) {
+		//没必要做同步
+		//如果在对主题分发过程中有订阅进来，最多就少接收或多收消息
+		//基于pubsub的应该注意此特性，如果应用接受不了，就不应该使得pubsub,
+		//或者确保在消息发送前注册或删除订阅器，
+		Set<ISubCallback> q = topic2Callbacks.get(topic);
+		if(q == null || q.isEmpty()) {
+			if(openDebug) {
+				logger.debug("No subscriber for: {}",item.getTopic());
+			}
+		} else {
+			for(ISubCallback cb : q) {
+				/*if(openDebug) {
+					logger.debug("Publish topic: {}, cb {}",item.getTopic(),cb.info());
+				}*/
+				try {
 					cb.onMessage(item);
+				} catch (Throwable e) {
+					logger.error("doPublish,Fail Item Size["+psitems.size()+"]",e);
+					//需要重发消息
+					if(psitems.size() > maxFailItemCount) {
+						//失败队列满，丢弃消息，确保服务能自动恢复
+						doFailItem(item,psitems.size());
+						return;
+					}
+					psitems.offer(new SendItem(SendItem.TYPY_RESEND,cb,item));
 				}
 			}
-			
 		}
+		//}
 	}
 	
-	private Object loadingLock = new Object();
-	private Queue<SubcribeItem> waitingLoadClazz = new ConcurrentLinkedQueue<>();
+	private void doResend() {
+		
+		if(psitems.isEmpty()) {
+			/*if(openDebug) {
+				logger.debug("doResend check empty");
+			}*/
+			return;
+		}
+		if(openDebug) {
+			logger.debug("doResend submit ones, send size:{}",psitems.size());
+		}
+		executor.submit(()->{
+			Set<SendItem> failPsDatas = new HashSet<>();
+			int cnt = 10;
+			for(SendItem si = psitems.poll(); si != null; si = psitems.poll()) {
+				try {
+					si.cb.onMessage(si.item);
+				} catch (Throwable e1) {
+					si.retryCnt++;
+					if(si.retryCnt > 3) {
+						//doFailItem(si.item,psitems.size());
+						logger.error("Retry exceed 3 Item:{},retryCnt:{}",si.item,si.retryCnt);
+					} else {
+						failPsDatas.add(si);
+					}
+				}
+				cnt--;
+				if(cnt <= 0) {
+					break;
+				}
+			}
+			if(!failPsDatas.isEmpty()) {
+				psitems.addAll(failPsDatas);
+				failPsDatas.clear();
+			}
+		});
+		
+	}
 	
-	private ClassLoadingWorker clWorker = new ClassLoadingWorker();
+	private final class SendItem {
+		public static final int TYPY_RESEND = 1;
+		
+		public int type;
+		public ISubCallback cb;
+		public PSData item;
+		public int retryCnt=0;
+		public Long retryInterval = 1000L;
+		
+		public SendItem(int type,ISubCallback cb,PSData item) {
+			this.type = type;
+			this.cb = cb;
+			this.item = item;
+			retryCnt = 0;
+		}
+	}
 	
 	private final class SubcribeItem {
 		public static final int TYPE_SUB = 1;
@@ -261,16 +390,29 @@ public class PubSubServer implements IInternalSubRpc{
 	
 	private final class ClassLoadingWorker extends Thread {
 		
+		private Queue<Runnable> tasks = new ConcurrentLinkedQueue<>();
+		
+		//存在发送失败需要重新发的项目
+		//只对doPublish中失败的消息负责
+		//publishString及publishData返回false的消息，由客户端处理
 		public ClassLoadingWorker() {
 			super("JMicro-"+Config.getInstanceName()+"-ClassLoadingWorker");
 		}
 		
+		public void submit(Runnable r) {
+			tasks.offer(r);
+			synchronized(loadingLock) {
+				loadingLock.notify();;
+			}
+		}
+		
 		public void run() {
 			Set<SubcribeItem> failItems = new HashSet<>();
+			//Set<SendItem> failPsDatas = new HashSet<>();
 			this.setContextClassLoader(cl);
 			while(true) {
 				try {
-					if(waitingLoadClazz.isEmpty()) {
+					if(tasks.isEmpty() && waitingLoadClazz.isEmpty()) {
 						synchronized(loadingLock) {
 							loadingLock.wait();
 						}
@@ -295,18 +437,48 @@ public class PubSubServer implements IInternalSubRpc{
 							throw e;
 						}
 					}
+					
+					/*for(SendItem psd = psitems.poll(); psd != null; psd = psitems.poll() ) {
+						try {
+							psd.cb.onMessage(psd.item);
+						} catch (Throwable e1) {
+							psd.retryCnt++;
+							if(psd.retryCnt > 3) {
+								logger.error("Fail Item:{},retryCnt:{}",psd.item,psd.retryCnt);
+							} else {
+								failPsDatas.add(psd);
+							}
+						}
+					}*/
+					
+					for(Runnable psd = tasks.poll(); psd != null; psd = tasks.poll() ) {
+						psd.run();
+					}
+					
 				}catch(Throwable e) {
 					logger.error("",e);
 				} finally {
+					boolean needSleep = false;
 					if(!failItems.isEmpty()) {
 						waitingLoadClazz.addAll(failItems);
+						needSleep = true;
+						failItems.clear();
+					}
+					
+					/*if(!failPsDatas.isEmpty()) {
+						psitems.addAll(failPsDatas);
+						needSleep = true;
+						failPsDatas.clear();
+					}*/
+					
+					if(needSleep) {
 						try {
 							Thread.sleep(5000);
 						} catch (InterruptedException e) {
-							e.printStackTrace();
+							logger.error("",e);
 						}
-						failItems.clear();
 					}
+					
 				}
 			}
 		}
@@ -318,16 +490,15 @@ public class PubSubServer implements IInternalSubRpc{
 			logger.debug("Unsubscribe CB:{} topic: {}",k,topic);
 		}
 		
-		topic = topic.intern();
-		
-		synchronized(topic) {
+		//topic = topic.intern();
+		//synchronized(topic) {
 			ISubCallback cb = callbacks.remove(k);
 			Set<ISubCallback> q = topic2Callbacks.get(topic);
 			if(q != null) {
 				q.remove(cb);
 			}
 			return cb != null;
-		}
+		//}
 	}
 	
 	private boolean doSubscribe(SubcribeItem sui) {
@@ -373,14 +544,13 @@ public class PubSubServer implements IInternalSubRpc{
 		
 		callbacks.put(k, cb);
 		
-		sui.topic = sui.topic.intern();
-		
-		synchronized(sui.topic) {
+		//sui.topic = sui.topic.intern();
+		//synchronized(sui.topic) {
 			if(!topic2Callbacks.containsKey(sui.topic)) {
 				topic2Callbacks.put(sui.topic, new HashSet<ISubCallback>());
 			}
 			topic2Callbacks.get(sui.topic).add(cb);
-		}
+		//}
 		
 		if(openDebug) {
 			logger.debug("Subcribe:{},topic:",k,sui.topic);

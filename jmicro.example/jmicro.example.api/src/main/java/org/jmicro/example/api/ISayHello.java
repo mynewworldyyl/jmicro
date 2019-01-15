@@ -10,4 +10,6 @@ public interface ISayHello {
 	void helloTopic(PSData data);
 	
 	void statis(PSData data);
+	
+	void testTopic(PSData data);
 }

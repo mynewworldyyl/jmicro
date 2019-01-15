@@ -84,6 +84,7 @@ public class NettyWebSocketHandler  extends SimpleChannelInboundHandler<TextWebS
     public void handlerAdded(ChannelHandlerContext ctx) throws Exception {
     	NettyServerSession session = new NettyServerSession(ctx,readBufferSize,heardbeatInterval
     			,Constants.TYPE_WEBSOCKET);
+    	session.init();
     	ctx.channel().attr(this.sessionKey).set(session);
     }
     

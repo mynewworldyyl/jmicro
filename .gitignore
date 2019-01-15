@@ -139,6 +139,7 @@ jmicro.pubsub/target/
 jmicro.pubsub/.classpath
 jmicro.pubsub/.project
 jmicro.pubsub/.settings/
+jmicro.pubsub/logs/
 jmicro.gateway/target/
 jmicro.gateway/.classpath
 jmicro.gateway/.project

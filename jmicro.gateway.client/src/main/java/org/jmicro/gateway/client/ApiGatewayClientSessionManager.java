@@ -164,6 +164,7 @@ public class ApiGatewayClientSessionManager implements IClientSessionManager {
 					ApiGatewayClientSocketSession s = new ApiGatewayClientSocketSession(ctx,readBufferSize,heardbeatInterval);
                     s.setReceiver(receiver);
 					s.putParam(Constants.SESSION_KEY, ctx);
+					s.init();
       	           sessions.put(sKey, s);
 				}
 

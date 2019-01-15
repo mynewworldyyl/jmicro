@@ -133,6 +133,8 @@ public abstract class AbstractClientServiceProxy implements InvocationHandler,IS
 		JMicroContext.get().setParam(Constants.SERVICE_METHOD_KEY, si.getMethod(method.getName(), args));
 		JMicroContext.get().setParam(Constants.SERVICE_ITEM_KEY, si);
 		
+		
+		
 		return h.invoke(proxy, method, args);
 	}
 	

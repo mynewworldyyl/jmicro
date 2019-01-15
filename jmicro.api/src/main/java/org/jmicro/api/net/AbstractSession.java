@@ -22,9 +22,12 @@ import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.jmicro.api.config.Config;
+import org.jmicro.api.monitor.MonitorConstant;
+import org.jmicro.api.monitor.ServiceCounter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -58,6 +61,8 @@ public abstract class AbstractSession implements ISession{
 	
 	private boolean dumpUpStream = false;
 	
+	protected ServiceCounter counter = null;
+	
 	private IMessageReceiver receiver = null;
 	
 	private Queue<ByteBuffer> readQueue = new ConcurrentLinkedQueue<ByteBuffer>();
@@ -81,8 +86,13 @@ public abstract class AbstractSession implements ISession{
 		}
 	}
 	
+	public void init() {
+		InetSocketAddress ia = this.getRemoteAddress();
+		this.counter = new ServiceCounter(ia.getHostString()+":"+ia.getPort(),STATIS_TYPES,5,10,TimeUnit.SECONDS);
+	}
+	
 	public void doWork() {
-		while(true) {
+		while(!this.isClose) {
 			try {
 				if(readQueue.isEmpty()) {
 					synchronized (worker) {
@@ -116,6 +126,7 @@ public abstract class AbstractSession implements ISession{
 
 	private void doRead(ByteBuffer msg) {
 
+		counter.add(ISession.CLIENT_READ_BYTES, msg.remaining());
     	//合并上次剩下的数据
      	ByteBuffer lb = null;
      	
@@ -213,6 +224,24 @@ public abstract class AbstractSession implements ISession{
 	
 	}
 	
+	@Override
+	public void increment(int type) {
+		this.counter.increment(type);
+	}
+	
+	public Double getFailPercent() {
+		return ServiceCounter.getData(counter, MonitorConstant.STATIS_FAIL_PERCENT);
+	}
+	
+	@Override
+	public Double getTakePercent(int type) {
+		return ServiceCounter.takePercent(counter, type);
+	}
+
+	@Override
+	public Double getTakeAvg(int type) {
+		return counter.getAvg(TimeUnit.SECONDS, type);
+	}
 	
 	public abstract InetSocketAddress getLocalAddress();
 	
@@ -281,6 +310,9 @@ public abstract class AbstractSession implements ISession{
 		params.clear();
 		this.sessionId=-1L;
 		this.isClose = true;
+		synchronized (worker) {
+			worker.notify();
+		}
 	}
 
 	@Override

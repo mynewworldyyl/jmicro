@@ -37,7 +37,12 @@ public class SayHelloImpl implements ISayHello {
 
 	@Subscribe(topic="/jmicro/test/topic01")
 	public void helloTopic(PSData data) {
-		System.out.println("Topic: "+data.getTopic()+", data: "+ data.getData().toString());
+		System.out.println("helloTopic: "+data.getTopic()+", data: "+ data.getData().toString());
+	}
+	
+	@Subscribe(topic="/jmicro/test/topic01")
+	public void testTopic(PSData data) {
+		System.out.println("testTopic: "+data.getTopic()+", data: "+ data.getData().toString());
 	}
 	
 	@Subscribe(topic=MonitorConstant.STATIS_SERVICE_METHOD_TOPIC)

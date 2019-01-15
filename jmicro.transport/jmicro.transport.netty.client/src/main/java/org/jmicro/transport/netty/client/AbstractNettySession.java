@@ -27,6 +27,7 @@ import java.nio.ByteBuffer;
 
 import org.jmicro.api.client.IClientSession;
 import org.jmicro.api.net.AbstractSession;
+import org.jmicro.api.net.ISession;
 import org.jmicro.api.net.Message;
 import org.jmicro.common.Constants;
 import org.jmicro.common.util.JsonUtils;
@@ -84,6 +85,8 @@ public abstract class AbstractNettySession extends AbstractSession implements IC
 			//ctx.write(msg)
 			//String json = JsonUtils.getIns().toJson(msg);
 			ByteBuffer bb = msg.encode();
+			this.counter.add(ISession.CLIENT_WRITE_BYTES, bb.remaining());
+			
 			ByteBuf bbf = Unpooled.buffer(bb.remaining());
 			bbf.writeBytes(bb);
 			ctx.channel().writeAndFlush(bbf);

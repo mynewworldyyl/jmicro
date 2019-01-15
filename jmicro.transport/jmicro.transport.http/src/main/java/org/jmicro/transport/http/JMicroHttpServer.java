@@ -100,7 +100,8 @@ public class JMicroHttpServer implements IServer{
         	JMicroContext.setMonitor(monitor);
         	JMicroContext.callSideProdiver(true);
         	HttpServerSession session = new HttpServerSession(exchange,readBufferSize,heardbeatInterval);
-			try {
+			session.init();
+        	try {
 				if(exchange.getRequestMethod().equals("POST")){
 					InputStream in = exchange.getRequestBody();
 					byte[]data = new byte[in.available()];

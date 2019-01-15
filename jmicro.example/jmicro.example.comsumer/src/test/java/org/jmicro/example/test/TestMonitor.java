@@ -52,8 +52,8 @@ public class TestMonitor extends JMicroBaseTestCase{
 				e1.printStackTrace();
 			}
 			try {
-				//Thread.sleep(ran.nextInt(1000));
-				Thread.sleep(1000);
+				Thread.sleep(ran.nextInt(50));
+				//Thread.sleep(1000);
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}

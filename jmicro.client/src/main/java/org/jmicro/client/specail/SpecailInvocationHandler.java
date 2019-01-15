@@ -234,7 +234,7 @@ public class SpecailInvocationHandler implements InvocationHandler, IMessageHand
         	//SF.doSubmit(MonitorConstant.CLIENT_REQ_BEGIN, req,null);
     	    
     	    IClientSession session = this.sessionManager.getOrConnect(s.getHost(), s.getPort());
-    		
+    	    
     		msg.setPayload(ICodecFactory.encode(this.codecFactory,req,msg.getProtocol()));
     		
     		if(SF.isLoggable(this.openDebug,MonitorConstant.LOG_DEBUG)) {
@@ -251,6 +251,8 @@ public class SpecailInvocationHandler implements InvocationHandler, IMessageHand
         		}
     			return null;
     		}
+    		
+    		session.increment(MonitorConstant.CLIENT_REQ_BEGIN);
     		
     		if(msg.isStream()){
     			String key = req.getRequestId()+"";
@@ -323,6 +325,7 @@ public class SpecailInvocationHandler implements InvocationHandler, IMessageHand
         				SF.doResponseLog(MonitorConstant.LOG_DEBUG,lid,TAG,resp,null,"reqID ["+resp.getReqId()+"] response");
             		}
     			} else {
+    				session.increment(MonitorConstant.CLIENT_REQ_TIMEOUT);
         			SF.doMessageLog(MonitorConstant.LOG_ERROR,TAG,respMsg,null,"reqID ["+resp.getReqId()+"] response");
         		}
     		} else {
@@ -341,6 +344,7 @@ public class SpecailInvocationHandler implements InvocationHandler, IMessageHand
     				//异步请求
     				//异步请求，收到一个确认包
     				SF.doSubmit(MonitorConstant.CLIENT_REQ_ASYNC1_SUCCESS, req, resp,null);
+    				session.increment(MonitorConstant.CLIENT_REQ_ASYNC1_SUCCESS);
         			req.setFinish(true);
         			waitForResponse.remove(""+req.getRequestId());
         			return resp;
@@ -363,14 +367,20 @@ public class SpecailInvocationHandler implements InvocationHandler, IMessageHand
     				//SF.doRequestLog(MonitorConstant.WARN,msg.getLinkId(),TAG,req,null,sb.toString());
     			} else {
     				//断开新打开连接
-    				session.close(true);
-    				session = null;
-    				logger.warn("Close session: {}",sb.toString());
     				
     				SF.doSubmit(MonitorConstant.CLIENT_REQ_TIMEOUT_FAIL, req, null);
     				sb.append("] timeout request and stop retry: ").append(retryCnt)
     				.append(",reqId:").append(req.getRequestId()).append(", LinkId:").append(lid);
     				SF.doRequestLog(MonitorConstant.LOG_ERROR,msg.getLinkId(),TAG,req,null,sb.toString());
+    				
+    				session.increment(MonitorConstant.CLIENT_REQ_TIMEOUT_FAIL);
+    				if(session.getFailPercent() > 50) {
+        				logger.warn("session.getFailPercent() > 50,Close session: {},Percent:{}",
+        						sb.toString(),session.getFailPercent());
+        				session.close(true);
+        				session = null;
+    				}
+    				
     				throw new TimeoutException(req,sb.toString());
     			}
     		
@@ -383,6 +393,8 @@ public class SpecailInvocationHandler implements InvocationHandler, IMessageHand
     				}
     				SF.doRequestLog(MonitorConstant.LOG_WARN,lid,TAG,req,null," do retry");
     				SF.doSubmit(MonitorConstant.CLIENT_REQ_RETRY, req, resp,null);
+    				session.increment(MonitorConstant.CLIENT_REQ_RETRY);
+    				
     				continue;//重试循环
     			}
     			
@@ -393,12 +405,14 @@ public class SpecailInvocationHandler implements InvocationHandler, IMessageHand
 				 req.setSuccess(resp.isSuccess());
 				 SF.doSubmit(MonitorConstant.CLIENT_REQ_EXCEPTION_ERR, req, null);
 				 SF.doResponseLog(MonitorConstant.LOG_ERROR,lid,TAG,resp,null,se.toString());
+				 session.increment(MonitorConstant.CLIENT_REQ_EXCEPTION_ERR);
 				 throw new RpcException(req,sb.toString());
 			} else if(!resp.isSuccess()){
 				 //服务器正常逻辑处理错误，不需要重试，直接失败
 				 req.setSuccess(resp.isSuccess());
 				 SF.doSubmit(MonitorConstant.CLIENT_REQ_BUSSINESS_ERR, req, resp,null);
 				 SF.doResponseLog(MonitorConstant.LOG_ERROR,lid,TAG,resp,null);
+				 session.increment(MonitorConstant.CLIENT_REQ_BUSSINESS_ERR);
 			     throw new RpcException(req,sb.toString());
 			}
     		//代码不应该走到这里，如果走到这里，说明系统还有问题

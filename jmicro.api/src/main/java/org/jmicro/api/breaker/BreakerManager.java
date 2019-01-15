@@ -74,7 +74,7 @@ public class BreakerManager implements ITickerAction{
 			TimerTicker.getTimer(timers,interval).addListener(key, this,sm);
 		} else {
 			//关闭服务自动检测
-			TimerTicker.getTimer(timers,interval).removeListener(key);
+			TimerTicker.getTimer(timers,interval).removeListener(key,false);
 		}
 	}
 
@@ -83,7 +83,7 @@ public class BreakerManager implements ITickerAction{
 		ServiceMethod sm = (ServiceMethod)attachement;
 		long interval = TimeUtils.getMilliseconds(sm.getBreakingRule().getCheckInterval(), sm.getBaseTimeUnit());;
 		if(!sm.isBreaking()) {
-			TimerTicker.getTimer(timers,interval).removeListener(key);
+			TimerTicker.getTimer(timers,interval).removeListener(key,false);
 			return;
 		}
 		

@@ -50,6 +50,7 @@ import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.util.AttributeKey;
+
 /**
  * 
  * @author Yulei Ye
@@ -279,13 +280,15 @@ public class NettyClientSessionManager implements IClientSessionManager{
 	            
    	            s.setDumpDownStream(this.dumpDownStream);
      		    s.setDumpUpStream(this.dumpUpStream);
+     		    
+     		    s.init();
      		
 	           //LOG.info("session connected : {}", session);
 	           logger.debug("Connection finish,host:"+host+", port:"+port);
 	           return s;
 	       } catch (Throwable e) {
-	    	   String msg = "Cannot connect host:" + host + ", port:" + port;
-	    	   logger.error(msg);
+	    	   String msg = "Cannot connect " + host + ":" + port;
+	    	   logger.error(msg,e);
 	           SF.doSubmit(MonitorConstant.CLIENT_REQ_CONN_FAIL, e,msg);
 	           throw new CommonException(msg);
 	       }
