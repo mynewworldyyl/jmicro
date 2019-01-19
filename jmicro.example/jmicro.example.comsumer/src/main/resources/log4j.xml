@@ -4,9 +4,9 @@
 	
 	<appender name="CONSOLE" class="org.apache.log4j.ConsoleAppender">
 		<param name="Target" value="System.err"/>
-		<param name="Threshold" value="DEBUG"/>
+		<param name="Threshold" value="INFO"/>
 		<layout class="org.apache.log4j.PatternLayout">
-			<param name="ConversionPattern" value="[%d][%p,%c{1}] %m%n"/>
+			<param name="ConversionPattern" value="[%L],[%t],[%d][%p,%c{1}] %m%n"/>
 		</layout>
 	</appender>
 	
@@ -60,6 +60,63 @@
 		</layout>
 	</appender>
 	
+		<appender name="jmicro_A" class="org.apache.log4j.DailyRollingFileAppender">
+		<param name="File" value="${user.dir}/logs/per/A.log"/>
+		<param name="DatePattern" value="'.'yyyyMMdd"/>
+		<param name="Append" value="true"/>
+		<param name="Threshold" value="DEBUG"/>
+		<layout class="org.apache.log4j.PatternLayout">
+			<param name="ConversionPattern" value="[%L],[%t],[%d][%p,%c{1}] %m%n"/>
+		</layout>
+	</appender>
+	
+	<appender name="jmicro_B" class="org.apache.log4j.DailyRollingFileAppender">
+		<param name="File" value="${user.dir}/logs/per/B.log"/>
+		<param name="DatePattern" value="'.'yyyyMMdd"/>
+		<param name="Append" value="true"/>
+		<param name="Threshold" value="DEBUG"/>
+		<layout class="org.apache.log4j.PatternLayout">
+			<param name="ConversionPattern" value="[%L],[%t],[%d][%p,%c{1}] %m%n"/>
+		</layout>
+	</appender>
+	
+	<appender name="jmicro_C" class="org.apache.log4j.DailyRollingFileAppender">
+		<param name="File" value="${user.dir}/logs/per/C.log"/>
+		<param name="DatePattern" value="'.'yyyyMMdd"/>
+		<param name="Append" value="true"/>
+		<param name="Threshold" value="DEBUG"/>
+		<layout class="org.apache.log4j.PatternLayout">
+			<param name="ConversionPattern" value="[%L],[%t],[%d][%p,%c{1}] %m%n"/>
+		</layout>
+	</appender>
+	
+	<appender name="jmicro_D" class="org.apache.log4j.DailyRollingFileAppender">
+		<param name="File" value="${user.dir}/logs/per/D.log"/>
+		<param name="DatePattern" value="'.'yyyyMMdd"/>
+		<param name="Append" value="true"/>
+		<param name="Threshold" value="DEBUG"/>
+		<layout class="org.apache.log4j.PatternLayout">
+			<param name="ConversionPattern" value="[%L],[%t],[%d][%p,%c{1}] %m%n"/>
+		</layout>
+	</appender>
+	
+	<logger name="org.jmicro.api.debug.a">
+		<level value="DEBUG"/>
+		<appender-ref ref="jmicro_A"/>
+	</logger>
+	<logger name="org.jmicro.api.debug.b">
+		<level value="DEBUG"/>
+		<appender-ref ref="jmicro_B"/>
+	</logger>
+	<logger name="org.jmicro.api.debug.c">
+		<level value="DEBUG"/>
+		<appender-ref ref="jmicro_C"/>
+	</logger>
+	<logger name="org.jmicro.api.debug.d">
+		<level value="DEBUG"/>
+		<appender-ref ref="jmicro_D"/>
+	</logger>
+	
 	<logger name="org.jmicro.client.specail">
 		<level value="DEBUG"/>
 		<appender-ref ref="jmicro_scpecail"/>
@@ -95,7 +152,7 @@
 	</logger>
 	 
 	<root>	
-	    <level value="DEBUG"/>
+	    <level value="INFO"/>
 		<appender-ref ref="CONSOLE"/>
 	</root>
 	

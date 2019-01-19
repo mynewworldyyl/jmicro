@@ -25,6 +25,9 @@ import java.nio.ByteBuffer;
 import java.util.Collection;
 import java.util.Map;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
  * 
  * @author Yulei Ye
@@ -33,6 +36,8 @@ import java.util.Map;
  */
 public class TypeUtils {
 
+	private static final Logger logger = LoggerFactory.getLogger(TypeUtils.class);
+	
 	private TypeUtils() {
 	}
 
@@ -69,18 +74,16 @@ public class TypeUtils {
 		}
 		
 		Object v = null;
-		boolean bf = f.isAccessible();
-		if(!bf){
+		
+		//boolean bf = f.isAccessible();
+		if(!f.isAccessible())
 			f.setAccessible(true);
-		}
 		try {
 			 v = f.get(obj);
 		} catch (IllegalArgumentException | IllegalAccessException e) {
 			e.printStackTrace();
 		}
-		if(!bf){
-			f.setAccessible(false);
-		}
+		//f.setAccessible(false);
 		return v;
 	}
 	
@@ -96,14 +99,13 @@ public class TypeUtils {
 			try {
 				f.set(obj, v);
 			} catch (IllegalArgumentException | IllegalAccessException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 		}
 		
-		if(!bf){
+		/*if(!bf){
 			f.setAccessible(false);
-		}
+		}*/
 	}
 
 	public static boolean isFinal(Class<?> type) {

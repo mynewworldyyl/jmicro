@@ -199,7 +199,7 @@ public class SubmitItemHolderManager implements IMonitorDataSubmiter{
 				Double dreq = counter.getTotal(MonitorConstant.CLIENT_REQ_BEGIN);
 				Double toreq = counter.getTotal(MonitorConstant.CLIENT_REQ_TIMEOUT_FAIL);
 				Double dresp = counter.getTotal(MonitorConstant.CLIENT_REQ_BUSSINESS_ERR,MonitorConstant.CLIENT_REQ_OK,MonitorConstant.CLIENT_REQ_EXCEPTION_ERR);
-				Double qps = counter.getAvg(TimeUnit.SECONDS,MonitorConstant.CLIENT_REQ_OK);
+				Double qps = counter.getQps(TimeUnit.SECONDS,MonitorConstant.CLIENT_REQ_OK);
 				if(dreq > -1 && dresp > -1) {
 					logger.debug("总请求:{}, 总响应:{}, 超时:{}, QPS:{}",dreq,dresp,toreq,qps);
 				}

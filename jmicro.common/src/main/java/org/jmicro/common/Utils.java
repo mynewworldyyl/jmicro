@@ -202,19 +202,19 @@ public class Utils {
 			cls = (Class)type;
 		}
 		Object v = null;
-		if(type == Boolean.TYPE){
+		if(type == Boolean.TYPE || type == Boolean.class){
 			v = Boolean.parseBoolean(str);
-		}else if(type == Short.TYPE){
+		}else if(type == Short.TYPE || type == Short.class){
 			v = Short.parseShort(str);
-		}else if(type == Integer.TYPE){
+		}else if(type == Integer.TYPE || type == Integer.class){
 			v = Integer.parseInt(str);
-		}else if(type == Long.TYPE){
+		}else if(type == Long.TYPE || type == Long.class){
 			v = Long.parseLong(str);
-		}else if(type == Float.TYPE){
+		}else if(type == Float.TYPE || type == Float.class){
 			v = Float.parseFloat(str);
-		}else if(type == Double.TYPE){
+		}else if(type == Double.TYPE || type == Double.class){
 			v = Double.parseDouble(str);
-		}else if(type == Byte.TYPE){
+		}else if(type == Byte.TYPE || type == Byte.class){
 			v = Byte.parseByte(str);
 		}/*else if(type == Character.TYPE){
 			v = Character(str);

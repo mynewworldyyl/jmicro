@@ -1,4 +1,4 @@
-package org.jmicro.example.test;
+package org.jmicro.api.service.integration;
 
 import java.util.Arrays;
 import java.util.Random;
@@ -7,29 +7,23 @@ import org.jmicro.api.JMicro;
 import org.jmicro.api.idgenerator.ComponentIdServer;
 import org.jmicro.api.net.IRequest;
 import org.jmicro.api.objectfactory.IObjectFactory;
+import org.jmicro.test.JMicroBaseTestCase;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 
 
-public class TestRedis {
+public class TestRedis extends JMicroBaseTestCase{
 
     private static final Logger logger = LoggerFactory.getLogger(TestRedis.class);
     
     @Test
 	public void testIdTestRedisIdServer() {
-		
-		IObjectFactory of = JMicro.getObjectFactoryAndStart(new String[] {
-				"-DinstanceName=testIdTestRedisIdServer",
-				"-Dclient=true",
-				"-Dorg.jmicro.api.idgenerator.IIdClient=uniqueIdGenerator"});
-		
 		//IIdServer idServer = of.getServie(IIdServer.class.getName(), "RedisBaseIdServer", "0.0.1");
 		ComponentIdServer idServer = of.get(ComponentIdServer.class);
-		
-		String[] longId = idServer.getStringIds(IRequest.class.getName(), 10);
-		System.out.println(Arrays.asList(longId).toString());
+		String longId = idServer.getStringId(IRequest.class);
+		System.out.println(longId);
 
 	}
     
@@ -48,7 +42,7 @@ public class TestRedis {
 		Runnable r = ()->{
 			while(true) {
 				try {
-					long longId = idServer.getLongId(IRequest.class.getName());
+					long longId = idServer.getLongId(IRequest.class);
 					System.out.println(longId);
 					try {
 						//Thread.sleep(500000000);

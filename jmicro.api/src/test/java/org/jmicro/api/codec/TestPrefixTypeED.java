@@ -156,9 +156,9 @@ public class TestPrefixTypeED {
 	public static final class ComplexEntity{
 		
 		public Map<String,Object> params = new HashMap<String,Object>();;
-		private String serviceName;
-		private String method;
-		private Object[] args;
+		private String serviceName="test";
+		private String method="222";
+		private Object[] args=new String[] {"ss"};
 		private String namespace;
 		private String version;
 		private String impl;
@@ -181,12 +181,19 @@ public class TestPrefixTypeED {
 		
 		ByteBuffer bb = encoder.encode(pe);
 		
+		ByteBuffer bb1 = encoder.encode(pe);
+		//ByteBuffer bb2 = encoder.encode(pe);
+		
 		bb.flip();
+		bb1.flip();
 		
 		ComplexEntity ped = decoder.decode(bb);
 		
-		System.out.println(ped);
+		ComplexEntity ped1 = decoder.decode(bb1);
+		//decoder.decode(bb2);
 		
+		System.out.println(ped);
+		System.out.println(ped1);
 	}
 	
 	public static final class ObjectEntity{		

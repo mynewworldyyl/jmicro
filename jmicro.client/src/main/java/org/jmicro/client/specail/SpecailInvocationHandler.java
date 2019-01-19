@@ -39,6 +39,7 @@ import org.jmicro.api.monitor.MonitorConstant;
 import org.jmicro.api.monitor.SF;
 import org.jmicro.api.net.IMessageHandler;
 import org.jmicro.api.net.IRequest;
+import org.jmicro.api.net.IResponse;
 import org.jmicro.api.net.ISession;
 import org.jmicro.api.net.Message;
 import org.jmicro.api.net.RpcRequest;
@@ -47,6 +48,7 @@ import org.jmicro.api.net.ServerError;
 import org.jmicro.api.registry.Server;
 import org.jmicro.api.registry.ServiceItem;
 import org.jmicro.api.registry.ServiceMethod;
+import org.jmicro.client.RpcClientRequestHandler;
 import org.jmicro.common.CommonException;
 import org.jmicro.common.Constants;
 import org.slf4j.Logger;
@@ -77,6 +79,9 @@ public class SpecailInvocationHandler implements InvocationHandler, IMessageHand
 	
 	@Inject(required=true)
 	private IClientSessionManager sessionManager;
+	
+	@Inject(value=Constants.DEFAULT_CLIENT_HANDLER)
+	private RpcClientRequestHandler rpcHandler;
 	
 	@Inject(required=true)
 	private ISelector selector;
@@ -117,8 +122,6 @@ public class SpecailInvocationHandler implements InvocationHandler, IMessageHand
 		JMicroContext.get().setParam(Constants.SERVICE_ITEM_KEY, poItem);
 		JMicroContext.setSrvLoggable();
 		
-		JMicroContext.lid();
-		
 		JMicroContext.get().setObject(Constants.PROXY, po);
 		
 		RpcRequest req = new RpcRequest();
@@ -127,7 +130,7 @@ public class SpecailInvocationHandler implements InvocationHandler, IMessageHand
         req.setNamespace(poItem.getKey().getNamespace());
         req.setVersion(poItem.getKey().getVersion());
         req.setArgs(args);
-        req.setRequestId(idGenerator.getLongId(IRequest.class.getName()));
+        req.setRequestId(idGenerator.getLongId(IRequest.class));
         req.setTransport(Constants.TRANSPORT_NETTY);
         req.setImpl(poItem.getImpl());
         
@@ -135,7 +138,9 @@ public class SpecailInvocationHandler implements InvocationHandler, IMessageHand
 			logger.debug("Item:{}",poItem.getKey().toKey(true, true, true));
 		}
         
-        RpcResponse resp = doRequest(req,po);
+        //RpcResponse resp = doRequest(req,po);
+        
+        IResponse resp = this.rpcHandler.onRequest(req);
         return resp == null ? null :resp.getResult();
 	
 	}
@@ -159,7 +164,6 @@ public class SpecailInvocationHandler implements InvocationHandler, IMessageHand
 		msg.setType(Constants.MSG_TYPE_SYSTEM_REQ_JRPC);
 		msg.setProtocol(Message.PROTOCOL_BIN);
 		msg.setReqId(req.getRequestId());
-		msg.setLinkId(lid);
 		msg.setVersion(Message.MSG_VERSION);
 		msg.setLevel(Message.PRIORITY_NORMAL);
 		
@@ -227,7 +231,7 @@ public class SpecailInvocationHandler implements InvocationHandler, IMessageHand
     		//JMicroContext.get().setParam(Constants.SERVICE_ITEM_KEY, si);
     		//JMicroContext.setSrvLoggable();
         	if(isDebug) {
-        		msg.setId(this.idGenerator.getLongId(Message.class.getName()));
+        		msg.setId(this.idGenerator.getLongId(Message.class));
         	}
     		msg.setLoggable(JMicroContext.get().isLoggable(false));
     		
@@ -377,8 +381,7 @@ public class SpecailInvocationHandler implements InvocationHandler, IMessageHand
     				if(session.getFailPercent() > 50) {
         				logger.warn("session.getFailPercent() > 50,Close session: {},Percent:{}",
         						sb.toString(),session.getFailPercent());
-        				session.close(true);
-        				session = null;
+        				this.sessionManager.closeSession(session);
     				}
     				
     				throw new TimeoutException(req,sb.toString());

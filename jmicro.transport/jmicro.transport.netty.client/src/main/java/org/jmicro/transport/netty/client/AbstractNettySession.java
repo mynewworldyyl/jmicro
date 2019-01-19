@@ -29,6 +29,7 @@ import org.jmicro.api.client.IClientSession;
 import org.jmicro.api.net.AbstractSession;
 import org.jmicro.api.net.ISession;
 import org.jmicro.api.net.Message;
+import org.jmicro.common.CommonException;
 import org.jmicro.common.Constants;
 import org.jmicro.common.util.JsonUtils;
 
@@ -44,7 +45,6 @@ public abstract class AbstractNettySession extends AbstractSession implements IC
 	private ChannelHandlerContext ctx;
 	
 	private boolean isWebSocket = false;
-	
 	
 	public AbstractNettySession(ChannelHandlerContext ctx,int readBufferSize,int heardbeatInterval,boolean isWebSocket) {
 		super(readBufferSize,heardbeatInterval);
@@ -85,6 +85,9 @@ public abstract class AbstractNettySession extends AbstractSession implements IC
 			//ctx.write(msg)
 			//String json = JsonUtils.getIns().toJson(msg);
 			ByteBuffer bb = msg.encode();
+			if(bb == null) {
+				throw new CommonException("data is NULL");
+			}
 			this.counter.add(ISession.CLIENT_WRITE_BYTES, bb.remaining());
 			
 			ByteBuf bbf = Unpooled.buffer(bb.remaining());
@@ -99,6 +102,9 @@ public abstract class AbstractNettySession extends AbstractSession implements IC
 
 	@Override
 	public void close(boolean flag) {
+		if(this.isClose()) {
+			return;
+		}
 		super.close(flag);
 		ctx.close();
 	}

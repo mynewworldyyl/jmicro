@@ -1,5 +1,6 @@
 package org.jmicro.example.provider;
 
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.jmicro.api.JMicroContext;
@@ -7,10 +8,7 @@ import org.jmicro.api.annotation.Cfg;
 import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.SMethod;
 import org.jmicro.api.annotation.Service;
-import org.jmicro.api.annotation.Subscribe;
-import org.jmicro.api.monitor.MonitorConstant;
 import org.jmicro.api.net.IWriteCallback;
-import org.jmicro.api.pubsub.PSData;
 import org.jmicro.api.test.Person;
 import org.jmicro.common.CommonException;
 import org.jmicro.common.Constants;
@@ -25,6 +23,9 @@ public class TestRpcServiceImpl implements ITestRpcService{
 	
 	@Cfg("/defaultLimiterName")
 	private String name;
+	
+	@Cfg(value="/TestRpcServiceImpl/MapParams-*")
+	public Map<String,String> params = null;
 	
 	@Override
 	@SMethod(monitorEnable=0,maxSpeed=100,baseTimeUnit=Constants.TIME_SECONDS,timeout=0)

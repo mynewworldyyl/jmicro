@@ -55,7 +55,7 @@ public class ApiGatewayClientSessionManager implements IClientSessionManager {
 	static final Logger logger = LoggerFactory.getLogger(ApiGatewayClientSessionManager.class);
 
 	private static final AttributeKey<IClientSession> sessionKey = 
-			AttributeKey.newInstance(Constants.SESSION_KEY+System.currentTimeMillis());
+			AttributeKey.newInstance(Constants.IO_SESSION_KEY+System.currentTimeMillis());
 	
 	AttributeKey<Boolean> monitorEnableKey = AttributeKey.newInstance(Constants.MONITOR_ENABLE_KEY);
 	
@@ -128,6 +128,15 @@ public class ApiGatewayClientSessionManager implements IClientSessionManager {
 			return sessions.get(sKey);
 		}
 	}
+	
+	@Override
+	public void closeSession(ISession session) {
+		String skey = (String)session.getParam(SKEY);
+		sessions.remove(skey);
+		if(!session.isClose()) {
+			session.close(true);
+		}
+	}
 
 	private void createWebSocketSession(String sKey, String host, int port) {		
 		
@@ -163,7 +172,7 @@ public class ApiGatewayClientSessionManager implements IClientSessionManager {
 					super.handlerAdded(ctx);
 					ApiGatewayClientSocketSession s = new ApiGatewayClientSocketSession(ctx,readBufferSize,heardbeatInterval);
                     s.setReceiver(receiver);
-					s.putParam(Constants.SESSION_KEY, ctx);
+					s.putParam(Constants.IO_SESSION_KEY, ctx);
 					s.init();
       	           sessions.put(sKey, s);
 				}
@@ -176,6 +185,7 @@ public class ApiGatewayClientSessionManager implements IClientSessionManager {
                  	}
                 	 
                 	ApiGatewayClientSocketSession cs = (ApiGatewayClientSocketSession)ctx.channel().attr(sessionKey).get();
+                 	cs.putParam(SKEY, sKey);
                  	
                  	ByteBuf bb = (ByteBuf)msg;
                  	if(bb.readableBytes() <= 0) {
@@ -211,9 +221,9 @@ public class ApiGatewayClientSessionManager implements IClientSessionManager {
             b.connect(host, port).sync();
 
             ApiGatewayClientSocketSession s = (ApiGatewayClientSocketSession)sessions.get(sKey);
-            ChannelHandlerContext ctx = (ChannelHandlerContext)s.getParam(Constants.SESSION_KEY);
+            ChannelHandlerContext ctx = (ChannelHandlerContext)s.getParam(Constants.IO_SESSION_KEY);
             
-            s.putParam(Constants.SESSION_KEY, ctx);
+            s.putParam(Constants.IO_SESSION_KEY, ctx);
             ctx.channel().attr(sessionKey).set(s);
             
            //LOG.info("session connected : {}", session);

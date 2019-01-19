@@ -81,6 +81,8 @@ public @interface SMethod {
 	 */
 	public long checkInterval() default -1;
 	
+	public int slotSize() default -1;
+	
 	/**
 	 * 空值表示由Service注解确定
 	 * @return

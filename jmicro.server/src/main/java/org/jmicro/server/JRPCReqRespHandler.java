@@ -22,6 +22,7 @@ import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.Inject;
 import org.jmicro.api.codec.ICodecFactory;
 import org.jmicro.api.config.Config;
+import org.jmicro.api.debug.LogUtil;
 import org.jmicro.api.idgenerator.ComponentIdServer;
 import org.jmicro.api.monitor.MonitorConstant;
 import org.jmicro.api.monitor.SF;
@@ -58,7 +59,7 @@ public class JRPCReqRespHandler implements IMessageHandler{
 	private InterceptorManager interceptorManger;
 	
 	@Cfg("/JRPCReqRespHandler/openDebug")
-	private boolean openDebug;
+	private boolean openDebug=false;
 	
 	@Inject
 	private ICodecFactory codeFactory;
@@ -85,14 +86,14 @@ public class JRPCReqRespHandler implements IMessageHandler{
 		RpcResponse resp =  new RpcResponse();
 		
 	    try {
-
+	    	
 			resp.setReqId(msg.getReqId());
 			resp.setMsg(msg);
 			resp.setSuccess(true);
-			resp.setId(idGenerator.getLongId(IResponse.class.getName()));
+			resp.setId(idGenerator.getLongId(IResponse.class));
 			
 			if(msg.isDebugMode()) {
-				msg.setId(idGenerator.getLongId(Message.class.getName()));
+				msg.setId(idGenerator.getLongId(Message.class));
 				msg.setInstanceName(Config.getInstanceName());
 				msg.setTime(System.currentTimeMillis());
 			}
@@ -130,10 +131,10 @@ public class JRPCReqRespHandler implements IMessageHandler{
 							return false;
 						}
 						RpcResponse resp = new RpcResponse(req1.getRequestId(),message);
-						resp.setId(idGenerator.getLongId(IResponse.class.getName()));
+						resp.setId(idGenerator.getLongId(IResponse.class));
 						resp.setSuccess(true);
 						//返回结果包
-						msg.setId(idGenerator.getLongId(Message.class.getName()));
+						msg.setId(idGenerator.getLongId(Message.class));
 						msg.setPayload(codeFactory.getEncoder(msg.getProtocol()).encode(resp));
 						msg.setType(Constants.MSG_TYPE_ASYNC_RESP);
 						
@@ -190,7 +191,6 @@ public class JRPCReqRespHandler implements IMessageHandler{
 				if(SF.isLoggable(this.openDebug,MonitorConstant.LOG_DEBUG)) {
 					SF.doResponseLog(MonitorConstant.LOG_DEBUG,msg.getLinkId(), TAG, resp,null);
 				}
-				
 				s.write(msg);
 			}
 			SF.doSubmit(MonitorConstant.SERVER_REQ_OK, req,resp,null);

@@ -96,9 +96,10 @@ public class ZKRegistry implements IRegistry {
 	
 	//private long startTime = System.currentTimeMillis();
 	
-	private long waitingActInterval = 1000*1*10;
+	private long waitingActInterval = 1000*10*3;
 	
-	private boolean needWaiting = true;
+	@Cfg("/ZKRegistry/needWaiting")
+	private boolean needWaiting = false;
 	
 	private boolean setNeedWaiting() {
 		if(needWaiting) {
@@ -290,11 +291,11 @@ public class ZKRegistry implements IRegistry {
 		String srvKey = item.path(Config.ServiceRegistDir);
 		localRegistedItems.put(srvKey, item);
 		
-		this.persisFromConfig(item);
+		/*this.persisFromConfig(item);
 		String configKey = item.path(Config.ServiceItemCofigDir);
 		if(!this.srvManager.exist(configKey)){
 			this.srvManager.updateOrCreate(item,configKey, false);
-		}
+		}*/
 		
 		if(srvManager.exist(srvKey)){
 			srvManager.removeService(srvKey);

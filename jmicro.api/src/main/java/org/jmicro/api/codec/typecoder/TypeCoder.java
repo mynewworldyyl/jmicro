@@ -13,6 +13,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.jmicro.api.codec.Decoder;
 import org.jmicro.api.codec.TypeCoderFactory;
@@ -27,6 +28,12 @@ import org.slf4j.LoggerFactory;
 public interface TypeCoder<T> extends Comparable<TypeCoder<T>>{
 	
 	public static final Logger logger = LoggerFactory.getLogger(TypeCoder.class);
+	
+	public static final Map<String,Class<?>> classCache = new HashMap<>();
+	public static final Object loadingLock = new Object();
+	
+	public static final Map<Class<?>,List<Field>> classFieldsCache = new HashMap<>();
+	public static final Object loadingFieldLock = new Object();
 	
 	/**
 	 * 指定值的类型编码
@@ -73,17 +80,15 @@ public interface TypeCoder<T> extends Comparable<TypeCoder<T>>{
 			throw new CommonException("should be public class [" + cls.getName() + "]");
 		}
 
-		List<String> fieldNames = new ArrayList<>();
-		Utils.getIns().getFieldNames(fieldNames, cls);
-		fieldNames.sort((v1, v2) -> v1.compareTo(v2));
+		List<Field> fields = loadClassFieldsFromCache(cls);
 
 		TypeCoder coder = TypeCoderFactory.getDefaultCoder();
 		
-		for (int i = 0; i < fieldNames.size(); i++) {
+		for (int i = 0; i < fields.size(); i++) {
 
-			String fn = fieldNames.get(i);
+			Field f  = fields.get(i);
 
-			Field f = Utils.getIns().getClassField(cls, fn);
+			//Field f = Utils.getIns().getClassField(cls, fn);
 			
 			if(Modifier.isTransient(f.getModifiers())) {
 				//transient字段不序列化
@@ -94,7 +99,7 @@ public interface TypeCoder<T> extends Comparable<TypeCoder<T>>{
 
 		}
 	}
-	
+
 	@SuppressWarnings({ "rawtypes", "unchecked" })
 	public static void encodeCollection(ByteBuffer buffer, Collection objs, Class<?> declareFieldType, Type genericType) {
 		if(objs == null || objs.isEmpty()) {
@@ -202,14 +207,12 @@ public interface TypeCoder<T> extends Comparable<TypeCoder<T>>{
 			throw new CommonException("fail to instance class [" +cls.getName()+"]",e1);
 		}
 		
-		List<String> fieldNames = new ArrayList<>();
-		Utils.getIns().getFieldNames(fieldNames,cls);
-		fieldNames.sort((v1,v2)->v1.compareTo(v2));
+		List<Field> fields = loadClassFieldsFromCache(cls);
 		
 		TypeCoder coder = TypeCoderFactory.getDefaultCoder();
-		for(int i =0; i < fieldNames.size(); i++){
+		for(int i =0; i < fields.size(); i++){
 
-			Field f = Utils.getIns().getClassField(cls, fieldNames.get(i));
+			Field f = fields.get(i);
 			
 			if(Modifier.isTransient(f.getModifiers())) {
 				continue;
@@ -341,19 +344,56 @@ public interface TypeCoder<T> extends Comparable<TypeCoder<T>>{
 			throw new CommonException("Decode invalid class full name!");
 		}
 		Class<?> cls = null;
-		try {
-			if(clsName.startsWith("[L")) {
-				clsName = clsName.substring(2,clsName.length()-1);
-				cls = Thread.currentThread().getContextClassLoader().loadClass(clsName);
-				cls = Array.newInstance(cls, 0).getClass();
-			} else {
-				cls = Thread.currentThread().getContextClassLoader()
-						.loadClass(clsName);
-			}
-		} catch (ClassNotFoundException e) {
-			throw new CommonException("class not found:" + clsName,e);
+
+		if(clsName.startsWith("[L")) {
+			clsName = clsName.substring(2,clsName.length()-1);
+			cls = loadClassFromCache(clsName);
+			cls = Array.newInstance(cls, 0).getClass();
+		} else {
+			cls = loadClassFromCache(clsName);
 		}
+	
 	    return cls;
+	}
+	
+	public static Class<?> loadClassFromCache(String clazzName) {
+		if(classCache.containsKey(clazzName)) {
+			return classCache.get(clazzName);
+		} else {
+			synchronized(loadingLock) {
+				if(classCache.containsKey(clazzName)) {
+					return classCache.get(clazzName);
+				}
+				Class<?> cls=null;
+				try {
+					cls = Thread.currentThread().getContextClassLoader().loadClass(clazzName);
+					classCache.put(clazzName, cls);
+					return cls;
+				} catch (ClassNotFoundException e) {
+					throw new CommonException("class not found:" + clazzName,e);
+				}
+			}
+		}
+		
+	}
+	
+	public static List<Field> loadClassFieldsFromCache(Class<?> cls) {
+		if(classFieldsCache.containsKey(cls)) {
+			return classFieldsCache.get(cls);
+		}
+		synchronized(loadingFieldLock) {
+			if(classFieldsCache.containsKey(cls)) {
+				return classFieldsCache.get(cls);
+			}
+			List<Field> fields = new ArrayList<>();
+			Utils.getIns().getFields(fields, cls);
+			if(!fields.isEmpty()) {
+				fields.sort((v1, v2) -> v1.getName().compareTo(v2.getName()));
+			}
+			classFieldsCache.put(cls, fields);
+			return fields;
+		}
+		
 	}
 	
 	/*******************************STATIC METHOD END****************************/

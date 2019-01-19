@@ -25,11 +25,16 @@ import java.io.UnsupportedEncodingException;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 
+import org.jmicro.api.JMicroContext;
+import org.jmicro.api.debug.LogUtil;
 import org.jmicro.api.net.AbstractSession;
 import org.jmicro.api.net.Message;
+import org.jmicro.api.registry.ServiceMethod;
 import org.jmicro.common.Constants;
 import org.jmicro.common.util.JsonUtils;
 import org.jmicro.server.IServerSession;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
@@ -40,6 +45,8 @@ import io.netty.handler.codec.http.websocketx.BinaryWebSocketFrame;
 
 public abstract class AbstractNettySession extends AbstractSession implements IServerSession {
 
+	private static final Logger logger = LoggerFactory.getLogger(AbstractNettySession.class);
+	
 	private ChannelHandlerContext ctx;
 	
 	private int type = Constants.TYPE_SOCKET;
@@ -93,6 +100,24 @@ public abstract class AbstractNettySession extends AbstractSession implements IS
 			ByteBuf bbf = Unpooled.buffer(data.length);
 			bbf.writeBytes(data);
 			ctx.channel().writeAndFlush(bbf);
+			if(msg.isDebugMode()) {
+				long cost = System.currentTimeMillis() - msg.getStartTime();
+				ServiceMethod sm = JMicroContext.get().getParam(Constants.SERVICE_METHOD_KEY, null);
+				
+				if(sm != null) {
+					if(sm.getTimeout() <= cost) {
+						logger.warn("Client ins[{}],reqId[{}],cost[{}],Method[{}], Timeout reqId[{}],TO[{}]",
+								msg.getInstanceName(),msg.getReqId(),cost,msg.getMethod(),
+								msg.getReqId(),sm.getTimeout());
+					}/*else {
+						logger.debug("Client ins[{}],reqId[{}],cost[{}],method[{}]",msg.getInstanceName(),msg.getReqId(),
+								cost,sm.getKey().getMethod());
+					}*/
+				} else {
+					logger.warn("Null ServiceMethod ins[{}],reqId[{}],cost[{}],method[{}]",
+							msg.getInstanceName(),msg.getReqId(),msg.getMethod());
+				}
+			}
 		}
 		//服务方写信息，是下行
 		this.dump(data,false,msg);

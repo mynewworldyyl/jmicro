@@ -19,7 +19,7 @@ public class TimeUtils {
 		unitNameToTimeUnit.put(Constants.TIME_HOUR, TimeUnit.HOURS);
 		unitNameToTimeUnit.put(Constants.TIME_MINUTES, TimeUnit.MINUTES);
 		unitNameToTimeUnit.put(Constants.TIME_SECONDS, TimeUnit.SECONDS);
-		unitNameToTimeUnit.put(Constants.TIME_MICROSECONDS, TimeUnit.MILLISECONDS);
+		unitNameToTimeUnit.put(Constants.TIME_MILLISECONDS, TimeUnit.MILLISECONDS);
 		unitNameToTimeUnit.put(Constants.TIME_MICROSECONDS, TimeUnit.MICROSECONDS);
 		unitNameToTimeUnit.put(Constants.TIME_NANOSECONDS, TimeUnit.NANOSECONDS);
 		
@@ -27,7 +27,7 @@ public class TimeUtils {
 		timeUnitToName.put(TimeUnit.HOURS,Constants.TIME_HOUR);
 		timeUnitToName.put(TimeUnit.MINUTES,Constants.TIME_MINUTES);
 		timeUnitToName.put(TimeUnit.SECONDS,Constants.TIME_SECONDS);
-		timeUnitToName.put(TimeUnit.MILLISECONDS,Constants.TIME_MICROSECONDS);
+		timeUnitToName.put(TimeUnit.MILLISECONDS,Constants.TIME_MILLISECONDS);
 		timeUnitToName.put(TimeUnit.MICROSECONDS,Constants.TIME_MICROSECONDS);
 		timeUnitToName.put(TimeUnit.NANOSECONDS,Constants.TIME_NANOSECONDS);
 		

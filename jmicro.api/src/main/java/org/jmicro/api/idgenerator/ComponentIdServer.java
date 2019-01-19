@@ -1,13 +1,31 @@
 package org.jmicro.api.idgenerator;
 
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Queue;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedQueue;
+
+import org.jmicro.api.annotation.Cfg;
 import org.jmicro.api.annotation.Component;
+import org.jmicro.api.annotation.IDStrategy;
 import org.jmicro.api.annotation.Inject;
+import org.jmicro.api.config.Config;
 import org.jmicro.common.CommonException;
 import org.jmicro.common.Constants;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Component
 public class ComponentIdServer /*implements IIdClient,IIdServer*/{
 
+	private final static Logger logger = LoggerFactory.getLogger(ComponentIdServer.class);
+	
+	private static final int DEFAULT_CATCHE_SIZE = 100;
+	
+	private static final String ID_CONFIG_KEY_PREFIX = "/ComponentIdServer/idgenerator-";
+	
 	/**
 	 * 非ID服务本身获取ID
 	 */
@@ -19,6 +37,19 @@ public class ComponentIdServer /*implements IIdClient,IIdServer*/{
 	 */
 	@Inject(value = Constants.DEFAULT_IDGENERATOR, required = false)
 	private IIdServer idServer;
+	
+	/**
+	 * idgenerator-打头的Key都放到此配置中,*代表ID类的全名
+	 */
+	@Cfg(value=ID_CONFIG_KEY_PREFIX+"*")
+	private Map<String,Integer> cacheCofig = new HashMap<>();
+	
+	@Inject
+	private Config config;
+	
+	private Map<String,Queue<Long>> longIdsCache = new HashMap<>();
+	private Map<String,Queue<Integer>> intIdsCache = new HashMap<>();
+	private Map<String,Queue<String>> strIdsCache = new HashMap<>();
 	
 	private boolean isNotIdServer = false;
 
@@ -52,29 +83,101 @@ public class ComponentIdServer /*implements IIdClient,IIdServer*/{
 			return idServer.getIntIds(idKey, num);
 		}
 	}
-
-	public Long getLongId(String idKey) {
-		if(isNotIdServer) {
-			return idClient.getLongId(idKey);
-		}else {
-			return idServer.getLongId(idKey);
+	
+	public Long getLongId(Class<?> idCls) {
+		
+		synchronized(longIdsCache) {
+			Queue<Long> ids = longIdsCache.get(idCls.getName());
+			if(ids != null && !ids.isEmpty()) {
+				return ids.poll();
+			}
+			
+			ids = longIdsCache.get(idCls.getName());
+			if(ids == null) {
+				ids = new ConcurrentLinkedQueue<Long>();
+				longIdsCache.put(idCls.getName(), ids);
+			}
+			
+			if(ids.isEmpty()) {
+				Long[] reqIds = this.getLongIds(idCls.getName(), getCacheSize(idCls));
+				ids.addAll(Arrays.asList(reqIds));
+			}
+			return ids.poll();
 		}
+		
+		
 	}
 
-	public String getStringId(String idKey) {
-		if(isNotIdServer) {
-			return idClient.getStringId(idKey);
-		}else {
-			return idServer.getStringId(idKey);
+	public String getStringId(Class<?> idCls) {
+		Queue<String> ids = strIdsCache.get(idCls.getName());
+		if(ids != null && !ids.isEmpty()) {
+			return ids.poll();
 		}
+		
+		synchronized(strIdsCache) {
+				
+			ids = strIdsCache.get(idCls.getName());
+			if(ids == null) {
+				ids = new ConcurrentLinkedQueue<String>();
+				strIdsCache.put(idCls.getName(), ids);
+			}
+			
+			if(ids.isEmpty()) {
+				String[] reqIds = this.getStringIds(idCls.getName(), getCacheSize(idCls));
+				ids.addAll(Arrays.asList(reqIds));
+			}
+			}
+		
+		return ids.poll();
 	}
 
-	public Integer getIntId(String idKey) {
-		if(isNotIdServer) {
-			return idClient.getIntId(idKey);
-		} else {
-			return idServer.getIntId(idKey);
+	public Integer getIntId(Class<?> idCls) {
+		Queue<Integer> ids = intIdsCache.get(idCls.getName());
+		if(ids != null && !ids.isEmpty()) {
+			return ids.poll();
 		}
+		
+		synchronized(intIdsCache) {
+			
+			ids = intIdsCache.get(idCls.getName());
+			
+			if(ids == null) {
+				ids = new ConcurrentLinkedQueue<Integer>();
+				intIdsCache.put(idCls.getName(), ids);
+			}
+			
+			if(ids.isEmpty()) {
+				Integer[] reqIds = this.getIntIds(idCls.getName(), getCacheSize(idCls));
+				ids.addAll(Arrays.asList(reqIds));
+			}
+		}
+		
+		return ids.poll();
+	}
+
+	private int getCacheSize(Class<?> idCls) {
+		String p = ID_CONFIG_KEY_PREFIX + idCls.getName();
+		if(cacheCofig.containsKey(p)) {
+			return cacheCofig.get(p);
+		}
+		
+		int size = 0;
+		if(idCls.isAnnotationPresent(IDStrategy.class)) {
+			IDStrategy ids = idCls.getAnnotation(IDStrategy.class);
+			size = ids.value();
+			if(size <= 0) {
+				logger.error("IDStragety config size error:{},size:{},set to default:{}",
+						idCls.getName(),size,DEFAULT_CATCHE_SIZE);
+			}
+		}
+		
+		if(size <= 0) {
+		    size = DEFAULT_CATCHE_SIZE;
+		}
+		
+		cacheCofig.put(p, size);
+		config.createConfig(size+"", p, true);
+		return size;
 	}
 	
 }

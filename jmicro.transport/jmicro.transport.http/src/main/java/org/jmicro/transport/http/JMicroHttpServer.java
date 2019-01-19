@@ -114,7 +114,7 @@ public class JMicroHttpServer implements IServer{
 					Message msg = new Message();
 		    		msg.setType(Constants.MSG_TYPE_REQ_JRPC);
 		    		msg.setProtocol(Message.PROTOCOL_JSON);
-		    		msg.setId(idGenerator.getLongId(Message.class.getName()));
+		    		msg.setId(idGenerator.getLongId(Message.class));
 		    		msg.setReqId(-1L);
 		    		msg.setPayload("");
 		    		msg.setVersion(Message.MSG_VERSION);

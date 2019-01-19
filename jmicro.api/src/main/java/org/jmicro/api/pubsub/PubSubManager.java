@@ -59,7 +59,7 @@ public class PubSubManager {
 	@Cfg(value="/PubSubManager/enable",defGlobal=false)
 	private boolean enable = false;
 	
-	@Cfg(value="/PubSubManager/openDebug")
+	@Cfg(value="/PubSubManager/openDebug",defGlobal=false)
 	private boolean openDebug = true;
 	
 	/**

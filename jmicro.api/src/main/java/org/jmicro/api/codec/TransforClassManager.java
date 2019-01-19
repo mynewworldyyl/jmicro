@@ -48,7 +48,7 @@ public class TransforClassManager {
 		String path = ROOT+"/"+clazz.getName();
 		if(!dataOperator.exist(path)) {
 			if(type == null || type == 0) {
-				type = idGenerator.getIntId(TransforClassManager.class.getName()).shortValue();
+				type = idGenerator.getIntId(TransforClassManager.class).shortValue();
 			}
 			dataOperator.createNode(path, type.toString(), false);
 		}

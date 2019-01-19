@@ -67,6 +67,12 @@ public interface ISession{
 	
 	public boolean isClose();
 	
+	/**
+	 * 关闭会话前等待状态
+	 * @return
+	 */
+	boolean waitingClose();
+	
 	void active();
 	
 	boolean isActive();

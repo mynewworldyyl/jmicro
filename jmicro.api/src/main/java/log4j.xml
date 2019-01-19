@@ -6,7 +6,7 @@
 		<param name="Target" value="System.err"/>
 		<param name="Threshold" value="DEBUG"/>
 		<layout class="org.apache.log4j.PatternLayout">
-			<param name="ConversionPattern" value="[%d][%p,%c{1}] %m%n"/>
+			<param name="ConversionPattern" value="[%L],[%d][%p,%c{1}] %m%n"/>
 		</layout>
 	</appender>
 	
@@ -49,19 +49,22 @@
 			<param name="ConversionPattern" value="[%d][%p,%c{1}] %m%n"/>
 		</layout>
 	</appender>
-
+	
 	<logger name="org.jmicro">
 		<level value="DEBUG"/>
 		<appender-ref ref="jmicro_debug"/>
 	</logger>
+	
 	<logger name="org.apache.zookeeper">
 		<level value="ERROR"/>
 		<appender-ref ref="jmicro_error"/>
 	</logger>
+	
 	 <logger name="org.apache.mina">
 		<level value="ERROR"/>
 		<appender-ref ref="jmicro_error"/>
 	</logger>
+	
 	<root>	
 	    <level value="DEBUG"/>
 		<appender-ref ref="CONSOLE"/>

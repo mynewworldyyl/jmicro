@@ -29,6 +29,8 @@ import org.jmicro.api.timer.TimerTicker;
 import org.jmicro.common.CommonException;
 import org.jmicro.common.util.StringUtils;
 import org.jmicro.common.util.TimeUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * 
@@ -37,6 +39,8 @@ import org.jmicro.common.util.TimeUtils;
  */
 public class ServiceCounter implements IServiceCounter{
 
+	private static final Logger logger = LoggerFactory.getLogger(ServiceCounter.class);
+	
 	private static final int DEFAULT_SLOT_SIZE = 10;
 	
 	//服务唯一标识,粒度到服务方法,=服务名+名称空间+版本+方法名+方法参数标识
@@ -107,15 +111,20 @@ public class ServiceCounter implements IServiceCounter{
 		}
 		return sum;
 	}
-	
-	public double getAvg(TimeUnit tounit,Integer... types) {
+	/**
+	 * 
+	 * @param tounit
+	 * @param types
+	 * @return
+	 */
+	public double getQps(TimeUnit tounit,Integer... types) {
 		if(types.length == 1) {
 			Counter c = getCounter(types[0],false);
 			if(c != null) {
-				return c.getAvg(unit);
+				return c.getQps(unit);
 			}
 		} else {
-			double sum = getTotalWithEx(types);
+			double sum = getValueWithEx(types);
 			long time = TimeUtils.getTime(this.timeWindow, this.unit, tounit);
 			return ((double)sum)/time;
 		}
@@ -135,8 +144,8 @@ public class ServiceCounter implements IServiceCounter{
 	
 	//***********************************************************//
 
-	public double getAvgWithEx(int type,TimeUnit unit) {
-		return getCounter(type,true).getAvg(unit);
+	public double getQpsWithEx(int type,TimeUnit unit) {
+		return getCounter(type,true).getQps(unit);
 	}
 	
 	@Override
@@ -144,10 +153,13 @@ public class ServiceCounter implements IServiceCounter{
 		return getCounter(type,true).getVal();
 	}
 	
-	public Double getTotalWithEx(Integer... types) {
+	/**
+	 * 全部类型的当前值的和
+	 */
+	public Double getValueWithEx(Integer... types) {
 		double sum = 0;
 		for(Integer type : types) {
-			sum += getCounter(type,true).getTotal();
+			sum += getCounter(type,true).getVal();
 		}
 		return sum;
 	}
@@ -202,6 +214,12 @@ public class ServiceCounter implements IServiceCounter{
 		return true;
 	}
 	
+	/**
+	 * 指定类型所占总请求数的百分比
+	 * @param counter
+	 * @param type
+	 * @return
+	 */
 	public static double takePercent(ServiceCounter counter,int type) {
 		Long totalReq = counter.get(MonitorConstant.CLIENT_REQ_BEGIN);
 		Long typeCount = counter.get(type);
@@ -223,15 +241,16 @@ public class ServiceCounter implements IServiceCounter{
 		case MonitorConstant.STATIS_FAIL_PERCENT:
 			Long totalReq = counter.get(MonitorConstant.CLIENT_REQ_BEGIN);
 			if(totalReq != 0) {
-				Long totalFail = counter.getTotalWithEx(MonitorConstant.CLIENT_REQ_EXCEPTION_ERR,MonitorConstant.CLIENT_REQ_TIMEOUT).longValue();
-				result = (totalFail*1.0/totalReq)*100;
+				double totalFail = counter.getValueWithEx(MonitorConstant.CLIENT_REQ_EXCEPTION_ERR,MonitorConstant.CLIENT_REQ_TIMEOUT);
+				result = (totalFail/totalReq)*100;
+				//logger.debug("totalReq:{},totalFail:{},Percent:{}",totalReq,totalFail,result);
 			}
 			break;
 		case MonitorConstant.STATIS_TOTAL_REQ:
 			result = 1.0 * counter.get(MonitorConstant.CLIENT_REQ_BEGIN);		
 			break;
 		case MonitorConstant.STATIS_TOTAL_RESP:
-			result = counter.getTotalWithEx(MonitorConstant.CLIENT_REQ_BUSSINESS_ERR,MonitorConstant.CLIENT_REQ_OK,MonitorConstant.CLIENT_REQ_EXCEPTION_ERR);
+			result = counter.getValueWithEx(MonitorConstant.CLIENT_REQ_BUSSINESS_ERR,MonitorConstant.CLIENT_REQ_OK,MonitorConstant.CLIENT_REQ_EXCEPTION_ERR);
 			break;
 		case MonitorConstant.STATIS_TOTAL_SUCCESS:
 			result =  1.0 * counter.get(MonitorConstant.CLIENT_REQ_ASYNC1_SUCCESS)+
@@ -260,13 +279,28 @@ public class ServiceCounter implements IServiceCounter{
 			}
 			break;
 		case MonitorConstant.STATIS_QPS:
-			result = counter.getAvg(TimeUnit.SECONDS,MonitorConstant.CLIENT_REQ_OK);
+			result = counter.getQps(TimeUnit.SECONDS,MonitorConstant.CLIENT_REQ_OK);
 		}
 		return result;
 	
 	}
 	
-	
+	/**
+	 *                                                             Tx
+	 *                   s0v             s1v               s2v     |       s3v 
+	 * |                  |                |                |      |         |
+	 * s0----------------s1---------------s2---------------s3---------------------->time zoone
+	 * 
+	 * s0,s1,s2,s3表示3个槽位，s0v,s1v,s2v,s3v表示有效时间最大值，Tx表示任意一个时间点。
+	 * 
+	 * 槽位有效时间之外的槽位都视为无效槽位
+	 * 
+	 * 任意时刻Tx，计算槽位Sx是否有效，假定Sxv表示任意槽位有效时间最大值
+	 *  Tx－Sxv ＞　timewindow 即表示 Sx为无效槽位，将其值设置为０即可
+	 *  
+	 * 当前槽位定义为： Tx < Sxv 且  Tx > Sxv-slotSizeInMilliseconds
+	 * 
+	 */
 	static class Counter implements ITickerAction{
 		
 		//时间窗口,单位毫秒,统计只保持时间窗口内的数据,超过时间窗口的数据自动丢弃
@@ -307,11 +341,17 @@ public class ServiceCounter implements IServiceCounter{
 			this.header = 0;
 			
 			long curTime = System.currentTimeMillis();
+			//槽位 有效时间=slotSizeInMilliseconds ~ (timeStart + slotSizeInMilliseconds)
+			//如果当前时间在有效时间内，则定义为当前槽位
 			for(int i = 0; i < this.slotLen; i++) {
-				this.slots[i] = new Slot(curTime + slotSizeInMilliseconds*i,0);
+				this.slots[i] = new Slot(curTime + slotSizeInMilliseconds*(i+1),0);
 			}
 		}
 		
+		/**
+		 * 任意时刻Tx，计算槽位Sx是否有效，假定Sxv表示任意槽位有效时间最大值
+	     * Tx－Sxv ＞　timewindow 即表示 Sx为无效槽位，将其值设置为０即可
+		 */
 		@Override
 		public void act(String key,Object attachement) {
 			/*
@@ -319,7 +359,7 @@ public class ServiceCounter implements IServiceCounter{
 			 */
 			long curTime = System.currentTimeMillis();
 			for(int i = 0; i < this.slots.length; i++) {
-				if(curTime - this.slots[i].getTimeStart() > timeWindow ) {
+				if((curTime - this.slots[i].getTimeEnd()) > timeWindow ) {
 					//槽位时间值已经超过时间窗口，重置之
 					this.slots[i].reset();
 				}
@@ -327,10 +367,11 @@ public class ServiceCounter implements IServiceCounter{
 		}
 		
 		/**
+		 * QPS
 		 * 当前窗口同平均值，总值除时间窗口
 		 * @return
 		 */
-		public double getAvg(TimeUnit timeUnit) {
+		public double getQps(TimeUnit timeUnit) {
 			long sum = getVal();
 			long time = TimeUtils.getTime(this.timeWindow, TimeUnit.MILLISECONDS, timeUnit);
 			
@@ -380,10 +421,20 @@ public class ServiceCounter implements IServiceCounter{
 			currentSlot().add(v);
 		}
 		
+		private boolean isCur(Slot s,long curTime) {
+			return curTime < s.getTimeEnd() && curTime > (s.getTimeEnd() - slotSizeInMilliseconds);
+		}
+		
+		/**
+		 * 当前槽位定义为： Tx < Sxv 且  Tx > Sxv-slotSizeInMilliseconds
+		 * 槽位有 效时间=slotSizeInMilliseconds ~ (timeStart + slotSizeInMilliseconds)
+		 * 如果当前时间在有效时间内，则定义为当前槽位
+		 * @return
+		 */
 		private Slot currentSlot() {
 			long curTime = System.currentTimeMillis();
 			Slot slot = slots[header];
-			if(curTime < slot.getTimeStart() + slotSizeInMilliseconds) {
+			if(isCur(slot,curTime)) {
 				//当前槽位还在时间窗口内,直接可以返回
 				return slot;
 			} else {
@@ -391,26 +442,30 @@ public class ServiceCounter implements IServiceCounter{
 				try {
 					if(isLock = locker.tryLock(5, TimeUnit.MILLISECONDS)) {
 						slot = slots[header];
-						if(curTime < slot.getTimeStart() + slotSizeInMilliseconds) {
+						if(isCur(slot,curTime)) {
 							//线程等待锁时,已经有另外一个线程在重置当前旋转木马
 							return slot;
-						}	
+						}
+						
 						int curHeader = header;
 						//当前槽位已经过时,新建之,过去的时间可能跨过了多个槽位
-						while(curTime > slot.getTimeStart() + slotSizeInMilliseconds){
+						while(!isCur(slot,curTime)){
 							//循环转,直到进入当前时间窗口
+							long preSlotTimeEnd = slots[header].getTimeEnd();
 							header = (header+1) % slotLen;
-							slots[header].reset();
+							slot = slots[header];
+							//重置槽位的值
+							slot.reset();
 							if(curHeader == header ){
 								//转了一圈,全部槽位都已经无效,直接从当前时间开始计算,防止长时间没使用之后的空转
-								slots[header].setTimeStart(curTime + slotSizeInMilliseconds);
+								slot.setTimeEnd(curTime + slotSizeInMilliseconds);
 								break;
 							} else {
-								slots[header].setTimeStart(slot.getTimeStart() + slotSizeInMilliseconds);
-								slot = slots[header];
+								//有效时间在前一个时间基础上前移一个
+								slot.setTimeEnd(preSlotTimeEnd+ slotSizeInMilliseconds);
 							}
 						}	
-						return slots[header];
+						return slot;
 					}
 				} catch (InterruptedException e) {
 					e.printStackTrace();
@@ -424,6 +479,10 @@ public class ServiceCounter implements IServiceCounter{
 			}
 		}
 
+		/**
+		 * 计数器启动以来的总值
+		 * @return
+		 */
 		public long getTotal() {
 			return total.get();
 		}
@@ -431,25 +490,25 @@ public class ServiceCounter implements IServiceCounter{
 	
 	static class Slot {
 		
-		private long timeStart;
+		private long timeEnd;
 		
 		private AtomicLong val;
 		
-		public Slot(long startTime,long v) {
-			this.timeStart = startTime;
-			this.val = new AtomicLong();
+		public Slot(long timeEnd,long v) {
+			this.timeEnd = timeEnd;
+			this.val = new AtomicLong(v);
 		}
 		
 		public long getVal() {
 			return val.get();
 		}
 
-		public long getTimeStart() {
-			return timeStart;
+		public long getTimeEnd() {
+			return timeEnd;
 		}
 
-		public void setTimeStart(long timeStart) {
-			this.timeStart = timeStart;
+		public void setTimeEnd(long timeEnd) {
+			this.timeEnd = timeEnd;
 		}
 
 		public void reset() {

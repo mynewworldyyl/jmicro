@@ -16,10 +16,15 @@
  */
 package org.jmicro.idgenerator;
 
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+
 import org.jmicro.api.JMicro;
+import org.jmicro.api.annotation.Cfg;
 import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.Inject;
-import org.jmicro.api.annotation.Service;
 import org.jmicro.api.idgenerator.IIdServer;
 import org.jmicro.common.Constants;
 import org.jmicro.common.Utils;

@@ -23,9 +23,11 @@ import java.util.Queue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.jmicro.api.config.Config;
+import org.jmicro.api.debug.LogUtil;
 import org.jmicro.api.monitor.MonitorConstant;
 import org.jmicro.api.monitor.ServiceCounter;
 import org.slf4j.Logger;
@@ -67,11 +69,13 @@ public abstract class AbstractSession implements ISession{
 	
 	private Queue<ByteBuffer> readQueue = new ConcurrentLinkedQueue<ByteBuffer>();
 	
+	private AtomicBoolean waitingClose = new AtomicBoolean(false);
+	
 	private Worker worker = new Worker();
 	
 	private class Worker extends Thread {
 		public void run() {
-			doWork();
+			//doWork();
 		}
 	}
 	
@@ -81,17 +85,17 @@ public abstract class AbstractSession implements ISession{
 		this.heardbeatInterval = heardbeatInterval;
 		if(!this.isServer()) {
 			//会对客户端会话，支持N个RPC同时并发
-			worker.setName("JMicro-"+Config.getInstanceName()+"_Session_Reader"+ID.incrementAndGet());
-			worker.start();
+			//worker.setName("JMicro-"+Config.getInstanceName()+"_Session_Reader"+ID.incrementAndGet());
+			//worker.start();
 		}
 	}
 	
 	public void init() {
 		InetSocketAddress ia = this.getRemoteAddress();
-		this.counter = new ServiceCounter(ia.getHostString()+":"+ia.getPort(),STATIS_TYPES,5,10,TimeUnit.SECONDS);
+		this.counter = new ServiceCounter(ia.getHostString()+":"+ia.getPort(),STATIS_TYPES,30,30,TimeUnit.SECONDS);
 	}
 	
-	public void doWork() {
+	private void doWork() {
 		while(!this.isClose) {
 			try {
 				if(readQueue.isEmpty()) {
@@ -112,7 +116,8 @@ public abstract class AbstractSession implements ISession{
 	
 	@Override
 	public void receive(ByteBuffer msg) {
-		if(this.isServer()) {
+		doRead(msg);
+		/*if(this.isServer()) {
 			doRead(msg);
 		} else {
 			readQueue.offer(msg);
@@ -121,7 +126,7 @@ public abstract class AbstractSession implements ISession{
 					worker.notify();;
 				}
 			}
-		}
+		}*/
 	}
 
 	private void doRead(ByteBuffer msg) {
@@ -152,7 +157,7 @@ public abstract class AbstractSession implements ISession{
      	}
     	
      	while(true) {
-     		
+     		 long startTime = System.currentTimeMillis();
      		 Message message = null;
               try {
             	 message =  Message.readMessage(lb);
@@ -168,13 +173,16 @@ public abstract class AbstractSession implements ISession{
 				throw e;
 			}
               
+              message.setStartTime(startTime);
               //服务言接收信息是上行，客户端接收信息是下行
        		  //dump(lb.array(),this.isServer(),message);
               
-              if(openDebug) {
-              	logger.debug("Got message reqId: "+ message.getReqId());
+              if(message.isDebugMode()) {
+              	LogUtil.B.debug("Message ins[{}] reqId[{}],method[{}]",message.getInstanceName(),
+              			message.getReqId(),message.getMethod());
               }
-             //JMicroContext.configProvider(message);
+              //JMicroContext.configProvider(message);
+             
               receiver.receive(this,message);
      	 }
      	
@@ -240,7 +248,7 @@ public abstract class AbstractSession implements ISession{
 
 	@Override
 	public Double getTakeAvg(int type) {
-		return counter.getAvg(TimeUnit.SECONDS, type);
+		return counter.getQps(TimeUnit.SECONDS, type);
 	}
 	
 	public abstract InetSocketAddress getLocalAddress();
@@ -265,6 +273,11 @@ public abstract class AbstractSession implements ISession{
 	@Override
 	public void active() {
 		lastActiveTime = System.currentTimeMillis();
+	}
+
+	@Override
+	public boolean waitingClose() {
+		return waitingClose.compareAndSet(false, true);
 	}
 
 	@Override
@@ -307,9 +320,9 @@ public abstract class AbstractSession implements ISession{
 
 	@Override
 	public void close(boolean flag) {
+		this.isClose = true;
 		params.clear();
 		this.sessionId=-1L;
-		this.isClose = true;
 		synchronized (worker) {
 			worker.notify();
 		}

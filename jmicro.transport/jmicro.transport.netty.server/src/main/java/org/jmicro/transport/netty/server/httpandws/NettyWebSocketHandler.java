@@ -48,7 +48,7 @@ public class NettyWebSocketHandler  extends SimpleChannelInboundHandler<TextWebS
 	static final Logger logger = LoggerFactory.getLogger(NettyServerSession.class);
 	
 	private static final AttributeKey<NettyServerSession> sessionKey = 
-			AttributeKey.newInstance(Constants.SESSION_KEY);
+			AttributeKey.newInstance(Constants.IO_SESSION_KEY);
 	
 	@Cfg("/MinaServer/readBufferSize")
 	private int readBufferSize=1024*4;

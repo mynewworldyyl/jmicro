@@ -27,7 +27,7 @@ public class NettySocketHandler extends ChannelInboundHandlerAdapter {
     static final Logger logger = LoggerFactory.getLogger(NettySocketHandler.class);
 	
 	private static final AttributeKey<NettyServerSession> sessionKey = 
-			AttributeKey.newInstance(Constants.SESSION_KEY+"Netty" + System.currentTimeMillis());
+			AttributeKey.newInstance(Constants.IO_SESSION_KEY+"Netty" + System.currentTimeMillis());
 	
 	@Cfg("/MinaServer/readBufferSize")
 	private int readBufferSize = 1024*4;
@@ -59,9 +59,9 @@ public class NettySocketHandler extends ChannelInboundHandlerAdapter {
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg)
             throws Exception {
-    	if(openDebug) {
+    	/*if(openDebug) {
     		logger.debug("channelRead Data: {}",msg);
-    	}
+    	}*/
     	if(!(msg instanceof ByteBuf)) {
     		ctx.fireChannelRead(msg);
     		return;
@@ -88,17 +88,17 @@ public class NettySocketHandler extends ChannelInboundHandlerAdapter {
     @Override
     public void channelReadComplete(ChannelHandlerContext ctx) throws Exception {
         ctx.flush();
-        if(openDebug) {
+        /*if(openDebug) {
     		logger.debug("channelReadComplete: {}",ctx);
-    	}
+    	}*/
     }
     
     @Override
     public void handlerAdded(ChannelHandlerContext ctx) throws Exception {
     	super.handlerAdded(ctx);
-    	if(openDebug) {
+    	/*if(openDebug) {
     		logger.debug("handlerAdded: {}",ctx);
-    	}
+    	}*/
     	NettyServerSession session = new NettyServerSession(ctx,readBufferSize,heardbeatInterval,
     			Constants.TYPE_SOCKET);
     	session.setReceiver(receiver);

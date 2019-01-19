@@ -124,6 +124,8 @@ public @interface Service {
 	//统计服务数据基本时长，单位同baseTimeUnit确定  @link SMethod
 	public long timeWindow() default 1000*10;
 	
+	public int slotSize() default 100;
+	
 	/**
 	 * 采样统计数据周期，单位由baseTimeUnit确定
 	 *   小于0表示由Service注解确定，大于0表示启用

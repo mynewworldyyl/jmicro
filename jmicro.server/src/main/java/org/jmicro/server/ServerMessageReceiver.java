@@ -25,7 +25,6 @@ import org.jmicro.api.annotation.Cfg;
 import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.Inject;
 import org.jmicro.api.codec.ICodecFactory;
-import org.jmicro.api.config.Config;
 import org.jmicro.api.executor.ExecutorConfig;
 import org.jmicro.api.executor.ExecutorFactory;
 import org.jmicro.api.idgenerator.ComponentIdServer;
@@ -42,6 +41,7 @@ import org.jmicro.common.Constants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import co.paralleluniverse.fibers.Fiber;
 import co.paralleluniverse.fibers.Suspendable;
 
 /**
@@ -128,6 +128,7 @@ public class ServerMessageReceiver implements IMessageReceiver{
 		executor.submit(()->{
 			JMicroContext.get().mergeParams(jc);
 			doReceive((IServerSession)s,msg);
+			
 		});
 		
 		/*new Thread(()->{

@@ -36,7 +36,6 @@ import org.jmicro.api.monitor.SubmitItem;
 import org.jmicro.api.pubsub.PSData;
 import org.jmicro.api.pubsub.PubSubManager;
 import org.jmicro.api.registry.ServiceMethod;
-import org.jmicro.api.registry.UniqueServiceKey;
 import org.jmicro.api.timer.ITickerAction;
 import org.jmicro.api.timer.TimerTicker;
 import org.jmicro.common.Constants;
@@ -82,10 +81,6 @@ public class ServiceReqMonitor extends AbstractMonitorDataSubscriber implements 
 	
 	@JMethod("init")
 	public void init() {}
-	
-	private String typeKey(String key, Integer type) {
-		return key+ UniqueServiceKey.SEP + type;
-	}
 	
 	public void act0(String key,Object attachement) {
 		ServiceCounter counter = counters.get(key);
@@ -199,7 +194,7 @@ public class ServiceReqMonitor extends AbstractMonitorDataSubscriber implements 
 		case MonitorConstant.STATIS_FAIL_PERCENT:
 			Long totalReq = counter.get(MonitorConstant.CLIENT_REQ_BEGIN);
 			if(totalReq != 0) {
-				Long totalFail = counter.getTotalWithEx(MonitorConstant.CLIENT_REQ_EXCEPTION_ERR,MonitorConstant.CLIENT_REQ_TIMEOUT).longValue();
+				Long totalFail = counter.getValueWithEx(MonitorConstant.CLIENT_REQ_EXCEPTION_ERR,MonitorConstant.CLIENT_REQ_TIMEOUT).longValue();
 				result = (totalFail*1.0/totalReq)*100;
 			}
 			break;
@@ -207,7 +202,7 @@ public class ServiceReqMonitor extends AbstractMonitorDataSubscriber implements 
 			result = 1.0 * counter.get(MonitorConstant.CLIENT_REQ_BEGIN);		
 			break;
 		case MonitorConstant.STATIS_TOTAL_RESP:
-			result = counter.getTotalWithEx(MonitorConstant.CLIENT_REQ_BUSSINESS_ERR,MonitorConstant.CLIENT_REQ_OK,MonitorConstant.CLIENT_REQ_EXCEPTION_ERR);
+			result = counter.getValueWithEx(MonitorConstant.CLIENT_REQ_BUSSINESS_ERR,MonitorConstant.CLIENT_REQ_OK,MonitorConstant.CLIENT_REQ_EXCEPTION_ERR);
 			break;
 		case MonitorConstant.STATIS_TOTAL_SUCCESS:
 			result =  1.0 * counter.get(MonitorConstant.CLIENT_REQ_ASYNC1_SUCCESS)+
@@ -236,7 +231,7 @@ public class ServiceReqMonitor extends AbstractMonitorDataSubscriber implements 
 			}
 			break;
 		case MonitorConstant.STATIS_QPS:
-			result = counter.getAvg(TimeUnit.SECONDS,MonitorConstant.CLIENT_REQ_OK);
+			result = counter.getQps(TimeUnit.SECONDS,MonitorConstant.CLIENT_REQ_OK);
 		}
 		return result;
 	}

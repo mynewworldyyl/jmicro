@@ -103,7 +103,7 @@ public class ServiceInvocationHandler implements InvocationHandler{
         req.setNamespace(poItem.getKey().getNamespace());
         req.setVersion(poItem.getKey().getVersion());
         req.setArgs(args);
-        req.setRequestId(idGenerator.getLongId(IRequest.class.getName()));
+        req.setRequestId(idGenerator.getLongId(IRequest.class));
         req.setTransport(Constants.TRANSPORT_NETTY);
         req.setImpl(poItem.getImpl());
         

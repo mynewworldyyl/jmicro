@@ -77,6 +77,8 @@ public final class Message {
 	//是否启用服务级log
 	public static final short FLAG0_LOGGABLE = 1 << 3;
 	
+	private  transient long startTime = -1;
+	
 	//1 byte length
 	private byte version;
 		
@@ -510,6 +512,14 @@ public final class Message {
 
 	public void setMethod(String method) {
 		this.method = method;
+	}
+	
+	public long getStartTime() {
+		return startTime;
+	}
+
+	public void setStartTime(long startTime) {
+		this.startTime = startTime;
 	}
 
 	@Override

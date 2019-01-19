@@ -82,6 +82,8 @@ public final class ServiceItem{
 	//统计服务数据基本时长，单位同baseTimeUnit确定 @link SMethod
 	private long timeWindow = -1;
 	
+	private int slotSize = 60;
+	
 	//采样统计数据周期，单位由baseTimeUnit确定
 	private long checkInterval = -1;
 		
@@ -156,6 +158,7 @@ public final class ServiceItem{
 		this.timeWindow = p.timeWindow;
 		this.checkInterval = p.checkInterval;
 		this.handler = p.handler;
+		this.slotSize = p.slotSize;
 		
 		for(ServiceMethod sm : p.getMethods()){
 			ServiceMethod nsm = this.getMethod(sm.getKey().getMethod(), sm.getKey().getParamsStr());
@@ -205,6 +208,14 @@ public final class ServiceItem{
 
 	public int getMonitorEnable() {
 		return monitorEnable;
+	}
+
+	public int getSlotSize() {
+		return slotSize;
+	}
+
+	public void setSlotSize(int slotSize) {
+		this.slotSize = slotSize;
 	}
 
 	public void setMonitorEnable(int monitorEnable) {

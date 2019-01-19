@@ -27,7 +27,7 @@ public interface Constants {
 	
 	public static final String CFG_ROOT="/jmicro";
 	//在CFG_ROOT下目录名称前缀为JMICRO系统保留，应用不可使用
-	public static final String DEFAULT_PREFIX="jm_";
+	public static final String DEFAULT_PREFIX="JMICRO_";
 	
 	public static final String SIDE_COMSUMER = "comsumer";
 	public static final String SIDE_PROVIDER="provider";
@@ -73,7 +73,7 @@ public interface Constants {
 	public static final String DEFAULT_IDGENERATOR = "defaultGenerator";
 	
 	public static final String CHARSET = "UTF-8";
-	public static final String SESSION_KEY = "_sessionKey";
+	public static final String IO_SESSION_KEY = "_iosessionKey";
 	
 	//public static final String CONFIG_ROOT = CFG_ROOT + "/config";
 	//public static final String RAFT_CONFIG_ROOT_KEY = "configRoot";

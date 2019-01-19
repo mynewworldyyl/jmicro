@@ -54,7 +54,7 @@ public class ServiceMonitorDataImpl implements IServiceMonitorData{
 	
 	@Override
 	public Integer subsicribe(String service) {
-		Integer id = idGenerator.getIntId(ServiceStatis.class.getName());
+		Integer id = idGenerator.getIntId(ServiceStatis.class);
 		final String lkey = DegradeManager.AVG_TIME_ROOT+service;
 		
 		IWriteCallback sender = JMicroContext.get().getParam(Constants.CONTEXT_CALLBACK_SERVICE, null);

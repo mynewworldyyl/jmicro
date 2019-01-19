@@ -87,7 +87,7 @@ public class ApiRequestMessageHandler implements IMessageHandler{
 		resp.setReqId(req.getReqId());
 		resp.setMsg(msg);
 		resp.setSuccess(true);
-		resp.setId(idGenerator.getLongId(ApiResponse.class.getName()));
+		resp.setId(idGenerator.getLongId(ApiResponse.class));
 		
 		long lid = JMicroContext.lid();
 
@@ -147,7 +147,7 @@ public class ApiRequestMessageHandler implements IMessageHandler{
 						JMicroContext.get().mergeParams(jc);
 						resp.setSuccess(true);
 						resp.setResult(rst);
-						resp.setId(idGenerator.getLongId(ApiResponse.class.getName()));
+						resp.setId(idGenerator.getLongId(ApiResponse.class));
 						msg.setPayload(ICodecFactory.encode(codecFactory, resp, msg.getProtocol()));
 						session.write(msg);
 						if(SF.isLoggable(this.openDebug,MonitorConstant.LOG_DEBUG)) {

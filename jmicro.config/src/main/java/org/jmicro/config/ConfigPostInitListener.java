@@ -19,8 +19,11 @@ package org.jmicro.config;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.lang.reflect.ParameterizedType;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.zookeeper.KeeperException;
 import org.jmicro.api.annotation.Cfg;
@@ -47,6 +50,14 @@ public class ConfigPostInitListener extends PostInitListenerAdapter {
 	public ConfigPostInitListener() {
 	}
 	
+	/**
+	 * 1。命令行参数中查找，如果找不到，进入2
+	 * 2。优先在服务配置中查找配置，如果找不到，进入3
+	 * 3。在全局配置中查找，如果找不到，进入4
+	 * 4。在环境系统环境变量中找，如果没找到，返回NULL
+	 * 5。从对象中找默认值，如果找到则进入6，如果没找到，判断required值如果是true报错，否则不处理返回
+	 * 6。判断defGlobal=true，将值配置到全局配置中，否则配置到局部配置中
+	 */
 	@Override
 	public void preInit(Object obj,Config cfg) {
 		
@@ -60,51 +71,175 @@ public class ConfigPostInitListener extends PostInitListenerAdapter {
 
 		 for(Field f : fields){
 			if(!f.isAnnotationPresent(Cfg.class)){
+				//不是配置类字段
 				continue;
 			}
 			
 			Cfg cfgAnno = f.getAnnotation(Cfg.class);
 			if(StringUtils.isBlank(cfgAnno.value())){
+				//配置路径不能为NULL或空格
 				throw new CommonException("Class ["+cls.getName()+",Field:"+f.getName()+"],Cfg path is NULL");
 			}
 			
 			String prefix = cfgAnno.value();
-			if(prefix.startsWith("/")){
+			if(!prefix.startsWith("/")){
 				prefix = "/"+prefix;
 			}
 			
-			String value = null;
-			//优先类全名组成路径
-			String path = "/" + cls.getName() + prefix;
-			
-			value = cfg.getString(path, null);
-			if(StringUtils.isEmpty(value)) {
-				//类简称组成路径
-				path = "/" + cls.getSimpleName() + prefix;
-				value = cfg.getString(path, null);
-			}
-			
-			if(StringUtils.isEmpty(value)){
-				//值直接指定绝对路径
-				path = cfgAnno.value();
-				value = cfg.getString(path, null);
-			}
-			
-			if(!StringUtils.isEmpty(value)){
-				 setValue(f,obj,value);
-			} else {
-				Object v = getFieldValue(f,obj);
-				path = cfgAnno.value();
-				if(v == null ) {
-					if(cfgAnno.required()) {
-						throw new CommonException("Class ["+cls.getName()+",Field:"+f.getName()+"] value: "+cfgAnno.value()+" is required");
-					}
-				} else {
-					cfg.createConfig(v.toString(), path, cfgAnno.defGlobal());
+			String path = null;
+					
+			if(Map.class.isAssignableFrom(f.getType())) {
+				if(!prefix.endsWith("*")) {
+					throw new CommonException("Class ["+cls.getName()+",Field:"+f.getName()+"] invalid map path ["+cfgAnno.value()+"] should end with '*'") ;
 				}
+				Map<String,String> ps = new HashMap<>();
+				//符合条件的全部值都要监听，只要有增加进来，都加到Map里面去
+				
+				//优先类全名组成路径
+				path = "/" + cls.getName() + prefix;
+				getMapConfig(cfg,path,f,ps);
+				watch(f,obj,path,cfg);
+				
+				path = "/" + cls.getSimpleName() + prefix;
+				getMapConfig(cfg,path,f,ps);
+				watch(f,obj,path,cfg);
+				
+				path = prefix;
+				getMapConfig(cfg,path,f,ps);
+				watch(f,obj,path,cfg);
+				
+				if(!ps.isEmpty()) {
+					setMapValue(f,obj,ps);
+				}
+				
+			} else {
+				String value = null;
+				//优先类全名组成路径
+				path = "/" + cls.getName() + prefix;
+				
+				value = getValueFromConfig(cfg,path,f);
+				if(StringUtils.isEmpty(value)) {
+					//类简称组成路径
+					path = "/" + cls.getSimpleName() + prefix;
+					value = getValueFromConfig(cfg,path,f);
+				}
+				
+				if(StringUtils.isEmpty(value)){
+					//值直接指定绝对路径
+					path = prefix;
+					value = getValueFromConfig(cfg,path,f);
+				}
+				
+				if(!StringUtils.isEmpty(value)){
+					 setValue(f,obj,value);
+				} else {
+					Object v = getFieldValue(f,obj);
+					path = cfgAnno.value();
+					if(v == null ) {
+						if(cfgAnno.required()) {
+							throw new CommonException("Class ["+cls.getName()+",Field:"+f.getName()+"] value: "+cfgAnno.value()+" is required");
+						}
+					} else {
+						cfg.createConfig(v.toString(), path, cfgAnno.defGlobal());
+					}
+				}
+				watch(f,obj,path,cfg);
 			}
-			watch(f,obj,path,cfg);
 		}
+	}
+	
+	private void setMapValue(Field f, Object obj, Map<String, String> ps) {
+		if(ps == null || ps.isEmpty()) {
+			return ;
+		}
+		
+		ParameterizedType genericType = (ParameterizedType) f.getGenericType();
+		if(genericType == null){
+			throw new CommonException("Must be ParameterizedType for cls:"+ f.getDeclaringClass().getName()+",field: "+f.getName());
+		}
+		Class<?> keyType = (Class<?>)genericType.getActualTypeArguments()[0];
+		if(keyType != String.class) {
+			throw new CommonException("Map config key only support String as key");
+		}
+		
+		Class<?> valueType = (Class<?>)genericType.getActualTypeArguments()[1];
+		
+		Map map = (Map) getFieldValue(f,obj);
+		
+		if(map == null){
+			map = new HashMap();
+		}
+		
+		for(Map.Entry<String, String> e: ps.entrySet()) {
+			Object v = Utils.getIns().getValue(valueType,e.getValue(),null);
+			map.put(e.getKey(), v);
+		}
+		
+		setObjectVal(obj,f,map);
+		
+	}
+	
+	private void setObjectVal(Object obj,Field f,Object srv) {
+
+		String setMethodName = "set"+f.getName().substring(0, 1).toUpperCase()+f.getName().substring(1);
+		Method m = null;
+		try {
+			 m = obj.getClass().getMethod(setMethodName, f.getType());
+			 m.invoke(obj, srv);
+		} catch (InvocationTargetException | NoSuchMethodException e1) {
+		    boolean bf = f.isAccessible();
+			if(!bf) {
+				f.setAccessible(true);
+			}
+			try {
+				f.set(obj, srv);
+			} catch (IllegalArgumentException | IllegalAccessException e) {
+				throw new CommonException("",e);
+			}
+			if(!bf) {
+				f.setAccessible(bf);
+			} 
+		}catch(SecurityException | IllegalAccessException | IllegalArgumentException e1){
+			throw new CommonException("Class ["+obj.getClass().getName()+"] field ["+ f.getName()+"] dependency ["+f.getType().getName()+"] error",e1);
+		}
+	
+	}
+
+	private void getMapConfig(Config cfg,String key,Field f,Map<String,String> params) {
+		Map<String,String> result = cfg.getParamByPattern(key);
+		if(result != null && !result.isEmpty()) {
+			params.putAll(result);
+		}
+	}
+	
+	private String getValueFromConfig(Config cfg,String key,Field f) {
+		//boolean isGlobal = f.getAnnotation(Cfg.class).defGlobal();
+		String val = Config.getCommandParam(key, String.class, null);
+		if(!StringUtils.isEmpty(val)) {
+			//在配置中心中建立配置，以便能动态修改，在系统 关闭后，配置会自动删除，以使下次还从命令行读取初始值
+			cfg.createConfig(val, key, false,true);
+			return val;
+		}
+		
+		val = cfg.getServiceParam(key, String.class, null);
+		if(!StringUtils.isEmpty(val)) {
+			return val;
+		}
+		
+		val = cfg.getGlobalParam(key, String.class, null);
+		if(!StringUtils.isEmpty(val)) {
+			return val;
+		}
+		
+		 val = Config.getEnvParam(key);
+		if(!StringUtils.isEmpty(val)) {
+			//在配置中心中建立配置，以便能动态修改，在系统 关闭后，配置会自动删除，以使下次还从命令行读取初始值
+			cfg.createConfig(val, key, false,true);
+			return val;
+		}
+		return null;
+	
+		
 	}
 
 	private Object getFieldValue(Field f, Object obj) {
@@ -152,7 +287,12 @@ public class ConfigPostInitListener extends PostInitListenerAdapter {
 			}
 			
 			Cfg cfg = f.getAnnotation(Cfg.class);
-			Object v = Utils.getIns().getValue(f.getType(),value,f.getGenericType());
+			
+			Object v = null;
+			if(value != null) {
+				v = Utils.getIns().getValue(f.getType(),value,f.getGenericType());
+			}
+			 
 			if(v == null){
 				if(cfg.required()){
 					throw new CommonException("Class ["+obj.getClass().getName()+",Field:"+f.getName()+"] is required");
@@ -181,12 +321,18 @@ public class ConfigPostInitListener extends PostInitListenerAdapter {
 	
 	private void watch(Field f,Object obj,String path,Config cfg){
 		IConfigChangeListener lis = (String path1,String data)->{
-			setValue(f,obj,data);
+			if(Map.class.isAssignableFrom(f.getType())) {
+				Map<String,String> ps = new HashMap<>();
+				ps.put(path1, data);
+				this.setMapValue(f, obj, ps);
+			}else {
+				setValue(f,obj,data);
+			}
 			notifyChange(f,obj);
 		};
 		cfg.addConfigListener(path, lis);
 	}
-	
+
 	protected void notifyChange(Field f,Object obj) {
 		Cfg cfg = f.getAnnotation(Cfg.class);
 		if(cfg == null || cfg.changeListener()== null || cfg.changeListener().trim().equals("")){

@@ -3,11 +3,19 @@ package org.jmicro.api.test.monitor;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
 
+import org.jmicro.api.JMicro;
+import org.jmicro.api.monitor.MonitorConstant;
 import org.jmicro.api.monitor.ServiceCounter;
+import org.jmicro.api.net.ISession;
+import org.jmicro.api.timer.TimerTicker;
 import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class TestServiceCounter {
 
+	private final static Logger logger = LoggerFactory.getLogger(TestServiceCounter.class);
+	
 	@Test
 	public void testServiceCounter() {
 		Random r = new Random(1000);
@@ -16,7 +24,7 @@ public class TestServiceCounter {
 		for(;true;) {
 			count.add(1, 1);
 			System.out.println("Total:"+count.get(1));
-			System.out.println("Avg:"+count.getAvgWithEx(1, TimeUnit.SECONDS));
+			System.out.println("Avg:"+count.getQpsWithEx(1, TimeUnit.SECONDS));
 			System.out.println("=============================");
 			try {
 				int t = r.nextInt(1000);
@@ -27,4 +35,81 @@ public class TestServiceCounter {
 			}
 		}
 	}
+	
+	@Test
+	public void testServiceCounterSingleVal() {
+		final Random ran = new Random(100);
+		ServiceCounter sc =  new ServiceCounter("testServiceCounterSingleVal", 
+				ISession.STATIS_TYPES,2,2,TimeUnit.SECONDS);
+		while(true) {
+			sc.increment(MonitorConstant.CLIENT_REQ_BEGIN);
+			Double succp = sc.getValueWithEx(MonitorConstant.CLIENT_REQ_BEGIN);
+			logger.debug("treq:{}",succp);
+		}
+	
+	}
+	
+	@Test
+	public void testMutilThreadCounter() {
+		final Random ran = new Random(1000);
+		ServiceCounter sc =  new ServiceCounter("testMutilThreadCounter", 
+				ISession.STATIS_TYPES,30*1000,300,TimeUnit.SECONDS);
+		
+		Runnable r = ()->{
+			while(true) {
+				sc.increment(MonitorConstant.CLIENT_REQ_BEGIN);
+				try {
+					Thread.sleep(ran.nextInt(3*1000));
+				} catch (InterruptedException e) {
+					e.printStackTrace();
+				}
+				int v = ran.nextInt(10);
+				v = v % 10;
+				if(v < 7) {
+					sc.increment(MonitorConstant.CLIENT_REQ_OK);
+				}else if(v == 7 || v == 8) {
+					sc.increment(MonitorConstant.CLIENT_REQ_TIMEOUT);
+				} else if(v == 9) {
+					sc.increment(MonitorConstant.CLIENT_REQ_EXCEPTION_ERR);
+				}
+				
+				/*Double treq = sc.getValueWithEx(MonitorConstant.CLIENT_REQ_BEGIN);
+				Double succp = sc.getValueWithEx(MonitorConstant.CLIENT_REQ_OK);
+				Double top = sc.getValueWithEx(MonitorConstant.CLIENT_REQ_TIMEOUT);
+				Double errp = sc.getValueWithEx(MonitorConstant.CLIENT_REQ_EXCEPTION_ERR);
+				logger.debug("treq:{}, suuc:{}, to:{}, err:{}",treq,succp,top,errp);*/
+			}
+		};
+		
+		TimerTicker.getDefault(1*1000L).addListener("testMutilThreadCounterTimer", (key,att)->{
+			
+			Double failPercent = ServiceCounter.getData(sc, MonitorConstant.STATIS_FAIL_PERCENT);// sc.getTotal(MonitorConstant.CLIENT_REQ_BEGIN);
+			Double succPersent = ServiceCounter.getData(sc, MonitorConstant.STATIS_SUCCESS_PERCENT); //sc.getTotal(MonitorConstant.CLIENT_REQ_OK);
+			
+			logger.debug("failPercent:{}, succPersent:{}",failPercent,succPersent);
+			
+			   /* Double treq = sc.getValueWithEx(MonitorConstant.CLIENT_REQ_BEGIN);
+				Double succp = sc.getValueWithEx(MonitorConstant.CLIENT_REQ_OK);
+				Double top = sc.getValueWithEx(MonitorConstant.CLIENT_REQ_TIMEOUT);
+				Double errp = sc.getValueWithEx(MonitorConstant.CLIENT_REQ_EXCEPTION_ERR);
+				logger.debug("treq:{}, suuc:{}, to:{}, err:{}",treq,succp,top,errp);*/
+				
+				/*Double rtotal = sc.getTotal(MonitorConstant.CLIENT_REQ_BEGIN);
+				Double stotal= sc.getTotal(MonitorConstant.CLIENT_REQ_OK);
+				Double ttotal = sc.getTotal(MonitorConstant.CLIENT_REQ_TIMEOUT);
+				Double etotal = sc.getTotal(MonitorConstant.CLIENT_REQ_EXCEPTION_ERR);
+				logger.debug("req:{}, resp:{}",rtotal,stotal+ttotal+etotal);*/
+				
+				
+		}, null);
+		
+		new Thread(r,"testMutilThreadCounter1").start();
+		//new Thread(r,"testMutilThreadCounter2").start();
+		//new Thread(r,"testMutilThreadCounter3").start();
+		//new Thread(r,"testMutilThreadCounter5").start();
+		//new Thread(r,"testMutilThreadCounter6").start();
+		
+		JMicro.waitForShutdown();
+	}
+	
 }

@@ -18,6 +18,7 @@ package org.jmicro.api.config;
 
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -87,6 +88,8 @@ public class Config implements IConfigChangeListener{
 	
 	private Map<String,Set<IConfigChangeListener>> configChangeListeners = new HashMap<>();
 	
+	private Map<String,Set<IConfigChangeListener>> patternConfigChangeListeners = new HashMap<>();
+	
 	private IDataOperator dataOperator;
 	
 	public Config() {}
@@ -147,7 +150,6 @@ public class Config implements IConfigChangeListener{
 				throw new CommonException("Invalid registry url: "+ registry);
 			}
 		}
-		
 	}
 	
 	public static long getSystemStartTime() {
@@ -195,10 +197,14 @@ public class Config implements IConfigChangeListener{
 	}
 	
 	public void createConfig(String value, String path, boolean isGlobal){
+		createConfig(value,path,isGlobal,false);
+	}
+	
+	public void createConfig(String value, String path, boolean isGlobal, boolean el){
 		if(isGlobal) {
-			this.dataOperator.createNode(CfgDir + path, value,false);
+			this.dataOperator.createNode(CfgDir + path, value,el);
 		} else {
-			this.dataOperator.createNode(ServiceConfigDir + path, value,false);
+			this.dataOperator.createNode(ServiceConfigDir + path, value,el);
 		}
 	}
 	
@@ -218,22 +224,59 @@ public class Config implements IConfigChangeListener{
 		}
 	}
 	
+	private void notifiListener(String subPath, String value,Set<IConfigChangeListener> l) {
+		if(l != null && !l.isEmpty() ){
+			for(IConfigChangeListener lis: l){
+				lis.configChange(subPath, value);
+			}
+		}
+	}
+	
 	private void notifiListener(String subPath, String value) {
 		Set<IConfigChangeListener> l = this.configChangeListeners.get(subPath);
-		if(l == null || l.isEmpty() ){
+		this.notifiListener(subPath, value, l);
+		
+		for(String key : patternConfigChangeListeners.keySet()) {
+			if(subPath.startsWith(key)) {
+				this.notifiListener(subPath, value, patternConfigChangeListeners.get(key));
+			}
+		}
+	}
+	
+	public void removeConfigListener(String key,IConfigChangeListener lis){
+		if(key == null) {
 			return;
 		}
-		for(IConfigChangeListener lis: l){
-			lis.configChange(subPath, value);
+		Set<IConfigChangeListener> l = null;				
+		if(key.endsWith("*")) {
+			key = key.substring(0,key.length()-1);
+			l = this.patternConfigChangeListeners.get(key);
+		} else {
+			l = this.configChangeListeners.get(key);
+		}
+		if(l != null && !l.isEmpty()){
+			l.remove(lis);
 		}
 	}
 
 	public void addConfigListener(String key,IConfigChangeListener lis){
-		Set<IConfigChangeListener> l = this.configChangeListeners.get(key);
-		if(l == null ){
-			this.configChangeListeners.put(key, l = new HashSet<IConfigChangeListener>());
+		if(key == null) {
+			return;
 		}
-		l.add(lis);
+		if(key.endsWith("*")) {
+			key = key.substring(0,key.length()-1);
+			Set<IConfigChangeListener> l = this.patternConfigChangeListeners.get(key);
+			if(l == null ){
+				this.patternConfigChangeListeners.put(key, l = new HashSet<IConfigChangeListener>());
+			}
+			l.add(lis);
+		} else {
+			Set<IConfigChangeListener> l = this.configChangeListeners.get(key);
+			if(l == null ){
+				this.configChangeListeners.put(key, l = new HashSet<IConfigChangeListener>());
+			}
+			l.add(lis);
+		}
 	}
 
 	//@JMethod("init")
@@ -241,12 +284,12 @@ public class Config implements IConfigChangeListener{
 		//命令行参数具有最高优先级
 		//params.putAll(CommadParams);
 		if(CommadParams.containsKey(Constants.BIND_IP)) {
-	        Host = CommadParams.get(Constants.BIND_IP);
+	        Host = getCommandParam(Constants.BIND_IP);
 		}else if(this.servicesConfig.containsKey(Constants.BIND_IP)) {
-			 Host = this.servicesConfig.get(Constants.BIND_IP);
+			 Host = this.getServiceParam(Constants.BIND_IP);
 		}else if(this.globalConfig.containsKey(Constants.BIND_IP)) {
-			 Host = this.globalConfig.get(Constants.BIND_IP);
-		}else {
+			 Host = this.getGlobalServiceParam(Constants.BIND_IP);
+		} else {
 			List<String> ips = Utils.getIns().getLocalIPList();
 	        if(ips.isEmpty()){
 	        	throw new CommonException("IP not found");
@@ -276,19 +319,38 @@ public class Config implements IConfigChangeListener{
 	}
 	
 	public static <T> T getCommandParam(String key,Class<T> type,T defalutValue) {
-		return getValue(getStaticVal(key),type,defalutValue);
+		return getValue(CommadParams.get(key),type,defalutValue);
 	}
 	
-	public static String getStaticVal(String key) {
-		if(CommadParams.get(key) != null) {
-			return CommadParams.get(key);
-		}
-		
+	public static String getCommandParam(String key) {
+		return CommadParams.get(key);
+	}
+	
+	public String getServiceParam(String key) {
+		return servicesConfig.get(key);
+	}
+	
+	public String getGlobalServiceParam(String key) {
+		return globalConfig.get(key);
+	}
+	
+	public static <T> T getEnvParam(String key,Class<T> type,T defalutValue) {
+		return getValue(getEnvParam(key),type,defalutValue);
+	}
+	
+	public static String getEnvParam(String key) {
 		if(System.getProperty(key) != null) {
 			return System.getProperty(key);
 		}
-		
 		return System.getenv(key);
+	}
+	
+	public <T> T getServiceParam(String key,Class<T> type,T defalutValue) {
+		return getValue(getServiceParam(key),type,defalutValue);
+	}
+	
+	public <T> T getGlobalParam(String key,Class<T> type,T defalutValue) {
+		return getValue(getGlobalServiceParam(key),type,defalutValue);
 	}
 	
 	public static String[]  getBasePackages() {
@@ -321,21 +383,24 @@ public class Config implements IConfigChangeListener{
 	
 	/**
 	 * 3个优先级，从高到底分别为，命令行参数，服务级配置参数，全局配置参数, 系统环境变量
-	 *    当命令行参数匹配成功时，不会再找其他参数，否则找服务级参数，最后找全局配置参数，都匹配不到，返回空。
-	 * 
+	 * 当命令行参数匹配成功时，不会再找其他参数，否则找服务级参数，最后找全局配置参数，都匹配不到，返回空。
+	 * 1。命令行参数中查找，如果找不到，进入2
+	 * 2。优先在服务配置中查找配置，如果找不到，进入3
+	 * 3。在全局配置中查找，如果找不到，进入4
+	 * 4。在环境系统环境变量中找，如果没找到，返回NULL
 	 * @param key
 	 * @return
 	 */
 	private String getValue(String key){
 		
-		String v = CommadParams.get(key);
+		String v = getCommandParam(key);
 		
 		if(v == null){
-			v = this.servicesConfig.get(key);
+			v = this.getServiceParam(key);
 		}
 		
 		if(v == null){
-			v = this.globalConfig.get(key);
+			v = this.getGlobalServiceParam(key);
 		}
 		
 		/*if(v == null){
@@ -343,7 +408,7 @@ public class Config implements IConfigChangeListener{
 		}*/
 		
 		if(v == null){
-			v = System.getenv(key);
+			v = getEnvParam(key);
 		}
 		
 		return v;
@@ -393,6 +458,49 @@ public class Config implements IConfigChangeListener{
 			dataOperator.createNode(Config.ServiceConfigDir, "", false);
 			//dataOperator.createNode(Config.ServiceConfigDir+"/val", "_v", false);
 		}
+	}
+
+	public Map<String,String> getParamByPattern(String key) {
+		
+		Map<String,String> result = new HashMap<>();
+		
+		if(key.endsWith("*")) {
+			key = key.substring(0,key.length()-1);
+		}
+		
+		for(Map.Entry<String, String> e : System.getenv().entrySet()) {
+			if(e.getKey().startsWith(key)) {
+				result.put(e.getKey(), e.getValue());
+			}
+		}
+		
+		Enumeration<?> enus = System.getProperties().propertyNames();
+		for(;enus.hasMoreElements();) {
+			String k = (String)enus.nextElement();
+			if(k.startsWith(key)) {
+				result.put(k, System.getProperty(k));
+			}
+		}
+		
+		for(Map.Entry<String, String> e : this.globalConfig.entrySet()) {
+			if(e.getKey().startsWith(key)) {
+				result.put(e.getKey(), e.getValue());
+			}
+		}
+		
+		for(Map.Entry<String, String> e : this.servicesConfig.entrySet()) {
+			if(e.getKey().startsWith(key)) {
+				result.put(e.getKey(), e.getValue());
+			}
+		}
+		
+		for(Map.Entry<String, String> e : CommadParams.entrySet()) {
+			if(e.getKey().startsWith(key)) {
+				result.put(e.getKey(), e.getValue());
+			}
+		}
+		
+		return result;
 	}
 	
 }

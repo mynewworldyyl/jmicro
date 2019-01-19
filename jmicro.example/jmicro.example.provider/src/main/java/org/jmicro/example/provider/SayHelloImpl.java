@@ -23,9 +23,11 @@ public class SayHelloImpl implements ISayHello {
 		loggable=1,	
 		testingArgs="AgATW0xqYXZhLmxhbmcuT2JqZWN0OwH/9AABAf/zAApBcmUgeW91IE9L",//测试参数
 		monitorEnable=1,
-		timeWindow=20,//统计时间窗口20S
-		checkInterval=2,//采样周期2S
-		baseTimeUnit="S"
+		timeWindow=30*1000,//统计时间窗口20S
+		checkInterval=2000,//采样周期2S
+		baseTimeUnit=Constants.TIME_MILLISECONDS,
+		timeout=3000,
+		debugMode=1
 	)
 	public String hello(String name) {
 		if(SF.isLoggable(true,MonitorConstant.LOG_DEBUG)) {
@@ -49,7 +51,5 @@ public class SayHelloImpl implements ISayHello {
 	public void statis(PSData data) {
 		System.out.println("Topic: "+data.getTopic()+", data: "+ data.getData().toString());
 	}
-
-	
 	
 }

@@ -269,6 +269,7 @@ public class ServiceLoader {
 		item.setMaxSpeed(anno.maxSpeed());
 		item.setBaseTimeUnit( StringUtils.isEmpty(anno.baseTimeUnit()) || intAnno == null ? anno.baseTimeUnit() : intAnno.baseTimeUnit());
 		item.setTimeWindow(anno.timeWindow() <= 0 || intAnno == null ?anno.timeWindow():intAnno.timeWindow());
+		item.setSlotSize(anno.slotSize() <= 0 || intAnno == null ?anno.slotSize():intAnno.slotSize());
 		item.setCheckInterval(anno.checkInterval() <= 0 || intAnno == null ?anno.checkInterval():intAnno.checkInterval());
 		
 		item.setAvgResponseTime(anno.avgResponseTime()!=-1 || intAnno == null ? anno.avgResponseTime() : intAnno.avgResponseTime());
@@ -364,6 +365,8 @@ public class ServiceLoader {
 					sm.setNeedResponse(manno.needResponse());
 					sm.setFailResponse(manno.failResponse());
 					sm.setTimeWindow(manno.timeWindow()<=0?item.getTimeWindow():manno.timeWindow());
+					sm.setSlotSize(manno.slotSize()<=0?item.getSlotSize():manno.slotSize());
+					
 					sm.setCheckInterval(manno.checkInterval()<=0?item.getCheckInterval():manno.checkInterval());
 					
 					sm.setBaseTimeUnit(StringUtils.isEmpty(manno.baseTimeUnit())? item.getBaseTimeUnit():manno.baseTimeUnit());
@@ -389,6 +392,7 @@ public class ServiceLoader {
 					sm.setLoggable(intMAnno.loggable());
 					sm.setDebugMode(intMAnno.debugMode());
 					sm.setTimeWindow(intMAnno.timeWindow()<=0?item.getTimeWindow():intMAnno.timeWindow());
+					sm.setSlotSize(intMAnno.slotSize()<=0?item.getSlotSize():intMAnno.slotSize());
 					sm.setCheckInterval(intMAnno.checkInterval()<=0?item.getCheckInterval():intMAnno.checkInterval());
 					sm.setBaseTimeUnit(StringUtils.isEmpty(intMAnno.baseTimeUnit())? item.getBaseTimeUnit():intMAnno.baseTimeUnit());
 				}

@@ -56,7 +56,7 @@ public interface IServiceCounter {
 	 * @param type
 	 * @return
 	 */
-	Double getTotalWithEx(Integer... type);
+	Double getValueWithEx(Integer... type);
 	
 	void incrementWithEx(Integer type);
 	
