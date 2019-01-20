@@ -21,6 +21,7 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.Queue;
+import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -38,8 +39,6 @@ import org.jmicro.api.monitor.MonitorConstant;
 import org.jmicro.api.monitor.ServiceStatis;
 import org.jmicro.api.monitor.SubmitItem;
 import org.jmicro.api.net.IRequest;
-import org.jmicro.api.registry.ServiceItem;
-import org.jmicro.api.registry.ServiceMethod;
 import org.jmicro.common.Constants;
 import org.jmicro.common.Utils;
 import org.jmicro.common.util.JsonUtils;
@@ -115,37 +114,40 @@ public class ServiceResponseTimeMonitor extends AbstractMonitorDataSubscriber im
 
 	@Override
 	@SMethod(needResponse=false)
-	public void onSubmit(SubmitItem si) {
-		//logger.debug("Service: "+si.getServiceName());
-		if(openDebug) {
-			logger.debug("onSubmit si: {} ",si);
+	public void onSubmit(Set<SubmitItem> sis) {
+		for(SubmitItem si : sis) {
+			//logger.debug("Service: "+si.getServiceName());
+			if(openDebug) {
+				logger.debug("onSubmit si: {} ",si);
+			}
+			if(MonitorConstant.CLIENT_REQ_BEGIN == si.getType()){
+				AvgResponseTimeItem i = new AvgResponseTimeItem();
+				IRequest req = (IRequest)si.getReq();
+				i.reqId = req.getRequestId();
+				i.service = si.getSm().getKey().toKey(false,false,false);
+				i.startTime = si.getTime();
+				reqRespAvgList.put(i.reqId, i);
+			}else if(MonitorConstant.CLIENT_REQ_OK == si.getType()
+					|| MonitorConstant.CLIENT_REQ_ASYNC1_SUCCESS == si.getType()){
+				IRequest req = (IRequest)si.getReq();
+				AvgResponseTimeItem i = reqRespAvgList.get(req.getRequestId());
+				if(i == null){
+					return;
+				}
+				if(!reqRespAvgs.containsKey(i.service)) {
+					reqRespAvgs.put(i.service, new LinkedList<Long>());
+				}
+				
+				reqRespAvgList.remove(i.reqId);
+				Queue<Long> qtime = reqRespAvgs.get(i.service);
+				qtime.offer(si.getTime()-i.startTime);
+				if(qtime.size() > 1000){
+					//only keep the last 1000 element
+					qtime.poll();
+				}
+			}
 		}
-		if(MonitorConstant.CLIENT_REQ_BEGIN == si.getType()){
-			AvgResponseTimeItem i = new AvgResponseTimeItem();
-			IRequest req = (IRequest)si.getReq();
-			i.reqId = req.getRequestId();
-			i.service = si.getSm().getKey().toKey(false,false,false);
-			i.startTime = si.getTime();
-			reqRespAvgList.put(i.reqId, i);
-		}else if(MonitorConstant.CLIENT_REQ_OK == si.getType()
-				|| MonitorConstant.CLIENT_REQ_ASYNC1_SUCCESS == si.getType()){
-			IRequest req = (IRequest)si.getReq();
-			AvgResponseTimeItem i = reqRespAvgList.get(req.getRequestId());
-			if(i == null){
-				return;
-			}
-			if(!reqRespAvgs.containsKey(i.service)) {
-				reqRespAvgs.put(i.service, new LinkedList<Long>());
-			}
-			
-			reqRespAvgList.remove(i.reqId);
-			Queue<Long> qtime = reqRespAvgs.get(i.service);
-			qtime.offer(si.getTime()-i.startTime);
-			if(qtime.size() > 1000){
-				//only keep the last 1000 element
-				qtime.poll();
-			}
-		}
+		
 	}
 
 	@Override

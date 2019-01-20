@@ -326,6 +326,32 @@ public final class ServiceItem{
 				return sm;
 			}
 		}
+		
+		Class<?> paramClazzes[] = UniqueServiceMethodKey.paramsClazzes(mkStr);
+		for(ServiceMethod sm : this.methods){
+			if(methodName.equals(sm.getKey().getMethod())){
+				Class<?> paramClazzes1[] = UniqueServiceMethodKey.paramsClazzes(sm.getKey().getParamsStr());
+				if(paramClazzes.length == 0 && paramClazzes1.length == 0) {
+					return sm;
+				}
+				if(paramClazzes.length != paramClazzes1.length) {
+					continue;
+				}
+				
+				boolean f = true;
+				for(int i=0; i < paramClazzes1.length; i++) {
+					if(!paramClazzes1[i].isAssignableFrom(paramClazzes[i])) {
+						f = false;
+						break;
+					}
+				}
+				
+				if(f) {
+					return sm;
+				}
+			}
+		}
+		
 		return null;
 	}
 	

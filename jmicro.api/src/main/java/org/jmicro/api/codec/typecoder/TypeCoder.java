@@ -1,5 +1,7 @@
 package org.jmicro.api.codec.typecoder;
 
+import java.io.DataOutput;
+import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
@@ -13,7 +15,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 import org.jmicro.api.codec.Decoder;
 import org.jmicro.api.codec.TypeCoderFactory;
@@ -56,7 +57,8 @@ public interface TypeCoder<T> extends Comparable<TypeCoder<T>>{
 	 * @param val
 	 * @param type
 	 */
-	void encode(ByteBuffer buffer, T val, Class<?> fieldDeclareType, Type genericType);
+	void encode(DataOutput buffer, T val, Class<?> fieldDeclareType, Type genericType) 
+			throws IOException;
 	
 	T decode(ByteBuffer buffer, Class<?> fieldDeclareType, Type genericType);
 	
@@ -68,9 +70,11 @@ public interface TypeCoder<T> extends Comparable<TypeCoder<T>>{
     * @param buffer
     * @param obj
     * @param fieldDeclareType
+	 * @throws IOException 
     */
 	@SuppressWarnings({ "rawtypes", "unchecked" })
-	public static void encodeByReflect(ByteBuffer buffer, Object obj, Class<?> fieldDeclareType,Type genericType) {
+	public static void encodeByReflect(DataOutput buffer, Object obj, Class<?> fieldDeclareType,
+			Type genericType) throws IOException {
 
 		// 进入此方法，obj必须不能为NULL
 		Class<?> cls = obj.getClass();
@@ -101,7 +105,8 @@ public interface TypeCoder<T> extends Comparable<TypeCoder<T>>{
 	}
 
 	@SuppressWarnings({ "rawtypes", "unchecked" })
-	public static void encodeCollection(ByteBuffer buffer, Collection objs, Class<?> declareFieldType, Type genericType) {
+	public static void encodeCollection(DataOutput buffer, Collection objs, 
+			Class<?> declareFieldType, Type genericType) throws IOException {
 		if(objs == null || objs.isEmpty()) {
 			putLength(buffer,0);
 			return;
@@ -121,7 +126,8 @@ public interface TypeCoder<T> extends Comparable<TypeCoder<T>>{
 	}
 	
 	@SuppressWarnings({ "rawtypes", "unchecked" })
-	public static <K,V> void encodeMap(ByteBuffer buffer,Map<K,V> map, ParameterizedType genericType){
+	public static <K,V> void encodeMap(DataOutput buffer,Map<K,V> map, 
+			ParameterizedType genericType) throws IOException{
 		if(map == null || map.size() == 0) {
 			putLength(buffer,0);
 			return;
@@ -145,8 +151,8 @@ public interface TypeCoder<T> extends Comparable<TypeCoder<T>>{
 	}
 	
 	@SuppressWarnings({ "unchecked", "rawtypes" })
-	public static <V> void encodeArray(ByteBuffer buffer, Object objs, Class<?> fieldDeclareType
-			, Type genericType){
+	public static <V> void encodeArray(DataOutput buffer, Object objs, Class<?> fieldDeclareType
+			, Type genericType) throws IOException{
 		if(objs == null) {
 			putLength(buffer,0);
 			return;
@@ -301,18 +307,18 @@ public interface TypeCoder<T> extends Comparable<TypeCoder<T>>{
 		buffer.putShort(code);
 	}
 	
-	public static void putStringType(ByteBuffer buffer,String clazz) {
+	public static void putStringType(DataOutput buffer,String clazz) throws IOException {
 		//类型前缀类型
-		buffer.put(Decoder.PREFIX_TYPE_STRING);
+		buffer.write(Decoder.PREFIX_TYPE_STRING);
 		//类名称
 		encodeString(buffer, clazz);
 	}
 	
-	public static void putLength(ByteBuffer buffer,int len) {
-		buffer.putShort((short)len);
+	public static void putLength(DataOutput buffer,int len) throws IOException {
+		buffer.writeShort(len);
 	}
 	
-	public static void encodeString(ByteBuffer buffer,String str){
+	public static void encodeString(DataOutput buffer,String str) throws IOException{
 		if(StringUtils.isEmpty(str)){
 			putLength(buffer,0);
 			return;
@@ -324,7 +330,7 @@ public interface TypeCoder<T> extends Comparable<TypeCoder<T>>{
 			}*/
 			byte[] data = str.getBytes(Constants.CHARSET);
 			putLength(buffer,data.length);
-			buffer.put(data);
+			buffer.write(data);
 		} catch (UnsupportedEncodingException e) {
 			throw new CommonException("encodeString error: "+str);
 		}
@@ -367,11 +373,15 @@ public interface TypeCoder<T> extends Comparable<TypeCoder<T>>{
 				Class<?> cls=null;
 				try {
 					cls = Thread.currentThread().getContextClassLoader().loadClass(clazzName);
-					classCache.put(clazzName, cls);
-					return cls;
-				} catch (ClassNotFoundException e) {
-					throw new CommonException("class not found:" + clazzName,e);
+				} catch (Throwable e) {
+					try {
+						cls = TypeCoder.class.getClassLoader().loadClass(clazzName);
+					} catch (ClassNotFoundException e1) {
+						throw new CommonException("class not found:" + clazzName,e);
+					}
 				}
+				classCache.put(clazzName, cls);
+				return cls;
 			}
 		}
 		

@@ -1,5 +1,7 @@
 package org.jmicro.api.codec.typecoder;
 
+import java.io.DataOutput;
+import java.io.IOException;
 import java.lang.reflect.Type;
 import java.nio.ByteBuffer;
 
@@ -12,13 +14,13 @@ public abstract class AbstractFinalTypeCoder<T> extends AbstractComparableTypeCo
 	}
 
 	@Override
-	public void encode(ByteBuffer buffer, T val, Class<?> fieldDeclareType, Type genericType) {
+	public void encode(DataOutput buffer, T val, Class<?> fieldDeclareType, Type genericType) throws IOException {
 		super.encode(buffer, val, fieldDeclareType, genericType);
 		encodeData(buffer, val, fieldDeclareType, genericType);
 	}
 
-	protected abstract void encodeData(ByteBuffer buffer, T val, 
-			Class<?> fieldDeclareType, Type genericType);
+	protected abstract void encodeData(DataOutput buffer, T val, 
+			Class<?> fieldDeclareType, Type genericType)throws IOException;
 
 	@Override
 	public boolean canSupport(Class<?> clazz) {

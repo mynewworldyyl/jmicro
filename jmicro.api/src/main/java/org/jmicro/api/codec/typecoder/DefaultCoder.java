@@ -1,5 +1,7 @@
 package org.jmicro.api.codec.typecoder;
 
+import java.io.DataOutput;
+import java.io.IOException;
 import java.lang.reflect.Type;
 import java.nio.ByteBuffer;
 import java.util.List;
@@ -55,9 +57,10 @@ public class DefaultCoder implements TypeCoder<Object> {
 
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	@Override
-	public void encode(ByteBuffer buffer, Object val, Class<?> fieldDeclareType, Type genericType) {
+	public void encode(DataOutput buffer, Object val, Class<?> fieldDeclareType
+			, Type genericType) throws IOException {
 		if (val == null) {
-			buffer.put(Decoder.PREFIX_TYPE_NULL);
+			buffer.write(Decoder.PREFIX_TYPE_NULL);
 			return;
 		} else {
 			//val已经非空值，肯定能获取到一个编码器，至少是DefaultCoder
@@ -78,7 +81,7 @@ public class DefaultCoder implements TypeCoder<Object> {
 					//写入类型前缀码Decoder.PREFIX_TYPE_STRING，类型编码信息
 					TypeCoder.putStringType(buffer, val.getClass().getName());
 				} else {
-					buffer.put(Decoder.PREFIX_TYPE_FINAL);
+					buffer.write(Decoder.PREFIX_TYPE_FINAL);
 				}
 				//默认编码器通过反射编码数据
 				TypeCoder.encodeByReflect(buffer, val, fieldDeclareType,genericType);

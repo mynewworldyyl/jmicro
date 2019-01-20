@@ -1,11 +1,9 @@
 package org.jmicro.api.codec.typecoder;
 
+import java.io.DataOutput;
+import java.io.IOException;
 import java.lang.reflect.Type;
 import java.nio.ByteBuffer;
-
-import org.jmicro.api.codec.Decoder;
-import org.jmicro.api.codec.TypeCoderFactory;
-import org.jmicro.common.CommonException;
 
 public class ArrayCoder extends AbstractShortTypeCoder<Object[]>{
 	   
@@ -30,7 +28,8 @@ public class ArrayCoder extends AbstractShortTypeCoder<Object[]>{
 		}
 
 		@Override
-		protected void encodeData(ByteBuffer buffer, Object[] val, Class<?> fieldDeclareType, Type genericType) {
+		protected void encodeData(DataOutput buffer, Object[] val, 
+				Class<?> fieldDeclareType, Type genericType) throws IOException {
 			Class<?> eltType = val.getClass().getComponentType();
 			if(val.length > 0) {
 				eltType = val[0].getClass();

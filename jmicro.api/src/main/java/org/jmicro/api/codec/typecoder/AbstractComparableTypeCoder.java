@@ -1,7 +1,8 @@
 package org.jmicro.api.codec.typecoder;
 
+import java.io.DataOutput;
+import java.io.IOException;
 import java.lang.reflect.Type;
-import java.nio.ByteBuffer;
 
 import org.jmicro.api.codec.TypeUtils;
 import org.jmicro.common.CommonException;
@@ -35,10 +36,11 @@ public abstract class AbstractComparableTypeCoder<T> implements TypeCoder<T>{
 	}
 	
 	@Override
-	public void encode(ByteBuffer buffer, T val, Class<?> fieldDeclareType, Type genericType) {
-		buffer.put(prefixCode);
+	public void encode(DataOutput buffer, T val, Class<?> fieldDeclareType, Type genericType)
+			throws IOException {
+		buffer.write(prefixCode);
 		if(fieldDeclareType == null || !TypeUtils.isFinal(fieldDeclareType)) {
-			buffer.putShort(code());
+			buffer.writeShort(code());
 		}
 	}
 

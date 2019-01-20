@@ -461,24 +461,19 @@ public class ZKRegistry implements IRegistry {
 		Set<ServiceItem> breakings = new HashSet<ServiceItem>();
 		Set<ServiceItem> set = new HashSet<ServiceItem>();
 		
-		String mStr = UniqueServiceMethodKey.paramsStr(args);
 		for(ServiceItem si : sis) {
 			if(!checkTransport(si,transport)){
 				continue;
 			}
-			
-			for(ServiceMethod sm : si.getMethods()){
-				if(sm.getKey().getMethod().equals(method) 
-						&& mStr.equals(sm.getKey().getParamsStr())){
-					if(sm.isBreaking()){
-						breakings.add(si);
-					} else {
-						set.add(si);
-						break;
-					}
-				}
+			ServiceMethod sm = si.getMethod(method, args);
+			if(sm.isBreaking()){
+				breakings.add(si);
+			} else {
+				set.add(si);
+				break;
 			}
 		}
+		
 		if(set.isEmpty() && !breakings.isEmpty()){
 			throw new  BreakerException("Request services is breaking",breakings);
 		} else {

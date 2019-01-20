@@ -1,5 +1,7 @@
 package org.jmicro.api.codec.typecoder;
 
+import java.io.DataOutput;
+import java.io.IOException;
 import java.lang.reflect.Type;
 import java.nio.ByteBuffer;
 
@@ -12,7 +14,8 @@ public class VoidTypeCoder extends AbstractComparableTypeCoder<Void>{
 	   }
 	   
 		@Override
-		public void encode(ByteBuffer buffer, Void val, Class<?> declareFieldType, Type genericType) {
+		public void encode(DataOutput buffer, Void val, Class<?> declareFieldType,
+				Type genericType) throws IOException {
 			super.encode(buffer, val, declareFieldType, genericType);
 		}
 

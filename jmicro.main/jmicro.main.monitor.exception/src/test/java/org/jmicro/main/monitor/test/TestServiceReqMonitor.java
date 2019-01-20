@@ -1,5 +1,8 @@
 package org.jmicro.main.monitor.test;
 
+import java.util.HashSet;
+import java.util.Set;
+
 import org.jmicro.api.JMicro;
 import org.jmicro.api.monitor.MonitorConstant;
 import org.jmicro.api.monitor.SF;
@@ -25,8 +28,9 @@ public class TestServiceReqMonitor extends JMicroBaseTestCase{
 		SubmitItem si = new SubmitItem();
 		si.setType(MonitorConstant.CLIENT_REQ_OK);
 		si.setSm(this.sayHelloServiceMethod());
-		
-		of.get(ServiceReqMonitor.class).onSubmit(si);
+		Set<SubmitItem> sis = new HashSet<>();
+		sis.add(si);
+		of.get(ServiceReqMonitor.class).onSubmit(sis);
 		
 		JMicro.waitForShutdown();
 	}
@@ -39,7 +43,11 @@ public class TestServiceReqMonitor extends JMicroBaseTestCase{
 		si.setSm(this.sayHelloServiceMethod());
 		
 		ServiceReqMonitor m = of.get(ServiceReqMonitor.class);
-		m.onSubmit(si);
+		
+		Set<SubmitItem> sis = new HashSet<>();
+		sis.add(si);
+		
+		m.onSubmit(sis);
 		
 		String mkey = si.getSm().getKey().toKey(true,true,true);
 		System.out.println("STATIS_FAIL_PERCENT: "+m.getData(mkey, MonitorConstant.STATIS_FAIL_PERCENT));

@@ -18,6 +18,7 @@ package org.jmicro.main.monitor;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
@@ -111,7 +112,7 @@ public class ServiceReqMonitor extends AbstractMonitorDataSubscriber implements 
 		
 		PSData psData = new PSData();
 		psData.setData(data);
-		psData.setTopic(MonitorConstant.STATIS_SERVICE_METHOD_TOPIC);
+		psData.setTopic(MonitorConstant.TEST_SERVICE_METHOD_TOPIC);
 		psData.put(Constants.SERVICE_METHOD_KEY, sm);
 		
 		//将统计数据分发出去
@@ -139,48 +140,51 @@ public class ServiceReqMonitor extends AbstractMonitorDataSubscriber implements 
 
 	@Override
 	@SMethod(needResponse=false)
-	public void onSubmit(SubmitItem si) {
+	public void onSubmit(Set<SubmitItem> sis) {
 		
-		ServiceMethod sm = si.getSm();
-		if(sm == null) {
-			logger.error("Service Method not found: "+si.toString());
-			return;
-		}
-		
-		String key = sm.getKey().toKey(true,true,true);
-		timeoutList.put(key, System.currentTimeMillis());
-		
-		TimerTicker timer = TimerTicker.getTimer(timers,TimeUtils.getMilliseconds(sm.getCheckInterval(),
-				sm.getBaseTimeUnit()));
-		ServiceCounter counter = counters.get(key);
-		if(counter == null) {
-			//取常量池中的字符串实例做同步锁，保证基于服务方法标识这一级别的同步
-			key = key.intern();
-			synchronized(key) {
-				counter = counters.get(key);
-				if(counter == null) {
-					counter = new ServiceCounter(key, YTPES,sm.getTimeWindow(),sm.getSlotSize()
-							,TimeUtils.getTimeUnit(sm.getBaseTimeUnit()));
-					counters.put(key, counter);
-					//BreakRule rule = si.getSm().getBreakingRule();
-					//定时收集统计数据
-					timer.addListener(key,tickerAct,sm);
-					if(this.openDebug) {
-						logger.debug("Create counter and add listener for service {},tw[{}],unit[{}]", key,sm.getTimeWindow(),sm.getBaseTimeUnit());
+		for(SubmitItem si : sis) {
+			ServiceMethod sm = si.getSm();
+			if(sm == null) {
+				logger.error("Service Method not found: "+si.toString());
+				continue;
+			}
+			
+			String key = sm.getKey().toKey(true,true,true);
+			timeoutList.put(key, System.currentTimeMillis());
+			
+			TimerTicker timer = TimerTicker.getTimer(timers,TimeUtils.getMilliseconds(sm.getCheckInterval(),
+					sm.getBaseTimeUnit()));
+			ServiceCounter counter = counters.get(key);
+			if(counter == null) {
+				//取常量池中的字符串实例做同步锁，保证基于服务方法标识这一级别的同步
+				key = key.intern();
+				synchronized(key) {
+					counter = counters.get(key);
+					if(counter == null) {
+						counter = new ServiceCounter(key, YTPES,sm.getTimeWindow(),sm.getSlotSize()
+								,TimeUtils.getTimeUnit(sm.getBaseTimeUnit()));
+						counters.put(key, counter);
+						//BreakRule rule = si.getSm().getBreakingRule();
+						//定时收集统计数据
+						timer.addListener(key,tickerAct,sm);
+						if(this.openDebug) {
+							logger.debug("Create counter and add listener for service {},tw[{}],unit[{}]", key,sm.getTimeWindow(),sm.getBaseTimeUnit());
+						}
 					}
 				}
 			}
-		}
-		
-		if(!timer.container(key)) {
-			if(this.openDebug) {
-				logger.debug("Add counter listener for service {},tw[{}],unit[{}]", key,sm.getTimeWindow(),sm.getBaseTimeUnit());
+			
+			if(!timer.container(key)) {
+				if(this.openDebug) {
+					logger.debug("Add counter listener for service {},tw[{}],unit[{}]", key,sm.getTimeWindow(),sm.getBaseTimeUnit());
+				}
+				//有新数据更新，激活统计数据时钟
+				timer.addListener(key,tickerAct,sm);
 			}
-			//有新数据更新，激活统计数据时钟
-			timer.addListener(key,tickerAct,sm);
+			
+			counter.increment(si.getType());
 		}
 		
-		counter.increment(si.getType());
 	}
 
 	@Override

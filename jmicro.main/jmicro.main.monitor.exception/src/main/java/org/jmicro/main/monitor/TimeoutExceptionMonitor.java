@@ -19,15 +19,14 @@ package org.jmicro.main.monitor;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Queue;
+import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
-import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.Inject;
 import org.jmicro.api.annotation.JMethod;
 import org.jmicro.api.annotation.SMethod;
-import org.jmicro.api.annotation.Service;
 import org.jmicro.api.degrade.DegradeManager;
 import org.jmicro.api.monitor.AbstractMonitorDataSubscriber;
 import org.jmicro.api.monitor.IMonitorDataSubscriber;
@@ -35,7 +34,6 @@ import org.jmicro.api.monitor.MonitorConstant;
 import org.jmicro.api.monitor.SubmitItem;
 import org.jmicro.api.net.IRequest;
 import org.jmicro.api.registry.UniqueServiceMethodKey;
-import org.jmicro.common.Constants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -101,35 +99,38 @@ public class TimeoutExceptionMonitor extends AbstractMonitorDataSubscriber imple
 
 	@Override
 	@SMethod(needResponse=false)
-	public void onSubmit(SubmitItem si) {
-		if(si.getType() != MonitorConstant.CLIENT_REQ_TIMEOUT) {
-			return;
-		}
-		
-		String service = null;
-		if(si.getReq() != null) {
-			IRequest req = (IRequest)si.getReq();
-			service = req.getServiceName() + "|"
-					+req.getMethod() + "|" + UniqueServiceMethodKey.paramsStr(req.getArgs());
-		}else {
-			service = si.getServiceName() + "|" + si.getMethod() + "|" + UniqueServiceMethodKey.paramsStr(si.getReqArgs());
-		}
-		
-		ExceItem ei = new ExceItem();
-		ei.time = si.getTime();
-		ei.type = si.getType();
-		
-		if(MonitorConstant.CLIENT_REQ_EXCEPTION_ERR == si.getType()){
-			if(!exceptinErrs.containsKey(service)){
-				exceptinErrs.put(service, new ConcurrentLinkedQueue<ExceItem>());
+	public void onSubmit(Set<SubmitItem> sis) {
+		for(SubmitItem si : sis) {
+			if(si.getType() != MonitorConstant.CLIENT_REQ_TIMEOUT) {
+				continue;
 			}
-			exceptinErrs.get(service).offer(ei);
-		} else if(MonitorConstant.CLIENT_REQ_BUSSINESS_ERR == si.getType()){
-			if(!bussinessErrs.containsKey(service)){
-				bussinessErrs.put(service, new ConcurrentLinkedQueue<ExceItem>());
+			
+			String service = null;
+			if(si.getReq() != null) {
+				IRequest req = (IRequest)si.getReq();
+				service = req.getServiceName() + "|"
+						+req.getMethod() + "|" + UniqueServiceMethodKey.paramsStr(req.getArgs());
+			}else {
+				service = si.getServiceName() + "|" + si.getMethod() + "|" + UniqueServiceMethodKey.paramsStr(si.getReqArgs());
 			}
-			bussinessErrs.get(service).offer(ei);
+			
+			ExceItem ei = new ExceItem();
+			ei.time = si.getTime();
+			ei.type = si.getType();
+			
+			if(MonitorConstant.CLIENT_REQ_EXCEPTION_ERR == si.getType()){
+				if(!exceptinErrs.containsKey(service)){
+					exceptinErrs.put(service, new ConcurrentLinkedQueue<ExceItem>());
+				}
+				exceptinErrs.get(service).offer(ei);
+			} else if(MonitorConstant.CLIENT_REQ_BUSSINESS_ERR == si.getType()){
+				if(!bussinessErrs.containsKey(service)){
+					bussinessErrs.put(service, new ConcurrentLinkedQueue<ExceItem>());
+				}
+				bussinessErrs.get(service).offer(ei);
+			}
 		}
+		
 	}
 
 	@Override

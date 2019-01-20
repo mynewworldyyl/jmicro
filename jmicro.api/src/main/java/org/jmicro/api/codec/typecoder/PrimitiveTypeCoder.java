@@ -1,5 +1,7 @@
 package org.jmicro.api.codec.typecoder;
 
+import java.io.DataOutput;
+import java.io.IOException;
 import java.lang.reflect.Type;
 import java.nio.ByteBuffer;
 
@@ -13,57 +15,58 @@ public class PrimitiveTypeCoder extends AbstractFinalTypeCoder<Object> {
 	}
 
 	@Override
-	public void encodeData(ByteBuffer buffer, Object obj,Class<?> fieldDeclareType,Type genericType) {
+	public void encodeData(DataOutput buffer, Object obj,Class<?> fieldDeclareType,
+			Type genericType) throws IOException{
 
 		Class<Object> cls = type();
 		if (TypeUtils.isPrimitiveInt(cls) || TypeUtils.isInt(cls)) {
 			if (obj == null) {
-				buffer.putInt(0);
+				buffer.write(0);
 			} else {
-				buffer.putInt((Integer) obj);
+				buffer.writeInt((Integer) obj);
 			}
 		} else if (TypeUtils.isPrimitiveByte(cls) || TypeUtils.isByte(cls)) {
 			if (obj == null) {
-				buffer.put((byte) 0);
+				buffer.write((byte) 0);
 			} else {
-				buffer.put((Byte) obj);
+				buffer.write((Byte) obj);
 			}
 		} else if (TypeUtils.isPrimitiveShort(cls) || TypeUtils.isShort(cls)) {
 			if (obj == null) {
-				buffer.putShort((short) 0);
+				buffer.writeShort((short) 0);
 			} else {
-				buffer.putShort((Short) obj);
+				buffer.writeShort((Short) obj);
 			}
 		} else if (TypeUtils.isPrimitiveLong(cls) || TypeUtils.isLong(cls)) {
 			if (obj == null) {
-				buffer.putLong(0);
+				buffer.writeLong(0);
 			} else {
-				buffer.putLong((Long) obj);
+				buffer.writeLong((Long) obj);
 			}
 		} else if (TypeUtils.isPrimitiveFloat(cls) || TypeUtils.isFloat(cls)) {
 			if (obj == null) {
-				buffer.putFloat(0);
+				buffer.writeFloat(0);
 			} else {
-				buffer.putFloat((Float) obj);
+				buffer.writeFloat((Float) obj);
 			}
 		} else if (TypeUtils.isPrimitiveDouble(cls) || TypeUtils.isDouble(cls)) {
 			if (obj == null) {
-				buffer.putDouble(0);
+				buffer.writeDouble(0);
 			} else {
-				buffer.putDouble((Double) obj);
+				buffer.writeDouble((Double) obj);
 			}
 		} else if (TypeUtils.isPrimitiveBoolean(cls) || TypeUtils.isBoolean(cls)) {
 			if (obj == null) {
-				buffer.put((byte) 0);
+				buffer.write((byte) 0);
 			} else {
 				boolean b = (Boolean) obj;
-				buffer.put(b ? (byte) 1 : (byte) 0);
+				buffer.write(b ? (byte) 1 : (byte) 0);
 			}
 		} else if (TypeUtils.isPrimitiveChar(cls) || TypeUtils.isChar(cls)) {
 			if (obj == null) {
-				buffer.putChar((char) 0);
+				buffer.writeChar((char) 0);
 			} else {
-				buffer.putChar((Character) obj);
+				buffer.writeChar((Character) obj);
 			}
 		}
 	}

@@ -94,7 +94,7 @@ public class SimpleCodecFactory implements ICodecFactory{
 			//ByteBuffer.allocate(defaultEncodeBufferSize);
 			//Encoder.encodeObject(bb,obj);
 			bb = prefixTypeEncoder.encode(obj);
-			bb.flip();
+			//bb.flip();
 			return bb;
 		}
 	};

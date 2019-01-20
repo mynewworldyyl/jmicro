@@ -130,7 +130,7 @@ public final class MonitorConstant {
 	
 	public static final int STATIS_QPS = 9;
 	
-	public static final String STATIS_SERVICE_METHOD_TOPIC = "/statics/smTopic";
+	public static final String TEST_SERVICE_METHOD_TOPIC = "/statics/smTopic";
 	
 	public static final Map<Integer,String> MONITOR_VAL_2_KEY = new HashMap<>();
 	static {

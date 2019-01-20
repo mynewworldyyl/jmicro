@@ -14,12 +14,6 @@ import org.junit.Test;
 public class TestPubSubServer extends JMicroBaseTestCase{
 
 	@Test
-	public void testPublishStringMessage() {
-		PubSubManager psm = of.get(PubSubManager.class);
-		psm.publish(new HashMap<String,Object>(), "/jmicro/test/topic01", "test pubsub server");
-	}
-	
-	@Test
 	public void testPubSubServerMessage() {
 		IInternalSubRpc psm = of.getRemoteServie(IInternalSubRpc.class.getName(), "org.jmicro.pubsub.DefaultPubSubServer", "0.0.1",null);
 		PSData psd = new PSData();
@@ -57,5 +51,11 @@ public class TestPubSubServer extends JMicroBaseTestCase{
 		new Thread(r).start();*/
 		
 		JMicro.waitForShutdown();
+	}
+	
+	@Test
+	public void testPublishStringMessage() {
+		PubSubManager psm = of.get(PubSubManager.class);
+		psm.publish(new HashMap<String,Object>(), "/jmicro/test/topic01", "test pubsub server");
 	}
 }

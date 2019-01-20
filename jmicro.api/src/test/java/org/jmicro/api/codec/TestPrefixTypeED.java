@@ -351,7 +351,7 @@ public class TestPrefixTypeED {
 		
 		PSData psData = new PSData();
 		psData.setData(data);
-		psData.setTopic(MonitorConstant.STATIS_SERVICE_METHOD_TOPIC);
+		psData.setTopic(MonitorConstant.TEST_SERVICE_METHOD_TOPIC);
 		psData.put(Constants.SERVICE_METHOD_KEY, new ServiceMethod());
 		
 		ByteBuffer bb = encoder.encode(psData);

@@ -1,10 +1,10 @@
 
 package org.jmicro.api.codec.typecoder;
 
+import java.io.DataOutput;
+import java.io.IOException;
 import java.lang.reflect.Type;
 import java.nio.ByteBuffer;
-
-import org.jmicro.common.CommonException;
 
 /**
  * Primitive类型肯定是final类型，不需要类型前缀标识
@@ -24,7 +24,8 @@ public class PrimitiveTypeArrayCoder extends AbstractFinalTypeCoder<Object>{
 		}
 
 		@Override
-		protected void encodeData(ByteBuffer buffer, Object val, Class<?> fieldDeclareType, Type genericType) {
+		protected void encodeData(DataOutput buffer, Object val, Class<?> fieldDeclareType
+				, Type genericType) throws IOException {
 			TypeCoder.encodeArray(buffer,val,type().getComponentType(),genericType);
 		}
 

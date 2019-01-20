@@ -39,7 +39,7 @@ public class BreakerSubscriberImpl implements IBreakerSubscriber{
 	private ServiceManager serviceManager;
 	
 	@Override
-	@Subscribe(topic=MonitorConstant.STATIS_SERVICE_METHOD_TOPIC)
+	@Subscribe(topic=MonitorConstant.TEST_SERVICE_METHOD_TOPIC)
 	public void onStatics(PSData psData) {
 		
 		Map<Integer,Double> data = (Map<Integer,Double>)psData.getData();

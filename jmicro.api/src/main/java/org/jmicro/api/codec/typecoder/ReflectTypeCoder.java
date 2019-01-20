@@ -1,5 +1,7 @@
 package org.jmicro.api.codec.typecoder;
 
+import java.io.DataOutput;
+import java.io.IOException;
 import java.lang.reflect.Type;
 import java.nio.ByteBuffer;
 
@@ -10,7 +12,8 @@ public class ReflectTypeCoder<T> extends AbstractShortTypeCoder<T>{
 	   }
 
 		@Override
-		public void encodeData(ByteBuffer buffer, T val,Class<?> fieldDeclareType, Type genericType) {
+		public void encodeData(DataOutput buffer, T val,Class<?> fieldDeclareType,
+				Type genericType) throws IOException {
 			TypeCoder.encodeByReflect(buffer,val,fieldDeclareType, genericType);
 		}
 

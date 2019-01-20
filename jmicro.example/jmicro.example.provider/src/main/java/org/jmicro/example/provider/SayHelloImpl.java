@@ -47,7 +47,7 @@ public class SayHelloImpl implements ISayHello {
 		System.out.println("testTopic: "+data.getTopic()+", data: "+ data.getData().toString());
 	}
 	
-	@Subscribe(topic=MonitorConstant.STATIS_SERVICE_METHOD_TOPIC)
+	@Subscribe(topic=MonitorConstant.TEST_SERVICE_METHOD_TOPIC)
 	public void statis(PSData data) {
 		System.out.println("Topic: "+data.getTopic()+", data: "+ data.getData().toString());
 	}

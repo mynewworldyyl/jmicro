@@ -10,7 +10,7 @@ public class StartMonitorAfterObjectFactoryReady implements IFactoryListener {
 	@Override
 	public void afterInit(IObjectFactory of) {
 		SubmitItemHolderManager sihm = of.get(SubmitItemHolderManager.class);
-		sihm.startWork("");
+		sihm.init0();
 	}
 
 	@Override

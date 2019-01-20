@@ -436,39 +436,6 @@ public class ServiceLoader {
 		return srv;
 	}
 	
-	public static Method getServiceMethod(Object obj ,IRequest req){
-		Class<?>[] pst = getMethodParamsType(req.getArgs());
-		try {
-			Method m = obj.getClass().getMethod(req.getMethod(), pst);
-			return m;
-		} catch (NoSuchMethodException | SecurityException | IllegalArgumentException e) {
-			throw new RpcException(req,"",e);
-		}
-	}
-	
-	public static Class<?>[]  getMethodParamsType(Object[] args){
-		if(args == null || args.length==0){
-			return new Class<?>[0];
-		}
-		Class<?>[] parameterTypes = new Class[args.length];
-		for(int i = 0; i < args.length; i++) {
-			parameterTypes[i] = ReflectUtils.getPrimitiveClazz(args[i].getClass());
-		}
-		return parameterTypes;
-	}
-	
-	public static Method getInterfaceMethod(IRequest req){
-		try {
-			Class<?> cls = Thread.currentThread().getContextClassLoader().loadClass(req.getServiceName());
-			Class<?>[] pst = getMethodParamsType(req.getArgs());
-			Method m = cls.getMethod(req.getMethod(),pst);
-			return m;
-		} catch (ClassNotFoundException | NoSuchMethodException | SecurityException e) {
-			logger.error("getInterfaceMethod",e);
-		}
-		return null;
-	}
-
 	public Map<String, Object> getServices() {
 		return Collections.unmodifiableMap(services);
 	}

@@ -1,10 +1,11 @@
 package org.jmicro.api.codec.typecoder;
 
+import java.io.DataOutput;
+import java.io.IOException;
 import java.lang.reflect.Type;
 import java.nio.ByteBuffer;
 
 import org.jmicro.api.codec.Decoder;
-import org.jmicro.common.CommonException;
 
 public abstract class AbstractShortTypeCoder<T>  extends AbstractComparableTypeCoder<T> {
 
@@ -19,13 +20,13 @@ public abstract class AbstractShortTypeCoder<T>  extends AbstractComparableTypeC
 	}
 	
 	@Override
-	public void encode(ByteBuffer buffer, T val, Class<?> fieldDeclareType, Type genericType) {
+	public void encode(DataOutput buffer, T val, Class<?> fieldDeclareType, Type genericType) throws IOException {
 		//super.encode(buffer, val, fieldDeclareType, genericType);
 		if(fieldDeclareType != null) {
 			checkType(fieldDeclareType);
 		}
-		buffer.put(prefixCode);
-		buffer.putShort(code());
+		buffer.write(prefixCode);
+		buffer.writeShort(code());
 		encodeData(buffer,val,fieldDeclareType,genericType);
 	}
 
@@ -43,7 +44,8 @@ public abstract class AbstractShortTypeCoder<T>  extends AbstractComparableTypeC
 	}
 	
 	protected abstract T decodeData(ByteBuffer buffer, Class<?> fieldDeclareType, Type genericType);
-	protected abstract void encodeData(ByteBuffer buffer, T val, Class<?> fieldDeclareType, Type genericType);
+	protected abstract void encodeData(DataOutput buffer, T val, Class<?> fieldDeclareType
+			, Type genericType) throws IOException;
 
 	@Override
 	public boolean canSupport(Class<?> clazz) {

@@ -1,6 +1,7 @@
 package org.jmicro.api.codec;
 
-import java.lang.reflect.ParameterizedType;
+import java.io.DataOutput;
+import java.io.IOException;
 import java.lang.reflect.Type;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
@@ -92,8 +93,9 @@ public class TypeCoderFactory {
 			}
 
 			@Override
-			public void encodeData(ByteBuffer buffer, String val, Class<?> fieldDeclareType, Type genericType) {
-				OnePrefixTypeEncoder.encodeString(buffer, (String) val);
+			public void encodeData(DataOutput buffer, String val, Class<?> fieldDeclareType,
+					Type genericType) throws IOException {
+				TypeCoder.encodeString(buffer, (String) val);
 			}
 
 		});
@@ -135,8 +137,9 @@ public class TypeCoderFactory {
 
 		registCoder(new AbstractShortTypeCoder<java.util.Date>(type--, java.util.Date.class) {
 			@Override
-			public void encodeData(ByteBuffer buffer, java.util.Date val, Class<?> fieldDeclareType, Type genericType) {
-				buffer.putLong(val.getTime());
+			public void encodeData(DataOutput buffer, java.util.Date val, Class<?> fieldDeclareType,
+					Type genericType) throws IOException {
+				buffer.writeLong(val.getTime());
 			}
 
 			@Override
@@ -148,8 +151,9 @@ public class TypeCoderFactory {
 
 		registCoder(new AbstractShortTypeCoder<java.sql.Date>(type--, java.sql.Date.class) {
 			@Override
-			public void encodeData(ByteBuffer buffer, java.sql.Date val, Class<?> fieldDeclareType, Type genericType) {
-				buffer.putLong(val.getTime());
+			public void encodeData(DataOutput buffer, java.sql.Date val, Class<?> fieldDeclareType,
+					Type genericType) throws IOException {
+				buffer.writeLong(val.getTime());
 			}
 
 			@Override
@@ -167,8 +171,9 @@ public class TypeCoderFactory {
 
 			@SuppressWarnings({ "unchecked", "rawtypes" })
 			@Override
-			public void encode(ByteBuffer buffer, Map val, Class<?> fieldDeclareType, Type genericType) {
-				buffer.put(Decoder.PREFIX_TYPE_MAP);
+			public void encode(DataOutput buffer, Map val, Class<?> fieldDeclareType, 
+					Type genericType) throws IOException {
+				buffer.write(Decoder.PREFIX_TYPE_MAP);
 				TypeCoder.encodeMap(buffer, (Map) val, TypeCoder.genericType(genericType));
 			}
 		});
@@ -176,8 +181,9 @@ public class TypeCoderFactory {
 		registCoder(new AbstractComparableTypeCoder<Set>(Decoder.PREFIX_TYPE_SET,type--, Set.class) {
 			
 			@Override
-			public void encode(ByteBuffer buffer, Set val, Class<?> fieldDeclareType, Type genericType) {
-				buffer.put(Decoder.PREFIX_TYPE_SET);
+			public void encode(DataOutput buffer, Set val, Class<?> fieldDeclareType,
+					Type genericType) throws IOException {
+				buffer.write(Decoder.PREFIX_TYPE_SET);
 				TypeCoder.encodeCollection(buffer, val, fieldDeclareType, TypeCoder.genericType(genericType));
 			}
 
@@ -194,8 +200,9 @@ public class TypeCoderFactory {
 		registCoder(new AbstractComparableTypeCoder<List>(Decoder.PREFIX_TYPE_LIST,type--, List.class) {
 			@SuppressWarnings("rawtypes")
 			@Override
-			public void encode(ByteBuffer buffer, List val, Class<?> fieldDeclareType, Type genericType) {
-				buffer.put(Decoder.PREFIX_TYPE_LIST);
+			public void encode(DataOutput buffer, List val, Class<?> fieldDeclareType,
+					Type genericType) throws IOException {
+				buffer.write(Decoder.PREFIX_TYPE_LIST);
 				TypeCoder.encodeCollection(buffer, val, fieldDeclareType, TypeCoder.genericType(genericType));
 			}
 
@@ -211,9 +218,12 @@ public class TypeCoderFactory {
 
 		registCoder(new AbstractShortTypeCoder<ByteBuffer>(type--, ByteBuffer.class) {
 			@Override
-			public void encodeData(ByteBuffer buffer, ByteBuffer val, Class<?> fieldDeclareType, Type genericType) {
+			public void encodeData(DataOutput buffer, ByteBuffer val, Class<?> fieldDeclareType,
+					Type genericType) throws IOException {
 				TypeCoder.putLength(buffer, val.remaining());
-				buffer.put(val);
+				byte[] data = new byte[val.remaining()];
+				val.get(data);
+				buffer.write(data);
 			}
 
 			@Override

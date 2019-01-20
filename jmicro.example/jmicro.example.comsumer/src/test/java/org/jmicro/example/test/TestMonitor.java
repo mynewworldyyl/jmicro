@@ -29,6 +29,7 @@ public class TestMonitor extends JMicroBaseTestCase{
 	public void testMonitor01() {
 		final Random ran = new Random();
 		this.setSayHelloContext();
+		this.waitForReady(10);
 		
 		SF.doSubmit(MonitorConstant.CLIENT_REQ_OK);
 		try {

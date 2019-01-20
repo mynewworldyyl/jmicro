@@ -16,6 +16,7 @@
  */
 package org.jmicro.api.registry;
 
+import org.jmicro.api.codec.typecoder.TypeCoder;
 import org.jmicro.common.CommonException;
 import org.jmicro.common.util.ClassHelper;
 import org.jmicro.common.util.ReflectUtils;
@@ -92,14 +93,9 @@ public final class UniqueServiceMethodKey {
 			return new Class[0];
 		}
 		
-		ClassLoader cl = ClassHelper.getClassLoader(UniqueServiceMethodKey.class);
 		Class<?>[] clazzes = new Class<?>[clses.length];
 		for(int i=0; i< clazzes.length; i++) {
-			try {
-				clazzes[i] = cl.loadClass(clses[i]);
-			} catch (ClassNotFoundException e) {
-				throw new CommonException("Service methon config error:"+paramsStr,e);
-			}
+			clazzes[i] = TypeCoder.loadClassFromCache(clses[i]);
 		}
 		
 		return clazzes;

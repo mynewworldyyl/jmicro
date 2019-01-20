@@ -20,5 +20,5 @@ public interface IMonitorDataSubmiter {
 	
 	boolean submit(SubmitItem item);
 	
-	boolean canSubmit(Integer type);
+	boolean canSubmit(int type);
 }
