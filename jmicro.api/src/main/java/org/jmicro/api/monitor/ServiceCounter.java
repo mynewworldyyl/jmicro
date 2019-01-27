@@ -121,7 +121,7 @@ public class ServiceCounter implements IServiceCounter{
 		if(types.length == 1) {
 			Counter c = getCounter(types[0],false);
 			if(c != null) {
-				return c.getQps(unit);
+				return c.getQps(tounit);
 			}
 		} else {
 			double sum = getValueWithEx(types);
@@ -207,7 +207,7 @@ public class ServiceCounter implements IServiceCounter{
 		}
 		String key = serviceKey+"-"+type;
 		
-		Counter cnt = new Counter(timeWindow,slotSizeInMilliseconds);
+		Counter cnt = new Counter(type,timeWindow,slotSizeInMilliseconds);
 		TimerTicker.getDefault(slotSizeInMilliseconds).addListener(key, cnt,null,true);
 		this.counters.put(type, cnt);
 		supportTypes.add(type);
@@ -280,6 +280,10 @@ public class ServiceCounter implements IServiceCounter{
 			break;
 		case MonitorConstant.STATIS_QPS:
 			result = counter.getQps(TimeUnit.SECONDS,MonitorConstant.CLIENT_REQ_OK);
+			break;
+		default:
+			result = counter.getValueWithEx(type);
+			break;
 		}
 		return result;
 	
@@ -303,6 +307,7 @@ public class ServiceCounter implements IServiceCounter{
 	 */
 	static class Counter implements ITickerAction{
 		
+		private final int type;
 		//时间窗口,单位毫秒,统计只保持时间窗口内的数据,超过时间窗口的数据自动丢弃
 		//统计数据平滑向前移动,单位毫秒
 		private final long timeWindow;
@@ -316,11 +321,11 @@ public class ServiceCounter implements IServiceCounter{
 		
 		private final Slot[] slots;
 		
-		private int header = -1;
+		private volatile int header = -1;
 		
 		private final ReentrantLock locker = new ReentrantLock();
 		
-		private AtomicLong total = new  AtomicLong(0);
+		private volatile AtomicLong total = new  AtomicLong(0);
 		
 		/**
 		 * 
@@ -329,8 +334,9 @@ public class ServiceCounter implements IServiceCounter{
 		 *     并且是必须满足timeWindow=N*slotSizeInMilliseconds, N是非负整数，N就是槽位个数
 		 *     
 		 */
-		public Counter(long timeWindow,long slotSizeInMilliseconds) {
+		public Counter(int type,long timeWindow,long slotSizeInMilliseconds) {
 			//this.id = id;
+			this.type = type;
 			this.timeWindow = timeWindow;
 			this.slotSizeInMilliseconds = slotSizeInMilliseconds;
 			
@@ -344,26 +350,13 @@ public class ServiceCounter implements IServiceCounter{
 			//槽位 有效时间=slotSizeInMilliseconds ~ (timeStart + slotSizeInMilliseconds)
 			//如果当前时间在有效时间内，则定义为当前槽位
 			for(int i = 0; i < this.slotLen; i++) {
-				this.slots[i] = new Slot(curTime + slotSizeInMilliseconds*(i+1),0);
+				this.slots[i] = new Slot(0,0);
 			}
-		}
-		
-		/**
-		 * 任意时刻Tx，计算槽位Sx是否有效，假定Sxv表示任意槽位有效时间最大值
-	     * Tx－Sxv ＞　timewindow 即表示 Sx为无效槽位，将其值设置为０即可
-		 */
-		@Override
-		public void act(String key,Object attachement) {
-			/*
-			 * 不用加锁，因为时间判断上不可能与当前使用的槽位重复
-			 */
-			long curTime = System.currentTimeMillis();
-			for(int i = 0; i < this.slots.length; i++) {
-				if((curTime - this.slots[i].getTimeEnd()) > timeWindow ) {
-					//槽位时间值已经超过时间窗口，重置之
-					this.slots[i].reset();
-				}
-			}
+			
+			this.slots[0].setTimeEnd(curTime+slotSizeInMilliseconds);
+			
+			logger.info("Create Counter type:{}, timeWindow:{},slotSizeInMilliseconds:{},slotLen:{},curTime:{}",this.type,
+					this.timeWindow,this.slotSizeInMilliseconds,this.slotLen,curTime);
 		}
 		
 		/**
@@ -371,24 +364,14 @@ public class ServiceCounter implements IServiceCounter{
 		 * 当前窗口同平均值，总值除时间窗口
 		 * @return
 		 */
+		boolean debugGetQps = false;
+		//boolean fqps = false;
 		public double getQps(TimeUnit timeUnit) {
 			long sum = getVal();
 			long time = TimeUtils.getTime(this.timeWindow, TimeUnit.MILLISECONDS, timeUnit);
-			
-			/*if(timeUnit == TimeUnit.SECONDS) {
-				time = TimeUnit.MILLISECONDS.toSeconds(this.timeWindow);
-			}else if(timeUnit == TimeUnit.MINUTES) {
-				time = TimeUnit.MILLISECONDS.toMinutes(this.timeWindow);
-			}else if(timeUnit == TimeUnit.HOURS) {
-				time = TimeUnit.MILLISECONDS.toHours(this.timeWindow);
-			}else if(timeUnit == TimeUnit.DAYS) {
-				time = TimeUnit.MILLISECONDS.toDays(this.timeWindow);
-			}else if(timeUnit == TimeUnit.MICROSECONDS) {
-				time = TimeUnit.MILLISECONDS.toMicros(this.timeWindow);
-			}else if(timeUnit == TimeUnit.NANOSECONDS) {
-				time = TimeUnit.MILLISECONDS.toNanos(this.timeWindow);
-			}*/
-			
+			if(debugGetQps) {
+				logger.info("sum:{},time:{}",sum,time);
+			}
 			return ((double)sum)/time;
 		}
 
@@ -398,8 +381,8 @@ public class ServiceCounter implements IServiceCounter{
 		 */
 		public long getVal() {
 			long sum = 0;
-			for(Slot b : slots) {
-				sum += b.getVal();
+			for(Slot s : slots) {
+				sum += s.getVal();
 			}
 			return sum;
 		}
@@ -421,10 +404,6 @@ public class ServiceCounter implements IServiceCounter{
 			currentSlot().add(v);
 		}
 		
-		private boolean isCur(Slot s,long curTime) {
-			return curTime < s.getTimeEnd() && curTime > (s.getTimeEnd() - slotSizeInMilliseconds);
-		}
-		
 		/**
 		 * 当前槽位定义为： Tx < Sxv 且  Tx > Sxv-slotSizeInMilliseconds
 		 * 槽位有 效时间=slotSizeInMilliseconds ~ (timeStart + slotSizeInMilliseconds)
@@ -432,51 +411,45 @@ public class ServiceCounter implements IServiceCounter{
 		 * @return
 		 */
 		private Slot currentSlot() {
-			long curTime = System.currentTimeMillis();
-			Slot slot = slots[header];
-			if(isCur(slot,curTime)) {
-				//当前槽位还在时间窗口内,直接可以返回
-				return slot;
-			} else {
-				boolean isLock = false;
-				try {
-					if(isLock = locker.tryLock(5, TimeUnit.MILLISECONDS)) {
-						slot = slots[header];
-						if(isCur(slot,curTime)) {
-							//线程等待锁时,已经有另外一个线程在重置当前旋转木马
-							return slot;
-						}
-						
-						int curHeader = header;
-						//当前槽位已经过时,新建之,过去的时间可能跨过了多个槽位
-						while(!isCur(slot,curTime)){
-							//循环转,直到进入当前时间窗口
-							long preSlotTimeEnd = slots[header].getTimeEnd();
-							header = (header+1) % slotLen;
-							slot = slots[header];
-							//重置槽位的值
-							slot.reset();
-							if(curHeader == header ){
-								//转了一圈,全部槽位都已经无效,直接从当前时间开始计算,防止长时间没使用之后的空转
-								slot.setTimeEnd(curTime + slotSizeInMilliseconds);
-								break;
-							} else {
-								//有效时间在前一个时间基础上前移一个
-								slot.setTimeEnd(preSlotTimeEnd+ slotSizeInMilliseconds);
-							}
-						}	
-						return slot;
-					}
-				} catch (InterruptedException e) {
-					e.printStackTrace();
-				}finally {
-					if(isLock) {
-						locker.unlock();
-					}
+			boolean isLock = false;
+			try {
+				if((isLock = locker.tryLock(300, TimeUnit.MILLISECONDS))) {
+					return slots[header];
 				}
-				//没锁成功,返回之前的槽位,此时算在计算误差范围内
-				return slot;
+			} catch (InterruptedException e) {
+				logger.error("act",e);
+			}finally {
+				if(isLock) {
+					locker.unlock();
+				}
 			}
+			logger.warn("数据计误差范围内：{}",this.type);
+			return slots[header];
+		}
+		
+		/**
+		 * 任意时刻Tx，计算槽位Sx是否有效，假定Sxv表示任意槽位有效时间最大值
+	     * Tx－Sxv ＞　timewindow 即表示 Sx为无效槽位，将其值设置为０即可
+		 */
+		@Override
+		public void act(String key,Object attachement) {
+			boolean isLock = false;
+			try {
+				if((isLock = locker.tryLock(100, TimeUnit.MILLISECONDS))) {
+					Slot preSlot = this.slots[header];
+					header = (header+1) % slotLen;
+					//当前槽位
+					this.slots[header].setTimeEnd(preSlot.getTimeEnd()+this.slotSizeInMilliseconds);
+					this.slots[header].reset();
+				}
+			} catch (InterruptedException e) {
+				logger.error("act",e);
+			}finally {
+				if(isLock) {
+					locker.unlock();
+				}
+			}
+			
 		}
 
 		/**
@@ -490,9 +463,9 @@ public class ServiceCounter implements IServiceCounter{
 	
 	static class Slot {
 		
-		private long timeEnd;
+		private volatile long timeEnd;
 		
-		private AtomicLong val;
+		private volatile AtomicLong val;
 		
 		public Slot(long timeEnd,long v) {
 			this.timeEnd = timeEnd;

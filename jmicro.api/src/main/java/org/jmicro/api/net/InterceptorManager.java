@@ -10,6 +10,7 @@ import org.jmicro.api.JMicroContext;
 import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.Interceptor;
 import org.jmicro.api.objectfactory.ProxyObject;
+import org.jmicro.api.registry.UniqueServiceMethodKey;
 import org.jmicro.common.CommonException;
 import org.jmicro.common.Constants;
 import org.slf4j.Logger;
@@ -169,11 +170,8 @@ public class InterceptorManager {
 		sb.append(req.getNamespace()).append(req.getVersion())
 		.append(req.getMethod());
 		
-		if(req.getArgs() != null){
-			Object[] args = req.getArgs();
-			for(int i = 0; i < args.length; i++) {
-				sb.append(args[i].toString());
-			}
+		if(req.getArgs() != null && req.getArgs().length > 0){
+			sb.append(UniqueServiceMethodKey.paramsStr(req.getArgs()));
 		}
 		
 		return sb.toString();

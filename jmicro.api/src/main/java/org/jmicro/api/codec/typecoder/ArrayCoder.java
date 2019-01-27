@@ -31,9 +31,9 @@ public class ArrayCoder extends AbstractShortTypeCoder<Object[]>{
 		protected void encodeData(DataOutput buffer, Object[] val, 
 				Class<?> fieldDeclareType, Type genericType) throws IOException {
 			Class<?> eltType = val.getClass().getComponentType();
-			if(val.length > 0) {
+			/*if(val.length > 0) {
 				eltType = val[0].getClass();
-			}
+			}*/
 			TypeCoder.putStringType(buffer, eltType.getName());
 			TypeCoder.encodeArray(buffer,val,eltType,genericType);
 		}

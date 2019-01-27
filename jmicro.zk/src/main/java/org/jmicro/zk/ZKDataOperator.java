@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.CuratorFrameworkFactory;
@@ -45,6 +46,7 @@ import org.apache.zookeeper.Watcher.Event.EventType;
 import org.apache.zookeeper.ZooDefs;
 import org.apache.zookeeper.data.ACL;
 import org.apache.zookeeper.data.Stat;
+import org.jmicro.api.IListener;
 import org.jmicro.api.annotation.Component;
 import org.jmicro.api.config.Config;
 import org.jmicro.api.raft.IChildrenListener;
@@ -87,6 +89,9 @@ public class ZKDataOperator implements IDataOperator{
 		propes = new Properties();
 		curator = createCuratorFramework();
 	}
+	
+	//路径到子结点之间关系，Key是全路径，值只包括结点名称
+	private Map<String,Set<String>> path2Children = new ConcurrentHashMap<>();
 	
 	//连接状态舰艇器，连上，断开，重连
 	//若增加监听器时，边接已经建立，则立即给一个连接通知，否则不给连接通知
@@ -139,7 +144,7 @@ public class ZKDataOperator implements IDataOperator{
 		Set<INodeListener> lis = nodeListeners.get(path);
 		if(lis != null && !lis.isEmpty()){
 			for(INodeListener l : lis){
-				l.nodeChanged(INodeListener.NODE_ADD,path, str);
+				l.nodeChanged(INodeListener.SERVICE_ADD,path, str);
 			}
 		}
 	}
@@ -149,7 +154,7 @@ public class ZKDataOperator implements IDataOperator{
 		Set<INodeListener> lis = nodeListeners.get(path);
 		if(lis != null && !lis.isEmpty()){
 			for(INodeListener l : lis){
-				l.nodeChanged(INodeListener.NODE_REMOVE,path, null);
+				l.nodeChanged(INodeListener.SERVICE_REMOVE,path, null);
 			}
 		}
 	}
@@ -192,17 +197,51 @@ public class ZKDataOperator implements IDataOperator{
 	}
 	
 	private void childrenChange(String path) {
-		List<String> children = this.getChildren(path);
-		if(children.isEmpty()){
-			return;
+		Set<String> news = this.getChildren(path);
+		Set<String> exists = this.path2Children.get(path);
+		
+		Set<String> adds = new HashSet<>();
+		Set<String> removes = new HashSet<>();
+		
+		//计算增加的结点
+		for(String n : news) {
+			//在新的列表里面有，但老列表里面没有就是增加
+			if(!exists.contains(n)) {
+				adds.add(n);
+			}
 		}
+		
+		for(String r : exists) {
+			//在老列表里面有，但是新列表里面没有，就是减少
+			if(!news.contains(r)) {
+				removes.add(r);
+			}
+		}
+		
 		Set<IChildrenListener> lis = childrenListeners.get(path);
 		if(lis != null && !lis.isEmpty()){
-			for(IChildrenListener l : lis){
-				if(OPEN_DEBUG) {
-					logger.debug("childrenChange path:{}, children:{}",path,children);
+			
+			if(!adds.isEmpty()) {
+				for(String a : adds) {
+					for(IChildrenListener l : lis){
+						if(OPEN_DEBUG) {
+							logger.debug("childrenChange add path:{}, children:{}",path,a);
+						}
+						String data = this.getData(path+"/"+a);
+						l.childrenChanged(IListener.SERVICE_ADD,path,a,data);
+					}
 				}
-				l.childrenChanged(path, children);
+			}
+			
+			if(!removes.isEmpty()) {
+				for(String a : removes) {
+					for(IChildrenListener l : lis){
+						if(OPEN_DEBUG) {
+							logger.debug("childrenChange remove path:{}, children:{}",path,a);
+						}
+						l.childrenChanged(IListener.SERVICE_REMOVE,path,a,null);
+					}
+				}
 			}
 		}
 	}
@@ -268,6 +307,9 @@ public class ZKDataOperator implements IDataOperator{
 	
 	}
 	
+	/**
+	 * 舰艇孩子增加或删除
+	 */
 	public void addChildrenListener(String path,IChildrenListener lis){
 		logger.debug("Add children listener for: {}",path);
 		if(childrenListeners.containsKey(path)){
@@ -278,15 +320,27 @@ public class ZKDataOperator implements IDataOperator{
 			}
 		    if(!l.isEmpty()){
 		    	//列表已经存在,但监听器还不存在
+		    	notifyChildrenAdd(lis,path);
 		    	l.add(lis);
 				return;
 		    }
 		}
 		//监听器和列表都不存在
-		Set<IChildrenListener> l = null;
-		childrenListeners.put(path, l = new HashSet<IChildrenListener>());
+		Set<IChildrenListener> l =  new HashSet<IChildrenListener>();
+		childrenListeners.put(path, l);
+		notifyChildrenAdd(lis,path);
 		l.add(lis);
 		watchChildren(path);
+	}
+	
+	private void notifyChildrenAdd(IChildrenListener l,String path) {
+		if(!this.path2Children.containsKey(path)) {
+			return;
+		}
+		for(String c : this.path2Children.get(path)) {
+			String data = this.getData(path+"/"+c);
+			l.childrenChanged(IListener.SERVICE_ADD,path,c,data);
+		}
 	}
 	
 	public void removeDataListener(String path,IDataListener lis){
@@ -349,17 +403,29 @@ public class ZKDataOperator implements IDataOperator{
 		}
 	}
 	
-	public List<String> getChildren(String path){
+	public Set<String> getFromCacheChildren(String path){
+		if(this.path2Children.containsKey(path)) {
+			Set<String> set = new HashSet<>();
+			set.addAll(path2Children.get(path));
+			return set;
+		}else {
+			return Collections.EMPTY_SET;
+		}
+	}
+	
+	public Set<String> getChildren(String path){
 		//init();
 		GetChildrenBuilder getChildBuilder = this.curator.getChildren();
   	   try {
-			return getChildBuilder.forPath(path);
+			List<String> l = getChildBuilder.forPath(path);
+			Set<String> set = new HashSet<>();
+			set.addAll(l);
 		} catch (KeeperException.NoNodeException e) {
 			logger.error(e.getMessage());
 		}catch(Exception e){
 			logger.error("",e);
 		}
-  	   return Collections.EMPTY_LIST;
+  	   return Collections.EMPTY_SET;
 	}
 	
 	/**

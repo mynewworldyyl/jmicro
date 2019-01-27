@@ -265,8 +265,8 @@ public class ServiceLoader {
 		item.setRetryCnt(anno.retryCnt()!=3 || intAnno == null ?anno.retryCnt():intAnno.retryCnt());
 		item.setRetryInterval(anno.retryInterval()!=500 || intAnno == null ?anno.retryInterval():intAnno.retryInterval());
 		//item.setTestingArgs(getFieldValue(anno.testingArgs(),intAnno == null ? null : intAnno.testingArgs(),""));
-		item.setTimeout(anno.timeout()!=2000 || intAnno == null ?anno.timeout():intAnno.timeout());
-		item.setMaxSpeed(anno.maxSpeed());
+		item.setTimeout(anno.timeout()!=2000 || intAnno == null ? anno.timeout() : intAnno.timeout());
+		item.setMaxSpeed(anno.maxSpeed() > 0 || intAnno == null ? anno.maxSpeed() : intAnno.maxSpeed());
 		item.setBaseTimeUnit( StringUtils.isEmpty(anno.baseTimeUnit()) || intAnno == null ? anno.baseTimeUnit() : intAnno.baseTimeUnit());
 		item.setTimeWindow(anno.timeWindow() <= 0 || intAnno == null ?anno.timeWindow():intAnno.timeWindow());
 		item.setSlotSize(anno.slotSize() <= 0 || intAnno == null ?anno.slotSize():intAnno.slotSize());
@@ -348,6 +348,7 @@ public class ServiceLoader {
 				sm.setFailResponse("");
 				sm.setLoggable(-1);
 				sm.setDebugMode(-1);
+				sm.setMaxSpeed(item.getMaxSpeed());
 				
 			} else {
 				 if(manno != null ) {
@@ -356,7 +357,10 @@ public class ServiceLoader {
 					sm.setRetryInterval(manno.retryInterval()!=500 || intMAnno == null ? manno.retryInterval():intMAnno.retryInterval());
 					sm.setTestingArgs(getFieldValue(manno.testingArgs(),intMAnno == null ? null : intMAnno.testingArgs(),""));
 					sm.setTimeout(manno.timeout()!=2000 || intMAnno == null ?manno.timeout():intMAnno.timeout());
-					sm.setMaxSpeed(manno.maxSpeed());
+					sm.setMaxSpeed(manno.maxSpeed() > 0 || intMAnno == null ? manno.maxSpeed():intMAnno.maxSpeed());
+					if(sm.getMaxSpeed() <=0) {
+						sm.setMaxSpeed(item.getMaxSpeed());
+					}
 					sm.setAvgResponseTime(manno.avgResponseTime()!=-1 || intMAnno == null ? manno.avgResponseTime() : intMAnno.avgResponseTime());
 					sm.setMonitorEnable(manno.monitorEnable()!=-1 || intMAnno == null ? manno.monitorEnable() : intMAnno.monitorEnable());
 					sm.setStream(manno.stream());
@@ -381,6 +385,10 @@ public class ServiceLoader {
 					sm.setTestingArgs(intMAnno.testingArgs());
 					sm.setTimeout(intMAnno.timeout());
 					sm.setMaxSpeed(intMAnno.maxSpeed());
+					if(sm.getMaxSpeed() <=0) {
+						sm.setMaxSpeed(item.getMaxSpeed());
+					}
+					
 					sm.setBaseTimeUnit(intMAnno.baseTimeUnit());
 					sm.setAvgResponseTime(intMAnno.avgResponseTime());
 					sm.setMonitorEnable(intMAnno.monitorEnable());

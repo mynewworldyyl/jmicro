@@ -45,7 +45,7 @@ class Worker implements Runnable{
 			}
 			
 			try {
-				Thread.sleep(r.nextInt(60));
+				Thread.sleep(r.nextInt(50));
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}

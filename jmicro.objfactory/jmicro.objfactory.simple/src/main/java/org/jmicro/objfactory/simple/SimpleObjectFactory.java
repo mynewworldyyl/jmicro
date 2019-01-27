@@ -46,7 +46,6 @@ import org.jmicro.api.classloader.RpcClassLoader;
 import org.jmicro.api.config.Config;
 import org.jmicro.api.config.IConfigLoader;
 import org.jmicro.api.http.annotation.HttpHandler;
-import org.jmicro.api.net.IServer;
 import org.jmicro.api.objectfactory.IFactoryListener;
 import org.jmicro.api.objectfactory.IObjectFactory;
 import org.jmicro.api.objectfactory.IPostInitListener;
@@ -55,7 +54,6 @@ import org.jmicro.api.raft.IDataOperator;
 import org.jmicro.api.registry.IRegistry;
 import org.jmicro.api.registry.ServiceItem;
 import org.jmicro.api.service.IServerServiceProxy;
-import org.jmicro.api.service.ServiceLoader;
 import org.jmicro.api.service.ServiceManager;
 import org.jmicro.common.CommonException;
 import org.jmicro.common.Constants;
@@ -509,6 +507,29 @@ public class SimpleObjectFactory implements IObjectFactory {
 		
 		if(!l.isEmpty()){
 			
+			for(int i =0; i < l.size(); i++){
+				Object o = l.get(i);
+				
+				 if(o instanceof ProxyObject){
+		    		continue;
+		    	 }
+				 
+				/*if(IIdServer.class.isInstance(o)) {
+					 //此代码仅用于开发测试，正式代码中应该注掉
+					 //用于测试具体某个组件的配置初始化
+					 logger.debug(o.toString());
+				 }*/
+				
+				if(systemObjs.contains(o) ||  haveInits.contains(o)) {
+					continue;
+				}
+				haveInits.add(o);
+				//只要在初始化前注入配置信息
+				notifyPreInitPostListener(o,cfg);
+			}
+			
+			haveInits.clear();
+			
 			//依赖注入
 			for(int i =0; i < l.size(); i++){
 				Object o = l.get(i);
@@ -523,9 +544,10 @@ public class SimpleObjectFactory implements IObjectFactory {
 					 logger.debug(o.toString());
 				 }*/
 				
-				if(systemObjs.contains(o)) {
+				if(systemObjs.contains(o) || haveInits.contains(o) || !isEnable(o)) {
 					continue;
 				}
+				
 				haveInits.add(o);
 				injectDepependencies(o);
 				//doAfterCreate(o,cfg);
@@ -546,30 +568,7 @@ public class SimpleObjectFactory implements IObjectFactory {
 					 logger.debug(o.toString());
 				 }*/
 				
-				if(srvManager == o || registry == o || dop == o || haveInits.contains(o)) {
-					continue;
-				}
-				haveInits.add(o);
-				//只要在初始化前注入配置信息
-				notifyPreInitPostListener(o,cfg);
-			}
-			
-			haveInits.clear();
-			
-			for(int i =0; i < l.size(); i++){
-				Object o = l.get(i);
-				
-				 if(o instanceof ProxyObject){
-		    		continue;
-		    	 }
-				 
-				/*if(IIdServer.class.isInstance(o)) {
-					 //此代码仅用于开发测试，正式代码中应该注掉
-					 //用于测试具体某个组件的配置初始化
-					 logger.debug(o.toString());
-				 }*/
-				
-				if(srvManager == o || registry == o || dop == o || haveInits.contains(o)) {
+				if(systemObjs.contains(o) || haveInits.contains(o) || !isEnable(o)) {
 					continue;
 				}
 				haveInits.add(o);
@@ -591,7 +590,7 @@ public class SimpleObjectFactory implements IObjectFactory {
 					 logger.debug(o.toString());
 				 }*/
 				
-				if(srvManager == o || registry == o || dop == o || haveInits.contains(o)) {
+				if(systemObjs.contains(o) || haveInits.contains(o) || !isEnable(o)) {
 					continue;
 				}
 				haveInits.add(o);
@@ -613,17 +612,17 @@ public class SimpleObjectFactory implements IObjectFactory {
 					 logger.debug(o.toString());
 				 }*/
 				
-				if(srvManager == o || registry == o || dop == o || haveInits.contains(o)) {
+				if(systemObjs.contains(o) || haveInits.contains(o) || !isEnable(o)) {
 					continue;
 				}
 				haveInits.add(o);
 				//通知初始化完成
 				notifyAfterInitPostListener(o,cfg);
 			}
+			haveInits.clear();
 			
 		}
 		
-		haveInits.clear();
 		haveInits = null;
 		
 		//RpcClassloaderClient在preinit时注入
@@ -644,6 +643,36 @@ public class SimpleObjectFactory implements IObjectFactory {
 		}
 	}
 	
+	private boolean isEnable(Object o) {
+		if(o == null) {
+			return false;
+		}
+		
+		try {
+			Method m = o.getClass().getMethod( "isEnable", new Class<?>[0]);
+			return (Boolean)m.invoke(o, new Object[0]);
+		} catch (NoSuchMethodException | SecurityException | IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
+			try {
+				Method m = o.getClass().getMethod( "isEnable", new Class<?>[0]);
+				return (Boolean)m.invoke(o, new Object[0]);
+			} catch (NoSuchMethodException | SecurityException | IllegalAccessException | IllegalArgumentException | InvocationTargetException e1) {
+				try {
+					Field f = o.getClass().getField("enable");
+					boolean acc = f.isAccessible();
+					if(!acc) {
+						f.setAccessible(true);
+					}
+					Boolean v = f.getBoolean(o);
+					f.setAccessible(acc);
+					return v;
+				} catch (NoSuchFieldException | SecurityException | IllegalArgumentException | IllegalAccessException e2) {
+				}
+			}
+		}
+		
+		return true;
+	}
+
 	private Class<?> loadCls(String clsName) {
 		
 		Class<?> cls = ClassScannerUtils.getIns().getClassByName(clsName);
@@ -1168,7 +1197,7 @@ public class SimpleObjectFactory implements IObjectFactory {
            }
            code.append(" super.").append(m.getName()).append("(");
            for(int j = 0; j < pts.length; j++){
-          	 code.append("("+pts[j].getName()+")$").append(j + 1);
+          	 code.append("$").append(j + 1);
           	 if(j < pts.length-1){
           		code.append(",");
           	 }

@@ -104,11 +104,10 @@ public class ServiceReqMonitor extends AbstractMonitorDataSubscriber implements 
 			//degradeManager.updateExceptionCnt(typeKey(key,type),v.toString());
 		}
 		
-		data.put(MonitorConstant.STATIS_TOTAL_RESP, getData(key,MonitorConstant.STATIS_TOTAL_RESP));
-		data.put(MonitorConstant.STATIS_QPS, getData(key,MonitorConstant.STATIS_QPS));
-		
-		data.put(MonitorConstant.STATIS_SUCCESS_PERCENT, getData(key,MonitorConstant.STATIS_SUCCESS_PERCENT));
-		data.put(MonitorConstant.STATIS_FAIL_PERCENT, getData(key,MonitorConstant.STATIS_FAIL_PERCENT));
+		data.put(MonitorConstant.STATIS_TOTAL_RESP, ServiceCounter.getData(counter,MonitorConstant.STATIS_TOTAL_RESP));
+		data.put(MonitorConstant.STATIS_QPS,  ServiceCounter.getData(counter,MonitorConstant.STATIS_QPS));
+		data.put(MonitorConstant.STATIS_SUCCESS_PERCENT,  ServiceCounter.getData(counter,MonitorConstant.STATIS_SUCCESS_PERCENT));
+		data.put(MonitorConstant.STATIS_FAIL_PERCENT,  ServiceCounter.getData(counter,MonitorConstant.STATIS_FAIL_PERCENT));
 		
 		PSData psData = new PSData();
 		psData.setData(data);
@@ -156,7 +155,7 @@ public class ServiceReqMonitor extends AbstractMonitorDataSubscriber implements 
 					sm.getBaseTimeUnit()));
 			ServiceCounter counter = counters.get(key);
 			if(counter == null) {
-				//取常量池中的字符串实例做同步锁，保证基于服务方法标识这一级别的同步
+				//取常量池中的字符串实例做同步锁,保证基于服务方法标识这一级别的同步
 				key = key.intern();
 				synchronized(key) {
 					counter = counters.get(key);
@@ -168,20 +167,21 @@ public class ServiceReqMonitor extends AbstractMonitorDataSubscriber implements 
 						//定时收集统计数据
 						timer.addListener(key,tickerAct,sm);
 						if(this.openDebug) {
-							logger.debug("Create counter and add listener for service {},tw[{}],unit[{}]", key,sm.getTimeWindow(),sm.getBaseTimeUnit());
+							logger.info("Create counter for service {},timewindow[{}],unit[{}],slotSize[{}],checkInterfal[{}]", 
+									key,sm.getTimeWindow(),sm.getBaseTimeUnit(),sm.getSlotSize(),sm.getCheckInterval());
 						}
 					}
 				}
 			}
 			
 			if(!timer.container(key)) {
-				if(this.openDebug) {
-					logger.debug("Add counter listener for service {},tw[{}],unit[{}]", key,sm.getTimeWindow(),sm.getBaseTimeUnit());
-				}
-				//有新数据更新，激活统计数据时钟
+				//有新数据更新,激活统计数据时钟
 				timer.addListener(key,tickerAct,sm);
+				if(this.openDebug) {
+					logger.info("Create counter for service {},timewindow[{}],unit[{}],slotSize[{}],checkInterfal[{}]", 
+							key,sm.getTimeWindow(),sm.getBaseTimeUnit(),sm.getSlotSize(),sm.getCheckInterval());
+				}
 			}
-			
 			counter.increment(si.getType());
 		}
 		

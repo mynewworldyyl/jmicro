@@ -101,6 +101,7 @@
 		<module>jmicro.redis</module>
 		<module>jmicro.etcd</module>
 		<module>jmicro.classloader</module>
+		<module>jmicro.chroreography</module>
     </modules>
 
     <dependencyManagement>
@@ -251,6 +252,22 @@
 				 <artifactId>jmicro.idgenerator</artifactId>
 				  <version>${jmicro.version}</version>
 	        </dependency>
+	         <dependency>
+				 <groupId>org.jmicro</groupId>
+				 <artifactId>jmicro.choregraphy.agent</artifactId>
+				  <version>${jmicro.version}</version>
+	        </dependency>
+	         <dependency>
+				 <groupId>org.jmicro</groupId>
+				 <artifactId>jmicro.choregraphy.controller</artifactId>
+				  <version>${jmicro.version}</version>
+	        </dependency>
+	         <dependency>
+				 <groupId>org.jmicro</groupId>
+				 <artifactId>jmicro.idgenerator</artifactId>
+				  <version>${jmicro.version}</version>
+	        </dependency>
+	        
 	        <dependency>
 				 <groupId>org.jmicro</groupId>
 				 <artifactId>jmicro.test</artifactId>

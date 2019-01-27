@@ -24,6 +24,8 @@ import java.util.Map;
  */
 public interface IRequest extends IReq{
 
+	ISession getSession();
+	
 	public String getServiceName();
 
 	public String getTransport();

@@ -30,6 +30,7 @@ import org.jmicro.api.net.IResponse;
 import org.jmicro.api.net.RpcResponse;
 import org.jmicro.api.net.ServerError;
 import org.jmicro.common.Constants;
+import org.jmicro.common.util.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 /**
@@ -44,7 +45,7 @@ public class FirstInterceptor extends AbstractInterceptor implements IIntercepto
 	private final static Logger logger = LoggerFactory.getLogger(FirstInterceptor.class);
 	
 	@Cfg(value ="/defaultLimiterName", required=false, changeListener="limiterName")
-	private String defaultLimiterName="gavaLimiter";
+	private String defaultLimiterName="limiterName";
 	
 	@Cfg("/respBufferSize")
 	private int respBufferSize = Constants.DEFAULT_RESP_BUFFER_SIZE;
@@ -58,24 +59,30 @@ public class FirstInterceptor extends AbstractInterceptor implements IIntercepto
 	}
 	
 	public void limiterName(String fieldName){
-		if(fieldName == null || "".equals(fieldName.trim())){
+		if(StringUtils.isEmpty(fieldName)){
 			return;
 		}
 		
-		if(fieldName.trim().equals("defaultLimiterName")){
-			limiter = JMicro.getObjectFactory().getByName(defaultLimiterName);
+		if("defaultLimiterName".equals(fieldName.trim())){
+			ILimiter l = JMicro.getObjectFactory().getByName(defaultLimiterName);
+			if(l != null) {
+				limiter = l;
+				logger.warn("Change limit to :{}",this.defaultLimiterName);
+			} else {
+				logger.error("Limiter [{}] not found",defaultLimiterName);
+			}
 		}
 	}
 	
 	@Override
 	public IResponse intercept(IRequestHandler handler, IRequest req) throws RpcException {
-		/*if(limiter != null){
+		if(limiter != null){
 			boolean r = limiter.apply(req);
 			if(!r){
 				logger.warn("Limit exceep, forbidon this request");
 				return fastFail(req);
 			}
-		}*/
+		}
 		
 		IResponse resp = handler.onRequest(req);
 		return resp;

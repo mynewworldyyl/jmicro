@@ -16,9 +16,7 @@
  */
 package org.jmicro.api.registry;
 
-import org.jmicro.api.codec.typecoder.TypeCoder;
 import org.jmicro.common.CommonException;
-import org.jmicro.common.util.ClassHelper;
 import org.jmicro.common.util.ReflectUtils;
 import org.jmicro.common.util.StringUtils;
 
@@ -38,7 +36,7 @@ public final class UniqueServiceMethodKey {
 	private String method;
 	private String paramsStr;
 	
-	public static String paramsStr(String[] clazzes) {
+	/*public static String paramsStr(String[] clazzes) {
 		if(clazzes == null || clazzes.length == 0) {
 			return "";
 		}
@@ -49,10 +47,10 @@ public final class UniqueServiceMethodKey {
 		}
 		sb.append(clazzes[offset]);
 		return sb.toString();
-	}
+	}*/
 	
 	public static String paramsStr(Class<?>[] args) {
-		if(args == null || args.length == 0) {
+		/*if(args == null || args.length == 0) {
 			return "";
 		}
 		StringBuilder sb = new StringBuilder();
@@ -61,20 +59,42 @@ public final class UniqueServiceMethodKey {
 		    sb.append(ReflectUtils.getFullClassName(args[i])).append(PSEP);
 		}
 		sb.append(ReflectUtils.getFullClassName(args[offset]));
-		return sb.toString();
+		return sb.toString();*/
+		
+		return ReflectUtils.getDesc(args);
 	}
 	
 	public static String paramsStr(Object[] args) {
 		if(args == null || args.length == 0) {
 			return "";
 		}
-		StringBuilder sb = new StringBuilder();
+		
+		Class<?>[] cs = new Class<?>[args.length];
+		for(int i = 0; i < cs.length; i++){
+			if(args[i] != null) {
+				cs[i] = args[i].getClass();
+			}else {
+				cs[i] = Void.class;
+			}
+		}
+		
+		return paramsStr(cs);
+		
+		/*StringBuilder sb = new StringBuilder();
 		int offset = args.length - 1;
 		for(int i = 0; i < offset; i++){
-		    sb.append(ReflectUtils.getFullClassName(args[i].getClass())).append(PSEP);
+			if(args[i] != null) {
+				sb.append(ReflectUtils.getFullClassName(args[i].getClass()));
+			}
+			sb.append(PSEP);
 		}
-		sb.append(ReflectUtils.getFullClassName(args[offset].getClass()));
-		return sb.toString();
+		if(args[offset]!= null) {
+			sb.append(ReflectUtils.getFullClassName(args[offset].getClass()));
+		}else {
+			sb.append("");
+		}*/
+		
+		//return sb.toString();
 	}
 	
 	/**
@@ -84,7 +104,7 @@ public final class UniqueServiceMethodKey {
 	 * @return
 	 */
 	public static Class<?>[] paramsClazzes(String paramsStr) {
-		if(StringUtils.isEmpty(paramsStr)) {
+		/*if(StringUtils.isEmpty(paramsStr)) {
 			return new Class[0];
 		}
 		
@@ -96,9 +116,13 @@ public final class UniqueServiceMethodKey {
 		Class<?>[] clazzes = new Class<?>[clses.length];
 		for(int i=0; i< clazzes.length; i++) {
 			clazzes[i] = TypeCoder.loadClassFromCache(clses[i]);
-		}
+		}*/
 		
-		return clazzes;
+		try {
+			return ReflectUtils.desc2classArray(paramsStr);
+		} catch (ClassNotFoundException e) {
+			throw new CommonException("paramsClazzes",e);
+		}
 	}
 	
 	/**

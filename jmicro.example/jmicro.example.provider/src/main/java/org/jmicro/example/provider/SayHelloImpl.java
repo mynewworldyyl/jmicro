@@ -1,5 +1,7 @@
 package org.jmicro.example.provider;
 
+import java.util.Map;
+
 import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.SBreakingRule;
 import org.jmicro.api.annotation.SMethod;
@@ -10,11 +12,15 @@ import org.jmicro.api.monitor.SF;
 import org.jmicro.api.pubsub.PSData;
 import org.jmicro.common.Constants;
 import org.jmicro.example.api.ISayHello;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-@Service(maxSpeed=100,baseTimeUnit=Constants.TIME_SECONDS)
+@Service(maxSpeed=-1,baseTimeUnit=Constants.TIME_SECONDS)
 @Component
 public class SayHelloImpl implements ISayHello {
 
+	private final static Logger logger = LoggerFactory.getLogger(SayHelloImpl.class);
+	
 	@Override
 	@SMethod(
 		//breakingRule="1S 50% 500MS",
@@ -27,7 +33,8 @@ public class SayHelloImpl implements ISayHello {
 		checkInterval=2000,//采样周期2S
 		baseTimeUnit=Constants.TIME_MILLISECONDS,
 		timeout=3000,
-		debugMode=1
+		debugMode=1,
+		maxSpeed=1000
 	)
 	public String hello(String name) {
 		if(SF.isLoggable(true,MonitorConstant.LOG_DEBUG)) {
@@ -49,7 +56,18 @@ public class SayHelloImpl implements ISayHello {
 	
 	@Subscribe(topic=MonitorConstant.TEST_SERVICE_METHOD_TOPIC)
 	public void statis(PSData data) {
-		System.out.println("Topic: "+data.getTopic()+", data: "+ data.getData().toString());
+		
+		Map<Integer,Double> ps = (Map<Integer,Double>)data.getData();
+		
+		logger.info("总请求:{}, 总响应:{}, TO:{}, TOF:{}, QPS:{}",
+				ps.get(MonitorConstant.CLIENT_REQ_BEGIN),
+				ps.get(MonitorConstant.STATIS_TOTAL_RESP)
+				,ps.get(MonitorConstant.CLIENT_REQ_TIMEOUT)
+				,ps.get(MonitorConstant.CLIENT_REQ_TIMEOUT_FAIL)
+				,ps.get(MonitorConstant.STATIS_QPS)
+				);
+		
+		//System.out.println("Topic: "+data.getTopic()+", data: "+ data.getData().toString());
 	}
 	
 }

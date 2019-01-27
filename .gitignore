@@ -177,6 +177,16 @@ jmicro.main/jmicro.main.monitor.responsetime/.classpath
 jmicro.main/jmicro.main.monitor.responsetime/.project
 jmicro.main/jmicro.main.monitor.responsetime/.settings/
 jmicro.main/jmicro.main.monitor.responsetime/logs/
+jmicro.choreography/jmicro.choreography.agent/target/
+jmicro.choreography/jmicro.choreography.agent/.classpath
+jmicro.choreography/jmicro.choreography.agent/.project
+jmicro.choreography/jmicro.choreography.agent/.settings/
+jmicro.choreography/jmicro.choreography.agent/logs/
+jmicro.choreography/jmicro.choreography.controller/target/
+jmicro.choreography/jmicro.choreography.controller/.classpath
+jmicro.choreography/jmicro.choreography.controller/.project
+jmicro.choreography/jmicro.choreography.controller/.settings/
+jmicro.choreography/jmicro.choreography.controller/logs/
 .DS_Store
 Thumbs.db
 UserInterfaceState.xcuserstate

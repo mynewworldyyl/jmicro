@@ -4,7 +4,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -21,7 +20,6 @@ import org.jmicro.api.registry.ServiceItem;
 import org.jmicro.api.registry.ServiceMethod;
 import org.jmicro.api.registry.UniqueServiceMethodKey;
 import org.jmicro.api.service.ServiceManager;
-import org.jmicro.common.CommonException;
 import org.jmicro.common.Constants;
 import org.jmicro.common.util.JsonUtils;
 import org.jmicro.common.util.StringUtils;
@@ -180,9 +178,9 @@ public class PubSubManager {
 			}
 		});	
 		*/
-		List<String> children = this.dataOp.getChildren(Config.PubSubDir);
+		Set<String> children = this.dataOp.getChildren(Config.PubSubDir);
 		for(String t : children) {
-			List<String>  subs = this.dataOp.getChildren(Config.PubSubDir+"/"+t);
+			Set<String>  subs = this.dataOp.getChildren(Config.PubSubDir+"/"+t);
 			for(String sub : subs) {
 				this.dataOp.deleteNode(Config.PubSubDir+"/"+t+"/"+sub);
 			}

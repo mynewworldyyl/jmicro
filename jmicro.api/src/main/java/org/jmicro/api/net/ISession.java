@@ -19,6 +19,7 @@ package org.jmicro.api.net;
 import java.nio.ByteBuffer;
 
 import org.jmicro.api.monitor.MonitorConstant;
+import org.jmicro.api.monitor.ServiceCounter;
 /**
  * 
  * @author Yulei Ye
@@ -102,5 +103,7 @@ public interface ISession{
 	Double getTakePercent(int type);
 	
 	Double getTakeAvg(int type);
+	
+	ServiceCounter getServiceCounter();
 	
 }

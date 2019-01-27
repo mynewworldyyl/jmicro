@@ -31,12 +31,12 @@ public class JMicroBaseTestCase {
 		registry = of.get(IRegistry.class);
 	}
 	
-	protected <T> T get(Class<T> cls) {
-		return of.get(cls);
-	}
-	
 	protected static String[] getArgs() {
 		return new String[] {"-DinstanceName=JMicroBaseTestCase"};
+	}
+	
+	protected <T> T get(Class<T> cls) {
+		return of.get(cls);
 	}
 	
 	protected UniqueServiceMethodKey helloTopicMethodKey() {

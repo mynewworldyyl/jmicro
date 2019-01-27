@@ -4,6 +4,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
+import org.jmicro.api.annotation.Cfg;
 import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.Service;
 import org.jmicro.api.classloader.IClassloaderRpc;
@@ -17,6 +18,9 @@ import org.slf4j.LoggerFactory;
 public class ClassloaderRpcService implements IClassloaderRpc {
 
 	private final static Logger logger = LoggerFactory.getLogger(ClassloaderRpcService.class);
+	
+	@Cfg(value="/")
+	private String jarResp;
 	
 	@Override
 	public byte[] getClassData(String clazz) {

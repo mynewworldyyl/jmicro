@@ -16,8 +16,8 @@
  */
 package org.jmicro.config;
 
-import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.jmicro.api.annotation.Component;
 import org.jmicro.api.config.IConfigChangeListener;
@@ -54,7 +54,7 @@ public class ZKConfigLoader implements IConfigLoader{
 		};
 		
 		 //String globalRoot = Config.CfgDir+"/config";
-		 List<String> children = dataOperator.getChildren(root);
+		 Set<String> children = dataOperator.getChildren(root);
 		 for(String child: children){
 			 loadOne(root,child,params);
 		 }
@@ -75,7 +75,7 @@ public class ZKConfigLoader implements IConfigLoader{
 			updateData("/"+child,data,params);
 			dataOperator.addDataListener(fullpath, this.dataListener);
 		} 
-		List<String> children = dataOperator.getChildren(fullpath);
+		Set<String> children = dataOperator.getChildren(fullpath);
 		 for(String ch: children){
 			 String pa = child + "/"+ch;
 			 loadOne(root,pa,params);

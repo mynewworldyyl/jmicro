@@ -16,7 +16,7 @@
  */
 package org.jmicro.api.monitor;
 
-import java.util.List;
+import java.util.Set;
 
 import org.jmicro.api.annotation.SMethod;
 import org.jmicro.api.annotation.Service;
@@ -33,5 +33,5 @@ public interface IServiceMonitorData {
 	Integer subsicribe(String service);
 	void unsubsicribe(Integer id,String service);
 	
-	List<String> getAllServices();
+	Set<String> getAllServices();
 }

@@ -60,6 +60,9 @@ public class Config implements IConfigChangeListener{
 	//全局消息订阅根目录
 	public static final String PubSubDir = Constants.CFG_ROOT+"/"+Constants.DEFAULT_PREFIX +"pubsub";
 	
+	//服务编排相关数据根目录
+	public static final String ChoreographyDir = Constants.CFG_ROOT+"/"+Constants.DEFAULT_PREFIX +"Choreography";
+	
 	//当前启动实例名称
 	private static String InstanceName = "";
 	

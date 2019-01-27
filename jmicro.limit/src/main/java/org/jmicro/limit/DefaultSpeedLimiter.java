@@ -18,20 +18,21 @@ package org.jmicro.limit;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentLinkedDeque;
+import java.util.concurrent.TimeUnit;
 
-import org.jmicro.api.annotation.Cfg;
+import org.jmicro.api.JMicroContext;
 import org.jmicro.api.annotation.Component;
-import org.jmicro.api.annotation.Inject;
 import org.jmicro.api.annotation.JMethod;
 import org.jmicro.api.limitspeed.ILimiter;
-import org.jmicro.api.monitor.IMonitorDataSubmiter;
 import org.jmicro.api.monitor.MonitorConstant;
 import org.jmicro.api.monitor.SF;
+import org.jmicro.api.monitor.ServiceCounter;
 import org.jmicro.api.net.IRequest;
-import org.jmicro.api.registry.IRegistry;
-import org.jmicro.api.registry.ServiceItem;
 import org.jmicro.api.registry.ServiceMethod;
+import org.jmicro.common.Constants;
+import org.jmicro.common.util.TimeUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * 
@@ -41,148 +42,56 @@ import org.jmicro.api.registry.ServiceMethod;
 @Component(lazy=false,value="limiterName")
 public class DefaultSpeedLimiter extends AbstractLimiter implements ILimiter{
 	
-	@Inject
-	private IRegistry registry;
+	static final Logger logger = LoggerFactory.getLogger(DefaultSpeedLimiter.class);
 	
-	//in seconds
-	@Cfg("/limitKeepTimeLong")
-	private int keepTimeLong;
-	
-	@Inject(required=false)
-	private IMonitorDataSubmiter monitor;
+	private static final Integer[] TYPES = new Integer[] {MonitorConstant.CLIENT_REQ_OK};
 	
 	@JMethod("init")
 	public void init(){
-		startWorker();
 	}
 	
-	/**
-	 * output from header and input from tail
-	 */
-	private Map<String,ConcurrentLinkedDeque<LimitData>> limiterData = new ConcurrentHashMap<>();
+	private Map<String,ServiceCounter> limiterData = new ConcurrentHashMap<>();
 	
 	@Override
 	public boolean apply(IRequest req) {
 		
 		//not support method override
-		String key = this.serviceKey(req);
-		if(!limiterData.containsKey(key)){
-			this.limiterData.put(key, new ConcurrentLinkedDeque<LimitData>());
-		}
-		
-		ConcurrentLinkedDeque<LimitData> ld = this.limiterData.get(key);
-		ServiceItem si = null;
-		if(ld.isEmpty()){
-			si = getServiceItem(req);
-		}else {
-			si = ld.peek().getSi();
-		}
-		
-		if(si == null){
-			// service not found and let the laster handler to decide how to response
+		ServiceMethod sm = JMicroContext.get().getParam(Constants.SERVICE_METHOD_KEY, null);
+		if(sm.getMaxSpeed() <= 0) {
 			return true;
 		}
 		
-		LimitData d = new LimitData();
-		d.setSi(si);
-		ld.add(d);
+		ServiceCounter sc =  null;
+		String key = sm.getKey().toKey(true, true, true);
 		
-		//return the time to be wait
-		int result = compute(ld,si,req);
-		if(result == 0){
+		if(!limiterData.containsKey(key)){
+			key = key.intern();
+			synchronized(key) {
+				if(!limiterData.containsKey(key)){
+					sc =  new ServiceCounter("key", TYPES,2,2,TimeUnit.SECONDS);
+					this.limiterData.put(key, sc);
+				}else {
+					sc = limiterData.get(key);
+				}
+			}
+		} else {
+			sc = limiterData.get(key);
+		}
+		
+		double qps = sc.getQpsWithEx(MonitorConstant.CLIENT_REQ_OK, TimeUnit.SECONDS);
+		//logger.info("{} qps:{}",sm.getKey().getMethod(),qps);
+		
+		if(qps > sm.getMaxSpeed()){
+			SF.doSubmit(MonitorConstant.SERVER_REQ_LIMIT_OK, req,null,"");
+			logger.info("key:{},qps:{},maxQps:{}",key,qps,sm.getMaxSpeed());
 			return false;
 		}
-		if(result > 0){
-			SF.doSubmit(MonitorConstant.SERVER_REQ_LIMIT_OK, req,null,result+"");
-			doWait(result,d);
-		}
+		
+		sc.incrementWithEx(MonitorConstant.CLIENT_REQ_OK);
 		
 		return true;
 	}
 	
-	private void doWait(int result,LimitData d) {
-		synchronized(d){
-			try {
-				d.wait(result);
-			} catch (InterruptedException e) {
-			}
-		}
-	}
 
-	private int compute(ConcurrentLinkedDeque<LimitData> ld,ServiceItem si,IRequest req ) {
-		ServiceMethod sm = null;
-		for(ServiceMethod mi : si.getMethods()){
-			if(mi.getKey().getMethod().equals(req.getMethod())){
-				sm = mi;
-				break;
-			}
-		}
-		
-		float maxSpeed = sm.getMaxSpeed();
-		if(maxSpeed == 0){
-			//not limit
-			return 0;
-		}
-		
-		if(maxSpeed < 0){
-			//decide by Service
-			maxSpeed = si.getMaxSpeed();
-		}
-		
-		if(maxSpeed <= 0){
-			//not limit
-			return 0;
-		}
-		
-		//maxSpeed > 0 limit speed
-		LimitData last = ld.getLast();
-		LimitData first = ld.getFirst();
-		long sp = (first.getReqTime()-last.getReqTime())/ld.size();
-		
-		if(sp < maxSpeed){
-			//not got the max speed
-			return 0;
-		}
-		
-		// simple wait 500 ms
-		return 500;
-	}
-	
-	private void startWorker(){
-		new Thread(()->{
-			for(;;){
-				try {
-					if(limiterData.isEmpty()){
-						Thread.sleep(2000);
-						continue;
-					}
-					long timeLong = this.keepTimeLong*1000;
-					for(ConcurrentLinkedDeque<LimitData> ld: this.limiterData.values()){
-						LimitData last = ld.getLast();
-						LimitData first = ld.getFirst();
-						if((first.getReqTime() - last.getReqTime()) < timeLong) {
-							continue;
-						}
-						doRemove(ld,timeLong);
-					}
-				} catch (Throwable e) {
-				}
-			}
-		},"JMicro-DefaultSpeedLimiter").start();
-	}
-
-	private void doRemove(ConcurrentLinkedDeque<LimitData> ld,long timeLong) {
-		
-		LimitData last = ld.getLast();
-		for(;;){
-			LimitData first = ld.getFirst();
-			if((first.getReqTime() - last.getReqTime()) < timeLong) {
-				return;
-			}
-			ld.pollFirst();
-		}
-		
-		
-	}
 
 }

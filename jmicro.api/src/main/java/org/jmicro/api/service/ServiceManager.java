@@ -18,16 +18,15 @@ package org.jmicro.api.service;
 
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.jmicro.api.IListener;
 import org.jmicro.api.annotation.Component;
 import org.jmicro.api.config.Config;
 import org.jmicro.api.raft.IChildrenListener;
 import org.jmicro.api.raft.IDataListener;
 import org.jmicro.api.raft.IDataOperator;
-import org.jmicro.api.raft.INodeListener;
 import org.jmicro.api.registry.IServiceListener;
 import org.jmicro.api.registry.ServiceItem;
 import org.jmicro.api.registry.ServiceMethod;
@@ -64,18 +63,19 @@ public class ServiceManager {
 	
 	private IDataOperator dataOperator;
 
-	private INodeListener nodeListener = new INodeListener(){
+	/*private INodeListener nodeListener = new INodeListener(){
 		public void nodeChanged(int type, String path,String data){
-			if(type == INodeListener.NODE_ADD){
+			if(type == IListener.SERVICE_ADD){
 				logger.error("NodeListener service add "+type+",path: "+path);
-			} else if(type == INodeListener.NODE_REMOVE) {
-				serviceRemove(path,data);
+				//serviceAdd(path,data);
+			} else if(type == IListener.SERVICE_REMOVE) {
+				serviceRemove(path);
 				logger.error("service remove:"+type+",path: "+path);
 			} else {
 				logger.error("rev invalid Node event type : "+type+",path: "+path);
 			}
 		}
-	};
+	};*/
 	
 	//动态服务数据监听器
 	private IDataListener dataListener = new IDataListener(){
@@ -97,22 +97,74 @@ public class ServiceManager {
 		dataOperator.addListener((state)->{
 			if(Constants.CONN_CONNECTED == state) {
 				logger.info("CONNECTED, reflesh children");
-				refleshChildren(null);
+				refleshChildren();
 			}else if(Constants.CONN_LOST == state) {
 				logger.warn("DISCONNECTED");
 			}else if(Constants.CONN_RECONNECTED == state) {
 				logger.warn("Reconnected,reflesh children");
-				refleshChildren(null);
-			}
-		});
-		logger.info("add listener");
-		dataOperator.addChildrenListener(Config.ServiceRegistDir, new IChildrenListener() {
-			@Override
-			public void childrenChanged(String path, List<String> children) {
-				refleshChildren(children);
+				refleshChildren();
 			}
 		});
 		
+		logger.info("add listener");
+		dataOperator.addChildrenListener(Config.ServiceRegistDir, new IChildrenListener() {
+			@Override
+			public void childrenChanged(int type,String parent, String child,String data) {
+				if(IListener.SERVICE_ADD == type) {
+					childrenAdd(parent+"/"+child,data);
+				}else if(IListener.SERVICE_REMOVE == type) {
+					childrenRemove(parent+"/"+child);
+				}else if(IListener.SERVICE_DATA_CHANGE == type){
+					//refleshChildrenUpdate(parent,child,data);
+				}
+			}
+		});
+	}
+	
+	private void refleshChildren() {
+		Set<String> children = this.dataOperator.getChildren(Config.ServiceRegistDir);
+		for(String child : children) {
+			String path = Config.ServiceRegistDir+"/"+child;
+			String data = this.dataOperator.getData(path);
+			childrenAdd(path,data);
+		}
+		
+	}
+
+	protected void childrenAdd(String path, String data) {
+		ServiceItem i = this.fromJson(data);
+		if(i == null){
+			logger.warn("Item NULL,path:{},data:{}",path,data);
+			return;
+		}
+		
+		if(this.path2Hash.containsKey(path)) {
+			logger.warn("Item exists,path:{},data:{}",path,data);
+			return;
+		}
+		
+		//从配置服务合并
+		//this.persisFromConfig(i);
+		
+		boolean flag = this.path2Hash.containsKey(path);
+		
+		if(!this.isChange(i, path)) {
+			logger.warn("Service Item no change {}",path);
+			return;
+		}
+				
+		if(!flag) {
+			logger.debug("Service Add: {}",path);
+			this.notifyServiceChange(IServiceListener.SERVICE_ADD, i,path);
+			//dataOperator.addNodeListener(path, nodeListener);
+			dataOperator.addDataListener(path, this.dataListener);
+			//dataOperator.addDataListener(i.path(Config.ServiceItemCofigDir), this.cfgDataListener);
+		}
+		
+	}
+	
+	protected void childrenRemove(String path) {
+		serviceRemove(path);
 	}
 	
 	public void addServiceListener(String srvPath,IServiceListener lis) {
@@ -197,7 +249,8 @@ public class ServiceManager {
 		if(this.path2SrvItems.containsKey(path)) {
 			return this.path2SrvItems.get(path);
 		}
-		refleshOneService(path);
+		String data = this.dataOperator.getData(path);
+		refleshOneService(path,data);
 		return this.path2SrvItems.get(path);
 	}
 	
@@ -260,7 +313,7 @@ public class ServiceManager {
 		return item;
 	}
 	
-	private synchronized void serviceRemove(String path, String data) {
+	private synchronized void serviceRemove(String path) {
 		ServiceItem si = null;
 		synchronized(path2Hash) {
 			this.path2Hash.remove(path);
@@ -270,18 +323,18 @@ public class ServiceManager {
 		if(si == null) {
 			return;
 		}
-		path = si.path(Config.ServiceRegistDir);
-		this.notifyServiceChange(IServiceListener.SERVICE_REMOVE,si,path);
+		//path = si.path(Config.ServiceRegistDir);
+		this.notifyServiceChange(IServiceListener.SERVICE_REMOVE, si, path);
 		this.dataOperator.removeDataListener(path, dataListener);
-		this.dataOperator.removeDataListener(si.path(Config.ServiceItemCofigDir), cfgDataListener);
-		this.dataOperator.removeNodeListener(path, this.nodeListener);
+		//this.dataOperator.removeDataListener(si.path(Config.ServiceItemCofigDir), cfgDataListener);
+		//this.dataOperator.removeNodeListener(path, this.nodeListener);
 	}
 	
 	/**
 	 *     配置改变，服务配置信息改变时，从配置信息合并到服务信息，反之则存储到配置信息
 	 * @param path
 	 * @param data
-	 * @param isConfig true服务配置信息改变， false 服务信息改变
+	 * @param isConfig true全局服务配置信息改变， false 服务实例信息改变
 	 */
 	private void updateItemData(String path, String data, boolean isConfig) {
 		ServiceItem si = this.fromJson(data);
@@ -297,7 +350,7 @@ public class ServiceManager {
 				//没有改变,接返回
 				return;
 			}
-			this.updateOrCreate(srvItem, srvPath, true);
+			//this.updateOrCreate(srvItem, srvPath, true);
 			si = srvItem;
 			path = srvPath;
 		} else {
@@ -305,26 +358,14 @@ public class ServiceManager {
 				//没有改变,接返回
 				return;
 			}
+			
 			//更新服务配置
-			this.updateOrCreate(si, si.path(Config.ServiceItemCofigDir), true);
+			//this.updateOrCreate(si, si.path(Config.ServiceItemCofigDir), true);
 		}
 		
 		this.notifyServiceChange(IServiceListener.SERVICE_DATA_CHANGE, si,path);
 	}
 	
-	private void refleshChildren(List<String> children) {
-		if(children == null) {
-			children = dataOperator.getChildren(Config.ServiceRegistDir);
-		}
-		if(children == null || children.isEmpty()) {
-			logger.warn("refleshChildren service is empty!");
-			return;
-		}
-		for(String child : children) {
-			refleshOneService(Config.ServiceRegistDir+"/"+ child);
-		}
-	}
-
 	private ServiceItem fromJson(String data){
 		return JsonUtils.getIns().fromJson(data, ServiceItem.class);
 	}
@@ -344,17 +385,18 @@ public class ServiceManager {
 	
 	private boolean isChange(ServiceItem si,String path) {
 		Integer hash = HashUtils.FNVHash1(JsonUtils.getIns().toJson(si));
-		if(hash.equals(this.path2Hash.get(path))) {
-			//信息没变
+		
+		if(this.path2Hash.containsKey(path) && hash.equals(this.path2Hash.get(path))) {
 			return false;
 		}
+		
 		this.path2Hash.put(path, hash);
+		this.path2SrvItems.put(path, si);
 		return true;
 	}
 	
-	private synchronized void refleshOneService(String path) {
+	private synchronized void refleshOneService(String path,String data) {
 		
-		String data =  dataOperator.getData(path);
 		ServiceItem i = this.fromJson(data);
 		if(i == null){
 			logger.warn("path:"+path+", data: "+data);
@@ -362,7 +404,7 @@ public class ServiceManager {
 		}
 		
 		//从配置服务合并
-		this.persisFromConfig(i);
+		//this.persisFromConfig(i);
 		
 		boolean flag = this.path2Hash.containsKey(path);
 		
@@ -378,9 +420,9 @@ public class ServiceManager {
 		} else {
 			logger.debug("Service Add: {}",path);
 			this.notifyServiceChange(IServiceListener.SERVICE_ADD, i,path);
-			dataOperator.addNodeListener(path, nodeListener);
+			//dataOperator.addNodeListener(path, nodeListener);
 			dataOperator.addDataListener(path, this.dataListener);
-			dataOperator.addDataListener(i.path(Config.ServiceItemCofigDir), this.cfgDataListener);
+			//dataOperator.addDataListener(i.path(Config.ServiceItemCofigDir), this.cfgDataListener);
 			
 		}
 	}

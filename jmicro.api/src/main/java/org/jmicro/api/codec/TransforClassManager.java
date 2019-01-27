@@ -18,6 +18,7 @@ package org.jmicro.api.codec;
 
 import java.util.List;
 
+import org.jmicro.api.IListener;
 import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.Inject;
 import org.jmicro.api.idgenerator.ComponentIdServer;
@@ -56,30 +57,28 @@ public class TransforClassManager {
 	
 	
 	public void init() {
-		updateType();
-		dataOperator.addChildrenListener(ROOT, (path,children)->{
-			this.update(children);
+		dataOperator.addChildrenListener(ROOT, (type,path,child,data)->{
+			if(type == IListener.SERVICE_REMOVE) {
+				//this.update(path,child,data);
+			}else if (type == IListener.SERVICE_ADD) {
+				this.update(path,child,data);
+			}
+			
 		});
 	}
 
-	private void updateType() {
-		List<String> children = this.dataOperator.getChildren(ROOT);
-		this.update(children);
-	}
-	
-	private void update(List<String> children) {
-		for(String c: children) {
-			Class<?> clazz;
-			try {
-				clazz = Thread.currentThread().getContextClassLoader().loadClass(c);
-				if(Decoder.getType(clazz) == null ) {
-					String type = dataOperator.getData(ROOT+"/"+c);
-					Decoder.registType(clazz,Short.parseShort(type));
-				}
-			} catch (ClassNotFoundException e) {
-				logger.error("",e);
+	private void update(String parent,String child,String data) {
+
+		Class<?> clazz;
+		try {
+			clazz = Thread.currentThread().getContextClassLoader().loadClass(child);
+			if(Decoder.getType(clazz) == null ) {
+				Decoder.registType(clazz,Short.parseShort(data));
 			}
+		} catch (ClassNotFoundException e) {
+			logger.error("",e);
 		}
+	
 	}
 	
 }

@@ -49,6 +49,7 @@ import org.jmicro.api.registry.ServiceItem;
 import org.jmicro.api.registry.ServiceMethod;
 import org.jmicro.common.CommonException;
 import org.jmicro.common.Constants;
+import org.jmicro.common.util.TimeUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -125,8 +126,8 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
         ServiceMethod sm = JMicroContext.get().getParam(Constants.SERVICE_METHOD_KEY, null);
         
         int retryCnt = -1;
-        int interval = -1;
-        int timeout = -1;
+        long interval = -1;
+        long timeout = -1;
         //第一次进来在同一个线程中，同一个调用的超时重试使用
         boolean isFistLoop = true;
         
@@ -168,14 +169,18 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
         		if(retryCnt < 0){
         			retryCnt = si.getRetryCnt();
         		}
+        		
         		interval = sm.getRetryInterval();
     			if(interval < 0){
     				interval = si.getRetryInterval();
     			}
+    			interval = TimeUtils.getMilliseconds(interval, sm.getBaseTimeUnit());
+    			
     			timeout = sm.getTimeout();
 				if(timeout < 0){
 					timeout = si.getTimeout();
 				}
+				timeout = TimeUtils.getMilliseconds(timeout, sm.getBaseTimeUnit());
 				
 				msg.setStream(sm.isStream());
 				msg.setDumpDownStream(sm.isDumpDownStream());
@@ -209,7 +214,7 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
     			//LogUtil.A.debug("Put waitForResponse reqID:{},keySet:{}",req.getRequestId(),waitForResponse.keySet());
         	}
     		
-        	msg.setPayload(ICodecFactory.encode(this.codecFactory,req,msg.getProtocol()));
+        	msg.setPayload(ICodecFactory.encode(this.codecFactory, req, msg.getProtocol()));
         	
         	//JMicroContext.get().setParam(Constants.SERVICE_METHOD_KEY, sm);
     		//JMicroContext.get().setParam(Constants.SERVICE_ITEM_KEY, si);

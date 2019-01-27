@@ -233,6 +233,11 @@ public abstract class AbstractSession implements ISession{
 	}
 	
 	@Override
+	public ServiceCounter getServiceCounter() {
+		return this.counter;
+	}
+
+	@Override
 	public void increment(int type) {
 		this.counter.increment(type);
 	}
