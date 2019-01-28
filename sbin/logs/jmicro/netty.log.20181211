@@ -1,2 +1,0 @@
-[2018-12-11 09:58:48,321][ERROR,ResourceLeakDetector] LEAK: {}.release() was not called before it's garbage-collected. See http://netty.io/wiki/reference-counted-objects.html for more information.{}
-[2018-12-11 21:52:33,694][ERROR,ResourceLeakDetector] LEAK: {}.release() was not called before it's garbage-collected. See http://netty.io/wiki/reference-counted-objects.html for more information.{}

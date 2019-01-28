@@ -102,6 +102,7 @@
 		<module>jmicro.etcd</module>
 		<module>jmicro.classloader</module>
 		<module>jmicro.chroreography</module>
+		<module>jmicro.test</module>
     </modules>
 
     <dependencyManagement>
