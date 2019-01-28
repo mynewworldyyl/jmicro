@@ -37,6 +37,10 @@ jmicro.api/.classpath
 jmicro.api/.project
 jmicro.api/.settings/
 jmicro.api/logs/
+jmicro.build/target/
+jmicro.build/.classpath
+jmicro.build/.project
+jmicro.build/.settings/
 jmicro.common/target/
 jmicro.common/.classpath
 jmicro.common/.project

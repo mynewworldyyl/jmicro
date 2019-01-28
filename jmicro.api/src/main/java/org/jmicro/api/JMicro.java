@@ -21,6 +21,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Proxy;
 import java.nio.ByteBuffer;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -47,7 +48,16 @@ public class JMicro {
 
 	private static final Map<String,IObjectFactory> objFactorys = new HashMap<>();
 	//确保每个对像工厂只会创建一个实例
-	static {
+	
+	private static boolean isInit = false;
+	
+	private static void init0() {
+		if(isInit) {
+			return;
+		}
+		
+		isInit = true;
+		
 		Set<Class<?>> objClazzes = ClassScannerUtils.getIns().loadClassesByAnno(ObjFactory.class);
 		for(Class<?> c : objClazzes) {
 			if(Modifier.isAbstract(c.getModifiers()) || Modifier.isInterface(c.getModifiers())){
@@ -70,14 +80,21 @@ public class JMicro {
 				throw new CommonException("Instance ObjectFactory exception: "+c.getName(),e);
 			}
 		}
+	
 	}
 	
 	public static IObjectFactory getObjectFactoryNotStart(String[] args,String name){
 		Config.parseArgs(args);
+		init0();
 		if(StringUtils.isEmpty(name)){
 			name = JMicroContext.get().getString(Constants.OBJ_FACTORY_KEY,Constants.DEFAULT_OBJ_FACTORY);
 		}
 		IObjectFactory of = objFactorys.get(name);
+		if(of == null) {
+			throw new CommonException("ObjectFactory ["+name+"] not found, please check the ["
+					+ IObjectFactory.class.getName() +"] implementation is include in the classpath and "
+					+ "retry again");
+		}
 		return of;
 	}
 
@@ -89,6 +106,9 @@ public class JMicro {
 	}
 	
 	public static IObjectFactory getObjectFactory(String name){
+		if(!isInit) {
+			throw new CommonException("Object Factory not init");
+		}
 		if(StringUtils.isEmpty(name)){
 			name = JMicroContext.get().getString(Constants.OBJ_FACTORY_KEY,Constants.DEFAULT_OBJ_FACTORY);
 		}
@@ -173,4 +193,10 @@ public class JMicro {
 				});
 		return (T)srv;
 	}
+	
+	public static void main(String[] args) {
+		 System.out.println(Arrays.asList(args));
+		 JMicro.getObjectFactoryAndStart(args);
+	}
+	
 }

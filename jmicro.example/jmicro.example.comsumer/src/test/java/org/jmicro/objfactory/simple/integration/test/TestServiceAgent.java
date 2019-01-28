@@ -26,6 +26,6 @@ public class TestServiceAgent  extends JMicroBaseTestCase{
 		
 		InstanceManager psm = of.get(InstanceManager.class);
 		
-		Assert.assertNotNull(result);
+		Assert.assertNotNull(psm);
 	}
 }

@@ -32,8 +32,8 @@ public class DumpManager {
 
 	private static final Logger logger = LoggerFactory.getLogger(DumpManager.class);
 	
-	private static final DumpManager ins = new DumpManager();
-	public static final DumpManager getIns() {return ins;}
+	private static  DumpManager ins = new DumpManager();
+	public static DumpManager getIns() {return ins;}
 	
 	private DumpManager() {
 		ExecutorConfig config = new ExecutorConfig();

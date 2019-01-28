@@ -47,14 +47,14 @@ public class TestInstanceManager extends JMicroBaseTestCase{
 	@Test
 	public void testCreateAgent() {
 		InstanceManager im = of.get(InstanceManager.class);
-		Assert.assertNotNull(im.getAgent());
+		//Assert.assertNotNull(im.getAgent());
 	}
 	
 	@Test
 	public void testGetAllAgentInfo() {
 		InstanceManager im = of.get(InstanceManager.class);
-		Assert.assertNotNull(im.getAllAgentInfo());
-		Assert.assertTrue(im.getAllAgentInfo().size() > 0);
+		Assert.assertNotNull(im.getAllInstancet());
+		Assert.assertTrue(im.getAllInstancet().size() > 0);
 	}
 	
 	@Test

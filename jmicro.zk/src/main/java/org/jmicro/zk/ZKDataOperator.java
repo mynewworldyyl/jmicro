@@ -203,18 +203,20 @@ public class ZKDataOperator implements IDataOperator{
 		Set<String> adds = new HashSet<>();
 		Set<String> removes = new HashSet<>();
 		
-		//计算增加的结点
-		for(String n : news) {
-			//在新的列表里面有，但老列表里面没有就是增加
-			if(!exists.contains(n)) {
-				adds.add(n);
+		if(exists != null) {
+			//计算增加的结点
+			for(String n : news) {
+				//在新的列表里面有，但老列表里面没有就是增加
+				if(!exists.contains(n)) {
+					adds.add(n);
+				}
 			}
-		}
-		
-		for(String r : exists) {
-			//在老列表里面有，但是新列表里面没有，就是减少
-			if(!news.contains(r)) {
-				removes.add(r);
+			
+			for(String r : exists) {
+				//在老列表里面有，但是新列表里面没有，就是减少
+				if(!news.contains(r)) {
+					removes.add(r);
+				}
 			}
 		}
 		

@@ -38,7 +38,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * 运行于Controller端，监听Agent相关的实例指令，并根据指令要求运行指令实例
+ * 
  * @author Yulei Ye
  * @date 2019年1月23日 下午10:21:05
  */
@@ -67,7 +67,7 @@ public class InstanceManager {
 	private Map<String,InstanceInfo> path2Instance = new ConcurrentHashMap<>();
 	
 	//Agent path到Instance列表映射
-	private Map<String,Set<InstanceInfo>> agent2Instances = new ConcurrentHashMap<>();
+	private Map<String,Set<InstanceInfo>> agentPath2Instances = new ConcurrentHashMap<>();
 	
 	private Set<IInstanceListener> instanceListeners = new HashSet<>();
 	
@@ -109,7 +109,7 @@ public class InstanceManager {
 		
 	}
 	
-	public Set<InstanceInfo> getAllAgentInfo() {
+	public Set<InstanceInfo> getAllInstancet() {
 		Set<InstanceInfo> agents = new HashSet<>();
 		agents.addAll(this.path2Instance.values());
 		return agents;
@@ -150,53 +150,23 @@ public class InstanceManager {
 	}
 	
 	
-	private void refleshInstance(List<String> children) {
-		if(children == null || children.isEmpty()) {
-			return;
-		}
-		
-		List<String> children = this.dataOperator.getChildren(root);
-		
-		for(String c : children) {
-			String path = root+"/"+c;
-			String data = this.dataOperator.getData(path);
-			InstanceInfo ai = JsonUtils.getIns().fromJson(data, InstanceInfo.class);
-			if(!path2Instance.containsKey(path)) {
-				dataOperator.addDataListener(path, agentDataListener);
-				dataOperator.addNodeListener(path, this.agentNodeListener);
-				notifyInstanceListener(IAgentListener.SERVICE_ADD,ai);
-			}
-			path2Instance.put(path, ai);
-			id2Instance.put(ai.getProcessId(), ai);
-		}
-		
-	}
-
-	private void updateInstanceData(String path, String data, boolean b) {
-		InstanceInfo ai = JsonUtils.getIns().fromJson(data, InstanceInfo.class);
-		path2Instance.put(path, ai);
-		id2Instance.put(ai.getProcessId(), ai);
-		notifyInstanceListener(IAgentListener.SERVICE_DATA_CHANGE,ai);
-	}
-	
 	private void agentAdded(AgentInfo agent) {
 		String path = agentPath(agent);
-		if(agent2Instances.containsKey(path)) {
-			dataOperator.removeDataListener(path, agentDataListener);
-			dataOperator.removeNodeListener(path, this.agentNodeListener);
-			InstanceInfo ai = this.path2Instance.remove(path);
-			if(ai != null) {
-				id2Instance.remove(ai.getProcessId());
-				notifyInstanceListener(IAgentListener.SERVICE_REMOVE,ai);
-			}
+		if(!agentPath2Instances.containsKey(path)) {
+			dataOperator.addChildrenListener(path, agent2InstanceListener);
 		}
 	}
 	
 	private void agentRemoved(AgentInfo agent) {
 		String path = agentPath(agent);
-		if(this.agent2Instances.containsKey(path)) {
+		if(this.agentPath2Instances.containsKey(path)) {
 			this.dataOperator.removeChildrenListener(path, this.agent2InstanceListener);
-			
+			Set<InstanceInfo> ins = agentPath2Instances.get(path);
+			if(ins != null && ins.isEmpty()) {
+				for(InstanceInfo ii : ins) {
+					notifyInstanceListener(IListener.SERVICE_REMOVE,ii);
+				}
+			}
 		}
 	}
 	
@@ -209,11 +179,13 @@ public class InstanceManager {
 		if(!path2Instance.containsKey(path)) {
 			InstanceInfo ai = JsonUtils.getIns().fromJson(data, InstanceInfo.class);
 			this.path2Instance.put(path,ai);
-			Set<InstanceInfo> iis = this.agent2Instances.get(agentPath);
+			Set<InstanceInfo> iis = this.agentPath2Instances.get(agentPath);
 			if(iis == null) {
-				this.agent2Instances.put(agentPath, new HashSet<>());
+				iis = new HashSet<>();
+				this.agentPath2Instances.put(agentPath,iis);
 			}
 			iis.add(ai);
+			this.notifyInstanceListener(IListener.SERVICE_ADD, ai);
 		}
 	}
 	
@@ -221,10 +193,11 @@ public class InstanceManager {
 		String path = agentPath + "/"+ instance;
 		if(path2Instance.containsKey(path)) {
 			InstanceInfo ai = this.path2Instance.remove(path);
-			this.agent2Instances.remove(agentPath);
-			if(ai != null) {
-				notifyInstanceListener(IAgentListener.SERVICE_REMOVE,ai);
+			Set<InstanceInfo> iis = this.agentPath2Instances.get(agentPath);
+			if(iis != null) {
+				iis.remove(ai);
 			}
+			notifyInstanceListener(IAgentListener.SERVICE_REMOVE,ai);
 		}
 	}
 

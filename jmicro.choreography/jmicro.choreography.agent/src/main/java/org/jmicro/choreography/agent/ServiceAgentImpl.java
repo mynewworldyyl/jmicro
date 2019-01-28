@@ -24,7 +24,6 @@ import org.jmicro.api.choreography.agent.IServiceAgent;
 import org.jmicro.api.choreography.base.AgentInfo;
 import org.jmicro.api.choreography.base.InstanceInfo;
 import org.jmicro.api.choreography.base.SchedulerResult;
-import org.jmicro.api.choreography.controller.InstanceManager;
 import org.jmicro.common.Constants;
 
 
@@ -41,8 +40,7 @@ public class ServiceAgentImpl implements IServiceAgent{
 	@Inject
 	private LocalProcessManager pm;
 	
-	@Inject
-	private InstanceManager insManager;
+	private AgentInfo agentInfo;
 	
 	public void init() {
 	}
@@ -66,7 +64,7 @@ public class ServiceAgentImpl implements IServiceAgent{
 
 	@Override
 	public AgentInfo info() {
-		return insManager.getAgent();
+		return agentInfo;
 	}
 	
 }
