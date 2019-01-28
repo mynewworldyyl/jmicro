@@ -72,8 +72,14 @@ public class HttpServerSession extends AbstractSession implements IServerSession
 			exchange.getResponseBody().write(json.getBytes(Constants.CHARSET));
 			this.close(true);
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 	}
+
+	@Override
+	public boolean isServer() {
+		return true;
+	}
+	
+	
 }

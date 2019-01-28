@@ -10,6 +10,11 @@
     <name>${project.artifactId}</name>
     <description>Jmicro service provider for testing</description>
     <dependencies>
+    	<dependency>
+			 <groupId>org.jmicro</groupId>
+			 <artifactId>jmicro.test</artifactId>
+			 <scope>test</scope>
+        </dependency>
         <dependency>
 			 <groupId>org.jmicro</groupId>
 			 <artifactId>jmicro.zk</artifactId>
@@ -22,32 +27,18 @@
 			 <groupId>org.jmicro</groupId>
 			 <artifactId>jmicro.common</artifactId>
         </dependency>
-       <!--  
-        <dependency>
-			 <groupId>org.jmicro</groupId>
-			 <artifactId>jmicro.transport.http</artifactId>
-        </dependency> 
-        -->
-        <!--  <dependency>
-			 <groupId>org.jmicro</groupId>
-			 <artifactId>jmicro.transport.mina</artifactId>
-        </dependency> -->
          <dependency>
 			 <groupId>org.jmicro</groupId>
-			 <artifactId>jmicro.transport.netty</artifactId>
+			 <artifactId>jmicro.transport.netty.server</artifactId>
         </dependency>
-        <dependency>
+          <dependency>
 			 <groupId>org.jmicro</groupId>
-			 <artifactId>jmicro.server</artifactId>
+			 <artifactId>jmicro.transport.netty.client</artifactId>
         </dependency>
           <dependency>
 			 <groupId>org.jmicro</groupId>
 			 <artifactId>jmicro.gateway</artifactId>
-        </dependency> 
-        <dependency>
-			 <groupId>org.jmicro</groupId>
-			 <artifactId>jmicro.client</artifactId>
-        </dependency> 
+        </dependency>  
          <dependency>
 			 <groupId>org.jmicro</groupId>
 			 <artifactId>jmicro.registry.zk</artifactId>
@@ -64,27 +55,49 @@
 			 <groupId>org.jmicro</groupId>
 			 <artifactId>jmicro.limit</artifactId>
         </dependency>
-         <dependency>
+          <dependency>
 			 <groupId>org.jmicro</groupId>
-			 <artifactId>jmicro.idgenerator</artifactId>
+			 <artifactId>jmicro.monitor.submiter</artifactId>
         </dependency>
          <dependency>
 			 <groupId>org.jmicro</groupId>
 			 <artifactId>jmicro.example.api</artifactId>
 			  <version>0.0.1-SNAPSHOT</version>
         </dependency>
+        
+        <!-- ID服务 -->
          <dependency>
 			 <groupId>org.jmicro</groupId>
-			 <artifactId>jmicro.monitor.dashboard</artifactId>
+			 <artifactId>jmicro.idgenerator</artifactId>
         </dependency>
+        
+        <!-- 监控 -->
+        <!--  <dependency>
+			 <groupId>org.jmicro</groupId>
+			 <artifactId>jmicro.main.monitor.exception</artifactId>
+        </dependency> -->
+        
+         <!-- 发布订阅服务 -->
+       <!--   <dependency>
+			 <groupId>org.jmicro</groupId>
+			 <artifactId>jmicro.pubsub</artifactId>
+        </dependency> -->
+        
+         <!-- 服务熔断器 -->
+       <!--  <dependency>
+			 <groupId>org.jmicro</groupId>
+			 <artifactId>jmicro.monitor.breaker</artifactId>
+        </dependency> -->
+        
          <dependency>
 			 <groupId>org.jmicro</groupId>
-			 <artifactId>jmicro.monitor.subermemory</artifactId>
+			 <artifactId>jmicro.classloader.client</artifactId>
         </dependency>
-        <dependency>
+          <dependency>
 			 <groupId>org.jmicro</groupId>
-			 <artifactId>jmicro.monitor.submiter</artifactId>
+			 <artifactId>jmicro.classloader.server</artifactId>
         </dependency>
+        
     </dependencies>
    
 </project>

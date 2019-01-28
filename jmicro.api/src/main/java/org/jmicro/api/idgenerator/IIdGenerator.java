@@ -16,24 +16,22 @@
  */
 package org.jmicro.api.idgenerator;
 
-import java.util.Set;
-
 /**
  * 
  * @author Yulei Ye
  * @date 2018年10月4日-上午11:55:12
  */
 public interface IIdGenerator {
-
-	Set<Long> getLongId(Class<?> idType,int num);
 	
-	Set<String> getStringId(Class<?> idType,int num);
+	String[] getStringIds(String idKey,int num);
 	
-	Set<Integer> getIntId(Class<?> idType,int num);
+	Long[] getLongIds(String idKey,int num);
 	
-	Long getLongId(Class<?> idType);
+	Integer[] getIntIds(String idKey,int num);
 	
-	String getStringId(Class<?> idType);
+	Long getLongId(String idKey);
 	
-	Integer getIntId(Class<?> idType);
+	String getStringId(String idKey);
+	
+	Integer getIntId(String idKey);
 }

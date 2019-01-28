@@ -25,6 +25,9 @@ import java.nio.ByteBuffer;
 import java.util.Collection;
 import java.util.Map;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
  * 
  * @author Yulei Ye
@@ -33,6 +36,8 @@ import java.util.Map;
  */
 public class TypeUtils {
 
+	private static final Logger logger = LoggerFactory.getLogger(TypeUtils.class);
+	
 	private TypeUtils() {
 	}
 
@@ -69,18 +74,16 @@ public class TypeUtils {
 		}
 		
 		Object v = null;
-		boolean bf = f.isAccessible();
-		if(!bf){
+		
+		//boolean bf = f.isAccessible();
+		if(!f.isAccessible())
 			f.setAccessible(true);
-		}
 		try {
 			 v = f.get(obj);
 		} catch (IllegalArgumentException | IllegalAccessException e) {
 			e.printStackTrace();
 		}
-		if(!bf){
-			f.setAccessible(false);
-		}
+		//f.setAccessible(false);
 		return v;
 	}
 	
@@ -96,14 +99,13 @@ public class TypeUtils {
 			try {
 				f.set(obj, v);
 			} catch (IllegalArgumentException | IllegalAccessException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 		}
 		
-		if(!bf){
+		/*if(!bf){
 			f.setAccessible(false);
-		}
+		}*/
 	}
 
 	public static boolean isFinal(Class<?> type) {
@@ -134,35 +136,78 @@ public class TypeUtils {
 	}
 
 	public static boolean isByte(Class<?> cls) {
-		return cls == byte.class || cls == Byte.class || cls == Byte.TYPE;
+		return  cls == Byte.class ;
 	}
 	
 	public static boolean isShort(Class<?> cls) {
-		return cls == short.class || cls == Short.class || cls == Short.TYPE;
+		return  cls == Short.class;
 	}
 	
 	public static boolean isInt(Class<?> cls) {
-		return cls == int.class || cls == Integer.class || cls == Integer.TYPE;
+		return cls == Integer.class ;
 	}
 	
 	public static boolean isLong(Class<?> cls) {
-		return cls == long.class || cls == Long.class || cls == Long.TYPE;
+		return  cls == Long.class;
 	}
 	
 	public static boolean isDouble(Class<?> cls) {
-		return cls == double.class || cls == Double.class || cls == Double.TYPE;
+		return  cls == Double.class ;
 	}
 	
 	public static boolean isFloat(Class<?> cls) {
-		return cls == float.class || cls == Float.class || cls == Float.TYPE;
+		return  cls == Float.class ;
 	}
 	
 	public static boolean isBoolean(Class<?> cls) {
-		return cls == boolean.class || cls == Boolean.class || cls == Boolean.TYPE;
+		return  cls == Boolean.class ;
 	}
 	
 	public static boolean isChar(Class<?> cls) {
-		return cls == char.class || cls == Character.class || cls == Character.TYPE;
+		return cls == Character.class ;
 	}
 	
+	public static boolean isDate(Class<?> cls) {
+		return cls == java.util.Date.class;
+	}
+	
+	public static boolean isPrimitive(Class<?> cls) {
+		return isPrimitiveByte(cls) || isPrimitiveShort(cls)
+				||isPrimitiveInt(cls) || isPrimitiveLong(cls)
+				||isPrimitiveDouble(cls) || isPrimitiveFloat(cls)
+				||isPrimitiveBoolean(cls) || isPrimitiveChar(cls)
+				;
+	}
+	
+	public static boolean isPrimitiveByte(Class<?> cls) {
+		return cls == byte.class || cls == Byte.TYPE;
+	}
+	
+	public static boolean isPrimitiveShort(Class<?> cls) {
+		return cls == short.class || cls == Short.TYPE;
+	}
+	
+	public static boolean isPrimitiveInt(Class<?> cls) {
+		return cls == int.class || cls == Integer.TYPE;
+	}
+	
+	public static boolean isPrimitiveLong(Class<?> cls) {
+		return cls == long.class || cls == Long.TYPE;
+	}
+	
+	public static boolean isPrimitiveDouble(Class<?> cls) {
+		return cls == double.class || cls == Double.TYPE;
+	}
+	
+	public static boolean isPrimitiveFloat(Class<?> cls) {
+		return cls == float.class || cls == Float.TYPE;
+	}
+	
+	public static boolean isPrimitiveBoolean(Class<?> cls) {
+		return cls == boolean.class || cls == Boolean.TYPE;
+	}
+	
+	public static boolean isPrimitiveChar(Class<?> cls) {
+		return cls == char.class || cls == Character.TYPE;
+	}
 }

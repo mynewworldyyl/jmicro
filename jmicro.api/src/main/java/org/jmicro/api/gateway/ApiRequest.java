@@ -19,6 +19,7 @@ package org.jmicro.api.gateway;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.jmicro.api.net.IReq;
 import org.jmicro.api.net.Message;
 
 /**
@@ -27,7 +28,7 @@ import org.jmicro.api.net.Message;
  * @date 2018年11月16日 上午12:21:55
  *
  */
-public final class ApiRequest {
+public final class ApiRequest implements IReq {
 	
 	private Map<String,Object> params = new HashMap<>();
 	

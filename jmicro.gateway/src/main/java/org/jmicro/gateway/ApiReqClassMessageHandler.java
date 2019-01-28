@@ -1,4 +1,3 @@
-
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -21,9 +20,9 @@ import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.Inject;
 import org.jmicro.api.codec.Decoder;
 import org.jmicro.api.codec.ICodecFactory;
-import org.jmicro.api.codec.TransforClassManager;
 import org.jmicro.api.gateway.ApiRequest;
-import org.jmicro.api.idgenerator.IIdGenerator;
+import org.jmicro.api.gateway.ApiResponse;
+import org.jmicro.api.idgenerator.ComponentIdServer;
 import org.jmicro.api.net.IMessageHandler;
 import org.jmicro.api.net.ISession;
 import org.jmicro.api.net.Message;
@@ -43,29 +42,42 @@ public class ApiReqClassMessageHandler implements IMessageHandler{
 	private final static Logger logger = LoggerFactory.getLogger(ApiReqClassMessageHandler.class);
 	
 	@Inject
-	private IIdGenerator idGenerator;
+	private ComponentIdServer idGenerator;
 	
 	@Inject
 	private ICodecFactory codecFactory;
 	
 	@Override
-	public Short type() {
+	public Byte type() {
 		return Constants.MSG_TYPE_API_CLASS_REQ;
 	}
 
 	@Override
 	public void onMessage(ISession session, Message msg) {
 		
-		msg.setType((short)(msg.getType()+1));
+		msg.setType((byte)(msg.getType()+1));
 		
-		Short type = ICodecFactory.decode(codecFactory, msg.getPayload(), 
-				Short.class, msg.getProtocol());
+		ApiRequest req = ICodecFactory.decode(codecFactory, msg.getPayload(), 
+				ApiRequest.class, msg.getProtocol());
+		
+		Short type = (Short)req.getArgs()[0];
+		
 		Class<?> cls = Decoder.getClass(type);
+		
+		ApiResponse resp = new ApiResponse();
+		resp.setReqId(req.getReqId());
+		resp.setMsg(msg);
+		resp.setId(type.longValue());
+		
 		if(cls != null) {
-			msg.setPayload(ICodecFactory.encode(codecFactory, cls.getName(), msg.getProtocol()));
+			resp.setResult(cls.getName());
+			resp.setSuccess(true);
 		}else {
-			msg.setPayload(ICodecFactory.encode(codecFactory, Void.class.getName(), msg.getProtocol()));
+			resp.setSuccess(false);
+			resp.setResult("");
 		}
+		
+		msg.setPayload(ICodecFactory.encode(codecFactory, resp, msg.getProtocol()));
 		
 		session.write(msg);
 	}

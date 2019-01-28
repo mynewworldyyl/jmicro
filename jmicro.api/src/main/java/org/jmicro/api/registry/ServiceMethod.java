@@ -20,33 +20,63 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 
 import org.jmicro.common.CommonException;
+import org.jmicro.common.Constants;
+
 /**
  * 
  * @author Yulei Ye
  * @date 2018年10月4日-下午12:04:38
  */
-public class ServiceMethod {
+public final class ServiceMethod {
 
-	private String methodName="";
+	private UniqueServiceMethodKey key = new UniqueServiceMethodKey();
 	
-	private String methodParamTypes=""; //full type name
+	//private String methodName="";
+	//private String[] methodParamTypes; //full type name
 	
 	//-1 use Service config, 0 disable, 1 enable
 	private int monitorEnable = -1;
+	private int loggable  = -1;
+	//dump 下行流，用于下行数问题排查
+	private boolean dumpDownStream = false;
+	//dump 上行流，用于上行数问题排查
+	private boolean dumpUpStream = false;
+	
+	//开启debug模式
+	private int debugMode = -1;
 	
 	private int retryCnt; //method can retry times, less or equal 0 cannot be retry
 	private int retryInterval; // milliseconds how long to wait before next retry
 	private int timeout; // milliseconds how long to wait for response before timeout 
 	
+	private BreakRule breakingRule = new BreakRule();
+	
+	//统计服务数据基本时长，单位同baseTimeUnit确定 @link SMethod
+	private long timeWindow = -1;
+	
+	//循环时钟槽位个数
+	private int slotSize = 10;
+	
+	//采样统计数据周期，单位由baseTimeUnit确定
+	private long checkInterval = -1;
+	
+	//基本时间单位  @link SMethod
+	private String baseTimeUnit = Constants.TIME_MILLISECONDS;
+	
+	/**
+	 * true all service method will fusing, false is normal service status
+	 */
+	private boolean breaking = false;
+	
+	/**
+	 * 失败时的默认返回值，包括服务熔断失败，降级失败等
+	 */
+	private String failResponse;
+	
 	/**
 	 * Max failure time before degrade the service
 	 */
 	private int maxFailBeforeDegrade;
-	
-	/**
-	 * Max failure time before cutdown the service
-	 */
-	private int maxFailBeforeFusing;
 	
 	/**
 	 * after the service cutdown, system can do testing weather the service is recovery
@@ -55,11 +85,9 @@ public class ServiceMethod {
 	private String testingArgs;
 	
 	/**
-	 * max qps
+	 * max qps，单位同baseTimeUnit确定
 	 */
 	private int maxSpeed = -1;
-	
-	private String speedUnit = "MS";
 	
 	/**
 	 *  milliseconds
@@ -68,12 +96,6 @@ public class ServiceMethod {
 	 *  
 	 */
 	private int avgResponseTime;
-
-	
-	/**
-	 * true all service method will fusing, false is normal service status
-	 */
-	private boolean breaking = false;
 	
 	/**
 	 * 1 is normal status, 
@@ -91,31 +113,44 @@ public class ServiceMethod {
 	private int degrade = 1;
 	
 	//0: need response, 1:no need response
-	public boolean needResponse = true;
-	
+	private boolean needResponse = true;
+
 	//true async return result,
 	//public boolean async = false;
-		
+
 	//false: not stream, true:stream, more than one request and response double stream
 	//a stream service must be async=true, and get got result by callback
-	public boolean stream = false;
+	private boolean stream = false;
 	
+	private String topic = null;
+
 	public void formPersisItem(ServiceMethod p){
 		this.monitorEnable = p.monitorEnable;
-		
-		this.retryCnt=p.retryCnt;
-		this.retryInterval=p.retryInterval;
+
+		this.retryCnt = p.retryCnt;
+		this.retryInterval = p.retryInterval;
 		this.timeout = p.timeout;
-		
-		this.maxFailBeforeDegrade=p.maxFailBeforeDegrade;
-		this.maxFailBeforeFusing=p.maxFailBeforeFusing;
-		
+
+		this.maxFailBeforeDegrade = p.maxFailBeforeDegrade;
+		this.getBreakingRule().from(p.getBreakingRule());;
+
 		this.testingArgs = p.testingArgs;
 		this.breaking = p.breaking;
-		
+
 		this.degrade = p.degrade;
 		this.maxSpeed = p.maxSpeed;
 		this.avgResponseTime = p.avgResponseTime;
+		
+		this.loggable = p.loggable;
+		
+		this.baseTimeUnit = p.baseTimeUnit;
+		this.checkInterval = p.checkInterval;
+		
+		this.dumpDownStream = p.dumpDownStream;
+		this.dumpUpStream = p.dumpUpStream;
+		this.debugMode = p.debugMode;
+		
+		this.topic = p.topic;
 	}
 	
 	public String toJson(){
@@ -124,7 +159,7 @@ public class ServiceMethod {
 		
 		for(int i =0; i < fields.length; i++){
 			Field f = fields[i];
-			if(Modifier.isStatic(f.getModifiers())){
+			if(Modifier.isStatic(f.getModifiers()) || Modifier.isTransient(f.getModifiers())){
 				continue;
 			}
 			try {
@@ -138,15 +173,6 @@ public class ServiceMethod {
 			}
 		}
 		
-		/*sb.append("maxFailBeforeCutdown").append(":").append(this.getMaxFailBeforeCutdown()).append(",");
-		sb.append("methodName").append(":").append(this.getMethodName()).append(",");
-		sb.append("methodParamTypes").append(":").append(this.getMethodParamTypes()).append(",");
-		sb.append("retryCnt").append(":").append(this.getRetryCnt()).append(",");
-		sb.append("retryInterval").append(":").append(this.getRetryInterval()).append(",");
-		sb.append("timeout").append(":").append(this.getTimeout()).append(",");
-		sb.append("maxFailBeforeDowngrade").append(":").append(this.getMaxFailBeforeDowngrade()).append(",");
-		sb.append("testingArgs").append(":").append(this.getTestingArgs()).append("");*/
-		sb.append("}");
 		return sb.toString();
 	}
 	
@@ -188,34 +214,22 @@ public class ServiceMethod {
 		}
 	}
 	
-	public static String methodParamsKey(Class<?>[] clazzes){
-		if(clazzes != null && clazzes.length >0){
-			StringBuffer sb = new StringBuffer();
-			for(Class<?> mc: clazzes){
-				sb.append(mc.getName()).append("-");
-			}
-			String sbt = sb.substring(0, sb.length()-1);
-			return sbt;
-		}
-		return "";
+	public boolean isDumpDownStream() {
+		return dumpDownStream;
 	}
-	
-	public static String methodParamsKey(Object[] args){
-		if(args != null && args.length >0){
-			Class<?>[] clazzes = new Class<?>[args.length];
-			int i = 0;
-			for(Object obj: args){
-				clazzes[i++]=obj.getClass();
-			}
-			return methodParamsKey(clazzes);
-		}
-		return "";
+
+	public void setDumpDownStream(boolean dumpDownStream) {
+		this.dumpDownStream = dumpDownStream;
 	}
-	
-	public String methodKey(){
-		return this.methodName+"|"+this.methodParamTypes;
+
+	public boolean isDumpUpStream() {
+		return dumpUpStream;
 	}
-	
+
+	public void setDumpUpStream(boolean dumpUpStream) {
+		this.dumpUpStream = dumpUpStream;
+	}
+
 	public boolean isBreaking() {
 		return breaking;
 	}
@@ -240,20 +254,36 @@ public class ServiceMethod {
 		this.avgResponseTime = avgResponseTime;
 	}
 
-	public String getMethodName() {
-		return methodName;
+	public int getLoggable() {
+		return loggable;
 	}
 
-	public void setMethodName(String methodName) {
-		this.methodName = methodName;
+	public int getDebugMode() {
+		return debugMode;
 	}
 
-	public String getMethodParamTypes() {
-		return methodParamTypes;
+	public void setDebugMode(int debugMode) {
+		this.debugMode = debugMode;
 	}
 
-	public void setMethodParamTypes(String methodParamTypes) {
-		this.methodParamTypes = methodParamTypes;
+	public long getCheckInterval() {
+		return checkInterval;
+	}
+
+	public void setCheckInterval(long checkInterval) {
+		this.checkInterval = checkInterval;
+	}
+
+	public void setLoggable(int loggable) {
+		this.loggable = loggable;
+	}
+
+	public UniqueServiceMethodKey getKey() {
+		return key;
+	}
+
+	public void setKey(UniqueServiceMethodKey key) {
+		this.key = key;
 	}
 
 	public int getRetryCnt() {
@@ -266,14 +296,6 @@ public class ServiceMethod {
 
 	public void setMaxSpeed(int maxSpeed) {
 		this.maxSpeed = maxSpeed;
-	}
-
-	public String getSpeedUnit() {
-		return speedUnit;
-	}
-
-	public void setSpeedUnit(String speedUnit) {
-		this.speedUnit = speedUnit;
 	}
 
 	public void setRetryCnt(int retryCnt) {
@@ -312,14 +334,6 @@ public class ServiceMethod {
 		this.maxFailBeforeDegrade = maxFailBeforeDegrade;
 	}
 
-	public int getMaxFailBeforeFusing() {
-		return maxFailBeforeFusing;
-	}
-
-	public void setMaxFailBeforeFusing(int maxFailBeforeFusing) {
-		this.maxFailBeforeFusing = maxFailBeforeFusing;
-	}
-
 	public String getTestingArgs() {
 		return testingArgs;
 	}
@@ -328,7 +342,7 @@ public class ServiceMethod {
 		this.testingArgs = testingArgs;
 	}
 
-	public boolean getNeedResponse() {
+	public boolean isNeedResponse() {
 		return needResponse;
 	}
 
@@ -343,5 +357,64 @@ public class ServiceMethod {
 	public void setStream(boolean stream) {
 		this.stream = stream;
 	}
-	
+
+	public String getFailResponse() {
+		return failResponse;
+	}
+
+	public void setFailResponse(String failResponse) {
+		this.failResponse = failResponse;
+	}
+
+	public BreakRule getBreakingRule() {
+		return breakingRule;
+	}
+
+	public void setBreakingRule(BreakRule breakingRule) {
+		this.breakingRule = breakingRule;
+	}
+
+
+	public long getTimeWindow() {
+		return timeWindow;
+	}
+
+	public void setTimeWindow(long timeWindow) {
+		this.timeWindow = timeWindow;
+	}
+
+	public String getBaseTimeUnit() {
+		return baseTimeUnit;
+	}
+
+	public void setBaseTimeUnit(String baseTimeUnit) {
+		this.baseTimeUnit = baseTimeUnit;
+	}
+
+	public int getSlotSize() {
+		return slotSize;
+	}
+
+	public void setSlotSize(int slotSize) {
+		this.slotSize = slotSize;
+	}
+
+	public String getTopic() {
+		return topic;
+	}
+
+	public void setTopic(String topic) {
+		this.topic = topic;
+	}
+
+	@Override
+	public int hashCode() {
+		return this.key==null?"".hashCode():this.key.hashCode();
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		return this.hashCode() == obj.hashCode();
+	}
+
 }

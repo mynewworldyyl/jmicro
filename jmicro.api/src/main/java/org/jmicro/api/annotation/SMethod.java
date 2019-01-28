@@ -21,6 +21,9 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
+
+import org.jmicro.api.net.Message;
+import org.jmicro.common.Constants;
 /**
  * service method
  * @author Yulei Ye
@@ -30,32 +33,78 @@ import java.lang.annotation.Target;
 @Retention(RUNTIME)
 public @interface SMethod {
 
-	public String value() default "";
+	//public String value() default "";
 	
-	public int retryInterval() default 500;
+	/**
+	 * 开启Debug模式，-1表示未定义，由别的地方定义，如系统环境变量，启动时指定等，0表示不开启，1表示开启
+	 * Message包增加额外高试字段，如linkid,msgid,instanceName,method
+	 * 开启debug后，其他标志才志作用 {@link Message}
+	 */
+	public int debugMode() default -1;
 	
+	//-1： depend on service config
+	//1: enable
+	//0: disable
 	public int monitorEnable() default -1;
 	
+	//dump 下行流，用于下行数问题排查
+	public boolean dumpDownStream() default false;
+	//dump 上行流，用于上行数问题排查
+	public boolean dumpUpStream() default false;
+	
+	//服务方法级别的日志记录标识，参考monitorEnable说明
+	public int loggable() default -1;
+	
+	public int retryInterval() default 500;
 	//method must can be retry, or 1
 	public int retryCnt() default 3;
-	
 	public int timeout() default 2000;
 	
-	//continue fail will downgrade service
-	public int maxFailBeforeDegrade() default 5;
+	/**
+	 * 失败时的默认返回值，包括服务熔断失败，降级失败等
+	 * 通过Gson能反序列化为方法的返回参数,如果失败，抛出异常，业务通过捕获异常处理失败
+	 */
+	public String failResponse() default "";
 	
-	//continue fail will hung up service, service request will fast fail
-	public int maxFailBeforeFusing() default 10;
+	/**
+	 * 主要是ServiceCounter使用
+	 * 统计数据的基本时间窗口，小于0表示由Service注解确定，大于0表示启用
+	 * @return
+	 */
+	public long timeWindow() default -1;
 	
-	//after hung up, will test the service with this arguments
+	
+	/**
+	 * 采样统计数据周期，单位由baseTimeUnit确定
+	 * 小于0表示由Service注解确定，大于0表示启用
+	 * @return
+	 */
+	public long checkInterval() default -1;
+	
+	public int slotSize() default -1;
+	
+	/**
+	 * 空值表示由Service注解确定
+	 * @return
+	 */
+	public String baseTimeUnit() default Constants.TIME_MILLISECONDS;
+	
+	public SBreakingRule breakingRule() default @SBreakingRule(enable=false,breakTimeInterval=1000,percent=50,checkInterval=80);
+	
+	//after breaking, will test the service with this arguments
 	public String testingArgs() default "";
+	
+	/**
+	 * 时间单位参考：@link org.jmicro.api.registry.ServiceItem
+	 * 1分钟内超时数超过总请求数的5%, 则将QPS限速降低10%
+	 * 
+	 * 值为空时，不启用
+	 */
+	public String degradeRule() default "1M [7FFFFEF4,7FFFFEF2] 10%";
 	
 	//0: need response, 1:no need response
 	public boolean needResponse() default true;
 	
-	/**
-	 * 实现IMessageCallback接口的组件名称，用于处理异步消息
-	 */
 	// StringUtils.isEmpty()=true: not stream, false: stream, one request will got more response
 	// if this value is not NULL, the async is always true without check the real value
 	// value is the callback component in IOC container created in client
@@ -72,7 +121,7 @@ public @interface SMethod {
 	/**
 	 * max qps
 	 */
-	public String maxSpeed() default "";
+	public int maxSpeed() default 0;//无限速
 	
 	/**
 	 *  milliseconds

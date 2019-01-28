@@ -16,7 +16,6 @@
  */
 package org.jmicro.api;
 
-import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Map;
 /**

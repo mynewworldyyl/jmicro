@@ -21,7 +21,7 @@ import java.util.List;
 import org.jmicro.api.annotation.Component;
 import org.jmicro.api.net.IMessageHandler;
 import org.jmicro.api.objectfactory.IObjectFactory;
-import org.jmicro.api.objectfactory.IPostFactoryReady;
+import org.jmicro.api.objectfactory.IFactoryListener;
 import org.jmicro.api.objectfactory.ProxyObject;
 import org.jmicro.common.Constants;
 /**
@@ -30,10 +30,10 @@ import org.jmicro.common.Constants;
  * @date 2018年10月9日-下午5:51:55
  */
 @Component(active=true,value="InitServerReceiver")
-public class InitServerReceiver implements IPostFactoryReady{
+public class InitServerReceiver implements IFactoryListener{
 
 	@Override
-	public void ready(IObjectFactory of) {
+	public void afterInit(IObjectFactory of) {
 		List<IMessageHandler> list = of.getByParent(IMessageHandler.class);
 		ServerMessageReceiver sr = of.get(ServerMessageReceiver.class);
 		for(IMessageHandler h: list){
@@ -51,4 +51,10 @@ public class InitServerReceiver implements IPostFactoryReady{
 	public int runLevel() {
 		return 0;
 	}
+
+	@Override
+	public void preInit(IObjectFactory of) {
+	}
+	
+	
 }

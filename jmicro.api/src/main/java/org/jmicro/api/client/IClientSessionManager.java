@@ -16,12 +16,18 @@
  */
 package org.jmicro.api.client;
 
+import org.jmicro.api.net.ISession;
+
 /**
  * 
  * @author Yulei Ye
  * @date 2018年10月4日-下午12:00:18
  */
 public interface IClientSessionManager {
+	
+	public static final String SKEY = "_sessionKeyKey";
+	
+	public static final String CLOSE_SESSION_TIMER = "_closeSessionTimer";
 
 	/**
 	 * 同一个主机和端口连接，可以在不同的RPC之间做重用，提高请求性能，相当于keepalive属性
@@ -30,5 +36,7 @@ public interface IClientSessionManager {
 	 * @return
 	 */
 	IClientSession getOrConnect(String host,int port);
+	
+	void closeSession(ISession session);
 	
 }

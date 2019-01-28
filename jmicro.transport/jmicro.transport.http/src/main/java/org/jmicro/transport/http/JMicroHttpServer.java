@@ -21,18 +21,20 @@ import java.io.InputStream;
 import java.net.InetSocketAddress;
 import java.util.List;
 
+import org.jmicro.api.JMicroContext;
 import org.jmicro.api.annotation.Cfg;
 import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.Inject;
 import org.jmicro.api.annotation.Server;
 import org.jmicro.api.codec.ICodecFactory;
 import org.jmicro.api.config.Config;
-import org.jmicro.api.idgenerator.IIdGenerator;
+import org.jmicro.api.idgenerator.ComponentIdServer;
 import org.jmicro.api.monitor.IMonitorDataSubmiter;
 import org.jmicro.api.monitor.MonitorConstant;
+import org.jmicro.api.monitor.SF;
 import org.jmicro.api.net.IMessageReceiver;
+import org.jmicro.api.net.IServer;
 import org.jmicro.api.net.Message;
-import org.jmicro.api.server.IServer;
 import org.jmicro.common.CommonException;
 import org.jmicro.common.Constants;
 import org.jmicro.common.Utils;
@@ -41,7 +43,6 @@ import org.jmicro.common.util.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.sun.net.httpserver.HttpContext;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
@@ -81,7 +82,7 @@ public class JMicroHttpServer implements IServer{
 	private int heardbeatInterval = 3; //seconds to send heardbeat Rate
 	
 	@Inject
-	private IIdGenerator idGenerator;
+	private ComponentIdServer idGenerator;
 	
 	@Inject
 	private ICodecFactory codeFactory;
@@ -96,14 +97,18 @@ public class JMicroHttpServer implements IServer{
 	private HttpHandler httpHandler = new HttpHandler(){
         @Override
         public void handle(HttpExchange exchange) {
+        	JMicroContext.setMonitor(monitor);
+        	JMicroContext.callSideProdiver(true);
         	HttpServerSession session = new HttpServerSession(exchange,readBufferSize,heardbeatInterval);
-			try {
+			session.init();
+        	try {
 				if(exchange.getRequestMethod().equals("POST")){
 					InputStream in = exchange.getRequestBody();
 					byte[]data = new byte[in.available()];
 					in.read(data, 0, data.length);
 		        	String json = new String(data,0,data.length, Constants.CHARSET);
 		        	Message msg = JsonUtils.getIns().fromJson(json, Message.class);
+		        	JMicroContext.configProvider(msg);
 		 			receiver.receive(session,msg);
 				}else {
 					Message msg = new Message();
@@ -111,9 +116,8 @@ public class JMicroHttpServer implements IServer{
 		    		msg.setProtocol(Message.PROTOCOL_JSON);
 		    		msg.setId(idGenerator.getLongId(Message.class));
 		    		msg.setReqId(-1L);
-		    		msg.setSessionId(session.getId());
 		    		msg.setPayload("");
-		    		msg.setVersion(Constants.VERSION_STR);
+		    		msg.setVersion(Message.MSG_VERSION);
 					exchange.sendResponseHeaders(200, 0);
 					exchange.getResponseBody().write(JsonUtils.getIns().toJson(msg).getBytes(Constants.CHARSET));
 					session.close(true);
@@ -157,12 +161,12 @@ public class JMicroHttpServer implements IServer{
         
         String m = "Running the server host["+this.host+"],port ["+this.port+"]";
         LOG.debug(m);    
-        MonitorConstant.doSubmit(monitor,MonitorConstant.SERVER_START, null,null,m);
+        SF.doSubmit(MonitorConstant.SERVER_START,m);
 	}
 
 	@Override
 	public void stop() {
-		MonitorConstant.doSubmit(monitor,MonitorConstant.SERVER_STOP, null,null,this.host,this.port);
+		SF.doSubmit(MonitorConstant.SERVER_STOP,this.host,this.port+"");
 		 if(server != null){
 			 server.stop(0);
 			 server = null;

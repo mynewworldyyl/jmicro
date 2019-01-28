@@ -16,10 +16,10 @@
  */
 package org.jmicro.api.net;
 
+import java.util.Arrays;
 import java.util.Map;
 
 import org.jmicro.api.AbstractObjectMapSupport;
-import org.jmicro.api.server.IRequest;
 import org.jmicro.common.Constants;
 /**
  * 
@@ -42,11 +42,11 @@ public final class RpcRequest extends AbstractObjectMapSupport implements IReque
 	
 	private String transport;
 	
-	private transient ISession session;
-	
 	protected Long reqId = -1L;
 	
-	private boolean isMonitorEnable = false;
+	private transient ISession session;
+	
+	private transient boolean isMonitorEnable = false;
 	
 	private transient Message msg;
 	
@@ -56,6 +56,12 @@ public final class RpcRequest extends AbstractObjectMapSupport implements IReque
 	
 	public RpcRequest(){}
 	
+	public boolean isLoggable() {
+		if(msg != null) {
+			return msg.isLoggable();
+		}
+		return false;
+	}
 	public Long getMsgId(){
 		if(this.msg != null){
 			return this.msg.getId();
@@ -68,11 +74,11 @@ public final class RpcRequest extends AbstractObjectMapSupport implements IReque
 	}
 	
 	public boolean needResponse(){
-		return (this.msg.getFlag() & Constants.FLAG_NEED_RESPONSE) != 0;
+		return this.msg.isNeedResponse();
 	}
 	
 	public boolean isStream(){
-		return (this.msg.getFlag() & Constants.FLAG_STREAM) != 0;
+		return this.msg.isStream();
 	}
 
 	public String getTransport() {
@@ -197,4 +203,19 @@ public final class RpcRequest extends AbstractObjectMapSupport implements IReque
 	public void setArgs(Object[] args) {
 		this.args = args;
 	}
+    public long getId() {
+    	 return this.reqId;
+     }
+	
+	public void setId(long id) {
+		this.reqId = id;
+	}
+
+	@Override
+	public String toString() {
+		return "RpcRequest [serviceName=" + serviceName + ", method=" + method + ", args=" + Arrays.toString(args)
+				+ ", namespace=" + namespace + ", version=" + version + ", impl=" + impl + ", transport=" + transport
+				+ ", reqId=" + reqId + "]";
+	}
+	
 }

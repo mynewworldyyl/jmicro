@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.CuratorFrameworkFactory;
@@ -34,6 +35,7 @@ import org.apache.curator.framework.api.ExistsBuilder;
 import org.apache.curator.framework.api.GetChildrenBuilder;
 import org.apache.curator.framework.api.GetDataBuilder;
 import org.apache.curator.framework.api.SetDataBuilder;
+import org.apache.curator.framework.imps.CuratorFrameworkState;
 import org.apache.curator.framework.state.ConnectionState;
 import org.apache.curator.retry.ExponentialBackoffRetry;
 import org.apache.zookeeper.CreateMode;
@@ -44,6 +46,7 @@ import org.apache.zookeeper.Watcher.Event.EventType;
 import org.apache.zookeeper.ZooDefs;
 import org.apache.zookeeper.data.ACL;
 import org.apache.zookeeper.data.Stat;
+import org.jmicro.api.IListener;
 import org.jmicro.api.annotation.Component;
 import org.jmicro.api.config.Config;
 import org.jmicro.api.raft.IChildrenListener;
@@ -51,12 +54,15 @@ import org.jmicro.api.raft.IConnectionStateChangeListener;
 import org.jmicro.api.raft.IDataListener;
 import org.jmicro.api.raft.IDataOperator;
 import org.jmicro.api.raft.INodeListener;
+import org.jmicro.common.CommonException;
 import org.jmicro.common.Constants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * 
+ * 1 每个结点每种事件都只设置一个监听器,业务代码可自由在此增加监听器,由此做事件分发
+ * 2 不保存结点信息
+ * 3 不对线程安全做保证
  * @author Yulei Ye
  * @date 2018年10月4日-下午12:10:34
  */
@@ -65,6 +71,9 @@ public class ZKDataOperator implements IDataOperator{
 
 	private final static Logger logger = LoggerFactory.getLogger(ZKDataOperator.class);
 	
+	private boolean OPEN_DEBUG = true;
+	
+	//only use for testing
 	private static ZKDataOperator ins = new ZKDataOperator();
 	public static ZKDataOperator getIns() {return ins;}
 	
@@ -79,23 +88,22 @@ public class ZKDataOperator implements IDataOperator{
 		isInit = true;
 		propes = new Properties();
 		curator = createCuratorFramework();
-		/*IObjectFactory of = JMicro.getObjectFactory();
-		if(!of.exist(this.curator.getClass())){
-			of.regist(this.curator);
-			of.regist(CuratorFramework.class,this.curator);
-		}
-		if(!of.exist(ZKDataOperator.class)){
-			of.regist(ins);
-			of.regist(IDataOperator.class,ins);
-		}*/
 	}
 	
+	//路径到子结点之间关系，Key是全路径，值只包括结点名称
+	private Map<String,Set<String>> path2Children = new ConcurrentHashMap<>();
+	
+	//连接状态舰艇器，连上，断开，重连
+	//若增加监听器时，边接已经建立，则立即给一个连接通知，否则不给连接通知
 	private Set<IConnectionStateChangeListener> connListeners = new HashSet<>();
 	
+	//子结点监听器
 	private Map<String,Set<IChildrenListener>> childrenListeners = new HashMap<>();
 	
+	//数据改变监听器
 	private  Map<String,Set<IDataListener>> dataListeners = new HashMap<>();
 	
+	//结点增加或删除监听器
 	private  Map<String,Set<INodeListener>> nodeListeners = new HashMap<>();
 	
 	private CuratorFramework curator = null;
@@ -106,17 +114,17 @@ public class ZKDataOperator implements IDataOperator{
 		   String path = event.getPath();
 	      //logger.info("Watcher for '{}' received watched event: {}",path, event);
 	      if (event.getType() == EventType.NodeDataChanged) {
-	    	  dataChange(path);
 	    	  watchData(path);
+	    	  dataChange(path);
 	      }else if (event.getType() == EventType.NodeChildrenChanged) {
-	    	  childrenChange(path);
 	    	  watchChildren(path);
+	    	  childrenChange(path);
 	      }else if(event.getType() == EventType.NodeDeleted){
+	    	  //watchNode(path);
 	    	  nodeDelete(path);
-	    	  watchNode(path);
 	      }else if(event.getType() == EventType.NodeCreated){
-	    	  nodeCreate(path);
 	    	  watchNode(path);
+	    	  nodeCreate(path);
 	      }
 	    	  
 	};
@@ -136,17 +144,17 @@ public class ZKDataOperator implements IDataOperator{
 		Set<INodeListener> lis = nodeListeners.get(path);
 		if(lis != null && !lis.isEmpty()){
 			for(INodeListener l : lis){
-				l.nodeChanged(INodeListener.NODE_ADD,path, str);
+				l.nodeChanged(INodeListener.SERVICE_ADD,path, str);
 			}
 		}
 	}
 	
 	private void nodeDelete(String path) {
-		String str = this.getData(path);
+		//String str = this.getData(path);
 		Set<INodeListener> lis = nodeListeners.get(path);
 		if(lis != null && !lis.isEmpty()){
 			for(INodeListener l : lis){
-				l.nodeChanged(INodeListener.NODE_REMOVE,path, str);
+				l.nodeChanged(INodeListener.SERVICE_REMOVE,path, null);
 			}
 		}
 	}
@@ -189,14 +197,51 @@ public class ZKDataOperator implements IDataOperator{
 	}
 	
 	private void childrenChange(String path) {
-		List<String> children = this.getChildren(path);
-		if(children.isEmpty()){
-			return;
+		Set<String> news = this.getChildren(path);
+		Set<String> exists = this.path2Children.get(path);
+		
+		Set<String> adds = new HashSet<>();
+		Set<String> removes = new HashSet<>();
+		
+		//计算增加的结点
+		for(String n : news) {
+			//在新的列表里面有，但老列表里面没有就是增加
+			if(!exists.contains(n)) {
+				adds.add(n);
+			}
 		}
+		
+		for(String r : exists) {
+			//在老列表里面有，但是新列表里面没有，就是减少
+			if(!news.contains(r)) {
+				removes.add(r);
+			}
+		}
+		
 		Set<IChildrenListener> lis = childrenListeners.get(path);
 		if(lis != null && !lis.isEmpty()){
-			for(IChildrenListener l : lis){
-				l.childrenChanged(path, children);
+			
+			if(!adds.isEmpty()) {
+				for(String a : adds) {
+					for(IChildrenListener l : lis){
+						if(OPEN_DEBUG) {
+							logger.debug("childrenChange add path:{}, children:{}",path,a);
+						}
+						String data = this.getData(path+"/"+a);
+						l.childrenChanged(IListener.SERVICE_ADD,path,a,data);
+					}
+				}
+			}
+			
+			if(!removes.isEmpty()) {
+				for(String a : removes) {
+					for(IChildrenListener l : lis){
+						if(OPEN_DEBUG) {
+							logger.debug("childrenChange remove path:{}, children:{}",path,a);
+						}
+						l.childrenChanged(IListener.SERVICE_REMOVE,path,a,null);
+					}
+				}
 			}
 		}
 	}
@@ -226,6 +271,7 @@ public class ZKDataOperator implements IDataOperator{
 	private void watchChildren(String path){
 		GetChildrenBuilder getChildBuilder = this.curator.getChildren();
 		 try {
+			 logger.debug("watchChildren: {}",path);
 			 getChildBuilder.usingWatcher(watcher).forPath(path);
 		} catch (KeeperException.NoNodeException e) {
 			logger.error(e.getMessage());
@@ -236,6 +282,11 @@ public class ZKDataOperator implements IDataOperator{
 	
 	public void addListener(IConnectionStateChangeListener lis){
 		connListeners.add(lis);
+		if(this.curator.getState() == CuratorFrameworkState.STARTED) {
+			lis.stateChanged(Constants.CONN_CONNECTED);
+		}else if(this.curator.getState() == CuratorFrameworkState.STOPPED) {
+			lis.stateChanged(Constants.CONN_LOST);
+		}
 	}
 	
 	public void addDataListener(String path,IDataListener lis){
@@ -256,21 +307,40 @@ public class ZKDataOperator implements IDataOperator{
 	
 	}
 	
+	/**
+	 * 舰艇孩子增加或删除
+	 */
 	public void addChildrenListener(String path,IChildrenListener lis){
+		logger.debug("Add children listener for: {}",path);
 		if(childrenListeners.containsKey(path)){
 			Set<IChildrenListener> l = childrenListeners.get(path);
 			if(this.existsListener(l, lis)){
+				//监听器已经存在
 				return;
 			}
 		    if(!l.isEmpty()){
+		    	//列表已经存在,但监听器还不存在
+		    	notifyChildrenAdd(lis,path);
 		    	l.add(lis);
 				return;
 		    }
 		}
-		Set<IChildrenListener> l = null;
-		childrenListeners.put(path, l = new HashSet<IChildrenListener>());
+		//监听器和列表都不存在
+		Set<IChildrenListener> l =  new HashSet<IChildrenListener>();
+		childrenListeners.put(path, l);
+		notifyChildrenAdd(lis,path);
 		l.add(lis);
 		watchChildren(path);
+	}
+	
+	private void notifyChildrenAdd(IChildrenListener l,String path) {
+		if(!this.path2Children.containsKey(path)) {
+			return;
+		}
+		for(String c : this.path2Children.get(path)) {
+			String data = this.getData(path+"/"+c);
+			l.childrenChanged(IListener.SERVICE_ADD,path,c,data);
+		}
 	}
 	
 	public void removeDataListener(String path,IDataListener lis){
@@ -294,6 +364,9 @@ public class ZKDataOperator implements IDataOperator{
 		ExistsBuilder existsBuilder = this.curator.checkExists();
 		try {
 			Stat stat = existsBuilder.forPath(path);
+			if(OPEN_DEBUG) {
+				//logger.debug("[exist] path {}, Stat {}",path,stat);
+			}
 			return stat != null;
 		} catch (KeeperException.NoNodeException e) {
 			logger.error(e.getMessage());
@@ -330,55 +403,74 @@ public class ZKDataOperator implements IDataOperator{
 		}
 	}
 	
-	public List<String> getChildren(String path){
+	public Set<String> getFromCacheChildren(String path){
+		if(this.path2Children.containsKey(path)) {
+			Set<String> set = new HashSet<>();
+			set.addAll(path2Children.get(path));
+			return set;
+		}else {
+			return Collections.EMPTY_SET;
+		}
+	}
+	
+	public Set<String> getChildren(String path){
 		//init();
 		GetChildrenBuilder getChildBuilder = this.curator.getChildren();
   	   try {
-			return getChildBuilder.forPath(path);
+			List<String> l = getChildBuilder.forPath(path);
+			Set<String> set = new HashSet<>();
+			set.addAll(l);
 		} catch (KeeperException.NoNodeException e) {
 			logger.error(e.getMessage());
 		}catch(Exception e){
 			logger.error("",e);
 		}
-  	   return Collections.EMPTY_LIST;
+  	   return Collections.EMPTY_SET;
 	}
 	
+	/**
+	 *如果结点已经存在，则直接更新数数
+	 */
 	public void createNode(String path,String data,boolean elp){
-		//init();
-		if(this.exist(path)){
-			this.setData(path, data);
-		} else {
-			String[] ps = path.split("/");
-			String p="";
-			for(int i=1; i < ps.length-1; i++){
-				p = p + "/"+ ps[i];
-				if(!this.exist(p)){
-					CreateBuilder createBuilder = this.curator.create();
-					createBuilder.withMode(CreateMode.PERSISTENT);
-			  	    try {
-						createBuilder.forPath(p);
-					} catch (KeeperException.NoNodeException e) {
-						logger.error(e.getMessage());
-					}catch(Exception e){
-						logger.error("",e);
-					}
+		if(this.exist(path)) {
+			if(elp) {
+				throw new CommonException("elp node ["+path+"] have been exists");
+			}else {
+				this.setData(path, data);
+			}
+			return;
+		}
+		String[] ps = path.split("/");
+		String p="";
+		for(int i=1; i < ps.length-1; i++){
+			p = p + "/"+ ps[i];
+			if(!this.exist(p)){
+				CreateBuilder createBuilder = this.curator.create();
+				createBuilder.withMode(CreateMode.PERSISTENT);
+		  	    try {
+					createBuilder.forPath(p);
+				} catch (KeeperException.NoNodeException e) {
+					logger.error(e.getMessage());
+				}catch(Exception e){
+					logger.error("",e);
 				}
 			}
-			CreateBuilder createBuilder = this.curator.create();
-	  	    try {
-	  	    	byte[] d = data.getBytes(Constants.CHARSET);
-	  	    	if(elp){
-	  	    		createBuilder.withMode(CreateMode.EPHEMERAL);
-	  	    	}else {
-	  	    		createBuilder.withMode(CreateMode.PERSISTENT);
-	  	    	}
-	  	    	createBuilder.forPath(path,d);
-			} catch (KeeperException.NoNodeException e) {
-				logger.error(e.getMessage());
-			}catch(Exception e){
-				logger.error("",e);
-			}
 		}
+		CreateBuilder createBuilder = this.curator.create();
+  	    try {
+  	    	byte[] d = data.getBytes(Constants.CHARSET);
+  	    	if(elp){
+  	    		createBuilder.withMode(CreateMode.EPHEMERAL);
+  	    	}else {
+  	    		createBuilder.withMode(CreateMode.PERSISTENT);
+  	    	}
+  	    	createBuilder.forPath(path,d);
+		} catch (KeeperException.NoNodeException e) {
+			logger.error(e.getMessage());
+		}catch(Exception e){
+			logger.error("",e);
+		}
+	
 	}
 	
 	public void deleteNode(String path){
@@ -404,7 +496,7 @@ public class ZKDataOperator implements IDataOperator{
 	        public List<ACL> getDefaultAcl() {
 	            if(acl ==null){
 	                ArrayList<ACL> acl = ZooDefs.Ids.OPEN_ACL_UNSAFE;
-	               // acl.clear();
+	                // acl.clear();
 	                //acl.add(new ACL(Perms.ALL, new Id("auth", propes.getProperty("auth")) ));
 	                this.acl = acl;
 	            }
@@ -447,6 +539,7 @@ public class ZKDataOperator implements IDataOperator{
 	    curator.getConnectionStateListenable().addListener((cf,state)->stateChanged(state));
 	    
 	    curator.start();
+	    
 	    return curator;
 	  }
 	
@@ -456,10 +549,10 @@ public class ZKDataOperator implements IDataOperator{
 			 s = Constants.CONN_LOST;
          } else if (state == ConnectionState.CONNECTED) {
         	 s = Constants.CONN_CONNECTED;
-        	 registListeners();
+        	 //registListeners();
          } else if (state == ConnectionState.RECONNECTED) {
         	 s = Constants.CONN_RECONNECTED;
-        	 registListeners();
+        	 //registListeners();
          }
 		 if(s!= 0){
 			 for(IConnectionStateChangeListener l : this.connListeners){
@@ -467,11 +560,7 @@ public class ZKDataOperator implements IDataOperator{
 			 }
 		 }
 	}
-	
-	private void registListeners() {
-		
-		
-	}
+
 	private void getConfig(){
 		//propes = new Properties();
 		//propes.put("connectString", "localhost:2180");

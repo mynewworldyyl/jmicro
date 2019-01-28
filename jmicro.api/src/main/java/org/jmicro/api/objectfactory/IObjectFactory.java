@@ -17,6 +17,8 @@
 package org.jmicro.api.objectfactory;
 
 import java.util.List;
+
+import org.jmicro.api.registry.ServiceItem;
 /**
  * 为JMicro微服务框架量身定制的IOC容器，具有基本的依赖注入，属性注入，属性动态更新，生成动态代理对像，动态代理远程对像，动态代理服务对像等功能。
  * 此IOC只能创建无参数构造函数的类，如果类不能满足此条件，则不能通过IOC创建，但可以在外部创建好后注册到IOC容器。
@@ -74,7 +76,9 @@ public interface IObjectFactory {
 	 */
 	<T> T getByName(String clsName);
 	
-	<T> T getServie(String srvName,String namespace,String version);
+	<T> T getRemoteServie(String srvName,String namespace,String version,ClassLoader cl);
+	
+	<T> T getRemoteServie(ServiceItem item,ClassLoader cl);
 	
 	/**
 	 * 取得所有子类的实例
@@ -109,7 +113,7 @@ public interface IObjectFactory {
 	/**如果IPostFactoryReady没有被IOC容器管理，可以在调用start前，调用此方法加入，然后再start容器
 	 * @param listener
 	 */
-	void addPostReadyListener(IPostFactoryReady listener);
+	//void addPostReadyListener(IFactoryListener listener);
 	
 	
 }

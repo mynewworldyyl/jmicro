@@ -61,8 +61,8 @@ public class RouteUtils {
 	}
 	
 	public static  boolean filterByClientIpPort(RouteEndpoint ep) {
-		String clientIp = getCtxParam(JMicroContext.CLIENT_IP);
-		Integer clientPort = JMicroContext.get().getInt(JMicroContext.CLIENT_PORT,0);
+		String clientIp = getCtxParam(JMicroContext.REMOTE_HOST);
+		Integer clientPort = JMicroContext.get().getInt(JMicroContext.LOCAL_PORT,0);
 		if(clientPort == null || StringUtils.isEmpty(ep.getIpPort()) || StringUtils.isEmpty(clientIp)) {
 			return false;
 		}

@@ -21,9 +21,9 @@ import java.util.Map;
 
 import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.Inject;
-import org.jmicro.api.codec.ICodecFactory;
 import org.jmicro.api.monitor.IMonitorDataSubmiter;
 import org.jmicro.api.monitor.MonitorConstant;
+import org.jmicro.api.monitor.SF;
 import org.jmicro.api.net.IMessageHandler;
 import org.jmicro.api.net.IMessageReceiver;
 import org.jmicro.api.net.ISession;
@@ -41,7 +41,7 @@ public class ClientMessageReceiver implements IMessageReceiver{
 
 	static final Logger logger = LoggerFactory.getLogger(ClientMessageReceiver.class);
 	
-	private Map<Short,IMessageHandler> handlers = new HashMap<>();
+	private Map<Byte,IMessageHandler> handlers = new HashMap<>();
 	
 	@Inject(required=false)
 	private IMonitorDataSubmiter monitor;
@@ -63,10 +63,9 @@ public class ClientMessageReceiver implements IMessageReceiver{
 				logger.error("Handler not found:" + Integer.toHexString(msg.getType()));
 			}
 		} catch (Throwable e) {
-			MonitorConstant.doSubmit(monitor,MonitorConstant.CLIENT_REQ_ASYNC2_FAIL,
-					null,null,msg.getId(),msg.getReqId(),msg.getSessionId());
-			logger.error("reqHandler error: ",e);
-			msg.setType((short)(msg.getType()+1));
+			SF.doSubmit(MonitorConstant.CLIENT_REQ_ASYNC2_FAIL,msg,e);
+			logger.error("reqHandler error: {}",msg,e);
+			msg.setType((byte)(msg.getType()+1));
 		}
 	}
 

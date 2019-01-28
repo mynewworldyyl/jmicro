@@ -24,14 +24,12 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.concurrent.ConcurrentHashMap;
 
-import org.jmicro.api.annotation.Channel;
 import org.jmicro.common.CommonException;
 /**
  * 
  * @author Yulei Ye
  * @date 2018年10月4日-上午11:59:36
  */
-@Channel("defaultChannel")
 public class ChannelImpl<T> implements IChannel<T> {
 
 	private volatile List<IChannelListener<T>> listeners = new ArrayList<IChannelListener<T>>();

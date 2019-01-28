@@ -16,15 +16,12 @@
  */
 package org.jmicro.api.codec;
 
-import java.lang.reflect.Array;
-import java.nio.ByteBuffer;
-import java.util.Collection;
 import java.util.List;
-import java.util.Map;
 
+import org.jmicro.api.IListener;
 import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.Inject;
-import org.jmicro.api.idgenerator.IIdGenerator;
+import org.jmicro.api.idgenerator.ComponentIdServer;
 import org.jmicro.api.raft.IDataOperator;
 import org.jmicro.common.Constants;
 import org.slf4j.Logger;
@@ -46,59 +43,42 @@ public class TransforClassManager {
 	private IDataOperator dataOperator;
 	
 	@Inject
-	private IIdGenerator idGenerator;
+	private ComponentIdServer idGenerator;
 	
-	public void registType(Class<?> clazz) {
+	public void registType(Class<?> clazz,Short type) {
 		String path = ROOT+"/"+clazz.getName();
 		if(!dataOperator.exist(path)) {
-			Short type = idGenerator.getIntId(TransforClassManager.class).shortValue();
+			if(type == null || type == 0) {
+				type = idGenerator.getIntId(TransforClassManager.class).shortValue();
+			}
 			dataOperator.createNode(path, type.toString(), false);
 		}
 	}
 	
 	
 	public void init() {
-		
-		registType(Map.class);
-		registType(Collection.class);
-		registType(List.class);
-		registType(Array.class);
-		registType(Void.class);
-		registType(Short.class);
-		registType(Integer.class);
-		registType(Long.class);
-		registType(Double.class);
-		registType(Float.class);
-		registType(Boolean.class);
-		registType(Character.class);
-		registType(Object.class);
-		registType(String.class);
-		registType(ByteBuffer.class);
-		
-		updateType();
-		dataOperator.addChildrenListener(ROOT, (path,children)->{
-			this.update(children);
+		dataOperator.addChildrenListener(ROOT, (type,path,child,data)->{
+			if(type == IListener.SERVICE_REMOVE) {
+				//this.update(path,child,data);
+			}else if (type == IListener.SERVICE_ADD) {
+				this.update(path,child,data);
+			}
+			
 		});
 	}
 
-	private void updateType() {
-		List<String> children = this.dataOperator.getChildren(ROOT);
-		this.update(children);
-	}
-	
-	private void update(List<String> children) {
-		for(String c: children) {
-			Class<?> clazz;
-			try {
-				clazz = Thread.currentThread().getContextClassLoader().loadClass(c);
-				if(Decoder.getType(clazz) == null ) {
-					String type = dataOperator.getData(ROOT+"/"+c);
-					Decoder.registType(Short.parseShort(type),clazz);
-				}
-			} catch (ClassNotFoundException e) {
-				logger.error("",e);
+	private void update(String parent,String child,String data) {
+
+		Class<?> clazz;
+		try {
+			clazz = Thread.currentThread().getContextClassLoader().loadClass(child);
+			if(Decoder.getType(clazz) == null ) {
+				Decoder.registType(clazz,Short.parseShort(data));
 			}
+		} catch (ClassNotFoundException e) {
+			logger.error("",e);
 		}
+	
 	}
 	
 }

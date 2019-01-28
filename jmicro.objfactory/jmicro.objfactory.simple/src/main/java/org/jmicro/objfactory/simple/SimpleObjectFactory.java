@@ -42,16 +42,19 @@ import org.jmicro.api.annotation.ObjFactory;
 import org.jmicro.api.annotation.PostListener;
 import org.jmicro.api.annotation.Reference;
 import org.jmicro.api.annotation.Service;
+import org.jmicro.api.classloader.RpcClassLoader;
 import org.jmicro.api.config.Config;
 import org.jmicro.api.config.IConfigLoader;
 import org.jmicro.api.http.annotation.HttpHandler;
+import org.jmicro.api.objectfactory.IFactoryListener;
 import org.jmicro.api.objectfactory.IObjectFactory;
-import org.jmicro.api.objectfactory.IPostFactoryReady;
 import org.jmicro.api.objectfactory.IPostInitListener;
 import org.jmicro.api.objectfactory.ProxyObject;
 import org.jmicro.api.raft.IDataOperator;
 import org.jmicro.api.registry.IRegistry;
+import org.jmicro.api.registry.ServiceItem;
 import org.jmicro.api.service.IServerServiceProxy;
+import org.jmicro.api.service.ServiceManager;
 import org.jmicro.common.CommonException;
 import org.jmicro.common.Constants;
 import org.jmicro.common.Utils;
@@ -65,7 +68,7 @@ import org.slf4j.LoggerFactory;
  * @author Yulei Ye
  * @date 2018年10月4日-下午12:12:24
  */
-@ObjFactory
+@ObjFactory(Constants.DEFAULT_OBJ_FACTORY)
 @Component(Constants.DEFAULT_OBJ_FACTORY)
 public class SimpleObjectFactory implements IObjectFactory {
 
@@ -77,7 +80,7 @@ public class SimpleObjectFactory implements IObjectFactory {
 	
 	private boolean fromLocal = true;
 	
-	private List<IPostFactoryReady> postReadyListeners = new ArrayList<>();
+	private List<IFactoryListener> postReadyListeners = new ArrayList<>();
 	
 	private List<IPostInitListener> postListeners = new ArrayList<>();
 	
@@ -92,10 +95,19 @@ public class SimpleObjectFactory implements IObjectFactory {
 	private HttpHandlerManager httpHandlerManager = new HttpHandlerManager(this);
 	
 	@Override
-	public <T> T getServie(String srvName, String namespace, String version) {
+	public <T> T getRemoteServie(String srvName, String namespace, String version,ClassLoader cl) {
 		Object obj = null;
 		if(obj == null){
-			obj = this.clientServiceProxyManager.getService(srvName,namespace,version);
+			obj = this.clientServiceProxyManager.getService(srvName,namespace,version,cl);
+		}
+		return (T)obj;
+	}
+
+	@Override
+	public <T> T getRemoteServie(ServiceItem item,ClassLoader cl) {
+		Object obj = null;
+		if(obj == null){
+			obj = this.clientServiceProxyManager.getService(item,cl);
 		}
 		return (T)obj;
 	}
@@ -113,7 +125,7 @@ public class SimpleObjectFactory implements IObjectFactory {
 				throw new CommonException("More than one instance of class ["+cls.getName()+"].");
 			}
 			
-			if(obj == null){
+			if(obj == null && cls.isAnnotationPresent(Service.class)){
 				obj = this.clientServiceProxyManager.getService(cls);
 			}
 		} else {
@@ -141,12 +153,14 @@ public class SimpleObjectFactory implements IObjectFactory {
 			return (T) this.nameToObjs.get(clsName);
 		}
 		
-		Object o = this.clientServiceProxyManager.getService(clsName);
-		if(o != null){
-			return (T)o;
+		Class<?> cls = this.loadCls(clsName);
+		if(cls != null && cls.isAnnotationPresent(Service.class)) {
+			Object o = this.clientServiceProxyManager.getService(clsName);
+			if(o != null){
+				return (T)o;
+			}
 		}
 		
-		Class<?> cls = ClassScannerUtils.getIns().getClassByAnnoName(clsName);
 		if(cls != null){
 			return (T)get(cls);
 		}
@@ -216,7 +230,14 @@ public class SimpleObjectFactory implements IObjectFactory {
 		this.clsNameToObjs.put(cls.getName(), obj);
 	}
 	
+	private boolean canCreate(Class<?> cls) {
+		return !IObjectFactory.class.isAssignableFrom(cls) && cls.isAnnotationPresent(Component.class);
+	}
+	
 	private <T> T createObject(Class<T> cls,boolean doAfterCreate) {
+		if(!canCreate(cls)) {
+			return null;
+		}
 		Object obj = null;
 		try {
 			if(!isLazy(cls)) {
@@ -233,22 +254,27 @@ public class SimpleObjectFactory implements IObjectFactory {
 		return  (T)obj;
 	}
 	
-     private void doAfterCreate(Object obj,Config cfg) {
+	private void doAfterCreate(Object obj,Config cfg) {
     	 if(cfg == null){
     		  cfg = (Config)objs.get(Config.class);
     	 }
     	 if(cfg == null){
     		 throw new CommonException("Config not load!");
     	 }
+    	 
+    	 /*if(obj instanceof IMessageReceiver) {
+    		 logger.debug("");
+    	 }*/
+    	 
     	 if(!(obj instanceof ProxyObject)){
     		 injectDepependencies(obj);
-    		 notifyPrePostListener(obj,cfg);
+    		 notifyPreInitPostListener(obj,cfg);
         	 doInit(obj);
-    		 notifyAfterPostListener(obj,cfg);
+    		 notifyAfterInitPostListener(obj,cfg);
     	 }
 	}
      
-     private void notifyAfterPostListener(Object obj,Config cfg) {
+     private void notifyAfterInitPostListener(Object obj,Config cfg) {
  		if(this.postListeners.isEmpty()) {
  			return;
  		}
@@ -257,7 +283,7 @@ public class SimpleObjectFactory implements IObjectFactory {
  		}	
  	}
      
-	private void notifyPrePostListener(Object obj,Config cfg) {
+	private void notifyPreInitPostListener(Object obj,Config cfg) {
 		if(this.postListeners.isEmpty()) {
 			return;
 		}
@@ -287,12 +313,6 @@ public class SimpleObjectFactory implements IObjectFactory {
 			return;
 		}
 		
-		String dataOperatorName = Config.getCommandParam(Constants.DATA_OPERATOR, String.class, Constants.DEFAULT_DATA_OPERATOR);
-		String registryName = Config.getCommandParam(Constants.REGISTRY_KEY, String.class, Constants.DEFAULT_REGISTRY);
-		
-		IRegistry registry = null;
-		IDataOperator dop = null;
-		
 		Set<Class<?>> listeners = ClassScannerUtils.getIns().loadClassByClass(IPostInitListener.class);
 		if(listeners != null && !listeners.isEmpty()) {
 			for(Class<?> c : listeners){
@@ -313,37 +333,100 @@ public class SimpleObjectFactory implements IObjectFactory {
 			}
 		}
 		
+		boolean serverOnly = Config.isServerOnly();
+		
+		boolean clientOnly = Config.isClientOnly();
+		
+		/**
+		 * 意味着此两个参数只能在命令行或环境变量中做配置，不能在ZK中配置，因为此时ZK还没启动，此配置正是ZK的启动配置
+		 */
+		String dataOperatorName = Config.getCommandParam(Constants.DATA_OPERATOR, String.class, Constants.DEFAULT_DATA_OPERATOR);
+		String registryName = Config.getCommandParam(Constants.REGISTRY_KEY, String.class, Constants.DEFAULT_REGISTRY);
+	
+		IRegistry registry = null;
+		IDataOperator dop = null;
+		ServiceManager srvManager = null;
+		
+		/*Set<IServer> servers = new HashSet<>();
+		ServiceLoader sl = null;*/
+		
+		Set<Object> systemObjs = new HashSet<>();
+		
 		Set<Class<?>> clses = ClassScannerUtils.getIns().getComponentClass();
 		if(clses != null && !clses.isEmpty()) {
 			for(Class<?> c : clses){
-				if(IObjectFactory.class.isAssignableFrom(c) || !c.isAnnotationPresent(Component.class)){
+				if(!this.canCreate(c)){
 					continue;
 				}
-				if(c.isAnnotationPresent(Component.class)) {
-					Component cann = c.getAnnotation(Component.class);
-					if(cann.active()){
-						logger.debug("enable com: "+c.getName());
-						Object obj = null;
-						if(c.isAnnotationPresent(Service.class)) {
-							 obj = createServiceObject(c,false);
-						} else if(c.isAnnotationPresent(HttpHandler.class)) {
-							obj = createHttpHanderObject(c);
-						}else {
-							obj = this.createObject(c, false);
-						}
-						this.cacheObj(c, obj, true);
-						
-						if(IDataOperator.class.isAssignableFrom(c) && dataOperatorName.equals(cann.value())){
-							dop = (IDataOperator)obj;
-						}
-						
-						if(IRegistry.class.isAssignableFrom(c) && registryName.equals(cann.value())){
-							registry = (IRegistry)obj;
-						}
-						
-					}else {
-						logger.debug("disable com: "+c.getName());
+				
+				Component cann = c.getAnnotation(Component.class);
+				if(!cann.active()){
+					logger.debug("disable com: "+c.getName());
+					continue;
+				}
+				
+				if(serverOnly && isComsumerSide(ProxyObject.getTargetCls(c))) {
+					//指定了服务端或客户端，不需要另一方所特定的组件
+					logger.debug("serverOnly server disable: "+c.getName());
+					continue;
+				}
+				
+				if(clientOnly && isProviderSide(ProxyObject.getTargetCls(c))) {
+					logger.debug("clientOnly client disable: "+c.getName());
+						continue;
 					}
+				
+				//logger.debug("enable com: "+c.getName());
+				Object obj = null;
+				if(c.isAnnotationPresent(Service.class)) {
+					 obj = createServiceObject(c,false);
+				} else if(c.isAnnotationPresent(HttpHandler.class)) {
+					obj = createHttpHanderObject(c);
+				} else {
+					obj = this.createObject(c, false);
+				}
+				this.cacheObj(c, obj, true);
+				
+				if(IDataOperator.class.isAssignableFrom(c) && dataOperatorName.equals(cann.value())){
+					if(dop == null) {
+						dop = (IDataOperator)obj;
+					}else {
+						throw new CommonException("More than one [" +dataOperatorName+"] to be found ["+c.getName()+", "+dop.getClass().getName()+"]" );
+					}
+					systemObjs.add(dop);
+				}
+				
+				if(ServiceManager.class == c) {
+					if(srvManager == null) {
+						srvManager = (ServiceManager)obj;
+					}else {
+						throw new CommonException("More than one [" +ServiceManager.class.getName()+"] to be found ["+c.getName()+", "+srvManager.getClass().getName()+"]" );
+					}
+					systemObjs.add(srvManager);
+				}
+				
+				/*if(ServiceLoader.class == c) {
+					if(sl == null) {
+						sl = (ServiceLoader)obj;
+					}else {
+						throw new CommonException("More than one [" +ServiceLoader.class.getName()+"] to be found ["+c.getName()+", "+sl.getClass().getName()+"]" );
+					}
+					systemObjs.add(sl);
+				}
+				
+				if(IServer.class.isAssignableFrom(c) ) {
+					IServer server = (IServer)obj;
+					servers.add(server);
+					systemObjs.add(servers);
+				}*/
+				
+				if(IRegistry.class.isAssignableFrom(c) && registryName.equals(cann.value())){
+					if(registry == null) {
+						registry = (IRegistry)obj;
+					}else {
+						throw new CommonException("More than one [" +registryName+"] to be found ["+c.getName()+", "+registry.getClass().getName()+"]" );
+					}
+					systemObjs.add(srvManager);
 				}
 			}
 		}
@@ -356,59 +439,200 @@ public class SimpleObjectFactory implements IObjectFactory {
 		
 		dop.init();
 		
+		Config cfg = (Config)objs.get(Config.class);
+		//初始化配置目录
+		cfg.setDataOperator(dop);
+		//IConfigLoader具体的配置加载类
+		List<IConfigLoader> configLoaders = this.getByParent(IConfigLoader.class);
+		//加载配置，并调用init0方法做初始化
+		cfg.loadConfig(configLoaders);
+		
 		if(registry == null){
 			throw new CommonException("IRegistry with name :"+registryName +" not found!");
 		}
+		
+		srvManager.setDataOperator(dop);
+		srvManager.init();
+		
 		registry.setDataOperator(dop);
+		registry.setSrvManager(srvManager);
 		registry.init();
+		
+		/*sl.setRegistry(registry);
+		sl.init();*/
 		
 		clientServiceProxyManager = new ClientServiceProxyManager(this);
 		clientServiceProxyManager.init();
-		List<Object> l = new ArrayList<>();
-		l.addAll(this.objs.values());
-		l.sort(new Comparator<Object>(){
-			@SuppressWarnings("unused")
-			@Override
-			public int compare(Object o1, Object o2) {
-				Component c1 = ProxyObject.getTargetCls(o1.getClass()).getAnnotation(Component.class);
-				Component c2 = ProxyObject.getTargetCls(o2.getClass()).getAnnotation(Component.class);
-				return c1.level() > c2.level()?1:c1.level() == c2.level()?0:-1;
-			}
-		});
 		
-		Config cfg = (Config)objs.get(Config.class);
-		cfg.setDataOperator(dop);
-		
-		List<IConfigLoader> configLoaders = this.getByParent(IConfigLoader.class);
-		cfg.loadConfig(configLoaders);
-		
-		Set<Object> haveInits = new HashSet<>();
-		
-		if(!l.isEmpty()){
-			for(int i =0; i < l.size(); i++){
-				Object o = l.get(i);
-				if(registry == o || dop == o || haveInits.contains(o)) {
-					continue;
-				}
-				haveInits.add(o);
-				doAfterCreate(o,cfg);
-			}
-		}
-		haveInits.clear();
-		haveInits = null;
-		
-		List<IPostFactoryReady> postL = this.getByParent(IPostFactoryReady.class);
-		
+		//取得全部工厂监听器
+		List<IFactoryListener> postL = this.getByParent(IFactoryListener.class);
 		postReadyListeners.addAll(postL);
-		postReadyListeners.sort(new Comparator<IPostFactoryReady>(){
+		postReadyListeners.sort(new Comparator<IFactoryListener>(){
 			@Override
-			public int compare(IPostFactoryReady o1, IPostFactoryReady o2) {
+			public int compare(IFactoryListener o1, IFactoryListener o2) {
 				return o1.runLevel() > o2.runLevel()?1:o1.runLevel() == o2.runLevel()?0:-1;
 			}
 		});
 		
-		for(IPostFactoryReady lis : this.postReadyListeners){
-			lis.ready(this);
+		//初始化前监听器
+		for(IFactoryListener lis : this.postReadyListeners){
+			//在这里可以注册实例
+			lis.preInit(this);;
+		}
+		
+		List<Object> l = new ArrayList<>();
+		l.addAll(this.objs.values());
+		l.sort(new Comparator<Object>(){
+			@Override
+			public int compare(Object o1, Object o2) {
+				Component c1 = ProxyObject.getTargetCls(o1.getClass()).getAnnotation(Component.class);
+				Component c2 = ProxyObject.getTargetCls(o2.getClass()).getAnnotation(Component.class);
+				if(c1 == null && c2 == null) {
+					return 0;
+				}else if(c1 == null && c2 != null) {
+					return -1;
+				}else if(c1 != null && c2 == null) {
+					return 1;
+				}else {
+					return c1.level() > c2.level()?1:c1.level() == c2.level()?0:-1;
+				}
+			}
+		});
+		
+		this.cacheObj(this.getClass(), this, true);
+		
+		notifyPreInitPostListener(registry,cfg);
+		
+		Set<Object> haveInits = new HashSet<>();
+		
+		if(!l.isEmpty()){
+			
+			for(int i =0; i < l.size(); i++){
+				Object o = l.get(i);
+				
+				 if(o instanceof ProxyObject){
+		    		continue;
+		    	 }
+				 
+				/*if(IIdServer.class.isInstance(o)) {
+					 //此代码仅用于开发测试，正式代码中应该注掉
+					 //用于测试具体某个组件的配置初始化
+					 logger.debug(o.toString());
+				 }*/
+				
+				if(systemObjs.contains(o) ||  haveInits.contains(o)) {
+					continue;
+				}
+				haveInits.add(o);
+				//只要在初始化前注入配置信息
+				notifyPreInitPostListener(o,cfg);
+			}
+			
+			haveInits.clear();
+			
+			//依赖注入
+			for(int i =0; i < l.size(); i++){
+				Object o = l.get(i);
+				
+				 if(o instanceof ProxyObject){
+		    		continue;
+		    	 }
+				 
+				/*if(IIdServer.class.isInstance(o)) {
+					 //此代码仅用于开发测试，正式代码中应该注掉
+					 //用于测试具体某个组件的配置初始化
+					 logger.debug(o.toString());
+				 }*/
+				
+				if(systemObjs.contains(o) || haveInits.contains(o) || !isEnable(o)) {
+					continue;
+				}
+				
+				haveInits.add(o);
+				injectDepependencies(o);
+				//doAfterCreate(o,cfg);
+			}
+			
+			haveInits.clear();
+			
+			for(int i =0; i < l.size(); i++){
+				Object o = l.get(i);
+				
+				 if(o instanceof ProxyObject){
+		    		continue;
+		    	 }
+				 
+				/*if(IIdServer.class.isInstance(o)) {
+					 //此代码仅用于开发测试，正式代码中应该注掉
+					 //用于测试具体某个组件的配置初始化
+					 logger.debug(o.toString());
+				 }*/
+				
+				if(systemObjs.contains(o) || haveInits.contains(o) || !isEnable(o)) {
+					continue;
+				}
+				haveInits.add(o);
+				//调用各组件的init方法
+				doInit(o);
+			}
+			
+			haveInits.clear();
+			for(int i =0; i < l.size(); i++){
+				Object o = l.get(i);
+				
+				 if(o instanceof ProxyObject){
+		    		continue;
+		    	 }
+				 
+				/*if(IIdServer.class.isInstance(o)) {
+					 //此代码仅用于开发测试，正式代码中应该注掉
+					 //用于测试具体某个组件的配置初始化
+					 logger.debug(o.toString());
+				 }*/
+				
+				if(systemObjs.contains(o) || haveInits.contains(o) || !isEnable(o)) {
+					continue;
+				}
+				haveInits.add(o);
+				//通知初始化完成
+				processReference(o);
+			}
+			
+			haveInits.clear();
+			for(int i =0; i < l.size(); i++){
+				Object o = l.get(i);
+				
+				 if(o instanceof ProxyObject){
+		    		continue;
+		    	 }
+				 
+				/*if(IIdServer.class.isInstance(o)) {
+					 //此代码仅用于开发测试，正式代码中应该注掉
+					 //用于测试具体某个组件的配置初始化
+					 logger.debug(o.toString());
+				 }*/
+				
+				if(systemObjs.contains(o) || haveInits.contains(o) || !isEnable(o)) {
+					continue;
+				}
+				haveInits.add(o);
+				//通知初始化完成
+				notifyAfterInitPostListener(o,cfg);
+			}
+			haveInits.clear();
+			
+		}
+		
+		haveInits = null;
+		
+		//RpcClassloaderClient在preinit时注入
+		RpcClassLoader cl = this.get(RpcClassLoader.class);
+		if(cl != null) {
+			Thread.currentThread().setContextClassLoader(cl);
+		}
+		
+		for(IFactoryListener lis : this.postReadyListeners){
+			lis.afterInit(this);
 		}
 		
 		fromLocal = false;
@@ -418,10 +642,70 @@ public class SimpleObjectFactory implements IObjectFactory {
 			isInit.notifyAll();
 		}
 	}
+	
+	private boolean isEnable(Object o) {
+		if(o == null) {
+			return false;
+		}
+		
+		try {
+			Method m = o.getClass().getMethod( "isEnable", new Class<?>[0]);
+			return (Boolean)m.invoke(o, new Object[0]);
+		} catch (NoSuchMethodException | SecurityException | IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
+			try {
+				Method m = o.getClass().getMethod( "isEnable", new Class<?>[0]);
+				return (Boolean)m.invoke(o, new Object[0]);
+			} catch (NoSuchMethodException | SecurityException | IllegalAccessException | IllegalArgumentException | InvocationTargetException e1) {
+				try {
+					Field f = o.getClass().getField("enable");
+					boolean acc = f.isAccessible();
+					if(!acc) {
+						f.setAccessible(true);
+					}
+					Boolean v = f.getBoolean(o);
+					f.setAccessible(acc);
+					return v;
+				} catch (NoSuchFieldException | SecurityException | IllegalArgumentException | IllegalAccessException e2) {
+				}
+			}
+		}
+		
+		return true;
+	}
+
+	private Class<?> loadCls(String clsName) {
+		
+		Class<?> cls = ClassScannerUtils.getIns().getClassByName(clsName);
+		if(cls == null) {
+			try {
+				cls = Thread.currentThread().getContextClassLoader().loadClass(clsName);
+			} catch (ClassNotFoundException e) {
+			}
+		}
+		
+		if(cls == null) {
+			try {
+				cls = this.getClass().getClassLoader().loadClass(clsName);
+			} catch (ClassNotFoundException e) {
+			}
+		}
+		
+		if(cls == null) {
+			RpcClassLoader cl = this.get(RpcClassLoader.class);
+			if(cl != null) {
+				try {
+					cls = cl.loadClass(clsName);
+				} catch (ClassNotFoundException e) {
+				}
+			}
+		}
+		
+		return cls;
+		
+	}
 
 	private Object createHttpHanderObject(Class<?> c) {
-		Object o = this.httpHandlerManager.createHandler(c);
-		
+		Object o = this.httpHandlerManager.createHandler(c);	
 		return o;
 	}
 
@@ -457,16 +741,16 @@ public class SimpleObjectFactory implements IObjectFactory {
 		postListeners.add(listener);
 	}
 	
-	@Override
-	public void addPostReadyListener(IPostFactoryReady listener) {
-		for(IPostFactoryReady l : postReadyListeners){
+	/*@Override
+	public void addPostReadyListener(IFactoryListener listener) {
+		for(IFactoryListener l : postReadyListeners){
 			if(l.getClass() == listener.getClass()) return;
 		}
 		postReadyListeners.add(listener);
-	}
+	}*/
 	
-	private boolean isProviderSide(Object o){
-		Class<?> cls = ProxyObject.getTargetCls(o.getClass());
+	private boolean isProviderSide(Class<?> cls){
+		//Class<?> cls = ProxyObject.getTargetCls(o.getClass());
 		Component comAnno = cls.getAnnotation(Component.class);
 		if(comAnno == null){
 			return true;
@@ -474,8 +758,8 @@ public class SimpleObjectFactory implements IObjectFactory {
 		return Constants.SIDE_PROVIDER.equals(comAnno.side());
 	}
 	
-	private boolean isComsumerSide(Object o){
-		Class<?> cls = ProxyObject.getTargetCls(o.getClass());
+	private boolean isComsumerSide(Class<?> cls){
+		//Class<?> cls = ProxyObject.getTargetCls(o.getClass());
 		Component comAnno = cls.getAnnotation(Component.class);
 		if(comAnno == null){
 			return true;
@@ -489,7 +773,7 @@ public class SimpleObjectFactory implements IObjectFactory {
 		}
 		Iterator<?> ite = list.iterator();
 		while(ite.hasNext()){
-			if(isProviderSide(ite.next())){
+			if(isProviderSide(ProxyObject.getTargetCls(ite.next().getClass()))){
 				ite.remove();
 			}
 		}
@@ -502,27 +786,29 @@ public class SimpleObjectFactory implements IObjectFactory {
 		}
 		Iterator<?> ite = list.iterator();
 		while(ite.hasNext()){
-			if(isComsumerSide(ite.next())){
+			if(isComsumerSide(ProxyObject.getTargetCls(ite.next().getClass()))){
 				ite.remove();
 			}
 		}
 		return list;
-	}	
-
-	private void injectDepependencies(Object obj) {
+	}
+	
+	private void processReference(Object obj) {
+		
 		Class<?> cls = ProxyObject.getTargetCls(obj.getClass());
 		List<Field> fields = new ArrayList<>();
 		Utils.getIns().getFields(fields, cls);
 		
-		Component comAnno = cls.getAnnotation(Component.class);
-		
-		boolean isProvider = isProviderSide(obj);
-		boolean isComsumer =  isComsumerSide(obj);
-		
 		for(Field f : fields) {
+			
 			Object srv = null;
 			boolean isRequired = false;
-			if(f.isAnnotationPresent(Reference.class)){
+			Class<?> refCls = f.getType();
+			
+			//系统启动时可以为某些类指定特定的实现
+			srv = this.getCommandSpecifyConponent(f);
+			
+			if(srv == null && f.isAnnotationPresent(Reference.class)){
 				//Inject the remote service obj
 				Reference ref = f.getAnnotation(Reference.class);
 				/*
@@ -533,10 +819,95 @@ public class SimpleObjectFactory implements IObjectFactory {
 				*/
 				isRequired = ref.required();
 				
-				srv = clientServiceProxyManager.createOrGetService(obj,f);
-				//getServiceProxy(cls,f,ref,obj);
+				try {
+					srv = clientServiceProxyManager.createOrGetService(obj,f);
+				} catch (CommonException e) {
+					if(!isRequired) {
+						logger.error("optional dependence cls ["+ f.getType().getName()
+								+"] not found for class ["+obj.getClass().getName()+"]",e.getMessage());
+					}else {
+						throw e;
+					}
+				}
 				
-			}else if(f.isAnnotationPresent(Inject.class)){
+			}
+			
+			if(srv != null) {
+				setObjectVal(obj, f, srv);
+			} else if(isRequired) {
+				throw new CommonException("Class ["+cls.getName()+"] field ["+ f.getName()+"] dependency ["+f.getType().getName()+"] not found");
+			}
+			
+		}
+			
+	}
+	
+	private void setObjectVal(Object obj,Field f,Object srv) {
+
+		String setMethodName = "set"+f.getName().substring(0, 1).toUpperCase()+f.getName().substring(1);
+		Method m = null;
+		try {
+			 m = obj.getClass().getMethod(setMethodName, f.getType());
+			 m.invoke(obj, srv);
+		} catch (InvocationTargetException | NoSuchMethodException e1) {
+		    boolean bf = f.isAccessible();
+			if(!bf) {
+				f.setAccessible(true);
+			}
+			try {
+				f.set(obj, srv);
+			} catch (IllegalArgumentException | IllegalAccessException e) {
+				throw new CommonException("",e);
+			}
+			if(!bf) {
+				f.setAccessible(bf);
+			} 
+		}catch(SecurityException | IllegalAccessException | IllegalArgumentException e1){
+			throw new CommonException("Class ["+obj.getClass().getName()+"] field ["+ f.getName()+"] dependency ["+f.getType().getName()+"] error",e1);
+		}
+	
+	}
+	
+	private Object getCommandSpecifyConponent(Field f) {
+		//系统启动时可以为某些类指定特定的实现
+		Object srv = null;
+		String commandComName = Config.getCommandParam(f.getType().getName(), String.class, null);
+		if(!StringUtils.isEmpty(commandComName) && ( f.isAnnotationPresent(Inject.class) || f.isAnnotationPresent(Reference.class) )) {
+			//对于注入或引用的服务,命令行指定实现组件名称
+			if(this.nameToObjs.containsKey(commandComName)) {
+				srv = this.nameToObjs.get(commandComName);
+			} else {
+				//指定的组件不存在
+				throw new CommonException("Component Name["+commandComName+"] for service ["+f.getType().getName()+"] not found");
+			}
+			
+			if(!f.getType().isInstance(srv)) {
+				//指定的组件不是该类的实例
+				throw new CommonException("Component with Name["+commandComName+"] not a instance of class ["+f.getType().getName()+"]");
+			}
+		}
+		
+		return srv;
+	}
+
+	private void injectDepependencies(Object obj) {
+		Class<?> cls = ProxyObject.getTargetCls(obj.getClass());
+		List<Field> fields = new ArrayList<>();
+		Utils.getIns().getFields(fields, cls);
+		
+		//Component comAnno = cls.getAnnotation(Component.class);
+		
+		boolean isProvider = isProviderSide(ProxyObject.getTargetCls(obj.getClass()));
+		boolean isComsumer =  isComsumerSide(ProxyObject.getTargetCls(obj.getClass()));
+		
+		for(Field f : fields) {
+			Object srv = null;
+			boolean isRequired = false;
+			Class<?> refCls = f.getType();
+			
+			srv = this.getCommandSpecifyConponent(f);
+			
+			if(srv == null && f.isAnnotationPresent(Inject.class)){
 				//Inject the local component
 				Inject inje = f.getAnnotation(Inject.class);
 				String name = inje.value();
@@ -698,6 +1069,9 @@ public class SimpleObjectFactory implements IObjectFactory {
 						srv = map;
 					}
 				}else if(type.isInterface() || Modifier.isAbstract(type.getModifiers())) {
+					/*if(type == IObjectFactory.class) {
+						logger.debug(type.getName());
+					}*/
 					List<?> l = this.getByParent(type);
 					
 					if(isProvider){
@@ -724,7 +1098,7 @@ public class SimpleObjectFactory implements IObjectFactory {
 							}
 						}
 					}
-				}else {
+				} else {
 					String annName = name;
 					if(annName != null && !"".equals(annName.trim())){
 						srv = this.getByName(name);
@@ -737,39 +1111,25 @@ public class SimpleObjectFactory implements IObjectFactory {
 						srv = this.get(type);
 					}
 					if(srv != null){
-						if(isProvider && this.isComsumerSide(srv)){
-							throw new CommonException("Class ["+cls.getName()+"] field ["+ f.getName()+"] dependency ["+f.getType().getName()+"] side should provider");
-						}else if(isComsumer && this.isProviderSide(srv)){
-							throw new CommonException("Class ["+cls.getName()+"] field ["+ f.getName()+"] dependency ["+f.getType().getName()+"] side should comsumer");
+						Class<?> clazz = ProxyObject.getTargetCls(srv.getClass());
+						//如果没有Component注解，默认服务提供者及消费者都可用flag=true，只有定义了一方可用的组件，才需要做检测
+						boolean flag = this.isComsumerSide(clazz) && this.isProviderSide(clazz);
+						if(!flag) {
+							if(isProvider && this.isComsumerSide(clazz)){
+								throw new CommonException("Class ["+cls.getName()+"] field ["+ f.getName()+"] dependency ["+f.getType().getName()+"] side should provider");
+							}else if(isComsumer && this.isProviderSide(ProxyObject.getTargetCls(srv.getClass()))){
+								throw new CommonException("Class ["+cls.getName()+"] field ["+ f.getName()+"] dependency ["+f.getType().getName()+"] side should comsumer");
+							}
 						}
+						
+					
 					}
 				}
 			}
 			
 			if(srv != null) {
-				String setMethodName = "set"+f.getName().substring(0, 1).toUpperCase()+f.getName().substring(1);
-				Method m = null;
-				try {
-					 m = obj.getClass().getMethod(setMethodName, f.getType());
-					 m.invoke(obj, srv);
-				} catch (InvocationTargetException | NoSuchMethodException e1) {
-				    boolean bf = f.isAccessible();
-					if(!bf) {
-						f.setAccessible(true);
-					}
-					try {
-						f.set(obj, srv);
-					} catch (IllegalArgumentException | IllegalAccessException e) {
-						throw new CommonException("",e);
-					}
-					if(!bf) {
-						f.setAccessible(bf);
-					} 
-				}catch(SecurityException | IllegalAccessException | IllegalArgumentException e1){
-					throw new CommonException("Class ["+cls.getName()+"] field ["+ f.getName()+"] dependency ["+f.getType().getName()+"] error",e1);
-				}
-				
-			}else if(isRequired) {
+				setObjectVal(obj, f, srv);
+			} else if(isRequired) {
 				throw new CommonException("Class ["+cls.getName()+"] field ["+ f.getName()+"] dependency ["+f.getType().getName()+"] not found");
 			}
 		}
@@ -805,11 +1165,14 @@ public class SimpleObjectFactory implements IObjectFactory {
 		 classGenerator.addMethod("public void enable(boolean en){ this.enable=en;}");*/
 		 classGenerator.addMethod("public java.lang.String wayd(java.lang.String msg){ return msg;}");
 		 
-		 //只为代理接口生成代理方法，别的方法继承自原始类
+		 //只为代理接口生成代理方法,别的方法继承自原始类
 		 Method[] ms1 = srvInterface.getMethods();
 		 
-		 Method[] ms2 = new Method[ms1.length];
-		 
+		 //Method[] ms2 = new Method[ms1.length];
+		/* if(cls.getName().equals("org.jmicro.example.provider.TestRpcServiceImpl")) {
+			 System.out.println("");
+		 }*/
+		 logger.debug("Create Service: {}",cls.getName());
 		 for(int i =0; i < ms1.length; i++) {
 		     //Method m1 = ms1[i];
 		     Method m = null;
@@ -828,13 +1191,13 @@ public class SimpleObjectFactory implements IObjectFactory {
            Class<?>[] pts = m.getParameterTypes();
 
            StringBuilder code = new StringBuilder();
-        		   
-           if (!Void.TYPE.equals(rt)) {
-        	   code.append("Object ret = ");
+
+           if(!Void.TYPE.equals(rt)) {
+        	   code.append(ReflectUtils.getName(rt)).append(" ret = ");
            }
-           code.append("super.").append(m.getName()).append("(");
-           for (int j = 0; j < pts.length; j++){
-          	 code.append("("+pts[j].getName()+")$").append(j + 1);
+           code.append(" super.").append(m.getName()).append("(");
+           for(int j = 0; j < pts.length; j++){
+          	 code.append("$").append(j + 1);
           	 if(j < pts.length-1){
           		code.append(",");
           	 }
@@ -842,9 +1205,9 @@ public class SimpleObjectFactory implements IObjectFactory {
            code.append(");");
            
            if (!Void.TYPE.equals(rt)) {
-        	   code.append(" return ").append(SimpleObjectFactory.asArgument(rt, "ret")).append(";");
+        	   code.append(" return ret;");
            }
-
+           logger.debug(code.toString());
            classGenerator.addMethod(m.getName(), m.getModifiers(), rt, pts, m.getExceptionTypes(), code.toString());      
 		 }
 		 
@@ -892,10 +1255,16 @@ public class SimpleObjectFactory implements IObjectFactory {
 			StringBuffer sb = new StringBuffer();
 			//sb.append("if (!this.init) { System.out.println( \"lazy init class:"+cls.getName()+"\"); this.init=true; this.target = ("+cls.getName()+")((java.lang.reflect.Constructor)constructors.get(this.conKey)).newInstance(this.conArgs);}");
 			sb.append(" _init0();");
-			sb.append(" Object v = methods[").append(index).append("].invoke(this.target,$args); ");	
 			Class<?> rt = m.getReturnType();
+			
 			if (!Void.TYPE.equals(rt)) {
-				sb.append(" return ").append(asArgument(rt, "v")).append(";");
+				sb.append(ReflectUtils.getName(rt)).append(" v = ");
+			}
+			
+			sb.append(" methods[").append(index).append("].invoke(this.target,$args); ");	
+			
+			if (!Void.TYPE.equals(rt)) {
+				sb.append(" return v ;");
 			}
 			cg.addMethod(m.getName(), m.getModifiers(), m.getReturnType(), m.getParameterTypes(),
 					m.getExceptionTypes(), sb.toString());
@@ -976,8 +1345,7 @@ public class SimpleObjectFactory implements IObjectFactory {
 				initMethod2.invoke(obj, new Object[]{});
 			}
 		} catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			logger.error("Component init error:"+obj.getClass().getName(),e);
 		}
 	}
 

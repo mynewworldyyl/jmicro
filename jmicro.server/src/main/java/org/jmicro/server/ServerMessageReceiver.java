@@ -18,25 +18,32 @@ package org.jmicro.server;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
 
 import org.jmicro.api.JMicroContext;
 import org.jmicro.api.annotation.Cfg;
 import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.Inject;
 import org.jmicro.api.codec.ICodecFactory;
-import org.jmicro.api.idgenerator.IIdGenerator;
+import org.jmicro.api.executor.ExecutorConfig;
+import org.jmicro.api.executor.ExecutorFactory;
+import org.jmicro.api.idgenerator.ComponentIdServer;
 import org.jmicro.api.monitor.IMonitorDataSubmiter;
 import org.jmicro.api.monitor.MonitorConstant;
+import org.jmicro.api.monitor.SF;
 import org.jmicro.api.net.IMessageHandler;
 import org.jmicro.api.net.IMessageReceiver;
 import org.jmicro.api.net.ISession;
 import org.jmicro.api.net.Message;
+import org.jmicro.api.net.ServerError;
 import org.jmicro.common.CommonException;
 import org.jmicro.common.Constants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import co.paralleluniverse.fibers.Fiber;
 import co.paralleluniverse.fibers.Suspendable;
+
 /**
  * 
  * @author Yulei Ye
@@ -46,6 +53,7 @@ import co.paralleluniverse.fibers.Suspendable;
 public class ServerMessageReceiver implements IMessageReceiver{
 
 	static final Logger logger = LoggerFactory.getLogger(ServerMessageReceiver.class);
+	static final Class<?> TAG = ServerMessageReceiver.class;
 	
 	@Cfg("/ServerMessageReceiver/openDebug")
 	private boolean openDebug;
@@ -54,24 +62,35 @@ public class ServerMessageReceiver implements IMessageReceiver{
 	private IMonitorDataSubmiter monitor;
 	
 	@Inject
-	private IIdGenerator idGenerator;
+	private ComponentIdServer idGenerator;
 	
 	@Inject
 	private ICodecFactory codeFactory;
 	
+	@Inject
+	private JRPCReqRespHandler jrpcHandler;
+	
 	/*@Cfg(value="/ServerReceiver/receiveBufferSize")
 	private int receiveBufferSize=1000;*/
 	
-	private volatile Map<Short,IMessageHandler> handlers = new ConcurrentHashMap<>();
+	private ExecutorService executor = null;
+	
+	private volatile Map<Byte,IMessageHandler> handlers = new ConcurrentHashMap<>();
 	
 	private Boolean ready = new Boolean(false);
 	
 	public void init(){
-		
+		ExecutorConfig config = new ExecutorConfig();
+		config.setMsMaxSize(60);
+		config.setTaskQueueSize(500);
+		config.setThreadNamePrefix("ServerMessageReceiver");
+		executor = ExecutorFactory.createExecutor(config);
+		//系统级RPC处理器，如ID请求处理器，和普通RPC处理理器同一个实例，但是TYPE标识不同，需要特殊处理
+		handlers.put(Constants.MSG_TYPE_SYSTEM_REQ_JRPC, jrpcHandler);
 	}
 	
 	public void registHandler(IMessageHandler handler){
-		Map<Short,IMessageHandler> handlers = this.handlers;
+		Map<Byte,IMessageHandler> handlers = this.handlers;
 		if(handlers.containsKey(handler.type())){
 			return;
 		}
@@ -85,8 +104,9 @@ public class ServerMessageReceiver implements IMessageReceiver{
 	@Override
 	@Suspendable
 	public void receive(ISession s, Message msg) {
+		 JMicroContext.configProvider(msg);
 		if(openDebug) {
-			logger.debug("Got message ReqId: "+msg.getReqId());
+			//SF.getIns().doMessageLog(MonitorConstant.DEBUG, TAG, msg,"receive");
 		}
 		if(!ready) {
 			synchronized(ready){
@@ -97,45 +117,50 @@ public class ServerMessageReceiver implements IMessageReceiver{
 				}
 			}
 		}
+		JMicroContext jc = JMicroContext.get();
 		//直接协程处理，IO LOOP线程返回
-		//new Fiber<Void>(() ->doReceive((IServerSession)s,data)).start();
-		new Thread(()->{doReceive((IServerSession)s,msg);}).start();
+		
+		/*new Fiber<Void>(() -> {
+			JMicroContext.get().mergeParams(jc);
+			doReceive((IServerSession)s,msg);
+		}).start();*/
+		
+		executor.submit(()->{
+			JMicroContext.get().mergeParams(jc);
+			doReceive((IServerSession)s,msg);
+			
+		});
+		
+		/*new Thread(()->{
+			JMicroContext.get().mergeParams(jc);
+			doReceive((IServerSession)s,msg);
+		}).start();*/
 	}
 	
 	@Suspendable
 	private void doReceive(IServerSession s, Message msg){
-		if(openDebug) {
-			logger.debug("doReceive ReqId: "+msg.getReqId());
-		}
 		
-		if(s.getId() != -1 && msg.getSessionId() != s.getId()) {
-			String msg1 = "Ignore MSG" + msg.getId() + "Rec session ID: "+msg.getSessionId()+",but this session ID: "+s.getId();
-			logger.warn(msg1);
-			if(monitorEnable(s)){
-				MonitorConstant.doSubmit(monitor,MonitorConstant.SERVER_PACKAGE_SESSION_ID_ERR,
-						null,null,msg.getId(),msg.getReqId(),s.getId(),msg1);
-			}
-			msg.setType((short)(msg.getType()+1));
-			s.write(msg);
-			return;
+		if(msg.isLoggable()) {
+			SF.doMessageLog(MonitorConstant.LOG_DEBUG, TAG, msg,null,"doReceive");
 		}
 		
 		try {
 			IMessageHandler h = handlers.get(msg.getType());
 			if(h == null) {
-				throw new CommonException("Message type ["+Integer.toHexString(msg.getType())+"] handler not found!");
+				String errMsg = "Message type ["+Integer.toHexString(msg.getType())+"] handler not found!";
+				SF.doMessageLog(MonitorConstant.LOG_ERROR, TAG, msg,null,errMsg);
+				throw new CommonException(errMsg);
 			}
 			h.onMessage(s, msg);
 		} catch (Throwable e) {
-			MonitorConstant.doSubmit(monitor,MonitorConstant.SERVER_REQ_ERROR, null,null);
-			logger.error("reqHandler error: ",e);
-			msg.setType((short)(msg.getType()+1));
+			SF.doMessageLog(MonitorConstant.LOG_ERROR, TAG, msg,e);
+			SF.doSubmit(MonitorConstant.SERVER_REQ_ERROR);
+			logger.error("reqHandler error:{},msg:{} ",e,msg);
+			msg.setType((byte)(msg.getType()+1));
+			ServerError se = new ServerError();
+			se.setMsg(e.getMessage());
+			msg.setPayload(codeFactory.getEncoder(msg.getProtocol()).encode(se));
 			s.write(msg);
 		}
 	}
-	
-	public static Boolean monitorEnable(IServerSession session) {
-   	 	 Boolean v = (Boolean)session.getParam(Constants.MONITOR_ENABLE_KEY);
-		 return v == null ? JMicroContext.get().isMonitor():v;
-    }
 }

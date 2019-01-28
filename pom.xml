@@ -19,7 +19,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>org.jmicro</groupId>
-    <artifactId>jmicro-parent</artifactId>
+    <artifactId>jmicro.parent</artifactId>
     <version>0.0.1-SNAPSHOT</version>
     <packaging>pom</packaging>
 
@@ -79,12 +79,12 @@
         <zookeeper.version>3.4.13</zookeeper.version>
         <curator.version>4.0.1</curator.version>
         <zkclient.version>2.0</zkclient.version>
+        <redis.version>2.10.0</redis.version>
     </properties>
 
-    <modules> 
+    <modules>
     	<module>jmicro.common</module>
 		<module>jmicro.api</module>
-		<module>jmicro.codec</module>
 		<module>jmicro.server</module>
 		<module>jmicro.client</module>
 		<module>jmicro.idgenerator</module>
@@ -96,8 +96,12 @@
 		<module>jmicro.limit</module>
 		<module>jmicro.monitor</module>
 		<module>jmicro.gateway</module>
-		<module>jmicro.route</module>
 		<module>jmicro.gateway.client</module>
+		<module>jmicro.pubsub</module>
+		<module>jmicro.redis</module>
+		<module>jmicro.etcd</module>
+		<module>jmicro.classloader</module>
+		<module>jmicro.chroreography</module>
     </modules>
 
     <dependencyManagement>
@@ -105,6 +109,21 @@
              <dependency>
                  <groupId>org.jmicro</groupId>
 				 <artifactId>jmicro.api</artifactId>
+				 <version>${jmicro.version}</version>
+            </dependency>
+			 <dependency>
+                 <groupId>org.jmicro</groupId>
+				 <artifactId>jmicro.redis</artifactId>
+				 <version>${jmicro.version}</version>
+            </dependency>
+			 <dependency>
+                 <groupId>org.jmicro</groupId>
+				 <artifactId>jmicro.pubsub</artifactId>
+				 <version>${jmicro.version}</version>
+            </dependency>
+			  <dependency>
+                 <groupId>org.jmicro</groupId>
+				 <artifactId>jmicro.etcd</artifactId>
 				 <version>${jmicro.version}</version>
             </dependency>
              <dependency>
@@ -122,16 +141,31 @@
 				 <artifactId>jmicro.gateway</artifactId>
 				 <version>${jmicro.version}</version>
             </dependency>
+			   <dependency>
+                 <groupId>org.jmicro</groupId>
+				 <artifactId>jmicro.classloader.server</artifactId>
+				 <version>${jmicro.version}</version>
+            </dependency>
+              <dependency>
+                 <groupId>org.jmicro</groupId>
+				 <artifactId>jmicro.classloader.client</artifactId>
+				 <version>${jmicro.version}</version>
+            </dependency>
+            <dependency>
+			 <groupId>org.jmicro</groupId>
+			 <artifactId>jmicro.gateway.client</artifactId>
+			 <version>${jmicro.version}</version>
+        	</dependency>
 	         <dependency>
 				 <groupId>org.jmicro</groupId>
 				 <artifactId>jmicro.transport.nio</artifactId>
 				  <version>${jmicro.version}</version>
 	        </dependency>
-	         <dependency>
+<!-- 	         <dependency>
 				 <groupId>org.jmicro</groupId>
 				 <artifactId>jmicro.transport.mina</artifactId>
 				  <version>${jmicro.version}</version>
-	        </dependency>
+	        </dependency> -->
 	         <dependency>
 				 <groupId>org.jmicro</groupId>
 				 <artifactId>jmicro.transport.http</artifactId>
@@ -139,7 +173,12 @@
 	        </dependency>
 	          <dependency>
 				 <groupId>org.jmicro</groupId>
-				 <artifactId>jmicro.transport.netty</artifactId>
+				 <artifactId>jmicro.transport.netty.client</artifactId>
+				  <version>${jmicro.version}</version>
+	        </dependency>
+			  <dependency>
+				 <groupId>org.jmicro</groupId>
+				 <artifactId>jmicro.transport.netty.server</artifactId>
 				  <version>${jmicro.version}</version>
 	        </dependency>
 	         <dependency>
@@ -150,11 +189,6 @@
             <dependency>
 				 <groupId>org.jmicro</groupId>
 				 <artifactId>jmicro.objfactory.simple</artifactId>
-				  <version>${jmicro.version}</version>
-	        </dependency>
-	         <dependency>
-				 <groupId>org.jmicro</groupId>
-				 <artifactId>jmicro.monitor.submiter</artifactId>
 				  <version>${jmicro.version}</version>
 	        </dependency>
 	          <dependency>
@@ -174,14 +208,29 @@
 			 </dependency>
 			 <dependency>
 			 <groupId>org.jmicro</groupId>
+			 <artifactId>jmicro.monitor.breaker</artifactId>
+			 <version>${jmicro.version}</version>
+			 </dependency>
+			 <dependency>
+			 <groupId>org.jmicro</groupId>
 			 <artifactId>jmicro.monitor.subermemory</artifactId>
 			 <version>${jmicro.version}</version>
 			 </dependency>
-			   <dependency>
+			<dependency>
 			 <groupId>org.jmicro</groupId>
 			 <artifactId>jmicro.monitor.dashboard</artifactId>
 			 <version>${jmicro.version}</version>
 			 </dependency>
+			 <dependency>
+			 <groupId>org.jmicro</groupId>
+			 <artifactId>jmicro.monitor.submiter</artifactId>
+			 <version>${jmicro.version}</version>
+			 </dependency>
+			  <dependency>
+			 <groupId>org.jmicro</groupId>
+			 <artifactId>jmicro.main.monitor.exception</artifactId>
+			  <version>${jmicro.version}</version>
+        	</dependency>
 			  <dependency>
 			 <groupId>org.jmicro</groupId>
 			 <artifactId>jmicro.server</artifactId>
@@ -190,11 +239,6 @@
 		         <dependency>
 					 <groupId>org.jmicro</groupId>
 					 <artifactId>jmicro.client</artifactId>
-					  <version>${jmicro.version}</version>
-		        </dependency>
-		         <dependency>
-					 <groupId>org.jmicro</groupId>
-					 <artifactId>jmicro.codec</artifactId>
 					  <version>${jmicro.version}</version>
 		        </dependency>
 	         <dependency>
@@ -208,7 +252,27 @@
 				 <artifactId>jmicro.idgenerator</artifactId>
 				  <version>${jmicro.version}</version>
 	        </dependency>
+	         <dependency>
+				 <groupId>org.jmicro</groupId>
+				 <artifactId>jmicro.choregraphy.agent</artifactId>
+				  <version>${jmicro.version}</version>
+	        </dependency>
+	         <dependency>
+				 <groupId>org.jmicro</groupId>
+				 <artifactId>jmicro.choregraphy.controller</artifactId>
+				  <version>${jmicro.version}</version>
+	        </dependency>
+	         <dependency>
+				 <groupId>org.jmicro</groupId>
+				 <artifactId>jmicro.idgenerator</artifactId>
+				  <version>${jmicro.version}</version>
+	        </dependency>
 	        
+	        <dependency>
+				 <groupId>org.jmicro</groupId>
+				 <artifactId>jmicro.test</artifactId>
+				  <version>${jmicro.version}</version>
+	        </dependency>
             <dependency>
 			<groupId>org.slf4j</groupId>
 			<artifactId>jcl-over-slf4j</artifactId>
@@ -254,7 +318,7 @@
 		<dependency>
 		    <groupId>org.javassist</groupId>
 		    <artifactId>javassist</artifactId>
-		    <version>3.23.1-GA</version>
+		    <version>3.24.0-GA</version>
 		</dependency>
         <dependency>
 		    <groupId>com.google.code.gson</groupId>
@@ -281,15 +345,25 @@
 		    <artifactId>netty-all</artifactId>
 		    <version>4.1.30.Final</version>
 		</dependency>
-		
+		<dependency>
+		    <groupId>redis.clients</groupId>
+		    <artifactId>jedis</artifactId>
+		    <version>${redis.version}</version>
+		</dependency>
+		 <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>${junit_version}</version>
+            <scope>test</scope>
+        </dependency>
         </dependencies>
+        
     </dependencyManagement>
 
     <dependencies>
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
-            <version>${junit_version}</version>
             <scope>test</scope>
         </dependency>
     </dependencies>

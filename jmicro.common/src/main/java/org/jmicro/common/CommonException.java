@@ -15,16 +15,21 @@
  * limitations under the License.
  */
 package org.jmicro.common;
+
+import java.io.Serializable;
+
 /**
  * 
  * @author Yulei Ye
  * @date 2018年10月4日-下午12:02:33
  */
-public class CommonException extends RuntimeException {
+public class CommonException extends RuntimeException implements Serializable{
 	 
 	private static final long serialVersionUID = 13434325523L;
 	
 	private String key = "";
+	
+	private String others = "";
 
 	public CommonException(String cause){
 		super(cause);
@@ -42,4 +47,19 @@ public class CommonException extends RuntimeException {
 		super(cause,exp);
 		this.key= key;
 	}
+
+	@Override
+	public String getMessage() {
+		return super.getMessage()+", " + others;
+	}
+
+	public String getOthers() {
+		return others;
+	}
+
+	public void setOthers(String others) {
+		this.others = others;
+	}
+	
+	
 }

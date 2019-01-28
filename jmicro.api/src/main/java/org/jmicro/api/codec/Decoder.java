@@ -28,6 +28,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.jmicro.api.gateway.ApiRequest;
+import org.jmicro.api.gateway.ApiResponse;
+import org.jmicro.api.monitor.SubmitItem;
+import org.jmicro.api.net.Message;
+import org.jmicro.api.net.RpcRequest;
+import org.jmicro.api.net.RpcResponse;
 import org.jmicro.common.CommonException;
 import org.jmicro.common.Constants;
 import org.jmicro.common.Utils;
@@ -39,18 +45,91 @@ import org.jmicro.common.util.StringUtils;
  */
 public class Decoder {
 	
-	public static final byte PREFIX_TYPE_SHORT = 1 << 0;
-	public static final byte PREFIX_TYPE_STRING = 1 << 1;
-	public static final byte PREFIX_TYPE_NULL = 1 << 2;
+	public static byte PREFIX_TYPE_ID = -128;
+	//空值编码
+	public static final byte PREFIX_TYPE_NULL = PREFIX_TYPE_ID++;
+	
+	//空值编码
+	public static final byte PREFIX_TYPE_FINAL = PREFIX_TYPE_ID++;
+		
+	//类型编码写入编码中
+	public static final byte PREFIX_TYPE_SHORT = PREFIX_TYPE_ID++;
+	//全限定类名作为前缀串写入编码中
+	public static final byte PREFIX_TYPE_STRING = PREFIX_TYPE_ID++;
+	
+	//以下对高使用频率非final类做快捷编码
+	
+	//列表类型编码，指示接下业读取一个列表，取列表编码器直接解码
+	public static final byte PREFIX_TYPE_LIST = PREFIX_TYPE_ID++;
+	//集合类型编码，指示接下来读取一个集合，取SET编码器直接解码
+	public static final byte PREFIX_TYPE_SET = PREFIX_TYPE_ID++;
+	//Map类型编码，指示接下来读取一个Map，取Map编码器直接解码
+	public static final byte PREFIX_TYPE_MAP = PREFIX_TYPE_ID++;
+	
+	//public static final byte PREFIX_TYPE_STRING = PREFIX_TYPE_ID--;
+	static {
+		checkPrefix(PREFIX_TYPE_ID);
+	}
 	
 	public static final Short NON_ENCODE_TYPE = 0;
+	public static final byte NULL_VALUE = 0;
+	public static final byte NON_NULL_VALUE = 1;
 
 	private static Map<Short,Class<?>> Short2Clazz = new HashMap<>();
 	private static Map<Class<?>,Short> clazz2Short = new HashMap<>();
 	
 	//static Short currentTypeCode = (short)(NON_ENCODE_TYPE + 1);
 	
-	public static void registType(Short type,Class<?> clazz){
+   private static IClientTransformClassLoader clazzLoader = null;
+   
+   private static final void checkPrefix(byte prefix) {
+	  if((byte)(prefix) == 127) {
+		  throw new CommonException("Prefix value overflow");
+	  }
+   }
+	
+   static {
+	    short type = (short)0xFFFF;
+		registType(Map.class,type--);
+		registType(Collection.class,type--);
+		registType(List.class,type--);
+		//registType(Array.class,type--);
+		registType(Void.class,type--);
+		registType(Short.class,type--);
+		registType(Integer.class,type--);
+		registType(Long.class,type--);
+		registType(Double.class,type--);
+		registType(Float.class,type--);
+		registType(Boolean.class,type--);
+		registType(Character.class,type--);
+		registType(Object.class,type--);
+		registType(String.class,type--);
+		registType(ByteBuffer.class,type--);
+		registType(Message.class,type--);
+		registType(RpcRequest.class,type--);
+		registType(RpcResponse.class,type--);
+		registType(ApiRequest.class,type--);
+		registType(ApiResponse.class,type--);
+		registType(SubmitItem.class,type--);
+		registType(java.util.Date.class,type--);
+		registType(java.sql.Date.class,type--);
+   }
+   
+   public static void setTransformClazzLoader(IClientTransformClassLoader l) {
+	   if(clazzLoader != null) {
+		   throw new CommonException(clazzLoader.getClass().getName()+" have been set before "+l.getClass().getName());
+	   }
+	   clazzLoader = l;
+   }
+   
+    public static Class<?> getClassByProvider(Short type) {
+		if(clazzLoader != null) {
+			return clazzLoader.getClazz(type);
+		}
+		return null;
+	}
+	
+	public static void registType(Class<?> clazz,Short type){
 		if(clazz2Short.containsKey(clazz)){
 			return;
 		}
@@ -88,13 +167,25 @@ public class Decoder {
 			return clazz2Short.get(String.class);
 		}else if(cls == ByteBuffer.class) {
 			return clazz2Short.get(ByteBuffer.class);
+		}else {
+			Short t = clazz2Short.get(cls);
+			if(t==null) {
+				 //无类型编码
+				t = NON_ENCODE_TYPE;
+			}
+			return t;
 		}
-	    //无类型编码
-		return NON_ENCODE_TYPE;
+	   
 	}
 	
 	public static Class<?> getClass(Short type){
-		return Short2Clazz.get(type);
+		Class<?> clazz = Short2Clazz.get(type);
+		if(clazz == null && type > 0) {
+			System.out.println(type);
+			 clazz = getClassByProvider(type);
+			 registType(clazz,type);
+		}
+		return clazz;
 	}
 	
 	/*public <T> T decode(byte[] buffer) {
@@ -322,49 +413,5 @@ public class Decoder {
 		}
 		return null;
 	}
-	
-	public static ByteBuffer readMessage(ByteBuffer cache){
-		
-		//当前写的位置，也就是可读的数据长度
-		int totalLen = cache.position();
-		if(totalLen < Constants.HEADER_LEN) {
-			//可读的数据长度小于头部长度
-			return null;
-		}
-		
-		//保存写数据位置
-		int pos = cache.position();
-		cache.position(0);
-		//读数据长度
-		int len = cache.getInt();
-		//还原写数据公位置
-		cache.position(pos);
-		
-		if(totalLen < len+Constants.HEADER_LEN){
-			//还不能构成一个足够长度的数据包
-			return null;
-		}
-		
-		//准备读数据
-		cache.flip();
-		
-		ByteBuffer body = ByteBuffer.allocate(len+Constants.HEADER_LEN);
-		body.put(cache);
-		body.flip();
-		
-		//准备下一次读
-		/**
-		  System.arraycopy(hb, ix(position()), hb, ix(0), remaining());
-	      position(remaining());
-	      limit(capacity());
-	      discardMark();
-	      return this;
-		 */
-		//将剩余数移移到缓存开始位置，position定位在数据长度位置，处于写状态
-		cache.compact();
-		//b.position(b.limit());
-		//cache.limit(cache.capacity());
-		
-		return body;
-	}
+
 }

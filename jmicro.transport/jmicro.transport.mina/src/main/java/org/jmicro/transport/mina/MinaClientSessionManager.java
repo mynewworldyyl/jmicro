@@ -19,11 +19,8 @@ package org.jmicro.transport.mina;
 import java.io.UnsupportedEncodingException;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
-import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
 import java.util.Timer;
-import java.util.TimerTask;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.mina.api.AbstractIoHandler;
@@ -39,11 +36,11 @@ import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.Inject;
 import org.jmicro.api.client.IClientSession;
 import org.jmicro.api.client.IClientSessionManager;
-import org.jmicro.api.codec.Decoder;
 import org.jmicro.api.codec.ICodecFactory;
 import org.jmicro.api.idgenerator.IIdGenerator;
 import org.jmicro.api.monitor.IMonitorDataSubmiter;
 import org.jmicro.api.monitor.MonitorConstant;
+import org.jmicro.api.monitor.SF;
 import org.jmicro.api.net.IMessageHandler;
 import org.jmicro.api.net.IMessageReceiver;
 import org.jmicro.api.net.ISession;
@@ -94,7 +91,7 @@ public class MinaClientSessionManager implements IClientSessionManager{
 	public void init()  {
 		this.receiver.registHandler(new IMessageHandler(){
 			@Override
-			public Short type() {
+			public Byte type() {
 				return Constants.MSG_TYPE_HEARBEAT_RESP;
 			}
 			
@@ -109,7 +106,7 @@ public class MinaClientSessionManager implements IClientSessionManager{
 			hearbeat.setType(Constants.MSG_TYPE_HEARBEAT_REQ);
 			hearbeat.setId(idGenerator.getLongId(Message.class));
 			hearbeat.setReqId(0L);
-			hearbeat.setVersion(Constants.DEFAULT_VERSION);
+			hearbeat.setVersion(Constants.MSG_VERSION);
 			final ByteBuffer bb = ByteBuffer.wrap("Hello".getBytes(Constants.CHARSET));
 			hearbeat.setPayload(bb);
 			
@@ -147,7 +144,7 @@ public class MinaClientSessionManager implements IClientSessionManager{
         public void sessionOpened(final IoSession session) {
             //LOG.info("session opened {}", session);
             if(monitorEnable(session)){
-            	MonitorConstant.doSubmit(monitor,MonitorConstant.CLIENT_IOSESSION_OPEN, null,null,session.getId());
+            	SF.doSubmit(MonitorConstant.CLIENT_IOSESSION_OPEN,session.getId()+"");
             }
         }
 
@@ -157,14 +154,14 @@ public class MinaClientSessionManager implements IClientSessionManager{
             //avoid ((ByteBuffer)message).remaining() when disable monitor
             if(monitorEnable(session) && monitor != null){
             	IClientSession s  = session.getAttribute(sessionKey);
-            	monitor.submit(MonitorConstant.CLIENT_IOSESSION_READ, null,null,s.getId(),session.getReadBytes(),((ByteBuffer)message).remaining());
+            	SF.doSubmit(MonitorConstant.CLIENT_IOSESSION_READ,s.getId()+"",session.getReadBytes()+"",((ByteBuffer)message).remaining()+"");
             }
             IClientSession cs = session.getAttribute(sessionKey);
             
             ByteBuffer buffer = cs.getReadBuffer();
             buffer.put((ByteBuffer)message);
             
-            ByteBuffer body = Decoder.readMessage(buffer);
+            ByteBuffer body = Message.readMessage(buffer);
             if(body == null){
             	return;
             }
@@ -182,7 +179,7 @@ public class MinaClientSessionManager implements IClientSessionManager{
             //avoid ((ByteBuffer)message).remaining()  when disable monitor
             if(monitorEnable(session) && monitor != null){
             	IClientSession s  = session.getAttribute(sessionKey);
-            	monitor.submit(MonitorConstant.CLIENT_IOSESSION_WRITE, null,null,s.getId(),((ByteBuffer)message).remaining());
+            	SF.doSubmit(MonitorConstant.CLIENT_IOSESSION_WRITE,s.getId()+"",((ByteBuffer)message).remaining()+"");
             }
         }
 
@@ -191,7 +188,7 @@ public class MinaClientSessionManager implements IClientSessionManager{
             //LOG.info("session closed {}", session);
             if(monitorEnable(session) && monitor != null){
             	IClientSession s  = session.getAttribute(sessionKey);
-            	MonitorConstant.doSubmit(monitor,MonitorConstant.CLIENT_IOSESSION_CLOSE, null,null,s.getId());
+            	SF.doSubmit(MonitorConstant.CLIENT_IOSESSION_CLOSE,s.getId()+"");
             }
         }
 
@@ -199,7 +196,7 @@ public class MinaClientSessionManager implements IClientSessionManager{
 		public void sessionIdle(IoSession session, IdleStatus status) {
 			super.sessionIdle(session, status);
 			if(monitorEnable(session)){
-				MonitorConstant.doSubmit(monitor,MonitorConstant.CLIENT_IOSESSION_IDLE, null,null,session,status);
+				SF.doSubmit(MonitorConstant.CLIENT_IOSESSION_IDLE,session+"",status.toString());
 			}
 		}
 
@@ -219,24 +216,9 @@ public class MinaClientSessionManager implements IClientSessionManager{
 			 logger.error("exceptionCaught",cause);
 			 if(session !=null && monitorEnable(session) && monitor != null ){
 				 IClientSession s  = session.getAttribute(sessionKey);
-	             MonitorConstant.doSubmit(monitor,MonitorConstant.CLIENT_IOSESSION_EXCEPTION, null,null,s.getId(),cause.getMessage());
+	             monitor.submit(MonitorConstant.CLIENT_IOSESSION_EXCEPTION,cause);
 	         }
 		}
-
-		/*@Override
-		public void handshakeStarted(IoSession abstractIoSession) {
-			super.handshakeStarted(abstractIoSession);
-		}
-
-		@Override
-		public void handshakeCompleted(IoSession session) {
-			super.handshakeCompleted(session);
-		}
-
-		@Override
-		public void secureClosed(IoSession session) {
-			super.secureClosed(session);
-		}*/
 		
     };
     
@@ -288,7 +270,7 @@ public class MinaClientSessionManager implements IClientSessionManager{
 	           return s;
 	       } catch (Throwable e) {
 	    	   logger.error("cannot connect host:" + host + ", port:" + port, e);
-	           MonitorConstant.doSubmit(monitor,MonitorConstant.CLIENT_REQ_CONN_FAIL, null, null,host,port,e.getMessage());
+	           SF.doSubmit(MonitorConstant.CLIENT_REQ_CONN_FAIL,e,host,port+"",e.getMessage());
 	           throw new CommonException("host:" + host + ", port:" + port,e);
 	       }
 		}

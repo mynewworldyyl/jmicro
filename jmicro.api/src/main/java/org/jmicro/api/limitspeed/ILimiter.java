@@ -16,7 +16,7 @@
  */
 package org.jmicro.api.limitspeed;
 
-import org.jmicro.api.server.IRequest;
+import org.jmicro.api.net.IRequest;
 /**
  * 
  * @author Yulei Ye

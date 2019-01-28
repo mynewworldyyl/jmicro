@@ -22,6 +22,7 @@ import java.lang.reflect.Method;
 
 import org.jmicro.api.JMicro;
 import org.jmicro.api.JMicroContext;
+import org.jmicro.api.annotation.Cfg;
 import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.Inject;
 import org.jmicro.api.client.AbstractClientServiceProxy;
@@ -29,7 +30,9 @@ import org.jmicro.api.client.IMessageCallback;
 import org.jmicro.api.codec.ICodecFactory;
 import org.jmicro.api.gateway.ApiRequest;
 import org.jmicro.api.gateway.ApiResponse;
-import org.jmicro.api.idgenerator.IIdGenerator;
+import org.jmicro.api.idgenerator.ComponentIdServer;
+import org.jmicro.api.monitor.MonitorConstant;
+import org.jmicro.api.monitor.SF;
 import org.jmicro.api.net.IMessageHandler;
 import org.jmicro.api.net.ISession;
 import org.jmicro.api.net.Message;
@@ -51,9 +54,10 @@ import org.slf4j.LoggerFactory;
 public class ApiRequestMessageHandler implements IMessageHandler{
 
 	private final static Logger logger = LoggerFactory.getLogger(ApiRequestMessageHandler.class);
+	private static final Class<?> TAG = ApiRequestMessageHandler.class;
 	
 	@Inject
-	private IIdGenerator idGenerator;
+	private ComponentIdServer idGenerator;
 	
 	@Inject
 	private ICodecFactory codecFactory;
@@ -61,8 +65,11 @@ public class ApiRequestMessageHandler implements IMessageHandler{
 	@Inject
 	private IObjectFactory objFactory;
 	
+	@Cfg("/ApiRequestMessageHandler/openDebug")
+	private boolean openDebug = false;
+	
 	@Override
-	public Short type() {
+	public Byte type() {
 		return Constants.MSG_TYPE_API_REQ;
 	}
 
@@ -73,12 +80,23 @@ public class ApiRequestMessageHandler implements IMessageHandler{
 		
 		ApiResponse resp = new ApiResponse();
 		Object result = null;
-		Object srv = JMicro.getObjectFactory().getServie(req.getServiceName(), 
-				req.getNamespace(), req.getVersion());
+		Object srv = JMicro.getObjectFactory().getRemoteServie(req.getServiceName(), 
+				req.getNamespace(), req.getVersion(),null);
 		
-		msg.setType((short)(msg.getType()+1));
+		msg.setType(Constants.MSG_TYPE_API_RESP);
 		resp.setReqId(req.getReqId());
 		resp.setMsg(msg);
+		resp.setSuccess(true);
+		resp.setId(idGenerator.getLongId(ApiResponse.class));
+		
+		long lid = JMicroContext.lid();
+
+		JMicroContext.get().setParam(JMicroContext.LOCAL_HOST, session.localHost());
+		JMicroContext.get().setParam(JMicroContext.LOCAL_PORT, session.localPort()+"");
+		JMicroContext.get().setParam(JMicroContext.REMOTE_HOST, session.remoteHost());
+		JMicroContext.get().setParam(JMicroContext.REMOTE_PORT, session.remotePort()+"");
+		
+		JMicroContext.get().mergeParams(req.getParams());
 		
 		if(srv != null){
 			Class<?>[] clazzes = null;
@@ -95,44 +113,66 @@ public class ApiRequestMessageHandler implements IMessageHandler{
 				AbstractClientServiceProxy proxy = (AbstractClientServiceProxy)srv;
 				ServiceItem si = proxy.getItem();
 				if(si == null) {
+					SF.doRequestLog(MonitorConstant.LOG_ERROR, lid, TAG, req, null," service not found");
 					throw new CommonException("Service["+req.getServiceName()+"] namespace ["+req.getNamespace()+"] not found");
 				}
 				ServiceMethod sm = si.getMethod(req.getMethod(), clazzes);
 				if(sm == null) {
+					SF.doRequestLog(MonitorConstant.LOG_ERROR, lid, TAG, req, null," service method not found");
 					throw new CommonException("Service mehtod ["+req.getServiceName()+"] method ["+req.getMethod()+"] not found");
 				}
 				
 				Method m = srv.getClass().getMethod(req.getMethod(), clazzes);
 				
-				JMicroContext.get().setParam(JMicroContext.CLIENT_IP, session.localHost());
-				//JMicroContext.get().setParam(JMicroContext.CLIENT_PORT, session.localPort());
-				JMicroContext.get().mergeParams(req.getParams());
+				JMicroContext.get().configMonitor(sm.getMonitorEnable(), si.getMonitorEnable());
 				
-				if(!sm.needResponse) {
+				if(SF.isLoggable(this.openDebug,MonitorConstant.LOG_DEBUG)) {
+					SF.doRequestLog(MonitorConstant.LOG_DEBUG, lid, TAG, req, null," got request");
+				}
+				
+				if(!sm.isNeedResponse()) {
 					result = m.invoke(srv, req.getArgs());
+					if(SF.isLoggable(this.openDebug,MonitorConstant.LOG_DEBUG)) {
+						SF.doRequestLog(MonitorConstant.LOG_DEBUG, lid, TAG, req, null," no need response");
+					}
 					return;
 				}
 				
-				if(sm.stream) {
+				if(sm.isStream()) {
+					final JMicroContext jc = JMicroContext.get();
 					IMessageCallback<Object> msgReceiver = (rst)->{
 						if(session.isClose()) {
 							return false;
 						}
+						JMicroContext.get().mergeParams(jc);
 						resp.setSuccess(true);
 						resp.setResult(rst);
 						resp.setId(idGenerator.getLongId(ApiResponse.class));
 						msg.setPayload(ICodecFactory.encode(codecFactory, resp, msg.getProtocol()));
 						session.write(msg);
+						if(SF.isLoggable(this.openDebug,MonitorConstant.LOG_DEBUG)) {
+							SF.doResponseLog(MonitorConstant.LOG_DEBUG, lid, TAG, resp, null," Api gateway stream response");
+						}
 						return true;
 					};
 					JMicroContext.get().setParam(Constants.CONTEXT_CALLBACK_CLIENT, msgReceiver);
 					result = m.invoke(srv, req.getArgs());
-				} else {
-					result = m.invoke(srv, req.getArgs());
-					resp.setSuccess(true);
+					// 返回确认包
 					resp.setResult(result);
-					resp.setId(idGenerator.getLongId(ApiResponse.class));
+					if(SF.isLoggable(this.openDebug,MonitorConstant.LOG_DEBUG)) {
+						SF.doResponseLog(MonitorConstant.LOG_DEBUG, lid, TAG, resp, null," Api gateway stream comfirm response",
+								result!=null ? result.toString():"");
+					}
+					session.write(msg);
+				} else {
+					
+					result = m.invoke(srv, req.getArgs());
+					
+					resp.setResult(result);
 					msg.setPayload(ICodecFactory.encode(codecFactory, resp, msg.getProtocol()));
+					if(SF.isLoggable(this.openDebug,MonitorConstant.LOG_DEBUG)) {
+						SF.doResponseLog(MonitorConstant.LOG_DEBUG, lid, TAG, resp, null," one response");
+					}
 					session.write(msg);
 				}
 			} catch (NoSuchMethodException | SecurityException | IllegalAccessException 
@@ -140,12 +180,14 @@ public class ApiRequestMessageHandler implements IMessageHandler{
 				logger.error("",e);
 				result = new ServerError(0,e.getMessage());
 				resp.setSuccess(false);
+				resp.setResult(result);
+				SF.doResponseLog(MonitorConstant.LOG_ERROR, lid, TAG, resp, e," service error");
 			}
 		} else {
 			resp.setSuccess(false);
 			resp.setResult(result);
-			resp.setId(idGenerator.getLongId(ApiResponse.class));
 			msg.setPayload(ICodecFactory.encode(codecFactory, resp, msg.getProtocol()));
+			SF.doResponseLog(MonitorConstant.LOG_ERROR, lid, TAG, resp, null," service instance not found");
 			session.write(msg);
 		}
 	}

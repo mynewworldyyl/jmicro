@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="UTF-8">
+        <title>Socket</title>
+      <script type="text/javascript" src="/js/jquery.js"></script>
+        <script type="text/javascript" src="/js/ws.js"></script>
+        <script type="text/javascript">
+            var websocket;
+
+            //如果浏览器支持WebSocket
+            if(window.WebSocket){
+                websocket = new WebSocket("ws://192.168.3.3:9992/ws");  //获得WebSocket对象
+
+                //当有消息过来的时候触发
+                websocket.onmessage = function(event){
+                    var respMessage = document.getElementById("respMessage");
+                    respMessage.value = respMessage.value + "\n" + event.data;
+                }
+
+                //连接关闭的时候触发
+                websocket.onclose = function(event){
+                    var respMessage = document.getElementById("respMessage");
+                    respMessage.value = respMessage.value + "\n断开连接";
+                }
+
+                //连接打开的时候触发
+                websocket.onopen = function(event){
+                    var respMessage = document.getElementById("respMessage");
+                    respMessage.value = "建立连接";
+                }
+            }else{
+                alert("浏览器不支持WebSocket");
+            }
+
+            function sendMsg(msg) { //发送消息
+                if(window.WebSocket){
+                	var json = {"protocol":2,"msgId":11977,"reqId":7832,"sessionId":162,"len":0,"version":"0.0.1","type":1,"flag":0,
+                		 "payload":"{serviceName:'org.jmicro.example.api.ITestRpcService',method:'getPerson'," +
+                     "args: [{username:'Client person Name',id:1234}],namespace:'defaultNamespace',"+
+                			 "version:'0.0.0',impl:'org.jmicro.example.provider.TestRpcServiceImpl',reqId:7832,isMonitorEnable:false,params:{} }"};
+                    if(websocket.readyState == WebSocket.OPEN) {
+                        //如果WebSocket是打开状态
+                        websocket.send(JSON.stringify(json));
+                        //send()发送消息
+                    };
+                }else{
+                    return;
+                }
+            }
+        </script>
+    </head>
+<body>
+    <form onsubmit="return false">
+        <textarea style="width: 300px; height: 200px;" name="message"></textarea>
+        <input type="button" onclick="sendMsg(this.form.message.value)" value="发送"><br>
+        <h3>信息</h3>
+        <textarea style="width: 300px; height: 200px;" id="respMessage"></textarea>
+        <input type="button" value="清空" onclick="javascript:document.getElementById('respMessage').value = ''">
+    </form>
+</body>
+</html>

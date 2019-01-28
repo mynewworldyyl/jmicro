@@ -16,13 +16,21 @@
  */
 package org.jmicro.api.raft;
 
-import java.util.List;
+import org.jmicro.api.IListener;
+
 /**
  * 
  * @author Yulei Ye
  * @date 2018年10月5日-下午6:33:03
  */
-public interface IChildrenListener {
+public interface IChildrenListener extends IListener{
 
-	void childrenChanged(String path,List<String> children);
+	/**
+	 * 
+	 * @param type 子结点增加或删除
+	 * @param parent 父路径，全路径
+	 * @param child 子结点名称，不包括父路径
+	 * @param data  子结点数据
+	 */
+	void childrenChanged(int type,String parent,String child,String data);
 }

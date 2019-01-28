@@ -19,7 +19,20 @@ package org.jmicro.api.net;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.util.Map;
+import java.util.Queue;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
+
+import org.jmicro.api.config.Config;
+import org.jmicro.api.debug.LogUtil;
+import org.jmicro.api.monitor.MonitorConstant;
+import org.jmicro.api.monitor.ServiceCounter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
  * 
  * @author Yulei Ye
@@ -27,11 +40,16 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public abstract class AbstractSession implements ISession{
 
-	private long sessionId=-1L;
+	private static final AtomicInteger ID = new AtomicInteger(0);
+	private static final Logger logger = LoggerFactory.getLogger(AbstractSession.class);
+	
+	private long sessionId = -1L;
 	
 	private Map<String,Object> params = new ConcurrentHashMap<String,Object>();
 	
-	private ByteBuffer readBuffer;
+	private int bufferSize = 4096;
+	
+	private volatile ByteBuffer readBuffer = null;
 	
 	private int heardbeatInterval;
 	
@@ -41,14 +59,230 @@ public abstract class AbstractSession implements ISession{
 	
 	private boolean openDebug = false;
 	
+	private boolean dumpDownStream = false;
+	
+	private boolean dumpUpStream = false;
+	
+	protected ServiceCounter counter = null;
+	
+	private IMessageReceiver receiver = null;
+	
+	private Queue<ByteBuffer> readQueue = new ConcurrentLinkedQueue<ByteBuffer>();
+	
+	private AtomicBoolean waitingClose = new AtomicBoolean(false);
+	
+	private Worker worker = new Worker();
+	
+	private class Worker extends Thread {
+		public void run() {
+			//doWork();
+		}
+	}
+	
 	public AbstractSession(int bufferSize,int heardbeatInterval){
-		readBuffer = ByteBuffer.allocate(bufferSize);
+		//this.receiver = receiver;
+		this.bufferSize = bufferSize;
 		this.heardbeatInterval = heardbeatInterval;
+		if(!this.isServer()) {
+			//会对客户端会话，支持N个RPC同时并发
+			//worker.setName("JMicro-"+Config.getInstanceName()+"_Session_Reader"+ID.incrementAndGet());
+			//worker.start();
+		}
+	}
+	
+	public void init() {
+		InetSocketAddress ia = this.getRemoteAddress();
+		this.counter = new ServiceCounter(ia.getHostString()+":"+ia.getPort(),STATIS_TYPES,30,30,TimeUnit.SECONDS);
+	}
+	
+	private void doWork() {
+		while(!this.isClose) {
+			try {
+				if(readQueue.isEmpty()) {
+					synchronized (worker) {
+						worker.wait();
+					}
+				}
+				ByteBuffer bb = null;
+				while((bb = readQueue.poll()) != null) {
+					doRead(bb);
+				}
+				
+			}catch(Throwable e) {
+				logger.error("",e);
+			}
+		}
 	}
 	
 	@Override
+	public void receive(ByteBuffer msg) {
+		doRead(msg);
+		/*if(this.isServer()) {
+			doRead(msg);
+		} else {
+			readQueue.offer(msg);
+			if(readQueue.size() == 1) {
+				synchronized (worker) {
+					worker.notify();;
+				}
+			}
+		}*/
+	}
+
+	private void doRead(ByteBuffer msg) {
+
+		counter.add(ISession.CLIENT_READ_BYTES, msg.remaining());
+    	//合并上次剩下的数据
+     	ByteBuffer lb = null;
+     	
+     	//logger.debug("T {}, GOT DATA: {}",Thread.currentThread().getName(),msg);
+     	
+     	if(this.readBuffer == null || this.readBuffer.remaining() <= 0) {
+     		this.readBuffer = null;
+     		lb = msg;
+     	} else {
+     		 if(openDebug) {
+     			logger.debug("combine buffer {}/{}",msg,this.readBuffer);
+     		 }
+     		
+     		int size = msg.remaining() + this.readBuffer.remaining();
+     		lb = ByteBuffer.allocate(size);
+     		
+     		lb.put(this.readBuffer);
+     		this.readBuffer = null;
+     		
+     		lb.put(msg);
+     		
+         	lb.flip();
+     	}
+    	
+     	while(true) {
+     		 long startTime = System.currentTimeMillis();
+     		 Message message = null;
+              try {
+            	 message =  Message.readMessage(lb);
+          		 if(message == null){
+                   	break;
+                  }
+          		  if(message.isDebugMode()) {
+          			 //logger.debug("T{},payload:{}",Thread.currentThread().getName(),message);
+          		  }
+			} catch (Throwable e) {
+				this.close(true);
+				logger.error("",e);
+				throw e;
+			}
+              
+              message.setStartTime(startTime);
+              //服务言接收信息是上行，客户端接收信息是下行
+       		  //dump(lb.array(),this.isServer(),message);
+              
+              if(message.isDebugMode()) {
+              	LogUtil.B.debug("Message ins[{}] reqId[{}],method[{}]",message.getInstanceName(),
+              			message.getReqId(),message.getMethod());
+              }
+              //JMicroContext.configProvider(message);
+             
+              receiver.receive(this,message);
+     	 }
+     	
+     	if(lb.remaining() > 0) {
+     		if(openDebug) {
+     			logger.debug("remaiding data: {}",lb);
+              }
+     		this.readBuffer = lb;
+     	}
+     	
+	}
+	
+	public void dump(byte[] data,boolean up) {
+		if(!this.dumpUpStream && !this.dumpDownStream ) {
+			//全为false,直接返回
+			return;
+		}
+
+ 		try {
+			if(up && (this.dumpUpStream)) {
+				this.doDumpUpStream(ByteBuffer.wrap(data));
+			} else if(!up && (this.dumpDownStream)) {
+				this.doDumpDownStream(ByteBuffer.wrap(data));
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+	
+	public void dump(byte[] data,boolean up,Message message) {
+
+		if(!this.dumpUpStream && !this.dumpDownStream 
+				&& !message.isDumpDownStream() && !message.isDumpUpStream()) {
+			//全为false,直接返回
+			return;
+		}
+
+ 		try {
+			if(up && (this.dumpUpStream || message.isDumpUpStream())) {
+				this.doDumpUpStream(ByteBuffer.wrap(data));
+			} else if(!up && (this.dumpDownStream || message.isDumpDownStream())) {
+				this.doDumpDownStream(ByteBuffer.wrap(data));
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	
+	}
+	
+	@Override
+	public ServiceCounter getServiceCounter() {
+		return this.counter;
+	}
+
+	@Override
+	public void increment(int type) {
+		this.counter.increment(type);
+	}
+	
+	public Double getFailPercent() {
+		return ServiceCounter.getData(counter, MonitorConstant.STATIS_FAIL_PERCENT);
+	}
+	
+	@Override
+	public Double getTakePercent(int type) {
+		return ServiceCounter.takePercent(counter, type);
+	}
+
+	@Override
+	public Double getTakeAvg(int type) {
+		return counter.getQps(TimeUnit.SECONDS, type);
+	}
+	
+	public abstract InetSocketAddress getLocalAddress();
+	
+	public abstract InetSocketAddress getRemoteAddress();
+	
+	public abstract boolean isServer();
+
+	private void doDumpDownStream(ByteBuffer buffer) {
+		DumpManager.getIns().doDump(buffer);
+	}
+	
+	private void doDumpUpStream(ByteBuffer buffer) {
+		DumpManager.getIns().doDump(buffer);
+	}
+
+	@Override
+	public int getReadBufferSize() {
+		return this.bufferSize;
+	}
+
+	@Override
 	public void active() {
 		lastActiveTime = System.currentTimeMillis();
+	}
+
+	@Override
+	public boolean waitingClose() {
+		return waitingClose.compareAndSet(false, true);
 	}
 
 	@Override
@@ -91,9 +325,12 @@ public abstract class AbstractSession implements ISession{
 
 	@Override
 	public void close(boolean flag) {
+		this.isClose = true;
 		params.clear();
 		this.sessionId=-1L;
-		this.isClose = true;
+		synchronized (worker) {
+			worker.notify();
+		}
 	}
 
 	@Override
@@ -104,14 +341,6 @@ public abstract class AbstractSession implements ISession{
 	@Override
 	public void putParam(String key, Object obj) {
 		this.params.put(key, obj);
-	}
-
-	public ByteBuffer getReadBuffer() {
-		return readBuffer;
-	}
-
-	public void setReadBuffer(ByteBuffer readBuffer) {
-		this.readBuffer = readBuffer;
 	}
 
 	@Override
@@ -139,7 +368,28 @@ public abstract class AbstractSession implements ISession{
 		return this.getLocalAddress().getPort();
 	}
 	
-	public abstract InetSocketAddress getLocalAddress();
+	public boolean isDumpDownStream() {
+		return dumpDownStream;
+	}
+
+	public void setDumpDownStream(boolean dump) {
+		this.dumpDownStream = dump;
+	}
+
+	public boolean isDumpUpStream() {
+		return dumpUpStream;
+	}
+
+	public void setDumpUpStream(boolean dump) {
+		this.dumpUpStream = dump;
+	}
+
+	public IMessageReceiver getReceiver() {
+		return receiver;
+	}
+
+	public void setReceiver(IMessageReceiver receiver) {
+		this.receiver = receiver;
+	}
 	
-	public abstract InetSocketAddress getRemoteAddress();
 }

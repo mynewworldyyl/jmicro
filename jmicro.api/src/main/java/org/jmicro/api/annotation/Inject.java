@@ -26,6 +26,8 @@ import java.lang.annotation.Target;
  * @author Yulei Ye
  * @date 2018年10月4日-上午11:56:24
  */
+
+import org.jmicro.common.Constants;
 @Target(FIELD)
 @Retention(RUNTIME)
 public @interface Inject {
@@ -39,4 +41,6 @@ public @interface Inject {
 	 * the reference annotation only inject remote services
 	 */
 	public boolean remote() default false;
+	
+	public String side() default Constants.SIDE_ANY;
 }

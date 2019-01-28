@@ -3,7 +3,7 @@ package org.jmicro.api;
 import org.jmicro.api.annotation.Component;
 import org.jmicro.api.config.Config;
 import org.jmicro.api.objectfactory.IObjectFactory;
-import org.jmicro.api.objectfactory.IPostFactoryReady;
+import org.jmicro.api.objectfactory.IFactoryListener;
 import org.jmicro.api.raft.IDataOperator;
 import org.jmicro.common.CommonException;
 import org.slf4j.Logger;
@@ -14,13 +14,13 @@ import org.slf4j.LoggerFactory;
  * @author Yulei Ye
  * @date 2018年10月20日-下午9:36:38
  */
-@Component(active=true,value="systemConditionChecker")
-public class CheckPostReadyListener implements IPostFactoryReady{
+@Component(active=false,value="systemConditionChecker")
+public class CheckPostReadyListener implements IFactoryListener{
 
 	private final static Logger logger = LoggerFactory.getLogger(CheckPostReadyListener.class);
 	
 	@Override
-	public void ready(IObjectFactory of) {
+	public void afterInit(IObjectFactory of) {
 		IDataOperator ddop = of.getByParent(IDataOperator.class).get(0);
 		if(ddop.exist(Config.getRaftBaseDir())) {
 			if(ddop.exist(Config.ServiceConfigDir+"/active")){
@@ -39,8 +39,15 @@ public class CheckPostReadyListener implements IPostFactoryReady{
 		}
 		
 	}
+	
 	@Override
 	public int runLevel() {
 		return 1001;
 	}
+	
+	@Override
+	public void preInit(IObjectFactory of) {
+	}
+	
+	
 }

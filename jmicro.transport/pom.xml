@@ -2,20 +2,24 @@
     <modelVersion>4.0.0</modelVersion>
     <parent>
          <groupId>org.jmicro</groupId>
-		 <artifactId>jmicro-parent</artifactId>
+		 <artifactId>jmicro.parent</artifactId>
 		 <version>0.0.1-SNAPSHOT</version>
     </parent>
-    <artifactId>jmicro-transport-parent</artifactId>
+    <artifactId>jmicro.transport.parent</artifactId>
     <packaging>pom</packaging>
     <name>${project.artifactId}</name>
-    <description>jmicro-transport-parent</description>
+    <description>jmicro transport parent</description>
     <properties>
         <skip_maven_deploy>false</skip_maven_deploy>
     </properties>
     <modules>
-        <!-- <module>jmicro.transport.api</module> -->
-        <module>jmicro.transport.mina</module>
+        <!-- <module>jmicro.transport.api</module>
+			<module>jmicro.transport.mina</module>
+		-->
+        
         <module>jmicro.transport.http</module>
-		<module>jmicro.transport.netty</module>
+		<module>jmicro.transport.netty.client</module>
+		<module>jmicro.transport.netty.server</module>
+		
     </modules>
 </project>

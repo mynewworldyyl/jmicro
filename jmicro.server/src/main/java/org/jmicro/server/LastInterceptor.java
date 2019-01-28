@@ -19,20 +19,21 @@ package org.jmicro.server;
 import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.Interceptor;
 import org.jmicro.api.exception.RpcException;
-import org.jmicro.api.server.AbstractInterceptor;
-import org.jmicro.api.server.IInterceptor;
-import org.jmicro.api.server.IRequest;
-import org.jmicro.api.server.IRequestHandler;
-import org.jmicro.api.server.IResponse;
+import org.jmicro.api.net.AbstractInterceptor;
+import org.jmicro.api.net.IInterceptor;
+import org.jmicro.api.net.IRequest;
+import org.jmicro.api.net.IRequestHandler;
+import org.jmicro.api.net.IResponse;
 import org.jmicro.common.Constants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 /**
  * 
  * @author Yulei Ye
  * @date 2018年10月4日-下午12:06:35
  */
-@Component(value=Constants.LAST_INTERCEPTOR,lazy=false)
+@Component(value=Constants.LAST_INTERCEPTOR,lazy=false,side=Constants.SIDE_PROVIDER)
 @Interceptor
 public class LastInterceptor extends AbstractInterceptor implements IInterceptor {
 

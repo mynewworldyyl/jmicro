@@ -32,5 +32,4 @@ public @interface Interceptor {
 
 	public String value() default "";
 	
-	public String method() default "intercept";
 }

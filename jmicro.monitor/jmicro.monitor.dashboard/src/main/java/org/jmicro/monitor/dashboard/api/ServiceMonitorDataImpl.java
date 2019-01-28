@@ -26,12 +26,12 @@ import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.Inject;
 import org.jmicro.api.annotation.Service;
 import org.jmicro.api.degrade.DegradeManager;
-import org.jmicro.api.idgenerator.IIdGenerator;
+import org.jmicro.api.idgenerator.ComponentIdServer;
 import org.jmicro.api.monitor.IServiceMonitorData;
 import org.jmicro.api.monitor.ServiceStatis;
+import org.jmicro.api.net.IWriteCallback;
 import org.jmicro.api.raft.IDataListener;
 import org.jmicro.api.raft.IDataOperator;
-import org.jmicro.api.server.IWriteCallback;
 import org.jmicro.common.Constants;
 
 /**
@@ -47,7 +47,7 @@ public class ServiceMonitorDataImpl implements IServiceMonitorData{
 	private Map<Integer,IDataListener> listeners = new HashMap<>();
 	
 	@Inject
-	private IIdGenerator idGenerator;
+	private ComponentIdServer idGenerator;
 	
 	@Inject
 	private IDataOperator dataOperator;
@@ -80,8 +80,8 @@ public class ServiceMonitorDataImpl implements IServiceMonitorData{
 	}
 
 	@Override
-	public List<String> getAllServices() {
-		List<String> services = dataOperator.getChildren(DegradeManager.AVG_TIME_ROOT);
+	public Set<String> getAllServices() {
+		Set<String> services = dataOperator.getChildren(DegradeManager.AVG_TIME_ROOT);
 		return services;
 	}
 	

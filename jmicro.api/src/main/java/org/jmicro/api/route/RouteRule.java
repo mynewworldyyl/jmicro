@@ -26,7 +26,7 @@ import org.jmicro.common.util.StringUtils;
  *
  * @date: 2018年11月10日 下午9:32:20
  */
-public class RouteRule {
+public final class RouteRule {
 
 	private String type;
 	

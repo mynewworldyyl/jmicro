@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE log4j:configuration SYSTEM "log4j.dtd">
+<log4j:configuration xmlns:log4j="http://jakarta.apache.org/log4j/" debug="false">
+	
+	<appender name="CONSOLE" class="org.apache.log4j.ConsoleAppender">
+		<param name="Target" value="System.err"/>
+		<param name="Threshold" value="DEBUG"/>
+		<layout class="org.apache.log4j.PatternLayout">
+			<param name="ConversionPattern" value="[%L],[%t],[%d][%p,%c{1}] %m%n"/>
+		</layout>
+	</appender>
+	
+	<appender name="NORMALLOG" class="org.apache.log4j.DailyRollingFileAppender">
+		<param name="File" value="${user.dir}/logs/jmicro/work.log"/>
+		<param name="DatePattern" value="'.'yyyyMMdd"/>
+		<param name="Append" value="true"/>
+		<param name="Threshold" value="DEBUG"/>
+		<layout class="org.apache.log4j.PatternLayout">
+			<param name="ConversionPattern" value="[%d][%p,%c{1}] %m%n"/>
+		</layout>
+	</appender>
+
+	<appender name="jmicro_info" class="org.apache.log4j.DailyRollingFileAppender">
+		<param name="File" value="${user.dir}/logs/jmicro/info.log"/>
+		<param name="DatePattern" value="'.'yyyyMMdd"/>
+		<param name="Append" value="true"/>
+		<param name="Threshold" value="INFO"/>
+		<layout class="org.apache.log4j.PatternLayout">
+			<param name="ConversionPattern" value="[%d][%p,%c{1}] %m%n"/>
+		</layout>
+	</appender>
+	
+	<appender name="jmicro_error" class="org.apache.log4j.DailyRollingFileAppender">
+		<param name="File" value="${user.dir}/logs/jmicro/error.log"/>
+		<param name="DatePattern" value="'.'yyyyMMdd"/>
+		<param name="Append" value="true"/>
+		<param name="Threshold" value="ERROR"/>
+		<layout class="org.apache.log4j.PatternLayout">
+			<param name="ConversionPattern" value="[%d][%p,%c{1}] %m%n"/>
+		</layout>
+	</appender>
+	
+	<appender name="jmicro_debug" class="org.apache.log4j.DailyRollingFileAppender">
+		<param name="File" value="${user.dir}/logs/jmicro/debug.log"/>
+		<param name="DatePattern" value="'.'yyyyMMdd"/>
+		<param name="Append" value="true"/>
+		<param name="Threshold" value="DEBUG"/>
+		<layout class="org.apache.log4j.PatternLayout">
+			<param name="ConversionPattern" value="[%d][%p,%c{1}] %m%n"/>
+		</layout>
+	</appender>
+	
+	<logger name="org.jmicro">
+		<level value="DEBUG"/>
+		<appender-ref ref="jmicro_debug"/>
+	</logger>
+	
+	<logger name="org.apache.zookeeper">
+		<level value="ERROR"/>
+		<appender-ref ref="jmicro_error"/>
+	</logger>
+	
+	 <logger name="org.apache.mina">
+		<level value="ERROR"/>
+		<appender-ref ref="jmicro_error"/>
+	</logger>
+	
+	<root>	
+	    <level value="DEBUG"/>
+		<appender-ref ref="CONSOLE"/>
+		<appender-ref ref="jmicro_debug"/>
+	</root>
+	
+</log4j:configuration>

@@ -16,7 +16,7 @@
  */
 package org.jmicro.api.monitor;
 
-import java.util.List;
+import java.util.Set;
 
 import org.jmicro.api.annotation.SMethod;
 import org.jmicro.api.annotation.Service;
@@ -29,9 +29,9 @@ import org.jmicro.api.annotation.Service;
 @Service(monitorEnable=0, namespace="serviceMonitorData", version="0.0.1")
 public interface IServiceMonitorData {
 
-	@SMethod(stream=true,retryCnt=0,maxSpeed="10s")
+	@SMethod(stream=true,retryCnt=0,maxSpeed=10,baseTimeUnit="S")
 	Integer subsicribe(String service);
 	void unsubsicribe(Integer id,String service);
 	
-	List<String> getAllServices();
+	Set<String> getAllServices();
 }

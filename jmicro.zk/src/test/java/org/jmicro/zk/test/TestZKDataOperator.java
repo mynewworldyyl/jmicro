@@ -32,9 +32,9 @@ public class TestZKDataOperator {
 	public void testWatchChildren() {
 		Config.parseArgs(new String[0]);
 		ZKDataOperator.getIns().addChildrenListener("/jmicro/config",
-			(path,children)->{
+			(type,path,child,data)->{
 				System.out.println(path);
-				System.out.println(children);
+				System.out.println(child);
 			});
 		Utils.getIns().waitForShutdown();
 	}

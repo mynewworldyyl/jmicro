@@ -17,28 +17,25 @@
 package org.jmicro.registry.zk;
 
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 
-import org.jmicro.api.Init;
+import org.jmicro.api.IWaitingAction;
 import org.jmicro.api.annotation.Cfg;
 import org.jmicro.api.annotation.Component;
-import org.jmicro.api.annotation.Inject;
-import org.jmicro.api.annotation.JMethod;
-import org.jmicro.api.annotation.Registry;
 import org.jmicro.api.config.Config;
 import org.jmicro.api.exception.BreakerException;
-import org.jmicro.api.raft.IDataListener;
 import org.jmicro.api.raft.IDataOperator;
-import org.jmicro.api.raft.INodeListener;
 import org.jmicro.api.registry.IRegistry;
 import org.jmicro.api.registry.IServiceListener;
 import org.jmicro.api.registry.ServiceItem;
 import org.jmicro.api.registry.ServiceMethod;
+import org.jmicro.api.registry.UniqueServiceKey;
+import org.jmicro.api.registry.UniqueServiceMethodKey;
+import org.jmicro.api.service.ServiceManager;
 import org.jmicro.common.Constants;
 import org.jmicro.common.util.JsonUtils;
 import org.jmicro.common.util.StringUtils;
@@ -46,144 +43,208 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
+ * 依赖于ServiceManager做服务的增加，删除，修改，查询操作，及对应的监听操作
  * 
  * @author Yulei Ye
  * @date 2018年10月4日-下午12:13:09
  */
 @Component(value=Constants.DEFAULT_REGISTRY,lazy=false)
-@Registry
-public class ZKRegistry implements IRegistry,Init {
+public class ZKRegistry implements IRegistry {
 
 	private final static Logger logger = LoggerFactory.getLogger(ZKRegistry.class);
 	
-	//stand on user side ,service unique name as key(key = servicename+namespace+version)
-	//when the value set is NULL, should notify IServiceListener service REMOVE event
-	//when the value set is NULL, and service add  to set first, should notify IServiceListener 
-	//service ADD event
-	private Map<String,Set<ServiceItem>> serviceItems = new ConcurrentHashMap<String,Set<ServiceItem>>();
+	/**
+	 * 根据服务servicename, namespace, version三个值组成的KEY作为监听标准，增加删除都接收通知
+	 * item.serviceName() as key
+	 */
+	private Map<String,Set<IServiceListener>> snvListeners = new ConcurrentHashMap<>();
 	
-	private Map<String,ServiceItem> path2Items = new HashMap<>();
+	/**
+	 * 根据服务servicename一个值组成的KEY作为监听标准，增加删除都接收通知
+	 * item.getKey().getServiceName() as key
+	 */
+	private Map<String,Set<IServiceListener>> serviceNameListeners = new ConcurrentHashMap<>();
 	
-	private Map<String,Boolean> serviceNameItems = new ConcurrentHashMap<String,Boolean>();
+	/**
+	 * 根据服务servicename, namespace, version三个值组成的KEY作为监听标准，服务存在性监听
+	 * 存在性表示第一个服务实例进来，或最后一个服务实例删除时接收到通知
+	 * item.serviceName() as key
+	 */
+	private Map<String,Set<IServiceListener>> snvExistsListeners = new ConcurrentHashMap<>();
 	
-	//stand on user side ,service unique name as key(key = servicename+namespace+version)
-	private HashMap<String,Set<IServiceListener>> keyListeners = new HashMap<>();
+	/**
+	 * 根据服务servicename, 一个值组成的KEY作为监听标准，服务存在性监听
+	 * 存在性表示第一个服务实例进来，或最后一个服务实例删除时接收到通知
+	 * item.getKey().getServiceName() as key
+	 */
+	private Map<String,Set<IServiceListener>> serviceNameExistsListeners = new ConcurrentHashMap<>();
 	
-	private HashMap<String,Set<IServiceListener>> serviceNameListeners = new HashMap<>();
+	private Map<String,ServiceItem> localRegistedItems = new ConcurrentHashMap<>();
 	
-	private static final long startTime = System.currentTimeMillis();
-	private static final long inactiveTimeLong = 30*1000;
+	//当前在线服务，servicename, namespace, version
+	private Map<String,AtomicInteger> services = new ConcurrentHashMap<>();
 	
 	@Cfg("/ZKRegistry/openDebug")
-	private boolean openDebug;
+	private boolean openDebug = false;
 	
-	@Inject
+	@Cfg("/ZKRegistry/registInterval")
+	private int registInterval = 1000*5;
+	
+	private ServiceManager srvManager;
+	
 	private IDataOperator dataOperator;
 	
-	//service instance path as key(key=ServiceItem.key())
-	//private  Map<String,INodeListener> nodeListeners = new HashMap<>();
-	//@JMethod("init")
+	//private long startTime = System.currentTimeMillis();
+	
+	private long waitingActInterval = 1000*10*3;
+	
+	@Cfg("/ZKRegistry/needWaiting")
+	private boolean needWaiting = false;
+	
+	private boolean setNeedWaiting() {
+		if(needWaiting) {
+			this.needWaiting = System.currentTimeMillis() - Config.getSystemStartTime() < waitingActInterval;
+		}
+		return this.needWaiting;
+	}
+	
 	public void init() {
-		dataOperator.addListener((state)->{
-			if(Constants.CONN_CONNECTED == state) {
-				logger.debug("ZKRegistry CONNECTED, add listeners");
-			}else if(Constants.CONN_LOST == state) {
-				logger.debug("ZKRegistry DISCONNECTED");
-			}else if(Constants.CONN_RECONNECTED == state) {
-				logger.debug("ZKRegistry Reconnected and reregist Services");
-				for(Set<ServiceItem> sis : serviceItems.values()) {
-					for(ServiceItem si: sis) {
-						regist(si);
-					}	
-				}
+		if(!Config.isClientOnly()) {
+			//只做服务提供者,不需要监听服务变化
+			Thread t = new Thread(this::startRegisterWorker);
+			t.setName("JMicro-ZKRegistry_regWorker");
+			t.start();
+		}
+		srvManager.addListener(new IServiceListener() {
+			@Override
+			public void serviceChanged(int type, ServiceItem item) {
+				srvChange(type,item);
 			}
 		});
 		
-		List<String> children = dataOperator.getChildren(Config.ServiceRegistDir);
-		logger.debug("Service: "+children.toString());
-		serviceChanged(Config.ServiceRegistDir,children);
-		
-		dataOperator.addChildrenListener(Config.ServiceRegistDir, (path,child1)->{
-			serviceChanged(path,child1);
-		});
 	}	
 	
-	private INodeListener nodeListener = new INodeListener(){
-		public void nodeChanged(int type, String path,String data){
-			if(type == INodeListener.NODE_ADD){
-				//serviceChanged(path);
-			} else if(type == INodeListener.NODE_REMOVE) {
-				serviceRemove(path);
-			} else {
-				logger.error("rev invalid Node event type : "+type+",path: "+path);
+	/** +++++++++++++++++++++++Service listen START ++++++++++++++++++**/
+	
+	private void startRegisterWorker() {
+		for(;;) {
+			
+			if(!Config.isClientOnly() && !localRegistedItems.isEmpty()) {
+				//如果只是服消费者，则没有注册服务
+				this.localRegistedItems.forEach((path,si) -> {
+					if(!this.srvManager.exist(path)) {
+						this.regist(si);
+					}
+				});
+			}
+			
+			try {
+				Thread.sleep(registInterval);
+			} catch (InterruptedException e) {
+				logger.error("",e);
 			}
 		}
-	};
+	}
 	
-	private IDataListener dataListener = new IDataListener(){
-		@Override
-		public void dataChanged(String path, String data) {
-			updateItem(path,data);
+	private void notifyListener(int type,ServiceItem item,Set<IServiceListener> listeners) {
+		if(listeners != null && !listeners.isEmpty()) {
+			listeners.forEach((l)->l.serviceChanged(type, item));
 		}
-	};
+	}
 	
+	
+	private void srvChange(int type, ServiceItem item) {
+		String key = item.serviceName();
+		if(type == IServiceListener.SERVICE_ADD) {
+			if(!services.containsKey(key)) {
+				services.put(key, new AtomicInteger(0));
+			}
+			
+			int val = services.get(key).incrementAndGet();
+			if(val == 1) {
+				//服务进来，服务存在性监听器
+				notifyListener(type,item,snvExistsListeners.get(key));
+				notifyListener(type,item,serviceNameExistsListeners.get(item.getKey().getServiceName()));
+			}
+			
+			//全量监听
+			notifyListener(type,item,snvListeners.get(key));
+			notifyListener(type,item,serviceNameListeners.get(item.getKey().getServiceName()));
+			
+		} else if(type == IServiceListener.SERVICE_REMOVE) {
+			
+			if(services.get(key) == null || services.get(key).decrementAndGet() == 0) {
+				//最后一个服务删除，服务存在性监听器
+				notifyListener(type,item,snvExistsListeners.get(key));
+				notifyListener(type,item,serviceNameExistsListeners.get(item.getKey().getServiceName()));
+			}
+			
+			//全量监听
+			notifyListener(type,item,snvListeners.get(key));
+			notifyListener(type,item,serviceNameListeners.get(item.getKey().getServiceName()));
+		}
+	}
+	
+	/**
+	 * 务名称，名称空间，版本
+	 */
 	@Override
-	public void addServiceListener(String key,IServiceListener lis) {
-		addServiceListener(this.keyListeners,key,lis);	
+	public void addExistsServiceNameListener(String key,IServiceListener lis) {
+		addServiceListener(this.serviceNameExistsListeners,key,lis);	
 	}
 
-	protected void updateItem(String configPath, String data) {
-		ServiceItem si = this.fromJson(data);
-		//String p = si.key(ServiceItem.ROOT);
-		//this.path2Items.put(p, si);
-		
-		Set<ServiceItem> items = this.serviceItems.get(si.serviceName());
-		if(items != null && !items.isEmpty()){
-			for(ServiceItem ei: items) {
-				ei.formPersisItem(si);
-			}
-		}
-		notifyServiceChange(IServiceListener.SERVICE_DATA_CHANGE,si);
-		notifyServiceNameChange(IServiceListener.SERVICE_DATA_CHANGE,si);
+	@Override
+	public void removeExistsServiceNameListener(String key,IServiceListener lis) {
+		removeServiceListener(this.serviceNameExistsListeners,key,lis);
+	}
+	
+	/**
+	 * 务名称，名称空间，版本
+	 */
+	@Override
+	public void addExistsServiceListener(String key,IServiceListener lis) {
+		addServiceListener(this.snvExistsListeners,key,lis);	
+	}
+
+	@Override
+	public void removeExistsServiceListener(String key,IServiceListener lis) {
+		removeServiceListener(this.snvExistsListeners,key,lis);
+	}
+	
+	
+	/**
+	 * 务名称，名称空间，版本
+	 */
+	@Override
+	public void addServiceListener(String key,IServiceListener lis) {
+		addServiceListener(this.snvListeners,key,lis);	
 	}
 
 	@Override
 	public void removeServiceListener(String key,IServiceListener lis) {
-		removeServiceListener(this.keyListeners,key,lis);
+		removeServiceListener(this.snvListeners,key,lis);
 	}
-
-	private void notifyServiceNameChange(int type,ServiceItem item){
-		//接口名为KEY监听器
-		Set<IServiceListener> lss = this.serviceNameListeners.get(item.getServiceName());
-		if(lss != null && !lss.isEmpty()){
-			for(IServiceListener l : lss){
-				l.serviceChanged(type, item);
-			}
-		}
-	}
-
-	private void notifyServiceChange(int type,ServiceItem item){
-		//key = servicename + namespace + version
-		Set<IServiceListener> ls = this.keyListeners.get(item.serviceName());
-		if(ls != null && !ls.isEmpty()){
-			for(IServiceListener l : ls){
-				l.serviceChanged(type, item);
-			}
-		}
+	
+	/**
+	 * 服务名称,接口名称
+	 */
+	@Override
+	public void addServiceNameListener(String serviceName, IServiceListener lis) {
+		addServiceListener(this.serviceNameListeners,serviceName,lis);
 	}
 	
 	@Override
-	public void addServiceNameListener(String key, IServiceListener lis) {
-		addServiceListener(this.serviceNameListeners,key,lis);
+	public void removeServiceNameListener(String key, IServiceListener lis) {
+		removeServiceListener(this.serviceNameListeners,key,lis);
 	}
 	
-	private void removeServiceListener(HashMap<String,Set<IServiceListener>> listeners, String key,IServiceListener lis){
+	private void removeServiceListener(Map<String,Set<IServiceListener>> listeners, String key,IServiceListener lis){
 		if(!listeners.containsKey(key)){
 			return;
 		}
 		
 		Set<IServiceListener> l = listeners.get(key);
-		if(l == null){
+		if(l == null || l.isEmpty()){
 			return;
 		}
 		for(IServiceListener al : l){
@@ -193,7 +254,7 @@ public class ZKRegistry implements IRegistry,Init {
 		}
 	}
 	
-	private void addServiceListener(HashMap<String,Set<IServiceListener>> listeners, String key,IServiceListener lis){
+	private void addServiceListener(Map<String,Set<IServiceListener>> listeners, String key,IServiceListener lis){
 
 		if(listeners.containsKey(key)){
 			Set<IServiceListener> l = listeners.get(key);
@@ -217,142 +278,58 @@ public class ZKRegistry implements IRegistry,Init {
 		if(s!= null && !s.isEmpty()){
 			lis.serviceChanged(IServiceListener.SERVICE_ADD, s.iterator().next());
 		}
-	
 	}
+	
+	/** +++++++++++++++++++++++Service listen END ++++++++++++++++++**/
+	
 
-	@Override
-	public void removeServiceNameListener(String key, IServiceListener lis) {
-		removeServiceListener(this.serviceNameListeners,key,lis);
-	}
-
-	private void serviceChanged(String path, List<String> children) {		
-		this.path2Items.clear();
-		this.serviceItems.clear();
-		for(String child : children){
-			serviceChanged(path+"/"+child);
-		}
-	}
+	/** +++++++++++++++++++++++Service CRUD for service exporter START++++++++++++++++++**/
 	
-	private void serviceChanged(String path) {		
-		
-		String data =  dataOperator.getData(path);
-		ServiceItem i = this.fromJson(data);
-		if(i == null){
-			logger.warn("path:"+path+", data: "+data);
-			return;
-		}
-		this.persisFromConfig(i);
-		
-		this.path2Items.put(path, i);
-		
-		String serviceName = i.serviceName();
-		logger.debug("service add: " + path);
-		if(!serviceItems.containsKey(serviceName)){
-			serviceItems.put(serviceName, new HashSet<ServiceItem>());
-		}
-		Set<ServiceItem> items = serviceItems.get(serviceName);
-		boolean e = items.isEmpty();
-		items.add(i);
-		if(e){
-			this.notifyServiceChange(IServiceListener.SERVICE_ADD, i);
-		}
-		
-		if(!this.serviceNameItems.containsKey(i.getServiceName())){
-			serviceNameItems.put(i.getServiceName(), true);
-			this.notifyServiceNameChange(IServiceListener.SERVICE_ADD, i);
-		}
-		
-		dataOperator.addNodeListener(path, nodeListener);
-		dataOperator.addDataListener(i.key(Config.ServiceRegistDir), this.dataListener);
-	}
-	
-	private void persisFromConfig(ServiceItem item){
-        if(item== null){
-        	logger.error("Item is NULL");
-        	return;
-        }
-		String key = item.key(Config.ServiceItemCofigDir);
-		if(dataOperator.exist(key)){
-			String data = dataOperator.getData(key);
-			ServiceItem perItem = this.fromJson(data);
-			item.formPersisItem(perItem);
-		}
-	}
-	
-	private ServiceItem fromJson(String data){
-		return JsonUtils.getIns().fromJson(data, ServiceItem.class);
-	}
-	
-	private void serviceRemove(String path) {
-		logger.debug("remove service: "+path);
-    	ServiceItem i = this.path2Items.remove(path);
-    	if(null==i){
-    		return;
-    	}
-    	Set<ServiceItem> items = serviceItems.get(i.serviceName());
-    	items.remove(i);
-    	
-    	String name = i.getServiceName();
-    	boolean f = false;
-    	for(ServiceItem si : this.path2Items.values()){
-    		if(name.equals(si.getServiceName())){
-    			f = true;
-    			break;
-    		}
-    	}
-    	
-    	if(!f) {
-    		this.notifyServiceNameChange(IServiceListener.SERVICE_REMOVE, i);
-    	}
-    	
-    	dataOperator.removeNodeListener(path, nodeListener);
-    	dataOperator.removeDataListener(path, dataListener);
-    	
-    	if(items.isEmpty()){
-    		this.notifyServiceChange(IServiceListener.SERVICE_REMOVE, i);
-    	}
-	}
-
 	@Override
 	public void regist(ServiceItem item) {
-		this.persisFromConfig(item);
 		
-		String key = item.key(Config.ServiceItemCofigDir);
-		String data = JsonUtils.getIns().toJson(item);
-		if(!dataOperator.exist(key)){
-			dataOperator.createNode(key,data, false);
-			
-		}
+		String srvKey = item.path(Config.ServiceRegistDir);
+		localRegistedItems.put(srvKey, item);
 		
-		key = item.key(Config.ServiceRegistDir);
-		if(dataOperator.exist(key)){			
-			dataOperator.deleteNode(key);
-			logger.debug("Delete old service: "+key);
+		/*this.persisFromConfig(item);
+		String configKey = item.path(Config.ServiceItemCofigDir);
+		if(!this.srvManager.exist(configKey)){
+			this.srvManager.updateOrCreate(item,configKey, false);
+		}*/
+		
+		if(srvManager.exist(srvKey)){
+			srvManager.removeService(srvKey);
+		} else {
+			this.srvManager.updateOrCreate(item,srvKey, true);
 		}
-		dataOperator.createNode(key,data, true);
 	}
 
 	@Override
 	public void unregist(ServiceItem item) {
-		String key = item.key(Config.ServiceRegistDir);
+		String key = item.path(Config.ServiceRegistDir);
 		logger.debug("unregist service: "+key);
-		if(dataOperator.exist(key)){
-			dataOperator.deleteNode(key);
+		if(srvManager.exist(key)){
+			srvManager.removeService(key);
 		}
+		localRegistedItems.remove(key);
 	}
 
 	@Override
 	public void update(ServiceItem item) {
-		String key = item.key(Config.ServiceRegistDir);
+		String key = item.path(Config.ServiceRegistDir);
 		logger.debug("regist service: "+key);
-		if(dataOperator.exist(key)){
-			String data = JsonUtils.getIns().toJson(item);
-			dataOperator.setData(key,data);
+		if(srvManager.exist(key)){
+			srvManager.updateOrCreate(item, key, true);
+			localRegistedItems.put(key, item);
 		}else {
 			logger.debug("update not found: "+key);
 		}
 	}
 
+	/** +++++++++++++++++++++++Service crud for service provider END ++++++++++++++++++**/
+	
+	/** +++++++++++++++++++++++Service QUERY for consumer START ++++++++++++++++++**/
+	
 	@Override
 	public Set<ServiceItem> getServices(String serviceName, String method, Object[] args
 			,String namespace,String version,String transport) {
@@ -369,59 +346,134 @@ public class ZKRegistry implements IRegistry,Init {
 		return this.getServices(serviceName, method, clazzes,namespace,version,transport);
 	}
 	
-	private Set<ServiceItem> matchVersion(String serviceName,String namespace,String version){
-		Set<ServiceItem> set = new HashSet<ServiceItem>();
-		String prefix = ServiceItem.snnsPrefix(serviceName,namespace);
-		for(Map.Entry<String, Set<ServiceItem>> e: this.serviceItems.entrySet()) {
-			String k = e.getKey();
-			if(k.startsWith(prefix) &&
-					ServiceItem.matchVersion(version, k.substring(k.lastIndexOf(
-							ServiceItem.KEY_SEPERATOR)+ServiceItem.KEY_SEPERATOR.length(), k.length()))) {
-				set.addAll(e.getValue());
-			}
+	@Override
+	public boolean isExists(String serviceName, String namespace, String version) {
+		if(this.needWaiting) {
+			logger.warn("Do isExists waiting get Key: {}",UniqueServiceKey.serviceName(serviceName, namespace, version));
+			setNeedWaiting();
+			return IWaitingAction.doAct(()->isExists0(serviceName,namespace,version),false);
+		} else {
+			return isExists0(serviceName,namespace,version);
 		}
-		return set;
+	}
+	
+	private boolean isExists0(String serviceName,final String namespace,final String version) {
+		String ns = UniqueServiceKey.namespace(namespace);
+		String v =  UniqueServiceKey.version(version);
+		Set<ServiceItem> sis = matchVersion(serviceName, ns, v);
+		return sis != null && !sis.isEmpty();
+	}
+	
+	public boolean isExists(String serviceName) {
+		Set<ServiceItem> sis = this.getServices(serviceName);
+		return sis != null && !sis.isEmpty();
 	}
 	
 
 	@Override
+	public Set<ServiceItem> getServices(String serviceName, String namespace, String version) {
+		if(this.needWaiting) {
+			logger.warn("Do getServices(String serviceName, String namespace, String version) waiting get Key: {}",UniqueServiceKey.serviceName(serviceName, namespace, version));
+			setNeedWaiting();
+			return IWaitingAction.doAct(()->getServices0(serviceName,namespace,version),null);
+		} else {
+			return getServices0(serviceName,namespace,version);
+		}	
+	}
+	
+	private Set<ServiceItem> getServices0(String serviceName, String namespace, String version) {
+		namespace = UniqueServiceKey.namespace(namespace);
+		version = UniqueServiceKey.version(version);
+		//Set<ServiceItem> sis = this.serviceItems.get(ServiceItem.serviceName(serviceName, namespace, version));
+		Set<ServiceItem> sis = matchVersion(serviceName, namespace, version);
+		if(sis == null){
+			return Collections.EMPTY_SET;
+		}		
+		return sis;
+	}
+
+	/**
+	 * use for set inject
+	 */
+	@Override
+	public Set<ServiceItem> getServices(String serviceName) {
+		if(this.needWaiting) {
+			logger.warn("Do getServices(String serviceName) waiting get serviceName:{}",serviceName);
+			setNeedWaiting();
+			return IWaitingAction.doAct(()->srvManager.getServiceItems(serviceName),null);
+		} else {
+			return this.srvManager.getServiceItems(serviceName);
+		}	
+	}
+
+	@Override
+	public ServiceItem getServiceByImpl(String impl) {
+		if(this.needWaiting) {
+			logger.warn("Do getServiceByImpl waiting get impl:{}",impl);
+			setNeedWaiting();
+			return IWaitingAction.doAct(()->getServiceByImpl0(impl),null);
+		} else {
+			return getServiceByImpl0(impl);
+		}	
+	}
+	
+	private ServiceItem getServiceByImpl0(String impl) {
+		for(ServiceItem si : this.srvManager.getAllItems()){
+			if(this.openDebug) {
+				logger.debug("Impl:"+si.getImpl());
+			}
+			if(si.getImpl().equals(impl)){
+				return si;
+			}
+		}
+		logger.error("Impl not found:"+impl);
+		return null;
+	}
+	
+	@Override
 	public Set<ServiceItem> getServices(String serviceName,String method,Class<?>[] args
 			,String namespace,String version,String transport) {
+		if(this.needWaiting) {
+			logger.warn("Do getServices waiting get key:{},method:{},transport:{}",UniqueServiceKey.serviceName(serviceName, namespace, version),
+					method,transport);
+			setNeedWaiting();
+			return IWaitingAction.doAct(
+					()->getServices0(serviceName,method,args,namespace,version,transport),null);
+		} else {
+			return getServices0(serviceName,method,args,namespace,version,transport);
+		}	
+	}
+	
+	private Set<ServiceItem> getServices0(String serviceName,String method,Class<?>[] args
+			,String namespace,String version,String transport) {
 		
-		namespace = ServiceItem.namespace(namespace);
-		version = ServiceItem.version(version);
+		namespace = UniqueServiceKey.namespace(namespace);
+		version = UniqueServiceKey.version(version);
 		
 		Set<ServiceItem> sis = matchVersion(serviceName, namespace, version);
 		
 		//this.serviceItems.get(ServiceItem.serviceName(serviceName, namespace, version));
 		
 		if(sis == null || sis.isEmpty()) {
-			return Collections.EMPTY_SET;
+			return null;
 		}
 		
 		Set<ServiceItem> breakings = new HashSet<ServiceItem>();
 		Set<ServiceItem> set = new HashSet<ServiceItem>();
 		
 		for(ServiceItem si : sis) {
-			if(si.isBreaking()){
-				breakings.add(si);
-				continue;
-			}
 			if(!checkTransport(si,transport)){
 				continue;
 			}
-			for(ServiceMethod sm : si.getMethods()){
-				if(sm.getMethodName().equals(method) 
-						&& ServiceMethod.methodParamsKey(args).equals(sm.getMethodParamTypes())){
-					if(sm.isBreaking()){
-						breakings.add(si);
-					}else {
-						set.add(si);
-						break;
-					}
-				}
+			ServiceMethod sm = si.getMethod(method, args);
+			if(sm.isBreaking()){
+				breakings.add(si);
+			} else {
+				set.add(si);
+				break;
 			}
 		}
+		
 		if(set.isEmpty() && !breakings.isEmpty()){
 			throw new  BreakerException("Request services is breaking",breakings);
 		} else {
@@ -436,56 +488,43 @@ public class ZKRegistry implements IRegistry,Init {
 		return si.getServer(transport) != null;
 	}
 
-	@Override
-	public boolean isExists(String serviceName,String namespace,String version) {
-		namespace = ServiceItem.namespace(namespace);
-		version =  ServiceItem.version(version);
-		Set<ServiceItem> sis = matchVersion(serviceName, namespace, version);
-		//Set<ServiceItem> sis = this.serviceItems.get(ServiceItem.serviceName(serviceName, namespace, version));
-		return sis != null && !sis.isEmpty();
-	}
-
-	@Override
-	public Set<ServiceItem> getServices(String serviceName, String namespace, String version) {
-		namespace = ServiceItem.namespace(namespace);
-		version = ServiceItem.version(version);
-		//Set<ServiceItem> sis = this.serviceItems.get(ServiceItem.serviceName(serviceName, namespace, version));
-		Set<ServiceItem> sis = matchVersion(serviceName, namespace, version);
-		if(sis == null){
-			return Collections.EMPTY_SET;
-		}		
-		return sis;
-	}
-
-	/**
-	 * use for set inject
-	 */
-	@Override
-	public Set<ServiceItem> getServices(String serviceName) {
-		Set<ServiceItem> is = new HashSet<>();
-		for(String key : this.serviceItems.keySet()){
-			if(key.startsWith(serviceName)){
-				is.addAll(this.serviceItems.get(key));
+	private Set<ServiceItem> matchVersion(String serviceName,String namespace,String version){
+		Set<ServiceItem> set = new HashSet<ServiceItem>();
+		String prefix = UniqueServiceKey.snnsPrefix(serviceName,namespace).toString();
+		for(ServiceItem si : this.srvManager.getServiceItems(prefix)) {
+			if(UniqueServiceKey.matchVersion(version,si.getKey().getVersion())) {
+				set.add(si);
 			}
 		}
-		return is;
+		return set;
 	}
 
-	@Override
-	public ServiceItem getServiceByImpl(String impl) {
-		for(ServiceItem si : path2Items.values()){
-			if(this.openDebug) {
-				logger.debug("Impl:"+si.getImpl());
-			}
-			if(si.getImpl().equals(impl)){
-				return si;
-			}
+	/** +++++++++++++++++++++++Service QUERY for consumer END ++++++++++++++++++**/
+	
+	private void persisFromConfig(ServiceItem item){
+        if(item== null){
+        	logger.error("Item is NULL");
+        	return;
+        }
+		String key = item.path(Config.ServiceItemCofigDir);
+		if(this.srvManager.exist(key)){
+			String data = dataOperator.getData(key);
+			ServiceItem perItem = this.fromJson(data);
+			item.formPersisItem(perItem);
 		}
-		return null;
+	}
+	
+	public void setSrvManager(ServiceManager srvManager) {
+		this.srvManager = srvManager;
 	}
 
 	public void setDataOperator(IDataOperator dataOperator) {
 		this.dataOperator = dataOperator;
 	}
+
+	private ServiceItem fromJson(String data){
+		return JsonUtils.getIns().fromJson(data, ServiceItem.class);
+	}
 	
 }
+

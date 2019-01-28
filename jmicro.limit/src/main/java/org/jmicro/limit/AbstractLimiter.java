@@ -20,11 +20,12 @@ import java.util.Set;
 
 import org.jmicro.api.JMicro;
 import org.jmicro.api.limitspeed.ILimiter;
+import org.jmicro.api.net.IRequest;
 import org.jmicro.api.registry.ServiceItem;
 import org.jmicro.api.registry.ServiceMethod;
-import org.jmicro.api.server.IRequest;
 import org.jmicro.common.CommonException;
 import org.jmicro.common.util.StringUtils;
+
 /**
  * 
  * @author Yulei Ye
@@ -60,7 +61,7 @@ public abstract class AbstractLimiter implements ILimiter{
 		}
 		ServiceMethod sm = null;
 		for(ServiceMethod mi : si.getMethods()){
-			if(mi.getMethodName().equals(req.getMethod())){
+			if(mi.getKey().getMethod().equals(req.getMethod())){
 				sm = mi;
 				break;
 			}
@@ -79,10 +80,10 @@ public abstract class AbstractLimiter implements ILimiter{
 		}
 		ServiceMethod sm = this.getServiceMethod(si, req);
 		
-		if(StringUtils.isEmpty(sm.getSpeedUnit())){
-			return si.getSpeedUnit();
+		if(StringUtils.isEmpty(sm.getBaseTimeUnit())){
+			return si.getBaseTimeUnit();
 		}else {
-			return sm.getSpeedUnit();
+			return sm.getBaseTimeUnit();
 		}
 	}
 	

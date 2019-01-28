@@ -16,6 +16,8 @@
  */
 package org.jmicro.api.monitor;
 
+import java.util.Set;
+
 /**
  * 
  * @author Yulei Ye
@@ -24,5 +26,8 @@ package org.jmicro.api.monitor;
 public interface IMonitorDataSubscriber {
 
 	Integer[] intrest();
-	void onSubmit(SubmitItem si);
+	
+	void onSubmit(Set<SubmitItem> sis);
+	
+	Double getData(String srvKey,Integer type);
 }

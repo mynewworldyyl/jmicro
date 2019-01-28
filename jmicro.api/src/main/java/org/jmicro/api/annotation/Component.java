@@ -38,7 +38,7 @@ public @interface Component {
 	/**
 	 * 使用时才实例化，启动时只是生成代理
 	 */
-	public boolean lazy() default true;
+	public boolean lazy() default false;
 	
 	/**
 	 * 实例化优先级，值越底，优先极越高。用户自定义的服务因为依赖于系统的核心组件，所以用户自定义的组件的level值不要太小，建议从10000开始
@@ -57,5 +57,11 @@ public @interface Component {
 	 * 如果指定了服务提供方或消费方，则该组件所依赖的组件也被限制为指定方
 	 * @return
 	 */
-	public String side() default Constants.SIDE_ANY; 
+	public String side() default Constants.SIDE_ANY;
+	
+	/**
+	 * 指定包下的类才可使用
+	 * @return
+	 */
+	public String[] limit2Packages() default {};
 }

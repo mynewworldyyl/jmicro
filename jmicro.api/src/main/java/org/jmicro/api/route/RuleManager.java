@@ -19,7 +19,6 @@ package org.jmicro.api.route;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -35,7 +34,7 @@ import org.jmicro.common.util.JsonUtils;
  * @author Yulei Ye
  * @date: 2018年11月11日 下午8:35:21
  */
-@Component
+@Component(lazy=false)
 public class RuleManager {
 	
 	private static final String RULE_DIR = Constants.CFG_ROOT+"/routeRules";
@@ -74,11 +73,11 @@ public class RuleManager {
 	}
 	
 	public void init() {
-		List<String> children = dataOperator.getChildren(RULE_DIR);
+		Set<String> children = dataOperator.getChildren(RULE_DIR);
 		update(children);
 	}
 	
-	private void update(List<String> children) {
+	private void update(Set<String> children) {
 		if(children == null || children.isEmpty()) {
 			return;
 		}

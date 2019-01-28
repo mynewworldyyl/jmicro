@@ -15,12 +15,15 @@
  * limitations under the License.
  */
 package org.jmicro.api.idgenerator;
+
+import org.jmicro.api.net.IReq;
+
 /**
  * 
  * @author Yulei Ye
  * @date 2018年10月25日-下午10:54:39
  */
-public class IdRequest {
+public class IdRequest implements IReq{
 
 	public static final byte BYte=1;
 	public static final	byte SHort=2;

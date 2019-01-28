@@ -1,0 +1,56 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+         <groupId>org.jmicro</groupId>
+		 <artifactId>jmicro.parent</artifactId>
+		 <version>0.0.1-SNAPSHOT</version>
+    </parent>
+    <artifactId>jmicro.pubsub</artifactId>
+    <packaging>jar</packaging>
+    <name>${project.artifactId}</name>
+    <description>publish subscribe Module</description>
+	<dependencies>
+		<dependency>
+			<groupId>org.jmicro</groupId>
+			<artifactId>jmicro.api</artifactId>
+		</dependency>
+		 <dependency>
+			 <groupId>org.jmicro</groupId>
+			 <artifactId>jmicro.transport.netty.server</artifactId>
+        </dependency>
+          <dependency>
+			 <groupId>org.jmicro</groupId>
+			 <artifactId>jmicro.transport.netty.client</artifactId>
+        </dependency>
+         <dependency>
+			 <groupId>org.jmicro</groupId>
+			 <artifactId>jmicro.registry.zk</artifactId>
+        </dependency>
+         <dependency>
+			 <groupId>org.jmicro</groupId>
+			 <artifactId>jmicro.objfactory.simple</artifactId>
+        </dependency>
+        <dependency>
+			 <groupId>org.jmicro</groupId>
+			 <artifactId>jmicro.config</artifactId>
+        </dependency>
+           <dependency>
+			 <groupId>org.jmicro</groupId>
+			 <artifactId>jmicro.limit</artifactId>
+        </dependency>
+        <dependency>
+			 <groupId>org.jmicro</groupId>
+			 <artifactId>jmicro.idgenerator</artifactId>
+        </dependency>
+        <dependency>
+			 <groupId>org.jmicro</groupId>
+			 <artifactId>jmicro.classloader.client</artifactId>
+        </dependency>
+        <dependency>
+			 <groupId>org.jmicro</groupId>
+			 <artifactId>jmicro.test</artifactId>
+			 <scope>test</scope>
+        </dependency>
+	</dependencies>
+   
+</project>

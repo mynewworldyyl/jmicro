@@ -1,21 +1,23 @@
 package org.jmicro.api.codec;
 
-import java.util.ArrayList;
-import java.util.List;
-
-import org.jmicro.api.test.Person;
-
 public final class Entity {
 
-	private long v=222;
-	private String str = null;
-	private Object hello = "Hello World";
 	
-	private List<Person> persons = new ArrayList<Person>();
+	public byte[] data = new byte[] {1,2,3};
+	
+	/*private long v=222;
+	private String str = null;
+	private Object hello = "Hello World";*/
+	
+	//public Object types = new Integer[] {1,2,3};
+	
+	
+	
+/*	private List<Person> persons = new ArrayList<Person>();
 	
 	{
 		persons.add(new Person());
-	}
+	}*/
 	
 	/*private List<String> list = new ArrayList<>();
 	{
@@ -35,7 +37,7 @@ public final class Entity {
 	
 	@Override
 	public String toString() {
-		return "hello=" + this.hello +", value = "/*+ v+",list:"+list+",map: "+map*/;
+		return "hello=" + this.data +", value = "/*+ v+",list:"+list+",map: "+map*/;
 	}
 	
 	

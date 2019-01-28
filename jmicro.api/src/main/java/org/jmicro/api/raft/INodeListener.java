@@ -16,15 +16,13 @@
  */
 package org.jmicro.api.raft;
 
+import org.jmicro.api.IListener;
+
 /**
  * 
  * @author Yulei Ye
  * @date 2018年10月6日-上午8:06:05
  */
-public interface INodeListener {
-
-	public static final int NODE_ADD = 1;
-	public static final int NODE_REMOVE = 2;
-	
+public interface INodeListener extends IListener{
 	void nodeChanged(int type, String path,String data);
 }

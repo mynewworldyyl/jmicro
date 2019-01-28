@@ -33,13 +33,13 @@ import org.slf4j.LoggerFactory;
  * @date 2018年11月16日 上午12:21:27
  *
  */
-@Component(value="routerManager")
+@Component(value="routerManager",lazy=false)
 public class RouterManager {
 
 	private final static Logger logger = LoggerFactory.getLogger(RouterManager.class);
 	
 	@Inject
-	private Map<String,IRouter> routers = new HashMap<>();
+	private volatile Map<String,IRouter> routers = new HashMap<>();
 	
 	@Cfg("/RouterManager/routerSort")
 	private String[] routerSorts = {"tagRouter","serviceRouter","ipRouter"};

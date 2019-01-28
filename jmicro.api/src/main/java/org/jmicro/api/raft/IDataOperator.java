@@ -16,7 +16,7 @@
  */
 package org.jmicro.api.raft;
 
-import java.util.List;
+import java.util.Set;
 
 /**
  * 
@@ -45,7 +45,7 @@ public interface IDataOperator {
 	
 	void setData(String path,String data);
 	
-	List<String> getChildren(String path);
+	Set<String> getChildren(String path);
 	
 	void createNode(String path,String data,boolean elp);
 	

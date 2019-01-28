@@ -1012,4 +1012,53 @@ public final class ReflectUtils {
 
         return properties;
     }
+    
+    public static String getFullClassName(Class<?> cl) {
+		 if(cl.isPrimitive()) {
+	            if (Boolean.TYPE == cl)
+	                return Boolean.class.getName();
+	            if (Byte.TYPE == cl)
+	            	 return Byte.class.getName();
+	            if (Character.TYPE == cl)
+	            	 return Character.class.getName();
+	            if (Double.TYPE == cl)
+	            	 return Double.class.getName();
+	            if (Float.TYPE == cl)
+	            	 return Float.class.getName();
+	            if (Integer.TYPE == cl)
+	            	 return Integer.class.getName();
+	            if (Long.TYPE == cl)
+	            	 return Long.class.getName();
+	            if (Short.TYPE == cl)
+	            	 return Short.class.getName();
+	            throw new RuntimeException(cl.getName() + " is unknown primitive type.");
+	        
+		 } else {
+			 return ReflectUtils.getName(cl);
+		 }
+	 }
+    
+    public static Class<?> getPrimitiveClazz(Class<?> cl) {
+		 if(cl.isPrimitive() || Number.class.isAssignableFrom(cl)) {
+	            if (Byte.TYPE == cl ||  Boolean.class == cl)
+	            	 return Byte.TYPE;
+	            if (Double.TYPE == cl ||  Double.class == cl)
+	            	 return Double.TYPE;
+	            if (Float.TYPE == cl ||  Float.class == cl)
+	            	 return Float.TYPE;
+	            if (Integer.TYPE == cl ||  Integer.class == cl)
+	            	 return Integer.TYPE;
+	            if (Long.TYPE == cl ||  Long.class == cl)
+	            	 return Long.TYPE;
+	            if (Short.TYPE == cl ||  Short.class == cl)
+	            	 return Short.TYPE;
+	            throw new RuntimeException(cl.getName() + " is unknown primitive type.");
+		 } else if(Boolean.TYPE == cl ||  Boolean.class == cl) {
+			 return Boolean.TYPE;
+		 }else if(Character.TYPE == cl ||  Character.class == cl) {
+			 return Character.TYPE;
+		 } else {
+			return cl;
+		 }
+	 }
 }

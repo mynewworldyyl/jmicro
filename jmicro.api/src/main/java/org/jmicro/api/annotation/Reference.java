@@ -21,6 +21,8 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
+
+import org.jmicro.common.Constants;
 /**
  *
  * 在服务接口相同的情况下：
@@ -69,6 +71,12 @@ public @interface Reference {
 	public boolean required() default false;
 	
 	public String registry() default "";
+	
+	/**
+	 * 用于代理处理类，有特殊需求的可以定制代码才需要设置，如ID请求处理器，使用的RpcRequest及Message不需要ID等特殊实现
+	 * @return
+	 */
+	//public String handler() default Constants.DEFAULT_INVOCATION_HANDLER;
 	
 	/**
 	 * 依赖服务有变化时，包括配置及服务上线下线的变化，则会调用此字段值对应的组件方法，让组件

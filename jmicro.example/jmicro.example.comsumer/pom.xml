@@ -10,6 +10,11 @@
     <name>${project.artifactId}</name>
     <description>Jmicro example service comsumer for testing</description>
     <dependencies>
+    	<dependency>
+			 <groupId>org.jmicro</groupId>
+			 <artifactId>jmicro.test</artifactId>
+			 <scope>test</scope>
+        </dependency>
         <dependency>
 			 <groupId>org.jmicro</groupId>
 			 <artifactId>jmicro.zk</artifactId>
@@ -31,17 +36,9 @@
 			 <artifactId>jmicro.example.api</artifactId>
 			  <version>0.0.1-SNAPSHOT</version>
         </dependency>
-      <!--   <dependency>
-			 <groupId>org.jmicro</groupId>
-			 <artifactId>jmicro.transport.mina</artifactId>
-        </dependency> -->
        <dependency>
 			 <groupId>org.jmicro</groupId>
-			 <artifactId>jmicro.transport.netty</artifactId>
-        </dependency>
-         <dependency>
-			 <groupId>org.jmicro</groupId>
-			 <artifactId>jmicro.client</artifactId>
+			 <artifactId>jmicro.transport.netty.client</artifactId>
         </dependency>
          <dependency>
 			 <groupId>org.jmicro</groupId>
@@ -50,10 +47,6 @@
          <dependency>
 			 <groupId>org.jmicro</groupId>
 			 <artifactId>jmicro.objfactory.simple</artifactId>
-        </dependency>
-         <dependency>
-			 <groupId>org.jmicro</groupId>
-			 <artifactId>jmicro.idgenerator</artifactId>
         </dependency>
 		 <dependency>
 			 <groupId>org.jmicro</groupId>
@@ -64,10 +57,31 @@
 			 <groupId>org.jmicro</groupId>
 			 <artifactId>jmicro.limit</artifactId>
         </dependency>
-         <dependency>
+          <dependency>
 			 <groupId>org.jmicro</groupId>
 			 <artifactId>jmicro.monitor.submiter</artifactId>
         </dependency>
+       <!--     <dependency>
+			 <groupId>org.jmicro</groupId>
+			 <artifactId>jmicro.monitor.breaker</artifactId>
+        </dependency> -->
+         <dependency>
+			 <groupId>org.jmicro</groupId>
+			 <artifactId>jmicro.idgenerator</artifactId>
+        </dependency>
+         <dependency>
+			 <groupId>org.jmicro</groupId>
+			 <artifactId>jmicro.gateway.client</artifactId>
+        </dependency>
+          <dependency>
+			 <groupId>org.jmicro</groupId>
+			 <artifactId>jmicro.classloader.client</artifactId>
+        </dependency>
+        <dependency>
+		    <groupId>com.netflix.hystrix</groupId>
+		    <artifactId>hystrix-core</artifactId>
+		    <version>1.5.18</version>
+		</dependency>
     </dependencies>
    
 </project>

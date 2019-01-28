@@ -16,151 +16,66 @@
  */
 package org.jmicro.idgenerator;
 
-import java.util.HashSet;
-import java.util.Set;
-
+import org.jmicro.api.JMicro;
 import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.Inject;
-import org.jmicro.api.idgenerator.IIdGenerator;
+import org.jmicro.api.annotation.Service;
+import org.jmicro.api.idgenerator.IIdServer;
 import org.jmicro.api.raft.IDataOperator;
-import org.jmicro.common.CommonException;
+import org.jmicro.api.raft.RaftBaseIdGenerator;
 import org.jmicro.common.Constants;
+import org.jmicro.common.Utils;
+
 /**
- * 
  * @author Yulei Ye
  * @date 2018年10月4日-下午12:11:16
  */
-@Component(value=Constants.DEFAULT_IDGENERATOR,level=9)
-public class JMicroIdGenerator implements IIdGenerator {
+@Component(active=false, value=Constants.DEFAULT_IDGENERATOR,level=2, side = Constants.SIDE_PROVIDER)
+//@Service(namespace="idServer", version="0.0.1")
+public class JMicroIdGenerator implements IIdServer {
 	
 	private static final String ID_IDR = Constants.CFG_ROOT + "/id/";
+	
+	public static void main(String[] args) {
+		 JMicro.getObjectFactoryAndStart(new String[] {"-DinstanceName=ZkBaseIdServer",
+				 "-Dserver=true",
+				 "-Dorg.jmicro.api.idgenerator.IIdServer=uniqueIdGenerator"});
+		 Utils.getIns().waitForShutdown();
+	}
 	
 	@Inject(required=true)
 	private IDataOperator dataOperator;
 	
+	private RaftBaseIdGenerator idg = null;
+	
 	public void init(){
-		
+		idg = new RaftBaseIdGenerator(ID_IDR,this.dataOperator);
 	}
 	
-	@SuppressWarnings("unchecked")
-	@Override
-	public Set<Integer> getIntId(Class<?> idType, int num) {
-		if(num > 1) {
-			return (Set<Integer>)this.get(idType,Integer.class,num);
-		}else {
-			Set<Integer> set = new HashSet<>();
-			Integer id = (Integer)this.get(idType,Integer.class,num);
-			set.add(id);
-			return set;
-		}
-		
+	public Integer[] getIntIds(String idKey, int num) {
+		return idg.getIntIds(idKey, num);
 	}
 	
-	@SuppressWarnings("unchecked")
-	@Override
-	public Set<Long> getLongId(Class<?> idType, int num) {
-		if(num > 1) {
-			return (Set<Long>)this.get(idType,Long.class,num);
-		}else {
-			Set<Long> set = new HashSet<>();
-			Long id = (Long)this.get(idType,Long.class,num);
-			set.add(id);
-			return set;
-		}
+	public Long[] getLongIds(String idKey, int num) {
+		return idg.getLongIds(idKey, num);
 	}
 	
-	@SuppressWarnings("unchecked")
-	@Override
-	public Set<String> getStringId(Class<?> idType, int num) {
-		if(num > 1) {
-			return (Set<String>)this.get(idType,Long.class,num);
-		}else {
-			Set<String> set = new HashSet<>();
-			String id = (String)this.get(idType,Long.class,num);
-			set.add(id);
-			return set;
-		}
+	public String[] getStringIds(String idKey, int num) {
+		return this.idg.getStringIds(idKey, num);
 	}
 	
 	@Override
-	public Long getLongId(Class<?> idType) {
-		return (Long)this.get(idType,Long.class,1);
+	public Long getLongId(String idKey) {
+		return this.idg.getLongId(idKey);
 	}
 
 	@Override
-	public String getStringId(Class<?> idType) {
-		return (String)this.get(idType,String.class,1);
+	public String getStringId(String idType) {
+		return this.idg.getStringId(idType);
 	}
 
 	@Override
-	public Integer getIntId(Class<?> idType) {
-		return (Integer)this.get(idType,Integer.class,1);
+	public Integer getIntId(String idKey) {
+		return this.idg.getIntId(idKey);
 	}
-	
-	private Object get(Class<?> idType,Class<?> clazzType,int num){
-		if(num <= 0) {
-			throw new CommonException("Req ID num must be more than one");
-		}
-		
-		String path = ID_IDR + idType.getName();
-		String idStr = "1";
-		if(this.dataOperator.exist(path)){
-			 idStr = dataOperator.getData(path);
-		} else {
-			dataOperator.createNode(path, idStr, false);
-		}
-		
-		Object result = null;
-		
-		if(clazzType == Long.class) {
-			if(num == 1){
-				long r = Long.parseLong(idStr);
-				result = r;
-				idStr = (r+1)+"";
-			} else {
-				long r = Long.parseLong(idStr);
-				Set<Long> ids = new HashSet<Long>();
-				for(int i=0; i < num;i++) {
-					ids.add(r+i);
-				}
-				r += num;
-				idStr = r+"";
-				result = ids;
-			}
-		}else if(clazzType == Integer.class) {
-			if(num == 1){
-				int r = Integer.parseInt(idStr);
-				result = r;
-				idStr = (r+1)+"";
-			} else {
-				int r = Integer.parseInt(idStr);
-				Set<Integer> ids = new HashSet<Integer>();
-				for(int i=0; i < num;i++) {
-					ids.add(r+i);
-				}
-				r += num;
-				idStr = r+"";
-				result = ids;
-			}
-		}else if(clazzType == String.class) {
-			if(num == 1){
-				long r = Long.parseLong(idStr);
-				result = r+"";
-				idStr = (r+1)+"";
-			} else {
-				long r = Long.parseLong(idStr);
-				Set<String> ids = new HashSet<String>();
-				for(int i=0; i < num;i++) {
-					ids.add((r+i)+"");
-				}
-				r += num;
-				idStr = r+"";
-				result = ids;
-			}
-		}
-		
-		dataOperator.setData(path, idStr);
-		return result;
-	}
-
 }

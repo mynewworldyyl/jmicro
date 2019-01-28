@@ -20,7 +20,6 @@ import java.util.Set;
 
 import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.Inject;
-import org.jmicro.api.annotation.Selector;
 import org.jmicro.api.loadbalance.ISelector;
 import org.jmicro.api.registry.IRegistry;
 import org.jmicro.api.registry.ServiceItem;
@@ -32,7 +31,6 @@ import org.jmicro.common.Constants;
  * @date 2018年10月4日-下午12:03:10
  */
 @Component(Constants.DEFAULT_SELECTOR)
-@Selector
 public class RoundBalance implements ISelector{
 
 	@Inject(required=true,value=Constants.DEFAULT_REGISTRY)
@@ -90,7 +88,5 @@ public class RoundBalance implements ISelector{
 		}
 		return this.getService(srvName, method, clazzes,namespace,version,transport);
 	}
-	
-	
 	
 }

@@ -17,24 +17,35 @@
 package org.jmicro.api.registry;
 
 import java.lang.reflect.Field;
-import java.lang.reflect.Modifier;
 import java.util.HashSet;
 import java.util.Random;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 import org.jmicro.api.config.Config;
 import org.jmicro.common.CommonException;
 import org.jmicro.common.Constants;
 import org.jmicro.common.Utils;
 import org.jmicro.common.util.StringUtils;
+import org.jmicro.common.util.TimeUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 /**
- * 
+ *  单位时间处理速度，类似QPS，但是间单位可定制
+ *  时间单位：H：小时， M： 分钟， S：秒 ，MS：毫少，NS：纳秒
+ *  如90S，表示每秒钟处理90个请求，20M，表示每分钟处理20个请求，数字只能为整数，不能是小数
+ *  
+ *  服务标识：服务级标识，服务方法标识，服务实例标识
+ *  服务级标识 同服务名称，服务命名空间，服务版本组成 , 参考 {@link UniqueServiceKey}
+ *  服务方法标识 同服务标识+服务方法名称+服务参数级成，参考  {@link UniqueServiceMethodKey}
+ *  服务实例标识一个具体的运行实例，分为服务实例，服务方法实例，在服务级标识及服务方法标识 基础上加实例名称组成，
+ *  运行过程中又可由IP+PORT标识。
+ *  
  * @author Yulei Ye
  * @date 2018年10月4日-下午12:04:29
  */
-public class ServiceItem{
+public final class ServiceItem{
 
 	private final static Logger logger = LoggerFactory.getLogger(ServiceItem.class);
 	
@@ -51,42 +62,40 @@ public class ServiceItem{
 	
 	//-1 use system default value, 0 disable, 1 enable
 	//@JField(persistence=true)
+	
+	private UniqueServiceKey key;
+	
+	private String instanceName;
+	
+	//开启debug模式
+	private int debugMode = -1;
+		
 	private int monitorEnable = -1;
+	private int loggable = -1;
 	
-	private String serviceName;
+	//基本时间单位
+	private String baseTimeUnit = Constants.TIME_MILLISECONDS;
 	
-	private String namespace = Constants.DEFAULT_NAMESPACE;
+	//由baseTimeUnit计算出来的JVM极别的时间单位，方便使用
+	private transient TimeUnit timeUnit = TimeUnit.MILLISECONDS;
 	
-	private String version = Constants.DEFAULT_VERSION;
+	//统计服务数据基本时长，单位同baseTimeUnit确定 @link SMethod
+	private long timeWindow = -1;
 	
+	private int slotSize = 60;
+	
+	//采样统计数据周期，单位由baseTimeUnit确定
+	private long checkInterval = -1;
+		
 	private Set<Server> servers = new HashSet<Server>();
 	
 	private String impl;
 	
+	private String handler;
+	
 	private int retryCnt=-1; //method can retry times, less or equal 0 cannot be retry
 	private int retryInterval=-1; // milliseconds how long to wait before next retry
 	private int timeout=-1; // milliseconds how long to wait for response before timeout 
-	
-	/**
-	 * Max failure time before downgrade the service
-	 */
-	private int maxFailBeforeDegrade=-1;
-	
-	/**
-	 * Max failure time before cutdown the service
-	 */
-	private int maxFailBeforeFusing=-1;
-	
-	/**
-	 * after the service fuse, system can do testing weather the service is recovery
-	 * with this arguments to invoke the service method
-	 */
-	private String testingArgs="";
-	
-	/**
-	 * true all service method will fusing, false is normal service status
-	 */
-	private boolean fusing = false;
 	
 	/**
 	 * 1 is normal status, 
@@ -103,14 +112,7 @@ public class ServiceItem{
 	 */
 	private int degrade = -1;
 	
-	/**
-	 * 单位时间处理速度，类似QPS，但是间单位可定制
-	 *  时间单位：H：小时， M： 分钟， S：秒 ，MS：毫少，NS：纳秒
-	 *  如90S，表示每秒钟处理90个请求，20M，表示每分钟处理20个请求，数字只能为整数，不能是小数
-	 */
 	private int maxSpeed = -1;
-	
-	private String speedUnit = "MS";
 	
 	/**
 	 *  milliseconds
@@ -146,22 +148,42 @@ public class ServiceItem{
 		this.retryInterval=p.retryInterval;
 		this.timeout = p.timeout;
 		
-		this.maxFailBeforeDegrade=p.maxFailBeforeDegrade;
-		this.maxFailBeforeFusing=p.maxFailBeforeFusing;
-		
-		this.testingArgs = p.testingArgs;
-		this.fusing = p.fusing;
-		
 		this.degrade = p.degrade;
 		this.maxSpeed = p.maxSpeed;
 		this.avgResponseTime = p.avgResponseTime;
+		this.loggable = p.loggable;
+		
+		this.baseTimeUnit = p.baseTimeUnit;
+		this.timeUnit = p.timeUnit;
+		this.timeWindow = p.timeWindow;
+		this.checkInterval = p.checkInterval;
+		this.handler = p.handler;
+		this.slotSize = p.slotSize;
 		
 		for(ServiceMethod sm : p.getMethods()){
-			ServiceMethod nsm = this.getMethod(sm.getMethodName(), sm.getMethodParamTypes());
+			ServiceMethod nsm = this.getMethod(sm.getKey().getMethod(), sm.getKey().getParamsStr());
 			if(nsm != null){
 				nsm.formPersisItem(sm);
+				nsm.setBreakingRule(new BreakRule());
+				nsm.getBreakingRule().from(sm.getBreakingRule());
 			}
 		}
+	}
+
+	public String getHandler() {
+		return handler;
+	}
+
+	public void setHandler(String handler) {
+		this.handler = handler;
+	}
+
+	public long getTimeWindow() {
+		return timeWindow;
+	}
+
+	public void setTimeWindow(long timeWindow) {
+		this.timeWindow = timeWindow;
 	}
 
 	public String getImpl() {
@@ -176,14 +198,6 @@ public class ServiceItem{
 		return servers;
 	}
 
-	public boolean isBreaking() {
-		return fusing;
-	}
-
-	public void setFusing(boolean fusing) {
-		this.fusing = fusing;
-	}
-
 	public int getDegrade() {
 		return degrade;
 	}
@@ -194,6 +208,14 @@ public class ServiceItem{
 
 	public int getMonitorEnable() {
 		return monitorEnable;
+	}
+
+	public int getSlotSize() {
+		return slotSize;
+	}
+
+	public void setSlotSize(int slotSize) {
+		this.slotSize = slotSize;
 	}
 
 	public void setMonitorEnable(int monitorEnable) {
@@ -208,6 +230,22 @@ public class ServiceItem{
 		this.avgResponseTime = avgResponseTime;
 	}
 
+	public int getDebugMode() {
+		return debugMode;
+	}
+
+	public void setDebugMode(int debugMode) {
+		this.debugMode = debugMode;
+	}
+
+	public int getLoggable() {
+		return loggable;
+	}
+
+	public void setLoggable(int loggable) {
+		this.loggable = loggable;
+	}
+
 	public void addMethod(ServiceMethod sm){
 		methods.add(sm);
 	}
@@ -216,107 +254,10 @@ public class ServiceItem{
 		return methods;
 	}
 	
+	//服务标识，服务名，名称空间，版本，3元组坐标
 	public String serviceName() {
-	   return serviceName(this.serviceName,this.namespace,this.version);
-	}
-	
-	public static String namespace(String namespace){
-		if(namespace == null || "".equals(namespace)){
-			namespace = Constants.DEFAULT_NAMESPACE;
-		}
-		return namespace;
-	}
-	
-   public static String version(String version){
-		if(version == null || "".equals(version)){
-			version = Constants.DEFAULT_VERSION;
-		}
-		return version;
-	}
-	
-	public static String serviceName(String sn, String ns, String v) {
-		return snnsPrefix(sn,ns)+version(v);
-	}
-	
-	public static String snnsPrefix(String sn, String ns) {
-		return sn+KEY_SEPERATOR+namespace(ns)+KEY_SEPERATOR;
-	}
-	
-	/**
-	 *   1.0.0
-	 *   
-	 *   1.0.0 < v < 2.0.3
-	 *   1.0.0 < v
-	 *   v < 2.0.3
-	 *  
-	 *   1.0.0 <= v <= 2.0.3
-	 *   1.0.0 <= v
-	 *   v <= 2.0.3
-	 *   
-	 *   x.*.*
-	 *   *
-	 *   *.x.*
-	 *   
-	 *   *.*.*
-	 *   
-	 * @param macher
-	 * @param version
-	 * @return
-	 */
-	public static boolean matchVersion(String macher, String version) {
-		boolean result = false;
-		if(version.equals(macher)) {
-			return true;
-		}
-		if(macher.indexOf("<=") > 0) {
-			String[] arr = macher.split("<=");
-			if(arr.length == 3) {
-				result= compare(arr[0],version)<=0 && compare(version,arr[1])<=0;
-			}else if(arr.length == 2) {
-				if(arr[0].indexOf(".") > 0) {
-					result=  compare(arr[0],version)<=0;
-				}else if(arr[1].indexOf(".") > 0) {
-					result=  compare(version,arr[1])<=0;
-				}
-			}
-		}else if(macher.indexOf("<") > 0) {
-			String[] arr = macher.split("<");
-			if(arr.length == 3) {
-				result= compare(arr[0],version)<0 && compare(version,arr[1])<0;
-			}else if(arr.length == 2) {
-				if(arr[0].indexOf(".") > 0) {
-					result=  compare(arr[0],version)<0;
-				}else if(arr[1].indexOf(".") > 0) {
-					result=  compare(version,arr[1])<0;
-				}
-			}
-		}else if(macher.indexOf("*") >= 0) {
-			if("*".equals(macher.trim())) {
-				result = true;
-			} else {
-				result = true;
-				String[] arr = macher.split(".");
-				String[] varr = version.split(".");
-				for(int i=0; i < arr.length; i++) {
-					if(!arr[i].equals("*") && !arr[i].equals(varr[i])) {
-						result = false;
-						break;
-					}
-				}
-			}
-		}
-		return result;
-	}
-	
-	public static int compare(String first, String second) {
-		return first.compareTo(second);
-	}
-	
-	public static String methodKey(String serviceName, String method,String paramStr) {
-		if(StringUtils.isEmpty(method)) {
-			throw new CommonException("service ["+serviceName+"] Method cannot be null,");
-		}
-		return serviceName+KEY_SEPERATOR+method+KEY_SEPERATOR+paramStr;
+	   return UniqueServiceKey.serviceName(this.getKey().getServiceName(), this.getKey().getNamespace(),
+			   this.getKey().getVersion()).toString();
 	}
 
 	private void parseVal(String val) {
@@ -363,6 +304,9 @@ public class ServiceItem{
 				logger.error("parseVal Field:"+vs[0],e);
 			}
 		}
+		
+		this.timeUnit = TimeUtils.getTimeUnit(this.baseTimeUnit);
+		
 		if(methodStr.length() == 2){
 			return;
 		}
@@ -376,84 +320,70 @@ public class ServiceItem{
 		}
 	}
 	
-	public ServiceMethod getMethod(String methodName,Object[] args){
-		String mk = ServiceMethod.methodParamsKey(args);
+	public ServiceMethod getMethod(String methodName,String mkStr){
 		for(ServiceMethod sm : this.methods){
-			if(methodName.equals(sm.getMethodName()) && mk.equals(sm.getMethodParamTypes())){
+			if(methodName.equals(sm.getKey().getMethod()) && mkStr.equals(sm.getKey().getParamsStr()) ){
 				return sm;
 			}
 		}
+		
+		Class<?> paramClazzes[] = UniqueServiceMethodKey.paramsClazzes(mkStr);
+		for(ServiceMethod sm : this.methods){
+			if(methodName.equals(sm.getKey().getMethod())){
+				Class<?> paramClazzes1[] = UniqueServiceMethodKey.paramsClazzes(sm.getKey().getParamsStr());
+				if(paramClazzes.length == 0 && paramClazzes1.length == 0) {
+					return sm;
+				}
+				if(paramClazzes.length != paramClazzes1.length) {
+					continue;
+				}
+				
+				boolean f = true;
+				for(int i=0; i < paramClazzes1.length; i++) {
+					if(!paramClazzes1[i].isAssignableFrom(paramClazzes[i])) {
+						f = false;
+						break;
+					}
+				}
+				
+				if(f) {
+					return sm;
+				}
+			}
+		}
+		
 		return null;
+	}
+	
+	public ServiceMethod getMethod(String methodName,Object[] args){
+		String mkStr = UniqueServiceMethodKey.paramsStr(args);
+		return getMethod(methodName, mkStr);
 	}
 	
 	public ServiceMethod getMethod(String methodName,Class<?>[] args){
-		String mk = ServiceMethod.methodParamsKey(args);
-		for(ServiceMethod sm : this.methods){
-			if(methodName.equals(sm.getMethodName()) && mk.equals(sm.getMethodParamTypes())){
-				return sm;
-			}
-		}
-		return null;
+		String mkStr = UniqueServiceMethodKey.paramsStr(args);
+		return getMethod(methodName, mkStr);
 	}
 	
-	public ServiceMethod getMethod(String methodName,String paramTypesStr){
-		for(ServiceMethod sm : this.methods){
-			if(methodName.equals(sm.getMethodName()) && paramTypesStr.equals(sm.getMethodParamTypes())){
-				return sm;
-			}
-		}
-		return null;
+	//服务实例标识,带上实例名和主机IP
+	public String path(String root){
+		return this.key.path(root, true, true, true);
 	}
 	
-	public String key(String root){
-		StringBuffer sb = new StringBuffer(root);
-				
-		if(!this.serviceName.startsWith(FILE_SEPERATOR)){
-			sb.append(FILE_SEPERATOR);
-		}
-		
-		sb.append(Config.getInstanceName()).append(VAL_SEPERATOR)
-		.append(this.serviceName).append(VAL_SEPERATOR)
-		.append(this.namespace).append(VAL_SEPERATOR)
-		.append(this.version)/*.append(VAL_SEPERATOR)
-		.append(this.createdTime)*/;
-
+	public static String pathForKey(String key){
+		StringBuffer sb = new StringBuffer(Config.ServiceRegistDir);
+		sb.append(FILE_SEPERATOR);
+		sb.append(key);
 		return sb.toString();
 	}
 	
-	public String val(){
-		StringBuffer sb = new StringBuffer();
-		Field[] fields = this.getClass().getDeclaredFields();
-		for(Field f : fields){
-			if(Modifier.isStatic(f.getModifiers()) || "methods".equals(f.getName())){
-				continue;
-			}
-			try {
-				Object v = f.get(this);
-				sb.append(f.getName()).append(KV_SEPERATOR).append(v==null?"":v.toString()).append(VAL_SEPERATOR);
-			} catch (IllegalArgumentException | IllegalAccessException e) {
-				logger.error("val Field:"+f.getName(),e);
-			}
-		}
-		
-		sb.append("methods").append(KV_SEPERATOR).append("[");
-		
-		int i = 0;
-		for(ServiceMethod sm : this.methods){
-			sb.append(sm.toJson());
-			if(i++ < this.methods.size()-1){
-				sb.append("##");
-			}
-		}
-		
-		sb.append("]");
-		
-		return sb.toString();
+	public String key(){
+		return key.toKey(true,true,true);
 	}
 
 	@Override
 	public int hashCode() {
-		return this.key(Config.ServiceRegistDir).hashCode();
+		return this.path(Config.ServiceRegistDir).hashCode();
 	}
 
 	@Override
@@ -461,25 +391,7 @@ public class ServiceItem{
 		if(obj == null || !(obj instanceof ServiceItem)) {
 			return false;
 		}
-		return this.key(Config.ServiceRegistDir).equals(((ServiceItem)obj).key(Config.ServiceRegistDir));
-	}
-
-	public String getServiceName() {
-		return serviceName;
-	}
-
-	public void setServiceName(String serviceName) {
-		this.serviceName = serviceName;
-	}
-
-	public String getNamespace() {
-		return namespace;
-	}
-
-	public void setNamespace(String namespace) {
-		if(namespace != null && !"".equals(namespace.trim())){
-			this.namespace = namespace;
-		}
+		return this.path(Config.ServiceRegistDir).equals(((ServiceItem)obj).path(Config.ServiceRegistDir));
 	}
 
 	public int getMaxSpeed() {
@@ -488,24 +400,6 @@ public class ServiceItem{
 
 	public void setMaxSpeed(int maxSpeed) {
 		this.maxSpeed = maxSpeed;
-	}
-
-	public String getSpeedUnit() {
-		return speedUnit;
-	}
-
-	public void setSpeedUnit(String speedUnit) {
-		this.speedUnit = speedUnit;
-	}
-
-	public String getVersion() {
-		return version;
-	}
-
-	public void setVersion(String version) {
-		if(version != null && !"".equals(version.trim())){
-			this.version = version;
-		}
 	}
 
 	public int getRetryCnt() {
@@ -532,32 +426,49 @@ public class ServiceItem{
 		this.timeout = timeout;
 	}
 
-	public int getMaxFailBeforeDegrade() {
-		return maxFailBeforeDegrade;
-	}
-
-	public void setMaxFailBeforeDegrade(int maxFailBeforeDowngrade) {
-		this.maxFailBeforeDegrade = maxFailBeforeDowngrade;
-	}
-
-	public int getMaxFailBeforeFusing() {
-		return maxFailBeforeFusing;
-	}
-
-	public void setMaxFailBeforeFusing(int maxFailBeforeFusing) {
-		this.maxFailBeforeFusing = maxFailBeforeFusing;
-	}
-
-	public String getTestingArgs() {
-		return testingArgs;
-	}
-
-	public void setTestingArgs(String testingArgs) {
-		this.testingArgs = testingArgs;
-	}
-
 	public void setMethods(Set<ServiceMethod> methods) {
 		this.methods = methods;
+	}
+
+	public String getInstanceName() {
+		return instanceName;
+	}
+
+	public void setInstanceName(String instanceName) {
+		this.instanceName = instanceName;
+	}
+
+	public UniqueServiceKey getKey() {
+		return key;
+	}
+
+	public void setKey(UniqueServiceKey key) {
+		this.key = key;
+	}
+
+	public String getBaseTimeUnit() {
+		return baseTimeUnit;
+	}
+
+	public void setBaseTimeUnit(String baseTimeUnit) {
+		this.baseTimeUnit = baseTimeUnit;
+		this.setTimeUnit(TimeUtils.getTimeUnit(baseTimeUnit));
+	}
+
+	public TimeUnit getTimeUnit() {
+		return timeUnit;
+	}
+
+	public void setTimeUnit(TimeUnit timeUnit) {
+		this.timeUnit = timeUnit;
+	}
+
+	public long getCheckInterval() {
+		return checkInterval;
+	}
+
+	public void setCheckInterval(long checkInterval) {
+		this.checkInterval = checkInterval;
 	}
 	
 }

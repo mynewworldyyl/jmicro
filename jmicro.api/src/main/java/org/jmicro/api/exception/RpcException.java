@@ -16,14 +16,14 @@
  */
 package org.jmicro.api.exception;
 
-import org.jmicro.api.server.IRequest;
+import org.jmicro.api.net.IRequest;
 import org.jmicro.common.CommonException;
 /**
  * 
  * @author Yulei Ye
  * @date 2018年10月4日-下午12:02:42
  */
-public class RpcException extends CommonException {
+public final class RpcException extends CommonException {
 	 
 	private static final long serialVersionUID = 134328923L;
 	

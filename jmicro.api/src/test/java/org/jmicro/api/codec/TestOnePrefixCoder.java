@@ -8,8 +8,10 @@ import java.util.Map;
 
 import org.jmicro.api.gateway.ApiRequest;
 import org.jmicro.api.gateway.ApiResponse;
+import org.jmicro.api.monitor.AbstractMonitorDataSubscriber;
 import org.jmicro.api.monitor.SubmitItem;
 import org.jmicro.api.net.Message;
+import org.jmicro.api.net.RpcRequest;
 import org.jmicro.api.net.RpcResponse;
 import org.jmicro.api.test.Person;
 import org.jmicro.common.Constants;
@@ -29,6 +31,7 @@ public class TestOnePrefixCoder {
 		resp.getParams().put("key01", 3);
 		resp.getParams().put("key02","hello");
 		resp.setMsg(new Message());
+		resp.setResult("Hell result");
 		
 		ByteBuffer dest = encoder.encode(resp);
 		dest.flip();
@@ -203,11 +206,11 @@ public class TestOnePrefixCoder {
 		msg.setProtocol(Message.PROTOCOL_BIN);
 		msg.setId(0);
 		msg.setReqId(0L);
-		msg.setSessionId(0);
+		msg.setLinkId(0);
 		ByteBuffer payload = encoder.encode(req);
 		payload.flip();
 		msg.setPayload(payload);
-		msg.setVersion(Constants.VERSION_STR);
+		msg.setVersion(Message.MSG_VERSION);
 		
 		ByteBuffer msgBuffer = encoder.encode(msg);
 		msgBuffer.flip();
@@ -233,11 +236,11 @@ public class TestOnePrefixCoder {
 		msg.setProtocol(Message.PROTOCOL_BIN);
 		msg.setId(0);
 		msg.setReqId(0L);
-		msg.setSessionId(0);
+		msg.setLinkId(0);
 		ByteBuffer payload = encoder.encode(req);
 		payload.flip();
 		msg.setPayload(payload);
-		msg.setVersion(Constants.VERSION_STR);
+		msg.setVersion(Message.MSG_VERSION);
 		req.setMsg(msg);
 		
 		ByteBuffer msgBuffer = encoder.encode(msg);
@@ -318,29 +321,84 @@ public class TestOnePrefixCoder {
 	}
 	
 	@Test
+	public void testSubmitItem() {
+		
+		RpcRequest rr = new RpcRequest();
+		SubmitItem si = new SubmitItem();
+		si.setType(222);
+		//si.seto("org.jmicro.api.monitor.SF:  service [org.jmicro.api.test.ISayHello], namespace [testsayhello], version [0.0.1], args [class java.lang.String=Hello]");
+		
+		rr.setArgs(new Object[] {si});
+		
+		ByteBuffer bb = encoder.encode(rr);
+		bb.flip();
+		System.out.println(bb.limit());
+		System.out.println(bb.position());
+		
+		rr = decoder.decode(bb);
+		
+		System.out.println(rr.getImpl());
+	}
+	
+	@Test
 	public void testEncodeSubmitItem(){
 		SubmitItem si = new SubmitItem();
-		si.setFinish(true);
-		si.setType(1);
-		si.setReqId(1);
-		si.setSessionId(1);
-		si.setNamespace("sss");
-		si.setVersion("fsa");
-		si.setReqArgs("fsf");
-		si.setMethod("sfs");
-		si.setMsgId(1);
-		si.setOthers("fsf");
-		si.setRespId(1L);
-		si.setResult("sfs");
 		
-		ByteBuffer bb = ByteBuffer.allocate(1024*4);
-		Encoder.encodeObject(bb, si);
+		ByteBuffer bb = encoder.encode(si);
 		bb.flip();
+		
 		System.out.println(bb.limit());
 		System.out.println(bb.array());
 		
-		Object o = Decoder.decodeObject(bb);
-		System.out.println(o);
+		SubmitItem si1 = decoder.decode(bb);
+		System.out.println(si1);
+		
+	}
+	
+	@Test
+	public void testEncodeResponse(){
+		RpcResponse si = new RpcResponse();
+		
+		si.setResult(AbstractMonitorDataSubscriber.YTPES);
+		
+		ByteBuffer bb = encoder.encode(si);
+		
+		bb.flip();
+		
+		RpcResponse si1 = decoder.decode(bb);
+		
+		Integer[]  arr = (Integer[])si1.getResult();
+		
+		System.out.println(arr);
+		
+	}
+	
+	@Test
+	public void testIntegerArrayEncodeDecoder(){
+		Entity si = new Entity();
+		
+		ByteBuffer bb = encoder.encode(si);
+		
+		bb.flip();
+		
+		Entity si1 = decoder.decode(bb);
+		
+		//Integer[]  arr = (Integer[])si1.types;
+		//System.out.println(arr);
+		
+	}
+	
+	@Test
+	public void testByteArrayEncodeDecoder(){
+		Entity si = new Entity();
+		
+		ByteBuffer bb = encoder.encode(si);
+		
+		bb.flip();
+		
+		Entity si1 = decoder.decode(bb);
+		
+		System.out.println(si1.data);
 		
 	}
 
