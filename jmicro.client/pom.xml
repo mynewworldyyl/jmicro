@@ -14,10 +14,10 @@
 		      <groupId>org.jmicro</groupId>
 			  <artifactId>jmicro.api</artifactId>
         </dependency>
-        <dependency>
+      <!--   <dependency>
 		    <groupId>co.paralleluniverse</groupId>
 		    <artifactId>quasar-core</artifactId>
-		</dependency>
+		</dependency> -->
     </dependencies>
    
 </project>

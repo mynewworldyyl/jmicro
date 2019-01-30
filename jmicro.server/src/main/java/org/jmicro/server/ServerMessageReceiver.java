@@ -41,9 +41,6 @@ import org.jmicro.common.Constants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import co.paralleluniverse.fibers.Fiber;
-import co.paralleluniverse.fibers.Suspendable;
-
 /**
  * 
  * @author Yulei Ye
@@ -102,7 +99,7 @@ public class ServerMessageReceiver implements IMessageReceiver{
 	}
 	
 	@Override
-	@Suspendable
+	//@Suspendable
 	public void receive(ISession s, Message msg) {
 		 JMicroContext.configProvider(msg);
 		if(openDebug) {
@@ -137,7 +134,7 @@ public class ServerMessageReceiver implements IMessageReceiver{
 		}).start();*/
 	}
 	
-	@Suspendable
+	//@Suspendable
 	private void doReceive(IServerSession s, Message msg){
 		
 		if(msg.isLoggable()) {

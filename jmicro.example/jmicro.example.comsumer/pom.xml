@@ -36,10 +36,10 @@
 			 <artifactId>jmicro.example.api</artifactId>
 			  <version>0.0.1-SNAPSHOT</version>
         </dependency>
-       <dependency>
+      <!--  <dependency>
 			 <groupId>org.jmicro</groupId>
 			 <artifactId>jmicro.transport.netty.client</artifactId>
-        </dependency>
+        </dependency> -->
          <dependency>
 			 <groupId>org.jmicro</groupId>
 			 <artifactId>jmicro.registry.zk</artifactId>
@@ -77,11 +77,11 @@
 			 <groupId>org.jmicro</groupId>
 			 <artifactId>jmicro.classloader.client</artifactId>
         </dependency>
-        <dependency>
+      <!--   <dependency>
 		    <groupId>com.netflix.hystrix</groupId>
 		    <artifactId>hystrix-core</artifactId>
 		    <version>1.5.18</version>
-		</dependency>
+		</dependency> -->
     </dependencies>
    
 </project>

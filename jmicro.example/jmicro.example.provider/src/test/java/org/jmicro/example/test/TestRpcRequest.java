@@ -11,9 +11,6 @@ import org.jmicro.api.registry.ServiceItem;
 import org.jmicro.common.Utils;
 import org.junit.Test;
 
-import co.paralleluniverse.fibers.Fiber;
-import co.paralleluniverse.fibers.SuspendExecution;
-
 public class TestRpcRequest {
 
 	@Test
@@ -58,7 +55,7 @@ public class TestRpcRequest {
 		Utils.getIns().waitForShutdown();
 	}
 
-	@SuppressWarnings("serial")
+/*	@SuppressWarnings("serial")
 	@Test
 	public void helloFiber() {
 		new Fiber<String>() {
@@ -71,7 +68,7 @@ public class TestRpcRequest {
 		}.start();
 		
 		Utils.getIns().waitForShutdown();
-	}
+	}*/
 	
 	@Test
 	public void testGetService() {

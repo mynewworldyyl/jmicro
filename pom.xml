@@ -425,6 +425,46 @@
                 </plugins>
             </build>
         </profile>
+        
+        <profile>
+            <id>build-main</id>
+            <build>
+		        <plugins>
+		            <plugin>
+		                <groupId>org.apache.maven.plugins</groupId>
+		                <artifactId>maven-compiler-plugin</artifactId>
+		                <version>2.3.2</version>
+		                <configuration>
+		                    <source>1.8</source>
+		                    <target>1.8</target>
+		                </configuration>
+		            </plugin>
+		            <plugin>
+		                <artifactId>maven-assembly-plugin</artifactId>
+		                <configuration>
+		                    <archive>
+		                        <manifest>
+		                            <mainClass>org.jmicro.api.JMicro</mainClass>
+		                        </manifest>
+		                    </archive>
+		                    <descriptorRefs>
+		                        <descriptorRef>jar-with-dependencies</descriptorRef>
+		                    </descriptorRefs>
+		                </configuration>
+		                <executions>
+		                    <execution>
+		                        <id>make-assembly</id>
+		                        <phase>package</phase>
+		                        <goals>
+		                            <goal>single</goal>
+		                        </goals>
+		                    </execution>
+		                </executions>
+		            </plugin>
+		        </plugins>
+		    </build>
+        </profile>
+        
     </profiles>
 
     <build>
@@ -439,9 +479,13 @@
                 <targetPath>META-INF/</targetPath>
                 <filtering>false</filtering>
                 <includes>
-                    <include>NOTICE</include>
+                    <!-- <include>NOTICE</include> -->
                     <include>LICENSE</include>
                 </includes>
+                <excludes>
+                	<exclude>maven/*</exclude>
+                	<exclude>NOTICE</exclude>
+                </excludes>
             </resource>
         </resources>
         <plugins>

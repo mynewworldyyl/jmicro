@@ -16,7 +16,6 @@
  */
 package org.jmicro.client;
 
-import org.jmicro.api.JMicro;
 import org.jmicro.api.annotation.Cfg;
 import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.Inject;
@@ -24,17 +23,12 @@ import org.jmicro.api.client.IClientSession;
 import org.jmicro.api.client.IMessageCallback;
 import org.jmicro.api.codec.ICodecFactory;
 import org.jmicro.api.net.IMessageHandler;
-import org.jmicro.api.net.IRequest;
 import org.jmicro.api.net.ISession;
 import org.jmicro.api.net.Message;
 import org.jmicro.api.net.RpcResponse;
-import org.jmicro.api.registry.ServiceMethod;
 import org.jmicro.common.Constants;
-import org.jmicro.common.util.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import co.paralleluniverse.fibers.Fiber;
 
 /**
  * 
@@ -62,7 +56,8 @@ public class AsyncMessageHandler implements IMessageHandler{
 
 	@Override
 	public void onMessage(ISession session,Message msg) {
-		new Fiber<Void>(() ->handleResponse((IClientSession)session,msg)).start();
+		//new Fiber<Void>(() ->handleResponse((IClientSession)session,msg)).start();
+		handleResponse((IClientSession)session,msg);
 	}
 	
 	@SuppressWarnings({ "rawtypes", "unchecked" })
