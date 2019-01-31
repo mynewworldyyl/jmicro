@@ -119,6 +119,7 @@ public class ServiceManager {
 				}
 			}
 		});
+		refleshChildren();
 	}
 	
 	private void refleshChildren() {

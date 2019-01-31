@@ -197,28 +197,27 @@ public class ZKDataOperator implements IDataOperator{
 	}
 	
 	private void childrenChange(String path) {
-		Set<String> news = this.getChildren(path);
-		Set<String> exists = this.path2Children.get(path);
+		Set<String> news = this.getChildrenFromRaft(path);
+		Set<String> exists = this.getChildrenFromCache(path);
 		
 		Set<String> adds = new HashSet<>();
 		Set<String> removes = new HashSet<>();
-		
-		if(exists != null) {
-			//计算增加的结点
-			for(String n : news) {
-				//在新的列表里面有，但老列表里面没有就是增加
-				if(!exists.contains(n)) {
-					adds.add(n);
-				}
-			}
-			
-			for(String r : exists) {
-				//在老列表里面有，但是新列表里面没有，就是减少
-				if(!news.contains(r)) {
-					removes.add(r);
-				}
+
+		//计算增加的结点
+		for(String n : news) {
+			//在新的列表里面有，但老列表里面没有就是增加
+			if(!exists.contains(n)) {
+				adds.add(n);
 			}
 		}
+		
+		for(String r : exists) {
+			//在老列表里面有，但是新列表里面没有，就是减少
+			if(!news.contains(r)) {
+				removes.add(r);
+			}
+		}
+	
 		
 		Set<IChildrenListener> lis = childrenListeners.get(path);
 		if(lis != null && !lis.isEmpty()){
@@ -302,15 +301,15 @@ public class ZKDataOperator implements IDataOperator{
 				return;
 			  }
 		}
-		Set<IDataListener> l = null;
-		dataListeners.put(path, l = new HashSet<IDataListener>());
+		Set<IDataListener> l = new HashSet<IDataListener>();
+		dataListeners.put(path,l);
 		l.add(lis);
 		watchData(path);
 	
 	}
 	
 	/**
-	 * 舰艇孩子增加或删除
+	 * 监听孩子增加或删除
 	 */
 	public void addChildrenListener(String path,IChildrenListener lis){
 		logger.debug("Add children listener for: {}",path);
@@ -327,6 +326,7 @@ public class ZKDataOperator implements IDataOperator{
 				return;
 		    }
 		}
+		this.getChildrenFromRaft(path);
 		//监听器和列表都不存在
 		Set<IChildrenListener> l =  new HashSet<IChildrenListener>();
 		childrenListeners.put(path, l);
@@ -336,6 +336,7 @@ public class ZKDataOperator implements IDataOperator{
 	}
 	
 	private void notifyChildrenAdd(IChildrenListener l,String path) {
+		
 		if(!this.path2Children.containsKey(path)) {
 			return;
 		}
@@ -365,6 +366,9 @@ public class ZKDataOperator implements IDataOperator{
 		//init();
 		ExistsBuilder existsBuilder = this.curator.checkExists();
 		try {
+			if(this.path2Children.containsKey(path)) {
+				return true;
+			}
 			Stat stat = existsBuilder.forPath(path);
 			if(OPEN_DEBUG) {
 				//logger.debug("[exist] path {}, Stat {}",path,stat);
@@ -405,7 +409,7 @@ public class ZKDataOperator implements IDataOperator{
 		}
 	}
 	
-	public Set<String> getFromCacheChildren(String path){
+	public Set<String> getChildrenFromCache(String path){
 		if(this.path2Children.containsKey(path)) {
 			Set<String> set = new HashSet<>();
 			set.addAll(path2Children.get(path));
@@ -415,19 +419,32 @@ public class ZKDataOperator implements IDataOperator{
 		}
 	}
 	
-	public Set<String> getChildren(String path){
-		//init();
-		GetChildrenBuilder getChildBuilder = this.curator.getChildren();
+	public Set<String> getChildrenFromRaft(String path){
   	   try {
-			List<String> l = getChildBuilder.forPath(path);
+  		    GetChildrenBuilder getChildBuilder = this.curator.getChildren();
+  		    List<String> l = getChildBuilder.forPath(path);
 			Set<String> set = new HashSet<>();
 			set.addAll(l);
+			return set;
 		} catch (KeeperException.NoNodeException e) {
 			logger.error(e.getMessage());
 		}catch(Exception e){
 			logger.error("",e);
 		}
   	   return Collections.EMPTY_SET;
+	}
+	
+	public Set<String> getChildren(String path){
+	    Set<String> l = this.getChildrenFromCache(path);
+	    if(l == null || l.isEmpty()) {
+	    	l = this.getChildrenFromRaft(path);
+	    	if(l != null && !l.isEmpty()) {
+	    		Set<String> set = new HashSet<>();
+				set.addAll(l);
+				this.path2Children.put(path, set);
+	    	}
+	    }
+		return l;
 	}
 	
 	/**
