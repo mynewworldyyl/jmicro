@@ -40,7 +40,7 @@ import org.slf4j.LoggerFactory;
  */
 public abstract class AbstractClientServiceProxy implements InvocationHandler,IServiceListener{
 
-	private final static Logger logger = LoggerFactory.getLogger(AbstractClientServiceProxy.class);
+	private final Logger logger = LoggerFactory.getLogger(this.getClass());
 	
 	private ServiceItem item = null;
 	

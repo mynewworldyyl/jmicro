@@ -82,7 +82,7 @@ public class ZKRegistry implements IRegistry {
 	private Map<String,ServiceItem> localRegistedItems = new ConcurrentHashMap<>();
 	
 	//当前在线服务，servicename, namespace, version
-	private Map<String,AtomicInteger> services = new ConcurrentHashMap<>();
+	private Map<String,AtomicInteger> servicesCounters = new ConcurrentHashMap<>();
 	
 	@Cfg("/ZKRegistry/openDebug")
 	private boolean openDebug = false;
@@ -156,11 +156,11 @@ public class ZKRegistry implements IRegistry {
 	private void srvChange(int type, ServiceItem item) {
 		String key = item.serviceName();
 		if(type == IServiceListener.SERVICE_ADD) {
-			if(!services.containsKey(key)) {
-				services.put(key, new AtomicInteger(0));
+			if(!servicesCounters.containsKey(key)) {
+				servicesCounters.put(key, new AtomicInteger(0));
 			}
 			
-			int val = services.get(key).incrementAndGet();
+			int val = servicesCounters.get(key).incrementAndGet();
 			if(val == 1) {
 				//服务进来，服务存在性监听器
 				notifyListener(type,item,snvExistsListeners.get(key));
@@ -173,7 +173,7 @@ public class ZKRegistry implements IRegistry {
 			
 		} else if(type == IServiceListener.SERVICE_REMOVE) {
 			
-			if(services.get(key) == null || services.get(key).decrementAndGet() == 0) {
+			if(servicesCounters.get(key) == null || servicesCounters.get(key).decrementAndGet() == 0) {
 				//最后一个服务删除，服务存在性监听器
 				notifyListener(type,item,snvExistsListeners.get(key));
 				notifyListener(type,item,serviceNameExistsListeners.get(item.getKey().getServiceName()));

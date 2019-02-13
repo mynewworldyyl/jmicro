@@ -132,6 +132,9 @@ public class Utils {
         } catch (SocketException e) {
             e.printStackTrace();
         }
+        if(ipList.isEmpty()) {
+        	ipList.add("127.0.0.1");
+        }
         return ipList;
     }
 	

@@ -142,8 +142,8 @@ public class PubSubServer implements IInternalSubRpc{
 	
 	public void init() {
 
-		if(!pubsubManager.isEnable()) {
-			logger.warn("/PubSubManager/enable must be true for pubsub server");
+		if(!pubsubManager.isEnableServer()) {
+			logger.warn("/PubSubManager/isEnableServer must be true for pubsub server");
 			return;
 		}
 		

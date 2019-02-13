@@ -55,7 +55,13 @@ public class PubSubManager {
 	 * is enable pubsub feature
 	 */
 	@Cfg(value="/PubSubManager/enable",defGlobal=false)
-	private boolean enable = false;
+	private boolean enable = true;
+	
+	/**
+	 * is enable pubsub server
+	 */
+	@Cfg(value="/PubSubManager/enableServer",defGlobal=false)
+	private boolean enableServer = false;
 	
 	@Cfg(value="/PubSubManager/openDebug",defGlobal=false)
 	private boolean openDebug = true;
@@ -104,7 +110,7 @@ public class PubSubManager {
 	
 	private Map<String,Set<String>> topic2Method = new ConcurrentHashMap<>();
 	
-	private Map<String,Boolean> srvs = new HashMap<>();
+	//private Map<String,Boolean> srvs = new HashMap<>();
 	
 	/*private INodeListener topicNodeListener = new INodeListener(){
 		public void nodeChanged(int type, String path,String data){
@@ -121,7 +127,7 @@ public class PubSubManager {
 	/**
 	 * 监听全部服务的增加操作，判断是否有订阅方法，如果有，则注册到对应的主是下面
 	 */
-	private IServiceListener serviceParseListener = new IServiceListener() {
+/*	private IServiceListener serviceParseListener = new IServiceListener() {
 		@Override
 		public void serviceChanged(int type, ServiceItem item) {
 			if(type == IServiceListener.SERVICE_ADD) {
@@ -134,13 +140,13 @@ public class PubSubManager {
 				logger.error("rev invalid Node event type : "+type+",path: "+item.getKey().toKey(true, true, true));
 			}
 		}
-	};
+	};*/
 	
 	private IServiceListener serviceAddedRemoveListener = new IServiceListener() {
 		@Override
 		public void serviceChanged(int type, ServiceItem item) {
 			if(type == IServiceListener.SERVICE_ADD) {
-				//parseServiceAdded(item);
+				parseServiceAdded(item);
 			}else if(type == IServiceListener.SERVICE_REMOVE) {
 				serviceRemoved(item);
 			}else if(type == IServiceListener.SERVICE_DATA_CHANGE) {
@@ -152,11 +158,7 @@ public class PubSubManager {
 	};
 	
 	public void init1() {
-		if(!enable) {
-			//不启用pubsub Server功能，此运行实例是一个
-			logger.info("Pubsub server is disable by config [/PubSubManager/enable]");
-			return;
-		}
+		initPubSubServer();
 		
 		/*if(pubSubServers.isEmpty()) {
 			throw new CommonException("No pubsub server found, pubsub is disable!");
@@ -178,6 +180,14 @@ public class PubSubManager {
 			}
 		});	
 		*/
+	}
+	
+	private void initPubSubServer() {
+		if(!enableServer) {
+			//不启用pubsub Server功能，此运行实例是一个
+			logger.info("Pubsub server is disable by config [/PubSubManager/enable]");
+			return;
+		}
 		Set<String> children = this.dataOp.getChildren(Config.PubSubDir);
 		for(String t : children) {
 			Set<String>  subs = this.dataOp.getChildren(Config.PubSubDir+"/"+t);
@@ -186,7 +196,7 @@ public class PubSubManager {
 			}
 		}
 		
-		srvManager.addListener(serviceParseListener);
+		srvManager.addListener(serviceAddedRemoveListener);
 	}
 	
 	protected void serviceDataChange(ServiceItem item) {
@@ -214,11 +224,11 @@ public class PubSubManager {
 			
 			this.notifySubListener(ISubsListener.SUB_REMOVE, sm.getTopic(), sm.getKey(), null);
 		}
-		String key = item.serviceName();
+		/*String key = item.serviceName();
 		if(srvs.containsKey(key)) {
 			srvs.remove(key);
 		}
-		registry.removeServiceListener(key, serviceAddedRemoveListener);
+		registry.removeServiceListener(key, serviceAddedRemoveListener);*/
 		
 	}
 
@@ -251,11 +261,11 @@ public class PubSubManager {
 			}
 		}
 		
-		String key = item.serviceName();
+		/*String key = item.serviceName();
 		if(flag && !srvs.containsKey(key)) {
 			srvs.put(key, true);
 			registry.addExistsServiceListener(key, serviceAddedRemoveListener);
-		}
+		}*/
 	}
 
 	/*public void addTopicListener(ITopicListener l) {
@@ -339,9 +349,9 @@ public class PubSubManager {
 
 	private boolean subscribe(Map<String,String> context,ServiceMethod sm) {
 		String p = this.getPath(sm);
-		String cxt = context == null ? "":JsonUtils.getIns().toJson(context);
+		String cxt = context == null ? "{ip:'localhost'}":JsonUtils.getIns().toJson(context);
 		if(!dataOp.exist(p)) {
-			dataOp.createNode(p,cxt,true);
+			dataOp.createNode(p, cxt, true);
 		}
 		return true;
 	}
@@ -353,8 +363,11 @@ public class PubSubManager {
 	}
 	
 	private String getPath(ServiceMethod sm) {
-		String p = Config.PubSubDir+"/" + sm.getTopic().replaceAll("/", "_")+"/"+sm.getKey().toKey(false, false, false);
-	    return p;
+		String p = Config.PubSubDir+"/" + sm.getTopic().replaceAll("/", "_");
+		String key = sm.getKey().toKey(false, false, false);
+		key = key.replaceAll("/","_");
+		key = key.substring(0, key.length()-1);
+	    return p+"/"+key;
 	}
 
 	private void notifySubListener(byte type,String topic,UniqueServiceMethodKey k,Map<String,String> context) {
@@ -375,8 +388,8 @@ public class PubSubManager {
 		
 	}
 
-	public boolean isEnable() {
-		return enable;
+	public boolean isEnableServer() {
+		return this.enableServer;
 	}
 	
 }

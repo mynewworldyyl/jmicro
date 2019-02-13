@@ -120,6 +120,7 @@ public class ZKDataOperator implements IDataOperator{
 	    	  watchChildren(path);
 	    	  childrenChange(path);
 	      }else if(event.getType() == EventType.NodeDeleted){
+	    	  logger.info("NodeDeleted for path:'{}'  evnet:{}",path, event);
 	    	  //watchNode(path);
 	    	  nodeDelete(path);
 	      }else if(event.getType() == EventType.NodeCreated){
@@ -459,7 +460,7 @@ public class ZKDataOperator implements IDataOperator{
 			}
 			return;
 		}
-		String[] ps = path.split("/");
+		String[] ps = path.trim().split("/");
 		String p="";
 		for(int i=1; i < ps.length-1; i++){
 			p = p + "/"+ ps[i];

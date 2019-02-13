@@ -110,19 +110,22 @@ public class ServiceManager {
 		dataOperator.addChildrenListener(Config.ServiceRegistDir, new IChildrenListener() {
 			@Override
 			public void childrenChanged(int type,String parent, String child,String data) {
+				String p = parent+"/"+child;
 				if(IListener.SERVICE_ADD == type) {
-					childrenAdd(parent+"/"+child,data);
+					logger.debug("Service add,path:{},data:{}",p,data);
+					childrenAdd(p,data);
 				}else if(IListener.SERVICE_REMOVE == type) {
-					childrenRemove(parent+"/"+child);
+					logger.debug("Service remove, path:{}",p);
+					serviceRemove(p);
 				}else if(IListener.SERVICE_DATA_CHANGE == type){
-					//refleshChildrenUpdate(parent,child,data);
+					logger.debug("Invalid service data change event, path:{}",p);
 				}
 			}
 		});
 		refleshChildren();
 	}
 	
-	private void refleshChildren() {
+	private synchronized void refleshChildren() {
 		Set<String> children = this.dataOperator.getChildren(Config.ServiceRegistDir);
 		for(String child : children) {
 			String path = Config.ServiceRegistDir+"/"+child;
@@ -132,7 +135,7 @@ public class ServiceManager {
 		
 	}
 
-	protected void childrenAdd(String path, String data) {
+	protected synchronized void childrenAdd(String path, String data) {
 		ServiceItem i = this.fromJson(data);
 		if(i == null){
 			logger.warn("Item NULL,path:{},data:{}",path,data);
@@ -160,15 +163,13 @@ public class ServiceManager {
 			//dataOperator.addNodeListener(path, nodeListener);
 			dataOperator.addDataListener(path, this.dataListener);
 			//dataOperator.addDataListener(i.path(Config.ServiceItemCofigDir), this.cfgDataListener);
+		}else {
+			logger.debug("Service add event but exists: {}",path);
 		}
 		
 	}
 	
-	protected void childrenRemove(String path) {
-		serviceRemove(path);
-	}
-	
-	public void addServiceListener(String srvPath,IServiceListener lis) {
+	public synchronized void addServiceListener(String srvPath,IServiceListener lis) {
 		HashMap<String,Set<IServiceListener>> serviceListeners = this.serviceListeners;
 		if(serviceListeners.containsKey(srvPath)){
 			Set<IServiceListener> l = serviceListeners.get(srvPath);
@@ -194,7 +195,7 @@ public class ServiceManager {
 		}
 	}
 	
-	public void removeServiceListener(String key, IServiceListener lis) {
+	public synchronized void removeServiceListener(String key, IServiceListener lis) {
 		HashMap<String,Set<IServiceListener>> serviceListeners = this.serviceListeners;
 		if(!serviceListeners.containsKey(key)){
 			return;
@@ -222,7 +223,7 @@ public class ServiceManager {
 		}
 	}
 	
-	public void removeListener(IServiceListener lis) {
+	public synchronized void removeListener(IServiceListener lis) {
 		if(this.listeners.contains(lis)) {
 			this.listeners.remove(lis);
 		}
@@ -246,7 +247,7 @@ public class ServiceManager {
 		dataOperator.deleteNode(path);
 	}
 	
-	public ServiceItem getItem(String path) {
+	public synchronized ServiceItem getItem(String path) {
 		if(this.path2SrvItems.containsKey(path)) {
 			return this.path2SrvItems.get(path);
 		}
@@ -255,7 +256,7 @@ public class ServiceManager {
 		return this.path2SrvItems.get(path);
 	}
 	
-	public Set<ServiceItem> getServiceItems(String srvPrefix) {
+	public synchronized Set<ServiceItem> getServiceItems(String srvPrefix) {
 		Set<ServiceItem> sets = new HashSet<>();
 		this.path2SrvItems.forEach((key,val) -> {
 			//logger.debug("prefix {}, key: {}" ,srvPrefix,key);
@@ -266,7 +267,7 @@ public class ServiceManager {
 		return sets;
 	}
 	
-	public Set<ServiceItem> getAllItems() {
+	public synchronized Set<ServiceItem> getAllItems() {
 		Set<ServiceItem> sets = new HashSet<>();
 		sets.addAll(this.path2SrvItems.values());
 		return sets;
@@ -322,8 +323,11 @@ public class ServiceManager {
 		}
 		
 		if(si == null) {
+			logger.warn("Remove not exists service:{}",path);
 			return;
 		}
+		
+		logger.warn("Remove service:{}",path);
 		//path = si.path(Config.ServiceRegistDir);
 		this.notifyServiceChange(IServiceListener.SERVICE_REMOVE, si, path);
 		this.dataOperator.removeDataListener(path, dataListener);
@@ -384,7 +388,7 @@ public class ServiceManager {
 		}
 	}
 	
-	private boolean isChange(ServiceItem si,String path) {
+	private  boolean isChange(ServiceItem si,String path) {
 		Integer hash = HashUtils.FNVHash1(JsonUtils.getIns().toJson(si));
 		
 		if(this.path2Hash.containsKey(path) && hash.equals(this.path2Hash.get(path))) {

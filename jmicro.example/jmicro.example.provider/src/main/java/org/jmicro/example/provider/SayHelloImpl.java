@@ -59,9 +59,9 @@ public class SayHelloImpl implements ISayHello {
 		
 		Map<Integer,Double> ps = (Map<Integer,Double>)data.getData();
 		
-		logger.info("总请求:{}, 总响应:{}, TO:{}, TOF:{}, QPS:{}",
-				ps.get(MonitorConstant.CLIENT_REQ_BEGIN),
-				ps.get(MonitorConstant.STATIS_TOTAL_RESP)
+		logger.info("总请求:{}, 总响应:{}, TO:{}, TOF:{}, QPS:{}"
+				,ps.get(MonitorConstant.CLIENT_REQ_BEGIN)
+				,ps.get(MonitorConstant.STATIS_TOTAL_RESP)
 				,ps.get(MonitorConstant.CLIENT_REQ_TIMEOUT)
 				,ps.get(MonitorConstant.CLIENT_REQ_TIMEOUT_FAIL)
 				,ps.get(MonitorConstant.STATIS_QPS)

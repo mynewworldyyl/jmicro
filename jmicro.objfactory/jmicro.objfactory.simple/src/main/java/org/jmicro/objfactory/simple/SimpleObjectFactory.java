@@ -836,6 +836,8 @@ public class SimpleObjectFactory implements IObjectFactory {
 				setObjectVal(obj, f, srv);
 			} else if(isRequired) {
 				throw new CommonException("Class ["+cls.getName()+"] field ["+ f.getName()+"] dependency ["+f.getType().getName()+"] not found");
+			} else {
+				logger.warn("Class ["+cls.getName()+"] field ["+ f.getName()+"] dependency ["+f.getType().getName()+"] not found");
 			}
 			
 		}
