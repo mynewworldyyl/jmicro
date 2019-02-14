@@ -23,7 +23,6 @@ import org.jmicro.api.JMicroContext;
 import org.jmicro.api.annotation.Cfg;
 import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.Inject;
-import org.jmicro.api.breaker.BreakerManager;
 import org.jmicro.api.client.AbstractClientServiceProxy;
 import org.jmicro.api.config.Config;
 import org.jmicro.api.idgenerator.ComponentIdServer;
@@ -56,9 +55,6 @@ public class ServiceInvocationHandler implements InvocationHandler{
 	
 	@Inject
 	private ComponentIdServer idGenerator;
-	
-	@Inject
-	private BreakerManager breakerManager;
 	
 	public ServiceInvocationHandler(){}
 	

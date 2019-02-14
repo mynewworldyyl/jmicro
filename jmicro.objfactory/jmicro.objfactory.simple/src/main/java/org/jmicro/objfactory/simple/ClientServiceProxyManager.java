@@ -30,6 +30,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import org.jmicro.api.annotation.Reference;
 import org.jmicro.api.annotation.Service;
+import org.jmicro.api.classloader.RpcClassLoader;
 import org.jmicro.api.client.AbstractClientServiceProxy;
 import org.jmicro.api.monitor.IMonitorDataSubmiter;
 import org.jmicro.api.objectfactory.ProxyObject;
@@ -103,12 +104,17 @@ class ClientServiceProxyManager {
 			try {
 				 return this.getClass().getClassLoader().loadClass(clsName);
 			} catch (ClassNotFoundException e1) {
+				if(cl == null) {
+					cl = of.get(RpcClassLoader.class);
+				}
+				
 				if(cl != null) {
 					try {
 						return cl.loadClass(clsName);
 					} catch (ClassNotFoundException e2) {
 					}
 				}
+				
 				throw new CommonException("class["+clsName+"] not found",e);
 			}
 		}

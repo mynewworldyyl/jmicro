@@ -4,8 +4,6 @@ import java.util.Random;
 
 import org.jmicro.api.JMicro;
 import org.jmicro.api.JMicroContext;
-import org.jmicro.api.config.Config;
-import org.jmicro.api.monitor.IMonitorDataSubmiter;
 import org.jmicro.api.objectfactory.IObjectFactory;
 import org.jmicro.example.api.ISayHello;
 

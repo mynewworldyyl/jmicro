@@ -143,7 +143,7 @@ public class ServiceManager {
 		}
 		
 		if(this.path2Hash.containsKey(path)) {
-			logger.warn("Item exists,path:{},data:{}",path,data);
+			logger.warn("Item exists,path:{}",path);
 			return;
 		}
 		
@@ -152,7 +152,7 @@ public class ServiceManager {
 		
 		boolean flag = this.path2Hash.containsKey(path);
 		
-		if(!this.isChange(i, path)) {
+		if(!this.isChange(i, data, path)) {
 			logger.warn("Service Item no change {}",path);
 			return;
 		}
@@ -310,7 +310,7 @@ public class ServiceManager {
 	}
 	
 	public ServiceItem getServiceByServiceMethod(ServiceMethod sm) {
-		String path = ServiceItem.pathForKey(sm.getKey().toKey(true, true, false));
+		String path = ServiceItem.pathForKey(sm.getKey().getUsk().toKey(true, true, true));
 		ServiceItem item = this.path2SrvItems.get(path);
 		return item;
 	}
@@ -351,7 +351,7 @@ public class ServiceManager {
 				srvItem = this.path2SrvItems.get(srvPath);
 			}
 			srvItem.formPersisItem(si);
-			if(!this.isChange(srvItem, srvPath)) {
+			if(!this.isChange(srvItem,data, srvPath)) {
 				//没有改变,接返回
 				return;
 			}
@@ -359,7 +359,7 @@ public class ServiceManager {
 			si = srvItem;
 			path = srvPath;
 		} else {
-			if(!this.isChange(si, path)) {
+			if(!this.isChange(si,data, path)) {
 				//没有改变,接返回
 				return;
 			}
@@ -388,8 +388,11 @@ public class ServiceManager {
 		}
 	}
 	
-	private  boolean isChange(ServiceItem si,String path) {
-		Integer hash = HashUtils.FNVHash1(JsonUtils.getIns().toJson(si));
+	private  boolean isChange(ServiceItem si,String json,String path) {
+		if(json == null) {
+			json = JsonUtils.getIns().toJson(si);
+		}
+		Integer hash = HashUtils.FNVHash1(json);
 		
 		if(this.path2Hash.containsKey(path) && hash.equals(this.path2Hash.get(path))) {
 			return false;
@@ -413,7 +416,7 @@ public class ServiceManager {
 		
 		boolean flag = this.path2Hash.containsKey(path);
 		
-		if(!this.isChange(i, path)) {
+		if(!this.isChange(i,data, path)) {
 			logger.warn("Service Item no change {}",path);
 			return;
 		}

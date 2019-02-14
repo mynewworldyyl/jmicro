@@ -102,6 +102,7 @@
 		<module>jmicro.etcd</module>
 		<module>jmicro.classloader</module>
 		<module>jmicro.choreography</module>
+		<module>jmicro.breaker</module>
 		<module>jmicro.test</module>
     </modules>
 
@@ -115,6 +116,11 @@
 			 <dependency>
                  <groupId>org.jmicro</groupId>
 				 <artifactId>jmicro.redis</artifactId>
+				 <version>${jmicro.version}</version>
+            </dependency>
+			 <dependency>
+                 <groupId>org.jmicro</groupId>
+				 <artifactId>jmicro.breaker</artifactId>
 				 <version>${jmicro.version}</version>
             </dependency>
 			 <dependency>
@@ -205,11 +211,6 @@
         	<dependency>
 			 <groupId>org.jmicro</groupId>
 			 <artifactId>jmicro.monitor.memory</artifactId>
-			 <version>${jmicro.version}</version>
-			 </dependency>
-			 <dependency>
-			 <groupId>org.jmicro</groupId>
-			 <artifactId>jmicro.monitor.breaker</artifactId>
 			 <version>${jmicro.version}</version>
 			 </dependency>
 			 <dependency>

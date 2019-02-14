@@ -1,4 +1,4 @@
-package org.jmicro.api.breaker;
+package org.jmicro.breaker.api;
 
 import java.io.UnsupportedEncodingException;
 import java.lang.reflect.InvocationTargetException;
@@ -25,7 +25,7 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.Inject;
-import org.jmicro.api.codec.OnePrefixDecoder;
+import org.jmicro.api.codec.PrefixTypeDecoder;
 import org.jmicro.api.objectfactory.IObjectFactory;
 import org.jmicro.api.registry.ServiceMethod;
 import org.jmicro.api.registry.UniqueServiceMethodKey;
@@ -59,14 +59,14 @@ public class BreakerManager implements ITickerAction{
 	private IObjectFactory of;
 	
 	@Inject
-	private OnePrefixDecoder decoder;
+	private PrefixTypeDecoder decoder;
 	
 	public void init(){
 		
 	}
 
 	public void breakService(ServiceMethod sm) {
-		String key = sm.getKey().toKey(true, true, true);
+		String key = sm.getKey().getUsk().toKey(true, true, true);
 		srvManager.breakService(sm);
 		long interval = TimeUtils.getMilliseconds(sm.getBreakingRule().getCheckInterval(), sm.getBaseTimeUnit());
 		if(sm.isBreaking()) {
@@ -78,6 +78,9 @@ public class BreakerManager implements ITickerAction{
 		}
 	}
 
+	/**
+	 * 按指定时间间隔，调用已经熔断的服务方法，直到熔断器关闭
+	 */
 	@Override
 	public void act(String key, Object attachement) {
 		ServiceMethod sm = (ServiceMethod)attachement;
@@ -104,7 +107,7 @@ public class BreakerManager implements ITickerAction{
 		
 		try {
 			Method m = srv.getClass().getMethod(sm.getKey().getMethod(), paramsTypeArr);
-			m.invoke(srv, args);
+			m.invoke(srv, "are you ok");
 		} catch (NoSuchMethodException | SecurityException | IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
 			logger.error("act",e);
 			throw new CommonException("act",e);
@@ -114,7 +117,7 @@ public class BreakerManager implements ITickerAction{
 	private Object[] getParams(String testingArgs) {
 		try {
 			byte[] data = Base64Utils.decode(testingArgs.getBytes(Constants.CHARSET));
-			Object[] args = (Object[]) this.decoder.decode(ByteBuffer.wrap(data));
+			Object[] args = this.decoder.decode(ByteBuffer.wrap(data));
 			return args;
 		} catch (UnsupportedEncodingException e) {
 			logger.error("",e);

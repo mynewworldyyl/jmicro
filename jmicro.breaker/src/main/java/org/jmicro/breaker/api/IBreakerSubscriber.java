@@ -1,4 +1,4 @@
-package org.jmicro.monitor.breaker.api;
+package org.jmicro.breaker.api;
 
 import org.jmicro.api.annotation.Service;
 import org.jmicro.api.pubsub.PSData;

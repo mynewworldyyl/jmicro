@@ -94,6 +94,7 @@ public class ServiceReqMonitor extends AbstractMonitorDataSubscriber implements 
 			//1分钟没有数据更新，服务在停用状态，不需要再更新其统计数据，直到下一次有数据更新为止
 			TimerTicker.getTimer(timers,TimeUtils.getMilliseconds(sm.getCheckInterval(),
 					sm.getBaseTimeUnit())).removeListener(key,false);
+			return;
 		}
 		
 		//提交数据到ZK

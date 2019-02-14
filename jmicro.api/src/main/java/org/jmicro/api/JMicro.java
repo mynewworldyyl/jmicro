@@ -28,7 +28,7 @@ import java.util.Set;
 
 import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.ObjFactory;
-import org.jmicro.api.codec.OnePrefixTypeEncoder;
+import org.jmicro.api.codec.PrefixTypeEncoder;
 import org.jmicro.api.config.Config;
 import org.jmicro.api.objectfactory.IObjectFactory;
 import org.jmicro.api.objectfactory.ProxyObject;
@@ -181,9 +181,9 @@ public class JMicro {
 							System.out.println("no need args for testing");
 							return null;
 						}
-						OnePrefixTypeEncoder encoder = new OnePrefixTypeEncoder();
+						PrefixTypeEncoder encoder = new PrefixTypeEncoder();
 						ByteBuffer bb = encoder.encode(args);
-						bb.flip();
+						//bb.flip();
 						byte[] data = new byte[bb.remaining()];
 						bb.get(data, 0, bb.limit());
 						String str = new String(Base64Utils.encode(data),Constants.CHARSET);

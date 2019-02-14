@@ -1,4 +1,4 @@
-package org.jmicro.monitor.breaker.impl;
+package org.jmicro.breaker.impl;
 
 import java.util.Map;
 
@@ -7,7 +7,6 @@ import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.Inject;
 import org.jmicro.api.annotation.Service;
 import org.jmicro.api.annotation.Subscribe;
-import org.jmicro.api.breaker.BreakerManager;
 import org.jmicro.api.degrade.DegradeManager;
 import org.jmicro.api.monitor.MonitorConstant;
 import org.jmicro.api.pubsub.PSData;
@@ -15,12 +14,13 @@ import org.jmicro.api.registry.BreakRule;
 import org.jmicro.api.registry.ServiceItem;
 import org.jmicro.api.registry.ServiceMethod;
 import org.jmicro.api.service.ServiceManager;
+import org.jmicro.breaker.api.BreakerManager;
+import org.jmicro.breaker.api.IBreakerSubscriber;
 import org.jmicro.common.Constants;
-import org.jmicro.monitor.breaker.api.IBreakerSubscriber;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-@Service(namespace="org.jmicro.monitor.breaker.api.IBreakerSubscriber")
+@Service(namespace="org.jmicro.breaker.api.IBreakerSubscriber")
 @Component
 public class BreakerSubscriberImpl implements IBreakerSubscriber{
 
@@ -63,7 +63,7 @@ public class BreakerSubscriberImpl implements IBreakerSubscriber{
 		
 		ServiceItem si = this.serviceManager.getServiceByServiceMethod(sm);
 		if(si == null) {
-			logger.error("Service not found:{}",sm.getKey().toKey(true, true, true));
+			logger.error("Service not found:{}",sm.getKey().getUsk().toKey(true, true, true));
 			return;
 		}
 		
@@ -79,7 +79,6 @@ public class BreakerSubscriberImpl implements IBreakerSubscriber{
 		}
 		
 		BreakRule rule = sm.getBreakingRule();
-		
 
 		if(sm.isBreaking()) {
 			//已经熔断,算成功率,判断是否关闭熔断器

@@ -14,7 +14,6 @@
     </properties>
     <modules>
 		<module>jmicro.monitor.dashboard</module>
-		<module>jmicro.monitor.breaker</module>
 		<module>jmicro.monitor.submiter</module>
     </modules>
 </project>

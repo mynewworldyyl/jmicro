@@ -1,4 +1,4 @@
-package org.jmicro.monitor.breaker;
+package org.jmicro.client;
 
 import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.Interceptor;
@@ -9,7 +9,6 @@ import org.jmicro.api.net.IInterceptor;
 import org.jmicro.api.net.IRequest;
 import org.jmicro.api.net.IRequestHandler;
 import org.jmicro.api.net.IResponse;
-import org.jmicro.client.FirstClientInterceptor;
 import org.jmicro.common.Constants;
 
 @Component(side=Constants.SIDE_COMSUMER)
