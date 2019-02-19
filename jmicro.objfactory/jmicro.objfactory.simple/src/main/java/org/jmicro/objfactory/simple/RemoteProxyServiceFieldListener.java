@@ -28,6 +28,7 @@ import org.jmicro.api.client.AbstractClientServiceProxy;
 import org.jmicro.api.objectfactory.ProxyObject;
 import org.jmicro.api.registry.IServiceListener;
 import org.jmicro.api.registry.ServiceItem;
+import org.jmicro.api.registry.UniqueServiceKey;
 import org.jmicro.common.CommonException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -49,6 +50,10 @@ class RemoteProxyServiceFieldListener implements IServiceListener{
 	
 	private ClientServiceProxyManager rsm;
 	
+	private Reference ref = null;
+	
+	private Class<?> srvType = null;
+	
 	/**
 	 * 
 	 * @param rsm
@@ -56,7 +61,8 @@ class RemoteProxyServiceFieldListener implements IServiceListener{
 	 * @param srcObj 引用代理对象或集合对象的对象，当代理对象或集合对象里的代理对像发生改变时，将收到通知
 	 * @param refField 代理对象或集合对象的类型声明字段，属于srcObj的成员
 	 */
-	RemoteProxyServiceFieldListener(ClientServiceProxyManager rsm,Object proxy,Object srcObj,Field refField){
+	RemoteProxyServiceFieldListener(ClientServiceProxyManager rsm,Object proxy,Object srcObj
+			,Field refField){
 		if(proxy== null){
 			throw new CommonException("Proxy object cannot be null: "+ refField.getDeclaringClass().getName()+",field: " + refField.getName());
 		}
@@ -65,11 +71,22 @@ class RemoteProxyServiceFieldListener implements IServiceListener{
 		
 		this.srcObj = srcObj;
 		this.refField = refField;
+		this.ref = refField.getAnnotation(Reference.class);
+		srvType = rsm.getEltType(refField);
 	}
 
 	@SuppressWarnings("unchecked")
 	@Override
 	public void serviceChanged(int type, ServiceItem item) {
+		
+		if(!item.getKey().getServiceName().equals(srvType.getName())) {
+			return;
+		}
+		
+		if(!UniqueServiceKey.matchVersion(ref.version(),item.getKey().getVersion()) || 
+				!UniqueServiceKey.matchNamespace(ref.namespace(),item.getKey().getNamespace())) {
+				return;
+		}
 		
 		if(Set.class.isAssignableFrom(refField.getType()) 
 				|| List.class.isAssignableFrom(refField.getType())){

@@ -71,24 +71,6 @@
 			 <artifactId>jmicro.idgenerator</artifactId>
         </dependency>
         
-        <!-- 监控 -->
-        <!--  <dependency>
-			 <groupId>org.jmicro</groupId>
-			 <artifactId>jmicro.main.monitor.exception</artifactId>
-        </dependency> -->
-        
-         <!-- 发布订阅服务 -->
-       <!--   <dependency>
-			 <groupId>org.jmicro</groupId>
-			 <artifactId>jmicro.pubsub</artifactId>
-        </dependency> -->
-        
-         <!-- 服务熔断器 -->
-       <!--  <dependency>
-			 <groupId>org.jmicro</groupId>
-			 <artifactId>jmicro.monitor.breaker</artifactId>
-        </dependency> -->
-        
          <dependency>
 			 <groupId>org.jmicro</groupId>
 			 <artifactId>jmicro.classloader.client</artifactId>

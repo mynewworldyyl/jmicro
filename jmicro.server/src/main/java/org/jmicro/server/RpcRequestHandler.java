@@ -52,15 +52,13 @@ public class RpcRequestHandler extends AbstractHandler implements IRequestHandle
 		RpcResponse resp = null;
 		try {
 			Method m = getServiceMethod(obj, request);
-			if(m != null) {
-				/*if(m.getName().equals("publishData")) {
-					logger.debug("debug info");;
-				}*/
-				Object result = m.invoke(obj, request.getArgs());
-				resp = new RpcResponse(request.getRequestId(),result);
-				resp.setMonitorEnable(request.isMonitorEnable());
-				resp.setSuccess(true);
-			}
+			/*if(m.getName().equals("publishData")) {
+			logger.debug("debug info");
+			}*/
+			Object result = m.invoke(obj, request.getArgs());
+			resp = new RpcResponse(request.getRequestId(),result);
+			resp.setMonitorEnable(request.isMonitorEnable());
+			resp.setSuccess(true);
 		} catch (SecurityException | IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
 			throw new RpcException(request,"",e);
 		}

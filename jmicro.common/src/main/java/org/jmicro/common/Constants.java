@@ -96,6 +96,12 @@ public interface Constants {
 	public static final String TRANSPORT_NETTY = "netty";
 	public static final String TRANSPORT_NETTY_HTTP = "nettyhttp";
 	
+	public static final String BREAKER_TEST_CONTEXT = "breakerTestContext";
+	
+	public static final String REF_ANNO = "referenceAnno";
+	
+	public static final String DIRECT_SERVICE_ITEM = "directServiceItem";
+	
     public static final int TYPE_HTTP = 1;
 	public static final int TYPE_SOCKET = 2;
 	public static final int TYPE_WEBSOCKET = 3;

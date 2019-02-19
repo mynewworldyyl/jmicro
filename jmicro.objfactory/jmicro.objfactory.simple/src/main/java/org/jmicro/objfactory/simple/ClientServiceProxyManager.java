@@ -32,7 +32,6 @@ import org.jmicro.api.annotation.Reference;
 import org.jmicro.api.annotation.Service;
 import org.jmicro.api.classloader.RpcClassLoader;
 import org.jmicro.api.client.AbstractClientServiceProxy;
-import org.jmicro.api.monitor.IMonitorDataSubmiter;
 import org.jmicro.api.objectfactory.ProxyObject;
 import org.jmicro.api.registry.IRegistry;
 import org.jmicro.api.registry.ServiceItem;
@@ -189,7 +188,7 @@ class ClientServiceProxyManager {
 		return proxy;
 	}
 	
-	private Class<?> getEltType(Field f){
+	public Class<?> getEltType(Field f){
 
 		if(Collection.class.isAssignableFrom(f.getType())){
 			ParameterizedType genericType = (ParameterizedType) f.getGenericType();
@@ -210,7 +209,7 @@ class ClientServiceProxyManager {
 		IRegistry registry = of.get(IRegistry.class);
 		boolean existsItem = false;
 		if(ref.required() ) {
-			existsItem = registry.isExists(ctype.getName());
+			existsItem = registry.isExists(ctype.getName(),ref.namespace(),ref.version());
 			if(!existsItem) {
 				StringBuffer sb = new StringBuffer("Class [");
 				sb.append(becls.getName()).append("] field [").append(f.getName())
@@ -282,7 +281,9 @@ class ClientServiceProxyManager {
 		//集合服务引用根据服务名称做监听，只要匹配名称的服务都加入集合里面
 		//集合元素唯一性是服务名称，名称空间，版本
 		//registry.addServiceNameListener(ctype.getName(), lis);
-		registry.addExistsServiceNameListener(ctype.getName(), lis);
+		//registry.addExistsServiceNameListener(ctype.getName(), lis);
+		
+		registry.addServiceNameListener(ctype.getName(), lis);
 		
 		exists.clear();
 		exists = null;
@@ -405,7 +406,7 @@ class ClientServiceProxyManager {
        	    clazz.getField("ms").set(null, ms);
 			@SuppressWarnings("unchecked")
 			T proxy = (T)clazz.newInstance();
-			return proxy; 
+			return proxy;
 		} catch (InstantiationException | IllegalArgumentException | IllegalAccessException | NoSuchFieldException | SecurityException e1) {
 			throw new CommonException("Fail to create proxy ["+ cls.getName()+"]");
 		} 

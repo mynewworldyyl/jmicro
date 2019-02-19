@@ -55,7 +55,7 @@ public class TestServiceManager extends JMicroBaseTestCase{
 	@Test
 	public void testGetServiceItem() {
 		sayHelloServiceItem();
-		Set<ServiceItem> sis = this.get(ServiceManager.class).getServiceItems("/jmicro/services");
+		Set<ServiceItem> sis = this.get(ServiceManager.class).getAllItems();
 		Assert.assertNotNull(sis);
 		Assert.assertFalse(sis.isEmpty());
 	}

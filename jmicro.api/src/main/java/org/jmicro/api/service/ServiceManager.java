@@ -30,10 +30,13 @@ import org.jmicro.api.raft.IDataOperator;
 import org.jmicro.api.registry.IServiceListener;
 import org.jmicro.api.registry.ServiceItem;
 import org.jmicro.api.registry.ServiceMethod;
+import org.jmicro.api.registry.UniqueServiceKey;
 import org.jmicro.api.registry.UniqueServiceMethodKey;
+import org.jmicro.common.CommonException;
 import org.jmicro.common.Constants;
 import org.jmicro.common.HashUtils;
 import org.jmicro.common.util.JsonUtils;
+import org.jmicro.common.util.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -256,12 +259,21 @@ public class ServiceManager {
 		return this.path2SrvItems.get(path);
 	}
 	
-	public synchronized Set<ServiceItem> getServiceItems(String srvPrefix) {
+	public synchronized Set<ServiceItem> getServiceItems(String serviceName,String namespace,String version) {
+		if(StringUtils.isEmpty(serviceName)) {
+			throw new CommonException("Service Name cannot be null");
+		}
 		Set<ServiceItem> sets = new HashSet<>();
-		this.path2SrvItems.forEach((key,val) -> {
+		this.path2SrvItems.forEach((key,si) -> {
 			//logger.debug("prefix {}, key: {}" ,srvPrefix,key);
-			if(key.indexOf(srvPrefix) > 0 || key.startsWith(srvPrefix)) {
-				sets.add(val);
+			if(si.getKey().getServiceName().equals(serviceName)) {
+				if(StringUtils.isEmpty(version) && StringUtils.isEmpty(namespace)) {
+					sets.add(si);
+				}else if(UniqueServiceKey.matchVersion(version,si.getKey().getVersion())
+					&& UniqueServiceKey.matchNamespace(namespace,si.getKey().getNamespace())) {
+					sets.add(si);
+					}
+				
 			}
 		});
 		return sets;

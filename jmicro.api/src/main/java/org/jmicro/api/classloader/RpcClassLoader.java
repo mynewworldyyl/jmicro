@@ -25,7 +25,12 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+import org.jmicro.api.JMicroContext;
+import org.jmicro.api.annotation.Inject;
 import org.jmicro.api.annotation.Reference;
+import org.jmicro.api.registry.IRegistry;
+import org.jmicro.api.registry.ServiceItem;
+import org.jmicro.common.Constants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -37,8 +42,17 @@ public class RpcClassLoader extends AbstractClientClassLoader {
     private Map<String,Class<?>> clazzes = new HashMap<>();
     private Map<String,byte[]> clazzesData = new HashMap<>();
     
+    //@Cfg(value="")
+    private Set<String> validRemoteLoaderPackages = new HashSet<>();
+    
+    //@Reference
+	//private Set<IClassloaderRpc> rpcLoaders = new HashSet<>();
+    
+    @Inject
+    private IRegistry registry;
+    
     @Reference
-	private Set<IClassloaderRpc> rpcLoaders = new HashSet<>();
+    private IClassloaderRpc rpcLlassloader = null;
     
     private ClassLoader parent = null;
 
@@ -99,13 +113,16 @@ public class RpcClassLoader extends AbstractClientClassLoader {
 			return clazzesData.get(className);
 		}else {
 			byte[] bytes=null;
-	         for(IClassloaderRpc rpc: this.rpcLoaders) {
-	        	bytes = rpc.getClassData(className);
+			Set<ServiceItem> items = this.registry.getServices(IClassloaderRpc.class.getName());
+	         for(ServiceItem si: items) {
+	        	JMicroContext.get().setParam(Constants.DIRECT_SERVICE_ITEM, si);
+	        	bytes = this.rpcLlassloader.getClassData(className);
 	        	if(bytes != null && bytes.length > 0) {
-	        		logger.warn("load class {} from {} ",className,rpc.info());
+	        		logger.warn("load class {} from {} ",className,si.getKey().toKey(true, true, true));
 	        		break;
 	        	}
 	         }
+	         JMicroContext.get().removeParam(Constants.DIRECT_SERVICE_ITEM);
 	         if(bytes != null && bytes.length > 0) {
 	        	 clazzesData.put(className, bytes);
 	         }
@@ -145,7 +162,7 @@ public class RpcClassLoader extends AbstractClientClassLoader {
 			return null;
 		}
 		
-    	if(this.rpcLoaders == null || this.rpcLoaders.isEmpty()) {
+    	if(this.rpcLlassloader == null) {
     		logger.error("RpcClassLoader is NULL when load:{}",className);
     		return null;
     	}

@@ -24,6 +24,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.jmicro.api.IWaitingAction;
+import org.jmicro.api.JMicroContext;
 import org.jmicro.api.annotation.Cfg;
 import org.jmicro.api.annotation.Component;
 import org.jmicro.api.config.Config;
@@ -57,10 +58,10 @@ public class ZKRegistry implements IRegistry {
 	 * 根据服务servicename, namespace, version三个值组成的KEY作为监听标准，增加删除都接收通知
 	 * item.serviceName() as key
 	 */
-	private Map<String,Set<IServiceListener>> snvListeners = new ConcurrentHashMap<>();
+	private Map<String,Set<IServiceListener>> snvKeyListeners = new ConcurrentHashMap<>();
 	
 	/**
-	 * 根据服务servicename一个值组成的KEY作为监听标准，增加删除都接收通知
+	 * 根据服务servicename(服务接口名称)一个值组成的KEY作为监听标准，增加删除都接收通知
 	 * item.getKey().getServiceName() as key
 	 */
 	private Map<String,Set<IServiceListener>> serviceNameListeners = new ConcurrentHashMap<>();
@@ -70,10 +71,10 @@ public class ZKRegistry implements IRegistry {
 	 * 存在性表示第一个服务实例进来，或最后一个服务实例删除时接收到通知
 	 * item.serviceName() as key
 	 */
-	private Map<String,Set<IServiceListener>> snvExistsListeners = new ConcurrentHashMap<>();
+	private Map<String,Set<IServiceListener>> snvKeyExistsListeners = new ConcurrentHashMap<>();
 	
 	/**
-	 * 根据服务servicename, 一个值组成的KEY作为监听标准，服务存在性监听
+	 * 根据服务servicename(服务接口名称), 一个值组成的KEY作为监听标准，服务存在性监听
 	 * 存在性表示第一个服务实例进来，或最后一个服务实例删除时接收到通知
 	 * item.getKey().getServiceName() as key
 	 */
@@ -163,24 +164,24 @@ public class ZKRegistry implements IRegistry {
 			int val = servicesCounters.get(key).incrementAndGet();
 			if(val == 1) {
 				//服务进来，服务存在性监听器
-				notifyListener(type,item,snvExistsListeners.get(key));
-				notifyListener(type,item,serviceNameExistsListeners.get(item.getKey().getServiceName()));
+				notifyListener(IServiceListener.SERVICE_ADD,item,snvKeyExistsListeners.get(key));
+				notifyListener(IServiceListener.SERVICE_ADD,item,serviceNameExistsListeners.get(item.getKey().getServiceName()));
 			}
 			
 			//全量监听
-			notifyListener(type,item,snvListeners.get(key));
+			notifyListener(type,item,snvKeyListeners.get(key));
 			notifyListener(type,item,serviceNameListeners.get(item.getKey().getServiceName()));
 			
 		} else if(type == IServiceListener.SERVICE_REMOVE) {
 			
 			if(servicesCounters.get(key) == null || servicesCounters.get(key).decrementAndGet() == 0) {
 				//最后一个服务删除，服务存在性监听器
-				notifyListener(type,item,snvExistsListeners.get(key));
-				notifyListener(type,item,serviceNameExistsListeners.get(item.getKey().getServiceName()));
+				notifyListener(IServiceListener.SERVICE_REMOVE,item,snvKeyExistsListeners.get(key));
+				notifyListener(IServiceListener.SERVICE_REMOVE,item,serviceNameExistsListeners.get(item.getKey().getServiceName()));
 			}
 			
 			//全量监听
-			notifyListener(type,item,snvListeners.get(key));
+			notifyListener(type,item,snvKeyListeners.get(key));
 			notifyListener(type,item,serviceNameListeners.get(item.getKey().getServiceName()));
 		}
 	}
@@ -203,12 +204,12 @@ public class ZKRegistry implements IRegistry {
 	 */
 	@Override
 	public void addExistsServiceListener(String key,IServiceListener lis) {
-		addServiceListener(this.snvExistsListeners,key,lis);	
+		addServiceListener(this.snvKeyExistsListeners,key,lis);	
 	}
 
 	@Override
 	public void removeExistsServiceListener(String key,IServiceListener lis) {
-		removeServiceListener(this.snvExistsListeners,key,lis);
+		removeServiceListener(this.snvKeyExistsListeners,key,lis);
 	}
 	
 	
@@ -217,12 +218,12 @@ public class ZKRegistry implements IRegistry {
 	 */
 	@Override
 	public void addServiceListener(String key,IServiceListener lis) {
-		addServiceListener(this.snvListeners,key,lis);	
+		addServiceListener(this.snvKeyListeners,key,lis);	
 	}
 
 	@Override
 	public void removeServiceListener(String key,IServiceListener lis) {
-		removeServiceListener(this.snvListeners,key,lis);
+		removeServiceListener(this.snvKeyListeners,key,lis);
 	}
 	
 	/**
@@ -358,9 +359,9 @@ public class ZKRegistry implements IRegistry {
 	}
 	
 	private boolean isExists0(String serviceName,final String namespace,final String version) {
-		String ns = UniqueServiceKey.namespace(namespace);
-		String v =  UniqueServiceKey.version(version);
-		Set<ServiceItem> sis = matchVersion(serviceName, ns, v);
+		//String ns = UniqueServiceKey.namespace(namespace);
+		//String v =  UniqueServiceKey.version(version);
+		Set<ServiceItem> sis = matchServiceItems(serviceName, namespace, version);
 		return sis != null && !sis.isEmpty();
 	}
 	
@@ -382,13 +383,13 @@ public class ZKRegistry implements IRegistry {
 	}
 	
 	private Set<ServiceItem> getServices0(String serviceName, String namespace, String version) {
-		namespace = UniqueServiceKey.namespace(namespace);
-		version = UniqueServiceKey.version(version);
+		//namespace = UniqueServiceKey.namespace(namespace);
+		//version = UniqueServiceKey.version(version);
 		//Set<ServiceItem> sis = this.serviceItems.get(ServiceItem.serviceName(serviceName, namespace, version));
-		Set<ServiceItem> sis = matchVersion(serviceName, namespace, version);
-		if(sis == null){
+		Set<ServiceItem> sis = matchServiceItems(serviceName, namespace, version);
+		/*if(sis == null){
 			return Collections.EMPTY_SET;
-		}		
+		}*/		
 		return sis;
 	}
 
@@ -400,9 +401,9 @@ public class ZKRegistry implements IRegistry {
 		if(this.needWaiting) {
 			logger.warn("Do getServices(String serviceName) waiting get serviceName:{}",serviceName);
 			setNeedWaiting();
-			return IWaitingAction.doAct(()->srvManager.getServiceItems(serviceName),null);
+			return IWaitingAction.doAct(()->srvManager.getServiceItems(serviceName,null,null),null);
 		} else {
-			return this.srvManager.getServiceItems(serviceName);
+			return this.srvManager.getServiceItems(serviceName,null,null);
 		}	
 	}
 
@@ -447,10 +448,10 @@ public class ZKRegistry implements IRegistry {
 	private Set<ServiceItem> getServices0(String serviceName,String method,Class<?>[] args
 			,String namespace,String version,String transport) {
 		
-		namespace = UniqueServiceKey.namespace(namespace);
-		version = UniqueServiceKey.version(version);
+		//namespace = UniqueServiceKey.namespace(namespace);
+		//version = UniqueServiceKey.version(version);
 		
-		Set<ServiceItem> sis = matchVersion(serviceName, namespace, version);
+		Set<ServiceItem> sis = matchServiceItems(serviceName, namespace, version);
 		
 		//this.serviceItems.get(ServiceItem.serviceName(serviceName, namespace, version));
 		
@@ -474,11 +475,16 @@ public class ZKRegistry implements IRegistry {
 			}
 		}
 		
-		if(set.isEmpty() && !breakings.isEmpty()){
-			throw new  BreakerException("Request services is breaking",breakings);
+		if(JMicroContext.get().getBoolean(Constants.BREAKER_TEST_CONTEXT, false)) {
+			return breakings;
 		} else {
-			return set;
+			if(set.isEmpty() && !breakings.isEmpty()){
+				throw new  BreakerException("Request services is breaking",breakings);
+			} else {
+				return set;
+			}
 		}
+		
 	}
 
 	private boolean checkTransport(ServiceItem si,String transport) {
@@ -488,15 +494,8 @@ public class ZKRegistry implements IRegistry {
 		return si.getServer(transport) != null;
 	}
 
-	private Set<ServiceItem> matchVersion(String serviceName,String namespace,String version){
-		Set<ServiceItem> set = new HashSet<ServiceItem>();
-		String prefix = UniqueServiceKey.snnsPrefix(serviceName,namespace).toString();
-		for(ServiceItem si : this.srvManager.getServiceItems(prefix)) {
-			if(UniqueServiceKey.matchVersion(version,si.getKey().getVersion())) {
-				set.add(si);
-			}
-		}
-		return set;
+	private Set<ServiceItem> matchServiceItems(String serviceName,String namespace,String version){
+		return this.srvManager.getServiceItems(serviceName,namespace,version);
 	}
 
 	/** +++++++++++++++++++++++Service QUERY for consumer END ++++++++++++++++++**/

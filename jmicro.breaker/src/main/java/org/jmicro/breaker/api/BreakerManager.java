@@ -7,6 +7,8 @@ import java.nio.ByteBuffer;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.jmicro.api.JMicro;
+import org.jmicro.api.JMicroContext;
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -49,6 +51,11 @@ import org.slf4j.LoggerFactory;
 public class BreakerManager implements ITickerAction{
 	
 	private final static Logger logger = LoggerFactory.getLogger(BreakerManager.class);
+	
+	public static void main(String[] args) {
+		JMicro.getObjectFactoryAndStart(new String[]{"-DinstanceName=Breaker"});
+		JMicro.waitForShutdown();
+	}
 	
 	private final Map<Long,TimerTicker> timers = new ConcurrentHashMap<>();
 	
@@ -98,19 +105,23 @@ public class BreakerManager implements ITickerAction{
 		}
 		
 		Class<?>[] paramsTypeArr = UniqueServiceMethodKey.paramsClazzes(sm.getKey().getParamsStr());
-		Object args = null;
+		Object[] args = null;
 		if(StringUtils.isEmpty(sm.getTestingArgs())) {
 			args = new Object[0];
 		} else {
 			args = getParams(sm.getTestingArgs());
 		}
 		
+		//args = new String[] {"are you OK"};
+		
 		try {
+			JMicroContext.get().setBoolean(Constants.BREAKER_TEST_CONTEXT, true);
 			Method m = srv.getClass().getMethod(sm.getKey().getMethod(), paramsTypeArr);
-			m.invoke(srv, "are you ok");
+			m.invoke(srv, args);
+			JMicroContext.get().removeParam(Constants.BREAKER_TEST_CONTEXT);
 		} catch (NoSuchMethodException | SecurityException | IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
 			logger.error("act",e);
-			throw new CommonException("act",e);
+			//throw new CommonException("act",e);
 		}
 	}
 	

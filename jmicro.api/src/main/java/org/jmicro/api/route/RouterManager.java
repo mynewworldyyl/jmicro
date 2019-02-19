@@ -46,6 +46,7 @@ public class RouterManager {
 	
 	public Set<ServiceItem> doRoute(Set<ServiceItem> services,String srvName,String method,Class<?>[] args
 			,String namespace,String version,String transport){
+		
 		if(routers.isEmpty()) {
 			return services;
 		}

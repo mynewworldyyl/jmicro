@@ -21,6 +21,7 @@ import java.lang.reflect.Method;
 import java.util.Set;
 
 import org.jmicro.api.JMicroContext;
+import org.jmicro.api.annotation.Reference;
 import org.jmicro.api.monitor.IMonitorDataSubmiter;
 import org.jmicro.api.objectfactory.IObjectFactory;
 import org.jmicro.api.registry.IRegistry;
@@ -33,6 +34,7 @@ import org.jmicro.common.Constants;
 import org.jmicro.common.util.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 /**
  * 
  * @author Yulei Ye
@@ -133,8 +135,6 @@ public abstract class AbstractClientServiceProxy implements InvocationHandler,IS
 		JMicroContext.get().setParam(Constants.SERVICE_METHOD_KEY, si.getMethod(method.getName(), args));
 		JMicroContext.get().setParam(Constants.SERVICE_ITEM_KEY, si);
 		
-		
-		
 		return h.invoke(proxy, method, args);
 	}
 	
@@ -154,10 +154,27 @@ public abstract class AbstractClientServiceProxy implements InvocationHandler,IS
 	
 	public void backupAndSetContext(){
 		//System.out.println("backupAndSetContext");
+		boolean breakFlag = JMicroContext.get().getBoolean(Constants.BREAKER_TEST_CONTEXT, false);
+		
+		Reference ref = JMicroContext.get().getParam(Constants.REF_ANNO, null);
+		
+		ServiceItem dsi = JMicroContext.get().getParam(Constants.DIRECT_SERVICE_ITEM, null);
+		
 		JMicroContext.get().backup();
 		JMicroContext.setMonitor(monitor);
 		//false表示不是provider端
 		JMicroContext.callSideProdiver(false);
+		if(breakFlag) {
+			JMicroContext.get().setBoolean(Constants.BREAKER_TEST_CONTEXT, true);
+		}
+		if(ref != null) {
+			JMicroContext.get().setParam(Constants.REF_ANNO, ref);
+		}
+		
+		if(dsi != null) {
+			JMicroContext.get().setParam(Constants.DIRECT_SERVICE_ITEM, dsi);
+		}
+		
 	}
 	
 	public void restoreContext(){

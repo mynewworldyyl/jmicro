@@ -170,6 +170,7 @@ jmicro.breaker/target/
 jmicro.breaker/.classpath
 jmicro.breaker/.project
 jmicro.breaker/.settings/
+jmicro.breaker/logs/
 jmicro.main/jmicro.main.monitor.exception/target/
 jmicro.main/jmicro.main.monitor.exception/.classpath
 jmicro.main/jmicro.main.monitor.exception/.project

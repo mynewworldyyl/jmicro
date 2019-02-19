@@ -56,13 +56,13 @@ public @interface Reference {
 	 * 此时应该指定名称空间
 	 * @return
 	 */
-	public String namespace() default "";
+	public String namespace() default "*";
 	
 	/**
 	 * 服务版本，使用原理和名称空间相同，版本是同一个名称空间下同一个接口的不同实现版本
 	 * @return
 	 */
-	public String version() default "";
+	public String version() default "*";
 	
 	/**
 	 * 此依赖是否是必须的，如果是必须的，但是启动时注册中心又没有此服务，则报错

@@ -162,9 +162,14 @@ public final class UniqueServiceKey {
 	 */
 	public static boolean matchVersion(String macher, String version) {
 		boolean result = false;
-		if(version.equals(macher)) {
+		if(StringUtils.isEmpty(macher) || version.equals(macher)) {
 			return true;
 		}
+		
+		if(StringUtils.isEmpty(version)) {
+			return macher.equals("*");
+		}
+		
 		if(macher.indexOf("<=") > 0) {
 			String[] arr = macher.split("<=");
 			if(arr.length == 3) {
@@ -203,6 +208,31 @@ public final class UniqueServiceKey {
 			}
 		}
 		return result;
+	}
+	
+	public static boolean matchNamespace(String macher, String namespace) {
+		if(StringUtils.isEmpty(macher)) {
+			return false;
+		}
+		
+		if(StringUtils.isEmpty(namespace)) {
+			return  macher.equals("*");
+		}
+		
+		if(macher.endsWith("*") && macher.length() > 1) {
+			macher = macher.substring(0,macher.length()-1);
+			if( namespace == null) {
+				return false;
+			}else {
+				return namespace.startsWith(macher);
+			}
+		} else if(macher.trim().equals("*")) {
+			//单*号完全匹配模式
+			return true;
+		} else {
+			//无*号匹配模式
+			return macher.equals(namespace);
+		}
 	}
 	
 	public static int compare(String first, String second) {

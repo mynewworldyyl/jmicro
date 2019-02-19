@@ -18,6 +18,7 @@ package org.jmicro.client;
 
 import java.util.Set;
 
+import org.jmicro.api.JMicroContext;
 import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.Inject;
 import org.jmicro.api.loadbalance.ISelector;
@@ -45,6 +46,12 @@ public class RoundBalance implements ISelector{
 	@Override
 	public ServiceItem getService(String srvName,String method,Class<?>[] args,String namespace,String version,
 			String transport) {
+		
+		ServiceItem dsi = JMicroContext.get().getParam(Constants.DIRECT_SERVICE_ITEM, null);
+		if(dsi != null) {
+			return dsi;
+		}
+		
 		Set<ServiceItem> srvItems = registry.getServices(srvName,method,args,namespace,version,transport);
 		if(srvItems == null || srvItems.isEmpty()) {
 			return null;
@@ -79,7 +86,7 @@ public class RoundBalance implements ISelector{
 		Class<?>[] clazzes = null;
 		if(args != null && args.length > 0){
 			int i = 0;
-			 clazzes = new Class<?>[args.length];
+			clazzes = new Class<?>[args.length];
 			for(Object a : args){
 				clazzes[i++] = a.getClass();
 			}

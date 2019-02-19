@@ -625,6 +625,8 @@ public class SimpleObjectFactory implements IObjectFactory {
 		
 		haveInits = null;
 		
+		ClassLoader oldCl = Thread.currentThread().getContextClassLoader();
+		
 		//RpcClassloaderClient在preinit时注入
 		RpcClassLoader cl = this.get(RpcClassLoader.class);
 		if(cl != null) {
@@ -633,6 +635,10 @@ public class SimpleObjectFactory implements IObjectFactory {
 		
 		for(IFactoryListener lis : this.postReadyListeners){
 			lis.afterInit(this);
+		}
+		
+		if(oldCl != null) {
+			Thread.currentThread().setContextClassLoader(oldCl);
 		}
 		
 		fromLocal = false;
@@ -837,8 +843,9 @@ public class SimpleObjectFactory implements IObjectFactory {
 			} else if(isRequired) {
 				throw new CommonException("Class ["+cls.getName()+"] field ["+ f.getName()+"] dependency ["+f.getType().getName()+"] not found");
 			} else {
-				if(f.isAnnotationPresent(Reference.class))
+				if(f.isAnnotationPresent(Reference.class)) {
 					logger.warn("Class ["+cls.getName()+"] field ["+ f.getName()+"] dependency ["+f.getType().getName()+"] not found");
+				}
 			}
 			
 		}
