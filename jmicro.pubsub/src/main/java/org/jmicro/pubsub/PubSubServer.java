@@ -357,14 +357,11 @@ public class PubSubServer implements IInternalSubRpc{
 	private final class SendItem {
 		public static final int TYPY_RESEND = 1;
 		
-		public int type;
 		public ISubCallback cb;
 		public PSData item;
 		public int retryCnt=0;
-		public Long retryInterval = 1000L;
 		
 		public SendItem(int type,ISubCallback cb,PSData item) {
-			this.type = type;
 			this.cb = cb;
 			this.item = item;
 			retryCnt = 0;
@@ -553,7 +550,7 @@ public class PubSubServer implements IInternalSubRpc{
 		//}
 		
 		if(openDebug) {
-			logger.debug("Subcribe:{},topic:",k,sui.topic);
+			logger.debug("Subcribe:{},topic:{}",k,sui.topic);
 		}
 		
 		return true;

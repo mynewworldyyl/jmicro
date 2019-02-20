@@ -26,7 +26,6 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import org.jmicro.api.JMicro;
 import org.jmicro.api.JMicroContext;
 import org.jmicro.api.annotation.Component;
-import org.jmicro.api.annotation.Inject;
 import org.jmicro.api.registry.ServiceItem;
 import org.jmicro.common.CommonException;
 import org.jmicro.common.Constants;

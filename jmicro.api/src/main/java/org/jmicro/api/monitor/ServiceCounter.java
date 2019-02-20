@@ -247,18 +247,18 @@ public class ServiceCounter implements IServiceCounter{
 			}
 			break;
 		case MonitorConstant.STATIS_TOTAL_REQ:
-			result = 1.0 * counter.get(MonitorConstant.CLIENT_REQ_BEGIN);		
+			result = 1.0 * counter.getTotal(MonitorConstant.CLIENT_REQ_BEGIN);		
 			break;
 		case MonitorConstant.STATIS_TOTAL_RESP:
-			result = counter.getValueWithEx(MonitorConstant.CLIENT_REQ_BUSSINESS_ERR,MonitorConstant.CLIENT_REQ_OK,MonitorConstant.CLIENT_REQ_EXCEPTION_ERR);
+			result = counter.getTotal(MonitorConstant.CLIENT_REQ_BUSSINESS_ERR,MonitorConstant.CLIENT_REQ_OK,MonitorConstant.CLIENT_REQ_EXCEPTION_ERR);
 			break;
 		case MonitorConstant.STATIS_TOTAL_SUCCESS:
-			result =  1.0 * counter.get(MonitorConstant.CLIENT_REQ_ASYNC1_SUCCESS)+
-					counter.get(MonitorConstant.CLIENT_REQ_OK);
+			result =  1.0 * counter.getTotal(MonitorConstant.CLIENT_REQ_ASYNC1_SUCCESS)+
+					counter.getTotal(MonitorConstant.CLIENT_REQ_OK);
 			break;
 		case MonitorConstant.STATIS_TOTAL_FAIL:
-			result = 1.0 * counter.get(MonitorConstant.CLIENT_REQ_EXCEPTION_ERR)+
-			counter.get(MonitorConstant.CLIENT_REQ_TIMEOUT);
+			result = 1.0 * counter.getTotal(MonitorConstant.CLIENT_REQ_EXCEPTION_ERR)+
+			counter.getTotal(MonitorConstant.CLIENT_REQ_TIMEOUT);
 			break;
 		case MonitorConstant.STATIS_SUCCESS_PERCENT:
 			totalReq = counter.get(MonitorConstant.CLIENT_REQ_BEGIN);

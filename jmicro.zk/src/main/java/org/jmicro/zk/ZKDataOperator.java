@@ -218,6 +218,21 @@ public class ZKDataOperator implements IDataOperator{
 				removes.add(r);
 			}
 		}
+		
+		if(!adds.isEmpty()) {
+			Set<String> children = this.path2Children.get(path);
+			if(children == null) {
+				children = new HashSet<String>();
+			}
+			children.addAll(adds);
+		}
+		
+		if(!removes.isEmpty()) {
+			Set<String> children = this.path2Children.get(path);
+			if(children != null) {
+				children.removeAll(removes);
+			}
+		}
 	
 		
 		Set<IChildrenListener> lis = childrenListeners.get(path);

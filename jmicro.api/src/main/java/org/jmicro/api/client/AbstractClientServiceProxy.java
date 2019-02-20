@@ -123,14 +123,6 @@ public abstract class AbstractClientServiceProxy implements InvocationHandler,IS
 			}
 		}
 		
-		if(this.monitor == null) {
-			try {
-	    		this.setMonitor(of.get(IMonitorDataSubmiter.class));
-	    	}catch(CommonException e) {
-	    		logger.error(e.getMessage());
-	    	}
-		}
-		
 		JMicroContext.get().configMonitor(si.getMonitorEnable(), si.getMonitorEnable()); 
 		JMicroContext.get().setParam(Constants.SERVICE_METHOD_KEY, si.getMethod(method.getName(), args));
 		JMicroContext.get().setParam(Constants.SERVICE_ITEM_KEY, si);
@@ -161,7 +153,16 @@ public abstract class AbstractClientServiceProxy implements InvocationHandler,IS
 		ServiceItem dsi = JMicroContext.get().getParam(Constants.DIRECT_SERVICE_ITEM, null);
 		
 		JMicroContext.get().backup();
+		
+		if(this.monitor == null) {
+			try {
+	    		this.setMonitor(of.get(IMonitorDataSubmiter.class));
+	    	}catch(CommonException e) {
+	    		logger.error(e.getMessage());
+	    	}
+		}
 		JMicroContext.setMonitor(monitor);
+		
 		//false表示不是provider端
 		JMicroContext.callSideProdiver(false);
 		if(breakFlag) {
