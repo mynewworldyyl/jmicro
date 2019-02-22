@@ -39,7 +39,7 @@ public final class MonitorConstant {
 	public static final int CLIENT_REQ_SERVICE_NOT_FOUND = 0X7FFFFFF3;
 	//服务熔断
 	public static final int CLIENT_REQ_SERVICE_BREAKING = 0X7FFFFFF4;
-	//请好正常返回，包括异步请求正常返回的确认包
+	//请求正常返回，包括异步请求正常返回的确认包
 	public static final int CLIENT_REQ_OK = 0X7FFFFFF6;
 	//请求超时，并且经过重试指定次数之后都没成功，返回失败
 	public static final int CLIENT_REQ_TIMEOUT_FAIL = 0X7FFFFFFA;

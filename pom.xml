@@ -104,6 +104,7 @@
 		<module>jmicro.choreography</module>
 		<module>jmicro.breaker</module>
 		<module>jmicro.test</module>
+		<module>jmicro.ext</module>
     </modules>
 
     <dependencyManagement>
@@ -275,6 +276,13 @@
 				 <artifactId>jmicro.test</artifactId>
 				  <version>${jmicro.version}</version>
 	        </dependency>
+			
+			<dependency>
+				 <groupId>org.jmicro</groupId>
+				 <artifactId>jmicro.mybatis</artifactId>
+				 <version>${jmicro.version}</version>
+	        </dependency>
+			
             <dependency>
 			<groupId>org.slf4j</groupId>
 			<artifactId>jcl-over-slf4j</artifactId>

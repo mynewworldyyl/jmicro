@@ -111,4 +111,12 @@ public abstract class AbstractLimiter implements ILimiter{
 		}
 		return maxSpeed;
 	}
+
+
+	@Override
+	public void end(IRequest req) {
+		
+	}
+	
+	
 }

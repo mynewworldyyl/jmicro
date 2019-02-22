@@ -779,7 +779,8 @@ public class SimpleObjectFactory implements IObjectFactory {
 		}
 		Iterator<?> ite = list.iterator();
 		while(ite.hasNext()){
-			if(isProviderSide(ProxyObject.getTargetCls(ite.next().getClass()))){
+			Class<?> c = ProxyObject.getTargetCls(ite.next().getClass());
+			if(c.isAnnotationPresent(Component.class) && isProviderSide(c)){
 				ite.remove();
 			}
 		}
@@ -792,7 +793,8 @@ public class SimpleObjectFactory implements IObjectFactory {
 		}
 		Iterator<?> ite = list.iterator();
 		while(ite.hasNext()){
-			if(isComsumerSide(ProxyObject.getTargetCls(ite.next().getClass()))){
+			Class<?> c = ProxyObject.getTargetCls(ite.next().getClass());
+			if(c.isAnnotationPresent(Component.class) && isComsumerSide(c)){
 				ite.remove();
 			}
 		}
@@ -916,6 +918,10 @@ public class SimpleObjectFactory implements IObjectFactory {
 			Class<?> refCls = f.getType();
 			
 			srv = this.getCommandSpecifyConponent(f);
+			
+			/*if(refCls.getName().equals("org.jmicro.ext.mybatis.CurSqlSessionFactory")) {
+				logger.debug("org.jmicro.ext.mybatis.CurSqlSessionFactory");
+			}*/
 			
 			if(srv == null && f.isAnnotationPresent(Inject.class)){
 				//Inject the local component
@@ -1109,6 +1115,7 @@ public class SimpleObjectFactory implements IObjectFactory {
 						}
 					}
 				} else {
+					
 					String annName = name;
 					if(annName != null && !"".equals(annName.trim())){
 						srv = this.getByName(name);

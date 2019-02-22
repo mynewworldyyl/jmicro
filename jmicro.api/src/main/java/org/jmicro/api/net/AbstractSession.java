@@ -177,10 +177,10 @@ public abstract class AbstractSession implements ISession{
               //服务言接收信息是上行，客户端接收信息是下行
        		  //dump(lb.array(),this.isServer(),message);
               
-              if(message.isDebugMode()) {
+              /*if(message.isDebugMode()) {
               	LogUtil.B.debug("Message ins[{}] reqId[{}],method[{}]",message.getInstanceName(),
               			message.getReqId(),message.getMethod());
-              }
+              }*/
               //JMicroContext.configProvider(message);
              
               receiver.receive(this,message);

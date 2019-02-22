@@ -77,6 +77,15 @@
 			 <groupId>org.jmicro</groupId>
 			 <artifactId>jmicro.classloader.client</artifactId>
         </dependency>
+         <dependency>
+			 <groupId>org.jmicro</groupId>
+			 <artifactId>jmicro.mybatis</artifactId>
+        </dependency>
+        <dependency>
+			<groupId>mysql</groupId>
+			<artifactId>mysql-connector-java</artifactId>
+			<version>5.1.34</version>
+		</dependency>
       <!--   <dependency>
 		    <groupId>com.netflix.hystrix</groupId>
 		    <artifactId>hystrix-core</artifactId>

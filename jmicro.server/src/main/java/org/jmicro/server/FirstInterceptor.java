@@ -85,6 +85,12 @@ public class FirstInterceptor extends AbstractInterceptor implements IIntercepto
 		}
 		
 		IResponse resp = handler.onRequest(req);
+		
+		//通知限速器结束一个请求
+		if(limiter != null){
+			limiter.end(req);
+		}
+		
 		return resp;
 	}
 

@@ -98,4 +98,10 @@ public class GuavaBaseLimiter  implements ILimiter{
 		return key;
 	}
 
+	@Override
+	public void end(IRequest req) {
+		// TODO Auto-generated method stub
+		
+	}
+
 }

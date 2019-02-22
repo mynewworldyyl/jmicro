@@ -196,6 +196,15 @@ jmicro.choreography/jmicro.choreography.controller/.classpath
 jmicro.choreography/jmicro.choreography.controller/.project
 jmicro.choreography/jmicro.choreography.controller/.settings/
 jmicro.choreography/jmicro.choreography.controller/logs/
+jmicro.ext/target/
+jmicro.ext/.classpath
+jmicro.ext/.project
+jmicro.ext/.settings/
+jmicro.ext/jmicro.mybatis/target/
+jmicro.ext/jmicro.mybatis/.classpath
+jmicro.ext/jmicro.mybatis/.project
+jmicro.ext/jmicro.mybatis/.settings/
+
 .DS_Store
 Thumbs.db
 UserInterfaceState.xcuserstate

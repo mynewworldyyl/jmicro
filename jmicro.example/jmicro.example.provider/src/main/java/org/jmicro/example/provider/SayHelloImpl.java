@@ -34,7 +34,7 @@ public class SayHelloImpl implements ISayHello {
 		baseTimeUnit=Constants.TIME_MILLISECONDS,
 		timeout=3000,
 		debugMode=1,
-		maxSpeed=1000
+		maxSpeed=1
 	)
 	public String hello(String name) {
 		if(SF.isLoggable(true,MonitorConstant.LOG_DEBUG)) {
