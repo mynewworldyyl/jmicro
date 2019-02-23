@@ -80,7 +80,7 @@ public class ServiceLoader {
 			logger.warn(Config.getInstanceName()+" Client Only so not load service!");
 			return;
 		}
-		List<IServer> ss = JMicro.getObjectFactory().getByParent(IServer.class);
+		Set<IServer> ss = JMicro.getObjectFactory().getByParent(IServer.class);
 		for(IServer s : ss){
 			org.jmicro.api.annotation.Server anno = 
 					s.getClass().getAnnotation(org.jmicro.api.annotation.Server.class);

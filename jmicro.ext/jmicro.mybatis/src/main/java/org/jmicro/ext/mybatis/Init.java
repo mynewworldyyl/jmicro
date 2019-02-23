@@ -54,8 +54,8 @@ public class Init implements IFactoryListener{
 		SqlSessionFactory sqlSessionFactory = new SqlSessionFactoryBuilder().build(inputStream,env,props);
 		SqlSessionManager ssm = new SqlSessionManager(sqlSessionFactory);
 		of.regist(SqlSessionManager.class, ssm);
-		of.regist(SqlSessionFactory.class, ssm);
-		of.regist(CurSqlSessionFactory.class, ssm);
+		//of.regist(SqlSessionFactory.class, ssm);
+		//of.regist(CurSqlSessionFactory.class, ssm);
 		
 		createMapperProxy(of,sqlSessionFactory.getConfiguration().getMapperRegistry().getMappers(),ssm);
 	}

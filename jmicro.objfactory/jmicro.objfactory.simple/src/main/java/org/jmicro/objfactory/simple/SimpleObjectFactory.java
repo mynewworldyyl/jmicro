@@ -118,9 +118,9 @@ public class SimpleObjectFactory implements IObjectFactory {
 		checkStatu();
 		Object obj = null;
 		if(cls.isInterface() || Modifier.isAbstract(cls.getModifiers())) {
-			List<T> l = this.getByParent(cls);
+			Set<T> l = this.getByParent(cls);
 			if(l.size() == 1) {
-				obj =  l.get(0);
+				obj =  l.iterator().next();
 			}else if(l.size() > 1) {
 				throw new CommonException("More than one instance of class ["+cls.getName()+"].");
 			}
@@ -168,8 +168,8 @@ public class SimpleObjectFactory implements IObjectFactory {
 	}
 
 	@Override
-	public <T> List<T> getByParent(Class<T> parrentCls) {
-		List<T> list = new ArrayList<>();
+	public <T> Set<T> getByParent(Class<T> parrentCls) {
+		Set<T> set = new HashSet<>();
 		Set<Class<?>> clazzes = ClassScannerUtils.getIns().loadClassByClass(parrentCls);
 		for(Class<?> c: clazzes) {
 			if(parrentCls.isAssignableFrom(c) && !Modifier.isAbstract(c.getModifiers())
@@ -178,17 +178,24 @@ public class SimpleObjectFactory implements IObjectFactory {
 				Component anno = c.getAnnotation(Component.class);
 				if(anno != null && anno.active()) {
 					Object obj = this.get(c);
-					if(obj != null) {
-						list.add((T)obj);
-					}
+					/*if(obj != null) {
+						set.add((T)obj);
+					}*/
 				}
 			}
 		}
-		Object obj = this.objs.get(parrentCls);
-		if(obj != null){
-			list.add((T)obj);
+		
+		for(Class<?> c : this.objs.keySet()) {
+			if(parrentCls.isAssignableFrom(c)) {
+				set.add((T)this.objs.get(c));
+			}
 		}
-		return list;
+		
+		/*Object obj = this.objs.get(parrentCls);
+		if(obj != null){
+			set.add((T)obj);
+		}*/
+		return set;
 	}
 	
 	private void checkStatu(){
@@ -443,7 +450,7 @@ public class SimpleObjectFactory implements IObjectFactory {
 		//初始化配置目录
 		cfg.setDataOperator(dop);
 		//IConfigLoader具体的配置加载类
-		List<IConfigLoader> configLoaders = this.getByParent(IConfigLoader.class);
+		Set<IConfigLoader> configLoaders = this.getByParent(IConfigLoader.class);
 		//加载配置，并调用init0方法做初始化
 		cfg.loadConfig(configLoaders);
 		
@@ -465,7 +472,7 @@ public class SimpleObjectFactory implements IObjectFactory {
 		clientServiceProxyManager.init();
 		
 		//取得全部工厂监听器
-		List<IFactoryListener> postL = this.getByParent(IFactoryListener.class);
+		Set<IFactoryListener> postL = this.getByParent(IFactoryListener.class);
 		postReadyListeners.addAll(postL);
 		postReadyListeners.sort(new Comparator<IFactoryListener>(){
 			@Override
@@ -773,7 +780,7 @@ public class SimpleObjectFactory implements IObjectFactory {
 		return Constants.SIDE_COMSUMER.equals(comAnno.side());
 	}
 	
-	private List<?> filterProviderSide(List<?> list){
+	private Set<?> filterProviderSide(Set<?> list){
 		if(list == null || list.isEmpty()){
 			return null;
 		}
@@ -787,7 +794,7 @@ public class SimpleObjectFactory implements IObjectFactory {
 		return list;
 	}
 	
-	private  List<?> filterComsumerSide(List<?> list){
+	private  Set<?> filterComsumerSide(Set<?> list){
 		if(list == null || list.isEmpty()){
 			return null;
 		}
@@ -919,9 +926,9 @@ public class SimpleObjectFactory implements IObjectFactory {
 			
 			srv = this.getCommandSpecifyConponent(f);
 			
-			/*if(refCls.getName().equals("org.jmicro.ext.mybatis.CurSqlSessionFactory")) {
+			if(refCls.getName().equals("org.apache.ibatis.session.SqlSessionFactory")) {
 				logger.debug("org.jmicro.ext.mybatis.CurSqlSessionFactory");
-			}*/
+			}
 			
 			if(srv == null && f.isAnnotationPresent(Inject.class)){
 				//Inject the local component
@@ -932,7 +939,7 @@ public class SimpleObjectFactory implements IObjectFactory {
 				
 				if(type.isArray()) {
 					Class<?> ctype = type.getComponentType();
-					List<?> l = this.getByParent(ctype);
+					Set<?> l = this.getByParent(ctype);
 					
 					if(isProvider){
 						l = this.filterComsumerSide(l);
@@ -952,7 +959,7 @@ public class SimpleObjectFactory implements IObjectFactory {
 					}
 					Class<?> ctype = (Class<?>)genericType.getActualTypeArguments()[0];
 					
-					List<?> l = this.getByParent(ctype);
+					Set<?> l = this.getByParent(ctype);
 					if(isProvider){
 						l = this.filterComsumerSide(l);
 					}else if(isComsumer){
@@ -997,7 +1004,7 @@ public class SimpleObjectFactory implements IObjectFactory {
 						throw new CommonException("must be ParameterizedType for cls:"+ cls.getName()+",field: "+f.getName());
 					}
 					Class<?> ctype = (Class<?>)genericType.getActualTypeArguments()[0];
-					List<?> l = this.getByParent(ctype);
+					Set<?> l = this.getByParent(ctype);
 					
 					if(isProvider){
 						l = this.filterComsumerSide(l);
@@ -1052,7 +1059,7 @@ public class SimpleObjectFactory implements IObjectFactory {
 								Object.class.getName(), cls.getName(),f.getName());
 					}
 					
-					List<?> l = this.getByParent(valueType);
+					Set<?> l = this.getByParent(valueType);
 					if(isProvider){
 						l = this.filterComsumerSide(l);
 					}else if(isComsumer){
@@ -1088,7 +1095,7 @@ public class SimpleObjectFactory implements IObjectFactory {
 					/*if(type == IObjectFactory.class) {
 						logger.debug(type.getName());
 					}*/
-					List<?> l = this.getByParent(type);
+					Set<?> l = this.getByParent(type);
 					
 					if(isProvider){
 						l = this.filterComsumerSide(l);
@@ -1098,7 +1105,7 @@ public class SimpleObjectFactory implements IObjectFactory {
 					
 					if(l != null && !l.isEmpty() && StringUtils.isEmpty(name)) {
 						if(l.size() == 1) {
-							srv =  l.get(0);
+							srv =  l.iterator().next();
 						}else if(l.size() > 1) {
 							StringBuffer sb = new StringBuffer("More implement for type [").append(cls.getName()).append("] ");
 							for(Object s : l) {

@@ -16,7 +16,7 @@
  */
 package org.jmicro.api.objectfactory;
 
-import java.util.List;
+import java.util.Set;
 
 import org.jmicro.api.registry.ServiceItem;
 /**
@@ -85,7 +85,7 @@ public interface IObjectFactory {
 	 * @param parrentCls
 	 * @return
 	 */
-	<T> List<T> getByParent(Class<T> parrentCls);
+	<T> Set<T> getByParent(Class<T> parrentCls);
 	
 	/**
 	 * 启动IOC容器，实例化并初始化当前classpath下的所有组件，默认调用组件的init方法，或 @JMethod（“init”）指定的初始化方法。

@@ -189,7 +189,7 @@ public class Config implements IConfigChangeListener{
 		BasePackages = pps;
 	}
 	
-	public void loadConfig(List<IConfigLoader> configLoaders){
+	public void loadConfig(Set<IConfigLoader> configLoaders){
 		for(IConfigLoader cl : configLoaders){
 			cl.setDataOperator(this.dataOperator);
 			cl.load(ServiceConfigDir,this.servicesConfig);

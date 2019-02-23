@@ -21,7 +21,7 @@ public class CheckPostReadyListener implements IFactoryListener{
 	
 	@Override
 	public void afterInit(IObjectFactory of) {
-		IDataOperator ddop = of.getByParent(IDataOperator.class).get(0);
+		IDataOperator ddop = of.getByParent(IDataOperator.class).iterator().next();
 		if(ddop.exist(Config.getRaftBaseDir())) {
 			if(ddop.exist(Config.ServiceConfigDir+"/active")){
 				logger.info("InstanceName: "+Config.getInstanceName() + " is in using,sleep 10s to recheck");

@@ -5,6 +5,6 @@ import org.apache.ibatis.session.SqlSession;
 public interface CurSqlSessionFactory {
 
 	  SqlSession curSession();
-	  void closeCurSession();
-
+	  void commitAndCloseCurSession();
+	  void rollbackAndCloseCurSession();
 }

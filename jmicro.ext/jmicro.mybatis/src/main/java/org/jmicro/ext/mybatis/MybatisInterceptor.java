@@ -47,10 +47,16 @@ public class MybatisInterceptor extends AbstractInterceptor implements IIntercep
 	
 	@Override
 	public IResponse intercept(IRequestHandler handler, IRequest req) throws RpcException {
-		IResponse resp = handler.onRequest(req);
-		if(curSqlSessionManager.curSession() != null) {
-			curSqlSessionManager.curSession().commit(true);
-			curSqlSessionManager.closeCurSession();
+		IResponse resp = null;
+		try {
+			resp = handler.onRequest(req);
+			if(curSqlSessionManager.curSession() != null) {
+				curSqlSessionManager.commitAndCloseCurSession();
+			}
+		} catch (Throwable e) {
+			if(curSqlSessionManager.curSession() != null) {
+				curSqlSessionManager.rollbackAndCloseCurSession();
+			}
 		}
 		return resp;
 	}

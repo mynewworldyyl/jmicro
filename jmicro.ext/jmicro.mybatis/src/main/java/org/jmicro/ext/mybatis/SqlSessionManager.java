@@ -27,12 +27,24 @@ public class SqlSessionManager implements SqlSessionFactory,CurSqlSessionFactory
 		return curSession.get();
 	}
 	
-	public void closeCurSession() {
-		if(curSession.get() == null) {
+	public void commitAndCloseCurSession() {
+		SqlSession s = this.curSession();
+		if(curSession() == null) {
 			return ;
 		}
-		curSession.get().close();
-		curSession.set(null);
+		s.commit(true);
+		s.close();
+		curSession.remove();
+	}
+	
+	public void rollbackAndCloseCurSession() {
+		SqlSession s = this.curSession();
+		if(curSession() == null) {
+			return ;
+		}
+		s.rollback(true);
+		s.close();
+		curSession.remove();
 	}
 
 	@Override
