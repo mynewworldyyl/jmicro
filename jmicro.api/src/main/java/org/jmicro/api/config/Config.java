@@ -16,6 +16,8 @@
  */
 package org.jmicro.api.config;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Enumeration;
@@ -23,8 +25,10 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 import java.util.Set;
 
+import org.jmicro.api.ClassScannerUtils;
 import org.jmicro.api.annotation.Cfg;
 import org.jmicro.api.annotation.Component;
 import org.jmicro.api.raft.IDataOperator;
@@ -88,6 +92,8 @@ public class Config implements IConfigChangeListener{
 	private final Map<String,String> globalConfig = new HashMap<>();
 	
 	private static Map<String,String> CommadParams = new HashMap<String,String>();
+	
+	private static Map<String,String> extConfig = new HashMap<String,String>();
 	
 	private Map<String,Set<IConfigChangeListener>> configChangeListeners = new HashMap<>();
 	
@@ -153,6 +159,60 @@ public class Config implements IConfigChangeListener{
 				throw new CommonException("Invalid registry url: "+ registry);
 			}
 		}
+		
+		loadExtConfig();
+		
+	}
+	
+	private static void loadExtConfig() {
+		List<String> configFiles = ClassScannerUtils.getClasspathResourcePaths("META-INF/jmicro", "*.properties");
+		Map<String,String> params = new HashMap<>();
+		ClassLoader cl = Config.class.getClassLoader();
+		Set<String> set = new HashSet<>();
+		for(String f : configFiles) {
+			InputStream is = null;
+			try {
+				is = cl.getResourceAsStream(f);
+				Properties p = new Properties();
+				p.load(is);
+				for(Object k : p.keySet()) {
+					String key = k.toString();
+					if(Constants.BASE_PACKAGES_KEY.equals(key)) {
+						String ps = p.getProperty(key, null);
+						if(!StringUtils.isEmpty(ps)){
+							String[] pps = ps.split(",");
+							set.addAll(Arrays.asList(pps));
+						}
+						logger.info("basePackages:{}",ps);
+						continue;
+					}
+					
+					if(params.containsKey(key)) {
+						logger.warn("Repeat config KEY:"+key+",params:"+params.get(key)+",config:"+p.get(k));
+						//throw new CommonException("Repeat config KEY:"+key+",params:"+params.get(key)+",config:"+p.get(k));
+					}
+					params.put(key, p.getProperty(key));
+				}
+			} catch (IOException e) {
+				logger.error("loadExtConfig",e);
+			} finally {
+				if(is != null) {
+					try {
+						is.close();
+					} catch (IOException e) {
+						logger.error("loadExtConfig close",e);
+					}
+				}
+			}
+		}
+		if(!set.isEmpty()) {
+			setBasePackages0(set);
+		}
+		
+		if(!params.isEmpty()) {
+			extConfig.putAll(params);
+		}
+		
 	}
 	
 	public static long getSystemStartTime() {
@@ -173,7 +233,7 @@ public class Config implements IConfigChangeListener{
 		return RaftBaseDir;
 	}
 
-	public static void setBasePackages0(Collection<String>  basePackages) {
+	public synchronized static void setBasePackages0(Collection<String>  basePackages) {
 		if(basePackages == null || basePackages.size() == 0) {
 			return;
 		}

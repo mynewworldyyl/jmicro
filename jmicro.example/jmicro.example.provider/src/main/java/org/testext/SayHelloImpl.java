@@ -1,4 +1,4 @@
-package org.jmicro.example.provider;
+package org.testext;
 
 import java.util.Map;
 
