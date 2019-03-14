@@ -53,10 +53,11 @@ public class ConfigPostInitListener extends PostInitListenerAdapter {
 	/**
 	 * 1。命令行参数中查找，如果找不到，进入2
 	 * 2。优先在服务配置中查找配置，如果找不到，进入3
-	 * 3。在全局配置中查找，如果找不到，进入4
-	 * 4。在环境系统环境变量中找，如果没找到，返回NULL
-	 * 5。从对象中找默认值，如果找到则进入6，如果没找到，判断required值如果是true报错，否则不处理返回
-	 * 6。判断defGlobal=true，将值配置到全局配置中，否则配置到局部配置中
+	 * 3。在META-INF/jmicro/*.properties中查找
+	 * 4。在全局配置中查找，如果找不到，进入4
+	 * 5。在环境系统环境变量中找，如果没找到，返回NULL
+	 * 6。从对象中找默认值，如果找到则进入6，如果没找到，判断required值如果是true报错，否则不处理返回
+	 * 7。判断defGlobal=true，将值配置到全局配置中，否则配置到局部配置中
 	 */
 	@Override
 	public void preInit(Object obj,Config cfg) {
@@ -217,12 +218,21 @@ public class ConfigPostInitListener extends PostInitListenerAdapter {
 		String val = Config.getCommandParam(key, String.class, null);
 		if(!StringUtils.isEmpty(val)) {
 			//在配置中心中建立配置，以便能动态修改，在系统 关闭后，配置会自动删除，以使下次还从命令行读取初始值
+			logger.info("class:{} Field:{} Config from command args:{}={}",f.getDeclaringClass().getName(),f.getName(),key,val);
 			cfg.createConfig(val, key, false,true);
 			return val;
 		}
 		
 		val = cfg.getServiceParam(key, String.class, null);
 		if(!StringUtils.isEmpty(val)) {
+			return val;
+		}
+		
+		val = Config.getExtParam(key, String.class, null);
+		if(!StringUtils.isEmpty(val)) {
+			//在配置中心中建立配置，以便能动态修改，在系统 关闭后，配置会自动删除，以使下次还从配置文件读取初始值
+			logger.info("class:{} Field:{} Config from extension:{}={}",f.getDeclaringClass().getName(),f.getName(),key,val);
+			cfg.createConfig(val, key, false,true);
 			return val;
 		}
 		
@@ -234,6 +244,7 @@ public class ConfigPostInitListener extends PostInitListenerAdapter {
 		 val = Config.getEnvParam(key);
 		if(!StringUtils.isEmpty(val)) {
 			//在配置中心中建立配置，以便能动态修改，在系统 关闭后，配置会自动删除，以使下次还从命令行读取初始值
+			logger.info("class:{} Field:{} Config from system env:{}={}",f.getDeclaringClass().getName(),f.getName(),key,val);
 			cfg.createConfig(val, key, false,true);
 			return val;
 		}

@@ -42,16 +42,18 @@ public class ZKConfigLoader implements IConfigLoader{
 	
 	@Override
 	public void load(String root,Map<String, String> params) {
-		dataListener = new IDataListener(){
-			@Override
-			public void dataChanged(String path, String data) {
-				String supath = path.substring(root.length(),path.length());
-				updateData(supath,data,params);
-				if(lis != null){
-					lis.configChange(path, data);
+		if(dataListener == null) {
+			dataListener = new IDataListener(){
+				@Override
+				public void dataChanged(String path, String data) {
+					String supath = path.substring(root.length(),path.length());
+					updateData(supath,data,params);
+					if(lis != null){
+						lis.configChange(path, data);
+					}
 				}
-			}
-		};
+			};
+		}
 		
 		 //String globalRoot = Config.CfgDir+"/config";
 		 Set<String> children = dataOperator.getChildren(root);

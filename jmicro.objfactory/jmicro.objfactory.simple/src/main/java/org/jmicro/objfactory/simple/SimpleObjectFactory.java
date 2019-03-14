@@ -406,26 +406,11 @@ public class SimpleObjectFactory implements IObjectFactory {
 				if(ServiceManager.class == c) {
 					if(srvManager == null) {
 						srvManager = (ServiceManager)obj;
-					}else {
+					} else {
 						throw new CommonException("More than one [" +ServiceManager.class.getName()+"] to be found ["+c.getName()+", "+srvManager.getClass().getName()+"]" );
 					}
 					systemObjs.add(srvManager);
 				}
-				
-				/*if(ServiceLoader.class == c) {
-					if(sl == null) {
-						sl = (ServiceLoader)obj;
-					}else {
-						throw new CommonException("More than one [" +ServiceLoader.class.getName()+"] to be found ["+c.getName()+", "+sl.getClass().getName()+"]" );
-					}
-					systemObjs.add(sl);
-				}
-				
-				if(IServer.class.isAssignableFrom(c) ) {
-					IServer server = (IServer)obj;
-					servers.add(server);
-					systemObjs.add(servers);
-				}*/
 				
 				if(IRegistry.class.isAssignableFrom(c) && registryName.equals(cann.value())){
 					if(registry == null) {

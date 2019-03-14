@@ -26,6 +26,9 @@ public interface Constants {
 	public static final String SERVER_ONLY="server";
 	
 	public static final String CFG_ROOT="/jmicro";
+	
+	public static final String LOCAL_DATA_DIR = "localDataDir";
+	
 	//在CFG_ROOT下目录名称前缀为JMICRO系统保留，应用不可使用
 	public static final String DEFAULT_PREFIX="JMICRO_";
 	
@@ -82,6 +85,7 @@ public interface Constants {
 	
 	public static final String BASE_PACKAGES_KEY = "basePackages";
 	public static final String INSTANCE_NAME = "instanceName";
+	public static final String INSTANCE_NAME_GEN_CLASS = "instanceNameGenClass";
 	
 	public static final String CONTEXT_CALLBACK_SERVICE = "ServiceCallback";
 	public static final String CONTEXT_CALLBACK_CLIENT = "ClientCallback";

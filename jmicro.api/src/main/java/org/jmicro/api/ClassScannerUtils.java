@@ -376,7 +376,7 @@ public class ClassScannerUtils {
 	public static List<String> getClasspathResourcePaths(String packageName,String patern) {
 		  
 		List<String> paths = new ArrayList<String>();  
-        boolean recursive = true;  
+        boolean recursive = true;
         String packageDirName = "";
 		if(packageName == null || "".equals(packageName.trim())) {
 			packageDirName = ".";
@@ -388,7 +388,7 @@ public class ClassScannerUtils {
         try {  
             dirs = Thread.currentThread().getContextClassLoader().getResources(packageDirName);  
             while (dirs.hasMoreElements()) {  
-                URL url = dirs.nextElement();  
+                URL url = dirs.nextElement();
                 String f = url.getFile();
                 String protocol = url.getProtocol();  
                 if ("file".equals(protocol)) {

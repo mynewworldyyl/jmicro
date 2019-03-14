@@ -5,10 +5,10 @@
 		 <artifactId>jmicro.parent</artifactId>
 		 <version>0.0.1-SNAPSHOT</version>
     </parent>
-    <artifactId>jmicro.etcd</artifactId>
+    <artifactId>jmicro.build</artifactId>
     <packaging>jar</packaging>
     <name>${project.artifactId}</name>
-    <description>etcd Module</description>
+    <description>build Module</description>
     <dependencies>
          <dependency>
             <groupId>org.jmicro</groupId>

@@ -14,30 +14,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.jmicro.example.comsumer;
+package org.jmicro.api.service;
 
-import org.jmicro.api.JMicro;
-import org.jmicro.api.JMicroContext;
-import org.jmicro.api.objectfactory.IObjectFactory;
-import org.jmicro.example.api.ISayHello;
+import org.jmicro.api.config.Config;
+import org.jmicro.api.raft.IDataOperator;
 
 /**
  * 
  * @author Yulei Ye
- *
- * @date: 2018年11月10日 下午9:23:25
+ * @date 2019年3月5日 下午7:39:21
  */
-public class ServiceComsumer {
+public interface IServiceInstanceNameGenerator {
 
-	public static void main(String[] args) {
-		
-		IObjectFactory of = JMicro.getObjectFactoryAndStart(new String[]{""});
-		
-		JMicroContext.get().setParam("routerTag", "tagValue");
-		
-		//got remote service from object factory
-		ISayHello src = of.get(ISayHello.class);
-		//invoke remote service
-		System.out.println(src.hello("Hello JMicro"));
-	}
+	String getInstanceName(IDataOperator dataOperator,Config config);
 }

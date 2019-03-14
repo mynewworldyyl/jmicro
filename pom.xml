@@ -383,7 +383,8 @@
         <profile>
             <id>java8-vm-args</id>
             <activation>
-                <jdk>[1.8,)</jdk>
+               <!--  <jdk>[1.8,)</jdk> -->
+                <activeByDefault>false</activeByDefault>
             </activation>
             <properties>
                 <argline>-server -Xms256m -Xmx512m -XX:MetaspaceSize=64m -XX:MaxMetaspaceSize=128m -Dfile.encoding=UTF-8
@@ -394,6 +395,10 @@
 
         <profile>
             <id>release</id>
+             <activation>
+	            <!-- 设置默认激活这个配置 -->
+	            <activeByDefault>false</activeByDefault>
+        	</activation>
             <build>
                 <plugins>
                     <plugin>
@@ -438,6 +443,10 @@
         
         <profile>
             <id>build-main</id>
+            <activation>
+	            <!-- 设置默认激活这个配置 -->
+	            <activeByDefault>true</activeByDefault>
+        	</activation>
             <build>
 		        <plugins>
 		            <plugin>

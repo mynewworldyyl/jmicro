@@ -29,9 +29,10 @@ import java.util.Properties;
 import java.util.Set;
 
 import org.jmicro.api.ClassScannerUtils;
-import org.jmicro.api.annotation.Cfg;
 import org.jmicro.api.annotation.Component;
 import org.jmicro.api.raft.IDataOperator;
+import org.jmicro.api.service.DefaultServiceInstanceNameProvider;
+import org.jmicro.api.service.IServiceInstanceNameGenerator;
 import org.jmicro.common.CommonException;
 import org.jmicro.common.Constants;
 import org.jmicro.common.Utils;
@@ -56,10 +57,12 @@ public class Config implements IConfigChangeListener{
 	private static String Host = "";
 	
 	//全局配置目录
-	public static final String CfgDir = Constants.CFG_ROOT +"/config";
+	public static final String CfgDir = Constants.CFG_ROOT +"/"/*+Constants.DEFAULT_PREFIX*/+"config";
+	
+	public static final String InstanceDir = Constants.CFG_ROOT + "/" + Constants.DEFAULT_PREFIX + "instance";
 	
 	//服务注册目录
-	public static final String ServiceRegistDir = Constants.CFG_ROOT +"/services";
+	public static final String ServiceRegistDir = Constants.CFG_ROOT +"/"+Constants.DEFAULT_PREFIX+"services";
 	
 	//全局消息订阅根目录
 	public static final String PubSubDir = Constants.CFG_ROOT+"/"+Constants.DEFAULT_PREFIX +"pubsub";
@@ -71,6 +74,8 @@ public class Config implements IConfigChangeListener{
 	private static String InstanceName = "";
 	
 	private static String[] commandArgs = null;
+	
+	private static String LocalDataDir = "";
 	
 	//服务在RAFT中的根目录
 	private static String RaftBaseDir = "";
@@ -84,16 +89,13 @@ public class Config implements IConfigChangeListener{
 	
 	private static String[] BasePackages = {"org.jmicro"};
 	
-	@Cfg("/basePackages")
-	private Collection<String> basePackages = null;
-	
 	private final Map<String,String> servicesConfig = new HashMap<>();
 	
 	private final Map<String,String> globalConfig = new HashMap<>();
 	
-	private static Map<String,String> CommadParams = new HashMap<String,String>();
+	private static Map<String,String> CommadParams = new HashMap<>();
 	
-	private static Map<String,String> extConfig = new HashMap<String,String>();
+	private static Map<String,String> extConfig = new HashMap<>();
 	
 	private Map<String,Set<IConfigChangeListener>> configChangeListeners = new HashMap<>();
 	
@@ -121,15 +123,6 @@ public class Config implements IConfigChangeListener{
 			}
 		}
 		
-		if(CommadParams.containsKey(Constants.INSTANCE_NAME)) {
-			InstanceName = CommadParams.get(Constants.INSTANCE_NAME);
-		} else {
-			InstanceName = System.currentTimeMillis()+"";
-		}
-		RaftBaseDir = Constants.CFG_ROOT +"/"+InstanceName;
-		ServiceConfigDir = RaftBaseDir+"/config";
-		ServiceItemCofigDir = RaftBaseDir+"/srvconfig";
-				
 		if(CommadParams.containsKey(Constants.BASE_PACKAGES_KEY)) {
 			String ps = CommadParams.get(Constants.BASE_PACKAGES_KEY);
 			if(!StringUtils.isEmpty(ps)){
@@ -164,6 +157,43 @@ public class Config implements IConfigChangeListener{
 		
 	}
 	
+	private void initInstanceName() {
+		
+		String insName = getCommandParam(Constants.INSTANCE_NAME);
+		
+		if(StringUtils.isNotEmpty(insName)) {
+			InstanceName = insName;
+			return;
+		} 
+		
+		String insGenClass = getCommandParam(Constants.INSTANCE_NAME_GEN_CLASS);
+		if(StringUtils.isEmpty(insGenClass)) {
+			insGenClass = getExtParam(Constants.INSTANCE_NAME_GEN_CLASS, String.class, null);
+		}
+		
+		if(StringUtils.isEmpty(insGenClass)) {
+			insGenClass = DefaultServiceInstanceNameProvider.class.getName();
+		}
+		
+		ClassLoader cl = Thread.currentThread().getContextClassLoader();
+		if(cl == null) {
+			cl = Config.class.getClassLoader();
+		}
+		
+		try {
+			Class<?> cls = cl.loadClass(insGenClass);
+			if(!IServiceInstanceNameGenerator.class.isAssignableFrom(cls)) {
+				throw new CommonException("Class ["+ insGenClass+"] not a implementation of ["+IServiceInstanceNameGenerator.class.getName()+"]" );
+			}
+			IServiceInstanceNameGenerator sin = (IServiceInstanceNameGenerator)cls.newInstance();
+			InstanceName = sin.getInstanceName(dataOperator,this);
+		} catch (ClassNotFoundException e) {
+			throw new CommonException("IServiceInstanceNameGenerator imple class ["+ insGenClass+"] not found" );
+		} catch (InstantiationException | IllegalAccessException e) {
+			throw new CommonException("",e);
+		}
+	}
+
 	private static void loadExtConfig() {
 		List<String> configFiles = ClassScannerUtils.getClasspathResourcePaths("META-INF/jmicro", "*.properties");
 		Map<String,String> params = new HashMap<>();
@@ -250,12 +280,33 @@ public class Config implements IConfigChangeListener{
 	}
 	
 	public void loadConfig(Set<IConfigLoader> configLoaders){
+		
+		//加载全局配置
 		for(IConfigLoader cl : configLoaders){
 			cl.setDataOperator(this.dataOperator);
-			cl.load(ServiceConfigDir,this.servicesConfig);
 			cl.load(CfgDir,this.globalConfig);
 			cl.setConfigChangeListener(this);
 		}
+		
+		initInstanceName();
+		
+		RaftBaseDir = Constants.CFG_ROOT +"/"+InstanceName;
+		ServiceConfigDir = RaftBaseDir+"/config";
+		ServiceItemCofigDir = RaftBaseDir+"/srvconfig";
+		
+		if(!dataOperator.exist(Config.CfgDir)) {
+			dataOperator.createNode(Config.CfgDir, "", false);
+		}
+		
+		if(!dataOperator.exist(Config.ServiceConfigDir)) {
+			dataOperator.createNode(Config.ServiceConfigDir, "", false);
+		}
+		
+		//加载服务级配置
+		for(IConfigLoader cl : configLoaders){
+			cl.load(ServiceConfigDir,this.servicesConfig);
+		}
+		
 		init0();
 	}
 	
@@ -275,11 +326,11 @@ public class Config implements IConfigChangeListener{
 	public void configChange(String path, String value) {
 		int index = -1;
 		if((index = path.indexOf(ServiceConfigDir)) >= 0 ) {
-			String subPath = path.substring(index+ServiceConfigDir.length(), path.length());
+			String subPath = path.substring(index + ServiceConfigDir.length(), path.length());
 			this.servicesConfig.put(subPath, value);
 			notifiListener(subPath,value);
 		}else if((index = path.indexOf(CfgDir)) >= 0 )  {
-			String subPath = path.substring(index+CfgDir.length(), path.length());
+			String subPath = path.substring(index + CfgDir.length(), path.length());
 			this.globalConfig.put(subPath, value);
 			notifiListener(subPath,value);
 		} else {
@@ -344,6 +395,21 @@ public class Config implements IConfigChangeListener{
 
 	//@JMethod("init")
 	public void init0(){
+		
+		if(CommadParams.containsKey(Constants.LOCAL_DATA_DIR)) {
+	        Host = getCommandParam(Constants.LOCAL_DATA_DIR);
+		}else if(this.servicesConfig.containsKey(Constants.BIND_IP)) {
+			 Host = this.getServiceParam(Constants.BIND_IP);
+		}else if(this.globalConfig.containsKey(Constants.BIND_IP)) {
+			 Host = this.getGlobalServiceParam(Constants.BIND_IP);
+		} else {
+			List<String> ips = Utils.getIns().getLocalIPList();
+	        if(ips.isEmpty()){
+	        	throw new CommonException("IP not found");
+	        }
+	        Host = ips.get(0);
+		}
+		
 		//命令行参数具有最高优先级
 		//params.putAll(CommadParams);
 		if(CommadParams.containsKey(Constants.BIND_IP)) {
@@ -383,6 +449,10 @@ public class Config implements IConfigChangeListener{
 	
 	public static <T> T getCommandParam(String key,Class<T> type,T defalutValue) {
 		return getValue(CommadParams.get(key),type,defalutValue);
+	}
+	
+	public static <T> T getExtParam(String key,Class<T> type,T defalutValue) {
+		return getValue(extConfig.get(key),type,defalutValue);
 	}
 	
 	public static String getCommandParam(String key) {
@@ -449,8 +519,9 @@ public class Config implements IConfigChangeListener{
 	 * 当命令行参数匹配成功时，不会再找其他参数，否则找服务级参数，最后找全局配置参数，都匹配不到，返回空。
 	 * 1。命令行参数中查找，如果找不到，进入2
 	 * 2。优先在服务配置中查找配置，如果找不到，进入3
-	 * 3。在全局配置中查找，如果找不到，进入4
-	 * 4。在环境系统环境变量中找，如果没找到，返回NULL
+	 * 3。在META-INF/jmicro/*.properties中查找
+	 * 4。在全局配置中查找，如果找不到，进入4
+	 * 5。在环境系统环境变量中找，如果没找到，返回NULL
 	 * @param key
 	 * @return
 	 */
@@ -472,6 +543,10 @@ public class Config implements IConfigChangeListener{
 		
 		if(v == null){
 			v = getEnvParam(key);
+		}
+		
+		if(v == null){
+			v = extConfig.get(key);
 		}
 		
 		return v;
@@ -512,15 +587,6 @@ public class Config implements IConfigChangeListener{
 			throw new CommonException("dataOperator cannot be null");
 		}
 		this.dataOperator = dataOperator;
-		if(!dataOperator.exist(Config.CfgDir)) {
-			dataOperator.createNode(Config.CfgDir, "", false);
-			//dataOperator.createNode(Config.CfgDir+"/val", "_v", false);
-		}
-		
-		if(!dataOperator.exist(Config.ServiceConfigDir)) {
-			dataOperator.createNode(Config.ServiceConfigDir, "", false);
-			//dataOperator.createNode(Config.ServiceConfigDir+"/val", "_v", false);
-		}
 	}
 
 	public Map<String,String> getParamByPattern(String key) {
@@ -551,11 +617,19 @@ public class Config implements IConfigChangeListener{
 			}
 		}
 		
+
+		for(Map.Entry<String, String> e : extConfig.entrySet()) {
+			if(e.getKey().startsWith(key)) {
+				result.put(e.getKey(), e.getValue());
+			}
+		}
+		
 		for(Map.Entry<String, String> e : this.servicesConfig.entrySet()) {
 			if(e.getKey().startsWith(key)) {
 				result.put(e.getKey(), e.getValue());
 			}
 		}
+		
 		
 		for(Map.Entry<String, String> e : CommadParams.entrySet()) {
 			if(e.getKey().startsWith(key)) {
