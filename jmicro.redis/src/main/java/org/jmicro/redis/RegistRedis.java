@@ -30,12 +30,16 @@ public class RegistRedis implements IFactoryListener{
 	@Override
 	public void preInit(IObjectFactory of) {
 		Config cfg = of.get(Config.class);
-		redisHost = cfg.getString("/RegistRedis/redisHost", "127.0.0.1");
-		if(StringUtils.isEmpty(redisHost)) {
-			throw new CommonException("Redis config [/RegistRedis/redisHost] not found");
+		String rh = cfg.getString("/RegistRedis/redisHost", "127.0.0.1");
+		if(StringUtils.isNotEmpty(rh)) {
+			redisHost = rh;
+			//throw new CommonException("Redis config [/RegistRedis/redisHost] not found");
 		}
-		
-		port = cfg.getInt("/RegistRedis/port", 6379);
+		int p = cfg.getInt("/RegistRedis/port", 6379);
+		if(p > 0) {
+			port = p;
+			//throw new CommonException("Redis config [/RegistRedis/redisHost] not found");
+		}
 		
 		Jedis jedis = new Jedis(redisHost,port);
 		of.regist(Jedis.class, jedis);

@@ -16,32 +16,55 @@
 # 下载源代码
 git checkout https://github.com/mynewworldyyl/jmicro.git
 
-# 构建
+# 构建JMicro全部依赖包
+进入到下载的源码目录，执行如下命令：
+
 maven clean install
 
-# 启动Zookeeper，很快将会增加ETCD支持，到时性能将会有质的提高
- run zookeeper 
+# 启动Zookeeper，端口保持默认值2181
+ 参考：https://zookeeper.apache.org/doc/r3.4.13/zookeeperStarted.html
  
-# ID服务
-java -jar jmicro.idgenerator-0.0.1-SNAPSHOT.jar
-或
-java -cp . org.jmicro.gateway.JMicroIdGenerator
+# 启动Redis，端口保持默认值6379
+ Linux: https://redis.io/download
+ 
+ Windows: https://github.com/MicrosoftArchive/redis/releases
+ 
+# 构建运行服务提供方
 
-# Api网关
-java -jar jmicro.gateway-0.0.1-SNAPSHOT.jar
-或
-java -cp . org.jmicro.gateway.ApiGatewayMain
+打开命令行窗口
 
-# 实时日志监控
-java -jar jmicro.main.monitor.log-0.0.1-SNAPSHOT.jar
-或
-java -cp . org.jmicro.main.monitor.LinkRouterMonitor
+进入provider目录
 
-# 实时请求数据监控(限流，熔断，降级的基础)
+cd ${SRC_ROOT}\jmicro.example\jmicro.example.provider
 
-java -jar jmicro.main.monitor.exception-0.0.1-SNAPSHOT.jar
-或
-java -cp . org.jmicro.main.monitor.ServiceReqMonitor
+构建运行包
+
+mvn clean install -Pbuild-main
+
+运行服务
+
+java -jar target/jmicro.example.provider-0.0.1-SNAPSHOT-jar-with-dependencies.jar
+
+
+# 构建运行服务消费方
+
+打开一个新命令行窗口
+
+进入comsumer目录
+
+cd ${SRC_ROOT}\jmicro.example\jmicro.example.comsumer
+
+构建运行包
+
+mvn clean install -Pbuild-main
+
+运行服务
+
+java -jar target/jmicro.example.comsumer-0.0.1-SNAPSHOT-jar-with-dependencies.jar
+
+最后一行看到如下输出 ，即服务提供方返回的消息
+
+Server say hello to: Hello JMicro
 
 
 # 定义一个服务,完整代码请参考jmicro.example下面的子项目

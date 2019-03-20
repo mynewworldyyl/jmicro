@@ -27,7 +27,7 @@ import org.jmicro.api.JMicro;
 public class ServiceProvider {
 
 	public static void main(String[] args) {
-		JMicro.getObjectFactoryAndStart(new String[]{"-DstartHttp=true"});
+		JMicro.getObjectFactoryAndStart(new String[]{});
 		JMicro.waitForShutdown();
 	}
 
