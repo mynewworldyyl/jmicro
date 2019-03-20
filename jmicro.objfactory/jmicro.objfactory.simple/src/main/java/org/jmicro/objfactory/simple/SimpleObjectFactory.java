@@ -68,8 +68,8 @@ import org.slf4j.LoggerFactory;
  * @author Yulei Ye
  * @date 2018年10月4日-下午12:12:24
  */
-@ObjFactory(Constants.DEFAULT_OBJ_FACTORY)
-@Component(Constants.DEFAULT_OBJ_FACTORY)
+/*@ObjFactory(Constants.DEFAULT_OBJ_FACTORY)
+@Component(Constants.DEFAULT_OBJ_FACTORY)*/
 public class SimpleObjectFactory implements IObjectFactory {
 
 	static AtomicInteger idgenerator = new AtomicInteger();
@@ -307,7 +307,7 @@ public class SimpleObjectFactory implements IObjectFactory {
 		return true;
 	}
 
-	public synchronized void start(){
+	public synchronized void start(IDataOperator dataOperator){
 		if(!isInit.compareAndSet(0, 1)){
 			if(isInit.get() == 1) {
 				synchronized(isInit) {
@@ -351,8 +351,10 @@ public class SimpleObjectFactory implements IObjectFactory {
 		String registryName = Config.getCommandParam(Constants.REGISTRY_KEY, String.class, Constants.DEFAULT_REGISTRY);
 	
 		IRegistry registry = null;
-		IDataOperator dop = null;
+		IDataOperator dop = dataOperator;
 		ServiceManager srvManager = null;
+		
+		this.cacheObj(dop.getClass(), dop, true);
 		
 		/*Set<IServer> servers = new HashSet<>();
 		ServiceLoader sl = null;*/
@@ -429,7 +431,7 @@ public class SimpleObjectFactory implements IObjectFactory {
 		
 		//this.cacheObj(IObjectFactory.class, this, true);
 		
-		dop.init();
+		//dop.init();
 		
 		Config cfg = (Config)objs.get(Config.class);
 		//初始化配置目录

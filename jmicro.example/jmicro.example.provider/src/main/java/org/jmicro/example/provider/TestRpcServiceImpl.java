@@ -14,8 +14,7 @@ import org.jmicro.common.CommonException;
 import org.jmicro.common.Constants;
 import org.jmicro.example.api.ITestRpcService;
 
-@Service(timeout=10*60*1000,maxSpeed=100,baseTimeUnit=Constants.TIME_SECONDS,
-namespace="testrpc",version="0.0.1")
+@Service(timeout=10*60*1000,maxSpeed=100,baseTimeUnit=Constants.TIME_SECONDS,namespace="testrpc",version="0.0.1")
 @Component
 public class TestRpcServiceImpl implements ITestRpcService{
 

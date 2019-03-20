@@ -14,7 +14,6 @@ public class TestPubsubManager extends JMicroBaseTestCase{
 	@BeforeClass //
 	public static void setupTestClass() {
 		of = JMicro.getObjectFactoryAndStart(getArgs());
-		of.start();
 		registry = of.get(IRegistry.class);
 	}
 	

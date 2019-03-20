@@ -16,8 +16,6 @@ public class TestIdGenerator {
 	public void testLongIDGenerator(){
 		IObjectFactory of = JMicro.getObjectFactoryAndStart(new String[] {"-DinstanceName=testLongIDGenerator",
 				"-Dorg.jmicro.api.idgenerator.IIdClient=idClient"});
-		of.start();
-		
 		IdClient g = of.get(IdClient.class);
 		g.getLongId(Message.class.getName());
 	}

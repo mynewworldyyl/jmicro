@@ -123,6 +123,8 @@ public class Config implements IConfigChangeListener{
 			}
 		}
 		
+		loadExtConfig();
+		
 		if(CommadParams.containsKey(Constants.BASE_PACKAGES_KEY)) {
 			String ps = CommadParams.get(Constants.BASE_PACKAGES_KEY);
 			if(!StringUtils.isEmpty(ps)){
@@ -131,11 +133,17 @@ public class Config implements IConfigChangeListener{
 			}
 		}
 		
-		if(CommadParams.containsKey(Constants.REGISTRY_URL_KEY)) {
-			String registry = CommadParams.get("registryUrl");
-			if(StringUtils.isEmpty(registry)){
-				throw new CommonException("Invalid registry url: "+ registry);
-			}
+		String registry = getCommandParam(Constants.REGISTRY_URL_KEY);
+		
+		if(StringUtils.isEmpty(registry)) {
+			registry = getEnvParam(Constants.REGISTRY_URL_KEY);
+		}
+		
+		if(StringUtils.isEmpty(registry)) {
+			registry = getExtParam(Constants.REGISTRY_URL_KEY, String.class, null);
+		}
+		
+		if(!StringUtils.isEmpty(registry)) {
 			int index = registry.indexOf("://");
 			if(index > 0){
 				RegistryProtocol = registry.substring(0,index);
@@ -148,12 +156,10 @@ public class Config implements IConfigChangeListener{
 				String[] hostport = registry.split(":");
 				RegistryHost = hostport[0];
 				RegistryPort = hostport[1];
-			}else {
+			} else {
 				throw new CommonException("Invalid registry url: "+ registry);
 			}
 		}
-		
-		loadExtConfig();
 		
 	}
 	
@@ -205,8 +211,10 @@ public class Config implements IConfigChangeListener{
 				is = cl.getResourceAsStream(f);
 				Properties p = new Properties();
 				p.load(is);
+				logger.info("Path:{}",f);
 				for(Object k : p.keySet()) {
 					String key = k.toString();
+					logger.debug("****{}={}", key, p.getProperty(key, ""));
 					if(Constants.BASE_PACKAGES_KEY.equals(key)) {
 						String ps = p.getProperty(key, null);
 						if(!StringUtils.isEmpty(ps)){
@@ -223,6 +231,7 @@ public class Config implements IConfigChangeListener{
 					}
 					params.put(key, p.getProperty(key));
 				}
+				logger.debug("End config {}******************************************",f);
 			} catch (IOException e) {
 				logger.error("loadExtConfig",e);
 			} finally {

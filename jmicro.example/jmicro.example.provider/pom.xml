@@ -64,13 +64,10 @@
 			 <artifactId>jmicro.example.api</artifactId>
 			  <version>0.0.1-SNAPSHOT</version>
         </dependency>
-        
-        <!-- ID服务 -->
          <dependency>
 			 <groupId>org.jmicro</groupId>
 			 <artifactId>jmicro.idgenerator</artifactId>
         </dependency>
-        
          <dependency>
 			 <groupId>org.jmicro</groupId>
 			 <artifactId>jmicro.classloader.client</artifactId>

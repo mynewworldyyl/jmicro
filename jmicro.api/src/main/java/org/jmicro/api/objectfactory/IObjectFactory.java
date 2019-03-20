@@ -18,6 +18,7 @@ package org.jmicro.api.objectfactory;
 
 import java.util.Set;
 
+import org.jmicro.api.raft.IDataOperator;
 import org.jmicro.api.registry.ServiceItem;
 /**
  * 为JMicro微服务框架量身定制的IOC容器，具有基本的依赖注入，属性注入，属性动态更新，生成动态代理对像，动态代理远程对像，动态代理服务对像等功能。
@@ -102,7 +103,7 @@ public interface IObjectFactory {
 	 * 6. 服务启动完成，
 	 * 
 	 */
-	void start();
+	void start(IDataOperator dataOperator);
 	
 	/**
 	 * 如果IPostInitListener没有加PostListener注解，可以在调用start前，调用此方法加入，然后再start容器

@@ -385,7 +385,7 @@ public class ClassScannerUtils {
 		}
 		
         Enumeration<URL> dirs;
-        try {  
+        try {
             dirs = Thread.currentThread().getContextClassLoader().getResources(packageDirName);  
             while (dirs.hasMoreElements()) {  
                 URL url = dirs.nextElement();

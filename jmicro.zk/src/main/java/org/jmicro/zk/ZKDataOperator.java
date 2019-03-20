@@ -47,7 +47,6 @@ import org.apache.zookeeper.ZooDefs;
 import org.apache.zookeeper.data.ACL;
 import org.apache.zookeeper.data.Stat;
 import org.jmicro.api.IListener;
-import org.jmicro.api.annotation.Component;
 import org.jmicro.api.config.Config;
 import org.jmicro.api.raft.IChildrenListener;
 import org.jmicro.api.raft.IConnectionStateChangeListener;
@@ -66,7 +65,7 @@ import org.slf4j.LoggerFactory;
  * @author Yulei Ye
  * @date 2018年10月4日-下午12:10:34
  */
-@Component(value=Constants.DEFAULT_DATA_OPERATOR,level=0,active=true,lazy=false)
+//@Component(value=Constants.DEFAULT_DATA_OPERATOR,level=0,active=true,lazy=false)
 public class ZKDataOperator implements IDataOperator{
 
 	private final static Logger logger = LoggerFactory.getLogger(ZKDataOperator.class);

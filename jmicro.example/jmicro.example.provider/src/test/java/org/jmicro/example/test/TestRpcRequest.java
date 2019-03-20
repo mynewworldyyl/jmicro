@@ -51,7 +51,6 @@ public class TestRpcRequest {
 		JMicroContext.setCfg(cfg);*/
 		
 		IObjectFactory of = JMicro.getObjectFactoryAndStart(new String[0]);
-		of.start();
 		Utils.getIns().waitForShutdown();
 	}
 

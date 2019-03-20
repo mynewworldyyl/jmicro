@@ -18,13 +18,11 @@ package org.jmicro.api;
 
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
 import java.lang.reflect.Proxy;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Set;
 
 import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.ObjFactory;
@@ -32,6 +30,7 @@ import org.jmicro.api.codec.PrefixTypeEncoder;
 import org.jmicro.api.config.Config;
 import org.jmicro.api.objectfactory.IObjectFactory;
 import org.jmicro.api.objectfactory.ProxyObject;
+import org.jmicro.api.raft.IDataOperator;
 import org.jmicro.api.registry.IRegistry;
 import org.jmicro.common.Base64Utils;
 import org.jmicro.common.CommonException;
@@ -51,6 +50,8 @@ public class JMicro {
 	
 	private static boolean isInit = false;
 	
+	private static IDataOperator dataOperator = null;
+	
 	private static void init0() {
 		if(isInit) {
 			return;
@@ -58,7 +59,29 @@ public class JMicro {
 		
 		isInit = true;
 		
-		Set<Class<?>> objClazzes = ClassScannerUtils.getIns().loadClassesByAnno(ObjFactory.class);
+		dataOperator = createOrGetDataOperator();
+		
+		String objClass  = getVal(Constants.OBJ_FACTORY_KEY,"org.jmicro.objfactory.simple.SimpleObjectFactory");
+		
+		Class<?> objCls = loadClass(objClass);
+		
+		IObjectFactory of=null;
+		of = (IObjectFactory)newInstance(objCls);
+		
+		String objName = Constants.DEFAULT_OBJ_FACTORY;
+		ObjFactory anno = objCls.getAnnotation(ObjFactory.class);
+		if(anno != null) {
+			objName = anno.value();
+		}
+		
+		if(objFactorys.containsKey(objName)){
+			throw new CommonException("Redefined Object Factory with name: "+objName
+			+",cls:"+objClass+",exists:"+ objFactorys.get(objName).getClass().getName());
+		}
+		
+		objFactorys.put(objName, of);
+		
+	/*	Set<Class<?>> objClazzes = ClassScannerUtils.getIns().loadClassesByAnno(ObjFactory.class);
 		for(Class<?> c : objClazzes) {
 			if(Modifier.isAbstract(c.getModifiers()) || Modifier.isInterface(c.getModifiers())){
 				throw new CommonException("Object Factory must not abstract or interface:"+c.getName());
@@ -79,8 +102,69 @@ public class JMicro {
 			} catch (InstantiationException | IllegalAccessException e) {
 				throw new CommonException("Instance ObjectFactory exception: "+c.getName(),e);
 			}
-		}
+		}*/
+	}
 	
+	public static IDataOperator createOrGetDataOperator() {
+		if(dataOperator != null) {
+			return dataOperator;
+		}
+		String objClass  = getVal(Constants.DATA_OPERATOR,"org.jmicro.zk.ZKDataOperator");
+		
+		Class<?> objCls = loadClass(objClass);
+		
+		dataOperator = (IDataOperator)newInstance(objCls);
+		dataOperator.init();
+		
+		return dataOperator;
+	}
+	
+	public static String getVal(String key,String defaultVal) {
+		String objClass  = Config.getCommandParam(key);
+		
+		if(StringUtils.isEmpty(objClass)) {
+			objClass = Config.getEnvParam(key);
+		}
+		
+		if(StringUtils.isEmpty(objClass)) {
+			objClass = Config.getExtParam(key,String.class,null);
+		}
+		
+		if(StringUtils.isEmpty(objClass) && dataOperator != null) {
+			String path = Config.CfgDir + "/" + key;
+			objClass = dataOperator.getData(path);
+		}
+		
+		if(StringUtils.isEmpty(objClass)) {
+			objClass = defaultVal;
+		}
+		
+		return defaultVal;
+	}
+	
+	
+	public static Class<?> loadClass(String className) {
+		ClassLoader cl = Thread.currentThread().getContextClassLoader();
+		if(cl == null) {
+			cl = JMicro.class.getClassLoader();
+		}
+		
+		Class<?> objCls;
+		try {
+			objCls = cl.loadClass(className);
+		} catch (ClassNotFoundException e) {
+			throw new CommonException(className+" not found!",e);
+		}
+		return objCls;
+	}
+	
+	
+	public static Object newInstance(Class<?> cls) {
+		try {
+			return cls.newInstance();
+		} catch (InstantiationException | IllegalAccessException e) {
+			throw new CommonException(cls+" newInstance Error!",e);
+		}
 	}
 	
 	public static IObjectFactory getObjectFactoryNotStart(String[] args,String name){
@@ -95,13 +179,14 @@ public class JMicro {
 					+ IObjectFactory.class.getName() +"] implementation is include in the classpath and "
 					+ "retry again");
 		}
+		
 		return of;
 	}
 
 	public static IObjectFactory getObjectFactoryAndStart(String[] args){
 		System.out.println(System.getProperty("java.class.path"));
 		IObjectFactory of =  getObjectFactoryNotStart(args,null);
-		of.start();
+		of.start(dataOperator);
 		return of;
 	}
 	
