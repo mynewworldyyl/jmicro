@@ -42,7 +42,8 @@
 				<configuration>
 					<archive>
 						<manifest>
-							<mainClass>org.jmicro.example.comsumer.ServiceComsumer</mainClass>
+							<!-- <mainClass>org.jmicro.example.comsumer.ServiceComsumer</mainClass> -->
+							<mainClass>org.jmicro.example.comsumer.PressureTest</mainClass>
 						</manifest>
 					</archive>
 				</configuration>

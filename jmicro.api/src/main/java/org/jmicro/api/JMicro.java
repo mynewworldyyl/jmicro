@@ -120,15 +120,7 @@ public class JMicro {
 	}
 	
 	public static String getVal(String key,String defaultVal) {
-		String objClass  = Config.getCommandParam(key);
-		
-		if(StringUtils.isEmpty(objClass)) {
-			objClass = Config.getEnvParam(key);
-		}
-		
-		if(StringUtils.isEmpty(objClass)) {
-			objClass = Config.getExtParam(key,String.class,null);
-		}
+		String objClass  = Config.getValue(key, String.class, defaultVal);
 		
 		if(StringUtils.isEmpty(objClass) && dataOperator != null) {
 			String path = Config.CfgDir + "/" + key;

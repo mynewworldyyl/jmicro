@@ -65,7 +65,7 @@ public class ServiceReqMonitor extends AbstractMonitorDataSubscriber implements 
 	private boolean openDebug = true;
 	
 	public static void main(String[] args) {
-		 JMicro.getObjectFactoryAndStart(new String[] {"-DinstanceName=ServiceReqMonitor"});
+		 JMicro.getObjectFactoryAndStart(new String[] {});
 		 Utils.getIns().waitForShutdown();
 	}
 

@@ -228,7 +228,7 @@ public class ConfigPostInitListener extends PostInitListenerAdapter {
 			return val;
 		}
 		
-		val = Config.getExtParam(key, String.class, null);
+		val = Config.getExtParam(key);
 		if(!StringUtils.isEmpty(val)) {
 			//在配置中心中建立配置，以便能动态修改，在系统 关闭后，配置会自动删除，以使下次还从配置文件读取初始值
 			logger.info("class:{} Field:{} Config from extension:{}={}",f.getDeclaringClass().getName(),f.getName(),key,val);

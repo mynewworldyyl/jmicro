@@ -53,7 +53,7 @@ public class BreakerManager implements ITickerAction{
 	private final static Logger logger = LoggerFactory.getLogger(BreakerManager.class);
 	
 	public static void main(String[] args) {
-		JMicro.getObjectFactoryAndStart(new String[]{"-DinstanceName=Breaker"});
+		JMicro.getObjectFactoryAndStart(new String[]{});
 		JMicro.waitForShutdown();
 	}
 	

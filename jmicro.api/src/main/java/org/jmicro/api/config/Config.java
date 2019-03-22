@@ -140,7 +140,7 @@ public class Config implements IConfigChangeListener{
 		}
 		
 		if(StringUtils.isEmpty(registry)) {
-			registry = getExtParam(Constants.REGISTRY_URL_KEY, String.class, null);
+			registry = getExtParam(Constants.REGISTRY_URL_KEY);
 		}
 		
 		if(!StringUtils.isEmpty(registry)) {
@@ -174,7 +174,7 @@ public class Config implements IConfigChangeListener{
 		
 		String insGenClass = getCommandParam(Constants.INSTANCE_NAME_GEN_CLASS);
 		if(StringUtils.isEmpty(insGenClass)) {
-			insGenClass = getExtParam(Constants.INSTANCE_NAME_GEN_CLASS, String.class, null);
+			insGenClass = getExtParam(Constants.INSTANCE_NAME_GEN_CLASS);
 		}
 		
 		if(StringUtils.isEmpty(insGenClass)) {
@@ -214,6 +214,7 @@ public class Config implements IConfigChangeListener{
 				logger.info("Path:{}",f);
 				for(Object k : p.keySet()) {
 					String key = k.toString();
+					String v = p.getProperty(key);
 					logger.debug("****{}={}", key, p.getProperty(key, ""));
 					if(Constants.BASE_PACKAGES_KEY.equals(key)) {
 						String ps = p.getProperty(key, null);
@@ -233,9 +234,9 @@ public class Config implements IConfigChangeListener{
 					if(!key.startsWith("/")) {
 						key = "/" + key;
 					}
-					key = key.replaceAll(".", "/");
+					key = key.replaceAll("\\.", "/");
 					
-					params.put(key, p.getProperty(key));
+					params.put(key, v);
 				}
 				logger.debug("End config {}******************************************",f);
 			} catch (IOException e) {
@@ -466,20 +467,46 @@ public class Config implements IConfigChangeListener{
 		return getValue(CommadParams.get(key),type,defalutValue);
 	}
 	
-	public static <T> T getExtParam(String key,Class<T> type,T defalutValue) {
-		return getValue(extConfig.get(key),type,defalutValue);
+	public static String getExtParam(String key) {
+		return getMapVal(key,extConfig,null);
+	}
+	
+	private static String getKey(String key) {
+		if(key == null) {
+			return null;
+		}
+		if(key.startsWith("/")) {
+			key = key.replace("/", "\\.");
+		} else {
+			key = "/" + key;
+			key = key.replace("\\.", "/");
+		}
+		return key;
+	}
+	
+	private static String getMapVal(String key,Map<String,String> map, String defalutValue) {
+		String v =  map.get(key);
+		if(StringUtils.isEmpty(v)) {
+			v = map.get(getKey(key));
+		}
+		if(StringUtils.isEmpty(v)) {
+			return defalutValue;
+		} else {
+			return v;
+		}
+		
 	}
 	
 	public static String getCommandParam(String key) {
-		return CommadParams.get(key);
+		return getMapVal(key,CommadParams,null);
 	}
 	
 	public String getServiceParam(String key) {
-		return servicesConfig.get(key);
+		return getMapVal(key,servicesConfig,null);
 	}
 	
 	public String getGlobalServiceParam(String key) {
-		return globalConfig.get(key);
+		return getMapVal(key,globalConfig,null);
 	}
 	
 	public static <T> T getEnvParam(String key,Class<T> type,T defalutValue) {
@@ -561,7 +588,7 @@ public class Config implements IConfigChangeListener{
 		}
 		
 		if(v == null){
-			v = extConfig.get(key);
+			v = getExtParam(key);
 		}
 		
 		return v;

@@ -124,7 +124,7 @@ public class PubSubServer implements IInternalSubRpc{
 	private ClassLoadingWorker clWorker = null;
 	
 	public static void main(String[] args) {
-		 JMicro.getObjectFactoryAndStart(new String[] {"-DinstanceName=PubSubServer"});
+		 JMicro.getObjectFactoryAndStart(new String[] {});
 		 Utils.getIns().waitForShutdown();
 	}
 	
