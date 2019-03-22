@@ -12,7 +12,7 @@ import org.jmicro.api.monitor.SF;
 import org.jmicro.api.objectfactory.IObjectFactory;
 import org.jmicro.api.registry.ServiceMethod;
 import org.jmicro.api.registry.UniqueServiceMethodKey;
-import org.jmicro.example.api.ISayHello;
+import org.jmicro.example.api.rpc.ISimpleRpc;
 import org.jmicro.example.comsumer.TestRpcClient;
 import org.jmicro.test.JMicroBaseTestCase;
 import org.junit.Test;
@@ -94,7 +94,7 @@ public class TestMonitor extends JMicroBaseTestCase{
 		IObjectFactory of = JMicro.getObjectFactoryAndStart(new String[] {"-DinstanceName=testSayHelloToPrintRouterLog","-Dclient=true"});
 		
 		JMicroContext.get().configMonitor(1, 1);
-		ISayHello sayHello = of.get(ISayHello.class);
+		ISimpleRpc sayHello = of.get(ISimpleRpc.class);
 		IMonitorDataSubmiter monitor = of.get(IMonitorDataSubmiter.class);
 		JMicroContext.get().setObject(JMicroContext.MONITOR, monitor);
 		

@@ -18,8 +18,8 @@ package org.jmicro.example.test;
 
 import org.jmicro.api.JMicro;
 import org.jmicro.common.Constants;
-import org.jmicro.example.api.ISayHello;
 import org.jmicro.example.api.ITestRpcService;
+import org.jmicro.example.api.rpc.ISimpleRpc;
 import org.jmicro.gateway.client.ApiGatewayClient;
 import org.jmicro.gateway.client.ApiGatewayConfig;
 import org.junit.Before;
@@ -43,16 +43,16 @@ public class TestApigateClient {
 	
 	@Test
 	public void testGetService() {
-		ISayHello srv = client.getService(ISayHello.class,
-				"testapigw", "0.0.1");
+		ISimpleRpc srv = client.getService(ISimpleRpc.class,
+				"simpleRpc", "0.0.1");
 		srv.hello("Hello api gateway");
 	}
 	
 	@Test
 	public void testCallService() {
 		String[] args = new String[] {"hello"};
-		String result =(String) client.callService(ISayHello.class.getName(),
-		"testsayhello", "0.0.1","hello",args);
+		String result =(String) client.callService(ISimpleRpc.class.getName(),
+		"simpleRpc", "0.0.1","hello",args);
 		System.out.println(result);
 	}
 	

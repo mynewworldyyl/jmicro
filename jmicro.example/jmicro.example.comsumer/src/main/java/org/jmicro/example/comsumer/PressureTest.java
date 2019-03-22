@@ -5,7 +5,7 @@ import java.util.Random;
 import org.jmicro.api.JMicro;
 import org.jmicro.api.JMicroContext;
 import org.jmicro.api.objectfactory.IObjectFactory;
-import org.jmicro.example.api.ISayHello;
+import org.jmicro.example.api.rpc.ISimpleRpc;
 
 public class PressureTest {
 
@@ -30,7 +30,7 @@ class Worker implements Runnable{
 	
 	@Override
 	public void run() {
-		ISayHello sayHello = of.get(ISayHello.class);
+		ISimpleRpc sayHello = of.get(ISimpleRpc.class);
 		JMicroContext.get().removeParam(JMicroContext.LINKER_ID);
 		
 		for(;;){

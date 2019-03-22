@@ -229,6 +229,12 @@ public class Config implements IConfigChangeListener{
 						logger.warn("Repeat config KEY:"+key+",params:"+params.get(key)+",config:"+p.get(k));
 						//throw new CommonException("Repeat config KEY:"+key+",params:"+params.get(key)+",config:"+p.get(k));
 					}
+					
+					if(!key.startsWith("/")) {
+						key = "/" + key;
+					}
+					key = key.replaceAll(".", "/");
+					
 					params.put(key, p.getProperty(key));
 				}
 				logger.debug("End config {}******************************************",f);

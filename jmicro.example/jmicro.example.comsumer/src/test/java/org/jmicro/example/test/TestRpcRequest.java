@@ -7,8 +7,8 @@ import org.jmicro.api.monitor.IServiceMonitorData;
 import org.jmicro.api.service.ICheckable;
 import org.jmicro.common.Constants;
 import org.jmicro.common.Utils;
-import org.jmicro.example.api.ISayHello;
 import org.jmicro.example.api.ITestRpcService;
+import org.jmicro.example.api.rpc.ISimpleRpc;
 import org.jmicro.example.comsumer.TestRpcClient;
 import org.jmicro.test.JMicroBaseTestCase;
 import org.junit.Test;
@@ -16,7 +16,7 @@ import org.junit.Test;
 public class TestRpcRequest extends JMicroBaseTestCase{
 
 	public static void main(String[] args) {
-		ISayHello sayHelloSrv = JMicro.getRpcServiceTestingArgs(ISayHello.class);
+		ISimpleRpc sayHelloSrv = JMicro.getRpcServiceTestingArgs(ISimpleRpc.class);
 		sayHelloSrv.hello("Are you OK");
 	}
 	

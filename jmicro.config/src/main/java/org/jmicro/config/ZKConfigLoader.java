@@ -73,7 +73,7 @@ public class ZKConfigLoader implements IConfigLoader{
 	private void loadOne(String root,String child,Map<String,String> params) {
 		String fullpath = root+"/"+child;
 		String data = dataOperator.getData(fullpath);
-		if(!StringUtils.isEmpty(data)){
+		if(StringUtils.isNotEmpty(data)){
 			updateData("/"+child,data,params);
 			dataOperator.addDataListener(fullpath, this.dataListener);
 		} 

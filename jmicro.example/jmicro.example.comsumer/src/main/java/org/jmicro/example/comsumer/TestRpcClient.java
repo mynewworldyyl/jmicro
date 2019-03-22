@@ -8,8 +8,8 @@ import org.jmicro.api.annotation.Reference;
 import org.jmicro.api.monitor.IMonitorDataSubscriber;
 import org.jmicro.api.test.Person;
 import org.jmicro.common.CommonException;
-import org.jmicro.example.api.ISayHello;
 import org.jmicro.example.api.ITestRpcService;
+import org.jmicro.example.api.rpc.ISimpleRpc;
 
 @Component
 public class TestRpcClient {
@@ -17,11 +17,11 @@ public class TestRpcClient {
 	@Reference(required=true,namespace="testrpc",version="0.0.1")
 	private ITestRpcService rpcService;
 	
-	@Reference(required=false,namespace="testsayhello",version="0.0.1")
-	private ISayHello sayHello;
+	@Reference(required=false,namespace="simpleRpc",version="0.0.1")
+	private ISimpleRpc sayHello;
 	
-	@Reference(required=true,namespace="testsayhello",version="0.0.1")
-	private Set<ISayHello> services = new HashSet<>();
+	@Reference(required=true,namespace="simpleRpc",version="0.0.1")
+	private Set<ISimpleRpc> services = new HashSet<>();
 	
 	@Reference(required=false,changeListener="subscriberChange")
 	private Set<IMonitorDataSubscriber> submiters = new HashSet<>();

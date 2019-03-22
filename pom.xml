@@ -105,10 +105,16 @@
 		<module>jmicro.breaker</module>
 		<module>jmicro.test</module>
 		<module>jmicro.ext</module>
+		<module>jmicro.build</module>
     </modules>
 
     <dependencyManagement>
         <dependencies>
+		        <dependency>
+					 <groupId>org.jmicro</groupId>
+					 <artifactId>jmicro.all</artifactId>
+					 <version>${jmicro.version}</version>
+		        </dependency>
              <dependency>
                  <groupId>org.jmicro</groupId>
 				 <artifactId>jmicro.api</artifactId>
@@ -449,15 +455,6 @@
         	</activation>
             <build>
 		        <plugins>
-		            <plugin>
-		                <groupId>org.apache.maven.plugins</groupId>
-		                <artifactId>maven-compiler-plugin</artifactId>
-		                <version>2.3.2</version>
-		                <configuration>
-		                    <source>1.8</source>
-		                    <target>1.8</target>
-		                </configuration>
-		            </plugin>
 		            <plugin>
 		                <artifactId>maven-assembly-plugin</artifactId>
 		                <configuration>

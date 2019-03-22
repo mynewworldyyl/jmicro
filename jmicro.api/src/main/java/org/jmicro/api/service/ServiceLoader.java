@@ -28,6 +28,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import org.jmicro.api.ClassScannerUtils;
 import org.jmicro.api.JMicro;
+import org.jmicro.api.annotation.Cfg;
 import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.Inject;
 import org.jmicro.api.annotation.JMethod;
@@ -36,8 +37,6 @@ import org.jmicro.api.annotation.SMethod;
 import org.jmicro.api.annotation.Service;
 import org.jmicro.api.annotation.Subscribe;
 import org.jmicro.api.config.Config;
-import org.jmicro.api.exception.RpcException;
-import org.jmicro.api.net.IRequest;
 import org.jmicro.api.net.IServer;
 import org.jmicro.api.objectfactory.ProxyObject;
 import org.jmicro.api.registry.IRegistry;
@@ -48,12 +47,12 @@ import org.jmicro.api.registry.UniqueServiceKey;
 import org.jmicro.api.registry.UniqueServiceMethodKey;
 import org.jmicro.common.CommonException;
 import org.jmicro.common.Constants;
-import org.jmicro.common.util.ReflectUtils;
 import org.jmicro.common.util.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javassist.Modifier;
+
 /**
  * 
  * @author Yulei Ye
@@ -63,6 +62,9 @@ import javassist.Modifier;
 public class ServiceLoader {
 
 	private final static Logger logger = LoggerFactory.getLogger(ServiceLoader.class);
+	
+	@Cfg(value = "/startSocket",required=false)
+	private boolean enable = true;
 	
 	@Inject(required=true)
 	private IRegistry registry;
@@ -75,8 +77,8 @@ public class ServiceLoader {
 	
 	@JMethod("init")
 	public void init(){
-		if(Config.isClientOnly()){
-			//纯客户端不需要导出服务
+		if(Config.isClientOnly() || !enable){
+			//纯客户端不需要导出服务,RPC端口没开放
 			logger.warn(Config.getInstanceName()+" Client Only so not load service!");
 			return;
 		}

@@ -2,7 +2,7 @@
     <modelVersion>4.0.0</modelVersion>
     <parent>
          <groupId>org.jmicro</groupId>
-		 <artifactId>jmicro.example</artifactId>
+		 <artifactId>jmicro.parent</artifactId>
 		 <version>0.0.1-SNAPSHOT</version>
     </parent>
     <artifactId>jmicro.example.api</artifactId>
@@ -10,12 +10,10 @@
     <name>${project.artifactId}</name>
     <description>Jmicro example api testing</description>
     <dependencies>
-
-        <dependency>
-			 <groupId>org.jmicro</groupId>
-			 <artifactId>jmicro.api</artifactId>
-        </dependency>
-         
+       <dependency>
+			<groupId>org.jmicro</groupId>
+			<artifactId>jmicro.api</artifactId>
+		</dependency>
     </dependencies>
    
 </project>

@@ -58,6 +58,9 @@ public class NettySocketServer  implements IServer{
 	
 	private  ServerBootstrap server;
 	
+	@Cfg(value = "/startSocket",required=false)
+	private boolean enable = true;
+	
 	@Inject
 	private NettySocketChannelInitializer initializer;
 	
@@ -73,6 +76,10 @@ public class NettySocketServer  implements IServer{
 	
 	@Override
 	public void init() {
+		if(!this.enable) {
+			LOG.info("NettySocketServer is disable");
+			return;
+		}
 		ExecutorConfig config = new ExecutorConfig();
 		config.setMsMaxSize(60);
 		config.setTaskQueueSize(1000);

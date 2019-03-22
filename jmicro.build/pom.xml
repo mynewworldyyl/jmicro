@@ -1,20 +1,191 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
-    <modelVersion>4.0.0</modelVersion>
-    <parent>
-         <groupId>org.jmicro</groupId>
-		 <artifactId>jmicro.parent</artifactId>
-		 <version>0.0.1-SNAPSHOT</version>
-    </parent>
-    <artifactId>jmicro.build</artifactId>
-    <packaging>jar</packaging>
-    <name>${project.artifactId}</name>
-    <description>build Module</description>
-    <dependencies>
-         <dependency>
-            <groupId>org.jmicro</groupId>
-            <artifactId>jmicro.api</artifactId>
-        </dependency>
-        
-    </dependencies>
-   
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	<parent>
+		<groupId>org.jmicro</groupId>
+		<artifactId>jmicro.parent</artifactId>
+		<version>0.0.1-SNAPSHOT</version>
+	</parent>
+	<artifactId>jmicro.all</artifactId>
+	<packaging>jar</packaging>
+	<name>${project.artifactId}</name>
+	<description>build Module</description>
+	<dependencies>
+		<dependency>
+			<groupId>org.jmicro</groupId>
+			<artifactId>jmicro.api</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.jmicro</groupId>
+			<artifactId>jmicro.redis</artifactId>
+		</dependency>
+		<!-- <dependency>
+			<groupId>org.jmicro</groupId>
+			<artifactId>jmicro.breaker</artifactId>
+		</dependency> -->
+		<!-- <dependency>
+			<groupId>org.jmicro</groupId>
+			<artifactId>jmicro.pubsub</artifactId>
+		</dependency> -->
+		<dependency>
+			<groupId>org.jmicro</groupId>
+			<artifactId>jmicro.etcd</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.jmicro</groupId>
+			<artifactId>jmicro.common</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.jmicro</groupId>
+			<artifactId>jmicro.zk</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.jmicro</groupId>
+			<artifactId>jmicro.gateway</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.jmicro</groupId>
+			<artifactId>jmicro.classloader.server</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.jmicro</groupId>
+			<artifactId>jmicro.classloader.client</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.jmicro</groupId>
+			<artifactId>jmicro.gateway.client</artifactId>
+		</dependency>
+		<!-- <dependency> <groupId>org.jmicro</groupId> <artifactId>jmicro.transport.nio</artifactId> 
+			</dependency> -->
+		<dependency>
+			<groupId>org.jmicro</groupId>
+			<artifactId>jmicro.transport.http</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.jmicro</groupId>
+			<artifactId>jmicro.transport.netty.client</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.jmicro</groupId>
+			<artifactId>jmicro.transport.netty.server</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.jmicro</groupId>
+			<artifactId>jmicro.registry.zk</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.jmicro</groupId>
+			<artifactId>jmicro.objfactory.simple</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.jmicro</groupId>
+			<artifactId>jmicro.config</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.jmicro</groupId>
+			<artifactId>jmicro.limit</artifactId>
+		</dependency>
+		<!-- <dependency> <groupId>org.jmicro</groupId> <artifactId>jmicro.monitor.memory</artifactId> 
+			</dependency> <dependency> <groupId>org.jmicro</groupId> <artifactId>jmicro.monitor.subermemory</artifactId> 
+			</dependency> -->
+		<!-- <dependency>
+			<groupId>org.jmicro</groupId>
+			<artifactId>jmicro.monitor.dashboard</artifactId>
+		</dependency> -->
+		<dependency>
+			<groupId>org.jmicro</groupId>
+			<artifactId>jmicro.monitor.submiter</artifactId>
+		</dependency>
+		<!-- <dependency>
+			<groupId>org.jmicro</groupId>
+			<artifactId>jmicro.main.monitor.exception</artifactId>
+		</dependency> -->
+		<dependency>
+			<groupId>org.jmicro</groupId>
+			<artifactId>jmicro.server</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.jmicro</groupId>
+			<artifactId>jmicro.client</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.jmicro</groupId>
+			<artifactId>jmicro.idgenerator</artifactId>
+		</dependency>
+		<!-- <dependency> <groupId>org.jmicro</groupId> <artifactId>jmicro.choreography.agent</artifactId> 
+			</dependency> <dependency> <groupId>org.jmicro</groupId> <artifactId>jmicro.choregraphy.controller</artifactId> 
+			</dependency> -->
+		<dependency>
+			<groupId>org.jmicro</groupId>
+			<artifactId>jmicro.idgenerator</artifactId>
+		</dependency>
+
+		<dependency>
+			<groupId>org.jmicro</groupId>
+			<artifactId>jmicro.test</artifactId>
+		</dependency>
+
+		<!-- <dependency> <groupId>org.jmicro</groupId> <artifactId>jmicro.mybatis</artifactId> 
+			</dependency> -->
+	</dependencies>
+
+	<build>
+		<plugins>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-shade-plugin</artifactId>
+				<executions>
+					<execution>
+						<phase>package</phase>
+						<goals>
+							<goal>shade</goal>
+						</goals>
+						<configuration>
+							<createSourcesJar>true</createSourcesJar>
+							<promoteTransitiveDependencies>true</promoteTransitiveDependencies>
+							<artifactSet>
+								<includes>
+									<include>org.jmicro:jmicro.common</include>
+									<include>org.jmicro:jmicro.api</include>
+									<include>org.jmicro:jmicro.server</include>
+									<include>org.jmicro:jmicro.client</include>
+									<include>org.jmicro:jmicro.idgenerator</include>
+									<include>org.jmicro:jmicro.zk</include>
+									<include>org.jmicro:jmicro.redis</include>
+									<include>org.jmicro:jmicro.breaker</include>
+									<include>org.jmicro:jmicro.pubsub</include>
+									<include>org.jmicro:jmicro.etcd</include>
+									<include>org.jmicro:jmicro.gateway</include>
+									<include>org.jmicro:jmicro.classloader.server</include>
+									<include>org.jmicro:jmicro.classloader.client</include>
+									<include>org.jmicro:jmicro.gateway.client</include>
+									<include>org.jmicro:jmicro.transport.netty.client</include>
+									<include>org.jmicro:jmicro.transport.netty.server</include>
+									<include>org.jmicro:jmicro.registry.zk</include>
+									<include>org.jmicro:jmicro.objfactory.simple</include>
+									<include>org.jmicro:jmicro.config</include>
+									<include>org.jmicro:jmicro.limit</include>
+									<include>org.jmicro:jmicro.monitor.memory</include>
+									<include>org.jmicro:jmicro.monitor.subermemory</include>
+									<include>org.jmicro:jmicro.monitor.dashboard</include>
+									<include>org.jmicro:jmicro.monitor.submiter</include>
+									<include>org.jmicro:jmicro.choregraphy.agent</include>
+									<include>org.jmicro:jmicro.choregraphy.controller</include>
+									<include>org.jmicro:jmicro.test</include>
+									<!-- <include>org.jmicro:jmicro.mybatis</include> -->
+								</includes>
+							</artifactSet>
+							<transformers>
+								<!-- <transformer implementation="org.apache.maven.plugins.shade.resource.AppendingTransformer"> 
+									<resource>META-INF/dubbo/internal/com.alibaba.dubbo.common.compiler.Compiler 
+									</resource> </transformer> -->
+							</transformers>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+		</plugins>
+	</build>
+
 </project>

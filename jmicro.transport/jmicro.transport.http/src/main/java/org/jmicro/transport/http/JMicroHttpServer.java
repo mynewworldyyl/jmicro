@@ -66,6 +66,9 @@ public class JMicroHttpServer implements IServer{
 	
 	private  HttpServer server;
 	
+	@Cfg(value = "/startHttp",required=false)
+	private boolean enable = false;
+	
 	@Inject
 	private IMessageReceiver receiver;
 	
@@ -130,6 +133,9 @@ public class JMicroHttpServer implements IServer{
 	    
 	@Override
 	public void init() {
+		if(!enable) {
+			return;
+		}
 		start();
 	}
 	
