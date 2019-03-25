@@ -30,7 +30,7 @@ public interface Constants {
 	public static final String LOCAL_DATA_DIR = "localDataDir";
 	
 	//在CFG_ROOT下目录名称前缀为JMICRO系统保留，应用不可使用
-	public static final String DEFAULT_PREFIX="JMICRO_";
+	public static final String DEFAULT_PREFIX="JMICRO";
 	
 	public static final String SIDE_COMSUMER = "comsumer";
 	public static final String SIDE_PROVIDER="provider";
@@ -105,6 +105,8 @@ public interface Constants {
 	public static final String REF_ANNO = "referenceAnno";
 	
 	public static final String DIRECT_SERVICE_ITEM = "directServiceItem";
+	
+	public static final String ROUTER_KEY = "routerKey";
 	
     public static final int TYPE_HTTP = 1;
 	public static final int TYPE_SOCKET = 2;

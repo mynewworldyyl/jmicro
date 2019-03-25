@@ -16,18 +16,10 @@
  */
 package org.jmicro.idgenerator;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-
-import org.jmicro.api.JMicro;
-import org.jmicro.api.annotation.Cfg;
 import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.Inject;
 import org.jmicro.api.idgenerator.IIdServer;
 import org.jmicro.common.Constants;
-import org.jmicro.common.Utils;
 
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
@@ -41,14 +33,14 @@ import redis.clients.jedis.JedisPool;
 //@Service(namespace="RedisBaseIdServer", version="0.0.1")
 public class JMicroRedisBaseIdGenerator implements IIdServer {
 	
-	private static final String ID_IDR = Constants.CFG_ROOT + "/id/";
+	private static final String ID_IDR = Constants.CFG_ROOT + "/"+Constants.DEFAULT_PREFIX+"/id/";
 	
-	public static void main(String[] args) {
+	/*public static void main(String[] args) {
 		 JMicro.getObjectFactoryAndStart(new String[] {"-DinstanceName=RedisBaseIdServer",
 				 "-Dserver=true",
 				 "-Dorg.jmicro.api.idgenerator.IIdServer=uniqueIdGenerator"});
 		 Utils.getIns().waitForShutdown();
-	}
+	}*/
 	
 	/*@Inject(required=true)
 	private Jedis redis;*/
@@ -83,7 +75,6 @@ public class JMicroRedisBaseIdGenerator implements IIdServer {
 		}finally {
 			r.close();
 		}
-		
 	}
 	
 	public Long[] getLongIds(String idKey, int num) {

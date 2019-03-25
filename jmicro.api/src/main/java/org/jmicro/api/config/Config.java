@@ -57,18 +57,18 @@ public class Config implements IConfigChangeListener{
 	private static String Host = "";
 	
 	//全局配置目录
-	public static final String CfgDir = Constants.CFG_ROOT +"/"/*+Constants.DEFAULT_PREFIX*/+"config";
+	public static final String CfgDir = Constants.CFG_ROOT +"/"+Constants.DEFAULT_PREFIX+"/config";
 	
-	public static final String InstanceDir = Constants.CFG_ROOT + "/" + Constants.DEFAULT_PREFIX + "instance";
+	public static final String InstanceDir = Constants.CFG_ROOT + "/" + Constants.DEFAULT_PREFIX + "/instance";
 	
 	//服务注册目录
-	public static final String ServiceRegistDir = Constants.CFG_ROOT +"/"+Constants.DEFAULT_PREFIX+"services";
+	public static final String ServiceRegistDir = Constants.CFG_ROOT +"/"+Constants.DEFAULT_PREFIX+"/services";
 	
 	//全局消息订阅根目录
-	public static final String PubSubDir = Constants.CFG_ROOT+"/"+Constants.DEFAULT_PREFIX +"pubsub";
+	public static final String PubSubDir = Constants.CFG_ROOT+"/"+Constants.DEFAULT_PREFIX +"/pubsub";
 	
 	//服务编排相关数据根目录
-	public static final String ChoreographyDir = Constants.CFG_ROOT+"/"+Constants.DEFAULT_PREFIX +"Choreography";
+	public static final String ChoreographyDir = Constants.CFG_ROOT+"/"+Constants.DEFAULT_PREFIX +"/choreography";
 	
 	//当前启动实例名称
 	private static String InstanceName = "";
@@ -332,8 +332,10 @@ public class Config implements IConfigChangeListener{
 	
 	public void createConfig(String value, String path, boolean isGlobal, boolean el){
 		if(isGlobal) {
+			this.globalConfig.put(path, value);
 			this.dataOperator.createNode(CfgDir + path, value,el);
 		} else {
+			this.servicesConfig.put(path, value);
 			this.dataOperator.createNode(ServiceConfigDir + path, value,el);
 		}
 	}

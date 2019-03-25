@@ -83,10 +83,10 @@ public class SF {
 		}
 	}
 	
-	public static void doBussinessLog(byte debug, Class<?> tag, Throwable exp, String... name) {
+	public static void doBussinessLog(byte debug, Class<?> tag, Throwable exp, String... msgs) {
 		Long lid = JMicroContext.lid();
 		ServiceMethod sm = JMicroContext.get().getParam(Constants.SERVICE_METHOD_KEY, null);
-		doServiceLog(debug,tag,lid,sm,exp,name);
+		doServiceLog(debug,tag,lid,sm,exp,msgs);
 	}
 
 	

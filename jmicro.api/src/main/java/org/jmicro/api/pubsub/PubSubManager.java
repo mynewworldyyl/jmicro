@@ -59,7 +59,7 @@ public class PubSubManager {
 	/**
 	 * is enable pubsub server
 	 */
-	@Cfg(value="/PubSubManager/enableServer",defGlobal=false)
+	@Cfg(value="/PubSubManager/enableServer",defGlobal=false, changeListener="initPubSubServer")
 	private boolean enableServer = false;
 	
 	@Cfg(value="/PubSubManager/openDebug",defGlobal=false)
@@ -184,7 +184,7 @@ public class PubSubManager {
 	private void initPubSubServer() {
 		if(!enableServer) {
 			//不启用pubsub Server功能，此运行实例是一个
-			logger.info("Pubsub server is disable by config [/PubSubManager/enable]");
+			logger.info("Pubsub server is disable by config [/PubSubManager/enableServer]");
 			return;
 		}
 		Set<String> children = this.dataOp.getChildren(Config.PubSubDir);

@@ -24,6 +24,7 @@ import java.util.Set;
 
 import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.Inject;
+import org.jmicro.api.config.Config;
 import org.jmicro.api.raft.IDataListener;
 import org.jmicro.api.raft.IDataOperator;
 import org.jmicro.common.Constants;
@@ -37,7 +38,7 @@ import org.jmicro.common.util.JsonUtils;
 @Component(lazy=false)
 public class RuleManager {
 	
-	private static final String RULE_DIR = Constants.CFG_ROOT+"/routeRules";
+	private static final String RULE_DIR = Constants.CFG_ROOT+"/"+Constants.DEFAULT_PREFIX+"/routeRules";
 
 	@Inject
 	private IDataOperator dataOperator;

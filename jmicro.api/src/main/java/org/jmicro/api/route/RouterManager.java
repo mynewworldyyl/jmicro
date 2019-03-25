@@ -20,10 +20,14 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
+import org.jmicro.api.JMicroContext;
 import org.jmicro.api.annotation.Cfg;
 import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.Inject;
 import org.jmicro.api.registry.ServiceItem;
+import org.jmicro.common.CommonException;
+import org.jmicro.common.Constants;
+import org.jmicro.common.util.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -50,6 +54,20 @@ public class RouterManager {
 		if(routers.isEmpty()) {
 			return services;
 		}
+		
+		String routerSort = JMicroContext.get().getParam(Constants.DIRECT_SERVICE_ITEM, null);
+		
+		if(StringUtils.isNotEmpty(routerSort)) {
+			routerSort = routerSort.trim();
+			IRouter r = routers.get(routerSort);
+			if(r != null && r.getRoute() != null) {
+				return r.doRoute(r.getRoute(), services, srvName, method, args, namespace, version, transport);
+			} else {
+				//logger.error("Router {} not defined, try to use by default config",routerSort);
+				throw new CommonException("Router "+routerSort+" not defined");
+			}
+		}
+		
 		Map<String,IRouter> rs = this.routers;
 		for(String key: routerSorts) {
 			IRouter r = rs.get(key);
