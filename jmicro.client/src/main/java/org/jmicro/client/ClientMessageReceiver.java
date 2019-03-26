@@ -63,8 +63,8 @@ public class ClientMessageReceiver implements IMessageReceiver{
 				logger.error("Handler not found:" + Integer.toHexString(msg.getType()));
 			}
 		} catch (Throwable e) {
-			SF.doSubmit(MonitorConstant.CLIENT_REQ_ASYNC2_FAIL,msg,e);
 			logger.error("reqHandler error: {}",msg,e);
+			SF.doSubmit(MonitorConstant.CLIENT_REQ_ASYNC2_FAIL,msg,e);
 			msg.setType((byte)(msg.getType()+1));
 		}
 	}

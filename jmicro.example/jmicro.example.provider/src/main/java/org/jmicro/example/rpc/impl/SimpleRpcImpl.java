@@ -10,7 +10,7 @@ import org.jmicro.common.Constants;
 import org.jmicro.example.api.rpc.ISimpleRpc;
 
 
-@Service(maxSpeed=-1,baseTimeUnit=Constants.TIME_SECONDS)
+@Service(namespace="simpleRpc",version="0.0.1", monitorEnable=1,maxSpeed=-1,baseTimeUnit=Constants.TIME_SECONDS)
 @Component
 public class SimpleRpcImpl implements ISimpleRpc {
 

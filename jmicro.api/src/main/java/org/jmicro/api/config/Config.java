@@ -80,9 +80,10 @@ public class Config implements IConfigChangeListener{
 	//服务在RAFT中的根目录
 	private static String RaftBaseDir = "";
 	
-	//针对服务配置的目录
+	//服务配置的目录，针对服务
 	public static String ServiceItemCofigDir = null;
 
+	//服务实例配置目录,对应服务运行实例
 	public static String ServiceConfigDir = null;
 	
 	public static long systemStartTime = System.currentTimeMillis();
@@ -306,9 +307,20 @@ public class Config implements IConfigChangeListener{
 		
 		initInstanceName();
 		
+		String path = Constants.CFG_ROOT +"/"+Config.getInstanceName()+"_ipPort";
+		if(dataOperator.exist(path)) {
+			dataOperator.setData(path, "");
+		}
+		
 		RaftBaseDir = Constants.CFG_ROOT +"/"+InstanceName;
 		ServiceConfigDir = RaftBaseDir+"/config";
 		ServiceItemCofigDir = RaftBaseDir+"/srvconfig";
+		
+		if(!dataOperator.exist(Config.RaftBaseDir)) {
+			dataOperator.createNode(Config.RaftBaseDir, "", false);
+		}else {
+			dataOperator.setData(Config.RaftBaseDir, "");
+		}
 		
 		if(!dataOperator.exist(Config.CfgDir)) {
 			dataOperator.createNode(Config.CfgDir, "", false);
@@ -316,6 +328,10 @@ public class Config implements IConfigChangeListener{
 		
 		if(!dataOperator.exist(Config.ServiceConfigDir)) {
 			dataOperator.createNode(Config.ServiceConfigDir, "", false);
+		}
+		
+		if(!dataOperator.exist(Config.ServiceItemCofigDir)) {
+			dataOperator.createNode(Config.ServiceItemCofigDir, "", false);
 		}
 		
 		//加载服务级配置

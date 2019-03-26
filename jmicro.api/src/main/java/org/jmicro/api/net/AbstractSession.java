@@ -131,7 +131,9 @@ public abstract class AbstractSession implements ISession{
 
 	private void doRead(ByteBuffer msg) {
 
-		counter.add(ISession.CLIENT_READ_BYTES, msg.remaining());
+		if(counter != null) {
+			counter.add(ISession.CLIENT_READ_BYTES, msg.remaining());
+		}
     	//合并上次剩下的数据
      	ByteBuffer lb = null;
      	
@@ -239,21 +241,33 @@ public abstract class AbstractSession implements ISession{
 
 	@Override
 	public void increment(int type) {
-		this.counter.increment(type);
+		if(counter != null) {
+			this.counter.increment(type);
+		}
 	}
 	
 	public Double getFailPercent() {
-		return ServiceCounter.getData(counter, MonitorConstant.STATIS_FAIL_PERCENT);
+		if(counter != null) {
+			return ServiceCounter.getData(counter, MonitorConstant.STATIS_FAIL_PERCENT);
+		}
+		return 0D;
 	}
 	
 	@Override
 	public Double getTakePercent(int type) {
-		return ServiceCounter.takePercent(counter, type);
+		if(counter != null) {
+			return ServiceCounter.takePercent(counter, type);
+		}
+		return 0D;
 	}
 
 	@Override
 	public Double getTakeAvg(int type) {
-		return counter.getQps(TimeUnit.SECONDS, type);
+		if(counter != null) {
+			return counter.getQps(TimeUnit.SECONDS, type);
+		}
+		return 0D;
+		
 	}
 	
 	public abstract InetSocketAddress getLocalAddress();

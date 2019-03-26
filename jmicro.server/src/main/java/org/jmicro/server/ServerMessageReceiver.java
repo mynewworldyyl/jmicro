@@ -67,6 +67,9 @@ public class ServerMessageReceiver implements IMessageReceiver{
 	@Inject
 	private JRPCReqRespHandler jrpcHandler;
 	
+	@Inject("idRequestMessageHandler")
+	private IMessageHandler idHandler;
+	
 	/*@Cfg(value="/ServerReceiver/receiveBufferSize")
 	private int receiveBufferSize=1000;*/
 	
@@ -84,6 +87,7 @@ public class ServerMessageReceiver implements IMessageReceiver{
 		executor = ExecutorFactory.createExecutor(config);
 		//系统级RPC处理器，如ID请求处理器，和普通RPC处理理器同一个实例，但是TYPE标识不同，需要特殊处理
 		handlers.put(Constants.MSG_TYPE_SYSTEM_REQ_JRPC, jrpcHandler);
+		handlers.put(Constants.MSG_TYPE_ID_REQ, idHandler);
 	}
 	
 	public void registHandler(IMessageHandler handler){
@@ -152,7 +156,8 @@ public class ServerMessageReceiver implements IMessageReceiver{
 		} catch (Throwable e) {
 			SF.doMessageLog(MonitorConstant.LOG_ERROR, TAG, msg,e);
 			SF.doSubmit(MonitorConstant.SERVER_REQ_ERROR);
-			logger.error("reqHandler error:{},msg:{} ",e,msg);
+			logger.error("reqHandler error msg:{} ",msg);
+			logger.error("",e);
 			msg.setType((byte)(msg.getType()+1));
 			ServerError se = new ServerError();
 			se.setMsg(e.getMessage());

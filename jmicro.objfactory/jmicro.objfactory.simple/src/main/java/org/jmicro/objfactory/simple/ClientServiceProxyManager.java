@@ -83,9 +83,19 @@ class ClientServiceProxyManager {
 		if(proxy != null){
 			return (T)proxy;
 		}
-		Class<?> cls = this.loadClass(srvName, cl);
+		ClassLoader useCl = Thread.currentThread().getContextClassLoader();
 		
-		proxy = createDynamicServiceProxy(cls,namespace,version);
+		try {
+			Class<?> cls = this.loadClass(srvName, cl);
+			proxy = createDynamicServiceProxy(cls,namespace,version);
+			Set<ServiceItem> items = registry.getServices(srvName, namespace, version);
+			if(items != null && !items.isEmpty()) {
+				AbstractClientServiceProxy ap = (AbstractClientServiceProxy)proxy;
+				ap.setItem(items.iterator().next());
+			}
+		} finally {
+			Thread.currentThread().setContextClassLoader(useCl);
+		}
 		this.initProxy(proxy,key);
 		return (T)proxy;
 	}
@@ -109,7 +119,11 @@ class ClientServiceProxyManager {
 				
 				if(cl != null) {
 					try {
-						return cl.loadClass(clsName);
+						Class<?> c = cl.loadClass(clsName);
+						if(c != null) {
+							Thread.currentThread().setContextClassLoader(cl);
+						}
+						return c;
 					} catch (ClassNotFoundException e2) {
 					}
 				}

@@ -35,7 +35,7 @@ public class TestApigateClient {
 		client.getConfig().setDebug(true);
 		
 		client.getConfig().setClientType(Constants.TYPE_SOCKET);
-		client.getConfig().setPort(51875);
+		client.getConfig().setPort(62688);
 		
 		/*client.getConfig().setPort(9090);
 		client.getConfig().setClientType(Constants.TYPE_HTTP);*/
@@ -45,7 +45,7 @@ public class TestApigateClient {
 	public void testGetService() {
 		ISimpleRpc srv = client.getService(ISimpleRpc.class,
 				"simpleRpc", "0.0.1");
-		srv.hello("Hello api gateway");
+		System.out.println(srv.hello("Hello api gateway"));
 	}
 	
 	@Test

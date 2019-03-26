@@ -33,7 +33,7 @@ import org.slf4j.LoggerFactory;
  * @author Yulei Ye
  * @date 2018年10月25日-下午10:54:58
  */
-@Component(side=Constants.SIDE_PROVIDER)
+@Component(side=Constants.SIDE_PROVIDER,value="idRequestMessageHandler")
 public class IdRequestMessageHandler implements IMessageHandler{
 
 	private final static Logger logger = LoggerFactory.getLogger(IdRequestMessageHandler.class);

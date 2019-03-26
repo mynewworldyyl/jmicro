@@ -153,10 +153,12 @@ jmicro.gateway/target/
 jmicro.gateway/.classpath
 jmicro.gateway/.project
 jmicro.gateway/.settings/
+jmicro.gateway/logs/
 jmicro.gateway.client/target/
 jmicro.gateway.client/.classpath
 jmicro.gateway.client/.project
 jmicro.gateway.client/.settings/
+jmicro.gateway.client/logs/
 jmicro.monitor/jmicro.monitor.submiter/target/
 jmicro.monitor/jmicro.monitor.submiter/.classpath
 jmicro.monitor/jmicro.monitor.submiter/.project

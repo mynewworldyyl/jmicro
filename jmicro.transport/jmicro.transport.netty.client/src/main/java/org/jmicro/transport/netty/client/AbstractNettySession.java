@@ -88,7 +88,10 @@ public abstract class AbstractNettySession extends AbstractSession implements IC
 			if(bb == null) {
 				throw new CommonException("data is NULL");
 			}
-			this.counter.add(ISession.CLIENT_WRITE_BYTES, bb.remaining());
+			
+			if(counter != null) {
+				this.counter.add(ISession.CLIENT_WRITE_BYTES, bb.remaining());
+			}
 			
 			ByteBuf bbf = Unpooled.buffer(bb.remaining());
 			bbf.writeBytes(bb);

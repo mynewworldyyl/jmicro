@@ -89,12 +89,7 @@ public class DefaultServiceInstanceNameProvider implements IServiceInstanceNameG
 		}
 		lf.deleteOnExit();*/
 		//本地存在，ZK中不存在,也就是没有虽的机器在使用此目录
-		List<String> ips = Utils.getIns().getLocalIPList();
-		String data = "0";
-		if(!ips.isEmpty()) {
-			data = ips.get(0);
-		}
-		dataOperator.createNode(path, data, true);
+		dataOperator.createNode(path, "", true);
 	}
 
 }

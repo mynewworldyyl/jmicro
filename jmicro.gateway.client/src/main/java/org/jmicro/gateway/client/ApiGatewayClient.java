@@ -27,13 +27,17 @@ import org.jmicro.api.annotation.Service;
 import org.jmicro.api.client.IClientSession;
 import org.jmicro.api.client.IMessageCallback;
 import org.jmicro.api.codec.Decoder;
-import org.jmicro.api.codec.OnePrefixDecoder;
-import org.jmicro.api.codec.OnePrefixTypeEncoder;
+import org.jmicro.api.codec.PrefixTypeDecoder;
+import org.jmicro.api.codec.PrefixTypeEncoder;
 import org.jmicro.api.gateway.ApiRequest;
 import org.jmicro.api.gateway.ApiResponse;
+import org.jmicro.api.idgenerator.IdRequest;
+import org.jmicro.api.monitor.Linker;
 import org.jmicro.api.net.IMessageHandler;
+import org.jmicro.api.net.IRequest;
 import org.jmicro.api.net.ISession;
 import org.jmicro.api.net.Message;
+import org.jmicro.api.net.ServerError;
 import org.jmicro.common.CommonException;
 import org.jmicro.common.Constants;
 import org.jmicro.common.Utils;
@@ -50,14 +54,10 @@ public class ApiGatewayClient {
 	
 	private final static Logger logger = LoggerFactory.getLogger(ApiGatewayClient.class);
 	
-	//private static int clientType = Constants.TYPE_SOCKET;
-	//private  static int clientType = Constants.TYPE_WEBSOCKET;
-	//private static int clientType = Constants.TYPE_HTTP;
-		
-	private static final AtomicLong reqId = new AtomicLong(0);
+	private static final AtomicLong reqId = new AtomicLong(1);
 	
-	private OnePrefixDecoder decoder = new OnePrefixDecoder();
-	private OnePrefixTypeEncoder encoder = new OnePrefixTypeEncoder();
+	private PrefixTypeDecoder decoder = new PrefixTypeDecoder();
+	private PrefixTypeEncoder encoder = new PrefixTypeEncoder();
 	
 	private ApiGatewayClientSessionManager sessionManager = new ApiGatewayClientSessionManager();
 	
@@ -69,11 +69,14 @@ public class ApiGatewayClient {
 	
 	private ApiGatewayConfig config = null;
 	
+	private IdClient idClient = null;
+	
 	public ApiGatewayClient(ApiGatewayConfig cfg) {
 		if(StringUtils.isEmpty(cfg.getHost())) {
 			cfg.setHost(Utils.getIns().getLocalIPList().get(0));
 		}
 		this.config = cfg;
+		this.idClient = new IdClient(this);
 		init();
 	}
 	
@@ -104,6 +107,20 @@ public class ApiGatewayClient {
 				waitForResponses.get(msg.getReqId()).onResponse(msg);
 			}
 		});
+		
+		sessionManager.registerMessageHandler(new IMessageHandler(){
+			@Override
+			public Byte type() {
+				return Constants.MSG_TYPE_ID_RESP;
+			}
+			
+			@Override
+			public void onMessage(ISession session, Message msg) {
+				session.active();
+				waitForResponses.get(msg.getReqId()).onResponse(msg);
+			}
+		});
+		
 		Decoder.setTransformClazzLoader(this::getEntityClazz);
 	}
 	
@@ -121,17 +138,24 @@ public class ApiGatewayClient {
     	
     	ApiRequest req = new ApiRequest();
 		req.setArgs(new Object[] {type});
-		req.setReqId(reqId.decrementAndGet());
+		req.setReqId(idClient.getLongId(IRequest.class.getName()));
 		
 		Message msg = new Message();
 		msg.setType(Constants.MSG_TYPE_API_CLASS_REQ);
 		msg.setProtocol(Message.PROTOCOL_BIN);
-		msg.setId(reqId.decrementAndGet());
-		msg.setReqId(reqId.decrementAndGet());
-		msg.setLinkId(reqId.decrementAndGet());
+		msg.setId(idClient.getLongId(Message.class.getName()));
+		msg.setReqId(req.getReqId());
+		msg.setLinkId(idClient.getLongId(Linker.class.getName()));
+		
+		msg.setStream(false);
+		msg.setDumpDownStream(false);
+		msg.setDumpUpStream(false);
+		msg.setNeedResponse(true);
+		msg.setLoggable(false);
+		msg.setMonitorable(false);
+		msg.setDebugMode(false);
 		
 		ByteBuffer bb = encoder.encode(req);
-		bb.flip();
 		
 		msg.setPayload(bb);
 		msg.setVersion(Message.MSG_VERSION);
@@ -196,6 +220,7 @@ public class ApiGatewayClient {
 					callback.onMessage((R)parseResult(respMsg1));
 				}
 			} else {
+				streamComfirmFlag.remove(msg.getReqId());
 				resqMsgCache.put(msg.getReqId(), respMsg1);
 				synchronized (msg) {
 					msg.notify();
@@ -203,13 +228,7 @@ public class ApiGatewayClient {
 			}
 		});
 		
-		int port = this.config.getPort();
-		if(this.config.getClientType() == Constants.TYPE_HTTP 
-				|| this.config.getClientType() == Constants.TYPE_WEBSOCKET) {
-			port = this.config.getPort();
-		}
-			
-		IClientSession sessin = sessionManager.getOrConnect(Utils.getIns().getLocalIPList().get(0), port);
+		IClientSession sessin = sessionManager.getOrConnect(this.config.getHost(), this.config.getPort());
 		sessin.write(msg);
 	
 		synchronized (msg) {
@@ -220,9 +239,13 @@ public class ApiGatewayClient {
 			}
 		}
 		
-		Message resqMsg = resqMsgCache.get(msg.getReqId());
-		return parseResult(resqMsg);
-		 
+		Message resqMsg = resqMsgCache.remove(msg.getReqId());
+		
+		if(resqMsg.getType() == Constants.MSG_TYPE_ID_RESP) {
+			return this.decoder.decode((ByteBuffer)resqMsg.getPayload());
+		} else {
+			return parseResult(resqMsg);
+		}
 	}
 	
 	private Object parseResult(Message resqMsg) {
@@ -231,13 +254,22 @@ public class ApiGatewayClient {
 			 return null;
 		 }
 		
-		 ApiResponse resp = this.decoder.decode((ByteBuffer)resqMsg.getPayload());
+		 Object v = this.decoder.decode((ByteBuffer)resqMsg.getPayload());
 		 
-		 if(resp.isSuccess()) {
-			 return resp.getResult();
-		 }else {
-			 throw new CommonException(resp.getResult().toString());
-		 }
+		if(v != null && v instanceof ServerError) {
+			throw new CommonException(v.toString());
+		} else if(v != null) {
+			ApiResponse resp = (ApiResponse)v;
+			 if(resp.isSuccess()) {
+				 return resp.getResult();
+			 } else {
+				 throw new CommonException(resp.getResult().toString());
+			 }
+		}else {
+			return null;
+		}
+			
+		 
 	}
     
     private Message createMessage(String serviceName, String namespace, String version, String method, Object[] args) {
@@ -246,23 +278,66 @@ public class ApiGatewayClient {
 		req.setArgs(args);
 		req.setMethod(method);
 		req.setNamespace(namespace);
-		req.setReqId(reqId.decrementAndGet());
+		req.setReqId(idClient.getLongId(IRequest.class.getName()));
 		req.setServiceName(serviceName);
 		req.setVersion(version);
 		
 		Message msg = new Message();
 		msg.setType(Constants.MSG_TYPE_API_REQ);
 		msg.setProtocol(Message.PROTOCOL_BIN);
-		msg.setId(reqId.decrementAndGet());
-		msg.setReqId(reqId.decrementAndGet());
-		msg.setLinkId(reqId.decrementAndGet());
+		msg.setId(idClient.getLongId(Message.class.getName()));
+		msg.setReqId(req.getReqId());
+		msg.setLinkId(idClient.getLongId(Linker.class.getName()));
+		
+		msg.setStream(false);
+		msg.setDumpDownStream(false);
+		msg.setDumpUpStream(false);
+		msg.setNeedResponse(true);
+		msg.setLoggable(false);
+		msg.setMonitorable(false);
+		msg.setDebugMode(false);
+		
 		ByteBuffer bb = encoder.encode(req);
-		bb.flip();
 		msg.setPayload(bb);
 		msg.setVersion(Message.MSG_VERSION);
 		
 		return msg;
     }
+    
+    @SuppressWarnings("unchecked")
+	public Object[] getIds(String clazz, int num, byte type) {
+    	
+    	IdRequest req = new IdRequest();
+		req.setClazz(clazz);
+		req.setNum(num);
+		req.setType(type);
+		
+		Message msg = new Message();
+		msg.setType(Constants.MSG_TYPE_ID_REQ);
+		msg.setProtocol(Message.PROTOCOL_BIN);
+		msg.setId(reqId.getAndIncrement());
+		msg.setReqId(msg.getId());
+		msg.setLinkId(reqId.getAndIncrement());
+		
+		msg.setStream(false);
+		msg.setDumpDownStream(false);
+		msg.setDumpUpStream(false);
+		msg.setNeedResponse(true);
+		msg.setLoggable(false);
+		msg.setMonitorable(false);
+		msg.setDebugMode(false);
+		
+		ByteBuffer bb = encoder.encode(req);
+		msg.setPayload(bb);
+		msg.setVersion(Message.MSG_VERSION);
+		Object v = getResponse(msg,null);
+		if(v != null && v instanceof ServerError) {
+			throw new CommonException(v.toString());
+		} else {
+			return (Object[])v ;
+		}
+		
+	}
 
     private static interface IResponseHandler{
 		void onResponse(Message msg);

@@ -17,6 +17,8 @@
 package org.jmicro.transport.netty.server;
 
 import java.net.InetSocketAddress;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.concurrent.ExecutorService;
 
 import org.jmicro.api.annotation.Cfg;
@@ -33,6 +35,7 @@ import org.jmicro.api.net.IServer;
 import org.jmicro.common.CommonException;
 import org.jmicro.common.Constants;
 import org.jmicro.common.util.StringUtils;
+import org.jmicro.server.IServerListener;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -73,6 +76,9 @@ public class NettySocketServer  implements IServer{
 	private ExecutorService workerGroupExecutor = null;
 	
 	private ExecutorService bossGroupExecutor = null;
+	
+	@Inject(required=false)
+	private Set<IServerListener> serverListener = new HashSet<>();
 	
 	@Override
 	public void init() {
@@ -130,6 +136,10 @@ public class NettySocketServer  implements IServer{
             //workerGroup.shutdownGracefully();
         }
         this.port = address.getPort();
+        
+        for(IServerListener l : serverListener) {
+        	l.serverStared(host(), port, Constants.TRANSPORT_NETTY);
+        }
         
         String m = "Running the netty socket server host["+Config.getHost()+"],port ["+this.port+"]";
         LOG.debug(m);    

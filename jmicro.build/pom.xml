@@ -40,10 +40,10 @@
 			<groupId>org.jmicro</groupId>
 			<artifactId>jmicro.zk</artifactId>
 		</dependency>
-		<dependency>
+		<!-- <dependency>
 			<groupId>org.jmicro</groupId>
 			<artifactId>jmicro.gateway</artifactId>
-		</dependency>
+		</dependency> -->
 		<dependency>
 			<groupId>org.jmicro</groupId>
 			<artifactId>jmicro.classloader.server</artifactId>
@@ -52,10 +52,10 @@
 			<groupId>org.jmicro</groupId>
 			<artifactId>jmicro.classloader.client</artifactId>
 		</dependency>
-		<dependency>
+		<!-- <dependency>
 			<groupId>org.jmicro</groupId>
 			<artifactId>jmicro.gateway.client</artifactId>
-		</dependency>
+		</dependency> -->
 		<!-- <dependency> <groupId>org.jmicro</groupId> <artifactId>jmicro.transport.nio</artifactId> 
 			</dependency> -->
 		<dependency>
@@ -153,13 +153,13 @@
 									<include>org.jmicro:jmicro.idgenerator</include>
 									<include>org.jmicro:jmicro.zk</include>
 									<include>org.jmicro:jmicro.redis</include>
-									<include>org.jmicro:jmicro.breaker</include>
-									<include>org.jmicro:jmicro.pubsub</include>
+									<!-- <include>org.jmicro:jmicro.breaker</include> -->
+									<!-- <include>org.jmicro:jmicro.pubsub</include> -->
 									<include>org.jmicro:jmicro.etcd</include>
-									<include>org.jmicro:jmicro.gateway</include>
+									<!-- <include>org.jmicro:jmicro.gateway</include> -->
 									<include>org.jmicro:jmicro.classloader.server</include>
 									<include>org.jmicro:jmicro.classloader.client</include>
-									<include>org.jmicro:jmicro.gateway.client</include>
+									<!-- <include>org.jmicro:jmicro.gateway.client</include> -->
 									<include>org.jmicro:jmicro.transport.netty.client</include>
 									<include>org.jmicro:jmicro.transport.netty.server</include>
 									<include>org.jmicro:jmicro.registry.zk</include>
@@ -168,10 +168,10 @@
 									<include>org.jmicro:jmicro.limit</include>
 									<include>org.jmicro:jmicro.monitor.memory</include>
 									<include>org.jmicro:jmicro.monitor.subermemory</include>
-									<include>org.jmicro:jmicro.monitor.dashboard</include>
+									<!-- <include>org.jmicro:jmicro.monitor.dashboard</include> -->
 									<include>org.jmicro:jmicro.monitor.submiter</include>
-									<include>org.jmicro:jmicro.choregraphy.agent</include>
-									<include>org.jmicro:jmicro.choregraphy.controller</include>
+									<!-- <include>org.jmicro:jmicro.choregraphy.agent</include>
+									<include>org.jmicro:jmicro.choregraphy.controller</include> -->
 									<include>org.jmicro:jmicro.test</include>
 									<!-- <include>org.jmicro:jmicro.mybatis</include> -->
 								</includes>
