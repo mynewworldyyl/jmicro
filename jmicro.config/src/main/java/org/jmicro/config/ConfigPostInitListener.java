@@ -21,9 +21,12 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.apache.zookeeper.KeeperException;
 import org.jmicro.api.annotation.Cfg;
@@ -113,6 +116,30 @@ public class ConfigPostInitListener extends PostInitListenerAdapter {
 					setMapValue(f,obj,ps);
 				}
 				
+			} else if(Collection.class.isAssignableFrom(f.getType())) {
+				if(!prefix.endsWith("*")) {
+					throw new CommonException("Class ["+cls.getName()+",Field:"+f.getName()+"] invalid map path ["+cfgAnno.value()+"] should end with '*'") ;
+				}
+				//符合条件的全部值都要监听，只要有增加进来，都加到Map里面去
+				
+				//优先类全名组成路径
+				Collection coll = new ArrayList();
+				path = "/" + cls.getName() + prefix;
+				getCollectionConfig(cfg,path,coll);
+				watch(f,obj,path,cfg);
+				
+				path = "/" + cls.getSimpleName() + prefix;
+				getCollectionConfig(cfg,path,coll);
+				watch(f,obj,path,cfg);
+				
+				path = prefix;
+				getCollectionConfig(cfg,path,coll);
+				watch(f,obj,path,cfg);
+				
+				if(!coll.isEmpty()) {
+					 setCollValue(f,obj,coll);
+				}
+				
 			} else {
 				String value = null;
 				//优先类全名组成路径
@@ -149,6 +176,34 @@ public class ConfigPostInitListener extends PostInitListenerAdapter {
 		}
 	}
 	
+	private void setCollValue(Field f, Object obj, Collection<String> newColl) {
+		Collection oldColl = (Collection)this.getFieldValue(f, obj);
+		if(oldColl == null) {
+			if(Set.class.isAssignableFrom(f.getType())) {
+				oldColl = new HashSet();
+			}else if(List.class.isAssignableFrom(f.getType())) {
+				oldColl = new ArrayList();
+			}else {
+				throw new CommonException("Class ["+obj.getClass().getName()+",Field:"+f.getName()+"] not support field type["+f.getType().getName()+"]") ;
+			}
+		}
+		
+		ParameterizedType genericType = (ParameterizedType) f.getGenericType();
+		if(genericType == null){
+			throw new CommonException("Must be ParameterizedType for cls:"+ f.getDeclaringClass().getName()+",field: "+f.getName());
+		}
+		Class<?> valType = (Class<?>)genericType.getActualTypeArguments()[0];
+		
+		for(String strv : newColl) {
+			Object v = Utils.getIns().getValue(valType, strv, null);
+			if(v != null) {
+				oldColl.add(v);
+			}
+		}
+		
+		setObjectVal(obj,f,oldColl);
+	}
+
 	private void setMapValue(Field f, Object obj, Map<String, String> ps) {
 		if(ps == null || ps.isEmpty()) {
 			return ;
@@ -210,6 +265,13 @@ public class ConfigPostInitListener extends PostInitListenerAdapter {
 		Map<String,String> result = cfg.getParamByPattern(key);
 		if(result != null && !result.isEmpty()) {
 			params.putAll(result);
+		}
+	}
+	
+	private void getCollectionConfig(Config cfg,String key,Collection l) {
+		Map<String,String> result = cfg.getParamByPattern(key);
+		if(result != null && !result.isEmpty()) {
+			l.addAll(result.values());
 		}
 	}
 	
@@ -332,10 +394,15 @@ public class ConfigPostInitListener extends PostInitListenerAdapter {
 	
 	private void watch(Field f,Object obj,String path,Config cfg){
 		IConfigChangeListener lis = (String path1,String data)->{
+			if(StringUtils.isEmpty(data)) {
+				return ;
+			}
 			if(Map.class.isAssignableFrom(f.getType())) {
 				Map<String,String> ps = new HashMap<>();
 				ps.put(path1, data);
 				this.setMapValue(f, obj, ps);
+			} if(Collection.class.isAssignableFrom(f.getType())){
+				
 			}else {
 				setValue(f,obj,data);
 			}

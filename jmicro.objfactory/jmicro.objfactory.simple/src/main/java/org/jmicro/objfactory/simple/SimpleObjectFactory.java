@@ -673,7 +673,7 @@ public class SimpleObjectFactory implements IObjectFactory {
 		return true;
 	}
 
-	private Class<?> loadCls(String clsName) {
+	public Class<?> loadCls(String clsName) {
 		
 		Class<?> cls = ClassScannerUtils.getIns().getClassByName(clsName);
 		if(cls == null) {

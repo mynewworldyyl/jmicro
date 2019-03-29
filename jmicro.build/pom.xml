@@ -58,10 +58,10 @@
 		</dependency> -->
 		<!-- <dependency> <groupId>org.jmicro</groupId> <artifactId>jmicro.transport.nio</artifactId> 
 			</dependency> -->
-		<dependency>
+		<!-- <dependency>
 			<groupId>org.jmicro</groupId>
 			<artifactId>jmicro.transport.http</artifactId>
-		</dependency>
+		</dependency> -->
 		<dependency>
 			<groupId>org.jmicro</groupId>
 			<artifactId>jmicro.transport.netty.client</artifactId>

@@ -85,18 +85,18 @@ public class NettyWebSocketHandler  extends SimpleChannelInboundHandler<TextWebS
     	NettyServerSession session = new NettyServerSession(ctx,readBufferSize,heardbeatInterval
     			,Constants.TYPE_WEBSOCKET);
     	session.init();
-    	ctx.channel().attr(this.sessionKey).set(session);
+    	ctx.channel().attr(sessionKey).set(session);
     }
     
     @Override
     public void handlerRemoved(ChannelHandlerContext ctx) throws Exception {
-    	ctx.channel().attr(this.sessionKey).remove();
+    	ctx.channel().attr(sessionKey).set(null);
     }
     
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
     	logger.error("exceptionCaught",cause);
-    	ctx.channel().attr(this.sessionKey).remove();
-        ctx.channel().attr(this.sessionKey).get().close(true);
+    	ctx.channel().attr(sessionKey).set(null);
+        ctx.channel().attr(sessionKey).get().close(true);
     }
 }

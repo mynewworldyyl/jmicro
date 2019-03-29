@@ -18,11 +18,12 @@ var jmicro = jmicro || {};
 
 jmicro.config ={
     //ip:"192.168.3.3",
-    ip:'192.168.1.104',
+    //ip:'192.168.1.104',
+    ip:'172.16.22.200',
     port:'9090',
-    wsContext:'/_ws_',
+    wsContext:'_ws_',
     httpContext:'/_http_',
-    useWs:false
+    useWs:true
 }
 
 jmicro.Constants = {
@@ -30,15 +31,51 @@ jmicro.Constants = {
   IRequestCls : 'org.jmicro.api.server.IRequest',
   ServiceStatisCls : 'org.jmicro.api.monitor.ServiceStatis',
   ISessionCls : 'org.jmicro.api.net.ISession',
-  PROTOCOL_BIN : 1,
-  PROTOCOL_JSON : 2,
   Integer : 3,
   LOng : 4,
   String : 5,
   DEFAULT_NAMESPACE : 'defaultNamespace',
   DEFAULT_VERSION : "0.0.0",
-  STREAM : 1 << 2,
-  NEED_RESPONSE : 1 << 1
+}
+
+jmicro.Constants.Message = {
+    HEADER_LEN : 10,
+    PROTOCOL_BIN : 0,
+    PROTOCOL_JSON  :  1,
+    PRIORITY_0  :  0,
+    PRIORITY_1  :  1,
+    PRIORITY_2  :  2,
+    PRIORITY_3  :  3,
+    PRIORITY_4  :  4,
+    PRIORITY_5  :  5,
+    PRIORITY_6  :  6,
+    PRIORITY_7  :  7,
+    PRIORITY_MIN  :  this.PRIORITY_0,
+    PRIORITY_NORMAL  :  this.PRIORITY_3,
+    PRIORITY_MAX  :  this.PRIORITY_7,
+    MSG_VERSION  :  1,
+    FLAG_PROTOCOL  :  1<<0,
+    //调试模式
+   FLAG_DEBUG_MODE  :  1<<1,
+    //需要响应的请求
+    FLAG_NEED_RESPONSE  :  1<<2,
+
+    //0B00111000 5---3
+    FLAG_LEVEL  :  0X38,
+
+    //异步消息
+   FLAG_STREAM  :  1<<6,
+
+    //DUMP上行数据
+    FLAG0_DUMP_UP  :  1<<0,
+    //DUMP下行数据
+    FLAG0_DUMP_DOWN  :  1<<1,
+
+    //可监控消息
+   FLAG0_MONITORABLE  :  1<<2,
+
+    //是否启用服务级log
+    FLAG0_LOGGABLE  : 1 << 3
 }
 
 jmicro.transport = {
@@ -52,7 +89,7 @@ jmicro.transport = {
                 type: "post",
                 dataType: "json",
                 data: JSON.stringify(data),
-                headers: {'Content-Type': 'application/json'},
+                headers: {'Content-Type': 'application/json','DataEncoderType':1},
                 success: function (result, statuCode, xhr) {
                     //sucCb(data, statuCode, xhr);
                 	result.payload=JSON.parse(result.payload);
@@ -75,34 +112,50 @@ jmicro.transport = {
 jmicro.rpc = {
     idCache:{},
     init:function(){
-        if(jmicro.config.useWs && !!window.WebSocket){
+        if(jmicro.config.useWs && !window.WebSocket){
             jmicro.config.useWs = false;
         }
+    },
+
+    createMsg:function(type) {
+        var msg = new jmicro.rpc.Message();
+        msg.setType(type);
+        msg.setProtocol(jmicro.Constants.Message.PROTOCOL_JSON);
+        msg.setId(new Date().getTime());
+        msg.setReqId(msg.getId());
+        msg.setLinkId(new Date().getTime());
+
+        msg.setStream(false);
+        msg.setDumpDownStream(false);
+        msg.setDumpUpStream(false);
+        msg.setNeedResponse(true);
+        msg.setLoggable(false);
+        msg.setMonitorable(false);
+        msg.setDebugMode(false);
+
+        return msg;
     }
+
     ,getId : function(idClazz){
         var self = this;
         return new Promise(function(reso1,reje){
           var cacheId = self.idCache[idClazz];
-          if(!!cacheId && cacheId.index < cacheId.ids.length){
-            reso1(cacheId.ids[cacheId.index++]);
+          if(!!cacheId && cacheId.curIndex < cacheId.ids.length){
+            reso1(cacheId.ids[cacheId.curIndex++]);
           } else {
             if(!cacheId){
-              cacheId = {ids:[],index:0};
+              cacheId = {ids:[],curIndex:0};
               self.idCache[idClazz] = cacheId;
             }
 
-            var msg = new jmicro.rpc.Message();
-            msg.type=0x7FFA;
+            var msg =  self.createMsg(0x0B)
 
             var req = new jmicro.rpc.IdRequest();
             req.type = jmicro.Constants.LOng;
             req.clazz = jmicro.Constants.MessageCls;
             req.num = 1;
             msg.payload = JSON.stringify(req);
-
-            msg.flag |= jmicro.Constants.NEED_RESPONSE;
-
-              jmicro.transport.send(msg,function(rstMsg,err){
+            jmicro.transport.send(msg,function(rstMsg,err){
               if(err){
                 reje(err);
                 return;
@@ -123,23 +176,21 @@ jmicro.rpc = {
   callRpcWithRequest : function(req){
     var self = this;
     return new Promise(function(reso,reje){
-      var msg = new jmicro.rpc.Message();
+
+      var msg =  self.createMsg(0x09)
 
       var streamCb = req.stream;
       if(typeof req.stream == 'function') {
         req.stream = true;
+        msg.setStream(true)
       }
       msg.payload =  JSON.stringify(req);
 
-      msg.type = 0x7FF8;
-      msg.protocol = jmicro.Constants.PROTOCOL_JSON;
       msg.reqId = req.reqId;
 
-      if(req.needResponse)
-        msg.flag |= jmicro.Constants.NEED_RESPONSE;
-
-      if(req.stream)
-        msg.flag |= jmicro.Constants.STREAM;
+      if(req.needResponse) {
+          msg.setNeedResponse(true);
+      }
 
       self.getId(jmicro.Constants.MessageCls)
         .then(function(id){
@@ -147,7 +198,7 @@ jmicro.rpc = {
           self.getId(jmicro.Constants.IRequestCls)
             .then(function(id){
               msg.reqId = id;
-                  jmicro.transport.send(msg,function(rstMsg,err){
+                jmicro.transport.send(msg,function(rstMsg,err){
                 if(req.stream) {
                   streamCb(rstMsg.payload.result,err);
                 } else {
@@ -313,18 +364,244 @@ jmicro.rpc = {
 }
 
 jmicro.rpc.Message = function() {
-  this.protocol = jmicro.Constants.PROTOCOL_JSON;
-  this.msgId =  -1,
-  this.reqId  =  -1,
-  this.sessionId  =  -1,
-  this.len  =  -1,
-  this.version  =  '0.0.0',
-  this.type  =  -1,
-  this.flag  =  0,
-  this.payload  =  ''
+
+    this.startTime = -1;
+
+    //1 byte length
+    this.version = jmicro.Constants.Message.MSG_VERSION;
+
+    this.reqId = -1;
+
+    //payload length with byte,4 byte length
+    //private int len;
+
+    // 1 byte
+    this.type = 0;
+
+    /**
+     * dm: is development mode
+     * S: Stream
+     * N: need Response
+     * P: protocol 0:bin, 1:json
+     * LLL: Message priority
+     *
+     *   S L L  L  N dm P
+     * | | | |  |  |  | |
+     * 7 6 5 4  3  2  1 0
+     * @return
+     */
+    this.flag = 0;
+
+    /**
+     * up: dump up stream data
+     * do: dump down stream data
+     * M: Monitorable
+     * L: 开发日志上发
+
+     *
+     *         L M  do up
+     * | | | | | |  |  |
+     * 7 6 5 4 3 2  1  0
+     * @return
+     */
+    this.flag0 = 0;
+
+    //request or response
+    //private boolean isReq;
+
+    //2 byte length
+    //private byte ext;
+
+    this.payload=null;
+
+    //*****************development mode field begin******************//
+    this.msgId = -1;
+    this.linkId = -1;
+    this.time = -1;
+    this.instanceName = '';
+    this.method = '';
+
+    //****************development mode field end*******************//
 }
 
 jmicro.rpc.Message.prototype = {
+    is : function(flag, mask){
+        return (flag & mask) != 0;
+    },
+
+    /* isByShort:function(flag, mask) {
+        return (flag & mask) != 0;
+    },*/
+
+    isDumpUpStream : function() {
+        return this.is(this.flag0,jmicro.Constants.Message.FLAG0_DUMP_UP);
+    },
+
+    setDumpUpStream : function( f) {
+        this.flag0 |= f ? jmicro.Constants.Message.FLAG0_DUMP_UP : 0 ;
+    },
+
+    isDumpDownStream : function() {
+        return this.is(this.flag0,jmicro.Constants.Message.FLAG0_DUMP_DOWN);
+    },
+
+    setDumpDownStream : function( f) {
+        this.flag0 |= f ? jmicro.Constants.Message.FLAG0_DUMP_DOWN : 0 ;
+    },
+
+    isLoggable:function() {
+        return this.is(this.flag0,jmicro.Constants.Message.FLAG0_LOGGABLE);
+    },
+
+    setLoggable : function( f) {
+        this.flag0 |= f ? jmicro.Constants.Message.FLAG0_LOGGABLE : 0 ;
+    },
+
+    isDebugMode : function() {
+        return this.is(this.flag,jmicro.Constants.Message.FLAG_DEBUG_MODE);
+    },
+
+    setDebugMode : function( f) {
+        this.flag |= f ? jmicro.Constants.Message.FLAG_DEBUG_MODE : 0 ;
+    },
+
+    isMonitorable : function() {
+        return this.is(this.flag0,jmicro.Constants.Message.FLAG0_MONITORABLE);
+    },
+
+    setMonitorable( f) {
+        this.flag0 |= f ? jmicro.Constants.Message.FLAG0_MONITORABLE : 0 ;
+    },
+
+    isStream : function() {
+        return this.is(this.flag,jmicro.Constants.Message.FLAG_STREAM);
+    },
+
+    setStream:function( f) {
+        this.flag |= f ? jmicro.Constants.Message.FLAG_STREAM : 0 ;
+    },
+
+    isNeedResponse:function() {
+        return this.is(this.flag,jmicro.Constants.Message.FLAG_NEED_RESPONSE);
+    },
+
+    setNeedResponse : function( f) {
+        this.flag |= f ? jmicro.Constants.Message.FLAG_NEED_RESPONSE : 0 ;
+    },
+
+    getLevel : function() {
+        return ((this.flag >>> 3) & 0x07);
+    },
+
+    setLevel : function( l) {
+        if(l > jmicro.Constants.Message.PRIORITY_7 || l < jmicro.Constants.Message.PRIORITY_0) {
+            throw "Invalid priority: "+l;
+        }
+        this.flag = ((l << 3) | this.flag);
+    },
+
+    getProtocolByFlag(flag) {
+        return (flag & 0x01);
+    },
+
+    getProtocol : function() {
+        return this.getProtocolByFlag(this.flag);
+    },
+
+    setProtocol:function( protocol) {
+        if(protocol == jmicro.Constants.Message.PROTOCOL_BIN || protocol == jmicro.Constants.Message.PROTOCOL_JSON) {
+            this.flag = ( protocol | (this.flag & 0xFE));
+        }else {
+            throw ("Invalid protocol: "+protocol);
+        }
+    },
+
+    getId() {
+        return this.msgId;
+    },
+
+    setId:function(id) {
+        this.msgId = id;
+    },
+
+    getVersion : function() {
+        return this.version;
+    },
+
+    setVersion : function(version) {
+        this.version = version;
+    },
+
+    getType : function() {
+        return this.type;
+    },
+
+    setType : function( type) {
+        this.type = type;
+    },
+
+     getPayload() {
+        return this.payload;
+    },
+    setPayload:  function( payload) {
+        this.payload = payload;
+    },
+
+    getReqId : function() {
+        return this.reqId;
+    },
+
+    setReqId : function( reqId) {
+        this.reqId = reqId;
+    },
+
+    getLinkId : function() {
+        return this.linkId;
+    },
+
+    setLinkId : function( linkId) {
+        this.linkId = linkId;
+    },
+
+    getFlag : function() {
+        return this.flag;
+    },
+
+    getFlag0 : function() {
+        return this.flag0;
+    },
+
+    getTime : function() {
+        return this.time;
+    },
+
+    setTime : function( time) {
+        this.time = time;
+    },
+
+    getInstanceName : function() {
+        return this.instanceName;
+    },
+
+    setInstanceName : function( instanceName) {
+        this.instanceName = instanceName;
+    },
+
+     getMethod : function() {
+        return this.method;
+    },
+
+    setMethod( method) {
+        this.method = method;
+    },
+
+    getStartTime : function() {
+        return this.startTime;
+    },
+
+    setStartTime : function( startTime) {
+        this.startTime = startTime;
+    }
 
 }
 

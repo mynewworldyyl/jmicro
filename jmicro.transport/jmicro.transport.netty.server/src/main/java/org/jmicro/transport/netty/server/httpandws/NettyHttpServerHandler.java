@@ -1,6 +1,8 @@
 package org.jmicro.transport.netty.server.httpandws;
 
 import java.nio.ByteBuffer;
+import java.util.HashSet;
+import java.util.Set;
 
 import org.jmicro.api.JMicroContext;
 import org.jmicro.api.annotation.Cfg;

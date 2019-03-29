@@ -17,13 +17,20 @@
 package org.jmicro.transport.netty.server.httpandws;
 
 import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.FileNameMap;
+import java.net.URL;
 import java.net.URLConnection;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.jmicro.api.annotation.Cfg;
 import org.jmicro.api.annotation.Component;
@@ -40,7 +47,6 @@ import io.netty.handler.codec.http.FullHttpResponse;
 import io.netty.handler.codec.http.HttpMethod;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.handler.codec.http.HttpVersion;
-import io.netty.util.CharsetUtil;
 
 /**
  * 
@@ -53,11 +59,17 @@ public class StaticResourceHttpHandler  {
 
 	static final Logger LOG = LoggerFactory.getLogger(StaticResourceHttpHandler.class);
 	
-	@Cfg("/StaticResourceHttpHandler/root")
-	private String root="*";
+	//@Cfg("/StaticResourceHttpHandler/root")
+	//private String root="*";
+	
+	@Cfg("/StaticResourceHttpHandler/debug")
+	private boolean debug = false;
 	
 	@Cfg("/StaticResourceHttpHandler/indexPage")
-	private String indexPage;
+	private String indexPage="index.html";
+	
+	@Cfg(value="/StaticResourceHttpHandler/staticResourceRoot_*", changeListener="resourceRootChange")
+	private List<String> staticResourceRoots = new ArrayList<>();
 	
 	private Map<String,byte[]> contents = new HashMap<>();
 	
@@ -71,16 +83,8 @@ public class StaticResourceHttpHandler  {
 		FullHttpResponse response = new DefaultFullHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.OK);
 		response.headers().set("content-Type",getContentType(path));
 		
-		byte[] content = null;
-		if(path.equals("/")){
-			content = this.getContent(this.root+indexPage);
-		}else {
-			content = this.getContent(this.root + path);
-		}
-		if(content == null) {
-			content = this.getContent(this.root + "404.html");
-		}
-	
+		byte[] content = this.getContent(path);
+
 		response.headers().set("content-Length",content.length);
 		
 		ByteBuf responseBuf = Unpooled.copiedBuffer(content);
@@ -103,20 +107,73 @@ public class StaticResourceHttpHandler  {
 	}
 	   
 	private byte[] getContent(String path) {
-		/*if(contents.containsKey(path)){
-			return contents.get(path);
-		}*/
+		String absPath = null;
+		
 		InputStream bisr = null;
+		
+		if(path.equals("/")){
+			path = path + indexPage;
+		}
+		
+		ClassLoader cl = StaticResourceHttpHandler.class.getClassLoader();
+		for(String parent: staticResourceRoots) {
+			String ph = parent + path;
+			if(!debug && contents.containsKey(ph)) {
+				return contents.get(ph);
+			}
+			File file = new File(ph);
+			if(file.exists() && file.isFile()) {
+				try {
+					absPath = ph;
+					bisr = new FileInputStream(absPath);
+					break;
+				} catch (FileNotFoundException e) {
+					LOG.error(absPath,e);
+				}
+			}
+			
+			bisr = cl.getResourceAsStream(ph);
+			if(bisr != null) {
+				absPath = ph;
+				break;
+			}
+		}
+		
+		if(absPath == null) {
+			for(String parent: staticResourceRoots) {
+				String ph = parent + "/404.html";
+				if(!debug && contents.containsKey(ph)) {
+					return contents.get(ph);
+				}
+				File file = new File(ph);
+				if(file.exists()) {
+					try {
+						bisr = new FileInputStream(file);
+						absPath = ph;
+						break;
+					} catch (FileNotFoundException e) {
+						LOG.error(absPath,e);
+					}
+				}
+				
+				bisr = cl.getResourceAsStream(ph);
+				if(bisr != null) {
+					absPath = ph;
+					break;
+				}
+			}
+		}
+		
 		try {
-			bisr = new FileInputStream(path);
+			
 			ByteArrayOutputStream bos = new ByteArrayOutputStream();
 			byte[] line = new byte[1024];
 			int len = -1;
 			while((len = bisr.read(line)) > 0 ){
 				bos.write(line, 0, len);
 			}
-			contents.put(path, bos.toByteArray());
-			return bos.toByteArray();
+			contents.put(absPath, bos.toByteArray());
+			return contents.get(absPath);
 		} catch (IOException e) {
 			LOG.error("getContent",e);
 		}finally{
@@ -128,6 +185,23 @@ public class StaticResourceHttpHandler  {
 			}
 		}
 		return null;
+	}
+	
+	public void resourceRootChange(String root) {
+		if(!staticResourceRoots.contains(root)) {
+			return;
+		}
+		
+		Set<String> clears = new HashSet<String>();
+		for(String p : contents.keySet()) {
+			if(p.startsWith(root)) {
+				clears.add(p);
+			}
+		}
+		
+		for(String p : clears) {
+			contents.remove(p);
+		}
 	}
 
 }

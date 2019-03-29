@@ -37,15 +37,16 @@
 
           function sayHello(){
             var req = new jmicro.rpc.ApiRequest();
-            req.serviceName='org.jmicro.example.api.ITestRpcService';
+            req.serviceName='org.jmicro.example.api.rpc.ISimpleRpc';
             req.method = 'hello';
-            req.namespace = 'testrpc';
+            req.namespace = 'simpleRpc';
             req.version = '0.0.1';
             req.args = ['hello api gateway'];
 
             jmicro.rpc.callRpc(req)
               .then(function(rst){
-                console.log(rst);
+                  console.log(rst);
+                  $('#respMessage').append(rst+'&#10;');
               }).catch(function(err){
               console.log(err);
             });
@@ -53,15 +54,16 @@
 
           function sayHello1(){
             var req = {};
-            req.serviceName='org.jmicro.example.api.ITestRpcService';
+            req.serviceName='org.jmicro.example.api.rpc.ISimpleRpc';
             req.method = 'hello';
-            req.namespace = 'testrpc';
+            req.namespace = 'simpleRpc';
             req.version = '0.0.1';
             req.args = ['hello api gateway'];
 
             jmicro.rpc.callRpc(req)
               .then(function(rst){
                 console.log(rst);
+                  $('#respMessage').append(rst+'&#10;');
               }).catch(function(err){
               console.log(err);
             });
@@ -78,6 +80,7 @@
             jmicro.rpc.callRpc(req)
               .then(function(rst){
                 console.log(rst);
+                  $('#respMessage').append(JSON.stringify(rst)+'&#10;');
               }).catch(function(err){
               console.log(err);
             });
@@ -87,6 +90,7 @@
             jmicro.rpc.callRpc('org.jmicro.example.api.ITestRpcService','testrpc','0.0.1','getPerson',[{username:'Hello JS RPC',id:222}])
               .then(function(rst){
                 console.log(rst);
+                  $('#respMessage').append(JSON.stringify(rst)+'&#10;');
               }).catch(function(err){
               console.log(err);
             });
@@ -95,9 +99,11 @@
           function testStream(){
             jmicro.rpc.callRpc('org.jmicro.example.api.ITestRpcService','testrpc','0.0.1','subscrite',['stream test'],function(rst){
               console.log(rst);
+                $('#respMessage').append(rst+'&#10;');
             },true)
               .then(function(rst){
                 console.log(rst);
+                  $('#respMessage').append(rst+'&#10;');
               }).catch(function(err){
                 console.log(err);
             });
@@ -118,7 +124,7 @@
 
         <h3>信息</h3>
         <textarea style="width: 300px; height: 200px;" id="respMessage"></textarea>
-        <input type="button" value="清空" onclick="javascript:document.getElementById('respMessage').value = ''">
+        <input type="button" value="清空" onclick="javascript:$('#respMessage').empty()">
     </form>
 </body>
 </html>

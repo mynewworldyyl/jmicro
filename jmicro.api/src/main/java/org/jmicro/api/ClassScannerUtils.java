@@ -118,7 +118,7 @@ public class ClassScannerUtils {
 			try {
 				cls = Thread.currentThread().getContextClassLoader().loadClass(clsName);
 			} catch (ClassNotFoundException e) {
-				e.printStackTrace();
+				logger.warn(e.getMessage());
 			}
 		}
 		return cls;

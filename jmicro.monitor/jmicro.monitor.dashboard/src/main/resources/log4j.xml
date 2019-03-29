@@ -10,16 +10,6 @@
 		</layout>
 	</appender>
 	
-	<appender name="NORMALLOG" class="org.apache.log4j.DailyRollingFileAppender">
-		<param name="File" value="${user.dir}/logs/jmicro/work.log"/>
-		<param name="DatePattern" value="'.'yyyyMMdd"/>
-		<param name="Append" value="true"/>
-		<param name="Threshold" value="DEBUG"/>
-		<layout class="org.apache.log4j.PatternLayout">
-			<param name="ConversionPattern" value="[%d][%p,%c{1}] %m%n"/>
-		</layout>
-	</appender>
-
 	<appender name="jmicro_info" class="org.apache.log4j.DailyRollingFileAppender">
 		<param name="File" value="${user.dir}/logs/jmicro/info.log"/>
 		<param name="DatePattern" value="'.'yyyyMMdd"/>
@@ -49,11 +39,19 @@
 			<param name="ConversionPattern" value="[%d][%p,%c{1}] %m%n"/>
 		</layout>
 	</appender>
-
+	
+	<logger name="org.jmicro.api.codec">
+		<level value="INFO"/>
+		<appender-ref ref="jmicro_debug"/>
+	</logger>
+	
 	<logger name="org.jmicro">
 		<level value="DEBUG"/>
 		<appender-ref ref="jmicro_debug"/>
+		<appender-ref ref="jmicro_info"/>
+		<appender-ref ref="jmicro_error"/>
 	</logger>
+	
 	<logger name="org.apache.zookeeper">
 		<level value="ERROR"/>
 		<appender-ref ref="jmicro_error"/>
@@ -62,10 +60,13 @@
 		<level value="ERROR"/>
 		<appender-ref ref="jmicro_error"/>
 	</logger>
+	
 	<root>	
 	    <level value="DEBUG"/>
 		<appender-ref ref="CONSOLE"/>
 		<appender-ref ref="jmicro_debug"/>
+		<appender-ref ref="jmicro_info"/>
+		<appender-ref ref="jmicro_error"/>
 	</root>
 	
 </log4j:configuration>

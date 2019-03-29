@@ -116,5 +116,7 @@ public interface IObjectFactory {
 	 */
 	//void addPostReadyListener(IFactoryListener listener);
 	
+	Class<?> loadCls(String clsName);
+	
 	
 }

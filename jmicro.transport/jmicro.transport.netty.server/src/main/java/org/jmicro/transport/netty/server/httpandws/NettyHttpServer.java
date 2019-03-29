@@ -74,10 +74,12 @@ public class NettyHttpServer implements IServer{
 	@Inject(required=false)
 	private Set<IServerListener> serverListener = new HashSet<>();
 	
+	@Cfg(value="/NettyHttpServer/startHttp",required=false,defGlobal=false)
+	private boolean startHttp = false;
+	
 	@Override
 	public void init() {
-		boolean flag = Config.getCommandParam(Constants.START_HTTP, Boolean.class, false);
-		if(flag) {
+		if(startHttp) {
 			start();
 		}
 	}
@@ -118,7 +120,7 @@ public class NettyHttpServer implements IServer{
         this.port = address.getPort();
         
         for(IServerListener l : serverListener) {
-        	l.serverStared(host(), port, Constants.TRANSPORT_NETTY);
+        	l.serverStared(host(), port, Constants.TRANSPORT_NETTY_HTTP);
         }
         
         String m = "Running netty http server host["+Config.getHost()+"],port ["+this.port+"]";

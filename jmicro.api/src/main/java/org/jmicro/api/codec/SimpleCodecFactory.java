@@ -21,6 +21,7 @@ import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.jmicro.api.JMicro;
 import org.jmicro.api.annotation.Cfg;
 import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.Inject;
@@ -165,11 +166,9 @@ public class SimpleCodecFactory implements ICodecFactory{
 		} else {
 			int argLen = jsonArgs.length;
 			//ServiceItem item = registry.getServiceByImpl(r.getImpl());
-			Class<?> srvClazz = null;
-			try {
-				srvClazz = Thread.currentThread().getContextClassLoader().loadClass(srvCls);
-			} catch (ClassNotFoundException e) {
-				throw new CommonException("",e);
+			Class<?> srvClazz = JMicro.getObjectFactory().loadCls(srvCls);
+			if(srvClazz == null) {
+				throw new CommonException("Class ["+srvCls+"] not found");
 			}
 			
 			Object[] args = new Object[jsonArgs.length];

@@ -26,7 +26,6 @@ import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 
 import org.jmicro.api.JMicroContext;
-import org.jmicro.api.debug.LogUtil;
 import org.jmicro.api.net.AbstractSession;
 import org.jmicro.api.net.Message;
 import org.jmicro.api.registry.ServiceMethod;
@@ -41,7 +40,7 @@ import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.http.DefaultFullHttpResponse;
 import io.netty.handler.codec.http.FullHttpResponse;
-import io.netty.handler.codec.http.websocketx.BinaryWebSocketFrame;
+import io.netty.handler.codec.http.websocketx.TextWebSocketFrame;
 
 public abstract class AbstractNettySession extends AbstractSession implements IServerSession {
 
@@ -93,9 +92,11 @@ public abstract class AbstractNettySession extends AbstractSession implements IS
 			*/
 			ctx.writeAndFlush(response);
 		}else if(this.type == Constants.TYPE_WEBSOCKET) {
-			ByteBuf bbf = Unpooled.buffer(data.length);
+			/*ByteBuf bbf = Unpooled.buffer(data.length);
 			bbf.writeBytes(data);
 			ctx.channel().writeAndFlush(new BinaryWebSocketFrame(bbf));
+*/			ctx.channel().writeAndFlush(new TextWebSocketFrame(JsonUtils.getIns().toJson(msg)));
+			
 		}else/* if(this.type == Constants.NETTY_SOCKET) */{
 			ByteBuf bbf = Unpooled.buffer(data.length);
 			bbf.writeBytes(data);

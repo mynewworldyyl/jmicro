@@ -59,7 +59,7 @@ jmicro.socket = {
     }
 
     ,send : function(msg,cb) {
-      if(msg.flag & jmicro.Constants.NEED_RESPONSE) {
+      if(msg.isNeedResponse()) {
         this.listeners[msg.reqId] = cb;
       }
       this.wsk.send(JSON.stringify(msg));
