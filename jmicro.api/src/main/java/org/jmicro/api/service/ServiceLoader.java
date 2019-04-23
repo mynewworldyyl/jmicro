@@ -66,6 +66,22 @@ public class ServiceLoader {
 	@Cfg(value = "/startSocket",required=false)
 	private boolean enable = true;
 	
+	//导出服务时使用的IP和端口，格式为IP的字符串形式,此值不建议在全局配置目录中配置，否则将导致全部服务会绑定在此ＩＰ上
+	@Cfg(value = Constants.ExportSocketIP,required=false,defGlobal=false)
+	private String exportSocketIP = null;
+	
+	//导出服务时使用的端口，格式为IP的字符串形式,此值不建议在全局配置目录中配置，否则将导致全部服务会绑定在此端口上
+	@Cfg(value = "/exportSocketPort",required=false,defGlobal=false)
+	private int exportSocketPort = 0;
+	
+	//导出服务时使用的IP和端口，格式为IP的字符串形式,此值不建议在全局配置目录中配置，否则将导致全部服务会绑定在此ＩＰ上
+	@Cfg(value = Constants.ExportHttpIP,required=false,defGlobal=false)
+	private String exportHttpIP = null;
+	
+	//导出服务时使用的端口，格式为IP的字符串形式,此值不建议在全局配置目录中配置，否则将导致全部服务会绑定在此端口上
+	@Cfg(value = "/exportHttpPort",required=false,defGlobal=false)
+	private int exportHttpPort = 0;
+	
 	@Inject(required=true)
 	private IRegistry registry;
 	
@@ -210,15 +226,36 @@ public class ServiceLoader {
 		int nettyPort = 0;
 		
 		for(IServer s : this.servers.values()){
+			
+			String host = "";
+			int port = 0;
+				
 			Server sr = new Server();
 			org.jmicro.api.annotation.Server sano = ProxyObject.getTargetCls(s.getClass())
 					.getAnnotation(org.jmicro.api.annotation.Server.class);
-			sr.setHost(s.host());
-			sr.setPort(s.port());
-			sr.setProtocol(sano.transport());
-			if(Constants.TRANSPORT_NETTY.equals(sano.transport())) {
-				nettyPort = s.port();
+			
+			if(Constants.TRANSPORT_NETTY.equals(sano.transport()) && this.exportSocketIP != null) {
+				host = this.exportSocketIP;
+				if(this.exportSocketPort > 0) {
+					port = this.exportSocketPort;
+				}
 			}
+			
+			if(Constants.TRANSPORT_NETTY_HTTP.equals(sano.transport()) && this.exportHttpIP != null) {
+				host = this.exportHttpIP;
+				if(this.exportHttpPort > 0) {
+					port = this.exportHttpPort;
+				}
+			}
+			
+			if(Constants.TRANSPORT_NETTY.equals(sano.transport())) {
+				nettyPort = port;
+			}
+			
+			sr.setHost(host);
+			sr.setPort(port);
+			sr.setProtocol(sano.transport());
+			
 			item.getServers().add(sr);
 		}
 		//Netty Socket 作为必选端口开放

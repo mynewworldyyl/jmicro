@@ -48,6 +48,7 @@ import org.apache.zookeeper.data.ACL;
 import org.apache.zookeeper.data.Stat;
 import org.jmicro.api.IListener;
 import org.jmicro.api.config.Config;
+import org.jmicro.api.objectfactory.IObjectFactory;
 import org.jmicro.api.raft.IChildrenListener;
 import org.jmicro.api.raft.IConnectionStateChangeListener;
 import org.jmicro.api.raft.IDataListener;
@@ -89,6 +90,11 @@ public class ZKDataOperator implements IDataOperator{
 		curator = createCuratorFramework();
 	}
 	
+	@Override
+	public void objectFactoryStarted(IObjectFactory of) {
+		of.regist(CuratorFramework.class, curator);
+	}
+
 	//路径到子结点之间关系，Key是全路径，值只包括结点名称
 	private Map<String,Set<String>> path2Children = new ConcurrentHashMap<>();
 	
@@ -543,7 +549,7 @@ public class ZKDataOperator implements IDataOperator{
 	    };  
 	    builder.aclProvider(aclProvider);
 	    
-	    String connectString = Config.getRegistryHost() + ":" + Config.getRegistryPort();
+	    String connectString = Config.getRegistryHost() /*+ ":" + Config.getRegistryPort()*/;
 	    builder.connectString(connectString);
 	    
 	    ExponentialBackoffRetry retryPolicy = new ExponentialBackoffRetry(1000, 3);

@@ -20,8 +20,8 @@ public class TestRpcServiceImpl implements ITestRpcService{
 
 	private AtomicInteger ai = new AtomicInteger();
 	
-	@Cfg("/defaultLimiterName")
-	private String name;
+	@Cfg("/TestRpcServiceImpl/defaultLimiterName")
+	private String name="defaultLimit";
 	
 	@Cfg(value="/TestRpcServiceImpl/MapParams-*")
 	public Map<String,String> params = null;

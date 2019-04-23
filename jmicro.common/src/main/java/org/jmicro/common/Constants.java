@@ -82,6 +82,9 @@ public interface Constants {
 	//public static final String RAFT_CONFIG_ROOT_KEY = "configRoot";
 	public static final String REGISTRY_URL_KEY = "registryUrl";
 	public static final String BIND_IP = "bindIp";
+	public static final String ExportSocketIP = "exportSocketIP";
+	public static final String ExportHttpIP = "exportHttpIP";
+	
 	
 	public static final String BASE_PACKAGES_KEY = "basePackages";
 	public static final String INSTANCE_NAME = "instanceName";

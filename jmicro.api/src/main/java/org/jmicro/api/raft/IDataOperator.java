@@ -18,6 +18,8 @@ package org.jmicro.api.raft;
 
 import java.util.Set;
 
+import org.jmicro.api.objectfactory.IObjectFactory;
+
 /**
  * 
  * @author Yulei Ye
@@ -52,5 +54,7 @@ public interface IDataOperator {
 	void deleteNode(String path);
 	
 	void init();
+	
+	void objectFactoryStarted(IObjectFactory of);
 
 }

@@ -51,8 +51,8 @@ public class Config implements IConfigChangeListener{
 	private final static Logger logger = LoggerFactory.getLogger(Config.class);
 	
 	private static String RegistryProtocol = "zookeeper";
-	private static String RegistryHost = "localhost";
-	private static String RegistryPort = "2181";
+	private static String RegistryHost = "localhost:2181";
+	//private static String RegistryPort = "2181";
 	
 	private static String Host = "";
 	
@@ -145,21 +145,31 @@ public class Config implements IConfigChangeListener{
 		}
 		
 		if(!StringUtils.isEmpty(registry)) {
-			int index = registry.indexOf("://");
-			if(index > 0){
-				RegistryProtocol = registry.substring(0,index);
-			}else {
-				throw new CommonException("Invalid registry url: "+ registry);
+			RegistryHost = null;
+			String[] arr = registry.split(",");
+			for(String one : arr) {
+				int index = one.indexOf("://");
+				if(index > 0){
+					RegistryProtocol = one.substring(0,index);
+				}else {
+					throw new CommonException("Invalid registry url: "+ registry);
+				}
+				one = one.substring(index+3);
+				if(RegistryHost == null) {
+					RegistryHost = one;
+				}else {
+					RegistryHost = "," + one;
+				}
+				
+				/*if((index = one.indexOf(":")) > 0){
+					String[] hostport = registry.split(":");
+					RegistryHost = hostport[0];
+					//RegistryPort = hostport[1];
+				} else {
+					throw new CommonException("Invalid registry url: "+ registry);
+				}*/
 			}
-			registry = registry.substring(index+3);
 			
-			if((index = registry.indexOf(":")) > 0){
-				String[] hostport = registry.split(":");
-				RegistryHost = hostport[0];
-				RegistryPort = hostport[1];
-			} else {
-				throw new CommonException("Invalid registry url: "+ registry);
-			}
 		}
 		
 	}
@@ -430,28 +440,18 @@ public class Config implements IConfigChangeListener{
 	//@JMethod("init")
 	public void init0(){
 		
-		if(CommadParams.containsKey(Constants.LOCAL_DATA_DIR)) {
-	        Host = getCommandParam(Constants.LOCAL_DATA_DIR);
-		}else if(this.servicesConfig.containsKey(Constants.BIND_IP)) {
-			 Host = this.getServiceParam(Constants.BIND_IP);
-		}else if(this.globalConfig.containsKey(Constants.BIND_IP)) {
-			 Host = this.getGlobalServiceParam(Constants.BIND_IP);
-		} else {
-			List<String> ips = Utils.getIns().getLocalIPList();
-	        if(ips.isEmpty()){
-	        	throw new CommonException("IP not found");
-	        }
-	        Host = ips.get(0);
-		}
+		LocalDataDir = this.getValue(Constants.LOCAL_DATA_DIR,true);
+		
+		Host = getValue(Constants.BIND_IP,false);
+		String exportHttpIP = getValue(Constants.ExportHttpIP,false);
+		String exportSocketIP = getValue(Constants.ExportSocketIP,false);
 		
 		//命令行参数具有最高优先级
 		//params.putAll(CommadParams);
-		if(CommadParams.containsKey(Constants.BIND_IP)) {
-	        Host = getCommandParam(Constants.BIND_IP);
-		}else if(this.servicesConfig.containsKey(Constants.BIND_IP)) {
-			 Host = this.getServiceParam(Constants.BIND_IP);
-		}else if(this.globalConfig.containsKey(Constants.BIND_IP)) {
-			 Host = this.getGlobalServiceParam(Constants.BIND_IP);
+		if(StringUtils.isNotEmpty(exportSocketIP) || StringUtils.isNotEmpty(exportHttpIP)) {
+			if(!exportSocketIP.equals(Host) && !exportHttpIP.equals(Host) ) {
+				Host = "0.0.0.0";
+			}
 		} else {
 			List<String> ips = Utils.getIns().getLocalIPList();
 	        if(ips.isEmpty()){
@@ -465,9 +465,9 @@ public class Config implements IConfigChangeListener{
 		return RegistryHost;
 	}
 	
-	public static String getRegistryPort() {
+	/*public static String getRegistryPort() {
 		return RegistryPort;
-	}
+	}*/
 	
 	public static String getHost() {
 		return Host;
@@ -555,23 +555,23 @@ public class Config implements IConfigChangeListener{
 	}	
 	
 	public Integer getInt(String key,int defautl){
-		return getValue(getValue(key),Integer.TYPE,defautl);
+		return getValue(getValue(key,true),Integer.TYPE,defautl);
 	}
 	
 	public String getString(String key,String defautl){
-		return getValue(getValue(key),String.class,defautl);
+		return getValue(getValue(key,true),String.class,defautl);
 	}
 	
 	public Boolean getBoolean(String key,boolean defautl){
-		return getValue(getValue(key),Boolean.TYPE,defautl);
+		return getValue(getValue(key,true),Boolean.TYPE,defautl);
 	}
 
 	public Float getFloat(String key,Float defautl){
-		return getValue(getValue(key),Float.TYPE,defautl);
+		return getValue(getValue(key,true),Float.TYPE,defautl);
 	}
 	
 	public Double getDouble(String key,Double defautl){
-		return getValue(getValue(key),Double.TYPE,defautl);
+		return getValue(getValue(key,true),Double.TYPE,defautl);
 	}
 	
 	/**
@@ -583,9 +583,10 @@ public class Config implements IConfigChangeListener{
 	 * 4。在全局配置中查找，如果找不到，进入4
 	 * 5。在环境系统环境变量中找，如果没找到，返回NULL
 	 * @param key
+	 * @param useGlobalService 是否可以使用全局配置，true表示可以
 	 * @return
 	 */
-	private String getValue(String key){
+	private String getValue(String key,boolean useGlobalService){
 		
 		String v = getCommandParam(key);
 		
@@ -593,7 +594,7 @@ public class Config implements IConfigChangeListener{
 			v = this.getServiceParam(key);
 		}
 		
-		if(v == null){
+		if(v == null && useGlobalService){
 			v = this.getGlobalServiceParam(key);
 		}
 		

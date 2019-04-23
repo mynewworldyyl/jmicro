@@ -3,7 +3,9 @@ package org.jmicro.example.comsumer;
 import java.util.HashSet;
 import java.util.Set;
 
+import org.apache.curator.framework.CuratorFramework;
 import org.jmicro.api.annotation.Component;
+import org.jmicro.api.annotation.Inject;
 import org.jmicro.api.annotation.Reference;
 import org.jmicro.api.monitor.IMonitorDataSubscriber;
 import org.jmicro.api.test.Person;
@@ -25,6 +27,9 @@ public class TestRpcClient {
 	
 	@Reference(required=false,changeListener="subscriberChange")
 	private Set<IMonitorDataSubscriber> submiters = new HashSet<>();
+	
+	@Inject
+	private CuratorFramework curator;
 	
 	public void invokeRpcService(){
 		String result = sayHello.hello("Hello RPC Server");

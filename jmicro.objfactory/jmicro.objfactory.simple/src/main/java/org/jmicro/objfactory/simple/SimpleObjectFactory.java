@@ -355,6 +355,7 @@ public class SimpleObjectFactory implements IObjectFactory {
 		ServiceManager srvManager = null;
 		
 		this.cacheObj(dop.getClass(), dop, true);
+		dop.objectFactoryStarted(this);
 		
 		/*Set<IServer> servers = new HashSet<>();
 		ServiceLoader sl = null;*/
