@@ -1,5 +1,6 @@
 package org.jmicro.api.codec.typecoder;
 
+import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
@@ -17,6 +18,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.jmicro.api.codec.Decoder;
+import org.jmicro.api.codec.JDataInput;
 import org.jmicro.api.codec.TypeCoderFactory;
 import org.jmicro.api.codec.TypeUtils;
 import org.jmicro.common.CommonException;
@@ -60,7 +62,7 @@ public interface TypeCoder<T> extends Comparable<TypeCoder<T>>{
 	void encode(DataOutput buffer, T val, Class<?> fieldDeclareType, Type genericType) 
 			throws IOException;
 	
-	T decode(ByteBuffer buffer, Class<?> fieldDeclareType, Type genericType);
+	T decode(DataInput buffer, Class<?> fieldDeclareType, Type genericType);
 	
 	boolean canSupport(Class<?> clazz);
 	
@@ -197,7 +199,7 @@ public interface TypeCoder<T> extends Comparable<TypeCoder<T>>{
 	}
 	
 	@SuppressWarnings({ "unchecked", "rawtypes" })
-	public static Object decodeByReflect(ByteBuffer buffer, Class<?> cls,Type genericType) {
+	public static Object decodeByReflect(DataInput buffer, Class<?> cls,Type genericType) {
 		
 		int m = cls.getModifiers();
 		
@@ -237,8 +239,14 @@ public interface TypeCoder<T> extends Comparable<TypeCoder<T>>{
 	}
 
 	@SuppressWarnings({ "unchecked", "rawtypes" })
-	public static Map<Object,Object> decodeMap(ByteBuffer buffer, ParameterizedType paramType){
-		int len = buffer.getShort();
+	public static Map<Object,Object> decodeMap(DataInput buffer, ParameterizedType paramType){
+		int len = 0;
+		try {
+			len = buffer.readShort();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 		if(len <= 0) {
 			return Collections.EMPTY_MAP;
 		}
@@ -258,8 +266,14 @@ public interface TypeCoder<T> extends Comparable<TypeCoder<T>>{
 	}
 	
 	@SuppressWarnings({ "unchecked", "rawtypes" })
-	public static void decodeCollection(ByteBuffer buffer, Collection coll, Class<?> declareType,Type genericType){
-		int len = buffer.getShort();
+	public static void decodeCollection(DataInput buffer, Collection coll, Class<?> declareType,Type genericType){
+		int len=0;
+		try {
+			len = buffer.readShort();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 		if(len <= 0) {
 			return ;
 		}
@@ -280,9 +294,15 @@ public interface TypeCoder<T> extends Comparable<TypeCoder<T>>{
 	}
 	
 	@SuppressWarnings({ "rawtypes", "unchecked" })
-	public static Object decodeArray(ByteBuffer buffer, Class<?> fieldDeclareType, Type genericType){
+	public static Object decodeArray(DataInput buffer, Class<?> fieldDeclareType, Type genericType){
 
-		int len = buffer.getShort();
+		int len=0;
+		try {
+			len = buffer.readShort();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 		if(len <= 0) {
 			return null;
 		}
@@ -336,16 +356,21 @@ public interface TypeCoder<T> extends Comparable<TypeCoder<T>>{
 		}
 	}
 	
-	public static Class<?> getType(ByteBuffer buffer, Class<?> declareFieldType, Type genericType) {
+	public static Class<?> getType(JDataInput buffer, Class<?> declareFieldType, Type genericType) {
 		if(declareFieldType == null || !TypeUtils.isFinal(declareFieldType)) {
 			return getType(buffer);
 		}
 		return declareFieldType;
 	}
 	
-	public static Class<?> getType(ByteBuffer buffer) {
+	public static Class<?> getType(DataInput buffer) {
 
-		String clsName = TypeCoder.decodeString(buffer);
+		String clsName="";
+		try {
+			clsName = buffer.readUTF();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 		if(clsName == null) {
 			throw new CommonException("Decode invalid class full name!");
 		}
@@ -396,15 +421,61 @@ public interface TypeCoder<T> extends Comparable<TypeCoder<T>>{
 				return classFieldsCache.get(cls);
 			}
 			List<Field> fields = new ArrayList<>();
+			//long time = System.currentTimeMillis();
 			Utils.getIns().getFields(fields, cls);
+			//System.out.println("Get Fields time:"+(System.currentTimeMillis()-time));
 			if(!fields.isEmpty()) {
-				fields.sort((v1, v2) -> v1.getName().compareTo(v2.getName()));
+				//time = System.currentTimeMillis();
+				//fields.sort((v1, v2) -> v1.getName().compareTo(v2.getName()));
+				sort(fields,0,fields.size()-1);
+				//System.out.println("Sort Fields time:"+(System.currentTimeMillis()-time));
 			}
 			classFieldsCache.put(cls, fields);
 			return fields;
 		}
 		
 	}
+	
+	public static void sort(List<Field> list, int low, int high){
+	    //start是list的第一位，end是list的最后一位，start和end都是list的坐标；
+	        int start = low;
+	        int end = high;
+	        //value作为参考值，取未排序的list第一位value的首字母作为参考
+	        //下方的算法大体思路，就是拿list的第一位和value比较，排序，
+	        //value值前都比value小，value值后都比value大
+	        String key = list.get(low).getName();
+
+	        //char valueStart = list.get(start).charAt(0);
+	        //char valueEnd = list.get(end).charAt(0);
+
+	        while(end>start){
+	            //从后往前比较
+	            //list.get(end).charAt(0)是list最后一个值的首字母
+	            while(end>start && list.get(end).getName().compareTo(key) >= 0) {
+	                end--;
+	            }
+	            if(list.get(end).getName().compareTo(key)<=0){
+	                //此时list第一位和最后一位需要调换位置，先将list第一位的值保存起来
+	                Field keyStarts = list.get(start);
+	                //此处调换位置，使用list的set方法，由于第一位放入了最后一个值，
+	                //所以最后一位需要放入之前的第一位的值
+	                list.set(start, list.get(end));
+	                list.set(end, keyStarts);
+	            }
+	            //从前往后比较
+	            while(end>start && list.get(start).getName().compareTo(key)<=0) start++;
+	            if(list.get(start).getName().compareTo(key) >= 0){
+	                // 同理从后往前比较，需要将第一位的值先保存，方便调换
+	                Field keyStarts = list.get(start);
+	                list.set(start, list.get(end));
+	                list.set(end, keyStarts);
+	            }
+
+	        if(start>low) sort(list, low, start-1);
+	        if(end<high) sort(list, end+1, high);
+	    }
+	}
+
 	
 	/*******************************STATIC METHOD END****************************/
 	

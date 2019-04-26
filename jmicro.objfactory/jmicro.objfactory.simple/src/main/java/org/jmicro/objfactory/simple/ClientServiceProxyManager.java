@@ -38,6 +38,7 @@ import org.jmicro.api.registry.ServiceItem;
 import org.jmicro.api.registry.UniqueServiceKey;
 import org.jmicro.api.service.ICheckable;
 import org.jmicro.common.CommonException;
+import org.jmicro.common.Utils;
 import org.jmicro.common.util.ClassGenerator;
 import org.jmicro.common.util.ReflectUtils;
 import org.slf4j.Logger;
@@ -400,7 +401,7 @@ class ClientServiceProxyManager {
             
             if (!Void.TYPE.equals(rt)){
              //code.append("System.out.println(ret);");
-           	 code.append(" return ").append(SimpleObjectFactory.asArgument(rt, "ret")).append(";");
+           	 code.append(" return ").append(Utils.getIns().asArgument(rt, "ret")).append(";");
             }
             
             code.append("} finally { ");

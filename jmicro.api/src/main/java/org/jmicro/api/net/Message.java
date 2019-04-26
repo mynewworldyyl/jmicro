@@ -19,7 +19,7 @@ package org.jmicro.api.net;
 import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
 
-import org.jmicro.api.codec.OnePrefixDecoder;
+import org.jmicro.api.codec.JDataInput;
 import org.jmicro.api.codec.OnePrefixTypeEncoder;
 import org.jmicro.common.CommonException;
 import org.jmicro.common.Constants;
@@ -253,8 +253,8 @@ public final class Message {
 				msg.setId(readUnsignedInt(b));
 				msg.setLinkId(readUnsignedInt(b));
 				msg.setTime(b.getLong());
-				msg.setInstanceName(OnePrefixDecoder.decodeString(b));
-				msg.setMethod(OnePrefixDecoder.decodeString(b));
+				msg.setInstanceName(JDataInput.readString(b));
+				msg.setMethod(JDataInput.readString(b));
 				//减去测试数据头部长度
 				len -= OnePrefixTypeEncoder.encodeStringLen(msg.getInstanceName());
 				len -= OnePrefixTypeEncoder.encodeStringLen(msg.getMethod());

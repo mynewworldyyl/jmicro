@@ -21,6 +21,24 @@
 			<artifactId>jmicro.example.api</artifactId>
 			<version>0.0.1-SNAPSHOT</version>
 		</dependency>
+		
+		<dependency>
+	<groupId>io.protostuff</groupId>
+	<artifactId>protostuff-runtime</artifactId>
+	<version>1.6.0</version>
+</dependency>
+
+	<dependency>
+		<groupId>io.protostuff</groupId>
+		<artifactId>protostuff-core</artifactId>
+		<version>1.6.0</version>
+	</dependency>
+	<dependency>
+    <groupId>com.esotericsoftware</groupId>
+    <artifactId>kryo</artifactId>
+    <version>4.0.2</version>
+	</dependency>
 	</dependencies>
+
 	
 </project>

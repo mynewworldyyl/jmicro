@@ -55,33 +55,21 @@ public class PrefixTypeEncoder implements IEncoder<ByteBuffer>{
 		TypeCoder coder = TypeCoderFactory.getDefaultCoder();
 		//field declare as Object.class in order to put type info any way
 		//从此进入时,字段声明及泛型类型都是空,区别于从反射方法进入
-		ByteArrayOutputStream bos = null;
-		DataOutputStream dos = null;
 		try {
-			bos = new ByteArrayOutputStream();
-			dos = new DataOutputStream(bos);
+			JDataOutput dos = new JDataOutput(256);
+			
+			/*dos.write(Decoder.PREFIX_TYPE_PROXY);
+			short code = TypeCoderFactory.getCodeByClass(obj.getClass());
+			dos.writeShort(code);
+			SerializeObject so = SerializeProxyFactory.getSerializeCoder(obj.getClass());
+			so.encode(dos,obj);*/
+			
 			coder.encode(dos, obj, null,null);
-			byte[] data = bos.toByteArray();
-			//byte[] temp = new byte[data.length];
-			//System.arraycopy(data, 0, temp, 0, data.length);
-			return  ByteBuffer.wrap(data);
+			return  dos.getBuf();
 		} catch (IOException e) {
 			throw new CommonException("encode error:"+obj.toString(),e);
 		}finally {
-			if(bos != null) {
-				try {
-					bos.close();
-				} catch (IOException e) {
-					logger.error("encode",e);
-				}
-			}
-			if(dos != null) {
-				try {
-					dos.close();
-				} catch (IOException e) {
-					logger.error("encode",e);
-				}
-			}
+			
 		}
 	}
 	

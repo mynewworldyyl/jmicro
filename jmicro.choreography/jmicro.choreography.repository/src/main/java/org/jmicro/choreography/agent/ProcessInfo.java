@@ -14,39 +14,64 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.jmicro.api.codec;
-
-import java.nio.ByteBuffer;
-
-import org.jmicro.api.annotation.Component;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+package org.jmicro.choreography.agent;
 
 /**
  * 
  * @author Yulei Ye
- * @date 2018年11月8日 上午11:43:13
+ * @date 2019年1月23日 下午10:41:08
  */
-@Component(value="prefixTypeDecoder",lazy=false)
-public class PrefixTypeDecoder{
+public class ProcessInfo {
+
+	private String id;
 	
-	private static final Logger logger = LoggerFactory.getLogger(PrefixTypeDecoder.class);
+	private Process process;
 	
-	//@Inject
-	//private TypeCoderFactory typeCf;
+	private String classpath;
 	
-	@SuppressWarnings("unchecked")
-	public <V> V decode(ByteBuffer buffer) {
-		
-		buffer.mark();
-		byte prefixCodeType = buffer.get();
-		if(prefixCodeType == Decoder.PREFIX_TYPE_NULL){
-			//空值直接返回
-			return null;
-		}
-		buffer.reset();
-		JDataInput input = new JDataInput(buffer);
-		
-		return (V)TypeCoderFactory.getDefaultCoder().decode(input, null, null);
+	private String mainClazz;
+	
+	private String[] args;
+
+	public String getId() {
+		return id;
 	}
+
+	public void setId(String id) {
+		this.id = id;
+	}
+
+	public Process getProcess() {
+		return process;
+	}
+
+	public void setProcess(Process process) {
+		this.process = process;
+	}
+
+	public String getClasspath() {
+		return classpath;
+	}
+
+	public void setClasspath(String classpath) {
+		this.classpath = classpath;
+	}
+
+	public String getMainClazz() {
+		return mainClazz;
+	}
+
+	public void setMainClazz(String mainClazz) {
+		this.mainClazz = mainClazz;
+	}
+
+	public String[] getArgs() {
+		return args;
+	}
+
+	public void setArgs(String[] args) {
+		this.args = args;
+	}
+	
+	
 }

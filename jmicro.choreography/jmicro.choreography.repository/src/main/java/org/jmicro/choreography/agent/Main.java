@@ -14,39 +14,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.jmicro.api.codec;
+package org.jmicro.choreography.agent;
 
-import java.nio.ByteBuffer;
-
-import org.jmicro.api.annotation.Component;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.jmicro.api.JMicro;
 
 /**
  * 
  * @author Yulei Ye
- * @date 2018年11月8日 上午11:43:13
+ * @date 2019年1月23日 下午10:40:38
  */
-@Component(value="prefixTypeDecoder",lazy=false)
-public class PrefixTypeDecoder{
-	
-	private static final Logger logger = LoggerFactory.getLogger(PrefixTypeDecoder.class);
-	
-	//@Inject
-	//private TypeCoderFactory typeCf;
-	
-	@SuppressWarnings("unchecked")
-	public <V> V decode(ByteBuffer buffer) {
-		
-		buffer.mark();
-		byte prefixCodeType = buffer.get();
-		if(prefixCodeType == Decoder.PREFIX_TYPE_NULL){
-			//空值直接返回
-			return null;
-		}
-		buffer.reset();
-		JDataInput input = new JDataInput(buffer);
-		
-		return (V)TypeCoderFactory.getDefaultCoder().decode(input, null, null);
+public class Main {
+	public static void main(String[] args) {
+		JMicro.getObjectFactoryAndStart(new String[]{"-DinstanceName=serviceAgentImpl"});
 	}
 }

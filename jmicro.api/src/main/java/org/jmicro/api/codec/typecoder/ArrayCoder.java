@@ -1,9 +1,9 @@
 package org.jmicro.api.codec.typecoder;
 
+import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.lang.reflect.Type;
-import java.nio.ByteBuffer;
 
 public class ArrayCoder extends AbstractShortTypeCoder<Object[]>{
 	   
@@ -21,8 +21,13 @@ public class ArrayCoder extends AbstractShortTypeCoder<Object[]>{
 		}
 
 		@Override
-		protected Object[] decodeData(ByteBuffer buffer, Class<?> fieldDeclareType, Type genericType) {
-			buffer.get();
+		protected Object[] decodeData(DataInput buffer, Class<?> fieldDeclareType, Type genericType) {
+			try {
+				buffer.readByte();
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 			Class<?> eltType = TypeCoder.getType(buffer);
 			return (Object[])TypeCoder.decodeArray(buffer,eltType,genericType);
 		}

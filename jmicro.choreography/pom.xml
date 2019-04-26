@@ -15,5 +15,7 @@
     <modules>
 		<module>jmicro.choreography.controller</module>
 		<module>jmicro.choreography.agent</module>
+		<module>jmicro.choreography.repository</module>
+		
     </modules>
 </project>

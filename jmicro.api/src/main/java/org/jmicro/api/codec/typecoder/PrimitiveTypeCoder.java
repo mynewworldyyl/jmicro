@@ -1,9 +1,9 @@
 package org.jmicro.api.codec.typecoder;
 
+import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.lang.reflect.Type;
-import java.nio.ByteBuffer;
 
 import org.jmicro.api.codec.TypeUtils;
 
@@ -72,27 +72,33 @@ public class PrimitiveTypeCoder extends AbstractFinalTypeCoder<Object> {
 	}
 
 	@Override
-	public Object decode(ByteBuffer buffer, Class<?> fieldDeclareType,Type genericType) {
+	public Object decode(DataInput buffer, Class<?> fieldDeclareType,Type genericType) {
 		Class<Object> cls = type();
 		Object val = null;
-		if (TypeUtils.isPrimitiveInt(cls) || TypeUtils.isInt(cls)) {
-			val = buffer.getInt();
-		} else if (TypeUtils.isPrimitiveByte(cls) || TypeUtils.isByte(cls)) {
-			val = buffer.get();
-		} else if (TypeUtils.isPrimitiveShort(cls) || TypeUtils.isShort(cls)) {
-			val = buffer.getShort();
-		} else if (TypeUtils.isPrimitiveLong(cls) || TypeUtils.isLong(cls)) {
-			val = buffer.getLong();
-		} else if (TypeUtils.isPrimitiveFloat(cls) || TypeUtils.isFloat(cls)) {
-			val = buffer.getFloat();
-		} else if (TypeUtils.isPrimitiveDouble(cls) || TypeUtils.isDouble(cls)) {
-			val = buffer.getDouble();
-		} else if (TypeUtils.isPrimitiveBoolean(cls) || TypeUtils.isBoolean(cls)) {
-			val = buffer.get() == 1;
-		} else if (TypeUtils.isPrimitiveChar(cls) || TypeUtils.isChar(cls)) {
-			val = buffer.getChar();
+		try {
+			if (TypeUtils.isPrimitiveInt(cls) || TypeUtils.isInt(cls)) {
+				val = buffer.readInt();
+			} else if (TypeUtils.isPrimitiveByte(cls) || TypeUtils.isByte(cls)) {
+				val = buffer.readByte();
+			} else if (TypeUtils.isPrimitiveShort(cls) || TypeUtils.isShort(cls)) {
+				val = buffer.readShort();
+			} else if (TypeUtils.isPrimitiveLong(cls) || TypeUtils.isLong(cls)) {
+				val = buffer.readLong();
+			} else if (TypeUtils.isPrimitiveFloat(cls) || TypeUtils.isFloat(cls)) {
+				val = buffer.readFloat();
+			} else if (TypeUtils.isPrimitiveDouble(cls) || TypeUtils.isDouble(cls)) {
+				val = buffer.readDouble();
+			} else if (TypeUtils.isPrimitiveBoolean(cls) || TypeUtils.isBoolean(cls)) {
+				val = buffer.readBoolean();
+			} else if (TypeUtils.isPrimitiveChar(cls) || TypeUtils.isChar(cls)) {
+				val = buffer.readChar();
+			}
+			return val;
+		} catch (IOException e) {
+			e.printStackTrace();
+			return null;
 		}
-		return val;
+		
 	}
 
 }

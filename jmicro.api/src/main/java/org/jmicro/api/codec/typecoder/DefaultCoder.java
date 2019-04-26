@@ -1,14 +1,18 @@
 package org.jmicro.api.codec.typecoder;
 
+import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.lang.reflect.Type;
-import java.nio.ByteBuffer;
+import java.util.Collection;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 import org.jmicro.api.codec.Decoder;
+import org.jmicro.api.codec.SerializeObject;
+import org.jmicro.api.codec.SerializeProxyFactory;
 import org.jmicro.api.codec.TypeCoderFactory;
 import org.jmicro.api.codec.TypeUtils;
 import org.jmicro.common.CommonException;
@@ -59,10 +63,55 @@ public class DefaultCoder implements TypeCoder<Object> {
 	@Override
 	public void encode(DataOutput buffer, Object val, Class<?> fieldDeclareType
 			, Type genericType) throws IOException {
-		if (val == null) {
-			buffer.write(Decoder.PREFIX_TYPE_NULL);
-			return;
-		} else {
+		//val impossible to be null
+		Class valCls = val.getClass();
+		
+		if(fieldDeclareType == null) {
+			if(valCls == byte.class || valCls == Byte.TYPE || valCls == Byte.class ) {
+				buffer.write(Decoder.PREFIX_TYPE_BYTE);
+				buffer.writeByte((byte)val);
+				return;
+			}else if(valCls == short.class || valCls == Short.TYPE || valCls == Short.class ) {
+				buffer.write(Decoder.PREFIX_TYPE_SHORTT);
+				buffer.writeShort((short)val);
+				return;
+			}else if(valCls == int.class || valCls == Integer.TYPE || valCls == Integer.class ) {
+				buffer.write(Decoder.PREFIX_TYPE_INT);
+				buffer.writeInt((int)val);
+				return;
+			}else if(valCls == long.class || valCls == Long.TYPE || valCls == Long.class ) {
+				buffer.write(Decoder.PREFIX_TYPE_LONG);
+				buffer.writeLong((long)val);
+				return;
+			}else if(valCls == float.class || valCls == Float.TYPE || valCls == Float.class ) {
+				buffer.write(Decoder.PREFIX_TYPE_FLOAT);
+				buffer.writeFloat((float)val);
+				return;
+			}else if(valCls == double.class || valCls == Double.TYPE || valCls == Double.class ) {
+				buffer.write(Decoder.PREFIX_TYPE_DOUBLE);
+				buffer.writeDouble((double)val);
+				return;
+			}else if(valCls == boolean.class || valCls == Boolean.TYPE || valCls == Boolean.class ) {
+				buffer.write(Decoder.PREFIX_TYPE_BOOLEAN);
+				buffer.writeBoolean((boolean)val);
+				return;
+			}else if(valCls == char.class || valCls == Character.TYPE || valCls == Character.class ) {
+				buffer.write(Decoder.PREFIX_TYPE_CHAR);
+				buffer.writeChar((char)val);
+				return;
+			}else if(valCls == String.class ) {
+				buffer.write(Decoder.PREFIX_TYPE_STRINGG);
+				buffer.writeUTF((String)val);
+				return;
+			}else if(valCls == Date.class ) {
+				buffer.write(Decoder.PREFIX_TYPE_DATE);
+				buffer.writeLong(((Date)val).getTime());
+				return;
+			}
+		} 
+		
+		if(Collection.class.isAssignableFrom(valCls) ||
+				Map.class.isAssignableFrom(valCls) || valCls.isArray()) {
 			//val已经非空值，肯定能获取到一个编码器，至少是DefaultCoder
 			TypeCoder coder = null;
 			if(fieldDeclareType != null && TypeUtils.isFinal(fieldDeclareType)) {
@@ -86,72 +135,136 @@ public class DefaultCoder implements TypeCoder<Object> {
 				//默认编码器通过反射编码数据
 				TypeCoder.encodeByReflect(buffer, val, fieldDeclareType,genericType);
 			}
+		
+		} else {
+			buffer.write(Decoder.PREFIX_TYPE_PROXY);
+			short code = TypeCoderFactory.getCodeByClass(valCls);
+			buffer.writeShort(code);
+			SerializeObject so = SerializeProxyFactory.getSerializeCoder(valCls);
+			so.encode(buffer,val);
 		}
+	
 	}
 
 	@Override
-	public Object decode(ByteBuffer buffer, Class<?> fieldDeclareType, Type genericType) {
+	public Object decode(DataInput buffer, Class<?> fieldDeclareType, Type genericType) {
 		
-		byte prefixCodeType = buffer.get();
-		if(prefixCodeType == Decoder.PREFIX_TYPE_NULL) {
+		try {
+			
+			if(fieldDeclareType != null) {
+				if(fieldDeclareType == byte.class || fieldDeclareType == Byte.TYPE || fieldDeclareType == Byte.class ) {
+					return buffer.readByte();
+				}else if(fieldDeclareType == short.class || fieldDeclareType == Short.TYPE || fieldDeclareType == Short.class ) {
+					return buffer.readShort();
+				}else if(fieldDeclareType == int.class || fieldDeclareType == Integer.TYPE || fieldDeclareType == Integer.class ) {
+					return buffer.readInt();
+				}else if(fieldDeclareType == long.class || fieldDeclareType == Long.TYPE || fieldDeclareType == Long.class ) {
+					return buffer.readLong();
+				}else if(fieldDeclareType == float.class || fieldDeclareType == Float.TYPE || fieldDeclareType == Float.class ) {
+					return buffer.readFloat();
+				}else if(fieldDeclareType == double.class || fieldDeclareType == Double.TYPE || fieldDeclareType == Double.class ) {
+					return buffer.readDouble();
+				}else if(fieldDeclareType == boolean.class || fieldDeclareType == Boolean.TYPE || fieldDeclareType == Boolean.class ) {
+					return buffer.readBoolean();
+				}else if(fieldDeclareType == char.class || fieldDeclareType == Character.TYPE || fieldDeclareType == Character.class ) {
+					return buffer.readChar();
+				}else if(fieldDeclareType == String.class ) {
+					return buffer.readUTF();
+				}else if(fieldDeclareType == Date.class ) {
+					return new Date(buffer.readLong());
+				}
+			}
+			
+			byte prefixCodeType = buffer.readByte();
+			if(prefixCodeType == Decoder.PREFIX_TYPE_NULL) {
+				return null;
+			}
+			
+			if(Decoder.PREFIX_TYPE_BYTE == prefixCodeType) {
+				return buffer.readByte();
+			}else if(Decoder.PREFIX_TYPE_SHORTT == prefixCodeType) {
+				return buffer.readShort();
+			}else if(Decoder.PREFIX_TYPE_INT == prefixCodeType) {
+				return buffer.readInt();
+			}else if(Decoder.PREFIX_TYPE_LONG == prefixCodeType) {
+				return buffer.readLong();
+			}else if(Decoder.PREFIX_TYPE_FLOAT == prefixCodeType) {
+				return buffer.readFloat();
+			}else if(Decoder.PREFIX_TYPE_DOUBLE == prefixCodeType) {
+				return buffer.readDouble();
+			}else if(Decoder.PREFIX_TYPE_BOOLEAN == prefixCodeType) {
+				return buffer.readBoolean();
+			}else if(Decoder.PREFIX_TYPE_CHAR == prefixCodeType) {
+				return buffer.readChar();
+			}else if(Decoder.PREFIX_TYPE_STRINGG == prefixCodeType) {
+				return buffer.readUTF();
+			}else if(Decoder.PREFIX_TYPE_DATE == prefixCodeType) {
+				return new Date(buffer.readLong());
+			}else if(Decoder.PREFIX_TYPE_PROXY == prefixCodeType) {
+				short code = buffer.readShort();
+				Class<?> cls = TypeCoderFactory.getClassByCode(code);
+				SerializeObject so = SerializeProxyFactory.getSerializeCoder(cls);
+				return so.decode(buffer);
+			}else if(Decoder.PREFIX_TYPE_STRING == prefixCodeType) {
+				fieldDeclareType = TypeCoder.getType(buffer);
+				if(fieldDeclareType == null) {
+					throw new CommonException("Invalid class data buffer: "+buffer.toString());
+				}
+				return TypeCoder.decodeByReflect(buffer, fieldDeclareType, genericType);
+				
+			}else if(Decoder.PREFIX_TYPE_FINAL == prefixCodeType) {
+				TypeCoder<?> coder = null;
+				if(fieldDeclareType == null || !TypeUtils.isFinal(fieldDeclareType)) {
+					coder = TypeCoderFactory.getCoder(buffer.readShort());
+				} else {
+					coder = TypeCoderFactory.getCoder(fieldDeclareType);
+				}
+				
+				if(coder != this) {
+					return coder.decode(buffer, fieldDeclareType, genericType);
+				} else {
+					return TypeCoder.decodeByReflect(buffer, fieldDeclareType, genericType);
+				}
+			} else if(Decoder.PREFIX_TYPE_SHORT == prefixCodeType) {
+				Short code = buffer.readShort();
+				Class<?> cls = TypeCoderFactory.getClassByCode(code);
+				TypeCoder<?> coder = TypeCoderFactory.getCoder(code);
+				if(coder != this) {
+					return coder.decode(buffer, fieldDeclareType, genericType);
+				}else {
+					throw new CommonException("Invalid type code: "+code);
+				}
+			} else if(Decoder.PREFIX_TYPE_LIST == prefixCodeType) {
+				TypeCoder<?> coder = TypeCoderFactory.getCoder(List.class);
+				if(coder != this) {
+					return coder.decode(buffer, fieldDeclareType, genericType);
+				}else {
+					throw new CommonException("Invalid List type coder: " + coder.type().getName());
+				}
+				
+			}  else if(Decoder.PREFIX_TYPE_SET == prefixCodeType) {
+				TypeCoder<?> coder = TypeCoderFactory.getCoder(Set.class);
+				if(coder != this) {
+					return coder.decode(buffer, fieldDeclareType, genericType);
+				}else {
+					throw new CommonException("Invalid Set type coder: " + coder.type().getName());
+				}
+			}  else if(Decoder.PREFIX_TYPE_MAP == prefixCodeType) {
+				TypeCoder<?> coder = TypeCoderFactory.getCoder(Map.class);
+				if(coder != this) {
+					return coder.decode(buffer, fieldDeclareType, genericType);
+				}else {
+					throw new CommonException("Invalid Map type coder: " + coder.type().getName());
+				}
+			}  else {
+				throw new CommonException("001","not support prefix type:" 
+			+ prefixCodeType+", fieldDeclareType:"+(fieldDeclareType==null?"":fieldDeclareType.getName()));
+			}
+		} catch (IOException e) {
+			e.printStackTrace();
 			return null;
 		}
 		
-		if(Decoder.PREFIX_TYPE_STRING == prefixCodeType) {
-			fieldDeclareType = TypeCoder.getType(buffer);
-			if(fieldDeclareType == null) {
-				throw new CommonException("Invalid class data buffer: "+buffer.toString());
-			}
-			return TypeCoder.decodeByReflect(buffer, fieldDeclareType, genericType);
-		}else if(Decoder.PREFIX_TYPE_FINAL == prefixCodeType) {
-			//Short code = buffer.getShort();
-			TypeCoder<?> coder = null;
-			if(fieldDeclareType == null || !TypeUtils.isFinal(fieldDeclareType)) {
-				coder = TypeCoderFactory.getCoder(buffer.getShort());
-			} else {
-				coder = TypeCoderFactory.getCoder(fieldDeclareType);
-			}
-			
-			if(coder != this) {
-				return coder.decode(buffer, fieldDeclareType, genericType);
-			} else {
-				return TypeCoder.decodeByReflect(buffer, fieldDeclareType, genericType);
-			}
-			
-		} else if(Decoder.PREFIX_TYPE_SHORT == prefixCodeType) {
-			Short code = buffer.getShort();
-			TypeCoder<?> coder = TypeCoderFactory.getCoder(code);
-			if(coder != this) {
-				return coder.decode(buffer, fieldDeclareType, genericType);
-			}else {
-				throw new CommonException("Invalid type code: "+code);
-			}
-		} else if(Decoder.PREFIX_TYPE_LIST == prefixCodeType) {
-			TypeCoder<?> coder = TypeCoderFactory.getCoder(List.class);
-			if(coder != this) {
-				return coder.decode(buffer, fieldDeclareType, genericType);
-			}else {
-				throw new CommonException("Invalid List type coder: " + coder.type().getName());
-			}
-			
-		}  else if(Decoder.PREFIX_TYPE_SET == prefixCodeType) {
-			TypeCoder<?> coder = TypeCoderFactory.getCoder(Set.class);
-			if(coder != this) {
-				return coder.decode(buffer, fieldDeclareType, genericType);
-			}else {
-				throw new CommonException("Invalid Set type coder: " + coder.type().getName());
-			}
-		}  else if(Decoder.PREFIX_TYPE_MAP == prefixCodeType) {
-			TypeCoder<?> coder = TypeCoderFactory.getCoder(Map.class);
-			if(coder != this) {
-				return coder.decode(buffer, fieldDeclareType, genericType);
-			}else {
-				throw new CommonException("Invalid Map type coder: " + coder.type().getName());
-			}
-		} else {
-			throw new CommonException("001","not support prefix type:" 
-		+ prefixCodeType+", fieldDeclareType:"+(fieldDeclareType==null?"":fieldDeclareType.getName()));
-		}
 	}
 	
 	@Override

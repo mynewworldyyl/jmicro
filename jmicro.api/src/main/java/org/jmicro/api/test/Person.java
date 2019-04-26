@@ -1,6 +1,8 @@
 package org.jmicro.api.test;
 
-public final class Person{
+import java.io.Serializable;
+
+public final class Person implements Serializable{
 	
 	private String username ="Yeu";
 	private Integer id = 222;

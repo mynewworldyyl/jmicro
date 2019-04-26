@@ -1,5 +1,6 @@
 package org.jmicro.api.codec;
 
+import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.lang.reflect.Type;
@@ -59,6 +60,12 @@ public class TypeCoderFactory {
 
 	@SuppressWarnings("rawtypes")
 	private static Map<Class, TypeCoder> clazz2Coder = new HashMap<>();
+	
+	@SuppressWarnings("rawtypes")
+	private static Map<Short, Class<?>> code2class = new HashMap<>();
+	
+	@SuppressWarnings("rawtypes")
+	private static Map<Class<?>,Short> class2code = new HashMap<>();
 
 	// static Short currentTypeCode = (short)(NON_ENCODE_TYPE + 1);
 
@@ -81,6 +88,10 @@ public class TypeCoderFactory {
 	public static TypeCoder<Void> getVoidCoder() {
 		return voidCoder;
 	}
+	
+	public static short type() {
+		return type--;
+	}
 
 	static {
 
@@ -88,8 +99,13 @@ public class TypeCoderFactory {
 
 		registCoder(new AbstractFinalTypeCoder<String>(type--, String.class) {
 			@Override
-			public String decode(ByteBuffer buffer, Class<?> fieldDeclareType, Type genericType) {
-				return OnePrefixDecoder.decodeString(buffer);
+			public String decode(DataInput buffer, Class<?> fieldDeclareType, Type genericType) {
+				try {
+					return buffer.readUTF();
+				} catch (IOException e) {
+					e.printStackTrace();
+					return null;
+				}
 			}
 
 			@Override
@@ -143,8 +159,13 @@ public class TypeCoderFactory {
 			}
 
 			@Override
-			public java.util.Date decodeData(ByteBuffer buffer, Class<?> declareFieldType, Type genericType) {
-				return new java.util.Date(buffer.getLong());
+			public java.util.Date decodeData(DataInput buffer, Class<?> declareFieldType, Type genericType) {
+				try {
+					return new java.util.Date(buffer.readLong());
+				} catch (IOException e) {
+					e.printStackTrace();
+					return null;
+				}
 			}
 
 		});
@@ -157,15 +178,20 @@ public class TypeCoderFactory {
 			}
 
 			@Override
-			public java.sql.Date decodeData(ByteBuffer buffer, Class<?> declareFieldType, Type genericType) {
-				return new java.sql.Date(buffer.getLong());
+			public java.sql.Date decodeData(DataInput buffer, Class<?> declareFieldType, Type genericType) {
+				try {
+					return new java.sql.Date(buffer.readLong());
+				} catch (IOException e) {
+					e.printStackTrace();
+					return null;
+				}
 			}
 		});
 
 		registCoder(new AbstractComparableTypeCoder<Map>(Decoder.PREFIX_TYPE_MAP,type--,Map.class) {
 			
 			@Override
-			public Map decode(ByteBuffer buffer, Class<?> fieldDeclareType, Type genericType) {
+			public Map decode(DataInput buffer, Class<?> fieldDeclareType, Type genericType) {
 				return TypeCoder.decodeMap(buffer, TypeCoder.genericType(genericType));
 			}
 
@@ -189,7 +215,7 @@ public class TypeCoderFactory {
 
 			@SuppressWarnings("rawtypes")
 			@Override
-			public Set decode(ByteBuffer buffer, Class<?> declareFieldType, Type genericType) {
+			public Set decode(DataInput buffer, Class<?> declareFieldType, Type genericType) {
 				Set result = new HashSet();
 				TypeCoder.decodeCollection(buffer, result, declareFieldType, TypeCoder.genericType(genericType));
 				return result;
@@ -208,7 +234,7 @@ public class TypeCoderFactory {
 
 			@SuppressWarnings("rawtypes")
 			@Override
-			public List decode(ByteBuffer buffer, Class<?> declareFieldType, Type genericType) {
+			public List decode(DataInput buffer, Class<?> declareFieldType, Type genericType) {
 				List result = new ArrayList();
 				TypeCoder.decodeCollection(buffer, result, declareFieldType, TypeCoder.genericType(genericType));
 				return result;
@@ -227,11 +253,17 @@ public class TypeCoderFactory {
 			}
 
 			@Override
-			public ByteBuffer decodeData(ByteBuffer buffer, Class<?> declareFieldType, Type genericType) {
-				int len = buffer.getShort();
-				byte[] data = new byte[len];
-				buffer.get(data, 0, len);
-				return ByteBuffer.wrap(data);
+			public ByteBuffer decodeData(DataInput buffer, Class<?> declareFieldType, Type genericType) {
+				try {
+					int len = buffer.readShort();
+					byte[] data = new byte[len];
+					buffer.readFully(data, 0, len);
+					return ByteBuffer.wrap(data);
+				} catch (IOException e) {
+					e.printStackTrace();
+					return null;
+				}
+				
 			}
 
 		});
@@ -306,5 +338,23 @@ public class TypeCoderFactory {
 		}
 		clazz2Coder.put(coder.type(), coder);
 		code2Coder.put(coder.code(), coder);
+		//registClass(coder.code(), coder.type());
+	}
+	
+	public static synchronized void registClass(Class<?> cls) {
+		if(class2code.containsKey(cls)) {
+			return;
+		}
+		Short t = type--;
+		code2class.put(t,cls);
+		class2code.put(cls, t);
+	}
+	
+	public static synchronized Class<?> getClassByCode(Short type) {
+		return code2class.get(type);
+	}
+	
+	public static synchronized Short getCodeByClass(Class<?> cls) {
+		return class2code.get(cls);
 	}
 }

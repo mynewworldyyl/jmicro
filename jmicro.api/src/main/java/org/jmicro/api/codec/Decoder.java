@@ -49,7 +49,7 @@ public class Decoder {
 	//空值编码
 	public static final byte PREFIX_TYPE_NULL = PREFIX_TYPE_ID++;
 	
-	//空值编码
+	//FINAL
 	public static final byte PREFIX_TYPE_FINAL = PREFIX_TYPE_ID++;
 		
 	//类型编码写入编码中
@@ -65,6 +65,21 @@ public class Decoder {
 	public static final byte PREFIX_TYPE_SET = PREFIX_TYPE_ID++;
 	//Map类型编码，指示接下来读取一个Map，取Map编码器直接解码
 	public static final byte PREFIX_TYPE_MAP = PREFIX_TYPE_ID++;
+	
+	public static final byte PREFIX_TYPE_BYTE = PREFIX_TYPE_ID++;
+	public static final byte PREFIX_TYPE_SHORTT = PREFIX_TYPE_ID++;
+	public static final byte PREFIX_TYPE_INT = PREFIX_TYPE_ID++;
+	public static final byte PREFIX_TYPE_LONG = PREFIX_TYPE_ID++;
+	public static final byte PREFIX_TYPE_FLOAT = PREFIX_TYPE_ID++;
+	public static final byte PREFIX_TYPE_DOUBLE = PREFIX_TYPE_ID++;
+	public static final byte PREFIX_TYPE_CHAR = PREFIX_TYPE_ID++;
+	public static final byte PREFIX_TYPE_BOOLEAN = PREFIX_TYPE_ID++;
+	public static final byte PREFIX_TYPE_STRINGG = PREFIX_TYPE_ID++;
+	public static final byte PREFIX_TYPE_DATE = PREFIX_TYPE_ID++;
+	public static final byte PREFIX_TYPE_BYTEBUFFER = PREFIX_TYPE_ID++;
+	public static final byte PREFIX_TYPE_REQUEST = PREFIX_TYPE_ID++;
+	public static final byte PREFIX_TYPE_RESPONSE = PREFIX_TYPE_ID++;
+	public static final byte PREFIX_TYPE_PROXY = PREFIX_TYPE_ID++;
 	
 	//public static final byte PREFIX_TYPE_STRING = PREFIX_TYPE_ID--;
 	static {

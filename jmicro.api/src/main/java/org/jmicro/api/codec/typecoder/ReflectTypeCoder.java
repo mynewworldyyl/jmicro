@@ -1,9 +1,9 @@
 package org.jmicro.api.codec.typecoder;
 
+import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.lang.reflect.Type;
-import java.nio.ByteBuffer;
 
 public class ReflectTypeCoder<T> extends AbstractShortTypeCoder<T>{
 	   
@@ -19,7 +19,7 @@ public class ReflectTypeCoder<T> extends AbstractShortTypeCoder<T>{
 
 		@SuppressWarnings("unchecked")
 		@Override
-		public T decodeData(ByteBuffer buffer, Class<?> declareFieldType, Type genericType) {
+		public T decodeData(DataInput buffer, Class<?> declareFieldType, Type genericType) {
 			return (T)TypeCoder.decodeByReflect(buffer,declareFieldType,genericType);
 		}
 }

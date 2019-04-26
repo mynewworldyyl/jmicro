@@ -1,5 +1,6 @@
 package org.jmicro.api.codec.typecoder;
 
+import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.lang.reflect.Type;
@@ -31,7 +32,7 @@ public abstract class AbstractShortTypeCoder<T>  extends AbstractComparableTypeC
 	}
 
 	@Override
-	public T decode(ByteBuffer buffer, Class<?> fieldDeclareType, Type genericType) {
+	public T decode(DataInput buffer, Class<?> fieldDeclareType, Type genericType) {
 		//确保declareFieldType==String.class
 		if(fieldDeclareType != null) {
 			checkType(fieldDeclareType);
@@ -43,7 +44,7 @@ public abstract class AbstractShortTypeCoder<T>  extends AbstractComparableTypeC
 		return decodeData(buffer,type(),genericType);
 	}
 	
-	protected abstract T decodeData(ByteBuffer buffer, Class<?> fieldDeclareType, Type genericType);
+	protected abstract T decodeData(DataInput buffer, Class<?> fieldDeclareType, Type genericType);
 	protected abstract void encodeData(DataOutput buffer, T val, Class<?> fieldDeclareType
 			, Type genericType) throws IOException;
 

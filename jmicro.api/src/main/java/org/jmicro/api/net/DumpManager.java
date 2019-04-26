@@ -19,6 +19,7 @@ import java.util.Map;
 import java.util.TreeMap;
 import java.util.concurrent.ExecutorService;
 
+import org.jmicro.api.codec.JDataInput;
 import org.jmicro.api.codec.OnePrefixDecoder;
 import org.jmicro.api.config.Config;
 import org.jmicro.api.executor.ExecutorConfig;
