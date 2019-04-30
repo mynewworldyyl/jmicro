@@ -11,7 +11,7 @@ import java.util.Map;
 import java.util.Set;
 
 import org.jmicro.api.codec.Decoder;
-import org.jmicro.api.codec.SerializeObject;
+import org.jmicro.api.codec.ISerializeObject;
 import org.jmicro.api.codec.SerializeProxyFactory;
 import org.jmicro.api.codec.TypeCoderFactory;
 import org.jmicro.api.codec.TypeUtils;
@@ -140,8 +140,14 @@ public class DefaultCoder implements TypeCoder<Object> {
 			buffer.write(Decoder.PREFIX_TYPE_PROXY);
 			short code = TypeCoderFactory.getCodeByClass(valCls);
 			buffer.writeShort(code);
-			SerializeObject so = SerializeProxyFactory.getSerializeCoder(valCls);
-			so.encode(buffer,val);
+			if(val instanceof ISerializeObject) {
+				//System.out.println("Use Instance "+valCls.getName());
+				((ISerializeObject)val).encode(buffer, null);
+			} else {
+				//System.out.println("Use Encoder "+valCls.getName());
+				ISerializeObject so = SerializeProxyFactory.getSerializeCoder(valCls);
+				so.encode(buffer,val);
+			}
 		}
 	
 	}
@@ -203,8 +209,17 @@ public class DefaultCoder implements TypeCoder<Object> {
 			}else if(Decoder.PREFIX_TYPE_PROXY == prefixCodeType) {
 				short code = buffer.readShort();
 				Class<?> cls = TypeCoderFactory.getClassByCode(code);
-				SerializeObject so = SerializeProxyFactory.getSerializeCoder(cls);
-				return so.decode(buffer);
+				if(ISerializeObject.class.isAssignableFrom(cls)) {
+					try {
+						ISerializeObject obj = (ISerializeObject)cls.newInstance();
+						return obj.decode(buffer);
+					} catch (InstantiationException | IllegalAccessException e) {
+						throw new CommonException("Create instance of: " + cls.getName() + " error!");
+					}
+				} else {
+					ISerializeObject so = SerializeProxyFactory.getSerializeCoder(cls);
+					return so.decode(buffer);
+				}
 			}else if(Decoder.PREFIX_TYPE_STRING == prefixCodeType) {
 				fieldDeclareType = TypeCoder.getType(buffer);
 				if(fieldDeclareType == null) {

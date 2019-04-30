@@ -210,4 +210,5 @@ public class TypeUtils {
 	public static boolean isPrimitiveChar(Class<?> cls) {
 		return cls == char.class || cls == Character.TYPE;
 	}
+
 }

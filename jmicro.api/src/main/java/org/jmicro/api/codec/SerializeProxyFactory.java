@@ -21,9 +21,9 @@ public class SerializeProxyFactory {
 
 	public static final Logger logger = LoggerFactory.getLogger(SerializeProxyFactory.class);
 	
-	public static Map<Class<?>,SerializeObject> cache = new HashMap<>();
+	public static Map<Class<?>,ISerializeObject> cache = new HashMap<>();
 	
-	public static <T> SerializeObject getSerializeCoder(Class<T> cls) {
+	public static <T> ISerializeObject getSerializeCoder(Class<T> cls) {
 		
 		if(cache.containsKey(cls)) {
 			return cache.get(cls);
@@ -53,7 +53,7 @@ public class SerializeProxyFactory {
 		 ClassGenerator classGenerator = ClassGenerator.newInstance(Thread.currentThread().getContextClassLoader());
 		 classGenerator.setClassName(cls.getName()+"$Serializer");
 		 //classGenerator.setSuperClass(SerializeObject.class);
-		 classGenerator.addInterface(SerializeObject.class);
+		 classGenerator.addInterface(ISerializeObject.class);
 		 classGenerator.addDefaultConstructor();
 		 
 		 classGenerator.addMethod(getEncodeMethod(cls));      
@@ -63,7 +63,7 @@ public class SerializeProxyFactory {
 		 Class<?> clazz = classGenerator.toClass();
 		 
 		 try {
-			cache.put(cls, (SerializeObject)clazz.newInstance());
+			cache.put(cls, (ISerializeObject)clazz.newInstance());
 		} catch (InstantiationException | IllegalAccessException e) {
 			e.printStackTrace();
 		}
@@ -94,7 +94,7 @@ public class SerializeProxyFactory {
 				sb.append(" __coder.decode(__buffer,").append(f.getType().getName()).append(".class,").append(" null);\n");
 			} else {
 				sb.append("java.lang.reflect.Field f = ").append("this.getClass().getDeclaredField(\"").append(f.getName()).append("\");");
-				sb.append("coder.encode(buffer,vv,").append(f.getType().getName()).append(".class,").append(" f.getGenericType() );");
+				sb.append("coder.encode(__buffer,vv,").append(f.getType().getName()).append(".class,").append(" f.getGenericType() );");
 			}
 			
 			sb.append(" ").append(ReflectUtils.getName(f.getType())).append(" __val =").append(Utils.getIns().asArgument(f.getType(), "__val1")).append(";\n");

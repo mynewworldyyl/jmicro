@@ -2,10 +2,13 @@ package org.jmicro.api.test;
 
 import java.io.Serializable;
 
+import org.jmicro.api.annotation.SO;
+
+@SO
 public final class Person implements Serializable{
 	
 	private String username ="Yeu";
-	private Integer id = 222;
+	private int id = 222;
 	
 	public String getUsername() {
 		return username;

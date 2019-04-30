@@ -198,6 +198,11 @@ jmicro.choreography/jmicro.choreography.controller/.classpath
 jmicro.choreography/jmicro.choreography.controller/.project
 jmicro.choreography/jmicro.choreography.controller/.settings/
 jmicro.choreography/jmicro.choreography.controller/logs/
+jmicro.choreography/jmicro.choreography.repository/target/
+jmicro.choreography/jmicro.choreography.repository/.classpath
+jmicro.choreography/jmicro.choreography.repository/.project
+jmicro.choreography/jmicro.choreography.repository/.settings/
+jmicro.choreography/jmicro.choreography.repository/logs/
 jmicro.ext/target/
 jmicro.ext/.classpath
 jmicro.ext/.project
@@ -206,6 +211,10 @@ jmicro.ext/jmicro.mybatis/target/
 jmicro.ext/jmicro.mybatis/.classpath
 jmicro.ext/jmicro.mybatis/.project
 jmicro.ext/jmicro.mybatis/.settings/
+jmicro.ext/jmicro.agent/target/
+jmicro.ext/jmicro.agent/.classpath
+jmicro.ext/jmicro.agent/.project
+jmicro.ext/jmicro.agent/.settings/
 
 .DS_Store
 Thumbs.db

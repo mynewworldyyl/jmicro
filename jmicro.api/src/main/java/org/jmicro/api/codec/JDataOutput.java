@@ -37,6 +37,14 @@ public class JDataOutput implements DataOutput {
 		
 	}
 	
+	public int position() {
+		return buf.position();
+	}
+	
+	public void write(int index,byte v) {
+		 buf.put(index, v);
+	}
+	
 	@Override
 	public void write(int b) throws IOException {
 		this.writeByte(b);

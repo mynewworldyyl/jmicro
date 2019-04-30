@@ -106,6 +106,7 @@
 		<module>jmicro.test</module>
 		<module>jmicro.ext</module>
 		<module>jmicro.build</module>
+		<module>jmicro.agent</module>
     </modules>
 
     <dependencyManagement>

@@ -1,15 +1,13 @@
 package org.jmicro.example.test;
 
 import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
+import org.jmicro.api.annotation.SO;
 import org.jmicro.api.test.Person;
 
+@SO
 public class SerializeObject implements Serializable{
 
 	private String val1111 = "sssssssssssss你好，&*￥W#W@";
@@ -96,13 +94,13 @@ public class SerializeObject implements Serializable{
 
 	
 	
-	/*public Set<Person> setv = new HashSet<>();
+	public Set<Person> setv = new HashSet<>();
 	
-	public List<Person> listv = new ArrayList<>();
+	/*public List<Person> listv = new ArrayList<>();
 	
 	public Map<String,Person> mapv = new HashMap<>();*/
 	
-	//private Person p = new Person();
+	private Person p = new Person();
 	
 	
 }

@@ -26,6 +26,7 @@ import org.jmicro.api.JMicro;
 import org.jmicro.api.codec.ICodecFactory;
 import org.jmicro.api.codec.IDecoder;
 import org.jmicro.api.codec.IEncoder;
+import org.jmicro.api.codec.ISerializeObject;
 import org.jmicro.api.codec.PrefixTypeDecoder;
 import org.jmicro.api.codec.PrefixTypeEncoder;
 import org.jmicro.api.codec.TypeCoderFactory;
@@ -34,6 +35,7 @@ import org.jmicro.api.net.Message;
 import org.jmicro.api.net.RpcResponse;
 import org.jmicro.api.objectfactory.IObjectFactory;
 import org.jmicro.api.test.Person;
+import org.jmicro.common.util.ReflectUtils;
 import org.junit.Test;
 import org.objenesis.strategy.StdInstantiatorStrategy;
 
@@ -80,15 +82,23 @@ public class TestCodec {
 	@Test
 	public void testEncodeObjectByProxy() throws IOException {
 		TypeCoderFactory.registClass(SerializeObject.class);
+		TypeCoderFactory.registClass(Person.class);
 		
 		//SerializeObject obj = SerializeProxyFactory.(SerializeObject.class);
 		SerializeObject obj = new SerializeObject();
 		
+		Person p = new Person();
+		p.setId(222222);
+		p.setUsername("测试用户名测试用户名测试用户名测试用户名测试用户名");
+		obj.setv.add(p);
+		/*obj.listv.add(p);
+		obj.mapv.put("psssssssss", p);*/
+		
 		PrefixTypeEncoder encoder = new PrefixTypeEncoder();
 		ByteBuffer bb = encoder.encode(obj);
 		encoder.encode(obj);
-		//PrefixTypeDecoder decoder = new PrefixTypeDecoder();
-		//SerializeObject obj1 = decoder.decode(bb);
+		PrefixTypeDecoder decoder = new PrefixTypeDecoder();
+		SerializeObject obj1 = decoder.decode(bb);
 		
 		System.out.println("PrefixTypeEncoder: " + bb.limit());
 		
@@ -202,11 +212,13 @@ public class TestCodec {
 		
 		SerializeObject obj = new SerializeObject();
 		
+		System.out.println(obj instanceof ISerializeObject);
+		
 		Person p = new Person();
 		p.setId(222222);
 		p.setUsername("测试用户名测试用户名测试用户名测试用户名测试用户名");
+		//obj.setv.add(p);
 		/*obj.listv.add(p);
-		obj.setv.add(p);
 		obj.mapv.put("psssssssss", p);*/
 		
 		long startTime = System.currentTimeMillis();
@@ -215,6 +227,7 @@ public class TestCodec {
 		PrefixTypeDecoder decoder = new PrefixTypeDecoder();
 		
 		TypeCoderFactory.registClass(SerializeObject.class);
+		TypeCoderFactory.registClass(Person.class);
 		
 		Object v = null;
 		for(int i = cnt; i > 0; i--) {
@@ -269,5 +282,12 @@ public class TestCodec {
         System.out.println("Kryo: " + (System.currentTimeMillis() - startTime));
 	        
 	}
+	
+	@Test
+	public void testDesc2Class() throws ClassNotFoundException {
+		String desc = "Ljava/util/Set<Lorg/jmicro/api/test/Person;>";
+		Class<?> cls = ReflectUtils.desc2class(desc);
+	}
+	
 	
 }
