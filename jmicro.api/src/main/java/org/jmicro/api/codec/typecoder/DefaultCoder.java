@@ -212,13 +212,15 @@ public class DefaultCoder implements TypeCoder<Object> {
 				if(ISerializeObject.class.isAssignableFrom(cls)) {
 					try {
 						ISerializeObject obj = (ISerializeObject)cls.newInstance();
-						return obj.decode(buffer);
+						obj.decode(buffer);
+						return  obj;
 					} catch (InstantiationException | IllegalAccessException e) {
 						throw new CommonException("Create instance of: " + cls.getName() + " error!");
 					}
 				} else {
 					ISerializeObject so = SerializeProxyFactory.getSerializeCoder(cls);
-					return so.decode(buffer);
+				    so.decode(buffer);
+				    return so;
 				}
 			}else if(Decoder.PREFIX_TYPE_STRING == prefixCodeType) {
 				fieldDeclareType = TypeCoder.getType(buffer);

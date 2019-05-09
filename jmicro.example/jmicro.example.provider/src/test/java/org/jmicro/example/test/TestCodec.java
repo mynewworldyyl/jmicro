@@ -96,7 +96,6 @@ public class TestCodec {
 		
 		PrefixTypeEncoder encoder = new PrefixTypeEncoder();
 		ByteBuffer bb = encoder.encode(obj);
-		encoder.encode(obj);
 		PrefixTypeDecoder decoder = new PrefixTypeDecoder();
 		SerializeObject obj1 = decoder.decode(bb);
 		
@@ -180,7 +179,6 @@ public class TestCodec {
 		for(int i = cnt; i > 0;i--) {
 			LinkedBuffer buf = LinkedBuffer.allocate(1024);
 			byte[] data = ProtobufIOUtil.toByteArray(obj, schema, buf);
-			//ProtobufIOUtil.mergeFrom(data, o, schema);
 		}
 		System.out.println("Protobuf: " + (System.currentTimeMillis() - startTime));
 		
@@ -217,22 +215,26 @@ public class TestCodec {
 		Person p = new Person();
 		p.setId(222222);
 		p.setUsername("测试用户名测试用户名测试用户名测试用户名测试用户名");
-		//obj.setv.add(p);
+		obj.setv.add(p);
 		/*obj.listv.add(p);
 		obj.mapv.put("psssssssss", p);*/
 		
-		long startTime = System.currentTimeMillis();
+		//obj.listv.add(p);
+		
+		
 		int cnt = 1000000;
 		PrefixTypeEncoder encoder = new PrefixTypeEncoder();
 		PrefixTypeDecoder decoder = new PrefixTypeDecoder();
-		
+
 		TypeCoderFactory.registClass(SerializeObject.class);
 		TypeCoderFactory.registClass(Person.class);
 		
 		Object v = null;
+		ByteBuffer bb = null;
+		
+		long startTime = System.currentTimeMillis();
 		for(int i = cnt; i > 0; i--) {
-			ByteBuffer bb = encoder.encode(obj);
-			//v = decoder.decode(bb);
+			 bb = encoder.encode(obj);
 		}
 		System.out.println("PrefixTypeEncoder: " + (System.currentTimeMillis() - startTime));
 		
@@ -249,13 +251,12 @@ public class TestCodec {
 		System.out.println("ObjectOutputStream: " + (System.currentTimeMillis() - startTime));*/
 		
 		//Protobuf不序列化类型信息，其比PrefixTypeEncoder少5个字节
-		startTime = System.currentTimeMillis();
 		Schema schema = RuntimeSchema.getSchema(obj.getClass());
+		startTime = System.currentTimeMillis();
 		for(int i = cnt; i > 0;i--) {
 			LinkedBuffer buf = LinkedBuffer.allocate(1024);
 			SerializeObject o = new SerializeObject();
 			byte[] data = ProtobufIOUtil.toByteArray(obj, schema, buf);
-			//ProtobufIOUtil.mergeFrom(data, o, schema);
 		}
 		System.out.println("Protobuf: " + (System.currentTimeMillis() - startTime));
 		
@@ -274,9 +275,9 @@ public class TestCodec {
             output.flush();
             output.close();
             
-            Input input = new Input(new ByteArrayInputStream(bi.toByteArray()));  
+           Input input = new Input(new ByteArrayInputStream(bi.toByteArray()));  
             SerializeObject o = new SerializeObject();
-            o = kryo.readObject(input, SerializeObject.class);
+            //o = kryo.readObject(input, SerializeObject.class);
         }  
         
         System.out.println("Kryo: " + (System.currentTimeMillis() - startTime));
@@ -289,5 +290,87 @@ public class TestCodec {
 		Class<?> cls = ReflectUtils.desc2class(desc);
 	}
 	
+	@Test
+	public void testCompareDecodePerfermance1() throws IOException, ClassNotFoundException {
+		
+		SerializeObject obj = new SerializeObject();
+		
+		Person p = new Person();
+		p.setId(222222);
+		p.setUsername("测试用户名测试用户名测试用户名测试用户名测试用户名");
+		obj.setv.add(p);
+		/*obj.listv.add(p);
+		obj.mapv.put("psssssssss", p);*/
+		
+		obj.listv.add(p);
+		
+		PrefixTypeEncoder encoder = new PrefixTypeEncoder();
+		PrefixTypeDecoder decoder = new PrefixTypeDecoder();
+		
+		TypeCoderFactory.registClass(SerializeObject.class);
+		TypeCoderFactory.registClass(Person.class);
+		
+		ByteBuffer bb = encoder.encode(obj);
+		
+		long startTime = System.currentTimeMillis();
+		int cnt = 1000000;
+		Object v = null;
+		for(int i = cnt; i > 0; i--) {
+			bb.mark();
+			v = decoder.decode(bb);
+			bb.reset();
+		}
+		System.out.println("PrefixTypeEncoder: " + (System.currentTimeMillis() - startTime));
+		
+		/*startTime = System.currentTimeMillis();
+		for(int i = cnt; i > 0;i--) {
+			ByteArrayOutputStream in = new ByteArrayOutputStream();
+			ObjectOutputStream oos = new ObjectOutputStream(in);
+			oos.writeObject(obj);
+			ObjectInputStream ios = new ObjectInputStream(new ByteArrayInputStream(in.toByteArray()));
+			v = ios.readObject();
+			
+			
+		}
+		System.out.println("ObjectOutputStream: " + (System.currentTimeMillis() - startTime));*/
+		
+		//Protobuf不序列化类型信息，其比PrefixTypeEncoder少5个字节
+		
+		Schema schema = RuntimeSchema.getSchema(obj.getClass());
+		
+		LinkedBuffer buf = LinkedBuffer.allocate(1024);
+		SerializeObject o = new SerializeObject();
+		byte[] data = ProtobufIOUtil.toByteArray(obj, schema, buf);
+		
+		startTime = System.currentTimeMillis();
+		
+		for(int i = cnt; i > 0;i--) {
+			ProtobufIOUtil.mergeFrom(data, o, schema);
+		}
+		System.out.println("Protobuf: " + (System.currentTimeMillis() - startTime));
+		
+		Kryo kryo = new Kryo();  
+        kryo.setReferences(false);  
+        kryo.setRegistrationRequired(false);  
+        kryo.setInstantiatorStrategy(new StdInstantiatorStrategy());  
+        kryo.register(Person.class);  
+        
+        ByteArrayOutputStream bi = new ByteArrayOutputStream();
+        Output output = new Output(bi);  
+        kryo.writeObject(output, obj);  
+        output.flush();
+        output.close();
+        
+        startTime = System.currentTimeMillis();
+        for (int i = cnt; i > 0;i--) {  
+            Input input = new Input(new ByteArrayInputStream(bi.toByteArray()));  
+            o = new SerializeObject();
+            //o = kryo.readObject(input, SerializeObject.class);
+        }  
+        
+        System.out.println("Kryo: " + (System.currentTimeMillis() - startTime));
+	        
+	}
 	
+
 }

@@ -8,6 +8,8 @@ import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Hashtable;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -95,6 +97,12 @@ public class TypeCoderFactory {
 
 	static {
 
+		registClass(ArrayList.class);
+		registClass(LinkedList.class);
+		registClass(HashSet.class);
+		registClass(HashMap.class);
+		registClass(Hashtable.class);
+		
 		registCoder(new ArrayCoder(type--));
 
 		registCoder(new AbstractFinalTypeCoder<String>(type--, String.class) {

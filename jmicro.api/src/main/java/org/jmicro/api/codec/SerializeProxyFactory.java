@@ -138,8 +138,6 @@ public class SerializeProxyFactory {
 			
 			Class fieldDeclareType = f.getType();
 			
-			sb.append(" ").append(ReflectUtils.getName(fieldDeclareType)).append(" __val"+i).append("=");
-			
 			Method m = null;
 			try {
 				m = cls.getMethod(getMethodName, new Class[0]);
@@ -147,12 +145,15 @@ public class SerializeProxyFactory {
 			}
 			
 			if(m != null) {
+				sb.append(" ").append(ReflectUtils.getName(fieldDeclareType)).append(" __val"+i).append("=");
 				sb.append(" __obj.").append(getMethodName).append("();\n");
 			}else if(Modifier.isPublic(f.getModifiers())) {
+				sb.append(" ").append(ReflectUtils.getName(fieldDeclareType)).append(" __val"+i).append("=");
 				sb.append(" __obj.").append(f.getName()).append(";\n");
 			} else {
 				sb.append("try { \n");
 				sb.append(" java.lang.reflect.Field f0 = ").append("__obj.getClass().getDeclaredField(\"").append(f.getName()).append("\");\n");
+				sb.append(" ").append(ReflectUtils.getName(fieldDeclareType)).append(" __val"+i).append("=");
 				sb.append(" org.jmicro.api.codec.TypeUtils.getFieldValue(__obj,f0);\n");
 				sb.append("catch(NoSuchFieldException | SecurityException e) { e.printStackTrace(); }\n");
 			}
