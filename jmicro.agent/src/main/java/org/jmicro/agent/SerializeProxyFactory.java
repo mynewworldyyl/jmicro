@@ -55,7 +55,7 @@ public class SerializeProxyFactory {
 
 		ClassPool cp = ClassPool.getDefault();
 		
-		StringBuffer sb = new StringBuffer(" public void decode(java.io.DataInput __buffer) {\n");
+		StringBuffer sb = new StringBuffer(" public void decode(java.io.DataInput __buffer)  throws java.io.IOException {\n");
 		
 		sb.append(cls.getName()).append(" __obj =  this;\n ");
 		
@@ -98,12 +98,15 @@ public class SerializeProxyFactory {
 				sb.append(varName).append(" = __buffer.readChar();\n");
 			}else  if(fieldDeclareType.getName().equals(Date.class.getName())) {
 				sb.append(" long tv"+i+" = __buffer.readLong(); \n ");
-				sb.append(varName).append(" = tv"+i+" == 0L ? null : new java.util.Date(__buffer.readLong());\n");
+				sb.append(varName).append(" = tv"+i+" == 0L ? null : new java.util.Date(tv"+i+");\n");
 			} else {
-				sb.append(" int prefixCode"+i+" = __buffer.readByte(); \n");
+				String flagName = "flagName" + i;
+				//读一个byte的标志位
+				sb.append(" byte "+flagName+" = __buffer.readByte(); \n");
+				//sb.append(" System.out.println(\"Decoder Flag: \" + ").append(flagName).append(");\n");
 				sb.append(varName).append("  = null;\n ");
 
-				sb.append(" if(prefixCode"+i+" == org.jmicro.api.codec.Decoder.PREFIX_TYPE_NULL) { ");
+				sb.append(" if(org.jmicro.agent.SerializeProxyFactory.isNull("+flagName+")) { ");
 				sb.append(varName).append("  = null;\n } else { // block0 \n");
 				
 				if(!fieldDeclareType.subtypeOf(cp.get(Collection.class.getName())) &&
@@ -124,23 +127,24 @@ public class SerializeProxyFactory {
 					sb.append(" org.jmicro.api.codec.typecoder.TypeCoder __coder = org.jmicro.api.codec.TypeCoderFactory.getDefaultCoder(); \n");
 				    
 					if(fieldDeclareType.subtypeOf(cp.get(Collection.class.getName()))) {
-						sb.append(" byte flag = __buffer.readByte(); \n");
-				    	
+						sb.append(" String clsName=null; short c = 0; \n");
 				    	if(fieldDeclareType.isInterface() || Modifier.isAbstract(fieldDeclareType.getModifiers())) {
-				    		sb.append(" String clsName = null; \n short c = 0; \n Class cls = null; \n");
-				    		sb.append(" int pc = __buffer.readByte(); \n");
-				    		sb.append(" if(pc ==1) { clsName = __buffer.readUTF(); } \n");
-				    		sb.append(" else { c = __buffer.readShort(); \n } \n");
+				    		sb.append(" if(org.jmicro.agent.SerializeProxyFactory.isType("+flagName+")) { \n");
+				    		sb.append(" clsName = __buffer.readUTF(); \n");
+				    		sb.append(" } \n else { \n");
+				    		sb.append(" c = __buffer.readShort(); \n");
+				    		sb.append(" } \n");
 				    		
 				    		sb.append(" if( __obj.").append(f.getName()).append(" == null ) { //block0 \n");
-				    		
-				    		sb.append(" if(clsName != null) {  ");
+				    		sb.append(" Class cls = null; \n");
+				    		sb.append(" if(clsName != null) {  \n");
 				    		sb.append("  cls = org.jmicro.agent.SerializeProxyFactory.loadClazz(clsName); \n");
-				    		sb.append(" } else {  ");
+				    		sb.append(" } else {  \n");
 				    		sb.append(" cls = org.jmicro.api.codec.TypeCoderFactory.getClassByCode(new Short(c)); \n");
 				    		sb.append(" } \n");
 				    		sb.append(varName).append("=(").append(fieldDeclareType.getName()).append(") org.jmicro.agent.SerializeProxyFactory.newInstance(cls); \n");
-					    	sb.append(" } // block0 \n  else {  // block1 \n");
+				    		sb.append(" __obj.").append(f.getName()).append(" = ").append(varName).append(";");
+				    		sb.append(" } // block0 \n  else {  // block1 \n");
 					    	sb.append(varName).append(" = __obj.").append(f.getName()).append(";");
 					    	sb.append(" } // block1 \n");
 				    	}
@@ -152,21 +156,25 @@ public class SerializeProxyFactory {
 				    	String genericType = getGenericType(gs);
 				    	
 				    	sb.append(" boolean readEvery = true;\n ");
-				    	sb.append(" Class eleCls = null ;\n");
+				    	sb.append(" Class eleCls = null ;\n clsName = null; \n c = 0; \n");
 				    	
-				    	sb.append("if(").append(genericType==null ? "null" : genericType + ".class").append("!= null && (java.lang.reflect.Modifier.isFinal(" + genericType + ".class.getModifiers()) ||org.jmicro.api.codec.ISerializeObject.class.isAssignableFrom("+genericType+".class))) { \n"); 
-				    	//能从泛型中能获取到足够的列表元素类型信息
-				    	//sb.append(" eltClsName=\"").append(genericType).append("\";\n");
-				    	sb.append("  eleCls = "+genericType+".class; \n");
-				    	sb.append(" readEvery = false; \n");
-			    		sb.append(" } else { // block3 \n");
-			    		sb.append("if((flag & 0x40) > 0 ) { //block4 \n");
-			    		sb.append(" c =  __buffer.readShort(); \n");
-			    		sb.append(" eleCls = org.jmicro.api.codec.TypeCoderFactory.getClassByCode(new Short(c)); \n");
-			    		sb.append(" readEvery = false; \n");
-			    		sb.append(" } //block4 \n");
-			    		
-			    		sb.append(" } //block3 \n");
+				    	sb.append(" if(!org.jmicro.agent.SerializeProxyFactory.isGenericTypeFinal("+flagName+")) { //blockgenic \n");
+				    	
+				    	sb.append(" if(org.jmicro.agent.SerializeProxyFactory.isHeaderELetment("+flagName+")) { \n");
+				    	sb.append(" readEvery = false;\n ");
+				    	sb.append(" if(org.jmicro.agent.SerializeProxyFactory.isElementTypeCode("+flagName+")) { \n");
+				    	sb.append(" c = __buffer.readShort(); \n");
+				    	sb.append(" eleCls = org.jmicro.api.codec.TypeCoderFactory.getClassByCode(new Short(c)); \n");
+				    	sb.append(" } \n else { \n");
+				    	sb.append(" clsName = __buffer.readUTF(); \n");
+				    	sb.append(" eleCls = org.jmicro.agent.SerializeProxyFactory.loadClazz(clsName); \n");
+				    	sb.append(" } \n");
+				    	
+				    	sb.append(" } ");
+				    	sb.append(" } //blockgenic \n else { \n ");
+				    	sb.append(" eleCls=").append(genericType).append(".class;");
+				    	sb.append(" readEvery = false;\n ");
+				    	sb.append(" } \n");
 			    		
 			    		sb.append(" int cnt = 0; \n");
 			    		sb.append(" while( cnt < size) { //block5 \n ++cnt; \n");
@@ -193,7 +201,7 @@ public class SerializeProxyFactory {
 				sb.append("} //block0 \n");
 			}
 			
-			sb.append("__obj.").append(f.getName()).append(" = "+varName+";\n");
+			sb.append("__obj.").append(f.getName()).append(" = "+varName+";\n\n");
 		}
 		
 		sb.append(" }\n");
@@ -203,7 +211,7 @@ public class SerializeProxyFactory {
 	}
 
 	private static String getEncodeMethod(CtClass cls) throws NotFoundException, CannotCompileException {
-		StringBuffer sb = new StringBuffer("public void encode(java.io.DataOutput __buffer,Object obj) { \n");
+		StringBuffer sb = new StringBuffer("public void encode(java.io.DataOutput __buffer,Object obj) throws java.io.IOException { \n");
 		sb.append(cls.getName()).append(" __obj =  this;\n ");
 		
 		ClassPool cp = ClassPool.getDefault();
@@ -251,8 +259,22 @@ public class SerializeProxyFactory {
 				sb.append("__val"+i+" == null ? __buffer.writeLong(0L) : ") ;
 				sb.append(" __buffer.writeLong(").append(" __val").append(i).append(".getTime()); \n");
 			}else {
-				sb.append("if(__val"+i).append(" == null)  { __buffer.write(org.jmicro.api.codec.Decoder.PREFIX_TYPE_NULL);\n}  ");
-				sb.append(" else { //block0 \n __buffer.write(org.jmicro.api.codec.Decoder.PREFIX_TYPE_FINAL);\n");
+				
+				 sb.append(" org.jmicro.api.codec.JDataOutput out = (org.jmicro.api.codec.JDataOutput)__buffer;\n");
+				 
+			    String flagName = "flag"+i;
+			    sb.append(" byte "+flagName+" = 0; \n");
+			    sb.append(" int flagIndex"+i+" = out.position(); \n");
+			    //在头部为标志位保留一个字节的位置
+			    sb.append(" __buffer.writeByte(0); // forward one byte  \n");
+			    
+				sb.append("if(__val"+i).append(" == null)  { "+flagName+" = org.jmicro.agent.SerializeProxyFactory.setNull("+flagName+"); \n out.write(flagIndex"+i+","+flagName+");\n}  ");
+				sb.append(" else { //block0 \n ");
+				
+				//sb.append("System.out.println(\"out:\"+out);\n");
+				//sb.append("System.out.println(\"__buffer:\"+__buffer);\n");
+				//sb.append("System.out.println(\"__val:\"+__val"+i+");\n");
+				//sb.append("System.out.println(\"out:\"+out);\n");
 				
 			   if(!fieldDeclareType.subtypeOf(cp.get(Collection.class.getName())) &&
 					!fieldDeclareType.subtypeOf(cp.get(Map.class.getName()))
@@ -263,20 +285,17 @@ public class SerializeProxyFactory {
 						sb.append(" org.jmicro.api.codec.typecoder.TypeCoder __coder = org.jmicro.api.codec.TypeCoderFactory.getDefaultCoder(); \n");
 						sb.append(" __coder.encode(__buffer,__val").append(i).append(",").append(fieldDeclareType.getName()).append(".class,").append(" null );\n\n");
 					}
+					 sb.append(" out.write(flagIndex"+i+","+flagName+");\n");
 			   } else {
 				    sb.append(" org.jmicro.api.codec.typecoder.TypeCoder __coder = org.jmicro.api.codec.TypeCoderFactory.getDefaultCoder(); \n");
+				    
+				   
 				    if(fieldDeclareType.subtypeOf(cp.get(Collection.class.getName()))) {
 				    	
-				    	sb.append(" org.jmicro.api.codec.JDataOutput out = (org.jmicro.api.codec.JDataOutput)__buffer;\n");
-				    	sb.append(" byte flag = 0; \n");
-				    	sb.append(" int flagIndex = out.position(); \n");
-				    	sb.append(" __buffer.writeByte(0); // forward one byte  \n");
-				    	
 				    	if(fieldDeclareType.isInterface() || Modifier.isAbstract(fieldDeclareType.getModifiers())) {
-				    		//sb.append(" __buffer.writeUTF(__val"+i+".getClass().getName());\n");
 				    		sb.append(" Short c = org.jmicro.api.codec.TypeCoderFactory.getCodeByClass(__val"+i+".getClass()); \n");
-				    		sb.append(" if(c == null) {__buffer.writeByte(1); \n __buffer.writeUTF(__val"+i+".getClass().getName());} \n");
-				    		sb.append(" else {__buffer.writeByte(2); \n __buffer.writeShort(c.intValue());} \n");
+				    		sb.append(" if(c == null) { "+flagName+" = org.jmicro.agent.SerializeProxyFactory.setType("+flagName+"); \n __buffer.writeUTF(__val"+i+".getClass().getName());\n } \n");
+				    		sb.append(" else { \n __buffer.writeShort(c.intValue());} \n");
 				    	}
 				    	
 				    	sb.append(" int size = __val"+i+".size(); \n");
@@ -291,18 +310,23 @@ public class SerializeProxyFactory {
 				    	String genericType = getGenericType(gs);
 				    	
 				    	sb.append("if(").append(genericType==null ? "null" : genericType + ".class").append("!= null && (java.lang.reflect.Modifier.isFinal(" + genericType + ".class.getModifiers()) ||org.jmicro.api.codec.ISerializeObject.class.isAssignableFrom("+genericType+".class))) { \n"); 
-				    	sb.append(" flag |= 1<<7  ; \n");//能从泛型中能获取到足够的列表元素类型信息
+				    	sb.append(" "+flagName+" = org.jmicro.agent.SerializeProxyFactory.setGenericTypeFinal("+flagName+"); \n");//能从泛型中能获取到足够的列表元素类型信息
 			    		sb.append(" } else { // block2 \n");
 			    		//从值中获取元素类型信息
 			    		sb.append(" boolean sameElt = org.jmicro.agent.SerializeProxyFactory.sameCollectionTypeEles(__val"+i+"); \n");//是否是同种类型的对象
 				    	sb.append(" boolean isFinal = org.jmicro.agent.SerializeProxyFactory.seriaFinalClass(__val"+i+".iterator().next().getClass());\n");
 				    	
 				    	sb.append(" if(sameElt && isFinal) { //block3 \n");
-				    		sb.append(" flag |= 1<<6; \n");//第一个元素 是否是抽象类，sameElt=true时有效
+				    		sb.append(" "+flagName+" = org.jmicro.agent.SerializeProxyFactory.setHeaderELetment("+flagName+"); \n");//第一个元素 是否是抽象类，sameElt=true时有效
 					    	//sb.append(" __buffer.writeUTF(__val"+i+".iterator().next().getClass().getName());\n");
+				    		sb.append(" writeEvery = false; \n");
 				    		sb.append(" Short c"+i+" = org.jmicro.api.codec.TypeCoderFactory.getCodeByClass(__val"+i+".iterator().next().getClass());\n");
+				    		sb.append(" if(c == null) {");
+				    		sb.append(" "+flagName+" = org.jmicro.agent.SerializeProxyFactory.setElementTypeCode("+flagName+"); \n");
+				    		sb.append("  __buffer.writeUTF(__val"+i+".iterator().next().getClass().getName()); ");
+				    		sb.append(" } // \n else { \n");
 				    		sb.append(" __buffer.writeShort(c"+i+".intValue());\n");
-					    	sb.append(" writeEvery = false; \n");
+				    		sb.append(" } ");
 				    	sb.append(" } //block3 \n");
 				    		sb.append(" else { //block4 \n");
 				    		sb.append(" writeEvery = true;\n");
@@ -314,11 +338,14 @@ public class SerializeProxyFactory {
 				    	//v cannot be null
 				    	sb.append(" Object v = ite.next(); \n");
 					   // sb.append(" if(writeEvery) {__buffer.writeUTF(v.getClass().getName());\n}");
-					    sb.append(" if(writeEvery) { Short cc"+i+" = org.jmicro.api.codec.TypeCoderFactory.getCodeByClass(v.getClass()); \n __buffer.writeShort(cc"+i+".intValue());\n}");
+					    sb.append(" if(writeEvery) { \n Short cc"+i+" = org.jmicro.api.codec.TypeCoderFactory.getCodeByClass(v.getClass()); \n __buffer.writeShort(cc"+i+".intValue());\n}\n");
 					    sb.append(" org.jmicro.agent.SerializeProxyFactory.encodeListElement(__buffer,v); \n");
 					    sb.append(" } //end for loop block5 \n ");
 					    
-					    sb.append(" out.write(flagIndex,flag);\n");
+					   /* sb.append(" System.out.println(\"Endoce Flag: \" + ")
+					    .append(flagName).append("+\"    \" + obj.getClass().getName()").append(");\n");*/
+					    
+					    sb.append(" out.write(flagIndex"+i+","+flagName+");\n");
 				    	
 					    sb.append(" } // end if block1 \n ");
 				    	
@@ -336,6 +363,7 @@ public class SerializeProxyFactory {
 */				}
 				sb.append(" } //end else block0 \n");
 			}
+			sb.append("\n\n");
 		}
 		
 		sb.append("}");
@@ -365,7 +393,81 @@ public class SerializeProxyFactory {
 			e.printStackTrace();
 			return null;
 		}
+	}
 	
+	//字段类型是否是空值 0：表示空值，1：表示非空值
+	public static final byte NULL_VAL = (byte)0X01;
+	
+	//字段类型，0：表示编码，1：表示类名
+	public static final byte TYPE_VAL = 0X40;
+	
+	//列表大小，0：表示等于0，1：大于0
+	public static final byte SIZE_NOT_ZERO = 0X20;
+	
+	//前置元素类型1：是，0：否
+	public static final byte HEADER_ELETMENT = 0X10;
+	
+	//字段类型，0：表示编码，1：表示类名
+	public static final byte GENERICTYPEFINAL = 0X08;
+	
+	//段类型，0：表示编码，1：表示类名
+	public static final byte ELEMENT_TYPE_CODE = 0X04;
+	
+	public static boolean isGenericTypeFinal(byte flag) {
+		return !isZero(flag ,GENERICTYPEFINAL);
+	}
+	
+	public static byte setElementTypeCode(byte flag) {
+		return setFlag(flag,ELEMENT_TYPE_CODE);
+	}
+	
+	public static boolean isElementTypeCode(byte flag) {
+		return isZero(flag ,ELEMENT_TYPE_CODE);
+	}
+	
+	public static byte setGenericTypeFinal(byte flag) {
+		return setFlag(flag,GENERICTYPEFINAL);
+	}
+	
+	public static boolean isHeaderELetment(byte flag) {
+		return isZero(flag ,HEADER_ELETMENT);
+	}
+	
+	public static byte setHeaderELetment(byte flag) {
+		return setFlag(flag,HEADER_ELETMENT);
+	}
+	
+	public static boolean isNull(byte flag) {
+		return !isZero(flag ,NULL_VAL);
+	}
+	
+	public static byte setNull(byte flag) {
+		return setFlag(flag,NULL_VAL);
+	}
+	
+	
+	public static boolean isType(byte flag) {
+		return !isZero(flag ,TYPE_VAL);
+	}
+	
+	public static byte setType(byte flag) {
+		return setFlag(flag,TYPE_VAL);
+	}
+
+	public static boolean isSizeZero(byte flag) {
+		return isZero(flag ,SIZE_NOT_ZERO);
+	}
+	
+	public static byte setSizeNotZero(byte flag) {
+		return setFlag(flag,SIZE_NOT_ZERO);
+	}
+	
+	private static boolean isZero(byte flag,byte model) {
+		return (flag & model) == 0;
+	}
+	
+	private static byte setFlag(byte flag,byte model) {
+		return (byte)(flag | model);
 	}
 	
 	private static String getGenericType(String gs) {

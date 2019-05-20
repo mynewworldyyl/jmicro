@@ -79,6 +79,23 @@ public class TestCodec {
 		System.out.println(resp);
 	}
 	
+	@SuppressWarnings("unused")
+	@Test
+	public void testTestEncodeObject() throws IOException {
+		TypeCoderFactory.registClass(TestSerializeObject.class);
+		TestSerializeObject obj = new TestSerializeObject();
+		obj.seti.add(2);
+		obj.seti.add(3);
+		
+		
+		PrefixTypeEncoder encoder = new PrefixTypeEncoder();
+		ByteBuffer bb = encoder.encode(obj);
+		PrefixTypeDecoder decoder = new PrefixTypeDecoder();
+		TestSerializeObject obj1 = decoder.decode(bb);
+		
+		System.out.println(obj1);
+	}
+	
 	@Test
 	public void testEncodeObjectByProxy() throws IOException {
 		TypeCoderFactory.registClass(SerializeObject.class);
@@ -93,6 +110,8 @@ public class TestCodec {
 		obj.setv.add(p);
 		/*obj.listv.add(p);
 		obj.mapv.put("psssssssss", p);*/
+		
+	    //obj.seti.add(333);
 		
 		PrefixTypeEncoder encoder = new PrefixTypeEncoder();
 		ByteBuffer bb = encoder.encode(obj);
@@ -218,7 +237,6 @@ public class TestCodec {
 		obj.setv.add(p);
 		/*obj.listv.add(p);
 		obj.mapv.put("psssssssss", p);*/
-		
 		//obj.listv.add(p);
 		
 		
@@ -302,7 +320,7 @@ public class TestCodec {
 		/*obj.listv.add(p);
 		obj.mapv.put("psssssssss", p);*/
 		
-		obj.listv.add(p);
+		//obj.listv.add(p);
 		
 		PrefixTypeEncoder encoder = new PrefixTypeEncoder();
 		PrefixTypeDecoder decoder = new PrefixTypeDecoder();
