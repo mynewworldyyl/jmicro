@@ -5,6 +5,7 @@ import java.io.DataOutput;
 import java.io.IOException;
 import java.lang.reflect.Type;
 import java.nio.ByteBuffer;
+import java.sql.Date;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -119,45 +120,68 @@ public class TypeCoderFactory {
 			@Override
 			public void encodeData(DataOutput buffer, String val, Class<?> fieldDeclareType,
 					Type genericType) throws IOException {
-				TypeCoder.encodeString(buffer, (String) val);
+				buffer.writeUTF(val);
 			}
 
 		});
+		registClass(String.class,type);
 
 		// registCoder(new VoidTypeCoder<Void>(type--,Void.TYPE));
 
 		registCoder(new PrimitiveTypeCoder(type--, Byte.class));
+		registClass(Byte.class,type);
 		registCoder(new PrimitiveTypeCoder(type--, Byte.TYPE));
+		registClass(Byte.TYPE,type);
 
 		registCoder(new PrimitiveTypeCoder(type--, Short.class));
+		registClass(Short.class,type);
 		registCoder(new PrimitiveTypeCoder(type--, Short.TYPE));
+		registClass(Short.TYPE,type);
 
 		registCoder(new PrimitiveTypeCoder(type--, Integer.class));
+		registClass(Integer.class,type);
 		registCoder(new PrimitiveTypeCoder(type--, Integer.TYPE));
+		registClass(Integer.TYPE,type);
 
 		registCoder(new PrimitiveTypeCoder(type--, Long.class));
+		registClass(Long.class,type);
 		registCoder(new PrimitiveTypeCoder(type--, Long.TYPE));
+		registClass(Long.TYPE,type);
 
 		registCoder(new PrimitiveTypeCoder(type--, Double.class));
+		registClass(Double.class,type);
 		registCoder(new PrimitiveTypeCoder(type--, Double.TYPE));
+		registClass(Double.TYPE,type);
 
 		registCoder(new PrimitiveTypeCoder(type--, Float.class));
+		registClass(Float.class,type);
 		registCoder(new PrimitiveTypeCoder(type--, Float.TYPE));
+		registClass(Float.TYPE,type);
 
 		registCoder(new PrimitiveTypeCoder(type--, Boolean.class));
+		registClass(Boolean.class,type);
 		registCoder(new PrimitiveTypeCoder(type--, Boolean.TYPE));
+		registClass(Boolean.TYPE,type);
 
 		registCoder(new PrimitiveTypeCoder(type--, Character.class));
 		registCoder(new PrimitiveTypeCoder(type--, Character.TYPE));
 
 		registCoder(new PrimitiveTypeArrayCoder(type--, byte[].class));
+		registClass(byte[].class,type);
 		registCoder(new PrimitiveTypeArrayCoder(type--, short[].class));
+		registClass(short[].class,type);
 		registCoder(new PrimitiveTypeArrayCoder(type--, int[].class));
+		registClass(int[].class,type);
 		registCoder(new PrimitiveTypeArrayCoder(type--, long[].class));
+		registClass(long[].class,type);
 		registCoder(new PrimitiveTypeArrayCoder(type--, float[].class));
+		registClass(float[].class,type);
 		registCoder(new PrimitiveTypeArrayCoder(type--, double[].class));
+		registClass(double[].class,type);
 		registCoder(new PrimitiveTypeArrayCoder(type--, boolean[].class));
+		registClass(boolean[].class,type);
 		registCoder(new PrimitiveTypeArrayCoder(type--, char[].class));
+		registClass(char[].class,type);
 
 		registCoder(new AbstractShortTypeCoder<java.util.Date>(type--, java.util.Date.class) {
 			@Override
@@ -177,6 +201,7 @@ public class TypeCoderFactory {
 			}
 
 		});
+		registClass(java.util.Date.class,type);
 
 		registCoder(new AbstractShortTypeCoder<java.sql.Date>(type--, java.sql.Date.class) {
 			@Override
@@ -195,6 +220,7 @@ public class TypeCoderFactory {
 				}
 			}
 		});
+		registClass(java.sql.Date.class,type);
 
 		registCoder(new AbstractComparableTypeCoder<Map>(Decoder.PREFIX_TYPE_MAP,type--,Map.class) {
 			
@@ -211,6 +237,7 @@ public class TypeCoderFactory {
 				TypeCoder.encodeMap(buffer, (Map) val, TypeCoder.genericType(genericType));
 			}
 		});
+		registClass(Map.class,type);
 
 		registCoder(new AbstractComparableTypeCoder<Set>(Decoder.PREFIX_TYPE_SET,type--, Set.class) {
 			
@@ -230,6 +257,7 @@ public class TypeCoderFactory {
 			}
 			
 		});
+		registClass(Set.class,type);
 
 		registCoder(new AbstractComparableTypeCoder<List>(Decoder.PREFIX_TYPE_LIST,type--, List.class) {
 			@SuppressWarnings("rawtypes")
@@ -249,6 +277,7 @@ public class TypeCoderFactory {
 			}
 			
 		});
+		registClass(List.class,type);
 
 		registCoder(new AbstractShortTypeCoder<ByteBuffer>(type--, ByteBuffer.class) {
 			@Override
@@ -275,17 +304,27 @@ public class TypeCoderFactory {
 			}
 
 		});
+		registClass(ByteBuffer.class,type);
 
 		registCoder(new ReflectTypeCoder<RpcRequest>(type--, RpcRequest.class));
+		registClass(RpcRequest.class,type);
 		registCoder(new ReflectTypeCoder<RpcResponse>(type--, RpcResponse.class));
+		registClass(RpcResponse.class,type);
 		registCoder(new ReflectTypeCoder<ApiRequest>(type--, ApiRequest.class));
+		registClass(ApiRequest.class,type);
 		registCoder(new ReflectTypeCoder<ApiResponse>(type--, ApiResponse.class));
+		registClass(ApiResponse.class,type);
 		registCoder(new ReflectTypeCoder<SubmitItem>(type--, SubmitItem.class));
+		registClass(SubmitItem.class,type);
+		
 		//registCoder(new ReflectTypeCoder<RpcRequest>(type--, RpcRequest.class));
 		//registCoder(new ReflectTypeCoder<RpcRequest>(type--, RpcRequest.class));
 
 		registCoder(getDefaultCoder());
 		registCoder(getVoidCoder());
+		
+		registClass(Void.class,voidCoder.code());
+		
 
 	}
 
@@ -347,6 +386,14 @@ public class TypeCoderFactory {
 		clazz2Coder.put(coder.type(), coder);
 		code2Coder.put(coder.code(), coder);
 		//registClass(coder.code(), coder.type());
+	}
+	
+	private static synchronized void registClass(Class<?> cls,Short t) {
+		if(class2code.containsKey(cls)) {
+			return;
+		}
+		code2class.put(t,cls);
+		class2code.put(cls, t);
 	}
 	
 	public static synchronized void registClass(Class<?> cls) {

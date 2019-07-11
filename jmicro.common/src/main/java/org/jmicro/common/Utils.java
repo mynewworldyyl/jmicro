@@ -287,5 +287,28 @@ public class Utils {
 	        }
 	        return "(" + ReflectUtils.getName(cl) + ")" + name;
 	    }
+	 
+	 	public String defaultVal(Class<?> cl) {
+	        if (cl.isPrimitive()) {
+	            if (Boolean.TYPE == cl)
+	                return "false";
+	            if (Byte.TYPE == cl)
+	            	 return "0";
+	            if (Character.TYPE == cl)
+	            	 return "' '";
+	            if (Double.TYPE == cl)
+	            	 return "0D";
+	            if (Float.TYPE == cl)
+	            	 return "0F";
+	            if (Integer.TYPE == cl)
+	            	 return "0";
+	            if (Long.TYPE == cl)
+	            	 return "0";
+	            if (Short.TYPE == cl)
+	            	 return "0";
+	            throw new RuntimeException(cl.getName() + " is unknown primitive type.");
+	        }
+	        return "null";
+	    }
 	
 }

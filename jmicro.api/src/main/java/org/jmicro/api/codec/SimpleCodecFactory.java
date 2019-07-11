@@ -63,11 +63,11 @@ public class SimpleCodecFactory implements ICodecFactory{
 	@Inject
 	private OnePrefixDecoder onePrefixDecoder;*/
 	
-	@Inject
-	private PrefixTypeEncoder prefixTypeEncoder;
+/*	@Inject
+	private PrefixTypeEncoder prefixTypeEncoder;*/
 	
 	@Inject
-	private PrefixTypeDecoder prefixDecoder;
+	private PrefixTypeEncoderDecoder prefixCoder;
 	
 	public SimpleCodecFactory(){}
 	
@@ -84,7 +84,7 @@ public class SimpleCodecFactory implements ICodecFactory{
 		@Override
 		public <R> R decode(ByteBuffer data,Class<R> clazz) {
 			//return (R)Decoder.decodeObject(data);
-			return (R)prefixDecoder.decode(data);
+			return (R)prefixCoder.decode(data);
 		}
 	};
 	
@@ -94,7 +94,7 @@ public class SimpleCodecFactory implements ICodecFactory{
 			ByteBuffer bb = null;
 			//ByteBuffer.allocate(defaultEncodeBufferSize);
 			//Encoder.encodeObject(bb,obj);
-			bb = prefixTypeEncoder.encode(obj);
+			bb = prefixCoder.encode(obj);
 			//bb.flip();
 			return bb;
 		}

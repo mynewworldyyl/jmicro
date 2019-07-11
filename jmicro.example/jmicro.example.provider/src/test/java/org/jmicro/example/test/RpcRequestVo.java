@@ -6,7 +6,7 @@ import org.jmicro.api.codec.ISerializeObject;
 import org.jmicro.api.net.ISession;
 import org.jmicro.api.net.Message;
 
-public class TestSerializeObject implements Serializable, ISerializeObject {
+public class RpcRequestVo implements Serializable, ISerializeObject {
 
 	private String serviceName;
 
@@ -35,7 +35,7 @@ public class TestSerializeObject implements Serializable, ISerializeObject {
 	private transient boolean finish = false;
 
 	public void encode(java.io.DataOutput __buffer, Object obj) throws java.io.IOException {
-		TestSerializeObject __obj = this;
+		RpcRequestVo __obj = this;
 		org.jmicro.api.codec.JDataOutput out = (org.jmicro.api.codec.JDataOutput) __buffer;
 		org.jmicro.api.codec.typecoder.TypeCoder __coder = org.jmicro.api.codec.TypeCoderFactory.getDefaultCoder();
 		java.lang.String __val0 = __obj.serviceName;
@@ -109,7 +109,7 @@ public class TestSerializeObject implements Serializable, ISerializeObject {
 	}
 
 	public void decode(java.io.DataInput __buffer) throws java.io.IOException {
-		TestSerializeObject __obj = this;
+		RpcRequestVo __obj = this;
 		org.jmicro.api.codec.JDataInput in = (org.jmicro.api.codec.JDataInput) __buffer;
 		java.lang.String __val0;
 		__val0 = __buffer.readUTF();
@@ -137,7 +137,7 @@ public class TestSerializeObject implements Serializable, ISerializeObject {
 				if (0 == (org.jmicro.common.Constants.GENERICTYPEFINAL & flagName2)) { // blockgenic
 					if (0 != (org.jmicro.common.Constants.HEADER_ELETMENT & flagName2)) {
 						readEvery = false;
-						if (0 != (org.jmicro.common.Constants.ELEMENT_TYPE_CODE & flagName2)) {
+						if (0 == (org.jmicro.common.Constants.ELEMENT_TYPE_CODE & flagName2)) {
 							c = __buffer.readShort();
 							eleCls = org.jmicro.api.codec.TypeCoderFactory.getClassByCode(new Short(c));
 						} else {
@@ -189,5 +189,108 @@ public class TestSerializeObject implements Serializable, ISerializeObject {
 		return;
 	}
 
+	public String getServiceName() {
+		return serviceName;
+	}
+
+	public void setServiceName(String serviceName) {
+		this.serviceName = serviceName;
+	}
+
+	public String getMethod() {
+		return method;
+	}
+
+	public void setMethod(String method) {
+		this.method = method;
+	}
+
+	public Object[] getArgs() {
+		return args;
+	}
+
+	public void setArgs(Object[] args) {
+		this.args = args;
+	}
+
+	public String getNamespace() {
+		return namespace;
+	}
+
+	public void setNamespace(String namespace) {
+		this.namespace = namespace;
+	}
+
+	public String getVersion() {
+		return version;
+	}
+
+	public void setVersion(String version) {
+		this.version = version;
+	}
+
+	public String getImpl() {
+		return impl;
+	}
+
+	public void setImpl(String impl) {
+		this.impl = impl;
+	}
+
+	public String getTransport() {
+		return transport;
+	}
+
+	public void setTransport(String transport) {
+		this.transport = transport;
+	}
+
+	public Long getReqId() {
+		return reqId;
+	}
+
+	public void setReqId(Long reqId) {
+		this.reqId = reqId;
+	}
+
+	public ISession getSession() {
+		return session;
+	}
+
+	public void setSession(ISession session) {
+		this.session = session;
+	}
+
+	public boolean isMonitorEnable() {
+		return isMonitorEnable;
+	}
+
+	public void setMonitorEnable(boolean isMonitorEnable) {
+		this.isMonitorEnable = isMonitorEnable;
+	}
+
+	public Message getMsg() {
+		return msg;
+	}
+
+	public void setMsg(Message msg) {
+		this.msg = msg;
+	}
+
+	public boolean isSuccess() {
+		return success;
+	}
+
+	public void setSuccess(boolean success) {
+		this.success = success;
+	}
+
+	public boolean isFinish() {
+		return finish;
+	}
+
+	public void setFinish(boolean finish) {
+		this.finish = finish;
+	}
 
 }

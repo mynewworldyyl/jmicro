@@ -213,8 +213,9 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
     			});
     			//LogUtil.A.debug("Put waitForResponse reqID:{},keySet:{}",req.getRequestId(),waitForResponse.keySet());
         	}
-    		
-        	msg.setPayload(ICodecFactory.encode(this.codecFactory, req, msg.getProtocol()));
+        	
+        	Object pl = ICodecFactory.encode(this.codecFactory, req, msg.getProtocol());
+        	msg.setPayload(pl);
         	
         	//JMicroContext.get().setParam(Constants.SERVICE_METHOD_KEY, sm);
     		//JMicroContext.get().setParam(Constants.SERVICE_ITEM_KEY, si);

@@ -22,24 +22,23 @@ public class ArrayCoder extends AbstractShortTypeCoder<Object[]>{
 
 		@Override
 		protected Object[] decodeData(DataInput buffer, Class<?> fieldDeclareType, Type genericType) {
-			try {
+			/*try {
 				buffer.readByte();
 			} catch (IOException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
-			Class<?> eltType = TypeCoder.getType(buffer);
-			return (Object[])TypeCoder.decodeArray(buffer,eltType,genericType);
+			Class<?> eltType = TypeCoder.getType(buffer);*/
+			return (Object[])TypeCoder.decodeArray(buffer,null,null);
 		}
 
 		@Override
 		protected void encodeData(DataOutput buffer, Object[] val, 
 				Class<?> fieldDeclareType, Type genericType) throws IOException {
-			Class<?> eltType = val.getClass().getComponentType();
+			//Class<?> eltType = val.getClass().getComponentType();
 			/*if(val.length > 0) {
 				eltType = val[0].getClass();
 			}*/
-			TypeCoder.putStringType(buffer, eltType.getName());
-			TypeCoder.encodeArray(buffer,val,eltType,genericType);
+			//TypeCoder.putStringType(buffer, eltType.getName());
+			TypeCoder.encodeArray(buffer,val,null,null);
 		}
 }

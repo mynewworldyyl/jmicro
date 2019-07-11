@@ -227,8 +227,8 @@ public class ServiceLoader {
 		
 		for(IServer s : this.servers.values()){
 			
-			String host = "";
-			int port = 0;
+			String host = s.host();
+			int port = s.port();
 				
 			Server sr = new Server();
 			org.jmicro.api.annotation.Server sano = ProxyObject.getTargetCls(s.getClass())
@@ -239,9 +239,7 @@ public class ServiceLoader {
 				if(this.exportSocketPort > 0) {
 					port = this.exportSocketPort;
 				}
-			}
-			
-			if(Constants.TRANSPORT_NETTY_HTTP.equals(sano.transport()) && this.exportHttpIP != null) {
+			}else if(Constants.TRANSPORT_NETTY_HTTP.equals(sano.transport()) && this.exportHttpIP != null) {
 				host = this.exportHttpIP;
 				if(this.exportHttpPort > 0) {
 					port = this.exportHttpPort;

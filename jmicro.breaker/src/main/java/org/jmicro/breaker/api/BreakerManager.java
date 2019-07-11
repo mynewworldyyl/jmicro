@@ -27,7 +27,7 @@ import org.jmicro.api.JMicroContext;
  */
 import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.Inject;
-import org.jmicro.api.codec.PrefixTypeDecoder;
+import org.jmicro.api.codec.PrefixTypeEncoderDecoder;
 import org.jmicro.api.objectfactory.IObjectFactory;
 import org.jmicro.api.registry.ServiceMethod;
 import org.jmicro.api.registry.UniqueServiceMethodKey;
@@ -66,7 +66,7 @@ public class BreakerManager implements ITickerAction{
 	private IObjectFactory of;
 	
 	@Inject
-	private PrefixTypeDecoder decoder;
+	private PrefixTypeEncoderDecoder decoder;
 	
 	public void init(){
 		

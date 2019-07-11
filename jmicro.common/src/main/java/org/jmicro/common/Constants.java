@@ -158,4 +158,32 @@ public interface Constants {
 	public static final String TIME_MICROSECONDS = "MC"; //微秒
 	public static final String TIME_NANOSECONDS = "N"; //纳秒
 	
+	
+	/*==============================================================*/
+
+	//字段类型，0：表示编码，1：表示类名
+	public static final byte TYPE_VAL = 0X40;
+	
+	//列表大小，0：表示等于0，1：大于0
+	public static final byte SIZE_NOT_ZERO = 0X20;
+	
+	//前置元素类型1：是，0：否
+	public static final byte HEADER_ELETMENT = 0X10;
+	
+	//字段类型，0：表示编码，1：表示类名
+	public static final byte GENERICTYPEFINAL = 0X08;
+	
+	//段类型，0：表示编码，1：表示类名
+	public static final byte ELEMENT_TYPE_CODE = 0X04;
+	
+	//字段类型是否是空值 0：表示空值，1：表示非空值
+	public static final byte EXT0 = (byte)0X02;
+	
+	//字段类型是否是空值 0：表示空值，1：表示非空值
+	public static final byte EXT1 = (byte)0X80;
+	
+	//字段类型是否是空值 0：表示空值，1：表示非空值
+	public static final byte NULL_VAL = (byte)0X01;
+	
+	/*==============================================================*/
 }

@@ -96,7 +96,14 @@ public class JDataInput implements DataInput {
 	}
 	
 	public static String readString(ByteBuffer buffer) {
-		short len = buffer.getShort();
+		
+		int len = buffer.get();
+		if(len == Byte.MAX_VALUE) {
+			len = buffer.getShort();
+			if(len == Short.MAX_VALUE) {
+				len = buffer.getInt();
+			}
+		}
 		if(len <= 0) {
 			return null;
 		}

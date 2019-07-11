@@ -20,12 +20,14 @@ import java.util.Arrays;
 import java.util.Map;
 
 import org.jmicro.api.AbstractObjectMapSupport;
-import org.jmicro.common.Constants;
+import org.jmicro.api.annotation.SO;
+
 /**
  * 
  * @author Yulei Ye
  * @date 2018年10月4日-下午12:07:03
  */
+@SO
 public final class RpcRequest extends AbstractObjectMapSupport implements IRequest{
 	
 	private String serviceName;
@@ -62,6 +64,7 @@ public final class RpcRequest extends AbstractObjectMapSupport implements IReque
 		}
 		return false;
 	}
+	
 	public Long getMsgId(){
 		if(this.msg != null){
 			return this.msg.getId();
@@ -69,6 +72,7 @@ public final class RpcRequest extends AbstractObjectMapSupport implements IReque
 		//super.getFloat("", 33F);
 		return -1l;
 	}
+	
 	public boolean isFinish() {
 		return finish;
 	}

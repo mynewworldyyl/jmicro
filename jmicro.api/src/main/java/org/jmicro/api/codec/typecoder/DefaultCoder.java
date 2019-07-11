@@ -12,6 +12,8 @@ import java.util.Set;
 
 import org.jmicro.api.codec.Decoder;
 import org.jmicro.api.codec.ISerializeObject;
+import org.jmicro.api.codec.ISerializer;
+import org.jmicro.api.codec.JDataOutput;
 import org.jmicro.api.codec.SerializeProxyFactory;
 import org.jmicro.api.codec.TypeCoderFactory;
 import org.jmicro.api.codec.TypeUtils;
@@ -108,7 +110,39 @@ public class DefaultCoder implements TypeCoder<Object> {
 				buffer.writeLong(((Date)val).getTime());
 				return;
 			}
-		} 
+		} else {
+			if(fieldDeclareType == byte.class || fieldDeclareType == Byte.TYPE || fieldDeclareType == Byte.class ) {
+				buffer.writeByte((byte)val);
+				return;
+			}else if(fieldDeclareType == short.class || fieldDeclareType == Short.TYPE || fieldDeclareType == Short.class ) {
+				buffer.writeShort((short)val);
+				return;
+			}else if(fieldDeclareType == int.class || fieldDeclareType == Integer.TYPE || fieldDeclareType == Integer.class ) {
+				buffer.writeInt((int)val);
+				return;
+			}else if(fieldDeclareType == long.class || fieldDeclareType == Long.TYPE || fieldDeclareType == Long.class ) {
+				buffer.writeLong((long)val);
+				return;
+			}else if(fieldDeclareType == float.class || fieldDeclareType == Float.TYPE || fieldDeclareType == Float.class ) {
+				buffer.writeFloat((float)val);
+				return;
+			}else if(fieldDeclareType == double.class || fieldDeclareType == Double.TYPE || fieldDeclareType == Double.class ) {
+				buffer.writeDouble((double)val);
+				return;
+			}else if(fieldDeclareType == boolean.class || fieldDeclareType == Boolean.TYPE || fieldDeclareType == Boolean.class ) {
+				buffer.writeBoolean((boolean)val);
+				return;
+			}else if(fieldDeclareType == char.class || fieldDeclareType == Character.TYPE || fieldDeclareType == Character.class ) {
+				buffer.writeChar((char)val);
+				return;
+			}else if(fieldDeclareType == String.class ) {
+				buffer.writeUTF((String)val);
+				return;
+			}else if(fieldDeclareType == Date.class ) {
+				buffer.writeLong(((Date)val).getTime());
+				return;
+			}
+		}
 		
 		if(Collection.class.isAssignableFrom(valCls) ||
 				Map.class.isAssignableFrom(valCls) || valCls.isArray()) {
@@ -137,16 +171,43 @@ public class DefaultCoder implements TypeCoder<Object> {
 			}
 		
 		} else {
+			JDataOutput jo = (JDataOutput)buffer;
+			int pos = jo.position();
 			buffer.write(Decoder.PREFIX_TYPE_PROXY);
-			short code = TypeCoderFactory.getCodeByClass(valCls);
-			buffer.writeShort(code);
+			buffer.writeUTF(val.getClass().getName());
+			
+			//buffer.writeShort(code);
 			if(val instanceof ISerializeObject) {
 				//System.out.println("Use Instance "+valCls.getName());
 				((ISerializeObject)val).encode(buffer, null);
 			} else {
 				//System.out.println("Use Encoder "+valCls.getName());
-				ISerializeObject so = SerializeProxyFactory.getSerializeCoder(valCls);
-				so.encode(buffer,val);
+				ISerializer so = null;
+				Throwable e1 = null;
+				try {
+					so = SerializeProxyFactory.getSerializeCoder(valCls);
+				} catch (Throwable e) {
+					e1 = e;
+				}
+				if(so != null) {
+					so.encode(buffer,val);
+				}else {
+					TypeCoder coder = TypeCoderFactory.getCoder(valCls);
+					if (coder != this) {
+						//有指定类型的编码器，使用指定类型的编码器
+						jo.position(pos);//具体编码器写其对应的前缀码及编码
+						coder.encode(buffer, val, fieldDeclareType, genericType);
+					} else {
+						/*if (fieldDeclareType == null || !TypeUtils.isFinal(fieldDeclareType)) {
+							//写入类型前缀码Decoder.PREFIX_TYPE_STRING，类型编码信息
+							TypeCoder.putStringType(buffer, val.getClass().getName());
+						} else {
+							buffer.write(Decoder.PREFIX_TYPE_FINAL);
+						}*/
+						//默认编码器通过反射编码数据
+						TypeCoder.encodeByReflect(buffer, val, fieldDeclareType,genericType);
+					}
+				}
 			}
 		}
 	
@@ -207,8 +268,7 @@ public class DefaultCoder implements TypeCoder<Object> {
 			}else if(Decoder.PREFIX_TYPE_DATE == prefixCodeType) {
 				return new Date(buffer.readLong());
 			}else if(Decoder.PREFIX_TYPE_PROXY == prefixCodeType) {
-				short code = buffer.readShort();
-				Class<?> cls = TypeCoderFactory.getClassByCode(code);
+				Class<?> cls = TypeCoder.getType(buffer);
 				if(ISerializeObject.class.isAssignableFrom(cls)) {
 					try {
 						ISerializeObject obj = (ISerializeObject)cls.newInstance();
@@ -218,9 +278,27 @@ public class DefaultCoder implements TypeCoder<Object> {
 						throw new CommonException("Create instance of: " + cls.getName() + " error!");
 					}
 				} else {
-					ISerializeObject so = SerializeProxyFactory.getSerializeCoder(cls);
-				    so.decode(buffer);
-				    return so;
+					
+					ISerializer so = null;
+					Throwable e1 = null;
+					try {
+						so = SerializeProxyFactory.getSerializeCoder(cls);
+					} catch (Throwable e) {
+						e1 = e;
+					}
+					if(so != null) {
+						 Object o = so.decode(buffer);
+						 return o;
+					} else {
+						TypeCoder cd = TypeCoderFactory.getCoder(cls);
+						if(cd != null && cd != this) {
+							
+							 Object o = cd.decode(buffer,cls,null);
+							 return o;
+						} else {
+							return TypeCoder.decodeByReflect(buffer, cls, genericType);
+						}
+					}
 				}
 			}else if(Decoder.PREFIX_TYPE_STRING == prefixCodeType) {
 				fieldDeclareType = TypeCoder.getType(buffer);
@@ -228,7 +306,6 @@ public class DefaultCoder implements TypeCoder<Object> {
 					throw new CommonException("Invalid class data buffer: "+buffer.toString());
 				}
 				return TypeCoder.decodeByReflect(buffer, fieldDeclareType, genericType);
-				
 			}else if(Decoder.PREFIX_TYPE_FINAL == prefixCodeType) {
 				TypeCoder<?> coder = null;
 				if(fieldDeclareType == null || !TypeUtils.isFinal(fieldDeclareType)) {

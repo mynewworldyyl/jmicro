@@ -27,8 +27,7 @@ import org.jmicro.api.annotation.Service;
 import org.jmicro.api.client.IClientSession;
 import org.jmicro.api.client.IMessageCallback;
 import org.jmicro.api.codec.Decoder;
-import org.jmicro.api.codec.PrefixTypeDecoder;
-import org.jmicro.api.codec.PrefixTypeEncoder;
+import org.jmicro.api.codec.PrefixTypeEncoderDecoder;
 import org.jmicro.api.gateway.ApiRequest;
 import org.jmicro.api.gateway.ApiResponse;
 import org.jmicro.api.idgenerator.IdRequest;
@@ -56,8 +55,7 @@ public class ApiGatewayClient {
 	
 	private static final AtomicLong reqId = new AtomicLong(1);
 	
-	private PrefixTypeDecoder decoder = new PrefixTypeDecoder();
-	private PrefixTypeEncoder encoder = new PrefixTypeEncoder();
+	private PrefixTypeEncoderDecoder decoder = new PrefixTypeEncoderDecoder();
 	
 	private ApiGatewayClientSessionManager sessionManager = new ApiGatewayClientSessionManager();
 	
@@ -155,7 +153,7 @@ public class ApiGatewayClient {
 		msg.setMonitorable(false);
 		msg.setDebugMode(false);
 		
-		ByteBuffer bb = encoder.encode(req);
+		ByteBuffer bb = decoder.encode(req);
 		
 		msg.setPayload(bb);
 		msg.setVersion(Message.MSG_VERSION);
@@ -297,7 +295,7 @@ public class ApiGatewayClient {
 		msg.setMonitorable(false);
 		msg.setDebugMode(false);
 		
-		ByteBuffer bb = encoder.encode(req);
+		ByteBuffer bb = decoder.encode(req);
 		msg.setPayload(bb);
 		msg.setVersion(Message.MSG_VERSION);
 		
@@ -327,7 +325,7 @@ public class ApiGatewayClient {
 		msg.setMonitorable(false);
 		msg.setDebugMode(false);
 		
-		ByteBuffer bb = encoder.encode(req);
+		ByteBuffer bb = decoder.encode(req);
 		msg.setPayload(bb);
 		msg.setVersion(Message.MSG_VERSION);
 		Object v = getResponse(msg,null);

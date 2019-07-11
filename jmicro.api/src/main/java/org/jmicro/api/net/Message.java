@@ -16,10 +16,12 @@
  */
 package org.jmicro.api.net;
 
+import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
 
 import org.jmicro.api.codec.JDataInput;
+import org.jmicro.api.codec.JDataOutput;
 import org.jmicro.api.codec.OnePrefixTypeEncoder;
 import org.jmicro.common.CommonException;
 import org.jmicro.common.Constants;
@@ -256,8 +258,8 @@ public final class Message {
 				msg.setInstanceName(JDataInput.readString(b));
 				msg.setMethod(JDataInput.readString(b));
 				//减去测试数据头部长度
-				len -= OnePrefixTypeEncoder.encodeStringLen(msg.getInstanceName());
-				len -= OnePrefixTypeEncoder.encodeStringLen(msg.getMethod());
+				len -= JDataOutput.encodeStringLen(msg.getInstanceName());
+				len -= JDataOutput.encodeStringLen(msg.getMethod());
 				len -= 16; //time
 			}
 		    
@@ -308,8 +310,8 @@ public final class Message {
 			}
 			
 			if(debug) {
-				len += OnePrefixTypeEncoder.encodeStringLen(instanceName);
-				len += OnePrefixTypeEncoder.encodeStringLen(method);
+				len += JDataOutput.encodeStringLen(instanceName);
+				len += JDataOutput.encodeStringLen(method);
 				//3个整数ID的长度，3*4=12
 				len += 16; //time
 			}
@@ -337,8 +339,16 @@ public final class Message {
 				//b.putLong(this.reqId);
 				//writeUnsignedInt(b, this.time);
 				b.putLong(this.time);
-				OnePrefixTypeEncoder.encodeString(b, this.instanceName);
-				OnePrefixTypeEncoder.encodeString(b, this.method);
+				
+				try {
+					JDataOutput.writeString(b, this.instanceName);
+					JDataOutput.writeString(b, this.method);
+				} catch (IOException e) {
+					throw new CommonException("",e);
+				}
+				
+				//OnePrefixTypeEncoder.encodeString(b, this.instanceName);
+				//OnePrefixTypeEncoder.encodeString(b, this.method);
 			}
 			
 			if(data != null){

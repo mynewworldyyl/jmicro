@@ -16,8 +16,6 @@
  */
 package org.jmicro.api.codec;
 
-import java.io.ByteArrayOutputStream;
-import java.io.DataOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 
@@ -29,19 +27,38 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
+ * 
  * @author Yulei Ye
- * @date 2018年10月4日-下午12:01:25
+ * @date 2018年11月8日 上午11:43:13
  */
-@Component(value="prefixTypeEncoder",lazy=false)
-public class PrefixTypeEncoder implements IEncoder<ByteBuffer>{
-
-	private static final Logger logger = LoggerFactory.getLogger(PrefixTypeEncoder.class);
+@Component(value="prefixTypeDecoder",lazy=false)
+public class PrefixTypeEncoderDecoder{
+	
+	private static final Logger logger = LoggerFactory.getLogger(PrefixTypeEncoderDecoder.class);
+	
+	//@Inject
+	//private TypeCoderFactory typeCf;
+	
+	TypeCoder<Object> dc = TypeCoderFactory.getDefaultCoder();
+	
+	@SuppressWarnings("unchecked")
+	public <V> V decode(ByteBuffer buffer) {
+		
+		byte prefixCodeType = buffer.get(buffer.position());
+		if(prefixCodeType == Decoder.PREFIX_TYPE_NULL){
+			//空值直接返回
+			return null;
+		}
+		JDataInput input = new JDataInput(buffer);
+		
+		return (V)dc.decode(input, null, null);
+	}
+	
 	
 	@Cfg(value="/OnePrefixTypeEncoder",defGlobal=true,required=true)
 	private int encodeBufferSize = 4092;
 	
 	@SuppressWarnings({ "unchecked", "rawtypes" })
-	@Override
 	public ByteBuffer encode(Object obj) {
 		if(obj == null) {
 			ByteBuffer buffer = ByteBuffer.allocate(1);

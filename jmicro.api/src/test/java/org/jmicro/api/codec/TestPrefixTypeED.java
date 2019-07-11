@@ -8,7 +8,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.jmicro.api.monitor.AbstractMonitorDataSubscriber;
 import org.jmicro.api.monitor.MonitorConstant;
 import org.jmicro.api.monitor.SubmitItem;
 import org.jmicro.api.net.ISession;
@@ -24,18 +23,14 @@ import org.junit.Test;
 
 public class TestPrefixTypeED {
 
-	private PrefixTypeEncoder encoder = new PrefixTypeEncoder();
-	
-	private PrefixTypeDecoder decoder = new PrefixTypeDecoder();
+	private PrefixTypeEncoderDecoder decoder = new PrefixTypeEncoderDecoder();
 	
 	@Test
 	public void testPrivimiteInt() {
 		
 		int intArra = 3;
 		
-		ByteBuffer bb = encoder.encode(intArra);
-		
-		bb.flip();
+		ByteBuffer bb = decoder.encode(intArra);
 		
 		int intArr1 = decoder.decode(bb);
 		
@@ -48,9 +43,7 @@ public class TestPrefixTypeED {
 		
 		int[] intArra = {1,2,3};
 		
-		ByteBuffer bb = encoder.encode(intArra);
-		
-		bb.flip();
+		ByteBuffer bb = decoder.encode(intArra);
 		
 		int[] intArr1 = decoder.decode(bb);
 		
@@ -63,9 +56,7 @@ public class TestPrefixTypeED {
 		
 		byte[] intArra = {1,2,3};
 		
-		ByteBuffer bb = encoder.encode(intArra);
-		
-		bb.flip();
+		ByteBuffer bb = decoder.encode(intArra);
 		
 		byte[] intArr1 = decoder.decode(bb);
 		
@@ -81,9 +72,7 @@ public class TestPrefixTypeED {
 		intArra.add(11);
 		intArra.add(13);
 		
-		ByteBuffer bb = encoder.encode(intArra);
-		
-		bb.flip();
+		ByteBuffer bb = decoder.encode(intArra);
 		
 		Set<Integer> intArr1 = decoder.decode(bb);
 		
@@ -99,9 +88,7 @@ public class TestPrefixTypeED {
 		intArra.add(11);
 		intArra.add(13);
 		
-		ByteBuffer bb = encoder.encode(intArra);
-		
-		bb.flip();
+		ByteBuffer bb = decoder.encode(intArra);
 		
 		List<Integer> intArr1 = decoder.decode(bb);
 		
@@ -120,9 +107,7 @@ public class TestPrefixTypeED {
 		intArra.intArra.add(11);
 		intArra.intArra.add(13);
 		
-		ByteBuffer bb = encoder.encode(intArra);
-		
-		bb.flip();
+		ByteBuffer bb = decoder.encode(intArra);
 		
 		ListEntity intArr1 = decoder.decode(bb);
 		
@@ -143,9 +128,7 @@ public class TestPrefixTypeED {
 		
 		PrivimiteIntArrayEntity pe = new PrivimiteIntArrayEntity();
 		
-		ByteBuffer bb = encoder.encode(pe);
-		
-		bb.flip();
+		ByteBuffer bb = decoder.encode(pe);
 		
 		PrivimiteIntArrayEntity ped = decoder.decode(bb);
 		
@@ -157,7 +140,7 @@ public class TestPrefixTypeED {
 		
 		public Map<String,Object> params = new HashMap<String,Object>();;
 		private String serviceName="test";
-		private String method="222";
+		/*private String method="222";
 		private Object[] args=new String[] {"ss"};
 		private String namespace;
 		private String version;
@@ -168,32 +151,29 @@ public class TestPrefixTypeED {
 		private transient boolean isMonitorEnable = false;
 		private transient Message msg;
 		private transient boolean success = false;
-		private transient boolean finish = false;
+		private transient boolean finish = false;*/
 	}
 	
 	@Test
 	public void testComplexEntity() {
 		
 		ComplexEntity pe = new ComplexEntity();
-		/*pe.params = new HashMap<String,Object>();
-		pe.params.put("objv", new Object());
-		pe.params.put("sss", new ComplexEntity());*/
+		pe.params = new HashMap<String,Object>();
+		pe.params.put("objv", "222");
+		pe.params.put("sss", new ComplexEntity());
 		
-		ByteBuffer bb = encoder.encode(pe);
+		ByteBuffer bb = decoder.encode(pe);
 		
-		ByteBuffer bb1 = encoder.encode(pe);
+		//ByteBuffer bb1 = decoder.encode(pe);
 		//ByteBuffer bb2 = encoder.encode(pe);
-		
-		bb.flip();
-		bb1.flip();
 		
 		ComplexEntity ped = decoder.decode(bb);
 		
-		ComplexEntity ped1 = decoder.decode(bb1);
+		//ComplexEntity ped1 = decoder.decode(bb1);
 		//decoder.decode(bb2);
 		
 		System.out.println(ped);
-		System.out.println(ped1);
+		//System.out.println(ped1);
 	}
 	
 	public static final class ObjectEntity{		
@@ -218,9 +198,7 @@ public class TestPrefixTypeED {
 		ce.params.put("sss", new ComplexEntity());
 		pe.result = ce;*/
 		
-		ByteBuffer bb = encoder.encode(pe);
-		
-		bb.flip();
+		ByteBuffer bb = decoder.encode(pe);
 		
 		ObjectEntity ped = decoder.decode(bb);
 		Integer[] rs = (Integer[])ped.result;
@@ -234,12 +212,12 @@ public class TestPrefixTypeED {
 		
 		RpcRequest pe = new RpcRequest();
 		SubmitItem si = new SubmitItem();
-		si.setSm(new ServiceMethod());
+		ServiceMethod sm = new ServiceMethod();
+		sm.getKey().setServiceName("sn");
+		si.setSm(sm);
 		pe.setArgs(new Object[] {si});
 		
-		ByteBuffer bb = encoder.encode(pe);
-		
-		bb.flip();
+		ByteBuffer bb = decoder.encode(pe);
 		
 		RpcRequest ped = decoder.decode(bb);
 		
@@ -252,10 +230,9 @@ public class TestPrefixTypeED {
 	public void testServiceMethod() {
 		
 		ServiceMethod pe = new ServiceMethod();
+		pe.getKey().setServiceName("sn");
 		
-		ByteBuffer bb = encoder.encode(pe);
-		
-		bb.flip();
+		ByteBuffer bb = decoder.encode(pe);
 		
 		ServiceMethod ped = decoder.decode(bb);
 		
@@ -272,9 +249,7 @@ public class TestPrefixTypeED {
 		
 		ObjectBreakRule pe = new ObjectBreakRule();
 		
-		ByteBuffer bb = encoder.encode(pe);
-		
-		bb.flip();
+		ByteBuffer bb = decoder.encode(pe);
 		
 		ObjectBreakRule ped = decoder.decode(bb);
 		
@@ -288,9 +263,7 @@ public class TestPrefixTypeED {
 		RpcResponse pe = new RpcResponse();
 		pe.setResult(new int[] {22,33,55});
 		
-		ByteBuffer bb = encoder.encode(pe);
-		
-		bb.flip();
+		ByteBuffer bb = decoder.encode(pe);
 		
 		RpcResponse ped = decoder.decode(bb);
 		int[] rs = (int[])ped.getResult();
@@ -319,9 +292,7 @@ public class TestPrefixTypeED {
 		
 		RpcResponse1 pe = new RpcResponse1();
 		
-		ByteBuffer bb = encoder.encode(pe);
-		
-		bb.flip();
+		ByteBuffer bb = decoder.encode(pe);
 		
 		RpcResponse1 ped = decoder.decode(bb);
 		int[] rs = (int[])ped.result;
@@ -334,9 +305,7 @@ public class TestPrefixTypeED {
 	public void testSubmitItem() {
 		
 		SubmitItem pe = new SubmitItem();
-		ByteBuffer bb = encoder.encode(pe);
-		
-		bb.flip();
+		ByteBuffer bb = decoder.encode(pe);
 		
 		SubmitItem ped = decoder.decode(bb);
 		System.out.println(ped);
@@ -354,9 +323,7 @@ public class TestPrefixTypeED {
 		psData.setTopic(MonitorConstant.TEST_SERVICE_METHOD_TOPIC);
 		psData.put(Constants.SERVICE_METHOD_KEY, new ServiceMethod());
 		
-		ByteBuffer bb = encoder.encode(psData);
-		
-		bb.flip();
+		ByteBuffer bb = decoder.encode(psData);
 		
 		PSData ped = decoder.decode(bb);
 		System.out.println(ped);

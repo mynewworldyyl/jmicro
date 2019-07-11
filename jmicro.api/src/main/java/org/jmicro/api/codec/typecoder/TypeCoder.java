@@ -3,7 +3,6 @@ package org.jmicro.api.codec.typecoder;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
@@ -13,18 +12,18 @@ import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import org.jmicro.api.codec.Decoder;
 import org.jmicro.api.codec.JDataInput;
+import org.jmicro.api.codec.JDataOutput;
 import org.jmicro.api.codec.TypeCoderFactory;
 import org.jmicro.api.codec.TypeUtils;
 import org.jmicro.common.CommonException;
-import org.jmicro.common.Constants;
 import org.jmicro.common.Utils;
-import org.jmicro.common.util.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -101,8 +100,34 @@ public interface TypeCoder<T> extends Comparable<TypeCoder<T>>{
 				continue;
 			}
 			Object v = TypeUtils.getFieldValue(obj, f);
-			coder.encode(buffer, v, f.getType(), f.getGenericType());
-
+			if(v != null) {
+				coder.encode(buffer, v, f.getType(), f.getGenericType());
+			} else {
+				Class t = f.getType();
+				if(t == byte.class || t == Byte.TYPE || t == Byte.class ) {
+					 buffer.writeByte(0);
+				}else if(t == short.class || t == Short.TYPE || t == Short.class ) {
+					 buffer.writeShort(0);
+				}else if(t == int.class || t == Integer.TYPE || t == Integer.class ) {
+					 buffer.writeInt(0);
+				}else if(t == long.class || t == Long.TYPE || t == Long.class ) {
+					 buffer.writeLong(0);
+				}else if(t == float.class || t == Float.TYPE || t == Float.class ) {
+					 buffer.writeFloat(0);
+				}else if(t == double.class || t == Double.TYPE || t == Double.class ) {
+					 buffer.writeDouble(0D);
+				}else if(t == boolean.class || t == Boolean.TYPE || t == Boolean.class ) {
+					 buffer.writeBoolean(false);
+				}else if(t == char.class || t == Character.TYPE || t == Character.class ) {
+					 buffer.writeChar(' ');
+				}else if(t == String.class ) {
+					 buffer.writeUTF("");
+				}else if(t == Date.class ) {
+					 buffer.write(0);
+				} else {
+					buffer.write(Decoder.PREFIX_TYPE_NULL);
+				}
+			}
 		}
 	}
 
@@ -155,6 +180,7 @@ public interface TypeCoder<T> extends Comparable<TypeCoder<T>>{
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	public static <V> void encodeArray(DataOutput buffer, Object objs, Class<?> fieldDeclareType
 			, Type genericType) throws IOException{
+		
 		if(objs == null) {
 			putLength(buffer,0);
 			return;
@@ -165,11 +191,79 @@ public interface TypeCoder<T> extends Comparable<TypeCoder<T>>{
 		if(len <=0) {
 			return;
 		}
+		
+		JDataOutput jo = (JDataOutput)buffer;
+		
+		byte flag = 0;
+		int flagIndex = jo.position();
+		jo.write(flag);
+		
+		boolean writeEvery;
+		
+		Class firstCls = Array.get(objs, 0).getClass();
+	   
+		boolean sameElt = sameArrayTypeEles(objs);
+	    boolean finalCls = seriaFinalClass(firstCls);
+	    
+	    if(sameElt && finalCls) {
+	    	flag |= org.jmicro.common.Constants.HEADER_ELETMENT;
+	    	Short code = org.jmicro.api.codec.TypeCoderFactory.getCodeByClass(firstCls);
+	    	writeEvery = false;
+	    	if(code == null) {
+	    		 flag |= org.jmicro.common.Constants.ELEMENT_TYPE_CODE;
+	    		 buffer.writeUTF(firstCls.getName());
+	    	} else {
+	    		 buffer.writeShort(code);
+	    	}
+	    } else {
+	    	writeEvery = true;
+	    }
+		
 		TypeCoder coder = TypeCoderFactory.getDefaultCoder();
 		for(int i = 0; i < len; i++){
 			Object v = Array.get(objs, i);
-			coder.encode(buffer, v, fieldDeclareType, genericType);
+			if(writeEvery) {
+				Short code = org.jmicro.api.codec.TypeCoderFactory.getCodeByClass(v.getClass());
+				if(code == null) {
+					 buffer.writeByte(Decoder.PREFIX_TYPE_STRING);
+		    		 buffer.writeUTF(v.getClass().getName());
+		    	} else {
+		    		 buffer.writeByte(Decoder.PREFIX_TYPE_SHORT);
+		    		 buffer.writeShort(code);
+		    	}
+			}
+			
+			coder.encode(buffer, v, null, null);
 		}
+		
+		//写标志位
+		jo.write(flagIndex,flag);
+		
+	}
+	
+	public static boolean seriaFinalClass(Class cls) {
+		return java.lang.reflect.Modifier.isFinal(cls.getModifiers()) ||org.jmicro.api.codec.ISerializeObject.class.isAssignableFrom(cls);
+	}
+	
+	public static boolean sameArrayTypeEles(Object coll) {
+		int len = Array.getLength(coll);
+		if(coll == null || len == 0 || len == 1) {
+			return true;
+		}
+		
+		Object pre = Array.get(coll, 0);
+		Object cur = null;
+		boolean same = true;
+		
+		for(int i = 1; i < len; i++) {
+			cur = Array.get(coll, i);
+			if(cur.getClass() != pre.getClass()) {
+				same = false;
+				break;
+			}
+			pre = cur;
+		}
+		return same;
 	}
 	
 	public static ParameterizedType genericType(Type genericType){
@@ -182,21 +276,6 @@ public interface TypeCoder<T> extends Comparable<TypeCoder<T>>{
 	
 	
 	/**********************************解码相关代码开始**************************************/
-	
-	public static String decodeString(ByteBuffer buffer){
-		int len = buffer.getShort();
-		if(len <= 0) {
-			return null;
-		}
-
-		try {
-			byte[] data = new byte[len];
-			buffer.get(data,0,len);
-			return new String(data,Constants.CHARSET);
-		} catch (UnsupportedEncodingException e) {
-		}
-		return null;
-	}
 	
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	public static Object decodeByReflect(DataInput buffer, Class<?> cls,Type genericType) {
@@ -297,27 +376,64 @@ public interface TypeCoder<T> extends Comparable<TypeCoder<T>>{
 	public static Object decodeArray(DataInput buffer, Class<?> fieldDeclareType, Type genericType){
 
 		int len=0;
+		byte flag = 0;
 		try {
 			len = buffer.readShort();
+			if(len <= 0) {
+				return null;
+			}
+			flag = buffer.readByte();
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		if(len <= 0) {
-			return null;
+		
+		boolean readEvery = true;
+		Class eltType = null;
+		if(0 != (org.jmicro.common.Constants.HEADER_ELETMENT & flag)) {
+			readEvery = false;
+			if(0 != (org.jmicro.common.Constants.ELEMENT_TYPE_CODE & flag)) {
+				eltType = getType(buffer);
+			}else {
+				try {
+					Short c = buffer.readShort();
+					eltType = org.jmicro.api.codec.TypeCoderFactory.getClassByCode(new Short(c));
+				} catch (IOException e) {
+					throw new CommonException("readShort",e);
+				}
+			}
 		}
 		
 		TypeCoder coder = TypeCoderFactory.getDefaultCoder();
 		 
-		Object objs = Array.newInstance(fieldDeclareType, len);
+		Object objs = null;
+		if(readEvery) {
+			objs = Array.newInstance(Object.class, len);
+		}else {
+			objs = Array.newInstance(eltType, len);
+		}
+		
 		for(int i = 0; i < len; i++){
-			Array.set(objs, i, coder.decode(buffer, fieldDeclareType, null));
+			if(readEvery) {
+				try {
+					byte prefixCode = buffer.readByte();
+					if(Decoder.PREFIX_TYPE_STRING == prefixCode) {
+						eltType = getType(buffer);
+					}else {
+						Short c = buffer.readShort();
+						eltType = org.jmicro.api.codec.TypeCoderFactory.getClassByCode(new Short(c));
+					}
+				} catch (IOException e) {
+					throw new CommonException("readByte",e);
+				}
+			}
+			Object o = coder.decode(buffer, null, null);
+			Array.set(objs, i, o);
 		}
 		
 		return objs;
 	}
 	
-	/**********************************解码相关代码结束**************************************/
+/**********************************解码相关代码结束**************************************/
 	
 /*******************************STATIC METHOD****************************/
 	
@@ -331,7 +447,8 @@ public interface TypeCoder<T> extends Comparable<TypeCoder<T>>{
 		//类型前缀类型
 		buffer.write(Decoder.PREFIX_TYPE_STRING);
 		//类名称
-		encodeString(buffer, clazz);
+		//encodeString(buffer, clazz);
+		buffer.writeUTF(clazz);
 	}
 	
 	public static void putLength(DataOutput buffer,int len) throws IOException {
@@ -339,21 +456,7 @@ public interface TypeCoder<T> extends Comparable<TypeCoder<T>>{
 	}
 	
 	public static void encodeString(DataOutput buffer,String str) throws IOException{
-		if(StringUtils.isEmpty(str)){
-			putLength(buffer,0);
-			return;
-		}
-	    try {
-	    	/*ServiceMethod sm = JMicroContext.get().getParam(Constants.SERVICE_METHOD_KEY,null);
-			if(sm != null && "intrest".equals(sm.getKey().getMethod()) && str.startsWith("[L")) {
-				logger.debug("eltType: {}",str);
-			}*/
-			byte[] data = str.getBytes(Constants.CHARSET);
-			putLength(buffer,data.length);
-			buffer.write(data);
-		} catch (UnsupportedEncodingException e) {
-			throw new CommonException("encodeString error: "+str);
-		}
+		buffer.writeUTF(str);
 	}
 	
 	public static Class<?> getType(JDataInput buffer, Class<?> declareFieldType, Type genericType) {
@@ -471,8 +574,8 @@ public interface TypeCoder<T> extends Comparable<TypeCoder<T>>{
 	                list.set(end, keyStarts);
 	            }
 
-	        if(start>low) sort(list, low, start-1);
-	        if(end<high) sort(list, end+1, high);
+	        if(start > low) sort(list, low, start-1);
+	        if(end < high) sort(list, end+1, high);
 	    }
 	}
 

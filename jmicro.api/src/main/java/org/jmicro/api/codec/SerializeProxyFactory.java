@@ -21,9 +21,9 @@ public class SerializeProxyFactory {
 
 	public static final Logger logger = LoggerFactory.getLogger(SerializeProxyFactory.class);
 	
-	public static Map<Class<?>,ISerializeObject> cache = new HashMap<>();
+	public static Map<Class<?>,ISerializer> cache = new HashMap<>();
 	
-	public static <T> ISerializeObject getSerializeCoder(Class<T> cls) {
+	public static <T> ISerializer getSerializeCoder(Class<T> cls) {
 		
 		if(cache.containsKey(cls)) {
 			return cache.get(cls);
@@ -53,7 +53,7 @@ public class SerializeProxyFactory {
 		 ClassGenerator classGenerator = ClassGenerator.newInstance(Thread.currentThread().getContextClassLoader());
 		 classGenerator.setClassName(cls.getName()+"$Serializer");
 		 //classGenerator.setSuperClass(SerializeObject.class);
-		 classGenerator.addInterface(ISerializeObject.class);
+		 classGenerator.addInterface(ISerializer.class);
 		 classGenerator.addDefaultConstructor();
 		 
 		 classGenerator.addMethod(getEncodeMethod(cls));      
@@ -63,7 +63,7 @@ public class SerializeProxyFactory {
 		 Class<?> clazz = classGenerator.toClass();
 		 
 		 try {
-			cache.put(cls, (ISerializeObject)clazz.newInstance());
+			cache.put(cls, (ISerializer)clazz.newInstance());
 		} catch (InstantiationException | IllegalAccessException e) {
 			e.printStackTrace();
 		}
@@ -72,10 +72,12 @@ public class SerializeProxyFactory {
 
 	private static  String getDecodeMethod(Class cls) {
 
-		StringBuffer sb = new StringBuffer("public Object decode(java.io.DataInput __buffer) {\n");
+		StringBuffer sb = new StringBuffer("public Object decode(java.io.DataInput __buffer)   throws java.io.IOException {\n");
 		sb.append(" org.jmicro.api.codec.typecoder.TypeCoder __coder = org.jmicro.api.codec.TypeCoderFactory.getDefaultCoder();\n\n");
 		
 		sb.append(cls.getName() ).append(" __obj =  new ").append(cls.getName()).append("();\n");
+		
+		sb.append(" java.lang.reflect.Field f = null; ");
 		
 		List<Field> fields = TypeCoder.loadClassFieldsFromCache(cls);
 		for(int i = 0; i < fields.size(); i++) {
@@ -85,19 +87,23 @@ public class SerializeProxyFactory {
 				continue;
 			}
 			
+			sb.append(" f = null;");
+			
 			//sb.append(" java.lang.reflect.Field f = ").append(cls.getName()).append(".class.getField(\"").append(f.getName()).append("\"); \n");
 			
-			sb.append(" java.lang.Object __val1=");
+			String valStr = "val"+i;
 			
 			if(!Collection.class.isAssignableFrom(f.getType()) &&
 					!Map.class.isAssignableFrom(f.getType())) {
-				sb.append(" __coder.decode(__buffer,").append(f.getType().getName()).append(".class,").append(" null);\n");
+				sb.append(" java.lang.Object __").append(valStr)
+				.append(" = __coder.decode(__buffer,").append(f.getType().getName()).append(".class,").append(" null);\n");
 			} else {
-				sb.append("java.lang.reflect.Field f = ").append("this.getClass().getDeclaredField(\"").append(f.getName()).append("\");");
-				sb.append("coder.encode(__buffer,vv,").append(f.getType().getName()).append(".class,").append(" f.getGenericType() );");
+				sb.append(" f = ").append(" __obj.getClass().getDeclaredField(\"").append(f.getName()).append("\");");
+				sb.append(" java.lang.Object __").append(valStr)
+				.append(" coder.encode(__buffer,vv,").append(f.getType().getName()).append(".class,").append(" f.getGenericType() );");
 			}
 			
-			sb.append(" ").append(ReflectUtils.getName(f.getType())).append(" __val =").append(Utils.getIns().asArgument(f.getType(), "__val1")).append(";\n");
+			sb.append(" ").append(ReflectUtils.getName(f.getType())).append(" _"+valStr+" =").append(Utils.getIns().asArgument(f.getType(), "__"+valStr)).append(";\n");
 			
 			String setMethodName = "set"+f.getName().substring(0, 1).toUpperCase()+f.getName().substring(1);
 			Method setMethod = null;
@@ -107,12 +113,13 @@ public class SerializeProxyFactory {
 			}
 			
 			if(setMethod != null) {
-				sb.append(" __obj.").append(setMethodName).append("(__val);\n\n");
+				sb.append("  __obj.").append(setMethodName).append("(_"+valStr+");\n\n");
 			} else {
 				if(Modifier.isPublic(f.getModifiers())) {
-					sb.append("__obj.").append(f.getName()).append("=(").append(f.getType().getName()).append(")val;\n");
+					sb.append(" __obj.").append(f.getName()).append("=(").append(f.getType().getName()).append(")_"+valStr+";\n");
 				} else {
-					sb.append("org.jmicro.api.codec.TypeUtils.setFieldValue(__obj, val, f);\n");
+					sb.append(" if(f == null ) { f =  __obj.getClass().getDeclaredField(\"" +f.getName()+ "\");}");
+					sb.append(" org.jmicro.api.codec.TypeUtils.setFieldValue(__obj, __"+valStr+", f);\n");
 				}
 			}
 		}
@@ -124,7 +131,7 @@ public class SerializeProxyFactory {
 	}
 
 	private static String getEncodeMethod(Class cls) {
-		StringBuffer sb = new StringBuffer("public void encode(java.io.DataOutput __buffer,Object obj) { \n");
+		StringBuffer sb = new StringBuffer("public void encode(java.io.DataOutput __buffer,Object obj)   throws java.io.IOException { \n");
 		sb.append(cls.getName() ).append(" __obj =  (").append(cls.getName()).append(")").append("obj; \n");
 		
 		List<Field> fields = TypeCoder.loadClassFieldsFromCache(cls);
@@ -151,11 +158,12 @@ public class SerializeProxyFactory {
 				sb.append(" ").append(ReflectUtils.getName(fieldDeclareType)).append(" __val"+i).append("=");
 				sb.append(" __obj.").append(f.getName()).append(";\n");
 			} else {
+				sb.append(" ").append(ReflectUtils.getName(fieldDeclareType)).append(" __val"+i).append(" = ").append(Utils.getIns().defaultVal(fieldDeclareType)).append("; \n");
 				sb.append("try { \n");
 				sb.append(" java.lang.reflect.Field f0 = ").append("__obj.getClass().getDeclaredField(\"").append(f.getName()).append("\");\n");
-				sb.append(" ").append(ReflectUtils.getName(fieldDeclareType)).append(" __val"+i).append("=");
-				sb.append(" org.jmicro.api.codec.TypeUtils.getFieldValue(__obj,f0);\n");
-				sb.append("catch(NoSuchFieldException | SecurityException e) { e.printStackTrace(); }\n");
+				sb.append(" Object v = org.jmicro.api.codec.TypeUtils.getFieldValue(__obj,f0);\n");
+				sb.append(" __val"+i).append("=").append(Utils.getIns().asArgument(fieldDeclareType, "v")).append(";\n");
+				sb.append(" } catch(Exception e) { e.printStackTrace(); }\n");
 			}
 			
 			if(fieldDeclareType == int.class || fieldDeclareType == Integer.TYPE || fieldDeclareType == Integer.class ) {
@@ -188,10 +196,11 @@ public class SerializeProxyFactory {
 						sb.append("try { \n");
 						sb.append(" java.lang.reflect.Field __f = ").append("__obj.getClass().getDeclaredField(\"").append(f.getName()).append("\");");
 						sb.append(" __coder.encode(buffer,__val").append(i).append(",").append(fieldDeclareType.getName()).append(".class,").append(" __f.getGenericType() );");
-						sb.append("catch(NoSuchFieldException | SecurityException e) { e.printStackTrace(); }\n");
+						sb.append(" catch(NoSuchFieldException | SecurityException e) { e.printStackTrace(); }\n");
 					}
 				sb.append(" } //end else block \n");
 			}
+			sb.append("\n\n");
 		}
 		
 		sb.append("}");

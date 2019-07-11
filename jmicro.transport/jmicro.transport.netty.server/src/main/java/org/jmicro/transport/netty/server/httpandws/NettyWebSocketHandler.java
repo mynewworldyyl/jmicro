@@ -51,7 +51,7 @@ public class NettyWebSocketHandler  extends SimpleChannelInboundHandler<TextWebS
 			AttributeKey.newInstance(Constants.IO_SESSION_KEY);
 	
 	@Cfg("/MinaServer/readBufferSize")
-	private int readBufferSize=1024*4;
+	private int readBufferSize = 1024*4;
 	
 	@Cfg("/MinaClientSessionManager/heardbeatInterval")
 	private int heardbeatInterval = 3; //seconds to send heardbeat Rate

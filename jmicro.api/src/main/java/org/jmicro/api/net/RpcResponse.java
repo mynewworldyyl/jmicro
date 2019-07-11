@@ -16,14 +16,14 @@
  */
 package org.jmicro.api.net;
 
-import java.util.Arrays;
-
 import org.jmicro.api.AbstractObjectMapSupport;
+import org.jmicro.api.annotation.SO;
 /**
  * 
  * @author Yulei Ye
  * @date 2018年10月4日-下午12:07:23
  */
+@SO
 public final class RpcResponse extends AbstractObjectMapSupport implements IResponse /*IEncoder,IResponse,*/{
 	
 	private long id;
