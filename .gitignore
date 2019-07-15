@@ -211,6 +211,10 @@ jmicro.ext/jmicro.mybatis/target/
 jmicro.ext/jmicro.mybatis/.classpath
 jmicro.ext/jmicro.mybatis/.project
 jmicro.ext/jmicro.mybatis/.settings/
+jmicro.ext/jmicro.mongodb/target/
+jmicro.ext/jmicro.mongodb/.classpath
+jmicro.ext/jmicro.mongodb/.project
+jmicro.ext/jmicro.mongodb/.settings/
 jmicro.ext/jmicro.agent/target/
 jmicro.ext/jmicro.agent/.classpath
 jmicro.ext/jmicro.agent/.project

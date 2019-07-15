@@ -14,5 +14,6 @@
     </properties>
     <modules>
         <module>jmicro.mybatis</module>
+		<module>jmicro.mongodb</module>
     </modules>
 </project>
