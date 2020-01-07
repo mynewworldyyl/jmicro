@@ -5,8 +5,6 @@ import java.lang.instrument.ClassFileTransformer;
 import java.lang.instrument.IllegalClassFormatException;
 import java.security.ProtectionDomain;
 
-import org.jmicro.api.annotation.SO;
-
 import javassist.CannotCompileException;
 import javassist.NotFoundException;
 

@@ -1,3 +1,14 @@
 Manifest-Version: 1.0
+Archiver-Version: Plexus Archiver
+Created-By: Apache Maven
+Built-By: yeyulei
+Build-Jdk: 1.8.0_191
+Specification-Title: jmicro.agent
+Specification-Vendor: The Apache Software Foundation
+Implementation-Title: jmicro.agent
+Implementation-Vendor-Id: org.jmicro
+Implementation-Vendor: The Apache Software Foundation
+Implementation-Version: 0.0.1-SNAPSHOT
+Specification-Version: 0.0.1-SNAPSHOT
 Premain-Class: org.jmicro.agent.JmicroAgent
 Can-Redefine-Classes: true
