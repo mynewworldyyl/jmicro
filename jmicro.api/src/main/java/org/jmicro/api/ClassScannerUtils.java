@@ -36,6 +36,7 @@ import java.util.Set;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
+import org.eclipse.core.runtime.FileLocator;
 import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.ObjFactory;
 import org.jmicro.api.annotation.PostListener;
@@ -319,11 +320,12 @@ public class ClassScannerUtils {
                          logger.error("鍦ㄦ壂鎻忕敤鎴峰畾涔夎鍥炬椂浠巎ar鍖呰幏鍙栨枃浠跺嚭閿�");  
                     }  
                 } else if ("bundleresource".equals(protocol)) {
-                    //System.err.println("file绫诲瀷鐨勬壂鎻�");  
-                   // String filePath = url.getFile(); 
-                    //URL fileUrl = FileLocator.toFileURL(url);
-                   // String filePath = URLDecoder.decode(fileUrl.getPath(), "UTF-8"); 
-                    //findAndAddClassesInPackageByFile(pack, filePath,recursive, classes);  
+                    System.err.println("file绫诲瀷鐨勬壂鎻�");  
+                    //String filePath = url.getFile(); 
+                    //bundleresource://163.fwk1666607455/org/jmicro/
+                    URL fileUrl = FileLocator.toFileURL(url);
+                    String filePath = URLDecoder.decode(fileUrl.getPath(), "UTF-8"); 
+                    findAndAddClassesInPackageByFile(pack, filePath,recursive, classes);  
                 } 
             }  
         } catch (IOException e) {  

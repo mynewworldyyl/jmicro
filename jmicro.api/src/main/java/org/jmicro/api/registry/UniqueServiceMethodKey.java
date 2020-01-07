@@ -50,7 +50,8 @@ public final class UniqueServiceMethodKey {
 	}*/
 	
 	public static String paramsStr(Class<?>[] args) {
-		/*if(args == null || args.length == 0) {
+		/*
+		if(args == null || args.length == 0) {
 			return "";
 		}
 		StringBuilder sb = new StringBuilder();
@@ -59,7 +60,8 @@ public final class UniqueServiceMethodKey {
 		    sb.append(ReflectUtils.getFullClassName(args[i])).append(PSEP);
 		}
 		sb.append(ReflectUtils.getFullClassName(args[offset]));
-		return sb.toString();*/
+		return sb.toString();
+		*/
 		
 		return ReflectUtils.getDesc(args);
 	}

@@ -108,13 +108,13 @@ public class CmdManager {
 		dataOperator.addListener((state)->{
 			if(Constants.CONN_CONNECTED == state) {
 				logger.info("CONNECTED, reflesh children");
-				Set<String> children = this.dataOperator.getChildren(root);
+				Set<String> children = this.dataOperator.getChildren(root,true);
 				refleshCmds(children);
 			}else if(Constants.CONN_LOST == state) {
 				logger.warn("DISCONNECTED");
 			}else if(Constants.CONN_RECONNECTED == state) {
 				logger.warn("Reconnected,reflesh children");
-				Set<String> children = this.dataOperator.getChildren(root);
+				Set<String> children = this.dataOperator.getChildren(root,true);
 				refleshCmds(children);
 			}
 		});

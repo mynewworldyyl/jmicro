@@ -47,7 +47,7 @@ public interface IDataOperator {
 	
 	void setData(String path,String data);
 	
-	Set<String> getChildren(String path);
+	Set<String> getChildren(String path,boolean fromCache);
 	
 	void createNode(String path,String data,boolean elp);
 	

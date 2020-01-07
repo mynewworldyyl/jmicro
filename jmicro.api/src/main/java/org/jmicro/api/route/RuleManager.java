@@ -74,7 +74,7 @@ public class RuleManager {
 	}
 	
 	public void init() {
-		Set<String> children = dataOperator.getChildren(RULE_DIR);
+		Set<String> children = dataOperator.getChildren(RULE_DIR,true);
 		update(children);
 	}
 	

@@ -28,6 +28,8 @@ import org.jmicro.common.Constants;
  * @date 2018年10月4日-下午12:04:38
  */
 public final class ServiceMethod {
+	
+	public transient ServiceItem _serviceItem;
 
 	private UniqueServiceMethodKey key = new UniqueServiceMethodKey();
 	

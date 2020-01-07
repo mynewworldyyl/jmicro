@@ -129,7 +129,7 @@ public class ServiceManager {
 	}
 	
 	private synchronized void refleshChildren() {
-		Set<String> children = this.dataOperator.getChildren(Config.ServiceRegistDir);
+		Set<String> children = this.dataOperator.getChildren(Config.ServiceRegistDir,true);
 		for(String child : children) {
 			String path = Config.ServiceRegistDir+"/"+child;
 			String data = this.dataOperator.getData(path);
@@ -276,6 +276,21 @@ public class ServiceManager {
 				
 			}
 		});
+		return sets;
+	}
+	
+	public synchronized Set<ServiceItem> getItemsByInstanceName(String instanceName) {
+		Set<ServiceItem> sets = new HashSet<>();
+		if(StringUtils.isEmpty(instanceName)) {
+			logger.error("getItemsByInstanceName instance is NULL {} and return NULL items list",instanceName);
+			return sets;
+		}
+		instanceName = instanceName.trim();
+		for(ServiceItem i : path2SrvItems.values()) {
+			if(instanceName.equals(i.getKey().getInstanceName())) {
+				sets.add(i);
+			}
+		}
 		return sets;
 	}
 	

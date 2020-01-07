@@ -187,9 +187,9 @@ public class PubSubManager {
 			logger.info("Pubsub server is disable by config [/PubSubManager/enableServer]");
 			return;
 		}
-		Set<String> children = this.dataOp.getChildren(Config.PubSubDir);
+		Set<String> children = this.dataOp.getChildren(Config.PubSubDir,true);
 		for(String t : children) {
-			Set<String>  subs = this.dataOp.getChildren(Config.PubSubDir+"/"+t);
+			Set<String>  subs = this.dataOp.getChildren(Config.PubSubDir+"/"+t,true);
 			for(String sub : subs) {
 				this.dataOp.deleteNode(Config.PubSubDir+"/"+t+"/"+sub);
 			}
