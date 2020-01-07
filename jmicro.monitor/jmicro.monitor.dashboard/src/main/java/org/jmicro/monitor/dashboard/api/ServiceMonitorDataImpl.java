@@ -81,7 +81,7 @@ public class ServiceMonitorDataImpl implements IServiceMonitorData{
 
 	@Override
 	public Set<String> getAllServices() {
-		Set<String> services = dataOperator.getChildren(DegradeManager.AVG_TIME_ROOT);
+		Set<String> services = dataOperator.getChildren(DegradeManager.AVG_TIME_ROOT,true);
 		return services;
 	}
 	

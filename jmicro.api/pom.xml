@@ -23,6 +23,14 @@
 			<groupId>log4j</groupId>
 			<artifactId>log4j</artifactId>
 		</dependency>
+		<!-- https://mvnrepository.com/artifact/org.eclipse.equinox/common -->
+		<dependency>
+		    <groupId>org.eclipse.equinox</groupId>
+		    <artifactId>common</artifactId>
+		    <version>3.6.200-v20130402-1505</version>
+		    <scope>provided</scope>
+		</dependency>
+
     </dependencies>
    
 </project>

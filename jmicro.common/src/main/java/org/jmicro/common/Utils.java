@@ -108,6 +108,12 @@ public class Utils {
 		 }
 	}
 	
+	public void shutdown(){
+		 synchronized(Utils.ins){
+			 Utils.ins.notifyAll();
+		 }
+	}
+	
 	public List<String> getLocalIPList() {
         List<String> ipList = new ArrayList<String>();
         try {

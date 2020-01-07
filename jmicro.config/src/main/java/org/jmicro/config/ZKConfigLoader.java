@@ -57,7 +57,7 @@ public class ZKConfigLoader implements IConfigLoader{
 		}
 		
 		 //String globalRoot = Config.CfgDir+"/config";
-		 Set<String> children = dataOperator.getChildren(root);
+		 Set<String> children = dataOperator.getChildren(root,true);
 		 for(String child: children){
 			 loadOne(root,child,params);
 		 }
@@ -78,7 +78,7 @@ public class ZKConfigLoader implements IConfigLoader{
 			updateData("/"+child,data,params);
 			dataOperator.addDataListener(fullpath, this.dataListener);
 		} 
-		Set<String> children = dataOperator.getChildren(fullpath);
+		Set<String> children = dataOperator.getChildren(fullpath,true);
 		 for(String ch: children){
 			 String pa = child + "/"+ch;
 			 loadOne(root,pa,params);

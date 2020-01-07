@@ -54,6 +54,21 @@
         <url>https://github.com/mynewworldyyl/jmicro/issues</url>
     </issueManagement>
 
+<!-- 	<repositories>  
+	  <repository>  
+	    <id>central</id>  
+	    <name>Central Repository</name>  
+	    <url>https://repo.maven.apache.org/maven2</url>  
+	    <layout>default</layout>  
+	     <releases>  
+        <enabled>true</enabled>  
+      </releases>  
+      <snapshots>  
+        <enabled>false</enabled>  
+      </snapshots>  
+	  </repository>  
+	</repositories>  --> 
+
     <properties>
     	<java_source_version>1.8</java_source_version>
         <java_target_version>1.8</java_target_version>

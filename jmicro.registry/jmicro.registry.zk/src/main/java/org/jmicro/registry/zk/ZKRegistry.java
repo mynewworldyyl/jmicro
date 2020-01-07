@@ -16,7 +16,6 @@
  */
 package org.jmicro.registry.zk;
 
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -35,7 +34,6 @@ import org.jmicro.api.registry.IServiceListener;
 import org.jmicro.api.registry.ServiceItem;
 import org.jmicro.api.registry.ServiceMethod;
 import org.jmicro.api.registry.UniqueServiceKey;
-import org.jmicro.api.registry.UniqueServiceMethodKey;
 import org.jmicro.api.service.ServiceManager;
 import org.jmicro.common.Constants;
 import org.jmicro.common.util.JsonUtils;

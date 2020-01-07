@@ -4,6 +4,7 @@ import org.jmicro.api.annotation.Component;
 import org.jmicro.api.config.Config;
 import org.jmicro.api.objectfactory.IFactoryListener;
 import org.jmicro.api.objectfactory.IObjectFactory;
+import org.jmicro.common.util.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -47,7 +48,7 @@ public class Init implements IFactoryListener{
         /** MongoDB 3.0及其以上版本使用该方法 */
         //MongoCredential mongoCredential = MongoCredential.createScramSha1Credential(username, dbname,password!=null?password.toCharArray():null);
         MongoCredential mongoCredential = null;
-        if(username != null) {
+        if(StringUtils.isNotEmpty(username)) {
         	mongoCredential =  MongoCredential.createScramSha1Credential(username, dbname,password!=null?password.toCharArray():null);
         }else {
         	mongoCredential = MongoCredential.createMongoX509Credential();

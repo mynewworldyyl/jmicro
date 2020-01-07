@@ -96,9 +96,9 @@ public class ServerMessageReceiver implements IMessageReceiver{
 			return;
 		}
 		handlers.put(handler.type(), handler);
-		ready = true;
-		synchronized(ready){
-			ready.notifyAll();
+		Boolean r = ready;
+		synchronized(r){
+			r.notifyAll();
 		}
 	}
 	
@@ -121,21 +121,25 @@ public class ServerMessageReceiver implements IMessageReceiver{
 		JMicroContext jc = JMicroContext.get();
 		//直接协程处理，IO LOOP线程返回
 		
-		/*new Fiber<Void>(() -> {
+		/*
+		 new Fiber<Void>(() -> {
 			JMicroContext.get().mergeParams(jc);
 			doReceive((IServerSession)s,msg);
-		}).start();*/
+		 }).start();
+		*/
 		
 		executor.submit(()->{
+			//线程间上下文切换
 			JMicroContext.get().mergeParams(jc);
 			doReceive((IServerSession)s,msg);
-			
 		});
 		
-		/*new Thread(()->{
+		/*
+		new Thread(()->{
 			JMicroContext.get().mergeParams(jc);
 			doReceive((IServerSession)s,msg);
-		}).start();*/
+		}).start();
+		*/
 	}
 	
 	//@Suspendable

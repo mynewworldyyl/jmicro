@@ -324,7 +324,8 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
 			sb.append(" host[").append(s.getHost()).append("] port [").append(s.getPort())
 			.append("] service[").append(si.getKey().getServiceName())
 			.append("] method[").append(sm.getKey().getMethod())
-			.append("] param[").append(sm.getKey().getParamsStr());
+			.append("] param[").append(sm.getKey().getParamsStr())
+			.append("] param value[").append(req.getArgs()!= null?argStr(req.getArgs()):"null");
     		
     		if(resp == null){
     			if(retryCnt > 0){
@@ -392,6 +393,23 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
     		
         }while(retryCnt-- > 0);
         throw new CommonException("Service:"+req.getServiceName()+", Method: "+req.getMethod()+", Params: "+req.getArgs());
+	}
+
+	private String argStr(Object[] args) {
+		if(args == null || args.length == 0) {
+			return "null";
+		}
+		
+		StringBuffer sb = new StringBuffer();
+		for(Object a : args) {
+			if(a == null) {
+				sb.append("null").append(",");
+			}else {
+				sb.append(a.toString()).append(",");
+			}
+		}
+		sb = sb.deleteCharAt(sb.length()-1);
+		return sb.toString();
 	}
 
 	@Override

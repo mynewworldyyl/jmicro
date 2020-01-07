@@ -155,7 +155,8 @@ public class JRPCReqRespHandler implements IMessageHandler{
 					interceptorManger.handleProvider(req1);
 				};
 				//异步响应
-				new Fiber<Void>(r).start();*/
+				new Fiber<Void>(r).start();
+				*/
 				
 				Runnable run = ()->{
 					JMicroContext.get().mergeParams(jc);
@@ -182,6 +183,7 @@ public class JRPCReqRespHandler implements IMessageHandler{
 				//同步响应
 				resp = (RpcResponse)interceptorManger.handleRequest(req);
 				if(resp == null){
+					//返回空值性况处理
 					resp = new RpcResponse(req.getRequestId(),null);
 					resp.setSuccess(true);
 				}

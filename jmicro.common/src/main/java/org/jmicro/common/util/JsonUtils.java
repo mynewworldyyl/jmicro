@@ -20,6 +20,7 @@ import java.lang.reflect.Type;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
@@ -73,6 +74,12 @@ public class JsonUtils {
 		List<String> m = this.fromJson(json, type);
 		return m;
 	}
+	
+	public Set<String> getStringValueSet(String json,boolean innerJson) {
+		Type type = new TypeToken<Set<String>>(){}.getType();
+		return JsonUtils.getIns().fromJson(json, type);
+	}
+	
 	
 	public String toJson(Object obj) {
 		if(obj == null) {

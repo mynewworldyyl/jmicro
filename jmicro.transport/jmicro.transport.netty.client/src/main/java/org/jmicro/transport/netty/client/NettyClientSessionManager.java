@@ -144,6 +144,10 @@ public class NettyClientSessionManager implements IClientSessionManager{
     @Override
 	public void closeSession(ISession session) {
 		String skey = (String)session.getParam(SKEY);
+		if(skey == null) {
+			logger.error("Session KEY is NULL when close session");
+			return;
+		}
 		//阻止新的请求使用此会话
 		sessions.remove(skey);
 		if(!session.isClose() && session.waitingClose()) {
@@ -196,10 +200,10 @@ public class NettyClientSessionManager implements IClientSessionManager{
 					@Override
 					public void handlerAdded(ChannelHandlerContext ctx) throws Exception {
 						super.handlerAdded(ctx);
-	                   NettyClientSession s = new NettyClientSession(ctx,readBufferSize,heardbeatInterval,false);
-	                   s.setReceiver(receiver);
-	                   s.putParam(Constants.IO_SESSION_KEY, ctx);
-	                   s.putParam(SKEY, sKey);
+	                    NettyClientSession s = new NettyClientSession(ctx,readBufferSize,heardbeatInterval,false);
+	                    s.setReceiver(receiver);
+	                    s.putParam(Constants.IO_SESSION_KEY, ctx);
+	                    s.putParam(SKEY, sKey);
 	                   
 	   	                s.setId(idGenerator.getLongId(ISession.class));
 	      	            s.putParam(Constants.IO_SESSION_KEY, ctx);

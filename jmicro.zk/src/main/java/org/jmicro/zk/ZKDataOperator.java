@@ -408,7 +408,11 @@ public class ZKDataOperator implements IDataOperator{
 		GetDataBuilder getDataBuilder = this.curator.getData();
   	    try {
 			byte[] data = getDataBuilder.forPath(path);
-			return new String(data,Constants.CHARSET);
+			if(data != null) {
+				return new String(data,Constants.CHARSET);
+			}else {
+				return "";
+			}
 		} catch (KeeperException.NoNodeException e) {
 			logger.error(e.getMessage());
 		}catch(Exception e){
@@ -455,8 +459,11 @@ public class ZKDataOperator implements IDataOperator{
   	   return Collections.EMPTY_SET;
 	}
 	
-	public Set<String> getChildren(String path){
-	    Set<String> l = this.getChildrenFromCache(path);
+	public Set<String> getChildren(String path,boolean fromCache){
+	    Set<String> l = null;
+	    if(fromCache) {
+	    	l = this.getChildrenFromCache(path);
+	    }
 	    if(l == null || l.isEmpty()) {
 	    	l = this.getChildrenFromRaft(path);
 	    	if(l != null && !l.isEmpty()) {
