@@ -14,16 +14,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.jmicro.api.cache;
+package org.jmicro.api.cache.lock;
 
 /**
  * 
  * 
  * @author Yulei Ye
- * @date 2020年1月11日
+ * @date 2020年1月12日
  */
-@FunctionalInterface
-public interface ICacheRefresher {
+public interface ILocker {
 
-	Object get(String key);
+	boolean tryLock(int checkIntervalWithMillisenconds);
+	
+	boolean tryLock(int checkIntervalWithMillisenconds,long timeoutWithMillisenconds);
+	
+	boolean unLock();
 }
