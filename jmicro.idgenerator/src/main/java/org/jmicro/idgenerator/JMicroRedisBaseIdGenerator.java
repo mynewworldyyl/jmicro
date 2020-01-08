@@ -106,7 +106,6 @@ public class JMicroRedisBaseIdGenerator implements IIdServer {
 		}finally {
 			r.close();
 		}
-		
 	}
 	
 	@Override

@@ -25,7 +25,6 @@ import org.slf4j.LoggerFactory;
  * @author Yulei Ye
  * @date 2018年11月19日 下午1:25:24
  */
-
 public class JMicroRcpServer   {
 
 	private final static Logger logger = LoggerFactory.getLogger(JMicroRcpServer.class);

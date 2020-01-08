@@ -383,7 +383,7 @@ public class ConfigPostInitListener extends PostInitListenerAdapter {
 			}
 		
         } catch (Exception e) {
-        	String msg = "Class ["+obj.getClass().getName()+",Field:"+f.getName()+"] set value error";
+        	String msg = "Class ["+obj.getClass().getName()+",Field:"+f.getName()+"] set value= " + value + " error";
 			if(e instanceof KeeperException.NoNodeException){
 				logger.warn(msg,e);
 			}else {

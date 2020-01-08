@@ -11,6 +11,12 @@ import org.jmicro.api.registry.ServiceMethod;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * 
+ * 
+ * @author Yulei Ye
+ * @date 2020年1月11日
+ */
 @Component
 public class StatisDataListenerManager {
 
