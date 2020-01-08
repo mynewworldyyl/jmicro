@@ -63,7 +63,7 @@ public class TimerTicker {
 			@Override
 			public void run() {
 				try {
-					notifyAction();
+					notifyAction(); 
 					if(!removeKeys.isEmpty()) {
 						for(;!removeKeys.isEmpty();) {
 							String k = removeKeys.poll();
@@ -111,4 +111,12 @@ public class TimerTicker {
 		return listeners.containsKey(key);
 	}
 
+	@Override
+	protected void finalize() throws Throwable {
+		System.out.println("finalize: "+timer.toString());
+		super.finalize();
+	}
+
+	
+	
 }
