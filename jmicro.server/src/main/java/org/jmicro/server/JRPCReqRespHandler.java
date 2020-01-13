@@ -192,7 +192,8 @@ public class JRPCReqRespHandler implements IMessageHandler{
 				
 				if(SF.isLoggable(this.openDebug,MonitorConstant.LOG_DEBUG)) {
 					SF.doResponseLog(MonitorConstant.LOG_DEBUG,msg.getLinkId(), TAG, resp,null);
-				}
+				} 
+				
 				s.write(msg);
 			}
 			SF.doSubmit(MonitorConstant.SERVER_REQ_OK, req,resp,null);

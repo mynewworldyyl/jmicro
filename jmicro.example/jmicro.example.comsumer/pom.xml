@@ -42,10 +42,10 @@
             <artifactId>mongodb-driver</artifactId>
             <version>3.10.1</version>
         </dependency>
-          <dependency>
+         <!--  <dependency>
 				 <groupId>org.jmicro</groupId>
 				 <artifactId>jmicro.mongodb</artifactId>
-	        </dependency>
+	        </dependency> -->
 	</dependencies>
 
 	<build>

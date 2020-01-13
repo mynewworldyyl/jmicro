@@ -34,12 +34,17 @@ public class TestPubSubServer extends JMicroBaseTestCase{
 		Runnable r = ()->{
 			while(true) {
 				try {
+					
+					long msgid = psm.publish(new HashMap<String,Object>(), TOPIC, 
+							"test pubsub server id: "+id.getAndIncrement(),PSData.FLAG_QUEUE);
+					
+					System.out.println("pubsub msgID:"+msgid);
+					
 					//Thread.sleep(2000);
 					Thread.sleep(ran.nextInt(100));
-					psm.publish(new HashMap<String,Object>(), TOPIC, 
-							"test pubsub server id: "+id.getAndIncrement());
+					
 				} catch (Throwable e) {
-					System.out.println(e.getMessage());;
+					e.printStackTrace();
 				}
 			}
 		};
@@ -56,7 +61,7 @@ public class TestPubSubServer extends JMicroBaseTestCase{
 	@Test
 	public void testPublishStringMessage() {
 		PubSubManager psm = of.get(PubSubManager.class);
-		psm.publish(new HashMap<String,Object>(), TOPIC, "test pubsub server");
+		psm.publish(new HashMap<String,Object>(), TOPIC, "test pubsub server",PSData.FLAG_PUBSUB);
 		JMicro.waitForShutdown();
 	}
 }

@@ -94,6 +94,9 @@ public interface Constants {
 	public static final String CONTEXT_CALLBACK_CLIENT = "ClientCallback";
 	
 	public static final String SERVICE_ITEM_KEY = "serviceItemKey";
+	
+	//public static final String SERVICE_SPECIFY_ITEM_KEY = "specifyServiceItemKey";
+	
 	public static final String SERVICE_METHOD_KEY = "serviceMethodKey";
 	public static final String SERVICE_OBJ_KEY = "serviceObjKey";
 	public static final String CLIENT_REF_METHOD = "reflectMethod";

@@ -50,18 +50,23 @@ public abstract class AbstractNettySession extends AbstractSession implements IS
 	
 	private int type = Constants.TYPE_SOCKET;
 	
+	private InetSocketAddress localAddre;
+	private InetSocketAddress remoteAddre;
+	
 	public AbstractNettySession(ChannelHandlerContext ctx,int readBufferSize,int heardbeatInterval,int type) {
 		super(readBufferSize,heardbeatInterval);
 		this.type = type;
 		this.ctx = ctx;
+		localAddre = (InetSocketAddress)ctx.channel().localAddress();
+		remoteAddre = (InetSocketAddress)ctx.channel().remoteAddress();
 	}
 	
 	public InetSocketAddress getLocalAddress(){
-		return (InetSocketAddress)ctx.channel().localAddress();
+		return localAddre;
 	}
 	
 	public InetSocketAddress getRemoteAddress(){
-		return (InetSocketAddress)ctx.channel().remoteAddress();
+		return remoteAddre;
 	}
 	
 	@Override

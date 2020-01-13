@@ -59,9 +59,12 @@ public class NettySocketHandler extends ChannelInboundHandlerAdapter {
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg)
             throws Exception {
-    	/*if(openDebug) {
+    	
+    	//logger.info("st:  "+System.currentTimeMillis());
+		
+    	if(openDebug) {
     		logger.debug("channelRead Data: {}",msg);
-    	}*/
+    	}
     	if(!(msg instanceof ByteBuf)) {
     		ctx.fireChannelRead(msg);
     		return;
@@ -72,6 +75,8 @@ public class NettySocketHandler extends ChannelInboundHandlerAdapter {
     		return;
     	}
     	
+    	//logger.info("ed0:  "+System.currentTimeMillis());
+    	
     	ByteBuffer b = ByteBuffer.allocate(bb.readableBytes());
     	bb.readBytes(b);
     	b.flip();
@@ -79,9 +84,15 @@ public class NettySocketHandler extends ChannelInboundHandlerAdapter {
     	
     	NettyServerSession session = ctx.channel().attr(sessionKey).get();
     	
+    	//logger.info("ed1:  "+System.currentTimeMillis());
+    	
     	JMicroContext.configProvider(monitor, session);
     	
+    	//logger.info("ed2:  "+System.currentTimeMillis());
+    	
     	session.receive(b);
+    	
+		//logger.info("ed1:  "+System.currentTimeMillis());
 
     }
     
@@ -96,9 +107,9 @@ public class NettySocketHandler extends ChannelInboundHandlerAdapter {
     @Override
     public void handlerAdded(ChannelHandlerContext ctx) throws Exception {
     	super.handlerAdded(ctx);
-    	/*if(openDebug) {
+    	if(openDebug) {
     		logger.debug("handlerAdded: {}",ctx);
-    	}*/
+    	}
     	NettyServerSession session = new NettyServerSession(ctx,readBufferSize,heardbeatInterval,
     			Constants.TYPE_SOCKET);
     	session.setReceiver(receiver);

@@ -122,6 +122,7 @@
 		<module>jmicro.ext</module>
 		<module>jmicro.build</module>
 		<module>jmicro.agent</module>
+		<module>jmicro.all</module>
     </modules>
 
     <dependencyManagement>

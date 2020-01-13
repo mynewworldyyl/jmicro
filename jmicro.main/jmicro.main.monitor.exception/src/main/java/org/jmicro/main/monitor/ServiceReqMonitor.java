@@ -118,8 +118,8 @@ public class ServiceReqMonitor extends AbstractMonitorDataSubscriber implements 
 		psData.put(Constants.SERVICE_METHOD_KEY, sm);
 		
 		//将统计数据分发出去
-		boolean f = pubSubManager.publish(psData);
-		if(!f) {
+		long f = pubSubManager.publish(psData);
+		if(f != PubSubManager.PUB_OK) {
 			logger.warn("Fail to publish topic: {}",psData.getTopic());
 		}
 		

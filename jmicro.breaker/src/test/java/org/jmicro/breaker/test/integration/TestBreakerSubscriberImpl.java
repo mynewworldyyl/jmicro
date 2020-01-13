@@ -58,7 +58,7 @@ public class TestBreakerSubscriberImpl extends JMicroBaseTestCase{
 					//Thread.sleep(2000);
 					Thread.sleep(ran.nextInt(100));
 					psm.publish(new HashMap<String,Object>(), TOPIC, 
-							"test pubsub server id: "+id.getAndIncrement());
+							"test pubsub server id: "+id.getAndIncrement(),PSData.FLAG_PUBSUB);
 				} catch (Throwable e) {
 					System.out.println(e.getMessage());;
 				}

@@ -122,7 +122,7 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
         
         ServerError se = null;
         		
-        ServiceItem si = null;
+        ServiceItem si = JMicroContext.get().getParam(Constants.DIRECT_SERVICE_ITEM,null);
         ServiceMethod sm = JMicroContext.get().getParam(Constants.SERVICE_METHOD_KEY, null);
         
         int retryCnt = -1;
@@ -146,8 +146,10 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
         do {
         	
 			//此方法可能抛出FusingException
-        	si = selector.getService(req.getServiceName(),req.getMethod(),req.getArgs(),req.getNamespace(),
-        			req.getVersion(), Constants.TRANSPORT_NETTY);
+        	if(si == null) {
+        		si = selector.getService(req.getServiceName(),req.getMethod(),req.getArgs(),req.getNamespace(),
+            			req.getVersion(), Constants.TRANSPORT_NETTY);
+        	}
         	
         	if(si == null) {
         		SF.doSubmit(MonitorConstant.CLIENT_REQ_SERVICE_NOT_FOUND, req,null);
@@ -232,6 +234,8 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
     			SF.doRequestLog(MonitorConstant.LOG_DEBUG,lid,TAG,req,null," do request");
     		}
     		
+    		//long st = System.currentTimeMillis();
+    		//logger.info(""+st);
     		session.write(msg);
     		
     		if(!sm.isNeedResponse() && !msg.isStream()) {
@@ -262,6 +266,7 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
     		
     		synchronized(req) {
     			try {
+    				//logger.info("waiting ReqID: {},timeout:{}",msg.getReqId(),timeout);
     				if(timeout > 0){
     					req.wait(timeout);
     				} else {
@@ -271,6 +276,10 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
     				logger.error("timeout: ",e);
     			}
     		}
+    		
+    		//long et = System.currentTimeMillis();
+    		//System.out.println(req.getRequestId() + " used: "+(et-st));
+    		
     		
     		Message respMsg = (Message)result.get("msg");
     		result.clear();
@@ -339,7 +348,7 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
     				session.increment(MonitorConstant.CLIENT_REQ_TIMEOUT_FAIL);
     				SF.doSubmit(MonitorConstant.CLIENT_REQ_TIMEOUT_FAIL, req, null);
     				
-    				sb.append("] timeout request and stop retry: ").append(retryCnt)
+    				sb.append("] timeout[").append(timeout).append("] request and stop retry: ").append(retryCnt)
     				.append(",reqId:").append(req.getRequestId()).append(", LinkId:").append(lid);
     				SF.doRequestLog(MonitorConstant.LOG_ERROR,msg.getLinkId(),TAG,req,null,sb.toString());
     				
@@ -425,6 +434,7 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
 			SF.doMessageLog(MonitorConstant.LOG_DEBUG,TAG,msg,null," receive message");
 		}
 		if(handler!= null){
+			//logger.info("get result reqID: {}",msg.getReqId());
 			handler.onResponse(msg);
 		} else {
 			SF.doMessageLog(MonitorConstant.LOG_ERROR,TAG,msg,null," handler not found");

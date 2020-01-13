@@ -87,6 +87,7 @@ public class ServiceInvocationHandler implements InvocationHandler{
 		
 		JMicroContext.get().setParam(Constants.SERVICE_METHOD_KEY, sm);
 		JMicroContext.get().setParam(Constants.SERVICE_ITEM_KEY, poItem);
+		
 		JMicroContext.setSrvLoggable();
 		JMicroContext.get().configMonitor(sm.getMonitorEnable(),poItem.getMonitorEnable());
 		

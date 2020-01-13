@@ -13,7 +13,7 @@ import org.jmicro.common.Constants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-@Service(namespace="classloaderrpc",version="0.0.1",handler=Constants.SPECIAL_INVOCATION_HANDLER)
+@Service(namespace="classloaderrpc",version="0.0.1",handler=Constants.SPECIAL_INVOCATION_HANDLER,timeout=30000)
 @Component
 public class ClassloaderRpcService implements IClassloaderRpc {
 
@@ -52,10 +52,10 @@ public class ClassloaderRpcService implements IClassloaderRpc {
 			while((len = is.read(data, 0, data.length)) > 0) {
 				bais.write(data, 0, len);
 			}
-			
+			logger.info("return class data:" + resName);
 			return bais.toByteArray();
 		} catch (ClassNotFoundException e) {
-			logger.error(clazz);
+			logger.error(clazz,e);
 		}catch (IOException e) {
 			logger.error(clazz);
 		}

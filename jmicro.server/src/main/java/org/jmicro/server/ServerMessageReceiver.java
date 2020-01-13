@@ -77,7 +77,9 @@ public class ServerMessageReceiver implements IMessageReceiver{
 	
 	private volatile Map<Byte,IMessageHandler> handlers = new ConcurrentHashMap<>();
 	
-	private Boolean ready = new Boolean(false);
+	private boolean ready = false;
+	
+	private Object readyLock = new Object();
 	
 	public void init(){
 		ExecutorConfig config = new ExecutorConfig();
@@ -88,6 +90,12 @@ public class ServerMessageReceiver implements IMessageReceiver{
 		//系统级RPC处理器，如ID请求处理器，和普通RPC处理理器同一个实例，但是TYPE标识不同，需要特殊处理
 		handlers.put(Constants.MSG_TYPE_SYSTEM_REQ_JRPC, jrpcHandler);
 		handlers.put(Constants.MSG_TYPE_ID_REQ, idHandler);
+		
+		ready = true;
+		synchronized(readyLock){
+			readyLock.notifyAll();
+		}
+		
 	}
 	
 	public void registHandler(IMessageHandler handler){
@@ -96,10 +104,12 @@ public class ServerMessageReceiver implements IMessageReceiver{
 			return;
 		}
 		handlers.put(handler.type(), handler);
-		Boolean r = ready;
-		synchronized(r){
-			r.notifyAll();
+		
+		ready = true;
+		synchronized(readyLock){
+			readyLock.notifyAll();
 		}
+		
 	}
 	
 	@Override
@@ -110,9 +120,9 @@ public class ServerMessageReceiver implements IMessageReceiver{
 			//SF.getIns().doMessageLog(MonitorConstant.DEBUG, TAG, msg,"receive");
 		}
 		if(!ready) {
-			synchronized(ready){
+			synchronized(readyLock){
 				try {
-					ready.wait();
+					readyLock.wait();
 				} catch (InterruptedException e) {
 					logger.error("receive(IServerSession s, ByteBuffer data) do wait",e);
 				}
