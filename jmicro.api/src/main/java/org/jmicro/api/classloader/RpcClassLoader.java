@@ -113,19 +113,34 @@ public class RpcClassLoader extends AbstractClientClassLoader {
 			return clazzesData.get(className);
 		}else {
 			byte[] bytes=null;
-			Set<ServiceItem> items = this.registry.getServices(IClassloaderRpc.class.getName());
-	         for(ServiceItem si: items) {
-	        	JMicroContext.get().setParam(Constants.DIRECT_SERVICE_ITEM, si);
-	        	bytes = this.rpcLlassloader.getClassData(className);
+			if(JMicroContext.get().getParam(Constants.DIRECT_SERVICE_ITEM, null) == null) {
+				Set<ServiceItem> items = this.registry.getServices(IClassloaderRpc.class.getName());
+		         for(ServiceItem si: items) {
+		        	JMicroContext.get().setParam(Constants.DIRECT_SERVICE_ITEM, si);
+		        	try {
+						bytes = this.rpcLlassloader.getClassData(className);
+					} catch (Throwable e) {
+					}
+		        	if(bytes != null && bytes.length > 0) {
+		        		logger.warn("load class {} from {} ",className,si.getKey().toKey(true, true, true));
+		        		break;
+		        	}
+		         }
+			} else {
+				ServiceItem si = JMicroContext.get().getParam(Constants.DIRECT_SERVICE_ITEM, null);
+				bytes = this.rpcLlassloader.getClassData(className);
 	        	if(bytes != null && bytes.length > 0) {
 	        		logger.warn("load class {} from {} ",className,si.getKey().toKey(true, true, true));
-	        		break;
 	        	}
-	         }
-	         JMicroContext.get().removeParam(Constants.DIRECT_SERVICE_ITEM);
-	         if(bytes != null && bytes.length > 0) {
-	        	 clazzesData.put(className, bytes);
-	         }
+	        	JMicroContext.get().removeParam(Constants.DIRECT_SERVICE_ITEM);
+			}
+			
+			if(bytes == null || bytes.length == 0) {
+        		logger.warn("load class {} not found ",className);
+        	}else {
+        		clazzesData.put(className, bytes);
+        	}
+	
 	         return bytes;
 		}
 		

@@ -16,6 +16,10 @@
  */
 package org.jmicro.api.cache;
 
+import java.io.UnsupportedEncodingException;
+
+import org.jmicro.common.Constants;
+
 /**
  * 
  * 
@@ -24,6 +28,17 @@ package org.jmicro.api.cache;
  */
 public interface ICache {
 
+	public static byte[] keyData(String key) {
+		byte[] k = null;
+		try {
+			k = key.getBytes(Constants.CHARSET);
+		} catch (UnsupportedEncodingException e) {
+			e.printStackTrace();
+			return null;
+		}
+		return k;
+	}
+	
 	boolean put(String key,Object val);
 	
 	boolean del(String key);

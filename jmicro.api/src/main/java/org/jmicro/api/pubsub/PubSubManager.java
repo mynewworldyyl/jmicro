@@ -12,6 +12,7 @@ import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.Inject;
 import org.jmicro.api.annotation.Reference;
 import org.jmicro.api.config.Config;
+import org.jmicro.api.idgenerator.ComponentIdServer;
 import org.jmicro.api.raft.IDataOperator;
 import org.jmicro.api.registry.IRegistry;
 import org.jmicro.api.registry.IServiceListener;
@@ -32,8 +33,20 @@ import org.slf4j.LoggerFactory;
  */
 @Component(value="pubSubManager")
 public class PubSubManager {
+	
+	//生产者成功将消息放入消息队列,但并不意味着消息被消费者成功消费
+	public static final int PUB_OK = 0;
+	//无消息服务可用,需要启动消息服务
+	public static final int PUB_SERVER_NOT_AVAILABALE = -1;
+	//消息队列已经满了,客户端可以重发,或等待一会再重发
+	public static final int PUB_SERVER_DISCARD = -2;
+	//消息服务线程队列已满,客户端可以重发,或等待一会再重发,可以考虑增加消息服务线程池大小,或增加消息服务
+	public static final int PUB_SERVER_BUSSUY = -3;
 
 	private final static Logger logger = LoggerFactory.getLogger(PubSubManager.class);
+	
+	@Inject
+	private ComponentIdServer idGenerator;
 	
 	@Inject
 	private IRegistry registry;
@@ -126,7 +139,7 @@ public class PubSubManager {
 	/**
 	 * 监听全部服务的增加操作，判断是否有订阅方法，如果有，则注册到对应的主是下面
 	 */
-/*	private IServiceListener serviceParseListener = new IServiceListener() {
+  /*  private IServiceListener serviceParseListener = new IServiceListener() {
 		@Override
 		public void serviceChanged(int type, ServiceItem item) {
 			if(type == IServiceListener.SERVICE_ADD) {
@@ -194,7 +207,6 @@ public class PubSubManager {
 				this.dataOp.deleteNode(Config.PubSubDir+"/"+t+"/"+sub);
 			}
 		}
-		
 		srvManager.addListener(serviceAddedRemoveListener);
 	}
 	
@@ -223,11 +235,13 @@ public class PubSubManager {
 			
 			this.notifySubListener(ISubsListener.SUB_REMOVE, sm.getTopic(), sm.getKey(), null);
 		}
-		/*String key = item.serviceName();
+		/*
+		String key = item.serviceName();
 		if(srvs.containsKey(key)) {
 			srvs.remove(key);
 		}
-		registry.removeServiceListener(key, serviceAddedRemoveListener);*/
+		registry.removeServiceListener(key, serviceAddedRemoveListener);
+		*/
 		
 	}
 
@@ -311,7 +325,7 @@ public class PubSubManager {
 		}
 	}
 	
-	public boolean publish(Map<String,Object> context, String topic, String content) {
+	public long publish(Map<String,Object> context, String topic, String content,byte flag) {
 
 		IInternalSubRpc s = this.defaultServer;// this.getServer(context);
 		
@@ -319,29 +333,34 @@ public class PubSubManager {
 		item.setTopic(topic);
 		item.setData(content);
 		item.setContext(context);
-		
+		item.setFlag(flag);
 		return this.publish(item);
 		
 	}
 	
-	public boolean publish(Map<String,Object> context,String topic, byte[] content) {
+	public long publish(Map<String,Object> context,String topic, byte[] content,byte flag) {
 		
 		PSData item = new PSData();
 		item.setTopic(topic);
 		item.setData(content);
 		item.setContext(context);
-		
+		item.setFlag(flag);
 		return this.publish(item);
 	}
 
-	public boolean publish(PSData item) {
+	public long publish(PSData item) {
 		IInternalSubRpc s = this.defaultServer;//this.getServer(item.getContext());
 		if(s == null) {
 			logger.error("No Pubsub server for topic:{}",item.getTopic());
-			return false;
+			return PUB_SERVER_NOT_AVAILABALE;
 		}
 		if(openDebug) {
 			logger.debug("Publish topic: {}, data: {}",item.getTopic(),item.getData());
+		}
+		if(item.getId() <= 0) {
+			//为消息生成唯一ID
+			//大于0时表示客户端已经预设置值
+			item.setId(this.idGenerator.getIntId(PSData.class));
 		}
 		return s.publishData(item);
 	}

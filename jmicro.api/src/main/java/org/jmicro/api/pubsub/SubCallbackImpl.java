@@ -57,7 +57,7 @@ public class SubCallbackImpl implements ISubCallback{
 	public void onMessage(PSData item) {
 		try {
 			m.invoke(this.srvProxy, item);
-		} catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
+		} catch (Throwable e) {
 			throw new CommonException("Fail to send message to [" + mkey.toString()+"]", e);
 		}
 	}

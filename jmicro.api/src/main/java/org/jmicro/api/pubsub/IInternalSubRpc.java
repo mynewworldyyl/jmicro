@@ -30,10 +30,20 @@ public interface IInternalSubRpc {
 	//boolean subcribe(String topic,String srv,String namespace,String version,String method);
 	
 	//boolean unsubcribe(String topic,String srv,String namespace,String version,String method);
+	/**
+	 * 
+	 * @param item
+	 * @return 小于或等于0表示错误状态，此次消息发送失败，需要客户端处理，大于0表示消息消息发送成功，返回值即为消息ID
+	 */
+	long publishData(PSData item);
 	
-	boolean publishData(PSData item);
-	
-	boolean publishString(String topic,String content);
+	/**
+	 * 
+	 * @param topic
+	 * @param content
+	 * @return 小于或等于0表示错误状态，此次消息发送失败，需要客户端处理，大于0表示消息消息发送成功，返回值即为消息ID
+	 */
+	long publishString(String topic,String content);
 	
 	//boolean publish(String topic,byte[] content);
 	

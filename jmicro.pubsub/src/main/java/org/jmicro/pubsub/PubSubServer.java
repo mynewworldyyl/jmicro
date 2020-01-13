@@ -29,6 +29,7 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.jmicro.api.JMicro;
+import org.jmicro.api.JMicroContext;
 import org.jmicro.api.annotation.Cfg;
 import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.Inject;
@@ -37,6 +38,7 @@ import org.jmicro.api.classloader.RpcClassLoader;
 import org.jmicro.api.config.Config;
 import org.jmicro.api.executor.ExecutorConfig;
 import org.jmicro.api.executor.ExecutorFactory;
+import org.jmicro.api.net.Message;
 import org.jmicro.api.objectfactory.IObjectFactory;
 import org.jmicro.api.pubsub.IInternalSubRpc;
 import org.jmicro.api.pubsub.ISubCallback;
@@ -53,6 +55,8 @@ import org.jmicro.common.Constants;
 import org.jmicro.common.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import redis.clients.jedis.JedisPool;
 
 /**
  * @author Yulei Ye
@@ -97,7 +101,12 @@ public class PubSubServer implements IInternalSubRpc{
 	private ServiceManager srvManager;
 	
 	@Inject
+	private JedisPool cache;
+	
+	@Inject
 	private IRegistry registry;
+	
+	private ItemStorage storage;
 	
 	private AtomicBoolean discard = new AtomicBoolean(false);
 	
@@ -146,6 +155,8 @@ public class PubSubServer implements IInternalSubRpc{
 			logger.warn("/PubSubManager/isEnableServer must be true for pubsub server");
 			return;
 		}
+		
+		this.storage = new ItemStorage(of);
 		
 		if(this.maxFailItemCount <=0) {
 			logger.warn("Invalid maxFailItemCount: {}, set to default:{}",this.maxFailItemCount,10000);
@@ -206,7 +217,9 @@ public class PubSubServer implements IInternalSubRpc{
 	
 	public boolean subcribe(String topic,UniqueServiceMethodKey key,Map<String, String> context) {
 		String k = key.toKey(false, false, false);
+		
 		if(callbacks.containsKey(k)) {
+			//服务名,版本,名称空 相同即为同一个服务,只需要注册一次即可
 			logger.warn("{} have been in the callback list",k);
 			return true;
 		}
@@ -230,11 +243,11 @@ public class PubSubServer implements IInternalSubRpc{
 		return true;
 	}
 	
-	public boolean publishString(String topic,String content) {
+	public long publishString(String topic,String content) {
 		if(discard.get()) {
 			//logger.warn("Disgard One:{}",topic);
 			//由发送者处理失败消息
-			return false;
+			return PubSubManager.PUB_SERVER_DISCARD;
 		}
 		
 		PSData item = new PSData();
@@ -243,24 +256,24 @@ public class PubSubServer implements IInternalSubRpc{
 		return this.publishData(item);
 	}
 	
-	public boolean publishData(PSData item) {
+	public long publishData(PSData item) {
 		if(discard.get()) {
 			//logger.warn("Disgard One:{}",item.getTopic());
 			//由发送者处理失败消息
-			return false;
+			return PubSubManager.PUB_SERVER_DISCARD;
 		}
 		try {
 			executor.submit(()->{
 				//在这里失败的消息，服务负责失败重发，最大限度保证消息能送达目标结点
 				doPublish(item);
 			});
-			return true;
+			return item.getId();
 		} catch (RejectedExecutionException e) {
-			//线程对列满了，停指定时间，待消息队列有空位再重新提交
+			//线程对列满了,停指定时间,待消息队列有空位再重新提交
 			discardOneTime();
 			logger.error("",e);
 			//由发送者处理失败消息
-			return false;
+			return PubSubManager.PUB_SERVER_BUSSUY;
 		}
 	}
 	
@@ -285,79 +298,159 @@ public class PubSubServer implements IInternalSubRpc{
 		}*/
 		//synchronized(topic) {
 		//没必要做同步
-		//如果在对主题分发过程中有订阅进来，最多就少接收或多收消息
-		//基于pubsub的应该注意此特性，如果应用接受不了，就不应该使得pubsub,
-		//或者确保在消息发送前注册或删除订阅器，
+		//如果在对主题分发过程中有订阅进来,最多就少接收或多收消息
+		//基于pubsub的应该注意此特性,如果应用接受不了,就不应该使得pubsub,
+		//或者确保在消息发送前注册或取消订阅器，
 		Set<ISubCallback> q = topic2Callbacks.get(topic);
 		if(q == null || q.isEmpty()) {
 			if(openDebug) {
+				//消息被丢弃
 				logger.debug("No subscriber for: {}",item.getTopic());
 			}
+			if(isQueue(item.getFlag())) {
+				//等待消费者上线
+				persist(item);
+			}
 		} else {
-			for(ISubCallback cb : q) {
-				/*if(openDebug) {
-					logger.debug("Publish topic: {}, cb {}",item.getTopic(),cb.info());
-				}*/
-				try {
-					cb.onMessage(item);
-				} catch (Throwable e) {
-					logger.error("doPublish,Fail Item Size["+psitems.size()+"]",e);
-					//需要重发消息
-					if(psitems.size() > maxFailItemCount) {
-						//失败队列满，丢弃消息，确保服务能自动恢复
-						doFailItem(item,psitems.size());
+			
+			if(isQueue(item.getFlag())) {
+				for(ISubCallback cb : q) {
+					/*if(openDebug) {
+						logger.debug("Publish topic: {}, cb {}",item.getTopic(),cb.info());
+					}*/
+					try {
+						cb.onMessage(item);
+						//队列类消息,只要一个并且只有一个消费者成功消费
 						return;
+					} catch (Throwable e) {
+						logger.error("doPublish,Fail Item Size["+psitems.size()+"]",e);
 					}
-					psitems.offer(new SendItem(SendItem.TYPY_RESEND,cb,item));
+				}
+				
+				//需要重发消息
+				if(psitems.size() > maxFailItemCount) {
+					//失败队列满,丢弃消息,确保服务能自动恢复
+					doFailItem(item,psitems.size());
+					persist(item);
+				} else {
+					psitems.offer(new SendItem(SendItem.TYPY_RESEND,null,item));
+				}
+			} else {
+				for(ISubCallback cb : q) {
+					/*if(openDebug) {
+						logger.debug("Publish topic: {}, cb {}",item.getTopic(),cb.info());
+					}*/
+					try {
+						cb.onMessage(item);
+						//最少一个消费者成功消费消息
+					} catch (Throwable e) {
+						logger.error("doPublish,Fail Item Size["+psitems.size()+"]",e);
+						//需要重发消息
+						if(psitems.size() > maxFailItemCount) {
+							//失败队列满,丢弃消息,确保服务能自动恢复
+							doFailItem(item,psitems.size());
+						} else {
+							//重发只能保证最大限度成功,但并不能保证一定成功
+							//只对这个订阅者重发,别的没有失败的订阅者不能重发
+							psitems.offer(new SendItem(SendItem.TYPY_RESEND,cb,item));
+						}
+					}
 				}
 			}
 		}
 		//}
 	}
 	
+	private boolean isQueue(byte flag) {
+		return Message.is(flag, PSData.FLAG_QUEUE);
+	}
+
 	private void doResend() {
 		
-		if(psitems.isEmpty()) {
+		if(psitems.isEmpty() ) {
 			/*if(openDebug) {
 				logger.debug("doResend check empty");
 			}*/
+			
+			Set<String> keys = topic2Callbacks.keySet();
+			for(String k : keys) {
+				long l = 0;
+				if((l = storage.len(k)) > 0) {
+					if(l > 10) {
+						l = 10;
+					}
+					for(;l > 0;) {
+						psitems.addAll(storage.pops(k, l));
+					}
+					
+				}
+			}
+		}
+		
+		if(psitems.isEmpty() ) {
 			return;
 		}
+		
 		if(openDebug) {
 			logger.debug("doResend submit ones, send size:{}",psitems.size());
 		}
 		executor.submit(()->{
-			Set<SendItem> failPsDatas = new HashSet<>();
-			int cnt = 10;
+			
 			for(SendItem si = psitems.poll(); si != null; si = psitems.poll()) {
-				try {
-					si.cb.onMessage(si.item);
-				} catch (Throwable e1) {
-					si.retryCnt++;
-					if(si.retryCnt > 3) {
-						//doFailItem(si.item,psitems.size());
-						logger.error("Retry exceed 3 Item:{},retryCnt:{}",si.item,si.retryCnt);
-					} else {
-						failPsDatas.add(si);
+				
+				if(isQueue(si.item.getFlag())) {
+					Set<ISubCallback> q = topic2Callbacks.get(si.item.getTopic());
+					boolean isSucc = false;
+					for(ISubCallback cb : q) {
+						try {
+							cb.onMessage(si.item);
+							//队列类消息,只要一个并且只有一个消费者成功消费
+							isSucc = true;
+							break;
+						} catch (Throwable e) {
+							logger.error("doPublish,Fail Item topic["+si.item.getTopic()+"]",e);
+						}
+					}
+					
+					//需要重发消息
+					if(!isSucc) {
+						doFailItem(si.item,psitems.size());
+						persist(si);
+					}
+				} else {
+					try {
+						si.cb.onMessage(si.item);
+					} catch (Throwable e) {
+						//失败订阅消息,最多只重发3次
+						si.retryCnt++;
+						if(si.retryCnt > 3) {
+							//doFailItem(si.item,psitems.size());
+							logger.error("Retry exceed 3 Item:{},retryCnt:{}",si.item,si.retryCnt);
+							persistLog(si);
+						}
 					}
 				}
-				cnt--;
-				if(cnt <= 0) {
-					break;
-				}
-			}
-			if(!failPsDatas.isEmpty()) {
-				psitems.addAll(failPsDatas);
-				failPsDatas.clear();
 			}
 		});
-		
 	}
 	
-	private final class SendItem {
-		public static final int TYPY_RESEND = 1;
+    private void persist(PSData item) {
+    	SendItem si = new SendItem(SendItem.TYPY_RESEND,null,item);
+    	persist(si);
+	}
+    
+    private void persist(SendItem item) {
+		this.storage.push(item);
+	}
+
+	private void persistLog(SendItem si) {
 		
-		public ISubCallback cb;
+	}
+
+	static final class SendItem {
+		transient public static final int TYPY_RESEND = 1;
+		
+		transient public ISubCallback cb;
 		public PSData item;
 		public int retryCnt=0;
 		
@@ -514,17 +607,32 @@ public class PubSubServer implements IInternalSubRpc{
 			return false;
 		}
 		
-		ServiceItem si = sis.iterator().next();
+		ServiceItem sitem = null;
+		for(ServiceItem si : sis) {
+			if(si.getKey().getInstanceName().equals(sui.key.getInstanceName())) {
+				sitem = si;
+				break;
+			}
+		}
+		
+		if(sitem == null) {
+			logger.warn("Service Item for classloader server not found {}",k);
+			return false;
+		}
 		
 		Object srv = null;
 		try {
 			PubSubServer.class.getClassLoader().loadClass(sui.key.getUsk().getServiceName());
-			srv = of.getRemoteServie(si,null);
+			srv = of.getRemoteServie(sitem,null);
 		} catch (ClassNotFoundException e) {
 			try {
+				
+				//JMicroContext.get().setParam(Constants.SERVICE_SPECIFY_ITEM_KEY, sitem);
+				JMicroContext.get().setParam(Constants.DIRECT_SERVICE_ITEM, sitem);
+				
 				Class<?> cls = this.cl.loadClass(sui.key.getUsk().getServiceName());
 				if(cls != null) {
-					srv = of.getRemoteServie(si,this.cl);
+					srv = of.getRemoteServie(sitem,this.cl);
 				}
 			} catch (ClassNotFoundException e1) {
 				logger.warn("Service {} not found.{}",k,e1);
@@ -543,10 +651,10 @@ public class PubSubServer implements IInternalSubRpc{
 		
 		//sui.topic = sui.topic.intern();
 		//synchronized(sui.topic) {
-			if(!topic2Callbacks.containsKey(sui.topic)) {
-				topic2Callbacks.put(sui.topic, new HashSet<ISubCallback>());
-			}
-			topic2Callbacks.get(sui.topic).add(cb);
+		if(!topic2Callbacks.containsKey(sui.topic)) {
+			topic2Callbacks.put(sui.topic, new HashSet<ISubCallback>());
+		}
+		topic2Callbacks.get(sui.topic).add(cb);
 		//}
 		
 		if(openDebug) {

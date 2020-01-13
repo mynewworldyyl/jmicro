@@ -3,6 +3,7 @@ package org.jmicro.pubsub.test;
 import java.util.HashMap;
 
 import org.jmicro.api.JMicro;
+import org.jmicro.api.pubsub.PubSubManager;
 import org.jmicro.api.registry.IRegistry;
 import org.jmicro.pubsub.PubSubServer;
 import org.jmicro.test.JMicroBaseTestCase;
@@ -12,7 +13,7 @@ import org.junit.Test;
 
 public class TestPubSubServer extends JMicroBaseTestCase{
 
-	@BeforeClass //
+	@BeforeClass
 	public static void setupTestClass() {
 		of = JMicro.getObjectFactoryAndStart(getArgs());
 		registry = of.get(IRegistry.class);
@@ -37,7 +38,7 @@ public class TestPubSubServer extends JMicroBaseTestCase{
 	
 	@Test
 	public void testPublishString() {
-		Assert.assertTrue(of.get(PubSubServer.class).publishString(TOPIC, "Hello pubsub server"));
+		Assert.assertTrue(PubSubManager.PUB_OK == of.get(PubSubServer.class).publishString(TOPIC, "Hello pubsub server"));
 		this.waitForReady(1);
 	}
 	
@@ -45,7 +46,7 @@ public class TestPubSubServer extends JMicroBaseTestCase{
 	public void testPublishString100() {
 		for(int i = 0; i < 100; i++ ) {
 			this.waitForReady(0.2F);
-			Assert.assertTrue(of.get(PubSubServer.class).publishString(TOPIC, "Hello pubsub server"+i));
+			Assert.assertTrue(PubSubManager.PUB_OK == of.get(PubSubServer.class).publishString(TOPIC, "Hello pubsub server"+i));
 		}
 	}
 	

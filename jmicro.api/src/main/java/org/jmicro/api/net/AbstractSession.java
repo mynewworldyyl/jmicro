@@ -73,6 +73,9 @@ public abstract class AbstractSession implements ISession{
 	
 	private Worker worker = new Worker();
 	
+	private String remoteAddr;
+	private String localAddr;
+	
 	private class Worker extends Thread {
 		public void run() {
 			//doWork();
@@ -92,7 +95,11 @@ public abstract class AbstractSession implements ISession{
 	
 	public void init() {
 		InetSocketAddress ia = this.getRemoteAddress();
+		remoteAddr = ia.getHostName();
+		localAddr = this.getLocalAddress().getHostName();
+		
 		this.counter = new ServiceCounter(ia.getHostString()+":"+ia.getPort(),STATIS_TYPES,30,30,TimeUnit.SECONDS);
+		
 	}
 	
 	private void doWork() {
@@ -364,7 +371,7 @@ public abstract class AbstractSession implements ISession{
 
 	@Override
 	public String remoteHost() {
-		return this.getRemoteAddress().getHostName();
+		return this.remoteAddr;
 	}
 
 	@Override
@@ -374,7 +381,7 @@ public abstract class AbstractSession implements ISession{
 
 	@Override
 	public String localHost() {
-		return this.getLocalAddress().getHostName();
+		return this.localAddr;
 	}
 
 	@Override
