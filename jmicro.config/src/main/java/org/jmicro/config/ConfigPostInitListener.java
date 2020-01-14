@@ -69,9 +69,9 @@ public class ConfigPostInitListener extends PostInitListenerAdapter {
 		 List<Field> fields = new ArrayList<>();
 		 Utils.getIns().getFields(fields, cls);
 		 
-		/* if(cls.getName().equals("org.jmicro.api.pubsub.PubSubManager")) {
+		if(cls.getName().equals("org.jmicro.main.monitor.Log2DbMonitor")) {
 			 logger.debug("preInit");
-		 }*/
+		 }
 
 		 for(Field f : fields){
 			if(!f.isAnnotationPresent(Cfg.class)){

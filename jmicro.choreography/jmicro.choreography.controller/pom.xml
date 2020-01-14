@@ -24,10 +24,6 @@
         </dependency>
          <dependency>
 			 <groupId>org.jmicro</groupId>
-			 <artifactId>jmicro.registry.zk</artifactId>
-        </dependency>
-         <dependency>
-			 <groupId>org.jmicro</groupId>
 			 <artifactId>jmicro.objfactory.simple</artifactId>
         </dependency>
         <dependency>

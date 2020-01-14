@@ -5,19 +5,15 @@
 		 <artifactId>jmicro.parent</artifactId>
 		 <version>0.0.1-SNAPSHOT</version>
     </parent>
-    <artifactId>jmicro.gateway</artifactId>
+    <artifactId>jmicro.submiter</artifactId>
     <packaging>jar</packaging>
     <name>${project.artifactId}</name>
-    <description>jmicro gateway Module</description>
-	<dependencies>
-		<dependency>
+    <description>monitor data submiter</description>
+    <dependencies>
+        <dependency>
 			 <groupId>org.jmicro</groupId>
 			 <artifactId>jmicro.api</artifactId>
-	    </dependency>
-	     <dependency>
-			 <groupId>org.jmicro</groupId>
-			 <artifactId>jmicro.redis</artifactId>
-	    </dependency>
-	</dependencies>
+        </dependency>
+    </dependencies>
    
 </project>

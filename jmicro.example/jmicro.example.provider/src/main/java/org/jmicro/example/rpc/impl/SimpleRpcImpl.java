@@ -33,7 +33,6 @@ public class SimpleRpcImpl implements ISimpleRpc {
 		if(SF.isLoggable(true,MonitorConstant.LOG_DEBUG)) {
 			SF.doBussinessLog(MonitorConstant.LOG_DEBUG,SimpleRpcImpl.class,null, name);
 		}
-		
 		//System.out.println("Server hello: " +name);
 		return "Server say hello to: "+name;
 	}

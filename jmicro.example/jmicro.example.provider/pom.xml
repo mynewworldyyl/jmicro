@@ -14,7 +14,7 @@
 	<dependencies>
 		<dependency>
 			<groupId>org.jmicro</groupId>
-			<artifactId>jmicro.all</artifactId>
+			<artifactId>jmicro.build</artifactId>
 		</dependency>
 		<dependency>
 			<groupId>org.jmicro</groupId>
@@ -42,6 +42,13 @@
     <artifactId>kryo</artifactId>
     <version>4.0.2</version>
 	</dependency>
+	
+	<dependency>
+			<groupId>org.jmicro</groupId>
+			<artifactId>jmicro.test</artifactId>
+			<scope>test</scope>
+		</dependency>
+		
 	</dependencies>
 	
 	

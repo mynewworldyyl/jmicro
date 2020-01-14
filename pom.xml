@@ -107,22 +107,19 @@
 		<module>jmicro.transport</module>
 		<module>jmicro.config</module>
 		<module>jmicro.objfactory</module>
-		<module>jmicro.registry</module>
 		<module>jmicro.limit</module>
-		<module>jmicro.monitor</module>
 		<module>jmicro.gateway</module>
 		<module>jmicro.gateway.client</module>
-		<module>jmicro.pubsub</module>
 		<module>jmicro.redis</module>
 		<module>jmicro.etcd</module>
+		<module>jmicro.submiter</module>
 		<module>jmicro.classloader</module>
-		<module>jmicro.choreography</module>
-		<module>jmicro.breaker</module>
+		<!-- <module>jmicro.choreography</module> -->
 		<module>jmicro.test</module>
 		<module>jmicro.ext</module>
-		<module>jmicro.build</module>
 		<module>jmicro.agent</module>
-		<module>jmicro.all</module>
+		<module>jmicro.main</module>
+		<module>jmicro.build</module>
     </modules>
 
     <dependencyManagement>
@@ -135,6 +132,16 @@
              <dependency>
                  <groupId>org.jmicro</groupId>
 				 <artifactId>jmicro.api</artifactId>
+				 <version>${jmicro.version}</version>
+            </dependency>
+             <dependency>
+                 <groupId>org.jmicro</groupId>
+				 <artifactId>jmicro.main.monitor.log</artifactId>
+				 <version>${jmicro.version}</version>
+            </dependency>
+            <dependency>
+                 <groupId>org.jmicro</groupId>
+				 <artifactId>jmicro.build</artifactId>
 				 <version>${jmicro.version}</version>
             </dependency>
 			 <dependency>
@@ -187,11 +194,7 @@
 			 <artifactId>jmicro.gateway.client</artifactId>
 			 <version>${jmicro.version}</version>
         	</dependency>
-	         <dependency>
-				 <groupId>org.jmicro</groupId>
-				 <artifactId>jmicro.transport.nio</artifactId>
-				  <version>${jmicro.version}</version>
-	        </dependency>
+
 <!-- 	         <dependency>
 				 <groupId>org.jmicro</groupId>
 				 <artifactId>jmicro.transport.mina</artifactId>
@@ -232,16 +235,6 @@
 				 <artifactId>jmicro.limit</artifactId>
 				 <version>${jmicro.version}</version>
         	</dependency>
-        	<dependency>
-			 <groupId>org.jmicro</groupId>
-			 <artifactId>jmicro.monitor.memory</artifactId>
-			 <version>${jmicro.version}</version>
-			 </dependency>
-			 <dependency>
-			 <groupId>org.jmicro</groupId>
-			 <artifactId>jmicro.monitor.subermemory</artifactId>
-			 <version>${jmicro.version}</version>
-			 </dependency>
 			<dependency>
 			 <groupId>org.jmicro</groupId>
 			 <artifactId>jmicro.monitor.dashboard</artifactId>
@@ -249,14 +242,9 @@
 			 </dependency>
 			 <dependency>
 			 <groupId>org.jmicro</groupId>
-			 <artifactId>jmicro.monitor.submiter</artifactId>
+			 <artifactId>jmicro.submiter</artifactId>
 			 <version>${jmicro.version}</version>
 			 </dependency>
-			  <dependency>
-			 <groupId>org.jmicro</groupId>
-			 <artifactId>jmicro.main.monitor.exception</artifactId>
-			  <version>${jmicro.version}</version>
-        	</dependency>
 			  <dependency>
 			 <groupId>org.jmicro</groupId>
 			 <artifactId>jmicro.server</artifactId>
@@ -288,11 +276,7 @@
 				 <artifactId>jmicro.choregraphy.controller</artifactId>
 				  <version>${jmicro.version}</version>
 	        </dependency>
-	         <dependency>
-				 <groupId>org.jmicro</groupId>
-				 <artifactId>jmicro.idgenerator</artifactId>
-				  <version>${jmicro.version}</version>
-	        </dependency>
+
 	        
 	        <dependency>
 				 <groupId>org.jmicro</groupId>
@@ -305,6 +289,13 @@
 				 <artifactId>jmicro.mybatis</artifactId>
 				 <version>${jmicro.version}</version>
 	        </dependency>
+	        
+	        <dependency>
+				 <groupId>org.jmicro</groupId>
+				 <artifactId>jmicro.main.rcptool</artifactId>
+				 <version>${jmicro.version}</version>
+	        </dependency>
+	        
 	        <dependency>
 				 <groupId>org.jmicro</groupId>
 				 <artifactId>jmicro.mongodb</artifactId>

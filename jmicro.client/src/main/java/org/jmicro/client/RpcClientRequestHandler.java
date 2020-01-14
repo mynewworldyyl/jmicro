@@ -145,8 +145,8 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
 		
         do {
         	
-			//此方法可能抛出FusingException
         	if(si == null) {
+        		//此方法可能抛出FusingException
         		si = selector.getService(req.getServiceName(),req.getMethod(),req.getArgs(),req.getNamespace(),
             			req.getVersion(), Constants.TRANSPORT_NETTY);
         	}
@@ -222,7 +222,7 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
         	//JMicroContext.get().setParam(Constants.SERVICE_METHOD_KEY, sm);
     		//JMicroContext.get().setParam(Constants.SERVICE_ITEM_KEY, si);
     		//JMicroContext.setSrvLoggable();
-    		msg.setLoggable(JMicroContext.get().isLoggable(false));
+    		//msg.setLoggable(JMicroContext.get().isLoggable(false));
     	    
     	    IClientSession session = this.sessionManager.getOrConnect(s.getHost(), s.getPort());
     		
@@ -261,7 +261,18 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
     				waitForResponse.remove(req.getRequestId());
     				throw new CommonException(errMsg);
     			}
-    			session.putParam(key,JMicroContext.get().getParam(Constants.CONTEXT_CALLBACK_CLIENT, null));
+    			
+    			Object cb = JMicroContext.get().getParam(Constants.CONTEXT_CALLBACK_CLIENT, null);
+    			if(cb != null) {
+    				session.putParam(key,cb);
+    			} else {
+    				String errMsg = "Failure Callback not found for reqID："+key;
+    				if(SF.isLoggable(this.openDebug,MonitorConstant.LOG_ERROR)) {
+    					SF.doServiceLog(MonitorConstant.LOG_ERROR,TAG,lid,sm,null, errMsg);
+    				}
+    				waitForResponse.remove(req.getRequestId());
+    				throw new CommonException(errMsg);
+    			}
     		}
     		
     		synchronized(req) {

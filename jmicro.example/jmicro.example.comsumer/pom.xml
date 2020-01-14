@@ -17,7 +17,7 @@
 	<dependencies>
 		<dependency>
 			<groupId>org.jmicro</groupId>
-			<artifactId>jmicro.all</artifactId>
+			<artifactId>jmicro.build</artifactId>
 		</dependency>
 		<dependency>
 			<groupId>org.jmicro</groupId>
@@ -46,6 +46,11 @@
 				 <groupId>org.jmicro</groupId>
 				 <artifactId>jmicro.mongodb</artifactId>
 	        </dependency> -->
+	        <dependency>
+			<groupId>org.jmicro</groupId>
+			<artifactId>jmicro.test</artifactId>
+			<scope>test</scope>
+		</dependency>
 	</dependencies>
 
 	<build>

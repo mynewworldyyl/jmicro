@@ -7,7 +7,7 @@
 		<artifactId>jmicro.parent</artifactId>
 		<version>0.0.1-SNAPSHOT</version>
 	</parent>
-	<artifactId>jmicro.all</artifactId>
+	<artifactId>jmicro.build</artifactId>
 	<packaging>jar</packaging>
 	<name>${project.artifactId}</name>
 	<description>build Module</description>
@@ -70,10 +70,7 @@
 			<groupId>org.jmicro</groupId>
 			<artifactId>jmicro.transport.netty.server</artifactId>
 		</dependency>
-		<dependency>
-			<groupId>org.jmicro</groupId>
-			<artifactId>jmicro.registry.zk</artifactId>
-		</dependency>
+		
 		<dependency>
 			<groupId>org.jmicro</groupId>
 			<artifactId>jmicro.objfactory.simple</artifactId>
@@ -86,21 +83,10 @@
 			<groupId>org.jmicro</groupId>
 			<artifactId>jmicro.limit</artifactId>
 		</dependency>
-		<!-- <dependency> <groupId>org.jmicro</groupId> <artifactId>jmicro.monitor.memory</artifactId> 
-			</dependency> <dependency> <groupId>org.jmicro</groupId> <artifactId>jmicro.monitor.subermemory</artifactId> 
-			</dependency> -->
-		<!-- <dependency>
-			<groupId>org.jmicro</groupId>
-			<artifactId>jmicro.monitor.dashboard</artifactId>
-		</dependency> -->
 		<dependency>
 			<groupId>org.jmicro</groupId>
-			<artifactId>jmicro.monitor.submiter</artifactId>
+			<artifactId>jmicro.submiter</artifactId>
 		</dependency>
-		<!-- <dependency>
-			<groupId>org.jmicro</groupId>
-			<artifactId>jmicro.main.monitor.exception</artifactId>
-		</dependency> -->
 		<dependency>
 			<groupId>org.jmicro</groupId>
 			<artifactId>jmicro.server</artifactId>
@@ -162,14 +148,14 @@
 									<!-- <include>org.jmicro:jmicro.gateway.client</include> -->
 									<include>org.jmicro:jmicro.transport.netty.client</include>
 									<include>org.jmicro:jmicro.transport.netty.server</include>
-									<include>org.jmicro:jmicro.registry.zk</include>
+									<!-- <include>org.jmicro:jmicro.registry.zk</include> -->
 									<include>org.jmicro:jmicro.objfactory.simple</include>
 									<include>org.jmicro:jmicro.config</include>
 									<include>org.jmicro:jmicro.limit</include>
-									<include>org.jmicro:jmicro.monitor.memory</include>
-									<include>org.jmicro:jmicro.monitor.subermemory</include>
+									<!-- <include>org.jmicro:jmicro.monitor.memory</include> -->
+									<!-- <include>org.jmicro:jmicro.monitor.subermemory</include> -->
 									<!-- <include>org.jmicro:jmicro.monitor.dashboard</include> -->
-									<include>org.jmicro:jmicro.monitor.submiter</include>
+									<include>org.jmicro:jmicro.submiter</include>
 									<!-- <include>org.jmicro:jmicro.choregraphy.agent</include>
 									<include>org.jmicro:jmicro.choregraphy.controller</include> -->
 									<include>org.jmicro:jmicro.test</include>

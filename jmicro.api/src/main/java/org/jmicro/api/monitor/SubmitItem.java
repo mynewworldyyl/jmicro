@@ -18,6 +18,7 @@ package org.jmicro.api.monitor;
 
 import java.util.Arrays;
 
+import org.jmicro.api.annotation.SO;
 import org.jmicro.api.net.IReq;
 import org.jmicro.api.net.IResp;
 import org.jmicro.api.net.Message;
@@ -27,6 +28,7 @@ import org.jmicro.api.registry.ServiceMethod;
  * @author Yulei Ye
  * @date 2018年10月5日-下午12:50:47
  */
+@SO
 public final class SubmitItem{
 
 	private byte level = MonitorConstant.LOG_DEBUG;

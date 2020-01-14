@@ -19,6 +19,7 @@ package org.jmicro.api.registry;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 
+import org.jmicro.api.annotation.SO;
 import org.jmicro.common.CommonException;
 import org.jmicro.common.Constants;
 
@@ -27,6 +28,7 @@ import org.jmicro.common.Constants;
  * @author Yulei Ye
  * @date 2018年10月4日-下午12:04:38
  */
+@SO
 public final class ServiceMethod {
 	
 	public transient ServiceItem _serviceItem;

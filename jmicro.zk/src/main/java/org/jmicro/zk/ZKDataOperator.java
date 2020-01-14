@@ -75,6 +75,7 @@ public class ZKDataOperator implements IDataOperator{
 	
 	//only use for testing
 	private static ZKDataOperator ins = new ZKDataOperator();
+	
 	public static ZKDataOperator getIns() {return ins;}
 	
 	private boolean isInit = false;

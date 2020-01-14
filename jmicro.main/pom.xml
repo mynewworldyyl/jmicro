@@ -5,19 +5,17 @@
 		 <artifactId>jmicro.parent</artifactId>
 		 <version>0.0.1-SNAPSHOT</version>
     </parent>
-    <artifactId>jmicro.gateway</artifactId>
-    <packaging>jar</packaging>
+    <artifactId>jmicro.main</artifactId>
+    <packaging>pom</packaging>
     <name>${project.artifactId}</name>
-    <description>jmicro gateway Module</description>
-	<dependencies>
-		<dependency>
-			 <groupId>org.jmicro</groupId>
-			 <artifactId>jmicro.api</artifactId>
-	    </dependency>
-	     <dependency>
-			 <groupId>org.jmicro</groupId>
-			 <artifactId>jmicro.redis</artifactId>
-	    </dependency>
-	</dependencies>
-   
+    <description>jmicro main</description>
+    <properties>
+        <skip_maven_deploy>false</skip_maven_deploy>
+    </properties>
+    <modules>        
+        <module>jmicro.main.rcptool</module>
+		<module>jmicro.main.monitor.log</module>
+		<module>jmicro.pubsub</module>
+		<module>jmicro.breaker</module>		
+    </modules>
 </project>

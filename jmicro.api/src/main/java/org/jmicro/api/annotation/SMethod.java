@@ -103,6 +103,8 @@ public @interface SMethod {
 	public String degradeRule() default "1M [7FFFFEF4,7FFFFEF2] 10%";
 	
 	//0: need response, 1:no need response
+	//不需要响应并不等于不需要返回值，但是不需要响应肯定没有返回值，有返回值肯定需要响应
+	//不需要响应说明RPC接口调用不需要确保一定成功，允许在极端情况下失败，比如日志提交，消息订阅发送等场景，以提升系统吞吐量
 	public boolean needResponse() default true;
 	
 	// StringUtils.isEmpty()=true: not stream, false: stream, one request will got more response

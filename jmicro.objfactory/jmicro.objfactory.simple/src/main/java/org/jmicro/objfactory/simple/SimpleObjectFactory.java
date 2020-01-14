@@ -38,7 +38,6 @@ import org.jmicro.api.JMicro;
 import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.Inject;
 import org.jmicro.api.annotation.JMethod;
-import org.jmicro.api.annotation.ObjFactory;
 import org.jmicro.api.annotation.PostListener;
 import org.jmicro.api.annotation.Reference;
 import org.jmicro.api.annotation.Service;
@@ -309,7 +308,9 @@ public class SimpleObjectFactory implements IObjectFactory {
 
 	public synchronized void start(IDataOperator dataOperator){
 		if(!isInit.compareAndSet(0, 1)){
+			//防止多线程同时进来多次实例化相同实例
 			if(isInit.get() == 1) {
+				//前面线程正在做初始化，等待其初始化完成后直接返回即可
 				synchronized(isInit) {
 					try {
 						isInit.wait();
@@ -320,48 +321,231 @@ public class SimpleObjectFactory implements IObjectFactory {
 			return;
 		}
 		
-		Set<Class<?>> listeners = ClassScannerUtils.getIns().loadClassByClass(IPostInitListener.class);
-		if(listeners != null && !listeners.isEmpty()) {
-			for(Class<?> c : listeners){
-				PostListener comAnno = c.getAnnotation(PostListener.class);
-				int mod = c.getModifiers();
-				if((comAnno != null && !comAnno.value())|| Modifier.isAbstract(mod) 
-						|| Modifier.isInterface(mod) || !Modifier.isPublic(mod)
-						){
-					continue;
-				}
-				
-				try {
-					IPostInitListener l = (IPostInitListener)c.newInstance();
-					this.addPostListener(l);
-				} catch (InstantiationException | IllegalAccessException e) {
-					logger.error("Create IPostInitListener Error",e);
-				}
-			}
-		}
-		
-		boolean serverOnly = Config.isServerOnly();
-		
-		boolean clientOnly = Config.isClientOnly();
+		//查找全部对像初始化监听器
+		createPostListener();
 		
 		/**
 		 * 意味着此两个参数只能在命令行或环境变量中做配置，不能在ZK中配置，因为此时ZK还没启动，此配置正是ZK的启动配置
+		 * 后其可以使用其他实现，如ETCD等
 		 */
-		String dataOperatorName = Config.getCommandParam(Constants.DATA_OPERATOR, String.class, Constants.DEFAULT_DATA_OPERATOR);
-		String registryName = Config.getCommandParam(Constants.REGISTRY_KEY, String.class, Constants.DEFAULT_REGISTRY);
-	
-		IRegistry registry = null;
-		IDataOperator dop = dataOperator;
-		ServiceManager srvManager = null;
+		//String dataOperatorName = Config.getCommandParam(Constants.DATA_OPERATOR, String.class, Constants.DEFAULT_DATA_OPERATOR);
 		
-		this.cacheObj(dop.getClass(), dop, true);
-		dop.objectFactoryStarted(this);
-		
-		/*Set<IServer> servers = new HashSet<>();
-		ServiceLoader sl = null;*/
+		this.cacheObj(dataOperator.getClass(), dataOperator, true);
+		//IDataOperator注册其内部实例到ObjectFactory
+		dataOperator.objectFactoryStarted(this);
 		
 		Set<Object> systemObjs = new HashSet<>();
 		
+		createComponentOrService(dataOperator,systemObjs);
+		
+		clientServiceProxyManager = new ClientServiceProxyManager(this);
+		clientServiceProxyManager.init();
+		
+		//取得全部工厂监听器
+		Set<IFactoryListener> postL = this.getByParent(IFactoryListener.class);
+		postReadyListeners.addAll(postL);
+		postReadyListeners.sort(new Comparator<IFactoryListener>(){
+			@Override
+			public int compare(IFactoryListener o1, IFactoryListener o2) {
+				return o1.runLevel() > o2.runLevel()?1:o1.runLevel() == o2.runLevel()?0:-1;
+			}
+		});
+		
+		//对像工厂初始化前监听器
+		for(IFactoryListener lis : this.postReadyListeners){
+			//在这里可以注册实例
+			lis.preInit(this);;
+		}
+		
+		List<Object> lobjs = new ArrayList<>();
+		lobjs.addAll(this.objs.values());
+		//根据对像定义level级别排序，level值越小，初始化及别越高，就也就越优先初始化
+		lobjs.sort(new Comparator<Object>(){
+			@Override
+			public int compare(Object o1, Object o2) {
+				Component c1 = ProxyObject.getTargetCls(o1.getClass()).getAnnotation(Component.class);
+				Component c2 = ProxyObject.getTargetCls(o2.getClass()).getAnnotation(Component.class);
+				if(c1 == null && c2 == null) {
+					return 0;
+				}else if(c1 == null && c2 != null) {
+					return -1;
+				}else if(c1 != null && c2 == null) {
+					return 1;
+				}else {
+					return c1.level() > c2.level()?1:c1.level() == c2.level()?0:-1;
+				}
+			}
+		});
+		
+		//将自己也保存到实例列表里面
+		this.cacheObj(this.getClass(), this, true);
+		
+		Config cfg = (Config)objs.get(Config.class);
+		IRegistry registry = (IRegistry)this.get(IRegistry.class);
+		
+		notifyPreInitPostListener(registry,cfg);
+		
+		if(!lobjs.isEmpty()){
+			
+			//组件开始初始化,在此注入Cfg配置，enable字段也在此注入
+			preInitPostListener0(lobjs,cfg,systemObjs);
+			
+			for(Iterator<Object> ite = lobjs.iterator() ;ite.hasNext();){
+				Object o = ite.next();
+				if(!this.isEnable(o)) {
+					//删除enable=false的组合
+					logger.info("disable component: "+o.getClass().getName());
+					ite.remove();
+				}
+			}
+			
+			//依赖注入
+			injectDepependencies0(lobjs,cfg,systemObjs);
+			
+			//调用各组件的init方法
+			doInit0(lobjs,cfg,systemObjs);
+			
+			//注入服务引用
+			processReference0(lobjs,cfg,systemObjs);
+			
+			//组件初始化完成
+			notifyAfterInitPostListener0(lobjs,cfg,systemObjs);
+		}
+		
+		ClassLoader oldCl = Thread.currentThread().getContextClassLoader();
+		
+		//RpcClassloaderClient在preinit时注入
+		RpcClassLoader cl = this.get(RpcClassLoader.class);
+		if(cl != null) {
+			Thread.currentThread().setContextClassLoader(cl);
+		}
+		
+		//对像工厂初始化后监听器
+		for(IFactoryListener lis : this.postReadyListeners){
+			lis.afterInit(this);
+		}
+		
+		if(oldCl != null) {
+			Thread.currentThread().setContextClassLoader(oldCl);
+		}
+		
+		fromLocal = false;
+		
+		isInit.set(2);
+		synchronized(isInit){
+			isInit.notifyAll();
+		}
+	}
+	
+	private void notifyAfterInitPostListener0(List<Object> lobjs, Config cfg, Set<Object> systemObjs) {
+		Set<Object> haveInits = new HashSet<>();
+		for(int i =0; i < lobjs.size(); i++){
+			Object o = lobjs.get(i);
+			
+			 if(o instanceof ProxyObject){
+	    		continue;
+	    	 }
+			
+			if(systemObjs.contains(o) || haveInits.contains(o)) {
+				continue;
+			}
+			haveInits.add(o);
+			//通知初始化完成
+			notifyAfterInitPostListener(o,cfg);
+		}
+	}
+
+	private void processReference0(List<Object> lobjs, Config cfg, Set<Object> systemObjs) {
+		Set<Object> haveInits = new HashSet<>();
+		for(int i =0; i < lobjs.size(); i++){
+			Object o = lobjs.get(i);
+			
+			 if(o instanceof ProxyObject){
+	    		continue;
+	    	 }
+			
+			if(systemObjs.contains(o) || haveInits.contains(o)) {
+				continue;
+			}
+			haveInits.add(o);
+			//通知初始化完成
+			processReference(o);
+		}
+		
+	}
+
+	private void doInit0(List<Object> lobjs, Config cfg, Set<Object> systemObjs) {
+		Set<Object> haveInits = new HashSet<>();
+		for(int i =0; i < lobjs.size(); i++){
+			Object o = lobjs.get(i);
+			
+			 if(o instanceof ProxyObject){
+	    		continue;
+	    	 }
+			 
+			if(systemObjs.contains(o) || haveInits.contains(o)) {
+				continue;
+			}
+			haveInits.add(o);
+			doInit(o);
+		}
+		
+	}
+
+	private void injectDepependencies0(List<Object> lobjs, Config cfg, Set<Object> systemObjs) {
+		Set<Object> haveInits = new HashSet<>();
+		for(int i =0; i < lobjs.size(); i++){
+			Object o = lobjs.get(i);
+			
+			 if(o instanceof ProxyObject){
+	    		continue;
+	    	 }
+			
+			if(systemObjs.contains(o) || haveInits.contains(o)) {
+				continue;
+			}
+			
+			haveInits.add(o);
+			injectDepependencies(o);
+		}
+		
+	}
+
+	private void preInitPostListener0(List<Object> lobjs, Config cfg,Set<Object> systemObjs) {
+		Set<Object> haveInits = new HashSet<>();
+		
+		for(int i =0; i < lobjs.size(); i++){
+			Object obj = lobjs.get(i);
+			//System.out.println(obj.getClass().getName());
+			
+			 if(obj instanceof ProxyObject){
+	    		continue;
+	    	 }
+			 
+			if(systemObjs.contains(obj) ||  haveInits.contains(obj)) {
+				continue;
+			}
+			haveInits.add(obj);
+			//只要在初始化前注入配置信息
+			notifyPreInitPostListener(obj,cfg);
+		}
+		
+	}
+
+	private void createComponentOrService(IDataOperator dop,Set<Object> systemObjs) {
+		
+		//是否只启动服务端实例，命令行或环境变量中做配置
+		boolean serverOnly = Config.isServerOnly();
+				
+		//是否只启动客户端实例，命令行或环境变量中做配置
+		boolean clientOnly = Config.isClientOnly();
+		
+		String registryName = Config.getCommandParam(Constants.REGISTRY_KEY, String.class, Constants.DEFAULT_REGISTRY);
+		
+		IRegistry registry = null;
+		
+		ServiceManager srvManager = null;
+				
 		Set<Class<?>> clses = ClassScannerUtils.getIns().getComponentClass();
 		if(clses != null && !clses.isEmpty()) {
 			for(Class<?> c : clses){
@@ -397,14 +581,14 @@ public class SimpleObjectFactory implements IObjectFactory {
 				}
 				this.cacheObj(c, obj, true);
 				
-				if(IDataOperator.class.isAssignableFrom(c) && dataOperatorName.equals(cann.value())){
+				/*if(IDataOperator.class.isAssignableFrom(c) && dataOperatorName.equals(cann.value())){
 					if(dop == null) {
 						dop = (IDataOperator)obj;
 					}else {
 						throw new CommonException("More than one [" +dataOperatorName+"] to be found ["+c.getName()+", "+dop.getClass().getName()+"]" );
 					}
 					systemObjs.add(dop);
-				}
+				}*/
 				
 				if(ServiceManager.class == c) {
 					if(srvManager == null) {
@@ -426,13 +610,9 @@ public class SimpleObjectFactory implements IObjectFactory {
 			}
 		}
 		
-		if(dop == null){
-			throw new CommonException("IDataOperator with name :"+dataOperatorName +" not found!");
+		if(registry == null){
+			throw new CommonException("IRegistry with name :"+registryName +" not found!");
 		}
-		
-		//this.cacheObj(IObjectFactory.class, this, true);
-		
-		//dop.init();
 		
 		Config cfg = (Config)objs.get(Config.class);
 		//初始化配置目录
@@ -442,10 +622,6 @@ public class SimpleObjectFactory implements IObjectFactory {
 		//加载配置，并调用init0方法做初始化
 		cfg.loadConfig(configLoaders);
 		
-		if(registry == null){
-			throw new CommonException("IRegistry with name :"+registryName +" not found!");
-		}
-		
 		srvManager.setDataOperator(dop);
 		srvManager.init();
 		
@@ -453,197 +629,30 @@ public class SimpleObjectFactory implements IObjectFactory {
 		registry.setSrvManager(srvManager);
 		registry.init();
 		
-		/*sl.setRegistry(registry);
-		sl.init();*/
-		
-		clientServiceProxyManager = new ClientServiceProxyManager(this);
-		clientServiceProxyManager.init();
-		
-		//取得全部工厂监听器
-		Set<IFactoryListener> postL = this.getByParent(IFactoryListener.class);
-		postReadyListeners.addAll(postL);
-		postReadyListeners.sort(new Comparator<IFactoryListener>(){
-			@Override
-			public int compare(IFactoryListener o1, IFactoryListener o2) {
-				return o1.runLevel() > o2.runLevel()?1:o1.runLevel() == o2.runLevel()?0:-1;
-			}
-		});
-		
-		//初始化前监听器
-		for(IFactoryListener lis : this.postReadyListeners){
-			//在这里可以注册实例
-			lis.preInit(this);;
-		}
-		
-		List<Object> l = new ArrayList<>();
-		l.addAll(this.objs.values());
-		l.sort(new Comparator<Object>(){
-			@Override
-			public int compare(Object o1, Object o2) {
-				Component c1 = ProxyObject.getTargetCls(o1.getClass()).getAnnotation(Component.class);
-				Component c2 = ProxyObject.getTargetCls(o2.getClass()).getAnnotation(Component.class);
-				if(c1 == null && c2 == null) {
-					return 0;
-				}else if(c1 == null && c2 != null) {
-					return -1;
-				}else if(c1 != null && c2 == null) {
-					return 1;
-				}else {
-					return c1.level() > c2.level()?1:c1.level() == c2.level()?0:-1;
-				}
-			}
-		});
-		
-		this.cacheObj(this.getClass(), this, true);
-		
-		notifyPreInitPostListener(registry,cfg);
-		
-		Set<Object> haveInits = new HashSet<>();
-		
-		if(!l.isEmpty()){
-			
-			for(int i =0; i < l.size(); i++){
-				Object o = l.get(i);
-				
-				 if(o instanceof ProxyObject){
-		    		continue;
-		    	 }
-				 
-				/*if(IIdServer.class.isInstance(o)) {
-					 //此代码仅用于开发测试，正式代码中应该注掉
-					 //用于测试具体某个组件的配置初始化
-					 logger.debug(o.toString());
-				 }*/
-				
-				if(systemObjs.contains(o) ||  haveInits.contains(o)) {
-					continue;
-				}
-				haveInits.add(o);
-				//只要在初始化前注入配置信息
-				notifyPreInitPostListener(o,cfg);
-			}
-			
-			haveInits.clear();
-			
-			//依赖注入
-			for(int i =0; i < l.size(); i++){
-				Object o = l.get(i);
-				
-				 if(o instanceof ProxyObject){
-		    		continue;
-		    	 }
-				 
-				/*if(IIdServer.class.isInstance(o)) {
-					 //此代码仅用于开发测试，正式代码中应该注掉
-					 //用于测试具体某个组件的配置初始化
-					 logger.debug(o.toString());
-				 }*/
-				
-				if(systemObjs.contains(o) || haveInits.contains(o) || !isEnable(o)) {
+	}
+
+	private void createPostListener() {
+		Set<Class<?>> listeners = ClassScannerUtils.getIns().loadClassByClass(IPostInitListener.class);
+		if(listeners != null && !listeners.isEmpty()) {
+			for(Class<?> c : listeners){
+				PostListener comAnno = c.getAnnotation(PostListener.class);
+				int mod = c.getModifiers();
+				if((comAnno != null && !comAnno.value())|| Modifier.isAbstract(mod) 
+						|| Modifier.isInterface(mod) || !Modifier.isPublic(mod)
+						){
 					continue;
 				}
 				
-				haveInits.add(o);
-				injectDepependencies(o);
-				//doAfterCreate(o,cfg);
-			}
-			
-			haveInits.clear();
-			
-			for(int i =0; i < l.size(); i++){
-				Object o = l.get(i);
-				
-				 if(o instanceof ProxyObject){
-		    		continue;
-		    	 }
-				 
-				/*if(IIdServer.class.isInstance(o)) {
-					 //此代码仅用于开发测试，正式代码中应该注掉
-					 //用于测试具体某个组件的配置初始化
-					 logger.debug(o.toString());
-				 }*/
-				
-				if(systemObjs.contains(o) || haveInits.contains(o) || !isEnable(o)) {
-					continue;
+				try {
+					IPostInitListener l = (IPostInitListener)c.newInstance();
+					this.addPostListener(l);
+				} catch (InstantiationException | IllegalAccessException e) {
+					logger.error("Create IPostInitListener Error",e);
 				}
-				haveInits.add(o);
-				//调用各组件的init方法
-				doInit(o);
 			}
-			
-			haveInits.clear();
-			for(int i =0; i < l.size(); i++){
-				Object o = l.get(i);
-				
-				 if(o instanceof ProxyObject){
-		    		continue;
-		    	 }
-				 
-				/*if(IIdServer.class.isInstance(o)) {
-					 //此代码仅用于开发测试，正式代码中应该注掉
-					 //用于测试具体某个组件的配置初始化
-					 logger.debug(o.toString());
-				 }*/
-				
-				if(systemObjs.contains(o) || haveInits.contains(o) || !isEnable(o)) {
-					continue;
-				}
-				haveInits.add(o);
-				//通知初始化完成
-				processReference(o);
-			}
-			
-			haveInits.clear();
-			for(int i =0; i < l.size(); i++){
-				Object o = l.get(i);
-				
-				 if(o instanceof ProxyObject){
-		    		continue;
-		    	 }
-				 
-				/*if(IIdServer.class.isInstance(o)) {
-					 //此代码仅用于开发测试，正式代码中应该注掉
-					 //用于测试具体某个组件的配置初始化
-					 logger.debug(o.toString());
-				 }*/
-				
-				if(systemObjs.contains(o) || haveInits.contains(o) || !isEnable(o)) {
-					continue;
-				}
-				haveInits.add(o);
-				//通知初始化完成
-				notifyAfterInitPostListener(o,cfg);
-			}
-			haveInits.clear();
-			
-		}
-		
-		haveInits = null;
-		
-		ClassLoader oldCl = Thread.currentThread().getContextClassLoader();
-		
-		//RpcClassloaderClient在preinit时注入
-		RpcClassLoader cl = this.get(RpcClassLoader.class);
-		if(cl != null) {
-			Thread.currentThread().setContextClassLoader(cl);
-		}
-		
-		for(IFactoryListener lis : this.postReadyListeners){
-			lis.afterInit(this);
-		}
-		
-		if(oldCl != null) {
-			Thread.currentThread().setContextClassLoader(oldCl);
-		}
-		
-		fromLocal = false;
-		
-		isInit.set(2);
-		synchronized(isInit){
-			isInit.notifyAll();
 		}
 	}
-	
+
 	private boolean isEnable(Object o) {
 		if(o == null) {
 			return false;
@@ -651,21 +660,27 @@ public class SimpleObjectFactory implements IObjectFactory {
 		
 		try {
 			Method m = o.getClass().getMethod( "isEnable", new Class<?>[0]);
-			return (Boolean)m.invoke(o, new Object[0]);
+			if(m != null) {
+				return (Boolean)m.invoke(o, new Object[0]);
+			}
+			
 		} catch (NoSuchMethodException | SecurityException | IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
 			try {
-				Method m = o.getClass().getMethod( "isEnable", new Class<?>[0]);
+				Method m = o.getClass().getMethod("isEnable", new Class<?>[0]);
 				return (Boolean)m.invoke(o, new Object[0]);
 			} catch (NoSuchMethodException | SecurityException | IllegalAccessException | IllegalArgumentException | InvocationTargetException e1) {
 				try {
 					Field f = o.getClass().getField("enable");
-					boolean acc = f.isAccessible();
-					if(!acc) {
-						f.setAccessible(true);
+					if(f != null) {
+						boolean acc = f.isAccessible();
+						if(!acc) {
+							f.setAccessible(true);
+						}
+						Boolean v = f.getBoolean(o);
+						f.setAccessible(acc);
+						return v;
 					}
-					Boolean v = f.getBoolean(o);
-					f.setAccessible(acc);
-					return v;
+					
 				} catch (NoSuchFieldException | SecurityException | IllegalArgumentException | IllegalAccessException e2) {
 				}
 			}
@@ -737,7 +752,7 @@ public class SimpleObjectFactory implements IObjectFactory {
 	@Override
 	public void addPostListener(IPostInitListener listener) {
 		for(IPostInitListener l : postListeners){
-			if(l.getClass() == listener.getClass()) return;
+			if(l.getClass() == listener.getClass()) return;//快有相同实例，直接返回
 		}
 		postListeners.add(listener);
 	}

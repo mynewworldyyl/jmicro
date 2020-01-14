@@ -141,6 +141,7 @@ public class SF {
 		//String  method = JMicroContext.get().getParam(org.jmicro.api.JMicroContext.CLIENT_METHOD, null);
 		
 		if("org.jmicro.api.monitor.IMonitorDataSubscriber".equals(srvName)) {
+			//日志提交RPC本身肯定不能通过此方式记录日志，否则进入死循环了
 			//if("onSubmit".equals(method) && "".equals(ns) ) {
 				return false;
 			//}
@@ -151,7 +152,7 @@ public class SF {
 		 if(sm == null) {
 			 return true;
 		 }
-		 
+		 //如果级别大于或等于错误，不管RPC的配置如何，肯定需要日志
 		return (JMicroContext.get().isLoggable(isComOpen) || level >= MonitorConstant.LOG_ERROR) && monitor() != null;
 	}
 	
