@@ -42,23 +42,47 @@ import org.jmicro.api.net.Message;
 import org.jmicro.api.objectfactory.IObjectFactory;
 import org.jmicro.api.pubsub.IInternalSubRpc;
 import org.jmicro.api.pubsub.ISubCallback;
-import org.jmicro.api.pubsub.ISubsListener;
 import org.jmicro.api.pubsub.PSData;
 import org.jmicro.api.pubsub.PubSubManager;
 import org.jmicro.api.pubsub.SubCallbackImpl;
+import org.jmicro.api.raft.IDataOperator;
 import org.jmicro.api.registry.IRegistry;
+import org.jmicro.api.registry.IServiceListener;
 import org.jmicro.api.registry.ServiceItem;
+import org.jmicro.api.registry.ServiceMethod;
 import org.jmicro.api.registry.UniqueServiceMethodKey;
 import org.jmicro.api.service.ServiceManager;
 import org.jmicro.api.timer.TimerTicker;
 import org.jmicro.common.Constants;
 import org.jmicro.common.Utils;
+import org.jmicro.common.util.JsonUtils;
+import org.jmicro.common.util.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import redis.clients.jedis.JedisPool;
 
 /**
+ *  The directory of the structure
+ * PubSubDir is the root directory
+ * Topic is pubsub topic and sub node is the listener of service method
+ * 
+ *            |            |--L2
+ *            |----topic1--|--L1
+ *            |            |--L3 
+ *            |
+ *            |            |--L1 
+ *            |            |--L2
+ *            |----topic2--|--L3
+ *            |            |--L4
+ * PubSubDir--|            |--L5   
+ *            |
+ *            |            |--L1
+ *            |            |--L2
+ *            |            |--L3
+ *            |----topic3--|--L4
+ *            |            |--L5
+ *                         |--L6
  * @author Yulei Ye
  * @date 2018年12月22日 下午11:10:21
  */
@@ -73,6 +97,12 @@ public class PubSubServer implements IInternalSubRpc{
 	private static final String DISCARD_TIMER = "PubsubServerAbortPolicy";
 	
 	private static final String RESEND_TIMER = "PubsubServerResendTimer";
+	
+	/**
+	 * is enable pubsub server
+	 */
+	@Cfg(value="/PubSubManager/enableServer",defGlobal=false, changeListener="initPubSubServer")
+	private boolean enableServer = false;
 	
 	@Cfg(value="/PubSubServer/openDebug")
 	private boolean openDebug = false;
@@ -106,6 +136,9 @@ public class PubSubServer implements IInternalSubRpc{
 	@Inject
 	private IRegistry registry;
 	
+	@Inject
+	private IDataOperator dataOp;
+	
 	private ItemStorage storage;
 	
 	private AtomicBoolean discard = new AtomicBoolean(false);
@@ -132,26 +165,16 @@ public class PubSubServer implements IInternalSubRpc{
 	private Queue<SubcribeItem> waitingLoadClazz = new ConcurrentLinkedQueue<>();
 	private ClassLoadingWorker clWorker = null;
 	
+	//private Map<String,Set<String>> topic2Method = new ConcurrentHashMap<>();
+	
 	public static void main(String[] args) {
 		 JMicro.getObjectFactoryAndStart(new String[] {});
 		 Utils.getIns().waitForShutdown();
 	}
 	
-	private ISubsListener subListener = new ISubsListener() {
-		@Override
-		public void on(byte type, String topic, UniqueServiceMethodKey smKey, 
-				Map<String, String> context) {
-			if(type == ISubsListener.SUB_ADD) {
-				subcribe(topic,smKey,context);
-			}else if(type == ISubsListener.SUB_REMOVE) {
-				unsubcribe(topic,smKey,context);
-			}
-		}
-	};
-	
 	public void init() {
 
-		if(!pubsubManager.isEnableServer()) {
+		if(!isEnableServer()) {
 			logger.warn("/PubSubManager/isEnableServer must be true for pubsub server");
 			return;
 		}
@@ -178,12 +201,74 @@ public class PubSubServer implements IInternalSubRpc{
 		config.setRejectedExecutionHandler(new PubsubServerAbortPolicy());
 		executor = ExecutorFactory.createExecutor(config);
 		
-		pubsubManager.addSubsListener(subListener);
+		initPubSubServer();
 		
 		clWorker = new ClassLoadingWorker();
 		clWorker.start();
 		
 		resetResendTimer();
+	}
+	
+	private void initPubSubServer() {
+		if(!isEnableServer()) {
+			//不启用pubsub Server功能，此运行实例是一个
+			logger.info("Pubsub server is disable by config [/PubSubManager/enableServer]");
+			return;
+		}
+		Set<String> children = this.dataOp.getChildren(Config.PubSubDir,true);
+		for(String t : children) {
+			Set<String>  subs = this.dataOp.getChildren(Config.PubSubDir+"/"+t,true);
+			for(String sub : subs) {
+				this.dataOp.deleteNode(Config.PubSubDir+"/"+t+"/"+sub);
+			}
+		}
+		srvManager.addListener(serviceAddedRemoveListener);
+	}
+	
+	private IServiceListener serviceAddedRemoveListener = new IServiceListener() {
+		@Override
+		public void serviceChanged(int type, ServiceItem item) {
+			if(type == IServiceListener.SERVICE_ADD) {
+				parseServiceAdded(item);
+			}else if(type == IServiceListener.SERVICE_REMOVE) {
+				serviceRemoved(item);
+			}else if(type == IServiceListener.SERVICE_DATA_CHANGE) {
+				serviceDataChange(item);
+			} else {
+				logger.error("rev invalid Node event type : "+type+",path: "+item.getKey().toKey(true, true, true));
+			}
+		}
+	};
+	
+	protected void serviceDataChange(ServiceItem item) {
+		
+	}
+	
+	protected void serviceRemoved(ServiceItem item) {
+		
+		for(ServiceMethod sm : item.getMethods()) {
+			if(StringUtils.isEmpty(sm.getTopic())) {
+				continue;
+			}
+			unsubcribe(sm.getTopic(),sm,null);
+		}
+	}
+	
+	protected void parseServiceAdded(ServiceItem item) {
+		if(item == null || item.getMethods() == null) {
+			return;
+		}
+		
+		for(ServiceMethod sm : item.getMethods()) {
+			if(StringUtils.isEmpty(sm.getTopic())) {
+				continue;
+			}
+			subcribe(sm.getTopic(),sm,null);
+			if(openDebug) {
+				logger.debug("Got ont CB: {}",sm.getKey().toKey(true, true, true));
+			}
+		}
+		
 	}
 	
 	public void resetResendTimer() {
@@ -215,28 +300,33 @@ public class PubSubServer implements IInternalSubRpc{
 		
 	}
 	
-	public boolean subcribe(String topic,UniqueServiceMethodKey key,Map<String, String> context) {
-		String k = key.toKey(false, false, false);
+	public boolean subcribe(String topic,ServiceMethod srvMethod,Map<String, String> context) {
+		
+		//doSaveSubscribe(null, srvMethod);
+		
+		String k = srvMethod.getKey().toKey(false, false, false);
 		
 		if(callbacks.containsKey(k)) {
 			//服务名,版本,名称空 相同即为同一个服务,只需要注册一次即可
 			logger.warn("{} have been in the callback list",k);
 			return true;
 		}
-		this.waitingLoadClazz.offer(new SubcribeItem(SubcribeItem.TYPE_SUB,topic,key,context));
+		this.waitingLoadClazz.offer(new SubcribeItem(SubcribeItem.TYPE_SUB,topic,srvMethod.getKey(),context));
 		synchronized(loadingLock) {
 			loadingLock.notify();
 		}
 		return true;
 	}
 	
-	public boolean unsubcribe(String topic,UniqueServiceMethodKey key,Map<String, String> context) {
-		String k = key.toKey(false, false, false);
+	public boolean unsubcribe(String topic,ServiceMethod srvMethod,Map<String, String> context) {
+		String k = srvMethod.getKey().toKey(false, false, false);
 		if(!callbacks.containsKey(k)) {
 			return true;
 		}
 		
-		this.waitingLoadClazz.offer(new SubcribeItem(SubcribeItem.TYPE_REMOVE,topic,key,context));
+		//this.doSaveUnsubcribe(null,srvMethod);
+		
+		this.waitingLoadClazz.offer(new SubcribeItem(SubcribeItem.TYPE_REMOVE,topic,srvMethod.getKey(),context));
 		synchronized(loadingLock) {
 			loadingLock.notify();
 		}
@@ -626,10 +716,8 @@ public class PubSubServer implements IInternalSubRpc{
 			srv = of.getRemoteServie(sitem,null);
 		} catch (ClassNotFoundException e) {
 			try {
-				
 				//JMicroContext.get().setParam(Constants.SERVICE_SPECIFY_ITEM_KEY, sitem);
 				JMicroContext.get().setParam(Constants.DIRECT_SERVICE_ITEM, sitem);
-				
 				Class<?> cls = this.cl.loadClass(sui.key.getUsk().getServiceName());
 				if(cls != null) {
 					srv = of.getRemoteServie(sitem,this.cl);
@@ -664,6 +752,9 @@ public class PubSubServer implements IInternalSubRpc{
 		return true;
 	}
 
+	public boolean isEnableServer() {
+		return this.enableServer;
+	}
 	
 	 private class PubsubServerAbortPolicy implements RejectedExecutionHandler {
 

@@ -5,6 +5,7 @@ import org.jmicro.api.pubsub.ISubsListener;
 import org.jmicro.api.pubsub.PSData;
 import org.jmicro.api.pubsub.PubSubManager;
 import org.jmicro.api.registry.IRegistry;
+import org.jmicro.pubsub.PubSubServer;
 import org.jmicro.test.JMicroBaseTestCase;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -51,9 +52,9 @@ public class TestPubsubManager extends JMicroBaseTestCase{
 		//JMicro.waitForShutdown();
 	}
 	
-	@Test
+	/*@Test
 	public void testPubsubAddSubListener() {
-		PubSubManager m = of.get(PubSubManager.class);
+		PubSubServer m = of.get(PubSubServer.class);
 		m.addSubsListener((type,topic,key,ctx) -> {
 			System.out.println("topic:"+topic+", type:"+type + ", key:"+key.toKey(true, true, true));
 		});
@@ -61,13 +62,13 @@ public class TestPubsubManager extends JMicroBaseTestCase{
 	
 	@Test
 	public void testPubsubAddUnSubListener() {
-		PubSubManager m = of.get(PubSubManager.class);
+		PubSubServer m = of.get(PubSubServer.class);
 		ISubsListener sub = (type,topic,key,ctx) -> {
 			System.out.println("topic:"+topic+", type:"+type + ", key:"+key.toKey(true, true, true));
 		};
 		m.addSubsListener(sub);
 		m.removeSubsListener(sub);
-	}
+	}*/
 	
 	/*@Test
 	public void testSubcribe() {

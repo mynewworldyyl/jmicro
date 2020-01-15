@@ -296,11 +296,12 @@ public class RegistryImpl implements IRegistry {
 			this.srvManager.updateOrCreate(item,configKey, false);
 		}*/
 		
-		if(srvManager.exist(srvKey)){
+		/*if(srvManager.exist(srvKey)){
 			srvManager.removeService(srvKey);
 		} else {
 			this.srvManager.updateOrCreate(item,srvKey, true);
-		}
+		}*/
+		this.srvManager.updateOrCreate(item,srvKey, true);
 	}
 
 	@Override

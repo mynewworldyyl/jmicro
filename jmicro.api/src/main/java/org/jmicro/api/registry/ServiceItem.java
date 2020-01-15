@@ -22,6 +22,7 @@ import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
+import org.jmicro.api.annotation.SO;
 import org.jmicro.api.config.Config;
 import org.jmicro.common.CommonException;
 import org.jmicro.common.Constants;
@@ -45,6 +46,7 @@ import org.slf4j.LoggerFactory;
  * @author Yulei Ye
  * @date 2018年10月4日-下午12:04:29
  */
+@SO
 public final class ServiceItem{
 
 	private final static Logger logger = LoggerFactory.getLogger(ServiceItem.class);
@@ -65,7 +67,7 @@ public final class ServiceItem{
 	
 	private UniqueServiceKey key;
 	
-	private String instanceName;
+	private String instanceName="";
 	
 	//开启debug模式
 	private int debugMode = -1;

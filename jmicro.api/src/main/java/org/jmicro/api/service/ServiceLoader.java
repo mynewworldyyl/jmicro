@@ -18,7 +18,6 @@ package org.jmicro.api.service;
 
 import java.lang.reflect.Method;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -54,6 +53,7 @@ import org.slf4j.LoggerFactory;
 import javassist.Modifier;
 
 /**
+ * 向注册中心注册服务
  * 
  * @author Yulei Ye
  * @date 2018年10月4日-下午12:08:01
@@ -126,7 +126,7 @@ public class ServiceLoader {
 		logger.info("export service finish!");
 	}
 	
-	public Object getService(String clsName,String namespace,String version){
+	private Object getService(String clsName,String namespace,String version){
 		
 		namespace = UniqueServiceKey.namespace(namespace);
 		version = UniqueServiceKey.version(version);
@@ -160,9 +160,11 @@ public class ServiceLoader {
 	
 	public Object getService(String impl){
 		Class<?> cls = ClassScannerUtils.getIns().getClassByName(impl);
+		/*
 		if(Modifier.isAbstract(cls.getModifiers()) || Modifier.isInterface(cls.getModifiers())){
 			throw new CommonException("impl is not a concrete class: "+impl);
 		}
+		*/
 		for(Object srv : services.values()){
 			if(cls.isInstance(srv)){
 				return srv;
@@ -176,7 +178,7 @@ public class ServiceLoader {
 		return clses;
 	}
 	
-	public boolean exportService(){
+	private boolean exportService(){
 		if(!services.isEmpty()){
 			//throw new CommonException("NO service to export");
 			return true;
@@ -198,7 +200,7 @@ public class ServiceLoader {
 		return flag;
 	}
 	
-	public void exportOne(Class<?> c) {
+	private void exportOne(Class<?> c) {
 
 		if(c.isInterface() || Modifier.isAbstract(c.getModifiers())){
 			return;
@@ -215,12 +217,15 @@ public class ServiceLoader {
 		logger.info("Export service:"+c.getName());
 	}
 	
-	private void registService(Object srv1) {
-		Class<?> srvCls = ProxyObject.getTargetCls(srv1.getClass());
-		ServiceItem item = this.getServiceItems(srvCls);
+	public void unregistService(ServiceItem item) {
+		registry.unregist(item);
+	}
+	
+	public ServiceItem registService(ServiceItem item) {
+		
 		if(item == null){
-			logger.error("class "+srvCls.getName()+" is not service");
-			return;
+			logger.error("Service item cannot be NULL");
+			return null;
 		}
 		
 		int nettyPort = 0;
@@ -256,15 +261,93 @@ public class ServiceLoader {
 			
 			item.getServers().add(sr);
 		}
+		
 		//Netty Socket 作为必选端口开放
 		item.getKey().setPort(nettyPort);
 		
 		registry.regist(item);
+		
+		return item;
 	}
 	
+	private ServiceItem registService(Object srv1) {
+		Class<?> srvCls = ProxyObject.getTargetCls(srv1.getClass());
+		ServiceItem item = this.getServiceItems(srvCls);
+		if(item == null){
+			logger.error("class "+srvCls.getName()+" is not service");
+			return null;
+		}
+		return registService(item);
+	}
+	
+	public ServiceItem createSrvItem(String srvName,String ns,String ver,String impl) {
+		ServiceItem item = new ServiceItem();
+		UniqueServiceKey usk = new UniqueServiceKey();
+		usk.setNamespace(ns);
+		usk.setServiceName(srvName);
+		usk.setVersion(ver);
+		usk.setInstanceName(Config.getInstanceName());
+		usk.setHost(Config.getHost());
+		
+		item.setKey(usk);
+		item.setImpl(impl);
+		
+		//item.setMaxFailBeforeDegrade(anno.maxFailBeforeDegrade()!=100 || intAnno == null ?anno.maxFailBeforeDegrade():intAnno.maxFailBeforeDegrade());
+		//item.setRetryCnt();
+		//item.setRetryInterval();
+		//item.setTestingArgs(getFieldValue(anno.testingArgs(),intAnno == null ? null : intAnno.testingArgs(),""));
+//		item.setTimeout();
+//		item.setMaxSpeed();
+//		item.setBaseTimeUnit();
+//		item.setTimeWindow();
+//		item.setSlotSize();
+//		item.setCheckInterval();
+//		
+//		item.setAvgResponseTime();
+//		item.setMonitorEnable();
+//		item.setLoggable();
+//		item.setDebugMode();
+//		
+//		item.setHandler();
+		
+		return item;
+	}
+	
+	public ServiceMethod createSrvMethod(ServiceItem item,String methodName,Class[] args) {
 
+		ServiceMethod sm = new ServiceMethod();
+		sm.setBreaking(false);
+		
+		//sm.setMaxFailBeforeDegrade(item.getMaxFailBeforeDegrade());
+		sm.setRetryCnt(item.getRetryCnt());
+		sm.setRetryInterval(item.getRetryInterval());
+		//sm.setTestingArgs(item.getTestingArgs());
+		sm.setTimeout(item.getTimeout());
+		sm.setMaxSpeed(item.getMaxSpeed());
+		sm.setBaseTimeUnit(item.getBaseTimeUnit());
+		sm.setTimeWindow(item.getTimeWindow());
+		sm.setAvgResponseTime(item.getAvgResponseTime());
+		sm.setMonitorEnable(item.getMonitorEnable());
+		sm.setFailResponse("");
+		sm.setLoggable(-1);
+		sm.setDebugMode(-1);
+		sm.setMaxSpeed(item.getMaxSpeed());
+		
+		sm.getKey().setUsk(item.getKey());
+		sm.getKey().setMethod(methodName);
+		if(args == null || args.length == 0) {
+			sm.getKey().setParamsStr("");
+		}else {
+			sm.getKey().setParamsStr(UniqueServiceMethodKey.paramsStr(args));
+		}
+		
+		item.addMethod(sm);
+		
+		return sm;
+	
+	}
 
-	public ServiceItem getServiceItems(Class<?> proxySrv) {
+	private ServiceItem getServiceItems(Class<?> proxySrv) {
 		Class<?> srvCls = ProxyObject.getTargetCls(proxySrv);
 		if(!srvCls.isAnnotationPresent(Service.class)){
 			throw new CommonException("Not a service class ["+srvCls.getName()+"] annotated with ["+Service.class.getName()+"]");
@@ -481,24 +564,8 @@ public class ServiceLoader {
 		return srv;
 	}
 	
-	public Map<String, Object> getServices() {
-		return Collections.unmodifiableMap(services);
-	}
-
 	public void setRegistry(IRegistry registry) {
 		this.registry = registry;
 	}
-
-	/*public static boolean isNeedResponse(ServiceLoader sl ,IRequest req){
-		Method m = getServiceMethod(sl,req);
-		if(m == null || !m.isAnnotationPresent(SMethod.class)){
-			m = getInterfaceMethod(req);
-			if(m == null || !m.isAnnotationPresent(SMethod.class)){
-				return true;
-			}
-		}
-		SMethod sm = m.getAnnotation(SMethod.class);
-		return sm.needResponse();
-	}*/
 	
 }

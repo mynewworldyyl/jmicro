@@ -268,10 +268,6 @@ public class SimpleObjectFactory implements IObjectFactory {
     		 throw new CommonException("Config not load!");
     	 }
     	 
-    	 /*if(obj instanceof IMessageReceiver) {
-    		 logger.debug("");
-    	 }*/
-    	 
     	 if(!(obj instanceof ProxyObject)){
     		 injectDepependencies(obj);
     		 notifyPreInitPostListener(obj,cfg);
@@ -331,12 +327,12 @@ public class SimpleObjectFactory implements IObjectFactory {
 		//String dataOperatorName = Config.getCommandParam(Constants.DATA_OPERATOR, String.class, Constants.DEFAULT_DATA_OPERATOR);
 		
 		this.cacheObj(dataOperator.getClass(), dataOperator, true);
-		//IDataOperator注册其内部实例到ObjectFactory
-		dataOperator.objectFactoryStarted(this);
 		
 		Set<Object> systemObjs = new HashSet<>();
-		
 		createComponentOrService(dataOperator,systemObjs);
+		
+		//IDataOperator注册其内部实例到ObjectFactory
+		dataOperator.objectFactoryStarted(this);
 		
 		clientServiceProxyManager = new ClientServiceProxyManager(this);
 		clientServiceProxyManager.init();
@@ -573,7 +569,8 @@ public class SimpleObjectFactory implements IObjectFactory {
 				//logger.debug("enable com: "+c.getName());
 				Object obj = null;
 				if(c.isAnnotationPresent(Service.class)) {
-					 obj = createServiceObject(c,false);
+					 obj = createDynamicService(c);
+					 obj = createServiceObject(obj,false);
 				} else if(c.isAnnotationPresent(HttpHandler.class)) {
 					obj = createHttpHanderObject(c);
 				} else {
@@ -725,8 +722,7 @@ public class SimpleObjectFactory implements IObjectFactory {
 		return o;
 	}
 
-	private Object createServiceObject(Class<?> cls, boolean doAfterCreate) {
-		Object obj = createDynamicService(cls);
+	private Object createServiceObject(Object obj, boolean doAfterCreate) {
 		if(doAfterCreate){
 			 doAfterCreate(obj,null);
 		}
@@ -740,12 +736,20 @@ public class SimpleObjectFactory implements IObjectFactory {
 	}
 
 	@Override
-	public void regist(Object obj) {		
+	public void regist(Object obj) {
+		this.doAfterCreate(obj, null);
 		this.cacheObj(obj.getClass(), obj,true);
 	}
 
 	@Override
 	public void regist(Class<?> clazz, Object obj) {
+		this.doAfterCreate(obj, null);
+		this.cacheObj(clazz, obj,true);
+	}
+
+	@Override
+	public <T> void registT(Class<T> clazz, T obj) {
+		this.doAfterCreate(obj, null);
 		this.cacheObj(clazz, obj,true);
 	}
 
@@ -1163,7 +1167,7 @@ public class SimpleObjectFactory implements IObjectFactory {
 		
 	}
 	
-	private Object createDynamicService(Class<?> cls) {
+	public Object createDynamicService(Class<?> cls) {
 		 ClassGenerator classGenerator = ClassGenerator.newInstance(Thread.currentThread().getContextClassLoader());
 		 classGenerator.setClassName(cls.getName()+"$JmicroSrv"+SimpleObjectFactory.idgenerator.getAndIncrement());
 		 classGenerator.setSuperClass(cls);

@@ -16,6 +16,7 @@
  */
 package org.jmicro.api.registry;
 
+import org.jmicro.api.annotation.SO;
 import org.jmicro.common.CommonException;
 import org.jmicro.common.Constants;
 import org.jmicro.common.util.StringUtils;
@@ -26,6 +27,7 @@ import org.jmicro.common.util.StringUtils;
  * @author Yulei Ye
  * @date 2018年12月2日 下午11:22:38
  */
+@SO
 public final class UniqueServiceKey {
 
 	public static final String SEP = "##";

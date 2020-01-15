@@ -56,5 +56,5 @@ public @interface Cfg {
 	 * org.jmicro.Config#ServiceConfigDir 路径下的值
 	 * @return
 	 */
-	public boolean defGlobal() default true;
+	public boolean defGlobal() default false;
 }

@@ -38,7 +38,7 @@ public class JMicroBaseTestCase {
 		return of.get(cls);
 	}
 	
-	protected UniqueServiceMethodKey helloTopicMethodKey() {
+	protected ServiceMethod helloTopicMethodKey() {
 		StringBuilder sb = new StringBuilder();
 		UniqueServiceKey.serviceName(sb, "org.jmicro.example.api.ISayHello");
 		UniqueServiceKey.namespace(sb, "testsayhello");
@@ -49,7 +49,9 @@ public class JMicroBaseTestCase {
 		sb.append("helloTopic").append(UniqueServiceMethodKey.SEP);
 		sb.append("org.jmicro.api.pubsub.PSData");
 		UniqueServiceMethodKey key = UniqueServiceMethodKey.fromKey(sb.toString());
-		return key;
+		ServiceMethod sm = new ServiceMethod();
+		sm.setKey(key);
+		return sm;
 	}
 	
 	protected ServiceItem sayHelloServiceItem() {

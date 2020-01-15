@@ -50,12 +50,15 @@ public interface IObjectFactory {
 	 * @param obj
 	 */
 	void regist(Object obj);
+	
 	/**
 	 * 指定类名注册对像，obj必须是clazz的实例
 	 * @param clazz
 	 * @param obj
 	 */
 	void regist(Class<?> clazz,Object obj);
+	
+	<T> void registT(Class<T> clazz,T obj);
 	
 	/**
 	 * 判断clazz类所对应的实例是否存在，如果存在则返回true，否则返回false

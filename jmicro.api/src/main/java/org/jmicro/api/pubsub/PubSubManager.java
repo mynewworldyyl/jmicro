@@ -1,11 +1,6 @@
 package org.jmicro.api.pubsub;
 
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Iterator;
 import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 
 import org.jmicro.api.annotation.Cfg;
 import org.jmicro.api.annotation.Component;
@@ -14,15 +9,9 @@ import org.jmicro.api.annotation.Reference;
 import org.jmicro.api.config.Config;
 import org.jmicro.api.idgenerator.ComponentIdServer;
 import org.jmicro.api.raft.IDataOperator;
-import org.jmicro.api.registry.IRegistry;
-import org.jmicro.api.registry.IServiceListener;
-import org.jmicro.api.registry.ServiceItem;
 import org.jmicro.api.registry.ServiceMethod;
-import org.jmicro.api.registry.UniqueServiceMethodKey;
-import org.jmicro.api.service.ServiceManager;
 import org.jmicro.common.Constants;
 import org.jmicro.common.util.JsonUtils;
-import org.jmicro.common.util.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -48,15 +37,6 @@ public class PubSubManager {
 	@Inject
 	private ComponentIdServer idGenerator;
 	
-	@Inject
-	private IRegistry registry;
-	
-	@Inject
-	private IDataOperator dataOp;
-	
-	@Inject
-	private ServiceManager srvManager;
-	
 	/**
 	 * default pubsub server
 	 */
@@ -69,14 +49,11 @@ public class PubSubManager {
 	@Cfg(value="/PubSubManager/enable",defGlobal=false)
 	private boolean enable = true;
 	
-	/**
-	 * is enable pubsub server
-	 */
-	@Cfg(value="/PubSubManager/enableServer",defGlobal=false, changeListener="initPubSubServer")
-	private boolean enableServer = false;
-	
 	@Cfg(value="/PubSubManager/openDebug",defGlobal=false)
 	private boolean openDebug = true;
+	
+	@Inject
+	private IDataOperator dataOp;
 	
 	/**
 	 * default pubsub server name
@@ -90,37 +67,12 @@ public class PubSubManager {
 	//private Set<ITopicListener> topicListeners = new HashSet<>();
 	
 	/**
-	 * The directory of the structure
-	 * PubSubDir is the root directory
-	 * Topic is pubsub topic and sub node is the listener of service method
-	 * 
-	 *            |            |--L2
-	 *            |----topic1--|--L1
-	 *            |            |--L3 
-	 *            |
-	 *            |            |--L1 
-	 *            |            |--L2
-	 *            |----topic2--|--L3
-	 *            |            |--L4
-	 * PubSubDir--|            |--L5   
-	 *            |
-	 *            |            |--L1
-	 *            |            |--L2
-	 *            |            |--L3
-	 *            |----topic3--|--L4
-	 *            |            |--L5
-	 *                         |--L6
-	 *
-	 */
-	private Set<ISubsListener> subListeners = Collections.synchronizedSet(new HashSet<>());
-	
-	/**
 	 * subscriber path to context list
 	 * key is subscriber path and value the context
 	 */
 	//private Map<String,Map<String,String>> path2SrvContext = new HashMap<>();
 	
-	private Map<String,Set<String>> topic2Method = new ConcurrentHashMap<>();
+	
 	
 	//private Map<String,Boolean> srvs = new HashMap<>();
 	
@@ -154,23 +106,10 @@ public class PubSubManager {
 		}
 	};*/
 	
-	private IServiceListener serviceAddedRemoveListener = new IServiceListener() {
-		@Override
-		public void serviceChanged(int type, ServiceItem item) {
-			if(type == IServiceListener.SERVICE_ADD) {
-				parseServiceAdded(item);
-			}else if(type == IServiceListener.SERVICE_REMOVE) {
-				serviceRemoved(item);
-			}else if(type == IServiceListener.SERVICE_DATA_CHANGE) {
-				serviceDataChange(item);
-			} else {
-				logger.error("rev invalid Node event type : "+type+",path: "+item.getKey().toKey(true, true, true));
-			}
-		}
-	};
+	
 	
 	public void init1() {
-		initPubSubServer();
+		//initPubSubServer();
 		
 		/*if(pubSubServers.isEmpty()) {
 			throw new CommonException("No pubsub server found, pubsub is disable!");
@@ -194,93 +133,6 @@ public class PubSubManager {
 		*/
 	}
 	
-	private void initPubSubServer() {
-		if(!enableServer) {
-			//不启用pubsub Server功能，此运行实例是一个
-			logger.info("Pubsub server is disable by config [/PubSubManager/enableServer]");
-			return;
-		}
-		Set<String> children = this.dataOp.getChildren(Config.PubSubDir,true);
-		for(String t : children) {
-			Set<String>  subs = this.dataOp.getChildren(Config.PubSubDir+"/"+t,true);
-			for(String sub : subs) {
-				this.dataOp.deleteNode(Config.PubSubDir+"/"+t+"/"+sub);
-			}
-		}
-		srvManager.addListener(serviceAddedRemoveListener);
-	}
-	
-	protected void serviceDataChange(ServiceItem item) {
-		
-	}
-
-	protected void serviceRemoved(ServiceItem item) {
-		
-		for(ServiceMethod sm : item.getMethods()) {
-			if(StringUtils.isEmpty(sm.getTopic())) {
-				continue;
-			}
-			
-			if(this.topic2Method.containsKey(sm.getTopic())) {
-				String mk = sm.getKey().toKey(false, false, false).intern();
-				Set<String> ms = this.topic2Method.get(sm.getTopic());
-				ms.remove(mk);
-				
-				if(ms.isEmpty()) {
-					this.topic2Method.remove(sm.getTopic());
-				}
-				
-				this.unsubcribe(null,sm);
-			}
-			
-			this.notifySubListener(ISubsListener.SUB_REMOVE, sm.getTopic(), sm.getKey(), null);
-		}
-		/*
-		String key = item.serviceName();
-		if(srvs.containsKey(key)) {
-			srvs.remove(key);
-		}
-		registry.removeServiceListener(key, serviceAddedRemoveListener);
-		*/
-		
-	}
-
-	protected void parseServiceAdded(ServiceItem item) {
-		if(item == null || item.getMethods() == null) {
-			return;
-		}
-		
-		boolean flag = false;
-		
-		for(ServiceMethod sm : item.getMethods()) {
-			if(StringUtils.isEmpty(sm.getTopic())) {
-				continue;
-			}
-			flag = true;
-			
-			if(!this.topic2Method.containsKey(sm.getTopic())) {
-				this.topic2Method.put(sm.getTopic(), new HashSet<>());
-			}
-			
-			String mk = sm.getKey().toKey(false, false, false).intern();
-			Set<String> ms = this.topic2Method.get(sm.getTopic());
-			if(!ms.contains(mk)) {
-				this.subscribe(null, sm);
-				ms.add(mk);
-				if(openDebug) {
-					logger.debug("Got ont CB: {}",mk);
-				}
-				this.notifySubListener(ISubsListener.SUB_ADD, sm.getTopic(), sm.getKey(), null);
-			}
-		}
-		
-		/*String key = item.serviceName();
-		if(flag && !srvs.containsKey(key)) {
-			srvs.put(key, true);
-			registry.addExistsServiceListener(key, serviceAddedRemoveListener);
-		}*/
-	}
-
 	/*public void addTopicListener(ITopicListener l) {
 		topicListeners.add(l);
 	}
@@ -301,29 +153,6 @@ public class PubSubManager {
 			l.on(type, topic, context);
 		}
 	}*/
-	
-	public void addSubsListener(ISubsListener l) {
-		if(subListeners == null) {
-			subListeners = new HashSet<ISubsListener>();
-		}
-		subListeners.add(l);
-		
-		if(!this.topic2Method.isEmpty()) {
-			for(Map.Entry<String, Set<String>> e : topic2Method.entrySet()) {
-				for(String key : e.getValue()) {
-					UniqueServiceMethodKey k = UniqueServiceMethodKey.fromKey(key);
-					l.on(ISubsListener.SUB_ADD, e.getKey(), k,null);
-				}
-			}
-		}
-	}
-	
-	public void removeSubsListener(ISubsListener l) {
-		Set<ISubsListener> subs = subListeners;
-		if(subs != null && subs.contains(l)) {
-			subs.remove(l);
-		}
-	}
 	
 	public long publish(Map<String,Object> context, String topic, String content,byte flag) {
 
@@ -364,8 +193,14 @@ public class PubSubManager {
 		}
 		return s.publishData(item);
 	}
-
-	private boolean subscribe(Map<String,String> context,ServiceMethod sm) {
+	
+	public boolean subsubcre(Object srv,String method, String topic,Map<String,String> context) {
+		
+		return true;
+	}
+	
+	
+	private boolean doSaveSubscribe(Map<String,String> context, ServiceMethod sm) {
 		String p = this.getPath(sm);
 		String cxt = context == null ? "{ip:'localhost'}":JsonUtils.getIns().toJson(context);
 		if(!dataOp.exist(p)) {
@@ -374,7 +209,7 @@ public class PubSubManager {
 		return true;
 	}
 
-	private boolean unsubcribe(Map<String,String> context,ServiceMethod sm) {
+	private boolean doSaveUnsubcribe(Map<String,String> context,ServiceMethod sm) {
 		String p = this.getPath(sm);
 		dataOp.deleteNode(p);
 		return true;
@@ -386,28 +221,6 @@ public class PubSubManager {
 		key = key.replaceAll("/","_");
 		key = key.substring(0, key.length()-1);
 	    return p+"/"+key;
-	}
-
-	private void notifySubListener(byte type,String topic,UniqueServiceMethodKey k,Map<String,String> context) {
-		Set<ISubsListener> subs = subListeners;
-		if(subs != null && subs.isEmpty()) {
-			return;
-		}
-		
-		/*String topic = this.getTopic(path);
-		UniqueServiceMethodKey k = this.getMethodKey(path); */
-		
-		Iterator<ISubsListener> ite = subs.iterator();
-		ISubsListener l = null;
-		while(ite.hasNext()) {
-			l = ite.next();
-			l.on(type, topic,k, context);
-		}
-		
-	}
-
-	public boolean isEnableServer() {
-		return this.enableServer;
 	}
 	
 }

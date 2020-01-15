@@ -20,11 +20,14 @@ import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.jmicro.api.annotation.SO;
+
 /**
  * 
  * @author Yulei Ye
  * @date 2018年12月22日 下午11:10:43
  */
+@SO
 public final class PSData implements Serializable{
 	
 	// 1: 队列消息, 只要一个消费者成功消费消息即为成功，并且只能一个消费者成功消费消息

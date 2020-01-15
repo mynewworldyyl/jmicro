@@ -7,6 +7,7 @@ import org.jmicro.api.monitor.IServiceMonitorData;
 import org.jmicro.api.service.ICheckable;
 import org.jmicro.common.Constants;
 import org.jmicro.common.Utils;
+import org.jmicro.example.api.DynamicInterface;
 import org.jmicro.example.api.ITestRpcService;
 import org.jmicro.example.api.rpc.ISimpleRpc;
 import org.jmicro.example.comsumer.TestRpcClient;
@@ -101,4 +102,10 @@ public class TestRpcRequest extends JMicroBaseTestCase{
 		//Utils.getIns().waitForShutdown();
 	}
 	
+	@Test
+	public void testCallDynamicRegistRpc() {
+		DynamicInterface r = of.getRemoteServie(DynamicInterface.class.getName(), "JMicroBaseTestCase_DynamicRegistryService",
+				"0.0.1", null);	
+		//r.run();
+	}
 }
