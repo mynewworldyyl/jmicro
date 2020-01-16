@@ -154,10 +154,20 @@ public class PubSubManager {
 		}
 	}*/
 	
+	public long publish(String topic,byte flag,Object[] args) {
+
+		PSData item = new PSData();
+		item.setTopic(topic);
+		item.setData(args);
+		item.setContext(null);
+		item.setFlag(flag);
+		return this.publish(item);
+		
+	}
+	
+	
 	public long publish(Map<String,Object> context, String topic, String content,byte flag) {
 
-		IInternalSubRpc s = this.defaultServer;// this.getServer(context);
-		
 		PSData item = new PSData();
 		item.setTopic(topic);
 		item.setData(content);
@@ -178,7 +188,7 @@ public class PubSubManager {
 	}
 
 	public long publish(PSData item) {
-		IInternalSubRpc s = this.defaultServer;//this.getServer(item.getContext());
+		IInternalSubRpc s = this.defaultServer;
 		if(s == null) {
 			logger.error("No Pubsub server for topic:{}",item.getTopic());
 			return PUB_SERVER_NOT_AVAILABALE;

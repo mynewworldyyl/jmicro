@@ -149,7 +149,7 @@ public class JMicroContext  {
 		if(obj == null){
 			SF.doRequestLog(MonitorConstant.LOG_ERROR, lid(), JMicroContext.class, req,null," service INSTANCE not found");
 			SF.doSubmit(MonitorConstant.SERVER_REQ_SERVICE_NOT_FOUND,req,null);
-			throw new CommonException("Service not found");
+			throw new CommonException("Service not found,srv: "+req.getImpl());
 		}
 		context.setObject(Constants.SERVICE_OBJ_KEY, obj);
 	}

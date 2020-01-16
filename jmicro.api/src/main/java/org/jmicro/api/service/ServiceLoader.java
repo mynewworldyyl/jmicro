@@ -206,13 +206,16 @@ public class ServiceLoader {
 			return;
 		}
 		
-		Object srv = this.createService(c);
+		Object srv = JMicro.getObjectFactory().get(c);
 		if(srv == null){
 			throw new CommonException("fail to export server "+c.getName());
 		}
-		registService(srv);
-		String key = this.serviceName(c);
-		services.put(key, srv);
+		
+		ServiceItem si = createSrvItemByClass(c);
+		
+		registService(si,srv);
+		//String key = this.serviceName();
+		//services.put(si.getImpl(), srv);
 		
 		logger.info("Export service:"+c.getName());
 	}
@@ -221,11 +224,15 @@ public class ServiceLoader {
 		registry.unregist(item);
 	}
 	
-	public ServiceItem registService(ServiceItem item) {
+	public ServiceItem registService(ServiceItem item,Object srv) {
 		
 		if(item == null){
 			logger.error("Service item cannot be NULL");
 			return null;
+		}
+		
+		if(srv != null && !services.containsKey(item.getImpl())) {
+			services.put(item.getImpl(), srv);
 		}
 		
 		int nettyPort = 0;
@@ -270,14 +277,14 @@ public class ServiceLoader {
 		return item;
 	}
 	
-	private ServiceItem registService(Object srv1) {
-		Class<?> srvCls = ProxyObject.getTargetCls(srv1.getClass());
+	private ServiceItem createSrvItemByClass(Class<?> cls) {
+		Class<?> srvCls = ProxyObject.getTargetCls(cls);
 		ServiceItem item = this.getServiceItems(srvCls);
 		if(item == null){
 			logger.error("class "+srvCls.getName()+" is not service");
 			return null;
 		}
-		return registService(item);
+		return item;
 	}
 	
 	public ServiceItem createSrvItem(String srvName,String ns,String ver,String impl) {
@@ -550,18 +557,6 @@ public class ServiceLoader {
 			return anno;
 		}
 		return intAnno;
-	}
-	
-	private String serviceName(Class<?> c) {
-		return c.getName();
-	}
-
-	private Object createService(Class<?> class1) {
-		Object srv = JMicro.getObjectFactory().get(class1);
-		if(srv != null) {
-			services.put(class1.getName(), srv);
-		}
-		return srv;
 	}
 	
 	public void setRegistry(IRegistry registry) {

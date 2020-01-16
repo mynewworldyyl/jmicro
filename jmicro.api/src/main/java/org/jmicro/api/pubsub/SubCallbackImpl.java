@@ -56,7 +56,15 @@ public class SubCallbackImpl implements ISubCallback{
 	@Override
 	public void onMessage(PSData item) {
 		try {
-			m.invoke(this.srvProxy, item);
+			Class[] ptype = m.getParameterTypes();
+			if(ptype == null) {
+				m.invoke(this.srvProxy, new Object[0]);
+			}else if(ptype.length == 1 && ptype[0] == PSData.class) {
+				m.invoke(this.srvProxy, item);
+			} else {
+				Object[] args = (Object[])item.getData();
+				m.invoke(this.srvProxy, args);
+			}
 		} catch (Throwable e) {
 			throw new CommonException("Fail to send message to [" + mkey.toString()+"]", e);
 		}
@@ -66,7 +74,12 @@ public class SubCallbackImpl implements ISubCallback{
 		try {
 			this.m = this.srvProxy.getClass().getMethod(mkey.getMethod(), PSData.class);
 		} catch (NoSuchMethodException | SecurityException e) {
-			throw new CommonException("Get ["+mkey.toString() +"] fail",e);
+			try {
+				Class<?>[] argsCls = UniqueServiceMethodKey.paramsClazzes(mkey.getParamsStr());
+				this.m = this.srvProxy.getClass().getMethod(mkey.getMethod(), argsCls);
+			} catch (NoSuchMethodException | SecurityException e1) {
+				throw new CommonException("Get ["+mkey.toString() +"] fail",e);
+			}
 		}
 	}
 

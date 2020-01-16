@@ -55,7 +55,19 @@ public class RpcRequestHandler extends AbstractHandler implements IRequestHandle
 			/*if(m.getName().equals("publishData")) {
 			logger.debug("debug info");
 			}*/
+			boolean f = m.isAccessible();
+			if(!f) {
+				//通过Lambda动态注册的服务方法,，会报方法调用异常，应该是内部生成的类是非public导致，在此暂时做此处理
+				if(obj.getClass().getName().contains("$$Lambda$")) {
+					m.setAccessible(true);
+				}
+			}
 			Object result = m.invoke(obj, request.getArgs());
+			
+			if(!f) {
+				//正常的非public方法调用不到跑到这里，所以可以直接设置即可
+				m.setAccessible(f);
+			}
 			resp = new RpcResponse(request.getRequestId(),result);
 			resp.setMonitorEnable(request.isMonitorEnable());
 			resp.setSuccess(true);
