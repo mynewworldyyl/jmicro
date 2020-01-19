@@ -91,6 +91,15 @@ public @interface SMethod {
 	
 	public SBreakingRule breakingRule() default @SBreakingRule(enable=false,breakTimeInterval=1000,percent=50,checkInterval=80);
 	
+	/**
+	 *      异步返回策略，客户端和服务器都可实现异步调用
+	 *      优先使用客户端异步，这样少一次RPC调用成本
+	 *      对于无需要接收响应的RPC，优先使用异步机制，并且异步无需回调结果值
+	 *      
+	 * @return
+	 */
+	public Async async() default @Async();
+	
 	//after breaking, will test the service with this arguments
 	public String testingArgs() default "";
 	
@@ -132,5 +141,7 @@ public @interface SMethod {
 	 *  
 	 */
 	public int avgResponseTime() default -1;
+	
+	
 	
 }

@@ -55,6 +55,8 @@ public final class ServiceMethod {
 	
 	private BreakRule breakingRule = new BreakRule();
 	
+	private AsyncConfig async = new AsyncConfig();
+	
 	//统计服务数据基本时长，单位同baseTimeUnit确定 @link SMethod
 	private long timeWindow = -1;
 	
@@ -136,7 +138,8 @@ public final class ServiceMethod {
 		this.timeout = p.timeout;
 
 		this.maxFailBeforeDegrade = p.maxFailBeforeDegrade;
-		this.getBreakingRule().from(p.getBreakingRule());;
+		this.getBreakingRule().from(p.getBreakingRule());
+		this.getAsync().from(p.getAsync());
 
 		this.testingArgs = p.testingArgs;
 		this.breaking = p.breaking;
@@ -419,6 +422,14 @@ public final class ServiceMethod {
 	@Override
 	public boolean equals(Object obj) {
 		return this.hashCode() == obj.hashCode();
+	}
+
+	public AsyncConfig getAsync() {
+		return async;
+	}
+
+	public void setAsync(AsyncConfig async) {
+		this.async = async;
 	}
 
 }

@@ -505,6 +505,13 @@ public class ServiceLoader {
 					sm.setLoggable(manno.loggable()!=-1 || intMAnno == null ? manno.loggable() : intMAnno.loggable());
 					sm.setDebugMode(manno.debugMode()!=-1 || intMAnno == null ? manno.debugMode() : intMAnno.debugMode());
 					
+					sm.getAsync().setCondition(manno.async().condition());
+					sm.getAsync().setEnable(manno.async().enable());
+					sm.getAsync().setMethod(manno.async().method());
+					sm.getAsync().setNamespace(manno.async().namespace());
+					sm.getAsync().setServiceName(manno.async().serviceName());
+					sm.getAsync().setVersion(manno.async().version());
+					
 				 } else {
 					sbr = intMAnno.breakingRule();
 					sm.setRetryCnt(intMAnno.retryCnt());

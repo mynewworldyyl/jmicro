@@ -14,22 +14,33 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.jmicro.api.annotation;
+package org.jmicro.pubsub;
 
-import static java.lang.annotation.ElementType.METHOD;
-import static java.lang.annotation.RetentionPolicy.RUNTIME;
+import java.util.Map;
 
-import java.lang.annotation.Retention;
-import java.lang.annotation.Target;
+import org.jmicro.api.registry.UniqueServiceMethodKey;
+
 /**
  * 
+ * 
  * @author Yulei Ye
- * @date 2018年10月4日-上午11:57:14
+ * @date 2020年1月16日
  */
-@Target(METHOD)
-@Retention(RUNTIME)
-public @interface App {
-	public String value() default "";
-	public int type() default 1; //1:server and client model, 2:server only, 3,client only
+class SubcribeItem {
+
+	public static final int TYPE_SUB = 1;
+	public static final int TYPE_REMOVE = 2;
 	
+	public int type;
+	public String topic;
+	public UniqueServiceMethodKey key;
+	public Map<String, String> context;
+	
+	public SubcribeItem(int type,String topic,UniqueServiceMethodKey key,Map<String, String> context) {
+		this.type = type;
+		this.topic = topic;
+		this.key = key;
+		this.context = context;
+	}
+
 }

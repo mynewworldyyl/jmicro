@@ -21,17 +21,32 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
+
 /**
  * 
  * @author Yulei Ye
- * @date 2018年10月4日-上午11:56:32
+ * @date 2018年10月4日-上午11:57:14
  */
 @Target(TYPE)
 @Retention(RUNTIME)
-public @interface Interceptor {
-
-	public String value() default "";
+public @interface Async {
 	
-	public int order() default 1000;
+	public boolean enable() default false;
+	
+	//异步条件timeout:超时转异步， speedlimit:限速转异步
+	//留给应用场影决定什么条件下做异步处理
+	public String[] condition() default {"timeout","speedlimit"};
+	
+	//异步调用服务名称
+	public String serviceName() default "";
+	
+	//异步调用服务名称空间
+	public String namespace() default ""; 
+	
+	//异步调用服务版本
+	public String version() default "";
+	
+	//异步调用服务方法名称，参数即是目标方法的返回值
+	public String method() default "";
 	
 }

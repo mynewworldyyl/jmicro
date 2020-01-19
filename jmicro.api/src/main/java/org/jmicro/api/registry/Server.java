@@ -1,5 +1,8 @@
 package org.jmicro.api.registry;
 
+import org.jmicro.api.annotation.SO;
+
+@SO
 public final class Server {
 
 	private String host;

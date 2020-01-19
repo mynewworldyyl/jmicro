@@ -18,6 +18,7 @@ package org.jmicro.api.registry;
 
 import java.util.concurrent.TimeUnit;
 
+import org.jmicro.api.annotation.SO;
 import org.jmicro.common.CommonException;
 import org.jmicro.common.util.StringUtils;
 
@@ -26,6 +27,7 @@ import org.jmicro.common.util.StringUtils;
  * @author Yulei Ye
  * @date 2018年12月2日 下午11:23:14
  */
+@SO
 public final class BreakRule {
 
 	//启用此熔断规则

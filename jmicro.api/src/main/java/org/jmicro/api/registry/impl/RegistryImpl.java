@@ -321,7 +321,7 @@ public class RegistryImpl implements IRegistry {
 		if(srvManager.exist(key)){
 			srvManager.updateOrCreate(item, key, true);
 			localRegistedItems.put(key, item);
-		}else {
+		} else {
 			logger.debug("update not found: "+key);
 		}
 	}

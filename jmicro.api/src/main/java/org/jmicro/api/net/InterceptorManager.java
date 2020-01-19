@@ -9,6 +9,8 @@ import org.jmicro.api.JMicro;
 import org.jmicro.api.JMicroContext;
 import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.Interceptor;
+import org.jmicro.api.monitor.MonitorConstant;
+import org.jmicro.api.monitor.SF;
 import org.jmicro.api.objectfactory.ProxyObject;
 import org.jmicro.api.registry.UniqueServiceMethodKey;
 import org.jmicro.common.CommonException;
@@ -51,6 +53,7 @@ public class InterceptorManager {
     			handler = JMicro.getObjectFactory().getByName(handlerName);
     		}
     		if(handler == null){
+    			SF.doRequestLog(MonitorConstant.LOG_ERROR, TAG, req, null, "Handler ["+handlerKey + " not found]");
     			throw new CommonException("Handler ["+handlerKey + " not found]");
     		}
     		hs.put(key, handler);

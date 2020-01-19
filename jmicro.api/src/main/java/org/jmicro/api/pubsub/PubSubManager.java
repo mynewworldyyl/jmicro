@@ -55,107 +55,20 @@ public class PubSubManager {
 	@Inject
 	private IDataOperator dataOp;
 	
-	/**
-	 * default pubsub server name
-	 */
-	//@Cfg(value="/PubSubManager/defaultServerName",changeListener="init")
-	//private String defaultServerName = Constants.DEFAULT_PUBSUB;
-	
-	/**
-	 * topic listener
-	 */
-	//private Set<ITopicListener> topicListeners = new HashSet<>();
-	
-	/**
-	 * subscriber path to context list
-	 * key is subscriber path and value the context
-	 */
-	//private Map<String,Map<String,String>> path2SrvContext = new HashMap<>();
-	
-	
-	
-	//private Map<String,Boolean> srvs = new HashMap<>();
-	
-	/*private INodeListener topicNodeListener = new INodeListener(){
-		public void nodeChanged(int type, String path,String data){
-			if(type == INodeListener.NODE_ADD){
-				logger.error("NodeListener service add "+type+",path: "+path);
-			} else if(type == INodeListener.NODE_REMOVE) {
-				logger.error("service remove:"+type+",path: "+path);
-			} else {
-				logger.error("rev invalid Node event type : "+type+",path: "+path);
-			}
-		}
-	};*/
-	
-	/**
-	 * 监听全部服务的增加操作，判断是否有订阅方法，如果有，则注册到对应的主是下面
-	 */
-  /*  private IServiceListener serviceParseListener = new IServiceListener() {
-		@Override
-		public void serviceChanged(int type, ServiceItem item) {
-			if(type == IServiceListener.SERVICE_ADD) {
-				parseServiceAdded(item);
-			}else if(type == IServiceListener.SERVICE_REMOVE) {
-				//serviceRemoved(item);
-			}else if(type == IServiceListener.SERVICE_DATA_CHANGE) {
-				//serviceDataChange(item);
-			} else {
-				logger.error("rev invalid Node event type : "+type+",path: "+item.getKey().toKey(true, true, true));
-			}
-		}
-	};*/
-	
-	
-	
 	public void init1() {
-		//initPubSubServer();
 		
-		/*if(pubSubServers.isEmpty()) {
-			throw new CommonException("No pubsub server found, pubsub is disable!");
-		}
-		
-		if(!StringUtils.isEmpty(defaultServerName)) {
-			IInternalSubRpc s = this.pubSubServers.get(defaultServerName);
-			if(s == null) {
-				logger.error("server [{}] not found",defaultServerName);
-			}
-			defaultServer = s;
-		}*/
-		
-		/*logger.info("add listener");
-		this.dataOp.addChildrenListener(Config.PubSubDir, new IChildrenListener() {
-			@Override
-			public void childrenChanged(String path, List<String> children) {
-				topicsAdd(children);
-			}
-		});	
-		*/
 	}
 	
-	/*public void addTopicListener(ITopicListener l) {
-		topicListeners.add(l);
+	public boolean isPubsubEnable() {
+		return this.defaultServer != null;
 	}
-	
-	public void removeTopicListener(ITopicListener l) {
-		topicListeners.remove(l);
-	}
-	
-	public void notifyTopicListener(byte type,String topic,Map<String,String> context) {
-		if(topicListeners.isEmpty()) {
-			return;
-		}
-		
-		Iterator<ITopicListener> ite = this.topicListeners.iterator();
-		ITopicListener l = null;
-		while(ite.hasNext()) {
-			l = ite.next();
-			l.on(type, topic, context);
-		}
-	}*/
 	
 	public long publish(String topic,byte flag,Object[] args) {
 
+		if(!this.isPubsubEnable()) {
+			return PUB_SERVER_NOT_AVAILABALE;
+		}
+		
 		PSData item = new PSData();
 		item.setTopic(topic);
 		item.setData(args);
@@ -167,7 +80,10 @@ public class PubSubManager {
 	
 	
 	public long publish(Map<String,Object> context, String topic, String content,byte flag) {
-
+		if(!this.isPubsubEnable()) {
+			return PUB_SERVER_NOT_AVAILABALE;
+		}
+		
 		PSData item = new PSData();
 		item.setTopic(topic);
 		item.setData(content);
@@ -178,7 +94,9 @@ public class PubSubManager {
 	}
 	
 	public long publish(Map<String,Object> context,String topic, byte[] content,byte flag) {
-		
+		if(!this.isPubsubEnable()) {
+			return PUB_SERVER_NOT_AVAILABALE;
+		}
 		PSData item = new PSData();
 		item.setTopic(topic);
 		item.setData(content);
@@ -188,27 +106,21 @@ public class PubSubManager {
 	}
 
 	public long publish(PSData item) {
-		IInternalSubRpc s = this.defaultServer;
-		if(s == null) {
-			logger.error("No Pubsub server for topic:{}",item.getTopic());
+		if(!this.isPubsubEnable()) {
 			return PUB_SERVER_NOT_AVAILABALE;
 		}
+		IInternalSubRpc s = this.defaultServer;
+		
 		if(openDebug) {
 			logger.debug("Publish topic: {}, data: {}",item.getTopic(),item.getData());
 		}
 		if(item.getId() <= 0) {
 			//为消息生成唯一ID
-			//大于0时表示客户端已经预设置值
+			//大于0时表示客户端已经预设置值,给客户端一些选择，比如业务需要提前知道消息ID做关联记录的场景
 			item.setId(this.idGenerator.getIntId(PSData.class));
 		}
 		return s.publishData(item);
 	}
-	
-	public boolean subsubcre(Object srv,String method, String topic,Map<String,String> context) {
-		
-		return true;
-	}
-	
 	
 	private boolean doSaveSubscribe(Map<String,String> context, ServiceMethod sm) {
 		String p = this.getPath(sm);

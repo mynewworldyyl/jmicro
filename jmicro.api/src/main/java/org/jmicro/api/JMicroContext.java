@@ -133,7 +133,7 @@ public class JMicroContext  {
 		ServiceItem si = registry.getServiceByImpl(req.getImpl());
 		if(si == null){
 			if(req.isLoggable()) {
-				SF.doRequestLog(MonitorConstant.LOG_ERROR, lid(), JMicroContext.class, req,null," service ITEM not found");
+				SF.doRequestLog(MonitorConstant.LOG_ERROR,JMicroContext.class, req,null," service ITEM not found");
 			}
 			SF.doSubmit(MonitorConstant.SERVER_REQ_SERVICE_NOT_FOUND,req,null);
 			throw new CommonException("Service not found impl："+req.getImpl());
@@ -147,7 +147,7 @@ public class JMicroContext  {
 		Object obj = serviceLoader.getService(req.getImpl());
 		
 		if(obj == null){
-			SF.doRequestLog(MonitorConstant.LOG_ERROR, lid(), JMicroContext.class, req,null," service INSTANCE not found");
+			SF.doRequestLog(MonitorConstant.LOG_ERROR,JMicroContext.class, req,null," service INSTANCE not found");
 			SF.doSubmit(MonitorConstant.SERVER_REQ_SERVICE_NOT_FOUND,req,null);
 			throw new CommonException("Service not found,srv: "+req.getImpl());
 		}

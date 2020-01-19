@@ -53,7 +53,7 @@ public class TestPubSubServer extends JMicroBaseTestCase{
 					System.out.println("pubsub msgID:"+msgid);
 					
 					//Thread.sleep(2000);
-					Thread.sleep(ran.nextInt(100));
+					Thread.sleep(ran.nextInt(50));
 					
 				} catch (Throwable e) {
 					e.printStackTrace();
@@ -63,9 +63,9 @@ public class TestPubSubServer extends JMicroBaseTestCase{
 		
 		new Thread(r).start();
 		new Thread(r).start();
-		/*new Thread(r).start();
 		new Thread(r).start();
-		new Thread(r).start();*/
+		new Thread(r).start();
+		new Thread(r).start();
 		
 		JMicro.waitForShutdown();
 	}

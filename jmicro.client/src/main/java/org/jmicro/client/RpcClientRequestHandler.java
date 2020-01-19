@@ -231,7 +231,7 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
     	    }
     		
     		if(SF.isLoggable(this.openDebug,MonitorConstant.LOG_DEBUG)) {
-    			SF.doRequestLog(MonitorConstant.LOG_DEBUG,lid,TAG,req,null," do request");
+    			SF.doRequestLog(MonitorConstant.LOG_DEBUG,TAG,req,null," do request");
     		}
     		
     		//long st = System.currentTimeMillis();
@@ -242,7 +242,7 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
     			//数据发送后，不需要返回结果，也不需要请求确认包，直接返回
     			//this.sessionManager.write(msg, null,retryCnt);
     			if(SF.isLoggable(this.openDebug,MonitorConstant.LOG_DEBUG)) {
-    				SF.doServiceLog(MonitorConstant.LOG_DEBUG,TAG,lid,sm,null, " no need response and return");
+    				SF.doServiceLog(MonitorConstant.LOG_DEBUG,TAG,sm,null, " no need response and return");
         		}
     			waitForResponse.remove(req.getRequestId());
     			return null;
@@ -256,7 +256,7 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
     			if(session.getParam(key) != null) {
     				String errMsg = "Failure Callback have been exists reqID："+key;
     				if(SF.isLoggable(this.openDebug,MonitorConstant.LOG_ERROR)) {
-    					SF.doServiceLog(MonitorConstant.LOG_ERROR,TAG,lid,sm,null, errMsg);
+    					SF.doServiceLog(MonitorConstant.LOG_ERROR,TAG,sm,null, errMsg);
     				}
     				waitForResponse.remove(req.getRequestId());
     				throw new CommonException(errMsg);
@@ -268,7 +268,7 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
     			} else {
     				String errMsg = "Failure Callback not found for reqID："+key;
     				if(SF.isLoggable(this.openDebug,MonitorConstant.LOG_ERROR)) {
-    					SF.doServiceLog(MonitorConstant.LOG_ERROR,TAG,lid,sm,null, errMsg);
+    					SF.doServiceLog(MonitorConstant.LOG_ERROR,TAG,sm,null, errMsg);
     				}
     				waitForResponse.remove(req.getRequestId());
     				throw new CommonException(errMsg);
@@ -304,7 +304,7 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
     				resp.setMsg(respMsg);
     				//req.setMsg(msg);
     				if(SF.isLoggable(this.openDebug,MonitorConstant.LOG_DEBUG)) {
-        				SF.doResponseLog(MonitorConstant.LOG_DEBUG,lid,TAG,resp,null,"reqID ["+resp.getReqId()+"] response");
+        				SF.doResponseLog(MonitorConstant.LOG_DEBUG,TAG,resp,null,"reqID ["+resp.getReqId()+"] response");
             		}
     			} else {
         			SF.doMessageLog(MonitorConstant.LOG_ERROR,TAG,respMsg,null,"reqID ["+resp.getReqId()+"] response");
@@ -361,7 +361,7 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
     				
     				sb.append("] timeout[").append(timeout).append("] request and stop retry: ").append(retryCnt)
     				.append(",reqId:").append(req.getRequestId()).append(", LinkId:").append(lid);
-    				SF.doRequestLog(MonitorConstant.LOG_ERROR,msg.getLinkId(),TAG,req,null,sb.toString());
+    				SF.doRequestLog(MonitorConstant.LOG_ERROR,TAG,req,null,sb.toString());
     				
     				if(session.getFailPercent() > 50) {
         				logger.warn("session.getFailPercent() > 50,Close session: {},Percent:{},sessionID:{}",sb.toString(),session.getFailPercent(),session.getId());
@@ -382,7 +382,7 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
     				
     				//logger.warn(sb.toString()+",reqId:"+req.getRequestId());
     			
-    				SF.doRequestLog(MonitorConstant.LOG_WARN,lid,TAG,req,null," do retry");
+    				SF.doRequestLog(MonitorConstant.LOG_WARN,TAG,req,null," do retry");
     				SF.doSubmit(MonitorConstant.CLIENT_REQ_RETRY, req, resp,null);
     				session.increment(MonitorConstant.CLIENT_REQ_RETRY);
     				continue;//重试循环
@@ -394,7 +394,7 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
 				 //logger.error("error code: "+se.getErrorCode()+" ,msg: "+se.getMsg());
 				 req.setSuccess(resp.isSuccess());
 				 SF.doSubmit(MonitorConstant.CLIENT_REQ_EXCEPTION_ERR, req, null);
-				 SF.doResponseLog(MonitorConstant.LOG_ERROR,lid,TAG,resp,null,se.toString());
+				 SF.doResponseLog(MonitorConstant.LOG_ERROR,TAG,resp,null,se.toString());
 				 session.increment(MonitorConstant.CLIENT_REQ_EXCEPTION_ERR);
 				 waitForResponse.remove(req.getRequestId());
 				 throw new RpcException(req,sb.toString());
@@ -402,7 +402,7 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
 				 //服务器正常逻辑处理错误，不需要重试，直接失败
 				 req.setSuccess(resp.isSuccess());
 				 SF.doSubmit(MonitorConstant.CLIENT_REQ_BUSSINESS_ERR, req, resp,null);
-				 SF.doResponseLog(MonitorConstant.LOG_ERROR,lid,TAG,resp,null);
+				 SF.doResponseLog(MonitorConstant.LOG_ERROR,TAG,resp,null);
 				 session.increment(MonitorConstant.CLIENT_REQ_BUSSINESS_ERR);
 				 waitForResponse.remove(req.getRequestId());
 			     throw new RpcException(req,sb.toString());

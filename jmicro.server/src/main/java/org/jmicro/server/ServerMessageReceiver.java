@@ -77,10 +77,6 @@ public class ServerMessageReceiver implements IMessageReceiver{
 	
 	private volatile Map<Byte,IMessageHandler> handlers = new ConcurrentHashMap<>();
 	
-	private boolean ready = false;
-	
-	private Object readyLock = new Object();
-	
 	public void init(){
 		ExecutorConfig config = new ExecutorConfig();
 		config.setMsMaxSize(60);
@@ -88,14 +84,8 @@ public class ServerMessageReceiver implements IMessageReceiver{
 		config.setThreadNamePrefix("ServerMessageReceiver");
 		executor = ExecutorFactory.createExecutor(config);
 		//系统级RPC处理器，如ID请求处理器，和普通RPC处理理器同一个实例，但是TYPE标识不同，需要特殊处理
-		handlers.put(Constants.MSG_TYPE_SYSTEM_REQ_JRPC, jrpcHandler);
-		handlers.put(Constants.MSG_TYPE_ID_REQ, idHandler);
-		
-		ready = true;
-		synchronized(readyLock){
-			readyLock.notifyAll();
-		}
-		
+		//registHandler(jrpcHandler);
+		//registHandler(idHandler);
 	}
 	
 	public void registHandler(IMessageHandler handler){
@@ -104,12 +94,6 @@ public class ServerMessageReceiver implements IMessageReceiver{
 			return;
 		}
 		handlers.put(handler.type(), handler);
-		
-		ready = true;
-		synchronized(readyLock){
-			readyLock.notifyAll();
-		}
-		
 	}
 	
 	@Override
@@ -118,15 +102,6 @@ public class ServerMessageReceiver implements IMessageReceiver{
 		 JMicroContext.configProvider(msg);
 		if(openDebug) {
 			//SF.getIns().doMessageLog(MonitorConstant.DEBUG, TAG, msg,"receive");
-		}
-		if(!ready) {
-			synchronized(readyLock){
-				try {
-					readyLock.wait();
-				} catch (InterruptedException e) {
-					logger.error("receive(IServerSession s, ByteBuffer data) do wait",e);
-				}
-			}
 		}
 		JMicroContext jc = JMicroContext.get();
 		//直接协程处理，IO LOOP线程返回

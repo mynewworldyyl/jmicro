@@ -75,7 +75,7 @@ public class TestMonitor extends JMicroBaseTestCase{
 		ServiceMethod sm = new ServiceMethod();
 		sm.setKey(UniqueServiceMethodKey.fromKey("org.jmicro.api.monitor.IMonitorDataSubscriber##LinkRouterMonitor##0.0.1##LinkRouterMonitor##172.16.22.200##9001##test##java.lang.String"));
 		for(;;){
-			SF.doServiceLog(MonitorConstant.LOG_DEBUG,this.getClass(), 1L,sm,null);
+			SF.doServiceLog(MonitorConstant.LOG_DEBUG,this.getClass(),sm,null);
 			//logger.debug("testSubmitLog");
 			try {
 				Thread.sleep(500);

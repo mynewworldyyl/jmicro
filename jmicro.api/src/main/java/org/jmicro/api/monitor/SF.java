@@ -72,8 +72,8 @@ public class SF {
 		return false;
 	}
 	
-	public static void doServiceLog(byte level,Class<?> cls,long linkId,ServiceMethod sm,Throwable exp,String... others) {
-
+	public static void doServiceLog(byte level,Class<?> cls,ServiceMethod sm,Throwable exp,String... others) {
+		long linkId = JMicroContext.lid();
 		IMonitorDataSubmiter monitor = monitor();
 		if(monitor != null) {
 			SubmitItem si = new SubmitItem(MonitorConstant.LINKER_ROUTER_MONITOR,level,linkId,sm,others);
@@ -84,13 +84,13 @@ public class SF {
 	}
 	
 	public static void doBussinessLog(byte debug, Class<?> tag, Throwable exp, String... msgs) {
-		Long lid = JMicroContext.lid();
 		ServiceMethod sm = JMicroContext.get().getParam(Constants.SERVICE_METHOD_KEY, null);
-		doServiceLog(debug,tag,lid,sm,exp,msgs);
+		doServiceLog(debug,tag,sm,exp,msgs);
 	}
 
 	
-	public static void doRequestLog(byte level,long linkId,Class<?> cls,IReq req,Throwable exp, String... others) {
+	public static void doRequestLog(byte level,Class<?> cls,IReq req,Throwable exp, String... others) {
+		long linkId = JMicroContext.lid();
 		IMonitorDataSubmiter monitor = monitor();
 		if(monitor != null) {
 			SubmitItem si = new SubmitItem(MonitorConstant.LINKER_ROUTER_MONITOR,level,linkId,
@@ -101,8 +101,8 @@ public class SF {
 		}
 	}
 	
-	public static void doResponseLog(byte level,long linkId,Class<?> cls,IResp resq,Throwable exp, String... others) {
-
+	public static void doResponseLog(byte level,Class<?> cls,IResp resq,Throwable exp, String... others) {
+		long linkId = JMicroContext.lid();
 		IMonitorDataSubmiter monitor = monitor();
 		if(monitor != null) {
 			SubmitItem si = new SubmitItem(MonitorConstant.LINKER_ROUTER_MONITOR,level,linkId,
@@ -114,16 +114,16 @@ public class SF {
 	}
 	
 	public static void doMessageLog(byte level,Class<?> cls,Message msg,Throwable exp,String... others) {
-
+		long linkId = JMicroContext.lid();
 		IMonitorDataSubmiter monitor = monitor();
 		if(monitor != null) {
 			SubmitItem si = new SubmitItem(MonitorConstant.LINKER_ROUTER_MONITOR,level,
 					msg,others);
 			si.setTagCls(cls.getName());
 			si.setEx(exp);
+			si.setLinkId(linkId);
 			monitor.submit(si);
 		}
-	
 	}
 	
 	public static IMonitorDataSubmiter monitor() {

@@ -41,7 +41,7 @@ public class GuavaBaseLimiter  implements ILimiter{
 	private Map<String,RateLimiter> rateLimiter = new ConcurrentHashMap<>();
 	
 	@Override
-	public boolean apply(IRequest req) {
+	public boolean enter(IRequest req) {
 		String key = this.key(req);
 		
 		ServiceMethod sm = (ServiceMethod)JMicroContext.get()

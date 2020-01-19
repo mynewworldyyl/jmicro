@@ -17,11 +17,14 @@
 package org.jmicro.server;
 
 import org.jmicro.api.JMicro;
+import org.jmicro.api.JMicroContext;
 import org.jmicro.api.annotation.Cfg;
 import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.Interceptor;
 import org.jmicro.api.exception.RpcException;
 import org.jmicro.api.limitspeed.ILimiter;
+import org.jmicro.api.monitor.MonitorConstant;
+import org.jmicro.api.monitor.SF;
 import org.jmicro.api.net.AbstractInterceptor;
 import org.jmicro.api.net.IInterceptor;
 import org.jmicro.api.net.IRequest;
@@ -39,7 +42,7 @@ import org.slf4j.LoggerFactory;
  * @date 2018年10月4日-下午12:05:30
  */
 @Component(value=Constants.FIRST_INTERCEPTOR,lazy=false,side=Constants.SIDE_PROVIDER)
-@Interceptor
+@Interceptor(order = 0)
 public class FirstInterceptor extends AbstractInterceptor implements IInterceptor{
 
 	private final static Logger logger = LoggerFactory.getLogger(FirstInterceptor.class);
@@ -55,7 +58,7 @@ public class FirstInterceptor extends AbstractInterceptor implements IIntercepto
 	public FirstInterceptor() {}
 	
 	public void init() {
-		limiterName("defaultLimiterName");
+		limiterName(defaultLimiterName);
 	}
 	
 	public void limiterName(String fieldName){
@@ -68,8 +71,12 @@ public class FirstInterceptor extends AbstractInterceptor implements IIntercepto
 			if(l != null) {
 				limiter = l;
 				logger.warn("Change limit to :{}",this.defaultLimiterName);
+				SF.doBussinessLog(MonitorConstant.LOG_DEBUG,FirstInterceptor.class,
+						null,"Change limit to: "+defaultLimiterName);
 			} else {
 				logger.error("Limiter [{}] not found",defaultLimiterName);
+				SF.doBussinessLog(MonitorConstant.LOG_ERROR,FirstInterceptor.class,
+						null,"Limiter ["+defaultLimiterName+"] not found");
 			}
 		}
 	}
@@ -77,9 +84,11 @@ public class FirstInterceptor extends AbstractInterceptor implements IIntercepto
 	@Override
 	public IResponse intercept(IRequestHandler handler, IRequest req) throws RpcException {
 		if(limiter != null){
-			boolean r = limiter.apply(req);
+			boolean r = limiter.enter(req);
 			if(!r){
 				logger.warn("Limit exceep, forbidon this request");
+				SF.doRequestLog(MonitorConstant.LOG_ERROR, FirstInterceptor.class, req,
+						null, "Limit exceep, forbidon this request");
 				return fastFail(req);
 			}
 		}

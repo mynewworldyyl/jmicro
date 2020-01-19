@@ -34,7 +34,7 @@ import org.slf4j.LoggerFactory;
  * @date 2018年10月4日-下午12:06:35
  */
 @Component(value=Constants.LAST_INTERCEPTOR,lazy=false,side=Constants.SIDE_PROVIDER)
-@Interceptor
+@Interceptor(order = Integer.MAX_VALUE)
 public class LastInterceptor extends AbstractInterceptor implements IInterceptor {
 
 	private final static Logger logger = LoggerFactory.getLogger(LastInterceptor.class);

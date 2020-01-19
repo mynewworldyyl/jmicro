@@ -29,7 +29,6 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.jmicro.api.JMicro;
-import org.jmicro.api.JMicroContext;
 import org.jmicro.api.annotation.Cfg;
 import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.Inject;
@@ -38,51 +37,27 @@ import org.jmicro.api.classloader.RpcClassLoader;
 import org.jmicro.api.config.Config;
 import org.jmicro.api.executor.ExecutorConfig;
 import org.jmicro.api.executor.ExecutorFactory;
+import org.jmicro.api.monitor.MonitorConstant;
+import org.jmicro.api.monitor.SF;
 import org.jmicro.api.net.Message;
 import org.jmicro.api.objectfactory.IObjectFactory;
 import org.jmicro.api.pubsub.IInternalSubRpc;
 import org.jmicro.api.pubsub.ISubCallback;
 import org.jmicro.api.pubsub.PSData;
 import org.jmicro.api.pubsub.PubSubManager;
-import org.jmicro.api.pubsub.SubCallbackImpl;
 import org.jmicro.api.raft.IDataOperator;
-import org.jmicro.api.registry.IRegistry;
-import org.jmicro.api.registry.IServiceListener;
-import org.jmicro.api.registry.ServiceItem;
 import org.jmicro.api.registry.ServiceMethod;
-import org.jmicro.api.registry.UniqueServiceMethodKey;
-import org.jmicro.api.service.ServiceManager;
 import org.jmicro.api.timer.TimerTicker;
 import org.jmicro.common.Constants;
 import org.jmicro.common.Utils;
 import org.jmicro.common.util.JsonUtils;
-import org.jmicro.common.util.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import redis.clients.jedis.JedisPool;
 
 /**
- *  The directory of the structure
- * PubSubDir is the root directory
- * Topic is pubsub topic and sub node is the listener of service method
- * 
- *            |            |--L2
- *            |----topic1--|--L1
- *            |            |--L3 
- *            |
- *            |            |--L1 
- *            |            |--L2
- *            |----topic2--|--L3
- *            |            |--L4
- * PubSubDir--|            |--L5   
- *            |
- *            |            |--L1
- *            |            |--L2
- *            |            |--L3
- *            |----topic3--|--L4
- *            |            |--L5
- *                         |--L6
+ *
  * @author Yulei Ye
  * @date 2018年12月22日 下午11:10:21
  */
@@ -108,7 +83,11 @@ public class PubSubServer implements IInternalSubRpc{
 	private boolean openDebug = false;
 	
 	@Cfg(value="/PubSubServer/maxFailItemCount")
-	private int maxFailItemCount = 10000;
+	private int maxFailItemCount = 100;
+	
+	@Cfg(value="/PubSubServer/maxCachePersistItem",defGlobal=true)
+	//默认1千万
+	private int maxCachePersistItem = 10000000;
 	
 	@Cfg(value="/PubSubServer/reOpenThreadInterval")
 	private long reOpenThreadInterval = 1000;
@@ -128,42 +107,26 @@ public class PubSubServer implements IInternalSubRpc{
 	private RpcClassLoader cl;
 	
 	@Inject
-	private ServiceManager srvManager;
-	
-	@Inject
 	private JedisPool cache;
 	
 	@Inject
-	private IRegistry registry;
-	
-	@Inject
 	private IDataOperator dataOp;
+	
+	private SubcriberManager subManager;
 	
 	private ItemStorage storage;
 	
 	private AtomicBoolean discard = new AtomicBoolean(false);
 	
-	/**
-	 *  订阅ID到回调之间映射关系
-	 */
-	private Map<String,ISubCallback> callbacks = new ConcurrentHashMap<>();	
-	
-	/**
-	 * 主题与回调服务关联关系，每个主题可以有0到N个服务
-	 */
-	private Map<String,Set<ISubCallback>> topic2Callbacks = new ConcurrentHashMap<>();
-	
 	private Map<Long,TimerTicker> resendTimers = new ConcurrentHashMap<>();
 	
-	private Queue<SendItem> psitems = null;
+	private Queue<SendItem> resendItems = null;
+	
+	//private Queue<PSData> sendItems = null;
 	
 	private ExecutorService executor = null;
 	
 	private boolean running = false;
-	
-	private Object loadingLock = new Object();
-	private Queue<SubcribeItem> waitingLoadClazz = new ConcurrentLinkedQueue<>();
-	private ClassLoadingWorker clWorker = null;
 	
 	//private Map<String,Set<String>> topic2Method = new ConcurrentHashMap<>();
 	
@@ -180,6 +143,7 @@ public class PubSubServer implements IInternalSubRpc{
 		}
 		
 		this.storage = new ItemStorage(of);
+		subManager = new SubcriberManager(of,this.openDebug);
 		
 		if(this.maxFailItemCount <=0) {
 			logger.warn("Invalid maxFailItemCount: {}, set to default:{}",this.maxFailItemCount,10000);
@@ -191,21 +155,19 @@ public class PubSubServer implements IInternalSubRpc{
 			this.reOpenThreadInterval = 1000;
 		}
 		
-		this.psitems = new ConcurrentLinkedQueue<>(new HashSet<>(maxFailItemCount));
+		this.resendItems = new ConcurrentLinkedQueue<>(new HashSet<>(maxFailItemCount));
+		
+		//this.sendItems = new ConcurrentLinkedQueue<>(new HashSet<>(maxFailItemCount));
 		
 		ExecutorConfig config = new ExecutorConfig();
 		config.setMsCoreSize(1);
 		config.setMsMaxSize(30);
-		config.setTaskQueueSize(1000);
+		config.setTaskQueueSize(5000);
 		config.setThreadNamePrefix("PublishExecurot");
 		config.setRejectedExecutionHandler(new PubsubServerAbortPolicy());
 		executor = ExecutorFactory.createExecutor(config);
 		
 		initPubSubServer();
-		
-		clWorker = new ClassLoadingWorker();
-		clWorker.start();
-		
 		resetResendTimer();
 	}
 	
@@ -220,52 +182,6 @@ public class PubSubServer implements IInternalSubRpc{
 			Set<String>  subs = this.dataOp.getChildren(Config.PubSubDir+"/"+t,true);
 			for(String sub : subs) {
 				this.dataOp.deleteNode(Config.PubSubDir+"/"+t+"/"+sub);
-			}
-		}
-		srvManager.addListener(serviceAddedRemoveListener);
-	}
-	
-	private IServiceListener serviceAddedRemoveListener = new IServiceListener() {
-		@Override
-		public void serviceChanged(int type, ServiceItem item) {
-			if(type == IServiceListener.SERVICE_ADD) {
-				parseServiceAdded(item);
-			}else if(type == IServiceListener.SERVICE_REMOVE) {
-				serviceRemoved(item);
-			}else if(type == IServiceListener.SERVICE_DATA_CHANGE) {
-				serviceDataChange(item);
-			} else {
-				logger.error("rev invalid Node event type : "+type+",path: "+item.getKey().toKey(true, true, true));
-			}
-		}
-	};
-	
-	protected void serviceDataChange(ServiceItem item) {
-		
-	}
-	
-	protected void serviceRemoved(ServiceItem item) {
-		
-		for(ServiceMethod sm : item.getMethods()) {
-			if(StringUtils.isEmpty(sm.getTopic())) {
-				continue;
-			}
-			unsubcribe(sm.getTopic(),sm,null);
-		}
-	}
-	
-	protected void parseServiceAdded(ServiceItem item) {
-		if(item == null || item.getMethods() == null) {
-			return;
-		}
-		
-		for(ServiceMethod sm : item.getMethods()) {
-			if(StringUtils.isEmpty(sm.getTopic())) {
-				continue;
-			}
-			subcribe(sm.getTopic(),sm,null);
-			if(openDebug) {
-				logger.debug("Got ont CB: {}",sm.getKey().toKey(true, true, true));
 			}
 		}
 		
@@ -301,36 +217,11 @@ public class PubSubServer implements IInternalSubRpc{
 	}
 	
 	public boolean subcribe(String topic,ServiceMethod srvMethod,Map<String, String> context) {
-		
-		//doSaveSubscribe(null, srvMethod);
-		
-		String k = srvMethod.getKey().toKey(false, false, false);
-		
-		if(callbacks.containsKey(k)) {
-			//服务名,版本,名称空 相同即为同一个服务,只需要注册一次即可
-			logger.warn("{} have been in the callback list",k);
-			return true;
-		}
-		this.waitingLoadClazz.offer(new SubcribeItem(SubcribeItem.TYPE_SUB,topic,srvMethod.getKey(),context));
-		synchronized(loadingLock) {
-			loadingLock.notify();
-		}
-		return true;
+		return this.subManager.subcribe(topic, srvMethod, context);
 	}
 	
 	public boolean unsubcribe(String topic,ServiceMethod srvMethod,Map<String, String> context) {
-		String k = srvMethod.getKey().toKey(false, false, false);
-		if(!callbacks.containsKey(k)) {
-			return true;
-		}
-		
-		//this.doSaveUnsubcribe(null,srvMethod);
-		
-		this.waitingLoadClazz.offer(new SubcribeItem(SubcribeItem.TYPE_REMOVE,topic,srvMethod.getKey(),context));
-		synchronized(loadingLock) {
-			loadingLock.notify();
-		}
-		return true;
+		return this.subManager.unsubcribe(topic, srvMethod, context);
 	}
 	
 	public long publishString(String topic,String content) {
@@ -353,24 +244,160 @@ public class PubSubServer implements IInternalSubRpc{
 			return PubSubManager.PUB_SERVER_DISCARD;
 		}
 		try {
+			/*if(this.sendItems.size() > this.maxFailItemCount) {
+				//本服务发送队列已经达上限，由发送者负责重发
+				return PubSubManager.PUB_SERVER_DISCARD;
+			}*/
+			//sendItems.offer(item);
+			
 			executor.submit(()->{
 				//在这里失败的消息，服务负责失败重发，最大限度保证消息能送达目标结点
-				doPublish(item);
+				if(isQueue(item.getFlag())) {
+					doPublishQuque(item,0,0);
+				} else {
+					doPublishSubsub(item,0,0);
+				}
 			});
+			
 			return item.getId();
 		} catch (RejectedExecutionException e) {
 			//线程对列满了,停指定时间,待消息队列有空位再重新提交
-			discardOneTime();
 			logger.error("",e);
 			//由发送者处理失败消息
-			return PubSubManager.PUB_SERVER_BUSSUY;
+			SendItem si = new SendItem(SendItem.TYPY_RESEND,null,item,0);
+			return queueItem(si);
 		}
 	}
 	
-	private void doFailItem(PSData item,int qsize) {
-		logger.error("Discard Item:{},queue size:{}, maxFailItemCount:{}",qsize,maxFailItemCount);
+	private long queueItem(SendItem item) {
+		if(item.retryCnt < 2 && resendItems.size() < maxFailItemCount) {
+			//内存缓存
+			resendItems.offer(item);
+		} else {
+			long l = storage.len(item.item.getTopic());
+			if(l < this.maxCachePersistItem) {
+				//做持久化
+				storage.push(item);
+			} else {
+				//没办法，服务器吃不消了，直接丢弃
+				SF.doBussinessLog(MonitorConstant.LOG_ERROR,PubSubServer.class,null, 
+						"缓存消息量已经达上限："+JsonUtils.getIns().toJson(item));
+				discardOneTime();
+				return PubSubManager.PUB_SERVER_DISCARD;
+			}
+		}
+		return item.item.getId();
 	}
 
+	private void doPublishSubsub(PSData item,int retryCnt, long time) {
+
+		String topic = item.getTopic();
+		/*if(openDebug) {
+			logger.debug("Got topic: {}",item.getTopic());
+		}*/
+		//如果在对主题分发过程中有订阅进来,最多就少接收或多收消息
+		//基于pubsub的应该注意此特性,如果应用接受不了,就不应该使得pubsub,
+		//或者确保在消息发送前注册或取消订阅器，
+		Set<ISubCallback> q = this.subManager.getCallback(topic);
+		if(q == null || q.isEmpty()) {
+			if(openDebug) {
+				//消息被丢弃
+				logger.debug("No subscriber for: {}",item.getTopic());
+				SF.doBussinessLog(MonitorConstant.LOG_ERROR,PubSubServer.class,null, 
+						"订阅消息当前无消费者,进入持久存储并重发msgID："+JsonUtils.getIns().toJson(item));
+			}
+			SendItem si = new SendItem(SendItem.TYPY_RESEND,null,item,retryCnt);
+			si.time = time;
+			queueItem(si);
+		} else {
+			boolean flag = false;
+			for(ISubCallback cb : q) {
+				/*if(openDebug) {
+					logger.debug("Publish topic: {}, cb {}",item.getTopic(),cb.info());
+				}*/
+				try {
+					cb.onMessage(item);
+					//最少一个消费者成功消费消息
+					flag = true;
+				} catch (Throwable e) {
+					flag = false;
+					logger.error("doPublish,Fail Item Size["+resendItems.size()+"]",e);
+					String info = "";
+					try {
+						info = cb.info();
+					} catch (Throwable e1) {
+					}
+					SF.doBussinessLog(MonitorConstant.LOG_ERROR,PubSubServer.class,e, info+"\n"+JsonUtils.getIns().toJson(item));
+				}
+			}
+			if(!flag) {
+				//一个都没有成功
+				//需要重发消息
+				queueItem(new SendItem(SendItem.TYPY_RESEND,null,item,retryCnt));
+			}
+		}
+	}
+
+	private void doPublishQuque(PSData item,int retryCnt,long time) {
+
+		String topic = item.getTopic();
+		/*if(openDebug) {
+			logger.debug("Got topic: {}",item.getTopic());
+		}*/
+		//synchronized(topic) {
+		//没必要做同步
+		//如果在对主题分发过程中有订阅进来,最多就少接收或多收消息
+		//基于pubsub的应该注意此特性,如果应用接受不了,就不应该使得pubsub,
+		//或者确保在消息发送前注册或取消订阅器，
+		Set<ISubCallback> q = this.subManager.getCallback(topic);
+		if(q == null || q.isEmpty()) {
+			if(openDebug) {
+				//消息进入重发队列
+				logger.debug("No subscriber for: {}",item.getTopic());
+			}
+			//等待消费者上线
+			SendItem si = new SendItem(SendItem.TYPY_RESEND,null,item,retryCnt++);
+			si.time = time;
+			queueItem(si);
+		} else {
+			for(ISubCallback cb : q) {
+				/*if(openDebug) {
+					logger.debug("Publish topic: {}, cb {}",item.getTopic(),cb.info());
+				}*/
+				try {
+					cb.onMessage(item);
+					//队列类消息,只要一个并且只有一个消费者成功消费
+					return;
+				} catch (Throwable e) {
+					logger.error("doPublishQuque",e);
+					String info = "";
+					try {
+						info = cb.info();
+					} catch (Throwable e1) {
+					}
+					SF.doBussinessLog(MonitorConstant.LOG_ERROR,PubSubServer.class,e, info+"\n"+JsonUtils.getIns().toJson(item));
+				}
+			}
+			
+			//需要重发消息
+			SendItem si = new SendItem(SendItem.TYPY_RESEND,null,item,retryCnt++);
+			si.time = time;
+			queueItem(si);
+			
+			/*if(resendItems.size() > maxFailItemCount) {
+				//失败队列满,丢弃消息,确保服务能自动恢复
+				SF.doBussinessLog(MonitorConstant.LOG_ERROR,PubSubServer.class,null, "队列消息发送失败,进入持久存储重发msgID："+item.getId());
+				persist(item);
+			} else {
+				resendItems.offer(new SendItem(SendItem.TYPY_RESEND,null,item,retryCnt++));
+			}*/
+		
+		}
+	}
+
+	/**
+	 * 极端高峰流量时，服务器直接拒绝请求，以确保服务不挂机
+	 */
 	private void discardOneTime() {
 		logger.warn("Thread pool exceed and stop {} Milliseconds",this.reOpenThreadInterval);
 		discard.set(true);
@@ -381,375 +408,65 @@ public class PubSubServer implements IInternalSubRpc{
     	},null);
 	}
 	
-	private void doPublish(PSData item) {
-		String topic = item.getTopic();
-		/*if(openDebug) {
-			logger.debug("Got topic: {}",item.getTopic());
-		}*/
-		//synchronized(topic) {
-		//没必要做同步
-		//如果在对主题分发过程中有订阅进来,最多就少接收或多收消息
-		//基于pubsub的应该注意此特性,如果应用接受不了,就不应该使得pubsub,
-		//或者确保在消息发送前注册或取消订阅器，
-		Set<ISubCallback> q = topic2Callbacks.get(topic);
-		if(q == null || q.isEmpty()) {
-			if(openDebug) {
-				//消息被丢弃
-				logger.debug("No subscriber for: {}",item.getTopic());
-			}
-			if(isQueue(item.getFlag())) {
-				//等待消费者上线
-				persist(item);
-			}
-		} else {
-			
-			if(isQueue(item.getFlag())) {
-				for(ISubCallback cb : q) {
-					/*if(openDebug) {
-						logger.debug("Publish topic: {}, cb {}",item.getTopic(),cb.info());
-					}*/
-					try {
-						cb.onMessage(item);
-						//队列类消息,只要一个并且只有一个消费者成功消费
-						return;
-					} catch (Throwable e) {
-						logger.error("doPublish,Fail Item Size["+psitems.size()+"]",e);
-					}
-				}
-				
-				//需要重发消息
-				if(psitems.size() > maxFailItemCount) {
-					//失败队列满,丢弃消息,确保服务能自动恢复
-					doFailItem(item,psitems.size());
-					persist(item);
-				} else {
-					psitems.offer(new SendItem(SendItem.TYPY_RESEND,null,item));
-				}
-			} else {
-				for(ISubCallback cb : q) {
-					/*if(openDebug) {
-						logger.debug("Publish topic: {}, cb {}",item.getTopic(),cb.info());
-					}*/
-					try {
-						cb.onMessage(item);
-						//最少一个消费者成功消费消息
-					} catch (Throwable e) {
-						logger.error("doPublish,Fail Item Size["+psitems.size()+"]",e);
-						//需要重发消息
-						if(psitems.size() > maxFailItemCount) {
-							//失败队列满,丢弃消息,确保服务能自动恢复
-							doFailItem(item,psitems.size());
-						} else {
-							//重发只能保证最大限度成功,但并不能保证一定成功
-							//只对这个订阅者重发,别的没有失败的订阅者不能重发
-							psitems.offer(new SendItem(SendItem.TYPY_RESEND,cb,item));
-						}
-					}
-				}
-			}
-		}
-		//}
-	}
-	
 	private boolean isQueue(byte flag) {
 		return Message.is(flag, PSData.FLAG_QUEUE);
 	}
 
 	private void doResend() {
 		
-		if(psitems.isEmpty() ) {
+		if(resendItems.isEmpty() ) {
 			/*if(openDebug) {
 				logger.debug("doResend check empty");
 			}*/
 			
-			Set<String> keys = topic2Callbacks.keySet();
+			Set<String> keys = this.subManager.topics();
 			for(String k : keys) {
 				long l = 0;
 				if((l = storage.len(k)) > 0) {
-					if(l > 10) {
-						l = 10;
+					if(l > 100) {
+						l = 100;
 					}
 					for(;l > 0;) {
-						psitems.addAll(storage.pops(k, l));
+						resendItems.addAll(storage.pops(k, l));
 					}
 					
 				}
 			}
 		}
 		
-		if(psitems.isEmpty() ) {
+		if( resendItems.isEmpty() ) {
 			return;
 		}
 		
 		if(openDebug) {
-			logger.debug("doResend submit ones, send size:{}",psitems.size());
+			logger.debug("doResend submit ones, send size:{}",resendItems.size());
 		}
 		executor.submit(()->{
-			
-			for(SendItem si = psitems.poll(); si != null; si = psitems.poll()) {
-				
+			for(SendItem si = resendItems.poll(); si != null; si = resendItems.poll()) {
 				if(isQueue(si.item.getFlag())) {
-					Set<ISubCallback> q = topic2Callbacks.get(si.item.getTopic());
-					boolean isSucc = false;
-					for(ISubCallback cb : q) {
-						try {
-							cb.onMessage(si.item);
-							//队列类消息,只要一个并且只有一个消费者成功消费
-							isSucc = true;
-							break;
-						} catch (Throwable e) {
-							logger.error("doPublish,Fail Item topic["+si.item.getTopic()+"]",e);
-						}
-					}
-					
-					//需要重发消息
-					if(!isSucc) {
-						doFailItem(si.item,psitems.size());
-						persist(si);
-					}
+					doPublishQuque(si.item,si.retryCnt,si.time);
 				} else {
-					try {
-						si.cb.onMessage(si.item);
-					} catch (Throwable e) {
-						//失败订阅消息,最多只重发3次
-						si.retryCnt++;
-						if(si.retryCnt > 3) {
-							//doFailItem(si.item,psitems.size());
-							logger.error("Retry exceed 3 Item:{},retryCnt:{}",si.item,si.retryCnt);
-							persistLog(si);
-						}
-					}
+					doPublishSubsub(si.item,si.retryCnt,si.time);
 				}
 			}
 		});
 	}
 	
-    private void persist(PSData item) {
-    	SendItem si = new SendItem(SendItem.TYPY_RESEND,null,item);
-    	persist(si);
-	}
-    
-    private void persist(SendItem item) {
-		this.storage.push(item);
-	}
-
-	private void persistLog(SendItem si) {
-		
-	}
-
-	static final class SendItem {
+ final class SendItem {
 		transient public static final int TYPY_RESEND = 1;
 		
 		transient public ISubCallback cb;
 		public PSData item;
 		public int retryCnt=0;
 		
-		public SendItem(int type,ISubCallback cb,PSData item) {
+		public long time = 0;
+		
+		public SendItem(int type,ISubCallback cb,PSData item,int retryCnt) {
 			this.cb = cb;
 			this.item = item;
-			retryCnt = 0;
+			this.retryCnt = retryCnt;
+			time = System.currentTimeMillis();
 		}
-	}
-	
-	private final class SubcribeItem {
-		public static final int TYPE_SUB = 1;
-		public static final int TYPE_REMOVE = 2;
-		
-		public int type;
-		public String topic;
-		public UniqueServiceMethodKey key;
-		public Map<String, String> context;
-		
-		public SubcribeItem(int type,String topic,UniqueServiceMethodKey key,Map<String, String> context) {
-			this.type = type;
-			this.topic = topic;
-			this.key = key;
-			this.context = context;
-		}
-	}
-	
-	private final class ClassLoadingWorker extends Thread {
-		
-		private Queue<Runnable> tasks = new ConcurrentLinkedQueue<>();
-		
-		//存在发送失败需要重新发的项目
-		//只对doPublish中失败的消息负责
-		//publishString及publishData返回false的消息，由客户端处理
-		public ClassLoadingWorker() {
-			super("JMicro-"+Config.getInstanceName()+"-ClassLoadingWorker");
-		}
-		
-		public void submit(Runnable r) {
-			tasks.offer(r);
-			synchronized(loadingLock) {
-				loadingLock.notify();;
-			}
-		}
-		
-		public void run() {
-			Set<SubcribeItem> failItems = new HashSet<>();
-			//Set<SendItem> failPsDatas = new HashSet<>();
-			this.setContextClassLoader(cl);
-			while(true) {
-				try {
-					if(tasks.isEmpty() && waitingLoadClazz.isEmpty()) {
-						synchronized(loadingLock) {
-							loadingLock.wait();
-						}
-					}
-					
-					for(SubcribeItem si = waitingLoadClazz.poll(); si != null; si = waitingLoadClazz.poll() ) {
-						try {
-							switch(si.type) {
-							case SubcribeItem.TYPE_SUB:
-								if(!doSubscribe(si)) {
-									failItems.add(si);
-								}
-								break;
-							case SubcribeItem.TYPE_REMOVE:
-								if(!doUnsubcribe(si.topic,si.key,si.context)) {
-									failItems.add(si);
-								}
-								break;
-							}
-						} catch (Throwable e) {
-							failItems.add(si);
-							throw e;
-						}
-					}
-					
-					/*for(SendItem psd = psitems.poll(); psd != null; psd = psitems.poll() ) {
-						try {
-							psd.cb.onMessage(psd.item);
-						} catch (Throwable e1) {
-							psd.retryCnt++;
-							if(psd.retryCnt > 3) {
-								logger.error("Fail Item:{},retryCnt:{}",psd.item,psd.retryCnt);
-							} else {
-								failPsDatas.add(psd);
-							}
-						}
-					}*/
-					
-					for(Runnable psd = tasks.poll(); psd != null; psd = tasks.poll() ) {
-						psd.run();
-					}
-					
-				}catch(Throwable e) {
-					logger.error("",e);
-				} finally {
-					boolean needSleep = false;
-					if(!failItems.isEmpty()) {
-						waitingLoadClazz.addAll(failItems);
-						needSleep = true;
-						failItems.clear();
-					}
-					
-					/*if(!failPsDatas.isEmpty()) {
-						psitems.addAll(failPsDatas);
-						needSleep = true;
-						failPsDatas.clear();
-					}*/
-					
-					if(needSleep) {
-						try {
-							Thread.sleep(5000);
-						} catch (InterruptedException e) {
-							logger.error("",e);
-						}
-					}
-					
-				}
-			}
-		}
-	}
-	
-	private boolean doUnsubcribe(String topic,UniqueServiceMethodKey key,Map<String, String> context) {
-		String k = key.toKey(false, false, false);
-		if(openDebug) {
-			logger.debug("Unsubscribe CB:{} topic: {}",k,topic);
-		}
-		
-		//topic = topic.intern();
-		//synchronized(topic) {
-			ISubCallback cb = callbacks.remove(k);
-			Set<ISubCallback> q = topic2Callbacks.get(topic);
-			if(q != null) {
-				q.remove(cb);
-			}
-			return cb != null;
-		//}
-	}
-	
-	private boolean doSubscribe(SubcribeItem sui) {
-		
-		String k = sui.key.toKey(false, false, false);
-		
-		if(callbacks.containsKey(k)) {
-			logger.warn("{} have been in the callback list",k);
-			return true;
-		}
-		
-		Set<ServiceItem> sis = registry.getServices(sui.key.getServiceName(), sui.key.getNamespace(), sui.key.getVersion());
-		
-		if(sis == null || sis.isEmpty()) {
-			logger.warn("Service Item not found {}",k);
-			return false;
-		}
-		
-		ServiceItem sitem = null;
-		for(ServiceItem si : sis) {
-			if(si.getKey().getInstanceName().equals(sui.key.getInstanceName())) {
-				sitem = si;
-				break;
-			}
-		}
-		
-		if(sitem == null) {
-			logger.warn("Service Item for classloader server not found {}",k);
-			return false;
-		}
-		
-		Object srv = null;
-		try {
-			PubSubServer.class.getClassLoader().loadClass(sui.key.getUsk().getServiceName());
-			srv = of.getRemoteServie(sitem,null);
-		} catch (ClassNotFoundException e) {
-			try {
-				//JMicroContext.get().setParam(Constants.SERVICE_SPECIFY_ITEM_KEY, sitem);
-				JMicroContext.get().setParam(Constants.DIRECT_SERVICE_ITEM, sitem);
-				Class<?> cls = this.cl.loadClass(sui.key.getUsk().getServiceName());
-				if(cls != null) {
-					srv = of.getRemoteServie(sitem,this.cl);
-				}
-			} catch (ClassNotFoundException e1) {
-				logger.warn("Service {} not found.{}",k,e1);
-				return false;
-			}
-		}
-		
-		if(srv == null) {
-			logger.warn("Servive [" + k + "] not found");
-			return false;
-		}
-		
-		SubCallbackImpl cb = new SubCallbackImpl(sui.key,srv);
-		
-		callbacks.put(k, cb);
-		
-		//sui.topic = sui.topic.intern();
-		//synchronized(sui.topic) {
-		if(!topic2Callbacks.containsKey(sui.topic)) {
-			topic2Callbacks.put(sui.topic, new HashSet<ISubCallback>());
-		}
-		topic2Callbacks.get(sui.topic).add(cb);
-		//}
-		
-		if(openDebug) {
-			logger.debug("Subcribe:{},topic:{}",k,sui.topic);
-		}
-		
-		return true;
 	}
 
 	public boolean isEnableServer() {

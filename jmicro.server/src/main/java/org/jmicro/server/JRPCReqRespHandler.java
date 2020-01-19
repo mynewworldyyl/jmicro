@@ -22,7 +22,6 @@ import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.Inject;
 import org.jmicro.api.codec.ICodecFactory;
 import org.jmicro.api.config.Config;
-import org.jmicro.api.debug.LogUtil;
 import org.jmicro.api.idgenerator.ComponentIdServer;
 import org.jmicro.api.monitor.MonitorConstant;
 import org.jmicro.api.monitor.SF;
@@ -118,7 +117,7 @@ public class JRPCReqRespHandler implements IMessageHandler{
 			msg.setVersion(req.getMsg().getVersion());
 				
 			if(msg.isLoggable()){
-				SF.doRequestLog(MonitorConstant.LOG_DEBUG,msg.getLinkId(), TAG, req,null,"got REQUEST");
+				SF.doRequestLog(MonitorConstant.LOG_DEBUG, TAG, req,null,"got REQUEST");
 			}
 			
 			if(req.isStream()){
@@ -139,7 +138,7 @@ public class JRPCReqRespHandler implements IMessageHandler{
 						msg.setType(Constants.MSG_TYPE_ASYNC_RESP);
 						
 						if(msg.isLoggable()) {
-							SF.doResponseLog(MonitorConstant.LOG_DEBUG, msg.getLinkId(), TAG, resp,null,"STREAM",resp.getId()+"");
+							SF.doResponseLog(MonitorConstant.LOG_DEBUG,TAG, resp,null,"STREAM",resp.getId()+"");
 						}
 						s.write(msg);
 						return true;
@@ -174,7 +173,7 @@ public class JRPCReqRespHandler implements IMessageHandler{
 				msg.setPayload(ICodecFactory.encode(codeFactory,resp,msg.getProtocol()));
 				
 				if(msg.isLoggable()) {
-					SF.doResponseLog(MonitorConstant.LOG_DEBUG,msg.getLinkId(),TAG, resp,null,"STREAM Confirm");
+					SF.doResponseLog(MonitorConstant.LOG_DEBUG,TAG, resp,null,"STREAM Confirm");
 				}
 				
 				s.write(msg);
@@ -191,7 +190,7 @@ public class JRPCReqRespHandler implements IMessageHandler{
 				msg.setType((byte)(msg.getType()+1));
 				
 				if(SF.isLoggable(this.openDebug,MonitorConstant.LOG_DEBUG)) {
-					SF.doResponseLog(MonitorConstant.LOG_DEBUG,msg.getLinkId(), TAG, resp,null);
+					SF.doResponseLog(MonitorConstant.LOG_DEBUG, TAG, resp,null);
 				} 
 				
 				s.write(msg);

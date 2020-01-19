@@ -32,9 +32,12 @@ public class TestDynamicRegistryService extends JMicroBaseTestCase{
 		ServiceItem si = sl.createSrvItem(DynamicInterface.class.getName(), Config.getInstanceName()+"_DynamicRegistryService", "0.0.1", DynamicInterface.class.getName());
 		
 		ServiceMethod sm = sl.createSrvMethod(si, "run", new Class[] {String.class});
+		sm.setMonitorEnable(1);
 		sm.setTopic("/jmicro/test/topic02");
 		
 		sl.registService(si,r);
+		
+		//sl.unregistService(si);
 		
 		JMicro.waitForShutdown();
 		

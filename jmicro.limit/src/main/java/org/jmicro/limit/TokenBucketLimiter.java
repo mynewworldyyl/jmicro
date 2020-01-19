@@ -45,7 +45,7 @@ public class TokenBucketLimiter extends AbstractLimiter implements ILimiter{
 	private IMonitorDataSubmiter monitor;
 	
 	@Override
-	public boolean apply(IRequest req) {
+	public boolean enter(IRequest req) {
 		int speed = this.getSpeed(req);
 		if(speed <=0){
 			return true;

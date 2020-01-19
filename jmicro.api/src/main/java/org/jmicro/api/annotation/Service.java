@@ -37,7 +37,7 @@ public @interface Service {
 	public String registry() default Constants.DEFAULT_REGISTRY;
 	
 	/**
-	 * 底层传输层，可以是http或Mina
+	 * 底层传输层，可以是http或netty
 	 */
 	public String[] servers() default "";
 	
@@ -137,7 +137,7 @@ public @interface Service {
 	public String baseTimeUnit() default Constants.TIME_MILLISECONDS;
 	
 	/**
-	 * 用于代理处理类，有特殊需求的可以定制代码才需要设置，如ID请求处理器，使用的RpcRequest及Message不需要ID等特殊实现
+	 * 用于代理处理类，有特殊需求的定制代码才需要设置，如ID请求处理器，使用的RpcRequest及Message不需要ID等特殊实现
 	 * @return
 	 */
 	public String handler() default Constants.DEFAULT_INVOCATION_HANDLER;
@@ -154,4 +154,7 @@ public @interface Service {
 	 * @return
 	 */
 	public String[] limit2Packages() default {};
+	
+	
+	
 }

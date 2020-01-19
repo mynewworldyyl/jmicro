@@ -22,7 +22,7 @@ public class DefaultServerListener implements IServerListener {
 		String d = transport+":"+ip+":"+port;
 		if(!dop.exist(path)) {
 			dop.createNode(path, d, false);
-		}else {
+		} else {
 			String dd = dop.getData(path);
 			if(StringUtils.isNotEmpty(dd)) {
 				d = dd+","+d;
@@ -37,11 +37,6 @@ public class DefaultServerListener implements IServerListener {
 			dop.setData(insPath, d);
 		}
 		
-	}
-
-	@Override
-	public void serverStop(String ip, int port, String transport) {
-
 	}
 
 }

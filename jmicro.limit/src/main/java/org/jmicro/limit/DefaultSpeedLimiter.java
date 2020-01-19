@@ -55,7 +55,7 @@ public class DefaultSpeedLimiter extends AbstractLimiter implements ILimiter{
 	}
 	
 	@Override
-	public boolean apply(IRequest req) {
+	public boolean enter(IRequest req) {
 		
 		//not support method override
 		ServiceMethod sm = JMicroContext.get().getParam(Constants.SERVICE_METHOD_KEY, null);
@@ -76,7 +76,7 @@ public class DefaultSpeedLimiter extends AbstractLimiter implements ILimiter{
 					this.limiterData.put(key, sc);
 					al = new AtomicInteger(0);
 					this.als.put(key, al);
-				}else {
+				} else {
 					sc = limiterData.get(key);
 					al = this.als.get(key);
 				}
