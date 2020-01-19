@@ -1,5 +1,6 @@
 package org.jmicro.api.net;
 
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.Map;
@@ -133,6 +134,28 @@ public class InterceptorManager {
 			throw new CommonException(sb.toString());
 		}
 		handlers[handlers.length-1] = lastHandler;
+		
+		if(handlers.length > 3) {
+			Arrays.sort(handlers, 1, handlers.length-2, (o1,o2)->{
+				
+				if(o1 == o2) {
+					return 0;
+				}
+				
+				if(o1 == null && o2 != null) {
+					return -1;
+				}
+				
+				if(o1 != null && o2 == null) {
+					return 1;
+				}
+				
+				Interceptor ha1 = o1.getClass().getAnnotation(Interceptor.class);
+				Interceptor ha2= o2.getClass().getAnnotation(Interceptor.class);
+				return ha1.order() > ha2.order() ? 1:(ha1.order() == ha2.order() ? 0:-1);
+			});
+		}
+		
 		
 		IRequestHandler last = handler;
 		for(int i = handlers.length-1; i >= 0; i--) {

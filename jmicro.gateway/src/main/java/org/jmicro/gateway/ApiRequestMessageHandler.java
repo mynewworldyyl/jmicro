@@ -89,7 +89,7 @@ public class ApiRequestMessageHandler implements IMessageHandler{
 		resp.setSuccess(true);
 		resp.setId(idGenerator.getLongId(ApiResponse.class));
 		
-		long lid = JMicroContext.lid();
+		//long lid = JMicroContext.lid();
 
 		JMicroContext.get().setParam(JMicroContext.LOCAL_HOST, session.localHost());
 		JMicroContext.get().setParam(JMicroContext.LOCAL_PORT, session.localPort()+"");
