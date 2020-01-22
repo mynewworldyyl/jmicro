@@ -26,6 +26,7 @@ import java.util.Set;
 import org.jmicro.api.annotation.Reference;
 import org.jmicro.api.client.AbstractClientServiceProxy;
 import org.jmicro.api.objectfactory.ProxyObject;
+import org.jmicro.api.registry.AsyncConfig;
 import org.jmicro.api.registry.IServiceListener;
 import org.jmicro.api.registry.ServiceItem;
 import org.jmicro.api.registry.UniqueServiceKey;
@@ -104,8 +105,11 @@ class RemoteProxyServiceFieldListener implements IServiceListener{
 				}
 				
 				if(!flag) {
+					
+					AsyncConfig[] acs = this.rsm.getAcs(this.ref);
+					
 					//代理还不存在，创建之
-					AbstractClientServiceProxy p = (AbstractClientServiceProxy)this.rsm.getService(item, null);
+					AbstractClientServiceProxy p = (AbstractClientServiceProxy)this.rsm.getRefRemoteService(item, null,acs);
 					if(p!=null){
 						set.add(p);
 						logger.debug("Add proxy for,Size:{} Field:{},Item:{}",set.size(),

@@ -65,4 +65,6 @@ public interface IRequest extends IReq{
 	void setId(long id);
 	
 	boolean isLoggable();
+	
+	void setObject(String key,Object value);
 }

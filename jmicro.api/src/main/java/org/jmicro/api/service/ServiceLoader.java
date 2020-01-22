@@ -380,6 +380,8 @@ public class ServiceLoader {
 		ServiceItem item = new ServiceItem();
 		UniqueServiceKey usk = new UniqueServiceKey();
 		usk.setNamespace(getFieldValue(anno.namespace(),intAnno == null ? null : intAnno.namespace(),Constants.DEFAULT_NAMESPACE));
+		
+		//服务名称肯定是接口全限定类名称
 		usk.setServiceName(interfacez.getName());
 		usk.setVersion(getFieldValue(anno.version(),intAnno == null ? null : intAnno.version(),Constants.VERSION));
 		usk.setInstanceName(Config.getInstanceName());
@@ -479,6 +481,7 @@ public class ServiceLoader {
 				
 			} else {
 				 if(manno != null ) {
+					 //实现类方法配置具有高优先级
 					sbr = manno.breakingRule();
 					sm.setRetryCnt(manno.retryCnt()!=3 || intMAnno == null ?manno.retryCnt():intMAnno.retryCnt());
 					sm.setRetryInterval(manno.retryInterval()!=500 || intMAnno == null ? manno.retryInterval():intMAnno.retryInterval());
@@ -505,14 +508,10 @@ public class ServiceLoader {
 					sm.setLoggable(manno.loggable()!=-1 || intMAnno == null ? manno.loggable() : intMAnno.loggable());
 					sm.setDebugMode(manno.debugMode()!=-1 || intMAnno == null ? manno.debugMode() : intMAnno.debugMode());
 					
-					sm.getAsync().setCondition(manno.async().condition());
-					sm.getAsync().setEnable(manno.async().enable());
-					sm.getAsync().setMethod(manno.async().method());
-					sm.getAsync().setNamespace(manno.async().namespace());
-					sm.getAsync().setServiceName(manno.async().serviceName());
-					sm.getAsync().setVersion(manno.async().version());
+					sm.setAsyncable(manno.asyncable());
 					
 				 } else {
+					 //使用接口方法配置
 					sbr = intMAnno.breakingRule();
 					sm.setRetryCnt(intMAnno.retryCnt());
 					sm.setRetryInterval(intMAnno.retryInterval());
@@ -537,7 +536,9 @@ public class ServiceLoader {
 					sm.setSlotSize(intMAnno.slotSize()<=0?item.getSlotSize():intMAnno.slotSize());
 					sm.setCheckInterval(intMAnno.checkInterval()<=0?item.getCheckInterval():intMAnno.checkInterval());
 					sm.setBaseTimeUnit(StringUtils.isEmpty(intMAnno.baseTimeUnit())? item.getBaseTimeUnit():intMAnno.baseTimeUnit());
-				}
+					
+					sm.setAsyncable(intMAnno.asyncable());
+				 }
 				 
 				sm.getBreakingRule().setBreakTimeInterval(sbr.breakTimeInterval());
 				sm.getBreakingRule().setEnable(sbr.enable());
@@ -549,6 +550,11 @@ public class ServiceLoader {
 			sm.getKey().setUsk(usk);
 			sm.getKey().setMethod(m.getName());
 			sm.getKey().setParamsStr(UniqueServiceMethodKey.paramsStr(m.getParameterTypes()));
+			
+			if(sm.isAsyncable()) {
+				//允许异步调用的RPC必须以方法全限定名为主题
+				sm.setTopic(sm.getKey().toKey(false, false, false));
+			}
 			
 			item.addMethod(sm);
 		}

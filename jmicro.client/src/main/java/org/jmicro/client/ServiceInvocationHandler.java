@@ -30,6 +30,7 @@ import org.jmicro.api.net.IRequest;
 import org.jmicro.api.net.IResponse;
 import org.jmicro.api.net.InterceptorManager;
 import org.jmicro.api.net.RpcRequest;
+import org.jmicro.api.registry.AsyncConfig;
 import org.jmicro.api.registry.ServiceItem;
 import org.jmicro.api.registry.ServiceMethod;
 import org.jmicro.common.CommonException;

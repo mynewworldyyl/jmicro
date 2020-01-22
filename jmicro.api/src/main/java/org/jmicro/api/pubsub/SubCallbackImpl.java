@@ -16,12 +16,18 @@
  */
 package org.jmicro.api.pubsub;
 
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.Map;
 
-import org.jmicro.api.registry.ServiceMethod;
+import org.jmicro.api.JMicroContext;
+import org.jmicro.api.monitor.MonitorConstant;
+import org.jmicro.api.monitor.SF;
+import org.jmicro.api.net.Message;
+import org.jmicro.api.registry.IRegistry;
 import org.jmicro.api.registry.UniqueServiceMethodKey;
 import org.jmicro.common.CommonException;
+import org.jmicro.common.Constants;
+import org.jmicro.common.util.JsonUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -40,7 +46,9 @@ public class SubCallbackImpl implements ISubCallback{
 	
 	private Method m = null;
 	
-	public SubCallbackImpl(UniqueServiceMethodKey mkey,Object srv){
+	private IRegistry reg;
+	
+	public SubCallbackImpl(UniqueServiceMethodKey mkey,Object srv, IRegistry reg){
 		if(mkey == null) {
 			throw new CommonException("SubCallback service method cannot be null");
 		}
@@ -50,24 +58,77 @@ public class SubCallbackImpl implements ISubCallback{
 		}
 		this.mkey = mkey;
 		this.srvProxy = srv;
+		this.reg = reg;
 		setMt();
 	}
 	
 	@Override
 	public void onMessage(PSData item) {
+		Object obj = null;
 		try {
 			Class[] ptype = m.getParameterTypes();
 			if(ptype == null) {
-				m.invoke(this.srvProxy, new Object[0]);
+				 obj = m.invoke(this.srvProxy, new Object[0]);
 			}else if(ptype.length == 1 && ptype[0] == PSData.class) {
-				m.invoke(this.srvProxy, item);
+				 obj = m.invoke(this.srvProxy, item);
 			} else {
-				Object[] args = (Object[])item.getData();
-				m.invoke(this.srvProxy, args);
+				 Object[] args = (Object[])item.getData();
+				 obj = m.invoke(this.srvProxy, args);
 			}
 		} catch (Throwable e) {
 			throw new CommonException("Fail to send message to [" + mkey.toString()+"]", e);
 		}
+		
+		boolean f = Message.is(item.getFlag(), PSData.FLAG_ASYNC_METHOD);
+		if(f) {
+			Map<String,Object> cxt = item.getContext();
+		    	
+			//AsyncInterceptor中设置以下参数
+		    String sn = (String)cxt.get(Constants.SERVICE_NAME_KEY);
+			String ns = (String)cxt.get(Constants.SERVICE_NAMESPACE_KEY);
+			String ver = (String)cxt.get(Constants.SERVICE_VERSION_KEY);
+		    
+			String mn = (String)cxt.get(Constants.SERVICE_METHOD_KEY);
+			
+			Long linkId = (Long)cxt.get(JMicroContext.LINKER_ID);
+			//Long reqId = (Long)cxt.get(JMicroContext.REQ_ID);
+			
+			if( sn == null ) {
+				String msg = "Async callback service name is NULL:" + mkey.toString()+" [sn="+ns + ",ns="+ns + "ver="+ver +",mn="+ mn+",with args:"+ (obj==null?"":JsonUtils.getIns().toJson(obj)) +"]";
+				SF.doBussinessLog(MonitorConstant.LOG_ERROR,SubCallbackImpl.class,null, msg);
+				throw new CommonException(msg);
+			}
+			
+			Object srv = reg.getServices(sn, ns, ver);
+			
+			if(srv != null) {
+				try {
+					Method m = null;
+					if(obj == null) {
+						m = srv.getClass().getMethod(mn);
+					} else {
+						m = srv.getClass().getMethod(mn,obj.getClass());
+					}
+					
+					if(m != null) {
+						//JMicroContext.get().setParam(key, val);
+						JMicroContext.get().setLong(JMicroContext.LINKER_ID, linkId);
+						//JMicroContext.get().setLong(JMicroContext.REQ_ID, reqId);
+						m.invoke(srv, obj);
+					}
+				} catch (Throwable e) {
+					String msg = "Fail to callback src service:" + mkey.toString()+" [sn="+ns + ",ns="+ns + "ver="+ver +",mn="+ mn+",with args:"+ (obj==null?"":JsonUtils.getIns().toJson(obj)) +"]";
+					SF.doBussinessLog(MonitorConstant.LOG_ERROR,SubCallbackImpl.class,e, msg);
+					throw new CommonException(msg,e);
+				}
+			} else {
+				String msg = "Async callback service not found:" + mkey.toString()+" [sn="+ns + ",ns="+ns + "ver="+ver +",mn="+ mn+",with args:"+ (obj==null?"":JsonUtils.getIns().toJson(obj)) +"]";
+				SF.doBussinessLog(MonitorConstant.LOG_ERROR,SubCallbackImpl.class,null, msg);
+				throw new CommonException(msg);
+			}
+			
+		}
+		
 	}
 
 	private void setMt() {

@@ -92,13 +92,13 @@ public @interface SMethod {
 	public SBreakingRule breakingRule() default @SBreakingRule(enable=false,breakTimeInterval=1000,percent=50,checkInterval=80);
 	
 	/**
-	 *      异步返回策略，客户端和服务器都可实现异步调用
-	 *      优先使用客户端异步，这样少一次RPC调用成本
-	 *      对于无需要接收响应的RPC，优先使用异步机制，并且异步无需回调结果值
-	 *      
+	 * 是否可异步调用，实际上此属性不应该在此设置，因为任何RPC方法都可以异步调用，只应该由客户端决定是否做异步调用。
+	 * 设置此属性的唯一目的是告诉ServiceLoader要把方法的KEY设置到topic中,以使PubsubServer注册此RPC方法为消息订阅方法 ，这样客户端
+	 * 就可以通过  PubsubServer异步调用此方法
+	 * 实际上可以在服务运行过程中设置topic属性达到同样的效果，而不管asyncable是什么值，asyncable只算是服务第一次运行过程中的默认行为
 	 * @return
 	 */
-	public Async async() default @Async();
+	public boolean asyncable() default false;
 	
 	//after breaking, will test the service with this arguments
 	public String testingArgs() default "";

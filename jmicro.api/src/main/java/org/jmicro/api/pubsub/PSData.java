@@ -36,6 +36,8 @@ public final class PSData implements Serializable{
 	
 	public static final byte FLAG_PUBSUB = 0<<0;
 	
+	public static final byte FLAG_ASYNC_METHOD = 1<<1;
+	
 	//1:  如果是订阅类消息,必须全部成功消费才算成功，否则对于失败
 	//0:只需要确保其中一个消费者成功消费消息即可认为消息发送成功，即使别的消费者消费失败，也不会重发消息
 	//public static final byte FLAG_SUCCESS_ALL = 1<<1;
@@ -52,6 +54,15 @@ public final class PSData implements Serializable{
 	private String topic;
 	
 	private Object data;
+	
+	public static byte flag(byte ...fs) {
+		byte fl = 0;
+		for(byte f : fs) {
+			fl |= f;
+		}
+		return fl; 
+	}
+
 
 	public byte getFlag() {
 		return flag;

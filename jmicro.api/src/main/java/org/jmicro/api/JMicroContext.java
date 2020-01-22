@@ -53,6 +53,8 @@ public class JMicroContext  {
 	public static final String REMOTE_PORT = "remotePort";
 	
 	public static final String LINKER_ID = "linkerId";
+	public static final String REQ_ID = "reqId";
+	public static final String MSG_ID = "msgId";
 	
 	public static final String MONITOR = "monitor";
 	

@@ -55,7 +55,7 @@ public final class ServiceMethod {
 	
 	private BreakRule breakingRule = new BreakRule();
 	
-	private AsyncConfig async = new AsyncConfig();
+	private boolean asyncable = false;
 	
 	//统计服务数据基本时长，单位同baseTimeUnit确定 @link SMethod
 	private long timeWindow = -1;
@@ -128,6 +128,7 @@ public final class ServiceMethod {
 	//a stream service must be async=true, and get got result by callback
 	private boolean stream = false;
 	
+	//如果客户端RPC异步调用，此topic值必须是方法全限定名，参考toKey方法实现
 	private String topic = null;
 
 	public void formPersisItem(ServiceMethod p){
@@ -139,7 +140,7 @@ public final class ServiceMethod {
 
 		this.maxFailBeforeDegrade = p.maxFailBeforeDegrade;
 		this.getBreakingRule().from(p.getBreakingRule());
-		this.getAsync().from(p.getAsync());
+		this.asyncable = p.asyncable;
 
 		this.testingArgs = p.testingArgs;
 		this.breaking = p.breaking;
@@ -424,12 +425,13 @@ public final class ServiceMethod {
 		return this.hashCode() == obj.hashCode();
 	}
 
-	public AsyncConfig getAsync() {
-		return async;
+	public boolean isAsyncable() {
+		return asyncable;
 	}
 
-	public void setAsync(AsyncConfig async) {
-		this.async = async;
+	public void setAsyncable(boolean asyncable) {
+		this.asyncable = asyncable;
 	}
+
 
 }

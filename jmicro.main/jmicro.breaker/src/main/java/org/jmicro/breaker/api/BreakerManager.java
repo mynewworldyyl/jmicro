@@ -99,7 +99,7 @@ public class BreakerManager implements ITickerAction{
 		
 		//服务熔断了,做自动服务检测
 		Object srv = of.getRemoteServie(sm.getKey().getServiceName(),sm.getKey().getNamespace(),
-				sm.getKey().getVersion(),null);
+				sm.getKey().getVersion(),null,null);
 		if(srv == null) {
 			throw new CommonException("Service ["+sm.getKey().getServiceName()+"] not found");
 		}

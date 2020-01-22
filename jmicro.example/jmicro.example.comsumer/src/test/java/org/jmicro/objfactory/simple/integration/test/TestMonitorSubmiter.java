@@ -16,7 +16,7 @@ public class TestMonitorSubmiter extends JMicroBaseTestCase{
 	@Test
 	public void testSubmitItem() {
 		IMonitorDataSubscriber m = of.getRemoteServie(IMonitorDataSubscriber.class.getName()
-				, "serviceExceptionMonitor", "0.0.1", null);
+				, "serviceExceptionMonitor", "0.0.1", null,null);
 		SubmitItem si = new SubmitItem();
 		Set<SubmitItem> sis = new HashSet<>();
 		sis.add(si);

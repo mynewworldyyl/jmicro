@@ -23,6 +23,9 @@ package org.jmicro.api.net;
 public final class ServerError {
 	
 	public static final int SE_LIMITER = 0xfffffff1;
+	public static final int SE_LIMITER_ENTER_ASYNC = 0xfffffff2;
+	
+	public static final int SE_ASYNC_PUBSUB_FAIL = 0xfffffff3;
 
 	private int errorCode;
 	private String msg;

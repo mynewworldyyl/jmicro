@@ -44,6 +44,9 @@ import org.jmicro.api.net.ISession;
 import org.jmicro.api.net.Message;
 import org.jmicro.api.net.RpcResponse;
 import org.jmicro.api.net.ServerError;
+import org.jmicro.api.pubsub.PSData;
+import org.jmicro.api.pubsub.PubSubManager;
+import org.jmicro.api.registry.AsyncConfig;
 import org.jmicro.api.registry.Server;
 import org.jmicro.api.registry.ServiceItem;
 import org.jmicro.api.registry.ServiceMethod;
@@ -83,6 +86,9 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
 	private ISelector selector;
 	
 	@Inject
+	private PubSubManager pubsubManager;
+	
+	@Inject
 	private ComponentIdServer idGenerator;
 	
 	//测试统计模式使用
@@ -111,10 +117,59 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
 		AbstractClientServiceProxy proxy =  (AbstractClientServiceProxy)JMicroContext.get().getObject(Constants.PROXY, null);
 		RpcResponse resp = null;
 		try {
+			 ServiceMethod sm = JMicroContext.get().getParam(Constants.SERVICE_METHOD_KEY, null);
+			 String mkey = sm.getKey().getMethod();
+	         AsyncConfig ac = proxy.getAcs(mkey);
+	         if(ac != null && ac.isEnable()) {
+	        	 if(ac.getCondition().equals(AsyncConfig.ASYNC_DIRECT)) {
+	        		 //客户端直接做异步
+	        		 return doAsyncInvoke(proxy,request,sm,ac);
+	        	 } else {
+	        		 //可以异步调用并异步返回结果
+		        	 request.setObject(mkey, ac);
+	        	 }
+	         }
 			resp = doRequest(request,proxy);
 		} catch (SecurityException | IllegalArgumentException  e) {
 			throw new RpcException(request,"",e);
 		}
+		return resp;
+	}
+
+	private IResponse doAsyncInvoke(AbstractClientServiceProxy proxy, IRequest req,ServiceMethod sm,AsyncConfig ac) {
+		
+		String topic = sm.getKey().toKey(false, false, false);
+		
+		Map<String,Object> cxt = new HashMap<>();
+		//结果回调RPC方法
+		cxt.put(topic, ac);
+		
+		//链路相关ID
+		cxt.put(JMicroContext.LINKER_ID, JMicroContext.lid());
+		cxt.put(JMicroContext.REQ_ID, req.getRequestId());
+		cxt.put(JMicroContext.MSG_ID, req.getMsgId());
+		
+		PSData data = new PSData();
+		data.setContext(cxt);
+		data.setData(req.getArgs());
+		data.setFlag(PSData.flag(PSData.FLAG_QUEUE,PSData.FLAG_ASYNC_METHOD));
+		data.setTopic(topic);
+		
+		//异步后,就不一定是本实例接收到此RPC调用了
+		long id = pubsubManager.publish(data);
+		
+		RpcResponse resp = new RpcResponse();
+		resp.setResult(id);
+		if(id < 0) {
+			String msg = "ErrorCode:"+id+",异步调用失败"+sm.getKey().toKey(false, false, false);
+			SF.doRequestLog(MonitorConstant.LOG_ERROR,TAG,req,null,msg);
+			ServerError se = new ServerError();
+			se.setErrorCode(ServerError.SE_ASYNC_PUBSUB_FAIL);
+			se.setMsg(msg);
+			resp.setResult(se);
+			resp.setSuccess(false);
+		}
+		
 		return resp;
 	}
 

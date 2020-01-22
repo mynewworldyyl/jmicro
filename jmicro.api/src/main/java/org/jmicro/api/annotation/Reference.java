@@ -84,4 +84,13 @@ public @interface Reference {
 	 * @return
 	 */
 	public String changeListener() default "";
+	
+	/**
+	 *      异步返回策略，客户端和服务器都可实现异步调用
+	 *      优先使用客户端异步，这样少一次RPC调用成本
+	 *      对于无需要接收响应的RPC，优先使用异步机制，并且异步无需回调结果值
+	 *      
+	 * @return
+	 */
+	public Async[] async() default {};
 }

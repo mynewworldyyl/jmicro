@@ -133,6 +133,7 @@ class SubcriberManager {
 		}
 		
 		for(ServiceMethod sm : item.getMethods()) {
+			//接收异步消息的方法也要注册
 			if(StringUtils.isEmpty(sm.getTopic())) {
 				continue;
 			}
@@ -241,14 +242,14 @@ class SubcriberManager {
 		Object srv = null;
 		try {
 			PubSubServer.class.getClassLoader().loadClass(sui.key.getUsk().getServiceName());
-			srv = of.getRemoteServie(sitem,null);
+			srv = of.getRemoteServie(sitem,null,null);
 		} catch (ClassNotFoundException e) {
 			try {
 				//JMicroContext.get().setParam(Constants.SERVICE_SPECIFY_ITEM_KEY, sitem);
 				JMicroContext.get().setParam(Constants.DIRECT_SERVICE_ITEM, sitem);
 				Class<?> cls = this.cl.loadClass(sui.key.getUsk().getServiceName());
 				if(cls != null) {
-					srv = of.getRemoteServie(sitem,this.cl);
+					srv = of.getRemoteServie(sitem,this.cl,null);
 				}
 			} catch (ClassNotFoundException e1) {
 				logger.warn("Service {} not found.{}",k,e1);
@@ -261,7 +262,7 @@ class SubcriberManager {
 			return false;
 		}
 		
-		SubCallbackImpl cb = new SubCallbackImpl(sui.key,srv);
+		SubCallbackImpl cb = new SubCallbackImpl(sui.key,srv,registry);
 		
 		callbacks.put(k, cb);
 		

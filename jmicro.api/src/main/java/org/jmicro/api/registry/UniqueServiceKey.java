@@ -212,6 +212,12 @@ public final class UniqueServiceKey {
 		return result;
 	}
 	
+	/**
+	 * 处理以*号结尾匹配
+	 * @param macher
+	 * @param namespace
+	 * @return
+	 */
 	public static boolean matchNamespace(String macher, String namespace) {
 		if(StringUtils.isEmpty(macher)) {
 			return false;

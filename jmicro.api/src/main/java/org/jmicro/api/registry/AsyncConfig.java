@@ -27,9 +27,25 @@ import org.jmicro.api.annotation.SO;
 @SO
 final public class AsyncConfig {
 	
+	//超时时做异步调用
+	public static final String ASYNC_TIMEOUT="timeout";
+	//熔断时做异步调用
+	public static final String ASYNC_BREAK="break";
+	//直接做异步调用
+	public static final String 	ASYNC_DIRECT="direct";
+	//不能做异步调用
+	public static final String 	ASYNC_DISABLE="";
+	
 	private boolean enable = false;
 	
-	private String[] condition;
+	//要调用的目标方法名称
+	private String forMethod;
+	
+	//要调用的目标方法参数,此参数可选
+	private String paramStr;
+	
+	//异步条件
+	private String condition;
 	
 	//异步调用服务名称
 	private String serviceName;
@@ -42,12 +58,12 @@ final public class AsyncConfig {
 	
 	//异步调用服务方法名称，参数即是目标方法的返回值
 	private String method;
-
-	public String[] getCondition() {
+	
+	public String getCondition() {
 		return condition;
 	}
 
-	public void setCondition(String[] condition) {
+	public void setCondition(String condition) {
 		this.condition = condition;
 	}
 
@@ -91,6 +107,22 @@ final public class AsyncConfig {
 		this.enable = enable;
 	}
 	
+	public String getForMethod() {
+		return forMethod;
+	}
+
+	public void setForMethod(String forMethod) {
+		this.forMethod = forMethod;
+	}
+
+	public String getParamStr() {
+		return paramStr;
+	}
+
+	public void setParamStr(String paramStr) {
+		this.paramStr = paramStr;
+	}
+
 	public void from(AsyncConfig r) {
 		this.setEnable(r.isEnable());
 		this.setCondition(r.getCondition());
@@ -98,6 +130,8 @@ final public class AsyncConfig {
 		this.setNamespace(r.getNamespace());
 		this.setServiceName(r.getServiceName());
 		this.setVersion(r.getVersion());
+		this.setForMethod(r.getForMethod());
+		this.setParamStr(r.getParamStr());
 	}
 	
 }

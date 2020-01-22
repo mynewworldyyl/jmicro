@@ -15,7 +15,8 @@ public class TestPubSubServer extends JMicroBaseTestCase{
 
 	@Test
 	public void testPubSubServerMessage() {
-		IInternalSubRpc psm = of.getRemoteServie(IInternalSubRpc.class.getName(), "org.jmicro.pubsub.DefaultPubSubServer", "0.0.1",null);
+		IInternalSubRpc psm = of.getRemoteServie(IInternalSubRpc.class.getName(),
+				"org.jmicro.pubsub.DefaultPubSubServer", "0.0.1",null,null);
 		PSData psd = new PSData();
 		psd.setData(new byte[] {22,33,33});
 		psd.setTopic(TOPIC);

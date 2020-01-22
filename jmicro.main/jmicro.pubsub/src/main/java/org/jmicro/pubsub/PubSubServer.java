@@ -279,9 +279,11 @@ public class PubSubServer implements IInternalSubRpc{
 				//做持久化
 				storage.push(item);
 			} else {
+				
 				//没办法，服务器吃不消了，直接丢弃
 				SF.doBussinessLog(MonitorConstant.LOG_ERROR,PubSubServer.class,null, 
 						"缓存消息量已经达上限："+JsonUtils.getIns().toJson(item));
+				
 				discardOneTime();
 				return PubSubManager.PUB_SERVER_DISCARD;
 			}

@@ -44,12 +44,12 @@ import org.jmicro.api.annotation.Service;
 import org.jmicro.api.classloader.RpcClassLoader;
 import org.jmicro.api.config.Config;
 import org.jmicro.api.config.IConfigLoader;
-import org.jmicro.api.http.annotation.HttpHandler;
 import org.jmicro.api.objectfactory.IFactoryListener;
 import org.jmicro.api.objectfactory.IObjectFactory;
 import org.jmicro.api.objectfactory.IPostInitListener;
 import org.jmicro.api.objectfactory.ProxyObject;
 import org.jmicro.api.raft.IDataOperator;
+import org.jmicro.api.registry.AsyncConfig;
 import org.jmicro.api.registry.IRegistry;
 import org.jmicro.api.registry.ServiceItem;
 import org.jmicro.api.service.IServerServiceProxy;
@@ -64,6 +64,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
+ * 1. 创建对像全部单例,所以不保证线程安全
+ * 2. 存在3种类型代理对象,分别是：
+ * 		a. Component.lazy注解指定的本地懒加载代理对像，由org.jmicro.api.objectfactory.ProxyObject接口标识;
+ * 		b. Service注解确定的远程服务对象，由org.jmicro.api.service.IServerServiceProxy抽像标识
+ * 		c. Reference注解确定的远程服务代理对象org.jmicro.api.client.AbstractClientServiceProxy
+ * 
+ * 
  * @author Yulei Ye
  * @date 2018年10月4日-下午12:12:24
  */
@@ -94,19 +101,20 @@ public class SimpleObjectFactory implements IObjectFactory {
 	private HttpHandlerManager httpHandlerManager = new HttpHandlerManager(this);
 	
 	@Override
-	public <T> T getRemoteServie(String srvName, String namespace, String version,ClassLoader cl) {
+	public <T> T getRemoteServie(String srvName, String namespace, String version,
+			ClassLoader cl,AsyncConfig[] acs) {
 		Object obj = null;
 		if(obj == null){
-			obj = this.clientServiceProxyManager.getService(srvName,namespace,version,cl);
+			obj = this.clientServiceProxyManager.getRefRemoteService(srvName,namespace,version,cl,acs);
 		}
 		return (T)obj;
 	}
 
 	@Override
-	public <T> T getRemoteServie(ServiceItem item,ClassLoader cl) {
+	public <T> T getRemoteServie(ServiceItem item,ClassLoader cl,AsyncConfig[] acs) {
 		Object obj = null;
 		if(obj == null){
-			obj = this.clientServiceProxyManager.getService(item,cl);
+			obj = this.clientServiceProxyManager.getRefRemoteService(item,cl,acs);
 		}
 		return (T)obj;
 	}
@@ -123,10 +131,9 @@ public class SimpleObjectFactory implements IObjectFactory {
 			}else if(l.size() > 1) {
 				throw new CommonException("More than one instance of class ["+cls.getName()+"].");
 			}
-			
-			if(obj == null && cls.isAnnotationPresent(Service.class)){
+			/*if(obj == null && cls.isAnnotationPresent(Service.class)){
 				obj = this.clientServiceProxyManager.getService(cls);
-			}
+			}*/
 		} else {
 			obj = objs.get(cls);
 			if(obj != null){
@@ -153,12 +160,12 @@ public class SimpleObjectFactory implements IObjectFactory {
 		}
 		
 		Class<?> cls = this.loadCls(clsName);
-		if(cls != null && cls.isAnnotationPresent(Service.class)) {
+		/*if(cls != null && cls.isAnnotationPresent(Service.class)) {
 			Object o = this.clientServiceProxyManager.getService(clsName);
 			if(o != null){
 				return (T)o;
 			}
-		}
+		}*/
 		
 		if(cls != null){
 			return (T)get(cls);
@@ -252,6 +259,7 @@ public class SimpleObjectFactory implements IObjectFactory {
 					 doAfterCreate(obj,null);
 				}
 			} else {
+				//创建目标对象的代理对像,直到客户端调用其中方法时才真正创建目标对象
 				obj = createLazyProxyObject(cls);
 			}
 		} catch (InstantiationException | IllegalAccessException e) {
@@ -398,11 +406,11 @@ public class SimpleObjectFactory implements IObjectFactory {
 			//依赖注入
 			injectDepependencies0(lobjs,cfg,systemObjs);
 			
-			//调用各组件的init方法
-			doInit0(lobjs,cfg,systemObjs);
-			
 			//注入服务引用
 			processReference0(lobjs,cfg,systemObjs);
+			
+			//调用各组件的init方法
+			doInit0(lobjs,cfg,systemObjs);
 			
 			//组件初始化完成
 			notifyAfterInitPostListener0(lobjs,cfg,systemObjs);
@@ -452,20 +460,22 @@ public class SimpleObjectFactory implements IObjectFactory {
 	}
 
 	private void processReference0(List<Object> lobjs, Config cfg, Set<Object> systemObjs) {
-		Set<Object> haveInits = new HashSet<>();
+		Set<Object> dones = new HashSet<>();
 		for(int i =0; i < lobjs.size(); i++){
 			Object o = lobjs.get(i);
 			
+			 //代理对像延迟到目标对像创建才做注入
 			 if(o instanceof ProxyObject){
 	    		continue;
 	    	 }
 			
-			if(systemObjs.contains(o) || haveInits.contains(o)) {
+			if(systemObjs.contains(o) || dones.contains(o)) {
 				continue;
 			}
-			haveInits.add(o);
+			dones.add(o);
 			//通知初始化完成
-			processReference(o);
+			//processReference(o);
+			clientServiceProxyManager.processReference(o);
 		}
 		
 	}
@@ -489,19 +499,20 @@ public class SimpleObjectFactory implements IObjectFactory {
 	}
 
 	private void injectDepependencies0(List<Object> lobjs, Config cfg, Set<Object> systemObjs) {
-		Set<Object> haveInits = new HashSet<>();
+		Set<Object> dones = new HashSet<>();
 		for(int i =0; i < lobjs.size(); i++){
 			Object o = lobjs.get(i);
 			
+			 //代理对像,还没真正创建目标对象,所以不需要
 			 if(o instanceof ProxyObject){
 	    		continue;
 	    	 }
 			
-			if(systemObjs.contains(o) || haveInits.contains(o)) {
+			if(systemObjs.contains(o) || dones.contains(o)) {
 				continue;
 			}
 			
-			haveInits.add(o);
+			dones.add(o);
 			injectDepependencies(o);
 		}
 		
@@ -570,9 +581,8 @@ public class SimpleObjectFactory implements IObjectFactory {
 				Object obj = null;
 				if(c.isAnnotationPresent(Service.class)) {
 					 obj = createDynamicService(c);
-					 obj = createServiceObject(obj,false);
-				} else if(c.isAnnotationPresent(HttpHandler.class)) {
-					obj = createHttpHanderObject(c);
+					 //obj = createServiceObject(obj,false);
+					 //doAfterCreate(obj,null);
 				} else {
 					obj = this.createObject(c, false);
 				}
@@ -602,7 +612,7 @@ public class SimpleObjectFactory implements IObjectFactory {
 					}else {
 						throw new CommonException("More than one [" +registryName+"] to be found ["+c.getName()+", "+registry.getClass().getName()+"]" );
 					}
-					systemObjs.add(srvManager);
+					systemObjs.add(registry);
 				}
 			}
 		}
@@ -717,18 +727,6 @@ public class SimpleObjectFactory implements IObjectFactory {
 		
 	}
 
-	private Object createHttpHanderObject(Class<?> c) {
-		Object o = this.httpHandlerManager.createHandler(c);	
-		return o;
-	}
-
-	private Object createServiceObject(Object obj, boolean doAfterCreate) {
-		if(doAfterCreate){
-			 doAfterCreate(obj,null);
-		}
-		return  obj;
-	}
-
 	@Override
 	public boolean exist(Class<?> clazz) {
 		checkStatu();
@@ -815,60 +813,7 @@ public class SimpleObjectFactory implements IObjectFactory {
 		return list;
 	}
 	
-	private void processReference(Object obj) {
-		
-		Class<?> cls = ProxyObject.getTargetCls(obj.getClass());
-		List<Field> fields = new ArrayList<>();
-		Utils.getIns().getFields(fields, cls);
-		
-		for(Field f : fields) {
-			
-			Object srv = null;
-			boolean isRequired = false;
-			Class<?> refCls = f.getType();
-			
-			//系统启动时可以为某些类指定特定的实现
-			srv = this.getCommandSpecifyConponent(f);
-			
-			if(srv == null && f.isAnnotationPresent(Reference.class)){
-				//Inject the remote service obj
-				Reference ref = f.getAnnotation(Reference.class);
-				/*
-				String name = ref.value();
-				if(StringUtils.isEmpty(name)) {
-					name = f.getClass().getName();
-				}
-				*/
-				isRequired = ref.required();
-				
-				try {
-					srv = clientServiceProxyManager.createOrGetService(obj,f);
-				} catch (CommonException e) {
-					if(!isRequired) {
-						logger.error("optional dependence cls ["+ f.getType().getName()
-								+"] not found for class ["+obj.getClass().getName()+"]",e.getMessage());
-					}else {
-						throw e;
-					}
-				}
-				
-			}
-			
-			if(srv != null) {
-				setObjectVal(obj, f, srv);
-			} else if(isRequired) {
-				throw new CommonException("Class ["+cls.getName()+"] field ["+ f.getName()+"] dependency ["+f.getType().getName()+"] not found");
-			} else {
-				if(f.isAnnotationPresent(Reference.class)) {
-					logger.warn("Class ["+cls.getName()+"] field ["+ f.getName()+"] dependency ["+f.getType().getName()+"] not found");
-				}
-			}
-			
-		}
-			
-	}
-	
-	private void setObjectVal(Object obj,Field f,Object srv) {
+	static void setObjectVal(Object obj,Field f,Object srv) {
 
 		String setMethodName = "set"+f.getName().substring(0, 1).toUpperCase()+f.getName().substring(1);
 		Method m = null;
@@ -894,7 +839,7 @@ public class SimpleObjectFactory implements IObjectFactory {
 	
 	}
 	
-	private Object getCommandSpecifyConponent(Field f) {
+	Object getCommandSpecifyConponent(Field f) {
 		//系统启动时可以为某些类指定特定的实现
 		Object srv = null;
 		String commandComName = Config.getCommandParam(f.getType().getName(), String.class, null);
@@ -916,6 +861,10 @@ public class SimpleObjectFactory implements IObjectFactory {
 		return srv;
 	}
 
+	/**
+	 * 注入两种注解分别为Inject和Reference，前者注入本地对像，后者注入远程对象
+	 * @param obj
+	 */
 	private void injectDepependencies(Object obj) {
 		Class<?> cls = ProxyObject.getTargetCls(obj.getClass());
 		List<Field> fields = new ArrayList<>();
@@ -930,12 +879,12 @@ public class SimpleObjectFactory implements IObjectFactory {
 			Object srv = null;
 			boolean isRequired = false;
 			Class<?> refCls = f.getType();
-			
+			//对某些类,命令行可以指定特定组件实例名称,系统对该类使用指定实例,忽略别的实例
 			srv = this.getCommandSpecifyConponent(f);
 			
-			if(refCls.getName().equals("org.apache.ibatis.session.SqlSessionFactory")) {
+			/*if(refCls.getName().equals("org.apache.ibatis.session.SqlSessionFactory")) {
 				logger.debug("org.jmicro.ext.mybatis.CurSqlSessionFactory");
-			}
+			}*/
 			
 			if(srv == null && f.isAnnotationPresent(Inject.class)){
 				//Inject the local component
@@ -1130,13 +1079,11 @@ public class SimpleObjectFactory implements IObjectFactory {
 					}
 				} else {
 					
-					String annName = name;
-					if(annName != null && !"".equals(annName.trim())){
+					if(name != null && !"".equals(name.trim())){
 						srv = this.getByName(name);
 						if(srv == null){
 							this.getByParent(type);
 						}
-						srv = this.getByName(name);
 					}
 					if(srv == null) {
 						srv = this.get(type);

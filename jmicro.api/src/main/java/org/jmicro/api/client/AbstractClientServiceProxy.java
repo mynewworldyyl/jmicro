@@ -18,12 +18,15 @@ package org.jmicro.api.client;
 
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Set;
 
 import org.jmicro.api.JMicroContext;
 import org.jmicro.api.annotation.Reference;
 import org.jmicro.api.monitor.IMonitorDataSubmiter;
 import org.jmicro.api.objectfactory.IObjectFactory;
+import org.jmicro.api.registry.AsyncConfig;
 import org.jmicro.api.registry.IRegistry;
 import org.jmicro.api.registry.IServiceListener;
 import org.jmicro.api.registry.ServiceItem;
@@ -50,6 +53,8 @@ public abstract class AbstractClientServiceProxy implements InvocationHandler,IS
 	
 	private IObjectFactory of;
 	
+	private Map<String,AsyncConfig> acs = null;
+	
 	private volatile InvocationHandler targetHandler = null;
 	
 	public IObjectFactory getOf() {
@@ -59,7 +64,7 @@ public abstract class AbstractClientServiceProxy implements InvocationHandler,IS
 	public void setOf(IObjectFactory of) {
 		this.of = of;
 	}
-
+	
 	@SuppressWarnings("unchecked")
 	@Override
 	public void serviceChanged(int type, ServiceItem item) {
@@ -220,6 +225,17 @@ public abstract class AbstractClientServiceProxy implements InvocationHandler,IS
 		return this.key().equals(o.key());
 	}
 	
+	public void setAsyncConfig(AsyncConfig[] acs) {
+		if(acs != null && acs.length > 0) {
+			this.acs = new HashMap<>();
+			for(AsyncConfig a : acs) {
+				this.acs.put(a.getForMethod(), a);
+			}
+		}
+	}
 	
+	public AsyncConfig getAcs(String mkey) {
+		return this.acs.get(mkey);
+	}
 	
 }

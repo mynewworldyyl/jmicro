@@ -95,6 +95,12 @@ public interface Constants {
 	
 	public static final String SERVICE_ITEM_KEY = "serviceItemKey";
 	
+	public static final String SERVICE_NAME_KEY = "nameKey";
+	
+	public static final String SERVICE_NAMESPACE_KEY = "namespaceKey";
+	
+	public static final String SERVICE_VERSION_KEY = "versionKey";
+	
 	//public static final String SERVICE_SPECIFY_ITEM_KEY = "specifyServiceItemKey";
 	
 	public static final String SERVICE_METHOD_KEY = "serviceMethodKey";

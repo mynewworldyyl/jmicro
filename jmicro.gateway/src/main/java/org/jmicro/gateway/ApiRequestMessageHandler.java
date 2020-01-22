@@ -81,7 +81,7 @@ public class ApiRequestMessageHandler implements IMessageHandler{
 		ApiResponse resp = new ApiResponse();
 		Object result = null;
 		Object srv = JMicro.getObjectFactory().getRemoteServie(req.getServiceName(), 
-				req.getNamespace(), req.getVersion(),null);
+				req.getNamespace(), req.getVersion(),null,null);
 		
 		msg.setType(Constants.MSG_TYPE_API_RESP);
 		resp.setReqId(req.getReqId());

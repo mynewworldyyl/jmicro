@@ -21,7 +21,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 @Service(namespace="org.jmicro.breaker.api.IBreakerSubscriber")
-@Component
 public class BreakerSubscriberImpl implements IBreakerSubscriber{
 
 	private final static Logger logger = LoggerFactory.getLogger(BreakerSubscriberImpl.class);

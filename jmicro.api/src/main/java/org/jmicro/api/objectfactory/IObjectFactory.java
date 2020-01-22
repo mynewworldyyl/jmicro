@@ -19,6 +19,7 @@ package org.jmicro.api.objectfactory;
 import java.util.Set;
 
 import org.jmicro.api.raft.IDataOperator;
+import org.jmicro.api.registry.AsyncConfig;
 import org.jmicro.api.registry.ServiceItem;
 /**
  * 为JMicro微服务框架量身定制的IOC容器，具有基本的依赖注入，属性注入，属性动态更新，生成动态代理对像，动态代理远程对像，动态代理服务对像等功能。
@@ -80,9 +81,9 @@ public interface IObjectFactory {
 	 */
 	<T> T getByName(String clsName);
 	
-	<T> T getRemoteServie(String srvName,String namespace,String version,ClassLoader cl);
+	<T> T getRemoteServie(String srvName,String namespace,String version,ClassLoader cl,AsyncConfig[] acs);
 	
-	<T> T getRemoteServie(ServiceItem item,ClassLoader cl);
+	<T> T getRemoteServie(ServiceItem item,ClassLoader cl,AsyncConfig[] acs);
 	
 	/**
 	 * 取得所有子类的实例

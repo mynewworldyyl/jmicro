@@ -65,7 +65,6 @@ public abstract class AbstractObjectMapSupport /*implements IEncoder,IDecoder*/{
 		return this.getParam(key,defautl);
 	}
 	
-	
 	public Float getFloat(String key,Float defautl){
 		return this.getParam(key,defautl);
 	}
@@ -76,6 +75,10 @@ public abstract class AbstractObjectMapSupport /*implements IEncoder,IDecoder*/{
 	
 	public Object getObject(String key,Object defautl){
 		return this.getParam(key,defautl);
+	}
+	
+	public void setObject(String key,Object value){
+		 this.params.put(key, value);
 	}
 
 
