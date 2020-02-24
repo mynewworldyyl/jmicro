@@ -137,7 +137,7 @@ public class RpcClassLoader extends AbstractClientClassLoader {
 			
 			if(bytes == null || bytes.length == 0) {
         		logger.warn("load class {} not found ",className);
-        	}else {
+        	} else {
         		clazzesData.put(className, bytes);
         	}
 	
@@ -158,7 +158,7 @@ public class RpcClassLoader extends AbstractClientClassLoader {
 	
 	private boolean checkResp(String className) {
 		 className = this.getClassName(className);
-		 if(!className.startsWith("org.jmicro")) {
+		 if(className.startsWith("java.") || className.startsWith("com.sun.")) {
 			 return false;
 		 }
 		 String cn = className.substring(className.lastIndexOf(".")+1);
@@ -173,14 +173,14 @@ public class RpcClassLoader extends AbstractClientClassLoader {
 		
 		 className = this.getClassName(className);
 		
+		 if(this.rpcLlassloader == null) {
+	    		logger.error("RpcClassLoader is NULL when load:{}",className);
+	    		return null;
+	    	}
+		 
 		if(!checkResp(className)) {
 			return null;
 		}
-		
-    	if(this.rpcLlassloader == null) {
-    		logger.error("RpcClassLoader is NULL when load:{}",className);
-    		return null;
-    	}
     	
     	if(clazzes.containsKey(className)) {
     		return this.clazzes.get(className);

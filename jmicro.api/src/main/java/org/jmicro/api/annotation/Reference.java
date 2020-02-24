@@ -92,5 +92,5 @@ public @interface Reference {
 	 *      
 	 * @return
 	 */
-	public Async[] async() default {};
+	public Async[] asyncs() default {};
 }

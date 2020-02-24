@@ -189,6 +189,11 @@ public class JMicroContext  {
 		return isLoggable || isComOpen;
 	}
 	
+	public static boolean existLinkId(){
+		return get().exists(LINKER_ID) && get().getBoolean(LINKER_ID, false);
+		
+	}
+	
 	public static Long lid(){
 		JMicroContext c = get();
 		Long id = c.getLong(LINKER_ID, null);

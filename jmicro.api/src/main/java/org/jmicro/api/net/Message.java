@@ -188,13 +188,13 @@ public final class Message {
 		flag0 |= f ? FLAG0_MONITORABLE : 0 ; 
 	}
 	
-	public boolean isStream() {
+	/*public boolean isStream() {
 		return is(flag,Message.FLAG_STREAM);
 	}
 	
 	public void setStream(boolean f) {
 		flag |= f ? Message.FLAG_STREAM : 0 ; 
-	}
+	}*/
 	
 	public boolean isNeedResponse() {
 		return is(flag,FLAG_NEED_RESPONSE);
@@ -538,7 +538,7 @@ public final class Message {
 				+ ", type=" + type + ", flag=" + Integer.toHexString(flag) + ", flag0=" + Integer.toHexString(flag0) 
 				+ ", payload=" + payload + ", time="+ time 
 				+ ", devMode=" + this.isDebugMode() + ", monitorable="+ this.isMonitorable() 
-				+ ", stream=" + this.isStream() + ", needresp="+ this.isNeedResponse()
+				+ ", needresp="+ this.isNeedResponse()
 				+ ", upstream=" + this.isDumpUpStream() + ", downstream="+ this.isDumpDownStream() 
 				+ ", instanceName=" + instanceName + ", method=" + method + "]";
 	}

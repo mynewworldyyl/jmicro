@@ -145,7 +145,7 @@ public class ApiGatewayClient {
 		msg.setReqId(req.getReqId());
 		msg.setLinkId(idClient.getLongId(Linker.class.getName()));
 		
-		msg.setStream(false);
+		//msg.setStream(false);
 		msg.setDumpDownStream(false);
 		msg.setDumpUpStream(false);
 		msg.setNeedResponse(true);
@@ -180,7 +180,7 @@ public class ApiGatewayClient {
 	public <R> Object callService(String serviceName, String namespace, String version
 			, String method, Object[] args,IMessageCallback<R> callback) {
 		Message msg = this.createMessage(serviceName, namespace, version, method, args);
-		msg.setStream(true);
+		//msg.setStream(true);
 		return getResponse(msg,callback);
 	}
 	
@@ -207,22 +207,10 @@ public class ApiGatewayClient {
 	private <R> Object getResponse(Message msg, final IMessageCallback<R> callback) {
 		streamComfirmFlag.put(msg.getReqId(), true);
 		waitForResponses.put(msg.getReqId(), respMsg1 -> {
-			if(msg.isStream()) {
-				if(streamComfirmFlag.containsKey(msg.getReqId()) && streamComfirmFlag.get(msg.getReqId())) {
-					//返回确认包
-					streamComfirmFlag.remove(msg.getReqId());
-					synchronized (msg) {
-						msg.notify();
-					}
-				} else {
-					callback.onMessage((R)parseResult(respMsg1));
-				}
-			} else {
-				streamComfirmFlag.remove(msg.getReqId());
-				resqMsgCache.put(msg.getReqId(), respMsg1);
-				synchronized (msg) {
-					msg.notify();
-				}
+			streamComfirmFlag.remove(msg.getReqId());
+			resqMsgCache.put(msg.getReqId(), respMsg1);
+			synchronized (msg) {
+				msg.notify();
 			}
 		});
 		
@@ -287,7 +275,7 @@ public class ApiGatewayClient {
 		msg.setReqId(req.getReqId());
 		msg.setLinkId(idClient.getLongId(Linker.class.getName()));
 		
-		msg.setStream(false);
+		//msg.setStream(false);
 		msg.setDumpDownStream(false);
 		msg.setDumpUpStream(false);
 		msg.setNeedResponse(true);
@@ -317,7 +305,7 @@ public class ApiGatewayClient {
 		msg.setReqId(msg.getId());
 		msg.setLinkId(reqId.getAndIncrement());
 		
-		msg.setStream(false);
+		//msg.setStream(false);
 		msg.setDumpDownStream(false);
 		msg.setDumpUpStream(false);
 		msg.setNeedResponse(true);

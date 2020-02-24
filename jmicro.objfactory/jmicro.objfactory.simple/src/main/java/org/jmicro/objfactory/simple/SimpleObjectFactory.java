@@ -406,11 +406,11 @@ public class SimpleObjectFactory implements IObjectFactory {
 			//依赖注入
 			injectDepependencies0(lobjs,cfg,systemObjs);
 			
-			//注入服务引用
-			processReference0(lobjs,cfg,systemObjs);
-			
 			//调用各组件的init方法
 			doInit0(lobjs,cfg,systemObjs);
+			
+			//注入服务引用
+			processReference0(lobjs,cfg,systemObjs);
 			
 			//组件初始化完成
 			notifyAfterInitPostListener0(lobjs,cfg,systemObjs);

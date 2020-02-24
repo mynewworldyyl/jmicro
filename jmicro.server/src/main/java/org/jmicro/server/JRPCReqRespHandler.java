@@ -119,82 +119,23 @@ public class JRPCReqRespHandler implements IMessageHandler{
 			if(msg.isLoggable()){
 				SF.doRequestLog(MonitorConstant.LOG_DEBUG, TAG, req,null,"got REQUEST");
 			}
-			
-			if(req.isStream()){
-				
-				IWriteCallback callback = new IWriteCallback(){
-					@Override
-					public boolean send(Object message) {
-						if(s.isClose()){
-							s.close(true);
-							return false;
-						}
-						RpcResponse resp = new RpcResponse(req1.getRequestId(),message);
-						resp.setId(idGenerator.getLongId(IResponse.class));
-						resp.setSuccess(true);
-						//返回结果包
-						msg.setId(idGenerator.getLongId(Message.class));
-						msg.setPayload(codeFactory.getEncoder(msg.getProtocol()).encode(resp));
-						msg.setType(Constants.MSG_TYPE_ASYNC_RESP);
-						
-						if(msg.isLoggable()) {
-							SF.doResponseLog(MonitorConstant.LOG_DEBUG,TAG, resp,null,"STREAM",resp.getId()+"");
-						}
-						s.write(msg);
-						return true;
-					}
-				};
-				
-				JMicroContext.get().setParam(Constants.CONTEXT_CALLBACK_SERVICE, callback);
-				JMicroContext jc = JMicroContext.get();
-				
-				/*
-				SuspendableRunnable r = () -> {
-					JMicroContext.get().mergeParams(jc);
-					interceptorManger.handleProvider(req1);
-				};
-				//异步响应
-				new Fiber<Void>(r).start();
-				*/
-				
-				Runnable run = ()->{
-					JMicroContext.get().mergeParams(jc);
-					interceptorManger.handleRequest(req1);
-				};
-				
-				//异步响应
-				new Thread(run).start();
-				
-				//直接返回一个确认包
+
+			//同步响应
+			resp = (RpcResponse)interceptorManger.handleRequest(req);
+			if(resp == null){
+				//返回空值性况处理
 				resp = new RpcResponse(req.getRequestId(),null);
 				resp.setSuccess(true);
-				
-				msg.setType((byte)(msg.getType()+1));
-				msg.setPayload(ICodecFactory.encode(codeFactory,resp,msg.getProtocol()));
-				
-				if(msg.isLoggable()) {
-					SF.doResponseLog(MonitorConstant.LOG_DEBUG,TAG, resp,null,"STREAM Confirm");
-				}
-				
-				s.write(msg);
-			
-			} else {
-				//同步响应
-				resp = (RpcResponse)interceptorManger.handleRequest(req);
-				if(resp == null){
-					//返回空值性况处理
-					resp = new RpcResponse(req.getRequestId(),null);
-					resp.setSuccess(true);
-				}
-				msg.setPayload(ICodecFactory.encode(codeFactory,resp,msg.getProtocol()));
-				msg.setType((byte)(msg.getType()+1));
-				
-				if(SF.isLoggable(this.openDebug,MonitorConstant.LOG_DEBUG)) {
-					SF.doResponseLog(MonitorConstant.LOG_DEBUG, TAG, resp,null);
-				} 
-				
-				s.write(msg);
 			}
+			msg.setPayload(ICodecFactory.encode(codeFactory,resp,msg.getProtocol()));
+			msg.setType((byte)(msg.getType()+1));
+			
+			if(SF.isLoggable(this.openDebug,MonitorConstant.LOG_DEBUG)) {
+				SF.doResponseLog(MonitorConstant.LOG_DEBUG, TAG, resp,null);
+			} 
+			
+			s.write(msg);
+		
 			SF.doSubmit(MonitorConstant.SERVER_REQ_OK, req,resp,null);
 		} catch (Throwable e) {
 			SF.doMessageLog(MonitorConstant.LOG_ERROR, TAG, msg,e);

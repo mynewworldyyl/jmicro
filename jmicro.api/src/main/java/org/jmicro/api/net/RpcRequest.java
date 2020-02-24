@@ -81,9 +81,9 @@ public final class RpcRequest extends AbstractObjectMapSupport implements IReque
 		return this.msg.isNeedResponse();
 	}
 	
-	public boolean isStream(){
+	/*public boolean isStream(){
 		return this.msg.isStream();
-	}
+	}*/
 
 	public String getTransport() {
 		return transport;

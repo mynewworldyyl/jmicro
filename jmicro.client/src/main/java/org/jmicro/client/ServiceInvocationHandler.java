@@ -92,22 +92,37 @@ public class ServiceInvocationHandler implements InvocationHandler{
 		JMicroContext.setSrvLoggable();
 		JMicroContext.get().configMonitor(sm.getMonitorEnable(),poItem.getMonitorEnable());
 		
-		JMicroContext.lid();
-		JMicroContext.get().setObject(Constants.PROXY, po);
-		
-		RpcRequest req = new RpcRequest();
-        req.setMethod(method.getName());
-        req.setServiceName(poItem.getKey().getServiceName());
-        req.setNamespace(poItem.getKey().getNamespace());
-        req.setVersion(poItem.getKey().getVersion());
-        req.setArgs(args);
-        req.setRequestId(idGenerator.getLongId(IRequest.class));
-        req.setTransport(Constants.TRANSPORT_NETTY);
-        req.setImpl(poItem.getImpl());
-        
-        IResponse resp = this.intManager.handleRequest(req);
-        
-        Object obj = resp == null ? null :resp.getResult();
+		Object obj = null;
+		try {
+			if(!JMicroContext.existLinkId()) {
+				//新建一个RPC链路
+				JMicroContext.get().setParam(Constants.NEW_LINKID, true);
+				JMicroContext.lid();
+			}
+			
+			JMicroContext.get().setObject(Constants.PROXY, po);
+			
+			RpcRequest req = new RpcRequest();
+			req.setMethod(method.getName());
+			req.setServiceName(poItem.getKey().getServiceName());
+			req.setNamespace(poItem.getKey().getNamespace());
+			req.setVersion(poItem.getKey().getVersion());
+			req.setArgs(args);
+			req.setRequestId(idGenerator.getLongId(IRequest.class));
+			req.setTransport(Constants.TRANSPORT_NETTY);
+			req.setImpl(poItem.getImpl());
+			
+			IResponse resp = this.intManager.handleRequest(req);
+			
+			obj = resp == null ? null :resp.getResult();
+		} finally {
+			if(JMicroContext.get().getObject(Constants.NEW_LINKID,null) != null &&
+					JMicroContext.get().getBoolean(Constants.NEW_LINKID,false) ) {
+				//RPC链路结束
+				JMicroContext.get().removeParam(Constants.NEW_LINKID);
+			}
+			
+		}
        /* if("intrest".equals(method.getName())) {
         	//代码仅用于测试
         	logger.debug("result type:{},value:{}",obj.getClass().getName(),obj.toString());

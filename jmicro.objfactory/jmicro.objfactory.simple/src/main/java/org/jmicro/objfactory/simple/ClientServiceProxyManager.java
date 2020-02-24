@@ -152,12 +152,12 @@ class ClientServiceProxyManager {
 				
 			}
 			
-			for(ServiceItem si : items) {
+			for(ServiceItem si : callbackItems) {
 				Set<ServiceMethod> sms = si.getMethods();
 				
 				boolean flag = false;
 				for(ServiceMethod sm : sms) {
-					if(sm.getKey().getMethod().equals(a.getForMethod())) {
+					if(sm.getKey().getMethod().equals(a.getMethod())) {
 						//方法名相同的都注册为异步调用方法
 						String mkey = sm.getKey().toKey(false, false, false);
 						if(StringUtils.isNotEmpty(sm.getTopic()) && !mkey.equals(sm.getTopic())) {
@@ -338,7 +338,7 @@ class ClientServiceProxyManager {
 				//服务不可用，但还是可以生成服务代理，直到使用时才决定服务的可用状态
 			} 
 			
-			AsyncConfig[] acs = this.getAcs(ref);			
+			AsyncConfig[] acs = this.getAcs(ref);	
 			
 			proxy = this.getRefRemoteService(type.getName(), ref.namespace(), ref.version(), null,acs);
 			
@@ -354,10 +354,10 @@ class ClientServiceProxyManager {
     
     AsyncConfig[] getAcs(Reference ref) {
     	AsyncConfig[] acs = null;
-		if(ref.async() != null && ref.async().length > 0) {
-			acs = new AsyncConfig[ref.async().length];
+		if(ref.asyncs() != null && ref.asyncs().length > 0) {
+			acs = new AsyncConfig[ref.asyncs().length];
 			int i = 0;
-			for(Async a : ref.async()) {
+			for(Async a : ref.asyncs()) {
 				AsyncConfig ac = new AsyncConfig();
 				ac.setCondition(a.condition());
 				ac.setEnable(a.enable());
@@ -365,6 +365,7 @@ class ClientServiceProxyManager {
 				ac.setNamespace(a.namespace());
 				ac.setServiceName(a.serviceName());
 				ac.setVersion(a.version());
+				ac.setForMethod(a.forMethod());
 				acs[i] = ac;
 				i++;
 			}

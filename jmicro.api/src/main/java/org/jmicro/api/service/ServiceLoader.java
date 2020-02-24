@@ -208,7 +208,7 @@ public class ServiceLoader {
 		
 		Object srv = JMicro.getObjectFactory().get(c);
 		if(srv == null){
-			throw new CommonException("fail to export server "+c.getName());
+			throw new CommonException("fail to export server, service instance is NULL "+c.getName());
 		}
 		
 		ServiceItem si = createSrvItemByClass(c);

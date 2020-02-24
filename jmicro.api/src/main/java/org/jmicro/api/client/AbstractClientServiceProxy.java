@@ -235,6 +235,9 @@ public abstract class AbstractClientServiceProxy implements InvocationHandler,IS
 	}
 	
 	public AsyncConfig getAcs(String mkey) {
+		if(acs == null) {
+			return null;
+		}
 		return this.acs.get(mkey);
 	}
 	

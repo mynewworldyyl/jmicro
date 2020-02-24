@@ -77,7 +77,7 @@ public abstract class AbstractObjectMapSupport /*implements IEncoder,IDecoder*/{
 		return this.getParam(key,defautl);
 	}
 	
-	public void setObject(String key,Object value){
+	public void putObject(String key,Object value){
 		 this.params.put(key, value);
 	}
 
