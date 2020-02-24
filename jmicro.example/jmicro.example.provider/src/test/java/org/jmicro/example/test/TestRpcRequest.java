@@ -102,7 +102,7 @@ public class TestRpcRequest {
 		msg.setVersion(Message.MSG_VERSION);
 		msg.setLevel(Message.PRIORITY_NORMAL);
 		
-		msg.setStream(false);
+		//msg.setStream(false);
 		msg.setDumpDownStream(false);
 		msg.setDumpUpStream(false);
 		msg.setNeedResponse(true);
