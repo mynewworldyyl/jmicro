@@ -77,10 +77,12 @@ class ClientServiceProxyManager {
 	
 	/**
 	 * 取客户端服务动态代理实例
+	 * 创建对应 srvName, namespace, version的服务代理，其中acs指定的forMethod方法将会被异步调用
 	 * @param srvName
 	 * @param namespace
 	 * @param version
 	 * @param cl
+	 * @param acs 需要异步调用的目标方法 ，即forMethod
 	 * @return
 	 */
 	@SuppressWarnings("unchecked")
@@ -110,6 +112,11 @@ class ClientServiceProxyManager {
 		return (T)proxy;
 	}
 	
+	/**
+	 * 创建对应items的服务代理，其中acs指定的forMethod方法将会被异步调用
+	 * @param acs
+	 * @param items
+	 */
 	private void registerAsyncService(AsyncConfig[] acs, Set<ServiceItem> items) {
 		if(acs ==null || acs.length == 0) {
 			return;
@@ -138,9 +145,12 @@ class ClientServiceProxyManager {
 							throw new CommonException("Callback service method topic is not valid:" + JsonUtils.getIns().toJson(a) 
 									+", Service: " + si.getKey().toKey(true, true, true)+",topic:" + sm.getTopic());
 						}
+						
 						if(StringUtils.isEmpty(sm.getTopic())) {
 							sm.setTopic(mkey);
 							updates.add(si);
+							flag = true;
+						}else if(sm.getTopic().equals(mkey)) {
 							flag = true;
 						}
 					}
@@ -158,18 +168,8 @@ class ClientServiceProxyManager {
 				boolean flag = false;
 				for(ServiceMethod sm : sms) {
 					if(sm.getKey().getMethod().equals(a.getMethod())) {
-						//方法名相同的都注册为异步调用方法
-						String mkey = sm.getKey().toKey(false, false, false);
-						if(StringUtils.isNotEmpty(sm.getTopic()) && !mkey.equals(sm.getTopic())) {
-							throw new CommonException("Async service method topic is not valid:" + JsonUtils.getIns().toJson(a) 
-									+", Service: " + si.getKey().toKey(true, true, true)+",topic:" + sm.getTopic());
-						}
-						if(StringUtils.isEmpty(sm.getTopic())) {
-							//如果非空，说明已经注册过主题
-							sm.setTopic(mkey);
-							updates.add(si);
-							flag = true;
-						}
+						flag = true;
+						break;
 					}
 				}
 				
@@ -237,6 +237,13 @@ class ClientServiceProxyManager {
 		return this.getRefRemoteService(srvClazz.getName(), srvAnno.namespace(),srvAnno.version(), null,acs);
 	}
 	
+	/**
+	 * 创建对应item的服务代理，其中acs指定的forMethod方法将会被异步调用
+	 * @param item
+	 * @param cl
+	 * @param acs 需要异步调用的目标方法 ，即forMethod
+	 * @return
+	 */
 	<T> T getRefRemoteService(ServiceItem item,ClassLoader cl, AsyncConfig[] acs) {
 		/*Object proxy = remoteObjects.get(item.serviceName());
 		if(proxy != null){

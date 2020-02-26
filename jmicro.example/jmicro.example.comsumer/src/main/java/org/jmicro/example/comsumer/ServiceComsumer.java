@@ -35,6 +35,7 @@ public class ServiceComsumer {
 		//JMicroContext.get().setParam("routerTag", "tagValue");
 		
 		//got remote service from object factory
+		//ISimpleRpc src = of.getRemoteServie(ISimpleRpc.class,null);
 		ISimpleRpc src = of.get(ISimpleRpc.class);
 		//invoke remote service
 		System.out.println(src.hello("Hello JMicro"));

@@ -56,7 +56,7 @@ final public class AsyncConfig {
 	//异步调用服务版本
 	private String version;
 	
-	//异步调用服务方法名称，参数即是目标方法的返回值
+	//异步调用服务方法名称，参数即是目标方法（forMethod）的返回值
 	private String method;
 	
 	public String getCondition() {

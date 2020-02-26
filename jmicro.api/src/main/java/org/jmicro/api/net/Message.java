@@ -34,7 +34,7 @@ import org.jmicro.common.util.JsonUtils;
  */
 public final class Message {
 	
-	public static final int HEADER_LEN = 10;
+	public static final int HEADER_LEN = 14;
 	
 	public static final byte PROTOCOL_BIN = 0;
 	public static final byte PROTOCOL_JSON = 1;
@@ -233,36 +233,47 @@ public final class Message {
 	
 	public static Message decode(ByteBuffer b) {
 		Message msg = null;
+		//第0个字节
 		byte flag = b.get();
 		if(getProtocolByFlag(flag) == PROTOCOL_BIN) {
 			msg = new Message();
 			msg.flag =  flag;
 			//ByteBuffer b = ByteBuffer.wrap(data);
-			int len = readUnsignedShort(b);
+			int len = readUnsignedShort(b);// len = 数据长度 + 测试模式时附加数据长度
 			if(b.remaining() < len){
 				throw new CommonException("Message len not valid");
 			}
 			
+			//第3个字节
 			msg.setVersion(b.get());
 			
 			//read type
+			//第4个字节
 			msg.setType(b.get());
+			
+			//第5，6，7，8个字节
 			msg.setReqId(readUnsignedInt(b));
+			
+			//第9，10，11，12个字节
+			msg.setLinkId(readUnsignedInt(b));
+			
+			//第13个字节
 			msg.flag0 = b.get();
 			
 			if(msg.isDebugMode()) {
 				//读取测试数据头部
-				msg.setId(readUnsignedInt(b));
-				msg.setLinkId(readUnsignedInt(b));
+				msg.setId(b.getLong());
 				msg.setTime(b.getLong());
+				len -= 16;
+				
 				msg.setInstanceName(JDataInput.readString(b));
 				msg.setMethod(JDataInput.readString(b));
 				//减去测试数据头部长度
 				len -= JDataOutput.encodeStringLen(msg.getInstanceName());
 				len -= JDataOutput.encodeStringLen(msg.getMethod());
-				len -= 16; //time
+				
 			}
-		    
+			
 			if(len > 0){
 				byte[] payload = new byte[len];
 				b.get(payload, 0, len);
@@ -302,44 +313,48 @@ public final class Message {
 		if(this.getProtocol() == PROTOCOL_BIN) {
 			
 			ByteBuffer data = (ByteBuffer)this.getPayload();
-			int len = 0;
-			if(data == null){
-				len = 0;
-			} else {
+			int len = 0;//数据长度 + 测试模式时附加数据长度
+			if(data != null){
 				len = data.remaining();
 			}
 			
 			if(debug) {
 				len += JDataOutput.encodeStringLen(instanceName);
 				len += JDataOutput.encodeStringLen(method);
-				//3个整数ID的长度，3*4=12
-				len += 16; //time
+				//2个long的长度，2*8=8
+				len += 16;
 			}
+			
+			//len += Message.HEADER_LEN
 			
 			b = ByteBuffer.allocate(len + Message.HEADER_LEN);
 			
+			//第0个字节，标志头
 			b.put(this.flag);
 			
+			//第1，2个字节 ,len = 数据长度 + 测试模式时附加数据长度
 			writeUnsignedShort(b, len);
 			//b.putShort((short)0);
 			
+			//第3个字节
 			b.put(this.version);
 			
+			//第4个字节
 			//writeUnsignedShort(b, this.type);
 			b.put(this.type);
 			
+			//第5，6，7，8个字节
 			writeUnsignedInt(b, this.reqId);
-			//b.putLong(this.linkId);
+			
+			//第9，10，11，12个字节
+			writeUnsignedInt(b, this.linkId);
+			
+			//第13个字节
 			b.put(this.flag0);
 			
 			if(debug) {
-				writeUnsignedInt(b, this.msgId);
-				//b.putLong(this.msgId);
-				writeUnsignedInt(b, this.linkId);
-				//b.putLong(this.reqId);
-				//writeUnsignedInt(b, this.time);
-				b.putLong(this.time);
-				
+				b.putLong(this.getId());
+				b.putLong(this.getTime());
 				try {
 					JDataOutput.writeString(b, this.instanceName);
 					JDataOutput.writeString(b, this.method);

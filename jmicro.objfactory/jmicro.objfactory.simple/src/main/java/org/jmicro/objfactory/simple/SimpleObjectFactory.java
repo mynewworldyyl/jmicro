@@ -119,6 +119,15 @@ public class SimpleObjectFactory implements IObjectFactory {
 		return (T)obj;
 	}
 
+	@Override
+	public <T> T getRemoteServie(Class<T> srvCls, AsyncConfig[] acs) {
+		Object obj = null;
+		if(obj == null){
+			obj = this.clientServiceProxyManager.getRefRemoteService(srvCls,acs);
+		}
+		return (T)obj;
+	}
+
 	@SuppressWarnings("unchecked")
 	@Override
 	public <T> T get(Class<T> cls) {
@@ -131,9 +140,9 @@ public class SimpleObjectFactory implements IObjectFactory {
 			}else if(l.size() > 1) {
 				throw new CommonException("More than one instance of class ["+cls.getName()+"].");
 			}
-			/*if(obj == null && cls.isAnnotationPresent(Service.class)){
-				obj = this.clientServiceProxyManager.getService(cls);
-			}*/
+			if(obj == null && cls.isAnnotationPresent(Service.class)){
+				obj = this.clientServiceProxyManager.getRefRemoteService(cls, null);
+			}
 		} else {
 			obj = objs.get(cls);
 			if(obj != null){

@@ -253,12 +253,12 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
 	    		isDebug = f == 1;
 	    		msg.setDebugMode(isDebug);
 	    		
+    			msg.setLinkId(JMicroContext.lid());
+    			
 	    		if(isDebug) {
 	    			//开启Debug模式，设置更多信息在消息包中，网络流及编码会有损耗，但更晚于问题追踪
 	    			msg.setInstanceName(Config.getInstanceName());
 	    			msg.setTime(System.currentTimeMillis());
-	    			lid = JMicroContext.lid();
-	    			msg.setLinkId(lid);
 	    			msg.setMethod(sm.getKey().getMethod());
 	    		}
 	    		

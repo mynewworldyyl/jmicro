@@ -135,18 +135,12 @@ public class ServiceManager {
 			String data = this.dataOperator.getData(path);
 			childrenAdd(path,data);
 		}
-		
 	}
 
 	protected synchronized void childrenAdd(String path, String data) {
 		ServiceItem i = this.fromJson(data);
 		if(i == null){
 			logger.warn("Item NULL,path:{},data:{}",path,data);
-			return;
-		}
-		
-		if(this.path2Hash.containsKey(path)) {
-			logger.warn("Item exists,path:{}",path);
 			return;
 		}
 		
@@ -161,13 +155,13 @@ public class ServiceManager {
 		}
 				
 		if(!flag) {
-			logger.debug("Service Add: {}",path);
+			logger.info("Service Add: {}",path);
 			this.notifyServiceChange(IServiceListener.SERVICE_ADD, i,path);
 			//dataOperator.addNodeListener(path, nodeListener);
 			dataOperator.addDataListener(path, this.dataListener);
 			//dataOperator.addDataListener(i.path(Config.ServiceItemCofigDir), this.cfgDataListener);
-		}else {
-			logger.debug("Service add event but exists: {}",path);
+		} else {
+			logger.info("Service add event but exists: {}",path);
 		}
 		
 	}
@@ -424,7 +418,7 @@ public class ServiceManager {
 		if(this.path2Hash.containsKey(path) && hash.equals(this.path2Hash.get(path))) {
 			return false;
 		}
-		
+		logger.info("Service Added: " + path);
 		this.path2Hash.put(path, hash);
 		this.path2SrvItems.put(path, si);
 		return true;

@@ -67,6 +67,7 @@ public interface IObjectFactory {
 	 * @return
 	 */
 	boolean exist(Class<?> clazz);
+	
 	/**
 	 * 取得类所对应的实例，如果cls是具体类，并具当前容器还不存在对应的实例，则创建之，然后返回。
 	 * @param cls
@@ -84,6 +85,8 @@ public interface IObjectFactory {
 	<T> T getRemoteServie(String srvName,String namespace,String version,ClassLoader cl,AsyncConfig[] acs);
 	
 	<T> T getRemoteServie(ServiceItem item,ClassLoader cl,AsyncConfig[] acs);
+	
+	<T> T getRemoteServie(Class<T> srvCls,AsyncConfig[] acs);
 	
 	/**
 	 * 取得所有子类的实例
