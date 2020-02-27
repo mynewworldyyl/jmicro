@@ -159,15 +159,17 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
 		long id = pubsubManager.publish(data);
 		
 		RpcResponse resp = new RpcResponse();
-		resp.setResult(id);
+		//resp.setResult(id);
 		if(id < 0) {
 			String msg = "ErrorCode:"+id+",异步调用失败"+sm.getKey().toKey(false, false, false);
 			SF.doRequestLog(MonitorConstant.LOG_ERROR,TAG,req,null,msg);
-			ServerError se = new ServerError();
+			/*ServerError se = new ServerError();
 			se.setErrorCode(ServerError.SE_ASYNC_PUBSUB_FAIL);
 			se.setMsg(msg);
 			resp.setResult(se);
 			resp.setSuccess(false);
+			*/
+			throw new RpcException(req,msg);
 		}
 		
 		return resp;

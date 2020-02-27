@@ -23,10 +23,11 @@ import org.jmicro.api.JMicroContext;
 import org.jmicro.api.monitor.MonitorConstant;
 import org.jmicro.api.monitor.SF;
 import org.jmicro.api.net.Message;
+import org.jmicro.api.objectfactory.IObjectFactory;
+import org.jmicro.api.registry.AsyncConfig;
 import org.jmicro.api.registry.IRegistry;
 import org.jmicro.api.registry.UniqueServiceMethodKey;
 import org.jmicro.common.CommonException;
-import org.jmicro.common.Constants;
 import org.jmicro.common.util.JsonUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -48,7 +49,9 @@ public class SubCallbackImpl implements ISubCallback{
 	
 	private IRegistry reg;
 	
-	public SubCallbackImpl(UniqueServiceMethodKey mkey,Object srv, IRegistry reg){
+	private IObjectFactory of;
+	
+	public SubCallbackImpl(UniqueServiceMethodKey mkey,Object srv, IRegistry reg,IObjectFactory of){
 		if(mkey == null) {
 			throw new CommonException("SubCallback service method cannot be null");
 		}
@@ -56,6 +59,7 @@ public class SubCallbackImpl implements ISubCallback{
 		if(srv == null) {
 			throw new CommonException("SubCallback service cannot be null");
 		}
+		this.of = of;
 		this.mkey = mkey;
 		this.srvProxy = srv;
 		this.reg = reg;
@@ -83,31 +87,33 @@ public class SubCallbackImpl implements ISubCallback{
 		if(f) {
 			Map<String,Object> cxt = item.getContext();
 		    	
+			AsyncConfig ac = (AsyncConfig)cxt.get(item.getTopic());
+			
 			//AsyncInterceptor中设置以下参数
-		    String sn = (String)cxt.get(Constants.SERVICE_NAME_KEY);
-			String ns = (String)cxt.get(Constants.SERVICE_NAMESPACE_KEY);
-			String ver = (String)cxt.get(Constants.SERVICE_VERSION_KEY);
+		    //String sn = (String)cxt.get(Constants.SERVICE_NAME_KEY);
+			//String ns = (String)cxt.get(Constants.SERVICE_NAMESPACE_KEY);
+			//String ver = (String)cxt.get(Constants.SERVICE_VERSION_KEY);
 		    
-			String mn = (String)cxt.get(Constants.SERVICE_METHOD_KEY);
+			//String mn = (String)cxt.get(Constants.SERVICE_METHOD_KEY);
 			
 			Long linkId = (Long)cxt.get(JMicroContext.LINKER_ID);
 			//Long reqId = (Long)cxt.get(JMicroContext.REQ_ID);
 			
-			if( sn == null ) {
-				String msg = "Async callback service name is NULL:" + mkey.toString()+" [sn="+ns + ",ns="+ns + "ver="+ver +",mn="+ mn+",with args:"+ (obj==null?"":JsonUtils.getIns().toJson(obj)) +"]";
+			if( ac == null ) {
+				String msg = "Async callback service name is NULL:" + mkey.toString()+" [item="+JsonUtils.getIns().toJson(item) + ",ns="+",with args:"+ (obj==null?"":JsonUtils.getIns().toJson(obj)) +"]";
 				SF.doBussinessLog(MonitorConstant.LOG_ERROR,SubCallbackImpl.class,null, msg);
 				throw new CommonException(msg);
 			}
 			
-			Object srv = reg.getServices(sn, ns, ver);
+			Object srv = of.getRemoteServie(ac.getServiceName(), ac.getNamespace(), ac.getVersion(),null,null);
 			
 			if(srv != null) {
 				try {
 					Method m = null;
 					if(obj == null) {
-						m = srv.getClass().getMethod(mn);
+						m = srv.getClass().getMethod(ac.getMethod());
 					} else {
-						m = srv.getClass().getMethod(mn,obj.getClass());
+						m = srv.getClass().getMethod(ac.getMethod(),obj.getClass());
 					}
 					
 					if(m != null) {
@@ -117,12 +123,12 @@ public class SubCallbackImpl implements ISubCallback{
 						m.invoke(srv, obj);
 					}
 				} catch (Throwable e) {
-					String msg = "Fail to callback src service:" + mkey.toString()+" [sn="+ns + ",ns="+ns + "ver="+ver +",mn="+ mn+",with args:"+ (obj==null?"":JsonUtils.getIns().toJson(obj)) +"]";
+					String msg = "Fail to callback src service:" + mkey.toString()+" [sn="+ac.getServiceName() + ",ns="+ac.getNamespace() + "ver="+ac.getVersion() +",mn="+ ac.getMethod()+",with args:"+ (obj==null?"":JsonUtils.getIns().toJson(obj)) +"]";
 					SF.doBussinessLog(MonitorConstant.LOG_ERROR,SubCallbackImpl.class,e, msg);
 					throw new CommonException(msg,e);
 				}
 			} else {
-				String msg = "Async callback service not found:" + mkey.toString()+" [sn="+ns + ",ns="+ns + "ver="+ver +",mn="+ mn+",with args:"+ (obj==null?"":JsonUtils.getIns().toJson(obj)) +"]";
+				String msg = "Async callback service not found:" + mkey.toString()+" [sn="+ac.getServiceName() + ",ns="+ac.getNamespace() + "ver="+ac.getVersion() +",mn="+ ac.getMethod()+",with args:"+ (obj==null?"":JsonUtils.getIns().toJson(obj)) +"]";
 				SF.doBussinessLog(MonitorConstant.LOG_ERROR,SubCallbackImpl.class,null, msg);
 				throw new CommonException(msg);
 			}

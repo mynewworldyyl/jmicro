@@ -109,10 +109,4 @@ public class TestRpcRequest extends JMicroBaseTestCase{
 		//r.run();
 	}
 	
-	@Test
-	public void testAsyncCallRpc() {
-		of.get(TestRpcClient.class).testCallAsyncRpc();
-		Utils.getIns().waitForShutdown();
-	}
-	
 }

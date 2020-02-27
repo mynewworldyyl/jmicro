@@ -42,8 +42,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- *  负责消息订阅逻辑
- *  The directory of the structure
+ * 负责消息订阅逻辑
+ * The directory of the structure
  * PubSubDir is the root directory
  * Topic is pubsub topic and sub node is the listener of service method
  * 
@@ -114,7 +114,34 @@ class SubcriberManager {
 	}
 	
 	private void serviceDataChange(ServiceItem item) {
+		if(item == null || item.getMethods() == null) {
+			return;
+		}
 		
+		for(ServiceMethod sm : item.getMethods()) {
+			//接收异步消息的方法也要注册
+			if(StringUtils.isEmpty(sm.getTopic())) {
+				continue;
+			}
+
+			String k = sm.getKey().toKey(false, false, false);
+			
+			if(callbacks.containsKey(k)) {
+				//服务名,版本,名称空 相同即为同一个服务,只需要注册一次即可
+				logger.warn("{} have been in the callback list",k);
+				continue;
+			}
+			
+			this.waitingLoadClazz.offer(new SubcribeItem(SubcribeItem.TYPE_UPDATE,sm.getTopic(),sm.getKey(),null));
+			
+			synchronized(loadingLock) {
+				loadingLock.notify();
+			}
+			
+			if(openDebug) {
+				logger.debug("Got ont CB: {}",sm.getKey().toKey(true, true, true));
+			}
+		}
 	}
 	
 	private void serviceRemoved(ServiceItem item) {
@@ -210,6 +237,10 @@ class SubcriberManager {
 		return true;
 	}
 	
+	private boolean doUpdateSubscribe(SubcribeItem sui) {
+		return doSubscribe(sui);
+	}
+	
 	private boolean doSubscribe(SubcribeItem sui) {
 		
 		String k = sui.key.toKey(false, false, false);
@@ -262,7 +293,7 @@ class SubcriberManager {
 			return false;
 		}
 		
-		SubCallbackImpl cb = new SubCallbackImpl(sui.key,srv,registry);
+		SubCallbackImpl cb = new SubCallbackImpl(sui.key,srv,registry,this.of);
 		
 		callbacks.put(k, cb);
 		
@@ -321,6 +352,11 @@ class SubcriberManager {
 								break;
 							case SubcribeItem.TYPE_REMOVE:
 								if(!doUnsubcribe(si.topic,si.key,si.context)) {
+									failItems.add(si);
+								}
+								break;
+							case SubcribeItem.TYPE_UPDATE:
+								if(!doUpdateSubscribe(si)) {
 									failItems.add(si);
 								}
 								break;

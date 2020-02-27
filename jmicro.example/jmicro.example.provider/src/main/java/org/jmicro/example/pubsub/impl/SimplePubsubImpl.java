@@ -23,7 +23,7 @@ public class SimplePubsubImpl implements ISimplePubsub {
 		System.out.println("helloTopic: "+data.getTopic()+", data: "+ data.getData().toString());
 	}
 	
-	@Subscribe(topic="/jmicro/test/topic01")
+	@Subscribe(topic="/jmicro/test/topic02")
 	public void testTopic(PSData data) {
 		System.out.println("testTopic: "+data.getTopic()+", data: "+ data.getData().toString());
 	}

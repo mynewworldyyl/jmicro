@@ -51,6 +51,14 @@
 			<artifactId>jmicro.test</artifactId>
 			<scope>test</scope>
 		</dependency>
+		
+		<dependency>
+			<groupId>org.jmicro</groupId>
+			<artifactId>jmicro.agent</artifactId>
+			<version>0.0.1-SNAPSHOT</version>
+			<scope>test</scope>
+		</dependency>
+		
 	</dependencies>
 
 	<build>

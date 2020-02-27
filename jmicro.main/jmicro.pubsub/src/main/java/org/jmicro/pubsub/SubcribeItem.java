@@ -30,6 +30,7 @@ class SubcribeItem {
 
 	public static final int TYPE_SUB = 1;
 	public static final int TYPE_REMOVE = 2;
+	public static final int TYPE_UPDATE = 3;
 	
 	public int type;
 	public String topic;

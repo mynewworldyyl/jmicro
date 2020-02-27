@@ -5,7 +5,6 @@ import java.io.DataOutput;
 import java.io.IOException;
 import java.lang.reflect.Type;
 import java.nio.ByteBuffer;
-import java.sql.Date;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -31,6 +30,7 @@ import org.jmicro.api.gateway.ApiResponse;
 import org.jmicro.api.monitor.SubmitItem;
 import org.jmicro.api.net.RpcRequest;
 import org.jmicro.api.net.RpcResponse;
+import org.jmicro.api.registry.AsyncConfig;
 import org.jmicro.common.CommonException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -308,14 +308,21 @@ public class TypeCoderFactory {
 
 		registCoder(new ReflectTypeCoder<RpcRequest>(type--, RpcRequest.class));
 		registClass(RpcRequest.class,type);
+		
 		registCoder(new ReflectTypeCoder<RpcResponse>(type--, RpcResponse.class));
 		registClass(RpcResponse.class,type);
+		
 		registCoder(new ReflectTypeCoder<ApiRequest>(type--, ApiRequest.class));
 		registClass(ApiRequest.class,type);
+		
 		registCoder(new ReflectTypeCoder<ApiResponse>(type--, ApiResponse.class));
 		registClass(ApiResponse.class,type);
+		
 		registCoder(new ReflectTypeCoder<SubmitItem>(type--, SubmitItem.class));
 		registClass(SubmitItem.class,type);
+		
+		registCoder(new ReflectTypeCoder<AsyncConfig>(type--, AsyncConfig.class));
+		registClass(AsyncConfig.class,type);
 		
 		//registCoder(new ReflectTypeCoder<RpcRequest>(type--, RpcRequest.class));
 		//registCoder(new ReflectTypeCoder<RpcRequest>(type--, RpcRequest.class));

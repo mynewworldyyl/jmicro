@@ -180,7 +180,7 @@ public interface Constants {
 	//前置元素类型1：是，0：否
 	public static final byte HEADER_ELETMENT = 0X10;
 	
-	//字段类型，0：表示编码，1：表示类名
+	//能从泛型中能获取到足够的列表元素类型信息 0:不能从泛型中能获取到足够的列表元素类型信息，1：可以从泛型中获取到足够的列表元素类型信息
 	public static final byte GENERICTYPEFINAL = 0X08;
 	
 	//段类型，0：表示编码，1：表示类名
