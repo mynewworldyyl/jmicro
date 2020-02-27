@@ -357,8 +357,8 @@ public class SerializeProxyFactory {
 		
 		sb.append(" return;\n }\n");
 		
-		System.out.println("\n\n");
-		System.out.println(sb.toString());
+		//System.out.println("\n\n");
+		//System.out.println(sb.toString());
 		
 		return sb.toString();
 	
@@ -682,7 +682,7 @@ public class SerializeProxyFactory {
 		
 		sb.append("}");
 		//System.out.println("\n\n");
-		System.out.println(sb.toString());
+		//System.out.println(sb.toString());
 		return sb.toString();
 	}
 	
