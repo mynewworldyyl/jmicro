@@ -1,9 +1,13 @@
 package org.jmicro.example.test.pubsub;
 
 import java.io.IOException;
+import java.nio.ByteBuffer;
 
 import org.jmicro.api.codec.JDataInput;
 import org.jmicro.api.codec.JDataOutput;
+import org.jmicro.api.codec.PrefixTypeEncoderDecoder;
+import org.jmicro.api.net.Message;
+import org.jmicro.api.net.RpcRequest;
 import org.jmicro.api.registry.AsyncConfig;
 import org.jmicro.common.Utils;
 import org.jmicro.example.comsumer.TestRpcClient;
@@ -61,11 +65,48 @@ public class TestPubsub extends JMicroBaseTestCase{
 		System.out.println(decodePsd);
 	}
 	
+	@Test
+	public void testEncodePSDatas() throws IOException {
+		
+		PrefixTypeEncoderDecoder ed = of.get(PrefixTypeEncoderDecoder.class);
+		
+		org.jmicro.api.pubsub.PSData psd = new org.jmicro.api.pubsub.PSData();
+		psd.setData(new byte[] {22,33,33});
+		psd.setId(0);
+		psd.setTopic("/test/testtopic");
+		
+		//psd.getContext().put("key", 222);
+		
+		RpcRequest req = new RpcRequest();
+		req.setId(22L);
+		req.setImpl("2222");
+		req.setNamespace("2222");
+		req.setSuccess(true);
+		org.jmicro.api.pubsub.PSData[] arg = new org.jmicro.api.pubsub.PSData[] {psd};
+		
+		req.setArgs(new Object[] {arg});
+		
+		Message msg = new Message();
+		
+		ByteBuffer bb = ed.encode(req);
+		msg.setPayload(bb);
+		
+		ByteBuffer msgBb = msg.encode();
+		
+		Message respMsg = Message.readMessage(msgBb);
+		
+		Object obj = ed.decode((ByteBuffer)respMsg.getPayload());
+		
+		System.out.println(obj);
+	}
+	
 	
 	@Test
 	public void testAsyncCallRpc() {
 		of.get(TestRpcClient.class).testCallAsyncRpc();
 		Utils.getIns().waitForShutdown();
 	}
+	
+
 	
 }

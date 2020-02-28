@@ -8,11 +8,30 @@ import org.jmicro.api.JMicro;
 import org.jmicro.api.pubsub.IInternalSubRpc;
 import org.jmicro.api.pubsub.PSData;
 import org.jmicro.api.pubsub.PubSubManager;
+import org.jmicro.common.Constants;
+import org.jmicro.common.Utils;
+import org.jmicro.example.comsumer.TestRpcClient;
 import org.jmicro.test.JMicroBaseTestCase;
 import org.junit.Test;
 
 public class TestPubSubServer extends JMicroBaseTestCase{
 
+	@Test
+	public void testPublishPSDatas() {
+		IInternalSubRpc psm = of.getRemoteServie(IInternalSubRpc.class.getName(),
+				Constants.DEFAULT_PUBSUB, "0.0.1",null,null);
+		
+		PSData psd = new PSData();
+		psd.setData(new byte[] {22,33,33});
+		psd.setTopic(TOPIC);
+		
+		psm.publishItems(new PSData[] {psd,psd,psd});
+		
+		//psm.publishData(psd);
+		
+		Utils.getIns().waitForShutdown();
+	}
+	
 	@Test
 	public void testPubSubServerMessage() {
 		IInternalSubRpc psm = of.getRemoteServie(IInternalSubRpc.class.getName(),
@@ -29,6 +48,8 @@ public class TestPubSubServer extends JMicroBaseTestCase{
 		Object[] args = new String[] {"test publish args"};
 		long msgid = psm.publish("/jmicro/test/topic02",PSData.FLAG_PUBSUB,args);
 		System.out.println("pubsub msgID:"+msgid);
+		
+		JMicro.waitForShutdown();
 	}
 	
 
@@ -47,9 +68,8 @@ public class TestPubSubServer extends JMicroBaseTestCase{
 					/*
 					long msgid = psm.publish(new HashMap<String,Object>(), TOPIC, 
 							"test pubsub server id: "+id.getAndIncrement(),PSData.FLAG_QUEUE);*/
-					
 
-					long msgid = psm.publish("/jmicro/test/topic02",PSData.FLAG_QUEUE,new String[] {"test pubsub server id: "+id.getAndIncrement()});
+					long msgid = psm.publish("/jmicro/test/topic02",PSData.FLAG_PUBSUB,new String[] {"test pubsub server id: "+id.getAndIncrement()});
 					
 					System.out.println("pubsub msgID:"+msgid);
 					
@@ -66,7 +86,7 @@ public class TestPubSubServer extends JMicroBaseTestCase{
 		new Thread(r).start();
 		new Thread(r).start();
 		new Thread(r).start();
-		new Thread(r).start();
+		//new Thread(r).start();
 		
 		JMicro.waitForShutdown();
 	}

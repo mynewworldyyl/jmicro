@@ -127,9 +127,11 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
 	        	 } else {
 	        		 //可以异步调用并异步返回结果
 		        	 request.putObject(mkey, ac);
+		        	 resp = doRequest(request,proxy);
 	        	 }
+	         } else {
+	        	 resp = doRequest(request,proxy);
 	         }
-			resp = doRequest(request,proxy);
 		} catch (SecurityException | IllegalArgumentException  e) {
 			throw new RpcException(request,"",e);
 		}

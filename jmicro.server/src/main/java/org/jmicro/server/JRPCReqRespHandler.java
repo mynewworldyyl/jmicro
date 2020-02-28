@@ -107,10 +107,13 @@ public class JRPCReqRespHandler implements IMessageHandler{
 			JMicroContext.config(req1,serviceLoader,registry);
 			
 			if(!msg.isNeedResponse()){
+				//无需返回值
 				interceptorManger.handleRequest(req);
 				SF.doSubmit(MonitorConstant.SERVER_REQ_OK, req,resp,null);
 				return;
 			}
+			
+			//下面处理需要返回值的RPC
 
 			msg.setReqId(req.getRequestId());
 			//msg.setSessionId(req.getSession().getId());
@@ -123,25 +126,28 @@ public class JRPCReqRespHandler implements IMessageHandler{
 			//同步响应
 			resp = (RpcResponse)interceptorManger.handleRequest(req);
 			if(resp == null){
-				//返回空值性况处理
+				//返回空值情况处理
 				resp = new RpcResponse(req.getRequestId(),null);
 				resp.setSuccess(true);
 			}
 			msg.setPayload(ICodecFactory.encode(codeFactory,resp,msg.getProtocol()));
+			//请求类型码比响应类型码大1，
 			msg.setType((byte)(msg.getType()+1));
 			
 			if(SF.isLoggable(this.openDebug,MonitorConstant.LOG_DEBUG)) {
 				SF.doResponseLog(MonitorConstant.LOG_DEBUG, TAG, resp,null);
 			} 
-			
+			//响应消息
 			s.write(msg);
 		
 			SF.doSubmit(MonitorConstant.SERVER_REQ_OK, req,resp,null);
 		} catch (Throwable e) {
+			//返回错误
 			SF.doMessageLog(MonitorConstant.LOG_ERROR, TAG, msg,e);
 			SF.doSubmit(MonitorConstant.SERVER_REQ_ERROR, req,resp,null);
 			logger.error("reqHandler error: ",e);
 			if(needResp && req != null ){
+				//返回错误
 				resp = new RpcResponse(req.getRequestId(),new ServerError(0,e.getMessage()));
 				resp.setSuccess(false);
 				msg.setPayload(ICodecFactory.encode(codeFactory,resp,msg.getProtocol()));

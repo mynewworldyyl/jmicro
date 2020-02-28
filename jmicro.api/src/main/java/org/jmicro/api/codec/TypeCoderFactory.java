@@ -30,6 +30,7 @@ import org.jmicro.api.gateway.ApiResponse;
 import org.jmicro.api.monitor.SubmitItem;
 import org.jmicro.api.net.RpcRequest;
 import org.jmicro.api.net.RpcResponse;
+import org.jmicro.api.pubsub.PSData;
 import org.jmicro.api.registry.AsyncConfig;
 import org.jmicro.common.CommonException;
 import org.slf4j.Logger;
@@ -323,6 +324,9 @@ public class TypeCoderFactory {
 		
 		registCoder(new ReflectTypeCoder<AsyncConfig>(type--, AsyncConfig.class));
 		registClass(AsyncConfig.class,type);
+		
+		registCoder(new ReflectTypeCoder<PSData>(type--, PSData.class));
+		registClass(PSData.class,type);
 		
 		//registCoder(new ReflectTypeCoder<RpcRequest>(type--, RpcRequest.class));
 		//registCoder(new ReflectTypeCoder<RpcRequest>(type--, RpcRequest.class));

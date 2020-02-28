@@ -32,6 +32,7 @@ import org.jmicro.api.net.IRequestHandler;
 import org.jmicro.api.net.IResponse;
 import org.jmicro.api.net.RpcResponse;
 import org.jmicro.common.Constants;
+import org.jmicro.common.util.JsonUtils;
 import org.jmicro.common.util.ReflectUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -72,7 +73,9 @@ public class RpcRequestHandler extends AbstractHandler implements IRequestHandle
 			resp.setMonitorEnable(request.isMonitorEnable());
 			resp.setSuccess(true);
 		} catch (SecurityException | IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
-			throw new RpcException(request,"",e);
+			String msg = "service class:["+obj.getClass().getName()+"] method ["+request.getMethod()+"], args ["
+					+ JsonUtils.getIns().toJson(request.getArgs())+"]";
+			throw new RpcException(request,msg,e);
 		}
 		return resp;
 	}
@@ -83,7 +86,14 @@ public class RpcRequestHandler extends AbstractHandler implements IRequestHandle
 			Method m = obj.getClass().getMethod(req.getMethod(), pst);
 			return m;
 		} catch (NoSuchMethodException | SecurityException | IllegalArgumentException e) {
-			throw new RpcException(req,"",e);
+			//降级到只匹配方法名称，意味着方法不能重载
+			Method[] ms = obj.getClass().getMethods();
+			for(Method m : ms) {
+				if(m.getName().equals(req.getMethod())) {
+					return m;
+				}
+			}
+			throw new RpcException(req,pst.toString(),e);
 		}
 	}
 	
@@ -93,18 +103,23 @@ public class RpcRequestHandler extends AbstractHandler implements IRequestHandle
 		}
 		Class<?>[] parameterTypes = new Class[args.length];
 		for(int i = 0; i < args.length; i++) {
-			Class<?> pt = args[i].getClass();
-			if(Set.class.isAssignableFrom(pt)) {
-				parameterTypes[i]=Set.class;
-			} else if(Map.class.isAssignableFrom(pt)) {
-				parameterTypes[i]=Map.class;
-			} else if(List.class.isAssignableFrom(pt)) {
-				parameterTypes[i]=List.class;
-			}  else if(Collection.class.isAssignableFrom(pt)) {
-				parameterTypes[i]=Collection.class;
-			} else {
-				parameterTypes[i] = ReflectUtils.getPrimitiveClazz(pt);
+			if(args[i] != null) {
+				Class<?> pt = args[i].getClass();
+				if(Set.class.isAssignableFrom(pt)) {
+					parameterTypes[i]=Set.class;
+				} else if(Map.class.isAssignableFrom(pt)) {
+					parameterTypes[i]=Map.class;
+				} else if(List.class.isAssignableFrom(pt)) {
+					parameterTypes[i]=List.class;
+				}  else if(Collection.class.isAssignableFrom(pt)) {
+					parameterTypes[i]=Collection.class;
+				} else {
+					parameterTypes[i] = ReflectUtils.getPrimitiveClazz(pt);
+				}
+			}else {
+				parameterTypes[i] = Object.class;
 			}
+			
 		}
 		return parameterTypes;
 	}

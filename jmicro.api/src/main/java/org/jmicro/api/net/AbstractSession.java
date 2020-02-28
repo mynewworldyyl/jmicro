@@ -26,8 +26,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.jmicro.api.config.Config;
-import org.jmicro.api.debug.LogUtil;
+import org.jmicro.api.JMicroContext;
 import org.jmicro.api.monitor.MonitorConstant;
 import org.jmicro.api.monitor.ServiceCounter;
 import org.slf4j.Logger;

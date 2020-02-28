@@ -4,6 +4,7 @@ import java.io.ByteArrayInputStream;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
+import java.lang.reflect.Array;
 import java.lang.reflect.Modifier;
 import java.util.Collection;
 import java.util.Date;
@@ -14,6 +15,7 @@ import org.jmicro.api.annotation.SO;
 import org.jmicro.api.codec.Decoder;
 import org.jmicro.api.codec.ISerializeObject;
 import org.jmicro.api.codec.TypeCoderFactory;
+import org.jmicro.api.codec.typecoder.TypeCoder;
 import org.jmicro.common.CommonException;
 import org.jmicro.common.util.StringUtils;
 import org.slf4j.Logger;
@@ -467,7 +469,7 @@ public class SerializeProxyFactory {
 			    		//从值中获取元素类型信息
 			    		sb.append(" Class firstEltCls = __val"+i+".iterator().next().getClass();\n");
 			    		sb.append(" boolean sameElt = org.jmicro.agent.SerializeProxyFactory.sameCollectionTypeEles(__val"+i+"); \n");//是否是同种类型的对象
-				    	sb.append(" boolean isFinal = org.jmicro.agent.SerializeProxyFactory.seriaFinalClass(firstEltCls);\n");
+				    	sb.append(" boolean isFinal = org.jmicro.agent.SerializeProxyFactory.seriaFinalClass(__val"+i+".toArray());\n");
 				    	
 				    	sb.append(" if(sameElt && isFinal) { //block3 \n");
 				    		sb.append(" "+flagName+" |= org.jmicro.common.Constants.HEADER_ELETMENT; \n");//第一个元素 是否是抽象类，sameElt=true时有效
@@ -525,7 +527,7 @@ public class SerializeProxyFactory {
 			    		sb.append(" } else { // block2 \n");
 			    		//从值中获取元素类型信息
 			    		sb.append(" boolean sameElt = org.jmicro.agent.SerializeProxyFactory.sameArrayTypeEles(__val"+i+"); \n");//是否是同种类型的对象
-				    	sb.append(" boolean isFinal = org.jmicro.agent.SerializeProxyFactory.seriaFinalClass(__val"+i+"[0].getClass());\n");
+				    	sb.append(" boolean isFinal = org.jmicro.agent.SerializeProxyFactory.seriaFinalClass(__val"+i+");\n");
 				    	
 				    	sb.append(" if(sameElt && isFinal) { //block3 \n");
 				    		sb.append(" "+flagName+" |= org.jmicro.common.Constants.HEADER_ELETMENT; \n");//第一个元素 是否是抽象类，sameElt=true时有效
@@ -619,7 +621,7 @@ public class SerializeProxyFactory {
 			    		sb.append(" } else { // block2 \n");
 			    		//从值中获取元素类型信息
 			    		sb.append(" boolean sameValElt = org.jmicro.agent.SerializeProxyFactory.sameCollectionTypeEles(__val"+i+".values()); \n");//是否是同种类型的对象
-				    	sb.append(" boolean isValFinal = org.jmicro.agent.SerializeProxyFactory.seriaFinalClass(__val"+i+".values().iterator().next().getClass());\n");
+				    	sb.append(" boolean isValFinal = org.jmicro.agent.SerializeProxyFactory.seriaFinalClass(__val"+i+".values().toArray());\n");
 				    	
 				    	sb.append(" if(sameValElt && isValFinal) { //block3 \n");
 				    		sb.append(" "+flagName+" |= org.jmicro.common.Constants.EXT1;//首值编码 \n");//第一个元素 是否是抽象类，sameElt=true时有效
@@ -704,12 +706,16 @@ public class SerializeProxyFactory {
 		if(cl == null) {
 			cl = SerializeProxyFactory.class.getClassLoader();
 		}
-		try {
-			return cl.loadClass(clsName);
-		} catch (ClassNotFoundException e) {
-			e.printStackTrace();
-			return null;
+		Class cls = null;
+		if(clsName.startsWith("[L")) {
+			clsName = clsName.substring(2,clsName.length()-1);
+			//cls = TypeCoder.loadClassFromCache(clsName);
+			Class c = TypeCoder.loadClassFromCache(clsName);
+			cls = Array.newInstance(c, 0).getClass();
+		} else {
+			cls =  TypeCoder.loadClassFromCache(clsName);
 		}
+		return cls;
 	}
 	
 
@@ -802,8 +808,8 @@ public class SerializeProxyFactory {
 		return same;
 	}
 	
-	public static boolean seriaFinalClass(Class cls) {
-		return java.lang.reflect.Modifier.isFinal(cls.getModifiers()) ||org.jmicro.api.codec.ISerializeObject.class.isAssignableFrom(cls);
+	public static boolean seriaFinalClass(Object arrays) {
+		return TypeCoder.seriaFinalClass(arrays);
 	}
 
 	public static void encodeListElement(DataOutput buffer, Object val) throws IOException {

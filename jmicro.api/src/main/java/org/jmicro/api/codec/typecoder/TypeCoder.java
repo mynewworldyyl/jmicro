@@ -20,6 +20,7 @@ import java.util.Map;
 import org.jmicro.api.codec.Decoder;
 import org.jmicro.api.codec.JDataInput;
 import org.jmicro.api.codec.JDataOutput;
+import org.jmicro.api.codec.SerializeProxyFactory;
 import org.jmicro.api.codec.TypeCoderFactory;
 import org.jmicro.api.codec.TypeUtils;
 import org.jmicro.common.CommonException;
@@ -199,13 +200,12 @@ public interface TypeCoder<T> extends Comparable<TypeCoder<T>>{
 		jo.write(flag);
 		
 		boolean writeEvery;
-		
-		Class firstCls = Array.get(objs, 0).getClass();
 	   
 		boolean sameElt = sameArrayTypeEles(objs);
-	    boolean finalCls = seriaFinalClass(firstCls);
+	    boolean finalCls = seriaFinalClass(objs);
 	    
 	    if(sameElt && finalCls) {
+	    	Class firstCls = Array.get(objs, 0).getClass();
 	    	flag |= org.jmicro.common.Constants.HEADER_ELETMENT;
 	    	Short code = org.jmicro.api.codec.TypeCoderFactory.getCodeByClass(firstCls);
 	    	writeEvery = false;
@@ -222,15 +222,26 @@ public interface TypeCoder<T> extends Comparable<TypeCoder<T>>{
 		TypeCoder coder = TypeCoderFactory.getDefaultCoder();
 		for(int i = 0; i < len; i++){
 			Object v = Array.get(objs, i);
+			
 			if(writeEvery) {
-				Short code = org.jmicro.api.codec.TypeCoderFactory.getCodeByClass(v.getClass());
-				if(code == null) {
-					 buffer.writeByte(Decoder.PREFIX_TYPE_STRING);
-		    		 buffer.writeUTF(v.getClass().getName());
-		    	} else {
-		    		 buffer.writeByte(Decoder.PREFIX_TYPE_SHORT);
-		    		 buffer.writeShort(code);
-		    	}
+				if(v == null) {
+					 buffer.writeByte(Decoder.PREFIX_TYPE_NULL);
+					 continue;
+				} else {
+					Short code = org.jmicro.api.codec.TypeCoderFactory.getCodeByClass(v.getClass());
+					if(code == null) {
+						 buffer.writeByte(Decoder.PREFIX_TYPE_STRING);
+			    		 buffer.writeUTF(v.getClass().getName());
+			    	} else {
+			    		 buffer.writeByte(Decoder.PREFIX_TYPE_SHORT);
+			    		 buffer.writeShort(code);
+			    	}
+				}
+			}
+			
+			if(v == null) {
+				buffer.writeByte(Decoder.PREFIX_TYPE_NULL);
+				continue;
 			}
 			
 			coder.encode(buffer, v, null, null);
@@ -241,8 +252,27 @@ public interface TypeCoder<T> extends Comparable<TypeCoder<T>>{
 		
 	}
 	
-	public static boolean seriaFinalClass(Class cls) {
-		return java.lang.reflect.Modifier.isFinal(cls.getModifiers()) ||org.jmicro.api.codec.ISerializeObject.class.isAssignableFrom(cls);
+	public static boolean seriaFinalClass(Object arrays) {
+
+
+		if(arrays == null) {
+			return false;
+		}
+		 int len = Array.getLength(arrays);
+		 if(len == 0) {
+			 return false;
+		 }
+		 
+		 for(int i = 0; i < len; i++) {
+			 Object elt = Array.get(arrays, i);
+			 if(elt == null) {
+				 continue;
+			 }
+			 return java.lang.reflect.Modifier.isFinal(elt.getClass().getModifiers()) ||org.jmicro.api.codec.ISerializeObject.class.isAssignableFrom(elt.getClass());
+		 }
+		 
+		return false;
+		
 	}
 	
 	public static boolean sameArrayTypeEles(Object coll) {
@@ -257,6 +287,9 @@ public interface TypeCoder<T> extends Comparable<TypeCoder<T>>{
 		
 		for(int i = 1; i < len; i++) {
 			cur = Array.get(coll, i);
+			if(cur == null) {
+				continue;
+			}
 			if(cur.getClass() != pre.getClass()) {
 				same = false;
 				break;
@@ -416,9 +449,12 @@ public interface TypeCoder<T> extends Comparable<TypeCoder<T>>{
 			if(readEvery) {
 				try {
 					byte prefixCode = buffer.readByte();
+					if(prefixCode ==Decoder.PREFIX_TYPE_NULL ) {
+						continue;
+					}
 					if(Decoder.PREFIX_TYPE_STRING == prefixCode) {
 						eltType = getType(buffer);
-					}else {
+					} else {
 						Short c = buffer.readShort();
 						eltType = org.jmicro.api.codec.TypeCoderFactory.getClassByCode(new Short(c));
 					}

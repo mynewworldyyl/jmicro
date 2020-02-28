@@ -1,13 +1,12 @@
 package org.jmicro.api.pubsub;
 
 import java.lang.reflect.Method;
-import java.util.Collection;
 
 import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.Inject;
 import org.jmicro.api.annotation.Subscribe;
-import org.jmicro.api.objectfactory.IObjectFactory;
 import org.jmicro.api.objectfactory.IFactoryListener;
+import org.jmicro.api.objectfactory.IObjectFactory;
 import org.jmicro.api.objectfactory.ProxyObject;
 import org.jmicro.api.registry.ServiceItem;
 import org.jmicro.api.registry.ServiceMethod;
@@ -38,7 +37,7 @@ public class PubSubPostFactoryReadyListener implements IFactoryListener {
 			ServiceItem si = this.srvLoader.getServiceItems(s.getClass());
 			loadSubscriber(s.getClass(),si);
 		}*/
-		pubSubManager.init1();
+		pubSubManager.init();
 	}
 
 	@Override

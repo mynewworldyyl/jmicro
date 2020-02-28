@@ -37,6 +37,8 @@ public interface IInternalSubRpc {
 	 */
 	long publishData(PSData item);
 	
+	long publishItems(PSData[] items);
+	
 	/**
 	 * 
 	 * @param topic

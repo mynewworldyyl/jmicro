@@ -187,7 +187,7 @@ public class PubSubServer implements IInternalSubRpc{
 		
 	}
 	
-	public void resetResendTimer() {
+	private void resetResendTimer() {
 		
 		logger.info("Reset timer with doResendInterval0:{},doResendInterval:{}",doResendInterval0,doResendInterval);
 		TimerTicker.getTimer(this.resendTimers, doResendInterval0).removeListener(RESEND_TIMER,true);
@@ -204,25 +204,16 @@ public class PubSubServer implements IInternalSubRpc{
 		doResendInterval0 = doResendInterval;
 	}
 	
-	public void start() {
-		if(running) {
-			return;
-		}
-		running = true;
-		logger.debug("start pubsub server: {}", PubSubServer.class.getName());
-	}
 	
-	public void stop() {
-		
-	}
-	
-	public boolean subcribe(String topic,ServiceMethod srvMethod,Map<String, String> context) {
+	/*
+	private boolean subcribe(String topic,ServiceMethod srvMethod,Map<String, String> context) {
 		return this.subManager.subcribe(topic, srvMethod, context);
 	}
 	
-	public boolean unsubcribe(String topic,ServiceMethod srvMethod,Map<String, String> context) {
+	private boolean unsubcribe(String topic,ServiceMethod srvMethod,Map<String, String> context) {
 		return this.subManager.unsubcribe(topic, srvMethod, context);
 	}
+	*/
 	
 	public long publishString(String topic,String content) {
 		if(discard.get()) {
@@ -237,6 +228,23 @@ public class PubSubServer implements IInternalSubRpc{
 		return this.publishData(item);
 	}
 	
+	/**
+	 * 如果发送部份失败，则返回失败选项的开始索引值，
+	 * 否则返回成功码
+	 */
+	@Override
+	public long publishItems(PSData[] items) {
+		for(int i = 0; i < items.length; i++) {
+			if(items[i] != null) {
+				long rst = publishData(items[i]);
+				if(rst == PubSubManager.PUB_SERVER_DISCARD) {
+					return i;
+				}
+			}
+		}
+		return PubSubManager.PUB_OK;
+	}
+
 	public long publishData(PSData item) {
 		if(discard.get()) {
 			//logger.warn("Disgard One:{}",item.getTopic());
@@ -471,7 +479,7 @@ public class PubSubServer implements IInternalSubRpc{
 		}
 	}
 
-	public boolean isEnableServer() {
+	private boolean isEnableServer() {
 		return this.enableServer;
 	}
 	
