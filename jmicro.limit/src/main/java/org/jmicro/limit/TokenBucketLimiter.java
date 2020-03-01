@@ -61,7 +61,7 @@ public class TokenBucketLimiter extends AbstractLimiter implements ILimiter{
 		//logger.debug("TokenBucketLimiter apply reqID: " + req.getRequestId());
 		int rst = b.applyToken(1);
 		if(rst < 0) {
-			SF.doSubmit(MonitorConstant.SERVER_REQ_LIMIT_FORBIDON, req,null,rst+"");
+			SF.limit(req);
 			return false;
 		} else {
 			return true;

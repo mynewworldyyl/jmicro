@@ -239,10 +239,8 @@ public class NettyClientSessionManager implements IClientSessionManager{
 	                		logger.error("Got NULL Session when read data {},data:{}",sKey,msg);
 	                		return;
 	                	}
-	                	if(monitorEnable(ctx) && monitor != null){
-	                		monitor.submit(MonitorConstant.CLIENT_IOSESSION_READ, cs.getId()+"",
-	                				((ByteBuf)msg).readableBytes()+"");
-	                    }
+
+                		SF.netIoRead(MonitorConstant.CLIENT_IOSESSION_READ,((ByteBuf)msg).readableBytes());
 	                	
 	             		ByteBuffer b = ByteBuffer.allocate(bb.readableBytes());
 	                	bb.readBytes(b);
@@ -273,8 +271,9 @@ public class NettyClientSessionManager implements IClientSessionManager{
 	        			 logger.error("exceptionCaught",cause);
 	        			 NettyClientSession session = (NettyClientSession)ctx.channel().attr(sessionKey).get();
 	        			 if(session !=null && monitorEnable(ctx) && monitor != null ){
-	        	             SF.doSubmit(MonitorConstant.CLIENT_IOSESSION_EXCEPTION
-	        	            		 ,cause,session.getId()+"");
+	        	             SF.netIo(MonitorConstant.CLIENT_IOSESSION_EXCEPTION
+	        	            		 ,"exceptionCaught sessionId:"+session.getId()+"",
+	        	            		 NettyClientSessionManager.class,cause);
 	        	         }
 	        			 closeCtx(ctx);
 	                 }
@@ -324,7 +323,8 @@ public class NettyClientSessionManager implements IClientSessionManager{
 	       } catch (Throwable e) {
 	    	   String msg = "Cannot connect " + host + ":" + port;
 	    	   logger.error(msg,e);
-	           SF.doSubmit(MonitorConstant.CLIENT_REQ_CONN_FAIL, e,msg);
+	    	   SF.netIo(MonitorConstant.CLIENT_CONNECT_FAIL
+	            		 ,msg,NettyClientSessionManager.class,e);
 	           throw new CommonException(msg);
 	       }
 		}

@@ -99,7 +99,7 @@ public class FirstClientInterceptor extends AbstractInterceptor implements IInte
 		ServiceMethod sm = JMicroContext.get().getParam(Constants.SERVICE_METHOD_KEY, null);
 		if(!sm.isBreaking()) {
 			//不支持熔断
-			throw new RpcException(req,"",e);
+			throw new RpcException(req,e);
 		}
 		
 		RpcResponse resp = new RpcResponse();
@@ -117,7 +117,7 @@ public class FirstClientInterceptor extends AbstractInterceptor implements IInte
 			resp.setResult(v);
 		} else {
 			//参数不对，继续抛出异常
-			throw new RpcException(req,"",e);
+			throw new RpcException(req,e);
 		}
 		return resp;
 	}

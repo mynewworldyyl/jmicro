@@ -16,6 +16,7 @@
  */
 package org.jmicro.client;
 
+import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -52,6 +53,7 @@ import org.jmicro.api.registry.ServiceItem;
 import org.jmicro.api.registry.ServiceMethod;
 import org.jmicro.common.CommonException;
 import org.jmicro.common.Constants;
+import org.jmicro.common.util.StringUtils;
 import org.jmicro.common.util.TimeUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -117,9 +119,20 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
 		AbstractClientServiceProxy proxy =  (AbstractClientServiceProxy)JMicroContext.get().getObject(Constants.PROXY, null);
 		RpcResponse resp = null;
 		try {
+			 //请求开始
+			 SF.reqStart(request);
+			
 			 ServiceMethod sm = JMicroContext.get().getParam(Constants.SERVICE_METHOD_KEY, null);
 			 String mkey = sm.getKey().getMethod();
 	         AsyncConfig ac = proxy.getAcs(mkey);
+	         if(ac == null && JMicroContext.get().exists(Constants.ASYNC_CONFIG)) {
+	        	 ac = (AsyncConfig)JMicroContext.get().getParam(Constants.ASYNC_CONFIG, null);
+	        	 if(!ac.getForMethod().equals(request.getMethod())) {
+	        		 //不属于当前方法的异步配置
+	        		 ac = null;
+	        	 }
+	         }
+	         
 	         if(ac != null && ac.isEnable()) {
 	        	 if(ac.getCondition().equals(AsyncConfig.ASYNC_DIRECT)) {
 	        		 //客户端直接做异步
@@ -133,7 +146,10 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
 	        	 resp = doRequest(request,proxy);
 	         }
 		} catch (SecurityException | IllegalArgumentException  e) {
-			throw new RpcException(request,"",e);
+			throw new RpcException(request,e);
+		} finally {
+			//无论成功或失败都有一个结束事件
+			SF.reqEnd(request, resp);
 		}
 		return resp;
 	}
@@ -154,15 +170,20 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
 		PSData data = new PSData();
 		data.setContext(cxt);
 		data.setData(req.getArgs());
-		data.setFlag(PSData.flag(PSData.FLAG_QUEUE,PSData.FLAG_ASYNC_METHOD));
+		
+		if(sm.isNeedResponse() && StringUtils.isNotEmpty(ac.getServiceName())) {
+			data.setFlag(PSData.flag(PSData.FLAG_QUEUE,PSData.FLAG_ASYNC_METHOD));
+		}
+		
 		data.setTopic(topic);
 		
 		//异步后,就不一定是本实例接收到此RPC调用了
 		long id = pubsubManager.publish(data);
 		
 		RpcResponse resp = new RpcResponse();
-		//resp.setResult(id);
-		if(id < 0) {
+		if(id >= 0) {
+			return resp;
+		} else {
 			String msg = "ErrorCode:"+id+",异步调用失败"+sm.getKey().toKey(false, false, false);
 			SF.doRequestLog(MonitorConstant.LOG_ERROR,TAG,req,null,msg);
 			/*ServerError se = new ServerError();
@@ -172,9 +193,8 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
 			resp.setSuccess(false);
 			*/
 			throw new RpcException(req,msg);
-		}
 		
-		return resp;
+		}
 	}
 
 	private RpcResponse doRequest(IRequest req, AbstractClientServiceProxy proxy) {
@@ -211,17 +231,22 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
         	}
         	
         	if(si == null) {
-        		SF.doSubmit(MonitorConstant.CLIENT_REQ_SERVICE_NOT_FOUND, req,null);
-    			throw new CommonException("Service [" + req.getServiceName() + "] not found!");
+        		//SF.doSubmit(MonitorConstant.CLIENT_REQ_SERVICE_NOT_FOUND, req,null);
+        		//服务未找到，或服务不存在
+        		SF.serviceNotFound(req);
+    			throw new RpcException(req,"Service [" + req.getServiceName() + "] not found!");
     		}
         	
         	Server s = si.getServer(Constants.TRANSPORT_NETTY);
         	
         	JMicroContext.get().setParam(JMicroContext.REMOTE_HOST, s.getHost());
     		JMicroContext.get().setParam(JMicroContext.REMOTE_PORT, s.getPort()+"");
+    		JMicroContext.get().setParam(Constants.SERVICE_ITEM_KEY, si);
+    		JMicroContext.get().setParam(Constants.SERVICE_METHOD_KEY, sm);
     		
     		//保存返回结果
-    		final Map<String,Object> result = new HashMap<>();
+    		//final Map<String,Object> result = new HashMap<>();
+    		final MessageHolder mh = new MessageHolder();
     		
         	if(isFistLoop){
         		//超时重试时,只需要执行一次此代码块
@@ -248,7 +273,7 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
 				msg.setDumpDownStream(sm.isDumpDownStream());
 				msg.setDumpUpStream(sm.isDumpUpStream());
 	    		msg.setNeedResponse(sm.isNeedResponse());
-	    		msg.setLoggable(JMicroContext.get().isLoggable(false));
+	    		//msg.setLoggable(JMicroContext.get().isLoggable(false));
 	    		
 	    		int f = sm.getMonitorEnable() == 1 ? 1 : (si.getMonitorEnable()== 1?1:0);
 	    		msg.setMonitorable(f == 1);
@@ -266,55 +291,46 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
 	    			msg.setMethod(sm.getKey().getMethod());
 	    		}
 	    		
+	    		ByteBuffer pl = ICodecFactory.encode(this.codecFactory, req, msg.getProtocol());
+				/*if(pl == null || pl.position() <= 0) {
+					System.out.println(pl);
+				}*/
+	        	msg.setPayload(pl);
+	    		
 	    		//超时重试不需要重复注册监听器
-    			waitForResponse.put(req.getRequestId(), (message)->{
-    				result.put("msg", message);
-    				//在请求响应之间做同步
-    				synchronized(req) {
-        				req.notify();
-        			}
-    			});
-    			//LogUtil.A.debug("Put waitForResponse reqID:{},keySet:{}",req.getRequestId(),waitForResponse.keySet());
+	    		if(sm.isNeedResponse()) {
+	    			//只有需要响应的请求才需要等待结果
+	    			waitForResponse.put(req.getRequestId(), (message)->{
+	    				mh.msg = message;
+	    				//在请求响应之间做同步
+	    				synchronized(req) {
+	        				req.notify();
+	        			}
+	    			});
+	    		}
         	}
         	
-        	Object pl = ICodecFactory.encode(this.codecFactory, req, msg.getProtocol());
-        	msg.setPayload(pl);
-        	
-        	//JMicroContext.get().setParam(Constants.SERVICE_METHOD_KEY, sm);
-    		//JMicroContext.get().setParam(Constants.SERVICE_ITEM_KEY, si);
-    		//JMicroContext.setSrvLoggable();
-    		//msg.setLoggable(JMicroContext.get().isLoggable(false));
-    	    
     	    IClientSession session = this.sessionManager.getOrConnect(s.getHost(), s.getPort());
     		
     	    if(isDebug) {
+    	    	//在调试模式下，给消息一个ID
+    	    	//每次超时重试，都起一个新的消息，但是同一个请求Req
     	    	msg.setId(this.idGenerator.getLongId(Message.class));
     	    }
     		
-    		if(SF.isLoggable(this.openDebug,MonitorConstant.LOG_DEBUG)) {
-    			SF.doRequestLog(MonitorConstant.LOG_DEBUG,TAG,req,null," do request");
-    		}
-    		
+    	    //session.increment(MonitorConstant.CLIENT_REQ_BEGIN);
+    	    
     		//long st = System.currentTimeMillis();
     		//logger.info(""+st);
     		session.write(msg);
     		
     		if(!sm.isNeedResponse()) {
     			//数据发送后，不需要返回结果，也不需要请求确认包，直接返回
-    			//this.sessionManager.write(msg, null,retryCnt);
-    			if(SF.isLoggable(this.openDebug,MonitorConstant.LOG_DEBUG)) {
-    				SF.doServiceLog(MonitorConstant.LOG_DEBUG,TAG,sm,null, " no need response and return");
-        		}
-    			waitForResponse.remove(req.getRequestId());
     			return null;
     		}
     		
-    		SF.doSubmit(MonitorConstant.CLIENT_REQ_BEGIN, req,null);
-    		session.increment(MonitorConstant.CLIENT_REQ_BEGIN);
-    		
     		synchronized(req) {
     			try {
-    				//logger.info("waiting ReqID: {},timeout:{}",msg.getReqId(),timeout);
     				if(timeout > 0){
     					req.wait(timeout);
     				} else {
@@ -325,117 +341,96 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
     			}
     		}
     		
-    		//long et = System.currentTimeMillis();
-    		//System.out.println(req.getRequestId() + " used: "+(et-st));
+    		//下面处理响应消息
+    		Message respMsg = mh.msg;
     		
-    		
-    		Message respMsg = (Message)result.get("msg");
-    		result.clear();
     		RpcResponse resp = null;
     		if(respMsg != null){
-    			if(respMsg.getPayload() != null){
-    				resp = ICodecFactory.decode(this.codecFactory,respMsg.getPayload(),
-    						RpcResponse.class,msg.getProtocol());
-    				
-    				resp.setMsg(respMsg);
-    				//req.setMsg(msg);
-    				if(SF.isLoggable(this.openDebug,MonitorConstant.LOG_DEBUG)) {
-        				SF.doResponseLog(MonitorConstant.LOG_DEBUG,TAG,resp,null,"reqID ["+resp.getReqId()+"] response");
-            		}
-    			} else {
-        			SF.doMessageLog(MonitorConstant.LOG_ERROR,TAG,respMsg,null,"reqID ["+resp.getReqId()+"] response");
-        		}
+				resp = ICodecFactory.decode(this.codecFactory,respMsg.getPayload(),
+						RpcResponse.class,msg.getProtocol());
+				resp.setMsg(respMsg);
     		} else {
-    			SF.doSubmit(MonitorConstant.CLIENT_REQ_TIMEOUT, req, null);
-    			session.increment(MonitorConstant.CLIENT_REQ_TIMEOUT);
+    			//到这里肯定是超时了
+    			//SF.doSubmit(MonitorConstant.CLIENT_REQ_TIMEOUT, req, null);
+    			logger.warn("Timeout reqID:"+req.getId()+",linkId:"+msg.getLinkId()+",timeout"+sm.getTimeout()+",Service: "+sm.getKey().toKey(true, true, true));
+    			SF.reqTimeout(req);
+    			//session.increment(MonitorConstant.CLIENT_REQ_TIMEOUT);
     		}
     		
     		if(resp != null && resp.isSuccess() && !(resp.getResult() instanceof ServerError)) {
-				session.increment(MonitorConstant.CLIENT_REQ_OK);
-    			SF.doSubmit(MonitorConstant.CLIENT_REQ_OK, req, resp,null);
+				//session.increment(MonitorConstant.CLIENT_REQ_OK);
 				//同步请求成功，直接返回
     			req.setFinish(true);
     			waitForResponse.remove(req.getRequestId());
-    			//LogUtil.A.debug("Remove waitForResponse reqID:{}",req.getRequestId());
+    			SF.reqSuccess(req,resp);
     			return resp;
     		}
     		
-    		//下面是此次请求失败,进入重试处理过程
-    		StringBuffer sb = new StringBuffer();
-			if(se!= null){
-				sb.append(se.toString());
-			}
-			sb.append(" host[").append(s.getHost()).append("] port [").append(s.getPort())
-			.append("] service[").append(si.getKey().getServiceName())
-			.append("] method[").append(sm.getKey().getMethod())
-			.append("] param[").append(sm.getKey().getParamsStr())
-			.append("] param value[").append(req.getArgs()!= null?argStr(req.getArgs()):"null");
+    		//总失败数=MonitorConstant.CLIENT_GET_RESPONSE_ERROR+
     		
+    		req.setFinish(false);
+    		
+    		//下面是此次请求失败,进入重试处理过程
     		if(resp == null){
-    			if(retryCnt > 0){
-    				//还可以重试
-    				sb.append("] do retry: ").append(retryCnt);
-    				//SF.doRequestLog(MonitorConstant.WARN,msg.getLinkId(),TAG,req,null,sb.toString());
-    				//logger.error("reqId:{}, waitForResponse keySet:{}",req.getRequestId(),waitForResponse.keySet());
-    			} else {
+    			retryCnt--;
+    			if(retryCnt <= 0){
     				//不能再重试了
     				//断开新打开连接
-    				session.increment(MonitorConstant.CLIENT_REQ_TIMEOUT_FAIL);
-    				SF.doSubmit(MonitorConstant.CLIENT_REQ_TIMEOUT_FAIL, req, null);
-    				
-    				sb.append("] timeout[").append(timeout).append("] request and stop retry: ").append(retryCnt)
-    				.append(",reqId:").append(req.getRequestId()).append(", LinkId:").append(lid);
-    				SF.doRequestLog(MonitorConstant.LOG_ERROR,TAG,req,null,sb.toString());
-    				
+    				//session.increment(MonitorConstant.CLIENT_REQ_TIMEOUT_FAIL);
+    				//SF.doSubmit(MonitorConstant.CLIENT_REQ_TIMEOUT_FAIL, req, null);
+    				//SF.doRequestLog(MonitorConstant.LOG_ERROR,TAG,req,null,sb.toString());
+    				//请求失败
     				if(session.getFailPercent() > 50) {
-        				logger.warn("session.getFailPercent() > 50,Close session: {},Percent:{},sessionID:{}",sb.toString(),session.getFailPercent(),session.getId());
         				this.sessionManager.closeSession(session);
     				}
-    				logger.error(sb.toString()+",Hander:" + waitForResponse.get(req.getRequestId()));
-    				//肯定是超时了
-    				throw new TimeoutException(req,sb.toString());
-    			}
-    		
-    			if(interval > 0 && retryCnt > 0){
-    				try {
-    					//超时重试间隔
-    					Thread.sleep(si.getRetryInterval());
-    				} catch (InterruptedException e) {
-    					logger.error("Sleep exceptoin ",e);
+    				logger.warn("Fail reqID:"+req.getId()+",linkId:"+msg.getLinkId()+",timeout"+",Service: "+sm.getKey().toKey(true, true, true));
+    				//肯定是超时失败了
+    				SF.reqTimeoutFail(req);
+    				throw new TimeoutException(req,si.getRetryCnt()+"");
+    			} else {
+    				if(interval > 0 ) {
+    					try {
+        					//超时重试间隔
+        					Thread.sleep(si.getRetryInterval());
+        				} catch (InterruptedException e) {
+        					logger.error("Sleep exceptoin ",e);
+        				}
     				}
-    				
-    				//logger.warn(sb.toString()+",reqId:"+req.getRequestId());
-    			
-    				SF.doRequestLog(MonitorConstant.LOG_WARN,TAG,req,null," do retry");
-    				SF.doSubmit(MonitorConstant.CLIENT_REQ_RETRY, req, resp,null);
-    				session.increment(MonitorConstant.CLIENT_REQ_RETRY);
+    				logger.warn("Do timeout retry reqID:"+req.getId()+",linkId:"+msg.getLinkId()+",retryCnt:"+retryCnt+",Service: "+sm.getKey().toKey(false, true, true));
+    				//session.increment(MonitorConstant.CLIENT_REQ_RETRY);
+    				SF.reqTimeoutRetry(req);
     				continue;//重试循环
     			}
     			
     		}else if(resp.getResult() instanceof ServerError){
 				//服务器已经发生错误,是否需要重试
 				 se = (ServerError)resp.getResult();
-				 //logger.error("error code: "+se.getErrorCode()+" ,msg: "+se.getMsg());
-				 req.setSuccess(resp.isSuccess());
-				 SF.doSubmit(MonitorConstant.CLIENT_REQ_EXCEPTION_ERR, req, null);
-				 SF.doResponseLog(MonitorConstant.LOG_ERROR,TAG,resp,null,se.toString());
-				 session.increment(MonitorConstant.CLIENT_REQ_EXCEPTION_ERR);
+				 logger.error("error code: "+se.getErrorCode()+" ,msg: "+se.getMsg()+",Service: "+sm.getKey().toKey(true, true, true));
+				 req.setSuccess(false);
+				 session.increment(MonitorConstant.CLIENT_GET_RESPONSE_ERROR);
 				 waitForResponse.remove(req.getRequestId());
-				 throw new RpcException(req,sb.toString());
+				 SF.reqServiceRespError(req, se);
+				 throw new RpcException(req,se);
 			} else if(!resp.isSuccess()){
 				 //服务器正常逻辑处理错误，不需要重试，直接失败
-				 req.setSuccess(resp.isSuccess());
-				 SF.doSubmit(MonitorConstant.CLIENT_REQ_BUSSINESS_ERR, req, resp,null);
-				 SF.doResponseLog(MonitorConstant.LOG_ERROR,TAG,resp,null);
-				 session.increment(MonitorConstant.CLIENT_REQ_BUSSINESS_ERR);
+				 logger.error("服务器响应错误reqID:"+req.getId()+",linkId:"+msg.getLinkId()+ resp.getResult()+",Service: "+sm.getKey().toKey(true, true, true));
+				 req.setSuccess(false);
+				 session.increment(MonitorConstant.CLIENT_GET_SERVER_ERROR);
+				 SF.reqServerError(req, resp.getResult() == null ? "":resp.getResult().toString());
 				 waitForResponse.remove(req.getRequestId());
-			     throw new RpcException(req,sb.toString());
+			     throw new RpcException(req,resp);
 			}
     		//waitForResponse.remove(req.getRequestId());
     		//代码不应该走到这里，如果走到这里，说明系统还有问题
-    		throw new CommonException(sb.toString());
+    		SF.reqError(req,"未知错误1");
     		
-        }while(retryCnt-- > 0);
+    		logger.error("未知错误reqID:"+req.getId()+",linkId:"+msg.getLinkId()+",Service: "+sm.getKey().toKey(true, true, true));
+    		throw new CommonException("未知错误1");
+    		
+        }while((retryCnt--) > 0);
+        logger.error("未知错误2,reqID:"+req.getId()+",linkId:"+msg.getLinkId()+",Service: "+sm.getKey().toKey(true, true, true));
+        SF.reqError(req,"未知错误2");
+        
         throw new CommonException("Service:"+req.getServiceName()+", Method: "+req.getMethod()+", Params: "+req.getArgs());
 	}
 
@@ -485,6 +480,10 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
 	
 	private static interface IResponseHandler{
 		void onResponse(Message msg);
+	}
+	
+	private class MessageHolder {
+		public Message msg;
 	}
 }
 

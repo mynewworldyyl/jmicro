@@ -16,9 +16,6 @@
  */
 package org.jmicro.monitor.submiter;
 
-import java.io.ByteArrayOutputStream;
-import java.io.PrintStream;
-import java.io.UnsupportedEncodingException;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
@@ -33,6 +30,7 @@ import org.jmicro.api.JMicroContext;
 import org.jmicro.api.annotation.Cfg;
 import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.Reference;
+import org.jmicro.api.client.AbstractClientServiceProxy;
 import org.jmicro.api.config.Config;
 import org.jmicro.api.executor.ExecutorConfig;
 import org.jmicro.api.executor.ExecutorFactory;
@@ -42,11 +40,8 @@ import org.jmicro.api.monitor.IMonitorDataSubscriber;
 import org.jmicro.api.monitor.MonitorConstant;
 import org.jmicro.api.monitor.ServiceCounter;
 import org.jmicro.api.monitor.SubmitItem;
-import org.jmicro.api.net.IReq;
-import org.jmicro.api.net.IRequest;
-import org.jmicro.api.net.IResp;
-import org.jmicro.api.net.IResponse;
-import org.jmicro.api.net.Message;
+import org.jmicro.api.registry.AsyncConfig;
+import org.jmicro.api.registry.IServiceListener;
 import org.jmicro.api.registry.ServiceMethod;
 import org.jmicro.api.timer.TimerTicker;
 import org.jmicro.common.Constants;
@@ -79,34 +74,50 @@ public class SubmitItemHolderManager implements IMonitorDataSubmiter{
 	@Cfg(value="/SubmitItemHolderManager/maxCacheItems",required=false)
 	private int maxCacheItems = 5000;
 	
+	@Cfg(value="/SubmitItemHolderManager/doAsyncSubmit",required=false)
+	private boolean doAsyncSubmit = true;
+	
 	private ExecutorService executor = null;
 	
 	//@Inject(required=false, remote=true)
 	//配置方式参数Reference注解说明
+	//同步提交
 	@Reference(required=false,changeListener="subscriberChange")
 	private Set<IMonitorDataSubscriber> submiters = new HashSet<>();
 	
-	private Map<IMonitorDataSubscriber,Integer[]> sub2Types = new ConcurrentHashMap<>();
+	private Set<IMonitorDataSubscriber> deleteMonitors = new HashSet<>();
+	private Set<IMonitorDataSubscriber> addMonitors = new HashSet<>();
+	
+	private Map<IMonitorDataSubscriber,Short[]> sub2Types = new ConcurrentHashMap<>();
 	private Map<IMonitorDataSubscriber,Long> lastSubmitTime = new ConcurrentHashMap<>();
 	
-	private Map<Integer,Set<IMonitorDataSubscriber>> type2Subscribers = new ConcurrentHashMap<>();
+	private Map<Short,Set<IMonitorDataSubscriber>> type2Subscribers = new ConcurrentHashMap<>();
 	
 	private Object cacheItemsLock = new Object();
 	private Map<IMonitorDataSubscriber,Set<SubmitItem>> cacheItems = new ConcurrentHashMap<>();
 	
-	private Boolean subscriberChange = false;
-	
 	private boolean ready = false;
+	
+	private AsyncConfig ac = new AsyncConfig(true,"onSubmit", AsyncConfig.ASYNC_DIRECT);
 	
 	//测试统计模式使用
 	@Cfg(value="/SubmitItemHolderManager/clientStatis",defGlobal=false)
 	private boolean clientStatis=false;
 	private ServiceCounter counter = null;
 
-	public void subscriberChange() {
+	public void subscriberChange(AbstractClientServiceProxy po,int opType) {
+		logger.info("subscriberChange");
+		if(opType == IServiceListener.SERVICE_ADD) {
+			synchronized(addMonitors) {
+				this.addMonitors.add((IMonitorDataSubscriber)po);
+			}
+		}else if(opType == IServiceListener.SERVICE_REMOVE) {
+			synchronized(deleteMonitors) {
+				this.deleteMonitors.add((IMonitorDataSubscriber)po);
+			}
+		}
+		
 		synchronized(cacheItemsLock) {
-			logger.info("subscriberChange");
-			subscriberChange = true;
 			cacheItemsLock.notifyAll();
 		}
 	}
@@ -133,10 +144,10 @@ public class SubmitItemHolderManager implements IMonitorDataSubmiter{
 					AbstractMonitorDataSubscriber.YTPES,10,2,TimeUnit.SECONDS);
 			TimerTicker.getDefault(2000L).addListener("SubmitItemHolderManager", (key,att)->{
 				System.out.println("======================================================");
-				Double dreq = counter.getTotal(MonitorConstant.CLIENT_REQ_BEGIN);
-				Double toreq = counter.getTotal(MonitorConstant.CLIENT_REQ_TIMEOUT_FAIL);
-				Double dresp = counter.getTotal(MonitorConstant.CLIENT_REQ_BUSSINESS_ERR,MonitorConstant.CLIENT_REQ_OK,MonitorConstant.CLIENT_REQ_EXCEPTION_ERR);
-				Double qps = counter.getQps(TimeUnit.SECONDS,MonitorConstant.CLIENT_REQ_OK);
+				Double dreq = counter.getTotal(MonitorConstant.REQ_START);
+				Double toreq = counter.getTotal(MonitorConstant.REQ_TIMEOUT);
+				Double dresp = counter.getTotal(MonitorConstant.CLIENT_GET_RESPONSE_ERROR,MonitorConstant.CLIENT_GET_SERVER_ERROR);
+				Double qps = counter.getQps(TimeUnit.SECONDS,MonitorConstant.REQ_START);
 				if(dreq > -1 && dresp > -1) {
 					logger.info("总请求:{}, 总响应:{}, 超时:{}, QPS:{}",dreq,dresp,toreq,qps);
 				}
@@ -159,45 +170,91 @@ public class SubmitItemHolderManager implements IMonitorDataSubmiter{
 				}
 			}
 		}
+	}
+	
+	private void addOneMonitor(IMonitorDataSubscriber m) {
+		Short[] types = m.intrest();
+		sub2Types.put(m, types);
 		
+		//用于提交数据
+		lastSubmitTime.put(m, 0L);
+		cacheItems.put(m, new HashSet<>());
+		
+		for(Short t : types) {
+			if(null == type2Subscribers.get(t)) {
+				type2Subscribers.put(t, new HashSet<IMonitorDataSubscriber>());
+			}
+			type2Subscribers.get(t).add(m);
+		}
+	}
+	
+	private void deleteOneMonitor(IMonitorDataSubscriber m) {
+		
+		Short[] types = sub2Types.get(m);
+		sub2Types.remove(m);
+		
+		//用于提交数据
+		lastSubmitTime.remove(m);
+		
+		Set<SubmitItem> items = cacheItems.remove(m);
+		if(items != null && !items.isEmpty()) {
+			logger.warn("Items not null when delete IMonitorDataSubscriber");
+		}
+		
+		for(Short t : types) {
+			if(type2Subscribers.containsKey(t)) {
+				Set<IMonitorDataSubscriber> subs = type2Subscribers.get(t);
+				subs.remove(m);
+			}
+		}
 	}
 	
 	private void doCheck() {
 		try {
+			//服务启动时执行一次
+			if(!submiters.isEmpty()) {
+				for(IMonitorDataSubscriber m : this.submiters){
+					addOneMonitor(m);
+				}
+			}
+			
+			ready = true;
 			
 			while(true) {
 				
-				if(subscriberChange && !submiters.isEmpty()) {
-					subscriberChange = false;
-					for(IMonitorDataSubscriber m : this.submiters){
-						if(!sub2Types.containsKey(m)) {
-							Integer[] types = m.intrest();
-							sub2Types.put(m, types);
-							lastSubmitTime.put(m, 0L);
-							cacheItems.put(m, new HashSet<>());
-							for(Integer t : types) {
-								if(null == type2Subscribers.get(t)) {
-									type2Subscribers.put(t, new HashSet<IMonitorDataSubscriber>());
-								}
-								type2Subscribers.get(t).add(m);
-							}
+				if(!addMonitors.isEmpty()) {
+					synchronized(addMonitors) {
+						for(IMonitorDataSubscriber m : this.addMonitors){
+							addOneMonitor(m);
 						}
+						addMonitors.clear();
 					}
-					ready = true;
 				}
-
+				
+				if(!deleteMonitors.isEmpty()) {
+					synchronized(deleteMonitors) {
+						for(IMonitorDataSubscriber m : this.deleteMonitors){
+							deleteOneMonitor(m);
+						}
+						deleteMonitors.clear();
+					}
+				}
+				
 				boolean f = false;
 				if(!this.submiters.isEmpty()) {
 					for(Map.Entry<IMonitorDataSubscriber, Long> sub : lastSubmitTime.entrySet()) {
 						Set<SubmitItem> items = cacheItems.get(sub.getKey());
+						//f=true,有数据要提交
 						f = !items.isEmpty();
 						if(f) {
+							//有数据要提交
 							break;
 						}
 					}
 				}
 				
 				if(!f) {
+					//f=false,无数据要提交
 					if(openDebug)
 						logger.info("wait");
 					synchronized(cacheItemsLock) {
@@ -214,7 +271,7 @@ public class SubmitItemHolderManager implements IMonitorDataSubmiter{
 					//离上一次提交超过300毫秒或者待提交数超过500
 					int batchSize = 50;
 					if(items != null && !items.isEmpty() 
-							&& (((curTime - sub.getValue()) > 300) ||  items.size() > batchSize)) {
+							&& (((curTime - sub.getValue()) > 300) ||  items.size() >= batchSize)) {
 						synchronized(items) {
 							Set<SubmitItem> temp = new HashSet<>();
 							if(items.size() < batchSize) {
@@ -229,6 +286,7 @@ public class SubmitItemHolderManager implements IMonitorDataSubmiter{
 							}
 							//提交一批数据
 							this.executor.submit(new Worker(sub.getKey(),temp));
+							//记录本次提交时间
 							lastSubmitTime.put(sub.getKey(), curTime);
 						}
 					}
@@ -260,8 +318,21 @@ public class SubmitItemHolderManager implements IMonitorDataSubmiter{
 				//如果有需要，可以选择其他方式，如slf4j等
 				JMicroContext.get().configMonitor(0, 0);
 				JMicroContext.get().setBoolean(Constants.FROM_MONITOR, true);
+				
+				if(doAsyncSubmit) {
+					JMicroContext.get().setParam(Constants.ASYNC_CONFIG, ac);
+				}
+				
 				//开始RPC提交日志
-				sub.onSubmit(its);
+				SubmitItem[] is = new SubmitItem[its.size()];
+				its.toArray(is);
+				
+				sub.onSubmit(is);
+				
+				if(doAsyncSubmit) {
+					JMicroContext.get().removeParam(Constants.ASYNC_CONFIG);
+				}
+				
 				if(clientStatis) {
 					for(SubmitItem it : its) {
 						if(it.getType() != MonitorConstant.LINKER_ROUTER_MONITOR) {
@@ -281,7 +352,7 @@ public class SubmitItemHolderManager implements IMonitorDataSubmiter{
 		}
 	}
 	
-	public boolean canSubmit(int type) {
+	public boolean canSubmit(short type) {
 		
 		if(!enable){
 			if(openDebug)
@@ -295,7 +366,7 @@ public class SubmitItemHolderManager implements IMonitorDataSubmiter{
 			return false;
 		}
 		
-		for(Integer[] types : sub2Types.values()) {
+		for(Short[] types : sub2Types.values()) {
 			for(int t : types) {
 				if(t == type) {
 					return true;
@@ -331,24 +402,8 @@ public class SubmitItemHolderManager implements IMonitorDataSubmiter{
 		
 		if(si.getSm() != null) {
 			ServiceMethod sm = si.getSm();
-			si.setNamespace(sm.getKey().getNamespace());
-			si.setServiceName(sm.getKey().getServiceName());
-			si.setVersion(sm.getKey().getVersion());
-			si.setMethod(JMicroContext.get().getString(JMicroContext.CLIENT_METHOD,null));
 		} else {
-			si.setNamespace(JMicroContext.get().getString(JMicroContext.CLIENT_NAMESPACE,null));
-			si.setServiceName(JMicroContext.get().getString(JMicroContext.CLIENT_SERVICE,null));
-			si.setVersion(JMicroContext.get().getString(JMicroContext.CLIENT_VERSION,null));
-			si.setMethod(JMicroContext.get().getString(JMicroContext.CLIENT_METHOD,null));
 			si.setSm(JMicroContext.get().getParam(Constants.SERVICE_METHOD_KEY, null));
-		}
-		
-		if(Config.isClientOnly()) {
-			si.setSide(Constants.SIDE_COMSUMER);
-		} else if(Config.isServerOnly()) {
-			si.setSide(Constants.SIDE_PROVIDER);
-		} else {
-			si.setSide(Constants.SIDE_ANY);
 		}
 	}
 	
@@ -405,121 +460,4 @@ public class SubmitItemHolderManager implements IMonitorDataSubmiter{
 		return true;
 	}
 	
-	public void submit(int type,IRequest req, IResponse resp,String... others){
-		
-		if(!canSubmit(type)) {
-			return;
-		}
-		
-		SubmitItem si = this.getItem();
-		si.setReq(req);
-		si.setResp(resp);
-		si.setOthers(others);
-		si.setType(type);
-		
-		si.setTime(System.currentTimeMillis());
-		
-		this.submit(si);
-	}
-
-	@Override
-	public boolean submit(int type, IReq req, IResp resp, Throwable exp, String... others) {
-		
-		if(!canSubmit(type)) {
-			return false;
-		}
-		
-		SubmitItem si = this.getItem();
-		
-		si.setType(type);
-		si.setReq(req);
-		si.setResp(resp);
-		si.setEx(exp);
-		si.setOthers(others);
-		
-		return submit(si);
-	}
-
-	@Override
-	public boolean submit(int type, IReq req, Throwable exp, String... others) {
-		if(!canSubmit(type)) {
-			return false;
-		}
-		SubmitItem si = this.getItem();
-		si.setType(type);
-		si.setReq(req);
-		si.setEx(exp);
-		si.setOthers(others);
-		return submit(si);
-	}
-
-	@Override
-	public boolean submit(int type, IResp resp, Throwable exp, String... others) {
-		if(!canSubmit(type)) {
-			return false;
-		}
-		SubmitItem si = this.getItem();
-		si.setType(type);
-		si.setResp(resp);
-		si.setEx(exp);
-		si.setOthers(others);
-		return submit(si);
-	}
-
-	@Override
-	public boolean submit(int type, Message msg, Throwable exp, String... others) {
-		if(!canSubmit(type)) {
-			return false;
-		}
-		SubmitItem si = this.getItem();
-		si.setType(type);
-		si.setMsg(msg);
-		si.setEx(exp);
-		si.setOthers(others);
-		return submit(si);
-	}
-
-	@Override
-	public boolean submit(int type, Throwable exp, String... others) {
-		if(!canSubmit(type)) {
-			return false;
-		}
-		SubmitItem si = this.getItem();
-		si.setType(type);
-		si.setEx(exp);
-		si.setOthers(others);
-		return submit(si);
-	}
-
-	@Override
-	public boolean submit(int type, String... others) {
-		if(!canSubmit(type)) {
-			return false;
-		}
-		SubmitItem si = this.getItem();
-		si.setType(type);
-		si.setOthers(others);
-		return submit(si);
-	}
-	
-	private void exception(SubmitItem si) {
-		if(si.getEx() == null) {
-			return;
-		}
-		StringBuilder sb = new StringBuilder();
-		ByteArrayOutputStream baos = new ByteArrayOutputStream();
-		PrintStream ps = null;
-		try {
-			 ps = new PrintStream(baos,true,Constants.CHARSET);
-			 si.getEx().printStackTrace(ps);
-			 sb.append(new String(baos.toByteArray(),Constants.CHARSET));
-		} catch (UnsupportedEncodingException e) {
-			e.printStackTrace();
-		}finally {
-			if(ps != null) {
-				ps.close();
-			}
-		}
-		si.setExp(sb.toString());
-	}
 }

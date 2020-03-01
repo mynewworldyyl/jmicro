@@ -59,12 +59,15 @@ public class ClientMessageReceiver implements IMessageReceiver{
 			IMessageHandler h = handlers.get(msg.getType());
 			if(h != null){
 				h.onMessage(session,msg);
-			}else {
+			} else {
+				SF.doMessageLog(MonitorConstant.LOG_ERROR, ClientMessageReceiver.class, msg, null, 
+						"Handler not found:" + Integer.toHexString(msg.getType()));
 				logger.error("Handler not found:" + Integer.toHexString(msg.getType()));
 			}
 		} catch (Throwable e) {
 			logger.error("reqHandler error: {}",msg,e);
-			SF.doSubmit(MonitorConstant.CLIENT_REQ_ASYNC2_FAIL,msg,e);
+			SF.doMessageLog(MonitorConstant.LOG_ERROR, ClientMessageReceiver.class, msg, e, 
+					"Handler not found:" + Integer.toHexString(msg.getType()));
 			msg.setType((byte)(msg.getType()+1));
 		}
 	}

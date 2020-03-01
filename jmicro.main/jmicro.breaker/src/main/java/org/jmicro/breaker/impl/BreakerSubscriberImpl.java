@@ -45,10 +45,10 @@ public class BreakerSubscriberImpl implements IBreakerSubscriber{
 		
 		if(openDebug) {
 			logger.debug("总请求:{}, 总响应:{}, TO:{}, TOF:{}, QPS:{}",
-					data.get(MonitorConstant.CLIENT_REQ_BEGIN)
+					data.get(MonitorConstant.REQ_START)
 					,data.get(MonitorConstant.STATIS_TOTAL_RESP)
-					,data.get(MonitorConstant.CLIENT_REQ_TIMEOUT)
-					,data.get(MonitorConstant.CLIENT_REQ_TIMEOUT_FAIL)
+					,data.get(MonitorConstant.REQ_TIMEOUT)
+					//,data.get(MonitorConstant.CLIENT_REQ_TIMEOUT_FAIL)
 					,data.get(MonitorConstant.STATIS_QPS)
 					);
 		}

@@ -22,10 +22,8 @@ import java.lang.reflect.Modifier;
 import java.lang.reflect.ParameterizedType;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 import org.jmicro.api.annotation.Async;
@@ -128,10 +126,6 @@ class ClientServiceProxyManager {
 			if(a == null) {
 				continue;
 			}
-			Set<ServiceItem> callbackItems = registry.getServices(a.getServiceName(), a.getNamespace(), a.getVersion());
-			if(callbackItems == null || callbackItems.isEmpty()) {
-				throw new CommonException("Callback service not found:" + JsonUtils.getIns().toJson(a));
-			}
 			
 			for(ServiceItem si : items) {
 				Set<ServiceMethod> sms = si.getMethods();
@@ -162,19 +156,27 @@ class ClientServiceProxyManager {
 				
 			}
 			
-			for(ServiceItem si : callbackItems) {
-				Set<ServiceMethod> sms = si.getMethods();
+			if(StringUtils.isNotEmpty(a.getServiceName())) {
 				
-				boolean flag = false;
-				for(ServiceMethod sm : sms) {
-					if(sm.getKey().getMethod().equals(a.getMethod())) {
-						flag = true;
-						break;
-					}
+				Set<ServiceItem> callbackItems = registry.getServices(a.getServiceName(), a.getNamespace(), a.getVersion());
+				if(callbackItems == null || callbackItems.isEmpty()) {
+					throw new CommonException("Callback service not found:" + JsonUtils.getIns().toJson(a));
 				}
 				
-				if(!flag) {
-					throw new CommonException("Async service method not found for:" + JsonUtils.getIns().toJson(a) +", Service: " + si.getKey().toKey(true, true, true));
+				for(ServiceItem si : callbackItems) {
+					Set<ServiceMethod> sms = si.getMethods();
+					
+					boolean flag = false;
+					for(ServiceMethod sm : sms) {
+						if(sm.getKey().getMethod().equals(a.getMethod())) {
+							flag = true;
+							break;
+						}
+					}
+					
+					if(!flag) {
+						throw new CommonException("Async service method not found for:" + JsonUtils.getIns().toJson(a) +", Service: " + si.getKey().toKey(true, true, true));
+					}
 				}
 			}
 			
@@ -254,7 +256,7 @@ class ClientServiceProxyManager {
 		Object proxy = createDynamicServiceProxy(cls,item.getKey().getNamespace(),item.getKey().getVersion(),acs);
 		AbstractClientServiceProxy asp = (AbstractClientServiceProxy)proxy;
 		asp.setItem(item);
-		this.initProxy(proxy, item.serviceName());
+		this.initProxy(proxy, item.serviceKey());
 		if(acs != null && acs.length > 0) {
 			//注册异步服务
 			Set<ServiceItem> items = new HashSet<>();
@@ -352,7 +354,7 @@ class ClientServiceProxyManager {
 			String key = UniqueServiceKey.serviceName(type.getName(),ref.namespace(),ref.version()).toString();
 			
 			//this.initProxyField(proxy, key, srcObj, f);
-			RemoteProxyServiceFieldListener lis = new RemoteProxyServiceFieldListener(this,proxy,srcObj,f);
+			RemoteProxyServiceFieldListener lis = new RemoteProxyServiceFieldListener(this,proxy,srcObj,f,this.registry);
 			registry.addExistsServiceListener(key, lis);
 		}
 		
@@ -440,8 +442,8 @@ class ClientServiceProxyManager {
 		
 		Collection<Object> el = (Collection<Object>)o;
 		
-		Map<String,Object> exists = new HashMap<>();
-		Object po = null;
+		Set<String> exists = new HashSet<>();
+		AbstractClientServiceProxy po = null;
 		
 		//请参考Reference说明使用
 		Set<ServiceItem> items = null;
@@ -453,20 +455,18 @@ class ClientServiceProxyManager {
 		
 		if(items != null && !items.isEmpty()){
 			for(ServiceItem si : items){
-				String key = si.serviceName();
-				if(exists.containsKey(key)){
+				String key = si.serviceKey();
+				if(exists.contains(key)){
 					continue;
 				}
-				
-				/*
-				 if(this.remoteObjects.containsKey(key)) {
-					po = remoteObjects.get(key);
-				 } else {
-					po = this.getService(si, null);
-				 }
-				*/
+				exists.add(key);
 				
 				po = this.getRefRemoteService(si, null,acs);
+				
+				//监听每一个元素，元素加入或删除时，要从集合中删除
+				//CollectionElementServiceProxyListener lis = new CollectionElementServiceProxyListener(this,el,srcObj,f,po);
+				//registry.addExistsServiceListener(key, lis);
+				
 				if(po != null){
 					el.add(po);
 				}
@@ -474,7 +474,7 @@ class ClientServiceProxyManager {
 		}
 		
 		//接受实现相同接口的所有服务，具体使用那个服务，由使用者去判断
-		RemoteProxyServiceFieldListener lis = new RemoteProxyServiceFieldListener(this,el,srcObj,f);
+		RemoteProxyServiceFieldListener lis = new RemoteProxyServiceFieldListener(this,el,srcObj,f,this.registry);
 		//集合服务引用根据服务名称做监听，只要匹配名称的服务都加入集合里面
 		//集合元素唯一性是服务名称，名称空间，版本
 		//registry.addServiceNameListener(ctype.getName(), lis);

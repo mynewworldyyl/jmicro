@@ -167,12 +167,12 @@ public class JMicroHttpServer implements IServer{
         
         String m = "Running the server host["+this.host+"],port ["+this.port+"]";
         LOG.debug(m);    
-        SF.doSubmit(MonitorConstant.SERVER_START,m);
+        SF.serverStart(this.monitor,this.host,this.port,Constants.TRANSPORT_NETTY_HTTP);
 	}
 
 	@Override
 	public void stop() {
-		SF.doSubmit(MonitorConstant.SERVER_STOP,this.host,this.port+"");
+		SF.serverStop(this.monitor,this.host,this.port);
 		 if(server != null){
 			 server.stop(0);
 			 server = null;

@@ -23,8 +23,8 @@ public class TestBreakerSubscriberImpl extends JMicroBaseTestCase{
 		final Random ran = new Random();
 		
 		IBreakerSubscriber bs = of.get(IBreakerSubscriber.class);
-		Map<Integer,Double> data = new HashMap<>();
-		for(Integer type : AbstractMonitorDataSubscriber.YTPES) {
+		Map<Short,Double> data = new HashMap<>();
+		for(Short type : AbstractMonitorDataSubscriber.YTPES) {
 			data.put(type, ran.nextDouble());
 		}
 		

@@ -24,6 +24,7 @@ import java.util.concurrent.TimeUnit;
 
 import org.jmicro.api.annotation.SO;
 import org.jmicro.api.config.Config;
+import org.jmicro.api.monitor.MonitorConstant;
 import org.jmicro.common.CommonException;
 import org.jmicro.common.Constants;
 import org.jmicro.common.Utils;
@@ -73,7 +74,8 @@ public final class ServiceItem{
 	private int debugMode = -1;
 		
 	private int monitorEnable = -1;
-	private int loggable = -1;
+	
+	private int logLevel = MonitorConstant.LOG_ERROR;
 	
 	//基本时间单位
 	private String baseTimeUnit = Constants.TIME_MILLISECONDS;
@@ -153,7 +155,7 @@ public final class ServiceItem{
 		this.degrade = p.degrade;
 		this.maxSpeed = p.maxSpeed;
 		this.avgResponseTime = p.avgResponseTime;
-		this.loggable = p.loggable;
+		this.logLevel = p.logLevel;
 		
 		this.baseTimeUnit = p.baseTimeUnit;
 		this.timeUnit = p.timeUnit;
@@ -240,12 +242,12 @@ public final class ServiceItem{
 		this.debugMode = debugMode;
 	}
 
-	public int getLoggable() {
-		return loggable;
+	public int getLogLevel() {
+		return logLevel;
 	}
 
-	public void setLoggable(int loggable) {
-		this.loggable = loggable;
+	public void setLogLevel(int logLevel) {
+		this.logLevel = logLevel;
 	}
 
 	public void addMethod(ServiceMethod sm){
@@ -257,7 +259,7 @@ public final class ServiceItem{
 	}
 	
 	//服务标识，服务名，名称空间，版本，3元组坐标
-	public String serviceName() {
+	public String serviceKey() {
 	   return UniqueServiceKey.serviceName(this.getKey().getServiceName(), this.getKey().getNamespace(),
 			   this.getKey().getVersion()).toString();
 	}

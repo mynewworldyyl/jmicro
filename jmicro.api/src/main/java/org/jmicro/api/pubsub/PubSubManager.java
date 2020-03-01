@@ -29,7 +29,7 @@ import org.slf4j.LoggerFactory;
 public class PubSubManager {
 	
 	//生产者成功将消息放入消息队列,但并不意味着消息被消费者成功消费
-	public static final int PUB_OK = Integer.MIN_VALUE;
+	public static final int PUB_OK = 0;
 	//无消息服务可用,需要启动消息服务
 	public static final int PUB_SERVER_NOT_AVAILABALE = -1;
 	//消息队列已经满了,客户端可以重发,或等待一会再重发
@@ -166,55 +166,52 @@ public class PubSubManager {
 			
 			while(true) {
 				try {
-					synchronized(locker) {
-						
-						if(psItems.isEmpty()){
+					synchronized (locker) {
+						if (psItems.isEmpty()) {
 							locker.wait();
 						}
 					}
-					
+
 					int size = psItems.size();
-					
-						if(size == 1) {
-							PSData psd = null;
-							psd = psItems.poll();
-							if(psd != null) {
-								doPublish(psd);
-							}
-							
-						}else if(size > 1) {
-							
-							Set<PSData> psds = new HashSet<>();
-							
-							for(int i = 0; i < size; i++ ) {
-								PSData ps = psItems.poll();
-								if(ps !=null) {
-									psds.add(ps);
-								}
-							}
-						
-							
-							if(psds.isEmpty()) {
-								continue;
-							}
-							
-							Long[] ids = idGenerator.getLongIds(PSData.class.getName(),psds.size());
-							
-							PSData[] pd =  new PSData[psds.size()];
-							psds.toArray(pd);
-							
-							for(int i = 0; i <pd.length; i++ ) {
-								if(pd[i] != null && pd[i].getId() <= 0) {
-									//为消息生成唯一ID
-									//大于0时表示客户端已经预设置值,给客户端一些选择，比如业务需要提前知道消息ID做关联记录的场景
-									pd[i].setId(ids[i]);
-								}
-							}
-							
-							defaultServer.publishItems(pd);
-							
+
+					if (size == 1) {
+						PSData psd = null;
+						psd = psItems.poll();
+						if (psd != null) {
+							doPublish(psd);
 						}
-					
+
+					} else if (size > 1) {
+
+						Set<PSData> psds = new HashSet<>();
+
+						for (int i = 0; i < size; i++) {
+							PSData ps = psItems.poll();
+							if (ps != null) {
+								psds.add(ps);
+							}
+						}
+
+						if (psds.isEmpty()) {
+							continue;
+						}
+
+						Long[] ids = idGenerator.getLongIds(PSData.class.getName(), psds.size());
+
+						PSData[] pd = new PSData[psds.size()];
+						psds.toArray(pd);
+
+						for (int i = 0; i < pd.length; i++) {
+							if (pd[i] != null && pd[i].getId() <= 0) {
+								// 为消息生成唯一ID
+								// 大于0时表示客户端已经预设置值,给客户端一些选择，比如业务需要提前知道消息ID做关联记录的场景
+								pd[i].setId(ids[i]);
+							}
+						}
+
+						defaultServer.publishItems(pd);
+					}
+
 				} catch (Throwable e) {
 					logger.error("",e);
 				}

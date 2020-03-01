@@ -106,6 +106,7 @@ public interface Constants {
 	//public static final String SERVICE_SPECIFY_ITEM_KEY = "specifyServiceItemKey";
 	
 	public static final String SERVICE_METHOD_KEY = "serviceMethodKey";
+	public static final String ASYNC_CONFIG = "asyncConfig";
 	public static final String NEW_LINKID = "newLinkId";
 	public static final String SERVICE_OBJ_KEY = "serviceObjKey";
 	public static final String CLIENT_REF_METHOD = "reflectMethod";

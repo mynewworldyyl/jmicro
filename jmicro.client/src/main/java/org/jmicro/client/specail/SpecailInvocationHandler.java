@@ -60,31 +60,15 @@ import org.slf4j.LoggerFactory;
  * @date 2018年10月4日-下午12:00:47
  */
 @Component(value="specailInvocationHandler", side=Constants.SIDE_COMSUMER)
-public class SpecailInvocationHandler implements InvocationHandler, IMessageHandler{
+public class SpecailInvocationHandler implements InvocationHandler{
 	
 	private final static Logger logger = LoggerFactory.getLogger(SpecailInvocationHandler.class);
-	
-	private final static Class<?> TAG = SpecailInvocationHandler.class;
-	
-	private volatile Map<String,IResponseHandler> waitForResponse = new ConcurrentHashMap<>();
 	
 	@Cfg(value="/SpecailInvocationHandler/openDebug",defGlobal=false)
 	private boolean openDebug=false;
 	
-	@Inject
-	private ICodecFactory codecFactory;
-	
-	@Cfg("/respBufferSize")
-	private int respBufferSize  = Constants.DEFAULT_RESP_BUFFER_SIZE;
-	
-	@Inject(required=true)
-	private IClientSessionManager sessionManager;
-	
 	@Inject(value=Constants.DEFAULT_CLIENT_HANDLER)
 	private RpcClientRequestHandler rpcHandler;
-	
-	@Inject(required=true)
-	private ISelector selector;
 	
 	@Inject
 	private ComponentIdServer idGenerator;
@@ -114,13 +98,9 @@ public class SpecailInvocationHandler implements InvocationHandler, IMessageHand
 			throw new CommonException("cls["+method.getDeclaringClass().getName()+"] method ["+method.getName()+"] method not found");
 		}
 		
-		if(sm.isStream() && JMicroContext.get().getParam(Constants.CONTEXT_CALLBACK_CLIENT, null) == null) {
-			throw new CommonException("cls["+method.getDeclaringClass().getName()+"] method ["+method.getName()+"] async callback not found!");
-		}
-		
 		JMicroContext.get().setParam(Constants.SERVICE_METHOD_KEY, sm);
 		JMicroContext.get().setParam(Constants.SERVICE_ITEM_KEY, poItem);
-		JMicroContext.setSrvLoggable();
+		//JMicroContext.setSrvLoggable();
 		
 		JMicroContext.get().setObject(Constants.PROXY, po);
 		
@@ -145,29 +125,4 @@ public class SpecailInvocationHandler implements InvocationHandler, IMessageHand
 	
 	}
 
-	@Override
-	public Byte type() {
-		return Constants.MSG_TYPE_SPECAIL_RRESP_JRPC;
-	}
-
-	@Override
-	public void onMessage(ISession session,Message msg) {
-		//receive response
-		IResponseHandler handler = waitForResponse.get(""+msg.getReqId());
-		if(msg.isLoggable()) {
-			SF.doMessageLog(MonitorConstant.LOG_DEBUG,TAG,msg,null," receive message");
-		}
-		if(handler!= null){
-			handler.onResponse(msg);
-		} else {
-			SF.doMessageLog(MonitorConstant.LOG_ERROR,TAG,msg,null," handler not found");
-			logger.error("msdId:"+msg.getId()+",reqId:"+msg.getReqId()+",linkId:"+msg.getLinkId()+" IGNORE");
-		}
-	}
-	
-	private static interface IResponseHandler{
-		void onResponse(Message msg);
-	}
-	
-	
 }

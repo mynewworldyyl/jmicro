@@ -29,7 +29,7 @@ import org.jmicro.api.annotation.Service;
 @Service(monitorEnable=0, namespace="serviceMonitorData", version="0.0.1")
 public interface IServiceMonitorData {
 
-	@SMethod(stream=true,retryCnt=0,maxSpeed=10,baseTimeUnit="S")
+	@SMethod(retryCnt=0,maxSpeed=10,baseTimeUnit="S")
 	Integer subsicribe(String service);
 	void unsubsicribe(Integer id,String service);
 	

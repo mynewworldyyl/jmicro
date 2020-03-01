@@ -22,6 +22,7 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
 
+import org.jmicro.api.monitor.MonitorConstant;
 import org.jmicro.api.net.Message;
 import org.jmicro.common.Constants;
 /**
@@ -53,7 +54,7 @@ public @interface SMethod {
 	public boolean dumpUpStream() default false;
 	
 	//服务方法级别的日志记录标识，参考monitorEnable说明
-	public int loggable() default -1;
+	public int logLevel() default MonitorConstant.LOG_ERROR;
 	
 	public int retryInterval() default 500;
 	//method must can be retry, or 1
@@ -119,7 +120,7 @@ public @interface SMethod {
 	// StringUtils.isEmpty()=true: not stream, false: stream, one request will got more response
 	// if this value is not NULL, the async is always true without check the real value
 	// value is the callback component in IOC container created in client
-	public boolean stream() default false;
+	//public boolean stream() default false;
 	
 	//async return result, server return two time: 
 	//first return to confirm receive the request, 

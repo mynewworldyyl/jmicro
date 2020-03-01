@@ -37,7 +37,7 @@ import org.slf4j.LoggerFactory;
  * @author Yulei Ye
  * @date 2018年11月28日 下午12:16:36
  */
-public class ServiceCounter implements IServiceCounter{
+public class ServiceCounter implements IServiceCounter<Short>{
 
 	private static final Logger logger = LoggerFactory.getLogger(ServiceCounter.class);
 	
@@ -46,14 +46,14 @@ public class ServiceCounter implements IServiceCounter{
 	//服务唯一标识,粒度到服务方法,=服务名+名称空间+版本+方法名+方法参数标识
 	private String serviceKey;
 	
-	private Set<Integer> supportTypes = new HashSet<>();
+	private Set<Short> supportTypes = new HashSet<>();
 	
 	private long timeWindow;
 	
 	private TimeUnit unit;
 	
 	//统计事件的类型,每种类型对应一种计数器
-	private ConcurrentHashMap<Integer,Counter> counters = new ConcurrentHashMap<>();
+	private ConcurrentHashMap<Short,Counter> counters = new ConcurrentHashMap<>();
 	
 	
 	public ServiceCounter(String serviceKey,long timeWindow,TimeUnit unit) {
@@ -65,10 +65,10 @@ public class ServiceCounter implements IServiceCounter{
 		this.unit = unit;
 	}
 	
-	public ServiceCounter(String serviceKey,Integer[] types,long timeWindow,long slotSize,TimeUnit unit) {
+	public ServiceCounter(String serviceKey,Short[] types,long timeWindow,long slotSize,TimeUnit unit) {
 		this(serviceKey,timeWindow,unit);
 		supportTypes.addAll(Arrays.asList(types));
-		for(Integer type : types) {
+		for(Short type : types) {
 			addCounter(type,slotSize);
 		}
 	}
@@ -78,7 +78,7 @@ public class ServiceCounter implements IServiceCounter{
 	}
 
 	@Override
-	public long get(Integer type) {
+	public long get(Short type) {
 		Counter c = getCounter(type,false);
 		if(c != null) {
 			return  c.getVal();
@@ -88,7 +88,7 @@ public class ServiceCounter implements IServiceCounter{
 	}
 
 	@Override
-	public boolean add(Integer type, long val) {
+	public boolean add(Short type, long val) {
 		Counter c = getCounter(type,false);
 		if(c != null) {
 			c.add(val);
@@ -99,9 +99,9 @@ public class ServiceCounter implements IServiceCounter{
 	}
 
 	@Override
-	public Double getTotal(Integer... types) {
+	public Double getTotal(Short... types) {
 		double sum = 0;
-		for(Integer type : types) {
+		for(Short type : types) {
 			Counter c = getCounter(type,false);
 			if(c == null) {
 				//返回一个无效值，使用方应该判断此值是否有效才能使用
@@ -117,7 +117,7 @@ public class ServiceCounter implements IServiceCounter{
 	 * @param types
 	 * @return
 	 */
-	public double getQps(TimeUnit tounit,Integer... types) {
+	public double getQps(TimeUnit tounit,Short... types) {
 		if(types.length == 1) {
 			Counter c = getCounter(types[0],false);
 			if(c != null) {
@@ -133,7 +133,7 @@ public class ServiceCounter implements IServiceCounter{
 	}
 
 	@Override
-	public boolean increment(Integer type) {
+	public boolean increment(Short type) {
 		Counter c = getCounter(type,false);
 		if(c != null) {
 			c.add(1);
@@ -144,27 +144,27 @@ public class ServiceCounter implements IServiceCounter{
 	
 	//***********************************************************//
 
-	public double getQpsWithEx(int type,TimeUnit unit) {
+	public double getQpsWithEx(Short type,TimeUnit unit) {
 		return getCounter(type,true).getQps(unit);
 	}
 	
 	@Override
-	public long getWithEx(Integer type) {
+	public long getWithEx(Short type) {
 		return getCounter(type,true).getVal();
 	}
 	
 	/**
 	 * 全部类型的当前值的和
 	 */
-	public Double getValueWithEx(Integer... types) {
+	public Double getValueWithEx(Short... types) {
 		double sum = 0;
-		for(Integer type : types) {
+		for(Short type : types) {
 			sum += getCounter(type,true).getVal();
 		}
 		return sum;
 	}
 	
-	private Counter getCounter(int type,boolean withEx) {
+	private Counter getCounter(Short type,boolean withEx) {
 		Counter c = counters.get(type);
 		if(c == null && withEx) {
 			throw new CommonException("Type not support for service :"
@@ -176,14 +176,14 @@ public class ServiceCounter implements IServiceCounter{
 	/**
 	 * 增加指定值
 	 */
-	public void addWithEx(Integer type,long val) {
+	public void addWithEx(Short type,long val) {
 		getCounter(type,true).add(val);
 	}
 	
 	/**
 	 * 自增1
 	 */
-	public void incrementWithEx(Integer type) {
+	public void incrementWithEx(Short type) {
 		this.addWithEx(type, 1);
 	}
 	
@@ -192,7 +192,7 @@ public class ServiceCounter implements IServiceCounter{
 		return this.addCounter(type, timeWindow, slotSize, TimeUtils.getTimeUnit(unit));
 	}*/
 
-	public boolean addCounter(Integer type,long slotSize) {
+	public boolean addCounter(Short type,long slotSize) {
 		if(this.counters.containsKey(type)) {
 			throw new CommonException("Type["+type+"] exists for service ["+this.serviceKey+"]");
 		}
@@ -220,8 +220,8 @@ public class ServiceCounter implements IServiceCounter{
 	 * @param type
 	 * @return
 	 */
-	public static double takePercent(ServiceCounter counter,int type) {
-		Long totalReq = counter.get(MonitorConstant.CLIENT_REQ_BEGIN);
+	public static double takePercent(ServiceCounter counter,Short type) {
+		Long totalReq = counter.get(MonitorConstant.REQ_START);
 		Long typeCount = counter.get(type);
 		if(totalReq != 0) {
 			return (typeCount*1.0/totalReq)*100;
@@ -230,7 +230,7 @@ public class ServiceCounter implements IServiceCounter{
 		}
 	}
 	
-	public static double getData(ServiceCounter counter,int type) {
+	public static double getData(ServiceCounter counter,Short type) {
 
 		if(counter == null) {
 			return 0D;
@@ -239,47 +239,48 @@ public class ServiceCounter implements IServiceCounter{
 		Double result = 0D;
 		switch(type) {
 		case MonitorConstant.STATIS_FAIL_PERCENT:
-			Long totalReq = counter.get(MonitorConstant.CLIENT_REQ_BEGIN);
+			Long totalReq = counter.get(MonitorConstant.REQ_START);
 			if(totalReq != 0) {
-				double totalFail = counter.getValueWithEx(MonitorConstant.CLIENT_REQ_EXCEPTION_ERR,MonitorConstant.CLIENT_REQ_TIMEOUT);
+				double totalFail = counter.getValueWithEx(MonitorConstant.CLIENT_GET_SERVER_ERROR,MonitorConstant.REQ_TIMEOUT);
 				result = (totalFail/totalReq)*100;
 				//logger.debug("totalReq:{},totalFail:{},Percent:{}",totalReq,totalFail,result);
 			}
 			break;
 		case MonitorConstant.STATIS_TOTAL_REQ:
-			result = 1.0 * counter.getTotal(MonitorConstant.CLIENT_REQ_BEGIN);		
+			result = 1.0 * counter.getTotal(MonitorConstant.REQ_START);		
 			break;
 		case MonitorConstant.STATIS_TOTAL_RESP:
-			result = counter.getTotal(MonitorConstant.CLIENT_REQ_BUSSINESS_ERR,MonitorConstant.CLIENT_REQ_OK,MonitorConstant.CLIENT_REQ_EXCEPTION_ERR);
+			result = counter.getTotal(MonitorConstant.REQ_END);
 			break;
 		case MonitorConstant.STATIS_TOTAL_SUCCESS:
-			result =  1.0 * counter.getTotal(MonitorConstant.CLIENT_REQ_ASYNC1_SUCCESS)+
-					counter.getTotal(MonitorConstant.CLIENT_REQ_OK);
+			result =  1.0 * counter.getTotal(MonitorConstant.REQ_SUCCESS);
 			break;
 		case MonitorConstant.STATIS_TOTAL_FAIL:
-			result = 1.0 * counter.getTotal(MonitorConstant.CLIENT_REQ_EXCEPTION_ERR)+
-			counter.getTotal(MonitorConstant.CLIENT_REQ_TIMEOUT);
+			result = 1.0 * counter.getTotal(MonitorConstant.CLIENT_GET_RESPONSE_ERROR)+
+			counter.getTotal(MonitorConstant.CLIENT_GET_SERVER_ERROR)+
+			counter.getTotal(MonitorConstant.REQ_TIMEOUT_FAIL)+
+			counter.getTotal(MonitorConstant.REQ_ERROR);
 			break;
 		case MonitorConstant.STATIS_SUCCESS_PERCENT:
-			totalReq = counter.get(MonitorConstant.CLIENT_REQ_BEGIN);
+			totalReq = counter.get(MonitorConstant.REQ_START);
 			if(totalReq != 0) {
-				result =  1.0 * counter.get(MonitorConstant.CLIENT_REQ_ASYNC1_SUCCESS)+
-						counter.get(MonitorConstant.CLIENT_REQ_OK);
+				result =  1.0 * counter.get(MonitorConstant.REQ_SUCCESS)/*+
+						counter.get(MonitorConstant.CLIENT_REQ_OK)*/;
 						result = (result*1.0/totalReq)*100;
 			}
 			break;
-		case MonitorConstant.CLIENT_REQ_TIMEOUT_FAIL:
-			result = 1.0 * counter.get(MonitorConstant.CLIENT_REQ_TIMEOUT_FAIL);
+		case MonitorConstant.REQ_TIMEOUT_FAIL:
+			result = 1.0 * counter.get(MonitorConstant.REQ_TIMEOUT_FAIL);
 			break;
 		case MonitorConstant.STATIS_TIMEOUT_PERCENT:
-			totalReq = counter.get(MonitorConstant.CLIENT_REQ_BEGIN);
+			totalReq = counter.get(MonitorConstant.REQ_START);
 			if(totalReq != 0) {
-				result = 1.0 * counter.get(MonitorConstant.CLIENT_REQ_TIMEOUT_FAIL);
+				result = 1.0 * counter.get(MonitorConstant.REQ_TIMEOUT_FAIL);
 				result = (result/totalReq)*100;
 			}
 			break;
 		case MonitorConstant.STATIS_QPS:
-			result = counter.getQps(TimeUnit.SECONDS,MonitorConstant.CLIENT_REQ_OK);
+			result = counter.getQps(TimeUnit.SECONDS,MonitorConstant.REQ_START);
 			break;
 		default:
 			result = counter.getValueWithEx(type);

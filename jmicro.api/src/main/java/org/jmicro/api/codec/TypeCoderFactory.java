@@ -27,6 +27,7 @@ import org.jmicro.api.codec.typecoder.TypeCoder;
 import org.jmicro.api.codec.typecoder.VoidTypeCoder;
 import org.jmicro.api.gateway.ApiRequest;
 import org.jmicro.api.gateway.ApiResponse;
+import org.jmicro.api.monitor.LogEntry;
 import org.jmicro.api.monitor.SubmitItem;
 import org.jmicro.api.net.RpcRequest;
 import org.jmicro.api.net.RpcResponse;
@@ -327,6 +328,9 @@ public class TypeCoderFactory {
 		
 		registCoder(new ReflectTypeCoder<PSData>(type--, PSData.class));
 		registClass(PSData.class,type);
+		
+		registCoder(new ReflectTypeCoder<LogEntry>(type--, LogEntry.class));
+		registClass(LogEntry.class,type);
 		
 		//registCoder(new ReflectTypeCoder<RpcRequest>(type--, RpcRequest.class));
 		//registCoder(new ReflectTypeCoder<RpcRequest>(type--, RpcRequest.class));

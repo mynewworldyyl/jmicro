@@ -109,12 +109,11 @@ public class JRPCReqRespHandler implements IMessageHandler{
 			if(!msg.isNeedResponse()){
 				//无需返回值
 				interceptorManger.handleRequest(req);
-				SF.doSubmit(MonitorConstant.SERVER_REQ_OK, req,resp,null);
+				//SF.doSubmit(MonitorConstant.SERVER_REQ_OK, req,resp,null);
 				return;
 			}
 			
 			//下面处理需要返回值的RPC
-
 			msg.setReqId(req.getRequestId());
 			//msg.setSessionId(req.getSession().getId());
 			msg.setVersion(req.getMsg().getVersion());
@@ -134,17 +133,20 @@ public class JRPCReqRespHandler implements IMessageHandler{
 			//请求类型码比响应类型码大1，
 			msg.setType((byte)(msg.getType()+1));
 			
-			if(SF.isLoggable(this.openDebug,MonitorConstant.LOG_DEBUG)) {
-				SF.doResponseLog(MonitorConstant.LOG_DEBUG, TAG, resp,null);
-			} 
 			//响应消息
 			s.write(msg);
+			
+			if(this.openDebug) {
+				SF.doResponseLog(MonitorConstant.LOG_DEBUG, TAG,req,resp,null);
+			} 
 		
-			SF.doSubmit(MonitorConstant.SERVER_REQ_OK, req,resp,null);
+			//SF.doSubmit(MonitorConstant.SERVER_REQ_OK, req,resp,null);
+			
 		} catch (Throwable e) {
 			//返回错误
-			SF.doMessageLog(MonitorConstant.LOG_ERROR, TAG, msg,e);
-			SF.doSubmit(MonitorConstant.SERVER_REQ_ERROR, req,resp,null);
+			//SF.doMessageLog(MonitorConstant.LOG_ERROR, TAG, msg,e);
+			//SF.doSubmit(MonitorConstant.SERVER_REQ_ERROR, req,resp,null);
+			SF.reqServerError(req, "");
 			logger.error("reqHandler error: ",e);
 			if(needResp && req != null ){
 				//返回错误

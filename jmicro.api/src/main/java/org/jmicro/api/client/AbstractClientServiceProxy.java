@@ -69,18 +69,18 @@ public abstract class AbstractClientServiceProxy implements InvocationHandler,IS
 	@Override
 	public void serviceChanged(int type, ServiceItem item) {
 
-		if(!this.key().equals(item.serviceName())){
+		if(!this.serviceKey().equals(item.serviceKey())){
 			throw new CommonException("Service listener give error service oriItem:"+ 
-					this.getItem()==null ? key():this.getItem().getKey().toKey(true, true, true)+" newItem:"+item.getKey().toKey(true, true, true));
+					this.getItem()==null ? serviceKey():this.getItem().getKey().toKey(true, true, true)+" newItem:"+item.getKey().toKey(true, true, true));
 		}
 		if(IServiceListener.SERVICE_ADD == type){
-			logger.info("Service Item Add: cls:{}, key:{}",this.getClass().getName(),this.key());
+			logger.info("Service Item Add: cls:{}, key:{}",this.getClass().getName(),this.serviceKey());
 			this.setItem(item);
 		}else if(IServiceListener.SERVICE_REMOVE == type) {
-			logger.info("Service Item Remove cls:{}, key:{}",this.getClass().getName(),this.key());
+			logger.info("Service Item Remove cls:{}, key:{}",this.getClass().getName(),this.serviceKey());
 			this.setItem(null);
 		}else if(IServiceListener.SERVICE_DATA_CHANGE == type) {
-			logger.info("Service Item Change: cls:{}, key:{}",this.getClass().getName(),this.key());
+			logger.info("Service Item Change: cls:{}, key:{}",this.getClass().getName(),this.serviceKey());
 			this.setItem(item);
 		}
 	}
@@ -199,13 +199,13 @@ public abstract class AbstractClientServiceProxy implements InvocationHandler,IS
 		return this.item;
 	}
 	
-	public String key(){
+	public String serviceKey(){
 		return UniqueServiceKey.serviceName(this.getServiceName(), this.getNamespace(), this.getVersion()).toString();
 	}
 	
 	@Override
 	public int hashCode() {
-		return this.key().hashCode();
+		return this.serviceKey().hashCode();
 	}
 
 	public IMonitorDataSubmiter getMonitor() {
@@ -222,7 +222,7 @@ public abstract class AbstractClientServiceProxy implements InvocationHandler,IS
 			return false;
 		}
 		AbstractClientServiceProxy o = (AbstractClientServiceProxy)obj;
-		return this.key().equals(o.key());
+		return this.serviceKey().equals(o.serviceKey());
 	}
 	
 	public void setAsyncConfig(AsyncConfig[] acs) {

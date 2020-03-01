@@ -32,6 +32,7 @@ import org.jmicro.api.JMicro;
 import org.jmicro.api.annotation.Cfg;
 import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.Inject;
+import org.jmicro.api.annotation.SMethod;
 import org.jmicro.api.annotation.Service;
 import org.jmicro.api.classloader.RpcClassLoader;
 import org.jmicro.api.config.Config;
@@ -42,11 +43,9 @@ import org.jmicro.api.monitor.SF;
 import org.jmicro.api.net.Message;
 import org.jmicro.api.objectfactory.IObjectFactory;
 import org.jmicro.api.pubsub.IInternalSubRpc;
-import org.jmicro.api.pubsub.ISubCallback;
 import org.jmicro.api.pubsub.PSData;
 import org.jmicro.api.pubsub.PubSubManager;
 import org.jmicro.api.raft.IDataOperator;
-import org.jmicro.api.registry.ServiceMethod;
 import org.jmicro.api.timer.TimerTicker;
 import org.jmicro.common.Constants;
 import org.jmicro.common.Utils;
@@ -63,7 +62,7 @@ import redis.clients.jedis.JedisPool;
  */
 //@Component(value=Constants.DEFAULT_PUBSUB,limit2Packages="org.jmicro.api.pubsub.PubSubManager")
 @Service(limit2Packages="org.jmicro.api.pubsub.PubSubManager",
-namespace=Constants.DEFAULT_PUBSUB,version="0.0.1")
+namespace=Constants.DEFAULT_PUBSUB,version="0.0.1",retryCnt=0, monitorEnable=0,timeout=5000)
 @Component(level=5)
 public class PubSubServer implements IInternalSubRpc{
 	

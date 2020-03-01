@@ -29,9 +29,10 @@ import org.jmicro.api.config.Config;
 import org.jmicro.api.executor.ExecutorConfig;
 import org.jmicro.api.executor.ExecutorFactory;
 import org.jmicro.api.monitor.IMonitorDataSubmiter;
-import org.jmicro.api.monitor.MonitorConstant;
 import org.jmicro.api.monitor.SF;
 import org.jmicro.api.net.IServer;
+import org.jmicro.api.objectfactory.IFactoryListener;
+import org.jmicro.api.objectfactory.IObjectFactory;
 import org.jmicro.common.CommonException;
 import org.jmicro.common.Constants;
 import org.jmicro.common.util.StringUtils;
@@ -55,7 +56,7 @@ import io.netty.handler.logging.LoggingHandler;
  */
 @Component(value=Constants.TRANSPORT_NETTY,lazy=false,level=1,side=Constants.SIDE_PROVIDER)
 @Server(transport=Constants.TRANSPORT_NETTY)
-public class NettySocketServer  implements IServer{
+public class NettySocketServer implements IServer,IFactoryListener {
 
 	static final Logger LOG = LoggerFactory.getLogger(NettySocketServer.class);
 	
@@ -143,12 +144,12 @@ public class NettySocketServer  implements IServer{
         
         String m = "Running the netty socket server host["+Config.getHost()+"],port ["+this.port+"]";
         LOG.debug(m);    
-        SF.doSubmit(MonitorConstant.SERVER_START,m);
+        
 	}
 
 	@Override
 	public void stop() {
-		SF.doSubmit(MonitorConstant.SERVER_STOP,Config.getHost(),this.port+"");
+		SF.serverStop(this.monitor,Config.getHost(),this.port);
 		 if(server != null){
 			 server = null;
         }
@@ -166,6 +167,24 @@ public class NettySocketServer  implements IServer{
 
 	public void setPort(int port) {
 		this.port = port;
+	}
+
+	@Override
+	public void preInit(IObjectFactory of) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void afterInit(IObjectFactory of) {
+		SF.serverStart(this.monitor,Config.getHost(),this.port, Constants.TRANSPORT_NETTY );
+		
+	}
+
+	@Override
+	public int runLevel() {
+		// TODO Auto-generated method stub
+		return 0;
 	}
 
 

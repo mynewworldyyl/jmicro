@@ -143,8 +143,8 @@ public class ServerMessageReceiver implements IMessageReceiver{
 			}
 			h.onMessage(s, msg);
 		} catch (Throwable e) {
-			SF.doMessageLog(MonitorConstant.LOG_ERROR, TAG, msg,e);
-			SF.doSubmit(MonitorConstant.SERVER_REQ_ERROR);
+			//SF.doMessageLog(MonitorConstant.LOG_ERROR, TAG, msg,e);
+			//SF.doSubmit(MonitorConstant.SERVER_REQ_ERROR);
 			logger.error("reqHandler error msg:{} ",msg);
 			logger.error("",e);
 			msg.setType((byte)(msg.getType()+1));

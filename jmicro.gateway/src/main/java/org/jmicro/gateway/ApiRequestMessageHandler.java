@@ -26,7 +26,6 @@ import org.jmicro.api.annotation.Cfg;
 import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.Inject;
 import org.jmicro.api.client.AbstractClientServiceProxy;
-import org.jmicro.api.client.IMessageCallback;
 import org.jmicro.api.codec.ICodecFactory;
 import org.jmicro.api.gateway.ApiRequest;
 import org.jmicro.api.gateway.ApiResponse;
@@ -126,68 +125,40 @@ public class ApiRequestMessageHandler implements IMessageHandler{
 				
 				JMicroContext.get().configMonitor(sm.getMonitorEnable(), si.getMonitorEnable());
 				
-				if(SF.isLoggable(this.openDebug,MonitorConstant.LOG_DEBUG)) {
+				if(this.openDebug) {
 					SF.doRequestLog(MonitorConstant.LOG_DEBUG, TAG, req, null," got request");
 				}
 				
 				if(!sm.isNeedResponse()) {
 					result = m.invoke(srv, req.getArgs());
-					if(SF.isLoggable(this.openDebug,MonitorConstant.LOG_DEBUG)) {
+					if(this.openDebug) {
 						SF.doRequestLog(MonitorConstant.LOG_DEBUG, TAG, req, null," no need response");
 					}
 					return;
 				}
 				
-				if(sm.isStream()) {
-					final JMicroContext jc = JMicroContext.get();
-					IMessageCallback<Object> msgReceiver = (rst)->{
-						if(session.isClose()) {
-							return false;
-						}
-						JMicroContext.get().mergeParams(jc);
-						resp.setSuccess(true);
-						resp.setResult(rst);
-						resp.setId(idGenerator.getLongId(ApiResponse.class));
-						msg.setPayload(ICodecFactory.encode(codecFactory, resp, msg.getProtocol()));
-						session.write(msg);
-						if(SF.isLoggable(this.openDebug,MonitorConstant.LOG_DEBUG)) {
-							SF.doResponseLog(MonitorConstant.LOG_DEBUG,TAG, resp, null," Api gateway stream response");
-						}
-						return true;
-					};
-					JMicroContext.get().setParam(Constants.CONTEXT_CALLBACK_CLIENT, msgReceiver);
-					result = m.invoke(srv, req.getArgs());
-					// 返回确认包
-					resp.setResult(result);
-					if(SF.isLoggable(this.openDebug,MonitorConstant.LOG_DEBUG)) {
-						SF.doResponseLog(MonitorConstant.LOG_DEBUG, TAG, resp, null," Api gateway stream comfirm response",
-								result!=null ? result.toString():"");
-					}
-					session.write(msg);
-				} else {
-					
-					result = m.invoke(srv, req.getArgs());
-					
-					resp.setResult(result);
-					msg.setPayload(ICodecFactory.encode(codecFactory, resp, msg.getProtocol()));
-					if(SF.isLoggable(this.openDebug,MonitorConstant.LOG_DEBUG)) {
-						SF.doResponseLog(MonitorConstant.LOG_DEBUG, TAG, resp, null," one response");
-					}
-					session.write(msg);
+				result = m.invoke(srv, req.getArgs());
+				
+				resp.setResult(result);
+				msg.setPayload(ICodecFactory.encode(codecFactory, resp, msg.getProtocol()));
+				if(this.openDebug) {
+					SF.doResponseLog(MonitorConstant.LOG_DEBUG, TAG,req, resp, null," one response");
 				}
+				session.write(msg);
+			
 			} catch (NoSuchMethodException | SecurityException | IllegalAccessException 
 					| IllegalArgumentException | InvocationTargetException | CommonException e) {
 				logger.error("",e);
 				result = new ServerError(0,e.getMessage());
 				resp.setSuccess(false);
 				resp.setResult(result);
-				SF.doResponseLog(MonitorConstant.LOG_ERROR, TAG, resp, e," service error");
+				SF.doResponseLog(MonitorConstant.LOG_ERROR, TAG,req, resp, e," service error");
 			}
 		} else {
 			resp.setSuccess(false);
 			resp.setResult(result);
 			msg.setPayload(ICodecFactory.encode(codecFactory, resp, msg.getProtocol()));
-			SF.doResponseLog(MonitorConstant.LOG_ERROR, TAG, resp, null," service instance not found");
+			SF.doResponseLog(MonitorConstant.LOG_ERROR, TAG,req, resp, null," service instance not found");
 			session.write(msg);
 		}
 	}

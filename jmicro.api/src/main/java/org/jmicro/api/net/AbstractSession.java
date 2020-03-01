@@ -246,7 +246,7 @@ public abstract class AbstractSession implements ISession{
 	}
 
 	@Override
-	public void increment(int type) {
+	public void increment(Short type) {
 		if(counter != null) {
 			this.counter.increment(type);
 		}
@@ -260,7 +260,7 @@ public abstract class AbstractSession implements ISession{
 	}
 	
 	@Override
-	public Double getTakePercent(int type) {
+	public Double getTakePercent(Short type) {
 		if(counter != null) {
 			return ServiceCounter.takePercent(counter, type);
 		}
@@ -268,7 +268,7 @@ public abstract class AbstractSession implements ISession{
 	}
 
 	@Override
-	public Double getTakeAvg(int type) {
+	public Double getTakeAvg(Short type) {
 		if(counter != null) {
 			return counter.getQps(TimeUnit.SECONDS, type);
 		}

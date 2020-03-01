@@ -367,7 +367,7 @@ public class SimpleObjectFactory implements IObjectFactory {
 		//对像工厂初始化前监听器
 		for(IFactoryListener lis : this.postReadyListeners){
 			//在这里可以注册实例
-			lis.preInit(this);;
+			lis.preInit(this);
 		}
 		
 		List<Object> lobjs = new ArrayList<>();

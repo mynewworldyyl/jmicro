@@ -16,8 +16,6 @@
  */
 package org.jmicro.api.monitor;
 
-import java.util.Arrays;
-
 import org.jmicro.api.annotation.SO;
 import org.jmicro.api.net.IReq;
 import org.jmicro.api.net.IResp;
@@ -25,23 +23,21 @@ import org.jmicro.api.net.Message;
 import org.jmicro.api.registry.ServiceMethod;
 
 /**
+ * 
  * @author Yulei Ye
  * @date 2018年10月5日-下午12:50:47
  */
 @SO
 public final class SubmitItem{
-
-	private byte level = MonitorConstant.LOG_DEBUG;
 	
-	private int type = -1;
+	//消息类型
+	private short type = -1;
+	
+	//日志实例
+	private LogEntry log = null;
 	
 	private Long linkId = null;
 	
-	private transient Throwable ex = null;
-	
-	private String exp = null;
-	private String side = null;
-	private String tagCls = null;
 	private String instanceName = null;
 	
 	private String localHost = null;
@@ -49,14 +45,9 @@ public final class SubmitItem{
 	private String remoteHost = null;
 	private String remotePort = null;
 	
-	private String serviceName = null;
-	private String namespace = null;
-	private String version = null;
-	
-	private String method = null;
-	private Object[] reqArgs = null;
-	
 	private String[] others = new String[0];
+	
+	private String desc;
 	
 	private Message msg  = null;
 	
@@ -64,40 +55,27 @@ public final class SubmitItem{
 	
 	private IResp resp = null;
 	
-	private ServiceMethod sm;
-	
-	//private Date date = new Date();
+	private ServiceMethod sm = null;
 	
 	private long time = 0;
 	
 	public void reset() {
-		level = MonitorConstant.LOG_DEBUG;
+		log = null;
 		type = -1;
-		linkId = null;
 		
-		exp = null;
-		side = null;
-		tagCls = null;
+		linkId = null;
+
 		localHost = null;
 		localPort = null;
 		remoteHost = null;
 		remotePort = null;
 		instanceName = null;
-		
-		serviceName = null;
-		namespace = null;
-		version = null;
-		
-		method = null;
-		reqArgs = null;
+
 		others = new String[0];
 		msg  = null;
 		req = null;
 		resp = null;
-		
-		ex = null;
-		
-		sm = null;
+		desc = null;
 		
 	}
 	
@@ -105,68 +83,75 @@ public final class SubmitItem{
 		this.time = System.currentTimeMillis();
 	}
 	
-	public SubmitItem(int type,byte level,long linkId,ServiceMethod sm,String[] others) {
-		this(type,level,linkId,others);
-		this.sm = sm;
+	public SubmitItem(LogEntry log) {
+		this.log = log;
 	}
 	
-	public SubmitItem(int type,byte level,long linkId,String... others) {
+
+	public SubmitItem(short type,long linkId,String... others) {
 		this(type);
-		this.level = level;
 		this.linkId = linkId;
 		if(others.length > 0) {
 			this.others = others;
 		}
 	}
 	
-	public SubmitItem(int type,byte level,Message msg,String... others) {
-		this(type,level,msg.getLinkId(),others);
+	public SubmitItem(short type,Message msg,String... others) {
+		this(type,msg.getLinkId(),others);
 		this.msg = msg;
 	}
 	
-	public SubmitItem(int type,byte level,long linkId,IReq req,String... others) {
-		this(type,level,linkId,others);
+	public SubmitItem(short type,long linkId,IReq req,String... others) {
+		this(type,linkId,others);
 		this.req = req;
 	}
 	
-	public SubmitItem(int type,byte level,long linkId,IResp resp,String... others) {
-		this(type,level,linkId,others);
+	public SubmitItem(short type,long linkId,IResp resp,String... others) {
+		this(type,linkId,others);
 		this.resp = resp;
 	}
 	
-	public SubmitItem(int type) {
+	public SubmitItem(short type) {
 		this();
 		this.type = type;
 	}
 	
-	public SubmitItem(int type,Message msg) {
+	public SubmitItem(short type,Message msg) {
 		this(type);
 		this.msg = msg;
 	}
 	
-	public SubmitItem(int type,IReq req) {
+	public SubmitItem(short type,IReq req) {
 		this(type);
 		this.req = req;
 	}
 	
-	public SubmitItem(int type,IResp resp) {
+	public SubmitItem(short type,IResp resp) {
 		this(type);
 		this.resp = resp;
 	}
 	
-	public SubmitItem(int type,IReq req,IResp resp) {
+	public SubmitItem(short type,IReq req,IResp resp) {
 		this(type);
 		this.resp = resp;
 		this.req = req;
 	}
 	
-	public SubmitItem(int type,Message msg,IReq req,IResp resp) {
+	public SubmitItem(short type,Message msg,IReq req,IResp resp) {
 		this(type);
 		this.resp = resp;
 		this.req = req;
 		this.msg = msg;
 	}
 	
+	public String getDesc() {
+		return desc;
+	}
+
+	public void setDesc(String desc) {
+		this.desc = desc;
+	}
+
 	public String getLocalPort() {
 		return localPort;
 	}
@@ -195,30 +180,6 @@ public final class SubmitItem{
 		this.linkId = linkId;
 	}
 
-	public Throwable getEx() {
-		return ex;
-	}
-
-	public void setEx(Throwable ex) {
-		this.ex = ex;
-	}
-
-	public String getExp() {
-		return exp;
-	}
-
-	public void setExp(String exp) {
-		this.exp = exp;
-	}
-
-	public String getSide() {
-		return side;
-	}
-
-	public void setSide(String side) {
-		this.side = side;
-	}
-
 	public void appendOther(String msg) {
 		String[] arr = new String[this.others.length+1];
 		System.arraycopy(this.others, 0, arr, 0, this.others.length);
@@ -226,19 +187,11 @@ public final class SubmitItem{
 		this.others = arr;
 	}
 	
-	public int getLevel() {
-		return level;
-	}
-
-	public void setLevel(byte level) {
-		this.level = level;
-	}
-
-	public int getType() {
+	public short getType() {
 		return type;
 	}
 
-	public void setType(int type) {
+	public void setType(short type) {
 		this.type = type;
 	}
 
@@ -248,46 +201,6 @@ public final class SubmitItem{
 
 	public void setLinkId(long linkId) {
 		this.linkId = linkId;
-	}
-
-	public String getServiceName() {
-		return serviceName;
-	}
-
-	public void setServiceName(String serviceName) {
-		this.serviceName = serviceName;
-	}
-
-	public String getNamespace() {
-		return namespace;
-	}
-
-	public void setNamespace(String namespace) {
-		this.namespace = namespace;
-	}
-
-	public String getVersion() {
-		return version;
-	}
-
-	public void setVersion(String version) {
-		this.version = version;
-	}
-
-	public String getMethod() {
-		return method;
-	}
-
-	public void setMethod(String method) {
-		this.method = method;
-	}
-
-	public Object[] getReqArgs() {
-		return reqArgs;
-	}
-
-	public void setReqArgs(Object[] reqArgs) {
-		this.reqArgs = reqArgs;
 	}
 
 	public String[] getOthers() {
@@ -322,14 +235,6 @@ public final class SubmitItem{
 		this.resp = resp;
 	}
 
-	public String getTagCls() {
-		return tagCls;
-	}
-
-	public void setTagCls(String tagCls) {
-		this.tagCls = tagCls;
-	}
-
 	public String getLocalHost() {
 		return localHost;
 	}
@@ -354,6 +259,14 @@ public final class SubmitItem{
 		this.time = time;
 	}
 
+	public LogEntry getLog() {
+		return log;
+	}
+
+	public void setLog(LogEntry log) {
+		this.log = log;
+	}
+
 	public ServiceMethod getSm() {
 		return sm;
 	}
@@ -362,14 +275,4 @@ public final class SubmitItem{
 		this.sm = sm;
 	}
 
-	@Override
-	public String toString() {
-		return "SubmitItem [level=" + level + ", type=" + Integer.toHexString(type).toUpperCase() + ", linkId=" + linkId + ", exp=" + exp + ", side="
-				+ side + ", tagCls=" + tagCls + ", instanceName=" + instanceName + ", localHost=" + localHost
-				+ ", localPort=" + localPort + ", remoteHost=" + remoteHost + ", remotePort=" + remotePort
-				+ ", serviceName=" + serviceName + ", namespace=" + namespace + ", version=" + version + ", method="
-				+ method + ", reqArgs=" + Arrays.toString(reqArgs) + ", others=" + Arrays.toString(others) + ", msg="
-				+ msg + ", req=" + req + ", resp=" + resp + ", sm=" + sm + ", time=" + time + "]";
-	}
-	
 }

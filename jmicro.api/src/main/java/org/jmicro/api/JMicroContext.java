@@ -137,7 +137,7 @@ public class JMicroContext  {
 			if(req.isLoggable()) {
 				SF.doRequestLog(MonitorConstant.LOG_ERROR,JMicroContext.class, req,null," service ITEM not found");
 			}
-			SF.doSubmit(MonitorConstant.SERVER_REQ_SERVICE_NOT_FOUND,req,null);
+			//SF.doSubmit(MonitorConstant.SERVER_REQ_SERVICE_NOT_FOUND,req,null);
 			throw new CommonException("Service not found impl："+req.getImpl());
 		}
 		
@@ -150,13 +150,13 @@ public class JMicroContext  {
 		
 		if(obj == null){
 			SF.doRequestLog(MonitorConstant.LOG_ERROR,JMicroContext.class, req,null," service INSTANCE not found");
-			SF.doSubmit(MonitorConstant.SERVER_REQ_SERVICE_NOT_FOUND,req,null);
+			//SF.doSubmit(MonitorConstant.SERVER_REQ_SERVICE_NOT_FOUND,req,null);
 			throw new CommonException("Service not found,srv: "+req.getImpl());
 		}
 		context.setObject(Constants.SERVICE_OBJ_KEY, obj);
 	}
 	
-	public static void setSrvLoggable(){
+	/*public static void setSrvLoggable(){
 		JMicroContext c = get();
 		ServiceItem si = c.getParam(Constants.SERVICE_ITEM_KEY, null);
 		ServiceMethod sm = c.getParam(Constants.SERVICE_METHOD_KEY, null);
@@ -181,13 +181,11 @@ public class JMicroContext  {
 		
 		//默认不启用服务级的log配置
 		c.isLoggable = false;
-		
-		
-	}
+	}*/
 	
-	public boolean isLoggable(boolean isComOpen) {
+	/*public boolean isLoggable(boolean isComOpen) {
 		return isLoggable || isComOpen;
-	}
+	}*/
 	
 	public static boolean existLinkId(){
 		return get().exists(LINKER_ID) && get().getBoolean(LINKER_ID, false);

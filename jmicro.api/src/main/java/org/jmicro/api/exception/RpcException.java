@@ -17,6 +17,8 @@
 package org.jmicro.api.exception;
 
 import org.jmicro.api.net.IRequest;
+import org.jmicro.api.net.IResponse;
+import org.jmicro.api.net.ServerError;
 import org.jmicro.common.CommonException;
 /**
  * 
@@ -34,17 +36,17 @@ public final class RpcException extends CommonException {
 		this.req=req;
 	}
 	
-	public RpcException(IRequest req,String cause,Throwable exp){
-		super(cause,exp);
+	public RpcException(IRequest req,IResponse resp){
+		super("fail");
 		this.req = req;
 	}
 	
-	public RpcException(IRequest req,String key,String cause){
-		this(req,key,cause,null);
+	public RpcException(IRequest req,ServerError se){
+		this(req,"code:"+se.getErrorCode()+":msg"+se.getMsg());
 	}
 	
-	public RpcException(IRequest req,String key,String cause,Throwable exp){
-		super(key,cause,exp);
+	public RpcException(IRequest req,Throwable exp){
+		super(exp.getMessage());
 		this.req= req;
 	}
 

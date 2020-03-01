@@ -31,7 +31,7 @@ public class TestMonitor extends JMicroBaseTestCase{
 		this.setSayHelloContext();
 		this.waitForReady(10);
 		
-		SF.doSubmit(MonitorConstant.CLIENT_REQ_OK);
+		//SF.doSubmit(MonitorConstant.CLIENT_REQ_OK);
 		try {
 			Thread.sleep(ran.nextInt(100));
 		} catch (InterruptedException e) {
@@ -48,7 +48,7 @@ public class TestMonitor extends JMicroBaseTestCase{
 		for(;;){
 			//MonitorConstant.doSubmit(monitor,MonitorConstant.CLIENT_REQ_BEGIN, null, null);
 			try {
-				SF.doSubmit(MonitorConstant.CLIENT_REQ_OK);
+				//SF.doSubmit(MonitorConstant.CLIENT_REQ_OK);
 			} catch (Throwable e1) {
 				e1.printStackTrace();
 			}
@@ -75,7 +75,7 @@ public class TestMonitor extends JMicroBaseTestCase{
 		ServiceMethod sm = new ServiceMethod();
 		sm.setKey(UniqueServiceMethodKey.fromKey("org.jmicro.api.monitor.IMonitorDataSubscriber##LinkRouterMonitor##0.0.1##LinkRouterMonitor##172.16.22.200##9001##test##java.lang.String"));
 		for(;;){
-			SF.doServiceLog(MonitorConstant.LOG_DEBUG,this.getClass(),sm,null);
+			SF.doServiceLog(MonitorConstant.LOG_DEBUG,this.getClass(),null);
 			//logger.debug("testSubmitLog");
 			try {
 				Thread.sleep(500);

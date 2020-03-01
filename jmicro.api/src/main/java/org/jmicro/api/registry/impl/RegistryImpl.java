@@ -153,7 +153,7 @@ public class RegistryImpl implements IRegistry {
 	
 	
 	private void srvChange(int type, ServiceItem item) {
-		String key = item.serviceName();
+		String key = item.serviceKey();
 		if(type == IServiceListener.SERVICE_ADD) {
 			if(!servicesCounters.containsKey(key)) {
 				servicesCounters.put(key, new AtomicInteger(0));

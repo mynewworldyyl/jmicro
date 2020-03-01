@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.jmicro.api.pubsub;
+package org.jmicro.pubsub;
 
 import java.lang.reflect.Method;
 import java.util.Map;
@@ -24,11 +24,13 @@ import org.jmicro.api.monitor.MonitorConstant;
 import org.jmicro.api.monitor.SF;
 import org.jmicro.api.net.Message;
 import org.jmicro.api.objectfactory.IObjectFactory;
+import org.jmicro.api.pubsub.PSData;
 import org.jmicro.api.registry.AsyncConfig;
 import org.jmicro.api.registry.IRegistry;
 import org.jmicro.api.registry.UniqueServiceMethodKey;
 import org.jmicro.common.CommonException;
 import org.jmicro.common.util.JsonUtils;
+import org.jmicro.common.util.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -47,11 +49,9 @@ public class SubCallbackImpl implements ISubCallback{
 	
 	private Method m = null;
 	
-	private IRegistry reg;
-	
 	private IObjectFactory of;
 	
-	public SubCallbackImpl(UniqueServiceMethodKey mkey,Object srv, IRegistry reg,IObjectFactory of){
+	public SubCallbackImpl(UniqueServiceMethodKey mkey,Object srv, IObjectFactory of){
 		if(mkey == null) {
 			throw new CommonException("SubCallback service method cannot be null");
 		}
@@ -62,7 +62,6 @@ public class SubCallbackImpl implements ISubCallback{
 		this.of = of;
 		this.mkey = mkey;
 		this.srvProxy = srv;
-		this.reg = reg;
 		setMt();
 	}
 	
@@ -105,32 +104,34 @@ public class SubCallbackImpl implements ISubCallback{
 				throw new CommonException(msg);
 			}
 			
-			Object srv = of.getRemoteServie(ac.getServiceName(), ac.getNamespace(), ac.getVersion(),null,null);
-			
-			if(srv != null) {
-				try {
-					Method m = null;
-					if(obj == null) {
-						m = srv.getClass().getMethod(ac.getMethod());
-					} else {
-						m = srv.getClass().getMethod(ac.getMethod(),obj.getClass());
+			if(StringUtils.isNotEmpty(ac.getServiceName())) {
+				Object srv = of.getRemoteServie(ac.getServiceName(), ac.getNamespace(), ac.getVersion(),null,null);
+				
+				if(srv != null) {
+					try {
+						Method m = null;
+						if(obj == null) {
+							m = srv.getClass().getMethod(ac.getMethod());
+						} else {
+							m = srv.getClass().getMethod(ac.getMethod(),obj.getClass());
+						}
+						
+						if(m != null) {
+							//JMicroContext.get().setParam(key, val);
+							JMicroContext.get().setLong(JMicroContext.LINKER_ID, linkId);
+							//JMicroContext.get().setLong(JMicroContext.REQ_ID, reqId);
+							m.invoke(srv, obj);
+						}
+					} catch (Throwable e) {
+						String msg = "Fail to callback src service:" + mkey.toString()+" [sn="+ac.getServiceName() + ",ns="+ac.getNamespace() + "ver="+ac.getVersion() +",mn="+ ac.getMethod()+",with args:"+ (obj==null?"":JsonUtils.getIns().toJson(obj)) +"]";
+						SF.doBussinessLog(MonitorConstant.LOG_ERROR,SubCallbackImpl.class,e, msg);
+						throw new CommonException(msg,e);
 					}
-					
-					if(m != null) {
-						//JMicroContext.get().setParam(key, val);
-						JMicroContext.get().setLong(JMicroContext.LINKER_ID, linkId);
-						//JMicroContext.get().setLong(JMicroContext.REQ_ID, reqId);
-						m.invoke(srv, obj);
-					}
-				} catch (Throwable e) {
-					String msg = "Fail to callback src service:" + mkey.toString()+" [sn="+ac.getServiceName() + ",ns="+ac.getNamespace() + "ver="+ac.getVersion() +",mn="+ ac.getMethod()+",with args:"+ (obj==null?"":JsonUtils.getIns().toJson(obj)) +"]";
-					SF.doBussinessLog(MonitorConstant.LOG_ERROR,SubCallbackImpl.class,e, msg);
-					throw new CommonException(msg,e);
+				} else {
+					String msg = "Async callback service not found:" + mkey.toString()+" [sn="+ac.getServiceName() + ",ns="+ac.getNamespace() + "ver="+ac.getVersion() +",mn="+ ac.getMethod()+",with args:"+ (obj==null?"":JsonUtils.getIns().toJson(obj)) +"]";
+					SF.doBussinessLog(MonitorConstant.LOG_ERROR,SubCallbackImpl.class,null, msg);
+					throw new CommonException(msg);
 				}
-			} else {
-				String msg = "Async callback service not found:" + mkey.toString()+" [sn="+ac.getServiceName() + ",ns="+ac.getNamespace() + "ver="+ac.getVersion() +",mn="+ ac.getMethod()+",with args:"+ (obj==null?"":JsonUtils.getIns().toJson(obj)) +"]";
-				SF.doBussinessLog(MonitorConstant.LOG_ERROR,SubCallbackImpl.class,null, msg);
-				throw new CommonException(msg);
 			}
 			
 		}

@@ -24,12 +24,9 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 import org.jmicro.api.JMicroContext;
-import org.jmicro.api.annotation.Inject;
 import org.jmicro.api.classloader.RpcClassLoader;
 import org.jmicro.api.config.Config;
 import org.jmicro.api.objectfactory.IObjectFactory;
-import org.jmicro.api.pubsub.ISubCallback;
-import org.jmicro.api.pubsub.SubCallbackImpl;
 import org.jmicro.api.registry.IRegistry;
 import org.jmicro.api.registry.IServiceListener;
 import org.jmicro.api.registry.ServiceItem;
@@ -293,7 +290,7 @@ class SubcriberManager {
 			return false;
 		}
 		
-		SubCallbackImpl cb = new SubCallbackImpl(sui.key,srv,registry,this.of);
+		SubCallbackImpl cb = new SubCallbackImpl(sui.key,srv,this.of);
 		
 		callbacks.put(k, cb);
 		

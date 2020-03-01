@@ -44,7 +44,7 @@ public class DefaultSpeedLimiter extends AbstractLimiter implements ILimiter{
 	
 	static final Logger logger = LoggerFactory.getLogger(DefaultSpeedLimiter.class);
 	
-	private static final Integer[] TYPES = new Integer[] {MonitorConstant.CLIENT_REQ_OK};
+	private static final Short[] TYPES = new Short[] {MonitorConstant.REQ_START};
 	
 	private Map<String,AtomicInteger> als = new ConcurrentHashMap<>();
 	
@@ -86,7 +86,7 @@ public class DefaultSpeedLimiter extends AbstractLimiter implements ILimiter{
 			al = this.als.get(key);
 		}
 		
-		double qps = sc.getQpsWithEx(MonitorConstant.CLIENT_REQ_OK, TimeUnit.SECONDS);
+		double qps = sc.getQpsWithEx(MonitorConstant.REQ_START, TimeUnit.SECONDS);
 		//logger.info("qps:{},key:{}",qps,sm.getKey().getMethod());
 		
 		if(qps > sm.getMaxSpeed()){
@@ -95,7 +95,7 @@ public class DefaultSpeedLimiter extends AbstractLimiter implements ILimiter{
 			int needWaitTime = (int)((1000.0*cnt)/ sm.getMaxSpeed());
 			
 			if(needWaitTime >= sm.getTimeout()) {
-				SF.doSubmit(MonitorConstant.SERVER_REQ_LIMIT_OK, req,null,"");
+				SF.limit(req);
 				logger.info("qps:{},maxQps:{},key:{}",qps,sm.getMaxSpeed(),key);
 				return false;
 			} 
@@ -114,7 +114,7 @@ public class DefaultSpeedLimiter extends AbstractLimiter implements ILimiter{
 		
 		//logger.info("apply cnt:{}",al.incrementAndGet());
 		
-		sc.incrementWithEx(MonitorConstant.CLIENT_REQ_OK);
+		sc.incrementWithEx(MonitorConstant.REQ_END);
 		
 		return true;
 	}

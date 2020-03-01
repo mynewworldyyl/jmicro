@@ -313,6 +313,8 @@ public final class Message {
 		if(this.getProtocol() == PROTOCOL_BIN) {
 			
 			ByteBuffer data = (ByteBuffer)this.getPayload();
+			data.mark();
+			
 			int len = 0;//数据长度 + 测试模式时附加数据长度
 			if(data != null){
 				len = data.remaining();
@@ -368,6 +370,7 @@ public final class Message {
 			
 			if(data != null){
 				b.put(data);
+				data.reset();
 			}
 			
 		} else {

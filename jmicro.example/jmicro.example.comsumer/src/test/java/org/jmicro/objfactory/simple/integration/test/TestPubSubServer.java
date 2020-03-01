@@ -25,7 +25,7 @@ public class TestPubSubServer extends JMicroBaseTestCase{
 		psd.setData(new byte[] {22,33,33});
 		psd.setTopic(TOPIC);
 		
-		psm.publishItems(new PSData[] {psd,psd,psd});
+		psm.publishItems(new PSData[] {psd,psd});
 		
 		//psm.publishData(psd);
 		
@@ -46,7 +46,7 @@ public class TestPubSubServer extends JMicroBaseTestCase{
 	public void testPublishArgs() {
 		PubSubManager psm = of.get(PubSubManager.class);
 		Object[] args = new String[] {"test publish args"};
-		long msgid = psm.publish("/jmicro/test/topic02",PSData.FLAG_PUBSUB,args);
+		long msgid = psm.publish(TOPIC,PSData.FLAG_PUBSUB,args);
 		System.out.println("pubsub msgID:"+msgid);
 		
 		JMicro.waitForShutdown();

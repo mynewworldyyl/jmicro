@@ -27,27 +27,27 @@ import org.jmicro.api.monitor.ServiceCounter;
  */
 public interface ISession{
 	
-	public static final int CLIENT_HANDLER_NOT_FOUND = 0X6FFFFFFF;
+	public static final short CLIENT_HANDLER_NOT_FOUND = 0X7FFF;
 	
-	public static final int CLIENT_WRITE_BYTES = 0X6FFFFFFE;
+	public static final short CLIENT_WRITE_BYTES = 0X7FFE;
 	
-	public static final int CLIENT_READ_BYTES = 0X6FFFFFFD;
+	public static final short CLIENT_READ_BYTES = 0X7FFD;
 	
-	public static final Integer[] STATIS_TYPES = new Integer[]{
+	public static final Short[] STATIS_TYPES = new Short[]{
 			//服务器发生错误,返回ServerError异常
-			MonitorConstant.CLIENT_REQ_EXCEPTION_ERR,
+			MonitorConstant.CLIENT_GET_SERVER_ERROR,
 			//业务错误,success=false,此时接口调用正常
-			MonitorConstant.CLIENT_REQ_BUSSINESS_ERR,
+			MonitorConstant.CLIENT_GET_RESPONSE_ERROR,
 			//请求超时
-			MonitorConstant.CLIENT_REQ_TIMEOUT_FAIL,
+			MonitorConstant.REQ_TIMEOUT,
 			//请求开始
-			MonitorConstant.CLIENT_REQ_BEGIN,
+			MonitorConstant.REQ_START,
 			//异步请求成功确认包
-			MonitorConstant.CLIENT_REQ_ASYNC1_SUCCESS,
+			//MonitorConstant.CLIENT_REQ_ASYNC1_SUCCESS,
 			//同步请求成功
-			MonitorConstant.CLIENT_REQ_OK,
+			MonitorConstant.REQ_SUCCESS,
 			//超时次数
-			MonitorConstant.CLIENT_REQ_TIMEOUT,
+			MonitorConstant.REQ_TIMEOUT_FAIL,
 			
 			ISession.CLIENT_HANDLER_NOT_FOUND,
 			ISession.CLIENT_WRITE_BYTES,
@@ -96,13 +96,13 @@ public interface ISession{
 	
 	void setDumpDownStream(boolean dump);
 	
-	void increment(int type);
+	void increment(Short type);
 	
 	Double getFailPercent();
 	
-	Double getTakePercent(int type);
+	Double getTakePercent(Short type);
 	
-	Double getTakeAvg(int type);
+	Double getTakeAvg(Short type);
 	
 	ServiceCounter getServiceCounter();
 	

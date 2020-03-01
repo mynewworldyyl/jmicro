@@ -27,7 +27,6 @@ import org.jmicro.api.annotation.Reference;
 import org.jmicro.api.client.AbstractClientServiceProxy;
 import org.jmicro.api.objectfactory.ProxyObject;
 import org.jmicro.api.registry.AsyncConfig;
-import org.jmicro.api.registry.IRegistry;
 import org.jmicro.api.registry.IServiceListener;
 import org.jmicro.api.registry.ServiceItem;
 import org.jmicro.api.registry.UniqueServiceKey;
@@ -40,9 +39,9 @@ import org.slf4j.LoggerFactory;
  * @author Yulei Ye
  * @date 2018年10月6日-下午12:08:48
  */
-class RemoteProxyServiceFieldListener implements IServiceListener{
+class FieldServiceProxyListener implements IServiceListener{
 
-	private final static Logger logger = LoggerFactory.getLogger(RemoteProxyServiceFieldListener.class);
+	private final static Logger logger = LoggerFactory.getLogger(FieldServiceProxyListener.class);
 	
 	private Object srcObj;
 	
@@ -56,8 +55,6 @@ class RemoteProxyServiceFieldListener implements IServiceListener{
 	
 	private Class<?> srvType = null;
 	
-	private IRegistry registry = null;
-	
 	/**
 	 * 
 	 * @param rsm
@@ -65,8 +62,8 @@ class RemoteProxyServiceFieldListener implements IServiceListener{
 	 * @param srcObj 引用代理对象或集合对象的对象，当代理对象或集合对象里的代理对像发生改变时，将收到通知
 	 * @param refField 代理对象或集合对象的类型声明字段，属于srcObj的成员
 	 */
-	RemoteProxyServiceFieldListener(ClientServiceProxyManager rsm,Object valProxy,Object srcObj
-			,Field refField,IRegistry registry){
+	FieldServiceProxyListener(ClientServiceProxyManager rsm,Object valProxy,Object srcObj
+			,Field refField){
 		if(valProxy== null){
 			throw new CommonException("Proxy object cannot be null: "+ refField.getDeclaringClass().getName()+",field: " + refField.getName());
 		}
@@ -77,8 +74,6 @@ class RemoteProxyServiceFieldListener implements IServiceListener{
 		this.refField = refField;
 		this.ref = refField.getAnnotation(Reference.class);
 		srvType = rsm.getEltType(refField);
-		
-		this.registry = registry;
 	}
 
 	@SuppressWarnings("unchecked")
@@ -115,39 +110,30 @@ class RemoteProxyServiceFieldListener implements IServiceListener{
 					set.add(p);
 					logger.debug("Add proxy for,Size:{} Field:{},Item:{}",set.size(),
 							refField.toString(),item.getKey().toKey(false, false, false));
-					//通知组件服务元素增加
-					notifyChange(p,type);
 				} else {
 					logger.error("Fail to create item proxy :{}",item.getKey().toKey(true, true, true));
 				}
 				
 			}else if(IServiceListener.SERVICE_REMOVE == type) {
-				
-				boolean exist = registry.isExists(item.getKey().getServiceName(), item.getKey().getNamespace(), item.getKey().getVersion());
-				
-				if(!exist) {
-					//服务已经不存在
-					AbstractClientServiceProxy po = null;
-					for(Object o: set){
-						AbstractClientServiceProxy p = (AbstractClientServiceProxy)o;
-						if(p.serviceKey().equals(item.serviceKey())){
-							po = p;
-							break;
-						}
+				AbstractClientServiceProxy po = null;
+				for(Object o: set){
+					AbstractClientServiceProxy p = (AbstractClientServiceProxy)o;
+					if(p.serviceKey().equals(item.serviceKey())){
+						po = p;
+						break;
 					}
-					if(po != null){
-						set.remove(po);
-						logger.debug("Remove proxy for,Size:{}, Field:{},Item:{}",set.size(),refField.toString(),
-								item.getKey().toKey(false, false, false));
-						//通知组件服务元素删除
-						notifyChange(po,type);
-					}
+				}
+				if(po != null){
+					set.remove(po);
+					logger.debug("Remove proxy for,Size:{}, Field:{},Item:{}",set.size(),refField.toString(),
+							item.getKey().toKey(false, false, false));
 				}
 			}
 		}
+		notifyChange();
 	}
 	
-	protected void notifyChange(AbstractClientServiceProxy po,int opType) {
+	protected void notifyChange() {
 		Reference cfg = this.refField.getAnnotation(Reference.class);
 		if(cfg == null || cfg.changeListener()== null || cfg.changeListener().trim().equals("")){
 			return;
@@ -155,7 +141,7 @@ class RemoteProxyServiceFieldListener implements IServiceListener{
 		Method m =  null;
 		Class<?> cls = ProxyObject.getTargetCls(this.refField.getDeclaringClass());
 		try {
-			 m =  cls.getMethod(cfg.changeListener(),new Class[]{AbstractClientServiceProxy.class,Integer.TYPE} );
+			 m =  cls.getMethod(cfg.changeListener(),new Class[]{String.class} );
 			 if(m != null){
 				 m.invoke(this.srcObj,refField.getName());
 			 }

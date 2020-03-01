@@ -16,7 +16,7 @@
  */
 package org.jmicro.api.monitor;
 
-import java.util.Set;
+import org.jmicro.api.annotation.SMethod;
 
 /**
  * 
@@ -25,9 +25,10 @@ import java.util.Set;
  */
 public interface IMonitorDataSubscriber {
 
-	Integer[] intrest();
+	Short[] intrest();
 	
-	void onSubmit(Set<SubmitItem> sis);
+	@SMethod(needResponse=false)
+	void onSubmit(SubmitItem[] sis);
 	
-	Double getData(String srvKey,Integer type);
+	Double getData(String srvKey,Short type);
 }

@@ -36,7 +36,11 @@ import org.jmicro.api.annotation.SMethod;
 import org.jmicro.api.annotation.Service;
 import org.jmicro.api.annotation.Subscribe;
 import org.jmicro.api.config.Config;
+import org.jmicro.api.monitor.IMonitorDataSubmiter;
+import org.jmicro.api.monitor.MonitorConstant;
 import org.jmicro.api.net.IServer;
+import org.jmicro.api.objectfactory.IFactoryListener;
+import org.jmicro.api.objectfactory.IObjectFactory;
 import org.jmicro.api.objectfactory.ProxyObject;
 import org.jmicro.api.registry.IRegistry;
 import org.jmicro.api.registry.Server;
@@ -59,7 +63,7 @@ import javassist.Modifier;
  * @date 2018年10月4日-下午12:08:01
  */
 @Component(lazy=false,level=2)
-public class ServiceLoader {
+public class ServiceLoader{
 
 	private final static Logger logger = LoggerFactory.getLogger(ServiceLoader.class);
 	
@@ -90,6 +94,8 @@ public class ServiceLoader {
 	private Map<String,Object> services = new ConcurrentHashMap<String,Object>();
 	
 	//private Map<String,Class<?>> servicesAnno = new ConcurrentHashMap<String,Class<?>>();
+	
+	
 	
 	@JMethod("init")
 	public void init(){
@@ -125,7 +131,7 @@ public class ServiceLoader {
 		exportService();
 		logger.info("export service finish!");
 	}
-	
+
 	private Object getService(String clsName,String namespace,String version){
 		
 		namespace = UniqueServiceKey.namespace(namespace);
@@ -336,7 +342,7 @@ public class ServiceLoader {
 		sm.setAvgResponseTime(item.getAvgResponseTime());
 		sm.setMonitorEnable(item.getMonitorEnable());
 		sm.setFailResponse("");
-		sm.setLoggable(-1);
+		sm.setLogLevel(MonitorConstant.LOG_ERROR);
 		sm.setDebugMode(-1);
 		sm.setMaxSpeed(item.getMaxSpeed());
 		
@@ -403,7 +409,7 @@ public class ServiceLoader {
 		
 		item.setAvgResponseTime(anno.avgResponseTime()!=-1 || intAnno == null ? anno.avgResponseTime() : intAnno.avgResponseTime());
 		item.setMonitorEnable(anno.monitorEnable()!=-1 || intAnno == null ? anno.monitorEnable() : intAnno.monitorEnable());
-		item.setLoggable(anno.loggable()!=-1 || intAnno == null ? anno.loggable() : intAnno.loggable());
+		item.setLogLevel(anno.logLevel()!=-1 || intAnno == null ? anno.logLevel() : intAnno.logLevel());
 		item.setDebugMode(anno.debugMode()!=-1 || intAnno == null ? anno.debugMode() : intAnno.debugMode());
 		
 		item.setHandler(anno.handler() != null && !anno.handler().trim().equals("") ? anno.handler():(intAnno != null?intAnno.handler():null));
@@ -427,7 +433,7 @@ public class ServiceLoader {
 		checkMethod.getKey().setUsk(usk);
 		checkMethod.getKey().setMethod("wayd");
 		checkMethod.getKey().setParamsStr(UniqueServiceMethodKey.paramsStr(new String[]{"java.lang.String"}));
-		checkMethod.setLoggable(0);
+		checkMethod.setLogLevel(MonitorConstant.LOG_ERROR);;
 		checkMethod.setDebugMode(0);
 		item.addMethod(checkMethod);
 		
@@ -475,7 +481,7 @@ public class ServiceLoader {
 				sm.setAvgResponseTime(item.getAvgResponseTime());
 				sm.setMonitorEnable(item.getMonitorEnable());
 				sm.setFailResponse("");
-				sm.setLoggable(-1);
+				sm.setLogLevel(MonitorConstant.LOG_ERROR);
 				sm.setDebugMode(-1);
 				sm.setMaxSpeed(item.getMaxSpeed());
 				
@@ -493,7 +499,7 @@ public class ServiceLoader {
 					}
 					sm.setAvgResponseTime(manno.avgResponseTime()!=-1 || intMAnno == null ? manno.avgResponseTime() : intMAnno.avgResponseTime());
 					sm.setMonitorEnable(manno.monitorEnable()!=-1 || intMAnno == null ? manno.monitorEnable() : intMAnno.monitorEnable());
-					sm.setStream(manno.stream());
+					//sm.setStream(manno.stream());
 					sm.setDumpDownStream(manno.dumpDownStream());
 					sm.setDumpUpStream(manno.dumpUpStream());
 					sm.setNeedResponse(manno.needResponse());
@@ -505,7 +511,7 @@ public class ServiceLoader {
 					
 					sm.setBaseTimeUnit(StringUtils.isEmpty(manno.baseTimeUnit())? item.getBaseTimeUnit():manno.baseTimeUnit());
 					
-					sm.setLoggable(manno.loggable()!=-1 || intMAnno == null ? manno.loggable() : intMAnno.loggable());
+					sm.setLogLevel(manno.logLevel()!=-1 || intMAnno == null ? manno.logLevel() : intMAnno.logLevel());
 					sm.setDebugMode(manno.debugMode()!=-1 || intMAnno == null ? manno.debugMode() : intMAnno.debugMode());
 					
 					sm.setAsyncable(manno.asyncable());
@@ -525,12 +531,12 @@ public class ServiceLoader {
 					sm.setBaseTimeUnit(intMAnno.baseTimeUnit());
 					sm.setAvgResponseTime(intMAnno.avgResponseTime());
 					sm.setMonitorEnable(intMAnno.monitorEnable());
-					sm.setStream(intMAnno.stream());
+					//sm.setStream(intMAnno.stream());
 					sm.setDumpDownStream(intMAnno.dumpDownStream());
 					sm.setDumpUpStream(intMAnno.dumpUpStream());
 					sm.setNeedResponse(intMAnno.needResponse());
 					sm.setFailResponse(intMAnno.failResponse());
-					sm.setLoggable(intMAnno.loggable());
+					sm.setLogLevel(intMAnno.logLevel());
 					sm.setDebugMode(intMAnno.debugMode());
 					sm.setTimeWindow(intMAnno.timeWindow()<=0?item.getTimeWindow():intMAnno.timeWindow());
 					sm.setSlotSize(intMAnno.slotSize()<=0?item.getSlotSize():intMAnno.slotSize());

@@ -23,41 +23,41 @@ import java.util.concurrent.TimeUnit;
  * @author Yulei Ye
  * @date 2018年11月28日 下午12:50:36
  */
-public interface IServiceCounter {
+public interface IServiceCounter<T> {
 
 	/**
 	 *  取指定类型的时间窗口内的统计总数
 	 * @param type
 	 * @return
 	 */
-	long get(Integer type);
+	long get(T type);
 	
-	boolean add(Integer type,long val);
+	boolean add(T type,long val);
 	
 	/**
 	 * 计数器启动以来的总数
 	 * @param type
 	 * @return
 	 */
-	Double getTotal(Integer... type);
+	Double getTotal(T... type);
 	
-	boolean increment(Integer type);
+	boolean increment(T type);
 	
-	boolean addCounter(Integer type,long slotSize);
+	boolean addCounter(T type,long slotSize);
 	
 	//boolean addCounter(Integer type,long timeWindow,long slotSize,String unit);
 	
-	long getWithEx(Integer type);
+	long getWithEx(T type);
 	
-	void addWithEx(Integer type,long val);
+	void addWithEx(T type,long val);
 	
 	/**
 	 * 计数器启动以来的总数
 	 * @param type
 	 * @return
 	 */
-	Double getValueWithEx(Integer... type);
+	Double getValueWithEx(T... type);
 	
-	void incrementWithEx(Integer type);
+	void incrementWithEx(T type);
 	
 }

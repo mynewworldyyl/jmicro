@@ -59,6 +59,16 @@ final public class AsyncConfig {
 	//异步调用服务方法名称，参数即是目标方法（forMethod）的返回值
 	private String method;
 	
+	public AsyncConfig() {
+		
+	}
+	
+	public AsyncConfig(boolean enable,String forMethod,String condition) {
+		this.enable = enable;
+		this.forMethod = forMethod;
+		this.condition = condition;
+	}
+	
 	public String getCondition() {
 		return condition;
 	}

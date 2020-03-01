@@ -314,7 +314,7 @@ public class TestPrefixTypeED {
 	
 	@Test
 	public void testPSData() {
-		Map<Integer,Double> data = new HashMap<>();
+		Map<Short,Double> data = new HashMap<>();
 		data.put(MonitorConstant.STATIS_TOTAL_RESP, 22D);
 		data.put(MonitorConstant.STATIS_QPS, 22D);
 		

@@ -32,14 +32,15 @@ public class TestServiceCounter {
 	@Test
 	public void test01() {
 		ServiceCounter sc = new ServiceCounter("test",10,TimeUnit.SECONDS);
-		sc.addCounter(1, 10);
+		short t = 1;
+		sc.addCounter(t, 10);
 		Random rand = new Random(1000);
 		
 		while(true) {
 			long v = rand.nextLong()%1000;
 			v = v<0? -v:v;
-			sc.add(1,v);
-			System.out.println(sc.get(1));
+			sc.add(t,v);
+			System.out.println(sc.get(t));
 			try {
 				Thread.sleep(v);
 			} catch (InterruptedException e) {

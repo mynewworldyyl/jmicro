@@ -20,6 +20,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 
 import org.jmicro.api.annotation.SO;
+import org.jmicro.api.monitor.MonitorConstant;
 import org.jmicro.common.CommonException;
 import org.jmicro.common.Constants;
 
@@ -40,13 +41,14 @@ public final class ServiceMethod {
 	
 	//-1 use Service config, 0 disable, 1 enable
 	private int monitorEnable = -1;
-	private int loggable  = -1;
+	private int logLevel  = MonitorConstant.LOG_ERROR;
 	//dump 下行流，用于下行数问题排查
 	private boolean dumpDownStream = false;
 	//dump 上行流，用于上行数问题排查
 	private boolean dumpUpStream = false;
 	
-	//开启debug模式
+	//开启debug模式，调模式下，会附加更多调试信息到网络消息包中，以方便调试
+	//此设置针对服务方法，注意区别于针对组件的openDebug属性，openDebug设置组件输出更多日志到日志文件或日志中心
 	private int debugMode = -1;
 	
 	private int retryCnt; //method can retry times, less or equal 0 cannot be retry
@@ -126,7 +128,7 @@ public final class ServiceMethod {
 
 	//false: not stream, true:stream, more than one request and response double stream
 	//a stream service must be async=true, and get got result by callback
-	private boolean stream = false;
+	//private boolean stream = false;
 	
 	//如果客户端RPC异步调用，此topic值必须是方法全限定名，参考toKey方法实现
 	private String topic = null;
@@ -149,7 +151,7 @@ public final class ServiceMethod {
 		this.maxSpeed = p.maxSpeed;
 		this.avgResponseTime = p.avgResponseTime;
 		
-		this.loggable = p.loggable;
+		this.logLevel = p.logLevel;
 		
 		this.baseTimeUnit = p.baseTimeUnit;
 		this.checkInterval = p.checkInterval;
@@ -262,10 +264,6 @@ public final class ServiceMethod {
 		this.avgResponseTime = avgResponseTime;
 	}
 
-	public int getLoggable() {
-		return loggable;
-	}
-
 	public int getDebugMode() {
 		return debugMode;
 	}
@@ -282,8 +280,12 @@ public final class ServiceMethod {
 		this.checkInterval = checkInterval;
 	}
 
-	public void setLoggable(int loggable) {
-		this.loggable = loggable;
+	public int getLogLevel() {
+		return logLevel;
+	}
+
+	public void setLogLevel(int logLevel) {
+		this.logLevel = logLevel;
 	}
 
 	public UniqueServiceMethodKey getKey() {
@@ -356,14 +358,6 @@ public final class ServiceMethod {
 
 	public void setNeedResponse(boolean needResponse) {
 		this.needResponse = needResponse;
-	}
-
-	public boolean isStream() {
-		return stream;
-	}
-
-	public void setStream(boolean stream) {
-		this.stream = stream;
 	}
 
 	public String getFailResponse() {

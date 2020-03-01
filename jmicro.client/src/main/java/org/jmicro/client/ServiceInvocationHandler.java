@@ -26,11 +26,11 @@ import org.jmicro.api.annotation.Inject;
 import org.jmicro.api.client.AbstractClientServiceProxy;
 import org.jmicro.api.config.Config;
 import org.jmicro.api.idgenerator.ComponentIdServer;
+import org.jmicro.api.monitor.SF;
 import org.jmicro.api.net.IRequest;
 import org.jmicro.api.net.IResponse;
 import org.jmicro.api.net.InterceptorManager;
 import org.jmicro.api.net.RpcRequest;
-import org.jmicro.api.registry.AsyncConfig;
 import org.jmicro.api.registry.ServiceItem;
 import org.jmicro.api.registry.ServiceMethod;
 import org.jmicro.common.CommonException;
@@ -82,27 +82,18 @@ public class ServiceInvocationHandler implements InvocationHandler{
 			throw new CommonException("cls["+method.getDeclaringClass().getName()+"] method ["+method.getName()+"] method not found");
 		}
 		
-		if(sm.isStream() && JMicroContext.get().getParam(Constants.CONTEXT_CALLBACK_CLIENT, null) == null) {
-			throw new CommonException("cls["+method.getDeclaringClass().getName()+"] method ["+method.getName()+"] async callback not found!");
-		}
-		
 		JMicroContext.get().setParam(Constants.SERVICE_METHOD_KEY, sm);
 		JMicroContext.get().setParam(Constants.SERVICE_ITEM_KEY, poItem);
 		
-		JMicroContext.setSrvLoggable();
+		//JMicroContext.setSrvLoggable();
 		JMicroContext.get().configMonitor(sm.getMonitorEnable(),poItem.getMonitorEnable());
 		
 		Object obj = null;
+		RpcRequest req = null;
+		IResponse resp = null;
 		try {
-			if(!JMicroContext.existLinkId()) {
-				//新建一个RPC链路
-				JMicroContext.get().setParam(Constants.NEW_LINKID, true);
-				JMicroContext.lid();
-			}
 			
-			JMicroContext.get().setObject(Constants.PROXY, po);
-			
-			RpcRequest req = new RpcRequest();
+			req = new RpcRequest();
 			req.setMethod(method.getName());
 			req.setServiceName(poItem.getKey().getServiceName());
 			req.setNamespace(poItem.getKey().getNamespace());
@@ -112,13 +103,22 @@ public class ServiceInvocationHandler implements InvocationHandler{
 			req.setTransport(Constants.TRANSPORT_NETTY);
 			req.setImpl(poItem.getImpl());
 			
-			IResponse resp = this.intManager.handleRequest(req);
+			if(!JMicroContext.existLinkId()) {
+				//新建一个RPC链路开始
+				JMicroContext.get().setParam(Constants.NEW_LINKID, true);
+				SF.linkStart(req);
+			}
+			
+			JMicroContext.get().setObject(Constants.PROXY, po);
+			
+			resp = this.intManager.handleRequest(req);
 			
 			obj = resp == null ? null :resp.getResult();
 		} finally {
 			if(JMicroContext.get().getObject(Constants.NEW_LINKID,null) != null &&
 					JMicroContext.get().getBoolean(Constants.NEW_LINKID,false) ) {
 				//RPC链路结束
+				SF.linkEnd(req,resp);
 				JMicroContext.get().removeParam(Constants.NEW_LINKID);
 			}
 			

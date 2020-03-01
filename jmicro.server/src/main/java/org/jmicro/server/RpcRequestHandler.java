@@ -32,7 +32,6 @@ import org.jmicro.api.net.IRequestHandler;
 import org.jmicro.api.net.IResponse;
 import org.jmicro.api.net.RpcResponse;
 import org.jmicro.common.Constants;
-import org.jmicro.common.util.JsonUtils;
 import org.jmicro.common.util.ReflectUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -73,9 +72,7 @@ public class RpcRequestHandler extends AbstractHandler implements IRequestHandle
 			resp.setMonitorEnable(request.isMonitorEnable());
 			resp.setSuccess(true);
 		} catch (SecurityException | IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
-			String msg = "service class:["+obj.getClass().getName()+"] method ["+request.getMethod()+"], args ["
-					+ JsonUtils.getIns().toJson(request.getArgs())+"]";
-			throw new RpcException(request,msg,e);
+			throw new RpcException(request,e);
 		}
 		return resp;
 	}
@@ -93,7 +90,7 @@ public class RpcRequestHandler extends AbstractHandler implements IRequestHandle
 					return m;
 				}
 			}
-			throw new RpcException(req,pst.toString(),e);
+			throw new RpcException(req,e);
 		}
 	}
 	

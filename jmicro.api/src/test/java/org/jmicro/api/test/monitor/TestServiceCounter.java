@@ -20,15 +20,16 @@ public class TestServiceCounter {
 	public void testServiceCounter() {
 		Random r = new Random(1000);
 		ServiceCounter count = new ServiceCounter("test", 10, TimeUnit.SECONDS);
-		count.addCounter(1, 10);
+		short t = 1;
+		count.addCounter(t, 10);
 		for(;true;) {
-			count.add(1, 1);
-			System.out.println("Total:"+count.get(1));
-			System.out.println("Avg:"+count.getQpsWithEx(1, TimeUnit.SECONDS));
+			count.add(t, 1);
+			System.out.println("Total:"+count.get(t));
+			System.out.println("Avg:"+count.getQpsWithEx(t, TimeUnit.SECONDS));
 			System.out.println("=============================");
 			try {
-				int t = r.nextInt(1000);
-				Thread.sleep((t < 0 ? -t : t));
+				int tt = r.nextInt(1000);
+				Thread.sleep((tt < 0 ? -tt : tt));
 			} catch (InterruptedException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
@@ -42,8 +43,8 @@ public class TestServiceCounter {
 		ServiceCounter sc =  new ServiceCounter("testServiceCounterSingleVal", 
 				ISession.STATIS_TYPES,2,2,TimeUnit.SECONDS);
 		while(true) {
-			sc.increment(MonitorConstant.CLIENT_REQ_OK);
-			Double succp = sc.getValueWithEx(MonitorConstant.CLIENT_REQ_OK);
+			sc.increment(MonitorConstant.REQ_SUCCESS);
+			Double succp = sc.getValueWithEx(MonitorConstant.REQ_SUCCESS);
 			Double qps = ServiceCounter.getData(sc,MonitorConstant.STATIS_QPS);
 			logger.debug("treq:{}",succp);
 		}
@@ -58,7 +59,7 @@ public class TestServiceCounter {
 		
 		Runnable r = ()->{
 			while(true) {
-				sc.increment(MonitorConstant.CLIENT_REQ_BEGIN);
+				sc.increment(MonitorConstant.REQ_START);
 				try {
 					Thread.sleep(ran.nextInt(50));
 				} catch (InterruptedException e) {
@@ -67,15 +68,15 @@ public class TestServiceCounter {
 				int v = ran.nextInt(10);
 				v = v % 10;
 				if(v < 9) {
-					sc.increment(MonitorConstant.CLIENT_REQ_OK);
+					sc.increment(MonitorConstant.REQ_SUCCESS);
 				}/*else if(v == 8) {
 					
 				} */else if(v == 9) {
 					v = ran.nextInt(1);
 					if(v == 0) {
-						sc.increment(MonitorConstant.CLIENT_REQ_TIMEOUT);
+						sc.increment(MonitorConstant.REQ_TIMEOUT);
 					}else if(v == 1) {
-						sc.increment(MonitorConstant.CLIENT_REQ_EXCEPTION_ERR);
+						sc.increment(MonitorConstant.CLIENT_GET_SERVER_ERROR);
 					}
 				}
 				
@@ -125,11 +126,11 @@ public class TestServiceCounter {
 	public void testSingleThreadSingleCounter() {
 		final Random ran = new Random(1000);
 		ServiceCounter sc =  new ServiceCounter("testSingleThreadSingleCounter", 
-				new Integer[] {MonitorConstant.CLIENT_REQ_OK},30000,100,TimeUnit.MILLISECONDS);
+				new Short[] {MonitorConstant.REQ_SUCCESS},30000,100,TimeUnit.MILLISECONDS);
 		
 		Runnable r = ()->{
 			while(true) {
-				sc.increment(MonitorConstant.CLIENT_REQ_OK);
+				sc.increment(MonitorConstant.REQ_SUCCESS);
 				try {
 					Thread.sleep(ran.nextInt(50));
 				} catch (InterruptedException e) {
