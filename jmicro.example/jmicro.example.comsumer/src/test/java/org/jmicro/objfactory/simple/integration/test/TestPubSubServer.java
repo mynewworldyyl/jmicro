@@ -1,16 +1,19 @@
 package org.jmicro.objfactory.simple.integration.test;
 
 import java.util.HashMap;
+import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.jmicro.api.JMicro;
+import org.jmicro.api.monitor.AbstractMonitorDataSubscriber;
+import org.jmicro.api.monitor.MonitorConstant;
 import org.jmicro.api.pubsub.IInternalSubRpc;
 import org.jmicro.api.pubsub.PSData;
 import org.jmicro.api.pubsub.PubSubManager;
+import org.jmicro.api.registry.ServiceMethod;
 import org.jmicro.common.Constants;
 import org.jmicro.common.Utils;
-import org.jmicro.example.comsumer.TestRpcClient;
 import org.jmicro.test.JMicroBaseTestCase;
 import org.junit.Test;
 
@@ -69,9 +72,27 @@ public class TestPubSubServer extends JMicroBaseTestCase{
 					long msgid = psm.publish(new HashMap<String,Object>(), TOPIC, 
 							"test pubsub server id: "+id.getAndIncrement(),PSData.FLAG_QUEUE);*/
 
-					long msgid = psm.publish("/jmicro/test/topic02",PSData.FLAG_PUBSUB,new String[] {"test pubsub server id: "+id.getAndIncrement()});
+					//long msgid = psm.publish("/jmicro/test/topic02",PSData.FLAG_PUBSUB,new String[] {"test pubsub server id: "+id.getAndIncrement()});
+					//System.out.println("pubsub msgID:"+msgid);
 					
-					System.out.println("pubsub msgID:"+msgid);
+					Map<Short,Double> data = new HashMap<>();
+					for(Short type : AbstractMonitorDataSubscriber.YTPES) {
+						//Double v = new Double(counter.getAvgWithEx(type,TimeUtils.getTimeUnit(sm.getBaseTimeUnit())));
+						data.put(type, 222.23D);
+						//degradeManager.updateExceptionCnt(typeKey(key,type),v.toString());
+					}
+					
+					data.put(MonitorConstant.STATIS_TOTAL_RESP, 222D);
+					data.put(MonitorConstant.STATIS_QPS,  222D);
+					data.put(MonitorConstant.STATIS_SUCCESS_PERCENT,  222D);
+					data.put(MonitorConstant.STATIS_FAIL_PERCENT,  232D);
+					
+					PSData psData = new PSData();
+					psData.setData(data);
+					psData.setTopic(MonitorConstant.TEST_SERVICE_METHOD_TOPIC);
+					psData.put(Constants.SERVICE_METHOD_KEY, new ServiceMethod());
+					
+					psm.publish(psData);
 					
 					//Thread.sleep(2000);
 					Thread.sleep(ran.nextInt(50));

@@ -27,7 +27,7 @@ import org.jmicro.api.codec.ISerializeObject;
  * @author Yulei Ye
  * @date 2018年12月22日 下午11:10:43
  */
-public final class PSData implements Serializable,ISerializeObject {
+public final class PSData implements Serializable, ISerializeObject {
 
 	// 1: 队列消息, 只要一个消费者成功消费消息即为成功，并且只能一个消费者成功消费消息
 	// 0:订阅消息，可以有多个消费者消费消息
@@ -138,9 +138,9 @@ public final class PSData implements Serializable,ISerializeObject {
 				if (java.lang.String.class != null && (java.lang.reflect.Modifier
 						.isFinal(java.lang.String.class.getModifiers())
 						|| org.jmicro.api.codec.ISerializeObject.class.isAssignableFrom(java.lang.String.class))) {
-					flag4 |= org.jmicro.common.Constants.GENERICTYPEFINAL;
+					flag4 |= org.jmicro.common.Constants.GENERICTYPEFINAL; // 能从泛型中能获取到足够的列表元素类型信息
 				} else { // block2
-					boolean sameKeyElt = org.jmicro.agent.SerializeProxyFactory.sameCollectionTypeEles(__val4.keySet());
+					boolean sameKeyElt = org.jmicro.agent.SerializeProxyFactory.sameCollectionTypeEles(__val4.keySet());// 是否是同种类型的对象
 					boolean isKeyFinal = org.jmicro.agent.SerializeProxyFactory
 							.seriaFinalClass(__val4.keySet().iterator().next().getClass());
 					if (sameKeyElt && isKeyFinal) { // block3
@@ -167,11 +167,11 @@ public final class PSData implements Serializable,ISerializeObject {
 				} else { // block2
 					boolean sameValElt = org.jmicro.agent.SerializeProxyFactory.sameCollectionTypeEles(__val4.values());
 					boolean isValFinal = org.jmicro.agent.SerializeProxyFactory
-							.seriaFinalClass(__val4.values().iterator().next().getClass());
+							.seriaFinalClass(__val4.values().toArray());
 					if (sameValElt && isValFinal) { // block3
 						flag4 |= org.jmicro.common.Constants.EXT1;// 首值编码
 						writeValEvery = false;
-						Class cls = __val4.keySet().iterator().next().getClass();
+						Class cls = __val4.values().iterator().next().getClass();
 						Short c4 = org.jmicro.api.codec.TypeCoderFactory.getCodeByClass(cls);
 						if (c4 == null) {
 							flag4 |= org.jmicro.common.Constants.SIZE_NOT_ZERO; // 字符串类型名编码
@@ -197,7 +197,6 @@ public final class PSData implements Serializable,ISerializeObject {
 							__buffer.writeShort(cc4.intValue());
 					}
 					org.jmicro.agent.SerializeProxyFactory.encodeListElement(__buffer, key);
-					
 					if (writeValEvery) {
 						Short cc4 = org.jmicro.api.codec.TypeCoderFactory.getCodeByClass(val.getClass());
 						if (cc4 == null)
@@ -272,7 +271,7 @@ public final class PSData implements Serializable,ISerializeObject {
 				Class keyEleCls = null;
 				String keyClsName = null;
 				c = 0;
-				if (0 == (org.jmicro.common.Constants.GENERICTYPEFINAL & flagName4)) { // blockgenic
+				if (0 == (org.jmicro.common.Constants.GENERICTYPEFINAL & flagName4)) { // blockgenic 从头部中读取类型信息
 					if (0 != (org.jmicro.common.Constants.HEADER_ELETMENT & flagName4)) {
 						readKeyEvery = false;
 						if (0 != (org.jmicro.common.Constants.ELEMENT_TYPE_CODE & flagName4)) {
@@ -291,17 +290,17 @@ public final class PSData implements Serializable,ISerializeObject {
 				Class valEleCls = null;
 				String valClsName = null;
 				c = 0;
-				if (0 == (org.jmicro.common.Constants.EXT0 & flagName4)) { // blockgenic
+				if (0 == (org.jmicro.common.Constants.EXT0 & flagName4)) { // blockgenic 不能从泛型参数获取类型信息
 					if (0 != (org.jmicro.common.Constants.EXT1 & flagName4)) {
 						readValEvery = false;
 						if (0 != (org.jmicro.common.Constants.SIZE_NOT_ZERO & flagName4)) {
-							c = __buffer.readShort();
-							valEleCls = org.jmicro.api.codec.TypeCoderFactory.getClassByCode(new Short(c));
-						} else {
 							valClsName = __buffer.readUTF();
 							valEleCls = org.jmicro.agent.SerializeProxyFactory.loadClazz(valClsName);
+						} else {
+							c = __buffer.readShort();
+							valEleCls = org.jmicro.api.codec.TypeCoderFactory.getClassByCode(new Short(c));
 						}
-					}else {
+					} else {
 						readValEvery = true;
 					}
 				} // blockgenic
@@ -317,7 +316,6 @@ public final class PSData implements Serializable,ISerializeObject {
 						keyEleCls = org.jmicro.api.codec.TypeCoderFactory.getClassByCode(new Short(c));
 					} // block6
 					Object key = org.jmicro.agent.SerializeProxyFactory.decodeListElement(__buffer, keyEleCls);
-					
 					if (readValEvery) { // block6
 						c = __buffer.readShort();
 						valEleCls = org.jmicro.api.codec.TypeCoderFactory.getClassByCode(new Short(c));

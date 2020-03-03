@@ -33,6 +33,7 @@ import org.jmicro.api.net.RpcRequest;
 import org.jmicro.api.net.RpcResponse;
 import org.jmicro.api.pubsub.PSData;
 import org.jmicro.api.registry.AsyncConfig;
+import org.jmicro.api.registry.ServiceMethod;
 import org.jmicro.common.CommonException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -331,6 +332,9 @@ public class TypeCoderFactory {
 		
 		registCoder(new ReflectTypeCoder<LogEntry>(type--, LogEntry.class));
 		registClass(LogEntry.class,type);
+		
+		registCoder(new ReflectTypeCoder<ServiceMethod>(type--, ServiceMethod.class));
+		registClass(ServiceMethod.class,type);
 		
 		//registCoder(new ReflectTypeCoder<RpcRequest>(type--, RpcRequest.class));
 		//registCoder(new ReflectTypeCoder<RpcRequest>(type--, RpcRequest.class));

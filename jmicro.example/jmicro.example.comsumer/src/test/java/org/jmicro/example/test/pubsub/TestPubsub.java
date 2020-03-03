@@ -2,13 +2,18 @@ package org.jmicro.example.test.pubsub;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.jmicro.api.codec.JDataInput;
 import org.jmicro.api.codec.JDataOutput;
 import org.jmicro.api.codec.PrefixTypeEncoderDecoder;
+import org.jmicro.api.monitor.MonitorConstant;
 import org.jmicro.api.net.Message;
 import org.jmicro.api.net.RpcRequest;
 import org.jmicro.api.registry.AsyncConfig;
+import org.jmicro.api.registry.ServiceMethod;
+import org.jmicro.common.Constants;
 import org.jmicro.common.Utils;
 import org.jmicro.example.comsumer.TestRpcClient;
 import org.jmicro.test.JMicroBaseTestCase;
@@ -98,6 +103,29 @@ public class TestPubsub extends JMicroBaseTestCase{
 		Object obj = ed.decode((ByteBuffer)respMsg.getPayload());
 		
 		System.out.println(obj);
+	}
+	
+	@Test
+	public void testEncodePSDataWithMapAsArgs() throws IOException {
+		
+		PrefixTypeEncoderDecoder ed = of.get(PrefixTypeEncoderDecoder.class);
+		
+		Map<Short,Object> data = new HashMap<>();
+		data.put(MonitorConstant.CLIENT_CONNECT_FAIL, 222D);
+		data.put(MonitorConstant.CLIENT_IOSESSION_CLOSE, new ServiceMethod());
+		//data.values().iterator()
+		//org.jmicro.api.pubsub.PSData psData = new org.jmicro.api.pubsub.PSData();
+		
+		PSData psData = new PSData();
+		psData.put(Constants.SERVICE_METHOD_KEY, new ServiceMethod());
+		psData.put(Constants.SERVICE_NAME_KEY, 2222);
+		psData.setData(data);
+		
+		ByteBuffer buffer = ed.encode(psData);
+		
+		PSData r = ed.decode(buffer);
+		
+		System.out.println(r);
 	}
 	
 	

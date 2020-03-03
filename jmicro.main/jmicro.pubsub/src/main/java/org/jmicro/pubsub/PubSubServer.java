@@ -38,6 +38,7 @@ import org.jmicro.api.classloader.RpcClassLoader;
 import org.jmicro.api.config.Config;
 import org.jmicro.api.executor.ExecutorConfig;
 import org.jmicro.api.executor.ExecutorFactory;
+import org.jmicro.api.monitor.IMonitorDataSubmiter;
 import org.jmicro.api.monitor.MonitorConstant;
 import org.jmicro.api.monitor.SF;
 import org.jmicro.api.net.Message;
@@ -110,6 +111,9 @@ public class PubSubServer implements IInternalSubRpc{
 	
 	@Inject
 	private IDataOperator dataOp;
+	
+	@Inject
+	private IMonitorDataSubmiter monitor;
 	
 	private SubcriberManager subManager;
 	

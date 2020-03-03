@@ -16,6 +16,7 @@
  */
 package org.jmicro.api.monitor;
 
+import org.jmicro.api.JMicro;
 import org.jmicro.api.JMicroContext;
 import org.jmicro.api.config.Config;
 import org.jmicro.api.net.IReq;
@@ -141,19 +142,19 @@ public class SF {
 		return false;
 	}
 	
-	public static boolean serverStart(IMonitorDataSubmiter monitor,String host,int port,String desc) {
-		if(monitor != null) {
+	public static boolean serverStart(String host,int port,String desc) {
+		if(monitor() != null) {
 			SubmitItem si = createSubmitItem(MonitorConstant.SERVER_START,null,null,
 					"host:"+host+", port:"+port+",desc"+desc,null,null,true);
-			return  monitor.submit(si);
+			return  monitor().submit(si);
 		}
 		return false;
 	}
 	
-	public static boolean serverStop(IMonitorDataSubmiter monitor,String host,int port) {
+	public static boolean serverStop(String host,int port) {
 		SubmitItem si = createSubmitItem(MonitorConstant.CLIENT_GET_SERVER_ERROR,null,null,
 				"host:"+host+", port:"+port,null,null,true);
-		return monitor.submit(si);
+		return monitor().submit(si);
 	}
 	
 	public static boolean netIo(short type,String desc,Class cls,Throwable ex) {
@@ -244,6 +245,7 @@ public class SF {
 		return false;
 	}
 	*/
+	
 	public static void doServiceLog(byte level,Class<?> cls,Throwable exp,Object... others) {
 		doLog(level,cls,null,null,null,exp,others);
 	}
@@ -297,7 +299,11 @@ public class SF {
 	}
 	
 	private static IMonitorDataSubmiter monitor() {
-		return JMicroContext.get().getParam(JMicroContext.MONITOR, null);
+		IMonitorDataSubmiter m = JMicroContext.get().getParam(JMicroContext.MONITOR, null);
+		if(m == null) {
+			m = JMicro.getObjectFactory().get(IMonitorDataSubmiter.class);
+		}
+		return m;
 	}
 	
 	private static boolean isMonitorable(short type) {

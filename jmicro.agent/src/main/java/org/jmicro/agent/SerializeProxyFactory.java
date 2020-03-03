@@ -305,11 +305,11 @@ public class SerializeProxyFactory {
 				    	sb.append(" if(0 != (org.jmicro.common.Constants.EXT1 & "+flagName+")) { \n");
 				    	sb.append(" readValEvery = false;\n ");
 				    	sb.append(" if(0 != (org.jmicro.common.Constants.SIZE_NOT_ZERO & "+flagName+")) { \n");
-				    	sb.append(" c = __buffer.readShort(); \n");
-				    	sb.append(" valEleCls = org.jmicro.api.codec.TypeCoderFactory.getClassByCode(new Short(c)); \n");
-				    	sb.append(" } \n else { \n");
 				    	sb.append(" valClsName = __buffer.readUTF(); \n");
 				    	sb.append(" valEleCls = org.jmicro.agent.SerializeProxyFactory.loadClazz(valClsName); \n");
+				    	sb.append(" } \n else { \n");
+				    	sb.append(" c = __buffer.readShort(); \n");
+				    	sb.append(" valEleCls = org.jmicro.api.codec.TypeCoderFactory.getClassByCode(new Short(c)); \n");
 				    	sb.append(" } \n");
 				    	
 				    	sb.append(" } else { \n readValEvery = true; \n }\n");
@@ -626,7 +626,7 @@ public class SerializeProxyFactory {
 				    	sb.append(" if(sameValElt && isValFinal) { //block3 \n");
 				    		sb.append(" "+flagName+" |= org.jmicro.common.Constants.EXT1;//首值编码 \n");//第一个元素 是否是抽象类，sameElt=true时有效
 				    		sb.append(" writeValEvery = false; \n");
-				    		sb.append(" Class cls = __val"+i+".keySet().iterator().next().getClass(); \n");
+				    		sb.append(" Class cls = __val"+i+".values().iterator().next().getClass(); \n");
 				    		sb.append(" Short c"+i+" = org.jmicro.api.codec.TypeCoderFactory.getCodeByClass(cls);\n");
 				    		sb.append(" if(c"+i+" == null) {");
 				    		sb.append(" "+flagName+" |= org.jmicro.common.Constants.SIZE_NOT_ZERO; //字符串类型名编码 \n ");

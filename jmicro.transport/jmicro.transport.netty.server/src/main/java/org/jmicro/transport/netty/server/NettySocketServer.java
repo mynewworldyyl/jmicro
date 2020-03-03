@@ -149,7 +149,7 @@ public class NettySocketServer implements IServer,IFactoryListener {
 
 	@Override
 	public void stop() {
-		SF.serverStop(this.monitor,Config.getHost(),this.port);
+		SF.serverStop(Config.getHost(),this.port);
 		 if(server != null){
 			 server = null;
         }
@@ -177,7 +177,7 @@ public class NettySocketServer implements IServer,IFactoryListener {
 
 	@Override
 	public void afterInit(IObjectFactory of) {
-		SF.serverStart(this.monitor,Config.getHost(),this.port, Constants.TRANSPORT_NETTY );
+		SF.serverStart(Config.getHost(),this.port, Constants.TRANSPORT_NETTY );
 		
 	}
 

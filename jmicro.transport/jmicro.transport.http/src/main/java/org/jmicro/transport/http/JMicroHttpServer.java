@@ -90,9 +90,6 @@ public class JMicroHttpServer implements IServer{
 	@Inject
 	private ICodecFactory codeFactory;
 	
-	@Inject(required=false)
-	private IMonitorDataSubmiter monitor;
-	
 	@Inject
 	private StaticResourceHttpHandler staticResourceHandler;
 	
@@ -100,7 +97,7 @@ public class JMicroHttpServer implements IServer{
 	private HttpHandler httpHandler = new HttpHandler(){
         @Override
         public void handle(HttpExchange exchange) {
-        	JMicroContext.setMonitor(monitor);
+        	JMicroContext.setMonitor();
         	JMicroContext.callSideProdiver(true);
         	HttpServerSession session = new HttpServerSession(exchange,readBufferSize,heardbeatInterval);
 			session.init();
@@ -167,12 +164,12 @@ public class JMicroHttpServer implements IServer{
         
         String m = "Running the server host["+this.host+"],port ["+this.port+"]";
         LOG.debug(m);    
-        SF.serverStart(this.monitor,this.host,this.port,Constants.TRANSPORT_NETTY_HTTP);
+        SF.serverStart(this.host,this.port,Constants.TRANSPORT_NETTY_HTTP);
 	}
 
 	@Override
 	public void stop() {
-		SF.serverStop(this.monitor,this.host,this.port);
+		SF.serverStop(this.host,this.port);
 		 if(server != null){
 			 server.stop(0);
 			 server = null;

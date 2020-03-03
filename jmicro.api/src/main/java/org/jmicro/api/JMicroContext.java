@@ -108,7 +108,7 @@ public class JMicroContext  {
 	
 	public static void configProvider(IMonitorDataSubmiter monitor,ISession s) {
 		callSideProdiver(true);
-		setMonitor(monitor);
+		setMonitor();
 		JMicroContext context = get();
 		
 		context.setParam(JMicroContext.SESSION_KEY, s);
@@ -228,8 +228,9 @@ public class JMicroContext  {
 		cxt.get().params.putAll(ps);;
 	}
 	
-	public static void setMonitor(IMonitorDataSubmiter monitor){
-		JMicroContext.get().setObject(JMicroContext.MONITOR, monitor);
+	public static void setMonitor(){
+		JMicroContext.get().setObject(JMicroContext.MONITOR, 
+				JMicro.getObjectFactory().get(IMonitorDataSubmiter.class));
 	}
 	
 	public void configMonitor(int methodCfg,int srvCfg){

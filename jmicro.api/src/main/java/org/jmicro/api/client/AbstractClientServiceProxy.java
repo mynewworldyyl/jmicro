@@ -166,7 +166,7 @@ public abstract class AbstractClientServiceProxy implements InvocationHandler,IS
 	    		logger.error(e.getMessage());
 	    	}
 		}
-		JMicroContext.setMonitor(monitor);
+		JMicroContext.setMonitor();
 		
 		//false表示不是provider端
 		JMicroContext.callSideProdiver(false);

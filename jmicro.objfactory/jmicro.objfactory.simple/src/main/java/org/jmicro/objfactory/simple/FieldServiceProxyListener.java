@@ -19,12 +19,13 @@ package org.jmicro.objfactory.simple;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 
+import org.jmicro.api.JMicro;
 import org.jmicro.api.annotation.Reference;
 import org.jmicro.api.client.AbstractClientServiceProxy;
+import org.jmicro.api.monitor.IMonitorDataSubmiter;
 import org.jmicro.api.monitor.MonitorConstant;
 import org.jmicro.api.monitor.SF;
 import org.jmicro.api.objectfactory.ProxyObject;
@@ -33,7 +34,6 @@ import org.jmicro.api.registry.IRegistry;
 import org.jmicro.api.registry.IServiceListener;
 import org.jmicro.api.registry.ServiceItem;
 import org.jmicro.api.registry.UniqueServiceKey;
-import org.jmicro.common.CommonException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -72,7 +72,6 @@ class FieldServiceProxyListener implements IServiceListener{
 		this.refField = refField;
 		this.ref = refField.getAnnotation(Reference.class);
 		srvType = rsm.getEltType(refField);
-		
 		this.registry = registry;
 	}
 

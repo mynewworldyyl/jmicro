@@ -75,6 +75,8 @@ public class ServerMessageReceiver implements IMessageReceiver{
 	
 	private ExecutorService executor = null;
 	
+	private Boolean finishInit = false;
+	
 	private volatile Map<Byte,IMessageHandler> handlers = new ConcurrentHashMap<>();
 	
 	public void init(){
@@ -86,6 +88,10 @@ public class ServerMessageReceiver implements IMessageReceiver{
 		//系统级RPC处理器，如ID请求处理器，和普通RPC处理理器同一个实例，但是TYPE标识不同，需要特殊处理
 		//registHandler(jrpcHandler);
 		//registHandler(idHandler);
+		finishInit = true;
+		synchronized(finishInit) {
+			finishInit.notifyAll();
+		}
 	}
 	
 	public void registHandler(IMessageHandler handler){
@@ -112,6 +118,16 @@ public class ServerMessageReceiver implements IMessageReceiver{
 			doReceive((IServerSession)s,msg);
 		 }).start();
 		*/
+		
+		if(!finishInit) {
+			synchronized(finishInit) {
+				try {
+					finishInit.wait();
+				} catch (InterruptedException e) {
+					e.printStackTrace();
+				}
+			}
+		}
 		
 		executor.submit(()->{
 			//线程间上下文切换

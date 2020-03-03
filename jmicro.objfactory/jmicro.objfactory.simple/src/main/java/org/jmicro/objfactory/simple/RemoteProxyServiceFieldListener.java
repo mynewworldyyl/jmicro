@@ -23,8 +23,10 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 
+import org.jmicro.api.JMicro;
 import org.jmicro.api.annotation.Reference;
 import org.jmicro.api.client.AbstractClientServiceProxy;
+import org.jmicro.api.monitor.IMonitorDataSubmiter;
 import org.jmicro.api.monitor.MonitorConstant;
 import org.jmicro.api.monitor.SF;
 import org.jmicro.api.objectfactory.ProxyObject;
@@ -58,6 +60,8 @@ class RemoteProxyServiceFieldListener implements IServiceListener{
 	
 	private Class<?> srvType = null;
 	
+	private IMonitorDataSubmiter monitor;
+	
 	private IRegistry registry = null;
 	
 	/**
@@ -79,6 +83,7 @@ class RemoteProxyServiceFieldListener implements IServiceListener{
 		this.refField = refField;
 		this.ref = refField.getAnnotation(Reference.class);
 		srvType = rsm.getEltType(refField);
+		monitor = JMicro.getObjectFactory().get(IMonitorDataSubmiter.class);
 		
 		this.registry = registry;
 	}
