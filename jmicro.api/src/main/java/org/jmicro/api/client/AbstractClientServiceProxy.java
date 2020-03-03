@@ -73,13 +73,13 @@ public abstract class AbstractClientServiceProxy implements InvocationHandler,IS
 			throw new CommonException("Service listener give error service oriItem:"+ 
 					this.getItem()==null ? serviceKey():this.getItem().getKey().toKey(true, true, true)+" newItem:"+item.getKey().toKey(true, true, true));
 		}
-		if(IServiceListener.SERVICE_ADD == type){
+		if(IServiceListener.ADD == type){
 			logger.info("Service Item Add: cls:{}, key:{}",this.getClass().getName(),this.serviceKey());
 			this.setItem(item);
-		}else if(IServiceListener.SERVICE_REMOVE == type) {
+		}else if(IServiceListener.REMOVE == type) {
 			logger.info("Service Item Remove cls:{}, key:{}",this.getClass().getName(),this.serviceKey());
 			this.setItem(null);
-		}else if(IServiceListener.SERVICE_DATA_CHANGE == type) {
+		}else if(IServiceListener.DATA_CHANGE == type) {
 			logger.info("Service Item Change: cls:{}, key:{}",this.getClass().getName(),this.serviceKey());
 			this.setItem(item);
 		}

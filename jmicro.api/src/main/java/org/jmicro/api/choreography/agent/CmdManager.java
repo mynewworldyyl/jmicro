@@ -82,10 +82,10 @@ public class CmdManager {
 	//Cmd结点监听器
 	private INodeListener agentNodeListener = new INodeListener(){
 		public void nodeChanged(int type, String path,String data){
-			if(type == IListener.SERVICE_ADD){
+			if(type == IListener.ADD){
 				//agentAdd(path,data);
 				logger.error("NodeListener Instance add "+type+",path: "+path);
-			} else if(type == IListener.SERVICE_REMOVE) {
+			} else if(type == IListener.REMOVE) {
 				//cmdRemoved(path);
 				logger.error("Instance remove:"+type+",path: "+path);
 			} else {
@@ -123,9 +123,9 @@ public class CmdManager {
 		dataOperator.addChildrenListener(root, new IChildrenListener() {
 			@Override
 			public void childrenChanged(int type,String parent,String child,String data) {
-				if(type == IListener.SERVICE_ADD) {
+				if(type == IListener.ADD) {
 					cmdAdded(parent+"/"+child,data);
-				}else if(type == IListener.SERVICE_REMOVE) {
+				}else if(type == IListener.REMOVE) {
 					cmdRemoved(parent+"/"+child);
 				}
 			}
@@ -161,7 +161,7 @@ public class CmdManager {
 		this.cmdListeners.add(l);
 		if(!path2Cmds.isEmpty()) {
 			for(Cmd ai: path2Cmds.values()) {
-				l.agentChanged(IAgentListener.SERVICE_ADD, ai);
+				l.agentChanged(IAgentListener.ADD, ai);
 			}
 		}
 	}
@@ -183,7 +183,7 @@ public class CmdManager {
 		Cmd cmd = JsonUtils.getIns().fromJson(data, Cmd.class);
 		path2Cmds.put(path,cmd);
 		if(!path2CmdListeners.containsKey(path)) {
-			notifyCmdListener(IAgentListener.SERVICE_ADD,cmd);
+			notifyCmdListener(IAgentListener.ADD,cmd);
 		}
 	}
 
@@ -191,7 +191,7 @@ public class CmdManager {
 		if(path2Cmds.containsKey(path)) {
 			Cmd cmd = this.path2Cmds.remove(path);
 			if(cmd != null) {
-				notifyCmdListener(IAgentListener.SERVICE_REMOVE,cmd);
+				notifyCmdListener(IAgentListener.REMOVE,cmd);
 			}
 		}
 	}

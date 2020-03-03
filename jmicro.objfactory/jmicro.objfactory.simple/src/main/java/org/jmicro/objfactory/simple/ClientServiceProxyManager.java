@@ -400,17 +400,13 @@ class ClientServiceProxyManager {
 	
 		Class<?> ctype = getEltType(f);
 		
-		boolean existsItem = false;
-		if(ref.required() ) {
-			existsItem = registry.isExists(ctype.getName(),ref.namespace(),ref.version());
-			if(!existsItem) {
+		boolean existsItem = registry.isExists(ctype.getName(),ref.namespace(),ref.version());
+		if(ref.required() && !existsItem) {
 				StringBuffer sb = new StringBuffer("Class [");
 				sb.append(becls.getName()).append("] field [").append(f.getName())
 				.append("] dependency [").append(f.getType().getName())
 				.append("] not found version [").append(ref.version()).append("] namespace [").append(ref.namespace()).append("]");
 				throw new CommonException(sb.toString());
-			}
-			
 		}
 
 		boolean bf = f.isAccessible();

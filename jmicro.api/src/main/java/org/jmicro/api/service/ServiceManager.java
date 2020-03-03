@@ -114,13 +114,13 @@ public class ServiceManager {
 			@Override
 			public void childrenChanged(int type,String parent, String child,String data) {
 				String p = parent+"/"+child;
-				if(IListener.SERVICE_ADD == type) {
+				if(IListener.ADD == type) {
 					logger.debug("Service add,path:{},data:{}",p,data);
 					childrenAdd(p,data);
-				}else if(IListener.SERVICE_REMOVE == type) {
+				}else if(IListener.REMOVE == type) {
 					logger.debug("Service remove, path:{}",p);
 					serviceRemove(p);
-				}else if(IListener.SERVICE_DATA_CHANGE == type){
+				}else if(IListener.DATA_CHANGE == type){
 					logger.debug("Invalid service data change event, path:{}",p);
 				}
 			}
@@ -156,7 +156,7 @@ public class ServiceManager {
 				
 		if(!flag) {
 			logger.info("Service Add: {}",path);
-			this.notifyServiceChange(IServiceListener.SERVICE_ADD, i,path);
+			this.notifyServiceChange(IServiceListener.ADD, i,path);
 			//dataOperator.addNodeListener(path, nodeListener);
 			dataOperator.addDataListener(path, this.dataListener);
 			//dataOperator.addDataListener(i.path(Config.ServiceItemCofigDir), this.cfgDataListener);
@@ -188,7 +188,7 @@ public class ServiceManager {
 
 		ServiceItem si = this.path2SrvItems.get(srvPath);
 		if(si != null) {
-			lis.serviceChanged(IServiceListener.SERVICE_ADD, si);
+			lis.serviceChanged(IServiceListener.ADD, si);
 		}
 	}
 	
@@ -213,7 +213,7 @@ public class ServiceManager {
 		if(!this.listeners.contains(lis)) {
 			if(!path2SrvItems.isEmpty()) {
 				for(ServiceItem si : path2SrvItems.values()) {
-					lis.serviceChanged(IServiceListener.SERVICE_ADD, si);
+					lis.serviceChanged(IServiceListener.ADD, si);
 				}
 			}
 			this.listeners.add(lis);
@@ -350,7 +350,7 @@ public class ServiceManager {
 		
 		logger.warn("Remove service:{}",path);
 		//path = si.path(Config.ServiceRegistDir);
-		this.notifyServiceChange(IServiceListener.SERVICE_REMOVE, si, path);
+		this.notifyServiceChange(IServiceListener.REMOVE, si, path);
 		this.dataOperator.removeDataListener(path, dataListener);
 		//this.dataOperator.removeDataListener(si.path(Config.ServiceItemCofigDir), cfgDataListener);
 		//this.dataOperator.removeNodeListener(path, this.nodeListener);
@@ -389,7 +389,7 @@ public class ServiceManager {
 			//this.updateOrCreate(si, si.path(Config.ServiceItemCofigDir), true);
 		}
 		
-		this.notifyServiceChange(IServiceListener.SERVICE_DATA_CHANGE, si,path);
+		this.notifyServiceChange(IServiceListener.DATA_CHANGE, si,path);
 	}
 	
 	private ServiceItem fromJson(String data){
@@ -445,10 +445,10 @@ public class ServiceManager {
 		this.path2SrvItems.put(path, i);
 		
 		if(flag) {
-			this.notifyServiceChange(IServiceListener.SERVICE_DATA_CHANGE, i,path);
+			this.notifyServiceChange(IServiceListener.DATA_CHANGE, i,path);
 		} else {
 			logger.debug("Service Add: {}",path);
-			this.notifyServiceChange(IServiceListener.SERVICE_ADD, i,path);
+			this.notifyServiceChange(IServiceListener.ADD, i,path);
 			//dataOperator.addNodeListener(path, nodeListener);
 			dataOperator.addDataListener(path, this.dataListener);
 			//dataOperator.addDataListener(i.path(Config.ServiceItemCofigDir), this.cfgDataListener);

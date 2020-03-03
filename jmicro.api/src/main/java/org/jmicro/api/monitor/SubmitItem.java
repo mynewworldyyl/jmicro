@@ -59,6 +59,8 @@ public final class SubmitItem{
 	
 	private long time = 0;
 	
+	private transient boolean canCache = false;
+	
 	public void reset() {
 		log = null;
 		type = -1;
@@ -76,6 +78,8 @@ public final class SubmitItem{
 		req = null;
 		resp = null;
 		desc = null;
+		
+		canCache = false;
 		
 	}
 	
@@ -273,6 +277,14 @@ public final class SubmitItem{
 
 	public void setSm(ServiceMethod sm) {
 		this.sm = sm;
+	}
+
+	public boolean isCanCache() {
+		return canCache;
+	}
+
+	public void setCanCache(boolean canCache) {
+		this.canCache = canCache;
 	}
 
 }

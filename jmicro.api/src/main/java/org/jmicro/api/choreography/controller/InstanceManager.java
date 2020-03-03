@@ -72,10 +72,10 @@ public class InstanceManager {
 	private Set<IInstanceListener> instanceListeners = new HashSet<>();
 	
 	private IAgentListener agentListener = (type,agent)->{
-		if(type == IListener.SERVICE_ADD){
+		if(type == IListener.ADD){
 			agentAdded(agent);
 			logger.error("Agent added:{} " + agent);
-		} else if(type == IListener.SERVICE_REMOVE) {
+		} else if(type == IListener.REMOVE) {
 			agentRemoved(agent);
 			logger.error("Agent removed:{} " + agent);
 		} else {
@@ -86,10 +86,10 @@ public class InstanceManager {
 	//Instance结点监听器
 	private IChildrenListener agent2InstanceListener = new IChildrenListener(){
 		public void childrenChanged(int type,String parent, String child,String data){
-			if(type == IListener.SERVICE_ADD){
+			if(type == IListener.ADD){
 				instanceAdded(parent,child,data);
 				logger.error("NodeListener Instance add parent:{}, child:{},data:{}",parent,child,data);
-			} else if(type == IListener.SERVICE_REMOVE) {
+			} else if(type == IListener.REMOVE) {
 				instanceRemoved(parent,child);
 				logger.error("NodeListener Instance remove parent:{}, child:{},data:{}",parent,child);
 			} else {
@@ -144,7 +144,7 @@ public class InstanceManager {
 		this.instanceListeners.add(l);
 		if(!path2Instance.isEmpty()) {
 			for(InstanceInfo ai: path2Instance.values()) {
-				l.agentChanged(IAgentListener.SERVICE_ADD, ai);
+				l.agentChanged(IAgentListener.ADD, ai);
 			}
 		}
 	}
@@ -164,7 +164,7 @@ public class InstanceManager {
 			Set<InstanceInfo> ins = agentPath2Instances.get(path);
 			if(ins != null && ins.isEmpty()) {
 				for(InstanceInfo ii : ins) {
-					notifyInstanceListener(IListener.SERVICE_REMOVE,ii);
+					notifyInstanceListener(IListener.REMOVE,ii);
 				}
 			}
 		}
@@ -185,7 +185,7 @@ public class InstanceManager {
 				this.agentPath2Instances.put(agentPath,iis);
 			}
 			iis.add(ai);
-			this.notifyInstanceListener(IListener.SERVICE_ADD, ai);
+			this.notifyInstanceListener(IListener.ADD, ai);
 		}
 	}
 	
@@ -197,7 +197,7 @@ public class InstanceManager {
 			if(iis != null) {
 				iis.remove(ai);
 			}
-			notifyInstanceListener(IAgentListener.SERVICE_REMOVE,ai);
+			notifyInstanceListener(IAgentListener.REMOVE,ai);
 		}
 	}
 

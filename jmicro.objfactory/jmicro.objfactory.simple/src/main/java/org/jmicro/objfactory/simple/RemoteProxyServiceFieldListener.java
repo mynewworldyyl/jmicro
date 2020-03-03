@@ -98,7 +98,7 @@ class RemoteProxyServiceFieldListener implements IServiceListener{
 				|| List.class.isAssignableFrom(refField.getType())){
 			Collection<Object> set = (Collection<Object>)this.refFieldVal;
 			
-			if(IServiceListener.SERVICE_ADD == type){
+			if(IServiceListener.ADD == type){
 				for(Object o: set){
 					AbstractClientServiceProxy p = (AbstractClientServiceProxy)o;
 					if(p.serviceKey().equals(item.serviceKey())){
@@ -121,7 +121,7 @@ class RemoteProxyServiceFieldListener implements IServiceListener{
 					logger.error("Fail to create item proxy :{}",item.getKey().toKey(true, true, true));
 				}
 				
-			}else if(IServiceListener.SERVICE_REMOVE == type) {
+			}else if(IServiceListener.REMOVE == type) {
 				
 				boolean exist = registry.isExists(item.getKey().getServiceName(), item.getKey().getNamespace(), item.getKey().getVersion());
 				
@@ -157,7 +157,7 @@ class RemoteProxyServiceFieldListener implements IServiceListener{
 		try {
 			 m =  cls.getMethod(cfg.changeListener(),new Class[]{AbstractClientServiceProxy.class,Integer.TYPE} );
 			 if(m != null){
-				 m.invoke(this.srcObj,refField.getName());
+				 m.invoke(this.srcObj,po,opType);
 			 }
 		} catch (NoSuchMethodException | SecurityException | IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
 			//System.out.println(e); 

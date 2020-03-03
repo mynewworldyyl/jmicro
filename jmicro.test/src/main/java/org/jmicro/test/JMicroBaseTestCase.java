@@ -55,7 +55,7 @@ public class JMicroBaseTestCase {
 	}
 	
 	protected ServiceItem sayHelloServiceItem() {
-		ServiceItem si = registry.getServiceByImpl("org.jmicro.example.provider.SayHelloImpl");
+		ServiceItem si = registry.getServiceByImpl("org.jmicro.example.rpc.impl.SimpleRpcImpl");
 		org.junit.Assert.assertNotNull(si);
 		return si;
 	}

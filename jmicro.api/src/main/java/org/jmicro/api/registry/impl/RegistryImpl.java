@@ -154,7 +154,7 @@ public class RegistryImpl implements IRegistry {
 	
 	private void srvChange(int type, ServiceItem item) {
 		String key = item.serviceKey();
-		if(type == IServiceListener.SERVICE_ADD) {
+		if(type == IServiceListener.ADD) {
 			if(!servicesCounters.containsKey(key)) {
 				servicesCounters.put(key, new AtomicInteger(0));
 			}
@@ -162,20 +162,20 @@ public class RegistryImpl implements IRegistry {
 			int val = servicesCounters.get(key).incrementAndGet();
 			if(val == 1) {
 				//服务进来，服务存在性监听器
-				notifyListener(IServiceListener.SERVICE_ADD,item,snvKeyExistsListeners.get(key));
-				notifyListener(IServiceListener.SERVICE_ADD,item,serviceNameExistsListeners.get(item.getKey().getServiceName()));
+				notifyListener(IServiceListener.ADD,item,snvKeyExistsListeners.get(key));
+				notifyListener(IServiceListener.ADD,item,serviceNameExistsListeners.get(item.getKey().getServiceName()));
 			}
 			
 			//全量监听
 			notifyListener(type,item,snvKeyListeners.get(key));
 			notifyListener(type,item,serviceNameListeners.get(item.getKey().getServiceName()));
 			
-		} else if(type == IServiceListener.SERVICE_REMOVE) {
+		} else if(type == IServiceListener.REMOVE) {
 			
 			if(servicesCounters.get(key) == null || servicesCounters.get(key).decrementAndGet() == 0) {
 				//最后一个服务删除，服务存在性监听器
-				notifyListener(IServiceListener.SERVICE_REMOVE,item,snvKeyExistsListeners.get(key));
-				notifyListener(IServiceListener.SERVICE_REMOVE,item,serviceNameExistsListeners.get(item.getKey().getServiceName()));
+				notifyListener(IServiceListener.REMOVE,item,snvKeyExistsListeners.get(key));
+				notifyListener(IServiceListener.REMOVE,item,serviceNameExistsListeners.get(item.getKey().getServiceName()));
 			}
 			
 			//全量监听
@@ -275,7 +275,7 @@ public class RegistryImpl implements IRegistry {
 
 		Set<ServiceItem> s = this.getServices(key);
 		if(s!= null && !s.isEmpty()){
-			lis.serviceChanged(IServiceListener.SERVICE_ADD, s.iterator().next());
+			lis.serviceChanged(IServiceListener.ADD, s.iterator().next());
 		}
 	}
 	

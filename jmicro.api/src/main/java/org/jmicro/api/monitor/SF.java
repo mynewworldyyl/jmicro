@@ -34,7 +34,7 @@ public class SF {
 	
 	public static boolean linkStart(IReq req) {
 		if(isMonitorable(MonitorConstant.LINK_START)) {
-			SubmitItem si = createSubmitItem(MonitorConstant.LINK_START,req,null,null,null,null);
+			SubmitItem si = createSubmitItem(MonitorConstant.LINK_START,req,null,null,null,null,false);
 			return monitor().submit(si);
 		}
 		return false;
@@ -42,7 +42,7 @@ public class SF {
 	
 	public static boolean linkEnd(IReq req,IResp resp) {
 		if(isMonitorable(MonitorConstant.LINK_END)) {
-			SubmitItem si = createSubmitItem(MonitorConstant.LINK_END,req,null,null,null,null);
+			SubmitItem si = createSubmitItem(MonitorConstant.LINK_END,req,null,null,null,null,false);
 			return  monitor().submit(si);
 		}
 		return false;
@@ -50,7 +50,7 @@ public class SF {
 	
 	public static boolean serviceNotFound(IReq req) {
 		if(isMonitorable(MonitorConstant.SERVICE_NOT_FOUND)) {
-			SubmitItem si = createSubmitItem(MonitorConstant.SERVICE_NOT_FOUND,req,null,null,null,null);
+			SubmitItem si = createSubmitItem(MonitorConstant.SERVICE_NOT_FOUND,req,null,null,null,null,false);
 			return  monitor().submit(si);
 		}
 		return false;
@@ -58,7 +58,7 @@ public class SF {
 	
 	public static boolean reqStart(IReq req) {
 		if(isMonitorable(MonitorConstant.REQ_START)) {
-			SubmitItem si = createSubmitItem(MonitorConstant.REQ_START,req,null,null,null,null);
+			SubmitItem si = createSubmitItem(MonitorConstant.REQ_START,req,null,null,null,null,false);
 			return  monitor().submit(si);
 		}
 		return false;
@@ -66,7 +66,7 @@ public class SF {
 	
 	public static boolean reqEnd(IReq req,IResp resp) {
 		if(isMonitorable(MonitorConstant.REQ_END)) {
-			SubmitItem si = createSubmitItem(MonitorConstant.REQ_END,req,null,null,null,null);
+			SubmitItem si = createSubmitItem(MonitorConstant.REQ_END,req,null,null,null,null,false);
 			return  monitor().submit(si);
 		}
 		return false;
@@ -74,7 +74,7 @@ public class SF {
 	
 	public static boolean reqTimeout(IReq req) {
 		if(isMonitorable(MonitorConstant.REQ_TIMEOUT)) {
-			SubmitItem si = createSubmitItem(MonitorConstant.REQ_TIMEOUT,req,null,null,null,null);
+			SubmitItem si = createSubmitItem(MonitorConstant.REQ_TIMEOUT,req,null,null,null,null,false);
 			return  monitor().submit(si);
 		}
 		return false;
@@ -82,7 +82,7 @@ public class SF {
 	
 	public static boolean reqTimeoutFail(IReq req) {
 		if(isMonitorable(MonitorConstant.REQ_TIMEOUT_FAIL)) {
-			SubmitItem si = createSubmitItem(MonitorConstant.REQ_TIMEOUT_FAIL,req,null,null,null,null);
+			SubmitItem si = createSubmitItem(MonitorConstant.REQ_TIMEOUT_FAIL,req,null,null,null,null,false);
 			return  monitor().submit(si);
 		}
 		return false;
@@ -90,7 +90,7 @@ public class SF {
 	
 	public static boolean reqTimeoutRetry(IReq req) {
 		if(isMonitorable(MonitorConstant.REQ_TIMEOUT_RETRY)) {
-			SubmitItem si = createSubmitItem(MonitorConstant.REQ_TIMEOUT_RETRY,req,null,null,null,null);
+			SubmitItem si = createSubmitItem(MonitorConstant.REQ_TIMEOUT_RETRY,req,null,null,null,null,false);
 			return  monitor().submit(si);
 		}
 		return false;
@@ -105,7 +105,7 @@ public class SF {
 	public static boolean reqServiceRespError(IReq req,ServerError se) {
 		if(isMonitorable(MonitorConstant.CLIENT_GET_RESPONSE_ERROR)) {
 			SubmitItem si = createSubmitItem(MonitorConstant.CLIENT_GET_RESPONSE_ERROR,req,null,
-					"code: "+se.getErrorCode()+",msg: "+se.getMsg(),null,null);
+					"code: "+se.getErrorCode()+",msg: "+se.getMsg(),null,null,false);
 			return  monitor().submit(si);
 		}
 		return false;
@@ -119,7 +119,7 @@ public class SF {
 	 */
 	public static boolean reqServerError(IReq req,String msg) {
 		if(isMonitorable(MonitorConstant.CLIENT_GET_SERVER_ERROR)) {
-			SubmitItem si = createSubmitItem(MonitorConstant.CLIENT_GET_SERVER_ERROR,req,null,msg,null,null);
+			SubmitItem si = createSubmitItem(MonitorConstant.CLIENT_GET_SERVER_ERROR,req,null,msg,null,null,false);
 			return  monitor().submit(si);
 		}
 		return false;
@@ -127,7 +127,7 @@ public class SF {
 	
 	public static boolean reqError(IReq req,String msg) {
 		if(isMonitorable(MonitorConstant.REQ_ERROR)) {
-			SubmitItem si = createSubmitItem(MonitorConstant.REQ_ERROR,req,null,msg,null,null);
+			SubmitItem si = createSubmitItem(MonitorConstant.REQ_ERROR,req,null,msg,null,null,false);
 			return  monitor().submit(si);
 		}
 		return false;
@@ -135,7 +135,7 @@ public class SF {
 	
 	public static boolean reqSuccess(IReq req,IResp resp) {
 		if(isMonitorable(MonitorConstant.REQ_ERROR)) {
-			SubmitItem si = createSubmitItem(MonitorConstant.REQ_ERROR,req,resp,null,null,null);
+			SubmitItem si = createSubmitItem(MonitorConstant.REQ_ERROR,req,resp,null,null,null,false);
 			return  monitor().submit(si);
 		}
 		return false;
@@ -144,7 +144,7 @@ public class SF {
 	public static boolean serverStart(IMonitorDataSubmiter monitor,String host,int port,String desc) {
 		if(monitor != null) {
 			SubmitItem si = createSubmitItem(MonitorConstant.SERVER_START,null,null,
-					"host:"+host+", port:"+port+",desc"+desc,null,null);
+					"host:"+host+", port:"+port+",desc"+desc,null,null,true);
 			return  monitor.submit(si);
 		}
 		return false;
@@ -152,14 +152,14 @@ public class SF {
 	
 	public static boolean serverStop(IMonitorDataSubmiter monitor,String host,int port) {
 		SubmitItem si = createSubmitItem(MonitorConstant.CLIENT_GET_SERVER_ERROR,null,null,
-				"host:"+host+", port:"+port,null,null);
+				"host:"+host+", port:"+port,null,null,true);
 		return monitor.submit(si);
 	}
 	
 	public static boolean netIo(short type,String desc,Class cls,Throwable ex) {
 		if(isMonitorable(type)) {
 			SubmitItem si = createSubmitItem(type,null,null,
-					desc,cls,ex);
+					desc,cls,ex,false);
 			return  monitor().submit(si);
 		}
 		return false;
@@ -168,7 +168,7 @@ public class SF {
 	public static boolean netIoRead(short type,long num) {
 		if(isMonitorable(type)) {
 			SubmitItem si = createSubmitItem(type,null,null,
-					num+"",null,null);
+					num+"",null,null,false);
 			
 			return  monitor().submit(si);
 		}
@@ -179,18 +179,21 @@ public class SF {
 	public static boolean limit(IReq req) {
 		if(isMonitorable(MonitorConstant.SERVICE_SPEED_LIMIT)) {
 			SubmitItem si = createSubmitItem(MonitorConstant.SERVICE_SPEED_LIMIT,req,null,
-					null,null,null);
+					null,null,null,false);
 			return  monitor().submit(si);
 		}
 		return false;
 	}
 	
-	private static SubmitItem createSubmitItem(short type,IReq req,IResp resp,String desc,Class cls,Throwable ex) {
+	private static SubmitItem createSubmitItem(short type,IReq req,IResp resp,String desc,Class cls
+			,Throwable ex,boolean canCache) {
 		SubmitItem si = new SubmitItem();
 		si.setType(type);
 		si.setReq(req);
 		si.setResp(resp);
 		si.setDesc(desc);
+		si.setCanCache(canCache);
+		
 		if(ex != null) {
 			LogEntry le = new LogEntry(MonitorConstant.LOG_ERROR,cls.getName(),ex,desc);
 			si.setLog(le);
@@ -295,7 +298,7 @@ public class SF {
 	}
 	
 	private static boolean isMonitorable(short type) {
-		return JMicroContext.get().isMonitor() && monitor() != null && monitor().canSubmit(type);
+		return  JMicroContext.get().isMonitor() && monitor() != null && monitor().canSubmit(type);
 	}
 	
 	/**

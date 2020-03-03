@@ -172,11 +172,11 @@ class SubcriberManager {
 	private IServiceListener serviceAddedRemoveListener = new IServiceListener() {
 		@Override
 		public void serviceChanged(int type, ServiceItem item) {
-			if(type == IServiceListener.SERVICE_ADD) {
+			if(type == IServiceListener.ADD) {
 				parseServiceAdded(item);
-			}else if(type == IServiceListener.SERVICE_REMOVE) {
+			}else if(type == IServiceListener.REMOVE) {
 				serviceRemoved(item);
-			}else if(type == IServiceListener.SERVICE_DATA_CHANGE) {
+			}else if(type == IServiceListener.DATA_CHANGE) {
 				serviceDataChange(item);
 			} else {
 				logger.error("rev invalid Node event type : "+type+",path: "+item.getKey().toKey(true, true, true));

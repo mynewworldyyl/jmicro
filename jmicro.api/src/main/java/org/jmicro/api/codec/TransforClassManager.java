@@ -58,9 +58,9 @@ public class TransforClassManager {
 	
 	public void init() {
 		dataOperator.addChildrenListener(ROOT, (type,path,child,data)->{
-			if(type == IListener.SERVICE_REMOVE) {
+			if(type == IListener.REMOVE) {
 				//this.update(path,child,data);
-			}else if (type == IListener.SERVICE_ADD) {
+			}else if (type == IListener.ADD) {
 				this.update(path,child,data);
 			}
 			

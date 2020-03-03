@@ -93,7 +93,7 @@ class FieldServiceProxyListener implements IServiceListener{
 				|| List.class.isAssignableFrom(refField.getType())){
 			Collection<Object> set = (Collection<Object>)this.refFieldVal;
 			
-			if(IServiceListener.SERVICE_ADD == type){
+			if(IServiceListener.ADD == type){
 				for(Object o: set){
 					AbstractClientServiceProxy p = (AbstractClientServiceProxy)o;
 					if(p.serviceKey().equals(item.serviceKey())){
@@ -114,7 +114,7 @@ class FieldServiceProxyListener implements IServiceListener{
 					logger.error("Fail to create item proxy :{}",item.getKey().toKey(true, true, true));
 				}
 				
-			}else if(IServiceListener.SERVICE_REMOVE == type) {
+			}else if(IServiceListener.REMOVE == type) {
 				AbstractClientServiceProxy po = null;
 				for(Object o: set){
 					AbstractClientServiceProxy p = (AbstractClientServiceProxy)o;

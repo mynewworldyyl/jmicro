@@ -96,6 +96,8 @@ public class SubmitItemHolderManager implements IMonitorDataSubmiter{
 	private Object cacheItemsLock = new Object();
 	private Map<IMonitorDataSubscriber,Set<SubmitItem>> cacheItems = new ConcurrentHashMap<>();
 	
+	private Set<SubmitItem> waitingForSubmitItems = new HashSet<>();
+	
 	private boolean ready = false;
 	
 	private AsyncConfig ac = new AsyncConfig(true,"onSubmit", AsyncConfig.ASYNC_DIRECT);
@@ -107,11 +109,11 @@ public class SubmitItemHolderManager implements IMonitorDataSubmiter{
 
 	public void subscriberChange(AbstractClientServiceProxy po,int opType) {
 		logger.info("subscriberChange");
-		if(opType == IServiceListener.SERVICE_ADD) {
+		if(opType == IServiceListener.ADD) {
 			synchronized(addMonitors) {
 				this.addMonitors.add((IMonitorDataSubscriber)po);
 			}
-		}else if(opType == IServiceListener.SERVICE_REMOVE) {
+		}else if(opType == IServiceListener.REMOVE) {
 			synchronized(deleteMonitors) {
 				this.deleteMonitors.add((IMonitorDataSubscriber)po);
 			}
@@ -216,6 +218,7 @@ public class SubmitItemHolderManager implements IMonitorDataSubmiter{
 				for(IMonitorDataSubscriber m : this.submiters){
 					addOneMonitor(m);
 				}
+				doSubmitCacheItems();
 			}
 			
 			ready = true;
@@ -229,6 +232,7 @@ public class SubmitItemHolderManager implements IMonitorDataSubmiter{
 						}
 						addMonitors.clear();
 					}
+					doSubmitCacheItems();
 				}
 				
 				if(!deleteMonitors.isEmpty()) {
@@ -420,6 +424,20 @@ public class SubmitItemHolderManager implements IMonitorDataSubmiter{
 		si.reset();
 		caches.offer(si);
 	}
+	
+	private void doSubmitCacheItems() {
+		if(this.waitingForSubmitItems.isEmpty()) {
+			return;
+		}
+		
+		for(Iterator<SubmitItem> ite =this.waitingForSubmitItems.iterator() ;ite.hasNext();) {
+			SubmitItem si = ite.next();
+			if(canSubmit(si.getType())) {
+				doSubmitOne(si);
+				ite.remove();
+			}
+		}
+	}
 
 	@Override
 	public boolean submit(SubmitItem item) {
@@ -430,23 +448,38 @@ public class SubmitItemHolderManager implements IMonitorDataSubmiter{
 			return false;
 		}
 		
-		if(!canSubmit(item.getType())) {
-			if(openDebug)
-				logger.info("Type [{}] not support",item.getType());
-			return false;
+		boolean cansubmit = canSubmit(item.getType());
+		
+		if(cansubmit) {
+			doSubmitOne(item);
+		}else {
+			if(item.isCanCache()) {
+				//当前无拉收者，但可以放入缓存中，等待接收者可用时再提交
+				this.waitingForSubmitItems.add(item);
+				return true;
+			} else {
+				//不能缓存，直接返回失败
+				if(openDebug)
+					logger.info("Type [{}] not support",item.getType());
+				return false;
+			}
 		}
 		
-		setHeader(item);
-		
+		return true;
+	}
+
+	private void doSubmitOne(SubmitItem item) {
 		Set<IMonitorDataSubscriber> subs = this.type2Subscribers.get(item.getType());
 		for(IMonitorDataSubscriber sub : subs) {
 			Set<SubmitItem> items = this.cacheItems.get(sub);
 			if(items.size() > this.maxCacheItems) {
+				//提交队列已经满了，直接丢弃
 				logger.warn("Exceed: {}",item);
 			} else {
 				synchronized(items) {
 					if(openDebug)
 						logger.info("add: {}",item);
+					//放入提交队列中
 					items.add(item);
 				}
 				synchronized(cacheItemsLock) {
@@ -456,8 +489,6 @@ public class SubmitItemHolderManager implements IMonitorDataSubmiter{
 				}
 			}
 		}
-		
-		return true;
 	}
 	
 }

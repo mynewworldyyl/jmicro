@@ -70,10 +70,10 @@ public class AgentManager {
 	//Agent结点监听器
 	private INodeListener agentNodeListener = new INodeListener(){
 		public void nodeChanged(int type, String path,String data){
-			if(type == IListener.SERVICE_ADD){
+			if(type == IListener.ADD){
 				//agentAdd(path,data);
 				logger.error("NodeListener Agent add "+type+",path: "+path);
-			} else if(type == IListener.SERVICE_REMOVE) {
+			} else if(type == IListener.REMOVE) {
 				removed(path);
 				logger.error("Agent remove:"+type+",path: "+path);
 			} else {
@@ -115,9 +115,9 @@ public class AgentManager {
 		dataOperator.addChildrenListener(ROOT_AGENT, new IChildrenListener() {
 			@Override
 			public void childrenChanged(int type,String parent, String child,String data) {
-				if(type == IListener.SERVICE_ADD) {
+				if(type == IListener.ADD) {
 					added(parent + "/" + child,data);
-				}else if(type == IListener.SERVICE_REMOVE) {
+				}else if(type == IListener.REMOVE) {
 					removed(parent + "/" + child);
 				}
 			}
@@ -140,7 +140,7 @@ public class AgentManager {
 		this.agentListeners.add(l);
 		if(!path2Agents.isEmpty()) {
 			for(AgentInfo ai: path2Agents.values()) {
-				l.agentChanged(IAgentListener.SERVICE_ADD, ai);
+				l.agentChanged(IAgentListener.ADD, ai);
 			}
 		}
 	}
@@ -151,7 +151,7 @@ public class AgentManager {
 		if(!path2Agents.containsKey(path)) {
 			dataOperator.addDataListener(path, agentDataListener);
 			dataOperator.addNodeListener(path, this.agentNodeListener);
-			notifyAgentListener(IAgentListener.SERVICE_ADD,ai);
+			notifyAgentListener(IAgentListener.ADD,ai);
 		}
 		path2Agents.put(path, ai);
 		id2Agents.put(ai.getId(), ai);
@@ -175,7 +175,7 @@ public class AgentManager {
 		AgentInfo ai = JsonUtils.getIns().fromJson(data, AgentInfo.class);
 		path2Agents.put(path, ai);
 		id2Agents.put(ai.getId(), ai);
-		notifyAgentListener(IAgentListener.SERVICE_DATA_CHANGE,ai);
+		notifyAgentListener(IAgentListener.DATA_CHANGE,ai);
 	}
 
 	private void removed(String path) {
@@ -185,7 +185,7 @@ public class AgentManager {
 			AgentInfo ai = this.path2Agents.remove(path);
 			if(ai != null) {
 				id2Agents.remove(ai.getId());
-				notifyAgentListener(IAgentListener.SERVICE_REMOVE,ai);
+				notifyAgentListener(IAgentListener.REMOVE,ai);
 			}
 		}
 	}
