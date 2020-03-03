@@ -347,14 +347,14 @@ class ClientServiceProxyManager {
 				//服务不可用，但还是可以生成服务代理，直到使用时才决定服务的可用状态
 			} 
 			
-			AsyncConfig[] acs = this.getAcs(ref);	
+			AsyncConfig[] acs = this.getAcs(ref);
 			
 			proxy = this.getRefRemoteService(type.getName(), ref.namespace(), ref.version(), null,acs);
 			
 			String key = UniqueServiceKey.serviceName(type.getName(),ref.namespace(),ref.version()).toString();
 			
 			//this.initProxyField(proxy, key, srcObj, f);
-			RemoteProxyServiceFieldListener lis = new RemoteProxyServiceFieldListener(this,proxy,srcObj,f,this.registry);
+			FieldServiceProxyListener lis = new FieldServiceProxyListener(this,srcObj,f,this.registry);
 			registry.addExistsServiceListener(key, lis);
 		}
 		

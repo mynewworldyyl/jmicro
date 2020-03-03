@@ -84,6 +84,10 @@ public class JMicroContext  {
 		}
 	}
 	
+	public static boolean existsContext() {
+		return cxt.get() != null;
+	}
+	
 	public static JMicroContext get(){
 		JMicroContext c = cxt.get();
 		if(c == null) {

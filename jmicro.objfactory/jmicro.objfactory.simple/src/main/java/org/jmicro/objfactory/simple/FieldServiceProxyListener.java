@@ -25,8 +25,11 @@ import java.util.Set;
 
 import org.jmicro.api.annotation.Reference;
 import org.jmicro.api.client.AbstractClientServiceProxy;
+import org.jmicro.api.monitor.MonitorConstant;
+import org.jmicro.api.monitor.SF;
 import org.jmicro.api.objectfactory.ProxyObject;
 import org.jmicro.api.registry.AsyncConfig;
+import org.jmicro.api.registry.IRegistry;
 import org.jmicro.api.registry.IServiceListener;
 import org.jmicro.api.registry.ServiceItem;
 import org.jmicro.api.registry.UniqueServiceKey;
@@ -45,8 +48,6 @@ class FieldServiceProxyListener implements IServiceListener{
 	
 	private Object srcObj;
 	
-	private Object refFieldVal;
-	
 	private Field refField;
 	
 	private ClientServiceProxyManager rsm;
@@ -55,6 +56,8 @@ class FieldServiceProxyListener implements IServiceListener{
 	
 	private Class<?> srvType = null;
 	
+	private IRegistry registry;
+	
 	/**
 	 * 
 	 * @param rsm
@@ -62,21 +65,18 @@ class FieldServiceProxyListener implements IServiceListener{
 	 * @param srcObj 引用代理对象或集合对象的对象，当代理对象或集合对象里的代理对像发生改变时，将收到通知
 	 * @param refField 代理对象或集合对象的类型声明字段，属于srcObj的成员
 	 */
-	FieldServiceProxyListener(ClientServiceProxyManager rsm,Object valProxy,Object srcObj
-			,Field refField){
-		if(valProxy== null){
-			throw new CommonException("Proxy object cannot be null: "+ refField.getDeclaringClass().getName()+",field: " + refField.getName());
-		}
+	FieldServiceProxyListener(ClientServiceProxyManager rsm,Object srcObj
+			,Field refField,IRegistry registry){
 		this.rsm = rsm;
-		this.refFieldVal = valProxy;
-		
 		this.srcObj = srcObj;
 		this.refField = refField;
 		this.ref = refField.getAnnotation(Reference.class);
 		srvType = rsm.getEltType(refField);
+		
+		this.registry = registry;
 	}
 
-	@SuppressWarnings("unchecked")
+
 	@Override
 	public void serviceChanged(int type, ServiceItem item) {
 		
@@ -89,47 +89,64 @@ class FieldServiceProxyListener implements IServiceListener{
 				return;
 		}
 		
-		if(Set.class.isAssignableFrom(refField.getType()) 
-				|| List.class.isAssignableFrom(refField.getType())){
-			Collection<Object> set = (Collection<Object>)this.refFieldVal;
+		if(!Set.class.isAssignableFrom(refField.getType()) &&
+				!List.class.isAssignableFrom(refField.getType())){
+			
+			boolean bf = refField.isAccessible();
+			Object o = null;
+			if(!bf) {
+				refField.setAccessible(true);
+			}
+			try {
+				o = refField.get(srcObj);
+			} catch (IllegalArgumentException | IllegalAccessException e) {
+				String msg = "Class ["+srcObj.getClass().getName()+"] field ["+ refField.getName()+"] dependency ["+refField.getType().getName()+"] not found";
+				logger.error(msg);
+				SF.doBussinessLog(MonitorConstant.LOG_ERROR, FieldServiceProxyListener.class, e, msg);
+				return;
+			}
+			if(!bf) {
+				refField.setAccessible(bf);
+			}
 			
 			if(IServiceListener.ADD == type){
-				for(Object o: set){
-					AbstractClientServiceProxy p = (AbstractClientServiceProxy)o;
-					if(p.serviceKey().equals(item.serviceKey())){
-						//服务代理已经存在,不需要重新创建
+				if(o != null) {
+					logger.warn("Service field not change:{}",item.getKey().toKey(false, false, false));
+					return;
+				} else {
+					AsyncConfig[] acs = this.rsm.getAcs(this.ref);
+					//代理还不存在，创建之
+					AbstractClientServiceProxy p = (AbstractClientServiceProxy)this.rsm.getRefRemoteService(item, null,acs);
+					if(p != null) {
+						SimpleObjectFactory.setObjectVal(srcObj, refField, p);
+					} else {
+						String msg = "Fail to create service "+item.getKey().toKey(true, true, true)+" for Class ["+srcObj.getClass().getName()+"] field ["+ refField.getName()+"] dependency ["+refField.getType().getName()+"]";
+						if(ref.required()) {
+							SF.doBussinessLog(MonitorConstant.LOG_ERROR, FieldServiceProxyListener.class, null, msg);
+							logger.error(msg);
+						}else {
+							SF.doBussinessLog(MonitorConstant.LOG_WARN, FieldServiceProxyListener.class, null, msg);
+							logger.warn(msg);
+						}
 						return;
 					}
 				}
-				
-				AsyncConfig[] acs = this.rsm.getAcs(this.ref);
-				
-				//代理还不存在，创建之
-				AbstractClientServiceProxy p = (AbstractClientServiceProxy)this.rsm.getRefRemoteService(item, null,acs);
-				if(p!=null){
-					set.add(p);
-					logger.debug("Add proxy for,Size:{} Field:{},Item:{}",set.size(),
-							refField.toString(),item.getKey().toKey(false, false, false));
-				} else {
-					logger.error("Fail to create item proxy :{}",item.getKey().toKey(true, true, true));
-				}
-				
 			}else if(IServiceListener.REMOVE == type) {
-				AbstractClientServiceProxy po = null;
-				for(Object o: set){
-					AbstractClientServiceProxy p = (AbstractClientServiceProxy)o;
-					if(p.serviceKey().equals(item.serviceKey())){
-						po = p;
-						break;
-					}
+
+				if(ref.required()) {
+					String msg = "Class ["+srcObj.getClass().getName()+"] field ["+ refField.getName()+"] dependency ["+refField.getType().getName()+"] offline";
+					logger.error(msg);
+					SF.doBussinessLog(MonitorConstant.LOG_WARN, FieldServiceProxyListener.class, null, msg);
+				}else {
+					String msg = "Class ["+srcObj.getClass().getName()+"] field ["+ refField.getName()+"] dependency ["+refField.getType().getName()+"] offline";
+					SF.doBussinessLog(MonitorConstant.LOG_WARN, FieldServiceProxyListener.class, null, msg);
+					logger.warn(msg);
 				}
-				if(po != null){
-					set.remove(po);
-					logger.debug("Remove proxy for,Size:{}, Field:{},Item:{}",set.size(),refField.toString(),
-							item.getKey().toKey(false, false, false));
-				}
+
+				SimpleObjectFactory.setObjectVal(srcObj, refField, null);
 			}
 		}
+		
 		notifyChange();
 	}
 	
@@ -146,14 +163,15 @@ class FieldServiceProxyListener implements IServiceListener{
 				 m.invoke(this.srcObj,refField.getName());
 			 }
 		} catch (NoSuchMethodException | SecurityException | IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
-			//System.out.println(e); 
+			logger.error("",e.getLocalizedMessage());
 			try {
 				m =  cls.getMethod(cfg.changeListener(),new Class[0] );
 				if(m != null){
 					 m.invoke(this.srcObj);
 				}
 			} catch (NoSuchMethodException | SecurityException | IllegalAccessException | IllegalArgumentException | InvocationTargetException e1) {
-				//System.out.println(e1);
+				logger.error("",e);
+				SF.doBussinessLog(MonitorConstant.LOG_ERROR, FieldServiceProxyListener.class, e, "Listener method ["+cfg.changeListener()+"] not found!");
 			}
 		}
 		

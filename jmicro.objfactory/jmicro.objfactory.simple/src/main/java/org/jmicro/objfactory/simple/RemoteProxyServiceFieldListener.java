@@ -25,6 +25,8 @@ import java.util.Set;
 
 import org.jmicro.api.annotation.Reference;
 import org.jmicro.api.client.AbstractClientServiceProxy;
+import org.jmicro.api.monitor.MonitorConstant;
+import org.jmicro.api.monitor.SF;
 import org.jmicro.api.objectfactory.ProxyObject;
 import org.jmicro.api.registry.AsyncConfig;
 import org.jmicro.api.registry.IRegistry;
@@ -118,7 +120,9 @@ class RemoteProxyServiceFieldListener implements IServiceListener{
 					//通知组件服务元素增加
 					notifyChange(p,type);
 				} else {
-					logger.error("Fail to create item proxy :{}",item.getKey().toKey(true, true, true));
+					String msg = "Fail to create item proxy: " + item.getKey().toKey(true, true, true);
+					SF.doBussinessLog(MonitorConstant.LOG_ERROR, RemoteProxyServiceFieldListener.class, null, msg);
+					logger.error("Fail to create item proxy :{}",msg);
 				}
 				
 			}else if(IServiceListener.REMOVE == type) {
@@ -168,6 +172,8 @@ class RemoteProxyServiceFieldListener implements IServiceListener{
 				}
 			} catch (NoSuchMethodException | SecurityException | IllegalAccessException | IllegalArgumentException | InvocationTargetException e1) {
 				//System.out.println(e1);
+				logger.error("",e);
+				SF.doBussinessLog(MonitorConstant.LOG_ERROR, RemoteProxyServiceFieldListener.class, e, "Listener method ["+cfg.changeListener()+"] not found!");
 			}
 		}
 		

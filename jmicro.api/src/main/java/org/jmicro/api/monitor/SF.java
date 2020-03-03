@@ -275,13 +275,16 @@ public class SF {
 	}
 	
 	private static void setCommon(SubmitItem si) {
+		if(JMicroContext.existsContext()) {
+			//在RPC上下文中才有以上信息
+			si.setLinkId(JMicroContext.lid());
+			si.setLocalPort(JMicroContext.get().getString(JMicroContext.LOCAL_PORT, ""));
+			si.setRemoteHost(JMicroContext.get().getString(JMicroContext.REMOTE_HOST, ""));
+			si.setRemotePort(JMicroContext.get().getString(JMicroContext.REMOTE_PORT, ""));
+			si.setSm((ServiceMethod)JMicroContext.get().getObject(Constants.SERVICE_METHOD_KEY, null));
+		}
+		si.setLocalHost(Config.getHost());
 		si.setInstanceName(Config.getInstanceName());
-		si.setLinkId(JMicroContext.lid());
-		si.setLocalHost(JMicroContext.get().getString(JMicroContext.LOCAL_HOST, ""));
-		si.setLocalPort(JMicroContext.get().getString(JMicroContext.LOCAL_PORT, ""));
-		si.setRemoteHost(JMicroContext.get().getString(JMicroContext.REMOTE_HOST, ""));
-		si.setRemotePort(JMicroContext.get().getString(JMicroContext.REMOTE_PORT, ""));
-		si.setSm((ServiceMethod)JMicroContext.get().getObject(Constants.SERVICE_METHOD_KEY, null));
 		si.setTime(System.currentTimeMillis());
 	}
 	
@@ -326,6 +329,7 @@ public class SF {
 		 ServiceMethod sm = JMicroContext.get().getParam(Constants.SERVICE_METHOD_KEY, null);
 		 
 		 if(sm == null) {
+			 //在非RPC上下文中，直接记录日志
 			 return true;
 		 }
 		 //如果级别大于或等于错误，不管RPC的配置如何，肯定需要日志
