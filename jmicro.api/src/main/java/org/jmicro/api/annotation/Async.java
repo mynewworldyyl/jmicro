@@ -53,4 +53,6 @@ public @interface Async {
 	//结果回调用服务方法名称,参数即是目标方法的返回值
 	public String method() default "";
 	
+	public String paramStr() default "";
+	
 }

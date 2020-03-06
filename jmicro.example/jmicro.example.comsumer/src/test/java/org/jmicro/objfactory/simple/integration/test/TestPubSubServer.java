@@ -11,6 +11,7 @@ import org.jmicro.api.monitor.MonitorConstant;
 import org.jmicro.api.pubsub.IInternalSubRpc;
 import org.jmicro.api.pubsub.PSData;
 import org.jmicro.api.pubsub.PubSubManager;
+import org.jmicro.api.registry.ServiceItem;
 import org.jmicro.api.registry.ServiceMethod;
 import org.jmicro.common.Constants;
 import org.jmicro.common.Utils;
@@ -39,9 +40,12 @@ public class TestPubSubServer extends JMicroBaseTestCase{
 	public void testPubSubServerMessage() {
 		IInternalSubRpc psm = of.getRemoteServie(IInternalSubRpc.class.getName(),
 				"org.jmicro.pubsub.DefaultPubSubServer", "0.0.1",null,null);
+		
 		PSData psd = new PSData();
 		psd.setData(new byte[] {22,33,33});
 		psd.setTopic(TOPIC);
+		
+		
 		psm.publishItem(psd);
 	}
 	
@@ -49,7 +53,28 @@ public class TestPubSubServer extends JMicroBaseTestCase{
 	public void testPublishArgs() {
 		PubSubManager psm = of.get(PubSubManager.class);
 		Object[] args = new String[] {"test publish args"};
-		long msgid = psm.publish(TOPIC,PSData.FLAG_PUBSUB,args);
+		long msgid = psm.publish(TOPIC,PSData.flag(PSData.FLAG_PUBSUB,PSData.FLAG_MESSAGE_CALLBACK),args);
+		System.out.println("pubsub msgID:"+msgid);
+		JMicro.waitForShutdown();
+	}
+	
+	@Test
+	public void testPublishMessageWithCallback() {
+		PubSubManager psm = of.get(PubSubManager.class);
+		
+		ServiceItem si = this.getServiceItem("org.jmicro.example.pubsub.impl.SimplePubsubImpl");
+		ServiceMethod sm = this.getServiceMethod(si, "notifyMessageStatu", new Class[] {Integer.TYPE,Long.TYPE,Map.class});
+		
+		PSData psd = new PSData();
+		psd.setData("test publish args");
+		psd.setTopic(TOPIC);
+		psd.setFlag(PSData.flag(PSData.FLAG_PUBSUB,PSData.FLAG_MESSAGE_CALLBACK));
+		psd.setCallback(sm.getKey());
+		psd.put("tst", 222);
+		psd.put("22f", "String");
+		psd.put("sm2", sm);
+		
+		long msgid = psm.publish(psd);
 		System.out.println("pubsub msgID:"+msgid);
 		
 		JMicro.waitForShutdown();
@@ -95,7 +120,7 @@ public class TestPubSubServer extends JMicroBaseTestCase{
 					System.out.println(psm.publish(psData));
 					
 					//Thread.sleep(2000);
-					Thread.sleep(ran.nextInt(100));
+					Thread.sleep(ran.nextInt(1000));
 					
 				} catch (Throwable e) {
 					e.printStackTrace();
@@ -104,9 +129,9 @@ public class TestPubSubServer extends JMicroBaseTestCase{
 		};
 		
 		new Thread(r).start();
-		new Thread(r).start();
-		new Thread(r).start();
-		new Thread(r).start();
+		//new Thread(r).start();
+		//new Thread(r).start();
+		//new Thread(r).start();
 		//new Thread(r).start();
 		
 		JMicro.waitForShutdown();

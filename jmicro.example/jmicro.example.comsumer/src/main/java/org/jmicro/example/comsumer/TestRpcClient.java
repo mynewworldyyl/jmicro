@@ -35,7 +35,8 @@ public class TestRpcClient {
 					@Async(forMethod="hello",enable=true,condition=AsyncConfig.ASYNC_DIRECT,
 				serviceName="org.jmicro.example.api.rpc.IAsyncRpcCallback",
 				namespace="asyncRpcCallback",
-				version="0.0.1",method="callback")
+				version="0.0.1",method="callback",
+				paramStr="Ljava/lang/String;")
 			})
 	private ISimpleRpc asyncRpc;
 	

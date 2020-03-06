@@ -8,6 +8,7 @@ import org.jmicro.api.annotation.Subscribe;
 import org.jmicro.api.monitor.MonitorConstant;
 import org.jmicro.api.pubsub.PSData;
 import org.jmicro.common.Constants;
+import org.jmicro.common.util.JsonUtils;
 import org.jmicro.example.api.pubsub.ISimplePubsub;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -47,6 +48,10 @@ public class SimplePubsubImpl implements ISimplePubsub {
 				);
 		
 		//System.out.println("Topic: "+data.getTopic()+", data: "+ data.getData().toString());
+	}
+	
+	public void notifyMessageStatu(int statusCode,long msgId,Map<String,Object> cxt) {
+		System.out.println("Message StatusCode: "+statusCode+", msgId: "+ msgId+",cxt:" + JsonUtils.getIns().toJson(cxt));
 	}
 	
 }

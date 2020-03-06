@@ -233,6 +233,7 @@ class ClientServiceProxyManager {
 				ac.setServiceName(a.serviceName());
 				ac.setVersion(a.version());
 				ac.setForMethod(a.forMethod());
+				ac.setParamStr(a.paramStr());
 				acs[i] = ac;
 				i++;
 			}

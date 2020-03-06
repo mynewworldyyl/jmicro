@@ -52,19 +52,6 @@ public final class UniqueServiceMethodKey {
 	}*/
 	
 	public static String paramsStr(Class<?>[] args) {
-		/*
-		if(args == null || args.length == 0) {
-			return "";
-		}
-		StringBuilder sb = new StringBuilder();
-		int offset = args.length - 1;
-		for(int i = 0; i < offset; i++){
-		    sb.append(ReflectUtils.getFullClassName(args[i])).append(PSEP);
-		}
-		sb.append(ReflectUtils.getFullClassName(args[offset]));
-		return sb.toString();
-		*/
-		
 		return ReflectUtils.getDesc(args);
 	}
 	
@@ -73,32 +60,9 @@ public final class UniqueServiceMethodKey {
 			return "";
 		}
 		
-		Class<?>[] cs = new Class<?>[args.length];
-		for(int i = 0; i < cs.length; i++){
-			if(args[i] != null) {
-				cs[i] = args[i].getClass();
-			}else {
-				cs[i] = Void.class;
-			}
-		}
+		Class<?>[] cs = paramsClazzes(args);
 		
 		return paramsStr(cs);
-		
-		/*StringBuilder sb = new StringBuilder();
-		int offset = args.length - 1;
-		for(int i = 0; i < offset; i++){
-			if(args[i] != null) {
-				sb.append(ReflectUtils.getFullClassName(args[i].getClass()));
-			}
-			sb.append(PSEP);
-		}
-		if(args[offset]!= null) {
-			sb.append(ReflectUtils.getFullClassName(args[offset].getClass()));
-		}else {
-			sb.append("");
-		}*/
-		
-		//return sb.toString();
 	}
 	
 	/**
@@ -107,27 +71,28 @@ public final class UniqueServiceMethodKey {
 	 * @param argStr 参数字符串
 	 * @return
 	 */
-	public static Class<?>[] paramsClazzes(String paramsStr) {
-		/*if(StringUtils.isEmpty(paramsStr)) {
-			return new Class[0];
+	public static Class<?>[] paramsClazzes(Object[] args) {
+		Class<?>[] cs = new Class<?>[args.length];
+		for(int i = 0; i < cs.length; i++){
+			if(args[i] != null) {
+				cs[i] = args[i].getClass();
+			}else {
+				cs[i] = Void.class;
+			}
 		}
-		
-		String[] clses = paramsStr.split(PSEP);
-		if(clses == null || clses.length == 0) {
-			return new Class[0];
-		}
-		
-		Class<?>[] clazzes = new Class<?>[clses.length];
-		for(int i=0; i< clazzes.length; i++) {
-			clazzes[i] = TypeCoder.loadClassFromCache(clses[i]);
-		}*/
-		
+		return cs;
+	}
+	
+	public static Class<?>[] paramsClazzes(String paramDesc) {
 		try {
-			return ReflectUtils.desc2classArray(paramsStr);
+			return ReflectUtils.desc2classArray(paramDesc);
 		} catch (ClassNotFoundException e) {
-			throw new CommonException("paramsClazzes",e);
+			e.printStackTrace();
+			return null;
 		}
 	}
+	
+	
 	
 	/**
 	 * 根据参数类型串解析出参数对像数组
@@ -135,11 +100,11 @@ public final class UniqueServiceMethodKey {
 	 * @param argStr 参数字符串
 	 * @return
 	 */
-	public static Object[] paramsArg(String paramsStr,String argStr) {
+/*	public static Object[] paramsArg(String paramsStr,String argStr) {
 		Class<?>[] clazzes = paramsClazzes(paramsStr);
 		
 		return null;
-	}
+	}*/
 	
 	public String toKey(boolean ins,boolean host,boolean port) {
 		StringBuilder sb = new StringBuilder(usk.toKey(ins, host, port));

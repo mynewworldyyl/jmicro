@@ -2,11 +2,9 @@ package org.jmicro.api.pubsub;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -18,8 +16,11 @@ import org.jmicro.api.annotation.Reference;
 import org.jmicro.api.executor.ExecutorConfig;
 import org.jmicro.api.executor.ExecutorFactory;
 import org.jmicro.api.idgenerator.ComponentIdServer;
+import org.jmicro.api.net.Message;
 import org.jmicro.api.raft.IDataOperator;
+import org.jmicro.api.service.ServiceInvokeManager;
 import org.jmicro.common.Constants;
+import org.jmicro.common.util.JsonUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -38,7 +39,7 @@ public class PubSubManager {
 	//消息队列已经满了,客户端可以重发,或等待一会再重发
 	public static final int PUB_SERVER_DISCARD = -2;
 	//消息服务线程队列已满,客户端可以重发,或等待一会再重发,可以考虑增加消息服务线程池大小,或增加消息服务
-	public static final int PUB_SERVER_BUSSUY = -3;
+	public static final int PUB_SERVER_BUSUY = -3;
 	
 	public static final int PUB_TOPIC_NOT_VALID= -4;
 
@@ -46,6 +47,9 @@ public class PubSubManager {
 	
 	@Inject
 	private ComponentIdServer idGenerator;
+	
+	@Inject
+	private ServiceInvokeManager siManager;
 	
 	/**
 	 * default pubsub server
@@ -337,21 +341,27 @@ public class PubSubManager {
 					
 					curItemCount.addAndGet(-size);
 
-					if (PubSubManager.PUB_SERVER_BUSSUY == result) {
+					if (PUB_SERVER_BUSUY == result) {
 						logger.warn("Got bussy result and sleep one seconds");
 						for(PSData d : l) {
 							if(d.getFailCnt() < 3) {
 								//重发3次
 								d.setFailCnt(d.getFailCnt()+1);
 								Thread.sleep(1000);
-								if((result = publish(d)) != 0) {
-									if(d.getLocalCallback() != null) {
-										d.getLocalCallback().callback(PubSubManager.PUB_SERVER_BUSSUY, d.getId(), d.getContext());
+								if((result = publish(d)) != PUB_OK) {
+									if(d.getCallback() != null && Message.is(d.getFlag(), PSData.FLAG_MESSAGE_CALLBACK)) {
+										//消息通知
+										siManager.call(d.getCallback(), new Object[] {PUB_SERVER_BUSUY, d.getId(), d.getContext()});
+									} else {
+										logger.error("Pubsub Server is busuy so disgard msg:" + JsonUtils.getIns().toJson(d));
 									}
 								}
 							} else {
-								if(d.getLocalCallback() != null) {
-									d.getLocalCallback().callback(PubSubManager.PUB_SERVER_BUSSUY, d.getId(), d.getContext());
+								if(d.getCallback() != null && Message.is(d.getFlag(), PSData.FLAG_MESSAGE_CALLBACK)) {
+									//消息通知
+									siManager.call(d.getCallback(), new Object[] {PUB_SERVER_BUSUY, d.getId(), d.getContext()});
+								} else {
+									logger.error("Pubsub Server is busuy and retry failure :" + JsonUtils.getIns().toJson(d));
 								}
 							}
 						}
@@ -359,8 +369,11 @@ public class PubSubManager {
 							|| PubSubManager.PUB_SERVER_DISCARD == result
 							|| PubSubManager.PUB_TOPIC_NOT_VALID == result) {
 						for(PSData d : l) {
-							if(d.getLocalCallback() != null) {
-								d.getLocalCallback().callback(result, d.getId(), d.getContext());
+							if(d.getCallback() != null && Message.is(d.getFlag(), PSData.FLAG_MESSAGE_CALLBACK)) {
+								//消息通知
+								siManager.call(d.getCallback(), new Object[] {result, d.getId(), d.getContext()});
+							} else {
+								logger.error("Publish message failure with code:"+result +", message: " + JsonUtils.getIns().toJson(d));
 							}
 						}
 					}

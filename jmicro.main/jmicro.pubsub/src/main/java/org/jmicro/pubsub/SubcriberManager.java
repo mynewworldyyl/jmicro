@@ -183,7 +183,8 @@ class SubcriberManager {
 			} else if (type == IServiceListener.REMOVE) {
 				serviceRemoved(item);
 			} else if (type == IServiceListener.DATA_CHANGE) {
-				//serviceDataChange(item);
+				//普通RPC方法可以动态更新为异步方法
+				serviceDataChange(item);
 			} else {
 				logger.error(
 						"rev invalid Node event type : " + type + ",path: " + item.getKey().toKey(true, true, true));
@@ -366,9 +367,9 @@ class SubcriberManager {
 								}
 								break;
 							case SubcribeItem.TYPE_UPDATE:
-								/*if (!doUpdateSubscribe(si)) {
+								if (!doUpdateSubscribe(si)) {
 									failItems.add(si);
-								}*/
+								}
 								break;
 							}
 						} catch (Throwable e) {

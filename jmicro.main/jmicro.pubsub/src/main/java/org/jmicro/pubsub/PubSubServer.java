@@ -164,12 +164,13 @@ public class PubSubServer implements IInternalSubRpc{
 		}
 		
 		if(items == null || StringUtils.isEmpty(topic)) {
+			//无效消息
 			return PubSubManager.PUB_SERVER_DISCARD;
 		}
 		
 		long size = this.memoryItemsCnt.get() + items.length;
 		if(size > this.maxMemoryItem && (items.length + cacheItemsCnt.get()) > this.maxCachePersistItem) {
-			return PubSubManager.PUB_SERVER_BUSSUY;
+			return PubSubManager.PUB_SERVER_BUSUY;
 		}
 		
 		if(size < this.maxMemoryItem) {

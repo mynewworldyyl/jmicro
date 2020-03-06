@@ -68,6 +68,18 @@ public class JMicroBaseTestCase {
 		return sm;
 	}
 	
+	protected ServiceItem getServiceItem(String impl) {
+		ServiceItem si = registry.getServiceByImpl(impl);
+		org.junit.Assert.assertNotNull(si);
+		return si;
+	}
+	
+	protected ServiceMethod getServiceMethod(ServiceItem si,String methodName,Class<?>[] argTypes) {
+		ServiceMethod sm = si.getMethod(methodName, argTypes);
+		org.junit.Assert.assertNotNull(sm);
+		return sm;
+	}
+	
 	protected void setSayHelloContext() {
 		
 		JMicroContext.get().configMonitor(1, 1);

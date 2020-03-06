@@ -175,10 +175,11 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
 		data.setContext(cxt);
 		data.setData(req.getArgs());
 		data.setTopic(topic);
+		
 		data.setFlag(PSData.flag(PSData.FLAG_PUBSUB,PSData.FLAG_ASYNC_METHOD));
-		data.mergeContext(ac.getContext());
 		
 		if(sm.isNeedResponse()) {
+			
 			ServiceItem si = this.getServiceItem(ac);
 			
 			if(si == null) {
@@ -196,8 +197,8 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
 				throw new RpcException(req,msg);
 			}
 			
-			callback = si.getMethod(ac.getMethod(), ac.getParamStr());
 			data.setCallback(callback.getKey());
+			data.mergeContext(ac.getContext());
 		}
 		
 		//异步后,就不一定是本实例接收到此RPC调用了

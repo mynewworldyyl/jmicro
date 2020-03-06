@@ -17,6 +17,7 @@
 package org.jmicro.api.registry;
 
 import java.lang.reflect.Field;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.Random;
 import java.util.Set;
@@ -344,7 +345,28 @@ public final class ServiceItem{
 				
 				boolean f = true;
 				for(int i=0; i < paramClazzes1.length; i++) {
-					if(!paramClazzes1[i].isAssignableFrom(paramClazzes[i])) {
+					if(paramClazzes[i].isPrimitive() || paramClazzes1[i].isPrimitive()) {
+						if((paramClazzes[i] == Byte.class || paramClazzes[i] == Byte.TYPE) && (paramClazzes[i] == Byte.class || paramClazzes1[i] == Byte.TYPE) ) {
+							continue;
+						}else if((paramClazzes[i] == Short.class || paramClazzes[i] == Short.TYPE) && (paramClazzes1[i] == Short.class || paramClazzes1[i] == Short.TYPE) ) {
+							continue;
+						}else if((paramClazzes[i] == Integer.class || paramClazzes[i] == Integer.TYPE) && (paramClazzes1[i] == Integer.class || paramClazzes1[i] == Integer.TYPE) ) {
+							continue;
+						}else if((paramClazzes[i] == Long.class || paramClazzes[i] == Long.TYPE) && (paramClazzes1[i] == Long.class || paramClazzes1[i] == Long.TYPE) ) {
+							continue;
+						}else if((paramClazzes[i] == Boolean.class || paramClazzes[i] == Boolean.TYPE) && (paramClazzes1[i] == Boolean.class || paramClazzes1[i] == Boolean.TYPE) ) {
+							continue;
+						}else if((paramClazzes[i] == Character.class || paramClazzes[i] == Character.TYPE) && (paramClazzes1[i] == Character.class || paramClazzes1[i] == Character.TYPE) ) {
+							continue;
+						}else if((paramClazzes[i] == Float.class || paramClazzes[i] == Float.TYPE) && (paramClazzes1[i] == Float.class || paramClazzes1[i] == Float.TYPE) ) {
+							continue;
+						}else if((paramClazzes[i] == Double.class || paramClazzes[i] == Double.TYPE) && (paramClazzes1[i] == Double.class || paramClazzes1[i] == Double.TYPE) ) {
+							continue;
+						} else {
+							f = false;
+							break;
+						}
+					} else if(!paramClazzes1[i].isAssignableFrom(paramClazzes[i])) {
 						f = false;
 						break;
 					}

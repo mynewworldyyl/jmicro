@@ -233,8 +233,6 @@ public class SubCallbackImpl implements ISubCallback{
 		
 		try {
 			
-			boolean f = Message.is(item.getFlag(), PSData.FLAG_ASYNC_METHOD);
-			
 			Holder h = null;
 			if(this.key2Holder.containsKey(key)) {
 				h = this.key2Holder.get(key);
@@ -271,16 +269,17 @@ public class SubCallbackImpl implements ISubCallback{
 			//JMicroContext.get().setLong(JMicroContext.REQ_ID, reqId);
 			if(Message.is(item.getFlag(), PSData.FLAG_ASYNC_METHOD)) {
 				//异步方法
-				m.invoke(h.srv, obj);
+				h.m.invoke(h.srv, obj);
 			}else if(Message.is(item.getFlag(), PSData.FLAG_MESSAGE_CALLBACK)) {
 				//消息通知
-				m.invoke(h.srv, statuCode,item.getId(),item.getContext());
+				h.m.invoke(h.srv, statuCode,item.getId(),item.getContext());
 			}
 			return true;
 		
 		} catch (Throwable e) {
 			String msg = "Fail to callback src service:" + sm.getKey().toString()+ ",c allback: "+ key.toKey(false, false, false);
 			SF.doBussinessLog(MonitorConstant.LOG_ERROR,SubCallbackImpl.class,e, msg);
+			logger.error("",e);
 			return false;
 		}
 	

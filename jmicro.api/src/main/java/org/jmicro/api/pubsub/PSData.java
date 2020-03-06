@@ -62,9 +62,6 @@ public final class PSData implements Serializable{
 	//消息发送结果回调的RPC方法，用于消息服务器给发送者回调
 	private UniqueServiceMethodKey callback;
 	
-	//用于本地发送状态回调
-	private transient ILocalMessageResultCallback localCallback;
-	
 	//客户端发送失败次数，用于重发计数，如果消息失败次数到达一定量，将消息丢弃，并调用localCallback（如果存在）通知调用者，
 	private transient int failCnt = 0;
 	
@@ -138,17 +135,6 @@ public final class PSData implements Serializable{
 	public void setCallback(UniqueServiceMethodKey callback) {
 		this.callback = callback;
 	}
-
-
-	public ILocalMessageResultCallback getLocalCallback() {
-		return localCallback;
-	}
-
-
-	public void setLocalCallback(ILocalMessageResultCallback localCallback) {
-		this.localCallback = localCallback;
-	}
-
 
 	public int getFailCnt() {
 		return failCnt;

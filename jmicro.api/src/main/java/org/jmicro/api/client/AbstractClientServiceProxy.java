@@ -159,6 +159,8 @@ public abstract class AbstractClientServiceProxy implements InvocationHandler,IS
 		
 		ServiceItem dsi = JMicroContext.get().getParam(Constants.DIRECT_SERVICE_ITEM, null);
 		
+		AsyncConfig async = JMicroContext.get().getParam(Constants.ASYNC_CONFIG, null);
+		
 		JMicroContext.get().backup();
 		
 		if(this.monitor == null) {
@@ -181,6 +183,10 @@ public abstract class AbstractClientServiceProxy implements InvocationHandler,IS
 		
 		if(dsi != null) {
 			JMicroContext.get().setParam(Constants.DIRECT_SERVICE_ITEM, dsi);
+		}
+		
+		if(async != null) {
+			JMicroContext.get().setParam(Constants.ASYNC_CONFIG, async);
 		}
 		
 	}

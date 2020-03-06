@@ -1,4 +1,4 @@
-package org.jmicro.example.comsumer;
+package org.jmicro.example.pubsub.impl;
 
 import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.SMethod;
