@@ -28,7 +28,7 @@ public class TestPubSubServer extends JMicroBaseTestCase{
 		psd.setData(new byte[] {22,33,33});
 		psd.setTopic(TOPIC);
 		
-		psm.publishItems(new PSData[] {psd,psd});
+		psm.publishItems(TOPIC,new PSData[] {psd,psd});
 		
 		//psm.publishData(psd);
 		
@@ -42,7 +42,7 @@ public class TestPubSubServer extends JMicroBaseTestCase{
 		PSData psd = new PSData();
 		psd.setData(new byte[] {22,33,33});
 		psd.setTopic(TOPIC);
-		psm.publishData(psd);
+		psm.publishItem(psd);
 	}
 	
 	@Test
@@ -89,13 +89,13 @@ public class TestPubSubServer extends JMicroBaseTestCase{
 					
 					PSData psData = new PSData();
 					psData.setData(data);
-					psData.setTopic(MonitorConstant.TEST_SERVICE_METHOD_TOPIC);
+					psData.setTopic(TOPIC);
 					psData.put(Constants.SERVICE_METHOD_KEY, new ServiceMethod());
 					
-					psm.publish(psData);
+					System.out.println(psm.publish(psData));
 					
 					//Thread.sleep(2000);
-					Thread.sleep(ran.nextInt(50));
+					Thread.sleep(ran.nextInt(100));
 					
 				} catch (Throwable e) {
 					e.printStackTrace();

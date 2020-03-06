@@ -24,9 +24,7 @@ import org.jmicro.api.cache.ICache;
 import org.jmicro.api.codec.ICodecFactory;
 import org.jmicro.api.net.Message;
 import org.jmicro.api.objectfactory.IObjectFactory;
-import org.jmicro.api.pubsub.PSData;
 import org.jmicro.common.util.StringUtils;
-import org.jmicro.pubsub.PubSubServer.SendItem;
 
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
@@ -37,19 +35,33 @@ import redis.clients.jedis.JedisPool;
  * @author Yulei Ye
  * @date 2020年1月12日
  */
-class ItemStorage {
+class ItemStorage<T> {
 
 	private JedisPool pool;
 	
 	private ICodecFactory codeFactory;
 	
-	ItemStorage(IObjectFactory of) {
+	private String prefix;
+	
+	ItemStorage(IObjectFactory of,String prefix) {
 		this.pool = of.get(JedisPool.class);
 		codeFactory = of.get(ICodecFactory.class);
-		
+		this.prefix = prefix;
 	}
 	
-	boolean push(SendItem item) {
+	boolean push(String key,T[] items) {
+		if(items == null) {
+			return false;
+		}
+		
+		for(T i : items) {
+			push(key,i);
+		}
+		
+		return true;
+	}
+	
+	boolean push(String key,T item) {
 		if(item == null) {
 			return false;
 		}
@@ -59,7 +71,7 @@ class ItemStorage {
 			j = pool.getResource();
 			ByteBuffer bb = (ByteBuffer)codeFactory.getEncoder(Message.PROTOCOL_BIN).encode(item);
 			if(bb != null) {
-				j.lpush(ICache.keyData(item.item.getTopic()), bb.array());
+				j.lpush(ICache.keyData(this.prefix+key), bb.array());
 				return true;
 			} else {
 				return false;
@@ -80,7 +92,7 @@ class ItemStorage {
 		Jedis j = null; 
 		try {
 			j = pool.getResource();
-			return j.llen(ICache.keyData(key));
+			return j.llen(ICache.keyData(this.prefix + key));
 		} finally {
 			if(j != null) {
 				j.close();
@@ -88,7 +100,7 @@ class ItemStorage {
 		}
 	}
 	
-	SendItem pop(String key) {
+	T pop(String key) {
 		if(key == null) {
 			return null;
 		}
@@ -96,8 +108,8 @@ class ItemStorage {
 		Jedis j = null; 
 		try {
 			j = pool.getResource();
-			byte[] data = j.lpop(ICache.keyData(key));
-			SendItem item = (SendItem)codeFactory.getDecoder(Message.PROTOCOL_BIN).decode(ByteBuffer.wrap(data),null);
+			byte[] data = j.lpop(ICache.keyData(this.prefix+key));
+			T item = (T)codeFactory.getDecoder(Message.PROTOCOL_BIN).decode(ByteBuffer.wrap(data),null);
 			return item;
 		} finally {
 			if(j != null) {
@@ -106,25 +118,25 @@ class ItemStorage {
 		}
 	}
 	
-	List<SendItem> pops(String key,long size) {
+	List<T> pops(String key,long size) {
 		if(key == null || size <=0) {
 			return null;
 		}
 		
 		Jedis j = null; 
 		try {
-			List<SendItem> l = new ArrayList<>();
+			List<T> l = new ArrayList<>();
 			
 			j = pool.getResource();
 
-			byte[] k = ICache.keyData(key);
+			byte[] k = ICache.keyData(this.prefix+key);
 			
 			for(;size > 0;) {
 				byte[] ds = j.lpop(k);
 				if(ds == null) {
 					break;
 				}
-				SendItem item = (SendItem)codeFactory.getDecoder(Message.PROTOCOL_BIN).decode(ByteBuffer.wrap(ds),null);
+				T item = (T)codeFactory.getDecoder(Message.PROTOCOL_BIN).decode(ByteBuffer.wrap(ds),null);
 				l.add(item);
 			}
 			return l;

@@ -90,6 +90,7 @@ public final class MonitorConstant {
 	public static final short CLIENT_IOSESSION_OPEN = 0X00E0;
 	public static final short CLIENT_IOSESSION_IDLE = 0X00E1;
 	public static final short CLIENT_IOSESSION_WRITE = 0X00E2;
+	//网络下行流量
 	public static final short CLIENT_IOSESSION_READ =  0X00E3;
 	public static final short CLIENT_IOSESSION_EXCEPTION = 0X00E4;
 	public static final short CLIENT_PACKAGE_SESSION_ID_ERR = 0X00E5;
@@ -98,6 +99,7 @@ public final class MonitorConstant {
 	public static final short SERVER_IOSESSION_OPEN =  0X00E7;
 	public static final short SERVER_IOSESSION_IDLE =  0X00E8;
 	public static final short SERVER_IOSESSION_WRITE = 0X00E9;
+	//网络上行流量
 	public static final short SERVER_IOSESSION_READ =  0X00EA;
     public static final short SERVER_IOSESSION_EXCEPTION = 0X00EB;
     

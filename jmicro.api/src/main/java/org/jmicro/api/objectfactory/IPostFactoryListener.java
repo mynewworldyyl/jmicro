@@ -20,7 +20,7 @@ package org.jmicro.api.objectfactory;
  * IObjectFactory初始化完成后，调用此接口实现通知
  * @date 2018年10月9日-下午5:52:12
  */
-public interface IFactoryListener {
+public interface IPostFactoryListener {
 
 	void preInit(IObjectFactory of);
 	

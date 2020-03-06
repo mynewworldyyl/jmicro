@@ -31,8 +31,8 @@ import org.jmicro.api.executor.ExecutorFactory;
 import org.jmicro.api.monitor.IMonitorDataSubmiter;
 import org.jmicro.api.monitor.SF;
 import org.jmicro.api.net.IServer;
-import org.jmicro.api.objectfactory.IFactoryListener;
 import org.jmicro.api.objectfactory.IObjectFactory;
+import org.jmicro.api.objectfactory.PostFactoryAdapter;
 import org.jmicro.common.CommonException;
 import org.jmicro.common.Constants;
 import org.jmicro.common.util.StringUtils;
@@ -56,7 +56,7 @@ import io.netty.handler.logging.LoggingHandler;
  */
 @Component(value=Constants.TRANSPORT_NETTY,lazy=false,level=1,side=Constants.SIDE_PROVIDER)
 @Server(transport=Constants.TRANSPORT_NETTY)
-public class NettySocketServer implements IServer,IFactoryListener {
+public class NettySocketServer extends PostFactoryAdapter implements IServer {
 
 	static final Logger LOG = LoggerFactory.getLogger(NettySocketServer.class);
 	

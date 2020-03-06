@@ -23,7 +23,7 @@ import org.jmicro.api.config.Config;
  * @author Yulei Ye
  * @date 2018年10月4日-下午12:03:53
  */
-public abstract class PostInitListenerAdapter implements IPostInitListener {
+public abstract class PostInitAdapter implements IPostInitListener {
 
 	@Override
 	public void preInit(Object obj,Config cfg) {

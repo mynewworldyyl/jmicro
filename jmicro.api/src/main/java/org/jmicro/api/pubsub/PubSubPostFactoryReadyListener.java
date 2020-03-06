@@ -5,7 +5,7 @@ import java.lang.reflect.Method;
 import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.Inject;
 import org.jmicro.api.annotation.Subscribe;
-import org.jmicro.api.objectfactory.IFactoryListener;
+import org.jmicro.api.objectfactory.IPostFactoryListener;
 import org.jmicro.api.objectfactory.IObjectFactory;
 import org.jmicro.api.objectfactory.ProxyObject;
 import org.jmicro.api.registry.ServiceItem;
@@ -17,7 +17,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 @Component(active=true,value="pubSubPostFactoryReadyListener")
-public class PubSubPostFactoryReadyListener implements IFactoryListener {
+public class PubSubPostFactoryReadyListener implements IPostFactoryListener {
 
 	private final static Logger logger = LoggerFactory.getLogger(PubSubManager.class);
 	
@@ -37,7 +37,7 @@ public class PubSubPostFactoryReadyListener implements IFactoryListener {
 			ServiceItem si = this.srvLoader.getServiceItems(s.getClass());
 			loadSubscriber(s.getClass(),si);
 		}*/
-		pubSubManager.init();
+		//pubSubManager.init();
 	}
 
 	@Override

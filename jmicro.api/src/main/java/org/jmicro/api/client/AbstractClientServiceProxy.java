@@ -30,6 +30,7 @@ import org.jmicro.api.registry.AsyncConfig;
 import org.jmicro.api.registry.IRegistry;
 import org.jmicro.api.registry.IServiceListener;
 import org.jmicro.api.registry.ServiceItem;
+import org.jmicro.api.registry.ServiceMethod;
 import org.jmicro.api.registry.UniqueServiceKey;
 import org.jmicro.api.registry.UniqueServiceMethodKey;
 import org.jmicro.common.CommonException;
@@ -127,9 +128,9 @@ public abstract class AbstractClientServiceProxy implements InvocationHandler,IS
 				}
 			}
 		}
-		
-		JMicroContext.get().configMonitor(si.getMonitorEnable(), si.getMonitorEnable()); 
-		JMicroContext.get().setParam(Constants.SERVICE_METHOD_KEY, si.getMethod(method.getName(), args));
+		ServiceMethod sm = si.getMethod(method.getName(), args);
+		JMicroContext.get().configMonitor(sm.getMonitorEnable(), si.getMonitorEnable()); 
+		JMicroContext.get().setParam(Constants.SERVICE_METHOD_KEY, sm);
 		JMicroContext.get().setParam(Constants.SERVICE_ITEM_KEY, si);
 		
 		return h.invoke(proxy, method, args);
@@ -147,6 +148,7 @@ public abstract class AbstractClientServiceProxy implements InvocationHandler,IS
 	public abstract String getNamespace();
 	
 	public abstract String getVersion();
+	
 	public abstract String getServiceName();
 	
 	public void backupAndSetContext(){
@@ -224,6 +226,8 @@ public abstract class AbstractClientServiceProxy implements InvocationHandler,IS
 		AbstractClientServiceProxy o = (AbstractClientServiceProxy)obj;
 		return this.serviceKey().equals(o.serviceKey());
 	}
+	
+	
 	
 	public void setAsyncConfig(AsyncConfig[] acs) {
 		if(acs != null && acs.length > 0) {

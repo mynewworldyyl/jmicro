@@ -21,6 +21,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.jmicro.api.annotation.SO;
+import org.jmicro.api.registry.UniqueServiceMethodKey;
 
 /**
  * 
@@ -36,7 +37,10 @@ public final class PSData implements Serializable{
 	
 	public static final byte FLAG_PUBSUB = 0<<0;
 	
+	//1右移1位，异步方法，决定回调方法的参数类型为消息通知的返回值
 	public static final byte FLAG_ASYNC_METHOD = 1<<1;
+	//1右移两位，消息回调通知，决定回调方法的参数类型为消息通知的返回值分别为 消息发送状态码，消息ID，消息上下文透传
+	public static final byte FLAG_MESSAGE_CALLBACK = 1<<2;
 	
 	//1:  如果是订阅类消息,必须全部成功消费才算成功，否则对于失败
 	//0:只需要确保其中一个消费者成功消费消息即可认为消息发送成功，即使别的消费者消费失败，也不会重发消息
@@ -55,6 +59,15 @@ public final class PSData implements Serializable{
 	
 	private Object data;
 	
+	//消息发送结果回调的RPC方法，用于消息服务器给发送者回调
+	private UniqueServiceMethodKey callback;
+	
+	//用于本地发送状态回调
+	private transient ILocalMessageResultCallback localCallback;
+	
+	//客户端发送失败次数，用于重发计数，如果消息失败次数到达一定量，将消息丢弃，并调用localCallback（如果存在）通知调用者，
+	private transient int failCnt = 0;
+	
 	public static byte flag(byte ...fs) {
 		byte fl = 0;
 		for(byte f : fs) {
@@ -63,6 +76,9 @@ public final class PSData implements Serializable{
 		return fl; 
 	}
 
+	public void mergeContext(Map<String,Object> cxt) {
+		this.context.putAll(cxt);
+	}
 
 	public byte getFlag() {
 		return flag;
@@ -112,4 +128,36 @@ public final class PSData implements Serializable{
 	public <T> T get(String key) {
 		return (T) this.context.get(key);
 	}
+
+
+	public UniqueServiceMethodKey getCallback() {
+		return callback;
+	}
+
+
+	public void setCallback(UniqueServiceMethodKey callback) {
+		this.callback = callback;
+	}
+
+
+	public ILocalMessageResultCallback getLocalCallback() {
+		return localCallback;
+	}
+
+
+	public void setLocalCallback(ILocalMessageResultCallback localCallback) {
+		this.localCallback = localCallback;
+	}
+
+
+	public int getFailCnt() {
+		return failCnt;
+	}
+
+
+	public void setFailCnt(int failCnt) {
+		this.failCnt = failCnt;
+	}
+	
+	
 }

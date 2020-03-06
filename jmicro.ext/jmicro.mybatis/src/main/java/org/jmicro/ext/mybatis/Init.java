@@ -13,7 +13,7 @@ import org.apache.ibatis.session.SqlSessionFactory;
 import org.apache.ibatis.session.SqlSessionFactoryBuilder;
 import org.jmicro.api.annotation.Component;
 import org.jmicro.api.config.Config;
-import org.jmicro.api.objectfactory.IFactoryListener;
+import org.jmicro.api.objectfactory.IPostFactoryListener;
 import org.jmicro.api.objectfactory.IObjectFactory;
 import org.jmicro.common.CommonException;
 import org.jmicro.common.util.StringUtils;
@@ -21,7 +21,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 @Component(lazy=false, level=99)
-public class Init implements IFactoryListener{
+public class Init implements IPostFactoryListener{
 	
 	private final static Logger logger = LoggerFactory.getLogger(Init.class);
 	
@@ -50,7 +50,7 @@ public class Init implements IFactoryListener{
 		Properties props = new Properties();
 		props.putAll(params);
 		
-		InputStream inputStream = IFactoryListener.class.getResourceAsStream(configLocation);
+		InputStream inputStream = IPostFactoryListener.class.getResourceAsStream(configLocation);
 		SqlSessionFactory sqlSessionFactory = new SqlSessionFactoryBuilder().build(inputStream,env,props);
 		SqlSessionManager ssm = new SqlSessionManager(sqlSessionFactory);
 		of.regist(SqlSessionManager.class, ssm);

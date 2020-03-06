@@ -33,7 +33,7 @@ import org.jmicro.api.annotation.Cfg;
 import org.jmicro.api.annotation.PostListener;
 import org.jmicro.api.config.Config;
 import org.jmicro.api.config.IConfigChangeListener;
-import org.jmicro.api.objectfactory.PostInitListenerAdapter;
+import org.jmicro.api.objectfactory.PostInitAdapter;
 import org.jmicro.api.objectfactory.ProxyObject;
 import org.jmicro.common.CommonException;
 import org.jmicro.common.Utils;
@@ -46,7 +46,7 @@ import org.slf4j.LoggerFactory;
  * @date 2018年10月4日-下午12:10:26
  */
 @PostListener(true)
-public class ConfigPostInitListener extends PostInitListenerAdapter {
+public class ConfigPostInitListener extends PostInitAdapter {
 
 	private final static Logger logger = LoggerFactory.getLogger(ConfigPostInitListener.class);
 	

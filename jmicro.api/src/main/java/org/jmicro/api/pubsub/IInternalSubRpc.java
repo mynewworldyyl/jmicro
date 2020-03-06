@@ -27,26 +27,26 @@ import org.jmicro.common.Constants;
 @Service(namespace=Constants.DEFAULT_PUBSUB,version="0.0.1")
 public interface IInternalSubRpc {
 
-	//boolean subcribe(String topic,String srv,String namespace,String version,String method);
+	/**
+	 * @param item
+	 * @return 状态码
+	 */
+	int publishItem(PSData item);
 	
-	//boolean unsubcribe(String topic,String srv,String namespace,String version,String method);
 	/**
 	 * 
-	 * @param item
-	 * @return 小于或等于0表示错误状态，此次消息发送失败，需要客户端处理，大于0表示消息消息发送成功，返回值即为消息ID
+	 * @param topic
+	 * @param items
+	 * @return 状态码
 	 */
-	long publishData(PSData item);
-	
-	long publishItems(PSData[] items);
+	int publishItems(String topic, PSData[] items);
 	
 	/**
 	 * 
 	 * @param topic
 	 * @param content
-	 * @return 小于或等于0表示错误状态，此次消息发送失败，需要客户端处理，大于0表示消息消息发送成功，返回值即为消息ID
+	 * @return 状态码
 	 */
-	long publishString(String topic,String content);
-	
-	//boolean publish(String topic,byte[] content);
+	int publishString(String topic,String content);
 	
 }

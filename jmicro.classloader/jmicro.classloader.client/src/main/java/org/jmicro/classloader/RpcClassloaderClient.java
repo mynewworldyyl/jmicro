@@ -2,11 +2,11 @@ package org.jmicro.classloader;
 
 import org.jmicro.api.annotation.Component;
 import org.jmicro.api.classloader.RpcClassLoader;
-import org.jmicro.api.objectfactory.IFactoryListener;
+import org.jmicro.api.objectfactory.IPostFactoryListener;
 import org.jmicro.api.objectfactory.IObjectFactory;
 
 @Component(level=50000)
-public class RpcClassloaderClient implements IFactoryListener{
+public class RpcClassloaderClient implements IPostFactoryListener{
 
 	private RpcClassLoader cl = null;
 	

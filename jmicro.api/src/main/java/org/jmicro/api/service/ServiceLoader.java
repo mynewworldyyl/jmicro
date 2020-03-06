@@ -39,7 +39,7 @@ import org.jmicro.api.config.Config;
 import org.jmicro.api.monitor.IMonitorDataSubmiter;
 import org.jmicro.api.monitor.MonitorConstant;
 import org.jmicro.api.net.IServer;
-import org.jmicro.api.objectfactory.IFactoryListener;
+import org.jmicro.api.objectfactory.IPostFactoryListener;
 import org.jmicro.api.objectfactory.IObjectFactory;
 import org.jmicro.api.objectfactory.ProxyObject;
 import org.jmicro.api.registry.IRegistry;

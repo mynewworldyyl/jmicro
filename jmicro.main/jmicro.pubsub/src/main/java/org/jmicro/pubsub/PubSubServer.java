@@ -16,41 +16,37 @@
  */
 package org.jmicro.pubsub;
 
-import java.util.HashSet;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
-import java.util.Queue;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.RejectedExecutionHandler;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.jmicro.api.JMicro;
 import org.jmicro.api.annotation.Cfg;
 import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.Inject;
-import org.jmicro.api.annotation.SMethod;
 import org.jmicro.api.annotation.Service;
 import org.jmicro.api.classloader.RpcClassLoader;
 import org.jmicro.api.config.Config;
 import org.jmicro.api.executor.ExecutorConfig;
 import org.jmicro.api.executor.ExecutorFactory;
-import org.jmicro.api.monitor.IMonitorDataSubmiter;
-import org.jmicro.api.monitor.MonitorConstant;
-import org.jmicro.api.monitor.SF;
-import org.jmicro.api.net.Message;
 import org.jmicro.api.objectfactory.IObjectFactory;
 import org.jmicro.api.pubsub.IInternalSubRpc;
 import org.jmicro.api.pubsub.PSData;
 import org.jmicro.api.pubsub.PubSubManager;
 import org.jmicro.api.raft.IDataOperator;
-import org.jmicro.api.timer.TimerTicker;
 import org.jmicro.common.Constants;
 import org.jmicro.common.Utils;
-import org.jmicro.common.util.JsonUtils;
+import org.jmicro.common.util.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -71,8 +67,6 @@ public class PubSubServer implements IInternalSubRpc{
 	
 	private static final String DISCARD_TIMER = "PubsubServerAbortPolicy";
 	
-	private static final String RESEND_TIMER = "PubsubServerResendTimer";
-	
 	/**
 	 * is enable pubsub server
 	 */
@@ -82,20 +76,31 @@ public class PubSubServer implements IInternalSubRpc{
 	@Cfg(value="/PubSubServer/openDebug")
 	private boolean openDebug = false;
 	
+	//内存存储最大的失败消息数量，超过此值会存储到磁盘
 	@Cfg(value="/PubSubServer/maxFailItemCount")
 	private int maxFailItemCount = 100;
 	
+	//默认1千万个持久化存储数据
 	@Cfg(value="/PubSubServer/maxCachePersistItem",defGlobal=true)
-	//默认1千万
 	private int maxCachePersistItem = 10000000;
 	
+	//默认1千万个内存侍发送数据，如果超过了此数，拒绝客户端继续提交
+	@Cfg(value="/PubSubServer/maxMemoryItem",defGlobal=true)
+	private int maxMemoryItem = 1000;
+	
+	//极端高峰流量时，服务器直接拒绝请求，以确保服务不挂机,此值是拒绝时长
 	@Cfg(value="/PubSubServer/reOpenThreadInterval")
 	private long reOpenThreadInterval = 1000;
 	
+	//做重发时间间隔
 	@Cfg(value="/PubSubServer/doResendInterval",changeListener="resetResendTimer")
 	private long doResendInterval = 1000;
 	
-	private long doResendInterval0 = 1000;
+	//当前内存消息数量
+	private AtomicInteger memoryItemsCnt = new AtomicInteger();
+	
+	//当前缓存消息数量
+	private AtomicInteger cacheItemsCnt = new AtomicInteger();
 	
 	@Inject
 	private IObjectFactory of;
@@ -112,30 +117,93 @@ public class PubSubServer implements IInternalSubRpc{
 	@Inject
 	private IDataOperator dataOp;
 	
-	@Inject
-	private IMonitorDataSubmiter monitor;
-	
 	private SubcriberManager subManager;
 	
-	private ItemStorage storage;
+	private ResendManager resendManager;
+	
+	private ItemStorage<PSData> cacheStorage;
 	
 	private AtomicBoolean discard = new AtomicBoolean(false);
 	
-	private Map<Long,TimerTicker> resendTimers = new ConcurrentHashMap<>();
+	private Map<String,List<PSData>> sendItems = new HashMap<>();
 	
-	private Queue<SendItem> resendItems = null;
-	
-	//private Queue<PSData> sendItems = null;
+	private Map<String,Long> lastSendTimes = new HashMap<>();
 	
 	private ExecutorService executor = null;
 	
-	private boolean running = false;
-	
-	//private Map<String,Set<String>> topic2Method = new ConcurrentHashMap<>();
+	private Object syncLocker = new Object();
 	
 	public static void main(String[] args) {
 		 JMicro.getObjectFactoryAndStart(new String[] {});
 		 Utils.getIns().waitForShutdown();
+	}
+	
+	@Override
+	public int publishItem(PSData item) {
+		return publishItems(item.getTopic(),new PSData[]{item});
+	}
+	
+	public int publishString(String topic,String content) {
+		if(!this.subManager.isValidTopic(topic)) {
+			return PubSubManager.PUB_TOPIC_NOT_VALID;
+		}
+		
+		PSData item = new PSData();
+		item.setTopic(topic);
+		item.setData(content);
+		return publishItems(topic,new PSData[]{item});
+	}
+	
+	/**
+	 * 同一主题的多个消息
+	 */
+	@Override
+	public int publishItems(String topic,PSData[] items) {
+		if(!this.subManager.isValidTopic(topic)) {
+			return PubSubManager.PUB_TOPIC_NOT_VALID;
+		}
+		
+		if(items == null || StringUtils.isEmpty(topic)) {
+			return PubSubManager.PUB_SERVER_DISCARD;
+		}
+		
+		long size = this.memoryItemsCnt.get() + items.length;
+		if(size > this.maxMemoryItem && (items.length + cacheItemsCnt.get()) > this.maxCachePersistItem) {
+			return PubSubManager.PUB_SERVER_BUSSUY;
+		}
+		
+		if(size < this.maxMemoryItem) {
+			List<PSData> l = this.sendItems.get(topic);
+			if(l == null) {
+				synchronized(syncLocker) {
+					 l = this.sendItems.get(topic);
+					 if(l == null) {
+						 this.sendItems.put(topic, l = new ArrayList<PSData>());
+						 lastSendTimes.put(topic, System.currentTimeMillis());
+					 }
+				}
+			}
+			
+			synchronized(l) {
+				if(openDebug) {
+					//logger.info("Client publish topic:{}",topic);
+				}
+				l.addAll(Arrays.asList(items));
+				memoryItemsCnt.addAndGet(items.length);
+			}
+		} else {
+			this.cacheStorage.push(topic,items);
+			cacheItemsCnt.addAndGet(items.length);
+			if(openDebug) {
+				logger.info("push to cache :{},total:{}",items.length,cacheItemsCnt.get());
+			}
+		}
+		
+		synchronized(syncLocker) {
+			syncLocker.notifyAll();
+		}
+		
+		return PubSubManager.PUB_OK;
 	}
 	
 	public void init() {
@@ -145,41 +213,27 @@ public class PubSubServer implements IInternalSubRpc{
 			return;
 		}
 		
-		this.storage = new ItemStorage(of);
 		subManager = new SubcriberManager(of,this.openDebug);
 		
-		if(this.maxFailItemCount <=0) {
-			logger.warn("Invalid maxFailItemCount: {}, set to default:{}",this.maxFailItemCount,10000);
-			this.maxFailItemCount = 10000;
-		}
+		this.resendManager = new ResendManager(of,this.openDebug,maxFailItemCount,doResendInterval);
+		resendManager.setSubManager(this.subManager);
+		
+		this.cacheStorage = new ItemStorage<PSData>(of,"/pubsubCache/");
 		
 		if(reOpenThreadInterval <= 0) {
 			logger.warn("Invalid reOpenThreadInterval: {}, set to default:{}",this.reOpenThreadInterval,1000);
 			this.reOpenThreadInterval = 1000;
 		}
-		
-		this.resendItems = new ConcurrentLinkedQueue<>(new HashSet<>(maxFailItemCount));
-		
 		//this.sendItems = new ConcurrentLinkedQueue<>(new HashSet<>(maxFailItemCount));
 		
 		ExecutorConfig config = new ExecutorConfig();
 		config.setMsCoreSize(1);
-		config.setMsMaxSize(30);
-		config.setTaskQueueSize(5000);
+		config.setMsMaxSize(5);
+		config.setTaskQueueSize(1000);
 		config.setThreadNamePrefix("PublishExecurot");
 		config.setRejectedExecutionHandler(new PubsubServerAbortPolicy());
 		executor = ExecutorFactory.createExecutor(config);
 		
-		initPubSubServer();
-		resetResendTimer();
-	}
-	
-	private void initPubSubServer() {
-		if(!isEnableServer()) {
-			//不启用pubsub Server功能，此运行实例是一个
-			logger.info("Pubsub server is disable by config [/PubSubManager/enableServer]");
-			return;
-		}
 		Set<String> children = this.dataOp.getChildren(Config.PubSubDir,true);
 		for(String t : children) {
 			Set<String>  subs = this.dataOp.getChildren(Config.PubSubDir+"/"+t,true);
@@ -188,297 +242,171 @@ public class PubSubServer implements IInternalSubRpc{
 			}
 		}
 		
+		Thread checkThread = new Thread(this::doCheck,"JMicro-"+Config.getInstanceName()+"-PubSubServer");
+		checkThread.setDaemon(true);
+		checkThread.start();
+		
 	}
 	
-	private void resetResendTimer() {
-		
-		logger.info("Reset timer with doResendInterval0:{},doResendInterval:{}",doResendInterval0,doResendInterval);
-		TimerTicker.getTimer(this.resendTimers, doResendInterval0).removeListener(RESEND_TIMER,true);
-		
-		TimerTicker.getTimer(this.resendTimers, doResendInterval)
-		.addListener(RESEND_TIMER, (key,att)->{
+	private void doCheck() {
+
+		int batchSize = 100;
+		int sendInterval = 500;
+		while (true) {
 			try {
-				doResend();
-			} catch (Throwable e) {
-				logger.error("Submit doResend fail: ",e);
-			}
-		}, null);
-		
-		doResendInterval0 = doResendInterval;
-	}
-	
-	
-	/*
-	private boolean subcribe(String topic,ServiceMethod srvMethod,Map<String, String> context) {
-		return this.subManager.subcribe(topic, srvMethod, context);
-	}
-	
-	private boolean unsubcribe(String topic,ServiceMethod srvMethod,Map<String, String> context) {
-		return this.subManager.unsubcribe(topic, srvMethod, context);
-	}
-	*/
-	
-	public long publishString(String topic,String content) {
-		if(discard.get()) {
-			//logger.warn("Disgard One:{}",topic);
-			//由发送者处理失败消息
-			return PubSubManager.PUB_SERVER_DISCARD;
-		}
-		
-		PSData item = new PSData();
-		item.setTopic(topic);
-		item.setData(content);
-		return this.publishData(item);
-	}
-	
-	/**
-	 * 如果发送部份失败，则返回失败选项的开始索引值，
-	 * 否则返回成功码
-	 */
-	@Override
-	public long publishItems(PSData[] items) {
-		for(int i = 0; i < items.length; i++) {
-			if(items[i] != null) {
-				long rst = publishData(items[i]);
-				if(rst == PubSubManager.PUB_SERVER_DISCARD) {
-					return i;
-				}
-			}
-		}
-		return PubSubManager.PUB_OK;
-	}
 
-	public long publishData(PSData item) {
-		if(discard.get()) {
-			//logger.warn("Disgard One:{}",item.getTopic());
-			//由发送者处理失败消息
-			return PubSubManager.PUB_SERVER_DISCARD;
-		}
-		try {
-			/*if(this.sendItems.size() > this.maxFailItemCount) {
-				//本服务发送队列已经达上限，由发送者负责重发
-				return PubSubManager.PUB_SERVER_DISCARD;
-			}*/
-			//sendItems.offer(item);
-			
-			executor.submit(()->{
-				//在这里失败的消息，服务负责失败重发，最大限度保证消息能送达目标结点
-				if(isQueue(item.getFlag())) {
-					doPublishQuque(item,0,0);
-				} else {
-					doPublishSubsub(item,0,0);
+				if (memoryItemsCnt.get() == 0 && cacheItemsCnt.get() == 0) {
+					synchronized (syncLocker) {
+						syncLocker.wait(1000);
+					}
 				}
-			});
-			
-			return item.getId();
-		} catch (RejectedExecutionException e) {
-			//线程对列满了,停指定时间,待消息队列有空位再重新提交
-			logger.error("",e);
-			//由发送者处理失败消息
-			SendItem si = new SendItem(SendItem.TYPY_RESEND,null,item,0);
-			return queueItem(si);
-		}
-	}
-	
-	private long queueItem(SendItem item) {
-		if(item.retryCnt < 2 && resendItems.size() < maxFailItemCount) {
-			//内存缓存
-			resendItems.offer(item);
-		} else {
-			long l = storage.len(item.item.getTopic());
-			if(l < this.maxCachePersistItem) {
-				//做持久化
-				storage.push(item);
-			} else {
+
+				long curTime = System.currentTimeMillis();
+				if (memoryItemsCnt.get() < batchSize) {
+					// 优先发送内存中的消息，如果内存中无消息，则发送缓存中的消息
+					for (Map.Entry<String, Long> e : lastSendTimes.entrySet()) {
+						if (curTime - e.getValue() > sendInterval && this.cacheStorage.len(e.getKey()) > 0) {
+							List<PSData> items = this.cacheStorage.pops(e.getKey(), batchSize);
+							cacheItemsCnt.addAndGet(-items.size());
+
+							List<PSData> is = sendItems.get(e.getKey());
+							if (is == null) {
+								synchronized (syncLocker) {
+									is = sendItems.get(e.getKey());
+									if (is == null) {
+										sendItems.put(e.getKey(), is = new ArrayList<>());
+									}
+								}
+							}
+							
+							synchronized (is) {
+								if(openDebug) {
+									logger.info("end get items from cache topic:{}",e.getKey());
+								}
+								is.addAll(items);
+							}
+							
+							memoryItemsCnt.addAndGet(items.size());
+							
+							if(openDebug) {
+								logger.info("begin get items from cache topic:{}",e.getKey());
+							}
+						}
+					}
+				}
+
+				if (memoryItemsCnt.get() == 0) {
+					// 没有待发送消息，进入下一轮循环
+					if (openDebug) {
+						//logger.info("No data to submit:");
+					}
+					continue;
+				}
 				
-				//没办法，服务器吃不消了，直接丢弃
-				SF.doBussinessLog(MonitorConstant.LOG_ERROR,PubSubServer.class,null, 
-						"缓存消息量已经达上限："+JsonUtils.getIns().toJson(item));
-				
-				discardOneTime();
-				return PubSubManager.PUB_SERVER_DISCARD;
-			}
-		}
-		return item.item.getId();
-	}
+				int sendSize = 0;
 
-	private void doPublishSubsub(PSData item,int retryCnt, long time) {
+				for (Map.Entry<String, List<PSData>> e : sendItems.entrySet()) {
 
-		String topic = item.getTopic();
-		/*if(openDebug) {
-			logger.debug("Got topic: {}",item.getTopic());
-		}*/
-		//如果在对主题分发过程中有订阅进来,最多就少接收或多收消息
-		//基于pubsub的应该注意此特性,如果应用接受不了,就不应该使得pubsub,
-		//或者确保在消息发送前注册或取消订阅器，
-		Set<ISubCallback> q = this.subManager.getCallback(topic);
-		if(q == null || q.isEmpty()) {
-			if(openDebug) {
-				//消息被丢弃
-				logger.debug("No subscriber for: {}",item.getTopic());
-				SF.doBussinessLog(MonitorConstant.LOG_ERROR,PubSubServer.class,null, 
-						"订阅消息当前无消费者,进入持久存储并重发msgID："+JsonUtils.getIns().toJson(item));
-			}
-			SendItem si = new SendItem(SendItem.TYPY_RESEND,null,item,retryCnt);
-			si.time = time;
-			queueItem(si);
-		} else {
-			boolean flag = false;
-			for(ISubCallback cb : q) {
-				/*if(openDebug) {
-					logger.debug("Publish topic: {}, cb {}",item.getTopic(),cb.info());
-				}*/
-				try {
-					cb.onMessage(item);
-					//最少一个消费者成功消费消息
-					flag = true;
-				} catch (Throwable e) {
-					flag = false;
-					logger.error("doPublish,Fail Item Size["+resendItems.size()+"]",e);
-					String info = "";
-					try {
-						info = cb.info();
-					} catch (Throwable e1) {
-					}
-					SF.doBussinessLog(MonitorConstant.LOG_ERROR,PubSubServer.class,e, info+"\n"+JsonUtils.getIns().toJson(item));
-				}
-			}
-			if(!flag) {
-				//一个都没有成功
-				//需要重发消息
-				queueItem(new SendItem(SendItem.TYPY_RESEND,null,item,retryCnt));
-			}
-		}
-	}
-
-	private void doPublishQuque(PSData item,int retryCnt,long time) {
-
-		String topic = item.getTopic();
-		/*if(openDebug) {
-			logger.debug("Got topic: {}",item.getTopic());
-		}*/
-		//synchronized(topic) {
-		//没必要做同步
-		//如果在对主题分发过程中有订阅进来,最多就少接收或多收消息
-		//基于pubsub的应该注意此特性,如果应用接受不了,就不应该使得pubsub,
-		//或者确保在消息发送前注册或取消订阅器，
-		Set<ISubCallback> q = this.subManager.getCallback(topic);
-		if(q == null || q.isEmpty()) {
-			if(openDebug) {
-				//消息进入重发队列
-				logger.debug("No subscriber for: {}",item.getTopic());
-			}
-			//等待消费者上线
-			SendItem si = new SendItem(SendItem.TYPY_RESEND,null,item,retryCnt++);
-			si.time = time;
-			queueItem(si);
-		} else {
-			for(ISubCallback cb : q) {
-				/*if(openDebug) {
-					logger.debug("Publish topic: {}, cb {}",item.getTopic(),cb.info());
-				}*/
-				try {
-					cb.onMessage(item);
-					//队列类消息,只要一个并且只有一个消费者成功消费
-					return;
-				} catch (Throwable e) {
-					logger.error("doPublishQuque",e);
-					String info = "";
-					try {
-						info = cb.info();
-					} catch (Throwable e1) {
-					}
-					SF.doBussinessLog(MonitorConstant.LOG_ERROR,PubSubServer.class,e, info+"\n"+JsonUtils.getIns().toJson(item));
-				}
-			}
-			
-			//需要重发消息
-			SendItem si = new SendItem(SendItem.TYPY_RESEND,null,item,retryCnt++);
-			si.time = time;
-			queueItem(si);
-			
-			/*if(resendItems.size() > maxFailItemCount) {
-				//失败队列满,丢弃消息,确保服务能自动恢复
-				SF.doBussinessLog(MonitorConstant.LOG_ERROR,PubSubServer.class,null, "队列消息发送失败,进入持久存储重发msgID："+item.getId());
-				persist(item);
-			} else {
-				resendItems.offer(new SendItem(SendItem.TYPY_RESEND,null,item,retryCnt++));
-			}*/
-		
-		}
-	}
-
-	/**
-	 * 极端高峰流量时，服务器直接拒绝请求，以确保服务不挂机
-	 */
-	private void discardOneTime() {
-		logger.warn("Thread pool exceed and stop {} Milliseconds",this.reOpenThreadInterval);
-		discard.set(true);
-    	TimerTicker.getDefault(this.reOpenThreadInterval).addListener(DISCARD_TIMER,(key,att)->{
-    		discard.set(false);
-    		logger.warn("Thread pool reopen after {} Milliseconds!",this.reOpenThreadInterval);
-    		TimerTicker.getDefault(this.reOpenThreadInterval).removeListener(DISCARD_TIMER,false);
-    	},null);
-	}
-	
-	private boolean isQueue(byte flag) {
-		return Message.is(flag, PSData.FLAG_QUEUE);
-	}
-
-	private void doResend() {
-		
-		if(resendItems.isEmpty() ) {
-			/*if(openDebug) {
-				logger.debug("doResend check empty");
-			}*/
-			
-			Set<String> keys = this.subManager.topics();
-			for(String k : keys) {
-				long l = 0;
-				if((l = storage.len(k)) > 0) {
-					if(l > 100) {
-						l = 100;
-					}
-					for(;l > 0;) {
-						resendItems.addAll(storage.pops(k, l));
+					if (e.getValue().isEmpty()) {
+						//无消息要发送
+						continue;
 					}
 					
+					long lastSendTime = lastSendTimes.get(e.getKey());
+					if(e.getValue().size() < batchSize && System.currentTimeMillis() - lastSendTime < sendInterval) {
+						//消息数量及距上次发送时间间隔都不到，直接路过
+						continue;
+					}
+
+					//更新发送时间
+					lastSendTimes.put(e.getKey(), System.currentTimeMillis());
+					
+					List<PSData> ll = e.getValue();
+
+					int size = ll.size();
+					if (size > batchSize) {
+						// 每批次最多能同时发送batchSize个消息
+						size = batchSize;
+					}
+
+					PSData[] items = new PSData[size];
+					synchronized (ll) {
+						int i = 0;
+						for (Iterator<PSData> ite = ll.iterator(); ite.hasNext() && i < size; i++) {
+							items[i] = ite.next();
+							ite.remove();
+						}
+					}
+					sendSize += items.length;
+					this.executor.submit(new Worker(items, e.getKey()));
 				}
+				
+				if(sendSize == 0 && memoryItemsCnt.get()/batchSize > 5) {
+					String msg = "Pubsub server got in exception statu: memory size: "+memoryItemsCnt.get()+
+							",cacheItemsCnt size:"+cacheItemsCnt.get()+", but no message to send";
+					logger.error(msg);
+					//SF.doBussinessLog(MonitorConstant.LOG_ERROR, PubSubServer.class, null, msg);
+				}
+
+			} catch (Throwable e) {
+				// 永不结束线程
+				logger.error("doCheck异常", e);
+				//SF.doBussinessLog(MonitorConstant.LOG_ERROR, PubSubServer.class, e, "doCheck异常");
 			}
 		}
 		
-		if( resendItems.isEmpty() ) {
-			return;
-		}
-		
-		if(openDebug) {
-			logger.debug("doResend submit ones, send size:{}",resendItems.size());
-		}
-		executor.submit(()->{
-			for(SendItem si = resendItems.poll(); si != null; si = resendItems.poll()) {
-				if(isQueue(si.item.getFlag())) {
-					doPublishQuque(si.item,si.retryCnt,si.time);
-				} else {
-					doPublishSubsub(si.item,si.retryCnt,si.time);
-				}
-			}
-		});
 	}
-	
- final class SendItem {
-		transient public static final int TYPY_RESEND = 1;
+
+	private class Worker implements Runnable{
 		
-		transient public ISubCallback cb;
-		public PSData item;
-		public int retryCnt=0;
+		private PSData[] items = null;
 		
-		public long time = 0;
+		private Set<ISubCallback> callbacks = null;
 		
-		public SendItem(int type,ISubCallback cb,PSData item,int retryCnt) {
-			this.cb = cb;
-			this.item = item;
-			this.retryCnt = retryCnt;
-			time = System.currentTimeMillis();
+		private String topic = null;
+		
+		public Worker(PSData[] items,String topic) {
+			this.items = items;
+			this.topic = topic;
+			this.callbacks =  subManager.getCallback(topic);
+		}
+		
+		@Override
+		public void run() {
+			try {
+				
+				/*if (openDebug) {
+					logger.info("submit topic:{},callbacks size:{}", topic, callbacks == null ? 0 : callbacks.size());
+				}*/
+				if(callbacks == null || callbacks.isEmpty()) {
+					//没有对应主题的监听器，直接进入重发队列，此时回调cb==null
+					SendItem si = new SendItem(SendItem.TYPY_RESEND, null, items, 0);
+					resendManager.queueItem(si);
+					logger.error("Push to resend component topic:"+topic);
+				} else {
+					for (ISubCallback cb : callbacks) {
+						PSData[] psds = null;
+						try {
+							psds = cb.onMessage(items);
+						} catch (Throwable e) {
+							// 进入重发队列
+							if (psds != null && psds.length > 0) {
+								SendItem si = new SendItem(SendItem.TYPY_RESEND, cb, psds, 0);
+								resendManager.queueItem(si);
+								logger.error("Push to resend component:"+cb.getSm().getKey().toKey(true, true, true));
+							}
+							logger.error("Worker get exception", e);
+							//SF.doBussinessLog(MonitorConstant.LOG_ERROR, PubSubServer.class, e, "Subscribe mybe down: "+cb.getSm().getKey().toKey(true, true, true));
+						}
+					}
+				}
+			} finally {
+				// 全部失败消息进入重发组件，在此也算成功，减去此批消息数量
+				int size = memoryItemsCnt.getAndAdd(-items.length);
+				if(openDebug) {
+					//logger.info("Do decrement memoryItemsCnt cur:"+memoryItemsCnt.get()+", before:"+size);
+				}
+			}
 		}
 	}
 

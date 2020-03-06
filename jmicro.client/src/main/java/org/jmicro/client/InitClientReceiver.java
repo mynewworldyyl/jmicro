@@ -20,7 +20,7 @@ import java.util.Set;
 
 import org.jmicro.api.annotation.Component;
 import org.jmicro.api.net.IMessageHandler;
-import org.jmicro.api.objectfactory.IFactoryListener;
+import org.jmicro.api.objectfactory.IPostFactoryListener;
 import org.jmicro.api.objectfactory.IObjectFactory;
 import org.jmicro.api.objectfactory.ProxyObject;
 import org.jmicro.common.Constants;
@@ -30,7 +30,7 @@ import org.jmicro.common.Constants;
  * @date 2018年10月9日-下午5:51:55
  */
 @Component(active=true,value="InitClientReceiver",side=Constants.SIDE_COMSUMER)
-public class InitClientReceiver implements IFactoryListener{
+public class InitClientReceiver implements IPostFactoryListener{
 	@Override
 	public void afterInit(IObjectFactory of) {
 		Set<IMessageHandler> list = of.getByParent(IMessageHandler.class);

@@ -17,6 +17,7 @@
 package org.jmicro.pubsub;
 
 import org.jmicro.api.pubsub.PSData;
+import org.jmicro.api.registry.ServiceMethod;
 
 /**
  * 
@@ -25,7 +26,10 @@ import org.jmicro.api.pubsub.PSData;
  */
 public interface ISubCallback {
 
-	void onMessage(PSData item);
+	PSData[]  onMessage(PSData[] item);
 	
 	String info();
+	
+	ServiceMethod getSm();
+	
 }

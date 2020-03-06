@@ -110,117 +110,10 @@ class ClientServiceProxyManager {
 		return (T)proxy;
 	}
 	
-	/**
-	 * 创建对应items的服务代理，其中acs指定的forMethod方法将会被异步调用
-	 * @param acs
-	 * @param items
-	 */
-	private void registerAsyncService(AsyncConfig[] acs, Set<ServiceItem> items) {
-		if(acs ==null || acs.length == 0) {
-			return;
-		}
-		
-		Set<ServiceItem> updates = new HashSet<>();
-		
-		for(AsyncConfig a : acs) {
-			if(a == null) {
-				continue;
-			}
-			
-			for(ServiceItem si : items) {
-				Set<ServiceMethod> sms = si.getMethods();
-				
-				boolean flag = false;
-				for(ServiceMethod sm : sms) {
-					if(sm.getKey().getMethod().equals(a.getForMethod())) {
-						//方法名相同的都注册为异步调用方法
-						String mkey = sm.getKey().toKey(false, false, false);
-						if(StringUtils.isNotEmpty(sm.getTopic()) && !mkey.equals(sm.getTopic())) {
-							throw new CommonException("Callback service method topic is not valid:" + JsonUtils.getIns().toJson(a) 
-									+", Service: " + si.getKey().toKey(true, true, true)+",topic:" + sm.getTopic());
-						}
-						
-						if(StringUtils.isEmpty(sm.getTopic())) {
-							sm.setTopic(mkey);
-							updates.add(si);
-							flag = true;
-						}else if(sm.getTopic().equals(mkey)) {
-							flag = true;
-						}
-					}
-				}
-				
-				if(!flag) {
-					throw new CommonException("Callback service method not found for:" + JsonUtils.getIns().toJson(a) +", Service: " + si.getKey().toKey(true, true, true));
-				}
-				
-			}
-			
-			if(StringUtils.isNotEmpty(a.getServiceName())) {
-				
-				Set<ServiceItem> callbackItems = registry.getServices(a.getServiceName(), a.getNamespace(), a.getVersion());
-				if(callbackItems == null || callbackItems.isEmpty()) {
-					throw new CommonException("Callback service not found:" + JsonUtils.getIns().toJson(a));
-				}
-				
-				for(ServiceItem si : callbackItems) {
-					Set<ServiceMethod> sms = si.getMethods();
-					
-					boolean flag = false;
-					for(ServiceMethod sm : sms) {
-						if(sm.getKey().getMethod().equals(a.getMethod())) {
-							flag = true;
-							break;
-						}
-					}
-					
-					if(!flag) {
-						throw new CommonException("Async service method not found for:" + JsonUtils.getIns().toJson(a) +", Service: " + si.getKey().toKey(true, true, true));
-					}
-				}
-			}
-			
-		}
-		
-		if(!updates.isEmpty()) {
-			for(ServiceItem si : updates) {
-				registry.update(si);
-			}
-		}
-		
-	}
-
 	@SuppressWarnings("unchecked")
 	<T> T  getRefRemoteService(String srvName, AsyncConfig[] acs){
 		Class<?> cls = loadClass(srvName,null);
 		return getRefRemoteService(cls,acs);
-	}
-	
-	private Class<?> loadClass(String clsName,ClassLoader cl) {
-		try {
-			return Thread.currentThread().getContextClassLoader().loadClass(clsName);
-		} catch (ClassNotFoundException e) {
-			try {
-				 return this.getClass().getClassLoader().loadClass(clsName);
-			} catch (ClassNotFoundException e1) {
-				if(cl == null) {
-					cl = of.get(RpcClassLoader.class);
-				}
-				
-				if(cl != null) {
-					try {
-						Class<?> c = cl.loadClass(clsName);
-						if(c != null) {
-							Thread.currentThread().setContextClassLoader(cl);
-						}
-						return c;
-					} catch (ClassNotFoundException e2) {
-					}
-				}
-				
-				throw new CommonException("class["+clsName+"] not found",e);
-			}
-		}
 	}
 	
 	/**
@@ -311,6 +204,148 @@ class ClientServiceProxyManager {
 			
 		}
 	}
+    
+    Class<?> getEltType(Field f){
+
+		if(Collection.class.isAssignableFrom(f.getType())){
+			ParameterizedType genericType = (ParameterizedType) f.getGenericType();
+			if(genericType == null) {
+				throw new CommonException("Must be ParameterizedType for cls:"+ f.getDeclaringClass().getName()+",field: "+f.getName());
+			}
+			Class<?> ctype = (Class<?>)genericType.getActualTypeArguments()[0];
+			return ctype;
+		}
+		
+		return f.getType();
+	}
+    
+    AsyncConfig[] getAcs(Reference ref) {
+    	AsyncConfig[] acs = null;
+		if(ref.asyncs() != null && ref.asyncs().length > 0) {
+			acs = new AsyncConfig[ref.asyncs().length];
+			int i = 0;
+			for(Async a : ref.asyncs()) {
+				AsyncConfig ac = new AsyncConfig();
+				ac.setCondition(a.condition());
+				ac.setEnable(a.enable());
+				ac.setMethod(a.method());
+				ac.setNamespace(a.namespace());
+				ac.setServiceName(a.serviceName());
+				ac.setVersion(a.version());
+				ac.setForMethod(a.forMethod());
+				acs[i] = ac;
+				i++;
+			}
+		}
+		return acs;
+    }
+	
+	/**
+	 * 创建对应items的服务代理，其中acs指定的forMethod方法将会被异步调用
+	 * @param acs
+	 * @param items
+	 */
+	private void registerAsyncService(AsyncConfig[] acs, Set<ServiceItem> items) {
+		if(acs ==null || acs.length == 0) {
+			return;
+		}
+		
+		Set<ServiceItem> updates = new HashSet<>();
+		
+		for(AsyncConfig a : acs) {
+			if(a == null) {
+				continue;
+			}
+			
+			for(ServiceItem si : items) {
+				Set<ServiceMethod> sms = si.getMethods();
+				
+				boolean flag = false;
+				for(ServiceMethod sm : sms) {
+					if(sm.getKey().getMethod().equals(a.getForMethod())) {
+						//方法名相同的都注册为异步调用方法
+						String mkey = sm.getKey().toKey(false, false, false);
+						if(StringUtils.isNotEmpty(sm.getTopic()) && !mkey.equals(sm.getTopic())) {
+							throw new CommonException("Callback service method topic is not valid:" + JsonUtils.getIns().toJson(a) 
+									+", Service: " + si.getKey().toKey(true, true, true)+",topic:" + sm.getTopic());
+						}
+						
+						if(StringUtils.isEmpty(sm.getTopic())) {
+							sm.setTopic(mkey);
+							updates.add(si);
+							flag = true;
+						}else if(sm.getTopic().equals(mkey)) {
+							flag = true;
+						}
+					}
+				}
+				
+				if(!flag) {
+					throw new CommonException("Callback service method not found for:" + JsonUtils.getIns().toJson(a) +", Service: " + si.getKey().toKey(true, true, true));
+				}
+				
+			}
+			
+			if(StringUtils.isNotEmpty(a.getServiceName())) {
+				
+				Set<ServiceItem> callbackItems = registry.getServices(a.getServiceName(), a.getNamespace(), a.getVersion());
+				if(callbackItems == null || callbackItems.isEmpty()) {
+					throw new CommonException("Callback service not found:" + JsonUtils.getIns().toJson(a));
+				}
+				
+				for(ServiceItem si : callbackItems) {
+					Set<ServiceMethod> sms = si.getMethods();
+					
+					boolean flag = false;
+					for(ServiceMethod sm : sms) {
+						if(sm.getKey().getMethod().equals(a.getMethod())) {
+							flag = true;
+							break;
+						}
+					}
+					
+					if(!flag) {
+						throw new CommonException("Async service method not found for:" + JsonUtils.getIns().toJson(a) +", Service: " + si.getKey().toKey(true, true, true));
+					}
+				}
+			}
+			
+		}
+		
+		if(!updates.isEmpty()) {
+			for(ServiceItem si : updates) {
+				registry.update(si);
+			}
+		}
+		
+	}
+	
+	private Class<?> loadClass(String clsName,ClassLoader cl) {
+		try {
+			return Thread.currentThread().getContextClassLoader().loadClass(clsName);
+		} catch (ClassNotFoundException e) {
+			try {
+				 return this.getClass().getClassLoader().loadClass(clsName);
+			} catch (ClassNotFoundException e1) {
+				if(cl == null) {
+					cl = of.get(RpcClassLoader.class);
+				}
+				
+				if(cl != null) {
+					try {
+						Class<?> c = cl.loadClass(clsName);
+						if(c != null) {
+							Thread.currentThread().setContextClassLoader(cl);
+						}
+						return c;
+					} catch (ClassNotFoundException e2) {
+					}
+				}
+				
+				throw new CommonException("class["+clsName+"] not found",e);
+			}
+		}
+	}
 	
     private Object createRefService(Object srcObj,Field f){
 		if(!f.isAnnotationPresent(Reference.class)){
@@ -361,41 +396,6 @@ class ClientServiceProxyManager {
 		return proxy;
 	}
     
-    AsyncConfig[] getAcs(Reference ref) {
-    	AsyncConfig[] acs = null;
-		if(ref.asyncs() != null && ref.asyncs().length > 0) {
-			acs = new AsyncConfig[ref.asyncs().length];
-			int i = 0;
-			for(Async a : ref.asyncs()) {
-				AsyncConfig ac = new AsyncConfig();
-				ac.setCondition(a.condition());
-				ac.setEnable(a.enable());
-				ac.setMethod(a.method());
-				ac.setNamespace(a.namespace());
-				ac.setServiceName(a.serviceName());
-				ac.setVersion(a.version());
-				ac.setForMethod(a.forMethod());
-				acs[i] = ac;
-				i++;
-			}
-		}
-		return acs;
-    }
-	
-	public Class<?> getEltType(Field f){
-
-		if(Collection.class.isAssignableFrom(f.getType())){
-			ParameterizedType genericType = (ParameterizedType) f.getGenericType();
-			if(genericType == null) {
-				throw new CommonException("Must be ParameterizedType for cls:"+ f.getDeclaringClass().getName()+",field: "+f.getName());
-			}
-			Class<?> ctype = (Class<?>)genericType.getActualTypeArguments()[0];
-			return ctype;
-		}
-		
-		return f.getType();
-	}
-	
 	private Object createCollectionService(Object srcObj, Field f, Class<?> becls, Reference ref) {
 	
 		Class<?> ctype = getEltType(f);
@@ -502,7 +502,7 @@ class ClientServiceProxyManager {
 	 * @param version
 	 * @return
 	 */
-	public  static <T> T createDynamicServiceProxy(Class<T> cls, String namespace, String version, AsyncConfig[] acs) {
+	private <T> T createDynamicServiceProxy(Class<T> cls, String namespace, String version, AsyncConfig[] acs) {
 		 ClassGenerator classGenerator = ClassGenerator.newInstance(Thread.currentThread().getContextClassLoader());
 		 classGenerator.setClassName(cls.getName()+"$Jmicro"+SimpleObjectFactory.idgenerator.getAndIncrement());
 		 classGenerator.setSuperClass(AbstractClientServiceProxy.class);

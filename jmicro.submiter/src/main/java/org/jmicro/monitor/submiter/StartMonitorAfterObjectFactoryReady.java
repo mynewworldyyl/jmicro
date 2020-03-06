@@ -2,23 +2,14 @@ package org.jmicro.monitor.submiter;
 
 import org.jmicro.api.annotation.Component;
 import org.jmicro.api.objectfactory.IObjectFactory;
-import org.jmicro.api.objectfactory.IFactoryListener;
+import org.jmicro.api.objectfactory.PostFactoryAdapter;
 
 @Component(active=true,value="startMonitorAfterObjectFactoryReady")
-public class StartMonitorAfterObjectFactoryReady implements IFactoryListener {
+public class StartMonitorAfterObjectFactoryReady extends PostFactoryAdapter {
 
 	@Override
 	public void afterInit(IObjectFactory of) {
 		SubmitItemHolderManager sihm = of.get(SubmitItemHolderManager.class);
 		sihm.init0();
-	}
-
-	@Override
-	public int runLevel() {
-		return 1000;
-	}
-	
-	@Override
-	public void preInit(IObjectFactory of) {
 	}
 }

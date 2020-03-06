@@ -244,8 +244,6 @@ public class JMicroContext  {
 	public void configMonitorable(boolean enable){
 		this.setBoolean(Constants.MONITOR_ENABLE_KEY, enable);
 	}
-	
-	
 
 	public void mergeParams(JMicroContext c){
 		Map<String,Object> ps = c.params;

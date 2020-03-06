@@ -2,7 +2,7 @@ package org.jmicro.ext.mongodb;
 
 import org.jmicro.api.annotation.Component;
 import org.jmicro.api.config.Config;
-import org.jmicro.api.objectfactory.IFactoryListener;
+import org.jmicro.api.objectfactory.IPostFactoryListener;
 import org.jmicro.api.objectfactory.IObjectFactory;
 import org.jmicro.common.util.StringUtils;
 import org.slf4j.Logger;
@@ -16,7 +16,7 @@ import com.mongodb.ServerAddress;
 import com.mongodb.client.MongoDatabase;
 
 @Component(lazy=false, level=99)
-public class Init implements IFactoryListener{
+public class Init implements IPostFactoryListener{
 	
 	private final static Logger logger = LoggerFactory.getLogger(Init.class);
 	

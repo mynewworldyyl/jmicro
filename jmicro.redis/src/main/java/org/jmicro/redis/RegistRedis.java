@@ -3,7 +3,7 @@ package org.jmicro.redis;
 import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.Inject;
 import org.jmicro.api.config.Config;
-import org.jmicro.api.objectfactory.IFactoryListener;
+import org.jmicro.api.objectfactory.IPostFactoryListener;
 import org.jmicro.api.objectfactory.IObjectFactory;
 import org.jmicro.common.CommonException;
 import org.jmicro.common.util.StringUtils;
@@ -13,7 +13,7 @@ import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.JedisPoolConfig;
 
 @Component(lazy=false, level=0)
-public class RegistRedis implements IFactoryListener{
+public class RegistRedis implements IPostFactoryListener{
 
 	//@Cfg(value = "/RegistRedis/redisHost", defGlobal=true)
 	private String redisHost = "127.0.0.1";

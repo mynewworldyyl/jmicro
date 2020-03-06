@@ -186,9 +186,17 @@ public class SerializeProxyFactory {
 			    		
 			    		sb.append(" int cnt = 0; \n");
 			    		sb.append(" while( cnt < size) { //block5 \n ++cnt; \n");
-			    		sb.append(" if(readEvery) { //block6 \n");
+			    		sb.append(" if(readEvery) { //block6 \n"); //block6 \n");
+			    		sb.append("  short prefixCode =  __buffer.readByte(); \n");
+			    		sb.append(" if(prefixCode == org.jmicro.api.codec.Decoder.PREFIX_TYPE_NULL ){ "+varName+".add(null);; continue;}");
+			    		sb.append(" if(prefixCode == org.jmicro.api.codec.Decoder.PREFIX_TYPE_SHORT) { \n");
 			    		sb.append("  c =  __buffer.readShort(); \n");
-			    		sb.append(" eleCls = org.jmicro.api.codec.TypeCoderFactory.getClassByCode(new Short(c)); \n ");
+			    		sb.append("  eleCls = org.jmicro.api.codec.TypeCoderFactory.getClassByCode(new Short(c)); \n ");
+			    		sb.append(" } else { \n");
+			    		sb.append(" java.lang.String cn = __buffer.readUTF(); \n");
+				    	sb.append(" eleCls = org.jmicro.agent.SerializeProxyFactory.loadClazz(cn); \n");
+			    		sb.append(" } \n");
+			    		
 			    		sb.append(" } //block6 \n");
 			    		sb.append(" Object elt = org.jmicro.agent.SerializeProxyFactory.decodeListElement(__buffer,eleCls); \n");
 			    		sb.append(" if(elt != null) { //block7 \n");
@@ -232,8 +240,16 @@ public class SerializeProxyFactory {
 			    		
 			    		sb.append(" for(int i = 0; i < size; i++) { //block5 \n ");
 			    		sb.append(" if(readEvery) { //block6 \n");
+			    		sb.append("  short prefixCode =  __buffer.readByte(); \n");
+			    		sb.append("if(prefixCode == org.jmicro.api.codec.Decoder.PREFIX_TYPE_NULL ){ "+varName+"[i]=null; continue;}");
+			    		sb.append(" if(prefixCode == org.jmicro.api.codec.Decoder.PREFIX_TYPE_SHORT) { \n");
 			    		sb.append("  c =  __buffer.readShort(); \n");
 			    		sb.append("  eleCls = org.jmicro.api.codec.TypeCoderFactory.getClassByCode(new Short(c)); \n ");
+			    		sb.append(" } else { \n");
+			    		sb.append(" java.lang.String cn = __buffer.readUTF(); \n");
+				    	sb.append(" eleCls = org.jmicro.agent.SerializeProxyFactory.loadClazz(cn); \n");
+			    		sb.append(" } \n");
+			    		
 			    		sb.append(" } //block6 \n");
 			    		sb.append(genericType).append(" elt = ("+genericType+") org.jmicro.agent.SerializeProxyFactory.decodeListElement(__buffer,eleCls); \n");
 			    		sb.append(" if(elt != null) { //block7 \n");
@@ -323,14 +339,31 @@ public class SerializeProxyFactory {
 			    		sb.append(" while( cnt < size) { //block5 \n ++cnt; \n");
 			    		
 			    		sb.append(" if(readKeyEvery) { //block6 \n");
+			    		
+			    		sb.append("  short prefixCode =  __buffer.readByte(); \n");
+			    		sb.append(" if(prefixCode == org.jmicro.api.codec.Decoder.PREFIX_TYPE_SHORT) { \n");
 			    		sb.append("  c =  __buffer.readShort(); \n");
-			    		sb.append(" keyEleCls = org.jmicro.api.codec.TypeCoderFactory.getClassByCode(new Short(c)); \n ");
+			    		sb.append("  keyEleCls = org.jmicro.api.codec.TypeCoderFactory.getClassByCode(new Short(c)); \n ");
+			    		sb.append(" } else { \n");
+			    		sb.append(" java.lang.String cn = __buffer.readUTF(); \n");
+				    	sb.append(" keyEleCls = org.jmicro.agent.SerializeProxyFactory.loadClazz(cn); \n");
+			    		sb.append(" } \n");
+			    		
 			    		sb.append(" } //block6 \n");
 			    		sb.append(" Object key = org.jmicro.agent.SerializeProxyFactory.decodeListElement(__buffer,keyEleCls); \n");
 			    		
 			    		sb.append(" if(readValEvery) { //block6 \n");
+			    		
+
+			    		sb.append("  short prefixCode =  __buffer.readByte(); \n");
+			    		sb.append(" if(prefixCode == org.jmicro.api.codec.Decoder.PREFIX_TYPE_SHORT) { \n");
 			    		sb.append("  c =  __buffer.readShort(); \n");
-			    		sb.append(" valEleCls = org.jmicro.api.codec.TypeCoderFactory.getClassByCode(new Short(c)); \n ");
+			    		sb.append("  valEleCls = org.jmicro.api.codec.TypeCoderFactory.getClassByCode(new Short(c)); \n ");
+			    		sb.append(" } else { \n");
+			    		sb.append(" java.lang.String cn = __buffer.readUTF(); \n");
+				    	sb.append(" valEleCls = org.jmicro.agent.SerializeProxyFactory.loadClazz(cn); \n");
+			    		sb.append(" } \n");
+			    		
 			    		sb.append(" } //block6 \n");
 			    		sb.append(" Object val = org.jmicro.agent.SerializeProxyFactory.decodeListElement(__buffer,valEleCls); \n");
 			    		
@@ -362,6 +395,10 @@ public class SerializeProxyFactory {
 		//System.out.println("\n\n");
 		//System.out.println(sb.toString());
 		
+		if("org.jmicro.api.net.RpcRequest".equals(cls.getName())) {
+			System.out.println(sb.toString());
+		}
+		
 		return sb.toString();
 	
 	}
@@ -385,8 +422,8 @@ public class SerializeProxyFactory {
 		for(int i = 0; i < fields.length; i++) {
 			CtField f = fields[i];
 			if(Modifier.isTransient(f.getModifiers()) || Modifier.isStatic(f.getModifiers())
-				|| Modifier.isFinal(f.getModifiers())) {
-				//transient字段不序列化
+				|| Modifier.isFinal(f.getModifiers()) ) {
+				//transient字段不序列化,final不可赋值，static一般为常量，所以也不做序列化
 				continue;
 			}
 			
@@ -493,10 +530,15 @@ public class SerializeProxyFactory {
 				    	//v cannot be null
 				    	sb.append(" Object v = ite.next(); \n");
 					   // sb.append(" if(writeEvery) {__buffer.writeUTF(v.getClass().getName());\n}");
-					    sb.append(" if(writeEvery) { \n Short cc"+i+" = org.jmicro.api.codec.TypeCoderFactory.getCodeByClass(v.getClass()); \n");
-					    sb.append(" if(cc"+i+"==null) org.jmicro.agent.SerializeProxyFactory.errorToSerializeObjectCode(v.getClass().getName()); \n  else ");
-					    sb.append("  __buffer.writeShort(cc"+i+".intValue()); \n");
-					    sb.append("  \n } \n");
+					    sb.append(" if(writeEvery) { \n");
+					    sb.append(" if(v == null) {  __buffer.writeByte(org.jmicro.api.codec.Decoder.PREFIX_TYPE_NULL); continue; \n } \n");
+					    sb.append(" Short cc"+i+" = org.jmicro.api.codec.TypeCoderFactory.getCodeByClass(v.getClass()); \n");
+					    sb.append(" if(cc"+i+"==null) { org.jmicro.agent.SerializeProxyFactory.errorToSerializeObjectCode(v.getClass().getName());\n");
+					    sb.append(" __buffer.writeByte(org.jmicro.api.codec.Decoder.PREFIX_TYPE_PROXY);\n");
+					    sb.append("  __buffer.writeUTF(v.getClass().getName()); ");
+					    sb.append(" } \n  else { \n");
+					    sb.append(" __buffer.writeByte(org.jmicro.api.codec.Decoder.PREFIX_TYPE_SHORT);\n");
+					    sb.append(" __buffer.writeShort(cc"+i+".intValue());}\n}\n");
 					    
 					    sb.append(" org.jmicro.agent.SerializeProxyFactory.encodeListElement(__buffer,v); \n");
 					    sb.append(" } //end for loop block5 \n ");
@@ -549,11 +591,18 @@ public class SerializeProxyFactory {
 				    	//sb.append(" java.util.Iterator ite = __val"+i+".iterator();\n")
 				    	sb.append(" for(int i = 0;  i < size; i++) { //loop block5 \n");
 				    	//v cannot be null
-				    	sb.append(" Object v = __val" + i + "[i];");
+				    	sb.append(" Object v = __val" + i + "[i];\n");
+				    	
 					    // sb.append(" if(writeEvery) {__buffer.writeUTF(v.getClass().getName());\n}");
-					    sb.append(" if(writeEvery) { \n Short cc"+i+" = org.jmicro.api.codec.TypeCoderFactory.getCodeByClass(v.getClass()); \n ");
-					    sb.append("if(cc"+i+"==null) org.jmicro.agent.SerializeProxyFactory.errorToSerializeObjectCode(v.getClass().getName()); \n  else ");
-					    sb.append("__buffer.writeShort(cc"+i+".intValue());\n}\n");
+					    sb.append(" if(writeEvery) { \n  ");
+					    sb.append(" if(v == null) {  __buffer.writeByte(org.jmicro.api.codec.Decoder.PREFIX_TYPE_NULL); continue; \n } \n");
+					    sb.append(" Short cc"+i+" = org.jmicro.api.codec.TypeCoderFactory.getCodeByClass(v.getClass()); \n");
+					    sb.append(" if(cc"+i+"==null) { org.jmicro.agent.SerializeProxyFactory.errorToSerializeObjectCode(v.getClass().getName());\n");
+					    sb.append(" __buffer.writeByte(org.jmicro.api.codec.Decoder.PREFIX_TYPE_PROXY);\n");
+					    sb.append("  __buffer.writeUTF(v.getClass().getName()); ");
+					    sb.append(" } \n  else { \n");
+					    sb.append(" __buffer.writeByte(org.jmicro.api.codec.Decoder.PREFIX_TYPE_SHORT);\n");
+					    sb.append(" __buffer.writeShort(cc"+i+".intValue());}\n}\n");
 					    
 					    sb.append(" org.jmicro.agent.SerializeProxyFactory.encodeListElement(__buffer,v); \n");
 					    sb.append(" } //end for loop block5 \n ");
@@ -649,14 +698,22 @@ public class SerializeProxyFactory {
 				    	
 					   // sb.append(" if(writeEvery) {__buffer.writeUTF(v.getClass().getName());\n}");
 					    sb.append(" if(writeKeyEvery) { \n Short cc"+i+" = org.jmicro.api.codec.TypeCoderFactory.getCodeByClass(key.getClass()); \n ");
-					    sb.append(" if(cc"+i+"==null) org.jmicro.agent.SerializeProxyFactory.errorToSerializeObjectCode(key.getClass().getName()); \n  else \n");
-					    sb.append("__buffer.writeShort(cc"+i+".intValue());\n}\n");
+					    sb.append(" if(cc"+i+"==null) { org.jmicro.agent.SerializeProxyFactory.errorToSerializeObjectCode(key.getClass().getName());\n");
+					    sb.append(" __buffer.writeByte(org.jmicro.api.codec.Decoder.PREFIX_TYPE_PROXY);\n");
+					    sb.append("  __buffer.writeUTF(key.getClass().getName()); ");
+					    sb.append(" } \n  else { \n");
+					    sb.append(" __buffer.writeByte(org.jmicro.api.codec.Decoder.PREFIX_TYPE_SHORT);\n");
+					    sb.append(" __buffer.writeShort(cc"+i+".intValue());}\n}\n");
 					    
 					    sb.append(" org.jmicro.agent.SerializeProxyFactory.encodeListElement(__buffer,key); \n");
 					    
 					    sb.append(" if(writeValEvery) { \n Short cc"+i+" = org.jmicro.api.codec.TypeCoderFactory.getCodeByClass(val.getClass()); \n ");
-					    sb.append(" if(cc"+i+"==null) org.jmicro.agent.SerializeProxyFactory.errorToSerializeObjectCode(val.getClass().getName()); \n  else \n");
-					    sb.append("__buffer.writeShort(cc"+i+".intValue());\n}\n");
+					    sb.append(" if(cc"+i+"==null) { org.jmicro.agent.SerializeProxyFactory.errorToSerializeObjectCode(val.getClass().getName());\n");
+					    sb.append(" __buffer.writeByte(org.jmicro.api.codec.Decoder.PREFIX_TYPE_PROXY);\n");
+					    sb.append("  __buffer.writeUTF(val.getClass().getName()); ");
+					    sb.append(" } \n  else { \n");
+					    sb.append(" __buffer.writeByte(org.jmicro.api.codec.Decoder.PREFIX_TYPE_SHORT);\n");
+					    sb.append(" __buffer.writeShort(cc"+i+".intValue());}\n}\n");
 					   
 					    sb.append(" org.jmicro.agent.SerializeProxyFactory.encodeListElement(__buffer,val); \n");
 					    sb.append(" } //end for loop block5 \n ");
@@ -684,7 +741,9 @@ public class SerializeProxyFactory {
 		
 		sb.append("}");
 		//System.out.println("\n\n");
-		//System.out.println(sb.toString());
+		if("org.jmicro.api.net.RpcRequest".equals(cls.getName())) {
+			System.out.println(sb.toString());
+		}
 		return sb.toString();
 	}
 	
@@ -764,8 +823,8 @@ public class SerializeProxyFactory {
 	}
 	
 	public static void errorToSerializeObjectCode(String clsName) {
-		String msg = "Have to call method org.jmicro.api.codec.TypeCoderFactory.registClass(\""+clsName+".class\") to regist serialize class["+clsName+"]";
-		throw new CommonException(msg);
+		String msg = "You can call method org.jmicro.api.codec.TypeCoderFactory.registClass(\""+clsName+".class\") to regist serialize class["+clsName+"] upgrade performance";
+		//throw new CommonException(msg);
 	}
 	
 	public static boolean sameArrayTypeEles(Object[] coll) {

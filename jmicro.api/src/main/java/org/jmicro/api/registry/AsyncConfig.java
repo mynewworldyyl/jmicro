@@ -16,6 +16,9 @@
  */
 package org.jmicro.api.registry;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import org.jmicro.api.annotation.SO;
 
 /**
@@ -41,9 +44,6 @@ final public class AsyncConfig {
 	//要调用的目标方法名称
 	private String forMethod;
 	
-	//要调用的目标方法参数,此参数可选
-	private String paramStr;
-	
 	//异步条件
 	private String condition;
 	
@@ -58,6 +58,12 @@ final public class AsyncConfig {
 	
 	//异步调用服务方法名称，参数即是目标方法（forMethod）的返回值
 	private String method;
+	
+	//要调用的目标方法参数,此参数可选
+	private String paramStr;
+	
+	//异步方法上下文，回调时回传
+	private Map<String,Object> context = new HashMap<>();
 	
 	public AsyncConfig() {
 		
@@ -133,6 +139,14 @@ final public class AsyncConfig {
 		this.paramStr = paramStr;
 	}
 
+	public Map<String, Object> getContext() {
+		return context;
+	}
+
+	public void setContext(Map<String, Object> context) {
+		this.context = context;
+	}
+
 	public void from(AsyncConfig r) {
 		this.setEnable(r.isEnable());
 		this.setCondition(r.getCondition());
@@ -142,6 +156,14 @@ final public class AsyncConfig {
 		this.setVersion(r.getVersion());
 		this.setForMethod(r.getForMethod());
 		this.setParamStr(r.getParamStr());
+		this.context.putAll(r.context);
+	}
+
+	@Override
+	public String toString() {
+		return "AsyncConfig [enable=" + enable + ", forMethod=" + forMethod + ", condition=" + condition
+				+ ", serviceName=" + serviceName + ", namespace=" + namespace + ", version=" + version + ", method="
+				+ method + ", paramStr=" + paramStr + "]";
 	}
 	
 }

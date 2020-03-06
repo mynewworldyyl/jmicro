@@ -40,12 +40,14 @@ import org.jmicro.api.annotation.Inject;
 import org.jmicro.api.annotation.JMethod;
 import org.jmicro.api.annotation.PostListener;
 import org.jmicro.api.annotation.Reference;
+import org.jmicro.api.annotation.SO;
 import org.jmicro.api.annotation.Service;
 import org.jmicro.api.classloader.RpcClassLoader;
+import org.jmicro.api.codec.TypeCoderFactory;
 import org.jmicro.api.config.Config;
 import org.jmicro.api.config.IConfigLoader;
-import org.jmicro.api.objectfactory.IFactoryListener;
 import org.jmicro.api.objectfactory.IObjectFactory;
+import org.jmicro.api.objectfactory.IPostFactoryListener;
 import org.jmicro.api.objectfactory.IPostInitListener;
 import org.jmicro.api.objectfactory.ProxyObject;
 import org.jmicro.api.raft.IDataOperator;
@@ -86,7 +88,7 @@ public class SimpleObjectFactory implements IObjectFactory {
 	
 	private boolean fromLocal = true;
 	
-	private List<IFactoryListener> postReadyListeners = new ArrayList<>();
+	private List<IPostFactoryListener> postReadyListeners = new ArrayList<>();
 	
 	private List<IPostInitListener> postListeners = new ArrayList<>();
 	
@@ -336,6 +338,7 @@ public class SimpleObjectFactory implements IObjectFactory {
 		
 		//查找全部对像初始化监听器
 		createPostListener();
+		registerSOClass();
 		
 		/**
 		 * 意味着此两个参数只能在命令行或环境变量中做配置，不能在ZK中配置，因为此时ZK还没启动，此配置正是ZK的启动配置
@@ -355,17 +358,17 @@ public class SimpleObjectFactory implements IObjectFactory {
 		clientServiceProxyManager.init();
 		
 		//取得全部工厂监听器
-		Set<IFactoryListener> postL = this.getByParent(IFactoryListener.class);
+		Set<IPostFactoryListener> postL = this.getByParent(IPostFactoryListener.class);
 		postReadyListeners.addAll(postL);
-		postReadyListeners.sort(new Comparator<IFactoryListener>(){
+		postReadyListeners.sort(new Comparator<IPostFactoryListener>(){
 			@Override
-			public int compare(IFactoryListener o1, IFactoryListener o2) {
+			public int compare(IPostFactoryListener o1, IPostFactoryListener o2) {
 				return o1.runLevel() > o2.runLevel()?1:o1.runLevel() == o2.runLevel()?0:-1;
 			}
 		});
 		
 		//对像工厂初始化前监听器
-		for(IFactoryListener lis : this.postReadyListeners){
+		for(IPostFactoryListener lis : this.postReadyListeners){
 			//在这里可以注册实例
 			lis.preInit(this);
 		}
@@ -434,7 +437,7 @@ public class SimpleObjectFactory implements IObjectFactory {
 		}
 		
 		//对像工厂初始化后监听器
-		for(IFactoryListener lis : this.postReadyListeners){
+		for(IPostFactoryListener lis : this.postReadyListeners){
 			lis.afterInit(this);
 		}
 		
@@ -449,6 +452,7 @@ public class SimpleObjectFactory implements IObjectFactory {
 			isInit.notifyAll();
 		}
 	}
+	
 	
 	private void notifyAfterInitPostListener0(List<Object> lobjs, Config cfg, Set<Object> systemObjs) {
 		Set<Object> haveInits = new HashSet<>();
@@ -1308,6 +1312,15 @@ public class SimpleObjectFactory implements IObjectFactory {
 			}
 		} catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
 			logger.error("Component init error:"+obj.getClass().getName(),e);
+		}
+	}
+	
+	private void registerSOClass() {
+		Set<Class<?>> listeners = ClassScannerUtils.getIns().loadClassesByAnno(SO.class);
+		if(listeners != null && !listeners.isEmpty()) {
+			for(Class<?> c : listeners){
+				TypeCoderFactory.registClass(c);
+			}
 		}
 	}
 

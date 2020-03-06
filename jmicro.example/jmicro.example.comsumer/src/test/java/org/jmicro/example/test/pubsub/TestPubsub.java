@@ -5,12 +5,12 @@ import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.jmicro.api.codec.ICodecFactory;
 import org.jmicro.api.codec.JDataInput;
 import org.jmicro.api.codec.JDataOutput;
 import org.jmicro.api.codec.PrefixTypeEncoderDecoder;
 import org.jmicro.api.monitor.MonitorConstant;
 import org.jmicro.api.net.Message;
-import org.jmicro.api.net.RpcRequest;
 import org.jmicro.api.registry.AsyncConfig;
 import org.jmicro.api.registry.ServiceMethod;
 import org.jmicro.common.Constants;
@@ -20,6 +20,12 @@ import org.jmicro.test.JMicroBaseTestCase;
 import org.junit.Test;
 
 public class TestPubsub extends JMicroBaseTestCase{
+	
+	@Test
+	public void testAsyncCallRpc() {
+		of.get(TestRpcClient.class).testCallAsyncRpc();
+		Utils.getIns().waitForShutdown();
+	}
 	
 	@Test
 	public void testEncodePSData() throws IOException {
@@ -73,7 +79,7 @@ public class TestPubsub extends JMicroBaseTestCase{
 	@Test
 	public void testEncodePSDatas() throws IOException {
 		
-		PrefixTypeEncoderDecoder ed = of.get(PrefixTypeEncoderDecoder.class);
+		ICodecFactory ed = of.get(ICodecFactory.class);
 		
 		org.jmicro.api.pubsub.PSData psd = new org.jmicro.api.pubsub.PSData();
 		psd.setData(new byte[] {22,33,33});
@@ -83,24 +89,28 @@ public class TestPubsub extends JMicroBaseTestCase{
 		//psd.getContext().put("key", 222);
 		
 		RpcRequest req = new RpcRequest();
-		req.setId(22L);
-		req.setImpl("2222");
-		req.setNamespace("2222");
-		req.setSuccess(true);
-		org.jmicro.api.pubsub.PSData[] arg = new org.jmicro.api.pubsub.PSData[] {psd};
+		req.setMethod("method");
+		req.setServiceName("serviceName");
+		req.setNamespace("namespace");
+		req.setVersion("0.0.1");
+		Object[] args = new Object[] {"23fsaf",new Object[] {psd,psd}};
+		req.setArgs(args);
+		req.setRequestId(22L);
+		req.setTransport(Constants.TRANSPORT_NETTY);
+		req.setImpl("fsafd");
 		
-		req.setArgs(new Object[] {arg});
+		//Message msg = new Message();
 		
-		Message msg = new Message();
+		ByteBuffer bb = (ByteBuffer)ed.getEncoder(Message.PROTOCOL_BIN).encode(req);
 		
-		ByteBuffer bb = ed.encode(req);
-		msg.setPayload(bb);
+		RpcRequest obj = (RpcRequest)ed.getDecoder(Message.PROTOCOL_BIN).decode(bb, null);
 		
+		/*msg.setPayload(bb);
 		ByteBuffer msgBb = msg.encode();
 		
 		Message respMsg = Message.readMessage(msgBb);
 		
-		Object obj = ed.decode((ByteBuffer)respMsg.getPayload());
+		Object obj = ed.decode((ByteBuffer)respMsg.getPayload());*/
 		
 		System.out.println(obj);
 	}
@@ -130,9 +140,39 @@ public class TestPubsub extends JMicroBaseTestCase{
 	
 	
 	@Test
-	public void testAsyncCallRpc() {
-		of.get(TestRpcClient.class).testCallAsyncRpc();
-		Utils.getIns().waitForShutdown();
+	public void testEncodeRequestWithPSData() throws IOException {
+		
+		org.jmicro.api.pubsub.PSData psd = new org.jmicro.api.pubsub.PSData();
+		psd.setData(new byte[] {22,33,33});
+		psd.setId(0);
+		psd.setTopic("/test/testtopic");
+		
+		//psd.getContext().put("key", 222);
+		
+		RpcRequest req = new RpcRequest();
+		req.setMethod("method");
+		req.setServiceName("serviceName");
+		req.setNamespace("namespace");
+		req.setVersion("0.0.1");
+		Object[] args = new Object[] {"23fsaf",new Object[] {psd,psd}};
+		req.setArgs(args);
+		req.setRequestId(22L);
+		req.setTransport(Constants.TRANSPORT_NETTY);
+		req.setImpl("fsafd");
+		
+		JDataOutput jo = new JDataOutput();
+		
+		Object obj = req;
+		
+		//((ISerializeObject)obj).encode(jo, obj);
+		req.encode(jo, obj);
+		
+		
+		JDataInput ji = new JDataInput(jo.getBuf());
+		RpcRequest r1 = new RpcRequest();
+		r1.decode(ji);
+		
+		System.out.print(r1);
 	}
 	
 

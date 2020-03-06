@@ -17,16 +17,24 @@
 package org.jmicro.pubsub;
 
 import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.jmicro.api.JMicroContext;
+import org.jmicro.api.client.AbstractClientServiceProxy;
 import org.jmicro.api.monitor.MonitorConstant;
 import org.jmicro.api.monitor.SF;
 import org.jmicro.api.net.Message;
 import org.jmicro.api.objectfactory.IObjectFactory;
 import org.jmicro.api.pubsub.PSData;
+import org.jmicro.api.pubsub.PubSubManager;
 import org.jmicro.api.registry.AsyncConfig;
 import org.jmicro.api.registry.IRegistry;
+import org.jmicro.api.registry.ServiceItem;
+import org.jmicro.api.registry.ServiceMethod;
 import org.jmicro.api.registry.UniqueServiceMethodKey;
 import org.jmicro.common.CommonException;
 import org.jmicro.common.util.JsonUtils;
@@ -41,9 +49,20 @@ import org.slf4j.LoggerFactory;
  */
 public class SubCallbackImpl implements ISubCallback{
 
+	private static final Class TAG = SubCallbackImpl.class;
+	
+	//接收PSData数组作为参数，同一主题批量数据传输，效率高
+	private static final int ARR = 1;
+	//接收单个PSData作为参数，效率底
+	private static final int SINGLE = 2;
+	//接收PSData.data作为参数，如异步RPC
+	private static final int DATA = 3;
+	//无参数
+	private static final int NONE = 4;
+	
 	private final static Logger logger = LoggerFactory.getLogger(SubCallbackImpl.class);
 	
-	private UniqueServiceMethodKey mkey = null;
+	private ServiceMethod sm = null;
 	
 	private Object srvProxy = null;
 	
@@ -51,8 +70,15 @@ public class SubCallbackImpl implements ISubCallback{
 	
 	private IObjectFactory of;
 	
-	public SubCallbackImpl(UniqueServiceMethodKey mkey,Object srv, IObjectFactory of){
-		if(mkey == null) {
+	private IRegistry reg;
+	
+	private Map<String,Holder> key2Holder = new HashMap<>();
+	
+	//方法参数模式
+	private int type;
+	
+	public SubCallbackImpl(ServiceMethod sm,Object srv, IObjectFactory of){
+		if(sm == null) {
 			throw new CommonException("SubCallback service method cannot be null");
 		}
 		
@@ -60,100 +86,233 @@ public class SubCallbackImpl implements ISubCallback{
 			throw new CommonException("SubCallback service cannot be null");
 		}
 		this.of = of;
-		this.mkey = mkey;
+		this.sm = sm;
 		this.srvProxy = srv;
+		this.reg = of.get(IRegistry.class);
+		
 		setMt();
 	}
 	
 	@Override
-	public void onMessage(PSData item) {
-		Object obj = null;
+	public PSData[] onMessage(PSData[] items) {
+		switch(type) {
+		case ARR:
+			//PSData数组作为参数
+			return callAsArra(items);
+		case DATA:
+			////以每个PSData.data作为参数调用主题方法，如异步RPC
+			return callAsyncRpc(items);
+		case SINGLE:
+			//接收单个PSData作为参数的RPC，效率底
+			return callOneByOne(items);
+		case NONE:
+			//接收单个PSData作为参数的RPC，效率底
+			return callNone(items);
+		}
+		throw new CommonException("onMessage topic:"+sm.getTopic(),sm.getKey().toKey(false, false, false));
+	}
+
+	private PSData[] callAsArra(PSData[] items) {
+		PSData[] fails = null;
 		try {
-			Class[] ptype = m.getParameterTypes();
-			if(ptype == null) {
-				 obj = m.invoke(this.srvProxy, new Object[0]);
-			}else if(ptype.length == 1 && ptype[0] == PSData.class) {
-				 obj = m.invoke(this.srvProxy, item);
-			} else {
-				 Object[] args = (Object[])item.getData();
-				 obj = m.invoke(this.srvProxy, args);
+			//多个消息作为整体发送，没办法实现结果回调通知，因为回调信息放置于PSData.context中，多个items,没办法确定使用那个
+			Object obj = m.invoke(this.srvProxy, new Object[] {items});
+			List<PSData> fs = notifyResult(obj,items);
+			if(fs != null && !fs.isEmpty()) {
+				fails = new PSData[fs.size()];
+				fs.toArray(fails);
 			}
+			return fails;
 		} catch (Throwable e) {
-			throw new CommonException("Fail to send message to [" + mkey.toString()+"]", e);
+			String msg = "callAsArra topic:"+sm.getTopic()+",mkey:"+sm.getKey().toKey(false, false, false);
+			logger.error(msg, e);
+			SF.doBussinessLog(MonitorConstant.LOG_ERROR, TAG, e, msg);
+			return items;
 		}
-		
-		boolean f = Message.is(item.getFlag(), PSData.FLAG_ASYNC_METHOD);
-		if(f) {
-			Map<String,Object> cxt = item.getContext();
-		    	
-			AsyncConfig ac = (AsyncConfig)cxt.get(item.getTopic());
-			
-			//AsyncInterceptor中设置以下参数
-		    //String sn = (String)cxt.get(Constants.SERVICE_NAME_KEY);
-			//String ns = (String)cxt.get(Constants.SERVICE_NAMESPACE_KEY);
-			//String ver = (String)cxt.get(Constants.SERVICE_VERSION_KEY);
-		    
-			//String mn = (String)cxt.get(Constants.SERVICE_METHOD_KEY);
-			
-			Long linkId = (Long)cxt.get(JMicroContext.LINKER_ID);
-			//Long reqId = (Long)cxt.get(JMicroContext.REQ_ID);
-			
-			if( ac == null ) {
-				String msg = "Async callback service name is NULL:" + mkey.toString()+" [item="+JsonUtils.getIns().toJson(item) + ",ns="+",with args:"+ (obj==null?"":JsonUtils.getIns().toJson(obj)) +"]";
-				SF.doBussinessLog(MonitorConstant.LOG_ERROR,SubCallbackImpl.class,null, msg);
-				throw new CommonException(msg);
-			}
-			
-			if(StringUtils.isNotEmpty(ac.getServiceName())) {
-				Object srv = of.getRemoteServie(ac.getServiceName(), ac.getNamespace(), ac.getVersion(),null,null);
-				
-				if(srv != null) {
-					try {
-						Method m = null;
-						if(obj == null) {
-							m = srv.getClass().getMethod(ac.getMethod());
-						} else {
-							m = srv.getClass().getMethod(ac.getMethod(),obj.getClass());
-						}
-						
-						if(m != null) {
-							//JMicroContext.get().setParam(key, val);
-							JMicroContext.get().setLong(JMicroContext.LINKER_ID, linkId);
-							//JMicroContext.get().setLong(JMicroContext.REQ_ID, reqId);
-							m.invoke(srv, obj);
-						}
-					} catch (Throwable e) {
-						String msg = "Fail to callback src service:" + mkey.toString()+" [sn="+ac.getServiceName() + ",ns="+ac.getNamespace() + "ver="+ac.getVersion() +",mn="+ ac.getMethod()+",with args:"+ (obj==null?"":JsonUtils.getIns().toJson(obj)) +"]";
-						SF.doBussinessLog(MonitorConstant.LOG_ERROR,SubCallbackImpl.class,e, msg);
-						throw new CommonException(msg,e);
-					}
-				} else {
-					String msg = "Async callback service not found:" + mkey.toString()+" [sn="+ac.getServiceName() + ",ns="+ac.getNamespace() + "ver="+ac.getVersion() +",mn="+ ac.getMethod()+",with args:"+ (obj==null?"":JsonUtils.getIns().toJson(obj)) +"]";
-					SF.doBussinessLog(MonitorConstant.LOG_ERROR,SubCallbackImpl.class,null, msg);
-					throw new CommonException(msg);
+	}
+
+	private List<PSData> notifyResult(Object obj, PSData[] items) {
+		List<PSData> fails = new ArrayList<>();
+		for (PSData pd : items) {
+			try {
+				if (pd.getCallback() != null) {
+					callback(pd, obj,PubSubManager.PUB_OK);
 				}
+			} catch (Throwable e) {
+				String msg = "callOneByOne pd:"+pd.getId()+", topic:"+pd.getTopic()+",mkey:"+sm.getKey().toKey(false, false, false);
+				logger.error(msg, e);
+				SF.doBussinessLog(MonitorConstant.LOG_ERROR, TAG, e, msg);
+				fails.add(pd);
 			}
-			
+		}
+		return fails;
+	}
+
+	private PSData[] callOneByOne(PSData[] items) {
+		List<PSData> fails = new ArrayList<>();
+		for (PSData pd : items) {
+			try {
+				Object obj = m.invoke(this.srvProxy, pd);;
+				callback(pd, obj,PubSubManager.PUB_OK);
+			} catch (Throwable e) {
+				String msg = "callOneByOne pd:"+pd.getId()+", topic:"+pd.getTopic()+",mkey:"+sm.getKey().toKey(false, false, false);
+				logger.error(msg, e);
+				SF.doBussinessLog(MonitorConstant.LOG_ERROR, TAG, e, msg);
+				fails.add(pd);
+			}
+		}
+		if(!fails.isEmpty()) {
+			PSData[] pds = new PSData[fails.size()];
+			fails.toArray(pds);
+			return pds;
+		}
+		return null;
+	}
+	
+	private PSData[] callNone(PSData[] items) {
+
+		List<PSData> fails = new ArrayList<>();
+		
+		for (PSData pd : items) {
+			try {
+				Object obj = null;
+				obj = m.invoke(this.srvProxy, new Object[0]);
+				callback(pd, obj,PubSubManager.PUB_OK);
+			} catch (Throwable e) {
+				String msg = "callAsyncRpc pd:"+pd.getId()+", topic:"+pd.getTopic()+",mkey:"+sm.getKey().toKey(false, false, false);
+				logger.error(msg, e);
+				SF.doBussinessLog(MonitorConstant.LOG_ERROR, TAG, e, msg);
+				fails.add(pd);
+			}
+		}
+		if(!fails.isEmpty()) {
+			PSData[] pds = new PSData[fails.size()];
+			fails.toArray(pds);
+			return pds;
+		}
+		return null;
+	}
+
+	private PSData[] callAsyncRpc(PSData[] items) {
+
+		List<PSData> fails = new ArrayList<>();
+		
+		for (PSData pd : items) {
+			try {
+				Object obj = null;
+				Object[] args = (Object[]) pd.getData();
+				obj = m.invoke(this.srvProxy, args);
+				callback(pd, obj,PubSubManager.PUB_OK);
+			} catch (Throwable e) {
+				String msg = "callAsyncRpc pd:"+pd.getId()+", topic:"+pd.getTopic()+",mkey:"+sm.getKey().toKey(false, false, false);
+				logger.error(msg, e);
+				SF.doBussinessLog(MonitorConstant.LOG_ERROR, TAG, e, msg);
+				fails.add(pd);
+			}
+		}
+		if(!fails.isEmpty()) {
+			PSData[] pds = new PSData[fails.size()];
+			fails.toArray(pds);
+			return pds;
+		}
+		return null;
+	}
+
+	//异步回调用返回值，如异步RPC时，返回结果给调用者
+	public boolean callback(PSData item,Object obj,int statuCode) {
+
+		if (item.getCallback() == null) {
+			return true;
 		}
 		
+		Map<String,Object> cxt = item.getContext();
+	
+		Long linkId = (Long)cxt.get(JMicroContext.LINKER_ID);
+		
+		UniqueServiceMethodKey key = item.getCallback();
+		
+		try {
+			
+			boolean f = Message.is(item.getFlag(), PSData.FLAG_ASYNC_METHOD);
+			
+			Holder h = null;
+			if(this.key2Holder.containsKey(key)) {
+				h = this.key2Holder.get(key);
+			} else {
+				h = new Holder();
+				h.srv  = of.getRemoteServie(key.getServiceName(),key.getNamespace(),key.getVersion(),null,null);
+				if(h.srv == null) {
+					String msg = "Fail to create async service proxy src:" + sm.getKey().toString()+",target:"+ key.toKey(false, false, false);
+					SF.doBussinessLog(MonitorConstant.LOG_ERROR,SubCallbackImpl.class,null, msg);
+					//即使返回false重发此条消息，也是同样的错误，没办法回调了，记录日志，只能通过人工处理
+					return true;
+				}
+				h.key = key;
+				
+				if(Message.is(item.getFlag(), PSData.FLAG_ASYNC_METHOD)) {
+					//异步方法
+					h.m = h.srv.getClass().getMethod(key.getMethod(),obj.getClass());
+				}else if(Message.is(item.getFlag(), PSData.FLAG_MESSAGE_CALLBACK)) {
+					//消息通知
+					h.m = h.srv.getClass().getMethod(key.getMethod(),Integer.TYPE,Long.TYPE,Map.class);
+				}
+				
+				if(h.m == null) {
+					String msg = "Async service method not found: src:" + sm.getKey().toString()+",target:"+ key.toKey(false, false, false);
+					SF.doBussinessLog(MonitorConstant.LOG_ERROR,SubCallbackImpl.class,null, msg);
+					//即使返回false重发此条消息，也是同样的错误，没办法回调了，记录日志，只能通过人工处理
+					return true;
+				}
+			
+			}
+
+			//JMicroContext.get().setParam(key, val);
+			JMicroContext.get().setLong(JMicroContext.LINKER_ID, linkId);
+			//JMicroContext.get().setLong(JMicroContext.REQ_ID, reqId);
+			if(Message.is(item.getFlag(), PSData.FLAG_ASYNC_METHOD)) {
+				//异步方法
+				m.invoke(h.srv, obj);
+			}else if(Message.is(item.getFlag(), PSData.FLAG_MESSAGE_CALLBACK)) {
+				//消息通知
+				m.invoke(h.srv, statuCode,item.getId(),item.getContext());
+			}
+			return true;
+		
+		} catch (Throwable e) {
+			String msg = "Fail to callback src service:" + sm.getKey().toString()+ ",c allback: "+ key.toKey(false, false, false);
+			SF.doBussinessLog(MonitorConstant.LOG_ERROR,SubCallbackImpl.class,e, msg);
+			return false;
+		}
+	
 	}
 
 	private void setMt() {
 		try {
-			this.m = this.srvProxy.getClass().getMethod(mkey.getMethod(), PSData.class);
-		} catch (NoSuchMethodException | SecurityException e) {
-			try {
-				Class<?>[] argsCls = UniqueServiceMethodKey.paramsClazzes(mkey.getParamsStr());
-				this.m = this.srvProxy.getClass().getMethod(mkey.getMethod(), argsCls);
-			} catch (NoSuchMethodException | SecurityException e1) {
-				throw new CommonException("Get ["+mkey.toString() +"] fail",e);
+			Class<?>[] argsCls = UniqueServiceMethodKey.paramsClazzes(sm.getKey().getParamsStr());
+			this.m = this.srvProxy.getClass().getMethod(sm.getKey().getMethod(), argsCls);
+			if(argsCls == null || argsCls.length ==0) {
+				this.type = NONE;
+			}else if(argsCls.length ==1 && argsCls[0] == PSData.class ) {
+				this.type = SINGLE;
+			}else if(argsCls.length == 1 && argsCls[0] == new PSData[0].getClass() ) {
+				this.type = ARR;
+			}else {
+				this.type = DATA;
 			}
+		} catch (NoSuchMethodException | SecurityException e) {
 		}
+	}
+	
+	private class Holder{
+		public Object srv;
+		public Method m;
+		public UniqueServiceMethodKey key;
+		
 	}
 
 	@Override
 	public String info() {
-		return mkey.toKey(false, false, false);
+		return sm.getKey().toKey(false, false, false);
 	}
 
 	@Override
@@ -169,6 +328,14 @@ public class SubCallbackImpl implements ISubCallback{
 	@Override
 	public boolean equals(Object obj) {
 		return hashCode() == obj.hashCode();
+	}
+
+	public ServiceMethod getSm() {
+		return sm;
+	}
+
+	public void setSm(ServiceMethod sm) {
+		this.sm = sm;
 	}
 	
 }

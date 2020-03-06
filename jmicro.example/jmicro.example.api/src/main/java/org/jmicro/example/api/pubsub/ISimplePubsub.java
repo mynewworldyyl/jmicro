@@ -10,4 +10,6 @@ public interface ISimplePubsub {
 	
 	void testTopic(PSData data);
 	
+	void helloTopicWithArrayArgs(PSData[] data);
+	
 }

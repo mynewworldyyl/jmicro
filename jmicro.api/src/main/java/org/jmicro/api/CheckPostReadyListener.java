@@ -3,7 +3,7 @@ package org.jmicro.api;
 import org.jmicro.api.annotation.Component;
 import org.jmicro.api.config.Config;
 import org.jmicro.api.objectfactory.IObjectFactory;
-import org.jmicro.api.objectfactory.IFactoryListener;
+import org.jmicro.api.objectfactory.IPostFactoryListener;
 import org.jmicro.api.raft.IDataOperator;
 import org.jmicro.common.CommonException;
 import org.slf4j.Logger;
@@ -15,7 +15,7 @@ import org.slf4j.LoggerFactory;
  * @date 2018年10月20日-下午9:36:38
  */
 @Component(active=false,value="systemConditionChecker")
-public class CheckPostReadyListener implements IFactoryListener{
+public class CheckPostReadyListener implements IPostFactoryListener{
 
 	private final static Logger logger = LoggerFactory.getLogger(CheckPostReadyListener.class);
 	

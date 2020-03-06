@@ -73,8 +73,6 @@ public class TypeCoderFactory {
 	@SuppressWarnings("rawtypes")
 	private static Map<Class<?>,Short> class2code = new HashMap<>();
 
-	// static Short currentTypeCode = (short)(NON_ENCODE_TYPE + 1);
-
 	private static IClientTransformClassLoader clazzLoader = null;
 
 	private static short type = (short) 0xFFFE;

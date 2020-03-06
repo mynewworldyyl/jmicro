@@ -28,6 +28,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import org.jmicro.api.JMicroContext;
 import org.jmicro.api.monitor.MonitorConstant;
+import org.jmicro.api.monitor.SF;
 import org.jmicro.api.monitor.ServiceCounter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -190,8 +191,12 @@ public abstract class AbstractSession implements ISession{
               			message.getReqId(),message.getMethod());
               }*/
               //JMicroContext.configProvider(message);
-             
-              receiver.receive(this,message);
+             if(this.isServer()) {
+            	 SF.netIoRead(MonitorConstant.SERVER_IOSESSION_READ, message.getLen());
+             } else {
+            	 SF.netIoRead(MonitorConstant.CLIENT_IOSESSION_READ, message.getLen());
+             }
+             receiver.receive(this,message);
      	 }
      	
      	if(lb.remaining() > 0) {

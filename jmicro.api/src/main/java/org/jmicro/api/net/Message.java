@@ -80,6 +80,8 @@ public final class Message {
 	public static final short FLAG0_LOGGABLE = 1 << 3;
 	
 	private  transient long startTime = -1;
+	//此消息所占字节数
+	private  transient int len = -1;
 	
 	//1 byte length
 	private byte version;
@@ -281,6 +283,9 @@ public final class Message {
 			}else {
 				msg.setPayload(null);
 			}
+			
+			msg.setLen(len + Message.HEADER_LEN);
+			
 		} else if(getProtocolByFlag(flag) == PROTOCOL_JSON) {
 			try {
 				String json = new String(b.array(),1,b.remaining(),Constants.CHARSET);
@@ -466,6 +471,14 @@ public final class Message {
 		b.put((byte)((v >>> 0)&0xFF));
 	}
     
+	public int getLen() {
+		return len;
+	}
+
+	public void setLen(int len) {
+		this.len = len;
+	}
+
 	public long getId() {
 		return this.msgId;
 	}

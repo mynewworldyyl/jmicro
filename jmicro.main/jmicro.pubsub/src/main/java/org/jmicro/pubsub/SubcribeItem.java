@@ -18,6 +18,7 @@ package org.jmicro.pubsub;
 
 import java.util.Map;
 
+import org.jmicro.api.registry.ServiceMethod;
 import org.jmicro.api.registry.UniqueServiceMethodKey;
 
 /**
@@ -34,13 +35,13 @@ class SubcribeItem {
 	
 	public int type;
 	public String topic;
-	public UniqueServiceMethodKey key;
+	public ServiceMethod sm;
 	public Map<String, String> context;
 	
-	public SubcribeItem(int type,String topic,UniqueServiceMethodKey key,Map<String, String> context) {
+	public SubcribeItem(int type,String topic,ServiceMethod sm,Map<String, String> context) {
 		this.type = type;
 		this.topic = topic;
-		this.key = key;
+		this.sm = sm;
 		this.context = context;
 	}
 

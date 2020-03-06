@@ -19,6 +19,7 @@ package org.jmicro.client;
 import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.jmicro.api.JMicroContext;
@@ -51,9 +52,9 @@ import org.jmicro.api.registry.AsyncConfig;
 import org.jmicro.api.registry.Server;
 import org.jmicro.api.registry.ServiceItem;
 import org.jmicro.api.registry.ServiceMethod;
+import org.jmicro.api.service.ServiceManager;
 import org.jmicro.common.CommonException;
 import org.jmicro.common.Constants;
-import org.jmicro.common.util.StringUtils;
 import org.jmicro.common.util.TimeUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -92,6 +93,9 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
 	
 	@Inject
 	private ComponentIdServer idGenerator;
+	
+	@Inject
+	private ServiceManager srvManager;
 	
 	//测试统计模式使用
 	//@Cfg(value="/RpcClientRequestHandler/clientStatis",defGlobal=false)
@@ -160,7 +164,7 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
 		
 		Map<String,Object> cxt = new HashMap<>();
 		//结果回调RPC方法
-		cxt.put(topic, ac);
+		//cxt.put(topic, ac);
 		
 		//链路相关ID
 		cxt.put(JMicroContext.LINKER_ID, JMicroContext.lid());
@@ -170,18 +174,40 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
 		PSData data = new PSData();
 		data.setContext(cxt);
 		data.setData(req.getArgs());
+		data.setTopic(topic);
+		data.setFlag(PSData.flag(PSData.FLAG_PUBSUB,PSData.FLAG_ASYNC_METHOD));
+		data.mergeContext(ac.getContext());
 		
-		if(sm.isNeedResponse() && StringUtils.isNotEmpty(ac.getServiceName())) {
-			data.setFlag(PSData.flag(PSData.FLAG_QUEUE,PSData.FLAG_ASYNC_METHOD));
+		if(sm.isNeedResponse()) {
+			ServiceItem si = this.getServiceItem(ac);
+			
+			if(si == null) {
+				String msg = "Async service not found for:"+sm.getKey().toKey(false, false, false)+",async :"+ ac.toString();
+				logger.error(msg);
+				SF.doRequestLog(MonitorConstant.LOG_ERROR, TAG, req, null, msg);
+				throw new RpcException(req,msg);
+			}
+			
+			ServiceMethod callback = si.getMethod(ac.getMethod(), ac.getParamStr());
+			if(callback == null) {
+				String msg = "Async method not found for:"+sm.getKey().toKey(false, false, false)+",async :"+ ac.toString();
+				logger.error(msg);
+				SF.doRequestLog(MonitorConstant.LOG_ERROR, TAG, req, null, msg);
+				throw new RpcException(req,msg);
+			}
+			
+			callback = si.getMethod(ac.getMethod(), ac.getParamStr());
+			data.setCallback(callback.getKey());
 		}
 		
-		data.setTopic(topic);
-		
 		//异步后,就不一定是本实例接收到此RPC调用了
+		data.setId(idGenerator.getIntId(PSData.class));
 		long id = pubsubManager.publish(data);
 		
 		RpcResponse resp = new RpcResponse();
-		if(id >= 0) {
+		if(id == PubSubManager.PUB_OK) {
+			//resp.setReqId(data.getId());
+			//异步调用RPC返回空值
 			return resp;
 		} else {
 			String msg = "ErrorCode:"+id+",异步调用失败"+sm.getKey().toKey(false, false, false);
@@ -450,6 +476,24 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
 		sb = sb.deleteCharAt(sb.length()-1);
 		return sb.toString();
 	}
+	
+	private ServiceItem getServiceItem(AsyncConfig ac) {
+		
+		Set<ServiceItem> items = this.srvManager.getServiceItems(ac.getServiceName(), ac.getNamespace(), ac.getVersion());
+		if(items == null || items.isEmpty()) {
+			return null;
+		}
+		
+		for(ServiceItem si : items) {
+			ServiceMethod sm = si.getMethod(ac.getMethod(), ac.getParamStr());
+			if(sm != null) {
+				return si;
+			}
+		}
+		
+		return null;
+	}
+
 
 	@Override
 	public Byte type() {

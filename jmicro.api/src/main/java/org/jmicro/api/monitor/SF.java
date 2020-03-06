@@ -170,7 +170,6 @@ public class SF {
 		if(isMonitorable(type)) {
 			SubmitItem si = createSubmitItem(type,null,null,
 					num+"",null,null,false);
-			
 			return  monitor().submit(si);
 		}
 		return false;
