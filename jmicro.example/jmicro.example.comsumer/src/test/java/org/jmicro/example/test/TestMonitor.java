@@ -1,5 +1,6 @@
 package org.jmicro.example.test;
 
+import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 
@@ -10,8 +11,10 @@ import org.jmicro.api.monitor.IMonitorDataSubscriber;
 import org.jmicro.api.monitor.MonitorConstant;
 import org.jmicro.api.monitor.SF;
 import org.jmicro.api.objectfactory.IObjectFactory;
+import org.jmicro.api.registry.ServiceItem;
 import org.jmicro.api.registry.ServiceMethod;
 import org.jmicro.api.registry.UniqueServiceMethodKey;
+import org.jmicro.common.Constants;
 import org.jmicro.example.api.rpc.ISimpleRpc;
 import org.jmicro.example.comsumer.TestRpcClient;
 import org.jmicro.test.JMicroBaseTestCase;
@@ -66,19 +69,19 @@ public class TestMonitor extends JMicroBaseTestCase{
 	@Test
 	public void testSubmitLog() {
 		
-		IObjectFactory of = JMicro.getObjectFactoryAndStart(new String[] {"-DinstanceName=testSubmitLog","-Dclient=true"});
-		
+		ServiceItem si = this.getServiceItem("org.jmicro.example.rpc.impl.SimpleRpcImpl");
+		ServiceMethod sm = this.getServiceMethod(si, "hello", new Class[] {String.class});
+	
 		JMicroContext.get().configMonitor(1, 1);
-		IMonitorDataSubmiter monitor = of.get(IMonitorDataSubmiter.class);
-		JMicroContext.get().setObject(JMicroContext.MONITOR, monitor);
-		JMicroContext.get().setString(JMicroContext.CLIENT_METHOD, "test");
-		ServiceMethod sm = new ServiceMethod();
-		sm.setKey(UniqueServiceMethodKey.fromKey("org.jmicro.api.monitor.IMonitorDataSubscriber##LinkRouterMonitor##0.0.1##LinkRouterMonitor##172.16.22.200##9001##test##java.lang.String"));
+		JMicroContext.get().setParam(Constants.SERVICE_METHOD_KEY, sm);
+		JMicroContext.get().setParam(Constants.SERVICE_ITEM_KEY, si);
+		
 		for(;;){
-			SF.doServiceLog(MonitorConstant.LOG_DEBUG,this.getClass(),null);
+			SF.doServiceLog(MonitorConstant.LOG_DEBUG,this.getClass(),null,"testSubmitLog");
+			
 			//logger.debug("testSubmitLog");
 			try {
-				Thread.sleep(500);
+				Thread.sleep(50);
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}

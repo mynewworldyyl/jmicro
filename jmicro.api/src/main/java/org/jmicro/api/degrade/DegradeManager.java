@@ -29,7 +29,7 @@ import org.jmicro.common.Constants;
 @Component(lazy=true)
 public class DegradeManager {
 
-	public static final String MONITOR = Constants.CFG_ROOT + "/monitor/";
+	public static final String MONITOR = Config.BASE_DIR + "/monitor/";
 	
 	public static final String AVG_TIME_ROOT = MONITOR + "avgtime/";
 	

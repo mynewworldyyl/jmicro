@@ -18,6 +18,7 @@ package org.jmicro.api.idgenerator;
 
 import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.Inject;
+import org.jmicro.api.config.Config;
 import org.jmicro.api.raft.IDataOperator;
 import org.jmicro.api.raft.RaftBaseIdGenerator;
 import org.jmicro.common.Constants;
@@ -30,7 +31,7 @@ import org.jmicro.common.Constants;
 @Component("uniqueIdGenerator")
 public class UniqueIdGenerator implements IIdGenerator/*,IIdServer,IIdClient*/{
 
-	private static final String ID_IDR = Constants.CFG_ROOT + "/id/";
+	private static final String ID_IDR = Config.BASE_DIR + "/id/";
 	
 	@Inject(required=true)
 	private IDataOperator dataOperator;

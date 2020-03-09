@@ -17,6 +17,7 @@ import org.jmicro.api.executor.ExecutorConfig;
 import org.jmicro.api.executor.ExecutorFactory;
 import org.jmicro.api.idgenerator.ComponentIdServer;
 import org.jmicro.api.net.Message;
+import org.jmicro.api.objectfactory.ProxyObject;
 import org.jmicro.api.raft.IDataOperator;
 import org.jmicro.api.service.ServiceInvokeManager;
 import org.jmicro.common.Constants;
@@ -99,7 +100,8 @@ public class PubSubManager {
 	}
 	
 	public boolean isPubsubEnable(int itemNum) {
-		return this.defaultServer != null || this.curItemCount.get()+itemNum <= this.maxPsItem;
+		return this.defaultServer != null && this.curItemCount.get()+itemNum <= this.maxPsItem 
+				&& ProxyObject.isUsableRemoteProxy(this.defaultServer);
 	}
 	
 	public int publish(String topic,byte flag,Object[] args) {
@@ -220,8 +222,8 @@ public class PubSubManager {
 	
     private void doWork() {
 		logger.info("START submit worker");
-    	int interval = 900;
-    	int batchSize = 5;
+    	int interval = 300;
+    	int batchSize = 50;
 		while(isRunning) {
 			try {
 				

@@ -30,6 +30,7 @@ import org.jmicro.api.annotation.Inject;
 import org.jmicro.api.annotation.Reference;
 import org.jmicro.api.registry.IRegistry;
 import org.jmicro.api.registry.ServiceItem;
+import org.jmicro.common.CommonException;
 import org.jmicro.common.Constants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -128,7 +129,12 @@ public class RpcClassLoader extends AbstractClientClassLoader {
 		         }
 			} else {
 				ServiceItem si = JMicroContext.get().getParam(Constants.DIRECT_SERVICE_ITEM, null);
-				bytes = this.rpcLlassloader.getClassData(className);
+				try {
+					bytes = this.rpcLlassloader.getClassData(className);
+				} catch (CommonException e) {
+					logger.error("Fail to load class:"+className+" from remote server",e);
+					return null;
+				}
 	        	if(bytes != null && bytes.length > 0) {
 	        		logger.warn("load class {} from {} ",className,si.getKey().toKey(true, true, true));
 	        	}

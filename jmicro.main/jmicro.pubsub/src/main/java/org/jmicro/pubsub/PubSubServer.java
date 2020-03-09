@@ -252,7 +252,7 @@ public class PubSubServer implements IInternalSubRpc{
 	private void doCheck() {
 
 		int batchSize = 100;
-		int sendInterval = 500;
+		int sendInterval = 300;
 		while (true) {
 			try {
 

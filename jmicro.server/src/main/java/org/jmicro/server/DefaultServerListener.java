@@ -18,7 +18,7 @@ public class DefaultServerListener implements IServerListener {
 	public void serverStared(String ip, int port, String transport) {
 		IDataOperator dop = config.getDataOperator();
 		//String path = Config.getRaftBaseDir();
-		String path = Constants.CFG_ROOT +"/"+Config.getInstanceName()+"_ipPort";
+		String path = Config.InstanceDir +"/"+Config.getInstanceName()+"_ipPort";
 		String d = transport+":"+ip+":"+port;
 		if(!dop.exist(path)) {
 			dop.createNode(path, d, false);
@@ -30,12 +30,12 @@ public class DefaultServerListener implements IServerListener {
 			dop.setData(path, d);
 		}
 		
-		String insPath = Config.InstanceDir + "/" + Config.getInstanceName();
+		/*String insPath = Config.InstanceDir + "/" + Config.getInstanceName();
 		if(!dop.exist(insPath)) {
 			dop.createNode(insPath, d, false);
 		}else {
 			dop.setData(insPath, d);
-		}
+		}*/
 		
 	}
 

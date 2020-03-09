@@ -56,19 +56,27 @@ public class Config implements IConfigChangeListener{
 	
 	private static String Host = "";
 	
-	//全局配置目录
-	public static final String CfgDir = Constants.CFG_ROOT +"/"+Constants.DEFAULT_PREFIX+"/config";
+	public static final String 	BASE_DIR = Constants.CFG_ROOT +"/"+Constants.DEFAULT_PREFIX;
 	
-	public static final String InstanceDir = Constants.CFG_ROOT + "/" + Constants.DEFAULT_PREFIX + "/instance";
+	//全局配置目录,配置信息由全局配置及实例级配置组成
+	public static final String CfgDir = BASE_DIR + "/config";
+	//全局配置
+	public static final String GROBAL_CONFIG = CfgDir + "/grobalConfig";
 	
-	//服务注册目录
-	public static final String ServiceRegistDir = Constants.CFG_ROOT +"/"+Constants.DEFAULT_PREFIX+"/services";
+	//实例相关信息
+	public static final String InstanceDir = BASE_DIR + "/instance";
+	
+	//服务实例注册目录,每个运行实例一个服务
+	public static final String ServiceRegistDir = BASE_DIR+"/serviceItems";
+	
+	//全局服务注册目录,全部运行实例共享一个服务注册
+	public static final String GrobalServiceRegistDir = BASE_DIR + "/grobalServiceItems";
 	
 	//全局消息订阅根目录
-	public static final String PubSubDir = Constants.CFG_ROOT+"/"+Constants.DEFAULT_PREFIX +"/pubsub";
+	public static final String PubSubDir = BASE_DIR +"/pubsub";
 	
 	//服务编排相关数据根目录
-	public static final String ChoreographyDir = Constants.CFG_ROOT+"/"+Constants.DEFAULT_PREFIX +"/choreography";
+	public static final String ChoreographyDir = BASE_DIR +"/choreography";
 	
 	//当前启动实例名称
 	private static String InstanceName = "";
@@ -78,11 +86,8 @@ public class Config implements IConfigChangeListener{
 	private static String LocalDataDir = "";
 	
 	//服务在RAFT中的根目录
-	private static String RaftBaseDir = "";
+	//private static String RaftBaseDir = "";
 	
-	//服务配置的目录，针对服务
-	public static String ServiceItemCofigDir = null;
-
 	//服务实例配置目录,对应服务运行实例
 	public static String ServiceConfigDir = null;
 	
@@ -283,13 +288,6 @@ public class Config implements IConfigChangeListener{
 		return InstanceName;
 	}
 	
-	public static String getRaftBaseDir(){
-		if(StringUtils.isEmpty(RaftBaseDir)){
-			throw new CommonException("RaftBaseDir cannot be NULL");
-		}
-		return RaftBaseDir;
-	}
-
 	public synchronized static void setBasePackages0(Collection<String>  basePackages) {
 		if(basePackages == null || basePackages.size() == 0) {
 			return;
@@ -311,37 +309,47 @@ public class Config implements IConfigChangeListener{
 		//加载全局配置
 		for(IConfigLoader cl : configLoaders){
 			cl.setDataOperator(this.dataOperator);
-			cl.load(CfgDir,this.globalConfig);
+			cl.load(GROBAL_CONFIG,this.globalConfig);
 			cl.setConfigChangeListener(this);
 		}
 		
 		initInstanceName();
 		
-		String path = Constants.CFG_ROOT +"/"+Config.getInstanceName()+"_ipPort";
+		String path = Config.InstanceDir +"/"+Config.getInstanceName()+"_ipPort";
 		if(dataOperator.exist(path)) {
 			dataOperator.setData(path, "");
 		}
 		
-		RaftBaseDir = Constants.CFG_ROOT +"/"+InstanceName;
-		ServiceConfigDir = RaftBaseDir+"/config";
-		ServiceItemCofigDir = RaftBaseDir+"/srvconfig";
+		ServiceConfigDir = CfgDir+"/" + InstanceName;
 		
-		if(!dataOperator.exist(Config.RaftBaseDir)) {
-			dataOperator.createNode(Config.RaftBaseDir, "", false);
-		}else {
-			dataOperator.setData(Config.RaftBaseDir, "");
+		//   /jmicro目录
+		if(!dataOperator.exist(Constants.CFG_ROOT)) {
+			dataOperator.createNode(Constants.CFG_ROOT, "", false);
 		}
 		
+		//   /jmicro/JMICRO
+		if(!dataOperator.exist(Config.BASE_DIR)) {
+			dataOperator.createNode(Config.BASE_DIR, "", false);
+		}
+		
+		 //   /jmicro/JMICRO/config 目录
 		if(!dataOperator.exist(Config.CfgDir)) {
 			dataOperator.createNode(Config.CfgDir, "", false);
 		}
 		
+	    //   /jmicro/JMICRO/config/{实例名称}  目录
 		if(!dataOperator.exist(Config.ServiceConfigDir)) {
 			dataOperator.createNode(Config.ServiceConfigDir, "", false);
 		}
 		
-		if(!dataOperator.exist(Config.ServiceItemCofigDir)) {
-			dataOperator.createNode(Config.ServiceItemCofigDir, "", false);
+		//服务注册目录
+		if(!dataOperator.exist(Config.ServiceRegistDir)) {
+			dataOperator.createNode(Config.ServiceRegistDir, "", false);
+		}
+		
+		//全局服务注册目录
+		if(!dataOperator.exist(Config.GrobalServiceRegistDir)) {
+			dataOperator.createNode(Config.GrobalServiceRegistDir, "", false);
 		}
 		
 		//加载服务级配置
@@ -359,7 +367,7 @@ public class Config implements IConfigChangeListener{
 	public void createConfig(String value, String path, boolean isGlobal, boolean el){
 		if(isGlobal) {
 			this.globalConfig.put(path, value);
-			this.dataOperator.createNode(CfgDir + path, value,el);
+			this.dataOperator.createNode(GROBAL_CONFIG + path, value,el);
 		} else {
 			this.servicesConfig.put(path, value);
 			this.dataOperator.createNode(ServiceConfigDir + path, value,el);
@@ -373,8 +381,8 @@ public class Config implements IConfigChangeListener{
 			String subPath = path.substring(index + ServiceConfigDir.length(), path.length());
 			this.servicesConfig.put(subPath, value);
 			notifiListener(subPath,value);
-		}else if((index = path.indexOf(CfgDir)) >= 0 )  {
-			String subPath = path.substring(index + CfgDir.length(), path.length());
+		}else if((index = path.indexOf(GROBAL_CONFIG)) >= 0 )  {
+			String subPath = path.substring(index + GROBAL_CONFIG.length(), path.length());
 			this.globalConfig.put(subPath, value);
 			notifiListener(subPath,value);
 		} else {

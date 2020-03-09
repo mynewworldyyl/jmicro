@@ -63,6 +63,8 @@ public class NettyClientSessionManager implements IClientSessionManager{
 
 	static final Logger logger = LoggerFactory.getLogger(NettyClientSessionManager.class);
 
+	private static final String TAG = NettyClientSessionManager.class.getName();
+	
 	private static final AttributeKey<IClientSession> sessionKey = 
 			AttributeKey.newInstance(Constants.IO_SESSION_KEY+System.currentTimeMillis());
 	
@@ -240,7 +242,7 @@ public class NettyClientSessionManager implements IClientSessionManager{
 	                		return;
 	                	}
 
-                		SF.netIoRead(MonitorConstant.CLIENT_IOSESSION_READ,((ByteBuf)msg).readableBytes());
+                		SF.netIoRead(TAG,MonitorConstant.CLIENT_IOSESSION_READ,((ByteBuf)msg).readableBytes());
 	                	
 	             		ByteBuffer b = ByteBuffer.allocate(bb.readableBytes());
 	                	bb.readBytes(b);

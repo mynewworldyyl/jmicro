@@ -25,12 +25,12 @@ import org.jmicro.api.service.IServerServiceProxy;
  */
 public interface ProxyObject {
 
-	/*public static Object getTarget(Object proxy){
-		if(proxy instanceof ProxyObject){
-			return ((ProxyObject)proxy).getTarget();
+	public static boolean isUsableRemoteProxy(Object proxy){
+		if(proxy instanceof AbstractClientServiceProxy){
+			return ((AbstractClientServiceProxy)proxy).isUsable();
 		}
-		return proxy;
-	}*/
+		return false;
+	}
 	
 	public static Class<?> getTargetCls(Class<?> proxyCls){
 		if(ProxyObject.class.isAssignableFrom(proxyCls) ||

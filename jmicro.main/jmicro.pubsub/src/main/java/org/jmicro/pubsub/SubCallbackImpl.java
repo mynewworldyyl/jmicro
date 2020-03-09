@@ -24,10 +24,10 @@ import java.util.Map;
 import java.util.Set;
 
 import org.jmicro.api.JMicroContext;
-import org.jmicro.api.client.AbstractClientServiceProxy;
 import org.jmicro.api.monitor.MonitorConstant;
 import org.jmicro.api.monitor.SF;
 import org.jmicro.api.net.Message;
+import org.jmicro.api.objectfactory.AbstractClientServiceProxy;
 import org.jmicro.api.objectfactory.IObjectFactory;
 import org.jmicro.api.pubsub.PSData;
 import org.jmicro.api.pubsub.PubSubManager;

@@ -33,65 +33,65 @@ import org.jmicro.common.Constants;
  */
 public class SF {
 	
-	public static boolean linkStart(IReq req) {
+	public static boolean linkStart(String tag,IReq req) {
 		if(isMonitorable(MonitorConstant.LINK_START)) {
-			SubmitItem si = createSubmitItem(MonitorConstant.LINK_START,req,null,null,null,null,false);
+			SubmitItem si = createSubmitItem(MonitorConstant.LINK_START,req,null,null,tag,null,false);
 			return monitor().submit(si);
 		}
 		return false;
 	}
 	
-	public static boolean linkEnd(IReq req,IResp resp) {
+	public static boolean linkEnd(String tag,IReq req,IResp resp) {
 		if(isMonitorable(MonitorConstant.LINK_END)) {
-			SubmitItem si = createSubmitItem(MonitorConstant.LINK_END,req,null,null,null,null,false);
+			SubmitItem si = createSubmitItem(MonitorConstant.LINK_END,req,null,null,tag,null,false);
 			return  monitor().submit(si);
 		}
 		return false;
 	}
 	
-	public static boolean serviceNotFound(IReq req) {
+	public static boolean serviceNotFound(String tag,IReq req) {
 		if(isMonitorable(MonitorConstant.SERVICE_NOT_FOUND)) {
-			SubmitItem si = createSubmitItem(MonitorConstant.SERVICE_NOT_FOUND,req,null,null,null,null,false);
+			SubmitItem si = createSubmitItem(MonitorConstant.SERVICE_NOT_FOUND,req,null,null,tag,null,false);
 			return  monitor().submit(si);
 		}
 		return false;
 	}
 	
-	public static boolean reqStart(IReq req) {
+	public static boolean reqStart(String tag,IReq req) {
 		if(isMonitorable(MonitorConstant.REQ_START)) {
-			SubmitItem si = createSubmitItem(MonitorConstant.REQ_START,req,null,null,null,null,false);
+			SubmitItem si = createSubmitItem(MonitorConstant.REQ_START,req,null,null,tag,null,false);
 			return  monitor().submit(si);
 		}
 		return false;
 	}
 	
-	public static boolean reqEnd(IReq req,IResp resp) {
+	public static boolean reqEnd(String tag,IReq req,IResp resp) {
 		if(isMonitorable(MonitorConstant.REQ_END)) {
-			SubmitItem si = createSubmitItem(MonitorConstant.REQ_END,req,null,null,null,null,false);
+			SubmitItem si = createSubmitItem(MonitorConstant.REQ_END,req,null,null,tag,null,false);
 			return  monitor().submit(si);
 		}
 		return false;
 	}
 	
-	public static boolean reqTimeout(IReq req) {
+	public static boolean reqTimeout(String tag,IReq req) {
 		if(isMonitorable(MonitorConstant.REQ_TIMEOUT)) {
-			SubmitItem si = createSubmitItem(MonitorConstant.REQ_TIMEOUT,req,null,null,null,null,false);
+			SubmitItem si = createSubmitItem(MonitorConstant.REQ_TIMEOUT,req,null,null,tag,null,false);
 			return  monitor().submit(si);
 		}
 		return false;
 	}
 	
-	public static boolean reqTimeoutFail(IReq req) {
+	public static boolean reqTimeoutFail(String tag,IReq req) {
 		if(isMonitorable(MonitorConstant.REQ_TIMEOUT_FAIL)) {
-			SubmitItem si = createSubmitItem(MonitorConstant.REQ_TIMEOUT_FAIL,req,null,null,null,null,false);
+			SubmitItem si = createSubmitItem(MonitorConstant.REQ_TIMEOUT_FAIL,req,null,null,tag,null,false);
 			return  monitor().submit(si);
 		}
 		return false;
 	}
 	
-	public static boolean reqTimeoutRetry(IReq req) {
+	public static boolean reqTimeoutRetry(String tag,IReq req) {
 		if(isMonitorable(MonitorConstant.REQ_TIMEOUT_RETRY)) {
-			SubmitItem si = createSubmitItem(MonitorConstant.REQ_TIMEOUT_RETRY,req,null,null,null,null,false);
+			SubmitItem si = createSubmitItem(MonitorConstant.REQ_TIMEOUT_RETRY,req,null,null,tag,null,false);
 			return  monitor().submit(si);
 		}
 		return false;
@@ -103,10 +103,10 @@ public class SF {
 	 * @param se
 	 * @return
 	 */
-	public static boolean reqServiceRespError(IReq req,ServerError se) {
+	public static boolean reqServiceRespError(String tag,IReq req,ServerError se) {
 		if(isMonitorable(MonitorConstant.CLIENT_GET_RESPONSE_ERROR)) {
 			SubmitItem si = createSubmitItem(MonitorConstant.CLIENT_GET_RESPONSE_ERROR,req,null,
-					"code: "+se.getErrorCode()+",msg: "+se.getMsg(),null,null,false);
+					"code: "+se.getErrorCode()+",msg: "+se.getMsg(),tag,null,false);
 			return  monitor().submit(si);
 		}
 		return false;
@@ -118,74 +118,74 @@ public class SF {
 	 * @param msg
 	 * @return
 	 */
-	public static boolean reqServerError(IReq req,String msg) {
+	public static boolean reqServerError(String tag,IReq req,String msg) {
 		if(isMonitorable(MonitorConstant.CLIENT_GET_SERVER_ERROR)) {
-			SubmitItem si = createSubmitItem(MonitorConstant.CLIENT_GET_SERVER_ERROR,req,null,msg,null,null,false);
+			SubmitItem si = createSubmitItem(MonitorConstant.CLIENT_GET_SERVER_ERROR,req,null,msg,tag,null,false);
 			return  monitor().submit(si);
 		}
 		return false;
 	}
 	
-	public static boolean reqError(IReq req,String msg) {
+	public static boolean reqError(String tag,IReq req,String msg) {
 		if(isMonitorable(MonitorConstant.REQ_ERROR)) {
-			SubmitItem si = createSubmitItem(MonitorConstant.REQ_ERROR,req,null,msg,null,null,false);
+			SubmitItem si = createSubmitItem(MonitorConstant.REQ_ERROR,req,null,msg,tag,null,false);
 			return  monitor().submit(si);
 		}
 		return false;
 	}
 	
-	public static boolean reqSuccess(IReq req,IResp resp) {
+	public static boolean reqSuccess(String tag,IReq req,IResp resp) {
 		if(isMonitorable(MonitorConstant.REQ_ERROR)) {
-			SubmitItem si = createSubmitItem(MonitorConstant.REQ_ERROR,req,resp,null,null,null,false);
+			SubmitItem si = createSubmitItem(MonitorConstant.REQ_ERROR,req,resp,null,tag,null,false);
 			return  monitor().submit(si);
 		}
 		return false;
 	}
 	
-	public static boolean serverStart(String host,int port,String desc) {
+	public static boolean serverStart(String tag,String host,int port,String desc) {
 		if(monitor() != null) {
 			SubmitItem si = createSubmitItem(MonitorConstant.SERVER_START,null,null,
-					"host:"+host+", port:"+port+",desc"+desc,null,null,true);
+					"host:"+host+", port:"+port+",desc: "+desc,tag,null,true);
 			return  monitor().submit(si);
 		}
 		return false;
 	}
 	
-	public static boolean serverStop(String host,int port) {
+	public static boolean serverStop(String tag,String host,int port) {
 		SubmitItem si = createSubmitItem(MonitorConstant.CLIENT_GET_SERVER_ERROR,null,null,
-				"host:"+host+", port:"+port,null,null,true);
+				"host:"+host+", port:"+port,tag,null,true);
 		return monitor().submit(si);
 	}
 	
 	public static boolean netIo(short type,String desc,Class cls,Throwable ex) {
 		if(isMonitorable(type)) {
 			SubmitItem si = createSubmitItem(type,null,null,
-					desc,cls,ex,false);
+					desc,cls.getName(),ex,false);
 			return  monitor().submit(si);
 		}
 		return false;
 	}
 	
-	public static boolean netIoRead(short type,long num) {
+	public static boolean netIoRead(String tag,short type,long num) {
 		if(isMonitorable(type)) {
 			SubmitItem si = createSubmitItem(type,null,null,
-					num+"",null,null,false);
+					num+"",tag,null,false);
 			return  monitor().submit(si);
 		}
 		return false;
 	}
 	
 	
-	public static boolean limit(IReq req) {
+	public static boolean limit(String tag,IReq req) {
 		if(isMonitorable(MonitorConstant.SERVICE_SPEED_LIMIT)) {
 			SubmitItem si = createSubmitItem(MonitorConstant.SERVICE_SPEED_LIMIT,req,null,
-					null,null,null,false);
+					null,tag,null,false);
 			return  monitor().submit(si);
 		}
 		return false;
 	}
 	
-	private static SubmitItem createSubmitItem(short type,IReq req,IResp resp,String desc,Class cls
+	private static SubmitItem createSubmitItem(short type,IReq req,IResp resp,String desc,String tag
 			,Throwable ex,boolean canCache) {
 		SubmitItem si = new SubmitItem();
 		si.setType(type);
@@ -193,84 +193,44 @@ public class SF {
 		si.setResp(resp);
 		si.setDesc(desc);
 		si.setCanCache(canCache);
+		si.setTag(tag);
 		
-		if(ex != null) {
-			LogEntry le = new LogEntry(MonitorConstant.LOG_ERROR,cls.getName(),ex,desc);
-			si.setLog(le);
-		}
+		si.setLevel(MonitorConstant.LOG_ERROR);
+		si.setEx(ex);
+		//si.setOthers(others);
+
 		setCommon(si);
 		return si;
 	}
 	
-/*	public static boolean doSubmit(int type,String... objs){
-		if(isMonitorable(type)) {
-			return  monitor().submit(type,objs);
-		}
-		return false;
-	}
-	
-	public static boolean doSubmit(int type,Throwable exp,String... objs){
-		if(isMonitorable(type)) {
-			 monitor().submit(type,exp,objs);
-		}
-		return false;
-	}
-	
-	public static boolean doSubmit(int type,IReq req,Throwable exp,String... objs){
-		if(isMonitorable(type)) {
-			 return monitor().submit(type, req,exp,objs);
-		}
-		return false;
-	}
-	
-	public static boolean doSubmit(int type,IResp resp,Throwable exp,String... objs){
-		if(isMonitorable(type)) {
-			 return monitor().submit(type,resp,exp,objs);
-		}
-		return false;
-	}
-	
-	public static boolean doSubmit(int type,IReq req,IResp resp,Throwable exp,String... objs){
-		if(isMonitorable(type)) {
-			 return monitor().submit(type, req,resp,exp,objs);
-		}
-		return false;
-	}
-	
-	public static boolean doSubmit(int type,Message msg,Throwable exp,String... objs){
-		if(isMonitorable(type)) {
-			 return monitor().submit(type, msg,exp,objs);
-		}
-		return false;
-	}
-	*/
-	
-	public static void doServiceLog(byte level,Class<?> cls,Throwable exp,Object... others) {
-		doLog(level,cls,null,null,null,exp,others);
+	public static void doServiceLog(byte level,Class<?> cls,Throwable exp,String desc,Object... others) {
+		doLog(level,cls,null,null,null,exp,desc,others);
 	}
 
-	public static void doBussinessLog(byte level, Class<?> tag, Throwable exp, Object... msgs) {
-		doServiceLog(level,tag,exp,msgs);
+	public static void doBussinessLog(byte level, Class<?> tag, Throwable exp,String desc, Object... msgs) {
+		doServiceLog(level,tag,exp,desc,msgs);
 	}
 	
-	public static void doRequestLog(byte level,Class<?> cls,IReq req,Throwable exp, Object... others) {
-		doLog(level,cls,req,null,null,exp,others);
+	public static void doRequestLog(byte level,Class<?> cls,IReq req,Throwable exp,String desc, Object... others) {
+		doLog(level,cls,req,null,null,exp,desc,others);
 	}
 	
-	public static void doResponseLog(byte level,Class<?> cls,IReq req,IResp resp,Throwable exp, Object... others) {
-		doLog(level,cls,req,resp,null,exp,others);
+	public static void doResponseLog(byte level,Class<?> cls,IReq req,IResp resp,Throwable exp,String desc, Object... others) {
+		doLog(level,cls,req,resp,null,exp,desc,others);
 	}
 	
-	public static void doMessageLog(byte level,Class<?> cls,Message msg,Throwable exp,Object... others) {
-		doLog(level,cls,null,null,msg,exp,others);
+	public static void doMessageLog(byte level,Class<?> cls,Message msg,Throwable exp,String desc,Object... others) {
+		doLog(level,cls,null,null,msg,exp,desc,others);
 	}
 	
-	private static void doLog(byte level,Class<?> cls,IReq req,IResp resp,Message msg,Throwable exp, Object... others) {
+	private static void doLog(byte level,Class<?> cls,IReq req,IResp resp,Message msg,Throwable exp, String desc,Object... others) {
 		if(isLoggable(level)) {
 			SubmitItem si = createLogSubmitItem(level,cls,exp,others);
 			si.setReq(req);
 			si.setResp(resp);
 			si.setMsg(msg);
+			si.setTag(cls.getName());
+			si.setDesc(desc);
 			monitor().submit(si);
 		}
 	}
@@ -290,10 +250,15 @@ public class SF {
 	}
 	
 	private static SubmitItem createLogSubmitItem(byte level,Class<?> cls,Throwable exp,Object... others) {
-		LogEntry le = new LogEntry(level,cls.getName(),exp,others);
-		SubmitItem si = new SubmitItem(le);
+		//LogEntry le = new LogEntry(level,exp,others);
+		SubmitItem si = new SubmitItem();
+		si.setTag(cls.getName());
 		si.setType(MonitorConstant.LINKER_ROUTER_MONITOR);
 		setCommon(si);
+		si.setLevel(level);
+		si.setEx(exp);
+		si.setOthers(others);
+		
 		return si;
 	}
 	

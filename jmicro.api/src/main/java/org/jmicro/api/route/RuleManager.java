@@ -38,7 +38,7 @@ import org.jmicro.common.util.JsonUtils;
 @Component(lazy=false)
 public class RuleManager {
 	
-	private static final String RULE_DIR = Constants.CFG_ROOT+"/"+Constants.DEFAULT_PREFIX+"/routeRules";
+	private static final String RULE_DIR = Config.BASE_DIR+"/routeRules";
 
 	@Inject
 	private IDataOperator dataOperator;

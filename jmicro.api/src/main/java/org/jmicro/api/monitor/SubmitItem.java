@@ -33,10 +33,9 @@ public final class SubmitItem{
 	//消息类型
 	private short type = -1;
 	
-	//日志实例
-	private LogEntry log = null;
-	
 	private Long linkId = null;
+	
+	private String tag = null;
 	
 	private String instanceName = null;
 	
@@ -45,7 +44,7 @@ public final class SubmitItem{
 	private String remoteHost = null;
 	private String remotePort = null;
 	
-	private String[] others = new String[0];
+	private Object[] others = new Object[0];
 	
 	private String desc;
 	
@@ -59,10 +58,15 @@ public final class SubmitItem{
 	
 	private long time = 0;
 	
+	private byte level = MonitorConstant.LOG_DEBUG;
+	
+	private transient Throwable ex = null;
+	
+	private String exMsg;
+	
 	private transient boolean canCache = false;
 	
 	public void reset() {
-		log = null;
 		type = -1;
 		
 		linkId = null;
@@ -81,71 +85,12 @@ public final class SubmitItem{
 		
 		canCache = false;
 		
+		tag = null;
+		
 	}
 	
 	public SubmitItem() {
 		this.time = System.currentTimeMillis();
-	}
-	
-	public SubmitItem(LogEntry log) {
-		this.log = log;
-	}
-	
-
-	public SubmitItem(short type,long linkId,String... others) {
-		this(type);
-		this.linkId = linkId;
-		if(others.length > 0) {
-			this.others = others;
-		}
-	}
-	
-	public SubmitItem(short type,Message msg,String... others) {
-		this(type,msg.getLinkId(),others);
-		this.msg = msg;
-	}
-	
-	public SubmitItem(short type,long linkId,IReq req,String... others) {
-		this(type,linkId,others);
-		this.req = req;
-	}
-	
-	public SubmitItem(short type,long linkId,IResp resp,String... others) {
-		this(type,linkId,others);
-		this.resp = resp;
-	}
-	
-	public SubmitItem(short type) {
-		this();
-		this.type = type;
-	}
-	
-	public SubmitItem(short type,Message msg) {
-		this(type);
-		this.msg = msg;
-	}
-	
-	public SubmitItem(short type,IReq req) {
-		this(type);
-		this.req = req;
-	}
-	
-	public SubmitItem(short type,IResp resp) {
-		this(type);
-		this.resp = resp;
-	}
-	
-	public SubmitItem(short type,IReq req,IResp resp) {
-		this(type);
-		this.resp = resp;
-		this.req = req;
-	}
-	
-	public SubmitItem(short type,Message msg,IReq req,IResp resp) {
-		this(type);
-		this.resp = resp;
-		this.req = req;
-		this.msg = msg;
 	}
 	
 	public String getDesc() {
@@ -207,11 +152,11 @@ public final class SubmitItem{
 		this.linkId = linkId;
 	}
 
-	public String[] getOthers() {
+	public Object[] getOthers() {
 		return others;
 	}
 
-	public void setOthers(String[] others) {
+	public void setOthers(Object[] others) {
 		this.others = others;
 	}
 
@@ -263,14 +208,6 @@ public final class SubmitItem{
 		this.time = time;
 	}
 
-	public LogEntry getLog() {
-		return log;
-	}
-
-	public void setLog(LogEntry log) {
-		this.log = log;
-	}
-
 	public ServiceMethod getSm() {
 		return sm;
 	}
@@ -285,6 +222,37 @@ public final class SubmitItem{
 
 	public void setCanCache(boolean canCache) {
 		this.canCache = canCache;
+	}
+
+	public String getTag() {
+		return tag;
+	}
+
+	public void setTag(String tag) {
+		this.tag = tag;
+	}
+
+	public byte getLevel() {
+		return level;
+	}
+
+	public void setLevel(byte level) {
+		this.level = level;
+	}
+
+	public Throwable getEx() {
+		return ex;
+	}
+
+	public void setEx(Throwable ex) {
+		this.ex = ex;
+		if(ex != null) {
+			this.exMsg = ex.getMessage();
+		}
+	}
+
+	public String getExMsg() {
+		return exMsg;
 	}
 
 }

@@ -396,19 +396,6 @@ public class ServiceManager {
 		return JsonUtils.getIns().fromJson(data, ServiceItem.class);
 	}
 	
-	private void persisFromConfig(ServiceItem item){
-        if(item== null){
-        	logger.error("Item is NULL");
-        	return;
-        }
-		String key = item.path(Config.ServiceItemCofigDir);
-		if(dataOperator.exist(key)){
-			String data = dataOperator.getData(key);
-			ServiceItem perItem = this.fromJson(data);
-			item.formPersisItem(perItem);
-		}
-	}
-	
 	private  boolean isChange(ServiceItem si,String json,String path) {
 		if(json == null) {
 			json = JsonUtils.getIns().toJson(si);

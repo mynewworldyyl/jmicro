@@ -23,7 +23,6 @@ import org.jmicro.api.JMicroContext;
 import org.jmicro.api.annotation.Cfg;
 import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.Inject;
-import org.jmicro.api.client.AbstractClientServiceProxy;
 import org.jmicro.api.config.Config;
 import org.jmicro.api.idgenerator.ComponentIdServer;
 import org.jmicro.api.monitor.SF;
@@ -31,6 +30,7 @@ import org.jmicro.api.net.IRequest;
 import org.jmicro.api.net.IResponse;
 import org.jmicro.api.net.InterceptorManager;
 import org.jmicro.api.net.RpcRequest;
+import org.jmicro.api.objectfactory.AbstractClientServiceProxy;
 import org.jmicro.api.registry.ServiceItem;
 import org.jmicro.api.registry.ServiceMethod;
 import org.jmicro.common.CommonException;
@@ -47,6 +47,8 @@ import org.slf4j.LoggerFactory;
 public class ServiceInvocationHandler implements InvocationHandler{
 	
 	private final static Logger logger = LoggerFactory.getLogger(ServiceInvocationHandler.class);
+	
+	private static final Class<?> TAG = ServiceInvocationHandler.class;
 	
 	@Cfg("/ServiceInvocationHandler/openDebug")
 	private boolean openDebug;
@@ -106,7 +108,7 @@ public class ServiceInvocationHandler implements InvocationHandler{
 			if(!JMicroContext.existLinkId()) {
 				//新建一个RPC链路开始
 				JMicroContext.get().setParam(Constants.NEW_LINKID, true);
-				SF.linkStart(req);
+				SF.linkStart(TAG.getName(),req);
 			}
 			
 			JMicroContext.get().setObject(Constants.PROXY, po);
@@ -118,7 +120,7 @@ public class ServiceInvocationHandler implements InvocationHandler{
 			if(JMicroContext.get().getObject(Constants.NEW_LINKID,null) != null &&
 					JMicroContext.get().getBoolean(Constants.NEW_LINKID,false) ) {
 				//RPC链路结束
-				SF.linkEnd(req,resp);
+				SF.linkEnd(TAG.getName(),req,resp);
 				JMicroContext.get().removeParam(Constants.NEW_LINKID);
 			}
 			

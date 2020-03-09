@@ -21,6 +21,7 @@ import java.util.List;
 import org.jmicro.api.IListener;
 import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.Inject;
+import org.jmicro.api.config.Config;
 import org.jmicro.api.idgenerator.ComponentIdServer;
 import org.jmicro.api.raft.IDataOperator;
 import org.jmicro.common.Constants;
@@ -37,7 +38,7 @@ public class TransforClassManager {
 
 	static final Logger logger = LoggerFactory.getLogger(TransforClassManager.class);
 	
-	private static final String ROOT = Constants.CFG_ROOT+"/tclist";
+	private static final String ROOT = Config.BASE_DIR+"/tclist";
 	
 	@Inject
 	private IDataOperator dataOperator;

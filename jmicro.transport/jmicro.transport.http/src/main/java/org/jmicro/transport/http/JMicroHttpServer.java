@@ -29,8 +29,6 @@ import org.jmicro.api.annotation.Server;
 import org.jmicro.api.codec.ICodecFactory;
 import org.jmicro.api.config.Config;
 import org.jmicro.api.idgenerator.ComponentIdServer;
-import org.jmicro.api.monitor.IMonitorDataSubmiter;
-import org.jmicro.api.monitor.MonitorConstant;
 import org.jmicro.api.monitor.SF;
 import org.jmicro.api.net.IMessageReceiver;
 import org.jmicro.api.net.IServer;
@@ -63,6 +61,8 @@ import com.sun.net.httpserver.HttpServer;
 public class JMicroHttpServer implements IServer{
 
 	static final Logger LOG = LoggerFactory.getLogger(JMicroHttpServer.class);
+	
+	private static final String TAG = JMicroHttpServer.class.getName();
 	
 	private  HttpServer server;
 	
@@ -164,12 +164,12 @@ public class JMicroHttpServer implements IServer{
         
         String m = "Running the server host["+this.host+"],port ["+this.port+"]";
         LOG.debug(m);    
-        SF.serverStart(this.host,this.port,Constants.TRANSPORT_NETTY_HTTP);
+        SF.serverStart(TAG,this.host,this.port,Constants.TRANSPORT_NETTY_HTTP);
 	}
 
 	@Override
 	public void stop() {
-		SF.serverStop(this.host,this.port);
+		SF.serverStop(TAG,this.host,this.port);
 		 if(server != null){
 			 server.stop(0);
 			 server = null;

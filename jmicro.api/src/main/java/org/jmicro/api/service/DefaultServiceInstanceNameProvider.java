@@ -55,9 +55,8 @@ public class DefaultServiceInstanceNameProvider implements IServiceInstanceNameG
 			}
 		}
 		
-		String tag = config.getString(TAG,TAG);
-		
 		if(insName == null) {
+			String tag = config.getString(TAG,TAG);
 			for(int i = 0; i < Integer.MAX_VALUE ; i++) {
 				String name = tag + i;
 				ud = new File(dir,name);

@@ -30,7 +30,7 @@ import org.jmicro.api.annotation.Async;
 import org.jmicro.api.annotation.Reference;
 import org.jmicro.api.annotation.Service;
 import org.jmicro.api.classloader.RpcClassLoader;
-import org.jmicro.api.client.AbstractClientServiceProxy;
+import org.jmicro.api.objectfactory.AbstractClientServiceProxy;
 import org.jmicro.api.objectfactory.ProxyObject;
 import org.jmicro.api.registry.AsyncConfig;
 import org.jmicro.api.registry.IRegistry;

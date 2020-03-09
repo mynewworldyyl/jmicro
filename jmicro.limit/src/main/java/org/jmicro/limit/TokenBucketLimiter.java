@@ -39,6 +39,8 @@ public class TokenBucketLimiter extends AbstractLimiter implements ILimiter{
 
 	private final static Logger logger = LoggerFactory.getLogger(TokenBucketLimiter.class);
 	
+	private static final String TAG = TokenBucketLimiter.class.getName();
+	
 	private Map<String,ITokenBucket> buckets = new HashMap<>();
 	
 	@Inject(required=false)
@@ -61,7 +63,7 @@ public class TokenBucketLimiter extends AbstractLimiter implements ILimiter{
 		//logger.debug("TokenBucketLimiter apply reqID: " + req.getRequestId());
 		int rst = b.applyToken(1);
 		if(rst < 0) {
-			SF.limit(req);
+			SF.limit(TAG,req);
 			return false;
 		} else {
 			return true;

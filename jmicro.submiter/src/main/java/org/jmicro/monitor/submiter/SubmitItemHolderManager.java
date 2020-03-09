@@ -30,8 +30,8 @@ import org.jmicro.api.JMicroContext;
 import org.jmicro.api.annotation.Cfg;
 import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.Reference;
-import org.jmicro.api.client.AbstractClientServiceProxy;
 import org.jmicro.api.config.Config;
+import org.jmicro.api.exception.AsyncRpcException;
 import org.jmicro.api.executor.ExecutorConfig;
 import org.jmicro.api.executor.ExecutorFactory;
 import org.jmicro.api.monitor.AbstractMonitorDataSubscriber;
@@ -40,6 +40,7 @@ import org.jmicro.api.monitor.IMonitorDataSubscriber;
 import org.jmicro.api.monitor.MonitorConstant;
 import org.jmicro.api.monitor.ServiceCounter;
 import org.jmicro.api.monitor.SubmitItem;
+import org.jmicro.api.objectfactory.AbstractClientServiceProxy;
 import org.jmicro.api.registry.AsyncConfig;
 import org.jmicro.api.registry.IServiceListener;
 import org.jmicro.api.registry.ServiceMethod;
@@ -174,23 +175,30 @@ public class SubmitItemHolderManager implements IMonitorDataSubmiter{
 		}
 	}
 	
-	private void addOneMonitor(IMonitorDataSubscriber m) {
-		Short[] types = m.intrest();
-		sub2Types.put(m, types);
-		
-		//用于提交数据
-		lastSubmitTime.put(m, 0L);
-		cacheItems.put(m, new HashSet<>());
-		
-		for(Short t : types) {
-			if(null == type2Subscribers.get(t)) {
-				type2Subscribers.put(t, new HashSet<IMonitorDataSubscriber>());
+	private boolean addOneMonitor(IMonitorDataSubscriber m) {
+		try {
+			Short[] types = m.intrest();
+			
+			sub2Types.put(m, types);
+			
+			//用于提交数据
+			lastSubmitTime.put(m, 0L);
+			cacheItems.put(m, new HashSet<>());
+			
+			for(Short t : types) {
+				if(null == type2Subscribers.get(t)) {
+					type2Subscribers.put(t, new HashSet<IMonitorDataSubscriber>());
+				}
+				type2Subscribers.get(t).add(m);
 			}
-			type2Subscribers.get(t).add(m);
+			return true;
+		} catch (Throwable e) {
+			logger.error("Call intrest got error:",e);
+			return false;
 		}
 	}
 	
-	private void deleteOneMonitor(IMonitorDataSubscriber m) {
+	private boolean deleteOneMonitor(IMonitorDataSubscriber m) {
 		
 		Short[] types = sub2Types.get(m);
 		sub2Types.remove(m);
@@ -209,6 +217,7 @@ public class SubmitItemHolderManager implements IMonitorDataSubmiter{
 				subs.remove(m);
 			}
 		}
+		return true;
 	}
 	
 	private void doCheck() {
@@ -227,20 +236,24 @@ public class SubmitItemHolderManager implements IMonitorDataSubmiter{
 				
 				if(!addMonitors.isEmpty()) {
 					synchronized(addMonitors) {
-						for(IMonitorDataSubscriber m : this.addMonitors){
-							addOneMonitor(m);
+						for(Iterator<IMonitorDataSubscriber> ite = this.addMonitors.iterator(); ite.hasNext(); ){
+							IMonitorDataSubscriber m = ite.next();
+							if(addOneMonitor(m)) {
+								ite.remove();
+							}
 						}
-						addMonitors.clear();
 					}
 					doSubmitCacheItems();
 				}
 				
 				if(!deleteMonitors.isEmpty()) {
 					synchronized(deleteMonitors) {
-						for(IMonitorDataSubscriber m : this.deleteMonitors){
-							deleteOneMonitor(m);
+						for(Iterator<IMonitorDataSubscriber> ite = this.deleteMonitors.iterator(); ite.hasNext(); ){
+							IMonitorDataSubscriber m = ite.next();
+							if(deleteOneMonitor(m)) {
+								ite.remove();
+							}
 						}
-						deleteMonitors.clear();
 					}
 				}
 				
@@ -331,7 +344,14 @@ public class SubmitItemHolderManager implements IMonitorDataSubmiter{
 				SubmitItem[] is = new SubmitItem[its.size()];
 				its.toArray(is);
 				
-				sub.onSubmit(is);
+				try {
+					sub.onSubmit(is);
+				} catch (AsyncRpcException e) {
+					logger.error(e.getMessage());
+					JMicroContext.get().removeParam(Constants.ASYNC_CONFIG);
+					//同步调用
+					sub.onSubmit(is);
+				}
 				
 				if(doAsyncSubmit) {
 					JMicroContext.get().removeParam(Constants.ASYNC_CONFIG);

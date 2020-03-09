@@ -123,7 +123,7 @@ public class JMicro {
 		String objClass  = Config.getValue(key, String.class, defaultVal);
 		
 		if(StringUtils.isEmpty(objClass) && dataOperator != null) {
-			String path = Config.CfgDir + "/" + key;
+			String path = Config.GROBAL_CONFIG + "/" + key;
 			objClass = dataOperator.getData(path);
 		}
 		

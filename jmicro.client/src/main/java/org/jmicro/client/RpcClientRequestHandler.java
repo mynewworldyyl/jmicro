@@ -26,11 +26,11 @@ import org.jmicro.api.JMicroContext;
 import org.jmicro.api.annotation.Cfg;
 import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.Inject;
-import org.jmicro.api.client.AbstractClientServiceProxy;
 import org.jmicro.api.client.IClientSession;
 import org.jmicro.api.client.IClientSessionManager;
 import org.jmicro.api.codec.ICodecFactory;
 import org.jmicro.api.config.Config;
+import org.jmicro.api.exception.AsyncRpcException;
 import org.jmicro.api.exception.RpcException;
 import org.jmicro.api.exception.TimeoutException;
 import org.jmicro.api.idgenerator.ComponentIdServer;
@@ -46,6 +46,7 @@ import org.jmicro.api.net.ISession;
 import org.jmicro.api.net.Message;
 import org.jmicro.api.net.RpcResponse;
 import org.jmicro.api.net.ServerError;
+import org.jmicro.api.objectfactory.AbstractClientServiceProxy;
 import org.jmicro.api.pubsub.PSData;
 import org.jmicro.api.pubsub.PubSubManager;
 import org.jmicro.api.registry.AsyncConfig;
@@ -124,7 +125,8 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
 		RpcResponse resp = null;
 		try {
 			 //请求开始
-			 SF.reqStart(request);
+			 SF.reqStart(TAG.getName(),request);
+			 SF.doRequestLog(MonitorConstant.LOG_DEBUG, TAG, request, null, "request start");
 			
 			 ServiceMethod sm = JMicroContext.get().getParam(Constants.SERVICE_METHOD_KEY, null);
 			 String mkey = sm.getKey().getMethod();
@@ -153,7 +155,7 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
 			throw new RpcException(request,e);
 		} finally {
 			//无论成功或失败都有一个结束事件
-			SF.reqEnd(request, resp);
+			SF.reqEnd(TAG.getName(),request, resp);
 		}
 		return resp;
 	}
@@ -219,7 +221,7 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
 			resp.setResult(se);
 			resp.setSuccess(false);
 			*/
-			throw new RpcException(req,msg);
+			throw new AsyncRpcException(req,msg);
 		
 		}
 	}
@@ -260,7 +262,7 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
         	if(si == null) {
         		//SF.doSubmit(MonitorConstant.CLIENT_REQ_SERVICE_NOT_FOUND, req,null);
         		//服务未找到，或服务不存在
-        		SF.serviceNotFound(req);
+        		SF.serviceNotFound(TAG.getName(),req);
     			throw new RpcException(req,"Service [" + req.getServiceName() + "] not found!");
     		}
         	
@@ -380,7 +382,7 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
     			//到这里肯定是超时了
     			//SF.doSubmit(MonitorConstant.CLIENT_REQ_TIMEOUT, req, null);
     			logger.warn("Timeout reqID:"+req.getId()+",linkId:"+msg.getLinkId()+",timeout"+sm.getTimeout()+",Service: "+sm.getKey().toKey(true, true, true));
-    			SF.reqTimeout(req);
+    			SF.reqTimeout(TAG.getName(),req);
     			//session.increment(MonitorConstant.CLIENT_REQ_TIMEOUT);
     		}
     		
@@ -389,7 +391,7 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
 				//同步请求成功，直接返回
     			req.setFinish(true);
     			waitForResponse.remove(req.getRequestId());
-    			SF.reqSuccess(req,resp);
+    			SF.reqSuccess(TAG.getName(),req,resp);
     			return resp;
     		}
     		
@@ -412,7 +414,7 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
     				}
     				logger.warn("Fail reqID:"+req.getId()+",linkId:"+msg.getLinkId()+",timeout"+",Service: "+sm.getKey().toKey(true, true, true));
     				//肯定是超时失败了
-    				SF.reqTimeoutFail(req);
+    				SF.reqTimeoutFail(TAG.getName(),req);
     				throw new TimeoutException(req,si.getRetryCnt()+"");
     			} else {
     				if(interval > 0 ) {
@@ -425,7 +427,7 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
     				}
     				logger.warn("Do timeout retry reqID:"+req.getId()+",linkId:"+msg.getLinkId()+",retryCnt:"+retryCnt+",Service: "+sm.getKey().toKey(false, true, true));
     				//session.increment(MonitorConstant.CLIENT_REQ_RETRY);
-    				SF.reqTimeoutRetry(req);
+    				SF.reqTimeoutRetry(TAG.getName(),req);
     				continue;//重试循环
     			}
     			
@@ -436,27 +438,27 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
 				 req.setSuccess(false);
 				 session.increment(MonitorConstant.CLIENT_GET_RESPONSE_ERROR);
 				 waitForResponse.remove(req.getRequestId());
-				 SF.reqServiceRespError(req, se);
+				 SF.reqServiceRespError(TAG.getName(),req, se);
 				 throw new RpcException(req,se);
 			} else if(!resp.isSuccess()){
 				 //服务器正常逻辑处理错误，不需要重试，直接失败
 				 logger.error("服务器响应错误reqID:"+req.getId()+",linkId:"+msg.getLinkId()+ resp.getResult()+",Service: "+sm.getKey().toKey(true, true, true));
 				 req.setSuccess(false);
 				 session.increment(MonitorConstant.CLIENT_GET_SERVER_ERROR);
-				 SF.reqServerError(req, resp.getResult() == null ? "":resp.getResult().toString());
+				 SF.reqServerError(TAG.getName(),req, resp.getResult() == null ? "":resp.getResult().toString());
 				 waitForResponse.remove(req.getRequestId());
 			     throw new RpcException(req,resp);
 			}
     		//waitForResponse.remove(req.getRequestId());
     		//代码不应该走到这里，如果走到这里，说明系统还有问题
-    		SF.reqError(req,"未知错误1");
+    		SF.reqError(TAG.getName(),req,"未知错误1");
     		
     		logger.error("未知错误reqID:"+req.getId()+",linkId:"+msg.getLinkId()+",Service: "+sm.getKey().toKey(true, true, true));
     		throw new CommonException("未知错误1");
     		
         }while((retryCnt--) > 0);
         logger.error("未知错误2,reqID:"+req.getId()+",linkId:"+msg.getLinkId()+",Service: "+sm.getKey().toKey(true, true, true));
-        SF.reqError(req,"未知错误2");
+        SF.reqError(TAG.getName(),req,"未知错误2");
         
         throw new CommonException("Service:"+req.getServiceName()+", Method: "+req.getMethod()+", Params: "+req.getArgs());
 	}

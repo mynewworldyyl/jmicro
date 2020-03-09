@@ -18,19 +18,19 @@ import org.jmicro.example.api.rpc.ISimpleRpc;
 @Component(level=1000)
 public class TestRpcClient {
 
-	@Reference(required=true,namespace="testrpc",version="0.0.1")
+	@Reference(required=false,namespace="testrpc",version="0.0.1")
 	private ITestRpcService rpcService;
 	
 	@Reference(required=false,namespace="simpleRpc",version="0.0.1")
 	private ISimpleRpc sayHello;
 	
-	@Reference(required=true,namespace="simpleRpc",version="0.0.1")
+	@Reference(required=false,namespace="simpleRpc",version="0.0.1")
 	private Set<ISimpleRpc> services = new HashSet<>();
 	
 	@Reference(required=false,changeListener="subscriberChange")
 	private Set<IMonitorDataSubscriber> submiters = new HashSet<>();
 	
-	@Reference(required=true,namespace="simpleRpc",version="0.0.1",
+	@Reference(required=false,namespace="simpleRpc",version="0.0.1",
 			asyncs= {
 					@Async(forMethod="hello",enable=true,condition=AsyncConfig.ASYNC_DIRECT,
 				serviceName="org.jmicro.example.api.rpc.IAsyncRpcCallback",

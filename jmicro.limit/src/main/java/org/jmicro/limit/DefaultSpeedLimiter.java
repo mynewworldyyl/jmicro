@@ -43,6 +43,7 @@ import org.slf4j.LoggerFactory;
 public class DefaultSpeedLimiter extends AbstractLimiter implements ILimiter{
 	
 	static final Logger logger = LoggerFactory.getLogger(DefaultSpeedLimiter.class);
+	private static final String TAG = DefaultSpeedLimiter.class.getName();
 	
 	private static final Short[] TYPES = new Short[] {MonitorConstant.REQ_START};
 	
@@ -95,7 +96,7 @@ public class DefaultSpeedLimiter extends AbstractLimiter implements ILimiter{
 			int needWaitTime = (int)((1000.0*cnt)/ sm.getMaxSpeed());
 			
 			if(needWaitTime >= sm.getTimeout()) {
-				SF.limit(req);
+				SF.limit(TAG,req);
 				logger.info("qps:{},maxQps:{},key:{}",qps,sm.getMaxSpeed(),key);
 				return false;
 			} 

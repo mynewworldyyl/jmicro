@@ -59,6 +59,7 @@ import io.netty.handler.logging.LoggingHandler;
 public class NettyHttpServer implements IServer{
 
 	static final Logger LOG = LoggerFactory.getLogger(NettyHttpServer.class);
+	private static final String TAG = NettyHttpServer.class.getName();
 	
 	private  ServerBootstrap server;
 	
@@ -126,12 +127,12 @@ public class NettyHttpServer implements IServer{
         String m = "Running netty http server host["+Config.getHost()+"],port ["+this.port+"]";
         LOG.debug(m);    
         //SF.doSubmit(MonitorConstant.SERVER_START,m);
-        SF.serverStart(Config.getHost(),this.port,Constants.TRANSPORT_NETTY_HTTP);
+        SF.serverStart(TAG,Config.getHost(),this.port,Constants.TRANSPORT_NETTY_HTTP);
 	}
 
 	@Override
 	public void stop() {
-		 SF.serverStop(Config.getHost(),this.port);
+		 SF.serverStop(TAG,Config.getHost(),this.port);
 		//SF.doSubmit(MonitorConstant.SERVER_STOP,Config.getHost(),this.port+"");
 		 if(server != null){
 			 //server.;

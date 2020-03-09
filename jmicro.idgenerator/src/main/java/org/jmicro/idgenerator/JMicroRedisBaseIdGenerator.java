@@ -18,6 +18,7 @@ package org.jmicro.idgenerator;
 
 import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.Inject;
+import org.jmicro.api.config.Config;
 import org.jmicro.api.idgenerator.IIdServer;
 import org.jmicro.common.Constants;
 
@@ -33,7 +34,7 @@ import redis.clients.jedis.JedisPool;
 //@Service(namespace="RedisBaseIdServer", version="0.0.1")
 public class JMicroRedisBaseIdGenerator implements IIdServer {
 	
-	private static final String ID_IDR = Constants.CFG_ROOT + "/"+Constants.DEFAULT_PREFIX+"/id/";
+	private static final String ID_IDR = Config.BASE_DIR+"/id/";
 	
 	/*public static void main(String[] args) {
 		 JMicro.getObjectFactoryAndStart(new String[] {"-DinstanceName=RedisBaseIdServer",

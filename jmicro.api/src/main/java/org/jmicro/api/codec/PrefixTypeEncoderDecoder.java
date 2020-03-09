@@ -73,7 +73,7 @@ public class PrefixTypeEncoderDecoder{
 		//field declare as Object.class in order to put type info any way
 		//从此进入时,字段声明及泛型类型都是空,区别于从反射方法进入
 		try {
-			JDataOutput dos = new JDataOutput(256);
+			JDataOutput dos = new JDataOutput(1);
 			
 			/*dos.write(Decoder.PREFIX_TYPE_PROXY);
 			short code = TypeCoderFactory.getCodeByClass(obj.getClass());

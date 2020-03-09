@@ -22,21 +22,22 @@ public class CheckPostReadyListener implements IPostFactoryListener{
 	@Override
 	public void afterInit(IObjectFactory of) {
 		IDataOperator ddop = of.getByParent(IDataOperator.class).iterator().next();
-		if(ddop.exist(Config.getRaftBaseDir())) {
-			if(ddop.exist(Config.ServiceConfigDir+"/active")){
-				logger.info("InstanceName: "+Config.getInstanceName() + " is in using,sleep 10s to recheck");
-				try {
-					Thread.sleep(10*1000);
-				} catch (InterruptedException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-				if(ddop.exist(Config.ServiceItemCofigDir+"/active")){
-					throw new CommonException("InstanceName :"+Config.getInstanceName()+" is using by other server");
-				}
+
+		if(ddop.exist(Config.ServiceConfigDir+"/active")){
+			logger.info("InstanceName: "+Config.getInstanceName() + " is in using,sleep 10s to recheck");
+			try {
+				//服务关闭后，需要过一定时间后，结点才会删除
+				Thread.sleep(10*1000);
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
 			}
-			ddop.createNode(Config.ServiceItemCofigDir+"/active", "", true);
+			if(ddop.exist(Config.ServiceConfigDir+"/active")){
+				throw new CommonException("InstanceName :"+Config.getInstanceName()+" is using by other server");
+			}
 		}
+		ddop.createNode(Config.ServiceConfigDir+"/active", "", true);
+	
 		
 	}
 	

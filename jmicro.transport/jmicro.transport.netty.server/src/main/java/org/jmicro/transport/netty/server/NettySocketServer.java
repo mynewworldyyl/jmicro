@@ -60,6 +60,8 @@ public class NettySocketServer extends PostFactoryAdapter implements IServer {
 
 	static final Logger LOG = LoggerFactory.getLogger(NettySocketServer.class);
 	
+	private static final String TAG = NettySocketServer.class.getName();
+	
 	private  ServerBootstrap server;
 	
 	@Cfg(value = "/startSocket",required=false)
@@ -145,11 +147,13 @@ public class NettySocketServer extends PostFactoryAdapter implements IServer {
         String m = "Running the netty socket server host["+Config.getHost()+"],port ["+this.port+"]";
         LOG.debug(m);    
         
+        SF.serverStart(TAG,Config.getHost(),this.port, "Server start: " + Constants.TRANSPORT_NETTY );
+        
 	}
 
 	@Override
 	public void stop() {
-		SF.serverStop(Config.getHost(),this.port);
+		SF.serverStop(TAG,Config.getHost(),this.port);
 		 if(server != null){
 			 server = null;
         }
@@ -177,8 +181,6 @@ public class NettySocketServer extends PostFactoryAdapter implements IServer {
 
 	@Override
 	public void afterInit(IObjectFactory of) {
-		SF.serverStart(Config.getHost(),this.port, Constants.TRANSPORT_NETTY );
-		
 	}
 
 	@Override

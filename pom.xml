@@ -406,7 +406,7 @@
                 <activeByDefault>false</activeByDefault>
             </activation>
             <properties>
-                <argline>-server -Xms256m -Xmx512m -XX:MetaspaceSize=64m -XX:MaxMetaspaceSize=128m -Dfile.encoding=UTF-8
+                <argline>-server -Xms32m -Xmx512m -XX:MetaspaceSize=64m -XX:MaxMetaspaceSize=128m -Dfile.encoding=UTF-8
                     -Djava.net.preferIPv4Stack=true
                 </argline>
             </properties>

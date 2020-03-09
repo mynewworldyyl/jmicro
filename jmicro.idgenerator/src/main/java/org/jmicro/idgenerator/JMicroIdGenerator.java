@@ -20,6 +20,7 @@ import org.jmicro.api.JMicro;
 import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.Inject;
 import org.jmicro.api.annotation.Service;
+import org.jmicro.api.config.Config;
 import org.jmicro.api.idgenerator.IIdServer;
 import org.jmicro.api.raft.IDataOperator;
 import org.jmicro.api.raft.RaftBaseIdGenerator;
@@ -34,7 +35,7 @@ import org.jmicro.common.Utils;
 //@Service(namespace="idServer", version="0.0.1")
 public class JMicroIdGenerator implements IIdServer {
 	
-	private static final String ID_IDR = Constants.CFG_ROOT + "/id/";
+	private static final String ID_IDR = Config.BASE_DIR + "/id/";
 	
 	public static void main(String[] args) {
 		 JMicro.getObjectFactoryAndStart(new String[] {"-DinstanceName=ZkBaseIdServer",

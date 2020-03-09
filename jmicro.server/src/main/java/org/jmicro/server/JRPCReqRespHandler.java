@@ -137,7 +137,7 @@ public class JRPCReqRespHandler implements IMessageHandler{
 			s.write(msg);
 			
 			if(this.openDebug) {
-				SF.doResponseLog(MonitorConstant.LOG_DEBUG, TAG,req,resp,null);
+				SF.doResponseLog(MonitorConstant.LOG_DEBUG, TAG,req,resp,null,"response success");
 			} 
 		
 			//SF.doSubmit(MonitorConstant.SERVER_REQ_OK, req,resp,null);
@@ -146,7 +146,7 @@ public class JRPCReqRespHandler implements IMessageHandler{
 			//返回错误
 			//SF.doMessageLog(MonitorConstant.LOG_ERROR, TAG, msg,e);
 			//SF.doSubmit(MonitorConstant.SERVER_REQ_ERROR, req,resp,null);
-			SF.reqServerError(req, "");
+			SF.reqServerError(TAG.getName(),req, "");
 			logger.error("reqHandler error: ",e);
 			if(needResp && req != null ){
 				//返回错误

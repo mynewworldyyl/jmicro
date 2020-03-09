@@ -59,7 +59,7 @@ public @interface SMethod {
 	public int retryInterval() default 500;
 	//method must can be retry, or 1
 	public int retryCnt() default 3;
-	public int timeout() default 2000;
+	public int timeout() default 5000;
 	
 	/**
 	 * 失败时的默认返回值，包括服务熔断失败，降级失败等

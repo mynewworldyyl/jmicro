@@ -192,9 +192,9 @@ public abstract class AbstractSession implements ISession{
               }*/
               //JMicroContext.configProvider(message);
              if(this.isServer()) {
-            	 SF.netIoRead(MonitorConstant.SERVER_IOSESSION_READ, message.getLen());
+            	 SF.netIoRead(this.getClass().getName(),MonitorConstant.SERVER_IOSESSION_READ, message.getLen());
              } else {
-            	 SF.netIoRead(MonitorConstant.CLIENT_IOSESSION_READ, message.getLen());
+            	 SF.netIoRead(this.getClass().getName(),MonitorConstant.CLIENT_IOSESSION_READ, message.getLen());
              }
              receiver.receive(this,message);
      	 }

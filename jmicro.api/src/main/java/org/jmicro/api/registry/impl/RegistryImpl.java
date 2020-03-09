@@ -504,7 +504,7 @@ public class RegistryImpl implements IRegistry {
         	logger.error("Item is NULL");
         	return;
         }
-		String key = item.path(Config.ServiceItemCofigDir);
+		String key = item.path(Config.GrobalServiceRegistDir);
 		if(this.srvManager.exist(key)){
 			String data = dataOperator.getData(key);
 			ServiceItem perItem = this.fromJson(data);

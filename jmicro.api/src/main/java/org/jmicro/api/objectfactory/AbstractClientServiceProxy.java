@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.jmicro.api.client;
+package org.jmicro.api.objectfactory;
 
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
@@ -25,7 +25,6 @@ import java.util.Set;
 import org.jmicro.api.JMicroContext;
 import org.jmicro.api.annotation.Reference;
 import org.jmicro.api.monitor.IMonitorDataSubmiter;
-import org.jmicro.api.objectfactory.IObjectFactory;
 import org.jmicro.api.registry.AsyncConfig;
 import org.jmicro.api.registry.IRegistry;
 import org.jmicro.api.registry.IServiceListener;
@@ -91,20 +90,13 @@ public abstract class AbstractClientServiceProxy implements InvocationHandler,IS
 		
 		ServiceItem si = this.item;
 		if(si == null) {
-			synchronized(this) {
-				si = this.item;
-				if(si == null) {
-					si = getItemFromRegistry();
-				}
-			}
-			if(si == null) {
+			if(isUsable()) {
 				String msg = "Service Item is NULL when call method ["
 						+method.getName()+"] with params ["+ UniqueServiceMethodKey.paramsStr(args) +"] proxy ["
 						+this.getClass().getName()+"]";
 				logger.error(msg);
 				throw new CommonException(msg);
 			}
-			this.item = si;
 		}
 		
 		InvocationHandler h = targetHandler;
@@ -134,6 +126,20 @@ public abstract class AbstractClientServiceProxy implements InvocationHandler,IS
 		JMicroContext.get().setParam(Constants.SERVICE_ITEM_KEY, si);
 		
 		return h.invoke(proxy, method, args);
+	}
+	
+	public boolean isUsable() {
+		if(this.item != null) {
+			return true;
+		}
+
+		synchronized(this) {
+			if(this.item == null) {
+				this.item = getItemFromRegistry();
+			}
+		}
+		return this.item != null;
+	
 	}
 	
 	protected ServiceItem getItemFromRegistry() {
