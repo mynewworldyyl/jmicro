@@ -275,7 +275,7 @@ public class DefaultCoder implements TypeCoder<Object> {
 						obj.decode(buffer);
 						return  obj;
 					} catch (InstantiationException | IllegalAccessException e) {
-						throw new CommonException("Create instance of: " + cls.getName() + " error!");
+						throw new CommonException("Create instance of: " + cls.getName() + " error!",e);
 					}
 				} else {
 					

@@ -20,6 +20,8 @@ public class SendItem {
 	
 	public String topic = null;
 	
+	public SendItem() {}
+	
 	public SendItem(int type,ISubCallback cb,PSData[] items,int retryCnt) {
 		if(items == null || items.length == 0 || items[0] == null) {
 			throw new CommonException("SendItem items PSData cannot be NULL");

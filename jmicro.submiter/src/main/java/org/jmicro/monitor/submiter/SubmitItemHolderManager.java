@@ -272,15 +272,15 @@ public class SubmitItemHolderManager implements IMonitorDataSubmiter{
 				
 				if(!f) {
 					//f=false,无数据要提交
-					if(openDebug)
-						logger.info("wait");
+					//if(openDebug)
+						//logger.info("wait");
 					synchronized(cacheItemsLock) {
 						cacheItemsLock.wait(3000);
 					}
 				}
 				
-				if(openDebug)
-					logger.info("send");
+				//if(openDebug)
+					//logger.info("send");
 				
 				long curTime = System.currentTimeMillis();
 				for(Map.Entry<IMonitorDataSubscriber, Long> sub : lastSubmitTime.entrySet()) {
@@ -398,7 +398,7 @@ public class SubmitItemHolderManager implements IMonitorDataSubmiter{
 			}
 		}
 		if(openDebug)
-			logger.debug("No subscriber for type {}",type);
+			logger.debug("No subscriber for type {}",Integer.toHexString(type));
 		return false;
 	}
 	
@@ -480,7 +480,7 @@ public class SubmitItemHolderManager implements IMonitorDataSubmiter{
 			} else {
 				//不能缓存，直接返回失败
 				if(openDebug)
-					logger.info("Type [{}] not support",item.getType());
+					logger.info("Type [{}] not support",Integer.toHexString(item.getType()));
 				return false;
 			}
 		}
@@ -494,17 +494,17 @@ public class SubmitItemHolderManager implements IMonitorDataSubmiter{
 			Set<SubmitItem> items = this.cacheItems.get(sub);
 			if(items.size() > this.maxCacheItems) {
 				//提交队列已经满了，直接丢弃
-				logger.warn("Exceed: {}",item);
-			} else {
+				logger.warn("Exceed: {}",item.getDesc());
+			} else { 
 				synchronized(items) {
 					if(openDebug)
-						logger.info("add: {}",item);
+						logger.info("add: {},type:{}",item.getDesc(),Integer.toHexString(item.getType()));
 					//放入提交队列中
 					items.add(item);
 				}
 				synchronized(cacheItemsLock) {
-					if(openDebug)
-						logger.info("wakup cacheItemsLock: {}",item);
+					//if(openDebug)
+						//logger.info("wakup cacheItemsLock");
 					cacheItemsLock.notify();
 				}
 			}

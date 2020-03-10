@@ -23,6 +23,7 @@ import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.jmicro.api.annotation.Cfg;
 import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.Inject;
 import org.jmicro.api.cache.ICache;
@@ -62,6 +63,9 @@ public class RedisCacheImpl implements ICache {
 	private static final Logger logger = LoggerFactory.getLogger(RedisCacheImpl.class);
 	
 	private final Map<Long,TimerTicker> timers = new ConcurrentHashMap<>();
+	
+	@Cfg("/RedisCacheImpl/openDebug")
+	private boolean openDebug = false;
 	
 	@Inject
 	private ICodecFactory codeFactory;
@@ -252,7 +256,7 @@ public class RedisCacheImpl implements ICache {
 		}
 		
 		//通过旋转时钟刷新缓存
-		TimerTicker t = TimerTicker.getTimer(this.timers, timerWithMilliseconds);
+		TimerTicker t = TimerTicker.getTimer(this.timers, timerWithMilliseconds).setOpenDebug(openDebug);
 		
 		t.addListener(key, (k,rr) -> {
 			Object val = ref.get(key);

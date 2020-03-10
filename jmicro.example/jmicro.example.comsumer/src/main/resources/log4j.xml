@@ -100,6 +100,11 @@
 		</layout>
 	</appender>
 	
+	<logger name="io.netty.handler.logging">
+		<level value="WARN"/>
+		<appender-ref ref="jmicro_error"/>
+	</logger>
+	
 	<logger name="org.jmicro.api.debug.a">
 		<level value="DEBUG"/>
 		<appender-ref ref="jmicro_A"/>
@@ -124,11 +129,11 @@
 
 	<logger name="org.jmicro">
 		<level value="DEBUG"/>
-		<appender-ref ref="jmicro_debug"/>
+		<appender-ref ref="CONSOLE"/>
 	</logger>
 	
 	<logger name="org.jmicro.api.codec">
-		<level value="INFO"/>
+		<level value="DEBUG"/>
 		<appender-ref ref="jmicro_debug"/>
 	</logger>
 	
@@ -152,7 +157,7 @@
 	</logger>
 	 
 	<root>	
-	    <level value="INFO"/>
+	    <level value="DEBUG"/>
 		<appender-ref ref="CONSOLE"/>
 	</root>
 	

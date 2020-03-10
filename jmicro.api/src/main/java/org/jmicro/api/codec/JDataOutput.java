@@ -186,8 +186,11 @@ public class JDataOutput implements DataOutput {
 	public static ByteBuffer writeString(ByteBuffer buf, String s) throws IOException {
 
 		if(s == null || s.length() == 0) {
-			checkCapacity(buf,1);
+			buf = checkCapacity(buf,1);
 			//buf.putShort((short)0);
+			if(buf.remaining() <= 0) {
+				System.out.print(buf);
+			}
 			buf.put((byte)0);
 			return buf;
 		}

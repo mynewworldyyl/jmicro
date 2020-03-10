@@ -100,10 +100,16 @@
 		</layout>
 	</appender>
 	
+	<logger name="io.netty.handler.logging">
+		<level value="WARN"/>
+		<appender-ref ref="jmicro_error"/>
+	</logger>
+	
 	<logger name="org.jmicro.api.debug.a">
 		<level value="DEBUG"/>
 		<appender-ref ref="jmicro_A"/>
 	</logger>
+	
 	<logger name="org.jmicro.api.debug.b">
 		<level value="DEBUG"/>
 		<appender-ref ref="jmicro_B"/>

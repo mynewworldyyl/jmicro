@@ -156,17 +156,15 @@ public final class MonitorConstant {
 	
 	public static final String TEST_SERVICE_METHOD_TOPIC = "/statics/smTopic";
 	
-	public static final Map<Integer,String> MONITOR_VAL_2_KEY = new HashMap<>();
+	public static final Map<Short,String> MONITOR_VAL_2_KEY = new HashMap<>();
 	static {
 		Field[] fs = MonitorConstant.class.getDeclaredFields();
 		for(Field f: fs){
-			if(!Modifier.isStatic(f.getModifiers()) || !(f.getName().startsWith("SERVER_") 
-					|| f.getName().startsWith("CLIENT_") || f.getName().startsWith("STATIS_") 
-					|| f.getName().startsWith("LINKER_ROUTER")) ){
+			if(!Modifier.isStatic(f.getModifiers()) || !Modifier.isPrivate(f.getModifiers())){
 				continue;
 			}
 			try {
-				MONITOR_VAL_2_KEY.put(f.getInt(null), f.getName());
+				MONITOR_VAL_2_KEY.put(f.getShort(null), f.getName());
 			} catch (IllegalArgumentException | IllegalAccessException e) {
 				e.printStackTrace();
 			}

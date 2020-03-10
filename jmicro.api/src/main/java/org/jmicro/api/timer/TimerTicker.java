@@ -36,6 +36,8 @@ public class TimerTicker {
 	private static final Logger logger = LoggerFactory.getLogger(TimerTicker.class);
 	private static final Map<Long,TimerTicker> defaultTimers = new ConcurrentHashMap<>();
 	
+	private boolean openDebug = false;
+	
 	public static TimerTicker getDefault(Long ticker) {
 		return getTimer(defaultTimers,ticker);
 	}
@@ -69,6 +71,9 @@ public class TimerTicker {
 							String k = removeKeys.poll();
 							listeners.remove(k);
 							attachements.remove(k);
+							if(openDebug) {
+								logger.info("Remote Action: "+ k);
+							}
 						}
 					}
 				} catch (Throwable e) {
@@ -115,6 +120,11 @@ public class TimerTicker {
 	protected void finalize() throws Throwable {
 		System.out.println("finalize: "+timer.toString());
 		super.finalize();
+	}
+
+	public TimerTicker setOpenDebug(boolean openDebug) {
+		this.openDebug = openDebug;
+		return this;
 	}
 
 	

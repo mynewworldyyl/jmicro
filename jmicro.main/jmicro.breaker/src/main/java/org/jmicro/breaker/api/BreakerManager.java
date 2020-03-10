@@ -9,6 +9,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import org.jmicro.api.JMicro;
 import org.jmicro.api.JMicroContext;
+import org.jmicro.api.annotation.Cfg;
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -59,6 +60,9 @@ public class BreakerManager implements ITickerAction{
 	
 	private final Map<Long,TimerTicker> timers = new ConcurrentHashMap<>();
 	
+	@Cfg("/BreakerManager/openDebug")
+	private boolean openDebug = false;
+	
 	@Inject
 	private ServiceManager srvManager;
 	
@@ -78,7 +82,7 @@ public class BreakerManager implements ITickerAction{
 		long interval = TimeUtils.getMilliseconds(sm.getBreakingRule().getCheckInterval(), sm.getBaseTimeUnit());
 		if(sm.isBreaking()) {
 			//服务熔断了,做自动服务检测
-			TimerTicker.getTimer(timers,interval).addListener(key, this,sm);
+			TimerTicker.getTimer(timers,interval).setOpenDebug(openDebug).addListener(key, this,sm);
 		} else {
 			//关闭服务自动检测
 			TimerTicker.getTimer(timers,interval).removeListener(key,false);

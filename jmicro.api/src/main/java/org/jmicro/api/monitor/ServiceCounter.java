@@ -43,6 +43,8 @@ public class ServiceCounter implements IServiceCounter<Short>{
 	
 	private static final int DEFAULT_SLOT_SIZE = 10;
 	
+	private boolean openDebug = false;
+	
 	//服务唯一标识,粒度到服务方法,=服务名+名称空间+版本+方法名+方法参数标识
 	private String serviceKey;
 	
@@ -306,7 +308,7 @@ public class ServiceCounter implements IServiceCounter<Short>{
 	 * 当前槽位定义为： Tx < Sxv 且  Tx > Sxv-slotSizeInMilliseconds
 	 * 
 	 */
-	static class Counter implements ITickerAction{
+	private class Counter implements ITickerAction{
 		
 		private final int type;
 		//时间窗口,单位毫秒,统计只保持时间窗口内的数据,超过时间窗口的数据自动丢弃
@@ -355,9 +357,12 @@ public class ServiceCounter implements IServiceCounter<Short>{
 			}
 			
 			this.slots[0].setTimeEnd(curTime+slotSizeInMilliseconds);
+			if(openDebug) {
+				logger.info("Create Counter type:{}, timeWindow:{},slotSizeInMilliseconds:{},slotLen:{},curTime:{}",this.type,
+						this.timeWindow,this.slotSizeInMilliseconds,this.slotLen,curTime);
+			}
 			
-			logger.info("Create Counter type:{}, timeWindow:{},slotSizeInMilliseconds:{},slotLen:{},curTime:{}",this.type,
-					this.timeWindow,this.slotSizeInMilliseconds,this.slotLen,curTime);
+			
 		}
 		
 		/**

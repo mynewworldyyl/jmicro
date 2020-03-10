@@ -397,6 +397,7 @@ public class ConfigPostInitListener extends PostInitAdapter {
 			if(StringUtils.isEmpty(data)) {
 				return ;
 			}
+			logger.debug("Config changed key:"+path+"="+data);
 			if(Map.class.isAssignableFrom(f.getType())) {
 				Map<String,String> ps = new HashMap<>();
 				ps.put(path1, data);

@@ -41,7 +41,7 @@ public class JMicroBaseTestCase {
 	protected ServiceMethod helloTopicMethodKey() {
 		StringBuilder sb = new StringBuilder();
 		UniqueServiceKey.serviceName(sb, "org.jmicro.example.api.ISayHello");
-		UniqueServiceKey.namespace(sb, "testsayhello");
+		UniqueServiceKey.namespace(sb, "simpleRpc");
 		UniqueServiceKey.version(sb, "0.0.1");
 		UniqueServiceKey.instanceName(true, sb, "provider");
 		UniqueServiceKey.host(true, sb, Utils.getIns().getLocalIPList().get(0));

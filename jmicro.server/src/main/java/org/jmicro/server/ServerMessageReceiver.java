@@ -35,6 +35,7 @@ import org.jmicro.api.net.IMessageHandler;
 import org.jmicro.api.net.IMessageReceiver;
 import org.jmicro.api.net.ISession;
 import org.jmicro.api.net.Message;
+import org.jmicro.api.net.RpcResponse;
 import org.jmicro.api.net.ServerError;
 import org.jmicro.common.CommonException;
 import org.jmicro.common.Constants;
@@ -163,10 +164,10 @@ public class ServerMessageReceiver implements IMessageReceiver{
 			//SF.doSubmit(MonitorConstant.SERVER_REQ_ERROR);
 			logger.error("reqHandler error msg:{} ",msg);
 			logger.error("",e);
+			RpcResponse resp = new RpcResponse(msg.getReqId(),new ServerError(0,e.getMessage()));
+			resp.setSuccess(false);
+			msg.setPayload(ICodecFactory.encode(codeFactory,resp,msg.getProtocol()));
 			msg.setType((byte)(msg.getType()+1));
-			ServerError se = new ServerError();
-			se.setMsg(e.getMessage());
-			msg.setPayload(codeFactory.getEncoder(msg.getProtocol()).encode(se));
 			s.write(msg);
 		}
 	}

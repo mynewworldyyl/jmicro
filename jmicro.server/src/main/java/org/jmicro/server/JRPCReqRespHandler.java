@@ -108,10 +108,16 @@ public class JRPCReqRespHandler implements IMessageHandler{
 			
 			if(!msg.isNeedResponse()){
 				//无需返回值
+				//数据发送后，不需要返回结果，也不需要请求确认包，直接返回
+    			if(openDebug) {
+        			logger.info("Not need response req:"+req.getMethod()+",Service:" + req.getServiceName()+", Namespace:"+req.getNamespace());
+        		}
 				interceptorManger.handleRequest(req);
 				//SF.doSubmit(MonitorConstant.SERVER_REQ_OK, req,resp,null);
 				return;
 			}
+			
+			
 			
 			//下面处理需要返回值的RPC
 			msg.setReqId(req.getRequestId());
@@ -132,6 +138,10 @@ public class JRPCReqRespHandler implements IMessageHandler{
 			msg.setPayload(ICodecFactory.encode(codeFactory,resp,msg.getProtocol()));
 			//请求类型码比响应类型码大1，
 			msg.setType((byte)(msg.getType()+1));
+			
+			if(openDebug) {
+    			logger.info("Response req:"+req.getMethod()+",Service:" + req.getServiceName()+", Namespace:"+req.getNamespace());
+    		}
 			
 			//响应消息
 			s.write(msg);

@@ -115,13 +115,13 @@ public class ServiceManager {
 			public void childrenChanged(int type,String parent, String child,String data) {
 				String p = parent+"/"+child;
 				if(IListener.ADD == type) {
-					logger.debug("Service add,path:{},data:{}",p,data);
+					logger.debug("Service add,path:{},data:{}",p.substring(Config.ServiceRegistDir.length()+1),data);
 					childrenAdd(p,data);
 				}else if(IListener.REMOVE == type) {
-					logger.debug("Service remove, path:{}",p);
+					logger.debug("Service remove, path:{}",p.substring(Config.ServiceRegistDir.length()+1));
 					serviceRemove(p);
 				}else if(IListener.DATA_CHANGE == type){
-					logger.debug("Invalid service data change event, path:{}",p);
+					logger.debug("Invalid service data change event, path:{}",p.substring(Config.ServiceRegistDir.length()+1));
 				}
 			}
 		});
@@ -155,7 +155,7 @@ public class ServiceManager {
 		}
 				
 		if(!flag) {
-			logger.info("Service Add: {}",path);
+			//logger.info("Service Add: {}",path.substring(Config.ServiceRegistDir.length()));
 			this.notifyServiceChange(IServiceListener.ADD, i,path);
 			//dataOperator.addNodeListener(path, nodeListener);
 			dataOperator.addDataListener(path, this.dataListener);
@@ -348,7 +348,7 @@ public class ServiceManager {
 			return;
 		}
 		
-		logger.warn("Remove service:{}",path);
+		//logger.warn("Remove service:{}",path);
 		//path = si.path(Config.ServiceRegistDir);
 		this.notifyServiceChange(IServiceListener.REMOVE, si, path);
 		this.dataOperator.removeDataListener(path, dataListener);
@@ -405,7 +405,7 @@ public class ServiceManager {
 		if(this.path2Hash.containsKey(path) && hash.equals(this.path2Hash.get(path))) {
 			return false;
 		}
-		logger.info("Service Added: " + path);
+		//logger.info("Service Added: " + path.substring(Config.ServiceRegistDir.length()));
 		this.path2Hash.put(path, hash);
 		this.path2SrvItems.put(path, si);
 		return true;
@@ -434,7 +434,7 @@ public class ServiceManager {
 		if(flag) {
 			this.notifyServiceChange(IServiceListener.DATA_CHANGE, i,path);
 		} else {
-			logger.debug("Service Add: {}",path);
+			//logger.debug("Service Add: {}",path);
 			this.notifyServiceChange(IServiceListener.ADD, i,path);
 			//dataOperator.addNodeListener(path, nodeListener);
 			dataOperator.addDataListener(path, this.dataListener);

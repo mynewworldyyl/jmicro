@@ -375,7 +375,7 @@ public class PubSubManager {
 								//消息通知
 								siManager.call(d.getCallback(), new Object[] {result, d.getId(), d.getContext()});
 							} else {
-								logger.error("Publish message failure with code:"+result +", message: " + JsonUtils.getIns().toJson(d));
+								logger.error("Publish message failure with code:"+result +" ,topic:"+d.getTopic() +" , message: " + JsonUtils.getIns().toJson(d));
 							}
 						}
 					}

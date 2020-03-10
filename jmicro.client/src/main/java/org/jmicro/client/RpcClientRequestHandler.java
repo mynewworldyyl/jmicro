@@ -124,6 +124,9 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
 		AbstractClientServiceProxy proxy =  (AbstractClientServiceProxy)JMicroContext.get().getObject(Constants.PROXY, null);
 		RpcResponse resp = null;
 		try {
+			/*if(openDebug) {
+				logger.info("onRequest Method:"+request.getMethod()+",Service:" + request.getServiceName());
+			}*/
 			 //请求开始
 			 SF.reqStart(TAG.getName(),request);
 			 SF.doRequestLog(MonitorConstant.LOG_DEBUG, TAG, request, null, "request start");
@@ -206,7 +209,9 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
 		//异步后,就不一定是本实例接收到此RPC调用了
 		data.setId(idGenerator.getIntId(PSData.class));
 		long id = pubsubManager.publish(data);
-		
+		if(openDebug) {
+			logger.info("Do async req:"+id+",Method:"+req.getMethod()+",Service:" + req.getServiceName()+", Namespace:"+req.getNamespace());
+		}
 		RpcResponse resp = new RpcResponse();
 		if(id == PubSubManager.PUB_OK) {
 			//resp.setReqId(data.getId());
@@ -353,8 +358,15 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
     		//logger.info(""+st);
     		session.write(msg);
     		
+    		if(openDebug) {
+    			logger.info("Write req:"+req.getMethod()+",Service:" + req.getServiceName()+", Namespace:"+req.getNamespace());
+    		}
+    		
     		if(!sm.isNeedResponse()) {
     			//数据发送后，不需要返回结果，也不需要请求确认包，直接返回
+    			if(openDebug) {
+        			logger.info("Not need response req:"+req.getMethod()+",Service:" + req.getServiceName()+", Namespace:"+req.getNamespace());
+        		}
     			return null;
     		}
     		
@@ -375,10 +387,16 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
     		
     		RpcResponse resp = null;
     		if(respMsg != null){
+    			if(openDebug) {
+        			logger.info("Got response req:"+req.getMethod()+",Service:" + req.getServiceName()+", Namespace:"+req.getNamespace());
+        		}
 				resp = ICodecFactory.decode(this.codecFactory,respMsg.getPayload(),
 						RpcResponse.class,msg.getProtocol());
 				resp.setMsg(respMsg);
     		} else {
+    			if(openDebug) {
+        			logger.info("Timeout req:"+req.getMethod()+",Service:" + req.getServiceName()+", Namespace:"+req.getNamespace());
+        		}
     			//到这里肯定是超时了
     			//SF.doSubmit(MonitorConstant.CLIENT_REQ_TIMEOUT, req, null);
     			logger.warn("Timeout reqID:"+req.getId()+",linkId:"+msg.getLinkId()+",timeout"+sm.getTimeout()+",Service: "+sm.getKey().toKey(true, true, true));

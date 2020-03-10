@@ -75,7 +75,7 @@ class ResendManager {
 		logger.info("Reset timer with doResendInterval0:{},doResendInterval:{}",doResendInterval,doResendInterval);
 		TimerTicker.getTimer(this.resendTimers, doResendInterval).removeListener(RESEND_TIMER,true);
 		
-		TimerTicker.getTimer(this.resendTimers, doResendInterval)
+		TimerTicker.getTimer(this.resendTimers, doResendInterval).setOpenDebug(openDebug)
 		.addListener(RESEND_TIMER, (key,att)->{
 			try {
 				doResend();
@@ -116,9 +116,9 @@ class ResendManager {
 			return;
 		}
 		
-		if(openDebug) {
+		/*if(openDebug) {
 			logger.debug("doResend submit ones, send size:{}",sendItems.size());
-		}
+		}*/
 		
 		for(Map.Entry<String,List<SendItem>> e : sendItems.entrySet()) {
 			
@@ -203,6 +203,7 @@ class ResendManager {
 		if(item.retryCnt > 2 ) {
 			//内存缓存,发送3次失败，
 			failStorage.push(item.topic, item);
+			logger.error("Fail item:"+JsonUtils.getIns().toJson(item));
 			if(item.cb != null) {
 				
 			}
@@ -213,6 +214,7 @@ class ResendManager {
 				resendStorage.push(item.topic,item);
 			} else {
 				failStorage.push(item.topic, item);
+				logger.error("缓存消息量已经达上限："+JsonUtils.getIns().toJson(item));
 				//没办法，服务器吃不消了，直接丢弃
 				SF.doBussinessLog(MonitorConstant.LOG_ERROR,PubSubServer.class,null, 
 						"缓存消息量已经达上限："+JsonUtils.getIns().toJson(item));

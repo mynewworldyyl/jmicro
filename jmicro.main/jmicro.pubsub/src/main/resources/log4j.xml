@@ -50,6 +50,11 @@
 		</layout>
 	</appender>
 	
+	<logger name="io.netty.handler.logging">
+		<level value="WARN"/>
+		<appender-ref ref="jmicro_error"/>
+	</logger>
+	
 	<logger name="org.jmicro">
 		<level value="DEBUG"/>
 		<appender-ref ref="jmicro_debug"/>
