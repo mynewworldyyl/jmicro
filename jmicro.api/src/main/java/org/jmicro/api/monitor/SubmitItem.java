@@ -33,7 +33,7 @@ public final class SubmitItem{
 	//消息类型
 	private short type = -1;
 	
-	private Long linkId = null;
+	private long linkId;
 	
 	private String tag = null;
 	
@@ -69,7 +69,7 @@ public final class SubmitItem{
 	public void reset() {
 		type = -1;
 		
-		linkId = null;
+		linkId = 0;
 
 		localHost = null;
 		localPort = null;

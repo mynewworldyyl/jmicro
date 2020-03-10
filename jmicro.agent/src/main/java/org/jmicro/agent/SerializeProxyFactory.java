@@ -432,30 +432,45 @@ public class SerializeProxyFactory {
 			//cls.addField(f);
 			
 			sb.append(" ").append(fieldDeclareType.getName()).append(" __val"+i).append("= __obj.").append(f.getName()).append(";\n");
-			
-			if(fieldDeclareType == CtClass.intType || fieldDeclareType.getName().equals(Integer.class.getName()) ) {
-				sb.append(" out.writeInt(").append(" __val").append(i).append("); \n");
+			 
+			if(fieldDeclareType == CtClass.intType ) {
+				sb.append(" out.writeInt(").append(" __val"+i).append("); \n");
+			}else if(fieldDeclareType.getName().equals(Integer.class.getName()) ) {
+				sb.append(" out.writeInt(").append(" __val"+i).append(" == null ? 0 : __val"+i+"); \n");
 			}else if(fieldDeclareType.getName().equals(String.class.getName())) {
-				sb.append(" out.writeUTF(").append(" __val").append(i).append("); \n");
-			}else if(fieldDeclareType == CtClass.longType || fieldDeclareType.getName().equals(Long.class.getName()) ) {
-				sb.append(" out.writeLong(").append(" __val").append(i).append("); \n");
-			}else if(fieldDeclareType == CtClass.byteType || fieldDeclareType.getName().equals(Byte.class.getName()) ) {
+				sb.append(" out.writeUTF(").append(" __val"+i).append(" == null ? \"\" : __val"+i+"); \n");
+			}else if(fieldDeclareType == CtClass.longType ) {
+				sb.append(" out.writeLong(").append(" __val"+i).append("); \n");
+			}else if(fieldDeclareType.getName().equals(Long.class.getName()) ) {
+				sb.append(" out.writeLong(").append(" __val"+i).append(" == null ? 0L : __val"+i+"); \n");
+			}else if(fieldDeclareType == CtClass.byteType) {
 				sb.append(" out.writeByte(").append(" __val").append(i).append("); \n");
-			}else if(fieldDeclareType == CtClass.shortType || fieldDeclareType.getName().equals(Short.class.getName()) ) {
+			}else if(fieldDeclareType.getName().equals(Byte.class.getName()) ) {
+				sb.append(" out.writeByte(").append(" __val"+i).append(" == null ? new java.lang.Byte((byte)0) : __val"+i+"); \n");
+			}else if(fieldDeclareType.getName().equals(Short.class.getName()) ) {
+				sb.append(" out.writeShort(").append(" __val"+i).append(" == null ? new java.lang.Byte((short)0) : __val"+i+"); \n");
+			}else if(fieldDeclareType == CtClass.shortType) {
 				sb.append(" out.writeShort(").append(" __val").append(i).append("); \n");
-			}else  if(fieldDeclareType == CtClass.floatType || fieldDeclareType.getName().equals(Float.class.getName()) ) {
+			}else  if(fieldDeclareType == CtClass.floatType) {
 				sb.append(" out.writeFloat(").append(" __val").append(i).append("); \n");
-			}else if(fieldDeclareType == CtClass.doubleType || fieldDeclareType.getName().equals(Double.class.getName()) ) {
+			}else  if(fieldDeclareType.getName().equals(Float.class.getName()) ) {
+				sb.append(" out.writeFloat(").append(" __val"+i).append(" == null ? 0.0F : __val"+i+"); \n");
+			}else if(fieldDeclareType == CtClass.doubleType) {
 				sb.append(" out.writeDouble(").append(" __val").append(i).append("); \n");
-			}else if(fieldDeclareType == CtClass.booleanType || fieldDeclareType.getName().equals(Boolean.class.getName()) ) {
+			}else if(fieldDeclareType.getName().equals(Double.class.getName()) ) {
+				sb.append(" out.writeDouble(").append(" __val"+i).append(" == null ? 0.0D : __val"+i+"); \n");
+			}else if(fieldDeclareType == CtClass.booleanType ) {
 				sb.append(" out.writeBoolean(").append(" __val").append(i).append("); \n");
-			}else if(fieldDeclareType == CtClass.charType || fieldDeclareType.getName().equals(Character.class.getName()) ) {
+			}else if(fieldDeclareType.getName().equals(Boolean.class.getName()) ) {
+				sb.append(" out.writeBoolean(").append(" __val"+i).append(" == null ? false : __val"+i+"); \n");
+			}else if(fieldDeclareType.getName().equals(Character.class.getName()) ) {
+				sb.append(" out.writeChar(").append(" __val").append(" == null ? '' : __val"+i+"); \n");
+			}else if(fieldDeclareType == CtClass.charType) {
 				sb.append(" out.writeChar(").append(" __val").append(i).append("); \n");
 			}else  if(fieldDeclareType.getName().equals(Date.class.getName())) {
 				sb.append("if(__val"+i+" == null)  __buffer.writeLong(0L) ;") ;
 				sb.append(" else __buffer.writeLong(").append(" __val").append(i).append(".getTime()); \n");
 			}else {
-				
 			    String flagName = "flag"+i;
 			    sb.append(" byte "+flagName+" = 0; \n");
 			    sb.append(" int flagIndex"+i+" = out.position(); \n");
@@ -474,7 +489,8 @@ public class SerializeProxyFactory {
 					!fieldDeclareType.subtypeOf(cp.get(Map.class.getName()))
 					&& !fieldDeclareType.isArray()) {
 					if(fieldDeclareType.hasAnnotation(SO.class)) {
-						sb.append(" ((org.jmicro.api.codec.ISerializeObject)__val"+i+").encode(__buffer,null);\n");
+						sb.append("java.lang.Object __o"+i).append("=__val"+i).append("; \n");
+						sb.append(" ((org.jmicro.api.codec.ISerializeObject)__o"+i+").encode(__buffer,null);\n");
 					} else {
 						sb.append(" __coder.encode(__buffer,__val").append(i).append(",").append(fieldDeclareType.getName()).append(".class,").append(" null );\n\n");
 					}
@@ -741,7 +757,7 @@ public class SerializeProxyFactory {
 		
 		sb.append("}");
 		//System.out.println("\n\n");
-		if("org.jmicro.api.net.RpcRequest".equals(cls.getName())) {
+		if("org.jmicro.api.monitor.SubmitItem".equals(cls.getName())) {
 			System.out.println(sb.toString());
 		}
 		return sb.toString();

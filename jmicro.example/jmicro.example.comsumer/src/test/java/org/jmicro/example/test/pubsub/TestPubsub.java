@@ -23,6 +23,7 @@ public class TestPubsub extends JMicroBaseTestCase{
 	
 	@Test
 	public void testAsyncCallRpc() {
+		SubmitItem si = new SubmitItem();
 		of.get(TestRpcClient.class).testCallAsyncRpc();
 		Utils.getIns().waitForShutdown();
 	}
