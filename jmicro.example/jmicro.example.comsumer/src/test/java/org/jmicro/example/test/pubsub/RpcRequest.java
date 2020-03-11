@@ -275,7 +275,7 @@ public class RpcRequest extends AbstractObjectMapSupport implements IRequest {
 	}
 
 	@Override
-	public Long getRequestId() {
+	public long getRequestId() {
 		return this.reqId;
 	}
 

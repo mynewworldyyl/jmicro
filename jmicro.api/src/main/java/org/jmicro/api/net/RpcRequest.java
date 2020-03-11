@@ -44,7 +44,7 @@ public final class RpcRequest extends AbstractObjectMapSupport implements IReque
 	
 	private String transport;
 	
-	protected Long reqId = -1L;
+	protected long reqId = -1L;
 	
 	private transient ISession session;
 	
@@ -121,18 +121,18 @@ public final class RpcRequest extends AbstractObjectMapSupport implements IReque
 		this.session = session;
 	}
 	
-	public void setRequestId(Long reqId) {
+	public void setRequestId(long reqId) {
 		this.reqId = reqId;
 	}
 
 	@Override
-	public Long getRequestId() {
+	public long getRequestId() {
 		return this.reqId;
 	}
 	
 	@Override
 	public int hashCode() {
-		return reqId.hashCode();
+		return (int)reqId;
 	}
 
 	@Override

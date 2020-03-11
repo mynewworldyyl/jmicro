@@ -46,7 +46,7 @@ public interface IRequest extends IReq{
 	public Object[] getArgs();
 	//public void setArgs(Object[] args);
 	
-	public Long getRequestId();
+	public long getRequestId();
 	
 	public boolean isSuccess();
 	void setSuccess(boolean isSuccess);

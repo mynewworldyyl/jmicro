@@ -436,13 +436,13 @@ public class SerializeProxyFactory {
 			if(fieldDeclareType == CtClass.intType ) {
 				sb.append(" out.writeInt(").append(" __val"+i).append("); \n");
 			}else if(fieldDeclareType.getName().equals(Integer.class.getName()) ) {
-				sb.append(" out.writeInt(").append(" __val"+i).append(" == null ? 0 : __val"+i+"); \n");
+				sb.append(" out.writeInt(").append(" __val"+i).append(" == null ? new java.lang.Integer(0) : __val"+i+"); \n");
 			}else if(fieldDeclareType.getName().equals(String.class.getName())) {
 				sb.append(" out.writeUTF(").append(" __val"+i).append(" == null ? \"\" : __val"+i+"); \n");
 			}else if(fieldDeclareType == CtClass.longType ) {
 				sb.append(" out.writeLong(").append(" __val"+i).append("); \n");
 			}else if(fieldDeclareType.getName().equals(Long.class.getName()) ) {
-				sb.append(" out.writeLong(").append(" __val"+i).append(" == null ? 0L : __val"+i+"); \n");
+				sb.append(" out.writeLong(").append(" __val"+i).append(" == null ? new java.lang.Long((long)0) : __val"+i+"); \n");
 			}else if(fieldDeclareType == CtClass.byteType) {
 				sb.append(" out.writeByte(").append(" __val").append(i).append("); \n");
 			}else if(fieldDeclareType.getName().equals(Byte.class.getName()) ) {
@@ -454,15 +454,15 @@ public class SerializeProxyFactory {
 			}else  if(fieldDeclareType == CtClass.floatType) {
 				sb.append(" out.writeFloat(").append(" __val").append(i).append("); \n");
 			}else  if(fieldDeclareType.getName().equals(Float.class.getName()) ) {
-				sb.append(" out.writeFloat(").append(" __val"+i).append(" == null ? 0.0F : __val"+i+"); \n");
+				sb.append(" out.writeFloat(").append(" __val"+i).append(" == null ? new java.lang.Float((double)0) : __val"+i+"); \n");
 			}else if(fieldDeclareType == CtClass.doubleType) {
 				sb.append(" out.writeDouble(").append(" __val").append(i).append("); \n");
 			}else if(fieldDeclareType.getName().equals(Double.class.getName()) ) {
-				sb.append(" out.writeDouble(").append(" __val"+i).append(" == null ? 0.0D : __val"+i+"); \n");
+				sb.append(" out.writeDouble(").append(" __val"+i).append(" == null ?  new java.lang.Double((double)0): __val"+i+"); \n");
 			}else if(fieldDeclareType == CtClass.booleanType ) {
 				sb.append(" out.writeBoolean(").append(" __val").append(i).append("); \n");
 			}else if(fieldDeclareType.getName().equals(Boolean.class.getName()) ) {
-				sb.append(" out.writeBoolean(").append(" __val"+i).append(" == null ? false : __val"+i+"); \n");
+				sb.append(" out.writeBoolean(").append(" __val"+i).append(" == null ? java.lang.Boolean(false) : __val"+i+"); \n");
 			}else if(fieldDeclareType.getName().equals(Character.class.getName()) ) {
 				sb.append(" out.writeChar(").append(" __val").append(" == null ? '' : __val"+i+"); \n");
 			}else if(fieldDeclareType == CtClass.charType) {
