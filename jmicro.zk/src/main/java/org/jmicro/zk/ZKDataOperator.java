@@ -162,6 +162,7 @@ public class ZKDataOperator implements IDataOperator{
 
 	@Override
 	public void setData(String path, String data) {
+		this.childrenManager.removeCache(path);
 		this.nodeManager.setData(path, data);
 	}
 
@@ -172,6 +173,7 @@ public class ZKDataOperator implements IDataOperator{
 
 	@Override
 	public void deleteNode(String path) {
+		this.childrenManager.removeCache(path);
 		this.nodeManager.deleteNode(path);
 	}
 	

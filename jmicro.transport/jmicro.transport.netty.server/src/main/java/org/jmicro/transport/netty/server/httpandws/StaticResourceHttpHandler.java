@@ -23,7 +23,6 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.FileNameMap;
-import java.net.URL;
 import java.net.URLConnection;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -126,21 +125,26 @@ public class StaticResourceHttpHandler  {
 				try {
 					absPath = ph;
 					bisr = new FileInputStream(absPath);
+					//已经读取到资源，退出循环
 					break;
 				} catch (FileNotFoundException e) {
 					LOG.error(absPath,e);
 				}
 			}
 			
+
 			bisr = cl.getResourceAsStream(ph);
 			if(bisr != null) {
+				//已经读取到资源，退出循环
 				absPath = ph;
 				break;
 			}
+		
 		}
 		
 		if(absPath == null) {
 			for(String parent: staticResourceRoots) {
+				//没找到资源，返回404页面
 				String ph = parent + "/404.html";
 				if(!debug && contents.containsKey(ph)) {
 					return contents.get(ph);

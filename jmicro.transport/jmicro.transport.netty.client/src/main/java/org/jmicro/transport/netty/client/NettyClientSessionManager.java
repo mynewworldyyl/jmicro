@@ -242,7 +242,7 @@ public class NettyClientSessionManager implements IClientSessionManager{
 	                		return;
 	                	}
 
-                		SF.netIoRead(TAG,MonitorConstant.CLIENT_IOSESSION_READ,((ByteBuf)msg).readableBytes());
+                		//SF.netIoRead(TAG,MonitorConstant.CLIENT_IOSESSION_READ,((ByteBuf)msg).readableBytes());
 	                	
 	             		ByteBuffer b = ByteBuffer.allocate(bb.readableBytes());
 	                	bb.readBytes(b);

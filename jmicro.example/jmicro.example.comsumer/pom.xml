@@ -28,6 +28,7 @@
 			<groupId>org.jmicro</groupId>
 			<artifactId>jmicro.mybatis</artifactId>
 		</dependency>
+		
 		<dependency>
 			<groupId>org.jmicro</groupId>
 			<artifactId>jmicro.gateway.client</artifactId>

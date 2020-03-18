@@ -68,11 +68,11 @@ public class NettyHttpServerHandler extends ChannelInboundHandlerAdapter {
     	
     	if(msg instanceof FullHttpRequest){
     		FullHttpRequest req = (FullHttpRequest)msg;
-    		//全部GET请求转到资源控制器上面
     		if(resourceHandler.canhandle(req)){
+    			//全部GET请求转到资源控制器上面
     			resourceHandler.handle(ctx, req);
     		} else if(req.method().equals(HttpMethod.POST)){
-    			//全部POST请求转到RPC控制器上面
+    			//全部POST请求转到RPC控制器上面,因为RPC只能用POST请求
     			NettyServerSession session = ctx.attr(sessionKey).get();
     			JMicroContext.configProvider(monitor, session);
     	    	

@@ -14,12 +14,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-var jmicro = jmicro || {};
+window.jmicro = window.jmicro || {};
 
 jmicro.socket = {
     listeners : {}
     ,logData:null
     ,idCallback:{}
+    ,uniqueId:0 //为每个消息生成一个唯一关联响应的ID
     ,init : function(onopen) {
             var url = 'ws://' + jmicro.config.ip + ':' + jmicro.config.port +'/'+ jmicro.config.wsContext;
             var self = this;
@@ -34,11 +35,9 @@ jmicro.socket = {
 
                if(self.listeners[msg.reqId]) {
                  self.listeners[msg.reqId](msg);
-               }
-
-               if(!(msg.flag & jmicro.Constants.STREAM)) {
                  delete self.listeners[msg.reqId];
                }
+
              }
 
             //连接关闭的时候触发
@@ -60,7 +59,8 @@ jmicro.socket = {
 
     ,send : function(msg,cb) {
       if(msg.isNeedResponse()) {
-        this.listeners[msg.reqId] = cb;
+          msg.reqId = this.uniqueId++;
+          this.listeners[msg.reqId] = cb;
       }
       this.wsk.send(JSON.stringify(msg));
     }

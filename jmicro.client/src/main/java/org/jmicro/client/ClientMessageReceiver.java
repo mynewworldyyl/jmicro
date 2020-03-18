@@ -60,6 +60,7 @@ public class ClientMessageReceiver implements IMessageReceiver{
 			if(h != null){
 				h.onMessage(session,msg);
 			} else {
+				SF.netIoRead(this.getClass().getName(),MonitorConstant.CLIENT_IOSESSION_READ, msg.getLen(),session);
 				SF.doMessageLog(MonitorConstant.LOG_ERROR, ClientMessageReceiver.class, msg, null, 
 						"Handler not found:" + Integer.toHexString(msg.getType()));
 				logger.error("Handler not found:" + Integer.toHexString(msg.getType()));

@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-var jmicro = jmicro || {};
+window.jmicro = window.jmicro || {};
 
 jmicro.config ={
     //ip:"192.168.3.3",
@@ -56,7 +56,7 @@ jmicro.Constants.Message = {
     MSG_VERSION  :  1,
     FLAG_PROTOCOL  :  1<<0,
     //调试模式
-   FLAG_DEBUG_MODE  :  1<<1,
+    FLAG_DEBUG_MODE  :  1<<1,
     //需要响应的请求
     FLAG_NEED_RESPONSE  :  1<<2,
 
@@ -72,7 +72,7 @@ jmicro.Constants.Message = {
     FLAG0_DUMP_DOWN  :  1<<1,
 
     //可监控消息
-   FLAG0_MONITORABLE  :  1<<2,
+    FLAG0_MONITORABLE  :  1<<2,
 
     //是否启用服务级log
     FLAG0_LOGGABLE  : 1 << 3
@@ -177,40 +177,20 @@ jmicro.rpc = {
     var self = this;
     return new Promise(function(reso,reje){
 
-      var msg =  self.createMsg(0x09)
-
-      var streamCb = req.stream;
-      if(typeof req.stream == 'function') {
-        req.stream = true;
-        msg.setStream(true)
-      }
+      let msg =  self.createMsg(0x09)
       msg.payload =  JSON.stringify(req);
-
-      msg.reqId = req.reqId;
 
       if(req.needResponse) {
           msg.setNeedResponse(true);
       }
+      jmicro.transport.send(msg,function(rstMsg,err){
+        if(err){
+            reje(err);
+        } else {
+            reso(rstMsg.payload.result);
+        }
+      });
 
-      self.getId(jmicro.Constants.MessageCls)
-        .then(function(id){
-          msg.msgId = id;
-          self.getId(jmicro.Constants.IRequestCls)
-            .then(function(id){
-              msg.reqId = id;
-                jmicro.transport.send(msg,function(rstMsg,err){
-                if(req.stream) {
-                  streamCb(rstMsg.payload.result,err);
-                } else {
-                  if(err){
-                    reje(err);
-                  } else {
-                    reso(rstMsg.payload.result);
-                  }
-                }
-              });
-            });
-        });
     });
   },
 
@@ -253,7 +233,7 @@ jmicro.rpc = {
         params.needResponse = true;
       }
 
-      var req = new jmicro.rpc.ApiRequest();
+      let req = new jmicro.rpc.ApiRequest();
       req.serviceName = params.serviceName;
       req.method = params.method;
       req.namespace = params.namespace;
@@ -261,18 +241,13 @@ jmicro.rpc = {
       req.args = params.args;
 
       req.needResponse = params.needResponse;
-      req.stream = params.stream;
 
-      self.getId(jmicro.Constants.IRequestCls)
-        .then(function(id){
-          req.reqId = id;
-          self.callRpcWithRequest(req)
-            .then(function(rst){
-              reso(rst);
-            }).catch(function(err){
-              reje(err);
-          });
-        });
+      self.callRpcWithRequest(req)
+        .then(function(rst){
+            reso(rst);
+        }).catch(function(err){
+            reje(err);
+      });
     });
 
   },
@@ -325,16 +300,13 @@ jmicro.rpc = {
       req.needResponse = needResponse;
       req.stream = stream;
 
-      self.getId(jmicro.Constants.IRequestCls)
-        .then(function(id){
-          req.reqId = id;
-          self.callRpcWithRequest(req)
-            .then(function(rst){
-              reso(rst);
-            }).catch(function(err){
-            reje(err);
-          });
-        });
+      self.callRpcWithRequest(req)
+          .then(function(rst){
+             reso(rst);
+          }).catch(function(err){
+             reje(err);
+         });
+
     });
 
   },
@@ -645,3 +617,4 @@ jmicro.rpc.ApiResponse.prototype = {
 }
 
 jmicro.rpc.init();
+

@@ -69,7 +69,7 @@ public final class ServiceItem{
 	
 	private UniqueServiceKey key;
 	
-	private String instanceName="";
+	//private String instanceName="";
 	
 	//开启debug模式
 	private int debugMode = -1;
@@ -454,14 +454,6 @@ public final class ServiceItem{
 
 	public void setMethods(Set<ServiceMethod> methods) {
 		this.methods = methods;
-	}
-
-	public String getInstanceName() {
-		return instanceName;
-	}
-
-	public void setInstanceName(String instanceName) {
-		this.instanceName = instanceName;
 	}
 
 	public UniqueServiceKey getKey() {

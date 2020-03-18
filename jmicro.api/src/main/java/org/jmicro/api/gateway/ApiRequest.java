@@ -19,6 +19,7 @@ package org.jmicro.api.gateway;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.jmicro.api.annotation.SO;
 import org.jmicro.api.net.IReq;
 import org.jmicro.api.net.Message;
 
@@ -28,19 +29,20 @@ import org.jmicro.api.net.Message;
  * @date 2018年11月16日 上午12:21:55
  *
  */
+@SO
 public final class ApiRequest implements IReq {
 	
 	private Map<String,Object> params = new HashMap<>();
 	
 	private String serviceName = "";
 	
-	private String method = "";
-	
-	private Object[] args = null;
-	
 	private String namespace = "";
 	
 	private String version = "";
+	
+	private String method = "";
+	
+	private Object[] args = null;
 	
 	private Long reqId = -1L;
 	

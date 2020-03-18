@@ -191,11 +191,6 @@ public abstract class AbstractSession implements ISession{
               			message.getReqId(),message.getMethod());
               }*/
               //JMicroContext.configProvider(message);
-             if(this.isServer()) {
-            	 SF.netIoRead(this.getClass().getName(),MonitorConstant.SERVER_IOSESSION_READ, message.getLen());
-             } else {
-            	 SF.netIoRead(this.getClass().getName(),MonitorConstant.CLIENT_IOSESSION_READ, message.getLen());
-             }
              receiver.receive(this,message);
      	 }
      	
@@ -285,8 +280,6 @@ public abstract class AbstractSession implements ISession{
 	
 	public abstract InetSocketAddress getRemoteAddress();
 	
-	public abstract boolean isServer();
-
 	private void doDumpDownStream(ByteBuffer buffer) {
 		DumpManager.getIns().doDump(buffer);
 	}

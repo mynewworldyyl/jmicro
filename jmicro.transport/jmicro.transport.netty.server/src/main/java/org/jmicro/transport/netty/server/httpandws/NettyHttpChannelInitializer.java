@@ -42,7 +42,7 @@ public class NettyHttpChannelInitializer extends ChannelInitializer<SocketChanne
 	@Inject
 	private NettyHttpServerHandler httpHandler;
 	
-	@Cfg(value="/websocketContextPath")
+	@Cfg(value="/websocketContextPath",defGlobal=true)
 	private String websocketContextPath = "/_ws_";
 	
 	@Override

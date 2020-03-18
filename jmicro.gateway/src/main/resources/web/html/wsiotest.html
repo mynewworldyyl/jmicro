@@ -96,19 +96,6 @@
             });
           }
 
-          function testStream(){
-            jmicro.rpc.callRpc('org.jmicro.example.api.ITestRpcService','testrpc','0.0.1','subscrite',['stream test'],function(rst){
-              console.log(rst);
-                $('#respMessage').append(rst+'&#10;');
-            },true)
-              .then(function(rst){
-                console.log(rst);
-                  $('#respMessage').append(rst+'&#10;');
-              }).catch(function(err){
-                console.log(err);
-            });
-          }
-
         </script>
     </head>
 <body>

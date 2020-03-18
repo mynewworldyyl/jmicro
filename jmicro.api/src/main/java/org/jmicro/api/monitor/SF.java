@@ -21,6 +21,7 @@ import org.jmicro.api.JMicroContext;
 import org.jmicro.api.config.Config;
 import org.jmicro.api.net.IReq;
 import org.jmicro.api.net.IResp;
+import org.jmicro.api.net.ISession;
 import org.jmicro.api.net.Message;
 import org.jmicro.api.net.ServerError;
 import org.jmicro.api.registry.ServiceMethod;
@@ -166,7 +167,7 @@ public class SF {
 		return false;
 	}
 	
-	public static boolean netIoRead(String tag,short type,long num) {
+	public static boolean netIoRead(String tag,short type,long num,ISession session) {
 		if(isMonitorable(type)) {
 			SubmitItem si = createSubmitItem(type,null,null,
 					num+"",tag,null,false);

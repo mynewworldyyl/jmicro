@@ -24,6 +24,7 @@ import java.util.Set;
 
 import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
+
 /**
  * 
  * @author Yulei Ye
@@ -40,7 +41,7 @@ public class JsonUtils {
 	}
 	
 	public GsonBuilder builder() {
-		GsonBuilder builder = new GsonBuilder();
+		GsonBuilder builder = b();
 		//builder.registerTypeAdapter(MessageType.class, new MessageTypeAdapter());
 		//builder.registerTypeAdapter(MessageState.class, new MessageStateAdapter());
 		//builder.registerTypeAdapter(MsgHeader.class, new MessageHeaderAdapter());
@@ -48,9 +49,13 @@ public class JsonUtils {
 		return builder;
 	}
 	
+	private GsonBuilder b() {
+		return new GsonBuilder().enableComplexMapKeySerialization().serializeNulls();
+	}
+	
 	
 	public<T> T fromJson(String json, Class<T> c) {
-		GsonBuilder builder = new GsonBuilder();
+		GsonBuilder builder = b();
 		//builder.registerTypeAdapter(MessageType.class, new MessageTypeAdapter());
 		//builder.registerTypeAdapter(MessageState.class, new MessageStateAdapter());
 		T obj = builder.create().fromJson(json, c);
@@ -58,7 +63,7 @@ public class JsonUtils {
 	}
 	
 	public <T> T fromJson(String json, java.lang.reflect.Type type) {
-		GsonBuilder builder = new GsonBuilder();
+		GsonBuilder builder = b();
 		T obj = builder.create().fromJson(json, type);
 		return obj;
 	}
@@ -85,7 +90,7 @@ public class JsonUtils {
 		if(obj == null) {
 			return "";
 		}
-		GsonBuilder builder = new GsonBuilder();
+		GsonBuilder builder = b();
 		//builder.registerTypeAdapter(MessageType.class, new MessageTypeAdapter());
 		//builder.registerTypeAdapter(MessageState.class, new MessageStateAdapter());
 		String json = builder.create().toJson(obj);
@@ -96,7 +101,7 @@ public class JsonUtils {
 		if(obj == null) {
 			return "";
 		}
-		GsonBuilder builder = new GsonBuilder();
+		GsonBuilder builder = b();
 		//builder.registerTypeAdapter(MessageType.class, new MessageTypeAdapter());
 		//builder.registerTypeAdapter(MessageState.class, new MessageStateAdapter());
 		String json = builder.create().toJson(obj,type);

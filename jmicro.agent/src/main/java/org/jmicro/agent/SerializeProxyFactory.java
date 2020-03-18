@@ -432,7 +432,9 @@ public class SerializeProxyFactory {
 			//cls.addField(f);
 			
 			sb.append(" ").append(fieldDeclareType.getName()).append(" __val"+i).append("= __obj.").append(f.getName()).append(";\n");
-			 
+			 /*
+			  * 字数型空值序列化后变为0值，字符串和字符型NULL值变为""空串,布尔值NULL值变为false
+			  */
 			if(fieldDeclareType == CtClass.intType ) {
 				sb.append(" out.writeInt(").append(" __val"+i).append("); \n");
 			}else if(fieldDeclareType.getName().equals(Integer.class.getName()) ) {

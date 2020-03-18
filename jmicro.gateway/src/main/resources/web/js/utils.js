@@ -1,4 +1,4 @@
-var jmicro = jmicro || {};
+var window.jmicro = window.jmicro || {};
 
 jmicro.goTo = function(url) {
     location.href = url;

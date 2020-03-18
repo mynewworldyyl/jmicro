@@ -116,6 +116,10 @@ jmicro.config/target/
 jmicro.config/.classpath
 jmicro.config/.project
 jmicro.config/.settings/
+jmicro.mng/target/
+jmicro.mng/.classpath
+jmicro.mng/.project
+jmicro.mng/.settings/
 jmicro.limit/target/
 jmicro.limit/.classpath
 jmicro.limit/.project

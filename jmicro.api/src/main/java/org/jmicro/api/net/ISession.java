@@ -78,6 +78,8 @@ public interface ISession{
 	
 	boolean isActive();
 	
+	boolean isServer();
+	
 	String remoteHost();
 	
 	int remotePort();

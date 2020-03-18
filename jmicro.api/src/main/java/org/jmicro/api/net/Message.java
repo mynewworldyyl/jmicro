@@ -22,7 +22,6 @@ import java.nio.ByteBuffer;
 
 import org.jmicro.api.codec.JDataInput;
 import org.jmicro.api.codec.JDataOutput;
-import org.jmicro.api.codec.OnePrefixTypeEncoder;
 import org.jmicro.common.CommonException;
 import org.jmicro.common.Constants;
 import org.jmicro.common.util.JsonUtils;
@@ -52,6 +51,14 @@ public final class Message {
 	public static final byte PRIORITY_NORMAL = PRIORITY_3;
 	public static final byte PRIORITY_MAX = PRIORITY_7;
 	
+	public static final int MAX_SHORT_VALUE = ((int)Short.MAX_VALUE)*2;
+	
+	public static final short MAX_BYTE_VALUE = ((short)Byte.MAX_VALUE)*2;
+	
+	public static final long MAX_INT_VALUE = ((long)Integer.MAX_VALUE) *2;
+	
+	//public static final long MAX_LONG_VALUE = Long.MAX_VALUE*2;
+	
 	public static final byte MSG_VERSION = (byte)1;
 	
 	public static final byte FLAG_PROTOCOL = 1<<0;
@@ -65,8 +72,8 @@ public final class Message {
 	//0B00111000 5---3
 	public static final byte FLAG_LEVEL = 0X38;
 	
-	//异步消息
-	public static final byte FLAG_STREAM = 1<<6;
+	//长度字段类型，1表示整数，0表示短整数
+	public static final byte FLAG_LENGTH_INT = 1<<6;
 	
 	//DUMP上行数据
 	public static final byte FLAG0_DUMP_UP = 1<<0;
@@ -96,7 +103,7 @@ public final class Message {
 	
 	/**
 	 * dm: is development mode
-	 * S: Stream
+	 * S: data length type 0:short 1:int
 	 * N: need Response 
 	 * P: protocol 0:bin, 1:json
 	 * LLL: Message priority 
@@ -190,20 +197,24 @@ public final class Message {
 		flag0 |= f ? FLAG0_MONITORABLE : 0 ; 
 	}
 	
-	/*public boolean isStream() {
-		return is(flag,Message.FLAG_STREAM);
-	}
-	
-	public void setStream(boolean f) {
-		flag |= f ? Message.FLAG_STREAM : 0 ; 
-	}*/
-	
 	public boolean isNeedResponse() {
 		return is(flag,FLAG_NEED_RESPONSE);
 	}
 	
 	public void setNeedResponse(boolean f) {
 		flag |= f ? FLAG_NEED_RESPONSE : 0 ; 
+	}
+	
+	/**
+	 * 
+	 * @param f true 表示整数，false表示短整数
+	 */
+	public void setLengthType(boolean f) {
+		flag |= f ? FLAG_LENGTH_INT : 0 ; 
+	}
+	
+	public boolean isLengthInt() {
+		return is(flag,FLAG_LENGTH_INT);
 	}
 	
 	public int getLevel() {
@@ -241,7 +252,12 @@ public final class Message {
 			msg = new Message();
 			msg.flag =  flag;
 			//ByteBuffer b = ByteBuffer.wrap(data);
-			int len = readUnsignedShort(b);// len = 数据长度 + 测试模式时附加数据长度
+			int len = 0;
+			if(is(flag,FLAG_LENGTH_INT)) {
+				len = b.getInt();
+			} else {
+				len = readUnsignedShort(b);// len = 数据长度 + 测试模式时附加数据长度
+			}
 			if(b.remaining() < len){
 				throw new CommonException("Message len not valid");
 			}
@@ -334,13 +350,33 @@ public final class Message {
 			
 			//len += Message.HEADER_LEN
 			
-			b = ByteBuffer.allocate(len + Message.HEADER_LEN);
+			//第1，2个字节 ,len = 数据长度 + 测试模式时附加数据长度
+			if(len < MAX_SHORT_VALUE) {
+				this.setLengthType(false);
+				b = ByteBuffer.allocate(len + Message.HEADER_LEN);
+			} else if(len < MAX_INT_VALUE){
+				this.setLengthType(true);
+				b = ByteBuffer.allocate(len + Message.HEADER_LEN+2);
+			} else {
+				throw new CommonException("Data length too long than :"+MAX_INT_VALUE+", but value "+len);
+			}
 			
 			//第0个字节，标志头
 			b.put(this.flag);
 			
-			//第1，2个字节 ,len = 数据长度 + 测试模式时附加数据长度
-			writeUnsignedShort(b, len);
+			
+			if(len < 65535) {
+				//第1，2个字节 ,len = 数据长度 + 测试模式时附加数据长度
+				this.setLengthType(false);
+				writeUnsignedShort(b, len);
+			}else if(len < Integer.MAX_VALUE){
+				//消息内内容最大长度为MAX_VALUE
+				this.setLengthType(true);
+				b.putInt(len);
+			} else {
+	    		throw new CommonException("Max int value is :"+ Integer.MAX_VALUE+", but value "+len);
+			}
+			
 			//b.putShort((short)0);
 			
 			//第3个字节
@@ -408,28 +444,42 @@ public final class Message {
 		}
 		
 		//取第一个字节标志位
-		//byte f = cache.get();
-				
+		byte f = cache.get();
+		int len = 0;
+		int headerLen = Message.HEADER_LEN;
 		//取第二，第三个字节 数据长度
-		cache.position(pos+1);
-		int len = Message.readUnsignedShort(cache);
-		//还原读数据公位置
-		cache.position(pos);
-				
-		if(totalLen < len + Message.HEADER_LEN){
-			//还不能构成一个足够长度的数据包
-			return null;
-		}
+	    if(is(f,FLAG_LENGTH_INT)) {
+	    	//数据长度不可能起过整数的最大值
+	    	len = cache.getInt();
+	    	//还原读数据公位置
+			cache.position(pos);
+			headerLen = headerLen+2;
+	    	if(totalLen < len + headerLen){
+				//还不能构成一个足够长度的数据包
+				return null;
+			}
+	    } else {
+	    	len = Message.readUnsignedShort(cache);
+	    	//还原读数据公位置
+			cache.position(pos);
+	    	if(totalLen < len + headerLen){
+				//还不能构成一个足够长度的数据包
+				return null;
+			}
+	    }
 		
-		byte[] data = new byte[len+Message.HEADER_LEN];
+		byte[] data = new byte[len + headerLen];
 		//从缓存中读一个包,cache的position往前推
-		cache.get(data, 0, len+Message.HEADER_LEN);
+		cache.get(data, 0, len+headerLen);
 		
 		return Message.decode(ByteBuffer.wrap(data));
         
 	}
 	
 	public static void writeUnsignedShort(ByteBuffer b,int v) {
+		if(v > MAX_SHORT_VALUE) {
+    		throw new CommonException("Max short value is :"+MAX_SHORT_VALUE+", but value "+v);
+    	}
 		byte data = (byte)((v >>> 8) & 0xFF);
 		b.put(data);
 		data = (byte)((v >>> 0) & 0xFF);
@@ -439,11 +489,14 @@ public final class Message {
 	 public static int readUnsignedShort(ByteBuffer b) {
 		int firstByte = (0xFF & ((int)b.get()));
 		int secondByte = (0xFF & ((int)b.get()));
-		char anUnsignedShort  = (char) (firstByte << 8 | secondByte);
+		int anUnsignedShort  = (int) (firstByte << 8 | secondByte);
         return anUnsignedShort;
 	 }
 	
 	public static void writeUnsignedByte(ByteBuffer b,short v) {
+		if(v > MAX_BYTE_VALUE) {
+    		throw new CommonException("Max byte value is :"+MAX_BYTE_VALUE+", but value "+v);
+    	}
 		byte vv = (byte)((v >>> 0) & 0xFF);
 		b.put(vv);
 	}
@@ -465,6 +518,9 @@ public final class Message {
     }
     
     public static void writeUnsignedInt(ByteBuffer b,long v) {
+    	if(v > MAX_INT_VALUE) {
+    		throw new CommonException("Max int value is :"+MAX_INT_VALUE+", but value "+v);
+    	}
 		b.put((byte)((v >>> 24)&0xFF));
 		b.put((byte)((v >>> 16)&0xFF));
 		b.put((byte)((v >>> 8)&0xFF));

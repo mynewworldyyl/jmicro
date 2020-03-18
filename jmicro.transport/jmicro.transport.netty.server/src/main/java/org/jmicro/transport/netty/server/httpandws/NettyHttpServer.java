@@ -26,7 +26,6 @@ import org.jmicro.api.annotation.Inject;
 import org.jmicro.api.annotation.Server;
 import org.jmicro.api.config.Config;
 import org.jmicro.api.monitor.IMonitorDataSubmiter;
-import org.jmicro.api.monitor.MonitorConstant;
 import org.jmicro.api.monitor.SF;
 import org.jmicro.api.net.IServer;
 import org.jmicro.common.CommonException;

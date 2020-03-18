@@ -9,6 +9,8 @@ import org.jmicro.api.codec.ICodecFactory;
 import org.jmicro.api.codec.JDataInput;
 import org.jmicro.api.codec.JDataOutput;
 import org.jmicro.api.codec.PrefixTypeEncoderDecoder;
+import org.jmicro.api.mng.ConfigNode;
+import org.jmicro.api.mng.IConfigManager;
 import org.jmicro.api.monitor.MonitorConstant;
 import org.jmicro.api.net.Message;
 import org.jmicro.api.registry.AsyncConfig;
@@ -176,6 +178,60 @@ public class TestPubsub extends JMicroBaseTestCase{
 		System.out.print(r1);
 	}
 	
-
+	
+	@Test
+	public void testEncodeConfigNode() throws IOException {
+		ICodecFactory ed = of.get(ICodecFactory.class);
+		
+		ConfigNode cn = new ConfigNode("/feaf/fda","22","dad");
+		ConfigNode[] c = new ConfigNode[] {
+				new ConfigNode("/feaf/fda","22","dad"),new ConfigNode("/feaf/fda","22","dad"),
+				new ConfigNode("/feaf/fda","22","dad"),new ConfigNode("/feaf/fda","22","dad")
+		};
+		cn.setChildren(c);
+		
+		ConfigNode cn1 = new ConfigNode("/feaf/fda","22","dad");
+		ConfigNode[] c1 = new ConfigNode[] {
+				new ConfigNode("/feaf/fda","22","dad"),new ConfigNode("/feaf/fda","22","dad"),
+				new ConfigNode("/feaf/fda","22","dad"),new ConfigNode("/feaf/fda","22","dad")
+		};
+		cn1.setChildren(c1);
+		
+		ByteBuffer bb = (ByteBuffer)ed.getEncoder(Message.PROTOCOL_BIN).encode(new ConfigNode[] {cn,cn1});
+		
+		ConfigNode[] obj = (ConfigNode[])ed.getDecoder(Message.PROTOCOL_BIN).decode(bb, null);
+		
+		System.out.print(obj);
+		
+	}
+	
+	@Test
+	public void testEncodeConfigNode0() throws IOException {
+		ICodecFactory ed = of.get(ICodecFactory.class);
+		IConfigManager cm = of.get(IConfigManager.class);
+		ConfigNode[] nodes = cm.getChildren("/", true);
+		
+		ByteBuffer bb = (ByteBuffer)ed.getEncoder(Message.PROTOCOL_BIN).encode(nodes);
+		
+		ConfigNode[] objs = (ConfigNode[])ed.getDecoder(Message.PROTOCOL_BIN).decode(bb, null);
+		
+		System.out.print(objs);
+		
+	}
+	
+	@Test
+	public void testGetConfigService() throws IOException {
+		/*ByteBuffer buf = ByteBuffer.allocate(100);
+		Message.writeUnsignedShort(buf, 65535);
+		
+		buf.flip();
+		
+		int val = Message.readUnsignedShort(buf);*/
+		
+		IConfigManager cm = of.getRemoteServie(IConfigManager.class.getName(),"configManager","0.0.1",null, null);
+		ConfigNode[] nodes = cm.getChildren("/", true);
+		System.out.print(nodes);
+		this.waitForReady(60*60);
+	}
 	
 }

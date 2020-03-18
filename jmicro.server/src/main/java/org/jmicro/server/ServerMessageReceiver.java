@@ -154,11 +154,15 @@ public class ServerMessageReceiver implements IMessageReceiver{
 		try {
 			IMessageHandler h = handlers.get(msg.getType());
 			if(h == null) {
+           	 	SF.netIoRead(this.getClass().getName(),MonitorConstant.SERVER_IOSESSION_READ, msg.getLen(),s);
+           	 	//SF.netIoRead(this.getClass().getName(),MonitorConstant.CLIENT_IOSESSION_READ, message.getLen());
 				String errMsg = "Message type ["+Integer.toHexString(msg.getType())+"] handler not found!";
 				SF.doMessageLog(MonitorConstant.LOG_ERROR, TAG, msg,null,errMsg);
 				throw new CommonException(errMsg);
+			} else {
+				h.onMessage(s, msg);
 			}
-			h.onMessage(s, msg);
+			
 		} catch (Throwable e) {
 			//SF.doMessageLog(MonitorConstant.LOG_ERROR, TAG, msg,e);
 			//SF.doSubmit(MonitorConstant.SERVER_REQ_ERROR);

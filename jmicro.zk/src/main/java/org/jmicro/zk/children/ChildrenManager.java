@@ -16,6 +16,7 @@ import org.apache.zookeeper.Watcher;
 import org.apache.zookeeper.Watcher.Event.EventType;
 import org.jmicro.api.IListener;
 import org.jmicro.api.raft.IChildrenListener;
+import org.jmicro.common.util.StringUtils;
 import org.jmicro.zk.ZKDataOperator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -216,6 +217,22 @@ public class ChildrenManager {
 			logger.error("", e);
 		}
 		return Collections.EMPTY_SET;
+	}
+	
+	public void removeCache(String path) {
+		if(StringUtils.isEmpty(path)) {
+			return;
+		}
+		String subNodeName = null;
+		String parentPath = null;
+		int idx = path.lastIndexOf("/");
+		if(idx > 0) {
+			subNodeName = path.substring(idx+1, path.length());
+			parentPath = path.substring(0, idx);
+		}
+		if(subNodeName != null && this.path2Children.containsKey(parentPath)) {
+			this.path2Children.get(parentPath).remove(subNodeName);
+		}
 	}
 
 }

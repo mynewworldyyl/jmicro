@@ -28,7 +28,6 @@ import org.jmicro.api.monitor.SF;
 import org.jmicro.api.net.IMessageHandler;
 import org.jmicro.api.net.IResponse;
 import org.jmicro.api.net.ISession;
-import org.jmicro.api.net.IWriteCallback;
 import org.jmicro.api.net.InterceptorManager;
 import org.jmicro.api.net.Message;
 import org.jmicro.api.net.RpcRequest;
@@ -106,6 +105,9 @@ public class JRPCReqRespHandler implements IMessageHandler{
 			
 			JMicroContext.config(req1,serviceLoader,registry);
 			
+			//在这里统计的流量可以精确到RPC服务方法
+			SF.netIoRead(this.getClass().getName(),MonitorConstant.SERVER_IOSESSION_READ, msg.getLen(),s);
+			
 			if(!msg.isNeedResponse()){
 				//无需返回值
 				//数据发送后，不需要返回结果，也不需要请求确认包，直接返回
@@ -116,8 +118,6 @@ public class JRPCReqRespHandler implements IMessageHandler{
 				//SF.doSubmit(MonitorConstant.SERVER_REQ_OK, req,resp,null);
 				return;
 			}
-			
-			
 			
 			//下面处理需要返回值的RPC
 			msg.setReqId(req.getRequestId());
@@ -145,10 +145,8 @@ public class JRPCReqRespHandler implements IMessageHandler{
 			
 			//响应消息
 			s.write(msg);
-			
-			if(this.openDebug) {
-				SF.doResponseLog(MonitorConstant.LOG_DEBUG, TAG,req,resp,null,"response success");
-			} 
+
+			SF.doResponseLog(MonitorConstant.LOG_DEBUG, TAG,req,resp,null,"response success");
 		
 			//SF.doSubmit(MonitorConstant.SERVER_REQ_OK, req,resp,null);
 			

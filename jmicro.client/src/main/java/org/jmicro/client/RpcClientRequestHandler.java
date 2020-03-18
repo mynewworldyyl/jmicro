@@ -387,6 +387,8 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
     		
     		RpcResponse resp = null;
     		if(respMsg != null){
+    			//精确到RPC方法的下行流量
+    			SF.netIoRead(this.getClass().getName(),MonitorConstant.CLIENT_IOSESSION_READ, respMsg.getLen(),session);
     			if(openDebug) {
         			logger.info("Got response req:"+req.getMethod()+",Service:" + req.getServiceName()+", Namespace:"+req.getNamespace());
         		}

@@ -106,6 +106,7 @@
 		<module>jmicro.zk</module>
 		<module>jmicro.transport</module>
 		<module>jmicro.config</module>
+		<module>jmicro.mng</module>
 		<module>jmicro.objfactory</module>
 		<module>jmicro.limit</module>
 		<module>jmicro.gateway</module>
@@ -120,6 +121,7 @@
 		<module>jmicro.agent</module>
 		<module>jmicro.main</module>
 		<module>jmicro.build</module>
+		
     </modules>
 
     <dependencyManagement>
@@ -228,6 +230,11 @@
 	          <dependency>
 				 <groupId>org.jmicro</groupId>
 				 <artifactId>jmicro.config</artifactId>
+				  <version>${jmicro.version}</version>
+	        </dependency>
+			 <dependency>
+				 <groupId>org.jmicro</groupId>
+				 <artifactId>jmicro.mng</artifactId>
 				  <version>${jmicro.version}</version>
 	        </dependency>
 	         <dependency>
