@@ -44,6 +44,30 @@ if(typeof Array.prototype.fill == 'undefined') {
     }
 }
 
+if(typeof String.prototype.trim == 'undefined') {
+    String.prototype.trim = function(e) {
+        return str.replace(/^\s+|\s+$/g,"");
+    }
+}
+
+if(typeof String.prototype.trim == 'undefined') {
+    String.prototype.trim = function(e) {
+        return this.replace(/^\s+|\s+$/g,"");
+    }
+}
+
+if(typeof String.prototype.leftTrim == 'undefined') {
+    String.prototype.leftTrim = function() {
+        return this.replace( /^\s*/, '');
+    }
+}
+
+if(typeof String.prototype.rightTrim == 'undefined') {
+    String.prototype.rightTrim = function() {
+        return this.replace(/(\s*$)/g, "");
+    }
+}
+
 jm.http = {
 
     getQueryParam : function(name) {
@@ -539,8 +563,8 @@ if(!jm.utils.browser) {
     jm.utils.browser = {};
     if(s != null) {
         jm.utils.browser[key] = [];
-        jm.utils.browser[key][0] = $.trim(s[0]);
-        jm.utils.browser[key][1] = $.trim(s[1]);
+        jm.utils.browser[key][0] = s[0].trim();
+        jm.utils.browser[key][1] = s[1].trim();
     }
 }
 

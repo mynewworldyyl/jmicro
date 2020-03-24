@@ -1,19 +1,39 @@
 <template>
-  <div id="app">
-      <j-left-view></j-left-view>
-      <main-content-editor :allow-many=false></main-content-editor>
+
+  <div>
+      <Menu mode="horizontal" theme="light" active-key="service" @on-select="toRouter">
+          <Menu-item name="" >
+              <Icon type="ios-paper"></Icon>
+              SERVICE
+          </Menu-item>
+          <Menu-item name="config">
+              <Icon type="ios-people"></Icon>
+              CONFIG
+          </Menu-item>
+
+          <Menu-item name="others">
+              <Icon type="ios-people"></Icon>
+              OTHERS
+          </Menu-item>
+      </Menu>
+
+      <!-- route outlet -->
+      <router-view></router-view>
   </div>
 </template>
 
 <script>
-    import JLeftView from './components/LeftView.vue'
-    import MainContentEditor from './components/MainContentEditor.vue'
+
 
 export default {
   name: 'App',
   components: {
-      MainContentEditor,
-      JLeftView,
+  },
+
+  methods:{
+      toRouter(key) {
+        this.$router.push('/'+key);
+      }
   }
 }
 </script>
@@ -27,4 +47,27 @@ export default {
   text-align: center;
   color: #2c3e50;
 }
+.JHeader{
+    width:auto;
+    height:39px;
+    position: relative;
+    top: 0px;
+    left: 0px;
+    border-radius: 3px;
+    background-color:lightsteelblue;
+    vertical-align: middle;
+    line-height: 39px;
+    text-align: left;
+    padding-left:6px;
+    font-weight:bold;
+}
+
+.mainMenuItem{
+    display:inline-block;
+    width:50px;
+    height:auto;
+    padding:5px 8px;
+    margin: 0px 8px;
+}
+
 </style>

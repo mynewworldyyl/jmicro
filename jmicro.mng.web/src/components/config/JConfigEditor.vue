@@ -49,7 +49,7 @@
     //import jm from '../../public/js/jm.js'
 
     export default {
-        name: 'j-right-content-editor',
+        name: 'JConfigEditor',
         props:{
           allowMany: {
               type: Boolean,
@@ -59,7 +59,7 @@
         mounted:function() {
             var self = this;
             //console.log(window.jm.utils.isBrowser('ie'));
-            window.jm.vue.$on('leftViewNodeSelect',function(nodes) {
+            window.jm.vue.$on('configNodeSelect',function(nodes) {
                 if(!nodes || nodes.length ==0) {
                     return;
                 }
@@ -124,7 +124,7 @@
 
             onAddOk() {
                 let self = this;
-                window.jm.mng.add(self.selectNode.path+'/'+self.inputName,self.inputVal)
+                window.jm.mng.conf.add(self.selectNode.path+'/'+self.inputName,self.inputVal)
                     .then(function(result){
                         if(result) {
                             let p = self.selectNode.path+'/'+self.inputName;
@@ -184,7 +184,7 @@
                     return;
                 }
 
-                window.jm.mng.update(self.selectNode.path+'/'+self.inputName,self.inputVal)
+                window.jm.mng.conf.update(self.selectNode.path+'/'+self.inputName,self.inputVal)
                     .then(function(result){
                         if(result) {
                             lf.val = self.inputVal;
@@ -220,7 +220,7 @@
                 if(lf == null) {
                     return;
                 }
-                window.jm.mng.delete(lf.path)
+                window.jm.mng.conf.delete(lf.path)
                     .then(function(result){
                         if(result) {
                             self.selectNode.leaf.splice(idx,1);

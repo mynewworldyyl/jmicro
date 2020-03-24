@@ -26,6 +26,7 @@ import org.jmicro.api.registry.IRegistry;
 import org.jmicro.api.registry.ServiceItem;
 import org.jmicro.api.route.RouterManager;
 import org.jmicro.common.Constants;
+
 /**
  * 
  * @author Yulei Ye
@@ -42,9 +43,8 @@ public class RoundBalance implements ISelector{
 	
 	private int next = 0;
 	
-	@SuppressWarnings("null")
-	@Override
-	public ServiceItem getService(String srvName,String method,Class<?>[] args,String namespace,String version,
+	
+	private ServiceItem getService(String srvName,String method,Class<?>[] args,String namespace,String version,
 			String transport) {
 		
 		ServiceItem dsi = JMicroContext.get().getParam(Constants.DIRECT_SERVICE_ITEM, null);

@@ -7,9 +7,9 @@
 <script>
 
     export default {
-        name: 'j-left-view',
+        name: 'JConfigList',
 
-        created(){
+        mounted(){
             let self = this;
             this.__getChildren(null,'/',function(data){
                 self.configs = data;
@@ -19,7 +19,7 @@
         methods:{
 
             nodeSelect(evt){
-               window.jm.vue.$emit('leftViewNodeSelect',evt);
+               window.jm.vue.$emit('configNodeSelect',evt);
             },
 
             loadChildren(item,cb){
@@ -53,7 +53,7 @@
                         }
                     }
                 }
-                window.jm.mng.getChildren(path,true).then(function(nodes){
+                window.jm.mng.conf.getChildren(path,true).then(function(nodes){
                     let ch = [];
                     if(parent != null ) {
                         ch = parent.children
