@@ -41,8 +41,8 @@ public class TagMatchToServiceIpPortRouter extends AbstractRouter  implements IR
 	private RuleManager ruleManager;
 	
 	@Override
-	public RouteRule getRoute() {
-		 Set<RouteRule> rules = ruleManager.getRouteRulesByType(IRouter.TYPE_CONTEXT_PARAMS_MATCH);
+	public RouteRule getRouteRule() {
+		Set<RouteRule> rules = ruleManager.getRouteRulesByType(IRouter.TYPE_CONTEXT_PARAMS_MATCH);
 		if(rules == null || rules.isEmpty()) {
 			return null;
 		}
@@ -82,7 +82,7 @@ public class TagMatchToServiceIpPortRouter extends AbstractRouter  implements IR
 	@Override
 	public Set<ServiceItem> doRoute(RouteRule rule,Set<ServiceItem> services, String srvName, String method, Class<?>[] args,
 			String namespace, String version, String transport) {
-		return filterServicesByIpPort(rule,services,transport);
+		return filterServicesByTargetIpPort(rule,services,transport);
 	}
 
 }

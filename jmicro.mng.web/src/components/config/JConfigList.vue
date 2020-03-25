@@ -1,5 +1,16 @@
 <template>
   <div class="JLeftView">
+      <div class="toolBar">
+          <Dropdown @on-click="menuSelect">
+              <a href="javascript:void(0)">
+                  Menu
+                  <Icon type="ios-arrow-down"></Icon>
+              </a>
+              <DropdownMenu slot="list">
+                  <DropdownItem  name="refresh">Refresh</DropdownItem>
+              </DropdownMenu>
+          </Dropdown>
+      </div>
       <Tree :data="configs" :load-data="loadChildren" @on-select-change="nodeSelect($event)"></Tree>
   </div>
 </template>
@@ -67,6 +78,14 @@
                     window.console.log(err);
                 });
             }
+
+            ,menuSelect(name){
+                if(name == 'refresh') {
+                    this.__getChildren(null,window.jm.mng.CONFIG_ROOT,(data)=>{
+                        this.configs = data;
+                    });
+                }
+            }
         },
 
         data () {
@@ -94,6 +113,23 @@
       border-right:1px solid lightgray;
       border-top:1px solid lightgray;
       text-align: left;
+  }
+
+  .JRouterList{
+      height:auto;
+      min-height: 500px;
+      min-width:25%;
+      max-width: 50%;
+      float: left;
+      border-right:1px solid lightgray;
+      border-top:1px solid lightgray;
+      text-align: left;
+      word-break: break-all;
+  }
+
+  .toolBar{
+      height: 31px;
+      background-color: darkgray;
   }
 
 </style>

@@ -29,6 +29,71 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
+ * Any client with specify IP will route to specify server listening on target IP
+ * 
+ * rule example1: IP to IP
+ * 
+     {
+       "id":"1",
+        "type":"ipRouter",
+        "enable":true,
+        "priority":1,
+         "from":{
+               "ipPort":"192.168.1.23"
+          },
+         "to":{
+				"ipPort":"192.168.1.25"
+  
+          }
+     }
+ *    
+ *    
+ *    rule example2: IP and PORT to target IP and PORT
+ *    
+ *     *    {
+ *      "id":"2",
+ *       "type":"ipRouter",
+ *       "enable":true,
+ *       "priority":1,
+ *        "from":{
+ *              "ipPort":'192.168.1.23:9999'
+ *         },
+ *        "to":{
+"				ipPort":'192.168.1.25:8888'
+ * 
+ *         }
+ *    }
+ *    
+ *        rule example3: IP to target IP and PORT
+ *    
+ *         {
+ *      "id":"3",
+ *       "type":"ipRouter",
+ *       "enable":true,
+ *       "priority":1,
+ *        "from":{
+ *              "ipPort":'192.168.1.23'
+ *         },
+ *        "to":{
+"				ipPort":'192.168.1.25:8888'
+ * 
+ *         }
+ *    }
+ *    
+ *    rule example4: IP and PORT to target IP
+ *         {
+ *       "id":"4",
+ *       "type":"ipRouter",
+ *       "enable":true,
+ *       "priority":1,
+ *        "from":{
+ *              "ipPort":'192.168.1.23:9999'
+ *         },
+ *        "to":{
+"				ipPort":'192.168.1.25'
+ * 
+ *         }
+ *    }
  * 
  * @author Yulei Ye
  * @date: 2018年11月11日 下午3:56:55
@@ -42,21 +107,23 @@ public class IpMatchToServiceIpPortRouter extends AbstractRouter implements IRou
 	private RuleManager ruleManager;
 	
 	@Override
-	public RouteRule getRoute() {
+	public RouteRule getRouteRule() {
 		Set<RouteRule> rules = ruleManager.getRouteRulesByType(IRouter.TYPE_IP_TO_IP);
 		if(rules == null || rules.isEmpty()) {
 			return null;
 		}
 		
-		String clientIp = JMicroContext.get().getString(JMicroContext.REMOTE_HOST, null);
+		String clientIp;
+		if(JMicroContext.callSideProdiver()) {
+			//在服务端做路由，取远程IP作为客户端IP,比如API网关
+			clientIp =  JMicroContext.get().getString(JMicroContext.REMOTE_HOST, null);
+		}else {
+			clientIp = JMicroContext.get().getString(JMicroContext.LOCAL_HOST, null);
+		}
+		
 		if(StringUtils.isEmpty(clientIp)) {
 			return null;
 		}
-		
-		/*int clientPort = JMicroContext.get().getInt(JMicroContext.CLIENT_PORT, 0);
-		if(clientPort == 0) {
-			return null;
-		}*/
 		
 		Iterator<RouteRule> ite = rules.iterator();
 		while(ite.hasNext()) {
@@ -82,7 +149,7 @@ public class IpMatchToServiceIpPortRouter extends AbstractRouter implements IRou
 	@Override
 	public Set<ServiceItem> doRoute(RouteRule rule,Set<ServiceItem> services, String srvName, String method, Class<?>[] args,
 			String namespace, String version, String transport) {
-		return filterServicesByIpPort(rule,services,transport);
+		return filterServicesByTargetIpPort(rule,services,transport);
 	}
 
 }

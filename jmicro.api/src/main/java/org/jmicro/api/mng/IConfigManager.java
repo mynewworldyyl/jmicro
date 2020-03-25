@@ -8,7 +8,7 @@ public interface IConfigManager {
 	
 	boolean delete(String path);
 	
-	boolean add(String path, String val);
+	boolean add(String path, String val,Boolean isDir);
 	
 	
 }

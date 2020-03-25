@@ -11,6 +11,26 @@
               CONFIG
           </Menu-item>
 
+          <Menu-item name="router">
+              <Icon type="ios-people"></Icon>
+              ROUTER
+          </Menu-item>
+
+          <Menu-item name="statis">
+              <Icon type="ios-people"></Icon>
+              STATIS
+          </Menu-item>
+
+          <Menu-item name="log">
+              <Icon type="ios-people"></Icon>
+              LOG
+          </Menu-item>
+          
+          <Menu-item name="shell">
+              <Icon type="ios-people"></Icon>
+              SHELL
+          </Menu-item>
+
           <Menu-item name="others">
               <Icon type="ios-people"></Icon>
               OTHERS

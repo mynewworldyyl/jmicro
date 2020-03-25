@@ -18,17 +18,19 @@ package org.jmicro.api.route;
 
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 
+import org.jmicro.api.annotation.Cfg;
 import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.Inject;
 import org.jmicro.api.config.Config;
+import org.jmicro.api.idgenerator.ComponentIdServer;
 import org.jmicro.api.raft.IDataListener;
 import org.jmicro.api.raft.IDataOperator;
-import org.jmicro.common.Constants;
 import org.jmicro.common.util.JsonUtils;
+import org.jmicro.common.util.StringUtils;
+
 /**
  * 
  *
@@ -43,37 +45,52 @@ public class RuleManager {
 	@Inject
 	private IDataOperator dataOperator;
 	
-	private volatile Map<String,RouteRule> mapRules = new HashMap<>();
+	@Inject
+	private ComponentIdServer idGenerator;
+	
+	@Cfg(value ="/RuleManager/routerSort",defGlobal=true,changeListener="addRouteType")
+	private String[] routerTypes = {"tagRouter","serviceRouter","ipRouter"};
+	
+	
+	private volatile Map<String,Set<RouteRule>> mapRules = new HashMap<>();
 	
 	private IDataListener dataListener = (path,data)-> {
 		RouteRule rule = JsonUtils.getIns().fromJson(data, RouteRule.class);
 		rule.check();
-		Map<String,RouteRule> rs = mapRules;
+		Map<String,Set<RouteRule>> rs = mapRules;
 		if(rule.isEnable()) {
-			rs.put(rule.key(), rule);
+			rs.get(rule.getType()).add(rule);
 		}
 	};
 	
+	public void addRouteType(String type) {
+		if(!mapRules.containsKey(type)) {
+			mapRules.put(type,  new HashSet<RouteRule>());
+		}
+	}
+	
 	public Set<RouteRule> getRouteRulesByType(String type){
-		Iterator<RouteRule> rules = this.mapRules.values().iterator();
+		return mapRules.get(type);
+	}
+	
+	public Set<RouteRule> getRouteRules(){
 		Set<RouteRule> set = new HashSet<>();
-		while(rules.hasNext()) {
-			RouteRule r = rules.next();
-			if(type.equals(r.getType())) {
-				set.add(r);
+		for(String t : routerTypes) {
+			if(mapRules.containsKey(t)) {
+				mapRules.put(t, this.mapRules.get(t));
 			}
 		}
 		return set;
 	}
 	
-	public Set<RouteRule> getRouteRules(){
-		Map<String,RouteRule> mapRules = this.mapRules;
-		Set<RouteRule> set = new HashSet<>();
-		set.addAll(mapRules.values());
-		return set;
-	}
-	
 	public void init() {
+		
+		for(String t : routerTypes) {
+			if(!mapRules.containsKey(t)) {
+				mapRules.put(t, new HashSet<RouteRule>());
+			}
+		}
+		
 		Set<String> children = dataOperator.getChildren(RULE_DIR,true);
 		update(children);
 	}
@@ -82,21 +99,18 @@ public class RuleManager {
 		if(children == null || children.isEmpty()) {
 			return;
 		}
-		Map<String,RouteRule> rs = new HashMap<>();
 		for(String c : children) {
 			RouteRule rule = updateOne(c);
 			if(rule.isEnable()) {
-				rs.put(rule.key(), rule);
+				mapRules.get(rule.getType()).add(rule);
 			}
 		}
-		this.mapRules = rs;
 	}
 
 	private RouteRule updateOne(String c) {
 		String p = RULE_DIR+"/"+c;
 		String data = this.dataOperator.getData(p);
 		RouteRule rule = JsonUtils.getIns().fromJson(data, RouteRule.class);
-		rule.setId(c);
 		rule.check();
 		watchRule(p);
 		return rule;
@@ -107,8 +121,15 @@ public class RuleManager {
 	}
 
 	public void addOrUpdate(RouteRule rule) {
-		String path = RULE_DIR + "/" + rule.key();
+		if(StringUtils.isEmpty(rule.getUniqueId())) {
+			rule.setUniqueId(idGenerator.getStringId(RouteRule.class));
+		}
+		String path = RULE_DIR + "/" + rule.getUniqueId();
 		dataOperator.createNode(path, rule.value(), false);
+	}
+
+	public String[] getRouterTypes() {
+		return routerTypes;
 	}
 	
 }

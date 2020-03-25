@@ -61,7 +61,7 @@ public class Config implements IConfigChangeListener{
 	//全局配置目录,配置信息由全局配置及实例级配置组成
 	public static final String CfgDir = BASE_DIR + "/config";
 	//全局配置
-	public static final String GROBAL_CONFIG = CfgDir + "/grobalConfig";
+	public static final String GROBAL_CONFIG = BASE_DIR + "/grobalConfig";
 	
 	//实例相关信息
 	public static final String InstanceDir = BASE_DIR + "/instance";

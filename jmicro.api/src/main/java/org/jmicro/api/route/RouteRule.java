@@ -27,14 +27,14 @@ import org.jmicro.common.util.StringUtils;
  * @date: 2018年11月10日 下午9:32:20
  */
 public final class RouteRule {
+	
+	//just a ID used to tag in ZK path, not others
+	private String uniqueId;
 
 	private String type;
 	
-	private String id;
-	
-	private RouteEndpoint from;
-	
-	private RouteEndpoint to;
+	//group rule in rule editor
+	private String group = "Default";
 	
 	/**
 	 * 此Rule是否启用
@@ -46,15 +46,15 @@ public final class RouteRule {
 	 */
 	private int priority;
 	
+	private RouteEndpoint from;
+	
+	private RouteEndpoint to;
+	
 	public RouteRule() {
 	}
 	
-	public RouteRule(String id) {
-		this.id = id;
-	}
-	
 	public void check() {
-		if(StringUtils.isEmpty(this.getId())) {
+		if(StringUtils.isEmpty(this.getType())) {
 			throw new CommonException("RouteRule ID cannot be null");
 		}
 	}
@@ -77,7 +77,14 @@ public final class RouteRule {
 
 	@Override
 	public int hashCode() {
-		return this.toString().hashCode();
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + (enable ? 1231 : 1237);
+		result = prime * result + ((from == null) ? 0 : from.hashCode());
+		result = prime * result + priority;
+		result = prime * result + ((to == null) ? 0 : to.hashCode());
+		result = prime * result + ((type == null) ? 0 : type.hashCode());
+		return result;
 	}
 
 	public RouteEndpoint getFrom() {
@@ -96,14 +103,6 @@ public final class RouteRule {
 		this.to = to;
 	}
 
-	public String getId() {
-		return id;
-	}
-
-	public void setId(String id) {
-		this.id = id;
-	}
-
 	public String getType() {
 		return type;
 	}
@@ -114,29 +113,61 @@ public final class RouteRule {
 
 	@Override
 	public boolean equals(Object obj) {
-		if(obj == null || !(obj instanceof RouteRule)) {
+		if (this == obj)
+			return true;
+		if (obj == null)
 			return false;
-		}
-		RouteRule rr = (RouteRule)obj;
-		return this.getId().equals(rr.getId());
+		if (getClass() != obj.getClass())
+			return false;
+		RouteRule other = (RouteRule) obj;
+		
+		if (type == null) {
+			if (other.type != null)
+				return false;
+		} else if (!type.equals(other.type))
+			return false;
+		if (from == null) {
+			if (other.from != null)
+				return false;
+		} else if (!from.equals(other.from))
+			return false;
+		if (to == null) {
+			if (other.to != null)
+				return false;
+		} else if (!to.equals(other.to))
+			return false;
+		return true;
 	}
+	
+	
 
 	@Override
 	public String toString() {
 		StringBuffer sb = new StringBuffer();
 		sb.append("from=").append(this.from)
 		.append(",to=").append(this.to)
-		.append(",id=").append(this.id)
 		.append(",type=").append(this.type);
 		return sb.toString();
 	}
 	
-	public String key() {
-		return this.getId();
-	}
-	
 	public String value() {
 		return JsonUtils.getIns().toJson(this);
+	}
+
+	public String getUniqueId() {
+		return uniqueId;
+	}
+
+	public void setUniqueId(String uniqueId) {
+		this.uniqueId = uniqueId;
+	}
+
+	public String getGroup() {
+		return group;
+	}
+
+	public void setGroup(String group) {
+		this.group = group;
 	}
 	
 	

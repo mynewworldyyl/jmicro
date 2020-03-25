@@ -77,6 +77,9 @@ public class RouteUtils {
 		if(isEmpty(rs)) {
 			return null;
 		}
+		if(rs.size() == 1) {
+			return rs.iterator().next();
+		}
 		Iterator<RouteRule> ite = rs.iterator();
 		RouteRule r = ite.next();
 		while(ite.hasNext()) {

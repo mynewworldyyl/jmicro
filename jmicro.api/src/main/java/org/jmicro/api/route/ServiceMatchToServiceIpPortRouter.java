@@ -42,8 +42,8 @@ public class ServiceMatchToServiceIpPortRouter extends AbstractRouter implements
 	private RuleManager ruleManager;
 	
 	@Override
-	public RouteRule getRoute() {
-		 Set<RouteRule> filterRules = ruleManager.getRouteRulesByType(IRouter.TYPE_CLIENT_SERVICE_MATCH);
+	public RouteRule getRouteRule() {
+	    Set<RouteRule> filterRules = ruleManager.getRouteRulesByType(IRouter.TYPE_CLIENT_SERVICE_MATCH);
 		if(filterRules == null || filterRules.isEmpty()) {
 			return null;
 		}
@@ -98,7 +98,7 @@ public class ServiceMatchToServiceIpPortRouter extends AbstractRouter implements
 	@Override
 	public Set<ServiceItem> doRoute(RouteRule rule,Set<ServiceItem> services, String srvName, String method, Class<?>[] args,
 			String namespace, String version, String transport) {
-		return filterServicesByIpPort(rule,services,transport);
+		return filterServicesByTargetIpPort(rule,services,transport);
 	}
 
 }

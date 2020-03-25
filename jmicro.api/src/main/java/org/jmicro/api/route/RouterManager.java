@@ -21,7 +21,6 @@ import java.util.Map;
 import java.util.Set;
 
 import org.jmicro.api.JMicroContext;
-import org.jmicro.api.annotation.Cfg;
 import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.Inject;
 import org.jmicro.api.registry.ServiceItem;
@@ -45,8 +44,8 @@ public class RouterManager {
 	@Inject
 	private volatile Map<String,IRouter> routers = new HashMap<>();
 	
-	@Cfg("/RouterManager/routerSort")
-	private String[] routerSorts = {"tagRouter","serviceRouter","ipRouter"};
+	@Inject
+	private RuleManager ruleManager;
 	
 	public Set<ServiceItem> doRoute(Set<ServiceItem> services,String srvName,String method,Class<?>[] args
 			,String namespace,String version,String transport){
@@ -55,13 +54,14 @@ public class RouterManager {
 			return services;
 		}
 		
-		String routerSort = JMicroContext.get().getParam(Constants.DIRECT_SERVICE_ITEM, null);
+		String routerSort = JMicroContext.get().getParam(Constants.ROUTER_KEY, null);
 		
 		if(StringUtils.isNotEmpty(routerSort)) {
 			routerSort = routerSort.trim();
 			IRouter r = routers.get(routerSort);
-			if(r != null && r.getRoute() != null) {
-				return r.doRoute(r.getRoute(), services, srvName, method, args, namespace, version, transport);
+			RouteRule ru = r.getRouteRule();
+			if(r != null && ru != null) {
+				return r.doRoute(ru, services, srvName, method, args, namespace, version, transport);
 			} else {
 				//logger.error("Router {} not defined, try to use by default config",routerSort);
 				throw new CommonException("Router "+routerSort+" not defined");
@@ -69,14 +69,14 @@ public class RouterManager {
 		}
 		
 		Map<String,IRouter> rs = this.routers;
-		for(String key: routerSorts) {
+		for(String key: this.ruleManager.getRouterTypes()) {
 			IRouter r = rs.get(key);
 			if(r != null) {
-				RouteRule rr = r.getRoute();
+				RouteRule rr = r.getRouteRule();
 				if(rr != null) {
 					return r.doRoute(rr, services, srvName, method, args, namespace, version, transport);
 				}
-			}else {
+			} else {
 				logger.error("Router {} not defined",key);
 			}
 		}

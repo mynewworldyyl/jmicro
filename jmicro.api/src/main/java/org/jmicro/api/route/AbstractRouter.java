@@ -45,7 +45,7 @@ public abstract class AbstractRouter implements IRouter{
 		return false;
 	}
 	
-	protected HashSet<ServiceItem> filterServicesByIpPort(RouteRule rule, Set<ServiceItem> services,String transport) {
+	protected HashSet<ServiceItem> filterServicesByTargetIpPort(RouteRule rule, Set<ServiceItem> services,String transport) {
 	   
 		String ipPort = rule.getTo().getIpPort();
 		

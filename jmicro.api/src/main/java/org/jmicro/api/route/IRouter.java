@@ -40,7 +40,7 @@ public interface IRouter {
 	
 	public static final String TYPE_NONE = "noRouter";
 	
-	RouteRule getRoute();
+	RouteRule getRouteRule();
 	
 	Set<ServiceItem> doRoute(RouteRule rule,Set<ServiceItem> service,String srvName,String method,Class<?>[] args
 			,String namespace,String version,String transport);

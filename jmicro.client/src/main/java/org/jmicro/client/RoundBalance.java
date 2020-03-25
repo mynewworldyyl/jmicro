@@ -47,6 +47,7 @@ public class RoundBalance implements ISelector{
 	private ServiceItem getService(String srvName,String method,Class<?>[] args,String namespace,String version,
 			String transport) {
 		
+		//客户端指定了服务实例，不需要做路由
 		ServiceItem dsi = JMicroContext.get().getParam(Constants.DIRECT_SERVICE_ITEM, null);
 		if(dsi != null) {
 			return dsi;

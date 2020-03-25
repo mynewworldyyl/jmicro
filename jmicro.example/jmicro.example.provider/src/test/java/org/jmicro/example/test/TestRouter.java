@@ -18,7 +18,7 @@ public class TestRouter {
 		//ip rule
 		RouteRule rr = new RouteRule();
 		rr.setEnable(true);
-		rr.setId("TestIpRoute");
+		rr.setUniqueId("TestIpRoute");
 		rr.setPriority(1000);
 		rr.setType(IRouter.TYPE_IP_TO_IP);
 		
@@ -39,7 +39,7 @@ public class TestRouter {
 		//service rule
 		rr = new RouteRule();
 		rr.setEnable(true);
-		rr.setId("TestServiceRoute");
+		rr.setUniqueId("TestServiceRoute");
 		rr.setPriority(1001);
 		rr.setType(IRouter.TYPE_CLIENT_SERVICE_MATCH);
 		
@@ -61,7 +61,7 @@ public class TestRouter {
 		//tag rule
 		rr = new RouteRule();
 		rr.setEnable(true);
-		rr.setId("TestTagRoute");
+		rr.setUniqueId("TestTagRoute");
 		rr.setPriority(1003);
 		rr.setType(IRouter.TYPE_CONTEXT_PARAMS_MATCH);
 		

@@ -7,7 +7,7 @@ import 'view-design/dist/styles/iview.css'
 
 import JConfig from './components/config/JConfig.vue'
 import JService from './components/service/JService.vue'
-
+import JRouter from './components/route/JRouter.vue'
 
 Vue.use(iView)
 Vue.use(VueRouter)
@@ -17,6 +17,7 @@ Vue.config.productionTip = false
 
 const routes = [
     { path: '/config', component: JConfig },
+    { path: '/router', component: JRouter },
     { path: '/', component: JService },
 
 ];

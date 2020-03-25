@@ -1,8 +1,14 @@
 window.jm = window.jm || {};
 
+let ROOT = '/jmicro/JMICRO';
+
 jm.mng = {
 
-    srv:{
+    ROUTER_ROOT : ROOT + '/routeRules',
+    CONFIG_ROOT : ROOT,
+    RULE_ID: 'org.jmicro.api.route.RouteRule',
+
+    srv : {
         getServices: function (){
             let req =  this.__ccreq();
             req.method = 'getServices';
@@ -61,10 +67,10 @@ jm.mng = {
             return jm.rpc.callRpc(req);
         },
 
-        add: function (path,val){
+        add: function (path,val,isDir){
             let req =  this.__ccreq();
             req.method = 'add';
-            req.args = [path,val];
+            req.args = [path,val,isDir];
             return jm.rpc.callRpc(req);
         },
 

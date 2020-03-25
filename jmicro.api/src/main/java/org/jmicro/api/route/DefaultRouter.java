@@ -38,7 +38,7 @@ public class DefaultRouter  extends AbstractRouter implements IRouter{
 	private RuleManager ruleManager;
 	
 	@Override
-	public RouteRule getRoute() {
+	public RouteRule getRouteRule() {
 		Set<RouteRule> rules = this.ruleManager.getRouteRules();
 		if(RouteUtils.isEmpty(rules)) {
 			return null;
@@ -140,8 +140,7 @@ public class DefaultRouter  extends AbstractRouter implements IRouter{
 		return filterRules;
 	}
 
-	private Set<RouteRule> filterRuleSource(Set<RouteRule> rules/*, String srvName
-			, String namespace, String version,String method*/) {
+	private Set<RouteRule> filterRuleSource(Set<RouteRule> rules) {
 		
 		Set<RouteRule> filterRules =  new HashSet<>();
 		filterRules.addAll(rules);

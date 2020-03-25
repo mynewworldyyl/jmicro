@@ -1,7 +1,7 @@
 <template>
   <div class="JServiceList">
       <div class="toolBar">
-          <Dropdown @on-click="changeGroup">
+          <Dropdown @on-click="menuSelect">
               <a href="javascript:void(0)">
                   Menu
                   <Icon type="ios-arrow-down"></Icon>
@@ -9,6 +9,7 @@
               <DropdownMenu slot="list">
                   <DropdownItem :selected="groupBy=='sn'" name="sn">Service</DropdownItem>
                   <DropdownItem :selected="groupBy=='ins'" name="ins">IP And Port</DropdownItem>
+                  <DropdownItem  name="refresh" :divided="true">Refresh</DropdownItem>
               </DropdownMenu>
           </Dropdown>
       </div>
@@ -55,15 +56,18 @@
             loadServices(cb) {
 
                 window.jm.mng.srv.getServices().then((nodes)=>{
-
                     if(!nodes || nodes.length == 0 ) {
-                        cb([]);
+                        if(cb) {
+                            cb([]);
+                        }
                     }
                     this.srcNodes = nodes;
                     this.notifyChange(cb);
                 }).catch((err)=>{
                     window.console.log(err);
-                    cb([]);
+                    if(cb) {
+                        cb([]);
+                    }
                 });
             }
 
@@ -166,16 +170,19 @@
                 return tr;
             }
 
-            ,changeGroup(name){
-                this.groupBy = name;
-                this.notifyChange();
+            ,menuSelect(name){
+                if('refresh' == name) {
+                    this.loadServices((srvTrees)=>{
+                        this.services = srvTrees;
+                    });
+                }else {
+                    this.groupBy = name;
+                    this.notifyChange();
+                }
+
             }
 
         },
-
-
-
-
     }
 
    export class TreeNode{

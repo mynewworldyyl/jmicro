@@ -5,9 +5,11 @@ import java.util.Set;
 import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.Inject;
 import org.jmicro.api.annotation.Service;
+import org.jmicro.api.config.Config;
 import org.jmicro.api.mng.ConfigNode;
 import org.jmicro.api.mng.IConfigManager;
 import org.jmicro.api.raft.IDataOperator;
+import org.jmicro.common.util.StringUtils;
 
 @Component
 @Service(namespace="configManager", version="0.0.1")
@@ -69,9 +71,19 @@ public class ConfigManagerImpl implements IConfigManager {
 	}
 
 	@Override
-	public boolean add(String path, String val) {
+	public boolean add(String path, String val,Boolean isDir) {
 		try {
+			if(isDir && val == null) {
+				val = "";
+			}else if(StringUtils.isEmpty(val)) {
+				return false;
+			}
 			op.createNode(path, val, false);
+			if(isDir) {
+				//有子结点才是目录结点，否则作为叶子结点造成不能再往里增加子结点
+				op.createNode(path+"/ip", Config.getHost(), false);
+			}
+			
 			return true;
 		} catch (Exception e) {
 			e.printStackTrace();

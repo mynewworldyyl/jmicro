@@ -26,10 +26,12 @@
         </Tabs>
     </div>
 
-      <Modal v-model="addNodeDialog" width="360" @on-ok="onAddOk()">
+      <Modal v-model="addNodeDialog" :loading="true" ref="addNodeDialog" width="360" @on-ok="onAddOk()">
           <table>
               <tr><td>名称</td><td><input type="input" id="nodeName" v-model="inputName"/></td></tr>
-              <tr><td>值</td><td><input type="input" id="nodeValue" v-model="inputVal"/></td></tr>
+              <tr><td>值</td><td><input type="input" id="nodeValue" v-model="inputVal" :disabled="isDir" /></td></tr>
+              <tr><td>目录</td><td><input type="checkbox" id="idDir" v-model="isDir"/></td></tr>
+              <tr><td colspan="2" style="color:red">{{errMsg}}</td></tr>
           </table>
       </Modal>
 
@@ -105,8 +107,10 @@
                 deleteNodeDialog:false,
                 updateNodeDialog:false,
 
+                isDir:false,
                 inputName:'',
                 inputVal:'',
+                errMsg:''
             }
         },
         methods: {
@@ -124,7 +128,12 @@
 
             onAddOk() {
                 let self = this;
-                window.jm.mng.conf.add(self.selectNode.path+'/'+self.inputName,self.inputVal)
+                this.$refs.addNodeDialog.buttonLoading = false;
+                if(!this.isDir && !this.inputVal) {
+                    self.errMsg='Value cannot be null!';
+                    return false;
+                }
+                window.jm.mng.conf.add(self.selectNode.path+'/'+self.inputName,self.inputVal,self.isDir)
                     .then(function(result){
                         if(result) {
                             let p = self.selectNode.path+'/'+self.inputName;
@@ -132,18 +141,23 @@
                             self.selectNode.leaf.push(newNode);
                             self.items[0] = self.selectNode;
                             self.$Message.success('Successfully add');
+
+                            self.addNodeDialog = false;
+                            self.errMsg='';
+                            self.inputName = '';
+                            self.inputVal = '';
+                            self.isDir = false;
+
                         }else {
                             self.$Message.fail('fail');
                         }
-                        self.inputName = '';
-                        self.inputVal = '';
                     }).catch(function(err){
                     self.$Message.fail('fail:'+err);
                     self.inputName = '';
                     self.inputVal = '';
-                });
+                    self.isDir = false;
 
-                self.addNodeDialog = false;
+                });
             },
 
             updateNode(path) {

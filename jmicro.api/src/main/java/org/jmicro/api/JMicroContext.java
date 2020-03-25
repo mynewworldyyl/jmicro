@@ -43,7 +43,7 @@ import org.jmicro.common.Constants;
  */
 public class JMicroContext  {
 
-	//value should be true or false, for provider or sunsumer side
+	//value should be true or false, for provider or consumer side
 	public static final String CALL_SIDE_PROVIDER = "callSideProvider";
 	
 	public static final String LOCAL_HOST = "host";
