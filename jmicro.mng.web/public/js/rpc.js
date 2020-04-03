@@ -200,7 +200,6 @@ jm.rpc = {
                 reso(rstMsg.payload.result);
             }
         });
-
     });
   },
 
@@ -235,10 +234,6 @@ jm.rpc = {
         return;
       }
 
-      if(!params.stream ) {
-        params.stream = false;
-      }
-
       if(typeof params.needResponse == 'undefined') {
         params.needResponse = true;
       }
@@ -270,7 +265,7 @@ jm.rpc = {
 
       if(!serviceName || serviceName.trim() == '') {
         reje('service name cannot be NULL');
-        return;
+          return;
       }
 
       if(!method || method.trim() == '') {
@@ -334,8 +329,8 @@ jm.rpc = {
         }
     } else {
           return new Promise(function(reso,reje){
-          reje('Invalid params');
-       });
+                reje('Invalid params');
+            });
     }
 
   }
@@ -594,6 +589,8 @@ jm.rpc.IdRequest.prototype = {
 
 }
 
+jm.rpc.reqId = 1;
+
 jm.rpc.ApiRequest = function() {
   this.params = {};
   this.serviceName = '';
@@ -601,7 +598,7 @@ jm.rpc.ApiRequest = function() {
   this.args = [];
   this.namespace = '';
   this.version = '';
-  this.reqId = -1;
+  this.reqId = jm.rpc.reqId++;
   this.msg = '';
   this.needResponse = true;
   this.stream = false;

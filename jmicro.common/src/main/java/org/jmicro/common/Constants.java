@@ -21,6 +21,8 @@ package org.jmicro.common;
  * @date 2018年10月4日-下午12:08:51
  */
 public interface Constants {
+	
+	public static final String TOPIC_SEPERATOR=",";
 
 	public static final String CLIENT_ONLY="client";
 	public static final String SERVER_ONLY="server";
@@ -92,7 +94,7 @@ public interface Constants {
 	public static final String INSTANCE_NAME = "instanceName";
 	public static final String INSTANCE_NAME_GEN_CLASS = "instanceNameGenClass";
 	
-	public static final String CONTEXT_CALLBACK_SERVICE = "ServiceCallback";
+	//public static final String CONTEXT_CALLBACK_SERVICE = "ServiceCallback";
 	public static final String CONTEXT_CALLBACK_CLIENT = "ClientCallback";
 	
 	public static final String SERVICE_ITEM_KEY = "serviceItemKey";

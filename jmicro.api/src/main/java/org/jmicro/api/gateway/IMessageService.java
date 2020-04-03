@@ -1,3 +1,4 @@
+
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -14,15 +15,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.jmicro.api.net;
+package org.jmicro.api.gateway;
+
+import java.util.Map;
 
 /**
- * RPC服务从Context中取得接口推送消息给客户端，实现服务端到客户端信息流推送
+ * 
  * @author Yulei Ye
- * @date 2018年10月12日-上午11:02:35
+ * @date 2020年3月26日
  */
-public interface IWriteCallback {
+public interface IMessageService {
 
-	boolean send(Object msg);
+	boolean subscribe(String topic,Map<String,Object> ctx);
+	
+	boolean unsubscribe(String topic,Map<String,Object> ctx);
+	
 	
 }

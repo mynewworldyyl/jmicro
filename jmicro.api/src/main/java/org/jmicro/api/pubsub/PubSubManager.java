@@ -13,6 +13,7 @@ import org.jmicro.api.annotation.Cfg;
 import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.Inject;
 import org.jmicro.api.annotation.Reference;
+import org.jmicro.api.config.Config;
 import org.jmicro.api.executor.ExecutorConfig;
 import org.jmicro.api.executor.ExecutorFactory;
 import org.jmicro.api.idgenerator.ComponentIdServer;
@@ -86,6 +87,7 @@ public class PubSubManager {
 	
 	private AtomicLong curItemCount = new AtomicLong(0);
 	
+	private Object runLocker = new Object();
 	private Boolean isRunning = false;
 	
 	public void init() {
@@ -100,7 +102,7 @@ public class PubSubManager {
 	}
 	
 	public boolean isPubsubEnable(int itemNum) {
-		return this.defaultServer != null && this.curItemCount.get()+itemNum <= this.maxPsItem 
+		return this.defaultServer != null && this.curItemCount.get() + itemNum <= this.maxPsItem 
 				&& ProxyObject.isUsableRemoteProxy(this.defaultServer);
 	}
 	
@@ -153,25 +155,18 @@ public class PubSubManager {
 		}
 		 
 		 if(!this.isRunning) {
-			 synchronized(isRunning) {
-				 if(!isRunning) {
-					 this.isRunning = true;
-					 new Thread(this::doWork).start();
-				 }
-			 }
+			 startChecker();
 		 }
 		 
 		curItemCount.addAndGet(items.length);
 		 
-		for(PSData d :items) {
-			List<PSData> is = topicSubmitItems.get(d.getTopic());
-			if(is == null) {
-				synchronized(topicSubmitItems) {
-					topicSubmitItems.put(d.getTopic(), is=new ArrayList<>());
+		synchronized (topicSubmitItems) {
+			for (PSData d : items) {
+				List<PSData> is = topicSubmitItems.get(d.getTopic());
+				if (is == null) {
+					topicSubmitItems.put(d.getTopic(), is = new ArrayList<>());
 					topicLastSubmitTime.put(d.getTopic(), System.currentTimeMillis());
 				}
-			}
-			synchronized(is) {
 				is.add(d);
 			}
 		}
@@ -186,30 +181,22 @@ public class PubSubManager {
 	public int publish(PSData item) {
 		
 		if(!this.isPubsubEnable(1)) {
-			 this.isRunning = true;
 			return PUB_SERVER_NOT_AVAILABALE;
 		}
 		
 		if(!this.isRunning) {
-			 synchronized(isRunning) {
-				 if(!isRunning) {
-					 this.isRunning = true;
-					 new Thread(this::doWork).start();
-				 }
-			 }
+			 startChecker();
 		 }
 		
 		curItemCount.incrementAndGet();
 		
 		List<PSData> items = topicSubmitItems.get(item.getTopic());
-		if(items == null) {
-			synchronized(topicSubmitItems) {
-				topicSubmitItems.put(item.getTopic(), items=new ArrayList<>());
+		
+		synchronized (topicSubmitItems) {
+			if (items == null) {
+				topicSubmitItems.put(item.getTopic(), items = new ArrayList<>());
 				topicLastSubmitTime.put(item.getTopic(), System.currentTimeMillis());
 			}
-		}
-		
-		synchronized(items) {
 			items.add(item);
 		}
 		
@@ -220,9 +207,21 @@ public class PubSubManager {
 		return PUB_OK;
 	}
 	
+	private void startChecker() {
+		 synchronized(this.runLocker) {
+			 if(this.isRunning) {
+				 return;
+			 }
+			 this.isRunning = true;
+			 Thread t = new Thread(this::doWork);
+			 t.setName(Config.getInstanceName()+"_PubSubManager_Checker");
+			 t.start();
+		 }
+	}
+	
     private void doWork() {
 		logger.info("START submit worker");
-    	int interval = 300;
+    	int interval = 500;
     	int batchSize = 50;
 		while(isRunning) {
 			try {
@@ -240,30 +239,30 @@ public class PubSubManager {
 				
 				int cnt = 0;
 				
-				for(Map.Entry<String, List<PSData>> e : topicSubmitItems.entrySet()) {
-					if(e.getValue().isEmpty()) {
-						continue;
-					}
-					
-					int subCnt = e.getValue().size();
-					
-					if(subCnt < batchSize) {
-						Long lastTime = topicLastSubmitTime.get(e.getKey());
-						if(curTime - lastTime < interval) {
-							//需要提交的数据量小于50且距上次提交时间小于100毫秒，暂时不提交此批数据
+				synchronized(topicSubmitItems) {
+					for(Map.Entry<String, List<PSData>> e : topicSubmitItems.entrySet()) {
+						if(e.getValue().isEmpty()) {
 							continue;
 						}
-					}
-					
-					topicLastSubmitTime.put(e.getKey(), System.currentTimeMillis());
-					
-					List<PSData> sl = ms.get(e.getKey());
-					if(!ms.containsKey(e.getKey())) {
-						ms.put(e.getKey(), sl = new ArrayList<>());
-					}
-					
-					List<PSData> l = e.getValue();
-					synchronized(l) {
+						
+						int subCnt = e.getValue().size();
+						
+						if(subCnt < batchSize) {
+							Long lastTime = topicLastSubmitTime.get(e.getKey());
+							if(curTime - lastTime < interval) {
+								//需要提交的数据量小于50且距上次提交时间小于100毫秒，暂时不提交此批数据
+								continue;
+							}
+						}
+						
+						topicLastSubmitTime.put(e.getKey(), System.currentTimeMillis());
+						
+						List<PSData> sl = ms.get(e.getKey());
+						if(!ms.containsKey(e.getKey())) {
+							ms.put(e.getKey(), sl = new ArrayList<>());
+						}
+						
+						List<PSData> l = e.getValue();
 						
 						if(subCnt > batchSize) {
 							//每个主题第次最大提交50个数量
@@ -278,8 +277,10 @@ public class PubSubManager {
 								ite.remove();
 							}
 						}
+					
 					}
 				}
+			
 				
 				if(cnt > 0) {
 					executor.submit(new Worker(ms));

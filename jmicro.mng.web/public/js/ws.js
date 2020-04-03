@@ -34,12 +34,13 @@ jm.socket = {
                var msg = JSON.parse(event.data);
                msg.payload = JSON.parse(msg.payload);
 
-               if(self.listeners[msg.reqId]) {
-                 self.listeners[msg.reqId](msg);
-               }
-
-               if(!(msg.flag & jm.Constants.STREAM)) {
-                 delete self.listeners[msg.reqId];
+               if(msg.type == jm.mng.ps.MSG_TYPE_ASYNC_RESP) {
+                   jm.mng.ps.onMsg(msg.payload);
+               } else {
+                   if(self.listeners[msg.reqId]) {
+                       self.listeners[msg.reqId](msg);
+                       delete self.listeners[msg.reqId];
+                   }
                }
              }
 

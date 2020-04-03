@@ -6,19 +6,19 @@
             <TabPane v-for="item in items"  :name="item.path" :label="item.title" v-bind:key="item.path">
                 <table class="configItemTalbe" width="99%">
                     <caption style="text-align: left;padding-bottom: 3px;">{{selectNode.path}}</caption>
-                    <thead><tr><td>键</td><td>值</td><td>操作</td></tr></thead>
+                    <thead><tr><td>KEY</td><td>VALUE</td><td>OPERATION</td></tr></thead>
 
                     <tr>
-                        <td></td><td></td><td> <a @click="addNode()">新增</a></td>
+                        <td></td><td></td><td> <a @click="addNode()">ADD</a></td>
                     </tr>
 
                     <tr v-for="c in item.children" :key="c.path">
-                        <td>{{c.name}}</td><td>{{c.val}}</td><td><a @click="updateNode(c.path)">修改</a></td>
+                        <td>{{c.name}}</td><td>{{c.val}}</td><td><a @click="updateNode(c.path)">MODIFY</a></td>
                     </tr>
 
                     <tr v-for="c in item.leaf" :key="c.path">
                         <td width="20%">{{c.name}}</td><td width="70%">{{c.val}}</td><td width="8%" class="opBar">
-                        <a @click="updateNode(c.path)">修改</a> &nbsp; <a @click="deleteNode(c.path)">删除</a></td>
+                        <a @click="updateNode(c.path)">MODIFY</a> &nbsp; <a @click="deleteNode(c.path)">DELETE</a></td>
                     </tr>
 
                 </table>
@@ -28,17 +28,17 @@
 
       <Modal v-model="addNodeDialog" :loading="true" ref="addNodeDialog" width="360" @on-ok="onAddOk()">
           <table>
-              <tr><td>名称</td><td><input type="input" id="nodeName" v-model="inputName"/></td></tr>
-              <tr><td>值</td><td><input type="input" id="nodeValue" v-model="inputVal" :disabled="isDir" /></td></tr>
-              <tr><td>目录</td><td><input type="checkbox" id="idDir" v-model="isDir"/></td></tr>
+              <tr><td>NAME</td><td><input type="input" id="nodeName" v-model="inputName"/></td></tr>
+              <tr><td>VALUE</td><td><input type="input" id="nodeValue" v-model="inputVal" :disabled="isDir" /></td></tr>
+              <tr><td>DIRECTORY</td><td><input type="checkbox" id="idDir" v-model="isDir"/></td></tr>
               <tr><td colspan="2" style="color:red">{{errMsg}}</td></tr>
           </table>
       </Modal>
 
       <Modal v-model="deleteNodeDialog" width="360" @on-ok="onUpdateOk()">
           <table>
-              <tr><td>名称</td><td><input type="input" disabled  v-model="inputName"/></td></tr>
-              <tr><td>值</td><td><input type="input"  v-model="inputVal"/></td></tr>
+              <tr><td>NAME</td><td><input type="input" disabled  v-model="inputName"/></td></tr>
+              <tr><td>VALUE</td><td><input type="input"  v-model="inputVal"/></td></tr>
           </table>
       </Modal>
 

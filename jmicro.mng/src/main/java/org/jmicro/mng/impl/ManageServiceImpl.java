@@ -12,7 +12,7 @@ import org.jmicro.api.registry.ServiceMethod;
 import org.jmicro.api.service.ServiceManager;
 
 @Component
-@Service(namespace="manageService", version="0.0.1")
+@Service(namespace="mng", version="0.0.1")
 public class ManageServiceImpl implements IManageService {
 
 	@Inject

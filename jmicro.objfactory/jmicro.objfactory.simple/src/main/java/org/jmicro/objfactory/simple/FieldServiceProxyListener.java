@@ -91,44 +91,45 @@ class FieldServiceProxyListener implements IServiceListener{
 		if(!Set.class.isAssignableFrom(refField.getType()) &&
 				!List.class.isAssignableFrom(refField.getType())){
 			
-			boolean bf = refField.isAccessible();
-			Object o = null;
-			if(!bf) {
-				refField.setAccessible(true);
-			}
-			try {
-				o = refField.get(srcObj);
-			} catch (IllegalArgumentException | IllegalAccessException e) {
-				String msg = "Class ["+srcObj.getClass().getName()+"] field ["+ refField.getName()+"] dependency ["+refField.getType().getName()+"] not found";
-				logger.error(msg);
-				SF.doBussinessLog(MonitorConstant.LOG_ERROR, FieldServiceProxyListener.class, e, msg);
-				return;
-			}
-			if(!bf) {
-				refField.setAccessible(bf);
-			}
-			
 			if(IServiceListener.ADD == type){
-				if(o != null) {
-					logger.warn("Service field not change:{}",item.getKey().toKey(false, false, false));
+				AsyncConfig[] acs = this.rsm.getAcs(this.ref);
+				boolean bf = refField.isAccessible();
+				Object o = null;
+				if(!bf) {
+					refField.setAccessible(true);
+				}
+				try {
+					o = refField.get(srcObj);
+				} catch (IllegalArgumentException | IllegalAccessException e) {
+					String msg = "Class ["+srcObj.getClass().getName()+"] field ["+ refField.getName()+"] dependency ["+refField.getType().getName()+"] not found";
+					logger.error(msg);
+					SF.doBussinessLog(MonitorConstant.LOG_ERROR, FieldServiceProxyListener.class, e, msg);
 					return;
-				} else {
-					AsyncConfig[] acs = this.rsm.getAcs(this.ref);
+				}
+				if(!bf) {
+					refField.setAccessible(bf);
+				}
+				
+				AbstractClientServiceProxy p = (AbstractClientServiceProxy)o;
+				if(o == null) {
 					//代理还不存在，创建之
-					AbstractClientServiceProxy p = (AbstractClientServiceProxy)this.rsm.getRefRemoteService(item, null,acs);
-					if(p != null) {
-						SimpleObjectFactory.setObjectVal(srcObj, refField, p);
-					} else {
-						String msg = "Fail to create service "+item.getKey().toKey(true, true, true)+" for Class ["+srcObj.getClass().getName()+"] field ["+ refField.getName()+"] dependency ["+refField.getType().getName()+"]";
-						if(ref.required()) {
-							SF.doBussinessLog(MonitorConstant.LOG_ERROR, FieldServiceProxyListener.class, null, msg);
-							logger.error(msg);
-						}else {
-							SF.doBussinessLog(MonitorConstant.LOG_WARN, FieldServiceProxyListener.class, null, msg);
-							logger.warn(msg);
+					 p = (AbstractClientServiceProxy)this.rsm.getRefRemoteService(item, null,acs);
+					 if(p != null) {
+							SimpleObjectFactory.setObjectVal(srcObj, refField, p);
+						} else {
+							String msg = "Fail to create service "+item.getKey().toKey(true, true, true)+" for Class ["+srcObj.getClass().getName()+"] field ["+ refField.getName()+"] dependency ["+refField.getType().getName()+"]";
+							if(ref.required()) {
+								SF.doBussinessLog(MonitorConstant.LOG_ERROR, FieldServiceProxyListener.class, null, msg);
+								logger.error(msg);
+							}else {
+								SF.doBussinessLog(MonitorConstant.LOG_WARN, FieldServiceProxyListener.class, null, msg);
+								logger.warn(msg);
+							}
+							return;
 						}
-						return;
-					}
+				}else {
+					p.setItem(item);
+					p.setAsyncConfig(acs);
 				}
 			}else if(IServiceListener.REMOVE == type) {
 

@@ -26,6 +26,8 @@ public class ChildrenManager {
 	private final static Logger logger = LoggerFactory.getLogger(ChildrenManager.class);
 
 	private boolean openDebug = true;
+	
+	private Object syncLocker = new Object();
 
 	// 路径到子结点之间关系，Key是全路径，值只包括结点名称
 	private Map<String, Set<String>> path2Children = new ConcurrentHashMap<>();
@@ -69,8 +71,10 @@ public class ChildrenManager {
 		Set<IChildrenListener> l = new HashSet<IChildrenListener>();
 		l.add(lis);
 		childrenListeners.put(path, l);
-		notifyChildrenAdd(lis, path);
 		watchChildren(path);
+		
+		notifyChildrenAdd(lis, path);
+		
 	}
 
 	public void removeChildrenListener(String path, IChildrenListener lis) {
@@ -100,8 +104,10 @@ public class ChildrenManager {
 	private final Watcher watcher = (WatchedEvent event) -> {
 		String path = event.getPath();
 		if (event.getType() == EventType.NodeChildrenChanged) {
-			childrenChange(path);
 			watchChildren(path);
+			synchronized(syncLocker) {
+				childrenChange(path);
+			}
 		}
 	};
 
@@ -114,6 +120,7 @@ public class ChildrenManager {
 
 		//计算增加的结点
 		for (String n : news) {
+			//logger.debug("Add: "+n);
 			// 在新的列表里面有，但老列表里面没有就是增加
 			if (!exists.contains(n)) {
 				adds.add(n);
@@ -188,10 +195,14 @@ public class ChildrenManager {
 			//当前路径下还没有子结点
 			return;
 		}
-		for (String c : this.path2Children.get(path)) {
-			String data = op.getData(path + "/" + c);
-			l.childrenChanged(IListener.ADD, path, c, data);
+		
+		synchronized(syncLocker) {
+			for (String c : this.path2Children.get(path)) {
+				String data = op.getData(path + "/" + c);
+				l.childrenChanged(IListener.ADD, path, c, data);
+			}
 		}
+		
 	}
 
 	public Set<String> getChildrenFromCache(String path) {

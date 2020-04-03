@@ -20,6 +20,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import org.jmicro.api.IListener;
 import org.jmicro.api.annotation.Component;
@@ -65,6 +66,8 @@ public class ServiceManager {
 	private Set<IServiceListener> listeners = new HashSet<>();
 	
 	private IDataOperator dataOperator;
+	
+	private ReentrantReadWriteLock rwLocker = new ReentrantReadWriteLock();
 
 	/*private INodeListener nodeListener = new INodeListener(){
 		public void nodeChanged(int type, String path,String data){
@@ -115,7 +118,7 @@ public class ServiceManager {
 			public void childrenChanged(int type,String parent, String child,String data) {
 				String p = parent+"/"+child;
 				if(IListener.ADD == type) {
-					logger.debug("Service add,path:{},data:{}",p.substring(Config.ServiceRegistDir.length()+1),data);
+					logger.debug("Service add,path:{}",p.substring(Config.ServiceRegistDir.length()+1));
 					childrenAdd(p,data);
 				}else if(IListener.REMOVE == type) {
 					logger.debug("Service remove, path:{}",p.substring(Config.ServiceRegistDir.length()+1));
@@ -128,7 +131,7 @@ public class ServiceManager {
 		refleshChildren();
 	}
 	
-	private synchronized void refleshChildren() {
+	private void refleshChildren() {
 		Set<String> children = this.dataOperator.getChildren(Config.ServiceRegistDir,true);
 		for(String child : children) {
 			String path = Config.ServiceRegistDir+"/"+child;
@@ -137,7 +140,7 @@ public class ServiceManager {
 		}
 	}
 
-	protected synchronized void childrenAdd(String path, String data) {
+	protected void childrenAdd(String path, String data) {
 		ServiceItem i = this.fromJson(data);
 		if(i == null){
 			logger.warn("Item NULL,path:{},data:{}",path,data);
@@ -166,7 +169,7 @@ public class ServiceManager {
 		
 	}
 	
-	public synchronized void addServiceListener(String srvPath,IServiceListener lis) {
+	public void addServiceListener(String srvPath,IServiceListener lis) {
 		HashMap<String,Set<IServiceListener>> serviceListeners = this.serviceListeners;
 		if(serviceListeners.containsKey(srvPath)){
 			Set<IServiceListener> l = serviceListeners.get(srvPath);
@@ -192,7 +195,7 @@ public class ServiceManager {
 		}
 	}
 	
-	public synchronized void removeServiceListener(String key, IServiceListener lis) {
+	public void removeServiceListener(String key, IServiceListener lis) {
 		HashMap<String,Set<IServiceListener>> serviceListeners = this.serviceListeners;
 		if(!serviceListeners.containsKey(key)){
 			return;
@@ -209,18 +212,26 @@ public class ServiceManager {
 		}
 	}
 	
-	public synchronized void addListener(IServiceListener lis) {
+	public void addListener(IServiceListener lis) {
 		if(!this.listeners.contains(lis)) {
 			if(!path2SrvItems.isEmpty()) {
-				for(ServiceItem si : path2SrvItems.values()) {
-					lis.serviceChanged(IServiceListener.ADD, si);
+				ReentrantReadWriteLock.ReadLock l = rwLocker.readLock();
+				try {
+					l.lock();
+					for(ServiceItem si : path2SrvItems.values()) {
+						lis.serviceChanged(IServiceListener.ADD, si);
+					}
+				} finally {
+					if(l != null) {
+						l.unlock();
+					}
 				}
 			}
 			this.listeners.add(lis);
 		}
 	}
 	
-	public synchronized void removeListener(IServiceListener lis) {
+	public void removeListener(IServiceListener lis) {
 		if(this.listeners.contains(lis)) {
 			this.listeners.remove(lis);
 		}
@@ -244,7 +255,7 @@ public class ServiceManager {
 		dataOperator.deleteNode(path);
 	}
 	
-	public synchronized ServiceItem getItem(String path) {
+	public ServiceItem getItem(String path) {
 		if(this.path2SrvItems.containsKey(path)) {
 			return this.path2SrvItems.get(path);
 		}
@@ -253,42 +264,61 @@ public class ServiceManager {
 		return this.path2SrvItems.get(path);
 	}
 	
-	public synchronized Set<ServiceItem> getServiceItems(String serviceName,String namespace,String version) {
+	public Set<ServiceItem> getServiceItems(String serviceName,String namespace,String version) {
 		if(StringUtils.isEmpty(serviceName)) {
 			throw new CommonException("Service Name cannot be null");
 		}
 		Set<ServiceItem> sets = new HashSet<>();
-		this.path2SrvItems.forEach((key,si) -> {
-			//logger.debug("prefix {}, key: {}" ,srvPrefix,key);
-			if(si.getKey().getServiceName().equals(serviceName)) {
-				if(StringUtils.isEmpty(version) && StringUtils.isEmpty(namespace)) {
-					sets.add(si);
-				}else if(UniqueServiceKey.matchVersion(version,si.getKey().getVersion())
-					&& UniqueServiceKey.matchNamespace(namespace,si.getKey().getNamespace())) {
-					sets.add(si);
-					}
-				
+		ReentrantReadWriteLock.ReadLock l = rwLocker.readLock();
+		try {
+			l.lock();
+			this.path2SrvItems.forEach((key,si) -> {
+				//logger.debug("prefix {}, key: {}" ,srvPrefix,key);
+				if(si.getKey().getServiceName().equals(serviceName)) {
+					if(StringUtils.isEmpty(version) && StringUtils.isEmpty(namespace)) {
+						sets.add(si);
+					}else if(UniqueServiceKey.matchVersion(version,si.getKey().getVersion())
+						&& UniqueServiceKey.matchNamespace(namespace,si.getKey().getNamespace())) {
+						sets.add(si);
+						}
+					
+				}
+			});
+		} finally {
+			if(l != null) {
+				l.unlock();
 			}
-		});
+		}
+		
 		return sets;
 	}
 	
-	public synchronized Set<ServiceItem> getItemsByInstanceName(String instanceName) {
+	public Set<ServiceItem> getItemsByInstanceName(String instanceName) {
 		Set<ServiceItem> sets = new HashSet<>();
 		if(StringUtils.isEmpty(instanceName)) {
 			logger.error("getItemsByInstanceName instance is NULL {} and return NULL items list",instanceName);
 			return sets;
 		}
 		instanceName = instanceName.trim();
-		for(ServiceItem i : path2SrvItems.values()) {
-			if(instanceName.equals(i.getKey().getInstanceName())) {
-				sets.add(i);
+		
+		ReentrantReadWriteLock.ReadLock l = rwLocker.readLock();
+		try {
+			l.lock();
+			for(ServiceItem i : path2SrvItems.values()) {
+				if(instanceName.equals(i.getKey().getInstanceName())) {
+					sets.add(i);
+				}
+			}
+		} finally {
+			if(l != null) {
+				l.unlock();
 			}
 		}
+		
 		return sets;
 	}
 	
-	public synchronized Set<ServiceItem> getAllItems() {
+	public Set<ServiceItem> getAllItems() {
 		Set<ServiceItem> sets = new HashSet<>();
 		sets.addAll(this.path2SrvItems.values());
 		return sets;
@@ -336,7 +366,7 @@ public class ServiceManager {
 		return item;
 	}
 	
-	private synchronized void serviceRemove(String path) {
+	private void serviceRemove(String path) {
 		ServiceItem si = null;
 		synchronized(path2Hash) {
 			this.path2Hash.remove(path);
@@ -368,9 +398,8 @@ public class ServiceManager {
 		if(isConfig) {
 			String srvPath = si.path(Config.ServiceRegistDir);
 			ServiceItem srvItem = null;
-			synchronized(path2Hash) {
-				srvItem = this.path2SrvItems.get(srvPath);
-			}
+			srvItem = this.path2SrvItems.get(srvPath);
+			
 			srvItem.formPersisItem(si);
 			if(!this.isChange(srvItem,data, srvPath)) {
 				//没有改变,接返回
@@ -406,12 +435,21 @@ public class ServiceManager {
 			return false;
 		}
 		//logger.info("Service Added: " + path.substring(Config.ServiceRegistDir.length()));
-		this.path2Hash.put(path, hash);
-		this.path2SrvItems.put(path, si);
+		
+		ReentrantReadWriteLock.WriteLock l = rwLocker.writeLock();
+		try {
+			l.lock();
+			this.path2Hash.put(path, hash);
+			this.path2SrvItems.put(path, si);
+		} finally {
+			if(l != null) {
+				l.unlock();
+			}
+		}
 		return true;
 	}
 	
-	private synchronized void refleshOneService(String path,String data) {
+	private void refleshOneService(String path,String data) {
 		
 		ServiceItem i = this.fromJson(data);
 		if(i == null){
@@ -429,7 +467,7 @@ public class ServiceManager {
 			return;
 		}
 				
-		this.path2SrvItems.put(path, i);
+		//this.path2SrvItems.put(path, i);
 		
 		if(flag) {
 			this.notifyServiceChange(IServiceListener.DATA_CHANGE, i,path);
@@ -464,5 +502,53 @@ public class ServiceManager {
 			}
 		}
 	}
+	
+	public Set<String> getAllTopic() {
+		Set<String> topics = new HashSet<>();
+		ReentrantReadWriteLock.ReadLock l = rwLocker.readLock();
+		try {
+			l.lock();
+			for(ServiceItem si : this.path2SrvItems.values()) {
+				for(ServiceMethod sm : si.getMethods()) {
+					if(StringUtils.isNotEmpty(sm.getTopic())) {
+						topics.add(sm.getTopic());
+					}
+				}
+			}
+		} finally {
+			if(l != null) {
+				l.unlock();
+			}
+		}
+		
+		return topics;
+	}
+	
+	public boolean containTopic(String topic) {
+		if(StringUtils.isEmpty(topic)) {
+			return false; 
+		}
+		
+		ReentrantReadWriteLock.ReadLock l = rwLocker.readLock();
+		try {
+			l.lock();
+			for(ServiceItem si : this.path2SrvItems.values()) {
+				for(ServiceMethod sm : si.getMethods()) {
+					if(StringUtils.isNotEmpty(sm.getTopic())) {
+						if(sm.getTopic().indexOf(topic) > -1) {
+							return true;
+						}
+					}
+				}
+			}
+		} finally {
+			if(l != null) {
+				l.unlock();
+			}
+		}
+		
+		return false;
+	}
+	
 	
 }

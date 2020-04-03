@@ -14,10 +14,9 @@
               <Input id="paramStr" :value="node.val.key.paramsStr" disabled/>
 
               <label for="topic">Topic</label>
-              <Input id="topic" v-model="node.val.topic" disabled/>
-
-              <Checkbox id="asyncable" v-model="node.val.asyncable" disabled>Asyncable</Checkbox>
-              <Checkbox v-model="node.val.needResponse">Need Response</Checkbox>
+              <Input id="topic"  class='textarea' :rows="5" :autosize="{maxRows:5,minRows: 5}"
+                     v-model="node.val.topic" type="textarea" disabled/>
+              <!--<textarea id="topic" v-model="node.val.topic" disabled/>-->
           </div>
       </Card>
 
@@ -42,7 +41,8 @@
 
               <label for="avgResponseTime">Service Average Response Time</label>
               <Input id="avgResponseTime"  v-model="node.val.avgResponseTime" placeholder="Average Response Time"/>
-
+              <Checkbox id="asyncable" v-model="node.val.asyncable" disabled>Asyncable</Checkbox>
+              <Checkbox v-model="node.val.needResponse">Need Response</Checkbox>
           </div>
       </Card>
 
@@ -79,7 +79,7 @@
           </div>
       </Card>
 
-      <Card style="width:350px;float:left;">
+      <Card style="width:350px; float:left;clear: left;">
           <p slot="title">
               <Icon type="ios-film-outline"></Icon>
               Timeout
@@ -103,7 +103,7 @@
           </div>
       </Card>
 
-      <Card style="width:350px;float:left;clear: left">
+      <Card style="width:350px;float:left;">
           <p slot="title">
               <Icon type="ios-film-outline"></Icon>
               Statis Timer
@@ -167,7 +167,7 @@
           </div>
       </Card>
 
-      <Card style="width:350px;float:left;clear: left">
+      <Card style="width:350px;float:left;">
           <p slot="title">
               <Icon type="ios-film-outline"></Icon>
               Testing

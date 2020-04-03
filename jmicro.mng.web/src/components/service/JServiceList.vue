@@ -3,7 +3,6 @@
       <div class="toolBar">
           <Dropdown @on-click="menuSelect">
               <a href="javascript:void(0)">
-                  Menu
                   <Icon type="ios-arrow-down"></Icon>
               </a>
               <DropdownMenu slot="list">
@@ -32,13 +31,20 @@
         data () {
             return {
                 services :[],
-                groupBy:GROUP_SN,
+                groupBy : GROUP_SN,
                 srcNodes:[],
             }
         },
 
         props:{
-
+            evtName:{
+                type:String,
+                default:'serviceNodeSelect'
+            },
+            slId:{
+                type:String,
+                default:''
+            }
         },
 
         created(){
@@ -50,7 +56,7 @@
         methods:{
 
             nodeSelect(evt){
-               window.jm.vue.$emit('servieNodeSelect',evt);
+               window.jm.vue.$emit(this.evtName,evt);
             },
 
             loadServices(cb) {
@@ -165,8 +171,6 @@
                     })
                 }
 
-                //delete node.methods;
-
                 return tr;
             }
 
@@ -179,9 +183,7 @@
                     this.groupBy = name;
                     this.notifyChange();
                 }
-
             }
-
         },
     }
 
@@ -228,20 +230,7 @@
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped>
   .JServiceList{
-      height:auto;
-      min-height: 500px;
-      min-width:25%;
-      max-width: 50%;
-      float: left;
-      border-right:1px solid lightgray;
-      border-top:1px solid lightgray;
-      text-align: left;
-      word-break: break-all;
-  }
 
-  .toolBar{
-      height: 31px;
-      background-color: darkgray;
   }
 
 </style>

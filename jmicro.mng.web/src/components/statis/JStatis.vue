@@ -1,15 +1,11 @@
 <template>
   <div>
-   <!-- <div class="serverListContainer">
-        <JServiceList></JServiceList>
-    </div>-->
-
-    <JServiceEditor dataId="JServiceEditorId" :allow-many=true ></JServiceEditor>
+  <JStatisServiceView dataId="JStatisServiceView" :allow-many=true ></JStatisServiceView>
 
   <div :style="drawerBtnStyle" class="drawerBtnStatu" @mouseenter="openDrawer()"></div>
   <Drawer :closable="false" placement="left" v-model="drawerStatus" :transfer="true"
           :draggable="true" :scrollable="true" width="50">
-      <JServiceList evt-name="serviceNodeSelect"></JServiceList>
+      <JServiceList slId="statisSrvListId" evt-name="statisNodeSelect"></JServiceList>
   </Drawer>
 
   </div>
@@ -17,13 +13,13 @@
 
 <script>
 
-    import JServiceList from './JServiceList.vue'
-    import JServiceEditor from './JServiceEditor.vue'
+    import JServiceList from '../service/JServiceList.vue'
+    import JStatisServiceView from './JStatisServiceView.vue'
 
 export default {
-    name: 'JService',
+    name: 'JStatis',
     components: {
-        JServiceEditor,
+        JStatisServiceView,
         JServiceList,
     },
     data() {

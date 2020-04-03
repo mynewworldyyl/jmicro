@@ -31,7 +31,7 @@ public class SimpleRpcImpl implements ISimpleRpc {
 	)
 	public String hello(String name) {
 		SF.doBussinessLog(MonitorConstant.LOG_DEBUG,SimpleRpcImpl.class,null, name);
-		System.out.println("Server hello: " +name);
+		//System.out.println("Server hello: " +name);
 		return "Server say hello to: "+name;
 	}
 

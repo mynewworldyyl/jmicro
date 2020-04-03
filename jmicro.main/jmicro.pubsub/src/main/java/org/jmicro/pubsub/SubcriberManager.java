@@ -16,6 +16,7 @@
  */
 package org.jmicro.pubsub;
 
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Queue;
@@ -116,6 +117,7 @@ class SubcriberManager {
 		return topic2Callbacks.keySet();
 	}
 
+	//有可能是增加了主题，也有可能是减少了主题
 	private void serviceDataChange(ServiceItem item) {
 		if (item == null || item.getMethods() == null) {
 			return;
@@ -123,27 +125,24 @@ class SubcriberManager {
 
 		for (ServiceMethod sm : item.getMethods()) {
 			// 接收异步消息的方法也要注册
-			if (StringUtils.isEmpty(sm.getTopic())) {
+			/*if (StringUtils.isEmpty(sm.getTopic())) {
 				continue;
-			}
+			}*/
 
 			String k = sm.getKey().toKey(false, false, false);
 
-			if (callbacks.containsKey(k)) {
-				// 服务名,版本,名称空 相同即为同一个服务,只需要注册一次即可
-				logger.warn("{} have been in the callback list", k);
-				continue;
-			}
+			if (callbacks.containsKey(k) || !callbacks.containsKey(k) 
+					&& StringUtils.isNotEmpty(sm.getTopic())) {
+				this.waitingLoadClazz.offer(new SubcribeItem(SubcribeItem.TYPE_UPDATE, sm.getTopic(), sm, null));
 
-			this.waitingLoadClazz.offer(new SubcribeItem(SubcribeItem.TYPE_UPDATE, sm.getTopic(), sm, null));
+				synchronized (loadingLock) {
+					loadingLock.notify();
+				}
 
-			synchronized (loadingLock) {
-				loadingLock.notify();
-			}
-
-			if (openDebug) {
-				logger.debug("Got ont CB: {}", sm.getKey().toKey(true, true, true));
-			}
+				if (openDebug) {
+					logger.debug("Got ont CB: {}", sm.getKey().toKey(true, true, true));
+				}
+			}	
 		}
 	}
 
@@ -163,7 +162,7 @@ class SubcriberManager {
 		}
 
 		for (ServiceMethod sm : item.getMethods()) {
-			// 接收异步消息的方法也要注册
+			//接收异步消息的方法也要注册
 			if (StringUtils.isEmpty(sm.getTopic())) {
 				continue;
 			}
@@ -194,20 +193,34 @@ class SubcriberManager {
 
 	boolean subcribe(String topic, ServiceMethod srvMethod, Map<String, String> context) {
 
-		// doSaveSubscribe(null, srvMethod);
+		if(StringUtils.isEmpty(topic)) {
+			return false;
+		}
 
 		String k = srvMethod.getKey().toKey(false, false, false);
+		
+		ISubCallback cb = callbacks.get(k);
+		String[] ts = topic.split(Constants.TOPIC_SEPERATOR);
+		
+		boolean flag = false;
+		for(String t : ts) {
+			if(this.topic2Callbacks.get(t) == null || !this.topic2Callbacks.get(t).contains(cb)) {
+				//此主题没有注册，进入注册流程
+				flag = true;
+				break;
+			}
+		}
 
-		if (callbacks.containsKey(k)) {
-			// 服务名,版本,名称空 相同即为同一个服务,只需要注册一次即可
-			logger.warn("{} have been in the callback list", k);
+		if (flag) {
+			this.waitingLoadClazz.offer(new SubcribeItem(SubcribeItem.TYPE_SUB, topic, srvMethod, context));
+			synchronized (loadingLock) {
+				loadingLock.notify();
+			}
 			return true;
 		}
-		this.waitingLoadClazz.offer(new SubcribeItem(SubcribeItem.TYPE_SUB, topic, srvMethod, context));
-		synchronized (loadingLock) {
-			loadingLock.notify();
-		}
-		return true;
+		
+		return false;
+		
 	}
 
 	boolean unsubcribe(String topic, ServiceMethod srvMethod, Map<String, String> context) {
@@ -224,78 +237,188 @@ class SubcriberManager {
 	}
 
 	private boolean doUpdateSubscribe(SubcribeItem sui) {
-		return doSubscribe(sui);
+
+		String k = sui.sm.getKey().toKey(false, false, false);
+		
+		SubCallbackImpl cb = (SubCallbackImpl)callbacks.get(k);
+		
+		if(cb == null) {
+
+			Set<ServiceItem> sis = registry.getServices(sui.sm.getKey().getServiceName(), sui.sm.getKey().getNamespace(),
+					sui.sm.getKey().getVersion());
+
+			if (sis == null || sis.isEmpty()) {
+				logger.warn("Service Item not found {}", k);
+				return false;
+			}
+
+			ServiceItem sitem = null;
+			for (ServiceItem si : sis) {
+				if (si.getKey().getInstanceName().equals(sui.sm.getKey().getInstanceName())) {
+					sitem = si;
+					break;
+				}
+			}
+
+			if (sitem == null) {
+				logger.warn("Service Item for classloader server not found {}", sui.sm.getKey().toKey(true, true, true));
+				return false;
+			}
+
+			Object srv = null;
+			try {
+				PubSubServer.class.getClassLoader().loadClass(sui.sm.getKey().getUsk().getServiceName());
+				srv = of.getRemoteServie(sitem, null, null);
+			} catch (ClassNotFoundException e) {
+				try {
+					// JMicroContext.get().setParam(Constants.SERVICE_SPECIFY_ITEM_KEY, sitem);
+					JMicroContext.get().setParam(Constants.DIRECT_SERVICE_ITEM, sitem);
+					Class<?> cls = this.cl.loadClass(sui.sm.getKey().getUsk().getServiceName());
+					if (cls != null) {
+						srv = of.getRemoteServie(sitem, this.cl, null);
+					}
+				} catch (ClassNotFoundException e1) {
+					logger.warn("Service {} not found.{}", k, e1);
+					return false;
+				}
+			}
+
+			if (srv == null) {
+				logger.warn("Servive [" + k + "] not found");
+				return false;
+			}
+			
+			cb = new SubCallbackImpl(sui.sm, srv, this.of);
+
+			callbacks.put(k, cb);
+		
+		}
+		
+		String[] curTs = null;
+		if(StringUtils.isNotEmpty(sui.topic)) {
+			curTs = sui.topic.split(Constants.TOPIC_SEPERATOR);
+		}
+		
+		Set<String> oldTs = new HashSet<>();
+		for(Map.Entry<String, Set<ISubCallback>> e: this.topic2Callbacks.entrySet()) {
+			//查找出当前服务方法所订阅的全部主题
+			if(e.getValue().contains(cb)) {
+				oldTs.add(e.getKey());
+			}
+		}
+		
+		Set<String> newTs = new HashSet<>();
+		if(curTs != null) {
+			newTs.addAll(Arrays.asList(curTs));
+		}
+		
+		//newTs剩下的主题就是新增的
+		newTs.removeAll(oldTs);
+	    if(!newTs.isEmpty()) {
+	    	for(String t : newTs) {
+				if (!topic2Callbacks.containsKey(t)) {
+					topic2Callbacks.put(t, new HashSet<ISubCallback>());
+				}
+				if(!topic2Callbacks.get(t).contains(cb)) {
+					topic2Callbacks.get(t).add(cb);
+					if (openDebug) {
+						logger.debug("subcribe:{},topic:{}", k, t);
+					}
+				}
+			}
+	    }
+	    
+	    newTs.clear();
+	    if(curTs != null) {
+	    	newTs.addAll(Arrays.asList(curTs));
+	    }
+	    
+	    //oldTs剩下的主题就是要删除的主题
+	    oldTs.removeAll(newTs);
+
+	    for(String t : oldTs) {
+			if (!topic2Callbacks.containsKey(t)) {
+				continue;
+			}
+			if(topic2Callbacks.get(t).contains(cb)) {
+				topic2Callbacks.get(t).remove(cb);
+				if (openDebug) {
+					logger.debug("unsubcribe:{},topic:{}", k, t);
+				}
+			}
+		}
+
+		return true;
+	
 	}
 
 	private boolean doSubscribe(SubcribeItem sui) {
 
 		String k = sui.sm.getKey().toKey(false, false, false);
+		
+		SubCallbackImpl cb = (SubCallbackImpl)callbacks.get(k);
+		if (cb == null) {
+			Set<ServiceItem> sis = registry.getServices(sui.sm.getKey().getServiceName(), sui.sm.getKey().getNamespace(),
+					sui.sm.getKey().getVersion());
 
-		if (callbacks.containsKey(k)) {
-			logger.warn("{} have been in the callback list", k);
-			return true;
-		}
-
-		Set<ServiceItem> sis = registry.getServices(sui.sm.getKey().getServiceName(), sui.sm.getKey().getNamespace(),
-				sui.sm.getKey().getVersion());
-
-		if (sis == null || sis.isEmpty()) {
-			logger.warn("Service Item not found {}", k);
-			return false;
-		}
-
-		ServiceItem sitem = null;
-		for (ServiceItem si : sis) {
-			if (si.getKey().getInstanceName().equals(sui.sm.getKey().getInstanceName())) {
-				sitem = si;
-				break;
-			}
-		}
-
-		if (sitem == null) {
-			logger.warn("Service Item for classloader server not found {}", sui.sm.getKey().toKey(true, true, true));
-			return false;
-		}
-
-		Object srv = null;
-		try {
-			PubSubServer.class.getClassLoader().loadClass(sui.sm.getKey().getUsk().getServiceName());
-			srv = of.getRemoteServie(sitem, null, null);
-		} catch (ClassNotFoundException e) {
-			try {
-				// JMicroContext.get().setParam(Constants.SERVICE_SPECIFY_ITEM_KEY, sitem);
-				JMicroContext.get().setParam(Constants.DIRECT_SERVICE_ITEM, sitem);
-				Class<?> cls = this.cl.loadClass(sui.sm.getKey().getUsk().getServiceName());
-				if (cls != null) {
-					srv = of.getRemoteServie(sitem, this.cl, null);
-				}
-			} catch (ClassNotFoundException e1) {
-				logger.warn("Service {} not found.{}", k, e1);
+			if (sis == null || sis.isEmpty()) {
+				logger.warn("Service Item not found {}", k);
 				return false;
 			}
+
+			ServiceItem sitem = null;
+			for (ServiceItem si : sis) {
+				if (si.getKey().getInstanceName().equals(sui.sm.getKey().getInstanceName())) {
+					sitem = si;
+					break;
+				}
+			}
+
+			if (sitem == null) {
+				logger.warn("Service Item for classloader server not found {}", sui.sm.getKey().toKey(true, true, true));
+				return false;
+			}
+
+			Object srv = null;
+			try {
+				PubSubServer.class.getClassLoader().loadClass(sui.sm.getKey().getUsk().getServiceName());
+				srv = of.getRemoteServie(sitem, null, null);
+			} catch (ClassNotFoundException e) {
+				try {
+					// JMicroContext.get().setParam(Constants.SERVICE_SPECIFY_ITEM_KEY, sitem);
+					JMicroContext.get().setParam(Constants.DIRECT_SERVICE_ITEM, sitem);
+					Class<?> cls = this.cl.loadClass(sui.sm.getKey().getUsk().getServiceName());
+					if (cls != null) {
+						srv = of.getRemoteServie(sitem, this.cl, null);
+					}
+				} catch (ClassNotFoundException e1) {
+					logger.warn("Service {} not found.{}", k, e1);
+					return false;
+				}
+			}
+
+			if (srv == null) {
+				logger.warn("Servive [" + k + "] not found");
+				return false;
+			}
+			
+			cb = new SubCallbackImpl(sui.sm, srv, this.of);
+
+			callbacks.put(k, cb);
 		}
-
-		if (srv == null) {
-			logger.warn("Servive [" + k + "] not found");
-			return false;
+		
+		String[] ts = sui.topic.split(Constants.TOPIC_SEPERATOR);
+		for(String t : ts) {
+			if (!topic2Callbacks.containsKey(t)) {
+				topic2Callbacks.put(t, new HashSet<ISubCallback>());
+			}
+			if(!topic2Callbacks.get(t).contains(cb)) {
+				topic2Callbacks.get(t).add(cb);
+			}
+			if (openDebug) {
+				logger.debug("Subcribe:{},topic:{}", k, t);
+			}
 		}
-
-		SubCallbackImpl cb = new SubCallbackImpl(sui.sm, srv, this.of);
-
-		callbacks.put(k, cb);
-
-		// sui.topic = sui.topic.intern();
-		// synchronized(sui.topic) {
-		if (!topic2Callbacks.containsKey(sui.topic)) {
-			topic2Callbacks.put(sui.topic, new HashSet<ISubCallback>());
-		}
-		topic2Callbacks.get(sui.topic).add(cb);
-		// }
-
-		if (openDebug) {
-			logger.debug("Subcribe:{},topic:{}", k, sui.topic);
-		}
-
 		return true;
 	}
 
@@ -305,6 +428,7 @@ class SubcriberManager {
 
 		if (sis == null || sis.isEmpty()) {
 
+			//已经没有服务在线，将注册的回调删除
 			String k = key.toKey(false, false, false);
 
 			if (openDebug) {
@@ -312,10 +436,15 @@ class SubcriberManager {
 			}
 
 			ISubCallback cb = callbacks.remove(k);
-			Set<ISubCallback> q = topic2Callbacks.get(topic);
-			if (q != null) {
-				q.remove(cb);
+			
+			String[] ts = topic.split(Constants.TOPIC_SEPERATOR);
+			for(String t : ts) {
+				Set<ISubCallback> q = topic2Callbacks.get(t);
+				if (q != null) {
+					q.remove(cb);
+				}
 			}
+			
 			return cb != null;
 		}
 
@@ -333,17 +462,8 @@ class SubcriberManager {
 			super("JMicro-" + Config.getInstanceName() + "-ClassLoadingWorker");
 		}
 
-		public void submit(Runnable r) {
-			tasks.offer(r);
-			synchronized (loadingLock) {
-				loadingLock.notify();
-				;
-			}
-		}
-
 		public void run() {
 			Set<SubcribeItem> failItems = new HashSet<>();
-			// Set<SendItem> failPsDatas = new HashSet<>();
 			this.setContextClassLoader(cl);
 			while (true) {
 				try {

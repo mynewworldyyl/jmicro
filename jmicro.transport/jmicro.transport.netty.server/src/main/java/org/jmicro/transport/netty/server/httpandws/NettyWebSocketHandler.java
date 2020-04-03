@@ -24,6 +24,7 @@ import org.jmicro.api.codec.ICodecFactory;
 import org.jmicro.api.idgenerator.ComponentIdServer;
 import org.jmicro.api.monitor.IMonitorDataSubmiter;
 import org.jmicro.api.net.IMessageReceiver;
+import org.jmicro.api.net.ISession;
 import org.jmicro.api.net.Message;
 import org.jmicro.common.Constants;
 import org.jmicro.common.util.JsonUtils;
@@ -91,13 +92,21 @@ public class NettyWebSocketHandler  extends SimpleChannelInboundHandler<TextWebS
     
     @Override
     public void handlerRemoved(ChannelHandlerContext ctx) throws Exception {
+    	ISession s = ctx.channel().attr(sessionKey).get();
     	ctx.channel().attr(sessionKey).set(null);
+    	if( s != null) {
+    		s.close(true);
+    	}
     }
     
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
     	logger.error("exceptionCaught",cause);
+    	ISession s = ctx.channel().attr(sessionKey).get();
     	ctx.channel().attr(sessionKey).set(null);
-        ctx.channel().attr(sessionKey).get().close(true);
+    	if( s != null) {
+    		s.close(true);
+    	}
     }
+
 }

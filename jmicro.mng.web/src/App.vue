@@ -7,7 +7,7 @@
               SERVICE
           </Menu-item>
           <Menu-item name="config">
-              <Icon type="ios-people"></Icon>
+              <Icon type="ios-construct"></Icon>
               CONFIG
           </Menu-item>
 
@@ -16,25 +16,42 @@
               ROUTER
           </Menu-item>
 
-          <Menu-item name="statis">
-              <Icon type="ios-people"></Icon>
+          <Menu-item name="statisService">
+              <Icon type="ios-stats" />
               STATIS
           </Menu-item>
 
+          <!--
+          <Submenu name="statisService">
+             <template slot="title">
+                  <Icon type="ios-stats" />
+                  STATIS
+              </template>
+              <MenuItem name="statisService">SERVICE</MenuItem>
+              <MenuItem name="instance">INSTANCE</MenuItem>
+              <MenuItem name="server">SERVER</MenuItem>
+          </Submenu>
+-->
           <Menu-item name="log">
-              <Icon type="ios-people"></Icon>
+              <Icon type="ios-filing"></Icon>
               LOG
           </Menu-item>
-          
+
           <Menu-item name="shell">
-              <Icon type="ios-people"></Icon>
+              <Icon type="ios-cog"></Icon>
               SHELL
           </Menu-item>
 
-          <Menu-item name="others">
-              <Icon type="ios-people"></Icon>
-              OTHERS
-          </Menu-item>
+          <Submenu name="o">
+              <template slot="title">
+                  <Icon type="ios-analytics" />
+                  OTHERS
+              </template>
+              <MenuItem name="help">HELP</MenuItem>
+              <MenuItem name="about">ABOUT</MenuItem>
+              <MenuItem name="contact">CONTACT ME</MenuItem>
+          </Submenu>
+
       </Menu>
 
       <!-- route outlet -->
@@ -50,9 +67,19 @@ export default {
   components: {
   },
 
+    data() {
+      return {
+          curRouter:null,
+      }
+    },
+
   methods:{
       toRouter(key) {
-        this.$router.push('/'+key);
+          if(key == 'o' || key == this.curRouter) {
+              return;
+          }
+          this.curRouter = key;
+          this.$router.push('/'+key);
       }
   }
 }

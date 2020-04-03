@@ -275,8 +275,22 @@ class ClientServiceProxyManager {
 							sm.setTopic(mkey);
 							updates.add(si);
 							flag = true;
-						}else if(sm.getTopic().equals(mkey)) {
-							flag = true;
+						}else {
+							boolean f = false;
+							String[] ts = sm.getTopic().split(";");
+							for(String t : ts) {
+								if(mkey.equals(t)) {
+									f = true;
+									break;
+								}
+							}
+							
+							if(!f) {
+								sm.setTopic(sm.getTopic()+";"+mkey);
+								updates.add(si);
+								flag = true;
+							}
+							
 						}
 					}
 				}

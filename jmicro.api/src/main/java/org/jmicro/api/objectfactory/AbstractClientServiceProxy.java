@@ -90,7 +90,7 @@ public abstract class AbstractClientServiceProxy implements InvocationHandler,IS
 		
 		ServiceItem si = this.item;
 		if(si == null) {
-			if(isUsable()) {
+			if(!isUsable()) {
 				String msg = "Service Item is NULL when call method ["
 						+method.getName()+"] with params ["+ UniqueServiceMethodKey.paramsStr(args) +"] proxy ["
 						+this.getClass().getName()+"]";

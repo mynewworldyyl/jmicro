@@ -160,7 +160,8 @@ public final class MonitorConstant {
 	static {
 		Field[] fs = MonitorConstant.class.getDeclaredFields();
 		for(Field f: fs){
-			if(!Modifier.isStatic(f.getModifiers()) || !Modifier.isPrivate(f.getModifiers())){
+			if(!Modifier.isStatic(f.getModifiers()) || !Modifier.isPrivate(f.getModifiers())
+					|| f.getType() != Short.TYPE ){
 				continue;
 			}
 			try {

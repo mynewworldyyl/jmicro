@@ -27,13 +27,13 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.RejectedExecutionHandler;
 import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.jmicro.api.JMicro;
 import org.jmicro.api.annotation.Cfg;
 import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.Inject;
+import org.jmicro.api.annotation.SMethod;
 import org.jmicro.api.annotation.Service;
 import org.jmicro.api.classloader.RpcClassLoader;
 import org.jmicro.api.config.Config;
@@ -123,9 +123,9 @@ public class PubSubServer implements IInternalSubRpc{
 	
 	private ItemStorage<PSData> cacheStorage;
 	
-	private AtomicBoolean discard = new AtomicBoolean(false);
-	
 	private Map<String,List<PSData>> sendItems = new HashMap<>();
+	
+	private Map<String,List<PSData>> acceptItems = new HashMap<>();
 	
 	private Map<String,Long> lastSendTimes = new HashMap<>();
 	
@@ -139,10 +139,12 @@ public class PubSubServer implements IInternalSubRpc{
 	}
 	
 	@Override
+	@SMethod(timeout=5000,retryCnt=0)
 	public int publishItem(PSData item) {
 		return publishItems(item.getTopic(),new PSData[]{item});
 	}
 	
+	@SMethod(timeout=5000,retryCnt=0)
 	public int publishString(String topic,String content) {
 		if(!this.subManager.isValidTopic(topic)) {
 			return PubSubManager.PUB_TOPIC_NOT_VALID;
@@ -158,6 +160,7 @@ public class PubSubServer implements IInternalSubRpc{
 	 * 同一主题的多个消息
 	 */
 	@Override
+	@SMethod(timeout=5000,retryCnt=0)
 	public int publishItems(String topic,PSData[] items) {
 		if(!this.subManager.isValidTopic(topic)) {
 			return PubSubManager.PUB_TOPIC_NOT_VALID;
@@ -174,24 +177,20 @@ public class PubSubServer implements IInternalSubRpc{
 		}
 		
 		if(size < this.maxMemoryItem) {
-			List<PSData> l = this.sendItems.get(topic);
+			List<PSData> l = this.acceptItems.get(topic);
 			if(l == null) {
-				synchronized(syncLocker) {
-					 l = this.sendItems.get(topic);
-					 if(l == null) {
-						 this.sendItems.put(topic, l = new ArrayList<PSData>());
-						 lastSendTimes.put(topic, System.currentTimeMillis());
-					 }
-				}
+				 l = this.acceptItems.get(topic);
+				 if(l == null) {
+					 this.acceptItems.put(topic, l = new ArrayList<PSData>());
+					 lastSendTimes.put(topic, System.currentTimeMillis());
+				 }
 			}
-			
-			synchronized(l) {
-				if(openDebug) {
-					//logger.info("Client publish topic:{}",topic);
-				}
-				l.addAll(Arrays.asList(items));
-				memoryItemsCnt.addAndGet(items.length);
+			if(openDebug) {
+				//logger.info("Client publish topic:{}",topic);
 			}
+			l.addAll(Arrays.asList(items));
+			memoryItemsCnt.addAndGet(items.length);
+		
 		} else {
 			this.cacheStorage.push(topic,items);
 			cacheItemsCnt.addAndGet(items.length);
@@ -228,20 +227,20 @@ public class PubSubServer implements IInternalSubRpc{
 		//this.sendItems = new ConcurrentLinkedQueue<>(new HashSet<>(maxFailItemCount));
 		
 		ExecutorConfig config = new ExecutorConfig();
-		config.setMsCoreSize(1);
-		config.setMsMaxSize(5);
-		config.setTaskQueueSize(1000);
+		config.setMsCoreSize(5);
+		config.setMsMaxSize(20);
+		config.setTaskQueueSize(10000);
 		config.setThreadNamePrefix("PublishExecurot");
 		config.setRejectedExecutionHandler(new PubsubServerAbortPolicy());
 		executor = ExecutorFactory.createExecutor(config);
 		
-		Set<String> children = this.dataOp.getChildren(Config.PubSubDir,true);
+		/*Set<String> children = this.dataOp.getChildren(Config.PubSubDir,true);
 		for(String t : children) {
 			Set<String>  subs = this.dataOp.getChildren(Config.PubSubDir+"/"+t,true);
 			for(String sub : subs) {
 				this.dataOp.deleteNode(Config.PubSubDir+"/"+t+"/"+sub);
 			}
-		}
+		}*/
 		
 		Thread checkThread = new Thread(this::doCheck,"JMicro-"+Config.getInstanceName()+"-PubSubServer");
 		checkThread.setDaemon(true);
@@ -306,41 +305,44 @@ public class PubSubServer implements IInternalSubRpc{
 				
 				int sendSize = 0;
 
-				for (Map.Entry<String, List<PSData>> e : sendItems.entrySet()) {
+				synchronized(syncLocker) {
+					for (Map.Entry<String, List<PSData>> e : sendItems.entrySet()) {
 
-					if (e.getValue().isEmpty()) {
-						//无消息要发送
-						continue;
-					}
-					
-					long lastSendTime = lastSendTimes.get(e.getKey());
-					if(e.getValue().size() < batchSize && System.currentTimeMillis() - lastSendTime < sendInterval) {
-						//消息数量及距上次发送时间间隔都不到，直接路过
-						continue;
-					}
-
-					//更新发送时间
-					lastSendTimes.put(e.getKey(), System.currentTimeMillis());
-					
-					List<PSData> ll = e.getValue();
-
-					int size = ll.size();
-					if (size > batchSize) {
-						// 每批次最多能同时发送batchSize个消息
-						size = batchSize;
-					}
-
-					PSData[] items = new PSData[size];
-					synchronized (ll) {
-						int i = 0;
-						for (Iterator<PSData> ite = ll.iterator(); ite.hasNext() && i < size; i++) {
-							items[i] = ite.next();
-							ite.remove();
+						if (e.getValue().isEmpty()) {
+							//无消息要发送
+							continue;
 						}
+						
+						long lastSendTime = lastSendTimes.get(e.getKey());
+						if(e.getValue().size() < batchSize && System.currentTimeMillis() - lastSendTime < sendInterval) {
+							//消息数量及距上次发送时间间隔都不到，直接路过
+							continue;
+						}
+
+						//更新发送时间
+						lastSendTimes.put(e.getKey(), System.currentTimeMillis());
+						
+						List<PSData> ll = e.getValue();
+
+						int size = ll.size();
+						if (size > batchSize) {
+							// 每批次最多能同时发送batchSize个消息
+							size = batchSize;
+						}
+
+						PSData[] items = new PSData[size];
+						synchronized (ll) {
+							int i = 0;
+							for (Iterator<PSData> ite = ll.iterator(); ite.hasNext() && i < size; i++) {
+								items[i] = ite.next();
+								ite.remove();
+							}
+						}
+						sendSize += items.length;
+						this.executor.submit(new Worker(items, e.getKey()));
 					}
-					sendSize += items.length;
-					this.executor.submit(new Worker(items, e.getKey()));
 				}
+				
 				
 				if(sendSize == 0 && memoryItemsCnt.get()/batchSize > 5) {
 					String msg = "Pubsub server got in exception statu: memory size: "+memoryItemsCnt.get()+

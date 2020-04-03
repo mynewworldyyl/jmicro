@@ -18,17 +18,17 @@ package org.jmicro.api.net;
 
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Queue;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.jmicro.api.JMicroContext;
 import org.jmicro.api.monitor.MonitorConstant;
-import org.jmicro.api.monitor.SF;
 import org.jmicro.api.monitor.ServiceCounter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -44,6 +44,8 @@ public abstract class AbstractSession implements ISession{
 	private static final Logger logger = LoggerFactory.getLogger(AbstractSession.class);
 	
 	private long sessionId = -1L;
+	
+	private Set<ISessionListener> listeners = new HashSet<>();
 	
 	private Map<String,Object> params = new ConcurrentHashMap<String,Object>();
 	
@@ -241,6 +243,31 @@ public abstract class AbstractSession implements ISession{
 	}
 	
 	@Override
+	public void addSessionListener(ISessionListener lis) {
+		if(lis != null) {
+			listeners.add(lis);
+		}
+	}
+
+	@Override
+	public void removeSessionListener(ISessionListener lis) {
+		if(lis != null) {
+			listeners.remove(lis);
+		}
+	}
+	
+    public void notifySessionEvent(int eventType) {
+    	if(listeners == null || listeners.isEmpty()) {
+    		return;
+    	}
+    	for(ISessionListener l : listeners) {
+    		if(l != null) {
+    			l.onEvent(eventType, this);
+    		}
+    	}
+    }
+
+	@Override
 	public ServiceCounter getServiceCounter() {
 		return this.counter;
 	}
@@ -344,6 +371,7 @@ public abstract class AbstractSession implements ISession{
 	@Override
 	public void close(boolean flag) {
 		this.isClose = true;
+		this.notifySessionEvent(ISession.EVENT_TYPE_CLOSE);		
 		params.clear();
 		this.sessionId=-1L;
 		synchronized (worker) {

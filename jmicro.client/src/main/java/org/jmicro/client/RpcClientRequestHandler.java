@@ -207,7 +207,11 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
 		}
 		
 		//异步后,就不一定是本实例接收到此RPC调用了
-		data.setId(idGenerator.getIntId(PSData.class));
+		Integer msgId = idGenerator.getIntId(PSData.class);
+		if(msgId == null) {
+			throw new CommonException("Fail to get msg ID");
+		}
+		data.setId(msgId);
 		long id = pubsubManager.publish(data);
 		if(openDebug) {
 			logger.info("Do async req:"+id+",Method:"+req.getMethod()+",Service:" + req.getServiceName()+", Namespace:"+req.getNamespace());

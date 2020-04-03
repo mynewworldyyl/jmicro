@@ -292,6 +292,7 @@ public class SimpleObjectFactory implements IObjectFactory {
     		 notifyPreInitPostListener(obj,cfg);
         	 doInit(obj);
     		 notifyAfterInitPostListener(obj,cfg);
+    		 doReady(obj);
     	 }
 	}
      
@@ -426,6 +427,8 @@ public class SimpleObjectFactory implements IObjectFactory {
 			
 			//组件初始化完成
 			notifyAfterInitPostListener0(lobjs,cfg,systemObjs);
+			
+			doReady0(lobjs,systemObjs);
 		}
 		
 		ClassLoader oldCl = Thread.currentThread().getContextClassLoader();
@@ -505,11 +508,31 @@ public class SimpleObjectFactory implements IObjectFactory {
 			if(systemObjs.contains(o) || haveInits.contains(o)) {
 				continue;
 			}
+			
 			haveInits.add(o);
 			doInit(o);
 		}
+	}
+	
+	private void doReady0(List<Object> lobjs, Set<Object> systemObjs) {
+		Set<Object> haveReadies = new HashSet<>();
+		for(int i =0; i < lobjs.size(); i++){
+			Object o = lobjs.get(i);
+			
+			 if(o instanceof ProxyObject){
+	    		continue;
+	    	 }
+			 
+			if(systemObjs.contains(o) || haveReadies.contains(o)) {
+				continue;
+			}
+			
+			haveReadies.add(o);
+			doReady(o);
+		}
 		
 	}
+
 
 	private void injectDepependencies0(List<Object> lobjs, Config cfg, Set<Object> systemObjs) {
 		Set<Object> dones = new HashSet<>();
@@ -1309,6 +1332,34 @@ public class SimpleObjectFactory implements IObjectFactory {
 				initMethod1.invoke(obj, new Object[]{});
 			}else if(initMethod2 != null){
 				initMethod2.invoke(obj, new Object[]{});
+			}
+		} catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
+			logger.error("Component init error:"+obj.getClass().getName(),e);
+		}
+	}
+	
+	private void doReady(Object obj) {
+		Class<?> tc = ProxyObject.getTargetCls(obj.getClass());
+		Method readyMethod1 = null;
+		Method readyMethod2 = null;
+		List<Method> methods = new ArrayList<>();
+		Utils.getIns().getMethods(methods, tc);
+		for(Method m : methods ) {
+			if(m.isAnnotationPresent(JMethod.class)) {
+				JMethod jm = m.getAnnotation(JMethod.class);
+				if("ready".equals(jm.value())) {
+					readyMethod1 = m;
+					break;
+				}
+			}else if(m.getName().equals("ready")) {
+				readyMethod2 = m;
+			}
+		}
+		try {
+			if(readyMethod1 != null) {
+				readyMethod1.invoke(obj, new Object[]{});
+			}else if(readyMethod2 != null){
+				readyMethod2.invoke(obj, new Object[]{});
 			}
 		} catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
 			logger.error("Component init error:"+obj.getClass().getName(),e);

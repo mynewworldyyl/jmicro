@@ -117,6 +117,7 @@ public class NettySocketHandler extends ChannelInboundHandlerAdapter {
     	session.setDumpUpStream(this.dumpUpStream);
     	session.init();
     	ctx.channel().attr(sessionKey).set(session);
+    	
     }
     
     @Override
@@ -126,6 +127,7 @@ public class NettySocketHandler extends ChannelInboundHandlerAdapter {
     		logger.debug("handlerRemoved: {}",ctx);
     	}
     	ctx.channel().attr(sessionKey).remove();
+    	
     }
     
     @Override

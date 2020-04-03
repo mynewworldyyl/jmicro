@@ -1,12 +1,17 @@
 window.jm = window.jm || {};
 
 let ROOT = '/jmicro/JMICRO';
+let MNG = 'mng';
 
 jm.mng = {
 
     ROUTER_ROOT : ROOT + '/routeRules',
     CONFIG_ROOT : ROOT,
     RULE_ID: 'org.jmicro.api.route.RouteRule',
+
+    cache:{
+
+    },
 
     srv : {
         getServices: function (){
@@ -40,7 +45,7 @@ jm.mng = {
         },
 
         sn:'org.jmicro.api.mng.IManageService',
-        ns:'manageService',
+        ns : MNG,
         v:'0.0.1',
     },
 
@@ -84,12 +89,190 @@ jm.mng = {
         },
 
         sn:'org.jmicro.api.mng.IConfigManager',
-        ns:'configManager', v:'0.0.1',
-
-
+        ns: MNG,
+        v:'0.0.1',
     },
 
+    ps : {
 
+        listeners:{},
+
+        onMsg : function(msg) {
+            let cbs = this.listeners[msg.topic];
+            for(let i = 0; i < cbs.length; i++){
+                if(!!cbs[i]) {
+                    cbs[i](msg);
+                }
+            }
+        },
+
+        subscribe: function (topic,ctx,callback){
+
+            if(this.listeners[topic] && this.listeners[topic].length > 0) {
+                let cs = this.listeners[topic];
+                callback.id = 0; //已经由别的接口订阅此主题，现在只需要注入回调即可
+                let flag = false;
+                //排除同一个回调方法重复订阅同一主题的情况
+                for(let i = 0; i < cs.length; i++) {
+                    if(cs[i] == callback) {
+                        flag = true;
+                        break;
+                    }
+                }
+                if(!flag) {
+                    cs.push(callback);
+                }
+
+                return new Promise(function(reso){
+                    reso(0);
+                });
+            }
+
+            let req =  this.__ccreq();
+            req.method = 'subscribe';
+            req.args = [topic, ctx | {}];
+            if(!this.listeners[topic]) {
+                this.listeners[topic] = [];
+            }
+
+            let self = this;
+            return new Promise(function(reso,reje){
+                jm.rpc.callRpc(req)
+                    .then((id)=>{
+                        if(id > 0 && !!callback) {
+                            callback.id = id;
+                            self.listeners[topic].push(callback);
+                        }
+                        reso(id);
+                    }).catch(err =>{
+                        reje(err);
+                });
+            });
+        },
+
+        unsubscribe: function (topic,callback){
+            let cs = this.listeners[topic];
+            if(cs && cs.length > 0) {
+                let idx = -1;
+                for(let i =0; i < cs.length; i++) {
+                    if(cs[i] == callback) {
+                        idx = i;
+                        break;
+                    }
+                }
+                if(idx >= 0) {
+                    cs.splice(idx,1);
+                }
+            }
+
+            if(!!cs && cs.length > 0) {
+                return new Promise(function(reso,reje){
+                    reso(0);
+                });
+            }
+
+            let req =  this.__ccreq();
+            req.method = 'unsubscribe';
+            req.args = [callback.id];
+            return new Promise(function(reso,reje){
+                jm.rpc.callRpc(req)
+                    .then((rst)=>{
+                        if(!rst) {
+                            //console.log("Fail to unsubscribe topic:"+topic);
+                            reje("Fail to unsubscribe topic:"+topic)
+                        }else {
+                            reso(rst);
+                        }
+                    }).catch(err =>{
+                        reje(err);
+                });
+            });
+        },
+
+        __ccreq:function(){
+            let req = {};
+            req.serviceName=this.sn;
+            req.namespace = this.ns;
+            req.version = this.v;
+            return req;
+        },
+
+        MSG_TYPE_ASYNC_RESP : 0x06,
+
+        sn:'org.jmicro.gateway.MessageServiceImpl',
+        ns:MNG,
+        v:'0.0.1',
+    },
+
+    statis : {
+
+        subscribeData: function (mkey,t,callback){
+            let self = this;
+            let topic = mkey+'##'+(t*1000);
+            //先订阅主题
+            return new Promise(function(reso,reje){
+                jm.mng.ps.subscribe(topic,null,callback)
+                    .then(id =>{
+                        if(id < 0) {
+                            reje("Fail to subscribe topic:"+topic+', please check server log for detail info');
+                            //m.mng.statis.unsubscribeData(mkey,t,callback);
+                        } else {
+                            let req =  self.__ccreq();
+                            req.method = 'startStatis';
+                            req.args = [mkey, t];
+                            jm.rpc.callRpc(req)
+                                .then(status =>{
+                                    if(status) {
+                                        reso(status);
+                                    } else {
+                                        jm.mng.ps.unsubscribe(topic,callback)
+                                        reje('Fail to start statis monitor, please check the monitor server is running');
+                                    }
+                                }).catch(err => {
+                                reje(err);
+                            });
+                        }
+                    }).catch(err => {
+                    reje(err);
+                });
+                });
+        },
+
+        unsubscribeData: function (mkey,t,callback){
+
+            return new Promise((reso,reje)=>{
+                let topic = mkey + "##"+(t*1000);
+              jm.mng.ps.unsubscribe(topic,callback)
+                  .then(rst => {
+                      if(!!rst || rst == 0) {
+                          let req =  this.__ccreq();
+                          req.method = 'stopStatis';
+                          req.args = [mkey,t];
+                          jm.rpc.callRpc(req)
+                              .then(r=>{
+                                  reso(r);
+                              }).catch(err =>{
+                                  reje(err);
+                          });
+                      }
+                  }).catch(err => {
+                        reje(err);
+                  });
+            });
+        },
+
+        __ccreq:function(){
+            let req = {};
+            req.serviceName=this.sn;
+            req.namespace = this.ns;
+            req.version = this.v;
+            return req;
+        },
+
+        sn:'org.jmicro.api.mng.IStatisMonitor',
+        ns:'mng',
+        v:'0.0.1',
+    },
 
 }
 

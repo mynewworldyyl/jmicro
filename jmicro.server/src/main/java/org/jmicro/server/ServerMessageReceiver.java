@@ -25,6 +25,7 @@ import org.jmicro.api.annotation.Cfg;
 import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.Inject;
 import org.jmicro.api.codec.ICodecFactory;
+import org.jmicro.api.config.Config;
 import org.jmicro.api.executor.ExecutorConfig;
 import org.jmicro.api.executor.ExecutorFactory;
 import org.jmicro.api.idgenerator.ComponentIdServer;
@@ -47,7 +48,7 @@ import org.slf4j.LoggerFactory;
  * @author Yulei Ye
  * @date 2018年10月9日-下午5:51:20
  */
-@Component(lazy=false,active=true,value="serverReceiver",side=Constants.SIDE_PROVIDER)
+@Component(lazy=false,active=true,value="serverReceiver",side=Constants.SIDE_PROVIDER,level=100000)
 public class ServerMessageReceiver implements IMessageReceiver{
 
 	static final Logger logger = LoggerFactory.getLogger(ServerMessageReceiver.class);
@@ -89,10 +90,14 @@ public class ServerMessageReceiver implements IMessageReceiver{
 		//系统级RPC处理器，如ID请求处理器，和普通RPC处理理器同一个实例，但是TYPE标识不同，需要特殊处理
 		//registHandler(jrpcHandler);
 		//registHandler(idHandler);
+	}
+	
+	public void ready() {
 		finishInit = true;
 		synchronized(finishInit) {
 			finishInit.notifyAll();
 		}
+		logger.info("Server ready:{}",Config.getInstanceName());
 	}
 	
 	public void registHandler(IMessageHandler handler){

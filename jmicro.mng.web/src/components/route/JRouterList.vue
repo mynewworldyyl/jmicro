@@ -177,9 +177,6 @@
       word-break: break-all;
   }
 
-  .toolBar{
-      height: 31px;
-      background-color: darkgray;
-  }
+
 
 </style>

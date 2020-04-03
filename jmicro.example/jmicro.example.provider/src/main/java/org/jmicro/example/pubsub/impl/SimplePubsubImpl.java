@@ -19,7 +19,7 @@ public class SimplePubsubImpl implements ISimplePubsub {
 
 	private final static Logger logger = LoggerFactory.getLogger(SimplePubsubImpl.class);
 
-	@Subscribe(topic="/jmicro/test/topic01")
+	@Subscribe(topic="/jmicro/test/topic01;/jmicro/test/topic02")
 	public void helloTopicWithArrayArgs(PSData[] data) {
 		System.out.println("helloTopicWithArrayArgs: "+data[0].getTopic()+", data: "+ data[0].getData().toString());
 	}
@@ -39,7 +39,7 @@ public class SimplePubsubImpl implements ISimplePubsub {
 		
 		Map<Short,Double> ps = (Map<Short,Double>)data.getData();
 		
-		logger.info("总请求:{}, 总响应:{}, TO:{}, TOF:{}, QPS:{}"
+		logger.info("总请求:{}, 总响应:{}, TO:{}, QPS:{}"
 				,ps.get(MonitorConstant.REQ_START)
 				,ps.get(MonitorConstant.STATIS_TOTAL_RESP)
 				,ps.get(MonitorConstant.REQ_TIMEOUT)

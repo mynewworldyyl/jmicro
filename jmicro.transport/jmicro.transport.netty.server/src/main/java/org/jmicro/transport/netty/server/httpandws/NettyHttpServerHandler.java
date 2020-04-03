@@ -10,6 +10,7 @@ import org.jmicro.api.codec.ICodecFactory;
 import org.jmicro.api.idgenerator.ComponentIdServer;
 import org.jmicro.api.monitor.IMonitorDataSubmiter;
 import org.jmicro.api.net.IMessageReceiver;
+import org.jmicro.api.net.ISession;
 import org.jmicro.api.net.Message;
 import org.jmicro.common.Constants;
 import org.jmicro.common.util.JsonUtils;
@@ -116,13 +117,20 @@ public class NettyHttpServerHandler extends ChannelInboundHandlerAdapter {
     public void handlerRemoved(ChannelHandlerContext ctx) throws Exception {
     	super.handlerRemoved(ctx);
     	ctx.channel().attr(sessionKey).remove();
+    	ISession s = ctx.channel().attr(sessionKey).get();
+    	if( s != null) {
+    		s.close(true);
+    	}
     }
     
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
     	logger.error("exceptionCaught",cause);
     	ctx.channel().attr(sessionKey).remove();
-        ctx.channel().attr(sessionKey).get().close(true);
+    	ISession s = ctx.channel().attr(sessionKey).get();
+    	if( s != null) {
+    		s.close(true);
+    	}
     }
     
 }

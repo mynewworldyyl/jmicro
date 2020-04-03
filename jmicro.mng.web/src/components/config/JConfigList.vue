@@ -3,7 +3,6 @@
       <div class="toolBar">
           <Dropdown @on-click="menuSelect">
               <a href="javascript:void(0)">
-                  Menu
                   <Icon type="ios-arrow-down"></Icon>
               </a>
               <DropdownMenu slot="list">
@@ -125,11 +124,6 @@
       border-top:1px solid lightgray;
       text-align: left;
       word-break: break-all;
-  }
-
-  .toolBar{
-      height: 31px;
-      background-color: darkgray;
   }
 
 </style>

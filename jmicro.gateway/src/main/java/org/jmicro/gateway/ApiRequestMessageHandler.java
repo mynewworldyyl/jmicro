@@ -19,6 +19,7 @@ package org.jmicro.gateway;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.Map;
 
 import org.jmicro.api.JMicro;
 import org.jmicro.api.JMicroContext;
@@ -64,6 +65,9 @@ public class ApiRequestMessageHandler implements IMessageHandler{
 	@Inject
 	private IObjectFactory objFactory;
 	
+	@Inject
+	private MessageServiceImpl ms;
+	
 	@Cfg("/ApiRequestMessageHandler/openDebug")
 	private boolean openDebug = false;
 	
@@ -79,8 +83,6 @@ public class ApiRequestMessageHandler implements IMessageHandler{
 		
 		ApiResponse resp = new ApiResponse();
 		Object result = null;
-		Object srv = JMicro.getObjectFactory().getRemoteServie(req.getServiceName(), 
-				req.getNamespace(), req.getVersion(),null,null);
 		
 		msg.setType(Constants.MSG_TYPE_API_RESP);
 		resp.setReqId(req.getReqId());
@@ -88,79 +90,104 @@ public class ApiRequestMessageHandler implements IMessageHandler{
 		resp.setSuccess(true);
 		resp.setId(idGenerator.getLongId(ApiResponse.class));
 		
-		//long lid = JMicroContext.lid();
-
-		JMicroContext.get().setParam(JMicroContext.LOCAL_HOST, session.localHost());
-		JMicroContext.get().setParam(JMicroContext.LOCAL_PORT, session.localPort()+"");
-		JMicroContext.get().setParam(JMicroContext.REMOTE_HOST, session.remoteHost());
-		JMicroContext.get().setParam(JMicroContext.REMOTE_PORT, session.remotePort()+"");
-		
-		JMicroContext.get().mergeParams(req.getParams());
-		
-		if(srv != null){
-			Class<?>[] clazzes = null;
-			if(req.getArgs() != null && req.getArgs().length > 0){
-				clazzes = new Class<?>[req.getArgs().length];
-				for(int index = 0; index < req.getArgs().length; index++){
-					clazzes[index] = req.getArgs()[index].getClass();
-				}
+		if(MessageServiceImpl.TAG.equals(req.getServiceName())) {
+			if("subscribe".equals(req.getMethod())) {
+				String topic = (String)req.getArgs()[0];
+				Map<String, Object> ctx = (Map<String, Object>)req.getArgs()[1];
+				result = ms.subscribe(session, topic, ctx);
+			} else if("unsubscribe".equals(req.getMethod())){
+				result = ms.unsubscribe((int)req.getArgs()[0]);
 			} else {
-				clazzes = new Class<?>[0];
+				logger.error("Method:"+req.getMethod()+" not found!");
+				result = false;
 			}
 			
-			try {
-				AbstractClientServiceProxy proxy = (AbstractClientServiceProxy)srv;
-				ServiceItem si = proxy.getItem();
-				if(si == null) {
-					SF.doRequestLog(MonitorConstant.LOG_ERROR, TAG, req, null," service not found");
-					throw new CommonException("Service["+req.getServiceName()+"] namespace ["+req.getNamespace()+"] not found");
-				}
-				ServiceMethod sm = si.getMethod(req.getMethod(), clazzes);
-				if(sm == null) {
-					SF.doRequestLog(MonitorConstant.LOG_ERROR, TAG, req, null," service method not found");
-					throw new CommonException("Service mehtod ["+req.getServiceName()+"] method ["+req.getMethod()+"] not found");
-				}
-				
-				Method m = srv.getClass().getMethod(req.getMethod(), clazzes);
-				
-				JMicroContext.get().configMonitor(sm.getMonitorEnable(), si.getMonitorEnable());
-				
-				if(this.openDebug) {
-					SF.doRequestLog(MonitorConstant.LOG_DEBUG, TAG, req, null," got request");
-				}
-				
-				if(!sm.isNeedResponse()) {
-					result = m.invoke(srv, req.getArgs());
-					if(this.openDebug) {
-						SF.doRequestLog(MonitorConstant.LOG_DEBUG, TAG, req, null," no need response");
-					}
-					return;
-				}
-				
-				result = m.invoke(srv, req.getArgs());
-				
-				resp.setResult(result);
-				msg.setPayload(ICodecFactory.encode(codecFactory, resp, msg.getProtocol()));
-				if(this.openDebug) {
-					SF.doResponseLog(MonitorConstant.LOG_DEBUG, TAG,req, resp, null," one response");
-				}
-				session.write(msg);
-			
-			} catch (NoSuchMethodException | SecurityException | IllegalAccessException 
-					| IllegalArgumentException | InvocationTargetException | CommonException e) {
-				logger.error("",e);
-				result = new ServerError(0,e.getMessage());
-				resp.setSuccess(false);
-				resp.setResult(result);
-				SF.doResponseLog(MonitorConstant.LOG_ERROR, TAG,req, resp, e," service error");
-			}
-		} else {
-			resp.setSuccess(false);
 			resp.setResult(result);
 			msg.setPayload(ICodecFactory.encode(codecFactory, resp, msg.getProtocol()));
-			SF.doResponseLog(MonitorConstant.LOG_ERROR, TAG,req, resp, null," service instance not found");
+			if(this.openDebug) {
+				SF.doResponseLog(MonitorConstant.LOG_DEBUG, TAG,req, resp, null," one response");
+			}
 			session.write(msg);
+			
+		} else {
+			Object srv = JMicro.getObjectFactory().getRemoteServie(req.getServiceName(), 
+					req.getNamespace(), req.getVersion(),null,null);
+			//long lid = JMicroContext.lid();
+
+			JMicroContext.get().setParam(JMicroContext.LOCAL_HOST, session.localHost());
+			JMicroContext.get().setParam(JMicroContext.LOCAL_PORT, session.localPort()+"");
+			JMicroContext.get().setParam(JMicroContext.REMOTE_HOST, session.remoteHost());
+			JMicroContext.get().setParam(JMicroContext.REMOTE_PORT, session.remotePort()+"");
+			
+			JMicroContext.get().mergeParams(req.getParams());
+			
+			if(srv != null){
+				Class<?>[] clazzes = null;
+				if(req.getArgs() != null && req.getArgs().length > 0){
+					clazzes = new Class<?>[req.getArgs().length];
+					for(int index = 0; index < req.getArgs().length; index++){
+						clazzes[index] = req.getArgs()[index].getClass();
+					}
+				} else {
+					clazzes = new Class<?>[0];
+				}
+				
+				try {
+					AbstractClientServiceProxy proxy = (AbstractClientServiceProxy)srv;
+					ServiceItem si = proxy.getItem();
+					if(si == null) {
+						SF.doRequestLog(MonitorConstant.LOG_ERROR, TAG, req, null," service not found");
+						throw new CommonException("Service["+req.getServiceName()+"] namespace ["+req.getNamespace()+"] not found");
+					}
+					ServiceMethod sm = si.getMethod(req.getMethod(), clazzes);
+					if(sm == null) {
+						SF.doRequestLog(MonitorConstant.LOG_ERROR, TAG, req, null," service method not found");
+						throw new CommonException("Service mehtod ["+req.getServiceName()+"] method ["+req.getMethod()+"] not found");
+					}
+					
+					Method m = srv.getClass().getMethod(req.getMethod(), clazzes);
+					
+					JMicroContext.get().configMonitor(sm.getMonitorEnable(), si.getMonitorEnable());
+					
+					if(this.openDebug) {
+						SF.doRequestLog(MonitorConstant.LOG_DEBUG, TAG, req, null," got request");
+					}
+					
+					if(!sm.isNeedResponse()) {
+						result = m.invoke(srv, req.getArgs());
+						if(this.openDebug) {
+							SF.doRequestLog(MonitorConstant.LOG_DEBUG, TAG, req, null," no need response");
+						}
+						return;
+					}
+					
+					result = m.invoke(srv, req.getArgs());
+					
+					resp.setResult(result);
+					msg.setPayload(ICodecFactory.encode(codecFactory, resp, msg.getProtocol()));
+					if(this.openDebug) {
+						SF.doResponseLog(MonitorConstant.LOG_DEBUG, TAG,req, resp, null," one response");
+					}
+					session.write(msg);
+				
+				} catch (NoSuchMethodException | SecurityException | IllegalAccessException 
+						| IllegalArgumentException | InvocationTargetException | CommonException e) {
+					logger.error("",e);
+					result = new ServerError(0,e.getMessage());
+					resp.setSuccess(false);
+					resp.setResult(result);
+					SF.doResponseLog(MonitorConstant.LOG_ERROR, TAG,req, resp, e," service error");
+				}
+			} else {
+				resp.setSuccess(false);
+				resp.setResult(result);
+				msg.setPayload(ICodecFactory.encode(codecFactory, resp, msg.getProtocol()));
+				SF.doResponseLog(MonitorConstant.LOG_ERROR, TAG,req, resp, null," service instance not found");
+				session.write(msg);
+			}
 		}
+		
+		
 	}
 
 }

@@ -16,17 +16,15 @@
  */
 package org.jmicro.api.codec;
 
-import java.util.List;
-
 import org.jmicro.api.IListener;
 import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.Inject;
 import org.jmicro.api.config.Config;
 import org.jmicro.api.idgenerator.ComponentIdServer;
 import org.jmicro.api.raft.IDataOperator;
-import org.jmicro.common.Constants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 /**
  * 
  * @author Yulei Ye
@@ -58,13 +56,17 @@ public class TransforClassManager {
 	
 	
 	public void init() {
+		
+		if(!dataOperator.exist(ROOT)) {
+			dataOperator.createNode(ROOT, Config.getHost(), false);
+		}
+		
 		dataOperator.addChildrenListener(ROOT, (type,path,child,data)->{
 			if(type == IListener.REMOVE) {
 				//this.update(path,child,data);
 			}else if (type == IListener.ADD) {
 				this.update(path,child,data);
 			}
-			
 		});
 	}
 

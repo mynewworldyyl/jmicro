@@ -1,12 +1,7 @@
 package org.jmicro.example.test;
 
 import org.jmicro.api.JMicro;
-import org.jmicro.api.JMicroContext;
-import org.jmicro.api.client.IMessageCallback;
-import org.jmicro.api.monitor.IServiceMonitorData;
 import org.jmicro.api.service.ICheckable;
-import org.jmicro.common.Constants;
-import org.jmicro.common.Utils;
 import org.jmicro.example.api.DynamicInterface;
 import org.jmicro.example.api.ITestRpcService;
 import org.jmicro.example.api.rpc.ISimpleRpc;
@@ -38,21 +33,6 @@ public class TestRpcRequest extends JMicroBaseTestCase{
 	}
 	
 	@Test
-	public void testStreamService() {
-		
-		ITestRpcService src = of.get(ITestRpcService.class);
-		
-		IMessageCallback<String> msgReceiver = (msg)->{
-			System.out.println(msg);
-			return true;
-		};
-		JMicroContext.get().setParam(Constants.CONTEXT_CALLBACK_CLIENT, msgReceiver);
-		
-		src.subscrite("Hello ");
-		Utils.getIns().waitForShutdown();
-	}
-	
-	@Test
 	public void testCheckable() {
 		
 		ITestRpcService src = of.get(ITestRpcService.class);
@@ -60,30 +40,6 @@ public class TestRpcRequest extends JMicroBaseTestCase{
 		String msg = c.wayd("How are you");
 		System.out.println(msg);
 		//Utils.getIns().waitForShutdown();
-	}
-	
-	@Test
-	public void testSubscriteResponseTimeMonitor() {
-		
-		IMessageCallback<String> msgReceiver = (msg)->{
-			System.out.println(msg);
-			return true;
-		};
-		
-		JMicroContext.get().setParam(Constants.CONTEXT_CALLBACK_CLIENT, msgReceiver);
-		
-		IServiceMonitorData src = of.get(IServiceMonitorData.class);
-		String sn = null;
-		/*
-		ServiceItem.serviceName("org.jmicro.example.api.ITestRpcService", "testrpc", "0.0.1");
-		sn = ServiceItem.methodKey(sn, "getPerson", "org.jmicro.api.Person");
-		*/
-		
-		Integer id = src.subsicribe(sn);
-		
-		Utils.getIns().waitForShutdown();
-		
-		src.unsubsicribe(id,sn);
 	}
 	
 	@Test

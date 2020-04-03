@@ -140,7 +140,7 @@ public class JRPCReqRespHandler implements IMessageHandler{
 			msg.setType((byte)(msg.getType()+1));
 			
 			if(openDebug) {
-    			logger.info("Response req:"+req.getMethod()+",Service:" + req.getServiceName()+", Namespace:"+req.getNamespace());
+    			//logger.info("Response req:"+req.getMethod()+",Service:" + req.getServiceName()+", Namespace:"+req.getNamespace());
     		}
 			
 			//响应消息

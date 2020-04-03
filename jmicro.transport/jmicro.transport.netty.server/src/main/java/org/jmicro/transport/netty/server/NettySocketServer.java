@@ -145,7 +145,7 @@ public class NettySocketServer extends PostFactoryAdapter implements IServer {
         }
         
         String m = "Running the netty socket server host["+Config.getHost()+"],port ["+this.port+"]";
-        LOG.debug(m);    
+        LOG.debug(m);
         
         SF.serverStart(TAG,Config.getHost(),this.port, "Server start: " + Constants.TRANSPORT_NETTY );
         

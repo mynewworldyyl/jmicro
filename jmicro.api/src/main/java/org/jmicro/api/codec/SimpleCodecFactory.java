@@ -32,6 +32,7 @@ import org.jmicro.api.codec.IEncoder;
 import org.jmicro.api.codec.OnePrefixDecoder;
 import org.jmicro.api.codec.OnePrefixTypeEncoder;
 import org.jmicro.api.gateway.ApiRequest;
+import org.jmicro.api.net.ISession;
 import org.jmicro.api.net.Message;
 import org.jmicro.api.net.RpcRequest;
 import org.jmicro.api.registry.IRegistry;
@@ -174,15 +175,20 @@ public class SimpleCodecFactory implements ICodecFactory{
 			Object[] args = new Object[jsonArgs.length];
 			
 			for(Method sm : srvClazz.getMethods()){
-				if(sm.getName().equals(methodName) &&
-						argLen == sm.getParameterCount()){
+				if(sm.getName().equals(methodName)/* &&
+						argLen == sm.getParameterCount()*/){
 					Class<?>[] clses = sm.getParameterTypes();
 					int i = 0;
+					int j = 0;
 					try {
 						for(; i < argLen; i++){
 							Class<?> pt = clses[i];
-							Object a = JsonUtils.getIns().fromJson(JsonUtils.getIns().toJson(jsonArgs[i]), pt);
-							args[i] = a;
+							if(ISession.class.isAssignableFrom(pt)) {
+								continue;
+							}
+							Object a = JsonUtils.getIns().fromJson(JsonUtils.getIns().toJson(jsonArgs[j]), pt);
+							args[j] = a;
+							j++;
 						}
 					} catch (Exception e) {
 						continue;

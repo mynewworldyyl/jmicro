@@ -27,6 +27,11 @@ import org.jmicro.api.monitor.ServiceCounter;
  */
 public interface ISession{
 	
+	public static final int EVENT_TYPE_CLOSE = 1;
+	
+	public static final int EVENT_TYPE_OPEN = 2;
+	
+	
 	public static final short CLIENT_HANDLER_NOT_FOUND = 0X7FFF;
 	
 	public static final short CLIENT_WRITE_BYTES = 0X7FFE;
@@ -56,9 +61,9 @@ public interface ISession{
 	
 	void close(boolean flag);
 	
-	Object getParam(String key);
+	<T> T getParam(String key);
 	
-	void putParam(String key,Object obj);
+	<T> void putParam(String key,T obj);
 	
 	//ByteBuffer getReadBuffer();
 	int getReadBufferSize();
@@ -107,5 +112,11 @@ public interface ISession{
 	Double getTakeAvg(Short type);
 	
 	ServiceCounter getServiceCounter();
+	
+	void addSessionListener(ISessionListener lis);
+	
+	void removeSessionListener(ISessionListener lis);
+	
+	void notifySessionEvent(int eventType);
 	
 }

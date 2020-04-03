@@ -24,6 +24,8 @@ public class DataManager {
 	//数据改变监听器
 	private  Map<String,Set<IDataListener>> dataListeners = new HashMap<>();
 	
+	private Object syncLocker = new Object();
+	
 	private CuratorFramework curator = null;
 	
 	private ZKDataOperator op;
@@ -39,7 +41,9 @@ public class DataManager {
 	      //logger.info("Watcher for '{}' received watched event: {}",path, event);
 	      if (event.getType() == EventType.NodeDataChanged) {
 	    	  watchData(path);
-	    	  dataChange(path);
+	    	  synchronized(syncLocker) {
+	    		  dataChange(path);
+	    	  }
 	      }
 	      
 	};
@@ -59,9 +63,9 @@ public class DataManager {
 		 try {
 			getDataBuilder.usingWatcher(watcher).forPath(path);
 		} catch (KeeperException.NoNodeException e) {
-			logger.error(e.getMessage());
+			logger.error("watchData1: " +e.getMessage());
 		}catch(Exception e){
-			logger.error("",e);
+			logger.error("watchData2: ",e);
 		}
 	}
 	

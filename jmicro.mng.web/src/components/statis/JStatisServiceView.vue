@@ -1,51 +1,51 @@
 <template>
-  <div class="JMainContentEditor">
-    <div>
-      <Tabs :value="!!selectNode ? selectNode.id:''" type="card" :closable="allowMany" @on-tab-remove="handleTabRemove"
-            :animated="false">
-            <TabPane v-for="(item,index) in items"  :name="item.id" :label="item.type=='method' ? item.title: (item.type + index)"
-                     v-bind:key="item.id">
-                <p stype="word-break: break-all;padding: 0px 10px;font-size: medium;">{{item.id}}</p>
-                <JServiceItem v-if="item.type == 'sn'" :item="item"></JServiceItem>
-                <JInstanceItem v-else-if="item.type == 'ins'" :item="item"></JInstanceItem>
-                <JMethodItem v-else-if="item.type == 'method'" :meth="item"></JMethodItem>
-            </TabPane>
-        </Tabs>
-    </div>
+    <div class="JStatisContentView">
+        <div>
+            <Tabs :value="!!selectNode ? selectNode.id:''" type="card" :closable="allowMany" @on-tab-remove="handleTabRemove"
+                  :animated="false">
+                <TabPane v-for="(item,index) in items"  :name="item.id" :label="item.type=='method' ? item.title: (item.type + index)"
+                         v-bind:key="item.id">
+                    <p stype="word-break: break-all;padding: 0px 10px;font-size: medium;">{{item.id}}</p>
+                    <JStatisServiceItemView v-if="item.type == 'sn'" :item="item"></JStatisServiceItemView>
+                    <JStatisServerItemView v-else-if="item.type == 'ins'" :item="item"></JStatisServerItemView>
+                    <JStatisSMethodItemView v-else-if="item.type == 'method'" :meth="item"></JStatisSMethodItemView>
+                </TabPane>
+            </Tabs>
+        </div>
 
-  </div>
+    </div>
 </template>
 
 <script>
     //import jm from '../../public/js/jm.js'
-    import JServiceItem from './JServiceItem.vue'
-    import JMethodItem from './JSMethodItem.vue'
-    import JInstanceItem from './JInstanceItem.vue'
+    import JStatisServiceItemView from './JStatisServiceItemView.vue'
+    import JStatisSMethodItemView from './JStatisSMethodItemView.vue'
+    import JStatisServerItemView from './JStatisServerItemView.vue'
 
     export default {
-        name: 'JServiceEditor',
+        name: 'JStatisServiceView',
         components: {
-            JServiceItem,
-            JMethodItem,
-            JInstanceItem,
+            JStatisServiceItemView,
+            JStatisSMethodItemView,
+            JStatisServerItemView,
         },
 
         data () {
             let d = window.jm.mng.cache[this.dataId];
             if( !d) {
                 d = window.jm.mng.cache[this.dataId] = {
-                    items:[],
-                    selectNode:null,
+                     items:[],
+                     selectNode:null,
                 };
             }
             return d;
         },
 
         props:{
-          allowMany: {
-              type: Boolean,
-              default: false
-          },
+            allowMany: {
+                type: Boolean,
+                default: false
+            },
             dataId:{
                 type:String,
                 required:true,
@@ -54,7 +54,7 @@
         mounted:function() {
             var self = this;
             //console.log(window.jm.utils.isBrowser('ie'));
-            window.jm.vue.$on('serviceNodeSelect',(nodes) => {
+            window.jm.vue.$on('statisNodeSelect',(nodes) => {
                 if(!nodes || nodes.length ==0) {
                     return;
                 }
@@ -112,10 +112,14 @@
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped>
-  .JMainContentEditor{
-      height:auto;
-     /* min-height: 500px;*/
-      overflow:hidden;
-  }
+    .JStatisContentView{
+        height:auto;
+        /* min-height: 500px;*/
+        overflow:hidden;
+    }
+
+    .JStatisContentView .ivu-tabs-bar{
+        margin-bottom: 5px;
+    }
 
 </style>

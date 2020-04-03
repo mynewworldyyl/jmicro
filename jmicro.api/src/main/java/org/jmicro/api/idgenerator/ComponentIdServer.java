@@ -4,7 +4,6 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Queue;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 import org.jmicro.api.annotation.Cfg;
@@ -86,13 +85,18 @@ public class ComponentIdServer /*implements IIdClient,IIdServer*/{
 	
 	public Long getLongId(Class<?> idCls) {
 		
-		synchronized(longIdsCache) {
-			Queue<Long> ids = longIdsCache.get(idCls.getName());
-			if(ids != null && !ids.isEmpty()) {
-				return ids.poll();
+		Queue<Long> ids = longIdsCache.get(idCls.getName());
+		if(ids != null && !ids.isEmpty()) {
+			Long id = ids.poll();
+			if(id != null) {
+				return id;
 			}
+		}
+		
+		synchronized(longIdsCache) {
 			
 			ids = longIdsCache.get(idCls.getName());
+			
 			if(ids == null) {
 				ids = new ConcurrentLinkedQueue<Long>();
 				longIdsCache.put(idCls.getName(), ids);
@@ -111,7 +115,10 @@ public class ComponentIdServer /*implements IIdClient,IIdServer*/{
 	public String getStringId(Class<?> idCls) {
 		Queue<String> ids = strIdsCache.get(idCls.getName());
 		if(ids != null && !ids.isEmpty()) {
-			return ids.poll();
+			String id = ids.poll();
+			if(id != null) {
+				return id;
+			}
 		}
 		
 		synchronized(strIdsCache) {
@@ -134,7 +141,10 @@ public class ComponentIdServer /*implements IIdClient,IIdServer*/{
 	public Integer getIntId(Class<?> idCls) {
 		Queue<Integer> ids = intIdsCache.get(idCls.getName());
 		if(ids != null && !ids.isEmpty()) {
-			return ids.poll();
+			Integer id = ids.poll();
+			if(id != null) {
+				return id;
+			}
 		}
 		
 		synchronized(intIdsCache) {
@@ -150,9 +160,10 @@ public class ComponentIdServer /*implements IIdClient,IIdServer*/{
 				Integer[] reqIds = this.getIntIds(idCls.getName(), getCacheSize(idCls));
 				ids.addAll(Arrays.asList(reqIds));
 			}
+			return ids.poll();
 		}
 		
-		return ids.poll();
+		
 	}
 
 	private int getCacheSize(Class<?> idCls) {

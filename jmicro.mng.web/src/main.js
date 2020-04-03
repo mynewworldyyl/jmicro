@@ -8,6 +8,9 @@ import 'view-design/dist/styles/iview.css'
 import JConfig from './components/config/JConfig.vue'
 import JService from './components/service/JService.vue'
 import JRouter from './components/route/JRouter.vue'
+import JShell from './components/shell/JShell.vue'
+import JLog from './components/log/JLog.vue'
+import JStatis from './components/statis/JStatis.vue'
 
 Vue.use(iView)
 Vue.use(VueRouter)
@@ -18,7 +21,11 @@ Vue.config.productionTip = false
 const routes = [
     { path: '/config', component: JConfig },
     { path: '/router', component: JRouter },
+    { path: '/shell', component: JShell },
+    { path: '/log', component: JLog },
+    { path: '/statisService', component: JStatis },
     { path: '/', component: JService },
+
 
 ];
 

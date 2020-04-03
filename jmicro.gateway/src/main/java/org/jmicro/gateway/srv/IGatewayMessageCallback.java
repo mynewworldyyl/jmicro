@@ -1,3 +1,4 @@
+
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -14,24 +15,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.jmicro.api.monitor;
+package org.jmicro.gateway.srv;
 
-import java.util.Set;
-
-import org.jmicro.api.annotation.SMethod;
-import org.jmicro.api.annotation.Service;
+import org.jmicro.api.pubsub.PSData;
 
 /**
  * 
+ * 
  * @author Yulei Ye
- * @date 2018年10月22日-下午1:42:45
+ * @date 2020年3月26日
  */
-@Service(monitorEnable=0, namespace="serviceMonitorData", version="0.0.1")
-public interface IServiceMonitorData {
+public interface IGatewayMessageCallback {
 
-	@SMethod(retryCnt=0,maxSpeed=10,baseTimeUnit="S")
-	Integer subsicribe(String service);
-	void unsubsicribe(Integer id,String service);
+	void onMessage(PSData[] item);
 	
-	Set<String> getAllServices();
 }
