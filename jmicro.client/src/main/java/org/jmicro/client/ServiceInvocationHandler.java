@@ -23,16 +23,15 @@ import org.jmicro.api.JMicroContext;
 import org.jmicro.api.annotation.Cfg;
 import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.Inject;
-import org.jmicro.api.config.Config;
+import org.jmicro.api.exception.RpcException;
 import org.jmicro.api.idgenerator.ComponentIdServer;
-import org.jmicro.api.monitor.SF;
+import org.jmicro.api.monitor.v1.SF;
+import org.jmicro.api.monitor.v2.MRpcItem;
 import org.jmicro.api.net.IRequest;
 import org.jmicro.api.net.IResponse;
 import org.jmicro.api.net.InterceptorManager;
 import org.jmicro.api.net.RpcRequest;
-import org.jmicro.api.objectfactory.AbstractClientServiceProxy;
 import org.jmicro.api.registry.ServiceItem;
-import org.jmicro.api.registry.ServiceMethod;
 import org.jmicro.common.CommonException;
 import org.jmicro.common.Constants;
 import org.slf4j.Logger;
@@ -64,66 +63,62 @@ public class ServiceInvocationHandler implements InvocationHandler{
 	@Override
 	public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
 		
-		JMicroContext.get().setParam(JMicroContext.LOCAL_HOST, Config.getHost());
-		JMicroContext.get().setParam(Constants.CLIENT_REF_METHOD, method);
-		
-		AbstractClientServiceProxy po = (AbstractClientServiceProxy)proxy;
-		String methodName = method.getName();
-		if(method.getDeclaringClass() == Object.class) {
-		   throw new CommonException("Invalid invoke ["
-				   +method.getDeclaringClass().getName()+"] for method [ "+methodName+"]");
-		}
-
-		ServiceItem poItem = po.getItem();
-		if(poItem == null){
-			throw new CommonException("cls["+method.getDeclaringClass().getName()+"] method ["+method.getName()+"] service not found");
-		}
-		
-		ServiceMethod sm = poItem.getMethod(methodName, args);
-		if(sm == null){
-			throw new CommonException("cls["+method.getDeclaringClass().getName()+"] method ["+method.getName()+"] method not found");
-		}
-		
-		JMicroContext.get().setParam(Constants.SERVICE_METHOD_KEY, sm);
-		JMicroContext.get().setParam(Constants.SERVICE_ITEM_KEY, poItem);
-		
-		//JMicroContext.setSrvLoggable();
-		JMicroContext.get().configMonitor(sm.getMonitorEnable(),poItem.getMonitorEnable());
-		
 		Object obj = null;
 		RpcRequest req = null;
 		IResponse resp = null;
 		try {
 			
+			JMicroContext cxt = JMicroContext.get();
+			
+			ServiceItem si = cxt.getParam(Constants.SERVICE_ITEM_KEY, null);
 			req = new RpcRequest();
 			req.setMethod(method.getName());
-			req.setServiceName(poItem.getKey().getServiceName());
-			req.setNamespace(poItem.getKey().getNamespace());
-			req.setVersion(poItem.getKey().getVersion());
+			req.setServiceName(si.getKey().getServiceName());
+			req.setNamespace(si.getKey().getNamespace());
+			req.setVersion(si.getKey().getVersion());
 			req.setArgs(args);
 			req.setRequestId(idGenerator.getLongId(IRequest.class));
 			req.setTransport(Constants.TRANSPORT_NETTY);
-			req.setImpl(poItem.getImpl());
+			req.setImpl(si.getImpl());
 			
-			if(!JMicroContext.existLinkId()) {
+			if(!JMicroContext.existLinkId() ) {
 				//新建一个RPC链路开始
-				JMicroContext.get().setParam(Constants.NEW_LINKID, true);
-				SF.linkStart(TAG.getName(),req);
+				cxt.setParam(Constants.NEW_LINKID, true);
+				if(JMicroContext.get().isMonitor()) {
+					SF.linkStart(TAG.getName(),req);
+					MRpcItem mi = cxt.getMRpcItem();
+					mi.setReq(req);
+					mi.setReqId(req.getRequestId());
+					mi.setLinkId(JMicroContext.lid());
+				}
 			}
 			
-			JMicroContext.get().setObject(Constants.PROXY, po);
+			if(JMicroContext.get().isDebug()) {
+				JMicroContext.get().getDebugLog()
+				.append(method.getName())
+				.append(",reqID:").append(req.getRequestId())
+				.append(",linkId:").append(JMicroContext.lid());
+			}
 			
 			resp = this.intManager.handleRequest(req);
 			
 			obj = resp == null ? null :resp.getResult();
+		} catch(Throwable ex) {
+			if(ex instanceof CommonException) {
+				throw ex;
+			} else {
+				logger.error("ServiceInvocationHandler error:",ex);
+				throw new RpcException(req,ex);
+			}
 		} finally {
 			if(JMicroContext.get().getObject(Constants.NEW_LINKID,null) != null &&
 					JMicroContext.get().getBoolean(Constants.NEW_LINKID,false) ) {
 				//RPC链路结束
-				SF.linkEnd(TAG.getName(),req,resp);
+				SF.linkEnd(TAG.getName(),resp);
 				JMicroContext.get().removeParam(Constants.NEW_LINKID);
 			}
-			
+			JMicroContext.get().debugLog(0);
+			JMicroContext.get().submitMRpcItem();
 		}
        /* if("intrest".equals(method.getName())) {
         	//代码仅用于测试

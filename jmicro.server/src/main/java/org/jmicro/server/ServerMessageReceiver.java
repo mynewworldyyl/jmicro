@@ -29,9 +29,9 @@ import org.jmicro.api.config.Config;
 import org.jmicro.api.executor.ExecutorConfig;
 import org.jmicro.api.executor.ExecutorFactory;
 import org.jmicro.api.idgenerator.ComponentIdServer;
-import org.jmicro.api.monitor.IMonitorDataSubmiter;
-import org.jmicro.api.monitor.MonitorConstant;
-import org.jmicro.api.monitor.SF;
+import org.jmicro.api.monitor.v1.IMonitorDataSubmiter;
+import org.jmicro.api.monitor.v1.MonitorConstant;
+import org.jmicro.api.monitor.v1.SF;
 import org.jmicro.api.net.IMessageHandler;
 import org.jmicro.api.net.IMessageReceiver;
 import org.jmicro.api.net.ISession;
@@ -83,6 +83,7 @@ public class ServerMessageReceiver implements IMessageReceiver{
 	
 	public void init(){
 		ExecutorConfig config = new ExecutorConfig();
+		config.setMsCoreSize(10);
 		config.setMsMaxSize(60);
 		config.setTaskQueueSize(500);
 		config.setThreadNamePrefix("ServerMessageReceiver");
@@ -115,6 +116,16 @@ public class ServerMessageReceiver implements IMessageReceiver{
 		if(openDebug) {
 			//SF.getIns().doMessageLog(MonitorConstant.DEBUG, TAG, msg,"receive");
 		}
+		
+		if(JMicroContext.get().isDebug()) {
+			long usedTime = System.currentTimeMillis() - msg.getTime();
+			StringBuilder sb = JMicroContext.get().getDebugLog();
+			 sb.append(msg.getMethod())
+			.append(",MsgId:").append(msg.getId()).append(",reqID:").append(msg.getReqId())
+			.append(",linkId:").append(JMicroContext.lid());
+			sb.append(",Receive Time:").append(usedTime);
+		}
+		
 		JMicroContext jc = JMicroContext.get();
 		//直接协程处理，IO LOOP线程返回
 		
@@ -151,12 +162,10 @@ public class ServerMessageReceiver implements IMessageReceiver{
 	
 	//@Suspendable
 	private void doReceive(IServerSession s, Message msg){
-		
-		if(msg.isLoggable()) {
-			SF.doMessageLog(MonitorConstant.LOG_DEBUG, TAG, msg,null,"doReceive");
-		}
-		
 		try {
+			if(msg.isLoggable()) {
+				SF.doMessageLog(MonitorConstant.LOG_DEBUG, TAG, msg,null,"doReceive");
+			}
 			IMessageHandler h = handlers.get(msg.getType());
 			if(h == null) {
            	 	SF.netIoRead(this.getClass().getName(),MonitorConstant.SERVER_IOSESSION_READ, msg.getLen(),s);
@@ -167,7 +176,6 @@ public class ServerMessageReceiver implements IMessageReceiver{
 			} else {
 				h.onMessage(s, msg);
 			}
-			
 		} catch (Throwable e) {
 			//SF.doMessageLog(MonitorConstant.LOG_ERROR, TAG, msg,e);
 			//SF.doSubmit(MonitorConstant.SERVER_REQ_ERROR);
@@ -178,6 +186,12 @@ public class ServerMessageReceiver implements IMessageReceiver{
 			msg.setPayload(ICodecFactory.encode(codeFactory,resp,msg.getProtocol()));
 			msg.setType((byte)(msg.getType()+1));
 			s.write(msg);
+		} finally {
+			if(JMicroContext.get().isDebug()) {
+				JMicroContext.get().appendCurUseTime("respTime",false);
+				JMicroContext.get().debugLog(1000);
+			}
+			JMicroContext.get().submitMRpcItem();
 		}
 	}
 }

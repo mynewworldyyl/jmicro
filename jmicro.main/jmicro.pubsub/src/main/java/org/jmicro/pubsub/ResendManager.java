@@ -10,8 +10,8 @@ import java.util.concurrent.ExecutorService;
 
 import org.jmicro.api.executor.ExecutorConfig;
 import org.jmicro.api.executor.ExecutorFactory;
-import org.jmicro.api.monitor.MonitorConstant;
-import org.jmicro.api.monitor.SF;
+import org.jmicro.api.monitor.v1.MonitorConstant;
+import org.jmicro.api.monitor.v1.SF;
 import org.jmicro.api.objectfactory.IObjectFactory;
 import org.jmicro.api.pubsub.PSData;
 import org.jmicro.api.timer.TimerTicker;

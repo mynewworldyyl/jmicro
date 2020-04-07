@@ -11,22 +11,23 @@ package org.jmicro.api.basket;
 public class BasketFactory<T> {
 
 	private int size = 10;
-	private Basket<T>[] baskets = new Basket[10];
-	private boolean[] using = new boolean[10];
+	private IBasket<T>[] baskets = null;
+	private boolean[] using = null;
 	
 	private Object locker = new Object();
 	
+	@SuppressWarnings("unchecked")
 	public BasketFactory(int size,int maxCapacityOfBasket) {
 		this.size = size;
 		baskets = new Basket[size];
 		using = new boolean[size];
 		for(int i =0; i < size; i++) {
-			baskets[i] = new Basket(maxCapacityOfBasket);
+			baskets[i] = new Basket<T>(maxCapacityOfBasket);
 			using[i] = false;
 		}
 	}
 	
-	public Basket<T> borrowWriteSlot() {
+	public IBasket<T> borrowWriteBasket() {
 		synchronized(locker) {
 			for(int i =0; i < size; i++) {
 				if(!using[i] && baskets[i].isWriteStatus()) {
@@ -39,7 +40,7 @@ public class BasketFactory<T> {
 	}
 	
 	
-	public Basket<T> borrowReadSlot() {
+	public IBasket<T> borrowReadSlot() {
 		synchronized(locker) {
 			for(int i =0; i < size; i++) {
 				if(!using[i] && baskets[i].isReadStatus()) {
@@ -51,7 +52,7 @@ public class BasketFactory<T> {
 		return null;
 	}
 	
-	public boolean returnWriteSlot(Basket<T> b,boolean returnStatus) {
+	public boolean returnWriteBasket(IBasket<T> b,boolean returnStatus) {
 		if(!b.isWriteStatus()) {
 			return false;
 		}
@@ -59,14 +60,14 @@ public class BasketFactory<T> {
 	}
 	
 	
-	public boolean returnReadSlot(Basket<T> b,boolean returnStatus) {
+	public boolean returnReadSlot(IBasket<T> b,boolean returnStatus) {
 		if(!b.isReadStatus()) {
 			return false;
 		}
 		return doReturn(b,returnStatus);
 	}
 	
-	private int getBasketIndex(Basket<T> b) {
+	private int getBasketIndex(IBasket<T> b) {
 		for(int i =0; i < size; i++) {
 			if(baskets[i] == b) {
 				return i;
@@ -75,7 +76,7 @@ public class BasketFactory<T> {
 		return -1;
 	}
 	
-	private boolean doReturn(Basket<T> b,boolean returnStatus) {
+	private boolean doReturn(IBasket<T> b,boolean returnStatus) {
 		int idx = getBasketIndex(b);
 		if(idx < 0) {
 			return false;
@@ -89,5 +90,119 @@ public class BasketFactory<T> {
 		using[idx] = false;
 		
 		return true;
+	}
+	
+	class Basket<E> implements IBasket<E>{
+		
+		private Object[] s = null;
+		
+		private int capacity;
+		
+		private int readIndex;
+		
+		private int writeIndex;
+
+		private boolean readStatus = false;
+		
+		public Basket(int capacity) {
+			this.capacity = capacity;
+			s = new Object[capacity];
+			readIndex = -1;
+			writeIndex = 0;
+		}
+		
+		public boolean add(E elt) {
+			if(readStatus) {
+				return false;
+			}
+			if(writeIndex < this.capacity) {
+				s[writeIndex++] = elt;
+				return true;
+			}
+			return false;
+		}
+		
+		public boolean add(E[] elts) {
+			if(readStatus) {
+				return false;
+			}
+			if(writeIndex + elts.length <= this.capacity) {
+				System.arraycopy(elts, 0, s, writeIndex, elts.length);
+				writeIndex += elts.length;
+				return true;
+			}
+			return false;
+		}
+		
+		public int remainding() {
+			if(readStatus) {
+				//剩余可读元素个数
+				return writeIndex - readIndex-1;
+			} else {
+				//剩余可写元素个数
+				return this.capacity - writeIndex;
+			}
+			
+		}
+		
+		public boolean exchangeStatus() {
+			if(this.readStatus) {
+				//由读状态变为写状态，当前元素个数必须小于容量
+				if(remainding() > 0) {
+					//还剩余未读元素，必须读完才能交换
+					return false;
+				} else {
+					this.readStatus = !this.readStatus;
+					readIndex = -1;
+					writeIndex = 0;
+					return true;
+				}
+			} else {
+				//由写状态切换到读状态，必须有元素可读，否则没意义
+				if((writeIndex - readIndex-1) > 0) {
+					this.readStatus = !this.readStatus;
+					return true;
+				}else {
+					return false;
+				}			
+			}		
+		}
+		
+		public boolean isReadStatus() {
+			return this.readStatus;
+		}
+		
+		public boolean isWriteStatus() {
+			return !this.readStatus;
+		}
+		
+		public boolean getAll(E[] arr) {
+			if(!readStatus) {
+				return false;
+			}
+			
+			int size = remainding();
+			if(size == 0 || size != arr.length) {
+				return false;
+			}
+			
+			for(int i = 0; i < size ; i++) {
+				arr[i] = get();
+			}
+			
+			return true;
+		}
+		
+		@SuppressWarnings("unchecked")
+		public E get() {
+			if(!readStatus || remainding() == 0) {
+				return null;
+			}
+			E e = (E)this.s[++readIndex];
+			this.s[readIndex] = null;
+			return e;
+		}
+		
+		
 	}
 }

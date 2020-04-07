@@ -24,9 +24,9 @@ import java.util.Set;
 
 import org.jmicro.api.JMicro;
 import org.jmicro.api.annotation.Reference;
-import org.jmicro.api.monitor.IMonitorDataSubmiter;
-import org.jmicro.api.monitor.MonitorConstant;
-import org.jmicro.api.monitor.SF;
+import org.jmicro.api.monitor.v1.IMonitorDataSubmiter;
+import org.jmicro.api.monitor.v1.MonitorConstant;
+import org.jmicro.api.monitor.v1.SF;
 import org.jmicro.api.objectfactory.AbstractClientServiceProxy;
 import org.jmicro.api.objectfactory.ProxyObject;
 import org.jmicro.api.registry.AsyncConfig;

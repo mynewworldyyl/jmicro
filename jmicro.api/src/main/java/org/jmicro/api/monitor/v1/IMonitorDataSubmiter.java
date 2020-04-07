@@ -1,4 +1,4 @@
-package org.jmicro.api.monitor;
+package org.jmicro.api.monitor.v1;
 
 public interface IMonitorDataSubmiter {
 

@@ -23,8 +23,12 @@ import java.util.Map;
 import java.util.Set;
 
 import org.jmicro.api.JMicroContext;
+import org.jmicro.api.annotation.Inject;
 import org.jmicro.api.annotation.Reference;
-import org.jmicro.api.monitor.IMonitorDataSubmiter;
+import org.jmicro.api.config.Config;
+import org.jmicro.api.idgenerator.ComponentIdServer;
+import org.jmicro.api.monitor.v1.IMonitorDataSubmiter;
+import org.jmicro.api.net.InterceptorManager;
 import org.jmicro.api.registry.AsyncConfig;
 import org.jmicro.api.registry.IRegistry;
 import org.jmicro.api.registry.IServiceListener;
@@ -65,7 +69,6 @@ public abstract class AbstractClientServiceProxy implements InvocationHandler,IS
 		this.of = of;
 	}
 	
-	@SuppressWarnings("unchecked")
 	@Override
 	public void serviceChanged(int type, ServiceItem item) {
 
@@ -96,6 +99,8 @@ public abstract class AbstractClientServiceProxy implements InvocationHandler,IS
 						+this.getClass().getName()+"]";
 				logger.error(msg);
 				throw new CommonException(msg);
+			} else {
+				si = this.item;
 			}
 		}
 		
@@ -120,10 +125,23 @@ public abstract class AbstractClientServiceProxy implements InvocationHandler,IS
 				}
 			}
 		}
+		
 		ServiceMethod sm = si.getMethod(method.getName(), args);
-		JMicroContext.get().configMonitor(sm.getMonitorEnable(), si.getMonitorEnable()); 
-		JMicroContext.get().setParam(Constants.SERVICE_METHOD_KEY, sm);
-		JMicroContext.get().setParam(Constants.SERVICE_ITEM_KEY, si);
+		
+		if(sm == null){
+			throw new CommonException("cls["+method.getDeclaringClass().getName()+"] method ["+method.getName()+"] method not found");
+		}
+		
+		String methodName = method.getName();
+		if(method.getDeclaringClass() == Object.class) {
+		   throw new CommonException("Invalid invoke ["
+				   +method.getDeclaringClass().getName()+"] for method [ "+methodName+"]");
+		}
+		
+		JMicroContext.get().setParam(Constants.CLIENT_REF_METHOD, method);
+		JMicroContext.get().setObject(Constants.PROXY, this);
+		
+		JMicroContext.configComsumer(sm,si);
 		
 		return h.invoke(proxy, method, args);
 	}

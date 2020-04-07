@@ -30,11 +30,14 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.jmicro.api.JMicro;
+import org.jmicro.api.JMicroContext;
 import org.jmicro.api.annotation.Cfg;
 import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.Inject;
 import org.jmicro.api.annotation.SMethod;
 import org.jmicro.api.annotation.Service;
+import org.jmicro.api.basket.BasketFactory;
+import org.jmicro.api.basket.IBasket;
 import org.jmicro.api.classloader.RpcClassLoader;
 import org.jmicro.api.config.Config;
 import org.jmicro.api.executor.ExecutorConfig;
@@ -123,9 +126,9 @@ public class PubSubServer implements IInternalSubRpc{
 	
 	private ItemStorage<PSData> cacheStorage;
 	
-	private Map<String,List<PSData>> sendItems = new HashMap<>();
+	private BasketFactory<PSData> basketFactory = null;
 	
-	private Map<String,List<PSData>> acceptItems = new HashMap<>();
+	private Map<String,List<PSData>> sendCache = new HashMap<>();
 	
 	private Map<String,Long> lastSendTimes = new HashMap<>();
 	
@@ -139,7 +142,7 @@ public class PubSubServer implements IInternalSubRpc{
 	}
 	
 	@Override
-	@SMethod(timeout=5000,retryCnt=0)
+	@SMethod(timeout=5000,retryCnt=0,asyncable=true,debugMode=1)
 	public int publishItem(PSData item) {
 		return publishItems(item.getTopic(),new PSData[]{item});
 	}
@@ -160,13 +163,13 @@ public class PubSubServer implements IInternalSubRpc{
 	 * 同一主题的多个消息
 	 */
 	@Override
-	@SMethod(timeout=5000,retryCnt=0)
+	@SMethod(timeout=5000,retryCnt=0,asyncable=true,debugMode=1)
 	public int publishItems(String topic,PSData[] items) {
 		if(!this.subManager.isValidTopic(topic)) {
 			return PubSubManager.PUB_TOPIC_NOT_VALID;
 		}
 		
-		if(items == null || StringUtils.isEmpty(topic)) {
+		if(items == null || StringUtils.isEmpty(topic) || items.length == 0) {
 			//无效消息
 			return PubSubManager.PUB_SERVER_DISCARD;
 		}
@@ -176,21 +179,20 @@ public class PubSubServer implements IInternalSubRpc{
 			return PubSubManager.PUB_SERVER_BUSUY;
 		}
 		
-		if(size < this.maxMemoryItem) {
-			List<PSData> l = this.acceptItems.get(topic);
-			if(l == null) {
-				 l = this.acceptItems.get(topic);
-				 if(l == null) {
-					 this.acceptItems.put(topic, l = new ArrayList<PSData>());
-					 lastSendTimes.put(topic, System.currentTimeMillis());
-				 }
-			}
-			if(openDebug) {
-				//logger.info("Client publish topic:{}",topic);
-			}
-			l.addAll(Arrays.asList(items));
-			memoryItemsCnt.addAndGet(items.length);
+		if(!lastSendTimes.containsKey(topic)) {
+			lastSendTimes.put(topic, System.currentTimeMillis());
+		}
 		
+		IBasket<PSData> b = this.basketFactory.borrowWriteBasket();
+		
+		if(b != null && size < this.maxMemoryItem) {
+			b.add(items);
+			memoryItemsCnt.addAndGet(items.length);
+			//lastSendTimes.put(topic, System.currentTimeMillis());
+			this.basketFactory.returnWriteBasket(b, true);
+			/*if(openDebug) {
+				logger.info("push to basket :{},total:{}",items.length,this.memoryItemsCnt);
+			}*/
 		} else {
 			this.cacheStorage.push(topic,items);
 			cacheItemsCnt.addAndGet(items.length);
@@ -201,6 +203,10 @@ public class PubSubServer implements IInternalSubRpc{
 		
 		synchronized(syncLocker) {
 			syncLocker.notifyAll();
+		}
+		
+		if(JMicroContext.get().isDebug()) {
+			JMicroContext.get().appendCurUseTime("pubsub server finishTime",true);
 		}
 		
 		return PubSubManager.PUB_OK;
@@ -227,12 +233,14 @@ public class PubSubServer implements IInternalSubRpc{
 		//this.sendItems = new ConcurrentLinkedQueue<>(new HashSet<>(maxFailItemCount));
 		
 		ExecutorConfig config = new ExecutorConfig();
-		config.setMsCoreSize(5);
-		config.setMsMaxSize(20);
+		config.setMsCoreSize(10);
+		config.setMsMaxSize(100);
 		config.setTaskQueueSize(10000);
 		config.setThreadNamePrefix("PublishExecurot");
 		config.setRejectedExecutionHandler(new PubsubServerAbortPolicy());
 		executor = ExecutorFactory.createExecutor(config);
+		
+		basketFactory = new BasketFactory<PSData>(1000,100);
 		
 		/*Set<String> children = this.dataOp.getChildren(Config.PubSubDir,true);
 		for(String t : children) {
@@ -260,33 +268,25 @@ public class PubSubServer implements IInternalSubRpc{
 						syncLocker.wait(1000);
 					}
 				}
-
+				
 				long curTime = System.currentTimeMillis();
 				if (memoryItemsCnt.get() < batchSize) {
 					// 优先发送内存中的消息，如果内存中无消息，则发送缓存中的消息
 					for (Map.Entry<String, Long> e : lastSendTimes.entrySet()) {
 						if (curTime - e.getValue() > sendInterval && this.cacheStorage.len(e.getKey()) > 0) {
 							List<PSData> items = this.cacheStorage.pops(e.getKey(), batchSize);
-							cacheItemsCnt.addAndGet(-items.size());
 
-							List<PSData> is = sendItems.get(e.getKey());
-							if (is == null) {
-								synchronized (syncLocker) {
-									is = sendItems.get(e.getKey());
-									if (is == null) {
-										sendItems.put(e.getKey(), is = new ArrayList<>());
-									}
-								}
+							IBasket<PSData> b = this.basketFactory.borrowWriteBasket();
+							PSData[] arr = new PSData[items.size()];
+							items.toArray(arr);
+							if(b != null && b.add(arr)) {
+								this.basketFactory.returnWriteBasket(b, true);
+								memoryItemsCnt.addAndGet(items.size());
+								cacheItemsCnt.addAndGet(-items.size());
+							} else {
+								this.basketFactory.returnWriteBasket(b, false);
+								this.cacheStorage.push(e.getKey(), arr);
 							}
-							
-							synchronized (is) {
-								if(openDebug) {
-									logger.info("end get items from cache topic:{}",e.getKey());
-								}
-								is.addAll(items);
-							}
-							
-							memoryItemsCnt.addAndGet(items.size());
 							
 							if(openDebug) {
 								logger.info("begin get items from cache topic:{}",e.getKey());
@@ -304,45 +304,60 @@ public class PubSubServer implements IInternalSubRpc{
 				}
 				
 				int sendSize = 0;
-
-				synchronized(syncLocker) {
-					for (Map.Entry<String, List<PSData>> e : sendItems.entrySet()) {
-
-						if (e.getValue().isEmpty()) {
-							//无消息要发送
-							continue;
-						}
-						
-						long lastSendTime = lastSendTimes.get(e.getKey());
-						if(e.getValue().size() < batchSize && System.currentTimeMillis() - lastSendTime < sendInterval) {
-							//消息数量及距上次发送时间间隔都不到，直接路过
-							continue;
-						}
-
-						//更新发送时间
-						lastSendTimes.put(e.getKey(), System.currentTimeMillis());
-						
-						List<PSData> ll = e.getValue();
-
-						int size = ll.size();
-						if (size > batchSize) {
-							// 每批次最多能同时发送batchSize个消息
-							size = batchSize;
-						}
-
-						PSData[] items = new PSData[size];
-						synchronized (ll) {
-							int i = 0;
-							for (Iterator<PSData> ite = ll.iterator(); ite.hasNext() && i < size; i++) {
-								items[i] = ite.next();
-								ite.remove();
-							}
-						}
-						sendSize += items.length;
-						this.executor.submit(new Worker(items, e.getKey()));
-					}
-				}
 				
+				IBasket<PSData> rb = null;
+
+				while ((rb = this.basketFactory.borrowReadSlot()) != null) {
+
+					PSData[] psd = new PSData[rb.remainding()];
+					if(!rb.getAll(psd)) {
+						this.basketFactory.returnReadSlot(rb, false);
+						if(openDebug) {
+							logger.info("Fail to get element from basket remaiding:{}",rb.remainding());
+						}//消息数量及距上次发送时间间隔都不到，直接路过
+						continue;
+					}
+					
+					this.basketFactory.returnReadSlot(rb, true);
+					
+					String topic = psd[0].getTopic();
+					
+					List<PSData> ll = this.sendCache.get(topic);
+					if(ll == null) {
+						this.sendCache.put(topic, (ll = new ArrayList<PSData>()));
+					}
+					ll.addAll(Arrays.asList(psd));
+					
+					
+					long lastSendTime = lastSendTimes.get(topic);
+					
+					if(ll.size() < batchSize && System.currentTimeMillis() - lastSendTime < sendInterval) {
+						if(openDebug) {
+							//logger.info("size :{},interval:{}",ll.size(),System.currentTimeMillis() - lastSendTime);
+						}//消息数量及距上次发送时间间隔都不到，直接路过
+						continue;
+					}
+
+					//更新发送时间
+					lastSendTimes.put(topic, System.currentTimeMillis());
+					
+					int size = ll.size();
+					if (size > batchSize) {
+						// 每批次最多能同时发送batchSize个消息
+						size = batchSize;
+					}
+
+					PSData[] items = new PSData[size];
+
+					int i = 0;
+					for (Iterator<PSData> ite = ll.iterator(); ite.hasNext() && i < size; i++) {
+						items[i] = ite.next();
+						ite.remove();
+					}
+				
+					sendSize += items.length;
+					this.executor.submit(new Worker(items, topic));
+				}
 				
 				if(sendSize == 0 && memoryItemsCnt.get()/batchSize > 5) {
 					String msg = "Pubsub server got in exception statu: memory size: "+memoryItemsCnt.get()+

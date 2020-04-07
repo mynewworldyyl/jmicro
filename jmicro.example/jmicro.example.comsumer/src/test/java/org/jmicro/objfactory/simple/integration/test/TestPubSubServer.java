@@ -6,8 +6,8 @@ import java.util.Random;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.jmicro.api.JMicro;
-import org.jmicro.api.monitor.AbstractMonitorDataSubscriber;
-import org.jmicro.api.monitor.MonitorConstant;
+import org.jmicro.api.monitor.v1.AbstractMonitorDataSubscriber;
+import org.jmicro.api.monitor.v1.MonitorConstant;
 import org.jmicro.api.pubsub.IInternalSubRpc;
 import org.jmicro.api.pubsub.PSData;
 import org.jmicro.api.pubsub.PubSubManager;
@@ -17,6 +17,8 @@ import org.jmicro.common.Constants;
 import org.jmicro.common.Utils;
 import org.jmicro.test.JMicroBaseTestCase;
 import org.junit.Test;
+
+import junit.framework.Assert;
 
 public class TestPubSubServer extends JMicroBaseTestCase{
 
@@ -29,7 +31,8 @@ public class TestPubSubServer extends JMicroBaseTestCase{
 		psd.setData(new byte[] {22,33,33});
 		psd.setTopic(TOPIC);
 		
-		psm.publishItems(TOPIC,new PSData[] {psd,psd});
+		int rst = psm.publishItems(TOPIC,new PSData[] {psd,psd});
+		Assert.assertTrue(rst == PubSubManager.PUB_OK);
 		
 		//psm.publishData(psd);
 		
@@ -117,10 +120,11 @@ public class TestPubSubServer extends JMicroBaseTestCase{
 					psData.setTopic(TOPIC);
 					psData.put(Constants.SERVICE_METHOD_KEY, new ServiceMethod());
 					
-					System.out.println(psm.publish(psData));
+					psm.publish(psData);
+					//System.out.println(psm.publish(psData));
 					
 					//Thread.sleep(2000);
-					Thread.sleep(ran.nextInt(1000));
+					Thread.sleep(ran.nextInt(100));
 					
 				} catch (Throwable e) {
 					e.printStackTrace();
@@ -129,9 +133,9 @@ public class TestPubSubServer extends JMicroBaseTestCase{
 		};
 		
 		new Thread(r).start();
-		//new Thread(r).start();
-		//new Thread(r).start();
-		//new Thread(r).start();
+		new Thread(r).start();
+		new Thread(r).start();
+		new Thread(r).start();
 		//new Thread(r).start();
 		
 		JMicro.waitForShutdown();

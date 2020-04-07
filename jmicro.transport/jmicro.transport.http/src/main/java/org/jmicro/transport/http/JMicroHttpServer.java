@@ -29,7 +29,7 @@ import org.jmicro.api.annotation.Server;
 import org.jmicro.api.codec.ICodecFactory;
 import org.jmicro.api.config.Config;
 import org.jmicro.api.idgenerator.ComponentIdServer;
-import org.jmicro.api.monitor.SF;
+import org.jmicro.api.monitor.v1.SF;
 import org.jmicro.api.net.IMessageReceiver;
 import org.jmicro.api.net.IServer;
 import org.jmicro.api.net.Message;

@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.jmicro.api.monitor;
+package org.jmicro.api.monitor.v1;
 
 import org.jmicro.api.annotation.SO;
 import org.jmicro.api.net.IReq;

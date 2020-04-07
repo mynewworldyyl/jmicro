@@ -11,7 +11,7 @@ import org.jmicro.api.codec.JDataOutput;
 import org.jmicro.api.codec.PrefixTypeEncoderDecoder;
 import org.jmicro.api.mng.ConfigNode;
 import org.jmicro.api.mng.IConfigManager;
-import org.jmicro.api.monitor.MonitorConstant;
+import org.jmicro.api.monitor.v1.MonitorConstant;
 import org.jmicro.api.net.Message;
 import org.jmicro.api.registry.AsyncConfig;
 import org.jmicro.api.registry.ServiceMethod;

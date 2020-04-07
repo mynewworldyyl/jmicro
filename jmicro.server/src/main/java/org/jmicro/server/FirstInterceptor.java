@@ -17,14 +17,13 @@
 package org.jmicro.server;
 
 import org.jmicro.api.JMicro;
-import org.jmicro.api.JMicroContext;
 import org.jmicro.api.annotation.Cfg;
 import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.Interceptor;
 import org.jmicro.api.exception.RpcException;
 import org.jmicro.api.limitspeed.ILimiter;
-import org.jmicro.api.monitor.MonitorConstant;
-import org.jmicro.api.monitor.SF;
+import org.jmicro.api.monitor.v1.MonitorConstant;
+import org.jmicro.api.monitor.v1.SF;
 import org.jmicro.api.net.AbstractInterceptor;
 import org.jmicro.api.net.IInterceptor;
 import org.jmicro.api.net.IRequest;
@@ -87,8 +86,7 @@ public class FirstInterceptor extends AbstractInterceptor implements IIntercepto
 			boolean r = limiter.enter(req);
 			if(!r){
 				logger.warn("Limit exceep, forbidon this request");
-				SF.doRequestLog(MonitorConstant.LOG_ERROR, FirstInterceptor.class, req,
-						null, "Limit exceep, forbidon this request");
+				SF.doRequestLog(MonitorConstant.LOG_ERROR, FirstInterceptor.class,null, "Limit exceep, forbidon this request");
 				return fastFail(req);
 			}
 		}

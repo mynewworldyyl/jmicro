@@ -24,12 +24,12 @@ import java.util.concurrent.ExecutorService;
 import org.jmicro.api.annotation.Cfg;
 import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.Inject;
+import org.jmicro.api.annotation.JMethod;
 import org.jmicro.api.annotation.Server;
 import org.jmicro.api.config.Config;
 import org.jmicro.api.executor.ExecutorConfig;
 import org.jmicro.api.executor.ExecutorFactory;
-import org.jmicro.api.monitor.IMonitorDataSubmiter;
-import org.jmicro.api.monitor.SF;
+import org.jmicro.api.monitor.v1.SF;
 import org.jmicro.api.net.IServer;
 import org.jmicro.api.objectfactory.IObjectFactory;
 import org.jmicro.api.objectfactory.PostFactoryAdapter;
@@ -70,9 +70,6 @@ public class NettySocketServer extends PostFactoryAdapter implements IServer {
 	@Inject
 	private NettySocketChannelInitializer initializer;
 	
-	@Inject(required=false)
-	private IMonitorDataSubmiter monitor;
-	
 	@Cfg(value="/NettySocketServer/nettyPort",required=false,defGlobal=false)
 	private int port=0;
 	
@@ -103,6 +100,11 @@ public class NettySocketServer extends PostFactoryAdapter implements IServer {
 		bossGroupExecutor = ExecutorFactory.createExecutor(config1);
 		
 		start();
+	}
+	
+	@JMethod("ready")
+	public void ready() {
+		
 	}
 	
 	@Override

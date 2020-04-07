@@ -1,40 +1,30 @@
 package org.jmicro.objfactory.simple.integration.test;
 
-import java.util.Random;
-import java.util.Set;
-
-import org.jmicro.api.JMicro;
-import org.jmicro.api.JMicroContext;
-import org.jmicro.api.monitor.v1.IMonitorDataSubmiter;
-import org.jmicro.api.monitor.v1.IMonitorDataSubscriber;
 import org.jmicro.api.monitor.v1.MonitorConstant;
 import org.jmicro.api.monitor.v1.SF;
-import org.jmicro.api.monitor.v1.SubmitItem;
-import org.jmicro.api.objectfactory.IObjectFactory;
-import org.jmicro.api.registry.ServiceItem;
-import org.jmicro.api.registry.ServiceMethod;
-import org.jmicro.common.Constants;
-import org.jmicro.example.api.rpc.ISimpleRpc;
-import org.jmicro.example.comsumer.TestRpcClient;
+import org.jmicro.api.monitor.v2.IMonitorDataSubscriber;
+import org.jmicro.api.monitor.v2.IMonitorServer;
+import org.jmicro.api.monitor.v2.MRpcItem;
+import org.jmicro.api.monitor.v2.MonitorManager;
 import org.jmicro.test.JMicroBaseTestCase;
 import org.junit.Test;
 
-public class TestMonitorSubmiter extends JMicroBaseTestCase{
+public class TestMonitorSubmiterV2 extends JMicroBaseTestCase{
 	
-	private SubmitItem ssubItem() {
-		SubmitItem si = new SubmitItem();
-		si.setType(MonitorConstant.LINKER_ROUTER_MONITOR);
-		si.setLevel(MonitorConstant.LOG_ERROR);
-		si.setDesc("testSubmitItem");
+	private MRpcItem ssubItem() {
+		MRpcItem si = new MRpcItem();
+		si.addOneItem(MonitorConstant.LINKER_ROUTER_MONITOR, TestMonitorSubmiterV2.class.getName(),
+				"Test Monitor server");
 		si.setLinkId(22L);
 		return si;
 	}
 	
 	@Test
 	public void testSubmitItem() {
+		this.setSayHelloContextv2();
 		IMonitorDataSubscriber m = of.getRemoteServie(IMonitorDataSubscriber.class.getName()
 				, "printLogMonitor", "0.0.1", null,null);
-		SubmitItem[] sis = new SubmitItem[1];
+		MRpcItem[] sis = new MRpcItem[1];
 		sis[0] = ssubItem();
 		m.onSubmit(sis);
 		
@@ -42,23 +32,57 @@ public class TestMonitorSubmiter extends JMicroBaseTestCase{
 	}
 	
 	@Test
-	public void testMonitorDataSubmiter() {
-		IMonitorDataSubmiter m = of.get(IMonitorDataSubmiter.class);
-		SubmitItem si = new SubmitItem();
-		si.setType(MonitorConstant.REQ_START);
-		m.submit(si);
-		this.waitForReady(100);
+	public void testMonitorServer() {
+		this.setSayHelloContextv2();
+		IMonitorServer m = of.getRemoteServie(IMonitorServer.class.getName()
+				, "monitorServer", "0.0.1", null,null);
+		MRpcItem[] sis = new MRpcItem[1];
+		sis[0] = ssubItem();
+		m.submit(sis);
+		
+		this.waitForReady(1000*10);
 	}
 	
 	@Test
-	public void testSFSubmiter() {
-		this.setSayHelloContext();
-		//SF.doSubmit(MonitorConstant.CLIENT_REQ_BEGIN);
-		this.waitForReady(100);
+	public void testMonitorDataSubmiter() {
+		MonitorManager m = of.get(MonitorManager.class);
+		m.readySubmit(ssubItem());
+		this.waitForReady(1000000);
 	}
 	
+	@Test
+	public void testSFSubmit() {
+		//SF.doBussinessLog(MonitorConstant.LOG_ERROR, TestMonitorSubmiterV2.class, null, "Hello");
+		//SF.netIo(MonitorConstant.LOG_ERROR, "testmonitor", TestMonitorSubmiterV2.class, null);
+		SF.doServiceLog(MonitorConstant.LOG_ERROR,TestMonitorSubmiterV2.class,null, "testmonitor");
+		this.waitForReady(1000000);
+	}
 	
-	 @Test
+	@Test
+	public void testSubmitLog() {
+		
+		//setSayHelloContext();
+		
+		MRpcItem mi= ssubItem();
+		
+		for(;;){
+			
+			try {
+				SF.doServiceLog(MonitorConstant.LOG_ERROR,TestMonitorSubmiterV2.class,null, "testmonitor");
+			} catch (Throwable e1) {
+				e1.printStackTrace();
+			}
+			
+			try {
+				Thread.sleep(300);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+		}
+		
+	}
+	
+	/* @Test
 		public void testMonitor01() {
 			final Random ran = new Random();
 			this.setSayHelloContext();
@@ -71,9 +95,9 @@ public class TestMonitorSubmiter extends JMicroBaseTestCase{
 				e.printStackTrace();
 			}
 			JMicro.waitForShutdown();
-		}
+		}*/
 	    
-		@Test
+		/*@Test
 		public void testMonitor02() {
 			final Random ran = new Random();
 			this.setSayHelloContext();
@@ -97,38 +121,7 @@ public class TestMonitorSubmiter extends JMicroBaseTestCase{
 		
 		
 		@Test
-		public void testSubmitLog() {
-			
-			IMonitorDataSubscriber m = of.getRemoteServie(IMonitorDataSubscriber.class.getName()
-					, "printLogMonitor", "0.0.1", null,null);
-			
-			SubmitItem[] sis = new SubmitItem[1];
-			sis[0] = ssubItem();
 		
-			setSayHelloContext();
-			
-			for(;;){
-				
-				
-				//logger.debug("testSubmitLog");
-				
-				try {
-					//m.onSubmit(sis);
-					SF.doServiceLog(MonitorConstant.LOG_DEBUG,this.getClass(),null,"testSubmitLog");
-				} catch (Throwable e1) {
-					e1.printStackTrace();
-				}
-				
-				try {
-					Thread.sleep(100);
-				} catch (InterruptedException e) {
-					e.printStackTrace();
-				}
-			}
-				
-			//JMicro.waitForShutdown();
-			
-		}
 		
 		@Test
 		public void testSayHelloToPrintRouterLog() {
@@ -185,6 +178,6 @@ public class TestMonitorSubmiter extends JMicroBaseTestCase{
 			
 			JMicro.waitForShutdown();
 			
-		}
+		}*/
 		
 }

@@ -18,8 +18,8 @@ package org.jmicro.api.net;
 
 import java.nio.ByteBuffer;
 
-import org.jmicro.api.monitor.MonitorConstant;
-import org.jmicro.api.monitor.ServiceCounter;
+import org.jmicro.api.monitor.v1.MonitorConstant;
+import org.jmicro.api.monitor.v1.ServiceCounter;
 /**
  * 
  * @author Yulei Ye
@@ -40,9 +40,9 @@ public interface ISession{
 	
 	public static final Short[] STATIS_TYPES = new Short[]{
 			//服务器发生错误,返回ServerError异常
-			MonitorConstant.CLIENT_GET_SERVER_ERROR,
+			MonitorConstant.CLIENT_SERVICE_ERROR,
 			//业务错误,success=false,此时接口调用正常
-			MonitorConstant.CLIENT_GET_RESPONSE_ERROR,
+			MonitorConstant.CLIENT_RESPONSE_SERVER_ERROR,
 			//请求超时
 			MonitorConstant.REQ_TIMEOUT,
 			//请求开始

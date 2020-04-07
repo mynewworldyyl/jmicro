@@ -17,7 +17,7 @@
 package org.jmicro.example.test.pubsub;
 
 import org.jmicro.api.annotation.SO;
-import org.jmicro.api.monitor.MonitorConstant;
+import org.jmicro.api.monitor.v1.MonitorConstant;
 import org.jmicro.api.net.IReq;
 import org.jmicro.api.net.IResp;
 import org.jmicro.api.net.Message;

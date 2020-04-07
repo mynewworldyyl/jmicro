@@ -8,8 +8,8 @@ import java.util.Map;
 
 import org.jmicro.api.gateway.ApiRequest;
 import org.jmicro.api.gateway.ApiResponse;
-import org.jmicro.api.monitor.AbstractMonitorDataSubscriber;
-import org.jmicro.api.monitor.SubmitItem;
+import org.jmicro.api.monitor.v1.AbstractMonitorDataSubscriber;
+import org.jmicro.api.monitor.v1.SubmitItem;
 import org.jmicro.api.net.Message;
 import org.jmicro.api.net.RpcRequest;
 import org.jmicro.api.net.RpcResponse;

@@ -5,7 +5,7 @@ import java.util.Map;
 import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.Service;
 import org.jmicro.api.annotation.Subscribe;
-import org.jmicro.api.monitor.MonitorConstant;
+import org.jmicro.api.monitor.v1.MonitorConstant;
 import org.jmicro.api.pubsub.PSData;
 import org.jmicro.common.Constants;
 import org.jmicro.common.util.JsonUtils;
@@ -19,9 +19,9 @@ public class SimplePubsubImpl implements ISimplePubsub {
 
 	private final static Logger logger = LoggerFactory.getLogger(SimplePubsubImpl.class);
 
-	@Subscribe(topic="/jmicro/test/topic01;/jmicro/test/topic02")
+	@Subscribe(topic="/jmicro/test/topic01"+Constants.TOPIC_SEPERATOR+"/jmicro/test/topic02")
 	public void helloTopicWithArrayArgs(PSData[] data) {
-		System.out.println("helloTopicWithArrayArgs: "+data[0].getTopic()+", data: "+ data[0].getData().toString());
+		System.out.println("helloTopicWithArrayArgs: "+data[0].getTopic()+", size: "+ data.length );
 	}
 	
 	//@Subscribe(topic="/jmicro/test/topic01")

@@ -14,46 +14,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.jmicro.api.monitor;
+package org.jmicro.api.monitor.v1;
 
 /**
- * 
+ * 链路监控ID生成
  * @author Yulei Ye
- * @date 2018年10月22日-下午1:42:56
+ * @date 2018年11月19日 下午10:31:17
  */
-public class ServiceStatis {
+public class Linker {
 
-	private String service;
-	private long time;
-	//public long endtime;
-	private int avgResponseTime;
-	
-	public ServiceStatis(){};
-	
-	public ServiceStatis(String service,long time,int avgResponseTime){
-		this.service = service;
-		this.time = time;
-		this.avgResponseTime = avgResponseTime;
-	};
-	
-	public String getService() {
-		return service;
-	}
-	public void setService(String service) {
-		this.service = service;
-	}
-	public long getTime() {
-		return time;
-	}
-	public void setTime(long time) {
-		this.time = time;
-	}
-	public int getAvgResponseTime() {
-		return avgResponseTime;
-	}
-	public void setAvgResponseTime(int avgResponseTime) {
-		this.avgResponseTime = avgResponseTime;
-	}
-	
-	
 }

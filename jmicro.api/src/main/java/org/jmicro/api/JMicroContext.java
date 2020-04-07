@@ -22,10 +22,12 @@ import java.util.Stack;
 
 import org.jmicro.api.config.Config;
 import org.jmicro.api.idgenerator.ComponentIdServer;
-import org.jmicro.api.monitor.IMonitorDataSubmiter;
-import org.jmicro.api.monitor.Linker;
-import org.jmicro.api.monitor.MonitorConstant;
-import org.jmicro.api.monitor.SF;
+import org.jmicro.api.monitor.v1.Linker;
+import org.jmicro.api.monitor.v1.MonitorConstant;
+import org.jmicro.api.monitor.v1.SF;
+import org.jmicro.api.monitor.v2.MRpcItem;
+import org.jmicro.api.monitor.v2.MonitorManager;
+import org.jmicro.api.monitor.v2.OneItem;
 import org.jmicro.api.net.IRequest;
 import org.jmicro.api.net.ISession;
 import org.jmicro.api.net.Message;
@@ -36,6 +38,8 @@ import org.jmicro.api.registry.UniqueServiceMethodKey;
 import org.jmicro.api.service.ServiceLoader;
 import org.jmicro.common.CommonException;
 import org.jmicro.common.Constants;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 /**
  * 
  * @author Yulei Ye
@@ -43,18 +47,21 @@ import org.jmicro.common.Constants;
  */
 public class JMicroContext  {
 
-	//value should be true or false, for provider or consumer side
-	public static final String CALL_SIDE_PROVIDER = "callSideProvider";
+	static final Logger logger = LoggerFactory.getLogger(JMicroContext.class);
 	
-	public static final String LOCAL_HOST = "host";
-	public static final String LOCAL_PORT = "port";
+	//value should be true or false, for provider or consumer side
+	public static final String CALL_SIDE_PROVIDER = "_callSideProvider";
+	
+	public static final String LOCAL_HOST = "_host";
+	public static final String LOCAL_PORT = "_port";
 	
 	public static final String REMOTE_HOST = "remoteHost";
-	public static final String REMOTE_PORT = "remotePort";
+	public static final String REMOTE_PORT = "_remotePort";
 	
-	public static final String LINKER_ID = "linkerId";
-	public static final String REQ_ID = "reqId";
-	public static final String MSG_ID = "msgId";
+	public static final String LINKER_ID = "_linkerId";
+	public static final String IS_DEBUG = "_isDebug";
+	public static final String REQ_ID = "_reqId";
+	public static final String MSG_ID = "_msgId";
 	
 	public static final String MONITOR = "monitor";
 	
@@ -73,9 +80,53 @@ public class JMicroContext  {
 	
 	private Stack<Map<String,Object>> stack = new Stack<>();
 	
-	private boolean isLoggable = false;
+	//private boolean isLoggable = false;
+	//ServiceMethod deubugMode =true时才有效
+	private boolean isDebug = false;
+	private long clientUpTime = 0;
+	private StringBuilder debugLoger;
+	
+	private MRpcItem item = null;
 	
 	private JMicroContext() {}
+	
+	public OneItem addOneItem(short type) {
+		if(this.isMonitor()) {
+			OneItem oi = new OneItem(type);
+			item.addOneItem(oi);
+			return oi;
+		}
+		return null;
+	}
+	
+	public MRpcItem getMRpcItem() {
+		if(this.isMonitor()) {
+			return this.item;
+		}
+		return null;
+	}
+	
+	public void submitMRpcItem() {
+		if(this.item != null && this.isMonitor()) {
+			MonitorManager mo = JMicroContext.get().getParam(JMicroContext.MONITOR, null);
+			if(mo != null) {
+				setCommon(this.item);
+				mo.readySubmit(this.item);
+			}
+		}
+	}
+	
+	private static void setCommon(MRpcItem si) {
+		if(si == null) {
+			return;
+		}
+		SF.setCommon(si);
+	}
+	
+	public static void setMonitor(){
+		JMicroContext.get().setObject(JMicroContext.MONITOR, 
+				JMicro.getObjectFactory().get(MonitorManager.class));
+	}
 	
 	public static void remove(){
 		JMicroContext c = cxt.get();
@@ -106,7 +157,7 @@ public class JMicroContext  {
 		return flag[0];
 	}
 	
-	public static void configProvider(IMonitorDataSubmiter monitor,ISession s) {
+	public static void configProvider(ISession s) {
 		callSideProdiver(true);
 		setMonitor();
 		JMicroContext context = get();
@@ -124,8 +175,41 @@ public class JMicroContext  {
 		JMicroContext context = cxt.get();
 		context.configMonitorable(msg.isMonitorable());
 		context.setParam(JMicroContext.LINKER_ID, msg.getLinkId());
-		context.isLoggable = msg.isLoggable();
+		//context.isLoggable = msg.isLoggable();
+		if(msg.isMonitorable()) {
+			if(context.item == null) {
+				context.item = new MRpcItem(lid(),msg.getReqId());
+			}
+		} else {
+			context.item = null;
+		}
+		//debug mode 下才有效
+		context.isDebug = msg.isDebugMode();
+		if(context.isDebug) {
+			context.clientUpTime = msg.getTime();
+			context.debugLoger = new StringBuilder();
+		}
 	}
+	
+	public static void configComsumer(ServiceMethod sm,ServiceItem si) {
+		JMicroContext context = cxt.get();
+		
+		context.setParam(Constants.SERVICE_METHOD_KEY, sm);
+		context.setParam(Constants.SERVICE_ITEM_KEY, si);
+		context.setParam(JMicroContext.LOCAL_HOST, Config.getHost());
+		
+		context.configMonitor(sm.getMonitorEnable(),si.getMonitorEnable());
+		//context.setParam(JMicroContext.LINKER_ID, msg.getLinkId());
+		//context.isLoggable = msg.isLoggable();
+		
+		//debug mode 下才有效
+		context.isDebug = sm.getDebugMode() == 1?true:(si.getDebugMode() == 1 ? true : false);
+		if(context.isDebug) {
+			context.clientUpTime = System.currentTimeMillis();
+			context.debugLoger = new StringBuilder();
+		}
+	}
+	
 	
 	public static void config(IRequest req, ServiceLoader serviceLoader,IRegistry registry) {
 		JMicroContext context = cxt.get();
@@ -139,7 +223,7 @@ public class JMicroContext  {
 		ServiceItem si = registry.getServiceByImpl(req.getImpl());
 		if(si == null){
 			if(req.isLoggable()) {
-				SF.doRequestLog(MonitorConstant.LOG_ERROR,JMicroContext.class, req,null," service ITEM not found");
+				SF.doRequestLog(MonitorConstant.LOG_ERROR,JMicroContext.class,null," service ITEM not found");
 			}
 			//SF.doSubmit(MonitorConstant.SERVER_REQ_SERVICE_NOT_FOUND,req,null);
 			throw new CommonException("Service not found impl："+req.getImpl());
@@ -153,7 +237,7 @@ public class JMicroContext  {
 		Object obj = serviceLoader.getService(req.getImpl());
 		
 		if(obj == null){
-			SF.doRequestLog(MonitorConstant.LOG_ERROR,JMicroContext.class, req,null," service INSTANCE not found");
+			SF.doRequestLog(MonitorConstant.LOG_ERROR,JMicroContext.class,null," service INSTANCE not found");
 			//SF.doSubmit(MonitorConstant.SERVER_REQ_SERVICE_NOT_FOUND,req,null);
 			throw new CommonException("Service not found,srv: "+req.getImpl());
 		}
@@ -192,7 +276,7 @@ public class JMicroContext  {
 	}*/
 	
 	public static boolean existLinkId(){
-		return get().exists(LINKER_ID) && get().getBoolean(LINKER_ID, false);
+		return get().exists(Constants.NEW_LINKID) && get().getBoolean(Constants.NEW_LINKID, false);
 		
 	}
 	
@@ -228,30 +312,86 @@ public class JMicroContext  {
 		cxt.get().params.putAll(ps);;
 	}
 	
-	public static void setMonitor(){
-		JMicroContext.get().setObject(JMicroContext.MONITOR, 
-				JMicro.getObjectFactory().get(IMonitorDataSubmiter.class));
-	}
-	
 	public void configMonitor(int methodCfg,int srvCfg){
 		if(methodCfg != -1){
 			configMonitorable(methodCfg==1);
 		} else if(srvCfg != -1){
 			configMonitorable(srvCfg==1);
 		}
+		if(this.isMonitor() && this.item == null) {
+			this.item = new MRpcItem();
+		}
 	}
 	
 	public void configMonitorable(boolean enable){
 		this.setBoolean(Constants.MONITOR_ENABLE_KEY, enable);
 	}
-
-	public void mergeParams(JMicroContext c){
-		Map<String,Object> ps = c.params;
-		if(ps == null || ps.isEmpty()) {
+	
+	public boolean isDebug(){
+		return isDebug;
+	}
+	
+	//debug mode 下才有效
+	public StringBuilder getDebugLog() {
+		return this.debugLoger;
+	}
+	
+	//debug mode 下才有效
+	public void appendCurUseTime(String label,boolean force) {
+		if(this.isDebug) {
+			ServiceMethod sm = this.getParam(Constants.SERVICE_METHOD_KEY, null);
+			if(sm != null) {
+				long cost = System.currentTimeMillis() - this.clientUpTime;
+				if(force || cost > sm.getTimeout()-300) {
+					//超时的请求才记录下来
+					this.debugLoger.append(",").append(label).append(": ").append(System.currentTimeMillis()-this.clientUpTime);
+				}
+			}
+		}
+	}
+	
+	public void debugLog(long timeout) {
+		if(!this.isDebug) {
 			return;
 		}
-		for(Map.Entry<String, Object> p : ps.entrySet()){
-			this.params.put(p.getKey(), p.getValue());
+
+		long cost = System.currentTimeMillis() - this.clientUpTime;
+		if(timeout > 0) {
+			if(cost > timeout) {
+				//超时的请求才记录下来
+				this.debugLoger.append(", cost except :").append(timeout).append(" : ").append(cost);
+				logger.warn(this.debugLoger.toString());
+			}
+		}else {
+			ServiceMethod sm = this.getParam(Constants.SERVICE_METHOD_KEY, null);
+			if(sm != null) {
+				if(cost > sm.getTimeout()-300) {
+					//超时的请求才记录下来
+					this.debugLoger.append(", mybe timeout except :").append((sm.getTimeout()-300)).append(" : ").append(cost);
+					logger.warn(this.debugLoger.toString());
+				}
+			} else {
+				//超时的请求才记录下来
+				this.debugLoger.append(", with ServiceMethod is NULL :");
+				logger.warn(this.debugLoger.toString());
+			}
+		}			
+	}
+	
+
+	public void mergeParams(JMicroContext c){
+		if(c.params != null && !c.params.isEmpty()) {
+			mergeParams(c.params);
+		}
+		
+		if(c.isDebug) {
+			this.isDebug = c.isDebug;
+			this.clientUpTime = c.clientUpTime;
+			this.debugLoger = new StringBuilder(c.debugLoger.toString());
+		}
+		
+		if(c.isMonitor()) {
+			this.item = c.item;
 		}
 	}
 	

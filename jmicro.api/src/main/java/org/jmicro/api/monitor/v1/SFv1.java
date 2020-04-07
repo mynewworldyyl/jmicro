@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.jmicro.api.monitor;
+package org.jmicro.api.monitor.v1;
 
 import org.jmicro.api.JMicro;
 import org.jmicro.api.JMicroContext;
@@ -32,7 +32,7 @@ import org.jmicro.common.Constants;
  * @author Yulei Ye
  * @date 2018年11月19日 下午9:34:45
  */
-public class SF {
+public class SFv1 {
 	
 	public static boolean linkStart(String tag,IReq req) {
 		if(isMonitorable(MonitorConstant.LINK_START)) {
@@ -105,8 +105,8 @@ public class SF {
 	 * @return
 	 */
 	public static boolean reqServiceRespError(String tag,IReq req,ServerError se) {
-		if(isMonitorable(MonitorConstant.CLIENT_GET_RESPONSE_ERROR)) {
-			SubmitItem si = createSubmitItem(MonitorConstant.CLIENT_GET_RESPONSE_ERROR,req,null,
+		if(isMonitorable(MonitorConstant.CLIENT_RESPONSE_SERVER_ERROR)) {
+			SubmitItem si = createSubmitItem(MonitorConstant.CLIENT_RESPONSE_SERVER_ERROR,req,null,
 					"code: "+se.getErrorCode()+",msg: "+se.getMsg(),tag,null,false);
 			return  monitor().submit(si);
 		}
@@ -120,8 +120,8 @@ public class SF {
 	 * @return
 	 */
 	public static boolean reqServerError(String tag,IReq req,String msg) {
-		if(isMonitorable(MonitorConstant.CLIENT_GET_SERVER_ERROR)) {
-			SubmitItem si = createSubmitItem(MonitorConstant.CLIENT_GET_SERVER_ERROR,req,null,msg,tag,null,false);
+		if(isMonitorable(MonitorConstant.CLIENT_SERVICE_ERROR)) {
+			SubmitItem si = createSubmitItem(MonitorConstant.CLIENT_SERVICE_ERROR,req,null,msg,tag,null,false);
 			return  monitor().submit(si);
 		}
 		return false;
@@ -153,7 +153,7 @@ public class SF {
 	}
 	
 	public static boolean serverStop(String tag,String host,int port) {
-		SubmitItem si = createSubmitItem(MonitorConstant.CLIENT_GET_SERVER_ERROR,null,null,
+		SubmitItem si = createSubmitItem(MonitorConstant.CLIENT_SERVICE_ERROR,null,null,
 				"host:"+host+", port:"+port,tag,null,true);
 		return monitor().submit(si);
 	}

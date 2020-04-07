@@ -140,7 +140,7 @@ class SubcriberManager {
 				}
 
 				if (openDebug) {
-					logger.debug("Got ont CB: {}", sm.getKey().toKey(true, true, true));
+					logger.debug("Got one CB: {}", sm.getKey().toKey(true, true, true));
 				}
 			}	
 		}

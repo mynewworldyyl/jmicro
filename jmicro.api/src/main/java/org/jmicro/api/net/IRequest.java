@@ -48,6 +48,8 @@ public interface IRequest extends IReq{
 	
 	public long getRequestId();
 	
+	void setRequestId(long reqId);
+	
 	public boolean isSuccess();
 	void setSuccess(boolean isSuccess);
 	
@@ -59,10 +61,6 @@ public interface IRequest extends IReq{
 	public Long getMsgId();
 	
 	public Map<String,Object> getRequestParams();
-	
-    long getId();
-	
-	void setId(long id);
 	
 	boolean isLoggable();
 	

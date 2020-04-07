@@ -32,7 +32,7 @@ import org.jmicro.api.annotation.Cfg;
 import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.Inject;
 import org.jmicro.api.codec.typecoder.TypeCoder;
-import org.jmicro.api.monitor.SubmitItem;
+import org.jmicro.api.monitor.v1.SubmitItem;
 import org.jmicro.common.CommonException;
 import org.jmicro.common.Constants;
 import org.jmicro.common.Utils;

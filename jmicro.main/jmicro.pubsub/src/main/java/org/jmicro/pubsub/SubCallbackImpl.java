@@ -24,8 +24,8 @@ import java.util.Map;
 import java.util.Set;
 
 import org.jmicro.api.JMicroContext;
-import org.jmicro.api.monitor.MonitorConstant;
-import org.jmicro.api.monitor.SF;
+import org.jmicro.api.monitor.v1.MonitorConstant;
+import org.jmicro.api.monitor.v1.SF;
 import org.jmicro.api.net.Message;
 import org.jmicro.api.objectfactory.AbstractClientServiceProxy;
 import org.jmicro.api.objectfactory.IObjectFactory;

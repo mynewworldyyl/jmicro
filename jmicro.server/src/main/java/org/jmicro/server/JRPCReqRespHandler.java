@@ -23,8 +23,8 @@ import org.jmicro.api.annotation.Inject;
 import org.jmicro.api.codec.ICodecFactory;
 import org.jmicro.api.config.Config;
 import org.jmicro.api.idgenerator.ComponentIdServer;
-import org.jmicro.api.monitor.MonitorConstant;
-import org.jmicro.api.monitor.SF;
+import org.jmicro.api.monitor.v1.MonitorConstant;
+import org.jmicro.api.monitor.v1.SF;
 import org.jmicro.api.net.IMessageHandler;
 import org.jmicro.api.net.IResponse;
 import org.jmicro.api.net.ISession;
@@ -93,12 +93,16 @@ public class JRPCReqRespHandler implements IMessageHandler{
 			if(msg.isDebugMode()) {
 				msg.setId(idGenerator.getLongId(Message.class));
 				msg.setInstanceName(Config.getInstanceName());
-				msg.setTime(System.currentTimeMillis());
 			}
 			
 	    	//req1为内部类访问
 	    	final RpcRequest req1 = ICodecFactory.decode(this.codeFactory,msg.getPayload(),
 					RpcRequest.class,msg.getProtocol());
+	    	
+	    	if(msg.isDebugMode()) {
+	    		JMicroContext.get().appendCurUseTime("Server end decode req",true);
+    		}
+	    	
 			req = req1;
 			req.setSession(s);
 			req.setMsg(msg);
@@ -112,7 +116,7 @@ public class JRPCReqRespHandler implements IMessageHandler{
 				//无需返回值
 				//数据发送后，不需要返回结果，也不需要请求确认包，直接返回
     			if(openDebug) {
-        			logger.info("Not need response req:"+req.getMethod()+",Service:" + req.getServiceName()+", Namespace:"+req.getNamespace());
+        			//logger.info("Not need response req:"+req.getMethod()+",Service:" + req.getServiceName()+", Namespace:"+req.getNamespace());
         		}
 				interceptorManger.handleRequest(req);
 				//SF.doSubmit(MonitorConstant.SERVER_REQ_OK, req,resp,null);
@@ -120,12 +124,12 @@ public class JRPCReqRespHandler implements IMessageHandler{
 			}
 			
 			//下面处理需要返回值的RPC
-			msg.setReqId(req.getRequestId());
+			//msg.setReqId(req.getRequestId());
 			//msg.setSessionId(req.getSession().getId());
 			msg.setVersion(req.getMsg().getVersion());
 				
 			if(msg.isLoggable()){
-				SF.doRequestLog(MonitorConstant.LOG_DEBUG, TAG, req,null,"got REQUEST");
+				SF.doRequestLog(MonitorConstant.LOG_DEBUG, TAG,null,"got REQUEST");
 			}
 
 			//同步响应
@@ -146,7 +150,7 @@ public class JRPCReqRespHandler implements IMessageHandler{
 			//响应消息
 			s.write(msg);
 
-			SF.doResponseLog(MonitorConstant.LOG_DEBUG, TAG,req,resp,null,"response success");
+			SF.doResponseLog(MonitorConstant.LOG_DEBUG, TAG,null,"response success");
 		
 			//SF.doSubmit(MonitorConstant.SERVER_REQ_OK, req,resp,null);
 			
@@ -154,7 +158,7 @@ public class JRPCReqRespHandler implements IMessageHandler{
 			//返回错误
 			//SF.doMessageLog(MonitorConstant.LOG_ERROR, TAG, msg,e);
 			//SF.doSubmit(MonitorConstant.SERVER_REQ_ERROR, req,resp,null);
-			SF.reqServerError(TAG.getName(),req, "");
+			SF.reqServerError(TAG.getName(), "");
 			logger.error("reqHandler error: ",e);
 			if(needResp && req != null ){
 				//返回错误

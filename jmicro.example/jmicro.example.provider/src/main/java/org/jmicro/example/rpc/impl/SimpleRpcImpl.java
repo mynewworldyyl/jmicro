@@ -4,8 +4,8 @@ import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.SBreakingRule;
 import org.jmicro.api.annotation.SMethod;
 import org.jmicro.api.annotation.Service;
-import org.jmicro.api.monitor.MonitorConstant;
-import org.jmicro.api.monitor.SF;
+import org.jmicro.api.monitor.v1.MonitorConstant;
+import org.jmicro.api.monitor.v1.SF;
 import org.jmicro.common.Constants;
 import org.jmicro.example.api.rpc.ISimpleRpc;
 
@@ -26,7 +26,7 @@ public class SimpleRpcImpl implements ISimpleRpc {
 			checkInterval=2000,//采样周期2S
 			baseTimeUnit=Constants.TIME_MILLISECONDS,
 			timeout=3000,
-			debugMode=1,
+			debugMode=0,
 			maxSpeed=1000
 	)
 	public String hello(String name) {

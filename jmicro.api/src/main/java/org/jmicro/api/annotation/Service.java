@@ -22,7 +22,7 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
 
-import org.jmicro.api.monitor.MonitorConstant;
+import org.jmicro.api.monitor.v1.MonitorConstant;
 import org.jmicro.api.net.Message;
 import org.jmicro.common.Constants;
 @Target({TYPE})

@@ -851,12 +851,23 @@ public class SerializeProxyFactory {
 		}
 		
 		Object pre = coll[0];
+		for(Object o : coll) {
+			if(o != null) {
+				pre = o;
+				break;
+			}
+		}
+		
+		if(pre == null) {
+			return true;
+		}
+		
 		Object cur = null;
 		boolean same = true;
 		
 		for(int i = 1; i < coll.length; i++) {
 			cur = coll[i];
-			if(cur.getClass() != pre.getClass()) {
+			if(cur != null && cur.getClass() != pre.getClass()) {
 				same = false;
 				break;
 			}

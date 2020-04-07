@@ -22,7 +22,6 @@ import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.Inject;
 import org.jmicro.api.codec.ICodecFactory;
 import org.jmicro.api.idgenerator.ComponentIdServer;
-import org.jmicro.api.monitor.IMonitorDataSubmiter;
 import org.jmicro.api.net.IMessageReceiver;
 import org.jmicro.api.net.ISession;
 import org.jmicro.api.net.Message;
@@ -64,9 +63,6 @@ public class NettyWebSocketHandler  extends SimpleChannelInboundHandler<TextWebS
 	@Inject
 	private ICodecFactory codeFactory;
 	
-	@Inject(required=false)
-	private IMonitorDataSubmiter monitor;
-	
 	@Inject
 	private IMessageReceiver receiver;
 	
@@ -76,7 +72,7 @@ public class NettyWebSocketHandler  extends SimpleChannelInboundHandler<TextWebS
     @Override
     protected void channelRead0(ChannelHandlerContext ctx, TextWebSocketFrame text) throws Exception {
     	NettyServerSession session = ctx.channel().attr(sessionKey).get();
-    	JMicroContext.configProvider(monitor, session);
+    	JMicroContext.configProvider(session);
     	Message msg = JsonUtils.getIns().fromJson(text.text(), Message.class);
     	JMicroContext.configProvider(msg);
 		receiver.receive(session,msg);

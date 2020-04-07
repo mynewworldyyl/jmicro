@@ -616,11 +616,10 @@ public class TestCodec {
 	public void testEncodeDecodeRpcRequest() throws IOException {
 		RpcRequest req = new RpcRequest();
 		req.setArgs(new Object[] { 1, "string" });
-		req.setId(111L);
+		req.setRequestId(111L);
 		req.setImpl("tset");
 		req.setMethod("method");
 		req.setNamespace("ns");
-		req.setRequestId(222L);
 		req.setServiceName("sn");
 		req.setSuccess(true);
 		req.setVersion("1");

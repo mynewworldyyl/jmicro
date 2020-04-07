@@ -30,8 +30,8 @@ import org.jmicro.api.codec.ICodecFactory;
 import org.jmicro.api.gateway.ApiRequest;
 import org.jmicro.api.gateway.ApiResponse;
 import org.jmicro.api.idgenerator.ComponentIdServer;
-import org.jmicro.api.monitor.MonitorConstant;
-import org.jmicro.api.monitor.SF;
+import org.jmicro.api.monitor.v1.MonitorConstant;
+import org.jmicro.api.monitor.v1.SF;
 import org.jmicro.api.net.IMessageHandler;
 import org.jmicro.api.net.ISession;
 import org.jmicro.api.net.Message;
@@ -105,7 +105,7 @@ public class ApiRequestMessageHandler implements IMessageHandler{
 			resp.setResult(result);
 			msg.setPayload(ICodecFactory.encode(codecFactory, resp, msg.getProtocol()));
 			if(this.openDebug) {
-				SF.doResponseLog(MonitorConstant.LOG_DEBUG, TAG,req, resp, null," one response");
+				SF.doResponseLog(MonitorConstant.LOG_DEBUG, TAG, null," one response");
 			}
 			session.write(msg);
 			
@@ -136,12 +136,12 @@ public class ApiRequestMessageHandler implements IMessageHandler{
 					AbstractClientServiceProxy proxy = (AbstractClientServiceProxy)srv;
 					ServiceItem si = proxy.getItem();
 					if(si == null) {
-						SF.doRequestLog(MonitorConstant.LOG_ERROR, TAG, req, null," service not found");
+						SF.doRequestLog(MonitorConstant.LOG_ERROR, TAG, null," service not found");
 						throw new CommonException("Service["+req.getServiceName()+"] namespace ["+req.getNamespace()+"] not found");
 					}
 					ServiceMethod sm = si.getMethod(req.getMethod(), clazzes);
 					if(sm == null) {
-						SF.doRequestLog(MonitorConstant.LOG_ERROR, TAG, req, null," service method not found");
+						SF.doRequestLog(MonitorConstant.LOG_ERROR, TAG, null," service method not found");
 						throw new CommonException("Service mehtod ["+req.getServiceName()+"] method ["+req.getMethod()+"] not found");
 					}
 					
@@ -150,13 +150,13 @@ public class ApiRequestMessageHandler implements IMessageHandler{
 					JMicroContext.get().configMonitor(sm.getMonitorEnable(), si.getMonitorEnable());
 					
 					if(this.openDebug) {
-						SF.doRequestLog(MonitorConstant.LOG_DEBUG, TAG, req, null," got request");
+						SF.doRequestLog(MonitorConstant.LOG_DEBUG, TAG, null," got request");
 					}
 					
 					if(!sm.isNeedResponse()) {
 						result = m.invoke(srv, req.getArgs());
 						if(this.openDebug) {
-							SF.doRequestLog(MonitorConstant.LOG_DEBUG, TAG, req, null," no need response");
+							SF.doRequestLog(MonitorConstant.LOG_DEBUG, TAG, null," no need response");
 						}
 						return;
 					}
@@ -166,7 +166,7 @@ public class ApiRequestMessageHandler implements IMessageHandler{
 					resp.setResult(result);
 					msg.setPayload(ICodecFactory.encode(codecFactory, resp, msg.getProtocol()));
 					if(this.openDebug) {
-						SF.doResponseLog(MonitorConstant.LOG_DEBUG, TAG,req, resp, null," one response");
+						SF.doResponseLog(MonitorConstant.LOG_DEBUG, TAG, null," one response");
 					}
 					session.write(msg);
 				
@@ -176,13 +176,13 @@ public class ApiRequestMessageHandler implements IMessageHandler{
 					result = new ServerError(0,e.getMessage());
 					resp.setSuccess(false);
 					resp.setResult(result);
-					SF.doResponseLog(MonitorConstant.LOG_ERROR, TAG,req, resp, e," service error");
+					SF.doResponseLog(MonitorConstant.LOG_ERROR, TAG, e," service error");
 				}
 			} else {
 				resp.setSuccess(false);
 				resp.setResult(result);
 				msg.setPayload(ICodecFactory.encode(codecFactory, resp, msg.getProtocol()));
-				SF.doResponseLog(MonitorConstant.LOG_ERROR, TAG,req, resp, null," service instance not found");
+				SF.doResponseLog(MonitorConstant.LOG_ERROR, TAG, null," service instance not found");
 				session.write(msg);
 			}
 		}

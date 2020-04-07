@@ -34,12 +34,12 @@ import org.jmicro.api.config.Config;
 import org.jmicro.api.exception.AsyncRpcException;
 import org.jmicro.api.executor.ExecutorConfig;
 import org.jmicro.api.executor.ExecutorFactory;
-import org.jmicro.api.monitor.AbstractMonitorDataSubscriber;
-import org.jmicro.api.monitor.IMonitorDataSubmiter;
-import org.jmicro.api.monitor.IMonitorDataSubscriber;
-import org.jmicro.api.monitor.MonitorConstant;
-import org.jmicro.api.monitor.ServiceCounter;
-import org.jmicro.api.monitor.SubmitItem;
+import org.jmicro.api.monitor.v1.AbstractMonitorDataSubscriber;
+import org.jmicro.api.monitor.v1.IMonitorDataSubmiter;
+import org.jmicro.api.monitor.v1.IMonitorDataSubscriber;
+import org.jmicro.api.monitor.v1.MonitorConstant;
+import org.jmicro.api.monitor.v1.ServiceCounter;
+import org.jmicro.api.monitor.v1.SubmitItem;
 import org.jmicro.api.objectfactory.AbstractClientServiceProxy;
 import org.jmicro.api.registry.AsyncConfig;
 import org.jmicro.api.registry.IServiceListener;
@@ -149,7 +149,7 @@ public class SubmitItemHolderManager implements IMonitorDataSubmiter{
 				System.out.println("======================================================");
 				Double dreq = counter.getTotal(MonitorConstant.REQ_START);
 				Double toreq = counter.getTotal(MonitorConstant.REQ_TIMEOUT);
-				Double dresp = counter.getTotal(MonitorConstant.CLIENT_GET_RESPONSE_ERROR,MonitorConstant.CLIENT_GET_SERVER_ERROR);
+				Double dresp = counter.getTotal(MonitorConstant.CLIENT_RESPONSE_SERVER_ERROR,MonitorConstant.CLIENT_SERVICE_ERROR);
 				Double qps = counter.getQps(TimeUnit.SECONDS,MonitorConstant.REQ_START);
 				if(dreq > -1 && dresp > -1) {
 					logger.info("总请求:{}, 总响应:{}, 超时:{}, QPS:{}",dreq,dresp,toreq,qps);

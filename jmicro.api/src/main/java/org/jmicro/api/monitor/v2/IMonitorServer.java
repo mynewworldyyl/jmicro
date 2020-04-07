@@ -14,13 +14,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.jmicro.api.monitor;
+package org.jmicro.api.monitor.v2;
 
 /**
- * 链路监控ID生成
+ * 
+ * 
  * @author Yulei Ye
- * @date 2018年11月19日 下午10:31:17
+ * @date 2020年4月4日
  */
-public class Linker {
+public interface IMonitorServer {
 
+	void submit(MRpcItem[] items);
+	
 }

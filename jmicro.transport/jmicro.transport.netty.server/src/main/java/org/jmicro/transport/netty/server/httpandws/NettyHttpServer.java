@@ -25,8 +25,7 @@ import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.Inject;
 import org.jmicro.api.annotation.Server;
 import org.jmicro.api.config.Config;
-import org.jmicro.api.monitor.IMonitorDataSubmiter;
-import org.jmicro.api.monitor.SF;
+import org.jmicro.api.monitor.v1.SF;
 import org.jmicro.api.net.IServer;
 import org.jmicro.common.CommonException;
 import org.jmicro.common.Constants;
@@ -64,9 +63,6 @@ public class NettyHttpServer implements IServer{
 	
 	@Inject
 	private NettyHttpChannelInitializer initializer;
-	
-	@Inject(required=false)
-	private IMonitorDataSubmiter monitor;
 	
 	@Cfg(value="/NettyHttpServer/nettyPort",required=false,defGlobal=false)
 	private int port=9090;

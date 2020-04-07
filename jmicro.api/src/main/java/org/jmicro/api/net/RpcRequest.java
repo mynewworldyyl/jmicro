@@ -121,6 +121,7 @@ public final class RpcRequest extends AbstractObjectMapSupport implements IReque
 		this.session = session;
 	}
 	
+	@Override
 	public void setRequestId(long reqId) {
 		this.reqId = reqId;
 	}
@@ -206,13 +207,6 @@ public final class RpcRequest extends AbstractObjectMapSupport implements IReque
 
 	public void setArgs(Object[] args) {
 		this.args = args;
-	}
-    public long getId() {
-    	 return this.reqId;
-     }
-	
-	public void setId(long id) {
-		this.reqId = id;
 	}
 
 	@Override

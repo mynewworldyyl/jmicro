@@ -8,8 +8,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.jmicro.api.monitor.MonitorConstant;
-import org.jmicro.api.monitor.SubmitItem;
+import org.jmicro.api.monitor.v1.MonitorConstant;
+import org.jmicro.api.monitor.v1.SubmitItem;
 import org.jmicro.api.net.ISession;
 import org.jmicro.api.net.Message;
 import org.jmicro.api.net.RpcRequest;

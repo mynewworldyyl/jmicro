@@ -8,7 +8,6 @@ import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.Inject;
 import org.jmicro.api.codec.ICodecFactory;
 import org.jmicro.api.idgenerator.ComponentIdServer;
-import org.jmicro.api.monitor.IMonitorDataSubmiter;
 import org.jmicro.api.net.IMessageReceiver;
 import org.jmicro.common.Constants;
 import org.slf4j.Logger;
@@ -43,9 +42,6 @@ public class NettySocketHandler extends ChannelInboundHandlerAdapter {
 	
 	@Inject
 	private ICodecFactory codeFactory;
-	
-	@Inject(required=false)
-	private IMonitorDataSubmiter monitor;
 	
 	@Inject
 	private IMessageReceiver receiver;
@@ -86,7 +82,7 @@ public class NettySocketHandler extends ChannelInboundHandlerAdapter {
     	
     	//logger.info("ed1:  "+System.currentTimeMillis());
     	
-    	JMicroContext.configProvider(monitor, session);
+    	JMicroContext.configProvider(session);
     	
     	//logger.info("ed2:  "+System.currentTimeMillis());
     	

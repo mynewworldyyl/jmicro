@@ -14,50 +14,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.jmicro.api.monitor;
+package org.jmicro.api.monitor.v2;
 
-import java.util.concurrent.TimeUnit;
+import java.util.Map;
 
 /**
  * 
  * @author Yulei Ye
- * @date 2018年11月28日 下午12:50:36
+ * @date 2018年10月5日-下午6:31:34
  */
-public interface IServiceCounter<T> {
+public interface IMonitorDataSubscriber {
 
-	/**
-	 *  取指定类型的时间窗口内的统计总数
-	 * @param type
-	 * @return
-	 */
-	long get(T type);
+	void onSubmit(MRpcItem[] sis);
 	
-	boolean add(T type,long val);
-	
-	/**
-	 * 计数器启动以来的总数
-	 * @param type
-	 * @return
-	 */
-	Double getTotal(T... type);
-	
-	boolean increment(T type);
-	
-	boolean addCounter(T type,long slotSize);
-	
-	//boolean addCounter(Integer type,long timeWindow,long slotSize,String unit);
-	
-	long getWithEx(T type);
-	
-	void addWithEx(T type,long val);
-	
-	/**
-	 * 计数器启动以来的总数
-	 * @param type
-	 * @return
-	 */
-	Double getValueWithEx(T... type);
-	
-	void incrementWithEx(T type);
-	
+	Map<Short,Double>  getData(String srvKey,Short[] type);
 }

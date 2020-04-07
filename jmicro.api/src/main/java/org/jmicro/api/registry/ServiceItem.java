@@ -25,7 +25,7 @@ import java.util.concurrent.TimeUnit;
 
 import org.jmicro.api.annotation.SO;
 import org.jmicro.api.config.Config;
-import org.jmicro.api.monitor.MonitorConstant;
+import org.jmicro.api.monitor.v1.MonitorConstant;
 import org.jmicro.common.CommonException;
 import org.jmicro.common.Constants;
 import org.jmicro.common.Utils;

@@ -25,9 +25,9 @@ import org.jmicro.api.JMicroContext;
 import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.JMethod;
 import org.jmicro.api.limitspeed.ILimiter;
-import org.jmicro.api.monitor.MonitorConstant;
-import org.jmicro.api.monitor.SF;
-import org.jmicro.api.monitor.ServiceCounter;
+import org.jmicro.api.monitor.v1.MonitorConstant;
+import org.jmicro.api.monitor.v1.SF;
+import org.jmicro.api.monitor.v1.ServiceCounter;
 import org.jmicro.api.net.IRequest;
 import org.jmicro.api.registry.ServiceMethod;
 import org.jmicro.common.Constants;
@@ -96,7 +96,7 @@ public class DefaultSpeedLimiter extends AbstractLimiter implements ILimiter{
 			int needWaitTime = (int)((1000.0*cnt)/ sm.getMaxSpeed());
 			
 			if(needWaitTime >= sm.getTimeout()) {
-				SF.limit(TAG,req);
+				SF.limit(TAG);
 				logger.info("qps:{},maxQps:{},key:{}",qps,sm.getMaxSpeed(),key);
 				return false;
 			} 

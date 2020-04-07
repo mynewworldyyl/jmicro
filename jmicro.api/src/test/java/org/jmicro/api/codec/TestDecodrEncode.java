@@ -8,7 +8,7 @@ import java.util.Map;
 
 import org.jmicro.api.codec.Decoder;
 import org.jmicro.api.codec.Encoder;
-import org.jmicro.api.monitor.SubmitItem;
+import org.jmicro.api.monitor.v1.SubmitItem;
 import org.junit.Test;
 
 public class TestDecodrEncode {

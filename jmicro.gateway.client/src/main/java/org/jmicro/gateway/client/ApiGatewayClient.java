@@ -31,7 +31,7 @@ import org.jmicro.api.codec.PrefixTypeEncoderDecoder;
 import org.jmicro.api.gateway.ApiRequest;
 import org.jmicro.api.gateway.ApiResponse;
 import org.jmicro.api.idgenerator.IdRequest;
-import org.jmicro.api.monitor.Linker;
+import org.jmicro.api.monitor.v1.Linker;
 import org.jmicro.api.net.IMessageHandler;
 import org.jmicro.api.net.IRequest;
 import org.jmicro.api.net.ISession;

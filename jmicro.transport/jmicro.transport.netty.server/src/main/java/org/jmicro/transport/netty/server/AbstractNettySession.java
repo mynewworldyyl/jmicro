@@ -72,6 +72,10 @@ public abstract class AbstractNettySession extends AbstractSession implements IS
 	@Override
 	public void write(Message msg) {
 		byte[] data = null;
+		//客户端Debug模式下上行时记录的时间
+		long oldTime = msg.getTime();
+		//记录下行时间
+		msg.setTime(System.currentTimeMillis());
 		if(msg.getProtocol() == Message.PROTOCOL_JSON) {
 			String json = JsonUtils.getIns().toJson(msg);
 			try {
@@ -127,6 +131,9 @@ public abstract class AbstractNettySession extends AbstractSession implements IS
 		}
 		//服务方写信息，是下行
 		this.dump(data,false,msg);
+		if(JMicroContext.get().isDebug()) {
+			JMicroContext.get().getDebugLog().append(",Encode time:").append(System.currentTimeMillis() - oldTime);
+		}
 	}
 
 	@Override

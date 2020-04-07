@@ -22,9 +22,9 @@ import java.util.Map;
 import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.Inject;
 import org.jmicro.api.limitspeed.ILimiter;
-import org.jmicro.api.monitor.IMonitorDataSubmiter;
-import org.jmicro.api.monitor.MonitorConstant;
-import org.jmicro.api.monitor.SF;
+import org.jmicro.api.monitor.v1.IMonitorDataSubmiter;
+import org.jmicro.api.monitor.v1.MonitorConstant;
+import org.jmicro.api.monitor.v1.SF;
 import org.jmicro.api.net.IRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -63,7 +63,7 @@ public class TokenBucketLimiter extends AbstractLimiter implements ILimiter{
 		//logger.debug("TokenBucketLimiter apply reqID: " + req.getRequestId());
 		int rst = b.applyToken(1);
 		if(rst < 0) {
-			SF.limit(TAG,req);
+			SF.limit(TAG);
 			return false;
 		} else {
 			return true;

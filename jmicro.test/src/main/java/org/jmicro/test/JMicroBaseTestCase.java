@@ -2,7 +2,8 @@ package org.jmicro.test;
 
 import org.jmicro.api.JMicro;
 import org.jmicro.api.JMicroContext;
-import org.jmicro.api.monitor.IMonitorDataSubmiter;
+import org.jmicro.api.monitor.v1.IMonitorDataSubmiter;
+import org.jmicro.api.monitor.v2.MonitorManager;
 import org.jmicro.api.objectfactory.IObjectFactory;
 import org.jmicro.api.registry.IRegistry;
 import org.jmicro.api.registry.ServiceItem;
@@ -84,6 +85,21 @@ public class JMicroBaseTestCase {
 		
 		JMicroContext.get().configMonitor(1, 1);
 		IMonitorDataSubmiter monitor = of.get(IMonitorDataSubmiter.class);
+		JMicroContext.get().setObject(JMicroContext.MONITOR, monitor);
+		
+		ServiceMethod sm = sayHelloServiceMethod();
+		JMicroContext.get().setParam(Constants.SERVICE_METHOD_KEY,sm);
+		JMicroContext.get().setParam(Constants.SERVICE_ITEM_KEY,sayHelloServiceItem());
+		JMicroContext.get().setString(JMicroContext.CLIENT_SERVICE, sm.getKey().getServiceName());
+		JMicroContext.get().setString(JMicroContext.CLIENT_NAMESPACE, sm.getKey().getNamespace());
+		JMicroContext.get().setString(JMicroContext.CLIENT_VERSION, sm.getKey().getVersion());
+		JMicroContext.get().setString(JMicroContext.CLIENT_METHOD, sm.getKey().getMethod());
+	}
+	
+	protected void setSayHelloContextv2() {
+		
+		JMicroContext.get().configMonitor(1, 1);
+		MonitorManager monitor = of.get(MonitorManager.class);
 		JMicroContext.get().setObject(JMicroContext.MONITOR, monitor);
 		
 		ServiceMethod sm = sayHelloServiceMethod();

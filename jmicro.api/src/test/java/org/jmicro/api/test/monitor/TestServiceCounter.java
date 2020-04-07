@@ -4,8 +4,8 @@ import java.util.Random;
 import java.util.concurrent.TimeUnit;
 
 import org.jmicro.api.JMicro;
-import org.jmicro.api.monitor.MonitorConstant;
-import org.jmicro.api.monitor.ServiceCounter;
+import org.jmicro.api.monitor.v1.MonitorConstant;
+import org.jmicro.api.monitor.v1.ServiceCounter;
 import org.jmicro.api.net.ISession;
 import org.jmicro.api.timer.TimerTicker;
 import org.junit.Test;
@@ -76,7 +76,7 @@ public class TestServiceCounter {
 					if(v == 0) {
 						sc.increment(MonitorConstant.REQ_TIMEOUT);
 					}else if(v == 1) {
-						sc.increment(MonitorConstant.CLIENT_GET_SERVER_ERROR);
+						sc.increment(MonitorConstant.CLIENT_SERVICE_ERROR);
 					}
 				}
 				

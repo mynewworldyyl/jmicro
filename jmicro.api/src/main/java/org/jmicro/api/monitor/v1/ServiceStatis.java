@@ -14,37 +14,46 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.jmicro.api.codec;
-
-import java.util.Random;
-import java.util.concurrent.TimeUnit;
-
-import org.jmicro.api.monitor.v1.ServiceCounter;
-import org.junit.Test;
+package org.jmicro.api.monitor.v1;
 
 /**
  * 
  * @author Yulei Ye
- * @date 2018年11月28日 下午11:00:41
+ * @date 2018年10月22日-下午1:42:56
  */
-public class TestServiceCounter {
+public class ServiceStatis {
 
-	@Test
-	public void test01() {
-		ServiceCounter sc = new ServiceCounter("test",10,TimeUnit.SECONDS);
-		short t = 1;
-		sc.addCounter(t, 10);
-		Random rand = new Random(1000);
-		
-		while(true) {
-			long v = rand.nextLong()%1000;
-			v = v<0? -v:v;
-			sc.add(t,v);
-			System.out.println(sc.get(t));
-			try {
-				Thread.sleep(v);
-			} catch (InterruptedException e) {
-			}
-		}
+	private String service;
+	private long time;
+	//public long endtime;
+	private int avgResponseTime;
+	
+	public ServiceStatis(){};
+	
+	public ServiceStatis(String service,long time,int avgResponseTime){
+		this.service = service;
+		this.time = time;
+		this.avgResponseTime = avgResponseTime;
+	};
+	
+	public String getService() {
+		return service;
 	}
+	public void setService(String service) {
+		this.service = service;
+	}
+	public long getTime() {
+		return time;
+	}
+	public void setTime(long time) {
+		this.time = time;
+	}
+	public int getAvgResponseTime() {
+		return avgResponseTime;
+	}
+	public void setAvgResponseTime(int avgResponseTime) {
+		this.avgResponseTime = avgResponseTime;
+	}
+	
+	
 }

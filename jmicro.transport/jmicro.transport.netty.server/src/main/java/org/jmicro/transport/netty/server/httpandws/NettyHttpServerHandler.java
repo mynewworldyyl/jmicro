@@ -8,7 +8,6 @@ import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.Inject;
 import org.jmicro.api.codec.ICodecFactory;
 import org.jmicro.api.idgenerator.ComponentIdServer;
-import org.jmicro.api.monitor.IMonitorDataSubmiter;
 import org.jmicro.api.net.IMessageReceiver;
 import org.jmicro.api.net.ISession;
 import org.jmicro.api.net.Message;
@@ -50,9 +49,6 @@ public class NettyHttpServerHandler extends ChannelInboundHandlerAdapter {
 	@Inject
 	private ICodecFactory codeFactory;
 	
-	@Inject(required=false)
-	private IMonitorDataSubmiter monitor;
-	
 	@Inject
 	private IMessageReceiver receiver;
 	
@@ -75,7 +71,7 @@ public class NettyHttpServerHandler extends ChannelInboundHandlerAdapter {
     		} else if(req.method().equals(HttpMethod.POST)){
     			//全部POST请求转到RPC控制器上面,因为RPC只能用POST请求
     			NettyServerSession session = ctx.attr(sessionKey).get();
-    			JMicroContext.configProvider(monitor, session);
+    			JMicroContext.configProvider(session);
     	    	
     			ByteBuf bb = req.content();
     			byte[] bts = new byte[bb.readableBytes()];

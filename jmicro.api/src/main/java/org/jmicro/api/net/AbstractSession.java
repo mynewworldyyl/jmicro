@@ -28,8 +28,9 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.jmicro.api.monitor.MonitorConstant;
-import org.jmicro.api.monitor.ServiceCounter;
+import org.jmicro.api.debug.LogUtil;
+import org.jmicro.api.monitor.v1.MonitorConstant;
+import org.jmicro.api.monitor.v1.ServiceCounter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -104,7 +105,7 @@ public abstract class AbstractSession implements ISession{
 		
 	}
 	
-	private void doWork() {
+	/*private void doWork() {
 		while(!this.isClose) {
 			try {
 				if(readQueue.isEmpty()) {
@@ -121,7 +122,7 @@ public abstract class AbstractSession implements ISession{
 				logger.error("",e);
 			}
 		}
-	}
+	}*/
 	
 	@Override
 	public void receive(ByteBuffer msg) {
@@ -188,7 +189,7 @@ public abstract class AbstractSession implements ISession{
               //服务言接收信息是上行，客户端接收信息是下行
        		  //dump(lb.array(),this.isServer(),message);
               
-              /*if(message.isDebugMode()) {
+             /* if(message.isDebugMode()) {
               	LogUtil.B.debug("Message ins[{}] reqId[{}],method[{}]",message.getInstanceName(),
               			message.getReqId(),message.getMethod());
               }*/

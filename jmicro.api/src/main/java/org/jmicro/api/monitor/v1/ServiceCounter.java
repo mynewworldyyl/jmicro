@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.jmicro.api.monitor;
+package org.jmicro.api.monitor.v1;
 
 import java.util.Arrays;
 import java.util.HashSet;
@@ -243,7 +243,7 @@ public class ServiceCounter implements IServiceCounter<Short>{
 		case MonitorConstant.STATIS_FAIL_PERCENT:
 			Long totalReq = counter.get(MonitorConstant.REQ_START);
 			if(totalReq != 0) {
-				double totalFail = counter.getValueWithEx(MonitorConstant.CLIENT_GET_SERVER_ERROR,MonitorConstant.REQ_TIMEOUT);
+				double totalFail = counter.getValueWithEx(MonitorConstant.CLIENT_SERVICE_ERROR,MonitorConstant.REQ_TIMEOUT);
 				result = (totalFail/totalReq)*100;
 				//logger.debug("totalReq:{},totalFail:{},Percent:{}",totalReq,totalFail,result);
 			}
@@ -258,8 +258,8 @@ public class ServiceCounter implements IServiceCounter<Short>{
 			result =  1.0 * counter.getTotal(MonitorConstant.REQ_SUCCESS);
 			break;
 		case MonitorConstant.STATIS_TOTAL_FAIL:
-			result = 1.0 * counter.getTotal(MonitorConstant.CLIENT_GET_RESPONSE_ERROR)+
-			counter.getTotal(MonitorConstant.CLIENT_GET_SERVER_ERROR)+
+			result = 1.0 * counter.getTotal(MonitorConstant.CLIENT_RESPONSE_SERVER_ERROR)+
+			counter.getTotal(MonitorConstant.CLIENT_SERVICE_ERROR)+
 			counter.getTotal(MonitorConstant.REQ_TIMEOUT_FAIL)+
 			counter.getTotal(MonitorConstant.REQ_ERROR);
 			break;
@@ -429,7 +429,7 @@ public class ServiceCounter implements IServiceCounter<Short>{
 					locker.unlock();
 				}
 			}
-			logger.warn("数据计误差范围内：{}",this.type);
+			logger.warn("数据统计误差范围内：{}",this.type);
 			return slots[header];
 		}
 		

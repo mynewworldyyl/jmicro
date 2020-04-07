@@ -1,6 +1,5 @@
 package org.jmicro.mng.impl;
 
-import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -13,8 +12,8 @@ import org.jmicro.api.cache.lock.ILocker;
 import org.jmicro.api.cache.lock.ILockerManager;
 import org.jmicro.api.config.Config;
 import org.jmicro.api.mng.IStatisMonitor;
-import org.jmicro.api.monitor.IMonitorDataSubscriber;
-import org.jmicro.api.monitor.MonitorConstant;
+import org.jmicro.api.monitor.v1.MonitorConstant;
+import org.jmicro.api.monitor.v2.IMonitorDataSubscriber;
 import org.jmicro.api.objectfactory.AbstractClientServiceProxy;
 import org.jmicro.api.pubsub.PSData;
 import org.jmicro.api.pubsub.PubSubManager;
@@ -73,15 +72,15 @@ public class StatisMonitorImpl implements IStatisMonitor {
 				return;
 			}
 			
-			Double v = dataServer.getData(mkey, MonitorConstant.STATIS_QPS);
+			Map<Short,Double> values = dataServer.getData(mkey, MonitorConstant.STATIS_TYPES);
 			
-			Map<Short,Double> data = new HashMap<Short,Double>();
-			data.put(MonitorConstant.STATIS_QPS, v);
+			//Map<Short,Double> data = new HashMap<Short,Double>();
+			//data.put(MonitorConstant.STATIS_QPS, v);
 			
-			System.out.println("QPS type: "+MonitorConstant.STATIS_QPS+"="+v);
+			//System.out.println("QPS type: "+MonitorConstant.STATIS_QPS+"="+v);
 			
 			PSData psData = new PSData();
-			psData.setData(data);
+			psData.setData(values);
 			psData.setTopic(key);
 			psData.put(Constants.SERVICE_METHOD_KEY, key);
 			

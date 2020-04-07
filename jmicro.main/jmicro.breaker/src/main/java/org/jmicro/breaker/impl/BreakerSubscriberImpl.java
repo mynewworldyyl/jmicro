@@ -8,7 +8,7 @@ import org.jmicro.api.annotation.Inject;
 import org.jmicro.api.annotation.Service;
 import org.jmicro.api.annotation.Subscribe;
 import org.jmicro.api.degrade.DegradeManager;
-import org.jmicro.api.monitor.MonitorConstant;
+import org.jmicro.api.monitor.v1.MonitorConstant;
 import org.jmicro.api.pubsub.PSData;
 import org.jmicro.api.registry.BreakRule;
 import org.jmicro.api.registry.ServiceItem;

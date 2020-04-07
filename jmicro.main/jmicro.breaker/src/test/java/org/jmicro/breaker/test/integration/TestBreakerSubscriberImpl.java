@@ -6,8 +6,8 @@ import java.util.Random;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.jmicro.api.JMicro;
-import org.jmicro.api.monitor.AbstractMonitorDataSubscriber;
-import org.jmicro.api.monitor.MonitorConstant;
+import org.jmicro.api.monitor.v1.AbstractMonitorDataSubscriber;
+import org.jmicro.api.monitor.v1.MonitorConstant;
 import org.jmicro.api.pubsub.PSData;
 import org.jmicro.api.pubsub.PubSubManager;
 import org.jmicro.breaker.api.IBreakerSubscriber;

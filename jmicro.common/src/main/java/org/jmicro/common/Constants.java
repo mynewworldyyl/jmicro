@@ -43,6 +43,7 @@ public interface Constants {
 	public static final String FROM_MONITOR = "fromMonitor";
 	
 	public static final String FROM_PUBSUB = "fromPubsub";
+	public static final String FROM_MONITOR_MANAGER = "_fromMonitorManager";
 	
 	public static final int CONN_CONNECTED=1;
 	public static final int CONN_RECONNECTED=2;

@@ -305,6 +305,11 @@ public class RpcRequest extends AbstractObjectMapSupport implements IRequest {
 		return this.getParams();
 	}
 
+	@Override
+	public void setRequestId(long reqId) {
+		this.reqId = reqId;
+	}
+
 	public String getImpl() {
 		return impl;
 	}

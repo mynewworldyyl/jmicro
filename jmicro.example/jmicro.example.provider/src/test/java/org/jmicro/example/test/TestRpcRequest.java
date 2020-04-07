@@ -121,7 +121,7 @@ public class TestRpcRequest {
 		req.setArgs(new Object[] { 1, "222", new Long(22L) });
 		req.setMsg(new Message());
 		req.setFinish(true);
-		req.setId(222L);
+		req.setRequestId(222L);
 		req.setImpl("test");
 		req.setNamespace("ns");
 		req.setRequestId(355L);
