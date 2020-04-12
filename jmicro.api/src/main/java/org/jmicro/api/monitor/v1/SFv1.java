@@ -83,8 +83,8 @@ public class SFv1 {
 	}
 	
 	public static boolean reqTimeoutFail(String tag,IReq req) {
-		if(isMonitorable(MonitorConstant.REQ_TIMEOUT_FAIL)) {
-			SubmitItem si = createSubmitItem(MonitorConstant.REQ_TIMEOUT_FAIL,req,null,null,tag,null,false);
+		if(isMonitorable(MonitorConstant.REQ_TOTAL_TIMEOUT_FAIL)) {
+			SubmitItem si = createSubmitItem(MonitorConstant.REQ_TOTAL_TIMEOUT_FAIL,req,null,null,tag,null,false);
 			return  monitor().submit(si);
 		}
 		return false;

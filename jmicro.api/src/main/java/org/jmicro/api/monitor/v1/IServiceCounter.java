@@ -16,7 +16,7 @@
  */
 package org.jmicro.api.monitor.v1;
 
-import java.util.concurrent.TimeUnit;
+import java.util.Map;
 
 /**
  * 
@@ -39,11 +39,11 @@ public interface IServiceCounter<T> {
 	 * @param type
 	 * @return
 	 */
-	Double getTotal(T... type);
+	Long getTotal(T... type);
 	
 	boolean increment(T type);
 	
-	boolean addCounter(T type,long slotSize);
+	boolean addCounter(T type);
 	
 	//boolean addCounter(Integer type,long timeWindow,long slotSize,String unit);
 	
@@ -59,5 +59,7 @@ public interface IServiceCounter<T> {
 	Double getValueWithEx(T... type);
 	
 	void incrementWithEx(T type);
+	
+	void getAll(Map<Short,Double> values);
 	
 }

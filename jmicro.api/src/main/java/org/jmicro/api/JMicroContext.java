@@ -40,6 +40,7 @@ import org.jmicro.common.CommonException;
 import org.jmicro.common.Constants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 /**
  * 
  * @author Yulei Ye
@@ -71,61 +72,45 @@ public class JMicroContext  {
 	public static final String CLIENT_METHOD = "clientMehtod";
 	public static final String CLIENT_ARGSTR= "argStr";
 	
-	public static String[] args = {};
+	public static final String MRPC_ITEM = "_mrpc_item";
+	public static final String CLIENT_UP_TIME = "_client_up_time";
+	public static final String DEBUG_LOG = "_debug_loggner";
 	
-	protected Map<String,Object> params = new HashMap<String,Object>();
+	public static String[] args = {};
 	
 	public static final String SESSION_KEY="_sessionKey";
 	private static final ThreadLocal<JMicroContext> cxt = new ThreadLocal<JMicroContext>();
 	
 	private Stack<Map<String,Object>> stack = new Stack<>();
 	
-	//private boolean isLoggable = false;
-	//ServiceMethod deubugMode =true时才有效
-	private boolean isDebug = false;
-	private long clientUpTime = 0;
-	private StringBuilder debugLoger;
-	
-	private MRpcItem item = null;
+	protected Map<String,Object> params = new HashMap<String,Object>();
 	
 	private JMicroContext() {}
 	
 	public OneItem addOneItem(short type) {
 		if(this.isMonitor()) {
 			OneItem oi = new OneItem(type);
-			item.addOneItem(oi);
+			getMRpcItem().addOneItem(oi);
 			return oi;
 		}
 		return null;
 	}
 	
 	public MRpcItem getMRpcItem() {
-		if(this.isMonitor()) {
-			return this.item;
-		}
-		return null;
+		//使用者需要调用isMonitor()或isDebug()判断是否可用状态
+		return this.getParam(MRPC_ITEM, null);
 	}
 	
 	public void submitMRpcItem() {
-		if(this.item != null && this.isMonitor()) {
+		if(this.isMonitor()) {
 			MonitorManager mo = JMicroContext.get().getParam(JMicroContext.MONITOR, null);
 			if(mo != null) {
-				setCommon(this.item);
-				mo.readySubmit(this.item);
+				MRpcItem item = getMRpcItem();
+				SF.setCommon(item);
+				mo.readySubmit(item);
+				JMicroContext.get().removeParam(MRPC_ITEM);
 			}
 		}
-	}
-	
-	private static void setCommon(MRpcItem si) {
-		if(si == null) {
-			return;
-		}
-		SF.setCommon(si);
-	}
-	
-	public static void setMonitor(){
-		JMicroContext.get().setObject(JMicroContext.MONITOR, 
-				JMicro.getObjectFactory().get(MonitorManager.class));
 	}
 	
 	public static void remove(){
@@ -141,11 +126,21 @@ public class JMicroContext  {
 	
 	public static JMicroContext get(){
 		JMicroContext c = cxt.get();
-		if(c == null) {
-			c = new JMicroContext();
-			cxt.set(c);
+		if(c != null) {
+			return c;
+		}
+		synchronized(JMicroContext.class) {
+			 c = cxt.get();
+			if(c == null) {
+				c = new JMicroContext();
+				cxt.set(c);
+			}
 		}
 		return c;
+	}
+	
+	public static void clear(){
+		cxt.set(null);
 	}
 	
 	public static boolean callSideProdiver(Boolean ... flag){
@@ -157,9 +152,9 @@ public class JMicroContext  {
 		return flag[0];
 	}
 	
-	public static void configProvider(ISession s) {
+	public static void configProvider(ISession s,Message msg) {
 		callSideProdiver(true);
-		setMonitor();
+		
 		JMicroContext context = get();
 		
 		context.setParam(JMicroContext.SESSION_KEY, s);
@@ -169,45 +164,64 @@ public class JMicroContext  {
 		
 		context.setParam(JMicroContext.LOCAL_HOST, s.localHost());
 		context.setParam(JMicroContext.LOCAL_PORT, s.localPort()+"");
-	}
-	
-	public static void configProvider(Message msg) {
-		JMicroContext context = cxt.get();
+		
 		context.configMonitorable(msg.isMonitorable());
 		context.setParam(JMicroContext.LINKER_ID, msg.getLinkId());
+		context.setParam(Constants.NEW_LINKID, false);
 		//context.isLoggable = msg.isLoggable();
-		if(msg.isMonitorable()) {
-			if(context.item == null) {
-				context.item = new MRpcItem(lid(),msg.getReqId());
-			}
-		} else {
-			context.item = null;
-		}
 		//debug mode 下才有效
-		context.isDebug = msg.isDebugMode();
-		if(context.isDebug) {
-			context.clientUpTime = msg.getTime();
-			context.debugLoger = new StringBuilder();
+		context.setParam(IS_DEBUG, msg.isDebugMode());
+		if(msg.isDebugMode()) {
+			context.setParam(CLIENT_UP_TIME, msg.getTime());
+			context.setParam(DEBUG_LOG, new StringBuilder());
+		}
+		
+		if(context.isMonitor()) {
+			context.setObject(JMicroContext.MONITOR, JMicro.getObjectFactory().get(MonitorManager.class));
+			MRpcItem item = context.getMRpcItem();
+			if(item == null) {
+				synchronized(MRpcItem.class) {
+					item = context.getMRpcItem();
+					if(item == null) {
+						item = new MRpcItem();
+						context.setParam(MRPC_ITEM, item);
+					}
+				}
+			}
 		}
 	}
 	
 	public static void configComsumer(ServiceMethod sm,ServiceItem si) {
 		JMicroContext context = cxt.get();
-		
+		context.setObject(JMicroContext.MONITOR, JMicro.getObjectFactory().get(MonitorManager.class));
 		context.setParam(Constants.SERVICE_METHOD_KEY, sm);
 		context.setParam(Constants.SERVICE_ITEM_KEY, si);
 		context.setParam(JMicroContext.LOCAL_HOST, Config.getHost());
 		
 		context.configMonitor(sm.getMonitorEnable(),si.getMonitorEnable());
-		//context.setParam(JMicroContext.LINKER_ID, msg.getLinkId());
-		//context.isLoggable = msg.isLoggable();
 		
 		//debug mode 下才有效
-		context.isDebug = sm.getDebugMode() == 1?true:(si.getDebugMode() == 1 ? true : false);
-		if(context.isDebug) {
-			context.clientUpTime = System.currentTimeMillis();
-			context.debugLoger = new StringBuilder();
+		boolean isDebug = sm.getDebugMode() == 1?true:(si.getDebugMode() == 1 ? true : false);
+		context.setParam(IS_DEBUG, isDebug);
+		if(isDebug) {
+			context.setParam(CLIENT_UP_TIME, System.currentTimeMillis());
+			context.setParam(DEBUG_LOG, new StringBuilder());
 		}
+		
+		if(context.isMonitor()) {
+			
+			MRpcItem item = context.getMRpcItem();
+			if(item == null) {
+				synchronized(MRpcItem.class) {
+					item = context.getMRpcItem();
+					if(item == null) {
+						item = new MRpcItem();
+						context.setParam(MRPC_ITEM, item);
+					}
+				}
+			}
+		}
+		
 	}
 	
 	
@@ -244,40 +258,8 @@ public class JMicroContext  {
 		context.setObject(Constants.SERVICE_OBJ_KEY, obj);
 	}
 	
-	/*public static void setSrvLoggable(){
-		JMicroContext c = get();
-		ServiceItem si = c.getParam(Constants.SERVICE_ITEM_KEY, null);
-		ServiceMethod sm = c.getParam(Constants.SERVICE_METHOD_KEY, null);
-		
-		if(sm == null && si == null) {
-			//都没有配置的情况下,不启用服务级的log功能
-			c.isLoggable = false;
-			return;
-		}
-		
-		if(sm.getLoggable() != -1) {
-			//方法级配置有效
-			c.isLoggable = sm.getLoggable() == 1;
-			return;
-		}
-		
-		if(si.getLoggable() != -1) {
-			//服务级配置有效
-			c.isLoggable = sm.getLoggable() == 1;
-			return;
-		}
-		
-		//默认不启用服务级的log配置
-		c.isLoggable = false;
-	}*/
-	
-	/*public boolean isLoggable(boolean isComOpen) {
-		return isLoggable || isComOpen;
-	}*/
-	
 	public static boolean existLinkId(){
 		return get().exists(Constants.NEW_LINKID) && get().getBoolean(Constants.NEW_LINKID, false);
-		
 	}
 	
 	public static Long lid(){
@@ -286,9 +268,7 @@ public class JMicroContext  {
 		if(id != null) {
 			return id;
 		}
-		
 		ComponentIdServer idGenerator = JMicro.getObjectFactory().get(ComponentIdServer.class);
-		
 		if(idGenerator != null) {
 			id = idGenerator.getLongId(Linker.class);
 			c.setLong(LINKER_ID, id);
@@ -296,12 +276,16 @@ public class JMicroContext  {
 		return id;
 	}
 	
-	public void backup() {
+	/**
+	 * 同一个线程多个RPC之间上下文切换
+	 */
+	public void backupAndClear() {
 		Map<String,Object> ps = new HashMap<>();
 		ps.putAll(cxt.get().params);
 		stack.push(ps);
 		cxt.get().params.clear();
 	}
+	
 	
 	public void restore() {
 		cxt.get().params.clear();
@@ -318,83 +302,67 @@ public class JMicroContext  {
 		} else if(srvCfg != -1){
 			configMonitorable(srvCfg==1);
 		}
-		if(this.isMonitor() && this.item == null) {
-			this.item = new MRpcItem();
-		}
 	}
 	
-	public void configMonitorable(boolean enable){
+	private void configMonitorable(boolean enable){
 		this.setBoolean(Constants.MONITOR_ENABLE_KEY, enable);
 	}
 	
 	public boolean isDebug(){
-		return isDebug;
+		return this.getBoolean(IS_DEBUG, false);
 	}
 	
 	//debug mode 下才有效
 	public StringBuilder getDebugLog() {
-		return this.debugLoger;
+		return this.getParam(DEBUG_LOG, null);
 	}
 	
 	//debug mode 下才有效
 	public void appendCurUseTime(String label,boolean force) {
-		if(this.isDebug) {
+		if(isDebug()) {
 			ServiceMethod sm = this.getParam(Constants.SERVICE_METHOD_KEY, null);
 			if(sm != null) {
-				long cost = System.currentTimeMillis() - this.clientUpTime;
-				if(force || cost > sm.getTimeout()-300) {
+				long cost = System.currentTimeMillis() - this.getLong(CLIENT_UP_TIME, System.currentTimeMillis());
+				if(force || cost > sm.getTimeout()-100) {
 					//超时的请求才记录下来
-					this.debugLoger.append(",").append(label).append(": ").append(System.currentTimeMillis()-this.clientUpTime);
+					StringBuilder sb = this.getDebugLog();
+					sb.append(",").append(label).append(": ").append(System.currentTimeMillis() - cost);
 				}
 			}
 		}
 	}
 	
 	public void debugLog(long timeout) {
-		if(!this.isDebug) {
+		if(!this.isDebug()) {
 			return;
 		}
 
-		long cost = System.currentTimeMillis() - this.clientUpTime;
+		StringBuilder log = this.getDebugLog();
+		this.removeParam(DEBUG_LOG);
+		long cost = System.currentTimeMillis() - this.getLong(CLIENT_UP_TIME, System.currentTimeMillis());
 		if(timeout > 0) {
 			if(cost > timeout) {
 				//超时的请求才记录下来
-				this.debugLoger.append(", cost except :").append(timeout).append(" : ").append(cost);
-				logger.warn(this.debugLoger.toString());
+				log.append(", cost except :").append(timeout).append(" : ").append(cost);
+				logger.warn(log.toString());
 			}
-		}else {
+		} else {
 			ServiceMethod sm = this.getParam(Constants.SERVICE_METHOD_KEY, null);
 			if(sm != null) {
 				if(cost > sm.getTimeout()-300) {
 					//超时的请求才记录下来
-					this.debugLoger.append(", mybe timeout except :").append((sm.getTimeout()-300)).append(" : ").append(cost);
-					logger.warn(this.debugLoger.toString());
+					log.append(", mybe timeout except :").append((sm.getTimeout()-300)).append(" : ").append(cost);
+					logger.warn(log.toString());
 				}
 			} else {
 				//超时的请求才记录下来
-				this.debugLoger.append(", with ServiceMethod is NULL :");
-				logger.warn(this.debugLoger.toString());
+				log.append(", with ServiceMethod is NULL :");
+				logger.warn(log.toString());
 			}
 		}			
 	}
 	
 
-	public void mergeParams(JMicroContext c){
-		if(c.params != null && !c.params.isEmpty()) {
-			mergeParams(c.params);
-		}
-		
-		if(c.isDebug) {
-			this.isDebug = c.isDebug;
-			this.clientUpTime = c.clientUpTime;
-			this.debugLoger = new StringBuilder(c.debugLoger.toString());
-		}
-		
-		if(c.isMonitor()) {
-			this.item = c.item;
-		}
-	}
-	
 	public void mergeParams(Map<String,Object> params){
 		if(params == null || params.isEmpty()) {
 			return;
@@ -429,7 +397,6 @@ public class JMicroContext  {
 	    this.params.remove(key);
 	}
 	
-	@SuppressWarnings("unchecked")
 	public <T> void setParam(String key,T val){
 		this.params.put(key,val);
 	}

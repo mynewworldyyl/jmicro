@@ -52,7 +52,7 @@ public interface ISession{
 			//同步请求成功
 			MonitorConstant.REQ_SUCCESS,
 			//超时次数
-			MonitorConstant.REQ_TIMEOUT_FAIL,
+			MonitorConstant.REQ_TOTAL_TIMEOUT_FAIL,
 			
 			ISession.CLIENT_HANDLER_NOT_FOUND,
 			ISession.CLIENT_WRITE_BYTES,

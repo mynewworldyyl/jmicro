@@ -16,7 +16,7 @@
  */
 package org.jmicro.api.monitor.v2;
 
-import java.util.Map;
+import org.jmicro.api.mng.ReportData;
 
 /**
  * 
@@ -27,5 +27,5 @@ public interface IMonitorDataSubscriber {
 
 	void onSubmit(MRpcItem[] sis);
 	
-	Map<Short,Double>  getData(String srvKey,Short[] type);
+	ReportData  getData(String srvKey,Short[] type, String[] dataType);
 }

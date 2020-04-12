@@ -60,7 +60,7 @@ public final class PSData implements Serializable{
 	private Object data;
 	
 	//消息发送结果回调的RPC方法，用于消息服务器给发送者回调
-	private UniqueServiceMethodKey callback;
+	private UniqueServiceMethodKey callback = null;
 	
 	//客户端发送失败次数，用于重发计数，如果消息失败次数到达一定量，将消息丢弃，并调用localCallback（如果存在）通知调用者，
 	private transient int failCnt = 0;

@@ -4,7 +4,7 @@ import java.util.concurrent.RejectedExecutionHandler;
 
 public class ExecutorConfig {
 
-    private int msCoreSize = 2;
+    private int msCoreSize = 1;
 	
 	private int msMaxSize = 10;
 	

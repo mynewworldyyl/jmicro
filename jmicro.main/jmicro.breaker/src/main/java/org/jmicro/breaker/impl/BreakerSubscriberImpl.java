@@ -49,7 +49,7 @@ public class BreakerSubscriberImpl implements IBreakerSubscriber{
 					,data.get(MonitorConstant.STATIS_TOTAL_RESP)
 					,data.get(MonitorConstant.REQ_TIMEOUT)
 					//,data.get(MonitorConstant.CLIENT_REQ_TIMEOUT_FAIL)
-					,data.get(MonitorConstant.STATIS_QPS)
+					,data.get(MonitorConstant.REQ_START)
 					);
 		}
 		
@@ -81,7 +81,7 @@ public class BreakerSubscriberImpl implements IBreakerSubscriber{
 
 		if(sm.isBreaking()) {
 			//已经熔断,算成功率,判断是否关闭熔断器
-			Double successPercent = data.get(MonitorConstant.STATIS_SUCCESS_PERCENT);
+			Double successPercent = data.get(MonitorConstant.STATIS_TOTAL_SUCCESS_PERCENT);
 			if(successPercent > rule.getPercent()) {
 				if(this.openDebug) {
 					logger.debug("Close breaker for service {}, success rate {}",sm.toJson(),successPercent);
@@ -91,7 +91,7 @@ public class BreakerSubscriberImpl implements IBreakerSubscriber{
 			}
 		} else {
 			//没有熔断,判断是否需要熔断
-			Double failPercent = data.get(MonitorConstant.STATIS_FAIL_PERCENT);
+			Double failPercent = data.get(MonitorConstant.STATIS_TOTAL_FAIL_PERCENT);
 			if(failPercent > rule.getPercent()) {
 				if(this.openDebug) {
 					logger.debug("Break down service {}, fail rate {}",sm.toJson(),failPercent);

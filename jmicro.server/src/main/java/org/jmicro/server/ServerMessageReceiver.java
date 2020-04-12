@@ -112,21 +112,11 @@ public class ServerMessageReceiver implements IMessageReceiver{
 	@Override
 	//@Suspendable
 	public void receive(ISession s, Message msg) {
-		 JMicroContext.configProvider(msg);
+		
 		if(openDebug) {
 			//SF.getIns().doMessageLog(MonitorConstant.DEBUG, TAG, msg,"receive");
 		}
-		
-		if(JMicroContext.get().isDebug()) {
-			long usedTime = System.currentTimeMillis() - msg.getTime();
-			StringBuilder sb = JMicroContext.get().getDebugLog();
-			 sb.append(msg.getMethod())
-			.append(",MsgId:").append(msg.getId()).append(",reqID:").append(msg.getReqId())
-			.append(",linkId:").append(JMicroContext.lid());
-			sb.append(",Receive Time:").append(usedTime);
-		}
-		
-		JMicroContext jc = JMicroContext.get();
+		//JMicroContext jc = JMicroContext.get();
 		//直接协程处理，IO LOOP线程返回
 		
 		/*
@@ -148,7 +138,7 @@ public class ServerMessageReceiver implements IMessageReceiver{
 		
 		executor.submit(()->{
 			//线程间上下文切换
-			JMicroContext.get().mergeParams(jc);
+			//JMicroContext.get().mergeParams(jc);
 			doReceive((IServerSession)s,msg);
 		});
 		
@@ -163,13 +153,23 @@ public class ServerMessageReceiver implements IMessageReceiver{
 	//@Suspendable
 	private void doReceive(IServerSession s, Message msg){
 		try {
+			
+			JMicroContext.configProvider(s,msg);
+			if(JMicroContext.get().isDebug()) {
+				long usedTime = System.currentTimeMillis() - msg.getTime();
+				StringBuilder sb = JMicroContext.get().getDebugLog();
+				 sb.append(msg.getMethod())
+				.append(",MsgId:").append(msg.getId()).append(",reqID:").append(msg.getReqId())
+				.append(",linkId:").append(JMicroContext.lid());
+				sb.append(",Receive Time:").append(usedTime);
+			}
+				
 			if(msg.isLoggable()) {
 				SF.doMessageLog(MonitorConstant.LOG_DEBUG, TAG, msg,null,"doReceive");
 			}
 			IMessageHandler h = handlers.get(msg.getType());
 			if(h == null) {
            	 	SF.netIoRead(this.getClass().getName(),MonitorConstant.SERVER_IOSESSION_READ, msg.getLen(),s);
-           	 	//SF.netIoRead(this.getClass().getName(),MonitorConstant.CLIENT_IOSESSION_READ, message.getLen());
 				String errMsg = "Message type ["+Integer.toHexString(msg.getType())+"] handler not found!";
 				SF.doMessageLog(MonitorConstant.LOG_ERROR, TAG, msg,null,errMsg);
 				throw new CommonException(errMsg);
@@ -180,7 +180,7 @@ public class ServerMessageReceiver implements IMessageReceiver{
 			//SF.doMessageLog(MonitorConstant.LOG_ERROR, TAG, msg,e);
 			//SF.doSubmit(MonitorConstant.SERVER_REQ_ERROR);
 			logger.error("reqHandler error msg:{} ",msg);
-			logger.error("",e);
+			logger.error("doReceive",e);
 			RpcResponse resp = new RpcResponse(msg.getReqId(),new ServerError(0,e.getMessage()));
 			resp.setSuccess(false);
 			msg.setPayload(ICodecFactory.encode(codeFactory,resp,msg.getProtocol()));
@@ -192,6 +192,7 @@ public class ServerMessageReceiver implements IMessageReceiver{
 				JMicroContext.get().debugLog(1000);
 			}
 			JMicroContext.get().submitMRpcItem();
+			JMicroContext.clear();
 		}
 	}
 }

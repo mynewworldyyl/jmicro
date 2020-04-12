@@ -19,9 +19,9 @@ public class TestServiceCounter {
 	@Test
 	public void testServiceCounter() {
 		Random r = new Random(1000);
-		ServiceCounter count = new ServiceCounter("test", 10, TimeUnit.SECONDS);
+		ServiceCounter count = new ServiceCounter("test",null,10,10,TimeUnit.SECONDS);
 		short t = 1;
-		count.addCounter(t, 10);
+		count.addCounter(t);
 		for(;true;) {
 			count.add(t, 1);
 			System.out.println("Total:"+count.get(t));
@@ -45,7 +45,7 @@ public class TestServiceCounter {
 		while(true) {
 			sc.increment(MonitorConstant.REQ_SUCCESS);
 			Double succp = sc.getValueWithEx(MonitorConstant.REQ_SUCCESS);
-			Double qps = ServiceCounter.getData(sc,MonitorConstant.STATIS_QPS);
+			//Double qps = ServiceCounter.getData(sc,MonitorConstant.STATIS_QPS);
 			logger.debug("treq:{}",succp);
 		}
 	
@@ -90,12 +90,12 @@ public class TestServiceCounter {
 		
 		TimerTicker.getDefault(1*1000L).addListener("testMutilThreadCounterTimer", (key,att)->{
 			
-			Double failPercent = ServiceCounter.getData(sc, MonitorConstant.STATIS_FAIL_PERCENT);// sc.getTotal(MonitorConstant.CLIENT_REQ_BEGIN);
-			Double succPersent = ServiceCounter.getData(sc, MonitorConstant.STATIS_SUCCESS_PERCENT); //sc.getTotal(MonitorConstant.CLIENT_REQ_OK);
+			//Double failPercent = ServiceCounter.getData(sc, MonitorConstant.STATIS_TOTAL_FAIL_PERCENT);// sc.getTotal(MonitorConstant.CLIENT_REQ_BEGIN);
+			//Double succPersent = ServiceCounter.getData(sc, MonitorConstant.STATIS_TOTAL_SUCCESS_PERCENT); //sc.getTotal(MonitorConstant.CLIENT_REQ_OK);
 			
-			Double qps = ServiceCounter.getData(sc,MonitorConstant.STATIS_QPS);
+			//Double qps = ServiceCounter.getData(sc,MonitorConstant.STATIS_QPS);
 			
-			logger.debug("qps:{}, succPersent:{}, failPercent:{}",qps,succPersent,failPercent);
+			//logger.debug("qps:{}, succPersent:{}, failPercent:{}",qps,succPersent,failPercent);
 			
 			   /* Double treq = sc.getValueWithEx(MonitorConstant.CLIENT_REQ_BEGIN);
 				Double succp = sc.getValueWithEx(MonitorConstant.CLIENT_REQ_OK);
@@ -141,9 +141,9 @@ public class TestServiceCounter {
 		
 		TimerTicker.getDefault(1*1000L).addListener("testSingleThreadSingleCounterTimer", (key,att)->{
 			
-			Double qps = ServiceCounter.getData(sc,MonitorConstant.STATIS_QPS);
+			//Double qps = ServiceCounter.getData(sc,MonitorConstant.STATIS_QPS);
 			
-			logger.debug("qps:{}",qps);
+			//logger.debug("qps:{}",qps);
 				
 		}, null);
 		

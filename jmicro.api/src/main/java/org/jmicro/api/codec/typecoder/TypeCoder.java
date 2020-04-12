@@ -254,6 +254,27 @@ public interface TypeCoder<T> extends Comparable<TypeCoder<T>>{
 	
 	public static boolean seriaFinalClass(Object arrays) {
 
+		if(arrays == null) {
+			return false;
+		}
+		 int len = Array.getLength(arrays);
+		 if(len == 0) {
+			 return false;
+		 }
+		 
+		 for(int i = 0; i < len; i++) {
+			 Object elt = Array.get(arrays, i);
+			 if(elt == null) {
+				 return false;
+			 }
+			 return java.lang.reflect.Modifier.isFinal(elt.getClass().getModifiers()) ||org.jmicro.api.codec.ISerializeObject.class.isAssignableFrom(elt.getClass());
+		 }
+		 
+		return false;
+		
+	}
+	
+	public static boolean hasNullElement(Object arrays) {
 
 		if(arrays == null) {
 			return false;
@@ -266,14 +287,14 @@ public interface TypeCoder<T> extends Comparable<TypeCoder<T>>{
 		 for(int i = 0; i < len; i++) {
 			 Object elt = Array.get(arrays, i);
 			 if(elt == null) {
-				 continue;
+				return true;
 			 }
-			 return java.lang.reflect.Modifier.isFinal(elt.getClass().getModifiers()) ||org.jmicro.api.codec.ISerializeObject.class.isAssignableFrom(elt.getClass());
 		 }
 		 
 		return false;
 		
 	}
+	
 	
 	public static boolean sameArrayTypeEles(Object coll) {
 		int len = Array.getLength(coll);

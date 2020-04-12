@@ -1,6 +1,6 @@
 <template>
   <div>
-  <JStatisServiceView dataId="JStatisServiceView" :allow-many=true ></JStatisServiceView>
+  <JStatisView dataId="JStatisView" :allow-many=true ></JStatisView>
 
   <div :style="drawerBtnStyle" class="drawerBtnStatu" @mouseenter="openDrawer()"></div>
   <Drawer :closable="false" placement="left" v-model="drawerStatus" :transfer="true"
@@ -14,12 +14,12 @@
 <script>
 
     import JServiceList from '../service/JServiceList.vue'
-    import JStatisServiceView from './JStatisServiceView.vue'
+    import JStatisView from './JStatisView.vue'
 
 export default {
     name: 'JStatis',
     components: {
-        JStatisServiceView,
+        JStatisView,
         JServiceList,
     },
     data() {

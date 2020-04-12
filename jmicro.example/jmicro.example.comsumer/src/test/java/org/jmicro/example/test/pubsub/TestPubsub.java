@@ -11,8 +11,10 @@ import org.jmicro.api.codec.JDataOutput;
 import org.jmicro.api.codec.PrefixTypeEncoderDecoder;
 import org.jmicro.api.mng.ConfigNode;
 import org.jmicro.api.mng.IConfigManager;
+import org.jmicro.api.mng.ReportData;
 import org.jmicro.api.monitor.v1.MonitorConstant;
 import org.jmicro.api.net.Message;
+import org.jmicro.api.pubsub.PSData;
 import org.jmicro.api.registry.AsyncConfig;
 import org.jmicro.api.registry.ServiceMethod;
 import org.jmicro.common.Constants;
@@ -61,7 +63,7 @@ public class TestPubsub extends JMicroBaseTestCase{
 	
 	@Test
 	public void testEncodePSData1() throws IOException {
-		PSData psd = new PSData();
+		PSData0 psd = new PSData0();
 		AsyncConfig as = new AsyncConfig();
 		psd.put("asc", as);
 		
@@ -71,7 +73,7 @@ public class TestPubsub extends JMicroBaseTestCase{
 		JDataOutput out = new JDataOutput();
 		psd.encode(out, null);
 		
-		PSData decodePsd = new PSData();
+		PSData0 decodePsd = new PSData0();
 		
 		JDataInput ji = new JDataInput(out.getBuf());
 		decodePsd.decode(ji);
@@ -129,14 +131,14 @@ public class TestPubsub extends JMicroBaseTestCase{
 		//data.values().iterator()
 		//org.jmicro.api.pubsub.PSData psData = new org.jmicro.api.pubsub.PSData();
 		
-		PSData psData = new PSData();
+		PSData0 psData = new PSData0();
 		psData.put(Constants.SERVICE_METHOD_KEY, new ServiceMethod());
 		psData.put(Constants.SERVICE_NAME_KEY, 2222);
 		psData.setData(data);
 		
 		ByteBuffer buffer = ed.encode(psData);
 		
-		PSData r = ed.decode(buffer);
+		PSData0 r = ed.decode(buffer);
 		
 		System.out.println(r);
 	}
@@ -232,6 +234,60 @@ public class TestPubsub extends JMicroBaseTestCase{
 		ConfigNode[] nodes = cm.getChildren("/", true);
 		System.out.print(nodes);
 		this.waitForReady(60*60);
+	}
+	
+	@Test
+	public void testReportDataEncodeDecode() throws IOException {
+		
+		ReportData0 rd = new ReportData0();
+		rd.setTypes(new Short[] {1,2,3});
+		rd.setLabels(new String[] {"","",""});
+		rd.setDatas(new Double[] {null,0D,0D});
+		
+		JDataOutput jo = new JDataOutput();
+		rd.encode(jo, rd);
+		
+		ReportData0 deData = new ReportData0();
+		deData.decode(new JDataInput(jo.getBuf()));
+		
+		System.out.println(deData);
+	}
+	
+	@Test
+	public void testPubsubReportDataEncodeDecode() throws IOException {
+		
+		PrefixTypeEncoderDecoder ed = of.get(PrefixTypeEncoderDecoder.class);
+		
+		Map<Short,Object> data = new HashMap<>();
+		data.put(MonitorConstant.CLIENT_CONNECT_FAIL, 222D);
+		data.put(MonitorConstant.CLIENT_IOSESSION_CLOSE, new ServiceMethod());
+		//data.values().iterator()
+		//org.jmicro.api.pubsub.PSData psData = new org.jmicro.api.pubsub.PSData();
+		
+		ReportData rd = new ReportData();
+		rd.setTypes(new Short[] {1,2,3});
+		rd.setLabels(new String[] {null,"",""});
+		
+		Double[] datas = new Double[] {0D,null,0D};
+		rd.setQps(datas);
+		
+		PSData psData = new PSData();
+		psData.setData(rd);
+		psData.setTopic("");
+		psData.put(Constants.SERVICE_METHOD_KEY, "");
+		
+		//ByteBuffer bb = ByteBuffer.allocate(1024);
+		
+		/*JDataOutput jo = new JDataOutput();
+		psData.encode(jo, psData);
+		
+		PSData deData = new PSData();
+		deData.decode(new JDataInput(jo.getBuf()));*/
+		
+		ByteBuffer buffer = ed.encode(psData);
+		PSData deData = ed.decode(buffer);
+		
+		System.out.println(deData);
 	}
 	
 }

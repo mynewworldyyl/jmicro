@@ -18,6 +18,7 @@ package org.jmicro.api.monitor.v1;
 
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
@@ -48,6 +49,12 @@ public class ServiceCounter implements IServiceCounter<Short>{
 	//服务唯一标识,粒度到服务方法,=服务名+名称空间+版本+方法名+方法参数标识
 	private String serviceKey;
 	
+	private long slotSize;
+	
+	private long slotSizeInMilliseconds;
+	
+	private long timeWindowInMilliseconds;
+	
 	private Set<Short> supportTypes = new HashSet<>();
 	
 	private long timeWindow;
@@ -58,20 +65,49 @@ public class ServiceCounter implements IServiceCounter<Short>{
 	private ConcurrentHashMap<Short,Counter> counters = new ConcurrentHashMap<>();
 	
 	
-	public ServiceCounter(String serviceKey,long timeWindow,TimeUnit unit) {
+	/*public ServiceCounter(String serviceKey,long timeWindow,TimeUnit unit) {
 		if(StringUtils.isEmpty(serviceKey)) {
 			throw new CommonException("Service Key cannot be null");
 		}
 		this.serviceKey = serviceKey;
 		this.timeWindow = timeWindow;
 		this.unit = unit;
-	}
+	}*/
 	
 	public ServiceCounter(String serviceKey,Short[] types,long timeWindow,long slotSize,TimeUnit unit) {
-		this(serviceKey,timeWindow,unit);
-		supportTypes.addAll(Arrays.asList(types));
-		for(Short type : types) {
-			addCounter(type,slotSize);
+		if(StringUtils.isEmpty(serviceKey)) {
+			throw new CommonException("Service Key cannot be null");
+		}
+		if(timeWindow <= 0) {
+			throw new CommonException("Invalid timeWindow: " + timeWindow);
+		}
+		if(slotSize <= 0) {
+			throw new CommonException("Invalid slotSize: " + slotSize);
+		}
+		
+		this.serviceKey = serviceKey;
+		this.unit = unit;
+		this.slotSize = slotSize;
+		this.timeWindow = timeWindow;
+		
+		timeWindowInMilliseconds = TimeUtils.getTime(timeWindow, unit,TimeUnit.MILLISECONDS);
+		
+		if(timeWindowInMilliseconds <= 0) {
+			throw new CommonException("Invalid timeWindow to MILLISECONDS : " + timeWindow);
+		}
+		
+		slotSizeInMilliseconds = timeWindowInMilliseconds / this.slotSize;
+		
+		if(slotSizeInMilliseconds == 0 || timeWindowInMilliseconds % slotSizeInMilliseconds != 0) {
+			throw new CommonException("timeWindow%slotSizeInMilliseconds must be zero,but:" +
+					timeWindow + "%" + slotSizeInMilliseconds+"="+(timeWindow % slotSizeInMilliseconds));
+		}
+		
+		if(types != null && types.length > 0) {
+			supportTypes.addAll(Arrays.asList(types));
+			for(Short type : types) {
+				addCounter(type);
+			}
 		}
 	}
 	
@@ -101,13 +137,13 @@ public class ServiceCounter implements IServiceCounter<Short>{
 	}
 
 	@Override
-	public Double getTotal(Short... types) {
-		double sum = 0;
+	public Long getTotal(Short... types) {
+		long sum = 0;
 		for(Short type : types) {
 			Counter c = getCounter(type,false);
 			if(c == null) {
 				//返回一个无效值，使用方应该判断此值是否有效才能使用
-				return -1D;
+				return -1L;
 			}
 			sum += getCounter(type,true).getTotal();
 		}
@@ -194,28 +230,34 @@ public class ServiceCounter implements IServiceCounter<Short>{
 		return this.addCounter(type, timeWindow, slotSize, TimeUtils.getTimeUnit(unit));
 	}*/
 
-	public boolean addCounter(Short type,long slotSize) {
+	public boolean addCounter(Short type) {
 		if(this.counters.containsKey(type)) {
 			throw new CommonException("Type["+type+"] exists for service ["+this.serviceKey+"]");
 		}
-		
-		long timeWindow = TimeUtils.getTime(this.timeWindow, this.unit,TimeUnit.MILLISECONDS);
-		long slotSizeInMilliseconds = timeWindow / slotSize;
-		//slotSizeInMilliseconds = TimeUtils.getTime(slotSizeInMilliseconds, unit,TimeUnit.MILLISECONDS);
-		
-		if(timeWindow % slotSizeInMilliseconds != 0) {
-			throw new CommonException("timeWindow%slotSizeInMilliseconds must be zero,but:" +
-					timeWindow + "%" + slotSizeInMilliseconds+"="+(timeWindow % slotSizeInMilliseconds));
-		}
+
 		String key = serviceKey+"-"+type;
 		
-		Counter cnt = new Counter(type,timeWindow,slotSizeInMilliseconds);
+		Counter cnt = new Counter(type,timeWindowInMilliseconds,slotSizeInMilliseconds);
 		TimerTicker.getDefault(slotSizeInMilliseconds).addListener(key, cnt,null,true);
 		this.counters.put(type, cnt);
 		supportTypes.add(type);
 		return true;
 	}
 	
+	
+	
+	@Override
+	public void getAll(Map<Short, Double> values) {
+		if(values == null) {
+			throw new NullPointerException("value is NULL");
+		}
+		
+		for(Map.Entry<Short, Counter> c : this.counters.entrySet()) {
+			values.put(c.getKey(), new Double(c.getValue().getVal()));
+		}
+		
+	}
+
 	/**
 	 * 指定类型所占总请求数的百分比
 	 * @param counter
@@ -240,7 +282,7 @@ public class ServiceCounter implements IServiceCounter<Short>{
 		
 		Double result = 0D;
 		switch(type) {
-		case MonitorConstant.STATIS_FAIL_PERCENT:
+		case MonitorConstant.STATIS_TOTAL_FAIL_PERCENT:
 			Long totalReq = counter.get(MonitorConstant.REQ_START);
 			if(totalReq != 0) {
 				double totalFail = counter.getValueWithEx(MonitorConstant.CLIENT_SERVICE_ERROR,MonitorConstant.REQ_TIMEOUT);
@@ -248,11 +290,11 @@ public class ServiceCounter implements IServiceCounter<Short>{
 				//logger.debug("totalReq:{},totalFail:{},Percent:{}",totalReq,totalFail,result);
 			}
 			break;
-		case MonitorConstant.STATIS_TOTAL_REQ:
+		case MonitorConstant.REQ_START:
 			result = 1.0 * counter.getTotal(MonitorConstant.REQ_START);		
 			break;
 		case MonitorConstant.STATIS_TOTAL_RESP:
-			result = counter.getTotal(MonitorConstant.REQ_END);
+			result = new Double(counter.getTotal(MonitorConstant.REQ_END));
 			break;
 		case MonitorConstant.STATIS_TOTAL_SUCCESS:
 			result =  1.0 * counter.getTotal(MonitorConstant.REQ_SUCCESS);
@@ -260,10 +302,10 @@ public class ServiceCounter implements IServiceCounter<Short>{
 		case MonitorConstant.STATIS_TOTAL_FAIL:
 			result = 1.0 * counter.getTotal(MonitorConstant.CLIENT_RESPONSE_SERVER_ERROR)+
 			counter.getTotal(MonitorConstant.CLIENT_SERVICE_ERROR)+
-			counter.getTotal(MonitorConstant.REQ_TIMEOUT_FAIL)+
+			counter.getTotal(MonitorConstant.REQ_TOTAL_TIMEOUT_FAIL)+
 			counter.getTotal(MonitorConstant.REQ_ERROR);
 			break;
-		case MonitorConstant.STATIS_SUCCESS_PERCENT:
+		case MonitorConstant.STATIS_TOTAL_SUCCESS_PERCENT:
 			totalReq = counter.get(MonitorConstant.REQ_START);
 			if(totalReq != 0) {
 				result =  1.0 * counter.get(MonitorConstant.REQ_SUCCESS)/*+
@@ -271,17 +313,17 @@ public class ServiceCounter implements IServiceCounter<Short>{
 						result = (result*1.0/totalReq)*100;
 			}
 			break;
-		case MonitorConstant.REQ_TIMEOUT_FAIL:
-			result = 1.0 * counter.get(MonitorConstant.REQ_TIMEOUT_FAIL);
+		case MonitorConstant.REQ_TOTAL_TIMEOUT_FAIL:
+			result = 1.0 * counter.get(MonitorConstant.REQ_TOTAL_TIMEOUT_FAIL);
 			break;
-		case MonitorConstant.STATIS_TIMEOUT_PERCENT:
+		case MonitorConstant.STATIS_TOTAL_TIMEOUT_PERCENT:
 			totalReq = counter.get(MonitorConstant.REQ_START);
 			if(totalReq != 0) {
-				result = 1.0 * counter.get(MonitorConstant.REQ_TIMEOUT_FAIL);
+				result = 1.0 * counter.get(MonitorConstant.REQ_TOTAL_TIMEOUT_FAIL);
 				result = (result/totalReq)*100;
 			}
 			break;
-		case MonitorConstant.STATIS_QPS:
+		case MonitorConstant.REQ_START+1:
 			result = counter.getQps(TimeUnit.SECONDS,MonitorConstant.REQ_START);
 			break;
 		default:

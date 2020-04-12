@@ -72,6 +72,7 @@ public class RpcRequestHandler extends AbstractHandler implements IRequestHandle
 			resp.setMonitorEnable(request.isMonitorEnable());
 			resp.setSuccess(true);
 		} catch (SecurityException | IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
+			logger.error("onRequest:",e);
 			throw new RpcException(request,e);
 		}
 		return resp;

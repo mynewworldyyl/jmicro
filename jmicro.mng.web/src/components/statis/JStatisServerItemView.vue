@@ -1,32 +1,48 @@
 <template>
   <div>
+    <JLineChart titleName="QPS" type="qps" indexTypes="240,209,246" :charContainerId="node.id + '1'" :node="node"></JLineChart>
+    <JLineChart titleName="Percent" type="percent"   indexTypes="240,209,246" :charContainerId="node.id + '2'" :node="node"></JLineChart>
+    <JLineChart titleName="Total" type="total"   indexTypes="240,209,246" :charContainerId="node.id + '3'" :node="node"></JLineChart>
+    <JIndexPercent titleName="QPS" type="qps"   :charContainerId="node.id + '4'" :node="node"></JIndexPercent>
+    <JIndexPercent titleName="Percent" type="percent"   :charContainerId="node.id + '5'" :node="node"></JIndexPercent>
+    <JIndexPercent titleName="Total" type="total"   :charContainerId="node.id + '6'" :node="node"></JIndexPercent>
   </div>
 </template>
 
 <script>
 
-    import TreeNode from "../service/JServiceList.vue"
+    //import TreeNode from "../service/JServiceList.vue"
+    import JLineChart from "../chart/JLineChart.vue"
+    import JIndexPercent from "../chart/JIndexPercent.vue"
 
-export default {
-    name: 'JStatisServerItemView',
-    components: {
-    },
-    props: {
-        meth : TreeNode
-    },
+    export default {
+        name: 'JStatisServiceItemView',
+        components: {
+            JLineChart,
+            JIndexPercent
+        },
+        props: {
+            serverNode : {type:Object,default:null}
+        },
 
-    methods: {
+        methods: {
 
-    },
+        },
 
-    data(){
-        return {
-            node : this.meth,
+        data(){
+            return {
+                node : this.serverNode,
+            }
         }
     }
-}
 </script>
 
 <style scoped>
+  .JContent{
+    height:auto;
+    position: relative;
+  }
+
+
 
 </style>

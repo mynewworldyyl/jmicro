@@ -21,17 +21,11 @@
               STATIS
           </Menu-item>
 
-          <!--
-          <Submenu name="statisService">
-             <template slot="title">
-                  <Icon type="ios-stats" />
-                  STATIS
-              </template>
-              <MenuItem name="statisService">SERVICE</MenuItem>
-              <MenuItem name="instance">INSTANCE</MenuItem>
-              <MenuItem name="server">SERVER</MenuItem>
-          </Submenu>
--->
+          <Menu-item name="warning">
+              <Icon type="ios-alert" />
+              WARNING
+          </Menu-item>
+
           <Menu-item name="log">
               <Icon type="ios-filing"></Icon>
               LOG
@@ -47,9 +41,9 @@
                   <Icon type="ios-analytics" />
                   OTHERS
               </template>
-              <MenuItem name="help">HELP</MenuItem>
-              <MenuItem name="about">ABOUT</MenuItem>
-              <MenuItem name="contact">CONTACT ME</MenuItem>
+              <MenuItem name="help"> <Icon type="ios-cog"></Icon>HELP</MenuItem>
+              <MenuItem name="about"> <Icon type="ios-cog"></Icon>ABOUT</MenuItem>
+              <MenuItem name="contact"> <Icon type="ios-cog"></Icon>CONTACT ME</MenuItem>
           </Submenu>
 
       </Menu>

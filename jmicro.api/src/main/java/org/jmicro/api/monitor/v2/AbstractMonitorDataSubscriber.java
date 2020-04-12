@@ -1,7 +1,6 @@
 package org.jmicro.api.monitor.v2;
 
-import java.util.Map;
-
+import org.jmicro.api.mng.ReportData;
 import org.jmicro.api.registry.UniqueServiceKey;
 
 public abstract class AbstractMonitorDataSubscriber implements IMonitorDataSubscriber {
@@ -12,7 +11,7 @@ public abstract class AbstractMonitorDataSubscriber implements IMonitorDataSubsc
 	}
 
 	@Override
-	public Map<Short,Double>  getData(String srvKey, Short[] type) {
+	public ReportData  getData(String srvKey, Short[] type, String[] dataType) {
 		return null;
 	}
 

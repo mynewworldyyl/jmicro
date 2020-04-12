@@ -23,12 +23,7 @@ import java.util.Map;
 import java.util.Set;
 
 import org.jmicro.api.JMicroContext;
-import org.jmicro.api.annotation.Inject;
 import org.jmicro.api.annotation.Reference;
-import org.jmicro.api.config.Config;
-import org.jmicro.api.idgenerator.ComponentIdServer;
-import org.jmicro.api.monitor.v1.IMonitorDataSubmiter;
-import org.jmicro.api.net.InterceptorManager;
 import org.jmicro.api.registry.AsyncConfig;
 import org.jmicro.api.registry.IRegistry;
 import org.jmicro.api.registry.IServiceListener;
@@ -52,8 +47,6 @@ public abstract class AbstractClientServiceProxy implements InvocationHandler,IS
 	private final Logger logger = LoggerFactory.getLogger(this.getClass());
 	
 	private ServiceItem item = null;
-	
-	private IMonitorDataSubmiter monitor;
 	
 	private IObjectFactory of;
 	
@@ -185,16 +178,7 @@ public abstract class AbstractClientServiceProxy implements InvocationHandler,IS
 		
 		AsyncConfig async = JMicroContext.get().getParam(Constants.ASYNC_CONFIG, null);
 		
-		JMicroContext.get().backup();
-		
-		if(this.monitor == null) {
-			try {
-	    		this.setMonitor(of.get(IMonitorDataSubmiter.class));
-	    	}catch(CommonException e) {
-	    		logger.error(e.getMessage());
-	    	}
-		}
-		JMicroContext.setMonitor();
+		JMicroContext.get().backupAndClear();
 		
 		//false表示不是provider端
 		JMicroContext.callSideProdiver(false);
@@ -240,14 +224,6 @@ public abstract class AbstractClientServiceProxy implements InvocationHandler,IS
 		return this.serviceKey().hashCode();
 	}
 
-	public IMonitorDataSubmiter getMonitor() {
-		return monitor;
-	}
-
-	public void setMonitor(IMonitorDataSubmiter monitor) {
-		this.monitor = monitor;
-	}
-
 	@Override
 	public boolean equals(Object obj) {
 		if(!(obj instanceof AbstractClientServiceProxy)){
@@ -256,8 +232,6 @@ public abstract class AbstractClientServiceProxy implements InvocationHandler,IS
 		AbstractClientServiceProxy o = (AbstractClientServiceProxy)obj;
 		return this.serviceKey().equals(o.serviceKey());
 	}
-	
-	
 	
 	public void setAsyncConfig(AsyncConfig[] acs) {
 		if(acs != null && acs.length > 0) {

@@ -12,7 +12,6 @@ import java.util.Iterator;
 import java.util.Map;
 
 import org.jmicro.api.annotation.SO;
-import org.jmicro.api.codec.Decoder;
 import org.jmicro.api.codec.ISerializeObject;
 import org.jmicro.api.codec.TypeCoderFactory;
 import org.jmicro.api.codec.typecoder.TypeCoder;
@@ -395,7 +394,7 @@ public class SerializeProxyFactory {
 		//System.out.println("\n\n");
 		//System.out.println(sb.toString());
 		
-		if("org.jmicro.api.net.RpcRequest".equals(cls.getName())) {
+		if("org.jmicro.api.mng.ReportData".equals(cls.getName())) {
 			System.out.println(sb.toString());
 		}
 		
@@ -514,11 +513,13 @@ public class SerializeProxyFactory {
 				    	
 				    	sb.append(" boolean writeEvery = false;\n");
 				    	
+				    	sb.append(" boolean hasNull = org.jmicro.agent.SerializeProxyFactory.collHasNullElement(__val"+i+");\n");
+				    	
 				    	//Ljava/util/Set<Lorg/jmicro/api/test/Person;>
 				    	String gs = f.getGenericSignature();
 				    	String genericType = getGenericType(gs);
 				    	
-				    	sb.append("if(").append(genericType==null ? "null" : genericType + ".class").append("!= null && (java.lang.reflect.Modifier.isFinal(" + genericType + ".class.getModifiers()) ||org.jmicro.api.codec.ISerializeObject.class.isAssignableFrom("+genericType+".class))) { \n"); 
+				    	sb.append("if(!hasNull && ").append(genericType==null ? "null" : genericType + ".class").append("!= null && (java.lang.reflect.Modifier.isFinal(" + genericType + ".class.getModifiers()) ||org.jmicro.api.codec.ISerializeObject.class.isAssignableFrom("+genericType+".class))) { \n"); 
 				    	sb.append(" "+flagName+" |= org.jmicro.common.Constants.GENERICTYPEFINAL; \n");//能从泛型中能获取到足够的列表元素类型信息
 			    		sb.append(" } else { // block2 \n");
 			    		//从值中获取元素类型信息
@@ -526,7 +527,7 @@ public class SerializeProxyFactory {
 			    		sb.append(" boolean sameElt = org.jmicro.agent.SerializeProxyFactory.sameCollectionTypeEles(__val"+i+"); \n");//是否是同种类型的对象
 				    	sb.append(" boolean isFinal = org.jmicro.agent.SerializeProxyFactory.seriaFinalClass(__val"+i+".toArray());\n");
 				    	
-				    	sb.append(" if(sameElt && isFinal) { //block3 \n");
+				    	sb.append(" if(sameElt && isFinal && !hasNull) { //block3 \n");
 				    		sb.append(" "+flagName+" |= org.jmicro.common.Constants.HEADER_ELETMENT; \n");//第一个元素 是否是抽象类，sameElt=true时有效
 					    	//sb.append(" __buffer.writeUTF(__val"+i+".iterator().next().getClass().getName());\n");
 				    		sb.append(" writeEvery = false; \n");
@@ -577,19 +578,21 @@ public class SerializeProxyFactory {
 				    	
 				    	sb.append(" boolean writeEvery = false;\n");
 				    	
+				    	sb.append(" boolean hasNull = org.jmicro.agent.SerializeProxyFactory.hasNullElement(__val"+i+");\n");
+				    	
 				    	//Ljava/util/Set<Lorg/jmicro/api/test/Person;>
 				    	CtClass arrEleType = fieldDeclareType.getComponentType();
 				    	
 				    	String genericType = arrEleType.getName();
 				    	
-				    	sb.append("if(").append(genericType==null ? "null" : genericType + ".class").append("!= null && (java.lang.reflect.Modifier.isFinal(" + genericType + ".class.getModifiers()) ||org.jmicro.api.codec.ISerializeObject.class.isAssignableFrom("+genericType+".class))) { \n"); 
+				    	sb.append("if(!hasNull && ( java.lang.reflect.Modifier.isFinal(" + genericType + ".class.getModifiers()) ||org.jmicro.api.codec.ISerializeObject.class.isAssignableFrom("+genericType+".class))) { \n"); 
 				    	sb.append(" "+flagName+" |= org.jmicro.common.Constants.GENERICTYPEFINAL; \n");//能从泛型中能获取到足够的列表元素类型信息
 			    		sb.append(" } else { // block2 \n");
 			    		//从值中获取元素类型信息
 			    		sb.append(" boolean sameElt = org.jmicro.agent.SerializeProxyFactory.sameArrayTypeEles(__val"+i+"); \n");//是否是同种类型的对象
 				    	sb.append(" boolean isFinal = org.jmicro.agent.SerializeProxyFactory.seriaFinalClass(__val"+i+");\n");
 				    	
-				    	sb.append(" if(sameElt && isFinal) { //block3 \n");
+				    	sb.append(" if(sameElt && isFinal && !hasNull) { //block3 \n");
 				    		sb.append(" "+flagName+" |= org.jmicro.common.Constants.HEADER_ELETMENT; \n");//第一个元素 是否是抽象类，sameElt=true时有效
 					    	//sb.append(" __buffer.writeUTF(__val"+i+".iterator().next().getClass().getName());\n");
 				    		sb.append(" writeEvery = false; \n");
@@ -655,15 +658,17 @@ public class SerializeProxyFactory {
 				    	String keyType = genericType.length == 2? genericType[0]:null;
 				    	String valType = genericType.length == 2? genericType[1]:null;
 				    	
+				    	sb.append(" boolean hasNullKeyElt = org.jmicro.agent.SerializeProxyFactory.collHasNullElement(__val"+i+".keySet());//是否有空元素的KEY \n");
+				    	
 				    	//encode Key type
-				    	sb.append("if(").append(keyType==null ? "null" : keyType + ".class").append("!= null && (java.lang.reflect.Modifier.isFinal(" + keyType + ".class.getModifiers()) ||org.jmicro.api.codec.ISerializeObject.class.isAssignableFrom("+keyType+".class))) { \n"); 
+				    	sb.append("if( !hasNullKeyElt && ").append(keyType==null ? "null" : keyType + ".class").append("!= null && (java.lang.reflect.Modifier.isFinal(" + keyType + ".class.getModifiers()) ||org.jmicro.api.codec.ISerializeObject.class.isAssignableFrom("+keyType+".class))) { \n"); 
 				    	sb.append(" "+flagName+" |= org.jmicro.common.Constants.GENERICTYPEFINAL; //能从泛型中能获取到足够的列表元素类型信息\n");
 			    		sb.append(" } else { // block2 \n");
 			    		//从值中获取元素类型信息
 			    		sb.append(" boolean sameKeyElt = org.jmicro.agent.SerializeProxyFactory.sameCollectionTypeEles(__val"+i+".keySet());//是否是同种类型的对象 \n");
 				    	sb.append(" boolean isKeyFinal = org.jmicro.agent.SerializeProxyFactory.seriaFinalClass(__val"+i+".keySet().iterator().next().getClass());\n");
 				    	
-				    	sb.append(" if(sameKeyElt && isKeyFinal) { //block3 \n");
+				    	sb.append(" if(sameKeyElt && isKeyFinal && !hasNullKeyElt) { //block3 \n");
 				    	    sb.append(" Class cls = __val"+i+".keySet().iterator().next().getClass(); \n");
 				    		sb.append(" "+flagName+" |= org.jmicro.common.Constants.HEADER_ELETMENT; \n");//第一个元素 是否是抽象类，sameElt=true时有效
 					    	//sb.append(" __buffer.writeUTF(__val"+i+".iterator().next().getClass().getName());\n");
@@ -681,16 +686,16 @@ public class SerializeProxyFactory {
 				    	sb.append(" } // block4 \n");
 				    	sb.append(" } // block2 \n");
 				    	
-				    	
+				    	sb.append(" boolean hasNullValElt = org.jmicro.agent.SerializeProxyFactory.collHasNullElement(__val"+i+".values());//是否有空元素的值 \n");
 				    	//encode value type
-				    	sb.append("if(").append(valType==null ? "null" : valType + ".class").append("!= null && (java.lang.reflect.Modifier.isFinal(" + valType + ".class.getModifiers()) ||org.jmicro.api.codec.ISerializeObject.class.isAssignableFrom("+valType+".class))) { \n"); 
+				    	sb.append("if(!hasNullValElt &&").append(valType==null ? "null" : valType + ".class").append("!= null && (java.lang.reflect.Modifier.isFinal(" + valType + ".class.getModifiers()) ||org.jmicro.api.codec.ISerializeObject.class.isAssignableFrom("+valType+".class))) { \n"); 
 				    	sb.append(" "+flagName+" |= org.jmicro.common.Constants.EXT0; \n");//能从泛型中能获取到足够的列表元素类型信息
 			    		sb.append(" } else { // block2 \n");
 			    		//从值中获取元素类型信息
 			    		sb.append(" boolean sameValElt = org.jmicro.agent.SerializeProxyFactory.sameCollectionTypeEles(__val"+i+".values()); \n");//是否是同种类型的对象
 				    	sb.append(" boolean isValFinal = org.jmicro.agent.SerializeProxyFactory.seriaFinalClass(__val"+i+".values().toArray());\n");
 				    	
-				    	sb.append(" if(sameValElt && isValFinal) { //block3 \n");
+				    	sb.append(" if(sameValElt && isValFinal && !hasNullValElt) { //block3 \n");
 				    		sb.append(" "+flagName+" |= org.jmicro.common.Constants.EXT1;//首值编码 \n");//第一个元素 是否是抽象类，sameElt=true时有效
 				    		sb.append(" writeValEvery = false; \n");
 				    		sb.append(" Class cls = __val"+i+".values().iterator().next().getClass(); \n");
@@ -715,7 +720,9 @@ public class SerializeProxyFactory {
 				    	sb.append(" Object val = __val"+i+".get(key); \n");
 				    	
 					   // sb.append(" if(writeEvery) {__buffer.writeUTF(v.getClass().getName());\n}");
-					    sb.append(" if(writeKeyEvery) { \n Short cc"+i+" = org.jmicro.api.codec.TypeCoderFactory.getCodeByClass(key.getClass()); \n ");
+					    sb.append(" if(writeKeyEvery) {  \n ");
+					    sb.append(" if(key == null) {  __buffer.writeByte(org.jmicro.api.codec.Decoder.PREFIX_TYPE_NULL); continue; \n } \n");
+					    sb.append(" Short cc"+i+" = org.jmicro.api.codec.TypeCoderFactory.getCodeByClass(key.getClass()); \n");
 					    sb.append(" if(cc"+i+"==null) { org.jmicro.agent.SerializeProxyFactory.errorToSerializeObjectCode(key.getClass().getName());\n");
 					    sb.append(" __buffer.writeByte(org.jmicro.api.codec.Decoder.PREFIX_TYPE_PROXY);\n");
 					    sb.append("  __buffer.writeUTF(key.getClass().getName()); ");
@@ -725,7 +732,9 @@ public class SerializeProxyFactory {
 					    
 					    sb.append(" org.jmicro.agent.SerializeProxyFactory.encodeListElement(__buffer,key); \n");
 					    
-					    sb.append(" if(writeValEvery) { \n Short cc"+i+" = org.jmicro.api.codec.TypeCoderFactory.getCodeByClass(val.getClass()); \n ");
+					    sb.append(" if(writeValEvery) { \n ");
+					    sb.append(" if(val == null) {  __buffer.writeByte(org.jmicro.api.codec.Decoder.PREFIX_TYPE_NULL); continue; \n } \n");
+					    sb.append(" Short cc"+i+" = org.jmicro.api.codec.TypeCoderFactory.getCodeByClass(val.getClass()); \n");
 					    sb.append(" if(cc"+i+"==null) { org.jmicro.agent.SerializeProxyFactory.errorToSerializeObjectCode(val.getClass().getName());\n");
 					    sb.append(" __buffer.writeByte(org.jmicro.api.codec.Decoder.PREFIX_TYPE_PROXY);\n");
 					    sb.append("  __buffer.writeUTF(val.getClass().getName()); ");
@@ -759,7 +768,7 @@ public class SerializeProxyFactory {
 		
 		sb.append("}");
 		//System.out.println("\n\n");
-		if("org.jmicro.api.monitor.SubmitItem".equals(cls.getName())) {
+		if("org.jmicro.api.mng.ReportData".equals(cls.getName())) {
 			System.out.println(sb.toString());
 		}
 		return sb.toString();
@@ -822,6 +831,14 @@ public class SerializeProxyFactory {
 			return null;
 		}
 		
+		/*try {
+			Class<?> cls = ReflectUtils.desc2class(gs);
+			System.out.println(cls);
+		} catch (ClassNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}*/
+		
 		String clsName = gs.substring(gs.indexOf("<L")+2);
 		clsName = clsName.substring(0,clsName.length()-3);
 	
@@ -851,13 +868,6 @@ public class SerializeProxyFactory {
 		}
 		
 		Object pre = coll[0];
-		for(Object o : coll) {
-			if(o != null) {
-				pre = o;
-				break;
-			}
-		}
-		
 		if(pre == null) {
 			return true;
 		}
@@ -867,7 +877,7 @@ public class SerializeProxyFactory {
 		
 		for(int i = 1; i < coll.length; i++) {
 			cur = coll[i];
-			if(cur != null && cur.getClass() != pre.getClass()) {
+			if(cur == null || cur.getClass() != pre.getClass() ) {
 				same = false;
 				break;
 			}
@@ -884,9 +894,13 @@ public class SerializeProxyFactory {
 			pre = ite.next();
 		}
 		
+		if(pre == null) {
+			return false;
+		}
+		
 		while(ite.hasNext()) {
 			cur = ite.next();
-			if(cur.getClass() != pre.getClass()) {
+			if(cur == null || cur.getClass() != pre.getClass()) {
 				same = false;
 				break;
 			}
@@ -896,9 +910,24 @@ public class SerializeProxyFactory {
 		return same;
 	}
 	
+	public static boolean collHasNullElement(Collection coll) {
+		Iterator ite = coll.iterator();
+		while(ite.hasNext()) {
+			if(ite.next() == null) {
+				return true;
+			}
+		}
+		return false;
+	}
+	
 	public static boolean seriaFinalClass(Object arrays) {
 		return TypeCoder.seriaFinalClass(arrays);
 	}
+	
+	public static boolean hasNullElement(Object arrays) {
+		return TypeCoder.hasNullElement(arrays);
+	}
+
 
 	public static void encodeListElement(DataOutput buffer, Object val) throws IOException {
 		//val impossible to be null
@@ -920,7 +949,7 @@ public class SerializeProxyFactory {
 			buffer.writeFloat((float)val);
 			return;
 		}else if(valCls == double.class || valCls == Double.TYPE || valCls == Double.class ) {
-			buffer.write(Decoder.PREFIX_TYPE_DOUBLE);
+			//buffer.write(Decoder.PREFIX_TYPE_DOUBLE);
 			buffer.writeDouble((double)val);
 			return;
 		}else if(valCls == boolean.class || valCls == Boolean.TYPE || valCls == Boolean.class ) {

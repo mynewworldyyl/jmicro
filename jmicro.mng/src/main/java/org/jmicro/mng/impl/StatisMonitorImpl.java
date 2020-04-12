@@ -1,17 +1,21 @@
 package org.jmicro.mng.impl;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.Inject;
+import org.jmicro.api.annotation.JMethod;
 import org.jmicro.api.annotation.Reference;
 import org.jmicro.api.annotation.SMethod;
 import org.jmicro.api.annotation.Service;
 import org.jmicro.api.cache.lock.ILocker;
 import org.jmicro.api.cache.lock.ILockerManager;
 import org.jmicro.api.config.Config;
+import org.jmicro.api.i18n.I18NManager;
 import org.jmicro.api.mng.IStatisMonitor;
+import org.jmicro.api.mng.ReportData;
 import org.jmicro.api.monitor.v1.MonitorConstant;
 import org.jmicro.api.monitor.v2.IMonitorDataSubscriber;
 import org.jmicro.api.objectfactory.AbstractClientServiceProxy;
@@ -35,7 +39,7 @@ import org.slf4j.LoggerFactory;
  * @author Yulei Ye
  * @date 2020年3月27日
  */
-@Component
+@Component(level=1001)
 @Service(namespace="mng",version="0.0.1")
 public class StatisMonitorImpl implements IStatisMonitor {
 
@@ -44,6 +48,8 @@ public class StatisMonitorImpl implements IStatisMonitor {
 	private static final String STATIS_MONITOR_DIR = Config.BASE_DIR + "/statisMonitorKeys";
 	
 	private static final String RES_LOCK = "statisCounterRegLock";
+	private static final String[] DATA_TYPE = new String[] {MonitorConstant.PREFIX_QPS,
+			MonitorConstant.PREFIX_PERCENT,MonitorConstant.PREFIX_TOTAL};
 	
 	private final Map<Long,TimerTicker> timers = new ConcurrentHashMap<>();
 	
@@ -59,8 +65,29 @@ public class StatisMonitorImpl implements IStatisMonitor {
 	@Inject
 	private ILockerManager lockManager;
 	
+	@Inject
+	private I18NManager i18nManager;
+	
 	@Reference(namespace="rpcStatisMonitor", version="0.0.1",required=false)
 	private IMonitorDataSubscriber dataServer;
+	
+	private String prefix = "statis.index.";
+	
+	private Short[] types = null;
+	
+	private String[] labels = null;
+	
+	@JMethod("ready")
+	public void ready() {
+		types = new Short[MonitorConstant.MONITOR_VAL_2_KEY.size()];
+		labels = new String[MonitorConstant.MONITOR_VAL_2_KEY.size()];
+		int i = 0;
+		for(Map.Entry<Short, String> e:MonitorConstant.MONITOR_VAL_2_KEY.entrySet() ) {
+			labels[i] = i18nManager.value("en", prefix + e.getKey());
+			types[i] = e.getKey();
+			i++;
+		}
+	}
 	
 	private ITickerAction tickerAct = new ITickerAction() {
 		public void act(String key,Object attachement) {
@@ -72,15 +99,13 @@ public class StatisMonitorImpl implements IStatisMonitor {
 				return;
 			}
 			
-			Map<Short,Double> values = dataServer.getData(mkey, MonitorConstant.STATIS_TYPES);
-			
-			//Map<Short,Double> data = new HashMap<Short,Double>();
-			//data.put(MonitorConstant.STATIS_QPS, v);
-			
+			ReportData rd = dataServer.getData(mkey, types, DATA_TYPE);
+			//rd.setTypes(types);
+			//rd.setLabels(labels);
 			//System.out.println("QPS type: "+MonitorConstant.STATIS_QPS+"="+v);
 			
 			PSData psData = new PSData();
-			psData.setData(values);
+			psData.setData(rd);
 			psData.setTopic(key);
 			psData.put(Constants.SERVICE_METHOD_KEY, key);
 			
@@ -92,6 +117,8 @@ public class StatisMonitorImpl implements IStatisMonitor {
 			
 		}
 	};
+	
+	
 	
 	@Override
 	@SMethod(timeout=60000,retryCnt=0)
@@ -126,7 +153,7 @@ public class StatisMonitorImpl implements IStatisMonitor {
 						timer.addListener(rkey,tickerAct,mkey);
 					}
 				}
-			}else {
+			} else {
 				return false;
 			}
 		}finally {
@@ -175,9 +202,16 @@ public class StatisMonitorImpl implements IStatisMonitor {
 				lock.unLock();
 			}
 		}
-		
-		
 		return true;
+	}
+
+	@Override
+	public Map<String,Object> index2Label() {
+		Map<String,Object> result = new HashMap<>();
+		result.put("types", this.types);
+		result.put("labels", this.labels);
+		result.put("indexes", MonitorConstant.MONITOR_VAL_2_KEY);
+		return result;
 	}
 
 

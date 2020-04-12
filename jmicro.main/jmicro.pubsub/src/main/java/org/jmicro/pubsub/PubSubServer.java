@@ -46,6 +46,7 @@ import org.jmicro.api.objectfactory.IObjectFactory;
 import org.jmicro.api.pubsub.IInternalSubRpc;
 import org.jmicro.api.pubsub.PSData;
 import org.jmicro.api.pubsub.PubSubManager;
+import org.jmicro.api.pubsub.PubsubServerStatus;
 import org.jmicro.api.raft.IDataOperator;
 import org.jmicro.common.Constants;
 import org.jmicro.common.Utils;
@@ -68,7 +69,7 @@ public class PubSubServer implements IInternalSubRpc{
 	
 	private final static Logger logger = LoggerFactory.getLogger(PubSubServer.class);
 	
-	private static final String DISCARD_TIMER = "PubsubServerAbortPolicy";
+	//private static final String DISCARD_TIMER = "PubsubServerAbortPolicy";
 	
 	/**
 	 * is enable pubsub server
@@ -373,6 +374,12 @@ public class PubSubServer implements IInternalSubRpc{
 			}
 		}
 		
+	}
+
+	@Override
+	public PubsubServerStatus status() {
+		
+		return null;
 	}
 
 	private class Worker implements Runnable{

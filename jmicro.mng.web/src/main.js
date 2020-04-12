@@ -10,6 +10,7 @@ import JService from './components/service/JService.vue'
 import JRouter from './components/route/JRouter.vue'
 import JShell from './components/shell/JShell.vue'
 import JLog from './components/log/JLog.vue'
+import JWarning from './components/warning/JWarning.vue'
 import JStatis from './components/statis/JStatis.vue'
 
 Vue.use(iView)
@@ -24,6 +25,7 @@ const routes = [
     { path: '/shell', component: JShell },
     { path: '/log', component: JLog },
     { path: '/statisService', component: JStatis },
+    { path: '/warning', component: JWarning },
     { path: '/', component: JService },
 
 

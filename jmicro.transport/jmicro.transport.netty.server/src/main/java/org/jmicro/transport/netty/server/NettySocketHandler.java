@@ -82,8 +82,6 @@ public class NettySocketHandler extends ChannelInboundHandlerAdapter {
     	
     	//logger.info("ed1:  "+System.currentTimeMillis());
     	
-    	JMicroContext.configProvider(session);
-    	
     	//logger.info("ed2:  "+System.currentTimeMillis());
     	
     	session.receive(b);

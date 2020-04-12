@@ -206,6 +206,10 @@ jm.mng = {
 
     statis : {
 
+        type2Labels:null,
+        types:null,
+        labels:null,
+
         subscribeData: function (mkey,t,callback){
             let self = this;
             let topic = mkey+'##'+(t*1000);
@@ -261,6 +265,73 @@ jm.mng = {
             });
         },
 
+        getType2Labels: function (callback){
+            let self = this;
+            if(self.type2Labels) {
+                callback(self.type2Labels,null);
+            }else {
+                let req =  this.__ccreq();
+                req.method = 'index2Label';
+                req.args = [];
+                jm.rpc.callRpc(req)
+                    .then(r=>{
+                        self.type2Labels = r.indexes;
+                        self.types = r.types;
+                        self.labels = r.labels;
+                        callback(self.type2Labels,null);
+                    }).catch(err =>{
+                    callback(null,err);
+                });
+            }
+        },
+
+        getTypes: function (callback){
+
+            let self = this;
+            if(self.type2Labels) {
+                if(callback) {
+                    callback(self.types,null);
+                } else {
+                    return self.types;
+                }
+            } else {
+                if(!callback) {
+                    return null;
+                }else {
+                    self.getType2Labels(function(t,err){
+                        if(!!t) {
+                            callback(self.types,null);
+                        }else {
+                            callback(null,err);
+                        }
+                    });
+                }
+            }
+        },
+
+        getLabels: function (callback){
+            let self = this;
+            if(self.type2Labels) {
+                if(callback) {
+                    callback(self.labels,null);
+                }else {
+                    return self.labels;
+                }
+            } else {
+                if(!callback) {
+                    return null;
+                }else {
+                    self.getType2Labels(function(t,err){
+                        if(!!t) {
+                            callback(self.labels,null);
+                        }else {
+                            callback(null,err);
+                        }
+                    });
+                }
+            }
+        },
+
         __ccreq:function(){
             let req = {};
             req.serviceName=this.sn;
@@ -271,6 +342,37 @@ jm.mng = {
 
         sn:'org.jmicro.api.mng.IStatisMonitor',
         ns:'mng',
+        v:'0.0.1',
+    },
+
+    i18n : {
+        data:{},
+        get: function (key){
+            return data[key];
+        },
+        changeLang: function (lang,callback){
+            let req =  this.__ccreq();
+            req.method = 'getI18NValues';
+            req.args = [lang];
+            let self = this;
+            m.rpc.callRpc(req).then((data)=>{
+                self.data = data;
+                callback();
+            }).then((err) => {
+                callback(err);
+            });
+        },
+
+        __ccreq:function(){
+            let req = {};
+            req.serviceName=this.sn;
+            req.namespace = this.ns;
+            req.version = this.v;
+            return req;
+        },
+
+        sn:'org.jmicro.mng.inter.ICommonManager',
+        ns : MNG,
         v:'0.0.1',
     },
 

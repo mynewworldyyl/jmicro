@@ -97,7 +97,6 @@ public class JMicroHttpServer implements IServer{
 	private HttpHandler httpHandler = new HttpHandler(){
         @Override
         public void handle(HttpExchange exchange) {
-        	JMicroContext.setMonitor();
         	JMicroContext.callSideProdiver(true);
         	HttpServerSession session = new HttpServerSession(exchange,readBufferSize,heardbeatInterval);
 			session.init();
@@ -108,7 +107,7 @@ public class JMicroHttpServer implements IServer{
 					in.read(data, 0, data.length);
 		        	String json = new String(data,0,data.length, Constants.CHARSET);
 		        	Message msg = JsonUtils.getIns().fromJson(json, Message.class);
-		        	JMicroContext.configProvider(msg);
+		        	JMicroContext.configProvider(session,msg);
 		 			receiver.receive(session,msg);
 				}else {
 					Message msg = new Message();

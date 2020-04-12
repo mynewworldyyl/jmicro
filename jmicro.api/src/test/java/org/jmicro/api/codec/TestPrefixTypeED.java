@@ -316,7 +316,7 @@ public class TestPrefixTypeED {
 	public void testPSData() {
 		Map<Short,Double> data = new HashMap<>();
 		data.put(MonitorConstant.STATIS_TOTAL_RESP, 22D);
-		data.put(MonitorConstant.STATIS_QPS, 22D);
+		data.put(MonitorConstant.REQ_START, 22D);
 		
 		PSData psData = new PSData();
 		psData.setData(data);

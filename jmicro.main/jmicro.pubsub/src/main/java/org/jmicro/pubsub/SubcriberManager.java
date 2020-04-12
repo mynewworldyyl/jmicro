@@ -385,7 +385,6 @@ class SubcriberManager {
 				srv = of.getRemoteServie(sitem, null, null);
 			} catch (ClassNotFoundException e) {
 				try {
-					// JMicroContext.get().setParam(Constants.SERVICE_SPECIFY_ITEM_KEY, sitem);
 					JMicroContext.get().setParam(Constants.DIRECT_SERVICE_ITEM, sitem);
 					Class<?> cls = this.cl.loadClass(sui.sm.getKey().getUsk().getServiceName());
 					if (cls != null) {

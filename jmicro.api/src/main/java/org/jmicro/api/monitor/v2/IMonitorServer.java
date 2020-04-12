@@ -26,4 +26,6 @@ public interface IMonitorServer {
 
 	void submit(MRpcItem[] items);
 	
+	MonitorServerStatus status();
+	
 }

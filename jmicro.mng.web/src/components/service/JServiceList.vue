@@ -7,7 +7,8 @@
               </a>
               <DropdownMenu slot="list">
                   <DropdownItem :selected="groupBy=='sn'" name="sn">Service</DropdownItem>
-                  <DropdownItem :selected="groupBy=='ins'" name="ins">IP And Port</DropdownItem>
+                  <DropdownItem :selected="groupBy=='ins'" name="ins">Instance</DropdownItem>
+                  <DropdownItem :selected="groupBy=='snv'" name="snv">SNV</DropdownItem>
                   <DropdownItem  name="refresh" :divided="true">Refresh</DropdownItem>
               </DropdownMenu>
           </Dropdown>
@@ -21,10 +22,14 @@
 
 <script>
 
-    //
+    //服务，服务实例，服务方法分组
     const GROUP_SN = 'sn';
+    //服务实例，服务，服务方法分组
     const GROUP_INS = 'ins';
+    //服务实例方法结点
     const GROUP_METHOD='method';
+    //服务名称，名称空间，版本分组服务方法
+    const GROUP_SNV = 'snv';
 
     export default {
         name: 'JServiceList',
@@ -89,7 +94,7 @@
                         if(this.groupBy == GROUP_SN) {
                             let r = layer02Layer1map[n.title];  //title = serviceName
                             if(!r) {
-                                r = new TreeNode(n.id,n.title,[],null,n.val);
+                                r = new TreeNode(n.title,n.title,[],null,n.val);
                                 layer02Layer1map[n.title] = r;
                                 r.type = GROUP_SN;
                                 roots.push(r);
@@ -112,21 +117,21 @@
                                     l2.addChild(e);
                                 });
                             }
-                        } else {
-                            let insKey = n.val.key.instanceName+'##'+n.val.key.host+'##'+n.val.key.port;
-
+                        } else if(this.groupBy == GROUP_INS){
+                            let insKey = n.val.key.instanceName;
                             let r = layer02Layer1map[insKey];  //title = serviceName
                             if(!r) {
-                                r = new TreeNode(insKey,insKey,[],null,n.val);
+                                let title = insKey + '##'+n.val.key.host+'##'+n.val.key.port;
+                                r = new TreeNode(insKey,title,[],null,n.val);
                                 layer02Layer1map[insKey]=r;
                                 r.type = GROUP_INS;
                                 roots.push(r);
                             }
 
-                            let layer1Key = n.title+'##'+insKey;
+                            let layer1Key = n.title + '##' + r.title;
                             let l2 = layer12Layer2map[layer1Key];  //title = serviceName
                             if(!l2) {
-                                l2 = new TreeNode(n.id,n.title,[],r,n.val);
+                                l2 = new TreeNode(layer1Key,n.title,[],r,n.val);
                                 layer12Layer2map[layer1Key] = l2;
                                 l2.type = GROUP_SN;
                                 r.addChild(l2);
@@ -138,6 +143,20 @@
                                     e.type = GROUP_METHOD;
                                     l2.addChild(e);
                                 });
+                            }
+                        } else if(this.groupBy == GROUP_SNV) {
+                            let insKey = n.title;
+                            if(!layer02Layer1map[insKey]) {
+                                n.type = GROUP_SNV;
+                                n.id = n.title;
+                                if(n.children != null && n.children.length > 0) {
+                                    n.children.forEach((e)=>{
+                                        e.parent = n;
+                                        e.type = GROUP_METHOD;
+                                        //n.addChild(e);
+                                    });
+                                }
+                                roots.push(n);
                             }
                         }
                     }
@@ -163,9 +182,10 @@
 
                 if(!!node.methods && node.methods.length > 0){
                     node.methods.forEach((e)=>{
-                        if(e!=null) {
+                        if(e!=null && e.key.method != 'wayd') {
                             let mid = id+'##'+e.key.method+'##' + e.key.paramsStr;
                             let tm = new TreeNode(mid, e.key.method,null,tr,e);
+                            tm.type = GROUP_METHOD;
                             tr.addChild(tm);
                         }
                     })

@@ -44,7 +44,7 @@ public class SimplePubsubImpl implements ISimplePubsub {
 				,ps.get(MonitorConstant.STATIS_TOTAL_RESP)
 				,ps.get(MonitorConstant.REQ_TIMEOUT)
 				//,ps.get(MonitorConstant.req)
-				,ps.get(MonitorConstant.STATIS_QPS)
+				,ps.get(MonitorConstant.REQ_START)
 				);
 		
 		//System.out.println("Topic: "+data.getTopic()+", data: "+ data.getData().toString());

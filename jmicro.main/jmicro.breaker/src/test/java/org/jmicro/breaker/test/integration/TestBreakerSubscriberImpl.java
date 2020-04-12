@@ -29,9 +29,9 @@ public class TestBreakerSubscriberImpl extends JMicroBaseTestCase{
 		}
 		
 		data.put(MonitorConstant.STATIS_TOTAL_RESP, 90D);
-		data.put(MonitorConstant.STATIS_QPS,  22D);
-		data.put(MonitorConstant.STATIS_SUCCESS_PERCENT,  80D);
-		data.put(MonitorConstant.STATIS_FAIL_PERCENT,  60D);
+		data.put(MonitorConstant.REQ_START,  22D);
+		data.put(MonitorConstant.STATIS_TOTAL_SUCCESS_PERCENT,  80D);
+		data.put(MonitorConstant.STATIS_TOTAL_FAIL_PERCENT,  60D);
 		
 		PSData psData = new PSData();
 		psData.setData(data);

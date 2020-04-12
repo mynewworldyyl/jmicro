@@ -106,6 +106,15 @@ public final class UniqueServiceMethodKey {
 		return null;
 	}*/
 	
+	public String toSnvm() {
+		StringBuilder sb = new StringBuilder();
+		sb.append(usk.toSnv());
+		sb.append(SEP).append(this.method).append(SEP);
+		sb.append(this.paramsStr);
+		return sb.toString();
+	}
+	
+	
 	public String toKey(boolean ins,boolean host,boolean port) {
 		StringBuilder sb = new StringBuilder(usk.toKey(ins, host, port));
 		sb.append(SEP).append(this.method).append(SEP);

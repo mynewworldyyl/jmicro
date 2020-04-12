@@ -23,6 +23,7 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
 
 import org.jmicro.common.Constants;
+
 /**
  *
  * 在服务接口相同的情况下：
@@ -49,7 +50,8 @@ import org.jmicro.common.Constants;
 @Target(FIELD)
 @Retention(RUNTIME)
 public @interface Reference {
-	public String value() default "";
+	//public String value() default "";
+	
 	/**
 	 * 依赖的服务名称空间，如果指定了名称空间，则只有与此名称空间相同的服务才会被注入到此字段
 	 * 如果目前有两个服务实现相同的服务接口，名称空间相同或没指定名称空间，系统无法确定要注入那个服务，则会报错，
@@ -70,7 +72,10 @@ public @interface Reference {
 	 */
 	public boolean required() default false;
 	
-	public String registry() default "";
+	//容器字段有效， 值可以是：service:表示每个服务注入一个代理实例
+	public String type() default "service";
+	
+	//public String registry() default "";
 	
 	/**
 	 * 用于代理处理类，有特殊需求的可以定制代码才需要设置，如ID请求处理器，使用的RpcRequest及Message不需要ID等特殊实现

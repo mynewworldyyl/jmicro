@@ -83,6 +83,7 @@ public class ServiceInvocationHandler implements InvocationHandler{
 			
 			if(!JMicroContext.existLinkId() ) {
 				//新建一个RPC链路开始
+				JMicroContext.lid();
 				cxt.setParam(Constants.NEW_LINKID, true);
 				if(JMicroContext.get().isMonitor()) {
 					SF.linkStart(TAG.getName(),req);
@@ -91,6 +92,8 @@ public class ServiceInvocationHandler implements InvocationHandler{
 					mi.setReqId(req.getRequestId());
 					mi.setLinkId(JMicroContext.lid());
 				}
+			} else {
+				cxt.setParam(Constants.NEW_LINKID, false);
 			}
 			
 			if(JMicroContext.get().isDebug()) {

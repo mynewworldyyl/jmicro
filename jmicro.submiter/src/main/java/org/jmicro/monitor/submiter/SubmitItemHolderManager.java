@@ -147,9 +147,9 @@ public class SubmitItemHolderManager implements IMonitorDataSubmiter{
 					AbstractMonitorDataSubscriber.YTPES,10,2,TimeUnit.SECONDS);
 			TimerTicker.getDefault(2000L).addListener("SubmitItemHolderManager", (key,att)->{
 				System.out.println("======================================================");
-				Double dreq = counter.getTotal(MonitorConstant.REQ_START);
-				Double toreq = counter.getTotal(MonitorConstant.REQ_TIMEOUT);
-				Double dresp = counter.getTotal(MonitorConstant.CLIENT_RESPONSE_SERVER_ERROR,MonitorConstant.CLIENT_SERVICE_ERROR);
+				Long dreq = counter.getTotal(MonitorConstant.REQ_START);
+				Long toreq = counter.getTotal(MonitorConstant.REQ_TIMEOUT);
+				Long dresp = counter.getTotal(MonitorConstant.CLIENT_RESPONSE_SERVER_ERROR,MonitorConstant.CLIENT_SERVICE_ERROR);
 				Double qps = counter.getQps(TimeUnit.SECONDS,MonitorConstant.REQ_START);
 				if(dreq > -1 && dresp > -1) {
 					logger.info("总请求:{}, 总响应:{}, 超时:{}, QPS:{}",dreq,dresp,toreq,qps);

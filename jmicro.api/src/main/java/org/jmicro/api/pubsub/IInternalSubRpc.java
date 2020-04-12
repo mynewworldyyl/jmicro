@@ -49,4 +49,6 @@ public interface IInternalSubRpc {
 	 */
 	int publishString(String topic,String content);
 	
+	PubsubServerStatus status();
+	
 }

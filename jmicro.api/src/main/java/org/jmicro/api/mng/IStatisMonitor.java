@@ -1,5 +1,7 @@
 package org.jmicro.api.mng;
 
+import java.util.Map;
+
 public interface IStatisMonitor {
 
 	/**
@@ -11,5 +13,8 @@ public interface IStatisMonitor {
 	boolean startStatis(String mkey,Integer t);
 	
 	boolean stopStatis(String mkey,Integer t);
+	
+	Map<String,Object> index2Label();
+	
 	
 }

@@ -185,13 +185,13 @@ public class JDataOutput implements DataOutput {
 	
 	public static ByteBuffer writeString(ByteBuffer buf, String s) throws IOException {
 
-		if(s == null || s.length() == 0) {
+		if(s == null) {
 			buf = checkCapacity(buf,1);
 			//buf.putShort((short)0);
 			if(buf.remaining() <= 0) {
 				System.out.print(buf);
 			}
-			buf.put((byte)0);
+			buf.put((byte)-1);
 			return buf;
 		}
 		
@@ -214,8 +214,9 @@ public class JDataOutput implements DataOutput {
 		}else {
 			throw new CommonException("String too long for:" + data.length);
 		}
-		
-		buf.put(data, 0, data.length);
+		if(data.length > 0) {
+			buf.put(data, 0, data.length);
+		}
 		return buf;
 	}
 	

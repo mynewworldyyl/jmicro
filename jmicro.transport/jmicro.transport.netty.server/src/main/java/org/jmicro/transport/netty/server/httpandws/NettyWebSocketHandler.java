@@ -72,9 +72,8 @@ public class NettyWebSocketHandler  extends SimpleChannelInboundHandler<TextWebS
     @Override
     protected void channelRead0(ChannelHandlerContext ctx, TextWebSocketFrame text) throws Exception {
     	NettyServerSession session = ctx.channel().attr(sessionKey).get();
-    	JMicroContext.configProvider(session);
     	Message msg = JsonUtils.getIns().fromJson(text.text(), Message.class);
-    	JMicroContext.configProvider(msg);
+    	JMicroContext.configProvider(session,msg);
 		receiver.receive(session,msg);
     }
     

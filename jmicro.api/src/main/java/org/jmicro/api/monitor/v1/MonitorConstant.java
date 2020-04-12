@@ -54,7 +54,7 @@ public final class MonitorConstant {
 	
 	private MonitorConstant(){}
 
-    //请求开始
+    //请求开始 240
 	public static final short REQ_START  = 0X00F0;
 	//请求结束
 	public static final short REQ_END  = 0X00F1;
@@ -70,7 +70,7 @@ public final class MonitorConstant {
 	//服务未找到
 	public static final short SERVICE_NOT_FOUND = 0X00F5;
 	
-	//客户端接收到服务器错误，非业务逻辑返回错误
+	//客户端接收到服务器错误，非业务逻辑返回错误 246
 	public static final short CLIENT_RESPONSE_SERVER_ERROR = 0X00F6;
 	
 	//服务业务错误，即业务逻辑错误
@@ -83,7 +83,7 @@ public final class MonitorConstant {
 	public static final short SERVICE_SPEED_LIMIT = 0X00FB;
 	
 	//请求超时
-	public static final short REQ_TIMEOUT_FAIL = 0X00FC;
+	public static final short REQ_TOTAL_TIMEOUT_FAIL = 0X00FC;
 	
 	public static final short CLIENT_IOSESSION_CLOSE = 0X00FD;
 	
@@ -113,24 +113,8 @@ public final class MonitorConstant {
 	//未知错误
 	public static final short REQ_ERROR = 0X00D0;
 	
-	//未知错误
+	//未知错误 209
 	public static final short REQ_SUCCESS = 0X00D1;
-	
-    //日志级别
-    public static final byte LOG_TRANCE = 1;
-    
-    public static final byte LOG_DEBUG = 2;
-    
-    public static final byte LOG_INFO = 3;
-    
-    public static final byte LOG_WARN = 4;
-    
-    public static final byte LOG_ERROR = 5;
-    
-    public static final byte LOG_FINAL = 6;
-	
-	//总请求数，RPC开始总数
-	public static final short STATIS_TOTAL_REQ = 2;
 	
 	//总成功数  业务失败，RPC成功 两者之和为总成功RPC数
 	public static final short STATIS_TOTAL_SUCCESS = 3;
@@ -139,24 +123,34 @@ public final class MonitorConstant {
 	public static final short STATIS_TOTAL_FAIL = 4;
 	
 	//总成功数所占比率
-	public static final short STATIS_SUCCESS_PERCENT = 5;
+	public static final short STATIS_TOTAL_SUCCESS_PERCENT = 5;
 	
 	//总失败数所占请求数比率，
-	public static final short STATIS_FAIL_PERCENT = 1;
+	public static final short STATIS_TOTAL_FAIL_PERCENT = 1;
 	
 	//超时数 REQ_TIMEOUT 总数
 	public static final short STATIS_TOTAL_TIMEOUT = 6;
 	
 	//超时失败百分比  REQ_TIMEOUT_FAIL 占 RPC请求总数
-	public static final short STATIS_TIMEOUT_PERCENT = 7;
+	public static final short STATIS_TOTAL_TIMEOUT_PERCENT = 7;
 	
 	//MonitorConstant.CLIENT_IOSESSION_READ 总数即为服务响应数
 	public static final short STATIS_TOTAL_RESP = 8;
 	
 	//每秒响应数定义为 QPS？ 
-	public static final short STATIS_QPS = 9;
+	//public static final short STATIS_QPS = 9;
 	
 	public static final String TEST_SERVICE_METHOD_TOPIC = "/statics/smTopic";
+	
+	public static final Short[] STATIS_INDEX = new Short[] { 
+			STATIS_TOTAL_SUCCESS,
+			STATIS_TOTAL_FAIL,
+			STATIS_TOTAL_SUCCESS_PERCENT,
+			STATIS_TOTAL_FAIL_PERCENT,
+			STATIS_TOTAL_TIMEOUT,
+			STATIS_TOTAL_TIMEOUT_PERCENT,
+			STATIS_TOTAL_RESP,
+	};
 	
 	public static final Short[] STATIS_TYPES = new Short[] { 
 			MonitorConstant.REQ_START, 
@@ -169,7 +163,7 @@ public final class MonitorConstant {
 			MonitorConstant.CLIENT_SERVICE_ERROR,
 			MonitorConstant.SERVER_REQ_SERVICE_NOT_FOUND,
 			MonitorConstant.SERVICE_SPEED_LIMIT,
-			MonitorConstant.REQ_TIMEOUT_FAIL,
+			MonitorConstant.REQ_TOTAL_TIMEOUT_FAIL,
 			MonitorConstant.REQ_TIMEOUT_RETRY,
 			MonitorConstant.REQ_ERROR,
 			MonitorConstant.REQ_SUCCESS,
@@ -193,12 +187,30 @@ public final class MonitorConstant {
 			MonitorConstant.SERVER_STOP,
 	};
 	
+    //日志级别
+    public static final byte LOG_TRANCE = 1;
+    
+    public static final byte LOG_DEBUG = 2;
+    
+    public static final byte LOG_INFO = 3;
+    
+    public static final byte LOG_WARN = 4;
+    
+    public static final byte LOG_ERROR = 5;
+    
+    public static final byte LOG_FINAL = 6;
+    
+    public static final String PREFIX_TOTAL = "total";
+    public static final String PREFIX_PERCENT = "percent";
+    public static final String PREFIX_QPS = "qps";
+    public static final String PREFIX_CUR = "cur";
+    
 	
 	public static final Map<Short,String> MONITOR_VAL_2_KEY = new HashMap<>();
 	static {
 		Field[] fs = MonitorConstant.class.getDeclaredFields();
 		for(Field f: fs){
-			if(!Modifier.isStatic(f.getModifiers()) || !Modifier.isPrivate(f.getModifiers())
+			if(!Modifier.isStatic(f.getModifiers()) || !Modifier.isPublic(f.getModifiers())
 					|| f.getType() != Short.TYPE ){
 				continue;
 			}

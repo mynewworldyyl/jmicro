@@ -17,6 +17,7 @@
 package org.jmicro.api.monitor.v2;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -36,6 +37,7 @@ import org.jmicro.api.cache.lock.ILockerManager;
 import org.jmicro.api.config.Config;
 import org.jmicro.api.executor.ExecutorConfig;
 import org.jmicro.api.executor.ExecutorFactory;
+import org.jmicro.api.objectfactory.AbstractClientServiceProxy;
 import org.jmicro.api.raft.IDataOperator;
 import org.jmicro.common.Constants;
 import org.jmicro.common.util.StringUtils;
@@ -61,6 +63,8 @@ public class MonitorManager {
 	@Reference(namespace="monitorServer",version="0.0.1")
 	private IMonitorServer monitorServer;
 	
+	private AbstractClientServiceProxy msPo;
+	
 	@Inject
 	private IDataOperator op;
 	
@@ -78,7 +82,8 @@ public class MonitorManager {
 	private ExecutorService executor = null;
 
 	public void init() {
-		this.basketFactory = new BasketFactory<MRpcItem>(100,1);
+		
+		this.basketFactory = new BasketFactory<MRpcItem>(5000,1);
 		op.addChildrenListener(TYPES_PATH, (type,parentDir,skey,data)->{
 			if(type == IListener.ADD) {
 				doAddType(skey,data);
@@ -101,14 +106,41 @@ public class MonitorManager {
 
 	@JMethod("ready")
 	public void ready() {
+		
 		logger.info("Init object :" +this.hashCode());
+		
+		msPo = (AbstractClientServiceProxy)((Object)this.monitorServer);
+		
 		ExecutorConfig config = new ExecutorConfig();
 		config.setMsMaxSize(10);
 		config.setTaskQueueSize(500);
-		config.setThreadNamePrefix("SubmitItemHolderManager");
+		config.setThreadNamePrefix("MonitorManager");
 		executor = ExecutorFactory.createExecutor(config);
 		
 		new Thread(this::doWork,Config.getInstanceName()+ "_MonitorManager_Worker").start();
+	}
+	
+	public boolean readySubmit(MRpcItem item,boolean canCache) {
+		if(canCache) {
+			if(this.basketFactory == null) {
+				logger.error("basketFactory is NULL");
+				return false;
+			}
+			IBasket<MRpcItem> b = basketFactory.borrowWriteBasket();
+			if(b == null) {
+				logger.error("borrow write basket fail");
+				return false;
+			}
+			b.add(item);
+			if(!basketFactory.returnWriteBasket(b, true)) {
+				logger.error("readySubmit fail to return this basket");
+				return false;
+			}
+			return true;
+		} else {
+			return readySubmit(item);
+		}
+		
 	}
 	
 	public boolean readySubmit(MRpcItem item) {
@@ -141,7 +173,7 @@ public class MonitorManager {
 			try {
 				
 				IBasket<MRpcItem> b = this.basketFactory.borrowReadSlot();
-				if(b == null && items.size() == 0) {
+				if(b == null && items.size() == 0 || msPo == null || !msPo.isUsable()) {
 					synchronized(syncLocker) {
 						syncLocker.wait(checkInterval);
 					}
@@ -186,17 +218,23 @@ public class MonitorManager {
 		@Override
 		public void run() {
 			
-			//不需要监控
-			JMicroContext.get().configMonitor(0, 0);
-			//发送消息RPC
-			JMicroContext.get().setBoolean(Constants.FROM_MONITOR_MANAGER, true);
-				
-			if(monitorServer != null) {
-				monitorServer.submit(items);
-			}else {
-				logger.error("Worker Monitor server is NULL");
+			try {
+				//不需要监控，也不应该监控，否则数据包将进入死循环永远停不下来
+				JMicroContext.get().configMonitor(0, 0);
+				//发送消息RPC
+				JMicroContext.get().setBoolean(Constants.FROM_MONITOR_MANAGER, true);
+					
+				if(monitorServer != null) {
+					//不能保证百分百发送成功，会有数据丢失
+					//为了提供更高的性能，丢失几个监控数据正常情况下可以接受
+					//如果监控服务同时部署两个以上，而两个监控服务器同时不可用的机率很低，等同于不可能，从而丢数据的可能性也趋于不可能
+					monitorServer.submit(items);
+				} else {
+					logger.error("Worker Monitor server is NULL");
+				}
+			} catch (Exception e) {
+				logger.error("MonitorManager.worker.run",e);
 			}
-			
 		}
 	}
 	
@@ -256,10 +294,22 @@ public class MonitorManager {
 		return this.mkey2Types.get(skey);
 	}
 	
-	public boolean needType(Short t) {
-		synchronized(types) {
-			return types.contains(t);
+	public boolean isServerReady() {
+		return monitorServer != null;
+	}
+	
+	public boolean canSubmit(Short t) {
+		
+		if(monitorServer == null) {
+			return false;
 		}
+		
+		if(!types.contains(t)) {
+			return false;
+		}
+		
+		AbstractClientServiceProxy po = (AbstractClientServiceProxy)((Object)this.monitorServer);
+		return po.isUsable();
 	}
 	
 	private void doDeleteType(String skey, String data) {
@@ -345,5 +395,11 @@ public class MonitorManager {
 		}
 		mkey2Types.put(skey, ts);
 	}
+
+	public Map<String, Set<Short>> getMkey2Types() {
+		return Collections.unmodifiableMap(mkey2Types);
+	}
+	
+	
 	
 }

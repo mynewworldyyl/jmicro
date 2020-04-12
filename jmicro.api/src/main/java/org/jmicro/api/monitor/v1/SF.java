@@ -99,9 +99,9 @@ public class SF {
 	}
 	
 	public static boolean reqTimeoutFail(String tag) {
-		if(isMonitorable(MonitorConstant.REQ_TIMEOUT_FAIL)) {
+		if(isMonitorable(MonitorConstant.REQ_TOTAL_TIMEOUT_FAIL)) {
 			MRpcItem mi = JMicroContext.get().getMRpcItem();
-			mi.addOneItem(MonitorConstant.REQ_TIMEOUT_FAIL, tag);
+			mi.addOneItem(MonitorConstant.REQ_TOTAL_TIMEOUT_FAIL, tag);
 			return true;
 		}
 		return false;
@@ -166,19 +166,20 @@ public class SF {
 	}
 	
 	public static boolean serverStart(String tag,String host,int port,String desc) {
-		if(!monitor().needType(MonitorConstant.SERVER_START)) {
+		MonitorManager mo = monitor();
+		if(mo.isServerReady() && !mo.canSubmit(MonitorConstant.SERVER_START)) {
 			return false;
 		}
 		MRpcItem mi = new MRpcItem();
 		OneItem oi = mi.addOneItem(MonitorConstant.SERVER_START, tag,desc);
 		oi.setOthers(new Object[] {host,port});
 		setCommon(mi);
-		monitor().readySubmit(mi);
+		mo.readySubmit(mi,true);
 		return true;
 	}
 	
 	public static boolean serverStop(String tag,String host,int port) {
-		if(!monitor().needType(MonitorConstant.SERVER_STOP)) {
+		if(!monitor().canSubmit(MonitorConstant.SERVER_STOP)) {
 			return false;
 		}
 		MRpcItem mi = JMicroContext.get().getMRpcItem();
@@ -188,9 +189,12 @@ public class SF {
 	}
 	
 	public static boolean netIo(short type,String desc,Class cls,Throwable ex) {
-		if(!monitor().needType(type)) {
+		
+		MonitorManager mo = monitor();
+		if(mo.isServerReady() && !mo.canSubmit(type)) {
 			return false;
 		}
+		
 		MRpcItem mi = JMicroContext.get().getMRpcItem();
 		boolean f = false;
 		if(mi == null) {
@@ -201,16 +205,18 @@ public class SF {
 		oi.setEx(ex);
 		if(f) {
 			setCommon(mi);
-			return monitor().readySubmit(mi);
+			return mo.readySubmit(mi,true);
 		}
 		return false;
 		
 	}
 	
 	public static boolean netIoRead(String tag,short type,long num,ISession session) {
-		if(!monitor().needType(type)) {
+		MonitorManager mo = monitor();
+		if(mo.isServerReady() && !mo.canSubmit(type)) {
 			return false;
 		}
+		
 		MRpcItem mi = JMicroContext.get().getMRpcItem();
 		boolean f = false;
 		if(mi == null) {
@@ -221,7 +227,7 @@ public class SF {
 		oi.setOthers(new Object[] {num});
 		if(f) {
 			setCommon(mi);
-			return monitor().readySubmit(mi);
+			return mo.readySubmit(mi,true);
 		}
 		return true;
 	}
@@ -315,7 +321,7 @@ public class SF {
 			return false;
 		}
 		
-		return monitor().needType(type);
+		return monitor().canSubmit(type);
 	}
 	
 	/**
@@ -328,9 +334,11 @@ public class SF {
 	 * @return
 	 */
 	public static boolean isLoggable(int level) {
-		if(!monitor().needType(MonitorConstant.LINKER_ROUTER_MONITOR)) {
+		MonitorManager mo = monitor();
+		if(mo == null || mo.isServerReady() && !mo.canSubmit(MonitorConstant.LINKER_ROUTER_MONITOR)) {
 			return false;
 		}
+		
 		String  srvName = JMicroContext.get().getParam(org.jmicro.api.JMicroContext.CLIENT_SERVICE, null);
 		//String  ns = JMicroContext.get().getParam(org.jmicro.api.JMicroContext.CLIENT_NAMESPACE, null);
 		//String  method = JMicroContext.get().getParam(org.jmicro.api.JMicroContext.CLIENT_METHOD, null);
@@ -349,7 +357,7 @@ public class SF {
 			 return true;
 		 }
 		 //如果级别大于或等于错误，不管RPC的配置如何，肯定需要日志
-		return (level >= sm.getLogLevel()) && monitor() != null;
+		return level >= sm.getLogLevel();
 	}
 	
 	

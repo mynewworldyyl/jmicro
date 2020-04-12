@@ -6,9 +6,10 @@
                 <TabPane v-for="(item,index) in items"  :name="item.id" :label="item.type=='method' ? item.title: (item.type + index)"
                          v-bind:key="item.id">
                     <p stype="word-break: break-all;padding: 0px 10px;font-size: medium;">{{item.id}}</p>
-                    <JStatisServiceItemView v-if="item.type == 'sn'" :item="item"></JStatisServiceItemView>
-                    <JStatisServerItemView v-else-if="item.type == 'ins'" :item="item"></JStatisServerItemView>
+                    <JStatisServiceItemView v-if="item.type == 'sn'" :serviceNode="item"></JStatisServiceItemView>
+                    <JStatisServerItemView v-else-if="item.type == 'ins'" :serverNode="item"></JStatisServerItemView>
                     <JStatisSMethodItemView v-else-if="item.type == 'method'" :meth="item"></JStatisSMethodItemView>
+                    <JStatisServiceItemView v-else-if="item.type == 'snv'" :serviceNode="item"></JStatisServiceItemView>
                 </TabPane>
             </Tabs>
         </div>
@@ -23,7 +24,7 @@
     import JStatisServerItemView from './JStatisServerItemView.vue'
 
     export default {
-        name: 'JStatisServiceView',
+        name: 'JStatisView',
         components: {
             JStatisServiceItemView,
             JStatisSMethodItemView,

@@ -71,7 +71,6 @@ public class NettyHttpServerHandler extends ChannelInboundHandlerAdapter {
     		} else if(req.method().equals(HttpMethod.POST)){
     			//全部POST请求转到RPC控制器上面,因为RPC只能用POST请求
     			NettyServerSession session = ctx.attr(sessionKey).get();
-    			JMicroContext.configProvider(session);
     	    	
     			ByteBuf bb = req.content();
     			byte[] bts = new byte[bb.readableBytes()];
@@ -81,11 +80,11 @@ public class NettyHttpServerHandler extends ChannelInboundHandlerAdapter {
     			if(encodeType == null || encodeType.equals(Message.PROTOCOL_JSON+"")) {
     				String result = new String(bts,Constants.CHARSET);
         			message = JsonUtils.getIns().fromJson(result, Message.class);
-        			JMicroContext.configProvider(message);
+        			JMicroContext.configProvider(session,message);
         			receiver.receive(session,message);
     			} else {
     				message = Message.decode(ByteBuffer.wrap(bts));
-    				JMicroContext.configProvider(message);
+    				JMicroContext.configProvider(session,message);
     				receiver.receive(session,message);
     			}
     		}

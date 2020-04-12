@@ -55,6 +55,14 @@ public final class UniqueServiceKey {
 		return sb.toString();
 	}
 	
+	public String toSnv() {
+		StringBuilder sb = new StringBuilder();
+		serviceName(sb,this.serviceName);
+		namespace(sb,this.namespace);
+		version(sb,this.version);
+		return sb.substring(0, sb.length() - SEP.length());
+	}
+	
 	public String toKey(boolean ins,boolean host,boolean port) {
 		StringBuilder sb = new StringBuilder();
 		serviceName(sb,this.serviceName);

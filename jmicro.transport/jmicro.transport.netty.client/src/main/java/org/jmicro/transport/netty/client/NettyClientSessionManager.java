@@ -224,7 +224,6 @@ public class NettyClientSessionManager implements IClientSessionManager{
 
 					@Override
 	                 public void channelRead(ChannelHandlerContext ctx, Object msg) {
-						JMicroContext.setMonitor();
 			        	JMicroContext.callSideProdiver(false);
 	                	if(!(msg instanceof ByteBuf)) {
 	                 		ctx.fireChannelRead(msg);
