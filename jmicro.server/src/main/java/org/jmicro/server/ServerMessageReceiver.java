@@ -69,8 +69,8 @@ public class ServerMessageReceiver implements IMessageReceiver{
 	@Inject
 	private JRPCReqRespHandler jrpcHandler;
 	
-	@Inject("idRequestMessageHandler")
-	private IMessageHandler idHandler;
+/*	@Inject("idRequestMessageHandler")
+	private IMessageHandler idHandler;*/
 	
 	/*@Cfg(value="/ServerReceiver/receiveBufferSize")
 	private int receiveBufferSize=1000;*/

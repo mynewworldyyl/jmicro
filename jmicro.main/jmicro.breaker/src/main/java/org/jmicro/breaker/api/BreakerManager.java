@@ -1,15 +1,3 @@
-package org.jmicro.breaker.api;
-
-import java.io.UnsupportedEncodingException;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.nio.ByteBuffer;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-
-import org.jmicro.api.JMicro;
-import org.jmicro.api.JMicroContext;
-import org.jmicro.api.annotation.Cfg;
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -26,19 +14,30 @@ import org.jmicro.api.annotation.Cfg;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.jmicro.breaker.api;
+
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+
+import org.jmicro.api.IListener;
+import org.jmicro.api.annotation.Cfg;
+
 import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.Inject;
-import org.jmicro.api.codec.PrefixTypeEncoderDecoder;
-import org.jmicro.api.objectfactory.IObjectFactory;
+import org.jmicro.api.annotation.JMethod;
+import org.jmicro.api.annotation.Reference;
+import org.jmicro.api.mng.ReportData;
+import org.jmicro.api.monitor.v1.MonitorConstant;
+import org.jmicro.api.monitor.v2.IMonitorDataSubscriber;
+import org.jmicro.api.objectfactory.AbstractClientServiceProxy;
+import org.jmicro.api.registry.BreakRule;
+import org.jmicro.api.registry.ServiceItem;
 import org.jmicro.api.registry.ServiceMethod;
-import org.jmicro.api.registry.UniqueServiceMethodKey;
 import org.jmicro.api.service.ServiceManager;
 import org.jmicro.api.timer.ITickerAction;
 import org.jmicro.api.timer.TimerTicker;
-import org.jmicro.common.Base64Utils;
-import org.jmicro.common.CommonException;
-import org.jmicro.common.Constants;
-import org.jmicro.common.util.StringUtils;
 import org.jmicro.common.util.TimeUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -53,40 +52,39 @@ public class BreakerManager implements ITickerAction{
 	
 	private final static Logger logger = LoggerFactory.getLogger(BreakerManager.class);
 	
-	public static void main(String[] args) {
-		JMicro.getObjectFactoryAndStart(new String[]{});
-		JMicro.waitForShutdown();
-	}
-	
 	private final Map<Long,TimerTicker> timers = new ConcurrentHashMap<>();
+	
+	private final Map<String,ServiceMethod> breakableMethods = new ConcurrentHashMap<>();
 	
 	@Cfg("/BreakerManager/openDebug")
 	private boolean openDebug = false;
 	
+	@Reference(namespace="rpcStatisMonitor", version="0.0.1",required=false)
+	private IMonitorDataSubscriber dataServer;
+	
+	private AbstractClientServiceProxy ds;
+	
 	@Inject
 	private ServiceManager srvManager;
-	
-	@Inject
-	private IObjectFactory of;
-	
-	@Inject
-	private PrefixTypeEncoderDecoder decoder;
 	
 	public void init(){
 		
 	}
-
-	public void breakService(ServiceMethod sm) {
-		String key = sm.getKey().getUsk().toKey(true, true, true);
-		srvManager.breakService(sm);
-		long interval = TimeUtils.getMilliseconds(sm.getBreakingRule().getCheckInterval(), sm.getBaseTimeUnit());
-		if(sm.isBreaking()) {
-			//服务熔断了,做自动服务检测
-			TimerTicker.getTimer(timers,interval).setOpenDebug(openDebug).addListener(key, this,sm);
-		} else {
-			//关闭服务自动检测
-			TimerTicker.getTimer(timers,interval).removeListener(key,false);
-		}
+	
+	@JMethod("ready")
+	public void ready(){
+		
+		ds = (AbstractClientServiceProxy)((Object)dataServer);
+		
+		srvManager.addListener((type,item)->{
+			if(type == IListener.ADD) {
+				serviceAdd(item);
+			}else if(type == IListener.REMOVE) {
+				serviceRemove(item);
+			}else if(type == IListener.DATA_CHANGE) {
+				serviceDataChange(item);
+			} 
+		});
 	}
 
 	/**
@@ -94,49 +92,139 @@ public class BreakerManager implements ITickerAction{
 	 */
 	@Override
 	public void act(String key, Object attachement) {
-		ServiceMethod sm = (ServiceMethod)attachement;
-		long interval = TimeUtils.getMilliseconds(sm.getBreakingRule().getCheckInterval(), sm.getBaseTimeUnit());;
-		if(!sm.isBreaking()) {
-			TimerTicker.getTimer(timers,interval).removeListener(key,false);
+		
+		if(!ds.isUsable()) {
+			logger.warn("Monitor data server is not ready for breaker check  {}",key);
 			return;
 		}
 		
-		//服务熔断了,做自动服务检测
-		Object srv = of.getRemoteServie(sm.getKey().getServiceName(),sm.getKey().getNamespace(),
-				sm.getKey().getVersion(),null,null);
-		if(srv == null) {
-			throw new CommonException("Service ["+sm.getKey().getServiceName()+"] not found");
-		}
-		
-		Class<?>[] paramsTypeArr = UniqueServiceMethodKey.paramsClazzes(sm.getKey().getParamsStr());
-		Object[] args = null;
-		if(StringUtils.isEmpty(sm.getTestingArgs())) {
-			args = new Object[0];
+		ServiceMethod sm = (ServiceMethod)attachement;
+		BreakRule rule = sm.getBreakingRule();
+
+		if(sm.isBreaking()) {
+			//已经熔断,算成功率,判断是否关闭熔断器
+			
+			ReportData rd = dataServer.getData(key,new Short[] {MonitorConstant.REQ_SUCCESS},new String[] {MonitorConstant.PREFIX_CUR_PERCENT});
+			
+			if(rd.getCurPercent() == null) {
+				logger.warn("Monitor data not found  {}",key);
+				return;
+			}
+			
+			if(rd.getCurPercent()[0] > rule.getPercent()) {
+				if(this.openDebug) {
+					logger.info("Close breaker for service {}, success rate {}",key,rd.getCurPercent()[0]);
+				}
+				sm.setBreaking(false);
+				srvManager.breakService(sm);
+			}
 		} else {
-			args = getParams(sm.getTestingArgs());
+			//没有熔断,判断是否需要熔断
+			ReportData rd = dataServer.getData(key,new Short[] {MonitorConstant.STATIS_FAIL_PERCENT},new String[] {MonitorConstant.PREFIX_CUR_PERCENT});
+			
+			if(rd.getCurPercent() == null) {
+				logger.info("Monitor data not found  {}",key);
+				return;
+			}
+			
+			if(rd.getCurPercent()[0] > rule.getPercent()) {
+				logger.warn("Break down service {}, fail rate {}",key,rd.getCurPercent()[0]);
+				sm.setBreaking(true);
+				srvManager.breakService(sm);
+			}
+		}
+	}	
+	
+	private void serviceDataChange(ServiceItem item) {
+
+		Set<ServiceMethod> sms = item.getMethods();
+		if(sms == null || sms.isEmpty()) {
+			return;
 		}
 		
-		//args = new String[] {"are you OK"};
+		Iterator<ServiceMethod> ite = sms.iterator();
+		while(ite.hasNext()) {
+			ServiceMethod sm = ite.next();
+			String key = sm.getKey().toKey(true, true, true);
+			
+			ServiceMethod oldSm = breakableMethods.get(key);
+
+			BreakRule br = sm.getBreakingRule();
+			
+			long interval = TimeUtils.getMilliseconds(br.getCheckInterval(), sm.getBaseTimeUnit());
+			
+			if(oldSm == null) {
+				if(!br.isEnable()) {
+					continue;
+				} else {
+					boolean isMonitorable = sm.getMonitorEnable() == 1 ? true:(sm.getMonitorEnable() == 0 ? false : (item.getMonitorEnable() == 1?true:false));
+					if(isMonitorable) {
+						breakableMethods.put(key, sm);
+						TimerTicker.getTimer(timers,interval).addListener(key, this, sm);
+					}
+				}
+			} else {
+				boolean isMonitorable = sm.getMonitorEnable() == 1 ? true:(sm.getMonitorEnable() == 0 ? false : (item.getMonitorEnable() == 1?true:false));
+				if(!br.isEnable() || !isMonitorable) { //br.isEnable() == true, 则 oldSm不可能等于NULL
+					//变为不可熔断
+					breakableMethods.remove(key);
+					long inter = TimeUtils.getMilliseconds(oldSm.getBreakingRule().getCheckInterval(), oldSm.getBaseTimeUnit());
+					TimerTicker.getTimer(timers,inter).removeListener(key, true);
+				} else if(!oldSm.getBreakingRule().equals(sm.getBreakingRule())){
+					long inter = TimeUtils.getMilliseconds(oldSm.getBreakingRule().getCheckInterval(), oldSm.getBaseTimeUnit());
+					TimerTicker.getTimer(timers,inter).removeListener(key, true);
+					breakableMethods.put(key, sm);
+					TimerTicker.getTimer(timers,interval).addListener(key, this, sm);
+				}
+			}
+		}
+	}
+
+	private void serviceRemove(ServiceItem item) {
+		Set<ServiceMethod> sms = item.getMethods();
+		if(sms == null || sms.isEmpty()) {
+			return;
+		}
 		
-		try {
-			JMicroContext.get().setBoolean(Constants.BREAKER_TEST_CONTEXT, true);
-			Method m = srv.getClass().getMethod(sm.getKey().getMethod(), paramsTypeArr);
-			m.invoke(srv, args);
-			JMicroContext.get().removeParam(Constants.BREAKER_TEST_CONTEXT);
-		} catch (NoSuchMethodException | SecurityException | IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
-			logger.error("act",e);
-			//throw new CommonException("act",e);
+		Iterator<ServiceMethod> ite = sms.iterator();
+		while(ite.hasNext()) {
+			ServiceMethod sm = ite.next();
+			
+			BreakRule br = sm.getBreakingRule();
+			if(br == null || !br.isEnable() ) {
+				continue;
+			}
+			
+			String key = sm.getKey().toKey(true, true, true);
+			if(breakableMethods.containsKey(key)) {
+				long interval = TimeUtils.getMilliseconds(br.getCheckInterval(), sm.getBaseTimeUnit());
+				TimerTicker.getTimer(timers,interval).removeListener(key, true);
+				breakableMethods.remove(key);
+			}
+		}
+	}
+
+	private void serviceAdd(ServiceItem item) {
+		Set<ServiceMethod> sms = item.getMethods();
+		if(sms == null || sms.isEmpty()) {
+			return;
+		}
+		
+		Iterator<ServiceMethod> ite = sms.iterator();
+		while(ite.hasNext()) {
+			ServiceMethod sm = ite.next();
+			BreakRule br = sm.getBreakingRule();
+			if(br == null || !br.isEnable() ) {
+				continue;
+			}
+			boolean isMonitorable = sm.getMonitorEnable() == 1 ? true:(sm.getMonitorEnable() == 0 ? false : (item.getMonitorEnable() == 1?true:false));
+			if(isMonitorable) {
+				String key = sm.getKey().toKey(true, true, true);
+				breakableMethods.put(key, sm);
+				long interval = TimeUtils.getMilliseconds(br.getCheckInterval(), sm.getBaseTimeUnit());
+				TimerTicker.getTimer(timers,interval).addListener(key, this, sm);
+			}
 		}
 	}
 	
-	private Object[] getParams(String testingArgs) {
-		try {
-			byte[] data = Base64Utils.decode(testingArgs.getBytes(Constants.CHARSET));
-			Object[] args = this.decoder.decode(ByteBuffer.wrap(data));
-			return args;
-		} catch (UnsupportedEncodingException e) {
-			logger.error("",e);
-			throw new CommonException("",e);
-		}
-	}
 }

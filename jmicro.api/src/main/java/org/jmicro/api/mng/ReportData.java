@@ -13,6 +13,7 @@ public class ReportData {
 	private Long[] total;
 	private Double[] percent;
 	private Long[] cur;
+	private Double[] curPercent;
 	
 	public Short[] getTypes() {
 		return types;
@@ -60,6 +61,14 @@ public class ReportData {
 
 	public void setPercent(Double[] percent) {
 		this.percent = percent;
+	}
+
+	public Double[] getCurPercent() {
+		return curPercent;
+	}
+
+	public void setCurPercent(Double[] curPercent) {
+		this.curPercent = curPercent;
 	}
 
 	

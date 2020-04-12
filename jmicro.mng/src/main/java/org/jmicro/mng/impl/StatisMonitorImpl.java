@@ -49,7 +49,7 @@ public class StatisMonitorImpl implements IStatisMonitor {
 	
 	private static final String RES_LOCK = "statisCounterRegLock";
 	private static final String[] DATA_TYPE = new String[] {MonitorConstant.PREFIX_QPS,
-			MonitorConstant.PREFIX_PERCENT,MonitorConstant.PREFIX_TOTAL};
+			MonitorConstant.PREFIX_TOTAL_PERCENT,MonitorConstant.PREFIX_TOTAL};
 	
 	private final Map<Long,TimerTicker> timers = new ConcurrentHashMap<>();
 	

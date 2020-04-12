@@ -60,6 +60,6 @@ public interface IServiceCounter<T> {
 	
 	void incrementWithEx(T type);
 	
-	void getAll(Map<Short,Double> values);
+	long gets(Short...types);
 	
 }

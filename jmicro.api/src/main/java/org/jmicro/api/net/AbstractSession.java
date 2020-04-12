@@ -282,7 +282,7 @@ public abstract class AbstractSession implements ISession{
 	
 	public Double getFailPercent() {
 		if(counter != null) {
-			return ServiceCounter.getData(counter, MonitorConstant.STATIS_TOTAL_FAIL_PERCENT);
+			return ServiceCounter.getData(counter, MonitorConstant.STATIS_FAIL_PERCENT);
 		}
 		return 0D;
 	}

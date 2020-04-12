@@ -83,7 +83,7 @@ public final class MonitorConstant {
 	public static final short SERVICE_SPEED_LIMIT = 0X00FB;
 	
 	//请求超时
-	public static final short REQ_TOTAL_TIMEOUT_FAIL = 0X00FC;
+	public static final short REQ_TIMEOUT_FAIL = 0X00FC;
 	
 	public static final short CLIENT_IOSESSION_CLOSE = 0X00FD;
 	
@@ -123,16 +123,16 @@ public final class MonitorConstant {
 	public static final short STATIS_TOTAL_FAIL = 4;
 	
 	//总成功数所占比率
-	public static final short STATIS_TOTAL_SUCCESS_PERCENT = 5;
+	public static final short STATIS_SUCCESS_PERCENT = 5;
 	
 	//总失败数所占请求数比率，
-	public static final short STATIS_TOTAL_FAIL_PERCENT = 1;
+	public static final short STATIS_FAIL_PERCENT = 1;
 	
 	//超时数 REQ_TIMEOUT 总数
 	public static final short STATIS_TOTAL_TIMEOUT = 6;
 	
 	//超时失败百分比  REQ_TIMEOUT_FAIL 占 RPC请求总数
-	public static final short STATIS_TOTAL_TIMEOUT_PERCENT = 7;
+	public static final short STATIS_TIMEOUT_PERCENT = 7;
 	
 	//MonitorConstant.CLIENT_IOSESSION_READ 总数即为服务响应数
 	public static final short STATIS_TOTAL_RESP = 8;
@@ -145,10 +145,10 @@ public final class MonitorConstant {
 	public static final Short[] STATIS_INDEX = new Short[] { 
 			STATIS_TOTAL_SUCCESS,
 			STATIS_TOTAL_FAIL,
-			STATIS_TOTAL_SUCCESS_PERCENT,
-			STATIS_TOTAL_FAIL_PERCENT,
+			STATIS_SUCCESS_PERCENT,
+			STATIS_FAIL_PERCENT,
 			STATIS_TOTAL_TIMEOUT,
-			STATIS_TOTAL_TIMEOUT_PERCENT,
+			STATIS_TIMEOUT_PERCENT,
 			STATIS_TOTAL_RESP,
 	};
 	
@@ -163,7 +163,7 @@ public final class MonitorConstant {
 			MonitorConstant.CLIENT_SERVICE_ERROR,
 			MonitorConstant.SERVER_REQ_SERVICE_NOT_FOUND,
 			MonitorConstant.SERVICE_SPEED_LIMIT,
-			MonitorConstant.REQ_TOTAL_TIMEOUT_FAIL,
+			MonitorConstant.REQ_TIMEOUT_FAIL,
 			MonitorConstant.REQ_TIMEOUT_RETRY,
 			MonitorConstant.REQ_ERROR,
 			MonitorConstant.REQ_SUCCESS,
@@ -201,9 +201,10 @@ public final class MonitorConstant {
     public static final byte LOG_FINAL = 6;
     
     public static final String PREFIX_TOTAL = "total";
-    public static final String PREFIX_PERCENT = "percent";
+    public static final String PREFIX_TOTAL_PERCENT = "totalPercent";
     public static final String PREFIX_QPS = "qps";
     public static final String PREFIX_CUR = "cur";
+    public static final String PREFIX_CUR_PERCENT = "curPercent";
     
 	
 	public static final Map<Short,String> MONITOR_VAL_2_KEY = new HashMap<>();

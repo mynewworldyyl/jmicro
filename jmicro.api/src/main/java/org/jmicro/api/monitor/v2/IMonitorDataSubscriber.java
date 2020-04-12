@@ -28,4 +28,5 @@ public interface IMonitorDataSubscriber {
 	void onSubmit(MRpcItem[] sis);
 	
 	ReportData  getData(String srvKey,Short[] type, String[] dataType);
+	
 }

@@ -99,9 +99,9 @@ public class SF {
 	}
 	
 	public static boolean reqTimeoutFail(String tag) {
-		if(isMonitorable(MonitorConstant.REQ_TOTAL_TIMEOUT_FAIL)) {
+		if(isMonitorable(MonitorConstant.REQ_TIMEOUT_FAIL)) {
 			MRpcItem mi = JMicroContext.get().getMRpcItem();
-			mi.addOneItem(MonitorConstant.REQ_TOTAL_TIMEOUT_FAIL, tag);
+			mi.addOneItem(MonitorConstant.REQ_TIMEOUT_FAIL, tag);
 			return true;
 		}
 		return false;

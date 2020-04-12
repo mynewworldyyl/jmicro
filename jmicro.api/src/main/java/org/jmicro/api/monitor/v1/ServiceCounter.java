@@ -124,6 +124,26 @@ public class ServiceCounter implements IServiceCounter<Short>{
 		//返回一个无效值，使用方应该判断此值是否有效才能使用
 		return -1;
 	}
+	
+	@Override
+	public long gets(Short...types) {
+		if(types == null || types.length == 0) {
+			//返回一个无效值，使用方应该判断此值是否有效才能使用
+			return -1;
+		}
+		long sum = 0;
+		for(Short type : types) {
+			Counter c = getCounter(type,false);
+			if(c == null) {
+				continue;
+			}
+			long v = this.get(type);
+			if(v != -1) {
+				sum += v;
+			}
+		}
+		return sum;
+	}
 
 	@Override
 	public boolean add(Short type, long val) {
@@ -142,10 +162,9 @@ public class ServiceCounter implements IServiceCounter<Short>{
 		for(Short type : types) {
 			Counter c = getCounter(type,false);
 			if(c == null) {
-				//返回一个无效值，使用方应该判断此值是否有效才能使用
-				return -1L;
+				continue;
 			}
-			sum += getCounter(type,true).getTotal();
+			sum += c.getTotal();
 		}
 		return sum;
 	}
@@ -244,9 +263,7 @@ public class ServiceCounter implements IServiceCounter<Short>{
 		return true;
 	}
 	
-	
-	
-	@Override
+/*	@Override
 	public void getAll(Map<Short, Double> values) {
 		if(values == null) {
 			throw new NullPointerException("value is NULL");
@@ -256,7 +273,7 @@ public class ServiceCounter implements IServiceCounter<Short>{
 			values.put(c.getKey(), new Double(c.getValue().getVal()));
 		}
 		
-	}
+	}*/
 
 	/**
 	 * 指定类型所占总请求数的百分比
@@ -282,7 +299,7 @@ public class ServiceCounter implements IServiceCounter<Short>{
 		
 		Double result = 0D;
 		switch(type) {
-		case MonitorConstant.STATIS_TOTAL_FAIL_PERCENT:
+		case MonitorConstant.STATIS_FAIL_PERCENT:
 			Long totalReq = counter.get(MonitorConstant.REQ_START);
 			if(totalReq != 0) {
 				double totalFail = counter.getValueWithEx(MonitorConstant.CLIENT_SERVICE_ERROR,MonitorConstant.REQ_TIMEOUT);
@@ -302,10 +319,10 @@ public class ServiceCounter implements IServiceCounter<Short>{
 		case MonitorConstant.STATIS_TOTAL_FAIL:
 			result = 1.0 * counter.getTotal(MonitorConstant.CLIENT_RESPONSE_SERVER_ERROR)+
 			counter.getTotal(MonitorConstant.CLIENT_SERVICE_ERROR)+
-			counter.getTotal(MonitorConstant.REQ_TOTAL_TIMEOUT_FAIL)+
+			counter.getTotal(MonitorConstant.REQ_TIMEOUT_FAIL)+
 			counter.getTotal(MonitorConstant.REQ_ERROR);
 			break;
-		case MonitorConstant.STATIS_TOTAL_SUCCESS_PERCENT:
+		case MonitorConstant.STATIS_SUCCESS_PERCENT:
 			totalReq = counter.get(MonitorConstant.REQ_START);
 			if(totalReq != 0) {
 				result =  1.0 * counter.get(MonitorConstant.REQ_SUCCESS)/*+
@@ -313,13 +330,13 @@ public class ServiceCounter implements IServiceCounter<Short>{
 						result = (result*1.0/totalReq)*100;
 			}
 			break;
-		case MonitorConstant.REQ_TOTAL_TIMEOUT_FAIL:
-			result = 1.0 * counter.get(MonitorConstant.REQ_TOTAL_TIMEOUT_FAIL);
+		case MonitorConstant.REQ_TIMEOUT_FAIL:
+			result = 1.0 * counter.get(MonitorConstant.REQ_TIMEOUT_FAIL);
 			break;
-		case MonitorConstant.STATIS_TOTAL_TIMEOUT_PERCENT:
+		case MonitorConstant.STATIS_TIMEOUT_PERCENT:
 			totalReq = counter.get(MonitorConstant.REQ_START);
 			if(totalReq != 0) {
-				result = 1.0 * counter.get(MonitorConstant.REQ_TOTAL_TIMEOUT_FAIL);
+				result = 1.0 * counter.get(MonitorConstant.REQ_TIMEOUT_FAIL);
 				result = (result/totalReq)*100;
 			}
 			break;

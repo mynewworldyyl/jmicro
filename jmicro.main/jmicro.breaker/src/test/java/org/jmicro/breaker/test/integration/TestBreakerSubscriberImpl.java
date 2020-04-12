@@ -1,47 +1,16 @@
 package org.jmicro.breaker.test.integration;
 
 import java.util.HashMap;
-import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.jmicro.api.JMicro;
-import org.jmicro.api.monitor.v1.AbstractMonitorDataSubscriber;
-import org.jmicro.api.monitor.v1.MonitorConstant;
 import org.jmicro.api.pubsub.PSData;
 import org.jmicro.api.pubsub.PubSubManager;
-import org.jmicro.breaker.api.IBreakerSubscriber;
-import org.jmicro.common.Constants;
 import org.jmicro.test.JMicroBaseTestCase;
 import org.junit.Test;
 
 public class TestBreakerSubscriberImpl extends JMicroBaseTestCase{
-
-	@Test
-	public void testOnStatics() {
-		
-		final Random ran = new Random();
-		
-		IBreakerSubscriber bs = of.get(IBreakerSubscriber.class);
-		Map<Short,Double> data = new HashMap<>();
-		for(Short type : AbstractMonitorDataSubscriber.YTPES) {
-			data.put(type, ran.nextDouble());
-		}
-		
-		data.put(MonitorConstant.STATIS_TOTAL_RESP, 90D);
-		data.put(MonitorConstant.REQ_START,  22D);
-		data.put(MonitorConstant.STATIS_TOTAL_SUCCESS_PERCENT,  80D);
-		data.put(MonitorConstant.STATIS_TOTAL_FAIL_PERCENT,  60D);
-		
-		PSData psData = new PSData();
-		psData.setData(data);
-		psData.setTopic(MonitorConstant.TEST_SERVICE_METHOD_TOPIC);
-		psData.put(Constants.SERVICE_METHOD_KEY, sayHelloServiceMethod());
-	
-		bs.onStatics(psData);
-		
-		JMicro.waitForShutdown();
-	}
 	
 	@Test
 	public void testPresurePublish() {

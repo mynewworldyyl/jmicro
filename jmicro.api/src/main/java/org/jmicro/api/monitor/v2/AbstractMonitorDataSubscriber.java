@@ -15,5 +15,4 @@ public abstract class AbstractMonitorDataSubscriber implements IMonitorDataSubsc
 		return null;
 	}
 
-	
 }
