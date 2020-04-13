@@ -188,6 +188,19 @@ public class SF {
 		return true;
 	}
 	
+	public static boolean breakService(String tag,ServiceMethod sm,String desc) {
+		MonitorManager mo = monitor();
+		if(mo.isServerReady() && !mo.canSubmit(MonitorConstant.SERVICE_BREAK)) {
+			return false;
+		}
+		MRpcItem mi = new MRpcItem();
+		mi.setSm(sm);
+		mi.addOneItem(MonitorConstant.SERVICE_BREAK, tag,desc);
+		setCommon(mi);
+		mo.readySubmit(mi,true);
+		return true;
+	}
+	
 	public static boolean netIo(short type,String desc,Class cls,Throwable ex) {
 		
 		MonitorManager mo = monitor();

@@ -45,7 +45,7 @@ public @interface SBreakingRule {
 	 * 统计时间窗口长度，默认10秒
 	 * @return
 	 */
-	public long breakTimeInterval() default 10000;
+	public long breakTimeInterval() default 2000;
 	
 	/**
 	 * 时间窗口内异常数超50%则熔断服务

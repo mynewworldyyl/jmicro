@@ -1,11 +1,14 @@
 package org.jmicro.example.rpc.impl;
 
+import java.util.Random;
+
 import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.SBreakingRule;
 import org.jmicro.api.annotation.SMethod;
 import org.jmicro.api.annotation.Service;
 import org.jmicro.api.monitor.v1.MonitorConstant;
 import org.jmicro.api.monitor.v1.SF;
+import org.jmicro.common.CommonException;
 import org.jmicro.common.Constants;
 import org.jmicro.example.api.rpc.ISimpleRpc;
 
@@ -14,23 +17,30 @@ import org.jmicro.example.api.rpc.ISimpleRpc;
 @Component
 public class SimpleRpcImpl implements ISimpleRpc {
 
+	private Random r = new Random(100);
+	
 	@Override
 	@SMethod(
 			//breakingRule="1S 50% 500MS",
 			//1秒钟内异常超50%，熔断服务，熔断后每80毫秒做一次测试
-			breakingRule = @SBreakingRule(enable=true,breakTimeInterval=1000,percent=50,checkInterval=80),
+			breakingRule = @SBreakingRule(enable=true,percent=50,checkInterval=5000),
 			logLevel=MonitorConstant.LOG_ERROR,	
-			testingArgs="gv/9gwAQamF2YS5sYW5nLk9iamVjdAABgf/8AApBcmUgeW91IE9L",//测试参数
+			testingArgs="gv/4AAEQ//aPCkFyZSB5b3UgT0s=",//测试参数
 			monitorEnable=1,
-			timeWindow=30*1000,//统计时间窗口20S
-			checkInterval=2000,//采样周期2S
-			baseTimeUnit=Constants.TIME_MILLISECONDS,
-			timeout=3000,
+			timeWindow=5*60000,//统计时间窗口5分钟
+			slotSize=100,
+			checkInterval=5000,//采样周期2S
+			timeout=5000,
+			retryInterval=1000,
 			debugMode=0,
 			maxSpeed=1000
 	)
 	public String hello(String name) {
 		SF.doBussinessLog(MonitorConstant.LOG_DEBUG,SimpleRpcImpl.class,null, name);
+		/*int rv = r.nextInt();
+		if(rv < 50) {
+			throw new CommonException("test breaker exception");
+		}*/
 		//System.out.println("Server hello: " +name);
 		return "Server say hello to: "+name;
 	}

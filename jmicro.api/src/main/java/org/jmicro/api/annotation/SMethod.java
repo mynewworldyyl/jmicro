@@ -86,11 +86,12 @@ public @interface SMethod {
 	
 	/**
 	 * 空值表示由Service注解确定
+	 * 如果修改了此默认值，则注意时间配置，否则造成时钟快速空转，CPU会超高异常
 	 * @return
 	 */
 	public String baseTimeUnit() default Constants.TIME_MILLISECONDS;
 	
-	public SBreakingRule breakingRule() default @SBreakingRule(enable=false,breakTimeInterval=1000,percent=50,checkInterval=80);
+	public SBreakingRule breakingRule() default @SBreakingRule(enable=false,percent=50,checkInterval=80);
 	
 	/**
 	 * 是否可异步调用，实际上此属性不应该在此设置，因为任何RPC方法都可以异步调用，只应该由客户端决定是否做异步调用。

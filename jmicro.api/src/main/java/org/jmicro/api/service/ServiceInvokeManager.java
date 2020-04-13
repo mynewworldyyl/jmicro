@@ -88,8 +88,22 @@ public class ServiceInvokeManager {
 		return call(si,sm,args,null);
 	}
 	
+	public <T> T callDirect(ServiceItem si, ServiceMethod sm, Object[] args) {
+		ServiceItem oldDirectItem = JMicroContext.get().getParam(Constants.DIRECT_SERVICE_ITEM, null);
+		JMicroContext.get().setParam(Constants.DIRECT_SERVICE_ITEM, si);
+		try {
+			return call(si,sm,args,null);
+		}finally{
+			if(oldDirectItem != null) {
+				JMicroContext.get().setParam(Constants.DIRECT_SERVICE_ITEM, oldDirectItem);
+			}else {
+				JMicroContext.get().removeParam(Constants.DIRECT_SERVICE_ITEM);
+			}
+		}	
+	}
+	
 	public <T> T call(ServiceItem si, ServiceMethod sm, Object[] args,AsyncConfig ac) {
-
+		
 		if(si == null) {
 			String msg = "Cannot call service for NULL ServiceItem";
 			SF.doBussinessLog(MonitorConstant.LOG_ERROR, TAG, null, msg);
@@ -112,13 +126,14 @@ public class ServiceInvokeManager {
 				throw new CommonException(msg);
 			}
 			proxes.put(key, p);
+		} else {
+			p = this.proxes.get(key);
 		}
 		
 		Method m = null;
 		try {
 			Class[] argTypes = UniqueServiceMethodKey.paramsClazzes(args);
 			m = p.getClass().getMethod(sm.getKey().getMethod(), argTypes);
-			
 		} catch (NoSuchMethodException | SecurityException e) {
 			String msg = "Service method not found: "+key;
 			SF.doBussinessLog(MonitorConstant.LOG_ERROR, TAG, null, msg);
@@ -132,7 +147,6 @@ public class ServiceInvokeManager {
 			return (T) m.invoke(p, args);
 		} catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
 			String msg = "Invoke service error: "+key+",msg:"+e.getMessage();
-			SF.doBussinessLog(MonitorConstant.LOG_ERROR, TAG, null, msg);
 			throw new CommonException(msg,e);
 		} finally {
 			if(ac != null) {

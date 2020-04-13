@@ -105,29 +105,17 @@ public class SimpleObjectFactory implements IObjectFactory {
 	@Override
 	public <T> T getRemoteServie(String srvName, String namespace, String version,
 			ClassLoader cl,AsyncConfig[] acs) {
-		Object obj = null;
-		if(obj == null){
-			obj = this.clientServiceProxyManager.getRefRemoteService(srvName,namespace,version,cl,acs);
-		}
-		return (T)obj;
+		return (T)this.clientServiceProxyManager.getRefRemoteService(srvName,namespace,version,cl,acs);
 	}
 
 	@Override
 	public <T> T getRemoteServie(ServiceItem item,ClassLoader cl,AsyncConfig[] acs) {
-		Object obj = null;
-		if(obj == null){
-			obj = this.clientServiceProxyManager.getRefRemoteService(item,cl,acs);
-		}
-		return (T)obj;
+		return (T)this.clientServiceProxyManager.getRefRemoteService(item,cl,acs);
 	}
 
 	@Override
 	public <T> T getRemoteServie(Class<T> srvCls, AsyncConfig[] acs) {
-		Object obj = null;
-		if(obj == null){
-			obj = this.clientServiceProxyManager.getRefRemoteService(srvCls,acs);
-		}
-		return (T)obj;
+		return (T)this.clientServiceProxyManager.getRefRemoteService(srvCls,acs);
 	}
 
 	@SuppressWarnings("unchecked")

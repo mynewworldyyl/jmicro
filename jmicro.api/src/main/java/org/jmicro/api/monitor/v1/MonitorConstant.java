@@ -116,6 +116,10 @@ public final class MonitorConstant {
 	//未知错误 209
 	public static final short REQ_SUCCESS = 0X00D1;
 	
+	//未知错误 209
+	public static final short SERVICE_BREAK = 0X00D0;
+	
+	
 	//总成功数  业务失败，RPC成功 两者之和为总成功RPC数
 	public static final short STATIS_TOTAL_SUCCESS = 3;
 	

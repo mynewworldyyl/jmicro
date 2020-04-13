@@ -26,7 +26,8 @@ import java.util.Map;
 
 import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.ObjFactory;
-import org.jmicro.api.codec.PrefixTypeEncoderDecoder;
+import org.jmicro.api.codec.JDataOutput;
+import org.jmicro.api.codec.TypeCoderFactory;
 import org.jmicro.api.config.Config;
 import org.jmicro.api.objectfactory.IObjectFactory;
 import org.jmicro.api.objectfactory.ProxyObject;
@@ -258,8 +259,14 @@ public class JMicro {
 							System.out.println("no need args for testing");
 							return null;
 						}
-						PrefixTypeEncoderDecoder decoder = new PrefixTypeEncoderDecoder();
-						ByteBuffer bb = decoder.encode(args);
+						
+						JDataOutput jo = new JDataOutput(2048);
+						
+						TypeCoderFactory.getDefaultCoder().encode(jo, args, null, null);
+						
+						ByteBuffer bb = jo.getBuf();
+						
+						//ByteBuffer bb = decoder.encode(args);
 						//bb.flip();
 						byte[] data = new byte[bb.remaining()];
 						bb.get(data, 0, bb.limit());
