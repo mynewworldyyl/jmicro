@@ -129,7 +129,7 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
 			}*/
 			 //请求开始
 			 SF.reqStart(TAG.getName(),request);
-			 SF.doRequestLog(MonitorConstant.LOG_DEBUG, TAG,null, "request start");
+			 //SF.doRequestLog(MonitorConstant.LOG_DEBUG, TAG,null, "request start");
 			
 			 ServiceMethod sm = JMicroContext.get().getParam(Constants.SERVICE_METHOD_KEY, null);
 			 String mkey = sm.getKey().getMethod();
@@ -402,7 +402,7 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
     		RpcResponse resp = null;
     		if(respMsg != null){
     			//精确到RPC方法的下行流量
-    			SF.netIoRead(this.getClass().getName(),MonitorConstant.CLIENT_IOSESSION_READ, respMsg.getLen(),session);
+    			SF.netIoRead(this.getClass().getName(),MonitorConstant.CLIENT_IOSESSION_READ, respMsg.getLen());
     			if(openDebug) {
         			//logger.info("Got response req:"+req.getMethod()+",Service:" + req.getServiceName()+", Namespace:"+req.getNamespace());
         		}
@@ -561,8 +561,8 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
 			SF.doMessageLog(MonitorConstant.LOG_ERROR,TAG,msg,null," handler not found");
 			logger.error("msdId:"+msg.getId()+",reqId:"+msg.getReqId()+",linkId:"+msg.getLinkId()+
 					",waitForResponse keySet"+waitForResponse.keySet());
-			session.increment(ISession.CLIENT_HANDLER_NOT_FOUND);
-			if(session.getTakePercent(ISession.CLIENT_HANDLER_NOT_FOUND) > 50) {
+			session.increment(MonitorConstant.CLIENT_HANDLER_NOT_FOUND);
+			if(session.getTakePercent(MonitorConstant.CLIENT_HANDLER_NOT_FOUND) > 50) {
 				//断开重连
 				this.sessionManager.closeSession(session);
 			}

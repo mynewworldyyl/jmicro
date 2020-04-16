@@ -25,7 +25,7 @@ public class TestServiceCounter {
 		for(;true;) {
 			count.add(t, 1);
 			System.out.println("Total:"+count.get(t));
-			System.out.println("Avg:"+count.getQpsWithEx(t, TimeUnit.SECONDS));
+			System.out.println("Avg:"+count.getQps(TimeUnit.SECONDS,t));
 			System.out.println("=============================");
 			try {
 				int tt = r.nextInt(1000);
@@ -44,7 +44,7 @@ public class TestServiceCounter {
 				ISession.STATIS_TYPES,2,2,TimeUnit.SECONDS);
 		while(true) {
 			sc.increment(MonitorConstant.REQ_SUCCESS);
-			Double succp = sc.getValueWithEx(MonitorConstant.REQ_SUCCESS);
+			Long succp = sc.get(MonitorConstant.REQ_SUCCESS);
 			//Double qps = ServiceCounter.getData(sc,MonitorConstant.STATIS_QPS);
 			logger.debug("treq:{}",succp);
 		}

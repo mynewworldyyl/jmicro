@@ -30,14 +30,13 @@ public class OneItem {
 
 	private short type = 0;
 	
-	private String tag = null;
+	private int num = 1;
+	private long val = 0;
 	
-	private Object[] others = null;
-	
-	private String desc;
-	
+	private String desc=null;
 	private long time = 0;
 	
+	private String tag = null;
 	private byte level = MonitorConstant.LOG_DEBUG;
 	
 	private transient Throwable ex = null;
@@ -55,7 +54,12 @@ public class OneItem {
 		this.desc = desc;
 		this.time = System.currentTimeMillis();
 	}
-
+	
+	public void doAdd(int n,double v) {
+		this.num += n;
+		this.val += v;
+	}
+	
 	public short getType() {
 		return type;
 	}
@@ -70,14 +74,6 @@ public class OneItem {
 
 	public void setTag(String tag) {
 		this.tag = tag;
-	}
-
-	public Object[] getOthers() {
-		return others;
-	}
-
-	public void setOthers(Object[] others) {
-		this.others = others;
 	}
 
 	public String getDesc() {
@@ -111,7 +107,21 @@ public class OneItem {
 	public void setEx(Throwable ex) {
 		this.ex = ex;
 	}
-		
-	
+
+	public int getNum() {
+		return num;
+	}
+
+	public void setNum(int num) {
+		this.num = num;
+	}
+
+	public long getVal() {
+		return val;
+	}
+
+	public void setVal(long val) {
+		this.val = val;
+	}
 	
 }

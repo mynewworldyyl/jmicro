@@ -125,8 +125,7 @@ public class SF {
 	public static boolean reqServiceRespError(String tag,ServerError se) {
 		if(isMonitorable(MonitorConstant.CLIENT_RESPONSE_SERVER_ERROR)) {
 			MRpcItem mi = JMicroContext.get().getMRpcItem();
-			OneItem oi = mi.addOneItem(MonitorConstant.CLIENT_RESPONSE_SERVER_ERROR, tag);
-			oi.setOthers(new Object[] {se});
+			OneItem oi = mi.addOneItem(MonitorConstant.CLIENT_RESPONSE_SERVER_ERROR, tag,se.toString());
 			return true;
 		}
 		return false;
@@ -165,16 +164,15 @@ public class SF {
 		return false;
 	}
 	
-	public static boolean serverStart(String tag,String host,int port,String desc) {
+	public static boolean serverStart(String tag,String desc) {
 		MonitorManager mo = monitor();
 		if(mo.isServerReady() && !mo.canSubmit(MonitorConstant.SERVER_START)) {
 			return false;
 		}
 		MRpcItem mi = new MRpcItem();
-		OneItem oi = mi.addOneItem(MonitorConstant.SERVER_START, tag,desc);
-		oi.setOthers(new Object[] {host,port});
+		mi.addOneItem(MonitorConstant.SERVER_START, tag,desc);
 		setCommon(mi);
-		mo.readySubmit(mi,true);
+		mo.readySubmit(mi);
 		return true;
 	}
 	
@@ -183,8 +181,7 @@ public class SF {
 			return false;
 		}
 		MRpcItem mi = JMicroContext.get().getMRpcItem();
-		OneItem oi = mi.addOneItem(MonitorConstant.SERVER_STOP, tag);
-		oi.setOthers(new Object[] {host,port});
+		mi.addOneItem(MonitorConstant.SERVER_STOP, tag,host+":"+port);
 		return true;
 	}
 	
@@ -197,7 +194,7 @@ public class SF {
 		mi.setSm(sm);
 		mi.addOneItem(MonitorConstant.SERVICE_BREAK, tag,desc);
 		setCommon(mi);
-		mo.readySubmit(mi,true);
+		mo.readySubmit(mi);
 		return true;
 	}
 	
@@ -218,13 +215,13 @@ public class SF {
 		oi.setEx(ex);
 		if(f) {
 			setCommon(mi);
-			return mo.readySubmit(mi,true);
+			return mo.submit2Cache(mi);
 		}
 		return false;
 		
 	}
 	
-	public static boolean netIoRead(String tag,short type,long num,ISession session) {
+	public static boolean netIoRead(String tag,short type,long num) {
 		MonitorManager mo = monitor();
 		if(mo.isServerReady() && !mo.canSubmit(type)) {
 			return false;
@@ -237,10 +234,10 @@ public class SF {
 			f = true;
 		}
 		OneItem oi = mi.addOneItem(type, tag);
-		oi.setOthers(new Object[] {num});
+		oi.setVal(num);
 		if(f) {
 			setCommon(mi);
-			return mo.readySubmit(mi,true);
+			return mo.submit2Cache(mi);
 		}
 		return true;
 	}
@@ -254,27 +251,27 @@ public class SF {
 		return false;
 	}
 	
-	public static void doServiceLog(byte level,Class<?> cls,Throwable exp,String desc,Object... others) {
-		doLog(level,cls,null,exp,desc,others);
+	public static void doServiceLog(byte level,Class<?> cls,Throwable exp,String desc) {
+		doLog(level,cls,null,exp,desc);
 	}
 
-	public static void doBussinessLog(byte level, Class<?> tag, Throwable exp,String desc, Object... msgs) {
-		doLog(level,tag,null,exp,desc,msgs);
+	public static void doBussinessLog(byte level, Class<?> tag, Throwable exp,String desc) {
+		doLog(level,tag,null,exp,desc);
 	}
 	
-	public static void doRequestLog(byte level,Class<?> cls,Throwable exp,String desc, Object... others) {
-		doLog(level,cls,null,exp,desc,others);
+	public static void doRequestLog(byte level,Class<?> cls,Throwable exp,String desc) {
+		doLog(level,cls,null,exp,desc);
 	}
 	
-	public static void doResponseLog(byte level,Class<?> cls,Throwable exp,String desc, Object... others) {
-		doLog(level,cls,null,exp,desc,others);
+	public static void doResponseLog(byte level,Class<?> cls,Throwable exp,String desc) {
+		doLog(level,cls,null,exp,desc);
 	}
 	
-	public static void doMessageLog(byte level,Class<?> cls,Message msg,Throwable exp,String desc,Object... others) {
-		doLog(level,cls,msg,exp,desc,others);
+	public static void doMessageLog(byte level,Class<?> cls,Message msg,Throwable exp,String desc) {
+		doLog(level,cls,msg,exp,desc);
 	}
 	
-	private static void doLog(byte level,Class<?> cls,Message msg,Throwable exp, String desc,Object... others) {
+	private static void doLog(byte level,Class<?> cls,Message msg,Throwable exp, String desc) {
 		if(isLoggable(level)) {
 			MRpcItem mi = JMicroContext.get().getMRpcItem();
 			boolean f = false;
@@ -284,9 +281,6 @@ public class SF {
 			}
 			OneItem oi = mi.addOneItem(MonitorConstant.LINKER_ROUTER_MONITOR, cls.getName(),desc);
 			oi.setEx(exp);
-			if(others != null && others.length > 0) {
-				oi.setOthers(others);
-			}
 			oi.setLevel(level);
 			mi.setMsg(msg);
 			if(f) {

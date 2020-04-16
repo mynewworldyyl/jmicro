@@ -14,7 +14,8 @@ public class BasketFactory<T> {
 	private IBasket<T>[] baskets = null;
 	private boolean[] using = null;
 	
-	private Object locker = new Object();
+	private Object readLocker = new Object();
+	private Object writeLocker = new Object();
 	
 	@SuppressWarnings("unchecked")
 	public BasketFactory(int size,int maxCapacityOfBasket) {
@@ -28,7 +29,7 @@ public class BasketFactory<T> {
 	}
 	
 	public IBasket<T> borrowWriteBasket() {
-		synchronized(locker) {
+		synchronized(writeLocker) {
 			for(int i =0; i < size; i++) {
 				if(!using[i] && baskets[i].isWriteStatus()) {
 					using[i] = true;
@@ -39,9 +40,8 @@ public class BasketFactory<T> {
 		return null;
 	}
 	
-	
 	public IBasket<T> borrowReadSlot() {
-		synchronized(locker) {
+		synchronized(readLocker) {
 			for(int i =0; i < size; i++) {
 				if(!using[i] && baskets[i].isReadStatus()) {
 					using[i] = true;
@@ -104,11 +104,14 @@ public class BasketFactory<T> {
 
 		private boolean readStatus = false;
 		
+		private long firstWriteTime;
+		
 		public Basket(int capacity) {
 			this.capacity = capacity;
 			s = new Object[capacity];
 			readIndex = -1;
 			writeIndex = 0;
+			firstWriteTime = 0;
 		}
 		
 		public boolean add(E elt) {
@@ -117,6 +120,9 @@ public class BasketFactory<T> {
 			}
 			if(writeIndex < this.capacity) {
 				s[writeIndex++] = elt;
+				if(firstWriteTime == 0) {
+					firstWriteTime = System.currentTimeMillis();
+				}
 				return true;
 			}
 			return false;
@@ -129,6 +135,9 @@ public class BasketFactory<T> {
 			if(writeIndex + elts.length <= this.capacity) {
 				System.arraycopy(elts, 0, s, writeIndex, elts.length);
 				writeIndex += elts.length;
+				if(firstWriteTime == 0) {
+					firstWriteTime = System.currentTimeMillis();
+				}
 				return true;
 			}
 			return false;
@@ -142,7 +151,6 @@ public class BasketFactory<T> {
 				//剩余可写元素个数
 				return this.capacity - writeIndex;
 			}
-			
 		}
 		
 		public boolean exchangeStatus() {
@@ -152,17 +160,18 @@ public class BasketFactory<T> {
 					//还剩余未读元素，必须读完才能交换
 					return false;
 				} else {
-					this.readStatus = !this.readStatus;
+					this.readStatus = false;
 					readIndex = -1;
 					writeIndex = 0;
+					firstWriteTime = 0;
 					return true;
 				}
 			} else {
 				//由写状态切换到读状态，必须有元素可读，否则没意义
 				if((writeIndex - readIndex-1) > 0) {
-					this.readStatus = !this.readStatus;
+					this.readStatus = true;
 					return true;
-				}else {
+				} else {
 					return false;
 				}			
 			}		
@@ -202,7 +211,25 @@ public class BasketFactory<T> {
 			this.s[readIndex] = null;
 			return e;
 		}
-		
+
+		@Override
+		public long firstWriteTime() {
+			return firstWriteTime;
+		}
+
+		/**
+		 * 是否存在有效元素，即可读取的元素
+		 */
+		@Override
+		public boolean isEmpty() {
+			if(readStatus) {
+				//剩余可读元素个数
+				return writeIndex - readIndex - 1 == 0;
+			} else {
+				//剩余可写元素个数
+				return writeIndex == 0;
+			}
+		}
 		
 	}
 }

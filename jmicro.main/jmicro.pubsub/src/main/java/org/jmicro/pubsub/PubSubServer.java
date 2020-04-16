@@ -261,9 +261,15 @@ public class PubSubServer implements IInternalSubRpc{
 
 		int batchSize = 100;
 		int sendInterval = 300;
+		long lastLoopTime = System.currentTimeMillis();
 		while (true) {
 			try {
 
+				if(System.currentTimeMillis() - lastLoopTime < 100) {
+					System.out.println("PubSubServer.doWork On loop");
+				}
+				lastLoopTime = System.currentTimeMillis();
+				
 				if (memoryItemsCnt.get() == 0 && cacheItemsCnt.get() == 0) {
 					synchronized (syncLocker) {
 						syncLocker.wait(1000);

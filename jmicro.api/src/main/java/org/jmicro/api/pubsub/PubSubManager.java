@@ -223,8 +223,14 @@ public class PubSubManager {
 		logger.info("START submit worker");
     	int interval = 500;
     	int batchSize = 50;
+    	long lastLoopTime = System.currentTimeMillis();
 		while(isRunning) {
 			try {
+				
+				if(System.currentTimeMillis() - lastLoopTime < 100) {
+					System.out.println("PubSubManager.doWork On loop");
+				}
+				lastLoopTime = System.currentTimeMillis();
 				
 				while(curItemCount.get() == 0) {
 					//没有数据，等待

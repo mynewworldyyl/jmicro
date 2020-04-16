@@ -16,8 +16,6 @@
  */
 package org.jmicro.api.monitor.v1;
 
-import java.util.Map;
-
 /**
  * 
  * @author Yulei Ye
@@ -43,23 +41,10 @@ public interface IServiceCounter<T> {
 	
 	boolean increment(T type);
 	
-	boolean addCounter(T type);
+	boolean addCounter(T type);	
 	
-	//boolean addCounter(Integer type,long timeWindow,long slotSize,String unit);
+	long getByTypes(Short...types);
 	
-	long getWithEx(T type);
-	
-	void addWithEx(T type,long val);
-	
-	/**
-	 * 计数器启动以来的总数
-	 * @param type
-	 * @return
-	 */
-	Double getValueWithEx(T... type);
-	
-	void incrementWithEx(T type);
-	
-	long gets(Short...types);
+	boolean existType(Short type);
 	
 }

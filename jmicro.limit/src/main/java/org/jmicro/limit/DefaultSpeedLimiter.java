@@ -87,7 +87,7 @@ public class DefaultSpeedLimiter extends AbstractLimiter implements ILimiter{
 			al = this.als.get(key);
 		}
 		
-		double qps = sc.getQpsWithEx(MonitorConstant.REQ_START, TimeUnit.SECONDS);
+		double qps = sc.getQps(TimeUnit.SECONDS,MonitorConstant.REQ_START);
 		//logger.info("qps:{},key:{}",qps,sm.getKey().getMethod());
 		
 		if(qps > sm.getMaxSpeed()){
@@ -115,7 +115,7 @@ public class DefaultSpeedLimiter extends AbstractLimiter implements ILimiter{
 		
 		//logger.info("apply cnt:{}",al.incrementAndGet());
 		
-		sc.incrementWithEx(MonitorConstant.REQ_END);
+		sc.increment(MonitorConstant.REQ_END);
 		
 		return true;
 	}

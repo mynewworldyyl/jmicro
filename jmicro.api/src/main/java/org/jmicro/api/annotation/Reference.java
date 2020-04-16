@@ -72,8 +72,9 @@ public @interface Reference {
 	 */
 	public boolean required() default false;
 	
-	//容器字段有效， 值可以是：service:表示每个服务注入一个代理实例
-	public String type() default "service";
+	//容器字段有效， 值可以是：ins:表示每个服务实例注入一个代理实例
+	//srv:每个servicename, namespace, version注入一个代理实例
+	public String type() default "srv";
 	
 	//public String registry() default "";
 	

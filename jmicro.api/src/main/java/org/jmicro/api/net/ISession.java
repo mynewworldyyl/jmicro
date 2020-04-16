@@ -31,13 +31,6 @@ public interface ISession{
 	
 	public static final int EVENT_TYPE_OPEN = 2;
 	
-	
-	public static final short CLIENT_HANDLER_NOT_FOUND = 0X7FFF;
-	
-	public static final short CLIENT_WRITE_BYTES = 0X7FFE;
-	
-	public static final short CLIENT_READ_BYTES = 0X7FFD;
-	
 	public static final Short[] STATIS_TYPES = new Short[]{
 			//服务器发生错误,返回ServerError异常
 			MonitorConstant.CLIENT_SERVICE_ERROR,
@@ -54,9 +47,9 @@ public interface ISession{
 			//超时次数
 			MonitorConstant.REQ_TIMEOUT_FAIL,
 			
-			ISession.CLIENT_HANDLER_NOT_FOUND,
-			ISession.CLIENT_WRITE_BYTES,
-			ISession.CLIENT_READ_BYTES
+			MonitorConstant.CLIENT_HANDLER_NOT_FOUND,
+			MonitorConstant.CLIENT_WRITE_BYTES,
+			MonitorConstant.CLIENT_READ_BYTES
 		};
 	
 	void close(boolean flag);

@@ -110,7 +110,7 @@ public class JRPCReqRespHandler implements IMessageHandler{
 			JMicroContext.config(req1,serviceLoader,registry);
 			
 			//在这里统计的流量可以精确到RPC服务方法
-			SF.netIoRead(this.getClass().getName(),MonitorConstant.SERVER_IOSESSION_READ, msg.getLen(),s);
+			SF.netIoRead(this.getClass().getName(),MonitorConstant.SERVER_IOSESSION_READ, msg.getLen());
 			
 			if(!msg.isNeedResponse()){
 				//无需返回值

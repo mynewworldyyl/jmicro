@@ -163,7 +163,7 @@ public class JMicroHttpServer implements IServer{
         
         String m = "Running the server host["+this.host+"],port ["+this.port+"]";
         LOG.debug(m);    
-        SF.serverStart(TAG,this.host,this.port,Constants.TRANSPORT_NETTY_HTTP);
+        SF.serverStart(TAG,Constants.TRANSPORT_NETTY_HTTP+" : "+this.host+" : "+this.port);
 	}
 
 	@Override

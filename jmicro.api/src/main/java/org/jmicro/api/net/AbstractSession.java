@@ -98,11 +98,9 @@ public abstract class AbstractSession implements ISession{
 	
 	public void init() {
 		InetSocketAddress ia = this.getRemoteAddress();
-		remoteAddr = ia.getHostName();
-		localAddr = this.getLocalAddress().getHostName();
-		
-		this.counter = new ServiceCounter(ia.getHostString()+":"+ia.getPort(),STATIS_TYPES,30,30,TimeUnit.SECONDS);
-		
+		remoteAddr = ia.getAddress().getHostAddress();
+		localAddr = this.getLocalAddress().getAddress().getHostAddress();
+		//this.counter = new ServiceCounter(remoteAddr+":"+ia.getPort(),STATIS_TYPES,30,10,TimeUnit.SECONDS);
 	}
 	
 	/*private void doWork() {
@@ -142,7 +140,7 @@ public abstract class AbstractSession implements ISession{
 	private void doRead(ByteBuffer msg) {
 
 		if(counter != null) {
-			counter.add(ISession.CLIENT_READ_BYTES, msg.remaining());
+			counter.add(MonitorConstant.CLIENT_READ_BYTES, msg.remaining());
 		}
     	//合并上次剩下的数据
      	ByteBuffer lb = null;

@@ -20,12 +20,14 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 
 import org.jmicro.api.IListener;
 import org.jmicro.api.JMicroContext;
+import org.jmicro.api.annotation.Cfg;
 import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.Inject;
 import org.jmicro.api.annotation.JMethod;
@@ -37,6 +39,7 @@ import org.jmicro.api.cache.lock.ILockerManager;
 import org.jmicro.api.config.Config;
 import org.jmicro.api.executor.ExecutorConfig;
 import org.jmicro.api.executor.ExecutorFactory;
+import org.jmicro.api.monitor.v1.MonitorConstant;
 import org.jmicro.api.objectfactory.AbstractClientServiceProxy;
 import org.jmicro.api.raft.IDataOperator;
 import org.jmicro.common.Constants;
@@ -60,8 +63,14 @@ public class MonitorManager {
 	
 	//private static final String TYPES_LOCKER = TYPES_PATH;
 	
+	@Cfg("/MonitorManager/isMonitorServer")
+	private boolean isMonitorServer = false;
+	
 	@Reference(namespace="monitorServer",version="0.0.1")
 	private IMonitorServer monitorServer;
+	
+	@Inject(required=false)
+	private IMonitorServer localMonitorServer;
 	
 	private AbstractClientServiceProxy msPo;
 	
@@ -77,6 +86,8 @@ public class MonitorManager {
 	
 	private BasketFactory<MRpcItem> basketFactory = null;
 	
+	private BasketFactory<MRpcItem> cacheBasket = null;
+	
 	private Object syncLocker = new Object();
 	
 	private ExecutorService executor = null;
@@ -84,6 +95,8 @@ public class MonitorManager {
 	public void init() {
 		
 		this.basketFactory = new BasketFactory<MRpcItem>(5000,1);
+		this.cacheBasket = new BasketFactory<MRpcItem>(1000,5);
+		
 		op.addChildrenListener(TYPES_PATH, (type,parentDir,skey,data)->{
 			if(type == IListener.ADD) {
 				doAddType(skey,data);
@@ -120,27 +133,28 @@ public class MonitorManager {
 		new Thread(this::doWork,Config.getInstanceName()+ "_MonitorManager_Worker").start();
 	}
 	
-	public boolean readySubmit(MRpcItem item,boolean canCache) {
-		if(canCache) {
-			if(this.basketFactory == null) {
-				logger.error("basketFactory is NULL");
-				return false;
-			}
-			IBasket<MRpcItem> b = basketFactory.borrowWriteBasket();
-			if(b == null) {
-				logger.error("borrow write basket fail");
-				return false;
-			}
-			b.add(item);
-			if(!basketFactory.returnWriteBasket(b, true)) {
-				logger.error("readySubmit fail to return this basket");
-				return false;
-			}
-			return true;
-		} else {
-			return readySubmit(item);
+	public boolean submit2Cache(MRpcItem item) {
+
+		if(this.cacheBasket == null) {
+			logger.error("cacheBasket is NULL");
+			return false;
 		}
 		
+		IBasket<MRpcItem> b = cacheBasket.borrowWriteBasket();
+		if(b == null) {
+			logger.error("borrow write basket fail");
+			return false;
+		}
+		b.add(item);
+		
+		//没有可写元素时，强制转为读状态
+		if(!cacheBasket.returnWriteBasket(b, b.remainding() == 0)) {
+			logger.error("readySubmit fail to return this basket");
+			return false;
+		}
+		
+		return true;
+	
 	}
 	
 	public boolean readySubmit(MRpcItem item) {
@@ -168,33 +182,82 @@ public class MonitorManager {
 		int maxSendInterval = 2000;
 		int checkInterval = 5000;
 		long lastSentTime = System.currentTimeMillis();
+		long lastLoopTime = System.currentTimeMillis();
+		//long loopCnt = 0;
 		
 		while(true) {
 			try {
 				
-				IBasket<MRpcItem> b = this.basketFactory.borrowReadSlot();
-				if(b == null && items.size() == 0 || msPo == null || !msPo.isUsable()) {
-					synchronized(syncLocker) {
-						syncLocker.wait(checkInterval);
+				IBasket<MRpcItem> readBasket = this.basketFactory.borrowReadSlot();
+				if(readBasket == null || msPo == null || !msPo.isUsable()) {
+					//超过5秒钟的缓存包，强制提交为读状态
+					long beginTime = System.currentTimeMillis();
+					IBasket<MRpcItem> wb = this.cacheBasket.borrowWriteBasket();
+					if(wb != null && !wb.isEmpty() && System.currentTimeMillis() - wb.firstWriteTime() > 5000) {
+						this.cacheBasket.returnWriteBasket(wb, true);
 					}
-					continue;
+					
+					IBasket<MRpcItem> cb = null;
+					while((cb = this.cacheBasket.borrowReadSlot()) != null) {
+						if(System.currentTimeMillis() - wb.firstWriteTime() > 180000) { //超过3分钟
+							MRpcItem[] mrs = new MRpcItem[cb.remainding()];
+							cb.getAll(mrs);
+							items.addAll(Arrays.asList(mrs));
+							cacheBasket.returnReadSlot(cb, true);
+						} else {
+							//没超过3分钟，不做单独发送，等等下次正常RPC做附带发送，或下次检测超时
+							cacheBasket.returnReadSlot(cb, false);
+						}
+						
+					}
+					
+					//中间耗费的时间要算在睡眠时间里面，如果耗费大于需要睡眠时间，则不需要睡眠了，直接进入下一次循环
+					long costTime = System.currentTimeMillis() - beginTime;
+					if((costTime = checkInterval-costTime) > 0) {
+						synchronized(syncLocker) {
+							syncLocker.wait(costTime);
+						}
+					}
+					
+					if(items.isEmpty()) {
+						continue;
+					}
 				}
 				
-				while(b != null) {
-					MRpcItem[] mrs = new MRpcItem[b.remainding()];
-					b.getAll(mrs);
+				while(readBasket != null) {
+					MRpcItem[] mrs = new MRpcItem[readBasket.remainding()];
+					readBasket.getAll(mrs);
 					items.addAll(Arrays.asList(mrs));
-					basketFactory.returnReadSlot(b, true);
-					b = this.basketFactory.borrowReadSlot();
+					basketFactory.returnReadSlot(readBasket, true);
+					readBasket = this.basketFactory.borrowReadSlot();
 				}
 				
 				if(items.size() == 0) {
 					continue;
 				}
 				
-				if(items.size() >= batchSize || (System.currentTimeMillis() - lastSentTime) > maxSendInterval) {
+				merge(items);
+				
+				if(items.size() >= batchSize || (items.size() > 0 && ((System.currentTimeMillis() - lastSentTime) > maxSendInterval))) {
+					
+					IBasket<MRpcItem> cb = null;
+					while((cb = this.cacheBasket.borrowReadSlot()) != null) {
+						MRpcItem[] mrs = new MRpcItem[cb.remainding()];
+						cb.getAll(mrs);
+						items.addAll(Arrays.asList(mrs));
+						cacheBasket.returnReadSlot(cb, true);
+					}
+					
+					//loopCnt++;
+					if(System.currentTimeMillis() - lastLoopTime < 100) {
+						//double v = loopCnt/(System.currentTimeMillis() - lastLoopTime);
+						System.out.println("MonitorManager do submit: " + items.size());
+					}
+					lastLoopTime = System.currentTimeMillis();
+					
 					MRpcItem[] mrs = new MRpcItem[items.size()];
 					items.toArray(mrs);
+					//System.out.println("submit: " +mrs.length);
 					this.executor.submit(new Worker(mrs));
 					items.clear();
 					lastSentTime = System.currentTimeMillis();
@@ -207,6 +270,134 @@ public class MonitorManager {
 	}
 	
 	
+	private void merge(Set<MRpcItem> items) {
+		
+		Set<MRpcItem> result = new HashSet<>();
+		
+		//Map<String,OneItem> oneItems = new HashMap<>();
+		
+		Map<String,MRpcItem> mprcItems = new HashMap<>();
+		
+		MRpcItem nullSMMRpcItem = null;
+		OneItem clientReadOi = null;
+		OneItem serverReadOi = null;
+		
+		for(Iterator<MRpcItem> ite = items.iterator(); ite.hasNext();) {
+			MRpcItem mi = ite.next();
+			ite.remove();
+			
+			if(!canCompress(mi) ) {
+				result.add(mi);
+			}
+			
+			if(mi.getSm() == null) {
+				//非RPC环境下的事件
+				if(nullSMMRpcItem == null) {
+					nullSMMRpcItem = mi;
+					//第一个，不用处理，别的合并到这个选项下面
+					continue;
+				}
+				Iterator<OneItem> oiIte = mi.getItems().iterator();
+				for(; oiIte.hasNext(); ) {
+					OneItem oi = oiIte.next();
+					oiIte.remove();
+					if(oi.getType() == MonitorConstant.CLIENT_IOSESSION_READ) {
+						if(clientReadOi == null) {
+							clientReadOi = oi;
+						} else {
+							clientReadOi.doAdd(1,oi.getVal());
+						}
+					} else if(oi.getType() == MonitorConstant.SERVER_IOSESSION_READ) {
+						if(serverReadOi == null) {
+							serverReadOi = oi;
+						} else {
+							serverReadOi.doAdd(1,oi.getVal());
+						}
+					} else {
+						nullSMMRpcItem.addOneItem(oi);
+					}
+				}
+			} else {
+				String smKey = mi.getSm().getKey().toKey(true, true, true);
+				MRpcItem oldMi = mprcItems.get(smKey);
+				 if(canDoLog(mi)) {
+					//日志记录不合并
+					result.add(mi);
+				} else if(oldMi == null) {
+					oldMi = mi;
+					//mi.setLinkId(0L);
+					//消息合并后，以下字段都没意义
+					mi.setMsg(null);
+					mi.setReq(null);
+					mi.setResp(null);
+					mprcItems.put(smKey,oldMi);
+					result.add(oldMi);
+				}  else {
+					//同一个方法的不同RPC请求数据进行合并
+					Iterator<OneItem> oiIte = mi.getItems().iterator();
+					for(; oiIte.hasNext(); ) {
+						OneItem oi = oiIte.next();
+						OneItem ooi = oldMi.getItem(oi.getType());
+						if(ooi == null) {
+							oldMi.addOneItem(oi);
+						} else {
+							ooi.doAdd(1,oi.getVal());
+						}
+					
+						/*if(oi.getType() == MonitorConstant.CLIENT_IOSESSION_READ||
+								oi.getType() == MonitorConstant.SERVER_IOSESSION_READ) {}else {
+							oldMi.addOneItem(oi);
+						}*/
+					}
+				}
+			}
+			
+		}
+		
+		if(nullSMMRpcItem != null) {
+			result.add(nullSMMRpcItem);
+			if(clientReadOi != null) {
+				nullSMMRpcItem.addOneItem(clientReadOi);
+			}
+			if(serverReadOi != null) {
+				nullSMMRpcItem.addOneItem(serverReadOi);
+			}
+		}
+		
+		items.addAll(result);
+		if(items.size() < 0) {
+			logger.error("Items cannot be NULL after compress");
+		}
+		//是否有利于JVM做回收操作？
+		result.clear();
+		
+	}
+
+
+	private boolean canDoLog(MRpcItem mi) {
+		Iterator<OneItem> oiIte = mi.getItems().iterator();
+		for(; oiIte.hasNext(); ) {
+			OneItem oi = oiIte.next();
+			if(oi.getType() == MonitorConstant.LINKER_ROUTER_MONITOR) {
+				if(mi.getSm().getLogLevel() >= oi.getLevel()) {
+					return true;
+				}
+			}
+		}
+		return false;
+	}
+
+	private boolean canCompress(MRpcItem mi) {
+		Iterator<OneItem> oiIte = mi.getItems().iterator();
+		for(; oiIte.hasNext(); ) {
+			if(MonitorConstant.KEY_TYPES.contains(oiIte.next().getType())) {
+				return false;
+			}
+		}
+		return true;
+	}
+
+
 	private class Worker implements Runnable {
 		
 		private MRpcItem[] items = null;
@@ -224,7 +415,10 @@ public class MonitorManager {
 				//发送消息RPC
 				JMicroContext.get().setBoolean(Constants.FROM_MONITOR_MANAGER, true);
 					
-				if(monitorServer != null) {
+				if(localMonitorServer != null) {
+					//本地包不需要RPC，直接本地调用
+					localMonitorServer.submit(items);
+				} else if(monitorServer != null) {
 					//不能保证百分百发送成功，会有数据丢失
 					//为了提供更高的性能，丢失几个监控数据正常情况下可以接受
 					//如果监控服务同时部署两个以上，而两个监控服务器同时不可用的机率很低，等同于不可能，从而丢数据的可能性也趋于不可能
@@ -300,7 +494,7 @@ public class MonitorManager {
 	
 	public boolean canSubmit(Short t) {
 		
-		if(monitorServer == null) {
+		if(/*isMonitorServer ||*/ monitorServer == null) {
 			return false;
 		}
 		
@@ -308,8 +502,7 @@ public class MonitorManager {
 			return false;
 		}
 		
-		AbstractClientServiceProxy po = (AbstractClientServiceProxy)((Object)this.monitorServer);
-		return po.isUsable();
+		return msPo.isUsable();
 	}
 	
 	private void doDeleteType(String skey, String data) {

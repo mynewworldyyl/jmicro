@@ -16,7 +16,9 @@
  */
 package org.jmicro.api.timer;
 
+import java.util.Iterator;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Queue;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -51,19 +53,28 @@ public class TimerTicker {
 		}
 	}
 	
-	//private long ticker;
+	private long ticker;
 	private Timer timer;
 	
 	private Map<String,ITickerAction> listeners = new ConcurrentHashMap<>();
 	private Map<String,Object> attachements = new ConcurrentHashMap<>();
 	private Queue<String> removeKeys = new ConcurrentLinkedQueue<>();
 	
+	long lastRunTime = 0;
+	
 	public TimerTicker(long ticker) {
-		//this.ticker = ticker;
+		this.ticker = ticker;
+		if(ticker < 99) {
+			//logger.warn("Ticker:" + ticker);
+			throw new CommonException("Ticker have to big to: " + 99+", but got: "+ticker);
+		}
+		
 		timer = new Timer("JMicro-Timer-"+ticker, true);
+		
 		timer.scheduleAtFixedRate(new TimerTask() {
 			@Override
 			public void run() {
+				
 				try {
 					notifyAction(); 
 					if(!removeKeys.isEmpty()) {
@@ -83,10 +94,24 @@ public class TimerTicker {
 		}, 0, ticker);
 	}
 	
+	@SuppressWarnings({ "unchecked", "rawtypes" })
 	private void notifyAction() {
-		listeners.forEach((key,act)->{
+		/*listeners.forEach((key,act)->{
+			if(System.currentTimeMillis() - lastRunTime < 100) {
+				logger.warn("Timer interval small to 100ms from last run: " + ticker+", key: "+key);
+			}
 			act.act(key,attachements.get(key));
-		});
+		});*/
+		
+		for(Iterator<Map.Entry<String, ITickerAction>> ite = listeners.entrySet().iterator(); ite.hasNext();) {
+			Entry<String, ITickerAction> kv = ite.next();
+			kv.getValue().act(kv.getKey(), attachements.get(kv.getKey()));
+			if(System.currentTimeMillis() - lastRunTime < 10) {
+				logger.warn("Timer interval small to 100ms from last run: " + ticker+", key: "+kv.getKey());
+			}
+		}
+		
+		lastRunTime = System.currentTimeMillis();
 	}
 	
 	public void addListener(String key,ITickerAction act,Object attachement) {
@@ -94,8 +119,12 @@ public class TimerTicker {
 	}
 	
 	public void addListener(String key,ITickerAction act,Object attachement,boolean replace) {
-		if(!replace && this.listeners.containsKey(key) && act != this.listeners.get(key)) {
-			throw new CommonException("listener with key[" + key+"] have been exists");
+		if(this.listeners.containsKey(key) && act != this.listeners.get(key)) {
+			if(!replace) {
+				throw new CommonException("listener with key[" + key+"] have been exists");
+			} else {
+				logger.warn("Replace Listener: " + key);
+			}
 		}
 		if(attachement != null) {
 			attachements.put(key, attachement);

@@ -394,9 +394,9 @@ public class SerializeProxyFactory {
 		//System.out.println("\n\n");
 		//System.out.println(sb.toString());
 		
-		if("org.jmicro.api.mng.ReportData".equals(cls.getName())) {
+		/*if("org.jmicro.api.mng.ReportData".equals(cls.getName())) {
 			System.out.println(sb.toString());
-		}
+		}*/
 		
 		return sb.toString();
 	
@@ -768,9 +768,9 @@ public class SerializeProxyFactory {
 		
 		sb.append("}");
 		//System.out.println("\n\n");
-		if("org.jmicro.api.mng.ReportData".equals(cls.getName())) {
+		/*if("org.jmicro.api.mng.ReportData".equals(cls.getName())) {
 			System.out.println(sb.toString());
-		}
+		}*/
 		return sb.toString();
 	}
 	

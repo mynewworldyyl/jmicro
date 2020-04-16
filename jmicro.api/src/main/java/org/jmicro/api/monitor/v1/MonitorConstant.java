@@ -19,7 +19,9 @@ package org.jmicro.api.monitor.v1;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * 全部RPC过程事件都需要记录，linkID和ReqID，在RPC请求开始时记录Request请求全部数据，后面通过ReqID关联查找请求数据，通过linkID查找链路
@@ -64,7 +66,7 @@ public final class MonitorConstant {
 	//链路结束
 	public static final short LINK_END  = 0X00F3;
 	
-	//请求超时
+	//请求超时 
 	public static final short REQ_TIMEOUT = 0X00F4;
 	
 	//服务未找到
@@ -118,6 +120,28 @@ public final class MonitorConstant {
 	
 	//未知错误 209
 	public static final short SERVICE_BREAK = 0X00D0;
+	
+	public static final short CLIENT_HANDLER_NOT_FOUND = 0X01FF;
+	
+	public static final short CLIENT_WRITE_BYTES = 0X02FE;
+	
+	public static final short CLIENT_READ_BYTES = 0X03FD;
+	
+	public static final short Monotor_Server_ReceiveItemCount = 0X04FD;
+	
+	public static final short Monotor_Server_ReceiveItemQps = 0X05FD;
+	
+	public static final short Monotor_Server_SubmitTaskCount = 0X06FD;
+	
+	public static final short Monotor_Server_TaskNormalCount = 0X07FD;
+	
+	public static final short Monotor_Server_TaskExceptionCount = 0X08FD;
+	
+	public static final short Monotor_Server_SubmitCount = 0X09FD;
+	
+	public static final short Monotor_Server_SubmitQps = 0X0AFD;
+	
+	public static final short Monotor_Server_CheckExceptionCount = 0X0BFD;
 	
 	
 	//总成功数  业务失败，RPC成功 两者之和为总成功RPC数
@@ -210,9 +234,23 @@ public final class MonitorConstant {
     public static final String PREFIX_CUR = "cur";
     public static final String PREFIX_CUR_PERCENT = "curPercent";
     
+    //以下类型出现时，将数据全部上传服务器，不做数据清除，如Rep数据，响应数据
+    public static final Set<Short> KEY_TYPES = new HashSet<>();
+    
 	
 	public static final Map<Short,String> MONITOR_VAL_2_KEY = new HashMap<>();
 	static {
+		KEY_TYPES.add(REQ_TIMEOUT);
+		KEY_TYPES.add(SERVICE_NOT_FOUND);
+		KEY_TYPES.add(CLIENT_RESPONSE_SERVER_ERROR);
+		KEY_TYPES.add(CLIENT_SERVICE_ERROR);
+		KEY_TYPES.add(SERVER_REQ_SERVICE_NOT_FOUND);
+		KEY_TYPES.add(REQ_TIMEOUT_FAIL);
+		KEY_TYPES.add(SERVICE_SPEED_LIMIT);
+		KEY_TYPES.add(REQ_TIMEOUT_RETRY);
+		KEY_TYPES.add(REQ_ERROR);
+		KEY_TYPES.add(SERVICE_BREAK);
+		
 		Field[] fs = MonitorConstant.class.getDeclaredFields();
 		for(Field f: fs){
 			if(!Modifier.isStatic(f.getModifiers()) || !Modifier.isPublic(f.getModifiers())

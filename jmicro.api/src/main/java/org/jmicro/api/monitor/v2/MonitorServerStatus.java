@@ -5,25 +5,26 @@ import java.util.Map;
 import java.util.Set;
 
 import org.jmicro.api.annotation.SO;
+import org.jmicro.api.monitor.v1.MonitorConstant;
 
 @SO
 public class MonitorServerStatus {
 	
-	public static final short receiveItemCount = 1;
+	public static final short receiveItemCount = MonitorConstant.Monotor_Server_ReceiveItemCount;
 	
-	public static final short receiveItemQps = 2;
+	public static final short receiveItemQps = MonitorConstant.Monotor_Server_ReceiveItemQps;
 	
-	public static final short submitTaskCount = 3;
+	public static final short submitTaskCount = MonitorConstant.Monotor_Server_SubmitTaskCount;
 	
-	public static final short taskNormalCount = 4;
+	public static final short taskNormalCount = MonitorConstant.Monotor_Server_TaskNormalCount;
 	
-	public static final short taskExceptionCount = 5;
+	public static final short taskExceptionCount = MonitorConstant.Monotor_Server_TaskExceptionCount;
 	
-	public static final short submitCount = 6;
+	public static final short submitCount = MonitorConstant.Monotor_Server_SubmitCount;
 	
-	public static final short submitQps = 7;
+	public static final short submitQps = MonitorConstant.Monotor_Server_SubmitQps;
 	
-	public static final short checkExceptionCount = 8;
+	public static final short checkExceptionCount = MonitorConstant.Monotor_Server_CheckExceptionCount;
 	
 	public static final Short[] TYPES  = {
 			receiveItemCount,receiveItemQps,submitTaskCount,taskNormalCount,taskExceptionCount,

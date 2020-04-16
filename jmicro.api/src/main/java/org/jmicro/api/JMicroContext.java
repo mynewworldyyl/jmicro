@@ -376,6 +376,7 @@ public class JMicroContext  {
 		if(this.exists(Constants.MONITOR_ENABLE_KEY)){
 			return this.getBoolean(Constants.MONITOR_ENABLE_KEY, false);
 		};
+		
 		Config cfg = JMicro.getObjectFactory().get(Config.class);
 		return cfg.getBoolean(Constants.MONITOR_ENABLE_KEY,false);
 	}

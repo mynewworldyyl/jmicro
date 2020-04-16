@@ -60,8 +60,6 @@ class RemoteProxyServiceFieldListener implements IServiceListener{
 	
 	private Class<?> srvType = null;
 	
-	private IMonitorDataSubmiter monitor;
-	
 	private IRegistry registry = null;
 	
 	/**
@@ -83,8 +81,6 @@ class RemoteProxyServiceFieldListener implements IServiceListener{
 		this.refField = refField;
 		this.ref = refField.getAnnotation(Reference.class);
 		srvType = rsm.getEltType(refField);
-		monitor = JMicro.getObjectFactory().get(IMonitorDataSubmiter.class);
-		
 		this.registry = registry;
 	}
 
@@ -106,11 +102,25 @@ class RemoteProxyServiceFieldListener implements IServiceListener{
 			Collection<Object> set = (Collection<Object>)this.refFieldVal;
 			
 			if(IServiceListener.ADD == type){
-				for(Object o: set){
-					AbstractClientServiceProxy p = (AbstractClientServiceProxy)o;
-					if(p.serviceKey().equals(item.serviceKey())){
-						//服务代理已经存在,不需要重新创建
-						return;
+				boolean direct = "ins".equals(ref.type());
+				
+				if(direct) {
+					String ekey = item.getKey().toKey(true, true, true);
+					for(Object o: set){
+						AbstractClientServiceProxy p = (AbstractClientServiceProxy)o;
+						if(p.getItem().getKey().toKey(true, true, true).equals(ekey)){
+							//服务代理已经存在,不需要重新创建
+							return;
+						}
+					}
+				} else {
+					String ekey = item.serviceKey();
+					for(Object o: set){
+						AbstractClientServiceProxy p = (AbstractClientServiceProxy)o;
+						if(p.serviceKey().equals(ekey)){
+							//服务代理已经存在,不需要重新创建
+							return;
+						}
 					}
 				}
 				
@@ -119,6 +129,7 @@ class RemoteProxyServiceFieldListener implements IServiceListener{
 				//代理还不存在，创建之
 				AbstractClientServiceProxy p = (AbstractClientServiceProxy)this.rsm.getRefRemoteService(item, null,acs);
 				if(p!=null){
+					p.setDirect(direct);
 					set.add(p);
 					logger.debug("Add proxy for,Size:{} Field:{},Item:{}",set.size(),
 							refField.toString(),item.getKey().toKey(false, false, false));
@@ -132,16 +143,35 @@ class RemoteProxyServiceFieldListener implements IServiceListener{
 				
 			}else if(IServiceListener.REMOVE == type) {
 				
-				boolean exist = registry.isExists(item.getKey().getServiceName(), item.getKey().getNamespace(), item.getKey().getVersion());
-				
-				if(!exist) {
+				boolean direct = "ins".equals(ref.type());
+				if(!direct) {
+					boolean exist = registry.isExists(item.getKey().getServiceName(), item.getKey().getNamespace(), item.getKey().getVersion());
+					if(!exist) {
+						//服务已经不存在
+						AbstractClientServiceProxy po = null;
+						for(Object o: set){
+							AbstractClientServiceProxy p = (AbstractClientServiceProxy)o;
+							if(p.serviceKey().equals(item.serviceKey())){
+								po = p;
+								break;
+							}
+						}
+						if(po != null){
+							set.remove(po);
+							logger.debug("Remove proxy for,Size:{}, Field:{},Item:{}",set.size(),refField.toString(),
+									item.getKey().toKey(false, false, false));
+							//通知组件服务元素删除
+							notifyChange(po,type);
+						}
+					}
+				} else {
 					//服务已经不存在
 					AbstractClientServiceProxy po = null;
+					String k= item.getKey().toKey(true, true, true);
 					for(Object o: set){
 						AbstractClientServiceProxy p = (AbstractClientServiceProxy)o;
-						if(p.serviceKey().equals(item.serviceKey())){
+						if(k.equals(p.getItem().getKey().toKey(true, true, true))){
 							po = p;
-							break;
 						}
 					}
 					if(po != null){
@@ -151,7 +181,9 @@ class RemoteProxyServiceFieldListener implements IServiceListener{
 						//通知组件服务元素删除
 						notifyChange(po,type);
 					}
+				
 				}
+				
 			}
 		}
 	}

@@ -7,6 +7,7 @@ import java.util.Map;
 
 import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.Inject;
+import org.jmicro.api.annotation.Reference;
 import org.jmicro.api.annotation.Service;
 import org.jmicro.api.monitor.v2.IMonitorServer;
 import org.jmicro.api.monitor.v2.MonitorManager;
@@ -17,6 +18,7 @@ import org.jmicro.mng.inter.IMonitorServerManager;
 @Service(namespace="mng",version="0.0.1")
 public class MonitorServerManagerImpl implements IMonitorServerManager{
 	
+	@Reference(namespace="monitorServer",type="ins")//每个服务实例一个代理对象
 	private List<IMonitorServer> monitorServers = new ArrayList<>();
 	
 	@Inject

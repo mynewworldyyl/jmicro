@@ -197,9 +197,7 @@ class ClientServiceProxyManager {
 			} else if(isRequired) {
 				throw new CommonException("Class ["+cls.getName()+"] field ["+ f.getName()+"] dependency ["+f.getType().getName()+"] not found");
 			} else {
-				if(f.isAnnotationPresent(Reference.class)) {
-					logger.warn("Class ["+cls.getName()+"] field ["+ f.getName()+"] dependency ["+f.getType().getName()+"] not found");
-				}
+				logger.warn("Class ["+cls.getName()+"] field ["+ f.getName()+"] dependency ["+f.getType().getName()+"] not found");
 			}
 			
 		}
@@ -440,7 +438,11 @@ class ClientServiceProxyManager {
 		
 		if(o == null){
 			if(Modifier.isAbstract(f.getType().getModifiers())) {
-				o = new HashSet<Object>();
+				if(Set.class.isAssignableFrom(f.getType())) {
+					o = new HashSet<Object>();
+				} else {
+					o = new ArrayList<Object>();
+				}
 			} else {
 				try {
 					//变量声明的类型是Set的子实现类型，如HashSet
@@ -456,31 +458,33 @@ class ClientServiceProxyManager {
 		Set<String> exists = new HashSet<>();
 		AbstractClientServiceProxy po = null;
 		
-		//请参考Reference说明使用
 		Set<ServiceItem> items = null;
 		if(existsItem) {
-			items = registry.getServices(ctype.getName());
+			items = registry.getServices(ctype.getName(),ref.namespace(),ref.version());
 		}
 		
 		AsyncConfig[] acs = this.getAcs(ref);
 		
 		if(items != null && !items.isEmpty()){
 			for(ServiceItem si : items){
-				String key = si.serviceKey();
-				if(exists.contains(key)){
-					continue;
+				boolean direct = "ins".equals(ref.type());
+				if(!direct) {
+					String key = si.serviceKey();
+					if(exists.contains(key)){
+						continue;
+					}
+					exists.add(si.serviceKey());
 				}
-				exists.add(key);
-				
-				po = this.getRefRemoteService(si, null,acs);
-				
 				//监听每一个元素，元素加入或删除时，要从集合中删除
 				//CollectionElementServiceProxyListener lis = new CollectionElementServiceProxyListener(this,el,srcObj,f,po);
 				//registry.addExistsServiceListener(key, lis);
+				po = this.getRefRemoteService(si, null,acs);
 				
 				if(po != null){
+					po.setDirect(direct);
 					el.add(po);
 				}
+				
 			}
 		}
 		

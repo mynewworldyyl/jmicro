@@ -17,6 +17,7 @@
 package org.jmicro.api.monitor.v2;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -38,8 +39,6 @@ public final class MRpcItem{
 	
 	private long reqId;
 	
-	private transient Message msg  = null;
-	
 	private IReq req = null;
 	
 	private IResp resp = null;
@@ -52,7 +51,11 @@ public final class MRpcItem{
 	private String remotePort = null;
 	private String instanceName = null;
 	
+	//private short[] types = null;
+	
 	private List<OneItem> items = new LinkedList<>();
+	
+	private transient Message msg  = null;
 	
 	public MRpcItem() {}
 	
@@ -61,7 +64,6 @@ public final class MRpcItem{
 		this.reqId = reqId;
 	}
 	
-	@SuppressWarnings("unchecked")
 	public List<OneItem> getOneItems(Short[] types) {
 		if(types == null || types.length == 0) {
 			return null;
@@ -122,13 +124,6 @@ public final class MRpcItem{
 		return oi;
 	}
 	
-	public OneItem addOneItem(short type,String tag,String desc,Object[] others) {
-		OneItem oi = new OneItem(type,tag,desc);
-		oi.setOthers(others);
-		this.items.add(oi);
-		return oi;
-	}
-	
 	public OneItem addOneItem(short type,String tag,String desc,long time) {
 		OneItem oi = new OneItem(type,tag,desc);
 		oi.setTime(time);
@@ -141,6 +136,16 @@ public final class MRpcItem{
 		oi.setEx(ex);
 		this.items.add(oi);
 		return oi;
+	}
+	
+	public OneItem getItem(short type) {
+		for(Iterator<OneItem> ite = items.iterator(); ite.hasNext(); ) {
+			OneItem oi = ite.next();
+			if(oi.getType() == type) {
+				return oi;
+			}
+		}
+		return null;
 	}
 	
 

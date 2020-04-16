@@ -42,7 +42,9 @@ public class ServiceCounter implements IServiceCounter<Short>{
 
 	private static final Logger logger = LoggerFactory.getLogger(ServiceCounter.class);
 	
-	private static final int DEFAULT_SLOT_SIZE = 10;
+	private final static Map<Long,TimerTicker> timers = new ConcurrentHashMap<>();
+	
+	//private static final int DEFAULT_SLOT_SIZE = 10;
 	
 	private boolean openDebug = false;
 	
@@ -64,6 +66,11 @@ public class ServiceCounter implements IServiceCounter<Short>{
 	//统计事件的类型,每种类型对应一种计数器
 	private ConcurrentHashMap<Short,Counter> counters = new ConcurrentHashMap<>();
 	
+	private ITickerAction clock = (key,att) -> {
+		for(Counter cnt : counters.values()) {
+			cnt.act();
+		}
+	};
 	
 	/*public ServiceCounter(String serviceKey,long timeWindow,TimeUnit unit) {
 		if(StringUtils.isEmpty(serviceKey)) {
@@ -109,6 +116,10 @@ public class ServiceCounter implements IServiceCounter<Short>{
 				addCounter(type);
 			}
 		}
+		
+		logger.info("Add serviceCounter key:{},window:{}, slotSizeInMilliseconds:{}",serviceKey,timeWindowInMilliseconds,slotSizeInMilliseconds);
+		
+		TimerTicker.getTimer(timers, slotSizeInMilliseconds).addListener(serviceKey, clock,null,true);
 	}
 	
 	public void destroy() {
@@ -126,7 +137,7 @@ public class ServiceCounter implements IServiceCounter<Short>{
 	}
 	
 	@Override
-	public long gets(Short...types) {
+	public long getByTypes(Short...types) {
 		if(types == null || types.length == 0) {
 			//返回一个无效值，使用方应该判断此值是否有效才能使用
 			return -1;
@@ -181,7 +192,7 @@ public class ServiceCounter implements IServiceCounter<Short>{
 				return c.getQps(tounit);
 			}
 		} else {
-			double sum = getValueWithEx(types);
+			double sum = this.getByTypes(types);
 			long time = TimeUtils.getTime(this.timeWindow, this.unit, tounit);
 			return ((double)sum)/time;
 		}
@@ -191,76 +202,52 @@ public class ServiceCounter implements IServiceCounter<Short>{
 
 	@Override
 	public boolean increment(Short type) {
-		Counter c = getCounter(type,false);
+		Counter c = getCounter(type,true);
 		if(c != null) {
 			c.add(1);
 			return true;
 		}
 		return false;
 	}
-	
-	//***********************************************************//
 
-	public double getQpsWithEx(Short type,TimeUnit unit) {
-		return getCounter(type,true).getQps(unit);
-	}
-	
-	@Override
-	public long getWithEx(Short type) {
-		return getCounter(type,true).getVal();
-	}
-	
-	/**
-	 * 全部类型的当前值的和
-	 */
-	public Double getValueWithEx(Short... types) {
-		double sum = 0;
-		for(Short type : types) {
-			sum += getCounter(type,true).getVal();
-		}
-		return sum;
-	}
-	
-	private Counter getCounter(Short type,boolean withEx) {
+	private Counter getCounter(Short type,boolean doAdd) {
 		Counter c = counters.get(type);
-		if(c == null && withEx) {
-			throw new CommonException("Type not support for service :"
-					+ this.serviceKey + ",type="+Integer.toHexString(type));
+		if(c == null && doAdd) {
+			synchronized(counters) {
+				c = counters.get(type);
+				if(c == null) {
+					if(this.addCounter(type)) {
+						c = counters.get(type);
+					}
+				}
+			}
+		}
+		if(c == null && doAdd) {
+			throw new CommonException("Fail to add type:" + Integer.toHexString(type));
 		}
 		return c;
 	}
 	
-	/**
-	 * 增加指定值
-	 */
-	public void addWithEx(Short type,long val) {
-		getCounter(type,true).add(val);
-	}
-	
-	/**
-	 * 自增1
-	 */
-	public void incrementWithEx(Short type) {
-		this.addWithEx(type, 1);
-	}
-	
-	/*@Override
-	public boolean addCounter(Integer type, long timeWindow, long slotSize, String unit) {
-		return this.addCounter(type, timeWindow, slotSize, TimeUtils.getTimeUnit(unit));
-	}*/
-
 	public boolean addCounter(Short type) {
-		if(this.counters.containsKey(type)) {
-			throw new CommonException("Type["+type+"] exists for service ["+this.serviceKey+"]");
+		if(counters.containsKey(type)) {
+			throw new CommonException("Type[" + MonitorConstant.MONITOR_VAL_2_KEY.get(type) + "] exists for service [" + this.serviceKey + "]");
 		}
 
-		String key = serviceKey+"-"+type;
+		//String key = serviceKey+"_"+type;
+		
+		logger.info("Add Counter for type:{},KEY:{},window:{}, slotSizeInMilliseconds:{}",
+				MonitorConstant.MONITOR_VAL_2_KEY.get(type),
+				serviceKey,timeWindowInMilliseconds,slotSizeInMilliseconds);
 		
 		Counter cnt = new Counter(type,timeWindowInMilliseconds,slotSizeInMilliseconds);
-		TimerTicker.getDefault(slotSizeInMilliseconds).addListener(key, cnt,null,true);
-		this.counters.put(type, cnt);
+		//TimerTicker.getTimer(timers, slotSizeInMilliseconds).addListener(key, cnt,null,true);
+		counters.put(type, cnt);
 		supportTypes.add(type);
 		return true;
+	}
+	
+	public boolean existType(Short type) {
+		return supportTypes.contains(type);
 	}
 	
 /*	@Override
@@ -302,7 +289,7 @@ public class ServiceCounter implements IServiceCounter<Short>{
 		case MonitorConstant.STATIS_FAIL_PERCENT:
 			Long totalReq = counter.get(MonitorConstant.REQ_START);
 			if(totalReq != 0) {
-				double totalFail = counter.getValueWithEx(MonitorConstant.CLIENT_SERVICE_ERROR,MonitorConstant.REQ_TIMEOUT);
+				double totalFail = new Double(counter.getByTypes(MonitorConstant.CLIENT_SERVICE_ERROR,MonitorConstant.REQ_TIMEOUT));
 				result = (totalFail/totalReq)*100;
 				//logger.debug("totalReq:{},totalFail:{},Percent:{}",totalReq,totalFail,result);
 			}
@@ -344,7 +331,7 @@ public class ServiceCounter implements IServiceCounter<Short>{
 			result = counter.getQps(TimeUnit.SECONDS,MonitorConstant.REQ_START);
 			break;
 		default:
-			result = counter.getValueWithEx(type);
+			result = new Double(counter.get(type));
 			break;
 		}
 		return result;
@@ -367,7 +354,7 @@ public class ServiceCounter implements IServiceCounter<Short>{
 	 * 当前槽位定义为： Tx < Sxv 且  Tx > Sxv-slotSizeInMilliseconds
 	 * 
 	 */
-	private class Counter implements ITickerAction{
+	private class Counter {
 		
 		private final int type;
 		//时间窗口,单位毫秒,统计只保持时间窗口内的数据,超过时间窗口的数据自动丢弃
@@ -417,7 +404,8 @@ public class ServiceCounter implements IServiceCounter<Short>{
 			
 			this.slots[0].setTimeEnd(curTime+slotSizeInMilliseconds);
 			if(openDebug) {
-				logger.info("Create Counter type:{}, timeWindow:{},slotSizeInMilliseconds:{},slotLen:{},curTime:{}",this.type,
+				logger.info("Create Counter type:{}, timeWindow:{},slotSizeInMilliseconds:{},slotLen:{},curTime:{}",
+						MonitorConstant.MONITOR_VAL_2_KEY.get(type),
 						this.timeWindow,this.slotSizeInMilliseconds,this.slotLen,curTime);
 			}
 			
@@ -433,7 +421,7 @@ public class ServiceCounter implements IServiceCounter<Short>{
 		//boolean fqps = false;
 		public double getQps(TimeUnit timeUnit) {
 			long sum = getVal();
-			long time = TimeUtils.getTime(this.timeWindow, TimeUnit.MILLISECONDS, timeUnit);
+			long time = TimeUtils.getTime(timeWindow,unit, timeUnit);
 			if(debugGetQps) {
 				logger.info("sum:{},time:{}",sum,time);
 			}
@@ -496,8 +484,8 @@ public class ServiceCounter implements IServiceCounter<Short>{
 		 * 任意时刻Tx，计算槽位Sx是否有效，假定Sxv表示任意槽位有效时间最大值
 	     * Tx－Sxv ＞　timewindow 即表示 Sx为无效槽位，将其值设置为０即可
 		 */
-		@Override
-		public void act(String key,Object attachement) {
+		
+		public void act(/*String key,Object attachement*/) {
 			boolean isLock = false;
 			try {
 				if((isLock = locker.tryLock(100, TimeUnit.MILLISECONDS))) {

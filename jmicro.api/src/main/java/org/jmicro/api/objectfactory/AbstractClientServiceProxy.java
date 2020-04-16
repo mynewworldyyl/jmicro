@@ -52,6 +52,8 @@ public abstract class AbstractClientServiceProxy implements InvocationHandler,IS
 	
 	private Map<String,AsyncConfig> acs = null;
 	
+	private boolean direct = false;
+	
 	private volatile InvocationHandler targetHandler = null;
 	
 	public IObjectFactory getOf() {
@@ -136,7 +138,21 @@ public abstract class AbstractClientServiceProxy implements InvocationHandler,IS
 		
 		JMicroContext.configComsumer(sm,si);
 		
-		return h.invoke(proxy, method, args);
+		boolean sdirect = false;
+		if(JMicroContext.get().getParam(Constants.DIRECT_SERVICE_ITEM, null) == null) {
+			if(this.isDirect()) {
+				sdirect = true;
+				JMicroContext.get().setParam(Constants.DIRECT_SERVICE_ITEM, this.item);
+			}
+		}
+		try {
+			return h.invoke(proxy, method, args);
+		}finally {
+			if(sdirect) {
+				JMicroContext.get().removeParam(Constants.DIRECT_SERVICE_ITEM);
+			}
+		}
+		
 	}
 	
 	public boolean isUsable() {
@@ -247,6 +263,14 @@ public abstract class AbstractClientServiceProxy implements InvocationHandler,IS
 			return null;
 		}
 		return this.acs.get(mkey);
+	}
+
+	public boolean isDirect() {
+		return direct;
+	}
+
+	public void setDirect(boolean direct) {
+		this.direct = direct;
 	}
 	
 }

@@ -16,8 +16,21 @@
  */
 var jm = jm || {};
 
+/**
+ * 0 ：对应常量CONNECTING (numeric value 0)，
+ 正在建立连接连接，还没有完成。The connection has not yet been established.
+ 1 ：对应常量OPEN (numeric value 1)，
+ 连接成功建立，可以进行通信。The WebSocket connection is established and communication is possible.
+ 2 ：对应常量CLOSING (numeric value 2)
+ 连接正在进行关闭握手，即将关闭。The connection is going through the closing handshake.
+ 3 : 对应常量CLOSED (numeric value 3)
+ 连接已经关闭或者根本没有建立。The connection has been closed or could not be opened.
+
+ * @type {{listeners: {}, logData: null, idCallback: {}, isInit: boolean, init: jm.socket.init, send: jm.socket.send, registListener: jm.socket.registListener}}
+ */
 jm.socket = {
-    listeners : {}
+    listeners : {},
+    waiting:[]
     ,logData:null
     ,idCallback:{}
     , isInit:false
@@ -47,6 +60,7 @@ jm.socket = {
             //连接关闭的时候触发
             self.wsk.onclose = function(event){
                console.log("connection close");
+                this.isInit = false;
             }
 
             //连接打开的时候触发
@@ -66,13 +80,24 @@ jm.socket = {
             //注册回调为消息监听
             this.listeners[msg.reqId] = cb;
         }
-        if(!this.isInit) {
-            let self = this;
+        let self = this;
+        if(!!self.wsk && self.wsk.readyState == WebSocket.OPEN) {
+            this.wsk.send(JSON.stringify(msg));
+        } else if(!self.wsk || self.wsk.readyState == WebSocket.CLOSED ||
+            self.wsk.readyState == WebSocket.CLOSING) {
             this.init(function () {
                 self.wsk.send(JSON.stringify(msg));
+                if(self.waiting.length > 0) {
+                    for(let i = 0; i < self.waiting.length; i++) {
+                        self.waiting[i]();
+                    }
+                    self.waiting = [];
+                }
             });
-        } else {
-            this.wsk.send(JSON.stringify(msg));
+        } else if(self.wsk.readyState == WebSocket.CONNECTING) {
+            self.waiting.push(function(){
+                this.wsk.send(JSON.stringify(msg));
+            })
         }
     }
 

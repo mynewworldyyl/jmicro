@@ -58,7 +58,7 @@ public @interface SMethod {
 	
 	public int retryInterval() default 500;
 	//method must can be retry, or 1
-	public int retryCnt() default 3;
+	public int retryCnt() default 0;
 	public int timeout() default 5000;
 	
 	/**

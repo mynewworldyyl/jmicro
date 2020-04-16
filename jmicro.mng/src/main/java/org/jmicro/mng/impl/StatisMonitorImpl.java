@@ -118,8 +118,6 @@ public class StatisMonitorImpl implements IStatisMonitor {
 		}
 	};
 	
-	
-	
 	@Override
 	@SMethod(timeout=60000,retryCnt=0)
 	public boolean startStatis(String mkey, Integer t) {

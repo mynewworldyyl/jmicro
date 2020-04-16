@@ -26,8 +26,8 @@ import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 
 import org.jmicro.api.client.IClientSession;
+import org.jmicro.api.monitor.v1.MonitorConstant;
 import org.jmicro.api.net.AbstractSession;
-import org.jmicro.api.net.ISession;
 import org.jmicro.api.net.Message;
 import org.jmicro.common.CommonException;
 import org.jmicro.common.Constants;
@@ -90,7 +90,7 @@ public abstract class AbstractNettySession extends AbstractSession implements IC
 			}
 			
 			if(counter != null) {
-				this.counter.add(ISession.CLIENT_WRITE_BYTES, bb.remaining());
+				this.counter.add(MonitorConstant.CLIENT_WRITE_BYTES, bb.remaining());
 			}
 			
 			ByteBuf bbf = Unpooled.buffer(bb.remaining());
