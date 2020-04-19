@@ -42,7 +42,8 @@ public interface IRequest extends IReq{
 	//public void setMethod(String method);
 	
 	public String getImpl();
-
+	public void setImpl(String impl);
+	
 	public Object[] getArgs();
 	//public void setArgs(Object[] args);
 	

@@ -3,7 +3,9 @@ package org.jmicro.example.test.pubsub;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 import org.jmicro.api.codec.ICodecFactory;
 import org.jmicro.api.codec.JDataInput;
@@ -13,6 +15,7 @@ import org.jmicro.api.mng.ConfigNode;
 import org.jmicro.api.mng.IConfigManager;
 import org.jmicro.api.mng.ReportData;
 import org.jmicro.api.monitor.v1.MonitorConstant;
+import org.jmicro.api.monitor.v2.MonitorServerStatus;
 import org.jmicro.api.net.Message;
 import org.jmicro.api.pubsub.PSData;
 import org.jmicro.api.registry.AsyncConfig;
@@ -52,7 +55,7 @@ public class TestPubsub extends JMicroBaseTestCase{
 		Object obj = psd;
 		org.jmicro.api.codec.ISerializeObject so = (org.jmicro.api.codec.ISerializeObject)obj;
 		JDataOutput out = new JDataOutput();
-		so.encode(out, null);
+		so.encode(out);
 		
 		JDataInput ji = new JDataInput(out.getBuf());
 		so.decode(ji);
@@ -71,7 +74,7 @@ public class TestPubsub extends JMicroBaseTestCase{
 		//psd.put("key", "ssss");
 		
 		JDataOutput out = new JDataOutput();
-		psd.encode(out, null);
+		psd.encode(out);
 		
 		PSData0 decodePsd = new PSData0();
 		
@@ -288,6 +291,42 @@ public class TestPubsub extends JMicroBaseTestCase{
 		PSData deData = ed.decode(buffer);
 		
 		System.out.println(deData);
+	}
+	
+	
+	@Test
+	public void testMonitorServerStatusEncodeDecode() throws IOException {
+		
+		MonitorServerStatus totalStatus = new MonitorServerStatus();
+		totalStatus.setCur(new double[10]);
+		
+		Set<Short> types = new HashSet<>();
+		types.add((short)222);
+		//totalStatus.getSubsriber2Types().put("sss", types);
+		
+		ICodecFactory ed = of.get(ICodecFactory.class);
+		
+		ByteBuffer bb = (ByteBuffer)ed.getEncoder(Message.PROTOCOL_BIN).encode(totalStatus);
+		
+		MonitorServerStatus objs = (MonitorServerStatus)ed.getDecoder(Message.PROTOCOL_BIN).decode(bb, null);
+		
+		System.out.println(objs);
+	}
+	
+	@Test
+	public void testMonitorServerStatusEncodeDecode0() throws IOException {
+		
+		MonitorServerStatus0 s = new MonitorServerStatus0();
+		//s.setTotal(new double[] {2222D,2222D,2222D,2222D,2222D,2222D,});
+		//s.setCur(new double[] {2222D,2222D,2222D,2222D,2222D,2222D,});
+		
+		JDataOutput jo = new JDataOutput(1024);
+		s.encode(jo);
+		
+		MonitorServerStatus0 objs = new MonitorServerStatus0();
+		objs.decode(new JDataInput(jo.getBuf()));
+		
+		System.out.println(objs);
 	}
 	
 }

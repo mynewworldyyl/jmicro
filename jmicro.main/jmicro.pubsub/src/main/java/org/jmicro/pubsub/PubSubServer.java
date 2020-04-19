@@ -184,10 +184,10 @@ public class PubSubServer implements IInternalSubRpc{
 			lastSendTimes.put(topic, System.currentTimeMillis());
 		}
 		
-		IBasket<PSData> b = this.basketFactory.borrowWriteBasket();
+		IBasket<PSData> b = this.basketFactory.borrowWriteBasket(true);
 		
 		if(b != null && size < this.maxMemoryItem) {
-			b.add(items);
+			b.write(items,0,items.length);
 			memoryItemsCnt.addAndGet(items.length);
 			//lastSendTimes.put(topic, System.currentTimeMillis());
 			this.basketFactory.returnWriteBasket(b, true);
@@ -283,10 +283,10 @@ public class PubSubServer implements IInternalSubRpc{
 						if (curTime - e.getValue() > sendInterval && this.cacheStorage.len(e.getKey()) > 0) {
 							List<PSData> items = this.cacheStorage.pops(e.getKey(), batchSize);
 
-							IBasket<PSData> b = this.basketFactory.borrowWriteBasket();
+							IBasket<PSData> b = this.basketFactory.borrowWriteBasket(false);
 							PSData[] arr = new PSData[items.size()];
 							items.toArray(arr);
-							if(b != null && b.add(arr)) {
+							if(b != null && b.write(arr,0,arr.length)) {
 								this.basketFactory.returnWriteBasket(b, true);
 								memoryItemsCnt.addAndGet(items.size());
 								cacheItemsCnt.addAndGet(-items.size());
@@ -317,7 +317,7 @@ public class PubSubServer implements IInternalSubRpc{
 				while ((rb = this.basketFactory.borrowReadSlot()) != null) {
 
 					PSData[] psd = new PSData[rb.remainding()];
-					if(!rb.getAll(psd)) {
+					if(!rb.readAll(psd)) {
 						this.basketFactory.returnReadSlot(rb, false);
 						if(openDebug) {
 							logger.info("Fail to get element from basket remaiding:{}",rb.remainding());

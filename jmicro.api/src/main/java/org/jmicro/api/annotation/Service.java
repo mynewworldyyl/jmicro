@@ -71,7 +71,7 @@ public @interface Service {
 	 * 服务是否可监控，-1表示未定义，由别的地方定义，如系统环境变量，启动时指定等，0表示不可监控，1表示可以被监控
 	 * 可以被监控的意思是：系统启用埋点日志上报，服务请求开始，服务请求得到OK响应，服务超时，服务异常等埋点
 	 */
-	public int monitorEnable() default -1;
+	public int monitorEnable() default 0;
 	
 	/**
 	 * 服务级的日志启用标识
@@ -123,9 +123,9 @@ public @interface Service {
 	public int maxSpeed() default 0; //0无限制
 	
 	//统计服务数据基本时长，单位同baseTimeUnit确定  @link SMethod
-	public long timeWindow() default 1000*10;
+	public long timeWindow() default 1000*60;
 	
-	public int slotSize() default 100;
+	public int slotInterval() default 1000;
 	
 	/**
 	 * 采样统计数据周期，单位由baseTimeUnit确定

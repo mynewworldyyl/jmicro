@@ -141,7 +141,7 @@ public class SimpleObjectFactory implements IObjectFactory {
 			
 			obj = this.createObject(cls,true);
 			if(obj != null) {
-				cacheObj(cls,obj,true);
+				cacheObj(cls,obj,null);
 			}
 		}
 		return (T)obj;
@@ -222,24 +222,46 @@ public class SimpleObjectFactory implements IObjectFactory {
 			obj = cls.newInstance();
 			doAfterCreate(obj,null);
 			//will replace the proxy object if exist, this is no impact to client
-			cacheObj(cls,obj,false);
+			cacheObj(cls,obj,null);
 		} catch (InstantiationException | IllegalAccessException e) {
 			throw new CommonException("Fail to create obj for ["+cls.getName()+"]",e);
 		}
 		return obj;
 	}
 	
-	private void cacheObj(Class<?> cls,Object obj,boolean check){
+	private void cacheObj(Class<?> cls,Object obj,String componentName){
+		boolean success = false;
 		cls = ProxyObject.getTargetCls(cls);
-		if(check && objs.containsKey(cls)){
+		if(!objs.containsKey(cls)){
+			objs.put(cls, obj);
+			success = true;
+		/*	throw new CommonException("class["+cls.getName()+"] instance exist"
+					+ this.objs.get(cls).getClass().getName());*/
+		}
+		
+		if(!StringUtils.isEmpty(componentName) && !this.nameToObjs.containsKey(componentName)) {
+			this.nameToObjs.put(componentName, obj);
+			success = true;
+			/*throw new CommonException("componentName["+componentName+"] exist: " 
+					+ this.nameToObjs.get(componentName).getClass().getName());*/
+		} else {
+			String comName = this.getComName(cls);
+			if(!StringUtils.isEmpty(comName)){
+				this.nameToObjs.put(comName, obj);
+				success = true;
+			}
+		}
+		
+		//objs.put(cls, obj);
+		
+		if(!clsNameToObjs.containsKey(cls.getName())){
+			this.clsNameToObjs.put(cls.getName(), obj);
+			success = true;
+		}
+		
+		if(!success) {
 			throw new CommonException("class["+cls.getName()+"] instance exist");
 		}
-		objs.put(cls, obj);
-		String comName = this.getComName(cls);
-		if(!StringUtils.isEmpty(comName)){
-			this.nameToObjs.put(comName, obj);
-		}
-		this.clsNameToObjs.put(cls.getName(), obj);
 	}
 	
 	private boolean canCreate(Class<?> cls) {
@@ -335,7 +357,7 @@ public class SimpleObjectFactory implements IObjectFactory {
 		 */
 		//String dataOperatorName = Config.getCommandParam(Constants.DATA_OPERATOR, String.class, Constants.DEFAULT_DATA_OPERATOR);
 		
-		this.cacheObj(dataOperator.getClass(), dataOperator, true);
+		this.cacheObj(dataOperator.getClass(), dataOperator,null);
 		
 		Set<Object> systemObjs = new HashSet<>();
 		createComponentOrService(dataOperator,systemObjs);
@@ -383,7 +405,7 @@ public class SimpleObjectFactory implements IObjectFactory {
 		});
 		
 		//将自己也保存到实例列表里面
-		this.cacheObj(this.getClass(), this, true);
+		this.cacheObj(this.getClass(), this, null);
 		
 		Config cfg = (Config)objs.get(Config.class);
 		IRegistry registry = (IRegistry)this.get(IRegistry.class);
@@ -610,7 +632,7 @@ public class SimpleObjectFactory implements IObjectFactory {
 				} else {
 					obj = this.createObject(c, false);
 				}
-				this.cacheObj(c, obj, true);
+				this.cacheObj(c, obj, null);
 				
 				/*if(IDataOperator.class.isAssignableFrom(c) && dataOperatorName.equals(cann.value())){
 					if(dop == null) {
@@ -760,19 +782,25 @@ public class SimpleObjectFactory implements IObjectFactory {
 	@Override
 	public void regist(Object obj) {
 		this.doAfterCreate(obj, null);
-		this.cacheObj(obj.getClass(), obj,true);
+		this.cacheObj(obj.getClass(), obj,null);
 	}
 
 	@Override
 	public void regist(Class<?> clazz, Object obj) {
 		this.doAfterCreate(obj, null);
-		this.cacheObj(clazz, obj,true);
+		this.cacheObj(clazz, obj,null);
+	}
+	
+	@Override
+	public void regist(String comName, Object obj) {
+		this.doAfterCreate(obj, null);
+		this.cacheObj(obj.getClass(), obj,comName);
 	}
 
 	@Override
 	public <T> void registT(Class<T> clazz, T obj) {
 		this.doAfterCreate(obj, null);
-		this.cacheObj(clazz, obj,true);
+		this.cacheObj(clazz, obj,null);
 	}
 
 	@Override

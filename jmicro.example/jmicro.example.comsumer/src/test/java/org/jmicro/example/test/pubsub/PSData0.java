@@ -121,7 +121,7 @@ public final class PSData0 implements Serializable, ISerializeObject {
 		return (T) this.context.get(key);
 	}
 
-	public void encode(java.io.DataOutput __buffer, Object obj) throws java.io.IOException {
+	public void encode(java.io.DataOutput __buffer) throws java.io.IOException {
 		PSData0 __obj = this;
 		org.jmicro.api.codec.JDataOutput out = (org.jmicro.api.codec.JDataOutput) __buffer;
 		org.jmicro.api.codec.typecoder.TypeCoder __coder = org.jmicro.api.codec.TypeCoderFactory.getDefaultCoder();
@@ -268,7 +268,7 @@ public final class PSData0 implements Serializable, ISerializeObject {
 			out.write(flagIndex10, flag10);
 		} else { // block0
 			java.lang.Object __o10 = __val10;
-			((org.jmicro.api.codec.ISerializeObject) __o10).encode(__buffer, null);
+			((org.jmicro.api.codec.ISerializeObject) __o10).encode(__buffer);
 			out.write(flagIndex10, flag10);
 		} // end else block0
 

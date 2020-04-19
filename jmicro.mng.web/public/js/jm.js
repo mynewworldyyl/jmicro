@@ -348,7 +348,7 @@ jm.mng = {
     i18n : {
         data:{},
         get: function (key){
-            return data[key];
+            return !this.data ? "undefined" : this.data[key];
         },
         changeLang: function (lang,callback){
             let req =  this.__ccreq();
@@ -372,6 +372,44 @@ jm.mng = {
         },
 
         sn:'org.jmicro.mng.inter.ICommonManager',
+        ns : MNG,
+        v:'0.0.1',
+    },
+
+    monitor : {
+        data:{},
+
+        serverList: function (){
+            let req =  this.__ccreq();
+            req.method = 'serverList';
+            req.args = [];
+            let self = this;
+            return jm.rpc.callRpc(req);
+        },
+
+        status: function (srvKeys){
+            let req =  this.__ccreq();
+            req.method = 'status';
+            req.args = [srvKeys];
+            return jm.rpc.callRpc(req);
+        },
+
+        enable: function (srvKey,enable){
+            let req =  this.__ccreq();
+            req.method = 'enable';
+            req.args = [srvKey,enable];
+            return jm.rpc.callRpc(req);
+        },
+
+        __ccreq:function(){
+            let req = {};
+            req.serviceName=this.sn;
+            req.namespace = this.ns;
+            req.version = this.v;
+            return req;
+        },
+
+        sn:'org.jmicro.mng.inter.IMonitorServerManager',
         ns : MNG,
         v:'0.0.1',
     },

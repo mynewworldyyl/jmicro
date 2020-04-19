@@ -71,10 +71,12 @@ public final class ServiceItem{
 	
 	//private String instanceName="";
 	
+	private int code = 0;
+	
 	//开启debug模式
-	private int debugMode = -1;
+	private int debugMode = 0;
 		
-	private int monitorEnable = -1;
+	private int monitorEnable = 0;
 	
 	private int logLevel = MonitorConstant.LOG_ERROR;
 	
@@ -85,7 +87,7 @@ public final class ServiceItem{
 	private transient TimeUnit timeUnit = TimeUnit.MILLISECONDS;
 	
 	//统计服务数据基本时长，单位同baseTimeUnit确定 @link SMethod
-	private long timeWindow = -1;
+	private long timeWindow = 180000;
 	
 	private int slotSize = 60;
 	
@@ -488,5 +490,14 @@ public final class ServiceItem{
 	public void setCheckInterval(long checkInterval) {
 		this.checkInterval = checkInterval;
 	}
+
+	public int getCode() {
+		return code;
+	}
+
+	public void setCode(int code) {
+		this.code = code;
+	}
+	
 	
 }

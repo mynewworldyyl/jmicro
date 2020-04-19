@@ -16,14 +16,17 @@
  */
 package org.jmicro.api.monitor.v2;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.TimeUnit;
 
 import org.jmicro.api.IListener;
 import org.jmicro.api.JMicroContext;
@@ -40,8 +43,13 @@ import org.jmicro.api.config.Config;
 import org.jmicro.api.executor.ExecutorConfig;
 import org.jmicro.api.executor.ExecutorFactory;
 import org.jmicro.api.monitor.v1.MonitorConstant;
+import org.jmicro.api.monitor.v1.ServiceCounter;
 import org.jmicro.api.objectfactory.AbstractClientServiceProxy;
+import org.jmicro.api.objectfactory.IObjectFactory;
 import org.jmicro.api.raft.IDataOperator;
+import org.jmicro.api.registry.ServiceItem;
+import org.jmicro.api.service.ServiceLoader;
+import org.jmicro.common.CommonException;
 import org.jmicro.common.Constants;
 import org.jmicro.common.util.StringUtils;
 import org.slf4j.Logger;
@@ -61,6 +69,14 @@ public class MonitorManager {
 	
 	private static final String TYPE_SPERATOR = ",";
 	
+	private final Short[] TYPES  = {
+			MonitorConstant.Ms_Fail2BorrowBasket,MonitorConstant.Ms_SubmitCnt,MonitorConstant.Ms_FailReturnWriteBasket,
+			MonitorConstant.Ms_CheckLoopCnt,MonitorConstant.Ms_CheckerSubmitItemCnt,
+			MonitorConstant.Ms_TaskSuccessItemCnt,MonitorConstant.Ms_TaskFailItemCnt
+	};
+	
+	private String[] typeLabels = null; 
+	
 	//private static final String TYPES_LOCKER = TYPES_PATH;
 	
 	@Cfg("/MonitorManager/isMonitorServer")
@@ -75,6 +91,9 @@ public class MonitorManager {
 	private AbstractClientServiceProxy msPo;
 	
 	@Inject
+	private IObjectFactory of;
+	
+	@Inject
 	private IDataOperator op;
 	
 	@Inject
@@ -82,7 +101,7 @@ public class MonitorManager {
 	
 	private Map<String,Set<Short>> mkey2Types = new HashMap<>();
 	
-	private Set<Short> types = new HashSet<>();
+	private List<Short> types = new ArrayList<>();
 	
 	private BasketFactory<MRpcItem> basketFactory = null;
 	
@@ -91,6 +110,8 @@ public class MonitorManager {
 	private Object syncLocker = new Object();
 	
 	private ExecutorService executor = null;
+	
+	private MonitorManagerStatusAdapter statusMonitorAdapter;
 
 	public void init() {
 		
@@ -124,6 +145,22 @@ public class MonitorManager {
 		
 		msPo = (AbstractClientServiceProxy)((Object)this.monitorServer);
 		
+		typeLabels = new String[TYPES.length];
+		for(int i = 0; i < TYPES.length; i++) {
+			typeLabels[i] = MonitorConstant.MONITOR_VAL_2_KEY.get(TYPES[i]);
+		}
+		
+		statusMonitorAdapter = new MonitorManagerStatusAdapter(TYPES,typeLabels,
+				Config.getInstanceName()+"_MonitorManagerStatuCheck","MonitorManager");
+		
+		ServiceLoader sl = of.get(ServiceLoader.class);
+		ServiceItem si = sl.createSrvItem(IMonitorAdapter.class, Config.getInstanceName()+"."+MonitorManagerStatusAdapter.class.getName(), "0.0.1", IMonitorAdapter.class.getName());
+		
+		of.regist("MonitorManagerStatuCheckAdapter", statusMonitorAdapter);
+		
+		sl.registService(si,statusMonitorAdapter);
+		
+		
 		ExecutorConfig config = new ExecutorConfig();
 		config.setMsMaxSize(10);
 		config.setTaskQueueSize(500);
@@ -140,17 +177,27 @@ public class MonitorManager {
 			return false;
 		}
 		
-		IBasket<MRpcItem> b = cacheBasket.borrowWriteBasket();
+		IBasket<MRpcItem> b = cacheBasket.borrowWriteBasket(true);
 		if(b == null) {
+			if(this.statusMonitorAdapter != null && this.statusMonitorAdapter.isMonitoralbe()) {
+				this.statusMonitorAdapter.getServiceCounter().add(MonitorConstant.Ms_Fail2BorrowBasket, 1);
+			}
 			logger.error("borrow write basket fail");
 			return false;
 		}
-		b.add(item);
+		b.write(item);
 		
 		//没有可写元素时，强制转为读状态
 		if(!cacheBasket.returnWriteBasket(b, b.remainding() == 0)) {
+			if(this.statusMonitorAdapter != null && this.statusMonitorAdapter.isMonitoralbe()) {
+				this.statusMonitorAdapter.getServiceCounter().add(MonitorConstant.Ms_FailReturnWriteBasket, 1);
+			}
 			logger.error("readySubmit fail to return this basket");
 			return false;
+		}
+		
+		if(this.statusMonitorAdapter != null && this.statusMonitorAdapter.isMonitoralbe()) {
+			this.statusMonitorAdapter.getServiceCounter().add(MonitorConstant.Ms_SubmitCnt, 1);
 		}
 		
 		return true;
@@ -158,62 +205,100 @@ public class MonitorManager {
 	}
 	
 	public boolean readySubmit(MRpcItem item) {
-		IBasket<MRpcItem> b = basketFactory.borrowWriteBasket();
+		IBasket<MRpcItem> b = basketFactory.borrowWriteBasket(true);
 		if(b == null) {
+			if(this.statusMonitorAdapter != null && this.statusMonitorAdapter.isMonitoralbe()) {
+				this.statusMonitorAdapter.getServiceCounter().add(MonitorConstant.Ms_Fail2BorrowBasket, 1);
+			}
 			logger.error("readySubmit fail to borrow write basket");
 			return false;
 		}
-		b.add(item);
+		b.write(item);
 		if(!basketFactory.returnWriteBasket(b, true)) {
+			if(this.statusMonitorAdapter != null && this.statusMonitorAdapter.isMonitoralbe()) {
+				this.statusMonitorAdapter.getServiceCounter().add(MonitorConstant.Ms_FailReturnWriteBasket, 1);
+			}
 			logger.error("readySubmit fail to return this item");
 			return false;
 		}
 		
-		synchronized(syncLocker) {
-			syncLocker.notify();
+		if(this.statusMonitorAdapter != null && this.statusMonitorAdapter.isMonitoralbe()) {
+			this.statusMonitorAdapter.getServiceCounter().add(MonitorConstant.Ms_SubmitCnt, 1);
 		}
+		
+		/*synchronized(syncLocker) {
+			syncLocker.notify();
+		}*/
+		
 		return true;
 	}
 	
 	private void doWork() {
 		
+		while(msPo == null || !msPo.isUsable()) {
+			logger.info("Waiting for monitor server to ready!");
+			synchronized(syncLocker) {
+				try {
+					syncLocker.wait(1000);
+				} catch (InterruptedException e) {
+				}
+			}
+		}
+		
+		logger.info("Minitor manage work start working!");
+		
 		Set<MRpcItem> items = new HashSet<MRpcItem>();
 		int batchSize = 5;
+		
 		int maxSendInterval = 2000;
 		int checkInterval = 5000;
+		
 		long lastSentTime = System.currentTimeMillis();
-		long lastLoopTime = System.currentTimeMillis();
+		//long lastLoopTime = System.currentTimeMillis();
 		//long loopCnt = 0;
 		
 		while(true) {
 			try {
 				
+				if(this.statusMonitorAdapter.isMonitoralbe()) {
+					this.statusMonitorAdapter.getServiceCounter().add(MonitorConstant.Ms_CheckLoopCnt, 1);
+				}
+				
 				IBasket<MRpcItem> readBasket = this.basketFactory.borrowReadSlot();
-				if(readBasket == null || msPo == null || !msPo.isUsable()) {
+				if(readBasket == null) {
 					//超过5秒钟的缓存包，强制提交为读状态
 					long beginTime = System.currentTimeMillis();
-					IBasket<MRpcItem> wb = this.cacheBasket.borrowWriteBasket();
-					if(wb != null && !wb.isEmpty() && System.currentTimeMillis() - wb.firstWriteTime() > 5000) {
-						this.cacheBasket.returnWriteBasket(wb, true);
+					IBasket<MRpcItem> wb = null;
+					Iterator<IBasket<MRpcItem>> writeIte = this.cacheBasket.iterator(false);
+					while((wb = writeIte.next()) != null) {
+						if(!wb.isEmpty() && (beginTime - wb.firstWriteTime()) > 5000) {
+							this.cacheBasket.returnWriteBasket(wb, true);
+						} else {
+							this.cacheBasket.returnWriteBasket(wb, false);
+						}
 					}
 					
-					IBasket<MRpcItem> cb = null;
-					while((cb = this.cacheBasket.borrowReadSlot()) != null) {
-						if(System.currentTimeMillis() - wb.firstWriteTime() > 180000) { //超过3分钟
-							MRpcItem[] mrs = new MRpcItem[cb.remainding()];
-							cb.getAll(mrs);
+					//beginTime = System.currentTimeMillis();
+					IBasket<MRpcItem> rb = null;
+					Iterator<IBasket<MRpcItem>> readIte = this.cacheBasket.iterator(true);
+					while((rb = readIte.next()) != null) {
+						if(beginTime - rb.firstWriteTime() > 10000) { //超过10秒
+							MRpcItem[] mrs = new MRpcItem[rb.remainding()];
+							rb.readAll(mrs);
 							items.addAll(Arrays.asList(mrs));
-							cacheBasket.returnReadSlot(cb, true);
+							cacheBasket.returnReadSlot(rb, true);
 						} else {
 							//没超过3分钟，不做单独发送，等等下次正常RPC做附带发送，或下次检测超时
-							cacheBasket.returnReadSlot(cb, false);
+							cacheBasket.returnReadSlot(rb, false);
 						}
-						
 					}
+					
+					//检查监听器是否超时
+					statusMonitorAdapter.checkTimeout();
 					
 					//中间耗费的时间要算在睡眠时间里面，如果耗费大于需要睡眠时间，则不需要睡眠了，直接进入下一次循环
 					long costTime = System.currentTimeMillis() - beginTime;
-					if((costTime = checkInterval-costTime) > 0) {
+					if((costTime = (checkInterval-costTime)) > 0) {
 						synchronized(syncLocker) {
 							syncLocker.wait(costTime);
 						}
@@ -226,7 +311,7 @@ public class MonitorManager {
 				
 				while(readBasket != null) {
 					MRpcItem[] mrs = new MRpcItem[readBasket.remainding()];
-					readBasket.getAll(mrs);
+					readBasket.readAll(mrs);
 					items.addAll(Arrays.asList(mrs));
 					basketFactory.returnReadSlot(readBasket, true);
 					readBasket = this.basketFactory.borrowReadSlot();
@@ -243,21 +328,19 @@ public class MonitorManager {
 					IBasket<MRpcItem> cb = null;
 					while((cb = this.cacheBasket.borrowReadSlot()) != null) {
 						MRpcItem[] mrs = new MRpcItem[cb.remainding()];
-						cb.getAll(mrs);
+						cb.readAll(mrs);
 						items.addAll(Arrays.asList(mrs));
 						cacheBasket.returnReadSlot(cb, true);
 					}
 					
-					//loopCnt++;
-					if(System.currentTimeMillis() - lastLoopTime < 100) {
-						//double v = loopCnt/(System.currentTimeMillis() - lastLoopTime);
-						System.out.println("MonitorManager do submit: " + items.size());
-					}
-					lastLoopTime = System.currentTimeMillis();
-					
 					MRpcItem[] mrs = new MRpcItem[items.size()];
 					items.toArray(mrs);
 					//System.out.println("submit: " +mrs.length);
+					
+					if(this.statusMonitorAdapter.isMonitoralbe()) {
+						this.statusMonitorAdapter.getServiceCounter().add(MonitorConstant.Ms_CheckerSubmitItemCnt, items.size());
+					}
+					
 					this.executor.submit(new Worker(mrs));
 					items.clear();
 					lastSentTime = System.currentTimeMillis();
@@ -418,15 +501,28 @@ public class MonitorManager {
 				if(localMonitorServer != null) {
 					//本地包不需要RPC，直接本地调用
 					localMonitorServer.submit(items);
+					if(statusMonitorAdapter.isMonitoralbe()) {
+						statusMonitorAdapter.getServiceCounter().add(MonitorConstant.Ms_TaskSuccessItemCnt, items.length);
+					}
 				} else if(monitorServer != null) {
 					//不能保证百分百发送成功，会有数据丢失
 					//为了提供更高的性能，丢失几个监控数据正常情况下可以接受
 					//如果监控服务同时部署两个以上，而两个监控服务器同时不可用的机率很低，等同于不可能，从而丢数据的可能性也趋于不可能
 					monitorServer.submit(items);
+					if(statusMonitorAdapter.isMonitoralbe()) {
+						statusMonitorAdapter.getServiceCounter().add(MonitorConstant.Ms_TaskSuccessItemCnt, items.length);
+					}
 				} else {
+					if(statusMonitorAdapter.isMonitoralbe()) {
+						statusMonitorAdapter.getServiceCounter().add(MonitorConstant.Ms_TaskFailItemCnt, items.length);
+					}
 					logger.error("Worker Monitor server is NULL");
 				}
 			} catch (Exception e) {
+				if(statusMonitorAdapter.isMonitoralbe()) {
+					statusMonitorAdapter.getServiceCounter().add(MonitorConstant.Ms_TaskFailItemCnt, items.length);
+					//statusMonitorAdapter.getServiceCounter().add(MonitorConstant.Ms_TaskExceptionCount, items.length);
+				}
 				logger.error("MonitorManager.worker.run",e);
 			}
 		}
@@ -593,6 +689,143 @@ public class MonitorManager {
 		return Collections.unmodifiableMap(mkey2Types);
 	}
 	
+	public Short[] getTypes() {
+		if(types.isEmpty()) {
+			return null;
+		}
+		
+		Short[] ts = new Short[types.size()];
+		types.toArray(ts);
+		
+		return ts;
+	}
 	
+	
+	public class MonitorManagerStatusAdapter implements IMonitorAdapter{
+		
+		private boolean monitoralbe = false;
+		
+		private long lastStatusTime = 0;
+		
+		private ServiceCounter sc = null;
+		
+		private String group = null;
+		
+		public final Short[] TYPES;
+		
+		public String[] typeLabels  = null;
+		
+		private String key;
+		
+		private MonitorManagerStatusAdapter(Short[] ts, String[] labels, String key,String group) {
+			if(ts == null || ts.length == 0) {
+				throw new CommonException("Monitor status type cannot be null");
+			}
+			if(StringUtils.isEmpty(key)) {
+				throw new CommonException("Monitor status checker KEY cannot be NULL");
+			}
+			
+			if(StringUtils.isEmpty(group)) {
+				this.group = "defalutMonitor";
+			}else {
+				this.group = group;
+			}
+			
+			TYPES = ts;
+			this.typeLabels = labels;
+			this.key = key;
+			this.init0();
+			sc = new ServiceCounter(this.key,TYPES,60*3L,1L,TimeUnit.SECONDS);
+		}
+		
+		private void init0() {
+			typeLabels = new String[TYPES.length];
+			for(int i = 0; i < TYPES.length; i++) {
+				typeLabels[i] = MonitorConstant.MONITOR_VAL_2_KEY.get(TYPES[i]);
+			}
+		}
+		
+		public ServiceCounter getServiceCounter() {
+			return sc;
+		}		
+		
+		public void checkTimeout() {
+			if(monitoralbe && (System.currentTimeMillis() - lastStatusTime > 300000)) {//5分钏没有状态请求
+				logger.warn("ServiceCounter timeout 5 minutes, and stop it");
+				this.enableMonitor(false);
+			}
+		}
+		
+		@Override
+		public MonitorServerStatus status() {
+			if(!monitoralbe) {
+				enableMonitor(true);
+			}
+			
+			lastStatusTime = System.currentTimeMillis();
+			
+			MonitorServerStatus s = new MonitorServerStatus(); 
+			//s.setInstanceName(Config.getInstanceName());
+			//s.setSubsriberSize(regSubs.size());
+			//s.getSubsriber2Types().putAll(this.monitorManager.getMkey2Types());
+			//s.setSendCacheSize(sentItems.size());
+			
+			double[] qpsArr = new double[TYPES.length];
+			double[] curArr = new double[TYPES.length];
+			double[] totalArr = new double[TYPES.length];
+			
+			s.setCur(curArr);
+			s.setQps(qpsArr);
+			s.setTotal(totalArr);
+			
+			for(int i = 0; i < TYPES.length; i++) {
+				Short t = TYPES[i];
+				
+				totalArr[i] = sc.getTotal(t);
+				 curArr[i] = new Double(sc.get(t));
+				 if(t == MonitorConstant.Ms_CheckLoopCnt) {
+					 //System.out.println("");
+				 }
+				 qpsArr[i] = sc.getQps(TimeUnit.SECONDS, t);
+				
+			}
+			
+			return s;
+		}
+
+		
+		@Override
+		public void enableMonitor(boolean enable) {
+			if(enable && !monitoralbe) {
+				sc.start();
+				monitoralbe = true;
+			} else if(!enable && monitoralbe) {
+				sc.stop();
+				monitoralbe = false;
+			}
+		}
+
+
+		@Override
+		public MonitorInfo info() {
+			MonitorInfo info = new MonitorInfo();
+			info.setGroup("MonitorManager");
+			info.setTypeLabels(typeLabels);
+			info.setTypes(TYPES);
+			info.setRunning(monitoralbe);
+			info.setInstanceName(Config.getInstanceName());
+			//info.getSubsriber2Types().putAll(monitorManager.getMkey2Types());;
+			return info;
+		}
+
+		public boolean isMonitoralbe() {
+			return monitoralbe;
+		}
+
+		@Override
+		public void reset() {
+		}
+		
+	}
 	
 }

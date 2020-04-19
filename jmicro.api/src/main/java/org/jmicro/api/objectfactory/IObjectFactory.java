@@ -61,6 +61,8 @@ public interface IObjectFactory {
 	
 	<T> void registT(Class<T> clazz,T obj);
 	
+	void regist(String comName, Object obj);
+	
 	/**
 	 * 判断clazz类所对应的实例是否存在，如果存在则返回true，否则返回false
 	 * @param clazz

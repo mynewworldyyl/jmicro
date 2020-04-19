@@ -36,6 +36,7 @@ import org.jmicro.api.annotation.SMethod;
 import org.jmicro.api.annotation.Service;
 import org.jmicro.api.annotation.Subscribe;
 import org.jmicro.api.config.Config;
+import org.jmicro.api.idgenerator.ComponentIdServer;
 import org.jmicro.api.monitor.v1.IMonitorDataSubmiter;
 import org.jmicro.api.monitor.v1.MonitorConstant;
 import org.jmicro.api.net.IServer;
@@ -89,13 +90,14 @@ public class ServiceLoader{
 	@Inject(required=true)
 	private IRegistry registry;
 	
+	@Inject
+	private ComponentIdServer idGenerator;
+	
 	private Map<String,IServer> servers = new HashMap<>();
 	
-	private Map<String,Object> services = new ConcurrentHashMap<String,Object>();
+	private Map<Integer,Object> services = new ConcurrentHashMap<Integer,Object>();
 	
 	//private Map<String,Class<?>> servicesAnno = new ConcurrentHashMap<String,Class<?>>();
-	
-	
 	
 	@JMethod("init")
 	public void init(){
@@ -164,19 +166,19 @@ public class ServiceLoader{
 		}
 	}
 	
-	public Object getService(String impl){
-		Class<?> cls = ClassScannerUtils.getIns().getClassByName(impl);
+	public Object getService(Integer code){
+		//Class<?> cls = ClassScannerUtils.getIns().getClassByName(impl);
 		/*
 		if(Modifier.isAbstract(cls.getModifiers()) || Modifier.isInterface(cls.getModifiers())){
 			throw new CommonException("impl is not a concrete class: "+impl);
 		}
 		*/
-		for(Object srv : services.values()){
+		/*for(Object srv : services.values()){
 			if(cls.isInstance(srv)){
 				return srv;
 			}
-		}
-		return null;
+		}*/
+		return services.get(code);
 	}
 	
 	private Set<Class<?>> loadServiceClass() {
@@ -219,7 +221,13 @@ public class ServiceLoader{
 		
 		ServiceItem si = createSrvItemByClass(c);
 		
+		int code = idGenerator.getIntId(ServiceItem.class);
+		si.setCode(code);
+		
 		registService(si,srv);
+		
+		//of.regist(code+"", srv);
+		
 		//String key = this.serviceName();
 		//services.put(si.getImpl(), srv);
 		
@@ -237,8 +245,8 @@ public class ServiceLoader{
 			return null;
 		}
 		
-		if(srv != null && !services.containsKey(item.getImpl())) {
-			services.put(item.getImpl(), srv);
+		if(srv != null && !services.containsKey(item.getCode())) {
+			services.put(item.getCode(), srv);
 		}
 		
 		int nettyPort = 0;
@@ -293,6 +301,19 @@ public class ServiceLoader{
 		return item;
 	}
 	
+	public ServiceItem createSrvItem(Class interfacez,String ns,String ver,String impl) {
+		if(!interfacez.isInterface()) {
+			logger.error("RPC service have to be public interface: "+interfacez.getName());
+		}
+		ServiceItem si = this.createSrvItem(interfacez.getName(), ns, ver, impl);
+		
+		for(Method m : interfacez.getMethods()) {
+			createSrvMethod(si,m.getName(),m.getParameterTypes());
+		}
+		
+		return si;
+	}
+	
 	public ServiceItem createSrvItem(String srvName,String ns,String ver,String impl) {
 		ServiceItem item = new ServiceItem();
 		UniqueServiceKey usk = new UniqueServiceKey();
@@ -304,6 +325,9 @@ public class ServiceLoader{
 		
 		item.setKey(usk);
 		item.setImpl(impl);
+		
+		int code = idGenerator.getIntId(ServiceItem.class);
+		item.setCode(code);
 		
 		//item.setMaxFailBeforeDegrade(anno.maxFailBeforeDegrade()!=100 || intAnno == null ?anno.maxFailBeforeDegrade():intAnno.maxFailBeforeDegrade());
 		//item.setRetryCnt();
@@ -404,7 +428,7 @@ public class ServiceLoader{
 		item.setMaxSpeed(anno.maxSpeed() > 0 || intAnno == null ? anno.maxSpeed() : intAnno.maxSpeed());
 		item.setBaseTimeUnit( StringUtils.isEmpty(anno.baseTimeUnit()) || intAnno == null ? anno.baseTimeUnit() : intAnno.baseTimeUnit());
 		item.setTimeWindow(anno.timeWindow() <= 0 || intAnno == null ?anno.timeWindow():intAnno.timeWindow());
-		item.setSlotSize(anno.slotSize() <= 0 || intAnno == null ?anno.slotSize():intAnno.slotSize());
+		item.setSlotSize(anno.slotInterval() <= 0 || intAnno == null ?anno.slotInterval():intAnno.slotInterval());
 		item.setCheckInterval(anno.checkInterval() <= 0 || intAnno == null ?anno.checkInterval():intAnno.checkInterval());
 		
 		item.setAvgResponseTime(anno.avgResponseTime()!=-1 || intAnno == null ? anno.avgResponseTime() : intAnno.avgResponseTime());
@@ -505,7 +529,7 @@ public class ServiceLoader{
 					sm.setNeedResponse(manno.needResponse());
 					sm.setFailResponse(manno.failResponse());
 					sm.setTimeWindow(manno.timeWindow()<=0?item.getTimeWindow():manno.timeWindow());
-					sm.setSlotSize(manno.slotSize()<=0?item.getSlotSize():manno.slotSize());
+					sm.setSlotInterval(manno.slotInterval()<=0?item.getSlotSize():manno.slotInterval());
 					
 					sm.setCheckInterval(manno.checkInterval()<=0?item.getCheckInterval():manno.checkInterval());
 					
@@ -539,7 +563,7 @@ public class ServiceLoader{
 					sm.setLogLevel(intMAnno.logLevel());
 					sm.setDebugMode(intMAnno.debugMode());
 					sm.setTimeWindow(intMAnno.timeWindow()<=0?item.getTimeWindow():intMAnno.timeWindow());
-					sm.setSlotSize(intMAnno.slotSize()<=0?item.getSlotSize():intMAnno.slotSize());
+					sm.setSlotInterval(intMAnno.slotInterval()<=0?item.getSlotSize():intMAnno.slotInterval());
 					sm.setCheckInterval(intMAnno.checkInterval()<=0?item.getCheckInterval():intMAnno.checkInterval());
 					sm.setBaseTimeUnit(StringUtils.isEmpty(intMAnno.baseTimeUnit())? item.getBaseTimeUnit():intMAnno.baseTimeUnit());
 					

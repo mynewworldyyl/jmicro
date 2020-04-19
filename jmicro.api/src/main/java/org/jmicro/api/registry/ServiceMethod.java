@@ -62,8 +62,8 @@ public final class ServiceMethod {
 	//统计服务数据基本时长，单位同baseTimeUnit确定 @link SMethod
 	private long timeWindow = -1;
 	
-	//循环时钟槽位个数
-	private int slotSize = 10;
+	//循环时钟每个单位的时间长度
+	private int slotInterval = 1;
 	
 	//采样统计数据周期，单位由baseTimeUnit确定
 	private long checkInterval = -1;
@@ -393,12 +393,12 @@ public final class ServiceMethod {
 		this.baseTimeUnit = baseTimeUnit;
 	}
 
-	public int getSlotSize() {
-		return slotSize;
+	public int getSlotInterval() {
+		return slotInterval;
 	}
 
-	public void setSlotSize(int slotSize) {
-		this.slotSize = slotSize;
+	public void setSlotInterval(int slotInterval) {
+		this.slotInterval = slotInterval;
 	}
 
 	public String getTopic() {

@@ -234,7 +234,7 @@ public class JMicroContext  {
 		context.setParam(JMicroContext.CLIENT_ARGSTR, UniqueServiceMethodKey.paramsStr(req.getArgs()));
 		context.mergeParams(req.getRequestParams());
 		
-		ServiceItem si = registry.getServiceByImpl(req.getImpl());
+		ServiceItem si = registry.getServiceByCode(Integer.parseInt(req.getImpl()));
 		if(si == null){
 			if(req.isLoggable()) {
 				SF.doRequestLog(MonitorConstant.LOG_ERROR,JMicroContext.class,null," service ITEM not found");
@@ -248,7 +248,7 @@ public class JMicroContext  {
 		context.setObject(Constants.SERVICE_ITEM_KEY, si);
 		context.setObject(Constants.SERVICE_METHOD_KEY, sm);
 		
-		Object obj = serviceLoader.getService(req.getImpl());
+		Object obj = serviceLoader.getService(Integer.parseInt(req.getImpl()));
 		
 		if(obj == null){
 			SF.doRequestLog(MonitorConstant.LOG_ERROR,JMicroContext.class,null," service INSTANCE not found");

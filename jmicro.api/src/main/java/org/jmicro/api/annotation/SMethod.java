@@ -72,7 +72,7 @@ public @interface SMethod {
 	 * 统计数据的基本时间窗口，小于0表示由Service注解确定，大于0表示启用
 	 * @return
 	 */
-	public long timeWindow() default -1;
+	public long timeWindow() default 1000*60;
 	
 	
 	/**
@@ -82,7 +82,7 @@ public @interface SMethod {
 	 */
 	public long checkInterval() default -1;
 	
-	public int slotSize() default -1;
+	public int slotInterval() default 1000;
 	
 	/**
 	 * 空值表示由Service注解确定

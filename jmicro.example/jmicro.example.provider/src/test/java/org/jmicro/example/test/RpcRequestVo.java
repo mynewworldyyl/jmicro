@@ -34,7 +34,7 @@ public class RpcRequestVo implements Serializable, ISerializeObject {
 
 	private transient boolean finish = false;
 
-	public void encode(java.io.DataOutput __buffer, Object obj) throws java.io.IOException {
+	public void encode(java.io.DataOutput __buffer) throws java.io.IOException {
 		RpcRequestVo __obj = this;
 		org.jmicro.api.codec.JDataOutput out = (org.jmicro.api.codec.JDataOutput) __buffer;
 		org.jmicro.api.codec.typecoder.TypeCoder __coder = org.jmicro.api.codec.TypeCoderFactory.getDefaultCoder();

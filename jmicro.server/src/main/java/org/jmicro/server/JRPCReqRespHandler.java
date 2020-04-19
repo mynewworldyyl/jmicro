@@ -150,7 +150,7 @@ public class JRPCReqRespHandler implements IMessageHandler{
 			//响应消息
 			s.write(msg);
 
-			SF.doResponseLog(MonitorConstant.LOG_DEBUG, TAG,null,"response success");
+			SF.doResponseLog(MonitorConstant.LOG_DEBUG, TAG, null,"response success");
 		
 			//SF.doSubmit(MonitorConstant.SERVER_REQ_OK, req,resp,null);
 			

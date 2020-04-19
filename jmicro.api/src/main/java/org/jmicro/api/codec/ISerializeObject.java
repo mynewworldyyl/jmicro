@@ -6,7 +6,7 @@ import java.io.IOException;
 
 public abstract interface ISerializeObject {
 
-	public abstract void encode(DataOutput buffer,Object obj)  throws IOException;
+	public abstract void encode(DataOutput buffer)  throws IOException;
 	
 	public abstract  void decode(DataInput buffer)  throws IOException;
 	

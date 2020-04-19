@@ -57,7 +57,7 @@ public class TestRpcRequest {
 		 req.setServiceName("3333");
 		 
 		 JDataOutput out = new JDataOutput();
-		 req.encode(out, req);
+		 req.encode(out);
 		 
 		 JDataInput ji = new JDataInput(out.getBuf());
 			

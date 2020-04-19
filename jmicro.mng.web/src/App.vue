@@ -11,10 +11,7 @@
               CONFIG
           </Menu-item>
 
-          <Menu-item name="router">
-              <Icon type="ios-people"></Icon>
-              ROUTER
-          </Menu-item>
+
 
           <Menu-item name="statisService">
               <Icon type="ios-stats" />
@@ -26,21 +23,25 @@
               WARNING
           </Menu-item>
 
-          <Menu-item name="log">
-              <Icon type="ios-filing"></Icon>
-              LOG
-          </Menu-item>
-
-          <Menu-item name="shell">
-              <Icon type="ios-cog"></Icon>
-              SHELL
-          </Menu-item>
+          <Submenu name="m">
+              <template slot="title">
+                  <Icon type="ios-analytics" />
+                  MONITORS
+              </template>
+              <MenuItem name="monitors"> <Icon type="ios-cog"></Icon>MONITORS</MenuItem>
+              <MenuItem name="pubsubServer"> <Icon type="ios-cog"></Icon>PUBSUBS</MenuItem>
+              <MenuItem name="breakerServer"> <Icon type="ios-cog"></Icon>BREAKERS</MenuItem>
+              <MenuItem name="apiGatewayServer"> <Icon type="ios-cog"></Icon>GATEWAYS</MenuItem>
+          </Submenu>
 
           <Submenu name="o">
               <template slot="title">
                   <Icon type="ios-analytics" />
                   OTHERS
               </template>
+              <Menu-item name="router"><Icon type="ios-people"></Icon>ROUTER</Menu-item>
+              <Menu-item name="log"><Icon type="ios-filing"></Icon>LOG</Menu-item>
+              <Menu-item name="shell"><Icon type="ios-cog"></Icon>SHELL</Menu-item>
               <MenuItem name="help"> <Icon type="ios-cog"></Icon>HELP</MenuItem>
               <MenuItem name="about"> <Icon type="ios-cog"></Icon>ABOUT</MenuItem>
               <MenuItem name="contact"> <Icon type="ios-cog"></Icon>CONTACT ME</MenuItem>
@@ -69,7 +70,7 @@ export default {
 
   methods:{
       toRouter(key) {
-          if(key == 'o' || key == this.curRouter) {
+          if(key == 'o' || key == this.curRouter || key == 'm') {
               return;
           }
           this.curRouter = key;

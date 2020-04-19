@@ -417,6 +417,30 @@ public class RegistryImpl implements IRegistry {
 		}	
 	}
 	
+	@Override
+	public ServiceItem getServiceByCode(int code) {
+		if(this.needWaiting) {
+			logger.warn("Do getServiceByCode waiting get code:{}",code);
+			setNeedWaiting();
+			return IWaitingAction.doAct(()->getServiceByCode0(code),null);
+		} else {
+			return getServiceByCode0(code);
+		}	
+	}
+	
+	private ServiceItem getServiceByCode0(int code) {
+		for(ServiceItem si : this.srvManager.getAllItems()){
+			if(this.openDebug) {
+				logger.debug("Impl:"+si.getImpl());
+			}
+			if(si.getCode() == code){
+				return si;
+			}
+		}
+		logger.error("Service with code: "+code+" not found!");
+		return null;
+	}
+	
 	private ServiceItem getServiceByImpl0(String impl) {
 		for(ServiceItem si : this.srvManager.getAllItems()){
 			if(this.openDebug) {

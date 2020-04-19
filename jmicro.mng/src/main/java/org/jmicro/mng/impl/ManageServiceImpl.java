@@ -68,7 +68,7 @@ public class ManageServiceImpl implements IManageService {
 		    		sm.setMonitorEnable(method.getMonitorEnable());
 		    		sm.setRetryCnt(method.getRetryCnt());
 		    		sm.setRetryInterval(method.getRetryInterval());
-		    		sm.setSlotSize(method.getSlotSize());
+		    		sm.setSlotInterval(method.getSlotInterval());
 		    		sm.setTimeout(method.getTimeout());
 		    		sm.setBaseTimeUnit(method.getBaseTimeUnit());
 		    		sm.setTimeWindow(method.getTimeWindow());

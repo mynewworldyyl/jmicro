@@ -30,7 +30,7 @@ import redis.clients.jedis.JedisPool;
  * @author Yulei Ye
  * @date 2019年1月3日 下午1:46:17
  */
-@Component(value=Constants.DEFAULT_IDGENERATOR, level=2)
+@Component(value=Constants.DEFAULT_IDGENERATOR, level=1)
 //@Service(namespace="RedisBaseIdServer", version="0.0.1")
 public class JMicroRedisBaseIdGenerator implements IIdServer {
 	

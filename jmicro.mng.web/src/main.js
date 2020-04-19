@@ -12,6 +12,7 @@ import JShell from './components/shell/JShell.vue'
 import JLog from './components/log/JLog.vue'
 import JWarning from './components/warning/JWarning.vue'
 import JStatis from './components/statis/JStatis.vue'
+import JMonitor from './components/monitor/JMonitor.vue'
 
 Vue.use(iView)
 Vue.use(VueRouter)
@@ -26,6 +27,7 @@ const routes = [
     { path: '/log', component: JLog },
     { path: '/statisService', component: JStatis },
     { path: '/warning', component: JWarning },
+    { path: '/monitors', component: JMonitor },
     { path: '/', component: JService },
 
 

@@ -51,7 +51,7 @@ public class ServiceCounter implements IServiceCounter<Short>{
 	//服务唯一标识,粒度到服务方法,=服务名+名称空间+版本+方法名+方法参数标识
 	private String serviceKey;
 	
-	private long slotSize;
+	private int slotSize;
 	
 	private long slotSizeInMilliseconds;
 	
@@ -62,6 +62,8 @@ public class ServiceCounter implements IServiceCounter<Short>{
 	private long timeWindow;
 	
 	private TimeUnit unit;
+	
+	private boolean staring = false;
 	
 	//统计事件的类型,每种类型对应一种计数器
 	private ConcurrentHashMap<Short,Counter> counters = new ConcurrentHashMap<>();
@@ -81,20 +83,29 @@ public class ServiceCounter implements IServiceCounter<Short>{
 		this.unit = unit;
 	}*/
 	
-	public ServiceCounter(String serviceKey,Short[] types,long timeWindow,long slotSize,TimeUnit unit) {
+	/**
+	 * 
+	 * @param serviceKey
+	 * @param types
+	 * @param timeWindow 统计窗口总时长
+	 * @param slotInterval 单位时间大小，timeWindow/slotInterval=总单位个数，且timeWindow%slotInterval必有等于0
+	 * @param unit timeWindow 和 slotInterval的时间单位
+	 */
+	public ServiceCounter(String serviceKey,Short[] types,long timeWindow,long slotInterval,TimeUnit unit) {
+		logger.info("Add serviceCounter key:{},window:{}, slotSize:{}, unit:{}",serviceKey,timeWindow,slotSize,unit.name());
 		if(StringUtils.isEmpty(serviceKey)) {
 			throw new CommonException("Service Key cannot be null");
 		}
 		if(timeWindow <= 0) {
-			throw new CommonException("Invalid timeWindow: " + timeWindow);
+			throw new CommonException("Invalid timeWindow: " + timeWindow+",KEY: "+serviceKey);
 		}
-		if(slotSize <= 0) {
-			throw new CommonException("Invalid slotSize: " + slotSize);
+		if(slotInterval <= 0) {
+			throw new CommonException("Invalid slotInterval: " + slotInterval + ",KEY: "+serviceKey);
 		}
 		
 		this.serviceKey = serviceKey;
 		this.unit = unit;
-		this.slotSize = slotSize;
+		//this.slotInterval = slotInterval;
 		this.timeWindow = timeWindow;
 		
 		timeWindowInMilliseconds = TimeUtils.getTime(timeWindow, unit,TimeUnit.MILLISECONDS);
@@ -103,11 +114,13 @@ public class ServiceCounter implements IServiceCounter<Short>{
 			throw new CommonException("Invalid timeWindow to MILLISECONDS : " + timeWindow);
 		}
 		
-		slotSizeInMilliseconds = timeWindowInMilliseconds / this.slotSize;
+		slotSizeInMilliseconds = TimeUtils.getTime(slotInterval, unit,TimeUnit.MILLISECONDS);
 		
-		if(slotSizeInMilliseconds == 0 || timeWindowInMilliseconds % slotSizeInMilliseconds != 0) {
-			throw new CommonException("timeWindow%slotSizeInMilliseconds must be zero,but:" +
-					timeWindow + "%" + slotSizeInMilliseconds+"="+(timeWindow % slotSizeInMilliseconds));
+		slotSize =(int) (timeWindowInMilliseconds / this.slotSizeInMilliseconds);
+		
+		if(timeWindowInMilliseconds % slotSizeInMilliseconds != 0) {
+			throw new CommonException("timeWindow % slotInterval must be zero,but:" +
+					timeWindow + "%" + slotInterval+"="+(timeWindow % slotInterval));
 		}
 		
 		if(types != null && types.length > 0) {
@@ -117,13 +130,31 @@ public class ServiceCounter implements IServiceCounter<Short>{
 			}
 		}
 		
-		logger.info("Add serviceCounter key:{},window:{}, slotSizeInMilliseconds:{}",serviceKey,timeWindowInMilliseconds,slotSizeInMilliseconds);
+		logger.info("ServiceCounter config, timeWindowInMilliseconds:{}, slotSizeInMilliseconds:{}",timeWindowInMilliseconds,slotSizeInMilliseconds);
 		
-		TimerTicker.getTimer(timers, slotSizeInMilliseconds).addListener(serviceKey, clock,null,true);
 	}
 	
-	public void destroy() {
-		
+	private void reset() {
+		for(Counter cnt : counters.values()) {
+			cnt.reset();
+		}
+	}
+	
+	public void stop() {
+		if(!staring) {
+			return;
+		}
+		TimerTicker.getTimer(timers, slotSizeInMilliseconds).removeListener(serviceKey, true);
+		staring = false;
+	}
+	
+	public void start() {
+		if(staring) {
+			return;
+		}
+		staring = true;
+		reset();
+		TimerTicker.getTimer(timers, slotSizeInMilliseconds).addListener(serviceKey, clock,null,true);
 	}
 
 	@Override
@@ -239,7 +270,7 @@ public class ServiceCounter implements IServiceCounter<Short>{
 				MonitorConstant.MONITOR_VAL_2_KEY.get(type),
 				serviceKey,timeWindowInMilliseconds,slotSizeInMilliseconds);
 		
-		Counter cnt = new Counter(type,timeWindowInMilliseconds,slotSizeInMilliseconds);
+		Counter cnt = new Counter(type/*,timeWindowInMilliseconds,slotSizeInMilliseconds*/);
 		//TimerTicker.getTimer(timers, slotSizeInMilliseconds).addListener(key, cnt,null,true);
 		counters.put(type, cnt);
 		supportTypes.add(type);
@@ -359,12 +390,12 @@ public class ServiceCounter implements IServiceCounter<Short>{
 		private final int type;
 		//时间窗口,单位毫秒,统计只保持时间窗口内的数据,超过时间窗口的数据自动丢弃
 		//统计数据平滑向前移动,单位毫秒
-		private final long timeWindow;
+		//private final long timeWindow;
 		
 		//每个槽位占用时间长度,单位毫秒
-		private final long slotSizeInMilliseconds;
+		//private final long slotSizeInMilliseconds;
 		
-		private final int slotLen;
+		//private final int slotLen;
 		
 		//private final String id;
 		
@@ -383,22 +414,22 @@ public class ServiceCounter implements IServiceCounter<Short>{
 		 *     并且是必须满足timeWindow=N*slotSizeInMilliseconds, N是非负整数，N就是槽位个数
 		 *     
 		 */
-		public Counter(int type,long timeWindow,long slotSizeInMilliseconds) {
+		public Counter(int type/*,long timeWindow,long slotSizeInMilliseconds*/) {
 			//this.id = id;
 			this.type = type;
-			this.timeWindow = timeWindow;
-			this.slotSizeInMilliseconds = slotSizeInMilliseconds;
+			//this.timeWindow = timeWindow;
+			//this.slotSizeInMilliseconds = slotSizeInMilliseconds;
 			
 			//计算槽位个数
-			this.slotLen = (int)(timeWindow / slotSizeInMilliseconds);
-			this.slots = new Slot[this.slotLen];
+			//this.slotLen = (int)(timeWindow / slotSizeInMilliseconds);
+			this.slots = new Slot[slotSize];
 			
 			this.header = 0;
 			
 			long curTime = System.currentTimeMillis();
 			//槽位 有效时间=slotSizeInMilliseconds ~ (timeStart + slotSizeInMilliseconds)
 			//如果当前时间在有效时间内，则定义为当前槽位
-			for(int i = 0; i < this.slotLen; i++) {
+			for(int i = 0; i < slotSize; i++) {
 				this.slots[i] = new Slot(0,0);
 			}
 			
@@ -406,7 +437,7 @@ public class ServiceCounter implements IServiceCounter<Short>{
 			if(openDebug) {
 				logger.info("Create Counter type:{}, timeWindow:{},slotSizeInMilliseconds:{},slotLen:{},curTime:{}",
 						MonitorConstant.MONITOR_VAL_2_KEY.get(type),
-						this.timeWindow,this.slotSizeInMilliseconds,this.slotLen,curTime);
+						timeWindowInMilliseconds,slotSizeInMilliseconds,slotSize,curTime);
 			}
 			
 			
@@ -490,9 +521,9 @@ public class ServiceCounter implements IServiceCounter<Short>{
 			try {
 				if((isLock = locker.tryLock(100, TimeUnit.MILLISECONDS))) {
 					Slot preSlot = this.slots[header];
-					header = (header+1) % slotLen;
+					header = (header+1) % slotSize;
 					//当前槽位
-					this.slots[header].setTimeEnd(preSlot.getTimeEnd()+this.slotSizeInMilliseconds);
+					this.slots[header].setTimeEnd(preSlot.getTimeEnd() + slotSizeInMilliseconds);
 					this.slots[header].reset();
 				}
 			} catch (InterruptedException e) {
@@ -511,6 +542,15 @@ public class ServiceCounter implements IServiceCounter<Short>{
 		 */
 		public long getTotal() {
 			return total.get();
+		}
+		
+		public void reset() {
+			for(int i = 0; i < slotSize; i++) {
+				this.slots[i].reset();
+			}
+			this.header = 0;
+			total.set(0);
+			this.slots[0].setTimeEnd(System.currentTimeMillis()+slotSizeInMilliseconds);
 		}
 	}
 	

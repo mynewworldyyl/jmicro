@@ -19,7 +19,7 @@ public class TestServiceCounter {
 	@Test
 	public void testServiceCounter() {
 		Random r = new Random(1000);
-		ServiceCounter count = new ServiceCounter("test",null,10,10,TimeUnit.SECONDS);
+		ServiceCounter count = new ServiceCounter("test",null,10,2,TimeUnit.SECONDS);
 		short t = 1;
 		count.addCounter(t);
 		for(;true;) {
@@ -41,7 +41,7 @@ public class TestServiceCounter {
 	public void testServiceCounterSingleVal() {
 		final Random ran = new Random(100);
 		ServiceCounter sc =  new ServiceCounter("testServiceCounterSingleVal", 
-				ISession.STATIS_TYPES,2,2,TimeUnit.SECONDS);
+				ISession.STATIS_TYPES,2,1,TimeUnit.SECONDS);
 		while(true) {
 			sc.increment(MonitorConstant.REQ_SUCCESS);
 			Long succp = sc.get(MonitorConstant.REQ_SUCCESS);
@@ -55,7 +55,7 @@ public class TestServiceCounter {
 	public void testMutilThreadCounter() {
 		final Random ran = new Random(500);
 		ServiceCounter sc =  new ServiceCounter("testMutilThreadCounter", 
-				ISession.STATIS_TYPES,30000,100,TimeUnit.MILLISECONDS);
+				ISession.STATIS_TYPES,30000,1000,TimeUnit.MILLISECONDS);
 		
 		Runnable r = ()->{
 			while(true) {

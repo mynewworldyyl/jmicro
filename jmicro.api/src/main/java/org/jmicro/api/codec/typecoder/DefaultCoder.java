@@ -179,7 +179,7 @@ public class DefaultCoder implements TypeCoder<Object> {
 			//buffer.writeShort(code);
 			if(val instanceof ISerializeObject) {
 				//System.out.println("Use Instance "+valCls.getName());
-				((ISerializeObject)val).encode(buffer, null);
+				((ISerializeObject)val).encode(buffer);
 			} else {
 				//System.out.println("Use Encoder "+valCls.getName());
 				ISerializer so = null;

@@ -274,6 +274,8 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
     			throw new RpcException(req,"Service [" + req.getServiceName() + "] not found!");
     		}
         	
+        	req.setImpl(si.getCode()+"");
+        	
         	Server s = si.getServer(Constants.TRANSPORT_NETTY);
         	
         	cxt.setParam(JMicroContext.REMOTE_HOST, s.getHost());

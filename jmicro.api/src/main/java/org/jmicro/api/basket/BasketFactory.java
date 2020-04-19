@@ -1,5 +1,11 @@
 package org.jmicro.api.basket;
 
+import java.util.Iterator;
+
+import org.jmicro.common.CommonException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
  * 专门对外提供篮子服务，并保证篮子不会重复借出，直到篮子归还为止。
  * 如果借出的是读篮子，归还前必须把篮子的全部数据读完，否则不能归还。
@@ -8,14 +14,57 @@ package org.jmicro.api.basket;
  * @author Yulei Ye
  * @date 2020年4月3日
  */
-public class BasketFactory<T> {
+public class BasketFactory<T>{
 
+	private final static Logger logger = LoggerFactory.getLogger(BasketFactory.class);
+	
 	private int size = 10;
 	private IBasket<T>[] baskets = null;
 	private boolean[] using = null;
 	
 	private Object readLocker = new Object();
 	private Object writeLocker = new Object();
+	
+	public Iterator<IBasket<T>> iterator(boolean read) {
+		return new Iterator<IBasket<T>>() {
+			int index = 0;
+			@Override
+			public boolean hasNext() {
+				throw new CommonException("Not support");
+			}
+
+			@Override
+			public IBasket<T> next() {
+				
+					if(index >= size) {
+						return null;
+					}
+				
+					if(read) {
+						synchronized(writeLocker) {
+							for(int i = index; i < size; i++) {
+								if(!using[i] && baskets[i].isReadStatus()) {
+									using[i] = true;
+									index = i+1;
+									return baskets[i];
+								}
+							}
+						}
+					} else {
+						synchronized(writeLocker) {
+							for(int i = index; i < size; i++) {
+								if(!using[i] && baskets[i].isWriteStatus()) {
+									using[i] = true;
+									index = i+1;
+									return baskets[i];
+								}
+							}
+						}
+					}
+					return null;
+				}
+		};
+	}
 	
 	@SuppressWarnings("unchecked")
 	public BasketFactory(int size,int maxCapacityOfBasket) {
@@ -28,7 +77,7 @@ public class BasketFactory<T> {
 		}
 	}
 	
-	public IBasket<T> borrowWriteBasket() {
+	public IBasket<T> borrowWriteBasket(boolean ...doLog) {
 		synchronized(writeLocker) {
 			for(int i =0; i < size; i++) {
 				if(!using[i] && baskets[i].isWriteStatus()) {
@@ -37,11 +86,27 @@ public class BasketFactory<T> {
 				}
 			}
 		}
+		
+		if(doLog.length == 1 && doLog[0]) {
+			StringBuffer us = new StringBuffer("USING: ");
+			StringBuffer sbstatus = new StringBuffer("WRITE: ");
+			StringBuffer slot = new StringBuffer("BASKET: ");
+			for(int i =0; i < size; i++) {
+				us.append(using[i]).append(",");
+				sbstatus.append(baskets[i].isWriteStatus()).append(",");
+				slot.append(baskets[i].remainding()).append(",");
+			}
+			us.append("\n").append(sbstatus.toString()).append("\n").append(slot.toString()).append("\n")
+			.append("=================================");
+			System.out.println(us.toString());
+		}
+		
+		
 		return null;
 	}
 	
 	public IBasket<T> borrowReadSlot() {
-		synchronized(readLocker) {
+		synchronized(writeLocker) {
 			for(int i =0; i < size; i++) {
 				if(!using[i] && baskets[i].isReadStatus()) {
 					using[i] = true;
@@ -79,6 +144,7 @@ public class BasketFactory<T> {
 	private boolean doReturn(IBasket<T> b,boolean returnStatus) {
 		int idx = getBasketIndex(b);
 		if(idx < 0) {
+			logger.error("return basket is not belong this basket factory!");
 			return false;
 		}
 		
@@ -114,8 +180,9 @@ public class BasketFactory<T> {
 			firstWriteTime = 0;
 		}
 		
-		public boolean add(E elt) {
+		public boolean write(E elt) {
 			if(readStatus) {
+				logger.error("Basket status is read status, not write status!");
 				return false;
 			}
 			if(writeIndex < this.capacity) {
@@ -124,23 +191,29 @@ public class BasketFactory<T> {
 					firstWriteTime = System.currentTimeMillis();
 				}
 				return true;
-			}
-			return false;
-		}
-		
-		public boolean add(E[] elts) {
-			if(readStatus) {
+			}else {
+				logger.error("Basket is full, cannot write now!");
 				return false;
 			}
-			if(writeIndex + elts.length <= this.capacity) {
-				System.arraycopy(elts, 0, s, writeIndex, elts.length);
-				writeIndex += elts.length;
+			
+		}
+		
+		public boolean write(E[] elts,int srcPosition,int len) {
+			if(readStatus) {
+				logger.error("Basket status is read status, not write status!");
+				return false;
+			}
+			if(writeIndex + len <= this.capacity) {
+				System.arraycopy(elts, srcPosition, s, writeIndex, len);
+				writeIndex += len;
 				if(firstWriteTime == 0) {
 					firstWriteTime = System.currentTimeMillis();
 				}
 				return true;
+			} else {
+				logger.error("Basket is full, cannot write now! NEED SIZE:"+elts.length+", CAN USE: "+this.remainding());
+				return false;
 			}
-			return false;
 		}
 		
 		public int remainding() {
@@ -158,6 +231,7 @@ public class BasketFactory<T> {
 				//由读状态变为写状态，当前元素个数必须小于容量
 				if(remainding() > 0) {
 					//还剩余未读元素，必须读完才能交换
+					logger.error("Have to read all the element before return this basket size: "+remainding());
 					return false;
 				} else {
 					this.readStatus = false;
@@ -172,6 +246,7 @@ public class BasketFactory<T> {
 					this.readStatus = true;
 					return true;
 				} else {
+					logger.error("No element to read for this basket");
 					return false;
 				}			
 			}		
@@ -185,7 +260,7 @@ public class BasketFactory<T> {
 			return !this.readStatus;
 		}
 		
-		public boolean getAll(E[] arr) {
+		public boolean readAll(E[] arr) {
 			if(!readStatus) {
 				return false;
 			}
@@ -196,16 +271,19 @@ public class BasketFactory<T> {
 			}
 			
 			for(int i = 0; i < size ; i++) {
-				arr[i] = get();
+				arr[i] = read();
 			}
 			
 			return true;
 		}
 		
 		@SuppressWarnings("unchecked")
-		public E get() {
+		public E read() {
 			if(!readStatus || remainding() == 0) {
 				return null;
+			}
+			if(readIndex >=9) {
+				System.out.print("");
 			}
 			E e = (E)this.s[++readIndex];
 			this.s[readIndex] = null;

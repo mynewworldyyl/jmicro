@@ -9,9 +9,9 @@ public interface IBasket<T> {
 	 */
 	public boolean isEmpty();
 	
-	public boolean add(T elt);
+	public boolean write(T elt);
 	
-	public boolean add(T[] elts);
+	public boolean write(T[] elts,int srcPosition,int len);
 	
 	public int remainding();
 	
@@ -21,7 +21,7 @@ public interface IBasket<T> {
 	
 	public boolean isWriteStatus();
 	
-	public boolean getAll(T[] arr);
+	public boolean readAll(T[] arr);
 	
-	public T get();
+	public T read();
 }

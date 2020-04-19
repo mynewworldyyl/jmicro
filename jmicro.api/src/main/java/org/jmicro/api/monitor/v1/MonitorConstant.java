@@ -127,21 +127,24 @@ public final class MonitorConstant {
 	
 	public static final short CLIENT_READ_BYTES = 0X03FD;
 	
-	public static final short Monotor_Server_ReceiveItemCount = 0X04FD;
+	public static final short Ms_ReceiveItemCnt = 0X04FD;
 	
-	public static final short Monotor_Server_ReceiveItemQps = 0X05FD;
+	public static final short Ms_FailItemCount = 0X05FD;
 	
-	public static final short Monotor_Server_SubmitTaskCount = 0X06FD;
+	public static final short Ms_CheckerSubmitItemCnt = 0X06FD;
 	
-	public static final short Monotor_Server_TaskNormalCount = 0X07FD;
+	public static final short Ms_TaskSuccessItemCnt = 0X07FD;
 	
-	public static final short Monotor_Server_TaskExceptionCount = 0X08FD;
+	public static final short Ms_TaskFailItemCnt = 0X08FD;
 	
-	public static final short Monotor_Server_SubmitCount = 0X09FD;
+	public static final short Ms_SubmitCnt = 0X09FD;
 	
-	public static final short Monotor_Server_SubmitQps = 0X0AFD;
+	public static final short Ms_Fail2BorrowBasket = 0X0AFD;
 	
-	public static final short Monotor_Server_CheckExceptionCount = 0X0BFD;
+	public static final short Ms_CheckerExpCnt = 0X0BFD;
+	public static final short Ms_CheckLoopCnt = 0X0CFD;
+	
+	public static final short Ms_FailReturnWriteBasket = 0X0DFD;
 	
 	
 	//总成功数  业务失败，RPC成功 两者之和为总成功RPC数

@@ -28,7 +28,7 @@ public class SimpleRpcImpl implements ISimpleRpc {
 			testingArgs="gv/4AAEQ//aPCkFyZSB5b3UgT0s=",//测试参数
 			monitorEnable=1,
 			timeWindow=5*60000,//统计时间窗口5分钟
-			slotSize=100,
+			slotInterval=100,
 			checkInterval=5000,//采样周期2S
 			timeout=5000,
 			retryInterval=1000,

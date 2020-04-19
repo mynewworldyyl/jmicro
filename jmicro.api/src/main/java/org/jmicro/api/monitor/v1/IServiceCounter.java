@@ -23,6 +23,9 @@ package org.jmicro.api.monitor.v1;
  */
 public interface IServiceCounter<T> {
 
+	void stop();
+	
+	void start();
 	/**
 	 *  取指定类型的时间窗口内的统计总数
 	 * @param type

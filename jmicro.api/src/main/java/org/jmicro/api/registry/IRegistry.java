@@ -48,6 +48,8 @@ public interface IRegistry{
 	
 	ServiceItem getServiceByImpl(String impl);
 	
+	ServiceItem getServiceByCode(int code);
+	
 	/**
 	 * 务名称，名称空间，版本维度做他量监听
 	 */

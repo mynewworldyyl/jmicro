@@ -132,7 +132,7 @@ public class TestCodec {
 		//for (int i = cnt; i > 0; i--) {
 
 			JDataOutput out = new JDataOutput();
-			obj.encode(out, obj);
+			obj.encode(out);
 
 			JDataInput ji = new JDataInput(out.getBuf());
 			TestSerializeObject robj = new TestSerializeObject();

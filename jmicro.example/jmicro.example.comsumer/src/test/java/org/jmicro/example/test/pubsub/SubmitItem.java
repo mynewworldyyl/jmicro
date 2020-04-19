@@ -255,7 +255,7 @@ public final class SubmitItem {
 		return exMsg;
 	}
 
-	public void encode(java.io.DataOutput __buffer, Object obj) throws java.io.IOException {
+	public void encode(java.io.DataOutput __buffer) throws java.io.IOException {
 		SubmitItem __obj = this;
 		org.jmicro.api.codec.JDataOutput out = (org.jmicro.api.codec.JDataOutput) __buffer;
 		org.jmicro.api.codec.typecoder.TypeCoder __coder = org.jmicro.api.codec.TypeCoderFactory.getDefaultCoder();
@@ -391,7 +391,7 @@ public final class SubmitItem {
 			flag13 |= org.jmicro.common.Constants.NULL_VAL;
 			out.write(flagIndex13, flag13);
 		} else { // block0
-			((org.jmicro.api.codec.ISerializeObject) __val13).encode(__buffer, null);
+			((org.jmicro.api.codec.ISerializeObject) __val13).encode(__buffer);
 			out.write(flagIndex13, flag13);
 		} // end else block0
 

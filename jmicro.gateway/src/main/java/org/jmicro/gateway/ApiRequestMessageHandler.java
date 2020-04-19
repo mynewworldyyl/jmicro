@@ -154,7 +154,7 @@ public class ApiRequestMessageHandler implements IMessageHandler{
 					}
 					
 					if(!sm.isNeedResponse()) {
-						result = m.invoke(srv, req.getArgs());
+						m.invoke(srv, req.getArgs());
 						if(this.openDebug) {
 							SF.doRequestLog(MonitorConstant.LOG_DEBUG, TAG, null," no need response");
 						}

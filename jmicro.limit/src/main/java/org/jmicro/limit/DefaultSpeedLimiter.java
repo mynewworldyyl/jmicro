@@ -73,7 +73,7 @@ public class DefaultSpeedLimiter extends AbstractLimiter implements ILimiter{
 			key = key.intern();
 			synchronized(key) {
 				if(!limiterData.containsKey(key)){
-					sc =  new ServiceCounter("key", TYPES,2,2,TimeUnit.SECONDS);
+					sc =  new ServiceCounter(key, TYPES,120,1,TimeUnit.SECONDS);
 					this.limiterData.put(key, sc);
 					al = new AtomicInteger(0);
 					this.als.put(key, al);

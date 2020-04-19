@@ -242,7 +242,7 @@ public class JMicro {
 		}else if(cls.isAnnotationPresent(CodecFactory.class)){
 			return cls.getAnnotation(CodecFactory.class).value();
 		}*/
-		return cls.getName();
+		return null;
 	
 	}
 	

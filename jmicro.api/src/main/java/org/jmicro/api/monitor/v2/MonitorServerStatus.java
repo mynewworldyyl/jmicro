@@ -1,55 +1,20 @@
 package org.jmicro.api.monitor.v2;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
-
 import org.jmicro.api.annotation.SO;
-import org.jmicro.api.monitor.v1.MonitorConstant;
 
 @SO
 public class MonitorServerStatus {
 	
-	public static final short receiveItemCount = MonitorConstant.Monotor_Server_ReceiveItemCount;
+	//private int subsriberSize;
 	
-	public static final short receiveItemQps = MonitorConstant.Monotor_Server_ReceiveItemQps;
+	private String srvKey;
 	
-	public static final short submitTaskCount = MonitorConstant.Monotor_Server_SubmitTaskCount;
-	
-	public static final short taskNormalCount = MonitorConstant.Monotor_Server_TaskNormalCount;
-	
-	public static final short taskExceptionCount = MonitorConstant.Monotor_Server_TaskExceptionCount;
-	
-	public static final short submitCount = MonitorConstant.Monotor_Server_SubmitCount;
-	
-	public static final short submitQps = MonitorConstant.Monotor_Server_SubmitQps;
-	
-	public static final short checkExceptionCount = MonitorConstant.Monotor_Server_CheckExceptionCount;
-	
-	public static final Short[] TYPES  = {
-			receiveItemCount,receiveItemQps,submitTaskCount,taskNormalCount,taskExceptionCount,
-			submitQps,submitCount
-	};
-	
-	private String instanceName;
-	
-	private int subsriberSize;
-	
-	private int sendCacheSize;
-	
-	private Map<String,Set> subsriber2Types = new HashMap<>();
-	
-	private Map<String,Double> statisData = null;
+	private double[] qps = null;
+	private double[] cur = null;
+	private double[] total = null;
 
-	public String getInstanceName() {
-		return instanceName;
-	}
 
-	public void setInstanceName(String instanceName) {
-		this.instanceName = instanceName;
-	}
-
-	public int getSubsriberSize() {
+	/*public int getSubsriberSize() {
 		return subsriberSize;
 	}
 
@@ -63,22 +28,38 @@ public class MonitorServerStatus {
 
 	public void setSendCacheSize(int sendCacheSize) {
 		this.sendCacheSize = sendCacheSize;
+	}*/
+
+	public double[] getQps() {
+		return qps;
 	}
 
-	public Map<String, Set> getSubsriber2Types() {
-		return subsriber2Types;
+	public String getSrvKey() {
+		return srvKey;
 	}
 
-	public void setSubsriber2Types(Map<String, Set> subsriber2Types) {
-		this.subsriber2Types = subsriber2Types;
+	public void setSrvKey(String srvKey) {
+		this.srvKey = srvKey;
 	}
 
-	public Map<String, Double> getStatisData() {
-		return statisData;
+	public void setQps(double[] qps) {
+		this.qps = qps;
 	}
 
-	public void setStatisData(Map<String, Double> statisData) {
-		this.statisData = statisData;
+	public double[] getCur() {
+		return cur;
+	}
+
+	public void setCur(double[] cur) {
+		this.cur = cur;
+	}
+
+	public double[] getTotal() {
+		return total;
+	}
+
+	public void setTotal(double[] total) {
+		this.total = total;
 	}
 
 }
