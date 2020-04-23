@@ -92,7 +92,7 @@ public class ServiceCounter implements IServiceCounter<Short>{
 	 * @param unit timeWindow 和 slotInterval的时间单位
 	 */
 	public ServiceCounter(String serviceKey,Short[] types,long timeWindow,long slotInterval,TimeUnit unit) {
-		logger.info("Add serviceCounter key:{},window:{}, slotSize:{}, unit:{}",serviceKey,timeWindow,slotSize,unit.name());
+		logger.info("Add serviceCounter key:{},window:{}, slotInterval:{}, unit:{}",serviceKey,timeWindow,slotInterval,unit.name());
 		if(StringUtils.isEmpty(serviceKey)) {
 			throw new CommonException("Service Key cannot be null");
 		}
@@ -108,15 +108,15 @@ public class ServiceCounter implements IServiceCounter<Short>{
 		//this.slotInterval = slotInterval;
 		this.timeWindow = timeWindow;
 		
-		timeWindowInMilliseconds = TimeUtils.getTime(timeWindow, unit,TimeUnit.MILLISECONDS);
+		this.timeWindowInMilliseconds = TimeUtils.getTime(timeWindow, unit,TimeUnit.MILLISECONDS);
 		
-		if(timeWindowInMilliseconds <= 0) {
+		if(this.timeWindowInMilliseconds <= 0) {
 			throw new CommonException("Invalid timeWindow to MILLISECONDS : " + timeWindow);
 		}
 		
-		slotSizeInMilliseconds = TimeUtils.getTime(slotInterval, unit,TimeUnit.MILLISECONDS);
+		this.slotSizeInMilliseconds = TimeUtils.getTime(slotInterval, unit,TimeUnit.MILLISECONDS);
 		
-		slotSize =(int) (timeWindowInMilliseconds / this.slotSizeInMilliseconds);
+		this.slotSize =(int) (timeWindowInMilliseconds / this.slotSizeInMilliseconds);
 		
 		if(timeWindowInMilliseconds % slotSizeInMilliseconds != 0) {
 			throw new CommonException("timeWindow % slotInterval must be zero,but:" +
@@ -189,7 +189,7 @@ public class ServiceCounter implements IServiceCounter<Short>{
 
 	@Override
 	public boolean add(Short type, long val) {
-		Counter c = getCounter(type,false);
+		Counter c = getCounter(type,true);
 		if(c != null) {
 			c.add(val);
 			return true;

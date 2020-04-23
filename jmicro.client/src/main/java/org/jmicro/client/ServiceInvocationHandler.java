@@ -27,6 +27,7 @@ import org.jmicro.api.exception.RpcException;
 import org.jmicro.api.idgenerator.ComponentIdServer;
 import org.jmicro.api.monitor.v1.SF;
 import org.jmicro.api.monitor.v2.MRpcItem;
+import org.jmicro.api.monitor.v2.MonitorManager;
 import org.jmicro.api.net.IRequest;
 import org.jmicro.api.net.IResponse;
 import org.jmicro.api.net.InterceptorManager;
@@ -58,6 +59,9 @@ public class ServiceInvocationHandler implements InvocationHandler{
 	@Inject
 	private ComponentIdServer idGenerator;
 	
+	@Inject
+	private MonitorManager monitor;
+	
 	public ServiceInvocationHandler(){}
 	
 	@Override
@@ -71,6 +75,7 @@ public class ServiceInvocationHandler implements InvocationHandler{
 			JMicroContext cxt = JMicroContext.get();
 			
 			ServiceItem si = cxt.getParam(Constants.SERVICE_ITEM_KEY, null);
+			
 			req = new RpcRequest();
 			req.setMethod(method.getName());
 			req.setServiceName(si.getKey().getServiceName());
@@ -85,7 +90,7 @@ public class ServiceInvocationHandler implements InvocationHandler{
 				//新建一个RPC链路开始
 				JMicroContext.lid();
 				cxt.setParam(Constants.NEW_LINKID, true);
-				if(JMicroContext.get().isMonitor()) {
+				if(JMicroContext.get().isMonitorable()) {
 					SF.linkStart(TAG.getName(),req);
 					MRpcItem mi = cxt.getMRpcItem();
 					mi.setReq(req);
@@ -121,7 +126,7 @@ public class ServiceInvocationHandler implements InvocationHandler{
 				JMicroContext.get().removeParam(Constants.NEW_LINKID);
 			}
 			JMicroContext.get().debugLog(0);
-			JMicroContext.get().submitMRpcItem();
+			JMicroContext.get().submitMRpcItem(monitor);
 		}
        /* if("intrest".equals(method.getName())) {
         	//代码仅用于测试

@@ -133,6 +133,10 @@ public class ServiceLoader{
 		exportService();
 		logger.info("export service finish!");
 	}
+	
+	public boolean hashServer() {
+		return !this.servers.isEmpty();
+	}
 
 	private Object getService(String clsName,String namespace,String version){
 		
@@ -301,14 +305,34 @@ public class ServiceLoader{
 		return item;
 	}
 	
-	public ServiceItem createSrvItem(Class interfacez,String ns,String ver,String impl) {
+	public ServiceItem createSrvItem(Class<?> interfacez,String ns,String ver,String impl) {
 		if(!interfacez.isInterface()) {
 			logger.error("RPC service have to be public interface: "+interfacez.getName());
 		}
-		ServiceItem si = this.createSrvItem(interfacez.getName(), ns, ver, impl);
+		//ServiceItem 
+		ServiceItem si = null;
+		if(interfacez.isAnnotationPresent(Service.class)) {
+			si = this.getServiceItems(interfacez);
+			if(StringUtils.isNotEmpty(ns)) {
+				si.getKey().setNamespace(UniqueServiceKey.namespace(ns));
+			}
+			
+			if(StringUtils.isNotEmpty(ver)) {
+				si.getKey().setVersion(UniqueServiceKey.version(ver));
+			}
+			
+			if(StringUtils.isNotEmpty(impl)) {
+				si.setImpl(impl);
+			}
+		}else {
+			si = this.createSrvItem(interfacez.getName(), ns, ver, impl);
+			for(Method m : interfacez.getMethods()) {
+				createSrvMethod(si,m.getName(),m.getParameterTypes());
+			}
+		}
 		
-		for(Method m : interfacez.getMethods()) {
-			createSrvMethod(si,m.getName(),m.getParameterTypes());
+		if(si.getCode() == 0) {
+			si.setCode(idGenerator.getIntId(ServiceItem.class));
 		}
 		
 		return si;
@@ -326,8 +350,6 @@ public class ServiceLoader{
 		item.setKey(usk);
 		item.setImpl(impl);
 		
-		int code = idGenerator.getIntId(ServiceItem.class);
-		item.setCode(code);
 		
 		//item.setMaxFailBeforeDegrade(anno.maxFailBeforeDegrade()!=100 || intAnno == null ?anno.maxFailBeforeDegrade():intAnno.maxFailBeforeDegrade());
 		//item.setRetryCnt();
@@ -394,11 +416,15 @@ public class ServiceLoader{
 		Service anno = srvCls.getAnnotation(Service.class);
 		Class<?> interfacez = anno.infs();
 		if(interfacez == null || interfacez == Void.class){
-			Class<?>[] ints = srvCls.getInterfaces();
-			if(ints == null || ints.length != 1) {
-				throw new CommonException("service ["+srvCls.getName()+"] have to implement one and only one interface.");
+			if(proxySrv.isInterface()) {
+				interfacez = srvCls;
+			}else {
+				Class<?>[] ints = srvCls.getInterfaces();
+				if(ints == null || ints.length != 1) {
+					throw new CommonException("service ["+srvCls.getName()+"] have to implement one and only one interface.");
+				}
+				interfacez = ints[0];
 			}
-			interfacez = ints[0];
 		}
 		
 		Service intAnno = null;

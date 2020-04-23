@@ -68,7 +68,7 @@ public class NettyClientSessionManager implements IClientSessionManager{
 	private static final AttributeKey<IClientSession> sessionKey = 
 			AttributeKey.newInstance(Constants.IO_SESSION_KEY+System.currentTimeMillis());
 	
-	AttributeKey<Boolean> monitorEnableKey = AttributeKey.newInstance(Constants.MONITOR_ENABLE_KEY);
+	AttributeKey<Boolean> monitorEnableKey = AttributeKey.newInstance(JMicroContext.IS_MONITORENABLE);
 	
 	private final Map<String,IClientSession> sessions = new ConcurrentHashMap<>();
 	
@@ -140,7 +140,7 @@ public class NettyClientSessionManager implements IClientSessionManager{
     
     private Boolean monitorEnable(ChannelHandlerContext ctx) {
     	 Boolean v = ctx.channel().attr(this.monitorEnableKey).get();
-		 return v == null ? JMicroContext.get().isMonitor():v;
+		 return v == null ? JMicroContext.get().isMonitorable():v;
     }
     
     @Override
@@ -211,10 +211,10 @@ public class NettyClientSessionManager implements IClientSessionManager{
 	      	            s.putParam(Constants.IO_SESSION_KEY, ctx);
 	      	            s.setOpenDebug(openDebug);
 	      	           
-	      	            s.putParam(Constants.MONITOR_ENABLE_KEY, JMicroContext.get().isMonitor());
+	      	            s.putParam(JMicroContext.IS_MONITORENABLE, JMicroContext.get().isMonitorable());
 	      	           
 	      	            ctx.channel().attr(sessionKey).set(s);
-	      	            ctx.channel().attr(monitorEnableKey).set(JMicroContext.get().isMonitor());;
+	      	            ctx.channel().attr(monitorEnableKey).set(JMicroContext.get().isMonitorable());;
 	   	            
 	      	            s.setDumpDownStream(dumpDownStream);
 	        		    s.setDumpUpStream(dumpUpStream);

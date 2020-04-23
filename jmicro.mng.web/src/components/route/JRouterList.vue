@@ -19,6 +19,10 @@
 
 <script>
 
+    import TreeNode from "../common/JTreeNode.js"
+
+    const GROUP = 'router';
+
     export default {
         name: 'JRouterList',
         data () {
@@ -90,8 +94,9 @@
                     let tn = type2TypeNode[n.val.type];
                     if(!tn) {
                         tn = new TreeNode(n.val.type,n.val.type,[],null,n);
+                        tn.group = GROUP;
                         if(n.val.type == selectId) {
-                            tn.selected=true;
+                            tn.selected = true;
                         }
                         type2TypeNode[n.val.type] = tn;
                         tn.type='t';
@@ -102,6 +107,7 @@
                     let grp = type2groups[grpId];
                     if(!grp) {
                         grp = new TreeNode(grpId, n.val.group,null,tn,[]);
+                        grp.group = GROUP;
                         type2groups[grpId] = grp;
                         grp.type='g';
                         tn.addChild(grp);
@@ -122,42 +128,6 @@
             }
 
         },
-    }
-
-    export class TreeNode{
-
-        constructor(id='',title='',children=[],parent=null,val=null){
-            this.id= id;
-            this.title= title;
-            this.children= children;
-            this.val = val;
-            this.parent = parent;
-            this.type='';
-        }
-
-        addChild(node) {
-            this.children.push(node);
-        }
-
-        removeChild(node) {
-            let idx = this.indexOfChild(node);
-            if(idx >=0) {
-                this.children.splice(idx,1);
-            }
-        }
-
-        indexOfChild(node) {
-            if(!this.children || this.children.length == 0) {
-                return -1;
-            }
-            for(let i = 0; i < this.children.length; i++) {
-                if(this.children[i]==node) {
-                    return i;
-                }
-            }
-            return -1;
-        }
-
     }
 
 </script>

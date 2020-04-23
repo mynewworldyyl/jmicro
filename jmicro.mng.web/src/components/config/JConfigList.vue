@@ -16,12 +16,16 @@
 
 <script>
 
+    import TreeNode from  "../common/JTreeNode.js"
+
+    const GROUP = 'config';
+
     export default {
         name: 'JConfigList',
 
         mounted(){
             let self = this;
-            this.__getChildren(null,'/',function(data){
+            this.__getChildren(null,window.jm.mng.CONFIG_ROOT,function(data){
                 self.configs = data;
             });
         },
@@ -37,42 +41,54 @@
             },
 
             __getChildren(parent,path,cb) {
-                var parseNode = function(parentNode) {
+                let parseNode = function(valNode) {
 
-                    parentNode.title = parentNode.name;
-                    parentNode.id = parentNode.path;
-
-                    if(!parentNode.children || parentNode.children.length == 0) {
-                        return
-                    }
-                    parentNode.leaf = [];
-
-                    for(let i = 0; i < parentNode.children.length; i++) {
-                        let n = parentNode.children[i];
-                        if(n.children != null && n.children.length > 0) {
-                            parseNode(n);
-                        } else {
-                            parentNode.leaf.push(n);
-                        }
+                    if(!valNode.children || valNode.children.length == 0) {
+                        return null;
                     }
 
-                    if(parentNode.leaf.length > 0) {
-                        for(let i = 0; i < parentNode.leaf.length; i++ ) {
-                            let idx = parentNode.children.indexOf(parentNode.leaf[i]);
-                            parentNode.children.splice(idx,1);
-                        }
+                    let r = new TreeNode(valNode.path, valNode.name, [],null, valNode, valNode.name);
+                    r.group = GROUP;
+                    r.label = valNode.name;
+
+                    let leaf = [];
+                    for(let i = 0; i < valNode.children.length; i++) {
+                        let n = valNode.children[i];
+                        let c = parseNode(n);
+                         if(c) {
+                             c.parent = r;
+                             r.addChild(c);
+                             // valNode.children.splice(i,1);
+                         } else {
+                             leaf.push(n);
+                         }
                     }
+                    valNode.children = leaf;
+                    return r;
                 }
-                window.jm.mng.conf.getChildren(path,true).then(function(nodes){
+
+                window.jm.mng.conf.getChildren(path,true)
+                    .then(function(nodes){
                     let ch = [];
-                    if(parent != null ) {
-                        ch = parent.children
-                    }
+                    let valNode = { path: path, name:path, val:null,children:[]};
+                    let root = new TreeNode(path, path, [], null, valNode, valNode.name);
+                        root.group = GROUP;
+                        root.label = valNode.name;
+                        root.expand = true;
+
                     for(let i = 0; i < nodes.length; i++) {
-                        parseNode(nodes[i]);
-                        ch.push(nodes[i]);
+                        let o = parseNode(nodes[i]);
+                        if(o) {
+                           root.addChild(o);
+                        } else {
+                            valNode.children.push(nodes[i]);
+                        }
                     }
-                    cb(ch);
+                    if(valNode.children.length > 0){
+                        ch.push(root);
+                    }
+
+                    cb([root]);
                 }).catch(function(err){
                     window.console.log(err);
                 });
@@ -89,9 +105,7 @@
 
         data () {
             return {
-                configs: [
-
-                ]
+                configs: []
             }
         },
 

@@ -355,7 +355,7 @@ jm.mng = {
             req.method = 'getI18NValues';
             req.args = [lang];
             let self = this;
-            m.rpc.callRpc(req).then((data)=>{
+            jm.rpc.callRpc(req).then((data)=>{
                 self.data = data;
                 callback();
             }).then((err) => {

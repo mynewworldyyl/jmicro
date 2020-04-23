@@ -5,32 +5,32 @@ import VueRouter from 'vue-router'
 import iView from 'view-design'
 import 'view-design/dist/styles/iview.css'
 
-import JConfig from './components/config/JConfig.vue'
+import JMicroEditor from  './components/JMicroEditor.vue'
+
+/*
 import JService from './components/service/JService.vue'
+import JConfig from './components/config/JConfig.vue'
 import JRouter from './components/route/JRouter.vue'
 import JShell from './components/shell/JShell.vue'
 import JLog from './components/log/JLog.vue'
 import JWarning from './components/warning/JWarning.vue'
 import JStatis from './components/statis/JStatis.vue'
-import JMonitor from './components/monitor/JMonitor.vue'
+import JMonitor from './components/monitor/JMonitor.vue'*/
 
 Vue.use(iView)
-Vue.use(VueRouter)
 Vue.use(window.jm)
-
 Vue.config.productionTip = false
 
+Vue.use(VueRouter)
 const routes = [
-    { path: '/config', component: JConfig },
+   /* { path: '/config', component: JConfig },
     { path: '/router', component: JRouter },
     { path: '/shell', component: JShell },
     { path: '/log', component: JLog },
     { path: '/statisService', component: JStatis },
     { path: '/warning', component: JWarning },
-    { path: '/monitors', component: JMonitor },
-    { path: '/', component: JService },
-
-
+    { path: '/monitors', component: JMonitor },*/
+    { path: '/', component: JMicroEditor },
 ];
 
 const router = new VueRouter({

@@ -22,6 +22,7 @@ import java.util.Map;
 import java.util.Timer;
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.jmicro.api.JMicroContext;
 import org.jmicro.api.client.IClientSession;
 import org.jmicro.api.client.IClientSessionManager;
 import org.jmicro.api.codec.Decoder;
@@ -57,7 +58,7 @@ public class ApiGatewayClientSessionManager implements IClientSessionManager {
 	private static final AttributeKey<IClientSession> sessionKey = 
 			AttributeKey.newInstance(Constants.IO_SESSION_KEY+System.currentTimeMillis());
 	
-	AttributeKey<Boolean> monitorEnableKey = AttributeKey.newInstance(Constants.MONITOR_ENABLE_KEY);
+	AttributeKey<Boolean> monitorEnableKey = AttributeKey.newInstance(JMicroContext.IS_MONITORENABLE);
 	
 	private final Map<String,IClientSession> sessions = new ConcurrentHashMap<>();
 	

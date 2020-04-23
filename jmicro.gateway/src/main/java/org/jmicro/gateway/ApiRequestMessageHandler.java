@@ -147,15 +147,15 @@ public class ApiRequestMessageHandler implements IMessageHandler{
 					
 					Method m = srv.getClass().getMethod(req.getMethod(), clazzes);
 					
-					JMicroContext.get().configMonitor(sm.getMonitorEnable(), si.getMonitorEnable());
+					//JMicroContext.get().configMonitor(sm.getMonitorEnable(), si.getMonitorEnable());
 					
-					if(this.openDebug) {
+					if(SF.isLoggable(MonitorConstant.LOG_DEBUG, msg.getLogLevel())) {
 						SF.doRequestLog(MonitorConstant.LOG_DEBUG, TAG, null," got request");
 					}
 					
 					if(!sm.isNeedResponse()) {
 						m.invoke(srv, req.getArgs());
-						if(this.openDebug) {
+						if(SF.isLoggable(MonitorConstant.LOG_DEBUG, msg.getLogLevel())) {
 							SF.doRequestLog(MonitorConstant.LOG_DEBUG, TAG, null," no need response");
 						}
 						return;
@@ -165,7 +165,7 @@ public class ApiRequestMessageHandler implements IMessageHandler{
 					
 					resp.setResult(result);
 					msg.setPayload(ICodecFactory.encode(codecFactory, resp, msg.getProtocol()));
-					if(this.openDebug) {
+					if(SF.isLoggable(MonitorConstant.LOG_DEBUG, msg.getLogLevel())) {
 						SF.doResponseLog(MonitorConstant.LOG_DEBUG, TAG, null," one response");
 					}
 					session.write(msg);

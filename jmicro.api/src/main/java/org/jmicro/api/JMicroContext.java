@@ -60,11 +60,13 @@ public class JMicroContext  {
 	public static final String REMOTE_PORT = "_remotePort";
 	
 	public static final String LINKER_ID = "_linkerId";
+	//控制RPC方法在每个服务中输出日志，区加于往监控服务器上传日志
 	public static final String IS_DEBUG = "_isDebug";
+	public static final String IS_MONITORENABLE = "_monitorEnable";
 	public static final String REQ_ID = "_reqId";
 	public static final String MSG_ID = "_msgId";
 	
-	public static final String MONITOR = "monitor";
+	//public static final String MONITOR = "monitor";
 	
 	public static final String CLIENT_SERVICE = "clientService";
 	public static final String CLIENT_NAMESPACE = "clientNamespace";
@@ -87,25 +89,15 @@ public class JMicroContext  {
 	
 	private JMicroContext() {}
 	
-	public OneItem addOneItem(short type) {
-		if(this.isMonitor()) {
-			OneItem oi = new OneItem(type);
-			getMRpcItem().addOneItem(oi);
-			return oi;
-		}
-		return null;
-	}
-	
 	public MRpcItem getMRpcItem() {
 		//使用者需要调用isMonitor()或isDebug()判断是否可用状态
 		return this.getParam(MRPC_ITEM, null);
 	}
 	
-	public void submitMRpcItem() {
-		if(this.isMonitor()) {
-			MonitorManager mo = JMicroContext.get().getParam(JMicroContext.MONITOR, null);
-			if(mo != null) {
-				MRpcItem item = getMRpcItem();
+	public void submitMRpcItem(MonitorManager mo) {
+		if(this.isMonitorable()) {
+			MRpcItem item = getMRpcItem();
+			if(item != null ) {
 				SF.setCommon(item);
 				mo.readySubmit(item);
 				JMicroContext.get().removeParam(MRPC_ITEM);
@@ -165,7 +157,6 @@ public class JMicroContext  {
 		context.setParam(JMicroContext.LOCAL_HOST, s.localHost());
 		context.setParam(JMicroContext.LOCAL_PORT, s.localPort()+"");
 		
-		context.configMonitorable(msg.isMonitorable());
 		context.setParam(JMicroContext.LINKER_ID, msg.getLinkId());
 		context.setParam(Constants.NEW_LINKID, false);
 		//context.isLoggable = msg.isLoggable();
@@ -176,40 +167,42 @@ public class JMicroContext  {
 			context.setParam(DEBUG_LOG, new StringBuilder());
 		}
 		
-		if(context.isMonitor()) {
-			context.setObject(JMicroContext.MONITOR, JMicro.getObjectFactory().get(MonitorManager.class));
+		boolean iMonitorable = msg.isMonitorable();
+		context.setParam(IS_MONITORENABLE, iMonitorable);
+		if(iMonitorable) {
 			MRpcItem item = context.getMRpcItem();
 			if(item == null) {
-				synchronized(MRpcItem.class) {
-					item = context.getMRpcItem();
-					if(item == null) {
-						item = new MRpcItem();
-						context.setParam(MRPC_ITEM, item);
-					}
-				}
+				item = new MRpcItem();
+				item.setReqId(msg.getReqId());
+				item.setLinkId(msg.getLinkId());
+				item.setMsg(msg);
+				context.setParam(MRPC_ITEM, item);
 			}
 		}
 	}
 	
+	public static boolean enableOrDisable(int siCfg,int smCfg) {
+		return smCfg == 1 ? true: (smCfg == 0 ? false:(siCfg == 1 ? true:false));
+	}
+	
 	public static void configComsumer(ServiceMethod sm,ServiceItem si) {
 		JMicroContext context = cxt.get();
-		context.setObject(JMicroContext.MONITOR, JMicro.getObjectFactory().get(MonitorManager.class));
+		//context.setObject(JMicroContext.MONITOR, JMicro.getObjectFactory().get(MonitorManager.class));
 		context.setParam(Constants.SERVICE_METHOD_KEY, sm);
 		context.setParam(Constants.SERVICE_ITEM_KEY, si);
 		context.setParam(JMicroContext.LOCAL_HOST, Config.getHost());
 		
-		context.configMonitor(sm.getMonitorEnable(),si.getMonitorEnable());
-		
 		//debug mode 下才有效
-		boolean isDebug = sm.getDebugMode() == 1?true:(si.getDebugMode() == 1 ? true : false);
+		boolean isDebug = enableOrDisable(si.getDebugMode(),sm.getDebugMode());
 		context.setParam(IS_DEBUG, isDebug);
 		if(isDebug) {
 			context.setParam(CLIENT_UP_TIME, System.currentTimeMillis());
 			context.setParam(DEBUG_LOG, new StringBuilder());
 		}
 		
-		if(context.isMonitor()) {
-			
+		boolean iMonitorable = enableOrDisable(si.getMonitorEnable(),sm.getMonitorEnable());
+		context.setParam(IS_MONITORENABLE, iMonitorable);
+		if(iMonitorable) {
 			MRpcItem item = context.getMRpcItem();
 			if(item == null) {
 				synchronized(MRpcItem.class) {
@@ -236,7 +229,7 @@ public class JMicroContext  {
 		
 		ServiceItem si = registry.getServiceByCode(Integer.parseInt(req.getImpl()));
 		if(si == null){
-			if(req.isLoggable()) {
+			if(SF.isLoggable(req.getLogLevel())) {
 				SF.doRequestLog(MonitorConstant.LOG_ERROR,JMicroContext.class,null," service ITEM not found");
 			}
 			//SF.doSubmit(MonitorConstant.SERVER_REQ_SERVICE_NOT_FOUND,req,null);
@@ -296,20 +289,12 @@ public class JMicroContext  {
 		cxt.get().params.putAll(ps);;
 	}
 	
-	public void configMonitor(int methodCfg,int srvCfg){
-		if(methodCfg != -1){
-			configMonitorable(methodCfg==1);
-		} else if(srvCfg != -1){
-			configMonitorable(srvCfg==1);
-		}
-	}
-	
-	private void configMonitorable(boolean enable){
-		this.setBoolean(Constants.MONITOR_ENABLE_KEY, enable);
-	}
-	
 	public boolean isDebug(){
 		return this.getBoolean(IS_DEBUG, false);
+	}
+	
+	public boolean isMonitorable(){
+		return this.getBoolean(IS_MONITORENABLE, false);
 	}
 	
 	//debug mode 下才有效
@@ -372,14 +357,14 @@ public class JMicroContext  {
 		}
 	}
 	
-	public Boolean isMonitor(){
+/*	public Boolean isMonitor(){
 		if(this.exists(Constants.MONITOR_ENABLE_KEY)){
 			return this.getBoolean(Constants.MONITOR_ENABLE_KEY, false);
 		};
 		
 		Config cfg = JMicro.getObjectFactory().get(Config.class);
 		return cfg.getBoolean(Constants.MONITOR_ENABLE_KEY,false);
-	}
+	}*/
 	
 	public boolean exists(String key){
 		return this.params.containsKey(key);

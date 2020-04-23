@@ -15,7 +15,7 @@
 
 <script>
 
-    import JMonitorEditor from "./monitor/JMonitorEditor.vue"
+    import JMonitorEditor from "./JMonitorEditor.vue"
 
     export default {
         name: 'JMonitorView',
@@ -45,7 +45,7 @@
             }
         },
         mounted:function() {
-            var self = this;
+            let self = this;
             //console.log(window.jm.utils.isBrowser('ie'));
             window.jm.vue.$on('monitorNodeSelect',(nodes) => {
                 if(!nodes || nodes.length ==0) {

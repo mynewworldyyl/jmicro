@@ -135,11 +135,8 @@ public class TestMonitorSubmiter extends JMicroBaseTestCase{
 			
 			IObjectFactory of = JMicro.getObjectFactoryAndStart(new String[] {"-DinstanceName=testSayHelloToPrintRouterLog","-Dclient=true"});
 			
-			JMicroContext.get().configMonitor(1, 1);
+			JMicroContext.get().setBoolean(JMicroContext.IS_MONITORENABLE, true);
 			ISimpleRpc sayHello = of.get(ISimpleRpc.class);
-			IMonitorDataSubmiter monitor = of.get(IMonitorDataSubmiter.class);
-			JMicroContext.get().setObject(JMicroContext.MONITOR, monitor);
-			
 			JMicroContext.get().removeParam(JMicroContext.LINKER_ID);
 			String result = sayHello.hello("Hello LOG");
 			System.out.println(result);
@@ -155,7 +152,7 @@ public class TestMonitorSubmiter extends JMicroBaseTestCase{
 			
 			IObjectFactory of = JMicro.getObjectFactoryAndStart(new String[] {"-DinstanceName=testGetInteret","-Dclient=true"});
 			
-			JMicroContext.get().configMonitor(1, 1);
+			JMicroContext.get().setBoolean(JMicroContext.IS_MONITORENABLE, false);;
 			Set<IMonitorDataSubscriber> ls = of.get(TestRpcClient.class).getSubmiters();
 			
 			Runnable r = ()->{

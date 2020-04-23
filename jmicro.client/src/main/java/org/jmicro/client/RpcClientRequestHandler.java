@@ -60,8 +60,7 @@ import org.jmicro.common.util.TimeUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-/**
- * 
+/** 
  * @author Yulei Ye
  * @date 2018年10月4日-下午12:07:12
  */
@@ -124,9 +123,9 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
 		AbstractClientServiceProxy proxy =  (AbstractClientServiceProxy)JMicroContext.get().getObject(Constants.PROXY, null);
 		RpcResponse resp = null;
 		try {
-			/*if(openDebug) {
+			 /*if(openDebug) {
 				logger.info("onRequest Method:"+request.getMethod()+",Service:" + request.getServiceName());
-			}*/
+			   }*/
 			 //请求开始
 			 SF.reqStart(TAG.getName(),request);
 			 //SF.doRequestLog(MonitorConstant.LOG_DEBUG, TAG,null, "request start");
@@ -257,7 +256,7 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
 		msg.setReqId(req.getRequestId());
 		
 		msg.setVersion(Message.MSG_VERSION);
-		msg.setLevel(Message.PRIORITY_NORMAL);
+		msg.setPriority(Message.PRIORITY_NORMAL);
 		
         do {
         	
@@ -310,11 +309,14 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
 				msg.setDumpDownStream(sm.isDumpDownStream());
 				msg.setDumpUpStream(sm.isDumpUpStream());
 	    		msg.setNeedResponse(sm.isNeedResponse());
-	    		//msg.setLoggable(JMicroContext.get().isLoggable(false));
 	    		
-	    		int f = sm.getMonitorEnable() == 1 ? 1 : (si.getMonitorEnable()== 1?1:0);
-	    		msg.setMonitorable(f == 1);
-	    		
+	    		//废弃此字段
+	    		msg.setLoggable(SF.isLoggable(sm.getLogLevel()));
+	    		//往监控服务器上传日志包,当前RPC的日志级别
+	    		msg.setLogLevel(sm.getLogLevel());
+	    		//往监控服务器上传监控包
+	    		msg.setMonitorable(cxt.isMonitorable());
+	    		//控制在各JVM实例内部转出日志
 	    		msg.setDebugMode(cxt.isDebug());
 	    		
     			msg.setLinkId(JMicroContext.lid());
@@ -403,8 +405,7 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
     		
     		RpcResponse resp = null;
     		if(respMsg != null){
-    			//精确到RPC方法的下行流量
-    			SF.netIoRead(this.getClass().getName(),MonitorConstant.CLIENT_IOSESSION_READ, respMsg.getLen());
+    		
     			if(openDebug) {
         			//logger.info("Got response req:"+req.getMethod()+",Service:" + req.getServiceName()+", Namespace:"+req.getNamespace());
         		}
@@ -552,15 +553,18 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
 	@Override
 	public void onMessage(ISession session,Message msg) {
 		//receive response
-		IResponseHandler handler = waitForResponse.get(msg.getReqId());
-		if(msg.isLoggable()) {
+		if(SF.isLoggable(MonitorConstant.LOG_DEBUG,msg.getLogLevel())) {
 			SF.doMessageLog(MonitorConstant.LOG_DEBUG,TAG,msg,null," receive message");
 		}
+		
+		IResponseHandler handler = waitForResponse.get(msg.getReqId());
 		if(handler!= null){
 			//logger.info("get result reqID: {}",msg.getReqId());
 			handler.onResponse(msg);
 		} else {
-			SF.doMessageLog(MonitorConstant.LOG_ERROR,TAG,msg,null," handler not found");
+			if(SF.isLoggable(MonitorConstant.LOG_ERROR,msg.getLogLevel())) {
+				SF.doMessageLog(MonitorConstant.LOG_ERROR,TAG,msg,null," handler not found");
+			}
 			logger.error("msdId:"+msg.getId()+",reqId:"+msg.getReqId()+",linkId:"+msg.getLinkId()+
 					",waitForResponse keySet"+waitForResponse.keySet());
 			session.increment(MonitorConstant.CLIENT_HANDLER_NOT_FOUND);

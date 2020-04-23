@@ -1,10 +1,10 @@
 <template>
   <div class="JMainContentEditor">
     <div>
-      <Tabs :value="!!selectNode ? selectNode.id:''" type="card" :closable="allowMany" @on-tab-remove="handleTabRemove"
-            :animated="false">
-            <TabPane v-for="(item,index) in items"  :name="item.id" :label="item.type=='method' ? item.title: (item.type + index)"
-                     v-bind:key="item.id">
+      <Tabs :value="!!selectNode ? selectNode.id:''" type="card" :closable="allowMany"
+            @on-tab-remove="handleTabRemove" :animated="false">
+            <TabPane v-for="(item,index) in items"  :name="item.id"
+                     :label="item.type=='method' ? item.title: (item.type + index)"  v-bind:key="item.id">
                 <p stype="word-break: break-all;padding: 0px 10px;font-size: medium;">{{item.id}}</p>
                 <JServiceItem v-if="item.type == 'sn'" :item="item"></JServiceItem>
                 <JInstanceItem v-else-if="item.type == 'ins'" :item="item"></JInstanceItem>
@@ -51,7 +51,8 @@
                 required:true,
             }
         },
-        mounted:function() {
+
+        mounted : function() {
             var self = this;
             //console.log(window.jm.utils.isBrowser('ie'));
             window.jm.vue.$on('serviceNodeSelect',(nodes) => {

@@ -18,7 +18,7 @@
                   <thead>
                     <tr v-if="s.info">
                         <td></td>
-                        <td v-for="(t,idx) in s.info.types" :key="'type_'+idx">
+                        <td style="padding:0px 5px;" v-for="(t,idx) in s.info.types" :key="'type_'+idx">
                         {{t}} : {{ s.info.typeLabels[idx] }}</td>
                     </tr>
                   </thead>
@@ -38,19 +38,12 @@
           <br/>
       </div>
 
-      <!--<div v-if="cache.serverList[0] && cache.serverList[0].data">
-          <div v-for="(sk,key) in cache.serverList[0].data.subsriber2Types" :key="key"
-               style="border-bottom: 1px solid lightgrey;margin-bottom: 10px;">
-              <p>{{key}}</p> <p>{{sk}}</p>
-          </div>
-      </div>-->
-
   </div>
 </template>
 
 <script>
 
-    import TreeNode from '../../JTreeNode.js'
+    import TreeNode from '../common/JTreeNode.js'
 
 export default {
 
@@ -77,19 +70,6 @@ export default {
                     data:null });
             }
         }
-
-        /*window.jm.mng.monitor.serverList()
-            .then((sl)=>{
-                self.cache.serverList = [];
-                if(sl && sl.length > 0) {
-                    self.cache.serverList.push({ status:false, srvKey:'total', data:null });
-                    for(let i = 0; i < sl.length; i++) {
-                        self.cache.serverList.push({ status:false, srvKey:sl[i], data:null });
-                    }
-                }
-            }).catch(err=>{
-                console.log(err);
-        });*/
     },
 
 
@@ -102,14 +82,14 @@ export default {
             cacheData = window.jm.mng.cache[dataKey] = {
                 serverList:[],
                 monitorServers:[],
+                timerId:-1,
+                rmSrvKeys:[],
+                addSrvKeys:[],
             }
         }
 
         return {
             cache : cacheData,
-            timerId:-1,
-            rmSrvKeys:[],
-            addSrvKeys:[],
         };
 
     },
@@ -132,17 +112,17 @@ export default {
 
         startServer(s) {
             let self = this;
-            if(self.timerId == -1) {
+            if(self.cache.timerId == -1) {
                 self.cache.monitorServers.push(s.srvKey);
             } else {
-                self.addSrvKeys.push(s.srvKey);
+                self.cache.addSrvKeys.push(s.srvKey);
             }
 
-            if(self.timerId == -1) {
-                self.timerId =  setInterval(()=>{
+            if(self.cache.timerId == -1) {
+                self.cache.timerId =  setInterval(()=>{
                     if(self.cache.monitorServers.length == 0) {
-                        clearInterval(self.timerId);
-                        self.timerId = -1;
+                        clearInterval(self.cache.timerId);
+                        self.cache.timerId = -1;
                         return;
                     }
                     window.jm.mng.monitor.status(self.cache.monitorServers)
@@ -162,10 +142,10 @@ export default {
                                 }
                             }
 
-                            if(self.rmSrvKeys.length > 0) {
+                            if(self.cache.rmSrvKeys.length > 0) {
                                 self.rmKey();
                             }
-                            if(self.addSrvKeys.length > 0) {
+                            if(self.cache.addSrvKeys.length > 0) {
                                 self.addKey();
                             }
                         }).catch(err=>{
@@ -176,8 +156,8 @@ export default {
         },
 
         addKey() {
-            for(let j = 0; j < this.addSrvKeys.length; j++) {
-                let srvKey = this.addSrvKeys[j];
+            for(let j = 0; j < this.cache.addSrvKeys.length; j++) {
+                let srvKey = this.cache.addSrvKeys[j];
                 let find = false;
                 for(let i = 0; i < this.cache.monitorServers.length; i++) {
                     if(srvKey == this.cache.monitorServers[i]) {
@@ -185,7 +165,7 @@ export default {
                         break;
                     }
                 }
-                this.addSrvKeys = [];
+                this.cache.addSrvKeys = [];
                 if(!find) {
                     this.cache.monitorServers.push(srvKey);
                 }
@@ -193,9 +173,9 @@ export default {
         },
 
         rmKey() {
-            for(let j = 0; j < this.rmSrvKeys.length; j++ ) {
+            for(let j = 0; j < this.cache.rmSrvKeys.length; j++ ) {
                 let idx = -1;
-                let srvKey = this.rmSrvKeys[j];
+                let srvKey = this.cache.rmSrvKeys[j];
                 for(let i = 0; i < this.cache.monitorServers.length; i++) {
                     if(srvKey == this.cache.monitorServers[i]) {
                         idx = i;
@@ -216,17 +196,17 @@ export default {
 
             }
 
-            this.rmSrvKeys = [];
+            this.cache.rmSrvKeys = [];
             if(this.cache.monitorServers.length == 0) {
-                clearInterval(this.timerId);
-                this.timerId = -1;
+                clearInterval(this.cache.timerId);
+                this.cache.timerId = -1;
             }
 
         },
 
         stopServer(s) {
-            if(this.timerId != -1) {
-                this.rmSrvKeys.push(s.srvKey);
+            if(this.cache.timerId != -1) {
+                this.cache.rmSrvKeys.push(s.srvKey);
             }
         }
 
@@ -240,6 +220,7 @@ export default {
       position: relative;
       margin:10px;
       margin-bottom:50px;
+      overflow-x: auto;
   }
 
     .header{

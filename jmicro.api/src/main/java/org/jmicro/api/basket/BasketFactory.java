@@ -41,7 +41,7 @@ public class BasketFactory<T>{
 					}
 				
 					if(read) {
-						synchronized(writeLocker) {
+						synchronized(readLocker) {
 							for(int i = index; i < size; i++) {
 								if(!using[i] && baskets[i].isReadStatus()) {
 									using[i] = true;
@@ -68,6 +68,14 @@ public class BasketFactory<T>{
 	
 	@SuppressWarnings("unchecked")
 	public BasketFactory(int size,int maxCapacityOfBasket) {
+		if(size <= 0) {
+			throw new CommonException("Basket size cannot be null");
+		}
+		
+		if(maxCapacityOfBasket <= 0) {
+			throw new CommonException("Basket slot maxCapacityOfBasket cannot be null");
+		}
+		
 		this.size = size;
 		baskets = new Basket[size];
 		using = new boolean[size];
@@ -106,7 +114,7 @@ public class BasketFactory<T>{
 	}
 	
 	public IBasket<T> borrowReadSlot() {
-		synchronized(writeLocker) {
+		synchronized(readLocker) {
 			for(int i =0; i < size; i++) {
 				if(!using[i] && baskets[i].isReadStatus()) {
 					using[i] = true;
@@ -156,6 +164,21 @@ public class BasketFactory<T>{
 		using[idx] = false;
 		
 		return true;
+	}
+	
+	/**
+	 * 
+	 * 瞬时间可读元素数量，也就是一个大概的数量，因为很多线程在读写篮子
+	 * @return
+	 */
+	public int size() {
+		int num = 0;
+		for(int i =0; i < size; i++) {
+			if(!using[i] && baskets[i].isReadStatus()) {
+				num += baskets[i].remainding();
+			}
+		}
+		return num;
 	}
 	
 	class Basket<E> implements IBasket<E>{

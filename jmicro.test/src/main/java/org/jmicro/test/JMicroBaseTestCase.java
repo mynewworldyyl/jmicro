@@ -83,9 +83,9 @@ public class JMicroBaseTestCase {
 	
 	protected void setSayHelloContext() {
 		
-		JMicroContext.get().configMonitor(1, 1);
+		JMicroContext.get().setBoolean(JMicroContext.IS_MONITORENABLE, false);
 		IMonitorDataSubmiter monitor = of.get(IMonitorDataSubmiter.class);
-		JMicroContext.get().setObject(JMicroContext.MONITOR, monitor);
+		//JMicroContext.get().setObject(JMicroContext.MONITOR, monitor);
 		
 		ServiceMethod sm = sayHelloServiceMethod();
 		JMicroContext.get().setParam(Constants.SERVICE_METHOD_KEY,sm);
@@ -98,9 +98,8 @@ public class JMicroBaseTestCase {
 	
 	protected void setSayHelloContextv2() {
 		
-		JMicroContext.get().configMonitor(1, 1);
+		JMicroContext.get().setBoolean(JMicroContext.IS_MONITORENABLE, true);
 		MonitorManager monitor = of.get(MonitorManager.class);
-		JMicroContext.get().setObject(JMicroContext.MONITOR, monitor);
 		
 		ServiceMethod sm = sayHelloServiceMethod();
 		JMicroContext.get().setParam(Constants.SERVICE_METHOD_KEY,sm);

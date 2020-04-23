@@ -49,13 +49,13 @@ class ItemStorage<T> {
 		this.prefix = prefix;
 	}
 	
-	boolean push(String key,T[] items) {
+	boolean push(String key,T[] items,int pos, int len) {
 		if(items == null) {
 			return false;
 		}
 		
-		for(T i : items) {
-			push(key,i);
+		for(int i = pos; i < len; i++) {
+			push(key,items[i]);
 		}
 		
 		return true;

@@ -122,12 +122,12 @@ public class NettyHttpServer implements IServer{
         String m = "Running netty http server host["+Config.getHost()+"],port ["+this.port+"]";
         LOG.debug(m);    
         //SF.doSubmit(MonitorConstant.SERVER_START,m);
-        SF.serverStart(TAG,Constants.TRANSPORT_NETTY_HTTP+" : "+Config.getHost()+" : "+this.port);
+        //SF.serverStart(TAG,Constants.TRANSPORT_NETTY_HTTP+" : "+Config.getHost()+" : "+this.port);
 	}
 
 	@Override
 	public void stop() {
-		 SF.serverStop(TAG,Config.getHost(),this.port);
+		 //SF.serverStop(TAG,Config.getHost(),this.port);
 		//SF.doSubmit(MonitorConstant.SERVER_STOP,Config.getHost(),this.port+"");
 		 if(server != null){
 			 //server.;

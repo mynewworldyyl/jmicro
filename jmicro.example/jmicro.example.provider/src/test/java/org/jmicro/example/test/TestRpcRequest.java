@@ -12,6 +12,7 @@ import org.jmicro.api.codec.IEncoder;
 import org.jmicro.api.codec.JDataInput;
 import org.jmicro.api.codec.JDataOutput;
 import org.jmicro.api.config.Config;
+import org.jmicro.api.monitor.v1.MonitorConstant;
 import org.jmicro.api.net.Message;
 import org.jmicro.api.net.RpcRequest;
 import org.jmicro.api.objectfactory.IObjectFactory;
@@ -100,13 +101,14 @@ public class TestRpcRequest {
 		msg.setProtocol(Message.PROTOCOL_BIN);
 		msg.setReqId(2222L);
 		msg.setVersion(Message.MSG_VERSION);
-		msg.setLevel(Message.PRIORITY_NORMAL);
+		msg.setPriority(Message.PRIORITY_NORMAL);
 		
 		//msg.setStream(false);
 		msg.setDumpDownStream(false);
 		msg.setDumpUpStream(false);
 		msg.setNeedResponse(true);
 		msg.setLoggable(true);
+		msg.setLogLevel(MonitorConstant.LOG_DEBUG);
 		msg.setMonitorable(true);
 		msg.setDebugMode(true);
 		

@@ -29,14 +29,17 @@ import org.jmicro.api.annotation.ObjFactory;
 import org.jmicro.api.codec.JDataOutput;
 import org.jmicro.api.codec.TypeCoderFactory;
 import org.jmicro.api.config.Config;
+import org.jmicro.api.net.Message;
 import org.jmicro.api.objectfactory.IObjectFactory;
 import org.jmicro.api.objectfactory.ProxyObject;
 import org.jmicro.api.raft.IDataOperator;
 import org.jmicro.api.registry.IRegistry;
+import org.jmicro.api.registry.UniqueServiceMethodKey;
 import org.jmicro.common.Base64Utils;
 import org.jmicro.common.CommonException;
 import org.jmicro.common.Constants;
 import org.jmicro.common.Utils;
+import org.jmicro.common.util.JsonUtils;
 import org.jmicro.common.util.StringUtils;
 
 /**
@@ -250,7 +253,7 @@ public class JMicro {
 		Utils.getIns().waitForShutdown();
 	}
 	
-	public static <T> T getRpcServiceTestingArgs(Class<T> srvClazz) {
+	public static <T> T getRpcServiceTestingArgs(Class<T> srvClazz,Map<String,String> result, byte protocol) {
 		Object srv = Proxy.newProxyInstance(Thread.currentThread().getContextClassLoader(),
 				new Class[] {srvClazz}, 
 				new InvocationHandler() {
@@ -260,18 +263,33 @@ public class JMicro {
 							return null;
 						}
 						
-						JDataOutput jo = new JDataOutput(2048);
+						if(Message.PROTOCOL_BIN == protocol) {
+							JDataOutput jo = new JDataOutput(2048);
+							
+							TypeCoderFactory.getDefaultCoder().encode(jo, args, null, null);
+							
+							ByteBuffer bb = jo.getBuf();
+							
+							//ByteBuffer bb = decoder.encode(args);
+							//bb.flip();
+							
+							byte[] data = new byte[bb.remaining()];
+							bb.get(data, 0, bb.limit());
+							String str = new String(Base64Utils.encode(data),Constants.CHARSET);
+							System.out.println(str);
+							if(result != null) {
+								String pd = UniqueServiceMethodKey.paramsStr(args);
+								result.put(pd, str);
+							}
+						} else {
+							String str = JsonUtils.getIns().toJson(args);
+							System.out.println(str);
+							if(result != null) {
+								String pd = UniqueServiceMethodKey.paramsStr(args);
+								result.put(pd, str);
+							}
+						}
 						
-						TypeCoderFactory.getDefaultCoder().encode(jo, args, null, null);
-						
-						ByteBuffer bb = jo.getBuf();
-						
-						//ByteBuffer bb = decoder.encode(args);
-						//bb.flip();
-						byte[] data = new byte[bb.remaining()];
-						bb.get(data, 0, bb.limit());
-						String str = new String(Base64Utils.encode(data),Constants.CHARSET);
-						System.out.println(str);
 						return null;
 					}
 				});

@@ -1,6 +1,10 @@
 package org.jmicro.example.test;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import org.jmicro.api.JMicro;
+import org.jmicro.api.net.Message;
 import org.jmicro.api.service.ICheckable;
 import org.jmicro.example.api.DynamicInterface;
 import org.jmicro.example.api.ITestRpcService;
@@ -12,8 +16,10 @@ import org.junit.Test;
 public class TestRpcRequest extends JMicroBaseTestCase{
 
 	public static void main(String[] args) {
-		ISimpleRpc sayHelloSrv = JMicro.getRpcServiceTestingArgs(ISimpleRpc.class);
+		Map<String,String> result = new HashMap<>();
+		ISimpleRpc sayHelloSrv = JMicro.getRpcServiceTestingArgs(ISimpleRpc.class,result,Message.PROTOCOL_BIN);
 		sayHelloSrv.hello("Are you OK");
+		System.out.println(result);
 	}
 	
 	@Test

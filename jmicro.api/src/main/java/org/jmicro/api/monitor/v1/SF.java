@@ -164,27 +164,6 @@ public class SF {
 		return false;
 	}
 	
-	public static boolean serverStart(String tag,String desc) {
-		MonitorManager mo = monitor();
-		if(mo.isServerReady() && !mo.canSubmit(MonitorConstant.SERVER_START)) {
-			return false;
-		}
-		MRpcItem mi = new MRpcItem();
-		mi.addOneItem(MonitorConstant.SERVER_START, tag,desc);
-		setCommon(mi);
-		mo.readySubmit(mi);
-		return true;
-	}
-	
-	public static boolean serverStop(String tag,String host,int port) {
-		if(!monitor().canSubmit(MonitorConstant.SERVER_STOP)) {
-			return false;
-		}
-		MRpcItem mi = JMicroContext.get().getMRpcItem();
-		mi.addOneItem(MonitorConstant.SERVER_STOP, tag,host+":"+port);
-		return true;
-	}
-	
 	public static boolean breakService(String tag,ServiceMethod sm,String desc) {
 		MonitorManager mo = monitor();
 		if(mo.isServerReady() && !mo.canSubmit(MonitorConstant.SERVICE_BREAK)) {
@@ -273,11 +252,19 @@ public class SF {
 	
 	private static void doLog(byte level,Class<?> cls,Message msg,Throwable exp, String desc) {
 		if(isLoggable(level)) {
+			int lineNum = Thread.currentThread().getStackTrace()[3].getLineNumber();
+			
 			MRpcItem mi = JMicroContext.get().getMRpcItem();
 			boolean f = false;
 			if(mi == null) {
 				mi = new MRpcItem();
 				f = true;
+			}
+			desc += ", Line: " + lineNum;
+			if(msg != null && msg.isDebugMode()) {
+				desc += ", Method: "+ msg.getMethod();
+				mi.setReqId(msg.getReqId());
+				mi.setLinkId(msg.getLinkId());
 			}
 			OneItem oi = mi.addOneItem(MonitorConstant.LINKER_ROUTER_MONITOR, cls.getName(),desc);
 			oi.setEx(exp);
@@ -285,7 +272,7 @@ public class SF {
 			mi.setMsg(msg);
 			if(f) {
 				setCommon(mi);
-				monitor().readySubmit(mi);
+				monitor().submit2Cache(mi);
 			}
 		}
 	}
@@ -316,19 +303,24 @@ public class SF {
 	}
 	
 	private static boolean isMonitorable(short type) {
-		boolean mo = JMicroContext.get().isMonitor();
-		if(!mo) {
+		
+		if(!JMicroContext.get().isMonitorable()) {
 			return false;
 		}
-		
-		String  srvName = JMicroContext.get().getParam(org.jmicro.api.JMicroContext.CLIENT_SERVICE, null);
-		
-		if(IMonitorServer.class.getName().equals(srvName)) {
-			//自身的RPC本身肯定不能通过此方式记录日志，否则进入死循环了
+		if(isMonitorServer()) {
 			return false;
 		}
 		
 		return monitor().canSubmit(type);
+	}
+	
+	private static boolean isMonitorServer() {
+		String  srvName = JMicroContext.get().getParam(org.jmicro.api.JMicroContext.CLIENT_SERVICE, null);
+		if(srvName != null) {
+			//自身的RPC本身肯定不能通过此方式记录日志，否则进入死循环了
+			return IMonitorServer.class.getName().equals(srvName);
+		}
+		return false;
 	}
 	
 	/**
@@ -340,31 +332,32 @@ public class SF {
 	 * @param level
 	 * @return
 	 */
-	public static boolean isLoggable(int level) {
+	public static boolean isLoggable(int needLevel,int ...rpcMethodLevel) {
 		MonitorManager mo = monitor();
-		if(mo == null || mo.isServerReady() && !mo.canSubmit(MonitorConstant.LINKER_ROUTER_MONITOR)) {
+		if(mo.isServerReady() && !mo.canSubmit(MonitorConstant.LINKER_ROUTER_MONITOR) 
+				|| needLevel == MonitorConstant.LOG_NO) {
 			return false;
 		}
 		
-		String  srvName = JMicroContext.get().getParam(org.jmicro.api.JMicroContext.CLIENT_SERVICE, null);
-		//String  ns = JMicroContext.get().getParam(org.jmicro.api.JMicroContext.CLIENT_NAMESPACE, null);
-		//String  method = JMicroContext.get().getParam(org.jmicro.api.JMicroContext.CLIENT_METHOD, null);
-		
-		if(IMonitorServer.class.getName().equals(srvName)) {
-			//日志提交RPC本身肯定不能通过此方式记录日志，否则进入死循环了
-			//if("onSubmit".equals(method) && "".equals(ns) ) {
-				return false;
-			//}
+		if(isMonitorServer()) {
+			return false;
 		}
 		
-		 ServiceMethod sm = JMicroContext.get().getParam(Constants.SERVICE_METHOD_KEY, null);
+		int rpcLevel;
+		if(rpcMethodLevel == null || rpcMethodLevel.length == 0) {
+			ServiceMethod sm = JMicroContext.get().getParam(Constants.SERVICE_METHOD_KEY, null);
+			 if(sm != null) {
+				 rpcLevel = sm.getLogLevel();
+			 } else {
+				 //默认错误日志强制监控
+				 rpcLevel = MonitorConstant.LOG_ERROR;
+			 }
+		}else {
+			rpcLevel = rpcMethodLevel[0];
+		}
 		 
-		 if(sm == null) {
-			 //在非RPC上下文中，直接记录日志
-			 return true;
-		 }
 		 //如果级别大于或等于错误，不管RPC的配置如何，肯定需要日志
-		return level >= sm.getLogLevel();
+		return needLevel >= rpcLevel;
 	}
 	
 	

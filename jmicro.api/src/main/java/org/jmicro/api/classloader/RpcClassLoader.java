@@ -138,7 +138,7 @@ public class RpcClassLoader extends AbstractClientClassLoader {
 	        	if(bytes != null && bytes.length > 0) {
 	        		logger.warn("load class {} from {} ",className,si.getKey().toKey(true, true, true));
 	        	}
-	        	JMicroContext.get().removeParam(Constants.DIRECT_SERVICE_ITEM);
+	        	//JMicroContext.get().removeParam(Constants.DIRECT_SERVICE_ITEM);
 			}
 			
 			if(bytes == null || bytes.length == 0) {

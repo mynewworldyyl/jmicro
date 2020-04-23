@@ -223,14 +223,16 @@ public class PubSubManager {
 		logger.info("START submit worker");
     	int interval = 500;
     	int batchSize = 50;
-    	long lastLoopTime = System.currentTimeMillis();
+    	//long lastLoopTime = System.currentTimeMillis();
 		while(isRunning) {
 			try {
 				
-				if(System.currentTimeMillis() - lastLoopTime < 100) {
+				/*if(System.currentTimeMillis() - lastLoopTime < 100) {
 					System.out.println("PubSubManager.doWork On loop");
 				}
 				lastLoopTime = System.currentTimeMillis();
+				*/
+				
 				
 				while(curItemCount.get() == 0) {
 					//没有数据，等待
@@ -310,7 +312,7 @@ public class PubSubManager {
 		public void run() {
 			
 			//不需要监控
-			JMicroContext.get().configMonitor(0, 0);
+			//JMicroContext.get().configMonitor(0, 0);
 			//发送消息RPC
 			JMicroContext.get().setBoolean(Constants.FROM_PUBSUB, true);
 				

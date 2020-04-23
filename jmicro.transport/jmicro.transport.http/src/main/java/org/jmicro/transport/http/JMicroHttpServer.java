@@ -29,7 +29,6 @@ import org.jmicro.api.annotation.Server;
 import org.jmicro.api.codec.ICodecFactory;
 import org.jmicro.api.config.Config;
 import org.jmicro.api.idgenerator.ComponentIdServer;
-import org.jmicro.api.monitor.v1.SF;
 import org.jmicro.api.net.IMessageReceiver;
 import org.jmicro.api.net.IServer;
 import org.jmicro.api.net.Message;
@@ -163,12 +162,12 @@ public class JMicroHttpServer implements IServer{
         
         String m = "Running the server host["+this.host+"],port ["+this.port+"]";
         LOG.debug(m);    
-        SF.serverStart(TAG,Constants.TRANSPORT_NETTY_HTTP+" : "+this.host+" : "+this.port);
+        //SF.serverStart(TAG,Constants.TRANSPORT_NETTY_HTTP+" : "+this.host+" : "+this.port);
 	}
 
 	@Override
 	public void stop() {
-		SF.serverStop(TAG,this.host,this.port);
+		//SF.serverStop(TAG,this.host,this.port);
 		 if(server != null){
 			 server.stop(0);
 			 server = null;

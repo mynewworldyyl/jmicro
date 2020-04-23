@@ -149,13 +149,13 @@ public class NettySocketServer extends PostFactoryAdapter implements IServer {
         String m = "Running the netty socket server host["+Config.getHost()+"],port ["+this.port+"]";
         LOG.debug(m);
         
-        SF.serverStart(TAG, "Server start: " + Constants.TRANSPORT_NETTY+" : "+Config.getHost()+" : "+this.port );
+        //SF.serverStart(TAG, "Server start: " + Constants.TRANSPORT_NETTY+" : "+Config.getHost()+" : "+this.port );
         
 	}
 
 	@Override
 	public void stop() {
-		SF.serverStop(TAG,Config.getHost(),this.port);
+		//SF.serverStop(TAG,Config.getHost(),this.port);
 		 if(server != null){
 			 server = null;
         }

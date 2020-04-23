@@ -21,7 +21,7 @@ public class TestDumpManager {
 	@Test
 	public void testParseDump() {
 		IObjectFactory of = JMicro.getObjectFactoryAndStart(new String[] {"-DinstanceName=testParseDump","-Dclient=true"});
-		JMicroContext.get().configMonitor(1, 1);
+		JMicroContext.get().setBoolean(JMicroContext.IS_MONITORENABLE, true);
 		DumpManager.getIns().printByLinkId(clientPath, -1);
 	}
 	

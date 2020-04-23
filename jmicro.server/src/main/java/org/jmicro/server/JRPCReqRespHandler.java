@@ -109,9 +109,6 @@ public class JRPCReqRespHandler implements IMessageHandler{
 			
 			JMicroContext.config(req1,serviceLoader,registry);
 			
-			//在这里统计的流量可以精确到RPC服务方法
-			SF.netIoRead(this.getClass().getName(),MonitorConstant.SERVER_IOSESSION_READ, msg.getLen());
-			
 			if(!msg.isNeedResponse()){
 				//无需返回值
 				//数据发送后，不需要返回结果，也不需要请求确认包，直接返回
@@ -128,7 +125,7 @@ public class JRPCReqRespHandler implements IMessageHandler{
 			//msg.setSessionId(req.getSession().getId());
 			msg.setVersion(req.getMsg().getVersion());
 				
-			if(msg.isLoggable()){
+			if(SF.isLoggable(MonitorConstant.LOG_DEBUG,msg.getLogLevel())){
 				SF.doRequestLog(MonitorConstant.LOG_DEBUG, TAG,null,"got REQUEST");
 			}
 
@@ -150,14 +147,12 @@ public class JRPCReqRespHandler implements IMessageHandler{
 			//响应消息
 			s.write(msg);
 
-			SF.doResponseLog(MonitorConstant.LOG_DEBUG, TAG, null,"response success");
+			if(SF.isLoggable(MonitorConstant.LOG_DEBUG,msg.getLogLevel())){
+				SF.doResponseLog(MonitorConstant.LOG_DEBUG, TAG, null,"response success");
+			}
 		
-			//SF.doSubmit(MonitorConstant.SERVER_REQ_OK, req,resp,null);
-			
 		} catch (Throwable e) {
 			//返回错误
-			//SF.doMessageLog(MonitorConstant.LOG_ERROR, TAG, msg,e);
-			//SF.doSubmit(MonitorConstant.SERVER_REQ_ERROR, req,resp,null);
 			SF.reqServerError(TAG.getName(), "");
 			logger.error("reqHandler error: ",e);
 			if(needResp && req != null ){

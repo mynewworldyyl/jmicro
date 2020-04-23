@@ -20,12 +20,11 @@ import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Collection;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
-import org.jmicro.api.JMicro;
 import org.jmicro.api.annotation.Reference;
-import org.jmicro.api.monitor.v1.IMonitorDataSubmiter;
 import org.jmicro.api.monitor.v1.MonitorConstant;
 import org.jmicro.api.monitor.v1.SF;
 import org.jmicro.api.objectfactory.AbstractClientServiceProxy;
@@ -106,11 +105,16 @@ class RemoteProxyServiceFieldListener implements IServiceListener{
 				
 				if(direct) {
 					String ekey = item.getKey().toKey(true, true, true);
-					for(Object o: set){
-						AbstractClientServiceProxy p = (AbstractClientServiceProxy)o;
-						if(p.getItem().getKey().toKey(true, true, true).equals(ekey)){
-							//服务代理已经存在,不需要重新创建
-							return;
+					Iterator<Object> ite = set.iterator();
+					for(;ite.hasNext();){
+						AbstractClientServiceProxy p = (AbstractClientServiceProxy)ite.next();
+						if(p.getItem() == null) {
+							ite.remove();
+						} else {
+							if(p.getItem().getKey().toKey(true, true, true).equals(ekey)){
+								//服务代理已经存在,不需要重新创建
+								return;
+							}
 						}
 					}
 				} else {
@@ -170,7 +174,7 @@ class RemoteProxyServiceFieldListener implements IServiceListener{
 					String k= item.getKey().toKey(true, true, true);
 					for(Object o: set){
 						AbstractClientServiceProxy p = (AbstractClientServiceProxy)o;
-						if(k.equals(p.getItem().getKey().toKey(true, true, true))){
+						if(p.getItem() != null && k.equals(p.getItem().getKey().toKey(true, true, true))){
 							po = p;
 						}
 					}

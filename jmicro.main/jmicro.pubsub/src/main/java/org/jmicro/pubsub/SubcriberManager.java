@@ -25,6 +25,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 import org.jmicro.api.JMicroContext;
+import org.jmicro.api.classloader.IClassloaderRpc;
 import org.jmicro.api.classloader.RpcClassLoader;
 import org.jmicro.api.config.Config;
 import org.jmicro.api.objectfactory.IObjectFactory;
@@ -270,17 +271,7 @@ class SubcriberManager {
 				PubSubServer.class.getClassLoader().loadClass(sui.sm.getKey().getUsk().getServiceName());
 				srv = of.getRemoteServie(sitem, null, null);
 			} catch (ClassNotFoundException e) {
-				try {
-					// JMicroContext.get().setParam(Constants.SERVICE_SPECIFY_ITEM_KEY, sitem);
-					JMicroContext.get().setParam(Constants.DIRECT_SERVICE_ITEM, sitem);
-					Class<?> cls = this.cl.loadClass(sui.sm.getKey().getUsk().getServiceName());
-					if (cls != null) {
-						srv = of.getRemoteServie(sitem, this.cl, null);
-					}
-				} catch (ClassNotFoundException e1) {
-					logger.warn("Service {} not found.{}", k, e1);
-					return false;
-				}
+				srv = this.getRemoteService(sui,sitem);
 			}
 
 			if (srv == null) {
@@ -384,16 +375,7 @@ class SubcriberManager {
 				PubSubServer.class.getClassLoader().loadClass(sui.sm.getKey().getUsk().getServiceName());
 				srv = of.getRemoteServie(sitem, null, null);
 			} catch (ClassNotFoundException e) {
-				try {
-					JMicroContext.get().setParam(Constants.DIRECT_SERVICE_ITEM, sitem);
-					Class<?> cls = this.cl.loadClass(sui.sm.getKey().getUsk().getServiceName());
-					if (cls != null) {
-						srv = of.getRemoteServie(sitem, this.cl, null);
-					}
-				} catch (ClassNotFoundException e1) {
-					logger.warn("Service {} not found.{}", k, e1);
-					return false;
-				}
+				srv = this.getRemoteService(sui,sitem);
 			}
 
 			if (srv == null) {
@@ -419,6 +401,47 @@ class SubcriberManager {
 			}
 		}
 		return true;
+	}
+	
+	
+	private Object getRemoteService(SubcribeItem sui,ServiceItem sitem) {
+
+		Object srv = null;
+		boolean setDirectServiceItem = false;
+		ServiceItem oldItem = null;
+		try {
+			Set<ServiceItem> items = this.registry.getServices(IClassloaderRpc.class.getName());
+			ServiceItem clsLoadItem = null;
+			for (ServiceItem si : items) {
+				if (si.getKey().getInstanceName().equals(sui.sm.getKey().getInstanceName())) {
+					clsLoadItem = si;
+					break;
+				}
+			}
+			
+			if(clsLoadItem != null) {
+				oldItem = JMicroContext.get().getParam(Constants.DIRECT_SERVICE_ITEM, null);
+				JMicroContext.get().setParam(Constants.DIRECT_SERVICE_ITEM, clsLoadItem);
+				setDirectServiceItem = true;
+				Class<?> cls = this.cl.loadClass(sui.sm.getKey().getUsk().getServiceName());
+				if (cls != null) {
+					srv = of.getRemoteServie(sitem, this.cl, null);
+				}
+			}
+		} catch (ClassNotFoundException e1) {
+			String k = sui.sm.getKey().toKey(false, false, false);
+			logger.warn("Service {} not found.{}", k, e1);
+		}finally {
+			if(setDirectServiceItem) {
+				if(oldItem == null) {
+					JMicroContext.get().removeParam(Constants.DIRECT_SERVICE_ITEM);
+				} else {
+					JMicroContext.get().setParam(Constants.DIRECT_SERVICE_ITEM, oldItem);
+				}
+				
+			}
+		}
+	return srv;
 	}
 
 	private boolean doUnsubcribe(String topic, UniqueServiceMethodKey key, Map<String, String> context) {

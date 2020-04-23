@@ -19,7 +19,9 @@
 
 <script>
 
-    import TreeNode from '../JTreeNode.js'
+    import TreeNode from '../common/JTreeNode.js'
+
+    const GROUP = 'monitors';
 
     export default {
         name: 'JMonitorList',
@@ -82,6 +84,7 @@
                     let r = key2nodes[grp];
                     if(!r) {
                         r = new TreeNode(grp,grp,[],null,null);
+                        r.group = GROUP;
                         r.val = [];
                         roots.push(r);
                         key2nodes[grp] = r;

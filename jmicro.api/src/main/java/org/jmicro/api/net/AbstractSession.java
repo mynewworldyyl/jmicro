@@ -30,6 +30,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import org.jmicro.api.debug.LogUtil;
 import org.jmicro.api.monitor.v1.MonitorConstant;
+import org.jmicro.api.monitor.v1.SF;
 import org.jmicro.api.monitor.v1.ServiceCounter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -192,6 +193,7 @@ public abstract class AbstractSession implements ISession{
               			message.getReqId(),message.getMethod());
               }*/
               //JMicroContext.configProvider(message);
+              
              receiver.receive(this,message);
      	 }
      	

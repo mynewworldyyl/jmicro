@@ -29,9 +29,9 @@ import org.jmicro.api.config.Config;
 import org.jmicro.api.executor.ExecutorConfig;
 import org.jmicro.api.executor.ExecutorFactory;
 import org.jmicro.api.idgenerator.ComponentIdServer;
-import org.jmicro.api.monitor.v1.IMonitorDataSubmiter;
 import org.jmicro.api.monitor.v1.MonitorConstant;
 import org.jmicro.api.monitor.v1.SF;
+import org.jmicro.api.monitor.v2.MonitorManager;
 import org.jmicro.api.net.IMessageHandler;
 import org.jmicro.api.net.IMessageReceiver;
 import org.jmicro.api.net.ISession;
@@ -58,7 +58,7 @@ public class ServerMessageReceiver implements IMessageReceiver{
 	private boolean openDebug;
 	
 	@Inject(required=false)
-	private IMonitorDataSubmiter monitor;
+	private MonitorManager monitor;
 	
 	@Inject
 	private ComponentIdServer idGenerator;
@@ -164,14 +164,20 @@ public class ServerMessageReceiver implements IMessageReceiver{
 				sb.append(",Receive Time:").append(usedTime);
 			}
 				
-			if(msg.isLoggable()) {
+			if(msg.isMonitorable()) {
+				SF.netIoRead(this.getClass().getName(),MonitorConstant.SERVER_IOSESSION_READ, msg.getLen());
+			}
+			
+			if(SF.isLoggable(MonitorConstant.LOG_DEBUG,msg.getLogLevel())) {
 				SF.doMessageLog(MonitorConstant.LOG_DEBUG, TAG, msg,null,"doReceive");
 			}
+			
 			IMessageHandler h = handlers.get(msg.getType());
 			if(h == null) {
-           	 	SF.netIoRead(this.getClass().getName(),MonitorConstant.SERVER_IOSESSION_READ, msg.getLen());
 				String errMsg = "Message type ["+Integer.toHexString(msg.getType())+"] handler not found!";
-				SF.doMessageLog(MonitorConstant.LOG_ERROR, TAG, msg,null,errMsg);
+				if(SF.isLoggable(MonitorConstant.LOG_ERROR,msg.getLogLevel())) {
+					SF.doMessageLog(MonitorConstant.LOG_ERROR, TAG, msg,null,errMsg);
+				}
 				throw new CommonException(errMsg);
 			} else {
 				h.onMessage(s, msg);
@@ -181,6 +187,11 @@ public class ServerMessageReceiver implements IMessageReceiver{
 			//SF.doSubmit(MonitorConstant.SERVER_REQ_ERROR);
 			logger.error("reqHandler error msg:{} ",msg);
 			logger.error("doReceive",e);
+			
+			if(SF.isLoggable(MonitorConstant.LOG_ERROR,msg.getLogLevel())) {
+				SF.doMessageLog(MonitorConstant.LOG_ERROR, TAG, msg,null,"error");
+			}
+			
 			RpcResponse resp = new RpcResponse(msg.getReqId(),new ServerError(0,e.getMessage()));
 			resp.setSuccess(false);
 			msg.setPayload(ICodecFactory.encode(codeFactory,resp,msg.getProtocol()));
@@ -191,7 +202,7 @@ public class ServerMessageReceiver implements IMessageReceiver{
 				JMicroContext.get().appendCurUseTime("respTime",false);
 				JMicroContext.get().debugLog(1000);
 			}
-			JMicroContext.get().submitMRpcItem();
+			JMicroContext.get().submitMRpcItem(monitor);
 			JMicroContext.clear();
 		}
 	}

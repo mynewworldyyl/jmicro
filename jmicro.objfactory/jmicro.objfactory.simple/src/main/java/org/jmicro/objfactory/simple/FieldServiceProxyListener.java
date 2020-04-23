@@ -116,6 +116,7 @@ class FieldServiceProxyListener implements IServiceListener{
 					 p = (AbstractClientServiceProxy)this.rsm.getRefRemoteService(item, null,acs);
 					 if(p != null) {
 							SimpleObjectFactory.setObjectVal(srcObj, refField, p);
+							notifyChange(p,type);
 						} else {
 							String msg = "Fail to create service "+item.getKey().toKey(true, true, true)+" for Class ["+srcObj.getClass().getName()+"] field ["+ refField.getName()+"] dependency ["+refField.getType().getName()+"]";
 							if(ref.required()) {
@@ -127,7 +128,8 @@ class FieldServiceProxyListener implements IServiceListener{
 							}
 							return;
 						}
-				}else {
+				} else {
+					notifyChange(p,type);
 					p.setItem(item);
 					p.setAsyncConfig(acs);
 				}
@@ -142,15 +144,14 @@ class FieldServiceProxyListener implements IServiceListener{
 					SF.doBussinessLog(MonitorConstant.LOG_WARN, FieldServiceProxyListener.class, null, msg);
 					logger.warn(msg);
 				}
-
+				notifyChange(null,type);
 				SimpleObjectFactory.setObjectVal(srcObj, refField, null);
 			}
 		}
 		
-		notifyChange();
 	}
 	
-	protected void notifyChange() {
+	protected void notifyChange(AbstractClientServiceProxy po,int opType) {
 		Reference cfg = this.refField.getAnnotation(Reference.class);
 		if(cfg == null || cfg.changeListener()== null || cfg.changeListener().trim().equals("")){
 			return;
@@ -158,20 +159,21 @@ class FieldServiceProxyListener implements IServiceListener{
 		Method m =  null;
 		Class<?> cls = ProxyObject.getTargetCls(this.refField.getDeclaringClass());
 		try {
-			 m =  cls.getMethod(cfg.changeListener(),new Class[]{String.class} );
+			 m =  cls.getMethod(cfg.changeListener(),new Class[]{AbstractClientServiceProxy.class,Integer.TYPE} );
 			 if(m != null){
-				 m.invoke(this.srcObj,refField.getName());
+				 m.invoke(this.srcObj,po,opType);
 			 }
 		} catch (NoSuchMethodException | SecurityException | IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
-			logger.error("",e.getLocalizedMessage());
+			//System.out.println(e); 
 			try {
 				m =  cls.getMethod(cfg.changeListener(),new Class[0] );
 				if(m != null){
 					 m.invoke(this.srcObj);
 				}
 			} catch (NoSuchMethodException | SecurityException | IllegalAccessException | IllegalArgumentException | InvocationTargetException e1) {
+				//System.out.println(e1);
 				logger.error("",e);
-				SF.doBussinessLog(MonitorConstant.LOG_ERROR, FieldServiceProxyListener.class, e, "Listener method ["+cfg.changeListener()+"] not found!");
+				SF.doBussinessLog(MonitorConstant.LOG_ERROR, RemoteProxyServiceFieldListener.class, e, "Listener method ["+cfg.changeListener()+"] not found!");
 			}
 		}
 		

@@ -32,6 +32,7 @@ import org.jmicro.api.gateway.ApiRequest;
 import org.jmicro.api.gateway.ApiResponse;
 import org.jmicro.api.idgenerator.IdRequest;
 import org.jmicro.api.monitor.v1.Linker;
+import org.jmicro.api.monitor.v1.MonitorConstant;
 import org.jmicro.api.net.IMessageHandler;
 import org.jmicro.api.net.IRequest;
 import org.jmicro.api.net.ISession;
@@ -150,6 +151,7 @@ public class ApiGatewayClient {
 		msg.setDumpUpStream(false);
 		msg.setNeedResponse(true);
 		msg.setLoggable(false);
+		msg.setLogLevel(MonitorConstant.LOG_NO);
 		msg.setMonitorable(false);
 		msg.setDebugMode(false);
 		
@@ -280,6 +282,7 @@ public class ApiGatewayClient {
 		msg.setDumpUpStream(false);
 		msg.setNeedResponse(true);
 		msg.setLoggable(false);
+		msg.setLogLevel(MonitorConstant.LOG_NO);
 		msg.setMonitorable(false);
 		msg.setDebugMode(false);
 		
@@ -310,6 +313,7 @@ public class ApiGatewayClient {
 		msg.setDumpUpStream(false);
 		msg.setNeedResponse(true);
 		msg.setLoggable(false);
+		msg.setLogLevel(MonitorConstant.LOG_NO);
 		msg.setMonitorable(false);
 		msg.setDebugMode(false);
 		

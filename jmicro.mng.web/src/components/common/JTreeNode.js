@@ -1,12 +1,15 @@
+
 export default class TreeNode {
 
-    constructor(id = '', title = '', children = [], parent = null, val = null) {
+    constructor(id = '', title = '', children = [], parent = null, val = null,label) {
         this.id = id;
         this.title = title;
         this.children = children;
         this.val = val;
         this.parent = parent;
         this.type = '';
+        this.label = label;
+        this.group = '';
     }
 
     addChild(node) {

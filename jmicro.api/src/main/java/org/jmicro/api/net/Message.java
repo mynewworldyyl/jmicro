@@ -22,6 +22,7 @@ import java.nio.ByteBuffer;
 
 import org.jmicro.api.codec.JDataInput;
 import org.jmicro.api.codec.JDataOutput;
+import org.jmicro.api.monitor.v1.MonitorConstant;
 import org.jmicro.common.CommonException;
 import org.jmicro.common.Constants;
 import org.jmicro.common.util.JsonUtils;
@@ -105,10 +106,10 @@ public final class Message {
 	 * dm: is development mode
 	 * S: data length type 0:short 1:int
 	 * N: need Response 
-	 * P: protocol 0:bin, 1:json
-	 * LLL: Message priority 
+	 * PR: protocol 0:bin, 1:json
+	 * PPP: Message priority 
 	 * 
-	 *   S L L  L  N dm P
+	 *   S P P  P  N dm PR
 	 * | | | |  |  |  | |
 	 * 7 6 5 4  3  2  1 0
 	 * @return
@@ -119,10 +120,10 @@ public final class Message {
 	 * up: dump up stream data
 	 * do: dump down stream data
 	 * M: Monitorable
-	 * L: 开发日志上发 
+	 * L: 日志级别 
 	
 	 * 
-	 *         L M  do up
+	 *     L L L M  do up
 	 * | | | | | |  |  |
 	 * 7 6 5 4 3 2  1  0
 	 * @return
@@ -217,15 +218,26 @@ public final class Message {
 		return is(flag,FLAG_LENGTH_INT);
 	}
 	
-	public int getLevel() {
+	public int getPriority() {
 		return (byte)((flag >>> 3) & 0x07);
 	}
 	
-	public void setLevel(int l) {
+	public void setPriority(int l) {
 		if(l > PRIORITY_7 || l < PRIORITY_0) {
 			 new CommonException("Invalid priority: "+l);
 		}
 		this.flag = (byte)((l << 3) | this.flag);
+	}
+	
+	public byte getLogLevel() {
+		return (byte)((flag0 >>> 3) & 0x07);
+	}
+	
+	public void setLogLevel(int v) {
+		if(v > MonitorConstant.LOG_NO || v < MonitorConstant.LOG_FINAL) {
+			 new CommonException("Invalid Log level: "+v);
+		}
+		this.flag0 = (byte)((v << 3) | this.flag0);
 	}
 	
 	public  static byte getProtocolByFlag(byte flag) {

@@ -55,22 +55,29 @@ public class ClientMessageReceiver implements IMessageReceiver{
 		/*Message msg = new Message();
 		msg.decode(buffer);*/
 		//CodecFactory.decode(this.codecFactory,buffer);
+        if(msg.isMonitorable()) {
+      	  SF.netIoRead(this.getClass().getName(),MonitorConstant.CLIENT_IOSESSION_READ, msg.getLen());
+        }
+        
 		try {
 			IMessageHandler h = handlers.get(msg.getType());
 			if(h != null){
 				h.onMessage(session,msg);
 			} else {
-				SF.netIoRead(this.getClass().getName(),MonitorConstant.CLIENT_IOSESSION_READ,
-						msg.getLen());
-				SF.doMessageLog(MonitorConstant.LOG_ERROR, ClientMessageReceiver.class, msg, null, 
-						"Handler not found:" + Integer.toHexString(msg.getType()));
+				if(SF.isLoggable(MonitorConstant.LOG_ERROR,msg.getLogLevel())) {
+					SF.doMessageLog(MonitorConstant.LOG_ERROR, ClientMessageReceiver.class, msg, null, 
+							"Handler not found:" + Integer.toHexString(msg.getType()));
+				}
 				logger.error("Handler not found:" + Integer.toHexString(msg.getType()));
 			}
 		} catch (Throwable e) {
 			logger.error("reqHandler error: {}",msg,e);
-			SF.doMessageLog(MonitorConstant.LOG_ERROR, ClientMessageReceiver.class, msg, e, 
-					"Handler not found:" + Integer.toHexString(msg.getType()));
+			if(SF.isLoggable(MonitorConstant.LOG_ERROR,msg.getLogLevel())) {
+				SF.doMessageLog(MonitorConstant.LOG_ERROR, ClientMessageReceiver.class, msg, e, 
+						"Handler not found:" + Integer.toHexString(msg.getType()));
+			}
 			msg.setType((byte)(msg.getType()+1));
+			
 		}
 	}
 

@@ -22,6 +22,8 @@
 
 <script>
 
+    import TreeNode from "../common/JTreeNode.js"
+
     //服务，服务实例，服务方法分组
     const GROUP_SN = 'sn';
     //服务实例，服务，服务方法分组
@@ -49,6 +51,11 @@
             slId:{
                 type:String,
                 default:''
+            },
+
+            group:{
+                type:String,
+                default:'service'
             }
         },
 
@@ -94,9 +101,10 @@
                         if(this.groupBy == GROUP_SN) {
                             let r = layer02Layer1map[n.title];  //title = serviceName
                             if(!r) {
-                                r = new TreeNode(n.title,n.title,[],null,n.val);
+                                r = new TreeNode(this.group + ':'+ n.title,n.title,[],null,n.val, this.group + ':'+ n.title);
                                 layer02Layer1map[n.title] = r;
                                 r.type = GROUP_SN;
+                                r.group = this.group;
                                 roots.push(r);
                             }
 
@@ -104,9 +112,10 @@
                             let layer1Key = n.title+'##'+t;
                             let l2 = layer12Layer2map[layer1Key];  //title = serviceName
                             if(!l2) {
-                                l2 = new TreeNode(layer1Key,t,[],r,n.val.key);
+                                l2 = new TreeNode(this.group + ':'+layer1Key,t,[],r,n.val.key, this.group+':' + n.val.key.instanceName);
                                 layer12Layer2map[layer1Key]= l2;
                                 l2.type = GROUP_INS;
+                                r.group = this.group;
                                 r.addChild(l2);
                             }
 
@@ -114,6 +123,7 @@
                                 n.children.forEach((e)=>{
                                     e.parent = l2;
                                     e.type = GROUP_METHOD;
+                                    e.group = this.group;
                                     l2.addChild(e);
                                 });
                             }
@@ -122,18 +132,20 @@
                             let r = layer02Layer1map[insKey];  //title = serviceName
                             if(!r) {
                                 let title = insKey + '##'+n.val.key.host+'##'+n.val.key.port;
-                                r = new TreeNode(insKey,title,[],null,n.val);
+                                r = new TreeNode(this.group + ':'+insKey,title,[],null,n.val, this.group + ':' + n.val.key.instanceName);
                                 layer02Layer1map[insKey]=r;
                                 r.type = GROUP_INS;
+                                r.group = this.group;
                                 roots.push(r);
                             }
 
                             let layer1Key = n.title + '##' + r.title;
                             let l2 = layer12Layer2map[layer1Key];  //title = serviceName
                             if(!l2) {
-                                l2 = new TreeNode(layer1Key,n.title,[],r,n.val);
+                                l2 = new TreeNode(this.group + ':'+layer1Key,n.title,[],r,n.val, this.group + ':' + n.val.serviceName);
                                 layer12Layer2map[layer1Key] = l2;
                                 l2.type = GROUP_SN;
+                                r.group = this.group;
                                 r.addChild(l2);
                             }
 
@@ -141,6 +153,7 @@
                                 n.children.forEach((e)=>{
                                     e.parent = l2;
                                     e.type = GROUP_METHOD;
+                                    r.group = this.group;
                                     l2.addChild(e);
                                 });
                             }
@@ -153,6 +166,7 @@
                                     n.children.forEach((e)=>{
                                         e.parent = n;
                                         e.type = GROUP_METHOD;
+                                        e.group = this.group;
                                         //n.addChild(e);
                                     });
                                 }
@@ -167,7 +181,6 @@
                 }else {
                     this.services = roots;
                 }
-
             }
 
             ,parseSrvNode(node){
@@ -176,16 +189,17 @@
                 }
 
                 let title = node.key.serviceName+'##'+node.key.namespace+'##'+node.key.version;
-                let id = title+'##'+node.key.instanceName+'##'+node.key.host+'##'+node.key.port;
+                let id = this.group + ':' + title + '##'+node.key.instanceName+'##'+node.key.host+'##'+node.key.port;
 
                 let tr = new TreeNode(id,title,[],null,node);
-
+                tr.group = this.group;
                 if(!!node.methods && node.methods.length > 0){
                     node.methods.forEach((e)=>{
                         if(e!=null && e.key.method != 'wayd') {
-                            let mid = id+'##'+e.key.method+'##' + e.key.paramsStr;
-                            let tm = new TreeNode(mid, e.key.method,null,tr,e);
+                            let mid = id + '##' + e.key.method + '##' + e.key.paramsStr;
+                            let tm = new TreeNode(mid, e.key.method, null, tr, e, this.group + ':' + e.key.method);
                             tm.type = GROUP_METHOD;
+                            tm.group = this.group;
                             tr.addChild(tm);
                         }
                     })
@@ -206,43 +220,6 @@
             }
         },
     }
-
-   export class TreeNode{
-
-        constructor(id='',title='',children=[],parent=null,val=null){
-            this.id= id;
-            this.title= title;
-            this.children= children;
-            this.val = val;
-            this.parent = parent;
-            this.type='';
-        }
-
-        addChild(node) {
-            this.children.push(node);
-        }
-
-        removeChild(node) {
-            let idx = this.indexOfChild(node);
-            if(idx >=0) {
-                this.children.splice(idx,1);
-            }
-        }
-
-        indexOfChild(node) {
-            if(!this.children || this.children.length == 0) {
-                return -1;
-            }
-           for(let i = 0; i < this.children.length; i++) {
-               if(this.children[i]==node) {
-                   return i;
-               }
-           }
-           return -1;
-        }
-
-    }
-
 
 </script>
 

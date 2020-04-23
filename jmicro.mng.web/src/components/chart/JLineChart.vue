@@ -212,8 +212,14 @@ export default {
         start() {
             //let mkey = 'org.jmicro.example.api.rpc.ISimpleRpc##simpleRpc##0.0.1##exampleProdiver0##192.168.56.1##63211##hello##Ljava/lang/String;';
             let self = this;
+            let idKey = this.node.id;
+            if(idKey.startWith('statis:')) {
+                idKey = idKey.substring(7);
+            }else if(idKey.startWith('service:')) {
+                idKey = idKey.substring(8);
+            }
             if(self.cache.started) {
-                window.jm.mng.statis.unsubscribeData(this.node.id,2,this.callback
+                window.jm.mng.statis.unsubscribeData(idKey,2,this.callback
                 ).then(rst =>{
                     self.$Message.success(rst);
                     self.cache.started = false;
@@ -223,7 +229,7 @@ export default {
                     self.cache.started = true;
                 });
             }else {
-                window.jm.mng.statis.subscribeData(this.node.id,2,this.callback)
+                window.jm.mng.statis.subscribeData(idKey,2,this.callback)
                     .then(rst =>{
                         self.$Message.success(rst);
                         self.cache.started = true;

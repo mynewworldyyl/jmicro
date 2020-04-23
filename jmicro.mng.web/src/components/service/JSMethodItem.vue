@@ -25,7 +25,7 @@
               <Icon type="ios-film-outline"></Icon>
               Base Parameters
           </p>
-          <a href="#" slot="extra"  @click="save()">
+          <a href="javascript:void(0);" slot="extra"  @click="save()">
               <Icon type="ios-loop-strong"></Icon>
               Save
           </a>
@@ -51,7 +51,7 @@
               <Icon type="ios-film-outline"></Icon>
               Monitor And Debug
           </p>
-          <a href="#" slot="extra"  @click="save()">
+          <a href="javascript:void(0);" slot="extra"  @click="save()">
               <Icon type="ios-loop-strong"></Icon>
               Save
           </a>
@@ -84,7 +84,7 @@
               <Icon type="ios-film-outline"></Icon>
               Timeout
           </p>
-          <a href="#" slot="extra"  @click="save()">
+          <a href="javascript:void(0);" slot="extra"  @click="save()">
               <Icon type="ios-loop-strong"></Icon>
               Save
           </a>
@@ -108,7 +108,7 @@
               <Icon type="ios-film-outline"></Icon>
               Statis Timer
           </p>
-          <a href="#" slot="extra" @click="save()">
+          <a href="javascript:void(0);" slot="extra" @click="save()">
               <Icon type="ios-loop-strong"></Icon>
               Save
           </a>
@@ -142,7 +142,7 @@
               <Icon type="ios-film-outline"></Icon>
               Break Rule
           </p>
-          <a href="#" slot="extra" @click="save()">
+          <a href="javascript:void(0);" slot="extra" @click="save()" >
               <Icon type="ios-loop-strong"></Icon>
               Save
           </a>
@@ -172,14 +172,34 @@
               <Icon type="ios-film-outline"></Icon>
               Testing
           </p>
-          <a href="#" slot="extra" @click="save()">
+          <a slot="extra" @click="save()" href="javascript:void(0);">
               <Icon type="ios-loop-strong"></Icon>
               Save
+          </a>
+          <a slot="extra" @click="doTesting(node.val)" href="javascript:void(0);">
+              <Icon type="ios-loop-strong"></Icon>
+              {{timerId == -1? 'Start':'Stop'}}
+          </a>
+          <a slot="extra" @click="testingResult=''" href="javascript:void(0);">
+              <Icon type="ios-loop-strong"></Icon>
+              Clear
           </a>
           <div>
 
               <label for="testingArgs">Testing Args</label>
-              <Input id="testingArgs" v-model="node.val.testingArgs"/>
+              <!-- <Input id="testingArgs" v-model="node.val.testingArgs"/> -->
+              <Input id="testingArgs"  class='textarea' :rows="5" :autosize="{maxRows:5,minRows: 5}"
+                      type="textarea" v-model="node.val.testingArgs"/>
+
+              <label for="testingResult">Testing Result</label>
+              <Input id="testingResult"  class='textarea' :rows="5" :autosize="{maxRows:5,minRows: 5}"
+                     type="textarea" v-model="testingResult"/>
+
+              <label for="InvokeNum">Testing Num</label>
+              <Input id="InvokeNum" v-model="invokeNum"/>
+
+              <label for="InvokeInterval">Interval with Milliseconds</label>
+              <Input id="InvokeInterval"  v-model="invokeInterval"/>
 
           </div>
       </Card>
@@ -213,12 +233,60 @@ export default {
                 .catch(()=>{
                     self.$Message.fail("Save fail");
                 });
+        },
+
+        doTesting() {
+            if(this.timerId != -1) {
+                clearInterval(this.timerId);
+                this.timerId = -1;
+            }else {
+                let method = this.node.val;
+                let self = this;
+                let args = JSON.parse(method.testingArgs);
+
+                if(self.invokeNum <= 0) {
+                    self.$Message.fail("Invalid invoke Num:" + self.invokeNum);
+                }else if(self.invokeNum == 1) {
+                    self.callRpc(method,args);
+                } else {
+                    let i = 0;
+                    self.timerId = setInterval(()=>{
+                        if(i < self.invokeNum) {
+                            self.callRpc(method,args);
+                            i++;
+                        }else {
+                            clearInterval(self.timerId);
+                            self.timerId = -1;
+                        }
+                    },self.invokeInterval);
+                }
+            }
+            return false;
+        },
+
+        callRpc(method,args) {
+            let self = this;
+            window.jm.rpc.callWithParams(method.key.usk.serviceName,method.key.usk.namespace,
+                method.key.usk.version,method.key.method,args,true)
+                .then(rst=>{
+                    if(self.testingResult) {
+                        self.testingResult  = self.testingResult + '\n' + rst;
+                    } else {
+                        self.testingResult  = rst;
+                    }
+                }).catch(err=>{
+                self.testingResult  = err;
+            });
         }
     },
 
     data(){
         return {
             node : this.meth,
+            testingResult:'',
+            invokeNum:100,
+            invokeInterval:1000,
+            timerId:-1,
         }
     }
 }

@@ -38,8 +38,8 @@ public interface Constants {
 	public static final String SIDE_PROVIDER="provider";
 	public static final String SIDE_ANY="any";
 	
-	public static final String MONITOR_ENABLE_KEY = "monitorEnableKey";
-	public static final String DEFAULT_MONITOR="defaultMonitor";
+	//public static final String MONITOR_ENABLE_KEY = "monitorEnableKey";
+	//public static final String DEFAULT_MONITOR="defaultMonitor";
 	public static final String FROM_MONITOR = "fromMonitor";
 	
 	public static final String FROM_PUBSUB = "fromPubsub";

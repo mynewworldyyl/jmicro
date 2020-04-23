@@ -100,9 +100,6 @@ public class StatisMonitorImpl implements IStatisMonitor {
 			}
 			
 			ReportData rd = dataServer.getData(mkey, types, DATA_TYPE);
-			//rd.setTypes(types);
-			//rd.setLabels(labels);
-			//System.out.println("QPS type: "+MonitorConstant.STATIS_QPS+"="+v);
 			
 			PSData psData = new PSData();
 			psData.setData(rd);

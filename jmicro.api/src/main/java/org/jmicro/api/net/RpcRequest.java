@@ -21,6 +21,7 @@ import java.util.Map;
 
 import org.jmicro.api.AbstractObjectMapSupport;
 import org.jmicro.api.annotation.SO;
+import org.jmicro.api.monitor.v1.MonitorConstant;
 
 /**
  * 
@@ -58,11 +59,11 @@ public final class RpcRequest extends AbstractObjectMapSupport implements IReque
 	
 	public RpcRequest(){}
 	
-	public boolean isLoggable() {
+	public int getLogLevel() {
 		if(msg != null) {
-			return msg.isLoggable();
+			return msg.getLogLevel();
 		}
-		return false;
+		return MonitorConstant.LOG_NO;
 	}
 	
 	public Long getMsgId(){

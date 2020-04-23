@@ -146,6 +146,15 @@ public final class MonitorConstant {
 	
 	public static final short Ms_FailReturnWriteBasket = 0X0DFD;
 	
+	public static final short Ms_TopicInvalid = 0X0EFD;
+	public static final short Ms_ServerDisgard = 0X0FFD;
+	public static final short Ms_ServerBusy = 0X10FD;
+	public static final short Ms_Pub2Cache = 0X11FD;
+	
+	public static final short Ms_SubmitTaskCnt = 0X12FD;
+	
+	public static final short Ms_DoResendCnt = 0X13FD;
+	public static final short Ms_DoResendWithCbNullCnt = 0X14FD;
 	
 	//总成功数  业务失败，RPC成功 两者之和为总成功RPC数
 	public static final short STATIS_TOTAL_SUCCESS = 3;
@@ -219,6 +228,9 @@ public final class MonitorConstant {
 	};
 	
     //日志级别
+	//0表示禁止日志监控
+	public static final byte LOG_NO = 0;
+	  
     public static final byte LOG_TRANCE = 1;
     
     public static final byte LOG_DEBUG = 2;

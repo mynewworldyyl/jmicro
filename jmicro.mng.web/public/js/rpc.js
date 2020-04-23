@@ -134,6 +134,7 @@ jm.rpc = {
         msg.setLoggable(false);
         msg.setMonitorable(false);
         msg.setDebugMode(false);
+        msg.setLogLevel(4)//LOG_WARN
 
         return msg;
     }
@@ -472,6 +473,17 @@ jm.rpc.Message.prototype = {
             throw "Invalid priority: "+l;
         }
         this.flag = ((l << 3) | this.flag);
+    },
+
+    getLogLevel : function() {
+        return ((this.flag0 >>> 3) & 0x07);
+    },
+
+    setLogLevel : function( l) {
+        if(l > 6 || l < 0) {
+            throw "Invalid log level: "+l;
+        }
+        this.flag0 = ((l << 3) | this.flag0);
     },
 
     getProtocolByFlag(flag) {

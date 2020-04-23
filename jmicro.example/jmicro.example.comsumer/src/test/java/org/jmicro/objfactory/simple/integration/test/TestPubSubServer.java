@@ -48,7 +48,6 @@ public class TestPubSubServer extends JMicroBaseTestCase{
 		psd.setData(new byte[] {22,33,33});
 		psd.setTopic(TOPIC);
 		
-		
 		psm.publishItem(psd);
 	}
 	
@@ -124,7 +123,7 @@ public class TestPubSubServer extends JMicroBaseTestCase{
 					//System.out.println(psm.publish(psData));
 					
 					//Thread.sleep(2000);
-					Thread.sleep(ran.nextInt(100));
+					Thread.sleep(ran.nextInt(50));
 					
 				} catch (Throwable e) {
 					e.printStackTrace();
@@ -136,7 +135,7 @@ public class TestPubSubServer extends JMicroBaseTestCase{
 		new Thread(r).start();
 		new Thread(r).start();
 		new Thread(r).start();
-		//new Thread(r).start();
+		new Thread(r).start();
 		
 		JMicro.waitForShutdown();
 	}

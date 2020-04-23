@@ -26,11 +26,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.TimeUnit;
 
 import org.jmicro.api.IListener;
 import org.jmicro.api.JMicroContext;
-import org.jmicro.api.annotation.Cfg;
 import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.Inject;
 import org.jmicro.api.annotation.JMethod;
@@ -43,13 +41,12 @@ import org.jmicro.api.config.Config;
 import org.jmicro.api.executor.ExecutorConfig;
 import org.jmicro.api.executor.ExecutorFactory;
 import org.jmicro.api.monitor.v1.MonitorConstant;
-import org.jmicro.api.monitor.v1.ServiceCounter;
 import org.jmicro.api.objectfactory.AbstractClientServiceProxy;
 import org.jmicro.api.objectfactory.IObjectFactory;
 import org.jmicro.api.raft.IDataOperator;
+import org.jmicro.api.registry.IServiceListener;
 import org.jmicro.api.registry.ServiceItem;
 import org.jmicro.api.service.ServiceLoader;
-import org.jmicro.common.CommonException;
 import org.jmicro.common.Constants;
 import org.jmicro.common.util.StringUtils;
 import org.slf4j.Logger;
@@ -60,7 +57,7 @@ import org.slf4j.LoggerFactory;
  * @author Yulei Ye
  * @date 2020年4月4日
  */
-@Component(level=0)
+@Component(level=2)
 public class MonitorManager {
 	
 	private final static Logger logger = LoggerFactory.getLogger(MonitorManager.class);
@@ -79,11 +76,13 @@ public class MonitorManager {
 	
 	//private static final String TYPES_LOCKER = TYPES_PATH;
 	
-	@Cfg("/MonitorManager/isMonitorServer")
-	private boolean isMonitorServer = false;
+	/*@Cfg("/MonitorManager/isMonitorServer")
+	private boolean isMonitorServer = false;*/
 	
-	@Reference(namespace="monitorServer",version="0.0.1")
+	@Reference(namespace="monitorServer",version="0.0.1",changeListener="enableWork")
 	private IMonitorServer monitorServer;
+	
+	private boolean checkerWorking = false;
 	
 	@Inject(required=false)
 	private IMonitorServer localMonitorServer;
@@ -112,7 +111,7 @@ public class MonitorManager {
 	private ExecutorService executor = null;
 	
 	private MonitorManagerStatusAdapter statusMonitorAdapter;
-
+	
 	public void init() {
 		
 		this.basketFactory = new BasketFactory<MRpcItem>(5000,1);
@@ -150,16 +149,16 @@ public class MonitorManager {
 			typeLabels[i] = MonitorConstant.MONITOR_VAL_2_KEY.get(TYPES[i]);
 		}
 		
-		statusMonitorAdapter = new MonitorManagerStatusAdapter(TYPES,typeLabels,
-				Config.getInstanceName()+"_MonitorManagerStatuCheck","MonitorManager");
-		
 		ServiceLoader sl = of.get(ServiceLoader.class);
-		ServiceItem si = sl.createSrvItem(IMonitorAdapter.class, Config.getInstanceName()+"."+MonitorManagerStatusAdapter.class.getName(), "0.0.1", IMonitorAdapter.class.getName());
+		String group = "MonitorManager";
+		statusMonitorAdapter = new MonitorManagerStatusAdapter(TYPES,typeLabels,
+				Config.getInstanceName()+"_MonitorManagerStatuCheck",group);
 		
-		of.regist("MonitorManagerStatuCheckAdapter", statusMonitorAdapter);
-		
-		sl.registService(si,statusMonitorAdapter);
-		
+		if(sl.hashServer()) {
+			ServiceItem si = sl.createSrvItem(IMonitorAdapter.class, Config.getInstanceName()+"."+group, "0.0.1", IMonitorAdapter.class.getName());
+			of.regist("PubsubServerStatuCheckAdapter", statusMonitorAdapter);
+			sl.registService(si,statusMonitorAdapter);
+		}
 		
 		ExecutorConfig config = new ExecutorConfig();
 		config.setMsMaxSize(10);
@@ -167,7 +166,8 @@ public class MonitorManager {
 		config.setThreadNamePrefix("MonitorManager");
 		executor = ExecutorFactory.createExecutor(config);
 		
-		new Thread(this::doWork,Config.getInstanceName()+ "_MonitorManager_Worker").start();
+		enableWork(msPo,IServiceListener.ADD);
+		
 	}
 	
 	public boolean submit2Cache(MRpcItem item) {
@@ -205,6 +205,9 @@ public class MonitorManager {
 	}
 	
 	public boolean readySubmit(MRpcItem item) {
+		if(!checkerWorking) {
+			return false;
+		}
 		IBasket<MRpcItem> b = basketFactory.borrowWriteBasket(true);
 		if(b == null) {
 			if(this.statusMonitorAdapter != null && this.statusMonitorAdapter.isMonitoralbe()) {
@@ -233,17 +236,19 @@ public class MonitorManager {
 		return true;
 	}
 	
-	private void doWork() {
-		
-		while(msPo == null || !msPo.isUsable()) {
-			logger.info("Waiting for monitor server to ready!");
-			synchronized(syncLocker) {
-				try {
-					syncLocker.wait(1000);
-				} catch (InterruptedException e) {
-				}
+	
+	public void enableWork(AbstractClientServiceProxy msPo, int opType) {
+		if(!checkerWorking && IServiceListener.ADD == opType) {
+			if(this.msPo != null && msPo.isUsable()) {
+				checkerWorking = true;
+				new Thread(this::doWork,Config.getInstanceName()+ "_MonitorManager_Worker").start();
 			}
+		} else if(checkerWorking && IServiceListener.REMOVE == opType) {
+			checkerWorking = false;
 		}
+	}
+	
+	private void doWork() {
 		
 		logger.info("Minitor manage work start working!");
 		
@@ -257,7 +262,7 @@ public class MonitorManager {
 		//long lastLoopTime = System.currentTimeMillis();
 		//long loopCnt = 0;
 		
-		while(true) {
+		while(checkerWorking) {
 			try {
 				
 				if(this.statusMonitorAdapter.isMonitoralbe()) {
@@ -347,7 +352,7 @@ public class MonitorManager {
 				}
 				
 			}catch(Throwable ex) {
-				logger.error("MonitorManager doWork"+ex);
+				logger.error("MonitorManager doWork",ex);
 			}
 		}
 	}
@@ -494,7 +499,7 @@ public class MonitorManager {
 			
 			try {
 				//不需要监控，也不应该监控，否则数据包将进入死循环永远停不下来
-				JMicroContext.get().configMonitor(0, 0);
+				//JMicroContext.get().configMonitor(0, 0);
 				//发送消息RPC
 				JMicroContext.get().setBoolean(Constants.FROM_MONITOR_MANAGER, true);
 					
@@ -590,7 +595,7 @@ public class MonitorManager {
 	
 	public boolean canSubmit(Short t) {
 		
-		if(/*isMonitorServer ||*/ monitorServer == null) {
+		if(!this.checkerWorking || monitorServer == null) {
 			return false;
 		}
 		
@@ -598,7 +603,7 @@ public class MonitorManager {
 			return false;
 		}
 		
-		return msPo.isUsable();
+		return this.checkerWorking;
 	}
 	
 	private void doDeleteType(String skey, String data) {
@@ -698,134 +703,6 @@ public class MonitorManager {
 		types.toArray(ts);
 		
 		return ts;
-	}
-	
-	
-	public class MonitorManagerStatusAdapter implements IMonitorAdapter{
-		
-		private boolean monitoralbe = false;
-		
-		private long lastStatusTime = 0;
-		
-		private ServiceCounter sc = null;
-		
-		private String group = null;
-		
-		public final Short[] TYPES;
-		
-		public String[] typeLabels  = null;
-		
-		private String key;
-		
-		private MonitorManagerStatusAdapter(Short[] ts, String[] labels, String key,String group) {
-			if(ts == null || ts.length == 0) {
-				throw new CommonException("Monitor status type cannot be null");
-			}
-			if(StringUtils.isEmpty(key)) {
-				throw new CommonException("Monitor status checker KEY cannot be NULL");
-			}
-			
-			if(StringUtils.isEmpty(group)) {
-				this.group = "defalutMonitor";
-			}else {
-				this.group = group;
-			}
-			
-			TYPES = ts;
-			this.typeLabels = labels;
-			this.key = key;
-			this.init0();
-			sc = new ServiceCounter(this.key,TYPES,60*3L,1L,TimeUnit.SECONDS);
-		}
-		
-		private void init0() {
-			typeLabels = new String[TYPES.length];
-			for(int i = 0; i < TYPES.length; i++) {
-				typeLabels[i] = MonitorConstant.MONITOR_VAL_2_KEY.get(TYPES[i]);
-			}
-		}
-		
-		public ServiceCounter getServiceCounter() {
-			return sc;
-		}		
-		
-		public void checkTimeout() {
-			if(monitoralbe && (System.currentTimeMillis() - lastStatusTime > 300000)) {//5分钏没有状态请求
-				logger.warn("ServiceCounter timeout 5 minutes, and stop it");
-				this.enableMonitor(false);
-			}
-		}
-		
-		@Override
-		public MonitorServerStatus status() {
-			if(!monitoralbe) {
-				enableMonitor(true);
-			}
-			
-			lastStatusTime = System.currentTimeMillis();
-			
-			MonitorServerStatus s = new MonitorServerStatus(); 
-			//s.setInstanceName(Config.getInstanceName());
-			//s.setSubsriberSize(regSubs.size());
-			//s.getSubsriber2Types().putAll(this.monitorManager.getMkey2Types());
-			//s.setSendCacheSize(sentItems.size());
-			
-			double[] qpsArr = new double[TYPES.length];
-			double[] curArr = new double[TYPES.length];
-			double[] totalArr = new double[TYPES.length];
-			
-			s.setCur(curArr);
-			s.setQps(qpsArr);
-			s.setTotal(totalArr);
-			
-			for(int i = 0; i < TYPES.length; i++) {
-				Short t = TYPES[i];
-				
-				totalArr[i] = sc.getTotal(t);
-				 curArr[i] = new Double(sc.get(t));
-				 if(t == MonitorConstant.Ms_CheckLoopCnt) {
-					 //System.out.println("");
-				 }
-				 qpsArr[i] = sc.getQps(TimeUnit.SECONDS, t);
-				
-			}
-			
-			return s;
-		}
-
-		
-		@Override
-		public void enableMonitor(boolean enable) {
-			if(enable && !monitoralbe) {
-				sc.start();
-				monitoralbe = true;
-			} else if(!enable && monitoralbe) {
-				sc.stop();
-				monitoralbe = false;
-			}
-		}
-
-
-		@Override
-		public MonitorInfo info() {
-			MonitorInfo info = new MonitorInfo();
-			info.setGroup("MonitorManager");
-			info.setTypeLabels(typeLabels);
-			info.setTypes(TYPES);
-			info.setRunning(monitoralbe);
-			info.setInstanceName(Config.getInstanceName());
-			//info.getSubsriber2Types().putAll(monitorManager.getMkey2Types());;
-			return info;
-		}
-
-		public boolean isMonitoralbe() {
-			return monitoralbe;
-		}
-
-		@Override
-		public void reset() {
-		}
-		
 	}
 	
 }

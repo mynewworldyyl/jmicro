@@ -7,6 +7,7 @@ import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.Inject;
 import org.jmicro.api.annotation.Reference;
 import org.jmicro.api.annotation.Service;
+import org.jmicro.api.monitor.v1.MonitorConstant;
 import org.jmicro.api.monitor.v2.IMonitorAdapter;
 import org.jmicro.api.monitor.v2.MonitorInfo;
 import org.jmicro.api.monitor.v2.MonitorManager;
@@ -17,7 +18,8 @@ import org.jmicro.common.util.StringUtils;
 import org.jmicro.mng.inter.IMonitorServerManager;
 
 @Component
-@Service(namespace="mng",version="0.0.1")
+@Service(namespace="mng",version="0.0.1",debugMode=0,
+monitorEnable=0,logLevel=MonitorConstant.LOG_ERROR,retryCnt=0)
 public class MonitorServerManagerImpl implements IMonitorServerManager{
 	
 	@Reference(namespace="*",version="*",type="ins")//每个服务实例一个代理对象

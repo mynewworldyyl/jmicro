@@ -96,7 +96,7 @@ jm.socket = {
             });
         } else if(self.wsk.readyState == WebSocket.CONNECTING) {
             self.waiting.push(function(){
-                this.wsk.send(JSON.stringify(msg));
+                self.wsk.send(JSON.stringify(msg));
             })
         }
     }

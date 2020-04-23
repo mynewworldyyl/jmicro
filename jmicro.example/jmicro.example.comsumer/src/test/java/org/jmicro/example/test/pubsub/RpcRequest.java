@@ -4,6 +4,7 @@ import java.util.Arrays;
 import java.util.Map;
 
 import org.jmicro.api.AbstractObjectMapSupport;
+import org.jmicro.api.monitor.v1.MonitorConstant;
 import org.jmicro.api.net.IRequest;
 import org.jmicro.api.net.ISession;
 import org.jmicro.api.net.Message;
@@ -207,11 +208,11 @@ public class RpcRequest extends AbstractObjectMapSupport implements IRequest {
 		return;
 	}
 
-	public boolean isLoggable() {
+	public int getLogLevel() {
 		if (msg != null) {
-			return msg.isLoggable();
+			return msg.getLogLevel();
 		}
-		return false;
+		return MonitorConstant.LOG_NO;
 	}
 
 	public Long getMsgId() {

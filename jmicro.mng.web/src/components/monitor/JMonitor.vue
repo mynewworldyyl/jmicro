@@ -17,11 +17,14 @@
     import JMonitorView from './JMonitorView.vue'
 
 export default {
+
     name: 'JMonitor',
+
     components: {
         JMonitorList,
         JMonitorView,
     },
+
     data() {
         return {
             drawerStatus: false,

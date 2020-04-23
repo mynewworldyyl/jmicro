@@ -24,8 +24,8 @@ public class SimpleRpcImpl implements ISimpleRpc {
 			//breakingRule="1S 50% 500MS",
 			//1秒钟内异常超50%，熔断服务，熔断后每80毫秒做一次测试
 			breakingRule = @SBreakingRule(enable=true,percent=50,checkInterval=5000),
-			logLevel=MonitorConstant.LOG_ERROR,	
-			testingArgs="gv/4AAEQ//aPCkFyZSB5b3UgT0s=",//测试参数
+			logLevel=MonitorConstant.LOG_DEBUG,	
+			testingArgs="[\"test args\"]",//测试参数
 			monitorEnable=1,
 			timeWindow=5*60000,//统计时间窗口5分钟
 			slotInterval=100,
@@ -33,10 +33,13 @@ public class SimpleRpcImpl implements ISimpleRpc {
 			timeout=5000,
 			retryInterval=1000,
 			debugMode=0,
-			maxSpeed=1000
+			maxSpeed=1000,
+			baseTimeUnit=Constants.TIME_MILLISECONDS
 	)
 	public String hello(String name) {
-		SF.doBussinessLog(MonitorConstant.LOG_DEBUG,SimpleRpcImpl.class,null, name);
+		if(SF.isLoggable(MonitorConstant.LOG_DEBUG)) {
+			SF.doBussinessLog(MonitorConstant.LOG_DEBUG,SimpleRpcImpl.class,null, name);
+		}
 		/*int rv = r.nextInt();
 		if(rv < 50) {
 			throw new CommonException("test breaker exception");

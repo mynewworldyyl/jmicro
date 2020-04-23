@@ -1,52 +1,46 @@
 <template>
   <div class="JMainContentEditor">
     <div>
-      <Tabs :value="!!selectNode ? selectNode.path:''" type="card" :closable="allowMany" @on-tab-remove="handleTabRemove()"
-            :animated="false">
-            <TabPane v-for="item in items"  :name="item.id" :label="item.label" v-bind:key="item.id">
                 <table class="configItemTalbe" width="99%">
-                    <caption style="text-align: left;padding-bottom: 3px;">{{selectNode.id}}</caption>
                     <thead><tr><td>KEY</td><td>VALUE</td><td>OPERATION</td></tr></thead>
 
                     <tr>
                         <td></td><td></td><td> <a @click="addNode()">ADD</a></td>
                     </tr>
 
-                    <tr v-for="c in item.children" :key="c.path">
-                        <td>{{c.name}}</td><td>{{c.val}}</td>
+                    <tr v-for="c in item.children" :key="c.id">
+                        <td>{{c.val.name}}</td><td>{{c.val.val}}</td>
                         <td>
-                            <a @click="updateNode(c.path)">MODIFY</a>
-                            <a v-if="!item.children" @click="deleteNode(c.path)">DELETE</a>
+                            <a @click="updateNode(c,true)">MODIFY</a>
                         </td>
                     </tr>
 
-                   <!-- <tr v-for="c in item.leaf" :key="c.path">
-                        <td width="20%">{{c.name}}</td><td width="70%">{{c.val}}</td><td width="8%" class="opBar">
-                        <a @click="updateNode(c.path)">MODIFY</a> &nbsp; <a @click="deleteNode(c.path)">DELETE</a></td>
-                    </tr>-->
+                    <tr v-for="c in item.val.children" :key="c.id">
+                        <td>{{c.name}}</td><td>{{c.val}}</td>
+                        <td>
+                            <a @click="updateNode(c,false)">MODIFY</a>&nbsp;&nbsp;
+                            <a @click="deleteNode(c)">DELETE</a>
+                        </td>
+                    </tr>
 
                 </table>
-            </TabPane>
-        </Tabs>
     </div>
 
       <Modal v-model="addNodeDialog" :loading="true" ref="addNodeDialog" width="360" @on-ok="onAddOk()">
           <table>
               <tr><td>NAME</td><td><input type="input" id="nodeName" v-model="inputName"/></td></tr>
-              <tr><td>VALUE</td><td><input type="input" id="nodeValue" v-model="inputVal" :disabled="isDir" /></td></tr>
+              <tr><td>VALUE</td><td><input type="input" id="nodeValue" v-model="inputVal" /></td></tr>
               <tr><td>DIRECTORY</td><td><input type="checkbox" id="idDir" v-model="isDir"/></td></tr>
               <tr><td colspan="2" style="color:red">{{errMsg}}</td></tr>
           </table>
       </Modal>
 
-      <Modal v-model="deleteNodeDialog" width="360" @on-ok="onUpdateOk()">
+      <Modal v-model="updateNodeDialog" width="360" @on-ok="onUpdateOk()">
           <table>
               <tr><td>NAME</td><td><input type="input" disabled  v-model="inputName"/></td></tr>
               <tr><td>VALUE</td><td><input type="input"  v-model="inputVal"/></td></tr>
           </table>
       </Modal>
-
-
 
   </div>
 </template>
@@ -54,62 +48,22 @@
 <script>
     //import jm from '../../public/js/jm.js'
 
+    import TreeNode from  "../common/JTreeNode.js"
+
     export default {
-        name: 'JConfigEditor',
+        name: 'JConfigItem',
         props:{
-          allowMany: {
-              type: Boolean,
-              default: false
-          },
-        },
-        mounted:function() {
-            var self = this;
-            //console.log(window.jm.utils.isBrowser('ie'));
-            window.jm.vue.$on('configNodeSelect',function(nodes) {
-                if(!nodes || nodes.length ==0) {
-                    return;
-                }
-
-                let node = nodes[0];
-
-                if(!!self.selectNode && self.selectNode.path == node.path) {
-                    return;
-                }
-
-                let is = self.items;
-                let it = null;
-
-                if(self.allowMany ) {
-                    for(let i = 0; i < self.items.length; i++) {
-                        if(self.items[i].path == node.path) {
-                            it = self.items[i];
-                            break;
-                        }
-                    }
-
-                    if(!it) {
-                        is.push(node);
-                        self.items = is;
-                        self.selectNode = node;
-                    } else {
-                        self.selectNode = it;
-                    }
-                } else {
-                    is[0] = node;
-                    self.items = is;
-                    self.selectNode = node;
-                }
-            });
+          item: { type: Object,required: true },
         },
 
         data () {
             return {
-                items:[],
-                selectName:'',
-                selectNode:null,
+
                 addNodeDialog:false,
                 deleteNodeDialog:false,
                 updateNodeDialog:false,
+
+                curNode:null,
 
                 isDir:false,
                 inputName:'',
@@ -118,16 +72,8 @@
             }
         },
         methods: {
-            handleTabRemove (evt,name) {
-                this['tab' + name] = false;
-            },
-
             addNode() {
-               if(!this.selectNode) {
-                   return;
-               }
-               let self = this;
-               self.addNodeDialog = true;
+                this.addNodeDialog = true;
             },
 
             onAddOk() {
@@ -137,13 +83,25 @@
                     self.errMsg='Value cannot be null!';
                     return false;
                 }
-                window.jm.mng.conf.add(self.selectNode.path+'/'+self.inputName,self.inputVal,self.isDir)
+
+                if(this.isDir && !this.inputVal) {
+                    this.inputVal = 'host';
+                }
+
+                let path = self.item.val.path + '/' + self.inputName;
+                window.jm.mng.conf.add(path,self.inputVal,self.isDir)
                     .then(function(result){
                         if(result) {
-                            let p = self.selectNode.path+'/'+self.inputName;
-                            let newNode = {id:p,name:self.inputName, val:self.inputVal,path:p};
-                            self.selectNode.leaf.push(newNode);
-                            self.items[0] = self.selectNode;
+                            let val = {name:self.inputName, val:self.inputVal, path:path};
+                            if(self.isDir) {
+                                let r = new TreeNode(val.path, val.name, [],self.item, val, val.name);
+                                r.group = 'config';
+                                self.item.addChild(r);
+                            }else {
+                                //r.children = null;
+                                self.item.val.children.push(val);
+                            }
+
                             self.$Message.success('Successfully add');
 
                             self.addNodeDialog = false;
@@ -153,10 +111,10 @@
                             self.isDir = false;
 
                         }else {
-                            self.$Message.fail('fail');
+                            self.$Message.error('fail');
                         }
                     }).catch(function(err){
-                    self.$Message.fail('fail:'+err);
+                    self.$Message.error('fail:'+err);
                     self.inputName = '';
                     self.inputVal = '';
                     self.isDir = false;
@@ -164,88 +122,78 @@
                 });
             },
 
-            updateNode(path) {
+            updateNode(node,isDir) {
                 let self = this;
+                self.isDir = isDir;
 
-                let lf = null;
-                for(let i = 0; i < self.selectNode.leaf.length; i++) {
-                    let l = self.selectNode.leaf[i];
-                    if(path == l.path) {
-                        lf = l;
-                        break;
-                    }
+                self.curNode = node;
+
+                if(isDir) {
+                    self.inputName = node.val.name;
+                    self.inputVal = node.val.val;
+                }else {
+                    self.inputName = node.name;
+                    self.inputVal = node.val;
                 }
-
-                if(lf == null) {
-                    return;
-                }
-
-                self.inputName = lf.name;
-                self.inputVal = lf.val;
-
-                self.deleteNodeDialog = true;
+                self.updateNodeDialog = true;
             },
 
             onUpdateOk() {
                 let self = this;
 
-                let lf = null;
-                for(let i = 0; i < self.selectNode.leaf.length; i++) {
-                    let l = self.selectNode.leaf[i];
-                    if(self.inputName == l.name) {
-                        lf = l;
-                        break;
-                    }
+                let valNode = null;
+                if(this.isDir) {
+                    valNode = self.curNode.val;
+                } else  {
+                    valNode = self.curNode;
                 }
 
-                if(lf == null) {
+                if(valNode.val == self.inputVal) {
                     return;
                 }
 
-                window.jm.mng.conf.update(self.selectNode.path+'/'+self.inputName,self.inputVal)
+                window.jm.mng.conf.update(valNode.path, self.inputVal)
                     .then(function(result){
                         if(result) {
-                            lf.val = self.inputVal;
-                            self.items[0] = self.selectNode;
+                            valNode.val = self.inputVal;
                             self.$Message.success('Successfully add');
                         }else {
                             self.$Message.error('fail');
                         }
                         self.inputName = '';
                         self.inputVal = '';
+                        self.curNode = null;
                     }).catch(function(err){
                     self.$Message.error('fail:'+err);
                     self.inputName = '';
                     self.inputVal = '';
+                    self.curNode = null;
                 });
 
                 self.addNodeDialog = false;
             },
 
-            deleteNode(path) {
-                let lf = null;
+            deleteNode(delNode) {
                 let self = this;
                 let idx = -1;
-                for(let i = 0; i < self.selectNode.leaf.length; i++) {
-                    let l = self.selectNode.leaf[i];
-                    if(path == l.path) {
-                        lf = l;
+                for(let i = 0; i < self.item.val.children.length; i++) {
+                    let l = self.item.val.children[i];
+                    if(delNode.path == l.path) {
                         idx = i;
                         break;
                     }
                 }
 
-                if(lf == null) {
+                if(idx == -1) {
                     return;
                 }
-                window.jm.mng.conf.delete(lf.path)
+                window.jm.mng.conf.delete(delNode.path)
                     .then(function(result){
                         if(result) {
-                            self.selectNode.leaf.splice(idx,1);
-                            self.items[0] = self.selectNode;
+                            self.item.val.children.splice(idx,1);
                             self.$Message.success('Successfully add');
                         }else {
-                            self.$Message.fail('fail');
+                            self.$Message.error('fail');
                         }
                         self.inputName = '';
                         self.inputVal = '';

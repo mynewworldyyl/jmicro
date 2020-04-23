@@ -63,7 +63,7 @@ public interface IRequest extends IReq{
 	
 	public Map<String,Object> getRequestParams();
 	
-	boolean isLoggable();
+	int getLogLevel();
 	
 	void putObject(String key,Object value);
 }
