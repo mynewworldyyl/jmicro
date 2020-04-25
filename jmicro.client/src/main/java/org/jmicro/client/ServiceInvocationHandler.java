@@ -27,7 +27,7 @@ import org.jmicro.api.exception.RpcException;
 import org.jmicro.api.idgenerator.ComponentIdServer;
 import org.jmicro.api.monitor.v1.SF;
 import org.jmicro.api.monitor.v2.MRpcItem;
-import org.jmicro.api.monitor.v2.MonitorManager;
+import org.jmicro.api.monitor.v2.MonitorClient;
 import org.jmicro.api.net.IRequest;
 import org.jmicro.api.net.IResponse;
 import org.jmicro.api.net.InterceptorManager;
@@ -60,7 +60,7 @@ public class ServiceInvocationHandler implements InvocationHandler{
 	private ComponentIdServer idGenerator;
 	
 	@Inject
-	private MonitorManager monitor;
+	private MonitorClient monitor;
 	
 	public ServiceInvocationHandler(){}
 	

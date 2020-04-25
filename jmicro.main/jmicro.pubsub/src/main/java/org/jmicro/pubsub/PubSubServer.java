@@ -45,7 +45,7 @@ import org.jmicro.api.executor.ExecutorFactory;
 import org.jmicro.api.monitor.v1.MonitorConstant;
 import org.jmicro.api.monitor.v1.ServiceCounter;
 import org.jmicro.api.monitor.v2.IMonitorAdapter;
-import org.jmicro.api.monitor.v2.MonitorManagerStatusAdapter;
+import org.jmicro.api.monitor.v2.MonitorClientStatusAdapter;
 import org.jmicro.api.objectfactory.IObjectFactory;
 import org.jmicro.api.pubsub.IInternalSubRpc;
 import org.jmicro.api.pubsub.PSData;
@@ -85,7 +85,7 @@ public class PubSubServer implements IInternalSubRpc{
 	
 	private String[] typeLabels = null; 
 	
-	private MonitorManagerStatusAdapter statusMonitorAdapter;
+	private MonitorClientStatusAdapter statusMonitorAdapter;
 	
 	//private static final String DISCARD_TIMER = "PubsubServerAbortPolicy";
 	
@@ -207,7 +207,7 @@ public class PubSubServer implements IInternalSubRpc{
 		}
 		
 		String group = "PubsubServer";
-		statusMonitorAdapter = new MonitorManagerStatusAdapter(TYPES,typeLabels,Config.getInstanceName()+"_PubsubServerStatuCheck",group);
+		statusMonitorAdapter = new MonitorClientStatusAdapter(TYPES,typeLabels,Config.getInstanceName()+"_PubsubServerStatuCheck",group);
 		
 		ServiceLoader sl = of.get(ServiceLoader.class);
 		ServiceItem si = sl.createSrvItem(IMonitorAdapter.class, Config.getInstanceName()+"."+group, "0.0.1", IMonitorAdapter.class.getName());

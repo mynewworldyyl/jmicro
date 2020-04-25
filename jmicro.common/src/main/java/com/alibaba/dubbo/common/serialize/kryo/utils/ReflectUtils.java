@@ -14,12 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.jmicro.common.util;
-
-import javassist.CtClass;
-import javassist.CtConstructor;
-import javassist.CtMethod;
-import javassist.NotFoundException;
+package com.alibaba.dubbo.common.serialize.kryo.utils;
 
 import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
@@ -41,6 +36,15 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import org.jmicro.common.util.StringUtils;
+
+import com.alibaba.dubbo.common.utils.ClassHelper;
+
+import javassist.CtClass;
+import javassist.CtConstructor;
+import javassist.CtMethod;
+import javassist.NotFoundException;
 
 /**
  * ReflectUtils

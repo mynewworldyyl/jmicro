@@ -10,7 +10,7 @@ import org.jmicro.api.annotation.Service;
 import org.jmicro.api.monitor.v1.MonitorConstant;
 import org.jmicro.api.monitor.v2.IMonitorAdapter;
 import org.jmicro.api.monitor.v2.MonitorInfo;
-import org.jmicro.api.monitor.v2.MonitorManager;
+import org.jmicro.api.monitor.v2.MonitorClient;
 import org.jmicro.api.monitor.v2.MonitorServerStatus;
 import org.jmicro.api.objectfactory.AbstractClientServiceProxy;
 import org.jmicro.api.registry.ServiceItem;
@@ -30,7 +30,7 @@ public class MonitorServerManagerImpl implements IMonitorServerManager{
 	//private Short[] types = null; 
 	
 	@Inject
-	private MonitorManager monitorManager;
+	private MonitorClient monitorManager;
 	
 	public void ready() {
 	/*	typeLabels = new String[MonitorServerStatus.TYPES.length];

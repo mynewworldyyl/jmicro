@@ -3,7 +3,7 @@ package org.jmicro.test;
 import org.jmicro.api.JMicro;
 import org.jmicro.api.JMicroContext;
 import org.jmicro.api.monitor.v1.IMonitorDataSubmiter;
-import org.jmicro.api.monitor.v2.MonitorManager;
+import org.jmicro.api.monitor.v2.MonitorClient;
 import org.jmicro.api.objectfactory.IObjectFactory;
 import org.jmicro.api.registry.IRegistry;
 import org.jmicro.api.registry.ServiceItem;
@@ -99,7 +99,7 @@ public class JMicroBaseTestCase {
 	protected void setSayHelloContextv2() {
 		
 		JMicroContext.get().setBoolean(JMicroContext.IS_MONITORENABLE, true);
-		MonitorManager monitor = of.get(MonitorManager.class);
+		MonitorClient monitor = of.get(MonitorClient.class);
 		
 		ServiceMethod sm = sayHelloServiceMethod();
 		JMicroContext.get().setParam(Constants.SERVICE_METHOD_KEY,sm);

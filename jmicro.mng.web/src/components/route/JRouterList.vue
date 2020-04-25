@@ -137,10 +137,6 @@
 <style scoped>
   .JRouterList{
       height:auto;
-      min-height: 500px;
-      min-width:17%;
-      max-width: 30%;
-      float: left;
       border-right:1px solid lightgray;
       border-top:1px solid lightgray;
       text-align: left;

@@ -6,7 +6,7 @@ import org.jmicro.api.monitor.v1.SF;
 import org.jmicro.api.monitor.v2.IMonitorDataSubscriber;
 import org.jmicro.api.monitor.v2.IMonitorServer;
 import org.jmicro.api.monitor.v2.MRpcItem;
-import org.jmicro.api.monitor.v2.MonitorManager;
+import org.jmicro.api.monitor.v2.MonitorClient;
 import org.jmicro.api.registry.ServiceMethod;
 import org.jmicro.common.util.JsonUtils;
 import org.jmicro.test.JMicroBaseTestCase;
@@ -59,7 +59,7 @@ public class TestMonitorSubmiterV2 extends JMicroBaseTestCase{
 	
 	@Test
 	public void testMonitorDataSubmiter() {
-		MonitorManager m = of.get(MonitorManager.class);
+		MonitorClient m = of.get(MonitorClient.class);
 		m.readySubmit(ssubItem());
 		this.waitForReady(1000000);
 	}

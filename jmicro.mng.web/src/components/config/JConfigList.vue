@@ -119,25 +119,9 @@
 <style scoped>
   .JLeftView{
       height:auto;
-      min-height: 500px;
-      min-width:200px;
-      max-width:300px;
-      float: left;
       border-right:1px solid lightgray;
       border-top:1px solid lightgray;
       text-align: left;
-  }
-
-  .JRouterList{
-      height:auto;
-      min-height: 500px;
-      min-width:25%;
-      max-width: 50%;
-      float: left;
-      border-right:1px solid lightgray;
-      border-top:1px solid lightgray;
-      text-align: left;
-      word-break: break-all;
   }
 
 </style>

@@ -60,10 +60,11 @@ import org.jmicro.common.CommonException;
 import org.jmicro.common.Constants;
 import org.jmicro.common.Utils;
 import org.jmicro.common.util.ClassGenerator;
-import org.jmicro.common.util.ReflectUtils;
 import org.jmicro.common.util.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.alibaba.dubbo.common.serialize.kryo.utils.ReflectUtils;
 
 /**
  * 1. 创建对像全部单例,所以不保证线程安全

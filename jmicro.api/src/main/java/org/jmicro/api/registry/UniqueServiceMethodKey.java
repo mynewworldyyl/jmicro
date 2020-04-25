@@ -18,8 +18,9 @@ package org.jmicro.api.registry;
 
 import org.jmicro.api.annotation.SO;
 import org.jmicro.common.CommonException;
-import org.jmicro.common.util.ReflectUtils;
 import org.jmicro.common.util.StringUtils;
+
+import com.alibaba.dubbo.common.serialize.kryo.utils.ReflectUtils;
 
 /**
  * 在服务标识基础上加上方法签名

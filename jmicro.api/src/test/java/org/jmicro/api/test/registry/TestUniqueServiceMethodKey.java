@@ -3,8 +3,9 @@ package org.jmicro.api.test.registry;
 import java.lang.reflect.Method;
 
 import org.jmicro.api.registry.UniqueServiceMethodKey;
-import org.jmicro.common.util.ReflectUtils;
 import org.junit.Test;
+
+import com.alibaba.dubbo.common.serialize.kryo.utils.ReflectUtils;
 
 public class TestUniqueServiceMethodKey {
 	

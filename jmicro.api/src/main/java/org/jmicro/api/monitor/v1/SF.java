@@ -21,7 +21,7 @@ import org.jmicro.api.JMicroContext;
 import org.jmicro.api.config.Config;
 import org.jmicro.api.monitor.v2.IMonitorServer;
 import org.jmicro.api.monitor.v2.MRpcItem;
-import org.jmicro.api.monitor.v2.MonitorManager;
+import org.jmicro.api.monitor.v2.MonitorClient;
 import org.jmicro.api.monitor.v2.OneItem;
 import org.jmicro.api.net.IReq;
 import org.jmicro.api.net.IResp;
@@ -38,7 +38,7 @@ import org.jmicro.common.Constants;
  */
 public class SF {
 	
-	private static MonitorManager m = null;
+	private static MonitorClient m = null;
 	
 	public static boolean linkStart(String tag,IReq req) {
 		if(isMonitorable(MonitorConstant.LINK_START)) {
@@ -165,7 +165,7 @@ public class SF {
 	}
 	
 	public static boolean breakService(String tag,ServiceMethod sm,String desc) {
-		MonitorManager mo = monitor();
+		MonitorClient mo = monitor();
 		if(mo.isServerReady() && !mo.canSubmit(MonitorConstant.SERVICE_BREAK)) {
 			return false;
 		}
@@ -179,7 +179,7 @@ public class SF {
 	
 	public static boolean netIo(short type,String desc,Class cls,Throwable ex) {
 		
-		MonitorManager mo = monitor();
+		MonitorClient mo = monitor();
 		if(mo.isServerReady() && !mo.canSubmit(type)) {
 			return false;
 		}
@@ -201,7 +201,7 @@ public class SF {
 	}
 	
 	public static boolean netIoRead(String tag,short type,long num) {
-		MonitorManager mo = monitor();
+		MonitorClient mo = monitor();
 		if(mo.isServerReady() && !mo.canSubmit(type)) {
 			return false;
 		}
@@ -295,9 +295,9 @@ public class SF {
 		si.setInstanceName(Config.getInstanceName());
 	}
 	
-	private static MonitorManager monitor() {
+	private static MonitorClient monitor() {
 		if(m== null) {
-			m = JMicro.getObjectFactory().get(MonitorManager.class);
+			m = JMicro.getObjectFactory().get(MonitorClient.class);
 		}
 		return m;
 	}
@@ -333,7 +333,7 @@ public class SF {
 	 * @return
 	 */
 	public static boolean isLoggable(int needLevel,int ...rpcMethodLevel) {
-		MonitorManager mo = monitor();
+		MonitorClient mo = monitor();
 		if(mo.isServerReady() && !mo.canSubmit(MonitorConstant.LINKER_ROUTER_MONITOR) 
 				|| needLevel == MonitorConstant.LOG_NO) {
 			return false;

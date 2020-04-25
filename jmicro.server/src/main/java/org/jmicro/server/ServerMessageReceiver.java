@@ -31,7 +31,7 @@ import org.jmicro.api.executor.ExecutorFactory;
 import org.jmicro.api.idgenerator.ComponentIdServer;
 import org.jmicro.api.monitor.v1.MonitorConstant;
 import org.jmicro.api.monitor.v1.SF;
-import org.jmicro.api.monitor.v2.MonitorManager;
+import org.jmicro.api.monitor.v2.MonitorClient;
 import org.jmicro.api.net.IMessageHandler;
 import org.jmicro.api.net.IMessageReceiver;
 import org.jmicro.api.net.ISession;
@@ -58,7 +58,7 @@ public class ServerMessageReceiver implements IMessageReceiver{
 	private boolean openDebug;
 	
 	@Inject(required=false)
-	private MonitorManager monitor;
+	private MonitorClient monitor;
 	
 	@Inject
 	private ComponentIdServer idGenerator;

@@ -26,7 +26,7 @@ import org.jmicro.api.monitor.v1.Linker;
 import org.jmicro.api.monitor.v1.MonitorConstant;
 import org.jmicro.api.monitor.v1.SF;
 import org.jmicro.api.monitor.v2.MRpcItem;
-import org.jmicro.api.monitor.v2.MonitorManager;
+import org.jmicro.api.monitor.v2.MonitorClient;
 import org.jmicro.api.monitor.v2.OneItem;
 import org.jmicro.api.net.IRequest;
 import org.jmicro.api.net.ISession;
@@ -101,7 +101,7 @@ public class JMicroContext  {
 		return this.getParam(MRPC_ITEM, null);
 	}
 	
-	public void submitMRpcItem(MonitorManager mo) {
+	public void submitMRpcItem(MonitorClient mo) {
 		if(this.isMonitorable()) {
 			MRpcItem item = getMRpcItem();
 			if(item != null ) {

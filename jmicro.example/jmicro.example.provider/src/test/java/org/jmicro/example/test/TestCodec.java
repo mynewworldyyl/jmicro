@@ -39,10 +39,10 @@ import org.jmicro.api.net.RpcRequest;
 import org.jmicro.api.net.RpcResponse;
 import org.jmicro.api.objectfactory.IObjectFactory;
 import org.jmicro.api.test.Person;
-import org.jmicro.common.util.ReflectUtils;
 import org.junit.Test;
 import org.objenesis.strategy.StdInstantiatorStrategy;
 
+import com.alibaba.dubbo.common.serialize.kryo.utils.ReflectUtils;
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;

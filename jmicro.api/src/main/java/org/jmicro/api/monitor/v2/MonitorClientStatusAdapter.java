@@ -10,7 +10,7 @@ import org.jmicro.common.util.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class MonitorManagerStatusAdapter implements IMonitorAdapter {
+public class MonitorClientStatusAdapter implements IMonitorAdapter {
 
 	private Logger logger = null;
 	
@@ -28,7 +28,7 @@ public class MonitorManagerStatusAdapter implements IMonitorAdapter {
 
 	private String key;
 
-	public MonitorManagerStatusAdapter(Short[] ts, String[] labels, String key, String group) {
+	public MonitorClientStatusAdapter(Short[] ts, String[] labels, String key, String group) {
 		if (ts == null || ts.length == 0) {
 			throw new CommonException("Monitor status type cannot be null");
 		}

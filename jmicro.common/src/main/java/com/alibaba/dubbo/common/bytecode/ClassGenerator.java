@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.jmicro.common.util;
+package com.alibaba.dubbo.common.bytecode;
 
 import java.io.IOException;
 import java.lang.reflect.Constructor;
@@ -29,6 +29,9 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
+
+import com.alibaba.dubbo.common.serialize.kryo.utils.ReflectUtils;
+import com.alibaba.dubbo.common.utils.ClassHelper;
 
 import javassist.CannotCompileException;
 import javassist.ClassPool;

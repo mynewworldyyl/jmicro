@@ -39,7 +39,8 @@ import java.util.Map;
 import java.util.Set;
 
 import org.jmicro.common.util.JsonUtils;
-import org.jmicro.common.util.ReflectUtils;
+
+import com.alibaba.dubbo.common.serialize.kryo.utils.ReflectUtils;
 /**
  * 
  * @author Yulei Ye

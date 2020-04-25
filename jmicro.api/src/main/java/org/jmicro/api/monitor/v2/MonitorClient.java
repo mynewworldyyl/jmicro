@@ -58,9 +58,9 @@ import org.slf4j.LoggerFactory;
  * @date 2020年4月4日
  */
 @Component(level=2)
-public class MonitorManager {
+public class MonitorClient {
 	
-	private final static Logger logger = LoggerFactory.getLogger(MonitorManager.class);
+	private final static Logger logger = LoggerFactory.getLogger(MonitorClient.class);
 	
 	private static final String TYPES_PATH = Config.BASE_DIR+"/monitorTypes";
 	
@@ -110,7 +110,7 @@ public class MonitorManager {
 	
 	private ExecutorService executor = null;
 	
-	private MonitorManagerStatusAdapter statusMonitorAdapter;
+	private MonitorClientStatusAdapter statusMonitorAdapter;
 	
 	public void init() {
 		
@@ -150,20 +150,20 @@ public class MonitorManager {
 		}
 		
 		ServiceLoader sl = of.get(ServiceLoader.class);
-		String group = "MonitorManager";
-		statusMonitorAdapter = new MonitorManagerStatusAdapter(TYPES,typeLabels,
-				Config.getInstanceName()+"_MonitorManagerStatuCheck",group);
+		String group = "MonitorClient";
+		statusMonitorAdapter = new MonitorClientStatusAdapter(TYPES,typeLabels,
+				Config.getInstanceName()+"_MonitorClientStatuCheck",group);
 		
 		if(sl.hashServer()) {
 			ServiceItem si = sl.createSrvItem(IMonitorAdapter.class, Config.getInstanceName()+"."+group, "0.0.1", IMonitorAdapter.class.getName());
-			of.regist("PubsubServerStatuCheckAdapter", statusMonitorAdapter);
+			of.regist("MonitorClientStatuCheckAdapter", statusMonitorAdapter);
 			sl.registService(si,statusMonitorAdapter);
 		}
 		
 		ExecutorConfig config = new ExecutorConfig();
 		config.setMsMaxSize(10);
 		config.setTaskQueueSize(500);
-		config.setThreadNamePrefix("MonitorManager");
+		config.setThreadNamePrefix("MonitorClient");
 		executor = ExecutorFactory.createExecutor(config);
 		
 		enableWork(msPo,IServiceListener.ADD);
@@ -241,7 +241,7 @@ public class MonitorManager {
 		if(!checkerWorking && IServiceListener.ADD == opType) {
 			if(this.msPo != null && msPo.isUsable()) {
 				checkerWorking = true;
-				new Thread(this::doWork,Config.getInstanceName()+ "_MonitorManager_Worker").start();
+				new Thread(this::doWork,Config.getInstanceName()+ "_MonitorClient_Worker").start();
 			}
 		} else if(checkerWorking && IServiceListener.REMOVE == opType) {
 			checkerWorking = false;
@@ -352,7 +352,7 @@ public class MonitorManager {
 				}
 				
 			}catch(Throwable ex) {
-				logger.error("MonitorManager doWork",ex);
+				logger.error("MonitorClient doWork",ex);
 			}
 		}
 	}
@@ -501,7 +501,7 @@ public class MonitorManager {
 				//不需要监控，也不应该监控，否则数据包将进入死循环永远停不下来
 				//JMicroContext.get().configMonitor(0, 0);
 				//发送消息RPC
-				JMicroContext.get().setBoolean(Constants.FROM_MONITOR_MANAGER, true);
+				JMicroContext.get().setBoolean(Constants.FROM_MONITOR_CLIENT, true);
 					
 				if(localMonitorServer != null) {
 					//本地包不需要RPC，直接本地调用
@@ -528,7 +528,7 @@ public class MonitorManager {
 					statusMonitorAdapter.getServiceCounter().add(MonitorConstant.Ms_TaskFailItemCnt, items.length);
 					//statusMonitorAdapter.getServiceCounter().add(MonitorConstant.Ms_TaskExceptionCount, items.length);
 				}
-				logger.error("MonitorManager.worker.run",e);
+				logger.error("MonitorClient.worker.run",e);
 			}
 		}
 	}

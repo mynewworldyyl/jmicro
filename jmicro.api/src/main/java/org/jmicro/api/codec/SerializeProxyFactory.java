@@ -12,10 +12,11 @@ import java.util.Map;
 import org.jmicro.api.codec.typecoder.TypeCoder;
 import org.jmicro.common.CommonException;
 import org.jmicro.common.Utils;
-import org.jmicro.common.util.ClassGenerator;
-import org.jmicro.common.util.ReflectUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.alibaba.dubbo.common.bytecode.ClassGenerator;
+import com.alibaba.dubbo.common.serialize.kryo.utils.ReflectUtils;
 
 public class SerializeProxyFactory {
 

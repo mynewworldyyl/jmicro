@@ -32,9 +32,10 @@ import org.jmicro.api.net.IRequestHandler;
 import org.jmicro.api.net.IResponse;
 import org.jmicro.api.net.RpcResponse;
 import org.jmicro.common.Constants;
-import org.jmicro.common.util.ReflectUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.alibaba.dubbo.common.serialize.kryo.utils.ReflectUtils;
 
 /**
  * 
