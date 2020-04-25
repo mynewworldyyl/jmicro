@@ -31,6 +31,7 @@ import org.jmicro.api.registry.ServiceItem;
 import org.jmicro.api.registry.ServiceMethod;
 import org.jmicro.api.registry.UniqueServiceKey;
 import org.jmicro.api.registry.UniqueServiceMethodKey;
+import org.jmicro.api.security.ActInfo;
 import org.jmicro.common.CommonException;
 import org.jmicro.common.Constants;
 import org.jmicro.common.util.StringUtils;
@@ -194,6 +195,10 @@ public abstract class AbstractClientServiceProxy implements InvocationHandler,IS
 		
 		AsyncConfig async = JMicroContext.get().getParam(Constants.ASYNC_CONFIG, null);
 		
+		ActInfo ai = JMicroContext.get().getParam(JMicroContext.LOGIN_ACT, null);
+		
+		String lk = JMicroContext.get().getParam(JMicroContext.LOGIN_KEY, null);
+		
 		JMicroContext.get().backupAndClear();
 		
 		//false表示不是provider端
@@ -211,6 +216,14 @@ public abstract class AbstractClientServiceProxy implements InvocationHandler,IS
 		
 		if(async != null) {
 			JMicroContext.get().setParam(Constants.ASYNC_CONFIG, async);
+		}
+		
+		if(lk != null) {
+			JMicroContext.get().setParam(JMicroContext.LOGIN_KEY, lk);
+		}
+		
+		if(ai != null) {
+			JMicroContext.get().setParam(JMicroContext.LOGIN_ACT, ai);
 		}
 		
 	}

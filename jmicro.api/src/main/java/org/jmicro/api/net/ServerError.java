@@ -22,10 +22,12 @@ package org.jmicro.api.net;
  */
 public final class ServerError {
 	
-	public static final int SE_LIMITER = 0xfffffff1;
-	public static final int SE_LIMITER_ENTER_ASYNC = 0xfffffff2;
+	public static final int SE_LIMITER = 0x00000001;
+	public static final int SE_LIMITER_ENTER_ASYNC = 0x00000002;
 	
-	public static final int SE_ASYNC_PUBSUB_FAIL = 0xfffffff3;
+	public static final int SE_ASYNC_PUBSUB_FAIL = 0x00000003;
+	
+	public static final int SE_INVLID_LOGIN_KEY = 0x00000004;
 
 	private int errorCode;
 	private String msg;

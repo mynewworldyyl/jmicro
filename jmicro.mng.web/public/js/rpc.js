@@ -180,9 +180,13 @@ jm.rpc = {
     var self = this;
     return new Promise(function(reso,reje){
 
-      var msg =  self.createMsg(0x09)
+      let msg =  self.createMsg(0x09)
+      let ai = jm.mng.act.actInfo;
+      if(ai && ai.success ) {
+          req.params['loginKey'] = ai.loginKey;
+      }
 
-      var streamCb = req.stream;
+      let streamCb = req.stream;
       if(typeof req.stream == 'function') {
         req.stream = true;
         msg.setStream(true)
@@ -295,7 +299,7 @@ jm.rpc = {
         return;
       }
 
-      var req = new jm.rpc.ApiRequest();
+      let req = new jm.rpc.ApiRequest();
       req.serviceName = serviceName;
       req.method = method;
       req.namespace = namespace;

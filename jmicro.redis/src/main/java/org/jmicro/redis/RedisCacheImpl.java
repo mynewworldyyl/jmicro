@@ -203,6 +203,30 @@ public class RedisCacheImpl implements ICache {
 	}
 
 	@Override
+	public boolean exist(String key) {
+		if(StringUtils.isEmpty(key)) {
+			logger.error("Expire key cannot be NULL");
+			return false;
+		}
+		
+		byte[] k = ICache.keyData(key);
+		if( k == null) {
+			return false;
+		}
+		
+		Jedis jedis = null;
+		try {
+			 jedis = jeditPool.getResource();
+			 jedis.exists(k);
+		} finally {
+			if(jedis != null) {
+				jedis.close();
+			}
+		}
+		return false;
+	}
+
+	@Override
 	public boolean expire(String key, long expire) {
 		if(StringUtils.isEmpty(key)) {
 			logger.error("Expire key cannot be NULL");

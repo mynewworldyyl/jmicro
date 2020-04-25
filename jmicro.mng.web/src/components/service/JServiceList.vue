@@ -63,6 +63,16 @@
             this.loadServices((srvTrees)=>{
                 this.services = srvTrees;
             });
+
+            let self = this;
+            window.jm.vue.$on('userLogin',() => {
+                self.loadServices();
+            });
+
+            window.jm.vue.$on('userLogout',() => {
+                self.loadServices();
+            });
+
         },
 
         methods:{

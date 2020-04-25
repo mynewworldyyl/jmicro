@@ -173,8 +173,20 @@ public interface TypeCoder<T> extends Comparable<TypeCoder<T>>{
 		TypeCoder coder = TypeCoderFactory.getDefaultCoder();
 		
 		for(Map.Entry<K,V> e: map.entrySet()){
-			coder.encode(buffer, e.getKey(), keyType, null);
-			coder.encode(buffer, e.getValue(), valueType, null);
+			if(e.getKey() == null) {
+				buffer.writeByte(Decoder.PREFIX_TYPE_NULL);
+			}else {
+				buffer.writeByte(Decoder.PREFIX_TYPE_PROXY);
+				coder.encode(buffer, e.getKey(), keyType, null);
+			}
+			
+			if(e.getValue() == null) {
+				buffer.writeByte(Decoder.PREFIX_TYPE_NULL);
+			}else {
+				buffer.writeByte(Decoder.PREFIX_TYPE_PROXY);
+				coder.encode(buffer, e.getValue(), valueType, null);
+			}
+			
 		}
 	}
 	
@@ -377,8 +389,7 @@ public interface TypeCoder<T> extends Comparable<TypeCoder<T>>{
 		try {
 			len = buffer.readShort();
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			logger.error("decodeMap",e);
 		}
 		if(len <= 0) {
 			return Collections.EMPTY_MAP;
@@ -390,9 +401,24 @@ public interface TypeCoder<T> extends Comparable<TypeCoder<T>>{
 		TypeCoder coder = TypeCoderFactory.getDefaultCoder();
 		Map<Object,Object> map = new HashMap<>();
 		for(; len > 0; len--) {
-			Object key = coder.decode(buffer, keyType, null);
-			Object value = coder.decode(buffer, valType, null);
-			map.put(key, value);
+			try {
+				byte preCode = buffer.readByte();
+				Object key =  null;
+				if(preCode != Decoder.PREFIX_TYPE_NULL) {
+					key = coder.decode(buffer, keyType, null);
+				}
+				
+				Object value =  null;
+				preCode = buffer.readByte();
+				if(preCode != Decoder.PREFIX_TYPE_NULL) {
+					value = coder.decode(buffer, valType, null);
+				}
+				map.put(key, value);
+				
+			} catch (IOException e) {
+				logger.error("decodeMap",e);
+			}
+			
 		}
 		
 		return map;

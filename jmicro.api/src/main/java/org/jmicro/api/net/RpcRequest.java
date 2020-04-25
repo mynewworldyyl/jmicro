@@ -17,9 +17,9 @@
 package org.jmicro.api.net;
 
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.Map;
 
-import org.jmicro.api.AbstractObjectMapSupport;
 import org.jmicro.api.annotation.SO;
 import org.jmicro.api.monitor.v1.MonitorConstant;
 
@@ -29,7 +29,9 @@ import org.jmicro.api.monitor.v1.MonitorConstant;
  * @date 2018年10月4日-下午12:07:03
  */
 @SO
-public final class RpcRequest extends AbstractObjectMapSupport implements IRequest{
+public final class RpcRequest implements IRequest{
+	
+	protected Map<String,Object> params = new HashMap<String,Object>();
 	
 	private String serviceName;
 	
@@ -58,6 +60,15 @@ public final class RpcRequest extends AbstractObjectMapSupport implements IReque
 	private transient boolean finish = false;
 	
 	public RpcRequest(){}
+	
+	@SuppressWarnings("unchecked")
+	public <T> T getParam(String key,T defautl){
+		T v = (T)this.params.get(key);
+		if(v == null){
+			return defautl;
+		}
+		return v;
+	}
 	
 	public int getLogLevel() {
 		if(msg != null) {
@@ -209,7 +220,39 @@ public final class RpcRequest extends AbstractObjectMapSupport implements IReque
 	public void setArgs(Object[] args) {
 		this.args = args;
 	}
-
+	public Map<String,Object> getParams(){
+		return this.params;
+	}
+	
+	//public abstract ByteBuffer newBuffer();
+	
+	public Integer getInt(String key,int defautl){
+		return this.getParam(key,defautl);
+	}
+	
+	public String getString(String key,String defautl){
+		return this.getParam(key,defautl);
+	}
+	
+	public Boolean getBoolean(String key,boolean defautl){
+		return this.getParam(key,defautl);
+	}
+	
+	public Float getFloat(String key,Float defautl){
+		return this.getParam(key,defautl);
+	}
+	
+	public Double getDouble(String key,Double defautl){
+		return this.getParam(key,defautl);
+	}
+	
+	public Object getObject(String key,Object defautl){
+		return this.getParam(key,defautl);
+	}
+	
+	public void putObject(String key,Object value){
+		 this.params.put(key, value);
+	}
 	@Override
 	public String toString() {
 		return "RpcRequest [serviceName=" + serviceName + ", method=" + method + ", args=" + Arrays.toString(args)

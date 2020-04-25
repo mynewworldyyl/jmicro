@@ -1,7 +1,10 @@
 package org.jmicro.mng.impl;
 
 import java.util.Set;
+import java.util.TreeSet;
 
+import org.jmicro.api.JMicroContext;
+import org.jmicro.api.annotation.Cfg;
 import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.Inject;
 import org.jmicro.api.annotation.Service;
@@ -9,12 +12,16 @@ import org.jmicro.api.mng.IManageService;
 import org.jmicro.api.registry.IRegistry;
 import org.jmicro.api.registry.ServiceItem;
 import org.jmicro.api.registry.ServiceMethod;
+import org.jmicro.api.security.ActInfo;
 import org.jmicro.api.service.ServiceManager;
 
 @Component
 @Service(namespace="mng", version="0.0.1")
 public class ManageServiceImpl implements IManageService {
 
+	@Cfg("/notLonginClientId")
+	private int notLonginClientId = 10;
+	
 	@Inject
 	private IRegistry reg;
 	
@@ -24,12 +31,32 @@ public class ManageServiceImpl implements IManageService {
 	@Override
 	public Set<ServiceItem> getServices() {
 		 Set<ServiceItem> items = srvManager.getAllItems();
-		 return items;
+		 if(items == null || items.isEmpty()) {
+			 return null;
+		 }
+		 
+		 Set<ServiceItem> sis = new TreeSet<>();
+		 ActInfo ai = JMicroContext.get().getParam(JMicroContext.LOGIN_ACT, null);
+		 if(ai != null) {
+			 for(ServiceItem si : items) {
+				 if(si.getClientId() >= ai.getClientId()) {
+					 sis.add(si);
+				 }
+			 }
+		 } else {
+			 for(ServiceItem si : items) {
+				 if(si.getClientId() >= this.notLonginClientId) {
+					 sis.add(si);
+				 }
+			 }
+		 }
+		 return sis;
 	}
 
 	@Override
 	public boolean updateItem(ServiceItem item) {
 	    ServiceItem si = srvManager.getServiceByKey(item.getKey().toKey(true, true, true));
+	    
 	    if(si != null) {
 	    	si.setAvgResponseTime(item.getAvgResponseTime());
 	    	si.setBaseTimeUnit(item.getBaseTimeUnit());

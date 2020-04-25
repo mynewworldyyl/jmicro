@@ -156,6 +156,6 @@ public @interface Service {
 	 */
 	public String[] limit2Packages() default {};
 	
-	
+	public int clientId() default 0;
 	
 }

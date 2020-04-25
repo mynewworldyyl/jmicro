@@ -3,9 +3,8 @@ package org.jmicro.redis;
 import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.Inject;
 import org.jmicro.api.config.Config;
-import org.jmicro.api.objectfactory.IPostFactoryListener;
 import org.jmicro.api.objectfactory.IObjectFactory;
-import org.jmicro.common.CommonException;
+import org.jmicro.api.objectfactory.IPostFactoryListener;
 import org.jmicro.common.util.StringUtils;
 
 import redis.clients.jedis.Jedis;

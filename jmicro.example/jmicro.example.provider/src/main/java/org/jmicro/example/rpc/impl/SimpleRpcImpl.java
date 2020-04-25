@@ -8,12 +8,12 @@ import org.jmicro.api.annotation.SMethod;
 import org.jmicro.api.annotation.Service;
 import org.jmicro.api.monitor.v1.MonitorConstant;
 import org.jmicro.api.monitor.v1.SF;
-import org.jmicro.common.CommonException;
 import org.jmicro.common.Constants;
 import org.jmicro.example.api.rpc.ISimpleRpc;
 
 
-@Service(namespace="simpleRpc",version="0.0.1", monitorEnable=1,maxSpeed=-1,baseTimeUnit=Constants.TIME_SECONDS)
+@Service(namespace="simpleRpc", version="0.0.1", monitorEnable=1, maxSpeed=-1,
+baseTimeUnit=Constants.TIME_SECONDS, clientId=1000)
 @Component
 public class SimpleRpcImpl implements ISimpleRpc {
 

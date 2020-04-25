@@ -7,6 +7,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+import org.jmicro.api.JMicroContext;
 import org.jmicro.api.codec.ICodecFactory;
 import org.jmicro.api.codec.JDataInput;
 import org.jmicro.api.codec.JDataOutput;
@@ -96,7 +97,7 @@ public class TestPubsub extends JMicroBaseTestCase{
 		
 		//psd.getContext().put("key", 222);
 		
-		RpcRequest req = new RpcRequest();
+		RpcRequest0 req = new RpcRequest0();
 		req.setMethod("method");
 		req.setServiceName("serviceName");
 		req.setNamespace("namespace");
@@ -107,11 +108,14 @@ public class TestPubsub extends JMicroBaseTestCase{
 		req.setTransport(Constants.TRANSPORT_NETTY);
 		req.setImpl("fsafd");
 		
+		req.putObject(JMicroContext.LOGIN_KEY, "testlogin012");
+		
 		//Message msg = new Message();
+		ByteBuffer bb = ICodecFactory.encode(ed, req, Message.PROTOCOL_BIN);
+		RpcRequest0 obj = ICodecFactory.decode(ed, bb, null, Message.PROTOCOL_BIN);
+		//ByteBuffer bb = (ByteBuffer)ed.getEncoder(Message.PROTOCOL_BIN).encode(req);
 		
-		ByteBuffer bb = (ByteBuffer)ed.getEncoder(Message.PROTOCOL_BIN).encode(req);
-		
-		RpcRequest obj = (RpcRequest)ed.getDecoder(Message.PROTOCOL_BIN).decode(bb, null);
+		//RpcRequest obj = (RpcRequest)ed.getDecoder(Message.PROTOCOL_BIN).decode(bb, null);
 		
 		/*msg.setPayload(bb);
 		ByteBuffer msgBb = msg.encode();
@@ -157,7 +161,7 @@ public class TestPubsub extends JMicroBaseTestCase{
 		
 		//psd.getContext().put("key", 222);
 		
-		RpcRequest req = new RpcRequest();
+		RpcRequest0 req = new RpcRequest0();
 		req.setMethod("method");
 		req.setServiceName("serviceName");
 		req.setNamespace("namespace");
@@ -173,11 +177,11 @@ public class TestPubsub extends JMicroBaseTestCase{
 		Object obj = req;
 		
 		//((ISerializeObject)obj).encode(jo, obj);
-		req.encode(jo, obj);
+		req.encode(jo);
 		
 		
 		JDataInput ji = new JDataInput(jo.getBuf());
-		RpcRequest r1 = new RpcRequest();
+		RpcRequest0 r1 = new RpcRequest0();
 		r1.decode(ji);
 		
 		System.out.print(r1);

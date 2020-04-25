@@ -16,6 +16,9 @@
  */
 package org.jmicro.api.net;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import org.jmicro.api.AbstractObjectMapSupport;
 import org.jmicro.api.annotation.SO;
 /**
@@ -24,7 +27,9 @@ import org.jmicro.api.annotation.SO;
  * @date 2018年10月4日-下午12:07:23
  */
 @SO
-public final class RpcResponse extends AbstractObjectMapSupport implements IResponse /*IEncoder,IResponse,*/{
+public final class RpcResponse /*extends AbstractObjectMapSupport*/ implements IResponse /*IEncoder,IResponse,*/{
+	
+	protected Map<String,Object> params = new HashMap<String,Object>();
 	
 	private long id;
 	
@@ -128,7 +133,61 @@ public final class RpcResponse extends AbstractObjectMapSupport implements IResp
 	public Long getReqId() {
 		return reqId;
 	}
-
+	
+	@SuppressWarnings("unchecked")
+	public <T> T getParam(String key,T defautl){
+		T v = (T)this.params.get(key);
+		if(v == null){
+			return defautl;
+		}
+		return v;
+	}
+	
+	/*public void decode(ByteBuffer ois) {
+		//ByteBuffer ois = ByteBuffer.wrap(data);
+		this.params.putAll(Decoder.decodeObject(ois));
+	}
+	
+	public ByteBuffer encode() {
+		ByteBuffer bb = newBuffer();
+		Encoder.encodeObject(bb,this.params);
+		return bb;
+	}*/
+	
+	public Map<String,Object> getParams(){
+		return this.params;
+	}
+	
+	//public abstract ByteBuffer newBuffer();
+	
+	public Integer getInt(String key,int defautl){
+		return this.getParam(key,defautl);
+	}
+	
+	public String getString(String key,String defautl){
+		return this.getParam(key,defautl);
+	}
+	
+	public Boolean getBoolean(String key,boolean defautl){
+		return this.getParam(key,defautl);
+	}
+	
+	public Float getFloat(String key,Float defautl){
+		return this.getParam(key,defautl);
+	}
+	
+	public Double getDouble(String key,Double defautl){
+		return this.getParam(key,defautl);
+	}
+	
+	public Object getObject(String key,Object defautl){
+		return this.getParam(key,defautl);
+	}
+	
+	public void putObject(String key,Object value){
+		 this.params.put(key, value);
+	}
+	
 	@Override
 	public String toString() {
 		return "RpcResponse [id=" + id + ", reqId=" + reqId + ", result=" + result + ", isMonitorEnable="

@@ -35,7 +35,6 @@ jm.mng = {
             return jm.rpc.callRpc(req);
         },
 
-        //common config request instance
         __ccreq:function(){
             let req = {};
             req.serviceName=this.sn;
@@ -79,7 +78,6 @@ jm.mng = {
             return jm.rpc.callRpc(req);
         },
 
-        //common config request instance
         __ccreq:function(){
             let req = {};
             req.serviceName=this.sn;
@@ -363,6 +361,8 @@ jm.mng = {
             });
         },
 
+
+
         __ccreq:function(){
             let req = {};
             req.serviceName=this.sn;
@@ -374,6 +374,73 @@ jm.mng = {
         sn:'org.jmicro.mng.inter.ICommonManager',
         ns : MNG,
         v:'0.0.1',
+    },
+
+    act : {
+        actInfo:null,
+
+        login: function (actName,pwd,cb){
+            if(this.actInfo && cb) {
+                cb(this.actInfo,null);
+                return;
+            }
+            let self = this;
+            let req =  this.__ccreq();
+            req.method = 'login';
+            req.args = [actName,pwd];
+            jm.rpc.callRpc(req)
+                .then(( actInfo )=>{
+                    if(actInfo && actInfo.success) {
+                        self.actInfo = actInfo;
+                        cb(actInfo,null);
+                    } else {
+                        cb(null,actInfo.msg);
+                    }
+                }).catch((err)=>{
+                    console.log(err);
+                    cb(null,err);
+                });;
+        },
+
+        loginout: function (cb){
+            if(!this.actInfo) {
+                if(cb) {
+                    cb(true,null)
+                }
+                return;
+            }
+            let self = this;
+            let req =  this.__ccreq();
+            req.method = 'logout';
+            req.args = [ this.actInfo.loginKey ];
+            jm.rpc.callRpc(req)
+                .then(( actInfo )=>{
+                    if(actInfo) {
+                        self.actInfo = null;
+                        if(cb) {
+                            cb(true,null)
+                        }
+                    }else {
+                        if(cb) {
+                            cb(false,'logout fail')
+                        }
+                    }
+                }).catch((err)=>{
+                    console.log(err);
+                    if(cb) {
+                        cb(false,err)
+                    }
+            });
+        },
+
+        __ccreq:function(){
+            let req = {};
+            req.serviceName = 'org.jmicro.api.security.IAccountService';
+            req.namespace = 'act';
+            req.version = '0.0.1';
+            return req;
+        },
+
     },
 
     monitor : {

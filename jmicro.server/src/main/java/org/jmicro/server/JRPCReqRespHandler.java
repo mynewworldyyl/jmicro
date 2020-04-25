@@ -34,8 +34,11 @@ import org.jmicro.api.net.RpcRequest;
 import org.jmicro.api.net.RpcResponse;
 import org.jmicro.api.net.ServerError;
 import org.jmicro.api.registry.IRegistry;
+import org.jmicro.api.security.ActInfo;
+import org.jmicro.api.security.IAccountService;
 import org.jmicro.api.service.ServiceLoader;
 import org.jmicro.common.Constants;
+import org.jmicro.common.util.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -71,6 +74,9 @@ public class JRPCReqRespHandler implements IMessageHandler{
 	@Inject(required=true)
 	private IRegistry registry = null;
 	
+	@Inject
+	private IAccountService accountManager;
+	
 	@Override
 	public Byte type() {
 		return TYPE;
@@ -99,6 +105,29 @@ public class JRPCReqRespHandler implements IMessageHandler{
 	    	final RpcRequest req1 = ICodecFactory.decode(this.codeFactory,msg.getPayload(),
 					RpcRequest.class,msg.getProtocol());
 	    	
+	    	ActInfo ai = null;
+			
+			if(req1.getParams().containsKey(JMicroContext.LOGIN_KEY)) {
+				String lk = (String)req1.getParams().get(JMicroContext.LOGIN_KEY);
+				if(StringUtils.isNotEmpty(lk)) {
+					ai = this.accountManager.getAccount(lk);
+					if(ai == null) {
+						ServerError se = new ServerError(ServerError.SE_INVLID_LOGIN_KEY,"Invalid login key!");
+						resp.setResult(se);
+						resp.setSuccess(false);
+						msg.setPayload(ICodecFactory.encode(codeFactory, resp, msg.getProtocol()));
+						if(SF.isLoggable(MonitorConstant.LOG_DEBUG, msg.getLogLevel())) {
+							SF.doResponseLog(MonitorConstant.LOG_DEBUG, TAG, null," one response");
+						}
+						s.write(msg);
+						return;
+					}else {
+						JMicroContext.get().setString(JMicroContext.LOGIN_KEY, lk);
+						JMicroContext.get().setObject(JMicroContext.LOGIN_ACT, ai);
+					}
+				}
+			}
+			
 	    	if(msg.isDebugMode()) {
 	    		JMicroContext.get().appendCurUseTime("Server end decode req",true);
     		}

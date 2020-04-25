@@ -17,7 +17,6 @@
 package org.jmicro.api.registry;
 
 import java.lang.reflect.Field;
-import java.util.Date;
 import java.util.HashSet;
 import java.util.Random;
 import java.util.Set;
@@ -49,7 +48,7 @@ import org.slf4j.LoggerFactory;
  * @date 2018年10月4日-下午12:04:29
  */
 @SO
-public final class ServiceItem{
+public final class ServiceItem implements Comparable<ServiceItem>{
 
 	private final static Logger logger = LoggerFactory.getLogger(ServiceItem.class);
 	
@@ -128,6 +127,8 @@ public final class ServiceItem{
 	 */
 	private int avgResponseTime = -1;
 	
+	private int clientId = 0;
+	
 	private Set<ServiceMethod> methods = new HashSet<>();
 	
 	//private long createdTime = System.currentTimeMillis();
@@ -148,7 +149,14 @@ public final class ServiceItem{
 		return null;
 	}
 	
-    public void formPersisItem(ServiceItem p){
+    @Override
+	public int compareTo(ServiceItem o) {
+		String key = this.getKey().toKey(true, false, false);
+		String keyo = o.getKey().toKey(true, false, false);
+		return key.compareTo(keyo);
+	}
+
+	public void formPersisItem(ServiceItem p){
 		this.monitorEnable = p.monitorEnable;
 		
 		this.retryCnt=p.retryCnt;
@@ -166,6 +174,7 @@ public final class ServiceItem{
 		this.checkInterval = p.checkInterval;
 		this.handler = p.handler;
 		this.slotSize = p.slotSize;
+		this.clientId = p.clientId;
 		
 		for(ServiceMethod sm : p.getMethods()){
 			ServiceMethod nsm = this.getMethod(sm.getKey().getMethod(), sm.getKey().getParamsStr());
@@ -328,6 +337,25 @@ public final class ServiceItem{
 	}
 	
 	public ServiceMethod getMethod(String methodName,String mkStr){
+		Set<ServiceMethod> ms = new HashSet<>();
+		for(ServiceMethod sm : this.methods){
+			if(methodName.equals(sm.getKey().getMethod())){
+				ms.add(sm);
+			}
+		}
+		if(ms.isEmpty()) {
+			return null;
+		}
+		
+		if(ms.size() == 1) {
+			return methods.iterator().next();
+		}
+		
+		if(StringUtils.isEmpty(mkStr)) {
+			throw new CommonException("Service method cannot be found with null params service: "+
+					this.getKey().getServiceName()+" , M: "+methodName);
+		}
+		
 		for(ServiceMethod sm : this.methods){
 			if(methodName.equals(sm.getKey().getMethod()) && mkStr.equals(sm.getKey().getParamsStr()) ){
 				return sm;
@@ -497,6 +525,14 @@ public final class ServiceItem{
 
 	public void setCode(int code) {
 		this.code = code;
+	}
+
+	public int getClientId() {
+		return clientId;
+	}
+
+	public void setClientId(int clientId) {
+		this.clientId = clientId;
 	}
 	
 	

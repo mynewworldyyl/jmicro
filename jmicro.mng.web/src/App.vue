@@ -1,74 +1,79 @@
 <template>
 
   <div>
-      <Menu mode="horizontal" theme="light" active-key="service" @on-select="toRouter">
-          <Menu-item name="service" >
-              <Icon type="ios-paper"></Icon>
-              SERVICE
-          </Menu-item>
+      <div style="position: fixed;right: 0px;left: 0px; height: 60px;top: 0px;z-index:100">
+          <Menu mode="horizontal" theme="light" active-key="service" @on-select="toRouter">
+              <Menu-item name="service" >
+                  <Icon type="ios-paper"></Icon>
+                  SERVICE
+              </Menu-item>
 
-          <Menu-item name="statis">
-              <Icon type="ios-stats" />
-              STATIS
-          </Menu-item>
+              <Menu-item name="statis">
+                  <Icon type="ios-stats" />
+                  STATIS
+              </Menu-item>
 
-          <Menu-item name="monitors">
-              <Icon type="ios-cog"></Icon>
-              MONITORS
-          </Menu-item>
+              <Menu-item name="monitors">
+                  <Icon type="ios-cog"></Icon>
+                  MONITORS
+              </Menu-item>
 
-          <Menu-item name="config">
-              <Icon type="ios-construct"></Icon>
-              CONFIG
-          </Menu-item>
+              <Menu-item name="config">
+                  <Icon type="ios-construct"></Icon>
+                  CONFIG
+              </Menu-item>
 
-          <Submenu name="o">
-              <template slot="title">
-                  <Icon type="ios-analytics" />
-                  OTHERS
-              </template>
-              <Menu-item name="router"><Icon type="ios-people"></Icon>ROUTER</Menu-item>
-              <Menu-item name="warning"><Icon type="ios-alert" />WARNING</Menu-item>
-              <Menu-item name="log"><Icon type="ios-filing"></Icon>LOG</Menu-item>
-              <Menu-item name="shell"><Icon type="ios-cog"></Icon>SHELL</Menu-item>
-              <MenuItem name="help"> <Icon type="ios-cog"></Icon>HELP</MenuItem>
-              <MenuItem name="about"> <Icon type="ios-cog"></Icon>ABOUT</MenuItem>
-              <MenuItem name="contact"> <Icon type="ios-cog"></Icon>CONTACT ME</MenuItem>
-          </Submenu>
+              <Submenu name="o">
+                  <template slot="title">
+                      <Icon type="ios-analytics" />
+                      OTHERS
+                  </template>
+                  <Menu-item name="router"><Icon type="ios-people"></Icon>ROUTER</Menu-item>
+                  <Menu-item name="warning"><Icon type="ios-alert" />WARNING</Menu-item>
+                  <Menu-item name="log"><Icon type="ios-filing"></Icon>LOG</Menu-item>
+                  <Menu-item name="shell"><Icon type="ios-cog"></Icon>SHELL</Menu-item>
+                  <MenuItem name="help"> <Icon type="ios-cog"></Icon>HELP</MenuItem>
+                  <MenuItem name="about"> <Icon type="ios-cog"></Icon>ABOUT</MenuItem>
+                  <MenuItem name="contact"> <Icon type="ios-cog"></Icon>CONTACT ME</MenuItem>
+              </Submenu>
 
-      </Menu>
-
+          </Menu>
+          <JAccount></JAccount>
+      </div>
 
       <div :style="curSelect.drawerBtnStyle" class="drawerBtnStatu" @mouseenter="openDrawer()"></div>
 
-      <!-- 服务监控列表 -->
-      <Drawer  v-model="cache.service.drawerStatus" :closable="false" placement="left" :transfer="true"
-              :draggable="true" :scrollable="true" width="50">
-          <JServiceList evt-name="serviceNodeSelect" group="service"></JServiceList>
-      </Drawer>
+      <div style="margin-top:60px;">
+          <!-- 服务监控列表 -->
+          <Drawer  v-model="cache.service.drawerStatus" :closable="false" placement="left" :transfer="true"
+                   :draggable="true" :scrollable="true" width="50">
+              <JServiceList evt-name="serviceNodeSelect" group="service"></JServiceList>
+          </Drawer>
 
-      <Drawer v-model="cache.config.drawerStatus" :closable="false" placement="left" :transfer="true"
-              :draggable="true" :scrollable="true" width="50">
-          <JConfigList></JConfigList>
-      </Drawer>
+          <Drawer v-model="cache.config.drawerStatus" :closable="false" placement="left" :transfer="true"
+                  :draggable="true" :scrollable="true" width="50">
+              <JConfigList></JConfigList>
+          </Drawer>
 
-      <Drawer  v-model="cache.statis.drawerStatus" :closable="false" placement="left" :transfer="true"
-              :draggable="true" :scrollable="true" width="50">
-          <JServiceList slId="statisSrvListId" evt-name="statisNodeSelect"  group="statis"></JServiceList>
-      </Drawer>
+          <Drawer  v-model="cache.statis.drawerStatus" :closable="false" placement="left" :transfer="true"
+                   :draggable="true" :scrollable="true" width="50">
+              <JServiceList slId="statisSrvListId" evt-name="statisNodeSelect"  group="statis"></JServiceList>
+          </Drawer>
 
-      <Drawer  v-model="cache.monitors.drawerStatus" :closable="false" placement="left" :transfer="true"
-              :draggable="true" :scrollable="true" width="50">
-          <JMonitorList slId="monitorListId" evt-name="monitorNodeSelect"></JMonitorList>
-      </Drawer>
+          <Drawer  v-model="cache.monitors.drawerStatus" :closable="false" placement="left" :transfer="true"
+                   :draggable="true" :scrollable="true" width="50">
+              <JMonitorList slId="monitorListId" evt-name="monitorNodeSelect"></JMonitorList>
+          </Drawer>
 
-      <Drawer  v-model="cache.router.drawerStatus" :closable="false" placement="left" :transfer="true"
-               :draggable="true" :scrollable="true" width="50">
-          <JRouterList></JRouterList>
-      </Drawer>
+          <Drawer  v-model="cache.router.drawerStatus" :closable="false" placement="left" :transfer="true"
+                   :draggable="true" :scrollable="true" width="50">
+              <JRouterList></JRouterList>
+          </Drawer>
 
-      <!-- route outlet -->
-     <router-view></router-view>
+          <!-- route outlet -->
+          <router-view></router-view>
+      </div>
+
   </div>
 </template>
 
@@ -78,6 +83,7 @@
     import JConfigList from './components/config/JConfigList.vue'
     import JMonitorList from './components/monitor/JMonitorList.vue'
     import JRouterList from './components/route/JRouterList.vue'
+    import JAccount from './components/common/JAccount.vue'
 
     let cache = null;
 
@@ -87,7 +93,8 @@ export default {
         JServiceList,
         JConfigList,
         JMonitorList,
-        JRouterList
+        JRouterList,
+        JAccount
     },
 
     data() {
@@ -157,6 +164,10 @@ export default {
               this.openDrawer();
           }
           /* this.$router.push('/'+key); */
+      },
+
+      doLoginOrLogout(){
+
       }
   }
 }
@@ -195,7 +206,7 @@ export default {
 }
 
 .drawerBtnStatu{
-    position: absolute;
+    position: fixed;
     left: 0px;
     top: 30%;
     bottom: 30%;
@@ -204,6 +215,9 @@ export default {
     border-left: 1px solid lightgray;
     background-color: lightgray;
     border-radius: 3px;
+    z-index: 1000000;
 }
+
+
 
 </style>

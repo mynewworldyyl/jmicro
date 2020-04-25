@@ -6,4 +6,5 @@ public interface ICommonManager {
 
 	Map<String,String> getI18NValues(String lang);
 	
+
 }

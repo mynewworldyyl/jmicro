@@ -93,8 +93,7 @@ public class BreakerManager{
 	}
 	
 	@JMethod("ready")
-	public void ready(){
-		
+	public void ready(){	
 		doTestImpl = this::doTestService;
 		breakerChecker = this::breakerChecker;
 		

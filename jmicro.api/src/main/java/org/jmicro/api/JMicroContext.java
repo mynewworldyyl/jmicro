@@ -59,6 +59,13 @@ public class JMicroContext  {
 	public static final String REMOTE_HOST = "remoteHost";
 	public static final String REMOTE_PORT = "_remotePort";
 	
+	public static final String LOGIN_ACT = "_loginAccount";
+	
+	public static final String LOGIN_KEY = "loginKey";
+	
+	public static final String CACHE_LOGIN_KEY = "__ActLoginKey_";
+	
+	
 	public static final String LINKER_ID = "_linkerId";
 	//控制RPC方法在每个服务中输出日志，区加于往监控服务器上传日志
 	public static final String IS_DEBUG = "_isDebug";

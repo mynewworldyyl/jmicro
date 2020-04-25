@@ -40,8 +40,11 @@ import org.jmicro.api.objectfactory.AbstractClientServiceProxy;
 import org.jmicro.api.objectfactory.IObjectFactory;
 import org.jmicro.api.registry.ServiceItem;
 import org.jmicro.api.registry.ServiceMethod;
+import org.jmicro.api.security.ActInfo;
+import org.jmicro.api.security.IAccountService;
 import org.jmicro.common.CommonException;
 import org.jmicro.common.Constants;
+import org.jmicro.common.util.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -58,6 +61,9 @@ public class ApiRequestMessageHandler implements IMessageHandler{
 	
 	@Inject
 	private ComponentIdServer idGenerator;
+	
+	@Inject
+	private IAccountService accountManager;
 	
 	@Inject
 	private ICodecFactory codecFactory;
@@ -90,6 +96,29 @@ public class ApiRequestMessageHandler implements IMessageHandler{
 		resp.setSuccess(true);
 		resp.setId(idGenerator.getLongId(ApiResponse.class));
 		
+		ActInfo ai = null;
+		
+		if(req.getParams().containsKey(JMicroContext.LOGIN_KEY)) {
+			String lk = (String)req.getParams().get(JMicroContext.LOGIN_KEY);
+			if(StringUtils.isNotEmpty(lk)) {
+				ai = this.accountManager.getAccount(lk);
+				if(ai == null) {
+					ServerError se = new ServerError(ServerError.SE_INVLID_LOGIN_KEY,"Invalid login key!");
+					resp.setResult(se);
+					resp.setSuccess(false);
+					msg.setPayload(ICodecFactory.encode(codecFactory, resp, msg.getProtocol()));
+					if(SF.isLoggable(MonitorConstant.LOG_DEBUG, msg.getLogLevel())) {
+						SF.doResponseLog(MonitorConstant.LOG_DEBUG, TAG, null," one response");
+					}
+					session.write(msg);
+					return;
+				} else {
+					JMicroContext.get().setString(JMicroContext.LOGIN_KEY, lk);
+					JMicroContext.get().setObject(JMicroContext.LOGIN_ACT, ai);	
+				}
+			}
+		}
+		
 		if(MessageServiceImpl.TAG.equals(req.getServiceName())) {
 			if("subscribe".equals(req.getMethod())) {
 				String topic = (String)req.getArgs()[0];
@@ -104,7 +133,7 @@ public class ApiRequestMessageHandler implements IMessageHandler{
 			
 			resp.setResult(result);
 			msg.setPayload(ICodecFactory.encode(codecFactory, resp, msg.getProtocol()));
-			if(this.openDebug) {
+			if(SF.isLoggable(MonitorConstant.LOG_DEBUG, msg.getLogLevel())) {
 				SF.doResponseLog(MonitorConstant.LOG_DEBUG, TAG, null," one response");
 			}
 			session.write(msg);
@@ -126,7 +155,11 @@ public class ApiRequestMessageHandler implements IMessageHandler{
 				if(req.getArgs() != null && req.getArgs().length > 0){
 					clazzes = new Class<?>[req.getArgs().length];
 					for(int index = 0; index < req.getArgs().length; index++){
-						clazzes[index] = req.getArgs()[index].getClass();
+						if(req.getArgs()[index] != null) {
+							clazzes[index] = req.getArgs()[index].getClass();
+						}else {
+							clazzes[index] = Void.class;
+						}
 					}
 				} else {
 					clazzes = new Class<?>[0];

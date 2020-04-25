@@ -45,6 +45,8 @@ public interface ICache {
 	
 	<T> T get(String key);
 	
+	boolean exist(String key);
+	
 	/**
 	 * 
 	 * @param key

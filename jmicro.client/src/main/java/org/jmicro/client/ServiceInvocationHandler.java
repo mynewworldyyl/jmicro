@@ -85,6 +85,7 @@ public class ServiceInvocationHandler implements InvocationHandler{
 			req.setRequestId(idGenerator.getLongId(IRequest.class));
 			req.setTransport(Constants.TRANSPORT_NETTY);
 			req.setImpl(si.getImpl());
+			req.putObject(JMicroContext.LOGIN_KEY, cxt.getString(JMicroContext.LOGIN_KEY, null));
 			
 			if(!JMicroContext.existLinkId() ) {
 				//新建一个RPC链路开始

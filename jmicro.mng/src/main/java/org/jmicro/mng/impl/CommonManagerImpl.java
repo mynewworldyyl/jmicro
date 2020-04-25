@@ -19,5 +19,5 @@ public class CommonManagerImpl implements ICommonManager {
 	public Map<String, String> getI18NValues(String lang) {
 		return i18nManager.values(lang);
 	}
-
+	
 }

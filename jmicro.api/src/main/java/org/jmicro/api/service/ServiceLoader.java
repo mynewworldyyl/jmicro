@@ -445,6 +445,7 @@ public class ServiceLoader{
 		
 		item.setKey(usk);
 		item.setImpl(proxySrv.getName());
+		item.setClientId(anno.clientId());
 		
 		//item.setMaxFailBeforeDegrade(anno.maxFailBeforeDegrade()!=100 || intAnno == null ?anno.maxFailBeforeDegrade():intAnno.maxFailBeforeDegrade());
 		item.setRetryCnt(anno.retryCnt()!=3 || intAnno == null ?anno.retryCnt():intAnno.retryCnt());
@@ -463,6 +464,7 @@ public class ServiceLoader{
 		item.setDebugMode(anno.debugMode()!=-1 || intAnno == null ? anno.debugMode() : intAnno.debugMode());
 		
 		item.setHandler(anno.handler() != null && !anno.handler().trim().equals("") ? anno.handler():(intAnno != null?intAnno.handler():null));
+		
 		
 		//测试方法
 		ServiceMethod checkMethod = new ServiceMethod();
