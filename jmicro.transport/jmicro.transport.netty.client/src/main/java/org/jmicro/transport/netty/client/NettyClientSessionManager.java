@@ -168,7 +168,7 @@ public class NettyClientSessionManager implements IClientSessionManager{
 	}
 
 	@Override
-	public IClientSession getOrConnect(String host, int port) {
+	public IClientSession getOrConnect(String targetInstanceName,String host, int port) {
 
 		final String ssKey = host+":"+port;
 		if(sessions.containsKey(ssKey)){
@@ -319,7 +319,7 @@ public class NettyClientSessionManager implements IClientSessionManager{
 	            s.init();
 	            
 	           //LOG.info("session connected : {}", session);
-	           logger.debug("Connection finish,host:" + host + ", port:" + s.getRemoteAddress().getPort());
+	           logger.debug("Connection finish,host:" + host + ", port:" + s.getRemoteAddress().getPort()+", instanceName: "+ targetInstanceName);
 	           return s;
 	       } catch (Throwable e) {
 	    	   String msg = "Cannot connect " + host + ":" + port;

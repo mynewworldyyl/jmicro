@@ -26,6 +26,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import org.jmicro.api.JMicroContext;
 import org.jmicro.api.annotation.Async;
 import org.jmicro.api.annotation.Reference;
 import org.jmicro.api.annotation.Service;
@@ -39,13 +40,14 @@ import org.jmicro.api.registry.ServiceMethod;
 import org.jmicro.api.registry.UniqueServiceKey;
 import org.jmicro.api.service.ICheckable;
 import org.jmicro.common.CommonException;
+import org.jmicro.common.Constants;
 import org.jmicro.common.Utils;
-import org.jmicro.common.util.ClassGenerator;
 import org.jmicro.common.util.JsonUtils;
 import org.jmicro.common.util.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.alibaba.dubbo.common.bytecode.ClassGenerator;
 import com.alibaba.dubbo.common.serialize.kryo.utils.ReflectUtils;
 
 /**
@@ -86,18 +88,20 @@ class ClientServiceProxyManager {
 	 */
 	@SuppressWarnings("unchecked")
 	<T> T  getRefRemoteService(String srvName,String namespace,String version,
-			ClassLoader cl, AsyncConfig[] acs){
+			RpcClassLoader cl, AsyncConfig[] acs){
 		String key = UniqueServiceKey.serviceName(srvName, namespace, version).toString();
-		/*Object proxy = remoteObjects.get(key);
-		if(proxy != null){
-			return (T)proxy;
-		}*/
 		ClassLoader useCl = Thread.currentThread().getContextClassLoader();
 		Object proxy = null;
 		try {
-			Class<?> cls = this.loadClass(srvName, cl);
-			proxy = createDynamicServiceProxy(cls,namespace,version,acs);
+			
 			Set<ServiceItem> items = registry.getServices(srvName, namespace, version);
+			String insName = null;
+			if(items != null && !items.isEmpty()) {
+				insName = items.iterator().next().getKey().getInstanceName();
+			}
+			Class<?> cls = this.loadClass(insName,srvName, cl);
+			proxy = createDynamicServiceProxy(cls,namespace,version,acs);
+			
 			if(items != null && !items.isEmpty()) {
 				AbstractClientServiceProxy ap = (AbstractClientServiceProxy)proxy;
 				ServiceItem si = items.iterator().next();
@@ -113,7 +117,7 @@ class ClientServiceProxyManager {
 	
 	@SuppressWarnings("unchecked")
 	<T> T  getRefRemoteService(String srvName, AsyncConfig[] acs){
-		Class<?> cls = loadClass(srvName,null);
+		Class<?> cls = loadClass(null,srvName,null);
 		return getRefRemoteService(cls,acs);
 	}
 	
@@ -122,7 +126,6 @@ class ClientServiceProxyManager {
 	 * @param srvClazz
 	 * @return
 	 */
-	@SuppressWarnings("unchecked")
 	<T> T getRefRemoteService(Class<?> srvClazz, AsyncConfig[] acs){
 		if(!srvClazz.isAnnotationPresent(Service.class)){
 			//通过接口创建的服务必须有Service注解,否则没办法获取服务3个座标信息
@@ -140,12 +143,12 @@ class ClientServiceProxyManager {
 	 * @param acs 需要异步调用的目标方法 ，即forMethod
 	 * @return
 	 */
-	<T> T getRefRemoteService(ServiceItem item,ClassLoader cl, AsyncConfig[] acs) {
+	<T> T getRefRemoteService(ServiceItem item,RpcClassLoader cl, AsyncConfig[] acs) {
 		/*Object proxy = remoteObjects.get(item.serviceName());
 		if(proxy != null){
 			return (T)proxy;
 		}*/
-		Class<?> cls = this.loadClass(item.getKey().getServiceName(), cl);
+		Class<?> cls = this.loadClass(item.getKey().getInstanceName(),item.getKey().getServiceName(), cl);
 
 		Object proxy = createDynamicServiceProxy(cls,item.getKey().getNamespace(),item.getKey().getVersion(),acs);
 		AbstractClientServiceProxy asp = (AbstractClientServiceProxy)proxy;
@@ -334,7 +337,7 @@ class ClientServiceProxyManager {
 		
 	}
 	
-	private Class<?> loadClass(String clsName,ClassLoader cl) {
+	private Class<?> loadClass(String instanceName,String clsName,RpcClassLoader cl) {
 		try {
 			return Thread.currentThread().getContextClassLoader().loadClass(clsName);
 		} catch (ClassNotFoundException e) {
@@ -346,16 +349,29 @@ class ClientServiceProxyManager {
 				}
 				
 				if(cl != null) {
+					boolean setDirectServiceItem = false;
+					ServiceItem oldItem = null;
+					Class<?> cls = null;
 					try {
-						Class<?> c = cl.loadClass(clsName);
-						if(c != null) {
-							Thread.currentThread().setContextClassLoader(cl);
+						ServiceItem clsLoadItem = cl.getClassLoaderItemByInstanceName(instanceName);
+						if(clsLoadItem != null) {
+							setDirectServiceItem = true;
+							oldItem = JMicroContext.get().getParam(Constants.DIRECT_SERVICE_ITEM, null);
+							JMicroContext.get().setParam(Constants.DIRECT_SERVICE_ITEM, clsLoadItem);
+							cls = cl.loadClass(clsName);
+							if(cls != null) {
+								Thread.currentThread().setContextClassLoader(cl);
+							}
 						}
-						return c;
-					} catch (ClassNotFoundException e2) {
+						return cls;
+					} catch (ClassNotFoundException e2) {}
+					finally {
+						if(setDirectServiceItem) {
+							JMicroContext.get().setParam(Constants.DIRECT_SERVICE_ITEM, oldItem);
+							//JMicroContext.get().removeParam(Constants.DIRECT_SERVICE_ITEM);
+						}
 					}
 				}
-				
 				throw new CommonException("class["+clsName+"] not found",e);
 			}
 		}

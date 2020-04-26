@@ -1,6 +1,6 @@
 package org.jmicro.objfactory.simple.integration.test;
 
-import org.jmicro.example.mybatis.mapper.TestMapper;
+/*import org.jmicro.example.mybatis.mapper.TestMapper;
 import org.jmicro.test.JMicroBaseTestCase;
 import org.junit.Assert;
 import org.junit.Test;
@@ -16,3 +16,4 @@ public class TestMybatis  extends JMicroBaseTestCase{
 	}
 	
 }
+*/

@@ -132,8 +132,8 @@ class SubcriberManager {
 
 			String k = sm.getKey().toKey(false, false, false);
 
-			if (callbacks.containsKey(k) || !callbacks.containsKey(k) 
-					&& StringUtils.isNotEmpty(sm.getTopic())) {
+			if (callbacks.containsKey(k) || (!callbacks.containsKey(k) 
+					&& StringUtils.isNotEmpty(sm.getTopic()))) {
 				this.waitingLoadClazz.offer(new SubcribeItem(SubcribeItem.TYPE_UPDATE, sm.getTopic(), sm, null));
 
 				synchronized (loadingLock) {
@@ -263,13 +263,14 @@ class SubcriberManager {
 
 			if (sitem == null) {
 				logger.warn("Service Item for classloader server not found {}", sui.sm.getKey().toKey(true, true, true));
-				return false;
+				//服务已经下线，直接剔除
+				return true;
 			}
 
 			Object srv = null;
 			try {
 				PubSubServer.class.getClassLoader().loadClass(sui.sm.getKey().getUsk().getServiceName());
-				srv = of.getRemoteServie(sitem, null, null);
+				srv = of.getRemoteServie(sitem, null);
 			} catch (ClassNotFoundException e) {
 				srv = this.getRemoteService(sui,sitem);
 			}
@@ -373,7 +374,7 @@ class SubcriberManager {
 			Object srv = null;
 			try {
 				PubSubServer.class.getClassLoader().loadClass(sui.sm.getKey().getUsk().getServiceName());
-				srv = of.getRemoteServie(sitem, null, null);
+				srv = of.getRemoteServie(sitem, null);
 			} catch (ClassNotFoundException e) {
 				srv = this.getRemoteService(sui,sitem);
 			}
@@ -410,22 +411,15 @@ class SubcriberManager {
 		boolean setDirectServiceItem = false;
 		ServiceItem oldItem = null;
 		try {
-			Set<ServiceItem> items = this.registry.getServices(IClassloaderRpc.class.getName());
-			ServiceItem clsLoadItem = null;
-			for (ServiceItem si : items) {
-				if (si.getKey().getInstanceName().equals(sui.sm.getKey().getInstanceName())) {
-					clsLoadItem = si;
-					break;
-				}
-			}
-			
+			//Set<ServiceItem> items = this.registry.getServices(IClassloaderRpc.class.getName());
+			ServiceItem clsLoadItem = this.cl.getClassLoaderItemByInstanceName(sitem.getKey().getInstanceName());
 			if(clsLoadItem != null) {
 				oldItem = JMicroContext.get().getParam(Constants.DIRECT_SERVICE_ITEM, null);
 				JMicroContext.get().setParam(Constants.DIRECT_SERVICE_ITEM, clsLoadItem);
 				setDirectServiceItem = true;
 				Class<?> cls = this.cl.loadClass(sui.sm.getKey().getUsk().getServiceName());
 				if (cls != null) {
-					srv = of.getRemoteServie(sitem, this.cl, null);
+					srv = of.getRemoteServie(sitem,null);
 				}
 			}
 		} catch (ClassNotFoundException e1) {

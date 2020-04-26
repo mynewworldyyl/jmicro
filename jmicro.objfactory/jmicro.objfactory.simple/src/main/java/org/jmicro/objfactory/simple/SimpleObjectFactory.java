@@ -59,11 +59,11 @@ import org.jmicro.api.service.ServiceManager;
 import org.jmicro.common.CommonException;
 import org.jmicro.common.Constants;
 import org.jmicro.common.Utils;
-import org.jmicro.common.util.ClassGenerator;
 import org.jmicro.common.util.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.alibaba.dubbo.common.bytecode.ClassGenerator;
 import com.alibaba.dubbo.common.serialize.kryo.utils.ReflectUtils;
 
 /**
@@ -103,15 +103,17 @@ public class SimpleObjectFactory implements IObjectFactory {
 	
 	private HttpHandlerManager httpHandlerManager = new HttpHandlerManager(this);
 	
+	private RpcClassLoader rpcClassLoader = null;
+	
+	
 	@Override
-	public <T> T getRemoteServie(String srvName, String namespace, String version,
-			ClassLoader cl,AsyncConfig[] acs) {
-		return (T)this.clientServiceProxyManager.getRefRemoteService(srvName,namespace,version,cl,acs);
+	public <T> T getRemoteServie(String srvName, String namespace, String version,AsyncConfig[] acs) {
+		return (T)this.clientServiceProxyManager.getRefRemoteService(srvName,namespace,version,rpcClassLoader,acs);
 	}
 
 	@Override
-	public <T> T getRemoteServie(ServiceItem item,ClassLoader cl,AsyncConfig[] acs) {
-		return (T)this.clientServiceProxyManager.getRefRemoteService(item,cl,acs);
+	public <T> T getRemoteServie(ServiceItem item,AsyncConfig[] acs) {
+		return (T)this.clientServiceProxyManager.getRefRemoteService(item,this.rpcClassLoader,acs);
 	}
 
 	@Override
@@ -357,6 +359,8 @@ public class SimpleObjectFactory implements IObjectFactory {
 		 * 后其可以使用其他实现，如ETCD等
 		 */
 		//String dataOperatorName = Config.getCommandParam(Constants.DATA_OPERATOR, String.class, Constants.DEFAULT_DATA_OPERATOR);
+		rpcClassLoader = new RpcClassLoader(this.getClass().getClassLoader());
+		this.cacheObj(RpcClassLoader.class, rpcClassLoader,"rpcClassLoader");
 		
 		this.cacheObj(dataOperator.getClass(), dataOperator,null);
 		
@@ -444,11 +448,7 @@ public class SimpleObjectFactory implements IObjectFactory {
 		
 		ClassLoader oldCl = Thread.currentThread().getContextClassLoader();
 		
-		//RpcClassloaderClient在preinit时注入
-		RpcClassLoader cl = this.get(RpcClassLoader.class);
-		if(cl != null) {
-			Thread.currentThread().setContextClassLoader(cl);
-		}
+		Thread.currentThread().setContextClassLoader(rpcClassLoader);
 		
 		//对像工厂初始化后监听器
 		for(IPostFactoryListener lis : this.postReadyListeners){
@@ -761,7 +761,7 @@ public class SimpleObjectFactory implements IObjectFactory {
 		}
 		
 		if(cls == null) {
-			RpcClassLoader cl = this.get(RpcClassLoader.class);
+			RpcClassLoader cl = this.rpcClassLoader;
 			if(cl != null) {
 				try {
 					cls = cl.loadClass(clsName);

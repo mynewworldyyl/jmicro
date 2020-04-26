@@ -105,13 +105,6 @@ public class SimpleCodecFactory implements ICodecFactory{
 		@Override
 		public <R> R decode(String json, Class<R> clazz) {
 			R obj = JsonUtils.getIns().fromJson(json, clazz);
-			if(clazz == RpcRequest.class){
-				RpcRequest r = (RpcRequest)obj;
-				r.setArgs(getArgs(r.getServiceName(),r.getMethod(),r.getArgs()));
-			} else if(clazz == ApiRequest.class) {
-				ApiRequest r = (ApiRequest)obj;
-				r.setArgs(getArgs(r.getServiceName(),r.getMethod(),r.getArgs()));
-			}
 			return obj;
 		}
 	};
@@ -158,50 +151,6 @@ public class SimpleCodecFactory implements ICodecFactory{
 					" have exists decoder [" + e.getClass().getName() + "]" );
 		}
 		encoders.put(protocol, encoder);
-	}
-	
-	private Object[] getArgs(String srvCls,String methodName,Object[] jsonArgs){
-
-		if(jsonArgs== null || jsonArgs.length ==0){
-			return new Object[0];
-		} else {
-			int argLen = jsonArgs.length;
-			//ServiceItem item = registry.getServiceByImpl(r.getImpl());
-			Class<?> srvClazz = JMicro.getObjectFactory().loadCls(srvCls);
-			if(srvClazz == null) {
-				throw new CommonException("Class ["+srvCls+"] not found");
-			}
-			
-			Object[] args = new Object[jsonArgs.length];
-			
-			for(Method sm : srvClazz.getMethods()){
-				if(sm.getName().equals(methodName)/* &&
-						argLen == sm.getParameterCount()*/){
-					Class<?>[] clses = sm.getParameterTypes();
-					int i = 0;
-					int j = 0;
-					try {
-						for(; i < argLen; i++){
-							Class<?> pt = clses[i];
-							if(ISession.class.isAssignableFrom(pt)) {
-								continue;
-							}
-							Object a = JsonUtils.getIns().fromJson(JsonUtils.getIns().toJson(jsonArgs[j]), pt);
-							args[j] = a;
-							j++;
-						}
-					} catch (Exception e) {
-						continue;
-					}
-					if( i == argLen) {
-						break;
-					}
-				}
-			}
-			return args;
-		}
-	
-	
 	}
 	
 }

@@ -281,7 +281,18 @@
                     }
                 }
                 if(i > -1) {
+                    //let it = this.items[i];
                     this.items.splice(i,1);
+
+                    if(this.items.length > 0) {
+                        if(i == 0) {
+                            this.selectNode = this.items[0];
+                        }else {
+                            this.selectNode = this.items[i-1];
+                        }
+                    }else {
+                        this.selectNode = null;
+                    }
                 }
             },
 

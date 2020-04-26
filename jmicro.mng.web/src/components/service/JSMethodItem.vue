@@ -128,8 +128,8 @@
               <label for="timeWindow">Time Window</label>
               <Input id="timeWindow" v-model="node.val.timeWindow" placeholder="Time"/>
 
-              <label for="slotSize">Slot Size</label>
-              <Input id="slotSize" v-model="node.val.slotSize" placeholder="slot Size"/>
+              <label for="slotSize">Slot Interval</label>
+              <Input id="slotSize" v-model="node.val.slotIndterval" placeholder="slot Size"/>
 
               <label for="checkInterval">Check Interval</label>
               <Input id="checkInterval" v-model="node.val.checkInterval" placeholder="checkInterval"/>

@@ -119,7 +119,7 @@ public class ServiceInvokeManager {
 		String key = si.getKey().toKey(false, false, false);
 		AbstractClientServiceProxy p = null;
 		if(!proxes.containsKey(key)) {
-			p = of.getRemoteServie(si, null, null);
+			p = of.getRemoteServie(si, null);
 			if(p == null) {
 				String msg = "Fail to create remote service proxy: "+key;
 				SF.doBussinessLog(MonitorConstant.LOG_ERROR, TAG, null, msg);

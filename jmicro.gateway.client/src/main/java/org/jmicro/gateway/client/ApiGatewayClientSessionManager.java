@@ -105,7 +105,7 @@ public class ApiGatewayClientSessionManager implements IClientSessionManager {
 	}
 
 	@Override
-	public IClientSession getOrConnect(String host, int port) {
+	public IClientSession getOrConnect(String instanceName,String host, int port) {
 
 		final String ssKey = host + port;
 		if(sessions.containsKey(ssKey)){

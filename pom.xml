@@ -186,11 +186,7 @@
 				 <artifactId>jmicro.classloader.server</artifactId>
 				 <version>${jmicro.version}</version>
             </dependency>
-              <dependency>
-                 <groupId>org.jmicro</groupId>
-				 <artifactId>jmicro.classloader.client</artifactId>
-				 <version>${jmicro.version}</version>
-            </dependency>
+             
             <dependency>
 			 <groupId>org.jmicro</groupId>
 			 <artifactId>jmicro.gateway.client</artifactId>

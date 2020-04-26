@@ -66,6 +66,11 @@ public class ClassScannerUtils {
 		return instance;
 	}
 	
+	public void putCls(String clsName,Class<?> cls){
+		logger.info("PUT class: "+clsName);
+		classes.put(clsName, cls);
+	}
+	
 	interface Checker{
 		boolean accept(Class<?> cls);
 	}

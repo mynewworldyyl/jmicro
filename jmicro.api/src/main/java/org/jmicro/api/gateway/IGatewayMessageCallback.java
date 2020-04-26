@@ -15,7 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.jmicro.gateway.srv;
+package org.jmicro.api.gateway;
 
 import org.jmicro.api.pubsub.PSData;
 

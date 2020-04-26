@@ -351,7 +351,7 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
 	    		}
         	}
         	
-    	    IClientSession session = this.sessionManager.getOrConnect(s.getHost(), s.getPort());
+    	    IClientSession session = this.sessionManager.getOrConnect(si.getKey().getInstanceName(),s.getHost(), s.getPort());
     		
     	    if(cxt.isDebug()) {
     	    	//在调试模式下，给消息一个ID

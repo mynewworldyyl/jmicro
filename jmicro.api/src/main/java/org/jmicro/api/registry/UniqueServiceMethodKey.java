@@ -39,6 +39,21 @@ public final class UniqueServiceMethodKey {
 	private String method;
 	private String paramsStr;
 	
+	private String returnParam;
+	
+	public Class<?>[] getParameterClasses() {
+		return paramsClazzes(this.paramsStr);
+	}
+	
+	public Class<?> getReturnParamClass() {
+		Class<?>[] rs = paramsClazzes(this.returnParam);
+		if(rs == null || rs.length == 0) {
+			return null;
+		} else {
+			return rs[0];
+		}
+	}
+	
 	/*public static String paramsStr(String[] clazzes) {
 		if(clazzes == null || clazzes.length == 0) {
 			return "";
@@ -86,6 +101,9 @@ public final class UniqueServiceMethodKey {
 	
 	public static Class<?>[] paramsClazzes(String paramDesc) {
 		try {
+			if(StringUtils.isEmpty(paramDesc)) {
+				return null;
+			}
 			return ReflectUtils.desc2classArray(paramDesc);
 		} catch (ClassNotFoundException e) {
 			e.printStackTrace();

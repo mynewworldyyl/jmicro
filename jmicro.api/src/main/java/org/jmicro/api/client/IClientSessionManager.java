@@ -35,7 +35,7 @@ public interface IClientSessionManager {
 	 * @param port
 	 * @return
 	 */
-	IClientSession getOrConnect(String host,int port);
+	IClientSession getOrConnect(String instanceName,String host,int port);
 	
 	void closeSession(ISession session);
 	

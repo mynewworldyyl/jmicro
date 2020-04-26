@@ -84,9 +84,9 @@ public interface IObjectFactory {
 	 */
 	<T> T getByName(String clsName);
 	
-	<T> T getRemoteServie(String srvName,String namespace,String version,ClassLoader cl,AsyncConfig[] acs);
+	<T> T getRemoteServie(String srvName,String namespace,String version,AsyncConfig[] acs);
 	
-	<T> T getRemoteServie(ServiceItem item,ClassLoader cl,AsyncConfig[] acs);
+	<T> T getRemoteServie(ServiceItem item,AsyncConfig[] acs);
 	
 	<T> T getRemoteServie(Class<T> srvCls,AsyncConfig[] acs);
 	

@@ -33,7 +33,7 @@ public class TestMonitorSubmiter extends JMicroBaseTestCase{
 	@Test
 	public void testSubmitItem() {
 		IMonitorDataSubscriber m = of.getRemoteServie(IMonitorDataSubscriber.class.getName()
-				, "printLogMonitor", "0.0.1", null,null);
+				, "printLogMonitor", "0.0.1",null);
 		SubmitItem[] sis = new SubmitItem[1];
 		sis[0] = ssubItem();
 		m.onSubmit(sis);
@@ -100,7 +100,7 @@ public class TestMonitorSubmiter extends JMicroBaseTestCase{
 		public void testSubmitLog() {
 			
 			IMonitorDataSubscriber m = of.getRemoteServie(IMonitorDataSubscriber.class.getName()
-					, "printLogMonitor", "0.0.1", null,null);
+					, "printLogMonitor", "0.0.1",null);
 			
 			SubmitItem[] sis = new SubmitItem[1];
 			sis[0] = ssubItem();

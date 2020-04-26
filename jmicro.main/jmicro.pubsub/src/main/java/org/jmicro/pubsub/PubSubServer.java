@@ -92,8 +92,8 @@ public class PubSubServer implements IInternalSubRpc{
 	/**
 	 * is enable pubsub server
 	 */
-	@Cfg(value="/PubSubManager/enableServer",defGlobal=false, changeListener="initPubSubServer")
-	private boolean enableServer = false;
+	//@Cfg(value="/PubSubManager/enableServer",defGlobal=false, changeListener="initPubSubServer")
+	//private boolean enableServer = false;
 	
 	@Cfg(value="/PubSubServer/openDebug")
 	private boolean openDebug = false;
@@ -162,11 +162,6 @@ public class PubSubServer implements IInternalSubRpc{
 	
 	public void init() {
 
-		if(!isEnableServer()) {
-			logger.warn("/PubSubManager/isEnableServer must be true for pubsub server");
-			return;
-		}
-		
 		subManager = new SubcriberManager(of,this.openDebug);
 		
 		this.resendManager = new ResendManager(of,this.openDebug,maxFailItemCount,doResendInterval);
@@ -603,10 +598,6 @@ public class PubSubServer implements IInternalSubRpc{
 		}
 	}
 
-	private boolean isEnableServer() {
-		return this.enableServer;
-	}
-	
 	 private class PubsubServerAbortPolicy implements RejectedExecutionHandler {
 
 	        public PubsubServerAbortPolicy() { }

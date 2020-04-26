@@ -232,7 +232,7 @@ public class SubCallbackImpl implements ISubCallback{
 				h = this.key2Holder.get(key);
 			} else {
 				h = new Holder();
-				h.srv  = of.getRemoteServie(key.getServiceName(),key.getNamespace(),key.getVersion(),null,null);
+				h.srv  = of.getRemoteServie(key.getServiceName(),key.getNamespace(),key.getVersion(),null);
 				if(h.srv == null) {
 					String msg = "Fail to create async service proxy src:" + sm.getKey().toString()+",target:"+ key.toKey(false, false, false);
 					SF.doBussinessLog(MonitorConstant.LOG_ERROR,SubCallbackImpl.class,null, msg);
@@ -284,12 +284,16 @@ public class SubCallbackImpl implements ISubCallback{
 			Class<?>[] argsCls = UniqueServiceMethodKey.paramsClazzes(sm.getKey().getParamsStr());
 			this.m = this.srvProxy.getClass().getMethod(sm.getKey().getMethod(), argsCls);
 			if(argsCls == null || argsCls.length ==0) {
+				//无参数
 				this.type = NONE;
 			}else if(argsCls.length ==1 && argsCls[0] == PSData.class ) {
+				//PSData实例作为单一参数
 				this.type = SINGLE;
 			}else if(argsCls.length == 1 && argsCls[0] == new PSData[0].getClass() ) {
+				//PSData实例数组作为参数
 				this.type = ARR;
-			}else {
+			} else {
+				//PSData.data数组作为RPC参数
 				this.type = DATA;
 			}
 		} catch (NoSuchMethodException | SecurityException e) {

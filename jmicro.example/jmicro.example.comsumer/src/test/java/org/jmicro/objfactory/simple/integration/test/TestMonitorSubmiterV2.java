@@ -26,7 +26,7 @@ public class TestMonitorSubmiterV2 extends JMicroBaseTestCase{
 	public void testSubmitItem() {
 		this.setSayHelloContextv2();
 		IMonitorDataSubscriber m = of.getRemoteServie(IMonitorDataSubscriber.class.getName()
-				, "printLogMonitor", "0.0.1", null,null);
+				, "printLogMonitor", "0.0.1",null);
 		MRpcItem[] sis = new MRpcItem[1];
 		sis[0] = ssubItem();
 		m.onSubmit(sis);
@@ -38,7 +38,7 @@ public class TestMonitorSubmiterV2 extends JMicroBaseTestCase{
 	public void testMonitorServer() {
 		this.setSayHelloContextv2();
 		IMonitorServer m = of.getRemoteServie(IMonitorServer.class.getName()
-				, "monitorServer", "0.0.1", null,null);
+				, "monitorServer", "0.0.1",null);
 		MRpcItem[] sis = new MRpcItem[1];
 		sis[0] = ssubItem();
 		m.submit(sis);
@@ -50,7 +50,7 @@ public class TestMonitorSubmiterV2 extends JMicroBaseTestCase{
 		this.setSayHelloContextv2();
 		ServiceMethod sm = sayHelloServiceMethod();
 		IMonitorDataSubscriber dataServer = of.getRemoteServie(IMonitorDataSubscriber.class.getName()
-				, "rpcStatisMonitor", "0.0.1", null,null);
+				, "rpcStatisMonitor", "0.0.1",null);
 		ReportData values = dataServer.getData(sm.getKey().toKey(true, true, true), MonitorConstant.STATIS_TYPES,
 				new String[] {MonitorConstant.PREFIX_QPS});
 		System.out.println(JsonUtils.getIns().toJson(values));

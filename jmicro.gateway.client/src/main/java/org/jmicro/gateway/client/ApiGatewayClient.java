@@ -216,7 +216,7 @@ public class ApiGatewayClient {
 			}
 		});
 		
-		IClientSession sessin = sessionManager.getOrConnect(this.config.getHost(), this.config.getPort());
+		IClientSession sessin = sessionManager.getOrConnect("apiGatewayClient",this.config.getHost(), this.config.getPort());
 		sessin.write(msg);
 	
 		synchronized (msg) {

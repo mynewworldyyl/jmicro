@@ -67,7 +67,7 @@ public class TestRpcRequest extends JMicroBaseTestCase{
 	@Test
 	public void testCallDynamicRegistRpc() {
 		DynamicInterface r = of.getRemoteServie(DynamicInterface.class.getName(), "JMicroBaseTestCase_DynamicRegistryService",
-				"0.0.1", null,null);	
+				"0.0.1",null);	
 		//r.run();
 	}
 	

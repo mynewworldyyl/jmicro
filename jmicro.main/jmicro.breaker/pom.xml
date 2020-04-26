@@ -12,13 +12,50 @@
     <dependencies>
         <dependency>
 			 <groupId>org.jmicro</groupId>
-			 <artifactId>jmicro.build</artifactId>
-        </dependency>
-		<dependency>
+			 <artifactId>jmicro.api</artifactId>
+	    </dependency>
+	     <dependency>
+			 <groupId>org.jmicro</groupId>
+			 <artifactId>jmicro.redis</artifactId>
+	    </dependency>
+	    <dependency>
+			 <groupId>org.jmicro</groupId>
+			 <artifactId>jmicro.zk</artifactId>
+	    </dependency>
+	    <dependency>
+			 <groupId>org.jmicro</groupId>
+			 <artifactId>jmicro.objfactory.simple</artifactId>
+	    </dependency>
+	    <dependency>
+			 <groupId>org.jmicro</groupId>
+			 <artifactId>jmicro.classloader.server</artifactId>
+	    </dependency>
+	    <dependency>
+			<groupId>org.jmicro</groupId>
+			<artifactId>jmicro.objfactory.simple</artifactId>
+		</dependency>
+	    <dependency>
+			 <groupId>org.jmicro</groupId>
+			 <artifactId>jmicro.transport.netty.client</artifactId>
+	    </dependency>
+	     <dependency>
+			 <groupId>org.jmicro</groupId>
+			 <artifactId>jmicro.transport.netty.server</artifactId>
+	    </dependency>
+	     <dependency>
+			 <groupId>org.jmicro</groupId>
+			 <artifactId>jmicro.submiter</artifactId>
+	    </dependency>
+	     <dependency>
+			 <groupId>org.jmicro</groupId>
+			 <artifactId>jmicro.idgenerator</artifactId>
+	    </dependency>
+	    
+	    <dependency>
 			 <groupId>org.jmicro</groupId>
 			 <artifactId>jmicro.test</artifactId>
 			 <scope>test</scope>
-        </dependency>
+	    </dependency>
     </dependencies>
    
 </project>

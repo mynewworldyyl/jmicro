@@ -1,0 +1,10 @@
+
+zookeeper:
+https://downloads.apache.org/zookeeper/zookeeper-3.4.14/zookeeper-3.4.14.tar.gz
+
+redis windows
+https://github.com/microsoftarchive/redis/releases/download/win-3.2.100/Redis-x64-3.2.100.zip
+
+node:
+https://nodejs.org/dist/v12.16.2/node-v12.16.2-win-x64.zip
+npm install -g cnpm

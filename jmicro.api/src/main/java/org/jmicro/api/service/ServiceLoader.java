@@ -17,7 +17,9 @@
 package org.jmicro.api.service;
 
 import java.lang.reflect.Method;
+import java.lang.reflect.ParameterizedType;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -35,13 +37,13 @@ import org.jmicro.api.annotation.SBreakingRule;
 import org.jmicro.api.annotation.SMethod;
 import org.jmicro.api.annotation.Service;
 import org.jmicro.api.annotation.Subscribe;
+import org.jmicro.api.classloader.RpcClassLoader;
+import org.jmicro.api.codec.TypeUtils;
+import org.jmicro.api.codec.typecoder.TypeCoder;
 import org.jmicro.api.config.Config;
 import org.jmicro.api.idgenerator.ComponentIdServer;
-import org.jmicro.api.monitor.v1.IMonitorDataSubmiter;
 import org.jmicro.api.monitor.v1.MonitorConstant;
 import org.jmicro.api.net.IServer;
-import org.jmicro.api.objectfactory.IPostFactoryListener;
-import org.jmicro.api.objectfactory.IObjectFactory;
 import org.jmicro.api.objectfactory.ProxyObject;
 import org.jmicro.api.registry.IRegistry;
 import org.jmicro.api.registry.Server;
@@ -92,6 +94,9 @@ public class ServiceLoader{
 	
 	@Inject
 	private ComponentIdServer idGenerator;
+	
+	@Inject
+	private RpcClassLoader cl;
 	
 	private Map<String,IServer> servers = new HashMap<>();
 	
@@ -290,6 +295,10 @@ public class ServiceLoader{
 		//Netty Socket 作为必选端口开放
 		item.getKey().setPort(nettyPort);
 		
+		if(item.getClientId() >10) {
+			cl.addClassInstance(item.getKey().getServiceName());
+		}
+		
 		registry.regist(item);
 		
 		return item;
@@ -402,6 +411,10 @@ public class ServiceLoader{
 		
 		item.addMethod(sm);
 		
+		for(Class<?> acls : args) {
+			this.needRegist(acls);
+		}
+		
 		return sm;
 	
 	}
@@ -464,7 +477,6 @@ public class ServiceLoader{
 		item.setDebugMode(anno.debugMode()!=-1 || intAnno == null ? anno.debugMode() : intAnno.debugMode());
 		
 		item.setHandler(anno.handler() != null && !anno.handler().trim().equals("") ? anno.handler():(intAnno != null?intAnno.handler():null));
-		
 		
 		//测试方法
 		ServiceMethod checkMethod = new ServiceMethod();
@@ -609,6 +621,10 @@ public class ServiceLoader{
 			sm.getKey().setMethod(m.getName());
 			sm.getKey().setParamsStr(UniqueServiceMethodKey.paramsStr(m.getParameterTypes()));
 			
+			for(Class<?> ps : m.getParameterTypes()) {
+				needRegist(ps);
+			}
+			
 			if(sm.isAsyncable()) {
 				//允许异步调用的RPC必须以方法全限定名为主题
 				sm.setTopic(sm.getKey().toKey(false, false, false));
@@ -618,6 +634,39 @@ public class ServiceLoader{
 		}
 		
 		return item;
+	}
+	
+	
+	private void needRegist(Class<?> cls) {
+		if(cls == null) {
+			return;
+		}
+		if(Collection.class.isAssignableFrom(cls)) {
+			ParameterizedType genericType = TypeCoder.genericType(cls.getGenericSuperclass());
+			Class<?> eltType = TypeUtils.finalParameterType((ParameterizedType) genericType, 0);
+			needRegist(eltType);
+		} else if(Map.class.isAssignableFrom(cls)) {
+			ParameterizedType genericType = TypeCoder.genericType(cls.getGenericSuperclass());
+			Class<?> keyType = TypeUtils.finalParameterType((ParameterizedType) genericType, 0);
+			Class<?> valueType = TypeUtils.finalParameterType((ParameterizedType) genericType, 1);
+			needRegist(keyType);
+			needRegist(valueType);
+		}
+		
+		if(cls.isPrimitive()||
+				cls.getName().startsWith("java") || 
+				cls.getName().startsWith("sun") ||
+				cls.getName().startsWith("com.sun") ||
+				cls.getClassLoader() == null || 
+				cls.getClassLoader().getClass().getName().startsWith("sun.misc.Launcher$ExtClassLoader")) {
+			return;
+		}
+		
+		if(cls.isArray()) {
+			needRegist(cls.getComponentType());
+		} else {
+			cl.addClassInstance(cls.getName());
+		}
 	}
 	
 	private  String getFieldValue(String anno, String intAnno,String defau) {

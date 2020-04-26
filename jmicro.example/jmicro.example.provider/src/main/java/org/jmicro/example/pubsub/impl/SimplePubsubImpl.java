@@ -13,7 +13,7 @@ import org.jmicro.example.api.pubsub.ISimplePubsub;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-@Service(maxSpeed=-1,baseTimeUnit=Constants.TIME_SECONDS)
+@Service(maxSpeed=-1,baseTimeUnit=Constants.TIME_SECONDS, clientId=1000)
 @Component
 public class SimplePubsubImpl implements ISimplePubsub {
 

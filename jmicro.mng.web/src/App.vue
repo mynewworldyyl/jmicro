@@ -46,7 +46,7 @@
       <div style="margin-top:60px;">
           <!-- 服务监控列表 -->
           <Drawer  v-model="cache.service.drawerStatus" :closable="false" placement="left" :transfer="true"
-                   :draggable="true" :scrollable="true" width="50">
+                   :draggable="true" :scrollable="true" width="30">
               <JServiceList evt-name="serviceNodeSelect" group="service"></JServiceList>
           </Drawer>
 

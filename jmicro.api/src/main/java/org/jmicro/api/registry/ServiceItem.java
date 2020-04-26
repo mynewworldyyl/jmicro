@@ -348,7 +348,7 @@ public final class ServiceItem implements Comparable<ServiceItem>{
 		}
 		
 		if(ms.size() == 1) {
-			return methods.iterator().next();
+			return ms.iterator().next();
 		}
 		
 		if(StringUtils.isEmpty(mkStr)) {

@@ -30,6 +30,7 @@ import org.jmicro.api.annotation.JMethod;
 import org.jmicro.api.annotation.SMethod;
 import org.jmicro.api.annotation.Service;
 import org.jmicro.api.codec.ICodecFactory;
+import org.jmicro.api.gateway.IGatewayMessageCallback;
 import org.jmicro.api.idgenerator.ComponentIdServer;
 import org.jmicro.api.net.ISession;
 import org.jmicro.api.net.ISessionListener;
@@ -42,7 +43,6 @@ import org.jmicro.api.timer.ITickerAction;
 import org.jmicro.api.timer.TimerTicker;
 import org.jmicro.common.Constants;
 import org.jmicro.common.util.StringUtils;
-import org.jmicro.gateway.srv.IGatewayMessageCallback;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

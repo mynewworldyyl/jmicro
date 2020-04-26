@@ -237,7 +237,7 @@ public class TestPubsub extends JMicroBaseTestCase{
 		
 		int val = Message.readUnsignedShort(buf);*/
 		
-		IConfigManager cm = of.getRemoteServie(IConfigManager.class.getName(),"configManager","0.0.1",null, null);
+		IConfigManager cm = of.getRemoteServie(IConfigManager.class.getName(),"configManager","0.0.1", null);
 		ConfigNode[] nodes = cm.getChildren("/", true);
 		System.out.print(nodes);
 		this.waitForReady(60*60);

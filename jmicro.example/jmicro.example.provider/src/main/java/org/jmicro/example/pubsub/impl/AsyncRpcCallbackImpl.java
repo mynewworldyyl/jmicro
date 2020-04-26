@@ -6,7 +6,7 @@ import org.jmicro.api.annotation.Service;
 import org.jmicro.common.Constants;
 import org.jmicro.example.api.rpc.IAsyncRpcCallback;
 
-@Service(namespace="asyncRpcCallback",version="0.0.1", baseTimeUnit=Constants.TIME_SECONDS)
+@Service(namespace="asyncRpcCallback",version="0.0.1", baseTimeUnit=Constants.TIME_SECONDS, clientId=1000)
 @Component
 public class AsyncRpcCallbackImpl implements IAsyncRpcCallback {
 

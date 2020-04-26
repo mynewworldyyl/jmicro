@@ -13,14 +13,14 @@ public class TestObjectFactory extends JMicroBaseTestCase{
 	public void testGetRemoteServie0() {
 		ServiceItem si = sayHelloServiceItem();
 		ISimpleRpc sayHello = of.getRemoteServie(si.getKey().getServiceName(), si.getKey().getNamespace()
-				, si.getKey().getVersion(), null,null);
+				, si.getKey().getVersion(),null);
 		System.out.println(sayHello.hello("testGetRemoteServie0"));
 	}
 	
 	@Test
 	public void testGetRemoteServie1() {
 		ServiceItem si = sayHelloServiceItem();
-		ISimpleRpc sayHello = of.getRemoteServie(si,null,null);
+		ISimpleRpc sayHello = of.getRemoteServie(si,null);
 		System.out.println(sayHello.hello("testGetRemoteServie0"));
 	}
 	

@@ -35,6 +35,7 @@ import org.jmicro.api.monitor.v1.SF;
 import org.jmicro.api.net.IMessageHandler;
 import org.jmicro.api.net.ISession;
 import org.jmicro.api.net.Message;
+import org.jmicro.api.net.RpcRequest;
 import org.jmicro.api.net.ServerError;
 import org.jmicro.api.objectfactory.AbstractClientServiceProxy;
 import org.jmicro.api.objectfactory.IObjectFactory;
@@ -44,6 +45,7 @@ import org.jmicro.api.security.ActInfo;
 import org.jmicro.api.security.IAccountService;
 import org.jmicro.common.CommonException;
 import org.jmicro.common.Constants;
+import org.jmicro.common.util.JsonUtils;
 import org.jmicro.common.util.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -87,6 +89,7 @@ public class ApiRequestMessageHandler implements IMessageHandler{
 		ApiRequest req = ICodecFactory.decode(codecFactory, msg.getPayload(), 
 				ApiRequest.class, msg.getProtocol());
 		
+		
 		ApiResponse resp = new ApiResponse();
 		Object result = null;
 		
@@ -120,6 +123,9 @@ public class ApiRequestMessageHandler implements IMessageHandler{
 		}
 		
 		if(MessageServiceImpl.TAG.equals(req.getServiceName())) {
+			if(msg.getProtocol() == Message.PROTOCOL_JSON) {
+				req.setArgs(getArgs(req.getServiceName(),req.getMethod(),req.getArgs()));
+			}
 			if("subscribe".equals(req.getMethod())) {
 				String topic = (String)req.getArgs()[0];
 				Map<String, Object> ctx = (Map<String, Object>)req.getArgs()[1];
@@ -140,9 +146,13 @@ public class ApiRequestMessageHandler implements IMessageHandler{
 			
 		} else {
 			Object srv = JMicro.getObjectFactory().getRemoteServie(req.getServiceName(), 
-					req.getNamespace(), req.getVersion(),null,null);
+					req.getNamespace(), req.getVersion(),null);
+			
 			//long lid = JMicroContext.lid();
-
+			if(msg.getProtocol() == Message.PROTOCOL_JSON) {
+				req.setArgs(getArgs(req.getServiceName(),req.getMethod(),req.getArgs()));
+			}
+			
 			JMicroContext.get().setParam(JMicroContext.LOCAL_HOST, session.localHost());
 			JMicroContext.get().setParam(JMicroContext.LOCAL_PORT, session.localPort()+"");
 			JMicroContext.get().setParam(JMicroContext.REMOTE_HOST, session.remoteHost());
@@ -223,4 +233,48 @@ public class ApiRequestMessageHandler implements IMessageHandler{
 		
 	}
 
+	
+	private Object[] getArgs(String srvCls,String methodName,Object[] jsonArgs){
+
+		if(jsonArgs== null || jsonArgs.length ==0){
+			return new Object[0];
+		} else {
+			int argLen = jsonArgs.length;
+			//ServiceItem item = registry.getServiceByImpl(r.getImpl());
+			Class<?> srvClazz = JMicro.getObjectFactory().loadCls(srvCls);
+			if(srvClazz == null) {
+				throw new CommonException("Class ["+srvCls+"] not found");
+			}
+			
+			Object[] args = new Object[jsonArgs.length];
+			
+			for(Method sm : srvClazz.getMethods()){
+				if(sm.getName().equals(methodName)/* &&
+						argLen == sm.getParameterCount()*/){
+					Class<?>[] clses = sm.getParameterTypes();
+					int i = 0;
+					int j = 0;
+					try {
+						for(; i < argLen; i++){
+							Class<?> pt = clses[i];
+							if(ISession.class.isAssignableFrom(pt)) {
+								continue;
+							}
+							Object a = JsonUtils.getIns().fromJson(JsonUtils.getIns().toJson(jsonArgs[j]), pt);
+							args[j] = a;
+							j++;
+						}
+					} catch (Exception e) {
+						continue;
+					}
+					if( i == argLen) {
+						break;
+					}
+				}
+			}
+			return args;
+		}
+	
+	
+	}
 }
