@@ -1,10 +1,11 @@
-
 zookeeper:
 https://downloads.apache.org/zookeeper/zookeeper-3.4.14/zookeeper-3.4.14.tar.gz
 
 redis windows
 https://github.com/microsoftarchive/redis/releases/download/win-3.2.100/Redis-x64-3.2.100.zip
 
-node:
+node: 做后台管理使用
 https://nodejs.org/dist/v12.16.2/node-v12.16.2-win-x64.zip
-npm install -g cnpm
+
+maven  JMicro代码构建
+https://mirrors.tuna.tsinghua.edu.cn/apache/maven/maven-3/3.6.3/binaries/apache-maven-3.6.3-bin.zip

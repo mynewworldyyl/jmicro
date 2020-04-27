@@ -20,14 +20,6 @@
 			<groupId>org.jmicro</groupId>
 			<artifactId>jmicro.redis</artifactId>
 		</dependency>
-		<!-- <dependency>
-			<groupId>org.jmicro</groupId>
-			<artifactId>jmicro.breaker</artifactId>
-		</dependency> -->
-		<!-- <dependency>
-			<groupId>org.jmicro</groupId>
-			<artifactId>jmicro.pubsub</artifactId>
-		</dependency> -->
 		<dependency>
 			<groupId>org.jmicro</groupId>
 			<artifactId>jmicro.etcd</artifactId>
@@ -40,28 +32,10 @@
 			<groupId>org.jmicro</groupId>
 			<artifactId>jmicro.zk</artifactId>
 		</dependency>
-		<!-- <dependency>
-			<groupId>org.jmicro</groupId>
-			<artifactId>jmicro.gateway</artifactId>
-		</dependency> -->
 		<dependency>
 			<groupId>org.jmicro</groupId>
 			<artifactId>jmicro.classloader.server</artifactId>
 		</dependency>
-		<dependency>
-			<groupId>org.jmicro</groupId>
-			<artifactId>jmicro.classloader.client</artifactId>
-		</dependency>
-		<!-- <dependency>
-			<groupId>org.jmicro</groupId>
-			<artifactId>jmicro.gateway.client</artifactId>
-		</dependency> -->
-		<!-- <dependency> <groupId>org.jmicro</groupId> <artifactId>jmicro.transport.nio</artifactId> 
-			</dependency> -->
-		<!-- <dependency>
-			<groupId>org.jmicro</groupId>
-			<artifactId>jmicro.transport.http</artifactId>
-		</dependency> -->
 		<dependency>
 			<groupId>org.jmicro</groupId>
 			<artifactId>jmicro.transport.netty.client</artifactId>
@@ -99,9 +73,6 @@
 			<groupId>org.jmicro</groupId>
 			<artifactId>jmicro.idgenerator</artifactId>
 		</dependency>
-		<!-- <dependency> <groupId>org.jmicro</groupId> <artifactId>jmicro.choreography.agent</artifactId> 
-			</dependency> <dependency> <groupId>org.jmicro</groupId> <artifactId>jmicro.choregraphy.controller</artifactId> 
-			</dependency> -->
 		<dependency>
 			<groupId>org.jmicro</groupId>
 			<artifactId>jmicro.idgenerator</artifactId>
@@ -111,9 +82,6 @@
 			<groupId>org.jmicro</groupId>
 			<artifactId>jmicro.test</artifactId>
 		</dependency>
-
-		<!-- <dependency> <groupId>org.jmicro</groupId> <artifactId>jmicro.mybatis</artifactId> 
-			</dependency> -->
 	</dependencies>
 
 	<build>

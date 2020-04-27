@@ -15,7 +15,8 @@ import JShell from './components/shell/JShell.vue'
 import JLog from './components/log/JLog.vue'
 import JWarning from './components/warning/JWarning.vue'
 import JStatis from './components/statis/JStatis.vue'
-import JMonitor from './components/monitor/JMonitor.vue'*/
+import JMonitor from './components/monitor/JMonitor.vue'
+*/
 
 Vue.use(iView)
 Vue.use(window.jm)

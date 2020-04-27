@@ -36,7 +36,7 @@ class Worker implements Runnable{
 		for(;;){
 			try {
 				String result = sayHello.hello(" Hello LOG: "+id);
-				//System.out.println(JMicroContext.get().getString(JMicroContext.LINKER_ID, "")+": "+result);
+				System.out.println(JMicroContext.get().getString(JMicroContext.LINKER_ID, "")+": "+result);
 				JMicroContext.get().removeParam(JMicroContext.LINKER_ID);
 			} catch (Throwable e) {
 				e.printStackTrace();

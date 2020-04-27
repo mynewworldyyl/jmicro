@@ -3,7 +3,9 @@
         <div>
             <Tabs :value="!!selectNode ? selectNode.id:''" type="card" :closable="true" @on-tab-remove="handleTabRemove" :animated="false">
                 <TabPane v-for="(item) in items"  :name="item.id" :label="item.label ? item.label : item.title"  v-bind:key="item.id">
-                    <p stype="word-break: break-all;padding: 0px 10px;font-size: medium;">{{item.id}}</p>
+
+                    <p v-if="item.group != 'shell'" stype="word-break: break-all;padding: 0px 10px;font-size: medium;">{{item.id}}</p>
+
                     <!-- RPC  config -->
                     <JServiceItem v-if="item.group == 'service' && item.type == 'sn'" :item="item"></JServiceItem>
                     <JInstanceItem v-else-if="item.group == 'service' && item.type == 'ins'" :item="item"></JInstanceItem>
@@ -24,6 +26,9 @@
 
                     <!--  Config -->
                     <JConfigItem v-else-if="item.group == 'config'" :item="item"></JConfigItem>
+
+                    <!-- Shell -->
+                    <JShell v-else-if="item.group == 'shell'" :item="item"></JShell>
 
                 </TabPane>
             </Tabs>
@@ -49,6 +54,10 @@
 
     import JConfigItem from './config/JConfigItem.vue'
 
+    import JShell from './shell/JShell.vue'
+
+    import TreeNode from "./common/JTreeNode.js"
+
     export default {
         name: 'JMicroEditor',
         components: {
@@ -66,6 +75,8 @@
             JRouterType,
 
             JConfigItem,
+
+            JShell,
         },
 
         data () {
@@ -88,6 +99,8 @@
             this.mountConfigSelect();
             this.mountMonitorsSelect();
             this.mountRouterSelect();
+
+            this.mountShellSelect();
 
         },
 
@@ -294,6 +307,36 @@
                         this.selectNode = null;
                     }
                 }
+            },
+
+            mountShellSelect(){
+                let self = this;
+                window.jm.vue.$on('shellSelect',function() {
+
+                    if(!!self.selectNode && self.selectNode.group == 'shell') {
+                        return;
+                    }
+
+                    let title = 'shell';
+                    let it = null;
+
+                    for(let i = 0; i < self.items.length; i++) {
+                        if(self.items[i].group == title ) {
+                            it = self.items[i];
+                            break;
+                        }
+                    }
+
+                    if(it) {
+                        self.selectNode = it;
+                    } else {
+                        let r = new TreeNode(title,title,null,null,null, title);
+                        r.type = title;
+                        r.group = title;
+                        self.items.push(r);
+                        self.selectNode = r;
+                    }
+                });
             },
 
         }

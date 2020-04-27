@@ -45,7 +45,7 @@ public class SimpleRpcImpl implements ISimpleRpc {
 		if(rv < 50) {
 			throw new CommonException("test breaker exception");
 		}*/
-		//System.out.println("Server hello: " +name);
+		System.out.println("Server hello: " +name);
 		return "Server say hello to: "+name;
 	}
 	

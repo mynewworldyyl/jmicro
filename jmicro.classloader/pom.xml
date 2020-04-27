@@ -14,6 +14,5 @@
     </properties>
     <modules>
 		<module>jmicro.classloader.server</module>
-		<module>jmicro.classloader.client</module>
     </modules>
 </project>

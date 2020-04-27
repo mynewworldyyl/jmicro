@@ -29,9 +29,9 @@
                       OTHERS
                   </template>
                   <Menu-item name="router"><Icon type="ios-people"></Icon>ROUTER</Menu-item>
+                  <Menu-item name="shell"><Icon type="ios-cog"></Icon>SHELL</Menu-item>
                   <Menu-item name="warning"><Icon type="ios-alert" />WARNING</Menu-item>
                   <Menu-item name="log"><Icon type="ios-filing"></Icon>LOG</Menu-item>
-                  <Menu-item name="shell"><Icon type="ios-cog"></Icon>SHELL</Menu-item>
                   <MenuItem name="help"> <Icon type="ios-cog"></Icon>HELP</MenuItem>
                   <MenuItem name="about"> <Icon type="ios-cog"></Icon>ABOUT</MenuItem>
                   <MenuItem name="contact"> <Icon type="ios-cog"></Icon>CONTACT ME</MenuItem>
@@ -46,7 +46,7 @@
       <div style="margin-top:60px;">
           <!-- 服务监控列表 -->
           <Drawer  v-model="cache.service.drawerStatus" :closable="false" placement="left" :transfer="true"
-                   :draggable="true" :scrollable="true" width="30">
+                   :draggable="true" :scrollable="true" width="50">
               <JServiceList evt-name="serviceNodeSelect" group="service"></JServiceList>
           </Drawer>
 
@@ -112,31 +112,31 @@ export default {
          cache['service']={
             key: 'service',
             drawerStatus:false,
-            drawerBtnStyle:{},
+            drawerBtnStyle:{left:'0px',},
         };
 
         cache['config']={
             key: 'config',
             drawerStatus:false,
-            drawerBtnStyle:{},
+            drawerBtnStyle:{left:'0px',},
         };
 
         cache['statis']={
             key: 'statis',
             drawerStatus:false,
-            drawerBtnStyle:{},
+            drawerBtnStyle:{left:'0px',},
         };
 
         cache['monitors']={
             key: 'monitors',
             drawerStatus:false,
-            drawerBtnStyle:{},
+            drawerBtnStyle:{left:'0px'},
         };
 
         cache['router']={
             key: 'router',
             drawerStatus:false,
-            drawerBtnStyle:{},
+            drawerBtnStyle:{left:'0px',},
         };
 
 
@@ -151,10 +151,16 @@ export default {
       openDrawer() {
           this.curSelect.drawerStatus = true;
           this.curSelect.drawerBtnStyle.zindex = 10000;
+          this.curSelect.drawerBtnStyle.left = '0px';
       },
 
       toRouter(key) {
-          if(key == cache.curSelectKey  ) {
+          if(key == 'shell') {
+              this.curSelect.drawerStatus = false;
+              this.curSelect.drawerBtnStyle.zindex = -10000;
+              this.curSelect.drawerBtnStyle.left = '-100px';
+              window.jm.vue.$emit('shellSelect',null);
+          } else if(key == cache.curSelectKey  ) {
               this.openDrawer();
           } else if(cache[key]) {
               this.curSelect.drawerStatus = false;
