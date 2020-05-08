@@ -33,7 +33,10 @@ maven clean install  -Dmaven.test.skip=true
  
 # 构建运行服务提供方
 
-打开命令行窗口
+打开命令行窗口，进入
+cd ${SRC_ROOT}\jmicro.example
+maven clean install  -Dmaven.test.skip=true
+
 
 进入provider目录
 

@@ -16,25 +16,17 @@
  */
 package org.jmicro.api.codec;
 
-import java.lang.reflect.Method;
+import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.jmicro.api.JMicro;
 import org.jmicro.api.annotation.Cfg;
 import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.Inject;
 import org.jmicro.api.annotation.JMethod;
-import org.jmicro.api.codec.ICodecFactory;
-import org.jmicro.api.codec.IDecoder;
-import org.jmicro.api.codec.IEncoder;
-import org.jmicro.api.codec.OnePrefixDecoder;
-import org.jmicro.api.codec.OnePrefixTypeEncoder;
-import org.jmicro.api.gateway.ApiRequest;
-import org.jmicro.api.net.ISession;
+import org.jmicro.api.classloader.RpcClassLoader;
 import org.jmicro.api.net.Message;
-import org.jmicro.api.net.RpcRequest;
 import org.jmicro.api.registry.IRegistry;
 import org.jmicro.common.CommonException;
 import org.jmicro.common.Constants;
@@ -57,6 +49,9 @@ public class SimpleCodecFactory implements ICodecFactory{
 	
 	@Inject
 	private IRegistry registry;
+	
+	@Inject
+	private RpcClassLoader cl;
 	
 	/*@Inject
 	private OnePrefixTypeEncoder onePrefixTypeEncoder;
@@ -85,7 +80,14 @@ public class SimpleCodecFactory implements ICodecFactory{
 		@Override
 		public <R> R decode(ByteBuffer data,Class<R> clazz) {
 			//return (R)Decoder.decodeObject(data);
-			return (R)prefixCoder.decode(data);
+			ClassLoader c = Thread.currentThread().getContextClassLoader();
+			try {
+				Thread.currentThread().setContextClassLoader(cl);
+				return (R)prefixCoder.decode(data);
+			}finally {
+				Thread.currentThread().setContextClassLoader(c);
+			}
+			
 		}
 	};
 	
@@ -101,18 +103,50 @@ public class SimpleCodecFactory implements ICodecFactory{
 		}
 	};
 	
-	private IDecoder<String> jsonDecoder = new IDecoder<String>(){
+	private IDecoder<Object> jsonDecoder = new IDecoder<Object>(){
 		@Override
-		public <R> R decode(String json, Class<R> clazz) {
-			R obj = JsonUtils.getIns().fromJson(json, clazz);
-			return obj;
+		public <R> R decode(Object data, Class<R> clazz) {
+			ClassLoader c = Thread.currentThread().getContextClassLoader();
+			try {
+				String json = "";
+				if(data instanceof ByteBuffer) {
+					ByteBuffer bb = (ByteBuffer)data;
+					try {
+						json = new String(bb.array(),0,bb.remaining(),Constants.CHARSET);
+					} catch (UnsupportedEncodingException e) {
+						e.printStackTrace();
+					}
+				}else if(data.getClass().isArray()) {
+					byte[] arr = (byte[])data;
+					try {
+						json = new String(arr,0,arr.length,Constants.CHARSET);
+					} catch (UnsupportedEncodingException e) {
+						e.printStackTrace();
+					}
+				}else if(data instanceof String) {
+					json = (String)data;
+				}
+				Thread.currentThread().setContextClassLoader(cl);
+				return JsonUtils.getIns().fromJson(json, clazz);
+			}finally {
+				Thread.currentThread().setContextClassLoader(c);
+			}
+			
 		}
 	};
 	
-	private IEncoder<String> jsonEncoder = new IEncoder<String>(){
+	private IEncoder<ByteBuffer> jsonEncoder = new IEncoder<ByteBuffer>(){
 		@Override
-		public String encode(Object obj) {
-			return JsonUtils.getIns().toJson(obj);
+		public ByteBuffer encode(Object obj) {
+			String json = JsonUtils.getIns().toJson(obj);
+			byte[] data;
+			try {
+				data = json.getBytes(Constants.CHARSET);
+				return ByteBuffer.wrap(data);
+			} catch (UnsupportedEncodingException e) {
+				e.printStackTrace();
+			}
+			return null;
 		}
 	};
 	

@@ -23,6 +23,16 @@
                   CONFIG
               </Menu-item>
 
+              <Submenu name="d">
+                  <template slot="title">
+                      <Icon type="ios-analytics" />
+                      DEPLOYMENT
+                  </template>
+                  <Menu-item name="repository"><Icon type="ios-people"></Icon>REPOSITORY</Menu-item>
+                  <Menu-item name="host"><Icon type="ios-cog"></Icon>HOST</Menu-item>
+                  <Menu-item name="instance"><Icon type="ios-alert" />INSTANCE</Menu-item>
+              </Submenu>
+
               <Submenu name="o">
                   <template slot="title">
                       <Icon type="ios-analytics" />
@@ -155,12 +165,9 @@ export default {
       },
 
       toRouter(key) {
-          if(key == 'shell') {
-              this.curSelect.drawerStatus = false;
-              this.curSelect.drawerBtnStyle.zindex = -10000;
-              this.curSelect.drawerBtnStyle.left = '-100px';
-              window.jm.vue.$emit('shellSelect',null);
-          } else if(key == cache.curSelectKey  ) {
+          if(key == 'o' || key == 'd') {
+              return
+          }else if(key == cache.curSelectKey  ) {
               this.openDrawer();
           } else if(cache[key]) {
               this.curSelect.drawerStatus = false;
@@ -168,6 +175,11 @@ export default {
               cache.curSelectKey = key;
               this.curSelect = cache[key];
               this.openDrawer();
+          }else {
+              this.curSelect.drawerStatus = false;
+              this.curSelect.drawerBtnStyle.zindex = -10000;
+              this.curSelect.drawerBtnStyle.left = '-100px';
+              window.jm.vue.$emit('openEditorSelect',key);
           }
           /* this.$router.push('/'+key); */
       },

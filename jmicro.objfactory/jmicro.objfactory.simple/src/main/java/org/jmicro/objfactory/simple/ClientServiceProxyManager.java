@@ -100,6 +100,9 @@ class ClientServiceProxyManager {
 				insName = items.iterator().next().getKey().getInstanceName();
 			}
 			Class<?> cls = this.loadClass(insName,srvName, cl);
+			if(cls == null) {
+				throw new CommonException("Class not found: "+srvName);
+			}
 			proxy = createDynamicServiceProxy(cls,namespace,version,acs);
 			
 			if(items != null && !items.isEmpty()) {

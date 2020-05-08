@@ -28,7 +28,7 @@
 	    </dependency>
 	    <dependency>
 			 <groupId>org.jmicro</groupId>
-			 <artifactId>jmicro.classloader.server</artifactId>
+			 <artifactId>jmicro.classloader</artifactId>
 	    </dependency>
 	    <dependency>
 			 <groupId>org.jmicro</groupId>

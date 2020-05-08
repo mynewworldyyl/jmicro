@@ -194,7 +194,7 @@ public class ServerMessageReceiver implements IMessageReceiver{
 			
 			RpcResponse resp = new RpcResponse(msg.getReqId(),new ServerError(0,e.getMessage()));
 			resp.setSuccess(false);
-			msg.setPayload(ICodecFactory.encode(codeFactory,resp,msg.getProtocol()));
+			msg.setPayload(ICodecFactory.encode(codeFactory,resp,msg.getUpProtocol()));
 			msg.setType((byte)(msg.getType()+1));
 			s.write(msg);
 		} finally {

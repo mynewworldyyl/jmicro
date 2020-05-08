@@ -53,7 +53,7 @@ public class IdRequestMessageHandler implements IMessageHandler{
 	public void onMessage(ISession session, Message msg) {
 		
 		IdRequest req = ICodecFactory.decode(codecFactory, msg.getPayload(), 
-				IdRequest.class, msg.getProtocol());
+				IdRequest.class, msg.getUpProtocol());
 		
 		String cls = req.getClazz();
 		
@@ -81,7 +81,7 @@ public class IdRequestMessageHandler implements IMessageHandler{
 		}
 		
 		msg.setType((byte)(msg.getType()+1));
-		msg.setPayload(ICodecFactory.encode(codecFactory, result, msg.getProtocol()));
+		msg.setPayload(ICodecFactory.encode(codecFactory, result, msg.getUpProtocol()));
 		session.write(msg);
 	}
 

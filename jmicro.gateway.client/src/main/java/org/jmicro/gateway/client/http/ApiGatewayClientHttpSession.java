@@ -22,6 +22,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.jmicro.api.client.IClientSession;
+import org.jmicro.api.codec.JDataInput;
 import org.jmicro.api.net.AbstractSession;
 import org.jmicro.api.net.Message;
 import org.jmicro.client.ClientMessageReceiver;
@@ -59,9 +60,9 @@ public class ApiGatewayClientHttpSession extends AbstractSession implements ICli
 		new Thread(() -> {
 			Map<String,String> headers = new HashMap<>();
 			headers.put(Constants.HTTP_HEADER_ENCODER, Message.PROTOCOL_BIN+"");
-			byte[] data = HttpClientUtil.doPostData(url, bb.array(),headers);
+			byte[] data = HttpClientUtil.doPostData(url, bb,headers);
 			if(data.length > 0) {
-				Message message = Message.decode(ByteBuffer.wrap(data));
+				Message message = Message.decode(new JDataInput(ByteBuffer.wrap(data)));
 	            receiver.receive(ApiGatewayClientHttpSession.this,message);
 			} else {
 				throw new CommonException("Req:"+msg.getReqId()+" response null data");

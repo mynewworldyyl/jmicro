@@ -1,6 +1,7 @@
 package org.jmicro.gateway.client.http;
 
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.util.Map;
 
 import org.apache.commons.logging.Log;
@@ -23,7 +24,7 @@ public class HttpClientUtil {
 
 	private static final Log LOG = LogFactory.getLog(HttpClientUtil.class);
 
-	public static byte[] doPostData(String url, byte[] data,Map<String,String> headers){
+	public static byte[] doPostData(String url, ByteBuffer data,Map<String,String> headers){
 			byte[] result = new byte[0];
 
 			// 创建httpclient对象
@@ -32,7 +33,9 @@ public class HttpClientUtil {
 			HttpPost httpPost = new HttpPost(url);
 
 			// 设置参数到请求对象中
-			httpPost.setEntity(new ByteArrayEntity(data,0,data.length));
+			byte[] byteData= new byte[data.remaining()];
+			data.get(byteData, 0, byteData.length);
+			httpPost.setEntity(new ByteArrayEntity(byteData,0,byteData.length));
 
 			// 设置header信息
 			// 指定报文头【Content-type】、【User-Agent】

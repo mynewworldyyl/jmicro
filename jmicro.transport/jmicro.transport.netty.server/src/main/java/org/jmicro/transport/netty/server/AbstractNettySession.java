@@ -21,7 +21,6 @@ import static io.netty.handler.codec.http.HttpHeaders.Names.CONTENT_TYPE;
 import static io.netty.handler.codec.http.HttpResponseStatus.OK;
 import static io.netty.handler.codec.http.HttpVersion.HTTP_1_1;
 
-import java.io.UnsupportedEncodingException;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 
@@ -30,7 +29,6 @@ import org.jmicro.api.net.AbstractSession;
 import org.jmicro.api.net.Message;
 import org.jmicro.api.registry.ServiceMethod;
 import org.jmicro.common.Constants;
-import org.jmicro.common.util.JsonUtils;
 import org.jmicro.server.IServerSession;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -40,7 +38,7 @@ import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.http.DefaultFullHttpResponse;
 import io.netty.handler.codec.http.FullHttpResponse;
-import io.netty.handler.codec.http.websocketx.TextWebSocketFrame;
+import io.netty.handler.codec.http.websocketx.BinaryWebSocketFrame;
 
 public abstract class AbstractNettySession extends AbstractSession implements IServerSession {
 
@@ -71,27 +69,18 @@ public abstract class AbstractNettySession extends AbstractSession implements IS
 	
 	@Override
 	public void write(Message msg) {
-		byte[] data = null;
+		
 		//客户端Debug模式下上行时记录的时间
 		long oldTime = msg.getTime();
 		//记录下行时间
 		msg.setTime(System.currentTimeMillis());
-		if(msg.getProtocol() == Message.PROTOCOL_JSON) {
-			String json = JsonUtils.getIns().toJson(msg);
-			try {
-				data = json.getBytes(Constants.CHARSET);
-			} catch (UnsupportedEncodingException e1) {
-				e1.printStackTrace();
-			}
-		} else /*if(msg.getProtocol() == Message.PROTOCOL_BIN) */{
-			ByteBuffer bb = msg.encode();
-			data = bb.array();
-		}
 		
+		ByteBuffer bb = msg.encode();
+		bb.mark();
+		ByteBuf bbf = Unpooled.copiedBuffer(bb);
 		if(this.type == Constants.TYPE_HTTP) {
 			FullHttpResponse response;
-			response = new DefaultFullHttpResponse(HTTP_1_1, OK,
-					Unpooled.wrappedBuffer(data));
+			response = new DefaultFullHttpResponse(HTTP_1_1, OK,bbf);
 			response.headers().set(CONTENT_TYPE, "text/json");
 			response.headers().set(CONTENT_LENGTH, response.content().readableBytes());
 			/* 
@@ -101,14 +90,10 @@ public abstract class AbstractNettySession extends AbstractSession implements IS
 			*/
 			ctx.writeAndFlush(response);
 		}else if(this.type == Constants.TYPE_WEBSOCKET) {
-			/*ByteBuf bbf = Unpooled.buffer(data.length);
-			bbf.writeBytes(data);
 			ctx.channel().writeAndFlush(new BinaryWebSocketFrame(bbf));
-*/			ctx.channel().writeAndFlush(new TextWebSocketFrame(JsonUtils.getIns().toJson(msg)));
+			//ctx.channel().writeAndFlush(new BinaryWebSocketFrame(JsonUtils.getIns().toJson(msg)));
 			
 		}else/* if(this.type == Constants.NETTY_SOCKET) */{
-			ByteBuf bbf = Unpooled.buffer(data.length);
-			bbf.writeBytes(data);
 			ctx.channel().writeAndFlush(bbf);
 			if(msg.isDebugMode()) {
 				long cost = System.currentTimeMillis() - msg.getStartTime();
@@ -130,7 +115,8 @@ public abstract class AbstractNettySession extends AbstractSession implements IS
 			}
 		}
 		//服务方写信息，是下行
-		this.dump(data,false,msg);
+		bb.reset();
+		this.dump(bb,false,msg);
 		if(JMicroContext.get().isDebug()) {
 			JMicroContext.get().getDebugLog().append(",Encode time:").append(System.currentTimeMillis() - oldTime);
 		}

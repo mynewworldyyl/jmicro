@@ -22,7 +22,7 @@ import org.jmicro.api.choreography.base.InstanceInfo;
 
 public interface IServiceAgent {
 
-	SchedulerResult startService(String processId,String path,String mainClazz,String[] args);
+	SchedulerResult startService(String processId, String path, String mainClazz, String[] args);
 	
 	InstanceInfo checkService(String path);
 	

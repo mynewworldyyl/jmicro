@@ -23,8 +23,8 @@ import org.jmicro.api.JMicro;
  * @author Yulei Ye
  * @date 2019年1月23日 下午10:40:38
  */
-public class Main {
+public class Repository {
 	public static void main(String[] args) {
-		JMicro.getObjectFactoryAndStart(new String[]{"-DinstanceName=serviceAgentImpl"});
+		JMicro.getObjectFactoryAndStart(new String[]{"-DinstanceName=ResourceRespository"});
 	}
 }

@@ -419,6 +419,94 @@ jm.utils = {
         oScript.type = "text/javascript";
         oScript.src=jsUrl;
         oHead.appendChild( oScript);
+    },
+
+     toUTF8Array : function(str) {
+         let utf8 = [];
+        for (let i=0; i < str.length; i++) {
+            let charcode = str.charCodeAt(i);
+            if (charcode < 0x80) utf8.push(charcode);
+            else if (charcode < 0x800) {
+                utf8.push(0xc0 | (charcode >> 6),
+                    0x80 | (charcode & 0x3f));
+            }
+            else if (charcode < 0xd800 || charcode >= 0xe000) {
+                utf8.push(0xe0 | (charcode >> 12),
+                    0x80 | ((charcode>>6) & 0x3f),
+                    0x80 | (charcode & 0x3f));
+            }
+            // surrogate pair
+            else {
+                i++;
+                charcode = ((charcode&0x3ff)<<10)|(str.charCodeAt(i)&0x3ff)
+                utf8.push(0xf0 | (charcode >>18),
+                    0x80 | ((charcode>>12) & 0x3f),
+                    0x80 | ((charcode>>6) & 0x3f),
+                    0x80 | (charcode & 0x3f));
+            }
+        }
+        return utf8;
+    },
+
+    fromUTF8Array : function(data) { // array of bytes
+        let str = '',
+            i;
+
+        for (i = 0; i < data.length; i++) {
+            let value = data[i];
+
+            if (value < 0x80) {
+                str += String.fromCharCode(value);
+            } else if (value > 0xBF && value < 0xE0) {
+                str += String.fromCharCode((value & 0x1F) << 6 | data[i + 1] & 0x3F);
+                i += 1;
+            } else if (value > 0xDF && value < 0xF0) {
+                str += String.fromCharCode((value & 0x0F) << 12 | (data[i + 1] & 0x3F) << 6 | data[i + 2] & 0x3F);
+                i += 2;
+            } else {
+                // surrogate pair
+                var charCode = ((value & 0x07) << 18 | (data[i + 1] & 0x3F) << 12 | (data[i + 2] & 0x3F) << 6 | data[i + 3] & 0x3F) - 0x010000;
+
+                str += String.fromCharCode(charCode >> 10 | 0xD800, charCode & 0x03FF | 0xDC00);
+                i += 3;
+            }
+        }
+
+        return str;
+    },
+
+    utf8StringTakeLen : function(str) { //
+        let le = this.toUTF8Array(str).len;
+        if(le < jm.rpc.Constants.MAX_BYTE_VALUE) {
+            return le +1;
+        }else if(le < jm.rpc.Constants.MAX_SHORT_VALUE) {
+            return le +3;
+        }else if(le < jm.rpc.Constants.MAX_INT_VALUE) {
+            return le +7;
+        }else {
+            throw "String too long for:" + le;
+        }
+    },
+
+    parseJson:function(data) {
+        if(data instanceof Array) {
+            let  jsonStr = this.fromUTF8Array(data);
+            return JSON.parse(jsonStr);
+        }else if(typeof data == 'string') {
+            return JSON.parse(data);
+        }else if(data instanceof ArrayBuffer){
+            let byteArray = [];
+            let dv = new DataView(data,data.byteLength);
+            for(let i = 0; i <data.byteLength; i++) {
+                byteArray.push(dv.getUint8());
+            }
+            let jsonStr = this.fromUTF8Array(byteArray);
+            return JSON.parse(data);
+        }else {
+            return data;
+        }
+
+
     }
 
 }
@@ -570,10 +658,377 @@ if(!jm.utils.browser) {
 
 if(jm.utils.isBrowser('ie')) {
     Array.prototype.fill = function(e) {
-        for(var i = 0; i < this.length; i++) {
+        for(let i = 0; i < this.length; i++) {
             this[i] = e;
         }
     }
 }
 
+jm.utils.JDataInput = function(buf) {
+    if(!buf) {
+        throw 'Read buf cannot be null';
+    }
+    if(buf instanceof Array) {
+        this.buf = new DataView(new ArrayBuffer(buf.length),0, buf.length) ;
+        for(let i = 0; i < buf.length; i++) {
+            this.buf.setInt8(i,buf[i]);
+        }
+    }else if (buf instanceof ArrayBuffer) {
+        this.buf = new DataView(buf,0, buf.byteLength);
+    }else {
+        throw 'Not support construct ArrayBuffer from '+(typeof buf);
+    }
+
+    this.readPos = 0;
+}
+
+//public static int
+jm.utils.JDataInput.prototype.readUnsignedShort = function() {
+    let firstByte = this.atByte();
+    let secondByte = this.atByte();
+    let anUnsignedShort  =  firstByte << 8 | secondByte;
+    return anUnsignedShort;
+},
+
+jm.utils.JDataInput.prototype.readInt = function() {
+    let firstByte = this.atByte();
+    let secondByte = this.atByte();
+    let thirdByte = this.atByte();
+    let fourthByte = this.atByte();
+    let anUnsignedInt  = ((firstByte << 24 | secondByte << 16 | thirdByte << 8 | fourthByte)) & 0xFFFFFFFF;
+    return anUnsignedInt;
+},
+
+//public static long
+    jm.utils.JDataInput.prototype.readUnsignedInt = function() {
+        /*let firstByte = this.atByte();
+        let secondByte = this.atByte();
+        let thirdByte = this.atByte();
+        let fourthByte = this.atByte();
+        let anUnsignedInt  = ((firstByte << 24 | secondByte << 16 | thirdByte << 8 | fourthByte)) & 0xFFFFFFFF;
+        return anUnsignedInt;*/
+        let b = this.getUByte() & 0xff;
+        let n = b & 0x7f;
+        if (b > 0x7f) {
+            b = this.getUByte() & 0xff;
+            n ^= (b & 0x7f) << 7;
+            if (b > 0x7f) {
+                b = this.getUByte() & 0xff;
+                n ^= (b & 0x7f) << 14;
+                if (b > 0x7f) {
+                    b = this.getUByte() & 0xff;
+                    n ^= (b & 0x7f) << 21;
+                    if (b > 0x7f) {
+                        b = this.getUByte() & 0xff;
+                        n ^= (b & 0x7f) << 28;
+                        if (b > 0x7f) {
+                            throw "Invalid int encoding";
+                        }
+                    }
+                }
+            }
+        }
+        return (n >>> 1) ^ -(n & 1); // back to two's-complement
+    },
+
+    jm.utils.JDataInput.prototype.getUByte = function() {
+        return this.buf.getUint8(this.readPos++);
+    }
+
+jm.utils.JDataInput.prototype.atByte = function() {
+    return 0xFF & this.getUByte();
+}
+
+jm.utils.JDataInput.prototype.remaining = function() {
+    return this.buf.byteLength - this.readPos;
+}
+
+//public static long
+jm.utils.JDataInput.prototype.readUnsignedLong = function() {
+    let firstByte = this.atByte();
+    let secondByte = this.atByte();
+    let thirdByte = this.atByte();
+    let fourthByte = this.atByte();
+
+    let fiveByte = this.atByte();
+    let sixByte = this.atByte();
+    let sevenByte = this.atByte();
+    let eightByte = this.atByte();
+
+    let anUnsignedLong  =
+        (firstByte << 56 | secondByte << 48 | thirdByte << 40 | fourthByte << 32 |
+            fiveByte << 24 | sixByte << 16 | sevenByte << 8 | eightByte) & 0xFFFFFFFFFFFFFFFF;
+    return anUnsignedLong;
+},
+
+    jm.utils.JDataInput.prototype.readUtf8String = function() {
+        let len = this.getUByte();
+
+        if(len == -1) {
+            return null;
+        }else if(len == 0) {
+            return "";
+        }
+
+        //Byte.MAX_VALUE
+        if(len == jm.rpc.Constants.MAX_BYTE_VALUE) {
+            len = this.readUnsignedShort();
+            //Short.MAX_VALUE
+            if(len == jm.rpc.Constants.MAX_SHORT_VALUE) {
+                len = this.readUnsignedInt();
+            }
+        }
+
+        let arr = [];
+        for(let i = 0; i < len; i++) {
+            arr.push(this.getUByte());
+        }
+
+        return jm.utils.fromUTF8Array(arr);
+    }
+
+
+jm.utils.JDataOutput = function(buf) {
+    if( buf instanceof ArrayBuffer) {
+        this._buf = buf;
+    } else if(typeof buf == 'number') {
+        let size = parseInt(buf);
+        this._buf = new ArrayBuffer(size);
+    }
+    this.buf = new DataView(this._buf);
+    this.oriSize = this._buf.byteLength;
+    this.writePos = 0;
+}
+
+jm.utils.JDataOutput.prototype.getBuf = function() {
+    return this._buf.slice(0,this.writePos);
+}
+
+jm.utils.JDataOutput.prototype.writeUByte = function(v) {
+    this.buf.setUint8(this.writePos++,v);
+}
+
+jm.utils.JDataOutput.prototype.remaining = function() {
+    return this._buf.byteLength - this.writePos;
+}
+
+jm.utils.JDataOutput.prototype.checkCapacity = function(len) {
+    let rem = this.remaining();
+    if(rem >= len) {
+        return;
+    }
+    this.oriSize *= 2;
+
+    let newBuf = new ArrayBuffer(this.oriSize);
+    for(let i = 0; i < rem; i++) {
+        newBuf.setUint8(i,this.buf.getUint8());
+    }
+    this.buf = newBuf;
+
+}
+
+//public static void
+jm.utils.JDataOutput.prototype.writeUnsignedShort = function(v) {
+    if(v > jm.rpc.Constants.MAX_SHORT_VALUE) {
+        throw "Max short value is :"+jm.rpc.Constants.MAX_SHORT_VALUE+", but value "+v;
+    }
+    this.checkCapacity(2);
+    this.writeUByte((v >>> 8) & 0xFF);
+    this.writeUByte((v >>> 0) & 0xFF);
+},
+
+//public static void
+jm.utils.JDataOutput.prototype.writeUnsignedByte = function(v) {
+    if(v > jm.rpc.Constants.MAX_BYTE_VALUE) {
+        throw "Max byte value is :"+jm.rpc.Constants.MAX_BYTE_VALUE+", but value "+v;
+    }
+    this.checkCapacity(1);
+    this.writeUByte(v);
+},
+
+    jm.utils.JDataOutput.prototype.writeInt = function(v) {
+        if(v > jm.rpc.Constants.MAX_INT_VALUE) {
+            throw "Max int value is :"+jm.rpc.Constants.MAX_INT_VALUE+", but value "+v;
+        }
+        this.checkCapacity(4);
+        //高字节底地址
+        this.writeUByte((v >>> 24)&0xFF);
+        this.writeUByte((v >>> 16)&0xFF);
+        this.writeUByte((v >>> 8)&0xFF);
+        this.writeUByte((v >>> 0)&0xFF);
+
+    }
+
+//public static void
+jm.utils.JDataOutput.prototype.writeUnsignedInt = function(n) {
+    if(n > jm.rpc.Constants.MAX_INT_VALUE) {
+        throw "Max int value is :"+jm.rpc.Constants.MAX_INT_VALUE+", but value "+v;
+    }
+    this.checkCapacity(4);
+    n = (n << 1) ^ (n >> 31);
+    if ((n & ~0x7F) != 0) {
+        this.writeUByte((n | 0x80) & 0xFF);
+        n >>>= 7;
+        if (n > 0x7F) {
+            this.writeUByte((n | 0x80) & 0xFF);
+            n >>>= 7;
+            if (n > 0x7F) {
+                this.writeUByte((n | 0x80) & 0xFF);
+                n >>>= 7;
+                if (n > 0x7F) {
+                    this.writeUByte((n | 0x80) & 0xFF);
+                    n >>>= 7;
+                }
+            }
+        }
+    }
+    this.writeUByte(n);
+
+}
+
+jm.utils.JDataOutput.prototype.writeUnsignedLong = function(v) {
+    if(v > jm.rpc.Constants.MAX_INT_VALUE) {
+        throw "Max int value is :"+jm.rpc.Constants.MAX_INT_VALUE+", but value "+v;
+    }
+    this.checkCapacity(8);
+    this.writeUByte((v >>> 56)&0xFF);
+    this.writeUByte((v >>> 48)&0xFF);
+    this.writeUByte((v >>> 40)&0xFF);
+    this.writeUByte((v >>> 32)&0xFF);
+    this.writeUByte((v >>> 24)&0xFF);
+    this.writeUByte((v >>> 16)&0xFF);
+    this.writeUByte((v >>> 8)&0xFF);
+    this.writeUByte((v >>> 0)&0xFF);
+}
+
+jm.utils.JDataOutput.prototype.writeByteArray = function(arr) {
+    if(!arr || arr.length == 0) {
+        this.writeUnsignedInt(0)
+        return;
+    }
+    let size = arr.length;
+    this.writeUnsignedInt(size);
+    for(let i = 0; i < size; i++) {
+        this.writeUByte(arr[i])
+    }
+}
+
+jm.utils.JDataOutput.prototype.writeArrayBuffer = function(ab) {
+    if(!ab || ab.byteLength == 0) {
+        this.writeUnsignedInt(0)
+    }else {
+        let size = ab.byteLength;
+        this.writeUnsignedInt(size);
+        for(let i = 0; i < size; i++) {
+            this.writeUByte(ab[i])
+        }
+    }
+}
+
+//public static void
+jm.utils.JDataOutput.prototype.writeUnsignedLong = function(v) {
+    if(v > jm.rpc.Constants.MAX_INT_VALUE) {
+        throw "Max int value is :"+jm.rpc.Constants.MAX_INT_VALUE+", but value "+v;
+    }
+    this.checkCapacity(8);
+    this.writeUByte((v >>> 56)&0xFF);
+    this.writeUByte((v >>> 48)&0xFF);
+    this.writeUByte((v >>> 40)&0xFF);
+    this.writeUByte((v >>> 32)&0xFF);
+    this.writeUByte((v >>> 24)&0xFF);
+    this.writeUByte((v >>> 16)&0xFF);
+    this.writeUByte((v >>> 8)&0xFF);
+    this.writeUByte((v >>> 0)&0xFF);
+}
+
+jm.utils.JDataOutput.prototype.writeUtf8String = function(s) {
+
+    if(s == null) {
+        this.checkCapacity(1);
+        this.writeUByte(-1);
+        return 0;
+    } else if(s.length == 0) {
+        this.checkCapacity(1);
+        this.writeUByte(0);
+        return 0;
+    }
+
+    let self = this;
+    let data = jm.utils.toUTF8Array(s);
+
+    let le = data.length;
+    let needLen = le;
+    if(le < jm.rpc.Constants.MAX_BYTE_VALUE) {
+        needLen = le +1;
+        self.checkCapacity(needLen);
+        self.writeUByte(le);
+    }else if(le < jm.rpc.Constants.MAX_SHORT_VALUE) {
+        needLen = le +3;
+        this.checkCapacity(needLen);
+        self.writeUByte(jm.rpc.Constants.MAX_BYTE_VALUE);
+        self.writeUnsignedShort(le);
+    }else if(le < jm.rpc.Constants.MAX_INT_VALUE) {
+        needLen = le +7;
+        self.checkCapacity(needLen);
+        self.writeUByte(jm.rpc.Constants.MAX_BYTE_VALUE);
+        self.writeUnsignedShort(jm.rpc.Constants.MAX_SHORT_VALUE);
+        self.writeUnsignedInt(le);
+    }else {
+        throw "String too long for:" + le;
+    }
+    if(le > 0) {
+        for(let i = 0; i < le; i++) {
+            this.writeUByte(data[i]);
+        }
+    }
+    return needLen;
+}
+
+jm.utils.JDataOutput.prototype.writeObject = function(obj) {
+    let len = 0;
+    for(let key in obj) {
+        len++;
+    }
+
+    this.writeUnsignedInt(len);
+    for(let key in obj) {
+        //全部写为字符串
+        this.writeUtf8String(key+"");
+        this.writeUtf8String(obj[key]+"");
+    }
+
+}
+
+jm.utils.JDataOutput.prototype.writeObjectArray = function(arr) {
+    if(arr == null || arr.length == 0) {
+        this.writeUnsignedInt(0);
+    } else {
+        this.writeUnsignedInt(arr.length);
+        for(let i = 0; i <arr.length; i++) {
+            let o = arr[i];
+            let t = typeof o;
+            if(t == 'undefined') {
+                throw 'RPC param cannot be undefined';
+            }else if(t == 'string') {
+                this.writeUtf8String(o);
+            }else if(t == 'boolean') {
+               if(o) {
+                   this.writeUByte(1);
+               }else {
+                   this.writeUByte(0);
+               }
+            }else if(t == 'number') {
+                this.writeUnsignedLong(o);
+            }else if(o instanceof  Array) {
+                this.writeByteArray(o);
+            }else if (o instanceof ArrayBuffer ) {
+                this.writeArrayBuffer(o)
+            }else if (t == 'object' ) {
+                this.writeObject(o)
+            }else {
+                throw 'not support encode: ' + o;
+            }
+        }
+    }
+}
 

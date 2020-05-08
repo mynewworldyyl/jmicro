@@ -1,6 +1,6 @@
 <template>
   <div>
-    <p>{{node.id}}</p>
+    <p>{{item.id}}</p>
   </div>
 </template>
 
@@ -13,7 +13,7 @@ export default {
     components: {
     },
     props: {
-    node:TreeNode
+    item:TreeNode
   }
 }
 </script>

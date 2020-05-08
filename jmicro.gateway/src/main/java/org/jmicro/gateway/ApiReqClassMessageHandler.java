@@ -58,7 +58,7 @@ public class ApiReqClassMessageHandler implements IMessageHandler{
 		msg.setType((byte)(msg.getType()+1));
 		
 		ApiRequest req = ICodecFactory.decode(codecFactory, msg.getPayload(), 
-				ApiRequest.class, msg.getProtocol());
+				ApiRequest.class, msg.getUpProtocol());
 		
 		Short type = (Short)req.getArgs()[0];
 		
@@ -77,7 +77,7 @@ public class ApiReqClassMessageHandler implements IMessageHandler{
 			resp.setResult("");
 		}
 		
-		msg.setPayload(ICodecFactory.encode(codecFactory, resp, msg.getProtocol()));
+		msg.setPayload(ICodecFactory.encode(codecFactory, resp, msg.getUpProtocol()));
 		
 		session.write(msg);
 	}

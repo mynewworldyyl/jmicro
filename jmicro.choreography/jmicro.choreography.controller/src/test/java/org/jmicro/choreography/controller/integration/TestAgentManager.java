@@ -16,6 +16,7 @@
  */
 package org.jmicro.choreography.controller.integration;
 
+import org.jmicro.api.IListener;
 import org.jmicro.api.choreography.base.AgentInfo;
 import org.jmicro.api.choreography.controller.AgentManager;
 import org.jmicro.api.choreography.controller.IAgentListener;
@@ -59,7 +60,7 @@ public class TestAgentManager extends JMicroBaseTestCase{
 		AgentManager am = of.get(AgentManager.class);
 		am.addAgentListener((type,ai)->{
 			Assert.assertNotNull(ai);
-			Assert.assertTrue(type == IAgentListener.SERVICE_ADD);
+			Assert.assertTrue(type == IListener.ADD);
 			System.out.println(ai);
 		});
 		//this.waitForReady(30);

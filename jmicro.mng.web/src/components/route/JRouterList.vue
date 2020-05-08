@@ -36,12 +36,7 @@
 
         },
 
-        created(){
-            this.loadRouters((routerList)=>{
-                this.routers = routerList;
-            });
-
-
+        created() {
             window.jm.vue.$on('routerAdded',(r) => {
                 if(!r) {
                     return;
@@ -50,7 +45,12 @@
                 let val = JSON.parse(r.val);
                 this.parseRouterNode(this.srcRouters,val.type+'##'+val.group);
             });
+        },
 
+        mounted(){
+            this.loadRouters((routerList)=>{
+                this.routers = routerList;
+            });
         },
 
         methods:{

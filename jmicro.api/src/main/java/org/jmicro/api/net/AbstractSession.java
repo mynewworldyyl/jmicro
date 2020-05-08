@@ -171,8 +171,8 @@ public abstract class AbstractSession implements ISession{
      		 long startTime = System.currentTimeMillis();
      		 Message message = null;
               try {
-            	 message =  Message.readMessage(lb);
-          		 if(message == null){
+            	  message =  Message.readMessage(lb);
+          		  if(message == null){
                    	break;
                   }
           		  if(message.isDebugMode()) {
@@ -223,7 +223,7 @@ public abstract class AbstractSession implements ISession{
 		}
 	}
 	
-	public void dump(byte[] data,boolean up,Message message) {
+	public void dump(ByteBuffer bb,boolean up,Message message) {
 
 		if(!this.dumpUpStream && !this.dumpDownStream 
 				&& !message.isDumpDownStream() && !message.isDumpUpStream()) {
@@ -233,9 +233,9 @@ public abstract class AbstractSession implements ISession{
 
  		try {
 			if(up && (this.dumpUpStream || message.isDumpUpStream())) {
-				this.doDumpUpStream(ByteBuffer.wrap(data));
+				this.doDumpUpStream(bb);
 			} else if(!up && (this.dumpDownStream || message.isDumpDownStream())) {
-				this.doDumpDownStream(ByteBuffer.wrap(data));
+				this.doDumpDownStream(bb);
 			}
 		} catch (Exception e) {
 			e.printStackTrace();

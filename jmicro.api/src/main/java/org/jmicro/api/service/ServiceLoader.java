@@ -18,6 +18,7 @@ package org.jmicro.api.service;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -295,9 +296,9 @@ public class ServiceLoader{
 		//Netty Socket 作为必选端口开放
 		item.getKey().setPort(nettyPort);
 		
-		if(item.getClientId() >10) {
+		//if(item.getClientId() >10) {
 			cl.addClassInstance(item.getKey().getServiceName());
-		}
+		//}
 		
 		registry.regist(item);
 		
@@ -381,7 +382,7 @@ public class ServiceLoader{
 		return item;
 	}
 	
-	public ServiceMethod createSrvMethod(ServiceItem item,String methodName,Class[] args) {
+	public ServiceMethod createSrvMethod(ServiceItem item,String methodName, Class[] args) {
 
 		ServiceMethod sm = new ServiceMethod();
 		sm.setBreaking(false);
@@ -412,7 +413,7 @@ public class ServiceLoader{
 		item.addMethod(sm);
 		
 		for(Class<?> acls : args) {
-			this.needRegist(acls);
+			this.needRegist(acls,null);
 		}
 		
 		return sm;
@@ -621,9 +622,14 @@ public class ServiceLoader{
 			sm.getKey().setMethod(m.getName());
 			sm.getKey().setParamsStr(UniqueServiceMethodKey.paramsStr(m.getParameterTypes()));
 			
-			for(Class<?> ps : m.getParameterTypes()) {
-				needRegist(ps);
+			Type[] types = m.getGenericParameterTypes();
+			 Class<?>[]  pts = m.getParameterTypes();
+			 
+			for(int i = 0; i < types.length; i++) {
+				needRegist(pts[i],types[i]);
 			}
+			
+			needRegist(m.getReturnType(),m.getGenericReturnType());
 			
 			if(sm.isAsyncable()) {
 				//允许异步调用的RPC必须以方法全限定名为主题
@@ -637,20 +643,22 @@ public class ServiceLoader{
 	}
 	
 	
-	private void needRegist(Class<?> cls) {
-		if(cls == null) {
+	private void needRegist(Class<?> cls,Type genericType) {
+		
+		if(cls == null || void.class == cls) {
 			return;
 		}
+		
 		if(Collection.class.isAssignableFrom(cls)) {
-			ParameterizedType genericType = TypeCoder.genericType(cls.getGenericSuperclass());
-			Class<?> eltType = TypeUtils.finalParameterType((ParameterizedType) genericType, 0);
-			needRegist(eltType);
+			ParameterizedType gt = TypeCoder.genericType(genericType);
+			Class<?> eltType = TypeUtils.finalParameterType(gt, 0);
+			needRegist(eltType,null);
 		} else if(Map.class.isAssignableFrom(cls)) {
-			ParameterizedType genericType = TypeCoder.genericType(cls.getGenericSuperclass());
-			Class<?> keyType = TypeUtils.finalParameterType((ParameterizedType) genericType, 0);
-			Class<?> valueType = TypeUtils.finalParameterType((ParameterizedType) genericType, 1);
-			needRegist(keyType);
-			needRegist(valueType);
+			ParameterizedType gt = TypeCoder.genericType(cls.getGenericSuperclass());
+			Class<?> keyType = TypeUtils.finalParameterType(gt, 0);
+			Class<?> valueType = TypeUtils.finalParameterType(gt, 1);
+			needRegist(keyType,null);
+			needRegist(valueType,null);
 		}
 		
 		if(cls.isPrimitive()||
@@ -663,7 +671,7 @@ public class ServiceLoader{
 		}
 		
 		if(cls.isArray()) {
-			needRegist(cls.getComponentType());
+			needRegist(cls.getComponentType(),null);
 		} else {
 			cl.addClassInstance(cls.getName());
 		}

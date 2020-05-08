@@ -1,5 +1,6 @@
 <template>
   <div class="JMonitorEditor">
+      <p stype="word-break: break-all;padding: 0px 10px;font-size: medium;">{{node.id}}</p>
       <div v-for="(s,idx ) in cache.serverList" :key="s.srvKey">
           <p class="header">
                <span v-if="idx!=0">

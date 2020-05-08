@@ -252,7 +252,7 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
         
         Message msg = new Message();
 		msg.setType(Constants.MSG_TYPE_REQ_JRPC);
-		msg.setProtocol(Message.PROTOCOL_BIN);
+		msg.setUpProtocol(Message.PROTOCOL_BIN);
 		msg.setReqId(req.getRequestId());
 		
 		msg.setVersion(Message.MSG_VERSION);
@@ -328,7 +328,7 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
 	    			msg.setMethod(sm.getKey().getMethod());
 	    		}
 	    		
-	    		ByteBuffer pl = ICodecFactory.encode(this.codecFactory, req, msg.getProtocol());
+	    		ByteBuffer pl = ICodecFactory.encode(this.codecFactory, req, msg.getUpProtocol());
 	    		if(cxt.isDebug()) {
 	    			cxt.appendCurUseTime("End encode req",true);
 	    		}
@@ -409,8 +409,9 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
     			if(openDebug) {
         			//logger.info("Got response req:"+req.getMethod()+",Service:" + req.getServiceName()+", Namespace:"+req.getNamespace());
         		}
+    			
 				resp = ICodecFactory.decode(this.codecFactory,respMsg.getPayload(),
-						RpcResponse.class,msg.getProtocol());
+						RpcResponse.class,msg.getUpProtocol());
 				resp.setMsg(respMsg);
 				
 				if(cxt.isDebug()) {

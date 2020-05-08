@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
 
+import org.jmicro.api.net.Message;
 import org.jmicro.common.Constants;
 
 public class JDataInput implements DataInput {
@@ -13,6 +14,10 @@ public class JDataInput implements DataInput {
 	
 	public JDataInput(ByteBuffer buf) {
 		this.buf = buf;
+	}
+	
+	public int remaining() {
+		return this.buf.remaining();
 	}
 
 	@Override
@@ -46,17 +51,22 @@ public class JDataInput implements DataInput {
 
 	@Override
 	public int readUnsignedByte() throws IOException {
-		throw new IOException("Not support readUnsignedByte");
+		//throw new IOException("Not support readUnsignedByte");
+		return Message.readUnsignedByte(buf);
+	}
+	
+	@Override
+	public int readUnsignedShort() throws IOException {
+		return Message.readUnsignedShort(buf);
+	}
+	
+	public int readUnsignedInt() throws IOException{
+		return (int)Message.readUnsignedInt(this.buf);
 	}
 
 	@Override
 	public short readShort() throws IOException {
 		return buf.getShort();
-	}
-
-	@Override
-	public int readUnsignedShort() throws IOException {
-		throw new IOException("Not support readUnsignedShort");
 	}
 
 	@Override
@@ -66,8 +76,8 @@ public class JDataInput implements DataInput {
 
 	@Override
 	public int readInt() throws IOException {
-		//return buf.getInt();
-		return readInt0();
+		return buf.getInt();
+		//return readInt0();
 	}
 
 	@Override
@@ -121,29 +131,4 @@ public class JDataInput implements DataInput {
 		}
 	}
 
-	private int readInt0() throws IOException{
-		int b = buf.get() & 0xff;
-		int n = b & 0x7f;
-		if (b > 0x7f) {
-			b = buf.get() & 0xff;
-			n ^= (b & 0x7f) << 7;
-			if (b > 0x7f) {
-				b = buf.get() & 0xff;
-				n ^= (b & 0x7f) << 14;
-				if (b > 0x7f) {
-					b = buf.get() & 0xff;
-					n ^= (b & 0x7f) << 21;
-					if (b > 0x7f) {
-						b = buf.get() & 0xff;
-						n ^= (b & 0x7f) << 28;
-						if (b > 0x7f) {
-							throw new IOException("Invalid int encoding");
-						}
-					}
-				}
-			}
-		}
-		return (n >>> 1) ^ -(n & 1); // back to two's-complement
-	}
-	
 }

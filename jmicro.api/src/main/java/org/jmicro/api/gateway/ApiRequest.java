@@ -16,10 +16,13 @@
  */
 package org.jmicro.api.gateway;
 
+import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Map;
 
 import org.jmicro.api.annotation.SO;
+import org.jmicro.api.codec.JDataInput;
 import org.jmicro.api.net.IReq;
 import org.jmicro.api.net.Message;
 
@@ -46,7 +49,7 @@ public final class ApiRequest implements IReq {
 	
 	private Long reqId = -1L;
 	
-	private int impCode = 0;
+	//private int impCode = 0;
 	
 	private transient Message msg = null;
 	
@@ -98,12 +101,5 @@ public final class ApiRequest implements IReq {
 	public void setMsg(Message msg) {
 		this.msg = msg;
 	}
-	public int getImpCode() {
-		return impCode;
-	}
-	public void setImpCode(int impCode) {
-		this.impCode = impCode;
-	}
-	
 	
 }

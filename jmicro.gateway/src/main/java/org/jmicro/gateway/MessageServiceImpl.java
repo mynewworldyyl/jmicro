@@ -237,7 +237,8 @@ public class MessageServiceImpl implements IGatewayMessageCallback{
 		
 		Message msg = new Message();
 		msg.setType(Constants.MSG_TYPE_ASYNC_RESP);
-		msg.setProtocol(Message.PROTOCOL_JSON);
+		//强制使用JSON下发数据
+		msg.setDownProtocol(Message.PROTOCOL_JSON);
 		
 		for(PSData i : items) {
 			
@@ -265,7 +266,10 @@ public class MessageServiceImpl implements IGatewayMessageCallback{
 						i.getContext().putAll(context);
 						i.getContext().putAll(r.ctx);
 					}
-					msg.setPayload(ICodecFactory.encode(codecFactory, i, msg.getProtocol()));
+					
+					//强制使用JSON下发数据
+					msg.setPayload(ICodecFactory.encode(codecFactory, i, Message.PROTOCOL_JSON));
+					
 					try {
 						r.sess.write(msg);
 						r.lastActiveTime = System.currentTimeMillis();

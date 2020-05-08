@@ -141,7 +141,7 @@ public class ApiGatewayClient {
 		
 		Message msg = new Message();
 		msg.setType(Constants.MSG_TYPE_API_CLASS_REQ);
-		msg.setProtocol(Message.PROTOCOL_BIN);
+		msg.setUpProtocol(Message.PROTOCOL_BIN);
 		msg.setId(idClient.getLongId(Message.class.getName()));
 		msg.setReqId(req.getReqId());
 		msg.setLinkId(idClient.getLongId(Linker.class.getName()));
@@ -272,7 +272,7 @@ public class ApiGatewayClient {
 		
 		Message msg = new Message();
 		msg.setType(Constants.MSG_TYPE_API_REQ);
-		msg.setProtocol(Message.PROTOCOL_BIN);
+		msg.setUpProtocol(Message.PROTOCOL_BIN);
 		msg.setId(idClient.getLongId(Message.class.getName()));
 		msg.setReqId(req.getReqId());
 		msg.setLinkId(idClient.getLongId(Linker.class.getName()));
@@ -303,7 +303,7 @@ public class ApiGatewayClient {
 		
 		Message msg = new Message();
 		msg.setType(Constants.MSG_TYPE_ID_REQ);
-		msg.setProtocol(Message.PROTOCOL_BIN);
+		msg.setUpProtocol(Message.PROTOCOL_BIN);
 		msg.setId(reqId.getAndIncrement());
 		msg.setReqId(msg.getId());
 		msg.setLinkId(reqId.getAndIncrement());

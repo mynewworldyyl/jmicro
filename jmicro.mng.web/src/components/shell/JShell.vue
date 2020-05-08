@@ -36,7 +36,7 @@
             this.term = new Terminal(
                 {
                     cols: 92,
-                    rows: 22,
+                    rows: 30,
                     cursorBlink: true, // 光标闪烁
                     cursorStyle: "underline", // 光标样式  null | 'block' | 'underline' | 'bar'
                     scrollback: 800, //回滚
@@ -48,14 +48,14 @@
             // 换行并输入起始符“$”
             this.term.prompt = () => {
                 self.term.write("\r\n$ ");
-                self.term.write(" ");
+                //self.term.write(" ");
             };
 
             this.term.open(terminalContainer, true);
             const fitAddon = new FitAddon();
             this.term.loadAddon(fitAddon);
             // Make the terminal's size and geometry fit the size of #terminal-container
-            fitAddon.fit();
+            //fitAddon.fit();
 
             this.term.writeln("JMicro service terminal $ ");
             this.term.prompt();

@@ -88,7 +88,7 @@ public @interface Service {
 	 * 重试次数
 	 */
 	//method must can be retry, or 1
-	public int retryCnt() default 3;
+	public int retryCnt() default 0;
 	
 	/**
 	 * 请求超时，单位是毫秒

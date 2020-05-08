@@ -115,13 +115,12 @@
 		<module>jmicro.etcd</module>
 		<module>jmicro.submiter</module>
 		<module>jmicro.classloader</module>
-		<!-- <module>jmicro.choreography</module> -->
+		<module>jmicro.choreography</module>
 		<module>jmicro.test</module>
 		<module>jmicro.ext</module>
 		<module>jmicro.agent</module>
 		<module>jmicro.main</module>
 		<module>jmicro.build</module>
-		
     </modules>
 
     <dependencyManagement>
@@ -183,7 +182,7 @@
             </dependency>
 			   <dependency>
                  <groupId>org.jmicro</groupId>
-				 <artifactId>jmicro.classloader.server</artifactId>
+				 <artifactId>jmicro.classloader</artifactId>
 				 <version>${jmicro.version}</version>
             </dependency>
              
@@ -248,6 +247,11 @@
 			 <artifactId>jmicro.submiter</artifactId>
 			 <version>${jmicro.version}</version>
 			 </dependency>
+			 <dependency>
+			<groupId>org.jmicro</groupId>
+			<artifactId>jmicro.choreography.api</artifactId>
+			<version>${jmicro.version}</version>
+			</dependency>
 			  <dependency>
 			 <groupId>org.jmicro</groupId>
 			 <artifactId>jmicro.server</artifactId>

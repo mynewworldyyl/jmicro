@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
 
+import org.jmicro.api.net.Message;
 import org.jmicro.common.CommonException;
 import org.jmicro.common.Constants;
 
@@ -57,8 +58,13 @@ public class JDataOutput implements DataOutput {
 	}
 
 	@Override
-	public void write(byte[] b) throws IOException {
+	public void write(byte[] b) {
 		buf = checkCapacity(buf,b.length);
+		buf.put(b);
+	}
+	
+	public void write(ByteBuffer b) {
+		buf = checkCapacity(buf,b.remaining());
 		buf.put(b);
 	}
 
@@ -110,14 +116,14 @@ public class JDataOutput implements DataOutput {
 	@Override
 	public void writeInt(int v) throws IOException {
 		buf = checkCapacity(buf,Integer.BYTES);
-		//buf.putInt(v);
-		encodeInt(v);
+		buf.putInt(v);
+		//encodeInt(v);
 	}
 	
 	public void writeInt(Integer v) throws IOException {
 		buf=checkCapacity(buf,Integer.BYTES);
-		//buf.putInt(v);
-		encodeInt(v);
+		buf.putInt(v);
+		//encodeInt(v);
 	}
 
 	@Override
@@ -227,26 +233,16 @@ public class JDataOutput implements DataOutput {
 		return buf;
 	}
 
-	private void encodeInt(int n) {
-		// move sign to low-order bit, and flip others if negative
-		n = (n << 1) ^ (n >> 31);
-		if ((n & ~0x7F) != 0) {
-			buf.put((byte) ((n | 0x80) & 0xFF));
-			n >>>= 7;
-			if (n > 0x7F) {
-				buf.put((byte) ((n | 0x80) & 0xFF));
-				n >>>= 7;
-				if (n > 0x7F) {
-					buf.put((byte) ((n | 0x80) & 0xFF));
-					n >>>= 7;
-					if (n > 0x7F) {
-						buf.put((byte) ((n | 0x80) & 0xFF));
-						n >>>= 7;
-					}
-				}
-			}
-		}
-		buf.put((byte) n);
+	public void writeUnsignedByte(short v) {
+		 Message.writeUnsignedByte(buf,v);
+	}
+	
+	public void writeUnsignedShort(int v){
+		 Message.writeUnsignedShort(buf,v);
+	}
+	
+	public void writeUnsignedInt(long v){
+		 Message.writeUnsignedInt(this.buf,v);
 	}
 	
 }

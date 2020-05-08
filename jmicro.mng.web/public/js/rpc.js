@@ -23,9 +23,10 @@ jm.config ={
     ip:'192.168.56.1',
     //ip:'192.168.1.145',
     port:'9090',
-    wsContext:'_ws_',
-    httpContext:'/_http_',
-    useWs:true
+    txtContext : '_txt_',
+    binContext : '_bin_',
+    httpContext : '/_http_',
+    useWs : true
 }
 
 jm.Constants = {
@@ -40,48 +41,8 @@ jm.Constants = {
   DEFAULT_VERSION : "0.0.0",
 }
 
-jm.Constants.Message = {
-    HEADER_LEN : 10,
-    PROTOCOL_BIN : 0,
-    PROTOCOL_JSON  :  1,
-    PRIORITY_0  :  0,
-    PRIORITY_1  :  1,
-    PRIORITY_2  :  2,
-    PRIORITY_3  :  3,
-    PRIORITY_4  :  4,
-    PRIORITY_5  :  5,
-    PRIORITY_6  :  6,
-    PRIORITY_7  :  7,
-    PRIORITY_MIN  :  this.PRIORITY_0,
-    PRIORITY_NORMAL  :  this.PRIORITY_3,
-    PRIORITY_MAX  :  this.PRIORITY_7,
-    MSG_VERSION  :  1,
-    FLAG_PROTOCOL  :  1<<0,
-    //调试模式
-    FLAG_DEBUG_MODE  :  1<<1,
-    //需要响应的请求
-    FLAG_NEED_RESPONSE  :  1<<2,
-
-    //0B00111000 5---3
-    FLAG_LEVEL  :  0X38,
-
-    //异步消息
-   FLAG_STREAM  :  1<<6,
-
-    //DUMP上行数据
-    FLAG0_DUMP_UP  :  1<<0,
-    //DUMP下行数据
-    FLAG0_DUMP_DOWN  :  1<<1,
-
-    //可监控消息
-    FLAG0_MONITORABLE  :  1<<2,
-
-    //是否启用服务级log
-    FLAG0_LOGGABLE  : 1 << 3
-}
-
 jm.transport = {
-    send:function(data,cb){
+    send : function(data,cb){
         if(jm.config.useWs){
             jm.socket.send(data,cb);
         } else {
@@ -90,7 +51,7 @@ jm.transport = {
                 url: jm.http.getHttpApiPath(),
                 type: "post",
                 dataType: "json",
-                data: JSON.stringify(data),
+                data: jm.socket.encode(data,false),
                 headers: {'Content-Type': 'application/json','DataEncoderType':1},
                 success: function (result, statuCode, xhr) {
                     //sucCb(data, statuCode, xhr);
@@ -108,7 +69,8 @@ jm.transport = {
                 }
             })
         }
-    }
+    },
+
 }
 
 jm.rpc = {
@@ -120,12 +82,11 @@ jm.rpc = {
     },
 
     createMsg:function(type) {
-        var msg = new jm.rpc.Message();
-        msg.setType(type);
-        msg.setProtocol(jm.Constants.Message.PROTOCOL_JSON);
-        msg.setId(new Date().getTime());
-        msg.setReqId(msg.getId());
-        msg.setLinkId(new Date().getTime());
+        let msg = new jm.rpc.Message();
+        msg.type = type;
+        msg.id= 0;
+        msg.reqId = 0;
+        msg.linkId = 0;
 
         //msg.setStream(false);
         msg.setDumpDownStream(false);
@@ -134,13 +95,13 @@ jm.rpc = {
         msg.setLoggable(false);
         msg.setMonitorable(false);
         msg.setDebugMode(false);
-        msg.setLogLevel(4)//LOG_WARN
+        msg.setLogLevel(jm.rpc.Constants.LOG_NO)//LOG_WARN
 
         return msg;
     }
 
     ,getId : function(idClazz){
-        var self = this;
+        let self = this;
         return new Promise(function(reso1,reje){
           var cacheId = self.idCache[idClazz];
           if(!!cacheId && cacheId.curIndex < cacheId.ids.length){
@@ -176,39 +137,67 @@ jm.rpc = {
      });
   },
 
-  callRpcWithRequest : function(req){
-    var self = this;
-    return new Promise(function(reso,reje){
+  callRpcWithRequest : function(req,type,upProtocol,downProtocol){
+    if(typeof type == 'undefined') {
+        type = jm.rpc.Constants.MSG_TYPE_REQ_RAW;
+    }
 
-      let msg =  self.createMsg(0x09)
-      let ai = jm.mng.act.actInfo;
-      if(ai && ai.success ) {
-          req.params['loginKey'] = ai.loginKey;
+      if(typeof upProtocol == 'undefined') {
+          upProtocol = jm.rpc.Constants.PROTOCOL_BIN;
       }
 
-      let streamCb = req.stream;
-      if(typeof req.stream == 'function') {
-        req.stream = true;
-        msg.setStream(true)
+      if(typeof downProtocol == 'undefined') {
+          downProtocol = jm.rpc.Constants.PROTOCOL_BIN;
       }
-      msg.payload =  JSON.stringify(req);
 
-      msg.reqId = req.reqId;
-
-      if(req.needResponse) {
-          msg.setNeedResponse(true);
-      }
-        jm.transport.send(msg,function(rstMsg,err){
-            if(err || !rstMsg.payload.success) {
-                reje(err || rstMsg.payload.msg);
-            }else {
-                reso(rstMsg.payload.result);
-            }
-        });
-    });
+    return this.callRpcWithTypeAndProtocol(req,type,upProtocol,downProtocol);
   },
 
-  callWithObject:function(params){
+    callRpcWithTypeAndProtocol : function(req,type,upProtocol,downProtocol){
+        let self = this;
+        return new Promise(function(reso,reje){
+
+            let msg =  self.createMsg(type);
+            msg.setUpProtocol(upProtocol);
+            msg.setDownProtocol(downProtocol);
+
+            if(req.reqId) {
+                msg.reqId = req.reqId;
+                msg.id = msg.reqId;
+            }else {
+                msg.reqId = jm.rpc.reqId++;
+                msg.id = msg.reqId;
+            }
+
+            let ai = jm.mng.act.actInfo;
+            if(ai && ai.success ) {
+                req.params['loginKey'] = ai.loginKey;
+            }
+
+            if(upProtocol == jm.rpc.Constants.PROTOCOL_JSON) {
+                msg.payload =  jm.utils.toUTF8Array(JSON.stringify(req));
+            } else if(upProtocol == jm.rpc.Constants.PROTOCOL_BIN ){
+                if(typeof req.encode == 'function') {
+                    msg.payload = req.encode(jm.rpc.Constants.PROTOCOL_BIN);
+                }
+            } else {
+                msg.payload = req;
+            }
+
+            if(req.needResponse) {
+                msg.setNeedResponse(true);
+            }
+            jm.transport.send(msg,function(rstMsg,err){
+                if(err || !rstMsg.payload.success) {
+                    reje(err || rstMsg.payload.msg);
+                } else {
+                    reso(rstMsg.payload.result);
+                }
+            });
+        });
+    },
+
+  callWithObject:function(params,type,upProtocol,downProtocol){
     var self = this;
     return new Promise(function(reso,reje){
 
@@ -251,25 +240,25 @@ jm.rpc = {
       req.args = params.args;
 
       req.needResponse = params.needResponse;
-      req.stream = params.stream;
+      //req.stream = params.stream;
 
-        self.callRpcWithRequest(req)
-            .then(function(rst){
-                reso(rst);
-            }).catch(function(err){
-            reje(err);
-        });
+      self.callRpcWithRequest(req,type,upProtocol,downProtocol)
+        .then(function(rst){
+            reso(rst);
+        }).catch(function(err){
+        reje(err);
+      });
 
     });
 
   },
 
-  callWithParams:function(serviceName,namespace,version,method,args,needResponse){
-    var self = this;
+  callWithParams : function(serviceName, namespace, version, method, args, needResponse){
+    let self = this;
     return new Promise(function(reso,reje){
 
       if(!serviceName || serviceName.trim() == '') {
-        reje('service name cannot be NULL');
+          reje('service name cannot be NULL');
           return;
       }
 
@@ -318,12 +307,24 @@ jm.rpc = {
 
   },
 
-  callRpc : function(param){
-    var self = this;
+  callRpc : function(param,type,upProtocol,downProtocol){
+        if(!upProtocol) {
+            upProtocol = jm.rpc.Constants.PROTOCOL_BIN;
+        }
+
+        if(!downProtocol) {
+            downProtocol = jm.rpc.Constants.PROTOCOL_BIN;
+        }
+
+      if(!type) {
+          type = jm.rpc.Constants.MSG_TYPE_REQ_RAW;
+      }
+
+      let self = this;
     if(param instanceof jm.rpc.ApiRequest) {
-        return self.callRpcWithRequest(param);
+        return self.callRpcWithRequest(param,type,upProtocol,downProtocol);
     }else if(typeof param  == 'object'){
-        return self.callWithObject(param);
+        return self.callWithObject(param,type,upProtocol,downProtocol);
     } else if(arguments.length >= 5) {
         if(arguments.length == 5) {
           return self.callWithParams(arguments[0],arguments[1],arguments[2],arguments[3],arguments[4]);
@@ -339,17 +340,87 @@ jm.rpc = {
     }
 
   }
+}
+
+jm.rpc.Constants = {
+
+    MSG_TYPE_API_REQ : 0x09, //API网关请求
+    MSG_TYPE_API_RESP : 0x0A,//API网关请求响应
+
+    MSG_TYPE_REQ_RAW : 0x03,  //纯二进制数据请求
+    MSG_TYPE_RRESP_RAW : 0x04, //纯二进制数据响应
+
+    LOG_NO : 0,
+    LOG_FINAL : 6,
+
+    CHARSET : 'UTF-8',
+
+    HEADER_LEN : 14,
+    PROTOCOL_BIN : 0,
+    PROTOCOL_JSON : 1,
+
+    PRIORITY_0 : 0,
+    PRIORITY_1 : 1,
+    PRIORITY_2 : 2,
+    PRIORITY_3 : 3,
+    PRIORITY_4 : 4,
+    PRIORITY_5 : 5,
+    PRIORITY_6 : 6,
+    PRIORITY_7 : 7,
+
+    PRIORITY_MIN : 0,
+    PRIORITY_NORMAL : 3,
+    PRIORITY_MAX : 7,
+
+    MAX_SHORT_VALUE:0X7FFF,
+
+    MAX_BYTE_VALUE :0X7F,
+
+    MAX_INT_VALUE :0x7FFFFFFF,
+
+    //public static final long MAX_LONG_VALUE = Long.MAX_VALUE*2;
+
+    MSG_VERSION :1,
+
+    FLAG_UP_PROTOCOL : 1 << 0,
+
+    FLAG_DOWN_PROTOCOL : -0x80,
+
+    //调试模式
+    FLAG_DEBUG_MODE : 1 << 1,
+
+    //需要响应的请求
+    FLAG_NEED_RESPONSE : 1 << 2,
+
+    //0B00111000 5---3
+    FLAG_LEVEL : 0X38,
+
+    //长度字段类型，1表示整数，0表示短整数
+    FLAG_LENGTH_INT : 1 << 6,
+
+    //DUMP上行数据
+    FLAG0_DUMP_UP : 1 << 0,
+    //DUMP下行数据
+    FLAG0_DUMP_DOWN : 1 << 1,
+
+    //可监控消息
+    FLAG0_MONITORABLE : 1 << 2,
+
+    //是否启用服务级log
+    FLAG0_LOGGABLE : 1 << 3,
 
 }
 
 jm.rpc.Message = function() {
 
-    this.startTime = -1;
+    this.startTime = 0;
+    //此消息所占字节数
+    this.len = -1;
 
     //1 byte length
-    this.version = jm.Constants.Message.MSG_VERSION;
+    this.version = 0;
 
-    this.reqId = -1;
+    this.reqId = 0;
 
     //payload length with byte,4 byte length
     //private int len;
@@ -359,12 +430,12 @@ jm.rpc.Message = function() {
 
     /**
      * dm: is development mode
-     * S: Stream
+     * S: data length type 0:short 1:int
      * N: need Response
-     * P: protocol 0:bin, 1:json
-     * LLL: Message priority
+     * PR: protocol 0:bin, 1:json
+     * PPP: Message priority
      *
-     *   S L L  L  N dm P
+     *   S P P  P  N dm PR
      * | | | |  |  |  | |
      * 7 6 5 4  3  2  1 0
      * @return
@@ -375,10 +446,10 @@ jm.rpc.Message = function() {
      * up: dump up stream data
      * do: dump down stream data
      * M: Monitorable
-     * L: 开发日志上发
+     * L: 日志级别
 
      *
-     *         L M  do up
+     *     L L L M  do up
      * | | | | | |  |  |
      * 7 6 5 4 3 2  1  0
      * @return
@@ -391,209 +462,351 @@ jm.rpc.Message = function() {
     //2 byte length
     //private byte ext;
 
-    this.payload=null;
+    this.payload = null;
+
 
     //*****************development mode field begin******************//
-    this.msgId = -1;
-    this.linkId = -1;
-    this.time = -1;
-    this.instanceName = '';
-    this.method = '';
+    this.msgId = 0;
+    this.linkId = 0;
+    this.time = 0;
+    this.instanceName = 0;
+    this.method = 0;
 
     //****************development mode field end*******************//
 }
 
-jm.rpc.Message.prototype = {
-    is : function(flag, mask){
-        return (flag & mask) != 0;
-    },
+//public static boolean
+jm.rpc.Message.prototype.is = function( flag,  mask) {
+    return (flag & mask) != 0;
+}
 
-    /* isByShort:function(flag, mask) {
-        return (flag & mask) != 0;
-    },*/
+jm.rpc.Message.prototype.set = function( isTrue, f, mask) {
+    return isTrue ?(f |= mask):(f &= ~mask);
+}
 
-    isDumpUpStream : function() {
-        return this.is(this.flag0,jm.Constants.Message.FLAG0_DUMP_UP);
-    },
+//public static boolean
+/* jm.rpc.Message.prototype.is( flag, mask) {
+    return (flag & mask) != 0;
+},*/
 
-    setDumpUpStream : function( f) {
-        this.flag0 |= f ? jm.Constants.Message.FLAG0_DUMP_UP : 0 ;
-    },
+jm.rpc.Message.prototype.isDumpUpStream = function()  {
+    return this.is(this.flag0,jm.rpc.Constants.FLAG0_DUMP_UP);
+}
 
-    isDumpDownStream : function() {
-        return this.is(this.flag0,jm.Constants.Message.FLAG0_DUMP_DOWN);
-    },
+//public boolean
+jm.rpc.Message.prototype.isDumpDownStream = function() {
+    return this.is(this.flag0, jm.rpc.Constants.FLAG0_DUMP_DOWN);
+}
 
-    setDumpDownStream : function( f) {
-        this.flag0 |= f ? jm.Constants.Message.FLAG0_DUMP_DOWN : 0 ;
-    },
+//public void
+jm.rpc.Message.prototype.setDumpUpStream = function(f)  {
+    //this.flag0 |= f ? jm.rpc.Constants.FLAG0_DUMP_UP : 0 ;
+    this.flag0  = this.set(f,this.flag0 ,jm.rpc.Constants.FLAG0_DUMP_UP);
+}
 
-    isLoggable:function() {
-        return this.is(this.flag0,jm.Constants.Message.FLAG0_LOGGABLE);
-    },
+//public boolean
+jm.rpc.Message.prototype.setDumpDownStream = function(f)  {
+    //return this.is(flag0,jm.rpc.Constants.FLAG0_DUMP_DOWN);
+    this.flag0  = this.set(f,this.flag0 ,jm.rpc.Constants.FLAG0_DUMP_DOWN);
+}
 
-    setLoggable : function( f) {
-        this.flag0 |= f ? jm.Constants.Message.FLAG0_LOGGABLE : 0 ;
-    },
+//public boolean
+jm.rpc.Message.prototype.isLoggable = function()  {
+    return this.is(this.flag0,jm.rpc.Constants.FLAG0_LOGGABLE);
+}
 
-    isDebugMode : function() {
-        return this.is(this.flag,jm.Constants.Message.FLAG_DEBUG_MODE);
-    },
+//public void
+jm.rpc.Message.prototype.setLoggable = function(f)  {
+    //this.flag0 |= f ? jm.rpc.Constants.FLAG0_LOGGABLE : 0 ;
+    this.flag0  = this.set(f,this.flag0 ,jm.rpc.Constants.FLAG0_LOGGABLE);
+}
 
-    setDebugMode : function( f) {
-        this.flag |= f ? jm.Constants.Message.FLAG_DEBUG_MODE : 0 ;
-    },
+//public boolean
+jm.rpc.Message.prototype.isDebugMode = function() {
+    return this.is(this.flag,jm.rpc.Constants.FLAG_DEBUG_MODE);
+}
 
-    isMonitorable : function() {
-        return this.is(this.flag0,jm.Constants.Message.FLAG0_MONITORABLE);
-    },
+//public void
+jm.rpc.Message.prototype.setDebugMode = function(f)  {
+    //this.flag |= f ? jm.rpc.Constants.FLAG_DEBUG_MODE : 0 ;
+    this.flag  = this.set(f,this.flag ,jm.rpc.Constants.FLAG_DEBUG_MODE);
+}
 
-    setMonitorable( f) {
-        this.flag0 |= f ? jm.Constants.Message.FLAG0_MONITORABLE : 0 ;
-    },
+//public boolean
+jm.rpc.Message.prototype.isMonitorable = function()  {
+    return this.is(this.flag0,jm.rpc.Constants.FLAG0_MONITORABLE);
+}
 
-    isStream : function() {
-        return this.is(this.flag,jm.Constants.Message.FLAG_STREAM);
-    },
+//public void
+jm.rpc.Message.prototype.setMonitorable = function(f)  {
+   // this.flag0 |= f ? jm.rpc.Constants.FLAG0_MONITORABLE : 0 ;
+    this.flag0  = this.set(f,this.flag0 ,jm.rpc.Constants.FLAG0_MONITORABLE);
+}
 
-    setStream:function( f) {
-        this.flag |= f ? jm.Constants.Message.FLAG_STREAM : 0 ;
-    },
+//public boolean
+jm.rpc.Message.prototype.isNeedResponse = function()  {
+    return this.is(this.flag,jm.rpc.Constants.FLAG_NEED_RESPONSE);
+}
 
-    isNeedResponse:function() {
-        return this.is(this.flag,jm.Constants.Message.FLAG_NEED_RESPONSE);
-    },
+//public void
+jm.rpc.Message.prototype.setNeedResponse = function(f)  {
+    //this.flag |= f ? jm.rpc.Constants.FLAG_NEED_RESPONSE : 0 ;
+    this.flag  = this.set(f,this.flag ,jm.rpc.Constants.FLAG_NEED_RESPONSE);
+}
 
-    setNeedResponse : function( f) {
-        this.flag |= f ? jm.Constants.Message.FLAG_NEED_RESPONSE : 0 ;
-    },
+/**
+ *
+ * @param f true 表示整数，false表示短整数
+ */
+//public void
+jm.rpc.Message.prototype.setLengthType = function(f)  {
+    //this.flag |= f ? jm.rpc.Constants.FLAG_LENGTH_INT : 0 ;
+    this.flag  = this.set(f,this.flag ,jm.rpc.Constants.FLAG_LENGTH_INT);
+}
 
-    getLevel : function() {
-        return ((this.flag >>> 3) & 0x07);
-    },
+//public boolean
+jm.rpc.Message.prototype.isLengthInt = function()  {
+    return this.is(this.flag,jm.rpc.Constants.FLAG_LENGTH_INT);
+}
 
-    setLevel : function( l) {
-        if(l > jm.Constants.Message.PRIORITY_7 || l < jm.Constants.Message.PRIORITY_0) {
-            throw "Invalid priority: "+l;
-        }
-        this.flag = ((l << 3) | this.flag);
-    },
+//public int
+jm.rpc.Message.prototype.getPriority = function()  {
+    return ((this.flag >>> 3) & 0x07);
+}
 
-    getLogLevel : function() {
-        return ((this.flag0 >>> 3) & 0x07);
-    },
+//public void
+jm.rpc.Message.prototype.setPriority = function(l)  {
+    if(l > jm.rpc.Constants.PRIORITY_7 || l < jm.rpc.Constants.PRIORITY_0) {
+        throw "Invalid priority: "+l;
+    }
+    this.flag = ((l << 3) | this.flag);
+}
 
-    setLogLevel : function( l) {
-        if(l > 6 || l < 0) {
-            throw "Invalid log level: "+l;
-        }
-        this.flag0 = ((l << 3) | this.flag0);
-    },
+//public byte
+jm.rpc.Message.prototype.getLogLevel = function()  {
+    return ((this.flag0 >>> 3) & 0x07);
+}
 
-    getProtocolByFlag(flag) {
-        return (flag & 0x01);
-    },
+//public void
+jm.rpc.Message.prototype.setLogLevel = function(v)  {
+    if(v < jm.rpc.Constants.LOG_NO || v > jm.rpc.Constants.LOG_FINAL) {
+        throw "Invalid Log level: "+v;
+    }
+    this.flag0 = ((v << 3) | this.flag0);
+}
 
-    getProtocol : function() {
-        return this.getProtocolByFlag(this.flag);
-    },
+jm.rpc.Message.prototype.getUpProtocol=function() {
+    return (this.flag & jm.rpc.Constants.FLAG_UP_PROTOCOL) >>> 0;
+}
 
-    setProtocol:function( protocol) {
-        if(protocol == jm.Constants.Message.PROTOCOL_BIN || protocol == jm.Constants.Message.PROTOCOL_JSON) {
-            this.flag = ( protocol | (this.flag & 0xFE));
-        }else {
-            throw ("Invalid protocol: "+protocol);
-        }
-    },
+jm.rpc.Message.prototype.setUpProtocol=function(protocol) {
+    //this.flag |= protocol == jm.rpc.Constants.PROTOCOL_JSON ? jm.rpc.Constants.FLAG_UP_PROTOCOL : 0 ;
+    this.flag  = this.set(protocol == jm.rpc.Constants.PROTOCOL_JSON ,this.flag ,jm.rpc.Constants.FLAG_UP_PROTOCOL);
+}
 
-    getId() {
-        return this.msgId;
-    },
+jm.rpc.Message.prototype.getDownProtocol=function() {
+    return (this.flag & jm.rpc.Constants.FLAG_DOWN_PROTOCOL) >>> 7;;
+}
 
-    setId:function(id) {
-        this.msgId = id;
-    },
+jm.rpc.Message.prototype.setDownProtocol = function(protocol) {
+    //this.flag |= protocol == jm.rpc.Constants.PROTOCOL_JSON ? jm.rpc.Constants.FLAG_DOWN_PROTOCOL : 0 ;
+    this.flag  = this.set(protocol == jm.rpc.Constants.PROTOCOL_JSON ,this.flag ,jm.rpc.Constants.FLAG_DOWN_PROTOCOL);
+}
 
-    getVersion : function() {
-        return this.version;
-    },
-
-    setVersion : function(version) {
-        this.version = version;
-    },
-
-    getType : function() {
-        return this.type;
-    },
-
-    setType : function( type) {
-        this.type = type;
-    },
-
-     getPayload() {
-        return this.payload;
-    },
-    setPayload:  function( payload) {
-        this.payload = payload;
-    },
-
-    getReqId : function() {
-        return this.reqId;
-    },
-
-    setReqId : function( reqId) {
-        this.reqId = reqId;
-    },
-
-    getLinkId : function() {
-        return this.linkId;
-    },
-
-    setLinkId : function( linkId) {
-        this.linkId = linkId;
-    },
-
-    getFlag : function() {
-        return this.flag;
-    },
-
-    getFlag0 : function() {
-        return this.flag0;
-    },
-
-    getTime : function() {
-        return this.time;
-    },
-
-    setTime : function( time) {
-        this.time = time;
-    },
-
-    getInstanceName : function() {
-        return this.instanceName;
-    },
-
-    setInstanceName : function( instanceName) {
-        this.instanceName = instanceName;
-    },
-
-     getMethod : function() {
-        return this.method;
-    },
-
-    setMethod( method) {
-        this.method = method;
-    },
-
-    getStartTime : function() {
-        return this.startTime;
-    },
-
-    setStartTime : function( startTime) {
-        this.startTime = startTime;
+//public static Message
+jm.rpc.Message.prototype.decode = function(b) {
+    let msg = this;
+    let dataInput = new jm.utils.JDataInput(b);
+    //第0个字节
+    msg.flag = dataInput.getUByte();
+    let len = 0;
+    if(this.isLengthInt()) {
+        len = dataInput.readInt();
+    } else {
+        len = dataInput.readUnsignedShort(); // len = 数据长度 + 测试模式时附加数据长度
     }
 
+    if(dataInput.remaining() < len){
+        throw "Message len not valid";
+    }
+
+    //第3个字节
+    msg.version = dataInput.getUByte();
+
+    //read type
+    //第4个字节
+    msg.type = dataInput.getUByte();
+
+    //第5，6，7，8个字节
+    msg.reqId = dataInput.readInt();
+
+    //第9，10，11，12个字节
+    msg.linkId = dataInput.readInt();
+
+    //第13个字节
+    msg.flag0 = dataInput.getUByte();
+
+    if(msg.isDebugMode()) {
+        //读取测试数据头部
+        msg.id = dataInput.readUnsignedLong();
+        msg.time = dataInput.readUnsignedLong()
+        len -= 16;
+
+        msg.instanceName = dataInput.readUtf8String();
+        len -= jm.utils.utf8StringTakeLen(msg.instanceName);
+
+        msg.method = dataInput.readUtf8String();
+        len -= jm.utils.utf8StringTakeLen(msg.method);
+
+        //减去测试数据头部长度
+        //len -= JDataOutput.encodeStringLen(msg.getInstanceName());
+        //len -= JDataOutput.encodeStringLen(msg.getMethod());
+    }
+
+    if(len > 0){
+        let pa = [];
+        for(let i = 0; i < len ; i++) {
+            pa.push(dataInput.getUByte());
+        }
+        if(this.getDownProtocol() == jm.rpc.Constants.PROTOCOL_JSON) {
+            msg.payload = JSON.parse(jm.utils.fromUTF8Array(pa));
+        } else {
+            msg.payload = pa;
+        }
+    }else {
+        msg.payload = null;
+    }
+
+    msg.len = len + jm.rpc.Constants.HEADER_LEN;
+
+    return msg;
 }
+
+//public ByteBuffer
+jm.rpc.Message.prototype.encode = function() {
+    let buf =  new jm.utils.JDataOutput(1024);
+    let len = 0;//数据长度 + 测试模式时附加数据长度
+
+    let data = this.payload;
+
+    if(!(data instanceof ArrayBuffer || data instanceof Array)) {
+        let json = JSON.stringify(data);
+        data = jm.utils.toUTF8Array(json);
+        this.setUpProtocol(jm.rpc.Constants.PROTOCOL_JSON)
+    }
+
+    if(data instanceof ArrayBuffer) {
+        len = data.byteLength;
+    } else {
+        len = data.length;
+    }
+
+    let inArr = null;
+    let meArr = null;
+    if(this.isDebugMode()) {
+        inArr = jm.utils.toUTF8Array(this.instanceName);
+        meArr = jm.utils.toUTF8Array(this.method);
+        len = len + inArr.length + meArr.length;
+        //2个long的长度，2*8=8
+        len += 16;
+    }
+
+    //len += Message.HEADER_LEN
+
+    //第1，2个字节 ,len = 数据长度 + 测试模式时附加数据长度
+    let maxLen = len + jm.rpc.Constants.HEADER_LEN;
+    if(maxLen < jm.rpc.Constants.MAX_SHORT_VALUE) {
+        this.setLengthType(false);
+    } else if(maxLen < jm.rpc.Constants.MAX_INT_VALUE){
+        this.setLengthType(true);
+    } else {
+        throw "Data length too long than :"+jm.rpc.Constants.MAX_INT_VALUE+", but value "+len;
+    }
+
+    //let b = new DataView(buf);
+    //第0个字节，标志头
+    //b.put(this.flag);
+    buf.writeUByte(this.flag);
+
+    if(maxLen < jm.rpc.Constants.MAX_SHORT_VALUE) {
+        //第1，2个字节 ,len = 数据长度 + 测试模式时附加数据长度
+        buf.writeUnsignedShort(len)
+    }else if(len < jm.rpc.Constants.MAX_INT_VALUE){
+        buf.writeInt(len)
+    } else {
+        throw "Data too long  :" + jm.rpc.Constants.MAX_INT_VALUE+", but value "+len;
+    }
+
+    //第3个字节
+    //b.put(this.version);
+    buf.writeUByte(this.version);
+
+    //第4个字节
+    //writeUnsignedShort(b, this.type);
+    //b.put(this.type);
+    buf.writeUByte(this.type);
+
+    //第5，6，7，8个字节
+    //writeUnsignedInt(b, this.reqId);
+    buf.writeInt(this.reqId);
+
+    //第9，10，11，12个字节
+    //writeUnsignedInt(b, this.linkId);
+    buf.writeInt(this.linkId);
+
+    //第13个字节
+    //b.put(this.flag0);
+    buf.writeUByte(this.flag0);
+
+    if(this.isDebugMode()) {
+        //b.putLong(this.getId());
+        //b.putLong(this.getTime());
+        //大端写长整数
+        buf.writeUnsignedLong(this.id)
+        buf.writeUnsignedLong(this.time)
+
+        buf.writeUtf8String(this.instanceName);
+        buf.writeUtf8String(this.method);
+
+        //OnePrefixTypeEncoder.encodeString(b, this.instanceName);
+        //OnePrefixTypeEncoder.encodeString(b, this.method);
+
+        /*buf.writeUtf8String(this.instanceName,function(len){
+            console.log(len);
+        });
+
+        buf.writeUtf8String(this.method,function(len){
+            console.log(len);
+        });*/
+    }
+
+    if(data != null){
+
+        if(data instanceof ArrayBuffer) {
+            let size = data.byteLength;
+            let dv = new DataView(data);
+            for(let i = 0; i < size; i++) {
+                buf.writeUByte(dv.getUint8(i))
+            }
+        } else {
+            buf.writeByteArray(data);
+        }
+    }
+
+    return buf.getBuf();
+},
+
+
+jm.rpc.Message.prototype.toString = function() {
+    return "Message [version=" + this.version + ", msgId=" + this.msgId + ", reqId=" + this.reqId + ", linkId=" + this.linkId
+        + ", type=" + this.type + ", flag=" + Number.toHexString(this.flag) + ", flag0=" + Number.toHexString(this.flag0)
+        + ", payload=" + this.payload + ", time="+ this.time
+        + ", devMode=" + this.isDebugMode() + ", monitorable="+ this.isMonitorable()
+        + ", needresp="+ this.isNeedResponse()
+        + ", upstream=" + this.isDumpUpStream() + ", downstream="+ this.isDumpDownStream()
+        + ", instanceName=" + this.instanceName + ", method=" + this.method + "]";
+}
+
 
 jm.rpc.IdRequest = function() {
     this.type  =  jm.Constants.LOng;
@@ -608,19 +821,35 @@ jm.rpc.IdRequest.prototype = {
 jm.rpc.reqId = 1;
 
 jm.rpc.ApiRequest = function() {
-  this.params = {};
+  this.reqId = jm.rpc.reqId++;
   this.serviceName = '';
-  this.method = '';
-  this.args = [];
   this.namespace = '';
   this.version = '';
-  this.reqId = jm.rpc.reqId++;
-  this.msg = '';
-  this.needResponse = true;
-  this.stream = false;
+  this.method = '';
+  this.params = {};
+
+  this.args = [];
+
 }
 
 jm.rpc.ApiRequest.prototype = {
+    encode : function(protocol) {
+        if(protocol == jm.rpc.Constants.PROTOCOL_BIN) {
+            let buf =  new jm.utils.JDataOutput(1024);
+            buf.writeUnsignedLong(this.reqId);
+            buf.writeUtf8String(this.serviceName);
+            buf.writeUtf8String(this.namespace);
+            buf.writeUtf8String(this.version);
+            buf.writeUtf8String(this.method);
+            buf.writeObject(this.params);
+            buf.writeObjectArray(this.args);
+            return buf.getBuf();
+        } else if(protocol == jm.rpc.Constants.PROTOCOL_JSON)  {
+            return JSON.stringify(this);
+        }else {
+            throw 'Invalid protocol:'+protocol;
+        }
+    }
 
 }
 
@@ -633,7 +862,37 @@ jm.rpc.ApiResponse = function() {
 }
 
 jm.rpc.ApiResponse.prototype = {
+    decode : function(arrayBuf, protocol) {
+        let dataInput = new jm.utils.JDataInput(arrayBuf);
 
+        if(protocol == jm.rpc.Constants.PROTOCOL_BIN) {
+            this.id = dataInput.readUnsignedLong();
+            this.reqId = dataInput.readUnsignedLong();
+            this.success = dataInput.getUByte() > 0 ;
+            this.result = [];
+            let len = dataInput.remaining();
+            for(let i = 0; i < len; i++) {
+                this.result.push(dataInput.getUByte());
+            }
+        } else if(protocol == jm.rpc.Constants.PROTOCOL_JSON)  {
+            let byteArray = [];
+            let len = dataInput.remaining();
+            for(let i = 0; i < len; i++) {
+                byteArray.push(dataInput.getUByte());
+            }
+
+            let jsonStr = jm.utils.fromUTF8Array(byteArray);
+            let o = JSON.parse(jsonStr);
+            if(o) {
+                this.id = o.id;
+                this.reqId = o.reqId;
+                this.success = o.success;
+                this.result = o.result;
+            }
+        }else {
+            throw 'Invalid protocol:'+protocol;
+        }
+    }
 }
 
 jm.rpc.init();

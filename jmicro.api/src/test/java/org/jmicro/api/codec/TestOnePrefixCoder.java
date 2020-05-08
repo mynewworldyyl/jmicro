@@ -203,7 +203,7 @@ public class TestOnePrefixCoder {
 		
 		Message msg = new Message();
 		msg.setType(Constants.MSG_TYPE_API_REQ);
-		msg.setProtocol(Message.PROTOCOL_BIN);
+		msg.setUpProtocol(Message.PROTOCOL_BIN);
 		msg.setId(0);
 		msg.setReqId(0L);
 		msg.setLinkId(0);
@@ -233,7 +233,7 @@ public class TestOnePrefixCoder {
 		
 		Message msg = new Message();
 		msg.setType(Constants.MSG_TYPE_API_REQ);
-		msg.setProtocol(Message.PROTOCOL_BIN);
+		msg.setUpProtocol(Message.PROTOCOL_BIN);
 		msg.setId(0);
 		msg.setReqId(0L);
 		msg.setLinkId(0);

@@ -34,7 +34,7 @@
 		</dependency>
 		<dependency>
 			<groupId>org.jmicro</groupId>
-			<artifactId>jmicro.classloader.server</artifactId>
+			<artifactId>jmicro.classloader</artifactId>
 		</dependency>
 		<dependency>
 			<groupId>org.jmicro</groupId>
@@ -75,11 +75,6 @@
 		</dependency>
 		<dependency>
 			<groupId>org.jmicro</groupId>
-			<artifactId>jmicro.idgenerator</artifactId>
-		</dependency>
-
-		<dependency>
-			<groupId>org.jmicro</groupId>
 			<artifactId>jmicro.test</artifactId>
 		</dependency>
 	</dependencies>
@@ -111,8 +106,7 @@
 									<!-- <include>org.jmicro:jmicro.pubsub</include> -->
 									<include>org.jmicro:jmicro.etcd</include>
 									<!-- <include>org.jmicro:jmicro.gateway</include> -->
-									<include>org.jmicro:jmicro.classloader.server</include>
-									<include>org.jmicro:jmicro.classloader.client</include>
+									<include>org.jmicro:jmicro.classloader</include>
 									<!-- <include>org.jmicro:jmicro.gateway.client</include> -->
 									<include>org.jmicro:jmicro.transport.netty.client</include>
 									<include>org.jmicro:jmicro.transport.netty.server</include>

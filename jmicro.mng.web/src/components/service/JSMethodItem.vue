@@ -1,6 +1,6 @@
 <template>
   <div>
-
+      <p stype="word-break: break-all;padding: 0px 10px;font-size: medium;">{{node.id}}</p>
       <Card style="width:350px;float:left;">
           <p slot="title">
               <Icon type="ios-film-outline"></Icon>
@@ -266,16 +266,17 @@ export default {
 
         callRpc(method,args) {
             let self = this;
-            window.jm.rpc.callWithParams(method.key.usk.serviceName,method.key.usk.namespace,
-                method.key.usk.version,method.key.method,args,true)
+            window.jm.rpc.callWithParams(method.key.usk.serviceName, method.key.usk.namespace,
+                method.key.usk.version, method.key.method, args,true)
                 .then(rst=>{
+                    rst = window.jm.utils.parseJson(rst);
                     if(self.testingResult) {
                         self.testingResult  = self.testingResult + '\n' + rst;
                     } else {
                         self.testingResult  = rst;
                     }
                 }).catch(err=>{
-                self.testingResult  = err;
+                    self.testingResult  = err;
             });
         }
     },

@@ -2,19 +2,19 @@
     <modelVersion>4.0.0</modelVersion>
     <parent>
          <groupId>org.jmicro</groupId>
-		 <artifactId>jmicro.classloader</artifactId>
+		 <artifactId>jmicro.choreography</artifactId>
 		 <version>0.0.1-SNAPSHOT</version>
     </parent>
-    <artifactId>jmicro.classloader.server</artifactId>
+    <artifactId>jmicro.choreography.api</artifactId>
     <packaging>jar</packaging>
     <name>${project.artifactId}</name>
-    <description>classloader server Module</description>
+    <description>jmicro choreography api</description>
     <dependencies>
-         <dependency>
-            <groupId>org.jmicro</groupId>
-            <artifactId>jmicro.api</artifactId>
-        </dependency>
-        
+        <dependency>
+			<groupId>org.jmicro</groupId>
+			<artifactId>jmicro.api</artifactId>
+		</dependency>
+		 
     </dependencies>
    
 </project>

@@ -7,6 +7,7 @@ import org.jmicro.api.annotation.Cfg;
 import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.Inject;
 import org.jmicro.api.codec.ICodecFactory;
+import org.jmicro.api.codec.JDataInput;
 import org.jmicro.api.idgenerator.ComponentIdServer;
 import org.jmicro.api.net.IMessageReceiver;
 import org.jmicro.api.net.ISession;
@@ -75,18 +76,22 @@ public class NettyHttpServerHandler extends ChannelInboundHandlerAdapter {
     			ByteBuf bb = req.content();
     			byte[] bts = new byte[bb.readableBytes()];
     			bb.readBytes(bts);
-    			String encodeType = req.headers().get(Constants.HTTP_HEADER_ENCODER);
-    			Message message = null;
-    			if(encodeType == null || encodeType.equals(Message.PROTOCOL_JSON+"")) {
+    			//String encodeType = req.headers().get(Constants.HTTP_HEADER_ENCODER);
+    			
+    			Message message = Message.decode(new JDataInput(ByteBuffer.wrap(bts)));
+				JMicroContext.configProvider(session,message);
+				receiver.receive(session,message);
+				
+    			/*if(encodeType == null || encodeType.equals(Message.PROTOCOL_JSON+"")) {
     				String result = new String(bts,Constants.CHARSET);
         			message = JsonUtils.getIns().fromJson(result, Message.class);
         			JMicroContext.configProvider(session,message);
         			receiver.receive(session,message);
     			} else {
-    				message = Message.decode(ByteBuffer.wrap(bts));
+    				message = Message.decode(new JDataInput(ByteBuffer.wrap(bts)));
     				JMicroContext.configProvider(session,message);
     				receiver.receive(session,message);
-    			}
+    			}*/
     		}
     	}else {
     		logger.debug("Error Http Request!");

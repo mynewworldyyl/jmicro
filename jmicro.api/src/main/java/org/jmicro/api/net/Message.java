@@ -62,7 +62,9 @@ public final class Message {
 	
 	public static final byte MSG_VERSION = (byte)1;
 	
-	public static final byte FLAG_PROTOCOL = 1<<0;
+	public static final byte FLAG_UP_PROTOCOL = 1<<0;
+	
+	public static final byte FLAG_DOWN_PROTOCOL = -0x80;
 	
 	//调试模式
 	public static final byte FLAG_DEBUG_MODE = 1<<1;
@@ -85,7 +87,7 @@ public final class Message {
 	public static final byte FLAG0_MONITORABLE = 1<<2;
 	
 	//是否启用服务级log
-	public static final short FLAG0_LOGGABLE = 1 << 3;
+	public static final byte FLAG0_LOGGABLE = 1 << 3;
 	
 	private  transient long startTime = -1;
 	//此消息所占字节数
@@ -106,10 +108,11 @@ public final class Message {
 	 * dm: is development mode
 	 * S: data length type 0:short 1:int
 	 * N: need Response 
-	 * PR: protocol 0:bin, 1:json
+	 * UPR: up protocol 0:bin, 1:json
+	 * DPR: down protocol 0:bin, 1:json
 	 * PPP: Message priority 
 	 * 
-	 *   S P P  P  N dm PR
+	 DPR S P P  P  N dm UPR
 	 * | | | |  |  |  | |
 	 * 7 6 5 4  3  2  1 0
 	 * @return
@@ -163,7 +166,8 @@ public final class Message {
 	}
 	
 	public void setDumpUpStream(boolean f) {
-		flag0 |= f ? FLAG0_DUMP_UP : 0 ; 
+		//flag0 |= f ? FLAG0_DUMP_UP : 0 ; 
+		flag0 = set(f,flag0,FLAG0_DUMP_UP);
 	}
 	
 	public boolean isDumpDownStream() {
@@ -171,7 +175,8 @@ public final class Message {
 	}
 	
 	public void setDumpDownStream(boolean f) {
-		flag0 |= f ? Message.FLAG0_DUMP_DOWN : 0 ; 
+		//flag0 |= f ? Message.FLAG0_DUMP_DOWN : 0 ; 
+		flag0 = set(f,flag0,FLAG0_DUMP_DOWN);
 	}
 	
 	public boolean isLoggable() {
@@ -179,7 +184,8 @@ public final class Message {
 	}
 	
 	public void setLoggable(boolean f) {
-		flag0 |= f ? FLAG0_LOGGABLE : 0 ; 
+		//flag0 |= f ? FLAG0_LOGGABLE : 0 ; 
+		flag0 = set(f,flag0,FLAG0_LOGGABLE);
 	}
 	
 	public boolean isDebugMode() {
@@ -187,7 +193,11 @@ public final class Message {
 	}
 	
 	public void setDebugMode(boolean f) {
-		flag |= f ? FLAG_DEBUG_MODE : 0 ; 
+		flag = set(f,flag,FLAG_DEBUG_MODE);
+	}
+	
+	public static byte set(boolean isTrue,byte f,byte mask) {
+		return isTrue ?(f |= mask):(f &= ~mask);
 	}
 	
 	public boolean isMonitorable() {
@@ -195,7 +205,7 @@ public final class Message {
 	}
 	
 	public void setMonitorable(boolean f) {
-		flag0 |= f ? FLAG0_MONITORABLE : 0 ; 
+		flag0 = set(f,flag0,FLAG0_MONITORABLE);
 	}
 	
 	public boolean isNeedResponse() {
@@ -203,7 +213,7 @@ public final class Message {
 	}
 	
 	public void setNeedResponse(boolean f) {
-		flag |= f ? FLAG_NEED_RESPONSE : 0 ; 
+		flag = set(f,flag,FLAG_NEED_RESPONSE);
 	}
 	
 	/**
@@ -211,7 +221,8 @@ public final class Message {
 	 * @param f true 表示整数，false表示短整数
 	 */
 	public void setLengthType(boolean f) {
-		flag |= f ? FLAG_LENGTH_INT : 0 ; 
+		//flag |= f ? FLAG_LENGTH_INT : 0 ; 
+		flag = set(f,flag,FLAG_LENGTH_INT);
 	}
 	
 	public boolean isLengthInt() {
@@ -232,7 +243,7 @@ public final class Message {
 	public byte getLogLevel() {
 		return (byte)((flag0 >>> 3) & 0x07);
 	}
-	
+	//000 001 010 011 100 101 110 111
 	public void setLogLevel(int v) {
 		if(v > MonitorConstant.LOG_NO || v < MonitorConstant.LOG_FINAL) {
 			 new CommonException("Invalid Log level: "+v);
@@ -240,73 +251,79 @@ public final class Message {
 		this.flag0 = (byte)((v << 3) | this.flag0);
 	}
 	
-	public  static byte getProtocolByFlag(byte flag) {
-		return (byte)(flag & 0x01);
+	public  static byte getProtocolByFlag(byte flag,byte offset) {
+		return (byte)(flag & offset);
 	}
 	
-	public byte getProtocol() {
-		return getProtocolByFlag(this.flag);
+	public byte getUpProtocol() {
+		return getProtocolByFlag(this.flag,FLAG_UP_PROTOCOL);
 	}
 
-	public void setProtocol(byte protocol) {
-		if(protocol == PROTOCOL_BIN || protocol == PROTOCOL_JSON) {
-			this.flag = (byte)( protocol | (this.flag & 0xFE));
-		}else {
-			 new CommonException("Invalid protocol: "+protocol);
-		}
+	public void setUpProtocol(byte protocol) {
+		//flag |= protocol == PROTOCOL_JSON ? FLAG_UP_PROTOCOL : 0 ; 
+		flag = set(protocol == PROTOCOL_JSON,flag,FLAG_UP_PROTOCOL);
 	}
 	
-	public static Message decode(ByteBuffer b) {
-		Message msg = null;
-		//第0个字节
-		byte flag = b.get();
-		if(getProtocolByFlag(flag) == PROTOCOL_BIN) {
+	public byte getDownProtocol() {
+		return getProtocolByFlag(this.flag,FLAG_DOWN_PROTOCOL);
+	}
+
+	public void setDownProtocol(byte protocol) {
+		//flag |= protocol == PROTOCOL_JSON ? FLAG_DOWN_PROTOCOL : 0 ;
+		flag = set(protocol == PROTOCOL_JSON,flag,FLAG_DOWN_PROTOCOL);
+	}
+	
+	public static Message decode(JDataInput b) {
+		try {
+			Message msg = null;
+			//第0个字节
+			byte flag = b.readByte();
+
 			msg = new Message();
 			msg.flag =  flag;
 			//ByteBuffer b = ByteBuffer.wrap(data);
 			int len = 0;
 			if(is(flag,FLAG_LENGTH_INT)) {
-				len = b.getInt();
+				len = b.readInt();
 			} else {
-				len = readUnsignedShort(b);// len = 数据长度 + 测试模式时附加数据长度
+				len = b.readUnsignedShort(); // len = 数据长度 + 测试模式时附加数据长度
 			}
 			if(b.remaining() < len){
 				throw new CommonException("Message len not valid");
 			}
 			
 			//第3个字节
-			msg.setVersion(b.get());
+			msg.setVersion(b.readByte());
 			
 			//read type
 			//第4个字节
-			msg.setType(b.get());
+			msg.setType(b.readByte());
 			
 			//第5，6，7，8个字节
-			msg.setReqId(readUnsignedInt(b));
+			msg.setReqId(b.readInt());
 			
 			//第9，10，11，12个字节
-			msg.setLinkId(readUnsignedInt(b));
+			msg.setLinkId(b.readInt());
 			
 			//第13个字节
-			msg.flag0 = b.get();
+			msg.flag0 = b.readByte();
 			
 			if(msg.isDebugMode()) {
 				//读取测试数据头部
-				msg.setId(b.getLong());
-				msg.setTime(b.getLong());
+				msg.setId(b.readLong());
+				msg.setTime(b.readLong());
 				len -= 16;
 				
-				msg.setInstanceName(JDataInput.readString(b));
-				msg.setMethod(JDataInput.readString(b));
+				msg.setInstanceName(b.readUTF());
+				msg.setMethod(b.readUTF());
 				//减去测试数据头部长度
 				len -= JDataOutput.encodeStringLen(msg.getInstanceName());
 				len -= JDataOutput.encodeStringLen(msg.getMethod());
-				
 			}
 			
 			if(len > 0){
 				byte[] payload = new byte[len];
-				b.get(payload, 0, len);
+				b.readFully(payload,0,len);
 				msg.setPayload(ByteBuffer.wrap(payload));
 			}else {
 				msg.setPayload(null);
@@ -314,105 +331,113 @@ public final class Message {
 			
 			msg.setLen(len + Message.HEADER_LEN);
 			
-		} else if(getProtocolByFlag(flag) == PROTOCOL_JSON) {
-			try {
-				String json = new String(b.array(),1,b.remaining(),Constants.CHARSET);
-				msg = JsonUtils.getIns().fromJson(json, Message.class);
-				msg.msgId = msg.msgId;
-				msg.reqId = msg.reqId;
-				msg.linkId = msg.linkId;
-				msg.version = msg.version;
-				msg.type = msg.type;
-				msg.flag = msg.flag;
-				msg.payload = msg.payload;
-				msg.flag0 = msg.flag0;
-				msg.instanceName = msg.instanceName;
-				msg.method = msg.method;
-				msg.time = msg.time;
-			} catch (UnsupportedEncodingException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-		}else {
-			throw new CommonException("Invalid protocol: "+ msg.getProtocol());
+			return msg;
+		} catch (IOException e) {
+			e.printStackTrace();
 		}
-		return msg;
+		return null;
 	}
 	
 	public ByteBuffer encode() {
-		ByteBuffer b =  null;
+		
+		JDataOutput b = new JDataOutput(512);
+		
+		//ByteBuffer b =  null;
 		
 		boolean debug = this.isDebugMode();
-		if(this.getProtocol() == PROTOCOL_BIN) {
-			
-			ByteBuffer data = (ByteBuffer)this.getPayload();
-			data.mark();
-			
-			int len = 0;//数据长度 + 测试模式时附加数据长度
-			if(data != null){
-				len = data.remaining();
+
+		ByteBuffer data = null;
+		if(this.getPayload() instanceof ByteBuffer) {
+			data = (ByteBuffer)this.getPayload();
+		} else {
+			String json = JsonUtils.getIns().toJson(this.getPayload());
+			try {
+				data = ByteBuffer.wrap(json.getBytes(Constants.CHARSET));
+			} catch (UnsupportedEncodingException e) {
+				e.printStackTrace();
 			}
-			
-			if(debug) {
-				len += JDataOutput.encodeStringLen(instanceName);
-				len += JDataOutput.encodeStringLen(method);
-				//2个long的长度，2*8=8
-				len += 16;
-			}
-			
-			//len += Message.HEADER_LEN
-			
-			//第1，2个字节 ,len = 数据长度 + 测试模式时附加数据长度
-			if(len < MAX_SHORT_VALUE) {
-				this.setLengthType(false);
-				b = ByteBuffer.allocate(len + Message.HEADER_LEN);
-			} else if(len < MAX_INT_VALUE){
-				this.setLengthType(true);
-				b = ByteBuffer.allocate(len + Message.HEADER_LEN+2);
-			} else {
-				throw new CommonException("Data length too long than :"+MAX_INT_VALUE+", but value "+len);
-			}
-			
+		}
+		
+		data.mark();
+		
+		int len = 0;//数据长度 + 测试模式时附加数据长度
+		if(data != null){
+			len = data.remaining();
+		}
+		
+		if(debug) {
+			len += JDataOutput.encodeStringLen(instanceName);
+			len += JDataOutput.encodeStringLen(method);
+			//2个long的长度，2*8=8
+			len += 16;
+		}
+		
+		//len += Message.HEADER_LEN
+		
+		//第1，2个字节 ,len = 数据长度 + 测试模式时附加数据长度
+		if(len < MAX_SHORT_VALUE) {
+			this.setLengthType(false);
+			//b = ByteBuffer.allocate(len + Message.HEADER_LEN);
+		} else if(len < MAX_INT_VALUE){
+			this.setLengthType(true);
+			//b = ByteBuffer.allocate(len + Message.HEADER_LEN+2);
+		} else {
+			throw new CommonException("Data length too long than :"+MAX_INT_VALUE+", but value "+len);
+		}
+		
+		try {
 			//第0个字节，标志头
-			b.put(this.flag);
-			
+			//b.put(this.flag);
+			b.writeByte(this.flag);
 			
 			if(len < 65535) {
 				//第1，2个字节 ,len = 数据长度 + 测试模式时附加数据长度
-				this.setLengthType(false);
-				writeUnsignedShort(b, len);
+				//this.setLengthType(false);
+				//writeUnsignedShort(b, len);
+				b.writeUnsignedShort(len);
 			}else if(len < Integer.MAX_VALUE){
 				//消息内内容最大长度为MAX_VALUE
-				this.setLengthType(true);
-				b.putInt(len);
+				//this.setLengthType(true);
+				//b.putInt(len);
+				b.writeInt(len);
 			} else {
-	    		throw new CommonException("Max int value is :"+ Integer.MAX_VALUE+", but value "+len);
+				throw new CommonException("Max int value is :"+ Integer.MAX_VALUE+", but value "+len);
 			}
 			
 			//b.putShort((short)0);
 			
 			//第3个字节
-			b.put(this.version);
+			//b.put(this.version);
+			b.writeByte(this.version);
 			
 			//第4个字节
 			//writeUnsignedShort(b, this.type);
-			b.put(this.type);
+			//b.put(this.type);
+			b.writeByte(this.type);
 			
 			//第5，6，7，8个字节
-			writeUnsignedInt(b, this.reqId);
+			//writeUnsignedInt(b, this.reqId);
+			b.writeInt((int)reqId);
 			
 			//第9，10，11，12个字节
-			writeUnsignedInt(b, this.linkId);
+			//writeUnsignedInt(b, this.linkId);
+			b.writeInt((int)linkId);
 			
 			//第13个字节
-			b.put(this.flag0);
+			//b.put(this.flag0);
+			b.writeByte(this.flag0);
 			
 			if(debug) {
-				b.putLong(this.getId());
-				b.putLong(this.getTime());
+				//b.putLong(this.getId());
+				//b.putLong(this.getTime());
+				b.writeLong(this.getId());
+				b.writeLong(this.getTime());
+				
 				try {
-					JDataOutput.writeString(b, this.instanceName);
-					JDataOutput.writeString(b, this.method);
+					//JDataOutput.writeString(b, this.instanceName);
+					//JDataOutput.writeString(b, this.method);
+					b.writeUTF(this.instanceName);
+					b.writeUTF(this.method);
 				} catch (IOException e) {
 					throw new CommonException("",e);
 				}
@@ -422,25 +447,18 @@ public final class Message {
 			}
 			
 			if(data != null){
-				b.put(data);
+				//b.put(data);
+				b.write(data);
 				data.reset();
 			}
 			
-		} else {
-			String json = JsonUtils.getIns().toJson(this);
-			try {
-				byte data[] = json.getBytes(Constants.CHARSET);
-				b = ByteBuffer.allocate(data.length+1);
-				b.put(PROTOCOL_JSON);
-				b.put(data,0,data.length);
-			} catch (UnsupportedEncodingException e) {
-				e.printStackTrace();
-			}
-		}
-		
-		b.flip();
+			//b.flip();
 
-		return b;
+			return b.getBuf();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		return null;
 	}
 	
 	public static Message readMessage(ByteBuffer cache){
@@ -462,10 +480,11 @@ public final class Message {
 		//取第二，第三个字节 数据长度
 	    if(is(f,FLAG_LENGTH_INT)) {
 	    	//数据长度不可能起过整数的最大值
+	    	//len = cache.getInt();
 	    	len = cache.getInt();
 	    	//还原读数据公位置
 			cache.position(pos);
-			headerLen = headerLen+2;
+			headerLen = headerLen + 2;
 	    	if(totalLen < len + headerLen){
 				//还不能构成一个足够长度的数据包
 				return null;
@@ -484,7 +503,7 @@ public final class Message {
 		//从缓存中读一个包,cache的position往前推
 		cache.get(data, 0, len+headerLen);
 		
-		return Message.decode(ByteBuffer.wrap(data));
+		return Message.decode(new JDataInput(ByteBuffer.wrap(data)));
         
 	}
 	
@@ -518,25 +537,68 @@ public final class Message {
 	    return vv;
 	}
     
-    public static long readUnsignedInt(ByteBuffer b) {
-    	int firstByte = (0xFF & ((int)b.get()));
+    public static long readUnsignedInt(ByteBuffer buf) {
+    	/*int firstByte = (0xFF & ((int)b.get()));
     	int secondByte = (0xFF & ((int)b.get()));
     	int thirdByte = (0xFF & ((int)b.get()));
     	int fourthByte = (0xFF & ((int)b.get()));
  	    long anUnsignedInt  = 
  	    		((long) (firstByte << 24 | secondByte << 16 | thirdByte << 8 | fourthByte))
  	    		& 0xFFFFFFFFL;
- 	    return anUnsignedInt;
+ 	    return anUnsignedInt;*/
+    	
+    	int b = buf.get() & 0xff;
+		int n = b & 0x7f;
+		if (b > 0x7f) {
+			b = buf.get() & 0xff;
+			n ^= (b & 0x7f) << 7;
+			if (b > 0x7f) {
+				b = buf.get() & 0xff;
+				n ^= (b & 0x7f) << 14;
+				if (b > 0x7f) {
+					b = buf.get() & 0xff;
+					n ^= (b & 0x7f) << 21;
+					if (b > 0x7f) {
+						b = buf.get() & 0xff;
+						n ^= (b & 0x7f) << 28;
+						if (b > 0x7f) {
+							throw new CommonException("Invalid int encoding");
+						}
+					}
+				}
+			}
+		}
+		return (n >>> 1) ^ -(n & 1);
+		
     }
     
-    public static void writeUnsignedInt(ByteBuffer b,long v) {
-    	if(v > MAX_INT_VALUE) {
-    		throw new CommonException("Max int value is :"+MAX_INT_VALUE+", but value "+v);
+    public static void writeUnsignedInt(ByteBuffer buf,long n) {
+    	if(n > MAX_INT_VALUE) {
+    		throw new CommonException("Max int value is :"+MAX_INT_VALUE+", but value "+n);
     	}
-		b.put((byte)((v >>> 24)&0xFF));
+		/*b.put((byte)((v >>> 24)&0xFF));
 		b.put((byte)((v >>> 16)&0xFF));
 		b.put((byte)((v >>> 8)&0xFF));
-		b.put((byte)((v >>> 0)&0xFF));
+		b.put((byte)((v >>> 0)&0xFF));*/
+		
+		n = (n << 1) ^ (n >> 31);
+		if ((n & ~0x7F) != 0) {
+			buf.put((byte) ((n | 0x80) & 0xFF));
+			n >>>= 7;
+			if (n > 0x7F) {
+				buf.put((byte) ((n | 0x80) & 0xFF));
+				n >>>= 7;
+				if (n > 0x7F) {
+					buf.put((byte) ((n | 0x80) & 0xFF));
+					n >>>= 7;
+					if (n > 0x7F) {
+						buf.put((byte) ((n | 0x80) & 0xFF));
+						n >>>= 7;
+					}
+				}
+			}
+		}
+		buf.put((byte) n);
 	}
     
 	public int getLen() {
@@ -579,7 +641,7 @@ public final class Message {
 		return reqId;
 	}
 
-	public void setReqId(Long reqId) {
+	public void setReqId(long reqId) {
 		this.reqId = reqId;
 	}
 

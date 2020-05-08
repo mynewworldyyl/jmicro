@@ -3,9 +3,6 @@
         <div>
             <Tabs :value="!!selectNode ? selectNode.id:''" type="card" :closable="true" @on-tab-remove="handleTabRemove" :animated="false">
                 <TabPane v-for="(item) in items"  :name="item.id" :label="item.label ? item.label : item.title"  v-bind:key="item.id">
-
-                    <p v-if="item.group != 'shell'" stype="word-break: break-all;padding: 0px 10px;font-size: medium;">{{item.id}}</p>
-
                     <!-- RPC  config -->
                     <JServiceItem v-if="item.group == 'service' && item.type == 'sn'" :item="item"></JServiceItem>
                     <JInstanceItem v-else-if="item.group == 'service' && item.type == 'ins'" :item="item"></JInstanceItem>
@@ -29,6 +26,10 @@
 
                     <!-- Shell -->
                     <JShell v-else-if="item.group == 'shell'" :item="item"></JShell>
+
+                    <JRepository v-else-if="item.group == 'repository'" :item="item"></JRepository>
+                    <JHost v-else-if="item.group == 'host'" :item="item"></JHost>
+                    <JInstance v-else-if="item.group == 'instance'" :item="item"></JInstance>
 
                 </TabPane>
             </Tabs>
@@ -56,6 +57,10 @@
 
     import JShell from './shell/JShell.vue'
 
+    import JRepository from './deployment/JRepository.vue'
+    import JHost from './deployment/JHost.vue'
+    import JInstance from './deployment/JInstance.vue'
+
     import TreeNode from "./common/JTreeNode.js"
 
     export default {
@@ -75,7 +80,9 @@
             JRouterType,
 
             JConfigItem,
-
+            JHost,
+            JRepository,
+            JInstance,
             JShell,
         },
 
@@ -311,13 +318,13 @@
 
             mountShellSelect(){
                 let self = this;
-                window.jm.vue.$on('shellSelect',function() {
+                window.jm.vue.$on('openEditorSelect',function(editorId) {
 
-                    if(!!self.selectNode && self.selectNode.group == 'shell') {
+                    if(!!self.selectNode && self.selectNode.group == editorId) {
                         return;
                     }
 
-                    let title = 'shell';
+                    let title = editorId;
                     let it = null;
 
                     for(let i = 0; i < self.items.length; i++) {

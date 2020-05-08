@@ -13,8 +13,8 @@
         <skip_maven_deploy>false</skip_maven_deploy>
     </properties>
     <modules>        
-        <module>jmicro.main.rcptool</module>
-		<module>jmicro.main.monitor.log</module>
+        <module>jmicro.rcptool</module>
+		<module>jmicro.monitor</module>
 		<module>jmicro.pubsub</module>
 		<module>jmicro.breaker</module>		
     </modules>

@@ -1,5 +1,6 @@
 <template>
   <div>
+    <p stype="word-break: break-all;padding: 0px 10px;font-size: medium;">{{node.id}}</p>
     <JLineChart titleName="QPS" type="qps" indexTypes="240,209,246" :charContainerId="node.id + '1'" :node="node"></JLineChart>
     <JLineChart titleName="Percent" type="percent"   indexTypes="240,209,246" :charContainerId="node.id + '2'" :node="node"></JLineChart>
     <JLineChart titleName="Total" type="total"   indexTypes="240,209,246" :charContainerId="node.id + '3'" :node="node"></JLineChart>

@@ -13,9 +13,9 @@
         <skip_maven_deploy>false</skip_maven_deploy>
     </properties>
     <modules>
+		<module>jmicro.choreography.api</module>
 		<module>jmicro.choreography.controller</module>
 		<module>jmicro.choreography.agent</module>
 		<module>jmicro.choreography.repository</module>
-		
     </modules>
 </project>

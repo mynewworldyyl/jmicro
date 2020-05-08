@@ -103,7 +103,7 @@ public class JRPCReqRespHandler implements IMessageHandler{
 			
 	    	//req1为内部类访问
 	    	final RpcRequest req1 = ICodecFactory.decode(this.codeFactory,msg.getPayload(),
-					RpcRequest.class,msg.getProtocol());
+					RpcRequest.class,msg.getUpProtocol());
 	    	
 	    	ActInfo ai = null;
 			
@@ -115,7 +115,7 @@ public class JRPCReqRespHandler implements IMessageHandler{
 						ServerError se = new ServerError(ServerError.SE_INVLID_LOGIN_KEY,"Invalid login key!");
 						resp.setResult(se);
 						resp.setSuccess(false);
-						msg.setPayload(ICodecFactory.encode(codeFactory, resp, msg.getProtocol()));
+						msg.setPayload(ICodecFactory.encode(codeFactory, resp, msg.getUpProtocol()));
 						if(SF.isLoggable(MonitorConstant.LOG_DEBUG, msg.getLogLevel())) {
 							SF.doResponseLog(MonitorConstant.LOG_DEBUG, TAG, null," one response");
 						}
@@ -165,7 +165,7 @@ public class JRPCReqRespHandler implements IMessageHandler{
 				resp = new RpcResponse(req.getRequestId(),null);
 				resp.setSuccess(true);
 			}
-			msg.setPayload(ICodecFactory.encode(codeFactory,resp,msg.getProtocol()));
+			msg.setPayload(ICodecFactory.encode(codeFactory,resp,msg.getUpProtocol()));
 			//请求类型码比响应类型码大1，
 			msg.setType((byte)(msg.getType()+1));
 			
@@ -188,7 +188,7 @@ public class JRPCReqRespHandler implements IMessageHandler{
 				//返回错误
 				resp = new RpcResponse(req.getRequestId(),new ServerError(0,e.getMessage()));
 				resp.setSuccess(false);
-				msg.setPayload(ICodecFactory.encode(codeFactory,resp,msg.getProtocol()));
+				msg.setPayload(ICodecFactory.encode(codeFactory,resp,msg.getUpProtocol()));
 				msg.setType((byte)(msg.getType()+1));
 				msg.setInstanceName(Config.getInstanceName());
 				msg.setTime(System.currentTimeMillis());

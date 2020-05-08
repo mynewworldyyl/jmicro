@@ -37,13 +37,19 @@ import io.netty.handler.stream.ChunkedWriteHandler;
 public class NettyHttpChannelInitializer extends ChannelInitializer<SocketChannel>{
 
 	@Inject
-	private NettyWebSocketHandler wsHandler;
+	private NettyTextWebSocketHandler txtWsHandler;
+	
+	@Inject
+	private NettyBinaryWebSocketHandler binWsHandler;
 	
 	@Inject
 	private NettyHttpServerHandler httpHandler;
 	
-	@Cfg(value="/websocketContextPath",defGlobal=true)
-	private String websocketContextPath = "/_ws_";
+	@Cfg(value="/textWebsocketContextPath",defGlobal=true)
+	private String textWebsocketContextPath = "/_txt_";
+	
+	@Cfg(value="/binaryWebsocketContextPath",defGlobal=true)
+	private String binaryWebsocketContextPath = "/_bin_";
 	
 	@Override
     protected void initChannel(SocketChannel ch) throws Exception {
@@ -55,10 +61,15 @@ public class NettyHttpChannelInitializer extends ChannelInitializer<SocketChanne
          //将一个Http的消息组装成一个完成的HttpRequest或者HttpResponse
         pipeline.addLast("httpObjectAggregator", new HttpObjectAggregator(8192));
         
-        pipeline.addLast("webSocketServerProtocolHandler", new WebSocketServerProtocolHandler(websocketContextPath));
+        pipeline.addLast("binWebSocketServerProtocolHandler", new WebSocketServerProtocolHandler(binaryWebsocketContextPath));
+        pipeline.addLast("binWebSocketWsHandler", binWsHandler);
         
-        pipeline.addLast("myWebSocketHandler", wsHandler);
+      /*  pipeline.addLast("webSocketServerProtocolHandler", new WebSocketServerProtocolHandler(textWebsocketContextPath));
+        pipeline.addLast("textWebSocketHandler", txtWsHandler);*/
+       
         pipeline.addLast("jmicroHttpHandler", httpHandler);
+        
+        
     }
 	
 }

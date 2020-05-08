@@ -62,7 +62,7 @@ public class AsyncMessageHandler implements IMessageHandler{
 	
 	@SuppressWarnings({ "rawtypes", "unchecked" })
 	private void handleResponse(IClientSession session,Message msg){
-		RpcResponse resp = ICodecFactory.decode(this.codecFactory,msg.getPayload(),RpcResponse.class,msg.getProtocol());
+		RpcResponse resp = ICodecFactory.decode(this.codecFactory,msg.getPayload(),RpcResponse.class,msg.getUpProtocol());
 		resp.setMsg(msg);
 		
 		//req.setMsg(msg);

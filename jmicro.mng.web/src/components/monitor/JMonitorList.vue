@@ -43,7 +43,7 @@
             }
         },
 
-        created(){
+        mounted(){
             this.loadMonitors();
         },
 

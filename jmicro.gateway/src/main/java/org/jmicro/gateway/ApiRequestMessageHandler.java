@@ -87,7 +87,7 @@ public class ApiRequestMessageHandler implements IMessageHandler{
 	@Override
 	public void onMessage(ISession session, Message msg) {
 		ApiRequest req = ICodecFactory.decode(codecFactory, msg.getPayload(), 
-				ApiRequest.class, msg.getProtocol());
+				ApiRequest.class, msg.getUpProtocol());
 		
 		
 		ApiResponse resp = new ApiResponse();
@@ -109,7 +109,7 @@ public class ApiRequestMessageHandler implements IMessageHandler{
 					ServerError se = new ServerError(ServerError.SE_INVLID_LOGIN_KEY,"Invalid login key!");
 					resp.setResult(se);
 					resp.setSuccess(false);
-					msg.setPayload(ICodecFactory.encode(codecFactory, resp, msg.getProtocol()));
+					msg.setPayload(ICodecFactory.encode(codecFactory, resp, msg.getUpProtocol()));
 					if(SF.isLoggable(MonitorConstant.LOG_DEBUG, msg.getLogLevel())) {
 						SF.doResponseLog(MonitorConstant.LOG_DEBUG, TAG, null," one response");
 					}
@@ -123,7 +123,7 @@ public class ApiRequestMessageHandler implements IMessageHandler{
 		}
 		
 		if(MessageServiceImpl.TAG.equals(req.getServiceName())) {
-			if(msg.getProtocol() == Message.PROTOCOL_JSON) {
+			if(msg.getUpProtocol() == Message.PROTOCOL_JSON) {
 				req.setArgs(getArgs(req.getServiceName(),req.getMethod(),req.getArgs()));
 			}
 			if("subscribe".equals(req.getMethod())) {
@@ -138,7 +138,7 @@ public class ApiRequestMessageHandler implements IMessageHandler{
 			}
 			
 			resp.setResult(result);
-			msg.setPayload(ICodecFactory.encode(codecFactory, resp, msg.getProtocol()));
+			msg.setPayload(ICodecFactory.encode(codecFactory, resp, msg.getUpProtocol()));
 			if(SF.isLoggable(MonitorConstant.LOG_DEBUG, msg.getLogLevel())) {
 				SF.doResponseLog(MonitorConstant.LOG_DEBUG, TAG, null," one response");
 			}
@@ -149,7 +149,7 @@ public class ApiRequestMessageHandler implements IMessageHandler{
 					req.getNamespace(), req.getVersion(),null);
 			
 			//long lid = JMicroContext.lid();
-			if(msg.getProtocol() == Message.PROTOCOL_JSON) {
+			if(msg.getUpProtocol() == Message.PROTOCOL_JSON) {
 				req.setArgs(getArgs(req.getServiceName(),req.getMethod(),req.getArgs()));
 			}
 			
@@ -207,7 +207,7 @@ public class ApiRequestMessageHandler implements IMessageHandler{
 					result = m.invoke(srv, req.getArgs());
 					
 					resp.setResult(result);
-					msg.setPayload(ICodecFactory.encode(codecFactory, resp, msg.getProtocol()));
+					msg.setPayload(ICodecFactory.encode(codecFactory, resp, msg.getUpProtocol()));
 					if(SF.isLoggable(MonitorConstant.LOG_DEBUG, msg.getLogLevel())) {
 						SF.doResponseLog(MonitorConstant.LOG_DEBUG, TAG, null," one response");
 					}
@@ -224,7 +224,7 @@ public class ApiRequestMessageHandler implements IMessageHandler{
 			} else {
 				resp.setSuccess(false);
 				resp.setResult(result);
-				msg.setPayload(ICodecFactory.encode(codecFactory, resp, msg.getProtocol()));
+				msg.setPayload(ICodecFactory.encode(codecFactory, resp, msg.getUpProtocol()));
 				SF.doResponseLog(MonitorConstant.LOG_ERROR, TAG, null," service instance not found");
 				session.write(msg);
 			}

@@ -24,6 +24,7 @@ import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.jmicro.api.IListener;
 import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.Inject;
 import org.jmicro.api.annotation.Reference;
@@ -62,11 +63,11 @@ public class ServiceSchedulerImpl implements IServiceController {
 	
 	public void init() {
 		agentManager.addAgentListener((type,ai)->{
-			if(type == IAgentListener.SERVICE_ADD) {
+			if(type == IListener.ADD) {
 				agentInfos.put(ai.getId(), ai);
-			}else if(type == IAgentListener.SERVICE_DATA_CHANGE) {
+			}else if(type == IListener.DATA_CHANGE) {
 				agentInfos.put(ai.getId(), ai);
-			}else if(type == IAgentListener.SERVICE_REMOVE) {
+			}else if(type == IListener.REMOVE) {
 				agentInfos.remove(ai.getId());
 			}
 		});

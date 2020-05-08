@@ -1,5 +1,7 @@
 <template>
   <div class="JServiceItem">
+      <p stype="word-break: break-all;padding: 0px 10px;font-size: medium;">{{node.id}}</p>
+
       <Card style="width:350px;float:left;">
           <p slot="title">
               <Icon type="ios-film-outline"></Icon>

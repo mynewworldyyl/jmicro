@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.jmicro.api.IListener;
 import org.jmicro.api.annotation.Cfg;
 import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.Inject;
@@ -101,13 +102,13 @@ public class LocalProcessManager {
 	}
 	
 	private IInstanceListener insListener = (type,ii) -> {
-		if(type == IInstanceListener.SERVICE_ADD) {
+		if(type == IListener.ADD) {
 			logger.info("Start Instance from ZK [{}]",ii);
 			startService(ii.getProcessId(),ii.getClasspath(),ii.getMainClazz(),ii.getArgs());
-		} else if(type == IInstanceListener.SERVICE_REMOVE) {
+		} else if(type == IListener.REMOVE) {
 			logger.info("Stop Instance from ZK [{}]",ii);
 			stopService(ii.getProcessId());
-		}else if(type == IInstanceListener.SERVICE_DATA_CHANGE) {
+		}else if(type == IListener.DATA_CHANGE) {
 			logger.info("Restart Instance from ZK [{}]",ii);
 			stopService(ii.getProcessId());
 			long ticker = 1000*10L;
@@ -117,7 +118,6 @@ public class LocalProcessManager {
 						TimerTicker.getDefault(ticker).removeListener("LocalProcessManagerTimer", true);
 					},ii);
 		}
-		
 	};
 	
 	private AgentInfo createAgent() {

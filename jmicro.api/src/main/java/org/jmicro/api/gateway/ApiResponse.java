@@ -16,9 +16,16 @@
  */
 package org.jmicro.api.gateway;
 
+import java.io.IOException;
+import java.nio.ByteBuffer;
+
 import org.jmicro.api.annotation.SO;
+import org.jmicro.api.codec.JDataOutput;
 import org.jmicro.api.net.IResp;
 import org.jmicro.api.net.Message;
+import org.jmicro.common.CommonException;
+import org.jmicro.common.Constants;
+import org.jmicro.common.util.JsonUtils;
 
 /**
  * 
@@ -33,6 +40,34 @@ public final class ApiResponse implements IResp {
 	private Long reqId =  -1L;
 	private Object result = null;
 	private boolean success = true;
+
+	public ByteBuffer encode() {
+		JDataOutput jo = new JDataOutput(512);
+		try {
+			jo.writeLong(id);
+			jo.writeLong(reqId);
+			jo.writeBoolean(this.success);
+			
+			byte[] data = null;
+			
+			if(result.getClass() ==  new byte[0].getClass()) {
+				data = (byte[]) this.result;
+			} else if(result instanceof ByteBuffer) {
+				ByteBuffer bb = (ByteBuffer)result;
+				data = new byte[bb.remaining()];
+				bb.get(data, 0, data.length);
+			} else {
+				String json = JsonUtils.getIns().toJson(this.result);
+				data = json.getBytes(Constants.CHARSET);
+			}
+			
+			jo.write(data);
+			
+		} catch (IOException e) {
+			throw new CommonException("encode error: ",e);
+		}
+		return jo.getBuf();
+	}
 	
 	public Long getId() {
 		return id;

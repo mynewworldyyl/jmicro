@@ -98,7 +98,7 @@ public class TestRpcRequest {
 
 		Message msg = new Message();
 		msg.setType(Constants.MSG_TYPE_REQ_JRPC);
-		msg.setProtocol(Message.PROTOCOL_BIN);
+		msg.setUpProtocol(Message.PROTOCOL_BIN);
 		msg.setReqId(2222L);
 		msg.setVersion(Message.MSG_VERSION);
 		msg.setPriority(Message.PRIORITY_NORMAL);

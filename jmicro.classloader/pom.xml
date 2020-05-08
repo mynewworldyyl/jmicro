@@ -6,13 +6,15 @@
 		 <version>0.0.1-SNAPSHOT</version>
     </parent>
     <artifactId>jmicro.classloader</artifactId>
-    <packaging>pom</packaging>
+    <packaging>jar</packaging>
     <name>${project.artifactId}</name>
-    <description>jmicro classloader from server</description>
-    <properties>
-        <skip_maven_deploy>false</skip_maven_deploy>
-    </properties>
-    <modules>
-		<module>jmicro.classloader.server</module>
-    </modules>
+    <description>classloader Module</description>
+    <dependencies>
+         <dependency>
+            <groupId>org.jmicro</groupId>
+            <artifactId>jmicro.api</artifactId>
+        </dependency>
+        
+    </dependencies>
+   
 </project>

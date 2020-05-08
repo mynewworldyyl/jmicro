@@ -13,26 +13,38 @@ jm.mng = {
 
     },
 
+    callRpc : function(req) {
+        return new Promise(function(reso,reje){
+            jm.rpc.callRpc(req, null, jm.rpc.Constants.PROTOCOL_BIN, jm.rpc.Constants.PROTOCOL_BIN)
+                .then((data)=>{
+                    reso(jm.utils.parseJson(data));
+                })
+                .catch((err)=>{
+                    reje(err);
+                })
+        });
+    },
+
     srv : {
         getServices: function (){
             let req =  this.__ccreq();
             req.method = 'getServices';
             req.args = [];
-            return jm.rpc.callRpc(req);
+            return jm.mng.callRpc(req);
         },
 
         updateItem: function (si){
             let req =  this.__ccreq();
             req.method = 'updateItem';
             req.args = [si];
-            return jm.rpc.callRpc(req);
+            return jm.mng.callRpc(req);
         },
 
         updateMethod: function (method){
             let req =  this.__ccreq();
             req.method = 'updateMethod';
             req.args = [method];
-            return jm.rpc.callRpc(req);
+            return jm.mng.callRpc(req);
         },
 
         __ccreq:function(){
@@ -48,34 +60,34 @@ jm.mng = {
         v:'0.0.1',
     },
 
-
     conf:{
         getChildren : function (path,all){
             let req =  this.__ccreq();
             req.method = 'getChildren';
             req.args = [path,all];
-            return jm.rpc.callRpc(req);
+
+           return jm.mng.callRpc(req);
         },
 
         update: function (path,val){
             let req =  this.__ccreq();
             req.method = 'update';
             req.args = [path,val];
-            return jm.rpc.callRpc(req);
+            return jm.mng.callRpc(req);
         },
 
         delete: function (path){
             let req =  this.__ccreq();
             req.method = 'delete';
             req.args = [path];
-            return jm.rpc.callRpc(req);
+            return jm.mng.callRpc(req);
         },
 
         add: function (path,val,isDir){
             let req =  this.__ccreq();
             req.method = 'add';
             req.args = [path,val,isDir];
-            return jm.rpc.callRpc(req);
+            return jm.mng.callRpc(req);
         },
 
         __ccreq:function(){
@@ -135,9 +147,9 @@ jm.mng = {
 
             let self = this;
             return new Promise(function(reso,reje){
-                jm.rpc.callRpc(req)
+                jm.mng.callRpc(req)
                     .then((id)=>{
-                        if(id > 0 && !!callback) {
+                        if( id > 0 && !!callback ) {
                             callback.id = id;
                             self.listeners[topic].push(callback);
                         }
@@ -173,7 +185,7 @@ jm.mng = {
             req.method = 'unsubscribe';
             req.args = [callback.id];
             return new Promise(function(reso,reje){
-                jm.rpc.callRpc(req)
+                jm.mng.callRpc(req)
                     .then((rst)=>{
                         if(!rst) {
                             //console.log("Fail to unsubscribe topic:"+topic);
@@ -222,7 +234,7 @@ jm.mng = {
                             let req =  self.__ccreq();
                             req.method = 'startStatis';
                             req.args = [mkey, t];
-                            jm.rpc.callRpc(req)
+                            jm.mng.callRpc(req)
                                 .then(status =>{
                                     if(status) {
                                         reso(status);
@@ -250,7 +262,7 @@ jm.mng = {
                           let req =  this.__ccreq();
                           req.method = 'stopStatis';
                           req.args = [mkey,t];
-                          jm.rpc.callRpc(req)
+                          jm.mng.callRpc(req)
                               .then(r=>{
                                   reso(r);
                               }).catch(err =>{
@@ -271,7 +283,7 @@ jm.mng = {
                 let req =  this.__ccreq();
                 req.method = 'index2Label';
                 req.args = [];
-                jm.rpc.callRpc(req)
+                jm.mng.callRpc(req)
                     .then(r=>{
                         self.type2Labels = r.indexes;
                         self.types = r.types;
@@ -353,7 +365,8 @@ jm.mng = {
             req.method = 'getI18NValues';
             req.args = [lang];
             let self = this;
-            jm.rpc.callRpc(req).then((data)=>{
+            jm.mng.callRpc(req)
+                .then((data)=>{
                 self.data = data;
                 callback();
             }).then((err) => {
@@ -388,7 +401,7 @@ jm.mng = {
             let req =  this.__ccreq();
             req.method = 'login';
             req.args = [actName,pwd];
-            jm.rpc.callRpc(req)
+            jm.mng.callRpc(req)
                 .then(( actInfo )=>{
                     if(actInfo && actInfo.success) {
                         self.actInfo = actInfo;
@@ -402,7 +415,7 @@ jm.mng = {
                 });;
         },
 
-        loginout: function (cb){
+        logout: function (cb){
             if(!this.actInfo) {
                 if(cb) {
                     cb(true,null)
@@ -413,7 +426,7 @@ jm.mng = {
             let req =  this.__ccreq();
             req.method = 'logout';
             req.args = [ this.actInfo.loginKey ];
-            jm.rpc.callRpc(req)
+            jm.mng.callRpc(req)
                 .then(( actInfo )=>{
                     if(actInfo) {
                         self.actInfo = null;
@@ -451,21 +464,21 @@ jm.mng = {
             req.method = 'serverList';
             req.args = [];
             let self = this;
-            return jm.rpc.callRpc(req);
+            return jm.mng.callRpc(req);
         },
 
         status: function (srvKeys){
             let req =  this.__ccreq();
             req.method = 'status';
             req.args = [srvKeys];
-            return jm.rpc.callRpc(req);
+            return jm.mng.callRpc(req);
         },
 
         enable: function (srvKey,enable){
             let req =  this.__ccreq();
             req.method = 'enable';
             req.args = [srvKey,enable];
-            return jm.rpc.callRpc(req);
+            return jm.mng.callRpc(req);
         },
 
         __ccreq:function(){
@@ -480,6 +493,58 @@ jm.mng = {
         ns : MNG,
         v:'0.0.1',
     },
+
+    repository : {
+
+        getResourceList: function (){
+            let req =  this.__ccreq();
+            req.method = 'getResourceList';
+            req.args = [];
+            let self = this;
+            return jm.mng.callRpc(req);
+        },
+
+        addResouce: function (name){
+            let req =  this.__ccreq();
+            req.method = 'addResouce';
+            req.args = [name];
+            return jm.mng.callRpc(req);
+        },
+
+        addResourceData: function (name,data,offset,len){
+            let req =  this.__ccreq();
+            req.method = 'addResourceData';
+            req.args = [name,data,offset,len];
+            return jm.mng.callRpc(req);
+        },
+
+        endResouce: function (name){
+            let req =  this.__ccreq();
+            req.method = 'endResouce';
+            req.args = [name];
+            return jm.mng.callRpc(req);
+        },
+
+        deleteResource: function (name){
+            let req =  this.__ccreq();
+            req.method = 'deleteResource';
+            req.args = [name];
+            return jm.mng.callRpc(req);
+        },
+
+        __ccreq:function(){
+            let req = {};
+            req.serviceName=this.sn;
+            req.namespace = this.ns;
+            req.version = this.v;
+            return req;
+        },
+
+        sn:'org.jmicro.choreography.api.IResourceResponsitory',
+        ns : 'rrs',
+        v:'0.0.1',
+    },
+
 
 }
 

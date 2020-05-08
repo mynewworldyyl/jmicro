@@ -62,7 +62,7 @@ public abstract class AbstractNettySession extends AbstractSession implements IC
 	
 	@Override
 	public void write(Message msg) {
-		if(msg.getProtocol() == Message.PROTOCOL_JSON) {
+		if(msg.getUpProtocol() == Message.PROTOCOL_JSON) {
 			String json = JsonUtils.getIns().toJson(msg);
 			if(this.isWebSocket) {
 				ctx.channel().writeAndFlush(new TextWebSocketFrame(json));
@@ -93,12 +93,12 @@ public abstract class AbstractNettySession extends AbstractSession implements IC
 				this.counter.add(MonitorConstant.CLIENT_WRITE_BYTES, bb.remaining());
 			}
 			
-			ByteBuf bbf = Unpooled.buffer(bb.remaining());
-			bbf.writeBytes(bb);
-			ctx.channel().writeAndFlush(bbf);
+			bb.mark();
+			ctx.channel().writeAndFlush(Unpooled.copiedBuffer(bb));
 			
 			//客户方写消息，算上行
-			this.dump(bb.array(),true,msg);
+			bb.reset();
+			this.dump(bb,true,msg);
 			
 		}
 	}

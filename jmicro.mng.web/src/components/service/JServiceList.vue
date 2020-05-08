@@ -59,7 +59,7 @@
             }
         },
 
-        created(){
+        mounted(){
             this.loadServices((srvTrees)=>{
                 this.services = srvTrees;
             });
