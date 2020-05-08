@@ -384,7 +384,7 @@ jm.rpc.Constants = {
 
     FLAG_UP_PROTOCOL : 1 << 0,
 
-    FLAG_DOWN_PROTOCOL : -0x80,
+    FLAG0_DOWN_PROTOCOL : 1 << 6,
 
     //调试模式
     FLAG_DEBUG_MODE : 1 << 1,
@@ -596,21 +596,20 @@ jm.rpc.Message.prototype.setLogLevel = function(v)  {
 }
 
 jm.rpc.Message.prototype.getUpProtocol=function() {
-    return (this.flag & jm.rpc.Constants.FLAG_UP_PROTOCOL) >>> 0;
+    return this.is(this.flag,jm.rpc.Constants.FLAG_UP_PROTOCOL) ? 1:0;
 }
 
 jm.rpc.Message.prototype.setUpProtocol=function(protocol) {
-    //this.flag |= protocol == jm.rpc.Constants.PROTOCOL_JSON ? jm.rpc.Constants.FLAG_UP_PROTOCOL : 0 ;
-    this.flag  = this.set(protocol == jm.rpc.Constants.PROTOCOL_JSON ,this.flag ,jm.rpc.Constants.FLAG_UP_PROTOCOL);
+    this.flag  = this.set(protocol == jm.rpc.Constants.PROTOCOL_JSON ,this.flag , jm.rpc.Constants.FLAG_UP_PROTOCOL);
 }
 
-jm.rpc.Message.prototype.getDownProtocol=function() {
-    return (this.flag & jm.rpc.Constants.FLAG_DOWN_PROTOCOL) >>> 7;;
+jm.rpc.Message.prototype.getDownProtocol = function() {
+    return this.is(this.flag0, jm.rpc.Constants.FLAG0_DOWN_PROTOCOL)?1:0;
 }
 
 jm.rpc.Message.prototype.setDownProtocol = function(protocol) {
     //this.flag |= protocol == jm.rpc.Constants.PROTOCOL_JSON ? jm.rpc.Constants.FLAG_DOWN_PROTOCOL : 0 ;
-    this.flag  = this.set(protocol == jm.rpc.Constants.PROTOCOL_JSON ,this.flag ,jm.rpc.Constants.FLAG_DOWN_PROTOCOL);
+    this.flag0  = this.set(protocol == jm.rpc.Constants.PROTOCOL_JSON ,this.flag0 ,jm.rpc.Constants.FLAG0_DOWN_PROTOCOL);
 }
 
 //public static Message
@@ -781,7 +780,6 @@ jm.rpc.Message.prototype.encode = function() {
     }
 
     if(data != null){
-
         if(data instanceof ArrayBuffer) {
             let size = data.byteLength;
             let dv = new DataView(data);
@@ -789,7 +787,10 @@ jm.rpc.Message.prototype.encode = function() {
                 buf.writeUByte(dv.getUint8(i))
             }
         } else {
-            buf.writeByteArray(data);
+            let size = data.length;
+            for(let i = 0; i < size; i++) {
+                buf.writeUByte(data[i])
+            }
         }
     }
 
@@ -863,9 +864,9 @@ jm.rpc.ApiResponse = function() {
 
 jm.rpc.ApiResponse.prototype = {
     decode : function(arrayBuf, protocol) {
-        let dataInput = new jm.utils.JDataInput(arrayBuf);
 
         if(protocol == jm.rpc.Constants.PROTOCOL_BIN) {
+            let dataInput = new jm.utils.JDataInput(arrayBuf);
             this.id = dataInput.readUnsignedLong();
             this.reqId = dataInput.readUnsignedLong();
             this.success = dataInput.getUByte() > 0 ;
@@ -875,19 +876,23 @@ jm.rpc.ApiResponse.prototype = {
                 this.result.push(dataInput.getUByte());
             }
         } else if(protocol == jm.rpc.Constants.PROTOCOL_JSON)  {
-            let byteArray = [];
-            let len = dataInput.remaining();
-            for(let i = 0; i < len; i++) {
-                byteArray.push(dataInput.getUByte());
-            }
 
-            let jsonStr = jm.utils.fromUTF8Array(byteArray);
-            let o = JSON.parse(jsonStr);
-            if(o) {
-                this.id = o.id;
-                this.reqId = o.reqId;
-                this.success = o.success;
-                this.result = o.result;
+            if(arrayBuf instanceof Array ||arrayBuf　instanceof ArrayBuffer) {
+                let dataInput = new jm.utils.JDataInput(arrayBuf);
+                let byteArray = [];
+                let len = dataInput.remaining();
+                for(let i = 0; i < len; i++) {
+                    byteArray.push(dataInput.getUByte());
+                }
+
+                let jsonStr = jm.utils.fromUTF8Array(byteArray);
+                let o = JSON.parse(jsonStr);
+                if(o) {
+                    this.id = o.id;
+                    this.reqId = o.reqId;
+                    this.success = o.success;
+                    this.result = o.result;
+                }
             }
         }else {
             throw 'Invalid protocol:'+protocol;

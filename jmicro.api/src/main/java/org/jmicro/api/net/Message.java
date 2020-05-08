@@ -64,7 +64,7 @@ public final class Message {
 	
 	public static final byte FLAG_UP_PROTOCOL = 1<<0;
 	
-	public static final byte FLAG_DOWN_PROTOCOL = -0x80;
+	public static final byte FLAG0_DOWN_PROTOCOL = 1<<6;
 	
 	//调试模式
 	public static final byte FLAG_DEBUG_MODE = 1<<1;
@@ -251,12 +251,8 @@ public final class Message {
 		this.flag0 = (byte)((v << 3) | this.flag0);
 	}
 	
-	public  static byte getProtocolByFlag(byte flag,byte offset) {
-		return (byte)(flag & offset);
-	}
-	
 	public byte getUpProtocol() {
-		return getProtocolByFlag(this.flag,FLAG_UP_PROTOCOL);
+		return is(this.flag,FLAG_UP_PROTOCOL)?(byte)1:0;
 	}
 
 	public void setUpProtocol(byte protocol) {
@@ -265,12 +261,12 @@ public final class Message {
 	}
 	
 	public byte getDownProtocol() {
-		return getProtocolByFlag(this.flag,FLAG_DOWN_PROTOCOL);
+		return is(this.flag0,FLAG0_DOWN_PROTOCOL)?(byte)1:0;
 	}
 
 	public void setDownProtocol(byte protocol) {
 		//flag |= protocol == PROTOCOL_JSON ? FLAG_DOWN_PROTOCOL : 0 ;
-		flag = set(protocol == PROTOCOL_JSON,flag,FLAG_DOWN_PROTOCOL);
+		flag = set(protocol == PROTOCOL_JSON,flag0,FLAG0_DOWN_PROTOCOL);
 	}
 	
 	public static Message decode(JDataInput b) {

@@ -51,6 +51,9 @@ jm.socket = {
                    msg.decode(buf);
 
                    if(msg.type == jm.mng.ps.MSG_TYPE_ASYNC_RESP) {
+                       if(!msg.success) {
+                           throw 'fail:' + msg.payload;
+                       }
                        /*let dataInput = new jm.utils.JDataInput( msg.payload);
                        let byteArray = [];
                        let len = dataInput.remaining();
@@ -61,10 +64,11 @@ jm.socket = {
                        msg.payload = JSON.parse(jsonStr);*/
                        jm.mng.ps.onMsg(msg.payload);
                    } else  {
-                       let resp = new jm.rpc.ApiResponse();
-                       resp.decode(msg.payload, msg.getDownProtocol());
-                       msg.payload = resp;
-
+                       if(msg.getDownProtocol() == jm.rpc.Constants.PROTOCOL_BIN) {
+                           let resp = new jm.rpc.ApiResponse();
+                           resp.decode(msg.payload, msg.getDownProtocol());
+                           msg.payload = resp;
+                       }
                        if(self.listeners[msg.reqId]) {
                            self.listeners[msg.reqId](msg);
                            delete self.listeners[msg.reqId];

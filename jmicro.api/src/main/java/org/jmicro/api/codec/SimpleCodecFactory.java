@@ -112,7 +112,9 @@ public class SimpleCodecFactory implements ICodecFactory{
 				if(data instanceof ByteBuffer) {
 					ByteBuffer bb = (ByteBuffer)data;
 					try {
-						json = new String(bb.array(),0,bb.remaining(),Constants.CHARSET);
+						byte[] byteData = new byte[bb.remaining()];
+						bb.get(byteData, 0, bb.remaining());
+						json = new String(byteData,0,byteData.length,Constants.CHARSET);
 					} catch (UnsupportedEncodingException e) {
 						e.printStackTrace();
 					}

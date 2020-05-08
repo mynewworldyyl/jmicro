@@ -13,11 +13,15 @@ jm.mng = {
 
     },
 
-    callRpc : function(req) {
+    callRpc : function(req,upProtocol,downProtocol) {
         return new Promise(function(reso,reje){
-            jm.rpc.callRpc(req, null, jm.rpc.Constants.PROTOCOL_BIN, jm.rpc.Constants.PROTOCOL_BIN)
+            jm.rpc.callRpc(req, null, upProtocol,downProtocol)
                 .then((data)=>{
-                    reso(jm.utils.parseJson(data));
+                    if(downProtocol == jm.rpc.Constants.PROTOCOL_BIN) {
+                        reso(jm.utils.parseJson(data));
+                    } else {
+                        reso(data);
+                    }
                 })
                 .catch((err)=>{
                     reje(err);
@@ -30,21 +34,21 @@ jm.mng = {
             let req =  this.__ccreq();
             req.method = 'getServices';
             req.args = [];
-            return jm.mng.callRpc(req);
+            return jm.mng.callRpc(req,jm.rpc.Constants.PROTOCOL_JSON, jm.rpc.Constants.PROTOCOL_JSON);
         },
 
         updateItem: function (si){
             let req =  this.__ccreq();
             req.method = 'updateItem';
             req.args = [si];
-            return jm.mng.callRpc(req);
+            return jm.mng.callRpc(req,jm.rpc.Constants.PROTOCOL_JSON, jm.rpc.Constants.PROTOCOL_JSON);
         },
 
         updateMethod: function (method){
             let req =  this.__ccreq();
             req.method = 'updateMethod';
             req.args = [method];
-            return jm.mng.callRpc(req);
+            return jm.mng.callRpc(req,jm.rpc.Constants.PROTOCOL_JSON, jm.rpc.Constants.PROTOCOL_JSON);
         },
 
         __ccreq:function(){
@@ -66,28 +70,28 @@ jm.mng = {
             req.method = 'getChildren';
             req.args = [path,all];
 
-           return jm.mng.callRpc(req);
+           return jm.mng.callRpc(req,jm.rpc.Constants.PROTOCOL_JSON, jm.rpc.Constants.PROTOCOL_JSON);
         },
 
         update: function (path,val){
             let req =  this.__ccreq();
             req.method = 'update';
             req.args = [path,val];
-            return jm.mng.callRpc(req);
+            return jm.mng.callRpc(req,jm.rpc.Constants.PROTOCOL_JSON, jm.rpc.Constants.PROTOCOL_JSON);
         },
 
         delete: function (path){
             let req =  this.__ccreq();
             req.method = 'delete';
             req.args = [path];
-            return jm.mng.callRpc(req);
+            return jm.mng.callRpc(req,jm.rpc.Constants.PROTOCOL_JSON, jm.rpc.Constants.PROTOCOL_JSON);
         },
 
         add: function (path,val,isDir){
             let req =  this.__ccreq();
             req.method = 'add';
             req.args = [path,val,isDir];
-            return jm.mng.callRpc(req);
+            return jm.mng.callRpc(req,jm.rpc.Constants.PROTOCOL_JSON, jm.rpc.Constants.PROTOCOL_JSON);
         },
 
         __ccreq:function(){
@@ -147,7 +151,7 @@ jm.mng = {
 
             let self = this;
             return new Promise(function(reso,reje){
-                jm.mng.callRpc(req)
+                jm.mng.callRpc(req,jm.rpc.Constants.PROTOCOL_JSON, jm.rpc.Constants.PROTOCOL_JSON)
                     .then((id)=>{
                         if( id > 0 && !!callback ) {
                             callback.id = id;
@@ -185,7 +189,7 @@ jm.mng = {
             req.method = 'unsubscribe';
             req.args = [callback.id];
             return new Promise(function(reso,reje){
-                jm.mng.callRpc(req)
+                jm.mng.callRpc(req,jm.rpc.Constants.PROTOCOL_JSON, jm.rpc.Constants.PROTOCOL_JSON)
                     .then((rst)=>{
                         if(!rst) {
                             //console.log("Fail to unsubscribe topic:"+topic);
@@ -234,7 +238,7 @@ jm.mng = {
                             let req =  self.__ccreq();
                             req.method = 'startStatis';
                             req.args = [mkey, t];
-                            jm.mng.callRpc(req)
+                            jm.mng.callRpc(req,jm.rpc.Constants.PROTOCOL_JSON, jm.rpc.Constants.PROTOCOL_JSON)
                                 .then(status =>{
                                     if(status) {
                                         reso(status);
@@ -262,7 +266,7 @@ jm.mng = {
                           let req =  this.__ccreq();
                           req.method = 'stopStatis';
                           req.args = [mkey,t];
-                          jm.mng.callRpc(req)
+                          jm.mng.callRpc(req,jm.rpc.Constants.PROTOCOL_JSON, jm.rpc.Constants.PROTOCOL_JSON)
                               .then(r=>{
                                   reso(r);
                               }).catch(err =>{
@@ -283,7 +287,7 @@ jm.mng = {
                 let req =  this.__ccreq();
                 req.method = 'index2Label';
                 req.args = [];
-                jm.mng.callRpc(req)
+                jm.mng.callRpc(req,jm.rpc.Constants.PROTOCOL_JSON, jm.rpc.Constants.PROTOCOL_JSON)
                     .then(r=>{
                         self.type2Labels = r.indexes;
                         self.types = r.types;
@@ -365,7 +369,7 @@ jm.mng = {
             req.method = 'getI18NValues';
             req.args = [lang];
             let self = this;
-            jm.mng.callRpc(req)
+            jm.mng.callRpc(req,jm.rpc.Constants.PROTOCOL_JSON, jm.rpc.Constants.PROTOCOL_JSON)
                 .then((data)=>{
                 self.data = data;
                 callback();
@@ -401,7 +405,7 @@ jm.mng = {
             let req =  this.__ccreq();
             req.method = 'login';
             req.args = [actName,pwd];
-            jm.mng.callRpc(req)
+            jm.mng.callRpc(req,jm.rpc.Constants.PROTOCOL_JSON, jm.rpc.Constants.PROTOCOL_JSON)
                 .then(( actInfo )=>{
                     if(actInfo && actInfo.success) {
                         self.actInfo = actInfo;
@@ -426,7 +430,7 @@ jm.mng = {
             let req =  this.__ccreq();
             req.method = 'logout';
             req.args = [ this.actInfo.loginKey ];
-            jm.mng.callRpc(req)
+            jm.mng.callRpc(req,jm.rpc.Constants.PROTOCOL_JSON, jm.rpc.Constants.PROTOCOL_JSON)
                 .then(( actInfo )=>{
                     if(actInfo) {
                         self.actInfo = null;
@@ -464,21 +468,21 @@ jm.mng = {
             req.method = 'serverList';
             req.args = [];
             let self = this;
-            return jm.mng.callRpc(req);
+            return jm.mng.callRpc(req,jm.rpc.Constants.PROTOCOL_JSON, jm.rpc.Constants.PROTOCOL_JSON);
         },
 
         status: function (srvKeys){
             let req =  this.__ccreq();
             req.method = 'status';
             req.args = [srvKeys];
-            return jm.mng.callRpc(req);
+            return jm.mng.callRpc(req,jm.rpc.Constants.PROTOCOL_JSON, jm.rpc.Constants.PROTOCOL_JSON);
         },
 
         enable: function (srvKey,enable){
             let req =  this.__ccreq();
             req.method = 'enable';
             req.args = [srvKey,enable];
-            return jm.mng.callRpc(req);
+            return jm.mng.callRpc(req,jm.rpc.Constants.PROTOCOL_JSON, jm.rpc.Constants.PROTOCOL_JSON);
         },
 
         __ccreq:function(){
@@ -501,35 +505,35 @@ jm.mng = {
             req.method = 'getResourceList';
             req.args = [];
             let self = this;
-            return jm.mng.callRpc(req);
+            return jm.mng.callRpc(req,jm.rpc.Constants.PROTOCOL_JSON, jm.rpc.Constants.PROTOCOL_JSON);
         },
 
         addResouce: function (name){
             let req =  this.__ccreq();
             req.method = 'addResouce';
             req.args = [name];
-            return jm.mng.callRpc(req);
+            return jm.mng.callRpc(req,jm.rpc.Constants.PROTOCOL_JSON, jm.rpc.Constants.PROTOCOL_JSON);
         },
 
         addResourceData: function (name,data,offset,len){
             let req =  this.__ccreq();
             req.method = 'addResourceData';
             req.args = [name,data,offset,len];
-            return jm.mng.callRpc(req);
+            return jm.mng.callRpc(req,jm.rpc.Constants.PROTOCOL_JSON, jm.rpc.Constants.PROTOCOL_JSON);
         },
 
         endResouce: function (name){
             let req =  this.__ccreq();
             req.method = 'endResouce';
             req.args = [name];
-            return jm.mng.callRpc(req);
+            return jm.mng.callRpc(req,jm.rpc.Constants.PROTOCOL_JSON, jm.rpc.Constants.PROTOCOL_JSON);
         },
 
         deleteResource: function (name){
             let req =  this.__ccreq();
             req.method = 'deleteResource';
             req.args = [name];
-            return jm.mng.callRpc(req);
+            return jm.mng.callRpc(req,jm.rpc.Constants.PROTOCOL_JSON, jm.rpc.Constants.PROTOCOL_JSON);
         },
 
         __ccreq:function(){
