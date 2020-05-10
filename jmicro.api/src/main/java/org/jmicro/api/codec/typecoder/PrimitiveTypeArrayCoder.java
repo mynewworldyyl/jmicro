@@ -24,9 +24,9 @@ public class PrimitiveTypeArrayCoder extends AbstractFinalTypeCoder<Object>{
 		@Override
 		public Object decode(DataInput buffer, Class<?> fieldDeclareType, Type genericType) {
 			//return TypeCoder.decodeArray(buffer,type().getComponentType(),genericType);
-			short len;
+			int len;
 			try {
-				len = buffer.readShort();
+				len = buffer.readInt();
 			} catch (IOException e) {
 				throw new CommonException("decode",e);
 			}
@@ -76,7 +76,7 @@ public class PrimitiveTypeArrayCoder extends AbstractFinalTypeCoder<Object>{
 				return;
 			}
 			int len = Array.getLength(objs);
-			buffer.writeShort(len);
+			buffer.writeInt(len);
 			
 			if(len <=0) {
 				return;

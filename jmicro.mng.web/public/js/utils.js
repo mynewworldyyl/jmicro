@@ -817,12 +817,20 @@ jm.utils.JDataOutput.prototype.checkCapacity = function(len) {
     if(rem >= len) {
         return;
     }
-    this.oriSize *= 2;
 
-    let newBuf = new ArrayBuffer(this.oriSize);
-    for(let i = 0; i < rem; i++) {
-        newBuf.setUint8(i,this.buf.getUint8());
+    let size = this.oriSize;
+    while(size - (this.oriSize-rem) < len) {
+        size *= 2;
     }
+
+    this.oriSize = size;
+
+    let buf0 = new ArrayBuffer(this.oriSize);
+    let newBuf = new DataView(buf0,0,this.oriSize);
+    for(let i = 0; i < this.writePos; i++) {
+        newBuf.setUint8(i,this.buf.getUint8(i));
+    }
+    this._buf = buf0;
     this.buf = newBuf;
 
 }
@@ -903,10 +911,12 @@ jm.utils.JDataOutput.prototype.writeUnsignedLong = function(v) {
 
 jm.utils.JDataOutput.prototype.writeByteArray = function(arr) {
     if(!arr || arr.length == 0) {
+        this.checkCapacity(4);
         this.writeUnsignedInt(0)
         return;
     }
     let size = arr.length;
+    this.checkCapacity(4+size);
     this.writeUnsignedInt(size);
     for(let i = 0; i < size; i++) {
         this.writeUByte(arr[i])
@@ -915,30 +925,16 @@ jm.utils.JDataOutput.prototype.writeByteArray = function(arr) {
 
 jm.utils.JDataOutput.prototype.writeArrayBuffer = function(ab) {
     if(!ab || ab.byteLength == 0) {
+        this.checkCapacity(4);
         this.writeUnsignedInt(0)
     }else {
         let size = ab.byteLength;
+        this.checkCapacity(4+size);
         this.writeUnsignedInt(size);
         for(let i = 0; i < size; i++) {
             this.writeUByte(ab[i])
         }
     }
-}
-
-//public static void
-jm.utils.JDataOutput.prototype.writeUnsignedLong = function(v) {
-    if(v > jm.rpc.Constants.MAX_INT_VALUE) {
-        throw "Max int value is :"+jm.rpc.Constants.MAX_INT_VALUE+", but value "+v;
-    }
-    this.checkCapacity(8);
-    this.writeUByte((v >>> 56)&0xFF);
-    this.writeUByte((v >>> 48)&0xFF);
-    this.writeUByte((v >>> 40)&0xFF);
-    this.writeUByte((v >>> 32)&0xFF);
-    this.writeUByte((v >>> 24)&0xFF);
-    this.writeUByte((v >>> 16)&0xFF);
-    this.writeUByte((v >>> 8)&0xFF);
-    this.writeUByte((v >>> 0)&0xFF);
 }
 
 jm.utils.JDataOutput.prototype.writeUtf8String = function(s) {
@@ -1001,8 +997,10 @@ jm.utils.JDataOutput.prototype.writeObject = function(obj) {
 
 jm.utils.JDataOutput.prototype.writeObjectArray = function(arr) {
     if(arr == null || arr.length == 0) {
+        this.checkCapacity(4);
         this.writeUnsignedInt(0);
     } else {
+        this.checkCapacity(4);
         this.writeUnsignedInt(arr.length);
         for(let i = 0; i <arr.length; i++) {
             let o = arr[i];

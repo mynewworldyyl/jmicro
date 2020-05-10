@@ -61,6 +61,11 @@
 			<scope>test</scope>
 		</dependency>
 		
+		 <dependency>
+			<groupId>org.jmicro</groupId>
+			<artifactId>jmicro.choreography.api</artifactId>
+		</dependency>
+		
 		<dependency>
 			<groupId>org.jmicro</groupId>
 			<artifactId>jmicro.agent</artifactId>

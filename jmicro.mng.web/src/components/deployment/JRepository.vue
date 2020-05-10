@@ -8,7 +8,7 @@
             <tr v-for="c in resList" :key="c.id">
                 <td>{{c.name}}</td><td>{{c.size}}</td><td>{{c.finish}}</td>
                 <td>
-                    <a v-if="!c.finish" @click="continueUpload(c)">CONTINUE</a>&nbsp;&nbsp;
+                    <a v-if="c.finishBlockNum != c.totalBlockNum && c.totalBlockNum > 0" @click="continueUpload(c)">CONTINUE</a>&nbsp;&nbsp;
                     <a @click="deleteRes(c)">DELETE</a>
                 </td>
             </tr>
@@ -17,8 +17,10 @@
         <Modal v-model="addResourceDialog" :loading="true" ref="addNodeDialog" width="360" @on-ok="onAddOk()">
             <table>
                 <tr><td>NAME</td><td><input type="input" id="nodeName" v-model="name"/></td></tr>
-                <tr><td>VALUE</td><td><input type="file" id="nodeValue" @change="fileSelect()" ref="resFile"/></td></tr>
+                <tr><td>VALUE</td><td><input type="file" id="nodeValue" ref="resFile"/></td></tr>
                 <tr><td colspan="2" style="color:red">{{errMsg}}</td></tr>
+                <tr v-if="onUpload"><td colspan="2">SIZE&FINISH:{{totalSize}}/{{finishSize}}&nbsp;&nbsp; COST:{{costTime}}&nbsp;&nbsp;SPEED:{{uploadSpeed}}</td></tr>
+                <tr v-if="onUpload"><td colspan="2"><Progress :percent="progressVal"></Progress></td></tr>
             </table>
         </Modal>
     </div>
@@ -32,10 +34,15 @@
             return {
                 resList:[],
                 addResourceDialog:false,
-                file:null,
                 name:'',
                 errMsg:'',
-                fileContent:null,
+
+                totalSize:'',
+                finishSize:'',
+                costTime:'',
+                uploadSpeed:'',
+                progressVal:0,
+                onUpload:false
             }
         },
         methods: {
@@ -50,50 +57,197 @@
 
             addNode(){
                 this.addResourceDialog = true;
+            },
 
+            uploadData(name,data,blockNum,cb) {
+                window.jm.mng.repository.addResourceData(name,data,blockNum)
+                    .then((rst) =>{
+                        cb(rst);
+                    })
+                    .catch((err) =>{
+                        if(cb) {
+                            cb(false);
+                        }
+                        throw 'Upload data error: ' + name + err;
+                    });
+            },
+
+            getSizeVal(size) {
+                let v = '';
+                if(size < 1024) {
+                    v = size + 'B';
+                }else if(size < 1024*1024 ) {
+                    v = this.toFixed(size/1024,2) + 'KB';
+                }else if(size < 1024*1024*1024 ) {
+                    v = this.toFixed(size/(1024*1024),2) + 'MB';
+                }else {
+                    v = this.toFixed(size/(1024*1024*1024),2) + 'GB';
+                }
+                return v;
+            },
+
+            getFinishSize(blockSize,curBlock) {
+                let s = blockSize * (curBlock+1);
+                return this.getSizeVal(s);
+            },
+
+            getProgressVal(blockSize,curBlock,totalSize) {
+                let s = blockSize * (curBlock+1);
+                return this.toFixed((s/totalSize)*100,0);
+            },
+
+            toFixed(val, num) {
+                if(val) {
+                    return parseFloat(val).toFixed(num);
+                }
+            },
+
+            getCostTime(startTime) {
+                let v = '';
+                let c = new Date().getTime() - startTime;
+                if(c < 1000) {
+                    v = c + 'MS';
+                }else if(c < 1000 * 60) {
+                    v = this.toFixed(c/1000,2) + 'S';
+                }else if(c < 1000 * 60 * 60) {
+                    c = c / 1000;
+                    v = this.toFixed(c/60,2)+'M '+(c%60)+'S'
+                }else {
+                    c = c / 1000;
+                    let h = c/(60*60);
+
+                    c = c % (60*60);
+                    let m = c/60;
+
+                    let s = c %(60);
+
+                    v = this.toFixed(h,0)+'H '+this.toFixed(m,0)+'M '+this.toFixed(s,0)+'S'
+                }
+                return v;
+            },
+
+            getSpeedVal(blockSize,curBlock,startTime) {
+                let s = blockSize * (curBlock+1);
+                let c = (new Date().getTime() - startTime)/1000;
+
+                if(c <= 0) {
+                    return '*';
+                }else {
+                    let sp = s/c;
+                    return this.getSizeVal(sp)+'/M';
+                }
             },
 
             onAddOk(){
+                let self = this;
+                let startTime = new Date().getTime();
 
+                this.getFileContent().then((buf) => {
+                    let totalLen = buf.byteLength;
+                   self.totalSize =  self.getSizeVal(totalLen);
+                    self.onUpload = true;
+                    let file = self.$refs.resFile.files[0];
+                    window.jm.mng.repository.addResource(file.name, totalLen).then((blockSize)=>{
+                        if(blockSize <= 0) {
+                            self.$Message.success("File exists "+file.name);
+                            return;
+                        }
+                        let blockNum = parseInt(totalLen/blockSize);
+                        let dv = new DataView(buf,0,totalLen);
+                        let curBlock = 0;
+
+                        let ud = function(success){
+                            if(success) {
+                                self.finishSize =  self.getFinishSize(blockSize,curBlock);
+                                self.costTime = self.getCostTime(startTime);
+                                self.progressVal = self.getProgressVal(blockSize,curBlock,totalLen);
+                                self.uploadSpeed = self.getSpeedVal(blockSize,curBlock,startTime);
+
+                                if(curBlock < blockNum) {
+                                    let bl = [];
+                                    for(let j = 0; j < blockSize; j++) {
+                                        bl.push(dv.getUint8(blockSize*curBlock+j));
+                                    }
+                                    self.uploadData(file.name,bl,curBlock,ud);
+                                    curBlock++;
+                                }else if(curBlock == blockNum) {
+                                    //最后一块
+                                    let lastBlockSize = totalLen % blockSize;
+                                    if( lastBlockSize > 0) {
+                                        let bl = [];
+                                        for (let j = 0; j < lastBlockSize; j++) {
+                                            bl.push(dv.getUint8(blockNum * blockSize + j));
+                                        }
+                                        self.uploadData(file.name,bl,curBlock,function(s){
+                                            if(s) {
+                                                self.addResourceDialog = false;
+                                                self.$Message.success("Success upload "+file.name);
+                                            }else {
+                                                console.log(s);
+                                                self.$Message.success("Fail upload "+file.name);
+                                            }
+                                        });
+                                    }
+
+                                        self.totalSize = '',
+                                        self.finishSize = '',
+                                        self.costTime = '',
+                                        self.uploadSpeed = '',
+                                        self.progressVal = 0,
+                                         self.onUpload = false;
+                                        self.refresh();
+                                }
+                            }
+                        }
+
+                        ud(true);
+
+                    }).catch((err)=>{
+                        window.console.log(err);
+                    });
+                }).catch(err=>{
+                    window.console.log(err);
+                    });
             },
 
-            fileSelect(){
+            getFileContent(){
                 let self = this;
-               let file = this.$refs.resFile.files[0];
-                if(file){
-                    //读取本地文件，以gbk编码方式输出
-                    let reader = new FileReader();
-                    reader.readAsArrayBuffer(file);
+                return new Promise(function(reso,reje){
+                    let file = self.$refs.resFile.files[0];
+                    if(file){
+                        let reader = new FileReader();
+                        reader.readAsArrayBuffer(file);
 
-                    reader.onabort	=()=> {
+                        reader.onabort	=()=> {
 
-                    };
+                        };
 
-                    //当读取操作发生错误时调用
-                    reader.onerror	= ()=> {
+                        //当读取操作发生错误时调用
+                        reader.onerror	= ()=> {
+                            reje('read file error');
+                        };
 
-                    };
+                        //当读取操作成功完成时调用
+                        reader.onload =	 () => {
+                            reso(reader.result);
+                        };
 
-                    //当读取操作成功完成时调用
-                    reader.onload =	 () => {
-                        self.fileContent = this.result;
-                    };
+                        //当读取操作完成时调用,不管是成功还是失败
+                        reader.onloadend =	()=> {
 
-                   //当读取操作完成时调用,不管是成功还是失败
-                    reader.onloadend =	()=> {
+                        };
 
-                    };
+                        //当读取操作将要开始之前调用
+                        reader.onloadstart	= ()=> {
 
-                    //当读取操作将要开始之前调用
-                    reader.onloadstart	= ()=> {
+                        };
 
-                    };
+                        //在读取数据过程中周期性调用
+                        reader.onprogress	= ()=> {
 
-                    //在读取数据过程中周期性调用
-                    reader.onprogress	= ()=> {
-
-                    };
-                }
+                        };
+                    }
+                })
             },
 
             continueUpload(res){
@@ -119,7 +273,7 @@
             },
 
             refresh(){
-                window.jm.mng.repository.getResourceList().then((resList)=>{
+                window.jm.mng.repository.getResourceList(false).then((resList)=>{
                     if(!resList || resList.length == 0 ) {
                         return;
                     }
@@ -130,7 +284,7 @@
             }
         },
 
-        activated () {
+        mounted () {
             this.refresh();
         },
     }

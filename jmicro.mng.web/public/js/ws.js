@@ -102,12 +102,13 @@ jm.socket = {
         }
         let self = this;
         //msg.setProtocol(jm.rpc.Constants.PROTOCOL_BIN);
+        let buffe = msg.encode();
         if(!!self.wsk && self.wsk.readyState == WebSocket.OPEN) {
-            this.wsk.send(msg.encode());
+            this.wsk.send(buffe);
         } else if(!self.wsk || self.wsk.readyState == WebSocket.CLOSED ||
             self.wsk.readyState == WebSocket.CLOSING) {
             this.init(function () {
-                self.wsk.send(msg.encode());
+                self.wsk.send(buffe);
                 //self.wsk.send(JSON.stringify(msg));
                 //self.wsk.se
                 if(self.waiting.length > 0) {
@@ -119,7 +120,7 @@ jm.socket = {
             });
         } else if(self.wsk.readyState == WebSocket.CONNECTING) {
             self.waiting.push(function(){
-                self.wsk.send(msg.encode());
+                self.wsk.send(buffe);
             })
         }
     }

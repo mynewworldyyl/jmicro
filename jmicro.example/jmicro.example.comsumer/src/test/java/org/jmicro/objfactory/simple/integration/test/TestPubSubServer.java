@@ -21,7 +21,7 @@ import org.junit.Test;
 import junit.framework.Assert;
 
 public class TestPubSubServer extends JMicroBaseTestCase{
-
+	
 	@Test
 	public void testPublishPSDatas() {
 		IInternalSubRpc psm = of.getRemoteServie(IInternalSubRpc.class.getName(),
@@ -146,4 +146,5 @@ public class TestPubSubServer extends JMicroBaseTestCase{
 		psm.publish(new HashMap<String,Object>(), TOPIC, "test pubsub server",PSData.FLAG_PUBSUB);
 		JMicro.waitForShutdown();
 	}
+
 }

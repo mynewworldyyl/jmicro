@@ -500,26 +500,26 @@ jm.mng = {
 
     repository : {
 
-        getResourceList: function (){
+        getResourceList: function (onlyFinish){
             let req =  this.__ccreq();
             req.method = 'getResourceList';
-            req.args = [];
+            req.args = [onlyFinish];
             let self = this;
             return jm.mng.callRpc(req,jm.rpc.Constants.PROTOCOL_JSON, jm.rpc.Constants.PROTOCOL_JSON);
         },
 
-        addResouce: function (name){
+        addResource: function (name,size){
             let req =  this.__ccreq();
-            req.method = 'addResouce';
-            req.args = [name];
+            req.method = 'addResource';
+            req.args = [name,size ];
             return jm.mng.callRpc(req,jm.rpc.Constants.PROTOCOL_JSON, jm.rpc.Constants.PROTOCOL_JSON);
         },
 
-        addResourceData: function (name,data,offset,len){
+        addResourceData: function (name,data,blockNum){
             let req =  this.__ccreq();
             req.method = 'addResourceData';
-            req.args = [name,data,offset,len];
-            return jm.mng.callRpc(req,jm.rpc.Constants.PROTOCOL_JSON, jm.rpc.Constants.PROTOCOL_JSON);
+            req.args = [name,data,blockNum];
+            return jm.mng.callRpc(req,jm.rpc.Constants.PROTOCOL_BIN, jm.rpc.Constants.PROTOCOL_JSON);
         },
 
         endResouce: function (name){

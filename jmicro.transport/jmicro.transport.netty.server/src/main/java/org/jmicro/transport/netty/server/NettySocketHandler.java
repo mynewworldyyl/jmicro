@@ -73,6 +73,8 @@ public class NettySocketHandler extends ChannelInboundHandlerAdapter {
     	
     	//logger.info("ed0:  "+System.currentTimeMillis());
     	
+    	//byte[] arr = bb.array();
+    	
     	ByteBuffer b = ByteBuffer.allocate(bb.readableBytes());
     	bb.readBytes(b);
     	b.flip();

@@ -225,8 +225,6 @@ public class JDataOutput implements DataOutput {
 		}
 		return buf;
 	}
-	
-	
 
 	public ByteBuffer getBuf() {
 		buf.flip();

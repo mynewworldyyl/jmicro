@@ -783,11 +783,13 @@ jm.rpc.Message.prototype.encode = function() {
         if(data instanceof ArrayBuffer) {
             let size = data.byteLength;
             let dv = new DataView(data);
+            buf.checkCapacity(size);
             for(let i = 0; i < size; i++) {
                 buf.writeUByte(dv.getUint8(i))
             }
         } else {
             let size = data.length;
+            buf.checkCapacity(size);
             for(let i = 0; i < size; i++) {
                 buf.writeUByte(data[i])
             }

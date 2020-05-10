@@ -9,11 +9,13 @@ public class PackageResource {
 
 	private long size;
 	
-	private String status;
+	private int finishBlockNum = 0;
 	
-	private boolean finish = true;
+	private int totalBlockNum = 0;
 	
-	private long offset;
+	private int blockSize = 0;
+	
+	private String blockIndexFileName;
 	
 	public String getName() {
 		return name;
@@ -31,29 +33,36 @@ public class PackageResource {
 		this.size = size;
 	}
 
-	public String getStatus() {
-		return status;
+	public int getFinishBlockNum() {
+		return finishBlockNum;
 	}
 
-	public void setStatus(String status) {
-		this.status = status;
+	public void setFinishBlockNum(int finishBlockNum) {
+		this.finishBlockNum = finishBlockNum;
 	}
 
-	public boolean isFinish() {
-		return finish;
+	public String getBlockIndexFileName() {
+		return blockIndexFileName;
 	}
 
-	public void setFinish(boolean isFinish) {
-		this.finish = isFinish;
+	public void setBlockIndexFileName(String blockIndexFileName) {
+		this.blockIndexFileName = blockIndexFileName;
 	}
 
-	public long getOffset() {
-		return offset;
+	public int getTotalBlockNum() {
+		return totalBlockNum;
 	}
 
-	public void setOffset(long offset) {
-		this.offset = offset;
+	public void setTotalBlockNum(int totalBlockNum) {
+		this.totalBlockNum = totalBlockNum;
 	}
-	
+
+	public int getBlockSize() {
+		return blockSize;
+	}
+
+	public void setBlockSize(int blockSize) {
+		this.blockSize = blockSize;
+	}
 	
 }

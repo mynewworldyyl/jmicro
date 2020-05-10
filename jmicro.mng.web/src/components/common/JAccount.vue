@@ -68,7 +68,7 @@ export default {
 
         doLogout(){
             let self = this;
-            window.jm.mng.act.loginout((sus,err)=>{
+            window.jm.mng.act.logout((sus,err)=>{
                 if(!err && sus) {
                     self.actInfo = {actName:'',success:false};
                     self.msg = '';

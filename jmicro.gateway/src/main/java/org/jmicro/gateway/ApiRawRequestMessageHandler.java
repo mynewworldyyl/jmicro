@@ -219,7 +219,7 @@ public class ApiRawRequestMessageHandler implements IMessageHandler{
 		}
 		
 		if(msg.getDownProtocol() == Message.PROTOCOL_JSON) {
-			msg.setPayload(ICodecFactory.encode(codecFactory, resp, msg.getUpProtocol()));
+			msg.setPayload(ICodecFactory.encode(codecFactory, resp, msg.getDownProtocol()));
 		} else {
 			msg.setPayload(resp.encode());
 		}
@@ -298,9 +298,7 @@ public class ApiRawRequestMessageHandler implements IMessageHandler{
 						int len = ji.readUnsignedInt();
 						if(len > 0) {
 							byte[] data = new byte[len];
-							for(int x = 0; x< len; x++) {
-								data[x] = ji.readByte();
-							}
+							ji.readFully(data, 0, len);
 							a = data;
 						}
 					}
