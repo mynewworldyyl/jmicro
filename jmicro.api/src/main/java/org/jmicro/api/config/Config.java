@@ -16,6 +16,7 @@
  */
 package org.jmicro.api.config;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
@@ -140,7 +141,6 @@ public class Config implements IConfigChangeListener{
 		}
 		
 		String registry = getCommandParam(Constants.REGISTRY_URL_KEY);
-		
 		if(StringUtils.isEmpty(registry)) {
 			registry = getEnvParam(Constants.REGISTRY_URL_KEY);
 		}
@@ -149,34 +149,56 @@ public class Config implements IConfigChangeListener{
 			registry = getExtParam(Constants.REGISTRY_URL_KEY);
 		}
 		
-		if(!StringUtils.isEmpty(registry)) {
-			RegistryHost = null;
-			String[] arr = registry.split(",");
-			for(String one : arr) {
-				int index = one.indexOf("://");
-				if(index > 0){
-					RegistryProtocol = one.substring(0,index);
-				}else {
-					throw new CommonException("Invalid registry url: "+ registry);
-				}
-				one = one.substring(index+3);
-				if(RegistryHost == null) {
-					RegistryHost = one;
-				}else {
-					RegistryHost = "," + one;
-				}
-				
-				/*if((index = one.indexOf(":")) > 0){
-					String[] hostport = registry.split(":");
-					RegistryHost = hostport[0];
-					//RegistryPort = hostport[1];
-				} else {
-					throw new CommonException("Invalid registry url: "+ registry);
-				}*/
-			}
-			
+		if(StringUtils.isEmpty(registry)) {
+			registry = "zookeeper://127.0.0.1:2181";
 		}
 		
+
+		RegistryHost = null;
+		String[] arr = registry.split(",");
+		for(String one : arr) {
+			int index = one.indexOf("://");
+			if(index > 0){
+				RegistryProtocol = one.substring(0,index);
+			}else {
+				throw new CommonException("Invalid registry url: "+ registry);
+			}
+			one = one.substring(index+3);
+			if(RegistryHost == null) {
+				RegistryHost = one;
+			}else {
+				RegistryHost = "," + one;
+			}
+		}
+
+		String dataDir = getCommandParam(Constants.LOCAL_DATA_DIR);
+		if(StringUtils.isEmpty(dataDir)) {
+			dataDir = System.getProperty("user.dir")+ File.separatorChar + "data";
+		}
+		
+		File dataDirFile = new File(dataDir);
+		if(!dataDirFile.exists()) {
+			if(!dataDirFile.mkdirs()) {
+				throw new CommonException("Fail to create data directory ["+dataDir+"] ");
+			}
+		}
+		
+		if(dataDirFile.isFile()) {
+			throw new CommonException("Data Dir ["+dataDir+"] cannot be a file");
+		}
+		
+		CommadParams.put(Constants.LOCAL_DATA_DIR, dataDir);
+	
+		
+	}
+	
+	private void initDataDir() {
+		String localDataDir = CommadParams.get(Constants.LOCAL_DATA_DIR);
+		File f = new File(localDataDir,InstanceName);
+		if(!f.exists()) {
+			f.mkdir();
+		}
+		CommadParams.put(Constants.INSTANCE_DATA_DIR, f.getAbsolutePath());
 	}
 	
 	private void initInstanceName() {
@@ -185,6 +207,7 @@ public class Config implements IConfigChangeListener{
 		
 		if(StringUtils.isNotEmpty(insName)) {
 			InstanceName = insName;
+			initDataDir();
 			return;
 		} 
 		
@@ -209,6 +232,7 @@ public class Config implements IConfigChangeListener{
 			}
 			IServiceInstanceNameGenerator sin = (IServiceInstanceNameGenerator)cls.newInstance();
 			InstanceName = sin.getInstanceName(dataOperator,this);
+			initDataDir();
 		} catch (ClassNotFoundException e) {
 			throw new CommonException("IServiceInstanceNameGenerator imple class ["+ insGenClass+"] not found" );
 		} catch (InstantiationException | IllegalAccessException e) {

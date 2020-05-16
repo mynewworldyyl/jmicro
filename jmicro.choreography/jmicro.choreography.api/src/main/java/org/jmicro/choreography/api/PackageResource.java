@@ -64,5 +64,16 @@ public class PackageResource {
 	public void setBlockSize(int blockSize) {
 		this.blockSize = blockSize;
 	}
+
+	@Override
+	public int hashCode() {
+		return name != null ? name.hashCode():0;
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		PackageResource pr = (PackageResource)obj;
+		return this.name != null ? name.equals(pr.getName()):(pr.getName() == null);
+	}
 	
 }

@@ -214,7 +214,7 @@ public class RpcClassLoader extends ClassLoader {
 			}
 	         
 	         if(bytes == null || bytes.length == 0) {
-	        	 logger.warn("class not found from {} ",insNames.toString());
+	        	 logger.warn("class[{}] not found from [{}] ",className,insNames.toString());
 	         }
 			
         	

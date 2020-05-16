@@ -56,7 +56,7 @@ public class ZKDataOperator implements IDataOperator{
 
 	private final static Logger logger = LoggerFactory.getLogger(ZKDataOperator.class);
 	
-	private boolean openDebug = true;
+	private boolean openDebug = false;
 	
 	//only use for testing
 	private static ZKDataOperator ins = new ZKDataOperator();

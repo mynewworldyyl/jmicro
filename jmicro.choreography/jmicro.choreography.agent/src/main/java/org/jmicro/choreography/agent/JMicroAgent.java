@@ -25,6 +25,6 @@ import org.jmicro.api.JMicro;
  */
 public class JMicroAgent {
 	public static void main(String[] args) {
-		JMicro.getObjectFactoryAndStart(new String[]{"-DinstanceName=serviceAgentImpl"});
+		JMicro.getObjectFactoryAndStart(new String[]{""});
 	}
 }

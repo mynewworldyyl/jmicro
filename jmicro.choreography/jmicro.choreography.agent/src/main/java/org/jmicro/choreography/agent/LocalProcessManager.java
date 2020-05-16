@@ -18,25 +18,23 @@ package org.jmicro.choreography.agent;
 
 import java.io.File;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.jmicro.api.IListener;
 import org.jmicro.api.annotation.Cfg;
-import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.Inject;
-import org.jmicro.api.choreography.base.AgentInfo;
-import org.jmicro.api.choreography.base.InstanceInfo;
-import org.jmicro.api.choreography.base.SchedulerResult;
-import org.jmicro.api.choreography.controller.AgentManager;
-import org.jmicro.api.choreography.controller.IInstanceListener;
-import org.jmicro.api.choreography.controller.InstanceManager;
+import org.jmicro.api.choreography.ChoyConstants;
+import org.jmicro.api.choreography.ProcessInfo;
 import org.jmicro.api.config.Config;
 import org.jmicro.api.idgenerator.ComponentIdServer;
 import org.jmicro.api.raft.IDataOperator;
 import org.jmicro.api.timer.TimerTicker;
+import org.jmicro.choreography.base.AgentInfo;
+import org.jmicro.choreography.base.InstanceInfo;
+import org.jmicro.choreography.base.SchedulerResult;
+import org.jmicro.choreography.controller.IInstanceListener;
 import org.jmicro.common.util.JsonUtils;
 import org.jmicro.common.util.StringUtils;
 import org.slf4j.Logger;
@@ -47,7 +45,7 @@ import org.slf4j.LoggerFactory;
  * @author Yulei Ye
  * @date 2019年1月23日 下午10:40:03
  */
-@Component
+//@Component
 public class LocalProcessManager {
 
 	private final static Logger logger = LoggerFactory.getLogger(LocalProcessManager.class);
@@ -62,12 +60,6 @@ public class LocalProcessManager {
 	
 	@Cfg(value="/LocalProcessManager/checkInterval")
 	private long checkInterval = 5000;
-	
-	@Inject
-	private InstanceManager insManager;
-	
-	@Inject
-	private AgentManager agentManager;
 	
 	@Inject
 	private IDataOperator dataOperator;
@@ -126,9 +118,9 @@ public class LocalProcessManager {
 		ai.setId(idServer.getStringId(AgentInfo.class));
 		ai.setCmd("java -jar test.jar org.jmicro.TestMain");
 		ai.setName(Config.getInstanceName());
-		ai.setStartTime(System.currentTimeMillis()+"");
+		ai.setStartTime(System.currentTimeMillis());
 		
-		String path = AgentManager.ROOT_AGENT + "/" + ai.getName() + ai.getId();
+		String path = ChoyConstants.ROOT_AGENT + "/" + ai.getName() + ai.getId();
 		String jsonData = JsonUtils.getIns().toJson(ai);
 		
 		if(!dataOperator.exist(path)) {
@@ -141,13 +133,13 @@ public class LocalProcessManager {
 	}
 
 	public void init() {
-		long ticker = 1000*30L;
+		/*long ticker = 1000*30L;
 		TimerTicker.getDefault(ticker).addListener("LocalProcessManagerCreateAgentTimer",
 				(key,i)->{
 					createAgent();
 					TimerTicker.getDefault(ticker).removeListener("LocalProcessManagerCreateAgentTimer", true);
-				},null);
-		insManager.addInstanceListener(insListener);
+				},null);*/
+		//insManager.addInstanceListener(insListener);
 	}
 	
 	public SchedulerResult startService(String processId,String classpaths, String mainClazz,String[] args) {
@@ -189,9 +181,6 @@ public class LocalProcessManager {
 			Process p = pb.start();
 			
 			ProcessInfo pi = new ProcessInfo();
-			pi.setArgs(args);
-			pi.setClasspath(classpaths);
-			pi.setMainClazz(mainClazz);
 			pi.setProcess(p);
 			pi.setId(processId);
 			
@@ -217,9 +206,6 @@ public class LocalProcessManager {
 			si.setAlive(false);
 		} else {
 			si.setAlive(true);
-			si.setArgs(pi.getArgs());
-			si.setClasspath(pi.getClasspath());
-			si.setMainClazz(pi.getMainClazz());
 			si.setProcessId(pi.getId());
 		}
 		return si;
@@ -232,8 +218,7 @@ public class LocalProcessManager {
 			pi.getProcess().destroy();
 			result.setSuccess(true);
 			processes.remove(processId);
-			logger.warn("Stop pid:{},mainClazz:{},args:{}",processId,
-					pi.getClass(),Arrays.asList(pi.getArgs()).toString());
+			logger.warn("Stop pid:{},mainClazz:{}",processId,pi.getClass());
 		} else {
 			result.setSuccess(false);
 			result.setMsg("Process processId ["+processId+"] not exists");

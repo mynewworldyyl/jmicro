@@ -23,6 +23,7 @@ import java.util.Set;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import org.jmicro.api.IListener;
+import org.jmicro.api.annotation.Cfg;
 import org.jmicro.api.annotation.Component;
 import org.jmicro.api.config.Config;
 import org.jmicro.api.raft.IChildrenListener;
@@ -66,6 +67,9 @@ public class ServiceManager {
 	private Set<IServiceListener> listeners = new HashSet<>();
 	
 	private IDataOperator dataOperator;
+	
+	@Cfg("/ServiceManager/openDebug")
+	private boolean openDebug = false;
 	
 	private ReentrantReadWriteLock rwLocker = new ReentrantReadWriteLock();
 
@@ -118,7 +122,10 @@ public class ServiceManager {
 			public void childrenChanged(int type,String parent, String child,String data) {
 				String p = parent+"/"+child;
 				if(IListener.ADD == type) {
-					logger.debug("Service add,path:{}",p.substring(Config.ServiceRegistDir.length()+1));
+					if(openDebug) {
+						logger.debug("Service add,path:{}",p.substring(Config.ServiceRegistDir.length()+1));
+					}
+					
 					childrenAdd(p,data);
 				}else if(IListener.REMOVE == type) {
 					logger.debug("Service remove, path:{}",p.substring(Config.ServiceRegistDir.length()+1));

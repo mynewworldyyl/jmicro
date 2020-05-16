@@ -49,7 +49,9 @@ public class ChildrenManager {
 	 * 监听孩子增加或删除
 	 */
 	public void addChildrenListener(String path, IChildrenListener lis) {
-		logger.debug("Add children listener for: {}", path);
+		if(this.openDebug)
+			logger.debug("Add children listener for: {}", path);
+		
 		if (childrenListeners.containsKey(path)) {
 			//指定路经的监听器已经存在了
 			Set<IChildrenListener> l = childrenListeners.get(path);
@@ -148,7 +150,9 @@ public class ChildrenManager {
 			children.removeAll(removes);
 		}
 
-		Set<IChildrenListener> lis = childrenListeners.get(path);
+		 Set<IChildrenListener> lis = new HashSet<>();
+		 lis.addAll(childrenListeners.get(path));
+		 
 		if (lis != null && !lis.isEmpty()) {
 
 			if (!adds.isEmpty()) {
@@ -179,7 +183,8 @@ public class ChildrenManager {
 	private void watchChildren(String path) {
 		GetChildrenBuilder getChildBuilder = this.curator.getChildren();
 		try {
-			logger.debug("watchChildren: {}", path);
+			if(this.openDebug)
+				logger.debug("watchChildren: {}", path);
 			getChildBuilder.usingWatcher(watcher).forPath(path);
 		} catch (KeeperException.NoNodeException e) {
 			logger.error(e.getMessage());
@@ -197,12 +202,13 @@ public class ChildrenManager {
 		}
 		
 		synchronized(syncLocker) {
-			for (String c : this.path2Children.get(path)) {
+			 Set<String> set = new HashSet<>();
+			 set.addAll(this.path2Children.get(path));
+			 for(String c : set) {
 				String data = op.getData(path + "/" + c);
 				l.childrenChanged(IListener.ADD, path, c, data);
-			}
+			 }
 		}
-		
 	}
 
 	public Set<String> getChildrenFromCache(String path) {

@@ -6,7 +6,7 @@ import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.Inject;
 import org.jmicro.api.annotation.Service;
 import org.jmicro.api.i18n.I18NManager;
-import org.jmicro.mng.inter.ICommonManager;
+import org.jmicro.mng.api.ICommonManager;
 
 @Component
 @Service(namespace="mng", version="0.0.1")

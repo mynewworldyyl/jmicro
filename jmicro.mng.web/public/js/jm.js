@@ -7,6 +7,10 @@ jm.mng = {
 
     ROUTER_ROOT : ROOT + '/routeRules',
     CONFIG_ROOT : ROOT,
+    AGENT_ROOT : ROOT + '/choreography/agents',
+    INSTANCE_ROOT : ROOT + '/choreography/instances',
+    DEP_ROOT : ROOT + '/choreography/deployments',
+
     RULE_ID: 'org.jmicro.api.route.RouteRule',
 
     cache:{
@@ -388,7 +392,7 @@ jm.mng = {
             return req;
         },
 
-        sn:'org.jmicro.mng.inter.ICommonManager',
+        sn:'org.jmicro.mng.api.ICommonManager',
         ns : MNG,
         v:'0.0.1',
     },
@@ -493,7 +497,7 @@ jm.mng = {
             return req;
         },
 
-        sn:'org.jmicro.mng.inter.IMonitorServerManager',
+        sn:'org.jmicro.mng.api.IMonitorServerManager',
         ns : MNG,
         v:'0.0.1',
     },
@@ -522,13 +526,6 @@ jm.mng = {
             return jm.mng.callRpc(req,jm.rpc.Constants.PROTOCOL_BIN, jm.rpc.Constants.PROTOCOL_JSON);
         },
 
-        endResouce: function (name){
-            let req =  this.__ccreq();
-            req.method = 'endResouce';
-            req.args = [name];
-            return jm.mng.callRpc(req,jm.rpc.Constants.PROTOCOL_JSON, jm.rpc.Constants.PROTOCOL_JSON);
-        },
-
         deleteResource: function (name){
             let req =  this.__ccreq();
             req.method = 'deleteResource';
@@ -546,6 +543,50 @@ jm.mng = {
 
         sn:'org.jmicro.choreography.api.IResourceResponsitory',
         ns : 'rrs',
+        v:'0.0.1',
+    },
+
+    deployment : {
+
+        getDeploymentList: function (){
+            let req =  this.__ccreq();
+            req.method = 'getDeploymentList';
+            req.args = [];
+            let self = this;
+            return jm.mng.callRpc(req,jm.rpc.Constants.PROTOCOL_JSON, jm.rpc.Constants.PROTOCOL_JSON);
+        },
+
+        addDeployment: function (deployment){
+            let req =  this.__ccreq();
+            req.method = 'addDeployment';
+            req.args = [deployment];
+            return jm.mng.callRpc(req,jm.rpc.Constants.PROTOCOL_JSON, jm.rpc.Constants.PROTOCOL_JSON);
+        },
+
+        deleteDeployment: function (id){
+            let req =  this.__ccreq();
+            req.method = 'deleteDeployment';
+            req.args = [id];
+            return jm.mng.callRpc(req,jm.rpc.Constants.PROTOCOL_JSON, jm.rpc.Constants.PROTOCOL_JSON);
+        },
+
+        updateDeployment: function (deployment){
+            let req =  this.__ccreq();
+            req.method = 'updateDeployment';
+            req.args = [deployment];
+            return jm.mng.callRpc(req,jm.rpc.Constants.PROTOCOL_JSON, jm.rpc.Constants.PROTOCOL_JSON);
+        },
+
+        __ccreq:function(){
+            let req = {};
+            req.serviceName=this.sn;
+            req.namespace = this.ns;
+            req.version = this.v;
+            return req;
+        },
+
+        sn:'org.jmicro.choreography.api.IDeploymentService',
+        ns : 'mng',
         v:'0.0.1',
     },
 

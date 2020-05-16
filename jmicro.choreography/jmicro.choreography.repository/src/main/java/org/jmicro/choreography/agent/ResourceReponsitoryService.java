@@ -259,7 +259,7 @@ public class ResourceReponsitoryService implements IResourceResponsitory{
 				//最后一块
 				byte[] destData = new byte[len];
 				System.arraycopy(data, 0, destData, 0, len);
-				
+				data = destData;
 			}
 			
 		} catch (IOException e) {

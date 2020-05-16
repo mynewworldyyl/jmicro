@@ -30,6 +30,7 @@ public interface Constants {
 	public static final String CFG_ROOT="/jmicro";
 	
 	public static final String LOCAL_DATA_DIR = "localDataDir";
+	public static final String INSTANCE_DATA_DIR = "instanceDataDir";
 	
 	//在CFG_ROOT下目录名称前缀为JMICRO系统保留，应用不可使用
 	public static final String DEFAULT_PREFIX="JMICRO";

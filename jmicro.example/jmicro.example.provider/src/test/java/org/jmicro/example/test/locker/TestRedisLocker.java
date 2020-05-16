@@ -28,8 +28,11 @@ public class TestRedisLocker extends JMicroBaseTestCase{
     	ILockerManager lm = of.get(ILockerManager.class);
        	
        ILocker l = lm.getLocker("testLock1");
+       ILocker l2 = lm.getLocker("testLock1");
        if(l.tryLock(5,10*1000)) {
+    	    l2.tryLock(5,10*1000);
     		System.out.println("Success to get locker");
+    	    l2.unLock();
     		l.unLock();
        } else {
     	   System.out.println("Fail to get locker");
@@ -70,11 +73,16 @@ public class TestRedisLocker extends JMicroBaseTestCase{
     	new Thread(()->{
     		while(true) {
    			   ILocker l = lm.getLocker("testLock1");
+   			   ILocker l2 = lm.getLocker("testLock1");
    		       if(l.tryLock(5,10*1000)) {
+   		    	    l2.tryLock(5,10*1000);
    		    		index++;
    		    		System.out.println("T2__"+index);
+   		    		l2.unLock();
    		    		l.unLock();
    		       }
+   		       
+   		       
    		    try {
 				Thread.sleep(10);
 			} catch (InterruptedException e) {

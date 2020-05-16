@@ -15,7 +15,7 @@ import org.jmicro.api.monitor.v2.MonitorServerStatus;
 import org.jmicro.api.objectfactory.AbstractClientServiceProxy;
 import org.jmicro.api.registry.ServiceItem;
 import org.jmicro.common.util.StringUtils;
-import org.jmicro.mng.inter.IMonitorServerManager;
+import org.jmicro.mng.api.IMonitorServerManager;
 
 @Component
 @Service(namespace="mng",version="0.0.1",debugMode=0,

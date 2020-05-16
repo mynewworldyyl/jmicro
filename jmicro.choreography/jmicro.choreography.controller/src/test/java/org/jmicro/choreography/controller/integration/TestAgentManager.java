@@ -17,11 +17,11 @@
 package org.jmicro.choreography.controller.integration;
 
 import org.jmicro.api.IListener;
-import org.jmicro.api.choreography.base.AgentInfo;
-import org.jmicro.api.choreography.controller.AgentManager;
-import org.jmicro.api.choreography.controller.IAgentListener;
+import org.jmicro.api.choreography.ChoyConstants;
 import org.jmicro.api.idgenerator.ComponentIdServer;
 import org.jmicro.api.raft.IDataOperator;
+import org.jmicro.choreography.assignment.AgentManager;
+import org.jmicro.choreography.base.AgentInfo;
 import org.jmicro.common.util.JsonUtils;
 import org.jmicro.test.JMicroBaseTestCase;
 import org.junit.Assert;
@@ -41,9 +41,9 @@ public class TestAgentManager extends JMicroBaseTestCase{
 		ai.setId(idserver.getStringId(AgentInfo.class));
 		ai.setCmd("java -jar test.jar org.jmicro.TestMain");
 		ai.setName("JmicroTestAgentmanager");
-		ai.setStartTime(System.currentTimeMillis()+"");
+		ai.setStartTime(System.currentTimeMillis());
 		
-		String path = AgentManager.ROOT_AGENT + "/" + ai.getName() + ai.getId();
+		String path = ChoyConstants.ROOT_AGENT + "/" + ai.getName() + ai.getId();
 		String jsonData = JsonUtils.getIns().toJson(ai);
 		
 		IDataOperator dataOperator = of.get(IDataOperator.class);

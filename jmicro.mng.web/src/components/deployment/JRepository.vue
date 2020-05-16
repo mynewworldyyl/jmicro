@@ -160,7 +160,7 @@
                             if(success) {
                                 self.finishSize =  self.getFinishSize(blockSize,curBlock);
                                 self.costTime = self.getCostTime(startTime);
-                                self.progressVal = self.getProgressVal(blockSize,curBlock,totalLen);
+                                self.progressVal = parseInt(self.getProgressVal(blockSize,curBlock,totalLen));
                                 self.uploadSpeed = self.getSpeedVal(blockSize,curBlock,startTime);
 
                                 if(curBlock < blockNum) {
@@ -293,45 +293,6 @@
 <style>
     .JRepository{
 
-    }
-    .configItemTalbe {
-        border-collapse: collapse;
-        margin: 0 auto;
-        text-align: left;
-    }
-
-    .configItemTalbe th {
-        font-size: medium;
-        font-family: "Microsoft Yahei", "微软雅黑", Tahoma, Arial, Helvetica, STHeiti;
-
-    }
-
-
-
-    .configItemTalbe td, table th {
-        border: 1px solid #cad9ea;
-        color: #666;
-        height: 30px;
-        max-width: 95px;
-        max-height: 50px;
-        overflow: hidden; /*超过区域就隐藏*/
-        /*display: -webkit-box;*/ /*-webkit- 是浏览器前缀，兼容旧版浏览器的 即为display: box;*/
-        -webkit-line-clamp: 2; /*限制在一个块元素显示的文本的行数*/
-        -webkit-box-orient: vertical; /*box-orient 属性规定框的子元素应该被水平或垂直排列。horizontal：水平，vertical：垂直*/
-        word-break: break-all; /*word-break 属性规定自动换行的处理方法 ，break-all：允许在单词内换行。*/
-    }
-
-    .configItemTalbe thead th {
-        background-color: #CCE8EB;
-        width: 100px;
-    }
-
-    .configItemTalbe tr:nth-child(odd) {
-        background: #fff;
-    }
-
-    .configItemTalbe tr:nth-child(even) {
-        background: #F5FAFA;
     }
 
 </style>

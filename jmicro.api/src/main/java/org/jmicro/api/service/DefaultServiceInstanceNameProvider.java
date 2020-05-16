@@ -18,13 +18,11 @@ public class DefaultServiceInstanceNameProvider implements IServiceInstanceNameG
 	@Override
 	public String getInstanceName(IDataOperator dataOperator,Config config) {
 		
-		String dataDir = config.getString(Constants.LOCAL_DATA_DIR, null);
+		String dataDir = Config.getCommandParam(Constants.LOCAL_DATA_DIR);
 		
 		if(StringUtils.isEmpty(dataDir)) {
-			dataDir = System.getProperty("user.dir");
+			throw new CommonException(dataDir + " cannot be NULL");
 		}
-		
-		dataDir = dataDir + File.separatorChar + "data";
 		
 		String insName = null;
 		
@@ -56,6 +54,7 @@ public class DefaultServiceInstanceNameProvider implements IServiceInstanceNameG
 		}
 		
 		if(insName == null) {
+			//实例名前缀，默认前缀是instanceName，
 			String tag = config.getString(TAG,TAG);
 			for(int i = 0; i < Integer.MAX_VALUE ; i++) {
 				String name = tag + i;

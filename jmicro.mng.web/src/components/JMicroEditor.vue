@@ -29,7 +29,11 @@
 
                     <JRepository v-else-if="item.group == 'repository'" :item="item"></JRepository>
                     <JHost v-else-if="item.group == 'host'" :item="item"></JHost>
-                    <JInstance v-else-if="item.group == 'instance'" :item="item"></JInstance>
+                    <JDeploymentDesc v-else-if="item.group == 'deploymentDesc'" :item="item"></JDeploymentDesc>
+
+                    <JAgent v-else-if="item.group == 'agent'" :item="item"></JAgent>
+                    <JProcess v-else-if="item.group == 'process'" :item="item"></JProcess>
+
 
                 </TabPane>
             </Tabs>
@@ -59,7 +63,9 @@
 
     import JRepository from './deployment/JRepository.vue'
     import JHost from './deployment/JHost.vue'
-    import JInstance from './deployment/JInstance.vue'
+    import JDeploymentDesc from './deployment/JDeploymentDesc.vue'
+    import JAgent from './deployment/JAgent.vue'
+    import JProcess from './deployment/JProcess.vue'
 
     import TreeNode from "./common/JTreeNode.js"
 
@@ -82,8 +88,11 @@
             JConfigItem,
             JHost,
             JRepository,
-            JInstance,
+            JDeploymentDesc,
             JShell,
+            JAgent,
+            JProcess,
+
         },
 
         data () {

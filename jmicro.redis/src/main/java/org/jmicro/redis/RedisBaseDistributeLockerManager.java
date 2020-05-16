@@ -16,6 +16,10 @@
  */
 package org.jmicro.redis;
 
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
+
 import org.jmicro.api.annotation.Component;
 import org.jmicro.api.annotation.Inject;
 import org.jmicro.api.cache.lock.ILocker;
@@ -36,6 +40,11 @@ import redis.clients.jedis.JedisPool;
 @Component(active=true,value="redisDLockerManager",side=Constants.SIDE_ANY)
 public class RedisBaseDistributeLockerManager implements ILockerManager {
 
+	private static final ThreadLocal<Map<String,AtomicInteger>> tl = new ThreadLocal<Map<String,AtomicInteger>>();
+	static {
+		tl.set(new HashMap<String,AtomicInteger>());
+	}
+	
 	@Inject
 	private JedisPool pool;
 	
@@ -66,7 +75,7 @@ public class RedisBaseDistributeLockerManager implements ILockerManager {
 		 */
 		@Override
 		public boolean tryLock(int checkIntervalWithMillisenconds) {
-			//最长持锁时间10分钟
+			//最长持锁时间1分钟
 			return tryLock(checkIntervalWithMillisenconds,60000);
 		}
 
@@ -76,6 +85,15 @@ public class RedisBaseDistributeLockerManager implements ILockerManager {
 				//同一个锁实例，在未解锁前，不能重复上锁，但是解锁之后，可以再锁
 				throw new CommonException(resource + " have been lock with Object:" + toString());
 			}
+			
+			AtomicInteger cnt = getLockCnt(resource);
+			if(cnt.get() > 0) {
+				//同一个线程对同一个资源取锁
+				lockStat = true;
+				cnt.incrementAndGet();
+				return true;
+			}
+			
 			if(checkIntervalWithMillisenconds <= 0) {
 				checkIntervalWithMillisenconds = 10;
 			}
@@ -83,7 +101,7 @@ public class RedisBaseDistributeLockerManager implements ILockerManager {
 			Jedis jedis = null;
 			try {
 				jedis = pool.getResource();
-				String rst = jedis.set(resource, "dd",NX,EX,timeoutWithMillisenconds);
+				String rst = jedis.set(resource, "dd",NX,PX,timeoutWithMillisenconds);
 				long inv = timeoutWithMillisenconds;
 				while(!"OK".equals(rst)) {
 					try {
@@ -94,11 +112,21 @@ public class RedisBaseDistributeLockerManager implements ILockerManager {
 					
 					inv -= checkIntervalWithMillisenconds;
 					if(inv > 0) {
-						rst = jedis.set(resource, "ddd",NX,EX,timeoutWithMillisenconds);
+						rst = jedis.set(resource, "dd",NX,EX,timeoutWithMillisenconds);
+					 }else {
+						break;
+					}
+					
+					if("OK".equals(rst)) {
+						break;
 					}
 				}
 				
 				lockStat = "OK".equals(rst);
+				
+				if(lockStat) {
+					cnt.incrementAndGet();
+				}
 				
 				return lockStat;
 			}finally{
@@ -110,18 +138,47 @@ public class RedisBaseDistributeLockerManager implements ILockerManager {
 
 		@Override
 		public boolean unLock() {
+			if(!lockStat) {
+				throw new CommonException(resource + " not in lock status" + toString());
+			}
+			
 			Jedis jedis = null;
 			try {
-				jedis = pool.getResource();
-				Long rst = jedis.del(resource);
-				lockStat = rst != 1;
-				return !lockStat;
+				AtomicInteger cnt = getLockCnt(resource);
+				int c = cnt.decrementAndGet();
+				if(c == 0) {
+					jedis = pool.getResource();
+					Long rst = jedis.del(resource);
+					lockStat = rst == 1;
+					if(lockStat) {
+						tl.get().remove(resource);
+					}
+					return lockStat;
+				} else {
+					return true;
+				}
+				
 			}finally{
 				if(jedis != null) {
 					jedis.close();
 				}
 			}
 		}
+	}
+	
+	private static AtomicInteger getLockCnt(String resource) {
+		Map<String,AtomicInteger> m = tl.get();
+		if(m == null) {
+			m = new HashMap<>();
+			tl.set(m);
+		}
+		
+		if(!m.containsKey(resource)) {
+			m.put(resource, new AtomicInteger());
+		}
+		
+		return m.get(resource);
+		
 	}
 }
 

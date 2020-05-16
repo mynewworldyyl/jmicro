@@ -28,9 +28,12 @@
                       <Icon type="ios-analytics" />
                       DEPLOYMENT
                   </template>
+                  <Menu-item name="choreography"><Icon type="ios-cog"></Icon>CHOREOGRAPHY</Menu-item>
+                  <Menu-item name="agent"><Icon type="ios-cog"></Icon>AGENTS</Menu-item>
+                  <Menu-item name="process"><Icon type="ios-cog"></Icon>PROCESS</Menu-item>
                   <Menu-item name="repository"><Icon type="ios-people"></Icon>REPOSITORY</Menu-item>
+                  <Menu-item name="deploymentDesc"><Icon type="ios-alert" />DEPLOY DESC</Menu-item>
                   <Menu-item name="host"><Icon type="ios-cog"></Icon>HOST</Menu-item>
-                  <Menu-item name="instance"><Icon type="ios-alert" />INSTANCE</Menu-item>
               </Submenu>
 
               <Submenu name="o">

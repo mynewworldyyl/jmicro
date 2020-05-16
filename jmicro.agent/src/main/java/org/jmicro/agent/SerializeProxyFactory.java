@@ -129,7 +129,7 @@ public class SerializeProxyFactory {
 		//System.out.println(sb.toString());
 		
 		if("org.jmicro.api.net.RpcRequest".equals(cls.getName())) {
-			System.out.println(sb.toString());
+			//System.out.println(sb.toString());
 		}
 		
 		return sb.toString();
@@ -224,7 +224,7 @@ public class SerializeProxyFactory {
 		
 		//System.out.println("\n\n");
 		if("org.jmicro.api.net.RpcRequest".equals(cls.getName())) {
-			System.out.println(sb.toString());
+			//System.out.println(sb.toString());
 		}
 		return sb.toString();
 	}

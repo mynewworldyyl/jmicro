@@ -48,26 +48,39 @@ public class NodeManager {
 	
 	private final Watcher watcher =(WatchedEvent event)->{
 		   String path = event.getPath();
+		   watchNode(path);
 	      if(event.getType() == EventType.NodeCreated){
-	    	  watchNode(path);
+	    	  //watchNode(path);
 	    	  nodeCreate(path);
 	      } else if(event.getType() == EventType.NodeDeleted){
 	    	  logger.info("NodeDeleted for path:'{}'  evnet:{}",path, event);
 	    	  //watchNode(path);
 	    	  nodeDelete(path);
+	      }else if(event.getType() == EventType.NodeDataChanged) {
+	    	  nodeDataChange(path);
 	      }
 	};
 	
 	private void nodeCreate(String path) {
-		String str = op.getData(path);
 		Set<INodeListener> lis = nodeListeners.get(path);
 		if(lis != null && !lis.isEmpty()){
+			String str = op.getData(path);
 			for(INodeListener l : lis){
 				l.nodeChanged(INodeListener.ADD,path, str);
 			}
 		}
 	}
 	
+	private void nodeDataChange(String path) {
+		Set<INodeListener> lis = nodeListeners.get(path);
+		if(lis != null && !lis.isEmpty()){
+			String str = op.getData(path);
+			for(INodeListener l : lis){
+				l.nodeChanged(INodeListener.DATA_CHANGE,path, str);
+			}
+		}
+	}
+
 	private void nodeDelete(String path) {
 		//String str = this.getData(path);
 		Set<INodeListener> lis = nodeListeners.get(path);
@@ -167,8 +180,8 @@ public class NodeManager {
 		ExistsBuilder existsBuilder = this.curator.checkExists();
 		try {
 			Stat stat = existsBuilder.forPath(path);
-			if(openDebug) {
-				//logger.debug("[exist] path {}, Stat {}",path,stat);
+			if(/*openDebug && */stat == null) {
+				logger.debug("Path not found: {}",path);
 			}
 			return stat != null;
 		} catch (KeeperException.NoNodeException e) {

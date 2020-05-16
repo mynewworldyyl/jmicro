@@ -1,0 +1,122 @@
+package org.jmicro.api.choreography;
+
+import java.io.File;
+import java.io.IOException;
+
+import org.jmicro.api.IListener;
+import org.jmicro.api.annotation.Component;
+import org.jmicro.api.annotation.Inject;
+import org.jmicro.api.config.Config;
+import org.jmicro.api.idgenerator.ComponentIdServer;
+import org.jmicro.api.raft.IDataOperator;
+import org.jmicro.common.CommonException;
+import org.jmicro.common.Constants;
+import org.jmicro.common.util.JsonUtils;
+import org.jmicro.common.util.StringUtils;
+import org.jmicro.common.util.SystemUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+@Component(level=100)
+public class Choy {
+	
+	private static final Logger logger = LoggerFactory.getLogger(Choy.class);
+	
+	@Inject
+	private IDataOperator op;
+	
+	@Inject
+	private ComponentIdServer idServer;
+	
+	@Inject
+	private Config cfg;
+	
+	public void ready() {
+		saveProccessId();
+	}
+	
+	private void saveProccessId() {
+		
+		String initProcessInfoPath = cfg.getString(ChoyConstants.PROCESS_INFO_FILE,null);
+		String json = "";
+		
+		if(StringUtils.isEmpty(initProcessInfoPath)) {
+			String dataDir = cfg.getString(Constants.INSTANCE_DATA_DIR,null);
+			if(StringUtils.isEmpty(dataDir)) {
+				throw new CommonException("Data Dir ["+Constants.INSTANCE_DATA_DIR+"] cannot be a file");
+			}
+			initProcessInfoPath = dataDir + File.separatorChar + "processInfo.json";
+		} 
+		
+		File processInfoData = new File(initProcessInfoPath);
+		
+		if(processInfoData.exists()) {
+			json = SystemUtils.getFileString(processInfoData);
+		}else {
+			try {
+				processInfoData.createNewFile();
+			} catch (IOException e) {
+				throw new CommonException("Fail to create file [" +processInfoData+"]");
+			}
+		}
+		
+		logger.info("Origit ProcessInfo:" + json);
+		
+		ProcessInfo pi = null;
+		if(StringUtils.isNotEmpty(json)) {
+			pi = JsonUtils.getIns().fromJson(json, ProcessInfo.class);
+		} else {
+			pi = new ProcessInfo();
+			pi.setAgentHost(Config.getHost());
+			pi.setAgentId(Config.getCommandParam(ChoyConstants.ARG_AGENT_ID));
+			pi.setDepId(Config.getCommandParam(ChoyConstants.ARG_DEP_ID));
+			
+			String id = Config.getCommandParam(ChoyConstants.ARG_INSTANCE_ID);
+			if(StringUtils.isNotEmpty(id)) {
+				pi.setId(id);
+			}else {
+				pi.setId(idServer.getStringId(ProcessInfo.class));
+			}
+			pi.setAgentProcessId(Config.getCommandParam(ChoyConstants.ARG_MYPARENT_ID));
+		}
+		
+		String pid = SystemUtils.getProcessId();
+		logger.info("Process ID:" + pid);
+		pi.setPid(pid);
+		pi.setActive(true);
+		pi.setInstanceName(Config.getInstanceName());
+		pi.setHost(Config.getHost());
+		pi.setDataDir(cfg.getString(Constants.INSTANCE_DATA_DIR,null));
+		
+		String p = ChoyConstants.INS_ROOT+"/" + pi.getId();
+		final String js = JsonUtils.getIns().toJson(pi);
+		op.createNode(p,js ,true);
+		
+		logger.info("Update ProcessInfo:" + js);
+		
+		initProcessInfoPath = cfg.getString(Constants.INSTANCE_DATA_DIR,null) + File.separatorChar + "processInfo.json";
+		SystemUtils.setFileString(initProcessInfoPath, js);
+		
+		/*op.addDataListener(p, (path,jsonStr)->{
+			ProcessInfo pi0 = JsonUtils.getIns().fromJson(jsonStr, ProcessInfo.class);
+			if(!pi0.isActive()) {
+				logger.warn("JVM exit by other system");
+				System.exit(0);
+			}
+		});*/
+		
+		op.addNodeListener(p, (int type, String path,String data)->{
+			//防止被误删除，只要此进程还在，此结点就不应该消失
+			if(type == IListener.REMOVE) {
+				op.createNode(p,js ,true);
+			}else if(type == IListener.DATA_CHANGE) {
+				ProcessInfo pi0 = JsonUtils.getIns().fromJson(data, ProcessInfo.class);
+				if(!pi0.isActive()) {
+					logger.warn("JVM exit by other system");
+					System.exit(0);
+				}
+			}
+		});
+		
+	}
+}

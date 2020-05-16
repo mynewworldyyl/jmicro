@@ -44,8 +44,7 @@ public class DataManager {
 	    	  synchronized(syncLocker) {
 	    		  dataChange(path);
 	    	  }
-	      }
-	      
+	      } 
 	};
 	
 	private void dataChange(String path){

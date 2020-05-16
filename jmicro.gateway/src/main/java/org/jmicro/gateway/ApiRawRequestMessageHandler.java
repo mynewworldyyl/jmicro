@@ -335,11 +335,10 @@ public class ApiRawRequestMessageHandler implements IMessageHandler{
 			return new Object[0];
 		} else {
 			
-			Object[] args = new Object[jsonArgs.length];
 			Method m = this.getSrvMethod(srvCls, methodName);
 			
 			Class<?>[] clses = m.getParameterTypes();
-			args = new Object[clses.length];
+			Object[] args = new Object[clses.length];
 			
 			int i = 0;
 			int j = 0;

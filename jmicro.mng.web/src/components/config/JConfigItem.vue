@@ -29,7 +29,8 @@
       <Modal v-model="addNodeDialog" :loading="true" ref="addNodeDialog" width="360" @on-ok="onAddOk()">
           <table>
               <tr><td>NAME</td><td><input type="input" id="nodeName" v-model="inputName"/></td></tr>
-              <tr><td>VALUE</td><td><input type="input" id="nodeValue" v-model="inputVal" /></td></tr>
+              <tr><td>VALUE</td><td><Input id="nodeValue"  class='textarea' :rows="5" :autosize="{maxRows:3,minRows: 3}"
+                                           type="textarea" v-model="inputVal"/></td></tr>
               <tr><td>DIRECTORY</td><td><input type="checkbox" id="idDir" v-model="isDir"/></td></tr>
               <tr><td colspan="2" style="color:red">{{errMsg}}</td></tr>
           </table>
@@ -38,7 +39,9 @@
       <Modal v-model="updateNodeDialog" width="360" @on-ok="onUpdateOk()">
           <table>
               <tr><td>NAME</td><td><input type="input" disabled  v-model="inputName"/></td></tr>
-              <tr><td>VALUE</td><td><input type="input"  v-model="inputVal"/></td></tr>
+              <tr><td>VALUE</td><td><Input class='textarea' :rows="5" :autosize="{maxRows:8,minRows: 3}"
+                                           type="textarea" v-model="inputVal"/></td></tr>
+
           </table>
       </Modal>
 

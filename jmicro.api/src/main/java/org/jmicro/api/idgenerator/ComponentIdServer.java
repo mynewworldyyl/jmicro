@@ -40,7 +40,7 @@ public class ComponentIdServer /*implements IIdClient,IIdServer*/{
 	/**
 	 * idgenerator-打头的Key都放到此配置中,*代表ID类的全名
 	 */
-	@Cfg(value=ID_CONFIG_KEY_PREFIX+"*")
+	@Cfg(value=ID_CONFIG_KEY_PREFIX+"*", defGlobal=true)
 	private Map<String,Integer> cacheCofig = new HashMap<>();
 	
 	@Inject
