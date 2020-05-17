@@ -181,7 +181,7 @@ public class NodeManager {
 		ExistsBuilder existsBuilder = this.curator.checkExists();
 		try {
 			Stat stat = existsBuilder.forPath(path);
-			if(/*openDebug && */stat == null) {
+			if(openDebug && stat == null) {
 				logger.debug("Path not found: {}",path);
 			}
 			return stat != null;

@@ -552,7 +552,7 @@ class ClientServiceProxyManager {
 		 classGenerator.addInterface(ICheckable.class);
 		 
 		 classGenerator.addField("public static java.lang.reflect.Method[] ms = null;");
-		 //classGenerator.addField("private " + InvocationHandler.class.getName() + " handler = new org.jmicro.api.client.ServiceInvocationHandler(this);");
+		 //classGenerator.addField("private " + InvocationHandler.class.getName() + " handler = new cn.jmicro.api.client.ServiceInvocationHandler(this);");
        
 		 //classGenerator.addField("private boolean enable="+enable+";");
 		 classGenerator.addMethod("public java.lang.String getNamespace(){ return \"" + namespace + "\";}");
@@ -592,7 +592,7 @@ class ClientServiceProxyManager {
            	 	code.append("; ");
             }
             
-           /* code.append(" if(getItem() == null) {throw new org.jmicro.common.CommonException(\"Service ")
+           /* code.append(" if(getItem() == null) {throw new cn.jmicro.common.CommonException(\"Service ")
             	.append(cls.getName()).append(" not available\"); }");*/
             
             code.append(" try { ");
@@ -600,29 +600,29 @@ class ClientServiceProxyManager {
             code.append(" this.backupAndSetContext();");
             
             //backup pre service info
-            code.append(" java.lang.String ns = org.jmicro.api.JMicroContext.get().getString(org.jmicro.api.JMicroContext.CLIENT_NAMESPACE, \"\");");
-            code.append(" java.lang.String sn = org.jmicro.api.JMicroContext.get().getString(org.jmicro.api.JMicroContext.CLIENT_SERVICE, \"\");");
-            code.append(" java.lang.String ver = org.jmicro.api.JMicroContext.get().getString(org.jmicro.api.JMicroContext.CLIENT_VERSION, \"\");");
-            code.append(" java.lang.String mt = org.jmicro.api.JMicroContext.get().getString(org.jmicro.api.JMicroContext.CLIENT_METHOD, \"\");");
+            code.append(" java.lang.String ns = cn.jmicro.api.JMicroContext.get().getString(cn.jmicro.api.JMicroContext.CLIENT_NAMESPACE, \"\");");
+            code.append(" java.lang.String sn = cn.jmicro.api.JMicroContext.get().getString(cn.jmicro.api.JMicroContext.CLIENT_SERVICE, \"\");");
+            code.append(" java.lang.String ver = cn.jmicro.api.JMicroContext.get().getString(cn.jmicro.api.JMicroContext.CLIENT_VERSION, \"\");");
+            code.append(" java.lang.String mt = cn.jmicro.api.JMicroContext.get().getString(cn.jmicro.api.JMicroContext.CLIENT_METHOD, \"\");");
             
             //set this invoke info
-            code.append(" org.jmicro.api.JMicroContext.get().setString(org.jmicro.api.JMicroContext.CLIENT_NAMESPACE, getNamespace());");
-            code.append(" org.jmicro.api.JMicroContext.get().setString(org.jmicro.api.JMicroContext.CLIENT_SERVICE, getServiceName());");
-            code.append(" org.jmicro.api.JMicroContext.get().setString(org.jmicro.api.JMicroContext.CLIENT_VERSION, getVersion());");
-            code.append(" org.jmicro.api.JMicroContext.get().setString(org.jmicro.api.JMicroContext.CLIENT_METHOD, \""+m.getName()+"\");");
+            code.append(" cn.jmicro.api.JMicroContext.get().setString(cn.jmicro.api.JMicroContext.CLIENT_NAMESPACE, getNamespace());");
+            code.append(" cn.jmicro.api.JMicroContext.get().setString(cn.jmicro.api.JMicroContext.CLIENT_SERVICE, getServiceName());");
+            code.append(" cn.jmicro.api.JMicroContext.get().setString(cn.jmicro.api.JMicroContext.CLIENT_VERSION, getVersion());");
+            code.append(" cn.jmicro.api.JMicroContext.get().setString(cn.jmicro.api.JMicroContext.CLIENT_METHOD, \""+m.getName()+"\");");
             
-            //code.append(" org.jmicro.api.registry.ServiceMethod poSm = super.getItem().getMethod(\"").append(m.getName()).append("\", args); ");
-            //code.append(" org.jmicro.api.JMicroContext.get().configMonitor(poSm.getMonitorEnable(), super.getItem().getMonitorEnable()); ");
-            //code.append(" org.jmicro.api.JMicroContext.get().setParam(org.jmicro.common.Constants.SERVICE_METHOD_KEY, poSm);");
-            //code.append(" org.jmicro.api.JMicroContext.get().setParam(org.jmicro.common.Constants.SERVICE_ITEM_KEY, super.getItem());");
+            //code.append(" cn.jmicro.api.registry.ServiceMethod poSm = super.getItem().getMethod(\"").append(m.getName()).append("\", args); ");
+            //code.append(" cn.jmicro.api.JMicroContext.get().configMonitor(poSm.getMonitorEnable(), super.getItem().getMonitorEnable()); ");
+            //code.append(" cn.jmicro.api.JMicroContext.get().setParam(cn.jmicro.common.Constants.SERVICE_METHOD_KEY, poSm);");
+            //code.append(" cn.jmicro.api.JMicroContext.get().setParam(cn.jmicro.common.Constants.SERVICE_ITEM_KEY, super.getItem());");
             
             code.append(" java.lang.Object ret = (java.lang.Object)this.invoke(this, ms[" + i + "], args);");
             
             //restore pre service info
-            code.append(" org.jmicro.api.JMicroContext.get().setString(org.jmicro.api.JMicroContext.CLIENT_NAMESPACE, ns);");
-            code.append(" org.jmicro.api.JMicroContext.get().setString(org.jmicro.api.JMicroContext.CLIENT_SERVICE, sn);");
-            code.append(" org.jmicro.api.JMicroContext.get().setString(org.jmicro.api.JMicroContext.CLIENT_VERSION, ver);");
-            code.append(" org.jmicro.api.JMicroContext.get().setString(org.jmicro.api.JMicroContext.CLIENT_METHOD, mt);");
+            code.append(" cn.jmicro.api.JMicroContext.get().setString(cn.jmicro.api.JMicroContext.CLIENT_NAMESPACE, ns);");
+            code.append(" cn.jmicro.api.JMicroContext.get().setString(cn.jmicro.api.JMicroContext.CLIENT_SERVICE, sn);");
+            code.append(" cn.jmicro.api.JMicroContext.get().setString(cn.jmicro.api.JMicroContext.CLIENT_VERSION, ver);");
+            code.append(" cn.jmicro.api.JMicroContext.get().setString(cn.jmicro.api.JMicroContext.CLIENT_METHOD, mt);");
             
             if (!Void.TYPE.equals(rt)){
              //code.append("System.out.println(ret);");

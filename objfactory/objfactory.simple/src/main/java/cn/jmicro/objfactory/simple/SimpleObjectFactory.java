@@ -70,9 +70,9 @@ import cn.jmicro.common.util.StringUtils;
 /**
  * 1. 创建对像全部单例,所以不保证线程安全
  * 2. 存在3种类型代理对象,分别是：
- * 		a. Component.lazy注解指定的本地懒加载代理对像，由org.jmicro.api.objectfactory.ProxyObject接口标识;
- * 		b. Service注解确定的远程服务对象，由org.jmicro.api.service.IServerServiceProxy抽像标识
- * 		c. Reference注解确定的远程服务代理对象org.jmicro.api.client.AbstractClientServiceProxy
+ * 		a. Component.lazy注解指定的本地懒加载代理对像，由cn.jmicro.api.objectfactory.ProxyObject接口标识;
+ * 		b. Service注解确定的远程服务对象，由cn.jmicro.api.service.IServerServiceProxy抽像标识
+ * 		c. Reference注解确定的远程服务代理对象cn.jmicro.api.client.AbstractClientServiceProxy
  * 
  * 
  * @author Yulei Ye
@@ -936,8 +936,8 @@ public class SimpleObjectFactory implements IObjectFactory {
 			//对某些类,命令行可以指定特定组件实例名称,系统对该类使用指定实例,忽略别的实例
 			srv = this.getCommandSpecifyConponent(f);
 			
-			/*if(refCls.getName().equals("org.apache.ibatis.session.SqlSessionFactory")) {
-				logger.debug("org.jmicro.ext.mybatis.CurSqlSessionFactory");
+			/*if(refCls.getName().equals("cn.apache.ibatis.session.SqlSessionFactory")) {
+				logger.debug("cn.jmicro.ext.mybatis.CurSqlSessionFactory");
 			}*/
 			
 			if(srv == null && f.isAnnotationPresent(Inject.class)){
@@ -1187,7 +1187,7 @@ public class SimpleObjectFactory implements IObjectFactory {
 		 
 		 
 		 //classGenerator.addField("public static java.lang.reflect.Method[] methods;");
-		 //classGenerator.addField("private " + InvocationHandler.class.getName() + " handler = new org.jmicro.api.client.ServiceInvocationHandler(this);");
+		 //classGenerator.addField("private " + InvocationHandler.class.getName() + " handler = new cn.jmicro.api.client.ServiceInvocationHandler(this);");
       
 /*		 classGenerator.addField("private boolean enable=true;");
 		 classGenerator.addMethod("public java.lang.String getNamespace(){ return \"" + ServiceItem.namespace(srvAnno.namespace()) + "\";}");
@@ -1201,7 +1201,7 @@ public class SimpleObjectFactory implements IObjectFactory {
 		 Method[] ms1 = srvInterface.getMethods();
 		 
 		 //Method[] ms2 = new Method[ms1.length];
-		/* if(cls.getName().equals("org.jmicro.example.provider.TestRpcServiceImpl")) {
+		/* if(cls.getName().equals("cn.jmicro.example.provider.TestRpcServiceImpl")) {
 			 System.out.println("");
 		 }*/
 		 logger.debug("Create Service: {}",cls.getName());
@@ -1308,7 +1308,7 @@ public class SimpleObjectFactory implements IObjectFactory {
 		cg.addField("private java.lang.Object[] conArgs;");
 		
 		cg.addField("public static java.lang.reflect.Method[] methods;");
-		cg.addField("public static org.jmicro.objfactory.simple.SimpleObjectFactory factory;");
+		cg.addField("public static cn.jmicro.objfactory.simple.SimpleObjectFactory factory;");
 		
 		Class<?> cl = cg.toClass();
 		
