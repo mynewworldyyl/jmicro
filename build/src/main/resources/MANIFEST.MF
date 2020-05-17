@@ -1,0 +1,45 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: cn.jmicro.all
+Bundle-Vendor: JMicro
+Bundle-SymbolicName: cn.jmicro.all;singleton:=true
+Bundle-Version: 0.0.1.SNAPSHOT
+Eclipse-LazyStart: true
+Bundle-ActivationPolicy: lazy
+Bundle-Localization: plugin
+Bundle-Copyright: Copyright (c) 2008, 2012 SAP AG, IBM Corporation and others. 
+ All rights reserved. This program and the accompanying materials 
+ are made available under the terms of the Eclipse Public License v1.0 
+ which accompanies this distribution, and is available at 
+ http://www.eclipse.org/legal/epl-v10.html
+Export-Package: cn.jmicro.api,
+ cn.jmicro.api.annotation,
+ cn.jmicro.api.annotation.channel,
+ cn.jmicro.api.choreography.agent,
+ cn.jmicro.api.choreography.base,
+ cn.jmicro.api.choreography.cmd,
+ cn.jmicro.api.choreography.controller,
+ cn.jmicro.api.classloader,
+ cn.jmicro.api.client,
+ cn.jmicro.api.codec,
+ cn.jmicro.api.codec.typecoder,
+ cn.jmicro.api.config,
+ cn.jmicro.api.debug,
+ cn.jmicro.api.degrade,
+ cn.jmicro.api.exception,
+ cn.jmicro.api.executor,
+ cn.jmicro.api.gateway,
+ cn.jmicro.api.http.annotation,
+ cn.jmicro.api.idgenerator,
+ cn.jmicro.api.limitspeed,
+ cn.jmicro.api.loadbalance,
+ cn.jmicro.api.monitor,
+ cn.jmicro.api.net,
+ cn.jmicro.api.objectfactory,
+ cn.jmicro.api.pubsub,
+ cn.jmicro.api.raft,
+ cn.jmicro.api.registry,
+ cn.jmicro.api.route,
+ cn.jmicro.api.service,
+ cn.jmicro.api.test,
+ cn.jmicro.api.timer

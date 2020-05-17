@@ -1,0 +1,30 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+         <groupId>cn.jmicro</groupId>
+		 <artifactId>transport.parent</artifactId>
+		 <version>0.0.1-SNAPSHOT</version>
+    </parent>
+    <artifactId>transport.http</artifactId>
+    <packaging>jar</packaging>
+    <name>${project.artifactId}</name>
+    <description>Transport http implements</description>
+    <properties>
+        <skip_maven_deploy>false</skip_maven_deploy>
+    </properties>
+    <dependencies>
+        <dependency>
+			 <groupId>cn.jmicro</groupId>
+			 <artifactId>api</artifactId>
+        </dependency>
+         <dependency>
+			 <groupId>cn.jmicro</groupId>
+			 <artifactId>common</artifactId>
+        </dependency>
+         <dependency>
+			 <groupId>cn.jmicro</groupId>
+			 <artifactId>server</artifactId>
+        </dependency>        
+    </dependencies>
+   
+</project>
