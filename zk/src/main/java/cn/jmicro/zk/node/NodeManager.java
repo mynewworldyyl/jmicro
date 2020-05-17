@@ -20,6 +20,7 @@ import org.apache.zookeeper.data.Stat;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import cn.jmicro.api.raft.IDataOperator;
 import cn.jmicro.api.raft.INodeListener;
 import cn.jmicro.common.CommonException;
 import cn.jmicro.common.Constants;
@@ -131,26 +132,26 @@ public class NodeManager {
 		l.remove(lis);
 	}
 	
-	/**
-	 *如果结点已经存在，则直接更新数数
-	 */
-	public void createNode(String path,String data,boolean elp){
+	public void createNode(String path,String data, int model){
 		if(this.exist(path)) {
+			boolean elp = model == IDataOperator.EPHEMERAL || model == IDataOperator.EPHEMERAL_SEQUENTIAL;
 			if(elp) {
 				throw new CommonException("elp node ["+path+"] have been exists");
-			}else {
+			} else {
+				//如果结点已经存在，则直接更新数数
 				this.setData(path, data);
 			}
 			return;
 		}
+		
 		String[] ps = path.trim().split("/");
 		String p="";
 		for(int i=1; i < ps.length-1; i++){
 			p = p + "/"+ ps[i];
 			if(!this.exist(p)){
-				CreateBuilder createBuilder = this.curator.create();
-				createBuilder.withMode(CreateMode.PERSISTENT);
 		  	    try {
+		  	    	CreateBuilder createBuilder = this.curator.create();
+					createBuilder.withMode(CreateMode.PERSISTENT);
 					createBuilder.forPath(p);
 				} catch (KeeperException.NoNodeException e) {
 					logger.error(e.getMessage());
@@ -162,18 +163,18 @@ public class NodeManager {
 		CreateBuilder createBuilder = this.curator.create();
   	    try {
   	    	byte[] d = data.getBytes(Constants.CHARSET);
-  	    	if(elp){
-  	    		createBuilder.withMode(CreateMode.EPHEMERAL);
-  	    	}else {
-  	    		createBuilder.withMode(CreateMode.PERSISTENT);
-  	    	}
+  	    	createBuilder.withMode(CreateMode.fromFlag(model));
   	    	createBuilder.forPath(path,d);
 		} catch (KeeperException.NoNodeException e) {
 			logger.error(e.getMessage());
 		}catch(Exception e){
 			logger.error("",e);
 		}
+	}
 	
+	
+	public void createNode(String path,String data, boolean elp){
+		this.createNode(path, data, elp ? IDataOperator.EPHEMERAL: IDataOperator.PERSISTENT);
 	}
 	
 	public boolean exist(String path){

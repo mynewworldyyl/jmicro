@@ -129,7 +129,6 @@
 
 	<logger name="cn.jmicro">
 		<level value="DEBUG"/>
-		<appender-ref ref="CONSOLE"/>
 	</logger>
 	
 	<logger name="cn.jmicro.api.codec">

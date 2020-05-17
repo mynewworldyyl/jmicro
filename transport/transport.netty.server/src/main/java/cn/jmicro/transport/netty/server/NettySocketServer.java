@@ -32,6 +32,7 @@ import cn.jmicro.api.annotation.Server;
 import cn.jmicro.api.config.Config;
 import cn.jmicro.api.executor.ExecutorConfig;
 import cn.jmicro.api.executor.ExecutorFactory;
+import cn.jmicro.api.masterelection.IMasterChangeListener;
 import cn.jmicro.api.net.IServer;
 import cn.jmicro.api.objectfactory.IObjectFactory;
 import cn.jmicro.api.objectfactory.PostFactoryAdapter;
@@ -67,6 +68,9 @@ public class NettySocketServer extends PostFactoryAdapter implements IServer {
 	private boolean enable = true;
 	
 	@Inject
+	private IObjectFactory of;
+	
+	@Inject
 	private NettySocketChannelInitializer initializer;
 	
 	@Cfg(value="/NettySocketServer/nettyPort",required=false,defGlobal=false)
@@ -85,6 +89,16 @@ public class NettySocketServer extends PostFactoryAdapter implements IServer {
 			LOG.info("NettySocketServer is disable");
 			return;
 		}
+		this.of.masterSlaveListen((type,isMaster)->{
+			if(isMaster && (IMasterChangeListener.MASTER_ONLINE == type || IMasterChangeListener.MASTER_NOTSUPPORT == type)) {
+				//主从模式
+				init0();
+			}
+		});
+		
+	}
+	
+	private void init0() {
 		ExecutorConfig config = new ExecutorConfig();
 		config.setMsMaxSize(60);
 		config.setTaskQueueSize(1000);

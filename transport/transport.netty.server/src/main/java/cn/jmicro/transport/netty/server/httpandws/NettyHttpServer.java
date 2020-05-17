@@ -28,7 +28,9 @@ import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Inject;
 import cn.jmicro.api.annotation.Server;
 import cn.jmicro.api.config.Config;
+import cn.jmicro.api.masterelection.IMasterChangeListener;
 import cn.jmicro.api.net.IServer;
+import cn.jmicro.api.objectfactory.IObjectFactory;
 import cn.jmicro.common.CommonException;
 import cn.jmicro.common.Constants;
 import cn.jmicro.common.util.StringUtils;
@@ -72,10 +74,18 @@ public class NettyHttpServer implements IServer{
 	@Cfg(value="/NettyHttpServer/startHttp",required=false,defGlobal=false)
 	private boolean startHttp = false;
 	
+	@Inject
+	private IObjectFactory of;
+	
 	@Override
 	public void init() {
 		if(startHttp) {
-			start();
+			this.of.masterSlaveListen((type,isMaster)->{
+				if(isMaster && (IMasterChangeListener.MASTER_ONLINE == type || IMasterChangeListener.MASTER_NOTSUPPORT == type)) {
+					//主从模式
+					start();
+				}
+			});
 		}
 	}
 	

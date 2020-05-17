@@ -29,6 +29,8 @@ public interface Constants {
 	
 	public static final String CFG_ROOT="/jmicro";
 	
+	public static final String Ml_MODEL_ENABLE = "enableMasterSlaveModel";
+	
 	public static final String LOCAL_DATA_DIR = "localDataDir";
 	public static final String INSTANCE_DATA_DIR = "instanceDataDir";
 	

@@ -599,6 +599,12 @@ public class ZKDataOperatorOld implements IDataOperator{
 	    return curator;
 	  }
 	
+	@Override
+	public void createNode(String path, String data, int model) {
+		// TODO Auto-generated method stub
+		
+	}
+
 	protected void stateChanged(ConnectionState state){
 		 int s = 0;
 		 if(state == ConnectionState.LOST) {

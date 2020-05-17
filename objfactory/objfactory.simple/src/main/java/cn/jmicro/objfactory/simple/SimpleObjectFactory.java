@@ -52,6 +52,8 @@ import cn.jmicro.api.classloader.RpcClassLoader;
 import cn.jmicro.api.codec.TypeCoderFactory;
 import cn.jmicro.api.config.Config;
 import cn.jmicro.api.config.IConfigLoader;
+import cn.jmicro.api.masterelection.IMasterChangeListener;
+import cn.jmicro.api.masterelection.LegalPerson;
 import cn.jmicro.api.objectfactory.IObjectFactory;
 import cn.jmicro.api.objectfactory.IPostFactoryListener;
 import cn.jmicro.api.objectfactory.IPostInitListener;
@@ -334,6 +336,18 @@ public class SimpleObjectFactory implements IObjectFactory {
 			return lazy.lazy();
 		}
 		return true;
+	}
+
+	@Override
+	public void masterSlaveListen(IMasterChangeListener l) {
+		Config cfg = this.get(Config.class);
+		boolean isMasterSlaveModel = cfg.getBoolean(Constants.Ml_MODEL_ENABLE, false);
+		LegalPerson lp = this.get(LegalPerson.class);
+		if(lp == null || !isMasterSlaveModel) {
+			l.masterChange(IMasterChangeListener.MASTER_NOTSUPPORT, true);
+		} else {
+			lp.addListener(l);
+		}
 	}
 
 	public synchronized void start(IDataOperator dataOperator){
@@ -676,6 +690,12 @@ public class SimpleObjectFactory implements IObjectFactory {
 		Set<IConfigLoader> configLoaders = this.getByParent(IConfigLoader.class);
 		//加载配置，并调用init0方法做初始化
 		cfg.loadConfig(configLoaders);
+		
+		boolean isMasterSlaveModel = cfg.getBoolean(Constants.Ml_MODEL_ENABLE, false);
+		if(isMasterSlaveModel) {
+			LegalPerson lp = new LegalPerson(this,cfg.getString("electionTag", "JmicroElectionTag"));
+			this.cacheObj(LegalPerson.class, lp, null);
+		}
 		
 		srvManager.setDataOperator(dop);
 		srvManager.init();

@@ -18,6 +18,7 @@ package cn.jmicro.api.objectfactory;
 
 import java.util.Set;
 
+import cn.jmicro.api.masterelection.IMasterChangeListener;
 import cn.jmicro.api.raft.IDataOperator;
 import cn.jmicro.api.registry.AsyncConfig;
 import cn.jmicro.api.registry.ServiceItem;
@@ -126,6 +127,8 @@ public interface IObjectFactory {
 	//void addPostReadyListener(IFactoryListener listener);
 	
 	Class<?> loadCls(String clsName);
+	
+	void masterSlaveListen(IMasterChangeListener l);
 	
 	
 }

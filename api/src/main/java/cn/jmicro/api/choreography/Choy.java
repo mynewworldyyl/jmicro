@@ -91,6 +91,14 @@ public class Choy {
 		
 		String p = ChoyConstants.INS_ROOT+"/" + pi.getId();
 		final String js = JsonUtils.getIns().toJson(pi);
+		if(op.exist(p)) {
+			String oldJson = op.getData(p);
+			ProcessInfo pri = JsonUtils.getIns().fromJson(oldJson, ProcessInfo.class);
+			if(pri != null && pri.isActive()) {
+				throw new CommonException("Process exist[" +oldJson+"]");
+			}
+			op.deleteNode(p);
+		}
 		op.createNode(p,js ,true);
 		
 		logger.info("Update ProcessInfo:" + js);

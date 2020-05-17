@@ -46,8 +46,11 @@ import cn.jmicro.api.codec.TypeUtils;
 import cn.jmicro.api.codec.typecoder.TypeCoder;
 import cn.jmicro.api.config.Config;
 import cn.jmicro.api.idgenerator.ComponentIdServer;
+import cn.jmicro.api.masterelection.IMasterChangeListener;
+import cn.jmicro.api.masterelection.LegalPerson;
 import cn.jmicro.api.monitor.v1.MonitorConstant;
 import cn.jmicro.api.net.IServer;
+import cn.jmicro.api.objectfactory.IObjectFactory;
 import cn.jmicro.api.objectfactory.ProxyObject;
 import cn.jmicro.api.registry.IRegistry;
 import cn.jmicro.api.registry.Server;
@@ -97,6 +100,9 @@ public class ServiceLoader{
 	private ComponentIdServer idGenerator;
 	
 	@Inject
+	private IObjectFactory of;
+	
+	@Inject
 	private RpcClassLoader cl;
 	
 	private Map<String,IServer> servers = new HashMap<>();
@@ -112,6 +118,15 @@ public class ServiceLoader{
 			logger.warn(Config.getInstanceName()+" Client Only so not load service!");
 			return;
 		}
+		
+		this.of.masterSlaveListen((type,isMaster)->{
+			if(isMaster && (IMasterChangeListener.MASTER_ONLINE == type || IMasterChangeListener.MASTER_NOTSUPPORT == type)) {
+				doExportService();
+			}
+		});
+	}
+	
+	private void doExportService() {
 		Set<IServer> ss = JMicro.getObjectFactory().getByParent(IServer.class);
 		for(IServer s : ss){
 			cn.jmicro.api.annotation.Server anno = 

@@ -12,7 +12,7 @@ import cn.jmicro.common.util.StringUtils;
 
 public class DefaultServiceInstanceNameProvider implements IServiceInstanceNameGenerator {
 
-	private static final String TAG = "instanceName";
+	private static final String TAG = Constants.INSTANCE_NAME;
 	private static final String LOCK_FILE = "lock.tmp";
 	
 	@Override

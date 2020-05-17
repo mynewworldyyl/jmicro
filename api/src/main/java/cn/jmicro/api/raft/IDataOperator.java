@@ -26,7 +26,15 @@ import cn.jmicro.api.objectfactory.IObjectFactory;
  * @date 2018年10月5日-下午6:43:31
  */
 public interface IDataOperator {
-
+	  
+    public static final int PERSISTENT = 0;
+   
+    public static final int PERSISTENT_SEQUENTIAL = 2;
+   
+    public static final int EPHEMERAL= 1;
+   
+    public static final int EPHEMERAL_SEQUENTIAL = 3;
+    
 	void addListener(IConnectionStateChangeListener lis);
 	
 	void addDataListener(String path,IDataListener lis);
@@ -50,6 +58,8 @@ public interface IDataOperator {
 	Set<String> getChildren(String path,boolean fromCache);
 	
 	void createNode(String path,String data,boolean elp);
+	
+	void createNode(String path,String data,int model);
 	
 	void deleteNode(String path);
 	
