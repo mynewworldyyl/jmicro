@@ -1,4 +1,4 @@
-package org.jmicro.agent;
+package cn.jmicro.agent;
 
 import java.io.IOException;
 import java.lang.instrument.ClassFileTransformer;

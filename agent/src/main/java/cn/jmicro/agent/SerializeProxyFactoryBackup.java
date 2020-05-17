@@ -1,4 +1,4 @@
-package org.jmicro.agent;
+package cn.jmicro.agent;
 
 import java.io.ByteArrayInputStream;
 import java.io.DataInput;
@@ -11,15 +11,15 @@ import java.util.Date;
 import java.util.Iterator;
 import java.util.Map;
 
-import org.jmicro.api.annotation.SO;
-import org.jmicro.api.codec.ISerializeObject;
-import org.jmicro.api.codec.TypeCoderFactory;
-import org.jmicro.api.codec.typecoder.TypeCoder;
-import org.jmicro.common.CommonException;
-import org.jmicro.common.util.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import cn.jmicro.api.annotation.SO;
+import cn.jmicro.api.codec.ISerializeObject;
+import cn.jmicro.api.codec.TypeCoderFactory;
+import cn.jmicro.api.codec.typecoder.TypeCoder;
+import cn.jmicro.common.CommonException;
+import cn.jmicro.common.util.StringUtils;
 import javassist.CannotCompileException;
 import javassist.ClassPool;
 import javassist.CtClass;

@@ -1,4 +1,4 @@
-package org.jmicro.agent;
+package cn.jmicro.agent;
 
 import java.lang.instrument.Instrumentation;
 

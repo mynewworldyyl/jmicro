@@ -6,9 +6,9 @@ Build-Jdk: 1.8.0_191
 Specification-Title: jmicro.agent
 Specification-Vendor: The Apache Software Foundation
 Implementation-Title: jmicro.agent
-Implementation-Vendor-Id: org.jmicro
+Implementation-Vendor-Id: cn.jmicro
 Implementation-Vendor: The Apache Software Foundation
 Implementation-Version: 0.0.1-SNAPSHOT
 Specification-Version: 0.0.1-SNAPSHOT
-Premain-Class: org.jmicro.agent.JmicroAgent
+Premain-Class: cn.jmicro.agent.JmicroAgent
 Can-Redefine-Classes: true
