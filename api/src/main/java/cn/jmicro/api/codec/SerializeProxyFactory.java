@@ -75,7 +75,7 @@ public class SerializeProxyFactory {
 	private static  String getDecodeMethod(Class cls) {
 
 		StringBuffer sb = new StringBuffer("public Object decode(java.io.DataInput __buffer)   throws java.io.IOException {\n");
-		sb.append(" org.jmicro.api.codec.typecoder.TypeCoder __coder = org.jmicro.api.codec.TypeCoderFactory.getDefaultCoder();\n\n");
+		sb.append(" cn.jmicro.api.codec.typecoder.TypeCoder __coder = cn.jmicro.api.codec.TypeCoderFactory.getDefaultCoder();\n\n");
 		
 		sb.append(cls.getName() ).append(" __obj =  new ").append(cls.getName()).append("();\n");
 		
@@ -121,7 +121,7 @@ public class SerializeProxyFactory {
 					sb.append(" __obj.").append(f.getName()).append("=(").append(f.getType().getName()).append(")_"+valStr+";\n");
 				} else {
 					sb.append(" if(f == null ) { f =  __obj.getClass().getDeclaredField(\"" +f.getName()+ "\");}");
-					sb.append(" org.jmicro.api.codec.TypeUtils.setFieldValue(__obj, __"+valStr+", f);\n");
+					sb.append(" cn.jmicro.api.codec.TypeUtils.setFieldValue(__obj, __"+valStr+", f);\n");
 				}
 			}
 		}
@@ -163,7 +163,7 @@ public class SerializeProxyFactory {
 				sb.append(" ").append(ReflectUtils.getName(fieldDeclareType)).append(" __val"+i).append(" = ").append(Utils.getIns().defaultVal(fieldDeclareType)).append("; \n");
 				sb.append("try { \n");
 				sb.append(" java.lang.reflect.Field f0 = ").append("__obj.getClass().getDeclaredField(\"").append(f.getName()).append("\");\n");
-				sb.append(" Object v = org.jmicro.api.codec.TypeUtils.getFieldValue(__obj,f0);\n");
+				sb.append(" Object v = cn.jmicro.api.codec.TypeUtils.getFieldValue(__obj,f0);\n");
 				sb.append(" __val"+i).append("=").append(Utils.getIns().asArgument(fieldDeclareType, "v")).append(";\n");
 				sb.append(" } catch(Exception e) { e.printStackTrace(); }\n");
 			}
@@ -189,8 +189,8 @@ public class SerializeProxyFactory {
 			}else  if(fieldDeclareType == Date.class ) {
 				sb.append(" __buffer.writeLong(").append(" __val").append(i).append(".getTime()); \n");
 			} else {
-				sb.append("if(__val"+i).append(" == null)  { __buffer.write(org.jmicro.api.codec.Decoder.PREFIX_TYPE_NULL);} else { ");
-				sb.append(" org.jmicro.api.codec.typecoder.TypeCoder __coder = org.jmicro.api.codec.TypeCoderFactory.getDefaultCoder(); \n");
+				sb.append("if(__val"+i).append(" == null)  { __buffer.write(cn.jmicro.api.codec.Decoder.PREFIX_TYPE_NULL);} else { ");
+				sb.append(" cn.jmicro.api.codec.typecoder.TypeCoder __coder = cn.jmicro.api.codec.TypeCoderFactory.getDefaultCoder(); \n");
 				   if(!Collection.class.isAssignableFrom(fieldDeclareType) &&
 						!Map.class.isAssignableFrom(fieldDeclareType)) {
 						sb.append(" __coder.encode(__buffer,__val").append(i).append(",").append(fieldDeclareType.getName()).append(".class,").append(" null );\n\n");

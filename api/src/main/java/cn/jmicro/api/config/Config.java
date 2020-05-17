@@ -95,7 +95,7 @@ public class Config implements IConfigChangeListener{
 	
 	public static long systemStartTime = System.currentTimeMillis();
 	
-	private static String[] BasePackages = {"org.jmicro"};
+	private static String[] BasePackages = {"cn.jmicro"};
 	
 	private final Map<String,String> servicesConfig = new HashMap<>();
 	

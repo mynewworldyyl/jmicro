@@ -105,39 +105,39 @@
 		<appender-ref ref="jmicro_error"/>
 	</logger>
 	
-	<logger name="org.jmicro.api.debug.a">
+	<logger name="cn.jmicro.api.debug.a">
 		<level value="DEBUG"/>
 		<appender-ref ref="jmicro_A"/>
 	</logger>
-	<logger name="org.jmicro.api.debug.b">
+	<logger name="cn.jmicro.api.debug.b">
 		<level value="DEBUG"/>
 		<appender-ref ref="jmicro_B"/>
 	</logger>
-	<logger name="org.jmicro.api.debug.c">
+	<logger name="cn.jmicro.api.debug.c">
 		<level value="DEBUG"/>
 		<appender-ref ref="jmicro_C"/>
 	</logger>
-	<logger name="org.jmicro.api.debug.d">
+	<logger name="cn.jmicro.api.debug.d">
 		<level value="DEBUG"/>
 		<appender-ref ref="jmicro_D"/>
 	</logger>
 	
-	<logger name="org.jmicro.client.specail">
+	<logger name="cn.jmicro.client.specail">
 		<level value="DEBUG"/>
 		<appender-ref ref="jmicro_scpecail"/>
 	</logger>
 
-	<logger name="org.jmicro">
+	<logger name="cn.jmicro">
 		<level value="DEBUG"/>
 		<appender-ref ref="CONSOLE"/>
 	</logger>
 	
-	<logger name="org.jmicro.api.codec">
+	<logger name="cn.jmicro.api.codec">
 		<level value="DEBUG"/>
 		<appender-ref ref="jmicro_debug"/>
 	</logger>
 	
-	<logger name="org.apache.zookeeper">
+	<logger name="cn.apache.zookeeper">
 		<level value="ERROR"/>
 		<appender-ref ref="jmicro_error"/>
 	</logger>

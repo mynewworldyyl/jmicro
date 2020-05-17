@@ -106,7 +106,7 @@ public @interface SMethod {
 	public String testingArgs() default "";
 	
 	/**
-	 * 时间单位参考：@link org.jmicro.api.registry.ServiceItem
+	 * 时间单位参考：@link cn.jmicro.api.registry.ServiceItem
 	 * 1分钟内超时数超过总请求数的5%, 则将QPS限速降低10%
 	 * 
 	 * 值为空时，不启用

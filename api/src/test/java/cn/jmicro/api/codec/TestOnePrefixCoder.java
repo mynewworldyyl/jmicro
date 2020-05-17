@@ -329,7 +329,7 @@ public class TestOnePrefixCoder {
 		RpcRequest rr = new RpcRequest();
 		SubmitItem si = new SubmitItem();
 		si.setType((short)222);
-		//si.seto("org.jmicro.api.monitor.SF:  service [org.jmicro.api.test.ISayHello], namespace [testsayhello], version [0.0.1], args [class java.lang.String=Hello]");
+		//si.seto("cn.jmicro.api.monitor.SF:  service [cn.jmicro.api.test.ISayHello], namespace [testsayhello], version [0.0.1], args [class java.lang.String=Hello]");
 		
 		rr.setArgs(new Object[] {si});
 		

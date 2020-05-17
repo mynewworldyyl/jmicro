@@ -1,5 +1,7 @@
 package cn.jmicro.example.test.pubsub;
 
+import cn.jmicro.agent.SerializeProxyFactory;
+
 public class ReportData0 {
 
 	private Short[] types;
@@ -264,7 +266,7 @@ public class ReportData0 {
 							eleCls = cn.jmicro.api.codec.TypeCoderFactory.getClassByCode(new Short(c));
 						} else {
 							java.lang.String cn = __buffer.readUTF();
-							eleCls = cn.jmicro.agent.SerializeProxyFactory.loadClazz(cn);
+							eleCls = SerializeProxyFactory.loadClazz(cn);
 						}
 					} // block6
 					java.lang.Short elt = (java.lang.Short) cn.jmicro.agent.SerializeProxyFactory
@@ -321,7 +323,7 @@ public class ReportData0 {
 							eleCls = cn.jmicro.api.codec.TypeCoderFactory.getClassByCode(new Short(c));
 						} else {
 							java.lang.String cn = __buffer.readUTF();
-							eleCls = cn.jmicro.agent.SerializeProxyFactory.loadClazz(cn);
+							eleCls = SerializeProxyFactory.loadClazz(cn);
 						}
 					} // block6
 					java.lang.String elt = (java.lang.String) cn.jmicro.agent.SerializeProxyFactory
@@ -378,7 +380,7 @@ public class ReportData0 {
 							eleCls = cn.jmicro.api.codec.TypeCoderFactory.getClassByCode(new Short(c));
 						} else {
 							java.lang.String cn = __buffer.readUTF();
-							eleCls = cn.jmicro.agent.SerializeProxyFactory.loadClazz(cn);
+							eleCls = SerializeProxyFactory.loadClazz(cn);
 						}
 					} // block6
 					java.lang.Double elt = (java.lang.Double) cn.jmicro.agent.SerializeProxyFactory

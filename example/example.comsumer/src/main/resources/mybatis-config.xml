@@ -15,6 +15,6 @@
     </environment>
   </environments>
    <mappers>
-    <mapper resource="org/jmicro/example/mybatis/mapper/TestMapper.xml"/>
+    <mapper resource="cn/jmicro/example/mybatis/mapper/TestMapper.xml"/>
   </mappers>
 </configuration>

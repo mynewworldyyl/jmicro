@@ -25,10 +25,10 @@ public class TestClassloader {
 		
 		RpcClassLoader cl = of.get(RpcClassLoader.class);
 		
-		Class<?> clazz = cl.loadClass("org.jmicro.example.api.IRemoteInterface");
+		Class<?> clazz = cl.loadClass("cn.jmicro.example.api.IRemoteInterface");
 		org.junit.Assert.assertNotNull(clazz);
 		
-		Class<?> clazz1 = cl.loadClass("org.jmicro.example.api.IRemoteInterface");
+		Class<?> clazz1 = cl.loadClass("cn.jmicro.example.api.IRemoteInterface");
 		org.junit.Assert.assertNotNull(clazz1);
 		
 		org.junit.Assert.assertTrue(clazz == clazz1);

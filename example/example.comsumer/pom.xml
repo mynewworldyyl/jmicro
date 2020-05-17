@@ -55,7 +55,7 @@
 				 <groupId>cn.jmicro</groupId>
 				 <artifactId>jmicro.mongodb</artifactId>
 	        </dependency> -->
-	        <dependency>
+	    <dependency>
 			<groupId>cn.jmicro</groupId>
 			<artifactId>test</artifactId>
 			<scope>test</scope>

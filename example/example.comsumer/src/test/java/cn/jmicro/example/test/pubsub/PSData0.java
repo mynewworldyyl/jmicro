@@ -20,6 +20,7 @@ import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 
+import cn.jmicro.agent.SerializeProxyFactory;
 import cn.jmicro.api.codec.ISerializeObject;
 import cn.jmicro.api.registry.UniqueServiceMethodKey;
 
@@ -358,7 +359,7 @@ public final class PSData0 implements Serializable, ISerializeObject {
 							keyEleCls = cn.jmicro.api.codec.TypeCoderFactory.getClassByCode(new Short(c));
 						} else {
 							java.lang.String cn = __buffer.readUTF();
-							keyEleCls = cn.jmicro.agent.SerializeProxyFactory.loadClazz(cn);
+							keyEleCls = SerializeProxyFactory.loadClazz(cn);
 						}
 					} // block6
 					Object key = cn.jmicro.agent.SerializeProxyFactory.decodeListElement(__buffer, keyEleCls);
@@ -369,7 +370,7 @@ public final class PSData0 implements Serializable, ISerializeObject {
 							valEleCls = cn.jmicro.api.codec.TypeCoderFactory.getClassByCode(new Short(c));
 						} else {
 							java.lang.String cn = __buffer.readUTF();
-							valEleCls = cn.jmicro.agent.SerializeProxyFactory.loadClazz(cn);
+							valEleCls = SerializeProxyFactory.loadClazz(cn);
 						}
 					} // block6
 					Object val = cn.jmicro.agent.SerializeProxyFactory.decodeListElement(__buffer, valEleCls);

@@ -2,7 +2,7 @@
     <modelVersion>4.0.0</modelVersion>
     <parent>
          <groupId>cn.jmicro</groupId>
-		 <artifactId>jmicro.parent</artifactId>
+		 <artifactId>parent</artifactId>
 		 <version>0.0.1-SNAPSHOT</version>
     </parent>
     <artifactId>example.api</artifactId>

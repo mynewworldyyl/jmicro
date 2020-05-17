@@ -13,7 +13,7 @@ public class TestZKRegistry {
 	
 	/**
 	 * 
-	org.jmicro.example.api.ITestRpcService####host%3D192.168.3.3%26port%3D59429
+	cn.jmicro.example.api.ITestRpcService####host%3D192.168.3.3%26port%3D59429
 	%26namespace%3DdefaultNamespace%26version%3D0.0.0%26time%3D362551174074939239
 	 */
 	@Test
@@ -22,7 +22,7 @@ public class TestZKRegistry {
 		RegistryImpl r = new RegistryImpl();
 		r.init();
 		
-		r.addServiceListener("org.jmicro.example.api.ITestRpcService##defaultNamespace##0.0.0", 
+		r.addServiceListener("cn.jmicro.example.api.ITestRpcService##defaultNamespace##0.0.0", 
 				(type,si)->{
 			System.out.println(type);
 			System.out.println(si.path(Config.ServiceRegistDir));

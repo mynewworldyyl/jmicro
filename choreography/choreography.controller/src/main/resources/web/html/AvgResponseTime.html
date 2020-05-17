@@ -40,8 +40,8 @@
   });
 
   function getAvgResponseTime(){
-    jmicro.rpc.callRpc('org.jmicro.api.monitor.IServiceMonitorData','serviceMonitorData','0.0.1',
-      'subsicribe',['org.jmicro.example.api.ITestRpcService##testrpc##0.0.1##getPerson##org.jmicro.api.Person'],
+    jmicro.rpc.callRpc('cn.jmicro.api.monitor.IServiceMonitorData','serviceMonitorData','0.0.1',
+      'subsicribe',['cn.jmicro.example.api.ITestRpcService##testrpc##0.0.1##getPerson##cn.jmicro.api.Person'],
       function(rst){
         console.log(rst);
         if(ydata.length ==maxPoint) {

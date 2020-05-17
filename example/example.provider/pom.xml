@@ -4,7 +4,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<parent>
 		<groupId>cn.jmicro</groupId>
-		<artifactId>jmicro.parent</artifactId>
+		<artifactId>parent</artifactId>
 		<version>0.0.1-SNAPSHOT</version>
 	</parent>
 	<artifactId>jmicro.example.provider</artifactId>
@@ -22,7 +22,7 @@
 		</dependency>
 		<dependency>
 			<groupId>cn.jmicro</groupId>
-			<artifactId>classloader.server</artifactId>
+			<artifactId>classloader</artifactId>
 		</dependency>
 		<dependency>
 			<groupId>cn.jmicro</groupId>
@@ -47,7 +47,7 @@
 		</dependency>
 		<dependency>
 			<groupId>cn.jmicro</groupId>
-			<artifactId>jmicro.agent</artifactId>
+			<artifactId>agent</artifactId>
 			<version>0.0.1-SNAPSHOT</version>
 			<scope>test</scope>
 		</dependency>
@@ -57,7 +57,7 @@
 	    </dependency>
 	     <dependency>
 			 <groupId>cn.jmicro</groupId>
-			 <artifactId>jmicro.transport.netty.server</artifactId>
+			 <artifactId>transport.netty.server</artifactId>
 	    </dependency>
 		<dependency>
 			<groupId>io.protostuff</groupId>

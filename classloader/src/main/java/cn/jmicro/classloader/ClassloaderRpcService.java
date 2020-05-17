@@ -10,8 +10,8 @@ import cn.jmicro.api.annotation.Service;
 import cn.jmicro.api.classloader.IClassloaderRpc;
 import cn.jmicro.api.config.Config;
 import cn.jmicro.common.Constants;
-import cn.slf4j.Logger;
-import cn.slf4j.LoggerFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Service(namespace="classloaderrpc",version="0.0.1",handler=Constants.SPECIAL_INVOCATION_HANDLER,timeout=30000)
 @Component

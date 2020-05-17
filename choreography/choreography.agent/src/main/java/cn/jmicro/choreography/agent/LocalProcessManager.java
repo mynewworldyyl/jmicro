@@ -117,7 +117,7 @@ public class LocalProcessManager {
 		
 		AgentInfo ai = new AgentInfo();
 		ai.setId(idServer.getStringId(AgentInfo.class));
-		ai.setCmd("java -jar test.jar org.jmicro.TestMain");
+		ai.setCmd("java -jar test.jar cn.jmicro.TestMain");
 		ai.setName(Config.getInstanceName());
 		ai.setStartTime(System.currentTimeMillis());
 		

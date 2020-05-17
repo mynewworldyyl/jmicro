@@ -90,7 +90,7 @@
 		</layout>
 	</appender>
 	
-	<logger name="org.jmicro">
+	<logger name="cn.jmicro">
 		<level value="DEBUG"/>
 		<appender-ref ref="electric_debug"/>
 	</logger>

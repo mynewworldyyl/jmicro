@@ -59,9 +59,9 @@ public class SerializeProxyFactory {
 		
 		sb.append(cls.getName()).append(" __obj =  this;\n ");
 		
-		sb.append(" org.jmicro.api.codec.typecoder.TypeCoder __coder = org.jmicro.api.codec.TypeCoderFactory.getDefaultCoder();\n\n");
+		sb.append(" cn.jmicro.api.codec.typecoder.TypeCoder __coder = cn.jmicro.api.codec.TypeCoderFactory.getDefaultCoder();\n\n");
 		
-		sb.append(" org.jmicro.api.codec.JDataInput in = (org.jmicro.api.codec.JDataInput)__buffer;\n");
+		sb.append(" cn.jmicro.api.codec.JDataInput in = (cn.jmicro.api.codec.JDataInput)__buffer;\n");
 		
 		CtField[] fields = cls.getDeclaredFields();
 		if(fields.length == 0 ) {
@@ -108,11 +108,11 @@ public class SerializeProxyFactory {
 				sb.append(varName).append(" = tv"+i+" == 0L ? null : new java.util.Date(tv"+i+");\n");
 			} else {
 				//sb.append(" byte preCode"+i+" = in.readByte();\n");
-				sb.append(" if(in.readByte() == org.jmicro.api.codec.Decoder.PREFIX_TYPE_NULL) { "+varName+"=null; } else { \n");
+				sb.append(" if(in.readByte() == cn.jmicro.api.codec.Decoder.PREFIX_TYPE_NULL) { "+varName+"=null; } else { \n");
 				
 				if(fieldDeclareType.hasAnnotation(SO.class)) {
 					sb.append(varName).append(" = new ").append(f.getType().getName()).append("();\n");
-					sb.append(" ((org.jmicro.api.codec.ISerializeObject)"+varName+").decode(__buffer);\n }");
+					sb.append(" ((cn.jmicro.api.codec.ISerializeObject)"+varName+").decode(__buffer);\n }");
 				} else {
 					sb.append(varName).append(" = (")
 					.append(fieldDeclareType.getName()).append(") __coder.decode(__buffer,")
@@ -128,7 +128,7 @@ public class SerializeProxyFactory {
 		//System.out.println("\n\n");
 		//System.out.println(sb.toString());
 		
-		if("org.jmicro.api.net.RpcRequest".equals(cls.getName())) {
+		if("cn.jmicro.api.net.RpcRequest".equals(cls.getName())) {
 			//System.out.println(sb.toString());
 		}
 		
@@ -139,8 +139,8 @@ public class SerializeProxyFactory {
 	private static String getEncodeMethod(CtClass cls) throws NotFoundException, CannotCompileException {
 		StringBuffer sb = new StringBuffer("public void encode(java.io.DataOutput __buffer) throws java.io.IOException { \n");
 		sb.append(cls.getName()).append(" __obj =  this;\n ");
-		sb.append(" org.jmicro.api.codec.JDataOutput out = (org.jmicro.api.codec.JDataOutput)__buffer;\n");
-		sb.append(" org.jmicro.api.codec.typecoder.TypeCoder __coder = org.jmicro.api.codec.TypeCoderFactory.getDefaultCoder(); \n");
+		sb.append(" cn.jmicro.api.codec.JDataOutput out = (cn.jmicro.api.codec.JDataOutput)__buffer;\n");
+		sb.append(" cn.jmicro.api.codec.typecoder.TypeCoder __coder = cn.jmicro.api.codec.TypeCoderFactory.getDefaultCoder(); \n");
 		
 		ClassPool cp = ClassPool.getDefault();
 		
@@ -206,11 +206,11 @@ public class SerializeProxyFactory {
 				sb.append("if(__val"+i+" == null)  __buffer.writeLong(0L) ;") ;
 				sb.append(" else out.writeLong(").append(" __val").append(i).append(".getTime()); \n");
 			}else {
-				sb.append("if(__val"+i+" == null){  out.write(org.jmicro.api.codec.Decoder.PREFIX_TYPE_NULL); \n} \n") ;
-				sb.append(" else { out.write(org.jmicro.api.codec.Decoder.PREFIX_TYPE_PROXY); \n");
+				sb.append("if(__val"+i+" == null){  out.write(cn.jmicro.api.codec.Decoder.PREFIX_TYPE_NULL); \n} \n") ;
+				sb.append(" else { out.write(cn.jmicro.api.codec.Decoder.PREFIX_TYPE_PROXY); \n");
 				if(fieldDeclareType.hasAnnotation(SO.class)) {
 					sb.append("java.lang.Object __o"+i).append("=__val"+i).append("; \n");
-					sb.append(" ((org.jmicro.api.codec.ISerializeObject)__o"+i+").encode(__buffer);\n }");
+					sb.append(" ((cn.jmicro.api.codec.ISerializeObject)__o"+i+").encode(__buffer);\n }");
 				} else {
 					sb.append(" __coder.encode(__buffer,__val").append(i).append(",").append(fieldDeclareType.getName()).append(".class,").append(" null ); \n }");
 				}
@@ -223,7 +223,7 @@ public class SerializeProxyFactory {
 		sb.append("}");
 		
 		//System.out.println("\n\n");
-		if("org.jmicro.api.net.RpcRequest".equals(cls.getName())) {
+		if("cn.jmicro.api.net.RpcRequest".equals(cls.getName())) {
 			//System.out.println(sb.toString());
 		}
 		return sb.toString();
@@ -313,7 +313,7 @@ public class SerializeProxyFactory {
 	}
 	
 	public static void errorToSerializeObjectCode(String clsName) {
-		String msg = "You can call method org.jmicro.api.codec.TypeCoderFactory.registClass(\""+clsName+".class\") to regist serialize class["+clsName+"] upgrade performance";
+		String msg = "You can call method cn.jmicro.api.codec.TypeCoderFactory.registClass(\""+clsName+".class\") to regist serialize class["+clsName+"] upgrade performance";
 		//throw new CommonException(msg);
 	}
 	

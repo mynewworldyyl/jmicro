@@ -30,10 +30,10 @@ jm.config ={
 }
 
 jm.Constants = {
-  MessageCls : 'org.jmicro.api.net.Message',
-  IRequestCls : 'org.jmicro.api.server.IRequest',
-  ServiceStatisCls : 'org.jmicro.api.monitor.ServiceStatis',
-  ISessionCls : 'org.jmicro.api.net.ISession',
+  MessageCls : 'cn.jmicro.api.net.Message',
+  IRequestCls : 'cn.jmicro.api.server.IRequest',
+  ServiceStatisCls : 'cn.jmicro.api.monitor.ServiceStatis',
+  ISessionCls : 'cn.jmicro.api.net.ISession',
   Integer : 3,
   LOng : 4,
   String : 5,

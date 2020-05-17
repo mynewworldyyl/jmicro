@@ -42,7 +42,7 @@ public class TestPubSubServer extends JMicroBaseTestCase{
 	@Test
 	public void testPubSubServerMessage() {
 		IInternalSubRpc psm = of.getRemoteServie(IInternalSubRpc.class.getName(),
-				"org.jmicro.pubsub.DefaultPubSubServer", "0.0.1",null);
+				"cn.jmicro.pubsub.DefaultPubSubServer", "0.0.1",null);
 		
 		PSData psd = new PSData();
 		psd.setData(new byte[] {22,33,33});
@@ -64,7 +64,7 @@ public class TestPubSubServer extends JMicroBaseTestCase{
 	public void testPublishMessageWithCallback() {
 		PubSubManager psm = of.get(PubSubManager.class);
 		
-		ServiceItem si = this.getServiceItem("org.jmicro.example.pubsub.impl.SimplePubsubImpl");
+		ServiceItem si = this.getServiceItem("cn.jmicro.example.pubsub.impl.SimplePubsubImpl");
 		ServiceMethod sm = this.getServiceMethod(si, "notifyMessageStatu", new Class[] {Integer.TYPE,Long.TYPE,Map.class});
 		
 		PSData psd = new PSData();

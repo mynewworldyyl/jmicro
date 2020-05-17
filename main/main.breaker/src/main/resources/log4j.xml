@@ -50,15 +50,15 @@
 		</layout>
 	</appender>
 
-	<logger name="org.jmicro">
+	<logger name="cn.jmicro">
 		<level value="DEBUG"/>
 		<appender-ref ref="jmicro_debug"/>
 	</logger>
-	<logger name="org.apache.zookeeper">
+	<logger name="cn.apache.zookeeper">
 		<level value="ERROR"/>
 		<appender-ref ref="jmicro_error"/>
 	</logger>
-	 <logger name="org.apache.mina">
+	 <logger name="cn.apache.mina">
 		<level value="ERROR"/>
 		<appender-ref ref="jmicro_error"/>
 	</logger>

@@ -47,7 +47,7 @@ public class TestRouter {
 		from = new RouteEndpoint();
 		from.setMethod("getPerson");
 		from.setNamespace("testrpc");
-		from.setServiceName("org.jmicro.example.api。ITestRpcService");
+		from.setServiceName("cn.jmicro.example.api。ITestRpcService");
 		from.setVersion("0.0.1");
 		rr.setFrom(from);
 		

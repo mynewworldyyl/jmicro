@@ -32,8 +32,8 @@ public class TestRpcRequest {
 		 RpcRequest req = new RpcRequest();
 		 //req.setSession();
 		 
-		 //req.setImpl("org.jmicro.objfactory.simple.TestRpcService");
-		 req.setServiceName("org.jmicro.objfactory.simple.ITestRpcService");
+		 //req.setImpl("cn.jmicro.objfactory.simple.TestRpcService");
+		 req.setServiceName("cn.jmicro.objfactory.simple.ITestRpcService");
 		 req.setMethod("hello");
 		 req.setArgs(new Object[]{"Yyl"});
 		 req.setNamespace("test");
@@ -158,7 +158,7 @@ public class TestRpcRequest {
 		/*Config cfg = new Config();
 		cfg.setBindIp("localhost");
 		cfg.setPort(9800);;
-		cfg.setBasePackages(new String[]{"org.jmicro","org.jmtest"});
+		cfg.setBasePackages(new String[]{"cn.jmicro","cn.jmtest"});
 		cfg.setRegistryUrl(new URL("zookeeper","localhost",2180));
 		JMicroContext.setCfg(cfg);*/
 		
@@ -186,21 +186,21 @@ public class TestRpcRequest {
 		IObjectFactory of = JMicro.getObjectFactoryAndStart(new String[]{"-DinstanceName=testGetService"});
 		IRegistry registry = of.get(IRegistry.class);
 		//registry.get
-		//org.jmicro.example.api.ITestRpcService&testrpc&0.0.1
+		//cn.jmicro.example.api.ITestRpcService&testrpc&0.0.1
 		
-		/*Set<ServiceItem> sis = registry.getServices("org.jmicro.example.api.ITestRpcService", 
+		/*Set<ServiceItem> sis = registry.getServices("cn.jmicro.example.api.ITestRpcService", 
 				"testrpc", "0.0.0<=x");*/
 		
-		/*Set<ServiceItem> sis = registry.getServices("org.jmicro.example.api.ITestRpcService", 
+		/*Set<ServiceItem> sis = registry.getServices("cn.jmicro.example.api.ITestRpcService", 
 				"testrpc", "x<=2.0.0");*/
 		
-		/*Set<ServiceItem> sis = registry.getServices("org.jmicro.example.api.ITestRpcService", 
+		/*Set<ServiceItem> sis = registry.getServices("cn.jmicro.example.api.ITestRpcService", 
 				"testrpc", "0.0.0<=x<=2.0.0");*/
 		
-		/*Set<ServiceItem> sis = registry.getServices("org.jmicro.example.api.ITestRpcService", 
+		/*Set<ServiceItem> sis = registry.getServices("cn.jmicro.example.api.ITestRpcService", 
 				"testrpc", "*");*/
 		
-		Set<ServiceItem> sis = registry.getServices("org.jmicro.example.api.ITestRpcService", 
+		Set<ServiceItem> sis = registry.getServices("cn.jmicro.example.api.ITestRpcService", 
 				"testrpc", "0.0.*");
 		
 		System.out.println(sis);

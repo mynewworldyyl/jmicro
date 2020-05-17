@@ -65,7 +65,7 @@ public class JMicro {
 		
 		dataOperator = createOrGetDataOperator();
 		
-		String objClass  = getVal(Constants.OBJ_FACTORY_KEY,"org.jmicro.objfactory.simple.SimpleObjectFactory");
+		String objClass  = getVal(Constants.OBJ_FACTORY_KEY,"cn.jmicro.objfactory.simple.SimpleObjectFactory");
 		
 		Class<?> objCls = loadClass(objClass);
 		
@@ -113,7 +113,7 @@ public class JMicro {
 		if(dataOperator != null) {
 			return dataOperator;
 		}
-		String objClass  = getVal(Constants.DATA_OPERATOR,"org.jmicro.zk.ZKDataOperator");
+		String objClass  = getVal(Constants.DATA_OPERATOR,"cn.jmicro.zk.ZKDataOperator");
 		
 		Class<?> objCls = loadClass(objClass);
 		

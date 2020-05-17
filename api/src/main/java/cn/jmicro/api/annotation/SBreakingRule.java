@@ -23,7 +23,7 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
 
 /**
- * 1M: 1分钟内，时间单位参考：@link org.jmicro.api.registry.ServiceItem
+ * 1M: 1分钟内，时间单位参考：@link cn.jmicro.api.registry.ServiceItem
  * 50%: 发生的异常数超过总请求数的50%
  * 500MS: 熔断后，每间隔500毫秒对接口做一次测试(使用testingArg参数)，测试成功率超过50%，则关闭熔断器
    *     值为空时，不启用

@@ -33,7 +33,7 @@ public @interface Cfg {
 	/**
 	 * value值以“/”开始，以非“/”结束
 	 * 对于Map，可以以*号结尾，表示匹配的条目全部放Map中，Key即配置的Key值，字符串类型，通过Map的泛型解析Value的类型
-	 * 相对于org.jmicro.Config#CfgDir 或  org.jmicro.Config#ServiceConfigDir 的路径
+	 * 相对于cn.jmicro.Config#CfgDir 或  cn.jmicro.Config#ServiceConfigDir 的路径
 	 */
 	public String value();
 	
@@ -51,9 +51,9 @@ public @interface Cfg {
 	public String changeListener() default "";
 	
 	/**
-	 * 是否默认使用全局配置（org.jmicro.Config#CfgDir ZK中全局配置路径下的值）
+	 * 是否默认使用全局配置（cn.jmicro.Config#CfgDir ZK中全局配置路径下的值）
 	 * 如果全局配置有值，则不使用服务级配置，否则优先使用服务级配置
-	 * org.jmicro.Config#ServiceConfigDir 路径下的值
+	 * cn.jmicro.Config#ServiceConfigDir 路径下的值
 	 * @return
 	 */
 	public boolean defGlobal() default false;

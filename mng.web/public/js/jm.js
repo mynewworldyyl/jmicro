@@ -11,7 +11,7 @@ jm.mng = {
     INSTANCE_ROOT : ROOT + '/choreography/instances',
     DEP_ROOT : ROOT + '/choreography/deployments',
 
-    RULE_ID: 'org.jmicro.api.route.RouteRule',
+    RULE_ID: 'cn.jmicro.api.route.RouteRule',
 
     cache:{
 
@@ -63,7 +63,7 @@ jm.mng = {
             return req;
         },
 
-        sn:'org.jmicro.api.mng.IManageService',
+        sn:'cn.jmicro.api.mng.IManageService',
         ns : MNG,
         v:'0.0.1',
     },
@@ -106,7 +106,7 @@ jm.mng = {
             return req;
         },
 
-        sn:'org.jmicro.api.mng.IConfigManager',
+        sn:'cn.jmicro.api.mng.IConfigManager',
         ns: MNG,
         v:'0.0.1',
     },
@@ -217,7 +217,7 @@ jm.mng = {
 
         MSG_TYPE_ASYNC_RESP : 0x06,
 
-        sn:'org.jmicro.gateway.MessageServiceImpl',
+        sn:'cn.jmicro.gateway.MessageServiceImpl',
         ns:MNG,
         v:'0.0.1',
     },
@@ -358,7 +358,7 @@ jm.mng = {
             return req;
         },
 
-        sn:'org.jmicro.api.mng.IStatisMonitor',
+        sn:'cn.jmicro.api.mng.IStatisMonitor',
         ns:'mng',
         v:'0.0.1',
     },
@@ -392,7 +392,7 @@ jm.mng = {
             return req;
         },
 
-        sn:'org.jmicro.mng.api.ICommonManager',
+        sn:'cn.jmicro.mng.api.ICommonManager',
         ns : MNG,
         v:'0.0.1',
     },
@@ -456,7 +456,7 @@ jm.mng = {
 
         __ccreq:function(){
             let req = {};
-            req.serviceName = 'org.jmicro.api.security.IAccountService';
+            req.serviceName = 'cn.jmicro.api.security.IAccountService';
             req.namespace = 'act';
             req.version = '0.0.1';
             return req;
@@ -497,7 +497,7 @@ jm.mng = {
             return req;
         },
 
-        sn:'org.jmicro.mng.api.IMonitorServerManager',
+        sn:'cn.jmicro.mng.api.IMonitorServerManager',
         ns : MNG,
         v:'0.0.1',
     },
@@ -541,7 +541,7 @@ jm.mng = {
             return req;
         },
 
-        sn:'org.jmicro.choreography.api.IResourceResponsitory',
+        sn:'cn.jmicro.choreography.api.IResourceResponsitory',
         ns : 'rrs',
         v:'0.0.1',
     },
@@ -585,7 +585,7 @@ jm.mng = {
             return req;
         },
 
-        sn:'org.jmicro.choreography.api.IDeploymentService',
+        sn:'cn.jmicro.choreography.api.IDeploymentService',
         ns : 'mng',
         v:'0.0.1',
     },

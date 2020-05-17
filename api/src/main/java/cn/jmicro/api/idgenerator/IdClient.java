@@ -53,7 +53,7 @@ public class IdClient implements IIdGenerator{
 	private Object getFromServer(Class<?> insType,String idType, int num) {
 
 		ServiceItem si = JMicroContext.get().getParam(Constants.SERVICE_ITEM_KEY,null);
-		if(si != null && "org.jmicro.api.idgenerator.IIdServer".equals(si.getKey().getServiceName())) {
+		if(si != null && "cn.jmicro.api.idgenerator.IIdServer".equals(si.getKey().getServiceName())) {
 			/*
 			 * IIdServer本身的RPC也要ID，此种情况直接从ZK取，不做RPC，否则会陷入死循坏
 			 */

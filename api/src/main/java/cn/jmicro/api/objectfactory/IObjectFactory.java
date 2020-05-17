@@ -100,7 +100,7 @@ public interface IObjectFactory {
 	/**
 	 * 启动IOC容器，实例化并初始化当前classpath下的所有组件，默认调用组件的init方法，或 @JMethod（“init”）指定的初始化方法。
 	 * 组件创建过程：
-	 * 1. 搜索classpath下指定包（通过basePackages命令行参数指定，org.jmicro默认加入，并且不可修改）的全部注解为@Component的类；
+	 * 1. 搜索classpath下指定包（通过basePackages命令行参数指定，cn.jmicro默认加入，并且不可修改）的全部注解为@Component的类；
 	 * 2. 通过默认构造函数实例化组件；
 	 * 3. 对level由小到大对组件进行做排序；
 	 * 4. 组件初始化过程：

@@ -10,9 +10,9 @@
         <script type="text/javascript">
 
           var json = {"protocol":2,"msgId":11977,"reqId":7832,"sessionId":162,"len":0,"version":"0.0.1","type":1,"flag":0,
-            "payload":"{serviceName:'org.jmicro.example.api.ITestRpcService',method:'getPerson'," +
+            "payload":"{serviceName:'cn.jmicro.example.api.ITestRpcService',method:'getPerson'," +
             "args: [{username:'Client person Name',id:1234}],namespace:'testrpc',"+
-            "version:'0.0.1',impl:'org.jmicro.example.provider.TestRpcServiceImpl',reqId:7832,isMonitorEnable:false,params:{} }"};
+            "version:'0.0.1',impl:'cn.jmicro.example.provider.TestRpcServiceImpl',reqId:7832,isMonitorEnable:false,params:{} }"};
 
           $(document).ready(function(){
             jmicro.socket.init();
@@ -37,7 +37,7 @@
 
           function sayHello(){
             var req = new jmicro.rpc.ApiRequest();
-            req.serviceName='org.jmicro.example.api.ITestRpcService';
+            req.serviceName='cn.jmicro.example.api.ITestRpcService';
             req.method = 'hello';
             req.namespace = 'testrpc';
             req.version = '0.0.1';
@@ -53,7 +53,7 @@
 
           function sayHello1(){
             var req = {};
-            req.serviceName='org.jmicro.example.api.ITestRpcService';
+            req.serviceName='cn.jmicro.example.api.ITestRpcService';
             req.method = 'hello';
             req.namespace = 'testrpc';
             req.version = '0.0.1';
@@ -69,7 +69,7 @@
 
           function getPerson(){
             var req = {};
-            req.serviceName='org.jmicro.example.api.ITestRpcService';
+            req.serviceName='cn.jmicro.example.api.ITestRpcService';
             req.namespace = 'testrpc';
             req.version = '0.0.1';
             req.method = 'getPerson';
@@ -84,7 +84,7 @@
           }
 
           function getPerson1(){
-            jmicro.rpc.callRpc('org.jmicro.example.api.ITestRpcService','testrpc','0.0.1','getPerson',[{username:'Hello JS RPC',id:222}])
+            jmicro.rpc.callRpc('cn.jmicro.example.api.ITestRpcService','testrpc','0.0.1','getPerson',[{username:'Hello JS RPC',id:222}])
               .then(function(rst){
                 console.log(rst);
               }).catch(function(err){
@@ -93,7 +93,7 @@
           }
 
           function testStream(){
-            jmicro.rpc.callRpc('org.jmicro.example.api.ITestRpcService','testrpc','0.0.1','subscrite',['stream test'],function(rst){
+            jmicro.rpc.callRpc('cn.jmicro.example.api.ITestRpcService','testrpc','0.0.1','subscrite',['stream test'],function(rst){
               console.log(rst);
             },true)
               .then(function(rst){

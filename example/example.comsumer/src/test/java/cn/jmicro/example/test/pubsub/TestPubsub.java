@@ -137,7 +137,7 @@ public class TestPubsub extends JMicroBaseTestCase{
 		data.put(MonitorConstant.CLIENT_CONNECT_FAIL, 222D);
 		data.put(MonitorConstant.CLIENT_IOSESSION_CLOSE, new ServiceMethod());
 		//data.values().iterator()
-		//org.jmicro.api.pubsub.PSData psData = new org.jmicro.api.pubsub.PSData();
+		//cn.jmicro.api.pubsub.PSData psData = new cn.jmicro.api.pubsub.PSData();
 		
 		PSData0 psData = new PSData0();
 		psData.put(Constants.SERVICE_METHOD_KEY, new ServiceMethod());
