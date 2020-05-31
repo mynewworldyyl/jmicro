@@ -17,6 +17,7 @@
 package cn.jmicro.choreography.base;
 
 import cn.jmicro.api.annotation.IDStrategy;
+import cn.jmicro.api.sysstatis.SystemStatis;
 
 @IDStrategy(1)
 public final class AgentInfo {
@@ -34,9 +35,7 @@ public final class AgentInfo {
 	
 	private long assignTime;
 	
-	private float cprRate;
-	
-	private float memoryRate;
+	private SystemStatis ss;
 
 	public String getId() {
 		return id;
@@ -62,22 +61,6 @@ public final class AgentInfo {
 		this.startTime = startTime;
 	}
 
-	public float getCprRate() {
-		return cprRate;
-	}
-
-	public void setCprRate(float cprRate) {
-		this.cprRate = cprRate;
-	}
-
-	public float getMemoryRate() {
-		return memoryRate;
-	}
-
-	public void setMemoryRate(float memoryRate) {
-		this.memoryRate = memoryRate;
-	}
-
 	public String getHost() {
 		return host;
 	}
@@ -92,6 +75,14 @@ public final class AgentInfo {
 
 	public void setAssignTime(long assignTime) {
 		this.assignTime = assignTime;
+	}
+
+	public SystemStatis getSs() {
+		return ss;
+	}
+
+	public void setSs(SystemStatis ss) {
+		this.ss = ss;
 	}
 
 	@Override

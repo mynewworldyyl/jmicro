@@ -18,11 +18,13 @@ import cn.jmicro.api.annotation.Inject;
 import cn.jmicro.api.cache.lock.ILockerManager;
 import cn.jmicro.api.choreography.ChoyConstants;
 import cn.jmicro.api.choreography.ProcessInfo;
+import cn.jmicro.api.objectfactory.IObjectFactory;
 import cn.jmicro.api.raft.IDataListener;
 import cn.jmicro.api.raft.IDataOperator;
 import cn.jmicro.api.timer.TimerTicker;
 import cn.jmicro.choreography.agent.AgentManager;
 import cn.jmicro.choreography.api.Deployment;
+import cn.jmicro.choreography.api.IAssignStrategy;
 import cn.jmicro.choreography.base.AgentInfo;
 import cn.jmicro.choreography.instance.InstanceManager;
 import cn.jmicro.common.Constants;
@@ -45,6 +47,12 @@ public class DeploymentAssignment {
 	
 	@Inject
 	private ILockerManager lockMgn;
+	
+	@Inject("defautAssignStrategy")
+	private IAssignStrategy defaultAssignStrategy; 
+	
+	@Inject
+	private IObjectFactory of; 
 	
 	//Agent to fail instance
 	private Map<String,Set<String>> fails = new HashMap<>();
@@ -72,7 +80,7 @@ public class DeploymentAssignment {
 			}
 		});
 		
-		TimerTicker.getDefault(1000*3L).addListener("", (key,att)->{
+		TimerTicker.getDefault(1000*5L).addListener("", (key,att)->{
 			try {
 				doChecker();
 			} catch (Throwable e) {
@@ -107,12 +115,18 @@ public class DeploymentAssignment {
 		});
 		
 	}
+	
+	private long lastCheckTime = 0;
 
 	private void doChecker() {
 		 Set<Assign> ass = new HashSet<>();
 		 ass.addAll(this.assigns);
 		 
 		 long curTime = System.currentTimeMillis();
+		 
+		 if(curTime - lastCheckTime < 5000) {
+			 return;
+		 }
 		 
 		 //检测分配后1分钟内有没有启动成功，如果没有启动成功，则取消分配
 		 for(Assign a : ass) {
@@ -152,7 +166,7 @@ public class DeploymentAssignment {
 				 this.doAssgin(dep);
 			 }
 		 }
-		
+		 lastCheckTime = curTime;
 	}
 	
 	private void instanceRemoved(String insId) {
@@ -273,16 +287,25 @@ public class DeploymentAssignment {
 			return ;
 		}
 		
-		if(sortList.size() > 1) {
-			sortList.sort((AgentInfo o1, AgentInfo o2)->{
-				//运行实例最多的排前头
-				return o1.getCprRate() > o2.getCprRate() ? 1: o1.getCprRate() == o2.getCprRate()?0:-1;
-			});
+		IAssignStrategy s = null;
+		
+		if(StringUtils.isEmpty(dep.getAssignStrategy())) {
+			s = this.defaultAssignStrategy;
+		} else {
+			s = of.getByName(dep.getAssignStrategy());
+			if(s == null) {
+				s = this.defaultAssignStrategy;
+				logger.error("Dec assign strategy [" + dep.getAssignStrategy() + "] not found, use default strategy");
+			}
 		}
 		
-		ite = sortList.iterator();
-		while(ite.hasNext()) {
-			AgentInfo aif = ite.next();
+		if(!s.doStrategy(sortList, dep)) {
+			logger.error("Dec assign fail with strategy [" + dep.getAssignStrategy() + "]");
+			return;
+		}
+		
+		for(int i = sortList.size() - 1; i >= 0; i-- ) {
+			AgentInfo aif = sortList.get(i);
 			Assign a = this.getAssignByDepIdAndAgentId(dep.getId(), aif.getId());
 			if(a != null) {
 				this.cancelAssign(a);
@@ -341,11 +364,27 @@ public class DeploymentAssignment {
 			return ;
 		}
 		
-		if(sortList.size() > 1) {
-			sortList.sort((AgentInfo o1, AgentInfo o2)->{
-				//Cpu利用率小的排前头
-				return o1.getCprRate() > o2.getCprRate() ? -1: o1.getCprRate() == o2.getCprRate()?0:1;
-			});
+		IAssignStrategy s = null;
+		
+		if(StringUtils.isEmpty(dep.getAssignStrategy()) 
+				|| "defautAssignStrategy".equals(dep.getAssignStrategy())) {
+			s = this.defaultAssignStrategy;
+		} else {
+			s = of.getByName(dep.getAssignStrategy());
+			if(s == null) {
+				s = this.defaultAssignStrategy;
+				logger.error("Assign strategy [" + dep.getAssignStrategy() + "] not found, use default strategy");
+			}
+		}
+		
+		if(!s.doStrategy(sortList, dep)) {
+			logger.error("Assign fail with strategy [" + dep.getAssignStrategy() + "]");
+			return;
+		}
+		
+		if(sortList.isEmpty()) {
+			logger.error("No agent for assign dep [" + dep.toString() + "]");
+			return;
 		}
 		
 		ite = sortList.iterator();

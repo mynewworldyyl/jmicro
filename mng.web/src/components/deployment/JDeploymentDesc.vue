@@ -3,9 +3,10 @@
         <a @click="addDeploy()">ADD</a>&nbsp;&nbsp;&nbsp;
         <a @click="refresh()">REFRESH</a>
         <table class="configItemTalbe" width="99%">
-            <thead><tr><td>ID</td><td>JAR FILE</td><td>INSTANCE NUM</td><td>ARGS</td><td>ENABLE</td><td>OPERATION</td></tr></thead>
+            <thead><tr><td>ID</td><td>JAR FILE</td><td>INSTANCE NUM</td><td>STRATEGY</td><td>STRATEGY ARGS</td><td>ARGS</td><td>ENABLE</td><td>OPERATION</td></tr></thead>
             <tr v-for="c in deployList" :key="c.id">
-                <td>{{c.id}}</td><td>{{c.jarFile}}</td><td>{{c.instanceNum}}</td><td>{{c.args}}</td><td>{{c.enable}}</td>
+                <td>{{c.id}}</td><td>{{c.jarFile}}</td><td>{{c.instanceNum}}</td><td>{{c.assignStrategy}}</td>
+                <td>{{c.strategyArgs}}</td><td>{{c.args}}</td><td>{{c.enable}}</td>
                 <td>&nbsp;
                     <a @click="deleteDeployment(c)">DELETE</a>&nbsp;&nbsp;&nbsp;
                     <a @click="updateDeployment(c)">UPDATE</a>
@@ -20,6 +21,13 @@
 
                 <Label for="instanceNum">INSTANCE NUM</Label>
                 <Input id="instanceNum" v-model="deployment.instanceNum"/>
+
+                <Label for="assignStrategy">STRATEGY</Label>
+                <Input id="assignStrategy" v-model="deployment.assignStrategy"/>
+
+                <Label for="strategyArgs">STRATEGY ARGS</Label>
+                <Input id="strategyArgs"  class='textarea' :rows="5" :autosize="{maxRows:3,minRows: 3}"
+                       type="textarea" v-model="deployment.strategyArgs"/>
 
                 <Label for="args">ARGS</Label>
                 <Input id="args"  class='textarea' :rows="5" :autosize="{maxRows:3,minRows: 3}"

@@ -147,6 +147,32 @@ public class InstanceManager {
 		return pis;
 	}
 	
+	public int getProcessSizeByDepId(String depid) {
+		if(StringUtils.isEmpty(depid)) {
+			return 0;
+		}
+		int cnt = 0;
+		for(ProcessInfo pi : mngProcesses.values()) {
+			if(depid.equals(pi.getDepId())) {
+				cnt++;
+			}
+		}
+		return cnt;
+	}
+	
+	public int getProcessSizeByAgentId(String agentId) {
+		if(StringUtils.isEmpty(agentId)) {
+			return 0;
+		}
+		int cnt = 0;
+		for(ProcessInfo pi : mngProcesses.values()) {
+			if(agentId.equals(pi.getAgentId())) {
+				cnt++;
+			}
+		}
+		return cnt;
+	}
+	
 	public Set<ProcessInfo> getProcessesByDepId(String depid) {
 		if(StringUtils.isEmpty(depid)) {
 			return null;
@@ -192,6 +218,13 @@ public class InstanceManager {
 		if(!listeners.contains(l)) {
 			listeners.add(l);
 		}
+		if(mngProcesses.isEmpty()) {
+			return ;
+		}
+		for(ProcessInfo pi : mngProcesses.values()) {
+			l.instance(IListener.ADD, pi);
+		}
+		
 	}
 	
 	public void removeListener(IInstanceListener l) {

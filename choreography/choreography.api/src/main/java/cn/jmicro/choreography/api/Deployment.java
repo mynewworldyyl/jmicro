@@ -18,6 +18,10 @@ public class Deployment {
 	private boolean enable;
 	
 	private boolean forceRestart;
+	
+	private String assignStrategy="defautAssignStrategy";
+	
+	private String strategyArgs;
 
 	public String getJarFile() {
 		return jarFile;
@@ -67,12 +71,27 @@ public class Deployment {
 		this.forceRestart = forceRestart;
 	}
 
+	public String getAssignStrategy() {
+		return assignStrategy;
+	}
+
+	public void setAssignStrategy(String assignStrategy) {
+		this.assignStrategy = assignStrategy;
+	}
+
+	public String getStrategyArgs() {
+		return strategyArgs;
+	}
+
+	public void setStrategyArgs(String strategyArgs) {
+		this.strategyArgs = strategyArgs;
+	}
+
 	@Override
 	public String toString() {
 		return "Deployment [id=" + id + ", jarFile=" + jarFile + ", instanceNum=" + instanceNum + ", args=" + args
-				+ ", enable=" + enable + "]";
+				+ ", enable=" + enable + ", forceRestart=" + forceRestart + ", assignStrategy=" + assignStrategy
+				+ ", strategyArgs=" + strategyArgs + "]";
 	}
-	
-	
 	
 }

@@ -74,15 +74,27 @@ public class AgentManager {
 	};
 	
 	private final INodeListener activeNodeListener = (type, path, data)->{
+		
+		String id = path.substring(path.lastIndexOf("/")+1);
+		String agentPath = ChoyConstants.ROOT_AGENT + "/" + id;
+		
 		if(IListener.REMOVE == type) {
-			String agentPath = path.substring(0,path.length() - 7);
-			String id = agentPath.substring(agentPath.lastIndexOf("/")+1);
 			AgentInfo ai = id2Agents.remove(id);
 			if(ai != null) {
 				notifyAgentListener(IAgentListener.REMOVE,ai);
 				if(!insManager.isExistByAgentId(id)) {
 					deleteAgent(agentPath);
 				}
+			}
+		}else if(IListener.ADD == type) {
+			String data1 = op.getData(agentPath);
+			AgentInfo ai = JsonUtils.getIns().fromJson(data1, AgentInfo.class);
+			if(!id2Agents.containsKey(id)) {
+				id2Agents.put(id, ai);
+				op.addDataListener(path, agentDataListener);
+				notifyAgentListener(IAgentListener.ADD,ai);
+			} else {
+				id2Agents.put(id, ai);
 			}
 		}
 	};
@@ -109,15 +121,19 @@ public class AgentManager {
 			public void childrenChanged(int type,String parent, String child,String data) {
 				String path = ChoyConstants.ROOT_AGENT+"/"+child;
 				String activePath = ChoyConstants.ROOT_ACTIVE_AGENT + "/"+child;
+				
+				op.addNodeListener(activePath, activeNodeListener);
+				
 				if(type == IListener.ADD) {
-					AgentInfo ai = JsonUtils.getIns().fromJson(data, AgentInfo.class);
-					if(!id2Agents.containsKey(child)) {
-						id2Agents.put(child, ai);
-						op.addDataListener(path, agentDataListener);
-						op.addNodeListener(activePath, activeNodeListener);
-						notifyAgentListener(IAgentListener.ADD,ai);
-					} else {
-						id2Agents.put(child, ai);
+					if(op.exist(activePath)) {
+						AgentInfo ai = JsonUtils.getIns().fromJson(data, AgentInfo.class);
+						if(!id2Agents.containsKey(child)) {
+							id2Agents.put(child, ai);
+							op.addDataListener(path, agentDataListener);
+							notifyAgentListener(IAgentListener.ADD,ai);
+						} else {
+							id2Agents.put(child, ai);
+						}
 					}
 				}else if(type == IListener.REMOVE) {
 					op.removeDataListener(path, agentDataListener);

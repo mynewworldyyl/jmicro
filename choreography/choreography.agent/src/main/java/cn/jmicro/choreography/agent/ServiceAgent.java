@@ -40,8 +40,8 @@ import cn.jmicro.api.choreography.ChoyConstants;
 import cn.jmicro.api.choreography.ProcessInfo;
 import cn.jmicro.api.config.Config;
 import cn.jmicro.api.idgenerator.ComponentIdServer;
-import cn.jmicro.api.raft.IDataListener;
 import cn.jmicro.api.raft.IDataOperator;
+import cn.jmicro.api.sysstatis.SystemStatisManager;
 import cn.jmicro.api.timer.TimerTicker;
 import cn.jmicro.choreography.api.Deployment;
 import cn.jmicro.choreography.api.IResourceResponsitory;
@@ -107,6 +107,9 @@ public class ServiceAgent {
 	@Inject
 	private ComponentIdServer idServer;
 	
+	@Inject
+	private SystemStatisManager ssm;
+	
 	private AgentInfo agentInfo;
 	
 	@Inject
@@ -153,6 +156,7 @@ public class ServiceAgent {
 		agentInfo.setStartTime(System.currentTimeMillis());
 		agentInfo.setAssignTime(agentInfo.getAssignTime());
 		agentInfo.setHost(Config.getHost());
+		agentInfo.setSs(ssm.getStatis());
 		
 		String agJson = JsonUtils.getIns().toJson(agentInfo);
 		SystemUtils.setFileString(infoFile, agJson);
@@ -200,7 +204,7 @@ public class ServiceAgent {
 			}
 		});
 		 
-		TimerTicker.getDefault(1000*3L).addListener("", (key,att)->{
+		TimerTicker.getDefault(5000L).addListener("", (key,att)->{
 				try {
 					if(System.currentTimeMillis() - agentInfo.getStartTime() < 1000*30) {
 						return;
@@ -219,6 +223,13 @@ public class ServiceAgent {
 		logger.warn("Recreate angent info: " + data);
 		op.createNodeOrSetData(path,data ,IDataOperator.PERSISTENT);
 	}
+	
+	private void setStatisData() {
+		agentInfo.setSs(ssm.getStatis());
+		
+		String data = JsonUtils.getIns().toJson(agentInfo);
+		op.setData(path, data);
+	}
 
 	private void checkStatus() {
 		long curTime = System.currentTimeMillis();
@@ -230,6 +241,8 @@ public class ServiceAgent {
 			recreateAgentInfo();
 			return;
 		}
+		
+		setStatisData();
 		
 		Set<String> keySet = new HashSet<>();
 		keySet.addAll(processInfos.keySet());
