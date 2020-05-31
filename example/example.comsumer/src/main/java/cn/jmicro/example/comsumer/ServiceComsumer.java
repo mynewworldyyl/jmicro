@@ -30,7 +30,7 @@ public class ServiceComsumer {
 
 	public static void main(String[] args) {
 		
-		IObjectFactory of = JMicro.getObjectFactoryAndStart(new String[]{""});
+		IObjectFactory of = JMicro.getObjectFactoryAndStart(args);
 		
 		//JMicroContext.get().setParam("routerTag", "tagValue");
 		

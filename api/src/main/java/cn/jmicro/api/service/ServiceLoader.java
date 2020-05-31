@@ -113,6 +113,7 @@ public class ServiceLoader{
 	
 	@JMethod("init")
 	public void init(){
+		
 		if(Config.isClientOnly() || !enable){
 			//纯客户端不需要导出服务,RPC端口没开放
 			logger.warn(Config.getInstanceName()+" Client Only so not load service!");

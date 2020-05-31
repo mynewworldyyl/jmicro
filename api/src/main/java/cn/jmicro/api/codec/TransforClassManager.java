@@ -51,7 +51,7 @@ public class TransforClassManager {
 			if(type == null || type == 0) {
 				type = idGenerator.getIntId(TransforClassManager.class).shortValue();
 			}
-			dataOperator.createNode(path, type.toString(), false);
+			dataOperator.createNodeOrSetData(path, type.toString(), false);
 		}
 	}
 	
@@ -59,7 +59,7 @@ public class TransforClassManager {
 	public void init() {
 		
 		if(!dataOperator.exist(ROOT)) {
-			dataOperator.createNode(ROOT, Config.getHost(), false);
+			dataOperator.createNodeOrSetData(ROOT, Config.getHost(), false);
 		}
 		
 		dataOperator.addChildrenListener(ROOT, (type,path,child,data)->{

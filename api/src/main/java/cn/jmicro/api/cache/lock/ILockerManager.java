@@ -16,6 +16,9 @@
  */
 package cn.jmicro.api.cache.lock;
 
+import cn.jmicro.common.CommonException;
+import cn.jmicro.common.util.StringUtils;
+
 /**
  * 
  * 
@@ -24,4 +27,36 @@ package cn.jmicro.api.cache.lock;
  */
 public interface ILockerManager {
 	ILocker getLocker(String resource);
+	
+	public static void doInlocker(String path, ILockerManager lockMgn,Runnable r) {
+		ILockerManager.doInlocker(path, lockMgn, 30*1000, r);
+	}
+	
+	public static void doInlocker(String path, ILockerManager lockMgn,long timeoutInMillis, Runnable r) {
+		ILockerManager.doInlocker(path, lockMgn, timeoutInMillis,500, r);
+	}
+	
+	public static void doInlocker(String path, ILockerManager lockMgn,long timeoutInMillis,
+			int checkInterval,Runnable r) {
+		
+		if(StringUtils.isEmpty(path)) {
+			throw new CommonException("Resource path cannot be NULL");
+		}
+		
+		ILocker locker = null;
+		boolean success = false;
+		try {
+			locker = lockMgn.getLocker(path);
+			if(success = locker.tryLock(checkInterval,timeoutInMillis)) {
+				r.run();
+			} else {
+				throw new CommonException("Fail to get locker:" + path);
+			}
+		}finally {
+			if(locker != null && success) {
+				locker.unLock();
+			}
+		}
+	}
+	
 }

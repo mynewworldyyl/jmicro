@@ -546,44 +546,37 @@ public class MonitorClient {
 		}
 		sb.delete(sb.length()-1, sb.length());
 		
-		ILocker l = null;
-		try {
-			String path = TYPES_PATH+"/"+srvKey;
-			l = lockManager.getLocker(path);
-			if(l.tryLock(10000)) {
-				if(op.exist(path)) {
-					String ts = op.getData(path);
-					if(StringUtils.isEmpty(ts)) {
-						ts = sb.toString();
-					} else {
-						String[] tsArr = ts.split(TYPE_SPERATOR);
-						for(short sv : typess) {
-							boolean f = false;
-							for(String v : tsArr) {
-								short ssv = Short.parseShort(v);
-								if(ssv == sv) {
-									f = true;
-									break;
-								}
-							}
-							
-							if(!f) {
-								ts = ts + TYPE_SPERATOR + sv;
+		String path = TYPES_PATH + "/" + srvKey;
+		
+		ILockerManager.doInlocker(path, lockManager, ()->{
+			if(op.exist(path)) {
+				String ts = op.getData(path);
+				if(StringUtils.isEmpty(ts)) {
+					ts = sb.toString();
+				} else {
+					String[] tsArr = ts.split(TYPE_SPERATOR);
+					for(short sv : typess) {
+						boolean f = false;
+						for(String v : tsArr) {
+							short ssv = Short.parseShort(v);
+							if(ssv == sv) {
+								f = true;
+								break;
 							}
 						}
+						
+						if(!f) {
+							ts = ts + TYPE_SPERATOR + sv;
+						}
 					}
-					op.setData(path, ts);
-				} else {
-					op.createNode(path, sb.toString(), true);
 				}
+				op.setData(path, ts);
 			} else {
-				logger.warn("Fail to get locker to regist types for:" + srvKey+", types:" + sb.toString());
+				op.createNodeOrSetData(path, sb.toString(), true);
 			}
-		}finally {
-			if(l != null) {
-				l.unLock();
-			}
-		}
+		
+		});
+		
 	}
 	
 	public Set<Short> intrest(String skey) {

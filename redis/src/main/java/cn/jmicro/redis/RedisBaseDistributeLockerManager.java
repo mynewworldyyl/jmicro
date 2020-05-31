@@ -40,9 +40,6 @@ import redis.clients.jedis.JedisPool;
 public class RedisBaseDistributeLockerManager implements ILockerManager {
 
 	private static final ThreadLocal<Map<String,AtomicInteger>> tl = new ThreadLocal<Map<String,AtomicInteger>>();
-	static {
-		tl.set(new HashMap<String,AtomicInteger>());
-	}
 	
 	@Inject
 	private JedisPool pool;
@@ -63,7 +60,7 @@ public class RedisBaseDistributeLockerManager implements ILockerManager {
 		
 		private String resource;
 		
-		private boolean lockStat = false;
+		//private boolean lockStat = false;
 		
 		protected LockerImpl(String resource) {
 			this.resource = resource;
@@ -80,15 +77,15 @@ public class RedisBaseDistributeLockerManager implements ILockerManager {
 
 		@Override
 		public boolean tryLock(int checkIntervalWithMillisenconds, long timeoutWithMillisenconds) {
-			if(lockStat) {
+			/*if(lockStat) {
 				//同一个锁实例，在未解锁前，不能重复上锁，但是解锁之后，可以再锁
 				throw new CommonException(resource + " have been lock with Object:" + toString());
-			}
+			}*/
 			
 			AtomicInteger cnt = getLockCnt(resource);
 			if(cnt.get() > 0) {
 				//同一个线程对同一个资源取锁
-				lockStat = true;
+				//lockStat = true;
 				cnt.incrementAndGet();
 				return true;
 			}
@@ -121,7 +118,7 @@ public class RedisBaseDistributeLockerManager implements ILockerManager {
 					}
 				}
 				
-				lockStat = "OK".equals(rst);
+				boolean lockStat = "OK".equals(rst);
 				
 				if(lockStat) {
 					cnt.incrementAndGet();
@@ -137,22 +134,29 @@ public class RedisBaseDistributeLockerManager implements ILockerManager {
 
 		@Override
 		public boolean unLock() {
-			if(!lockStat) {
+			/*if(!lockStat) {
 				throw new CommonException(resource + " not in lock status" + toString());
 			}
-			
+			*/
 			Jedis jedis = null;
 			try {
 				AtomicInteger cnt = getLockCnt(resource);
+				if(cnt.get() == 0) {
+					return true;
+				}
 				int c = cnt.decrementAndGet();
+				if(c < 0) {
+					c = 0;
+					cnt.set(0);
+				}
 				if(c == 0) {
 					jedis = pool.getResource();
 					Long rst = jedis.del(resource);
-					lockStat = rst == 1;
-					if(lockStat) {
+					//lockStat = rst == 1;
+					/*if(lockStat) {
 						tl.get().remove(resource);
-					}
-					return lockStat;
+					}*/
+					return rst == 1;
 				} else {
 					return true;
 				}
@@ -169,11 +173,13 @@ public class RedisBaseDistributeLockerManager implements ILockerManager {
 		Map<String,AtomicInteger> m = tl.get();
 		if(m == null) {
 			m = new HashMap<>();
+			m.put(resource, new AtomicInteger(0));
 			tl.set(m);
 		}
 		
-		if(!m.containsKey(resource)) {
-			m.put(resource, new AtomicInteger());
+		AtomicInteger ac = m.get(resource);
+		if(ac == null) {
+			m.put(resource, ac = new AtomicInteger(0));
 		}
 		
 		return m.get(resource);

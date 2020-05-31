@@ -20,6 +20,8 @@ import cn.jmicro.api.config.Config;
 
 public interface ChoyConstants {
 
+	public static final String ROOT_ACTIVE_AGENT = Config.ChoreographyDir+"/activeAgents";
+	
 	public static final String ROOT_AGENT = Config.ChoreographyDir+"/agents";
 	
 	public static final String DEP_DIR = Config.ChoreographyDir + "/deployments";

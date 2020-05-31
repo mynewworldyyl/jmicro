@@ -5,6 +5,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.junit.Test;
 
+import cn.jmicro.api.masterelection.IMasterChangeListener;
 import cn.jmicro.api.masterelection.LegalPerson;
 import cn.jmicro.test.JMicroBaseTestCase;
 
@@ -13,10 +14,14 @@ public class TestHA extends JMicroBaseTestCase{
 	private void doServerWorker() {
 		
 		AtomicBoolean finish = new AtomicBoolean(false);
-		LegalPerson lp = new LegalPerson(of,"testElection",(type,isMaster)->{
+		
+		IMasterChangeListener lis = (type,isMaster)->{
 			System.out.println("Election result: " + type + ", isMaster: " + isMaster);
 			finish.set(true);
-		});
+		};
+		
+		LegalPerson lp = new LegalPerson(of,"testElection");
+		lp.addListener(lis);
 		
 		while(!finish.get()) {
 			System.out.println("Status: " + lp.isLockStatu() + ", isMaster: " + lp.isMaster());

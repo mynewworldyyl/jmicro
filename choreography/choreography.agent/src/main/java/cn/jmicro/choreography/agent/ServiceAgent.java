@@ -23,7 +23,6 @@ import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -36,7 +35,6 @@ import cn.jmicro.api.annotation.Cfg;
 import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Inject;
 import cn.jmicro.api.annotation.Reference;
-import cn.jmicro.api.cache.lock.ILocker;
 import cn.jmicro.api.cache.lock.ILockerManager;
 import cn.jmicro.api.choreography.ChoyConstants;
 import cn.jmicro.api.choreography.ProcessInfo;
@@ -48,6 +46,7 @@ import cn.jmicro.api.timer.TimerTicker;
 import cn.jmicro.choreography.api.Deployment;
 import cn.jmicro.choreography.api.IResourceResponsitory;
 import cn.jmicro.choreography.base.AgentInfo;
+import cn.jmicro.choreography.instance.InstanceManager;
 import cn.jmicro.common.CommonException;
 import cn.jmicro.common.Constants;
 import cn.jmicro.common.util.JsonUtils;
@@ -72,10 +71,15 @@ public class ServiceAgent {
 	private String resourceDir; // = System.getProperty("user.dir") + "/resourceDir";
 	
 	@Cfg(value = "/ServiceAgent/javaAgentJarFile", defGlobal=true)
-	private String javaAgentJarFile="jmicro.agent-0.0.1-SNAPSHOT.jar";
+	private String javaAgentJarFile="jmicro-agent-0.0.1-SNAPSHOT.jar";
 	
 	@Cfg(value="/ResourceReponsitoryService/uploadBlockSize", defGlobal=true)
 	private int uploadBlockSize = 65300;//1024*1024;
+	
+	//will be cancel the start process when start time
+	//will be force stop the process when process not response to stop action before timeout
+	@Cfg(value="/ServiceAgent/processOpTimeout", defGlobal=true)
+	private int processOpTimeout = 2*60*1000 + 20*1000;  //20秒是ZK结点超时时间
 	
 	@Inject
 	private Config cfg;
@@ -86,13 +90,16 @@ public class ServiceAgent {
 	
 	//private Map<String,Deployment> deployments = new HashMap<>();
 	
-	private Map<String,Long> processTimeout = new HashMap<>();
+	//private Map<String,Long> processTimeout = new HashMap<>();
 	
 	private Map<String,ProcessInfo> processInfos = new HashMap<>();
-	private Map<String,ProcessInfo> dep2Process = new HashMap<>();
+	//private Map<String,ProcessInfo> dep2Process = new HashMap<>();
 	
 	@Reference(namespace="rrs",version="*")
 	private IResourceResponsitory respo;
+	
+	@Inject
+	private InstanceManager insManager;
 	
 	@Inject
 	private IDataOperator op;
@@ -107,15 +114,7 @@ public class ServiceAgent {
 	
 	private String path;
 	
-	private IDataListener processInfoDataListener = (path,data)-> {
-		if(StringUtils.isEmpty(data)) {
-			return;
-		}
-		ProcessInfo pi = JsonUtils.getIns().fromJson(data, ProcessInfo.class);
-		if(pi.isActive() && processInfos.containsKey(pi.getId())) {
-			processInfos.put(pi.getId(), pi);
-		}
-	};
+	private String activePath;
 	
 	public void ready() {
 		
@@ -132,24 +131,22 @@ public class ServiceAgent {
 		}
 		
 		File infoFile = new File(cfg.getString(Constants.INSTANCE_DATA_DIR,""),"agent.json");
-		
-		if(checkExist(infoFile)) {
-			logger.warn("Only one agent can be exist for one resourceDir: " + resourceDir);
-			System.exit(0);
-			return;
-		}
-		
 		if(infoFile.exists()) {
 			String existAgentJson = SystemUtils.getFileString(infoFile);
-			if(existAgentJson != null) {
+			if(StringUtils.isNotEmpty(existAgentJson)) {
 				agentInfo = JsonUtils.getIns().fromJson(existAgentJson, AgentInfo.class);
+				activePath = ChoyConstants.ROOT_ACTIVE_AGENT+"/" + agentInfo.getId();
+				if(op.exist(activePath)) {
+					logger.warn("Only one agent can be exist for one resourceDir: " + resourceDir);
+					System.exit(0);
+					return;
+				}
 			}
 		}
 		
 		if(agentInfo == null) {
-			String id = idServer.getStringId(AgentInfo.class);
 			agentInfo = new AgentInfo();
-			agentInfo.setId(id);
+			agentInfo.setId(idServer.getStringId(AgentInfo.class));
 		}
 		
 		agentInfo.setName(Config.getInstanceName());
@@ -161,29 +158,53 @@ public class ServiceAgent {
 		SystemUtils.setFileString(infoFile, agJson);
 		
 		path = ChoyConstants.ROOT_AGENT + "/" + agentInfo.getId();
-		op.createNode(path,agJson , true);
+		activePath = ChoyConstants.ROOT_ACTIVE_AGENT + "/"+ agentInfo.getId();
 		
-		/*op.addNodeListener(path, (int type, String p,String data)->{
-			//防止被误删除，只要此进程还在，此结点就不应该消失
-			if(type == IListener.REMOVE) {
-				recreateAgentInfo();
+		op.createNodeOrSetData(path, agJson , IDataOperator.PERSISTENT); //
+		op.createNodeOrSetData(activePath,"true",IDataOperator.EPHEMERAL); //代表此Agent的存活标志
+		//op.createNodeOrSetData(assignPath, "" , false); //分配给此Agent的全部部署ID
+		
+		insManager.filterByAgent(agentInfo.getId());
+		
+		insManager.addListener((type,pi) -> {
+			if(type == IListener.ADD) {
+				instanceAdded(pi);
+			} else if(type == IListener.REMOVE) {
+				instanceRemoved(pi);
 			}
-		});*/
-		
-		op.addDataListener(path, (path,data0)->{
-			checkStatus();
 		});
 		
-		 op.addChildrenListener(ChoyConstants.INS_ROOT, (type,parent,insId,data)->{
+		 //本Agent退出
+		/* op.addDataListener(activePath, (path,data) -> {
+			 if("fasle".equals(data)) {
+				 Set<ProcessInfo> ids = new HashSet<>();
+				 ids.addAll(this.processInfos.values());
+				 for(ProcessInfo id : ids) {
+					this.instanceRemoved(id);
+				 }
+			 }
+		 });*/
+		 
+		 //监控分配新的应用
+		op.addChildrenListener(path, (type,parent,depId,data)->{
 			if(type == IListener.ADD) {
-				instanceAdded(insId,data);
+				ProcessInfo pi = this.insManager.getProcessesByAgentIdAndDepid(agentInfo.getId(), depId);
+				if(pi != null) {
+					//第一次启动时，已经存在对应的应用
+					instanceAdded(pi);
+				} else {
+					deploymentAdded(depId);
+				}
 			}else if(type == IListener.REMOVE) {
-				instanceRemoved(insId);
+				this.deploymentRemoved(depId);
 			}
 		});
 		 
-		 TimerTicker.getDefault(1000*3L).addListener("", (key,att)->{
+		TimerTicker.getDefault(1000*3L).addListener("", (key,att)->{
 				try {
+					if(System.currentTimeMillis() - agentInfo.getStartTime() < 1000*30) {
+						return;
+					}
 					checkStatus();
 				} catch (Throwable e) {
 					logger.error("doChecker",e);
@@ -196,7 +217,7 @@ public class ServiceAgent {
 		agentInfo.setAssignTime(System.currentTimeMillis());
 		String data = JsonUtils.getIns().toJson(agentInfo);
 		logger.warn("Recreate angent info: " + data);
-		op.createNode(path,data ,true);
+		op.createNodeOrSetData(path,data ,IDataOperator.PERSISTENT);
 	}
 
 	private void checkStatus() {
@@ -204,154 +225,91 @@ public class ServiceAgent {
 		if( curTime - agentInfo.getAssignTime() < 10000) {
 			return;
 		}
-		
-		doInlocker(path,()->{
-			if(!op.exist(path)) {
-				recreateAgentInfo();
-				return;
-			}
-			
-			String data = op.getData(path);
-			
-			AgentInfo ai = JsonUtils.getIns().fromJson(data, AgentInfo.class);
-			if(ai != null) {
-				boolean doUpdate = false;
-				if(!ai.getRunningDeps().isEmpty()) {
-					Iterator<String> ite = ai.getRunningDeps().iterator();
-					for(;ite.hasNext();) {
-						ProcessInfo pi = this.dep2Process.get(ite.next());
-						if( pi == null ) {
-							doUpdate = true;
-							ite.remove();
-						}
-					}
-				}
-				
-				if(!ai.getAssignDeps().isEmpty()) {
-					for(String d : ai.getAssignDeps()) {
-						if(deploymentAdded(d)) {
-							ai.getRunningDeps().add(d);
-						}
-					}
-					ai.getAssignDeps().clear();
-					doUpdate = true;
-				}
-				
-				if(!ai.getDeleteDeps().isEmpty()) {
-					for(String d : ai.getDeleteDeps()) {
-						deploymentRemoved(d);
-						ai.getRunningDeps().remove(d);
-					}
-					ai.getDeleteDeps().clear();
-					doUpdate = true;
-				}
 
-				Set<String> keySet = new HashSet<>();
-				keySet.addAll(processInfos.keySet());
-				for(String k : keySet) {
-					ProcessInfo pi = processInfos.get(k);
-					String p = ChoyConstants.INS_ROOT + "/" + pi.getId();
-					if(!op.exist(p)) {
-						deploymentRemoved(pi.getDepId());
-						ai.getRunningDeps().remove(pi.getDepId());
-						processInfos.remove(k);
-						dep2Process.remove(pi.getDepId());
-						doUpdate = true;
+		if(!op.exist(path)) {
+			recreateAgentInfo();
+			return;
+		}
+		
+		Set<String> keySet = new HashSet<>();
+		keySet.addAll(processInfos.keySet());
+		for(String k : keySet) {
+			ProcessInfo pi = processInfos.get(k);
+			String p = ChoyConstants.INS_ROOT + "/" + pi.getId();
+			if(op.exist(p)) {
+				if(!pi.isActive() && curTime - pi.getOpTime() > pi.getTimeOut()) {
+					//已经命令进程停止，并且超过超时时间还没成功退出
+					processInfos.remove(k);
+					if(StringUtils.isNotEmpty(pi.getPid())) {
+						forceStopProcess(pi.getPid());
 					}
-				}
-				
-				if(doUpdate) {
-					agentInfo = ai;
-					ai.setAssignTime(curTime);//删除成功
-					op.setData(path, JsonUtils.getIns().toJson(ai));
+				} 
+			} else {
+				//进程节点不存在
+				//pi.getPid() != null: 进程已经停止
+				//进程启动超时: curTime - pi.getOpTime() > pi.getTimeOut()
+				if(pi.getPid() != null || (pi.getPid() == null && curTime - pi.getOpTime() > pi.getTimeOut())) {
+					//进程ID为空，启动中，进程还没起来
+					//超时时间已经到了
+					processInfos.remove(k);
 				}
 			}
-		});		
+		}
+		
 	}
 
-	private boolean checkExist(File infoFile) {
-		
-		if(!infoFile.exists()) {
-			return false;
+	private void forceStopProcess(String pid) {
+		String cmd = "kill -9 "+pid;
+		if(SystemUtils.isWindows()) {
+			 cmd = "taskkill /f /pid "+pid;
+		} else {
+			 //类unix系统停止进程
+			 cmd = "kill -9 "+pid;
 		}
 		
-		String existAgentJson = SystemUtils.getFileString(infoFile);
-		if(existAgentJson == null) {
-			return false;
+		try {
+			Runtime.getRuntime().exec(cmd);
+		} catch (IOException e) {
+			logger.error("fail to stop process : " + pid,e);
 		}
 		
-		AgentInfo existAgentInfo = JsonUtils.getIns().fromJson(existAgentJson, AgentInfo.class);
-		Set<String> agents = op.getChildren(ChoyConstants.ROOT_AGENT, false);
-		for(String a : agents) {
-			String data = op.getData(ChoyConstants.ROOT_AGENT+"/"+a);
-			AgentInfo ai = JsonUtils.getIns().fromJson(data, AgentInfo.class);
-			if(existAgentInfo.getId().equals(ai.getId())) {
-				logger.warn("Agent exist: " + data);
-				//return true;
-			}
-		
-		}
-		return false;
 	}
 
-	private void instanceRemoved(String insId) {
-		if(processInfos.containsKey(insId)) {
-			op.removeDataListener(ChoyConstants.INS_ROOT+"/" + insId, this.processInfoDataListener);
-			ProcessInfo pi = processInfos.remove(insId);
-			stopProcess(pi);
-			dep2Process.remove(pi.getDepId());
-			
-			this.doInlocker(this.path, ()->{
-				String data = op.getData(this.path);
-				AgentInfo ai = JsonUtils.getIns().fromJson(data, AgentInfo.class);
-				if(ai.getRunningDeps().contains(pi.getDepId())) {
-					ai.getRunningDeps().remove(pi.getDepId());
-					ai.setAssignTime(System.currentTimeMillis());
-					op.setData(this.path, JsonUtils.getIns().toJson(ai));
-				}
-				logger.info("Insatnce remove: " + JsonUtils.getIns().toJson(pi));
-				agentInfo = ai;
-			});
-			
-		
+
+	private void instanceRemoved(ProcessInfo pi) {
+		if(processInfos.containsKey(pi.getId())) {
+			 processInfos.remove(pi.getId());
+			 //stopProcess(pi);
 		}
 	}
 	
-	private void instanceAdded(String insId, String json) {
-		ProcessInfo pi = JsonUtils.getIns().fromJson(json, ProcessInfo.class);
+	private void instanceAdded(ProcessInfo pi) {
+		if(pi == null) {
+			logger.error("ProcessInfo is NULL");
+			return;
+		}
 		if(StringUtils.isEmpty(pi.getAgentId())) {
 			//非Agent环境下启动的实例
 			return;
 		}
 		if(pi.getAgentId().equals(this.agentInfo.getId())) {
-			String pipath = ChoyConstants.INS_ROOT+"/" + insId;
-			op.addDataListener(pipath, processInfoDataListener);
-			
-			if(processInfos.containsKey(pi.getId())) {
-				processInfos.put(insId, pi);
-				dep2Process.put(pi.getDepId(), pi);
-			} else {
-				processInfos.put(insId, pi);
-				dep2Process.put(pi.getDepId(), pi);
-				//第一次启动时，Agent关联实例
-				doInlocker(this.path,()->{
-					String data = op.getData(this.path);
-					AgentInfo ai = JsonUtils.getIns().fromJson(data, AgentInfo.class);
-					if(!ai.getRunningDeps().contains(pi.getDepId())) {
-						ai.getRunningDeps().add(pi.getDepId());
-						ai.setAssignTime(System.currentTimeMillis());
-						op.setData(path, JsonUtils.getIns().toJson(ai));
-						this.agentInfo = ai;
-					}
-				});
-			}
-			
-			logger.info("Insatnce add: " + json);
+			processInfos.put(pi.getId(), pi);
+			logger.info("Insatnce add: " + pi.toString());
 		}
 	}
 
 	private void deploymentRemoved(String depId) {
-		stopProcess(this.dep2Process.get(depId));
+		ProcessInfo p = null;
+		for(ProcessInfo pi : processInfos.values()) {
+			if(depId.equals(pi.getDepId())) {
+				p = pi;
+				break;
+			}
+		}
+		if(p != null) {
+			stopProcess(p);
+		}
+		
 	}
 
 	private boolean deploymentAdded(String depId) {
@@ -368,6 +326,7 @@ public class ServiceAgent {
 	}
 
 	private boolean startDep(Deployment dep) {
+		
 		boolean doContinue = true;
 		if(!checkRes(dep.getJarFile()) ) {
 			//Jar文件还不存在，先下载资源
@@ -401,7 +360,9 @@ public class ServiceAgent {
 		}
 		
 		if(SystemUtils.isWindows()) {
+			
 		}else if(SystemUtils.isLinux()) {
+			
 		} else {
 			logger.error("Not support operation system:" + SystemUtils.getOSname());
 			return false;
@@ -441,6 +402,8 @@ public class ServiceAgent {
 			pi.setAgentProcessId(SystemUtils.getProcessId());
 			pi.setAgentHost(Config.getHost());
 			pi.setAgentInstanceName(Config.getInstanceName());
+			pi.setOpTime(System.currentTimeMillis());
+			pi.setTimeOut(this.processOpTimeout);
 			
 			//通过文件传递给子进程，再由子进程在启动后存入ZK
 			String data = JsonUtils.getIns().toJson(pi);
@@ -452,7 +415,7 @@ public class ServiceAgent {
 			pi.setProcess(p);
 			
 			this.processInfos.put(pi.getId(), pi);
-			this.dep2Process.put(pi.getDepId(), pi);
+			//this.dep2Process.put(pi.getDepId(), pi);
 			
 			logger.info("Start process: " + data);
 			return true;
@@ -464,7 +427,6 @@ public class ServiceAgent {
 				try {
 					os.close();
 				} catch (IOException e) {
-					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
 			}
@@ -499,7 +461,6 @@ public class ServiceAgent {
 					return true;
 				}
 			}
-			
 		} catch (IOException e) {
 			logger.error("Download ["+jarFile+"]",e);
 			return false;
@@ -521,33 +482,18 @@ public class ServiceAgent {
 
 	private void stopProcess(ProcessInfo pi) {
 		if(pi == null) {
-			//logger.warn("Receive NULL dep for stop deployment");
+			logger.warn("Receive NULL dep for stop deployment");
 			return;
 		}
 		
 		String p = ChoyConstants.INS_ROOT+"/"+pi.getId();
-		if(op.exist(p)) {
+		if(op.exist(p) && pi.isActive()) {
 			pi.setActive(false);
+			pi.setOpTime(System.currentTimeMillis());
+			pi.setTimeOut(processOpTimeout);
 			String data = JsonUtils.getIns().toJson(pi);
 			op.setData(p, data);
 			logger.info("Stop process: " + data);
-		}
-	}
-	
-	private void doInlocker(String lockPath,Runnable r) {
-		ILocker locker = null;
-		boolean success = false;
-		try {
-			locker = lockMgn.getLocker(lockPath);
-			if(success = locker.tryLock(1000,30*1000)) {
-				r.run();
-			} else {
-				throw new CommonException("Fail to get locker:" + lockPath);
-			}
-		}finally {
-			if(locker != null && success) {
-				locker.unLock();
-			}
 		}
 	}
 }

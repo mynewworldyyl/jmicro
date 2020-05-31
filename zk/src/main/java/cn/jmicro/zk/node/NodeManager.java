@@ -63,6 +63,20 @@ public class NodeManager {
 	      }
 	};
 	
+	public void connStateChange(int type) {
+		if(nodeListeners.isEmpty()) {
+			return;
+		}
+		if(Constants.CONN_RECONNECTED == type) {
+			Set<String> ls = new HashSet<>();
+			ls.addAll(this.nodeListeners.keySet());
+			
+			for(String path : ls) {
+				watchNode(path);
+			}
+		}
+	}
+	
 	private void nodeCreate(String path) {
 		Set<INodeListener> lis = nodeListeners.get(path);
 		if(lis != null && !lis.isEmpty()){
@@ -163,7 +177,8 @@ public class NodeManager {
 		CreateBuilder createBuilder = this.curator.create();
   	    try {
   	    	byte[] d = data.getBytes(Constants.CHARSET);
-  	    	createBuilder.withMode(CreateMode.fromFlag(model));
+  	    	CreateMode cm = CreateMode.fromFlag(model);
+  	    	createBuilder.withMode(cm);
   	    	createBuilder.forPath(path,d);
 		} catch (KeeperException.NoNodeException e) {
 			logger.error(e.getMessage());

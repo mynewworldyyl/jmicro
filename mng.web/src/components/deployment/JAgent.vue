@@ -25,8 +25,10 @@
         methods: {
 
             refresh(){
+                let self = this;
                 window.jm.mng.conf.getChildren(window.jm.mng.AGENT_ROOT,true).then((agentList)=>{
                     if(!agentList || agentList.length == 0 ) {
+                        self.$Message.success("No data to show");
                         return;
                     }
 

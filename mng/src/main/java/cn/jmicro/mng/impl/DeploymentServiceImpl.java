@@ -54,7 +54,7 @@ public class DeploymentServiceImpl implements IDeploymentService {
 		String id = idServer.getStringId(Deployment.class);
 		dep.setId(id);
 		
-		op.createNode(ChoyConstants.DEP_DIR+"/"+id, JsonUtils.getIns().toJson(dep), false);
+		op.createNodeOrSetData(ChoyConstants.DEP_DIR+"/"+id, JsonUtils.getIns().toJson(dep), false);
 		
 		return dep;
 	}

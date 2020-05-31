@@ -487,7 +487,7 @@ public class ZKDataOperatorOld implements IDataOperator{
 	/**
 	 *如果结点已经存在，则直接更新数数
 	 */
-	public void createNode(String path,String data,boolean elp){
+	public void createNodeOrSetData(String path,String data,boolean elp){
 		if(this.exist(path)) {
 			if(elp) {
 				throw new CommonException("elp node ["+path+"] have been exists");
@@ -600,7 +600,7 @@ public class ZKDataOperatorOld implements IDataOperator{
 	  }
 	
 	@Override
-	public void createNode(String path, String data, int model) {
+	public void createNodeOrSetData(String path, String data, int model) {
 		// TODO Auto-generated method stub
 		
 	}

@@ -1,6 +1,7 @@
 <template>
     <div class="JProcess">
         <a @click="refresh()">REFRESH</a>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input type="checkbox" v-model="showAll"/>ALL
         <table class="configItemTalbe" width="99%">
             <thead><tr><td>ID</td><td>NAME</td><td>HOST</td><td>PROCESS ID</td>
                 <td>AGENT HOST</td><td>AGENT NAME</td><td>AGENT ID</td> <td>AGENT PROCESS ID</td>
@@ -26,14 +27,17 @@
         name: 'JProcess',
         data () {
             return {
+                showAll:false,
                 processList:[],
             }
         },
         methods: {
 
             refresh(){
+                let self = this;
                 window.jm.mng.conf.getChildren(window.jm.mng.INSTANCE_ROOT,true).then((processList)=>{
                     if(!processList || processList.length == 0 ) {
+                        self.$Message.success("No data to show");
                         return;
                     }
 
@@ -41,7 +45,9 @@
                     for(let i = 0; i < processList.length; i++) {
                         let e = JSON.parse(processList[i].val);
                         //e.startTime0 = new Date(e.startTime).format("yyyy-MM-dd hh:mm:ss");
-                        if(e.agentProcessId) {
+                        if(self.showAll) {
+                            this.processList.push(e);
+                        }else if(e.agentProcessId) {
                             this.processList.push(e);
                         }
 

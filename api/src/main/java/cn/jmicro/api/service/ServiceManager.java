@@ -255,7 +255,7 @@ public class ServiceManager {
 			dataOperator.setData(path, data);
 		} else {
 			logger.debug("Create node: {}", path);
-			dataOperator.createNode(path,data, isel);
+			dataOperator.createNodeOrSetData(path,data, isel);
 		}
 	}
 	

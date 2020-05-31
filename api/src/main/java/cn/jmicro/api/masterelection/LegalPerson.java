@@ -12,7 +12,6 @@ import cn.jmicro.api.config.Config;
 import cn.jmicro.api.objectfactory.IObjectFactory;
 import cn.jmicro.api.raft.IDataOperator;
 import cn.jmicro.common.CommonException;
-import cn.jmicro.common.Constants;
 import cn.jmicro.common.util.StringUtils;
 
 @IDStrategy(10)
@@ -24,12 +23,13 @@ public class LegalPerson {
 	
 	private IDataOperator op;
 	
-	private Config cfg;
+	//private Config cfg;
 	
 	//private ComponentIdServer idServer;
 	
 	private String dir;
 	
+	//用于区别本法人实例
 	private String prefix;
 	
 	private boolean isMaster;
@@ -58,7 +58,7 @@ public class LegalPerson {
 		}
 		
 		this.op = of.get(IDataOperator.class);
-		this.cfg = of.get(Config.class);
+		//this.cfg = of.get(Config.class);
 		//this.idServer = of.get(ComponentIdServer.class);
 		
 		//this.listener = listener;
@@ -70,7 +70,7 @@ public class LegalPerson {
 			//创建目录节点，并在目录上记录开始时间
 			electionStartTime = curTime;
 			logger.info("Create master dir node and enter election status: {}, dir: {}",electionStartTime,dir);
-			op.createNode(this.dir, "" + electionStartTime, IDataOperator.PERSISTENT);
+			op.createNodeOrSetData(this.dir, "" + electionStartTime, IDataOperator.PERSISTENT);
 			lockStatu = true;
 		}else {
 			Set<String> chs = op.getChildren(this.dir, false);
@@ -91,8 +91,9 @@ public class LegalPerson {
 			}
 		}
 		
-		this.prefix = cfg.getString(Constants.INSTANCE_NAME, null); //this.idServer.getStringId(LegalPerson.class)+"_";
-		if(this.prefix == null) {
+		this.prefix = Config.getInstanceName();
+		//this.idServer.getStringId(LegalPerson.class)+"_";
+		/*if(this.prefix == null) {
 			this.prefix = Config.getInstanceName();
 			if(this.prefix.length() >= 3) {
 				//把后面的数字去除，默认支持两位数字，也就是最多100个实例的高可用集群
@@ -100,10 +101,10 @@ public class LegalPerson {
 			} else {
 				this.prefix = this.prefix.substring(0,this.prefix.length()-1);
 			}
-		}
+		}*/
 		
 		String nodePath = this.dir +"/" + this.prefix;
-		op.createNode(nodePath, "", IDataOperator.EPHEMERAL_SEQUENTIAL);
+		op.createNodeOrSetData(nodePath, "", IDataOperator.EPHEMERAL_SEQUENTIAL);
 		//this.seq = Long.parseLong(getSeq(op.getData(nodePath)));
 		
 		op.addChildrenListener(this.dir, (type,parent,child,data)->{
@@ -118,7 +119,7 @@ public class LegalPerson {
 					lockStatu = true;
 					logger.info("Master [{}] offline, dir: {}", dm,dir);
 					//主节点下线
-					notify(IMasterChangeListener.MASTER_OFFLINE, this.isMaster);
+					this.notify(IMasterChangeListener.MASTER_OFFLINE, this.isMaster);
 					//进入待选主状态
 					long cTime = System.currentTimeMillis();
 					long t = Long.parseLong(op.getData(dir));
@@ -140,13 +141,13 @@ public class LegalPerson {
 		
 		op.addDataListener(this.dir, (path,data) -> {
 			this.electionStartTime = Long.parseLong(data);
-			lockStatu = true;
+			this.lockStatu = true;
 			this.masterSeq = -1;
-			notify(IMasterChangeListener.MASTER_OFFLINE, false);
-			startElectionWorker();
+			this.notify(IMasterChangeListener.MASTER_OFFLINE, false);
+			this.startElectionWorker();
 		});
 		
-		startElectionWorker();
+		this.startElectionWorker();
 	}
 
 	private void notify(int masterOffline, boolean b) {

@@ -78,10 +78,10 @@ public class ConfigManagerImpl implements IConfigManager {
 			}else if(StringUtils.isEmpty(val)) {
 				return false;
 			}
-			op.createNode(path, val, false);
+			op.createNodeOrSetData(path, val, false);
 			if(isDir) {
 				//有子结点才是目录结点，否则作为叶子结点造成不能再往里增加子结点
-				op.createNode(path+"/ip", Config.getHost(), false);
+				op.createNodeOrSetData(path+"/ip", Config.getHost(), false);
 			}
 			
 			return true;

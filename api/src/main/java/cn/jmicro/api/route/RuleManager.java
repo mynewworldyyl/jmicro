@@ -125,7 +125,7 @@ public class RuleManager {
 			rule.setUniqueId(idGenerator.getStringId(RouteRule.class));
 		}
 		String path = RULE_DIR + "/" + rule.getUniqueId();
-		dataOperator.createNode(path, rule.value(), false);
+		dataOperator.createNodeOrSetData(path, rule.value(), false);
 	}
 
 	public String[] getRouterTypes() {

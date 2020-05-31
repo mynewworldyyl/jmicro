@@ -37,7 +37,7 @@ public class CheckPostReadyListener implements IPostFactoryListener{
 				throw new CommonException("InstanceName :"+Config.getInstanceName()+" is using by other server");
 			}
 		}
-		ddop.createNode(Config.ServiceConfigDir+"/active", "", true);
+		ddop.createNodeOrSetData(Config.ServiceConfigDir+"/active", "", true);
 	
 		
 	}

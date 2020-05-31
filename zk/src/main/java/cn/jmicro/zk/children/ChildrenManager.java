@@ -19,6 +19,7 @@ import org.slf4j.LoggerFactory;
 
 import cn.jmicro.api.IListener;
 import cn.jmicro.api.raft.IChildrenListener;
+import cn.jmicro.common.Constants;
 import cn.jmicro.common.util.StringUtils;
 import cn.jmicro.zk.ZKDataOperator;
 
@@ -44,6 +45,21 @@ public class ChildrenManager {
 		this.op = op;
 		this.curator = c;
 		this.openDebug = openDebug;
+	}
+	
+	public void connStateChange(int type) {
+		if(childrenListeners.isEmpty()) {
+			return;
+		}
+		if(Constants.CONN_RECONNECTED == type) {
+			Set<String> ls = new HashSet<>();
+			ls.addAll(this.childrenListeners.keySet());
+			
+			for(String path : ls) {
+				watchChildren(path);
+			}
+		}
+		
 	}
 
 	/**

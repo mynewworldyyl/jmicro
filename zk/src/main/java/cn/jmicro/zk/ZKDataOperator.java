@@ -163,23 +163,23 @@ public class ZKDataOperator implements IDataOperator{
 
 	@Override
 	public void setData(String path, String data) {
-		this.childrenManager.removeCache(path);
+		//this.childrenManager.removeCache(path);
 		this.nodeManager.setData(path, data);
 	}
 
 	@Override
-	public void createNode(String path, String data, boolean elp) {
+	public void createNodeOrSetData(String path, String data, boolean elp) {
 		this.nodeManager.createNode(path, data, elp);
 	}
 
 	@Override
-	public void createNode(String path, String data, int model) {
+	public void createNodeOrSetData(String path, String data, int model) {
 		this.nodeManager.createNode(path, data, model);
 	}
 
 	@Override
 	public void deleteNode(String path) {
-		this.childrenManager.removeCache(path);
+		//this.childrenManager.removeCache(path);
 		this.nodeManager.deleteNode(path);
 	}
 	
@@ -260,7 +260,14 @@ public class ZKDataOperator implements IDataOperator{
         	 s = Constants.CONN_RECONNECTED;
         	 //registListeners();
          }
+		 
+		 
 		 if(s!= 0){
+			 
+			 this.childrenManager.connStateChange(s);
+			 this.nodeManager.connStateChange(s);
+			 this.dataManager.connStateChange(s);
+			 
 			 for(IConnectionStateChangeListener l : this.connListeners){
 				 l.stateChanged(s);
 			 }

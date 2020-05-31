@@ -56,7 +56,7 @@ public class DegradeManager {
 		if(dataOperator.exist(path)) {
 			dataOperator.setData(path, data);
 		}else {
-			dataOperator.createNode(path, data, false);
+			dataOperator.createNodeOrSetData(path, data, false);
 		}
 	}
 	

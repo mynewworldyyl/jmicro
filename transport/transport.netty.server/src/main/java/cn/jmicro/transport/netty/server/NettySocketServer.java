@@ -35,7 +35,6 @@ import cn.jmicro.api.executor.ExecutorFactory;
 import cn.jmicro.api.masterelection.IMasterChangeListener;
 import cn.jmicro.api.net.IServer;
 import cn.jmicro.api.objectfactory.IObjectFactory;
-import cn.jmicro.api.objectfactory.PostFactoryAdapter;
 import cn.jmicro.common.CommonException;
 import cn.jmicro.common.Constants;
 import cn.jmicro.common.util.StringUtils;
@@ -56,7 +55,7 @@ import io.netty.handler.logging.LoggingHandler;
  */
 @Component(value=Constants.TRANSPORT_NETTY,lazy=false,level=1,side=Constants.SIDE_PROVIDER)
 @Server(transport=Constants.TRANSPORT_NETTY)
-public class NettySocketServer extends PostFactoryAdapter implements IServer {
+public class NettySocketServer implements IServer {
 
 	static final Logger LOG = LoggerFactory.getLogger(NettySocketServer.class);
 	
@@ -85,7 +84,7 @@ public class NettySocketServer extends PostFactoryAdapter implements IServer {
 	
 	@Override
 	public void init() {
-		if(!this.enable) {
+		if(Config.isClientOnly() || !this.enable) {
 			LOG.info("NettySocketServer is disable");
 			return;
 		}
@@ -187,22 +186,4 @@ public class NettySocketServer extends PostFactoryAdapter implements IServer {
 	public void setPort(int port) {
 		this.port = port;
 	}
-
-	@Override
-	public void preInit(IObjectFactory of) {
-		// TODO Auto-generated method stub
-		
-	}
-
-	@Override
-	public void afterInit(IObjectFactory of) {
-	}
-
-	@Override
-	public int runLevel() {
-		// TODO Auto-generated method stub
-		return 0;
-	}
-
-
 }

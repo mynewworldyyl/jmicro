@@ -79,14 +79,18 @@ public class NettyHttpServer implements IServer{
 	
 	@Override
 	public void init() {
-		if(startHttp) {
-			this.of.masterSlaveListen((type,isMaster)->{
-				if(isMaster && (IMasterChangeListener.MASTER_ONLINE == type || IMasterChangeListener.MASTER_NOTSUPPORT == type)) {
-					//主从模式
-					start();
-				}
-			});
+		if(Config.isClientOnly() || !this.startHttp) {
+			LOG.info("NettyHttpServer is disable");
+			return;
 		}
+
+		this.of.masterSlaveListen((type,isMaster)->{
+			if(isMaster && (IMasterChangeListener.MASTER_ONLINE == type || IMasterChangeListener.MASTER_NOTSUPPORT == type)) {
+				//主从模式
+				start();
+			}
+		});
+	
 	}
 	
 	@Override

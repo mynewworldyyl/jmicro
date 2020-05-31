@@ -143,7 +143,7 @@ public class StatisMonitorImpl implements IStatisMonitor {
 					op.setData(regPath, cnt+"");
 				} else {
 					//如果此服务挂机，结点将消失，重新启动后，客户端需要重新订阅
-					op.createNode(regPath, "1", true);
+					op.createNodeOrSetData(regPath, "1", true);
 					TimerTicker timer = TimerTicker.getTimer(timers,time);
 					if(!timer.container(rkey)) {
 						timer.addListener(rkey,tickerAct,mkey);

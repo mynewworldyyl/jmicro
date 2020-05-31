@@ -15,6 +15,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import cn.jmicro.api.raft.IDataListener;
+import cn.jmicro.common.Constants;
 import cn.jmicro.zk.ZKDataOperator;
 
 public class DataManager {
@@ -47,6 +48,20 @@ public class DataManager {
 	    	  }
 	      } 
 	};
+	
+	public void connStateChange(int type) {
+		if(dataListeners.isEmpty()) {
+			return;
+		}
+		if(Constants.CONN_RECONNECTED == type) {
+			Set<String> ls = new HashSet<>();
+			ls.addAll(this.dataListeners.keySet());
+			
+			for(String path : ls) {
+				 watchData(path);
+			}
+		}
+	}
 	
 	private void dataChange(String path){
 		String str = op.getData(path);

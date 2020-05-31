@@ -54,9 +54,8 @@
 		<level value="DEBUG"/>
 		<appender-ref ref="jmicro_debug"/>
 	</logger>
-	<logger name="cn.apache.zookeeper">
+	<logger name="org.apache.zookeeper">
 		<level value="ERROR"/>
-		<appender-ref ref="jmicro_error"/>
 	</logger>
 	 <logger name="org.apache.mina">
 		<level value="ERROR"/>
@@ -65,7 +64,6 @@
 	<root>	
 	    <level value="DEBUG"/>
 		<appender-ref ref="CONSOLE"/>
-		<appender-ref ref="jmicro_debug"/>
 	</root>
 	
 </log4j:configuration>

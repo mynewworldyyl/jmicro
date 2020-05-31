@@ -32,6 +32,10 @@ public class ProcessInfo {
 	
 	private boolean active;
 	
+	private long opTime;
+	
+	private long timeOut;
+	
 	private transient Process process;
 
 	public String getId() {
@@ -136,6 +140,22 @@ public class ProcessInfo {
 
 	public void setAgentProcessId(String agentProcessId) {
 		this.agentProcessId = agentProcessId;
+	}
+
+	public long getOpTime() {
+		return opTime;
+	}
+
+	public void setOpTime(long opTime) {
+		this.opTime = opTime;
+	}
+
+	public long getTimeOut() {
+		return timeOut;
+	}
+
+	public void setTimeOut(long timeOut) {
+		this.timeOut = timeOut;
 	}
 
 	@Override

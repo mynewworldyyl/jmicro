@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package cn.jmicro.choreography.assignment;
+package cn.jmicro.choreography.agent;
 
 import java.util.HashSet;
 import java.util.Map;
@@ -31,8 +31,10 @@ import cn.jmicro.api.choreography.ChoyConstants;
 import cn.jmicro.api.raft.IChildrenListener;
 import cn.jmicro.api.raft.IDataListener;
 import cn.jmicro.api.raft.IDataOperator;
+import cn.jmicro.api.raft.INodeListener;
 import cn.jmicro.choreography.base.AgentInfo;
 import cn.jmicro.choreography.controller.IAgentListener;
+import cn.jmicro.choreography.instance.InstanceManager;
 import cn.jmicro.common.Constants;
 import cn.jmicro.common.util.JsonUtils;
 
@@ -49,10 +51,16 @@ public class AgentManager {
 	private final static String AGENT_IS_DESABLE = "AgentManager is disable by [\"/AgentManager/enable\"]";
 	
 	@Inject
-	private IDataOperator dataOperator;
+	private IDataOperator op;
+	
+	@Inject
+	private InstanceManager insManager;
 	
 	//路径到Agent映射
 	private Map<String,AgentInfo> id2Agents = new ConcurrentHashMap<>();
+	
+	//分配的部署
+	//private Map<String,Set<String>> id2Deps = new ConcurrentHashMap<>();
 	
 	private Set<IAgentListener> agentListeners = new HashSet<>();
 	
@@ -65,39 +73,91 @@ public class AgentManager {
 		}
 	};
 	
+	private final INodeListener activeNodeListener = (type, path, data)->{
+		if(IListener.REMOVE == type) {
+			String agentPath = path.substring(0,path.length() - 7);
+			String id = agentPath.substring(agentPath.lastIndexOf("/")+1);
+			AgentInfo ai = id2Agents.remove(id);
+			if(ai != null) {
+				notifyAgentListener(IAgentListener.REMOVE,ai);
+				if(!insManager.isExistByAgentId(id)) {
+					deleteAgent(agentPath);
+				}
+			}
+		}
+	};
+	
 	public void ready() {
 		
-		dataOperator.addListener((state)->{
+		op.addListener((state)->{
 			if(Constants.CONN_CONNECTED == state) {
 				logger.info("CONNECTED, reflesh children");
-				Set<String> children = this.dataOperator.getChildren(ChoyConstants.ROOT_AGENT,true);
-				refleshAgent(children);
+				//refleshAgent();
 			}else if(Constants.CONN_LOST == state) {
 				logger.warn("DISCONNECTED");
 			}else if(Constants.CONN_RECONNECTED == state) {
 				logger.warn("Reconnected,reflesh children");
-				Set<String> children = this.dataOperator.getChildren(ChoyConstants.ROOT_AGENT,true);
-				refleshAgent(children);
+				//refleshAgent();
 			}
 		});
 		
+		deleteInvalidAgent();
+		
 		logger.info("add listener");
-		dataOperator.addChildrenListener(ChoyConstants.ROOT_AGENT, new IChildrenListener() {
+		op.addChildrenListener(ChoyConstants.ROOT_AGENT, new IChildrenListener() {
 			@Override
 			public void childrenChanged(int type,String parent, String child,String data) {
+				String path = ChoyConstants.ROOT_AGENT+"/"+child;
+				String activePath = ChoyConstants.ROOT_ACTIVE_AGENT + "/"+child;
 				if(type == IListener.ADD) {
-					added(child,data);
+					AgentInfo ai = JsonUtils.getIns().fromJson(data, AgentInfo.class);
+					if(!id2Agents.containsKey(child)) {
+						id2Agents.put(child, ai);
+						op.addDataListener(path, agentDataListener);
+						op.addNodeListener(activePath, activeNodeListener);
+						notifyAgentListener(IAgentListener.ADD,ai);
+					} else {
+						id2Agents.put(child, ai);
+					}
 				}else if(type == IListener.REMOVE) {
-					removed(child);
+					op.removeDataListener(path, agentDataListener);
+					op.removeNodeListener(activePath, activeNodeListener);
+					id2Agents.remove(child);
 				}
 			}
 		});
 	}
 	
-	public Set<AgentInfo> getAllAgentInfo() {
-		Set<String> children = this.dataOperator.getChildren(ChoyConstants.ROOT_AGENT,true);
-		refleshAgent(children);
+	private void deleteInvalidAgent() {
+		Set<String> children = op.getChildren(ChoyConstants.ROOT_AGENT, false);
+		if(children == null || children.isEmpty()) {
+			return;
+		}
 		
+		for(String c : children) {
+			if(!insManager.isExistByAgentId(c)) {
+				String activePath = ChoyConstants.ROOT_ACTIVE_AGENT + "/"+c;
+				if(!op.exist(activePath)) {
+					String path = ChoyConstants.ROOT_AGENT+"/"+c;
+					deleteAgent(path);
+				}
+			}
+		}
+	}
+	
+	private void deleteAgent(String path) {
+		//String asDepPath = path + "/assign";
+		Set<String>  asDeps = this.op.getChildren(path,false);
+		if(asDeps != null && !asDeps.isEmpty()) {
+			for(String c : asDeps) {
+				op.deleteNode(path + "/" +c);
+			}
+		}
+		op.deleteNode(path);
+	}
+
+	public Set<AgentInfo> getAllAgentInfo() {
+		//refleshAgent();
 		Set<AgentInfo> agents = new HashSet<>();
 		agents.addAll(this.id2Agents.values());
 		return agents;
@@ -105,56 +165,21 @@ public class AgentManager {
 	
 	public void addAgentListener(IAgentListener l) {
 
-		if( this.agentListeners.contains(l) ) {
+		if(this.agentListeners.contains(l) ) {
 			return;
 		}
 		this.agentListeners.add(l);
 		if(!id2Agents.isEmpty()) {
-			for(AgentInfo ai: id2Agents.values()) {
+			for(AgentInfo ai : id2Agents.values()) {
 				l.agentChanged(IAgentListener.ADD, ai);
 			}
 		}
 	}
 	
-	private void added(String c,String data) {
-		AgentInfo ai = JsonUtils.getIns().fromJson(data, AgentInfo.class);
-		id2Agents.put(c, ai);
-		if(!id2Agents.containsKey(c)) {
-			String p = ChoyConstants.ROOT_AGENT+"/"+c;
-			dataOperator.addDataListener(p, agentDataListener);
-			notifyAgentListener(IAgentListener.ADD,ai);
-		}
-	}
-	
-	
-	private void refleshAgent(Set<String> children) {
-		if(children == null || children.isEmpty()) {
-			return;
-		}
-		
-		for(String c : children) {
-			String path = ChoyConstants.ROOT_AGENT+"/"+c;
-			String data = this.dataOperator.getData(path);
-			added(c,data);
-		}
-		
-	}
-
 	private void updateAgentData(String c, String data) {
 		AgentInfo ai = JsonUtils.getIns().fromJson(data, AgentInfo.class);
 		id2Agents.put(c, ai);
 		notifyAgentListener(IAgentListener.DATA_CHANGE,ai);
-	}
-
-	private void removed(String c) {
-		if(id2Agents.containsKey(c)) {
-			String path = ChoyConstants.ROOT_AGENT+"/"+c;
-			dataOperator.removeDataListener(path, agentDataListener);
-			AgentInfo ai = this.id2Agents.remove(c);
-			if(ai != null) {
-				notifyAgentListener(IAgentListener.REMOVE,ai);
-			}
-		}
 	}
 
 	private void notifyAgentListener(int type,AgentInfo ai) {

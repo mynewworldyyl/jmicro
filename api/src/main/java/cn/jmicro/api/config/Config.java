@@ -349,32 +349,32 @@ public class Config implements IConfigChangeListener{
 		
 		//   /jmicro目录
 		if(!dataOperator.exist(Constants.CFG_ROOT)) {
-			dataOperator.createNode(Constants.CFG_ROOT, "", false);
+			dataOperator.createNodeOrSetData(Constants.CFG_ROOT, "", false);
 		}
 		
 		//   /jmicro/JMICRO
 		if(!dataOperator.exist(Config.BASE_DIR)) {
-			dataOperator.createNode(Config.BASE_DIR, "", false);
+			dataOperator.createNodeOrSetData(Config.BASE_DIR, "", false);
 		}
 		
 		 //   /jmicro/JMICRO/config 目录
 		if(!dataOperator.exist(Config.CfgDir)) {
-			dataOperator.createNode(Config.CfgDir, "", false);
+			dataOperator.createNodeOrSetData(Config.CfgDir, "", false);
 		}
 		
 	    //   /jmicro/JMICRO/config/{实例名称}  目录
 		if(!dataOperator.exist(Config.ServiceConfigDir)) {
-			dataOperator.createNode(Config.ServiceConfigDir, "", false);
+			dataOperator.createNodeOrSetData(Config.ServiceConfigDir, "", false);
 		}
 		
 		//服务注册目录
 		if(!dataOperator.exist(Config.ServiceRegistDir)) {
-			dataOperator.createNode(Config.ServiceRegistDir, "", false);
+			dataOperator.createNodeOrSetData(Config.ServiceRegistDir, "", false);
 		}
 		
 		//全局服务注册目录
 		if(!dataOperator.exist(Config.GrobalServiceRegistDir)) {
-			dataOperator.createNode(Config.GrobalServiceRegistDir, "", false);
+			dataOperator.createNodeOrSetData(Config.GrobalServiceRegistDir, "", false);
 		}
 		
 		//加载服务级配置
@@ -392,10 +392,10 @@ public class Config implements IConfigChangeListener{
 	public void createConfig(String value, String path, boolean isGlobal, boolean el){
 		if(isGlobal) {
 			this.globalConfig.put(path, value);
-			this.dataOperator.createNode(GROBAL_CONFIG + path, value,el);
+			this.dataOperator.createNodeOrSetData(GROBAL_CONFIG + path, value,el);
 		} else {
 			this.servicesConfig.put(path, value);
-			this.dataOperator.createNode(ServiceConfigDir + path, value,el);
+			this.dataOperator.createNodeOrSetData(ServiceConfigDir + path, value,el);
 		}
 	}
 	
@@ -481,16 +481,18 @@ public class Config implements IConfigChangeListener{
 		
 		//命令行参数具有最高优先级
 		//params.putAll(CommadParams);
-		if(StringUtils.isNotEmpty(exportSocketIP) || StringUtils.isNotEmpty(exportHttpIP)) {
-			if(!exportSocketIP.equals(Host) && !exportHttpIP.equals(Host) ) {
-				Host = "0.0.0.0";
+		if(StringUtils.isEmpty(Host)) {
+			if(StringUtils.isNotEmpty(exportSocketIP) || StringUtils.isNotEmpty(exportHttpIP)) {
+				if(!exportSocketIP.equals(Host) && !exportHttpIP.equals(Host) ) {
+					Host = "0.0.0.0";
+				}
+			} else {
+				List<String> ips = Utils.getIns().getLocalIPList();
+		        if(ips.isEmpty()){
+		        	throw new CommonException("IP not found");
+		        }
+		        Host = ips.get(0);
 			}
-		} else {
-			List<String> ips = Utils.getIns().getLocalIPList();
-	        if(ips.isEmpty()){
-	        	throw new CommonException("IP not found");
-	        }
-	        Host = ips.get(0);
 		}
 	}
 	

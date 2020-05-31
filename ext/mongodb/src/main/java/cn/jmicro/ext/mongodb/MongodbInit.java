@@ -17,20 +17,20 @@ import cn.jmicro.api.objectfactory.IPostFactoryListener;
 import cn.jmicro.common.util.StringUtils;
 
 @Component(lazy=false, level=99)
-public class Init implements IPostFactoryListener{
+public class MongodbInit implements IPostFactoryListener{
 	
-	private final static Logger logger = LoggerFactory.getLogger(Init.class);
+	private final static Logger logger = LoggerFactory.getLogger(MongodbInit.class);
 	
 	//private MapperProxy mapperProxy = new MapperProxy();
 	
-	private IObjectFactory of;
+	//private IObjectFactory of;
 	
 	public void init() {
 	}
 
 	@Override
 	public void preInit(IObjectFactory of) {
-		this.of = of;
+		//this.of = of;
 		Config cfg = of.get(Config.class);
 		String  host = cfg.getString("/mongodb/host", "localhost");
 		int  port = cfg.getInt("/mongodb/port", 27017);

@@ -87,7 +87,7 @@ public class DefaultServiceInstanceNameProvider implements IServiceInstanceNameG
 		}
 		lf.deleteOnExit();*/
 		//本地存在，ZK中不存在,也就是没有虽的机器在使用此目录
-		dataOperator.createNode(path, "", true);
+		dataOperator.createNodeOrSetData(path, "", true);
 	}
 
 }

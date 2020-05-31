@@ -275,6 +275,7 @@
             refresh(){
                 window.jm.mng.repository.getResourceList(false).then((resList)=>{
                     if(!resList || resList.length == 0 ) {
+                        self.$Message.success("No data to show");
                         return;
                     }
                     this.resList = resList;

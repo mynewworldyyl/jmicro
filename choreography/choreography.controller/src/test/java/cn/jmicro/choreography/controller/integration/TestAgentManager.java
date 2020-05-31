@@ -23,7 +23,7 @@ import cn.jmicro.api.IListener;
 import cn.jmicro.api.choreography.ChoyConstants;
 import cn.jmicro.api.idgenerator.ComponentIdServer;
 import cn.jmicro.api.raft.IDataOperator;
-import cn.jmicro.choreography.assignment.AgentManager;
+import cn.jmicro.choreography.agent.AgentManager;
 import cn.jmicro.choreography.base.AgentInfo;
 import cn.jmicro.common.util.JsonUtils;
 import cn.jmicro.test.JMicroBaseTestCase;
@@ -40,7 +40,6 @@ public class TestAgentManager extends JMicroBaseTestCase{
 		AgentInfo ai = new AgentInfo();
 		ComponentIdServer idserver = of.get(ComponentIdServer.class);
 		ai.setId(idserver.getStringId(AgentInfo.class));
-		ai.setCmd("java -jar test.jar cn.jmicro.TestMain");
 		ai.setName("JmicroTestAgentmanager");
 		ai.setStartTime(System.currentTimeMillis());
 		
@@ -50,7 +49,7 @@ public class TestAgentManager extends JMicroBaseTestCase{
 		IDataOperator dataOperator = of.get(IDataOperator.class);
 		
 		if(!dataOperator.exist(path)) {
-			dataOperator.createNode(path, jsonData, true);
+			dataOperator.createNodeOrSetData(path, jsonData, true);
 		}else {
 			dataOperator.setData(path, jsonData);
 		}

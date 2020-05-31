@@ -6,7 +6,7 @@ import cn.jmicro.common.Utils;
 public class MonitorStarter {
 
 	public static void main(String[] args) {
-		 JMicro.getObjectFactoryAndStart(new String[] {});
+		 JMicro.getObjectFactoryAndStart(args);
 		 Utils.getIns().waitForShutdown();
 	}
 }

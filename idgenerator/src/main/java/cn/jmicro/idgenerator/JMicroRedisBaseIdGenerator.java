@@ -69,7 +69,7 @@ public class JMicroRedisBaseIdGenerator implements IIdServer {
 			Integer[] ids = new Integer[num];
 			int oriId = endId - num;
 			for(int i = 0; i < num; i++) {
-				ids[i] = oriId+i;
+				ids[i] = oriId+i+1;
 			}
 			return ids;
 		}finally {
@@ -84,7 +84,7 @@ public class JMicroRedisBaseIdGenerator implements IIdServer {
 			Long[] ids = new Long[num];
 			long oriId = endId - num;
 			for(int i = 0; i < num; i++) {
-				ids[i] = oriId+i;
+				ids[i] = oriId+i+1;
 			}
 			return ids;
 		}finally {
@@ -100,7 +100,7 @@ public class JMicroRedisBaseIdGenerator implements IIdServer {
 			String[] ids = new String[num];
 			long oriId = endId - num;
 			for(int i = 0; i < num; i++) {
-				ids[i] = new Long(oriId+i).toString();
+				ids[i] = new Long(oriId+i+1).toString();
 			}
 			return ids;
 		}finally {

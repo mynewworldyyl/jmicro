@@ -31,7 +31,7 @@ public class ExampleServiceInstanceNameProvider implements IServiceInstanceNameG
 			if(ud.exists()) {
 				String path = Config.InstanceDir + "/" + name;
 				if(!dataOperator.exist(path)) {
-					dataOperator.createNode(path, "0", true);
+					dataOperator.createNodeOrSetData(path, "0", true);
 					insName = name;
 				}
 			}

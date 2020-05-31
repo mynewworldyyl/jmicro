@@ -16,9 +16,6 @@
  */
 package cn.jmicro.choreography.base;
 
-import java.util.HashSet;
-import java.util.Set;
-
 import cn.jmicro.api.annotation.IDStrategy;
 
 @IDStrategy(1)
@@ -32,9 +29,6 @@ public final class AgentInfo {
 	
 	private String host;
 	
-	//启动此Agent JVM的命令，包括java及后面的全部参数
-	private String cmd;
-	
 	//yyyy-MM-dd:hh:mm:ss
 	private long startTime;
 	
@@ -43,14 +37,6 @@ public final class AgentInfo {
 	private float cprRate;
 	
 	private float memoryRate;
-	
-	//private HashSet<String> lockerDeps = new HashSet<>();
-	
-	private HashSet<String> runningDeps = new HashSet<>();
-	
-	private HashSet<String> assignDeps = new HashSet<>();
-	
-	private HashSet<String> deleteDeps = new HashSet<>();
 
 	public String getId() {
 		return id;
@@ -66,14 +52,6 @@ public final class AgentInfo {
 
 	public void setName(String name) {
 		this.name = name;
-	}
-
-	public String getCmd() {
-		return cmd;
-	}
-
-	public void setCmd(String cmd) {
-		this.cmd = cmd;
 	}
 
 	public long getStartTime() {
@@ -100,18 +78,6 @@ public final class AgentInfo {
 		this.memoryRate = memoryRate;
 	}
 
-	public Set<String> getRunningDeps() {
-		return runningDeps;
-	}
-
-	public Set<String> getAssignDeps() {
-		return assignDeps;
-	}
-
-	public Set<String> getDeleteDeps() {
-		return deleteDeps;
-	}
-
 	public String getHost() {
 		return host;
 	}
@@ -130,7 +96,7 @@ public final class AgentInfo {
 
 	@Override
 	public String toString() {
-		return "AgentInfo [id=" + id + ", name=" + name + ", cmd=" + cmd + ", startTime=" + startTime + "]";
+		return "AgentInfo [id=" + id + ", name=" + name + ", startTime=" + startTime + "]";
 	}
 
 }

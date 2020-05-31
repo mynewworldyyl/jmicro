@@ -15,7 +15,7 @@ public class TestDataOperator extends JMicroBaseTestCase {
 	@Test
 	public void testCreateSeqNode() throws IOException {
 		IDataOperator op = of.get(IDataOperator.class);
-		op.createNode(LegalPerson.ROOT+"/testElNode/tag", "", IDataOperator.EPHEMERAL_SEQUENTIAL);
+		op.createNodeOrSetData(LegalPerson.ROOT+"/testElNode/tag", "", IDataOperator.EPHEMERAL_SEQUENTIAL);
 		waitForReady(30*60);
 	}
 	

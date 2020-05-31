@@ -15,16 +15,17 @@ import org.slf4j.LoggerFactory;
 import cn.jmicro.api.IListener;
 import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Inject;
-import cn.jmicro.api.cache.lock.ILocker;
 import cn.jmicro.api.cache.lock.ILockerManager;
 import cn.jmicro.api.choreography.ChoyConstants;
 import cn.jmicro.api.choreography.ProcessInfo;
 import cn.jmicro.api.raft.IDataListener;
 import cn.jmicro.api.raft.IDataOperator;
 import cn.jmicro.api.timer.TimerTicker;
+import cn.jmicro.choreography.agent.AgentManager;
 import cn.jmicro.choreography.api.Deployment;
 import cn.jmicro.choreography.base.AgentInfo;
-import cn.jmicro.common.CommonException;
+import cn.jmicro.choreography.instance.InstanceManager;
+import cn.jmicro.common.Constants;
 import cn.jmicro.common.util.JsonUtils;
 import cn.jmicro.common.util.StringUtils;
 
@@ -40,7 +41,13 @@ public class DeploymentAssignment {
 	private AgentManager agentManager;
 	
 	@Inject
+	private InstanceManager insManager;
+	
+	@Inject
 	private ILockerManager lockMgn;
+	
+	//Agent to fail instance
+	private Map<String,Set<String>> fails = new HashMap<>();
 	
 	private Set<Assign> assigns = new HashSet<>();
 	
@@ -48,53 +55,20 @@ public class DeploymentAssignment {
 	
 	private Map<String,Long> nextDeployTimeout = new HashMap<>();
 	
-	private IDataListener processInfoDataListener = (path,data)-> {
-		ProcessInfo pi = JsonUtils.getIns().fromJson(data, ProcessInfo.class);
-		Assign a = this.getAssignByInfoId(pi.getId());
-		if(a != null) {
-			a.pi = pi;
-		}
-	};
-	
 	private IDataListener deploymentDataListener = (path,data)->{
 		deploymentDataChanged(path.substring(ChoyConstants.DEP_DIR.length()+1),data);
 	};
 	
 	public void ready() {
-		
-		op.addChildrenListener(ChoyConstants.DEP_DIR, (type,p,c,data)->{
-			if(type == IListener.ADD) {
-				String path = ChoyConstants.DEP_DIR + "/" + c;
-				op.addDataListener(path, deploymentDataListener);
-				deploymentAdded(c,data);
-			}else if(type == IListener.REMOVE) {
-				String path = ChoyConstants.DEP_DIR + "/" + c;
-				op.removeDataListener(path, deploymentDataListener);
-				deploymentRemoved(c,data);
-			}
-		});
-		
-		agentManager.addAgentListener((t,ai) -> {
-			/*if(t == IListener.REMOVE) {
-				//Agent 停机，重新分配部署
-				Set<Assign> aas = this.getAssignByAgentId(ai.getId());
-				if(aas != null) {
-					for(Assign a : aas) {
-						cancelAssign(a);
-					}
-				}
-			}*//*else if(t == IListener.ADD) {
-				for(Deployment dep : deployments.values()) {
-					doAssgin(dep);
-				}
-			}*/
-		});
-		
-		op.addChildrenListener(ChoyConstants.INS_ROOT, (type,p,c,data)->{
-			if(type == IListener.ADD) {
-				instanceAdded(c,data);
-			} else if(type == IListener.REMOVE) {
-				instanceRemoved(c);
+		op.addListener((state)->{
+			if(Constants.CONN_CONNECTED == state) {
+				logger.info("CONNECTED, reflesh children");
+				registListener();
+			}else if(Constants.CONN_LOST == state) {
+				logger.warn("DISCONNECTED");
+			}else if(Constants.CONN_RECONNECTED == state) {
+				logger.warn("Reconnected,reflesh children");
+				registListener();
 			}
 		});
 		
@@ -107,23 +81,50 @@ public class DeploymentAssignment {
 		}, null);
 		
 	}
+	
+	
+	private void registListener() {
+		op.addChildrenListener(ChoyConstants.DEP_DIR, (type,p,c,data)->{
+			if(type == IListener.ADD) {
+				String path = ChoyConstants.DEP_DIR + "/" + c;
+				op.addDataListener(path, deploymentDataListener);
+				deploymentAdded(c,data);
+			}else if(type == IListener.REMOVE) {
+				String path = ChoyConstants.DEP_DIR + "/" + c;
+				op.removeDataListener(path, deploymentDataListener);
+				deploymentRemoved(c,data);
+			}
+		});
+		
+		insManager.addListener((type,pi) -> {
+			if(type == IListener.ADD) {
+				instanceAdded(pi);
+			} else if(type == IListener.REMOVE) {
+				if(pi != null) {
+					instanceRemoved(pi.getId());
+				}
+			}
+		});
+		
+	}
 
 	private void doChecker() {
 		 Set<Assign> ass = new HashSet<>();
 		 ass.addAll(this.assigns);
 		 
 		 long curTime = System.currentTimeMillis();
-		 //检测分配后1分钟内有没有启动成功，如果没有启动成功
+		 
+		 //检测分配后1分钟内有没有启动成功，如果没有启动成功，则取消分配
 		 for(Assign a : ass) {
-			 if(a.pi == null && curTime - a.assignTime > 120000) {
+			 if(a.insId == null && curTime - a.assignTime > 120000) {
 				 cancelAssign(a);
 				 continue;
 			 }
 			 
-			 if(a.pi != null) {
-				 String piPath = ChoyConstants.INS_ROOT + "/" + a.pi.getId();
+			 if(a.insId != null) {
+				 String piPath = ChoyConstants.INS_ROOT + "/" + a.insId;
 				 if(!op.exist(piPath)) {
-					 instanceRemoved(a.pi.getId());
+					 instanceRemoved(a.insId);
 				 }
 			 }
 		 }
@@ -134,11 +135,10 @@ public class DeploymentAssignment {
 		 for(Deployment dep : deps) {
 			 if(!dep.isEnable()) {
 				 //logger.warn("Stop deployment: "+ dep.toString());
-					stopDeployment(dep.getId());
+				 stopDeployment(dep.getId());
 			 }else if(dep.isForceRestart()) {
 				 logger.warn("Force restart deployment: "+ dep.toString());
 				 stopDeployment(dep.getId());
-				 nextDeployTimeout.put(dep.getId(), System.currentTimeMillis());
 				 dep.setForceRestart(false);
 			 } else if(dep.isEnable()) {
 				 if(nextDeployTimeout.containsKey(dep.getId())) {
@@ -154,45 +154,33 @@ public class DeploymentAssignment {
 		 }
 		
 	}
-
-	/*private void loadDeployment() {
-		Set<String> deps = op.getChildren(DEP_DIR, false);
-		for(String d : deps) {
-			String p = DEP_DIR + "/" + d;
-			String data = op.getData(p);
-			this.deploymentAdded(d, data);
-		}
-	}*/
 	
 	private void instanceRemoved(String insId) {
 		Assign a = this.getAssignByInfoId(insId);
 		if(a != null) {
 			logger.info("Instance remove: " + a.toString());
-			op.removeDataListener(ChoyConstants.INS_ROOT+"/" + insId, this.processInfoDataListener);
 			cancelAssign(a);
 		}
 	}
 	
-	private void instanceAdded(String insId, String json) {
+	private void instanceAdded(ProcessInfo pi) {
 		
-		ProcessInfo pi = JsonUtils.getIns().fromJson(json, ProcessInfo.class);
-		if(StringUtils.isEmpty(pi.getAgentId())) {
-			//非编排环境下启动的实例
+		if(pi == null || StringUtils.isEmpty(pi.getAgentId())) {
 			return;
 		}
 		
 		Assign a = this.getAssignByDepIdAndAgentId(pi.getDepId(),pi.getAgentId());
 		if(a == null) {
 			//初次启动时，对已经存在的实例做实例化
-			logger.info("Instance add for origint: " + json);
+			logger.info("Instance add for origint: " + pi.toString());
 			a = new Assign(pi.getDepId(),pi.getAgentId());
 			a.assignTime = System.currentTimeMillis();
 			this.assigns.add(a);
-		}else {
-			logger.info("Instance start success: " + json);
+		} else {
+			logger.info("Instance start success: " + pi.toString());
 		}
 		
-		a.pi = pi;
+		a.insId = pi.getId();
 	}
 
 	private void deploymentRemoved(String d, String data) {
@@ -217,30 +205,19 @@ public class DeploymentAssignment {
 	private void cancelAssign(Assign a) {
 		logger.info("Cancel dep ["+a.depId+"], agentId [" + a.agentId+"]");
 		
-		ILocker locker = null;
-		String ap = ChoyConstants.ROOT_AGENT + "/" + a.agentId;
-		try {
-			locker = lockMgn.getLocker(ap);
-			if(locker.tryLock(3*1000)) {
-				String data = op.getData(ap);
-				AgentInfo ai = JsonUtils.getIns().fromJson(data, AgentInfo.class);
-				if(ai != null && ai.getRunningDeps().contains(a.depId)) {
-					ai.getDeleteDeps().add(a.depId);
-					ai.setAssignTime(System.currentTimeMillis());
-					op.setData(ap, JsonUtils.getIns().toJson(ai));
-					nextDeployTimeout.put(a.depId, System.currentTimeMillis());
-				}
-				this.assigns.remove(a);
-			} else {
-				logger.error("Fail to get locker:" + ap);
-			}
-		}finally {
-			if(locker != null) {
-				locker.unLock();
-			}
+		String path = ChoyConstants.ROOT_AGENT+"/"+a.agentId+"/"+a.depId;
+		if(op.exist(path)) {
+			op.deleteNode(path);
 		}
+		
+		if(!fails.containsKey(a.agentId)) {
+			fails.put(a.agentId, new HashSet<String>());
+		}
+		fails.get(a.agentId).add(a.depId);
+		
+		this.assigns.remove(a);
+		nextDeployTimeout.put(a.depId, System.currentTimeMillis());
 	}
-	
 
 	private void deploymentDataChanged(String depId, String data) {
 		Deployment newDep = JsonUtils.getIns().fromJson(data, Deployment.class);
@@ -264,15 +241,9 @@ public class DeploymentAssignment {
 			return ;
 		}
 		
-		checkAssignFail(agentInfo);
-		
-		checkDeleteFail(agentInfo);
-		
 		int cnt = dep.getInstanceNum() - ass.size();
-		if(cnt == 0) {
-			return;
-		}else if(cnt > 0) {
-			//减少运行实例
+		if(cnt > 0) {
+			//增加运行实例
 			doAddAssign(agentInfo,dep,cnt);
 		}else if(cnt < 0) {
 			//减少运行实例
@@ -305,7 +276,7 @@ public class DeploymentAssignment {
 		if(sortList.size() > 1) {
 			sortList.sort((AgentInfo o1, AgentInfo o2)->{
 				//运行实例最多的排前头
-				return o1.getRunningDeps().size() > o2.getRunningDeps().size() ? 1: o1.getRunningDeps().size() == o2.getRunningDeps().size()?0:-1;
+				return o1.getCprRate() > o2.getCprRate() ? 1: o1.getCprRate() == o2.getCprRate()?0:-1;
 			});
 		}
 		
@@ -324,7 +295,7 @@ public class DeploymentAssignment {
 		
 	}
 
-	private void doAddAssign(Set<AgentInfo> agentInfo,Deployment dep,int cnt) {
+	private void doAddAssign(Set<AgentInfo> agentInfo, Deployment dep,int cnt) {
 
 		long curTime = System.currentTimeMillis();
 		
@@ -339,14 +310,34 @@ public class DeploymentAssignment {
 				ite.remove();
 				continue;
 			}
-			if(ai.getRunningDeps().contains(dep.getId()) ||
-					ai.getAssignDeps().contains(dep.getId())) {
+			Assign a = this.getAssignByDepIdAndAgentId(dep.getId(), ai.getId());
+			if(a != null) {
 				ite.remove();
 				continue;
 			}
+			
+			if(fails.containsKey(ai.getId())) {
+				if(fails.get(ai.getId()).contains(dep.getId())) {
+					ite.remove();
+					continue;
+				}
+			}
+			
 		}
 		
 		if(sortList.size() == 0) {
+			boolean flag = false;
+			for(Set<String> set : fails.values()) {
+				if(set.contains(dep.getId())) {
+					set.remove(dep.getId());
+					flag = true;
+				}
+			}
+			
+			if(flag) {
+				logger.info("Do reassign depId: " + dep.getId());
+				doAddAssign(agentInfo,dep,cnt);
+			}
 			return ;
 		}
 		
@@ -360,96 +351,36 @@ public class DeploymentAssignment {
 		ite = sortList.iterator();
 		
 		while(ite.hasNext()) {
-			AgentInfo aif0 = ite.next();
+			AgentInfo aif = ite.next();
 			
-			String path = ChoyConstants.ROOT_AGENT+"/"+aif0.getId();
-			String data = this.op.getData(path);
-			if(StringUtils.isEmpty(data)) {
-				continue;
-			}
-			
-			final AgentInfo aif = JsonUtils.getIns().fromJson(data, AgentInfo.class);
-			
-			doInlocker(path,()->{
-				if(!aif.getRunningDeps().contains(dep.getId())) {
-					aif.getAssignDeps().add(dep.getId());
-					aif.setAssignTime(curTime);
-					String dd = JsonUtils.getIns().toJson(aif);
-					op.setData(ChoyConstants.ROOT_AGENT+"/"+aif.getId(), dd);
-					Assign a = new Assign(dep.getId(),aif.getId());
-					this.assigns.add(a);
-					a.assignTime = curTime;
-					logger.warn("Assign deployment: "+ dep.toString());
-					logger.info("Assign: "+dep.getId() +" to "+ data);
-					nextDeployTimeout.put(dep.getId(), curTime);
-				}
-			});
-			
-			if(--cnt == 0) {
-				return;
-			}
-			
-			ILocker locker = null;
-			boolean lockSucc = false;
-			try {
-				locker = lockMgn.getLocker(path);
-				if(lockSucc = locker.tryLock(3*1000)) {} else {
-					logger.error("Fail to get locker:" + path);
-				}
-			}finally {
-				if(locker != null && lockSucc) {
-					locker.unLock();
-				}
-			}
-		}
-	
-		
-	}
+			String path = ChoyConstants.ROOT_AGENT+"/"+aif.getId()+"/"+dep.getId();
+			if(op.exist(path)) {
+				Assign a = new Assign(dep.getId(),aif.getId());
+				this.assigns.add(a);
+			} else {
+				op.createNodeOrSetData(path, "", IDataOperator.PERSISTENT);
+				
+				aif.setAssignTime(curTime);
+				String dd = JsonUtils.getIns().toJson(aif);
+				op.setData(ChoyConstants.ROOT_AGENT+"/"+aif.getId(), dd);
+				
+				Assign a = new Assign(dep.getId(),aif.getId());
+				this.assigns.add(a);
+				a.assignTime = curTime;
+				
+				logger.warn("Assign deployment: "+ dep.toString());
+				logger.info("Assign: "+dep.getId() +" to "+ dd);
+				
+				nextDeployTimeout.put(dep.getId(), curTime);
 
-	private void checkDeleteFail(Set<AgentInfo> agentInfo) {
-		long curTime = System.currentTimeMillis();
-		for(AgentInfo ai : agentInfo) {
-			if(ai.getDeleteDeps().isEmpty()) {
-				continue;
+				if(--cnt == 0) {
+					return;
+				}
 			}
 			
-			String path = ChoyConstants.ROOT_AGENT+"/"+ai.getId();
-			if(curTime - ai.getAssignTime() > 120000) { //两分钟内都没有分配成功
-				doInlocker(path,()->{
-					String data = op.getData(path);
-					AgentInfo a = JsonUtils.getIns().fromJson(data, AgentInfo.class);
-					if(a != null) {
-						a.setAssignTime(curTime); //触发下一次删除操作
-						op.setData(path, JsonUtils.getIns().toJson(a));
-					}
-				});
-			}
 		}
 	}
 
-	private void checkAssignFail(Set<AgentInfo> agentInfo) {
-		long curTime = System.currentTimeMillis();
-		for(AgentInfo ai : agentInfo) {
-			if(ai.getAssignDeps().isEmpty()) {
-				continue;
-			}
-			
-			String path = ChoyConstants.ROOT_AGENT+"/"+ai.getId();
-			if(curTime - ai.getAssignTime() > 120000) { //两分钟内都没有分配成功
-				doInlocker(path,()->{
-					ai.getAssignDeps().clear();
-					String data = op.getData(path);
-					AgentInfo a = JsonUtils.getIns().fromJson(data, AgentInfo.class);
-					if(a != null) {
-						a.getAssignDeps().clear();
-						a.setAssignTime(0);
-						op.setData(path, JsonUtils.getIns().toJson(a));
-					}
-				});
-			}
-		}
-		
-	}
 
 	private class Assign {
 		public Assign(String depId,String agentId) {
@@ -458,7 +389,7 @@ public class DeploymentAssignment {
 		}
 		public String depId;
 		public String agentId;
-		public ProcessInfo pi;
+		public String insId;
 		
 		public long assignTime;
 		
@@ -478,7 +409,7 @@ public class DeploymentAssignment {
 		
 		@Override
 		public String toString() {
-			return "Assign [depId=" + depId + ", agentId=" + agentId + ", pi=" + pi + "]";
+			return "Assign [depId=" + depId + ", agentId=" + agentId + ", insId=" + insId + "]";
 		}
 		
 		
@@ -486,10 +417,10 @@ public class DeploymentAssignment {
 	
 	private Assign getAssignByInfoId(String id) {
 		for(Assign a : this.assigns) {
-			if(a.pi == null) {
+			if(a.insId == null) {
 				continue;
 			}
-			if(id.equals(a.pi.getId())) {
+			if(id.equals(a.insId)) {
 				return a;
 			}
 		}
@@ -537,20 +468,4 @@ public class DeploymentAssignment {
 		return null;
 	}
 	
-	private void doInlocker(String lockPath,Runnable r) {
-		ILocker locker = null;
-		boolean success = false;
-		try {
-			locker = lockMgn.getLocker(lockPath);
-			if(success = locker.tryLock(1000,30*1000)) {
-				r.run();
-			} else {
-				throw new CommonException("Fail to get locker:" + lockPath);
-			}
-		}finally {
-			if(locker != null && success) {
-				locker.unLock();
-			}
-		}
-	}
 }

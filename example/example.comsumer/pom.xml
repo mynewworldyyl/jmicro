@@ -15,10 +15,10 @@
 		<jmicro.version>0.0.1-SNAPSHOT</jmicro.version>
 	</properties>
 	<dependencies>
-		<dependency>
+		<!-- <dependency>
 			<groupId>cn.jmicro</groupId>
 			<artifactId>build</artifactId>
-		</dependency>
+		</dependency> -->
 		<dependency>
 			<groupId>cn.jmicro</groupId>
 			<artifactId>example.api</artifactId>

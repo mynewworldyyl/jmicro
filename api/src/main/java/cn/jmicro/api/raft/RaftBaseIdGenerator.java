@@ -93,7 +93,7 @@ public class RaftBaseIdGenerator {
 			if(this.dataOperator.exist(path)){
 				 idStr = dataOperator.getData(path);
 			} else {
-				dataOperator.createNode(path, idStr, false);
+				dataOperator.createNodeOrSetData(path, idStr, false);
 			}
 			
 			Object result = null;

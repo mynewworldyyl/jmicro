@@ -111,12 +111,12 @@ public class RpcClassLoader extends ClassLoader {
     public void addClassInstance(String className) {
     	String path = CLASS_IDR +"/" + className;
     	if(!op.exist(path)) {
-    		op.createNode(path, "", false);
+    		op.createNodeOrSetData(path, "", false);
     	}
     	
     	String insPath = path + "/" + Config.getInstanceName();
     	if(!op.exist(insPath)) {
-    		op.createNode(insPath, Config.getHost(), true);
+    		op.createNodeOrSetData(insPath, Config.getHost(), true);
     	}
     }  
 

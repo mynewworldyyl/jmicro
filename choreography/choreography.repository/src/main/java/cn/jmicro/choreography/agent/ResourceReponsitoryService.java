@@ -38,6 +38,9 @@ public class ResourceReponsitoryService implements IResourceResponsitory{
 	@Cfg(value="/ResourceReponsitoryService/uploadBlockSize", defGlobal=true)
 	private int uploadBlockSize = 65300;//1024*1024;
 	
+	@Cfg(value="/ResourceReponsitoryService/openDebug", defGlobal=false)
+	private boolean openDebug = true;//1024*1024;
+	
 	@Inject
 	private ICodecFactory codecFactory;
 	
@@ -121,6 +124,10 @@ public class ResourceReponsitoryService implements IResourceResponsitory{
 				continue;
 			}
 			
+			if(openDebug) {
+				LOG.debug("Return resource: " + f.getName());
+			}
+			
 			PackageResource rr = new PackageResource();
 			rr.setName(f.getName());
 			rr.setSize(f.length());
@@ -146,6 +153,9 @@ public class ResourceReponsitoryService implements IResourceResponsitory{
 			for(File f : indexFiles) {
 				String n = f.getName();
 				if(!this.blockIndexFiles.containsKey(n)) {
+					if(openDebug) {
+						LOG.debug("Return temp resource: " + n);
+					}
 					PackageResource zkrr = new PackageResource();
 					l.add(zkrr);
 					zkrr.setName(n);
@@ -185,6 +195,7 @@ public class ResourceReponsitoryService implements IResourceResponsitory{
 	public int addResource(String name, int totalSize) {
 		File resFile = new File(this.dir,name);
 		if(resFile.exists()) {
+			LOG.error("Resource exist: " + name);
 			return -2;
 		}
 		
@@ -208,6 +219,10 @@ public class ResourceReponsitoryService implements IResourceResponsitory{
 		rr.setTotalBlockNum(bn);
 		
 		saveIndex(rr);
+		
+		if(openDebug) {
+			LOG.debug("Add resource: " + name);
+		}
 		
 		return this.uploadBlockSize;
 	}
@@ -244,6 +259,7 @@ public class ResourceReponsitoryService implements IResourceResponsitory{
 			if(zkrr.getFinishBlockNum() == zkrr.getTotalBlockNum()) {
 				finishFileUpload(name,zkrr);
 				deleteIndex(name);
+				LOG.info("Add resource success: " + name);
 			} else {
 				this.saveIndex(zkrr);
 			}
@@ -261,8 +277,11 @@ public class ResourceReponsitoryService implements IResourceResponsitory{
 		
 		File resFile = new File(this.dir,name);
 		if(!resFile.exists()) {
+			LOG.error("File [" +name + "] not found!");
 			return -1;
 		}
+		
+		LOG.info("Init download resource name : " + name + ", downloadId: " +downloadId);
 		
 		try {
 			this.downloadReses.put(downloadId, new FileInputStream(resFile));
@@ -302,6 +321,7 @@ public class ResourceReponsitoryService implements IResourceResponsitory{
 				byte[] destData = new byte[len];
 				System.arraycopy(data, 0, destData, 0, len);
 				data = destData;
+				LOG.info("Download resource success ID: " + downloadId);
 			}
 			
 		} catch (IOException e) {

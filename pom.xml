@@ -525,7 +525,7 @@
             </resource>
         </resources>
         <plugins>
-            <plugin>
+           <!--  <plugin>
                 <artifactId>maven-source-plugin</artifactId>
                 <version>${maven_source_version}</version>
                 <executions>
@@ -536,7 +536,7 @@
                         </goals>
                     </execution>
                 </executions>
-            </plugin>
+            </plugin> -->
             <plugin>
                 <artifactId>maven-jar-plugin</artifactId>
                 <version>${maven_jar_version}</version>

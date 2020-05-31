@@ -21,7 +21,7 @@ public class DefaultServerListener implements IServerListener {
 		String path = Config.InstanceDir +"/"+Config.getInstanceName()+"_ipPort";
 		String d = transport+":"+ip+":"+port;
 		if(!dop.exist(path)) {
-			dop.createNode(path, d, false);
+			dop.createNodeOrSetData(path, d, false);
 		} else {
 			String dd = dop.getData(path);
 			if(StringUtils.isNotEmpty(dd)) {

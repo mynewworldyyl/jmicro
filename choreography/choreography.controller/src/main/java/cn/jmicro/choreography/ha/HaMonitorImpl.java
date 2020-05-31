@@ -6,8 +6,8 @@ import cn.jmicro.api.annotation.Inject;
 import cn.jmicro.api.annotation.Service;
 import cn.jmicro.api.idgenerator.ComponentIdServer;
 
-@Component
-@Service(namespace="ha",version="0.0.1",timeout=2000,retryCnt=0)
+/*@Component
+@Service(namespace="ha",version="0.0.1",timeout=2000,retryCnt=0)*/
 public class HaMonitorImpl implements IHaMonitor {
 
 	private int id;

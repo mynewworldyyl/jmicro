@@ -12,10 +12,10 @@
 	<name>${project.artifactId}</name>
 	<description>Jmicro service provider for testing</description>
 	<dependencies>
-		<dependency>
+		<!-- <dependency>
 			<groupId>cn.jmicro</groupId>
 			<artifactId>build</artifactId>
-		</dependency>
+		</dependency> -->
 		<dependency>
 			<groupId>cn.jmicro</groupId>
 			<artifactId>gateway</artifactId>

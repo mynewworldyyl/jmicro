@@ -139,22 +139,18 @@
 	</logger>
 	
 	<logger name="org.apache.zookeeper">
-		<level value="ERROR"/>
-		<appender-ref ref="jmicro_error"/>
+		<level value="info"/>
 	</logger>
 	
 	<logger name="org.apache.mina">
 		<level value="ERROR"/>
-		<appender-ref ref="jmicro_error"/>
 	</logger>
 	<logger name="io.netty">
 		<level value="INFO"/>
-		<appender-ref ref="CONSOLE"/>
 	</logger>
 	
 	<logger name="org.jboss">
 		<level value="INFO"/>
-		<appender-ref ref="CONSOLE"/>
 	</logger>
 	 
 	<root>	

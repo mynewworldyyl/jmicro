@@ -298,12 +298,12 @@ public final class ClassGenerator {
                     }
                 }
             }
-            try {
+           /* try {
 				mCtc.writeFile("D:\\opensource\\gitresp\\jmicro\\jmicro.objfactory\\jmicro.objfactory.simple\\target");
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
-			}
+			}*/
             return mCtc.toClass(loader, pd);
         } catch (RuntimeException e) {
             throw e;
