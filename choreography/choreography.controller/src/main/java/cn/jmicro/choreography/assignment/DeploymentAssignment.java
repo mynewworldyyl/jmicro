@@ -224,6 +224,18 @@ public class DeploymentAssignment {
 			op.deleteNode(path);
 		}
 		
+		if(!this.agentManager.isActive(a.agentId)) {
+			//Agent挂机状态，直接关闭服务进程
+			ProcessInfo pi = this.insManager.getProcessesByInsId(a.insId);
+			String p = ChoyConstants.INS_ROOT+"/"+a.insId;
+			if(op.exist(p) && pi.isActive()) {
+				pi.setActive(false);
+				String data = JsonUtils.getIns().toJson(pi);
+				op.setData(p, data);
+				logger.info("Stop process: " + data);
+			}
+		}
+		
 		if(!fails.containsKey(a.agentId)) {
 			fails.put(a.agentId, new HashSet<String>());
 		}

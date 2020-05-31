@@ -161,6 +161,10 @@ public class AgentManager {
 		}
 	}
 	
+	public boolean isActive(String agentId) {
+		return this.id2Agents.containsKey(agentId);
+	}
+	
 	private void deleteAgent(String path) {
 		//String asDepPath = path + "/assign";
 		Set<String>  asDeps = this.op.getChildren(path,false);
