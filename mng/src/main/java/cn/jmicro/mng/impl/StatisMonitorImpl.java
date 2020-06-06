@@ -146,7 +146,7 @@ public class StatisMonitorImpl implements IStatisMonitor {
 					op.createNodeOrSetData(regPath, "1", true);
 					TimerTicker timer = TimerTicker.getTimer(timers,time);
 					if(!timer.container(rkey)) {
-						timer.addListener(rkey,tickerAct,mkey);
+						timer.addListener(rkey,mkey,tickerAct);
 					}
 				}
 			} else {

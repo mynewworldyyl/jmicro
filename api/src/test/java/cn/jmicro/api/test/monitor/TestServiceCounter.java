@@ -89,7 +89,7 @@ public class TestServiceCounter {
 			}
 		};
 		
-		TimerTicker.getDefault(1*1000L).addListener("testMutilThreadCounterTimer", (key,att)->{
+		TimerTicker.getDefault(1*1000L).addListener("testMutilThreadCounterTimer", null, (key,att)->{
 			
 			//Double failPercent = ServiceCounter.getData(sc, MonitorConstant.STATIS_TOTAL_FAIL_PERCENT);// sc.getTotal(MonitorConstant.CLIENT_REQ_BEGIN);
 			//Double succPersent = ServiceCounter.getData(sc, MonitorConstant.STATIS_TOTAL_SUCCESS_PERCENT); //sc.getTotal(MonitorConstant.CLIENT_REQ_OK);
@@ -111,7 +111,7 @@ public class TestServiceCounter {
 				logger.debug("req:{}, resp:{}",rtotal,stotal+ttotal+etotal);*/
 				
 				
-		}, null);
+		});
 		
 		new Thread(r,"testMutilThreadCounter1").start();
 		new Thread(r,"testMutilThreadCounter2").start();
@@ -140,13 +140,13 @@ public class TestServiceCounter {
 			}
 		};
 		
-		TimerTicker.getDefault(1*1000L).addListener("testSingleThreadSingleCounterTimer", (key,att)->{
+		TimerTicker.getDefault(1*1000L).addListener("testSingleThreadSingleCounterTimer", null, (key,att)->{
 			
 			//Double qps = ServiceCounter.getData(sc,MonitorConstant.STATIS_QPS);
 			
 			//logger.debug("qps:{}",qps);
 				
-		}, null);
+		});
 		
 		new Thread(r,"testMutilThreadCounter1").start();
 		new Thread(r,"testMutilThreadCounter2").start();

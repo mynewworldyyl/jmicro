@@ -6,7 +6,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import org.junit.Test;
 
 import cn.jmicro.api.masterelection.IMasterChangeListener;
-import cn.jmicro.api.masterelection.LegalPerson;
+import cn.jmicro.api.masterelection.VoterPerson;
 import cn.jmicro.test.JMicroBaseTestCase;
 
 public class TestHA extends JMicroBaseTestCase{
@@ -20,7 +20,7 @@ public class TestHA extends JMicroBaseTestCase{
 			finish.set(true);
 		};
 		
-		LegalPerson lp = new LegalPerson(of,"testElection");
+		VoterPerson lp = new VoterPerson(of,"testElection");
 		lp.addListener(lis);
 		
 		while(!finish.get()) {

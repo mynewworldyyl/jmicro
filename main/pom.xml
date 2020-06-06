@@ -12,7 +12,7 @@
     <properties>
         <skip_maven_deploy>false</skip_maven_deploy>
     </properties>
-    <modules>        
+    <modules>
         <module>main.rcptool</module>
 		<module>main.pubsub</module>
 		<module>main.breaker</module>	

@@ -77,13 +77,13 @@ class ResendManager {
 		TimerTicker.getTimer(this.resendTimers, doResendInterval).removeListener(RESEND_TIMER,true);
 		
 		TimerTicker.getTimer(this.resendTimers, doResendInterval).setOpenDebug(openDebug)
-		.addListener(RESEND_TIMER, (key,att)->{
+		.addListener(RESEND_TIMER, null, (key,att)->{
 			try {
 				doResend();
 			} catch (Throwable e) {
 				logger.error("Submit doResend fail: ",e);
 			}
-		}, null);
+		});
 		
 	}
 	

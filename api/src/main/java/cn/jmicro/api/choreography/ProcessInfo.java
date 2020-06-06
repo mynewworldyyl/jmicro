@@ -28,13 +28,19 @@ public class ProcessInfo {
 	
 	private String cmd;
 	
-	private String workDataDir;
+	private String workDir;
 	
 	private boolean active;
 	
 	private long opTime;
 	
 	private long timeOut;
+	
+	private long startTime;
+	
+	private boolean haEnable = false;
+	
+	private boolean master = false;
 	
 	private transient Process process;
 
@@ -44,6 +50,30 @@ public class ProcessInfo {
 
 	public void setId(String id) {
 		this.id = id;
+	}
+
+	public boolean isHaEnable() {
+		return haEnable;
+	}
+
+	public void setHaEnable(boolean haEnable) {
+		this.haEnable = haEnable;
+	}
+
+	public boolean isMaster() {
+		return master;
+	}
+
+	public void setMaster(boolean master) {
+		this.master = master;
+	}
+
+	public String getWorkDir() {
+		return workDir;
+	}
+
+	public void setWorkDir(String workDir) {
+		this.workDir = workDir;
 	}
 
 	public String getDepId() {
@@ -78,20 +108,20 @@ public class ProcessInfo {
 		this.pid = pid;
 	}
 
-	public String getDataDir() {
-		return workDataDir;
-	}
-
-	public void setDataDir(String workDir) {
-		this.workDataDir = workDir;
-	}
-
 	public boolean isActive() {
 		return active;
 	}
 
 	public void setActive(boolean active) {
 		this.active = active;
+	}
+
+	public long getStartTime() {
+		return startTime;
+	}
+
+	public void setStartTime(long startTime) {
+		this.startTime = startTime;
 	}
 
 	public Process getProcess() {
@@ -176,7 +206,7 @@ public class ProcessInfo {
 		return "ProcessInfo [id=" + id + ", host=" + host + ", instanceName=" + instanceName + ", agentHost="
 				+ agentHost + ", agentInstanceName=" + agentInstanceName + ", depId=" + depId + ", agentId=" + agentId
 				+ ", agentProcessId=" + agentProcessId + ", pid=" + pid + ", cmd=" + cmd + ", workDataDir="
-				+ workDataDir + ", active=" + active + "]";
+				+ workDir + ", active=" + active + "]";
 	}
 
 	

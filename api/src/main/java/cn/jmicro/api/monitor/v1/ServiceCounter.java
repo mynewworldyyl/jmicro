@@ -155,7 +155,7 @@ public class ServiceCounter implements IServiceCounter<Short>{
 		}
 		staring = true;
 		reset();
-		TimerTicker.getTimer(timers, slotSizeInMilliseconds).addListener(serviceKey, clock,null,true);
+		TimerTicker.getTimer(timers, slotSizeInMilliseconds).addListener(serviceKey,null,true, clock);
 	}
 
 	@Override

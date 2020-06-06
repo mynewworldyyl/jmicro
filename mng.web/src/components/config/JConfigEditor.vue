@@ -4,6 +4,7 @@
       <Tabs :value="!!selectNode ? selectNode.path:''" type="card" :closable="allowMany" @on-tab-remove="handleTabRemove()"
             :animated="false">
             <TabPane v-for="item in items"  :name="item.id" :label="item.label" v-bind:key="item.id">
+                {{selectNode.path}}
                 <table class="configItemTalbe" width="99%">
                     <caption style="text-align: left;padding-bottom: 3px;">{{selectNode.id}}</caption>
                     <thead><tr><td>KEY</td><td>VALUE</td><td>OPERATION</td></tr></thead>

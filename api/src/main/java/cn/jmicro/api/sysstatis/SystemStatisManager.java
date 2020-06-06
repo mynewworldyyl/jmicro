@@ -29,7 +29,7 @@ public class SystemStatisManager {
 		ss.setFreeMemory(osBean.getFreePhysicalMemorySize());
 		ss.setTotalMemory(osBean.getTotalPhysicalMemorySize());
 		
-		ss.setAvgCpuLoad(osBean.getSystemCpuLoad());
+		ss.setAvgCpuLoad(osBean.getSystemLoadAverage());
 		ss.setCpuNum(mngBean.getAvailableProcessors());
 		ss.setInsName(Config.getInstanceName());
 		ss.setSysName(System.getProperty("os.name"));

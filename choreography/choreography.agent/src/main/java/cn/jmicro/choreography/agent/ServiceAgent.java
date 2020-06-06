@@ -21,6 +21,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -40,10 +41,13 @@ import cn.jmicro.api.choreography.ChoyConstants;
 import cn.jmicro.api.choreography.ProcessInfo;
 import cn.jmicro.api.config.Config;
 import cn.jmicro.api.idgenerator.ComponentIdServer;
+import cn.jmicro.api.raft.IChildrenListener;
+import cn.jmicro.api.raft.IDataListener;
 import cn.jmicro.api.raft.IDataOperator;
 import cn.jmicro.api.sysstatis.SystemStatisManager;
 import cn.jmicro.api.timer.TimerTicker;
 import cn.jmicro.choreography.api.Deployment;
+import cn.jmicro.choreography.api.IAssignStrategy;
 import cn.jmicro.choreography.api.IResourceResponsitory;
 import cn.jmicro.choreography.base.AgentInfo;
 import cn.jmicro.choreography.instance.InstanceManager;
@@ -92,7 +96,11 @@ public class ServiceAgent {
 	
 	//private Map<String,Long> processTimeout = new HashMap<>();
 	
-	private Map<String,ProcessInfo> processInfos = new HashMap<>();
+	private Map<String,ProcessInfo> startingProcess = new HashMap<>();
+	
+	private Map<String,ProcessInfo> stopingProcess = new HashMap<>();
+	
+	private Map<String,Process> sysProcess = new HashMap<>();
 	//private Map<String,ProcessInfo> dep2Process = new HashMap<>();
 	
 	@Reference(namespace="rrs",version="*")
@@ -118,6 +126,37 @@ public class ServiceAgent {
 	private String path;
 	
 	private String activePath;
+	
+	private String[] initDepIds;
+	
+	private IChildrenListener deploymentListener = (type,parent,depId,data)->{
+		if(type == IListener.ADD) {
+			ProcessInfo pi = this.insManager.getProcessesByAgentIdAndDepid(agentInfo.getId(), depId);
+			if(pi == null) {
+				deploymentAdded(depId);
+			} else {
+				//第一次启动时，已经存在对应的应用
+				logger.warn("Process exist: " + pi.toString());
+			}
+		}else if(type == IListener.REMOVE) {
+			this.deploymentRemoved(depId);
+		}
+	};
+	
+	private IDataListener cmdListener = (path0,cmd) -> {
+		switch(cmd) {
+		case ChoyConstants.AGENT_CMD_STARTING_TIMEOUT:
+		case ChoyConstants.AGENT_CMD_STOPING_TIMEOUT:
+			logger.warn("Reset deployment listenr for cmd: " + cmd);
+			op.removeChildrenListener(path,deploymentListener);
+			op.addChildrenListener(this.path, deploymentListener);
+			break;
+		}
+	};
+	
+	private IDataListener agentDataListener = (path0,data) -> {
+		agentInfo = JsonUtils.getIns().fromJson(data, AgentInfo.class);
+	};
 	
 	public void ready() {
 		
@@ -152,11 +191,20 @@ public class ServiceAgent {
 			agentInfo.setId(idServer.getStringId(AgentInfo.class));
 		}
 		
+		boolean privat = cfg.getBoolean(ChoyConstants.ARG_AGENT_PRIVATE, false);
+		agentInfo.setPrivat(privat);
+		
+		String deps = cfg.getString(ChoyConstants.ARG_INIT_DEP_IDS,null);
+		if(privat && StringUtils.isEmpty(deps)) {
+			throw new CommonException("Private agent init depId cannot be NULL");
+		}
+		
 		agentInfo.setName(Config.getInstanceName());
 		agentInfo.setStartTime(System.currentTimeMillis());
 		agentInfo.setAssignTime(agentInfo.getAssignTime());
 		agentInfo.setHost(Config.getHost());
 		agentInfo.setSs(ssm.getStatis());
+		agentInfo.setInitDepIds(deps);
 		
 		String agJson = JsonUtils.getIns().toJson(agentInfo);
 		SystemUtils.setFileString(infoFile, agJson);
@@ -165,7 +213,17 @@ public class ServiceAgent {
 		activePath = ChoyConstants.ROOT_ACTIVE_AGENT + "/"+ agentInfo.getId();
 		
 		op.createNodeOrSetData(path, agJson , IDataOperator.PERSISTENT); //
-		op.createNodeOrSetData(activePath,"true",IDataOperator.EPHEMERAL); //代表此Agent的存活标志
+		if(op.exist(activePath)) {
+			op.deleteNode(activePath);
+		} else {
+			op.createNodeOrSetData(activePath,ChoyConstants.AGENT_CMD_NOP,IDataOperator.EPHEMERAL); //代表此Agent的存活标志
+		}
+		
+		//run specify deployments
+		if(StringUtils.isNotEmpty(deps)) {
+			setInitDeps(deps);
+		}
+		
 		//op.createNodeOrSetData(assignPath, "" , false); //分配给此Agent的全部部署ID
 		
 		insManager.filterByAgent(agentInfo.getId());
@@ -174,54 +232,104 @@ public class ServiceAgent {
 			if(type == IListener.ADD) {
 				instanceAdded(pi);
 			} else if(type == IListener.REMOVE) {
+				logger.info("Instance remove: " + pi.toString());
 				instanceRemoved(pi);
 			}
 		});
 		
-		 //本Agent退出
-		/* op.addDataListener(activePath, (path,data) -> {
-			 if("fasle".equals(data)) {
-				 Set<ProcessInfo> ids = new HashSet<>();
-				 ids.addAll(this.processInfos.values());
-				 for(ProcessInfo id : ids) {
-					this.instanceRemoved(id);
-				 }
-			 }
-		 });*/
-		 
-		 //监控分配新的应用
-		op.addChildrenListener(path, (type,parent,depId,data)->{
-			if(type == IListener.ADD) {
-				ProcessInfo pi = this.insManager.getProcessesByAgentIdAndDepid(agentInfo.getId(), depId);
-				if(pi != null) {
-					//第一次启动时，已经存在对应的应用
-					instanceAdded(pi);
-				} else {
-					deploymentAdded(depId);
+		//监控分配新的应用
+		op.addChildrenListener(path,deploymentListener);
+		
+		op.addDataListener(path, agentDataListener);
+		
+		op.addDataListener(activePath, cmdListener);
+		
+		TimerTicker.doInBaseTicker(5, Config.getInstanceName()+"_ServiceAgent", null, (key,att)->{
+			try {
+				if(System.currentTimeMillis() - agentInfo.getStartTime() < 1000*30) {
+					return;
 				}
-			}else if(type == IListener.REMOVE) {
-				this.deploymentRemoved(depId);
+				checkStatus();
+			} catch (Throwable e) {
+				logger.error("doChecker",e);
 			}
 		});
-		 
-		TimerTicker.getDefault(5000L).addListener("", (key,att)->{
-				try {
-					if(System.currentTimeMillis() - agentInfo.getStartTime() < 1000*30) {
-						return;
-					}
-					checkStatus();
-				} catch (Throwable e) {
-					logger.error("doChecker",e);
-				}
-			}, null);
-		 
 	}
 	
+	private boolean hasController() {
+		if(!op.exist(ChoyConstants.ROOT_CONTROLLER)) {
+			return false;
+		}
+		Set<String> controllers = op.getChildren(ChoyConstants.ROOT_CONTROLLER,false);
+		return controllers != null && controllers.size() > 0;
+	}
+	
+	private void setInitDeps(String deps) {
+		String[] depIds = deps.split(",");
+		if(depIds == null || depIds.length == 0) {
+			return;
+		}
+		
+		initDepIds = depIds;
+		if(this.hasController()) {
+			//manager by controllers
+			return;
+		}
+		
+		//start instances specify by depId
+		for(String depId : depIds) {
+			startInitDeployment(depId);
+		}
+	}
+
+	private void startInitDeployment(String depId) {
+		if(StringUtils.isEmpty(depId)) {
+			return;
+		}
+		depId = depId.trim();
+		Deployment dep = this.getDeployment(depId);
+		if(dep == null) {
+			logger.error("Deployment not found for ID: " + depId);
+			return;
+		}
+		
+		if(!dep.isEnable()) {
+			logger.error("Deployment is disable " + depId);
+			return;
+		}
+		
+		Map<String,String> params = IAssignStrategy.parseArgs(dep.getStrategyArgs());
+		String agentIds = params.get(IAssignStrategy.AGENT_ID);
+		if(StringUtils.isEmpty(agentIds)) {
+			logger.error("Deployment ID [" + depId+"] not contain angent ID [" + agentInfo.getId() + "]");
+			return;
+		}
+		
+		boolean f = false;
+		String[] agids = agentIds.split(",");
+		for(String aid : agids) {
+			if(aid.equals(agentInfo.getId())) {
+				//deployment descriptor argument with name agentId equals this agentId
+				f = true;
+				break;
+			}
+		}
+		
+		if(f) {
+			op.createNodeOrSetData(path+"/" + depId, "", false);
+		} else {
+			logger.error("Deployment ID [" + depId+"] not contain init angent Id [" + agentInfo.getId() + "]");
+		}
+		
+	}
+
 	private void recreateAgentInfo() {
 		agentInfo.setAssignTime(System.currentTimeMillis());
 		String data = JsonUtils.getIns().toJson(agentInfo);
 		logger.warn("Recreate angent info: " + data);
 		op.createNodeOrSetData(path,data ,IDataOperator.PERSISTENT);
+		op.addChildrenListener(path,deploymentListener);
+		op.addDataListener(path, agentDataListener);
 	}
 	
 	private void setStatisData() {
@@ -242,29 +350,61 @@ public class ServiceAgent {
 			return;
 		}
 		
+		if(!op.exist(activePath)) {
+			op.createNodeOrSetData(activePath,ChoyConstants.AGENT_CMD_NOP,IDataOperator.EPHEMERAL); //代表此Agent的存活标志
+			op.addDataListener(activePath, cmdListener);
+		}
+		
 		setStatisData();
 		
-		Set<String> keySet = new HashSet<>();
-		keySet.addAll(processInfos.keySet());
-		for(String k : keySet) {
-			ProcessInfo pi = processInfos.get(k);
-			String p = ChoyConstants.INS_ROOT + "/" + pi.getId();
-			if(op.exist(p)) {
-				if(!pi.isActive() && curTime - pi.getOpTime() > pi.getTimeOut()) {
+		if(!startingProcess.isEmpty()) {
+			Set<String> keySet = new HashSet<>();
+			keySet.addAll(startingProcess.keySet());
+			for(String k : keySet) {
+				ProcessInfo pi = startingProcess.get(k);
+				
+				if(curTime - pi.getOpTime() > pi.getTimeOut()) {
 					//已经命令进程停止，并且超过超时时间还没成功退出
-					processInfos.remove(k);
-					if(StringUtils.isNotEmpty(pi.getPid())) {
-						forceStopProcess(pi.getPid());
+					logger.debug("Start timeout: " + pi.toString());
+					startingProcess.remove(k);
+					
+					forceStopProcess(k);
+					
+					String path = ChoyConstants.ROOT_AGENT+"/"+pi.getAgentId()+"/"+pi.getDepId();
+					if(op.exist(path)) {
+						logger.debug("Delete deployment node by checker: " + path);
+						op.deleteNode(path);
 					}
-				} 
-			} else {
-				//进程节点不存在
-				//pi.getPid() != null: 进程已经停止
-				//进程启动超时: curTime - pi.getOpTime() > pi.getTimeOut()
-				if(pi.getPid() != null || (pi.getPid() == null && curTime - pi.getOpTime() > pi.getTimeOut())) {
-					//进程ID为空，启动中，进程还没起来
-					//超时时间已经到了
-					processInfos.remove(k);
+				}
+			}
+		}
+		
+		if(!stopingProcess.isEmpty()) {
+			Set<String> keySet = new HashSet<>();
+			keySet.addAll(stopingProcess.keySet());
+			for(String k : keySet) {
+				ProcessInfo pi = stopingProcess.get(k);
+				String p = ChoyConstants.INS_ROOT + "/" + pi.getId();
+				if(curTime - pi.getOpTime() > pi.getTimeOut()) {
+					//已经命令进程停止，并且超过超时时间还没成功退出
+					logger.warn("Stop timeout and force stop it: " + pi.toString());
+					stopingProcess.remove(k);
+					forceStopProcess(k);
+					
+					String path = ChoyConstants.ROOT_AGENT+"/"+pi.getAgentId()+"/"+pi.getDepId();
+					if(op.exist(path)) {
+						logger.warn("Delete deployment node by checker: " + path);
+						op.deleteNode(path);
+					}
+				}
+			}
+		}
+		
+		if(this.initDepIds != null && this.initDepIds.length > 0 && !this.hasController()) {
+			for(String depId : this.initDepIds) {
+				int size = this.insManager.getProcessSizeByDepId(depId);
+				if(size == 0) {
+					startInitDeployment(depId);
 				}
 			}
 		}
@@ -272,27 +412,46 @@ public class ServiceAgent {
 	}
 
 	private void forceStopProcess(String pid) {
-		String cmd = "kill -9 "+pid;
+		
+		Process p = sysProcess.get(pid);
+		if(p != null) {
+			logger.warn("Force kill process " + pid);
+			p.destroyForcibly();
+			sysProcess.remove(pid);
+		}
+		
+		/*String cmd = "kill -15 "+pid;
 		if(SystemUtils.isWindows()) {
 			 cmd = "taskkill /f /pid "+pid;
-		} else {
-			 //类unix系统停止进程
-			 cmd = "kill -9 "+pid;
 		}
 		
 		try {
+			logger.warn("Force kill with command: " + cmd);
 			Runtime.getRuntime().exec(cmd);
 		} catch (IOException e) {
 			logger.error("fail to stop process : " + pid,e);
-		}
+		}*/
 		
 	}
 
 
 	private void instanceRemoved(ProcessInfo pi) {
-		if(processInfos.containsKey(pi.getId())) {
-			 processInfos.remove(pi.getId());
-			 //stopProcess(pi);
+		if(this.stopingProcess.containsKey(pi.getId())) {
+			stopingProcess.remove(pi.getId());
+		}
+		
+		if(sysProcess.containsKey(pi.getId())) {
+			sysProcess.remove(pi.getId());
+		}
+		
+		Set<ProcessInfo>  set = this.insManager.getProcessesByDepId(pi.getDepId());
+		if(set == null || set.isEmpty()) {
+			//删除分配
+			String path = ChoyConstants.ROOT_AGENT+"/"+pi.getAgentId()+"/"+pi.getDepId();
+			if(op.exist(path)) {
+				logger.debug("Delete deployment node: " + path);
+				op.deleteNode(path);
+			}
 		}
 	}
 	
@@ -306,14 +465,16 @@ public class ServiceAgent {
 			return;
 		}
 		if(pi.getAgentId().equals(this.agentInfo.getId())) {
-			processInfos.put(pi.getId(), pi);
+			//processInfos.put(pi.getId(), pi);
+			//启动成功后，实例由InstanceManager管理
+			startingProcess.remove(pi.getId());
 			logger.info("Insatnce add: " + pi.toString());
 		}
 	}
 
 	private void deploymentRemoved(String depId) {
 		ProcessInfo p = null;
-		for(ProcessInfo pi : processInfos.values()) {
+		for( ProcessInfo pi : this.insManager.getProcessesByDepId(depId) ) {
 			if(depId.equals(pi.getDepId())) {
 				p = pi;
 				break;
@@ -321,12 +482,38 @@ public class ServiceAgent {
 		}
 		if(p != null) {
 			stopProcess(p);
+		} else {
+			logger.warn("Process for dep: " + depId + " not found!");
 		}
 		
 	}
 
 	private boolean deploymentAdded(String depId) {
+		if(this.agentInfo.isPrivat()) {
+			if(this.initDepIds == null || this.initDepIds.length == 0) {
+				logger.error("Private agent but initDepIds is null!");
+				return false;
+			}else {
+				boolean f = false;
+				for(String did : this.initDepIds) {
+					if(did.equals(depId)) {
+						f = true;
+						break;
+					}
+				}
+				
+				if(!f) {
+					logger.error("Private agent not responsible for dep:[" + depId+"] initDepIds : "
+							+ Arrays.toString(this.initDepIds));
+					return false;
+				}
+			}
+		}
 		Deployment dep = getDeployment(depId);
+		if(dep == null) {
+			logger.error("Deployment not found for ID:" + depId);
+			return false;
+		}
 		boolean f = startDep(dep);
 		return f;
 	}
@@ -339,6 +526,10 @@ public class ServiceAgent {
 	}
 
 	private boolean startDep(Deployment dep) {
+		if(dep == null) {
+			logger.error("Invalid dep for NULL!");
+			return false;
+		}
 		
 		boolean doContinue = true;
 		if(!checkRes(dep.getJarFile()) ) {
@@ -356,7 +547,12 @@ public class ServiceAgent {
 			return false;
 		}
 		
-		String processId = idServer.getStringId(ProcessInfo.class);
+		String processId = op.getData(this.path +"/" + dep.getId()); //idServer.getStringId(ProcessInfo.class);
+		if(StringUtils.isEmpty(processId)) {
+			long prid = Long.parseLong(op.getData(ChoyConstants.ID_PATH))+1;
+			processId = prid + "";
+			op.setData(ChoyConstants.ID_PATH, processId);
+		}
 		
 		String args = dep.getArgs();
 		
@@ -407,16 +603,16 @@ public class ServiceAgent {
 			
 			ProcessInfo pi = new ProcessInfo();
 			pi.setActive(false);
-			pi.setAgentId(this.agentInfo.getId());
+			pi.setAgentId(agentInfo.getId());
 			pi.setCmd(list.toString());
 			pi.setDepId(dep.getId());
 			pi.setId(processId);
-			pi.setDataDir(wd.getAbsolutePath());
+			pi.setWorkDir(wd.getAbsolutePath());
 			pi.setAgentProcessId(SystemUtils.getProcessId());
 			pi.setAgentHost(Config.getHost());
 			pi.setAgentInstanceName(Config.getInstanceName());
 			pi.setOpTime(System.currentTimeMillis());
-			pi.setTimeOut(this.processOpTimeout);
+			pi.setTimeOut(processOpTimeout);
 			
 			//通过文件传递给子进程，再由子进程在启动后存入ZK
 			String data = JsonUtils.getIns().toJson(pi);
@@ -426,8 +622,9 @@ public class ServiceAgent {
 			
 			Process p = pb.start();
 			pi.setProcess(p);
+			sysProcess.put(pi.getId(), p);
 			
-			this.processInfos.put(pi.getId(), pi);
+			this.startingProcess.put(pi.getId(), pi);
 			//this.dep2Process.put(pi.getDepId(), pi);
 			
 			logger.info("Start process: " + data);
@@ -504,6 +701,7 @@ public class ServiceAgent {
 			pi.setActive(false);
 			pi.setOpTime(System.currentTimeMillis());
 			pi.setTimeOut(processOpTimeout);
+			this.stopingProcess.put(pi.getId(), pi);
 			String data = JsonUtils.getIns().toJson(pi);
 			op.setData(p, data);
 			logger.info("Stop process: " + data);

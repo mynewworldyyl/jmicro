@@ -3,10 +3,12 @@
         <a @click="addDeploy()">ADD</a>&nbsp;&nbsp;&nbsp;
         <a @click="refresh()">REFRESH</a>
         <table class="configItemTalbe" width="99%">
-            <thead><tr><td>ID</td><td>JAR FILE</td><td>INSTANCE NUM</td><td>STRATEGY</td><td>STRATEGY ARGS</td><td>ARGS</td><td>ENABLE</td><td>OPERATION</td></tr></thead>
+            <thead><tr><td>ID</td><td>JAR FILE</td><td>ENABLE</td><td>INSTANCE NUM</td><td>STRATEGY</td>
+                <td>STRATEGY ARGS</td><td>ARGS</td><td>OPERATION</td></tr>
+            </thead>
             <tr v-for="c in deployList" :key="c.id">
-                <td>{{c.id}}</td><td>{{c.jarFile}}</td><td>{{c.instanceNum}}</td><td>{{c.assignStrategy}}</td>
-                <td>{{c.strategyArgs}}</td><td>{{c.args}}</td><td>{{c.enable}}</td>
+                <td>{{c.id}}</td><td>{{c.jarFile}}</td><td>{{c.enable}}</td><td>{{c.instanceNum}}</td>
+                <td>{{c.assignStrategy}}</td><td>{{c.strategyArgs}}</td><td>{{c.args}}</td>
                 <td>&nbsp;
                     <a @click="deleteDeployment(c)">DELETE</a>&nbsp;&nbsp;&nbsp;
                     <a @click="updateDeployment(c)">UPDATE</a>
@@ -16,6 +18,10 @@
 
         <Modal v-model="addResourceDialog" :loading="true" ref="addNodeDialog" width="360" @on-ok="onAddOk()">
             <div>
+                <Checkbox v-model="deployment.enable">ENABLE</Checkbox>
+                <br/>
+                <div style="color:red">{{errMsg}}</div>
+
                 <Label for="jarFile">JAR FILE</Label>
                 <Input id="jarFile"  v-model="deployment.jarFile"/>
 
@@ -33,8 +39,6 @@
                 <Input id="args"  class='textarea' :rows="5" :autosize="{maxRows:3,minRows: 3}"
                        type="textarea" v-model="deployment.args"/>
 
-                <Checkbox v-model="deployment.enable">ENABLE</Checkbox>
-                <div style="color:red">{{errMsg}}</div>
               </div>
         </Modal>
 
@@ -100,7 +104,7 @@
                 }
 
                 if(self.doUpdate) {
-                    window.jm.mng.deployment.updateDeployment(self.deployment).then((success)=>{
+                    window.jm.mng.choy.updateDeployment(self.deployment).then((success)=>{
                         if( success ) {
                             self.$Message.success("Fail to add deployment ");
                             this.addResourceDialog = false;
@@ -111,7 +115,7 @@
                         self.resetDeployment();
                     });
                 }else {
-                    window.jm.mng.deployment.addDeployment(self.deployment).then((dep)=>{
+                    window.jm.mng.choy.addDeployment(self.deployment).then((dep)=>{
                         if( dep ) {
                             self.deployList.push(dep);
                             self.resetDeployment();
@@ -127,7 +131,7 @@
 
             deleteDeployment(res){
                 let self = this;
-                window.jm.mng.deployment.deleteDeployment(res.id).then((rst)=>{
+                window.jm.mng.choy.deleteDeployment(res.id).then((rst)=>{
                     if(rst ) {
                         for(let i = 0; i < self.deployList.length; i++) {
                             if(self.deployList[i].id == res.id) {
@@ -144,7 +148,7 @@
             },
 
             refresh(){
-                window.jm.mng.deployment.getDeploymentList().then((deployList)=>{
+                window.jm.mng.choy.getDeploymentList().then((deployList)=>{
                     if(!deployList || deployList.length == 0 ) {
                         return;
                     }

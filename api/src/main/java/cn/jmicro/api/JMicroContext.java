@@ -38,6 +38,7 @@ import cn.jmicro.api.registry.IRegistry;
 import cn.jmicro.api.registry.ServiceItem;
 import cn.jmicro.api.registry.ServiceMethod;
 import cn.jmicro.api.registry.UniqueServiceMethodKey;
+import cn.jmicro.api.security.ActInfo;
 import cn.jmicro.api.service.ServiceLoader;
 import cn.jmicro.common.CommonException;
 import cn.jmicro.common.Constants;
@@ -287,6 +288,26 @@ public class JMicroContext  {
 		cxt.get().params.clear();
 	}
 	
+	public ActInfo getAccount() {
+		 return JMicroContext.get().getParam(JMicroContext.LOGIN_ACT, null);
+	}
+	
+	public boolean hasPermission(int reqLevel) {
+		 ActInfo ai = JMicroContext.get().getParam(JMicroContext.LOGIN_ACT, null);
+		 if(ai != null) {
+			return  ai.getClientId() <= reqLevel;
+		 }
+		 return false;
+	}
+	
+	public boolean hasPermission(int reqLevel, int defaultLevel) {
+		 ActInfo ai = JMicroContext.get().getParam(JMicroContext.LOGIN_ACT, null);
+		 if(ai != null) {
+			return ai.getClientId() <= reqLevel;
+		 } else {
+			 return defaultLevel <= reqLevel;
+		 }
+	}
 	
 	public void restore() {
 		cxt.get().params.clear();

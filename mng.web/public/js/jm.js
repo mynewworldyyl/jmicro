@@ -33,34 +33,27 @@ jm.mng = {
         });
     },
 
+    callRpcWithParams : function(service,namespace,version,method,args) {
+        let req = {};
+        req.serviceName = service;
+        req.namespace = namespace;
+        req.version = version;
+        req.method = method;
+        req.args = args;
+        return jm.mng.callRpc(req,jm.rpc.Constants.PROTOCOL_JSON, jm.rpc.Constants.PROTOCOL_JSON);
+    },
+
     srv : {
         getServices: function (){
-            let req =  this.__ccreq();
-            req.method = 'getServices';
-            req.args = [];
-            return jm.mng.callRpc(req,jm.rpc.Constants.PROTOCOL_JSON, jm.rpc.Constants.PROTOCOL_JSON);
+            return jm.mng.callRpcWithParams(this.sn,this.ns,this.v,'getServices',[]);
         },
 
         updateItem: function (si){
-            let req =  this.__ccreq();
-            req.method = 'updateItem';
-            req.args = [si];
-            return jm.mng.callRpc(req,jm.rpc.Constants.PROTOCOL_JSON, jm.rpc.Constants.PROTOCOL_JSON);
+            return jm.mng.callRpcWithParams(this.sn,this.ns,this.v,'updateItem',[si]);
         },
 
         updateMethod: function (method){
-            let req =  this.__ccreq();
-            req.method = 'updateMethod';
-            req.args = [method];
-            return jm.mng.callRpc(req,jm.rpc.Constants.PROTOCOL_JSON, jm.rpc.Constants.PROTOCOL_JSON);
-        },
-
-        __ccreq:function(){
-            let req = {};
-            req.serviceName=this.sn;
-            req.namespace = this.ns;
-            req.version = this.v;
-            return req;
+            return jm.mng.callRpcWithParams(this.sn,this.ns,this.v,'updateMethod',[method]);
         },
 
         sn:'cn.jmicro.api.mng.IManageService',
@@ -70,40 +63,19 @@ jm.mng = {
 
     conf:{
         getChildren : function (path,all){
-            let req =  this.__ccreq();
-            req.method = 'getChildren';
-            req.args = [path,all];
-
-           return jm.mng.callRpc(req,jm.rpc.Constants.PROTOCOL_JSON, jm.rpc.Constants.PROTOCOL_JSON);
+            return jm.mng.callRpcWithParams(this.sn,this.ns,this.v,'getChildren',[path,all]);
         },
 
         update: function (path,val){
-            let req =  this.__ccreq();
-            req.method = 'update';
-            req.args = [path,val];
-            return jm.mng.callRpc(req,jm.rpc.Constants.PROTOCOL_JSON, jm.rpc.Constants.PROTOCOL_JSON);
+            return jm.mng.callRpcWithParams(this.sn,this.ns,this.v,'update',[path,val]);
         },
 
         delete: function (path){
-            let req =  this.__ccreq();
-            req.method = 'delete';
-            req.args = [path];
-            return jm.mng.callRpc(req,jm.rpc.Constants.PROTOCOL_JSON, jm.rpc.Constants.PROTOCOL_JSON);
+            return jm.mng.callRpcWithParams(this.sn,this.ns,this.v,'delete',[path]);
         },
 
         add: function (path,val,isDir){
-            let req =  this.__ccreq();
-            req.method = 'add';
-            req.args = [path,val,isDir];
-            return jm.mng.callRpc(req,jm.rpc.Constants.PROTOCOL_JSON, jm.rpc.Constants.PROTOCOL_JSON);
-        },
-
-        __ccreq:function(){
-            let req = {};
-            req.serviceName=this.sn;
-            req.namespace = this.ns;
-            req.version = this.v;
-            return req;
+            return jm.mng.callRpcWithParams(this.sn,this.ns,this.v,'add',[path,val,isDir]);
         },
 
         sn:'cn.jmicro.api.mng.IConfigManager',
@@ -468,33 +440,15 @@ jm.mng = {
         data:{},
 
         serverList: function (){
-            let req =  this.__ccreq();
-            req.method = 'serverList';
-            req.args = [];
-            let self = this;
-            return jm.mng.callRpc(req,jm.rpc.Constants.PROTOCOL_JSON, jm.rpc.Constants.PROTOCOL_JSON);
+            return jm.mng.callRpcWithParams(this.sn,this.ns,this.v,'serverList',[]);
         },
 
         status: function (srvKeys){
-            let req =  this.__ccreq();
-            req.method = 'status';
-            req.args = [srvKeys];
-            return jm.mng.callRpc(req,jm.rpc.Constants.PROTOCOL_JSON, jm.rpc.Constants.PROTOCOL_JSON);
+            return jm.mng.callRpcWithParams(this.sn,this.ns,this.v,'status',[srvKeys]);
         },
 
         enable: function (srvKey,enable){
-            let req =  this.__ccreq();
-            req.method = 'enable';
-            req.args = [srvKey,enable];
-            return jm.mng.callRpc(req,jm.rpc.Constants.PROTOCOL_JSON, jm.rpc.Constants.PROTOCOL_JSON);
-        },
-
-        __ccreq:function(){
-            let req = {};
-            req.serviceName=this.sn;
-            req.namespace = this.ns;
-            req.version = this.v;
-            return req;
+            return jm.mng.callRpcWithParams(this.sn,this.ns,this.v,'enable',[srvKey,enable]);
         },
 
         sn:'cn.jmicro.mng.api.IMonitorServerManager',
@@ -505,40 +459,27 @@ jm.mng = {
     repository : {
 
         getResourceList: function (onlyFinish){
-            let req =  this.__ccreq();
-            req.method = 'getResourceList';
-            req.args = [onlyFinish];
-            let self = this;
-            return jm.mng.callRpc(req,jm.rpc.Constants.PROTOCOL_JSON, jm.rpc.Constants.PROTOCOL_JSON);
+            return jm.mng.callRpcWithParams(this.sn,this.ns,this.v,'getResourceList',[onlyFinish]);
         },
 
         addResource: function (name,size){
-            let req =  this.__ccreq();
-            req.method = 'addResource';
-            req.args = [name,size ];
-            return jm.mng.callRpc(req,jm.rpc.Constants.PROTOCOL_JSON, jm.rpc.Constants.PROTOCOL_JSON);
+            return jm.mng.callRpcWithParams(this.sn,this.ns,this.v,'addResource',[name,size]);
         },
 
         addResourceData: function (name,data,blockNum){
-            let req =  this.__ccreq();
+            let req = {};
+
+            req.serviceName=this.sn;
+            req.namespace = this.ns;
+            req.version = this.v;
+
             req.method = 'addResourceData';
             req.args = [name,data,blockNum];
             return jm.mng.callRpc(req,jm.rpc.Constants.PROTOCOL_BIN, jm.rpc.Constants.PROTOCOL_JSON);
         },
 
         deleteResource: function (name){
-            let req =  this.__ccreq();
-            req.method = 'deleteResource';
-            req.args = [name];
-            return jm.mng.callRpc(req,jm.rpc.Constants.PROTOCOL_JSON, jm.rpc.Constants.PROTOCOL_JSON);
-        },
-
-        __ccreq:function(){
-            let req = {};
-            req.serviceName=this.sn;
-            req.namespace = this.ns;
-            req.version = this.v;
-            return req;
+            return jm.mng.callRpcWithParams(this.sn,this.ns,this.v,'deleteResource',[name]);
         },
 
         sn:'cn.jmicro.choreography.api.IResourceResponsitory',
@@ -546,50 +487,54 @@ jm.mng = {
         v:'0.0.1',
     },
 
-    deployment : {
+    choy : {
 
         getDeploymentList: function (){
-            let req =  this.__ccreq();
-            req.method = 'getDeploymentList';
-            req.args = [];
-            let self = this;
-            return jm.mng.callRpc(req,jm.rpc.Constants.PROTOCOL_JSON, jm.rpc.Constants.PROTOCOL_JSON);
+            return jm.mng.callRpcWithParams(this.sn,this.ns,this.v,'getDeploymentList',[]);
         },
 
         addDeployment: function (deployment){
-            let req =  this.__ccreq();
-            req.method = 'addDeployment';
-            req.args = [deployment];
-            return jm.mng.callRpc(req,jm.rpc.Constants.PROTOCOL_JSON, jm.rpc.Constants.PROTOCOL_JSON);
+            return jm.mng.callRpcWithParams(this.sn,this.ns,this.v,'addDeployment',[deployment]);
         },
 
         deleteDeployment: function (id){
-            let req =  this.__ccreq();
-            req.method = 'deleteDeployment';
-            req.args = [id];
-            return jm.mng.callRpc(req,jm.rpc.Constants.PROTOCOL_JSON, jm.rpc.Constants.PROTOCOL_JSON);
+            return jm.mng.callRpcWithParams(this.sn,this.ns,this.v,'deleteDeployment',[id]);
         },
 
         updateDeployment: function (deployment){
-            let req =  this.__ccreq();
-            req.method = 'updateDeployment';
-            req.args = [deployment];
-            return jm.mng.callRpc(req,jm.rpc.Constants.PROTOCOL_JSON, jm.rpc.Constants.PROTOCOL_JSON);
+            return jm.mng.callRpcWithParams(this.sn,this.ns,this.v,'updateDeployment',[deployment]);
         },
 
-        __ccreq:function(){
-            let req = {};
-            req.serviceName=this.sn;
-            req.namespace = this.ns;
-            req.version = this.v;
-            return req;
+        stopProcess: function (insId){
+            return jm.mng.callRpcWithParams(this.sn,this.ns,this.v,'stopProcess',[insId]);
         },
 
-        sn:'cn.jmicro.choreography.api.IDeploymentService',
+        getProcessInstanceList: function (all){
+            return jm.mng.callRpcWithParams(this.sn,this.ns,this.v,'getProcessInstanceList',[all]);
+        },
+
+        getAgentList: function (showAll){
+            return jm.mng.callRpcWithParams(this.sn,this.ns,this.v,'getAgentList',[showAll]);
+        },
+
+        changeAgentState: function (agentId){
+            return jm.mng.callRpcWithParams(this.sn,this.ns,this.v,'changeAgentState',[agentId]);
+        },
+
+        sn:'cn.jmicro.mng.api.IChoreographyService',
         ns : 'mng',
         v:'0.0.1',
     },
 
+    comm : {
+        hasPermission: function (per){
+            return jm.mng.callRpcWithParams(this.sn,this.ns,this.v,'hasPermission',[per]);
+        },
+
+        sn:'cn.jmicro.mng.api.ICommonManager',
+        ns : MNG,
+        v:'0.0.1',
+    },
 
 }
 

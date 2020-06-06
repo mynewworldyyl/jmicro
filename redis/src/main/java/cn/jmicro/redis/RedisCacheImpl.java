@@ -282,12 +282,12 @@ public class RedisCacheImpl implements ICache {
 		//通过旋转时钟刷新缓存
 		TimerTicker t = TimerTicker.getTimer(this.timers, timerWithMilliseconds).setOpenDebug(openDebug);
 		
-		t.addListener(key, (k,rr) -> {
+		t.addListener(key, r, true, (k,rr) -> {
 			Object val = ref.get(key);
 			if( val != null) {
 				put(key,val,expire,randomVal);
 			}
-		}, r, true);
+		});
 		
 		return true;
 	}

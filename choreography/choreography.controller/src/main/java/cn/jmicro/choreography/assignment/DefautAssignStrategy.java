@@ -1,6 +1,5 @@
 package cn.jmicro.choreography.assignment;
 
-import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -10,6 +9,7 @@ import org.slf4j.LoggerFactory;
 
 import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Inject;
+import cn.jmicro.api.sysstatis.SystemStatis;
 import cn.jmicro.choreography.api.Deployment;
 import cn.jmicro.choreography.api.IAssignStrategy;
 import cn.jmicro.choreography.base.AgentInfo;
@@ -19,16 +19,12 @@ import cn.jmicro.common.util.StringUtils;
 @Component(value="defautAssignStrategy")
 public class DefautAssignStrategy implements IAssignStrategy{
 
+	private final String[] DEFAULT_SORT_PRIORITY = {CPU_MAX_RATE,MEM_MIN_FREE,INSTANCE_NUM};
+	
 	private final static Logger logger = LoggerFactory.getLogger(DefautAssignStrategy.class);
 	
 	@Inject
 	private InstanceManager insManager;
-	
-	private Comparator<AgentInfo> comparator = ( o1, o2)->{
-		int o1Size = insManager.getProcessSizeByAgentId(o1.getId());
-		int o2Size = insManager.getProcessSizeByAgentId(o2.getId());
-		return o1Size > o2Size ? 1: o1Size == o2Size ? 0 : -1;
-	};
 	
 	@Override
 	public boolean doStrategy(List<AgentInfo> agents, Deployment dep) {
@@ -68,22 +64,66 @@ public class DefautAssignStrategy implements IAssignStrategy{
 			return true;
 		}
 		
-		agents.sort(comparator);
+		final String[] sorts;
+		
+		if(params == null || !params.containsKey(SORT_PRIORITY) || 
+				StringUtils.isEmpty(params.get(SORT_PRIORITY))) {
+			sorts = DEFAULT_SORT_PRIORITY;
+		} else {
+			sorts = params.get(SORT_PRIORITY).split(",");
+		}
+		
+		agents.sort(( o1, o2)->{
+			int rst = 0;
+			for(int i = 0; i < sorts.length; i++) {
+				rst = sort(sorts[i],o1,o2);
+				if(rst != 0) {
+					return rst;
+				}
+			}
+			return rst;
+		});
+		
 		return true;
 		
 	}
 	
+	private int sort(String sortBy, AgentInfo o1, AgentInfo o2) {
+		if(StringUtils.isEmpty(sortBy)) {
+			return 0;
+		}
+		
+		int rst = 0;
+		
+		SystemStatis s1 = o1.getSs();
+		SystemStatis s2 = o2.getSs();
+		
+		if(CPU_MAX_RATE.equals(sortBy.trim())) {
+			rst = s1.getCpuLoad() > s2.getCpuLoad() ? -1: (s1.getCpuLoad() == s2.getCpuLoad()?0:1);
+		}else if(MEM_MIN_FREE.equals(sortBy.trim())) {
+			rst = s1.getFreeMemory() > s2.getFreeMemory() ? 1: (s1.getFreeMemory() == s2.getFreeMemory() ? 0 : -1);
+		}else if(CORE_NUM.equals(sortBy.trim())) {
+			rst = s1.getCpuNum() > s2.getCpuNum() ? 1: (s1.getCpuNum() == s2.getCpuNum() ? 0 : -1);
+		}else if(INSTANCE_NUM.equals(sortBy.trim())) {
+			int z1 = this.insManager.getProcessSizeByAgentId(o1.getId());
+			int z2 = this.insManager.getProcessSizeByAgentId(o2.getId());
+			rst = z1 > z2 ? -1: (z1 == z2 ? 0 : 1);
+		}
+		
+		return rst;
+	}
+
 	private void filteCpuRate(List<AgentInfo> agents, String cpuRate, Deployment dep) {
 		if(StringUtils.isEmpty(cpuRate)) {
 			logger.error("cpuRate val is NULL for: [" +dep.toString() +"]");
 			return;
 		}
 		
-		double cn = Double.parseDouble(cpuRate)*100;
+		double cn = Double.parseDouble(cpuRate);
 		Iterator<AgentInfo> ite = agents.iterator();
 		while(ite.hasNext()) {
 			AgentInfo ai = ite.next();
-			if(ai.getSs() == null || ai.getSs().getAvgCpuLoad() > cn) {
+			if(ai.getSs() == null || ai.getSs().getAvgCpuLoad()*100 > cn) {
 				ite.remove();
 			}
 		}
@@ -99,15 +139,17 @@ public class DefautAssignStrategy implements IAssignStrategy{
 		if(minFreeMem.endsWith("B")) {
 			minFreeMem = minFreeMem.substring(0,minFreeMem.length()-1);
 			cn = Long.parseLong(minFreeMem);
-		}else if(minFreeMem.endsWith("KB")) {
-			minFreeMem = minFreeMem.substring(0,minFreeMem.length()-2);
+		}else if(minFreeMem.endsWith("K")) {
+			minFreeMem = minFreeMem.substring(0,minFreeMem.length()-1);
 			cn = Long.parseLong(minFreeMem)*1024;
-		}else if(minFreeMem.endsWith("MB")) {
-			minFreeMem = minFreeMem.substring(0,minFreeMem.length()-2);
+		}else if(minFreeMem.endsWith("M")) {
+			minFreeMem = minFreeMem.substring(0,minFreeMem.length()-1);
 			cn = Long.parseLong(minFreeMem)*1024*1024;
-		}else if(minFreeMem.endsWith("GB")) {
-			minFreeMem = minFreeMem.substring(0,minFreeMem.length()-2);
+		}else if(minFreeMem.endsWith("G")) {
+			minFreeMem = minFreeMem.substring(0,minFreeMem.length()-1);
 			cn = Long.parseLong(minFreeMem)*1024*1024*1024;
+		}else {
+			cn = Long.parseLong(minFreeMem);
 		}
 		
 		Iterator<AgentInfo> ite = agents.iterator();

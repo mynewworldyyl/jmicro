@@ -5,11 +5,15 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import cn.jmicro.api.IListener;
 import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Inject;
 import cn.jmicro.api.choreography.ChoyConstants;
 import cn.jmicro.api.choreography.ProcessInfo;
+import cn.jmicro.api.raft.IDataListener;
 import cn.jmicro.api.raft.IDataOperator;
 import cn.jmicro.choreography.api.IInstanceListener;
 import cn.jmicro.common.util.JsonUtils;
@@ -18,10 +22,12 @@ import cn.jmicro.common.util.StringUtils;
 @Component
 public class InstanceManager {
 
+	private final static Logger logger = LoggerFactory.getLogger(InstanceManager.class);
+	
 	@Inject
 	private IDataOperator op;
 	
-	//private Map<String,ProcessInfo> sysProcesses = new HashMap<>();
+	private Map<String,ProcessInfo> sysProcesses = new HashMap<>();
 	
 	private String agentId = null;
 	
@@ -33,6 +39,28 @@ public class InstanceManager {
 	private Object notifyObj = new Object();
 	
 	private long rmTimeout = 10000;
+	
+	private boolean mngSysProcess = true;
+	
+	private IDataListener insDataListener = (path,data)->{
+		if(StringUtils.isEmpty(data)) {
+			logger.warn("Data is NULL for path: " + path);
+			return;
+		}
+		
+		String id = path.substring(ChoyConstants.INS_ROOT.length()+1);
+		ProcessInfo pi = JsonUtils.getIns().fromJson(data,ProcessInfo.class);
+		
+		if(this.mngSysProcess && StringUtils.isEmpty(pi.getAgentId())) {
+			this.sysProcesses.put(id, pi);
+			return;
+		}
+		
+		if(StringUtils.isNotEmpty(pi.getAgentId())) {
+			mngProcesses.put(id, pi);
+			notifyListener(IListener.DATA_CHANGE,pi);
+		}
+	};
 	
 	public void init() {
 		op.addChildrenListener(ChoyConstants.INS_ROOT, (type,p,c,data)->{
@@ -87,6 +115,10 @@ public class InstanceManager {
 	}
 	
 	public void filterByAgent(String agentId) {
+		mngSysProcess = false;
+		if(!sysProcesses.isEmpty()) {
+			sysProcesses.clear();
+		}
 		this.agentId = agentId;
 		if(!mngProcesses.isEmpty()) {
 			Set<ProcessInfo> pis = new HashSet<>();
@@ -100,9 +132,19 @@ public class InstanceManager {
 	}
 
 	private void instanceRemoved(String c) {
+		logger.debug("Instance remove ID: " + c);
+		
 		if(mngProcesses.containsKey(c)) {
 			ProcessInfo pi = mngProcesses.remove(c);
 			notifyListener(IListener.REMOVE,pi);
+			String p = ChoyConstants.INS_ROOT +"/" + pi.getId();
+			op.removeDataListener(p, this.insDataListener);
+		} else {
+			if(mngSysProcess && sysProcesses.containsKey(c)) {
+				sysProcesses.remove(c);
+				String p = ChoyConstants.INS_ROOT +"/" + c;
+				op.removeDataListener(p, this.insDataListener);
+			} 
 		}
 	}
 
@@ -122,17 +164,43 @@ public class InstanceManager {
 		if(pi == null) {
 			return;
 		}
-
+		
+		logger.debug("Instance Add: " + data);
+		
 		if(this.agentId != null && !this.agentId.equals(pi.getAgentId())) {
+			//对于Agent端，只需要管理Agent相关的进程实例
+			return;
+		}
+		
+		if(this.mngSysProcess && StringUtils.isEmpty(pi.getAgentId())) {
+			//非Agent进程
+			String p = ChoyConstants.INS_ROOT +"/" + pi.getId();
+			op.addDataListener(p, this.insDataListener);
+			this.sysProcesses.put(c, pi);
 			return;
 		}
 		
 		if(StringUtils.isNotEmpty(pi.getAgentId())) {
+			String p = ChoyConstants.INS_ROOT +"/" + pi.getId();
+			op.addDataListener(p, this.insDataListener);
 			mngProcesses.put(c, pi);
 			notifyListener(IListener.ADD,pi);
 		}
-	
 	}
+	
+	public Set<ProcessInfo> getProcesses(boolean all) {
+		Set<ProcessInfo> inses = new HashSet<>();
+		inses.addAll(this.mngProcesses.values());
+		if(all) {
+			if(mngSysProcess) {
+				inses.addAll(this.sysProcesses.values());
+			}else {
+				logger.warn("This instanceManager is not a system process mamager to cannot show all process in system!");
+			}
+		} 
+		return inses;
+	}
+	
 	
 	public Set<ProcessInfo> getProcessesByAgentId(String agentId) {
 		if(StringUtils.isEmpty(agentId)) {

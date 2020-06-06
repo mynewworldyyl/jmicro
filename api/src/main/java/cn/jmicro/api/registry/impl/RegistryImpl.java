@@ -38,6 +38,7 @@ import cn.jmicro.api.registry.ServiceItem;
 import cn.jmicro.api.registry.ServiceMethod;
 import cn.jmicro.api.registry.UniqueServiceKey;
 import cn.jmicro.api.service.ServiceManager;
+import cn.jmicro.api.timer.TimerTicker;
 import cn.jmicro.common.Constants;
 import cn.jmicro.common.util.JsonUtils;
 import cn.jmicro.common.util.StringUtils;
@@ -111,9 +112,14 @@ public class RegistryImpl implements IRegistry {
 	public void init() {
 		if(!Config.isClientOnly()) {
 			//只做服务提供者,不需要监听服务变化
-			Thread t = new Thread(this::startRegisterWorker);
+			/*Thread t = new Thread(this::startRegisterWorker);
 			t.setName("JMicro-ZKRegistry_regWorker");
-			t.start();
+			t.start();*/
+			
+			TimerTicker.doInBaseTicker(30, "JMicro-ZKRegistry_regWorker", null, (key,att)->{
+				startRegisterWorker();
+			});
+			
 		}
 		srvManager.addListener(new IServiceListener() {
 			@Override
@@ -127,23 +133,22 @@ public class RegistryImpl implements IRegistry {
 	/** +++++++++++++++++++++++Service listen START ++++++++++++++++++**/
 	
 	private void startRegisterWorker() {
-		for(;;) {
-			
-			if(!Config.isClientOnly() && !localRegistedItems.isEmpty()) {
-				//如果只是服消费者，则没有注册服务
-				this.localRegistedItems.forEach((path,si) -> {
-					if(!this.srvManager.exist(path)) {
-						this.regist(si);
-					}
-				});
-			}
-			
-			try {
-				Thread.sleep(registInterval);
-			} catch (InterruptedException e) {
-				logger.error("",e);
-			}
+		
+		/*try {
+			Thread.sleep(registInterval);
+		} catch (InterruptedException e) {
+			logger.error("",e);
+		}*/
+		
+		if(!localRegistedItems.isEmpty()) {
+			//如果只是服消费者，则没有注册服务
+			this.localRegistedItems.forEach((path,si) -> {
+				if(!this.srvManager.exist(path)) {
+					this.regist(si);
+				}
+			});
 		}
+	
 	}
 	
 	private void notifyListener(int type,ServiceItem item,Set<IServiceListener> listeners) {

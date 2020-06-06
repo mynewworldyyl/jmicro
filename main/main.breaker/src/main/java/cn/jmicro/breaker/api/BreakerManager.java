@@ -159,7 +159,7 @@ public class BreakerManager{
 				srvManager.breakService(sm);
 				
 				long interval = TimeUtils.getMilliseconds(rule.getBreakTimeInterval(), sm.getBaseTimeUnit());
-				TimerTicker.getTimer(timers,interval).addListener(key+"/dotesting", doTestImpl, sm);
+				TimerTicker.getTimer(timers,interval).addListener(key+"/dotesting", sm, doTestImpl);
 				
 				SF.breakService("open", sm, ""+rd.getCurPercent()[0]);
 			}
@@ -192,7 +192,7 @@ public class BreakerManager{
 					if(isMonitorable) {
 						BreakerReg reg = new BreakerReg(key,sm,item);
 						breakableMethods.put(key, reg);
-						TimerTicker.getTimer(timers,interval).addListener(key, breakerChecker, sm);
+						TimerTicker.getTimer(timers,interval).addListener(key, sm, breakerChecker);
 					}
 				}
 			} else {
@@ -207,7 +207,7 @@ public class BreakerManager{
 					TimerTicker.getTimer(timers,inter).removeListener(key, true);
 					BreakerReg reg = new BreakerReg(key,sm,item);
 					breakableMethods.put(key, reg);
-					TimerTicker.getTimer(timers,interval).addListener(key, breakerChecker, sm);
+					TimerTicker.getTimer(timers,interval).addListener(key, sm, breakerChecker);
 				}
 			}
 		}
@@ -256,11 +256,11 @@ public class BreakerManager{
 				BreakerReg reg = new BreakerReg(key,sm,item);
 				breakableMethods.put(key, reg);
 				long interval = TimeUtils.getMilliseconds(br.getCheckInterval(), sm.getBaseTimeUnit());
-				TimerTicker.getTimer(timers,interval).addListener(key, breakerChecker, sm);
+				TimerTicker.getTimer(timers,interval).addListener(key, sm, breakerChecker);
 				
 				if(sm.isBreaking()) {
 					long inte = TimeUtils.getMilliseconds(br.getBreakTimeInterval(), sm.getBaseTimeUnit());
-					TimerTicker.getTimer(timers,inte).addListener(key+"/dotesting", doTestImpl, sm);
+					TimerTicker.getTimer(timers,inte).addListener(key+"/dotesting", sm, doTestImpl);
 				}
 			}
 		}

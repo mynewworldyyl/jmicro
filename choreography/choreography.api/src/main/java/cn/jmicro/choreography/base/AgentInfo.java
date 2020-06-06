@@ -30,12 +30,18 @@ public final class AgentInfo {
 	
 	private String host;
 	
+	private String initDepIds;
+	
 	//yyyy-MM-dd:hh:mm:ss
 	private long startTime;
 	
 	private long assignTime;
 	
+	private boolean active;
+	
 	private SystemStatis ss;
+	
+	private boolean privat = false;
 
 	public String getId() {
 		return id;
@@ -85,9 +91,36 @@ public final class AgentInfo {
 		this.ss = ss;
 	}
 
+	public boolean isActive() {
+		return active;
+	}
+
+	public void setActive(boolean active) {
+		this.active = active;
+	}
+
+	public boolean isPrivat() {
+		return privat;
+	}
+
+	public void setPrivat(boolean privat) {
+		this.privat = privat;
+	}
+
+	public String getInitDepIds() {
+		return initDepIds;
+	}
+
+	public void setInitDepIds(String initDepIds) {
+		this.initDepIds = initDepIds;
+	}
+
 	@Override
 	public String toString() {
-		return "AgentInfo [id=" + id + ", name=" + name + ", startTime=" + startTime + "]";
+		return "AgentInfo [id=" + id + ", name=" + name + ", host=" + host + ", initDepIds=" + initDepIds
+				+ ", startTime=" + startTime + ", assignTime=" + assignTime + ", active=" + active + ", privat="
+				+ privat + "]";
 	}
+
 
 }

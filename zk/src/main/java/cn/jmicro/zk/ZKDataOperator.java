@@ -139,6 +139,13 @@ public class ZKDataOperator implements IDataOperator{
 		}
 	}
 	
+	@Override
+	public void removeListener(IConnectionStateChangeListener lis) {
+		if(connListeners.contains(lis)) {
+			connListeners.remove(lis);
+		}
+	}
+
 	public Set<String> getChildrenFromCache(String path){
 		return this.childrenManager.getChildrenFromCache(path);
 	}
@@ -263,10 +270,11 @@ public class ZKDataOperator implements IDataOperator{
 		 
 		 
 		 if(s!= 0){
-			 
-			 this.childrenManager.connStateChange(s);
-			 this.nodeManager.connStateChange(s);
-			 this.dataManager.connStateChange(s);
+			 if(childrenManager != null) {
+				 this.childrenManager.connStateChange(s);
+				 this.nodeManager.connStateChange(s);
+				 this.dataManager.connStateChange(s);
+			 }
 			 
 			 for(IConnectionStateChangeListener l : this.connListeners){
 				 l.stateChanged(s);

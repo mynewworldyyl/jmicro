@@ -19,7 +19,7 @@ import cn.jmicro.api.service.ServiceManager;
 @Service(namespace="mng", version="0.0.1")
 public class ManageServiceImpl implements IManageService {
 
-	@Cfg("/notLonginClientId")
+	@Cfg(value="/notLonginClientId",defGlobal=true)
 	private int notLonginClientId = 10;
 	
 	@Inject

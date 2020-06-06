@@ -28,6 +28,10 @@ public interface ChoyConstants {
 	
 	public static final String INS_ROOT = Config.ChoreographyDir + "/instances";
 	
+	public static final String ROOT_CONTROLLER = Config.ChoreographyDir + "/controllers";
+	
+	public static final String ID_PATH = Config.ChoreographyDir + "/" + ProcessInfo.class.getName();
+	
 	public static final String PROCESS_INFO_FILE = "processInfoFile";
 	
 	public static final String ARG_INSTANCE_ID = "instanceId";
@@ -37,4 +41,16 @@ public interface ChoyConstants {
 	public static final String ARG_DEP_ID = "depId";
 	
 	public static final String ARG_AGENT_ID = "agentId";
+	
+	public static final String ARG_AGENT_PRIVATE = "private";
+	
+	public static final String ARG_INIT_DEP_IDS = "initDepIds";
+	
+	public static final String AGENT_CMD_NOP = "0";
+	
+	public static final String AGENT_CMD_STARTING_TIMEOUT = "1";
+	
+	public static final String AGENT_CMD_STOPING_TIMEOUT = "2";
+	
+	//public static final String AGENT_CMD_NOP = "3";
 }

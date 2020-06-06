@@ -78,14 +78,13 @@ public class ResourceReponsitoryService implements IResourceResponsitory{
 			tempDir.mkdir();
 		}
 		
-
-		TimerTicker.getDefault(60000L).addListener("", (key,att)->{
+		TimerTicker.doInBaseTicker(120, "ResourceReponsitoryChecker", null, (key,att)->{
 			try {
 				doChecker();
 			} catch (Throwable e) {
 				LOG.error("doChecker",e);
 			}
-		}, null);
+		});
 	}
 	
 	private void doChecker() {

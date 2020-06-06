@@ -15,11 +15,13 @@ import cn.jmicro.common.CommonException;
 import cn.jmicro.common.util.StringUtils;
 
 @IDStrategy(10)
-public class LegalPerson {
+public class VoterPerson {
 	
 	public final static String ROOT = Config.BASE_DIR+"/_ME";
+	
+	private final static String PREFIX_SEPERATOR = "##";
 
-	private final static Logger logger = LoggerFactory.getLogger(LegalPerson.class);
+	private final static Logger logger = LoggerFactory.getLogger(VoterPerson.class);
 	
 	private IDataOperator op;
 	
@@ -34,36 +36,44 @@ public class LegalPerson {
 	
 	private boolean isMaster;
 	
-	private long masterSeq = -1;
+	private long masterSeq = Long.MAX_VALUE;
 	
-	private long seq = -1;
+	private long seq = Long.MAX_VALUE;
 	
 	//dir创建时间
 	private long electionStartTime;
 	
-	private long timeout = 10*1000;
+	//统计选票前需要等待时长
+	private long timeout = 5*1000;
 	
 	//是否进入选主状态,true:选主状态，服务不能在正常工作状态
 	private boolean lockStatu = true;
 	
 	private Set<IMasterChangeListener> listeners = new HashSet<>();
 	
-	public LegalPerson(IObjectFactory of, String tag) {
+	public VoterPerson(IObjectFactory of, String tag) {
 		if(of == null) {
 			throw new CommonException("Data operator cannot be NULL");
 		}
 		
 		if(StringUtils.isEmpty(tag) || StringUtils.isEmpty(tag.trim())) {
-			throw new CommonException("Election tag cannot be NULL");
+			tag = Config.getInstanceName();
+			int idx = -1;
+			for(int i = tag.length()-1; i >= 0; i--) {
+				if(!Character.isDigit(tag.charAt(i))) {
+					idx = i;
+					break;
+				}
+			}
+			tag = tag.substring(0,idx+1);
 		}
 		
 		this.op = of.get(IDataOperator.class);
 		//this.cfg = of.get(Config.class);
 		//this.idServer = of.get(ComponentIdServer.class);
-		
 		//this.listener = listener;
 		
-		this.dir = ROOT +"/"+ tag;
+		this.dir = ROOT + "/" + tag;
 		
 		long curTime = System.currentTimeMillis();
 		if(!op.exist(dir)) {
@@ -72,7 +82,7 @@ public class LegalPerson {
 			logger.info("Create master dir node and enter election status: {}, dir: {}",electionStartTime,dir);
 			op.createNodeOrSetData(this.dir, "" + electionStartTime, IDataOperator.PERSISTENT);
 			lockStatu = true;
-		}else {
+		} else {
 			Set<String> chs = op.getChildren(this.dir, false);
 			//目录已经存在，则取目录上的时间
 			if(chs == null || chs.isEmpty()) {
@@ -91,17 +101,7 @@ public class LegalPerson {
 			}
 		}
 		
-		this.prefix = Config.getInstanceName();
-		//this.idServer.getStringId(LegalPerson.class)+"_";
-		/*if(this.prefix == null) {
-			this.prefix = Config.getInstanceName();
-			if(this.prefix.length() >= 3) {
-				//把后面的数字去除，默认支持两位数字，也就是最多100个实例的高可用集群
-				this.prefix = this.prefix.substring(0,this.prefix.length()-2);
-			} else {
-				this.prefix = this.prefix.substring(0,this.prefix.length()-1);
-			}
-		}*/
+		this.prefix = Config.getInstanceName() + PREFIX_SEPERATOR;
 		
 		String nodePath = this.dir +"/" + this.prefix;
 		op.createNodeOrSetData(nodePath, "", IDataOperator.EPHEMERAL_SEQUENTIAL);
@@ -109,29 +109,28 @@ public class LegalPerson {
 		
 		op.addChildrenListener(this.dir, (type,parent,child,data)->{
 			
-			if(seq == -1 && child.startsWith(this.prefix)) {
-				this.seq = getSeq(child);
-			}
-			
 			if(type == IListener.REMOVE) {
 				long dm = getSeq(child);
-				if(masterSeq != -1 && dm == masterSeq) {
-					lockStatu = true;
+				//进入待选主状态
+				if(dm == masterSeq) {
 					logger.info("Master [{}] offline, dir: {}", dm,dir);
-					//主节点下线
-					this.notify(IMasterChangeListener.MASTER_OFFLINE, this.isMaster);
-					//进入待选主状态
-					long cTime = System.currentTimeMillis();
+					
+					if(dm == seq) {
+						//退位
+						this.notify(IMasterChangeListener.MASTER_OFFLINE, true);
+					}
+					
+					//主节点下线,才需要重新选举
 					long t = Long.parseLong(op.getData(dir));
-					if(cTime - t > timeout) {
+					if(this.electionStartTime ==  t) {
 						//上一任期的时间，说明时间没有更新
 						//最先收到主节点下线通知，宣告重选主节点
 						electionStartTime = System.currentTimeMillis();
 						op.setData(dir, electionStartTime + "");
 						logger.info("The start election time [{}] offline, dir: {}", dm,dir);
 					}
-					//startElectionWorker();
 				}
+				
 			} else if(type == IListener.ADD) {
 				//最先接收到通知的节点，不一定就是主节点，如多个系统同时增加节点1，2，3，收到通知的顺序可能是 3，1，2
 				//那么首先收到通知的节点3肯定不能选为主节点
@@ -140,26 +139,50 @@ public class LegalPerson {
 		});
 		
 		op.addDataListener(this.dir, (path,data) -> {
-			this.electionStartTime = Long.parseLong(data);
+			long upTime = Long.parseLong(data);
 			this.lockStatu = true;
 			this.masterSeq = -1;
-			this.notify(IMasterChangeListener.MASTER_OFFLINE, false);
+			if(upTime != this.electionStartTime) {
+				this.electionStartTime = upTime;
+				this.notify(IMasterChangeListener.MASTER_OFFLINE, false);
+			}
 			this.startElectionWorker();
 		});
 		
-		this.startElectionWorker();
-	}
-
-	private void notify(int masterOffline, boolean b) {
-		for(IMasterChangeListener l : this.listeners) {
-			new Thread(()-> {
-				l.masterChange(masterOffline, b);
-			}).start();
+		Set<String> children = op.getChildren(this.dir, false);
+		for(String child : children) {
+			long s = getSeq(child);
+			if(child.startsWith(this.prefix)) {
+				this.seq = s;
+				if(lockStatu) {
+					break;
+				}
+			}
+			if(!lockStatu) {
+				if(s < this.masterSeq) {
+					this.masterSeq = s;
+				}
+			}
+			
+		}
+		
+		if(lockStatu) {
+			this.startElectionWorker();
+		} else {
+			this.isMaster = false;
 		}
 	}
 
+	private void notify(int masterOffline, boolean b) {
+		new Thread(()-> {
+			for(IMasterChangeListener l : this.listeners) {
+				l.masterChange(masterOffline, b);
+			}
+		}).start();
+	}
+
 	private long getSeq(String child) {
-		return Long.parseLong(child.substring(this.prefix.length()));
+		return Long.parseLong(child.split(PREFIX_SEPERATOR)[1]);
 	}
 
 	private void startElectionWorker() {
@@ -177,9 +200,12 @@ public class LegalPerson {
 	
 	private boolean doWorker() {
 		//等待指定时间后工始计票
-		while(System.currentTimeMillis() - this.electionStartTime < timeout) {
+		long besTime = System.currentTimeMillis() - this.electionStartTime;
+		while( besTime < timeout) {
 			try {
+				logger.debug("Need wait: [" + (besTime / 1000) + "] seconds.");
 				Thread.sleep(1000);
+				besTime = System.currentTimeMillis() - this.electionStartTime;
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}
@@ -231,7 +257,7 @@ public class LegalPerson {
 				//已经是主状态
 				l.masterChange(IMasterChangeListener.MASTER_ONLINE, this.isMaster);
 			}
-		}else {
+		} else {
 			throw new CommonException("Save listenre exist");
 		}
 	}

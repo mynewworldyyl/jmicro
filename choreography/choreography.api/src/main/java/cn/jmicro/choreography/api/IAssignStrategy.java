@@ -24,6 +24,10 @@ public interface IAssignStrategy {
 	
 	//最小内核数量
 	public static final String CORE_NUM = "coreNum";
+	
+	public static final String INSTANCE_NUM = "instanceNum";
+	
+	public static final String SORT_PRIORITY = "sortPriority";
 
 	boolean doStrategy(List<AgentInfo> agents, Deployment dep);
 	

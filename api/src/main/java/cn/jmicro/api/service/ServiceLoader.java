@@ -47,7 +47,7 @@ import cn.jmicro.api.codec.typecoder.TypeCoder;
 import cn.jmicro.api.config.Config;
 import cn.jmicro.api.idgenerator.ComponentIdServer;
 import cn.jmicro.api.masterelection.IMasterChangeListener;
-import cn.jmicro.api.masterelection.LegalPerson;
+import cn.jmicro.api.masterelection.VoterPerson;
 import cn.jmicro.api.monitor.v1.MonitorConstant;
 import cn.jmicro.api.net.IServer;
 import cn.jmicro.api.objectfactory.IObjectFactory;

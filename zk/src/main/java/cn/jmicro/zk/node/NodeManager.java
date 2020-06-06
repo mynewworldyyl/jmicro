@@ -24,6 +24,7 @@ import cn.jmicro.api.raft.IDataOperator;
 import cn.jmicro.api.raft.INodeListener;
 import cn.jmicro.common.CommonException;
 import cn.jmicro.common.Constants;
+import cn.jmicro.common.util.StringUtils;
 import cn.jmicro.zk.ZKDataOperator;
 
 public class NodeManager {
@@ -50,7 +51,9 @@ public class NodeManager {
 	
 	private final Watcher watcher =(WatchedEvent event)->{
 		   String path = event.getPath();
-		   watchNode(path);
+		   if(StringUtils.isNotEmpty(path)) {
+			   watchNode(path);
+		   }
 	      if(event.getType() == EventType.NodeCreated){
 	    	  //watchNode(path);
 	    	  nodeCreate(path);

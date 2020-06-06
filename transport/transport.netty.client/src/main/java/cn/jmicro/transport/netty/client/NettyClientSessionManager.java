@@ -156,10 +156,10 @@ public class NettyClientSessionManager implements IClientSessionManager{
 			if(waitBeforeCloseSession > 0) {
 				//在真正关闭会话前待指时间，使已经发送的请求得到正常响应
 				TimerTicker.getDefault(this.waitBeforeCloseSession).addListener(CLOSE_SESSION_TIMER+session.getId(),
-						(key,att)->{
+						null,(key,att)->{
 							session.close(true);
 							TimerTicker.getDefault(this.waitBeforeCloseSession).removeListener(key, true);
-				}, null);
+				});
 			} else {
 				session.close(true);
 			}

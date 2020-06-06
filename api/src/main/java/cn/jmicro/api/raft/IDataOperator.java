@@ -37,6 +37,8 @@ public interface IDataOperator {
     
 	void addListener(IConnectionStateChangeListener lis);
 	
+	void removeListener(IConnectionStateChangeListener lis);
+	
 	void addDataListener(String path,IDataListener lis);
 	
 	void addChildrenListener(String path,IChildrenListener lis);

@@ -312,7 +312,7 @@ public class MessageServiceImpl implements IGatewayMessageCallback{
 	@JMethod("ready")
 	public void ready() {
 		TimerTicker timer = TimerTicker.getDefault(30*1000L);
-		timer.addListener(TIMER_KEY, tickerAct, null);
+		timer.addListener(TIMER_KEY, null, tickerAct);
 	}
 
 	private class Registion{

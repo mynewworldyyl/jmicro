@@ -16,6 +16,8 @@
  */
 package cn.jmicro.objfactory.simple;
 
+import java.io.File;
+import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
@@ -40,6 +42,7 @@ import com.alibaba.dubbo.common.bytecode.ClassGenerator;
 import com.alibaba.dubbo.common.serialize.kryo.utils.ReflectUtils;
 
 import cn.jmicro.api.ClassScannerUtils;
+import cn.jmicro.api.IListener;
 import cn.jmicro.api.JMicro;
 import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Inject;
@@ -48,12 +51,14 @@ import cn.jmicro.api.annotation.PostListener;
 import cn.jmicro.api.annotation.Reference;
 import cn.jmicro.api.annotation.SO;
 import cn.jmicro.api.annotation.Service;
+import cn.jmicro.api.choreography.ChoyConstants;
+import cn.jmicro.api.choreography.ProcessInfo;
 import cn.jmicro.api.classloader.RpcClassLoader;
 import cn.jmicro.api.codec.TypeCoderFactory;
 import cn.jmicro.api.config.Config;
 import cn.jmicro.api.config.IConfigLoader;
 import cn.jmicro.api.masterelection.IMasterChangeListener;
-import cn.jmicro.api.masterelection.LegalPerson;
+import cn.jmicro.api.masterelection.VoterPerson;
 import cn.jmicro.api.objectfactory.IObjectFactory;
 import cn.jmicro.api.objectfactory.IPostFactoryListener;
 import cn.jmicro.api.objectfactory.IPostInitListener;
@@ -64,10 +69,13 @@ import cn.jmicro.api.registry.IRegistry;
 import cn.jmicro.api.registry.ServiceItem;
 import cn.jmicro.api.service.IServerServiceProxy;
 import cn.jmicro.api.service.ServiceManager;
+import cn.jmicro.api.timer.TimerTicker;
 import cn.jmicro.common.CommonException;
 import cn.jmicro.common.Constants;
 import cn.jmicro.common.Utils;
+import cn.jmicro.common.util.JsonUtils;
 import cn.jmicro.common.util.StringUtils;
+import cn.jmicro.common.util.SystemUtils;
 
 /**
  * 1. 创建对像全部单例,所以不保证线程安全
@@ -107,6 +115,8 @@ public class SimpleObjectFactory implements IObjectFactory {
 	private HttpHandlerManager httpHandlerManager = new HttpHandlerManager(this);
 	
 	private RpcClassLoader rpcClassLoader = null;
+	
+	private Object waitForShutdown = new Object();
 	
 	
 	@Override
@@ -342,7 +352,7 @@ public class SimpleObjectFactory implements IObjectFactory {
 	public void masterSlaveListen(IMasterChangeListener l) {
 		Config cfg = this.get(Config.class);
 		boolean isMasterSlaveModel = cfg.getBoolean(Constants.Ml_MODEL_ENABLE, false);
-		LegalPerson lp = this.get(LegalPerson.class);
+		VoterPerson lp = this.get(VoterPerson.class);
 		if(lp == null || !isMasterSlaveModel) {
 			l.masterChange(IMasterChangeListener.MASTER_NOTSUPPORT, true);
 		} else {
@@ -365,121 +375,190 @@ public class SimpleObjectFactory implements IObjectFactory {
 			return;
 		}
 		
-		//查找全部对像初始化监听器
-		createPostListener();
-		registerSOClass();
-		
-		/**
-		 * 意味着此两个参数只能在命令行或环境变量中做配置，不能在ZK中配置，因为此时ZK还没启动，此配置正是ZK的启动配置
-		 * 后其可以使用其他实现，如ETCD等
-		 */
-		//String dataOperatorName = Config.getCommandParam(Constants.DATA_OPERATOR, String.class, Constants.DEFAULT_DATA_OPERATOR);
-		rpcClassLoader = new RpcClassLoader(this.getClass().getClassLoader());
-		this.cacheObj(RpcClassLoader.class, rpcClassLoader,"rpcClassLoader");
-		
 		this.cacheObj(dataOperator.getClass(), dataOperator,null);
+		Config cfg = (Config)this.createOneComponent(Config.class,Config.isClientOnly(),Config.isServerOnly());
 		
-		Set<Object> systemObjs = new HashSet<>();
-		createComponentOrService(dataOperator,systemObjs);
+		//初始化配置目录
+		cfg.setDataOperator(dataOperator);
+		//IConfigLoader具体的配置加载类
 		
-		//IDataOperator注册其内部实例到ObjectFactory
-		dataOperator.objectFactoryStarted(this);
-		
-		clientServiceProxyManager = new ClientServiceProxyManager(this);
-		clientServiceProxyManager.init();
-		
-		//取得全部工厂监听器
-		Set<IPostFactoryListener> postL = this.getByParent(IPostFactoryListener.class);
-		postReadyListeners.addAll(postL);
-		postReadyListeners.sort(new Comparator<IPostFactoryListener>(){
-			@Override
-			public int compare(IPostFactoryListener o1, IPostFactoryListener o2) {
-				return o1.runLevel() > o2.runLevel()?1:o1.runLevel() == o2.runLevel()?0:-1;
-			}
-		});
-		
-		//对像工厂初始化前监听器
-		for(IPostFactoryListener lis : this.postReadyListeners){
-			//在这里可以注册实例
-			lis.preInit(this);
+		Set<Class<?>> configLoaderCls = ClassScannerUtils.getIns().loadClassByClass(IConfigLoader.class);
+		for(Class<?> c : configLoaderCls) {
+			this.createOneComponent(c, Config.isClientOnly(), Config.isServerOnly());
 		}
+		Set<IConfigLoader> configLoaders = this.getByParent(IConfigLoader.class);
+		//加载配置，并调用init0方法做初始化
+		cfg.loadConfig(configLoaders);
+		configLoaderCls.add(Config.class);
 		
-		List<Object> lobjs = new ArrayList<>();
-		lobjs.addAll(this.objs.values());
-		//根据对像定义level级别排序，level值越小，初始化及别越高，就也就越优先初始化
-		lobjs.sort(new Comparator<Object>(){
-			@Override
-			public int compare(Object o1, Object o2) {
-				Component c1 = ProxyObject.getTargetCls(o1.getClass()).getAnnotation(Component.class);
-				Component c2 = ProxyObject.getTargetCls(o2.getClass()).getAnnotation(Component.class);
-				if(c1 == null && c2 == null) {
-					return 0;
-				}else if(c1 == null && c2 != null) {
-					return -1;
-				}else if(c1 != null && c2 == null) {
-					return 1;
-				}else {
-					return c1.level() > c2.level()?1:c1.level() == c2.level()?0:-1;
+		createProccessInfo(dataOperator,cfg);
+		
+		Runnable r = ()-> {
+			//查找全部对像初始化监听器
+			createPostListener();
+			registerSOClass();
+			
+			/**
+			 * 意味着此两个参数只能在命令行或环境变量中做配置，不能在ZK中配置，因为此时ZK还没启动，此配置正是ZK的启动配置
+			 * 后其可以使用其他实现，如ETCD等
+			 */
+			//String dataOperatorName = Config.getCommandParam(Constants.DATA_OPERATOR, String.class, Constants.DEFAULT_DATA_OPERATOR);
+			rpcClassLoader = new RpcClassLoader(this.getClass().getClassLoader());
+			this.cacheObj(RpcClassLoader.class, rpcClassLoader,"rpcClassLoader");
+			
+			Set<Class<?>> clses = ClassScannerUtils.getIns().getComponentClass();
+			clses.removeAll(configLoaderCls);
+			
+			Set<Object> systemObjs = new HashSet<>();
+			createComponentOrService(dataOperator,systemObjs,clses);
+			
+			//IDataOperator注册其内部实例到ObjectFactory
+			dataOperator.objectFactoryStarted(this);
+			
+			clientServiceProxyManager = new ClientServiceProxyManager(this);
+			clientServiceProxyManager.init();
+			
+			//取得全部工厂监听器
+			Set<IPostFactoryListener> postL = this.getByParent(IPostFactoryListener.class);
+			postReadyListeners.addAll(postL);
+			postReadyListeners.sort(new Comparator<IPostFactoryListener>(){
+				@Override
+				public int compare(IPostFactoryListener o1, IPostFactoryListener o2) {
+					return o1.runLevel() > o2.runLevel()?1:o1.runLevel() == o2.runLevel()?0:-1;
 				}
+			});
+			
+			//对像工厂初始化前监听器
+			for(IPostFactoryListener lis : this.postReadyListeners){
+				//在这里可以注册实例
+				lis.preInit(this);
 			}
-		});
-		
-		//将自己也保存到实例列表里面
-		this.cacheObj(this.getClass(), this, null);
-		
-		Config cfg = (Config)objs.get(Config.class);
-		IRegistry registry = (IRegistry)this.get(IRegistry.class);
-		
-		notifyPreInitPostListener(registry,cfg);
-		
-		if(!lobjs.isEmpty()){
 			
-			//组件开始初始化,在此注入Cfg配置，enable字段也在此注入
-			preInitPostListener0(lobjs,cfg,systemObjs);
-			
-			for(Iterator<Object> ite = lobjs.iterator() ;ite.hasNext();){
-				Object o = ite.next();
-				if(!this.isEnable(o)) {
-					//删除enable=false的组合
-					logger.info("disable component: "+o.getClass().getName());
-					ite.remove();
+			List<Object> lobjs = new ArrayList<>();
+			lobjs.addAll(this.objs.values());
+			//根据对像定义level级别排序，level值越小，初始化及别越高，就也就越优先初始化
+			lobjs.sort(new Comparator<Object>(){
+				@Override
+				public int compare(Object o1, Object o2) {
+					Component c1 = ProxyObject.getTargetCls(o1.getClass()).getAnnotation(Component.class);
+					Component c2 = ProxyObject.getTargetCls(o2.getClass()).getAnnotation(Component.class);
+					if(c1 == null && c2 == null) {
+						return 0;
+					}else if(c1 == null && c2 != null) {
+						return -1;
+					}else if(c1 != null && c2 == null) {
+						return 1;
+					}else {
+						return c1.level() > c2.level()?1:c1.level() == c2.level()?0:-1;
+					}
 				}
+			});
+			
+			//将自己也保存到实例列表里面
+			this.cacheObj(this.getClass(), this, null);
+			
+			IRegistry registry = (IRegistry)this.get(IRegistry.class);
+			
+			notifyPreInitPostListener(registry,cfg);
+			
+			if(!lobjs.isEmpty()){
+				
+				//组件开始初始化,在此注入Cfg配置，enable字段也在此注入
+				preInitPostListener0(lobjs,cfg,systemObjs);
+				
+				for(Iterator<Object> ite = lobjs.iterator() ;ite.hasNext();){
+					Object o = ite.next();
+					if(!this.isEnable(o)) {
+						//删除enable=false的组合
+						logger.info("disable component: "+o.getClass().getName());
+						ite.remove();
+					}
+				}
+				
+				//依赖注入
+				injectDepependencies0(lobjs,cfg,systemObjs);
+				
+				//调用各组件的init方法
+				doInit0(lobjs,cfg,systemObjs);
+				
+				//注入服务引用
+				processReference0(lobjs,cfg,systemObjs);
+				
+				//组件初始化完成
+				notifyAfterInitPostListener0(lobjs,cfg,systemObjs);
+				
+				doReady0(lobjs,systemObjs);
 			}
 			
-			//依赖注入
-			injectDepependencies0(lobjs,cfg,systemObjs);
+			ClassLoader oldCl = Thread.currentThread().getContextClassLoader();
 			
-			//调用各组件的init方法
-			doInit0(lobjs,cfg,systemObjs);
+			Thread.currentThread().setContextClassLoader(rpcClassLoader);
 			
-			//注入服务引用
-			processReference0(lobjs,cfg,systemObjs);
+			//对像工厂初始化后监听器
+			for(IPostFactoryListener lis : this.postReadyListeners){
+				lis.afterInit(this);
+			}
 			
-			//组件初始化完成
-			notifyAfterInitPostListener0(lobjs,cfg,systemObjs);
+			if(oldCl != null) {
+				Thread.currentThread().setContextClassLoader(oldCl);
+			}
 			
-			doReady0(lobjs,systemObjs);
+			fromLocal = false;
+			
+			isInit.set(2);
+			synchronized(isInit){
+				isInit.notifyAll();
+			}
+		};
+		
+		boolean ismlModel = cfg.getBoolean(Constants.Ml_MODEL_ENABLE, false);
+		boolean[] isMast = new boolean[1];
+		isMast[0] = false;
+		if(ismlModel) {
+			VoterPerson lp = new VoterPerson(this,null);
+			this.cacheObj(VoterPerson.class, lp,null);
+			this.masterSlaveListen((type,isMaster)->{
+				if(isMaster && (IMasterChangeListener.MASTER_ONLINE == type 
+						|| IMasterChangeListener.MASTER_NOTSUPPORT == type)) {
+					 //参选成功
+					 isMast[0] = true;
+					 logger.info(Config.getInstanceName() + " got as master");
+					 if(!pi.isMaster()) {
+						 pi.setMaster(true);
+						 String p = ChoyConstants.INS_ROOT+"/" + pi.getId();
+						 String js = JsonUtils.getIns().toJson(pi);
+					     dataOperator.setData(p, js);
+					 }
+					 r.run();
+				} else if(isMast[0]) {
+					 //失去master资格，退出
+					if(pi.isMaster()) {
+						pi.setMaster(false);
+						String p = ChoyConstants.INS_ROOT+"/" + pi.getId();
+						final String js = JsonUtils.getIns().toJson(pi);
+						dataOperator.setData(p, js);
+					}
+					 logger.info(Config.getInstanceName() + " lost master, need restart server!");
+					 System.exit(0);
+				}
+				
+			});
+		} else {
+			 r.run();
 		}
 		
-		ClassLoader oldCl = Thread.currentThread().getContextClassLoader();
+		//if(Config.isClientOnly()) {}
 		
-		Thread.currentThread().setContextClassLoader(rpcClassLoader);
-		
-		//对像工厂初始化后监听器
-		for(IPostFactoryListener lis : this.postReadyListeners){
-			lis.afterInit(this);
+
+		logger.info("Wait for shutdown!");
+		synchronized(waitForShutdown) {
+			try {
+				waitForShutdown.wait(Long.MAX_VALUE);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
 		}
-		
-		if(oldCl != null) {
-			Thread.currentThread().setContextClassLoader(oldCl);
-		}
-		
-		fromLocal = false;
-		
-		isInit.set(2);
-		synchronized(isInit){
-			isInit.notifyAll();
-		}
+		logger.info("Server shutdown!");
 	}
 	
 	
@@ -601,11 +680,11 @@ public class SimpleObjectFactory implements IObjectFactory {
 		
 	}
 
-	private void createComponentOrService(IDataOperator dop,Set<Object> systemObjs) {
+	private void createComponentOrService(IDataOperator dop, Set<Object> systemObjs, Set<Class<?>> clses) {
 		
 		//是否只启动服务端实例，命令行或环境变量中做配置
 		boolean serverOnly = Config.isServerOnly();
-				
+
 		//是否只启动客户端实例，命令行或环境变量中做配置
 		boolean clientOnly = Config.isClientOnly();
 		
@@ -614,51 +693,16 @@ public class SimpleObjectFactory implements IObjectFactory {
 		IRegistry registry = null;
 		
 		ServiceManager srvManager = null;
-				
-		Set<Class<?>> clses = ClassScannerUtils.getIns().getComponentClass();
+		
 		if(clses != null && !clses.isEmpty()) {
 			for(Class<?> c : clses){
-				if(!this.canCreate(c)){
+				
+				Object obj = createOneComponent(c,clientOnly,serverOnly);
+				if(obj == null) {
 					continue;
 				}
 				
 				Component cann = c.getAnnotation(Component.class);
-				if(!cann.active()){
-					logger.debug("disable com: "+c.getName());
-					continue;
-				}
-				
-				if(serverOnly && isComsumerSide(ProxyObject.getTargetCls(c))) {
-					//指定了服务端或客户端，不需要另一方所特定的组件
-					logger.debug("serverOnly server disable: "+c.getName());
-					continue;
-				}
-				
-				if(clientOnly && isProviderSide(ProxyObject.getTargetCls(c))) {
-					logger.debug("clientOnly client disable: "+c.getName());
-						continue;
-					}
-				
-				//logger.debug("enable com: "+c.getName());
-				Object obj = null;
-				if(c.isAnnotationPresent(Service.class)) {
-					 obj = createDynamicService(c);
-					 //obj = createServiceObject(obj,false);
-					 //doAfterCreate(obj,null);
-				} else {
-					obj = this.createObject(c, false);
-				}
-				this.cacheObj(c, obj, null);
-				
-				/*if(IDataOperator.class.isAssignableFrom(c) && dataOperatorName.equals(cann.value())){
-					if(dop == null) {
-						dop = (IDataOperator)obj;
-					}else {
-						throw new CommonException("More than one [" +dataOperatorName+"] to be found ["+c.getName()+", "+dop.getClass().getName()+"]" );
-					}
-					systemObjs.add(dop);
-				}*/
-				
 				if(ServiceManager.class == c) {
 					if(srvManager == null) {
 						srvManager = (ServiceManager)obj;
@@ -683,20 +727,6 @@ public class SimpleObjectFactory implements IObjectFactory {
 			throw new CommonException("IRegistry with name :"+registryName +" not found!");
 		}
 		
-		Config cfg = (Config)objs.get(Config.class);
-		//初始化配置目录
-		cfg.setDataOperator(dop);
-		//IConfigLoader具体的配置加载类
-		Set<IConfigLoader> configLoaders = this.getByParent(IConfigLoader.class);
-		//加载配置，并调用init0方法做初始化
-		cfg.loadConfig(configLoaders);
-		
-		boolean isMasterSlaveModel = cfg.getBoolean(Constants.Ml_MODEL_ENABLE, false);
-		if(isMasterSlaveModel) {
-			LegalPerson lp = new LegalPerson(this,cfg.getString("electionTag", "JmicroElectionTag"));
-			this.cacheObj(LegalPerson.class, lp, null);
-		}
-		
 		srvManager.setDataOperator(dop);
 		srvManager.init();
 		
@@ -704,6 +734,40 @@ public class SimpleObjectFactory implements IObjectFactory {
 		registry.setSrvManager(srvManager);
 		registry.init();
 		
+	}
+
+	private  Object createOneComponent(Class<?> c,boolean clientOnly,boolean serverOnly) {
+		if(!this.canCreate(c)){
+			return null;
+		}
+		
+		Component cann = c.getAnnotation(Component.class);
+		if(!cann.active()){
+			logger.debug("disable com: "+c.getName());
+			return null;
+		}
+		
+		if(serverOnly && isComsumerSide(ProxyObject.getTargetCls(c))) {
+			//指定了服务端或客户端，不需要另一方所特定的组件
+			logger.debug("serverOnly server disable: "+c.getName());
+			return null;
+		}
+		
+		if(clientOnly && isProviderSide(ProxyObject.getTargetCls(c))) {
+			logger.debug("clientOnly client disable: "+c.getName());
+			return null;
+		}
+		
+		Object obj = null;
+		if(c.isAnnotationPresent(Service.class)) {
+			 obj = createDynamicService(c);
+			 //obj = createServiceObject(obj,false);
+			 //doAfterCreate(obj,null);
+		} else {
+			obj = this.createObject(c, false);
+		}
+		this.cacheObj(c, obj, null);
+		return obj;
 	}
 
 	private void createPostListener() {
@@ -1411,6 +1475,116 @@ public class SimpleObjectFactory implements IObjectFactory {
 				TypeCoderFactory.registClass(c);
 			}
 		}
+	}
+	
+	private ProcessInfo pi = null;
+	
+	private void createProccessInfo(IDataOperator op,Config cfg) {
+	
+		String initProcessInfoPath = cfg.getString(ChoyConstants.PROCESS_INFO_FILE,null);
+		String json = "";
+		
+		if(StringUtils.isEmpty(initProcessInfoPath)) {
+			String dataDir = cfg.getString(Constants.INSTANCE_DATA_DIR,null);
+			if(StringUtils.isEmpty(dataDir)) {
+				throw new CommonException("Data Dir ["+Constants.INSTANCE_DATA_DIR+"] cannot be a file");
+			}
+			initProcessInfoPath = dataDir + File.separatorChar + "processInfo.json";
+		} 
+		
+		File processInfoData = new File(initProcessInfoPath);
+		
+		if(processInfoData.exists()) {
+			json = SystemUtils.getFileString(processInfoData);
+		}else {
+			try {
+				processInfoData.createNewFile();
+			} catch (IOException e) {
+				throw new CommonException("Fail to create file [" +processInfoData+"]");
+			}
+		}
+		
+		logger.info("Origit ProcessInfo:" + json);
+		
+		if(StringUtils.isNotEmpty(json)) {
+			pi = JsonUtils.getIns().fromJson(json, ProcessInfo.class);
+			//编排环境下启动的实例
+			//checkPreProcess(pi);
+		} else {
+			//非编排环境下启动的实例
+			pi = new ProcessInfo();
+			pi.setAgentHost(Config.getHost());
+			pi.setAgentId(Config.getCommandParam(ChoyConstants.ARG_AGENT_ID));
+			pi.setDepId(Config.getCommandParam(ChoyConstants.ARG_DEP_ID));
+			
+			String id = Config.getCommandParam(ChoyConstants.ARG_INSTANCE_ID);
+			if(StringUtils.isNotEmpty(id)) {
+				pi.setId(id);
+			}else {
+				long processId = Long.parseLong(op.getData(ChoyConstants.ID_PATH))+1;
+				pi.setId(processId+"");
+				op.setData(ChoyConstants.ID_PATH, processId+"");
+			}
+			pi.setAgentProcessId(Config.getCommandParam(ChoyConstants.ARG_MYPARENT_ID));
+		}
+		
+		boolean ismlModel = cfg.getBoolean(Constants.Ml_MODEL_ENABLE, false);
+		String pid = SystemUtils.getProcessId();
+		logger.info("Process ID:" + pid);
+		pi.setPid(pid);
+		pi.setActive(true);
+		pi.setInstanceName(Config.getInstanceName());
+		pi.setHost(Config.getHost());
+		pi.setWorkDir(cfg.getString(Constants.INSTANCE_DATA_DIR,null));
+		pi.setOpTime(System.currentTimeMillis());
+		pi.setHaEnable(ismlModel);
+		pi.setMaster(false);
+		//pi.setTimeOut(0);
+		
+		String p = ChoyConstants.INS_ROOT+"/" + pi.getId();
+		final String js = JsonUtils.getIns().toJson(pi);
+		if(op.exist(p)) {
+			String oldJson = op.getData(p);
+			ProcessInfo pri = JsonUtils.getIns().fromJson(oldJson, ProcessInfo.class);
+			if(pri != null && pri.isActive()) {
+				throw new CommonException("Process exist[" +oldJson+"]");
+			}
+			op.deleteNode(p);
+		}
+		
+		op.createNodeOrSetData(p,js ,IDataOperator.EPHEMERAL);
+		
+		logger.info("Update ProcessInfo:" + js);
+		
+		initProcessInfoPath = cfg.getString(Constants.INSTANCE_DATA_DIR,null) + File.separatorChar + "processInfo.json";
+		SystemUtils.setFileString(initProcessInfoPath, js);
+		
+		op.addNodeListener(p, (int type, String path,String data)->{
+			//防止被误删除，只要此进程还在，此结点就不应该消失
+			if(type == IListener.DATA_CHANGE) {
+				ProcessInfo pi0 = JsonUtils.getIns().fromJson(data, ProcessInfo.class);
+				if(!pi0.isActive()) {
+					op.deleteNode(p);
+					logger.warn("JVM exit by other system");
+					System.exit(0);
+				}else {
+					pi.setHaEnable(pi0.isHaEnable());
+					pi.setOpTime(pi0.getOpTime());
+					pi.setMaster(pi0.isMaster());
+				}
+			}
+		});
+		
+		this.cacheObj(ProcessInfo.class, pi,null);
+		
+		TimerTicker.doInBaseTicker(60,Config.getInstanceName() + "_Choy_checker",null,(key,at)->{
+			if(!op.exist(p) && pi.isActive()) {
+				String js0 = JsonUtils.getIns().toJson(pi);
+				logger.warn("Recreate process info node by checker: " + js0);
+				op.createNodeOrSetData(p,js0,true);
+			}
+		});
+		
 	}
 
 }

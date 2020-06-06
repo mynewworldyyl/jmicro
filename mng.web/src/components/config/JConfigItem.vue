@@ -1,6 +1,7 @@
 <template>
   <div class="JMainContentEditor">
     <div>
+                {{item.id}}
                 <table class="configItemTalbe" width="99%">
                     <thead><tr><td>KEY</td><td>VALUE</td><td>OPERATION</td></tr></thead>
 

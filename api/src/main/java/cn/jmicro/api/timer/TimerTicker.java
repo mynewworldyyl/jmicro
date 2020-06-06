@@ -41,9 +41,37 @@ public class TimerTicker {
 	
 	private boolean openDebug = false;
 	
+	public static final long BASE_TIME_TICK = 1000;
+	
 	public static TimerTicker getDefault(Long ticker) {
 		return getTimer(defaultTimers,ticker);
 	}
+	
+	public static TimerTicker getBaseTimer() {
+		if(defaultTimers.containsKey(BASE_TIME_TICK)) {
+			return defaultTimers.get(BASE_TIME_TICK);
+		} else {
+			defaultTimers.put(BASE_TIME_TICK, new TimerTicker(BASE_TIME_TICK));
+			return defaultTimers.get(BASE_TIME_TICK);
+		}
+	}
+	
+	@SuppressWarnings("rawtypes")
+	public static void doInBaseTicker(int fact, String key, Object attachement, ITickerAction act) {
+		if(fact <= 0) {
+			throw new CommonException("Invalid fact: " + fact);
+		}
+		final int[] checkCnt = new int[1];
+		checkCnt[0] = 0;
+		TimerTicker.getBaseTimer().addListener(key, attachement, (key0,att0)->{
+			checkCnt[0]++;
+			if( (checkCnt[0] % fact) == 0) {
+				checkCnt[0] = 0;
+				act.act(key0, att0);
+			}
+		});
+	}
+	
 	
 	public static TimerTicker getTimer(Map<Long,TimerTicker> timers,Long ticker) {
 		if(timers.containsKey(ticker)) {
@@ -62,6 +90,7 @@ public class TimerTicker {
 	private Queue<String> removeKeys = new ConcurrentLinkedQueue<>();
 	
 	long lastRunTime = 0;
+	long lastCostTime = 0;
 	
 	public TimerTicker(long ticker) {
 		this.ticker = ticker;
@@ -70,14 +99,25 @@ public class TimerTicker {
 			throw new CommonException("Ticker have to big to: " + 99+", but got: "+ticker);
 		}
 		
+		logger.debug("Ticker: " + ticker);
+		
 		timer = new Timer("JMicro-Timer-"+ticker, true);
 		
 		timer.scheduleAtFixedRate(new TimerTask() {
 			@Override
 			public void run() {
-				
 				try {
+					long beginTime = System.currentTimeMillis();
+				
+					long interval = beginTime - lastRunTime; //允许10毫秒误差
+					
+					if(interval < ticker) {
+						//logger.debug("Timer ["+interval+"] small ticker ["+ticker+"] from last run!");
+						return;
+					}
+					
 					notifyAction(); 
+					
 					if(!removeKeys.isEmpty()) {
 						for(;!removeKeys.isEmpty();) {
 							String k = removeKeys.poll();
@@ -88,9 +128,16 @@ public class TimerTicker {
 							}
 						}
 					}
+					
+					lastRunTime = System.currentTimeMillis();
+					lastCostTime = lastRunTime - beginTime;
+					if(lastCostTime > ticker) {
+						logger.debug("Action cost time ["+lastCostTime+"] more than ["+ticker+"]!");
+					}
 				} catch (Throwable e) {
 					logger.error("JMicro TimerTicker.scheduleAtFixedRate",e);
 				}
+				
 			}
 		}, 0, ticker);
 	}
@@ -107,19 +154,18 @@ public class TimerTicker {
 		for(Iterator<Map.Entry<String, ITickerAction>> ite = listeners.entrySet().iterator(); ite.hasNext();) {
 			Entry<String, ITickerAction> kv = ite.next();
 			kv.getValue().act(kv.getKey(), attachements.get(kv.getKey()));
-			if(System.currentTimeMillis() - lastRunTime < 10) {
-				logger.warn("Timer interval small to 100ms from last run: " + ticker+", key: "+kv.getKey());
-			}
 		}
 		
-		lastRunTime = System.currentTimeMillis();
+		
 	}
 	
-	public void addListener(String key,ITickerAction act,Object attachement) {
-		addListener(key,act,attachement,false);
+	@SuppressWarnings("rawtypes")
+	public void addListener(String key,Object attachement,ITickerAction act) {
+		addListener(key,attachement,false,act);
 	}
 	
-	public void addListener(String key,ITickerAction act,Object attachement,boolean replace) {
+	@SuppressWarnings("rawtypes")
+	public void addListener(String key,Object attachement,boolean replace,ITickerAction act) {
 		if(this.listeners.containsKey(key) && act != this.listeners.get(key)) {
 			if(!replace) {
 				throw new CommonException("listener with key[" + key+"] have been exists");

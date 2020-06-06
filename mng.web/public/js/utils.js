@@ -14,6 +14,46 @@ String.prototype.endWith=function(str){
     return reg.test(this);
 }
 
+Date.prototype.toDecDay = function() {
+    let curDate = new Date();
+    let decVal = curDate.getTime() - this.getTime();
+    if(decVal <= 0) {
+        return '0';
+    }
+
+    let minuteMS = 60*1000;
+    let hourMS = 60*minuteMS;
+    let dateMS = 24*hourMS;
+
+    let str = '';
+
+    let v = parseInt(decVal/dateMS);
+    if(v > 0) {
+        str += v + 'D,';
+    }
+
+    decVal = decVal % dateMS;
+    v = parseInt(decVal/hourMS);
+    if(v > 0) {
+        str += v + 'H,';
+    }
+
+    decVal = decVal % hourMS;
+    v = parseInt(decVal/minuteMS);
+    if(v > 0) {
+        str += v + 'M,';
+    }
+
+    decVal = decVal % minuteMS;
+    v = parseInt(decVal/1000);
+    if(v > 0) {
+        str += v + 'S';
+    }
+
+    return str;
+
+}
+
 Date.prototype.format = function(fmt) {
     var o = {
         "M+" : this.getMonth()+1,                 //月份
