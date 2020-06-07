@@ -1521,9 +1521,15 @@ public class SimpleObjectFactory implements IObjectFactory {
 			if(StringUtils.isNotEmpty(id)) {
 				pi.setId(id);
 			}else {
-				long processId = Long.parseLong(op.getData(ChoyConstants.ID_PATH))+1;
-				pi.setId(processId+"");
-				op.setData(ChoyConstants.ID_PATH, processId+"");
+				String processId = "";
+				if(op.exist(ChoyConstants.ID_PATH)) {
+					processId = (Long.parseLong(op.getData(ChoyConstants.ID_PATH))+1)+"";
+					op.setData(ChoyConstants.ID_PATH, processId);
+				} else {
+					op.createNodeOrSetData(ChoyConstants.ID_PATH, "1", false);
+					processId = "1";
+				}
+				pi.setId(processId);
 			}
 			pi.setAgentProcessId(Config.getCommandParam(ChoyConstants.ARG_MYPARENT_ID));
 		}
@@ -1539,6 +1545,7 @@ public class SimpleObjectFactory implements IObjectFactory {
 		pi.setOpTime(System.currentTimeMillis());
 		pi.setHaEnable(ismlModel);
 		pi.setMaster(false);
+		pi.setStartTime(pi.getOpTime());
 		//pi.setTimeOut(0);
 		
 		String p = ChoyConstants.INS_ROOT+"/" + pi.getId();

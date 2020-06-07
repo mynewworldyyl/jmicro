@@ -17,6 +17,10 @@ jm.mng = {
 
     },
 
+    init : function() {
+        jm.mng.comm.init();
+    },
+
     callRpc : function(req,upProtocol,downProtocol) {
         return new Promise(function(reso,reje){
             jm.rpc.callRpc(req, null, upProtocol,downProtocol)
@@ -385,6 +389,7 @@ jm.mng = {
                 .then(( actInfo )=>{
                     if(actInfo && actInfo.success) {
                         self.actInfo = actInfo;
+                        jm.mng.init();
                         cb(actInfo,null);
                     } else {
                         cb(null,actInfo.msg);
@@ -410,6 +415,7 @@ jm.mng = {
                 .then(( actInfo )=>{
                     if(actInfo) {
                         self.actInfo = null;
+                        jm.mng.comm.adminPer = false;
                         if(cb) {
                             cb(true,null)
                         }
@@ -527,6 +533,17 @@ jm.mng = {
     },
 
     comm : {
+        adminPer:false,
+
+        init:function() {
+            let self = this;
+            window.jm.mng.comm.hasPermission(1).then((rst)=>{
+                self.adminPer = rst;
+            }).catch((err)=>{
+                window.console.log(err);
+            });
+        },
+
         hasPermission: function (per){
             return jm.mng.callRpcWithParams(this.sn,this.ns,this.v,'hasPermission',[per]);
         },

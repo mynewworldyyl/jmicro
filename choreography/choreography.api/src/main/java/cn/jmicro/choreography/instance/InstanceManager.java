@@ -165,7 +165,7 @@ public class InstanceManager {
 			return;
 		}
 		
-		logger.debug("Instance Add: " + data);
+		//logger.debug("Instance Add: " + data);
 		
 		if(this.agentId != null && !this.agentId.equals(pi.getAgentId())) {
 			//对于Agent端，只需要管理Agent相关的进程实例
@@ -254,9 +254,11 @@ public class InstanceManager {
 		return pis;
 	}
 	
-	public ProcessInfo getProcessesByInsId(String insId) {
+	public ProcessInfo getProcessesByInsId(String insId,boolean includeSys) {
 		if(mngProcesses.containsKey(insId)) {
 			return mngProcesses.get(insId);
+		}else if(includeSys) {
+			return sysProcesses.get(insId);
 		}
 		return null;
 	}

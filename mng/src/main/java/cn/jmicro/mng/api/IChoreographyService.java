@@ -19,10 +19,10 @@ public interface IChoreographyService {
 	 boolean updateDeployment(Deployment dep);
 	 
 	 //Agent
-	 Set<AgentInfoVo> getAgentList(boolean showAll);
+	 List<AgentInfoVo> getAgentList(boolean showAll);
 	 
 	 //Process instance
-	 Set<ProcessInfo> getProcessInstanceList(boolean all);
+	 List<ProcessInfo> getProcessInstanceList(boolean all);
 	 
 	 boolean stopProcess(String insId);
 	 

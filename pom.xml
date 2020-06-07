@@ -120,6 +120,7 @@
 		<module>agent</module>
 		<module>main</module>
 		<module>build</module>
+		<module>example</module>
     </modules>
 
     <dependencyManagement>

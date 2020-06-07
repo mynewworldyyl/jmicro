@@ -10,8 +10,8 @@
                 <td>{{c.id}}</td><td>{{c.jarFile}}</td><td>{{c.enable}}</td><td>{{c.instanceNum}}</td>
                 <td>{{c.assignStrategy}}</td><td>{{c.strategyArgs}}</td><td>{{c.args}}</td>
                 <td>&nbsp;
-                    <a @click="deleteDeployment(c)">DELETE</a>&nbsp;&nbsp;&nbsp;
-                    <a @click="updateDeployment(c)">UPDATE</a>
+                    <a v-if="adminPer" @click="deleteDeployment(c)">DELETE</a>&nbsp;&nbsp;&nbsp;
+                    <a v-if="adminPer" @click="updateDeployment(c)">UPDATE</a>
                 </td>
             </tr>
         </table>
@@ -121,7 +121,7 @@
                             self.resetDeployment();
                             this.addResourceDialog = false;
                         } else {
-                            self.$Message.fail("Fail to add deployment ");
+                            self.$Message.error("Fail to add deployment ");
                         }
                     }).catch((err)=>{
                         window.console.log(err);
@@ -140,7 +140,7 @@
                             }
                         }
                     }else {
-                        self.$Message.fail("Fail to delete resource "+res.name);
+                        self.$Message.error("Fail to delete resource "+res.name);
                     }
                 }).catch((err)=>{
                     window.console.log(err);
@@ -148,6 +148,7 @@
             },
 
             refresh(){
+                this.adminPer = window.jm.mng.comm.adminPer;
                 window.jm.mng.choy.getDeploymentList().then((deployList)=>{
                     if(!deployList || deployList.length == 0 ) {
                         return;
@@ -156,7 +157,7 @@
                 }).catch((err)=>{
                     window.console.log(err);
                 });
-            }
+            },
         },
 
         mounted () {

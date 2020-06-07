@@ -277,6 +277,13 @@ main/main.breaker/.settings/
 main/main.breaker/logs/
 main/main.breaker/data/
 main/main.breaker/bin/
+main/main.init/target/
+main/main.init/.classpath
+main/main.init/.project
+main/main.init/.settings/
+main/main.init/logs/
+main/main.init/data/
+main/main.init/bin/
 choreography/choreography.agent/target/
 choreography/choreography.agent/.classpath
 choreography/choreography.agent/.project

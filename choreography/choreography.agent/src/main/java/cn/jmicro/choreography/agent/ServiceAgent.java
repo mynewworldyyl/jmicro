@@ -271,6 +271,7 @@ public class ServiceAgent {
 		}
 		
 		initDepIds = depIds;
+		
 		if(this.hasController()) {
 			//manager by controllers
 			return;
@@ -288,13 +289,7 @@ public class ServiceAgent {
 		}
 		depId = depId.trim();
 		Deployment dep = this.getDeployment(depId);
-		if(dep == null) {
-			logger.error("Deployment not found for ID: " + depId);
-			return;
-		}
-		
-		if(!dep.isEnable()) {
-			logger.error("Deployment is disable " + depId);
+		if(dep == null || !dep.isEnable()) {
 			return;
 		}
 		
@@ -367,14 +362,8 @@ public class ServiceAgent {
 					//已经命令进程停止，并且超过超时时间还没成功退出
 					logger.debug("Start timeout: " + pi.toString());
 					startingProcess.remove(k);
-					
 					forceStopProcess(k);
-					
-					String path = ChoyConstants.ROOT_AGENT+"/"+pi.getAgentId()+"/"+pi.getDepId();
-					if(op.exist(path)) {
-						logger.debug("Delete deployment node by checker: " + path);
-						op.deleteNode(path);
-					}
+					deleteAssignDepNode(pi.getDepId());
 				}
 			}
 		}
@@ -390,12 +379,7 @@ public class ServiceAgent {
 					logger.warn("Stop timeout and force stop it: " + pi.toString());
 					stopingProcess.remove(k);
 					forceStopProcess(k);
-					
-					String path = ChoyConstants.ROOT_AGENT+"/"+pi.getAgentId()+"/"+pi.getDepId();
-					if(op.exist(path)) {
-						logger.warn("Delete deployment node by checker: " + path);
-						op.deleteNode(path);
-					}
+					deleteAssignDepNode(pi.getDepId());
 				}
 			}
 		}
@@ -447,11 +431,7 @@ public class ServiceAgent {
 		Set<ProcessInfo>  set = this.insManager.getProcessesByDepId(pi.getDepId());
 		if(set == null || set.isEmpty()) {
 			//删除分配
-			String path = ChoyConstants.ROOT_AGENT+"/"+pi.getAgentId()+"/"+pi.getDepId();
-			if(op.exist(path)) {
-				logger.debug("Delete deployment node: " + path);
-				op.deleteNode(path);
-			}
+			deleteAssignDepNode(pi.getDepId());
 		}
 	}
 	
@@ -509,13 +489,28 @@ public class ServiceAgent {
 				}
 			}
 		}
+		
 		Deployment dep = getDeployment(depId);
 		if(dep == null) {
 			logger.error("Deployment not found for ID:" + depId);
 			return false;
 		}
+		
+		if(!dep.isEnable()) {
+			deleteAssignDepNode(dep.getId());
+			return false;
+		}
+		
 		boolean f = startDep(dep);
 		return f;
+	}
+	
+	private void deleteAssignDepNode(String depId) {
+		String assignDepPath = path + "/" + depId;
+		if(op.exist(assignDepPath)) {
+			logger.debug("Delete deployment node: " + assignDepPath);
+			op.deleteNode(assignDepPath);
+		}
 	}
 
 	private Deployment getDeployment(String depId) {
@@ -582,6 +577,18 @@ public class ServiceAgent {
 		list.add("-D" + ChoyConstants.ARG_DEP_ID+"=" + dep.getId());
 		list.add("-D" + ChoyConstants.ARG_AGENT_ID+"=" + this.agentInfo.getId());
 		
+		logger.info("Dep args: " + dep.getArgs());
+		//list.add(dep.getArgs());
+		if(StringUtils.isNotEmpty(dep.getArgs())) {
+			Map<String,String> params = IAssignStrategy.parseArgs(dep.getArgs());
+			for(Map.Entry<String,String> e: params.entrySet()) {
+				if(logger.isDebugEnabled()) {
+					logger.debug(e.getKey() + "=" +e.getValue());
+				}
+				list.add("-D" + e.getKey()+"=" + e.getValue());
+			}
+		}
+		
 		ProcessBuilder pb = new ProcessBuilder(list);
 		File wd = new File(workDir + "/" + processId);
 		wd.mkdirs();
@@ -613,6 +620,7 @@ public class ServiceAgent {
 			pi.setAgentInstanceName(Config.getInstanceName());
 			pi.setOpTime(System.currentTimeMillis());
 			pi.setTimeOut(processOpTimeout);
+			//pi.setStartTime(pi.getOpTime());
 			
 			//通过文件传递给子进程，再由子进程在启动后存入ZK
 			String data = JsonUtils.getIns().toJson(pi);

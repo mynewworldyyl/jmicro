@@ -112,6 +112,13 @@ public class ChoreographyServiceImpl implements IChoreographyService {
 				}
 			}
 		}
+		
+		result.sort((o1,o2)->{
+			int id1 = Integer.parseInt(o1.getId());
+			int id2 = Integer.parseInt(o2.getId());
+			return id1 > id2 ? 1 : id1 == id2 ? 0 :-1;
+		});
+		
 		return result;
 	}
 
@@ -176,14 +183,27 @@ public class ChoreographyServiceImpl implements IChoreographyService {
 	}
 	
 	@Override
-	public Set<ProcessInfo> getProcessInstanceList(boolean all) {
-		return this.insManager.getProcesses(all);
+	public List<ProcessInfo> getProcessInstanceList(boolean all) {
+		 Set<ProcessInfo> set = this.insManager.getProcesses(all);
+		 if(set == null || set.isEmpty()) {
+			 return null;
+		 }
+		 List<ProcessInfo> result = new ArrayList<>();
+		 result.addAll(set);
+		result.sort((o1,o2)->{
+			int id1 = Integer.parseInt(o1.getId());
+			int id2 = Integer.parseInt(o2.getId());
+			return id1 > id2 ? 1 : id1 == id2 ? 0 :-1;
+		});
+		
+		return result;
+		
 	}
 	
 	@Override
 	public boolean stopProcess(String insId) {
 		if(commonManager.hasPermission(this.adminPermissionLevel)) {
-			ProcessInfo pi = this.insManager.getProcessesByInsId(insId);
+			ProcessInfo pi = this.insManager.getProcessesByInsId(insId,true);
 			if(pi != null) {
 				String p = ChoyConstants.INS_ROOT + "/" + pi.getId();
 				pi.setActive(false);
@@ -200,13 +220,13 @@ public class ChoreographyServiceImpl implements IChoreographyService {
 	
 	//Agent
 	@Override
-	public Set<AgentInfoVo> getAgentList(boolean showAll) {
+	public List<AgentInfoVo> getAgentList(boolean showAll) {
 		ConfigNode[] agents = this.configManager.getChildren(ChoyConstants.ROOT_AGENT, true);
 		if(agents == null || agents.length == 0) {
 			return null;
 		}
 		
-		Set<AgentInfoVo> aivs = new HashSet<>();
+		List<AgentInfoVo> aivs = new ArrayList<>();
 		
 		for(ConfigNode cn : agents) {
 			
@@ -237,6 +257,13 @@ public class ChoreographyServiceImpl implements IChoreographyService {
 				 av.setDepIds(depids);
 			 }
 		}
+		
+		aivs.sort((o1,o2)->{
+			int id1 = Integer.parseInt(o1.getAgentInfo().getId());
+			int id2 = Integer.parseInt(o2.getAgentInfo().getId());
+			return id1 > id2 ? 1 : id1 == id2 ? 0 :-1;
+		});
+		 
 		return aivs;
 	}
 	

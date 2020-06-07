@@ -122,18 +122,29 @@ public class Config implements IConfigChangeListener{
 					throw new CommonException("Invalid arg: "+ arg);
 				}
 				ar = ar.trim();
+				String key;
+				String val;
+				
 				if(ar.indexOf("=") > 0){
 					String[] ars = ar.split("=");
-					CommadParams.put(ars[0].trim(), ars[1].trim());
+					key = ars[0].trim();
+					val = ars[1].trim();
 				} else {
-					CommadParams.put(ar, null);
+					key = ar;
+					val = null;
 				}
+				
+				if(logger.isDebugEnabled()) {
+					logger.debug("{}={}",key,val);
+				}
+				
+				CommadParams.put(key,val);
 			}
 		}
 		
 		loadExtConfig();
 		
-		if(CommadParams.containsKey(Constants.BASE_PACKAGES_KEY)) {
+		if(contain(Constants.BASE_PACKAGES_KEY,CommadParams)) {
 			String ps = CommadParams.get(Constants.BASE_PACKAGES_KEY);
 			if(!StringUtils.isEmpty(ps)){
 				String[] pps = ps.split(",");
@@ -509,11 +520,19 @@ public class Config implements IConfigChangeListener{
 	}
 	
 	public static boolean isClientOnly() {
-		return CommadParams.containsKey(Constants.CLIENT_ONLY);
+		return contain(Constants.CLIENT_ONLY,CommadParams);
 	}
 	
 	public static boolean isServerOnly() {
-		return CommadParams.containsKey(Constants.SERVER_ONLY);
+		return contain(Constants.SERVER_ONLY,CommadParams);
+	}
+	
+	private static boolean contain(String key,Map<String,String> params) {
+		boolean f = params.containsKey(key);
+		if(!f) {
+			f = params.containsKey(key);
+		}
+		return f;
 	}
 	
 	public static <T> T getCommandParam(String key,Class<T> type,T defalutValue) {
@@ -529,7 +548,7 @@ public class Config implements IConfigChangeListener{
 			return null;
 		}
 		if(key.startsWith("/")) {
-			key = key.replace("/", "\\.");
+			key = key.substring(1).replace("/", "\\.");
 		} else {
 			key = "/" + key;
 			key = key.replace("\\.", "/");
@@ -547,7 +566,6 @@ public class Config implements IConfigChangeListener{
 		} else {
 			return v;
 		}
-		
 	}
 	
 	public static String getCommandParam(String key) {

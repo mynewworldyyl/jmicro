@@ -148,7 +148,7 @@ public class DeploymentAssignment {
 	};
 	
 	 private void ready0() {
-		 String conRootPath = ChoyConstants.ROOT_CONTROLLER+"/" + this.processInfo.getId();
+		 String conRootPath = ChoyConstants.ROOT_CONTROLLER + "/" + this.processInfo.getId();
 		 if(op.exist(conRootPath)) {
 			 op.deleteNode(conRootPath);
 		 }
@@ -345,7 +345,7 @@ public class DeploymentAssignment {
 	
 	private void cancelAssign(Assign a) {
 		if(a.state == AssignState.STOPING) {
-			if(null == insManager.getProcessesByInsId(a.getInsId())) {
+			if(null == insManager.getProcessesByInsId(a.getInsId(),false)) {
 				this.assigns.remove(a);
 			}
 			logger.warn("Assign is on stoping state: depId:"+a.getDepId() + ", agentId: " + a.getAgentId());
@@ -358,7 +358,7 @@ public class DeploymentAssignment {
 		String path = ChoyConstants.ROOT_AGENT+"/"+a.getAgentId()+"/"+a.getDepId();
 		if(set.size() > 1 || !this.agentManager.isActive(a.getAgentId()) || !op.exist(path)) {
 			//Agent挂机状态，直接关闭服务进程
-			ProcessInfo pi = this.insManager.getProcessesByInsId(a.getInsId());
+			ProcessInfo pi = this.insManager.getProcessesByInsId(a.getInsId(),false);
 			String p = ChoyConstants.INS_ROOT + "/" + a.getInsId();
 			if(op.exist(p) && pi.isActive()) {
 				pi.setActive(false);

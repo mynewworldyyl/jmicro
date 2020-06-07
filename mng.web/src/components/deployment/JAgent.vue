@@ -3,14 +3,16 @@
         <a @click="refresh()">REFRESH</a>
         &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input type="checkbox" v-model="showAll"/>SHOW ALL
         <table class="configItemTalbe" width="99%">
-            <thead><tr><td>ID</td><td>NAME</td> <td>PRIVATE</td><td>ACTIVE</td><td>START TIME</td>
-                <td>CONTINUTE</td>
-                <td>DEPS</td><td>INTS</td><td>HOST</td><td>STATIS</td><td>OPERATION</td></tr></thead>
+            <thead><tr><td>ID</td><td>NAME</td> <td>PRIVATE</td><td>ACTIVE</td> <td>DEPS</td><td>INTS</td>
+                <td>START TIME</td><td>CONTINUTE</td>
+               <td>HOST</td><td>STATIS</td><td>OPERATION</td></tr></thead>
             <tr v-for="a in agentList" :key="a.id">
                 <td>{{ a.agentInfo.id }}</td><td>{{ a.agentInfo.name }}</td><td>{{a.agentInfo.privat}}</td>
-                <td>{{ a.agentInfo.active }}</td><td>{{ a.agentInfo.startTime0 }}</td><td>{{ a.agentInfo.continue }}</td>
+                <td>{{ a.agentInfo.active }}</td>
                 <td>{{ a.depIds ? a.depIds.join(',') : '' }}</td>
                 <td>{{ a.intIds ? a.intIds.join(',') : '' }}</td>
+                <td>{{ a.agentInfo.startTime0 }}</td><td>{{ a.agentInfo.continue }}</td>
+
                 <td>{{ a.agentInfo.host }}</td>
                 <td>{{JSON.stringify(a.agentInfo.ss)}}</td>
                 <td>&nbsp;
@@ -36,7 +38,7 @@
 
             refresh(){
                 let self = this;
-                this.hasPer(1);
+                this.adminPer = window.jm.mng.comm.adminPer;
                 window.jm.mng.choy.getAgentList(this.showAll).then((agentList)=>{
                     if(!agentList || agentList.length == 0 ) {
                         self.$Message.success("No data to show");
@@ -53,15 +55,6 @@
                         this.agentList.push(e);
                     }
 
-                }).catch((err)=>{
-                    window.console.log(err);
-                });
-            },
-
-            hasPer(perId) {
-                let self = this;
-                window.jm.mng.comm.hasPermission(perId).then((rst)=>{
-                    self.adminPer = rst;
                 }).catch((err)=>{
                     window.console.log(err);
                 });
