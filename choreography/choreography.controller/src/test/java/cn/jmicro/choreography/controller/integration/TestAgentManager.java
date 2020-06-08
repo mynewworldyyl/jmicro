@@ -58,7 +58,7 @@ public class TestAgentManager extends JMicroBaseTestCase{
 	@Test
 	public void testAddServiceListener() {
 		AgentManager am = of.get(AgentManager.class);
-		am.addAgentListener((type,ai)->{
+		am.addAgentListener((type,child,ai)->{
 			Assert.assertNotNull(ai);
 			Assert.assertTrue(type == IListener.ADD);
 			System.out.println(ai);

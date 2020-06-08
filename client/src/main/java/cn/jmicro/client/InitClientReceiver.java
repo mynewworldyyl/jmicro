@@ -33,6 +33,16 @@ import cn.jmicro.common.Constants;
 public class InitClientReceiver implements IPostFactoryListener{
 	@Override
 	public void afterInit(IObjectFactory of) {
+		
+	}
+	
+	@Override
+	public int runLevel() {
+		return 0;
+	}
+	
+	@Override
+	public void preInit(IObjectFactory of) {
 		Set<IMessageHandler> list = of.getByParent(IMessageHandler.class);
 		ClientMessageReceiver sr = of.get(ClientMessageReceiver.class);
 		for(IMessageHandler h: list){
@@ -44,14 +54,6 @@ public class InitClientReceiver implements IPostFactoryListener{
 				}
 			}
 		}
-	}
 	
-	@Override
-	public int runLevel() {
-		return 0;
-	}
-	
-	@Override
-	public void preInit(IObjectFactory of) {
 	}
 }

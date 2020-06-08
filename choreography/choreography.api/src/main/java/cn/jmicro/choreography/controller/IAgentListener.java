@@ -21,6 +21,6 @@ import cn.jmicro.choreography.base.AgentInfo;
 
 public interface IAgentListener  extends IListener{
 	
-	void agentChanged(int type, AgentInfo agent);
+	void agentChanged(int type,String agentId, AgentInfo agent);
 	
 }

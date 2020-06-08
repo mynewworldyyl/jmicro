@@ -1,7 +1,6 @@
 package cn.jmicro.choreography.assignment;
 
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -33,9 +32,10 @@ import cn.jmicro.choreography.agent.AgentManager;
 import cn.jmicro.choreography.api.Deployment;
 import cn.jmicro.choreography.api.IAssignStrategy;
 import cn.jmicro.choreography.api.IInstanceListener;
+import cn.jmicro.choreography.assign.Assign;
+import cn.jmicro.choreography.assign.AssignState;
 import cn.jmicro.choreography.base.AgentInfo;
 import cn.jmicro.choreography.instance.InstanceManager;
-import cn.jmicro.common.CommonException;
 import cn.jmicro.common.Constants;
 import cn.jmicro.common.util.JsonUtils;
 import cn.jmicro.common.util.StringUtils;
@@ -49,6 +49,9 @@ public class DeploymentAssignment {
 	private boolean isMasterSlaveModel = false;
 	
 	private boolean isMaster = true;
+	
+	@Inject
+	private AssignManager assingManager;
 	
 	@Inject
 	private IDataOperator op;
@@ -76,8 +79,6 @@ public class DeploymentAssignment {
 	
 	//Agent to fail instance
 	private Map<String,Set<String>> fails = new HashMap<>();
-	
-	private Set<Assign> assigns = Collections.synchronizedSet(new HashSet<>());
 	
 	private Map<String,Deployment> deployments = new HashMap<>();
 	
@@ -134,9 +135,9 @@ public class DeploymentAssignment {
 	};
 	
 	private IMasterChangeListener mcl = (type,isMaster)->{
-		if(isMaster && (IMasterChangeListener.MASTER_ONLINE == type 
-				|| IMasterChangeListener.MASTER_NOTSUPPORT == type)) {
-			//参选成功
+		if(isMaster && ( IMasterChangeListener.MASTER_ONLINE == type 
+				|| IMasterChangeListener.MASTER_NOTSUPPORT == type )) {
+			 //参选成功
 			 logger.info(Config.getInstanceName() + " got as master");
 			 isMaster = true;
 			 ready0();
@@ -146,6 +147,17 @@ public class DeploymentAssignment {
 			 lostMaster();
 		}
 	};
+	
+	public void ready() {
+		if(!op.exist(ChoyConstants.ID_PATH)) {
+			op.createNodeOrSetData(ChoyConstants.ID_PATH, "0", IDataOperator.PERSISTENT);
+		}
+		if(isMasterSlaveModel) {
+			of.masterSlaveListen(mcl);
+		} else {
+			ready0();
+		}
+	}
 	
 	 private void ready0() {
 		 String conRootPath = ChoyConstants.ROOT_CONTROLLER + "/" + this.processInfo.getId();
@@ -157,8 +169,8 @@ public class DeploymentAssignment {
 		 op.addListener(connListener);
 		 TimerTicker.getDefault(1000*5L).addListener(actKey,null,act);
 	 }
-	 
-	 private void lostMaster() {
+	
+	private void lostMaster() {
 		 
 		 logger.warn(Config.getInstanceName() + " lost master resposibility");
 		 TimerTicker.getDefault(1000*5L).removeListener(actKey, true);
@@ -174,20 +186,7 @@ public class DeploymentAssignment {
 		 }
 		 deployments.clear();
 		 nextDeployTimeout.clear();
-		 assigns.clear();
-		 
 	 }
-	
-	public void ready() {
-		if(!op.exist(ChoyConstants.ID_PATH)) {
-			op.createNodeOrSetData(ChoyConstants.ID_PATH, "0", IDataOperator.PERSISTENT);
-		}
-		if(isMasterSlaveModel) {
-			this.of.masterSlaveListen(mcl);
-		} else {
-			ready0();
-		}
-	}
 	
 	private void registListener() {
 		op.addChildrenListener(ChoyConstants.DEP_DIR, depListener);
@@ -201,12 +200,12 @@ public class DeploymentAssignment {
 			 return;
 		 }
 		 
-		 Set<Assign> ass = new HashSet<>();
-		 ass.addAll(this.assigns);
+		 Set<Assign> ass = this.assingManager.getAll();
 		 
 		 //检测分配后2分钟内有没有启动成功，如果没有启动成功，则取消分配
 		 for(Assign a : ass) {
-			 if(a.state == AssignState.STARTING && curTime - a.opTime > 120000) {
+			 if((a.state == AssignState.INIT || a.state == AssignState.STARTING 
+					 || a.state == AssignState.DOWNLOAD_RES) && curTime - a.opTime > 120000) {
 				 //starting timeout
 				 logger.error("Starting timeout: " + a.toString());
 				 cancelAssign(a);
@@ -218,39 +217,32 @@ public class DeploymentAssignment {
 				 String piPath = ChoyConstants.INS_ROOT + "/" + a.getInsId();
 				 if(!op.exist(piPath)) {
 					 logger.error("Delete invalid assign: " + a.toString());
-					 this.assigns.remove(a);
-				 }else {
+					 this.assingManager.remove(a);
+				 } else {
 					 String data = op.getData(piPath);
 					 if(StringUtils.isEmpty(data)) {
 						 logger.warn("Delete invalid process node: " + piPath);
 						 op.deleteNode(piPath);
-						 this.assigns.remove(a);
+						 this.assingManager.remove(a);
 					 } else {
-						 
 						 if(a.checkTime > 100) {
 							 op.deleteNode(piPath);
-							 this.assigns.remove(a);
+							 this.assingManager.remove(a);
 							 logger.error("Process stop exception Assign: " + a.toString());
 							 logger.error("Process stop exception processInfo: " + data);
 							 logger.error("You should check it by your hand, sorry for this case!");
 						 } else {
 							 ProcessInfo pi = JsonUtils.getIns().fromJson(data, ProcessInfo.class);
+							 a.checkTime++;
+							 this.assingManager.update(a);
 							 if(pi.isActive()) {
-								 a.checkTime++;
 								 logger.warn("Do cancel time["+a.checkTime+"] again: " + data);
 								 this.cancelAssign(a);
 							 } else {
-								 a.checkTime++;
 								 logger.warn("Process in stoping time["+a.checkTime+"] state: " + data);
 							 }
 						 }
-						 
 					 }
-				 }
-				 
-				 String apath = ChoyConstants.ROOT_AGENT+"/"+a.getAgentId()+"/"+a.depId;
-				 if(op.exist(apath)) {
-					 op.deleteNode(apath);
 				 }
 				 
 				 continue;
@@ -294,11 +286,11 @@ public class DeploymentAssignment {
 	}
 	
 	private void instanceRemoved(String insId) {
-		Assign a = this.getAssignByInfoId(insId);
+		Assign a = this.assingManager.getAssignByInfoId(insId);
 		if(a != null) {
 			logger.info("Instance remove: " + a.toString());
 			cancelAssign(a);
-			this.assigns.remove(a);
+			assingManager.remove(a);
 		}
 	}
 	
@@ -308,18 +300,18 @@ public class DeploymentAssignment {
 			return;
 		}
 		
-		Assign a = this.getAssignByInfoId(pi.getId());
+		Assign a = assingManager.getAssignByInfoId(pi.getId());
 		if(a == null) {
 			//初次启动时，对已经存在的实例做实例化
 			logger.info("Instance add for origint: " + pi.toString());
 			a = new Assign(pi.getDepId(),pi.getAgentId(),pi.getId());
-			this.assigns.add(a);
 		} else {
 			logger.info("Instance start success: " + pi.toString());
 		}
 		
 		a.opTime = System.currentTimeMillis();
 		a.state = AssignState.STARTED;
+		this.assingManager.add(a);
 	}
 
 	private void deploymentRemoved(String d, String data) {
@@ -329,14 +321,15 @@ public class DeploymentAssignment {
 	}
 	
 	private void stopDeployment(String depId) {
-		Set<Assign> ownerAgents = this.getAssignByDepId(depId);
+		Set<Assign> ownerAgents = assingManager.getAssignByDepId(depId);
 		if(ownerAgents == null || ownerAgents.isEmpty()) {
 			return;
 		}
 		
 		logger.info("Stop deployment: "+depId);
 		for(Assign a : ownerAgents) {
-			if(a.state == AssignState.STARTING || a.state == AssignState.STARTED) {
+			if(a.state == AssignState.STARTING || a.state == AssignState.STARTED ||
+					a.state == AssignState.INIT || a.state == AssignState.DOWNLOAD_RES) {
 				logger.info("Cancel assign: "+a.toString());
 				cancelAssign(a);
 			}
@@ -346,7 +339,7 @@ public class DeploymentAssignment {
 	private void cancelAssign(Assign a) {
 		if(a.state == AssignState.STOPING) {
 			if(null == insManager.getProcessesByInsId(a.getInsId(),false)) {
-				this.assigns.remove(a);
+				assingManager.remove(a);
 			}
 			logger.warn("Assign is on stoping state: depId:"+a.getDepId() + ", agentId: " + a.getAgentId());
 			return;
@@ -354,7 +347,7 @@ public class DeploymentAssignment {
 		
 		logger.info("Cancel dep ["+a.getDepId()+"], agentId [" + a.getAgentId()+"]");
 		
-		Set<Assign> set = this.getAssignByDepIdAndAgentId(a.getDepId(), a.getAgentId());
+		Set<Assign> set = assingManager.getAssignByDepIdAndAgentId(a.getDepId(), a.getAgentId());
 		String path = ChoyConstants.ROOT_AGENT+"/"+a.getAgentId()+"/"+a.getDepId();
 		if(set.size() > 1 || !this.agentManager.isActive(a.getAgentId()) || !op.exist(path)) {
 			//Agent挂机状态，直接关闭服务进程
@@ -365,19 +358,20 @@ public class DeploymentAssignment {
 				String data = JsonUtils.getIns().toJson(pi);
 				op.setData(p, data);
 				logger.info("Stop process: " + data);
+			} else {
+				assingManager.remove(a);
 			}
 		} else {
 			logger.debug("Delete deploy: " + path);
-			op.deleteNode(path);
+			a.state = AssignState.STOPING;
+			a.opTime = System.currentTimeMillis();
+			assingManager.update(a);
 		}
 		
 		if(!fails.containsKey(a.getAgentId())) {
 			fails.put(a.getAgentId(), new HashSet<String>());
 		}
 		fails.get(a.getAgentId()).add(a.getDepId());
-		
-		a.state = AssignState.STOPING;
-		a.opTime = System.currentTimeMillis();
 		
 		nextDeployTimeout.put(a.getDepId(), System.currentTimeMillis());
 	}
@@ -397,9 +391,9 @@ public class DeploymentAssignment {
 		if(!dep.isEnable()) {
 			return;
 		}
-		Set<Assign> ass = this.getAssignByDepId(dep.getId());
+		Set<Assign> ass = assingManager.getAssignByDepId(dep.getId());
 		//filterState(ass,AssignState.STARTED,AssignState.STARTING);
-		this.fiterByState(ass, AssignState.STARTED,AssignState.STARTING);
+		this.fiterByState(ass, AssignState.STARTED,AssignState.STARTING,AssignState.INIT);
 		
 		Set<AgentInfo> agentInfo = this.agentManager.getAllAgentInfo();
 		
@@ -481,13 +475,17 @@ public class DeploymentAssignment {
 		
 		for(int i = sortList.size() - 1; i >= 0; i-- ) {
 			AgentInfo aif = sortList.get(i);
-			Set<Assign> as = this.getAssignByDepIdAndAgentId(dep.getId(), aif.getId());
+			Set<Assign> as = assingManager.getAssignByDepIdAndAgentId(dep.getId(), aif.getId());
 			
 			if(!as.isEmpty()) {
 				
-				Assign a = getByState(as,AssignState.STARTING);
+				Assign a = getByState(as,AssignState.INIT);
 				if(a == null) {
-					a =  getByState(as,AssignState.STARTED);
+					a =  getByState(as,AssignState.STARTING);
+				}
+				
+				if(a == null) {
+					getByState(as,AssignState.STARTED);
 				}
 				
 				if(a != null) {
@@ -525,7 +523,7 @@ public class DeploymentAssignment {
 		
 		logger.warn("Force direct stop [" + dep.getId() + "], count [" + (-cnt) + "] ");
 		
-		Set<Assign> as = this.getAssignByDepId(dep.getId());
+		Set<Assign> as = assingManager.getAssignByDepId(dep.getId());
 		if(as.size() > 0) {
 			Iterator<Assign> ite = as.iterator();
 			while(ite.hasNext()) {
@@ -578,28 +576,20 @@ public class DeploymentAssignment {
 				//String pid = idServer.getStringId(ProcessInfo.class);
 				String pid = (Long.parseLong(op.getData(ChoyConstants.ID_PATH)) +1)+"";
 				op.setData(ChoyConstants.ID_PATH, pid);
-				op.createNodeOrSetData(path, pid, IDataOperator.PERSISTENT);
 				
 				Assign a = new Assign(dep.getId(),aif.getId(),pid);
 				a.opTime = curTime;
-				a.state = AssignState.STARTING;
-				assigns.add(a);
+				a.state = AssignState.INIT;
+				assingManager.add(a);
 				
-				aif.setAssignTime(curTime);
-				String dd = JsonUtils.getIns().toJson(aif);
-				op.setData(ChoyConstants.ROOT_AGENT+"/"+aif.getId(), dd);
-				
-				logger.warn("Assign deployment: "+ dep.toString());
-				logger.info("Assign: " + dep.getId() + " to " + dd);
+				logger.info("Assign: " + a.toString());
 				
 				nextDeployTimeout.put(dep.getId(), curTime);
 
 				if(--cnt == 0) {
 					return;
 				}
-			
 			}
-			
 		}
 	}
 
@@ -664,7 +654,7 @@ public class DeploymentAssignment {
 				continue;
 			}
 			
-			Set<Assign> as = this.getAssignByDepIdAndAgentId(dep.getId(), ai.getId());
+			Set<Assign> as = assingManager.getAssignByDepIdAndAgentId(dep.getId(), ai.getId());
 			if(!as.isEmpty()) {
 				ite.remove();
 				continue;
@@ -712,136 +702,8 @@ public class DeploymentAssignment {
 			logger.error("Assign fail with strategy [" + dep.getAssignStrategy() + "]");
 			return;
 		}
-		
 	}
 
-	private enum AssignState{
-		INIT,STARTING,STOPING,STARTED
-	}
-
-	private class Assign {
-		
-		public Assign(String depId,String agentId,String insId) {
-			if(StringUtils.isEmpty(insId)) {
-				throw new CommonException("Process instance ID cannot be NULL");
-			}
-			
-			if(StringUtils.isEmpty(agentId)) {
-				throw new CommonException("Agent ID cannot be NULL");
-			}
-			
-			if(StringUtils.isEmpty(depId)) {
-				throw new CommonException("Deployment ID cannot be NULL");
-			}
-			
-			this.depId = depId;
-			this.agentId = agentId;
-			this.insId = insId;
-		}
-		
-		private String depId;
-		private String agentId;
-		private String insId;
-		
-		public AssignState state = AssignState.INIT;
-		
-		public long opTime;
-		
-		public int checkTime = 0;
-		
-		public String getDepId() {
-			return depId;
-		}
-
-		public String getAgentId() {
-			return agentId;
-		}
-
-		public String getInsId() {
-			return insId;
-		}
-
-		@Override
-		public int hashCode() {
-			if(this.getInsId() == null || "".equals(this.getInsId())) {
-				return (this.agentId + this.depId).hashCode();
-			} else {
-				return Integer.parseInt(this.getInsId());
-			}
-		}
-
-		@Override
-		public boolean equals(Object obj) {
-			if (this == obj)
-				return true;
-			if (obj == null)
-				return false;
-			if (getClass() != obj.getClass())
-				return false;
-			return hashCode() == obj.hashCode();
-		}
-
-		@Override
-		public String toString() {
-			return "Assign [depId=" + depId + ", agentId=" + agentId + ", insId=" + getInsId() + "]";
-		}
-
-	}
 	
-	private Assign getAssignByInfoId(String id) {
-		for(Assign a : this.assigns) {
-			if(a.getInsId() == null) {
-				continue;
-			}
-			if(id.equals(a.getInsId())) {
-				return a;
-			}
-		}
-		return null;
-	}
-	
-	@SuppressWarnings({"unchecked" })
-	private Set<Assign> getAssignByDepId(String depId) {
-		if(StringUtils.isEmpty(depId)) {
-			return Collections.EMPTY_SET;
-		}
-		Set<Assign> s = new HashSet<>();
-		for(Assign a : this.assigns) {
-			if(depId.equals(a.getDepId())) {
-				s.add(a);
-			}
-		}
-		return s;
-	}
-	
-	
-	@SuppressWarnings({ "unused", "unchecked" })
-	private Set<Assign> getAssignByAgentId(String agentId) {
-		if(StringUtils.isEmpty(agentId)) {
-			return Collections.EMPTY_SET;
-		}
-		Set<Assign> s = new HashSet<>();
-		for(Assign a : this.assigns) {
-			if(agentId.equals(a.getAgentId())) {
-				s.add(a);
-			}
-		}
-		return s;
-	}
-	
-	private Set<Assign> getAssignByDepIdAndAgentId(String depId, String agentId) {
-		
-		if(StringUtils.isEmpty(agentId) || StringUtils.isEmpty(depId) ) {
-			return null;
-		}
-		
-		Set<Assign> s = new HashSet<>();
-		for(Assign a : this.assigns) {
-			if(agentId.equals(a.getAgentId()) && depId.equals(a.getDepId())) {
-				s.add(a);
-			}
-		}
-		return s;
-	}
 	
 }

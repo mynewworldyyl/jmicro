@@ -28,6 +28,7 @@ public interface ChoyConstants {
 	
 	public static final String INS_ROOT = Config.ChoreographyDir + "/instances";
 	
+	//controller存活标志
 	public static final String ROOT_CONTROLLER = Config.ChoreographyDir + "/controllers";
 	
 	public static final String ID_PATH = Config.ChoreographyDir + "/" + ProcessInfo.class.getName();

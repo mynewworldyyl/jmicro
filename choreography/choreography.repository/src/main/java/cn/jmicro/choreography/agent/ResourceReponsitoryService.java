@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -41,6 +42,9 @@ public class ResourceReponsitoryService implements IResourceResponsitory{
 	@Cfg(value="/ResourceReponsitoryService/openDebug", defGlobal=false)
 	private boolean openDebug = true;//1024*1024;
 	
+	@Cfg(value="/ResourceReponsitoryService/resTimeout", defGlobal=true)
+	private long resTimeout = 3*60*1000;
+	
 	@Inject
 	private ICodecFactory codecFactory;
 	
@@ -59,7 +63,7 @@ public class ResourceReponsitoryService implements IResourceResponsitory{
 	
 	private Map<Integer,InputStream> downloadReses = new HashMap<>();
 	
-	private Map<Integer,Long> downloadResourceTimeout = new HashMap<>();
+	private Map<Integer,Long> downloadResourceTimeout = Collections.synchronizedMap(new HashMap<>());
 	
 	/*
 	@Inject
@@ -97,10 +101,11 @@ public class ResourceReponsitoryService implements IResourceResponsitory{
 		mtemp.putAll(this.downloadResourceTimeout);
 				
 		for(Map.Entry<Integer,Long> e : mtemp.entrySet()) {
-			if(curTime - e.getValue() > 180000) {
+			if(curTime - e.getValue() > resTimeout) {
 				InputStream is = this.downloadReses.get(e.getKey());
 				if(is != null) {
 					try {
+						LOG.warn("Remove timeout resource: " + e.getKey()+", timeout: " + this.resTimeout);
 						is.close();
 						this.downloadReses.remove(e.getKey());
 						this.downloadResourceTimeout.remove(e.getKey());
@@ -297,6 +302,7 @@ public class ResourceReponsitoryService implements IResourceResponsitory{
 	public byte[] downResourceData(int downloadId, int specifyBlockNum) {
 		InputStream is = this.downloadReses.get(downloadId);
 		if(is == null) {
+			LOG.error("Resource not found ID: " + downloadId);
 			return null;
 		}
 		
@@ -320,7 +326,7 @@ public class ResourceReponsitoryService implements IResourceResponsitory{
 				byte[] destData = new byte[len];
 				System.arraycopy(data, 0, destData, 0, len);
 				data = destData;
-				LOG.info("Download resource success ID: " + downloadId);
+				LOG.info("Download resource finish ID: " + downloadId);
 			}
 			
 		} catch (IOException e) {

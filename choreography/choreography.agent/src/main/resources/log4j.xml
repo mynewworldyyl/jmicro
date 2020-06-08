@@ -3,7 +3,7 @@
 <log4j:configuration xmlns:log4j="http://jakarta.apache.org/log4j/" debug="false">
 	
 	<appender name="CONSOLE" class="org.apache.log4j.ConsoleAppender">
-		<param name="Target" value="System.err"/>
+		<param name="Target" value="System.out"/>
 		<param name="Threshold" value="DEBUG"/>
 		<layout class="org.apache.log4j.PatternLayout">
 			<param name="ConversionPattern" value="[%d][%p,%c{1}] %m%n"/>
@@ -52,12 +52,15 @@
 
 	<logger name="cn.jmicro">
 		<level value="DEBUG"/>
+		<appender-ref ref="NORMALLOG"/>
 	</logger>
 	<logger name="org.apache.zookeeper">
 		<level value="error"/>
+		<appender-ref ref="NORMALLOG"/>
 	</logger>
 	 <logger name="org.apache.mina">
 		<level value="ERROR"/>
+		<appender-ref ref="NORMALLOG"/>
 	</logger>
 	<root>	
 	    <level value="DEBUG"/>

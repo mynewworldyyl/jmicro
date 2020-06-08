@@ -81,7 +81,7 @@ public class AgentManager {
 		if(IListener.REMOVE == type) {
 			AgentInfo ai = id2Agents.remove(id);
 			if(ai != null) {
-				notifyAgentListener(IAgentListener.REMOVE,ai);
+				notifyAgentListener(IAgentListener.REMOVE,ai.getId(),ai);
 				if(!insManager.isExistByAgentId(id)) {
 					deleteAgent(agentPath);
 				}
@@ -92,7 +92,7 @@ public class AgentManager {
 			if(!id2Agents.containsKey(id)) {
 				id2Agents.put(id, ai);
 				op.addDataListener(path, agentDataListener);
-				notifyAgentListener(IAgentListener.ADD,ai);
+				notifyAgentListener(IAgentListener.ADD,id,ai);
 			} else {
 				id2Agents.put(id, ai);
 			}
@@ -130,7 +130,7 @@ public class AgentManager {
 						if(!id2Agents.containsKey(child)) {
 							id2Agents.put(child, ai);
 							op.addDataListener(path, agentDataListener);
-							notifyAgentListener(IAgentListener.ADD,ai);
+							notifyAgentListener(IAgentListener.ADD,child,ai);
 						} else {
 							id2Agents.put(child, ai);
 						}
@@ -138,7 +138,8 @@ public class AgentManager {
 				}else if(type == IListener.REMOVE) {
 					op.removeDataListener(path, agentDataListener);
 					op.removeNodeListener(activePath, activeNodeListener);
-					id2Agents.remove(child);
+					AgentInfo ai = id2Agents.remove(child);
+					notifyAgentListener(IAgentListener.REMOVE,child,ai);
 				}
 			}
 		});
@@ -191,7 +192,7 @@ public class AgentManager {
 		this.agentListeners.add(l);
 		if(!id2Agents.isEmpty()) {
 			for(AgentInfo ai : id2Agents.values()) {
-				l.agentChanged(IAgentListener.ADD, ai);
+				l.agentChanged(IAgentListener.ADD,ai.getId(), ai);
 			}
 		}
 	}
@@ -199,16 +200,16 @@ public class AgentManager {
 	private void updateAgentData(String c, String data) {
 		AgentInfo ai = JsonUtils.getIns().fromJson(data, AgentInfo.class);
 		id2Agents.put(c, ai);
-		notifyAgentListener(IAgentListener.DATA_CHANGE,ai);
+		notifyAgentListener(IAgentListener.DATA_CHANGE,ai.getId(),ai);
 	}
 
-	private void notifyAgentListener(int type,AgentInfo ai) {
+	private void notifyAgentListener(int type,String agentId,AgentInfo ai) {
 		if(this.agentListeners.isEmpty()) {
 			return;
 		}
 		
 		for(IAgentListener l : this.agentListeners) {
-			l.agentChanged(type, ai);
+			l.agentChanged(type,agentId, ai);
 		}
 		
 	}
