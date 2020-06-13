@@ -4,23 +4,23 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
-import cn.jmicro.api.monitor.v1.MonitorConstant;
+import cn.jmicro.api.monitor.MC;
 
 public class MonitorServerStatus0 {
 
-public static final short receiveItemCount = MonitorConstant.Ms_ReceiveItemCnt;
+public static final short receiveItemCount = MC.Ms_ReceiveItemCnt;
 	
-	public static final short receiveItemQps = MonitorConstant.Ms_FailItemCount;
+	public static final short receiveItemQps = MC.Ms_FailItemCount;
 	
-	public static final short submitTaskCount = MonitorConstant.Ms_CheckerSubmitItemCnt;
+	public static final short submitTaskCount = MC.Ms_CheckerSubmitItemCnt;
 	
-	public static final short taskNormalCount = MonitorConstant.Ms_TaskSuccessItemCnt;
+	public static final short taskNormalCount = MC.Ms_TaskSuccessItemCnt;
 	
-	public static final short taskExceptionCount = MonitorConstant.Ms_TaskFailItemCnt;
+	public static final short taskExceptionCount = MC.Ms_TaskFailItemCnt;
 	
-	public static final short submitCount = MonitorConstant.Ms_SubmitCnt;
+	public static final short submitCount = MC.Ms_SubmitCnt;
 	
-	public static final short submitQps = MonitorConstant.Ms_Fail2BorrowBasket;
+	public static final short submitQps = MC.Ms_Fail2BorrowBasket;
 
 	public static final Short[] TYPES = { receiveItemCount, receiveItemQps, submitTaskCount, taskNormalCount,
 			taskExceptionCount, submitQps, submitCount };

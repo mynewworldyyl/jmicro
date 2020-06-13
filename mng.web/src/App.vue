@@ -13,10 +13,15 @@
                   STATIS
               </Menu-item>
 
-              <Menu-item name="monitors">
-                  <Icon type="ios-cog"></Icon>
-                  MONITORS
-              </Menu-item>
+              <Submenu name="mo">
+                  <template slot="title">
+                      <Icon type="ios-cog" />
+                      MONITOR
+                  </template>
+                  <Menu-item name="monitors"><Icon type="ios-cog"></Icon>MONITORS</Menu-item>
+                  <Menu-item name="typeConfig"><Icon type="ios-cog"></Icon>TYPE CONFIG</Menu-item>
+                  <Menu-item name="monitorType"><Icon type="ios-cog"></Icon>MONITOR TYPES</Menu-item>
+              </Submenu>
 
               <Menu-item name="config">
                   <Icon type="ios-construct"></Icon>
@@ -83,6 +88,11 @@
               <JRouterList></JRouterList>
           </Drawer>
 
+          <Drawer  v-model="cache.monitorType.drawerStatus" :closable="false" placement="left" :transfer="true"
+                   :draggable="true" :scrollable="true" width="50">
+              <JMonitorTypeKeyList slId="monitorTypeKey" evt-name="monitorTypeKeySelect"></JMonitorTypeKeyList>
+          </Drawer>
+
           <!-- route outlet -->
           <router-view></router-view>
       </div>
@@ -97,6 +107,7 @@
     import JMonitorList from './components/monitor/JMonitorList.vue'
     import JRouterList from './components/route/JRouterList.vue'
     import JAccount from './components/common/JAccount.vue'
+    import JMonitorTypeKeyList from './components/monitor/JMonitorTypeKeyList.vue'
 
     let cache = null;
 
@@ -107,7 +118,8 @@ export default {
         JConfigList,
         JMonitorList,
         JRouterList,
-        JAccount
+        JAccount,
+        JMonitorTypeKeyList,
     },
 
     data() {
@@ -146,6 +158,12 @@ export default {
             drawerBtnStyle:{left:'0px'},
         };
 
+        cache['monitorType']={
+            key: 'monitorType',
+            drawerStatus:false,
+            drawerBtnStyle:{left:'0px'},
+        };
+
         cache['router']={
             key: 'router',
             drawerStatus:false,
@@ -168,7 +186,7 @@ export default {
       },
 
       toRouter(key) {
-          if(key == 'o' || key == 'd') {
+          if(key == 'o' || key == 'd' || key =='mo') {
               return
           }else if(key == cache.curSelectKey  ) {
               this.openDrawer();

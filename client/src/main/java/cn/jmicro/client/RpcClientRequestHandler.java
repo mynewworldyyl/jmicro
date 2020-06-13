@@ -38,8 +38,8 @@ import cn.jmicro.api.exception.RpcException;
 import cn.jmicro.api.exception.TimeoutException;
 import cn.jmicro.api.idgenerator.ComponentIdServer;
 import cn.jmicro.api.loadbalance.ISelector;
-import cn.jmicro.api.monitor.v1.MonitorConstant;
-import cn.jmicro.api.monitor.v1.SF;
+import cn.jmicro.api.monitor.MC;
+import cn.jmicro.api.monitor.SF;
 import cn.jmicro.api.net.AbstractHandler;
 import cn.jmicro.api.net.IMessageHandler;
 import cn.jmicro.api.net.IRequest;
@@ -190,7 +190,7 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
 			if(si == null) {
 				String msg = "Async service not found for:"+sm.getKey().toKey(false, false, false)+",async :"+ ac.toString();
 				logger.error(msg);
-				SF.doRequestLog(MonitorConstant.LOG_ERROR, TAG, null, msg);
+				SF.doRequestLog(MC.MT_PLATFORM_LOG,MC.LOG_ERROR, TAG, null, msg);
 				throw new RpcException(req,msg);
 			}
 			
@@ -198,7 +198,7 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
 			if(callback == null) {
 				String msg = "Async method not found for:"+sm.getKey().toKey(false, false, false)+",async :"+ ac.toString();
 				logger.error(msg);
-				SF.doRequestLog(MonitorConstant.LOG_ERROR, TAG, null, msg);
+				SF.doRequestLog(MC.MT_PLATFORM_LOG,MC.LOG_ERROR, TAG, null, msg);
 				throw new RpcException(req,msg);
 			}
 			
@@ -223,7 +223,7 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
 			return resp;
 		} else {
 			String msg = "ErrorCode:"+id+",异步调用失败"+sm.getKey().toKey(false, false, false);
-			SF.doRequestLog(MonitorConstant.LOG_ERROR,TAG,null,msg);
+			SF.doRequestLog(MC.MT_PLATFORM_LOG,MC.LOG_ERROR,TAG,null,msg);
 			/*ServerError se = new ServerError();
 			se.setErrorCode(ServerError.SE_ASYNC_PUBSUB_FAIL);
 			se.setMsg(msg);
@@ -270,7 +270,7 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
         	if(si == null) {
         		//SF.doSubmit(MonitorConstant.CLIENT_REQ_SERVICE_NOT_FOUND, req,null);
         		//服务未找到，或服务不存在
-        		SF.serviceNotFound(TAG.getName());
+        		SF.serviceNotFound(TAG.getSimpleName(), "Service [" + req.getServiceName() + "] not found!");
     			throw new RpcException(req,"Service [" + req.getServiceName() + "] not found!");
     		}
         	
@@ -429,7 +429,7 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
     			//到这里肯定是超时了
     			//SF.doSubmit(MonitorConstant.CLIENT_REQ_TIMEOUT, req, null);
     			logger.warn("Timeout reqID:"+req.getRequestId()+",linkId:"+msg.getLinkId()+",timeout"+sm.getTimeout()+",Service: "+sm.getKey().toKey(true, true, true));
-    			SF.reqTimeout(TAG.getName());
+    			SF.reqTimeout(TAG.getName(),"");
     			//session.increment(MonitorConstant.CLIENT_REQ_TIMEOUT);
     		}
     		
@@ -464,7 +464,7 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
     				}
     				logger.warn("Fail reqID:"+req.getRequestId()+",linkId:"+msg.getLinkId()+",timeout"+",Service: "+sm.getKey().toKey(true, true, true));
     				//肯定是超时失败了
-    				SF.reqTimeoutFail(TAG.getName());
+    				SF.reqTimeoutFail(TAG.getName(),"");
     				throw new TimeoutException(req,si.getRetryCnt()+"");
     			} else {
     				if(interval > 0 ) {
@@ -477,7 +477,7 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
     				}
     				logger.warn("Do timeout retry reqID:"+req.getRequestId()+",linkId:"+msg.getLinkId()+",retryCnt:"+retryCnt+",Service: "+sm.getKey().toKey(false, true, true));
     				//session.increment(MonitorConstant.CLIENT_REQ_RETRY);
-    				SF.reqTimeoutRetry(TAG.getName());
+    				SF.reqTimeoutRetry(TAG.getName(),"");
     				continue;//重试循环
     			}
     			
@@ -485,7 +485,7 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
 				 se = (ServerError)resp.getResult();
 				 logger.error("error code: "+se.getErrorCode()+" ,msg: "+se.getMsg()+",Service: "+sm.getKey().toKey(true, true, true));
 				 req.setSuccess(false);
-				 session.increment(MonitorConstant.CLIENT_RESPONSE_SERVER_ERROR);
+				 session.increment(MC.MT_CLIENT_RESPONSE_SERVER_ERROR);
 				 waitForResponse.remove(req.getRequestId());
 				 SF.reqServiceRespError(TAG.getName(), se);
 				 throw new RpcException(req,se);
@@ -493,7 +493,7 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
 				 //服务器正常逻辑处理错误，不需要重试，直接失败
 				 logger.error("服务器响应错误reqID:"+req.getRequestId()+",linkId:"+msg.getLinkId()+ resp.getResult()+",Service: "+sm.getKey().toKey(true, true, true));
 				 req.setSuccess(false);
-				 session.increment(MonitorConstant.CLIENT_SERVICE_ERROR);
+				 session.increment(MC.MT_CLIENT_SERVICE_ERROR);
 				 SF.reqServerError(TAG.getName(), resp.getResult() == null ? "":resp.getResult().toString());
 				 waitForResponse.remove(req.getRequestId());
 			     throw new RpcException(req,resp);
@@ -555,8 +555,8 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
 	@Override
 	public void onMessage(ISession session,Message msg) {
 		//receive response
-		if(SF.isLoggable(MonitorConstant.LOG_DEBUG,msg.getLogLevel())) {
-			SF.doMessageLog(MonitorConstant.LOG_DEBUG,TAG,msg,null," receive message");
+		if(SF.isLoggable(MC.LOG_DEBUG,msg.getLogLevel())) {
+			SF.doMessageLog(MC.MT_PLATFORM_LOG,MC.LOG_DEBUG,TAG,msg,null," receive message");
 		}
 		
 		IResponseHandler handler = waitForResponse.get(msg.getReqId());
@@ -564,13 +564,13 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
 			//logger.info("get result reqID: {}",msg.getReqId());
 			handler.onResponse(msg);
 		} else {
-			if(SF.isLoggable(MonitorConstant.LOG_ERROR,msg.getLogLevel())) {
-				SF.doMessageLog(MonitorConstant.LOG_ERROR,TAG,msg,null," handler not found");
+			if(SF.isLoggable(MC.LOG_ERROR,msg.getLogLevel())) {
+				SF.doMessageLog(MC.MT_PLATFORM_LOG,MC.LOG_ERROR,TAG,msg,null," handler not found");
 			}
 			logger.error("msdId:"+msg.getId()+",reqId:"+msg.getReqId()+",linkId:"+msg.getLinkId()+
 					",waitForResponse keySet"+waitForResponse.keySet());
-			session.increment(MonitorConstant.CLIENT_HANDLER_NOT_FOUND);
-			if(session.getTakePercent(MonitorConstant.CLIENT_HANDLER_NOT_FOUND) > 50) {
+			session.increment(MC.MT_CLIENT_HANDLER_NOT_FOUND);
+			if(session.getTakePercent(MC.MT_CLIENT_HANDLER_NOT_FOUND) > 50) {
 				//断开重连
 				this.sessionManager.closeSession(session);
 			}

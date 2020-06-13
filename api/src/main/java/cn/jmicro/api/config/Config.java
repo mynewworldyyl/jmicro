@@ -80,6 +80,12 @@ public class Config implements IConfigChangeListener{
 	//服务编排相关数据根目录
 	public static final String ChoreographyDir = BASE_DIR +"/choreography";
 	
+	public static final String MonitorDir = BASE_DIR +"/monitorDir";
+	
+	public static final String CurCustomTypeCodeDir = MonitorDir +"/curCustomTypeCode";
+	public static final String MonitorTypeConfigDir = MonitorDir +"/monitorTypeConfig";
+	public static final String MonitorTypesDir = MonitorDir+"/monitorTypes";
+	
 	//当前启动实例名称
 	private static String InstanceName = "";
 	

@@ -20,6 +20,8 @@ import cn.jmicro.api.choreography.ProcessInfo;
 import cn.jmicro.api.idgenerator.ComponentIdServer;
 import cn.jmicro.api.mng.ConfigNode;
 import cn.jmicro.api.mng.IConfigManager;
+import cn.jmicro.api.monitor.MC;
+import cn.jmicro.api.monitor.SF;
 import cn.jmicro.api.raft.IDataOperator;
 import cn.jmicro.api.security.ActInfo;
 import cn.jmicro.choreography.api.Deployment;
@@ -38,6 +40,8 @@ import cn.jmicro.mng.api.choreography.AgentInfoVo;
 public class ChoreographyServiceImpl implements IChoreographyService {
 
 	private final static Logger logger = LoggerFactory.getLogger(ChoreographyServiceImpl.class);
+	
+	private final static String TAG = ChoreographyServiceImpl.class.getSimpleName();
 	
 	@Cfg(value="/adminPermissionLevel",defGlobal=true)
 	private int adminPermissionLevel = 0;
@@ -73,6 +77,7 @@ public class ChoreographyServiceImpl implements IChoreographyService {
 			} else {
 				msg += "No login account to add deployment: " + dep.toString(); 
 			}
+			SF.eventLog(MC.MT_DEPLOYMENT_ADD,MC.LOG_INFO, TAG,msg);
 			logger.warn(msg);
 			return null;
 		}
@@ -133,7 +138,7 @@ public class ChoreographyServiceImpl implements IChoreographyService {
 			} else {
 				msg += "No login account to update deployment: " + id; 
 			}
-			
+			SF.eventLog(MC.MT_DEPLOYMENT_REMOVE,MC.LOG_WARN, TAG,msg);
 			logger.warn(msg);
 			return false;
 		}
@@ -154,7 +159,7 @@ public class ChoreographyServiceImpl implements IChoreographyService {
 			} else {
 				msg += "No login account to update deployment: " + dep.toString(); 
 			}
-			
+			SF.eventLog(MC.MT_DEPLOYMENT_LOG,MC.LOG_ERROR, TAG,msg);
 			logger.warn(msg);
 			return false;
 		}
@@ -177,8 +182,9 @@ public class ChoreographyServiceImpl implements IChoreographyService {
 				return false;
 			}
 		}
-		
-		op.setData(ChoyConstants.DEP_DIR+"/"+dep.getId(), JsonUtils.getIns().toJson(dep));
+		data = JsonUtils.getIns().toJson(dep);
+		SF.eventLog(MC.MT_DEPLOYMENT_LOG,MC.LOG_INFO, TAG,data);
+		op.setData(ChoyConstants.DEP_DIR+"/"+dep.getId(), data);
 		return true;
 	}
 	
@@ -210,9 +216,21 @@ public class ChoreographyServiceImpl implements IChoreographyService {
 				String data = JsonUtils.getIns().toJson(pi);
 				op.setData(p, data);
 				ActInfo ai = JMicroContext.get().getAccount();
-				logger.warn("Stop process by Account [" + ai.getActName() + "], Process: " + data);
+				String msg = "Stop process by Account [" + ai.getActName() + "], Process: " + data;
+				logger.warn(msg);
+				SF.eventLog(MC.MT_DEPLOYMENT_LOG,MC.LOG_WARN, TAG,msg);
 				return true;
 			}
+		} else {
+			String msg = "";
+			ActInfo ai = JMicroContext.get().getAccount();
+			if(ai != null) {
+				msg = "No permission to stop process [" + ai.getActName() + "], Process ID: " + insId;
+			}else {
+				msg = "Nor login account to stop process ID: " + insId;
+			}
+			logger.warn(msg);
+			SF.eventLog(MC.MT_DEPLOYMENT_LOG,MC.LOG_WARN, TAG,msg);
 		}
 		
 		return false;

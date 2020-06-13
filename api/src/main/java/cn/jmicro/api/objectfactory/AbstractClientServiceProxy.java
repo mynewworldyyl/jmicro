@@ -196,7 +196,7 @@ public abstract class AbstractClientServiceProxy implements InvocationHandler,IS
 		
 		AsyncConfig async = JMicroContext.get().getParam(Constants.ASYNC_CONFIG, null);
 		
-		ActInfo ai = JMicroContext.get().getParam(JMicroContext.LOGIN_ACT, null);
+		ActInfo ai = JMicroContext.get().getAccount();
 		
 		String lk = JMicroContext.get().getParam(JMicroContext.LOGIN_KEY, null);
 		
@@ -224,7 +224,7 @@ public abstract class AbstractClientServiceProxy implements InvocationHandler,IS
 		}
 		
 		if(ai != null) {
-			JMicroContext.get().setParam(JMicroContext.LOGIN_ACT, ai);
+			JMicroContext.get().setAccount(ai);
 		}
 		
 	}

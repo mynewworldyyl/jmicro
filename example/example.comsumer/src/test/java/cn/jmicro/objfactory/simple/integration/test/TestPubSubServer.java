@@ -8,8 +8,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.Test;
 
 import cn.jmicro.api.JMicro;
-import cn.jmicro.api.monitor.v1.AbstractMonitorDataSubscriber;
-import cn.jmicro.api.monitor.v1.MonitorConstant;
+import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.pubsub.IInternalSubRpc;
 import cn.jmicro.api.pubsub.PSData;
 import cn.jmicro.api.pubsub.PubSubManager;
@@ -103,16 +102,16 @@ public class TestPubSubServer extends JMicroBaseTestCase{
 					//System.out.println("pubsub msgID:"+msgid);
 					
 					Map<Short,Double> data = new HashMap<>();
-					for(Short type : AbstractMonitorDataSubscriber.YTPES) {
+					for(Short type : MC.MS_TYPES_ARR) {
 						//Double v = new Double(counter.getAvgWithEx(type,TimeUtils.getTimeUnit(sm.getBaseTimeUnit())));
 						data.put(type, 222.23D);
 						//degradeManager.updateExceptionCnt(typeKey(key,type),v.toString());
 					}
 					
-					data.put(MonitorConstant.STATIS_TOTAL_RESP, 222D);
-					data.put(MonitorConstant.REQ_START,  222D);
-					data.put(MonitorConstant.STATIS_SUCCESS_PERCENT,  222D);
-					data.put(MonitorConstant.STATIS_FAIL_PERCENT,  232D);
+					data.put(MC.STATIS_TOTAL_RESP, 222D);
+					data.put(MC.MT_REQ_START,  222D);
+					data.put(MC.STATIS_SUCCESS_PERCENT,  222D);
+					data.put(MC.STATIS_FAIL_PERCENT,  232D);
 					
 					PSData psData = new PSData();
 					psData.setData(data);

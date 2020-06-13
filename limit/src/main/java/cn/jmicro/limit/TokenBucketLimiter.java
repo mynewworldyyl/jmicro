@@ -23,11 +23,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import cn.jmicro.api.annotation.Component;
-import cn.jmicro.api.annotation.Inject;
 import cn.jmicro.api.limitspeed.ILimiter;
-import cn.jmicro.api.monitor.v1.IMonitorDataSubmiter;
-import cn.jmicro.api.monitor.v1.MonitorConstant;
-import cn.jmicro.api.monitor.v1.SF;
+import cn.jmicro.api.monitor.SF;
 import cn.jmicro.api.net.IRequest;
 
 /**
@@ -43,9 +40,6 @@ public class TokenBucketLimiter extends AbstractLimiter implements ILimiter{
 	private static final String TAG = TokenBucketLimiter.class.getName();
 	
 	private Map<String,ITokenBucket> buckets = new HashMap<>();
-	
-	@Inject(required=false)
-	private IMonitorDataSubmiter monitor;
 	
 	@Override
 	public boolean enter(IRequest req) {

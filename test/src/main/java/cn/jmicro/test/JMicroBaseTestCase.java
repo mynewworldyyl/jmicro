@@ -6,8 +6,7 @@ import org.junit.runners.BlockJUnit4ClassRunner;
 
 import cn.jmicro.api.JMicro;
 import cn.jmicro.api.JMicroContext;
-import cn.jmicro.api.monitor.v1.IMonitorDataSubmiter;
-import cn.jmicro.api.monitor.v2.MonitorClient;
+import cn.jmicro.api.monitor.MonitorClient;
 import cn.jmicro.api.objectfactory.IObjectFactory;
 import cn.jmicro.api.registry.IRegistry;
 import cn.jmicro.api.registry.ServiceItem;
@@ -85,7 +84,6 @@ public class JMicroBaseTestCase {
 	protected void setSayHelloContext() {
 		
 		JMicroContext.get().setBoolean(JMicroContext.IS_MONITORENABLE, false);
-		IMonitorDataSubmiter monitor = of.get(IMonitorDataSubmiter.class);
 		//JMicroContext.get().setObject(JMicroContext.MONITOR, monitor);
 		
 		ServiceMethod sm = sayHelloServiceMethod();

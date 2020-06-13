@@ -35,7 +35,6 @@ import cn.jmicro.api.annotation.Cfg;
 import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Inject;
 import cn.jmicro.api.codec.typecoder.TypeCoder;
-import cn.jmicro.api.monitor.v1.SubmitItem;
 import cn.jmicro.common.CommonException;
 import cn.jmicro.common.Constants;
 import cn.jmicro.common.Utils;
@@ -181,17 +180,14 @@ public class OnePrefixTypeEncoder implements IEncoder<ByteBuffer>{
 		if(!Modifier.isPublic(cls.getModifiers())) {
 			throw new CommonException("should be public class [" +cls.getName()+"]");
 		}
-		if(obj != null && obj.getClass() == SubmitItem.class) {
-			//logger.debug("cls {}", cls.getName());
-		}
 		
 		if(!TypeUtils.isFinal(cls)) {
 			//不能从泛型参数拿到类型信息，需要把类型参数写到buffer中
 			if(obj == null) {
-				this.putType(buffer, Void.class);
+				putType(buffer, Void.class);
 			} else {
 				cls = obj.getClass();
-				this.putType(buffer, cls);
+				putType(buffer, cls);
 			}
 		}
 		

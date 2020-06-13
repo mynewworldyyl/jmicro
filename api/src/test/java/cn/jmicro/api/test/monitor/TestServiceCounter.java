@@ -8,8 +8,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import cn.jmicro.api.JMicro;
-import cn.jmicro.api.monitor.v1.MonitorConstant;
-import cn.jmicro.api.monitor.v1.ServiceCounter;
+import cn.jmicro.api.monitor.MC;
+import cn.jmicro.api.monitor.ServiceCounter;
 import cn.jmicro.api.net.ISession;
 import cn.jmicro.api.timer.TimerTicker;
 
@@ -44,8 +44,8 @@ public class TestServiceCounter {
 		ServiceCounter sc =  new ServiceCounter("testServiceCounterSingleVal", 
 				ISession.STATIS_TYPES,2,1,TimeUnit.SECONDS);
 		while(true) {
-			sc.increment(MonitorConstant.REQ_SUCCESS);
-			Long succp = sc.get(MonitorConstant.REQ_SUCCESS);
+			sc.increment(MC.MT_REQ_SUCCESS);
+			Long succp = sc.get(MC.MT_REQ_SUCCESS);
 			//Double qps = ServiceCounter.getData(sc,MonitorConstant.STATIS_QPS);
 			logger.debug("treq:{}",succp);
 		}
@@ -60,7 +60,7 @@ public class TestServiceCounter {
 		
 		Runnable r = ()->{
 			while(true) {
-				sc.increment(MonitorConstant.REQ_START);
+				sc.increment(MC.MT_REQ_START);
 				try {
 					Thread.sleep(ran.nextInt(50));
 				} catch (InterruptedException e) {
@@ -69,15 +69,15 @@ public class TestServiceCounter {
 				int v = ran.nextInt(10);
 				v = v % 10;
 				if(v < 9) {
-					sc.increment(MonitorConstant.REQ_SUCCESS);
+					sc.increment(MC.MT_REQ_SUCCESS);
 				}/*else if(v == 8) {
 					
 				} */else if(v == 9) {
 					v = ran.nextInt(1);
 					if(v == 0) {
-						sc.increment(MonitorConstant.REQ_TIMEOUT);
+						sc.increment(MC.MT_REQ_TIMEOUT);
 					}else if(v == 1) {
-						sc.increment(MonitorConstant.CLIENT_SERVICE_ERROR);
+						sc.increment(MC.MT_CLIENT_SERVICE_ERROR);
 					}
 				}
 				
@@ -127,11 +127,11 @@ public class TestServiceCounter {
 	public void testSingleThreadSingleCounter() {
 		final Random ran = new Random(1000);
 		ServiceCounter sc =  new ServiceCounter("testSingleThreadSingleCounter", 
-				new Short[] {MonitorConstant.REQ_SUCCESS},30000,100,TimeUnit.MILLISECONDS);
+				new Short[] {MC.MT_REQ_SUCCESS},30000,100,TimeUnit.MILLISECONDS);
 		
 		Runnable r = ()->{
 			while(true) {
-				sc.increment(MonitorConstant.REQ_SUCCESS);
+				sc.increment(MC.MT_REQ_SUCCESS);
 				try {
 					Thread.sleep(ran.nextInt(50));
 				} catch (InterruptedException e) {

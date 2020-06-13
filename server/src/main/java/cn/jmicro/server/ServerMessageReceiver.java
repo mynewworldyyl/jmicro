@@ -32,9 +32,9 @@ import cn.jmicro.api.config.Config;
 import cn.jmicro.api.executor.ExecutorConfig;
 import cn.jmicro.api.executor.ExecutorFactory;
 import cn.jmicro.api.idgenerator.ComponentIdServer;
-import cn.jmicro.api.monitor.v1.MonitorConstant;
-import cn.jmicro.api.monitor.v1.SF;
-import cn.jmicro.api.monitor.v2.MonitorClient;
+import cn.jmicro.api.monitor.MC;
+import cn.jmicro.api.monitor.MonitorClient;
+import cn.jmicro.api.monitor.SF;
 import cn.jmicro.api.net.IMessageHandler;
 import cn.jmicro.api.net.IMessageReceiver;
 import cn.jmicro.api.net.ISession;
@@ -166,18 +166,18 @@ public class ServerMessageReceiver implements IMessageReceiver{
 			}
 				
 			if(msg.isMonitorable()) {
-				SF.netIoRead(this.getClass().getName(),MonitorConstant.SERVER_IOSESSION_READ, msg.getLen());
+				SF.netIoRead(this.getClass().getName(),MC.MT_SERVER_IOSESSION_READ, msg.getLen());
 			}
 			
-			if(SF.isLoggable(MonitorConstant.LOG_DEBUG,msg.getLogLevel())) {
-				SF.doMessageLog(MonitorConstant.LOG_DEBUG, TAG, msg,null,"doReceive");
+			if(SF.isLoggable(MC.LOG_DEBUG,msg.getLogLevel())) {
+				SF.doMessageLog(MC.MT_PLATFORM_LOG,MC.LOG_DEBUG, TAG, msg,null,"doReceive");
 			}
 			
 			IMessageHandler h = handlers.get(msg.getType());
 			if(h == null) {
 				String errMsg = "Message type ["+Integer.toHexString(msg.getType())+"] handler not found!";
-				if(SF.isLoggable(MonitorConstant.LOG_ERROR,msg.getLogLevel())) {
-					SF.doMessageLog(MonitorConstant.LOG_ERROR, TAG, msg,null,errMsg);
+				if(SF.isLoggable(MC.LOG_ERROR,msg.getLogLevel())) {
+					SF.doMessageLog(MC.MT_PLATFORM_LOG,MC.LOG_ERROR, TAG, msg,null,errMsg);
 				}
 				throw new CommonException(errMsg);
 			} else {
@@ -189,8 +189,8 @@ public class ServerMessageReceiver implements IMessageReceiver{
 			logger.error("reqHandler error msg:{} ",msg);
 			logger.error("doReceive",e);
 			
-			if(SF.isLoggable(MonitorConstant.LOG_ERROR,msg.getLogLevel())) {
-				SF.doMessageLog(MonitorConstant.LOG_ERROR, TAG, msg,null,"error");
+			if(SF.isLoggable(MC.LOG_ERROR,msg.getLogLevel())) {
+				SF.doMessageLog(MC.MT_PLATFORM_LOG,MC.LOG_ERROR, TAG, msg,null,"error");
 			}
 			
 			RpcResponse resp = new RpcResponse(msg.getReqId(),new ServerError(0,e.getMessage()));

@@ -1,0 +1,20 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+         <groupId>cn.jmicro</groupId>
+		 <artifactId>parent</artifactId>
+		 <version>0.0.1-SNAPSHOT</version>
+    </parent>
+    <artifactId>monitor</artifactId>
+    <packaging>pom</packaging>
+    <name>${project.artifactId}</name>
+    <description>jmicro monitor main</description>
+    <properties>
+        <skip_maven_deploy>false</skip_maven_deploy>
+    </properties>
+    <modules>
+		<module>monitor.api</module>	
+        <module>monitor.common</module>
+		<module>monitor.persist2db</module>	
+    </modules>
+</project>

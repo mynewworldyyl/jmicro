@@ -34,8 +34,8 @@ import cn.jmicro.api.codec.PrefixTypeEncoderDecoder;
 import cn.jmicro.api.gateway.ApiRequest;
 import cn.jmicro.api.gateway.ApiResponse;
 import cn.jmicro.api.idgenerator.IdRequest;
-import cn.jmicro.api.monitor.v1.Linker;
-import cn.jmicro.api.monitor.v1.MonitorConstant;
+import cn.jmicro.api.monitor.Linker;
+import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.net.IMessageHandler;
 import cn.jmicro.api.net.IRequest;
 import cn.jmicro.api.net.ISession;
@@ -152,7 +152,7 @@ public class ApiGatewayClient {
 		msg.setDumpUpStream(false);
 		msg.setNeedResponse(true);
 		msg.setLoggable(false);
-		msg.setLogLevel(MonitorConstant.LOG_NO);
+		msg.setLogLevel(MC.LOG_NO);
 		msg.setMonitorable(false);
 		msg.setDebugMode(false);
 		
@@ -283,7 +283,7 @@ public class ApiGatewayClient {
 		msg.setDumpUpStream(false);
 		msg.setNeedResponse(true);
 		msg.setLoggable(false);
-		msg.setLogLevel(MonitorConstant.LOG_NO);
+		msg.setLogLevel(MC.LOG_NO);
 		msg.setMonitorable(false);
 		msg.setDebugMode(false);
 		
@@ -314,7 +314,7 @@ public class ApiGatewayClient {
 		msg.setDumpUpStream(false);
 		msg.setNeedResponse(true);
 		msg.setLoggable(false);
-		msg.setLogLevel(MonitorConstant.LOG_NO);
+		msg.setLogLevel(MC.LOG_NO);
 		msg.setMonitorable(false);
 		msg.setDebugMode(false);
 		

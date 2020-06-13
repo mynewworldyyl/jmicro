@@ -27,7 +27,7 @@ import org.slf4j.LoggerFactory;
 
 import cn.jmicro.api.annotation.SO;
 import cn.jmicro.api.config.Config;
-import cn.jmicro.api.monitor.v1.MonitorConstant;
+import cn.jmicro.api.monitor.MC;
 import cn.jmicro.common.CommonException;
 import cn.jmicro.common.Constants;
 import cn.jmicro.common.Utils;
@@ -78,7 +78,7 @@ public final class ServiceItem implements Comparable<ServiceItem>{
 		
 	private int monitorEnable = 0;
 	
-	private int logLevel = MonitorConstant.LOG_ERROR;
+	private int logLevel = MC.LOG_ERROR;
 	
 	//基本时间单位
 	private String baseTimeUnit = Constants.TIME_MILLISECONDS;

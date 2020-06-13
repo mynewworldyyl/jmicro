@@ -45,10 +45,10 @@ import cn.jmicro.api.classloader.RpcClassLoader;
 import cn.jmicro.api.config.Config;
 import cn.jmicro.api.executor.ExecutorConfig;
 import cn.jmicro.api.executor.ExecutorFactory;
-import cn.jmicro.api.monitor.v1.MonitorConstant;
-import cn.jmicro.api.monitor.v1.ServiceCounter;
-import cn.jmicro.api.monitor.v2.IMonitorAdapter;
-import cn.jmicro.api.monitor.v2.MonitorClientStatusAdapter;
+import cn.jmicro.api.monitor.IMonitorAdapter;
+import cn.jmicro.api.monitor.MC;
+import cn.jmicro.api.monitor.MonitorClientStatusAdapter;
+import cn.jmicro.api.monitor.ServiceCounter;
 import cn.jmicro.api.objectfactory.IObjectFactory;
 import cn.jmicro.api.pubsub.IInternalSubRpc;
 import cn.jmicro.api.pubsub.PSData;
@@ -75,12 +75,12 @@ public class PubSubServer implements IInternalSubRpc{
 	private final static Logger logger = LoggerFactory.getLogger(PubSubServer.class);
 	
 	private final Short[] TYPES  = {
-			MonitorConstant.Ms_ReceiveItemCnt,MonitorConstant.Ms_SubmitCnt,MonitorConstant.Ms_CheckLoopCnt,
-			MonitorConstant.Ms_CheckerSubmitItemCnt,MonitorConstant.Ms_SubmitTaskCnt,MonitorConstant.Ms_TaskSuccessItemCnt,
-			MonitorConstant.Ms_Pub2Cache,MonitorConstant.Ms_DoResendWithCbNullCnt,MonitorConstant.Ms_DoResendCnt,
-			MonitorConstant.Ms_TopicInvalid,MonitorConstant.Ms_ServerDisgard,MonitorConstant.Ms_ServerBusy,
-			MonitorConstant.Ms_Fail2BorrowBasket,MonitorConstant.Ms_FailReturnWriteBasket,
-			MonitorConstant.Ms_TaskFailItemCnt,
+			MC.Ms_ReceiveItemCnt,MC.Ms_SubmitCnt,MC.Ms_CheckLoopCnt,
+			MC.Ms_CheckerSubmitItemCnt,MC.Ms_SubmitTaskCnt,MC.Ms_TaskSuccessItemCnt,
+			MC.Ms_Pub2Cache,MC.Ms_DoResendWithCbNullCnt,MC.Ms_DoResendCnt,
+			MC.Ms_TopicInvalid,MC.Ms_ServerDisgard,MC.Ms_ServerBusy,
+			MC.Ms_Fail2BorrowBasket,MC.Ms_FailReturnWriteBasket,
+			MC.Ms_TaskFailItemCnt,
 	};
 	
 	private String[] typeLabels = null; 
@@ -198,7 +198,7 @@ public class PubSubServer implements IInternalSubRpc{
 	public void ready() {
 		typeLabels = new String[TYPES.length];
 		for(int i = 0; i < TYPES.length; i++) {
-			typeLabels[i] = MonitorConstant.MONITOR_VAL_2_KEY.get(TYPES[i]);
+			typeLabels[i] = MC.MONITOR_VAL_2_KEY.get(TYPES[i]);
 		}
 		
 		String group = "PubsubServer";
@@ -250,12 +250,12 @@ public class PubSubServer implements IInternalSubRpc{
 		ServiceCounter sc = this.statusMonitorAdapter.getServiceCounter();
 		
 		if(items != null && me) {
-			sc.add(MonitorConstant.Ms_ReceiveItemCnt,items.length);
+			sc.add(MC.Ms_ReceiveItemCnt,items.length);
 		}
 		
 		if(!this.subManager.isValidTopic(topic)) {
 			if(me) {
-				sc.add(MonitorConstant.Ms_TopicInvalid, items.length);
+				sc.add(MC.Ms_TopicInvalid, items.length);
 			}
 			return PubSubManager.PUB_TOPIC_NOT_VALID;
 		}
@@ -263,7 +263,7 @@ public class PubSubServer implements IInternalSubRpc{
 		if(items == null || StringUtils.isEmpty(topic) || items.length == 0) {
 			//无效消息
 			if(me) {
-				sc.add(MonitorConstant.Ms_ServerDisgard, 1);
+				sc.add(MC.Ms_ServerDisgard, 1);
 			}
 			return PubSubManager.PUB_SERVER_DISCARD;
 		}
@@ -272,7 +272,7 @@ public class PubSubServer implements IInternalSubRpc{
 		if(size > this.maxMemoryItem && (items.length + cacheItemsCnt.get()) > this.maxCachePersistItem) {
 			//无效消息
 			if(me) {
-				sc.add(MonitorConstant.Ms_ServerBusy,1);
+				sc.add(MC.Ms_ServerBusy,1);
 			}
 			return PubSubManager.PUB_SERVER_BUSUY;
 		}
@@ -282,7 +282,7 @@ public class PubSubServer implements IInternalSubRpc{
 		}
 		
 		if(me) {
-			sc.add(MonitorConstant.Ms_SubmitCnt, items.length);
+			sc.add(MC.Ms_SubmitCnt, items.length);
 		}
 		
 		//IBasket<PSData> b = this.basketFactory.borrowWriteBasket(true);
@@ -304,8 +304,8 @@ public class PubSubServer implements IInternalSubRpc{
 							continue;
 						}else {
 							if(me) {
-								sc.add(MonitorConstant.Ms_FailReturnWriteBasket, 1);
-								sc.add(MonitorConstant.Ms_FailItemCount, items.length);
+								sc.add(MC.Ms_FailReturnWriteBasket, 1);
+								sc.add(MC.Ms_FailItemCount, items.length);
 							}
 							logger.error("Fail to return basket fail size: "+ (items.length - pos));
 							break;
@@ -316,14 +316,14 @@ public class PubSubServer implements IInternalSubRpc{
 						logger.error("Fail write basket size: "+ (items.length - pos));
 						if(me) {
 							//sc.add(MonitorConstant.Ms_Fail2BorrowBasket, 1);
-							sc.add(MonitorConstant.Ms_FailItemCount, items.length - pos);
+							sc.add(MC.Ms_FailItemCount, items.length - pos);
 						}
 						break;
 					}	
 				} else {
 					if(me) {
-						sc.add(MonitorConstant.Ms_FailReturnWriteBasket, 1);
-						sc.add(MonitorConstant.Ms_FailItemCount, items.length);
+						sc.add(MC.Ms_FailReturnWriteBasket, 1);
+						sc.add(MC.Ms_FailItemCount, items.length);
 					}
 					logger.error("Fail size: "+ (items.length - pos));
 					break;
@@ -334,7 +334,7 @@ public class PubSubServer implements IInternalSubRpc{
 			this.cacheStorage.push(topic,items,0,items.length);
 			cacheItemsCnt.addAndGet(items.length);
 			if(me) {
-				sc.add(MonitorConstant.Ms_Pub2Cache, items.length);
+				sc.add(MC.Ms_Pub2Cache, items.length);
 			}
 			if(openDebug) {
 				logger.info("push to cache :{},total:{}",items.length,cacheItemsCnt.get());
@@ -373,8 +373,8 @@ public class PubSubServer implements IInternalSubRpc{
 						continue;
 					}else {
 						if(me) {
-							sc.add(MonitorConstant.Ms_FailReturnWriteBasket, 1);
-							sc.add(MonitorConstant.Ms_FailItemCount, items.length - pos);
+							sc.add(MC.Ms_FailReturnWriteBasket, 1);
+							sc.add(MC.Ms_FailItemCount, items.length - pos);
 						}
 						logger.error("Fail to return basket fail size: "+ (items.length - pos));
 						break;
@@ -385,14 +385,14 @@ public class PubSubServer implements IInternalSubRpc{
 					logger.error("Fail write basket size: "+ (items.length - pos));
 					if(me) {
 						//sc.add(MonitorConstant.Ms_Fail2BorrowBasket, 1);
-						sc.add(MonitorConstant.Ms_FailItemCount, items.length - pos);
+						sc.add(MC.Ms_FailItemCount, items.length - pos);
 					}
 					break;
 				}	
 			} else {
 				if(me) {
-					sc.add(MonitorConstant.Ms_FailReturnWriteBasket, 1);
-					sc.add(MonitorConstant.Ms_FailItemCount, items.length);
+					sc.add(MC.Ms_FailReturnWriteBasket, 1);
+					sc.add(MC.Ms_FailItemCount, items.length);
 				}
 				logger.error("Fail size: "+ (items.length - pos));
 				break;
@@ -413,7 +413,7 @@ public class PubSubServer implements IInternalSubRpc{
 				ServiceCounter sc = this.statusMonitorAdapter.getServiceCounter();
 				
 				if(me) {
-					sc.add(MonitorConstant.Ms_CheckLoopCnt, 1);
+					sc.add(MC.Ms_CheckLoopCnt, 1);
 				}
 				
 				long len = basketFactory.size();
@@ -514,12 +514,12 @@ public class PubSubServer implements IInternalSubRpc{
 					this.executor.submit(new Worker(items, topic));
 					
 					if(me) {
-						sc.add(MonitorConstant.Ms_SubmitTaskCnt, 1);
+						sc.add(MC.Ms_SubmitTaskCnt, 1);
 					}
 				}
 				
 				if(me) {
-					sc.add(MonitorConstant.Ms_CheckerSubmitItemCnt, sendSize);
+					sc.add(MC.Ms_CheckerSubmitItemCnt, sendSize);
 				}
 				
 
@@ -558,7 +558,7 @@ public class PubSubServer implements IInternalSubRpc{
 					SendItem si = new SendItem(SendItem.TYPY_RESEND, null, items, 0);
 					resendManager.queueItem(si);
 					if(me) {
-						sc.add(MonitorConstant.Ms_DoResendWithCbNullCnt, items.length);
+						sc.add(MC.Ms_DoResendWithCbNullCnt, items.length);
 					}
 					logger.error("Push to resend component topic:"+topic);
 				} else {
@@ -567,7 +567,7 @@ public class PubSubServer implements IInternalSubRpc{
 						try {
 							psds = cb.onMessage(items);
 							if(me) {
-								sc.add(MonitorConstant.Ms_TaskSuccessItemCnt, items.length);
+								sc.add(MC.Ms_TaskSuccessItemCnt, items.length);
 							}
 						} catch (Throwable e) {
 							// 进入重发队列
@@ -575,12 +575,12 @@ public class PubSubServer implements IInternalSubRpc{
 								SendItem si = new SendItem(SendItem.TYPY_RESEND, cb, psds, 0);
 								resendManager.queueItem(si);
 								if(me) {
-									sc.add(MonitorConstant.Ms_DoResendCnt, psds.length);
+									sc.add(MC.Ms_DoResendCnt, psds.length);
 								}
 								logger.error("Push to resend component:"+cb.getSm().getKey().toKey(true, true, true));
 							 }else {
 								if(me) {
-									sc.add(MonitorConstant.Ms_TaskFailItemCnt, psds.length);
+									sc.add(MC.Ms_TaskFailItemCnt, psds.length);
 								}
 							}
 							logger.error("Worker get exception", e);

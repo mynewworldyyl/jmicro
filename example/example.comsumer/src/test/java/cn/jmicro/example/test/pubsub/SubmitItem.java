@@ -17,7 +17,7 @@
 package cn.jmicro.example.test.pubsub;
 
 import cn.jmicro.api.annotation.SO;
-import cn.jmicro.api.monitor.v1.MonitorConstant;
+import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.net.IReq;
 import cn.jmicro.api.net.IResp;
 import cn.jmicro.api.net.Message;
@@ -58,7 +58,7 @@ public final class SubmitItem {
 
 	private long time = 0;
 
-	private byte level = MonitorConstant.LOG_DEBUG;
+	private byte level = MC.LOG_DEBUG;
 
 	private transient Throwable ex = null;
 

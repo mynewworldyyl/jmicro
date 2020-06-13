@@ -36,7 +36,7 @@ public class ManageServiceImpl implements IManageService {
 		 }
 		 
 		 Set<ServiceItem> sis = new TreeSet<>();
-		 ActInfo ai = JMicroContext.get().getParam(JMicroContext.LOGIN_ACT, null);
+		 ActInfo ai = JMicroContext.get().getAccount();
 		 if(ai != null) {
 			 for(ServiceItem si : items) {
 				 if(si.getClientId() >= ai.getClientId()) {

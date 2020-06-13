@@ -32,9 +32,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import cn.jmicro.api.debug.LogUtil;
-import cn.jmicro.api.monitor.v1.MonitorConstant;
-import cn.jmicro.api.monitor.v1.SF;
-import cn.jmicro.api.monitor.v1.ServiceCounter;
+import cn.jmicro.api.monitor.MC;
+import cn.jmicro.api.monitor.SF;
+import cn.jmicro.api.monitor.ServiceCounter;
 
 /**
  * 
@@ -142,7 +142,7 @@ public abstract class AbstractSession implements ISession{
 	private void doRead(ByteBuffer msg) {
 
 		if(counter != null) {
-			counter.add(MonitorConstant.CLIENT_READ_BYTES, msg.remaining());
+			counter.add(MC.MT_CLIENT_READ_BYTES, msg.remaining());
 		}
     	//合并上次剩下的数据
      	ByteBuffer lb = null;
@@ -283,7 +283,7 @@ public abstract class AbstractSession implements ISession{
 	
 	public Double getFailPercent() {
 		if(counter != null) {
-			return ServiceCounter.getData(counter, MonitorConstant.STATIS_FAIL_PERCENT);
+			return ServiceCounter.getData(counter, MC.STATIS_FAIL_PERCENT);
 		}
 		return 0D;
 	}

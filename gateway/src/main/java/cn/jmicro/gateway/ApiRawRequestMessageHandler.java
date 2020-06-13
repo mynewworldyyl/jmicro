@@ -37,8 +37,8 @@ import cn.jmicro.api.codec.JDataInput;
 import cn.jmicro.api.gateway.ApiRequest;
 import cn.jmicro.api.gateway.ApiResponse;
 import cn.jmicro.api.idgenerator.ComponentIdServer;
-import cn.jmicro.api.monitor.v1.MonitorConstant;
-import cn.jmicro.api.monitor.v1.SF;
+import cn.jmicro.api.monitor.MC;
+import cn.jmicro.api.monitor.SF;
 import cn.jmicro.api.net.IMessageHandler;
 import cn.jmicro.api.net.ISession;
 import cn.jmicro.api.net.Message;
@@ -147,7 +147,7 @@ public class ApiRawRequestMessageHandler implements IMessageHandler{
 					doLogick = false;
 				} else {
 					JMicroContext.get().setString(JMicroContext.LOGIN_KEY, lk);
-					JMicroContext.get().setObject(JMicroContext.LOGIN_ACT, ai);	
+					JMicroContext.get().setAccount(ai);	
 				}
 			}
 		}
@@ -182,23 +182,23 @@ public class ApiRawRequestMessageHandler implements IMessageHandler{
 					AbstractClientServiceProxy proxy = (AbstractClientServiceProxy)srv;
 					ServiceItem si = proxy.getItem();
 					if(si == null) {
-						SF.doRequestLog(MonitorConstant.LOG_ERROR, TAG, null," service not found");
+						SF.doRequestLog(MC.MT_PLATFORM_LOG,MC.LOG_ERROR, TAG, null," service not found");
 						throw new CommonException("Service["+req.getServiceName()+"] namespace ["+req.getNamespace()+"] not found");
 					}
 					ServiceMethod sm = si.getMethod(req.getMethod(), m.getParameterTypes());
 					if(sm == null) {
-						SF.doRequestLog(MonitorConstant.LOG_ERROR, TAG, null," service method not found");
+						SF.doRequestLog(MC.MT_PLATFORM_LOG,MC.LOG_ERROR, TAG, null," service method not found");
 						throw new CommonException("Service mehtod ["+req.getServiceName()+"] method ["+req.getMethod()+"] not found");
 					}
 					
-					if(SF.isLoggable(MonitorConstant.LOG_DEBUG, msg.getLogLevel())) {
-						SF.doRequestLog(MonitorConstant.LOG_DEBUG, TAG, null," got request");
+					if(SF.isLoggable(MC.LOG_DEBUG, msg.getLogLevel())) {
+						SF.doRequestLog(MC.MT_PLATFORM_LOG,MC.LOG_DEBUG, TAG, null," got request");
 					}
 					
 					if(!sm.isNeedResponse()) {
 						m.invoke(srv, req.getArgs());
-						if(SF.isLoggable(MonitorConstant.LOG_DEBUG, msg.getLogLevel())) {
-							SF.doRequestLog(MonitorConstant.LOG_DEBUG, TAG, null," no need response");
+						if(SF.isLoggable(MC.LOG_DEBUG, msg.getLogLevel())) {
+							SF.doRequestLog(MC.MT_PLATFORM_LOG,MC.LOG_DEBUG, TAG, null," no need response");
 						}
 						return;
 					}
@@ -211,7 +211,7 @@ public class ApiRawRequestMessageHandler implements IMessageHandler{
 					result = new ServerError(0,e.getMessage());
 					resp.setSuccess(false);
 					resp.setResult(result);
-					SF.doResponseLog(MonitorConstant.LOG_ERROR, TAG, e," service error");
+					SF.doResponseLog(MC.MT_PLATFORM_LOG,MC.LOG_ERROR, TAG, e," service error");
 				}
 			} else {
 				resp.setSuccess(false);
@@ -225,8 +225,8 @@ public class ApiRawRequestMessageHandler implements IMessageHandler{
 			msg.setPayload(resp.encode());
 		}
 		
-		if(SF.isLoggable(MonitorConstant.LOG_DEBUG, msg.getLogLevel())) {
-			SF.doResponseLog(MonitorConstant.LOG_DEBUG, TAG, null," one response");
+		if(SF.isLoggable(MC.LOG_DEBUG, msg.getLogLevel())) {
+			SF.doResponseLog(MC.MT_PLATFORM_LOG,MC.LOG_DEBUG, TAG, null," one response");
 		}
 		session.write(msg);
 		

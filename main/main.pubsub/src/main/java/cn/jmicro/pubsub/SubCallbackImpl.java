@@ -26,8 +26,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import cn.jmicro.api.JMicroContext;
-import cn.jmicro.api.monitor.v1.MonitorConstant;
-import cn.jmicro.api.monitor.v1.SF;
+import cn.jmicro.api.monitor.MC;
+import cn.jmicro.api.monitor.SF;
 import cn.jmicro.api.net.Message;
 import cn.jmicro.api.objectfactory.IObjectFactory;
 import cn.jmicro.api.pubsub.PSData;
@@ -121,7 +121,7 @@ public class SubCallbackImpl implements ISubCallback{
 		} catch (Throwable e) {
 			String msg = "callAsArra topic:"+sm.getTopic()+",mkey:"+sm.getKey().toKey(false, false, false);
 			logger.error(msg, e);
-			SF.doBussinessLog(MonitorConstant.LOG_ERROR, TAG, e, msg);
+			SF.doBussinessLog(MC.MT_PUBSUB_LOG,MC.LOG_ERROR, TAG, e, msg);
 			return items;
 		}
 	}
@@ -136,7 +136,7 @@ public class SubCallbackImpl implements ISubCallback{
 			} catch (Throwable e) {
 				String msg = "callOneByOne pd:"+pd.getId()+", topic:"+pd.getTopic()+",mkey:"+sm.getKey().toKey(false, false, false);
 				logger.error(msg, e);
-				SF.doBussinessLog(MonitorConstant.LOG_ERROR, TAG, e, msg);
+				SF.doBussinessLog(MC.MT_PUBSUB_LOG,MC.LOG_ERROR, TAG, e, msg);
 				fails.add(pd);
 			}
 		}
@@ -152,7 +152,7 @@ public class SubCallbackImpl implements ISubCallback{
 			} catch (Throwable e) {
 				String msg = "callOneByOne pd:"+pd.getId()+", topic:"+pd.getTopic()+",mkey:"+sm.getKey().toKey(false, false, false);
 				logger.error(msg, e);
-				SF.doBussinessLog(MonitorConstant.LOG_ERROR, TAG, e, msg);
+				SF.doBussinessLog(MC.MT_PUBSUB_LOG,MC.LOG_ERROR, TAG, e, msg);
 				fails.add(pd);
 			}
 		}
@@ -176,7 +176,7 @@ public class SubCallbackImpl implements ISubCallback{
 			} catch (Throwable e) {
 				String msg = "callAsyncRpc pd:"+pd.getId()+", topic:"+pd.getTopic()+",mkey:"+sm.getKey().toKey(false, false, false);
 				logger.error(msg, e);
-				SF.doBussinessLog(MonitorConstant.LOG_ERROR, TAG, e, msg);
+				SF.doBussinessLog(MC.MT_PUBSUB_LOG,MC.LOG_ERROR, TAG, e, msg);
 				fails.add(pd);
 			}
 		}
@@ -201,7 +201,7 @@ public class SubCallbackImpl implements ISubCallback{
 			} catch (Throwable e) {
 				String msg = "callAsyncRpc pd:"+pd.getId()+", topic:"+pd.getTopic()+",mkey:"+sm.getKey().toKey(false, false, false);
 				logger.error(msg, e);
-				SF.doBussinessLog(MonitorConstant.LOG_ERROR, TAG, e, msg);
+				SF.doBussinessLog(MC.MT_PUBSUB_LOG,MC.LOG_ERROR, TAG, e, msg);
 				fails.add(pd);
 			}
 		}
@@ -236,7 +236,7 @@ public class SubCallbackImpl implements ISubCallback{
 				h.srv  = of.getRemoteServie(key.getServiceName(),key.getNamespace(),key.getVersion(),null);
 				if(h.srv == null) {
 					String msg = "Fail to create async service proxy src:" + sm.getKey().toString()+",target:"+ key.toKey(false, false, false);
-					SF.doBussinessLog(MonitorConstant.LOG_ERROR,SubCallbackImpl.class,null, msg);
+					SF.doBussinessLog(MC.MT_PUBSUB_LOG,MC.LOG_ERROR,SubCallbackImpl.class,null, msg);
 					//即使返回false重发此条消息，也是同样的错误，没办法回调了，记录日志，只能通过人工处理
 					return true;
 				}
@@ -252,7 +252,7 @@ public class SubCallbackImpl implements ISubCallback{
 				
 				if(h.m == null) {
 					String msg = "Async service method not found: src:" + sm.getKey().toString()+",target:"+ key.toKey(false, false, false);
-					SF.doBussinessLog(MonitorConstant.LOG_ERROR,SubCallbackImpl.class,null, msg);
+					SF.doBussinessLog(MC.MT_PUBSUB_LOG,MC.LOG_ERROR,SubCallbackImpl.class,null, msg);
 					//即使返回false重发此条消息，也是同样的错误，没办法回调了，记录日志，只能通过人工处理
 					return true;
 				}
@@ -273,7 +273,7 @@ public class SubCallbackImpl implements ISubCallback{
 		
 		} catch (Throwable e) {
 			String msg = "Fail to callback src service:" + sm.getKey().toString()+ ",c allback: "+ key.toKey(false, false, false);
-			SF.doBussinessLog(MonitorConstant.LOG_ERROR,SubCallbackImpl.class,e, msg);
+			SF.doBussinessLog(MC.MT_PUBSUB_LOG,MC.LOG_ERROR,SubCallbackImpl.class,e, msg);
 			logger.error("",e);
 			return false;
 		}

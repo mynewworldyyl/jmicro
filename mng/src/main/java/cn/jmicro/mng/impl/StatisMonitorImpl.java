@@ -19,8 +19,8 @@ import cn.jmicro.api.config.Config;
 import cn.jmicro.api.i18n.I18NManager;
 import cn.jmicro.api.mng.IStatisMonitor;
 import cn.jmicro.api.mng.ReportData;
-import cn.jmicro.api.monitor.v1.MonitorConstant;
-import cn.jmicro.api.monitor.v2.IMonitorDataSubscriber;
+import cn.jmicro.api.monitor.IMonitorDataSubscriber;
+import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.objectfactory.AbstractClientServiceProxy;
 import cn.jmicro.api.pubsub.PSData;
 import cn.jmicro.api.pubsub.PubSubManager;
@@ -49,8 +49,8 @@ public class StatisMonitorImpl implements IStatisMonitor {
 	private static final String STATIS_MONITOR_DIR = Config.BASE_DIR + "/statisMonitorKeys";
 	
 	private static final String RES_LOCK = "statisCounterRegLock";
-	private static final String[] DATA_TYPE = new String[] {MonitorConstant.PREFIX_QPS,
-			MonitorConstant.PREFIX_TOTAL_PERCENT,MonitorConstant.PREFIX_TOTAL};
+	private static final String[] DATA_TYPE = new String[] {MC.PREFIX_QPS,
+			MC.PREFIX_TOTAL_PERCENT,MC.PREFIX_TOTAL};
 	
 	private final Map<Long,TimerTicker> timers = new ConcurrentHashMap<>();
 	
@@ -80,10 +80,10 @@ public class StatisMonitorImpl implements IStatisMonitor {
 	
 	@JMethod("ready")
 	public void ready() {
-		types = new Short[MonitorConstant.MONITOR_VAL_2_KEY.size()];
-		labels = new String[MonitorConstant.MONITOR_VAL_2_KEY.size()];
+		types = new Short[MC.MONITOR_VAL_2_KEY.size()];
+		labels = new String[MC.MONITOR_VAL_2_KEY.size()];
 		int i = 0;
-		for(Map.Entry<Short, String> e:MonitorConstant.MONITOR_VAL_2_KEY.entrySet() ) {
+		for(Map.Entry<Short, String> e:MC.MONITOR_VAL_2_KEY.entrySet() ) {
 			labels[i] = i18nManager.value("en", prefix + e.getKey());
 			types[i] = e.getKey();
 			i++;
@@ -206,7 +206,7 @@ public class StatisMonitorImpl implements IStatisMonitor {
 		Map<String,Object> result = new HashMap<>();
 		result.put("types", this.types);
 		result.put("labels", this.labels);
-		result.put("indexes", MonitorConstant.MONITOR_VAL_2_KEY);
+		result.put("indexes", MC.MONITOR_VAL_2_KEY);
 		return result;
 	}
 

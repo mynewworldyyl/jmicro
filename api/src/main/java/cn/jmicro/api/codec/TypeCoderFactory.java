@@ -30,7 +30,7 @@ import cn.jmicro.api.codec.typecoder.TypeCoder;
 import cn.jmicro.api.codec.typecoder.VoidTypeCoder;
 import cn.jmicro.api.gateway.ApiRequest;
 import cn.jmicro.api.gateway.ApiResponse;
-import cn.jmicro.api.monitor.v1.SubmitItem;
+import cn.jmicro.api.monitor.MRpcItem;
 import cn.jmicro.api.net.RpcRequest;
 import cn.jmicro.api.net.RpcResponse;
 import cn.jmicro.api.pubsub.PSData;
@@ -319,8 +319,8 @@ public class TypeCoderFactory {
 		registCoder(new ReflectTypeCoder<ApiResponse>(type--, ApiResponse.class));
 		registClass(ApiResponse.class,type);
 		
-		registCoder(new ReflectTypeCoder<SubmitItem>(type--, SubmitItem.class));
-		registClass(SubmitItem.class,type);
+		registCoder(new ReflectTypeCoder<MRpcItem>(type--, MRpcItem.class));
+		registClass(MRpcItem.class,type);
 		
 		registCoder(new ReflectTypeCoder<AsyncConfig>(type--, AsyncConfig.class));
 		registClass(AsyncConfig.class,type);

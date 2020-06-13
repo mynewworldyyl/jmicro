@@ -16,7 +16,6 @@
         <module>main.rcptool</module>
 		<module>main.pubsub</module>
 		<module>main.breaker</module>	
-		<module>main.monitor</module>
-		<module>main.init</module>	
+		<module>main.init</module>		
     </modules>
 </project>

@@ -14,7 +14,7 @@ import cn.jmicro.api.codec.IEncoder;
 import cn.jmicro.api.codec.JDataInput;
 import cn.jmicro.api.codec.JDataOutput;
 import cn.jmicro.api.config.Config;
-import cn.jmicro.api.monitor.v1.MonitorConstant;
+import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.net.Message;
 import cn.jmicro.api.net.RpcRequest;
 import cn.jmicro.api.objectfactory.IObjectFactory;
@@ -109,7 +109,7 @@ public class TestRpcRequest {
 		msg.setDumpUpStream(false);
 		msg.setNeedResponse(true);
 		msg.setLoggable(true);
-		msg.setLogLevel(MonitorConstant.LOG_DEBUG);
+		msg.setLogLevel(MC.LOG_DEBUG);
 		msg.setMonitorable(true);
 		msg.setDebugMode(true);
 		

@@ -1,7 +1,7 @@
 package cn.jmicro.mng.api;
 
-import cn.jmicro.api.monitor.v2.MonitorInfo;
-import cn.jmicro.api.monitor.v2.MonitorServerStatus;
+import cn.jmicro.api.monitor.MonitorInfo;
+import cn.jmicro.api.monitor.MonitorServerStatus;
 
 public interface IMonitorServerManager {
 

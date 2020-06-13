@@ -119,6 +119,7 @@
 		<module>ext</module>
 		<module>agent</module>
 		<module>main</module>
+		<module>monitor</module>
 		<module>build</module>
 		<module>example</module>
     </modules>
@@ -160,6 +161,11 @@
 				 <artifactId>pubsub</artifactId>
 				 <version>${jmicro.version}</version>
             </dependency>
+              <dependency>
+			 <groupId>cn.jmicro</groupId>
+			 <artifactId>monitor.api</artifactId>
+			  <version>${jmicro.version}</version>
+	    </dependency>
 			  <dependency>
                  <groupId>cn.jmicro</groupId>
 				 <artifactId>etcd</artifactId>

@@ -75,5 +75,12 @@ public class PackageResource {
 		PackageResource pr = (PackageResource)obj;
 		return this.name != null ? name.equals(pr.getName()):(pr.getName() == null);
 	}
+
+	@Override
+	public String toString() {
+		return "PackageResource [name=" + name + ", size=" + size + ", finishBlockNum=" + finishBlockNum
+				+ ", totalBlockNum=" + totalBlockNum + ", blockSize=" + blockSize + ", blockIndexFileName="
+				+ blockIndexFileName + "]";
+	}
 	
 }

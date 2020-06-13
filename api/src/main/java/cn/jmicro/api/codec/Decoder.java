@@ -30,7 +30,7 @@ import java.util.Map;
 
 import cn.jmicro.api.gateway.ApiRequest;
 import cn.jmicro.api.gateway.ApiResponse;
-import cn.jmicro.api.monitor.v1.SubmitItem;
+import cn.jmicro.api.monitor.MRpcItem;
 import cn.jmicro.api.net.Message;
 import cn.jmicro.api.net.RpcRequest;
 import cn.jmicro.api.net.RpcResponse;
@@ -125,7 +125,7 @@ public class Decoder {
 		registType(RpcResponse.class,type--);
 		registType(ApiRequest.class,type--);
 		registType(ApiResponse.class,type--);
-		registType(SubmitItem.class,type--);
+		registType(MRpcItem.class,type--);
 		registType(java.util.Date.class,type--);
 		registType(java.sql.Date.class,type--);
    }

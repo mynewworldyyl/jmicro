@@ -25,12 +25,11 @@ import org.slf4j.LoggerFactory;
 
 import cn.jmicro.api.config.Config;
 import cn.jmicro.api.idgenerator.ComponentIdServer;
-import cn.jmicro.api.monitor.v1.Linker;
-import cn.jmicro.api.monitor.v1.MonitorConstant;
-import cn.jmicro.api.monitor.v1.SF;
-import cn.jmicro.api.monitor.v2.MRpcItem;
-import cn.jmicro.api.monitor.v2.MonitorClient;
-import cn.jmicro.api.monitor.v2.OneItem;
+import cn.jmicro.api.monitor.Linker;
+import cn.jmicro.api.monitor.MC;
+import cn.jmicro.api.monitor.MRpcItem;
+import cn.jmicro.api.monitor.MonitorClient;
+import cn.jmicro.api.monitor.SF;
 import cn.jmicro.api.net.IRequest;
 import cn.jmicro.api.net.ISession;
 import cn.jmicro.api.net.Message;
@@ -239,7 +238,7 @@ public class JMicroContext  {
 		ServiceItem si = registry.getServiceByCode(Integer.parseInt(req.getImpl()));
 		if(si == null){
 			if(SF.isLoggable(req.getLogLevel())) {
-				SF.doRequestLog(MonitorConstant.LOG_ERROR,JMicroContext.class,null," service ITEM not found");
+				SF.doRequestLog(MC.MT_PLATFORM_LOG,MC.LOG_ERROR,JMicroContext.class,null," service ITEM not found");
 			}
 			//SF.doSubmit(MonitorConstant.SERVER_REQ_SERVICE_NOT_FOUND,req,null);
 			throw new CommonException("Service not found impl："+req.getImpl());
@@ -253,7 +252,7 @@ public class JMicroContext  {
 		Object obj = serviceLoader.getService(Integer.parseInt(req.getImpl()));
 		
 		if(obj == null){
-			SF.doRequestLog(MonitorConstant.LOG_ERROR,JMicroContext.class,null," service INSTANCE not found");
+			SF.doRequestLog(MC.MT_PLATFORM_LOG,MC.LOG_ERROR,JMicroContext.class,null," service INSTANCE not found");
 			//SF.doSubmit(MonitorConstant.SERVER_REQ_SERVICE_NOT_FOUND,req,null);
 			throw new CommonException("Service not found,srv: "+req.getImpl());
 		}
@@ -292,8 +291,12 @@ public class JMicroContext  {
 		 return JMicroContext.get().getParam(JMicroContext.LOGIN_ACT, null);
 	}
 	
+	public void setAccount(ActInfo act) {
+		 JMicroContext.get().setParam(JMicroContext.LOGIN_ACT, act);
+	}
+	
 	public boolean hasPermission(int reqLevel) {
-		 ActInfo ai = JMicroContext.get().getParam(JMicroContext.LOGIN_ACT, null);
+		 ActInfo ai = getAccount();
 		 if(ai != null) {
 			return  ai.getClientId() <= reqLevel;
 		 }
@@ -301,7 +304,7 @@ public class JMicroContext  {
 	}
 	
 	public boolean hasPermission(int reqLevel, int defaultLevel) {
-		 ActInfo ai = JMicroContext.get().getParam(JMicroContext.LOGIN_ACT, null);
+		 ActInfo ai =  getAccount();
 		 if(ai != null) {
 			return ai.getClientId() <= reqLevel;
 		 } else {

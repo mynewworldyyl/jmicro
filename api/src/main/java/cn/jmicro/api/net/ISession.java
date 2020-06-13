@@ -18,8 +18,8 @@ package cn.jmicro.api.net;
 
 import java.nio.ByteBuffer;
 
-import cn.jmicro.api.monitor.v1.MonitorConstant;
-import cn.jmicro.api.monitor.v1.ServiceCounter;
+import cn.jmicro.api.monitor.MC;
+import cn.jmicro.api.monitor.ServiceCounter;
 /**
  * 
  * @author Yulei Ye
@@ -33,23 +33,23 @@ public interface ISession{
 	
 	public static final Short[] STATIS_TYPES = new Short[]{
 			//服务器发生错误,返回ServerError异常
-			MonitorConstant.CLIENT_SERVICE_ERROR,
+			MC.MT_CLIENT_SERVICE_ERROR,
 			//业务错误,success=false,此时接口调用正常
-			MonitorConstant.CLIENT_RESPONSE_SERVER_ERROR,
+			MC.MT_CLIENT_RESPONSE_SERVER_ERROR,
 			//请求超时
-			MonitorConstant.REQ_TIMEOUT,
+			MC.MT_REQ_TIMEOUT,
 			//请求开始
-			MonitorConstant.REQ_START,
+			MC.MT_REQ_START,
 			//异步请求成功确认包
 			//MonitorConstant.CLIENT_REQ_ASYNC1_SUCCESS,
 			//同步请求成功
-			MonitorConstant.REQ_SUCCESS,
+			MC.MT_REQ_SUCCESS,
 			//超时次数
-			MonitorConstant.REQ_TIMEOUT_FAIL,
+			MC.MT_REQ_TIMEOUT_FAIL,
 			
-			MonitorConstant.CLIENT_HANDLER_NOT_FOUND,
-			MonitorConstant.CLIENT_WRITE_BYTES,
-			MonitorConstant.CLIENT_READ_BYTES
+			MC.MT_CLIENT_HANDLER_NOT_FOUND,
+			MC.MT_CLIENT_WRITE_BYTES,
+			MC.MT_CLIENT_READ_BYTES
 		};
 	
 	void close(boolean flag);

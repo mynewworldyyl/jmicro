@@ -1,45 +1,45 @@
 <template>
   <div class="JMonitorEditor">
-      <p stype="word-break: break-all;padding: 0px 10px;font-size: medium;">{{node.id}}</p>
-      <div v-for="(s,idx ) in cache.serverList" :key="s.srvKey">
-          <p class="header">
+    <p stype="word-break: break-all;padding: 0px 10px;font-size: medium;">{{group.id}}</p>
+    <div v-for="(s,idx ) in cache.serverList" :key="s.srvKey">
+        <p class="header">
                <span v-if="idx!=0">
                   <a @click="btnClick(s)">{{ s.status ?  'Stop' : 'Start' }}</a>
               </span>
-              <span v-if="idx != 0 && s.info">{{s.info.instanceName}}</span>
-              <br/>
-              <span>{{s.srvKey}}</span>
-          </p>
-          <div class="content">
-             <!-- <div v-if="s.data">
-                  subsriberSize: <span class="valueCls">{{s.data.subsriberSize}}</span>
-                  sendCacheSize: <span class="valueCls">{{s.data.sendCacheSize}}</span>
-              </div>-->
-              <table >
-                  <thead>
-                    <tr v-if="s.info">
-                        <td></td>
-                        <td style="padding:0px 5px;" v-for="(t,idx) in s.info.types" :key="'type_'+idx">
+            <span v-if="idx != 0 && s.info">{{s.info.instanceName}}</span>
+            <br/>
+            <span>{{s.srvKey}}</span>
+        </p>
+        <div class="content">
+            <!-- <div v-if="s.data">
+                 subsriberSize: <span class="valueCls">{{s.data.subsriberSize}}</span>
+                 sendCacheSize: <span class="valueCls">{{s.data.sendCacheSize}}</span>
+             </div>-->
+            <table >
+                <thead>
+                <tr v-if="s.info">
+                    <td></td>
+                    <td style="padding:0px 5px;" v-for="(t,idx) in s.info.types" :key="'type_'+idx">
                         {{t}} : {{ s.info.typeLabels[idx] }}</td>
-                    </tr>
-                  </thead>
-                  <tbody>
-                  <tr v-if="s.data">
-                      <td>QPS</td> <td v-for="(q,idx) in s.data.qps" :key="'qps_'+idx">{{q.toFixed(2)}}</td>
-                  </tr>
-                  <tr v-if="s.data">
-                      <td>CUR</td> <td v-for="(q,idx) in s.data.cur" :key="'cur_'+idx">{{q}}</td>
-                  </tr>
-                  <tr v-if="s.data">
-                      <td>TOTAL</td> <td v-for="(q,idx) in s.data.total" :key="'total_'+idx">{{q}}</td>
-                  </tr>
-                  </tbody>
-              </table>
-          </div>
-          <br/>
-      </div>
+                </tr>
+                </thead>
+                <tbody>
+                <tr v-if="s.data">
+                    <td>QPS</td> <td v-for="(q,idx) in s.data.qps" :key="'qps_'+idx">{{q.toFixed(2)}}</td>
+                </tr>
+                <tr v-if="s.data">
+                    <td>CUR</td> <td v-for="(q,idx) in s.data.cur" :key="'cur_'+idx">{{q}}</td>
+                </tr>
+                <tr v-if="s.data">
+                    <td>TOTAL</td> <td v-for="(q,idx) in s.data.total" :key="'total_'+idx">{{q}}</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+        <br/>
+    </div>
 
-  </div>
+</div>
 </template>
 
 <script>

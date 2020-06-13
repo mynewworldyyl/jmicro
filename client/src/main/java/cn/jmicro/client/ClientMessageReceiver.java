@@ -23,10 +23,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import cn.jmicro.api.annotation.Component;
-import cn.jmicro.api.annotation.Inject;
-import cn.jmicro.api.monitor.v1.IMonitorDataSubmiter;
-import cn.jmicro.api.monitor.v1.MonitorConstant;
-import cn.jmicro.api.monitor.v1.SF;
+import cn.jmicro.api.monitor.MC;
+import cn.jmicro.api.monitor.SF;
 import cn.jmicro.api.net.IMessageHandler;
 import cn.jmicro.api.net.IMessageReceiver;
 import cn.jmicro.api.net.ISession;
@@ -44,9 +42,6 @@ public class ClientMessageReceiver implements IMessageReceiver{
 	
 	private Map<Byte,IMessageHandler> handlers = new HashMap<>();
 	
-	@Inject(required=false)
-	private IMonitorDataSubmiter monitor;
-	
 	public void init(){
 		
 	}
@@ -57,7 +52,7 @@ public class ClientMessageReceiver implements IMessageReceiver{
 		msg.decode(buffer);*/
 		//CodecFactory.decode(this.codecFactory,buffer);
         if(msg.isMonitorable()) {
-      	  SF.netIoRead(this.getClass().getName(),MonitorConstant.CLIENT_IOSESSION_READ, msg.getLen());
+      	  SF.netIoRead(this.getClass().getName(),MC.MT_CLIENT_IOSESSION_READ, msg.getLen());
         }
         
 		try {
@@ -65,16 +60,16 @@ public class ClientMessageReceiver implements IMessageReceiver{
 			if(h != null){
 				h.onMessage(session,msg);
 			} else {
-				if(SF.isLoggable(MonitorConstant.LOG_ERROR,msg.getLogLevel())) {
-					SF.doMessageLog(MonitorConstant.LOG_ERROR, ClientMessageReceiver.class, msg, null, 
+				if(SF.isLoggable(MC.LOG_ERROR,msg.getLogLevel())) {
+					SF.doMessageLog(MC.MT_PLATFORM_LOG,MC.LOG_ERROR, ClientMessageReceiver.class, msg, null, 
 							"Handler not found:" + Integer.toHexString(msg.getType()));
 				}
 				logger.error("Handler not found:" + Integer.toHexString(msg.getType()));
 			}
 		} catch (Throwable e) {
 			logger.error("reqHandler error: {}",msg,e);
-			if(SF.isLoggable(MonitorConstant.LOG_ERROR,msg.getLogLevel())) {
-				SF.doMessageLog(MonitorConstant.LOG_ERROR, ClientMessageReceiver.class, msg, e, 
+			if(SF.isLoggable(MC.LOG_ERROR,msg.getLogLevel())) {
+				SF.doMessageLog(MC.MT_PLATFORM_LOG,MC.LOG_ERROR, ClientMessageReceiver.class, msg, e, 
 						"Handler not found:" + Integer.toHexString(msg.getType()));
 			}
 			msg.setType((byte)(msg.getType()+1));

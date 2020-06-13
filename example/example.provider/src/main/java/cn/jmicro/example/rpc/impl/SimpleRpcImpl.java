@@ -6,8 +6,8 @@ import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.SBreakingRule;
 import cn.jmicro.api.annotation.SMethod;
 import cn.jmicro.api.annotation.Service;
-import cn.jmicro.api.monitor.v1.MonitorConstant;
-import cn.jmicro.api.monitor.v1.SF;
+import cn.jmicro.api.monitor.MC;
+import cn.jmicro.api.monitor.SF;
 import cn.jmicro.api.test.Person;
 import cn.jmicro.common.Constants;
 import cn.jmicro.example.api.rpc.ISimpleRpc;
@@ -25,7 +25,7 @@ public class SimpleRpcImpl implements ISimpleRpc {
 			//breakingRule="1S 50% 500MS",
 			//1秒钟内异常超50%，熔断服务，熔断后每80毫秒做一次测试
 			breakingRule = @SBreakingRule(enable=true,percent=50,checkInterval=5000),
-			logLevel=MonitorConstant.LOG_DEBUG,	
+			logLevel=MC.LOG_DEBUG,	
 			testingArgs="[\"test args\"]",//测试参数
 			monitorEnable=1,
 			timeWindow=5*60000,//统计时间窗口5分钟
@@ -38,8 +38,8 @@ public class SimpleRpcImpl implements ISimpleRpc {
 			baseTimeUnit=Constants.TIME_MILLISECONDS
 	)
 	public String hello(String name) {
-		if(SF.isLoggable(MonitorConstant.LOG_DEBUG)) {
-			SF.doBussinessLog(MonitorConstant.LOG_DEBUG,SimpleRpcImpl.class,null, name);
+		if(SF.isLoggable(MC.LOG_DEBUG)) {
+			SF.doBussinessLog(MC.MT_PLATFORM_LOG,MC.LOG_DEBUG,SimpleRpcImpl.class,null, name);
 		}
 		/*int rv = r.nextInt();
 		if(rv < 50) {
@@ -54,7 +54,7 @@ public class SimpleRpcImpl implements ISimpleRpc {
 			//breakingRule="1S 50% 500MS",
 			//1秒钟内异常超50%，熔断服务，熔断后每80毫秒做一次测试
 			breakingRule = @SBreakingRule(enable=true,percent=50,checkInterval=5000),
-			logLevel=MonitorConstant.LOG_DEBUG,	
+			logLevel=MC.LOG_DEBUG,	
 			testingArgs="[\"test args\"]",//测试参数
 			monitorEnable=1,
 			timeWindow=5*60000,//统计时间窗口5分钟
@@ -67,8 +67,8 @@ public class SimpleRpcImpl implements ISimpleRpc {
 			baseTimeUnit=Constants.TIME_MILLISECONDS
 	)
 	public String hi(Person name) {
-		if(SF.isLoggable(MonitorConstant.LOG_DEBUG)) {
-			SF.doBussinessLog(MonitorConstant.LOG_DEBUG,SimpleRpcImpl.class,null, name.getUsername());
+		if(SF.isLoggable(MC.LOG_DEBUG)) {
+			SF.doBussinessLog(MC.MT_PLATFORM_LOG,MC.LOG_DEBUG,SimpleRpcImpl.class,null, name.getUsername());
 		}
 		return "Server say hello to: "+name;
 	}

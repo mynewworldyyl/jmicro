@@ -22,7 +22,7 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
 
-import cn.jmicro.api.monitor.v1.MonitorConstant;
+import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.net.Message;
 import cn.jmicro.common.Constants;
 @Target({TYPE})
@@ -77,7 +77,7 @@ public @interface Service {
 	 * 服务级的日志启用标识
 	 * @return
 	 */
-	public int logLevel() default MonitorConstant.LOG_ERROR;;
+	public int logLevel() default MC.LOG_ERROR;;
 	
 	/**
 	 * 如果超时了，要间隔多久才重试

@@ -28,9 +28,9 @@ import cn.jmicro.api.JMicroContext;
 import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.JMethod;
 import cn.jmicro.api.limitspeed.ILimiter;
-import cn.jmicro.api.monitor.v1.MonitorConstant;
-import cn.jmicro.api.monitor.v1.SF;
-import cn.jmicro.api.monitor.v1.ServiceCounter;
+import cn.jmicro.api.monitor.MC;
+import cn.jmicro.api.monitor.SF;
+import cn.jmicro.api.monitor.ServiceCounter;
 import cn.jmicro.api.net.IRequest;
 import cn.jmicro.api.registry.ServiceMethod;
 import cn.jmicro.common.Constants;
@@ -46,7 +46,7 @@ public class DefaultSpeedLimiter extends AbstractLimiter implements ILimiter{
 	static final Logger logger = LoggerFactory.getLogger(DefaultSpeedLimiter.class);
 	private static final String TAG = DefaultSpeedLimiter.class.getName();
 	
-	private static final Short[] TYPES = new Short[] {MonitorConstant.REQ_START};
+	private static final Short[] TYPES = new Short[] {MC.MT_REQ_START};
 	
 	private Map<String,AtomicInteger> als = new ConcurrentHashMap<>();
 	
@@ -88,7 +88,7 @@ public class DefaultSpeedLimiter extends AbstractLimiter implements ILimiter{
 			al = this.als.get(key);
 		}
 		
-		double qps = sc.getQps(TimeUnit.SECONDS,MonitorConstant.REQ_START);
+		double qps = sc.getQps(TimeUnit.SECONDS,MC.MT_REQ_START);
 		//logger.info("qps:{},key:{}",qps,sm.getKey().getMethod());
 		
 		if(qps > sm.getMaxSpeed()){
@@ -116,7 +116,7 @@ public class DefaultSpeedLimiter extends AbstractLimiter implements ILimiter{
 		
 		//logger.info("apply cnt:{}",al.incrementAndGet());
 		
-		sc.increment(MonitorConstant.REQ_END);
+		sc.increment(MC.MT_REQ_END);
 		
 		return true;
 	}

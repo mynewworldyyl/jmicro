@@ -9,7 +9,7 @@ import cn.jmicro.api.annotation.Async;
 import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Inject;
 import cn.jmicro.api.annotation.Reference;
-import cn.jmicro.api.monitor.v1.IMonitorDataSubscriber;
+import cn.jmicro.api.monitor.IMonitorDataSubscriber;
 import cn.jmicro.api.registry.AsyncConfig;
 import cn.jmicro.api.test.Person;
 import cn.jmicro.common.CommonException;

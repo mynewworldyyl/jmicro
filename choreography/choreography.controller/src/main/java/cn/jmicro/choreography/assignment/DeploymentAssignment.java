@@ -21,6 +21,8 @@ import cn.jmicro.api.choreography.ChoyConstants;
 import cn.jmicro.api.choreography.ProcessInfo;
 import cn.jmicro.api.config.Config;
 import cn.jmicro.api.masterelection.IMasterChangeListener;
+import cn.jmicro.api.monitor.MC;
+import cn.jmicro.api.monitor.SF;
 import cn.jmicro.api.objectfactory.IObjectFactory;
 import cn.jmicro.api.raft.IChildrenListener;
 import cn.jmicro.api.raft.IConnectionStateChangeListener;
@@ -45,10 +47,10 @@ public class DeploymentAssignment {
 
 	private final static Logger logger = LoggerFactory.getLogger(DeploymentAssignment.class);
 	
+	private static final Class<?> TAG = DeploymentAssignment.class;
+	
 	@Cfg("/enableMasterSlaveModel")
 	private boolean isMasterSlaveModel = false;
-	
-	private boolean isMaster = true;
 	
 	@Inject
 	private AssignManager assingManager;
@@ -196,7 +198,7 @@ public class DeploymentAssignment {
 	private void doChecker() {
 		 
 		 long curTime = System.currentTimeMillis();
-		 if(curTime - lastCheckTime < 5000) {
+		 if(curTime - lastCheckTime < 3000) {
 			 return;
 		 }
 		 
@@ -208,6 +210,8 @@ public class DeploymentAssignment {
 					 || a.state == AssignState.DOWNLOAD_RES) && curTime - a.opTime > 120000) {
 				 //starting timeout
 				 logger.error("Starting timeout: " + a.toString());
+				 //SF.event(MonitorConstant.Ms_PROCESS_LOG, TAG, "Timeout: "+ a.toString());
+				 SF.eventLog(MC.MT_ASSIGN_LOG, MC.LOG_WARN, TAG.getSimpleName(), "Timeout: "+ a.toString());
 				 cancelAssign(a);
 				 continue;
 			 }
@@ -272,7 +276,7 @@ public class DeploymentAssignment {
 				 dep.setForceRestart(false);
 			 } else if(dep.isEnable()) {
 				 if(nextDeployTimeout.containsKey(dep.getId())) {
-					 if(curTime - nextDeployTimeout.get(dep.getId()) < 60000 ) {
+					 if(curTime - nextDeployTimeout.get(dep.getId()) < 10000 ) {
 						 //两次分配动作之间最少等待一分钟
 						 continue;
 					 } else {
@@ -288,7 +292,10 @@ public class DeploymentAssignment {
 	private void instanceRemoved(String insId) {
 		Assign a = this.assingManager.getAssignByInfoId(insId);
 		if(a != null) {
-			logger.info("Instance remove: " + a.toString());
+			if(logger.isInfoEnabled()) {
+				logger.info("Instance remove: " + a.toString());
+			}
+			SF.eventLog(MC.MT_PROCESS_REMOVE,MC.LOG_WARN, TAG.getSimpleName(),JsonUtils.getIns().toJson(a));
 			cancelAssign(a);
 			assingManager.remove(a);
 		}
@@ -303,11 +310,17 @@ public class DeploymentAssignment {
 		Assign a = assingManager.getAssignByInfoId(pi.getId());
 		if(a == null) {
 			//初次启动时，对已经存在的实例做实例化
-			logger.info("Instance add for origint: " + pi.toString());
+			if(logger.isInfoEnabled()) {
+				logger.info("Instance add for origint: " + pi.toString());
+			}
 			a = new Assign(pi.getDepId(),pi.getAgentId(),pi.getId());
 		} else {
-			logger.info("Instance start success: " + pi.toString());
+			if(logger.isInfoEnabled()) {
+				logger.info("Instance start success: " + pi.toString());
+			}
 		}
+		
+		SF.eventLog(MC.MT_PROCESS_ADD,MC.LOG_WARN, TAG.getSimpleName(),  JsonUtils.getIns().toJson(pi));
 		
 		a.opTime = System.currentTimeMillis();
 		a.state = AssignState.STARTED;
@@ -315,7 +328,11 @@ public class DeploymentAssignment {
 	}
 
 	private void deploymentRemoved(String d, String data) {
-		logger.info("Remove deployment ID: "+d);
+		if(logger.isInfoEnabled()) {
+			logger.info("Remove deployment ID: "+d);
+		}
+		
+		SF.eventLog(MC.MT_DEPLOYMENT_REMOVE,MC.LOG_WARN, TAG.getSimpleName(),data);
 		deployments.remove(d);
 		stopDeployment(d);
 	}
@@ -325,12 +342,17 @@ public class DeploymentAssignment {
 		if(ownerAgents == null || ownerAgents.isEmpty()) {
 			return;
 		}
+		if(logger.isInfoEnabled()) {
+			logger.info("Stop deployment: "+depId);
+		}
 		
-		logger.info("Stop deployment: "+depId);
 		for(Assign a : ownerAgents) {
 			if(a.state == AssignState.STARTING || a.state == AssignState.STARTED ||
 					a.state == AssignState.INIT || a.state == AssignState.DOWNLOAD_RES) {
-				logger.info("Cancel assign: "+a.toString());
+				if(logger.isInfoEnabled()) {
+					logger.info("Cancel assign: "+a.toString());
+				}
+				SF.eventLog(MC.MT_DEPLOYMENT_LOG,MC.LOG_WARN, TAG.getSimpleName(),a.toString());
 				cancelAssign(a);
 			}
 		}
@@ -341,11 +363,15 @@ public class DeploymentAssignment {
 			if(null == insManager.getProcessesByInsId(a.getInsId(),false)) {
 				assingManager.remove(a);
 			}
-			logger.warn("Assign is on stoping state: depId:"+a.getDepId() + ", agentId: " + a.getAgentId());
+			String msg = "Assign is on stoping state: depId: " + a.toString();
+			logger.warn(msg);
+			SF.eventLog(MC.MT_ASSIGN_REMOVE,MC.LOG_WARN, TAG.getSimpleName(),msg);
 			return;
 		}
 		
-		logger.info("Cancel dep ["+a.getDepId()+"], agentId [" + a.getAgentId()+"]");
+		String msg = "Cancel dep ["+a.getDepId()+"], agentId [" + a.getAgentId()+"]";
+		SF.eventLog(MC.MT_ASSIGN_REMOVE,MC.LOG_WARN, TAG.getSimpleName(),msg);
+		logger.info(msg);
 		
 		Set<Assign> set = assingManager.getAssignByDepIdAndAgentId(a.getDepId(), a.getAgentId());
 		String path = ChoyConstants.ROOT_AGENT+"/"+a.getAgentId()+"/"+a.getDepId();
@@ -400,10 +426,9 @@ public class DeploymentAssignment {
 		int cnt = dep.getInstanceNum() - ass.size();
 		if(cnt > 0) {
 			//增加运行实例
-			if(agentInfo == null || agentInfo.isEmpty()) {
-				return ;
+			if(agentInfo != null && !agentInfo.isEmpty()) {
+				doAddAssign(agentInfo,dep,cnt);
 			}
-			doAddAssign(agentInfo,dep,cnt);
 		}else if(cnt < 0) {
 			//减少运行实例
 			doDecAssign(agentInfo,dep,cnt);
@@ -521,7 +546,10 @@ public class DeploymentAssignment {
 			return;
 		}
 		
-		logger.warn("Force direct stop [" + dep.getId() + "], count [" + (-cnt) + "] ");
+		String msg = "Force direct stop [" + dep.getId() + "], count [" + (-cnt) + "] ";
+		logger.warn(msg);
+		
+		SF.eventLog(MC.MT_ASSIGN_REMOVE,MC.LOG_WARN, TAG.getSimpleName(),msg);
 		
 		Set<Assign> as = assingManager.getAssignByDepId(dep.getId());
 		if(as.size() > 0) {
@@ -582,7 +610,10 @@ public class DeploymentAssignment {
 				a.state = AssignState.INIT;
 				assingManager.add(a);
 				
-				logger.info("Assign: " + a.toString());
+				String msg = a.toString();
+				SF.eventLog(MC.MT_ASSIGN_ADD,MC.LOG_INFO, TAG.getSimpleName(),msg);
+				
+				logger.info("Assign: " + msg);
 				
 				nextDeployTimeout.put(dep.getId(), curTime);
 

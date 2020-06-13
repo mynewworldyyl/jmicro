@@ -25,8 +25,8 @@ import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Interceptor;
 import cn.jmicro.api.exception.RpcException;
 import cn.jmicro.api.limitspeed.ILimiter;
-import cn.jmicro.api.monitor.v1.MonitorConstant;
-import cn.jmicro.api.monitor.v1.SF;
+import cn.jmicro.api.monitor.MC;
+import cn.jmicro.api.monitor.SF;
 import cn.jmicro.api.net.AbstractInterceptor;
 import cn.jmicro.api.net.IInterceptor;
 import cn.jmicro.api.net.IRequest;
@@ -71,11 +71,11 @@ public class FirstInterceptor extends AbstractInterceptor implements IIntercepto
 			if(l != null) {
 				limiter = l;
 				logger.warn("Change limit to :{}",this.defaultLimiterName);
-				SF.doBussinessLog(MonitorConstant.LOG_DEBUG,FirstInterceptor.class,
+				SF.doBussinessLog(MC.MT_PLATFORM_LOG,MC.LOG_DEBUG,FirstInterceptor.class,
 						null,"Change limit to: "+defaultLimiterName);
 			} else {
 				logger.error("Limiter [{}] not found",defaultLimiterName);
-				SF.doBussinessLog(MonitorConstant.LOG_ERROR,FirstInterceptor.class,
+				SF.doBussinessLog(MC.MT_PLATFORM_LOG,MC.LOG_ERROR,FirstInterceptor.class,
 						null,"Limiter ["+defaultLimiterName+"] not found");
 			}
 		}
@@ -87,7 +87,7 @@ public class FirstInterceptor extends AbstractInterceptor implements IIntercepto
 			boolean r = limiter.enter(req);
 			if(!r){
 				logger.warn("Limit exceep, forbidon this request");
-				SF.doRequestLog(MonitorConstant.LOG_ERROR, FirstInterceptor.class,null, "Limit exceep, forbidon this request");
+				SF.doRequestLog(MC.MT_PLATFORM_LOG,MC.LOG_ERROR, FirstInterceptor.class,null, "Limit exceep, forbidon this request");
 				return fastFail(req);
 			}
 		}

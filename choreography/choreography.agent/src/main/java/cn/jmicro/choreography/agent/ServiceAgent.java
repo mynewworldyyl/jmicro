@@ -43,6 +43,8 @@ import cn.jmicro.api.choreography.ChoyConstants;
 import cn.jmicro.api.choreography.ProcessInfo;
 import cn.jmicro.api.config.Config;
 import cn.jmicro.api.idgenerator.ComponentIdServer;
+import cn.jmicro.api.monitor.MC;
+import cn.jmicro.api.monitor.SF;
 import cn.jmicro.api.raft.IChildrenListener;
 import cn.jmicro.api.raft.IDataListener;
 import cn.jmicro.api.raft.IDataOperator;
@@ -72,6 +74,8 @@ public class ServiceAgent {
 
 	private static final Logger logger = LoggerFactory.getLogger(ServiceAgent.class);
 	
+	private static final String TAG = ServiceAgent.class.getSimpleName();
+	
 	//@Cfg("/ServiceAgent/workDir")
 	private String workDir;
 	
@@ -96,16 +100,11 @@ public class ServiceAgent {
 	
 	private File resourceDirFile = null;
 	
-	//private Map<String,Deployment> deployments = new HashMap<>();
-	
-	//private Map<String,Long> processTimeout = new HashMap<>();
-	
 	private Map<String,ProcessInfo> startingProcess = new HashMap<>();
 	
 	private Map<String,ProcessInfo> stopingProcess = new HashMap<>();
 	
 	private Map<String,Process> sysProcess = new HashMap<>();
-	//private Map<String,ProcessInfo> dep2Process = new HashMap<>();
 	
 	private Queue<Deployment> startDeps = new ConcurrentLinkedQueue<>();
 	
@@ -252,9 +251,9 @@ public class ServiceAgent {
 		
 		TimerTicker.doInBaseTicker(5, Config.getInstanceName()+"_ServiceAgent", null, (key,att)->{
 			try {
-				if(System.currentTimeMillis() - agentInfo.getStartTime() < 1000*30) {
+				/*if(System.currentTimeMillis() - agentInfo.getStartTime() < 5000) {
 					return;
-				}
+				}*/
 				checkStatus();
 			} catch (Throwable e) {
 				logger.error("doChecker",e);
@@ -347,7 +346,7 @@ public class ServiceAgent {
 
 	private void checkStatus() {
 		long curTime = System.currentTimeMillis();
-		if( curTime - agentInfo.getAssignTime() < 10000) {
+		if( curTime - agentInfo.getAssignTime() < 5000) {
 			return;
 		}
 
@@ -368,6 +367,7 @@ public class ServiceAgent {
 			while((dep = startDeps.poll()) != null) {
 				startDep(dep);
 			}
+			
 		}
 		
 		if(!startingProcess.isEmpty()) {
@@ -375,7 +375,6 @@ public class ServiceAgent {
 			keySet.addAll(startingProcess.keySet());
 			for(String k : keySet) {
 				ProcessInfo pi = startingProcess.get(k);
-				
 				if(curTime - pi.getOpTime() > pi.getTimeOut()) {
 					//已经命令进程停止，并且超过超时时间还没成功退出
 					logger.debug("Start timeout: " + pi.toString());
@@ -500,8 +499,10 @@ public class ServiceAgent {
 				}
 				
 				if(!f) {
-					logger.error("Private agent not responsible for dep:[" + depId+"] initDepIds : "
-							+ Arrays.toString(this.initDepIds));
+					String msg = "Private agent not responsible for dep:[" + depId+"] initDepIds : "
+							+ Arrays.toString(this.initDepIds);
+					SF.eventLog(MC.MT_AGENT_LOG,MC.LOG_WARN, TAG,msg);
+					logger.error(msg);
 					return;
 				}
 			}
@@ -509,7 +510,9 @@ public class ServiceAgent {
 		
 		Deployment dep = getDeployment(depId);
 		if(dep == null) {
-			logger.error("Deployment not found for ID:" + depId);
+			String msg = "Deployment not found for ID:" + depId + ", initDepIds: "+ Arrays.toString(this.initDepIds);
+			logger.error(msg);
+			SF.eventLog(MC.MT_AGENT_LOG,MC.LOG_WARN, TAG,msg);
 			return;
 		}
 		
@@ -517,7 +520,6 @@ public class ServiceAgent {
 			deleteAssignDepNode(dep.getId());
 			return;
 		}
-		
 		
 		startDeps.offer(dep);
 		
@@ -530,7 +532,9 @@ public class ServiceAgent {
 	private void deleteAssignDepNode(String depId) {
 		String assignDepPath = path + "/" + depId;
 		if(op.exist(assignDepPath)) {
-			logger.debug("Delete deployment node: " + assignDepPath);
+			String msg = "Delete deployment node: " + assignDepPath;
+			logger.warn(msg);
+			SF.eventLog(MC.MT_AGENT_LOG,MC.LOG_WARN, TAG,msg);
 			op.deleteNode(assignDepPath);
 		}
 	}
@@ -551,18 +555,24 @@ public class ServiceAgent {
 		boolean doContinue = true;
 		if(!checkRes(dep.getJarFile()) ) {
 			//Jar文件还不存在，先下载资源
-			logger.info("Begin download: "+dep.getJarFile());
+			String msg = "Begin download: "+dep.getJarFile();
+			logger.info(msg);
+			SF.eventLog(MC.MT_AGENT_LOG,MC.LOG_WARN, TAG,msg);
 			doContinue = downloadJarFile(dep.getJarFile(),dep.getId());
 		}
 		
 		if(!checkRes(this.javaAgentJarFile) ) {
 			//Jar文件还不存在，先下载资源
-			logger.info("Begin download: "+this.javaAgentJarFile);
+			String msg = "Begin download: "+this.javaAgentJarFile;
+			logger.info(msg);
+			SF.eventLog(MC.MT_AGENT_LOG,MC.LOG_WARN, TAG,msg);
 			doContinue = downloadJarFile(this.javaAgentJarFile,dep.getId());
 		}
 		
 		if(!doContinue) {
-			logger.error("Start deployment fail pls check yourself");
+			String msg = "Start deployment fail pls check yourself dep: " + dep.toString();
+			logger.error(msg);
+			SF.eventLog(MC.MT_AGENT_LOG,MC.LOG_ERROR, TAG,msg);
 			return false;
 		}
 		
@@ -570,7 +580,9 @@ public class ServiceAgent {
 		
 		String assignData = op.getData(this.path +"/" + dep.getId()); //idServer.getStringId(ProcessInfo.class);
 		if(StringUtils.isEmpty(assignData)) {
-			throw new CommonException("Assign data is null when start dep: " + dep.getId());
+			String msg = "Assign data is null when start dep: " + dep.getId();
+			SF.eventLog(MC.MT_AGENT_LOG,MC.LOG_ERROR, TAG,msg);
+			throw new CommonException(msg);
 		}
 		
 		Assign a = JsonUtils.getIns().fromJson(assignData, Assign.class);
@@ -623,7 +635,7 @@ public class ServiceAgent {
 		File errorFile = new File(wd,"error.log");
 		pb.redirectError(errorFile);
 		
-		File outputFile = new File(wd,"nohup.log");
+		File outputFile = new File(wd,"output.log");
 		pb.redirectOutput(outputFile);
 		
 		File processInfoData = new File(wd,a.getInsId()+".json");
@@ -659,11 +671,12 @@ public class ServiceAgent {
 			sysProcess.put(pi.getId(), p);
 			
 			this.startingProcess.put(pi.getId(), pi);
-			//this.dep2Process.put(pi.getDepId(), pi);
-			
-			logger.info("Start process: " + data);
+			String msg = "Start process: " + data;
+			SF.eventLog(MC.MT_AGENT_LOG,MC.LOG_INFO, TAG,msg);
+			logger.info(msg);
 			return true;
 		} catch (IOException e) {
+			SF.doServiceLog(MC.MT_AGENT_LOG,MC.LOG_ERROR, this.getClass(),e,"");
 			logger.error("",e);
 			return false;
 		} finally {
@@ -696,6 +709,7 @@ public class ServiceAgent {
 		int resId = respo.initDownloadResource(jarFile);
 		if(resId <= 0) {
 			String msg = "Download ["+jarFile+"] fail with resource id: "+ resId;
+			SF.eventLog(MC.MT_AGENT_LOG,MC.LOG_ERROR, TAG,msg);
 			logger.error(msg);
 			return false;
 		}
@@ -709,7 +723,9 @@ public class ServiceAgent {
 			f.createNewFile();
 			
 			fos = new FileOutputStream(f);
-			logger.info("Begin download: "+jarFile);
+			String msg = "Begin download: "+jarFile;
+			logger.info(msg);
+			SF.eventLog(MC.MT_AGENT_LOG,MC.LOG_ERROR, TAG,msg);
 			while(true) {
 				byte[] data = respo.downResourceData(resId, 0);
 				
@@ -726,11 +742,14 @@ public class ServiceAgent {
 				}
 				
 				if(data == null || data.length < this.uploadBlockSize) {
-					logger.info("Finish download: "+jarFile+" with size: " + f.length());
+					 msg = "Finish download: "+jarFile+" with size: " + f.length();
+					logger.info(msg);
+					SF.eventLog(MC.MT_AGENT_LOG,MC.LOG_ERROR, TAG,msg);
 					return true;
 				}
 			}
 		} catch (IOException e) {
+			SF.doServiceLog(MC.MT_AGENT_LOG,MC.LOG_ERROR, this.getClass(),e,jarFile);
 			logger.error("Download ["+jarFile+"]",e);
 			return false;
 		}finally {
@@ -751,7 +770,7 @@ public class ServiceAgent {
 
 	private void stopProcess(ProcessInfo pi) {
 		if(pi == null) {
-			logger.warn("Receive NULL dep for stop deployment");
+			logger.warn("Receive NULL process info for stop deployment");
 			return;
 		}
 		

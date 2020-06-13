@@ -8,14 +8,10 @@ import java.util.Map;
 
 import org.junit.Test;
 
-import cn.jmicro.api.codec.OnePrefixDecoder;
-import cn.jmicro.api.codec.OnePrefixTypeEncoder;
 import cn.jmicro.api.gateway.ApiRequest;
 import cn.jmicro.api.gateway.ApiResponse;
-import cn.jmicro.api.monitor.v1.AbstractMonitorDataSubscriber;
-import cn.jmicro.api.monitor.v1.SubmitItem;
+import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.net.Message;
-import cn.jmicro.api.net.RpcRequest;
 import cn.jmicro.api.net.RpcResponse;
 import cn.jmicro.api.test.Person;
 import cn.jmicro.common.Constants;
@@ -324,45 +320,10 @@ public class TestOnePrefixCoder {
 	}
 	
 	@Test
-	public void testSubmitItem() {
-		
-		RpcRequest rr = new RpcRequest();
-		SubmitItem si = new SubmitItem();
-		si.setType((short)222);
-		//si.seto("cn.jmicro.api.monitor.SF:  service [cn.jmicro.api.test.ISayHello], namespace [testsayhello], version [0.0.1], args [class java.lang.String=Hello]");
-		
-		rr.setArgs(new Object[] {si});
-		
-		ByteBuffer bb = encoder.encode(rr);
-		bb.flip();
-		System.out.println(bb.limit());
-		System.out.println(bb.position());
-		
-		rr = decoder.decode(bb);
-		
-		System.out.println(rr.getImpl());
-	}
-	
-	@Test
-	public void testEncodeSubmitItem(){
-		SubmitItem si = new SubmitItem();
-		
-		ByteBuffer bb = encoder.encode(si);
-		bb.flip();
-		
-		System.out.println(bb.limit());
-		System.out.println(bb.array());
-		
-		SubmitItem si1 = decoder.decode(bb);
-		System.out.println(si1);
-		
-	}
-	
-	@Test
 	public void testEncodeResponse(){
 		RpcResponse si = new RpcResponse();
 		
-		si.setResult(AbstractMonitorDataSubscriber.YTPES);
+		si.setResult(MC.MTMS_TYPES_ARR);
 		
 		ByteBuffer bb = encoder.encode(si);
 		

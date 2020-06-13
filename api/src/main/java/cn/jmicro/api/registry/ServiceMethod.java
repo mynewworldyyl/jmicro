@@ -20,7 +20,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 
 import cn.jmicro.api.annotation.SO;
-import cn.jmicro.api.monitor.v1.MonitorConstant;
+import cn.jmicro.api.monitor.MC;
 import cn.jmicro.common.CommonException;
 import cn.jmicro.common.Constants;
 
@@ -41,7 +41,7 @@ public final class ServiceMethod {
 	
 	//-1 use Service config, 0 disable, 1 enable
 	private int monitorEnable = -1;
-	private int logLevel  = MonitorConstant.LOG_ERROR;
+	private int logLevel  = MC.LOG_ERROR;
 	//dump 下行流，用于下行数问题排查
 	private boolean dumpDownStream = false;
 	//dump 上行流，用于上行数问题排查

@@ -17,8 +17,8 @@ import cn.jmicro.api.codec.PrefixTypeEncoderDecoder;
 import cn.jmicro.api.mng.ConfigNode;
 import cn.jmicro.api.mng.IConfigManager;
 import cn.jmicro.api.mng.ReportData;
-import cn.jmicro.api.monitor.v1.MonitorConstant;
-import cn.jmicro.api.monitor.v2.MonitorServerStatus;
+import cn.jmicro.api.monitor.MC;
+import cn.jmicro.api.monitor.MonitorServerStatus;
 import cn.jmicro.api.net.Message;
 import cn.jmicro.api.pubsub.PSData;
 import cn.jmicro.api.registry.AsyncConfig;
@@ -134,8 +134,8 @@ public class TestPubsub extends JMicroBaseTestCase{
 		PrefixTypeEncoderDecoder ed = of.get(PrefixTypeEncoderDecoder.class);
 		
 		Map<Short,Object> data = new HashMap<>();
-		data.put(MonitorConstant.CLIENT_CONNECT_FAIL, 222D);
-		data.put(MonitorConstant.CLIENT_IOSESSION_CLOSE, new ServiceMethod());
+		data.put(MC.MT_CLIENT_CONNECT_FAIL, 222D);
+		data.put(MC.MT_CLIENT_IOSESSION_CLOSE, new ServiceMethod());
 		//data.values().iterator()
 		//cn.jmicro.api.pubsub.PSData psData = new cn.jmicro.api.pubsub.PSData();
 		
@@ -267,8 +267,8 @@ public class TestPubsub extends JMicroBaseTestCase{
 		PrefixTypeEncoderDecoder ed = of.get(PrefixTypeEncoderDecoder.class);
 		
 		Map<Short,Object> data = new HashMap<>();
-		data.put(MonitorConstant.CLIENT_CONNECT_FAIL, 222D);
-		data.put(MonitorConstant.CLIENT_IOSESSION_CLOSE, new ServiceMethod());
+		data.put(MC.MT_CLIENT_CONNECT_FAIL, 222D);
+		data.put(MC.MT_CLIENT_IOSESSION_CLOSE, new ServiceMethod());
 		//data.values().iterator()
 		//org.jmicro.api.pubsub.PSData psData = new org.jmicro.api.pubsub.PSData();
 		

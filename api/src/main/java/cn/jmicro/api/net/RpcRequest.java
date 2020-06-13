@@ -21,7 +21,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import cn.jmicro.api.annotation.SO;
-import cn.jmicro.api.monitor.v1.MonitorConstant;
+import cn.jmicro.api.monitor.MC;
 
 /**
  * 
@@ -74,7 +74,7 @@ public final class RpcRequest implements IRequest{
 		if(msg != null) {
 			return msg.getLogLevel();
 		}
-		return MonitorConstant.LOG_NO;
+		return MC.LOG_NO;
 	}
 	
 	public Long getMsgId(){

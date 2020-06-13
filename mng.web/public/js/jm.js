@@ -553,6 +553,45 @@ jm.mng = {
         v:'0.0.1',
     },
 
+    moType : {
+
+        getAllConfigs: function (){
+            return jm.mng.callRpcWithParams(this.sn,this.ns,this.v,'getAllConfigs',[]);
+        },
+
+        update: function (mcConfig){
+            return jm.mng.callRpcWithParams(this.sn,this.ns,this.v,'update',[mcConfig]);
+        },
+
+        delete: function (mcConfig){
+            return jm.mng.callRpcWithParams(this.sn,this.ns,this.v,'delete',[mcConfig]);
+        },
+
+        add: function (mcConfig){
+            return jm.mng.callRpcWithParams(this.sn,this.ns,this.v,'add',[mcConfig]);
+        },
+
+        getConfigByMonitorKey: function (key){
+            return jm.mng.callRpcWithParams(this.sn,this.ns,this.v,'getConfigByMonitorKey',[key]);
+        },
+
+        updateMonitorTypes: function (key,adds,dels){
+            return jm.mng.callRpcWithParams(this.sn,this.ns,this.v,'updateMonitorTypes',[key,adds,dels]);
+        },
+
+        removeFromMonitor: function (key,type){
+            return jm.mng.callRpcWithParams(this.sn,this.ns,this.v,'removeFromMonitor',[key,type]);
+        },
+
+        getMonitorKeyList: function (){
+            return jm.mng.callRpcWithParams(this.sn,this.ns,this.v,'getMonitorKeyList',[]);
+        },
+
+        sn:'cn.jmicro.mng.api.IMonitorTypeService',
+        ns : 'mng',
+        v:'0.0.1',
+    },
+
 }
 
 /*

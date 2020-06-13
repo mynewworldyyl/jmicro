@@ -8,7 +8,9 @@ import cn.jmicro.api.config.Config;
 import cn.jmicro.api.idgenerator.ComponentIdServer;
 import cn.jmicro.api.raft.IDataOperator;
 import cn.jmicro.choreography.api.Deployment;
+import cn.jmicro.common.CommonException;
 import cn.jmicro.common.util.JsonUtils;
+import cn.jmicro.common.util.StringUtils;
 
 @Component
 public class InitJmicroEnv {
@@ -27,15 +29,98 @@ public class InitJmicroEnv {
 	}
 	
 	public void ready() {
-		/*String en = Config.getCommandParam("InitJmicroEnv");
-		if(en == null || !Boolean.parseBoolean(en)) {
-			return;
-		}*/
-		createResposityDeployment();
-		createControllerDeployment();
-		createGatewayDeployment();
+		
+		String initDepTypeStr = this.cfg.getString("initDepTypes",null);
+		if(StringUtils.isEmpty(initDepTypeStr)) {
+			throw new CommonException("initDepTypes cannot be null");
+		}
+		
+		String[] initDepTypes = initDepTypeStr.split(",");
+		
+		for(String t : initDepTypes) {
+			Module m = Module.valueOf(t);
+			if(Module.pubsub == m) {
+				createPubsubDeployment();
+			} else if(Module.repository == m) {
+				createResposityDeployment();
+			} else if(Module.controller== m) {
+				createControllerDeployment();
+			} else if(Module.gateway == m) {
+				createGatewayDeployment();
+			} else if(Module.breaker == m) {
+				createBreakerDeployment();
+			} else if(Module.monitor == m) {
+				createMonitorDeployment();
+			}else {
+				System.out.println("Invalid module name: " + t);
+			}
+		}
 	}
 	
+	private void createMonitorDeployment() {
+		Deployment respDep = new Deployment();
+		String id = idServer.getStringId(Deployment.class);
+		respDep.setId(id);
+		respDep.setAssignStrategy("defautAssignStrategy");
+		respDep.setStrategyArgs("-DsortPriority=maxCPURate,minFreeMemory,coreNum -DagentId=0,1");
+		respDep.setEnable(true);
+		respDep.setInstanceNum(2);
+		
+		String jar = cfg.getString(Module.monitor.name()+".jar", null);
+		if(jar == null) {
+			jar = "jmicro-monitor-0.0.1-SNAPSHOT-jar-with-dependencies.jar";
+		}
+		
+		respDep.setJarFile(jar);
+		
+		respDep.setArgs("-DenableMasterSlaveModel=true");
+		
+		op.createNodeOrSetData(ChoyConstants.DEP_DIR+"/" + respDep.getId(), 
+				JsonUtils.getIns().toJson(respDep), IDataOperator.PERSISTENT);
+	}
+
+	private void createBreakerDeployment() {
+		Deployment respDep = new Deployment();
+		String id = idServer.getStringId(Deployment.class);
+		respDep.setId(id);
+		respDep.setAssignStrategy("defautAssignStrategy");
+		respDep.setStrategyArgs("-DsortPriority=maxCPURate,minFreeMemory,coreNum -DagentId=0,1");
+		respDep.setEnable(true);
+		respDep.setInstanceNum(2);
+		
+		String jar = cfg.getString(Module.breaker.name()+".jar", null);
+		if(jar == null) {
+			jar = "jmicro-breaker-0.0.1-SNAPSHOT-jar-with-dependencies.jar";
+		}
+		respDep.setJarFile(jar);
+		
+		respDep.setArgs("-DenableMasterSlaveModel=true");
+		
+		op.createNodeOrSetData(ChoyConstants.DEP_DIR+"/" + respDep.getId(), 
+				JsonUtils.getIns().toJson(respDep), IDataOperator.PERSISTENT);
+	}
+
+	private void createPubsubDeployment() {
+		Deployment respDep = new Deployment();
+		String id = idServer.getStringId(Deployment.class);
+		respDep.setId(id);
+		respDep.setAssignStrategy("defautAssignStrategy");
+		respDep.setStrategyArgs("-DsortPriority=maxCPURate,minFreeMemory,coreNum -DagentId=0,1");
+		respDep.setEnable(true);
+		respDep.setInstanceNum(2);
+		
+		String jar = cfg.getString(Module.pubsub.name()+".jar", null);
+		if(jar == null) {
+			jar = "jmicro-pubsub-0.0.1-SNAPSHOT-jar-with-dependencies.jar";
+		}
+		respDep.setJarFile(jar);
+		
+		respDep.setArgs("-DenableMasterSlaveModel=true");
+		
+		op.createNodeOrSetData(ChoyConstants.DEP_DIR+"/" + respDep.getId(), 
+				JsonUtils.getIns().toJson(respDep), IDataOperator.PERSISTENT);
+	}
+
 	private void createGatewayDeployment() {
 		Deployment respDep = new Deployment();
 		String id = idServer.getStringId(Deployment.class);
@@ -44,7 +129,12 @@ public class InitJmicroEnv {
 		respDep.setStrategyArgs("-DsortPriority=maxCPURate,minFreeMemory,coreNum -DagentId=0,1");
 		respDep.setEnable(true);
 		respDep.setInstanceNum(2);
-		respDep.setJarFile("jmicro-jmicro.example.provider-0.0.1-SNAPSHOT-jar-with-dependencies.jar");
+
+		String jar = cfg.getString(Module.gateway.name()+".jar", null);
+		if(jar == null) {
+			jar = "jmicro-example.provider-0.0.1-SNAPSHOT-jar-with-dependencies.jar";
+		}
+		respDep.setJarFile(jar);
 		
 		respDep.setArgs("-DenableMasterSlaveModel=true");
 		
@@ -61,7 +151,14 @@ public class InitJmicroEnv {
 		respDep.setEnable(true);
 		respDep.setInstanceNum(2);
 		respDep.setArgs("-Dclient=true -DenableMasterSlaveModel=true");
-		respDep.setJarFile("jmicro-choreography.controller-0.0.1-SNAPSHOT-jar-with-dependencies.jar");
+		
+		String jar = cfg.getString(Module.controller.name()+".jar", null);
+		if(jar == null) {
+			jar = "jmicro-choreography.controller-0.0.1-SNAPSHOT-jar-with-dependencies.jar";
+		}
+		respDep.setJarFile(jar);
+		
+		
 		op.createNodeOrSetData(ChoyConstants.DEP_DIR+"/" + respDep.getId(), 
 				JsonUtils.getIns().toJson(respDep), IDataOperator.PERSISTENT);
 	}
@@ -75,9 +172,21 @@ public class InitJmicroEnv {
 		respDep.setEnable(true);
 		respDep.setInstanceNum(2);
 		respDep.setArgs("-DResourceReponsitoryService.dataDir="+"D:\\opensource\\resDataDir -DenableMasterSlaveModel=true");
-		respDep.setJarFile("jmicro-choreography.repository-0.0.1-SNAPSHOT-jar-with-dependencies.jar");
+		
+		String jar = cfg.getString(Module.repository.name()+".jar", null);
+		if(jar == null) {
+			jar = "jmicro-choreography.repository-0.0.1-SNAPSHOT-jar-with-dependencies.jar";
+		}
+		respDep.setJarFile(jar);
+		
 		op.createNodeOrSetData(ChoyConstants.DEP_DIR+"/" + respDep.getId(), 
 				JsonUtils.getIns().toJson(respDep), IDataOperator.PERSISTENT);
 	}
 	
+	public enum Module {
+		pubsub,breaker,monitor,repository,controller,gateway
+	}
+	
 }
+
+

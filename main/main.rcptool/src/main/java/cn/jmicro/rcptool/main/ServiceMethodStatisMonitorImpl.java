@@ -9,7 +9,7 @@ import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Inject;
 import cn.jmicro.api.annotation.Service;
 import cn.jmicro.api.annotation.Subscribe;
-import cn.jmicro.api.monitor.v1.MonitorConstant;
+import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.pubsub.PSData;
 import cn.jmicro.api.registry.ServiceMethod;
 import cn.jmicro.common.Constants;
@@ -26,7 +26,7 @@ public class ServiceMethodStatisMonitorImpl implements IServiceMethodStatisMonit
 	private StatisDataListenerManager lisManager;
 	
 	@SuppressWarnings("unchecked")
-	@Subscribe(topic=MonitorConstant.TEST_SERVICE_METHOD_TOPIC)
+	@Subscribe(topic=MC.TEST_SERVICE_METHOD_TOPIC)
 	public void statisMonitor(PSData psData) {
 		
 		Map<Integer,Double> ps = (Map<Integer,Double>)psData.getData();

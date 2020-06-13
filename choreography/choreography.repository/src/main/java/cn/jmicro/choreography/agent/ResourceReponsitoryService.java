@@ -224,9 +224,7 @@ public class ResourceReponsitoryService implements IResourceResponsitory{
 		
 		saveIndex(rr);
 		
-		if(openDebug) {
-			LOG.debug("Add resource: " + name);
-		}
+		LOG.info("Add resource: " + rr.toString());
 		
 		return this.uploadBlockSize;
 	}
@@ -263,8 +261,11 @@ public class ResourceReponsitoryService implements IResourceResponsitory{
 			if(zkrr.getFinishBlockNum() == zkrr.getTotalBlockNum()) {
 				finishFileUpload(name,zkrr);
 				deleteIndex(name);
-				LOG.info("Add resource success: " + name);
+				LOG.info("Add resource success: " + zkrr.toString());
 			} else {
+				if(openDebug) {
+					LOG.debug("Name: " +zkrr.getName() +" blockNum: " + zkrr.getFinishBlockNum());
+				}
 				this.saveIndex(zkrr);
 			}
 			

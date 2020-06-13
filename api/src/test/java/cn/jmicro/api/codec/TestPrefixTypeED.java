@@ -11,12 +11,8 @@ import java.util.Set;
 import org.junit.Assert;
 import org.junit.Test;
 
-import cn.jmicro.api.codec.PrefixTypeEncoderDecoder;
-import cn.jmicro.api.monitor.v1.MonitorConstant;
-import cn.jmicro.api.monitor.v1.SubmitItem;
-import cn.jmicro.api.net.ISession;
+import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.net.Message;
-import cn.jmicro.api.net.RpcRequest;
 import cn.jmicro.api.net.RpcResponse;
 import cn.jmicro.api.pubsub.PSData;
 import cn.jmicro.api.registry.BreakRule;
@@ -208,26 +204,6 @@ public class TestPrefixTypeED {
 		
 	}
 	
-	
-	@Test
-	public void testRpcRequest() {
-		
-		RpcRequest pe = new RpcRequest();
-		SubmitItem si = new SubmitItem();
-		ServiceMethod sm = new ServiceMethod();
-		sm.getKey().setServiceName("sn");
-		si.setSm(sm);
-		pe.setArgs(new Object[] {si});
-		
-		ByteBuffer bb = decoder.encode(pe);
-		
-		RpcRequest ped = decoder.decode(bb);
-		
-		System.out.println(ped);
-		
-	}
-	
-	
 	@Test
 	public void testServiceMethod() {
 		
@@ -304,25 +280,14 @@ public class TestPrefixTypeED {
 	}
 	
 	@Test
-	public void testSubmitItem() {
-		
-		SubmitItem pe = new SubmitItem();
-		ByteBuffer bb = decoder.encode(pe);
-		
-		SubmitItem ped = decoder.decode(bb);
-		System.out.println(ped);
-		
-	}
-	
-	@Test
 	public void testPSData() {
 		Map<Short,Double> data = new HashMap<>();
-		data.put(MonitorConstant.STATIS_TOTAL_RESP, 22D);
-		data.put(MonitorConstant.REQ_START, 22D);
+		data.put(MC.STATIS_TOTAL_RESP, 22D);
+		data.put(MC.MT_REQ_START, 22D);
 		
 		PSData psData = new PSData();
 		psData.setData(data);
-		psData.setTopic(MonitorConstant.TEST_SERVICE_METHOD_TOPIC);
+		psData.setTopic(MC.TEST_SERVICE_METHOD_TOPIC);
 		psData.put(Constants.SERVICE_METHOD_KEY, new ServiceMethod());
 		
 		ByteBuffer bb = decoder.encode(psData);

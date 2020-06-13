@@ -32,9 +32,8 @@ import cn.jmicro.api.client.IClientSession;
 import cn.jmicro.api.client.IClientSessionManager;
 import cn.jmicro.api.codec.ICodecFactory;
 import cn.jmicro.api.idgenerator.ComponentIdServer;
-import cn.jmicro.api.monitor.v1.IMonitorDataSubmiter;
-import cn.jmicro.api.monitor.v1.MonitorConstant;
-import cn.jmicro.api.monitor.v1.SF;
+import cn.jmicro.api.monitor.MC;
+import cn.jmicro.api.monitor.SF;
 import cn.jmicro.api.net.IMessageHandler;
 import cn.jmicro.api.net.IMessageReceiver;
 import cn.jmicro.api.net.ISession;
@@ -88,9 +87,6 @@ public class NettyClientSessionManager implements IClientSessionManager{
 	
 	@Inject
 	private ComponentIdServer idGenerator;
-	
-	@Inject(required=false)
-	private IMonitorDataSubmiter monitor;
 	
 	@Inject(required=true)
 	private IMessageReceiver receiver;
@@ -271,8 +267,8 @@ public class NettyClientSessionManager implements IClientSessionManager{
 						}
 	        			 logger.error("exceptionCaught",cause);
 	        			 NettyClientSession session = (NettyClientSession)ctx.channel().attr(sessionKey).get();
-	        			 if(session !=null && monitorEnable(ctx) && monitor != null ){
-	        	             SF.netIo(MonitorConstant.CLIENT_IOSESSION_EXCEPTION
+	        			 if(session !=null && monitorEnable(ctx) ){
+	        	             SF.netIo(MC.MT_CLIENT_IOSESSION_EXCEPTION,MC.LOG_ERROR
 	        	            		 ,"exceptionCaught sessionId:"+session.getId()+"",
 	        	            		 NettyClientSessionManager.class,cause);
 	        	         }
@@ -324,7 +320,7 @@ public class NettyClientSessionManager implements IClientSessionManager{
 	       } catch (Throwable e) {
 	    	   String msg = "Cannot connect " + host + ":" + port;
 	    	   logger.error(msg,e);
-	    	   SF.netIo(MonitorConstant.CLIENT_CONNECT_FAIL
+	    	   SF.netIo(MC.MT_CLIENT_CONNECT_FAIL,MC.LOG_ERROR
 	            		 ,msg,NettyClientSessionManager.class,e);
 	           throw new CommonException(msg);
 	       }

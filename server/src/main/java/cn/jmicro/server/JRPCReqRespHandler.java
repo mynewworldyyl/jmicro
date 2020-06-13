@@ -26,8 +26,8 @@ import cn.jmicro.api.annotation.Inject;
 import cn.jmicro.api.codec.ICodecFactory;
 import cn.jmicro.api.config.Config;
 import cn.jmicro.api.idgenerator.ComponentIdServer;
-import cn.jmicro.api.monitor.v1.MonitorConstant;
-import cn.jmicro.api.monitor.v1.SF;
+import cn.jmicro.api.monitor.MC;
+import cn.jmicro.api.monitor.SF;
 import cn.jmicro.api.net.IMessageHandler;
 import cn.jmicro.api.net.IResponse;
 import cn.jmicro.api.net.ISession;
@@ -117,14 +117,14 @@ public class JRPCReqRespHandler implements IMessageHandler{
 						resp.setResult(se);
 						resp.setSuccess(false);
 						msg.setPayload(ICodecFactory.encode(codeFactory, resp, msg.getUpProtocol()));
-						if(SF.isLoggable(MonitorConstant.LOG_DEBUG, msg.getLogLevel())) {
-							SF.doResponseLog(MonitorConstant.LOG_DEBUG, TAG, null," one response");
+						if(SF.isLoggable(MC.LOG_DEBUG, msg.getLogLevel())) {
+							SF.doResponseLog(MC.MT_PLATFORM_LOG,MC.LOG_DEBUG, TAG, null," one response");
 						}
 						s.write(msg);
 						return;
 					}else {
 						JMicroContext.get().setString(JMicroContext.LOGIN_KEY, lk);
-						JMicroContext.get().setObject(JMicroContext.LOGIN_ACT, ai);
+						JMicroContext.get().setAccount(ai);;
 					}
 				}
 			}
@@ -155,8 +155,8 @@ public class JRPCReqRespHandler implements IMessageHandler{
 			//msg.setSessionId(req.getSession().getId());
 			msg.setVersion(req.getMsg().getVersion());
 				
-			if(SF.isLoggable(MonitorConstant.LOG_DEBUG,msg.getLogLevel())){
-				SF.doRequestLog(MonitorConstant.LOG_DEBUG, TAG,null,"got REQUEST");
+			if(SF.isLoggable(MC.LOG_DEBUG,msg.getLogLevel())){
+				SF.doRequestLog(MC.MT_PLATFORM_LOG,MC.LOG_DEBUG, TAG,null,"got REQUEST");
 			}
 
 			//同步响应
@@ -177,8 +177,8 @@ public class JRPCReqRespHandler implements IMessageHandler{
 			//响应消息
 			s.write(msg);
 
-			if(SF.isLoggable(MonitorConstant.LOG_DEBUG,msg.getLogLevel())){
-				SF.doResponseLog(MonitorConstant.LOG_DEBUG, TAG, null,"response success");
+			if(SF.isLoggable(MC.LOG_DEBUG,msg.getLogLevel())){
+				SF.doResponseLog(MC.MT_PLATFORM_LOG,MC.LOG_DEBUG, TAG, null,"response success");
 			}
 		
 		} catch (Throwable e) {

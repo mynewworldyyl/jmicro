@@ -59,6 +59,8 @@ import cn.jmicro.api.config.Config;
 import cn.jmicro.api.config.IConfigLoader;
 import cn.jmicro.api.masterelection.IMasterChangeListener;
 import cn.jmicro.api.masterelection.VoterPerson;
+import cn.jmicro.api.monitor.MC;
+import cn.jmicro.api.monitor.SF;
 import cn.jmicro.api.objectfactory.IObjectFactory;
 import cn.jmicro.api.objectfactory.IPostFactoryListener;
 import cn.jmicro.api.objectfactory.IPostInitListener;
@@ -269,7 +271,6 @@ public class SimpleObjectFactory implements IObjectFactory {
 		}
 		
 		//objs.put(cls, obj);
-		
 		if(!clsNameToObjs.containsKey(cls.getName())){
 			this.clsNameToObjs.put(cls.getName(), obj);
 			success = true;
@@ -404,7 +405,9 @@ public class SimpleObjectFactory implements IObjectFactory {
 			 */
 			//String dataOperatorName = Config.getCommandParam(Constants.DATA_OPERATOR, String.class, Constants.DEFAULT_DATA_OPERATOR);
 			rpcClassLoader = new RpcClassLoader(this.getClass().getClassLoader());
-			this.cacheObj(RpcClassLoader.class, rpcClassLoader,"rpcClassLoader");
+			if(!clsNameToObjs.containsKey(RpcClassLoader.class.getName())) {
+				this.cacheObj(RpcClassLoader.class, rpcClassLoader,"rpcClassLoader");
+			}
 			
 			Set<Class<?>> clses = ClassScannerUtils.getIns().getComponentClass();
 			clses.removeAll(configLoaderCls);
@@ -1573,6 +1576,15 @@ public class SimpleObjectFactory implements IObjectFactory {
 				if(!pi0.isActive()) {
 					op.deleteNode(p);
 					logger.warn("JVM exit by other system");
+					SF.eventLog(MC.MT_PROCESS_REMOVE,MC.LOG_WARN, this.getClass().getSimpleName(),data);
+					synchronized(this) {
+						try {
+							//等日志发送完成
+							this.wait(2000);
+						} catch (InterruptedException e) {
+							e.printStackTrace();
+						}
+					}
 					System.exit(0);
 				}else {
 					pi.setHaEnable(pi0.isHaEnable());
@@ -1587,10 +1599,14 @@ public class SimpleObjectFactory implements IObjectFactory {
 		TimerTicker.doInBaseTicker(60,Config.getInstanceName() + "_Choy_checker",null,(key,at)->{
 			if(!op.exist(p) && pi.isActive()) {
 				String js0 = JsonUtils.getIns().toJson(pi);
-				logger.warn("Recreate process info node by checker: " + js0);
+				String msg = "Recreate process info node by checker: " + js0;
+				logger.warn(msg);
+				SF.eventLog(MC.MT_PROCESS_LOG,MC.LOG_WARN, this.getClass().getSimpleName(),msg);
 				op.createNodeOrSetData(p,js0,true);
 			}
 		});
+		
+		//SF.eventLog(MC.MT_PROCESS_ADD,MC.LOG_INFO, this.getClass().getSimpleName(),js);
 		
 	}
 

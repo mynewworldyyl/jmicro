@@ -48,7 +48,7 @@ import cn.jmicro.api.config.Config;
 import cn.jmicro.api.idgenerator.ComponentIdServer;
 import cn.jmicro.api.masterelection.IMasterChangeListener;
 import cn.jmicro.api.masterelection.VoterPerson;
-import cn.jmicro.api.monitor.v1.MonitorConstant;
+import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.net.IServer;
 import cn.jmicro.api.objectfactory.IObjectFactory;
 import cn.jmicro.api.objectfactory.ProxyObject;
@@ -414,7 +414,7 @@ public class ServiceLoader{
 		sm.setAvgResponseTime(item.getAvgResponseTime());
 		sm.setMonitorEnable(item.getMonitorEnable());
 		sm.setFailResponse("");
-		sm.setLogLevel(MonitorConstant.LOG_ERROR);
+		sm.setLogLevel(MC.LOG_ERROR);
 		sm.setDebugMode(-1);
 		sm.setMaxSpeed(item.getMaxSpeed());
 		
@@ -514,7 +514,7 @@ public class ServiceLoader{
 		checkMethod.getKey().setUsk(usk);
 		checkMethod.getKey().setMethod("wayd");
 		checkMethod.getKey().setParamsStr(UniqueServiceMethodKey.paramsStr(new String[]{"java.lang.String"}));
-		checkMethod.setLogLevel(MonitorConstant.LOG_ERROR);;
+		checkMethod.setLogLevel(MC.LOG_ERROR);;
 		checkMethod.setDebugMode(0);
 		item.addMethod(checkMethod);
 		
@@ -562,7 +562,7 @@ public class ServiceLoader{
 				sm.setAvgResponseTime(item.getAvgResponseTime());
 				sm.setMonitorEnable(item.getMonitorEnable());
 				sm.setFailResponse("");
-				sm.setLogLevel(MonitorConstant.LOG_ERROR);
+				sm.setLogLevel(MC.LOG_ERROR);
 				sm.setDebugMode(-1);
 				sm.setMaxSpeed(item.getMaxSpeed());
 				

@@ -25,11 +25,9 @@ import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import cn.jmicro.api.JMicro;
 import cn.jmicro.api.annotation.Reference;
-import cn.jmicro.api.monitor.v1.IMonitorDataSubmiter;
-import cn.jmicro.api.monitor.v1.MonitorConstant;
-import cn.jmicro.api.monitor.v1.SF;
+import cn.jmicro.api.monitor.MC;
+import cn.jmicro.api.monitor.SF;
 import cn.jmicro.api.objectfactory.AbstractClientServiceProxy;
 import cn.jmicro.api.objectfactory.ProxyObject;
 import cn.jmicro.api.registry.AsyncConfig;
@@ -104,7 +102,7 @@ class FieldServiceProxyListener implements IServiceListener{
 				} catch (IllegalArgumentException | IllegalAccessException e) {
 					String msg = "Class ["+srcObj.getClass().getName()+"] field ["+ refField.getName()+"] dependency ["+refField.getType().getName()+"] not found";
 					logger.error(msg);
-					SF.doBussinessLog(MonitorConstant.LOG_ERROR, FieldServiceProxyListener.class, e, msg);
+					SF.doBussinessLog(MC.MT_PLATFORM_LOG,MC.LOG_ERROR, FieldServiceProxyListener.class, e, msg);
 					return;
 				}
 				if(!bf) {
@@ -121,10 +119,10 @@ class FieldServiceProxyListener implements IServiceListener{
 						} else {
 							String msg = "Fail to create service "+item.getKey().toKey(true, true, true)+" for Class ["+srcObj.getClass().getName()+"] field ["+ refField.getName()+"] dependency ["+refField.getType().getName()+"]";
 							if(ref.required()) {
-								SF.doBussinessLog(MonitorConstant.LOG_ERROR, FieldServiceProxyListener.class, null, msg);
+								SF.doBussinessLog(MC.MT_PLATFORM_LOG,MC.LOG_ERROR, FieldServiceProxyListener.class, null, msg);
 								logger.error(msg);
 							}else {
-								SF.doBussinessLog(MonitorConstant.LOG_WARN, FieldServiceProxyListener.class, null, msg);
+								SF.doBussinessLog(MC.MT_PLATFORM_LOG,MC.LOG_WARN, FieldServiceProxyListener.class, null, msg);
 								logger.warn(msg);
 							}
 							return;
@@ -139,10 +137,10 @@ class FieldServiceProxyListener implements IServiceListener{
 				if(ref.required()) {
 					String msg = "Class ["+srcObj.getClass().getName()+"] field ["+ refField.getName()+"] dependency ["+refField.getType().getName()+"] offline";
 					logger.error(msg);
-					SF.doBussinessLog(MonitorConstant.LOG_WARN, FieldServiceProxyListener.class, null, msg);
+					SF.doBussinessLog(MC.MT_PLATFORM_LOG,MC.LOG_WARN, FieldServiceProxyListener.class, null, msg);
 				}else {
 					String msg = "Class ["+srcObj.getClass().getName()+"] field ["+ refField.getName()+"] dependency ["+refField.getType().getName()+"] offline";
-					SF.doBussinessLog(MonitorConstant.LOG_WARN, FieldServiceProxyListener.class, null, msg);
+					SF.doBussinessLog(MC.MT_PLATFORM_LOG,MC.LOG_WARN, FieldServiceProxyListener.class, null, msg);
 					logger.warn(msg);
 				}
 				notifyChange(null,type);
@@ -174,7 +172,7 @@ class FieldServiceProxyListener implements IServiceListener{
 			} catch (NoSuchMethodException | SecurityException | IllegalAccessException | IllegalArgumentException | InvocationTargetException e1) {
 				//System.out.println(e1);
 				logger.error("",e);
-				SF.doBussinessLog(MonitorConstant.LOG_ERROR, RemoteProxyServiceFieldListener.class, e, "Listener method ["+cfg.changeListener()+"] not found!");
+				SF.doBussinessLog(MC.MT_PLATFORM_LOG,MC.LOG_ERROR, RemoteProxyServiceFieldListener.class, e, "Listener method ["+cfg.changeListener()+"] not found!");
 			}
 		}
 		

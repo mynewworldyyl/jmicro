@@ -8,7 +8,7 @@ import org.slf4j.LoggerFactory;
 import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Service;
 import cn.jmicro.api.annotation.Subscribe;
-import cn.jmicro.api.monitor.v1.MonitorConstant;
+import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.pubsub.PSData;
 import cn.jmicro.common.Constants;
 import cn.jmicro.common.util.JsonUtils;
@@ -35,17 +35,17 @@ public class SimplePubsubImpl implements ISimplePubsub {
 		System.out.println("testTopic: "+data.getTopic()+", data: "+ data.getData().toString());
 	}
 	
-	@Subscribe(topic=MonitorConstant.TEST_SERVICE_METHOD_TOPIC)
+	@Subscribe(topic=MC.TEST_SERVICE_METHOD_TOPIC)
 	public void statis(PSData data) {
 		
 		Map<Short,Double> ps = (Map<Short,Double>)data.getData();
 		
 		logger.info("总请求:{}, 总响应:{}, TO:{}, QPS:{}"
-				,ps.get(MonitorConstant.REQ_START)
-				,ps.get(MonitorConstant.STATIS_TOTAL_RESP)
-				,ps.get(MonitorConstant.REQ_TIMEOUT)
+				,ps.get(MC.MT_REQ_START)
+				,ps.get(MC.STATIS_TOTAL_RESP)
+				,ps.get(MC.MT_REQ_TIMEOUT)
 				//,ps.get(MonitorConstant.req)
-				,ps.get(MonitorConstant.REQ_START)
+				,ps.get(MC.MT_REQ_START)
 				);
 		
 		//System.out.println("Topic: "+data.getTopic()+", data: "+ data.getData().toString());

@@ -21,7 +21,7 @@ import java.util.concurrent.TimeUnit;
 
 import org.junit.Test;
 
-import cn.jmicro.api.monitor.v1.ServiceCounter;
+import cn.jmicro.api.monitor.ServiceCounter;
 
 /**
  * 

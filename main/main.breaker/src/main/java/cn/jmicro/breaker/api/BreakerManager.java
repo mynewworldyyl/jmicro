@@ -35,9 +35,9 @@ import cn.jmicro.api.annotation.Reference;
 import cn.jmicro.api.codec.JDataInput;
 import cn.jmicro.api.codec.TypeCoderFactory;
 import cn.jmicro.api.mng.ReportData;
-import cn.jmicro.api.monitor.v1.MonitorConstant;
-import cn.jmicro.api.monitor.v1.SF;
-import cn.jmicro.api.monitor.v2.IMonitorDataSubscriber;
+import cn.jmicro.api.monitor.IMonitorDataSubscriber;
+import cn.jmicro.api.monitor.MC;
+import cn.jmicro.api.monitor.SF;
 import cn.jmicro.api.objectfactory.AbstractClientServiceProxy;
 import cn.jmicro.api.objectfactory.IObjectFactory;
 import cn.jmicro.api.registry.BreakRule;
@@ -126,7 +126,7 @@ public class BreakerManager{
 		if(sm.isBreaking()) {
 			//已经熔断,算成功率,判断是否关闭熔断器
 			
-			ReportData rd = dataServer.getData(key,new Short[] {MonitorConstant.REQ_SUCCESS},new String[] {MonitorConstant.PREFIX_CUR_PERCENT});
+			ReportData rd = dataServer.getData(key,new Short[] {MC.MT_REQ_SUCCESS},new String[] {MC.PREFIX_CUR_PERCENT});
 			
 			if(rd.getCurPercent() == null) {
 				logger.warn("Monitor data not found  {}",key);
@@ -146,7 +146,7 @@ public class BreakerManager{
 			}
 		} else {
 			//没有熔断,判断是否需要熔断
-			ReportData rd = dataServer.getData(key,new Short[] {MonitorConstant.STATIS_FAIL_PERCENT},new String[] {MonitorConstant.PREFIX_CUR_PERCENT});
+			ReportData rd = dataServer.getData(key,new Short[] {MC.STATIS_FAIL_PERCENT},new String[] {MC.PREFIX_CUR_PERCENT});
 			
 			if(rd.getCurPercent() == null) {
 				logger.info("Monitor data not found  {}",key);

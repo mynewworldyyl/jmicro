@@ -34,7 +34,8 @@
                     <JAgent v-else-if="item.group == 'agent'" :item="item"></JAgent>
                     <JProcess v-else-if="item.group == 'process'" :item="item"></JProcess>
 
-
+                    <JTypeConfig v-else-if="item.group == 'typeConfig'" :item="item"></JTypeConfig>
+                    <JMonitorTypeKeyEditor v-else-if="item.group == 'monitorTye'" :item="item"></JMonitorTypeKeyEditor>
                 </TabPane>
             </Tabs>
         </div>
@@ -68,6 +69,8 @@
     import JProcess from './deployment/JProcess.vue'
 
     import TreeNode from "./common/JTreeNode.js"
+    import JTypeConfig from "./monitor/JTypeConfig.vue"
+    import JMonitorTypeKeyEditor from "./monitor/JMonitorTypeKeyEditor.vue"
 
     export default {
         name: 'JMicroEditor',
@@ -93,6 +96,9 @@
             JAgent,
             JProcess,
 
+            JTypeConfig,
+
+            JMonitorTypeKeyEditor,
         },
 
         data () {
@@ -118,9 +124,50 @@
 
             this.mountShellSelect();
 
+            this.mountMonitorTypeKeySelect();
         },
 
         methods: {
+
+            mountMonitorTypeKeySelect(){
+                let self = this;
+                //console.log(window.jm.utils.isBrowser('ie'));
+                window.jm.vue.$on('monitorTypeKeySelect',(nodes) => {
+                    if(!nodes || nodes.length ==0) {
+                        return;
+                    }
+
+                    let node = nodes[0];
+
+                    if(!!self.selectNode && self.selectNode.id == node.id) {
+                        return;
+                    }
+
+                    let is = self.items;
+                    let it = null;
+
+                    if(self.allowMany ) {
+                        for(let i = 0; i < self.items.length; i++) {
+                            if(self.items[i].id == node.id) {
+                                it = self.items[i];
+                                break;
+                            }
+                        }
+
+                        if(!it) {
+                            is.push(node);
+                            self.items = is;
+                            self.selectNode = node;
+                        } else {
+                            self.selectNode = it;
+                        }
+                    } else {
+                        is[0] = node;
+                        self.items = is;
+                        self.selectNode = node;
+                    }
+                });
+            },
 
             mountMonitorsSelect(){
                 let self = this;

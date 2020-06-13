@@ -28,8 +28,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import cn.jmicro.api.annotation.Reference;
-import cn.jmicro.api.monitor.v1.MonitorConstant;
-import cn.jmicro.api.monitor.v1.SF;
+import cn.jmicro.api.monitor.MC;
+import cn.jmicro.api.monitor.SF;
 import cn.jmicro.api.objectfactory.AbstractClientServiceProxy;
 import cn.jmicro.api.objectfactory.ProxyObject;
 import cn.jmicro.api.registry.AsyncConfig;
@@ -142,7 +142,7 @@ class RemoteProxyServiceFieldListener implements IServiceListener{
 					notifyChange(p,type);
 				} else {
 					String msg = "Fail to create item proxy: " + item.getKey().toKey(true, true, true);
-					SF.doBussinessLog(MonitorConstant.LOG_ERROR, RemoteProxyServiceFieldListener.class, null, msg);
+					SF.doBussinessLog(MC.MT_PLATFORM_LOG,MC.LOG_ERROR, RemoteProxyServiceFieldListener.class, null, msg);
 					logger.error("Fail to create item proxy :{}",msg);
 				}
 				
@@ -215,7 +215,7 @@ class RemoteProxyServiceFieldListener implements IServiceListener{
 			} catch (NoSuchMethodException | SecurityException | IllegalAccessException | IllegalArgumentException | InvocationTargetException e1) {
 				//System.out.println(e1);
 				logger.error("",e);
-				SF.doBussinessLog(MonitorConstant.LOG_ERROR, RemoteProxyServiceFieldListener.class, e, "Listener method ["+cfg.changeListener()+"] not found!");
+				SF.doBussinessLog(MC.MT_PLATFORM_LOG,MC.LOG_ERROR, RemoteProxyServiceFieldListener.class, e, "Listener method ["+cfg.changeListener()+"] not found!");
 			}
 		}
 		

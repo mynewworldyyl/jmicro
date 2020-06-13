@@ -7,7 +7,7 @@
 		<artifactId>parent</artifactId>
 		<version>0.0.1-SNAPSHOT</version>
 	</parent>
-	<artifactId>jmicro.example.provider</artifactId>
+	<artifactId>example.provider</artifactId>
 	<packaging>jar</packaging>
 	<name>${project.artifactId}</name>
 	<description>Jmicro service provider for testing</description>
