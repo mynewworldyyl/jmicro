@@ -121,7 +121,7 @@ public class ApiGatewayClient {
 			}
 		});
 		
-		Decoder.setTransformClazzLoader(this::getEntityClazz);
+		//Decoder.setTransformClazzLoader(this::getEntityClazz);
 	}
 	
 	public <T> T getService(Class<T> serviceClass, String namespace, String version) {		

@@ -1,9 +1,9 @@
 <template>
-    <div class="JMonitorTypeKeyList">
+    <div class="JMonitorTypeServiceMethod">
         <a @click="refresh()">REFRESH</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
         <a  v-if="adminPer"  @click="update()">UPDATE</a>
         <br/>
-        <p>{{item.id}}</p>
+        <p>{{id}}</p>
         <table class="configItemTalbe" width="99%">
             <thead><tr><td>GROUP</td> <td>LABEL</td><td>FIELD NAME</td><td>TYPE CODE</td> <td>DESC</td><td>OPERATION</td></tr></thead>
             <tr v-for="a in typeList" :key="a.id">
@@ -21,26 +21,19 @@
 
 <script>
 
-    const cid  = 'JMonitorTypeKeyList';
+    const cid  = 'JMonitorTypeServiceMethod';
     export default {
         name: cid,
         data () {
-
-            let types = this.item.val.split(',');
-            let ts = [];
-            for(let i = 0; i < types.length; i++) {
-                ts.push(parseInt(types[i]));
-            }
-
             return {
-                types:ts,
+                id: this.getCurKey(),
+                types:[],
                 adds:[],
                 dels:[],
                 errMsg:'',
                 typeList : [],
                 adminPer : false,
                 addConfigDialog:false,
-                cfg:{group:'',fieldName:'',label:'',desc:''}
             }
         },
 
@@ -55,7 +48,7 @@
             refresh(){
                 let self = this;
                 this.adminPer = window.jm.mng.comm.adminPer;
-                window.jm.mng.moType.getAllConfigs().then((resp)=>{
+                window.jm.mng.moType.getAllConfigsByGroup(['deflt']).then((resp)=>{
                     if(resp.code != 0) {
                         self.$Message.success(resp.msg);
                         return;
@@ -68,7 +61,7 @@
                         return;
                     }
 
-                    window.jm.mng.moType.getConfigByMonitorKey(self.item.id).then((resp)=>{
+                    window.jm.mng.moType.getConfigByServiceMethodKey(self.id).then((resp)=>{
                         if(resp.code != 0) {
                             self.$Message.success(resp.msg);
                             return;
@@ -128,8 +121,7 @@
                     return;
                 }
                 let self = this;
-
-                window.jm.mng.moType.updateMonitorTypes(this.item.id,this.adds,this.dels).then((resp)=>{
+                window.jm.mng.moType.updateServiceMethodMonitorTypes(self.id,this.adds,this.dels).then((resp)=>{
                     if(resp.code == 0) {
                         if(this.adds.length > 0) {
                             this.adds.splice(0,this.adds.length);
@@ -144,13 +136,27 @@
                     self.refresh();
                 });
             },
+
+            getCurKey() {
+
+                let key = null;
+                if(this.item.type == 'ins') {
+                    let node = this.item.val.key;
+                    key = node.instanceName
+                }else if(this.item.type == 'method') {
+                    key = this.item.mkey;
+                } else {
+                    let node = this.item.val.key;
+                    key = node.serviceName + "##" + node.namespace + "##" + node.version;
+                }
+                return key;
+            },
+
         },
 
         mounted () {
             //let self = this;
-            window.jm.mng.act.addListener(this.item.id,()=>{
-                this.refresh();
-            });
+            window.jm.mng.act.addListener(this.item.id,this.refresh);
             this.refresh();
         },
 
@@ -162,7 +168,7 @@
 </script>
 
 <style>
-    .JMonitorTypeKeyList{
+    .JMonitorTypeServiceMethod{
 
     }
 

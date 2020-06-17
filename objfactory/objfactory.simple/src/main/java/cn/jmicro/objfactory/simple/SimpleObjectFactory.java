@@ -397,7 +397,7 @@ public class SimpleObjectFactory implements IObjectFactory {
 		Runnable r = ()-> {
 			//查找全部对像初始化监听器
 			createPostListener();
-			registerSOClass();
+			//registerSOClass();
 			
 			/**
 			 * 意味着此两个参数只能在命令行或环境变量中做配置，不能在ZK中配置，因为此时ZK还没启动，此配置正是ZK的启动配置
@@ -533,6 +533,9 @@ public class SimpleObjectFactory implements IObjectFactory {
 					     dataOperator.setData(p, js);
 					 }
 					 r.run();
+					 
+					 SF.eventLog(MC.MT_PLATFORM_LOG, MC.LOG_INFO, SimpleObjectFactory.class.getName()
+							 , JsonUtils.getIns().toJson(pi));
 				} else if(isMast[0]) {
 					 //失去master资格，退出
 					if(pi.isMaster()) {
@@ -541,6 +544,8 @@ public class SimpleObjectFactory implements IObjectFactory {
 						final String js = JsonUtils.getIns().toJson(pi);
 						dataOperator.setData(p, js);
 					}
+					 SF.eventLog(MC.MT_PLATFORM_LOG, MC.LOG_INFO, SimpleObjectFactory.class.getName()
+							 , JsonUtils.getIns().toJson(pi));
 					 logger.info(Config.getInstanceName() + " lost master, need restart server!");
 					 System.exit(0);
 				}
@@ -551,17 +556,19 @@ public class SimpleObjectFactory implements IObjectFactory {
 		}
 		
 		//if(Config.isClientOnly()) {}
-		
-
-		logger.info("Wait for shutdown!");
-		synchronized(waitForShutdown) {
-			try {
-				waitForShutdown.wait(Long.MAX_VALUE);
-			} catch (InterruptedException e) {
-				e.printStackTrace();
+		/*String wfs = Config.getCommandParam("waitForShutdown");
+		if( wfs == null || Boolean.parseBoolean(wfs) ) {
+			logger.info("Wait for shutdown!");
+			synchronized(waitForShutdown) {
+				try {
+					waitForShutdown.wait(Long.MAX_VALUE);
+				} catch (InterruptedException e) {
+					e.printStackTrace();
+				}
 			}
-		}
-		logger.info("Server shutdown!");
+			logger.info("Server shutdown!");
+		}*/
+		
 	}
 	
 	
@@ -1468,15 +1475,6 @@ public class SimpleObjectFactory implements IObjectFactory {
 			}
 		} catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
 			logger.error("Component init error:"+obj.getClass().getName(),e);
-		}
-	}
-	
-	private void registerSOClass() {
-		Set<Class<?>> listeners = ClassScannerUtils.getIns().loadClassesByAnno(SO.class);
-		if(listeners != null && !listeners.isEmpty()) {
-			for(Class<?> c : listeners){
-				TypeCoderFactory.registClass(c);
-			}
 		}
 	}
 	

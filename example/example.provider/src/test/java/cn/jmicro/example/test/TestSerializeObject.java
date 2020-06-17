@@ -37,7 +37,7 @@ public class TestSerializeObject implements Serializable, ISerializeObject {
 	public void encode(java.io.DataOutput __buffer) throws java.io.IOException {
 		TestSerializeObject __obj = this;
 		cn.jmicro.api.codec.JDataOutput out = (cn.jmicro.api.codec.JDataOutput) __buffer;
-		cn.jmicro.api.codec.typecoder.TypeCoder __coder = cn.jmicro.api.codec.TypeCoderFactory.getDefaultCoder();
+		cn.jmicro.api.codec.typecoder.TypeCoder __coder = cn.jmicro.api.codec.TypeCoderFactory.getIns().getDefaultCoder();
 		java.lang.String __val0 = __obj.serviceName;
 		out.writeUTF(__val0);
 
@@ -66,7 +66,7 @@ public class TestSerializeObject implements Serializable, ISerializeObject {
 					if (sameElt && isFinal) { // block3
 						flag2 |= cn.jmicro.common.Constants.HEADER_ELETMENT;
 						writeEvery = false;
-						Short c2 = cn.jmicro.api.codec.TypeCoderFactory.getCodeByClass(__val2[0].getClass());
+						Short c2 = cn.jmicro.api.codec.TypeCoderFactory.getIns().getCodeByClass(__val2[0].getClass());
 						if (c2 == null) {
 							flag2 |= cn.jmicro.common.Constants.ELEMENT_TYPE_CODE;
 							__buffer.writeUTF(__val2[0].getClass().getName());
@@ -82,7 +82,7 @@ public class TestSerializeObject implements Serializable, ISerializeObject {
 				for (int i = 0; i < size; i++) { // loop block5
 					Object v = __val2[i];
 					if (writeEvery) {
-						Short cc2 = cn.jmicro.api.codec.TypeCoderFactory.getCodeByClass(v.getClass());
+						Short cc2 = cn.jmicro.api.codec.TypeCoderFactory.getIns().getCodeByClass(v.getClass());
 						__buffer.writeShort(cc2.intValue());
 					}
 					cn.jmicro.agent.SerializeProxyFactory.encodeListElement(__buffer, v);
@@ -125,7 +125,7 @@ public class TestSerializeObject implements Serializable, ISerializeObject {
 		if (0 != (cn.jmicro.common.Constants.NULL_VAL & flagName2)) {
 			__val2 = null;
 		} else { // block0
-			cn.jmicro.api.codec.typecoder.TypeCoder __coder = cn.jmicro.api.codec.TypeCoderFactory.getDefaultCoder();
+			cn.jmicro.api.codec.typecoder.TypeCoder __coder = cn.jmicro.api.codec.TypeCoderFactory.getIns().getDefaultCoder();
 			String clsName = null;
 			short c = 0;
 			int size = __buffer.readShort();
@@ -139,7 +139,7 @@ public class TestSerializeObject implements Serializable, ISerializeObject {
 						readEvery = false;
 						if (0 != (cn.jmicro.common.Constants.ELEMENT_TYPE_CODE & flagName2)) {
 							c = __buffer.readShort();
-							eleCls = cn.jmicro.api.codec.TypeCoderFactory.getClassByCode(new Short(c));
+							eleCls = cn.jmicro.api.codec.TypeCoderFactory.getIns().getClassByCode(new Short(c));
 						} else {
 							clsName = __buffer.readUTF();
 							eleCls = cn.jmicro.agent.SerializeProxyFactory.loadClazz(clsName);
@@ -154,7 +154,7 @@ public class TestSerializeObject implements Serializable, ISerializeObject {
 				for (int i = 0; i < size; i++) { // block5
 					if (readEvery) { // block6
 						c = __buffer.readShort();
-						eleCls = cn.jmicro.api.codec.TypeCoderFactory.getClassByCode(new Short(c));
+						eleCls = cn.jmicro.api.codec.TypeCoderFactory.getIns().getClassByCode(new Short(c));
 					} // block6
 					java.lang.Object elt = (java.lang.Object) cn.jmicro.agent.SerializeProxyFactory
 							.decodeListElement(__buffer, eleCls);

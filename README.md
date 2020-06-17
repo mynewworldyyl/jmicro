@@ -71,6 +71,11 @@ java -jar target/jmicro.example.comsumer-0.0.1-SNAPSHOT-jar-with-dependencies.ja
 
 Server say hello to: Hello JMicro
 
+## 疑难解答
+
+1 如果碰到编码解码，序列化相关错误，首先检查服务启动命令是否缺失如下参数
+-javaagent:$JMICRO_ROOT/agent/target/jmicro-agent-0.0.1-SNAPSHOT.jar
+
 
 
 

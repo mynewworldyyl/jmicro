@@ -90,7 +90,7 @@ class ClientServiceProxyManager {
 	@SuppressWarnings("unchecked")
 	<T> T  getRefRemoteService(String srvName,String namespace,String version,
 			RpcClassLoader cl, AsyncConfig[] acs){
-		String key = UniqueServiceKey.serviceName(srvName, namespace, version).toString();
+		String key = UniqueServiceKey.serviceName(srvName, namespace, version);
 		ClassLoader useCl = Thread.currentThread().getContextClassLoader();
 		Object proxy = null;
 		try {
@@ -420,7 +420,7 @@ class ClientServiceProxyManager {
 			
 			proxy = this.getRefRemoteService(type.getName(), ref.namespace(), ref.version(), null,acs);
 			
-			String key = UniqueServiceKey.serviceName(type.getName(),ref.namespace(),ref.version()).toString();
+			String key = UniqueServiceKey.serviceName(type.getName(),ref.namespace(),ref.version());
 			
 			//this.initProxyField(proxy, key, srcObj, f);
 			FieldServiceProxyListener lis = new FieldServiceProxyListener(this,srcObj,f,this.registry);

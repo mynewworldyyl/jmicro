@@ -36,7 +36,7 @@ public class OneItem {
 	private long time = 0;
 	
 	private String tag = null;
-	private byte level = MC.LOG_DEBUG;
+	private byte level = MC.LOG_NO;
 	
 	private transient Throwable ex = null;
 	
@@ -54,9 +54,9 @@ public class OneItem {
 		this.time = System.currentTimeMillis();
 	}
 	
-	public void doAdd(int n,double v) {
-		this.num += n;
-		this.val += v;
+	public void doAdd(int val,double num) {
+		this.num += num;
+		this.val += val;
 	}
 	
 	public short getType() {

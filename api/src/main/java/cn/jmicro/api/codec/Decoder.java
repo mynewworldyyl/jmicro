@@ -95,8 +95,6 @@ public class Decoder {
 	
 	//static Short currentTypeCode = (short)(NON_ENCODE_TYPE + 1);
 	
-   private static IClientTransformClassLoader clazzLoader = null;
-   
    private static final void checkPrefix(byte prefix) {
 	  if((byte)(prefix) == 127) {
 		  throw new CommonException("Prefix value overflow");
@@ -130,20 +128,6 @@ public class Decoder {
 		registType(java.sql.Date.class,type--);
    }
    
-   public static void setTransformClazzLoader(IClientTransformClassLoader l) {
-	   if(clazzLoader != null) {
-		   throw new CommonException(clazzLoader.getClass().getName()+" have been set before "+l.getClass().getName());
-	   }
-	   clazzLoader = l;
-   }
-   
-    public static Class<?> getClassByProvider(Short type) {
-		if(clazzLoader != null) {
-			return clazzLoader.getClazz(type);
-		}
-		return null;
-	}
-	
 	public static void registType(Class<?> clazz,Short type){
 		if(clazz2Short.containsKey(clazz)){
 			return;
@@ -195,11 +179,11 @@ public class Decoder {
 	
 	public static Class<?> getClass(Short type){
 		Class<?> clazz = Short2Clazz.get(type);
-		if(clazz == null && type > 0) {
-			System.out.println(type);
+		/*if(clazz == null && type > 0) {
+			 System.out.println(type);
 			 clazz = getClassByProvider(type);
 			 registType(clazz,type);
-		}
+		}*/
 		return clazz;
 	}
 	

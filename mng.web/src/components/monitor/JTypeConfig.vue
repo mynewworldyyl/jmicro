@@ -51,8 +51,10 @@
 
 <script>
 
+    const cid = 'JTypeConfig';
+
     export default {
-        name: 'JTypeConfig',
+        name: cid,
         data () {
             return {
                 groups:[],
@@ -159,13 +161,19 @@
         },
 
         mounted () {
+            //let self = this;
+            window.jm.mng.act.addListener(cid,this.refresh);
             this.refresh();
+        },
+
+        beforeDestroy() {
+            window.jm.mng.act.removeListener(cid);
         },
     }
 </script>
 
 <style>
-    .JAgent{
+    .JTypeConfig{
 
     }
 

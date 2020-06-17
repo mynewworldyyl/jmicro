@@ -162,8 +162,8 @@ public class TestCodec {
 
 	@Test
 	public void testEncodeObjectByProxy() throws IOException {
-		TypeCoderFactory.registClass(SerializeObject.class);
-		TypeCoderFactory.registClass(Person.class);
+		TypeCoderFactory.getIns().registClass(SerializeObject.class);
+		TypeCoderFactory.getIns().registClass(Person.class);
 
 		SerializeObject obj = this.getSO();
 
@@ -182,9 +182,9 @@ public class TestCodec {
 
 	@Test
 	public void testCompareEncodeObject() throws IOException {
-		TypeCoderFactory
-				.registCoder(new ReflectTypeCoder<SerializeObject>(TypeCoderFactory.type(), SerializeObject.class));
-		SerializeObject obj = new SerializeObject();
+	/*	TypeCoderFactory.getIns()
+				.registCoder(new ReflectTypeCoder<SerializeObject>(TypeCoderFactory.getIns().type(), SerializeObject.class));
+	*/	SerializeObject obj = new SerializeObject();
 
 		PrefixTypeEncoderDecoder decoder = new PrefixTypeEncoderDecoder();
 		ByteBuffer bb = decoder.encode(obj);
@@ -222,8 +222,8 @@ public class TestCodec {
 
 		PrefixTypeEncoderDecoder decoder = new PrefixTypeEncoderDecoder();
 
-		TypeCoderFactory.registClass(SerializeObject.class);
-		TypeCoderFactory.registClass(Person.class);
+		TypeCoderFactory.getIns().registClass(SerializeObject.class);
+		TypeCoderFactory.getIns().registClass(Person.class);
 
 		Object v = null;
 		ByteBuffer bb = null;
@@ -341,8 +341,8 @@ public class TestCodec {
 
 		PrefixTypeEncoderDecoder decoder = new PrefixTypeEncoderDecoder();
 
-		TypeCoderFactory.registClass(SerializeObject.class);
-		TypeCoderFactory.registClass(Person.class);
+		TypeCoderFactory.getIns().registClass(SerializeObject.class);
+		TypeCoderFactory.getIns().registClass(Person.class);
 
 		Object v = null;
 		ByteBuffer bb = null;
@@ -522,8 +522,8 @@ public class TestCodec {
 
 		PrefixTypeEncoderDecoder decoder = new PrefixTypeEncoderDecoder();
 
-		TypeCoderFactory.registClass(SerializeObject.class);
-		TypeCoderFactory.registClass(Person.class);
+		TypeCoderFactory.getIns().registClass(SerializeObject.class);
+		TypeCoderFactory.getIns().registClass(Person.class);
 
 		ByteBuffer bb = decoder.encode(obj);
 

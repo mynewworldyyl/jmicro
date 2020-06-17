@@ -106,7 +106,7 @@ public static final short receiveItemCount = MC.Ms_ReceiveItemCnt;
 	public void encode(java.io.DataOutput __buffer) throws java.io.IOException {
 		MonitorServerStatus0 __obj = this;
 		cn.jmicro.api.codec.JDataOutput out = (cn.jmicro.api.codec.JDataOutput) __buffer;
-		cn.jmicro.api.codec.typecoder.TypeCoder __coder = cn.jmicro.api.codec.TypeCoderFactory.getDefaultCoder();
+		cn.jmicro.api.codec.typecoder.TypeCoder __coder = cn.jmicro.api.codec.TypeCoderFactory.getIns().getDefaultCoder();
 		java.util.Map __val9 = __obj.subsriber2Types;
 		if (__val9 == null) {
 			out.write(cn.jmicro.api.codec.Decoder.PREFIX_TYPE_NULL);
@@ -160,7 +160,7 @@ public static final short receiveItemCount = MC.Ms_ReceiveItemCnt;
 
 	public void decode(java.io.DataInput __buffer) throws java.io.IOException {
 		MonitorServerStatus0 __obj = this;
-		cn.jmicro.api.codec.typecoder.TypeCoder __coder = cn.jmicro.api.codec.TypeCoderFactory.getDefaultCoder();
+		cn.jmicro.api.codec.typecoder.TypeCoder __coder = cn.jmicro.api.codec.TypeCoderFactory.getIns().getDefaultCoder();
 
 		cn.jmicro.api.codec.JDataInput in = (cn.jmicro.api.codec.JDataInput) __buffer;
 		java.util.Map __val9;

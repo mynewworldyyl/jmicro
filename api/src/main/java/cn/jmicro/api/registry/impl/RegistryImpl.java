@@ -142,8 +142,9 @@ public class RegistryImpl implements IRegistry {
 		
 		if(!localRegistedItems.isEmpty()) {
 			//如果只是服消费者，则没有注册服务
+			long curTime = System.currentTimeMillis();
 			this.localRegistedItems.forEach((path,si) -> {
-				if(!this.srvManager.exist(path)) {
+				if(curTime - si.getCreatedTime() > 120000 && !this.srvManager.exist(path)) {
 					this.regist(si);
 				}
 			});
@@ -307,6 +308,8 @@ public class RegistryImpl implements IRegistry {
 		} else {
 			this.srvManager.updateOrCreate(item,srvKey, true);
 		}*/
+		logger.debug("code:" + item.getCode() + ", Service: " + item.getKey().toSnv());
+		
 		this.srvManager.updateOrCreate(item,srvKey, true);
 	}
 

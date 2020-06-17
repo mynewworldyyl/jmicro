@@ -287,7 +287,7 @@ public class BreakerManager{
 			try {
 				byte[] data = Base64Utils.decode(sm.getTestingArgs().getBytes(Constants.CHARSET));
 				JDataInput ji = new JDataInput(ByteBuffer.wrap(data));
-				args = (Object[])TypeCoderFactory.getDefaultCoder().decode(ji, null, null);
+				args = (Object[])TypeCoderFactory.getIns().getDefaultCoder().decode(ji, null, null);
 				reg.testArgs = args;
 			} catch (UnsupportedEncodingException e) {
 				logger.error("",e);

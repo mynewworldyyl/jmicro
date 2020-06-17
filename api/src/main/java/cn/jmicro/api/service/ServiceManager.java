@@ -126,7 +126,6 @@ public class ServiceManager {
 					if(openDebug) {
 						logger.debug("Service add,path:{}",p.substring(Config.ServiceRegistDir.length()+1));
 					}
-					
 					childrenAdd(p,data);
 				}else if(IListener.REMOVE == type) {
 					logger.debug("Service remove, path:{}",p.substring(Config.ServiceRegistDir.length()+1));
@@ -149,8 +148,8 @@ public class ServiceManager {
 	}
 
 	protected void childrenAdd(String path, String data) {
-		ServiceItem i = this.fromJson(data);
-		if(i == null){
+		ServiceItem si = this.fromJson(data);
+		if(si == null){
 			logger.warn("Item NULL,path:{},data:{}",path,data);
 			return;
 		}
@@ -160,19 +159,20 @@ public class ServiceManager {
 		
 		boolean flag = this.path2Hash.containsKey(path);
 		
-		if(!this.isChange(i, data, path)) {
+		if(!this.isChange(si, data, path)) {
 			logger.warn("Service Item no change {}",path);
 			return;
 		}
 				
 		if(!flag) {
 			//logger.info("Service Add: {}",path.substring(Config.ServiceRegistDir.length()));
-			this.notifyServiceChange(IServiceListener.ADD, i,path);
+			this.notifyServiceChange(IServiceListener.ADD, si,path);
 			//dataOperator.addNodeListener(path, nodeListener);
 			dataOperator.addDataListener(path, this.dataListener);
 			//dataOperator.addDataListener(i.path(Config.ServiceItemCofigDir), this.cfgDataListener);
 		} else {
 			logger.info("Service add event but exists: {}",path);
+			this.notifyServiceChange(IServiceListener.DATA_CHANGE, si,path);
 		}
 		
 	}
@@ -402,31 +402,23 @@ public class ServiceManager {
 	 */
 	private void updateItemData(String path, String data, boolean isConfig) {
 		ServiceItem si = this.fromJson(data);
+
+		String srvPath = si.path(Config.ServiceRegistDir);
+		ServiceItem srvItem = this.path2SrvItems.get(srvPath);
 		
-		if(isConfig) {
-			String srvPath = si.path(Config.ServiceRegistDir);
-			ServiceItem srvItem = null;
-			srvItem = this.path2SrvItems.get(srvPath);
-			
-			srvItem.formPersisItem(si);
-			if(!this.isChange(srvItem,data, srvPath)) {
-				//没有改变,接返回
-				return;
-			}
-			//this.updateOrCreate(srvItem, srvPath, true);
-			si = srvItem;
-			path = srvPath;
+		if(srvItem == null) {
+			childrenAdd(path,data);
 		} else {
-			if(!this.isChange(si,data, path)) {
-				//没有改变,接返回
-				return;
+			srvItem.formPersisItem(si);
+			if(this.isChange(srvItem, data, srvPath)) {
+				//this.updateOrCreate(srvItem, srvPath, true);
+				si = srvItem;
+				path = srvPath;
+				this.notifyServiceChange(IServiceListener.DATA_CHANGE, srvItem,path);
 			}
-			
-			//更新服务配置
-			//this.updateOrCreate(si, si.path(Config.ServiceItemCofigDir), true);
 		}
 		
-		this.notifyServiceChange(IServiceListener.DATA_CHANGE, si,path);
+		
 	}
 	
 	private ServiceItem fromJson(String data){
@@ -442,10 +434,12 @@ public class ServiceManager {
 		if(this.path2Hash.containsKey(path) && hash.equals(this.path2Hash.get(path))) {
 			return false;
 		}
-		//logger.info("Service Added: " + path.substring(Config.ServiceRegistDir.length()));
 		
-		ReentrantReadWriteLock.WriteLock l = rwLocker.writeLock();
+		logger.info("Service added, Code: " + si.getCode() + ", Service: " + si.getKey().toSnv());
+		
+		ReentrantReadWriteLock.WriteLock l = null;
 		try {
+			l = rwLocker.writeLock();
 			l.lock();
 			this.path2Hash.put(path, hash);
 			this.path2SrvItems.put(path, si);

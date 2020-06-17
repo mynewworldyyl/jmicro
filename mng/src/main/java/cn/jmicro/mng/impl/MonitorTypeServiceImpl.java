@@ -3,6 +3,7 @@ package cn.jmicro.mng.impl;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -17,6 +18,7 @@ import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.monitor.MCConfig;
 import cn.jmicro.api.monitor.MonitorTypesManager;
 import cn.jmicro.api.raft.IDataOperator;
+import cn.jmicro.common.Constants;
 import cn.jmicro.common.util.StringUtils;
 import cn.jmicro.mng.api.ICommonManager;
 import cn.jmicro.mng.api.IMonitorTypeService;
@@ -151,21 +153,20 @@ public class MonitorTypeServiceImpl implements IMonitorTypeService {
 
 	@Override
 	public Resp<List<Short>> getConfigByMonitorKey(String key) {
-		List<Short> l = getTypeByKey(key);
+		List<Short> l = getTypeByKey(Config.MonitorTypesDir + "/" + key);
 		Resp<List<Short>> resp = new Resp<List<Short>>();
 		resp.setData(l);
 		return resp;
 	}
 
-	@Override
-	public Resp<Void> add2Monitor(String key, Short[] types) {
+	private Resp<Void> add2Monitor(String parentDir,String key, Short[] types) {
 		Resp<Void> resp = new Resp<Void>();
 		if(!commonManager.hasPermission(this.adminPermissionLevel)) {
 			resp.setCode(Resp.CODE_NO_PERMISSION);
 			resp.setMsg("No permission!");
 			return resp;
 		}
-		String path = Config.MonitorTypesDir + "/" + key;
+		String path = parentDir + "/" + key;
 		List<Short> l = getTypeByKey(key);
 		
 		
@@ -212,15 +213,15 @@ public class MonitorTypeServiceImpl implements IMonitorTypeService {
 		return resp;
 	}
 
-	@Override
-	public Resp<Void> removeFromMonitor(String key, Short[] types) {
+	private Resp<Void> removeFromMonitor(String parentDir,String key, Short[] types) {
 		Resp<Void> resp = new Resp<Void>();
 		if(!commonManager.hasPermission(this.adminPermissionLevel)) {
 			resp.setCode(Resp.CODE_NO_PERMISSION);
 			resp.setMsg("No permission!");
 			return resp;
 		}
-		List<Short> l = getTypeByKey(key);
+		String path = parentDir + "/" + key;
+		List<Short> l = getTypeByKey(path);
 		
 		StringBuffer sb = new StringBuffer();
 		
@@ -239,7 +240,6 @@ public class MonitorTypeServiceImpl implements IMonitorTypeService {
 		}
 		
 		if(sb.length() > 0) {
-			String path = Config.MonitorTypesDir + "/" + key;
 			sb.delete(sb.length()-1, sb.length());
 			op.setData(path, sb.toString());
 		}
@@ -261,12 +261,12 @@ public class MonitorTypeServiceImpl implements IMonitorTypeService {
 		}
 		Resp<Void> rsp = null;
 		if(adds != null && adds.length > 0) {
-			rsp = add2Monitor(key,adds);
+			rsp = add2Monitor(Config.MonitorTypesDir,key,adds);
 		}
 		
 		Resp<Void> rsp0 = null;
 		if(dels != null && dels.length > 0) {
-			rsp0 = removeFromMonitor(key,dels);
+			rsp0 = removeFromMonitor(Config.MonitorTypesDir,key,dels);
 		}
 		
 		if(rsp == null) {
@@ -283,9 +283,8 @@ public class MonitorTypeServiceImpl implements IMonitorTypeService {
 		}
 	}
 
-	private List<Short> getTypeByKey(String key) {
+	private List<Short> getTypeByKey(String path) {
 		List<Short> l = new ArrayList<>();
-		String path = Config.MonitorTypesDir + "/" + key;
 		if(op.exist(path)) {
 			String data = op.getData(path);
 			if(StringUtils.isNotEmpty(data)) {
@@ -299,4 +298,98 @@ public class MonitorTypeServiceImpl implements IMonitorTypeService {
 		return l;
 	}
 
+	@Override
+	public Resp<List<Short>> getConfigByServiceMethodKey(String key) {
+		if(key.contains("/")) {
+			key = key.replaceAll("/", Constants.PATH_EXCAPE);
+		}
+		
+		List<Short> l = getTypeByKey(Config.MonitorServiceMethodTypesDir + "/" + key);
+		Resp<List<Short>> resp = new Resp<List<Short>>();
+		resp.setData(l);
+		return resp;
+	}
+
+	@Override
+	public Resp<Void> updateServiceMethodMonitorTypes(String key, Short[] adds, Short[] dels) {
+
+		Resp<Void> resp = new Resp<Void>();
+		if(!commonManager.hasPermission(this.adminPermissionLevel)) {
+			resp.setCode(Resp.CODE_NO_PERMISSION);
+			resp.setMsg("No permission!");
+			return resp;
+		}
+		
+		if(key.contains("/")) {
+			key = key.replaceAll("/", Constants.PATH_EXCAPE);
+		}
+		
+		Resp<Void> rsp = null;
+		if(adds != null && adds.length > 0) {
+			rsp = add2Monitor(Config.MonitorServiceMethodTypesDir,key,adds);
+		}
+		
+		Resp<Void> rsp0 = null;
+		if(dels != null && dels.length > 0) {
+			rsp0 = removeFromMonitor(Config.MonitorServiceMethodTypesDir,key,dels);
+		}
+		
+		if(rsp == null) {
+			return rsp0;
+		}else if(rsp0 == null) {
+			return rsp;
+		}else {
+			if(rsp.getCode() == 0 && rsp0.getCode() == 0) {
+				return rsp;
+			} else {
+				rsp.setMsg(rsp.getMsg() + ": " + rsp0.getMsg());
+			}
+			return rsp;
+		}
+	
+	}
+
+	@Override
+	public Resp<List<MCConfig>> getAllConfigsByGroup(String[] groups) {
+		Resp<List<MCConfig>> resp = new Resp<List<MCConfig>>();
+		if(groups == null || groups.length == 0) {
+			resp.setCode(Resp.CODE_FAIL);
+			resp.setMsg("Group value is NULL");
+			return resp;
+		}
+		
+		for(int i = 0; i < groups.length; i++) {
+			if(StringUtils.isEmpty(groups[i])) {
+				resp.setCode(Resp.CODE_FAIL);
+				resp.setMsg("Group index ["+i+"] value is NULL");
+				return resp;
+			}
+		}
+		
+		
+		List<MCConfig> l = new ArrayList<>();
+		Set<MCConfig> rst = mtm.getAll();
+		if(rst != null) {
+			Iterator<MCConfig> cfgs = rst.iterator();
+			for(;cfgs.hasNext();) {
+				MCConfig mc = cfgs.next();
+				boolean f = false;
+				for(String g : groups) {
+					if(g.equals(mc.getGroup())) {
+						f = true;
+						break;
+					}
+				}
+				if(!f) {
+					cfgs.remove();
+				}
+			}
+			l.addAll(rst);
+			l.sort(com);
+		}
+		resp.setCode(Resp.CODE_SUCCESS);
+		resp.setData(l);
+		return resp;
+	}
+	
 }

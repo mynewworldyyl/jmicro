@@ -981,7 +981,7 @@ public class SerializeProxyFactoryBackup {
 			((ISerializeObject)val).encode(buffer);
 			return;
 		} else {
-			TypeCoderFactory.getDefaultCoder().encode(buffer, val, null, null);
+			TypeCoderFactory.getIns().getDefaultCoder().encode(buffer, val, null, null);
 		}
 	
 	}
@@ -1026,7 +1026,7 @@ public class SerializeProxyFactoryBackup {
 				return null;
 			}
 		} else {
-			return TypeCoderFactory.getDefaultCoder().decode(buffer, valCls, null);
+			return TypeCoderFactory.getIns().getDefaultCoder().decode(buffer, valCls, null);
 		}
 	
 	}

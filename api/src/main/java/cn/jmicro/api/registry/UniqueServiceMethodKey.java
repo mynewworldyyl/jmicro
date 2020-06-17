@@ -41,6 +41,9 @@ public final class UniqueServiceMethodKey {
 	
 	private String returnParam;
 	
+	private transient String cacheFullKey = null;
+	private transient String cacheMethodKey = null;
+	
 	public Class<?>[] getParameterClasses() {
 		return paramsClazzes(this.paramsStr);
 	}
@@ -111,8 +114,6 @@ public final class UniqueServiceMethodKey {
 		}
 	}
 	
-	
-	
 	/**
 	 * 根据参数类型串解析出参数对像数组
 	 * @param paramsStr 参数类型数符串
@@ -135,10 +136,26 @@ public final class UniqueServiceMethodKey {
 	
 	
 	public String toKey(boolean ins,boolean host,boolean port) {
-		StringBuilder sb = new StringBuilder(usk.toKey(ins, host, port));
-		sb.append(SEP).append(this.method).append(SEP);
-		sb.append(this.paramsStr);
-		return sb.toString();
+		if(this.cacheFullKey != null && ins && host && port) {
+			return cacheFullKey;
+		} else if(this.cacheMethodKey != null && !ins && !host && !port) {
+			return this.cacheMethodKey;
+		} else {
+			StringBuilder sb = new StringBuilder(usk.toKey(ins, host, port));
+			sb.append(SEP).append(this.method).append(SEP);
+			sb.append(this.paramsStr);
+			if(ins && host && port) {
+				cacheFullKey = sb.toString();
+				return cacheFullKey;
+			}else if(!ins && !host && !port){
+				cacheMethodKey = sb.toString();
+				return cacheMethodKey;
+			}else {
+				return sb.toString();
+			}
+		}
+		
+		
 	}
 	
 	public static UniqueServiceKey fromKey(String[] strs) {

@@ -266,7 +266,7 @@ public class JMicro {
 						if(Message.PROTOCOL_BIN == protocol) {
 							JDataOutput jo = new JDataOutput(2048);
 							
-							TypeCoderFactory.getDefaultCoder().encode(jo, args, null, null);
+							TypeCoderFactory.getIns().getDefaultCoder().encode(jo, args, null, null);
 							
 							ByteBuffer bb = jo.getBuf();
 							

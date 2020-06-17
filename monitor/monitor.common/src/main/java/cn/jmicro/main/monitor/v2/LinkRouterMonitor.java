@@ -54,8 +54,8 @@ import cn.jmicro.monitor.api.AbstractMonitorDataSubscriber;
  * @author Yulei Ye
  * @date 2018年11月19日 下午1:25:24
  */
-@Component
-@Service(version="0.0.1", namespace="printLogMonitor",monitorEnable=0,handler=Constants.SPECIAL_INVOCATION_HANDLER)
+//@Component
+//@Service(version="0.0.1", namespace="printLogMonitor",monitorEnable=0,handler=Constants.SPECIAL_INVOCATION_HANDLER)
 public class LinkRouterMonitor extends AbstractMonitorDataSubscriber implements IMonitorDataSubscriber {
 
 	private final static Logger logger = LoggerFactory.getLogger(LinkRouterMonitor.class);
@@ -150,16 +150,10 @@ public class LinkRouterMonitor extends AbstractMonitorDataSubscriber implements 
 				for(Iterator<OneItem> ite = l.iterator(); ite.hasNext();) {
 					OneItem oi = ite.next();
 					ite.remove();
-					switch(oi.getType()) {
-					/*case MonitorConstant.LINKER_ROUTER_MONITOR:
-						doPrintLog(si,oi);
-						break;*/
-					case MC.MT_SERVER_START:
+					if(oi.getLevel() != MC.LOG_NO) {
 						String msg = toLog(si,oi);
 						logger.info(msg);
-						break;
 					}
-					
 				}
 			}
 		
@@ -342,7 +336,7 @@ public class LinkRouterMonitor extends AbstractMonitorDataSubscriber implements 
 	}
 	
 	private void service(StringBuilder sb,String sn,String ns,String v,String method,Object[] args) {
-		sb.append(" service[").append(UniqueServiceKey.serviceName(sn, ns, v).toString())
+		sb.append(" service[").append(UniqueServiceKey.serviceName(sn, ns, v))
 		.append("&").append(method).append("] args[");
 		if(args != null && args.length > 0) {
 			for(int i=0; i< args.length;i++) {

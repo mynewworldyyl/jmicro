@@ -9,6 +9,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import cn.jmicro.api.IListener;
+import cn.jmicro.api.annotation.Cfg;
 import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Inject;
 import cn.jmicro.api.choreography.ChoyConstants;
@@ -23,6 +24,9 @@ import cn.jmicro.common.util.StringUtils;
 public class InstanceManager {
 
 	private final static Logger logger = LoggerFactory.getLogger(InstanceManager.class);
+	
+	@Cfg("/InstanceManager/enable")
+	private boolean enable = false;
 	
 	@Inject
 	private IDataOperator op;
@@ -62,7 +66,7 @@ public class InstanceManager {
 		}
 	};
 	
-	public void init() {
+	public void ready() {
 		op.addChildrenListener(ChoyConstants.INS_ROOT, (type,p,c,data)->{
 			if(type == IListener.ADD) {
 				instanceAdded(c,data);
@@ -74,7 +78,6 @@ public class InstanceManager {
 				}
 			}
 		});
-		
 		new Thread(this::check).start();
 		
 	}

@@ -43,6 +43,7 @@ import org.slf4j.LoggerFactory;
 import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.ObjFactory;
 import cn.jmicro.api.annotation.PostListener;
+import cn.jmicro.api.annotation.SO;
 import cn.jmicro.api.annotation.Service;
 import cn.jmicro.api.config.Config;
 import cn.jmicro.common.util.StringUtils;
@@ -71,6 +72,13 @@ public class ClassScannerUtils {
 		logger.info("PUT class: "+clsName);
 		classes.put(clsName, cls);
 	}
+	
+	public Set<Class<?>> getAll(){
+		Set<Class<?>> all = new HashSet<>();
+		all.addAll(this.classes.values());
+		return all;
+	}
+	
 	
 	interface Checker{
 		boolean accept(Class<?> cls);
@@ -222,6 +230,7 @@ public class ClassScannerUtils {
 				||cls.isAnnotationPresent(Service.class)
 				||cls.isAnnotationPresent(PostListener.class)
 				||cls.isAnnotationPresent(ObjFactory.class)
+				||cls.isAnnotationPresent(SO.class)
 				/*||cls.isAnnotationPresent(Name.class)
 				||cls.isAnnotationPresent(Server.class)
 				||cls.isAnnotationPresent(Channel.class)
@@ -348,7 +357,7 @@ public class ClassScannerUtils {
      * @param recursive 
      * @param classes 
      */  
-	private void findAndAddClassesInPackageByFile(String packageName,  String packagePath, final boolean recursive, Set<Class<?>> classes) {
+	public void findAndAddClassesInPackageByFile(String packageName,  String packagePath, final boolean recursive, Set<Class<?>> classes) {
     	if(classes == null) {
     		throw new NullPointerException("classes can not be null");
     	}

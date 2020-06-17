@@ -40,6 +40,10 @@ public final class UniqueServiceKey {
 	private String namespace = Constants.DEFAULT_NAMESPACE;
 	private String version = Constants.VERSION;
 	
+	private transient String cacheFullKey = null;
+	private transient String cacheSrvKey = null;
+	private transient String snvKey = null;
+	
 	public UniqueServiceKey() {}
 	
 	public UniqueServiceKey(String serviceName,String namespace,String version) {
@@ -56,14 +60,33 @@ public final class UniqueServiceKey {
 	}
 	
 	public String toSnv() {
+		if(this.snvKey != null) {
+			return snvKey;
+		}
 		StringBuilder sb = new StringBuilder();
 		serviceName(sb,this.serviceName);
 		namespace(sb,this.namespace);
 		version(sb,this.version);
-		return sb.substring(0, sb.length() - SEP.length());
+		this.snvKey = sb.substring(0, sb.length() - SEP.length());
+		return this.snvKey;
 	}
 	
 	public String toKey(boolean ins,boolean host,boolean port) {
+		
+		if(this.cacheFullKey != null && ins && host && port) {
+			return this.cacheFullKey;
+		}else if(this.cacheSrvKey != null && !ins && !host && !port) {
+			return this.cacheSrvKey;
+		}
+		
+		if(port && this.port <= 0) {
+			throw new CommonException("Port is not set yet");
+		}
+		
+		if(host && this.host == null) {
+			throw new CommonException("Host is not set yet");
+		}
+		
 		StringBuilder sb = new StringBuilder();
 		serviceName(sb,this.serviceName);
 		namespace(sb,this.namespace);
@@ -72,9 +95,16 @@ public final class UniqueServiceKey {
 		instanceName(ins,sb,this.instanceName);
 		host(host,sb,this.host);
 		port(port,sb,this.port);
+
+		String key = sb.substring(0, sb.length() - SEP.length());
+		if(ins && host && port) {
+			return this.cacheFullKey = key;
+		}else if( !ins && !host && !port) {
+			return this.cacheSrvKey = key;
+		}else {
+			return key;
+		}
 		
-		;
-		return sb.substring(0, sb.length()-2);
 	}
 	
 	public static UniqueServiceKey fromKey(String key) {
@@ -138,8 +168,10 @@ public final class UniqueServiceKey {
 		return appendOne(true,sb,serviceName);
 	}
 	
-	public static StringBuilder serviceName(String sn, String ns, String v) {
-		return version(snnsPrefix(sn,ns),v);
+	public static String serviceName(String sn, String ns, String v) {
+		StringBuilder snv = version(snnsPrefix(sn,ns),v);
+		snv.delete(snv.length()-2, snv.length());
+		return snv.toString();
 	}
 	
 	public static StringBuilder snnsPrefix(String sn, String ns) {

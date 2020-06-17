@@ -125,7 +125,7 @@ public final class PSData0 implements Serializable, ISerializeObject {
 	public void encode(java.io.DataOutput __buffer) throws java.io.IOException {
 		PSData0 __obj = this;
 		cn.jmicro.api.codec.JDataOutput out = (cn.jmicro.api.codec.JDataOutput) __buffer;
-		cn.jmicro.api.codec.typecoder.TypeCoder __coder = cn.jmicro.api.codec.TypeCoderFactory.getDefaultCoder();
+		cn.jmicro.api.codec.typecoder.TypeCoder __coder = cn.jmicro.api.codec.TypeCoderFactory.getIns().getDefaultCoder();
 		java.util.Map __val5 = __obj.context;
 		byte flag5 = 0;
 		int flagIndex5 = out.position();
@@ -134,7 +134,7 @@ public final class PSData0 implements Serializable, ISerializeObject {
 			flag5 |= cn.jmicro.common.Constants.NULL_VAL;
 			out.write(flagIndex5, flag5);
 		} else { // block0
-			Short c = cn.jmicro.api.codec.TypeCoderFactory.getCodeByClass(__val5.getClass());
+			Short c = cn.jmicro.api.codec.TypeCoderFactory.getIns().getCodeByClass(__val5.getClass());
 			if (c == null) {
 				flag5 |= cn.jmicro.common.Constants.TYPE_VAL;
 				__buffer.writeUTF(__val5.getClass().getName());
@@ -159,7 +159,7 @@ public final class PSData0 implements Serializable, ISerializeObject {
 						Class cls = __val5.keySet().iterator().next().getClass();
 						flag5 |= cn.jmicro.common.Constants.HEADER_ELETMENT;
 						writeKeyEvery = false;
-						Short c5 = cn.jmicro.api.codec.TypeCoderFactory.getCodeByClass(cls);
+						Short c5 = cn.jmicro.api.codec.TypeCoderFactory.getIns().getCodeByClass(cls);
 						if (c5 == null) {
 							flag5 |= cn.jmicro.common.Constants.ELEMENT_TYPE_CODE;
 							__buffer.writeUTF(cls.getName());
@@ -185,7 +185,7 @@ public final class PSData0 implements Serializable, ISerializeObject {
 						flag5 |= cn.jmicro.common.Constants.EXT1;// 首值编码
 						writeValEvery = false;
 						Class cls = __val5.values().iterator().next().getClass();
-						Short c5 = cn.jmicro.api.codec.TypeCoderFactory.getCodeByClass(cls);
+						Short c5 = cn.jmicro.api.codec.TypeCoderFactory.getIns().getCodeByClass(cls);
 						if (c5 == null) {
 							flag5 |= cn.jmicro.common.Constants.SIZE_NOT_ZERO; // 字符串类型名编码
 							__buffer.writeUTF(cls.getName());
@@ -207,7 +207,7 @@ public final class PSData0 implements Serializable, ISerializeObject {
 							__buffer.writeByte(cn.jmicro.api.codec.Decoder.PREFIX_TYPE_NULL);
 							continue;
 						}
-						Short cc5 = cn.jmicro.api.codec.TypeCoderFactory.getCodeByClass(key.getClass());
+						Short cc5 = cn.jmicro.api.codec.TypeCoderFactory.getIns().getCodeByClass(key.getClass());
 						if (cc5 == null) {
 							cn.jmicro.agent.SerializeProxyFactory.errorToSerializeObjectCode(key.getClass().getName());
 							__buffer.writeByte(cn.jmicro.api.codec.Decoder.PREFIX_TYPE_PROXY);
@@ -223,7 +223,7 @@ public final class PSData0 implements Serializable, ISerializeObject {
 							__buffer.writeByte(cn.jmicro.api.codec.Decoder.PREFIX_TYPE_NULL);
 							continue;
 						}
-						Short cc5 = cn.jmicro.api.codec.TypeCoderFactory.getCodeByClass(val.getClass());
+						Short cc5 = cn.jmicro.api.codec.TypeCoderFactory.getIns().getCodeByClass(val.getClass());
 						if (cc5 == null) {
 							cn.jmicro.agent.SerializeProxyFactory.errorToSerializeObjectCode(val.getClass().getName());
 							__buffer.writeByte(cn.jmicro.api.codec.Decoder.PREFIX_TYPE_PROXY);
@@ -284,7 +284,7 @@ public final class PSData0 implements Serializable, ISerializeObject {
 		if (0 != (cn.jmicro.common.Constants.NULL_VAL & flagName5)) {
 			__val5 = null;
 		} else { // block0
-			cn.jmicro.api.codec.typecoder.TypeCoder __coder = cn.jmicro.api.codec.TypeCoderFactory.getDefaultCoder();
+			cn.jmicro.api.codec.typecoder.TypeCoder __coder = cn.jmicro.api.codec.TypeCoderFactory.getIns().getDefaultCoder();
 			String clsName = null;
 			short c = 0;
 			if (0 != (cn.jmicro.common.Constants.TYPE_VAL & flagName5)) {
@@ -297,7 +297,7 @@ public final class PSData0 implements Serializable, ISerializeObject {
 				if (clsName != null) {
 					cls = cn.jmicro.agent.SerializeProxyFactory.loadClazz(clsName);
 				} else {
-					cls = cn.jmicro.api.codec.TypeCoderFactory.getClassByCode(new Short(c));
+					cls = cn.jmicro.api.codec.TypeCoderFactory.getIns().getClassByCode(new Short(c));
 				}
 				__val5 = (java.util.Map) cn.jmicro.agent.SerializeProxyFactory.newInstance(cls);
 				__obj.context = __val5;
@@ -317,7 +317,7 @@ public final class PSData0 implements Serializable, ISerializeObject {
 						readKeyEvery = false;
 						if (0 != (cn.jmicro.common.Constants.ELEMENT_TYPE_CODE & flagName5)) {
 							c = __buffer.readShort();
-							keyEleCls = cn.jmicro.api.codec.TypeCoderFactory.getClassByCode(new Short(c));
+							keyEleCls = cn.jmicro.api.codec.TypeCoderFactory.getIns().getClassByCode(new Short(c));
 						} else {
 							keyClsName = __buffer.readUTF();
 							keyEleCls = cn.jmicro.agent.SerializeProxyFactory.loadClazz(keyClsName);
@@ -339,7 +339,7 @@ public final class PSData0 implements Serializable, ISerializeObject {
 							valEleCls = cn.jmicro.agent.SerializeProxyFactory.loadClazz(valClsName);
 						} else {
 							c = __buffer.readShort();
-							valEleCls = cn.jmicro.api.codec.TypeCoderFactory.getClassByCode(new Short(c));
+							valEleCls = cn.jmicro.api.codec.TypeCoderFactory.getIns().getClassByCode(new Short(c));
 						}
 					} else {
 						readValEvery = true;
@@ -356,7 +356,7 @@ public final class PSData0 implements Serializable, ISerializeObject {
 						short prefixCode = __buffer.readByte();
 						if (prefixCode == cn.jmicro.api.codec.Decoder.PREFIX_TYPE_SHORT) {
 							c = __buffer.readShort();
-							keyEleCls = cn.jmicro.api.codec.TypeCoderFactory.getClassByCode(new Short(c));
+							keyEleCls = cn.jmicro.api.codec.TypeCoderFactory.getIns().getClassByCode(new Short(c));
 						} else {
 							java.lang.String cn = __buffer.readUTF();
 							keyEleCls = SerializeProxyFactory.loadClazz(cn);
@@ -367,7 +367,7 @@ public final class PSData0 implements Serializable, ISerializeObject {
 						short prefixCode = __buffer.readByte();
 						if (prefixCode == cn.jmicro.api.codec.Decoder.PREFIX_TYPE_SHORT) {
 							c = __buffer.readShort();
-							valEleCls = cn.jmicro.api.codec.TypeCoderFactory.getClassByCode(new Short(c));
+							valEleCls = cn.jmicro.api.codec.TypeCoderFactory.getIns().getClassByCode(new Short(c));
 						} else {
 							java.lang.String cn = __buffer.readUTF();
 							valEleCls = SerializeProxyFactory.loadClazz(cn);
@@ -400,7 +400,7 @@ public final class PSData0 implements Serializable, ISerializeObject {
 		if (0 != (cn.jmicro.common.Constants.NULL_VAL & flagName9)) {
 			__val9 = null;
 		} else { // block0
-			cn.jmicro.api.codec.typecoder.TypeCoder __coder = cn.jmicro.api.codec.TypeCoderFactory.getDefaultCoder();
+			cn.jmicro.api.codec.typecoder.TypeCoder __coder = cn.jmicro.api.codec.TypeCoderFactory.getIns().getDefaultCoder();
 
 			__val9 = (java.lang.Object) __coder.decode(__buffer, java.lang.Object.class, null);
 		} // block0

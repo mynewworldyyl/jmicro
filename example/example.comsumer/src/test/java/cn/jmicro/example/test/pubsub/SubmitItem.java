@@ -258,7 +258,7 @@ public final class SubmitItem {
 	public void encode(java.io.DataOutput __buffer) throws java.io.IOException {
 		SubmitItem __obj = this;
 		cn.jmicro.api.codec.JDataOutput out = (cn.jmicro.api.codec.JDataOutput) __buffer;
-		cn.jmicro.api.codec.typecoder.TypeCoder __coder = cn.jmicro.api.codec.TypeCoderFactory.getDefaultCoder();
+		cn.jmicro.api.codec.typecoder.TypeCoder __coder = cn.jmicro.api.codec.TypeCoderFactory.getIns().getDefaultCoder();
 		short __val0 = __obj.type;
 		out.writeShort(__val0);
 
@@ -305,7 +305,7 @@ public final class SubmitItem {
 					if (sameElt && isFinal) { // block3
 						flag8 |= cn.jmicro.common.Constants.HEADER_ELETMENT;
 						writeEvery = false;
-						Short c8 = cn.jmicro.api.codec.TypeCoderFactory.getCodeByClass(__val8[0].getClass());
+						Short c8 = cn.jmicro.api.codec.TypeCoderFactory.getIns().getCodeByClass(__val8[0].getClass());
 						if (c8 == null) {
 							flag8 |= cn.jmicro.common.Constants.ELEMENT_TYPE_CODE;
 							__buffer.writeUTF(__val8[0].getClass().getName());
@@ -325,7 +325,7 @@ public final class SubmitItem {
 							__buffer.writeByte(cn.jmicro.api.codec.Decoder.PREFIX_TYPE_NULL);
 							continue;
 						}
-						Short cc8 = cn.jmicro.api.codec.TypeCoderFactory.getCodeByClass(v.getClass());
+						Short cc8 = cn.jmicro.api.codec.TypeCoderFactory.getIns().getCodeByClass(v.getClass());
 						if (cc8 == null) {
 							cn.jmicro.agent.SerializeProxyFactory.errorToSerializeObjectCode(v.getClass().getName());
 							__buffer.writeByte(cn.jmicro.api.codec.Decoder.PREFIX_TYPE_PROXY);

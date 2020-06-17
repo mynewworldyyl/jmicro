@@ -20,11 +20,19 @@ public interface IMonitorTypeService {
 	//////////////////////FOR MONITOR///////////////////////////////
 	Resp<List<Short>> getConfigByMonitorKey(String key);
 	
-	Resp<Void> add2Monitor(String key,Short[] type);
+	//Resp<Void> add2Monitor(String key,Short[] type);
 	
-	Resp<Void> removeFromMonitor(String key,Short[] type);
+	//Resp<Void> removeFromMonitor(String key,Short[] type);
 	
 	Resp<Void> updateMonitorTypes(String key,Short[] adds,Short[] dels);
 	
 	Resp<Map<String,String>> getMonitorKeyList();
+	
+	
+	//////////////////////FOR SERVICE METHOD MONITOR///////////////////////////////
+	Resp<List<Short>> getConfigByServiceMethodKey(String key);
+	
+	Resp<Void> updateServiceMethodMonitorTypes(String key,Short[] adds,Short[] dels);
+	
+	Resp<List<MCConfig>> getAllConfigsByGroup(String[] groups);
 }

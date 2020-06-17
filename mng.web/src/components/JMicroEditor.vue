@@ -36,6 +36,7 @@
 
                     <JTypeConfig v-else-if="item.group == 'typeConfig'" :item="item"></JTypeConfig>
                     <JMonitorTypeKeyEditor v-else-if="item.group == 'monitorTye'" :item="item"></JMonitorTypeKeyEditor>
+                    <JMonitorTypeServiceMethodEditor v-else-if="item.group == 'mtsm'" :item="item"></JMonitorTypeServiceMethodEditor>
                 </TabPane>
             </Tabs>
         </div>
@@ -71,6 +72,7 @@
     import TreeNode from "./common/JTreeNode.js"
     import JTypeConfig from "./monitor/JTypeConfig.vue"
     import JMonitorTypeKeyEditor from "./monitor/JMonitorTypeKeyEditor.vue"
+    import JMonitorTypeServiceMethodEditor from "./monitor/JMonitorTypeServiceMethodEditor.vue"
 
     export default {
         name: 'JMicroEditor',
@@ -99,6 +101,7 @@
             JTypeConfig,
 
             JMonitorTypeKeyEditor,
+            JMonitorTypeServiceMethodEditor,
         },
 
         data () {
@@ -116,7 +119,7 @@
 
         mounted : function() {
             //let self = this;
-            this.mountServiceSelect();
+            this.mountServiceSelect('serviceNodeSelect');
             this.mountStatisSelect();
             this.mountConfigSelect();
             this.mountMonitorsSelect();
@@ -124,15 +127,18 @@
 
             this.mountShellSelect();
 
-            this.mountMonitorTypeKeySelect();
+            this.mountMonitorTypeKeySelect('monitorTypeKeySelect');
+
+            this.mountServiceSelect('monitorTypeServiceMethodSelect');
+
         },
 
         methods: {
 
-            mountMonitorTypeKeySelect(){
+            mountMonitorTypeKeySelect(evt){
                 let self = this;
                 //console.log(window.jm.utils.isBrowser('ie'));
-                window.jm.vue.$on('monitorTypeKeySelect',(nodes) => {
+                window.jm.vue.$on(evt,(nodes) => {
                     if(!nodes || nodes.length ==0) {
                         return;
                     }
@@ -313,10 +319,10 @@
                 });
             },
 
-            mountServiceSelect() {
+            mountServiceSelect(evt) {
                 let self = this;
                 //console.log(window.jm.utils.isBrowser('ie'));
-                window.jm.vue.$on('serviceNodeSelect',(nodes) => {
+                window.jm.vue.$on(evt,(nodes) => {
                     if(!nodes || nodes.length ==0) {
                         return;
                     }

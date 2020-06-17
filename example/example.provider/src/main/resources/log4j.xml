@@ -19,6 +19,16 @@
 			<param name="ConversionPattern" value="[%L],[%t],[%d][%p,%c{1}] %m%n"/>
 		</layout>
 	</appender>
+	
+	<appender name="SF" class="org.apache.log4j.DailyRollingFileAppender">
+		<param name="File" value="${user.dir}/logs/jmicro/sf.log"/>
+		<param name="DatePattern" value="'.'yyyyMMdd"/>
+		<param name="Append" value="true"/>
+		<param name="Threshold" value="DEBUG"/>
+		<layout class="org.apache.log4j.PatternLayout">
+			<param name="ConversionPattern" value="[%L],[%t],[%d][%p,%c{1}] %m%n"/>
+		</layout>
+	</appender>
 
 	<appender name="jmicro_info" class="org.apache.log4j.DailyRollingFileAppender">
 		<param name="File" value="${user.dir}/logs/jmicro/info.log"/>
@@ -99,6 +109,11 @@
 			<param name="ConversionPattern" value="[%L],[%t],[%d][%p,%c{1}] %m%n"/>
 		</layout>
 	</appender>
+	
+	<logger name="cn.jmicro.api.monitor.sf">
+		<level value="DEBUG"/>
+		<appender-ref ref="SF"/>
+	</logger>
 	
 	<logger name="io.netty.handler.logging">
 		<level value="WARN"/>

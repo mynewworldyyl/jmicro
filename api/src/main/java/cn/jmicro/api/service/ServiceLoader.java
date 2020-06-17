@@ -109,6 +109,10 @@ public class ServiceLoader{
 	
 	private Map<Integer,Object> services = new ConcurrentHashMap<Integer,Object>();
 	
+	private Server nettyServer = null;
+	
+	private Server httpServer = null;
+	
 	//private Map<String,Class<?>> servicesAnno = new ConcurrentHashMap<String,Class<?>>();
 	
 	@JMethod("init")
@@ -152,6 +156,42 @@ public class ServiceLoader{
 			}
 			servers.put(anno.transport(), s);
 		}
+		
+		
+		for(IServer s : this.servers.values()){
+			
+			String host = s.host();
+			int port = s.port();
+				
+			Server sr = new Server();
+			cn.jmicro.api.annotation.Server sano = ProxyObject.getTargetCls(s.getClass())
+					.getAnnotation(cn.jmicro.api.annotation.Server.class);
+			
+			if(Constants.TRANSPORT_NETTY.equals(sano.transport())) {
+				if( this.exportSocketIP != null) {
+					host = this.exportSocketIP;
+					if(this.exportSocketPort > 0) {
+						port = this.exportSocketPort;
+					}
+				}
+				this.nettyServer = sr;
+			} else if(Constants.TRANSPORT_NETTY_HTTP.equals(sano.transport())) {
+				if(this.exportHttpIP != null) {
+					host = this.exportHttpIP;
+					if(this.exportHttpPort > 0) {
+						port = this.exportHttpPort;
+					}
+				}
+				this.httpServer = sr;
+			}
+			
+			sr.setHost(host);
+			sr.setPort(port);
+			sr.setProtocol(sano.transport());
+			
+			
+		}
+		
 		exportService();
 		logger.info("export service finish!");
 	}
@@ -275,43 +315,6 @@ public class ServiceLoader{
 			services.put(item.getCode(), srv);
 		}
 		
-		int nettyPort = 0;
-		
-		for(IServer s : this.servers.values()){
-			
-			String host = s.host();
-			int port = s.port();
-				
-			Server sr = new Server();
-			cn.jmicro.api.annotation.Server sano = ProxyObject.getTargetCls(s.getClass())
-					.getAnnotation(cn.jmicro.api.annotation.Server.class);
-			
-			if(Constants.TRANSPORT_NETTY.equals(sano.transport()) && this.exportSocketIP != null) {
-				host = this.exportSocketIP;
-				if(this.exportSocketPort > 0) {
-					port = this.exportSocketPort;
-				}
-			}else if(Constants.TRANSPORT_NETTY_HTTP.equals(sano.transport()) && this.exportHttpIP != null) {
-				host = this.exportHttpIP;
-				if(this.exportHttpPort > 0) {
-					port = this.exportHttpPort;
-				}
-			}
-			
-			if(Constants.TRANSPORT_NETTY.equals(sano.transport())) {
-				nettyPort = port;
-			}
-			
-			sr.setHost(host);
-			sr.setPort(port);
-			sr.setProtocol(sano.transport());
-			
-			item.getServers().add(sr);
-		}
-		
-		//Netty Socket 作为必选端口开放
-		item.getKey().setPort(nettyPort);
-		
 		//if(item.getClientId() >10) {
 			cl.addClassInstance(item.getKey().getServiceName());
 		//}
@@ -323,7 +326,7 @@ public class ServiceLoader{
 	
 	private ServiceItem createSrvItemByClass(Class<?> cls) {
 		Class<?> srvCls = ProxyObject.getTargetCls(cls);
-		ServiceItem item = this.getServiceItems(srvCls);
+		ServiceItem item = this.getServiceItems(srvCls,null,null);
 		if(item == null){
 			logger.error("class "+srvCls.getName()+" is not service");
 			return null;
@@ -338,26 +341,18 @@ public class ServiceLoader{
 		//ServiceItem 
 		ServiceItem si = null;
 		if(interfacez.isAnnotationPresent(Service.class)) {
-			si = this.getServiceItems(interfacez);
-			if(StringUtils.isNotEmpty(ns)) {
-				si.getKey().setNamespace(UniqueServiceKey.namespace(ns));
-			}
-			
-			if(StringUtils.isNotEmpty(ver)) {
-				si.getKey().setVersion(UniqueServiceKey.version(ver));
-			}
-			
+			si = this.getServiceItems(interfacez,ns,ver);
 			if(StringUtils.isNotEmpty(impl)) {
 				si.setImpl(impl);
 			}
-		}else {
+		} else {
 			si = this.createSrvItem(interfacez.getName(), ns, ver, impl);
 			for(Method m : interfacez.getMethods()) {
 				createSrvMethod(si,m.getName(),m.getParameterTypes());
 			}
 		}
 		
-		if(si.getCode() == 0) {
+		if(si.getCode() <= 0) {
 			si.setCode(idGenerator.getIntId(ServiceItem.class));
 		}
 		
@@ -376,6 +371,9 @@ public class ServiceLoader{
 		item.setKey(usk);
 		item.setImpl(impl);
 		
+		item.getServers().add(this.nettyServer);
+		item.getServers().add(this.httpServer);
+		item.setExternal(false);
 		
 		//item.setMaxFailBeforeDegrade(anno.maxFailBeforeDegrade()!=100 || intAnno == null ?anno.maxFailBeforeDegrade():intAnno.maxFailBeforeDegrade());
 		//item.setRetryCnt();
@@ -436,7 +434,7 @@ public class ServiceLoader{
 	
 	}
 
-	private ServiceItem getServiceItems(Class<?> proxySrv) {
+	private ServiceItem getServiceItems(Class<?> proxySrv,String namespace,String version) {
 		Class<?> srvCls = ProxyObject.getTargetCls(proxySrv);
 		if(!srvCls.isAnnotationPresent(Service.class)){
 			throw new CommonException("Not a service class ["+srvCls.getName()+"] annotated with ["+Service.class.getName()+"]");
@@ -464,18 +462,35 @@ public class ServiceLoader{
 		}
 		
 		ServiceItem item = new ServiceItem();
-		UniqueServiceKey usk = new UniqueServiceKey();
-		usk.setNamespace(getFieldValue(anno.namespace(),intAnno == null ? null : intAnno.namespace(),Constants.DEFAULT_NAMESPACE));
 		
+		//Netty Socket 作为必选端口开放
+		
+		item.getServers().add(this.nettyServer);
+		item.getServers().add(this.httpServer);
+		
+		UniqueServiceKey usk = new UniqueServiceKey();
+		usk.setPort(this.nettyServer.getPort());
 		//服务名称肯定是接口全限定类名称
 		usk.setServiceName(interfacez.getName());
-		usk.setVersion(getFieldValue(anno.version(),intAnno == null ? null : intAnno.version(),Constants.VERSION));
 		usk.setInstanceName(Config.getInstanceName());
 		usk.setHost(Config.getHost());
+		
+		if(StringUtils.isNotEmpty(namespace)) {
+			usk.setNamespace(UniqueServiceKey.namespace(namespace));
+		}else {
+			usk.setNamespace(getFieldValue(anno.namespace(),intAnno == null ? null : intAnno.namespace(),Constants.DEFAULT_NAMESPACE));
+		}
+		
+		if(StringUtils.isNotEmpty(version)) {
+			usk.setVersion(UniqueServiceKey.version(version));
+		}else {
+			usk.setVersion(getFieldValue(anno.version(),intAnno == null ? null : intAnno.version(),Constants.VERSION));
+		}
 		
 		item.setKey(usk);
 		item.setImpl(proxySrv.getName());
 		item.setClientId(anno.clientId());
+		item.setExternal(anno.external());
 		
 		//item.setMaxFailBeforeDegrade(anno.maxFailBeforeDegrade()!=100 || intAnno == null ?anno.maxFailBeforeDegrade():intAnno.maxFailBeforeDegrade());
 		item.setRetryCnt(anno.retryCnt()!=3 || intAnno == null ?anno.retryCnt():intAnno.retryCnt());

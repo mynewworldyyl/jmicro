@@ -165,10 +165,6 @@ public class ServerMessageReceiver implements IMessageReceiver{
 				sb.append(",Receive Time:").append(usedTime);
 			}
 				
-			if(msg.isMonitorable()) {
-				SF.netIoRead(this.getClass().getName(),MC.MT_SERVER_IOSESSION_READ, msg.getLen());
-			}
-			
 			if(SF.isLoggable(MC.LOG_DEBUG,msg.getLogLevel())) {
 				SF.doMessageLog(MC.MT_PLATFORM_LOG,MC.LOG_DEBUG, TAG, msg,null,"doReceive");
 			}

@@ -20,6 +20,8 @@
               <Input id="host" :value="node.val.key.host" placeholder="Host" disabled/>
               <label for="port">Socket Port</label>
               <Input id="port" :value="node.val.key.port" placeholder="Port" disabled/>
+              <label for="code">Code</label>
+              <Input id="code" :value="node.val.code" placeholder="" disabled/>
           </div>
       </Card>
 

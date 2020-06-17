@@ -89,7 +89,7 @@ public interface TypeCoder<T> extends Comparable<TypeCoder<T>>{
 
 		List<Field> fields = loadClassFieldsFromCache(cls);
 
-		TypeCoder coder = TypeCoderFactory.getDefaultCoder();
+		TypeCoder coder = TypeCoderFactory.getIns().getDefaultCoder();
 		
 		for (int i = 0; i < fields.size(); i++) {
 
@@ -147,7 +147,7 @@ public interface TypeCoder<T> extends Comparable<TypeCoder<T>>{
 		 }
 		 putLength(buffer,objs.size());
 		
-		TypeCoder coder = TypeCoderFactory.getDefaultCoder();
+		TypeCoder coder = TypeCoderFactory.getIns().getDefaultCoder();
 		for(Object o: objs){
 			coder.encode(buffer, o, valueType, null);
 		}
@@ -171,7 +171,7 @@ public interface TypeCoder<T> extends Comparable<TypeCoder<T>>{
 			valueType = TypeUtils.finalParameterType((ParameterizedType) genericType, 1);
 		}
 		
-		TypeCoder coder = TypeCoderFactory.getDefaultCoder();
+		TypeCoder coder = TypeCoderFactory.getIns().getDefaultCoder();
 		
 		for(Map.Entry<K,V> e: map.entrySet()){
 			if(e.getKey() == null) {
@@ -220,7 +220,7 @@ public interface TypeCoder<T> extends Comparable<TypeCoder<T>>{
 	    if(sameElt && finalCls) {
 	    	Class firstCls = Array.get(objs, 0).getClass();
 	    	flag |= cn.jmicro.common.Constants.HEADER_ELETMENT;
-	    	Short code = cn.jmicro.api.codec.TypeCoderFactory.getCodeByClass(firstCls);
+	    	Short code = cn.jmicro.api.codec.TypeCoderFactory.getIns().getCodeByClass(firstCls);
 	    	writeEvery = false;
 	    	if(code == null) {
 	    		 flag |= cn.jmicro.common.Constants.ELEMENT_TYPE_CODE;
@@ -232,7 +232,7 @@ public interface TypeCoder<T> extends Comparable<TypeCoder<T>>{
 	    	writeEvery = true;
 	    }
 		
-		TypeCoder coder = TypeCoderFactory.getDefaultCoder();
+		TypeCoder coder = TypeCoderFactory.getIns().getDefaultCoder();
 		for(int i = 0; i < len; i++){
 			Object v = Array.get(objs, i);
 			
@@ -241,7 +241,7 @@ public interface TypeCoder<T> extends Comparable<TypeCoder<T>>{
 					 buffer.writeByte(Decoder.PREFIX_TYPE_NULL);
 					 continue;
 				} else {
-					Short code = cn.jmicro.api.codec.TypeCoderFactory.getCodeByClass(v.getClass());
+					Short code = cn.jmicro.api.codec.TypeCoderFactory.getIns().getCodeByClass(v.getClass());
 					if(code == null) {
 						 buffer.writeByte(Decoder.PREFIX_TYPE_STRING);
 			    		 buffer.writeUTF(v.getClass().getName());
@@ -280,10 +280,13 @@ public interface TypeCoder<T> extends Comparable<TypeCoder<T>>{
 			 if(elt == null) {
 				 return false;
 			 }
-			 return java.lang.reflect.Modifier.isFinal(elt.getClass().getModifiers()) ||cn.jmicro.api.codec.ISerializeObject.class.isAssignableFrom(elt.getClass());
+			 boolean f = java.lang.reflect.Modifier.isFinal(elt.getClass().getModifiers()) ||cn.jmicro.api.codec.ISerializeObject.class.isAssignableFrom(elt.getClass());
+		     if(!f) {
+		    	 return false;
+		     }
 		 }
 		 
-		return false;
+		return true;
 		
 	}
 	
@@ -315,11 +318,25 @@ public interface TypeCoder<T> extends Comparable<TypeCoder<T>>{
 			return true;
 		}
 		
-		Object pre = Array.get(coll, 0);
+		Object pre = null;
+		int beginIndex = 1;
+		for(int i = 0; i < len; i++) {
+			pre = Array.get(coll, 0);
+			if(pre != null) {
+				beginIndex = 1;
+				break;
+			}
+		}
+		
+		if(pre == null) {
+			//all element is null
+			return true;
+		}
+		
 		Object cur = null;
 		boolean same = true;
 		
-		for(int i = 1; i < len; i++) {
+		for(int i = beginIndex; i < len; i++) {
 			cur = Array.get(coll, i);
 			if(cur == null) {
 				continue;
@@ -363,7 +380,7 @@ public interface TypeCoder<T> extends Comparable<TypeCoder<T>>{
 		
 		List<Field> fields = loadClassFieldsFromCache(cls);
 		
-		TypeCoder coder = TypeCoderFactory.getDefaultCoder();
+		TypeCoder coder = TypeCoderFactory.getIns().getDefaultCoder();
 		for(int i =0; i < fields.size(); i++){
 
 			Field f = fields.get(i);
@@ -372,6 +389,7 @@ public interface TypeCoder<T> extends Comparable<TypeCoder<T>>{
 				continue;
 			}
 			try {
+				System.out.println(cls.getName() + "."+f.getName());
 				Object v = coder.decode(buffer, f.getType(), f.getGenericType());
 				TypeUtils.setFieldValue(obj, v, f);
 			} catch (CommonException e) {
@@ -399,7 +417,7 @@ public interface TypeCoder<T> extends Comparable<TypeCoder<T>>{
 		Class<?> keyType = TypeUtils.finalParameterType(paramType,0);
 		Class<?> valType = TypeUtils.finalParameterType(paramType,1);
 		
-		TypeCoder coder = TypeCoderFactory.getDefaultCoder();
+		TypeCoder coder = TypeCoderFactory.getIns().getDefaultCoder();
 		Map<Object,Object> map = new HashMap<>();
 		for(; len > 0; len--) {
 			try {
@@ -443,7 +461,7 @@ public interface TypeCoder<T> extends Comparable<TypeCoder<T>>{
 			 valueType = TypeUtils.finalParameterType((ParameterizedType)genericType,0);
 		 }
 		 
-		 TypeCoder coder = TypeCoderFactory.getDefaultCoder();
+		 TypeCoder coder = TypeCoderFactory.getIns().getDefaultCoder();
 		 
 		for(int i =0; i <len; i++){
 			Object v = coder.decode(buffer, valueType, null);
@@ -477,14 +495,14 @@ public interface TypeCoder<T> extends Comparable<TypeCoder<T>>{
 			}else {
 				try {
 					Short c = buffer.readShort();
-					eltType = cn.jmicro.api.codec.TypeCoderFactory.getClassByCode(new Short(c));
+					eltType = cn.jmicro.api.codec.TypeCoderFactory.getIns().getClassByCode(new Short(c));
 				} catch (IOException e) {
 					throw new CommonException("readShort",e);
 				}
 			}
 		}
 		
-		TypeCoder coder = TypeCoderFactory.getDefaultCoder();
+		TypeCoder coder = TypeCoderFactory.getIns().getDefaultCoder();
 		 
 		Object objs = null;
 		if(readEvery) {
@@ -504,7 +522,7 @@ public interface TypeCoder<T> extends Comparable<TypeCoder<T>>{
 						eltType = getType(buffer);
 					} else {
 						Short c = buffer.readShort();
-						eltType = cn.jmicro.api.codec.TypeCoderFactory.getClassByCode(new Short(c));
+						eltType = cn.jmicro.api.codec.TypeCoderFactory.getIns().getClassByCode(new Short(c));
 					}
 				} catch (IOException e) {
 					throw new CommonException("readByte",e);

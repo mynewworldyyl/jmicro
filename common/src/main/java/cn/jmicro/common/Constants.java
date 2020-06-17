@@ -15,6 +15,7 @@
  * limitations under the License.
  */
 package cn.jmicro.common;
+
 /**
  * 
  * @author Yulei Ye
@@ -22,10 +23,14 @@ package cn.jmicro.common;
  */
 public interface Constants {
 	
+	public static final String PATH_EXCAPE = "#@!";
+	
 	public static final String TOPIC_SEPERATOR=",";
 
 	public static final String CLIENT_ONLY="client";
 	public static final String SERVER_ONLY="server";
+	
+	public static final String TYPE_CODE_PRODUCER = "typeCodeProducer";
 	
 	public static final String CFG_ROOT="/jmicro";
 	

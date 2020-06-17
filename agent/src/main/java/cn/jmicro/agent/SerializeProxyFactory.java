@@ -59,7 +59,7 @@ public class SerializeProxyFactory {
 		
 		sb.append(cls.getName()).append(" __obj =  this;\n ");
 		
-		sb.append(" cn.jmicro.api.codec.typecoder.TypeCoder __coder = cn.jmicro.api.codec.TypeCoderFactory.getDefaultCoder();\n\n");
+		sb.append(" cn.jmicro.api.codec.typecoder.TypeCoder __coder = cn.jmicro.api.codec.TypeCoderFactory.getIns().getDefaultCoder();\n\n");
 		
 		sb.append(" cn.jmicro.api.codec.JDataInput in = (cn.jmicro.api.codec.JDataInput)__buffer;\n");
 		
@@ -140,7 +140,7 @@ public class SerializeProxyFactory {
 		StringBuffer sb = new StringBuffer("public void encode(java.io.DataOutput __buffer) throws java.io.IOException { \n");
 		sb.append(cls.getName()).append(" __obj =  this;\n ");
 		sb.append(" cn.jmicro.api.codec.JDataOutput out = (cn.jmicro.api.codec.JDataOutput)__buffer;\n");
-		sb.append(" cn.jmicro.api.codec.typecoder.TypeCoder __coder = cn.jmicro.api.codec.TypeCoderFactory.getDefaultCoder(); \n");
+		sb.append(" cn.jmicro.api.codec.typecoder.TypeCoder __coder = cn.jmicro.api.codec.TypeCoderFactory.getIns().getDefaultCoder(); \n");
 		
 		ClassPool cp = ClassPool.getDefault();
 		
@@ -313,7 +313,7 @@ public class SerializeProxyFactory {
 	}
 	
 	public static void errorToSerializeObjectCode(String clsName) {
-		String msg = "You can call method cn.jmicro.api.codec.TypeCoderFactory.registClass(\""+clsName+".class\") to regist serialize class["+clsName+"] upgrade performance";
+		String msg = "You can call method cn.jmicro.api.codec.TypeCoderFactory.getIns().registClass(\""+clsName+".class\") to regist serialize class["+clsName+"] upgrade performance";
 		//throw new CommonException(msg);
 	}
 	
@@ -431,12 +431,12 @@ public class SerializeProxyFactory {
 		if(val != null && val instanceof ISerializeObject) {
 			//System.out.println("Use Instance "+valCls.getName());
 			/*buffer.write(Decoder.PREFIX_TYPE_PROXY);
-			short code = TypeCoderFactory.getCodeByClass(valCls);
+			short code = TypeCoderFactory.getIns().getCodeByClass(valCls);
 			buffer.writeShort(code);*/
 			((ISerializeObject)val).encode(buffer);
 			return;
 		} else {
-			TypeCoderFactory.getDefaultCoder().encode(buffer, val, null, null);
+			TypeCoderFactory.getIns().getDefaultCoder().encode(buffer, val, null, null);
 		}
 	
 	}
@@ -469,7 +469,7 @@ public class SerializeProxyFactory {
 		if(ISerializeObject.class.isAssignableFrom(valCls)) {
 			//System.out.println("Use Instance "+valCls.getName());
 			/*buffer.write(Decoder.PREFIX_TYPE_PROXY);
-			short code = TypeCoderFactory.getCodeByClass(valCls);
+			short code = TypeCoderFactory.getIns().getCodeByClass(valCls);
 			buffer.writeShort(code);*/
 			Object val;
 			try {
@@ -481,7 +481,7 @@ public class SerializeProxyFactory {
 				return null;
 			}
 		} else {
-			return TypeCoderFactory.getDefaultCoder().decode(buffer, valCls, null);
+			return TypeCoderFactory.getIns().getDefaultCoder().decode(buffer, valCls, null);
 		}
 	
 	}

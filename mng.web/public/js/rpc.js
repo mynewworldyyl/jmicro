@@ -356,6 +356,9 @@ jm.rpc.Constants = {
 
     CHARSET : 'UTF-8',
 
+    LOGIN:1,
+    LOGOUT:2,
+
     HEADER_LEN : 14,
     PROTOCOL_BIN : 0,
     PROTOCOL_JSON : 1,

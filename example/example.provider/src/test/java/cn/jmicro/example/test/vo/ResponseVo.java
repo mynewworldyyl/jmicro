@@ -19,7 +19,7 @@ public class ResponseVo {
 	public void encode(java.io.DataOutput __buffer,Object obj) throws java.io.IOException { 
 		ResponseVo __obj =  this;
 		  cn.jmicro.api.codec.JDataOutput out = (cn.jmicro.api.codec.JDataOutput)__buffer;
-		 cn.jmicro.api.codec.typecoder.TypeCoder __coder = cn.jmicro.api.codec.TypeCoderFactory.getDefaultCoder(); 
+		 cn.jmicro.api.codec.typecoder.TypeCoder __coder = cn.jmicro.api.codec.TypeCoderFactory.getIns().getDefaultCoder(); 
 		 long __val0= __obj.id;
 		 out.writeLong( __val0); 
 
@@ -66,7 +66,7 @@ public class ResponseVo {
 		 __val3  = null;
 		  if(0 != (cn.jmicro.common.Constants.NULL_VAL & flagName3)) {  __val3  = null;
 		 } else { // block0 
-		 cn.jmicro.api.codec.typecoder.TypeCoder __coder = cn.jmicro.api.codec.TypeCoderFactory.getDefaultCoder();
+		 cn.jmicro.api.codec.typecoder.TypeCoder __coder = cn.jmicro.api.codec.TypeCoderFactory.getIns().getDefaultCoder();
 
 		 __val3 = (java.lang.Object) __coder.decode(__buffer,java.lang.Object.class, null );
 		} //block0 

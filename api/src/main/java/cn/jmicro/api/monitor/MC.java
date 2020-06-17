@@ -186,25 +186,25 @@ public final class MC {
 	@MCA("平台日志")
 	public static final short MT_PLATFORM_LOG = 0x0031;
 	
-	@MCA("接收消息数量")
+	@MCA(value="接收消息数量", group="ms")
 	public static final short Ms_ReceiveItemCnt = 0x0032;
-	@MCA("失败消息数量")
+	@MCA(value="失败消息数量", group="ms")
 	public static final short Ms_FailItemCount = 0x0033;
-	@MCA("线程提交消息数量")
+	@MCA(value="线程提交消息数量", group="ms")
 	public static final short Ms_CheckerSubmitItemCnt = 0x0034;
-	@MCA("任务提交成功消息数量")
+	@MCA(value="任务提交成功消息数量", group="ms")
 	public static final short Ms_TaskSuccessItemCnt = 0x0035;
-	@MCA("任务提交失败消息数量")
+	@MCA(value="任务提交失败消息数量", group="ms")
 	public static final short Ms_TaskFailItemCnt = 0x0036;
-	@MCA("提交消息数量")
+	@MCA(value="提交消息数量", group="ms")
 	public static final short Ms_SubmitCnt = 0x0037;
-	@MCA("提交到消息篮子失败消息数量")
+	@MCA(value="提交到消息篮子失败消息数量", group="ms")
 	public static final short Ms_Fail2BorrowBasket = 0x0038;
-	@MCA("线程提交异常消息数量")
+	@MCA(value="线程提交异常消息数量", group="ms")
 	public static final short Ms_CheckerExpCnt = 0x0039;
-	@MCA("线程循环次数")
+	@MCA(value="线程循环次数", group="ms")
 	public static final short Ms_CheckLoopCnt = 0x003A;
-	@MCA("归还篮子失败次数")
+	@MCA(value="归还篮子失败次数", group="ms")
 	public static final short Ms_FailReturnWriteBasket = 0x003B;
 	
 	@MCA(value="收到无效消息主题", group=Constants.PUBSUB_KEY)

@@ -41,14 +41,14 @@ public class JMicroBaseTestCase {
 	
 	protected ServiceMethod helloTopicMethodKey() {
 		StringBuilder sb = new StringBuilder();
-		UniqueServiceKey.serviceName(sb, "org.jmicro.example.api.ISayHello");
+		UniqueServiceKey.serviceName(sb, "cn.jmicro.example.api.ISayHello");
 		UniqueServiceKey.namespace(sb, "simpleRpc");
 		UniqueServiceKey.version(sb, "0.0.1");
 		UniqueServiceKey.instanceName(true, sb, "provider");
 		UniqueServiceKey.host(true, sb, Utils.getIns().getLocalIPList().get(0));
 		UniqueServiceKey.port(false, sb, 0);
 		sb.append("helloTopic").append(UniqueServiceMethodKey.SEP);
-		sb.append("org.jmicro.api.pubsub.PSData");
+		sb.append("cn.jmicro.api.pubsub.PSData");
 		UniqueServiceMethodKey key = UniqueServiceMethodKey.fromKey(sb.toString());
 		ServiceMethod sm = new ServiceMethod();
 		sm.setKey(key);
@@ -56,7 +56,7 @@ public class JMicroBaseTestCase {
 	}
 	
 	protected ServiceItem sayHelloServiceItem() {
-		ServiceItem si = registry.getServiceByImpl("org.jmicro.example.rpc.impl.SimpleRpcImpl");
+		ServiceItem si = registry.getServiceByImpl("cn.jmicro.example.rpc.impl.SimpleRpcImpl");
 		org.junit.Assert.assertNotNull(si);
 		return si;
 	}

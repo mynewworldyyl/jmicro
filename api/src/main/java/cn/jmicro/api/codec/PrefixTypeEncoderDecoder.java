@@ -40,7 +40,11 @@ public class PrefixTypeEncoderDecoder{
 	//@Inject
 	//private TypeCoderFactory typeCf;
 	
-	TypeCoder<Object> dc = TypeCoderFactory.getDefaultCoder();
+	private TypeCoder<Object> dc = null;
+	
+	public void ready() {
+		dc = TypeCoderFactory.getIns().getDefaultCoder();
+	}
 	
 	@SuppressWarnings("unchecked")
 	public <V> V decode(ByteBuffer buffer) {
@@ -59,7 +63,6 @@ public class PrefixTypeEncoderDecoder{
 	@Cfg(value="/OnePrefixTypeEncoder",defGlobal=true,required=true)
 	private int encodeBufferSize = 4092;
 	
-	@SuppressWarnings({ "unchecked", "rawtypes" })
 	public ByteBuffer encode(Object obj) {
 		if(obj == null) {
 			ByteBuffer buffer = ByteBuffer.allocate(1);
@@ -70,7 +73,7 @@ public class PrefixTypeEncoderDecoder{
 
 		//buffer = ByteBuffer.allocate(encodeBufferSize);
 		//入口从Object的coder开始
-		TypeCoder coder = TypeCoderFactory.getDefaultCoder();
+		//TypeCoder coder = TypeCoderFactory.getIns().getDefaultCoder();
 		//field declare as Object.class in order to put type info any way
 		//从此进入时,字段声明及泛型类型都是空,区别于从反射方法进入
 		try {
@@ -82,7 +85,7 @@ public class PrefixTypeEncoderDecoder{
 			SerializeObject so = SerializeProxyFactory.getSerializeCoder(obj.getClass());
 			so.encode(dos,obj);*/
 			
-			coder.encode(dos, obj, null,null);
+			dc.encode(dos, obj, null,null);
 			return  dos.getBuf();
 		} catch (IOException e) {
 			throw new CommonException("encode error:"+obj.toString(),e);

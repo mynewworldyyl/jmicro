@@ -21,6 +21,7 @@
                   <Menu-item name="monitors"><Icon type="ios-cog"></Icon>MONITORS</Menu-item>
                   <Menu-item name="typeConfig"><Icon type="ios-cog"></Icon>TYPE CONFIG</Menu-item>
                   <Menu-item name="monitorType"><Icon type="ios-cog"></Icon>MONITOR TYPES</Menu-item>
+                  <Menu-item name="monitorTypeServiceMethod"><Icon type="ios-cog"></Icon>MONITOR SERVICE</Menu-item>
               </Submenu>
 
               <Menu-item name="config">
@@ -93,6 +94,12 @@
               <JMonitorTypeKeyList slId="monitorTypeKey" evt-name="monitorTypeKeySelect"></JMonitorTypeKeyList>
           </Drawer>
 
+          <Drawer  v-model="cache.monitorTypeServiceMethod.drawerStatus" :closable="false" placement="left" :transfer="true"
+                   :draggable="true" :scrollable="true" width="50">
+              <JServiceList slId="monitorTypeServiceMethodId" evt-name="monitorTypeServiceMethodSelect"
+                            group="mtsm" menuStr="ins" groupBy="ins"></JServiceList>
+          </Drawer>
+
           <!-- route outlet -->
           <router-view></router-view>
       </div>
@@ -160,6 +167,12 @@ export default {
 
         cache['monitorType']={
             key: 'monitorType',
+            drawerStatus:false,
+            drawerBtnStyle:{left:'0px'},
+        };
+
+        cache['monitorTypeServiceMethod']={
+            key: 'monitorTypeServiceMethod',
             drawerStatus:false,
             drawerBtnStyle:{left:'0px'},
         };

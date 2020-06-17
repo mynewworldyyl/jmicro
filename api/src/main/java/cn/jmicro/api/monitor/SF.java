@@ -16,6 +16,9 @@
  */
 package cn.jmicro.api.monitor;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import cn.jmicro.api.JMicro;
 import cn.jmicro.api.JMicroContext;
 import cn.jmicro.api.config.Config;
@@ -25,6 +28,7 @@ import cn.jmicro.api.net.Message;
 import cn.jmicro.api.net.ServerError;
 import cn.jmicro.api.registry.ServiceMethod;
 import cn.jmicro.common.Constants;
+import cn.jmicro.common.util.JsonUtils;
 
 /**
  * 
@@ -33,14 +37,22 @@ import cn.jmicro.common.Constants;
  */
 public class SF {
 	
+	private final static Logger logger = LoggerFactory.getLogger("cn.jmicro.api.monitor.sf.SFF");
+	
 	private static MonitorClient m = null;
 	
+	private static boolean isInit = false;
+	
+	private static boolean isMs = false;
+	
+	private static boolean isDs = false;
+	
 	public static boolean linkStart(String tag,IReq req) {
-		return reqEvent(MC.MT_LINK_START,MC.LOG_INFO,req,tag);
+		return reqEvent(MC.MT_LINK_START,MC.LOG_DEBUG,req,tag);
 	}
 	
 	public static boolean linkEnd(String tag,IResp resp) {
-		return respEvent(MC.MT_LINK_END,MC.LOG_INFO,resp,tag);
+		return respEvent(MC.MT_LINK_END,MC.LOG_DEBUG,resp,tag);
 	}
 	
 	public static boolean reqStart(String tag,IReq req) {
@@ -57,8 +69,13 @@ public class SF {
 			mi.setResp(resp);
 			mi.addOneItem(type,level,tag,"");
 			return true;
+		}else {
+			if(level >= MC.LOG_DEBUG && logger.isDebugEnabled()) {
+				logger.debug("Disgard: type:" + MC.MONITOR_VAL_2_KEY.get(type) + ",level: " + level + " tag: " +tag + " Resp: "
+			+JsonUtils.getIns().toJson(resp));
+			}
+			return false;
 		}
-		return false;
 	} 
 	
 	public static boolean reqEvent(short type,byte level,IReq req,String tag) {
@@ -67,8 +84,12 @@ public class SF {
 			mi.setReq(req);
 			mi.addOneItem(type,level,tag,"");
 			return true;
+		}else {
+			if(level >= MC.LOG_DEBUG && logger.isDebugEnabled()) {
+				logger.debug("Disgard: type:" + MC.MONITOR_VAL_2_KEY.get(type) + ",level: " + level + " tag: " +tag + " Req: "+JsonUtils.getIns().toJson(req));
+			}
+			return false;
 		}
-		return false;
 	} 
 	
 	public static boolean serviceNotFound(String tag,String desc) {
@@ -88,9 +109,9 @@ public class SF {
 	}
 	
 	public static boolean eventLog(short type,byte level,String tag,String desc) {
-		if(isMonitorable(type) || isLoggable(level)) {
+		if(isMonitorable(type)) {
 			MRpcItem mi = null;
-			if(JMicroContext.existsContext()) {
+			if(JMicroContext.existRpcContext()) {
 				 mi = JMicroContext.get().getMRpcItem();
 			}
 			boolean f = false;
@@ -102,7 +123,11 @@ public class SF {
 			mi.addOneItem(type,level, tag,desc);
 			if(f) {
 				setCommon(mi);
-				return monitor().readySubmit(mi);
+				return m.readySubmit(mi);
+			}
+		}else {
+			if(level >= MC.LOG_DEBUG && logger.isDebugEnabled()) {
+				logger.debug("Disgard: type:" + MC.MONITOR_VAL_2_KEY.get(type) + ", level: " + level + ", tag: " +tag + ", Desc: "+desc);
 			}
 		}
 		return false;
@@ -137,27 +162,40 @@ public class SF {
 	}
 	
 	public static boolean breakService(String tag,ServiceMethod sm,String desc) {
-		MonitorClient mo = monitor();
-		if(mo.isServerReady() && !mo.canSubmit(MC.MT_SERVICE_BREAK)) {
+		if(isMonitorable(MC.MT_SERVICE_BREAK)) {
+			MRpcItem mi = new MRpcItem();
+			mi.setSm(sm);
+			mi.addOneItem(MC.MT_SERVICE_BREAK,MC.LOG_WARN, tag,desc);
+			setCommon(mi);
+			m.readySubmit(mi);
+			return true;
+		}else {
+			if(logger.isDebugEnabled()) {
+				logger.debug("Disgard: type:MT_SERVICE_BREAK, level: " + MC.LOG_WARN + ", tag: " +tag + ", Desc: "+desc);
+			}
 			return false;
 		}
-		MRpcItem mi = new MRpcItem();
-		mi.setSm(sm);
-		mi.addOneItem(MC.MT_SERVICE_BREAK,MC.LOG_WARN, tag,desc);
-		setCommon(mi);
-		mo.readySubmit(mi);
-		return true;
+		
 	}
 	
+	
+	
 	public static boolean netIo(short type,byte level,String desc,Class cls,Throwable ex) {
-		
-		MonitorClient mo = monitor();
-		if(mo.isServerReady() && !mo.canSubmit(type)) {
+		if(!isMonitorable(type)) {
+			if(logger.isDebugEnabled()) {
+				logger.debug("Disgard: type:" + MC.MONITOR_VAL_2_KEY.get(type) + ", level: " + level + ", tag: " +cls.getName() + ", Desc: "+desc);
+			}
+			if(ex != null) {
+				logger.error("",ex);
+			}
+			return false;
+		}
+		if(m.isServerReady() && !m.canSubmit(sm(),type)) {
 			return false;
 		}
 		
 		MRpcItem mi = null;
-		if(JMicroContext.existsContext()) {
+		if(JMicroContext.existRpcContext()) {
 			mi = JMicroContext.get().getMRpcItem();
 		}
 		
@@ -171,20 +209,22 @@ public class SF {
 		oi.setEx(ex);
 		if(f) {
 			setCommon(mi);
-			return mo.submit2Cache(mi);
+			return m.submit2Cache(mi);
 		}
 		return false;
 		
 	}
 	
 	public static boolean netIoRead(String tag,short type,long num) {
-		MonitorClient mo = monitor();
-		if(mo.isServerReady() && !mo.canSubmit(type)) {
+		if(m.isServerReady() && !m.canSubmit(sm(),type)) {
+			if(logger.isDebugEnabled()) {
+				logger.debug("Disgard: type:" + MC.MONITOR_VAL_2_KEY.get(type) + ", level: " + MC.LOG_DEBUG + ", tag: " +tag + ", Num: "+num);
+			}
 			return false;
 		}
 		
 		MRpcItem mi = null;
-		if(JMicroContext.existsContext()) {
+		if(JMicroContext.existRpcContext()) {
 			mi = JMicroContext.get().getMRpcItem();
 		}
 		
@@ -198,7 +238,7 @@ public class SF {
 		oi.setVal(num);
 		if(f) {
 			setCommon(mi);
-			return mo.submit2Cache(mi);
+			return m.submit2Cache(mi);
 		}
 		return true;
 	}
@@ -232,7 +272,7 @@ public class SF {
 	}
 	
 	private static void doLog(short type,byte level,Class<?> cls,Message msg,Throwable exp, String desc) {
-		if(isLoggable(level)) {
+		if(isMonitorable(type)) {
 			int lineNum = Thread.currentThread().getStackTrace()[3].getLineNumber();
 			MRpcItem mi = JMicroContext.get().getMRpcItem();
 			boolean f = false;
@@ -251,9 +291,24 @@ public class SF {
 			mi.setMsg(msg);
 			if(f) {
 				setCommon(mi);
-				monitor().submit2Cache(mi);
+				m.submit2Cache(mi);
+			}
+		}else {
+			if(logger.isDebugEnabled()) {
+				logger.debug("Disgard: type:" + MC.MONITOR_VAL_2_KEY.get(type) + ", level: " + MC.LOG_DEBUG + ", tag: " +cls.getName() + ", Desc: "+desc);
+			}
+			
+			if(exp != null) {
+				logger.error("",exp);
 			}
 		}
+	}
+	
+	private static ServiceMethod sm() {
+		if(JMicroContext.existRpcContext()) {
+			return JMicroContext.get().getParam(Constants.SERVICE_METHOD_KEY, null);
+		}
+		return null;
 	}
 	
 	public static void setCommon(MRpcItem si) {
@@ -261,7 +316,7 @@ public class SF {
 			return;
 		}
 
-		if(JMicroContext.existsContext()) {
+		if(JMicroContext.existRpcContext()) {
 			si.setAct(JMicroContext.get().getAccount());
 			//在RPC上下文中才有以上信息
 			si.setLinkId(JMicroContext.lid());
@@ -275,35 +330,26 @@ public class SF {
 		si.setInstanceName(Config.getInstanceName());
 	}
 	
-	private static MonitorClient monitor() {
-		if(m== null) {
-			m = JMicro.getObjectFactory().get(MonitorClient.class);
-		}
-		return m;
-	}
-	
 	private static boolean isMonitorable(short type) {
 		
-		if(JMicroContext.existsContext() && !JMicroContext.get().isMonitorable()) {
+		if(!isInit) {
+			isInit = true;
+			isMs = JMicro.getObjectFactory().get(IMonitorServer.class) != null;
+			m = JMicro.getObjectFactory().get(MonitorClient.class);
+			isDs = JMicro.getObjectFactory().get(IMonitorDataSubscriber.class) != null;
+		}
+		
+		if(JMicroContext.existRpcContext() && !JMicroContext.get().isMonitorable()
+				|| m == null || !m.isServerReady()) {
 			return false;
 		}
 		
-		if(isMonitorServer()) {
+		if((isDs || isMs) && JMicroContext.existLinkId()) {
+			//avoid dead loop
 			return false;
 		}
 		
-		return monitor().canSubmit(type);
-	}
-	
-	private static boolean isMonitorServer() {
-		if(JMicroContext.existsContext()) {
-			String  srvName = JMicroContext.get().getParam(cn.jmicro.api.JMicroContext.CLIENT_SERVICE, null);
-			if(srvName != null) {
-				//自身的RPC本身肯定不能通过此方式记录日志，否则进入死循环了
-				return IMonitorServer.class.getName().equals(srvName);
-			}
-		}
-		return false;
+		return m.canSubmit(sm(),type);
 	}
 	
 	/**
@@ -316,19 +362,14 @@ public class SF {
 	 * @return
 	 */
 	public static boolean isLoggable(int needLevel,int ...rpcMethodLevel) {
-		MonitorClient mo = monitor();
-		if(!mo.isServerReady() /*&& !mo.canSubmit(MonitorConstant.LINKER_ROUTER_MONITOR) */
+		if(!m.isServerReady() /*&& !mo.canSubmit(MonitorConstant.LINKER_ROUTER_MONITOR) */
 				|| needLevel == MC.LOG_NO) {
-			return false;
-		}
-		
-		if(isMonitorServer()) {
 			return false;
 		}
 		
 		int rpcLevel;
 		if(rpcMethodLevel == null || rpcMethodLevel.length == 0) {
-			if(JMicroContext.existsContext()) {
+			if(JMicroContext.existRpcContext()) {
 				ServiceMethod sm = JMicroContext.get().getParam(Constants.SERVICE_METHOD_KEY, null);
 				 if(sm != null) {
 					 rpcLevel = sm.getLogLevel();

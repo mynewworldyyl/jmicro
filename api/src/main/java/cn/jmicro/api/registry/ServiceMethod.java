@@ -132,13 +132,15 @@ public final class ServiceMethod {
 	
 	//如果客户端RPC异步调用，此topic值必须是方法全限定名，参考toKey方法实现
 	private String topic = null;
-
+	
 	public void formPersisItem(ServiceMethod p){
 		this.monitorEnable = p.monitorEnable;
 
 		this.retryCnt = p.retryCnt;
 		this.retryInterval = p.retryInterval;
 		this.timeout = p.timeout;
+		this.timeWindow = p.timeWindow;
+		this.slotInterval = p.slotInterval;
 
 		this.maxFailBeforeDegrade = p.maxFailBeforeDegrade;
 		this.getBreakingRule().from(p.getBreakingRule());
@@ -150,6 +152,8 @@ public final class ServiceMethod {
 		this.degrade = p.degrade;
 		this.maxSpeed = p.maxSpeed;
 		this.avgResponseTime = p.avgResponseTime;
+		this.failResponse = p.failResponse;
+		this.needResponse = p.needResponse;
 		
 		this.logLevel = p.logLevel;
 		

@@ -370,6 +370,10 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
     	    
     		session.write(msg);
     		
+    		if(msg.isMonitorable()) {
+            	  SF.netIoRead(TAG.getName(),MC.MT_CLIENT_IOSESSION_WRITE, msg.getLen());
+            }
+    		
     		if(cxt.isDebug()) {
     			cxt.appendCurUseTime("End write:",true);
     		}
@@ -404,6 +408,10 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
     		//下面处理响应消息
     		Message respMsg = mh.msg;
     		
+    		if(respMsg != null && respMsg.isMonitorable()) {
+          	  SF.netIoRead(TAG.getName(),MC.MT_CLIENT_IOSESSION_READ, respMsg.getLen());
+            }
+    		
     		RpcResponse resp = null;
     		if(respMsg != null){
     		
@@ -418,7 +426,6 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
 				if(cxt.isDebug()) {
 	    			cxt.appendCurUseTime("Go resp",false);
 	    		}
-				
     		} else {
     			if(openDebug) {
         			logger.info("Timeout req:"+req.getMethod()+",Service:" + req.getServiceName()+", Namespace:"+req.getNamespace());

@@ -51,9 +51,9 @@ public class ClientMessageReceiver implements IMessageReceiver{
 		/*Message msg = new Message();
 		msg.decode(buffer);*/
 		//CodecFactory.decode(this.codecFactory,buffer);
-        if(msg.isMonitorable()) {
+       /* if(msg.isMonitorable()) {
       	  SF.netIoRead(this.getClass().getName(),MC.MT_CLIENT_IOSESSION_READ, msg.getLen());
-        }
+        }*/
         
 		try {
 			IMessageHandler h = handlers.get(msg.getType());

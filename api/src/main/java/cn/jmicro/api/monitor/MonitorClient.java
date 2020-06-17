@@ -16,13 +16,10 @@
  */
 package cn.jmicro.api.monitor;
 
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
@@ -30,7 +27,6 @@ import java.util.concurrent.ExecutorService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import cn.jmicro.api.IListener;
 import cn.jmicro.api.JMicroContext;
 import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Inject;
@@ -38,7 +34,6 @@ import cn.jmicro.api.annotation.JMethod;
 import cn.jmicro.api.annotation.Reference;
 import cn.jmicro.api.basket.BasketFactory;
 import cn.jmicro.api.basket.IBasket;
-import cn.jmicro.api.cache.lock.ILockerManager;
 import cn.jmicro.api.config.Config;
 import cn.jmicro.api.executor.ExecutorConfig;
 import cn.jmicro.api.executor.ExecutorFactory;
@@ -47,21 +42,19 @@ import cn.jmicro.api.objectfactory.IObjectFactory;
 import cn.jmicro.api.raft.IDataOperator;
 import cn.jmicro.api.registry.IServiceListener;
 import cn.jmicro.api.registry.ServiceItem;
+import cn.jmicro.api.registry.ServiceMethod;
 import cn.jmicro.api.service.ServiceLoader;
 import cn.jmicro.common.Constants;
-import cn.jmicro.common.util.StringUtils;
 
 /**
  * 
  * @author Yulei Ye
  * @date 2020年4月4日
  */
-@Component(level=2)
+@Component(level=3)
 public class MonitorClient {
 	
 	private final static Logger logger = LoggerFactory.getLogger(MonitorClient.class);
-	
-	public static final String TYPE_SPERATOR = ",";
 	
 	private final Short[] TYPES  = {
 			MC.Ms_Fail2BorrowBasket,MC.Ms_SubmitCnt,MC.Ms_FailReturnWriteBasket,
@@ -70,11 +63,6 @@ public class MonitorClient {
 	};
 	
 	private String[] typeLabels = null; 
-	
-	//private static final String TYPES_LOCKER = TYPES_PATH;
-	
-	/*@Cfg("/MonitorManager/isMonitorServer")
-	private boolean isMonitorServer = false;*/
 	
 	@Reference(namespace="monitorServer",version="0.0.1",changeListener="enableWork")
 	private IMonitorServer monitorServer;
@@ -93,11 +81,9 @@ public class MonitorClient {
 	private IDataOperator op;
 	
 	@Inject
-	private ILockerManager lockManager;
+	private MonitorTypeManager mtManager;
 	
-	private Map<String,Set<Short>> mkey2Types = new HashMap<>();
-	
-	private List<Short> types = new ArrayList<>();
+	//private Map<String,Boolean> srvMethodMonitorEnable = new HashMap<>();
 	
 	private BasketFactory<MRpcItem> basketFactory = null;
 	
@@ -114,23 +100,13 @@ public class MonitorClient {
 		this.basketFactory = new BasketFactory<MRpcItem>(5000,1);
 		this.cacheBasket = new BasketFactory<MRpcItem>(1000,5);
 		
-		op.addChildrenListener(Config.MonitorTypesDir, (type,parentDir,skey,data)->{
-			if(type == IListener.ADD) {
-				doAddType(skey,data);
-			}else if(type == IListener.DATA_CHANGE) {
-				doUpdateType(skey,data);
-			}else if(type == IListener.REMOVE) {
-				doDeleteType(skey,data);
-			}
-		});
-		
-		Set<String> children = op.getChildren(Config.MonitorTypesDir, false);
+		/*Set<String> children = op.getChildren(Config.MonitorTypesDir, false);
 		if(children != null && !children.isEmpty()) {
 			for(String c : children) {
 				String data = op.getData(Config.MonitorTypesDir+"/"+c);
 				doAddType(c,data);
 			}
-		}
+		}*/
 		
 	}
 
@@ -371,10 +347,6 @@ public class MonitorClient {
 			MRpcItem mi = ite.next();
 			ite.remove();
 			
-			if(!canCompress(mi) ) {
-				result.add(mi);
-			}
-			
 			if(mi.getSm() == null) {
 				//非RPC环境下的事件
 				if(nullSMMRpcItem == null) {
@@ -403,8 +375,8 @@ public class MonitorClient {
 					}
 				}
 			} else {
-				String smKey = mi.getSm().getKey().toKey(true, true, true);
-				MRpcItem oldMi = mprcItems.get(smKey);
+				 String smKey = mi.getSm().getKey().toKey(true, true, true);
+				 MRpcItem oldMi = mprcItems.get(smKey);
 				 if(canDoLog(mi)) {
 					//日志记录不合并
 					result.add(mi);
@@ -426,7 +398,7 @@ public class MonitorClient {
 						if(ooi == null) {
 							oldMi.addOneItem(oi);
 						} else {
-							ooi.doAdd(1,oi.getVal());
+							ooi.doAdd(1,oi.getNum());
 						}
 					
 						/*if(oi.getType() == MonitorConstant.CLIENT_IOSESSION_READ||
@@ -436,7 +408,6 @@ public class MonitorClient {
 					}
 				}
 			}
-			
 		}
 		
 		if(nullSMMRpcItem != null) {
@@ -462,6 +433,10 @@ public class MonitorClient {
 	private boolean canDoLog(MRpcItem mi) {
 		Iterator<OneItem> oiIte = mi.getItems().iterator();
 		for(; oiIte.hasNext(); ) {
+			if(mi.getSm().getLogLevel() == MC.LOG_NO) {
+				//不输出LOG
+				return false;
+			}
 			OneItem oi = oiIte.next();
 			if(mi.getSm().getLogLevel() >= oi.getLevel()) {
 				return true;
@@ -469,17 +444,6 @@ public class MonitorClient {
 		}
 		return false;
 	}
-
-	private boolean canCompress(MRpcItem mi) {
-		Iterator<OneItem> oiIte = mi.getItems().iterator();
-		for(; oiIte.hasNext(); ) {
-			if(MC.MTMS_TYPES.contains(oiIte.next().getType())) {
-				return false;
-			}
-		}
-		return true;
-	}
-
 
 	private class Worker implements Runnable {
 		
@@ -528,126 +492,15 @@ public class MonitorClient {
 		}
 	}
 	
-	
-	
-	public Set<Short> intrest(String skey) {
-		return this.mkey2Types.get(skey);
-	}
-	
 	public boolean isServerReady() {
 		return monitorServer != null;
 	}
 	
-	public boolean canSubmit(Short t) {
-		
+	public boolean canSubmit(ServiceMethod sm, Short t) {
 		if(!this.checkerWorking || monitorServer == null) {
 			return false;
 		}
-		
-		if(!types.contains(t)) {
-			return false;
-		}
-		
-		return this.checkerWorking;
-	}
-	
-	private void doDeleteType(String skey, String data) {
-		Set<Short> ts = mkey2Types.get(skey);
-		mkey2Types.remove(skey);
-		
-		for(Short t : ts) {
-			boolean need = false;
-			for(Set<Short> ss : mkey2Types.values()) {
-				if(ss.contains(t)) {
-					need = true;
-					break;
-				}
-			}
-			if(!need) {
-				types.remove(t);
-			}
-		}
+		return this.mtManager.canSubmit(sm,t);
 	}
 
-	private void doUpdateType(String skey, String data) {
-
-		if(StringUtils.isEmpty(data)) {
-			doDeleteType(skey,data);
-			return;
-		}
-		
-		Set<Short> oldTs = mkey2Types.get(skey);
-		if(oldTs == null || oldTs.isEmpty()) {
-			doAddType(skey,data);
-			return;
-		}
-		
-		Set<Short> newTs = new HashSet<Short>();
-		String[] tsArr = data.split(TYPE_SPERATOR);
-		for(String t : tsArr) {
-			Short v = Short.parseShort(t);
-			newTs.add(v);
-		}
-		
-		Set<Short> delTs0 = new HashSet<Short>();
-		delTs0.addAll(oldTs);
-		
-		//计算被删除的类型，delTs0中剩下的就是被删除元素
-		delTs0.removeAll(newTs);
-		
-		//计算新增的类型，newTs中剩下都是新增类型 
-		newTs.removeAll(oldTs);
-		
-		//作为新增元素加到集合中
-		oldTs.addAll(newTs);
-		oldTs.removeAll(delTs0);
-		
-		//利用集合自动重
-		types.addAll(newTs);
-		
-		for(Short t : delTs0) {
-			boolean need = false;
-			for(Set<Short> ss : mkey2Types.values()) {
-				if(ss.contains(t)) {
-					need = true;
-					break;
-				}
-			}
-			if(!need) {
-				types.remove(t);
-			}
-		}
-	}
-
-	private void doAddType(String skey, String data) {
-		if(StringUtils.isEmpty(data)) {
-			mkey2Types.put(skey, new HashSet<Short>());
-			return;
-		}
-		
-		Set<Short> ts = new HashSet<Short>();
-		String[] tsArr = data.split(TYPE_SPERATOR);
-		for(String t : tsArr) {
-			Short v = Short.parseShort(t);
-			ts.add(v);
-			types.add(v);
-		}
-		mkey2Types.put(skey, ts);
-	}
-
-	public Map<String, Set<Short>> getMkey2Types() {
-		return Collections.unmodifiableMap(mkey2Types);
-	}
-	
-	public Short[] getTypes() {
-		if(types.isEmpty()) {
-			return null;
-		}
-		
-		Short[] ts = new Short[types.size()];
-		types.toArray(ts);
-		
-		return ts;
-	}
-	
 }

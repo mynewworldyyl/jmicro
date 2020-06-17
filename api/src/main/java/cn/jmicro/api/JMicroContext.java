@@ -120,8 +120,8 @@ public class JMicroContext  {
 		}
 	}
 	
-	public static boolean existsContext() {
-		return cxt.get() != null;
+	public static boolean existRpcContext() {
+		return cxt.get() != null && get().exists(Constants.SERVICE_METHOD_KEY);
 	}
 	
 	public static JMicroContext get(){
@@ -241,7 +241,7 @@ public class JMicroContext  {
 				SF.doRequestLog(MC.MT_PLATFORM_LOG,MC.LOG_ERROR,JMicroContext.class,null," service ITEM not found");
 			}
 			//SF.doSubmit(MonitorConstant.SERVER_REQ_SERVICE_NOT_FOUND,req,null);
-			throw new CommonException("Service not found impl："+req.getImpl());
+			throw new CommonException("Service not found impl："+req.getImpl()+", srv: " + req.getServiceName());
 		}
 		
 		ServiceMethod sm = si.getMethod(req.getMethod(), req.getArgs());
@@ -260,7 +260,7 @@ public class JMicroContext  {
 	}
 	
 	public static boolean existLinkId(){
-		return get().exists(Constants.NEW_LINKID) && get().getBoolean(Constants.NEW_LINKID, false);
+		return get().exists(LINKER_ID);
 	}
 	
 	public static Long lid(){

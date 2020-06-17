@@ -2,7 +2,6 @@ package cn.jmicro.api.monitor;
 
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 
 import org.slf4j.Logger;
@@ -14,6 +13,7 @@ import cn.jmicro.api.annotation.Inject;
 import cn.jmicro.api.config.Config;
 import cn.jmicro.api.raft.IDataOperator;
 import cn.jmicro.common.CommonException;
+import cn.jmicro.common.Constants;
 import cn.jmicro.common.util.JsonUtils;
 import cn.jmicro.common.util.StringUtils;
 
@@ -21,8 +21,6 @@ import cn.jmicro.common.util.StringUtils;
 public class MonitorTypesManager {
 
 	private final static Logger logger = LoggerFactory.getLogger(MonitorTypesManager.class);
-	
-	public static final String PATH_EXCAPE = "^$^";
 	
 	@Inject
 	private IDataOperator op;
@@ -60,7 +58,7 @@ public class MonitorTypesManager {
 		Set<String> cfs = op.getChildren(Config.MonitorTypeConfigDir, false);
 		Set<MCConfig> exists = new HashSet<>();
 		for(String data : cfs) {
-			data = data.replaceAll(PATH_EXCAPE, "/");
+			data = data.replaceAll(Constants.PATH_EXCAPE, "/");
 			MCConfig mcc = JsonUtils.getIns().fromJson(data, MCConfig.class);
 			exists.add(mcc);
 		}
@@ -110,7 +108,7 @@ public class MonitorTypesManager {
 		
 		String val = JsonUtils.getIns().toJson(cfg);
 		if(val.contains("/")) {
-			val = val.replaceAll("/", PATH_EXCAPE);
+			val = val.replaceAll("/", Constants.PATH_EXCAPE);
 		}
 		
 		String path = Config.MonitorTypeConfigDir + "/" + val;
@@ -164,7 +162,7 @@ public class MonitorTypesManager {
 		
 		String ejson = JsonUtils.getIns().toJson(emc);
 		if(ejson.contains("/")) {
-			ejson = ejson.replaceAll("/", PATH_EXCAPE);
+			ejson = ejson.replaceAll("/", Constants.PATH_EXCAPE);
 		}
 		op.deleteNode(Config.MonitorTypeConfigDir + "/" + ejson);
 		return true;
@@ -192,7 +190,7 @@ public class MonitorTypesManager {
 			return;
 		}
 		
-		val = val.replaceAll(PATH_EXCAPE, "/");
+		val = val.replaceAll(Constants.PATH_EXCAPE, "/");
 		
 		MCConfig mcc = JsonUtils.getIns().fromJson(val, MCConfig.class);
 		if(!configs.add(mcc)) {

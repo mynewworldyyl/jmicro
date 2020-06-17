@@ -25,6 +25,7 @@ import java.util.concurrent.TimeUnit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import cn.jmicro.api.annotation.IDStrategy;
 import cn.jmicro.api.annotation.SO;
 import cn.jmicro.api.config.Config;
 import cn.jmicro.api.monitor.MC;
@@ -49,6 +50,7 @@ import cn.jmicro.common.util.TimeUtils;
  * @date 2018年10月4日-下午12:04:29
  */
 @SO
+@IDStrategy(value=10)
 public final class ServiceItem implements Comparable<ServiceItem>{
 
 	private final static Logger logger = LoggerFactory.getLogger(ServiceItem.class);
@@ -130,9 +132,11 @@ public final class ServiceItem implements Comparable<ServiceItem>{
 	
 	private int clientId = 0;
 	
+	private boolean external = false;
+	
 	private Set<ServiceMethod> methods = new HashSet<>();
 	
-	//private long createdTime = System.currentTimeMillis();
+	private long createdTime = System.currentTimeMillis();
 	
 	public ServiceItem() {}
 	
@@ -176,13 +180,20 @@ public final class ServiceItem implements Comparable<ServiceItem>{
 		this.handler = p.handler;
 		this.slotSize = p.slotSize;
 		this.clientId = p.clientId;
+		this.code = p.getCode();
+		this.debugMode = p.getDebugMode();
+		this.servers.clear();
+		this.servers.addAll(p.getServers());
+		this.impl = p.getImpl();
+		this.external = p.external;
+		this.createdTime = p.createdTime;
 		
 		for(ServiceMethod sm : p.getMethods()){
 			ServiceMethod nsm = this.getMethod(sm.getKey().getMethod(), sm.getKey().getParamsStr());
 			if(nsm != null){
 				nsm.formPersisItem(sm);
-				nsm.setBreakingRule(new BreakRule());
-				nsm.getBreakingRule().from(sm.getBreakingRule());
+				//nsm.setBreakingRule(new BreakRule());
+				//nsm.getBreakingRule().from(sm.getBreakingRule());
 			}
 		}
 	}
@@ -199,6 +210,14 @@ public final class ServiceItem implements Comparable<ServiceItem>{
 		return timeWindow;
 	}
 
+	public long getCreatedTime() {
+		return createdTime;
+	}
+
+	public void setCreatedTime(long createdTime) {
+		this.createdTime = createdTime;
+	}
+
 	public void setTimeWindow(long timeWindow) {
 		this.timeWindow = timeWindow;
 	}
@@ -213,6 +232,14 @@ public final class ServiceItem implements Comparable<ServiceItem>{
 
 	public Set<Server> getServers() {
 		return servers;
+	}
+
+	public boolean isExternal() {
+		return external;
+	}
+
+	public void setExternal(boolean external) {
+		this.external = external;
 	}
 
 	public int getDegrade() {
@@ -274,7 +301,7 @@ public final class ServiceItem implements Comparable<ServiceItem>{
 	//服务标识，服务名，名称空间，版本，3元组坐标
 	public String serviceKey() {
 	   return UniqueServiceKey.serviceName(this.getKey().getServiceName(), this.getKey().getNamespace(),
-			   this.getKey().getVersion()).toString();
+			   this.getKey().getVersion());
 	}
 
 	private void parseVal(String val) {
@@ -440,7 +467,7 @@ public final class ServiceItem implements Comparable<ServiceItem>{
 
 	@Override
 	public int hashCode() {
-		return this.path(Config.ServiceRegistDir).hashCode();
+		return this.path("").hashCode();
 	}
 
 	@Override
@@ -448,7 +475,7 @@ public final class ServiceItem implements Comparable<ServiceItem>{
 		if(obj == null || !(obj instanceof ServiceItem)) {
 			return false;
 		}
-		return this.path(Config.ServiceRegistDir).equals(((ServiceItem)obj).path(Config.ServiceRegistDir));
+		return this.path("").equals(((ServiceItem)obj).path(""));
 	}
 
 	public int getMaxSpeed() {

@@ -449,8 +449,9 @@ public final class Message {
 			}
 			
 			//b.flip();
-
-			return b.getBuf();
+			ByteBuffer bb = b.getBuf();
+			this.len = bb.limit();
+			return bb;
 		} catch (IOException e) {
 			e.printStackTrace();
 		}

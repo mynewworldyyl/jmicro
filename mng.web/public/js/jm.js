@@ -17,8 +17,8 @@ jm.mng = {
 
     },
 
-    init : function() {
-        jm.mng.comm.init();
+    init : function(cb) {
+        jm.mng.comm.init(cb);
     },
 
     callRpc : function(req,upProtocol,downProtocol) {
@@ -375,6 +375,29 @@ jm.mng = {
 
     act : {
         actInfo:null,
+        actListeners:{},
+
+        addListener : function(key,l) {
+            if(!!this.actListeners[key]) {
+                throw 'Exist listener: ' + key;
+            }
+            this.actListeners[key] = l;
+        },
+
+        removeListener : function(key) {
+            if(!this.actListeners[key]) {
+               return;
+            }
+            delete this.actListeners[key];
+        },
+
+        _notify : function(type) {
+            for(let key in this.actListeners) {
+                if(this.actListeners[key]) {
+                    this.actListeners[key](type,this.actInfo);
+                }
+            }
+        },
 
         login: function (actName,pwd,cb){
             if(this.actInfo && cb) {
@@ -389,8 +412,10 @@ jm.mng = {
                 .then(( actInfo )=>{
                     if(actInfo && actInfo.success) {
                         self.actInfo = actInfo;
-                        jm.mng.init();
                         cb(actInfo,null);
+                        jm.mng.init(function(suc){
+                            self._notify(jm.rpc.Constants.LOGIN);
+                        });
                     } else {
                         cb(null,actInfo.msg);
                     }
@@ -419,6 +444,9 @@ jm.mng = {
                         if(cb) {
                             cb(true,null)
                         }
+                        jm.mng.init(function(suc){
+                            self._notify(jm.rpc.Constants.LOGOUT);
+                        });
                     }else {
                         if(cb) {
                             cb(false,'logout fail')
@@ -535,12 +563,18 @@ jm.mng = {
     comm : {
         adminPer:false,
 
-        init:function() {
+        init:function(cb) {
             let self = this;
             window.jm.mng.comm.hasPermission(1).then((rst)=>{
                 self.adminPer = rst;
+                if(cb) {
+                    cb(true);
+                }
             }).catch((err)=>{
                 window.console.log(err);
+                if(cb) {
+                    cb(false);
+                }
             });
         },
 
@@ -579,12 +613,20 @@ jm.mng = {
             return jm.mng.callRpcWithParams(this.sn,this.ns,this.v,'updateMonitorTypes',[key,adds,dels]);
         },
 
-        removeFromMonitor: function (key,type){
-            return jm.mng.callRpcWithParams(this.sn,this.ns,this.v,'removeFromMonitor',[key,type]);
-        },
-
         getMonitorKeyList: function (){
             return jm.mng.callRpcWithParams(this.sn,this.ns,this.v,'getMonitorKeyList',[]);
+        },
+
+        getConfigByServiceMethodKey: function (key){
+            return jm.mng.callRpcWithParams(this.sn,this.ns,this.v,'getConfigByServiceMethodKey',[key]);
+        },
+
+        updateServiceMethodMonitorTypes: function (key,adds,dels){
+            return jm.mng.callRpcWithParams(this.sn,this.ns,this.v,'updateServiceMethodMonitorTypes',[key,adds,dels]);
+        },
+
+        getAllConfigsByGroup: function (groups){
+            return jm.mng.callRpcWithParams(this.sn,this.ns,this.v,'getAllConfigsByGroup',[groups]);
         },
 
         sn:'cn.jmicro.mng.api.IMonitorTypeService',

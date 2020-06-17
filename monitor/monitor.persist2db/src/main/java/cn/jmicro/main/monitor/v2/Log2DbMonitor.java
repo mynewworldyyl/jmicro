@@ -39,7 +39,6 @@ import cn.jmicro.api.monitor.IMonitorDataSubscriber;
 import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.monitor.MRpcItem;
 import cn.jmicro.api.raft.IDataOperator;
-import cn.jmicro.common.Constants;
 import cn.jmicro.common.Utils;
 import cn.jmicro.common.util.JsonUtils;
 import cn.jmicro.monitor.api.AbstractMonitorDataSubscriber;
@@ -51,7 +50,7 @@ import cn.jmicro.monitor.api.AbstractMonitorDataSubscriber;
  * @date 2020年1月18日
  */
 @Component
-@Service(version="0.0.1", namespace="log2DbMonitor",monitorEnable=0,handler=Constants.SPECIAL_INVOCATION_HANDLER)
+@Service(version="0.0.1", namespace="log2DbMonitor",monitorEnable=0)
 public class Log2DbMonitor extends AbstractMonitorDataSubscriber implements IMonitorDataSubscriber {
 
 	private final static Logger logger = LoggerFactory.getLogger(Log2DbMonitor.class);
@@ -90,7 +89,6 @@ public class Log2DbMonitor extends AbstractMonitorDataSubscriber implements IMon
 						temp.addAll(siq);
 						siq.clear();
 					}
-					
 					saveLog(temp);
 				}
 				try {

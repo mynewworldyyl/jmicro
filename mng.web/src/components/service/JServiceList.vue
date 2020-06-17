@@ -6,9 +6,11 @@
                   <Icon type="ios-arrow-down"></Icon>
               </a>
               <DropdownMenu slot="list">
-                  <DropdownItem :selected="groupBy=='sn'" name="sn">Service</DropdownItem>
-                  <DropdownItem :selected="groupBy=='ins'" name="ins">Instance</DropdownItem>
-                  <DropdownItem :selected="groupBy=='snv'" name="snv">SNV</DropdownItem>
+
+                  <DropdownItem v-for="m in menus" :key="m" :selected="groupBy==m" :name="m">{{m}}</DropdownItem>
+                 <!-- <DropdownItem :selected="groupBy=='ins'" name="ins">Instance</DropdownItem>
+                  <DropdownItem :selected="groupBy=='snv'" name="snv">SNV</DropdownItem>-->
+
                   <DropdownItem  name="refresh" :divided="true">Refresh</DropdownItem>
               </DropdownMenu>
           </Dropdown>
@@ -36,10 +38,11 @@
     export default {
         name: 'JServiceList',
         data () {
+            let menus = this.menuStr.split(",");
             return {
-                services :[],
-                groupBy : GROUP_SN,
-                srcNodes:[],
+                services : [],
+                srcNodes : [],
+                menus : menus,
             }
         },
 
@@ -56,7 +59,18 @@
             group:{
                 type:String,
                 default:'service'
+            },
+
+            menuStr:{
+                type : String,
+                default:GROUP_SN  +  ',' + GROUP_INS + ',' + GROUP_SNV
+            },
+
+            groupBy:{
+                type : String,
+                default:GROUP_SN
             }
+
         },
 
         mounted(){
@@ -125,7 +139,7 @@
                                 l2 = new TreeNode(this.group + ':'+layer1Key,t,[],r,n.val.key, this.group+':' + n.val.key.instanceName);
                                 layer12Layer2map[layer1Key]= l2;
                                 l2.type = GROUP_INS;
-                                r.group = this.group;
+                                l2.group = this.group;
                                 r.addChild(l2);
                             }
 
@@ -152,10 +166,10 @@
                             let layer1Key = n.title + '##' + r.title;
                             let l2 = layer12Layer2map[layer1Key];  //title = serviceName
                             if(!l2) {
-                                l2 = new TreeNode(this.group + ':'+layer1Key,n.title,[],r,n.val, this.group + ':' + n.val.serviceName);
+                                l2 = new TreeNode(this.group + ':'+layer1Key,n.title,[],r,n.val, this.group + ':' + n.val.key.serviceName);
                                 layer12Layer2map[layer1Key] = l2;
                                 l2.type = GROUP_SN;
-                                r.group = this.group;
+                                l2.group = this.group;
                                 r.addChild(l2);
                             }
 
@@ -163,7 +177,7 @@
                                 n.children.forEach((e)=>{
                                     e.parent = l2;
                                     e.type = GROUP_METHOD;
-                                    r.group = this.group;
+                                    e.group = this.group;
                                     l2.addChild(e);
                                 });
                             }
@@ -199,7 +213,10 @@
                 }
 
                 let title = node.key.serviceName+'##'+node.key.namespace+'##'+node.key.version;
-                let id = this.group + ':' + title + '##'+node.key.instanceName+'##'+node.key.host+'##'+node.key.port;
+                let mFullKey = title + '##'+node.key.instanceName+'##'+node.key.host+'##'+node.key.port;
+                let id = this.group + ':' + mFullKey;
+
+                let mKeyPrefix = title + '######';
 
                 let tr = new TreeNode(id,title,[],null,node);
                 tr.group = this.group;
@@ -210,6 +227,7 @@
                             let tm = new TreeNode(mid, e.key.method, null, tr, e, this.group + ':' + e.key.method);
                             tm.type = GROUP_METHOD;
                             tm.group = this.group;
+                            tm.mkey = mKeyPrefix + '##' + e.key.method + '##' + e.key.paramsStr;
                             tr.addChild(tm);
                         }
                     })

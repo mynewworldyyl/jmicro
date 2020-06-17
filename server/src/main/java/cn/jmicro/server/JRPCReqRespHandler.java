@@ -139,6 +139,10 @@ public class JRPCReqRespHandler implements IMessageHandler{
 			
 			JMicroContext.config(req1,serviceLoader,registry);
 			
+			if(msg.isMonitorable()) {
+				SF.netIoRead(TAG.getName(),MC.MT_SERVER_IOSESSION_READ, msg.getLen());
+			}
+			
 			if(!msg.isNeedResponse()){
 				//无需返回值
 				//数据发送后，不需要返回结果，也不需要请求确认包，直接返回
@@ -177,6 +181,10 @@ public class JRPCReqRespHandler implements IMessageHandler{
 			//响应消息
 			s.write(msg);
 
+			if(msg.isMonitorable()) {
+				SF.netIoRead(TAG.getName(),MC.MT_SERVER_IOSESSION_WRITE, msg.getLen());
+			}
+			
 			if(SF.isLoggable(MC.LOG_DEBUG,msg.getLogLevel())){
 				SF.doResponseLog(MC.MT_PLATFORM_LOG,MC.LOG_DEBUG, TAG, null,"response success");
 			}

@@ -18,6 +18,8 @@ import java.util.TreeMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import cn.jmicro.api.ClassScannerUtils;
+import cn.jmicro.api.annotation.SO;
 import cn.jmicro.api.codec.typecoder.AbstractComparableTypeCoder;
 import cn.jmicro.api.codec.typecoder.AbstractFinalTypeCoder;
 import cn.jmicro.api.codec.typecoder.AbstractShortTypeCoder;
@@ -25,17 +27,8 @@ import cn.jmicro.api.codec.typecoder.ArrayCoder;
 import cn.jmicro.api.codec.typecoder.DefaultCoder;
 import cn.jmicro.api.codec.typecoder.PrimitiveTypeArrayCoder;
 import cn.jmicro.api.codec.typecoder.PrimitiveTypeCoder;
-import cn.jmicro.api.codec.typecoder.ReflectTypeCoder;
 import cn.jmicro.api.codec.typecoder.TypeCoder;
 import cn.jmicro.api.codec.typecoder.VoidTypeCoder;
-import cn.jmicro.api.gateway.ApiRequest;
-import cn.jmicro.api.gateway.ApiResponse;
-import cn.jmicro.api.monitor.MRpcItem;
-import cn.jmicro.api.net.RpcRequest;
-import cn.jmicro.api.net.RpcResponse;
-import cn.jmicro.api.pubsub.PSData;
-import cn.jmicro.api.registry.AsyncConfig;
-import cn.jmicro.api.registry.ServiceMethod;
 import cn.jmicro.common.CommonException;
 
 /**
@@ -62,42 +55,53 @@ public class TypeCoderFactory {
 	}
 
 	@SuppressWarnings("rawtypes")
-	private static Map<Short, TypeCoder> code2Coder = new TreeMap<>();
+	private Map<Short, TypeCoder> code2Coder = new TreeMap<>();
 
 	@SuppressWarnings("rawtypes")
-	private static Map<Class, TypeCoder> clazz2Coder = new HashMap<>();
+	private Map<Class, TypeCoder> clazz2Coder = new HashMap<>();
 	
 	@SuppressWarnings("rawtypes")
-	private static Map<Short, Class<?>> code2class = new HashMap<>();
+	private Map<Short, Class<?>> code2class = new HashMap<>();
 	
 	@SuppressWarnings("rawtypes")
-	private static Map<Class<?>,Short> class2code = new HashMap<>();
+	private Map<Class<?>,Short> class2code = new HashMap<>();
 
-	private static IClientTransformClassLoader clazzLoader = null;
-
-	private static short type = (short) 0xFFFE;
+	private ITypeCodeProducer tcp;
 
 	private TypeCoderFactory() {
 	}
 
 	@SuppressWarnings("rawtypes")
-	private static TypeCoder<Object> defaultCoder = new DefaultCoder();
+	private TypeCoder<Object> defaultCoder = new DefaultCoder();
 
-	private static final TypeCoder<Void> voidCoder = new VoidTypeCoder(type--);
+	private TypeCoder<Void> voidCoder = null;
+	
+	public synchronized void  setTypeCodeProducer(ITypeCodeProducer tc) {
+		if(tcp != null) {
+			throw new CommonException("ITypeCodeProducer has been set with: " + tcp.getClass().getName());
+		}
+		tcp = tc;
+		create();
+	}
 
-	public static TypeCoder<Object> getDefaultCoder() {
+	public TypeCoder<Object> getDefaultCoder() {
+		checkTcp();
 		return defaultCoder;
 	}
 
-	public static TypeCoder<Void> getVoidCoder() {
+	public TypeCoder<Void> getVoidCoder() {
+		checkTcp();
 		return voidCoder;
 	}
 	
-	public static short type() {
-		return type--;
+	private void checkTcp() {
+		if(tcp == null) {
+			throw new CommonException("ITypeCodeProducer not set yet: ");
+		}
 	}
-
-	static {
+	
+	private void create() {
+		voidCoder = new VoidTypeCoder(tcp.getTypeCode(Void.class.getName()));
 
 		registClass(ArrayList.class);
 		registClass(LinkedList.class);
@@ -105,9 +109,9 @@ public class TypeCoderFactory {
 		registClass(HashMap.class);
 		registClass(Hashtable.class);
 		
-		registCoder(new ArrayCoder(type--));
+		registCoder(new ArrayCoder(tcp.getTypeCode(Object[].class.getName())));
 
-		registCoder(new AbstractFinalTypeCoder<String>(type--, String.class) {
+		registCoder(new AbstractFinalTypeCoder<String>(tcp.getTypeCode(String.class.getName()), String.class) {
 			@Override
 			public String decode(DataInput buffer, Class<?> fieldDeclareType, Type genericType) {
 				try {
@@ -125,66 +129,66 @@ public class TypeCoderFactory {
 			}
 
 		});
-		registClass(String.class,type);
+		registClass(String.class,tcp.getTypeCode(String.class.getName()));
 
 		// registCoder(new VoidTypeCoder<Void>(type--,Void.TYPE));
 
-		registCoder(new PrimitiveTypeCoder(type--, Byte.class));
-		registClass(Byte.class,type);
-		registCoder(new PrimitiveTypeCoder(type--, Byte.TYPE));
-		registClass(Byte.TYPE,type);
+		registCoder(new PrimitiveTypeCoder(tcp.getTypeCode(Byte.class.getName()), Byte.class));
+		registClass(Byte.class,tcp.getTypeCode(Byte.class.getName()));
+		registCoder(new PrimitiveTypeCoder(tcp.getTypeCode(Byte.TYPE.getName()), Byte.TYPE));
+		registClass(Byte.TYPE,tcp.getTypeCode(Byte.TYPE.getName()));
 
-		registCoder(new PrimitiveTypeCoder(type--, Short.class));
-		registClass(Short.class,type);
-		registCoder(new PrimitiveTypeCoder(type--, Short.TYPE));
-		registClass(Short.TYPE,type);
+		registCoder(new PrimitiveTypeCoder(tcp.getTypeCode(Short.class.getName()), Short.class));
+		registClass(Short.class,tcp.getTypeCode(Short.class.getName()));
+		registCoder(new PrimitiveTypeCoder(tcp.getTypeCode(Short.TYPE.getName()), Short.TYPE));
+		registClass(Short.TYPE,tcp.getTypeCode(Short.TYPE.getName()));
 
-		registCoder(new PrimitiveTypeCoder(type--, Integer.class));
-		registClass(Integer.class,type);
-		registCoder(new PrimitiveTypeCoder(type--, Integer.TYPE));
-		registClass(Integer.TYPE,type);
+		registCoder(new PrimitiveTypeCoder(tcp.getTypeCode(Integer.class.getName()), Integer.class));
+		registClass(Integer.class,tcp.getTypeCode(Integer.class.getName()));
+		registCoder(new PrimitiveTypeCoder(tcp.getTypeCode(Integer.TYPE.getName()), Integer.TYPE));
+		registClass(Integer.TYPE,tcp.getTypeCode(Integer.TYPE.getName()));
 
-		registCoder(new PrimitiveTypeCoder(type--, Long.class));
-		registClass(Long.class,type);
-		registCoder(new PrimitiveTypeCoder(type--, Long.TYPE));
-		registClass(Long.TYPE,type);
+		registCoder(new PrimitiveTypeCoder(tcp.getTypeCode(Long.class.getName()), Long.class));
+		registClass(Long.class,tcp.getTypeCode(Long.class.getName()));
+		registCoder(new PrimitiveTypeCoder(tcp.getTypeCode(Long.TYPE.getName()), Long.TYPE));
+		registClass(Long.TYPE,tcp.getTypeCode(Long.TYPE.getName()));
 
-		registCoder(new PrimitiveTypeCoder(type--, Double.class));
-		registClass(Double.class,type);
-		registCoder(new PrimitiveTypeCoder(type--, Double.TYPE));
-		registClass(Double.TYPE,type);
+		registCoder(new PrimitiveTypeCoder(tcp.getTypeCode(Double.class.getName()), Double.class));
+		registClass(Double.class,tcp.getTypeCode(Double.class.getName()));
+		registCoder(new PrimitiveTypeCoder(tcp.getTypeCode(Double.TYPE.getName()), Double.TYPE));
+		registClass(Double.TYPE,tcp.getTypeCode(Double.TYPE.getName()));
 
-		registCoder(new PrimitiveTypeCoder(type--, Float.class));
-		registClass(Float.class,type);
-		registCoder(new PrimitiveTypeCoder(type--, Float.TYPE));
-		registClass(Float.TYPE,type);
+		registCoder(new PrimitiveTypeCoder(tcp.getTypeCode(Float.class.getName()), Float.class));
+		registClass(Float.class,tcp.getTypeCode(Float.class.getName()));
+		registCoder(new PrimitiveTypeCoder(tcp.getTypeCode(Float.TYPE.getName()), Float.TYPE));
+		registClass(Float.TYPE,tcp.getTypeCode(Float.TYPE.getName()));
 
-		registCoder(new PrimitiveTypeCoder(type--, Boolean.class));
-		registClass(Boolean.class,type);
-		registCoder(new PrimitiveTypeCoder(type--, Boolean.TYPE));
-		registClass(Boolean.TYPE,type);
+		registCoder(new PrimitiveTypeCoder(tcp.getTypeCode(Boolean.class.getName()), Boolean.class));
+		registClass(Boolean.class,tcp.getTypeCode(Boolean.class.getName()));
+		registCoder(new PrimitiveTypeCoder(tcp.getTypeCode(Boolean.TYPE.getName()), Boolean.TYPE));
+		registClass(Boolean.TYPE,tcp.getTypeCode(Boolean.TYPE.getName()));
 
-		registCoder(new PrimitiveTypeCoder(type--, Character.class));
-		registCoder(new PrimitiveTypeCoder(type--, Character.TYPE));
+		registCoder(new PrimitiveTypeCoder(tcp.getTypeCode(Character.class.getName()), Character.class));
+		registCoder(new PrimitiveTypeCoder(tcp.getTypeCode(Character.TYPE.getName()), Character.TYPE));
 
-		registCoder(new PrimitiveTypeArrayCoder(type--, byte[].class));
-		registClass(byte[].class,type);
-		registCoder(new PrimitiveTypeArrayCoder(type--, short[].class));
-		registClass(short[].class,type);
-		registCoder(new PrimitiveTypeArrayCoder(type--, int[].class));
-		registClass(int[].class,type);
-		registCoder(new PrimitiveTypeArrayCoder(type--, long[].class));
-		registClass(long[].class,type);
-		registCoder(new PrimitiveTypeArrayCoder(type--, float[].class));
-		registClass(float[].class,type);
-		registCoder(new PrimitiveTypeArrayCoder(type--, double[].class));
-		registClass(double[].class,type);
-		registCoder(new PrimitiveTypeArrayCoder(type--, boolean[].class));
-		registClass(boolean[].class,type);
-		registCoder(new PrimitiveTypeArrayCoder(type--, char[].class));
-		registClass(char[].class,type);
+		registCoder(new PrimitiveTypeArrayCoder(tcp.getTypeCode(byte[].class.getName()), byte[].class));
+		registClass(byte[].class,tcp.getTypeCode(byte[].class.getName()));
+		registCoder(new PrimitiveTypeArrayCoder(tcp.getTypeCode(short[].class.getName()), short[].class));
+		registClass(short[].class,tcp.getTypeCode(short[].class.getName()));
+		registCoder(new PrimitiveTypeArrayCoder(tcp.getTypeCode(int[].class.getName()), int[].class));
+		registClass(int[].class,tcp.getTypeCode(int[].class.getName()));
+		registCoder(new PrimitiveTypeArrayCoder(tcp.getTypeCode(long[].class.getName()), long[].class));
+		registClass(long[].class,tcp.getTypeCode(long[].class.getName()));
+		registCoder(new PrimitiveTypeArrayCoder(tcp.getTypeCode(float[].class.getName()), float[].class));
+		registClass(float[].class,tcp.getTypeCode(float[].class.getName()));
+		registCoder(new PrimitiveTypeArrayCoder(tcp.getTypeCode(double[].class.getName()), double[].class));
+		registClass(double[].class,tcp.getTypeCode(double[].class.getName()));
+		registCoder(new PrimitiveTypeArrayCoder(tcp.getTypeCode(boolean[].class.getName()), boolean[].class));
+		registClass(boolean[].class,tcp.getTypeCode(boolean[].class.getName()));
+		registCoder(new PrimitiveTypeArrayCoder(tcp.getTypeCode(char[].class.getName()), char[].class));
+		registClass(char[].class,tcp.getTypeCode(char[].class.getName()));
 
-		registCoder(new AbstractShortTypeCoder<java.util.Date>(type--, java.util.Date.class) {
+		registCoder(new AbstractShortTypeCoder<java.util.Date>(tcp.getTypeCode(java.util.Date.class.getName()), java.util.Date.class) {
 			@Override
 			public void encodeData(DataOutput buffer, java.util.Date val, Class<?> fieldDeclareType,
 					Type genericType) throws IOException {
@@ -202,9 +206,9 @@ public class TypeCoderFactory {
 			}
 
 		});
-		registClass(java.util.Date.class,type);
+		registClass(java.util.Date.class,tcp.getTypeCode(java.util.Date.class.getName()));
 
-		registCoder(new AbstractShortTypeCoder<java.sql.Date>(type--, java.sql.Date.class) {
+		registCoder(new AbstractShortTypeCoder<java.sql.Date>(tcp.getTypeCode(java.sql.Date.class.getName()), java.sql.Date.class) {
 			@Override
 			public void encodeData(DataOutput buffer, java.sql.Date val, Class<?> fieldDeclareType,
 					Type genericType) throws IOException {
@@ -221,9 +225,9 @@ public class TypeCoderFactory {
 				}
 			}
 		});
-		registClass(java.sql.Date.class,type);
+		registClass(java.sql.Date.class,tcp.getTypeCode(java.sql.Date.class.getName()));
 
-		registCoder(new AbstractComparableTypeCoder<Map>(Decoder.PREFIX_TYPE_MAP,type--,Map.class) {
+		registCoder(new AbstractComparableTypeCoder<Map>(Decoder.PREFIX_TYPE_MAP,tcp.getTypeCode(Map.class.getName()),Map.class) {
 			
 			@Override
 			public Map decode(DataInput buffer, Class<?> fieldDeclareType, Type genericType) {
@@ -238,9 +242,9 @@ public class TypeCoderFactory {
 				TypeCoder.encodeMap(buffer, (Map) val, TypeCoder.genericType(genericType));
 			}
 		});
-		registClass(Map.class,type);
+		registClass(Map.class,tcp.getTypeCode(Map.class.getName()));
 
-		registCoder(new AbstractComparableTypeCoder<Set>(Decoder.PREFIX_TYPE_SET,type--, Set.class) {
+		registCoder(new AbstractComparableTypeCoder<Set>(Decoder.PREFIX_TYPE_SET,tcp.getTypeCode(Set.class.getName()), Set.class) {
 			
 			@Override
 			public void encode(DataOutput buffer, Set val, Class<?> fieldDeclareType,
@@ -258,9 +262,9 @@ public class TypeCoderFactory {
 			}
 			
 		});
-		registClass(Set.class,type);
+		registClass(Set.class,tcp.getTypeCode(Set.class.getName()));
 
-		registCoder(new AbstractComparableTypeCoder<List>(Decoder.PREFIX_TYPE_LIST,type--, List.class) {
+		registCoder(new AbstractComparableTypeCoder<List>(Decoder.PREFIX_TYPE_LIST,tcp.getTypeCode(List.class.getName()), List.class) {
 			@SuppressWarnings("rawtypes")
 			@Override
 			public void encode(DataOutput buffer, List val, Class<?> fieldDeclareType,
@@ -278,9 +282,9 @@ public class TypeCoderFactory {
 			}
 			
 		});
-		registClass(List.class,type);
+		registClass(List.class,tcp.getTypeCode(List.class.getName()));
 
-		registCoder(new AbstractShortTypeCoder<ByteBuffer>(type--, ByteBuffer.class) {
+		registCoder(new AbstractShortTypeCoder<ByteBuffer>(tcp.getTypeCode(ByteBuffer.class.getName()), ByteBuffer.class) {
 			@Override
 			public void encodeData(DataOutput buffer, ByteBuffer val, Class<?> fieldDeclareType,
 					Type genericType) throws IOException {
@@ -305,9 +309,9 @@ public class TypeCoderFactory {
 			}
 
 		});
-		registClass(ByteBuffer.class,type);
+		registClass(ByteBuffer.class,tcp.getTypeCode(ByteBuffer.class.getName()));
 
-		registCoder(new ReflectTypeCoder<RpcRequest>(type--, RpcRequest.class));
+		/*registCoder(new ReflectTypeCoder<RpcRequest>(type--, RpcRequest.class));
 		registClass(RpcRequest.class,type);
 		
 		registCoder(new ReflectTypeCoder<RpcResponse>(type--, RpcResponse.class));
@@ -329,7 +333,7 @@ public class TypeCoderFactory {
 		registClass(PSData.class,type);
 		
 		registCoder(new ReflectTypeCoder<ServiceMethod>(type--, ServiceMethod.class));
-		registClass(ServiceMethod.class,type);
+		registClass(ServiceMethod.class,type);*/
 		
 		//registCoder(new ReflectTypeCoder<RpcRequest>(type--, RpcRequest.class));
 		//registCoder(new ReflectTypeCoder<RpcRequest>(type--, RpcRequest.class));
@@ -339,27 +343,32 @@ public class TypeCoderFactory {
 		
 		registClass(Void.class,voidCoder.code());
 		
-
+		registerSOClass();
+	
 	}
-
-	public static void setTransformClazzLoader(IClientTransformClassLoader l) {
-		if (clazzLoader != null) {
-			throw new CommonException(
-					clazzLoader.getClass().getName() + " have been set before " + l.getClass().getName());
+	
+	private void registerSOClass() {
+		Set<Class<?>> sos = ClassScannerUtils.getIns().loadClassesByAnno(SO.class);
+		if(sos != null && !sos.isEmpty()) {
+			for(Class<?> c : sos){
+				this.registClass(c);
+			}
 		}
-		clazzLoader = l;
 	}
 
 	public <T> TypeCoder<T> getByCode(short code) {
+		checkTcp();
 		return getCoder(code);
 	}
 
 	public <T> TypeCoder<T> getByClass(Class<T> clazz) {
+		checkTcp();
 		return getCoder(clazz);
 	}
 
 	@SuppressWarnings("unchecked")
-	public static <T> TypeCoder<T> getCoder(Class<T> cls) {
+	public <T> TypeCoder<T> getCoder(Class<T> cls) {
+		checkTcp();
 		TypeCoder<T> c = clazz2Coder.get(cls);
 
 		if (c == null) {
@@ -380,19 +389,15 @@ public class TypeCoderFactory {
 	 * @return
 	 */
 	@SuppressWarnings("unchecked")
-	public static <T> TypeCoder<T> getCoder(Short code) {
+	public <T> TypeCoder<T> getCoder(Short code) {
+		checkTcp();
+		checkTcp();
 		TypeCoder<T> c = code2Coder.get(code);
 		return c != null ? c : (TypeCoder<T>) defaultCoder;
 	}
 
-	public static Class<?> getClassByProvider(Short type) {
-		if (clazzLoader != null) {
-			return clazzLoader.getClazz(type);
-		}
-		return null;
-	}
-
-	public static synchronized void registCoder(TypeCoder<?> coder) {
+	public synchronized void registCoder(TypeCoder<?> coder) {
+		checkTcp();
 		if (clazz2Coder.containsKey(coder.type())) {
 			logger.error("clazz[" + coder.type().getName() + "], code [" + coder.code() + "] REregist");
 			return;
@@ -402,7 +407,8 @@ public class TypeCoderFactory {
 		//registClass(coder.code(), coder.type());
 	}
 	
-	private static synchronized void registClass(Class<?> cls,Short t) {
+	private synchronized void registClass(Class<?> cls,Short t) {
+		checkTcp();
 		if(class2code.containsKey(cls)) {
 			return;
 		}
@@ -410,20 +416,23 @@ public class TypeCoderFactory {
 		class2code.put(cls, t);
 	}
 	
-	public static synchronized void registClass(Class<?> cls) {
+	public synchronized void registClass(Class<?> cls) {
+		checkTcp();
 		if(class2code.containsKey(cls)) {
 			return;
 		}
-		Short t = type--;
+		Short t = tcp.getTypeCode(cls.getName());
 		code2class.put(t,cls);
 		class2code.put(cls, t);
 	}
 	
-	public static synchronized Class<?> getClassByCode(Short type) {
+	public synchronized Class<?> getClassByCode(Short type) {
+		checkTcp();
 		return code2class.get(type);
 	}
 	
-	public static synchronized Short getCodeByClass(Class<?> cls) {
+	public synchronized Short getCodeByClass(Class<?> cls) {
+		checkTcp();
 		return class2code.get(cls);
 	}
 }

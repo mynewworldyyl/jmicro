@@ -246,7 +246,7 @@ public abstract class AbstractClientServiceProxy implements InvocationHandler,IS
 	}
 	
 	public String serviceKey(){
-		return UniqueServiceKey.serviceName(this.getServiceName(), this.getNamespace(), this.getVersion()).toString();
+		return UniqueServiceKey.serviceName(this.getServiceName(), this.getNamespace(), this.getVersion());
 	}
 	
 	@Override

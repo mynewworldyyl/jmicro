@@ -28,7 +28,7 @@ public class TestRpcClient {
 	@Reference(required=false,namespace="simpleRpc",version="0.0.1")
 	private Set<ISimpleRpc> services = new HashSet<>();
 	
-	@Reference(required=false,changeListener="subscriberChange")
+	@Reference(required=false)
 	private Set<IMonitorDataSubscriber> submiters = new HashSet<>();
 	
 	@Reference(required=false,namespace="simpleRpc",version="0.0.1",

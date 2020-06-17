@@ -41,7 +41,7 @@ public class RpcRequest0 extends AbstractObjectMapSupport implements IRequest {
 	public void encode(java.io.DataOutput __buffer) throws java.io.IOException {
 		RpcRequest0 __obj = this;
 		cn.jmicro.api.codec.JDataOutput out = (cn.jmicro.api.codec.JDataOutput) __buffer;
-		cn.jmicro.api.codec.typecoder.TypeCoder __coder = cn.jmicro.api.codec.TypeCoderFactory.getDefaultCoder();
+		cn.jmicro.api.codec.typecoder.TypeCoder __coder = cn.jmicro.api.codec.TypeCoderFactory.getIns().getDefaultCoder();
 		java.lang.String __val0 = __obj.serviceName;
 		out.writeUTF(__val0 == null ? "" : __val0);
 
@@ -75,7 +75,7 @@ public class RpcRequest0 extends AbstractObjectMapSupport implements IRequest {
 
 	public void decode(java.io.DataInput __buffer) throws java.io.IOException {
 		RpcRequest0 __obj = this;
-		cn.jmicro.api.codec.typecoder.TypeCoder __coder = cn.jmicro.api.codec.TypeCoderFactory.getDefaultCoder();
+		cn.jmicro.api.codec.typecoder.TypeCoder __coder = cn.jmicro.api.codec.TypeCoderFactory.getIns().getDefaultCoder();
 
 		cn.jmicro.api.codec.JDataInput in = (cn.jmicro.api.codec.JDataInput) __buffer;
 		java.lang.String __val0;

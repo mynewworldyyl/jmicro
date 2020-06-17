@@ -37,7 +37,7 @@ public class ReportData0 {
 	public void encode(java.io.DataOutput __buffer, Object obj) throws java.io.IOException {
 		ReportData0 __obj = this;
 		cn.jmicro.api.codec.JDataOutput out = (cn.jmicro.api.codec.JDataOutput) __buffer;
-		cn.jmicro.api.codec.typecoder.TypeCoder __coder = cn.jmicro.api.codec.TypeCoderFactory.getDefaultCoder();
+		cn.jmicro.api.codec.typecoder.TypeCoder __coder = cn.jmicro.api.codec.TypeCoderFactory.getIns().getDefaultCoder();
 		java.lang.Short[] __val0 = __obj.types;
 		byte flag0 = 0;
 		int flagIndex0 = out.position();
@@ -61,7 +61,7 @@ public class ReportData0 {
 					if (sameElt && isFinal && !hasNull) { // block3
 						flag0 |= cn.jmicro.common.Constants.HEADER_ELETMENT;
 						writeEvery = false;
-						Short c0 = cn.jmicro.api.codec.TypeCoderFactory.getCodeByClass(__val0[0].getClass());
+						Short c0 = cn.jmicro.api.codec.TypeCoderFactory.getIns().getCodeByClass(__val0[0].getClass());
 						if (c0 == null) {
 							flag0 |= cn.jmicro.common.Constants.ELEMENT_TYPE_CODE;
 							__buffer.writeUTF(__val0[0].getClass().getName());
@@ -81,7 +81,7 @@ public class ReportData0 {
 							__buffer.writeByte(cn.jmicro.api.codec.Decoder.PREFIX_TYPE_NULL);
 							continue;
 						}
-						Short cc0 = cn.jmicro.api.codec.TypeCoderFactory.getCodeByClass(v.getClass());
+						Short cc0 = cn.jmicro.api.codec.TypeCoderFactory.getIns().getCodeByClass(v.getClass());
 						if (cc0 == null) {
 							cn.jmicro.agent.SerializeProxyFactory.errorToSerializeObjectCode(v.getClass().getName());
 							__buffer.writeByte(cn.jmicro.api.codec.Decoder.PREFIX_TYPE_PROXY);
@@ -121,7 +121,7 @@ public class ReportData0 {
 					if (sameElt && isFinal && !hasNull) { // block3
 						flag1 |= cn.jmicro.common.Constants.HEADER_ELETMENT;
 						writeEvery = false;
-						Short c1 = cn.jmicro.api.codec.TypeCoderFactory.getCodeByClass(__val1[0].getClass());
+						Short c1 = cn.jmicro.api.codec.TypeCoderFactory.getIns().getCodeByClass(__val1[0].getClass());
 						if (c1 == null) {
 							flag1 |= cn.jmicro.common.Constants.ELEMENT_TYPE_CODE;
 							__buffer.writeUTF(__val1[0].getClass().getName());
@@ -141,7 +141,7 @@ public class ReportData0 {
 							__buffer.writeByte(cn.jmicro.api.codec.Decoder.PREFIX_TYPE_NULL);
 							continue;
 						}
-						Short cc1 = cn.jmicro.api.codec.TypeCoderFactory.getCodeByClass(v.getClass());
+						Short cc1 = cn.jmicro.api.codec.TypeCoderFactory.getIns().getCodeByClass(v.getClass());
 						if (cc1 == null) {
 							cn.jmicro.agent.SerializeProxyFactory.errorToSerializeObjectCode(v.getClass().getName());
 							__buffer.writeByte(cn.jmicro.api.codec.Decoder.PREFIX_TYPE_PROXY);
@@ -181,7 +181,7 @@ public class ReportData0 {
 					if (sameElt && isFinal && !hasNull) { // block3
 						flag2 |= cn.jmicro.common.Constants.HEADER_ELETMENT;
 						writeEvery = false;
-						Short c2 = cn.jmicro.api.codec.TypeCoderFactory.getCodeByClass(__val2[0].getClass());
+						Short c2 = cn.jmicro.api.codec.TypeCoderFactory.getIns().getCodeByClass(__val2[0].getClass());
 						if (c2 == null) {
 							flag2 |= cn.jmicro.common.Constants.ELEMENT_TYPE_CODE;
 							__buffer.writeUTF(__val2[0].getClass().getName());
@@ -201,7 +201,7 @@ public class ReportData0 {
 							__buffer.writeByte(cn.jmicro.api.codec.Decoder.PREFIX_TYPE_NULL);
 							continue;
 						}
-						Short cc2 = cn.jmicro.api.codec.TypeCoderFactory.getCodeByClass(v.getClass());
+						Short cc2 = cn.jmicro.api.codec.TypeCoderFactory.getIns().getCodeByClass(v.getClass());
 						if (cc2 == null) {
 							cn.jmicro.agent.SerializeProxyFactory.errorToSerializeObjectCode(v.getClass().getName());
 							__buffer.writeByte(cn.jmicro.api.codec.Decoder.PREFIX_TYPE_PROXY);
@@ -228,7 +228,7 @@ public class ReportData0 {
 		if (0 != (cn.jmicro.common.Constants.NULL_VAL & flagName0)) {
 			__val0 = null;
 		} else { // block0
-			cn.jmicro.api.codec.typecoder.TypeCoder __coder = cn.jmicro.api.codec.TypeCoderFactory.getDefaultCoder();
+			cn.jmicro.api.codec.typecoder.TypeCoder __coder = cn.jmicro.api.codec.TypeCoderFactory.getIns().getDefaultCoder();
 			String clsName = null;
 			short c = 0;
 			int size = __buffer.readShort();
@@ -242,7 +242,7 @@ public class ReportData0 {
 						readEvery = false;
 						if (0 == (cn.jmicro.common.Constants.ELEMENT_TYPE_CODE & flagName0)) {
 							c = __buffer.readShort();
-							eleCls = cn.jmicro.api.codec.TypeCoderFactory.getClassByCode(new Short(c));
+							eleCls = cn.jmicro.api.codec.TypeCoderFactory.getIns().getClassByCode(new Short(c));
 						} else {
 							clsName = __buffer.readUTF();
 							eleCls = cn.jmicro.agent.SerializeProxyFactory.loadClazz(clsName);
@@ -263,7 +263,7 @@ public class ReportData0 {
 						}
 						if (prefixCode == cn.jmicro.api.codec.Decoder.PREFIX_TYPE_SHORT) {
 							c = __buffer.readShort();
-							eleCls = cn.jmicro.api.codec.TypeCoderFactory.getClassByCode(new Short(c));
+							eleCls = cn.jmicro.api.codec.TypeCoderFactory.getIns().getClassByCode(new Short(c));
 						} else {
 							java.lang.String cn = __buffer.readUTF();
 							eleCls = SerializeProxyFactory.loadClazz(cn);
@@ -285,7 +285,7 @@ public class ReportData0 {
 		if (0 != (cn.jmicro.common.Constants.NULL_VAL & flagName1)) {
 			__val1 = null;
 		} else { // block0
-			cn.jmicro.api.codec.typecoder.TypeCoder __coder = cn.jmicro.api.codec.TypeCoderFactory.getDefaultCoder();
+			cn.jmicro.api.codec.typecoder.TypeCoder __coder = cn.jmicro.api.codec.TypeCoderFactory.getIns().getDefaultCoder();
 			String clsName = null;
 			short c = 0;
 			int size = __buffer.readShort();
@@ -299,7 +299,7 @@ public class ReportData0 {
 						readEvery = false;
 						if (0 == (cn.jmicro.common.Constants.ELEMENT_TYPE_CODE & flagName1)) {
 							c = __buffer.readShort();
-							eleCls = cn.jmicro.api.codec.TypeCoderFactory.getClassByCode(new Short(c));
+							eleCls = cn.jmicro.api.codec.TypeCoderFactory.getIns().getClassByCode(new Short(c));
 						} else {
 							clsName = __buffer.readUTF();
 							eleCls = cn.jmicro.agent.SerializeProxyFactory.loadClazz(clsName);
@@ -320,7 +320,7 @@ public class ReportData0 {
 						}
 						if (prefixCode == cn.jmicro.api.codec.Decoder.PREFIX_TYPE_SHORT) {
 							c = __buffer.readShort();
-							eleCls = cn.jmicro.api.codec.TypeCoderFactory.getClassByCode(new Short(c));
+							eleCls = cn.jmicro.api.codec.TypeCoderFactory.getIns().getClassByCode(new Short(c));
 						} else {
 							java.lang.String cn = __buffer.readUTF();
 							eleCls = SerializeProxyFactory.loadClazz(cn);
@@ -342,7 +342,7 @@ public class ReportData0 {
 		if (0 != (cn.jmicro.common.Constants.NULL_VAL & flagName2)) {
 			__val2 = null;
 		} else { // block0
-			cn.jmicro.api.codec.typecoder.TypeCoder __coder = cn.jmicro.api.codec.TypeCoderFactory.getDefaultCoder();
+			cn.jmicro.api.codec.typecoder.TypeCoder __coder = cn.jmicro.api.codec.TypeCoderFactory.getIns().getDefaultCoder();
 			String clsName = null;
 			short c = 0;
 			int size = __buffer.readShort();
@@ -356,7 +356,7 @@ public class ReportData0 {
 						readEvery = false;
 						if (0 == (cn.jmicro.common.Constants.ELEMENT_TYPE_CODE & flagName2)) {
 							c = __buffer.readShort();
-							eleCls = cn.jmicro.api.codec.TypeCoderFactory.getClassByCode(new Short(c));
+							eleCls = cn.jmicro.api.codec.TypeCoderFactory.getIns().getClassByCode(new Short(c));
 						} else {
 							clsName = __buffer.readUTF();
 							eleCls = cn.jmicro.agent.SerializeProxyFactory.loadClazz(clsName);
@@ -377,7 +377,7 @@ public class ReportData0 {
 						}
 						if (prefixCode == cn.jmicro.api.codec.Decoder.PREFIX_TYPE_SHORT) {
 							c = __buffer.readShort();
-							eleCls = cn.jmicro.api.codec.TypeCoderFactory.getClassByCode(new Short(c));
+							eleCls = cn.jmicro.api.codec.TypeCoderFactory.getIns().getClassByCode(new Short(c));
 						} else {
 							java.lang.String cn = __buffer.readUTF();
 							eleCls = SerializeProxyFactory.loadClazz(cn);

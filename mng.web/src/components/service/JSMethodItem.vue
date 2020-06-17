@@ -25,7 +25,7 @@
               <Icon type="ios-film-outline"></Icon>
               Base Parameters
           </p>
-          <a href="javascript:void(0);" slot="extra"  @click="save()">
+          <a  href="javascript:void(0);" slot="extra"  @click="save()">
               <Icon type="ios-loop-strong"></Icon>
               Save
           </a>
@@ -51,7 +51,7 @@
               <Icon type="ios-film-outline"></Icon>
               Monitor And Debug
           </p>
-          <a href="javascript:void(0);" slot="extra"  @click="save()">
+          <a v-if="adminPer"  href="javascript:void(0);" slot="extra"  @click="save()">
               <Icon type="ios-loop-strong"></Icon>
               Save
           </a>
@@ -84,7 +84,7 @@
               <Icon type="ios-film-outline"></Icon>
               Timeout
           </p>
-          <a href="javascript:void(0);" slot="extra"  @click="save()">
+          <a v-if="adminPer" href="javascript:void(0);" slot="extra"  @click="save()">
               <Icon type="ios-loop-strong"></Icon>
               Save
           </a>
@@ -108,7 +108,7 @@
               <Icon type="ios-film-outline"></Icon>
               Statis Timer
           </p>
-          <a href="javascript:void(0);" slot="extra" @click="save()">
+          <a v-if="adminPer"  href="javascript:void(0);" slot="extra" @click="save()">
               <Icon type="ios-loop-strong"></Icon>
               Save
           </a>
@@ -142,7 +142,7 @@
               <Icon type="ios-film-outline"></Icon>
               Break Rule
           </p>
-          <a href="javascript:void(0);" slot="extra" @click="save()" >
+          <a v-if="adminPer" slot="extra" @click="save()" href="javascript:void(0);">
               <Icon type="ios-loop-strong"></Icon>
               Save
           </a>
@@ -172,7 +172,7 @@
               <Icon type="ios-film-outline"></Icon>
               Testing
           </p>
-          <a slot="extra" @click="save()" href="javascript:void(0);">
+          <a v-if="adminPer" slot="extra" @click="save()" href="javascript:void(0);">
               <Icon type="ios-loop-strong"></Icon>
               Save
           </a>
@@ -211,12 +211,20 @@
 
     import TreeNode from  "./JServiceList.vue"
 
+    const cid = 'JMethodItem';
 export default {
-    name: 'JMethodItem',
+    name: cid,
     components: {
     },
     props: {
         meth : TreeNode
+    },
+
+    mounted() {
+        let self = this;
+        window.jm.mng.act.addListener(cid,()=>{
+            self.adminPer = window.jm.mng.comm.adminPer;
+        });
     },
 
     methods: {
@@ -284,6 +292,7 @@ export default {
     data(){
         return {
             node : this.meth,
+            adminPer : false,
             testingResult:'',
             invokeNum:100,
             invokeInterval:1000,

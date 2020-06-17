@@ -150,9 +150,9 @@ public class DefaultCoder implements TypeCoder<Object> {
 			TypeCoder coder = null;
 			if(fieldDeclareType != null && TypeUtils.isFinal(fieldDeclareType)) {
 				//基本数据类型的非引用类型
-				coder = TypeCoderFactory.getCoder(fieldDeclareType);
+				coder = TypeCoderFactory.getIns().getCoder(fieldDeclareType);
 			} else {
-				coder = TypeCoderFactory.getCoder(val.getClass());
+				coder = TypeCoderFactory.getIns().getCoder(val.getClass());
 			}
 			
 			if (coder != this) {
@@ -192,7 +192,7 @@ public class DefaultCoder implements TypeCoder<Object> {
 				if(so != null) {
 					so.encode(buffer,val);
 				}else {
-					TypeCoder coder = TypeCoderFactory.getCoder(valCls);
+					TypeCoder coder = TypeCoderFactory.getIns().getCoder(valCls);
 					if (coder != this) {
 						//有指定类型的编码器，使用指定类型的编码器
 						jo.position(pos);//具体编码器写其对应的前缀码及编码
@@ -290,7 +290,7 @@ public class DefaultCoder implements TypeCoder<Object> {
 						 Object o = so.decode(buffer);
 						 return o;
 					} else {
-						TypeCoder cd = TypeCoderFactory.getCoder(cls);
+						TypeCoder cd = TypeCoderFactory.getIns().getCoder(cls);
 						if(cd != null && cd != this) {
 							
 							 Object o = cd.decode(buffer,cls,null);
@@ -309,9 +309,9 @@ public class DefaultCoder implements TypeCoder<Object> {
 			}else if(Decoder.PREFIX_TYPE_FINAL == prefixCodeType) {
 				TypeCoder<?> coder = null;
 				if(fieldDeclareType == null || !TypeUtils.isFinal(fieldDeclareType)) {
-					coder = TypeCoderFactory.getCoder(buffer.readShort());
+					coder = TypeCoderFactory.getIns().getCoder(buffer.readShort());
 				} else {
-					coder = TypeCoderFactory.getCoder(fieldDeclareType);
+					coder = TypeCoderFactory.getIns().getCoder(fieldDeclareType);
 				}
 				
 				if(coder != this) {
@@ -321,15 +321,15 @@ public class DefaultCoder implements TypeCoder<Object> {
 				}
 			} else if(Decoder.PREFIX_TYPE_SHORT == prefixCodeType) {
 				Short code = buffer.readShort();
-				Class<?> cls = TypeCoderFactory.getClassByCode(code);
-				TypeCoder<?> coder = TypeCoderFactory.getCoder(code);
+				Class<?> cls = TypeCoderFactory.getIns().getClassByCode(code);
+				TypeCoder<?> coder = TypeCoderFactory.getIns().getCoder(code);
 				if(coder != this) {
 					return coder.decode(buffer, fieldDeclareType, genericType);
 				}else {
 					throw new CommonException("Invalid type code: "+code);
 				}
 			} else if(Decoder.PREFIX_TYPE_LIST == prefixCodeType) {
-				TypeCoder<?> coder = TypeCoderFactory.getCoder(List.class);
+				TypeCoder<?> coder = TypeCoderFactory.getIns().getCoder(List.class);
 				if(coder != this) {
 					return coder.decode(buffer, fieldDeclareType, genericType);
 				}else {
@@ -337,14 +337,14 @@ public class DefaultCoder implements TypeCoder<Object> {
 				}
 				
 			}  else if(Decoder.PREFIX_TYPE_SET == prefixCodeType) {
-				TypeCoder<?> coder = TypeCoderFactory.getCoder(Set.class);
+				TypeCoder<?> coder = TypeCoderFactory.getIns().getCoder(Set.class);
 				if(coder != this) {
 					return coder.decode(buffer, fieldDeclareType, genericType);
 				}else {
 					throw new CommonException("Invalid Set type coder: " + coder.type().getName());
 				}
 			}  else if(Decoder.PREFIX_TYPE_MAP == prefixCodeType) {
-				TypeCoder<?> coder = TypeCoderFactory.getCoder(Map.class);
+				TypeCoder<?> coder = TypeCoderFactory.getIns().getCoder(Map.class);
 				if(coder != this) {
 					return coder.decode(buffer, fieldDeclareType, genericType);
 				}else {

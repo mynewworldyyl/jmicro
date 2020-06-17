@@ -51,8 +51,8 @@ import cn.jmicro.monitor.api.AbstractMonitorDataSubscriber;
  * @author Yulei Ye
  * @date 2019年7月15日
  */
-@Component
-@Service(version="0.0.1", namespace="rpcStatisMonitor",monitorEnable=0,handler=Constants.SPECIAL_INVOCATION_HANDLER)
+//@Component
+//@Service(version="0.0.1", namespace="rpcStatisMonitor",monitorEnable=0,handler=Constants.SPECIAL_INVOCATION_HANDLER)
 public class ServiceReqMonitor  extends AbstractMonitorDataSubscriber implements IMonitorDataSubscriber{
 	
 	private final static Logger logger = LoggerFactory.getLogger(ServiceReqMonitor.class);

@@ -38,9 +38,9 @@ public @interface Service {
 	public String registry() default Constants.DEFAULT_REGISTRY;
 	
 	/**
-	 * 底层传输层，可以是http或netty
+	 * 是否可通过api网关使用
 	 */
-	public String[] servers() default "";
+	public boolean external() default false;
 	
 	/**
 	 * 服务接口，如果类只实现一个接口，则此值可不填

@@ -166,8 +166,7 @@ public class ApiRawRequestMessageHandler implements IMessageHandler{
 			
 			resp.setResult(result);
 		} else if(doLogick){
-			Object srv = JMicro.getObjectFactory().getRemoteServie(req.getServiceName(), 
-					req.getNamespace(), req.getVersion(),null);
+			Object srv = objFactory.getRemoteServie(req.getServiceName(), req.getNamespace(), req.getVersion(),null);
 			JMicroContext.get().setParam(JMicroContext.LOCAL_HOST, session.localHost());
 			JMicroContext.get().setParam(JMicroContext.LOCAL_PORT, session.localPort()+"");
 			JMicroContext.get().setParam(JMicroContext.REMOTE_HOST, session.remoteHost());
