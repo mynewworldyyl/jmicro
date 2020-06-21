@@ -200,8 +200,14 @@ public abstract class AbstractClientServiceProxy implements InvocationHandler,IS
 		
 		String lk = JMicroContext.get().getParam(JMicroContext.LOGIN_KEY, null);
 		
+		Long linkId = JMicroContext.get().getParam(JMicroContext.LINKER_ID, null);
+		
+		Long preRequestId = JMicroContext.get().getParam(JMicroContext.REQ_ID, null);
+		
+		//backup the rpc context from here
 		JMicroContext.get().backupAndClear();
 		
+		//Start a new RPC context from here
 		//false表示不是provider端
 		JMicroContext.callSideProdiver(false);
 		if(breakFlag) {
@@ -221,6 +227,15 @@ public abstract class AbstractClientServiceProxy implements InvocationHandler,IS
 		
 		if(lk != null) {
 			JMicroContext.get().setParam(JMicroContext.LOGIN_KEY, lk);
+		}
+		
+		if(linkId != null && linkId > 0) {
+			JMicroContext.get().setParam(JMicroContext.LINKER_ID, linkId);
+		}
+		
+		if(preRequestId != null && preRequestId > 0) {
+			//pre request ID is the parent ID of this request
+			JMicroContext.get().setParam(JMicroContext.REQ_PARENT_ID, preRequestId);
 		}
 		
 		if(ai != null) {

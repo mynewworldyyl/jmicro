@@ -8,4 +8,6 @@ public interface ISimpleRpc {
 	String hello(String name);
 	
 	String hi(Person p);
+	
+	String linkRpc(String msg);
 }

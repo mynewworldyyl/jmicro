@@ -19,7 +19,7 @@ import cn.jmicro.mng.api.IMonitorServerManager;
 
 @Component
 @Service(namespace="mng",version="0.0.1",debugMode=0,
-monitorEnable=0,logLevel=MC.LOG_ERROR,retryCnt=0)
+monitorEnable=0,logLevel=MC.LOG_ERROR,retryCnt=0,external=true)
 public class MonitorServerManagerImpl implements IMonitorServerManager{
 	
 	@Reference(namespace="*",version="*",type="ins")//每个服务实例一个代理对象

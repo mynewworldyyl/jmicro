@@ -49,6 +49,8 @@ public final class RpcRequest implements IRequest{
 	
 	protected long reqId = -1L;
 	
+	protected long reqParentId = -1L;
+	
 	private transient ISession session;
 	
 	private transient boolean isMonitorEnable = false;
@@ -93,12 +95,16 @@ public final class RpcRequest implements IRequest{
 		return this.msg.isNeedResponse();
 	}
 	
-	/*public boolean isStream(){
-		return this.msg.isStream();
-	}*/
-
 	public String getTransport() {
 		return transport;
+	}
+
+	public long getReqParentId() {
+		return reqParentId;
+	}
+
+	public void setReqParentId(long reqParentId) {
+		this.reqParentId = reqParentId;
 	}
 
 	public void setTransport(String transport) {

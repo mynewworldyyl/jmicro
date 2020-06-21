@@ -226,7 +226,7 @@ public final class MC {
 	@MCA(value="总成功数", group=Constants.STATIS_KEY,desc="业务失败，RPC成功 两者之和为总成功RPC数")
 	public static final short STATIS_TOTAL_SUCCESS = 0x0043;
 	
-	//总失败数 
+	//总失败数
 	@MCA(value="总失败数", group=Constants.STATIS_KEY,desc="服务器错误，未知错误，超时失败  三者之和为失败RPC总数")
 	public static final short STATIS_TOTAL_FAIL = 0x0044;
 	
@@ -247,6 +247,9 @@ public final class MC {
 	//MonitorConstant.CLIENT_IOSESSION_READ 总数即为服务响应数
 	@MCA(value="RPC服务响应总数", group=Constants.STATIS_KEY, desc="")
 	public static final short STATIS_TOTAL_RESP = 0x0049;
+	
+	@MCA("应用日志")
+	public static final short MT_APP_LOG = 0x004A;
 	
 	public static final short KEEP_MAX_VAL = 0x0FFF;
 	
@@ -287,6 +290,9 @@ public final class MC {
     
     public static final List<MCConfig> MC_CONFIGS = new ArrayList<>();
     
+    public static final Map<String,Byte> LogKey2Val = new HashMap<>();
+    public static final Map<String,Short> MT_Key2Val = new HashMap<>();
+    
     public static Short[] MT_TYPES_ARR;
     public static Short[] MS_TYPES_ARR;
     public static Short[] MTMS_TYPES_ARR;
@@ -299,10 +305,23 @@ public final class MC {
 		
 		Field[] fs = MC.class.getDeclaredFields();
 		for(Field f: fs){
-			if(!f.isAnnotationPresent(MCA.class)){
-				continue;
-			}
+			
+			
 			try {
+				
+				if(f.getType() == Byte.TYPE) {
+					String name = f.getName();
+					Byte val = f.getByte(null);
+					if(name.startsWith("LOG_")) {
+						LogKey2Val.put(name, val);
+					}
+					continue;
+				}
+				
+				if(!f.isAnnotationPresent(MCA.class)){
+					continue;
+				}
+				
 				MCA mca = f.getAnnotation(MCA.class);
 				String name = f.getName();
 				Short val = f.getShort(null);
@@ -326,6 +345,7 @@ public final class MC {
 				if(name.startsWith("MT_")) {
 					MT_TYPES.add(val);
 					MTMS_TYPES.add(val);
+					MT_Key2Val.put(name, val);
 				}else if(name.startsWith("Ms_")) {
 					MS_TYPES.add(val);
 					MTMS_TYPES.add(val);

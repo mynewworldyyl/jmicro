@@ -11,7 +11,7 @@ public class PressureTest {
 
 	public static void main(String[] args) {
 		IObjectFactory of = JMicro.getObjectFactoryAndStart(new String[] {"-DinstanceName=PressureTest"});
-		for(int i = 0; i < 5;i++){
+		for(int i = 0; i < 1;i++){
 			new Thread(new Worker(of,i)).start();
 		}
 	}

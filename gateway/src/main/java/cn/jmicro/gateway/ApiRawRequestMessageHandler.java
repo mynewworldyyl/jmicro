@@ -163,57 +163,60 @@ public class ApiRawRequestMessageHandler implements IMessageHandler{
 				logger.error("Method:"+req.getMethod()+" not found!");
 				result = false;
 			}
-			
 			resp.setResult(result);
 		} else if(doLogick){
 			Object srv = objFactory.getRemoteServie(req.getServiceName(), req.getNamespace(), req.getVersion(),null);
-			JMicroContext.get().setParam(JMicroContext.LOCAL_HOST, session.localHost());
-			JMicroContext.get().setParam(JMicroContext.LOCAL_PORT, session.localPort()+"");
-			JMicroContext.get().setParam(JMicroContext.REMOTE_HOST, session.remoteHost());
-			JMicroContext.get().setParam(JMicroContext.REMOTE_PORT, session.remotePort()+"");
-			
-			JMicroContext.get().mergeParams(req.getParams());
-			
 			if(srv != null){
-				Method m = this.getSrvMethod(req.getServiceName(), req.getMethod());
-				
 				try {
 					AbstractClientServiceProxy proxy = (AbstractClientServiceProxy)srv;
 					ServiceItem si = proxy.getItem();
 					if(si == null) {
-						SF.doRequestLog(MC.MT_PLATFORM_LOG,MC.LOG_ERROR, TAG, null," service not found");
+						//SF.doRequestLog(MC.MT_PLATFORM_LOG,MC.LOG_ERROR, TAG, null," service not found");
 						throw new CommonException("Service["+req.getServiceName()+"] namespace ["+req.getNamespace()+"] not found");
-					}
-					ServiceMethod sm = si.getMethod(req.getMethod(), m.getParameterTypes());
-					if(sm == null) {
-						SF.doRequestLog(MC.MT_PLATFORM_LOG,MC.LOG_ERROR, TAG, null," service method not found");
-						throw new CommonException("Service mehtod ["+req.getServiceName()+"] method ["+req.getMethod()+"] not found");
-					}
-					
-					if(SF.isLoggable(MC.LOG_DEBUG, msg.getLogLevel())) {
-						SF.doRequestLog(MC.MT_PLATFORM_LOG,MC.LOG_DEBUG, TAG, null," got request");
-					}
-					
-					if(!sm.isNeedResponse()) {
-						m.invoke(srv, req.getArgs());
-						if(SF.isLoggable(MC.LOG_DEBUG, msg.getLogLevel())) {
-							SF.doRequestLog(MC.MT_PLATFORM_LOG,MC.LOG_DEBUG, TAG, null," no need response");
+					} else if(si.isExternal()) {
+						Method m = this.getSrvMethod(req.getServiceName(), req.getMethod());
+						JMicroContext.get().setParam(JMicroContext.LOCAL_HOST, session.localHost());
+						JMicroContext.get().setParam(JMicroContext.LOCAL_PORT, session.localPort()+"");
+						JMicroContext.get().setParam(JMicroContext.REMOTE_HOST, session.remoteHost());
+						JMicroContext.get().setParam(JMicroContext.REMOTE_PORT, session.remotePort()+"");
+						JMicroContext.get().mergeParams(req.getParams());
+						
+						ServiceMethod sm = si.getMethod(req.getMethod(), m.getParameterTypes());
+						if(sm == null) {
+							SF.doRequestLog(MC.MT_PLATFORM_LOG,MC.LOG_ERROR, TAG, null," service method not found");
+							throw new CommonException("Service mehtod ["+req.getServiceName()+"] method ["+req.getMethod()+"] not found");
 						}
-						return;
+						
+						if(SF.isLoggable(MC.LOG_DEBUG, msg.getLogLevel())) {
+							SF.doRequestLog(MC.MT_PLATFORM_LOG,MC.LOG_DEBUG, TAG, null," got request");
+						}
+						
+						if(!sm.isNeedResponse()) {
+							m.invoke(srv, req.getArgs());
+							if(SF.isLoggable(MC.LOG_DEBUG, msg.getLogLevel())) {
+								SF.doRequestLog(MC.MT_PLATFORM_LOG,MC.LOG_DEBUG, TAG, null," no need response");
+							}
+							return;
+						}
+						
+						result = m.invoke(srv, req.getArgs());
+						resp.setResult(result);
+					} else {
+						String msgStr = "Service["+req.getServiceName()+"] namespace ["+req.getNamespace()+"] is not external!";
+						throw new CommonException(msgStr);
 					}
-					
-					result = m.invoke(srv, req.getArgs());
-					resp.setResult(result);
 				} catch ( SecurityException | IllegalAccessException 
 						| IllegalArgumentException | InvocationTargetException | CommonException e) {
 					logger.error("",e);
 					result = new ServerError(0,e.getMessage());
 					resp.setSuccess(false);
 					resp.setResult(result);
-					SF.doResponseLog(MC.MT_PLATFORM_LOG,MC.LOG_ERROR, TAG, e," service error");
+					SF.doResponseLog(MC.MT_PLATFORM_LOG,MC.LOG_ERROR, TAG, e,e.getMessage());
 				}
 			} else {
 				resp.setSuccess(false);
+				String msgStr = "Service["+req.getServiceName()+"] namespace ["+req.getNamespace()+"] instance not found!";
+				result = new ServerError(0,msgStr);
 				resp.setResult(result);
 			}
 		}

@@ -562,6 +562,7 @@ jm.mng = {
 
     comm : {
         adminPer:false,
+        dicts:{},
 
         init:function(cb) {
             let self = this;
@@ -580,6 +581,41 @@ jm.mng = {
 
         hasPermission: function (per){
             return jm.mng.callRpcWithParams(this.sn,this.ns,this.v,'hasPermission',[per]);
+        },
+
+        getDicts: function (keys){
+            let self = this;
+            return new Promise(function(reso,reje){
+                let ds = {};
+                let nokeys = [];
+                for(let i = 0; i <keys.length; i++) {
+                    if(self.dicts[keys[i]]) {
+                        ds[keys[i]] = self.dicts[keys[i]];
+                    } else {
+                        nokeys.push(keys[i]);
+                    }
+                }
+
+                if(nokeys.length == 0) {
+                    reso(ds);
+                } else {
+                    jm.mng.callRpcWithParams(self.sn,self.ns,self.v,'getDicts',[nokeys])
+                        .then((resp)=>{
+                            if(resp.code != 0) {
+                                reje(resp.msg);
+                            } else {
+                                for(let i = 0; i < nokeys.length; i++) {
+                                    self.dicts[nokeys[i]] =  resp.data[nokeys[i]];
+                                    ds[nokeys[i]] = resp.data[nokeys[i]];
+                                }
+                                reso(ds);
+                            }
+                        }).catch((err)=>{
+                            reje(err);
+                    });
+                }
+
+            });
         },
 
         sn:'cn.jmicro.mng.api.ICommonManager',
@@ -633,6 +669,29 @@ jm.mng = {
         ns : 'mng',
         v:'0.0.1',
     },
+
+    logSrv : {
+
+        count: function (params) {
+            return jm.mng.callRpcWithParams(this.sn, this.ns, this.v, 'count', [params]);
+        },
+
+        query: function (params,pageSize,curPage) {
+            return jm.mng.callRpcWithParams(this.sn, this.ns, this.v, 'query', [params,pageSize,curPage]);
+        },
+
+        queryDict: function () {
+            return jm.mng.callRpcWithParams(this.sn, this.ns, this.v, 'queryDict', []);
+        },
+
+        getByLinkId: function(linkId) {
+            return jm.mng.callRpcWithParams(this.sn, this.ns, this.v, 'getByLinkId', [linkId]);
+        },
+
+        sn:'cn.jmicro.mng.api.ILogService',
+        ns : 'mng',
+        v:'0.0.1',
+    }
 
 }
 

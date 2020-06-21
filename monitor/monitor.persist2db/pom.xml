@@ -50,7 +50,6 @@
 			 <groupId>cn.jmicro</groupId>
 			 <artifactId>idgenerator</artifactId>
 	    </dependency>
-	    
 	    <dependency>
 			 <groupId>cn.jmicro</groupId>
 			 <artifactId>test</artifactId>

@@ -49,6 +49,8 @@ public interface IRequest extends IReq{
 	
 	public long getRequestId();
 	
+	public long getReqParentId();
+	
 	void setRequestId(long reqId);
 	
 	public boolean isSuccess();

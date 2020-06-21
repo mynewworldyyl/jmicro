@@ -14,6 +14,10 @@ public class Resp<T> {
 	private int code;
 	private T data;
 	
+	private int total;
+	private int pageSize;
+	private int curPage;
+	
 	public String getMsg() {
 		return msg;
 	}
@@ -31,6 +35,24 @@ public class Resp<T> {
 	}
 	public void setCode(int code) {
 		this.code = code;
+	}
+	public int getTotal() {
+		return total;
+	}
+	public void setTotal(int total) {
+		this.total = total;
+	}
+	public int getPageSize() {
+		return pageSize;
+	}
+	public void setPageSize(int pageSize) {
+		this.pageSize = pageSize;
+	}
+	public int getCurPage() {
+		return curPage;
+	}
+	public void setCurPage(int curPage) {
+		this.curPage = curPage;
 	}
 	
 	

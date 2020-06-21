@@ -87,6 +87,7 @@ public class ServiceInvocationHandler implements InvocationHandler{
 			req.setTransport(Constants.TRANSPORT_NETTY);
 			req.setImpl(si.getImpl());
 			req.putObject(JMicroContext.LOGIN_KEY, cxt.getString(JMicroContext.LOGIN_KEY, null));
+			req.setReqParentId(cxt.getLong(JMicroContext.REQ_PARENT_ID, 0L));
 			
 			if(!JMicroContext.existLinkId() ) {
 				//新建一个RPC链路开始
@@ -94,13 +95,17 @@ public class ServiceInvocationHandler implements InvocationHandler{
 				cxt.setParam(Constants.NEW_LINKID, true);
 				if(JMicroContext.get().isMonitorable()) {
 					SF.linkStart(TAG.getName(),req);
-					MRpcItem mi = cxt.getMRpcItem();
-					mi.setReq(req);
-					mi.setReqId(req.getRequestId());
-					mi.setLinkId(JMicroContext.lid());
 				}
 			} else {
 				cxt.setParam(Constants.NEW_LINKID, false);
+			}
+			
+			if(JMicroContext.get().isMonitorable()) {
+				MRpcItem mi = cxt.getMRpcItem();
+				mi.setReq(req);
+				mi.setReqId(req.getRequestId());
+				mi.setLinkId(JMicroContext.lid());
+				mi.setReqParentId(req.getReqParentId());
 			}
 			
 			if(JMicroContext.get().isDebug()) {

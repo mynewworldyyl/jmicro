@@ -25,7 +25,7 @@ import cn.jmicro.mng.api.IMonitorTypeService;
 
 @Component
 @Service(namespace = "mng", version = "0.0.1", debugMode = 0,
-monitorEnable = 0, logLevel = MC.LOG_ERROR, retryCnt = 0)
+monitorEnable = 0, logLevel = MC.LOG_ERROR, retryCnt = 0,external=true)
 public class MonitorTypeServiceImpl implements IMonitorTypeService {
 
 	@Cfg(value="/adminPermissionLevel",defGlobal=true)
@@ -167,7 +167,7 @@ public class MonitorTypeServiceImpl implements IMonitorTypeService {
 			return resp;
 		}
 		String path = parentDir + "/" + key;
-		List<Short> l = getTypeByKey(key);
+		List<Short> l = getTypeByKey(path);
 		
 		
 		StringBuffer nsb = new StringBuffer();
@@ -239,10 +239,12 @@ public class MonitorTypeServiceImpl implements IMonitorTypeService {
 			}
 		}
 		
+
 		if(sb.length() > 0) {
 			sb.delete(sb.length()-1, sb.length());
-			op.setData(path, sb.toString());
 		}
+		
+		op.setData(path, sb.toString());
 		
 		resp.setCode(Resp.CODE_SUCCESS);
 		

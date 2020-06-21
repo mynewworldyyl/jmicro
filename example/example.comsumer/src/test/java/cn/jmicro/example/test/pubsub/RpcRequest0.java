@@ -185,6 +185,12 @@ public class RpcRequest0 extends AbstractObjectMapSupport implements IRequest {
 	}
 
 	@Override
+	public long getReqParentId() {
+		// TODO Auto-generated method stub
+		return 0;
+	}
+
+	@Override
 	public String getTransport() {
 		// TODO Auto-generated method stub
 		return null;

@@ -3,7 +3,7 @@
 <log4j:configuration xmlns:log4j="http://jakarta.apache.org/log4j/" debug="false">
 	
 	<appender name="CONSOLE" class="org.apache.log4j.ConsoleAppender">
-		<param name="Target" value="System.out"/>
+		<param name="Target" value="System.err"/>
 		<param name="Threshold" value="DEBUG"/>
 		<layout class="org.apache.log4j.PatternLayout">
 			<param name="ConversionPattern" value="[%L],[%t],[%d][%p,%c{1}] %m%n"/>
@@ -111,7 +111,7 @@
 	</appender>
 	
 	<logger name="cn.jmicro.api.monitor.sf">
-		<level value="DEBUG"/>
+		<level value="INFO"/>
 		<appender-ref ref="SF"/>
 	</logger>
 	
@@ -165,6 +165,11 @@
 	
 	<logger name="org.jboss">
 		<level value="INFO"/>
+		<appender-ref ref="NORMALLOG"/>
+	</logger>
+	
+	<logger name="org.mongodb">
+		<level value="WARN"/>
 		<appender-ref ref="NORMALLOG"/>
 	</logger>
 	 

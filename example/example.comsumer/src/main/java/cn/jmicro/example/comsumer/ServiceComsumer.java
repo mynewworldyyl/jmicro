@@ -17,6 +17,8 @@
 package cn.jmicro.example.comsumer;
 
 import cn.jmicro.api.JMicro;
+import cn.jmicro.api.monitor.MC;
+import cn.jmicro.api.monitor.SF;
 import cn.jmicro.api.objectfactory.IObjectFactory;
 import cn.jmicro.example.api.rpc.ISimpleRpc;
 
@@ -36,8 +38,12 @@ public class ServiceComsumer {
 		
 		//got remote service from object factory
 		//ISimpleRpc src = of.getRemoteServie(ISimpleRpc.class,null);
+		SF.doBussinessLog(MC.MT_PLATFORM_LOG, MC.LOG_DEBUG, 
+				ServiceComsumer.class, null, "test submit nonrpc log");
 		ISimpleRpc src = of.get(ISimpleRpc.class);
 		//invoke remote service
 		System.out.println(src.hello("Hello JMicro"));
+		
+		
 	}
 }

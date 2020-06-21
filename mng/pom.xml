@@ -19,6 +19,10 @@
             <artifactId>config</artifactId>
         </dependency>
         <dependency>
+			 <groupId>cn.jmicro</groupId>
+			 <artifactId>mongodb</artifactId>
+	    </dependency>
+        <dependency>
             <groupId>cn.jmicro</groupId>
             <artifactId>redis</artifactId>
         </dependency>

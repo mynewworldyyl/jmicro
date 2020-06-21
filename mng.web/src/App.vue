@@ -18,10 +18,11 @@
                       <Icon type="ios-cog" />
                       MONITOR
                   </template>
+                  <Menu-item name="invokeLinkView"><Icon type="ios-cog"></Icon>INVOKE LINK</Menu-item>
                   <Menu-item name="monitors"><Icon type="ios-cog"></Icon>MONITORS</Menu-item>
                   <Menu-item name="typeConfig"><Icon type="ios-cog"></Icon>TYPE CONFIG</Menu-item>
                   <Menu-item name="monitorType"><Icon type="ios-cog"></Icon>MONITOR TYPES</Menu-item>
-                  <Menu-item name="monitorTypeServiceMethod"><Icon type="ios-cog"></Icon>MONITOR SERVICE</Menu-item>
+                  <Menu-item name="monitorTypeServiceMethod"><Icon type="ios-cog"></Icon>SERVICE TYPES</Menu-item>
               </Submenu>
 
               <Menu-item name="config">

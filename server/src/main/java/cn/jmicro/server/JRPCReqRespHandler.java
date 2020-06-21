@@ -27,6 +27,7 @@ import cn.jmicro.api.codec.ICodecFactory;
 import cn.jmicro.api.config.Config;
 import cn.jmicro.api.idgenerator.ComponentIdServer;
 import cn.jmicro.api.monitor.MC;
+import cn.jmicro.api.monitor.MRpcItem;
 import cn.jmicro.api.monitor.SF;
 import cn.jmicro.api.net.IMessageHandler;
 import cn.jmicro.api.net.IResponse;
@@ -205,6 +206,14 @@ public class JRPCReqRespHandler implements IMessageHandler{
 			}
 			
 			s.close(true);
+		} finally {
+			if(JMicroContext.get().isMonitorable()) {
+				MRpcItem item = JMicroContext.get().getMRpcItem();
+				item.setReq(req);
+				item.setResp(resp);
+				item.setReqId(req.getRequestId());
+				item.setLinkId(msg.getLinkId());
+			}
 		}
 	}
 

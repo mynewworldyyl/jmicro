@@ -88,8 +88,8 @@ public class MonitorServerImpl implements IMonitorServer {
 	
 	private MonitorServerStatusAdapter statusAdapter;
 	
-	@Cfg(value="/MonitorServerImpl/openDebug")
-	private boolean openDebug = false;
+	//@Cfg(value="/MonitorServerImpl/openDebug")
+	private boolean openDebug = true;
 	
 	public void init() {
 		ExecutorConfig config = new ExecutorConfig();
@@ -141,9 +141,9 @@ public class MonitorServerImpl implements IMonitorServer {
 			sc.add(MC.Ms_ReceiveItemCnt, items.length);
 		}
 		
-		if(openDebug) {
+		/*if(openDebug) {
 			log(items);
-		}
+		}*/
 		
 		int pos = 0;
 		while(pos < items.length) {
@@ -348,7 +348,7 @@ public class MonitorServerImpl implements IMonitorServer {
 	private boolean deleteOneMonitor(IMonitorDataSubscriber m) {
 		for(Iterator<RegItem> ite = this.regSubs.iterator(); ite.hasNext(); ) {
 			RegItem ri = ite.next();
-			if(ri == m) {
+			if(ri.sub == m) {
 				ite.remove();
 				return true;
 			}
@@ -385,6 +385,12 @@ public class MonitorServerImpl implements IMonitorServer {
 				
 				MRpcItem[] items = new MRpcItem[ri.sendItems.size()];
 				ri.sendItems.toArray(items);
+				
+				if(openDebug) {
+					logger.debug("Submit items: " + items.length);
+					log(items);
+				}
+				
 				ri.sub.onSubmit(items);
 				if(monitoralbe) {
 					sc.add(MC.Ms_TaskSuccessItemCnt, items.length);

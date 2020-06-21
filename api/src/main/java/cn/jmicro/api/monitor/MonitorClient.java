@@ -472,6 +472,10 @@ public class MonitorClient {
 					//不能保证百分百发送成功，会有数据丢失
 					//为了提供更高的性能，丢失几个监控数据正常情况下可以接受
 					//如果监控服务同时部署两个以上，而两个监控服务器同时不可用的机率很低，等同于不可能，从而丢数据的可能性也趋于不可能
+					logger.info("==========================================================");
+					for(MRpcItem mi: items) {
+						logger.info("MonitorClient lid:" +mi.getLinkId() +", reqId: " + mi.getReqId()+", parentId: " + mi.getReqParentId());
+					}
 					monitorServer.submit(items);
 					if(statusMonitorAdapter.isMonitoralbe()) {
 						statusMonitorAdapter.getServiceCounter().add(MC.Ms_TaskSuccessItemCnt, items.length);

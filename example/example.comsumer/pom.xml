@@ -68,6 +68,11 @@
 		
 		<dependency>
 			<groupId>cn.jmicro</groupId>
+			<artifactId>mng</artifactId>
+		</dependency>
+		
+		<dependency>
+			<groupId>cn.jmicro</groupId>
 			<artifactId>agent</artifactId>
 			<version>0.0.1-SNAPSHOT</version>
 			<scope>test</scope>

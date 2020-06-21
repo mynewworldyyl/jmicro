@@ -68,6 +68,7 @@ public class JMicroContext  {
 	
 	
 	public static final String LINKER_ID = "_linkerId";
+	public static final String REQ_PARENT_ID = "_reqParentId";
 	//控制RPC方法在每个服务中输出日志，区加于往监控服务器上传日志
 	public static final String IS_DEBUG = "_isDebug";
 	public static final String IS_MONITORENABLE = "_monitorEnable";
@@ -167,6 +168,7 @@ public class JMicroContext  {
 		
 		context.setParam(JMicroContext.LINKER_ID, msg.getLinkId());
 		context.setParam(Constants.NEW_LINKID, false);
+		
 		//context.isLoggable = msg.isLoggable();
 		//debug mode 下才有效
 		context.setParam(IS_DEBUG, msg.isDebugMode());
@@ -181,11 +183,11 @@ public class JMicroContext  {
 			MRpcItem item = context.getMRpcItem();
 			if(item == null) {
 				item = new MRpcItem();
-				item.setReqId(msg.getReqId());
-				item.setLinkId(msg.getLinkId());
-				item.setMsg(msg);
 				context.setParam(MRPC_ITEM, item);
 			}
+			item.setLinkId(msg.getLinkId());
+			item.setMsg(msg);
+			item.setProvider(true);
 		}
 	}
 	
@@ -217,21 +219,42 @@ public class JMicroContext  {
 					item = context.getMRpcItem();
 					if(item == null) {
 						item = new MRpcItem();
+						//the pre RPC Request ID as the parent ID of this request
 						context.setParam(MRPC_ITEM, item);
 					}
 				}
 			}
+			item.setProvider(false);
+			item.setReqParentId(context.getLong(REQ_PARENT_ID, 0L));
 		}
 		
 	}
 	
 	
 	public static void config(IRequest req, ServiceLoader serviceLoader,IRegistry registry) {
+		
+		Object obj = serviceLoader.getService(Integer.parseInt(req.getImpl()));
+		if(obj == null){
+			SF.doRequestLog(MC.MT_PLATFORM_LOG,MC.LOG_ERROR,JMicroContext.class,null," service INSTANCE not found");
+			//SF.doSubmit(MonitorConstant.SERVER_REQ_SERVICE_NOT_FOUND,req,null);
+			throw new CommonException("Service not found,srv: "+req.getImpl());
+		}
+		
 		JMicroContext context = cxt.get();
 		context.setString(JMicroContext.CLIENT_SERVICE, req.getServiceName());
 		context.setString(JMicroContext.CLIENT_NAMESPACE, req.getNamespace());
 		context.setString(JMicroContext.CLIENT_METHOD, req.getMethod());
 		context.setString(JMicroContext.CLIENT_VERSION, req.getVersion());
+		//context.setLong(JMicroContext.REQ_PARENT_ID, req.getRequestId());
+		context.setParam(JMicroContext.REQ_ID, req.getRequestId());
+		
+		if(context.isMonitorable()) {
+			MRpcItem mi = context.getMRpcItem();
+			mi.setReqParentId(req.getReqParentId());
+			mi.setReqId(req.getRequestId());
+			mi.setReq(req);
+		}
+		
 		context.setParam(JMicroContext.CLIENT_ARGSTR, UniqueServiceMethodKey.paramsStr(req.getArgs()));
 		context.mergeParams(req.getRequestParams());
 		
@@ -245,18 +268,10 @@ public class JMicroContext  {
 		}
 		
 		ServiceMethod sm = si.getMethod(req.getMethod(), req.getArgs());
-		
 		context.setObject(Constants.SERVICE_ITEM_KEY, si);
 		context.setObject(Constants.SERVICE_METHOD_KEY, sm);
-		
-		Object obj = serviceLoader.getService(Integer.parseInt(req.getImpl()));
-		
-		if(obj == null){
-			SF.doRequestLog(MC.MT_PLATFORM_LOG,MC.LOG_ERROR,JMicroContext.class,null," service INSTANCE not found");
-			//SF.doSubmit(MonitorConstant.SERVER_REQ_SERVICE_NOT_FOUND,req,null);
-			throw new CommonException("Service not found,srv: "+req.getImpl());
-		}
 		context.setObject(Constants.SERVICE_OBJ_KEY, obj);
+		
 	}
 	
 	public static boolean existLinkId(){
@@ -388,15 +403,6 @@ public class JMicroContext  {
 			this.params.put(p.getKey(), p.getValue());
 		}
 	}
-	
-/*	public Boolean isMonitor(){
-		if(this.exists(Constants.MONITOR_ENABLE_KEY)){
-			return this.getBoolean(Constants.MONITOR_ENABLE_KEY, false);
-		};
-		
-		Config cfg = JMicro.getObjectFactory().get(Config.class);
-		return cfg.getBoolean(Constants.MONITOR_ENABLE_KEY,false);
-	}*/
 	
 	public boolean exists(String key){
 		return this.params.containsKey(key);

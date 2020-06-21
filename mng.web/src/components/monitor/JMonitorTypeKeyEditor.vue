@@ -1,6 +1,8 @@
 <template>
     <div class="JMonitorTypeKeyList">
         <a @click="refresh()">REFRESH</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+        <a  v-if="adminPer"   @click="selectAll(true)">SELECTALL</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+        <a  v-if="adminPer"   @click="selectAll(false)">UNSELECTALL</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
         <a  v-if="adminPer"  @click="update()">UPDATE</a>
         <br/>
         <p>{{item.id}}</p>
@@ -11,7 +13,7 @@
                 <td>{{ a.type }}&nbsp;/&nbsp;0X{{ a.type.toString(16).toUpperCase() }}</td>
                 <td>{{ a.desc }}</td>
                 <td>
-                    <Checkbox v-if="adminPer" v-model="a.check" @change.native="checkChange(a)"></Checkbox>
+                    <Checkbox :disabled="!adminPer" v-model="a.check" @change.native="checkChange(a)"></Checkbox>
                 </td>
             </tr>
         </table>
@@ -144,6 +146,21 @@
                     self.refresh();
                 });
             },
+
+            selectAll(st) {
+                if(this.typeList == null || this.typeList.length == 0) {
+                    return;
+                }
+
+                for(let i = 0; i < this.typeList.length; i++) {
+                    let v = this.typeList[i];
+                    if(v.check != st) {
+                        v.check = st;
+                        this.checkChange(v)
+                    }
+                }
+            },
+
         },
 
         mounted () {

@@ -38,7 +38,10 @@ import cn.jmicro.api.mng.ReportData;
 import cn.jmicro.api.monitor.IMonitorDataSubscriber;
 import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.monitor.MRpcItem;
+import cn.jmicro.api.net.RpcRequest;
 import cn.jmicro.api.raft.IDataOperator;
+import cn.jmicro.api.registry.IRegistry;
+import cn.jmicro.api.registry.ServiceItem;
 import cn.jmicro.common.Utils;
 import cn.jmicro.common.util.JsonUtils;
 import cn.jmicro.monitor.api.AbstractMonitorDataSubscriber;
@@ -50,7 +53,7 @@ import cn.jmicro.monitor.api.AbstractMonitorDataSubscriber;
  * @date 2020年1月18日
  */
 @Component
-@Service(version="0.0.1", namespace="log2DbMonitor",monitorEnable=0)
+@Service(version="0.0.1", namespace="log2DbMonitor",monitorEnable=0,retryCnt=0,timeout=3000)
 public class Log2DbMonitor extends AbstractMonitorDataSubscriber implements IMonitorDataSubscriber {
 
 	private final static Logger logger = LoggerFactory.getLogger(Log2DbMonitor.class);
@@ -66,6 +69,9 @@ public class Log2DbMonitor extends AbstractMonitorDataSubscriber implements IMon
 	
 	@Inject
 	private IDataOperator op;
+	
+	@Inject
+	private IRegistry reg;
 	
 	private List<MRpcItem> siq = new LinkedList<>();
 	
@@ -110,24 +116,43 @@ public class Log2DbMonitor extends AbstractMonitorDataSubscriber implements IMon
 			return;
 		}
 		
-		List<Document> docs = new ArrayList<>();
+		List<Document> llDocs = new ArrayList<>();
+		List<Document> notRpcDocs = new ArrayList<>();
+		
 		synchronized(temp) {
 			Iterator<MRpcItem> itesm = temp.iterator();
 			for(;itesm.hasNext();) {
-				Document d = toLog(itesm.next());
-				if(d != null) {
-					docs.add(d);
+				MRpcItem mi =  itesm.next();
+				Document d = toLog(mi);
+				if(mi.getReqId() > 0) {
+					if(mi.getReq() instanceof RpcRequest) {
+						RpcRequest req = (RpcRequest)mi.getReq();
+						ServiceItem si = reg.getServiceByCode(Integer.parseInt(req.getImpl()));
+						if(si != null) {
+							d.put("implCls", si.getImpl());
+						}
+					}
+					llDocs.add(d);
+				} else {
+					notRpcDocs.add(d);
 				}
 				itesm.remove();
 			}
 		}
 		
-		MongoCollection<Document> coll = mongoDb.getCollection("linker_log");
-		coll.insertMany(docs);
+		if(!llDocs.isEmpty()) {
+			MongoCollection<Document> coll = mongoDb.getCollection("rpc_log");
+			coll.insertMany(llDocs);
+		}else if(!notRpcDocs.isEmpty()){
+			MongoCollection<Document> coll = mongoDb.getCollection("nonrpc_log");
+			coll.insertMany(notRpcDocs);
+		}
+		
 	}
 
 	private Document toLog(MRpcItem si) {
 		Document d = Document.parse(JsonUtils.getIns().toJson(si));
+		d.put("inputTime", System.currentTimeMillis());
 		return d;
 	}
 	
@@ -145,7 +170,7 @@ public class Log2DbMonitor extends AbstractMonitorDataSubscriber implements IMon
 				logger.warn("LinkRouterMonitor LOG TYPE ERROR:{}",si);
 				return;
 			}*/
-			
+			logger.debug("Log2DbMonitor lid:" +si.getLinkId() +", reqId: " + si.getReqId()+", reqParentId: " + si.getReqParentId());
 			synchronized(siq) {
 				siq.add(si);
 			}

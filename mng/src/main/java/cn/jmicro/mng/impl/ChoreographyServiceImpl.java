@@ -36,7 +36,7 @@ import cn.jmicro.mng.api.ICommonManager;
 import cn.jmicro.mng.api.choreography.AgentInfoVo;
 
 @Component
-@Service(namespace="mng", version="0.0.1",retryCnt=0)
+@Service(namespace="mng", version="0.0.1",retryCnt=0,external=true)
 public class ChoreographyServiceImpl implements IChoreographyService {
 
 	private final static Logger logger = LoggerFactory.getLogger(ChoreographyServiceImpl.class);

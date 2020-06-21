@@ -37,7 +37,7 @@ import cn.jmicro.common.util.JsonUtils;
  */
 public class SF {
 	
-	private final static Logger logger = LoggerFactory.getLogger("cn.jmicro.api.monitor.sf.SFF");
+	private final static Logger logger = LoggerFactory.getLogger("cn.jmicro.api.monitor.sf");
 	
 	private static MonitorClient m = null;
 	

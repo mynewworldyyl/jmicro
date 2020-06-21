@@ -8,7 +8,7 @@ import cn.jmicro.api.cache.ICache;
 import cn.jmicro.api.idgenerator.ComponentIdServer;
 
 @Component
-@Service(namespace="act", version="0.0.1")
+@Service(namespace="act", version="0.0.1",external=true)
 public class AccountServiceImpl implements IAccountService {
 
 	private static final ActInfo admin = new ActInfo("admin","0", 0);

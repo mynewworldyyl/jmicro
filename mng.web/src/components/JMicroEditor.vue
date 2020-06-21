@@ -37,6 +37,7 @@
                     <JTypeConfig v-else-if="item.group == 'typeConfig'" :item="item"></JTypeConfig>
                     <JMonitorTypeKeyEditor v-else-if="item.group == 'monitorTye'" :item="item"></JMonitorTypeKeyEditor>
                     <JMonitorTypeServiceMethodEditor v-else-if="item.group == 'mtsm'" :item="item"></JMonitorTypeServiceMethodEditor>
+                    <JInvokeLinkView v-else-if="item.group == 'invokeLinkView'" :item="item"></JInvokeLinkView>
                 </TabPane>
             </Tabs>
         </div>
@@ -71,6 +72,7 @@
 
     import TreeNode from "./common/JTreeNode.js"
     import JTypeConfig from "./monitor/JTypeConfig.vue"
+    import JInvokeLinkView from "./monitor/JInvokeLinkView.vue"
     import JMonitorTypeKeyEditor from "./monitor/JMonitorTypeKeyEditor.vue"
     import JMonitorTypeServiceMethodEditor from "./monitor/JMonitorTypeServiceMethodEditor.vue"
 
@@ -102,6 +104,7 @@
 
             JMonitorTypeKeyEditor,
             JMonitorTypeServiceMethodEditor,
+            JInvokeLinkView,
         },
 
         data () {

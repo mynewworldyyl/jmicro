@@ -40,6 +40,8 @@ public final class MRpcItem{
 	
 	private long reqId;
 	
+	private long reqParentId=-1L;
+	
 	private IReq req = null;
 	
 	private IResp resp = null;
@@ -53,6 +55,9 @@ public final class MRpcItem{
 	private String remoteHost = null;
 	private String remotePort = null;
 	private String instanceName = null;
+	private boolean provider;
+	
+	private long createTime = System.currentTimeMillis();
 	
 	//private short[] types = null;
 	
@@ -94,6 +99,10 @@ public final class MRpcItem{
 		mi.reqId = this.reqId;
 		mi.resp = this.resp;
 		mi.sm = this.sm;
+		mi.provider = this.provider;
+		mi.createTime = this.createTime;
+		mi.reqParentId = this.reqParentId;
+		
 		return mi;
 	}
 	
@@ -108,6 +117,9 @@ public final class MRpcItem{
 		msg  = null;
 		req = null;
 		resp = null;
+		provider = false;
+		createTime = System.currentTimeMillis();
+		
 	}
 	
 	public OneItem addOneItem(OneItem oi) {
@@ -152,7 +164,22 @@ public final class MRpcItem{
 		}
 		return null;
 	}
-	
+
+	public long getCreateTime() {
+		return createTime;
+	}
+
+	public void setCreateTime(long createTime) {
+		this.createTime = createTime;
+	}
+
+	public long getReqParentId() {
+		return reqParentId;
+	}
+
+	public void setReqParentId(long reqParentId) {
+		this.reqParentId = reqParentId;
+	}
 
 	public long getLinkId() {
 		return linkId;
@@ -212,6 +239,14 @@ public final class MRpcItem{
 
 	public String getRemoteHost() {
 		return remoteHost;
+	}
+
+	public boolean isProvider() {
+		return provider;
+	}
+
+	public void setProvider(boolean provider) {
+		this.provider = provider;
 	}
 
 	public void setRemoteHost(String remoteHost) {

@@ -41,7 +41,7 @@ import cn.jmicro.common.util.TimeUtils;
  * @date 2020年3月27日
  */
 @Component(level=1001)
-@Service(namespace="mng",version="0.0.1")
+@Service(namespace="mng",version="0.0.1",external=true)
 public class StatisMonitorImpl implements IStatisMonitor {
 
 	private final static Logger logger = LoggerFactory.getLogger(StatisMonitorImpl.class);
