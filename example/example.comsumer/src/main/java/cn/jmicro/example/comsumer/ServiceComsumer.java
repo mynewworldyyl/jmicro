@@ -38,8 +38,7 @@ public class ServiceComsumer {
 		
 		//got remote service from object factory
 		//ISimpleRpc src = of.getRemoteServie(ISimpleRpc.class,null);
-		SF.doBussinessLog(MC.MT_PLATFORM_LOG, MC.LOG_DEBUG, 
-				ServiceComsumer.class, null, "test submit nonrpc log");
+		SF.eventLog(MC.MT_PLATFORM_LOG, MC.LOG_DEBUG, ServiceComsumer.class, "test submit nonrpc log");
 		ISimpleRpc src = of.get(ISimpleRpc.class);
 		//invoke remote service
 		System.out.println(src.hello("Hello JMicro"));

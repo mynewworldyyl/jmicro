@@ -28,6 +28,7 @@ import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Inject;
 import cn.jmicro.api.exception.RpcException;
 import cn.jmicro.api.idgenerator.ComponentIdServer;
+import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.monitor.MRpcItem;
 import cn.jmicro.api.monitor.MonitorClient;
 import cn.jmicro.api.monitor.SF;
@@ -94,7 +95,7 @@ public class ServiceInvocationHandler implements InvocationHandler{
 				JMicroContext.lid();
 				cxt.setParam(Constants.NEW_LINKID, true);
 				if(JMicroContext.get().isMonitorable()) {
-					SF.linkStart(TAG.getName(),req);
+					SF.eventLog(MC.MT_LINK_START, MC.LOG_NO, TAG, null);
 				}
 			} else {
 				cxt.setParam(Constants.NEW_LINKID, false);
@@ -117,7 +118,7 @@ public class ServiceInvocationHandler implements InvocationHandler{
 			
 			resp = this.intManager.handleRequest(req);
 			
-			obj = resp == null ? null :resp.getResult();
+			obj = resp == null ? null : resp.getResult();
 		} catch(Throwable ex) {
 			if(ex instanceof CommonException) {
 				throw ex;
@@ -129,7 +130,7 @@ public class ServiceInvocationHandler implements InvocationHandler{
 			if(JMicroContext.get().getObject(Constants.NEW_LINKID,null) != null &&
 					JMicroContext.get().getBoolean(Constants.NEW_LINKID,false) ) {
 				//RPC链路结束
-				SF.linkEnd(TAG.getName(),resp);
+				SF.eventLog(MC.MT_LINK_END, MC.LOG_NO, TAG, null);
 				JMicroContext.get().removeParam(Constants.NEW_LINKID);
 			}
 			JMicroContext.get().debugLog(0);

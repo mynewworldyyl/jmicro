@@ -38,6 +38,8 @@
                     <JMonitorTypeKeyEditor v-else-if="item.group == 'monitorTye'" :item="item"></JMonitorTypeKeyEditor>
                     <JMonitorTypeServiceMethodEditor v-else-if="item.group == 'mtsm'" :item="item"></JMonitorTypeServiceMethodEditor>
                     <JInvokeLinkView v-else-if="item.group == 'invokeLinkView'" :item="item"></JInvokeLinkView>
+                    <JLogItemView v-else-if="item.group == 'logItemView'" :item="item"></JLogItemView>
+
                 </TabPane>
             </Tabs>
         </div>
@@ -46,7 +48,7 @@
 </template>
 
 <script>
-    //import jm from '../../public/js/jm.js'
+
     import JServiceItem from './service/JServiceItem.vue'
     import JMethodItem from './service/JSMethodItem.vue'
     import JInstanceItem from './service/JInstanceItem.vue'
@@ -75,6 +77,7 @@
     import JInvokeLinkView from "./monitor/JInvokeLinkView.vue"
     import JMonitorTypeKeyEditor from "./monitor/JMonitorTypeKeyEditor.vue"
     import JMonitorTypeServiceMethodEditor from "./monitor/JMonitorTypeServiceMethodEditor.vue"
+    import JLogItemView from "./monitor/JLogItemView.vue"
 
     export default {
         name: 'JMicroEditor',
@@ -105,6 +108,7 @@
             JMonitorTypeKeyEditor,
             JMonitorTypeServiceMethodEditor,
             JInvokeLinkView,
+            JLogItemView,
         },
 
         data () {

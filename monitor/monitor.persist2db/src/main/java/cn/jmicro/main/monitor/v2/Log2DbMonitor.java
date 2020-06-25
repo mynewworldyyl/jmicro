@@ -117,14 +117,28 @@ public class Log2DbMonitor extends AbstractMonitorDataSubscriber implements IMon
 		}
 		
 		List<Document> llDocs = new ArrayList<>();
-		List<Document> notRpcDocs = new ArrayList<>();
+		//List<Document> notRpcDocs = new ArrayList<>();
 		
 		synchronized(temp) {
+			long curTime = System.currentTimeMillis();
 			Iterator<MRpcItem> itesm = temp.iterator();
 			for(;itesm.hasNext();) {
 				MRpcItem mi =  itesm.next();
-				Document d = toLog(mi);
-				if(mi.getReqId() > 0) {
+				mi.setInputTime(curTime);
+				if(mi.getReq() instanceof RpcRequest) {
+					RpcRequest req = (RpcRequest)mi.getReq();
+					ServiceItem si = reg.getServiceByCode(Integer.parseInt(req.getImpl()));
+					if(si != null) {
+						mi.setImplCls(si.getImpl());
+					}
+				}
+				
+				Document d = Document.parse(JsonUtils.getIns().toJson(mi));
+				llDocs.add(d);
+			
+				/*if(mi.getReqId() > 0) {
+					Document d = Document.parse(JsonUtils.getIns().toJson(mi));
+					d.put("inputTime", System.currentTimeMillis());
 					if(mi.getReq() instanceof RpcRequest) {
 						RpcRequest req = (RpcRequest)mi.getReq();
 						ServiceItem si = reg.getServiceByCode(Integer.parseInt(req.getImpl()));
@@ -134,28 +148,31 @@ public class Log2DbMonitor extends AbstractMonitorDataSubscriber implements IMon
 					}
 					llDocs.add(d);
 				} else {
-					notRpcDocs.add(d);
-				}
+					if(mi.getItems() != null && mi.getItems().size() > 0) {
+						for(OneItem oi : mi.getItems()) {
+							oi.setInstanceName(mi.getInstanceName());
+							Document d = Document.parse(JsonUtils.getIns().toJson(oi));
+							notRpcDocs.add(d);
+						}
+					}
+				}*/
 				itesm.remove();
 			}
 		}
 		
+		MongoCollection<Document> coll = mongoDb.getCollection("rpc_log");
+		coll.insertMany(llDocs);
+		/*
 		if(!llDocs.isEmpty()) {
 			MongoCollection<Document> coll = mongoDb.getCollection("rpc_log");
 			coll.insertMany(llDocs);
 		}else if(!notRpcDocs.isEmpty()){
 			MongoCollection<Document> coll = mongoDb.getCollection("nonrpc_log");
 			coll.insertMany(notRpcDocs);
-		}
+		}*/
 		
 	}
 
-	private Document toLog(MRpcItem si) {
-		Document d = Document.parse(JsonUtils.getIns().toJson(si));
-		d.put("inputTime", System.currentTimeMillis());
-		return d;
-	}
-	
 	@Override
 	@SMethod(needResponse=false,asyncable=true)
 	public void onSubmit(MRpcItem[] sis) {

@@ -534,7 +534,7 @@ public class SimpleObjectFactory implements IObjectFactory {
 					 }
 					 r.run();
 					 
-					 SF.eventLog(MC.MT_PLATFORM_LOG, MC.LOG_INFO, SimpleObjectFactory.class.getName()
+					 SF.eventLog(MC.MT_PLATFORM_LOG, MC.LOG_INFO, SimpleObjectFactory.class
 							 , JsonUtils.getIns().toJson(pi));
 				} else if(isMast[0]) {
 					 //失去master资格，退出
@@ -544,7 +544,7 @@ public class SimpleObjectFactory implements IObjectFactory {
 						final String js = JsonUtils.getIns().toJson(pi);
 						dataOperator.setData(p, js);
 					}
-					 SF.eventLog(MC.MT_PLATFORM_LOG, MC.LOG_INFO, SimpleObjectFactory.class.getName()
+					 SF.eventLog(MC.MT_PLATFORM_LOG, MC.LOG_INFO, SimpleObjectFactory.class
 							 , JsonUtils.getIns().toJson(pi));
 					 logger.info(Config.getInstanceName() + " lost master, need restart server!");
 					 System.exit(0);
@@ -1574,7 +1574,7 @@ public class SimpleObjectFactory implements IObjectFactory {
 				if(!pi0.isActive()) {
 					op.deleteNode(p);
 					logger.warn("JVM exit by other system");
-					SF.eventLog(MC.MT_PROCESS_REMOVE,MC.LOG_WARN, this.getClass().getSimpleName(),data);
+					SF.eventLog(MC.MT_PROCESS_REMOVE,MC.LOG_WARN, this.getClass(),data);
 					synchronized(this) {
 						try {
 							//等日志发送完成
@@ -1599,7 +1599,7 @@ public class SimpleObjectFactory implements IObjectFactory {
 				String js0 = JsonUtils.getIns().toJson(pi);
 				String msg = "Recreate process info node by checker: " + js0;
 				logger.warn(msg);
-				SF.eventLog(MC.MT_PROCESS_LOG,MC.LOG_WARN, this.getClass().getSimpleName(),msg);
+				SF.eventLog(MC.MT_PROCESS_LOG,MC.LOG_WARN, this.getClass(),msg);
 				op.createNodeOrSetData(p,js0,true);
 			}
 		});

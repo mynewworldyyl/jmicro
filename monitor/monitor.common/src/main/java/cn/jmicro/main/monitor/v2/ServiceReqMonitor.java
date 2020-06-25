@@ -211,7 +211,7 @@ public class ServiceReqMonitor  extends AbstractMonitorDataSubscriber implements
 			 + key + " , Num: " + oi.getNum() + " , Val: " + oi.getVal());
 			 }*/
 			 if(MC.MT_CLIENT_IOSESSION_READ == oi.getType()
-				|| MC.MT_SERVER_IOSESSION_READ == oi.getType()) {
+				|| MC.MT_SERVER_JRPC_GET_REQUEST == oi.getType()) {
 				 counter.add(oi.getType(), oi.getVal());
 			 } else {
 				 counter.add(oi.getType(), oi.getNum());

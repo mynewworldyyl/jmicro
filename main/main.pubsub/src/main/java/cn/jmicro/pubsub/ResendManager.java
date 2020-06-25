@@ -217,7 +217,7 @@ class ResendManager {
 				failStorage.push(item.topic, item);
 				logger.error("缓存消息量已经达上限："+JsonUtils.getIns().toJson(item));
 				//没办法，服务器吃不消了，直接丢弃
-				SF.doBussinessLog(MC.MT_PUBSUB_LOG,MC.LOG_ERROR,PubSubServer.class,null, 
+				SF.eventLog(MC.MT_PUBSUB_LOG,MC.LOG_ERROR,PubSubServer.class, 
 						"缓存消息量已经达上限："+JsonUtils.getIns().toJson(item));
 			}
 		}

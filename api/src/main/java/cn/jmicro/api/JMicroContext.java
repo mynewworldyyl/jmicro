@@ -108,6 +108,7 @@ public class JMicroContext  {
 			MRpcItem item = getMRpcItem();
 			if(item != null ) {
 				SF.setCommon(item);
+				item.setCostTime(System.currentTimeMillis() - item.getCreateTime());
 				mo.readySubmit(item);
 				JMicroContext.get().removeParam(MRPC_ITEM);
 			}
@@ -235,7 +236,7 @@ public class JMicroContext  {
 		
 		Object obj = serviceLoader.getService(Integer.parseInt(req.getImpl()));
 		if(obj == null){
-			SF.doRequestLog(MC.MT_PLATFORM_LOG,MC.LOG_ERROR,JMicroContext.class,null," service INSTANCE not found");
+			SF.eventLog(MC.MT_PLATFORM_LOG,MC.LOG_ERROR,JMicroContext.class," service INSTANCE not found");
 			//SF.doSubmit(MonitorConstant.SERVER_REQ_SERVICE_NOT_FOUND,req,null);
 			throw new CommonException("Service not found,srv: "+req.getImpl());
 		}
@@ -260,8 +261,8 @@ public class JMicroContext  {
 		
 		ServiceItem si = registry.getServiceByCode(Integer.parseInt(req.getImpl()));
 		if(si == null){
-			if(SF.isLoggable(req.getLogLevel())) {
-				SF.doRequestLog(MC.MT_PLATFORM_LOG,MC.LOG_ERROR,JMicroContext.class,null," service ITEM not found");
+			if(SF.isLoggable(MC.LOG_ERROR,req.getLogLevel())) {
+				SF.eventLog(MC.MT_SERVICE_ITEM_NOT_FOUND,MC.LOG_ERROR,JMicroContext.class," service ITEM not found");
 			}
 			//SF.doSubmit(MonitorConstant.SERVER_REQ_SERVICE_NOT_FOUND,req,null);
 			throw new CommonException("Service not found impl："+req.getImpl()+", srv: " + req.getServiceName());

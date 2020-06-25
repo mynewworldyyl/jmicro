@@ -99,7 +99,7 @@ public class TestMonitorSubmiter extends JMicroBaseTestCase{
 				
 				try {
 					//m.onSubmit(sis);
-					SF.doServiceLog(MC.MT_PLATFORM_LOG,MC.LOG_DEBUG,this.getClass(),null,"testSubmitLog");
+					SF.eventLog(MC.MT_PLATFORM_LOG,MC.LOG_DEBUG,this.getClass(),"testSubmitLog");
 				} catch (Throwable e1) {
 					e1.printStackTrace();
 				}

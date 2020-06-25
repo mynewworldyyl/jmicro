@@ -183,18 +183,19 @@ public class ApiRawRequestMessageHandler implements IMessageHandler{
 						
 						ServiceMethod sm = si.getMethod(req.getMethod(), m.getParameterTypes());
 						if(sm == null) {
-							SF.doRequestLog(MC.MT_PLATFORM_LOG,MC.LOG_ERROR, TAG, null," service method not found");
-							throw new CommonException("Service mehtod ["+req.getServiceName()+"] method ["+req.getMethod()+"] not found");
+							String errMsg = "Service mehtod ["+req.getServiceName()+"] method ["+req.getMethod()+"] not found";
+							SF.eventLog(MC.MT_SERVICE_METHOD_NOT_FOUND,MC.LOG_ERROR, TAG, errMsg);
+							throw new CommonException(errMsg);
 						}
 						
 						if(SF.isLoggable(MC.LOG_DEBUG, msg.getLogLevel())) {
-							SF.doRequestLog(MC.MT_PLATFORM_LOG,MC.LOG_DEBUG, TAG, null," got request");
+							SF.eventLog(MC.MT_PLATFORM_LOG,MC.LOG_DEBUG, TAG," got request");
 						}
 						
 						if(!sm.isNeedResponse()) {
 							m.invoke(srv, req.getArgs());
 							if(SF.isLoggable(MC.LOG_DEBUG, msg.getLogLevel())) {
-								SF.doRequestLog(MC.MT_PLATFORM_LOG,MC.LOG_DEBUG, TAG, null," no need response");
+								SF.eventLog(MC.MT_PLATFORM_LOG,MC.LOG_DEBUG, TAG," no need response");
 							}
 							return;
 						}
@@ -211,7 +212,7 @@ public class ApiRawRequestMessageHandler implements IMessageHandler{
 					result = new ServerError(0,e.getMessage());
 					resp.setSuccess(false);
 					resp.setResult(result);
-					SF.doResponseLog(MC.MT_PLATFORM_LOG,MC.LOG_ERROR, TAG, e,e.getMessage());
+					SF.eventLog(MC.MT_SERVER_ERROR,MC.LOG_ERROR, TAG,"", e);
 				}
 			} else {
 				resp.setSuccess(false);
@@ -228,7 +229,7 @@ public class ApiRawRequestMessageHandler implements IMessageHandler{
 		}
 		
 		if(SF.isLoggable(MC.LOG_DEBUG, msg.getLogLevel())) {
-			SF.doResponseLog(MC.MT_PLATFORM_LOG,MC.LOG_DEBUG, TAG, null," one response");
+			SF.eventLog(MC.MT_PLATFORM_LOG,MC.LOG_DEBUG, TAG," one response");
 		}
 		session.write(msg);
 		

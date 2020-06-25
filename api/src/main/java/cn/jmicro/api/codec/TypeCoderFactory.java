@@ -231,7 +231,7 @@ public class TypeCoderFactory {
 			
 			@Override
 			public Map decode(DataInput buffer, Class<?> fieldDeclareType, Type genericType) {
-				return TypeCoder.decodeMap(buffer, TypeCoder.genericType(genericType));
+				return TypeCoder.decodeMap(buffer, fieldDeclareType, TypeCoder.genericType(genericType));
 			}
 
 			@SuppressWarnings({ "unchecked", "rawtypes" })

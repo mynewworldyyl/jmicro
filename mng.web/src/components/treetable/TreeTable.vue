@@ -3,15 +3,14 @@
         <div class="tree-head">
             <table>
                 <tr>
-                    <td class="td1">LINK ID</td>
-                    <td class="td2">REQ ID</td>
-                    <td class="td3" @click="isDesc=!isDesc">
-                        METHOD
-                        <!-- <div class="arrow">
-                             <span class="up-arrow" :class="{'sort':isDesc}"></span>
-                             <span class="down-arrow" :class="{'sort':!isDesc}"></span>
-                         </div>-->
+                    <td class="td1">REQ ID</td>
+                    <td class="td2"  @click="isDesc=!isDesc">COST
+                        <div class="arrow">
+                                <span class="up-arrow" :class="{'sort':isDesc}"></span>
+                                <span class="down-arrow" :class="{'sort':!isDesc}"></span>
+                        </div>
                     </td>
+                    <td class="td3">METHOD</td>
                     <td class="td5">SERVICE</td>
                     <td class="td6">NAMESPACE</td>
                     <td class="td7">VERSION</td>
@@ -72,7 +71,7 @@
             },
             isDesc(nelVal, oldVal) {
                 console.log(oldVal);
-                this.$emit('orderByFunc', nelVal)
+                this.$emit('orderByCost')
             }
         },
         computed: {
@@ -134,8 +133,8 @@
         width: 100%;
         position: relative;
         .center {
-            text-align: center;
-        }
+              text-align: center;
+          }
         table {
             width: 100%;
             text-align: center;
@@ -202,7 +201,7 @@
             }
         }
         > div{
-            position: absolute;
+            position: relative;
             width:100%;
         }
         .line-height {
@@ -252,7 +251,7 @@
             text-overflow:ellipsis;
         }
         .tree-wrap {
-            top:40px;
+            //top:40px;
         }
         .tree-body {
             table{

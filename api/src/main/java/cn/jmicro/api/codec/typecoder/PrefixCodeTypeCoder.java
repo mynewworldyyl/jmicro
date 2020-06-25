@@ -4,7 +4,6 @@ import java.io.DataOutput;
 import java.io.IOException;
 import java.lang.reflect.Type;
 
-import cn.jmicro.api.codec.TypeUtils;
 import cn.jmicro.common.CommonException;
 
 public abstract class PrefixCodeTypeCoder<T> implements TypeCoder<T>{

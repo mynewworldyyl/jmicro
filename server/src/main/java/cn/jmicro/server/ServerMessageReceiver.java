@@ -156,7 +156,7 @@ public class ServerMessageReceiver implements IMessageReceiver{
 		try {
 			
 			JMicroContext.configProvider(s,msg);
-			if(JMicroContext.get().isDebug()) {
+			if(msg.isDebugMode()) {
 				long usedTime = System.currentTimeMillis() - msg.getTime();
 				StringBuilder sb = JMicroContext.get().getDebugLog();
 				 sb.append(msg.getMethod())
@@ -164,17 +164,15 @@ public class ServerMessageReceiver implements IMessageReceiver{
 				.append(",linkId:").append(JMicroContext.lid());
 				sb.append(",Receive Time:").append(usedTime);
 			}
-				
+			
 			if(SF.isLoggable(MC.LOG_DEBUG,msg.getLogLevel())) {
-				SF.doMessageLog(MC.MT_PLATFORM_LOG,MC.LOG_DEBUG, TAG, msg,null,"doReceive");
+				SF.eventLog(MC.MT_PLATFORM_LOG,MC.LOG_DEBUG, TAG,"doReceive");
 			}
 			
 			IMessageHandler h = handlers.get(msg.getType());
 			if(h == null) {
 				String errMsg = "Message type ["+Integer.toHexString(msg.getType())+"] handler not found!";
-				if(SF.isLoggable(MC.LOG_ERROR,msg.getLogLevel())) {
-					SF.doMessageLog(MC.MT_PLATFORM_LOG,MC.LOG_ERROR, TAG, msg,null,errMsg);
-				}
+				SF.eventLog(MC.MT_HANDLER_NOT_FOUND,MC.LOG_ERROR, TAG,errMsg);
 				throw new CommonException(errMsg);
 			} else {
 				h.onMessage(s, msg);
@@ -185,9 +183,7 @@ public class ServerMessageReceiver implements IMessageReceiver{
 			logger.error("reqHandler error msg:{} ",msg);
 			logger.error("doReceive",e);
 			
-			if(SF.isLoggable(MC.LOG_ERROR,msg.getLogLevel())) {
-				SF.doMessageLog(MC.MT_PLATFORM_LOG,MC.LOG_ERROR, TAG, msg,null,"error");
-			}
+			SF.eventLog(MC.MT_SERVER_ERROR,MC.LOG_ERROR, TAG,"error",e);
 			
 			RpcResponse resp = new RpcResponse(msg.getReqId(),new ServerError(0,e.getMessage()));
 			resp.setSuccess(false);

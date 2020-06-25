@@ -56,7 +56,7 @@ public class JRPCReqRespHandler implements IMessageHandler{
 	
 	private static final Class<?> TAG = JRPCReqRespHandler.class;
 	
-	static final Logger logger = LoggerFactory.getLogger(JRPCReqRespHandler.class);
+	private static final Logger logger = LoggerFactory.getLogger(JRPCReqRespHandler.class);
 	
 	@Inject
 	private InterceptorManager interceptorManger;
@@ -93,19 +93,29 @@ public class JRPCReqRespHandler implements IMessageHandler{
 		
 	    try {
 	    	
+	    	//req1为内部类访问
+	    	final RpcRequest req1 = ICodecFactory.decode(this.codeFactory,msg.getPayload(),
+					RpcRequest.class,msg.getUpProtocol());
+	    	
+	    	req = req1;
+			req.setSession(s);
+			req.setMsg(msg);
+			
+	    	JMicroContext.config(req1,serviceLoader,registry);
+	    	
+	    	if(msg.isMonitorable()) {
+				SF.netIoRead(TAG.getName(),MC.MT_SERVER_JRPC_GET_REQUEST, msg.getLen());
+			}
+	    	
 			resp.setReqId(msg.getReqId());
 			resp.setMsg(msg);
 			resp.setSuccess(true);
-			resp.setId(idGenerator.getLongId(IResponse.class));
+			//resp.setId(idGenerator.getLongId(IResponse.class));
 			
 			if(msg.isDebugMode()) {
 				msg.setId(idGenerator.getLongId(Message.class));
 				msg.setInstanceName(Config.getInstanceName());
 			}
-			
-	    	//req1为内部类访问
-	    	final RpcRequest req1 = ICodecFactory.decode(this.codeFactory,msg.getPayload(),
-					RpcRequest.class,msg.getUpProtocol());
 	    	
 	    	ActInfo ai = null;
 			
@@ -118,9 +128,7 @@ public class JRPCReqRespHandler implements IMessageHandler{
 						resp.setResult(se);
 						resp.setSuccess(false);
 						msg.setPayload(ICodecFactory.encode(codeFactory, resp, msg.getUpProtocol()));
-						if(SF.isLoggable(MC.LOG_DEBUG, msg.getLogLevel())) {
-							SF.doResponseLog(MC.MT_PLATFORM_LOG,MC.LOG_DEBUG, TAG, null," one response");
-						}
+						SF.eventLog(MC.MT_INVALID_LOGIN_INFO,MC.LOG_ERROR, TAG,se.toString());
 						s.write(msg);
 						return;
 					}else {
@@ -134,16 +142,6 @@ public class JRPCReqRespHandler implements IMessageHandler{
 	    		JMicroContext.get().appendCurUseTime("Server end decode req",true);
     		}
 	    	
-			req = req1;
-			req.setSession(s);
-			req.setMsg(msg);
-			
-			JMicroContext.config(req1,serviceLoader,registry);
-			
-			if(msg.isMonitorable()) {
-				SF.netIoRead(TAG.getName(),MC.MT_SERVER_IOSESSION_READ, msg.getLen());
-			}
-			
 			if(!msg.isNeedResponse()){
 				//无需返回值
 				//数据发送后，不需要返回结果，也不需要请求确认包，直接返回
@@ -152,6 +150,9 @@ public class JRPCReqRespHandler implements IMessageHandler{
         		}
 				interceptorManger.handleRequest(req);
 				//SF.doSubmit(MonitorConstant.SERVER_REQ_OK, req,resp,null);
+				if(msg.isMonitorable()) {
+					SF.netIoRead(TAG.getName(),MC.MT_SERVER_JRPC_RESPONSE_SUCCESS, 0);
+				}
 				return;
 			}
 			
@@ -160,10 +161,6 @@ public class JRPCReqRespHandler implements IMessageHandler{
 			//msg.setSessionId(req.getSession().getId());
 			msg.setVersion(req.getMsg().getVersion());
 				
-			if(SF.isLoggable(MC.LOG_DEBUG,msg.getLogLevel())){
-				SF.doRequestLog(MC.MT_PLATFORM_LOG,MC.LOG_DEBUG, TAG,null,"got REQUEST");
-			}
-
 			//同步响应
 			resp = (RpcResponse)interceptorManger.handleRequest(req);
 			if(resp == null){
@@ -175,25 +172,17 @@ public class JRPCReqRespHandler implements IMessageHandler{
 			//请求类型码比响应类型码大1，
 			msg.setType((byte)(msg.getType()+1));
 			
-			if(openDebug) {
-    			//logger.info("Response req:"+req.getMethod()+",Service:" + req.getServiceName()+", Namespace:"+req.getNamespace());
-    		}
-			
 			//响应消息
 			s.write(msg);
 
 			if(msg.isMonitorable()) {
-				SF.netIoRead(TAG.getName(),MC.MT_SERVER_IOSESSION_WRITE, msg.getLen());
+				SF.netIoRead(TAG.getName(),MC.MT_SERVER_JRPC_RESPONSE_SUCCESS, msg.getLen());
 			}
 			
-			if(SF.isLoggable(MC.LOG_DEBUG,msg.getLogLevel())){
-				SF.doResponseLog(MC.MT_PLATFORM_LOG,MC.LOG_DEBUG, TAG, null,"response success");
-			}
-		
 		} catch (Throwable e) {
 			//返回错误
-			SF.reqServerError(TAG.getName(), "");
-			logger.error("reqHandler error: ",e);
+			SF.eventLog(MC.MT_SERVER_ERROR,MC.LOG_ERROR, TAG,"JRPCReq error",e);
+			logger.error("JRPCReq error: ",e);
 			if(needResp && req != null ){
 				//返回错误
 				resp = new RpcResponse(req.getRequestId(),new ServerError(0,e.getMessage()));
@@ -204,7 +193,6 @@ public class JRPCReqRespHandler implements IMessageHandler{
 				msg.setTime(System.currentTimeMillis());
 				s.write(msg);
 			}
-			
 			s.close(true);
 		} finally {
 			if(JMicroContext.get().isMonitorable()) {

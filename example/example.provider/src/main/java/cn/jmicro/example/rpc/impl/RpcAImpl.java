@@ -20,7 +20,7 @@ public class RpcAImpl implements IRpcA {
 	@Override
 	public String invokeRpcA(String aargs) {
 		if(SF.isLoggable(MC.LOG_DEBUG)) {
-			SF.doBussinessLog(MC.MT_APP_LOG,MC.LOG_DEBUG,SimpleRpcImpl.class,null, aargs + ": invokeRpcA => invokeRpcB");
+			SF.eventLog(MC.MT_APP_LOG,MC.LOG_DEBUG,SimpleRpcImpl.class, aargs + ": invokeRpcA => invokeRpcB");
 		}
 		System.out.println("invokeRpcA: " + aargs);
 		//return "invokeRpcA: " + aargs;

@@ -71,12 +71,12 @@ public class FirstInterceptor extends AbstractInterceptor implements IIntercepto
 			if(l != null) {
 				limiter = l;
 				logger.warn("Change limit to :{}",this.defaultLimiterName);
-				SF.doBussinessLog(MC.MT_PLATFORM_LOG,MC.LOG_DEBUG,FirstInterceptor.class,
-						null,"Change limit to: "+defaultLimiterName);
+				SF.eventLog(MC.MT_PLATFORM_LOG,MC.LOG_DEBUG,FirstInterceptor.class,
+						"Change limit to: "+defaultLimiterName);
 			} else {
 				logger.error("Limiter [{}] not found",defaultLimiterName);
-				SF.doBussinessLog(MC.MT_PLATFORM_LOG,MC.LOG_ERROR,FirstInterceptor.class,
-						null,"Limiter ["+defaultLimiterName+"] not found");
+				SF.eventLog(MC.MT_PLATFORM_LOG,MC.LOG_ERROR,FirstInterceptor.class,
+						"Limiter ["+defaultLimiterName+"] not found");
 			}
 		}
 	}
@@ -87,7 +87,7 @@ public class FirstInterceptor extends AbstractInterceptor implements IIntercepto
 			boolean r = limiter.enter(req);
 			if(!r){
 				logger.warn("Limit exceep, forbidon this request");
-				SF.doRequestLog(MC.MT_PLATFORM_LOG,MC.LOG_ERROR, FirstInterceptor.class,null, "Limit exceep, forbidon this request");
+				SF.eventLog(MC.MT_PLATFORM_LOG,MC.LOG_ERROR, FirstInterceptor.class, "Limit exceep, forbidon this request");
 				return fastFail(req);
 			}
 		}

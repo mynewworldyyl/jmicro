@@ -364,7 +364,7 @@ public class MonitorClient {
 						} else {
 							clientReadOi.doAdd(1,oi.getVal());
 						}
-					} else if(oi.getType() == MC.MT_SERVER_IOSESSION_READ) {
+					} else if(oi.getType() == MC.MT_SERVER_JRPC_GET_REQUEST) {
 						if(serverReadOi == null) {
 							serverReadOi = oi;
 						} else {

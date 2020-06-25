@@ -16,6 +16,10 @@
  */
 package cn.jmicro.api.monitor;
 
+import java.io.ByteArrayOutputStream;
+import java.io.PrintStream;
+import java.io.UnsupportedEncodingException;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -47,22 +51,6 @@ public class SF {
 	
 	private static boolean isDs = false;
 	
-	public static boolean linkStart(String tag,IReq req) {
-		return reqEvent(MC.MT_LINK_START,MC.LOG_DEBUG,req,tag);
-	}
-	
-	public static boolean linkEnd(String tag,IResp resp) {
-		return respEvent(MC.MT_LINK_END,MC.LOG_DEBUG,resp,tag);
-	}
-	
-	public static boolean reqStart(String tag,IReq req) {
-		return reqEvent(MC.MT_REQ_START,MC.LOG_DEBUG,req,tag);
-	}
-	
-	public static boolean reqEnd(String tag,IResp resp) {
-		return respEvent(MC.MT_REQ_END,MC.LOG_DEBUG,resp,tag);
-	}
-	
 	public static boolean respEvent(short type,byte level,IResp resp,String tag) {
 		if(isMonitorable(type)) {
 			MRpcItem mi = JMicroContext.get().getMRpcItem();
@@ -92,23 +80,11 @@ public class SF {
 		}
 	} 
 	
-	public static boolean serviceNotFound(String tag,String desc) {
-		return eventLog(MC.MT_SERVICE_NOT_FOUND,MC.LOG_ERROR, tag,desc);
+	public static boolean eventLog(short type,byte level,Class<?> tag,String desc) {
+		return eventLog(type,level,tag,desc,null);
 	}
 	
-	public static boolean reqTimeout(String tag,String desc) {
-		return eventLog(MC.MT_REQ_TIMEOUT,MC.LOG_WARN, tag,desc);
-	}
-	
-	public static boolean reqTimeoutFail(String tag,String desc) {
-		return eventLog(MC.MT_REQ_TIMEOUT_FAIL,MC.LOG_ERROR, tag,desc);
-	}
-	
-	public static boolean reqTimeoutRetry(String tag,String desc) {
-		return eventLog(MC.MT_REQ_TIMEOUT_FAIL,MC.LOG_WARN, tag,desc);
-	}
-	
-	public static boolean eventLog(short type,byte level,String tag,String desc) {
+	public static boolean eventLog(short type,byte level,Class<?> tag,String desc,Throwable exp) {
 		if(isMonitorable(type)) {
 			MRpcItem mi = null;
 			if(JMicroContext.existRpcContext()) {
@@ -120,7 +96,11 @@ public class SF {
 				 mi = new MRpcItem();
 			}
 			
-			mi.addOneItem(type,level, tag,desc);
+			OneItem oi = mi.addOneItem(type,level, tag.getName(),desc);
+			if(exp != null) {
+				oi.setEx(serialEx(exp));
+			}
+			
 			if(f) {
 				setCommon(mi);
 				return m.readySubmit(mi);
@@ -131,34 +111,6 @@ public class SF {
 			}
 		}
 		return false;
-	}
-	
-	/**
-	 * 服务器响应一个业务错误
-	 * @param req
-	 * @param se
-	 * @return
-	 */
-	public static boolean reqServiceRespError(String tag,ServerError se) {
-		return eventLog(MC.MT_CLIENT_RESPONSE_SERVER_ERROR,MC.LOG_ERROR, tag,se.toString());
-	}
-	
-	/**
-	 * 服务器发生系统级错误
-	 * @param req
-	 * @param msg
-	 * @return
-	 */
-	public static boolean reqServerError(String tag,String msg) {
-		return eventLog(MC.MT_CLIENT_SERVICE_ERROR,MC.LOG_ERROR, tag,msg);
-	}
-	
-	public static boolean reqError(String tag,String msg) {
-		return eventLog(MC.MT_REQ_ERROR,MC.LOG_ERROR, tag,msg);
-	}
-	
-	public static boolean reqSuccess(String tag) {
-		return eventLog(MC.MT_REQ_SUCCESS,MC.LOG_DEBUG, tag,"");
 	}
 	
 	public static boolean breakService(String tag,ServiceMethod sm,String desc) {
@@ -175,12 +127,9 @@ public class SF {
 			}
 			return false;
 		}
-		
 	}
 	
-	
-	
-	public static boolean netIo(short type,byte level,String desc,Class cls,Throwable ex) {
+	public static boolean netIo(short type,byte level,Class<?> cls,String desc,Throwable ex) {
 		if(!isMonitorable(type)) {
 			if(logger.isDebugEnabled()) {
 				logger.debug("Disgard: type:" + MC.MONITOR_VAL_2_KEY.get(type) + ", level: " + level + ", tag: " +cls.getName() + ", Desc: "+desc);
@@ -206,7 +155,10 @@ public class SF {
 		}
 		
 		OneItem oi = mi.addOneItem(type,level,cls.getName(),desc);
-		oi.setEx(ex);
+		if(ex != null) {
+			oi.setEx(serialEx(ex));
+		}
+		
 		if(f) {
 			setCommon(mi);
 			return m.submit2Cache(mi);
@@ -215,6 +167,18 @@ public class SF {
 		
 	}
 	
+	public static String serialEx(Throwable ex) {
+		ByteArrayOutputStream baos = new ByteArrayOutputStream();
+		try {
+			ex.printStackTrace(new PrintStream(baos,true,Constants.CHARSET));
+			return baos.toString(Constants.CHARSET);
+		} catch (UnsupportedEncodingException e) {
+			logger.error("",ex);
+			logger.error("",e);
+		}
+		return ex.getMessage();
+	}
+
 	public static boolean netIoRead(String tag,short type,long num) {
 		if(m.isServerReady() && !m.canSubmit(sm(),type)) {
 			if(logger.isDebugEnabled()) {
@@ -243,34 +207,6 @@ public class SF {
 		return true;
 	}
 	
-	public static boolean limit(String tag) {
-		return eventLog(MC.MT_SERVICE_SPEED_LIMIT,MC.LOG_WARN, tag,"");
-	}
-	
-	public static void doServiceLog(short type,byte level,Class<?> cls,Throwable exp,String desc) {
-		doLog(type,level,cls,null,exp,desc);
-	}
-	
-	public static void doServiceLog(short type,byte level,Class<?> cls,String desc) {
-		doLog(type,level,cls,null,null,desc);
-	}
-
-	public static void doBussinessLog(short type,byte level, Class<?> cls, Throwable exp,String desc) {
-		doLog(type,level,cls,null,exp,desc);
-	}
-	
-	public static void doRequestLog(short type,byte level,Class<?> cls,Throwable exp,String desc) {
-		doLog(type,level,cls,null,exp,desc);
-	}
-	
-	public static void doResponseLog(short type,byte level,Class<?> cls,Throwable exp,String desc) {
-		doLog(type,level,cls,null,exp,desc);
-	}
-	
-	public static void doMessageLog(short type,byte level,Class<?> cls,Message msg,Throwable exp,String desc) {
-		doLog(type,level,cls,msg,exp,desc);
-	}
-	
 	private static void doLog(short type,byte level,Class<?> cls,Message msg,Throwable exp, String desc) {
 		if(isMonitorable(type)) {
 			int lineNum = Thread.currentThread().getStackTrace()[3].getLineNumber();
@@ -287,13 +223,13 @@ public class SF {
 				mi.setLinkId(msg.getLinkId());
 			}
 			OneItem oi = mi.addOneItem(type,level, cls.getName(),desc);
-			oi.setEx(exp);
+			oi.setEx(serialEx(exp));
 			mi.setMsg(msg);
 			if(f) {
 				setCommon(mi);
 				m.submit2Cache(mi);
 			}
-		}else {
+		} else {
 			if(logger.isDebugEnabled()) {
 				logger.debug("Disgard: type:" + MC.MONITOR_VAL_2_KEY.get(type) + ", level: " + MC.LOG_DEBUG + ", tag: " +cls.getName() + ", Desc: "+desc);
 			}
@@ -361,7 +297,7 @@ public class SF {
 	 * @param level
 	 * @return
 	 */
-	public static boolean isLoggable(int needLevel,int ...rpcMethodLevel) {
+	public static boolean isLoggable(int needLevel, int ...rpcMethodLevel) {
 		if(!m.isServerReady() /*&& !mo.canSubmit(MonitorConstant.LINKER_ROUTER_MONITOR) */
 				|| needLevel == MC.LOG_NO) {
 			return false;

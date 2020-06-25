@@ -23,7 +23,6 @@ import org.slf4j.LoggerFactory;
 import cn.jmicro.api.codec.Decoder;
 import cn.jmicro.api.codec.JDataInput;
 import cn.jmicro.api.codec.JDataOutput;
-import cn.jmicro.api.codec.SerializeProxyFactory;
 import cn.jmicro.api.codec.TypeCoderFactory;
 import cn.jmicro.api.codec.TypeUtils;
 import cn.jmicro.common.CommonException;
@@ -257,7 +256,7 @@ public interface TypeCoder<T> extends Comparable<TypeCoder<T>>{
 				continue;
 			}
 			
-			coder.encode(buffer, v, null, null);
+			coder.encode(buffer, v, v.getClass(), null);
 		}
 		
 		//写标志位
@@ -389,7 +388,7 @@ public interface TypeCoder<T> extends Comparable<TypeCoder<T>>{
 				continue;
 			}
 			try {
-				System.out.println(cls.getName() + "."+f.getName());
+				//System.out.println(cls.getName() + "."+f.getName());
 				Object v = coder.decode(buffer, f.getType(), f.getGenericType());
 				TypeUtils.setFieldValue(obj, v, f);
 			} catch (CommonException e) {
@@ -403,7 +402,7 @@ public interface TypeCoder<T> extends Comparable<TypeCoder<T>>{
 	}
 
 	@SuppressWarnings({ "unchecked", "rawtypes" })
-	public static Map<Object,Object> decodeMap(DataInput buffer, ParameterizedType paramType){
+	public static Map<Object,Object> decodeMap(DataInput buffer,Class<?> mapType, ParameterizedType paramType){
 		int len = 0;
 		try {
 			len = buffer.readShort();
@@ -417,8 +416,21 @@ public interface TypeCoder<T> extends Comparable<TypeCoder<T>>{
 		Class<?> keyType = TypeUtils.finalParameterType(paramType,0);
 		Class<?> valType = TypeUtils.finalParameterType(paramType,1);
 		
+		Map<Object,Object> map = null;
 		TypeCoder coder = TypeCoderFactory.getIns().getDefaultCoder();
-		Map<Object,Object> map = new HashMap<>();
+		if(mapType != null && !Modifier.isAbstract(mapType.getModifiers()) 
+				&& Map.class.isAssignableFrom(mapType)) {
+			try {
+				map = (Map<Object,Object>)mapType.newInstance();
+			} catch (InstantiationException | IllegalAccessException e) {
+				logger.error("",e);
+			}
+		}
+		
+		if(map == null) {
+			map = new HashMap<>();
+		}
+		
 		for(; len > 0; len--) {
 			try {
 				byte preCode = buffer.readByte();
@@ -528,7 +540,7 @@ public interface TypeCoder<T> extends Comparable<TypeCoder<T>>{
 					throw new CommonException("readByte",e);
 				}
 			}
-			Object o = coder.decode(buffer, null, null);
+			Object o = coder.decode(buffer, eltType, null);
 			Array.set(objs, i, o);
 		}
 		

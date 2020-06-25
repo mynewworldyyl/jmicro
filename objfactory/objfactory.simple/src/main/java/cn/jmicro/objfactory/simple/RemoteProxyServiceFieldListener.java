@@ -142,7 +142,7 @@ class RemoteProxyServiceFieldListener implements IServiceListener{
 					notifyChange(p,type);
 				} else {
 					String msg = "Fail to create item proxy: " + item.getKey().toKey(true, true, true);
-					SF.doBussinessLog(MC.MT_PLATFORM_LOG,MC.LOG_ERROR, RemoteProxyServiceFieldListener.class, null, msg);
+					SF.eventLog(MC.MT_PLATFORM_LOG,MC.LOG_ERROR, RemoteProxyServiceFieldListener.class, msg);
 					logger.error("Fail to create item proxy :{}",msg);
 				}
 				
@@ -215,7 +215,8 @@ class RemoteProxyServiceFieldListener implements IServiceListener{
 			} catch (NoSuchMethodException | SecurityException | IllegalAccessException | IllegalArgumentException | InvocationTargetException e1) {
 				//System.out.println(e1);
 				logger.error("",e);
-				SF.doBussinessLog(MC.MT_PLATFORM_LOG,MC.LOG_ERROR, RemoteProxyServiceFieldListener.class, e, "Listener method ["+cfg.changeListener()+"] not found!");
+				SF.eventLog(MC.MT_PLATFORM_LOG,MC.LOG_ERROR, RemoteProxyServiceFieldListener.class,
+						 "Listener method ["+cfg.changeListener()+"] not found!",e);
 			}
 		}
 		

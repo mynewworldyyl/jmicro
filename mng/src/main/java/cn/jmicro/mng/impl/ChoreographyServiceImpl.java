@@ -41,7 +41,7 @@ public class ChoreographyServiceImpl implements IChoreographyService {
 
 	private final static Logger logger = LoggerFactory.getLogger(ChoreographyServiceImpl.class);
 	
-	private final static String TAG = ChoreographyServiceImpl.class.getSimpleName();
+	private final static Class<?> TAG = ChoreographyServiceImpl.class;
 	
 	@Cfg(value="/adminPermissionLevel",defGlobal=true)
 	private int adminPermissionLevel = 0;

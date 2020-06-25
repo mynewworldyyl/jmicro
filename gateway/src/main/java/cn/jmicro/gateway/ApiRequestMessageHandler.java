@@ -111,9 +111,7 @@ public class ApiRequestMessageHandler implements IMessageHandler{
 					resp.setResult(se);
 					resp.setSuccess(false);
 					msg.setPayload(ICodecFactory.encode(codecFactory, resp, msg.getUpProtocol()));
-					if(SF.isLoggable(MC.LOG_DEBUG, msg.getLogLevel())) {
-						SF.doResponseLog(MC.MT_PLATFORM_LOG,MC.LOG_DEBUG, TAG, null," one response");
-					}
+					SF.eventLog(MC.MT_INVALID_LOGIN_INFO,MC.LOG_ERROR, TAG,lk);
 					session.write(msg);
 					return;
 				} else {
@@ -141,7 +139,7 @@ public class ApiRequestMessageHandler implements IMessageHandler{
 			resp.setResult(result);
 			msg.setPayload(ICodecFactory.encode(codecFactory, resp, msg.getUpProtocol()));
 			if(SF.isLoggable(MC.LOG_DEBUG, msg.getLogLevel())) {
-				SF.doResponseLog(MC.MT_PLATFORM_LOG,MC.LOG_DEBUG, TAG, null," one response");
+				SF.eventLog(MC.MT_PLATFORM_LOG,MC.LOG_DEBUG, TAG," one response");
 			}
 			session.write(msg);
 			
@@ -180,13 +178,15 @@ public class ApiRequestMessageHandler implements IMessageHandler{
 					AbstractClientServiceProxy proxy = (AbstractClientServiceProxy)srv;
 					ServiceItem si = proxy.getItem();
 					if(si == null) {
-						SF.doRequestLog(MC.MT_PLATFORM_LOG,MC.LOG_ERROR, TAG, null," service not found");
-						throw new CommonException("Service["+req.getServiceName()+"] namespace ["+req.getNamespace()+"] not found");
+						String errMsg = "Service["+req.getServiceName()+"] namespace ["+req.getNamespace()+"] not found";
+						SF.eventLog(MC.MT_SERVICE_ITEM_NOT_FOUND,MC.LOG_ERROR, TAG," service not found");
+						throw new CommonException(errMsg);
 					}
 					ServiceMethod sm = si.getMethod(req.getMethod(), clazzes);
 					if(sm == null) {
-						SF.doRequestLog(MC.MT_PLATFORM_LOG,MC.LOG_ERROR, TAG, null," service method not found");
-						throw new CommonException("Service mehtod ["+req.getServiceName()+"] method ["+req.getMethod()+"] not found");
+						String errMsg = "Service mehtod ["+req.getServiceName()+"] method ["+req.getMethod()+"] not found";
+						SF.eventLog(MC.MT_PLATFORM_LOG,MC.LOG_ERROR, TAG,errMsg);
+						throw new CommonException(errMsg);
 					}
 					
 					Method m = srv.getClass().getMethod(req.getMethod(), clazzes);
@@ -194,13 +194,13 @@ public class ApiRequestMessageHandler implements IMessageHandler{
 					//JMicroContext.get().configMonitor(sm.getMonitorEnable(), si.getMonitorEnable());
 					
 					if(SF.isLoggable(MC.LOG_DEBUG, msg.getLogLevel())) {
-						SF.doRequestLog(MC.MT_PLATFORM_LOG,MC.LOG_DEBUG, TAG, null," got request");
+						SF.eventLog(MC.MT_PLATFORM_LOG,MC.LOG_DEBUG, TAG," got request");
 					}
 					
 					if(!sm.isNeedResponse()) {
 						m.invoke(srv, req.getArgs());
 						if(SF.isLoggable(MC.LOG_DEBUG, msg.getLogLevel())) {
-							SF.doRequestLog(MC.MT_PLATFORM_LOG,MC.LOG_DEBUG, TAG, null," no need response");
+							SF.eventLog(MC.MT_PLATFORM_LOG,MC.LOG_DEBUG, TAG," no need response");
 						}
 						return;
 					}
@@ -210,7 +210,7 @@ public class ApiRequestMessageHandler implements IMessageHandler{
 					resp.setResult(result);
 					msg.setPayload(ICodecFactory.encode(codecFactory, resp, msg.getUpProtocol()));
 					if(SF.isLoggable(MC.LOG_DEBUG, msg.getLogLevel())) {
-						SF.doResponseLog(MC.MT_PLATFORM_LOG,MC.LOG_DEBUG, TAG, null," one response");
+						SF.eventLog(MC.MT_PLATFORM_LOG,MC.LOG_DEBUG, TAG," one response");
 					}
 					session.write(msg);
 				
@@ -220,13 +220,13 @@ public class ApiRequestMessageHandler implements IMessageHandler{
 					result = new ServerError(0,e.getMessage());
 					resp.setSuccess(false);
 					resp.setResult(result);
-					SF.doResponseLog(MC.MT_PLATFORM_LOG,MC.LOG_ERROR, TAG, e," service error");
+					SF.eventLog(MC.MT_PLATFORM_LOG,MC.LOG_ERROR, TAG," service error", e);
 				}
 			} else {
 				resp.setSuccess(false);
 				resp.setResult(result);
 				msg.setPayload(ICodecFactory.encode(codecFactory, resp, msg.getUpProtocol()));
-				SF.doResponseLog(MC.MT_PLATFORM_LOG,MC.LOG_ERROR, TAG, null," service instance not found");
+				SF.eventLog(MC.MT_SERVICE_RROXY_NOT_FOUND,MC.LOG_ERROR, TAG,req.getServiceName());
 				session.write(msg);
 			}
 		}

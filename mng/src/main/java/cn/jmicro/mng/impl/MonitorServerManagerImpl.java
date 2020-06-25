@@ -1,7 +1,9 @@
 package cn.jmicro.mng.impl;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Inject;
@@ -116,8 +118,8 @@ public class MonitorServerManagerImpl implements IMonitorServerManager{
 
 	@Override
 	public MonitorInfo[] serverList() {
-		MonitorInfo[] infos = new MonitorInfo[this.monitorServers.size()];
 		
+		Set<MonitorInfo> set = new HashSet<>();
 		for(int i = 0; i < this.monitorServers.size(); i++) {
 			
 			IMonitorAdapter s = this.monitorServers.get(i);
@@ -133,15 +135,12 @@ public class MonitorServerManagerImpl implements IMonitorServerManager{
 			MonitorInfo in = s.info();
 			if(in != null) {
 				in.setSrvKey(srvKey);
+				set.add(in);
 			}
-			
-			/*if(!minfos.containsKey(in.getGroup())) {
-				minfos.put(in.getGroup(), in);
-			}*/
-
-			//this.minfos.put(srvKey, in);
-			infos[i] = in;
 		}
+		
+		MonitorInfo[] infos = new MonitorInfo[set.size()];
+		set.toArray(infos);
 		return infos;
 	}
 	

@@ -688,6 +688,14 @@ jm.mng = {
             return jm.mng.callRpcWithParams(this.sn, this.ns, this.v, 'getByLinkId', [linkId]);
         },
 
+        countLog: function (params) {
+            return jm.mng.callRpcWithParams(this.sn, this.ns, this.v, 'countLog', [params]);
+        },
+
+        queryLog: function (params,pageSize,curPage) {
+            return jm.mng.callRpcWithParams(this.sn, this.ns, this.v, 'queryLog', [params,pageSize,curPage]);
+        },
+
         sn:'cn.jmicro.mng.api.ILogService',
         ns : 'mng',
         v:'0.0.1',

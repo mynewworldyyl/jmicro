@@ -15,7 +15,7 @@ public class RpcBImpl implements IRpcB {
 	@Override
 	public String invokeRpcB(String aargs) {
 		if(SF.isLoggable(MC.LOG_DEBUG)) {
-			SF.doBussinessLog(MC.MT_APP_LOG,MC.LOG_DEBUG,SimpleRpcImpl.class,null, aargs + ": invokeRpcB return");
+			SF.eventLog(MC.MT_APP_LOG,MC.LOG_DEBUG,SimpleRpcImpl.class, aargs + ": invokeRpcB return");
 		}
 		System.out.println("invokeRpcB: " + aargs);
 		return aargs + " : invokeRpcB return";

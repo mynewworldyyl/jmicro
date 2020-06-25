@@ -74,7 +74,7 @@ public class ServiceAgent {
 
 	private static final Logger logger = LoggerFactory.getLogger(ServiceAgent.class);
 	
-	private static final String TAG = ServiceAgent.class.getSimpleName();
+	private static final Class<?> TAG = ServiceAgent.class;
 	
 	//@Cfg("/ServiceAgent/workDir")
 	private String workDir;
@@ -676,7 +676,7 @@ public class ServiceAgent {
 			logger.info(msg);
 			return true;
 		} catch (IOException e) {
-			SF.doServiceLog(MC.MT_AGENT_LOG,MC.LOG_ERROR, this.getClass(),e,"");
+			SF.eventLog(MC.MT_AGENT_LOG,MC.LOG_ERROR, this.getClass(),"",e);
 			logger.error("",e);
 			return false;
 		} finally {
@@ -749,7 +749,7 @@ public class ServiceAgent {
 				}
 			}
 		} catch (IOException e) {
-			SF.doServiceLog(MC.MT_AGENT_LOG,MC.LOG_ERROR, this.getClass(),e,jarFile);
+			SF.eventLog(MC.MT_AGENT_LOG,MC.LOG_ERROR, this.getClass(),jarFile,e);
 			logger.error("Download ["+jarFile+"]",e);
 			return false;
 		}finally {

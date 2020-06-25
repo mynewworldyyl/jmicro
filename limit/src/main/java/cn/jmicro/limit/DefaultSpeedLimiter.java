@@ -44,7 +44,7 @@ import cn.jmicro.common.Constants;
 public class DefaultSpeedLimiter extends AbstractLimiter implements ILimiter{
 	
 	static final Logger logger = LoggerFactory.getLogger(DefaultSpeedLimiter.class);
-	private static final String TAG = DefaultSpeedLimiter.class.getName();
+	private static final Class<?> TAG = DefaultSpeedLimiter.class;
 	
 	private static final Short[] TYPES = new Short[] {MC.MT_REQ_START};
 	
@@ -97,8 +97,9 @@ public class DefaultSpeedLimiter extends AbstractLimiter implements ILimiter{
 			int needWaitTime = (int)((1000.0*cnt)/ sm.getMaxSpeed());
 			
 			if(needWaitTime >= sm.getTimeout()) {
-				SF.limit(TAG);
-				logger.info("qps:{},maxQps:{},key:{}",qps,sm.getMaxSpeed(),key);
+				String errMsg = "qps:"+qps+",maxQps:"+sm.getMaxSpeed()+",key:"+key;
+				SF.eventLog(MC.MT_SERVICE_SPEED_LIMIT, MC.LOG_WARN, TAG, errMsg);
+				logger.info(errMsg);
 				return false;
 			} 
 			

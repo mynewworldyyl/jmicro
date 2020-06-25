@@ -1,18 +1,22 @@
 <template>
-    <div class="JInvokeLinkView" style="position:relative;height:auto">
+    <div class="JLogItemView" style="position:relative;height:auto">
 
         <div style="position:relative;height:auto;margin-top:10px;">
-            <treeTable ref="recTree"
-                       :list.sync="logList"
-                       @callMethod="callMethod"
-                       @viewDetail="viewDetail">
-                       @orderByCost="orderByCost"
-            </treeTable>
+            <table class="configItemTalbe" width="99%">
+                <thead><tr><td style="width:300px">TAG</td><td  style="width:165px">TIME</td><td style="width:135px">LEVEL</td>
+                    <td  style="width:130px">TYPE</td><td  style="width:38px">TYPE</td><td  style="width:38px">TYPE</td>
+                    <td>DESC</td></tr></thead>
+                <tr v-for="c in logList" :key="c._id">
+                    <td>{{c.tag}}</td><td>{{c.time | formatDate}}</td><td>{{c.levelLabel}}</td>
+                    <td>{{c.typeLabel}}</td><td>{{c.val}}</td><td>{{c.num}}</td><td style="text-align:left;">{{c.desc}}</td>
+                </tr>
+            </table>
         </div>
 
         <div style="position:relative;text-align:center;">
-            <Page ref="pager" :total="totalNum" :page-size="pageSize" :current="curPage" show-elevator show-sizer show-total
-                  @on-change="curPageChange" @on-page-size-change="pageSizeChange"  :page-size-opts="[10, 30, 60,100]"></Page>
+            <Page ref="pager" :total="totalNum" :page-size="pageSize" :current="curPage"
+                  show-elevator show-sizer show-total @on-change="curPageChange"
+                  @on-page-size-change="pageSizeChange" :page-size-opts="[10, 30, 60,100]"></Page>
         </div>
 
         <div :style="drawer.drawerBtnStyle" class="drawerJinvokeBtnStatu" @mouseenter="openDrawer()"></div>
@@ -154,6 +158,16 @@
                     </td>
                 </tr>
                 <tr>
+                    <td>TAG(*)</td>
+                    <td>
+                        <Input  v-model="queryParams.tag"/>
+                    </td>
+                    <td>DESC(*)</td>
+                    <td>
+                        <Input  v-model="queryParams.desc"/>
+                    </td>
+                </tr>
+                <tr>
                     <td>SUCCESS</td>
                     <td>
                         <Select v-model="queryParams.success">
@@ -162,7 +176,13 @@
                             <Option value="false">false</Option>
                         </Select>
                     </td>
-                    <td></td><td></td>
+                    <td>EXCLUDE NOLOG</td>
+                    <td>
+                        <Select v-model="queryParams.noLog">
+                            <Option value="false">false</Option>
+                            <Option value="true">true</Option>
+                        </Select>
+                    </td>
                 </tr>
 
                 <tr>
@@ -171,72 +191,47 @@
             </table>
         </Drawer>
 
-      <!--  <div :style="detail.drawerBtnStyle" class="detailJinvokeBtnStatu" @mouseenter="openDetailDrawer()"></div>-->
-
-        <Drawer  v-model="detail.drawerStatus" :closable="false" placement="right" :transfer="true"
-                 :draggable="true" :scrollable="true" width="95">
-            <JLinkDetailView :linkId="curDetailLinkId"></JLinkDetailView>
-        </Drawer>
 
     </div>
 </template>
 
 <script>
 
-    import treeTable from '../treetable/TreeTable.vue'
-    import JLinkDetailView from './JLinkDetailView.vue'
-
-    const cid = 'JInvokeLinkView';
+    const cid = 'JLogItemView';
 
     export default {
         name: cid,
         data() {
             return {
-                adminPer:false,
-                list: [], // 请求原始数据
                 logList: [],
-                queryParams:{},
+                queryParams:{noLog:"true"},
                 totalNum:0,
                 pageSize:10,
                 curPage:1,
 
-                linkIdSort:1,
-                createTimeSort:0,
-                costSort:0,
+                curLogId:-1,
+                ds:{},
 
                 drawer: {
                     drawerStatus:false,
                     drawerBtnStyle:{left:'0px',zindex:1000},
                 },
-                detail: {
-                    drawerStatus:false,
-                    drawerBtnStyle:{right:'0px',zindex:1000},
-                },
+
                 selOptions:{
                 },
 
-                curDetailLinkId:-1,
             }
         },
 
         components: {
-            treeTable,
-            JLinkDetailView,
+
         },
 
         methods: {
-            callMethod(mi) {
-              console.log(mi);
-            },
 
             viewDetail(mi) {
-                this.curDetailLinkId = mi.item.linkId;
+                this.curLogId = mi._id;
                 this.openDetailDrawer(mi);
-            },
-
-            orderByCost(newVal) {
-                this.params['costSort'] = newVal;
-                this.doQuery();
             },
 
             curPageChange(curPage){
@@ -253,7 +248,7 @@
             doQuery() {
                 let self = this;
                 let params = this.getQueryConditions();
-                window.jm.mng.logSrv.count(params).then((resp)=>{
+                window.jm.mng.logSrv.countLog(params).then((resp)=>{
                     if(resp.code != 0) {
                         self.$Message.success(resp.msg);
                         return;
@@ -271,12 +266,21 @@
                 let self = this;
                 this.adminPer = window.jm.mng.comm.adminPer;
                 let params = this.getQueryConditions();
-                window.jm.mng.logSrv.query(params,this.pageSize,this.curPage-1).then((resp)=>{
+                window.jm.mng.logSrv.queryLog(params,this.pageSize,this.curPage-1).then((resp)=>{
                     if(resp.code != 0) {
                         self.$Message.success(resp.msg);
                         return;
                     }
-                    self.logList = resp.data;
+                    let ll = resp.data;
+                    if(ll && ll.length > 0) {
+                        ll.map(e => {
+                            e.typeLabel = self.ds['mtKey2Val'][e.type];
+                            e.levelLabel = self.ds['logKey2Val'][e.level];
+                        });
+                    }
+
+                    self.logList = ll;
+
                 }).catch((err)=>{
                     window.console.log(err);
                 });
@@ -319,25 +323,25 @@
                 this.detail.drawerBtnStyle.right = '0px';
             },
 
-            createGroup(val,key) {
-                let groups = this.selOptions[key];
-                if(!groups) {
-                    groups = this.selOptions[key] = [];
-                }
-                if(val && val.trim() != '') {
-                    val = val.trim();
-                    for(let i =0; i < groups.length; i++) {
-                        if(val == this.groups[i]) {
-                            return;
-                        }
-                    }
-                    this.groups.push(val);
-                }
-            }
         },
 
         mounted () {
             let self = this;
+            window.jm.mng.comm.getDicts(['logKey2Val','mtKey2Val']).then((dicts)=>{
+                if(dicts) {
+                    for(let k in dicts) {
+                        let k2v = dicts[k];
+                        let v2k = {};
+                        self.ds[k] = v2k;
+                        for(let kk in k2v) {
+                            v2k[k2v[kk]] = kk;
+                        }
+                    }
+                }
+            }).catch((err)=>{
+                throw err;
+            });
+
             window.jm.mng.logSrv.queryDict().then((resp)=>{
                 if(resp.code != 0) {
                     self.$Message.success(resp.msg);
@@ -357,16 +361,19 @@
             window.jm.mng.act.removeListener(cid);
         },
 
+        filters: {
+            formatDate: function(time) {
+                // 后期自己格式化
+                return new Date(time).format("yyyy/MM/dd hh:mm:ss S") //Utility.formatDate(date, 'yyyy/MM/dd')
+            }
+        },
+
     }
 </script>
 
 <style>
-    .JInvokeLinkView{
+    .JLogItemView{
         min-height: 500px;
-    }
-
-    #queryTable{
-
     }
 
     #queryTable td {
@@ -386,17 +393,8 @@
         z-index: 1000000;
     }
 
-    .detailJinvokeBtnStatu{
-        position: fixed;
-        right: 0px;
-        top: 30%;
-        bottom: 30%;
-        height: 39%;
-        width: 1px;
-        border-right: 1px solid lightgray;
-        background-color: lightgray;
-        border-radius: 3px;
-        z-index: 1000000;
+    .configItemTalbe td {
+        text-align: center;
     }
 
 </style>

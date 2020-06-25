@@ -11,11 +11,11 @@
                                     <span v-if="model.children.length > 0" class="tree-close" :class="{'tree-open':model.isExpand}" @click="handlerExpand(model)"></span>
                                     <a class="ellipsis">
                                         <i class="t-icon m-dep"></i>
-                                        <span :title="model.item.linkId">{{model.item.linkId}}</span>
+                                        <span :title="model.item.reqId">{{model.item.reqId}}</span>
                                     </a>
                                 </div>
                             </td>
-                            <td class="td2">{{model.item.reqId}}</td>
+                            <td class="td2">{{model.item.costTime}}MS</td>
                             <td class="td3">{{model.item.req.method}}</td>
                             <td class="td5">{{model.item.req.serviceName}}</td>
                             <td class="td6">{{model.item.req.namespace}}</td>
@@ -25,7 +25,7 @@
                             </td>
                             <td class="td8"> {{model.item.createTime|formatDate}}</td>
                             <td class="td9">
-                                <a class="reset" href="javascript:;" @click="viewDetail(model)">DETAIL</a>
+                                <a v-if="model.item.reqParentId <= 0" class="reset" href="javascript:;" @click="viewDetail(model)">DETAIL</a>
                                <!-- <i class="line"></i>
                                 <a class="reset" href="javascript:;" @click="callMethod(model)">CALL</a>-->
                             </td>
@@ -120,7 +120,7 @@
         filters: {
             formatDate: function(time) {
                 // 后期自己格式化
-                return new Date(time).format("yyyy/MM/dd hh:mm:ss") //Utility.formatDate(date, 'yyyy/MM/dd')
+                return new Date(time).format("yyyy/MM/dd hh:mm:ss S") //Utility.formatDate(date, 'yyyy/MM/dd')
             }
         }
     }

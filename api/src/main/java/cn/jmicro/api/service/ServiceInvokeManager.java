@@ -64,7 +64,7 @@ public class ServiceInvokeManager {
 		ServiceItem si = items.iterator().next();
 		if(si == null) {
 			String msg = "Service item not found for: "+mkey.toKey(false, false, false);
-			SF.doBussinessLog(MC.MT_PLATFORM_LOG,MC.LOG_ERROR, TAG, null, msg);
+			SF.eventLog(MC.MT_SERVICE_ITEM_NOT_FOUND,MC.LOG_ERROR, TAG, msg);
 			throw new CommonException(msg);
 		}
 		
@@ -72,7 +72,7 @@ public class ServiceInvokeManager {
 		ServiceMethod sm = si.getMethod(mkey.getMethod(), mkey.getParamsStr());
 		if(sm == null) {
 			String msg = "Service method not found for: "+mkey.toKey(false, false, false);
-			SF.doBussinessLog(MC.MT_PLATFORM_LOG,MC.LOG_ERROR, TAG, null, msg);
+			SF.eventLog(MC.MT_SERVICE_METHOD_NOT_FOUND,MC.LOG_ERROR, TAG, msg);
 			throw new CommonException(msg);
 		}
 		return call(si,sm,args,ac);
@@ -106,13 +106,13 @@ public class ServiceInvokeManager {
 		
 		if(si == null) {
 			String msg = "Cannot call service for NULL ServiceItem";
-			SF.doBussinessLog(MC.MT_PLATFORM_LOG,MC.LOG_ERROR, TAG, null, msg);
+			SF.eventLog(MC.MT_SERVICE_ITEM_NOT_FOUND,MC.LOG_ERROR, TAG, msg);
 			throw new CommonException(msg);
 		}
 		
 		if(sm == null) {
 			String msg = "Cannot call service for NULL ServiceMethod:"+si.getKey().toKey(false, false, false);
-			SF.doBussinessLog(MC.MT_PLATFORM_LOG,MC.LOG_ERROR, TAG, null, msg);
+			SF.eventLog(MC.MT_SERVICE_METHOD_NOT_FOUND,MC.LOG_ERROR, TAG, msg);
 			throw new CommonException(msg);
 		}
 		
@@ -122,7 +122,7 @@ public class ServiceInvokeManager {
 			p = of.getRemoteServie(si, null);
 			if(p == null) {
 				String msg = "Fail to create remote service proxy: "+key;
-				SF.doBussinessLog(MC.MT_PLATFORM_LOG,MC.LOG_ERROR, TAG, null, msg);
+				SF.eventLog(MC.MT_SERVICE_RROXY_NOT_FOUND,MC.LOG_ERROR, TAG, msg);
 				throw new CommonException(msg);
 			}
 			proxes.put(key, p);
@@ -136,7 +136,7 @@ public class ServiceInvokeManager {
 			m = p.getClass().getMethod(sm.getKey().getMethod(), argTypes);
 		} catch (NoSuchMethodException | SecurityException e) {
 			String msg = "Service method not found: "+key;
-			SF.doBussinessLog(MC.MT_PLATFORM_LOG,MC.LOG_ERROR, TAG, null, msg);
+			SF.eventLog(MC.MT_PLATFORM_LOG,MC.LOG_ERROR, TAG, msg);
 			throw new CommonException(msg,e);
 		}
 		

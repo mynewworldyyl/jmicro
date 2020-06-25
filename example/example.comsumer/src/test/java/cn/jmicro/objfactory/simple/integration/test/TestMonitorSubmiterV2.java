@@ -69,7 +69,7 @@ public class TestMonitorSubmiterV2 extends JMicroBaseTestCase{
 	public void testSFSubmit() {
 		//SF.doBussinessLog(MonitorConstant.LOG_ERROR, TestMonitorSubmiterV2.class, null, "Hello");
 		//SF.netIo(MonitorConstant.LOG_ERROR, "testmonitor", TestMonitorSubmiterV2.class, null);
-		SF.doServiceLog(MC.MT_PLATFORM_LOG,MC.LOG_ERROR,TestMonitorSubmiterV2.class,null, "testmonitor");
+		SF.eventLog(MC.MT_PLATFORM_LOG,MC.LOG_ERROR,TestMonitorSubmiterV2.class, "testmonitor");
 		this.waitForReady(1000000);
 	}
 	
@@ -83,7 +83,7 @@ public class TestMonitorSubmiterV2 extends JMicroBaseTestCase{
 		for(;;){
 			
 			try {
-				SF.doServiceLog(MC.MT_PLATFORM_LOG,MC.LOG_ERROR,TestMonitorSubmiterV2.class,null, "testmonitor");
+				SF.eventLog(MC.MT_PLATFORM_LOG,MC.LOG_ERROR,TestMonitorSubmiterV2.class, "testmonitor");
 			} catch (Throwable e1) {
 				e1.printStackTrace();
 			}

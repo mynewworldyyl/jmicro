@@ -33,9 +33,11 @@ import cn.jmicro.api.net.IReq;
 import cn.jmicro.api.net.IResp;
 import cn.jmicro.api.net.RpcRequest;
 import cn.jmicro.api.net.RpcResponse;
+import cn.jmicro.common.util.JsonUtils;
 import cn.jmicro.common.util.StringUtils;
 import cn.jmicro.mng.api.ILogService;
 import cn.jmicro.mng.api.LogEntry;
+import cn.jmicro.mng.api.LogItem;
 
 @Component
 @Service(namespace="mng", version="0.0.1",external=true)
@@ -116,7 +118,12 @@ public class LogServiceImpl implements ILogService {
 		
 		Document match = new Document("$match", qryMatch);
 		//Document group = new Document("$group", sub_group);
-		Document sort = new Document("$sort", new Document("linkId", 1));
+		
+		Document sortFields = new Document("costTime",-1);
+		sortFields.put("linkId", -1);
+		
+		Document sort = new Document("$sort", sortFields);
+		
 		Document skip = new Document("$skip", pageSize*curPage);
 		Document limit = new Document("$limit", pageSize);
 		
@@ -256,6 +263,132 @@ public class LogServiceImpl implements ILogService {
 		return resp;
 	}
 	
+	@Override
+	public Resp<Integer> countLog(Map<String, String> queryConditions) {
+
+		Resp<Integer> resp = new Resp<>();
+
+		Document qryMatch = this.getLogCondtions(queryConditions);
+		
+		Document groupDoc = new Document();
+		
+		groupDoc.put("_id", null);
+		groupDoc.put("total", new Document("$sum",1));
+		
+		Document match = new Document("$match", qryMatch);
+		Document unwind = new Document("$unwind", "$items");
+		Document group = new Document("$group", groupDoc);
+
+		List<Document> aggregateList = new ArrayList<Document>();
+		aggregateList.add(match);
+		aggregateList.add(unwind);
+		
+		String val = queryConditions.get("noLog");
+		if(StringUtils.isNotEmpty(val) && "true".equals(val)) {
+			aggregateList.add(new Document("$match",new Document("items.level",new Document("$ne",MC.LOG_NO))));
+		}
+		
+		aggregateList.add(group);
+
+		MongoCollection<Document> rpcLogColl = mongoDb.getCollection("rpc_log");
+		AggregateIterable<Document> resultset = rpcLogColl.aggregate(aggregateList);
+
+		Document log = resultset.first();
+		if(log != null) {
+			resp.setData(log.getInteger("total"));
+			resp.setCode(Resp.CODE_SUCCESS);
+		}else {
+			resp.setCode(Resp.CODE_FAIL);
+			resp.setMsg("No data to found!");
+		}
+	
+		return resp;
+	}
+
+	@Override
+	public Resp<List<LogItem>> queryLog(Map<String, String> queryConditions, int pageSize, int curPage) {
+
+		Document qryMatch = this.getLogCondtions(queryConditions);
+		
+		Document match = new Document("$match", qryMatch);
+		Document unwind = new Document("$unwind", "$items");
+		
+		Document sort = new Document("$sort", new Document("items.time", -1));
+		Document skip = new Document("$skip", pageSize*curPage);
+		Document limit = new Document("$limit", pageSize);
+		
+		List<Document> aggregateList = new ArrayList<Document>();
+		aggregateList.add(match);
+		aggregateList.add(unwind);
+		
+		String val = queryConditions.get("noLog");
+		if(StringUtils.isNotEmpty(val) && "true".equals(val)) {
+			aggregateList.add(new Document("$match",new Document("items.level",new Document("$ne",MC.LOG_NO))));
+		}
+		
+		aggregateList.add(sort);
+		aggregateList.add(skip);
+		aggregateList.add(limit);
+		
+		MongoCollection<Document> rpcLogColl = mongoDb.getCollection("rpc_log");
+		AggregateIterable<Document> resultset = rpcLogColl.aggregate(aggregateList);
+		MongoCursor<Document> cursor = resultset.iterator();
+		
+		Resp<List<LogItem>> resp = new Resp<>();
+		List<LogItem> rl = new ArrayList<>();
+		resp.setData(rl);
+		
+		try {
+			while(cursor.hasNext()) {
+				Document log = cursor.next();
+				Document liDoc = log.get("items", Document.class);
+				LogItem li = JsonUtils.getIns().fromJson(liDoc.toJson(settings), LogItem.class);
+				log.remove("items");
+				MRpcItem mi = fromJson(log.toJson(settings));
+				mi.setItems(null);
+				li.setItem(mi);
+				rl.add(li);
+			}
+			resp.setCode(Resp.CODE_SUCCESS);
+		} finally {
+			cursor.close();
+		}
+		
+		return resp;
+	
+	}
+	
+	private Document getLogCondtions(Map<String, String> queryConditions) {
+		Document match = this.getCondtions(queryConditions);
+		
+		String key = "reqParentId";
+		String val = queryConditions.get(key);
+		if(StringUtils.isEmpty(val)) {
+			match.remove(key);
+		}
+		
+		key = "provider";
+		val = queryConditions.get(key);
+		if(StringUtils.isEmpty(val)) {
+			match.remove(key);
+		}
+		
+		//db.getCollection('rpc_log').find({"items":{"$elemMatch":{"tag":{$regex:"cn"}}}} )
+		key = "tag";
+		val = queryConditions.get(key);
+		if(StringUtils.isNotEmpty(val)) {
+			match.put("items.tag", new Document("$regex",val));
+		}
+		
+		key = "desc";
+		val = queryConditions.get(key);
+		if(StringUtils.isNotEmpty(val)) {
+			match.put("items.desc", new Document("$regex",val));
+		}
+		
+		return match;
+	}
+
 	private Document getCondtions(Map<String, String> queryConditions) {
 		Document match = new Document();
 		
@@ -377,6 +510,12 @@ public class LogServiceImpl implements ILogService {
 		val = queryConditions.get(key);
 		if(StringUtils.isNotEmpty(val)) {
 			match.put("items.type", Short.parseShort(val));
+		}
+		
+		key = "success";
+		val = queryConditions.get(key);
+		if(StringUtils.isNotEmpty(val)) {
+			match.put("resp.success", Boolean.parseBoolean(val));
 		}
 		
 		return match;

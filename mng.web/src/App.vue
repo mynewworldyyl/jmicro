@@ -3,43 +3,35 @@
   <div>
       <div style="position: fixed;right: 0px;left: 0px; height: 60px;top: 0px;z-index:100">
           <Menu mode="horizontal" theme="light" active-key="service" @on-select="toRouter">
-              <Menu-item name="service" >
-                  <Icon type="ios-paper"></Icon>
-                  SERVICE
-              </Menu-item>
-
-              <Menu-item name="statis">
-                  <Icon type="ios-stats" />
-                  STATIS
-              </Menu-item>
-
               <Submenu name="mo">
-                  <template slot="title">
-                      <Icon type="ios-cog" />
-                      MONITOR
-                  </template>
-                  <Menu-item name="invokeLinkView"><Icon type="ios-cog"></Icon>INVOKE LINK</Menu-item>
-                  <Menu-item name="monitors"><Icon type="ios-cog"></Icon>MONITORS</Menu-item>
-                  <Menu-item name="typeConfig"><Icon type="ios-cog"></Icon>TYPE CONFIG</Menu-item>
-                  <Menu-item name="monitorType"><Icon type="ios-cog"></Icon>MONITOR TYPES</Menu-item>
-                  <Menu-item name="monitorTypeServiceMethod"><Icon type="ios-cog"></Icon>SERVICE TYPES</Menu-item>
-              </Submenu>
-
-              <Menu-item name="config">
-                  <Icon type="ios-construct"></Icon>
-                  CONFIG
-              </Menu-item>
+                  <template slot="title"><Icon type="ios-cog" />MONITOR</template>
+                  <Menu-group title="MONITOR">
+                      <Menu-item name="service" ><Icon type="ios-paper"></Icon>SERVICE</Menu-item>
+                      <Menu-item name="statis"><Icon type="ios-stats" />STATIS</Menu-item>
+                      <Menu-item name="monitors"><Icon type="ios-cog"></Icon>MONITORS</Menu-item>
+                  </Menu-group>
+                  <Menu-group title="LOG">
+                      <Menu-item name="invokeLinkView"><Icon type="ios-cog"></Icon>INVOKE LINK</Menu-item>
+                      <Menu-item name="logItemView"><Icon type="ios-cog"></Icon>LOG</Menu-item>
+                  </Menu-group>
+                  <Menu-group title="CFG">
+                      <Menu-item name="warning"><Icon type="ios-alert" />WARNING</Menu-item>
+                      <Menu-item name="typeConfig"><Icon type="ios-cog"></Icon>TYPE CONFIG</Menu-item>
+                      <Menu-item name="monitorType"><Icon type="ios-cog"></Icon>MONITOR TYPES</Menu-item>
+                      <Menu-item name="monitorTypeServiceMethod"><Icon type="ios-cog"></Icon>SERVICE TYPES</Menu-item>
+                  </Menu-group>
+                   </Submenu>
 
               <Submenu name="d">
                   <template slot="title">
                       <Icon type="ios-analytics" />
                       DEPLOYMENT
                   </template>
-                  <Menu-item name="choreography"><Icon type="ios-cog"></Icon>CHOREOGRAPHY</Menu-item>
+                  <Menu-item name="deploymentDesc"><Icon type="ios-alert" />DEPLOY DESC</Menu-item>
                   <Menu-item name="agent"><Icon type="ios-cog"></Icon>AGENTS</Menu-item>
                   <Menu-item name="process"><Icon type="ios-cog"></Icon>PROCESS</Menu-item>
                   <Menu-item name="repository"><Icon type="ios-people"></Icon>REPOSITORY</Menu-item>
-                  <Menu-item name="deploymentDesc"><Icon type="ios-alert" />DEPLOY DESC</Menu-item>
+                  <Menu-item name="choreography"><Icon type="ios-cog"></Icon>CHOREOGRAPHY</Menu-item>
                   <Menu-item name="host"><Icon type="ios-cog"></Icon>HOST</Menu-item>
               </Submenu>
 
@@ -48,10 +40,10 @@
                       <Icon type="ios-analytics" />
                       OTHERS
                   </template>
+                  <Menu-item name="config"><Icon type="ios-construct"></Icon>CONFIG</Menu-item>
                   <Menu-item name="router"><Icon type="ios-people"></Icon>ROUTER</Menu-item>
                   <Menu-item name="shell"><Icon type="ios-cog"></Icon>SHELL</Menu-item>
-                  <Menu-item name="warning"><Icon type="ios-alert" />WARNING</Menu-item>
-                  <Menu-item name="log"><Icon type="ios-filing"></Icon>LOG</Menu-item>
+                 <!-- <Menu-item name="log"><Icon type="ios-filing"></Icon>LOG</Menu-item>-->
                   <MenuItem name="help"> <Icon type="ios-cog"></Icon>HELP</MenuItem>
                   <MenuItem name="about"> <Icon type="ios-cog"></Icon>ABOUT</MenuItem>
                   <MenuItem name="contact"> <Icon type="ios-cog"></Icon>CONTACT ME</MenuItem>

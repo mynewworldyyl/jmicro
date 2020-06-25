@@ -43,7 +43,7 @@ public class SimpleRpcImpl implements ISimpleRpc {
 	)
 	public String hello(String name) {
 		if(SF.isLoggable(MC.LOG_DEBUG)) {
-			SF.doBussinessLog(MC.MT_PLATFORM_LOG,MC.LOG_DEBUG,SimpleRpcImpl.class,null, name);
+			SF.eventLog(MC.MT_PLATFORM_LOG,MC.LOG_DEBUG,SimpleRpcImpl.class, name);
 		}
 		/*int rv = r.nextInt();
 		if(rv < 50) {
@@ -72,7 +72,7 @@ public class SimpleRpcImpl implements ISimpleRpc {
 	)
 	public String hi(Person name) {
 		if(SF.isLoggable(MC.LOG_DEBUG)) {
-			SF.doBussinessLog(MC.MT_PLATFORM_LOG,MC.LOG_DEBUG,SimpleRpcImpl.class,null, name.getUsername());
+			SF.eventLog(MC.MT_PLATFORM_LOG,MC.LOG_DEBUG,SimpleRpcImpl.class, name.getUsername());
 		}
 		return "Server say hello to: "+name;
 	}
@@ -80,7 +80,7 @@ public class SimpleRpcImpl implements ISimpleRpc {
 	@Override
 	public String linkRpc(String msg) {
 		if(SF.isLoggable(MC.LOG_DEBUG)) {
-			SF.doBussinessLog(MC.MT_APP_LOG,MC.LOG_DEBUG,SimpleRpcImpl.class,null, "linkRpc call IRpcA with: " + msg);
+			SF.eventLog(MC.MT_APP_LOG,MC.LOG_DEBUG,SimpleRpcImpl.class, "linkRpc call IRpcA with: " + msg);
 		}
 		System.out.println("linkRpc: " + msg);
 		return this.rpca.invokeRpcA(msg+" linkRpc => invokeRpcA");

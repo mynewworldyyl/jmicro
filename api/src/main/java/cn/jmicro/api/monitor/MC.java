@@ -74,7 +74,7 @@ public final class MC {
 	public static final short MT_REQ_TIMEOUT = 0x0005;
 	
 	@MCA("服务未找到 ")
-	public static final short MT_SERVICE_NOT_FOUND = 0x0006;
+	public static final short MT_SERVICE_ITEM_NOT_FOUND = 0x0006;
 	
 	//客户端接收到服务器错误，非业务逻辑返回错误 246
 	@MCA("客户端收到服务器错误 ")
@@ -86,8 +86,10 @@ public final class MC {
 	
 	@MCA("服务开启 ")
 	public static final short MT_SERVER_START = 0x0009;
+	
 	@MCA("服务停止")
 	public static final short MT_SERVER_STOP = 0x000A;
+	
 	@MCA("服务端服务不存在")
 	public static final short MT_SERVER_REQ_SERVICE_NOT_FOUND = 0x000B;
 	
@@ -119,10 +121,10 @@ public final class MC {
 	@MCA("服务端链路空闲事件")
 	public static final short MT_SERVER_IOSESSION_IDLE =  0x0017;
 	@MCA("服务端IO写数据（下行）")
-	public static final short MT_SERVER_IOSESSION_WRITE = 0x0018;
+	public static final short MT_SERVER_JRPC_RESPONSE_SUCCESS = 0x0018;
 	//网络上行流量
 	@MCA("服务端IO读数据（上行）")
-	public static final short MT_SERVER_IOSESSION_READ =  0x0019;
+	public static final short MT_SERVER_JRPC_GET_REQUEST =  0x0019;
 	@MCA("服务端网络IO异步")
     public static final short MT_SERVER_IOSESSION_EXCEPTION = 0x001A;
     
@@ -143,12 +145,13 @@ public final class MC {
 	public static final short MT_SERVICE_BREAK = 0x001F;
 	
 	@MCA("消息处理器未找到")
-	public static final short MT_CLIENT_HANDLER_NOT_FOUND = 0x0020;
+	public static final short MT_HANDLER_NOT_FOUND = 0x0020;
 	
-	@MCA("客户端写字节数")
-	public static final short MT_CLIENT_WRITE_BYTES = 0x0021;
-	@MCA("客户端读字节数")
-	public static final short MT_CLIENT_READ_BYTES = 0x0022;
+	@MCA("异步RPC失败")
+	public static final short MT_ASYNC_RPC_FAIL = 0x0021;
+	
+	@MCA("服务方法未找到")
+	public static final short MT_SERVICE_METHOD_NOT_FOUND = 0x0022;
 	
 	@MCA("进程启动")
 	public static final short MT_PROCESS_ADD = 0x0023;
@@ -250,6 +253,15 @@ public final class MC {
 	
 	@MCA("应用日志")
 	public static final short MT_APP_LOG = 0x004A;
+	
+	@MCA("服务器错误")
+	public static final short MT_SERVER_ERROR = 0x004B;
+	
+	@MCA("无效登陆信息")
+	public static final short MT_INVALID_LOGIN_INFO = 0x004C;
+	
+	@MCA("服务代理实例未找到")
+	public static final short MT_SERVICE_RROXY_NOT_FOUND = 0x004D;
 	
 	public static final short KEEP_MAX_VAL = 0x0FFF;
 	

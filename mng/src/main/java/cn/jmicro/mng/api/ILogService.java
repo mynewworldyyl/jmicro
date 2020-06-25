@@ -15,4 +15,7 @@ public interface ILogService {
 	
 	Resp<LogEntry> getByLinkId(Long linkId);
 	
+	Resp<Integer> countLog(Map<String, String> queryConditions);
+	Resp<List<LogItem>> queryLog(Map<String,String> queryConditions,int pageSize,int curPage);
+	
 }

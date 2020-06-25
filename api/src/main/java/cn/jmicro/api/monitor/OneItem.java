@@ -38,7 +38,7 @@ public class OneItem {
 	private String tag = null;
 	private byte level = MC.LOG_NO;
 	
-	private transient Throwable ex = null;
+	private String ex = null;
 	
 	public OneItem() {}
 	
@@ -99,14 +99,6 @@ public class OneItem {
 		this.level = level;
 	}
 
-	public Throwable getEx() {
-		return ex;
-	}
-
-	public void setEx(Throwable ex) {
-		this.ex = ex;
-	}
-
 	public int getNum() {
 		return num;
 	}
@@ -122,5 +114,13 @@ public class OneItem {
 	public void setVal(long val) {
 		this.val = val;
 	}
-	
+
+	public String getEx() {
+		return ex;
+	}
+
+	public void setEx(String ex) {
+		this.ex = ex;
+	}
+
 }

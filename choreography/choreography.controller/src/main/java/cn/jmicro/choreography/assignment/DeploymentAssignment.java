@@ -211,7 +211,7 @@ public class DeploymentAssignment {
 				 //starting timeout
 				 logger.error("Starting timeout: " + a.toString());
 				 //SF.event(MonitorConstant.Ms_PROCESS_LOG, TAG, "Timeout: "+ a.toString());
-				 SF.eventLog(MC.MT_ASSIGN_LOG, MC.LOG_WARN, TAG.getSimpleName(), "Timeout: "+ a.toString());
+				 SF.eventLog(MC.MT_ASSIGN_LOG, MC.LOG_WARN, TAG, "Timeout: "+ a.toString());
 				 cancelAssign(a);
 				 continue;
 			 }
@@ -295,7 +295,7 @@ public class DeploymentAssignment {
 			if(logger.isInfoEnabled()) {
 				logger.info("Instance remove: " + a.toString());
 			}
-			SF.eventLog(MC.MT_PROCESS_REMOVE,MC.LOG_WARN, TAG.getSimpleName(),JsonUtils.getIns().toJson(a));
+			SF.eventLog(MC.MT_PROCESS_REMOVE,MC.LOG_WARN, TAG,JsonUtils.getIns().toJson(a));
 			cancelAssign(a);
 			assingManager.remove(a);
 		}
@@ -320,7 +320,7 @@ public class DeploymentAssignment {
 			}
 		}
 		
-		SF.eventLog(MC.MT_PROCESS_ADD,MC.LOG_WARN, TAG.getSimpleName(),  JsonUtils.getIns().toJson(pi));
+		SF.eventLog(MC.MT_PROCESS_ADD,MC.LOG_WARN, TAG,  JsonUtils.getIns().toJson(pi));
 		
 		a.opTime = System.currentTimeMillis();
 		a.state = AssignState.STARTED;
@@ -332,7 +332,7 @@ public class DeploymentAssignment {
 			logger.info("Remove deployment ID: "+d);
 		}
 		
-		SF.eventLog(MC.MT_DEPLOYMENT_REMOVE,MC.LOG_WARN, TAG.getSimpleName(),data);
+		SF.eventLog(MC.MT_DEPLOYMENT_REMOVE,MC.LOG_WARN, TAG,data);
 		deployments.remove(d);
 		stopDeployment(d);
 	}
@@ -352,7 +352,7 @@ public class DeploymentAssignment {
 				if(logger.isInfoEnabled()) {
 					logger.info("Cancel assign: "+a.toString());
 				}
-				SF.eventLog(MC.MT_DEPLOYMENT_LOG,MC.LOG_WARN, TAG.getSimpleName(),a.toString());
+				SF.eventLog(MC.MT_DEPLOYMENT_LOG,MC.LOG_WARN, TAG,a.toString());
 				cancelAssign(a);
 			}
 		}
@@ -365,12 +365,12 @@ public class DeploymentAssignment {
 			}
 			String msg = "Assign is on stoping state: depId: " + a.toString();
 			logger.warn(msg);
-			SF.eventLog(MC.MT_ASSIGN_REMOVE,MC.LOG_WARN, TAG.getSimpleName(),msg);
+			SF.eventLog(MC.MT_ASSIGN_REMOVE,MC.LOG_WARN, TAG,msg);
 			return;
 		}
 		
 		String msg = "Cancel dep ["+a.getDepId()+"], agentId [" + a.getAgentId()+"]";
-		SF.eventLog(MC.MT_ASSIGN_REMOVE,MC.LOG_WARN, TAG.getSimpleName(),msg);
+		SF.eventLog(MC.MT_ASSIGN_REMOVE,MC.LOG_WARN, TAG,msg);
 		logger.info(msg);
 		
 		Set<Assign> set = assingManager.getAssignByDepIdAndAgentId(a.getDepId(), a.getAgentId());
@@ -549,7 +549,7 @@ public class DeploymentAssignment {
 		String msg = "Force direct stop [" + dep.getId() + "], count [" + (-cnt) + "] ";
 		logger.warn(msg);
 		
-		SF.eventLog(MC.MT_ASSIGN_REMOVE,MC.LOG_WARN, TAG.getSimpleName(),msg);
+		SF.eventLog(MC.MT_ASSIGN_REMOVE,MC.LOG_WARN, TAG,msg);
 		
 		Set<Assign> as = assingManager.getAssignByDepId(dep.getId());
 		if(as.size() > 0) {
@@ -611,7 +611,7 @@ public class DeploymentAssignment {
 				assingManager.add(a);
 				
 				String msg = a.toString();
-				SF.eventLog(MC.MT_ASSIGN_ADD,MC.LOG_INFO, TAG.getSimpleName(),msg);
+				SF.eventLog(MC.MT_ASSIGN_ADD,MC.LOG_INFO, TAG,msg);
 				
 				logger.info("Assign: " + msg);
 				

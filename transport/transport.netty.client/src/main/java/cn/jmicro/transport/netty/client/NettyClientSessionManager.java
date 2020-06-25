@@ -268,9 +268,9 @@ public class NettyClientSessionManager implements IClientSessionManager{
 	        			 logger.error("exceptionCaught",cause);
 	        			 NettyClientSession session = (NettyClientSession)ctx.channel().attr(sessionKey).get();
 	        			 if(session !=null && monitorEnable(ctx) ){
-	        	             SF.netIo(MC.MT_CLIENT_IOSESSION_EXCEPTION,MC.LOG_ERROR
-	        	            		 ,"exceptionCaught sessionId:"+session.getId()+"",
-	        	            		 NettyClientSessionManager.class,cause);
+	        	             SF.netIo(MC.MT_CLIENT_IOSESSION_EXCEPTION,MC.LOG_ERROR,
+	        	            		 NettyClientSessionManager.class
+	        	            		 ,"exceptionCaught sessionId:"+session.getId()+"",cause);
 	        	         }
 	        			 closeCtx(ctx);
 	                 }
@@ -320,8 +320,8 @@ public class NettyClientSessionManager implements IClientSessionManager{
 	       } catch (Throwable e) {
 	    	   String msg = "Cannot connect " + host + ":" + port;
 	    	   logger.error(msg,e);
-	    	   SF.netIo(MC.MT_CLIENT_CONNECT_FAIL,MC.LOG_ERROR
-	            		 ,msg,NettyClientSessionManager.class,e);
+	    	   SF.netIo(MC.MT_CLIENT_CONNECT_FAIL,MC.LOG_ERROR,
+	            		 NettyClientSessionManager.class,msg,e);
 	           throw new CommonException(msg);
 	       }
 		}

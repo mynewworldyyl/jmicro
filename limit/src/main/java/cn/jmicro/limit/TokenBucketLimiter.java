@@ -24,6 +24,7 @@ import org.slf4j.LoggerFactory;
 
 import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.limitspeed.ILimiter;
+import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.monitor.SF;
 import cn.jmicro.api.net.IRequest;
 
@@ -37,7 +38,7 @@ public class TokenBucketLimiter extends AbstractLimiter implements ILimiter{
 
 	private final static Logger logger = LoggerFactory.getLogger(TokenBucketLimiter.class);
 	
-	private static final String TAG = TokenBucketLimiter.class.getName();
+	private static final Class<?> TAG = TokenBucketLimiter.class;
 	
 	private Map<String,ITokenBucket> buckets = new HashMap<>();
 	
@@ -58,7 +59,9 @@ public class TokenBucketLimiter extends AbstractLimiter implements ILimiter{
 		//logger.debug("TokenBucketLimiter apply reqID: " + req.getRequestId());
 		int rst = b.applyToken(1);
 		if(rst < 0) {
-			SF.limit(TAG);
+			String errMsg = "speed:"+speed+",key:"+key;
+			SF.eventLog(MC.MT_SERVICE_SPEED_LIMIT, MC.LOG_WARN, TAG, errMsg);
+			logger.info(errMsg);
 			return false;
 		} else {
 			return true;

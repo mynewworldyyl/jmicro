@@ -50,6 +50,8 @@ public final class MRpcItem{
 	
 	private ActInfo act;
 	
+	private String implCls;
+	
 	private String localHost = null;
 	private String localPort = null;
 	private String remoteHost = null;
@@ -58,6 +60,8 @@ public final class MRpcItem{
 	private boolean provider;
 	
 	private long createTime = System.currentTimeMillis();
+	private long inputTime;
+	private long costTime;
 	
 	//private short[] types = null;
 	
@@ -102,7 +106,9 @@ public final class MRpcItem{
 		mi.provider = this.provider;
 		mi.createTime = this.createTime;
 		mi.reqParentId = this.reqParentId;
-		
+		mi.implCls = this.implCls;
+		mi.inputTime = this.inputTime;
+		mi.costTime = this.costTime;
 		return mi;
 	}
 	
@@ -118,7 +124,9 @@ public final class MRpcItem{
 		req = null;
 		resp = null;
 		provider = false;
+		implCls = null;
 		createTime = System.currentTimeMillis();
+		inputTime = 0;
 		
 	}
 	
@@ -150,7 +158,9 @@ public final class MRpcItem{
 	
 	public OneItem addOneItem(short type,String tag,Throwable ex) {
 		OneItem oi = new OneItem(type,tag,"");
-		oi.setEx(ex);
+		if(ex != null) {
+			oi.setEx(SF.serialEx(ex));
+		}
 		this.items.add(oi);
 		return oi;
 	}
@@ -195,6 +205,31 @@ public final class MRpcItem{
 
 	public void setMsg(Message msg) {
 		this.msg = msg;
+	}
+
+	public String getImplCls() {
+		return implCls;
+	}
+
+	public void setImplCls(String implCls) {
+		this.implCls = implCls;
+	}
+
+	public long getInputTime() {
+		return inputTime;
+	}
+
+	public void setInputTime(long inputTime) {
+		this.inputTime = inputTime;
+	}
+
+
+	public long getCostTime() {
+		return costTime;
+	}
+
+	public void setCostTime(long costTime) {
+		this.costTime = costTime;
 	}
 
 	public IReq getReq() {
