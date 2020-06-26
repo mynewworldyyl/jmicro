@@ -81,7 +81,7 @@ public class MonitorClient {
 	private IDataOperator op;
 	
 	@Inject
-	private MonitorTypeManager mtManager;
+	private MonitorAndService2TypeRelationshipManager mtManager;
 	
 	//private Map<String,Boolean> srvMethodMonitorEnable = new HashMap<>();
 	

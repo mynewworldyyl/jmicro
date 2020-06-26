@@ -498,11 +498,11 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
 				 logger.error(errMsg);
 				 req.setSuccess(false);
 				 waitForResponse.remove(req.getRequestId());
-				 SF.eventLog(MC.MT_CLIENT_SERVICE_ERROR, MC.LOG_ERROR, TAG,errMsg);
+				 SF.eventLog(MC.MT_CLIENT_RESPONSE_SERVER_ERROR, MC.LOG_ERROR, TAG,errMsg);
 				 throw new RpcException(req,se);
 			} else if(!resp.isSuccess()){
 				 //服务器正常逻辑处理错误，不需要重试，直接失败
-				String errMsg = "服务器响应错误reqID:"+req.getRequestId()+",linkId:"+msg.getLinkId()+ resp.getResult()+",Service: "+sm.getKey().toKey(true, true, true);
+				 String errMsg = "服务器响应错误reqID:"+req.getRequestId()+",linkId:"+msg.getLinkId()+ resp.getResult()+",Service: "+sm.getKey().toKey(true, true, true);
 				 logger.error(errMsg);
 				 req.setSuccess(false);
 				 SF.eventLog(MC.MT_REQ_ERROR, MC.LOG_ERROR, TAG,errMsg);
@@ -512,7 +512,7 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
     		//waitForResponse.remove(req.getRequestId());
     		//代码不应该走到这里，如果走到这里，说明系统还有问题
     		String errMsg = "未知错误reqID:"+req.getRequestId()+",linkId:"+msg.getLinkId()+",Service: "+sm.getKey().toKey(true, true, true);
-    		 SF.eventLog(MC.MT_REQ_ERROR, MC.LOG_ERROR, TAG,errMsg);
+    		SF.eventLog(MC.MT_REQ_ERROR, MC.LOG_ERROR, TAG,errMsg);
     		logger.error(errMsg);
     		throw new CommonException(errMsg);
     		

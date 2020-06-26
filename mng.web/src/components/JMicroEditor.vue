@@ -39,6 +39,7 @@
                     <JMonitorTypeServiceMethodEditor v-else-if="item.group == 'mtsm'" :item="item"></JMonitorTypeServiceMethodEditor>
                     <JInvokeLinkView v-else-if="item.group == 'invokeLinkView'" :item="item"></JInvokeLinkView>
                     <JLogItemView v-else-if="item.group == 'logItemView'" :item="item"></JLogItemView>
+                    <JNamedTypeEditor v-else-if="item.group == 'namedType'" :item="item"></JNamedTypeEditor>
 
                 </TabPane>
             </Tabs>
@@ -78,6 +79,7 @@
     import JMonitorTypeKeyEditor from "./monitor/JMonitorTypeKeyEditor.vue"
     import JMonitorTypeServiceMethodEditor from "./monitor/JMonitorTypeServiceMethodEditor.vue"
     import JLogItemView from "./monitor/JLogItemView.vue"
+    import JNamedTypeEditor from "./monitor/JNamedTypeEditor.vue"
 
     export default {
         name: 'JMicroEditor',
@@ -109,6 +111,7 @@
             JMonitorTypeServiceMethodEditor,
             JInvokeLinkView,
             JLogItemView,
+            JNamedTypeEditor,
         },
 
         data () {
@@ -138,6 +141,7 @@
 
             this.mountServiceSelect('monitorTypeServiceMethodSelect');
 
+            this.mountServiceSelect('namedTypeSelect');
         },
 
         methods: {

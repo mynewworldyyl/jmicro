@@ -6,7 +6,7 @@ import org.slf4j.LoggerFactory;
 import cn.jmicro.api.config.Config;
 import cn.jmicro.api.mng.ReportData;
 import cn.jmicro.api.monitor.IMonitorDataSubscriber;
-import cn.jmicro.api.monitor.MonitorTypeManager;
+import cn.jmicro.api.monitor.MonitorAndService2TypeRelationshipManager;
 import cn.jmicro.api.raft.IDataOperator;
 import cn.jmicro.api.registry.UniqueServiceKey;
 
@@ -38,7 +38,7 @@ public abstract class AbstractMonitorDataSubscriber implements IMonitorDataSubsc
 		
 		StringBuilder sb = new StringBuilder();
 		for(Short s : typess) {
-			sb.append(s).append(MonitorTypeManager.TYPE_SPERATOR);
+			sb.append(s).append(MonitorAndService2TypeRelationshipManager.TYPE_SPERATOR);
 		}
 		sb.delete(sb.length()-1, sb.length());
 		

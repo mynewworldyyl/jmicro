@@ -318,7 +318,6 @@ public final class MC {
 		Field[] fs = MC.class.getDeclaredFields();
 		for(Field f: fs){
 			
-			
 			try {
 				
 				if(f.getType() == Byte.TYPE) {

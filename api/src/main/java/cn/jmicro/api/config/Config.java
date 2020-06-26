@@ -86,6 +86,7 @@ public class Config implements IConfigChangeListener{
 	public static final String MonitorTypeConfigDir = MonitorDir +"/monitorTypeConfig";
 	public static final String MonitorTypesDir = MonitorDir+"/monitorTypes";
 	public static final String MonitorServiceMethodTypesDir = MonitorDir+"/serviceMethodTypes";
+	public static final String NamedTypesDir = MonitorDir +"/namedTypesDir";
 	
 	//当前启动实例名称
 	private static String InstanceName = "";

@@ -32,7 +32,7 @@ import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.monitor.MRpcItem;
 import cn.jmicro.api.monitor.MonitorInfo;
 import cn.jmicro.api.monitor.MonitorServerStatus;
-import cn.jmicro.api.monitor.MonitorTypeManager;
+import cn.jmicro.api.monitor.MonitorAndService2TypeRelationshipManager;
 import cn.jmicro.api.monitor.OneItem;
 import cn.jmicro.api.monitor.ServiceCounter;
 import cn.jmicro.api.objectfactory.AbstractClientServiceProxy;
@@ -64,7 +64,7 @@ public class MonitorServerImpl implements IMonitorServer {
 	private IObjectFactory of;
 	
 	@Inject
-	private MonitorTypeManager mtManager;
+	private MonitorAndService2TypeRelationshipManager mtManager;
 	
 	private ServiceCounter sc = null;
 	

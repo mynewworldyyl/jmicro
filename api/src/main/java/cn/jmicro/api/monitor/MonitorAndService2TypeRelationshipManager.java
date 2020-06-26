@@ -21,7 +21,7 @@ import cn.jmicro.common.Constants;
 import cn.jmicro.common.util.StringUtils;
 
 @Component
-public class MonitorTypeManager {
+public class MonitorAndService2TypeRelationshipManager {
 
 	public static final String TYPE_SPERATOR = ",";
 	
@@ -404,7 +404,5 @@ public class MonitorTypeManager {
 		}
 		
 	}
-
-	
 	
 }

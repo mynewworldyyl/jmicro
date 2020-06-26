@@ -18,9 +18,9 @@ import cn.jmicro.common.util.JsonUtils;
 import cn.jmicro.common.util.StringUtils;
 
 @Component
-public class MonitorTypesManager {
+public class MCTypesManager {
 
-	private final static Logger logger = LoggerFactory.getLogger(MonitorTypesManager.class);
+	private final static Logger logger = LoggerFactory.getLogger(MCTypesManager.class);
 	
 	@Inject
 	private IDataOperator op;

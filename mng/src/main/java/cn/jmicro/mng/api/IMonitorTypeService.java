@@ -35,4 +35,13 @@ public interface IMonitorTypeService {
 	Resp<Void> updateServiceMethodMonitorTypes(String key,Short[] adds,Short[] dels);
 	
 	Resp<List<MCConfig>> getAllConfigsByGroup(String[] groups);
+	
+	////////////////////////Named types ///////////////////////////////////
+	Resp<Void> addNamedTypes(String name);
+	
+	Resp<List<Short>> getTypesByNamed(String name);
+	
+	Resp<Void> updateNamedTypes(String name, Short[] adds, Short[] dels);
+	
+	Resp<List<String>> getNamedList();
 }

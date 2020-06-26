@@ -24,16 +24,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import cn.jmicro.api.annotation.Cfg;
-import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Inject;
 import cn.jmicro.api.annotation.JMethod;
 import cn.jmicro.api.annotation.SMethod;
-import cn.jmicro.api.annotation.Service;
 import cn.jmicro.api.mng.ReportData;
 import cn.jmicro.api.monitor.IMonitorDataSubscriber;
 import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.monitor.MRpcItem;
-import cn.jmicro.api.monitor.MonitorClient;
 import cn.jmicro.api.monitor.OneItem;
 import cn.jmicro.api.monitor.ServiceCounter;
 import cn.jmicro.api.pubsub.PSData;
@@ -60,6 +57,8 @@ public class ServiceReqMonitor  extends AbstractMonitorDataSubscriber implements
 	private final Map<Long,TimerTicker> timers = new ConcurrentHashMap<>();
 	
 	private final Map<String,Long> timeoutList = new ConcurrentHashMap<>();
+	
+	private final Map<String,Short> MT_Key2Val = MC.MT_Key2Val;
 	
 	@Cfg("/Monitor/ServiceReqMonitor/enable")
 	private boolean enable = false;
@@ -186,7 +185,6 @@ public class ServiceReqMonitor  extends AbstractMonitorDataSubscriber implements
 			sb.append(", reqId: ").append(si.getReqId());
 			logger.debug(sb.toString()); 
 		}
-		
 	}
 
 	private void doStatis(MRpcItem si, String key,long windowSize,long slotInterval,TimeUnit tu) {
@@ -235,7 +233,7 @@ public class ServiceReqMonitor  extends AbstractMonitorDataSubscriber implements
 		for(String dt : dataType) {
 			switch(dt) {
 				case MC.PREFIX_QPS:
-					result.setQps(this.getQpsData(counter,types));	
+					result.setQps(this.getQpsData(counter,types));
 				    break;
 				case MC.PREFIX_TOTAL_PERCENT:
 					result.setPercent(this.getPercentData(counter,types));
@@ -377,7 +375,6 @@ public class ServiceReqMonitor  extends AbstractMonitorDataSubscriber implements
 			} else {
 				datas[i] = 0D;
 			}
-			
 		}
 		return datas;
 	}

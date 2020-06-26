@@ -19,6 +19,7 @@
                       <Menu-item name="typeConfig"><Icon type="ios-cog"></Icon>TYPE CONFIG</Menu-item>
                       <Menu-item name="monitorType"><Icon type="ios-cog"></Icon>MONITOR TYPES</Menu-item>
                       <Menu-item name="monitorTypeServiceMethod"><Icon type="ios-cog"></Icon>SERVICE TYPES</Menu-item>
+                      <Menu-item name="namedType"><Icon type="ios-cog"></Icon>NAMED TYPES</Menu-item>
                   </Menu-group>
                    </Submenu>
 
@@ -93,6 +94,12 @@
                             group="mtsm" menuStr="ins" groupBy="ins"></JServiceList>
           </Drawer>
 
+          <Drawer  v-model="cache.namedType.drawerStatus" :closable="false" placement="left" :transfer="true"
+                   :draggable="true" :scrollable="true" width="50">
+              <JNamedTypeList slId="JNamedTypeId" evt-name="namedTypeSelect"
+                            group="namedType"></JNamedTypeList>
+          </Drawer>
+
           <!-- route outlet -->
           <router-view></router-view>
       </div>
@@ -108,6 +115,7 @@
     import JRouterList from './components/route/JRouterList.vue'
     import JAccount from './components/common/JAccount.vue'
     import JMonitorTypeKeyList from './components/monitor/JMonitorTypeKeyList.vue'
+    import JNamedTypeList from './components/monitor/JNamedTypeList.vue'
 
     let cache = null;
 
@@ -120,6 +128,7 @@ export default {
         JRouterList,
         JAccount,
         JMonitorTypeKeyList,
+      JNamedTypeList,
     },
 
     data() {
@@ -160,6 +169,12 @@ export default {
 
         cache['monitorType']={
             key: 'monitorType',
+            drawerStatus:false,
+            drawerBtnStyle:{left:'0px'},
+        };
+
+        cache['namedType']={
+            key: 'namedType',
             drawerStatus:false,
             drawerBtnStyle:{left:'0px'},
         };

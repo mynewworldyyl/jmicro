@@ -665,6 +665,22 @@ jm.mng = {
             return jm.mng.callRpcWithParams(this.sn,this.ns,this.v,'getAllConfigsByGroup',[groups]);
         },
 
+        addNamedTypes: function (name){
+            return jm.mng.callRpcWithParams(this.sn,this.ns,this.v,'addNamedTypes',[name]);
+        },
+
+        getTypesByNamed: function (name){
+            return jm.mng.callRpcWithParams(this.sn,this.ns,this.v,'getTypesByNamed',[name]);
+        },
+
+        updateNamedTypes: function (key,adds,dels){
+            return jm.mng.callRpcWithParams(this.sn,this.ns,this.v,'updateNamedTypes',[key,adds,dels]);
+        },
+
+        getNamedList: function (){
+            return jm.mng.callRpcWithParams(this.sn,this.ns,this.v,'getNamedList',[]);
+        },
+
         sn:'cn.jmicro.mng.api.IMonitorTypeService',
         ns : 'mng',
         v:'0.0.1',

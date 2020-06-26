@@ -16,7 +16,7 @@ import cn.jmicro.api.annotation.Service;
 import cn.jmicro.api.config.Config;
 import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.monitor.MCConfig;
-import cn.jmicro.api.monitor.MonitorTypesManager;
+import cn.jmicro.api.monitor.MCTypesManager;
 import cn.jmicro.api.raft.IDataOperator;
 import cn.jmicro.common.Constants;
 import cn.jmicro.common.util.StringUtils;
@@ -35,7 +35,7 @@ public class MonitorTypeServiceImpl implements IMonitorTypeService {
 	private IDataOperator op;
 	
 	@Inject
-	private MonitorTypesManager mtm;
+	private MCTypesManager mtm;
 	
 	@Inject
 	private ICommonManager commonManager;
@@ -392,6 +392,89 @@ public class MonitorTypeServiceImpl implements IMonitorTypeService {
 		resp.setCode(Resp.CODE_SUCCESS);
 		resp.setData(l);
 		return resp;
+	}
+	
+	@Override
+	public Resp<List<String>> getNamedList() {
+		Set<String> ls = op.getChildren(Config.NamedTypesDir,false);
+		Resp<List<String>> resp = new Resp<>();
+		List<String> l = new ArrayList<>();
+		l.addAll(ls);
+		resp.setData(l);
+		return resp;
+	}
+
+	
+	@Override
+	public Resp<List<Short>> getTypesByNamed(String name) {
+		if(name.contains("/")) {
+			name = name.replaceAll("/", Constants.PATH_EXCAPE);
+		}
+		
+		List<Short> l = getTypeByKey(Config.NamedTypesDir + "/" + name);
+		Resp<List<Short>> resp = new Resp<List<Short>>();
+		resp.setData(l);
+		return resp;
+	}
+
+	@Override
+	public Resp<Void> updateNamedTypes(String name, Short[] adds, Short[] dels) {
+
+		Resp<Void> resp = new Resp<Void>();
+		if(!commonManager.hasPermission(this.adminPermissionLevel)) {
+			resp.setCode(Resp.CODE_NO_PERMISSION);
+			resp.setMsg("No permission!");
+			return resp;
+		}
+		
+		if(name.contains("/")) {
+			name = name.replaceAll("/", Constants.PATH_EXCAPE);
+		}
+		
+		Resp<Void> rsp = null;
+		if(adds != null && adds.length > 0) {
+			rsp = add2Monitor(Config.NamedTypesDir,name,adds);
+		}
+		
+		Resp<Void> rsp0 = null;
+		if(dels != null && dels.length > 0) {
+			rsp0 = removeFromMonitor(Config.NamedTypesDir,name,dels);
+		}
+		
+		if(rsp == null) {
+			return rsp0;
+		}else if(rsp0 == null) {
+			return rsp;
+		}else {
+			if(rsp.getCode() == 0 && rsp0.getCode() == 0) {
+				return rsp;
+			} else {
+				rsp.setMsg(rsp.getMsg() + ": " + rsp0.getMsg());
+			}
+			return rsp;
+		}
+	}
+	
+	@Override
+	public Resp<Void> addNamedTypes(String name) {
+		 String key0 = name;
+		 if(name.contains("/")) {
+			 key0 = name.replaceAll("/", Constants.PATH_EXCAPE);
+		 }
+		
+		 Resp<Void> resp = new Resp<>();
+		 resp.setCode(Resp.CODE_SUCCESS);
+		 
+		 String p = Config.NamedTypesDir + "/" + key0;
+		 if(op.exist(p)) {
+			 resp.setCode(Resp.CODE_FAIL);
+			 resp.setMsg("exist:　" + name);
+		 } else {
+			 op.createNodeOrSetData(p, "", IDataOperator.PERSISTENT);
+		 }
+		 
+		 return resp;
+		
 	}
 	
 }
