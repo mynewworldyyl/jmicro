@@ -1,19 +1,95 @@
 package cn.jmicro.api.executor;
 
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.ThreadPoolExecutor.AbortPolicy;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import cn.jmicro.api.annotation.Component;
+import cn.jmicro.api.annotation.Inject;
 import cn.jmicro.api.config.Config;
+import cn.jmicro.api.monitor.MC;
+import cn.jmicro.api.monitor.SF;
+import cn.jmicro.api.objectfactory.IObjectFactory;
+import cn.jmicro.api.registry.ServiceItem;
+import cn.jmicro.api.service.ServiceLoader;
+import cn.jmicro.common.CommonException;
+import cn.jmicro.common.Constants;
+import cn.jmicro.common.util.JsonUtils;
 import cn.jmicro.common.util.StringUtils;
 import cn.jmicro.common.util.TimeUtils;
 
-public final class ExecutorFactory {
+@Component
+public class ExecutorFactory {
 
-	private ExecutorFactory() {}
+	private static final Logger logger = LoggerFactory.getLogger(ExecutorFactory.class);
 	
-	public static ExecutorService createExecutor(ExecutorConfig cfg) {
+	private Map<String,JmicroThreadPoolExecutor> executors = new HashMap<>();
+	
+    private static final String GROUP = Constants.EXECUTOR_POOL;
+    
+    private final Set<ExecutorConfig> waitingRegist = new HashSet<>();
+    
+    @Inject
+    private ServiceLoader sl;
+    
+    @Inject
+    private IObjectFactory of;
+    
+	public ExecutorFactory() {}
+	
+	public void ready() {
+		new Thread(this::doCheck).start();
+	}
+	
+	private void doCheck() {
+		while(true) {
+			try {
+				
+				if(!waitingRegist.isEmpty() && sl.hashServer()) {
+					Iterator<ExecutorConfig> ecs = this.waitingRegist.iterator();
+					while(ecs.hasNext()) {
+						ExecutorConfig cfg = ecs.next();
+						ecs.remove();
+						String ns = Config.getInstanceName() + "." + GROUP+"_" + cfg.getThreadNamePrefix();
+						ServiceItem si = sl.createSrvItem(IExecutorInfo.class, ns,"0.0.1", JmicroThreadPoolExecutor.class.getName());
+						JmicroThreadPoolExecutor executor = this.executors.get(cfg.getThreadNamePrefix());
+						of.regist(ns, executor);
+						sl.registService(si,executor);
+					}
+				}
+				
+				for(JmicroThreadPoolExecutor je: this.executors.values()) {
+					je.check();
+				}
+				
+				Thread.sleep(5000);
+				
+			} catch (Throwable e) {
+				
+			}
+		}	
+	}
+
+	public ExecutorService createExecutor(ExecutorConfig cfg) {
+		
+		if(StringUtils.isEmpty(cfg.getThreadNamePrefix())) {
+			throw new CommonException("ThreadNamePrefix cannot be null");
+		}
+		
+		if(this.executors.containsKey(cfg.getThreadNamePrefix())) {
+			logger.info("Return exist thread pool: " + cfg.getThreadNamePrefix());
+			return this.executors.get(cfg.getThreadNamePrefix());
+		}
+		
 		if( cfg.getMsCoreSize() <= 0) {
 			cfg.setMsCoreSize(1);
 		}
@@ -35,15 +111,105 @@ public final class ExecutorFactory {
 		}
 		
 		if(StringUtils.isEmpty(cfg.getThreadNamePrefix())) {
-			cfg.setThreadNamePrefix("Default");;
+			cfg.setThreadNamePrefix("Default");
 		}
 		
-		ThreadPoolExecutor executor = new ThreadPoolExecutor(cfg.getMsCoreSize(),cfg.getMsMaxSize(),
-				cfg.getIdleTimeout(),TimeUtils.getTimeUnit(cfg.getTimeUnit()),
-				new LinkedBlockingQueue<Runnable>(cfg.getTaskQueueSize()),
-				new NamedThreadFactory("JMicro-"+Config.getInstanceName()+"-"+cfg.getThreadNamePrefix())
-				,cfg.getRejectedExecutionHandler());
+		JmicroThreadPoolExecutor executor = new JmicroThreadPoolExecutor(cfg);
+		
+		 if(sl.hashServer()) {
+			String ns = Config.getInstanceName() + "." + GROUP+"_" + cfg.getThreadNamePrefix();
+			ServiceItem si = sl.createSrvItem(IExecutorInfo.class, ns,"0.0.1", JmicroThreadPoolExecutor.class.getName());
+			of.regist(ns, executor);
+			sl.registService(si,executor);
+		}else {
+			waitingRegist.add(cfg);
+		}
+		
+		executors.put(cfg.getThreadNamePrefix(), executor);
 		
 		return executor;
+	}
+	
+	public class JmicroThreadPoolExecutor extends ThreadPoolExecutor implements IExecutorInfo{
+		
+		 private final Logger ilog = LoggerFactory.getLogger(JmicroThreadPoolExecutor.class);
+		 private ExecutorConfig cfg = null;
+		 private ExecutorInfo ei;
+		 
+		 private long warnSize = Long.MAX_VALUE;
+		 
+		 public JmicroThreadPoolExecutor(ExecutorConfig cfg) {
+			 super(cfg.getMsCoreSize(),cfg.getMsMaxSize(),
+						cfg.getIdleTimeout(),TimeUtils.getTimeUnit(cfg.getTimeUnit()),
+						new LinkedBlockingQueue<Runnable>(cfg.getTaskQueueSize()),
+						new NamedThreadFactory("JMicro-"+Config.getInstanceName()+"-"+cfg.getThreadNamePrefix())
+						,cfg.getRejectedExecutionHandler());
+			this.cfg = cfg;
+			this.ei = new ExecutorInfo();
+			this.ei.setTerminal(false);
+			this.ei.setInstanceName(Config.getInstanceName());
+			this.ei.setKey("JMicro-" + Config.getInstanceName()+"-" + this.cfg.getThreadNamePrefix());
+			this.ei.setEc(this.cfg);
+			
+			ilog.info("Create thread pool: " + this.ei.getKey());
+			//queue size got 80% of the max queue size will sent warning message to monitor server
+			warnSize = (long)(this.cfg.getTaskQueueSize()*0.8);
+			
+			/*SF.eventLog(MC.EP_START, MC.LOG_WARN, JmicroThreadPoolExecutor.class,
+					JsonUtils.getIns().toJson(ei));*/
+		 }
+		 
+		 public void shutdown() {
+			  ilog.info("{} Going to shutdown. Executed tasks: {}, Running tasks: {}, Pending tasks: {}",
+					  this.cfg.getThreadNamePrefix(), this.getCompletedTaskCount(), this.getActiveCount(), this.getQueue().size());
+		      super.shutdown();
+		 }
+		
+		@Override
+		public ExecutorInfo getInfo() {
+			//logger.debug("Return: " + this.ei.getKey());
+			//setInfo();
+			return this.ei;
+		}
+		 
+		private void setInfo() {
+			this.ei.setActiveCount(this.getActiveCount());
+			this.ei.setCompletedTaskCount(this.getCompletedTaskCount());
+			this.ei.setLargestPoolSize(this.getLargestPoolSize());
+			this.ei.setPoolSize(this.getPoolSize());
+			this.ei.setTaskCount(this.getTaskCount());
+			this.ei.setCurQueueCnt(this.getQueue().size());
+		}
+
+		@Override
+		protected void beforeExecute(Thread t, Runnable r) {
+			this.ei.setStartCnt(this.ei.getStartCnt()+1);
+			super.beforeExecute(t, r);
+		}
+
+		@Override
+		protected void afterExecute(Runnable r, Throwable t) {
+			this.ei.setEndCnt(this.ei.getEndCnt()+1);
+			super.afterExecute(r, t);
+		}
+
+		@Override
+		protected void terminated() {
+			//setInfo();
+			this.ei.setTerminal(true);
+			SF.eventLog(MC.EP_TERMINAL, MC.LOG_WARN, JmicroThreadPoolExecutor.class,
+					JsonUtils.getIns().toJson(this.ei));
+			super.terminated();
+		}
+		
+		public void check() {
+			//if pool size less than 2, you should know what you doing
+			setInfo();
+			if(this.cfg.getTaskQueueSize() > 2 && this.getPoolSize() > this.warnSize) {
+				SF.eventLog(MC.EP_TASK_WARNING, MC.LOG_WARN, JmicroThreadPoolExecutor.class,
+						JsonUtils.getIns().toJson(this.ei));
+			}
+		}
+
 	}
 }

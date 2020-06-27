@@ -22,7 +22,6 @@ import java.util.concurrent.ExecutorService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import cn.jmicro.api.codec.JDataInput;
 import cn.jmicro.api.codec.OnePrefixDecoder;
 import cn.jmicro.api.config.Config;
 import cn.jmicro.api.executor.ExecutorConfig;
@@ -53,7 +52,7 @@ public class DumpManager {
 		config.setMsCoreSize(1);
 		config.setMsMaxSize(5);
 		config.setTaskQueueSize(10);
-		executor = ExecutorFactory.createExecutor(config);
+		executor = new ExecutorFactory().createExecutor(config);
 	}
 	
 	private OnePrefixDecoder decoder =  new OnePrefixDecoder();

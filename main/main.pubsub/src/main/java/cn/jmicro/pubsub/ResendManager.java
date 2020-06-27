@@ -66,7 +66,7 @@ class ResendManager {
 		config.setTaskQueueSize(5000);
 		config.setThreadNamePrefix("ResendManager");
 		//config.setRejectedExecutionHandler(new PubsubServerAbortPolicy());
-		executor = ExecutorFactory.createExecutor(config);
+		executor = of.get(ExecutorFactory.class).createExecutor(config);
 		
 		resetResendTimer();
 	}

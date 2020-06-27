@@ -55,6 +55,9 @@ public class ServerMessageReceiver implements IMessageReceiver{
 	static final Logger logger = LoggerFactory.getLogger(ServerMessageReceiver.class);
 	static final Class<?> TAG = ServerMessageReceiver.class;
 	
+	@Inject
+	private ExecutorFactory ef;
+	
 	@Cfg("/ServerMessageReceiver/openDebug")
 	private boolean openDebug;
 	
@@ -88,7 +91,7 @@ public class ServerMessageReceiver implements IMessageReceiver{
 		config.setMsMaxSize(60);
 		config.setTaskQueueSize(500);
 		config.setThreadNamePrefix("ServerMessageReceiver");
-		executor = ExecutorFactory.createExecutor(config);
+		executor = ef.createExecutor(config);
 		//系统级RPC处理器，如ID请求处理器，和普通RPC处理理器同一个实例，但是TYPE标识不同，需要特殊处理
 		//registHandler(jrpcHandler);
 		//registHandler(idHandler);

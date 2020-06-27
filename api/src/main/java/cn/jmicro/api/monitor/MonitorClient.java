@@ -137,7 +137,7 @@ public class MonitorClient {
 		config.setMsMaxSize(10);
 		config.setTaskQueueSize(500);
 		config.setThreadNamePrefix("MonitorClient");
-		executor = ExecutorFactory.createExecutor(config);
+		executor = of.get(ExecutorFactory.class).createExecutor(config);
 		
 		enableWork(msPo,IServiceListener.ADD);
 		

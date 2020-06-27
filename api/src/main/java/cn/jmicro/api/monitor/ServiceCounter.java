@@ -321,7 +321,7 @@ public class ServiceCounter implements IServiceCounter<Short>{
 		case MC.STATIS_FAIL_PERCENT:
 			Long totalReq = counter.get(MC.MT_REQ_START);
 			if(totalReq != 0) {
-				double totalFail = new Double(counter.getByTypes(MC.MT_CLIENT_SERVICE_ERROR,MC.MT_REQ_TIMEOUT));
+				double totalFail = new Double(counter.getByTypes(MC.MT_SERVICE_ERROR,MC.MT_REQ_TIMEOUT));
 				result = (totalFail/totalReq)*100;
 				//logger.debug("totalReq:{},totalFail:{},Percent:{}",totalReq,totalFail,result);
 			}
@@ -337,7 +337,7 @@ public class ServiceCounter implements IServiceCounter<Short>{
 			break;
 		case MC.STATIS_TOTAL_FAIL:
 			result = 1.0 * counter.getTotal(MC.MT_CLIENT_RESPONSE_SERVER_ERROR)+
-			counter.getTotal(MC.MT_CLIENT_SERVICE_ERROR)+
+			counter.getTotal(MC.MT_SERVICE_ERROR)+
 			counter.getTotal(MC.MT_REQ_TIMEOUT_FAIL)+
 			counter.getTotal(MC.MT_REQ_ERROR);
 			break;

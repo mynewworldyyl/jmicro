@@ -277,7 +277,7 @@ public class ServiceReqMonitor  extends AbstractMonitorDataSubscriber implements
 			case MC.STATIS_SUCCESS_PERCENT:
 				totalReq = counter.get(MC.MT_REQ_START);
 				if(totalReq > 0) {
-					val =  1.0 * counter.getByTypes(MC.MT_REQ_SUCCESS,MC.MT_CLIENT_SERVICE_ERROR);
+					val =  1.0 * counter.getByTypes(MC.MT_REQ_SUCCESS,MC.MT_SERVICE_ERROR);
 					if(val > 0) {
 						val = (val*1.0/totalReq)*100;
 					}
@@ -340,7 +340,7 @@ public class ServiceReqMonitor  extends AbstractMonitorDataSubscriber implements
 			case MC.STATIS_SUCCESS_PERCENT:
 				totalReq = counter.getTotal(MC.MT_REQ_START);
 				if(totalReq > 0) {
-					val =  1.0 * counter.getTotal(MC.MT_REQ_SUCCESS,MC.MT_CLIENT_SERVICE_ERROR);
+					val =  1.0 * counter.getTotal(MC.MT_REQ_SUCCESS,MC.MT_SERVICE_ERROR);
 					if(val > 0) {
 						val = (val*1.0/totalReq)*100;
 					}

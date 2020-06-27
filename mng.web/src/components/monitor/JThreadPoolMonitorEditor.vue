@@ -1,0 +1,113 @@
+<template>
+    <div class="JThreadPoolMonitorEditor">
+        <a @click="refresh()">REFRESH</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+        <br/>
+        <p>{{item.key}}</p>
+        <table class="configItemTalbe" width="99%">
+            <thead><tr><td>instanceName</td><td>activeCount</td> <td>completedTaskCount</td><td>largestPoolSize</td><td>poolSize</td>
+                <td>taskCount</td><td>curQueueCnt</td><td>startCnt</td><td>endCnt</td><td>terminal</td><td>coreSize</td><td>maxPoolSize</td><td>taskQueueSize</td></tr></thead>
+           <tr v-for="it in itemList" :key="it.id">
+                <td>{{ it.val.ec.threadNamePrefix }}</td> <td>{{ it.val.activeCount }}</td><td>{{it.val.completedTaskCount}}</td>
+                <td>{{it.val.largestPoolSize}}</td>
+                <td>{{ it.val.poolSize }}</td><td>{{ it.val.taskCount }}</td>
+               <td>{{ it.val.curQueueCnt }}</td><td>{{ it.val.startCnt }}</td>
+                <td>{{ it.val.endCnt }}</td><td>{{ it.val.terminal }}</td>
+                <td>{{ it.val.ec.msCoreSize }}</td><td>{{ it.val.ec.msMaxSize }}</td><td>{{ it.val.ec.taskQueueSize }}</td>
+            </tr>
+
+        </table>
+
+    </div>
+</template>
+
+<script>
+    import TreeNode from "../common/JTreeNode.js"
+    const cid  = 'JThreadPoolMonitorEditor';
+    const GROUP = 'threadPool';
+    export default {
+        name: cid,
+
+        data () {
+            let its =  this.parseItem();
+            return {
+                itemList : its,
+            }
+        },
+
+        props:{
+            item : {
+                type:Object,
+            },
+        },
+
+        methods: {
+
+            parseItem() {
+                let its = null;
+                if(this.item.type == 'mo') {
+                    its = [],
+                        its.push(this.item);
+                }else {
+                    its = this.item.children;
+                }
+                return its;
+            },
+
+            refresh(){
+               let self = this;
+                this.adminPer = window.jm.mng.comm.adminPer;
+                window.jm.mng.threadPoolSrv.getInfo(this.item.id,this.item.type).then((resp)=>{
+                    if(resp.code != 0) {
+                        self.$Message.success(resp.msg);
+                        return;
+                    }
+
+                    let its = resp.data;
+                    self.item.children = null;
+                    if(self.item.type == 'ins' ) {
+                        self.item.children = [];
+                        for(let i = 0; i < its.length; i++) {
+                            let n = its[i];
+                            let s = new TreeNode(n.key, n.key,null,self.item,n,n.key);
+                            s.group = GROUP;
+                            s.type = 'mo';
+                            self.item.addChild(s);
+                            self.itemList = self.item.children;
+                        }
+                    } else {
+                        self.item.val = resp.data;
+                    }
+                }).catch((err)=>{
+                    window.console.log(err);
+                });
+
+
+            },
+        },
+
+        mounted () {
+            //let self = this;
+            window.jm.mng.act.addListener(this.item.id,()=>{
+                //this.refresh();
+            });
+            //this.refresh();
+        },
+
+        beforeDestroy() {
+            window.jm.mng.act.removeListener(this.item.id);
+        },
+
+    }
+</script>
+
+<style>
+    .JThreadPoolMonitorEditor{
+
+    }
+
+    .configItemTalbe tr:hover {
+        background-color:yellow;
+    }
+
+
+</style>

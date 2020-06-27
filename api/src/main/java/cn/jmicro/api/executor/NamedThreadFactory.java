@@ -30,4 +30,10 @@ public class NamedThreadFactory implements ThreadFactory {
     public ThreadGroup getThreadGroup() {
         return mGroup;
     }
+
+	public String getmPrefix() {
+		return mPrefix;
+	}
+    
+    
 }

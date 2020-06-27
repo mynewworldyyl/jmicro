@@ -89,19 +89,21 @@ public class MonitorServerImpl implements IMonitorServer {
 	private MonitorServerStatusAdapter statusAdapter;
 	
 	//@Cfg(value="/MonitorServerImpl/openDebug")
-	private boolean openDebug = true;
+	private boolean openDebug = false;
 	
 	public void init() {
-		ExecutorConfig config = new ExecutorConfig();
-		config.setMsMaxSize(60);
-		config.setTaskQueueSize(500);
-		config.setThreadNamePrefix("MonitorServer");
-		executor = ExecutorFactory.createExecutor(config);
-		basketFactory = new BasketFactory<MRpcItem>(1000,10);	
 	}
 	
 	@JMethod("ready")
 	public void ready() {
+		
+		ExecutorConfig config = new ExecutorConfig();
+		config.setMsMaxSize(60);
+		config.setTaskQueueSize(500);
+		config.setThreadNamePrefix("MonitorServer");
+		
+		executor = of.get(ExecutorFactory.class).createExecutor(config);
+		basketFactory = new BasketFactory<MRpcItem>(1000,10);
 		
 		statusAdapter = new MonitorServerStatusAdapter();
 		//statusAdapter.init();

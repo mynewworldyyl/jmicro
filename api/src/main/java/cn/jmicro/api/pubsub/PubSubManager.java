@@ -80,6 +80,9 @@ public class PubSubManager {
 	@Inject
 	private IDataOperator dataOp;
 	
+	@Inject
+	private ExecutorFactory ef;
+	
 	private Map<String,List<PSData>> topicSubmitItems = new HashMap<>();
 	
 	private Map<String,Long> topicLastSubmitTime = new HashMap<>();
@@ -91,14 +94,14 @@ public class PubSubManager {
 	private Object runLocker = new Object();
 	private Boolean isRunning = false;
 	
-	public void init() {
+	public void ready() {
 
 		logger.info("Init object :" +this.hashCode());
 		ExecutorConfig config = new ExecutorConfig();
 		config.setMsMaxSize(60);
 		config.setTaskQueueSize(500);
-		config.setThreadNamePrefix("SubmitItemHolderManager");
-		executor = ExecutorFactory.createExecutor(config);
+		config.setThreadNamePrefix("PubSubManager");
+		executor = ef.createExecutor(config);
 		
 	}
 	

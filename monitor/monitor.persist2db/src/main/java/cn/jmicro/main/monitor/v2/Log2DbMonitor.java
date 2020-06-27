@@ -187,7 +187,7 @@ public class Log2DbMonitor extends AbstractMonitorDataSubscriber implements IMon
 				logger.warn("LinkRouterMonitor LOG TYPE ERROR:{}",si);
 				return;
 			}*/
-			logger.debug("Log2DbMonitor lid:" +si.getLinkId() +", reqId: " + si.getReqId()+", reqParentId: " + si.getReqParentId());
+			//logger.debug("Log2DbMonitor lid:" +si.getLinkId() +", reqId: " + si.getReqId()+", reqParentId: " + si.getReqParentId());
 			synchronized(siq) {
 				siq.add(si);
 			}

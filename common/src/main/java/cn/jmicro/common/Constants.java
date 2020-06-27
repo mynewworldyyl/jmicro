@@ -68,6 +68,9 @@ public interface Constants {
 	
 	public static final String PUBSUB_KEY="pubsub";
 	public static final String STATIS_KEY="statis";
+	
+	public static final String EXECUTOR_POOL="executorPool";
+	
 	public static final String DEFAULT_PUBSUB="org.jmicro.pubsub.PubSubServer";
 	
 	public static final String DEFAULT_CODEC_FACTORY = "defaultCodecFactory";

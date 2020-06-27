@@ -67,31 +67,32 @@ public final class MC {
 	
 	@MCA("链路开始")
 	public static final short MT_LINK_START  = 0X0003;
+	
 	@MCA("链路结束")
 	public static final short MT_LINK_END  = 0X0004;
 	
 	@MCA("请求超时 ")
 	public static final short MT_REQ_TIMEOUT = 0x0005;
 	
-	@MCA("服务未找到 ")
+	@MCA(value="服务未找到",desc="ServiceItem未找到")
 	public static final short MT_SERVICE_ITEM_NOT_FOUND = 0x0006;
 	
 	//客户端接收到服务器错误，非业务逻辑返回错误 246
-	@MCA("客户端收到服务器错误 ")
+	@MCA(value="服务器错误",desc="客户端收到ServerError实例")
 	public static final short MT_CLIENT_RESPONSE_SERVER_ERROR = 0x0007;
 	
 	//服务业务错误，即业务逻辑错误
-	@MCA("服务业务错误 ")
-	public static final short MT_CLIENT_SERVICE_ERROR = 0x0008;
+	@MCA(value="服务业务错误 ", desc = "由应用自行提交，平台将其作为一种错误标识并加以应用")
+	public static final short MT_SERVICE_ERROR = 0x0008;
 	
-	@MCA("服务开启 ")
+	@MCA(value="服务器开启 ", desc="MT_PROCESS_REMOVE对应服务退出，开启服务编排器情况下才可监测到")
 	public static final short MT_SERVER_START = 0x0009;
 	
-	@MCA("服务停止")
-	public static final short MT_SERVER_STOP = 0x000A;
+	/*@MCA("服务器停止")
+	public static final short MT_SERVER_STOP = 0x000A;*/
 	
-	@MCA("服务端服务不存在")
-	public static final short MT_SERVER_REQ_SERVICE_NOT_FOUND = 0x000B;
+	/*@MCA("服务端服务不存在")
+	public static final short MT_SERVER_REQ_SERVICE_NOT_FOUND = 0x000B;*/
 	
 	@MCA("服务限速")
 	public static final short MT_SERVICE_SPEED_LIMIT = 0x000C;
@@ -101,30 +102,40 @@ public final class MC {
 	
 	@MCA("客户端网络通信关闭")
 	public static final short MT_CLIENT_IOSESSION_CLOSE = 0x000E;
+	
 	@MCA("客户端网络通信打开")
 	public static final short MT_CLIENT_IOSESSION_OPEN = 0x000F;
+	
 	@MCA("客户端网络链路空闲事件")
 	public static final short MT_CLIENT_IOSESSION_IDLE = 0x0010;
+	
 	@MCA("客户端IO写数据（上行）")
 	public static final short MT_CLIENT_IOSESSION_WRITE = 0x012;
+	
 	//网络下行流量
 	@MCA("客户端IO读数据（下行）")
 	public static final short MT_CLIENT_IOSESSION_READ =  0x0013;
+	
 	@MCA("客户端网络IO异步")
 	public static final short MT_CLIENT_IOSESSION_EXCEPTION = 0x0014;
 	//public static final short CLIENT_PACKAGE_SESSION_ID_ERR = 0X00E5;
 	
 	@MCA("服务端网络关闭")
 	public static final short MT_SERVER_IOSESSION_CLOSE = 0x0015;
+	
 	@MCA("服务端网络打开")
 	public static final short MT_SERVER_IOSESSION_OPEN =  0x0016;
+	
 	@MCA("服务端链路空闲事件")
 	public static final short MT_SERVER_IOSESSION_IDLE =  0x0017;
+	
 	@MCA("服务端IO写数据（下行）")
 	public static final short MT_SERVER_JRPC_RESPONSE_SUCCESS = 0x0018;
+	
 	//网络上行流量
 	@MCA("服务端IO读数据（上行）")
 	public static final short MT_SERVER_JRPC_GET_REQUEST =  0x0019;
+	
 	@MCA("服务端网络IO异步")
     public static final short MT_SERVER_IOSESSION_EXCEPTION = 0x001A;
     
@@ -191,37 +202,52 @@ public final class MC {
 	
 	@MCA(value="接收消息数量", group="ms")
 	public static final short Ms_ReceiveItemCnt = 0x0032;
+	
 	@MCA(value="失败消息数量", group="ms")
 	public static final short Ms_FailItemCount = 0x0033;
+	
 	@MCA(value="线程提交消息数量", group="ms")
 	public static final short Ms_CheckerSubmitItemCnt = 0x0034;
+	
 	@MCA(value="任务提交成功消息数量", group="ms")
 	public static final short Ms_TaskSuccessItemCnt = 0x0035;
+	
 	@MCA(value="任务提交失败消息数量", group="ms")
 	public static final short Ms_TaskFailItemCnt = 0x0036;
+	
 	@MCA(value="提交消息数量", group="ms")
 	public static final short Ms_SubmitCnt = 0x0037;
+	
 	@MCA(value="提交到消息篮子失败消息数量", group="ms")
 	public static final short Ms_Fail2BorrowBasket = 0x0038;
+	
 	@MCA(value="线程提交异常消息数量", group="ms")
 	public static final short Ms_CheckerExpCnt = 0x0039;
+	
 	@MCA(value="线程循环次数", group="ms")
 	public static final short Ms_CheckLoopCnt = 0x003A;
+	
 	@MCA(value="归还篮子失败次数", group="ms")
 	public static final short Ms_FailReturnWriteBasket = 0x003B;
 	
 	@MCA(value="收到无效消息主题", group=Constants.PUBSUB_KEY)
 	public static final short Ms_TopicInvalid = 0x003C;
+	
 	@MCA(value="消息服务器强制丢弃消息", group=Constants.PUBSUB_KEY)
 	public static final short Ms_ServerDisgard = 0x003D;
+	
 	@MCA(value="消息服务器繁忙", group=Constants.PUBSUB_KEY)
 	public static final short Ms_ServerBusy = 0x003E;
+	
 	@MCA(value="消息入分发队列", group=Constants.PUBSUB_KEY)
 	public static final short Ms_Pub2Cache = 0x003F;
+	
 	@MCA(value="提交任务次数", group=Constants.PUBSUB_KEY)
 	public static final short Ms_SubmitTaskCnt = 0x0040;
+	
 	@MCA(value="消息重新分发次数", group=Constants.PUBSUB_KEY)
 	public static final short Ms_DoResendCnt = 0x0041;
+	
 	@MCA(value="消息重新分发遇到接收器为空次数", group=Constants.PUBSUB_KEY)
 	public static final short Ms_DoResendWithCbNullCnt = 0x0042;
 	
@@ -263,6 +289,15 @@ public final class MC {
 	@MCA("服务代理实例未找到")
 	public static final short MT_SERVICE_RROXY_NOT_FOUND = 0x004D;
 	
+	@MCA(value="线程池终止", group=Constants.EXECUTOR_POOL, desc="")
+	public static final short EP_TERMINAL = 0x004E;
+	
+	@MCA(value="线程池开始", group=Constants.EXECUTOR_POOL, desc="")
+	public static final short EP_START = 0x004F;
+	
+	@MCA(value="队列任务数报警", group=Constants.EXECUTOR_POOL, desc="")
+	public static final short EP_TASK_WARNING = 0x0050;
+	
 	public static final short KEEP_MAX_VAL = 0x0FFF;
 	
 	//每秒响应数定义为 QPS？ 
@@ -299,6 +334,7 @@ public final class MC {
     public static final Set<Short> MS_TYPES = new HashSet<>();
     public static final Set<Short> MTMS_TYPES = new HashSet<>();
     public static final Set<Short> STATIS_TYPES = new HashSet<>();
+    public static final Set<Short> EP_TYPES = new HashSet<>();
     
     public static final List<MCConfig> MC_CONFIGS = new ArrayList<>();
     
@@ -308,6 +344,7 @@ public final class MC {
     public static Short[] MT_TYPES_ARR;
     public static Short[] MS_TYPES_ARR;
     public static Short[] MTMS_TYPES_ARR;
+    public static Short[] EP_TYPES_ARR;
     
     public static Short[] STATIS_TYPES_ARR;
     public static Short[] STATIS_INDEX_ARR;
@@ -362,6 +399,9 @@ public final class MC {
 					MTMS_TYPES.add(val);
 				}else if(name.startsWith("STATIS_")) {
 					STATIS_TYPES.add(val);
+				}else if(name.startsWith("EP_")) {
+					EP_TYPES.add(val);
+					MTMS_TYPES.add(val);
 				}
 				
 				MT_TYPES_ARR = new Short[MT_TYPES.size()];
@@ -369,6 +409,9 @@ public final class MC {
 				
 				MS_TYPES_ARR = new Short[MS_TYPES.size()];
 				MS_TYPES.toArray(MS_TYPES_ARR);
+				
+				EP_TYPES_ARR = new Short[EP_TYPES.size()];
+				EP_TYPES.toArray(EP_TYPES_ARR);
 				
 				STATIS_TYPES_ARR = new Short[STATIS_TYPES.size()];
 				STATIS_TYPES.toArray(STATIS_TYPES_ARR);

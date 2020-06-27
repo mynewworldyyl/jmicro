@@ -715,7 +715,22 @@ jm.mng = {
         sn:'cn.jmicro.mng.api.ILogService',
         ns : 'mng',
         v:'0.0.1',
-    }
+    },
+
+    threadPoolSrv : {
+
+        serverList : function () {
+            return jm.mng.callRpcWithParams(this.sn, this.ns, this.v, 'serverList', []);
+        },
+
+        getInfo : function (key,type) {
+            return jm.mng.callRpcWithParams(this.sn, this.ns, this.v, 'getInfo', [key,type]);
+        },
+
+        sn:'cn.jmicro.mng.api.IThreadPoolMonitor',
+        ns : 'mng',
+        v:'0.0.1',
+    },
 
 }
 

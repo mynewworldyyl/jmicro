@@ -77,7 +77,7 @@ public class TestServiceCounter {
 					if(v == 0) {
 						sc.increment(MC.MT_REQ_TIMEOUT);
 					}else if(v == 1) {
-						sc.increment(MC.MT_CLIENT_SERVICE_ERROR);
+						sc.increment(MC.MT_SERVICE_ERROR);
 					}
 				}
 				

@@ -429,13 +429,13 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
 	    			cxt.appendCurUseTime("Go resp",false);
 	    		}
     		} else {
+    			//到这里肯定是超时了
     			if(openDebug) {
         			logger.info("Timeout req:"+req.getMethod()+",Service:" + req.getServiceName()+", Namespace:"+req.getNamespace());
         		}
     			if(cxt.isDebug()) {
 	    			cxt.appendCurUseTime("Timeout",true);
 	    		}
-    			//到这里肯定是超时了
     			String errMsg = "Timeout reqID:"+req.getRequestId()+",linkId:"+msg.getLinkId()+",timeout"+sm.getTimeout()+",Service: "+sm.getKey().toKey(true, true, true);
     			logger.warn(errMsg);
     			SF.eventLog(MC.MT_REQ_TIMEOUT, MC.LOG_WARN, TAG, errMsg);

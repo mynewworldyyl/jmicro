@@ -9,6 +9,7 @@
                       <Menu-item name="service" ><Icon type="ios-paper"></Icon>SERVICE</Menu-item>
                       <Menu-item name="statis"><Icon type="ios-stats" />STATIS</Menu-item>
                       <Menu-item name="monitors"><Icon type="ios-cog"></Icon>MONITORS</Menu-item>
+                      <Menu-item name="threadPool"><Icon type="ios-cog"></Icon>THREAD</Menu-item>
                   </Menu-group>
                   <Menu-group title="LOG">
                       <Menu-item name="invokeLinkView"><Icon type="ios-cog"></Icon>INVOKE LINK</Menu-item>
@@ -100,6 +101,12 @@
                             group="namedType"></JNamedTypeList>
           </Drawer>
 
+          <Drawer  v-model="cache.threadPool.drawerStatus" :closable="false" placement="left" :transfer="true"
+                   :draggable="true" :scrollable="true" width="50">
+              <JThreadPoolMonitorList slId="threadPoolId" evt-name="threadPoolSelect"
+                              group="threadPool"></JThreadPoolMonitorList>
+          </Drawer>
+
           <!-- route outlet -->
           <router-view></router-view>
       </div>
@@ -116,6 +123,7 @@
     import JAccount from './components/common/JAccount.vue'
     import JMonitorTypeKeyList from './components/monitor/JMonitorTypeKeyList.vue'
     import JNamedTypeList from './components/monitor/JNamedTypeList.vue'
+    import JThreadPoolMonitorList from './components/monitor/JThreadPoolMonitorList.vue'
 
     let cache = null;
 
@@ -128,7 +136,9 @@ export default {
         JRouterList,
         JAccount,
         JMonitorTypeKeyList,
-      JNamedTypeList,
+        JNamedTypeList,
+        JThreadPoolMonitorList,
+
     },
 
     data() {
@@ -187,6 +197,12 @@ export default {
 
         cache['router']={
             key: 'router',
+            drawerStatus:false,
+            drawerBtnStyle:{left:'0px',},
+        };
+
+        cache['threadPool']={
+            key: 'threadPool',
             drawerStatus:false,
             drawerBtnStyle:{left:'0px',},
         };

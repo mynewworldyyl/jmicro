@@ -534,10 +534,10 @@ public class SimpleObjectFactory implements IObjectFactory {
 					 }
 					 r.run();
 					 
-					 SF.eventLog(MC.MT_PLATFORM_LOG, MC.LOG_INFO, SimpleObjectFactory.class
+					 SF.eventLog(MC.MT_SERVER_START, MC.LOG_INFO, SimpleObjectFactory.class
 							 , JsonUtils.getIns().toJson(pi));
 				} else if(isMast[0]) {
-					 //失去master资格，退出
+					//失去master资格，退出
 					if(pi.isMaster()) {
 						pi.setMaster(false);
 						String p = ChoyConstants.INS_ROOT+"/" + pi.getId();

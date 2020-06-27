@@ -58,13 +58,12 @@ public class NamedTypeManager {
 		if(skey.contains(Constants.PATH_EXCAPE)) {
 			skey = skey.replaceAll(Constants.PATH_EXCAPE, "/");
 		}
+		
 		Map<String,Set<Short>> key2Types = named2Types;
 		Set<Short> change = key2Types.remove(skey);
-		
 		if(!change.isEmpty()) {
 			this.notifyChange(IListener.REMOVE, skey, change);
 		}
-		
 	}
 	
 	private void doSrvMoTypeUpdate(String skey, String data) {

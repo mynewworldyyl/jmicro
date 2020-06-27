@@ -229,7 +229,7 @@ public class ApiRawRequestMessageHandler implements IMessageHandler{
 		}
 		
 		if(SF.isLoggable(MC.LOG_DEBUG, msg.getLogLevel())) {
-			SF.eventLog(MC.MT_PLATFORM_LOG,MC.LOG_DEBUG, TAG," one response");
+			SF.eventLog(MC.MT_PLATFORM_LOG,MC.LOG_DEBUG, TAG,"one response");
 		}
 		session.write(msg);
 		

@@ -367,6 +367,7 @@ public class ServiceLoader{
 		usk.setVersion(ver);
 		usk.setInstanceName(Config.getInstanceName());
 		usk.setHost(Config.getHost());
+		usk.setPort(this.nettyServer.getPort());
 		
 		item.setKey(usk);
 		item.setImpl(impl);

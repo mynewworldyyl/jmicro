@@ -40,6 +40,7 @@
                     <JInvokeLinkView v-else-if="item.group == 'invokeLinkView'" :item="item"></JInvokeLinkView>
                     <JLogItemView v-else-if="item.group == 'logItemView'" :item="item"></JLogItemView>
                     <JNamedTypeEditor v-else-if="item.group == 'namedType'" :item="item"></JNamedTypeEditor>
+                    <JThreadPoolMonitorEditor v-else-if="item.group == 'threadPool'" :item="item"></JThreadPoolMonitorEditor>
 
                 </TabPane>
             </Tabs>
@@ -80,6 +81,7 @@
     import JMonitorTypeServiceMethodEditor from "./monitor/JMonitorTypeServiceMethodEditor.vue"
     import JLogItemView from "./monitor/JLogItemView.vue"
     import JNamedTypeEditor from "./monitor/JNamedTypeEditor.vue"
+    import JThreadPoolMonitorEditor from "./monitor/JThreadPoolMonitorEditor.vue"
 
     export default {
         name: 'JMicroEditor',
@@ -112,6 +114,7 @@
             JInvokeLinkView,
             JLogItemView,
             JNamedTypeEditor,
+            JThreadPoolMonitorEditor,
         },
 
         data () {
@@ -142,6 +145,8 @@
             this.mountServiceSelect('monitorTypeServiceMethodSelect');
 
             this.mountServiceSelect('namedTypeSelect');
+
+            this.mountServiceSelect('threadPoolSelect');
         },
 
         methods: {

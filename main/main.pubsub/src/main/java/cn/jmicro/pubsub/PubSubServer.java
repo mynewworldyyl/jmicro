@@ -181,7 +181,7 @@ public class PubSubServer implements IInternalSubRpc{
 		config.setTaskQueueSize(10000);
 		config.setThreadNamePrefix("PublishExecurot");
 		config.setRejectedExecutionHandler(new PubsubServerAbortPolicy());
-		executor = ExecutorFactory.createExecutor(config);
+		executor = of.get(ExecutorFactory.class).createExecutor(config);
 		
 		basketFactory = new BasketFactory<PSData>(2000,20);
 		

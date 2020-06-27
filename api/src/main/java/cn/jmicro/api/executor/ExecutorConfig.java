@@ -2,6 +2,9 @@ package cn.jmicro.api.executor;
 
 import java.util.concurrent.RejectedExecutionHandler;
 
+import cn.jmicro.api.annotation.SO;
+
+@SO
 public class ExecutorConfig {
 
     private int msCoreSize = 1;
@@ -16,7 +19,7 @@ public class ExecutorConfig {
 	
 	private String threadNamePrefix = "JmicroExecutor";
 	
-	private RejectedExecutionHandler rejectedExecutionHandler;
+	private transient RejectedExecutionHandler rejectedExecutionHandler;
 
 	public RejectedExecutionHandler getRejectedExecutionHandler() {
 		return rejectedExecutionHandler;
