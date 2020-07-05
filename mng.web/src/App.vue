@@ -49,6 +49,7 @@
                   <MenuItem name="help"> <Icon type="ios-cog"></Icon>HELP</MenuItem>
                   <MenuItem name="about"> <Icon type="ios-cog"></Icon>ABOUT</MenuItem>
                   <MenuItem name="contact"> <Icon type="ios-cog"></Icon>CONTACT ME</MenuItem>
+                  <MenuItem name="testing"> <Icon type="ios-cog"></Icon>TESTING</MenuItem>
               </Submenu>
 
           </Menu>

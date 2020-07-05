@@ -27,7 +27,7 @@ jm.config ={
     txtContext : '_txt_',
     binContext : '_bin_',
     httpContext : '/_http_',
-    useWs : true
+    useWs : false
 }
 
 jm.Constants = {
@@ -43,32 +43,40 @@ jm.Constants = {
 }
 
 jm.transport = {
-    send : function(data,cb){
+    httpContext: 'http://' + jm.config.ip + ':' + jm.config.port +'/'+ jm.config.httpContext,
+    send : function(msg,cb){
         if(jm.config.useWs){
-            jm.socket.send(data,cb);
+            jm.socket.send(msg,cb);
         } else {
-            //jm.http.postHelper(jm.http.getHttpApiPath(),data,cb);
-            $.ajax({
-                url: jm.http.getHttpApiPath(),
-                type: "post",
-                dataType: "json",
-                data: jm.socket.encode(data,false),
-                headers: {'Content-Type': 'application/json','DataEncoderType':1},
-                success: function (result, statuCode, xhr) {
-                    //sucCb(data, statuCode, xhr);
-                	result.payload=JSON.parse(result.payload);
-                	cb(result,null);
-                },
-                beforeSend: function (xhr) {
-                },
-                error: function (err, xhr) {
-                    if (errCb) {
-                        errCb(err, xhr);
-                    } else {
-                        sucCb(null, err, xhr);
+            let buff = msg.encode();
+            let xhr = new XMLHttpRequest();
+            xhr.responseType='arraybuffer';
+            xhr.onload = function() {
+                if(xhr.readyState == 4 ) {
+                    if(xhr.status == 200) {
+                        let respBuff = xhr.response;
+                        let respMsg = new  jm.rpc.Message();
+                        respMsg.decode(respBuff);
+                        if(respMsg.type == jm.mng.ps.MSG_TYPE_ASYNC_RESP) {
+                            if(!respMsg.success) {
+                                throw 'fail:' + respMsg.payload;
+                            }
+                            jm.mng.ps.onMsg(respMsg.payload);
+                        } else  {
+                            if(respMsg.getDownProtocol() == jm.rpc.Constants.PROTOCOL_BIN) {
+                                let resp = new jm.rpc.ApiResponse();
+                                resp.decode(respMsg.payload, respMsg.getDownProtocol());
+                                respMsg.payload = resp;
+                            }
+                            cb(respMsg);
+                        }
+                    }else {
+                        cb(null,xhr.statusText);
                     }
                 }
-            })
+            }
+            xhr.open('POST',this.httpContext,true);
+            xhr.send(buff);
         }
     },
 
@@ -93,7 +101,7 @@ jm.rpc = {
         msg.setDumpDownStream(false);
         msg.setDumpUpStream(false);
         msg.setNeedResponse(true);
-        msg.setLoggable(false);
+        //msg.setLoggable(false);
         msg.setMonitorable(false);
         msg.setDebugMode(false);
         msg.setLogLevel(jm.rpc.Constants.LOG_NO)//LOG_WARN
@@ -386,32 +394,30 @@ jm.rpc.Constants = {
 
     MSG_VERSION :1,
 
-    FLAG_UP_PROTOCOL : 1 << 0,
-
-    FLAG0_DOWN_PROTOCOL : 1 << 6,
+    //长度字段类型，1表示整数，0表示短整数
+    FLAG_LENGTH_INT : 1 << 0,
 
     //调试模式
-    FLAG_DEBUG_MODE : 1 << 1,
+    FLAG_DEBUG_MODE  :  1 << 1,
 
     //需要响应的请求
-    FLAG_NEED_RESPONSE : 1 << 2,
+    FLAG_NEED_RESPONSE  :  1 << 2,
 
-    //0B00111000 5---3
-    FLAG_LEVEL : 0X38,
+    FLAG_UP_PROTOCOL  :  1<<5,
 
-    //长度字段类型，1表示整数，0表示短整数
-    FLAG_LENGTH_INT : 1 << 6,
+    FLAG_DOWN_PROTOCOL  :  1 << 6,
 
     //DUMP上行数据
-    FLAG0_DUMP_UP : 1 << 0,
+    FLAG_DUMP_UP  :  1 << 7,
+
     //DUMP下行数据
-    FLAG0_DUMP_DOWN : 1 << 1,
+    FLAG_DUMP_DOWN  :  1 << 8,
 
     //可监控消息
-    FLAG0_MONITORABLE : 1 << 2,
+    FLAG_MONITORABLE  :  1 << 9,
 
-    //是否启用服务级log
-    FLAG0_LOGGABLE : 1 << 3,
+    //可监控消息
+    FLAG_ASYNC_RESUTN_RESULT  :  1 << 13,
 
 }
 
@@ -428,37 +434,29 @@ jm.rpc.Message = function() {
 
     //payload length with byte,4 byte length
     //private int len;
-
     // 1 byte
     this.type = 0;
 
     /**
-     * dm: is development mode
-     * S: data length type 0:short 1:int
-     * N: need Response
-     * PR: protocol 0:bin, 1:json
-     * PPP: Message priority
+     * 0        S:       data length type 0:short 1 : int
+     * 1        dm:      is development mode
+     * 2        N:       need Response
+     * 3,4      PP:      Message priority
+     * 5        UPR:     up protocol  0:bin,  1: json
+     * 6        DPR:     down protocol 0:bin, 1 : json
+     * 7        up:      dump up stream data
+     * 8        do:      dump down stream data
+     * 9        M:       Monitorable
+     * 10,11,12 LLL      Log level
+     * 13       A:       async return result，different from async RPC
      *
-     *   S P P  P  N dm PR
-     * | | | |  |  |  | |
-     * 7 6 5 4  3  2  1 0
+     A   L  L   L   M  DO UP  DPR  UPR  P    P   N   dm   S
+     |    |   |   |  |   |   |  |  |   |    |    |    |   |    |   |
+     15  14  13  12  11  10  9  8  7   6    5    4    3   2    1   0
+
      * @return
      */
     this.flag = 0;
-
-    /**
-     * up: dump up stream data
-     * do: dump down stream data
-     * M: Monitorable
-     * L: 日志级别
-
-     *
-     *     L L L M  do up
-     * | | | | | |  |  |
-     * 7 6 5 4 3 2  1  0
-     * @return
-     */
-    this.flag0 = 0;
 
     //request or response
     //private boolean isReq;
@@ -488,41 +486,38 @@ jm.rpc.Message.prototype.set = function( isTrue, f, mask) {
     return isTrue ?(f |= mask):(f &= ~mask);
 }
 
-//public static boolean
-/* jm.rpc.Message.prototype.is( flag, mask) {
-    return (flag & mask) != 0;
-},*/
+jm.rpc.Message.prototype.isAsyncReturnResult = function() {
+    return this.is(this.flag,jm.rpc.Constants.FLAG_ASYNC_RESUTN_RESULT);
+}
+
+jm.rpc.Message.prototype.setAsyncReturnResult = function(f) {
+    this.flag = set(f,this.flag,jm.rpc.Constants.FLAG_ASYNC_RESUTN_RESULT);
+}
 
 jm.rpc.Message.prototype.isDumpUpStream = function()  {
-    return this.is(this.flag0,jm.rpc.Constants.FLAG0_DUMP_UP);
+    return this.is(this.flag,jm.rpc.Constants.FLAG_DUMP_UP);
 }
 
 //public boolean
 jm.rpc.Message.prototype.isDumpDownStream = function() {
-    return this.is(this.flag0, jm.rpc.Constants.FLAG0_DUMP_DOWN);
+    return this.is(this.flag, jm.rpc.Constants.FLAG_DUMP_DOWN);
 }
 
 //public void
 jm.rpc.Message.prototype.setDumpUpStream = function(f)  {
-    //this.flag0 |= f ? jm.rpc.Constants.FLAG0_DUMP_UP : 0 ;
-    this.flag0  = this.set(f,this.flag0 ,jm.rpc.Constants.FLAG0_DUMP_UP);
+    //this.flag |= f ? jm.rpc.Constants.FLAG_DUMP_UP : 0 ;
+    this.flag  = this.set(f,this.flag ,jm.rpc.Constants.FLAG_DUMP_UP);
 }
 
 //public boolean
 jm.rpc.Message.prototype.setDumpDownStream = function(f)  {
-    //return this.is(flag0,jm.rpc.Constants.FLAG0_DUMP_DOWN);
-    this.flag0  = this.set(f,this.flag0 ,jm.rpc.Constants.FLAG0_DUMP_DOWN);
+    //return this.is(flag,jm.rpc.Constants.FLAG_DUMP_DOWN);
+    this.flag  = this.set(f,this.flag ,jm.rpc.Constants.FLAG_DUMP_DOWN);
 }
 
 //public boolean
 jm.rpc.Message.prototype.isLoggable = function()  {
-    return this.is(this.flag0,jm.rpc.Constants.FLAG0_LOGGABLE);
-}
-
-//public void
-jm.rpc.Message.prototype.setLoggable = function(f)  {
-    //this.flag0 |= f ? jm.rpc.Constants.FLAG0_LOGGABLE : 0 ;
-    this.flag0  = this.set(f,this.flag0 ,jm.rpc.Constants.FLAG0_LOGGABLE);
+    return this.is(this.flag,jm.rpc.Constants.FLAG_LOGGABLE);
 }
 
 //public boolean
@@ -538,13 +533,13 @@ jm.rpc.Message.prototype.setDebugMode = function(f)  {
 
 //public boolean
 jm.rpc.Message.prototype.isMonitorable = function()  {
-    return this.is(this.flag0,jm.rpc.Constants.FLAG0_MONITORABLE);
+    return this.is(this.flag,jm.rpc.Constants.FLAG_MONITORABLE);
 }
 
 //public void
 jm.rpc.Message.prototype.setMonitorable = function(f)  {
-   // this.flag0 |= f ? jm.rpc.Constants.FLAG0_MONITORABLE : 0 ;
-    this.flag0  = this.set(f,this.flag0 ,jm.rpc.Constants.FLAG0_MONITORABLE);
+   // this.flag |= f ? jm.rpc.Constants.FLAG_MONITORABLE : 0 ;
+    this.flag  = this.set(f,this.flag ,jm.rpc.Constants.FLAG_MONITORABLE);
 }
 
 //public boolean
@@ -580,7 +575,7 @@ jm.rpc.Message.prototype.getPriority = function()  {
 
 //public void
 jm.rpc.Message.prototype.setPriority = function(l)  {
-    if(l > jm.rpc.Constants.PRIORITY_7 || l < jm.rpc.Constants.PRIORITY_0) {
+    if(l > jm.rpc.Constants.PRIORITY_3 || l < jm.rpc.Constants.PRIORITY_0) {
         throw "Invalid priority: "+l;
     }
     this.flag = ((l << 3) | this.flag);
@@ -588,7 +583,7 @@ jm.rpc.Message.prototype.setPriority = function(l)  {
 
 //public byte
 jm.rpc.Message.prototype.getLogLevel = function()  {
-    return ((this.flag0 >>> 3) & 0x07);
+    return ((this.flag >>> 10) & 0x07);
 }
 
 //public void
@@ -596,7 +591,7 @@ jm.rpc.Message.prototype.setLogLevel = function(v)  {
     if(v < jm.rpc.Constants.LOG_NO || v > jm.rpc.Constants.LOG_FINAL) {
         throw "Invalid Log level: "+v;
     }
-    this.flag0 = ((v << 3) | this.flag0);
+    this.flag = ((v << 10) | this.flag);
 }
 
 jm.rpc.Message.prototype.getUpProtocol=function() {
@@ -608,12 +603,12 @@ jm.rpc.Message.prototype.setUpProtocol=function(protocol) {
 }
 
 jm.rpc.Message.prototype.getDownProtocol = function() {
-    return this.is(this.flag0, jm.rpc.Constants.FLAG0_DOWN_PROTOCOL)?1:0;
+    return this.is(this.flag, jm.rpc.Constants.FLAG_DOWN_PROTOCOL)?1:0;
 }
 
 jm.rpc.Message.prototype.setDownProtocol = function(protocol) {
     //this.flag |= protocol == jm.rpc.Constants.PROTOCOL_JSON ? jm.rpc.Constants.FLAG_DOWN_PROTOCOL : 0 ;
-    this.flag0  = this.set(protocol == jm.rpc.Constants.PROTOCOL_JSON ,this.flag0 ,jm.rpc.Constants.FLAG0_DOWN_PROTOCOL);
+    this.flag  = this.set(protocol == jm.rpc.Constants.PROTOCOL_JSON ,this.flag ,jm.rpc.Constants.FLAG_DOWN_PROTOCOL);
 }
 
 //public static Message
@@ -621,7 +616,7 @@ jm.rpc.Message.prototype.decode = function(b) {
     let msg = this;
     let dataInput = new jm.utils.JDataInput(b);
     //第0个字节
-    msg.flag = dataInput.getUByte();
+    msg.flag = dataInput.readUnsignedShort();
     let len = 0;
     if(this.isLengthInt()) {
         len = dataInput.readInt();
@@ -647,7 +642,7 @@ jm.rpc.Message.prototype.decode = function(b) {
     msg.linkId = dataInput.readInt();
 
     //第13个字节
-    msg.flag0 = dataInput.getUByte();
+    //msg.flag = dataInput.getUByte();
 
     if(msg.isDebugMode()) {
         //读取测试数据头部
@@ -729,7 +724,7 @@ jm.rpc.Message.prototype.encode = function() {
     //let b = new DataView(buf);
     //第0个字节，标志头
     //b.put(this.flag);
-    buf.writeUByte(this.flag);
+    buf.writeUnsignedShort(this.flag);
 
     if(maxLen < jm.rpc.Constants.MAX_SHORT_VALUE) {
         //第1，2个字节 ,len = 数据长度 + 测试模式时附加数据长度
@@ -756,10 +751,6 @@ jm.rpc.Message.prototype.encode = function() {
     //第9，10，11，12个字节
     //writeUnsignedInt(b, this.linkId);
     buf.writeInt(this.linkId);
-
-    //第13个字节
-    //b.put(this.flag0);
-    buf.writeUByte(this.flag0);
 
     if(this.isDebugMode()) {
         //b.putLong(this.getId());
@@ -806,7 +797,7 @@ jm.rpc.Message.prototype.encode = function() {
 
 jm.rpc.Message.prototype.toString = function() {
     return "Message [version=" + this.version + ", msgId=" + this.msgId + ", reqId=" + this.reqId + ", linkId=" + this.linkId
-        + ", type=" + this.type + ", flag=" + Number.toHexString(this.flag) + ", flag0=" + Number.toHexString(this.flag0)
+        + ", type=" + this.type + ", flag=" + Number.toHexString(this.flag)
         + ", payload=" + this.payload + ", time="+ this.time
         + ", devMode=" + this.isDebugMode() + ", monitorable="+ this.isMonitorable()
         + ", needresp="+ this.isNeedResponse()

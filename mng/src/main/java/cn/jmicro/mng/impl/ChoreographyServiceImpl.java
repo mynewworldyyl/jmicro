@@ -15,28 +15,28 @@ import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Inject;
 import cn.jmicro.api.annotation.Reference;
 import cn.jmicro.api.annotation.Service;
+import cn.jmicro.api.choreography.AgentInfo;
+import cn.jmicro.api.choreography.AgentInfoVo;
 import cn.jmicro.api.choreography.ChoyConstants;
+import cn.jmicro.api.choreography.Deployment;
 import cn.jmicro.api.choreography.ProcessInfo;
 import cn.jmicro.api.idgenerator.ComponentIdServer;
 import cn.jmicro.api.mng.ConfigNode;
+import cn.jmicro.api.mng.IChoreographyService;
+import cn.jmicro.api.mng.ICommonManager;
 import cn.jmicro.api.mng.IConfigManager;
 import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.monitor.SF;
 import cn.jmicro.api.raft.IDataOperator;
 import cn.jmicro.api.security.ActInfo;
-import cn.jmicro.choreography.api.Deployment;
 import cn.jmicro.choreography.api.IResourceResponsitory;
 import cn.jmicro.choreography.api.PackageResource;
-import cn.jmicro.choreography.base.AgentInfo;
 import cn.jmicro.choreography.instance.InstanceManager;
 import cn.jmicro.common.util.JsonUtils;
 import cn.jmicro.common.util.StringUtils;
-import cn.jmicro.mng.api.IChoreographyService;
-import cn.jmicro.mng.api.ICommonManager;
-import cn.jmicro.mng.api.choreography.AgentInfoVo;
 
 @Component
-@Service(namespace="mng", version="0.0.1",retryCnt=0,external=true)
+@Service(namespace="mng", version="0.0.1",retryCnt=0,external=true,debugMode=1)
 public class ChoreographyServiceImpl implements IChoreographyService {
 
 	private final static Logger logger = LoggerFactory.getLogger(ChoreographyServiceImpl.class);

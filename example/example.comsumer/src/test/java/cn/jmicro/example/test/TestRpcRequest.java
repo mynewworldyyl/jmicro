@@ -6,6 +6,10 @@ import java.util.Map;
 import org.junit.Test;
 
 import cn.jmicro.api.JMicro;
+import cn.jmicro.api.async.AsyncFailResult;
+import cn.jmicro.api.async.IPromise;
+import cn.jmicro.api.async.PromiseUtils;
+import cn.jmicro.api.client.IAsyncCallback;
 import cn.jmicro.api.net.Message;
 import cn.jmicro.api.service.ICheckable;
 import cn.jmicro.example.api.DynamicInterface;
@@ -70,6 +74,34 @@ public class TestRpcRequest extends JMicroBaseTestCase{
 		DynamicInterface r = of.getRemoteServie(DynamicInterface.class.getName(), "JMicroBaseTestCase_DynamicRegistryService",
 				"0.0.1",null);	
 		//r.run();
+	}
+	
+	@Test
+	public void testClientAsyncRpc() {
+		ISimpleRpc sayHelloSrv = of.getRemoteServie(ISimpleRpc.class.getName(),"simpleRpc","0.0.1",null);
+		
+		IPromise<String> p = PromiseUtils.callService(sayHelloSrv, "hello", "hello async rpc");
+		
+		p.then((msg,fail) -> {
+			System.out.println(msg);
+		});
+		
+		this.waitForReady(1000);
+
+	}
+	
+	@Test
+	public void testLinkRpcAsync() {
+		ISimpleRpc sayHelloSrv = of.getRemoteServie(ISimpleRpc.class.getName(),"simpleRpc","0.0.1",null);
+		
+		IPromise<String> p = PromiseUtils.callService(sayHelloSrv, "linkRpc", "linkRpc async rpc");
+		
+		p.then((msg,fail) -> {
+			System.out.println(msg);
+		});
+		
+		this.waitForReady(1000);
+
 	}
 	
 }

@@ -23,6 +23,7 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
 
 import cn.jmicro.common.Constants;
+
 /**
  * 
  * @author Yulei Ye

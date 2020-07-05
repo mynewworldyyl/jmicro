@@ -111,6 +111,7 @@ public interface Constants {
 	
 	//public static final String CONTEXT_CALLBACK_SERVICE = "ServiceCallback";
 	public static final String CONTEXT_CALLBACK_CLIENT = "ClientCallback";
+	public static final String CONTEXT_SERVICE_RESPONSE = "serviceResponse";
 	
 	public static final String SERVICE_ITEM_KEY = "serviceItemKey";
 	
@@ -165,8 +166,8 @@ public interface Constants {
 	public static final byte MSG_TYPE_API_CLASS_REQ = (byte)0x07; //API网关请求
 	public static final byte MSG_TYPE_API_CLASS_RESP = (byte)0x08;//API网关请求响应
 	
-	public static final byte MSG_TYPE_API_REQ = (byte)0x09; //API网关请求
-	public static final byte MSG_TYPE_API_RESP = (byte)0x0A;//API网关请求响应
+	//public static final byte MSG_TYPE_API_REQ = (byte)0x09; //API网关请求
+	//public static final byte MSG_TYPE_API_RESP = (byte)0x0A;//API网关请求响应
 	
 	public static final byte MSG_TYPE_ID_REQ = (byte)0x0B; //Id请求
 	public static final byte MSG_TYPE_ID_RESP = (byte)0x0C;//Id请求响应

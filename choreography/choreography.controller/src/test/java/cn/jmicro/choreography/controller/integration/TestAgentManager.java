@@ -20,11 +20,11 @@ import org.junit.Assert;
 import org.junit.Test;
 
 import cn.jmicro.api.IListener;
+import cn.jmicro.api.choreography.AgentInfo;
 import cn.jmicro.api.choreography.ChoyConstants;
 import cn.jmicro.api.idgenerator.ComponentIdServer;
 import cn.jmicro.api.raft.IDataOperator;
 import cn.jmicro.choreography.agent.AgentManager;
-import cn.jmicro.choreography.base.AgentInfo;
 import cn.jmicro.common.util.JsonUtils;
 import cn.jmicro.test.JMicroBaseTestCase;
 

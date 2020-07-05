@@ -16,13 +16,10 @@
  */
 package cn.jmicro.api.gateway;
 
-import java.io.IOException;
-import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Map;
 
 import cn.jmicro.api.annotation.SO;
-import cn.jmicro.api.codec.JDataInput;
 import cn.jmicro.api.net.IReq;
 import cn.jmicro.api.net.Message;
 

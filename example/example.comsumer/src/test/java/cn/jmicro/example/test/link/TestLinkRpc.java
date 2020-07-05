@@ -2,6 +2,8 @@ package cn.jmicro.example.test.link;
 
 import org.junit.Test;
 
+import cn.jmicro.api.async.IPromise;
+import cn.jmicro.api.async.PromiseUtils;
 import cn.jmicro.example.api.rpc.ISimpleRpc;
 import cn.jmicro.test.JMicroBaseTestCase;
 
@@ -38,6 +40,19 @@ public class TestLinkRpc extends JMicroBaseTestCase{
 			}
 			System.out.println(ms.linkRpc("Test link: "+i));
 		}
+		
+		this.waitForReady(1000);
+	}
+	
+	@Test
+	public void testAsyncLinkRpc() {
+		ISimpleRpc sayHelloSrv = of.getRemoteServie(ISimpleRpc.class.getName(),"simpleRpc","0.0.1",null);
+		
+		IPromise<String> p = PromiseUtils.callService(sayHelloSrv, "linkRpc", "Test link async");
+		
+		p.then((msg,fail) -> {
+			System.out.println(msg);
+		});
 		
 		this.waitForReady(1000);
 	}

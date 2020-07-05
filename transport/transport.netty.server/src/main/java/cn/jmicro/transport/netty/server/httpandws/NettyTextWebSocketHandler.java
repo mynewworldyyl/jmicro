@@ -21,7 +21,6 @@ import org.slf4j.LoggerFactory;
 
 import cn.jmicro.api.JMicroContext;
 import cn.jmicro.api.annotation.Cfg;
-import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Inject;
 import cn.jmicro.api.codec.ICodecFactory;
 import cn.jmicro.api.idgenerator.ComponentIdServer;
@@ -31,7 +30,6 @@ import cn.jmicro.api.net.Message;
 import cn.jmicro.common.Constants;
 import cn.jmicro.common.util.JsonUtils;
 import cn.jmicro.transport.netty.server.NettyServerSession;
-import io.netty.channel.ChannelHandler.Sharable;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.handler.codec.http.websocketx.TextWebSocketFrame;
@@ -42,8 +40,8 @@ import io.netty.util.AttributeKey;
  * @author Yulei Ye
  * @date 2018年10月21日-下午9:16:10
  */
-@Component(lazy=false,side=Constants.SIDE_PROVIDER)
-@Sharable
+//@Component(lazy=false,side=Constants.SIDE_PROVIDER)
+//@Sharable
 public class NettyTextWebSocketHandler extends SimpleChannelInboundHandler<TextWebSocketFrame>{
 	
 	static final Logger logger = LoggerFactory.getLogger(NettyServerSession.class);

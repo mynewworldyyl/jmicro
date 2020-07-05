@@ -16,10 +16,14 @@
  */
 package cn.jmicro.example.comsumer;
 
+import com.cloudogu.blog.annotationprocessor.log.Log;
+
 import cn.jmicro.api.JMicro;
+import cn.jmicro.api.JMicroContext;
 import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.monitor.SF;
 import cn.jmicro.api.objectfactory.IObjectFactory;
+import cn.jmicro.codegenerator.ServiceGen;
 import cn.jmicro.example.api.rpc.ISimpleRpc;
 
 /**
@@ -28,13 +32,14 @@ import cn.jmicro.example.api.rpc.ISimpleRpc;
  *
  * @date: 2018年11月10日 下午9:23:25
  */
+@ServiceGen
+@Log
 public class ServiceComsumer {
 
 	public static void main(String[] args) {
 		
 		IObjectFactory of = JMicro.getObjectFactoryAndStart(args);
-		
-		//JMicroContext.get().setParam("routerTag", "tagValue");
+		JMicroContext.get().setParam("routerTag", "tagValue");
 		
 		//got remote service from object factory
 		//ISimpleRpc src = of.getRemoteServie(ISimpleRpc.class,null);

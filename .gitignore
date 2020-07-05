@@ -218,6 +218,13 @@ etcd/.settings/
 etcd/logs/
 etcd/bin/
 etcd/data/
+codegenerator/target/
+codegenerator/.classpath
+codegenerator/.project
+codegenerator/.settings/
+codegenerator/logs/
+codegenerator/bin/
+codegenerator/data/
 classloader/target/
 classloader/.classpath
 classloader/.project

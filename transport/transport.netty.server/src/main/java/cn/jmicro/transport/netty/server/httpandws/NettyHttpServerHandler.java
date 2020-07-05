@@ -65,21 +65,25 @@ public class NettyHttpServerHandler extends ChannelInboundHandlerAdapter {
     	
     	if(msg instanceof FullHttpRequest){
     		FullHttpRequest req = (FullHttpRequest)msg;
+    		NettyServerSession session = ctx.attr(sessionKey).get();
+    		//cors(req,session);
     		if(resourceHandler.canhandle(req)){
     			//全部GET请求转到资源控制器上面
     			resourceHandler.handle(ctx, req);
     		} else if(req.method().equals(HttpMethod.POST)){
     			//全部POST请求转到RPC控制器上面,因为RPC只能用POST请求
-    			NettyServerSession session = ctx.attr(sessionKey).get();
     	    	
     			ByteBuf bb = req.content();
     			byte[] bts = new byte[bb.readableBytes()];
     			bb.readBytes(bts);
+    			
+    			session.receive(ByteBuffer.wrap(bts));
+    			
     			//String encodeType = req.headers().get(Constants.HTTP_HEADER_ENCODER);
     			
-    			Message message = Message.decode(new JDataInput(ByteBuffer.wrap(bts)));
+    			/*Message message = Message.decode(new JDataInput(ByteBuffer.wrap(bts)));
 				JMicroContext.configProvider(session,message);
-				receiver.receive(session,message);
+				receiver.receive(session,message);*/
 				
     			/*if(encodeType == null || encodeType.equals(Message.PROTOCOL_JSON+"")) {
     				String result = new String(bts,Constants.CHARSET);
@@ -98,7 +102,7 @@ public class NettyHttpServerHandler extends ChannelInboundHandlerAdapter {
     	}
     }
     
-    @Override
+	@Override
     public void channelReadComplete(ChannelHandlerContext ctx) throws Exception {
         ctx.flush();
     }
@@ -108,6 +112,10 @@ public class NettyHttpServerHandler extends ChannelInboundHandlerAdapter {
     	super.handlerAdded(ctx);
     	NettyServerSession session = new NettyServerSession(ctx,readBufferSize,heardbeatInterval,
     			Constants.TYPE_HTTP);
+    	
+    	session.setReceiver(receiver);
+    	session.setDumpDownStream(false);
+    	session.setDumpUpStream(false);
     	session.init();
     	ctx.channel().attr(sessionKey).set(session);
     }

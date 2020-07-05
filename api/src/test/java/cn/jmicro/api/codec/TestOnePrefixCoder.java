@@ -201,7 +201,7 @@ public class TestOnePrefixCoder {
 		req.setVersion("0.0.1");
 		
 		Message msg = new Message();
-		msg.setType(Constants.MSG_TYPE_API_REQ);
+		msg.setType(Constants.MSG_TYPE_REQ_RAW);
 		msg.setUpProtocol(Message.PROTOCOL_BIN);
 		msg.setId(0);
 		msg.setReqId(0L);
@@ -231,7 +231,7 @@ public class TestOnePrefixCoder {
 		req.setSuccess(true);
 		
 		Message msg = new Message();
-		msg.setType(Constants.MSG_TYPE_API_REQ);
+		msg.setType(Constants.MSG_TYPE_REQ_RAW);
 		msg.setUpProtocol(Message.PROTOCOL_BIN);
 		msg.setId(0);
 		msg.setReqId(0L);

@@ -37,10 +37,11 @@
         },
 
         created() {
+            this.loadServerList();
         },
 
         mounted(){
-            this.loadServerList();
+
         },
 
         methods:{
@@ -82,7 +83,8 @@
                         tn.type = 'ins';
                         rs.push(tn);
                     }
-                    let s = new TreeNode(n.key, n.key,null,tn,n,n.key);
+                    let t = n.ec.threadNamePrefix;
+                    let s = new TreeNode(n.key, t,null,tn,n,t);
                     s.group = GROUP;
                     s.type = 'mo';
                     tn.addChild(s);

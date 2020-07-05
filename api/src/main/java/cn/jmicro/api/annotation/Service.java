@@ -93,7 +93,7 @@ public @interface Service {
 	/**
 	 * 请求超时，单位是毫秒
 	 */
-	public int timeout() default 5000;
+	public int timeout() default 10000;
 	
 	/**
 	 * 系统检测自动带上的参数 

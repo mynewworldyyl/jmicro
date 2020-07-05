@@ -368,7 +368,7 @@ jm.mng = {
             return req;
         },
 
-        sn:'cn.jmicro.mng.api.ICommonManager',
+        sn:'cn.jmicro.api.mng.ICommonManager',
         ns : MNG,
         v:'0.0.1',
     },
@@ -485,7 +485,7 @@ jm.mng = {
             return jm.mng.callRpcWithParams(this.sn,this.ns,this.v,'enable',[srvKey,enable]);
         },
 
-        sn:'cn.jmicro.mng.api.IMonitorServerManager',
+        sn:'cn.jmicro.api.mng.IMonitorServerManager',
         ns : MNG,
         v:'0.0.1',
     },
@@ -555,7 +555,7 @@ jm.mng = {
             return jm.mng.callRpcWithParams(this.sn,this.ns,this.v,'changeAgentState',[agentId]);
         },
 
-        sn:'cn.jmicro.mng.api.IChoreographyService',
+        sn:'cn.jmicro.api.mng.IChoreographyService',
         ns : 'mng',
         v:'0.0.1',
     },
@@ -618,7 +618,7 @@ jm.mng = {
             });
         },
 
-        sn:'cn.jmicro.mng.api.ICommonManager',
+        sn:'cn.jmicro.api.mng.ICommonManager',
         ns : MNG,
         v:'0.0.1',
     },
@@ -681,7 +681,7 @@ jm.mng = {
             return jm.mng.callRpcWithParams(this.sn,this.ns,this.v,'getNamedList',[]);
         },
 
-        sn:'cn.jmicro.mng.api.IMonitorTypeService',
+        sn:'cn.jmicro.api.mng.IMonitorTypeService',
         ns : 'mng',
         v:'0.0.1',
     },
@@ -712,7 +712,7 @@ jm.mng = {
             return jm.mng.callRpcWithParams(this.sn, this.ns, this.v, 'queryLog', [params,pageSize,curPage]);
         },
 
-        sn:'cn.jmicro.mng.api.ILogService',
+        sn:'cn.jmicro.api.mng.ILogService',
         ns : 'mng',
         v:'0.0.1',
     },
@@ -727,7 +727,7 @@ jm.mng = {
             return jm.mng.callRpcWithParams(this.sn, this.ns, this.v, 'getInfo', [key,type]);
         },
 
-        sn:'cn.jmicro.mng.api.IThreadPoolMonitor',
+        sn:'cn.jmicro.api.mng.IThreadPoolMonitor',
         ns : 'mng',
         v:'0.0.1',
     },

@@ -127,7 +127,7 @@ public class MonitorClient {
 		statusMonitorAdapter = new MonitorClientStatusAdapter(TYPES,typeLabels,
 				Config.getInstanceName()+"_MonitorClientStatuCheck",group);
 		
-		if(sl.hashServer()) {
+		if(sl.hashServer() && !Config.isClientOnly()) {
 			ServiceItem si = sl.createSrvItem(IMonitorAdapter.class, Config.getInstanceName()+"."+group, "0.0.1", IMonitorAdapter.class.getName());
 			of.regist("MonitorClientStatuCheckAdapter", statusMonitorAdapter);
 			sl.registService(si,statusMonitorAdapter);

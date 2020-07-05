@@ -306,6 +306,11 @@ public class ServiceLoader{
 	
 	public ServiceItem registService(ServiceItem item,Object srv) {
 		
+		if(Config.isClientOnly()) {
+			logger.warn("Client only cannot export service!");
+			return null;
+		}
+		
 		if(item == null){
 			logger.error("Service item cannot be NULL");
 			return null;
@@ -335,6 +340,10 @@ public class ServiceLoader{
 	}
 	
 	public ServiceItem createSrvItem(Class<?> interfacez,String ns,String ver,String impl) {
+		if(Config.isClientOnly()) {
+			logger.warn("Client only cannot export service!");
+			return null;
+		}
 		if(!interfacez.isInterface()) {
 			logger.error("RPC service have to be public interface: "+interfacez.getName());
 		}

@@ -11,11 +11,11 @@ import cn.jmicro.api.annotation.Inject;
 import cn.jmicro.api.annotation.Service;
 import cn.jmicro.api.config.DictManager;
 import cn.jmicro.api.i18n.I18NManager;
+import cn.jmicro.api.mng.ICommonManager;
 import cn.jmicro.common.util.StringUtils;
-import cn.jmicro.mng.api.ICommonManager;
 
 @Component
-@Service(namespace="mng", version="0.0.1",external=true)
+@Service(namespace="mng", version="0.0.1",external=true,debugMode=1)
 public class CommonManagerImpl implements ICommonManager {
 
 	@Cfg("/notLonginClientId")

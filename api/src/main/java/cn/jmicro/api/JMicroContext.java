@@ -25,12 +25,14 @@ import org.slf4j.LoggerFactory;
 
 import cn.jmicro.api.config.Config;
 import cn.jmicro.api.idgenerator.ComponentIdServer;
+import cn.jmicro.api.internal.async.IClientAsyncCallback;
 import cn.jmicro.api.monitor.Linker;
 import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.monitor.MRpcItem;
 import cn.jmicro.api.monitor.MonitorClient;
 import cn.jmicro.api.monitor.SF;
 import cn.jmicro.api.net.IRequest;
+import cn.jmicro.api.net.IResponse;
 import cn.jmicro.api.net.ISession;
 import cn.jmicro.api.net.Message;
 import cn.jmicro.api.registry.IRegistry;
@@ -38,6 +40,7 @@ import cn.jmicro.api.registry.ServiceItem;
 import cn.jmicro.api.registry.ServiceMethod;
 import cn.jmicro.api.registry.UniqueServiceMethodKey;
 import cn.jmicro.api.security.ActInfo;
+import cn.jmicro.api.service.IServiceAsyncResponse;
 import cn.jmicro.api.service.ServiceLoader;
 import cn.jmicro.common.CommonException;
 import cn.jmicro.common.Constants;
@@ -85,9 +88,8 @@ public class JMicroContext  {
 	
 	public static final String MRPC_ITEM = "_mrpc_item";
 	public static final String CLIENT_UP_TIME = "_client_up_time";
+	public static final String SERVER_GOT_TIME = "_server_got_time";
 	public static final String DEBUG_LOG = "_debug_loggner";
-	
-	public static String[] args = {};
 	
 	public static final String SESSION_KEY="_sessionKey";
 	private static final ThreadLocal<JMicroContext> cxt = new ThreadLocal<JMicroContext>();
@@ -174,8 +176,13 @@ public class JMicroContext  {
 		//debug mode 下才有效
 		context.setParam(IS_DEBUG, msg.isDebugMode());
 		if(msg.isDebugMode()) {
+			//long clientTime = msg.getTime();
+			StringBuilder sb = new StringBuilder();
+			long curTime = System.currentTimeMillis();
+			sb.append("Provider, Client to server cost: ").append(curTime-msg.getTime()).append(", ");
 			context.setParam(CLIENT_UP_TIME, msg.getTime());
-			context.setParam(DEBUG_LOG, new StringBuilder());
+			context.setParam(SERVER_GOT_TIME, curTime);
+			context.setParam(DEBUG_LOG, sb);
 		}
 		
 		boolean iMonitorable = msg.isMonitorable();
@@ -208,7 +215,7 @@ public class JMicroContext  {
 		context.setParam(IS_DEBUG, isDebug);
 		if(isDebug) {
 			context.setParam(CLIENT_UP_TIME, System.currentTimeMillis());
-			context.setParam(DEBUG_LOG, new StringBuilder());
+			context.setParam(DEBUG_LOG, new StringBuilder("Comsumer "));
 		}
 		
 		boolean iMonitorable = enableOrDisable(si.getMonitorEnable(),sm.getMonitorEnable());
@@ -293,6 +300,14 @@ public class JMicroContext  {
 		return id;
 	}
 	
+	public boolean isAsync() {
+		if(this.exists(JMicroContext.CALL_SIDE_PROVIDER)) {
+			return this.exists(Constants.CONTEXT_SERVICE_RESPONSE);
+		} else {
+			return this.exists(Constants.CONTEXT_CALLBACK_CLIENT);
+		}
+	}
+	
 	/**
 	 * 同一个线程多个RPC之间上下文切换
 	 */
@@ -337,6 +352,10 @@ public class JMicroContext  {
 		cxt.get().params.putAll(ps);;
 	}
 	
+	public void getAllParams(Map<String,Object> params) {
+		params.putAll(this.params);
+	}
+	
 	public boolean isDebug(){
 		return this.getBoolean(IS_DEBUG, false);
 	}
@@ -355,11 +374,12 @@ public class JMicroContext  {
 		if(isDebug()) {
 			ServiceMethod sm = this.getParam(Constants.SERVICE_METHOD_KEY, null);
 			if(sm != null) {
-				long cost = System.currentTimeMillis() - this.getLong(CLIENT_UP_TIME, System.currentTimeMillis());
+				long curTime = System.currentTimeMillis();
+				long cost = curTime - this.getLong(CLIENT_UP_TIME, curTime);
 				if(force || cost > sm.getTimeout()-100) {
 					//超时的请求才记录下来
 					StringBuilder sb = this.getDebugLog();
-					sb.append(",").append(label).append(": ").append(System.currentTimeMillis() - cost);
+					sb.append(",").append(label).append(": ").append(cost);
 				}
 			}
 		}
@@ -372,19 +392,20 @@ public class JMicroContext  {
 
 		StringBuilder log = this.getDebugLog();
 		this.removeParam(DEBUG_LOG);
-		long cost = System.currentTimeMillis() - this.getLong(CLIENT_UP_TIME, System.currentTimeMillis());
+		long curTime = System.currentTimeMillis();
+		long cost = curTime - this.getLong(CLIENT_UP_TIME, curTime);
 		if(timeout > 0) {
 			if(cost > timeout) {
 				//超时的请求才记录下来
-				log.append(", cost except :").append(timeout).append(" : ").append(cost);
+				log.append(", cost expect :").append(timeout).append(" : ").append(cost);
 				logger.warn(log.toString());
 			}
 		} else {
 			ServiceMethod sm = this.getParam(Constants.SERVICE_METHOD_KEY, null);
 			if(sm != null) {
-				if(cost > sm.getTimeout()-300) {
+				if(cost > sm.getTimeout()-100) {
 					//超时的请求才记录下来
-					log.append(", mybe timeout except :").append((sm.getTimeout()-300)).append(" : ").append(cost);
+					log.append(", maybe timeout expect :").append((sm.getTimeout()-100)).append(" : ").append(cost);
 					logger.warn(log.toString());
 				}
 			} else {
@@ -470,7 +491,6 @@ public class JMicroContext  {
 	public Boolean getBoolean(String key,boolean defautl){
 		return this.getParam(key,defautl);
 	}
-	
 	
 	public Float getFloat(String key,Float defautl){
 		return this.getParam(key,defautl);

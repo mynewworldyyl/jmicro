@@ -26,6 +26,7 @@
 
                     <!-- Shell -->
                     <JShell v-else-if="item.group == 'shell'" :item="item"></JShell>
+                    <JTesting v-else-if="item.group == 'testing'" :item="item"></JTesting>
 
                     <JRepository v-else-if="item.group == 'repository'" :item="item"></JRepository>
                     <JHost v-else-if="item.group == 'host'" :item="item"></JHost>
@@ -67,6 +68,7 @@
     import JConfigItem from './config/JConfigItem.vue'
 
     import JShell from './shell/JShell.vue'
+    import JTesting from './shell/JTesting.vue'
 
     import JRepository from './deployment/JRepository.vue'
     import JHost from './deployment/JHost.vue'
@@ -104,6 +106,7 @@
             JRepository,
             JDeploymentDesc,
             JShell,
+            JTesting,
             JAgent,
             JProcess,
 

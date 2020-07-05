@@ -9,10 +9,10 @@ import org.slf4j.LoggerFactory;
 
 import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Inject;
+import cn.jmicro.api.choreography.AgentInfo;
+import cn.jmicro.api.choreography.Deployment;
 import cn.jmicro.api.sysstatis.SystemStatis;
-import cn.jmicro.choreography.api.Deployment;
 import cn.jmicro.choreography.api.IAssignStrategy;
-import cn.jmicro.choreography.base.AgentInfo;
 import cn.jmicro.choreography.instance.InstanceManager;
 import cn.jmicro.common.util.StringUtils;
 

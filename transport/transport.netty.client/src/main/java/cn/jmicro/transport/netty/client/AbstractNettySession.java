@@ -91,7 +91,7 @@ public abstract class AbstractNettySession extends AbstractSession implements IC
 			bb.mark();
 			ctx.channel().writeAndFlush(Unpooled.copiedBuffer(bb));
 			
-			//客户方写消息，算上行
+			//客户端写消息，算上行
 			bb.reset();
 			this.dump(bb,true,msg);
 			

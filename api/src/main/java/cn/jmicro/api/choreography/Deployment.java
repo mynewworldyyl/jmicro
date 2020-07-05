@@ -1,4 +1,4 @@
-package cn.jmicro.choreography.api;
+package cn.jmicro.api.choreography;
 
 import cn.jmicro.api.annotation.IDStrategy;
 import cn.jmicro.api.annotation.SO;

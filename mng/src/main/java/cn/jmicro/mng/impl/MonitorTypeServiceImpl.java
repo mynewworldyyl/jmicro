@@ -14,17 +14,17 @@ import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Inject;
 import cn.jmicro.api.annotation.Service;
 import cn.jmicro.api.config.Config;
+import cn.jmicro.api.mng.ICommonManager;
+import cn.jmicro.api.mng.IMonitorTypeService;
 import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.monitor.MCConfig;
 import cn.jmicro.api.monitor.MCTypesManager;
 import cn.jmicro.api.raft.IDataOperator;
 import cn.jmicro.common.Constants;
 import cn.jmicro.common.util.StringUtils;
-import cn.jmicro.mng.api.ICommonManager;
-import cn.jmicro.mng.api.IMonitorTypeService;
 
 @Component
-@Service(namespace = "mng", version = "0.0.1", debugMode = 0,
+@Service(namespace = "mng", version = "0.0.1", debugMode = 1,timeout=10000,
 monitorEnable = 0, logLevel = MC.LOG_ERROR, retryCnt = 0,external=true)
 public class MonitorTypeServiceImpl implements IMonitorTypeService {
 

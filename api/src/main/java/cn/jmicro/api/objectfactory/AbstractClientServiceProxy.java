@@ -27,6 +27,7 @@ import org.slf4j.LoggerFactory;
 
 import cn.jmicro.api.JMicroContext;
 import cn.jmicro.api.annotation.Reference;
+import cn.jmicro.api.internal.async.IClientAsyncCallback;
 import cn.jmicro.api.registry.AsyncConfig;
 import cn.jmicro.api.registry.IRegistry;
 import cn.jmicro.api.registry.IServiceListener;
@@ -204,6 +205,8 @@ public abstract class AbstractClientServiceProxy implements InvocationHandler,IS
 		
 		Long preRequestId = JMicroContext.get().getParam(JMicroContext.REQ_ID, null);
 		
+		IClientAsyncCallback cb = JMicroContext.get().getParam(Constants.CONTEXT_CALLBACK_CLIENT,null);
+		
 		//backup the rpc context from here
 		JMicroContext.get().backupAndClear();
 		
@@ -215,6 +218,10 @@ public abstract class AbstractClientServiceProxy implements InvocationHandler,IS
 		}
 		if(ref != null) {
 			JMicroContext.get().setParam(Constants.REF_ANNO, ref);
+		}
+		
+		if(cb != null) {
+			JMicroContext.get().setParam(Constants.CONTEXT_CALLBACK_CLIENT,cb);
 		}
 		
 		if(dsi != null) {

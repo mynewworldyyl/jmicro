@@ -204,6 +204,7 @@ public class PubSubServer implements IInternalSubRpc{
 		String group = "PubsubServer";
 		statusMonitorAdapter = new MonitorClientStatusAdapter(TYPES,typeLabels,Config.getInstanceName()+"_PubsubServerStatuCheck",group);
 		
+
 		ServiceLoader sl = of.get(ServiceLoader.class);
 		ServiceItem si = sl.createSrvItem(IMonitorAdapter.class, Config.getInstanceName()+"."+group, "0.0.1", IMonitorAdapter.class.getName());
 		of.regist("MonitorManagerStatuCheckAdapter", statusMonitorAdapter);

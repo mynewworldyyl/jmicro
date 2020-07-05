@@ -238,6 +238,7 @@ public class MessageServiceImpl implements IGatewayMessageCallback{
 		
 		Message msg = new Message();
 		msg.setType(Constants.MSG_TYPE_ASYNC_RESP);
+		
 		//强制使用JSON下发数据
 		msg.setDownProtocol(Message.PROTOCOL_JSON);
 		

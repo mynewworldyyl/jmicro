@@ -82,7 +82,7 @@
         <maven_jar_version>3.0.2</maven_jar_version>
         <maven_surefire_version>2.19.1</maven_surefire_version>
         <maven_deploy_version>2.8.2</maven_deploy_version>
-        <maven_compiler_version>3.6.0</maven_compiler_version>
+        <maven_compiler_version>3.6.1</maven_compiler_version>
         <maven_source_version>3.0.1</maven_source_version>
         <maven_javadoc_version>3.0.1</maven_javadoc_version>
         <maven_jetty_version>9.4.11.v20180605</maven_jetty_version>
@@ -136,6 +136,7 @@
 				 <artifactId>api</artifactId>
 				 <version>${jmicro.version}</version>
             </dependency>
+            
              <dependency>
                  <groupId>cn.jmicro</groupId>
 				 <artifactId>main.monitor.log</artifactId>
@@ -398,6 +399,11 @@
             <version>${junit_version}</version>
             <scope>test</scope>
         </dependency>
+         <dependency>
+			<groupId>cn.jmicro</groupId>
+			<artifactId>codegenerator</artifactId>
+			 <version>${jmicro.version}</version>
+		</dependency>
         </dependencies>
         
     </dependencyManagement>
@@ -408,6 +414,11 @@
             <artifactId>junit</artifactId>
             <scope>test</scope>
         </dependency>
+       <!-- <dependency>
+			<groupId>cn.jmicro</groupId>
+			<artifactId>codegenerator</artifactId>
+			<scope>provided</scope>
+		</dependency> -->
        
     </dependencies>
 
@@ -416,7 +427,7 @@
             <id>java8-vm-args</id>
             <activation>
                <!--  <jdk>[1.8,)</jdk> -->
-                <activeByDefault>false</activeByDefault>
+                <activeByDefault>true</activeByDefault>
             </activation>
             <properties>
                 <argline>-server -Xms32m -Xmx512m -XX:MetaspaceSize=64m -XX:MaxMetaspaceSize=128m -Dfile.encoding=UTF-8
@@ -593,10 +604,14 @@
                 <version>${maven_compiler_version}</version>
                 <configuration>
                     <compilerArgument>-proc:none</compilerArgument>
-                    <fork>true</fork>
                     <source>${java_source_version}</source>
                     <target>${java_target_version}</target>
                     <encoding>${file_encoding}</encoding>
+                    <generatedSourcesDirectory>${project.build.directory}/generated-src/</generatedSourcesDirectory>  
+	                <annotationProcessors>
+	                 	<annotationProcessor>com.cloudogu.blog.annotationprocessor.log.LogProcessor</annotationProcessor>
+	                    <annotationProcessor>cn.jmicro.codegenerator.ClientServiceProxyGenerator</annotationProcessor>
+	               </annotationProcessors>
                 </configuration>
             </plugin>
 			

@@ -127,14 +127,17 @@ public class ServiceInvocationHandler implements InvocationHandler{
 				throw new RpcException(req,ex);
 			}
 		} finally {
-			if(JMicroContext.get().getObject(Constants.NEW_LINKID,null) != null &&
-					JMicroContext.get().getBoolean(Constants.NEW_LINKID,false) ) {
-				//RPC链路结束
-				SF.eventLog(MC.MT_LINK_END, MC.LOG_NO, TAG, null);
-				JMicroContext.get().removeParam(Constants.NEW_LINKID);
+			if(!JMicroContext.get().isAsync()) {
+				if(JMicroContext.get().getObject(Constants.NEW_LINKID,null) != null &&
+						JMicroContext.get().getBoolean(Constants.NEW_LINKID,false) ) {
+					//RPC链路结束
+					SF.eventLog(MC.MT_LINK_END, MC.LOG_NO, TAG, null);
+					JMicroContext.get().removeParam(Constants.NEW_LINKID);
+				}
+				JMicroContext.get().debugLog(0);
+				JMicroContext.get().submitMRpcItem(monitor);
 			}
-			JMicroContext.get().debugLog(0);
-			JMicroContext.get().submitMRpcItem(monitor);
+			
 		}
        /* if("intrest".equals(method.getName())) {
         	//代码仅用于测试

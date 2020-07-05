@@ -5,23 +5,28 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import cn.jmicro.api.Resp;
 import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Reference;
 import cn.jmicro.api.annotation.Service;
 import cn.jmicro.api.executor.ExecutorInfo;
 import cn.jmicro.api.executor.IExecutorInfo;
+import cn.jmicro.api.mng.IThreadPoolMonitor;
 import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.objectfactory.AbstractClientServiceProxy;
 import cn.jmicro.api.registry.ServiceItem;
 import cn.jmicro.common.util.StringUtils;
-import cn.jmicro.mng.api.IThreadPoolMonitor;
 
 @Component
-@Service(namespace="mng",version="0.0.1",debugMode=0,
-monitorEnable=0,logLevel=MC.LOG_ERROR,retryCnt=0,external=true,timeout=10000)
+@Service(namespace="mng",version="0.0.1",debugMode=1,
+monitorEnable=0,logLevel=MC.LOG_ERROR,retryCnt=0,external=true,timeout=3000)
 public class ThreadPoolMonitorImpl implements IThreadPoolMonitor {
 
+	private static final Logger logger = LoggerFactory.getLogger(ThreadPoolMonitorImpl.class);
+	
 	@Reference(namespace="*",version="*",type="ins")
 	private List<IExecutorInfo> monitorServers = new ArrayList<>();
 	
@@ -36,6 +41,7 @@ public class ThreadPoolMonitorImpl implements IThreadPoolMonitor {
 		List<ExecutorInfo> l = new ArrayList<>();
 		resp.setData(l);
 		for(IExecutorInfo iei : this.monitorServers) {
+			//logger.debug("getInfo begin time: " + System.currentTimeMillis() );
 			ExecutorInfo ei = iei.getInfo();
 			if(ei != null) {
 				l.add(ei);

@@ -109,10 +109,12 @@ public class MonitorServerImpl implements IMonitorServer {
 		//statusAdapter.init();
 		of.regist("monitorServerStatusAdapter", statusAdapter);
 		
-		ServiceLoader sl = of.get(ServiceLoader.class);
-		ServiceItem si = sl.createSrvItem(IMonitorAdapter.class, 
-				Config.getInstanceName()+"."+MonitorServerStatusAdapter.class.getName(), "0.0.1", null);
-		sl.registService(si,statusAdapter);
+		if(!Config.isClientOnly()) {
+			ServiceLoader sl = of.get(ServiceLoader.class);
+			ServiceItem si = sl.createSrvItem(IMonitorAdapter.class, 
+					Config.getInstanceName()+"."+MonitorServerStatusAdapter.class.getName(), "0.0.1", null);
+			sl.registService(si,statusAdapter);
+		}
 		
 		new Thread(this::doCheck,Config.getInstanceName()+"_MonitorServer_doCheck").start();
 		

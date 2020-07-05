@@ -24,7 +24,6 @@ import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -32,9 +31,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import cn.jmicro.api.debug.LogUtil;
-import cn.jmicro.api.monitor.MC;
-import cn.jmicro.api.monitor.SF;
-import cn.jmicro.api.monitor.ServiceCounter;
 
 /**
  * 
@@ -186,11 +182,13 @@ public abstract class AbstractSession implements ISession{
               //服务言接收信息是上行，客户端接收信息是下行
        		  //dump(lb.array(),this.isServer(),message);
               
+              //JMicroContext.configProvider(this,message);
              /* if(message.isDebugMode()) {
-              	LogUtil.B.debug("Message ins[{}] reqId[{}],method[{}]",message.getInstanceName(),
-              			message.getReqId(),message.getMethod());
+            	  long curTIme = System.currentTimeMillis();
+              	  LogUtil.B.debug((this.isServer() ? "Server ":"Client ") + "Read msg ins[{}] reqId[{}] method[{}] Total Cost:[{}],Read Cost[{}] ",
+              			message.getInstanceName(),
+              			message.getReqId(),message.getMethod(),(startTime-message.getTime()),(curTIme - startTime));
               }*/
-              //JMicroContext.configProvider(message);
               
              receiver.receive(this,message);
      	 }

@@ -17,7 +17,7 @@
 package cn.jmicro.choreography.controller;
 
 import cn.jmicro.api.IListener;
-import cn.jmicro.choreography.base.AgentInfo;
+import cn.jmicro.api.choreography.AgentInfo;
 
 public interface IAgentListener  extends IListener{
 	

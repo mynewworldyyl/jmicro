@@ -17,16 +17,18 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import cn.jmicro.api.codec.OnePrefixDecoder;
 import cn.jmicro.api.config.Config;
-import cn.jmicro.api.executor.ExecutorConfig;
-import cn.jmicro.api.executor.ExecutorFactory;
 import cn.jmicro.common.util.DateUtils;
+import cn.jmicro.common.util.StringUtils;
 
 
 public class DumpManager {
@@ -43,16 +45,17 @@ public class DumpManager {
 				return ins;
 			}
 			ins = new DumpManager();
+			String dumpDir = Config.getCommandParam("dumpDir");
+			if(StringUtils.isEmpty(dumpDir)) {
+				dumpDir = System.getProperty("user.dir") + File.separator + "/dumpDir";
+			}
+			ins.dumpFileDir = dumpDir;
 		}
 		return ins;
 	}
 	
 	private DumpManager() {
-		ExecutorConfig config = new ExecutorConfig();
-		config.setMsCoreSize(1);
-		config.setMsMaxSize(5);
-		config.setTaskQueueSize(10);
-		executor = new ExecutorFactory().createExecutor(config);
+		executor = new ThreadPoolExecutor(1,5,1000*10,TimeUnit.MILLISECONDS,new ArrayBlockingQueue<Runnable>(100));
 	}
 	
 	private OnePrefixDecoder decoder =  new OnePrefixDecoder();

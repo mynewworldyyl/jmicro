@@ -14,14 +14,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package cn.jmicro.api.client;
+package cn.jmicro.api.service;
 
 /**
- * 异步消息接收器，通过streamCallback指定实现组件名称
  * @author Yulei Ye
  * @date 2018年10月17日-上午11:09:59
  */
-public interface IMessageCallback<T> {
+public interface IServiceAsyncResponse {
 
-	boolean onMessage(T msg);
+	<R> void result(R result);
 }

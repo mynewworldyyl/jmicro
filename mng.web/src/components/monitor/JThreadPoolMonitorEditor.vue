@@ -45,7 +45,7 @@
             parseItem() {
                 let its = null;
                 if(this.item.type == 'mo') {
-                    its = [],
+                        its = [],
                         its.push(this.item);
                 }else {
                     its = this.item.children;
@@ -57,7 +57,7 @@
                let self = this;
                 this.adminPer = window.jm.mng.comm.adminPer;
                 window.jm.mng.threadPoolSrv.getInfo(this.item.id,this.item.type).then((resp)=>{
-                    if(resp.code != 0) {
+                    if(resp.code != 0 && resp.data.length > 0) {
                         self.$Message.success(resp.msg);
                         return;
                     }
@@ -68,14 +68,15 @@
                         self.item.children = [];
                         for(let i = 0; i < its.length; i++) {
                             let n = its[i];
-                            let s = new TreeNode(n.key, n.key,null,self.item,n,n.key);
+                            let t =  n.ec.threadNamePrefix;
+                            let s = new TreeNode(n.key, t,null,self.item,n,t);
                             s.group = GROUP;
                             s.type = 'mo';
                             self.item.addChild(s);
                             self.itemList = self.item.children;
                         }
                     } else {
-                        self.item.val = resp.data;
+                        self.item.val = resp.data[0];
                     }
                 }).catch((err)=>{
                     window.console.log(err);

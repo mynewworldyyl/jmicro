@@ -61,9 +61,8 @@ public class TestApigateClient {
 	public void testCallTestRpcService() {
 		String[] args = new String[] {"hello"};
 		String result =(String) client.callService(ITestRpcService.class.getName(),
-		"testrpc", "0.0.1","subscrite",args,(msg)->{
+		"testrpc", "0.0.1","subscrite",args, (msg,f)->{
 			System.out.println("Got server msg:"+msg);
-			return true;
 		});
 		System.out.println(result);
 		JMicro.waitForShutdown();

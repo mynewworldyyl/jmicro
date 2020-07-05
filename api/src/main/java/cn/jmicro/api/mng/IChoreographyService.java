@@ -1,11 +1,10 @@
-package cn.jmicro.mng.api;
+package cn.jmicro.api.mng;
 
 import java.util.List;
-import java.util.Set;
 
+import cn.jmicro.api.choreography.AgentInfoVo;
+import cn.jmicro.api.choreography.Deployment;
 import cn.jmicro.api.choreography.ProcessInfo;
-import cn.jmicro.choreography.api.Deployment;
-import cn.jmicro.mng.api.choreography.AgentInfoVo;
 
 public interface IChoreographyService {
 

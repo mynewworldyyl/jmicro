@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package cn.jmicro.choreography.base;
+package cn.jmicro.api.choreography;
 
 import cn.jmicro.api.annotation.IDStrategy;
 import cn.jmicro.api.sysstatis.SystemStatis;

@@ -62,32 +62,36 @@ public final class Message {
 	
 	public static final byte MSG_VERSION = (byte)1;
 	
-	public static final byte FLAG_UP_PROTOCOL = 1<<0;
-	
-	public static final byte FLAG0_DOWN_PROTOCOL = 1<<6;
-	
+	//长度字段类型，1表示整数，0表示短整数
+    public static final short FLAG_LENGTH_INT = 1 << 0;
+    
 	//调试模式
-	public static final byte FLAG_DEBUG_MODE = 1<<1;
+	public static final short FLAG_DEBUG_MODE = 1 << 1;
 	
 	//需要响应的请求
-	public static final byte FLAG_NEED_RESPONSE = 1<<2;
+	public static final short FLAG_NEED_RESPONSE = 1 << 2;
 	
-	//0B00111000 5---3
-	public static final byte FLAG_LEVEL = 0X38;
+	public static final short FLAG_UP_PROTOCOL = 1<<5;
 	
-	//长度字段类型，1表示整数，0表示短整数
-	public static final byte FLAG_LENGTH_INT = 1<<6;
+	public static final short FLAG_DOWN_PROTOCOL = 1 << 6;
 	
 	//DUMP上行数据
-	public static final byte FLAG0_DUMP_UP = 1<<0;
+	public static final short FLAG_DUMP_UP = 1 << 7;
+		
 	//DUMP下行数据
-	public static final byte FLAG0_DUMP_DOWN = 1<<1;
+	public static final short FLAG_DUMP_DOWN = 1 << 8;
 	
 	//可监控消息
-	public static final byte FLAG0_MONITORABLE = 1<<2;
+	public static final short FLAG_MONITORABLE = 1 << 9;
+	
+	//可监控消息
+	public static final short FLAG_ASYNC_RESUTN_RESULT = 1 << 13;
+	
+	//0B00111000 5---3
+	//public static final short FLAG_LEVEL = 0X38;
 	
 	//是否启用服务级log
-	public static final byte FLAG0_LOGGABLE = 1 << 3;
+	//public static final short FLAG_LOGGABLE = 1 << 3;
 	
 	private  transient long startTime = -1;
 	//此消息所占字节数
@@ -105,33 +109,39 @@ public final class Message {
 	private byte type;
 	
 	/**
-	 * dm: is development mode
-	 * S: data length type 0:short 1:int
-	 * N: need Response 
-	 * UPR: up protocol 0:bin, 1:json
-	 * DPR: down protocol 0:bin, 1:json
-	 * PPP: Message priority 
+	 * 0        S:       data length type 0:short 1 : int
+	 * 1        dm:      is development mode
+	 * 2        N:       need Response
+	 * 3,4      PP:      Message priority 
+	 * 5        UPR:     up protocol  0:bin,  1: json 
+     * 6        DPR:     down protocol 0:bin, 1 : json 
+	 * 7        up:      dump up stream data
+	 * 8        do:      dump down stream data
+	 * 9        M:       Monitorable
+	 * 10,11,12 LLL      Log level
+	 * 13       A:       async return result，different from async RPC
 	 * 
-	 DPR S P P  P  N dm UPR
-	 * | | | |  |  |  | |
-	 * 7 6 5 4  3  2  1 0
+	          A   L  L   L   M  DO UP  DPR  UPR  P    P   N   dm   S
+	 |    |   |   |  |   |   |  |  |   |    |    |    |   |    |   |
+     15  14  13  12  11  10  9  8  7   6    5    4    3   2    1   0
+     
 	 * @return
 	 */
-	private byte flag = 0;
+	private short flag = 0;
 	
 	/**
 	 * up: dump up stream data
 	 * do: dump down stream data
 	 * M: Monitorable
 	 * L: 日志级别 
-	
+	   A: 异步返回结果，区别于异步RPC
 	 * 
-	 *     L L L M  do up
+	 *   A L L L M  do up
 	 * | | | | | |  |  |
 	 * 7 6 5 4 3 2  1  0
 	 * @return
 	 */
-	private byte flag0 = 0;
+	//private byte flag0 = 0;
 	
 	//request or response
 	//private boolean isReq;
@@ -153,39 +163,41 @@ public final class Message {
 	
 	public Message(){}
 	
-	public static boolean is(byte flag, byte mask) {
+	public static boolean is(short flag, short mask) {
 		return (flag & mask) != 0;
 	}
 	
-	public static boolean is(byte flag, short mask) {
+	/*public static boolean is(byte flag, short mask) {
 		return (flag & mask) != 0;
+	}*/
+	
+	public boolean isAsyncReturnResult() {
+		return is(flag,FLAG_ASYNC_RESUTN_RESULT);
+	}
+	
+	public void setAsyncReturnResult(boolean f) {
+		flag = set(f,flag,FLAG_ASYNC_RESUTN_RESULT);
 	}
 	
 	public boolean isDumpUpStream() {
-		return is(flag0,FLAG0_DUMP_UP);
+		return is(flag,FLAG_DUMP_UP);
 	}
 	
 	public void setDumpUpStream(boolean f) {
 		//flag0 |= f ? FLAG0_DUMP_UP : 0 ; 
-		flag0 = set(f,flag0,FLAG0_DUMP_UP);
+		flag = set(f,flag,FLAG_DUMP_UP);
 	}
 	
 	public boolean isDumpDownStream() {
-		return is(flag0,FLAG0_DUMP_DOWN);
+		return is(flag,FLAG_DUMP_DOWN);
 	}
 	
 	public void setDumpDownStream(boolean f) {
-		//flag0 |= f ? Message.FLAG0_DUMP_DOWN : 0 ; 
-		flag0 = set(f,flag0,FLAG0_DUMP_DOWN);
+		flag = set(f,flag,FLAG_DUMP_DOWN);
 	}
 	
 	public boolean isLoggable() {
-		return is(flag0,FLAG0_LOGGABLE);
-	}
-	
-	public void setLoggable(boolean f) {
-		//flag0 |= f ? FLAG0_LOGGABLE : 0 ; 
-		flag0 = set(f,flag0,FLAG0_LOGGABLE);
+		return this.getLogLevel() > MC.LOG_NO;
 	}
 	
 	public boolean isDebugMode() {
@@ -196,16 +208,16 @@ public final class Message {
 		flag = set(f,flag,FLAG_DEBUG_MODE);
 	}
 	
-	public static byte set(boolean isTrue,byte f,byte mask) {
-		return isTrue ?(f |= mask):(f &= ~mask);
+	public static short set(boolean isTrue,short f,short mask) {
+		return isTrue ?(f |= mask) : (f &= ~mask);
 	}
 	
 	public boolean isMonitorable() {
-		return is(flag0,FLAG0_MONITORABLE);
+		return is(flag,FLAG_MONITORABLE);
 	}
 	
 	public void setMonitorable(boolean f) {
-		flag0 = set(f,flag0,FLAG0_MONITORABLE);
+		flag = set(f,flag,FLAG_MONITORABLE);
 	}
 	
 	public boolean isNeedResponse() {
@@ -230,25 +242,25 @@ public final class Message {
 	}
 	
 	public int getPriority() {
-		return (byte)((flag >>> 3) & 0x07);
+		return (byte)((flag >>> 3) & 0x03);
 	}
 	
 	public void setPriority(int l) {
-		if(l > PRIORITY_7 || l < PRIORITY_0) {
+		if(l > PRIORITY_3 || l < PRIORITY_0) {
 			 new CommonException("Invalid priority: "+l);
 		}
 		this.flag = (byte)((l << 3) | this.flag);
 	}
 	
 	public byte getLogLevel() {
-		return (byte)((flag0 >>> 3) & 0x07);
+		return (byte)((flag >>> 10) & 0x07);
 	}
 	//000 001 010 011 100 101 110 111
 	public void setLogLevel(int v) {
-		if(v > MC.LOG_NO || v < MC.LOG_FINAL) {
+		if(v < MC.LOG_NO || v > MC.LOG_FINAL) {
 			 new CommonException("Invalid Log level: "+v);
 		}
-		this.flag0 = (byte)((v << 3) | this.flag0);
+		this.flag = (byte)((v << 10) | this.flag);
 	}
 	
 	public byte getUpProtocol() {
@@ -261,19 +273,19 @@ public final class Message {
 	}
 	
 	public byte getDownProtocol() {
-		return is(this.flag0,FLAG0_DOWN_PROTOCOL)?(byte)1:0;
+		return is(this.flag,FLAG_DOWN_PROTOCOL)?(byte)1:0;
 	}
 
 	public void setDownProtocol(byte protocol) {
 		//flag |= protocol == PROTOCOL_JSON ? FLAG_DOWN_PROTOCOL : 0 ;
-		flag = set(protocol == PROTOCOL_JSON,flag0,FLAG0_DOWN_PROTOCOL);
+		flag = set(protocol == PROTOCOL_JSON,flag,FLAG_DOWN_PROTOCOL);
 	}
 	
 	public static Message decode(JDataInput b) {
 		try {
 			Message msg = null;
 			//第0个字节
-			byte flag = b.readByte();
+			short flag = b.readShort();
 
 			msg = new Message();
 			msg.flag =  flag;
@@ -302,7 +314,7 @@ public final class Message {
 			msg.setLinkId(b.readInt());
 			
 			//第13个字节
-			msg.flag0 = b.readByte();
+			//msg.flag0 = b.readByte();
 			
 			if(msg.isDebugMode()) {
 				//读取测试数据头部
@@ -382,17 +394,17 @@ public final class Message {
 		}
 		
 		try {
-			//第0个字节，标志头
+			//第0,1个字节，标志头
 			//b.put(this.flag);
-			b.writeByte(this.flag);
+			b.writeShort(this.flag);
 			
 			if(len < 65535) {
-				//第1，2个字节 ,len = 数据长度 + 测试模式时附加数据长度
+				//第2，3个字节 ,len = 数据长度 + 测试模式时附加数据长度
 				//this.setLengthType(false);
 				//writeUnsignedShort(b, len);
 				b.writeUnsignedShort(len);
 			}else if(len < Integer.MAX_VALUE){
-				//消息内内容最大长度为MAX_VALUE
+				//消息内内容最大长度为MAX_VALUE 2,3,4,5
 				//this.setLengthType(true);
 				//b.putInt(len);
 				b.writeInt(len);
@@ -421,7 +433,7 @@ public final class Message {
 			
 			//第13个字节
 			//b.put(this.flag0);
-			b.writeByte(this.flag0);
+			//b.writeByte(this.flag0);
 			
 			if(debug) {
 				//b.putLong(this.getId());
@@ -471,7 +483,7 @@ public final class Message {
 		}
 		
 		//取第一个字节标志位
-		byte f = cache.get();
+		short f = cache.getShort();
 		int len = 0;
 		int headerLen = Message.HEADER_LEN;
 		//取第二，第三个字节 数据长度
@@ -627,6 +639,14 @@ public final class Message {
 		this.type = type;
 	}
 	
+	public short getFlag() {
+		return flag;
+	}
+
+	public void setFlag(short flag) {
+		this.flag = flag;
+	}
+
 	public Object getPayload() {
 		return payload;
 	}
@@ -648,14 +668,6 @@ public final class Message {
 
 	public void setLinkId(long linkId) {
 		this.linkId = linkId;
-	}
-
-	public byte getFlag() {
-		return flag;
-	}
-
-	public byte getFlag0() {
-		return flag0;
 	}
 
 	public long getTime() {
@@ -693,7 +705,7 @@ public final class Message {
 	@Override
 	public String toString() {
 		return "Message [version=" + version + ", msgId=" + msgId + ", reqId=" + reqId + ", linkId=" + linkId 
-				+ ", type=" + type + ", flag=" + Integer.toHexString(flag) + ", flag0=" + Integer.toHexString(flag0) 
+				+ ", type=" + type + ", flag=" + Integer.toHexString(flag)
 				+ ", payload=" + payload + ", time="+ time 
 				+ ", devMode=" + this.isDebugMode() + ", monitorable="+ this.isMonitorable() 
 				+ ", needresp="+ this.isNeedResponse()

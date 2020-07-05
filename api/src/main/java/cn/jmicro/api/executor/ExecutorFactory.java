@@ -5,10 +5,15 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.FutureTask;
+import java.util.concurrent.RunnableFuture;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.ThreadPoolExecutor.AbortPolicy;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -38,6 +43,8 @@ public class ExecutorFactory {
     
     private final Set<ExecutorConfig> waitingRegist = new HashSet<>();
     
+    private final Map<String,ExecutorMonitorServer> emses = new HashMap<>();
+    
     @Inject
     private ServiceLoader sl;
     
@@ -47,7 +54,9 @@ public class ExecutorFactory {
 	public ExecutorFactory() {}
 	
 	public void ready() {
-		new Thread(this::doCheck).start();
+		if(!Config.isClientOnly()) {
+			new Thread(this::doCheck).start();
+		}
 	}
 	
 	private void doCheck() {
@@ -59,15 +68,11 @@ public class ExecutorFactory {
 					while(ecs.hasNext()) {
 						ExecutorConfig cfg = ecs.next();
 						ecs.remove();
-						String ns = Config.getInstanceName() + "." + GROUP+"_" + cfg.getThreadNamePrefix();
-						ServiceItem si = sl.createSrvItem(IExecutorInfo.class, ns,"0.0.1", JmicroThreadPoolExecutor.class.getName());
-						JmicroThreadPoolExecutor executor = this.executors.get(cfg.getThreadNamePrefix());
-						of.regist(ns, executor);
-						sl.registService(si,executor);
+						this.createExecutorService(cfg);
 					}
 				}
 				
-				for(JmicroThreadPoolExecutor je: this.executors.values()) {
+				for(ExecutorMonitorServer je: emses.values()) {
 					je.check();
 				}
 				
@@ -115,101 +120,123 @@ public class ExecutorFactory {
 		}
 		
 		JmicroThreadPoolExecutor executor = new JmicroThreadPoolExecutor(cfg);
-		
-		 if(sl.hashServer()) {
-			String ns = Config.getInstanceName() + "." + GROUP+"_" + cfg.getThreadNamePrefix();
-			ServiceItem si = sl.createSrvItem(IExecutorInfo.class, ns,"0.0.1", JmicroThreadPoolExecutor.class.getName());
-			of.regist(ns, executor);
-			sl.registService(si,executor);
-		}else {
-			waitingRegist.add(cfg);
-		}
-		
 		executors.put(cfg.getThreadNamePrefix(), executor);
+		
+		if(!Config.isClientOnly()) {
+			 if(sl.hashServer()) {
+				createExecutorService(cfg);
+			}else {
+				waitingRegist.add(cfg);
+			}
+		}
 		
 		return executor;
 	}
 	
-	public class JmicroThreadPoolExecutor extends ThreadPoolExecutor implements IExecutorInfo{
+	private void createExecutorService(ExecutorConfig cfg) {
 		
-		 private final Logger ilog = LoggerFactory.getLogger(JmicroThreadPoolExecutor.class);
-		 private ExecutorConfig cfg = null;
-		 private ExecutorInfo ei;
+		JmicroThreadPoolExecutor executor = this.executors.get(cfg.getThreadNamePrefix());
+		
+		String ns = Config.getInstanceName() + "." + GROUP+"_" + cfg.getThreadNamePrefix();
+		ServiceItem si = sl.createSrvItem(IExecutorInfo.class, ns,"0.0.1", ExecutorMonitorServer.class.getName());
+		
+		ExecutorMonitorServer ems = new ExecutorMonitorServer(cfg,executor.getEi());
+		ems.setE(executor);
+		executor.getEi().setKey(si.getKey().toKey(true, true, true));
+		emses.put(cfg.getThreadNamePrefix(),ems);
 		 
+		of.regist(ns, ems);
+		sl.registService(si,ems);
+		
+	}
+
+	public class ExecutorMonitorServer  implements IExecutorInfo {
+		
+		 private final Logger ilog = LoggerFactory.getLogger(ExecutorMonitorServer.class);
+		 
+		 private ExecutorInfo ei;
+		 private JmicroThreadPoolExecutor e;
+		 private ExecutorConfig cfg = null;
 		 private long warnSize = Long.MAX_VALUE;
 		 
-		 public JmicroThreadPoolExecutor(ExecutorConfig cfg) {
-			 super(cfg.getMsCoreSize(),cfg.getMsMaxSize(),
-						cfg.getIdleTimeout(),TimeUtils.getTimeUnit(cfg.getTimeUnit()),
-						new LinkedBlockingQueue<Runnable>(cfg.getTaskQueueSize()),
-						new NamedThreadFactory("JMicro-"+Config.getInstanceName()+"-"+cfg.getThreadNamePrefix())
-						,cfg.getRejectedExecutionHandler());
+		 public ExecutorMonitorServer(ExecutorConfig cfg,ExecutorInfo ei) {
 			this.cfg = cfg;
-			this.ei = new ExecutorInfo();
+			this.ei = ei;
 			this.ei.setTerminal(false);
 			this.ei.setInstanceName(Config.getInstanceName());
-			this.ei.setKey("JMicro-" + Config.getInstanceName()+"-" + this.cfg.getThreadNamePrefix());
+			//this.ei.setKey("JMicro-" + Config.getInstanceName()+"-" + this.cfg.getThreadNamePrefix());
 			this.ei.setEc(this.cfg);
 			
 			ilog.info("Create thread pool: " + this.ei.getKey());
 			//queue size got 80% of the max queue size will sent warning message to monitor server
 			warnSize = (long)(this.cfg.getTaskQueueSize()*0.8);
-			
-			/*SF.eventLog(MC.EP_START, MC.LOG_WARN, JmicroThreadPoolExecutor.class,
-					JsonUtils.getIns().toJson(ei));*/
 		 }
 		 
-		 public void shutdown() {
-			  ilog.info("{} Going to shutdown. Executed tasks: {}, Running tasks: {}, Pending tasks: {}",
-					  this.cfg.getThreadNamePrefix(), this.getCompletedTaskCount(), this.getActiveCount(), this.getQueue().size());
-		      super.shutdown();
-		 }
-		
 		@Override
 		public ExecutorInfo getInfo() {
-			//logger.debug("Return: " + this.ei.getKey());
-			//setInfo();
+			setInfo();
 			return this.ei;
 		}
 		 
 		private void setInfo() {
-			this.ei.setActiveCount(this.getActiveCount());
-			this.ei.setCompletedTaskCount(this.getCompletedTaskCount());
-			this.ei.setLargestPoolSize(this.getLargestPoolSize());
-			this.ei.setPoolSize(this.getPoolSize());
-			this.ei.setTaskCount(this.getTaskCount());
-			this.ei.setCurQueueCnt(this.getQueue().size());
+			this.ei.setActiveCount(e.getActiveCount());
+			this.ei.setCompletedTaskCount(e.getCompletedTaskCount());
+			this.ei.setLargestPoolSize(e.getLargestPoolSize());
+			this.ei.setPoolSize(e.getPoolSize());
+			this.ei.setTaskCount(e.getTaskCount());
+			this.ei.setCurQueueCnt(e.getQueue().size());
 		}
 
-		@Override
-		protected void beforeExecute(Thread t, Runnable r) {
-			this.ei.setStartCnt(this.ei.getStartCnt()+1);
-			super.beforeExecute(t, r);
-		}
-
-		@Override
-		protected void afterExecute(Runnable r, Throwable t) {
-			this.ei.setEndCnt(this.ei.getEndCnt()+1);
-			super.afterExecute(r, t);
-		}
-
-		@Override
-		protected void terminated() {
-			//setInfo();
-			this.ei.setTerminal(true);
-			SF.eventLog(MC.EP_TERMINAL, MC.LOG_WARN, JmicroThreadPoolExecutor.class,
-					JsonUtils.getIns().toJson(this.ei));
-			super.terminated();
-		}
-		
 		public void check() {
 			//if pool size less than 2, you should know what you doing
-			setInfo();
-			if(this.cfg.getTaskQueueSize() > 2 && this.getPoolSize() > this.warnSize) {
+			if(this.cfg.getTaskQueueSize() > 2 && e.getPoolSize() > this.warnSize) {
+				setInfo();
 				SF.eventLog(MC.EP_TASK_WARNING, MC.LOG_WARN, JmicroThreadPoolExecutor.class,
 						JsonUtils.getIns().toJson(this.ei));
 			}
 		}
 
+		public void setE(JmicroThreadPoolExecutor e) {
+			this.e = e;
+		}
+	}
+	
+	public static class JmicroThreadPoolExecutor extends ThreadPoolExecutor{
+		
+		 private ExecutorInfo ei;
+		 
+		 public JmicroThreadPoolExecutor(ExecutorConfig cfg) {
+			 super(cfg.getMsCoreSize(),cfg.getMsMaxSize(),
+						cfg.getIdleTimeout(),TimeUtils.getTimeUnit(cfg.getTimeUnit()),
+						new ArrayBlockingQueue<Runnable>(cfg.getTaskQueueSize()),
+						new NamedThreadFactory("JMicro-"+Config.getInstanceName()+"-"+cfg.getThreadNamePrefix())
+						,cfg.getRejectedExecutionHandler());
+			this.ei = new ExecutorInfo();
+		 }
+		 
+		@Override
+		protected void beforeExecute(Thread t, Runnable r) {
+			this.ei.addStartCnt();
+			super.beforeExecute(t, r);
+		}
+
+		@Override
+		protected void afterExecute(Runnable r, Throwable t) {
+			this.ei.addEndCnt();
+			super.afterExecute(r, t);
+		}
+
+		@Override
+		protected void terminated() {
+			this.ei.setTerminal(true);
+			SF.eventLog(MC.EP_TERMINAL, MC.LOG_WARN, JmicroThreadPoolExecutor.class,
+					JsonUtils.getIns().toJson(ei));
+			super.terminated();
+		}
+
+		public ExecutorInfo getEi() {
+			return ei;
+		}
+		
 	}
 }

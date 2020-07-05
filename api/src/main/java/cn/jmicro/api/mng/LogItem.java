@@ -1,4 +1,4 @@
-package cn.jmicro.mng.api;
+package cn.jmicro.api.mng;
 
 import cn.jmicro.api.annotation.SO;
 import cn.jmicro.api.monitor.MC;

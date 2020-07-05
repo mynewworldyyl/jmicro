@@ -28,7 +28,7 @@ import org.slf4j.LoggerFactory;
 
 import cn.jmicro.api.annotation.Service;
 import cn.jmicro.api.client.IClientSession;
-import cn.jmicro.api.client.IMessageCallback;
+import cn.jmicro.api.client.IAsyncCallback;
 import cn.jmicro.api.codec.Decoder;
 import cn.jmicro.api.codec.PrefixTypeEncoderDecoder;
 import cn.jmicro.api.gateway.ApiRequest;
@@ -85,7 +85,7 @@ public class ApiGatewayClient {
 		sessionManager.registerMessageHandler(new IMessageHandler(){
 			@Override
 			public Byte type() {
-				return Constants.MSG_TYPE_API_RESP;
+				return Constants.MSG_TYPE_RRESP_RAW;
 			}
 			
 			@Override
@@ -151,7 +151,6 @@ public class ApiGatewayClient {
 		msg.setDumpDownStream(false);
 		msg.setDumpUpStream(false);
 		msg.setNeedResponse(true);
-		msg.setLoggable(false);
 		msg.setLogLevel(MC.LOG_NO);
 		msg.setMonitorable(false);
 		msg.setDebugMode(false);
@@ -181,7 +180,7 @@ public class ApiGatewayClient {
 	}
 	
 	public <R> Object callService(String serviceName, String namespace, String version
-			, String method, Object[] args,IMessageCallback<R> callback) {
+			, String method, Object[] args,IAsyncCallback<R> callback) {
 		Message msg = this.createMessage(serviceName, namespace, version, method, args);
 		//msg.setStream(true);
 		return getResponse(msg,callback);
@@ -207,7 +206,7 @@ public class ApiGatewayClient {
 	}
 	
 	@SuppressWarnings("unchecked")
-	private <R> Object getResponse(Message msg, final IMessageCallback<R> callback) {
+	private <R> Object getResponse(Message msg, final IAsyncCallback<R> callback) {
 		streamComfirmFlag.put(msg.getReqId(), true);
 		waitForResponses.put(msg.getReqId(), respMsg1 -> {
 			streamComfirmFlag.remove(msg.getReqId());
@@ -272,7 +271,7 @@ public class ApiGatewayClient {
 		req.setVersion(version);
 		
 		Message msg = new Message();
-		msg.setType(Constants.MSG_TYPE_API_REQ);
+		msg.setType(Constants.MSG_TYPE_REQ_RAW);
 		msg.setUpProtocol(Message.PROTOCOL_BIN);
 		msg.setId(idClient.getLongId(Message.class.getName()));
 		msg.setReqId(req.getReqId());
@@ -282,7 +281,6 @@ public class ApiGatewayClient {
 		msg.setDumpDownStream(false);
 		msg.setDumpUpStream(false);
 		msg.setNeedResponse(true);
-		msg.setLoggable(false);
 		msg.setLogLevel(MC.LOG_NO);
 		msg.setMonitorable(false);
 		msg.setDebugMode(false);
@@ -313,7 +311,6 @@ public class ApiGatewayClient {
 		msg.setDumpDownStream(false);
 		msg.setDumpUpStream(false);
 		msg.setNeedResponse(true);
-		msg.setLoggable(false);
 		msg.setLogLevel(MC.LOG_NO);
 		msg.setMonitorable(false);
 		msg.setDebugMode(false);

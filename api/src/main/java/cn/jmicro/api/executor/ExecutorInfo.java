@@ -30,10 +30,10 @@ public class ExecutorInfo {
 	private long taskCount;
 
 	//开始数
-	private int startCnt;
+	private int startCnt=0;
 	
 	//结束数
-	private int endCnt;
+	private int endCnt=0;
 	
 	//当前队列任务数
 	private int curQueueCnt;
@@ -96,20 +96,12 @@ public class ExecutorInfo {
 		this.taskCount = taskCount;
 	}
 
-	public int getStartCnt() {
-		return startCnt;
+	public void addStartCnt() {
+		 startCnt++;
 	}
 
-	public void setStartCnt(int startCnt) {
-		this.startCnt = startCnt;
-	}
-
-	public int getEndCnt() {
-		return endCnt;
-	}
-
-	public void setEndCnt(int endCnt) {
-		this.endCnt = endCnt;
+	public void addEndCnt() {
+		this.endCnt++;
 	}
 
 	public boolean isTerminal() {

@@ -23,7 +23,7 @@ import cn.jmicro.api.annotation.Cfg;
 import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Inject;
 import cn.jmicro.api.client.IClientSession;
-import cn.jmicro.api.client.IMessageCallback;
+import cn.jmicro.api.client.IAsyncCallback;
 import cn.jmicro.api.codec.ICodecFactory;
 import cn.jmicro.api.net.IMessageHandler;
 import cn.jmicro.api.net.ISession;
@@ -108,12 +108,12 @@ public class AsyncMessageHandler implements IMessageHandler{
 		methodName = methodName.substring(0,i);
 		*/
 		
-		IMessageCallback callback = (IMessageCallback)session.getParam(key);
+		IAsyncCallback callback = (IAsyncCallback)session.getParam(key);
 		if(callback == null){
 			logger.error("Service [ "+key+"] not found!");
 			return;
 		}
-		callback.onMessage(resp.getResult());
+		callback.onMessage(resp.getResult(),null);
 		
 		/*try {
 			Class<?>[] pts = ServiceLoader.getMethodParamsType((Object[])resp.getResult());

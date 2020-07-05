@@ -108,7 +108,6 @@ public class TestRpcRequest {
 		msg.setDumpDownStream(false);
 		msg.setDumpUpStream(false);
 		msg.setNeedResponse(true);
-		msg.setLoggable(true);
 		msg.setLogLevel(MC.LOG_DEBUG);
 		msg.setMonitorable(true);
 		msg.setDebugMode(true);

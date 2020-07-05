@@ -25,9 +25,12 @@ import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Inject;
 import cn.jmicro.api.codec.ICodecFactory;
 import cn.jmicro.api.config.Config;
+import cn.jmicro.api.exception.RpcException;
+import cn.jmicro.api.exception.TimeoutException;
 import cn.jmicro.api.idgenerator.ComponentIdServer;
 import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.monitor.MRpcItem;
+import cn.jmicro.api.monitor.MonitorClient;
 import cn.jmicro.api.monitor.SF;
 import cn.jmicro.api.net.IMessageHandler;
 import cn.jmicro.api.net.IResponse;
@@ -40,6 +43,7 @@ import cn.jmicro.api.net.ServerError;
 import cn.jmicro.api.registry.IRegistry;
 import cn.jmicro.api.security.ActInfo;
 import cn.jmicro.api.security.IAccountService;
+import cn.jmicro.api.service.IServiceAsyncResponse;
 import cn.jmicro.api.service.ServiceLoader;
 import cn.jmicro.common.Constants;
 import cn.jmicro.common.util.StringUtils;
@@ -79,6 +83,9 @@ public class JRPCReqRespHandler implements IMessageHandler{
 	@Inject
 	private IAccountService accountManager;
 	
+	@Inject
+	private MonitorClient monitor;
+	
 	@Override
 	public Byte type() {
 		return TYPE;
@@ -97,9 +104,15 @@ public class JRPCReqRespHandler implements IMessageHandler{
 	    	final RpcRequest req1 = ICodecFactory.decode(this.codeFactory,msg.getPayload(),
 					RpcRequest.class,msg.getUpProtocol());
 	    	
+	    	if(msg.isDebugMode()) {
+	    		JMicroContext.get().appendCurUseTime("Server end decode req",true);
+    		}
+	    	
 	    	req = req1;
 			req.setSession(s);
 			req.setMsg(msg);
+			
+			//logger.info(req.getServiceName()+" debugMode: " + msg.isDebugMode()+", method: " + msg.getMethod());
 			
 	    	JMicroContext.config(req1,serviceLoader,registry);
 	    	
@@ -127,9 +140,8 @@ public class JRPCReqRespHandler implements IMessageHandler{
 						ServerError se = new ServerError(ServerError.SE_INVLID_LOGIN_KEY,"Invalid login key!");
 						resp.setResult(se);
 						resp.setSuccess(false);
-						msg.setPayload(ICodecFactory.encode(codeFactory, resp, msg.getUpProtocol()));
 						SF.eventLog(MC.MT_INVALID_LOGIN_INFO,MC.LOG_ERROR, TAG,se.toString());
-						s.write(msg);
+						resp2Client(resp,s,msg);
 						return;
 					}else {
 						JMicroContext.get().setString(JMicroContext.LOGIN_KEY, lk);
@@ -138,10 +150,6 @@ public class JRPCReqRespHandler implements IMessageHandler{
 				}
 			}
 			
-	    	if(msg.isDebugMode()) {
-	    		JMicroContext.get().appendCurUseTime("Server end decode req",true);
-    		}
-	    	
 			if(!msg.isNeedResponse()){
 				//无需返回值
 				//数据发送后，不需要返回结果，也不需要请求确认包，直接返回
@@ -156,52 +164,101 @@ public class JRPCReqRespHandler implements IMessageHandler{
 				return;
 			}
 			
-			//下面处理需要返回值的RPC
-			//msg.setReqId(req.getRequestId());
-			//msg.setSessionId(req.getSession().getId());
-			msg.setVersion(req.getMsg().getVersion());
-				
-			//同步响应
-			resp = (RpcResponse)interceptorManger.handleRequest(req);
-			if(resp == null){
-				//返回空值情况处理
-				resp = new RpcResponse(req.getRequestId(),null);
-				resp.setSuccess(true);
-			}
-			msg.setPayload(ICodecFactory.encode(codeFactory,resp,msg.getUpProtocol()));
-			//请求类型码比响应类型码大1，
-			msg.setType((byte)(msg.getType()+1));
-			
-			//响应消息
-			s.write(msg);
-
-			if(msg.isMonitorable()) {
-				SF.netIoRead(TAG.getName(),MC.MT_SERVER_JRPC_RESPONSE_SUCCESS, msg.getLen());
+			if(msg.isAsyncReturnResult()) {
+				final RpcResponse r = resp;
+				JMicroContext cxt = JMicroContext.get();
+				//异步响应
+				IServiceAsyncResponse cb = new IServiceAsyncResponse() {
+					@Override
+					public <R> void result(R result) {
+						r.setSuccess(true);
+						r.setResult(result);
+						resp2Client(r,s,msg);
+						cxt.removeParam(Constants.CONTEXT_SERVICE_RESPONSE);
+						if(JMicroContext.get().isDebug()) {
+							JMicroContext.get().appendCurUseTime("Async respTime",false);
+							JMicroContext.get().debugLog(0);
+						}
+						JMicroContext.get().submitMRpcItem(monitor);
+					}
+				};
+				cxt.setParam(Constants.CONTEXT_SERVICE_RESPONSE, cb);
+				IResponse rr = interceptorManger.handleRequest(req);
+				if(rr != null && rr.getResult() != null) {
+					cxt.removeParam(Constants.CONTEXT_SERVICE_RESPONSE);
+					resp2Client(rr,s,msg);
+				}
+			} else {
+				//同步响应
+				resp = (RpcResponse)interceptorManger.handleRequest(req);
+				if(resp == null){
+					//返回空值情况处理
+					resp = new RpcResponse(req.getRequestId(),null);
+					resp.setSuccess(true);
+				}
+				resp2Client(resp,s,msg);
 			}
 			
 		} catch (Throwable e) {
-			//返回错误
-			SF.eventLog(MC.MT_SERVER_ERROR,MC.LOG_ERROR, TAG,"JRPCReq error",e);
-			logger.error("JRPCReq error: ",e);
-			if(needResp && req != null ){
-				//返回错误
-				resp = new RpcResponse(req.getRequestId(),new ServerError(0,e.getMessage()));
-				resp.setSuccess(false);
-				msg.setPayload(ICodecFactory.encode(codeFactory,resp,msg.getUpProtocol()));
-				msg.setType((byte)(msg.getType()+1));
-				msg.setInstanceName(Config.getInstanceName());
-				msg.setTime(System.currentTimeMillis());
-				s.write(msg);
-			}
-			s.close(true);
+			doException(req,s,msg,e);
 		} finally {
-			if(JMicroContext.get().isMonitorable()) {
-				MRpcItem item = JMicroContext.get().getMRpcItem();
-				item.setReq(req);
-				item.setResp(resp);
-				item.setReqId(req.getRequestId());
-				item.setLinkId(msg.getLinkId());
+			if(!msg.isAsyncReturnResult() && JMicroContext.get().isMonitorable()) {
+				doFinally(req,resp,msg);
 			}
+		}
+	}
+	
+	private void doException(RpcRequest req, ISession s,Message msg,Throwable e) {
+
+		//返回错误
+		SF.eventLog(MC.MT_SERVER_ERROR,MC.LOG_ERROR, TAG,"JRPCReq error",e);
+		logger.error("JRPCReq error: ",e);
+		if(msg.isNeedResponse() && req != null ) {
+			//返回错误
+			RpcResponse resp = new RpcResponse(req.getRequestId(),new ServerError(0,e.getMessage()));
+			resp.setSuccess(false);
+			msg.setPayload(ICodecFactory.encode(codeFactory,resp,msg.getUpProtocol()));
+			msg.setType((byte)(msg.getType()+1));
+			msg.setInstanceName(Config.getInstanceName());
+			msg.setTime(System.currentTimeMillis());
+			s.write(msg);
+		}
+		
+		if(!((e instanceof RpcException) || (e instanceof TimeoutException))) {
+			s.close(true);
+		}
+	}
+	
+	private void doFinally(RpcRequest req, RpcResponse resp,Message msg) {
+		MRpcItem item = JMicroContext.get().getMRpcItem();
+		item.setReq(req);
+		item.setResp(resp);
+		item.setReqId(req.getRequestId());
+		item.setLinkId(msg.getLinkId());
+	}
+	
+	private void resp2Client(IResponse resp, ISession s,Message msg) {
+		if(msg.isDebugMode()) {
+    		JMicroContext.get().appendCurUseTime("Service Return",true);
+		}
+		
+		msg.setPayload(ICodecFactory.encode(codeFactory,resp,msg.getUpProtocol()));
+		//请求类型码比响应类型码大1，
+		msg.setType((byte)(msg.getType()+1));
+		
+		if(msg.isDebugMode()) {
+    		JMicroContext.get().appendCurUseTime("Server finish encode",true);
+		}
+		
+		//响应消息
+		s.write(msg);
+
+		if(msg.isMonitorable()) {
+			SF.netIoRead(TAG.getName(),MC.MT_SERVER_JRPC_RESPONSE_SUCCESS, msg.getLen());
+		}
+		
+		if(msg.isDebugMode()) {
+    		JMicroContext.get().appendCurUseTime("Server finish write",true);
 		}
 	}
 

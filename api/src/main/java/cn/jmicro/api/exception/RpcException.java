@@ -30,6 +30,8 @@ public final class RpcException extends CommonException {
 	private static final long serialVersionUID = 134328923L;
 	
 	private IRequest req = null;
+	
+	private IResponse resp = null;
 
 	public RpcException(IRequest req,String cause){
 		super(cause);
@@ -39,6 +41,7 @@ public final class RpcException extends CommonException {
 	public RpcException(IRequest req,IResponse resp){
 		super("fail");
 		this.req = req;
+		this.resp = resp;
 	}
 	
 	public RpcException(IRequest req,ServerError se){
@@ -46,7 +49,7 @@ public final class RpcException extends CommonException {
 	}
 	
 	public RpcException(IRequest req,Throwable exp){
-		super(exp.getMessage());
+		super("fail",exp);
 		this.req= req;
 	}
 
@@ -58,5 +61,33 @@ public final class RpcException extends CommonException {
 		this.req = req;
 	}
 
+	public IResponse getResp() {
+		return resp;
+	}
+
+	public void setResp(IResponse resp) {
+		this.resp = resp;
+	}
+
+	@Override
+	public String toString() {
+		String msg = super.toString();
+		StringBuffer sb = new StringBuffer(msg);
+		if(req != null) {
+			sb.append("reqID:").append(req.getRequestId())
+			.append(", service: ").append(req.getServiceName())
+			.append(", namespace: ").append(req.getNamespace())
+			.append(", version: ").append(req.getVersion())
+			.append(", method: ").append(req.getMethod())
+			.append(", args: ").append(req.getArgs());
+		}
+		
+		if(resp!= null) {
+			sb.append(", resp result: ").append(resp.getResult());
+		}
+		
+		return sb.toString();
+		
+	}
 
 }

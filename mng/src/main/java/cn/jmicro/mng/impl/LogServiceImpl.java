@@ -27,6 +27,9 @@ import cn.jmicro.api.Resp;
 import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Inject;
 import cn.jmicro.api.annotation.Service;
+import cn.jmicro.api.mng.ILogService;
+import cn.jmicro.api.mng.LogEntry;
+import cn.jmicro.api.mng.LogItem;
 import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.monitor.MRpcItem;
 import cn.jmicro.api.net.IReq;
@@ -35,12 +38,9 @@ import cn.jmicro.api.net.RpcRequest;
 import cn.jmicro.api.net.RpcResponse;
 import cn.jmicro.common.util.JsonUtils;
 import cn.jmicro.common.util.StringUtils;
-import cn.jmicro.mng.api.ILogService;
-import cn.jmicro.mng.api.LogEntry;
-import cn.jmicro.mng.api.LogItem;
 
 @Component
-@Service(namespace="mng", version="0.0.1",external=true)
+@Service(namespace="mng", version="0.0.1",external=true,debugMode=1)
 public class LogServiceImpl implements ILogService {
 
 	@Inject

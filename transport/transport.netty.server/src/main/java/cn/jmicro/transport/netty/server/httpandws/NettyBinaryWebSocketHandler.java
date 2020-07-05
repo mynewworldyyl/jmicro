@@ -105,9 +105,6 @@ public class NettyBinaryWebSocketHandler extends SimpleChannelInboundHandler<Bin
     	session.setDumpUpStream(false);
     	session.init();
     	ctx.channel().attr(sessionKey).set(session);
-    	
-    	session.init();
-    	ctx.channel().attr(sessionKey).set(session);
     }
     
     @Override

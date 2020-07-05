@@ -99,16 +99,16 @@ public class NettySocketServer implements IServer {
 	
 	private void init0() {
 		ExecutorConfig config = new ExecutorConfig();
-		config.setMsCoreSize(2);
+		config.setMsCoreSize(20);
 		config.setMsMaxSize(60);
-		config.setTaskQueueSize(1000);
+		config.setTaskQueueSize(2);
 		config.setThreadNamePrefix("NIO-WorkerGroup");
 		workerGroupExecutor = of.get(ExecutorFactory.class).createExecutor(config);
 		
 		ExecutorConfig config1 = new ExecutorConfig();
-		config1.setMsCoreSize(2);
+		config1.setMsCoreSize(20);
 		config1.setMsMaxSize(60);
-		config1.setTaskQueueSize(500);
+		config1.setTaskQueueSize(2);
 		config1.setThreadNamePrefix("NIO-BossGroup");
 		bossGroupExecutor = of.get(ExecutorFactory.class).createExecutor(config1);
 		
@@ -131,8 +131,8 @@ public class NettySocketServer implements IServer {
         
         //InetAddress.getByAddress(Array(127, 0, 0, 1))
         InetSocketAddress address = new InetSocketAddress(Config.getHost(),this.port);
-        EventLoopGroup bossGroup = new NioEventLoopGroup(0,bossGroupExecutor);
-        EventLoopGroup workerGroup = new NioEventLoopGroup(0,workerGroupExecutor);
+        EventLoopGroup bossGroup = new NioEventLoopGroup(/*0,bossGroupExecutor*/);
+        EventLoopGroup workerGroup = new NioEventLoopGroup(/*0,workerGroupExecutor*/);
         
         try {
         	server = new ServerBootstrap();

@@ -1,4 +1,4 @@
-package cn.jmicro.mng.api;
+package cn.jmicro.api.mng;
 
 import java.util.Map;
 

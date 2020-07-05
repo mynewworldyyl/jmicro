@@ -5,7 +5,10 @@ import cn.jmicro.api.test.Person;
 
 @Service
 public interface ISimpleRpc {
+	
 	String hello(String name);
+	
+	//IPromise<String> helloAsync(String name);
 	
 	String hi(Person p);
 	

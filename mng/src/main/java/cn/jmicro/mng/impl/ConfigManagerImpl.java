@@ -12,7 +12,7 @@ import cn.jmicro.api.raft.IDataOperator;
 import cn.jmicro.common.util.StringUtils;
 
 @Component
-@Service(namespace="mng", version="0.0.1",retryCnt=0,external=true,timeout=10000)
+@Service(namespace="mng", version="0.0.1",retryCnt=0,external=true,timeout=10000,debugMode=1)
 public class ConfigManagerImpl implements IConfigManager {
 
 	@Inject

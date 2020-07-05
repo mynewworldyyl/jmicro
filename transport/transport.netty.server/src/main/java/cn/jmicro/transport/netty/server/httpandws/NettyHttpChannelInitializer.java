@@ -35,8 +35,8 @@ import io.netty.handler.stream.ChunkedWriteHandler;
 @Component(lazy=false)
 public class NettyHttpChannelInitializer extends ChannelInitializer<SocketChannel>{
 
-	@Inject
-	private NettyTextWebSocketHandler txtWsHandler;
+	//@Inject
+	//private NettyTextWebSocketHandler txtWsHandler;
 	
 	@Inject
 	private NettyBinaryWebSocketHandler binWsHandler;
@@ -44,8 +44,8 @@ public class NettyHttpChannelInitializer extends ChannelInitializer<SocketChanne
 	@Inject
 	private NettyHttpServerHandler httpHandler;
 	
-	@Cfg(value="/textWebsocketContextPath",defGlobal=true)
-	private String textWebsocketContextPath = "/_txt_";
+	//@Cfg(value="/textWebsocketContextPath",defGlobal=true)
+	//private String textWebsocketContextPath = "/_txt_";
 	
 	@Cfg(value="/binaryWebsocketContextPath",defGlobal=true)
 	private String binaryWebsocketContextPath = "/_bin_";

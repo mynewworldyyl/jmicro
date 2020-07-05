@@ -21,7 +21,6 @@ public class BreakerInterceptor implements IInterceptor {
 		try {
 			resp = handler.onRequest(req);
 		} catch (BreakerException | TimeoutException e) {
-			e.printStackTrace();
 			resp =  FirstClientInterceptor.doFastFail(req,e);
 		}
 		return resp;

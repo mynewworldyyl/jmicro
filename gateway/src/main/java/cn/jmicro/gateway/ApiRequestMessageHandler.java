@@ -56,7 +56,7 @@ import cn.jmicro.common.util.StringUtils;
  *
  * @author Yulei Ye
  */
-@Component(side = Constants.SIDE_PROVIDER)
+//@Component(side = Constants.SIDE_PROVIDER)
 public class ApiRequestMessageHandler implements IMessageHandler{
 
 	private final static Logger logger = LoggerFactory.getLogger(ApiRequestMessageHandler.class);
@@ -82,7 +82,7 @@ public class ApiRequestMessageHandler implements IMessageHandler{
 	
 	@Override
 	public Byte type() {
-		return Constants.MSG_TYPE_API_REQ;
+		return 0;//Constants.MSG_TYPE_API_REQ;
 	}
 
 	@Override
@@ -94,7 +94,7 @@ public class ApiRequestMessageHandler implements IMessageHandler{
 		ApiResponse resp = new ApiResponse();
 		Object result = null;
 		
-		msg.setType(Constants.MSG_TYPE_API_RESP);
+		//msg.setType(Constants.MSG_TYPE_API_RESP);
 		resp.setReqId(req.getReqId());
 		resp.setMsg(msg);
 		resp.setSuccess(true);

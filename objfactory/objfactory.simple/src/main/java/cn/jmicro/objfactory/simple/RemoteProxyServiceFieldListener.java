@@ -156,7 +156,7 @@ class RemoteProxyServiceFieldListener implements IServiceListener{
 						AbstractClientServiceProxy po = null;
 						for(Object o: set){
 							AbstractClientServiceProxy p = (AbstractClientServiceProxy)o;
-							if(p.serviceKey().equals(item.serviceKey())){
+							if(p.getItem() == null || p.serviceKey().equals(item.serviceKey())){
 								po = p;
 								break;
 							}
@@ -170,13 +170,13 @@ class RemoteProxyServiceFieldListener implements IServiceListener{
 						}
 					}
 				} else {
-					//服务已经不存在
 					AbstractClientServiceProxy po = null;
 					String k= item.getKey().toKey(true, true, true);
 					for(Object o: set){
 						AbstractClientServiceProxy p = (AbstractClientServiceProxy)o;
-						if(p.getItem() != null && k.equals(p.getItem().getKey().toKey(true, true, true))){
+						if(p.getItem() == null || k.equals(p.getItem().getKey().toKey(true, true, true))){
 							po = p;
+							break;
 						}
 					}
 					if(po != null){

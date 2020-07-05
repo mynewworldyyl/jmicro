@@ -118,19 +118,19 @@ public class SimpleObjectFactory implements IObjectFactory {
 	
 	private RpcClassLoader rpcClassLoader = null;
 	
-	private Object waitForShutdown = new Object();
-	
-	
+	@SuppressWarnings("unchecked")
 	@Override
 	public <T> T getRemoteServie(String srvName, String namespace, String version,AsyncConfig[] acs) {
 		return (T)this.clientServiceProxyManager.getRefRemoteService(srvName,namespace,version,rpcClassLoader,acs);
 	}
 
+	@SuppressWarnings("unchecked")
 	@Override
 	public <T> T getRemoteServie(ServiceItem item,AsyncConfig[] acs) {
 		return (T)this.clientServiceProxyManager.getRefRemoteService(item,this.rpcClassLoader,acs);
 	}
 
+	@SuppressWarnings("unchecked")
 	@Override
 	public <T> T getRemoteServie(Class<T> srvCls, AsyncConfig[] acs) {
 		return (T)this.clientServiceProxyManager.getRefRemoteService(srvCls,acs);

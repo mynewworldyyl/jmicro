@@ -4,7 +4,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import cn.jmicro.choreography.base.AgentInfo;
+import cn.jmicro.api.choreography.AgentInfo;
+import cn.jmicro.api.choreography.Deployment;
 import cn.jmicro.common.CommonException;
 import cn.jmicro.common.util.StringUtils;
 

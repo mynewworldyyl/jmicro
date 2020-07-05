@@ -1,7 +1,6 @@
-package cn.jmicro.mng.api.choreography;
+package cn.jmicro.api.choreography;
 
 import cn.jmicro.api.annotation.SO;
-import cn.jmicro.choreography.base.AgentInfo;
 
 @SO
 public class AgentInfoVo {

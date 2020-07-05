@@ -2,19 +2,23 @@ package cn.jmicro.example.rpc.impl;
 
 import java.util.Random;
 
+import cn.jmicro.api.JMicroContext;
 import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Reference;
 import cn.jmicro.api.annotation.SBreakingRule;
 import cn.jmicro.api.annotation.SMethod;
 import cn.jmicro.api.annotation.Service;
+import cn.jmicro.api.async.IPromise;
+import cn.jmicro.api.async.PromiseUtils;
 import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.monitor.SF;
+import cn.jmicro.api.service.IServiceAsyncResponse;
 import cn.jmicro.api.test.Person;
 import cn.jmicro.common.Constants;
 import cn.jmicro.example.api.rpc.IRpcA;
 import cn.jmicro.example.api.rpc.ISimpleRpc;
 
-@Service(namespace="simpleRpc", version="0.0.1", monitorEnable=1, maxSpeed=-1,
+@Service(namespace="simpleRpc", version="0.0.1", monitorEnable=1, maxSpeed=-1,debugMode=1,
 baseTimeUnit=Constants.TIME_SECONDS, clientId=1000)
 @Component
 public class SimpleRpcImpl implements ISimpleRpc {
@@ -37,7 +41,7 @@ public class SimpleRpcImpl implements ISimpleRpc {
 			checkInterval=5000,//采样周期2S
 			timeout=5000,
 			retryInterval=1000,
-			debugMode=0,
+			debugMode=1,
 			maxSpeed=1000,
 			baseTimeUnit=Constants.TIME_MILLISECONDS
 	)
@@ -82,8 +86,24 @@ public class SimpleRpcImpl implements ISimpleRpc {
 		if(SF.isLoggable(MC.LOG_DEBUG)) {
 			SF.eventLog(MC.MT_APP_LOG,MC.LOG_DEBUG,SimpleRpcImpl.class, "linkRpc call IRpcA with: " + msg);
 		}
+		
 		System.out.println("linkRpc: " + msg);
-		return this.rpca.invokeRpcA(msg+" linkRpc => invokeRpcA");
+		//return this.rpca.invokeRpcA(msg+" linkRpc => invokeRpcA");
+		
+		IPromise<String> p = PromiseUtils.callService(this.rpca, "invokeRpcA",
+				"linkRpc call IRpcA with: " + msg);
+		
+		JMicroContext cxt = JMicroContext.get();
+		if(cxt.isAsync()) {
+			IServiceAsyncResponse cb = cxt.getParam(Constants.CONTEXT_SERVICE_RESPONSE,null);
+			p.then((rst,fail) -> {
+				cb.result(rst);
+			});
+			return null;
+		} else {
+			return p.getResult();
+		}
+		
 	}
 
 	

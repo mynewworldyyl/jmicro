@@ -88,8 +88,8 @@ public final class MC {
 	@MCA(value="服务器开启 ", desc="MT_PROCESS_REMOVE对应服务退出，开启服务编排器情况下才可监测到")
 	public static final short MT_SERVER_START = 0x0009;
 	
-	/*@MCA("服务器停止")
-	public static final short MT_SERVER_STOP = 0x000A;*/
+	/*@MCA("线程池拒绝任务")
+	public static final short MT_EXECUTOR_REJECT = 0x000A;*/
 	
 	/*@MCA("服务端服务不存在")
 	public static final short MT_SERVER_REQ_SERVICE_NOT_FOUND = 0x000B;*/
@@ -297,6 +297,9 @@ public final class MC {
 	
 	@MCA(value="队列任务数报警", group=Constants.EXECUTOR_POOL, desc="")
 	public static final short EP_TASK_WARNING = 0x0050;
+	
+	@MCA(value="线程池拒绝任务提交", group=Constants.EXECUTOR_POOL, desc="")
+	public static final short MT_EXECUTOR_REJECT = 0x0051;
 	
 	public static final short KEEP_MAX_VAL = 0x0FFF;
 	

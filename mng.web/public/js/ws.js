@@ -36,8 +36,8 @@ jm.socket = {
     , isInit:false
     ,init : function(onopen) {
             this.isInit = true;
-            var url = 'ws://' + jm.config.ip + ':' + jm.config.port +'/'+ jm.config.binContext;
-            var self = this;
+            let url = 'ws://' + jm.config.ip + ':' + jm.config.port +'/'+ jm.config.binContext;
+            let self = this;
             if(window.WebSocket){
               self.wsk = new WebSocket(url);  //获得WebSocket对象
 
@@ -132,89 +132,6 @@ jm.socket = {
           throw 'type:'+type + ' have been exists';
       }
    },
-
-}
-
-jm.binSocket = {
-    listeners : {},
-    waiting:[]
-    ,logData:null
-    ,idCallback:{}
-    , isInit:false
-    ,init : function(onopen) {
-        this.isInit = true;
-        var url = 'ws://' + jm.config.ip + ':' + jm.config.port +'/'+ jm.config.binContext;
-        var self = this;
-        if(window.WebSocket){
-            self.wsk = new WebSocket(url);  //获得WebSocket对象
-
-            //当有消息过来的时候触发
-            self.wsk.onmessage = function(event){
-                //console.log(event.data);
-                var msg = JSON.parse(event.data);
-                msg.payload = JSON.parse(msg.payload);
-
-                if(msg.type == jm.mng.ps.MSG_TYPE_ASYNC_RESP) {
-                    jm.mng.ps.onMsg(msg.payload);
-                } else {
-                    if(self.listeners[msg.reqId]) {
-                        self.listeners[msg.reqId](msg);
-                        delete self.listeners[msg.reqId];
-                    }
-                }
-            }
-
-            //连接关闭的时候触发
-            self.wsk.onclose = function(event){
-                console.log("connection close");
-                this.isInit = false;
-            }
-
-            //连接打开的时候触发
-            self.wsk.onopen = function(event){
-                console.log("connect successfully");
-                if(onopen) {
-                    onopen();
-                }
-            }
-        }else{
-            alert("浏览器不支持WebSocket");
-        }
-    }
-
-    ,send : function(bb,cb) {
-        if(cb) {
-            //注册回调为消息监听
-            this.listeners[cb.reqId] = cb;
-        }
-        let self = this;
-        if(!!self.wsk && self.wsk.readyState == WebSocket.OPEN) {
-            this.wsk.send(bb);
-        } else if(!self.wsk || self.wsk.readyState == WebSocket.CLOSED ||
-            self.wsk.readyState == WebSocket.CLOSING) {
-            this.init(function () {
-                self.wsk.send(bb);
-                if(self.waiting.length > 0) {
-                    for(let i = 0; i < self.waiting.length; i++) {
-                        self.waiting[i]();
-                    }
-                    self.waiting = [];
-                }
-            });
-        } else if(self.wsk.readyState == WebSocket.CONNECTING) {
-            self.waiting.push(function(){
-                self.wsk.send(bb);
-            })
-        }
-    }
-
-    ,registListener : function(type,lis) {
-        if(!this.listeners[type]) {
-            this.listeners[type] = lis;
-        } else {
-            throw 'type:'+type + ' have been exists';
-        }
-    }
 
 }
 

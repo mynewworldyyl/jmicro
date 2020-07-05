@@ -66,11 +66,11 @@ public class SF {
 		}
 	} 
 	
-	public static boolean reqEvent(short type,byte level,IReq req,String tag) {
+	public static boolean reqEvent(short type,byte level,IReq req,String tag,String desc) {
 		if(isMonitorable(type)) {
 			MRpcItem mi = JMicroContext.get().getMRpcItem();
 			mi.setReq(req);
-			mi.addOneItem(type,level,tag,"");
+			mi.addOneItem(type,level,tag,desc);
 			return true;
 		}else {
 			if(level >= MC.LOG_DEBUG && logger.isDebugEnabled()) {

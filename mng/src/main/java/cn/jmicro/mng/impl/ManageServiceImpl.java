@@ -16,7 +16,7 @@ import cn.jmicro.api.security.ActInfo;
 import cn.jmicro.api.service.ServiceManager;
 
 @Component
-@Service(namespace="mng", version="0.0.1",external=true,timeout=10000)
+@Service(namespace="mng", version="0.0.1",external=true,timeout=10000,debugMode=1)
 public class ManageServiceImpl implements IManageService {
 
 	@Cfg(value="/notLonginClientId",defGlobal=true)

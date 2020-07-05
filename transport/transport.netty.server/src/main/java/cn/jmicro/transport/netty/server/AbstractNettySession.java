@@ -16,8 +16,6 @@
  */
 package cn.jmicro.transport.netty.server;
 
-import static io.netty.handler.codec.http.HttpHeaders.Names.CONTENT_LENGTH;
-import static io.netty.handler.codec.http.HttpHeaders.Names.CONTENT_TYPE;
 import static io.netty.handler.codec.http.HttpResponseStatus.OK;
 import static io.netty.handler.codec.http.HttpVersion.HTTP_1_1;
 
@@ -38,6 +36,9 @@ import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.http.DefaultFullHttpResponse;
 import io.netty.handler.codec.http.FullHttpResponse;
+import io.netty.handler.codec.http.HttpHeaderNames;
+import io.netty.handler.codec.http.HttpHeaderValues;
+import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.websocketx.BinaryWebSocketFrame;
 
 public abstract class AbstractNettySession extends AbstractSession implements IServerSession {
@@ -79,10 +80,10 @@ public abstract class AbstractNettySession extends AbstractSession implements IS
 		bb.mark();
 		ByteBuf bbf = Unpooled.copiedBuffer(bb);
 		if(this.type == Constants.TYPE_HTTP) {
-			FullHttpResponse response;
-			response = new DefaultFullHttpResponse(HTTP_1_1, OK,bbf);
-			response.headers().set(CONTENT_TYPE, "text/json");
-			response.headers().set(CONTENT_LENGTH, response.content().readableBytes());
+			FullHttpResponse response =  new DefaultFullHttpResponse(HTTP_1_1, OK,bbf);
+			response.headers().set(HttpHeaderNames.CONTENT_TYPE, HttpHeaderValues.BINARY);
+			response.headers().set(HttpHeaderNames.CONTENT_LENGTH, response.content().readableBytes());
+			cors(response);
 			/* 
 			if(HttpHeaders.isKeepAlive(request)) {
 				response.headers().set(CONNECTION, Values.KEEP_ALIVE);
@@ -120,6 +121,13 @@ public abstract class AbstractNettySession extends AbstractSession implements IS
 		if(JMicroContext.get().isDebug()) {
 			JMicroContext.get().getDebugLog().append(",Encode time:").append(System.currentTimeMillis() - oldTime);
 		}
+	}
+	
+	private void cors(FullHttpResponse response) {
+		 HttpHeaders h = response.headers();
+		 h.set(HttpHeaderNames.ACCESS_CONTROL_ALLOW_ORIGIN, "*");
+		 h.set(HttpHeaderNames.ACCESS_CONTROL_ALLOW_METHODS, "POST,GET");
+		 h.set(HttpHeaderNames.ACCESS_CONTROL_ALLOW_HEADERS, "x-requested-with,content-type");
 	}
 
 	@Override
