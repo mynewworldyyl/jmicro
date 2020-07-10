@@ -5,7 +5,9 @@ import java.util.Map;
 
 import cn.jmicro.api.Resp;
 import cn.jmicro.api.monitor.MCConfig;
+import cn.jmicro.codegenerator.AsyncClientProxy;
 
+@AsyncClientProxy
 public interface IMonitorTypeService {
 
 	////////////////////GROBAL CONFIG////////////////////////////////

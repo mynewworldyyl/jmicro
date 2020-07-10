@@ -27,7 +27,7 @@ import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Inject;
 import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.monitor.SF;
-import cn.jmicro.api.objectfactory.AbstractClientServiceProxy;
+import cn.jmicro.api.objectfactory.AbstractClientServiceProxyHolder;
 import cn.jmicro.api.objectfactory.IObjectFactory;
 import cn.jmicro.api.registry.AsyncConfig;
 import cn.jmicro.api.registry.ServiceItem;
@@ -47,7 +47,7 @@ public class ServiceInvokeManager {
 
 	private static final Class TAG = ServiceInvokeManager.class;
 	
-	private Map<String,AbstractClientServiceProxy> proxes = new HashMap<>();
+	private Map<String,AbstractClientServiceProxyHolder> proxes = new HashMap<>();
 	
 	@Inject
 	private IObjectFactory of = null;
@@ -117,7 +117,7 @@ public class ServiceInvokeManager {
 		}
 		
 		String key = si.getKey().toKey(false, false, false);
-		AbstractClientServiceProxy p = null;
+		AbstractClientServiceProxyHolder p = null;
 		if(!proxes.containsKey(key)) {
 			p = of.getRemoteServie(si, null);
 			if(p == null) {

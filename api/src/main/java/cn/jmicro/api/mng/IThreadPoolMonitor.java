@@ -4,7 +4,9 @@ import java.util.List;
 
 import cn.jmicro.api.Resp;
 import cn.jmicro.api.executor.ExecutorInfo;
+import cn.jmicro.codegenerator.AsyncClientProxy;
 
+@AsyncClientProxy
 public interface IThreadPoolMonitor {
 
 	Resp<List<ExecutorInfo>> serverList();

@@ -30,7 +30,8 @@ import org.slf4j.LoggerFactory;
 import cn.jmicro.api.annotation.Reference;
 import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.monitor.SF;
-import cn.jmicro.api.objectfactory.AbstractClientServiceProxy;
+import cn.jmicro.api.objectfactory.AbstractClientServiceProxyHolder;
+import cn.jmicro.api.objectfactory.ClientServiceProxyHolder;
 import cn.jmicro.api.objectfactory.ProxyObject;
 import cn.jmicro.api.registry.AsyncConfig;
 import cn.jmicro.api.registry.IRegistry;
@@ -108,11 +109,11 @@ class RemoteProxyServiceFieldListener implements IServiceListener{
 					String ekey = item.getKey().toKey(true, true, true);
 					Iterator<Object> ite = set.iterator();
 					for(;ite.hasNext();){
-						AbstractClientServiceProxy p = (AbstractClientServiceProxy)ite.next();
-						if(p.getItem() == null) {
+						AbstractClientServiceProxyHolder p = (AbstractClientServiceProxyHolder)ite.next();
+						if(p.getHolder().getItem() == null) {
 							ite.remove();
 						} else {
-							if(p.getItem().getKey().toKey(true, true, true).equals(ekey)){
+							if(p.getHolder().getItem().getKey().toKey(true, true, true).equals(ekey)){
 								//服务代理已经存在,不需要重新创建
 								return;
 							}
@@ -121,8 +122,8 @@ class RemoteProxyServiceFieldListener implements IServiceListener{
 				} else {
 					String ekey = item.serviceKey();
 					for(Object o: set){
-						AbstractClientServiceProxy p = (AbstractClientServiceProxy)o;
-						if(p.serviceKey().equals(ekey)){
+						AbstractClientServiceProxyHolder p = (AbstractClientServiceProxyHolder)o;
+						if(p.getHolder().serviceKey().equals(ekey)){
 							//服务代理已经存在,不需要重新创建
 							return;
 						}
@@ -132,9 +133,9 @@ class RemoteProxyServiceFieldListener implements IServiceListener{
 				AsyncConfig[] acs = this.rsm.getAcs(this.ref);
 				
 				//代理还不存在，创建之
-				AbstractClientServiceProxy p = (AbstractClientServiceProxy)this.rsm.getRefRemoteService(item, null,acs);
+				AbstractClientServiceProxyHolder p = (AbstractClientServiceProxyHolder)this.rsm.getRefRemoteService(item, null,acs);
 				if(p!=null){
-					p.setDirect(direct);
+					p.getHolder().setDirect(direct);
 					set.add(p);
 					logger.debug("Add proxy for,Size:{} Field:{},Item:{}",set.size(),
 							refField.toString(),item.getKey().toKey(false, false, false));
@@ -153,10 +154,10 @@ class RemoteProxyServiceFieldListener implements IServiceListener{
 					boolean exist = registry.isExists(item.getKey().getServiceName(), item.getKey().getNamespace(), item.getKey().getVersion());
 					if(!exist) {
 						//服务已经不存在
-						AbstractClientServiceProxy po = null;
+						AbstractClientServiceProxyHolder po = null;
 						for(Object o: set){
-							AbstractClientServiceProxy p = (AbstractClientServiceProxy)o;
-							if(p.getItem() == null || p.serviceKey().equals(item.serviceKey())){
+							AbstractClientServiceProxyHolder p = (AbstractClientServiceProxyHolder)o;
+							if(p.getHolder().getItem() == null || p.getHolder().serviceKey().equals(item.serviceKey())){
 								po = p;
 								break;
 							}
@@ -170,11 +171,11 @@ class RemoteProxyServiceFieldListener implements IServiceListener{
 						}
 					}
 				} else {
-					AbstractClientServiceProxy po = null;
+					AbstractClientServiceProxyHolder po = null;
 					String k= item.getKey().toKey(true, true, true);
 					for(Object o: set){
-						AbstractClientServiceProxy p = (AbstractClientServiceProxy)o;
-						if(p.getItem() == null || k.equals(p.getItem().getKey().toKey(true, true, true))){
+						AbstractClientServiceProxyHolder p = (AbstractClientServiceProxyHolder)o;
+						if(p.getHolder().getItem() == null || k.equals(p.getHolder().getItem().getKey().toKey(true, true, true))){
 							po = p;
 							break;
 						}
@@ -193,7 +194,7 @@ class RemoteProxyServiceFieldListener implements IServiceListener{
 		}
 	}
 	
-	protected void notifyChange(AbstractClientServiceProxy po,int opType) {
+	protected void notifyChange(AbstractClientServiceProxyHolder po,int opType) {
 		Reference cfg = this.refField.getAnnotation(Reference.class);
 		if(cfg == null || cfg.changeListener()== null || cfg.changeListener().trim().equals("")){
 			return;
@@ -201,7 +202,7 @@ class RemoteProxyServiceFieldListener implements IServiceListener{
 		Method m =  null;
 		Class<?> cls = ProxyObject.getTargetCls(this.refField.getDeclaringClass());
 		try {
-			 m =  cls.getMethod(cfg.changeListener(),new Class[]{AbstractClientServiceProxy.class,Integer.TYPE} );
+			 m =  cls.getMethod(cfg.changeListener(),new Class[]{AbstractClientServiceProxyHolder.class,Integer.TYPE} );
 			 if(m != null){
 				 m.invoke(this.srcObj,po,opType);
 			 }

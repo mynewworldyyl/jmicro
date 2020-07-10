@@ -16,8 +16,6 @@
  */
 package cn.jmicro.api.objectfactory;
 
-import java.lang.reflect.InvocationHandler;
-import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -27,6 +25,7 @@ import org.slf4j.LoggerFactory;
 
 import cn.jmicro.api.JMicroContext;
 import cn.jmicro.api.annotation.Reference;
+import cn.jmicro.api.client.InvocationHandler;
 import cn.jmicro.api.internal.async.IClientAsyncCallback;
 import cn.jmicro.api.registry.AsyncConfig;
 import cn.jmicro.api.registry.IRegistry;
@@ -45,11 +44,17 @@ import cn.jmicro.common.util.StringUtils;
  * @author Yulei Ye
  * @date 2018年10月4日-下午12:00:01
  */
-public abstract class AbstractClientServiceProxy implements InvocationHandler,IServiceListener{
+public class ClientServiceProxyHolder implements IServiceListener{
 
 	private final Logger logger = LoggerFactory.getLogger(this.getClass());
 	
 	private ServiceItem item = null;
+	
+	private String ns;
+	
+	private String v;
+	
+	private String sn;
 	
 	private IObjectFactory of;
 	
@@ -86,14 +91,14 @@ public abstract class AbstractClientServiceProxy implements InvocationHandler,IS
 		}
 	}
 	
-	@Override
-	public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+	public Object invoke(String methodName, Object... args) {
+		backupAndSetContext();
 		
 		ServiceItem si = this.item;
 		if(si == null) {
 			if(!isUsable()) {
 				String msg = "Service Item is NULL when call method ["
-						+method.getName()+"] with params ["+ UniqueServiceMethodKey.paramsStr(args) +"] proxy ["
+						+methodName+"] with params ["+ UniqueServiceMethodKey.paramsStr(args) +"] proxy ["
 						+this.getClass().getName()+"]";
 				logger.error(msg);
 				throw new CommonException(msg);
@@ -114,7 +119,7 @@ public abstract class AbstractClientServiceProxy implements InvocationHandler,IS
 			    	h = of.getByName(handler);
 			    	if(h == null) {
 			    		String msg = "Handler not found when call method ["
-								+method.getName()+"] with params ["+ UniqueServiceMethodKey.paramsStr(args) +"] proxy ["
+								+methodName+"] with params ["+ UniqueServiceMethodKey.paramsStr(args) +"] proxy ["
 								+this.getClass().getName()+"]";
 						logger.error(msg);
 						throw new CommonException(msg);
@@ -124,19 +129,18 @@ public abstract class AbstractClientServiceProxy implements InvocationHandler,IS
 			}
 		}
 		
-		ServiceMethod sm = si.getMethod(method.getName(), args);
+		ServiceMethod sm = si.getMethod(methodName, args);
 		
 		if(sm == null){
-			throw new CommonException("cls["+method.getDeclaringClass().getName()+"] method ["+method.getName()+"] method not found");
+			throw new CommonException("cls["+si.getImpl()+"] method ["+methodName+"] method not found");
 		}
 		
-		String methodName = method.getName();
-		if(method.getDeclaringClass() == Object.class) {
-		   throw new CommonException("Invalid invoke ["
-				   +method.getDeclaringClass().getName()+"] for method [ "+methodName+"]");
-		}
+		JMicroContext.get().setString(cn.jmicro.api.JMicroContext.CLIENT_NAMESPACE, this.getNamespace());
+		JMicroContext.get().setString(cn.jmicro.api.JMicroContext.CLIENT_SERVICE, this.getNamespace());
+		JMicroContext.get().setString(cn.jmicro.api.JMicroContext.CLIENT_VERSION, this.getNamespace());
+		JMicroContext.get().setString(cn.jmicro.api.JMicroContext.CLIENT_METHOD, this.getNamespace());
 		
-		JMicroContext.get().setParam(Constants.CLIENT_REF_METHOD, method);
+		JMicroContext.get().setParam(Constants.CLIENT_REF_METHOD, methodName);
 		JMicroContext.get().setObject(Constants.PROXY, this);
 		
 		JMicroContext.configComsumer(sm,si);
@@ -149,11 +153,12 @@ public abstract class AbstractClientServiceProxy implements InvocationHandler,IS
 			}
 		}
 		try {
-			return h.invoke(proxy, method, args);
+			return h.invoke(this, methodName, args);
 		}finally {
 			if(sdirect) {
 				JMicroContext.get().removeParam(Constants.DIRECT_SERVICE_ITEM);
 			}
+			this.restoreContext();
 		}
 		
 	}
@@ -181,11 +186,17 @@ public abstract class AbstractClientServiceProxy implements InvocationHandler,IS
 		return null;
 	}
 
-	public abstract String getNamespace();
+	public String getNamespace() {
+		return this.ns;
+	}
 	
-	public abstract String getVersion();
+	public String getVersion() {
+		return this.v;
+	}
 	
-	public abstract String getServiceName();
+	public String getServiceName() {
+		return this.sn;
+	}
 	
 	public void backupAndSetContext(){
 		//System.out.println("backupAndSetContext");
@@ -260,6 +271,20 @@ public abstract class AbstractClientServiceProxy implements InvocationHandler,IS
 	//public abstract void enable(boolean enable);
 	
 	public  void setItem(ServiceItem item){
+		if(this.item != null) {
+			if(StringUtils.isEmpty(this.ns)) {
+				this.ns = item.getKey().getNamespace();
+			}
+			
+			if(StringUtils.isEmpty(this.v)) {
+				this.ns = item.getKey().getVersion();
+			}
+			
+			if(StringUtils.isEmpty(this.sn)) {
+				this.ns = item.getKey().getServiceName();
+			}
+		}
+	
 		this.item = item;
 	}
 	
@@ -278,10 +303,10 @@ public abstract class AbstractClientServiceProxy implements InvocationHandler,IS
 
 	@Override
 	public boolean equals(Object obj) {
-		if(!(obj instanceof AbstractClientServiceProxy)){
+		if(!(obj instanceof ClientServiceProxyHolder)){
 			return false;
 		}
-		AbstractClientServiceProxy o = (AbstractClientServiceProxy)obj;
+		ClientServiceProxyHolder o = (ClientServiceProxyHolder)obj;
 		return this.serviceKey().equals(o.serviceKey());
 	}
 	
@@ -307,6 +332,18 @@ public abstract class AbstractClientServiceProxy implements InvocationHandler,IS
 
 	public void setDirect(boolean direct) {
 		this.direct = direct;
+	}
+	
+	public void setNamespace(String ns) {
+		this.ns = ns;
+	}
+	
+	public void setVersion(String v) {
+		this.v = v;
+	}
+	
+	public void setServiceName(String sn) {
+		this.sn = sn;
 	}
 	
 }

@@ -27,7 +27,6 @@ import org.slf4j.LoggerFactory;
 import cn.jmicro.api.JMicro;
 import cn.jmicro.api.JMicroContext;
 import cn.jmicro.api.annotation.Cfg;
-import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Inject;
 import cn.jmicro.api.codec.ICodecFactory;
 import cn.jmicro.api.gateway.ApiRequest;
@@ -38,16 +37,14 @@ import cn.jmicro.api.monitor.SF;
 import cn.jmicro.api.net.IMessageHandler;
 import cn.jmicro.api.net.ISession;
 import cn.jmicro.api.net.Message;
-import cn.jmicro.api.net.RpcRequest;
 import cn.jmicro.api.net.ServerError;
-import cn.jmicro.api.objectfactory.AbstractClientServiceProxy;
+import cn.jmicro.api.objectfactory.AbstractClientServiceProxyHolder;
 import cn.jmicro.api.objectfactory.IObjectFactory;
 import cn.jmicro.api.registry.ServiceItem;
 import cn.jmicro.api.registry.ServiceMethod;
 import cn.jmicro.api.security.ActInfo;
 import cn.jmicro.api.security.IAccountService;
 import cn.jmicro.common.CommonException;
-import cn.jmicro.common.Constants;
 import cn.jmicro.common.util.JsonUtils;
 import cn.jmicro.common.util.StringUtils;
 
@@ -175,8 +172,8 @@ public class ApiRequestMessageHandler implements IMessageHandler{
 				}
 				
 				try {
-					AbstractClientServiceProxy proxy = (AbstractClientServiceProxy)srv;
-					ServiceItem si = proxy.getItem();
+					AbstractClientServiceProxyHolder proxy = (AbstractClientServiceProxyHolder)srv;
+					ServiceItem si = proxy.getHolder().getItem();
 					if(si == null) {
 						String errMsg = "Service["+req.getServiceName()+"] namespace ["+req.getNamespace()+"] not found";
 						SF.eventLog(MC.MT_SERVICE_ITEM_NOT_FOUND,MC.LOG_ERROR, TAG," service not found");

@@ -1,5 +1,8 @@
 package cn.jmicro.api.mng;
 
+import cn.jmicro.codegenerator.AsyncClientProxy;
+
+@AsyncClientProxy
 public interface IConfigManager {
 
 	ConfigNode[] getChildren(String path,Boolean getAll);

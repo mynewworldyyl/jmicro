@@ -16,7 +16,8 @@ import cn.jmicro.api.executor.ExecutorInfo;
 import cn.jmicro.api.executor.IExecutorInfo;
 import cn.jmicro.api.mng.IThreadPoolMonitor;
 import cn.jmicro.api.monitor.MC;
-import cn.jmicro.api.objectfactory.AbstractClientServiceProxy;
+import cn.jmicro.api.objectfactory.AbstractClientServiceProxyHolder;
+import cn.jmicro.api.objectfactory.ClientServiceProxyHolder;
 import cn.jmicro.api.registry.ServiceItem;
 import cn.jmicro.common.util.StringUtils;
 
@@ -83,8 +84,8 @@ public class ThreadPoolMonitorImpl implements IThreadPoolMonitor {
 		Set<IExecutorInfo> eis = new HashSet<>();
 		
 		for(int i = 0; i < this.monitorServers.size(); i++) {
-			AbstractClientServiceProxy s = (AbstractClientServiceProxy)((Object)this.monitorServers.get(i));
-			ServiceItem si = s.getItem();
+			AbstractClientServiceProxyHolder s = (AbstractClientServiceProxyHolder)((Object)this.monitorServers.get(i));
+			ServiceItem si = s.getHolder().getItem();
 			if(si == null) {
 				continue;
 			}

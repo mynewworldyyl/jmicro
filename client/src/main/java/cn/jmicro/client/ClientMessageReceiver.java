@@ -18,11 +18,17 @@ package cn.jmicro.client;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.RejectedExecutionHandler;
+import java.util.concurrent.ThreadPoolExecutor;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import cn.jmicro.api.annotation.Component;
+import cn.jmicro.api.annotation.Inject;
+import cn.jmicro.api.executor.ExecutorConfig;
+import cn.jmicro.api.executor.ExecutorFactory;
 import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.monitor.SF;
 import cn.jmicro.api.net.IMessageHandler;
@@ -42,8 +48,24 @@ public class ClientMessageReceiver implements IMessageReceiver{
 	
 	private Map<Byte,IMessageHandler> handlers = new HashMap<>();
 	
-	public void init(){
-		
+	private ExecutorService defaultExecutor = null;
+	
+	@Inject
+	private ExecutorFactory ef;
+	
+	public void ready(){
+		ExecutorConfig config = new ExecutorConfig();
+		config.setMsCoreSize(5);
+		config.setMsMaxSize(20);
+		config.setTaskQueueSize(10);
+		config.setThreadNamePrefix("ClientMessageReceiver-default");
+		config.setRejectedExecutionHandler(new RejectedExecutionHandler() {
+			@Override
+			public void rejectedExecution(Runnable r, ThreadPoolExecutor executor) {
+				logger.error("Reject task: " + r.toString());
+			}
+		});
+		defaultExecutor = ef.createExecutor(config);
 	}
 
 	@Override
@@ -58,7 +80,9 @@ public class ClientMessageReceiver implements IMessageReceiver{
 		try {
 			IMessageHandler h = handlers.get(msg.getType());
 			if(h != null){
-				h.onMessage(session,msg);
+				defaultExecutor.execute(()->{
+					h.onMessage(session,msg);
+				});
 			} else {
 				String errMsg = "Handler not found:" + Integer.toHexString(msg.getType());
 				SF.eventLog(MC.MT_HANDLER_NOT_FOUND,MC.LOG_ERROR, ClientMessageReceiver.class,errMsg);

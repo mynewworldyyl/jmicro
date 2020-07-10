@@ -26,8 +26,8 @@ import cn.jmicro.api.service.IServerServiceProxy;
 public interface ProxyObject {
 
 	public static boolean isUsableRemoteProxy(Object proxy){
-		if(proxy instanceof AbstractClientServiceProxy){
-			return ((AbstractClientServiceProxy)proxy).isUsable();
+		if(proxy instanceof AbstractClientServiceProxyHolder){
+			return ((AbstractClientServiceProxyHolder)proxy).getHolder().isUsable();
 		}
 		return false;
 	}

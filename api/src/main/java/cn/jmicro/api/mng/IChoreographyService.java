@@ -5,7 +5,9 @@ import java.util.List;
 import cn.jmicro.api.choreography.AgentInfoVo;
 import cn.jmicro.api.choreography.Deployment;
 import cn.jmicro.api.choreography.ProcessInfo;
+import cn.jmicro.codegenerator.AsyncClientProxy;
 
+@AsyncClientProxy
 public interface IChoreographyService {
 
 	 //Deployment

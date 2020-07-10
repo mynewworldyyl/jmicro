@@ -15,6 +15,7 @@ import cn.jmicro.api.test.Person;
 import cn.jmicro.common.CommonException;
 import cn.jmicro.example.api.ITestRpcService;
 import cn.jmicro.example.api.rpc.ISimpleRpc;
+import cn.jmicro.example.api.rpc.client.IRpcAAsyncClient;
 
 @Component(level=1000)
 public class TestRpcClient {
@@ -25,6 +26,9 @@ public class TestRpcClient {
 	@Reference(required=false,namespace="simpleRpc",version="0.0.1")
 	private ISimpleRpc sayHello;
 	
+	@Reference(required=false,namespace="rpca",version="0.0.1")
+	private IRpcAAsyncClient rpca;
+	
 	@Reference(required=false,namespace="simpleRpc",version="0.0.1")
 	private Set<ISimpleRpc> services = new HashSet<>();
 	
@@ -33,7 +37,7 @@ public class TestRpcClient {
 	
 	@Reference(required=false,namespace="simpleRpc",version="0.0.1",
 			asyncs= {
-					@Async(forMethod="hello",enable=true,condition=AsyncConfig.ASYNC_DIRECT,
+				@Async(forMethod="hello",enable=true,condition=AsyncConfig.ASYNC_DIRECT,
 				serviceName="cn.jmicro.example.api.rpc.IAsyncRpcCallback",
 				namespace="asyncRpcCallback",
 				version="0.0.1",method="callback",

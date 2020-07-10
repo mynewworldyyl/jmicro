@@ -37,7 +37,8 @@ import cn.jmicro.api.basket.IBasket;
 import cn.jmicro.api.config.Config;
 import cn.jmicro.api.executor.ExecutorConfig;
 import cn.jmicro.api.executor.ExecutorFactory;
-import cn.jmicro.api.objectfactory.AbstractClientServiceProxy;
+import cn.jmicro.api.objectfactory.AbstractClientServiceProxyHolder;
+import cn.jmicro.api.objectfactory.ClientServiceProxyHolder;
 import cn.jmicro.api.objectfactory.IObjectFactory;
 import cn.jmicro.api.raft.IDataOperator;
 import cn.jmicro.api.registry.IServiceListener;
@@ -72,7 +73,7 @@ public class MonitorClient {
 	@Inject(required=false)
 	private IMonitorServer localMonitorServer;
 	
-	private AbstractClientServiceProxy msPo;
+	private AbstractClientServiceProxyHolder msPo;
 	
 	@Inject
 	private IObjectFactory of;
@@ -115,7 +116,7 @@ public class MonitorClient {
 		
 		logger.info("Init object :" +this.hashCode());
 		
-		msPo = (AbstractClientServiceProxy)((Object)this.monitorServer);
+		msPo = (AbstractClientServiceProxyHolder)((Object)this.monitorServer);
 		
 		typeLabels = new String[TYPES.length];
 		for(int i = 0; i < TYPES.length; i++) {
@@ -210,9 +211,9 @@ public class MonitorClient {
 	}
 	
 	
-	public void enableWork(AbstractClientServiceProxy msPo, int opType) {
+	public void enableWork(AbstractClientServiceProxyHolder msPo, int opType) {
 		if(!checkerWorking && IServiceListener.ADD == opType) {
-			if(this.msPo != null && msPo.isUsable()) {
+			if(this.msPo != null && msPo.getHolder().isUsable()) {
 				checkerWorking = true;
 				new Thread(this::doWork,Config.getInstanceName()+ "_MonitorClient_Worker").start();
 			}

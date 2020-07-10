@@ -16,15 +16,12 @@
  */
 package cn.jmicro.example.comsumer;
 
-import com.cloudogu.blog.annotationprocessor.log.Log;
-
 import cn.jmicro.api.JMicro;
-import cn.jmicro.api.JMicroContext;
 import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.monitor.SF;
 import cn.jmicro.api.objectfactory.IObjectFactory;
-import cn.jmicro.codegenerator.ServiceGen;
 import cn.jmicro.example.api.rpc.ISimpleRpc;
+import cn.jmicro.example.api.rpc.client.ISimpleRpcAsyncClient;
 
 /**
  * 
@@ -32,22 +29,37 @@ import cn.jmicro.example.api.rpc.ISimpleRpc;
  *
  * @date: 2018年11月10日 下午9:23:25
  */
-@ServiceGen
-@Log
 public class ServiceComsumer {
 
 	public static void main(String[] args) {
 		
 		IObjectFactory of = JMicro.getObjectFactoryAndStart(args);
-		JMicroContext.get().setParam("routerTag", "tagValue");
+		//JMicroContext.get().setParam("routerTag", "tagValue");
 		
 		//got remote service from object factory
 		//ISimpleRpc src = of.getRemoteServie(ISimpleRpc.class,null);
 		SF.eventLog(MC.MT_PLATFORM_LOG, MC.LOG_DEBUG, ServiceComsumer.class, "test submit nonrpc log");
-		ISimpleRpc src = of.get(ISimpleRpc.class);
+		//ISimpleRpc src = of.get(ISimpleRpc.class);
+		ISimpleRpcAsyncClient src = (ISimpleRpcAsyncClient)of.get(ISimpleRpc.class);
 		//invoke remote service
-		System.out.println(src.hello("Hello JMicro"));
+		//System.out.println(src.hello("Hello JMicro"));
+		src.helloAsync("Hello JMicro").then((rst, fail)->{
+			System.out.println(rst);
+			
+			String r = src.hello("Hello two");
+			System.out.println(r);
+			
+			src.helloAsync("Hello two").then((rst1, fail1)->{
+				System.out.println(rst);
+			});
+			
+		});
 		
+		try {
+			Thread.sleep(1000*30);
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
 		
 	}
 }

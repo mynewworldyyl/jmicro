@@ -24,18 +24,6 @@
 			<artifactId>example.api</artifactId>
 			<version>0.0.1-SNAPSHOT</version>
 		</dependency>
-		
-		  <dependency>
-            <groupId>com.cloudogu.blog</groupId>
-            <artifactId>log</artifactId>
-            <version>1.0-SNAPSHOT</version>
-        </dependency>
-		 
-		 <dependency>
-            <groupId>com.cloudogu.blog</groupId>
-            <artifactId>log</artifactId>
-            <version>1.0-SNAPSHOT</version>
-        </dependency>
 		<dependency>
 			<groupId>cn.jmicro</groupId>
 			<artifactId>idgenerator</artifactId>
@@ -84,31 +72,13 @@
 
 	<build>
 		<plugins>
-            
-             <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <version>${maven_compiler_version}</version>
-                <configuration>
-                    <!-- <compilerArgument>-proc:none</compilerArgument> -->
-                    <source>${java_source_version}</source>
-                    <target>${java_target_version}</target>
-                    <encoding>${file_encoding}</encoding>
-                    <generatedSourcesDirectory>${project.build.directory}/generated-src/</generatedSourcesDirectory>  
-	                <annotationProcessors>
-	                 	<annotationProcessor>com.cloudogu.blog.annotationprocessor.log.LogProcessor</annotationProcessor>
-	                    <annotationProcessor>cn.jmicro.codegenerator.ClientServiceProxyGenerator</annotationProcessor>
-	               </annotationProcessors>
-                </configuration>
-            </plugin>
-            
 			<plugin>
 				<artifactId>maven-assembly-plugin</artifactId>
 				<configuration>
 					<archive>
 						<manifest>
-							<!-- <mainClass>cn.jmicro.example.comsumer.ServiceComsumer</mainClass> -->
-							<mainClass>cn.jmicro.example.comsumer.PressureTest</mainClass>
+							 <mainClass>cn.jmicro.example.comsumer.ServiceComsumer</mainClass>
+							<!-- <mainClass>cn.jmicro.example.comsumer.PressureTest</mainClass> -->
 						</manifest>
 					</archive>
 				</configuration>

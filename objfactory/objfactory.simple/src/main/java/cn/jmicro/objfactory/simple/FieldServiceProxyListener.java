@@ -28,7 +28,7 @@ import org.slf4j.LoggerFactory;
 import cn.jmicro.api.annotation.Reference;
 import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.monitor.SF;
-import cn.jmicro.api.objectfactory.AbstractClientServiceProxy;
+import cn.jmicro.api.objectfactory.AbstractClientServiceProxyHolder;
 import cn.jmicro.api.objectfactory.ProxyObject;
 import cn.jmicro.api.registry.AsyncConfig;
 import cn.jmicro.api.registry.IRegistry;
@@ -109,10 +109,10 @@ class FieldServiceProxyListener implements IServiceListener{
 					refField.setAccessible(bf);
 				}
 				
-				AbstractClientServiceProxy p = (AbstractClientServiceProxy)o;
+				AbstractClientServiceProxyHolder p = (AbstractClientServiceProxyHolder)o;
 				if(o == null) {
 					//代理还不存在，创建之
-					 p = (AbstractClientServiceProxy)this.rsm.getRefRemoteService(item, null,acs);
+					 p = (AbstractClientServiceProxyHolder)this.rsm.getRefRemoteService(item, null,acs);
 					 if(p != null) {
 							SimpleObjectFactory.setObjectVal(srcObj, refField, p);
 							notifyChange(p,type);
@@ -129,8 +129,8 @@ class FieldServiceProxyListener implements IServiceListener{
 						}
 				} else {
 					notifyChange(p,type);
-					p.setItem(item);
-					p.setAsyncConfig(acs);
+					p.getHolder().setItem(item);
+					p.getHolder().setAsyncConfig(acs);
 				}
 			}else if(IServiceListener.REMOVE == type) {
 
@@ -150,7 +150,7 @@ class FieldServiceProxyListener implements IServiceListener{
 		
 	}
 	
-	protected void notifyChange(AbstractClientServiceProxy po,int opType) {
+	protected void notifyChange(AbstractClientServiceProxyHolder po,int opType) {
 		Reference cfg = this.refField.getAnnotation(Reference.class);
 		if(cfg == null || cfg.changeListener()== null || cfg.changeListener().trim().equals("")){
 			return;
@@ -158,7 +158,7 @@ class FieldServiceProxyListener implements IServiceListener{
 		Method m =  null;
 		Class<?> cls = ProxyObject.getTargetCls(this.refField.getDeclaringClass());
 		try {
-			 m =  cls.getMethod(cfg.changeListener(),new Class[]{AbstractClientServiceProxy.class,Integer.TYPE} );
+			 m =  cls.getMethod(cfg.changeListener(),new Class[]{AbstractClientServiceProxyHolder.class,Integer.TYPE} );
 			 if(m != null){
 				 m.invoke(this.srcObj,po,opType);
 			 }

@@ -15,7 +15,8 @@ import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.monitor.MonitorClient;
 import cn.jmicro.api.monitor.MonitorInfo;
 import cn.jmicro.api.monitor.MonitorServerStatus;
-import cn.jmicro.api.objectfactory.AbstractClientServiceProxy;
+import cn.jmicro.api.objectfactory.AbstractClientServiceProxyHolder;
+import cn.jmicro.api.objectfactory.ClientServiceProxyHolder;
 import cn.jmicro.api.registry.ServiceItem;
 import cn.jmicro.common.util.StringUtils;
 
@@ -124,12 +125,12 @@ public class MonitorServerManagerImpl implements IMonitorServerManager{
 			
 			IMonitorAdapter s = this.monitorServers.get(i);
 			
-			AbstractClientServiceProxy proxy = (AbstractClientServiceProxy)((Object)s);
-			if(!proxy.isUsable()) {
+			AbstractClientServiceProxyHolder proxy = (AbstractClientServiceProxyHolder)((Object)s);
+			if(!proxy.getHolder().isUsable()) {
 				continue;
 			}
 			
-			ServiceItem si = proxy.getItem();
+			ServiceItem si = proxy.getHolder().getItem();
 			String srvKey = si.getKey().toKey(true, true, true);
 			
 			MonitorInfo in = s.info();
@@ -149,8 +150,8 @@ public class MonitorServerManagerImpl implements IMonitorServerManager{
 			return null;
 		}
 		for(int i = 0; i < this.monitorServers.size(); i++) {
-			AbstractClientServiceProxy s = (AbstractClientServiceProxy)((Object)this.monitorServers.get(i));
-			ServiceItem si = s.getItem();
+			AbstractClientServiceProxyHolder s = (AbstractClientServiceProxyHolder)((Object)this.monitorServers.get(i));
+			ServiceItem si = s.getHolder().getItem();
 			if(si == null) {
 				continue;
 			}

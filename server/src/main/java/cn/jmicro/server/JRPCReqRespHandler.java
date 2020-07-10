@@ -185,6 +185,7 @@ public class JRPCReqRespHandler implements IMessageHandler{
 				cxt.setParam(Constants.CONTEXT_SERVICE_RESPONSE, cb);
 				IResponse rr = interceptorManger.handleRequest(req);
 				if(rr != null && rr.getResult() != null) {
+					//同步返回结果
 					cxt.removeParam(Constants.CONTEXT_SERVICE_RESPONSE);
 					resp2Client(rr,s,msg);
 				}

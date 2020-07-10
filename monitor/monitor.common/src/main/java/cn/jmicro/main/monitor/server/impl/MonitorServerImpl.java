@@ -13,7 +13,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import cn.jmicro.api.JMicroContext;
-import cn.jmicro.api.annotation.Cfg;
 import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Inject;
 import cn.jmicro.api.annotation.JMethod;
@@ -30,12 +29,12 @@ import cn.jmicro.api.monitor.IMonitorDataSubscriber;
 import cn.jmicro.api.monitor.IMonitorServer;
 import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.monitor.MRpcItem;
+import cn.jmicro.api.monitor.MonitorAndService2TypeRelationshipManager;
 import cn.jmicro.api.monitor.MonitorInfo;
 import cn.jmicro.api.monitor.MonitorServerStatus;
-import cn.jmicro.api.monitor.MonitorAndService2TypeRelationshipManager;
 import cn.jmicro.api.monitor.OneItem;
 import cn.jmicro.api.monitor.ServiceCounter;
-import cn.jmicro.api.objectfactory.AbstractClientServiceProxy;
+import cn.jmicro.api.objectfactory.AbstractClientServiceProxyHolder;
 import cn.jmicro.api.objectfactory.IObjectFactory;
 import cn.jmicro.api.registry.IServiceListener;
 import cn.jmicro.api.registry.ServiceItem;
@@ -121,7 +120,7 @@ public class MonitorServerImpl implements IMonitorServer {
 		//服务启动时执行一次
 		if(!subsribers.isEmpty()) {
 			for(IMonitorDataSubscriber m : this.subsribers){
-				subscriberChange((AbstractClientServiceProxy)m,IServiceListener.ADD);
+				subscriberChange((AbstractClientServiceProxyHolder)m,IServiceListener.ADD);
 			}
 			//doSubmitCacheItems();
 		}
@@ -199,7 +198,7 @@ public class MonitorServerImpl implements IMonitorServer {
 		
 	}
 	
-	public void subscriberChange(AbstractClientServiceProxy po,int opType) {
+	public void subscriberChange(AbstractClientServiceProxyHolder po,int opType) {
 		IMonitorDataSubscriber mds = (IMonitorDataSubscriber)po;
 		logger.info("subscriberChange");
 		if(opType == IServiceListener.ADD) {
@@ -314,17 +313,17 @@ public class MonitorServerImpl implements IMonitorServer {
 	
 	private boolean addOneMonitor(IMonitorDataSubscriber m) {
 		try {
-			AbstractClientServiceProxy po = (AbstractClientServiceProxy)((Object)m);
-			if(po.getItem() == null) {
+			AbstractClientServiceProxyHolder po = (AbstractClientServiceProxyHolder)((Object)m);
+			if(po.getHolder().getItem() == null) {
 				return false;
 			}
-			String skey = po.getItem().serviceKey();
+			String skey = po.getHolder().getItem().serviceKey();
 			Set<Short> types = this.mtManager.intrest(skey);
 			if(types != null && types.size() > 0) {
 				RegItem ri = new RegItem();
 				try {
 					//订阅者和服务器部署同一个JVM，做本地调用，不使用RPC
-					Class<?> cls = MonitorServerImpl.class.getClassLoader().loadClass(po.getItem().getImpl());
+					Class<?> cls = MonitorServerImpl.class.getClassLoader().loadClass(po.getHolder().getItem().getImpl());
 					if(cls != null && IMonitorDataSubscriber.class.isAssignableFrom(cls) && cls.isAnnotationPresent(Component.class)) {
 						IMonitorDataSubscriber sub = (IMonitorDataSubscriber)of.get(cls);
 						ri.sub = sub;

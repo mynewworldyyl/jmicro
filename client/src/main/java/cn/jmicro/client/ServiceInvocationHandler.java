@@ -16,9 +16,6 @@
  */
 package cn.jmicro.client;
 
-import java.lang.reflect.InvocationHandler;
-import java.lang.reflect.Method;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -26,6 +23,7 @@ import cn.jmicro.api.JMicroContext;
 import cn.jmicro.api.annotation.Cfg;
 import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Inject;
+import cn.jmicro.api.client.InvocationHandler;
 import cn.jmicro.api.exception.RpcException;
 import cn.jmicro.api.idgenerator.ComponentIdServer;
 import cn.jmicro.api.monitor.MC;
@@ -66,8 +64,8 @@ public class ServiceInvocationHandler implements InvocationHandler{
 	
 	public ServiceInvocationHandler(){}
 	
-	@Override
-	public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+	
+	public Object invoke(Object proxy, String methodName, Object[] args){
 		
 		Object obj = null;
 		RpcRequest req = null;
@@ -79,7 +77,7 @@ public class ServiceInvocationHandler implements InvocationHandler{
 			ServiceItem si = cxt.getParam(Constants.SERVICE_ITEM_KEY, null);
 			
 			req = new RpcRequest();
-			req.setMethod(method.getName());
+			req.setMethod(methodName);
 			req.setServiceName(si.getKey().getServiceName());
 			req.setNamespace(si.getKey().getNamespace());
 			req.setVersion(si.getKey().getVersion());
@@ -111,7 +109,7 @@ public class ServiceInvocationHandler implements InvocationHandler{
 			
 			if(JMicroContext.get().isDebug()) {
 				JMicroContext.get().getDebugLog()
-				.append(method.getName())
+				.append(methodName)
 				.append(",reqID:").append(req.getRequestId())
 				.append(",linkId:").append(JMicroContext.lid());
 			}

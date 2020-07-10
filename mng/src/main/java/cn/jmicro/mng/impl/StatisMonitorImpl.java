@@ -21,7 +21,7 @@ import cn.jmicro.api.mng.IStatisMonitor;
 import cn.jmicro.api.mng.ReportData;
 import cn.jmicro.api.monitor.IMonitorDataSubscriber;
 import cn.jmicro.api.monitor.MC;
-import cn.jmicro.api.objectfactory.AbstractClientServiceProxy;
+import cn.jmicro.api.objectfactory.AbstractClientServiceProxyHolder;
 import cn.jmicro.api.pubsub.PSData;
 import cn.jmicro.api.pubsub.PubSubManager;
 import cn.jmicro.api.raft.IDataOperator;
@@ -120,9 +120,9 @@ public class StatisMonitorImpl implements IStatisMonitor {
 	@SMethod(timeout=60000,retryCnt=0)
 	public boolean startStatis(String mkey, Integer t) {
 		
-		AbstractClientServiceProxy ds = (AbstractClientServiceProxy)((Object)dataServer);
+		AbstractClientServiceProxyHolder ds = (AbstractClientServiceProxyHolder)((Object)dataServer);
 		
-		if(dataServer == null || !ds.isUsable()) {
+		if(dataServer == null || !ds.getHolder().isUsable()) {
 			logger.error("Monitor server is not available, do you start it!");
 			return false;
 		}

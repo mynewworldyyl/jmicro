@@ -1,5 +1,8 @@
 package cn.jmicro.api.security;
 
+import cn.jmicro.codegenerator.AsyncClientProxy;
+
+@AsyncClientProxy
 public interface IAccountService {
 
 	ActInfo login(String actName,String pwd);

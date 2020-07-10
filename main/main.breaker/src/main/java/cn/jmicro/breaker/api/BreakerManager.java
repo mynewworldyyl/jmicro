@@ -38,7 +38,8 @@ import cn.jmicro.api.mng.ReportData;
 import cn.jmicro.api.monitor.IMonitorDataSubscriber;
 import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.monitor.SF;
-import cn.jmicro.api.objectfactory.AbstractClientServiceProxy;
+import cn.jmicro.api.objectfactory.AbstractClientServiceProxyHolder;
+import cn.jmicro.api.objectfactory.ClientServiceProxyHolder;
 import cn.jmicro.api.objectfactory.IObjectFactory;
 import cn.jmicro.api.registry.BreakRule;
 import cn.jmicro.api.registry.ServiceItem;
@@ -74,7 +75,7 @@ public class BreakerManager{
 	@Reference(namespace="rpcStatisMonitor", version="0.0.1",required=false)
 	private IMonitorDataSubscriber dataServer;
 	
-	private AbstractClientServiceProxy ds;
+	private AbstractClientServiceProxyHolder ds;
 	
 	@Inject
 	private ServiceManager srvManager;
@@ -98,7 +99,7 @@ public class BreakerManager{
 		doTestImpl = this::doTestService;
 		breakerChecker = this::breakerChecker;
 		
-		ds = (AbstractClientServiceProxy)((Object)dataServer);
+		ds = (AbstractClientServiceProxyHolder)((Object)dataServer);
 		
 		srvManager.addListener((type,item)->{
 			if(type == IListener.ADD) {
@@ -116,7 +117,7 @@ public class BreakerManager{
 	 */
 	public void breakerChecker(String key, ServiceMethod sm) {
 		
-		if(!ds.isUsable()) {
+		if(!ds.getHolder().isUsable()) {
 			logger.warn("Monitor data server is not ready for breaker check  {}",key);
 			return;
 		}

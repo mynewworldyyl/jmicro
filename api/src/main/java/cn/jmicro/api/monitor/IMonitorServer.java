@@ -16,12 +16,15 @@
  */
 package cn.jmicro.api.monitor;
 
+import cn.jmicro.codegenerator.AsyncClientProxy;
+
 /**
  * 
  * 
  * @author Yulei Ye
  * @date 2020年4月4日
  */
+@AsyncClientProxy
 public interface IMonitorServer {
 
 	void submit(MRpcItem[] items);

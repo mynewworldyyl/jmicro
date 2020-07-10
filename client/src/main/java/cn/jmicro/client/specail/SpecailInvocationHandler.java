@@ -16,9 +16,6 @@
  */
 package cn.jmicro.client.specail;
 
-import java.lang.reflect.InvocationHandler;
-import java.lang.reflect.Method;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -26,12 +23,13 @@ import cn.jmicro.api.JMicroContext;
 import cn.jmicro.api.annotation.Cfg;
 import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Inject;
+import cn.jmicro.api.client.InvocationHandler;
 import cn.jmicro.api.config.Config;
 import cn.jmicro.api.idgenerator.ComponentIdServer;
 import cn.jmicro.api.net.IRequest;
 import cn.jmicro.api.net.IResponse;
 import cn.jmicro.api.net.RpcRequest;
-import cn.jmicro.api.objectfactory.AbstractClientServiceProxy;
+import cn.jmicro.api.objectfactory.AbstractClientServiceProxyHolder;
 import cn.jmicro.api.registry.ServiceItem;
 import cn.jmicro.api.registry.ServiceMethod;
 import cn.jmicro.client.RpcClientRequestHandler;
@@ -60,26 +58,21 @@ public class SpecailInvocationHandler implements InvocationHandler{
 	public SpecailInvocationHandler(){}
 	
 	@Override
-	public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+	public Object invoke(Object proxy, String methodName, Object[] args) {
 		
 		JMicroContext.get().setParam(JMicroContext.LOCAL_HOST, Config.getHost());
-		JMicroContext.get().setParam(Constants.CLIENT_REF_METHOD, method);
+		JMicroContext.get().setParam(Constants.CLIENT_REF_METHOD, methodName);
 		
-		AbstractClientServiceProxy po = (AbstractClientServiceProxy)proxy;
-		String methodName = method.getName();
-		if(method.getDeclaringClass() == Object.class) {
-		   throw new CommonException("Invalid invoke ["
-				   +method.getDeclaringClass().getName()+"] for method [ "+methodName+"]");
-		}
+		AbstractClientServiceProxyHolder po = (AbstractClientServiceProxyHolder)proxy;
 
-		ServiceItem poItem = po.getItem();
+		ServiceItem poItem = po.getHolder().getItem();
 		if(poItem == null){
-			throw new CommonException("cls["+method.getDeclaringClass().getName()+"] method ["+method.getName()+"] service not found");
+			throw new CommonException("cls["+proxy.getClass().getName()+"] method ["+methodName+"] service not found");
 		}
 		
 		ServiceMethod sm = poItem.getMethod(methodName, args);
 		if(sm == null){
-			throw new CommonException("cls["+method.getDeclaringClass().getName()+"] method ["+method.getName()+"] method not found");
+			throw new CommonException("cls["+proxy.getClass().getName()+"] method ["+methodName+"] method not found");
 		}
 		
 		JMicroContext.get().setParam(Constants.SERVICE_METHOD_KEY, sm);
@@ -89,7 +82,7 @@ public class SpecailInvocationHandler implements InvocationHandler{
 		JMicroContext.get().setObject(Constants.PROXY, po);
 		
 		RpcRequest req = new RpcRequest();
-        req.setMethod(method.getName());
+        req.setMethod(methodName);
         req.setServiceName(poItem.getKey().getServiceName());
         req.setNamespace(poItem.getKey().getNamespace());
         req.setVersion(poItem.getKey().getVersion());

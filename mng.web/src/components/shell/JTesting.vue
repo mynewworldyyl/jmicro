@@ -5,7 +5,7 @@
         <Button @click="loadServerList('moType','getMonitorKeyList')">moType.getMonitorKeyList</Button>
         <Button @click="loadServerList('monitor','serverList')">monitor.serverList</Button>
         <Button @click="loadServerList('conf','getChildren','/jmicro/JMICRO',true)">conf.getChildren</Button>
-
+        <Button @click="loadServerList('comm','getDicts',['logKey2Val'])">comm.getDicts</Button>
     </div>
 </template>
 

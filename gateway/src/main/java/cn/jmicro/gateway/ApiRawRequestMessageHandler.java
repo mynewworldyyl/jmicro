@@ -43,7 +43,7 @@ import cn.jmicro.api.net.IMessageHandler;
 import cn.jmicro.api.net.ISession;
 import cn.jmicro.api.net.Message;
 import cn.jmicro.api.net.ServerError;
-import cn.jmicro.api.objectfactory.AbstractClientServiceProxy;
+import cn.jmicro.api.objectfactory.AbstractClientServiceProxyHolder;
 import cn.jmicro.api.objectfactory.IObjectFactory;
 import cn.jmicro.api.registry.ServiceItem;
 import cn.jmicro.api.registry.ServiceMethod;
@@ -168,8 +168,8 @@ public class ApiRawRequestMessageHandler implements IMessageHandler{
 			Object srv = objFactory.getRemoteServie(req.getServiceName(), req.getNamespace(), req.getVersion(),null);
 			if(srv != null){
 				try {
-					AbstractClientServiceProxy proxy = (AbstractClientServiceProxy)srv;
-					ServiceItem si = proxy.getItem();
+					AbstractClientServiceProxyHolder proxy = (AbstractClientServiceProxyHolder)srv;
+					ServiceItem si = proxy.getHolder().getItem();
 					if(si == null) {
 						//SF.doRequestLog(MC.MT_PLATFORM_LOG,MC.LOG_ERROR, TAG, null," service not found");
 						throw new CommonException("Service["+req.getServiceName()+"] namespace ["+req.getNamespace()+"] not found");

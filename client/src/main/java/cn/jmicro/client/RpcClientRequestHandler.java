@@ -51,7 +51,7 @@ import cn.jmicro.api.net.ISession;
 import cn.jmicro.api.net.Message;
 import cn.jmicro.api.net.RpcResponse;
 import cn.jmicro.api.net.ServerError;
-import cn.jmicro.api.objectfactory.AbstractClientServiceProxy;
+import cn.jmicro.api.objectfactory.ClientServiceProxyHolder;
 import cn.jmicro.api.pubsub.PSData;
 import cn.jmicro.api.pubsub.PubSubManager;
 import cn.jmicro.api.registry.AsyncConfig;
@@ -128,7 +128,7 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
 	
 	@Override
 	public IResponse onRequest(IRequest request) {
-		AbstractClientServiceProxy proxy =  (AbstractClientServiceProxy)JMicroContext.get().getObject(Constants.PROXY, null);
+		ClientServiceProxyHolder proxy =  (ClientServiceProxyHolder)JMicroContext.get().getObject(Constants.PROXY, null);
 		RpcResponse resp = null;
 		try {
 			 /*if(openDebug) {
@@ -171,7 +171,7 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
 		return resp;
 	}
 
-	private IResponse doAsyncInvoke(AbstractClientServiceProxy proxy, IRequest req,ServiceMethod sm,AsyncConfig ac) {
+	private IResponse doAsyncInvoke(ClientServiceProxyHolder proxy, IRequest req,ServiceMethod sm,AsyncConfig ac) {
 		
 		String topic = sm.getKey().toKey(false, false, false);
 		
@@ -237,7 +237,7 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
 		}
 	}
 
-	private RpcResponse doRequest(IRequest req, AbstractClientServiceProxy proxy) {
+	private RpcResponse doRequest(IRequest req, ClientServiceProxyHolder proxy) {
         
         ServerError se = null;
         		
@@ -359,17 +359,19 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
 	    				msg.setAsyncReturnResult(true);
 	    				Map<String,Object> cxtParams = new HashMap<>();
 	    				cxt.getAllParams(cxtParams);
+	    				cxt.removeParam(Constants.CONTEXT_CALLBACK_CLIENT);
 	    				asyncResponse.put(req.getRequestId(), (respMsg)->{
 	    					try {
 	    						JMicroContext.get().mergeParams(cxtParams);
-	    						if(cxt.isDebug()) {
-		    		    			cxt.appendCurUseTime("Got async resp ",true);
+	    						if(JMicroContext.get().isDebug()) {
+	    							JMicroContext.get().appendCurUseTime("Got async resp ",true);
 		    		    		}
-	    						RpcResponse resp = ICodecFactory.decode(this.codecFactory,respMsg.getPayload(),
-		    							RpcResponse.class,msg.getUpProtocol());
+	    						RpcResponse resp = ICodecFactory.decode(this.codecFactory, respMsg.getPayload(),
+		    							RpcResponse.class, msg.getUpProtocol());
 		    					resp.setMsg(respMsg);
 		    					asyncResponse.remove(req.getRequestId());
-		    					IClientAsyncCallback cb = (IClientAsyncCallback)cxt.getObject(Constants.CONTEXT_CALLBACK_CLIENT, null);
+		    					IClientAsyncCallback cb = (IClientAsyncCallback)JMicroContext.get().getObject(Constants.CONTEXT_CALLBACK_CLIENT, null);
+		    					JMicroContext.get().removeParam(Constants.CONTEXT_CALLBACK_CLIENT);
 		    					cb.onResponse(resp);
 	    					}catch( Throwable e) {
 	    						String errMsg = "Client callback error reqID:"+req.getRequestId()+",linkId:"+msg.getLinkId()+",Service: "+sm.getKey().toKey(true, true, true);

@@ -3,7 +3,9 @@ package cn.jmicro.example.api.pubsub;
 import java.util.Map;
 
 import cn.jmicro.api.pubsub.PSData;
+import cn.jmicro.codegenerator.AsyncClientProxy;
 
+@AsyncClientProxy
 public interface ISimplePubsub {
 
 	void helloTopic(PSData data);

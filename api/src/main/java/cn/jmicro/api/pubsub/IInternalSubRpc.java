@@ -17,6 +17,7 @@
 package cn.jmicro.api.pubsub;
 
 import cn.jmicro.api.annotation.Service;
+import cn.jmicro.codegenerator.AsyncClientProxy;
 import cn.jmicro.common.Constants;
 
 /**
@@ -25,6 +26,7 @@ import cn.jmicro.common.Constants;
  * @date 2018年12月22日 下午11:10:01
  */
 @Service(namespace=Constants.DEFAULT_PUBSUB,version="0.0.1")
+@AsyncClientProxy
 public interface IInternalSubRpc {
 
 	/**

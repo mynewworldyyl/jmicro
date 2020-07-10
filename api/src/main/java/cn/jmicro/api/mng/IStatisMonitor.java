@@ -2,6 +2,9 @@ package cn.jmicro.api.mng;
 
 import java.util.Map;
 
+import cn.jmicro.codegenerator.AsyncClientProxy;
+
+@AsyncClientProxy
 public interface IStatisMonitor {
 
 	/**
