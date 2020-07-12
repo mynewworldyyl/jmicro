@@ -7,10 +7,10 @@ import java.lang.Void;
 
 public class DynamicInterfaceAsyncClientImpl extends AbstractClientServiceProxyHolder implements DynamicInterfaceAsyncClient {
   public IPromise<Void> runAsync(String data) {
-    return cn.jmicro.api.async.PromiseUtils.callService(this, "run", data);
+    return cn.jmicro.api.async.PromiseUtils.callService(this, "run", (java.lang.Object)(data));
   }
 
   public void run(String data) {
-    this.proxyHolder.invoke("run", data);
+    this.proxyHolder.invoke("run", (java.lang.Object)(data));
   }
 }

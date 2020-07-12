@@ -6,10 +6,10 @@ import java.lang.String;
 
 public class RpcBAsyncClientImpl extends AbstractClientServiceProxyHolder implements IRpcBAsyncClient {
   public IPromise<String> invokeRpcBAsync(String bargs) {
-    return cn.jmicro.api.async.PromiseUtils.callService(this, "invokeRpcB", bargs);
+    return cn.jmicro.api.async.PromiseUtils.callService(this, "invokeRpcB", (java.lang.Object)(bargs));
   }
 
   public String invokeRpcB(String bargs) {
-    return (java.lang.String) this.proxyHolder.invoke("invokeRpcB", bargs);
+    return (java.lang.String) this.proxyHolder.invoke("invokeRpcB", (java.lang.Object)(bargs));
   }
 }

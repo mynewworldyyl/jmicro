@@ -65,13 +65,16 @@ public class NettyHttpServer implements IServer{
 	@Inject
 	private NettyHttpChannelInitializer initializer;
 	
-	@Cfg(value="/NettyHttpServer/nettyPort",required=false,defGlobal=false)
+	@Cfg(value="/nettyHttpPort",required=false,defGlobal=false)
 	private int port=9090;
+	
+	//@Cfg(value = "/"+Constants.ExportHttpIP,required=false,defGlobal=false)
+	private String exportHttpIP = null;
 	
 	@Inject(required=false)
 	private Set<IServerListener> serverListener = new HashSet<>();
 	
-	@Cfg(value="/NettyHttpServer/startHttp",required=false,defGlobal=false)
+	@Cfg(value="/startHttp",required=false,defGlobal=false)
 	private boolean startHttp = false;
 	
 	@Inject
@@ -98,12 +101,17 @@ public class NettyHttpServer implements IServer{
 		if(Config.isClientOnly()) {
 			return;
 		}
-        if(StringUtils.isEmpty(Config.getHost())){
+		
+		exportHttpIP = Config.getHttpHost();
+		
+        if(StringUtils.isEmpty(exportHttpIP)){
         	throw new CommonException("IP not found");
         }
         
         //InetAddress.getByAddress(Array(127, 0, 0, 1))
-        InetSocketAddress address = new InetSocketAddress(Config.getHost(),this.port);
+        
+        
+        InetSocketAddress address = new InetSocketAddress(exportHttpIP,this.port);
         EventLoopGroup bossGroup = new NioEventLoopGroup();
         EventLoopGroup workerGroup = new NioEventLoopGroup();
         
@@ -132,7 +140,7 @@ public class NettyHttpServer implements IServer{
         	l.serverStared(host(), port, Constants.TRANSPORT_NETTY_HTTP);
         }
         
-        String m = "Running netty http server host["+Config.getHost()+"],port ["+this.port+"]";
+        String m = "Running netty http server host["+exportHttpIP+"],port ["+this.port+"]";
         LOG.debug(m);    
         //SF.doSubmit(MonitorConstant.SERVER_START,m);
         //SF.serverStart(TAG,Constants.TRANSPORT_NETTY_HTTP+" : "+Config.getHost()+" : "+this.port);
@@ -150,7 +158,7 @@ public class NettyHttpServer implements IServer{
 
 	@Override
 	public String host() {
-		return Config.getHost();
+		return exportHttpIP;
 	}
 
 	@Override

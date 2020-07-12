@@ -7,5 +7,6 @@ public interface IRpcA {
 
 	String invokeRpcA(String aargs);
 	
-	//Person[] getPersions();
+	//String invokeRpcAsy(String aargs);
+	
 }

@@ -10,27 +10,27 @@ import java.lang.Void;
 
 public class TestRpcServiceAsyncClientImpl extends AbstractClientServiceProxyHolder implements ITestRpcServiceAsyncClient {
   public IPromise<Person> getPersonAsync(Person p) {
-    return cn.jmicro.api.async.PromiseUtils.callService(this, "getPerson", p);
+    return cn.jmicro.api.async.PromiseUtils.callService(this, "getPerson", (java.lang.Object)(p));
   }
 
   public Person getPerson(Person p) {
-    return (cn.jmicro.api.test.Person) this.proxyHolder.invoke("getPerson", p);
+    return (cn.jmicro.api.test.Person) this.proxyHolder.invoke("getPerson", (java.lang.Object)(p));
   }
 
   public IPromise<Void> pushMessageAsync(String msg) {
-    return cn.jmicro.api.async.PromiseUtils.callService(this, "pushMessage", msg);
+    return cn.jmicro.api.async.PromiseUtils.callService(this, "pushMessage", (java.lang.Object)(msg));
   }
 
   public void pushMessage(String msg) {
-    this.proxyHolder.invoke("pushMessage", msg);
+    this.proxyHolder.invoke("pushMessage", (java.lang.Object)(msg));
   }
 
   public IPromise<String> helloAsync(String name) {
-    return cn.jmicro.api.async.PromiseUtils.callService(this, "hello", name);
+    return cn.jmicro.api.async.PromiseUtils.callService(this, "hello", (java.lang.Object)(name));
   }
 
   public String hello(String name) {
-    return (java.lang.String) this.proxyHolder.invoke("hello", name);
+    return (java.lang.String) this.proxyHolder.invoke("hello", (java.lang.Object)(name));
   }
 
   public IPromise<Integer> testReturnPrimitiveResultAsync() {

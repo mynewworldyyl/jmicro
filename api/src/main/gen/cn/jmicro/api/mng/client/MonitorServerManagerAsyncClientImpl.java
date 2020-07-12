@@ -22,7 +22,7 @@ public class MonitorServerManagerAsyncClientImpl extends AbstractClientServicePr
   }
 
   public boolean enable(String srvKey, Boolean enable) {
-    return (java.lang.Boolean) this.proxyHolder.invoke("enable", srvKey,enable);
+    return (boolean) this.proxyHolder.invoke("enable", srvKey,enable);
   }
 
   public IPromise<MonitorInfo[]> serverListAsync() {

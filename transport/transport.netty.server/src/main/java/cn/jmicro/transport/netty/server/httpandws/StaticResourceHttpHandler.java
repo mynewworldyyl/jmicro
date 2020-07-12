@@ -22,6 +22,7 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.UnsupportedEncodingException;
 import java.net.FileNameMap;
 import java.net.URLConnection;
 import java.util.ArrayList;
@@ -36,6 +37,7 @@ import org.slf4j.LoggerFactory;
 
 import cn.jmicro.api.annotation.Cfg;
 import cn.jmicro.api.annotation.Component;
+import cn.jmicro.common.Constants;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelFutureListener;
@@ -80,7 +82,9 @@ public class StaticResourceHttpHandler  {
 		String path = request.uri();
 		
 		FullHttpResponse response = new DefaultFullHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.OK);
-		response.headers().set("content-Type",getContentType(path));
+		//response.headers().set("content-Type",getContentType(path));
+		
+		//LOG.debug(path);
 		
 		byte[] content = this.getContent(path);
 
@@ -101,6 +105,7 @@ public class StaticResourceHttpHandler  {
 			if(ct == null) {
 				ct = "text/html;charset=UTF-8";
 			}
+			LOG.debug(path + " content type　: " + ct);
 			return ct;
 		}
 	}
@@ -111,7 +116,7 @@ public class StaticResourceHttpHandler  {
 		InputStream bisr = null;
 		
 		if(path.equals("/")){
-			path = path + indexPage;
+			path = "/" + indexPage;
 		}
 		
 		ClassLoader cl = StaticResourceHttpHandler.class.getClassLoader();
@@ -165,6 +170,15 @@ public class StaticResourceHttpHandler  {
 					absPath = ph;
 					break;
 				}
+			}
+		}
+		
+		if(bisr == null) {
+			LOG.error(absPath);
+			try {
+				return "404 page not found!".getBytes(Constants.CHARSET);
+			} catch (UnsupportedEncodingException e) {
+				e.printStackTrace();
 			}
 		}
 		

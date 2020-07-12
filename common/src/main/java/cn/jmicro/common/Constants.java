@@ -100,7 +100,7 @@ public interface Constants {
 	//public static final String CONFIG_ROOT = CFG_ROOT + "/config";
 	//public static final String RAFT_CONFIG_ROOT_KEY = "configRoot";
 	public static final String REGISTRY_URL_KEY = "registryUrl";
-	public static final String BIND_IP = "bindIp";
+	//public static final String BIND_IP = "bindIp";
 	public static final String ExportSocketIP = "exportSocketIP";
 	public static final String ExportHttpIP = "exportHttpIP";
 	

@@ -108,7 +108,7 @@ public class ServiceAgent {
 	
 	private Queue<Deployment> startDeps = new ConcurrentLinkedQueue<>();
 	
-	@Reference(namespace="rrs",version="*")
+	@Reference(namespace="rrs",version="*",required=true)
 	private IResourceResponsitory respo;
 	
 	@Inject
@@ -207,7 +207,7 @@ public class ServiceAgent {
 		agentInfo.setName(Config.getInstanceName());
 		agentInfo.setStartTime(System.currentTimeMillis());
 		agentInfo.setAssignTime(agentInfo.getAssignTime());
-		agentInfo.setHost(Config.getHost());
+		agentInfo.setHost(Config.getSocketHost());
 		agentInfo.setSs(ssm.getStatis());
 		agentInfo.setInitDepIds(deps);
 		
@@ -654,7 +654,7 @@ public class ServiceAgent {
 			pi.setId(a.getInsId());
 			pi.setWorkDir(wd.getAbsolutePath());
 			pi.setAgentProcessId(SystemUtils.getProcessId());
-			pi.setAgentHost(Config.getHost());
+			pi.setAgentHost(Config.getSocketHost());
 			pi.setAgentInstanceName(Config.getInstanceName());
 			pi.setOpTime(System.currentTimeMillis());
 			pi.setTimeOut(processOpTimeout);

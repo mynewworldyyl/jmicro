@@ -10,7 +10,7 @@ import cn.jmicro.example.api.rpc.IRpcA;
 import cn.jmicro.example.api.rpc.IRpcB;
 
 @Service(namespace="rpca", version="0.0.1", monitorEnable=1, maxSpeed=-1,
-baseTimeUnit=Constants.TIME_SECONDS, clientId=1000)
+baseTimeUnit=Constants.TIME_SECONDS, clientId=1000,external=true)
 @Component
 public class RpcAImpl implements IRpcA {
 

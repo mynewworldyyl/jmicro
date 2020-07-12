@@ -447,11 +447,11 @@ public class SimpleObjectFactory implements IObjectFactory {
 					Component c2 = ProxyObject.getTargetCls(o2.getClass()).getAnnotation(Component.class);
 					if(c1 == null && c2 == null) {
 						return 0;
-					}else if(c1 == null && c2 != null) {
+					} else if(c1 == null && c2 != null) {
 						return -1;
-					}else if(c1 != null && c2 == null) {
+					} else if(c1 != null && c2 == null) {
 						return 1;
-					}else {
+					} else {
 						return c1.level() > c2.level()?1:c1.level() == c2.level()?0:-1;
 					}
 				}
@@ -1514,7 +1514,7 @@ public class SimpleObjectFactory implements IObjectFactory {
 		} else {
 			//非编排环境下启动的实例
 			pi = new ProcessInfo();
-			pi.setAgentHost(Config.getHost());
+			pi.setAgentHost(Config.getSocketHost());
 			pi.setAgentId(Config.getCommandParam(ChoyConstants.ARG_AGENT_ID));
 			pi.setDepId(Config.getCommandParam(ChoyConstants.ARG_DEP_ID));
 			
@@ -1541,7 +1541,7 @@ public class SimpleObjectFactory implements IObjectFactory {
 		pi.setPid(pid);
 		pi.setActive(true);
 		pi.setInstanceName(Config.getInstanceName());
-		pi.setHost(Config.getHost());
+		pi.setHost(Config.getSocketHost());
 		pi.setWorkDir(cfg.getString(Constants.INSTANCE_DATA_DIR,null));
 		pi.setOpTime(System.currentTimeMillis());
 		pi.setHaEnable(ismlModel);

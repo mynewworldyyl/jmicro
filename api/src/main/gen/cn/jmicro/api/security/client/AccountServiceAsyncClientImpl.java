@@ -20,7 +20,7 @@ public class AccountServiceAsyncClientImpl extends AbstractClientServiceProxyHol
   }
 
   public boolean logout(String loginKey) {
-    return (java.lang.Boolean) this.proxyHolder.invoke("logout", (java.lang.Object)(loginKey));
+    return (boolean) this.proxyHolder.invoke("logout", (java.lang.Object)(loginKey));
   }
 
   public IPromise<Boolean> isLoginAsync(String loginKey) {
@@ -28,7 +28,7 @@ public class AccountServiceAsyncClientImpl extends AbstractClientServiceProxyHol
   }
 
   public boolean isLogin(String loginKey) {
-    return (java.lang.Boolean) this.proxyHolder.invoke("isLogin", (java.lang.Object)(loginKey));
+    return (boolean) this.proxyHolder.invoke("isLogin", (java.lang.Object)(loginKey));
   }
 
   public IPromise<ActInfo> getAccountAsync(String loginKey) {

@@ -13,7 +13,7 @@ public class StatisMonitorAsyncClientImpl extends AbstractClientServiceProxyHold
   }
 
   public boolean startStatis(String mkey, Integer t) {
-    return (java.lang.Boolean) this.proxyHolder.invoke("startStatis", mkey,t);
+    return (boolean) this.proxyHolder.invoke("startStatis", mkey,t);
   }
 
   public IPromise<Boolean> stopStatisAsync(String mkey, Integer t) {
@@ -21,7 +21,7 @@ public class StatisMonitorAsyncClientImpl extends AbstractClientServiceProxyHold
   }
 
   public boolean stopStatis(String mkey, Integer t) {
-    return (java.lang.Boolean) this.proxyHolder.invoke("stopStatis", mkey,t);
+    return (boolean) this.proxyHolder.invoke("stopStatis", mkey,t);
   }
 
   public IPromise<Map> index2LabelAsync() {

@@ -27,7 +27,7 @@ import cn.jmicro.choreography.api.IResourceResponsitory;
 import cn.jmicro.choreography.api.PackageResource;
 
 @Component
-@Service(namespace="rrs",version="0.0.1",timeout=0,retryCnt=0)
+@Service(namespace="rrs",version="0.0.1",timeout=0,retryCnt=0,external=true)
 public class ResourceReponsitoryService implements IResourceResponsitory{
 
 	private static final Logger LOG = LoggerFactory.getLogger(ResourceReponsitoryService.class);

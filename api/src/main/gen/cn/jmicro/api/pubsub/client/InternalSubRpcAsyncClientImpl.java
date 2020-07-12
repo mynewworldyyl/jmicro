@@ -12,7 +12,7 @@ public class InternalSubRpcAsyncClientImpl extends AbstractClientServiceProxyHol
   }
 
   public int publishItem(PSData item) {
-    return (java.lang.Integer) this.proxyHolder.invoke("publishItem", (java.lang.Object)(item));
+    return (int) this.proxyHolder.invoke("publishItem", (java.lang.Object)(item));
   }
 
   public IPromise<Integer> publishItemsAsync(String topic, PSData[] items) {
@@ -20,7 +20,7 @@ public class InternalSubRpcAsyncClientImpl extends AbstractClientServiceProxyHol
   }
 
   public int publishItems(String topic, PSData[] items) {
-    return (java.lang.Integer) this.proxyHolder.invoke("publishItems", topic,items);
+    return (int) this.proxyHolder.invoke("publishItems", topic,items);
   }
 
   public IPromise<Integer> publishStringAsync(String topic, String content) {
@@ -28,6 +28,6 @@ public class InternalSubRpcAsyncClientImpl extends AbstractClientServiceProxyHol
   }
 
   public int publishString(String topic, String content) {
-    return (java.lang.Integer) this.proxyHolder.invoke("publishString", topic,content);
+    return (int) this.proxyHolder.invoke("publishString", topic,content);
   }
 }

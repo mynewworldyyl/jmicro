@@ -177,11 +177,11 @@ public class ServerMessageReceiver implements IMessageReceiver{
 		}
 		
 		if (useExecutorPool) {
-			if(msg.isDebugMode()) {
+			/*if(msg.isDebugMode()) {
 				 long curTIme = System.currentTimeMillis();
 				 LogUtil.B.debug("Server receive msg ins[{}] reqId[{}] method[{}] Total Cost:[{}]",
 	              			msg.getInstanceName(),msg.getReqId(),msg.getMethod(),(curTIme-msg.getTime()));
-			}
+			}*/
 			
 			JMicroTask t = this.popTask();
 			t.setMsg(msg);
@@ -282,12 +282,12 @@ public class ServerMessageReceiver implements IMessageReceiver{
 		@Override
 		public void run() {
 			try {
-				if(msg.isDebugMode())
-					logger.debug(msg.getMethod() + " reqId: "+msg.getReqId()+" Got " + cnt.decrementAndGet());
+				/*if(msg.isDebugMode())
+					logger.debug(msg.getMethod() + " reqId: "+msg.getReqId()+" Got " + cnt.decrementAndGet());*/
 				doReceive((IServerSession)s, msg);
 			} finally{
-				if(msg.isDebugMode())
-					logger.debug(msg.getMethod() + " reqId: "+msg.getReqId()+" Release " + cnt.decrementAndGet());
+			/*	if(msg.isDebugMode())
+					logger.debug(msg.getMethod() + " reqId: "+msg.getReqId()+" Release " + cnt.decrementAndGet());*/
 				offerTask(this);
 			}
 		}
@@ -325,7 +325,7 @@ public class ServerMessageReceiver implements IMessageReceiver{
         		
         		StringBuffer sb = new StringBuffer("Executor reject: ");
         		sb.append("ins[").append(Config.getInstanceName()).append("]");
-        		sb.append(" localhost[").append(Config.getHost()).append("]");
+        		sb.append(" localhost[").append(Config.getSocketHost()).append("]");
         		sb.append(" localport[").append(s.localPort()).append("]");
         		sb.append(" reqid[").append(msg.getReqId()).append("]");
         		sb.append(" linkId[").append(msg.getLinkId()).append("]");

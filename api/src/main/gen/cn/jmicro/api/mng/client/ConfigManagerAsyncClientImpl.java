@@ -20,7 +20,7 @@ public class ConfigManagerAsyncClientImpl extends AbstractClientServiceProxyHold
   }
 
   public boolean update(String path, String val) {
-    return (java.lang.Boolean) this.proxyHolder.invoke("update", path,val);
+    return (boolean) this.proxyHolder.invoke("update", path,val);
   }
 
   public IPromise<Boolean> deleteAsync(String path) {
@@ -28,7 +28,7 @@ public class ConfigManagerAsyncClientImpl extends AbstractClientServiceProxyHold
   }
 
   public boolean delete(String path) {
-    return (java.lang.Boolean) this.proxyHolder.invoke("delete", (java.lang.Object)(path));
+    return (boolean) this.proxyHolder.invoke("delete", (java.lang.Object)(path));
   }
 
   public IPromise<Boolean> addAsync(String path, String val, Boolean isDir) {
@@ -36,6 +36,6 @@ public class ConfigManagerAsyncClientImpl extends AbstractClientServiceProxyHold
   }
 
   public boolean add(String path, String val, Boolean isDir) {
-    return (java.lang.Boolean) this.proxyHolder.invoke("add", path,val,isDir);
+    return (boolean) this.proxyHolder.invoke("add", path,val,isDir);
   }
 }

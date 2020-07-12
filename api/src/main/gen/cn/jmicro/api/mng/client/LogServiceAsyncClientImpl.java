@@ -13,7 +13,7 @@ public class LogServiceAsyncClientImpl extends AbstractClientServiceProxyHolder 
   }
 
   public Resp count(Map<String, String> queryConditions) {
-    return (cn.jmicro.api.Resp) this.proxyHolder.invoke("count", (java.lang.Object)(queryConditions));
+    return (cn.jmicro.api.Resp<java.lang.Long>) this.proxyHolder.invoke("count", (java.lang.Object)(queryConditions));
   }
 
   public IPromise<Resp> queryAsync(Map<String, String> queryConditions, int pageSize, int curPage) {
@@ -21,7 +21,7 @@ public class LogServiceAsyncClientImpl extends AbstractClientServiceProxyHolder 
   }
 
   public Resp query(Map<String, String> queryConditions, int pageSize, int curPage) {
-    return (cn.jmicro.api.Resp) this.proxyHolder.invoke("query", queryConditions,pageSize,curPage);
+    return (cn.jmicro.api.Resp<java.util.List<cn.jmicro.api.mng.LogEntry>>) this.proxyHolder.invoke("query", queryConditions,pageSize,curPage);
   }
 
   public IPromise<Resp> queryDictAsync() {
@@ -37,7 +37,7 @@ public class LogServiceAsyncClientImpl extends AbstractClientServiceProxyHolder 
   }
 
   public Resp getByLinkId(Long linkId) {
-    return (cn.jmicro.api.Resp) this.proxyHolder.invoke("getByLinkId", (java.lang.Object)(linkId));
+    return (cn.jmicro.api.Resp<cn.jmicro.api.mng.LogEntry>) this.proxyHolder.invoke("getByLinkId", (java.lang.Object)(linkId));
   }
 
   public IPromise<Resp> countLogAsync(Map<String, String> queryConditions) {
@@ -45,7 +45,7 @@ public class LogServiceAsyncClientImpl extends AbstractClientServiceProxyHolder 
   }
 
   public Resp countLog(Map<String, String> queryConditions) {
-    return (cn.jmicro.api.Resp) this.proxyHolder.invoke("countLog", (java.lang.Object)(queryConditions));
+    return (cn.jmicro.api.Resp<java.lang.Integer>) this.proxyHolder.invoke("countLog", (java.lang.Object)(queryConditions));
   }
 
   public IPromise<Resp> queryLogAsync(Map<String, String> queryConditions, int pageSize,
@@ -54,6 +54,6 @@ public class LogServiceAsyncClientImpl extends AbstractClientServiceProxyHolder 
   }
 
   public Resp queryLog(Map<String, String> queryConditions, int pageSize, int curPage) {
-    return (cn.jmicro.api.Resp) this.proxyHolder.invoke("queryLog", queryConditions,pageSize,curPage);
+    return (cn.jmicro.api.Resp<java.util.List<cn.jmicro.api.mng.LogItem>>) this.proxyHolder.invoke("queryLog", queryConditions,pageSize,curPage);
   }
 }

@@ -12,14 +12,69 @@
 	<name>${project.artifactId}</name>
 	<description>Jmicro service provider for testing</description>
 	<dependencies>
-		<!-- <dependency>
+		<!--  <dependency>
 			<groupId>cn.jmicro</groupId>
-			<artifactId>build</artifactId>
+			<artifactId>all</artifactId>
 		</dependency> -->
+		
 		<dependency>
+			<groupId>cn.jmicro</groupId>
+			<artifactId>classloader</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>cn.jmicro</groupId>
+			<artifactId>client</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>cn.jmicro</groupId>
+			<artifactId>objfactory.simple</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>cn.jmicro</groupId>
+			<artifactId>idgenerator</artifactId>
+		</dependency>
+		 <dependency>
+			 <groupId>cn.jmicro</groupId>
+			 <artifactId>transport.netty.client</artifactId>
+	    </dependency>
+	     <dependency>
+			 <groupId>cn.jmicro</groupId>
+			 <artifactId>transport.netty.server</artifactId>
+	    </dependency>
+
+		<dependency>
+			<groupId>cn.jmicro</groupId>
+			<artifactId>gateway.client</artifactId>
+		</dependency>
+		
+		<dependency>
+			<groupId>cn.jmicro</groupId>
+			<artifactId>test</artifactId>
+		</dependency>
+		
+		<dependency>
+			<groupId>cn.jmicro</groupId>
+			<artifactId>example.api</artifactId>
+			<version>0.0.1-SNAPSHOT</version>
+		</dependency>
+		<dependency>
+			<groupId>cn.jmicro</groupId>
+			<artifactId>agent</artifactId>
+			<version>0.0.1-SNAPSHOT</version>
+			<scope>test</scope>
+		</dependency>
+		
+		 <dependency>
 			<groupId>cn.jmicro</groupId>
 			<artifactId>gateway</artifactId>
 		</dependency>
+		
+		 <dependency>
+			<groupId>cn.jmicro</groupId>
+			<artifactId>mng</artifactId>
+		</dependency>
+		
+		<!--
 		<dependency>
 			<groupId>cn.jmicro</groupId>
 			<artifactId>classloader</artifactId>
@@ -58,29 +113,32 @@
 	     <dependency>
 			 <groupId>cn.jmicro</groupId>
 			 <artifactId>transport.netty.server</artifactId>
-	    </dependency>
+	    </dependency> -->
 		<dependency>
 			<groupId>io.protostuff</groupId>
 			<artifactId>protostuff-runtime</artifactId>
 			<version>1.6.0</version>
+			<scope>test</scope>
 		</dependency>
 
 		<dependency>
 			<groupId>io.protostuff</groupId>
 			<artifactId>protostuff-core</artifactId>
 			<version>1.6.0</version>
+			<scope>test</scope>
 		</dependency>
 		<dependency>
 			<groupId>com.esotericsoftware</groupId>
 			<artifactId>kryo</artifactId>
 			<version>4.0.2</version>
+			<scope>test</scope>
 		</dependency>
 
-		<dependency>
+	<!-- 	<dependency>
 			<groupId>cn.jmicro</groupId>
 			<artifactId>test</artifactId>
 			<scope>test</scope>
-		</dependency>
+		</dependency> -->
 
 	</dependencies>
 

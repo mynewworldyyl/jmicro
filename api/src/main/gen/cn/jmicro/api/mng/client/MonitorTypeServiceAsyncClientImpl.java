@@ -21,7 +21,7 @@ public class MonitorTypeServiceAsyncClientImpl extends AbstractClientServiceProx
   }
 
   public Resp update(MCConfig mc) {
-    return (cn.jmicro.api.Resp) this.proxyHolder.invoke("update", (java.lang.Object)(mc));
+    return (cn.jmicro.api.Resp<java.lang.Void>) this.proxyHolder.invoke("update", (java.lang.Object)(mc));
   }
 
   public IPromise<Resp> deleteAsync(short type) {
@@ -29,7 +29,7 @@ public class MonitorTypeServiceAsyncClientImpl extends AbstractClientServiceProx
   }
 
   public Resp delete(short type) {
-    return (cn.jmicro.api.Resp) this.proxyHolder.invoke("delete", (java.lang.Object)(type));
+    return (cn.jmicro.api.Resp<java.lang.Void>) this.proxyHolder.invoke("delete", (java.lang.Object)(type));
   }
 
   public IPromise<Resp> addAsync(MCConfig mc) {
@@ -37,7 +37,7 @@ public class MonitorTypeServiceAsyncClientImpl extends AbstractClientServiceProx
   }
 
   public Resp add(MCConfig mc) {
-    return (cn.jmicro.api.Resp) this.proxyHolder.invoke("add", (java.lang.Object)(mc));
+    return (cn.jmicro.api.Resp<java.lang.Void>) this.proxyHolder.invoke("add", (java.lang.Object)(mc));
   }
 
   public IPromise<Resp> getConfigByMonitorKeyAsync(String key) {
@@ -45,7 +45,7 @@ public class MonitorTypeServiceAsyncClientImpl extends AbstractClientServiceProx
   }
 
   public Resp getConfigByMonitorKey(String key) {
-    return (cn.jmicro.api.Resp) this.proxyHolder.invoke("getConfigByMonitorKey", (java.lang.Object)(key));
+    return (cn.jmicro.api.Resp<java.util.List<java.lang.Short>>) this.proxyHolder.invoke("getConfigByMonitorKey", (java.lang.Object)(key));
   }
 
   public IPromise<Resp> updateMonitorTypesAsync(String key, Short[] adds, Short[] dels) {
@@ -53,7 +53,7 @@ public class MonitorTypeServiceAsyncClientImpl extends AbstractClientServiceProx
   }
 
   public Resp updateMonitorTypes(String key, Short[] adds, Short[] dels) {
-    return (cn.jmicro.api.Resp) this.proxyHolder.invoke("updateMonitorTypes", key,adds,dels);
+    return (cn.jmicro.api.Resp<java.lang.Void>) this.proxyHolder.invoke("updateMonitorTypes", key,adds,dels);
   }
 
   public IPromise<Resp> getMonitorKeyListAsync() {
@@ -69,7 +69,7 @@ public class MonitorTypeServiceAsyncClientImpl extends AbstractClientServiceProx
   }
 
   public Resp getConfigByServiceMethodKey(String key) {
-    return (cn.jmicro.api.Resp) this.proxyHolder.invoke("getConfigByServiceMethodKey", (java.lang.Object)(key));
+    return (cn.jmicro.api.Resp<java.util.List<java.lang.Short>>) this.proxyHolder.invoke("getConfigByServiceMethodKey", (java.lang.Object)(key));
   }
 
   public IPromise<Resp> updateServiceMethodMonitorTypesAsync(String key, Short[] adds,
@@ -78,7 +78,7 @@ public class MonitorTypeServiceAsyncClientImpl extends AbstractClientServiceProx
   }
 
   public Resp updateServiceMethodMonitorTypes(String key, Short[] adds, Short[] dels) {
-    return (cn.jmicro.api.Resp) this.proxyHolder.invoke("updateServiceMethodMonitorTypes", key,adds,dels);
+    return (cn.jmicro.api.Resp<java.lang.Void>) this.proxyHolder.invoke("updateServiceMethodMonitorTypes", key,adds,dels);
   }
 
   public IPromise<Resp> getAllConfigsByGroupAsync(String[] groups) {
@@ -86,7 +86,7 @@ public class MonitorTypeServiceAsyncClientImpl extends AbstractClientServiceProx
   }
 
   public Resp getAllConfigsByGroup(String[] groups) {
-    return (cn.jmicro.api.Resp) this.proxyHolder.invoke("getAllConfigsByGroup", (java.lang.Object)(groups));
+    return (cn.jmicro.api.Resp<java.util.List<cn.jmicro.api.monitor.MCConfig>>) this.proxyHolder.invoke("getAllConfigsByGroup", (java.lang.Object)(groups));
   }
 
   public IPromise<Resp> addNamedTypesAsync(String name) {
@@ -94,7 +94,7 @@ public class MonitorTypeServiceAsyncClientImpl extends AbstractClientServiceProx
   }
 
   public Resp addNamedTypes(String name) {
-    return (cn.jmicro.api.Resp) this.proxyHolder.invoke("addNamedTypes", (java.lang.Object)(name));
+    return (cn.jmicro.api.Resp<java.lang.Void>) this.proxyHolder.invoke("addNamedTypes", (java.lang.Object)(name));
   }
 
   public IPromise<Resp> getTypesByNamedAsync(String name) {
@@ -102,7 +102,7 @@ public class MonitorTypeServiceAsyncClientImpl extends AbstractClientServiceProx
   }
 
   public Resp getTypesByNamed(String name) {
-    return (cn.jmicro.api.Resp) this.proxyHolder.invoke("getTypesByNamed", (java.lang.Object)(name));
+    return (cn.jmicro.api.Resp<java.util.List<java.lang.Short>>) this.proxyHolder.invoke("getTypesByNamed", (java.lang.Object)(name));
   }
 
   public IPromise<Resp> updateNamedTypesAsync(String name, Short[] adds, Short[] dels) {
@@ -110,7 +110,7 @@ public class MonitorTypeServiceAsyncClientImpl extends AbstractClientServiceProx
   }
 
   public Resp updateNamedTypes(String name, Short[] adds, Short[] dels) {
-    return (cn.jmicro.api.Resp) this.proxyHolder.invoke("updateNamedTypes", name,adds,dels);
+    return (cn.jmicro.api.Resp<java.lang.Void>) this.proxyHolder.invoke("updateNamedTypes", name,adds,dels);
   }
 
   public IPromise<Resp> getNamedListAsync() {

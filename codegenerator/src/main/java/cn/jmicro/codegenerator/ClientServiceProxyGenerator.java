@@ -62,7 +62,11 @@ public class ClientServiceProxyGenerator extends AbstractProcessor {
 				 throw new RuntimeException(AsyncClientProxy.class + " only support interface, not suport " + tn);
 		     }
 			 
-			 TypeElement typeElement = (TypeElement)element;
+			 if(tn.contains("IGenelizedType")) {
+				 System.out.println("ClientServiceProxyGenerator: "+tn);
+			 }
+			 
+			 TypeElement typeElement = (TypeElement)element;	
 		     generateInterfaceClass(typeElement);
 			
 		     generateImplClass(typeElement);
@@ -126,7 +130,7 @@ public class ClientServiceProxyGenerator extends AbstractProcessor {
 	    MethodSpec.Builder builder = MethodSpec.methodBuilder(m.getSimpleName().toString())
 		  .addModifiers(Modifier.PUBLIC);
 	  
-	    ClassName returnTypeName = parseReturnType(m,builder,null);
+	   ClassName returnTypeName = parseReturnType(m,builder,null);
 	  	
 	  	String psString = "";
 	  	for(VariableElement pe : m.getParameters()) {
@@ -150,10 +154,10 @@ public class ClientServiceProxyGenerator extends AbstractProcessor {
 	  	} else {
 	  		if(!psString.equals("")) {
 	  			if(m.getParameters().size() == 1) {
-	  				builder.addCode("return ($L) this.proxyHolder.invoke($S, (java.lang.Object)($L));", returnTypeName.toString(), 
+	  				builder.addCode("return ($L) this.proxyHolder.invoke($S, (java.lang.Object)($L));", m.getReturnType().toString(), 
 				  			m.getSimpleName(),psString);
 	  			} else {
-	  				builder.addCode("return ($L) this.proxyHolder.invoke($S, $L);",returnTypeName.toString(), 
+	  				builder.addCode("return ($L) this.proxyHolder.invoke($S, $L);",m.getReturnType().toString(), 
 				  			m.getSimpleName(),psString);
 	  			}
 	  		}else {

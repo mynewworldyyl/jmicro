@@ -95,7 +95,6 @@ public class JRPCReqRespHandler implements IMessageHandler{
 	public void onMessage(ISession s, Message msg) {
 		   
 		RpcRequest req = null;
-		boolean needResp = true;
 		RpcResponse resp =  new RpcResponse();
 		
 	    try {

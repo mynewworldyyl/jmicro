@@ -17,13 +17,14 @@
 package cn.jmicro.api.monitor;
 
 import cn.jmicro.api.mng.ReportData;
-import cn.jmicro.api.monitor.MRpcItem;
+import cn.jmicro.codegenerator.AsyncClientProxy;
 
 /**
  * 
  * @author Yulei Ye
  * @date 2018年10月5日-下午6:31:34
  */
+@AsyncClientProxy
 public interface IMonitorDataSubscriber {
 
 	void onSubmit(MRpcItem[] sis);

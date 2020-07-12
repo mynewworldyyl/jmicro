@@ -91,7 +91,8 @@ public class ClientServiceProxyHolder implements IServiceListener{
 		}
 	}
 	
-	public Object invoke(String methodName, Object... args) {
+	@SuppressWarnings("unchecked")
+	public <T> T invoke(String methodName, Object... args) {
 		backupAndSetContext();
 		
 		ServiceItem si = this.item;
@@ -153,7 +154,8 @@ public class ClientServiceProxyHolder implements IServiceListener{
 			}
 		}
 		try {
-			return h.invoke(this, methodName, args);
+			T to = (T)h.invoke(this, methodName, args);
+			return to;
 		}finally {
 			if(sdirect) {
 				JMicroContext.get().removeParam(Constants.DIRECT_SERVICE_ITEM);

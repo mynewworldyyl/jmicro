@@ -6,10 +6,10 @@ import java.lang.String;
 
 public class RpcAAsyncClientImpl extends AbstractClientServiceProxyHolder implements IRpcAAsyncClient {
   public IPromise<String> invokeRpcAAsync(String aargs) {
-    return cn.jmicro.api.async.PromiseUtils.callService(this, "invokeRpcA", aargs);
+    return cn.jmicro.api.async.PromiseUtils.callService(this, "invokeRpcA", (java.lang.Object)(aargs));
   }
 
   public String invokeRpcA(String aargs) {
-    return (java.lang.String) this.proxyHolder.invoke("invokeRpcA", aargs);
+    return (java.lang.String) this.proxyHolder.invoke("invokeRpcA", (java.lang.Object)(aargs));
   }
 }

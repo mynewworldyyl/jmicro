@@ -19,6 +19,6 @@ public class ThreadPoolMonitorAsyncClientImpl extends AbstractClientServiceProxy
   }
 
   public Resp getInfo(String key, String type) {
-    return (cn.jmicro.api.Resp) this.proxyHolder.invoke("getInfo", key,type);
+    return (cn.jmicro.api.Resp<java.util.List<cn.jmicro.api.executor.ExecutorInfo>>) this.proxyHolder.invoke("getInfo", key,type);
   }
 }

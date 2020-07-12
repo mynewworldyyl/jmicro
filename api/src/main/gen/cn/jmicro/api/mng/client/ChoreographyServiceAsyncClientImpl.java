@@ -29,7 +29,7 @@ public class ChoreographyServiceAsyncClientImpl extends AbstractClientServicePro
   }
 
   public boolean deleteDeployment(int id) {
-    return (java.lang.Boolean) this.proxyHolder.invoke("deleteDeployment", (java.lang.Object)(id));
+    return (boolean) this.proxyHolder.invoke("deleteDeployment", (java.lang.Object)(id));
   }
 
   public IPromise<Boolean> updateDeploymentAsync(Deployment dep) {
@@ -37,7 +37,7 @@ public class ChoreographyServiceAsyncClientImpl extends AbstractClientServicePro
   }
 
   public boolean updateDeployment(Deployment dep) {
-    return (java.lang.Boolean) this.proxyHolder.invoke("updateDeployment", (java.lang.Object)(dep));
+    return (boolean) this.proxyHolder.invoke("updateDeployment", (java.lang.Object)(dep));
   }
 
   public IPromise<List> getAgentListAsync(boolean showAll) {
@@ -45,7 +45,7 @@ public class ChoreographyServiceAsyncClientImpl extends AbstractClientServicePro
   }
 
   public List getAgentList(boolean showAll) {
-    return (java.util.List) this.proxyHolder.invoke("getAgentList", (java.lang.Object)(showAll));
+    return (java.util.List<cn.jmicro.api.choreography.AgentInfoVo>) this.proxyHolder.invoke("getAgentList", (java.lang.Object)(showAll));
   }
 
   public IPromise<List> getProcessInstanceListAsync(boolean all) {
@@ -53,7 +53,7 @@ public class ChoreographyServiceAsyncClientImpl extends AbstractClientServicePro
   }
 
   public List getProcessInstanceList(boolean all) {
-    return (java.util.List) this.proxyHolder.invoke("getProcessInstanceList", (java.lang.Object)(all));
+    return (java.util.List<cn.jmicro.api.choreography.ProcessInfo>) this.proxyHolder.invoke("getProcessInstanceList", (java.lang.Object)(all));
   }
 
   public IPromise<Boolean> stopProcessAsync(String insId) {
@@ -61,7 +61,7 @@ public class ChoreographyServiceAsyncClientImpl extends AbstractClientServicePro
   }
 
   public boolean stopProcess(String insId) {
-    return (java.lang.Boolean) this.proxyHolder.invoke("stopProcess", (java.lang.Object)(insId));
+    return (boolean) this.proxyHolder.invoke("stopProcess", (java.lang.Object)(insId));
   }
 
   public IPromise<String> changeAgentStateAsync(String agentId) {

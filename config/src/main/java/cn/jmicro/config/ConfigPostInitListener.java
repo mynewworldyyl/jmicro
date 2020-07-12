@@ -70,7 +70,7 @@ public class ConfigPostInitListener extends PostInitAdapter {
 		 List<Field> fields = new ArrayList<>();
 		 Utils.getIns().getFields(fields, cls);
 		 
-		if(cls.getName().equals("cn.jmicro.main.monitor.Log2DbMonitor")) {
+		if(cls.getName().equals("cn.jmicro.transport.netty.server.httpandws.NettyHttpServer")) {
 			 logger.debug("preInit");
 		 }
 
@@ -142,11 +142,20 @@ public class ConfigPostInitListener extends PostInitAdapter {
 				}
 				
 			} else {
-				String value = null;
-				//优先类全名组成路径
-				path = "/" + cls.getName() + prefix;
+				String value = getValueFromCommand(prefix,f);
 				
-				value = getValueFromConfig(cfg,path,f);
+				if(StringUtils.isEmpty(value)) {
+					//优先类全名组成路径
+					path = "/" + cls.getName() + prefix;
+					value = getValueFromConfig(cfg,path,f);
+				}
+				
+				if(StringUtils.isEmpty(value)) {
+					//类简称组成路径
+					path = "/" + cls.getSimpleName() + prefix;
+					value = getValueFromConfig(cfg,path,f);
+				}
+				
 				if(StringUtils.isEmpty(value)) {
 					//类简称组成路径
 					path = "/" + cls.getSimpleName() + prefix;
@@ -274,6 +283,28 @@ public class ConfigPostInitListener extends PostInitAdapter {
 		if(result != null && !result.isEmpty()) {
 			l.addAll(result.values());
 		}
+	}
+	
+	private String getValueFromCommand(String prefix, Field f) {
+		Class<?> cls = f.getDeclaringClass();
+		String value = null;
+		//优先类全名组成路径
+		
+		String path = "/" + cls.getName() + prefix;
+		
+		value = Config.getCommandParam(path);
+		if(StringUtils.isEmpty(value)) {
+			//类简称组成路径
+			path = "/" + cls.getSimpleName() + prefix;
+			value =  Config.getCommandParam(path);
+		}
+		
+		if(StringUtils.isEmpty(value)){
+			//值直接指定绝对路径
+			path = prefix;
+			value =  Config.getCommandParam(path);
+		}
+		return value;
 	}
 	
 	private String getValueFromConfig(Config cfg,String key,Field f) {

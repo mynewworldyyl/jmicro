@@ -7,59 +7,14 @@
 		<artifactId>parent</artifactId>
 		<version>0.0.1-SNAPSHOT</version>
 	</parent>
-	<artifactId>build</artifactId>
+	<artifactId>all</artifactId>
 	<packaging>jar</packaging>
 	<name>${project.artifactId}</name>
 	<description>build Module</description>
 	<dependencies>
 		<dependency>
 			<groupId>cn.jmicro</groupId>
-			<artifactId>api</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>cn.jmicro</groupId>
-			<artifactId>redis</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>cn.jmicro</groupId>
-			<artifactId>etcd</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>cn.jmicro</groupId>
-			<artifactId>common</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>cn.jmicro</groupId>
-			<artifactId>zk</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>cn.jmicro</groupId>
 			<artifactId>classloader</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>cn.jmicro</groupId>
-			<artifactId>transport.netty.client</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>cn.jmicro</groupId>
-			<artifactId>transport.netty.server</artifactId>
-		</dependency>
-		
-		<dependency>
-			<groupId>cn.jmicro</groupId>
-			<artifactId>objfactory.simple</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>cn.jmicro</groupId>
-			<artifactId>config</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>cn.jmicro</groupId>
-			<artifactId>limit</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>cn.jmicro</groupId>
-			<artifactId>server</artifactId>
 		</dependency>
 		<dependency>
 			<groupId>cn.jmicro</groupId>
@@ -67,12 +22,31 @@
 		</dependency>
 		<dependency>
 			<groupId>cn.jmicro</groupId>
+			<artifactId>objfactory.simple</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>cn.jmicro</groupId>
 			<artifactId>idgenerator</artifactId>
 		</dependency>
+		 <dependency>
+			 <groupId>cn.jmicro</groupId>
+			 <artifactId>transport.netty.client</artifactId>
+	    </dependency>
+	     <dependency>
+			 <groupId>cn.jmicro</groupId>
+			 <artifactId>transport.netty.server</artifactId>
+	    </dependency>
+
+		<dependency>
+			<groupId>cn.jmicro</groupId>
+			<artifactId>gateway.client</artifactId>
+		</dependency>
+		
 		<dependency>
 			<groupId>cn.jmicro</groupId>
 			<artifactId>test</artifactId>
 		</dependency>
+		
 	</dependencies>
 
 	<build>
@@ -89,35 +63,24 @@
 						<configuration>
 							<createSourcesJar>true</createSourcesJar>
 							<promoteTransitiveDependencies>true</promoteTransitiveDependencies>
+							<createDependencyReducedPom>true</createDependencyReducedPom>
 							<artifactSet>
 								<includes>
-									<include>cn.jmicro:jmicro.common</include>
-									<include>cn.jmicro:jmicro.api</include>
-									<include>cn.jmicro:jmicro.server</include>
-									<include>cn.jmicro:jmicro.client</include>
-									<include>cn.jmicro:jmicro.idgenerator</include>
-									<include>cn.jmicro:jmicro.zk</include>
-									<include>cn.jmicro:jmicro.redis</include>
-									<!-- <include>cn.jmicro:jmicro.breaker</include> -->
-									<!-- <include>cn.jmicro:jmicro.pubsub</include> -->
-									<include>cn.jmicro:jmicro.etcd</include>
-									<!-- <include>cn.jmicro:jmicro.gateway</include> -->
-									<include>cn.jmicro:jmicro.classloader</include>
-									<!-- <include>cn.jmicro:jmicro.gateway.client</include> -->
-									<include>cn.jmicro:jmicro.transport.netty.client</include>
-									<include>cn.jmicro:jmicro.transport.netty.server</include>
-									<!-- <include>cn.jmicro:jmicro.registry.zk</include> -->
-									<include>cn.jmicro:jmicro.objfactory.simple</include>
-									<include>cn.jmicro:jmicro.config</include>
-									<include>cn.jmicro:jmicro.limit</include>
-									<!-- <include>cn.jmicro:jmicro.monitor.memory</include> -->
-									<!-- <include>cn.jmicro:jmicro.monitor.subermemory</include> -->
-									<!-- <include>cn.jmicro:jmicro.monitor.dashboard</include> -->
-									<include>cn.jmicro:jmicro.submiter</include>
-									<!-- <include>cn.jmicro:jmicro.choregraphy.agent</include>
-									<include>cn.jmicro:jmicro.choregraphy.controller</include> -->
-									<include>cn.jmicro:jmicro.test</include>
-									<!-- <include>cn.jmicro:jmicro.mybatis</include> -->
+									<include>cn.jmicro:common</include>
+									<include>cn.jmicro:api</include>
+									<include>cn.jmicro:server</include>
+									<include>cn.jmicro:client</include>
+									<include>cn.jmicro:idgenerator</include>
+									<include>cn.jmicro:test</include>
+									<include>cn.jmicro:objfactory.simple</include>
+									<include>cn.jmicro:classloader</include>
+									<include>cn.jmicro:redis</include>
+									<include>cn.jmicro:limit</include>
+									<include>cn.jmicro:transport.netty.server</include>
+									<include>cn.jmicro:transport.netty.client</include>
+									<include>cn.jmicro:config</include>
+									<include>cn.jmicro:zk</include>
+									<include>cn.jmicro:gateway.client</include>
 								</includes>
 							</artifactSet>
 							<transformers>
@@ -133,43 +96,13 @@
 					                    <X-Compile-Source-JDK>${maven.compile.source}</X-Compile-Source-JDK>
 					                    <X-Compile-Target-JDK>${maven.compile.target}</X-Compile-Target-JDK>
 					                    
-					                    <Manifest-Version> 1.0</Manifest-Version>
+					                    <Manifest-Version>1.0</Manifest-Version>
 										<Bundle-ManifestVersion>2</Bundle-ManifestVersion>
 										<Bundle-Name>cn.jmicro.all</Bundle-Name>
 										<Bundle-Vendor>JMicro</Bundle-Vendor> 
 										<Bundle-SymbolicName>cn.jmicro.all;singleton:=true</Bundle-SymbolicName>
 										<Bundle-Version>0.0.1.SNAPSHOT</Bundle-Version>
-					                    <Export-Package>cn.jmicro.api,
- cn.jmicro.api.annotation,
- cn.jmicro.api.annotation.channel,
- cn.jmicro.api.choreography.agent,
- cn.jmicro.api.choreography.base,
- cn.jmicro.api.choreography.cmd,
- cn.jmicro.api.choreography.controller,
- cn.jmicro.api.classloader,
- cn.jmicro.api.client,
- cn.jmicro.api.codec,
- cn.jmicro.api.codec.typecoder,
- cn.jmicro.api.config,
- cn.jmicro.api.debug,
- cn.jmicro.api.degrade,
- cn.jmicro.api.exception,
- cn.jmicro.api.executor,
- cn.jmicro.api.gateway,
- cn.jmicro.api.http.annotation,
- cn.jmicro.api.idgenerator,
- cn.jmicro.api.limitspeed,
- cn.jmicro.api.loadbalance,
- cn.jmicro.api.monitor,
- cn.jmicro.api.net,
- cn.jmicro.api.objectfactory,
- cn.jmicro.api.pubsub,
- cn.jmicro.api.raft,
- cn.jmicro.api.registry,
- cn.jmicro.api.route,
- cn.jmicro.api.service,
- cn.jmicro.api.test,
- cn.jmicro.api.timer</Export-Package>
+					                    <Export-Package></Export-Package>
 					                    
 					                  </manifestEntries>
 					                </transformer>

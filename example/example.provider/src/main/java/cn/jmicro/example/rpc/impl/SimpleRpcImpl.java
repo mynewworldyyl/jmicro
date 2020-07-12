@@ -18,7 +18,7 @@ import cn.jmicro.example.api.rpc.ISimpleRpc;
 import cn.jmicro.example.api.rpc.client.IRpcAAsyncClient;
 
 @Service(namespace="simpleRpc", version="0.0.1", monitorEnable=1, maxSpeed=-1,debugMode=1,
-baseTimeUnit=Constants.TIME_SECONDS, clientId=1000)
+baseTimeUnit=Constants.TIME_SECONDS, clientId=1000,external=true)
 @Component
 public class SimpleRpcImpl implements ISimpleRpc {
 

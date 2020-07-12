@@ -153,6 +153,11 @@
 		<appender-ref ref="NORMALLOG"/>
 	</logger>
 	
+	<logger name="com.mongodb">
+		<level value="INFO"/>
+		<appender-ref ref="NORMALLOG"/>
+	</logger>
+	
 	<logger name="org.apache.mina">
 		<level value="INFO"/>
 		<appender-ref ref="NORMALLOG"/>

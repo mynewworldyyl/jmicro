@@ -41,7 +41,6 @@ import cn.jmicro.api.codec.JDataInput;
 import cn.jmicro.api.codec.JDataOutput;
 import cn.jmicro.api.codec.PrefixTypeEncoderDecoder;
 import cn.jmicro.api.codec.TypeCoderFactory;
-import cn.jmicro.api.codec.typecoder.ReflectTypeCoder;
 import cn.jmicro.api.net.Message;
 import cn.jmicro.api.net.RpcRequest;
 import cn.jmicro.api.net.RpcResponse;

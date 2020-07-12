@@ -56,7 +56,7 @@ public class Config implements IConfigChangeListener{
 	private static String RegistryHost = "localhost:2181";
 	//private static String RegistryPort = "2181";
 	
-	private static String Host = "";
+	//private static String Host = "";
 	
 	public static final String 	BASE_DIR = Constants.CFG_ROOT +"/"+Constants.DEFAULT_PREFIX;
 	
@@ -94,6 +94,9 @@ public class Config implements IConfigChangeListener{
 	private static String[] commandArgs = null;
 	
 	private static String LocalDataDir = "";
+	
+	private static String  exportHttpIP = null;
+	private static String  exportSocketIP = null;
 	
 	//服务在RAFT中的根目录
 	//private static String RaftBaseDir = "";
@@ -291,10 +294,10 @@ public class Config implements IConfigChangeListener{
 						//throw new CommonException("Repeat config KEY:"+key+",params:"+params.get(key)+",config:"+p.get(k));
 					}
 					
-					if(!key.startsWith("/")) {
+					/*if(!key.startsWith("/")) {
 						key = "/" + key;
 					}
-					key = key.replaceAll("\\.", "/");
+					key = key.replaceAll("\\.", "/");*/
 					
 					params.put(key, v);
 				}
@@ -494,25 +497,23 @@ public class Config implements IConfigChangeListener{
 		
 		LocalDataDir = this.getValue(Constants.LOCAL_DATA_DIR,true);
 		
-		Host = getValue(Constants.BIND_IP,false);
-		String exportHttpIP = getValue(Constants.ExportHttpIP,false);
-		String exportSocketIP = getValue(Constants.ExportSocketIP,false);
+		List<String> ips = Utils.getIns().getLocalIPList();
+        if(ips.isEmpty()){
+        	throw new CommonException("IP not found");
+        }
+        
+        String defHost = ips.get(0);
+        
+		exportHttpIP = getValue(Constants.ExportHttpIP,false);
+		exportSocketIP = getValue(Constants.ExportSocketIP,false);
 		
-		//命令行参数具有最高优先级
-		//params.putAll(CommadParams);
-		if(StringUtils.isEmpty(Host)) {
-			if(StringUtils.isNotEmpty(exportSocketIP) || StringUtils.isNotEmpty(exportHttpIP)) {
-				if(!exportSocketIP.equals(Host) && !exportHttpIP.equals(Host) ) {
-					Host = "0.0.0.0";
-				}
-			} else {
-				List<String> ips = Utils.getIns().getLocalIPList();
-		        if(ips.isEmpty()){
-		        	throw new CommonException("IP not found");
-		        }
-		        Host = ips.get(0);
-			}
-		}
+		if(StringUtils.isEmpty(exportHttpIP)) {
+			exportHttpIP =  defHost;
+		} 
+		
+		if(StringUtils.isEmpty(exportSocketIP)) {
+			exportSocketIP =  defHost;
+		} 
 	}
 	
 	public static String getRegistryHost() {
@@ -523,8 +524,12 @@ public class Config implements IConfigChangeListener{
 		return RegistryPort;
 	}*/
 	
-	public static String getHost() {
-		return Host;
+	public static String getHttpHost() {
+		return exportHttpIP;
+	}
+	
+	public static String getSocketHost() {
+		return exportSocketIP;
 	}
 	
 	public static boolean isClientOnly() {
@@ -577,7 +582,24 @@ public class Config implements IConfigChangeListener{
 	}
 	
 	public static String getCommandParam(String key) {
-		return getMapVal(key,CommadParams,null);
+		String v = getMapVal(key,CommadParams,null);
+		
+		while(StringUtils.isEmpty(v)) {
+			if(!key.contains("/")) {
+				break;
+			}
+			
+			key = key.substring(key.indexOf("/"));
+			v = getMapVal(key,CommadParams,null);
+			if(!StringUtils.isEmpty(v)) {
+				break;
+			}
+			
+			key = key.substring(1);
+			v = getMapVal(key,CommadParams,null);
+		}
+		
+		return v;
 	}
 	
 	public String getServiceParam(String key) {

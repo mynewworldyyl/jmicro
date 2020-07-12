@@ -15,26 +15,34 @@
 		<jmicro.version>0.0.1-SNAPSHOT</jmicro.version>
 	</properties>
 	<dependencies>
-		<!-- <dependency>
+		 <dependency>
 			<groupId>cn.jmicro</groupId>
-			<artifactId>build</artifactId>
-		</dependency> -->
+			<artifactId>all</artifactId>
+		</dependency>
 		<dependency>
 			<groupId>cn.jmicro</groupId>
 			<artifactId>example.api</artifactId>
 			<version>0.0.1-SNAPSHOT</version>
 		</dependency>
+		
 		<dependency>
-			<groupId>cn.jmicro</groupId>
-			<artifactId>idgenerator</artifactId>
+			<groupId>io.protostuff</groupId>
+			<artifactId>protostuff-runtime</artifactId>
+			<version>1.6.0</version>
+			<scope>test</scope>
 		</dependency>
-		 <dependency>
-			 <groupId>cn.jmicro</groupId>
-			 <artifactId>transport.netty.client</artifactId>
-	    </dependency>
+
 		<dependency>
-			<groupId>cn.jmicro</groupId>
-			<artifactId>gateway.client</artifactId>
+			<groupId>io.protostuff</groupId>
+			<artifactId>protostuff-core</artifactId>
+			<version>1.6.0</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>com.esotericsoftware</groupId>
+			<artifactId>kryo</artifactId>
+			<version>4.0.2</version>
+			<scope>test</scope>
 		</dependency>
 		<dependency>
 			<groupId>mysql</groupId>
@@ -46,26 +54,15 @@
             <artifactId>mongodb-driver</artifactId>
             <version>3.10.1</version>
         </dependency>
-         <!--  <dependency>
-				 <groupId>cn.jmicro</groupId>
-				 <artifactId>jmicro.mongodb</artifactId>
-	        </dependency> -->
-	    <dependency>
-			<groupId>cn.jmicro</groupId>
-			<artifactId>test</artifactId>
-			<scope>test</scope>
-		</dependency>
-		
-		 <dependency>
-			<groupId>cn.jmicro</groupId>
-			<artifactId>choreography.api</artifactId>
-		</dependency>
-		
-		<dependency>
+        <dependency>
 			<groupId>cn.jmicro</groupId>
 			<artifactId>agent</artifactId>
 			<version>0.0.1-SNAPSHOT</version>
 			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>cn.jmicro</groupId>
+			<artifactId>choreography.api</artifactId>
 		</dependency>
 		
 	</dependencies>

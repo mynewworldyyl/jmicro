@@ -65,7 +65,7 @@ public class ServiceInvocationHandler implements InvocationHandler{
 	public ServiceInvocationHandler(){}
 	
 	
-	public Object invoke(Object proxy, String methodName, Object[] args){
+	public <T> T invoke(Object proxy, String methodName, Object[] args){
 		
 		Object obj = null;
 		RpcRequest req = null;
@@ -142,7 +142,7 @@ public class ServiceInvocationHandler implements InvocationHandler{
         	logger.debug("result type:{},value:{}",obj.getClass().getName(),obj.toString());
         }*/
 		
-        return obj;
+        return (T)obj;
 	
 	}
 	

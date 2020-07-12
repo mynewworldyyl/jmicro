@@ -13,7 +13,7 @@ public class CommonManagerAsyncClientImpl extends AbstractClientServiceProxyHold
   }
 
   public Map getI18NValues(String lang) {
-    return (java.util.Map) this.proxyHolder.invoke("getI18NValues", (java.lang.Object)(lang));
+    return (java.util.Map<java.lang.String,java.lang.String>) this.proxyHolder.invoke("getI18NValues", (java.lang.Object)(lang));
   }
 
   public IPromise<Boolean> hasPermissionAsync(int per) {
@@ -21,7 +21,7 @@ public class CommonManagerAsyncClientImpl extends AbstractClientServiceProxyHold
   }
 
   public boolean hasPermission(int per) {
-    return (java.lang.Boolean) this.proxyHolder.invoke("hasPermission", (java.lang.Object)(per));
+    return (boolean) this.proxyHolder.invoke("hasPermission", (java.lang.Object)(per));
   }
 
   public IPromise<Boolean> notLoginPermissionAsync(int per) {
@@ -29,7 +29,7 @@ public class CommonManagerAsyncClientImpl extends AbstractClientServiceProxyHold
   }
 
   public boolean notLoginPermission(int per) {
-    return (java.lang.Boolean) this.proxyHolder.invoke("notLoginPermission", (java.lang.Object)(per));
+    return (boolean) this.proxyHolder.invoke("notLoginPermission", (java.lang.Object)(per));
   }
 
   public IPromise<Resp> getDictsAsync(String[] keys) {
@@ -37,6 +37,6 @@ public class CommonManagerAsyncClientImpl extends AbstractClientServiceProxyHold
   }
 
   public Resp getDicts(String[] keys) {
-    return (cn.jmicro.api.Resp) this.proxyHolder.invoke("getDicts", (java.lang.Object)(keys));
+    return (cn.jmicro.api.Resp<java.util.Map<java.lang.String,java.lang.Object>>) this.proxyHolder.invoke("getDicts", (java.lang.Object)(keys));
   }
 }

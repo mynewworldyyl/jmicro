@@ -58,9 +58,9 @@ public class SpecailInvocationHandler implements InvocationHandler{
 	public SpecailInvocationHandler(){}
 	
 	@Override
-	public Object invoke(Object proxy, String methodName, Object[] args) {
+	public <T> T invoke(Object proxy, String methodName, Object[] args) {
 		
-		JMicroContext.get().setParam(JMicroContext.LOCAL_HOST, Config.getHost());
+		JMicroContext.get().setParam(JMicroContext.LOCAL_HOST, Config.getSocketHost());
 		JMicroContext.get().setParam(Constants.CLIENT_REF_METHOD, methodName);
 		
 		AbstractClientServiceProxyHolder po = (AbstractClientServiceProxyHolder)proxy;
@@ -98,7 +98,7 @@ public class SpecailInvocationHandler implements InvocationHandler{
         //RpcResponse resp = doRequest(req,po);
         
         IResponse resp = this.rpcHandler.onRequest(req);
-        return resp == null ? null :resp.getResult();
+        return resp == null ? null : (T)resp.getResult();
 	
 	}
 

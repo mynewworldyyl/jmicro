@@ -21,13 +21,15 @@ jm.config ={
     //ip:"192.168.3.3",
     //ip:'127.0.0.1',
     ip:'192.168.56.1',
+    //ip:'124.70.152.7',
+    // ip:'jmicro.cn',
     //ip:'192.168.101.22',
     //ip:'172.18.0.1',
     port:'9090',
     txtContext : '_txt_',
     binContext : '_bin_',
     httpContext : '/_http_',
-    useWs : false
+    useWs : true
 }
 
 jm.Constants = {

@@ -2,6 +2,9 @@ package cn.jmicro.choreography.api;
 
 import java.util.List;
 
+import cn.jmicro.codegenerator.AsyncClientProxy;
+
+@AsyncClientProxy
 public interface IResourceResponsitory {
 
 	List<PackageResource> getResourceList(boolean onlyFinish);

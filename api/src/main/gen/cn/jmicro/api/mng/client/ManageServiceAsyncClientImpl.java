@@ -21,7 +21,7 @@ public class ManageServiceAsyncClientImpl extends AbstractClientServiceProxyHold
   }
 
   public boolean updateMethod(ServiceMethod method) {
-    return (java.lang.Boolean) this.proxyHolder.invoke("updateMethod", (java.lang.Object)(method));
+    return (boolean) this.proxyHolder.invoke("updateMethod", (java.lang.Object)(method));
   }
 
   public IPromise<Boolean> updateItemAsync(ServiceItem item) {
@@ -29,6 +29,6 @@ public class ManageServiceAsyncClientImpl extends AbstractClientServiceProxyHold
   }
 
   public boolean updateItem(ServiceItem item) {
-    return (java.lang.Boolean) this.proxyHolder.invoke("updateItem", (java.lang.Object)(item));
+    return (boolean) this.proxyHolder.invoke("updateItem", (java.lang.Object)(item));
   }
 }

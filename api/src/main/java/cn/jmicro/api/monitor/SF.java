@@ -262,7 +262,7 @@ public class SF {
 			si.setSm((ServiceMethod)JMicroContext.get().getObject(Constants.SERVICE_METHOD_KEY, null));
 		}
 		
-		si.setLocalHost(Config.getHost());
+		si.setLocalHost(Config.getSocketHost());
 		si.setInstanceName(Config.getInstanceName());
 	}
 	
@@ -298,7 +298,7 @@ public class SF {
 	 * @return
 	 */
 	public static boolean isLoggable(int needLevel, int ...rpcMethodLevel) {
-		if(!m.isServerReady() /*&& !mo.canSubmit(MonitorConstant.LINKER_ROUTER_MONITOR) */
+		if(m == null || !m.isServerReady() /*&& !mo.canSubmit(MonitorConstant.LINKER_ROUTER_MONITOR) */
 				|| needLevel == MC.LOG_NO) {
 			return false;
 		}

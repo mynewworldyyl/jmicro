@@ -78,7 +78,7 @@ public class ServiceLoader{
 	private boolean enable = true;
 	
 	//导出服务时使用的IP和端口，格式为IP的字符串形式,此值不建议在全局配置目录中配置，否则将导致全部服务会绑定在此ＩＰ上
-	@Cfg(value = Constants.ExportSocketIP,required=false,defGlobal=false)
+	@Cfg(value = "/"+Constants.ExportSocketIP,required=false,defGlobal=false)
 	private String exportSocketIP = null;
 	
 	//导出服务时使用的端口，格式为IP的字符串形式,此值不建议在全局配置目录中配置，否则将导致全部服务会绑定在此端口上
@@ -86,7 +86,7 @@ public class ServiceLoader{
 	private int exportSocketPort = 0;
 	
 	//导出服务时使用的IP和端口，格式为IP的字符串形式,此值不建议在全局配置目录中配置，否则将导致全部服务会绑定在此ＩＰ上
-	@Cfg(value = Constants.ExportHttpIP,required=false,defGlobal=false)
+	@Cfg(value = "/"+Constants.ExportHttpIP,required=false,defGlobal=false)
 	private String exportHttpIP = null;
 	
 	//导出服务时使用的端口，格式为IP的字符串形式,此值不建议在全局配置目录中配置，否则将导致全部服务会绑定在此端口上
@@ -375,7 +375,7 @@ public class ServiceLoader{
 		usk.setServiceName(srvName);
 		usk.setVersion(ver);
 		usk.setInstanceName(Config.getInstanceName());
-		usk.setHost(Config.getHost());
+		usk.setHost(Config.getSocketHost());
 		usk.setPort(this.nettyServer.getPort());
 		
 		item.setKey(usk);
@@ -483,7 +483,7 @@ public class ServiceLoader{
 		//服务名称肯定是接口全限定类名称
 		usk.setServiceName(interfacez.getName());
 		usk.setInstanceName(Config.getInstanceName());
-		usk.setHost(Config.getHost());
+		usk.setHost(Config.getSocketHost());
 		
 		if(StringUtils.isNotEmpty(namespace)) {
 			usk.setNamespace(UniqueServiceKey.namespace(namespace));
