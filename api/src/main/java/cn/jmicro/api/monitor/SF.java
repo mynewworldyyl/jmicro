@@ -180,7 +180,7 @@ public class SF {
 	}
 
 	public static boolean netIoRead(String tag,short type,long num) {
-		if(m.isServerReady() && !m.canSubmit(sm(),type)) {
+		if(isMonitorable(type) && m.isServerReady() && !m.canSubmit(sm(),type)) {
 			if(logger.isDebugEnabled()) {
 				logger.debug("Disgard: type:" + MC.MONITOR_VAL_2_KEY.get(type) + ", level: " + MC.LOG_DEBUG + ", tag: " +tag + ", Num: "+num);
 			}

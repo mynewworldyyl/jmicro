@@ -4,16 +4,16 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import cn.jmicro.api.annotation.Cfg;
 import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Service;
 import cn.jmicro.api.classloader.IClassloaderRpc;
 import cn.jmicro.api.config.Config;
-import cn.jmicro.common.Constants;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
-@Service(namespace="classloaderrpc",version="0.0.1",handler=Constants.SPECIAL_INVOCATION_HANDLER,timeout=30000)
+@Service(namespace="classloaderrpc",version="0.0.1",timeout=30000)
 @Component
 public class ClassloaderRpcService implements IClassloaderRpc {
 

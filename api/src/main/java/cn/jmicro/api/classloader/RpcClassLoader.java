@@ -39,8 +39,8 @@ import cn.jmicro.api.raft.IChildrenListener;
 import cn.jmicro.api.raft.IDataOperator;
 import cn.jmicro.api.registry.IRegistry;
 import cn.jmicro.api.registry.ServiceItem;
+import cn.jmicro.codegenerator.AsyncClientProxy;
 import cn.jmicro.common.Constants;
-import cn.jmicro.common.util.StringUtils;
 
 
 public class RpcClassLoader extends ClassLoader {
@@ -60,7 +60,7 @@ public class RpcClassLoader extends ClassLoader {
     @Inject
     private IRegistry registry;
     
-    @Reference
+    @Reference(required = true)
     private IClassloaderRpc rpcLlassloader = null;
     
     private ClassLoader parent = null;
@@ -109,6 +109,10 @@ public class RpcClassLoader extends ClassLoader {
 	}
     
     public void addClassInstance(String className) {
+    	if(className.startsWith("cn.jmicro.api")) {
+    		//系统类不需要远程加载，全部JMICRO应用都依赖于cn.jmicro:api包
+    		return;
+    	}
     	String path = CLASS_IDR +"/" + className;
     	if(!op.exist(path)) {
     		op.createNodeOrSetData(path, "", false);
@@ -170,8 +174,27 @@ public class RpcClassLoader extends ClassLoader {
 		} else {
 			 Set<String> insNames = this.classesName2Instance.get(className);
 			 if(insNames  == null || insNames.isEmpty()) {
-				 logger.warn("class owner servernot found: {} ",className);
-				 return null;
+				 if(className.endsWith(AsyncClientProxy.IMPL_SUBFIX)) {
+					 String cn = className.substring(0, className.indexOf(AsyncClientProxy.IMPL_SUBFIX));
+					 String pkgName = cn.substring(0,cn.lastIndexOf("."));
+					 pkgName = pkgName.substring(0, pkgName.indexOf(AsyncClientProxy.PKG_SUBFIX));
+					 String simpleClassName = "I"+cn.substring(cn.lastIndexOf(".")+1,cn.length());
+					 String iname = pkgName + simpleClassName;
+					 insNames = this.classesName2Instance.get(iname);
+				 }else if(className.endsWith(AsyncClientProxy.INT_SUBFIX)) {
+					 String cn = className.substring(0, className.indexOf(AsyncClientProxy.INT_SUBFIX));
+					 String pkgName = cn.substring(0,cn.lastIndexOf("."));
+					 pkgName = pkgName.substring(0, pkgName.indexOf(AsyncClientProxy.PKG_SUBFIX));
+					 String simpleClassName = cn.substring(cn.lastIndexOf(".")+1,cn.length());
+					 String iname = pkgName + simpleClassName;
+					 insNames = this.classesName2Instance.get(iname);
+				 }
+				 
+				 if(insNames  == null || insNames.isEmpty()) {
+					 logger.warn("class owner servernot found: {} ",className);
+					 return null;
+				 }
+				 
 			 }
 			 
 			 Set<ServiceItem> items = this.registry.getServices(IClassloaderRpc.class.getName());

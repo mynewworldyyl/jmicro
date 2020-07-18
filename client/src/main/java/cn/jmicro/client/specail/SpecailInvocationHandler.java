@@ -29,7 +29,7 @@ import cn.jmicro.api.idgenerator.ComponentIdServer;
 import cn.jmicro.api.net.IRequest;
 import cn.jmicro.api.net.IResponse;
 import cn.jmicro.api.net.RpcRequest;
-import cn.jmicro.api.objectfactory.AbstractClientServiceProxyHolder;
+import cn.jmicro.api.objectfactory.ClientServiceProxyHolder;
 import cn.jmicro.api.registry.ServiceItem;
 import cn.jmicro.api.registry.ServiceMethod;
 import cn.jmicro.client.RpcClientRequestHandler;
@@ -63,9 +63,9 @@ public class SpecailInvocationHandler implements InvocationHandler{
 		JMicroContext.get().setParam(JMicroContext.LOCAL_HOST, Config.getSocketHost());
 		JMicroContext.get().setParam(Constants.CLIENT_REF_METHOD, methodName);
 		
-		AbstractClientServiceProxyHolder po = (AbstractClientServiceProxyHolder)proxy;
+		ClientServiceProxyHolder po = (ClientServiceProxyHolder)proxy;
 
-		ServiceItem poItem = po.getHolder().getItem();
+		ServiceItem poItem = po.getItem();
 		if(poItem == null){
 			throw new CommonException("cls["+proxy.getClass().getName()+"] method ["+methodName+"] service not found");
 		}

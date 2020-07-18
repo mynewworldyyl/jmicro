@@ -241,7 +241,7 @@ public class ApiRawRequestMessageHandler implements IMessageHandler{
 	private Object[] getArgs(String serviceName, String method, ISession session, JDataInput ji) {
 		
 		//ServiceItem item = registry.getServiceByImpl(r.getImpl());
-		Class<?> srvClazz = JMicro.getObjectFactory().loadCls(serviceName);
+		Class<?> srvClazz = objFactory.loadCls(serviceName);
 		if(srvClazz == null) {
 			throw new CommonException("Class ["+serviceName+"] not found");
 		}
