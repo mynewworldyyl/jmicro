@@ -5,10 +5,10 @@
 		 <artifactId>main</artifactId>
 		 <version>0.0.1-SNAPSHOT</version>
     </parent>
-    <artifactId>init</artifactId>
+    <artifactId>main.init</artifactId>
     <packaging>jar</packaging>
     <name>${project.artifactId}</name>
-    <description>publish subscribe Module</description>
+    <description>init deployment</description>
 	<dependencies>
 		<dependency>
 			 <groupId>cn.jmicro</groupId>

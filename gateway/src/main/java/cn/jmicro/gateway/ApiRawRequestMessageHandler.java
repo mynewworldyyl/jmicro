@@ -87,7 +87,7 @@ public class ApiRawRequestMessageHandler implements IMessageHandler{
 	public Byte type() {
 		return Constants.MSG_TYPE_REQ_RAW;
 	}
-
+	
 	@Override
 	public void onMessage(ISession session, Message msg) {
 		ApiRequest req = null;
@@ -165,7 +165,9 @@ public class ApiRawRequestMessageHandler implements IMessageHandler{
 			}
 			resp.setResult(result);
 		} else if(doLogick){
+			
 			Object srv = objFactory.getRemoteServie(req.getServiceName(), req.getNamespace(), req.getVersion(),null);
+			
 			if(srv != null){
 				try {
 					AbstractClientServiceProxyHolder proxy = (AbstractClientServiceProxyHolder)srv;

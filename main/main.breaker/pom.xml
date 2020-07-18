@@ -5,44 +5,15 @@
 		 <artifactId>main</artifactId>
 		 <version>0.0.1-SNAPSHOT</version>
     </parent>
-    <artifactId>breaker</artifactId>
+    <artifactId>main.breaker</artifactId>
     <packaging>jar</packaging>
     <name>${project.artifactId}</name>
     <description>breaker Module</description>
     <dependencies>
         <dependency>
 			 <groupId>cn.jmicro</groupId>
-			 <artifactId>api</artifactId>
+			 <artifactId>all</artifactId>
 	    </dependency>
-	     <dependency>
-			 <groupId>cn.jmicro</groupId>
-			 <artifactId>redis</artifactId>
-	    </dependency>
-	    <dependency>
-			 <groupId>cn.jmicro</groupId>
-			 <artifactId>zk</artifactId>
-	    </dependency>
-	    <dependency>
-			 <groupId>cn.jmicro</groupId>
-			 <artifactId>objfactory.simple</artifactId>
-	    </dependency>
-	    <dependency>
-			 <groupId>cn.jmicro</groupId>
-			 <artifactId>classloader</artifactId>
-	    </dependency>
-	    <dependency>
-			 <groupId>cn.jmicro</groupId>
-			 <artifactId>transport.netty.client</artifactId>
-	    </dependency>
-	     <dependency>
-			 <groupId>cn.jmicro</groupId>
-			 <artifactId>transport.netty.server</artifactId>
-	    </dependency>
-	     <dependency>
-			 <groupId>cn.jmicro</groupId>
-			 <artifactId>idgenerator</artifactId>
-	    </dependency>
-	    
 	    <dependency>
 			 <groupId>cn.jmicro</groupId>
 			 <artifactId>test</artifactId>

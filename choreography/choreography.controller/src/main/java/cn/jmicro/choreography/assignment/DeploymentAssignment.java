@@ -374,7 +374,7 @@ public class DeploymentAssignment {
 		logger.info(msg);
 		
 		Set<Assign> set = assingManager.getAssignByDepIdAndAgentId(a.getDepId(), a.getAgentId());
-		String path = ChoyConstants.ROOT_AGENT+"/"+a.getAgentId()+"/"+a.getDepId();
+		String path = ChoyConstants.ROOT_AGENT+"/" + a.getAgentId() + "/" + a.getInsId();
 		if(set.size() > 1 || !this.agentManager.isActive(a.getAgentId()) || !op.exist(path)) {
 			//Agent挂机状态，直接关闭服务进程
 			ProcessInfo pi = this.insManager.getProcessesByInsId(a.getInsId(),false);
@@ -419,7 +419,7 @@ public class DeploymentAssignment {
 		}
 		Set<Assign> ass = assingManager.getAssignByDepId(dep.getId());
 		//filterState(ass,AssignState.STARTED,AssignState.STARTING);
-		this.fiterByState(ass, AssignState.STARTED,AssignState.STARTING,AssignState.INIT);
+		this.includeByState(ass, AssignState.STARTED,AssignState.STARTING,AssignState.INIT);
 		
 		Set<AgentInfo> agentInfo = this.agentManager.getAllAgentInfo();
 		
@@ -436,7 +436,7 @@ public class DeploymentAssignment {
 		
 	}
 	
-	private void fiterByState(Set<Assign> ass, AssignState... states) {
+	private void includeByState(Set<Assign> ass, AssignState... states) {
 		Iterator<Assign> ite = ass.iterator();
 		while(ite.hasNext()) {
 			Assign a = ite.next();
@@ -445,6 +445,7 @@ public class DeploymentAssignment {
 			for(AssignState as : states) {
 				if(as == a.state) {
 					f = true;
+					break;
 				}
 			}
 			
@@ -458,21 +459,32 @@ public class DeploymentAssignment {
 
 	private void doDecAssign(Set<AgentInfo> agentInfo, Deployment dep, int cnt) {
 		
-		Set<ProcessInfo> depAgents = this.insManager.getProcessesByDepId(dep.getId());
-		if(depAgents == null || depAgents.isEmpty()) {
+		Set<ProcessInfo> processes = this.insManager.getProcessesByDepId(dep.getId());
+		if(processes == null || processes.isEmpty()) {
 			logger.info("No agents for dep: " + dep.toString());
 			return;
 		}
 		
 		List<AgentInfo> sortList = new LinkedList<>();
-		for(ProcessInfo pi : depAgents) {
-			Iterator<AgentInfo> ite = sortList.iterator();
-			while(ite.hasNext()) {
-				if(pi.getAgentId().equals(ite.next().getId())) {
-					ite.remove();
+		sortList.addAll(agentInfo);
+		
+		Iterator<AgentInfo> ite = sortList.iterator();
+		
+		while(ite.hasNext()) {
+			AgentInfo ai = ite.next();
+			
+			boolean found = false;
+			for(ProcessInfo pi : processes) {
+				if(pi.getAgentId().equals(ai.getId())) {
+					found = true;
 					break;
 				}
 			}
+			
+			if(!found) {
+				ite.remove();
+			}
+			
 		}
 		
 		if(sortList.isEmpty()) {
@@ -554,7 +566,8 @@ public class DeploymentAssignment {
 		Set<Assign> as = assingManager.getAssignByDepId(dep.getId());
 		if(as.size() > 0) {
 			Iterator<Assign> ite = as.iterator();
-			while(ite.hasNext()) {
+			while(cnt < 0 && ite.hasNext()) {
+				cnt++;
 				this.cancelAssign(ite.next());
 			}
 		}
@@ -598,29 +611,28 @@ public class DeploymentAssignment {
 		while(ite.hasNext()) {
 			AgentInfo aif = ite.next();
 			
-			String path = ChoyConstants.ROOT_AGENT + "/" + aif.getId() + "/"+dep.getId();
-			if(!op.exist(path)) {
+			//String path = ChoyConstants.ROOT_AGENT + "/" + aif.getId() + "/"+dep.getId();
 
-				//String pid = idServer.getStringId(ProcessInfo.class);
-				String pid = (Long.parseLong(op.getData(ChoyConstants.ID_PATH)) +1)+"";
-				op.setData(ChoyConstants.ID_PATH, pid);
-				
-				Assign a = new Assign(dep.getId(),aif.getId(),pid);
-				a.opTime = curTime;
-				a.state = AssignState.INIT;
-				assingManager.add(a);
-				
-				String msg = a.toString();
-				SF.eventLog(MC.MT_ASSIGN_ADD,MC.LOG_INFO, TAG,msg);
-				
-				logger.info("Assign: " + msg);
-				
-				nextDeployTimeout.put(dep.getId(), curTime);
+			//String pid = idServer.getStringId(ProcessInfo.class);
+			String pid = (Long.parseLong(op.getData(ChoyConstants.ID_PATH)) +1)+"";
+			op.setData(ChoyConstants.ID_PATH, pid);
+			
+			Assign a = new Assign(dep.getId(),aif.getId(),pid);
+			a.opTime = curTime;
+			a.state = AssignState.INIT;
+			assingManager.add(a);
+			
+			String msg = a.toString();
+			SF.eventLog(MC.MT_ASSIGN_ADD,MC.LOG_INFO, TAG,msg);
+			
+			logger.info("Assign: " + msg);
+			
+			nextDeployTimeout.put(dep.getId(), curTime);
 
-				if(--cnt == 0) {
-					return;
-				}
+			if(--cnt == 0) {
+				break;
 			}
+		
 		}
 	}
 

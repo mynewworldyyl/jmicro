@@ -39,11 +39,10 @@ public class TestAgentManager extends JMicroBaseTestCase{
 	public void testCreateAgent() {
 		AgentInfo ai = new AgentInfo();
 		ComponentIdServer idserver = of.get(ComponentIdServer.class);
-		ai.setId(idserver.getStringId(AgentInfo.class));
-		ai.setName("JmicroTestAgentmanager");
+		ai.setId("JmicroTestAgentmanager");
 		ai.setStartTime(System.currentTimeMillis());
 		
-		String path = ChoyConstants.ROOT_AGENT + "/" + ai.getName() + ai.getId();
+		String path = ChoyConstants.ROOT_AGENT + "/" + ai.getId();
 		String jsonData = JsonUtils.getIns().toJson(ai);
 		
 		IDataOperator dataOperator = of.get(IDataOperator.class);

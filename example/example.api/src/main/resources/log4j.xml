@@ -101,13 +101,13 @@
 	
 	
 	<logger name="java.sql">
-		<level value="DEBUG"/>
+		<level value="INFO"/>
 		<appender-ref ref="electric_sql"/>
 		<appender-ref ref="CONSOLE"/>
 	</logger>
 	
 	<logger name="org.mybatis">
-		<level value="DEBUG"/>
+		<level value="INFO"/>
 		<appender-ref ref="electric_sql"/>
 		<appender-ref ref="CONSOLE"/>
 	</logger>
@@ -117,7 +117,7 @@
 		<appender-ref ref="spring"/>
 	</logger>
 	
-	<logger name="org.mongodb.driver">
+	<logger name="org.mongodb">
 		<level value="INFO"/>
 		<appender-ref ref="spring"/>
 	</logger>

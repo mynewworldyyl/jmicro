@@ -139,10 +139,10 @@ public class ExecutorFactory {
 		
 		String ns = Config.getInstanceName() + "." + GROUP+"_" + cfg.getThreadNamePrefix();
 		ServiceItem si = sl.createSrvItem(IExecutorInfo.class, ns,"0.0.1", ExecutorMonitorServer.class.getName());
+		executor.getEi().setKey(si.getKey().toKey(true, true, true));
 		
 		ExecutorMonitorServer ems = new ExecutorMonitorServer(cfg,executor.getEi());
 		ems.setE(executor);
-		executor.getEi().setKey(si.getKey().toKey(true, true, true));
 		emses.put(cfg.getThreadNamePrefix(),ems);
 		 
 		of.regist(ns, ems);

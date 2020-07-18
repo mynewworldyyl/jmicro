@@ -101,37 +101,38 @@
     <modules>
     	<module>common</module>
 		<module>api</module>
-		<module>server</module>
-		<module>client</module>
+		<module>ext</module>
+		<module>agent</module>
 		<module>config</module>
 		<module>idgenerator</module>
 		<module>zk</module>
+		<module>redis</module>
+		<module>etcd</module>
+		<module>classloader</module>
+		<module>server</module>
+		<module>client</module>
 		<module>transport</module>
 		<module>mng</module>
 		<module>objfactory</module>
 		<module>limit</module>
 		<module>gateway</module>
 		<module>gateway.client</module>
-		<module>redis</module>
-		<module>etcd</module>
-		<module>classloader</module>
+		<module>build</module>
 		<module>choreography</module>
 		<module>test</module>
-		<module>ext</module>
-		<module>agent</module>
 		<module>main</module>
 		<module>monitor</module>
-		<module>build</module>
-		<!-- <module>example</module> -->
+		<module>example</module>
     </modules>
 
     <dependencyManagement>
         <dependencies>
-		        <dependency>
-					 <groupId>cn.jmicro</groupId>
-					 <artifactId>all</artifactId>
-					 <version>${jmicro.version}</version>
-		        </dependency>
+	        <dependency>
+				 <groupId>cn.jmicro</groupId>
+				 <artifactId>all</artifactId>
+				 <version>${jmicro.version}</version>
+	        </dependency>
+	        
              <dependency>
                  <groupId>cn.jmicro</groupId>
 				 <artifactId>api</artifactId>
@@ -286,32 +287,26 @@
 				 <artifactId>choregraphy.controller</artifactId>
 				  <version>${jmicro.version}</version>
 	        </dependency>
-
-	        
 	        <dependency>
 				 <groupId>cn.jmicro</groupId>
 				 <artifactId>test</artifactId>
 				  <version>${jmicro.version}</version>
 	        </dependency>
-			
 			<dependency>
 				 <groupId>cn.jmicro</groupId>
 				 <artifactId>mybatis</artifactId>
 				 <version>${jmicro.version}</version>
 	        </dependency>
-	        
 	        <dependency>
 				 <groupId>cn.jmicro</groupId>
 				 <artifactId>main.rcptool</artifactId>
 				 <version>${jmicro.version}</version>
 	        </dependency>
-	        
 	        <dependency>
 				 <groupId>cn.jmicro</groupId>
 				 <artifactId>mongodb</artifactId>
 				 <version>${jmicro.version}</version>
 	        </dependency>
-			
             <dependency>
 			<groupId>org.slf4j</groupId>
 			<artifactId>jcl-over-slf4j</artifactId>

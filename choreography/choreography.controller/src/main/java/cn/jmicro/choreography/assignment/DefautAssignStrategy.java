@@ -196,10 +196,10 @@ public class DefautAssignStrategy implements IAssignStrategy{
 		while(ite.hasNext()) {
 			AgentInfo ai = ite.next();
 			if(matchPrefix) {
-				if(!ai.getName().startsWith(name)){
+				if(!ai.getId().startsWith(name)){
 					ite.remove();
 				}
-			}else if(!name.equals(ai.getName())){
+			}else if(!name.equals(ai.getId())){
 				ite.remove();
 			}
 		}

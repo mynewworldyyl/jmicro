@@ -520,6 +520,7 @@ public class SimpleObjectFactory implements IObjectFactory {
 		if(ismlModel) {
 			VoterPerson lp = new VoterPerson(this,null);
 			this.cacheObj(VoterPerson.class, lp,null);
+			logger.info("Wait for master!");
 			this.masterSlaveListen((type,isMaster)->{
 				if(isMaster && (IMasterChangeListener.MASTER_ONLINE == type 
 						|| IMasterChangeListener.MASTER_NOTSUPPORT == type)) {
@@ -549,8 +550,8 @@ public class SimpleObjectFactory implements IObjectFactory {
 					 logger.info(Config.getInstanceName() + " lost master, need restart server!");
 					 System.exit(0);
 				}
-				
 			});
+			
 		} else {
 			 r.run();
 		}
@@ -596,9 +597,9 @@ public class SimpleObjectFactory implements IObjectFactory {
 			Object o = lobjs.get(i);
 			
 			 //代理对像延迟到目标对像创建才做注入
-			 if(o instanceof ProxyObject){
-	    		continue;
-	    	 }
+			if(o instanceof ProxyObject){
+				continue;
+	    	}
 			
 			if(systemObjs.contains(o) || dones.contains(o)) {
 				continue;

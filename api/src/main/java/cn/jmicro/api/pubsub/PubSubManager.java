@@ -20,6 +20,7 @@ import cn.jmicro.api.config.Config;
 import cn.jmicro.api.executor.ExecutorConfig;
 import cn.jmicro.api.executor.ExecutorFactory;
 import cn.jmicro.api.idgenerator.ComponentIdServer;
+import cn.jmicro.api.internal.pubsub.IInternalSubRpc;
 import cn.jmicro.api.net.Message;
 import cn.jmicro.api.objectfactory.ProxyObject;
 import cn.jmicro.api.raft.IDataOperator;

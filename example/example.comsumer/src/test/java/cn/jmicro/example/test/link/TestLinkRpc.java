@@ -22,16 +22,14 @@ public class TestLinkRpc extends JMicroBaseTestCase{
 	
 	@Test
 	public void testLinkRpc() {
-		ISimpleRpc ms = of.getRemoteServie(ISimpleRpc.class.getName(), 
-				"simpleRpc", "0.0.1", null);
+		ISimpleRpc ms = of.getRemoteServie(ISimpleRpc.class.getName(), "simpleRpc", "0.0.1", null);
 		System.out.println(ms.linkRpc("Test link: "));
 		this.waitForReady(1000);
 	}
 	
 	@Test
 	public void testLinkRpcLoop() {
-		ISimpleRpc ms = of.getRemoteServie(ISimpleRpc.class.getName(), 
-				"simpleRpc", "0.0.1", null);
+		ISimpleRpc ms = of.getRemoteServie(ISimpleRpc.class.getName(), "simpleRpc", "0.0.1", null);
 		for(int i = 0; i < 10 ; i++) {
 			try {
 				Thread.sleep(100);

@@ -74,6 +74,8 @@ public class Config implements IConfigChangeListener{
 	//全局服务注册目录,全部运行实例共享一个服务注册
 	public static final String GrobalServiceRegistDir = BASE_DIR + "/grobalServiceItems";
 	
+	public static final String AccountDir = BASE_DIR + "/accounts";
+	
 	//全局消息订阅根目录
 	public static final String PubSubDir = BASE_DIR +"/pubsub";
 	
@@ -215,53 +217,89 @@ public class Config implements IConfigChangeListener{
 		
 	}
 	
-	private void initDataDir() {
+	private void initInstanceName() {
+		
+		String dataDir = getCommandParam(Constants.LOCAL_DATA_DIR);
+		
+		String prefix = this.getString(Constants.INSTANCE_NAME,Constants.INSTANCE_NAME);
+		
+		if(StringUtils.isEmpty(dataDir)) {
+			throw new CommonException(dataDir + " cannot be NULL");
+		}
+		
+		String insName = null;
+		
+		File ud = null;
+		File dir = new File(dataDir);
+		
+		if(!dir.exists()) {
+			dir.mkdirs();
+		}
+		
+		//优先在本地目录中寻找
+		for(File f : dir.listFiles()) {
+			if(!f.isDirectory() || !f.getName().startsWith(prefix)) {
+				continue;
+			}
+			
+			/*File lockFile = new File(f.getAbsolutePath(),LOCK_FILE);
+			if(lockFile.exists()) {
+				//被同一台机上的不同实例使用
+				continue;
+			}*/
+			
+			String path = Config.InstanceDir + "/" + f.getName();
+			if(!dataOperator.exist(path)) {
+				doTag(dataOperator,f,path);
+				insName = f.getName();
+				break;
+			}
+		}
+		
+		if(insName == null) {
+			//实例名前缀，默认前缀是instanceName，
+			
+			for(int i = 0; i < Integer.MAX_VALUE ; i++) {
+				String name = prefix + i;
+				ud = new File(dir,name);
+				String path = Config.InstanceDir + "/" + name;
+				if(!ud.exists() && !dataOperator.exist(path)) {
+					doTag(dataOperator,ud.getAbsoluteFile(),path);
+					insName = name;
+					break;
+				}
+			}
+		}
+		
+		if(StringUtils.isEmpty(insName)) {
+			throw new CommonException("Fail to get instance name");
+		}
+		
 		String localDataDir = CommadParams.get(Constants.LOCAL_DATA_DIR);
-		File f = new File(localDataDir,InstanceName);
+		File f = new File(localDataDir,insName);
 		if(!f.exists()) {
 			f.mkdir();
 		}
 		CommadParams.put(Constants.INSTANCE_DATA_DIR, f.getAbsolutePath());
+		
+		InstanceName = insName;
 	}
 	
-	private void initInstanceName() {
-		
-		String insName = getCommandParam(Constants.INSTANCE_NAME);
-		
-		if(StringUtils.isNotEmpty(insName)) {
-			InstanceName = insName;
-			initDataDir();
-			return;
-		} 
-		
-		String insGenClass = getCommandParam(Constants.INSTANCE_NAME_GEN_CLASS);
-		if(StringUtils.isEmpty(insGenClass)) {
-			insGenClass = getExtParam(Constants.INSTANCE_NAME_GEN_CLASS);
+	private void doTag(IDataOperator dataOperator,File dir,String path) {
+		if(!dir.exists()) {
+			dir.mkdirs();
 		}
-		
-		if(StringUtils.isEmpty(insGenClass)) {
-			insGenClass = DefaultServiceInstanceNameProvider.class.getName();
-		}
-		
-		ClassLoader cl = Thread.currentThread().getContextClassLoader();
-		if(cl == null) {
-			cl = Config.class.getClassLoader();
-		}
-		
+		/*File lf = new File(dir,LOCK_FILE);
 		try {
-			Class<?> cls = cl.loadClass(insGenClass);
-			if(!IServiceInstanceNameGenerator.class.isAssignableFrom(cls)) {
-				throw new CommonException("Class ["+ insGenClass+"] not a implementation of ["+IServiceInstanceNameGenerator.class.getName()+"]" );
-			}
-			IServiceInstanceNameGenerator sin = (IServiceInstanceNameGenerator)cls.newInstance();
-			InstanceName = sin.getInstanceName(dataOperator,this);
-			initDataDir();
-		} catch (ClassNotFoundException e) {
-			throw new CommonException("IServiceInstanceNameGenerator imple class ["+ insGenClass+"] not found" );
-		} catch (InstantiationException | IllegalAccessException e) {
-			throw new CommonException("",e);
+			lf.createNewFile();
+		} catch (IOException e) {
+			throw new CommonException(lf.getAbsolutePath(),e);
 		}
+		lf.deleteOnExit();*/
+		//本地存在，ZK中不存在,也就是没有虽的机器在使用此目录
+		dataOperator.createNodeOrSetData(path, "", true);
 	}
+	
 
 	private static void loadExtConfig() {
 		List<String> configFiles = ClassScannerUtils.getClasspathResourcePaths("META-INF/jmicro", "*.properties");

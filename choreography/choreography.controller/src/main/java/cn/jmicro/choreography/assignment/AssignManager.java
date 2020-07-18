@@ -56,9 +56,9 @@ public class AssignManager {
 				return;
 			}
 			addOrUpdate(a);
-			op.addDataListener(p, assignDataListener);
+			op.addDataListener(p+"/"+c, assignDataListener);
 		} else if(type == IListener.REMOVE) {
-			op.removeDataListener(p, assignDataListener);
+			op.removeDataListener(p+"/"+c, assignDataListener);
 		}
 	};
 	
@@ -146,7 +146,7 @@ public class AssignManager {
 	}
 	
 	private String assignPath(Assign a) {
-		return ChoyConstants.ROOT_AGENT + "/" + a.getAgentId() + "/" + a.getDepId();
+		return ChoyConstants.ROOT_AGENT + "/" + a.getAgentId() + "/" + a.getInsId();
 	}
 	
 	public Assign getAssignByInfoId(String id) {

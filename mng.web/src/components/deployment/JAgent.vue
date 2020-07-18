@@ -3,11 +3,11 @@
         <a @click="refresh()">REFRESH</a>
         &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input type="checkbox" v-model="showAll"/>SHOW ALL
         <table class="configItemTalbe" width="99%">
-            <thead><tr><td>ID</td><td>NAME</td> <td>PRIVATE</td><td>ACTIVE</td> <td>DEPS</td><td>INTS</td>
+            <thead><tr><td>ID</td><td>PRIVATE</td><td>ACTIVE</td> <td>DEPS</td><td>INTS</td>
                 <td>START TIME</td><td>CONTINUTE</td>
                <td>HOST</td><td>STATIS</td><td>OPERATION</td></tr></thead>
             <tr v-for="a in agentList" :key="a.id">
-                <td>{{ a.agentInfo.id }}</td><td>{{ a.agentInfo.name }}</td><td>{{a.agentInfo.privat}}</td>
+                <td>{{ a.agentInfo.id }}</td><td>{{a.agentInfo.privat}}</td>
                 <td>{{ a.agentInfo.active }}</td>
                 <td>{{ a.depIds ? a.depIds.join(',') : '' }}</td>
                 <td>{{ a.intIds ? a.intIds.join(',') : '' }}</td>

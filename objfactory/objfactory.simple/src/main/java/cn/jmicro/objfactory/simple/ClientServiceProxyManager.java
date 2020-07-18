@@ -33,6 +33,7 @@ import cn.jmicro.api.annotation.Async;
 import cn.jmicro.api.annotation.Reference;
 import cn.jmicro.api.annotation.Service;
 import cn.jmicro.api.classloader.RpcClassLoader;
+import cn.jmicro.api.config.Config;
 import cn.jmicro.api.objectfactory.AbstractClientServiceProxyHolder;
 import cn.jmicro.api.objectfactory.ClientServiceProxyHolder;
 import cn.jmicro.api.objectfactory.ProxyObject;
@@ -41,6 +42,7 @@ import cn.jmicro.api.registry.IRegistry;
 import cn.jmicro.api.registry.ServiceItem;
 import cn.jmicro.api.registry.ServiceMethod;
 import cn.jmicro.api.registry.UniqueServiceKey;
+import cn.jmicro.codegenerator.AsyncClientProxy;
 import cn.jmicro.common.CommonException;
 import cn.jmicro.common.Constants;
 import cn.jmicro.common.Utils;
@@ -90,21 +92,20 @@ class ClientServiceProxyManager {
 		ClassLoader useCl = Thread.currentThread().getContextClassLoader();
 		AbstractClientServiceProxyHolder proxy = null;
 		try {
-			
+			srvName = parseServiceClass(srvName);
 			Set<ServiceItem> items = registry.getServices(srvName, namespace, version);
 			ServiceItem si = null;
-			if(items == null || items.isEmpty()) {
-				throw new CommonException("Class not found: "+UniqueServiceKey.serviceName(srvName, namespace, version));
+			if(srvName.equals("cn.jmicro.example.api.rpc.IRpcA")) {
+				System.out.println("ClientServiceProxyManager: " + srvName);
 			}
-			
-			si = items.iterator().next();
-			
-			proxy = createDynamicServiceProxy(si,cl,acs);
-			
-			registerAsyncService(acs,items);
-			
-			//this.initProxy(proxy,key);
-			
+			if(items == null || items.isEmpty()) {
+				//throw new CommonException("Class not found: "+UniqueServiceKey.serviceName(srvName, namespace, version));
+				proxy = createDynamicServiceProxyWithSNV(Config.getInstanceName(),srvName, namespace, version,cl,acs);
+			} else {
+				si = items.iterator().next();
+				proxy = createDynamicServiceProxy(si,cl,acs);
+				registerAsyncService(acs,items);
+			}
 		} finally {
 			Thread.currentThread().setContextClassLoader(useCl);
 		}
@@ -112,9 +113,9 @@ class ClientServiceProxyManager {
 		return (T)proxy;
 	}
 	
-	@SuppressWarnings("unchecked")
 	<T> T  getRefRemoteService(String srvName, AsyncConfig[] acs){
-		Class<?> cls = loadClass(null,srvName,null);
+		//srvName = parseServiceClass(srvName);
+		Class<?> cls = loadClass(Config.getInstanceName(),srvName,null);
 		return getRefRemoteService(cls,acs);
 	}
 	
@@ -129,6 +130,7 @@ class ClientServiceProxyManager {
 			throw new CommonException("Cannot create service proxy ["+srvClazz.getName()
 			+"[ without anno [" +Service.class.getName() +"]");
 		}
+		srvClazz = this.parseServiceClass(srvClazz);
 		Service srvAnno = srvClazz.getAnnotation(Service.class);
 		return this.getRefRemoteService(srvClazz.getName(), srvAnno.namespace(),srvAnno.version(), null,acs);
 	}
@@ -373,7 +375,7 @@ class ClientServiceProxyManager {
 		
 		Class<?> becls = ProxyObject.getTargetCls(srcObj.getClass());
 		Reference ref = f.getAnnotation(Reference.class);
-		Class<?> type = f.getType();
+		Class<?> type = parseServiceClass(f.getType());
 		
 		Object proxy = null;
 		
@@ -414,6 +416,25 @@ class ClientServiceProxyManager {
 		return proxy;
 	}
     
+    private String parseServiceClass(String type) {
+		if(type.endsWith(AsyncClientProxy.INT_SUBFIX)) {
+			return type.substring(0, type.indexOf(AsyncClientProxy.INT_SUBFIX));
+		}else if(type.endsWith(AsyncClientProxy.IMPL_SUBFIX)) {
+			return "I" + type.substring(0, type.indexOf(AsyncClientProxy.IMPL_SUBFIX));
+		}
+		return type;
+	}
+    
+	private Class<?> parseServiceClass(Class<?> type) {
+		String cn = type.getSimpleName();
+		if(cn.endsWith(AsyncClientProxy.INT_SUBFIX)) {
+			return type.getInterfaces()[0];
+		}else if(cn.endsWith(AsyncClientProxy.IMPL_SUBFIX)) {
+			return type.getInterfaces()[0].getInterfaces()[0];
+		}
+		return type;
+	}
+
 	private Object createCollectionService(Object srcObj, Field f, Class<?> becls, Reference ref) {
 	
 		Class<?> ctype = getEltType(f);
@@ -513,7 +534,7 @@ class ClientServiceProxyManager {
 		
 		String clientProxyClsName = generateClientProxyName(si.getKey().getServiceName());
 		
-		Class<?> cls = this.loadClass(si.getKey().getInstanceName(),clientProxyClsName, cl);
+		Class<?> cls = this.loadClass(si.getKey().getInstanceName(), clientProxyClsName, cl);
 		if(cls == null) {
 			throw new CommonException("Client holder class not found: "+clientProxyClsName);
 		}
@@ -540,23 +561,49 @@ class ClientServiceProxyManager {
 		}
 	}
 	
+	private <T> T createDynamicServiceProxyWithSNV(String instanceName,String serviceName,String namespace,String version,
+			RpcClassLoader cl, AsyncConfig[] acs) {
+		
+		String clientProxyClsName = generateClientProxyName(serviceName);
+		
+		Class<?> cls = this.loadClass(instanceName, clientProxyClsName, cl);
+		if(cls == null) {
+			throw new CommonException("Client holder class not found: "+clientProxyClsName);
+		}
+		
+		try {
+			AbstractClientServiceProxyHolder proxy = (AbstractClientServiceProxyHolder) cls.newInstance();
+			ClientServiceProxyHolder holder = proxy.getHolder();
+			//holder.setItem(si);
+			holder.setAsyncConfig(acs);
+			holder.setNamespace(namespace);
+			holder.setVersion(version);
+			holder.setServiceName(serviceName);
+			holder.setOf(of);
+			String key = UniqueServiceKey.serviceName(serviceName, namespace, version);
+			registry.addExistsServiceListener(key, holder);
+			return (T)proxy;
+		} catch (InstantiationException | IllegalAccessException e) {
+			throw new CommonException("Create instalce exception: "+clientProxyClsName,e);
+		}
+	}
+	
 	
 	private String generateClientProxyName(String srvName) {
 		 String pkgName = "";
 		 
 		 int idx = srvName.lastIndexOf(".");
 		 if(idx > 0) {
-			 pkgName = srvName.substring(0,idx)+".client";
+			 pkgName = srvName.substring(0,idx) + "." + AsyncClientProxy.PKG_SUBFIX;
 		 } else {
-			 pkgName = "client";
+			 pkgName = AsyncClientProxy.PKG_SUBFIX;
 		 }
-		 
 		
 		 String cln = srvName.substring(idx+1);
 		 if(cln.startsWith("I")) {
-			  cln = cln.substring(1)+"AsyncClientImpl";
+			  cln = cln.substring(1) + AsyncClientProxy.IMPL_SUBFIX;
 		 } else {
-			 cln = cln + "AsyncClientImpl";
+			 cln = cln + AsyncClientProxy.IMPL_SUBFIX;
 		 }
 		 
 		 return pkgName + "." + cln;

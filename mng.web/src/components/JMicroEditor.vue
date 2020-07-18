@@ -27,6 +27,7 @@
                     <!-- Shell -->
                     <JShell v-else-if="item.group == 'shell'" :item="item"></JShell>
                     <JTesting v-else-if="item.group == 'testing'" :item="item"></JTesting>
+                    <JAbout v-else-if="item.group == 'about'" :item="item"></JAbout>
 
                     <JRepository v-else-if="item.group == 'repository'" :item="item"></JRepository>
                     <JHost v-else-if="item.group == 'host'" :item="item"></JHost>
@@ -52,8 +53,10 @@
 
 <script>
 
-    import JServiceItem from './service/JServiceItem.vue'
-    import JMethodItem from './service/JSMethodItem.vue'
+    import TreeNode from "./common/JTreeNode.js"
+
+    //import JServiceItem from './service/JServiceItem.vue'
+    /*import JMethodItem from './service/JSMethodItem.vue'
     import JInstanceItem from './service/JInstanceItem.vue'
 
     import JStatisServiceItemView from './statis/JStatisServiceItemView.vue'
@@ -76,48 +79,49 @@
     import JAgent from './deployment/JAgent.vue'
     import JProcess from './deployment/JProcess.vue'
 
-    import TreeNode from "./common/JTreeNode.js"
+
     import JTypeConfig from "./monitor/JTypeConfig.vue"
     import JInvokeLinkView from "./monitor/JInvokeLinkView.vue"
     import JMonitorTypeKeyEditor from "./monitor/JMonitorTypeKeyEditor.vue"
     import JMonitorTypeServiceMethodEditor from "./monitor/JMonitorTypeServiceMethodEditor.vue"
     import JLogItemView from "./monitor/JLogItemView.vue"
     import JNamedTypeEditor from "./monitor/JNamedTypeEditor.vue"
-    import JThreadPoolMonitorEditor from "./monitor/JThreadPoolMonitorEditor.vue"
+    import JThreadPoolMonitorEditor from "./monitor/JThreadPoolMonitorEditor.vue"*/
 
     export default {
         name: 'JMicroEditor',
         components: {
-            JServiceItem,
-            JMethodItem,
-            JInstanceItem,
+            JServiceItem : () => import('./service/JServiceItem.vue'),
+            JMethodItem: () => import('./service/JSMethodItem.vue'),
+            JInstanceItem : () => import('./service/JInstanceItem.vue'),
 
-            JStatisServiceItemView,
-            JStatisSMethodItemView,
-            JStatisServerItemView,
+            JStatisServiceItemView : () => import('./statis/JStatisServiceItemView.vue'),
+            JStatisSMethodItemView : () => import('./statis/JStatisSMethodItemView.vue'),
+            JStatisServerItemView : () => import('./statis/JStatisServerItemView.vue'),
 
-            JMonitorEditor,
+            JMonitorEditor : () => import('./monitor/JMonitorEditor.vue'),
 
-            JRouterGroup,
-            JRouterType,
+            JRouterGroup : () => import('./route/JRouterType.vue'),
+            JRouterType : () => import('./route/JRouterGroup.vue'),
 
-            JConfigItem,
-            JHost,
-            JRepository,
-            JDeploymentDesc,
-            JShell,
-            JTesting,
-            JAgent,
-            JProcess,
+            JConfigItem : () => import('./config/JConfigItem.vue'),
+            JHost : () => import('./deployment/JHost.vue'),
+            JRepository : () => import('./deployment/JRepository.vue'),
+            JDeploymentDesc : () => import('./deployment/JDeploymentDesc.vue'),
+            JShell : () => import('./shell/JShell.vue'),
+            JAbout : () => import('./shell/JAbout.vue'),
+            JTesting : () => import('./shell/JTesting.vue'),
+            JAgent : () => import('./deployment/JAgent.vue'),
+            JProcess : () => import('./deployment/JProcess.vue'),
 
-            JTypeConfig,
+            JTypeConfig : () => import('./monitor/JTypeConfig.vue'),
 
-            JMonitorTypeKeyEditor,
-            JMonitorTypeServiceMethodEditor,
-            JInvokeLinkView,
-            JLogItemView,
-            JNamedTypeEditor,
-            JThreadPoolMonitorEditor,
+            JMonitorTypeKeyEditor : () => import('./monitor/JMonitorTypeKeyEditor.vue'),
+            JMonitorTypeServiceMethodEditor : () => import('./monitor/JMonitorTypeServiceMethodEditor.vue'),
+            JInvokeLinkView : () => import('./monitor/JInvokeLinkView.vue'),
+            JLogItemView : () => import('./monitor/JLogItemView.vue'),
+            JNamedTypeEditor : () => import('./monitor/JNamedTypeEditor.vue'),
+            JThreadPoolMonitorEditor : () => import('./monitor/JThreadPoolMonitorEditor.vue'),
         },
 
         data () {
@@ -150,6 +154,8 @@
             this.mountServiceSelect('namedTypeSelect');
 
             this.mountServiceSelect('threadPoolSelect');
+
+            window.jm.vue.$emit('openEditorSelect','about');
         },
 
         methods: {

@@ -15,7 +15,7 @@ import cn.jmicro.api.service.IServiceAsyncResponse;
 import cn.jmicro.api.test.Person;
 import cn.jmicro.common.Constants;
 import cn.jmicro.example.api.rpc.ISimpleRpc;
-import cn.jmicro.example.api.rpc.client.IRpcAAsyncClient;
+import cn.jmicro.example.api.rpc.genclient.IRpcA$JMAsyncClient;
 
 @Service(namespace="simpleRpc", version="0.0.1", monitorEnable=1, maxSpeed=-1,debugMode=1,
 baseTimeUnit=Constants.TIME_SECONDS, clientId=1000,external=true)
@@ -23,7 +23,7 @@ baseTimeUnit=Constants.TIME_SECONDS, clientId=1000,external=true)
 public class SimpleRpcImpl implements ISimpleRpc {
 
 	@Reference(namespace="rpca", version="0.0.1")
-	private IRpcAAsyncClient rpca;
+	private IRpcA$JMAsyncClient rpca;
 	
 	private Random r = new Random(100);
 	
@@ -91,7 +91,7 @@ public class SimpleRpcImpl implements ISimpleRpc {
 		
 		//IPromise<String> p = PromiseUtils.callService(this.rpca, "invokeRpcA","linkRpc call IRpcA with: " + msg);
 		
-		IPromise<String> p = this.rpca.invokeRpcAAsync("invokeRpcA");
+		IPromise<String> p = this.rpca.invokeRpcAJMAsync("invokeRpcA");
 		JMicroContext cxt = JMicroContext.get();
 		if(cxt.isAsync()) {
 			IServiceAsyncResponse cb = cxt.getParam(Constants.CONTEXT_SERVICE_RESPONSE,null);

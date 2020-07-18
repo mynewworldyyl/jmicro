@@ -277,9 +277,7 @@ public class ChoreographyServiceImpl implements IChoreographyService {
 		}
 		
 		aivs.sort((o1,o2)->{
-			int id1 = Integer.parseInt(o1.getAgentInfo().getId());
-			int id2 = Integer.parseInt(o2.getAgentInfo().getId());
-			return id1 > id2 ? 1 : id1 == id2 ? 0 :-1;
+			return o1.getAgentInfo().getId().compareTo(o2.getAgentInfo().getId());
 		});
 		 
 		return aivs;

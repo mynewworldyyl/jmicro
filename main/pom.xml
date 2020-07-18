@@ -16,6 +16,9 @@
         <module>main.rcptool</module>
 		<module>main.pubsub</module>
 		<module>main.breaker</module>	
-		<module>main.init</module>		
+		<module>main.init</module>
+		<module>main.push</module>		
+		<module>main.apigateway</module>
+		<module>main.mng</module>
     </modules>
 </project>

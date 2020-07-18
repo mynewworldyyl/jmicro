@@ -7,7 +7,7 @@
 		<artifactId>main</artifactId>
 		<version>0.0.1-SNAPSHOT</version>
 	</parent>
-	<artifactId>rcptool</artifactId>
+	<artifactId>main.rcptool</artifactId>
 	<packaging>jar</packaging>
 	<name>${project.artifactId}</name>
 	<description>rcptool server</description>
@@ -71,9 +71,8 @@
           </dependency>
 	</dependencies>
 
-	<build>
+	<!-- <build>
 		<plugins>
-
 			<plugin>
 				<artifactId>maven-assembly-plugin</artifactId>
 				<configuration>
@@ -95,5 +94,5 @@
 				</executions>
 			</plugin>
 		</plugins>
-	</build>
+	</build> -->
 </project>

@@ -27,4 +27,12 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.SOURCE)
 public @interface AsyncClientProxy {
 	
+	public static final String PKG_SUBFIX = "genclient";
+	
+	public static final String INT_SUBFIX = "$JMAsyncClient";
+	
+	public static final String IMPL_SUBFIX = INT_SUBFIX + "Impl";
+	
+	public static final String ASYNC_METHOD_SUBFIX = "JMAsync";
+	
 }

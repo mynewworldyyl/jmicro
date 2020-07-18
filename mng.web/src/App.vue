@@ -48,7 +48,7 @@
                  <!-- <Menu-item name="log"><Icon type="ios-filing"></Icon>LOG</Menu-item>-->
                   <MenuItem name="help"> <Icon type="ios-cog"></Icon>HELP</MenuItem>
                   <MenuItem name="about"> <Icon type="ios-cog"></Icon>ABOUT</MenuItem>
-                  <MenuItem name="contact"> <Icon type="ios-cog"></Icon>CONTACT ME</MenuItem>
+                 <!-- <MenuItem name="contact"> <Icon type="ios-cog"></Icon>CONTACT ME</MenuItem>-->
                   <MenuItem name="testing"> <Icon type="ios-cog"></Icon>TESTING</MenuItem>
               </Submenu>
 
@@ -56,6 +56,7 @@
           <JAccount></JAccount>
       </div>
 
+      <!-- 屏幕左边的打开抽屉按钮 -->
       <div :style="curSelect.drawerBtnStyle" class="drawerBtnStatu" @mouseenter="openDrawer()"></div>
 
       <div style="margin-top:60px;">
@@ -130,6 +131,11 @@
 
 export default {
   name: 'App',
+    mounted() {
+        window.jm.rpc.init();
+        //jm.mng.init();
+    },
+
   components: {
         JServiceList,
         JConfigList,

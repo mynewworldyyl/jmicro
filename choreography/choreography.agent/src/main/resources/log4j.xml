@@ -62,6 +62,10 @@
 		<level value="ERROR"/>
 		<appender-ref ref="NORMALLOG"/>
 	</logger>
+	 <logger name="io.netty">
+		<level value="ERROR"/>
+		<appender-ref ref="NORMALLOG"/>
+	</logger>
 	<root>	
 	    <level value="DEBUG"/>
 		<appender-ref ref="CONSOLE"/>

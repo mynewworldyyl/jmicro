@@ -19,11 +19,14 @@ package cn.jmicro.api.gateway;
 
 import java.util.Map;
 
+import cn.jmicro.codegenerator.AsyncClientProxy;
+
 /**
  * 
  * @author Yulei Ye
  * @date 2020年3月26日
  */
+@AsyncClientProxy
 public interface IMessageService {
 
 	boolean subscribe(String topic,Map<String,Object> ctx);

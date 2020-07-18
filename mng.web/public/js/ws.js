@@ -33,7 +33,15 @@ jm.socket = {
     waiting:[]
     ,logData:null
     ,idCallback:{}
-    , isInit:false
+    ,isInit:false
+
+    ,reconnect: function() {
+        if(this.wsk) {
+            this.wsk.close();
+        }
+        this.isInit = false
+    }
+
     ,init : function(onopen) {
             this.isInit = true;
             let url = 'ws://' + jm.config.ip + ':' + jm.config.port +'/'+ jm.config.binContext;

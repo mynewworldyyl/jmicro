@@ -21,7 +21,7 @@ import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.monitor.SF;
 import cn.jmicro.api.objectfactory.IObjectFactory;
 import cn.jmicro.example.api.rpc.ISimpleRpc;
-import cn.jmicro.example.api.rpc.client.ISimpleRpcAsyncClient;
+import cn.jmicro.example.api.rpc.genclient.ISimpleRpc$JMAsyncClient;
 
 /**
  * 
@@ -40,16 +40,16 @@ public class ServiceComsumer {
 		//ISimpleRpc src = of.getRemoteServie(ISimpleRpc.class,null);
 		SF.eventLog(MC.MT_PLATFORM_LOG, MC.LOG_DEBUG, ServiceComsumer.class, "test submit nonrpc log");
 		//ISimpleRpc src = of.get(ISimpleRpc.class);
-		ISimpleRpcAsyncClient src = (ISimpleRpcAsyncClient)of.get(ISimpleRpc.class);
+		ISimpleRpc$JMAsyncClient src = (ISimpleRpc$JMAsyncClient)of.get(ISimpleRpc.class);
 		//invoke remote service
 		//System.out.println(src.hello("Hello JMicro"));
-		src.helloAsync("Hello JMicro").then((rst, fail)->{
+		src.helloJMAsync("Hello JMicro").then((rst, fail)->{
 			System.out.println(rst);
 			
 			String r = src.hello("Hello two");
 			System.out.println(r);
 			
-			src.helloAsync("Hello two").then((rst1, fail1)->{
+			src.helloJMAsync("Hello two").then((rst1, fail1)->{
 				System.out.println(rst);
 			});
 			

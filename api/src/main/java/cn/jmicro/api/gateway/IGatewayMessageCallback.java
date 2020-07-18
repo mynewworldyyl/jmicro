@@ -18,6 +18,7 @@
 package cn.jmicro.api.gateway;
 
 import cn.jmicro.api.pubsub.PSData;
+import cn.jmicro.codegenerator.AsyncClientProxy;
 
 /**
  * 
@@ -25,6 +26,7 @@ import cn.jmicro.api.pubsub.PSData;
  * @author Yulei Ye
  * @date 2020年3月26日
  */
+@AsyncClientProxy
 public interface IGatewayMessageCallback {
 
 	void onMessage(PSData[] item);

@@ -8,7 +8,7 @@
             <table>
                 <tr><td>actName</td><td><input type="input"  v-model="actName"/></td></tr>
                 <tr><td>Password</td><td><input type="password"  v-model="pwd"/></td></tr>
-                <tr><td>confirm Password</td><td><input type="password"  v-model="cfPwd"/></td></tr>
+                <!--<tr><td>confirm Password</td><td><input type="password"  v-model="cfPwd"/></td></tr>-->
                 <tr><td colspan="2">{{msg}}</td></tr>
             </table>
         </Modal>
@@ -30,7 +30,6 @@ export default {
             loginDialog : false,
             actName : '',
             pwd : '',
-            cfPwd : '',
             actInfo : {actName:'',success:false},
             msg:''
         };
@@ -49,7 +48,7 @@ export default {
             let self = this;
             this.$refs.loginDialog.buttonLoading = false;
 
-            if(!this.pwd || !this.cfPwd || this.pwd != this.cfPwd ) {
+            if(!this.pwd) {
                 self.msg = 'Invalid pwd';
                 return;
             }

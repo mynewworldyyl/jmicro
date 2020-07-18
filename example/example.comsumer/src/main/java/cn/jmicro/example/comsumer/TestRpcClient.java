@@ -15,7 +15,7 @@ import cn.jmicro.api.test.Person;
 import cn.jmicro.common.CommonException;
 import cn.jmicro.example.api.ITestRpcService;
 import cn.jmicro.example.api.rpc.ISimpleRpc;
-import cn.jmicro.example.api.rpc.client.IRpcAAsyncClient;
+import cn.jmicro.example.api.rpc.genclient.IRpcA$JMAsyncClient;
 
 @Component(level=1000)
 public class TestRpcClient {
@@ -27,7 +27,7 @@ public class TestRpcClient {
 	private ISimpleRpc sayHello;
 	
 	@Reference(required=false,namespace="rpca",version="0.0.1")
-	private IRpcAAsyncClient rpca;
+	private IRpcA$JMAsyncClient rpca;
 	
 	@Reference(required=false,namespace="simpleRpc",version="0.0.1")
 	private Set<ISimpleRpc> services = new HashSet<>();

@@ -26,6 +26,7 @@ jm.config ={
     //ip:'192.168.101.22',
     //ip:'172.18.0.1',
     port:'9090',
+    //port:'80',
     txtContext : '_txt_',
     binContext : '_bin_',
     httpContext : '/_http_',
@@ -90,6 +91,30 @@ jm.rpc = {
         if(jm.config.useWs && !window.WebSocket){
             jm.config.useWs = false;
         }
+
+        let req = {};
+        req.serviceName = 'cn.jmicro.api.gateway.IHostNamedService';
+        req.namespace = 'gateway';
+        req.version = '0.0.1';
+        req.method = 'bestHost';
+        req.args = [];
+
+        jm.rpc.callRpc(req, null, jm.rpc.Constants.PROTOCOL_JSON,jm.rpc.Constants.PROTOCOL_JSON)
+            .then((data)=>{
+                if(data && data.length > 0) {
+                    //let jo = jm.utils.parseJson(data);
+                    let arr = data.split(':');
+                    if(arr[0] && arr[1] && ( arr[0] != jm.config.ip ||  arr[1] != jm.config.port )) {
+                        jm.config.ip = arr[0];
+                        jm.config.port = arr[1];
+                        jm.socket.reconnect();
+                    }
+                } else {
+                    throw "API gateway host not found!";
+                }
+            }).catch((err)=>{
+                throw err;
+            })
     },
 
     createMsg:function(type) {
@@ -180,9 +205,8 @@ jm.rpc = {
                 msg.id = msg.reqId;
             }
 
-            let ai = jm.mng.act.actInfo;
-            if(ai && ai.success ) {
-                req.params['loginKey'] = ai.loginKey;
+            if(!!jm.mng && !!jm.mng.act && !!jm.mng.act.actInfo && jm.mng.act.actInfo.success ) {
+                req.params['loginKey'] = jm.mng.act.actInfo.loginKey;
             }
 
             if(upProtocol == jm.rpc.Constants.PROTOCOL_JSON) {
@@ -898,6 +922,4 @@ jm.rpc.ApiResponse.prototype = {
         }
     }
 }
-
-jm.rpc.init();
 

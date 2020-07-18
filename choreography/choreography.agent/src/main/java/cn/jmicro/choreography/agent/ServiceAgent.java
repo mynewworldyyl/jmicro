@@ -106,9 +106,9 @@ public class ServiceAgent {
 	
 	private Map<String,Process> sysProcess = new HashMap<>();
 	
-	private Queue<Deployment> startDeps = new ConcurrentLinkedQueue<>();
+	private Queue<Assign> startDeps = new ConcurrentLinkedQueue<>();
 	
-	@Reference(namespace="rrs",version="*",required=true)
+	@Reference(namespace="rrs",version="*")
 	private IResourceResponsitory respo;
 	
 	@Inject
@@ -123,6 +123,9 @@ public class ServiceAgent {
 	@Inject
 	private SystemStatisManager ssm;
 	
+	@Inject
+	private AssignManager assignManager;
+	
 	private AgentInfo agentInfo;
 	
 	@Inject
@@ -134,27 +137,38 @@ public class ServiceAgent {
 	
 	private String[] initDepIds;
 	
-	private IChildrenListener deploymentListener = (type,parent,depId,data)->{
+	private IChildrenListener deploymentListener = (type,parent,insId,data)->{
 		if(type == IListener.ADD) {
-			ProcessInfo pi = this.insManager.getProcessesByAgentIdAndDepid(agentInfo.getId(), depId);
-			if(pi == null) {
-				deploymentAdded(depId);
-			} else {
-				//第一次启动时，已经存在对应的应用
-				logger.warn("Process exist: " + pi.toString());
-			}
+			Assign as = JsonUtils.getIns().fromJson(data, Assign.class);
+			//ProcessInfo pi = this.insManager.getProcessesByAgentIdAndDepid(agentInfo.getId(), as.getDepId());
+			assignAdded(as);
 		}else if(type == IListener.REMOVE) {
-			this.deploymentRemoved(depId);
+			this.assignRemoved(insId);
 		}
 	};
+	
+	
+	private IAssignListener assignListener = new IAssignListener() {
+		@Override
+		public void change(int type, Assign as) {
+			if(type == IListener.ADD) {
+				assignAdded(as);
+			}else if(type == IListener.REMOVE) {
+				assignRemoved(as.getInsId());
+			}else if(type == IListener.DATA_CHANGE) {
+				assignDataChange(as);
+			}
+		}
+	};
+	
 	
 	private IDataListener cmdListener = (path0,cmd) -> {
 		switch(cmd) {
 		case ChoyConstants.AGENT_CMD_STARTING_TIMEOUT:
 		case ChoyConstants.AGENT_CMD_STOPING_TIMEOUT:
 			logger.warn("Reset deployment listenr for cmd: " + cmd);
-			op.removeChildrenListener(path,deploymentListener);
-			op.addChildrenListener(this.path, deploymentListener);
+			//op.removeChildrenListener(path,deploymentListener);
+			//op.addChildrenListener(path, deploymentListener);
 			break;
 		}
 	};
@@ -193,7 +207,7 @@ public class ServiceAgent {
 		
 		if(agentInfo == null) {
 			agentInfo = new AgentInfo();
-			agentInfo.setId(idServer.getStringId(AgentInfo.class));
+			//agentInfo.setId(idServer.getStringId(AgentInfo.class));
 		}
 		
 		boolean privat = cfg.getBoolean(ChoyConstants.ARG_AGENT_PRIVATE, false);
@@ -204,7 +218,8 @@ public class ServiceAgent {
 			throw new CommonException("Private agent init depId cannot be NULL");
 		}
 		
-		agentInfo.setName(Config.getInstanceName());
+		//agentInfo.setName(Config.getInstanceName());
+		agentInfo.setId(Config.getInstanceName());
 		agentInfo.setStartTime(System.currentTimeMillis());
 		agentInfo.setAssignTime(agentInfo.getAssignTime());
 		agentInfo.setHost(Config.getSocketHost());
@@ -224,6 +239,8 @@ public class ServiceAgent {
 			op.createNodeOrSetData(activePath,ChoyConstants.AGENT_CMD_NOP,IDataOperator.EPHEMERAL); //代表此Agent的存活标志
 		}
 		
+		this.assignManager.doInit(assignListener,agentInfo.getId());
+		
 		//run specify deployments
 		if(StringUtils.isNotEmpty(deps)) {
 			setInitDeps(deps);
@@ -232,7 +249,6 @@ public class ServiceAgent {
 		//op.createNodeOrSetData(assignPath, "" , false); //分配给此Agent的全部部署ID
 		
 		insManager.filterByAgent(agentInfo.getId());
-		
 		insManager.addListener((type,pi) -> {
 			if(type == IListener.ADD) {
 				instanceAdded(pi);
@@ -243,7 +259,7 @@ public class ServiceAgent {
 		});
 		
 		//监控分配新的应用
-		op.addChildrenListener(path,deploymentListener);
+		//op.addChildrenListener(path,deploymentListener);
 		
 		op.addDataListener(path, agentDataListener);
 		
@@ -288,6 +304,12 @@ public class ServiceAgent {
 		}
 	}
 
+	private void assignDataChange(Assign as) {
+		if(as.state == AssignState.STOPING) {
+			this.stopProcess(this.insManager.getProcessesByInsId(as.getInsId(), false));
+		}
+	}
+	
 	private void startInitDeployment(String depId) {
 		if(StringUtils.isEmpty(depId)) {
 			return;
@@ -333,7 +355,7 @@ public class ServiceAgent {
 		String data = JsonUtils.getIns().toJson(agentInfo);
 		logger.warn("Recreate angent info: " + data);
 		op.createNodeOrSetData(path,data ,IDataOperator.PERSISTENT);
-		op.addChildrenListener(path,deploymentListener);
+		//op.addChildrenListener(path,deploymentListener);
 		op.addDataListener(path, agentDataListener);
 	}
 	
@@ -363,9 +385,9 @@ public class ServiceAgent {
 		setStatisData();
 		
 		if(!startDeps.isEmpty()) {
-			Deployment dep = null;
-			while((dep = startDeps.poll()) != null) {
-				startDep(dep);
+			Assign as = null;
+			while((as = startDeps.poll()) != null) {
+				startDep(as);
 			}
 			
 		}
@@ -380,7 +402,7 @@ public class ServiceAgent {
 					logger.debug("Start timeout: " + pi.toString());
 					startingProcess.remove(k);
 					forceStopProcess(k);
-					deleteAssignDepNode(pi.getDepId());
+					deleteAssignDepNode(pi.getId());
 				}
 			}
 		}
@@ -396,7 +418,7 @@ public class ServiceAgent {
 					logger.warn("Stop timeout and force stop it: " + pi.toString());
 					stopingProcess.remove(k);
 					forceStopProcess(k);
-					deleteAssignDepNode(pi.getDepId());
+					deleteAssignDepNode(pi.getId());
 				}
 			}
 		}
@@ -444,11 +466,7 @@ public class ServiceAgent {
 			sysProcess.remove(pi.getId());
 		}
 		
-		Set<ProcessInfo>  set = this.insManager.getProcessesByDepId(pi.getDepId());
-		if(set == null || set.isEmpty()) {
-			//删除分配
-			deleteAssignDepNode(pi.getDepId());
-		}
+		deleteAssignDepNode(pi.getId());
 	}
 	
 	private void instanceAdded(ProcessInfo pi) {
@@ -468,23 +486,16 @@ public class ServiceAgent {
 		}
 	}
 
-	private void deploymentRemoved(String depId) {
-		ProcessInfo p = null;
-		for( ProcessInfo pi : this.insManager.getProcessesByDepId(depId) ) {
-			if(depId.equals(pi.getDepId())) {
-				p = pi;
-				break;
-			}
-		}
+	private void assignRemoved(String insId) {
+		ProcessInfo p = this.insManager.getProcessesByInsId(insId, false);
 		if(p != null) {
 			stopProcess(p);
 		} else {
-			logger.warn("Process for dep: " + depId + " not found!");
+			logger.warn("Process for instance: " + insId + " not found!");
 		}
-		
 	}
 
-	private void deploymentAdded(String depId) {
+	private void assignAdded(Assign as) {
 		if(this.agentInfo.isPrivat()) {
 			if(this.initDepIds == null || this.initDepIds.length == 0) {
 				logger.error("Private agent but initDepIds is null!");
@@ -492,14 +503,14 @@ public class ServiceAgent {
 			}else {
 				boolean f = false;
 				for(String did : this.initDepIds) {
-					if(did.equals(depId)) {
+					if(did.equals(as.getDepId())) {
 						f = true;
 						break;
 					}
 				}
 				
 				if(!f) {
-					String msg = "Private agent not responsible for dep:[" + depId+"] initDepIds : "
+					String msg = "Private agent not responsible for dep:[" + as.getDepId()+"] initDepIds : "
 							+ Arrays.toString(this.initDepIds);
 					SF.eventLog(MC.MT_AGENT_LOG,MC.LOG_WARN, TAG,msg);
 					logger.error(msg);
@@ -508,20 +519,20 @@ public class ServiceAgent {
 			}
 		}
 		
-		Deployment dep = getDeployment(depId);
+		Deployment dep = getDeployment(as.getDepId());
 		if(dep == null) {
-			String msg = "Deployment not found for ID:" + depId + ", initDepIds: "+ Arrays.toString(this.initDepIds);
+			String msg = "Deployment not found for ID:" + as.getDepId() + ", initDepIds: "+ Arrays.toString(this.initDepIds);
 			logger.error(msg);
 			SF.eventLog(MC.MT_AGENT_LOG,MC.LOG_WARN, TAG,msg);
 			return;
 		}
 		
 		if(!dep.isEnable()) {
-			deleteAssignDepNode(dep.getId());
+			deleteAssignDepNode(as.getInsId());
 			return;
 		}
 		
-		startDeps.offer(dep);
+		startDeps.offer(as);
 		
 		/*new Thread(()-> {
 			startDep(dep);
@@ -529,8 +540,8 @@ public class ServiceAgent {
 		
 	}
 	
-	private void deleteAssignDepNode(String depId) {
-		String assignDepPath = path + "/" + depId;
+	private void deleteAssignDepNode(String insId) {
+		String assignDepPath = path + "/" + insId;
 		if(op.exist(assignDepPath)) {
 			String msg = "Delete deployment node: " + assignDepPath;
 			logger.warn(msg);
@@ -546,19 +557,20 @@ public class ServiceAgent {
 		return dep;
 	}
 
-	private boolean startDep(Deployment dep) {
-		if(dep == null) {
+	private boolean startDep(Assign as) {
+		if(as == null) {
 			logger.error("Invalid dep for NULL!");
 			return false;
 		}
 		
+		Deployment dep = getDeployment(as.getDepId());
 		boolean doContinue = true;
 		if(!checkRes(dep.getJarFile()) ) {
 			//Jar文件还不存在，先下载资源
 			String msg = "Begin download: "+dep.getJarFile();
 			logger.info(msg);
 			SF.eventLog(MC.MT_AGENT_LOG,MC.LOG_WARN, TAG,msg);
-			doContinue = downloadJarFile(dep.getJarFile(),dep.getId());
+			doContinue = downloadJarFile(dep.getJarFile(),as);
 		}
 		
 		if(!checkRes(this.javaAgentJarFile) ) {
@@ -566,7 +578,7 @@ public class ServiceAgent {
 			String msg = "Begin download: "+this.javaAgentJarFile;
 			logger.info(msg);
 			SF.eventLog(MC.MT_AGENT_LOG,MC.LOG_WARN, TAG,msg);
-			doContinue = downloadJarFile(this.javaAgentJarFile,dep.getId());
+			doContinue = downloadJarFile(this.javaAgentJarFile,as);
 		}
 		
 		if(!doContinue) {
@@ -576,9 +588,9 @@ public class ServiceAgent {
 			return false;
 		}
 		
-		updateAssign(dep.getId(), AssignState.STARTING);
+		updateAssign(as, AssignState.STARTING);
 		
-		String assignData = op.getData(this.path +"/" + dep.getId()); //idServer.getStringId(ProcessInfo.class);
+		String assignData = op.getData(this.path +"/" + as.getInsId()); //idServer.getStringId(ProcessInfo.class);
 		if(StringUtils.isEmpty(assignData)) {
 			String msg = "Assign data is null when start dep: " + dep.getId();
 			SF.eventLog(MC.MT_AGENT_LOG,MC.LOG_ERROR, TAG,msg);
@@ -690,22 +702,22 @@ public class ServiceAgent {
 		}
 	}
 	
-	private void updateAssign(String depId, AssignState s) {
-		String data = op.getData(this.path + "/" + depId);
+	private void updateAssign(Assign as, AssignState s) {
+		String data = op.getData(this.path + "/" + as.getInsId());
 		Assign a = JsonUtils.getIns().fromJson(data, Assign.class);
 		if(a == null) {
-			throw new CommonException("Assign not found dor depID: " + depId);
+			throw new CommonException("Assign not found dor insId: " + as.getInsId());
 		}
 		a.opTime = System.currentTimeMillis();
 		if(s != null) {
 			a.state = s;
 		}
-	    op.setData(this.path+"/" + depId,JsonUtils.getIns().toJson(a));
+	    op.setData(this.path+"/" + as.getInsId(),JsonUtils.getIns().toJson(a));
 		return;
 	}
 	
 	
-	private boolean downloadJarFile(String jarFile,String depId) {
+	private boolean downloadJarFile(String jarFile,Assign as) {
 		int resId = respo.initDownloadResource(jarFile);
 		if(resId <= 0) {
 			String msg = "Download ["+jarFile+"] fail with resource id: "+ resId;
@@ -716,7 +728,7 @@ public class ServiceAgent {
 		
 		long curTime = System.currentTimeMillis();
 		
-		updateAssign(depId,AssignState.DOWNLOAD_RES);
+		updateAssign(as,AssignState.DOWNLOAD_RES);
 		FileOutputStream fos = null;
 		try {
 			File f = new File(this.resourceDir,jarFile);
@@ -732,7 +744,7 @@ public class ServiceAgent {
 				long ctime = System.currentTimeMillis();
 				if(ctime - curTime > 10) {
 					//通知Controller分配还在下载数据，不要超时关停此分配
-					updateAssign(depId,null);
+					updateAssign(as,null);
 					curTime = ctime;
 				}
 				

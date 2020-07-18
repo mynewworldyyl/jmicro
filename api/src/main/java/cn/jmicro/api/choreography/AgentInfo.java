@@ -26,7 +26,7 @@ public final class AgentInfo {
 	private String id;
 	
 	//JMicro instance name
-	private String name;
+	//private String name;
 	
 	private String host;
 	
@@ -49,14 +49,6 @@ public final class AgentInfo {
 
 	public void setId(String id) {
 		this.id = id;
-	}
-
-	public String getName() {
-		return name;
-	}
-
-	public void setName(String name) {
-		this.name = name;
 	}
 
 	public long getStartTime() {
@@ -117,7 +109,7 @@ public final class AgentInfo {
 
 	@Override
 	public String toString() {
-		return "AgentInfo [id=" + id + ", name=" + name + ", host=" + host + ", initDepIds=" + initDepIds
+		return "AgentInfo [id=" + id + ", host=" + host + ", initDepIds=" + initDepIds
 				+ ", startTime=" + startTime + ", assignTime=" + assignTime + ", active=" + active + ", privat="
 				+ privat + "]";
 	}

@@ -8,8 +8,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.Test;
 
 import cn.jmicro.api.JMicro;
+import cn.jmicro.api.internal.pubsub.IInternalSubRpc;
 import cn.jmicro.api.monitor.MC;
-import cn.jmicro.api.pubsub.IInternalSubRpc;
 import cn.jmicro.api.pubsub.PSData;
 import cn.jmicro.api.pubsub.PubSubManager;
 import cn.jmicro.api.registry.ServiceItem;

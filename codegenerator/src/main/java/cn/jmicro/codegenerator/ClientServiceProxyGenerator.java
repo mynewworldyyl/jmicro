@@ -84,19 +84,19 @@ public class ClientServiceProxyGenerator extends AbstractProcessor {
 		 
 		 int idx = srcTn.lastIndexOf(".");
 		 if(idx > 0) {
-			 pkgName = srcTn.substring(0,idx)+".client";
+			 pkgName = srcTn.substring(0,idx) + "." + AsyncClientProxy.PKG_SUBFIX;
 		 } else {
-			 pkgName = "client";
+			 pkgName = AsyncClientProxy.PKG_SUBFIX;
 		 }
 		
 		 String cln = null;
 		 if(tn.startsWith("I")) {
-			  cln = tn.substring(1)+"AsyncClientImpl";
+			  cln = tn.substring(1) + AsyncClientProxy.IMPL_SUBFIX;
 		 } else {
-			 cln = tn + "AsyncClientImpl";
+			 cln = tn + AsyncClientProxy.IMPL_SUBFIX;
 		 }
 		 
-		 ClassName supperInterface = ClassName.get(pkgName, tn+"AsyncClient");
+		 ClassName supperInterface = ClassName.get(pkgName, tn + AsyncClientProxy.INT_SUBFIX);
 		 ClassName supperClass = ClassName.get("cn.jmicro.api.objectfactory", "AbstractClientServiceProxyHolder");
 		 
 		 TypeSpec.Builder clientProxyHolderBuilder = TypeSpec.classBuilder(cln)
@@ -171,7 +171,7 @@ public class ClientServiceProxyGenerator extends AbstractProcessor {
 
 	private MethodSpec addAsyncClassMethod(ExecutableElement m) {
 
-		    MethodSpec.Builder builder = MethodSpec.methodBuilder(m.getSimpleName().toString()+"Async")
+		    MethodSpec.Builder builder = MethodSpec.methodBuilder(m.getSimpleName().toString() + AsyncClientProxy.ASYNC_METHOD_SUBFIX)
 			  .addModifiers(Modifier.PUBLIC);
 
 		    ClassName promise = ClassName.get("cn.jmicro.api.async", "IPromise");
@@ -343,13 +343,13 @@ public class ClientServiceProxyGenerator extends AbstractProcessor {
 		 
 		 int idx = srcTn.lastIndexOf(".");
 		 if(idx > 0) {
-			 pkgName = srcTn.substring(0,idx)+".client";
+			 pkgName = srcTn.substring(0,idx) + "." + AsyncClientProxy.PKG_SUBFIX;
 		 } else {
-			 pkgName = "client";
+			 pkgName = AsyncClientProxy.PKG_SUBFIX;
 		 }
 		 
 		 ClassName supperInterface = ClassName.get(srcTn.substring(0,idx), tn);
-		 TypeSpec.Builder clientProxyHolderBuilder = TypeSpec.interfaceBuilder(tn+"AsyncClient")
+		 TypeSpec.Builder clientProxyHolderBuilder = TypeSpec.interfaceBuilder(tn + AsyncClientProxy.INT_SUBFIX)
 			      .addModifiers(Modifier.PUBLIC)
 			      .addSuperinterface(supperInterface);
 
@@ -377,7 +377,7 @@ public class ClientServiceProxyGenerator extends AbstractProcessor {
 	}
 
 	private MethodSpec addInterfaceMethod(ExecutableElement m) {
-	  MethodSpec.Builder builder = MethodSpec.methodBuilder(m.getSimpleName().toString()+"Async")
+	  MethodSpec.Builder builder = MethodSpec.methodBuilder(m.getSimpleName().toString() + AsyncClientProxy.ASYNC_METHOD_SUBFIX)
 		  .addModifiers(Modifier.PUBLIC,Modifier.ABSTRACT);
 	  
 	    ClassName promise = ClassName.get("cn.jmicro.api.async", "IPromise");

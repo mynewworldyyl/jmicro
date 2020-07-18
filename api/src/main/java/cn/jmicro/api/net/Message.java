@@ -84,7 +84,7 @@ public final class Message {
 	//可监控消息
 	public static final short FLAG_MONITORABLE = 1 << 9;
 	
-	//可监控消息
+	//异步请求响应类消息
 	public static final short FLAG_ASYNC_RESUTN_RESULT = 1 << 13;
 	
 	//0B00111000 5---3
@@ -93,13 +93,15 @@ public final class Message {
 	//是否启用服务级log
 	//public static final short FLAG_LOGGABLE = 1 << 3;
 	
-	private  transient long startTime = -1;
-	//此消息所占字节数
-	private  transient int len = -1;
+	private transient long startTime = -1;
+	
+	//此消息所占字节数，用于记录流量
+	private transient int len = -1;
 	
 	//1 byte length
 	private byte version;
-		
+	
+	//normal message ID	or JRPC request ID
 	private long reqId;
 	
 	//payload length with byte,4 byte length
@@ -150,7 +152,6 @@ public final class Message {
 	//private byte ext;
 	
 	private Object payload;	
-	
 	
 	//*****************development mode field begin******************//
 	private long msgId;

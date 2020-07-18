@@ -128,6 +128,7 @@ jm.mng = {
             if(!this.listeners[topic]) {
                 this.listeners[topic] = [];
             }
+            self.listeners[topic].push(callback);
 
             let self = this;
             return new Promise(function(reso,reje){
@@ -135,7 +136,6 @@ jm.mng = {
                     .then((id)=>{
                         if( id > 0 && !!callback ) {
                             callback.id = id;
-                            self.listeners[topic].push(callback);
                         }
                         reso(id);
                     }).catch(err =>{
@@ -728,6 +728,21 @@ jm.mng = {
         },
 
         sn:'cn.jmicro.api.mng.IThreadPoolMonitor',
+        ns : 'mng',
+        v:'0.0.1',
+    },
+
+    hostNameSrv : {
+
+        getHosts : function(name) {
+            return jm.mng.callRpcWithParams(this.sn, this.ns, this.v, 'getHosts', [name]);
+        },
+
+        bestHost : function () {
+            return jm.mng.callRpcWithParams(this.sn, this.ns, this.v, 'bestHost', []);
+        },
+
+        sn:'cn.jmicro.api.gateway.IHostNamedService',
         ns : 'mng',
         v:'0.0.1',
     },

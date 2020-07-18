@@ -86,7 +86,7 @@ public class StaticResourceHttpHandler  {
 		
 		//LOG.debug(path);
 		
-		byte[] content = this.getContent(path);
+		byte[] content = this.getContent(path,response);
 
 		response.headers().set("content-Length",content.length);
 		
@@ -110,33 +110,45 @@ public class StaticResourceHttpHandler  {
 		}
 	}
 	   
-	private byte[] getContent(String path) {
+	private byte[] getContent(String path,FullHttpResponse response) {
 		String absPath = null;
 		
 		InputStream bisr = null;
 		
-		if(path.equals("/")){
+		if(path.equals("/") || "".equals(path)){
 			path = "/" + indexPage;
 		}
 		
 		ClassLoader cl = StaticResourceHttpHandler.class.getClassLoader();
 		for(String parent: staticResourceRoots) {
 			String ph = parent + path;
-			if(!debug && contents.containsKey(ph)) {
-				return contents.get(ph);
+			if(!debug) {
+				if(contents.containsKey(ph+".gz")) {
+					response.headers().set("Content-Encoding","gzip");
+					return contents.get(ph+".gz");
+				} else if(contents.containsKey(ph)) {
+					return contents.get(ph);
+				}
 			}
+			
 			File file = new File(ph);
+			File filegz = new File(ph+".gz");
+			
 			if(file.exists() && file.isFile()) {
 				try {
-					absPath = ph;
-					bisr = new FileInputStream(absPath);
-					//已经读取到资源，退出循环
+					if(filegz.exists()) {
+						absPath = ph+".gz";
+						response.headers().set("Content-Encoding","gzip");
+						bisr = new FileInputStream(filegz);
+					} else {
+						absPath = ph;
+						bisr = new FileInputStream(absPath);
+					}
 					break;
 				} catch (FileNotFoundException e) {
 					LOG.error(absPath,e);
 				}
 			}
-			
 
 			bisr = cl.getResourceAsStream(ph);
 			if(bisr != null) {
