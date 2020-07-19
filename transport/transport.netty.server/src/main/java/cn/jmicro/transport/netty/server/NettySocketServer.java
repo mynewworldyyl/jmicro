@@ -125,12 +125,12 @@ public class NettySocketServer implements IServer {
 		if(Config.isClientOnly()) {
 			return;
 		}
-        if(StringUtils.isEmpty(Config.getSocketHost())){
+        if(StringUtils.isEmpty(Config.getExportSocketHost())){
         	throw new CommonException("IP not found");
         }
         
         //InetAddress.getByAddress(Array(127, 0, 0, 1))
-        InetSocketAddress address = new InetSocketAddress(Config.getSocketHost(),this.port);
+        InetSocketAddress address = new InetSocketAddress(Config.getExportSocketHost(),this.port);
         EventLoopGroup bossGroup = new NioEventLoopGroup(/*0,bossGroupExecutor*/);
         EventLoopGroup workerGroup = new NioEventLoopGroup(/*0,workerGroupExecutor*/);
         
@@ -159,7 +159,7 @@ public class NettySocketServer implements IServer {
         	l.serverStared(host(), port, Constants.TRANSPORT_NETTY);
         }
         
-        String m = "Running the netty socket server host["+Config.getSocketHost()+"],port ["+this.port+"]";
+        String m = "Running the netty socket server host["+Config.getExportSocketHost()+"],port ["+this.port+"]";
         LOG.debug(m);
         
         //SF.serverStart(TAG, "Server start: " + Constants.TRANSPORT_NETTY+" : "+Config.getHost()+" : "+this.port );
@@ -176,7 +176,7 @@ public class NettySocketServer implements IServer {
 
 	@Override
 	public String host() {
-		return Config.getSocketHost();
+		return Config.getExportSocketHost();
 	}
 
 	@Override

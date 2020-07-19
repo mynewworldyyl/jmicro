@@ -325,7 +325,7 @@ public class ServerMessageReceiver implements IMessageReceiver{
         		
         		StringBuffer sb = new StringBuffer("Executor reject: ");
         		sb.append("ins[").append(Config.getInstanceName()).append("]");
-        		sb.append(" localhost[").append(Config.getSocketHost()).append("]");
+        		sb.append(" localhost[").append(Config.getExportSocketHost()).append("]");
         		sb.append(" localport[").append(s.localPort()).append("]");
         		sb.append(" reqid[").append(msg.getReqId()).append("]");
         		sb.append(" linkId[").append(msg.getLinkId()).append("]");

@@ -208,7 +208,7 @@ public class JMicroContext  {
 		//context.setObject(JMicroContext.MONITOR, JMicro.getObjectFactory().get(MonitorManager.class));
 		context.setParam(Constants.SERVICE_METHOD_KEY, sm);
 		context.setParam(Constants.SERVICE_ITEM_KEY, si);
-		context.setParam(JMicroContext.LOCAL_HOST, Config.getSocketHost());
+		context.setParam(JMicroContext.LOCAL_HOST, Config.getExportSocketHost());
 		
 		//debug mode 下才有效
 		boolean isDebug = enableOrDisable(si.getDebugMode(),sm.getDebugMode());

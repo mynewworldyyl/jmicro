@@ -39,7 +39,7 @@ public class ApiGatewayHostManager {
 	
 	public void ready() {
 		op.addChildrenListener(HostDir, childrenListener);
-		regist(Config.getHttpHost(),port+"");
+		regist(Config.getExportHttpHost(),port+"");
 	}
 	
 	public String bestHost() {

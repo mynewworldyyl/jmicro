@@ -1515,7 +1515,7 @@ public class SimpleObjectFactory implements IObjectFactory {
 		} else {
 			//非编排环境下启动的实例
 			pi = new ProcessInfo();
-			pi.setAgentHost(Config.getSocketHost());
+			pi.setAgentHost(Config.getExportSocketHost());
 			pi.setAgentId(Config.getCommandParam(ChoyConstants.ARG_AGENT_ID));
 			pi.setDepId(Config.getCommandParam(ChoyConstants.ARG_DEP_ID));
 			
@@ -1542,7 +1542,7 @@ public class SimpleObjectFactory implements IObjectFactory {
 		pi.setPid(pid);
 		pi.setActive(true);
 		pi.setInstanceName(Config.getInstanceName());
-		pi.setHost(Config.getSocketHost());
+		pi.setHost(Config.getExportSocketHost());
 		pi.setWorkDir(cfg.getString(Constants.INSTANCE_DATA_DIR,null));
 		pi.setOpTime(System.currentTimeMillis());
 		pi.setHaEnable(ismlModel);

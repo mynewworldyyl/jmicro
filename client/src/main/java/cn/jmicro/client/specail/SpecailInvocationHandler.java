@@ -60,7 +60,7 @@ public class SpecailInvocationHandler implements InvocationHandler{
 	@Override
 	public <T> T invoke(Object proxy, String methodName, Object[] args) {
 		
-		JMicroContext.get().setParam(JMicroContext.LOCAL_HOST, Config.getSocketHost());
+		JMicroContext.get().setParam(JMicroContext.LOCAL_HOST, Config.getExportSocketHost());
 		JMicroContext.get().setParam(Constants.CLIENT_REF_METHOD, methodName);
 		
 		ClientServiceProxyHolder po = (ClientServiceProxyHolder)proxy;

@@ -66,7 +66,7 @@ public class ClassloaderRpcService implements IClassloaderRpc {
 	@Override
 	public String info() {
 		StringBuffer sb = new StringBuffer();
-		sb.append("host:").append(Config.getSocketHost());
+		sb.append("host:").append(Config.getExportSocketHost());
 		sb.append(",instanceName:").append(Config.getInstanceName());
 		return sb.toString();
 	}

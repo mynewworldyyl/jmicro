@@ -375,7 +375,7 @@ public class ServiceLoader{
 		usk.setServiceName(srvName);
 		usk.setVersion(ver);
 		usk.setInstanceName(Config.getInstanceName());
-		usk.setHost(Config.getSocketHost());
+		usk.setHost(Config.getExportSocketHost());
 		usk.setPort(this.nettyServer.getPort());
 		
 		item.setKey(usk);
@@ -483,7 +483,7 @@ public class ServiceLoader{
 		//服务名称肯定是接口全限定类名称
 		usk.setServiceName(interfacez.getName());
 		usk.setInstanceName(Config.getInstanceName());
-		usk.setHost(Config.getSocketHost());
+		usk.setHost(Config.getExportSocketHost());
 		
 		if(StringUtils.isNotEmpty(namespace)) {
 			usk.setNamespace(UniqueServiceKey.namespace(namespace));

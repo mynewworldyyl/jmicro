@@ -69,7 +69,7 @@ public class NettyHttpServer implements IServer{
 	private int port=9090;
 	
 	//@Cfg(value = "/"+Constants.ExportHttpIP,required=false,defGlobal=false)
-	private String exportHttpIP = null;
+	private String listenHttpIP = null;
 	
 	@Inject(required=false)
 	private Set<IServerListener> serverListener = new HashSet<>();
@@ -102,16 +102,16 @@ public class NettyHttpServer implements IServer{
 			return;
 		}
 		
-		exportHttpIP = Config.getHttpHost();
+		listenHttpIP = Config.getListenHttpHost();
 		
-        if(StringUtils.isEmpty(exportHttpIP)){
+        if(StringUtils.isEmpty(listenHttpIP)){
         	throw new CommonException("IP not found");
         }
         
         //InetAddress.getByAddress(Array(127, 0, 0, 1))
         
         
-        InetSocketAddress address = new InetSocketAddress(exportHttpIP,this.port);
+        InetSocketAddress address = new InetSocketAddress(listenHttpIP,this.port);
         EventLoopGroup bossGroup = new NioEventLoopGroup();
         EventLoopGroup workerGroup = new NioEventLoopGroup();
         
@@ -140,7 +140,7 @@ public class NettyHttpServer implements IServer{
         	l.serverStared(host(), port, Constants.TRANSPORT_NETTY_HTTP);
         }
         
-        String m = "Running netty http server host["+exportHttpIP+"],port ["+this.port+"]";
+        String m = "Running netty http server host["+listenHttpIP+"],port ["+this.port+"]";
         LOG.debug(m);    
         //SF.doSubmit(MonitorConstant.SERVER_START,m);
         //SF.serverStart(TAG,Constants.TRANSPORT_NETTY_HTTP+" : "+Config.getHost()+" : "+this.port);
@@ -158,7 +158,7 @@ public class NettyHttpServer implements IServer{
 
 	@Override
 	public String host() {
-		return exportHttpIP;
+		return listenHttpIP;
 	}
 
 	@Override

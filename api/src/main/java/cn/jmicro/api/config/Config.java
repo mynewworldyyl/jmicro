@@ -100,6 +100,9 @@ public class Config implements IConfigChangeListener{
 	private static String  exportHttpIP = null;
 	private static String  exportSocketIP = null;
 	
+	private static String  listenHttpIP = null;
+	private static String  listenSocketIP = null;
+	
 	//服务在RAFT中的根目录
 	//private static String RaftBaseDir = "";
 	
@@ -545,6 +548,17 @@ public class Config implements IConfigChangeListener{
 		exportHttpIP = getValue(Constants.ExportHttpIP,false);
 		exportSocketIP = getValue(Constants.ExportSocketIP,false);
 		
+		listenHttpIP = getValue(Constants.ListenHttpIP,false);
+		listenSocketIP = getValue(Constants.ListenSocketIP,false);
+		
+		if(StringUtils.isEmpty(listenHttpIP)) {
+			listenHttpIP =  defHost;
+		} 
+		
+		if(StringUtils.isEmpty(listenSocketIP)) {
+			listenSocketIP =  defHost;
+		} 
+		
 		if(StringUtils.isEmpty(exportHttpIP)) {
 			exportHttpIP =  defHost;
 		} 
@@ -562,13 +576,22 @@ public class Config implements IConfigChangeListener{
 		return RegistryPort;
 	}*/
 	
-	public static String getHttpHost() {
+	public static String getExportHttpHost() {
 		return exportHttpIP;
 	}
 	
-	public static String getSocketHost() {
+	public static String getExportSocketHost() {
 		return exportSocketIP;
 	}
+	
+	public static String getListenHttpHost() {
+		return listenHttpIP;
+	}
+	
+	public static String getListenSocketHost() {
+		return listenSocketIP;
+	}
+	
 	
 	public static boolean isClientOnly() {
 		return contain(Constants.CLIENT_ONLY,CommadParams);

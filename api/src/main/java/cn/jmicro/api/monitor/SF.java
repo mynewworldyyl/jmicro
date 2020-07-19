@@ -262,7 +262,7 @@ public class SF {
 			si.setSm((ServiceMethod)JMicroContext.get().getObject(Constants.SERVICE_METHOD_KEY, null));
 		}
 		
-		si.setLocalHost(Config.getSocketHost());
+		si.setLocalHost(Config.getExportSocketHost());
 		si.setInstanceName(Config.getInstanceName());
 	}
 	

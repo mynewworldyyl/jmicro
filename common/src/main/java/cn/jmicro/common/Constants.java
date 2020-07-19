@@ -104,6 +104,9 @@ public interface Constants {
 	public static final String ExportSocketIP = "exportSocketIP";
 	public static final String ExportHttpIP = "exportHttpIP";
 	
+	public static final String ListenSocketIP = "listenSocketIP";
+	public static final String ListenHttpIP = "listenHttpIP";
+	
 	
 	public static final String BASE_PACKAGES_KEY = "basePackages";
 	public static final String INSTANCE_NAME = "instanceName";

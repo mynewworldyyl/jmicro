@@ -59,7 +59,7 @@ public class TransforClassManager {
 	public void init() {
 		
 		if(!dataOperator.exist(ROOT)) {
-			dataOperator.createNodeOrSetData(ROOT, Config.getSocketHost(), false);
+			dataOperator.createNodeOrSetData(ROOT, Config.getExportSocketHost(), false);
 		}
 		
 		dataOperator.addChildrenListener(ROOT, (type,path,child,data)->{

@@ -120,7 +120,7 @@ public class RpcClassLoader extends ClassLoader {
     	
     	String insPath = path + "/" + Config.getInstanceName();
     	if(!op.exist(insPath)) {
-    		op.createNodeOrSetData(insPath, Config.getSocketHost(), true);
+    		op.createNodeOrSetData(insPath, Config.getExportSocketHost(), true);
     	}
     }  
 

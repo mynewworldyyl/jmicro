@@ -5,7 +5,7 @@
         <table class="configItemTalbe" width="99%">
             <thead><tr><td>ID</td><td>NAME</td><td>ACTIVE</td><td>HA ENABLE</td><td>IS MASTER</td><td>WORK DIR</td>
                 <td>PROCESS ID</td><td>START TIME</td><td>CONTINUTE</td><td>HOST</td>
-                <td>AGENT ID</td> <td>AGENT PROCESS ID</td>
+                <td>AGENT ID</td> <!--<td>AGENT PROCESS ID</td>-->
                 <td>DEP ID</td>
                 <td>OPERATION</td></tr>
             </thead>
@@ -13,7 +13,7 @@
                 <td>{{a.id}}</td> <td>{{a.instanceName}}</td>
                 <td>{{a.active}}</td><td>{{a.haEnable}}</td> <td>{{a.master}}</td><td :title="a.workDir">dir</td>
                 <td>{{a.pid}}</td><td>{{ a.startTime0 }}</td><td>{{ a.continue }}</td><td>{{a.host}}</td>
-                <td>{{a.agentId}}</td><td>{{a.agentProcessId}}</td><td>{{a.depId}}</td>
+                <td>{{a.agentId}}</td><!--<td>{{a.agentProcessId}}</td>--><td>{{a.depId}}</td>
                 <td>&nbsp;
                    <a v-if="adminPer" @click="stopProcess(a.id)"> STOP </a>
                 </td>

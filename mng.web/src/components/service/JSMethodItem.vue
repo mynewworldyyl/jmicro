@@ -294,8 +294,8 @@ export default {
             node : this.meth,
             adminPer : false,
             testingResult:'',
-            invokeNum:100,
-            invokeInterval:1000,
+            invokeNum:1,
+            invokeInterval:5000,
             timerId:-1,
         }
     }

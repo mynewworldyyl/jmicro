@@ -222,7 +222,7 @@ public class ServiceAgent {
 		agentInfo.setId(Config.getInstanceName());
 		agentInfo.setStartTime(System.currentTimeMillis());
 		agentInfo.setAssignTime(agentInfo.getAssignTime());
-		agentInfo.setHost(Config.getSocketHost());
+		agentInfo.setHost(Config.getExportSocketHost());
 		agentInfo.setSs(ssm.getStatis());
 		agentInfo.setInitDepIds(deps);
 		
@@ -666,7 +666,7 @@ public class ServiceAgent {
 			pi.setId(a.getInsId());
 			pi.setWorkDir(wd.getAbsolutePath());
 			pi.setAgentProcessId(SystemUtils.getProcessId());
-			pi.setAgentHost(Config.getSocketHost());
+			pi.setAgentHost(Config.getExportSocketHost());
 			pi.setAgentInstanceName(Config.getInstanceName());
 			pi.setOpTime(System.currentTimeMillis());
 			pi.setTimeOut(processOpTimeout);
