@@ -29,7 +29,6 @@ import cn.jmicro.api.config.Config;
 import cn.jmicro.api.net.IReq;
 import cn.jmicro.api.net.IResp;
 import cn.jmicro.api.net.Message;
-import cn.jmicro.api.net.ServerError;
 import cn.jmicro.api.registry.ServiceMethod;
 import cn.jmicro.common.Constants;
 import cn.jmicro.common.util.JsonUtils;
@@ -58,7 +57,7 @@ public class SF {
 			mi.addOneItem(type,level,tag,"");
 			return true;
 		}else {
-			if(level >= MC.LOG_DEBUG && logger.isDebugEnabled()) {
+			if(level >= MC.LOG_INFO && logger.isDebugEnabled()) {
 				logger.debug("Disgard: type:" + MC.MONITOR_VAL_2_KEY.get(type) + ",level: " + level + " tag: " +tag + " Resp: "
 			+JsonUtils.getIns().toJson(resp));
 			}
@@ -73,7 +72,7 @@ public class SF {
 			mi.addOneItem(type,level,tag,desc);
 			return true;
 		}else {
-			if(level >= MC.LOG_DEBUG && logger.isDebugEnabled()) {
+			if(level >= MC.LOG_INFO && logger.isDebugEnabled()) {
 				logger.debug("Disgard: type:" + MC.MONITOR_VAL_2_KEY.get(type) + ",level: " + level + " tag: " +tag + " Req: "+JsonUtils.getIns().toJson(req));
 			}
 			return false;
@@ -106,7 +105,7 @@ public class SF {
 				return m.readySubmit(mi);
 			}
 		}else {
-			if(level >= MC.LOG_DEBUG && logger.isDebugEnabled()) {
+			if(level >= MC.LOG_INFO && logger.isDebugEnabled()) {
 				logger.debug("Disgard: type:" + MC.MONITOR_VAL_2_KEY.get(type) + ", level: " + level + ", tag: " +tag + ", Desc: "+desc);
 			}
 		}
@@ -131,7 +130,7 @@ public class SF {
 	
 	public static boolean netIo(short type,byte level,Class<?> cls,String desc,Throwable ex) {
 		if(!isMonitorable(type)) {
-			if(logger.isDebugEnabled()) {
+			if(level >= MC.LOG_INFO && logger.isDebugEnabled()) {
 				logger.debug("Disgard: type:" + MC.MONITOR_VAL_2_KEY.get(type) + ", level: " + level + ", tag: " +cls.getName() + ", Desc: "+desc);
 			}
 			if(ex != null) {
@@ -181,9 +180,9 @@ public class SF {
 
 	public static boolean netIoRead(String tag,short type,long num) {
 		if(isMonitorable(type) && m.isServerReady() && !m.canSubmit(sm(),type)) {
-			if(logger.isDebugEnabled()) {
+			/*if(logger.isDebugEnabled()) {
 				logger.debug("Disgard: type:" + MC.MONITOR_VAL_2_KEY.get(type) + ", level: " + MC.LOG_DEBUG + ", tag: " +tag + ", Num: "+num);
-			}
+			}*/
 			return false;
 		}
 		
@@ -230,7 +229,7 @@ public class SF {
 				m.submit2Cache(mi);
 			}
 		} else {
-			if(logger.isDebugEnabled()) {
+			if(level >= MC.LOG_INFO && logger.isDebugEnabled()) {
 				logger.debug("Disgard: type:" + MC.MONITOR_VAL_2_KEY.get(type) + ", level: " + MC.LOG_DEBUG + ", tag: " +cls.getName() + ", Desc: "+desc);
 			}
 			

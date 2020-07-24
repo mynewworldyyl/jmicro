@@ -12,10 +12,12 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import cn.jmicro.api.Resp;
 import cn.jmicro.api.annotation.Cfg;
 import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Inject;
@@ -32,6 +34,8 @@ public class ResourceReponsitoryService implements IResourceResponsitory{
 
 	private static final Logger LOG = LoggerFactory.getLogger(ResourceReponsitoryService.class);
 	
+	private static final String REF_FILE_SUBFIX = "-jar-with-dependencies.jar";
+	
 	@Cfg(value="/ResourceReponsitoryService/dataDir", defGlobal=true)
 	private String resDir = System.getProperty("user.dir") + "/resDataDir";
 	
@@ -44,6 +48,9 @@ public class ResourceReponsitoryService implements IResourceResponsitory{
 	
 	@Cfg(value="/ResourceReponsitoryService/resTimeout", defGlobal=true)
 	private long resTimeout = 3*60*1000;
+	
+	@Cfg(value="/devMode", defGlobal=false)
+	private boolean devMode = false;//1024*1024;
 	
 	@Inject
 	private ICodecFactory codecFactory;
@@ -120,8 +127,19 @@ public class ResourceReponsitoryService implements IResourceResponsitory{
 
 	@Override
 	public List<PackageResource> getResourceList(boolean onlyFinish) {
+		//Resp<List<PackageResource>> resp = new Resp<>(0);
+		
 		List<PackageResource> l = new ArrayList<>();
-		File[] fs = dir.listFiles();
+		
+		File[] fs = null;
+		if(this.devMode) {
+			Map<String,File> fileMaps = new HashMap<>();
+			findFile0(fileMaps, this.dir);
+			fs = new File[fileMaps.size()];
+			fileMaps.values().toArray(fs);
+		}else {
+			fs = dir.listFiles();
+		}
 		
 		for(File f : fs) {
 			if(f.isDirectory()) {
@@ -168,12 +186,13 @@ public class ResourceReponsitoryService implements IResourceResponsitory{
 			
 			l.addAll(this.blockIndexFiles.values());
 		}
-		
+		//resp.setData(l);
 		return l;
 	}
 	
 	@Override
-	public boolean deleteResource(String name) {
+	public Resp<Boolean> deleteResource(String name) {
+		Resp<Boolean> resp = new Resp<>(0);
 		File res = new File(resDir+"/"+name);
 		if(res.exists()) {
 			res.delete();
@@ -191,16 +210,20 @@ public class ResourceReponsitoryService implements IResourceResponsitory{
 			}
 			resD.delete();
 		}
-		
-		return true;
+		resp.setData(true);
+		return resp;
 	}
 
 	@Override
-	public int addResource(String name, int totalSize) {
+	public Resp<Integer> addResource(String name, int totalSize) {
+		Resp<Integer> resp = new Resp<>(0);
 		File resFile = new File(this.dir,name);
 		if(resFile.exists()) {
-			LOG.error("Resource exist: " + name);
-			return -2;
+			String msg = "Resource exist: " + name;
+			LOG.error(msg);
+			resp.setMsg(msg);
+			resp.setCode(1);
+			return resp;
 		}
 		
 		PackageResource rr = new PackageResource();
@@ -225,18 +248,21 @@ public class ResourceReponsitoryService implements IResourceResponsitory{
 		saveIndex(rr);
 		
 		LOG.info("Add resource: " + rr.toString());
-		
-		return this.uploadBlockSize;
+		resp.setData(this.uploadBlockSize);
+		return resp;
 	}
 
 	@Override
-	public boolean addResourceData(String name, byte[] data, int blockNum) {
-		
+	public Resp<Boolean> addResourceData(String name, byte[] data, int blockNum) {
+		Resp<Boolean> resp = new Resp<>(0);
 		PackageResource zkrr = this.getIndex(name);
 		synchronized(zkrr) {
 			if(zkrr == null) {
-				LOG.error("Resource is not ready to upload!");
-				return false;
+				String msg = "Resource is not ready to upload!";
+				resp.setMsg(msg);
+				resp.setCode(1);
+				LOG.error(msg);
+				return resp;
 			}
 			
 			FileOutputStream bs = null;
@@ -246,8 +272,11 @@ public class ResourceReponsitoryService implements IResourceResponsitory{
 				bs.write(data, 0, data.length);
 				zkrr.setFinishBlockNum(zkrr.getFinishBlockNum() +1);
 			} catch (IOException e1) {
-				LOG.error(name +" " + blockNum,e1);
-				return false;
+				String msg = name +" " + blockNum;
+				resp.setMsg(msg);
+				resp.setCode(1);
+				LOG.error(msg,e1);
+				return resp;
 			} finally {
 				if(bs != null) {
 					try {
@@ -269,21 +298,33 @@ public class ResourceReponsitoryService implements IResourceResponsitory{
 				this.saveIndex(zkrr);
 			}
 			
-			return true;
+			return resp;
 		}
 	}
 	
 	
 
 	@Override
-	public int initDownloadResource(String name) {
+	public Resp<Integer> initDownloadResource(String name) {
 
+		Resp<Integer> resp = new Resp<>(0);
+		
 		Integer downloadId = this.idGenerator.getIntId(PackageResource.class);
 		
 		File resFile = new File(this.dir,name);
+		if(this.devMode) {
+			File devFile = findResFile(name);
+			if(devFile != null) {
+				resFile = devFile;
+			}
+		}
+		
 		if(!resFile.exists()) {
-			LOG.error("File [" +name + "] not found!");
-			return -1;
+			String msg = "File [" +name + "] not found!";
+			resp.setMsg(msg);
+			resp.setCode(1);
+			LOG.error(msg);
+			return resp;
 		}
 		
 		LOG.info("Init download resource name : " + name + ", downloadId: " +downloadId);
@@ -292,11 +333,38 @@ public class ResourceReponsitoryService implements IResourceResponsitory{
 			this.downloadReses.put(downloadId, new FileInputStream(resFile));
 			downloadResourceTimeout.put(downloadId, System.currentTimeMillis());
 		} catch (FileNotFoundException e) {
-			LOG.error("File [" + downloadId+"] not found");
-			return -1;
+			String msg = "File [" + downloadId+"] not found";
+			resp.setMsg(msg);
+			resp.setCode(1);
+			LOG.error(msg);
+			return resp;
 		}
-		
-		return downloadId;
+		resp.setData(downloadId);
+		return resp;
+	}
+
+	private File findResFile(String name) {
+		if(!(name.endsWith(REF_FILE_SUBFIX) || name.startsWith("jmicro-agent-"))) {
+			LOG.warn("Resource name invalid: " + name);
+			return null;
+		}
+		Map<String,File> rst = new HashMap<>();
+		findFile0(rst,dir);
+		return rst.get(name);
+	}
+
+	private void findFile0(Map<String,File> rst, File file) {
+		if(file.isFile()) {
+			String n = file.getName();
+			if(file.getAbsolutePath().indexOf("target") > 1 && (n.endsWith(REF_FILE_SUBFIX) || n.startsWith("jmicro-agent-"))) {
+				rst.put(n, file);
+			}
+		}else {
+			File[] fs = file.listFiles();
+			for(File f : fs) {
+				findFile0(rst,f);
+			}
+		}
 	}
 
 	@Override

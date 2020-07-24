@@ -48,8 +48,8 @@
         methods: {
 
             testArrayBuffer() {
-                window.jm.mng.repository.addResourceData('test01',[0,1,2],0,3).then((rst)=>{
-                    console.log(rst);
+                window.jm.mng.repository.addResourceData('test01',[0,1,2],0,3).then((resp)=>{
+                    console.log(resp);
                 }).catch((err)=>{
                     window.console.log(err);
                 });
@@ -60,9 +60,15 @@
             },
 
             uploadData(name,data,blockNum,cb) {
+                let self = this;
                 window.jm.mng.repository.addResourceData(name,data,blockNum)
-                    .then((rst) =>{
-                        cb(rst);
+                    .then((resp) =>{
+                        if(resp.code==0) {
+                            cb(true);
+                        }else {
+                            self.$Message.error(resp.msg);
+                            cb(false);
+                        }
                     })
                     .catch((err) =>{
                         if(cb) {
@@ -144,14 +150,16 @@
 
                 this.getFileContent().then((buf) => {
                     let totalLen = buf.byteLength;
-                   self.totalSize =  self.getSizeVal(totalLen);
+                    self.totalSize =  self.getSizeVal(totalLen);
                     self.onUpload = true;
                     let file = self.$refs.resFile.files[0];
-                    window.jm.mng.repository.addResource(file.name, totalLen).then((blockSize)=>{
-                        if(blockSize <= 0) {
-                            self.$Message.success("File exists "+file.name);
+                    window.jm.mng.repository.addResource(file.name, totalLen).then((resp)=>{
+                        if(resp.code != 0) {
+                            self.$Message.success(resp.msg);
                             return;
                         }
+                        //resp.data blockSize
+                        let blockSize = resp.data;
                         let blockNum = parseInt(totalLen/blockSize);
                         let dv = new DataView(buf,0,totalLen);
                         let curBlock = 0;
@@ -178,12 +186,11 @@
                                         for (let j = 0; j < lastBlockSize; j++) {
                                             bl.push(dv.getUint8(blockNum * blockSize + j));
                                         }
-                                        self.uploadData(file.name,bl,curBlock,function(s){
-                                            if(s) {
+                                        self.uploadData(file.name,bl,curBlock,function(suc){
+                                            if(suc) {
                                                 self.addResourceDialog = false;
                                                 self.$Message.success("Success upload "+file.name);
-                                            }else {
-                                                console.log(s);
+                                            } else {
                                                 self.$Message.success("Fail upload "+file.name);
                                             }
                                         });
@@ -207,6 +214,7 @@
                     });
                 }).catch(err=>{
                     window.console.log(err);
+                    self.$Message.error(err);
                     });
             },
 
@@ -257,7 +265,7 @@
             deleteRes(res){
                 let self = this;
                 window.jm.mng.repository.deleteResource(res.name).then((rst)=>{
-                    if(rst ) {
+                    if(rst.code == 0 ) {
                         for(let i = 0; i < self.resList.length; i++) {
                             if(self.resList[i].name == res.name) {
                                 self.resList.splice(i,1);
@@ -265,14 +273,16 @@
                             }
                         }
                     }else {
-                        self.$Message.fail("Fail to delete resource "+res.name);
+                        self.$Message.error(rst.msg);
                     }
                 }).catch((err)=>{
                     window.console.log(err);
+                    self.$Message.error(err || "Service not found");
                 });
             },
 
             refresh(){
+                let self = this;
                 window.jm.mng.repository.getResourceList(false).then((resList)=>{
                     if(!resList || resList.length == 0 ) {
                         self.$Message.success("No data to show");
@@ -281,11 +291,13 @@
                     this.resList = resList;
                 }).catch((err)=>{
                     window.console.log(err);
+                    self.$Message.error(err || "Service not found");
                 });
             }
         },
 
         mounted () {
+            window.jm.mng.act.addListener('JRepository',this.refresh);
             this.refresh();
         },
     }

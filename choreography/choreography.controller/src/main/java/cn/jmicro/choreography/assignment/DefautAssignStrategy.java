@@ -19,7 +19,7 @@ import cn.jmicro.common.util.StringUtils;
 @Component(value="defautAssignStrategy")
 public class DefautAssignStrategy implements IAssignStrategy{
 
-	private final String[] DEFAULT_SORT_PRIORITY = {CPU_MAX_RATE,MEM_MIN_FREE,INSTANCE_NUM};
+	private final String[] DEFAULT_SORT_PRIORITY = {INSTANCE_NUM,CPU_MAX_RATE,MEM_MIN_FREE};
 	
 	private final static Logger logger = LoggerFactory.getLogger(DefautAssignStrategy.class);
 	
@@ -107,7 +107,7 @@ public class DefautAssignStrategy implements IAssignStrategy{
 		}else if(INSTANCE_NUM.equals(sortBy.trim())) {
 			int z1 = this.insManager.getProcessSizeByAgentId(o1.getId());
 			int z2 = this.insManager.getProcessSizeByAgentId(o2.getId());
-			rst = z1 > z2 ? -1: (z1 == z2 ? 0 : 1);
+			rst = z1 > z2 ? 1: (z1 == z2 ? 0 : -1);
 		}
 		
 		return rst;
@@ -124,6 +124,9 @@ public class DefautAssignStrategy implements IAssignStrategy{
 		while(ite.hasNext()) {
 			AgentInfo ai = ite.next();
 			if(ai.getSs() == null || ai.getSs().getAvgCpuLoad()*100 > cn) {
+				if(logger.isDebugEnabled()) {
+					logger.debug("filteCpuRate req cpuRate：" + cn + ", Status: " + ai.getSs().toString() );
+				}
 				ite.remove();
 			}
 		}
@@ -139,16 +142,16 @@ public class DefautAssignStrategy implements IAssignStrategy{
 		if(minFreeMem.endsWith("B")) {
 			minFreeMem = minFreeMem.substring(0,minFreeMem.length()-1);
 			cn = Long.parseLong(minFreeMem);
-		}else if(minFreeMem.endsWith("K")) {
+		} else if(minFreeMem.endsWith("K")) {
 			minFreeMem = minFreeMem.substring(0,minFreeMem.length()-1);
 			cn = Long.parseLong(minFreeMem)*1024;
-		}else if(minFreeMem.endsWith("M")) {
+		} else if(minFreeMem.endsWith("M")) {
 			minFreeMem = minFreeMem.substring(0,minFreeMem.length()-1);
 			cn = Long.parseLong(minFreeMem)*1024*1024;
-		}else if(minFreeMem.endsWith("G")) {
+		} else if(minFreeMem.endsWith("G")) {
 			minFreeMem = minFreeMem.substring(0,minFreeMem.length()-1);
 			cn = Long.parseLong(minFreeMem)*1024*1024*1024;
-		}else {
+		} else {
 			cn = Long.parseLong(minFreeMem);
 		}
 		
@@ -156,6 +159,9 @@ public class DefautAssignStrategy implements IAssignStrategy{
 		while(ite.hasNext()) {
 			AgentInfo ai = ite.next();
 			if(ai.getSs() == null || ai.getSs().getFreeMemory() < cn) {
+				if(logger.isDebugEnabled()) {
+					logger.debug("filteFreeMemory req minFreeMem：" + minFreeMem +", "+ ai.getId() +", FreeMemoty: " + ai.getSs().getFreeMemory());
+				}
 				ite.remove();
 			}
 		}
@@ -173,6 +179,9 @@ public class DefautAssignStrategy implements IAssignStrategy{
 		while(ite.hasNext()) {
 			AgentInfo ai = ite.next();
 			if(ai.getSs() == null || ai.getSs().getCpuNum() < cn) {
+				if(logger.isDebugEnabled()) {
+					logger.debug("filterCoreNum req coreNum：" + coreNum +", "+ ai.getId() +", but core: " + ai.getSs().getCpuNum());
+				}
 				ite.remove();
 			}
 		}

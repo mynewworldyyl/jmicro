@@ -6,7 +6,7 @@
 		<param name="Target" value="System.err"/>
 		<param name="Threshold" value="DEBUG"/>
 		<layout class="org.apache.log4j.PatternLayout">
-			<param name="ConversionPattern" value="[%d][%p,%c{1}] %m%n"/>
+			<param name="ConversionPattern" value="[%d][%p,%c] %m%n"/>
 		</layout>
 	</appender>
 	
@@ -71,12 +71,14 @@
 		<appender-ref ref="jmicro_error"/>
 	</logger>
 	
+	<logger name="com.mongodb">
+		<level value="WARN"/>
+		<appender-ref ref="NORMALLOG"/>
+	</logger>
+	
 	<root>	
 	    <level value="INFO"/>
 		<appender-ref ref="CONSOLE"/>
-		<appender-ref ref="jmicro_debug"/>
-		<appender-ref ref="jmicro_info"/>
-		<appender-ref ref="jmicro_error"/>
 	</root>
 	
 </log4j:configuration>

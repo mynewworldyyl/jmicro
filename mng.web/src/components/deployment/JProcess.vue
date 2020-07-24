@@ -38,15 +38,15 @@
             refresh(){
                 let self = this;
                 this.adminPer = window.jm.mng.comm.adminPer;
-                window.jm.mng.choy.getProcessInstanceList(self.showAll).then((processList)=>{
-                    if(!processList || processList.length == 0 ) {
-                        self.$Message.success("No data to show");
+                window.jm.mng.choy.getProcessInstanceList(self.showAll).then((resp)=>{
+                    if(resp.code != 0 || !resp.data || resp.data.length == 0 ) {
+                        self.$Message.success(resp.msg || "No data to show");
                         this.processList = [];
                         return;
                     }
                     this.processList =[];
-                    for(let i = 0; i < processList.length; i++) {
-                        let e = processList[i];
+                    for(let i = 0; i < resp.data.length; i++) {
+                        let e = resp.data[i];
                         let d = new Date(e.startTime);
                         e.startTime0 = d.format("yyyy-MM-dd hh:mm:ss");
                         e.continue = d.toDecDay();
@@ -54,19 +54,21 @@
                     }
                 }).catch((err)=>{
                     window.console.log(err);
+                    self.$Message.error(err);
                 });
             },
 
             stopProcess(insId) {
                 let self = this;
-                window.jm.mng.choy.stopProcess(insId).then((rst)=>{
-                    if(rst) {
+                window.jm.mng.choy.stopProcess(insId).then((resp)=>{
+                    if(resp.code == 0) {
                         self.$Message.success("Success stop process");
                     }else {
-                        self.$Message.success("Failure to stop process");
+                        self.$Message.success(resp.msg);
                     }
                 }).catch((err)=>{
                     window.console.log(err);
+                    self.$Message.error(err);
                 });
             },
 
@@ -74,13 +76,14 @@
 
         mounted () {
             //has admin permission, only control the show of the button
+            window.jm.mng.act.addListener('JProcess',this.refresh);
             this.refresh();
         },
     }
 </script>
 
 <style>
-    .JAgent{
+    .JProcess{
 
     }
 

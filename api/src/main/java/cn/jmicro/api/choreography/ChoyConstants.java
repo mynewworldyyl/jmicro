@@ -53,5 +53,9 @@ public interface ChoyConstants {
 	
 	public static final String AGENT_CMD_STOPING_TIMEOUT = "2";
 	
+	public static final String AGENT_CMD_CLEAR_LOCAL_RESOURCE = "3";
+	
+	public static final String AGENT_CMD_STOP_ALL_INSTANCE = "4";
+	
 	//public static final String AGENT_CMD_NOP = "3";
 }

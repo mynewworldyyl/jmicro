@@ -6,6 +6,7 @@ import java.io.InputStream;
 
 import org.junit.Test;
 
+import cn.jmicro.api.Resp;
 import cn.jmicro.choreography.api.IResourceResponsitory;
 import cn.jmicro.common.CommonException;
 import cn.jmicro.test.JMicroBaseTestCase;
@@ -21,7 +22,8 @@ public class TestRopository extends JMicroBaseTestCase {
 		is.read(data, 0, data.length);
 		
 		IResourceResponsitory respo = of.getRemoteServie(IResourceResponsitory.class.getName(),"rrs", "0.0.1", null);
-		int blockSize = respo.addResource(name, data.length);
+		Resp<Integer> resp = respo.addResource(name, data.length);
+		int blockSize = resp.getData();
 		if(blockSize < 0) {
 			throw new CommonException("File exist");
 		}
@@ -29,14 +31,14 @@ public class TestRopository extends JMicroBaseTestCase {
 		for(int i = 0; i < blockNum; i++) {
 			byte[] bd = new byte[blockSize];
 			System.arraycopy(data, blockSize*i, bd, 0, blockSize);
-			org.junit.Assert.assertTrue(respo.addResourceData(name, bd, i));
+			org.junit.Assert.assertTrue(respo.addResourceData(name, bd, i).getData());
 		}
 		
 		int lastSize = data.length % blockSize;
 		if(lastSize > 0) {
 			byte[] bd = new byte[lastSize];
 			System.arraycopy(data, blockNum*blockSize, bd, 0, lastSize);
-			org.junit.Assert.assertTrue(respo.addResourceData(name, bd, blockNum));
+			org.junit.Assert.assertTrue(respo.addResourceData(name, bd, blockNum).getData());
 		}
 		
 		is.close();

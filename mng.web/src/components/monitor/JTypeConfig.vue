@@ -162,6 +162,14 @@
 
         mounted () {
             //let self = this;
+            let self = this;
+            window.jm.vue.$on('userLogin',() => {
+                self.refresh();
+            });
+
+            window.jm.vue.$on('userLogout',() => {
+                self.refresh();
+            });
             window.jm.mng.act.addListener(cid,this.refresh);
             this.refresh();
         },

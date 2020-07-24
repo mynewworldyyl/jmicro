@@ -581,15 +581,18 @@ public class DeploymentAssignment {
 		List<AgentInfo> sortList = new LinkedList<>();
 		sortList.addAll(agentInfo);
 		
+		//Agent已经启动对应部署
 		filterByCurProcess(sortList,dep);
 		
 		String agentIds = null;
 		if(StringUtils.isNotEmpty(dep.getStrategyArgs())) {
 			Map<String,String> params = IAssignStrategy.parseArgs(dep.getStrategyArgs());
+			//指定Agent运行部署
 			agentIds = params.get(IAssignStrategy.AGENT_ID);
 		}
 		
 		if(StringUtils.isNotEmpty(agentIds)) {
+			//只保留指定的Agent，其他的删除
 			filterByAgentId(sortList,dep,cnt,agentIds);
 			if(sortList == null || sortList.isEmpty()) {
 				logger.debug("doAddAssign: Agent ID: " + agentIds + " not on line for dep: " + dep.toString());
@@ -597,6 +600,7 @@ public class DeploymentAssignment {
 			}
 		} else { 
 			if(!sortList.isEmpty()) {
+				//由策略负责分配
 				filterAgentByStrategy(sortList,dep,cnt);
 			}
 		}
@@ -682,6 +686,7 @@ public class DeploymentAssignment {
 		Iterator<AgentInfo> ite = sortList.iterator();
 		while(ite.hasNext()) {
 			AgentInfo ai = ite.next();
+			//去除私有的Agent
 			if(ai.isPrivat()) {
 				ite.remove();
 			}
@@ -691,20 +696,27 @@ public class DeploymentAssignment {
 		ite = sortList.iterator();
 		while(ite.hasNext()) {
 			AgentInfo ai = ite.next();
-			if(curTime - ai.getStartTime() < 60000) {
-				//启动后1分钟内不给做任务分配，以使Agent达到稳定状态
+			if(curTime - ai.getStartTime() < 15000) {
+				//启动后15秒内不给做任务分配，以使Agent达到稳定状态
+				logger.info(ai.getId() + " exclude since start time less than 15 seconds!");
 				ite.remove();
 				continue;
 			}
 			
 			Set<Assign> as = assingManager.getAssignByDepIdAndAgentId(dep.getId(), ai.getId());
 			if(!as.isEmpty()) {
+				if(logger.isDebugEnabled()) {
+					logger.debug(dep.getJarFile() + " is assigned: " + ai.getId() );
+				}
 				ite.remove();
 				continue;
 			}
 			
 			if(fails.containsKey(ai.getId())) {
 				if(fails.get(ai.getId()).contains(dep.getId())) {
+					if(logger.isDebugEnabled()) {
+						logger.debug( dep.getJarFile() + " is failure in recent for: " + ai.getId() );
+					}
 					ite.remove();
 					continue;
 				}

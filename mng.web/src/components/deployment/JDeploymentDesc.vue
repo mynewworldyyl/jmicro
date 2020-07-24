@@ -104,9 +104,9 @@
                 }
 
                 if(self.doUpdate) {
-                    window.jm.mng.choy.updateDeployment(self.deployment).then((success)=>{
-                        if( success ) {
-                            self.$Message.success("Fail to add deployment ");
+                    window.jm.mng.choy.updateDeployment(self.deployment).then((resp)=>{
+                        if( resp.code != 0 || !resp.data ) {
+                            self.$Message.success(resp.msg);
                             this.addResourceDialog = false;
                         }
                         self.resetDeployment();
@@ -115,24 +115,25 @@
                         self.resetDeployment();
                     });
                 }else {
-                    window.jm.mng.choy.addDeployment(self.deployment).then((dep)=>{
-                        if( dep ) {
-                            self.deployList.push(dep);
+                    window.jm.mng.choy.addDeployment(self.deployment).then((resp)=>{
+                        if( resp.code == 0 ) {
+                            self.deployList.push(resp.data);
                             self.resetDeployment();
                             this.addResourceDialog = false;
                         } else {
-                            self.$Message.error("Fail to add deployment ");
+                            self.$Message.error(resp.msg);
                         }
                     }).catch((err)=>{
                         window.console.log(err);
+                        self.$Message.error(err);
                     });
                 }
             },
 
             deleteDeployment(res){
                 let self = this;
-                window.jm.mng.choy.deleteDeployment(res.id).then((rst)=>{
-                    if(rst ) {
+                window.jm.mng.choy.deleteDeployment(res.id).then((resp)=>{
+                    if(resp.code != 0 ) {
                         for(let i = 0; i < self.deployList.length; i++) {
                             if(self.deployList[i].id == res.id) {
                                 self.deployList.splice(i,1);
@@ -140,27 +141,33 @@
                             }
                         }
                     }else {
-                        self.$Message.error("Fail to delete resource "+res.name);
+                        self.$Message.error(resp.msg);
                     }
                 }).catch((err)=>{
                     window.console.log(err);
+                    self.$Message.error(err);
                 });
             },
 
             refresh(){
+                let self = this;
                 this.adminPer = window.jm.mng.comm.adminPer;
-                window.jm.mng.choy.getDeploymentList().then((deployList)=>{
-                    if(!deployList || deployList.length == 0 ) {
+                window.jm.mng.choy.getDeploymentList().then((resp)=>{
+                    if(resp.code != 0 ) {
+                        self.$Message.error(resp.msg);
                         return;
                     }
-                    this.deployList = deployList;
+                    this.deployList = resp.data;
                 }).catch((err)=>{
                     window.console.log(err);
+                    self.$Message.error(err);
                 });
             },
         },
 
         mounted () {
+            let self = this;
+            window.jm.mng.act.addListener(self.name,self.refresh);
             this.refresh();
         },
     }

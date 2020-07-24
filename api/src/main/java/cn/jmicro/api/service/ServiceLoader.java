@@ -339,7 +339,7 @@ public class ServiceLoader{
 		return item;
 	}
 	
-	public ServiceItem createSrvItem(Class<?> interfacez,String ns,String ver,String impl) {
+	public ServiceItem createSrvItem(Class<?> interfacez, String ns, String ver, String impl) {
 		if(Config.isClientOnly()) {
 			logger.warn("Client only cannot export service!");
 			return null;
@@ -368,7 +368,7 @@ public class ServiceLoader{
 		return si;
 	}
 	
-	public ServiceItem createSrvItem(String srvName,String ns,String ver,String impl) {
+	public ServiceItem createSrvItem(String srvName, String ns, String ver, String impl) {
 		ServiceItem item = new ServiceItem();
 		UniqueServiceKey usk = new UniqueServiceKey();
 		usk.setNamespace(ns);
@@ -384,6 +384,7 @@ public class ServiceLoader{
 		item.getServers().add(this.nettyServer);
 		item.getServers().add(this.httpServer);
 		item.setExternal(false);
+		item.setShowFront(true);
 		
 		//item.setMaxFailBeforeDegrade(anno.maxFailBeforeDegrade()!=100 || intAnno == null ?anno.maxFailBeforeDegrade():intAnno.maxFailBeforeDegrade());
 		//item.setRetryCnt();
@@ -501,6 +502,7 @@ public class ServiceLoader{
 		item.setImpl(proxySrv.getName());
 		item.setClientId(anno.clientId());
 		item.setExternal(anno.external());
+		item.setShowFront(anno.showFront());
 		
 		//item.setMaxFailBeforeDegrade(anno.maxFailBeforeDegrade()!=100 || intAnno == null ?anno.maxFailBeforeDegrade():intAnno.maxFailBeforeDegrade());
 		item.setRetryCnt(anno.retryCnt()!=3 || intAnno == null ?anno.retryCnt():intAnno.retryCnt());

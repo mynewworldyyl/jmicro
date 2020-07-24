@@ -132,6 +132,9 @@ public final class ServiceItem implements Comparable<ServiceItem>{
 	
 	private int clientId = 0;
 	
+	//configurable from mng UI
+	private boolean showFront = true;
+	
 	private boolean external = false;
 	
 	private Set<ServiceMethod> methods = new HashSet<>();
@@ -186,6 +189,7 @@ public final class ServiceItem implements Comparable<ServiceItem>{
 		this.servers.addAll(p.getServers());
 		this.impl = p.getImpl();
 		this.external = p.external;
+		this.showFront = p.showFront;
 		this.createdTime = p.createdTime;
 		
 		for(ServiceMethod sm : p.getMethods()){
@@ -236,6 +240,14 @@ public final class ServiceItem implements Comparable<ServiceItem>{
 
 	public boolean isExternal() {
 		return external;
+	}
+
+	public boolean isShowFront() {
+		return showFront;
+	}
+
+	public void setShowFront(boolean showFront) {
+		this.showFront = showFront;
 	}
 
 	public void setExternal(boolean external) {

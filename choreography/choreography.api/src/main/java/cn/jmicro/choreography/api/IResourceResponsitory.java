@@ -2,6 +2,7 @@ package cn.jmicro.choreography.api;
 
 import java.util.List;
 
+import cn.jmicro.api.Resp;
 import cn.jmicro.codegenerator.AsyncClientProxy;
 
 @AsyncClientProxy
@@ -9,15 +10,15 @@ public interface IResourceResponsitory {
 
 	List<PackageResource> getResourceList(boolean onlyFinish);
 	
-	int addResource(String name, int totalSize);
+	Resp<Integer> addResource(String name, int totalSize);
 	
-	boolean addResourceData(String name, byte[] data, int blockNum);
+	Resp<Boolean> addResourceData(String name, byte[] data, int blockNum);
 	
-	boolean deleteResource(String name);
+	Resp<Boolean> deleteResource(String name);
 	
 	byte[] downResourceData(int downloadId, int blockNum);
 	
-	int initDownloadResource(String name);
+	Resp<Integer> initDownloadResource(String name);
 	
 	
 }

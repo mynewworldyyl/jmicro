@@ -13,7 +13,7 @@ import cn.jmicro.api.annotation.Service;
 import cn.jmicro.api.classloader.IClassloaderRpc;
 import cn.jmicro.api.config.Config;
 
-@Service(namespace="classloaderrpc",version="0.0.1",timeout=30000)
+@Service(namespace="classloaderrpc",version="0.0.1",timeout=30000,showFront=false)
 @Component
 public class ClassloaderRpcService implements IClassloaderRpc {
 

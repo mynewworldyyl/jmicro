@@ -16,7 +16,7 @@ import cn.jmicro.api.security.ActInfo;
 import cn.jmicro.api.service.ServiceManager;
 
 @Component
-@Service(namespace="mng", version="0.0.1",external=true,timeout=10000,debugMode=1)
+@Service(namespace="mng", version="0.0.1",external=true,timeout=10000,debugMode=1,showFront=false)
 public class ManageServiceImpl implements IManageService {
 
 	@Cfg(value="/notLonginClientId",defGlobal=true)
@@ -39,12 +39,18 @@ public class ManageServiceImpl implements IManageService {
 		 ActInfo ai = JMicroContext.get().getAccount();
 		 if(ai != null) {
 			 for(ServiceItem si : items) {
+				 if(!si.isShowFront()) {
+					 continue;
+				 }
 				 if(si.getClientId() >= ai.getClientId()) {
 					 sis.add(si);
 				 }
 			 }
 		 } else {
 			 for(ServiceItem si : items) {
+				 if(!si.isShowFront()) {
+					 continue;
+				 }
 				 if(si.getClientId() >= this.notLonginClientId) {
 					 sis.add(si);
 				 }

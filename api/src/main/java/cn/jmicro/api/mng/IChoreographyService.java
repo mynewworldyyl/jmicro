@@ -2,6 +2,7 @@ package cn.jmicro.api.mng;
 
 import java.util.List;
 
+import cn.jmicro.api.Resp;
 import cn.jmicro.api.choreography.AgentInfoVo;
 import cn.jmicro.api.choreography.Deployment;
 import cn.jmicro.api.choreography.ProcessInfo;
@@ -11,22 +12,26 @@ import cn.jmicro.codegenerator.AsyncClientProxy;
 public interface IChoreographyService {
 
 	 //Deployment
-	 Deployment addDeployment(Deployment dep);
+	 Resp<Deployment> addDeployment(Deployment dep);
 	 
-	 List<Deployment> getDeploymentList();
+	 Resp<List<Deployment>> getDeploymentList();
 	 
-	 boolean deleteDeployment(int id);
+	 Resp<Boolean> deleteDeployment(int id);
 	 
-	 boolean updateDeployment(Deployment dep);
+	 Resp<Boolean> updateDeployment(Deployment dep);
 	 
 	 //Agent
-	 List<AgentInfoVo> getAgentList(boolean showAll);
+	 Resp<List<AgentInfoVo>> getAgentList(boolean showAll);
+	 
+	 Resp<Boolean> clearResourceCache(String resId);
 	 
 	 //Process instance
-	 List<ProcessInfo> getProcessInstanceList(boolean all);
+	 Resp<List<ProcessInfo>> getProcessInstanceList(boolean all);
 	 
-	 boolean stopProcess(String insId);
+	 Resp<Boolean> stopProcess(String insId);
 	 
-	 String changeAgentState(String agentId);
+	 Resp<String> changeAgentState(String agentId);
+	 
+	 Resp<Boolean> stopAllInstance(String agentId);
 	 
 }

@@ -160,6 +160,16 @@
             window.jm.mng.act.addListener(this.item.id,()=>{
                 this.refresh();
             });
+
+            let self = this;
+            window.jm.vue.$on('userLogin',() => {
+                self.refresh();
+            });
+
+            window.jm.vue.$on('userLogout',() => {
+                self.refresh();
+            });
+
             this.refresh();
         },
 

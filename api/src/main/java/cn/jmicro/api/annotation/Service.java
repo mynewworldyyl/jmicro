@@ -43,6 +43,12 @@ public @interface Service {
 	public boolean external() default false;
 	
 	/**
+	 * 服务配置显示于管理后台前端
+	 * @return
+	 */
+	public boolean showFront() default true;
+	
+	/**
 	 * 服务接口，如果类只实现一个接口，则此值可不填
 	 * 一个实现只能存在一个接口作为服务，如果类同时实现了多个接口，则需要在此属性说明那个接口是服务接口
 	 */

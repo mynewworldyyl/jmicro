@@ -37,7 +37,7 @@ public class SerializeProxyFactory {
 			 return null;
 		 }
 		 
-		 System.out.println(className);
+		 //System.out.println(className);
 		 
 		 //ct.addMethod(CtMethod.make(sameCollectionElts(), ct));
 		 
@@ -47,13 +47,16 @@ public class SerializeProxyFactory {
 		 
 		 ct.addMethod(CtMethod.make(getDecodeMethod(ct), ct));
 		 
-		 return ct.toBytecode();
+		 byte[] data = ct.toBytecode();
+		 ct.detach();
+		 
+		 return data;
 		 
 	}
 
 	private static  String getDecodeMethod(CtClass cls) throws NotFoundException, CannotCompileException {
 
-		ClassPool cp = ClassPool.getDefault();
+		//ClassPool cp = ClassPool.getDefault();
 		
 		StringBuffer sb = new StringBuffer(" public void decode(java.io.DataInput __buffer)  throws java.io.IOException {\n");
 		
@@ -142,7 +145,7 @@ public class SerializeProxyFactory {
 		sb.append(" cn.jmicro.api.codec.JDataOutput out = (cn.jmicro.api.codec.JDataOutput)__buffer;\n");
 		sb.append(" cn.jmicro.api.codec.typecoder.TypeCoder __coder = cn.jmicro.api.codec.TypeCoderFactory.getIns().getDefaultCoder(); \n");
 		
-		ClassPool cp = ClassPool.getDefault();
+		//ClassPool cp = ClassPool.getDefault();
 		
 		/*List<Field> fields = new ArrayList<>();
 		Utils.getIns().getFields(fields, cls);
@@ -214,9 +217,9 @@ public class SerializeProxyFactory {
 				} else {
 					sb.append(" __coder.encode(__buffer,__val").append(i).append(",").append(fieldDeclareType.getName()).append(".class,").append(" null ); \n }");
 				}
-				
-				
 			}
+			//fieldDeclareType.detach();
+			
 			sb.append("\n\n");
 		}
 		

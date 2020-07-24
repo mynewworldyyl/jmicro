@@ -555,6 +555,18 @@ jm.mng = {
             return jm.mng.callRpcWithParams(this.sn,this.ns,this.v,'changeAgentState',[agentId]);
         },
 
+        clearResourceCache: function (agentId){
+            return jm.mng.callRpcWithParams(this.sn,this.ns,this.v,'clearResourceCache',[agentId]);
+        },
+
+        stopAllInstance:function(agentId) {
+            return jm.mng.callRpcWithParams(this.sn,this.ns,this.v,'stopAllInstance',[agentId]);
+        },
+
+
+
+
+
         sn:'cn.jmicro.api.mng.IChoreographyService',
         ns : 'mng',
         v:'0.0.1',

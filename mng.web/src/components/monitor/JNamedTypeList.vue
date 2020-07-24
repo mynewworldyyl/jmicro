@@ -57,6 +57,7 @@
 
         mounted(){
             this.loadNamedTypeList();
+            //window.jm.mng.act.addListener(this.name,this.loadNamedTypeList);
         },
 
         methods:{

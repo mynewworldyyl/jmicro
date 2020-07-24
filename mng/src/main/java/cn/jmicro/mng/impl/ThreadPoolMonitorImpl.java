@@ -23,7 +23,7 @@ import cn.jmicro.common.util.StringUtils;
 
 @Component
 @Service(namespace="mng",version="0.0.1",debugMode=1,
-monitorEnable=0,logLevel=MC.LOG_ERROR,retryCnt=0,external=true,timeout=3000)
+monitorEnable=0,logLevel=MC.LOG_ERROR,retryCnt=0,external=true,timeout=3000,showFront=false)
 public class ThreadPoolMonitorImpl implements IThreadPoolMonitor {
 
 	private static final Logger logger = LoggerFactory.getLogger(ThreadPoolMonitorImpl.class);

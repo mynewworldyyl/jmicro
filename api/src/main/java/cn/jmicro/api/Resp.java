@@ -18,6 +18,10 @@ public class Resp<T> {
 	private int pageSize;
 	private int curPage;
 	
+	public Resp() {};
+	public Resp(int code) {this.code = code;};
+	public Resp(int code,String msg) {this.code = code;this.msg=msg;};
+	
 	public String getMsg() {
 		return msg;
 	}

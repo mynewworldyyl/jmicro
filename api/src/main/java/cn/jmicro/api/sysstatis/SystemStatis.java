@@ -59,4 +59,12 @@ public class SystemStatis {
 	public void setCpuNum(int cpuNum) {
 		this.cpuNum = cpuNum;
 	}
+	@Override
+	public String toString() {
+		return "SystemStatis [totalMemory=" + totalMemory + ", freeMemory=" + freeMemory + ", cpuLoad=" + cpuLoad
+				+ ", avgCpuLoad=" + avgCpuLoad + ", insName=" + insName + ", sysName=" + sysName + ", cpuNum=" + cpuNum
+				+ "]";
+	}
+	
+	
 }

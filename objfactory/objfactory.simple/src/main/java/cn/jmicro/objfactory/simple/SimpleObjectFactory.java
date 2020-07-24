@@ -49,12 +49,10 @@ import cn.jmicro.api.annotation.Inject;
 import cn.jmicro.api.annotation.JMethod;
 import cn.jmicro.api.annotation.PostListener;
 import cn.jmicro.api.annotation.Reference;
-import cn.jmicro.api.annotation.SO;
 import cn.jmicro.api.annotation.Service;
 import cn.jmicro.api.choreography.ChoyConstants;
 import cn.jmicro.api.choreography.ProcessInfo;
 import cn.jmicro.api.classloader.RpcClassLoader;
-import cn.jmicro.api.codec.TypeCoderFactory;
 import cn.jmicro.api.config.Config;
 import cn.jmicro.api.config.IConfigLoader;
 import cn.jmicro.api.masterelection.IMasterChangeListener;
@@ -375,6 +373,14 @@ public class SimpleObjectFactory implements IObjectFactory {
 			}
 			return;
 		}
+		
+		Runtime.getRuntime().addShutdownHook(new Thread() {
+			public void run() {
+				logger.warn("进程终止： "+JsonUtils.getIns().toJson(pi));
+				 String p = ChoyConstants.INS_ROOT+"/" + pi.getId();
+				 dataOperator.deleteNode(p);
+			}
+		});
 		
 		this.cacheObj(dataOperator.getClass(), dataOperator,null);
 		Config cfg = (Config)this.createOneComponent(Config.class,Config.isClientOnly(),Config.isServerOnly());
@@ -1558,6 +1564,7 @@ public class SimpleObjectFactory implements IObjectFactory {
 			if(pri != null && pri.isActive()) {
 				throw new CommonException("Process exist[" +oldJson+"]");
 			}
+			logger.warn("Delete exist process info: " + js);
 			op.deleteNode(p);
 		}
 		

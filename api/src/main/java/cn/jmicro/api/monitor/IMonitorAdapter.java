@@ -6,7 +6,7 @@ import cn.jmicro.api.monitor.MonitorServerStatus;
 import cn.jmicro.codegenerator.AsyncClientProxy;
 
 @Service(timeout=5000,retryCnt=0,debugMode=0,
-monitorEnable=0,logLevel=MC.LOG_ERROR)
+monitorEnable=0,logLevel=MC.LOG_ERROR,showFront=false)
 @AsyncClientProxy
 public interface IMonitorAdapter {
 
