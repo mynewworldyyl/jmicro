@@ -37,10 +37,10 @@
 			 <artifactId>transport.netty.server</artifactId>
 	    </dependency>
 
-		<dependency>
+		<!-- <dependency>
 			<groupId>cn.jmicro</groupId>
 			<artifactId>gateway.client</artifactId>
-		</dependency>
+		</dependency> -->
 		
 		<dependency>
 			<groupId>cn.jmicro</groupId>
@@ -80,7 +80,7 @@
 									<include>cn.jmicro:transport.netty.client</include>
 									<include>cn.jmicro:config</include>
 									<include>cn.jmicro:zk</include>
-									<include>cn.jmicro:gateway.client</include>
+									<!-- <include>cn.jmicro:gateway.client</include> -->
 								</includes>
 							</artifactSet>
 							<transformers>

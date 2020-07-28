@@ -19,6 +19,10 @@
 			<groupId>cn.jmicro</groupId>
 			<artifactId>all</artifactId>
 		</dependency>
+		 <dependency>
+			<groupId>cn.jmicro</groupId>
+			<artifactId>gateway.client</artifactId>
+		</dependency>
 		<dependency>
 			<groupId>cn.jmicro</groupId>
 			<artifactId>example.api</artifactId>
