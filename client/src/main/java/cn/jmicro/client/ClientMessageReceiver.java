@@ -18,6 +18,7 @@ package cn.jmicro.client;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.RejectedExecutionHandler;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -29,6 +30,7 @@ import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Inject;
 import cn.jmicro.api.executor.ExecutorConfig;
 import cn.jmicro.api.executor.ExecutorFactory;
+import cn.jmicro.api.executor.NamedThreadFactory;
 import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.monitor.SF;
 import cn.jmicro.api.net.IMessageHandler;
@@ -36,6 +38,8 @@ import cn.jmicro.api.net.IMessageReceiver;
 import cn.jmicro.api.net.ISession;
 import cn.jmicro.api.net.Message;
 import cn.jmicro.common.Constants;
+import cn.jmicro.common.util.StringUtils;
+import cn.jmicro.common.util.TimeUtils;
 
 /** 
  * @author Yulei Ye
@@ -52,6 +56,33 @@ public class ClientMessageReceiver implements IMessageReceiver{
 	
 	@Inject
 	private ExecutorFactory ef;
+	
+	public ClientMessageReceiver() {}
+	
+	public ClientMessageReceiver(boolean client) {
+		
+		ExecutorConfig cfg = new ExecutorConfig();
+		cfg.setMsCoreSize(1);
+		cfg.setMsMaxSize(1);
+		cfg.setTaskQueueSize(10);
+		cfg.setThreadNamePrefix("ClientMessageReceiver-client");
+		cfg.setRejectedExecutionHandler(new RejectedExecutionHandler() {
+			@Override
+			public void rejectedExecution(Runnable r, ThreadPoolExecutor executor) {
+				logger.error("Reject task: " + r.toString());
+			}
+		});
+		
+		if(StringUtils.isEmpty(cfg.getThreadNamePrefix())) {
+			cfg.setThreadNamePrefix("Default");
+		}
+		
+		defaultExecutor = new ThreadPoolExecutor(cfg.getMsCoreSize(),cfg.getMsMaxSize(),
+				cfg.getIdleTimeout(),TimeUtils.getTimeUnit(cfg.getTimeUnit()),
+				new ArrayBlockingQueue<Runnable>(cfg.getTaskQueueSize()),
+				new NamedThreadFactory("JMicro-"+"client"+"-"+cfg.getThreadNamePrefix())
+				,cfg.getRejectedExecutionHandler());
+	}
 	
 	public void ready(){
 		ExecutorConfig config = new ExecutorConfig();

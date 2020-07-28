@@ -16,14 +16,7 @@
  */
 package cn.jmicro.gateway.client;
 
-import java.lang.reflect.Array;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Queue;
-import java.util.concurrent.ConcurrentLinkedQueue;
-
-import cn.jmicro.api.idgenerator.IdRequest;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * 
@@ -33,7 +26,22 @@ import cn.jmicro.api.idgenerator.IdRequest;
 public class IdClient{
 
 	public static final int CACHE_SIZE = 1;
-	private volatile Map<String,Queue<Object>> cache = new HashMap<>();
+	
+	private static final AtomicLong ID = new AtomicLong();
+	
+	public Long getLongId(String idType) {
+		return ID.incrementAndGet();
+	}
+
+	public String getStringId(String idType) {
+		return getLongId(idType).toString();
+	}
+
+	public Integer getIntId(String idType) {
+		return getLongId(idType).intValue();
+	}
+	
+/*	private volatile Map<String,Queue<Object>> cache = new HashMap<>();
 	
 	private ApiGatewayClient agc;
 	
@@ -105,6 +113,6 @@ public class IdClient{
 
 	public Integer getIntId(String idType) {
 		return getIntIds(idType, 1)[0];
-	}
+	}*/
 	
 }

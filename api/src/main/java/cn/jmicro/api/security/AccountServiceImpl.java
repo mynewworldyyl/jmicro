@@ -17,11 +17,11 @@ import cn.jmicro.common.util.StringUtils;
 @Service(namespace="act", version="0.0.1",external=true)
 public class AccountServiceImpl implements IAccountService {
 
-	private static final ActInfo admin = new ActInfo("admin","0", 0);
+	private static final ActInfo admin = new ActInfo("jmicro","jmicro123", 0);
 	
-	private static final ActInfo act0 = new ActInfo("user1","0", 10);
+	private static final ActInfo act0 = new ActInfo("jmicro0","jmicro123", 10);
 	
-	private static final ActInfo act1 = new ActInfo("user2","0", 100);
+	private static final ActInfo act1 = new ActInfo("jmicro1","jmicro123", 100);
 	
 	@Inject
 	private ICache cache;

@@ -5,7 +5,7 @@
             <table class="configItemTalbe" width="99%">
                 <thead><tr><td style="width:300px">TAG</td><td  style="width:165px">TIME</td><td style="width:135px">LEVEL</td>
                     <td  style="width:130px">TYPE</td><td  style="width:38px">TYPE</td><td  style="width:38px">TYPE</td>
-                    <td>DESC</td></tr></thead>
+                    <td>LOG</td></tr></thead>
                 <tr v-for="c in logList" :key="c._id">
                     <td>{{c.tag}}</td><td>{{c.time | formatDate}}</td><td>{{c.levelLabel}}</td>
                     <td>{{c.typeLabel}}</td><td>{{c.val}}</td><td>{{c.num}}</td><td style="text-align:left;">{{c.desc}}</td>

@@ -66,7 +66,7 @@ public class ApiGatewayClientSessionManager implements IClientSessionManager {
 	
 	private int heardbeatInterval = 3; //seconds to send heardbeat Rate
 	
-	private ClientMessageReceiver receiver = new ClientMessageReceiver();
+	private ClientMessageReceiver receiver = new ClientMessageReceiver(true);
 	
 	private Timer ticker = new Timer("ApiClientSessionHeardbeatWorker",true);
 	
@@ -107,7 +107,7 @@ public class ApiGatewayClientSessionManager implements IClientSessionManager {
 	@Override
 	public IClientSession getOrConnect(String instanceName,String host, int port) {
 
-		final String ssKey = host + port;
+		final String ssKey = host +":"+ port;
 		if(sessions.containsKey(ssKey)){
 			return sessions.get(ssKey);
 		}

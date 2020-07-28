@@ -16,6 +16,7 @@
  */
 package cn.jmicro.gateway.client;
 
+import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.nio.ByteBuffer;
@@ -27,8 +28,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import cn.jmicro.api.annotation.Service;
-import cn.jmicro.api.client.IClientSession;
 import cn.jmicro.api.client.IAsyncCallback;
+import cn.jmicro.api.client.IClientSession;
 import cn.jmicro.api.codec.Decoder;
 import cn.jmicro.api.codec.PrefixTypeEncoderDecoder;
 import cn.jmicro.api.gateway.ApiRequest;
@@ -44,6 +45,7 @@ import cn.jmicro.api.net.ServerError;
 import cn.jmicro.common.CommonException;
 import cn.jmicro.common.Constants;
 import cn.jmicro.common.Utils;
+import cn.jmicro.common.util.JsonUtils;
 import cn.jmicro.common.util.StringUtils;
 
 /**
@@ -76,7 +78,7 @@ public class ApiGatewayClient {
 			cfg.setHost(Utils.getIns().getLocalIPList().get(0));
 		}
 		this.config = cfg;
-		this.idClient = new IdClient(this);
+		this.idClient = new IdClient();
 		init();
 	}
 	
@@ -160,7 +162,7 @@ public class ApiGatewayClient {
 		msg.setPayload(bb);
 		msg.setVersion(Message.MSG_VERSION);
 		
-		String clazzName =(String) getResponse(msg,null);
+		String clazzName =(String) getResponse(msg,null,String.class);
 		
 		if(StringUtils.isEmpty(clazzName)) {
 			try {
@@ -174,16 +176,16 @@ public class ApiGatewayClient {
 		return null;
 	}
 	
-	public Object callService(String serviceName, String namespace, String version, String method, Object[] args) {
-		Message msg = this.createMessage(serviceName, namespace, version, method, args);
-		return getResponse(msg,null);
+	public <T> T callService(String serviceName, String namespace, String version, String methodName, Class<T> returnType, Object[] args) {
+		Message msg = this.createMessage(serviceName, namespace, version, methodName, args);
+		return getResponse(msg,null,returnType);
 	}
 	
 	public <R> Object callService(String serviceName, String namespace, String version
-			, String method, Object[] args,IAsyncCallback<R> callback) {
+			, String method, Object[] args,Class<R> returnType,IAsyncCallback<R> callback) {
 		Message msg = this.createMessage(serviceName, namespace, version, method, args);
 		//msg.setStream(true);
-		return getResponse(msg,callback);
+		return getResponse(msg,callback,returnType);
 	}
 	
 	private Object callService(Class<?> serviceClass,Method mehtod,Object[] args,
@@ -202,11 +204,11 @@ public class ApiGatewayClient {
 		if(srvAnno != null && StringUtils.isEmpty(version)) {
 			version = srvAnno.version();
 		}
-		return callService(serviceClass.getName(),namespace,version,mehtod.getName(),args);
+		return callService(serviceClass.getName(),namespace,version,mehtod.getName(),mehtod.getReturnType() ,args);
 	}
 	
-	@SuppressWarnings("unchecked")
-	private <R> Object getResponse(Message msg, final IAsyncCallback<R> callback) {
+	//@SuppressWarnings("unchecked")
+	private <R> R getResponse(Message msg, final IAsyncCallback<R> callback,Class<R> returnType) {
 		streamComfirmFlag.put(msg.getReqId(), true);
 		waitForResponses.put(msg.getReqId(), respMsg1 -> {
 			streamComfirmFlag.remove(msg.getReqId());
@@ -221,7 +223,7 @@ public class ApiGatewayClient {
 	
 		synchronized (msg) {
 			try {
-				msg.wait(30*1000);
+				msg.wait(60*1000);
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}
@@ -229,35 +231,44 @@ public class ApiGatewayClient {
 		
 		Message resqMsg = resqMsgCache.remove(msg.getReqId());
 		
+		if(resqMsg == null) {
+			throw new CommonException("Timeout");
+		}
+		
 		if(resqMsg.getType() == Constants.MSG_TYPE_ID_RESP) {
 			return this.decoder.decode((ByteBuffer)resqMsg.getPayload());
 		} else {
-			return parseResult(resqMsg);
+			return parseResult(resqMsg,returnType);
 		}
 	}
 	
-	private Object parseResult(Message resqMsg) {
+	private <R> R parseResult(Message resqMsg,Class<R> returnType) {
 		 
 		 if(resqMsg == null) {
 			 return null;
 		 }
 		
-		 Object v = this.decoder.decode((ByteBuffer)resqMsg.getPayload());
-		 
-		if(v != null && v instanceof ServerError) {
-			throw new CommonException(v.toString());
-		} else if(v != null) {
-			ApiResponse resp = (ApiResponse)v;
-			 if(resp.isSuccess()) {
-				 return resp.getResult();
-			 } else {
-				 throw new CommonException(resp.getResult().toString());
-			 }
-		}else {
-			return null;
+		//Object v = this.decoder.decode((ByteBuffer)resqMsg.getPayload());
+		ByteBuffer bb =  (ByteBuffer)resqMsg.getPayload();
+		String json = null;
+		try {
+			json = new String(bb.array(),Constants.CHARSET);
+			ApiResponse apiResp = JsonUtils.getIns().fromJson(json, ApiResponse.class);
+			if(apiResp.isSuccess()) {
+				 if(apiResp.getResult() == null || returnType == Void.class || Void.TYPE == returnType) {
+					 return null;
+				 } else {
+					 String js = JsonUtils.getIns().toJson(apiResp.getResult());
+					 R rst = JsonUtils.getIns().fromJson(js, returnType);
+					 return rst;
+				 }
+			} else {
+				throw new CommonException(apiResp.toString());
+			}
+		} catch (UnsupportedEncodingException e) {
+			throw new CommonException(json,e);
 		}
-			
-		 
+		
 	}
     
     private Message createMessage(String serviceName, String namespace, String version, String method, Object[] args) {
@@ -272,10 +283,11 @@ public class ApiGatewayClient {
 		
 		Message msg = new Message();
 		msg.setType(Constants.MSG_TYPE_REQ_RAW);
-		msg.setUpProtocol(Message.PROTOCOL_BIN);
-		msg.setId(idClient.getLongId(Message.class.getName()));
+		msg.setUpProtocol(Message.PROTOCOL_JSON);
+		msg.setDownProtocol(Message.PROTOCOL_JSON);
+		msg.setId(req.getReqId()/*idClient.getLongId(Message.class.getName())*/);
 		msg.setReqId(req.getReqId());
-		msg.setLinkId(idClient.getLongId(Linker.class.getName()));
+		msg.setLinkId(req.getReqId()/*idClient.getLongId(Linker.class.getName())*/);
 		
 		//msg.setStream(false);
 		msg.setDumpDownStream(false);
@@ -285,7 +297,15 @@ public class ApiGatewayClient {
 		msg.setMonitorable(false);
 		msg.setDebugMode(false);
 		
-		ByteBuffer bb = decoder.encode(req);
+		//ByteBuffer bb = decoder.encode(req);
+		
+		String json = JsonUtils.getIns().toJson(req);
+		ByteBuffer bb = null;
+		try {
+			bb = ByteBuffer.wrap(json.getBytes(Constants.CHARSET));
+		} catch (UnsupportedEncodingException e) {
+			e.printStackTrace();
+		}
 		msg.setPayload(bb);
 		msg.setVersion(Message.MSG_VERSION);
 		
@@ -318,7 +338,7 @@ public class ApiGatewayClient {
 		ByteBuffer bb = decoder.encode(req);
 		msg.setPayload(bb);
 		msg.setVersion(Message.MSG_VERSION);
-		Object v = getResponse(msg,null);
+		Object v = getResponse(msg,null,Long.class);
 		if(v != null && v instanceof ServerError) {
 			throw new CommonException(v.toString());
 		} else {

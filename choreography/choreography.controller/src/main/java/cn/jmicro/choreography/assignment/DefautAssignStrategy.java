@@ -26,6 +26,12 @@ public class DefautAssignStrategy implements IAssignStrategy{
 	@Inject
 	private InstanceManager insManager;
 	
+	
+	
+	public void ready() {
+		
+	}
+	
 	@Override
 	public boolean doStrategy(List<AgentInfo> agents, Deployment dep) {
 		if(agents.size() == 0) {
@@ -123,7 +129,7 @@ public class DefautAssignStrategy implements IAssignStrategy{
 		Iterator<AgentInfo> ite = agents.iterator();
 		while(ite.hasNext()) {
 			AgentInfo ai = ite.next();
-			if(ai.getSs() == null || ai.getSs().getAvgCpuLoad()*100 > cn) {
+			if(ai.getSs() == null || ai.getSs().getAvgCpuLoad() > cn) {
 				if(logger.isDebugEnabled()) {
 					logger.debug("filteCpuRate req cpuRate：" + cn + ", Status: " + ai.getSs().toString() );
 				}

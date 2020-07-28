@@ -133,7 +133,7 @@
             deleteDeployment(res){
                 let self = this;
                 window.jm.mng.choy.deleteDeployment(res.id).then((resp)=>{
-                    if(resp.code != 0 ) {
+                    if(resp.code == 0 ) {
                         for(let i = 0; i < self.deployList.length; i++) {
                             if(self.deployList[i].id == res.id) {
                                 self.deployList.splice(i,1);

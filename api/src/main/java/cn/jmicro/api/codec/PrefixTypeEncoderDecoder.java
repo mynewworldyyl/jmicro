@@ -32,7 +32,7 @@ import cn.jmicro.common.CommonException;
  * @author Yulei Ye
  * @date 2018年11月8日 上午11:43:13
  */
-@Component(value="prefixTypeDecoder",lazy=false)
+@Component(value="prefixTypeDecoder",lazy=false,level=2000)
 public class PrefixTypeEncoderDecoder{
 	
 	private static final Logger logger = LoggerFactory.getLogger(PrefixTypeEncoderDecoder.class);

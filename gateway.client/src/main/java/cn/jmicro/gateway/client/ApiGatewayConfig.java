@@ -42,7 +42,7 @@ public class ApiGatewayConfig {
 		this.setPort(port);
 	}
 	
-	public ApiGatewayConfig(int clientType,int port,String host) {
+	public ApiGatewayConfig(int clientType,String host,int port) {
 		this(clientType,port);
 		this.setHost(host);
 	}
@@ -70,7 +70,7 @@ public class ApiGatewayConfig {
 	}
 
 	public void setClientType(int clientType) {
-		if(clientType == Constants.TYPE_SOCKET || clientType == Constants.TYPE_SOCKET
+		if(clientType == Constants.TYPE_SOCKET || clientType == Constants.TYPE_HTTP
 				|| clientType == Constants.TYPE_WEBSOCKET) {
 			this.clientType = clientType;
 		} else {

@@ -55,8 +55,8 @@ public class RaftBaseTypeCodeProducer implements ITypeCodeProducer {
 				op.createNodeOrSetData(ROOT, Short.MIN_VALUE+"", IDataOperator.PERSISTENT);
 			}
 			op.addChildrenListener(ROOT, typeListener);
-			TypeCoderFactory.getIns().setTypeCodeProducer(this);
 		}
+		TypeCoderFactory.getIns().setTypeCodeProducer(this);
 	}
 	
 	@Override

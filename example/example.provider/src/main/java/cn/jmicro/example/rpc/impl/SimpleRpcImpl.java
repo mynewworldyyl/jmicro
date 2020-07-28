@@ -73,11 +73,11 @@ public class SimpleRpcImpl implements ISimpleRpc {
 			maxSpeed=1000,
 			baseTimeUnit=Constants.TIME_MILLISECONDS
 	)
-	public String hi(Person name) {
+	public String hi(Person person) {
 		if(SF.isLoggable(MC.LOG_DEBUG)) {
-			SF.eventLog(MC.MT_PLATFORM_LOG,MC.LOG_DEBUG,SimpleRpcImpl.class, name.getUsername());
+			SF.eventLog(MC.MT_PLATFORM_LOG,MC.LOG_DEBUG,SimpleRpcImpl.class, person.getUsername());
 		}
-		return "Server say hello to: "+name;
+		return "Server say hello to: " + person.toString();
 	}
 
 	@Override

@@ -16,7 +16,7 @@
 
         <Modal v-model="addResourceDialog" :loading="true" ref="addNodeDialog" width="360" @on-ok="onAddOk()">
             <table>
-                <tr><td>NAME</td><td><input type="input" id="nodeName" v-model="name"/></td></tr>
+               <tr><td>NAME</td><td><input type="input" id="fileName" v-model="fileName"/></td></tr>
                 <tr><td>VALUE</td><td><input type="file" id="nodeValue" ref="resFile"/></td></tr>
                 <tr><td colspan="2" style="color:red">{{errMsg}}</td></tr>
                 <tr v-if="onUpload"><td colspan="2">SIZE&FINISH:{{totalSize}}/{{finishSize}}&nbsp;&nbsp; COST:{{costTime}}&nbsp;&nbsp;SPEED:{{uploadSpeed}}</td></tr>
@@ -34,7 +34,7 @@
             return {
                 resList:[],
                 addResourceDialog:false,
-                name:'',
+                fileName:'',
                 errMsg:'',
 
                 totalSize:'',
@@ -153,7 +153,12 @@
                     self.totalSize =  self.getSizeVal(totalLen);
                     self.onUpload = true;
                     let file = self.$refs.resFile.files[0];
-                    window.jm.mng.repository.addResource(file.name, totalLen).then((resp)=>{
+
+                    if(!self.fileName || self.fileName == 0 || this.fileName == '') {
+                        self.fileName = file.name;
+                    }
+
+                    window.jm.mng.repository.addResource(self.fileName, totalLen).then((resp)=>{
                         if(resp.code != 0) {
                             self.$Message.success(resp.msg);
                             return;
@@ -176,7 +181,7 @@
                                     for(let j = 0; j < blockSize; j++) {
                                         bl.push(dv.getUint8(blockSize*curBlock+j));
                                     }
-                                    self.uploadData(file.name,bl,curBlock,ud);
+                                    self.uploadData(self.fileName,bl,curBlock,ud);
                                     curBlock++;
                                 }else if(curBlock == blockNum) {
                                     //最后一块
@@ -186,12 +191,12 @@
                                         for (let j = 0; j < lastBlockSize; j++) {
                                             bl.push(dv.getUint8(blockNum * blockSize + j));
                                         }
-                                        self.uploadData(file.name,bl,curBlock,function(suc){
+                                        self.uploadData(self.fileName,bl,curBlock,function(suc){
                                             if(suc) {
                                                 self.addResourceDialog = false;
-                                                self.$Message.success("Success upload "+file.name);
+                                                self.$Message.success("Success upload "+this.fileName);
                                             } else {
-                                                self.$Message.success("Fail upload "+file.name);
+                                                self.$Message.success("Fail upload "+this.fileName);
                                             }
                                         });
                                     }
@@ -201,7 +206,8 @@
                                         self.costTime = '',
                                         self.uploadSpeed = '',
                                         self.progressVal = 0,
-                                         self.onUpload = false;
+                                        self.onUpload = false;
+                                        this.fileName = '';
                                         self.refresh();
                                 }
                             }

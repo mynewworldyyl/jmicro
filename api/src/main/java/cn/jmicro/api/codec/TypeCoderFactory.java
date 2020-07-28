@@ -60,10 +60,10 @@ public class TypeCoderFactory {
 	@SuppressWarnings("rawtypes")
 	private Map<Class, TypeCoder> clazz2Coder = new HashMap<>();
 	
-	@SuppressWarnings("rawtypes")
+	//@SuppressWarnings("rawtypes")
 	private Map<Short, Class<?>> code2class = new HashMap<>();
 	
-	@SuppressWarnings("rawtypes")
+	//@SuppressWarnings("rawtypes")
 	private Map<Class<?>,Short> class2code = new HashMap<>();
 
 	private ITypeCodeProducer tcp;

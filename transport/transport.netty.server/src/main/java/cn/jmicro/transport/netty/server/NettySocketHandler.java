@@ -105,8 +105,7 @@ public class NettySocketHandler extends ChannelInboundHandlerAdapter {
     	if(openDebug) {
     		logger.debug("handlerAdded: {}",ctx);
     	}
-    	NettyServerSession session = new NettyServerSession(ctx,readBufferSize,heardbeatInterval,
-    			Constants.TYPE_SOCKET);
+    	NettyServerSession session = new NettyServerSession(ctx,readBufferSize,heardbeatInterval,Constants.TYPE_SOCKET);
     	session.setReceiver(receiver);
     	session.setDumpDownStream(this.dumpDownStream);
     	session.setDumpUpStream(this.dumpUpStream);

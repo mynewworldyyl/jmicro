@@ -22,6 +22,7 @@ import cn.jmicro.api.choreography.ChoyConstants;
 import cn.jmicro.api.choreography.Deployment;
 import cn.jmicro.api.choreography.ProcessInfo;
 import cn.jmicro.api.config.Config;
+import cn.jmicro.api.idgenerator.ComponentIdServer;
 import cn.jmicro.api.masterelection.IMasterChangeListener;
 import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.monitor.SF;
@@ -38,6 +39,7 @@ import cn.jmicro.choreography.api.IInstanceListener;
 import cn.jmicro.choreography.assign.Assign;
 import cn.jmicro.choreography.assign.AssignState;
 import cn.jmicro.choreography.instance.InstanceManager;
+import cn.jmicro.common.CommonException;
 import cn.jmicro.common.Constants;
 import cn.jmicro.common.util.JsonUtils;
 import cn.jmicro.common.util.StringUtils;
@@ -75,6 +77,12 @@ public class DeploymentAssignment {
 	
 	@Inject
 	private ProcessInfo processInfo;
+	
+	@Inject
+	private Config cfg;
+	
+	@Inject
+	private ComponentIdServer idServer;
 	
 	//@Inject
 	//private ComponentIdServer idServer;
@@ -151,17 +159,99 @@ public class DeploymentAssignment {
 	};
 	
 	public void ready() {
+		
+		if(StringUtils.isNotEmpty(cfg.getString("apiGatewayExportHttpIP", null))) {
+			createInitDeployment();
+		}
+		
 		if(!op.exist(ChoyConstants.ID_PATH)) {
 			op.createNodeOrSetData(ChoyConstants.ID_PATH, "0", IDataOperator.PERSISTENT);
 		}
+		
 		if(isMasterSlaveModel) {
 			of.masterSlaveListen(mcl);
 		} else {
 			ready0();
 		}
+		
 	}
 	
-	 private void ready0() {
+	 private void createInitDeployment() {
+		 Set<String> children = op.getChildren(ChoyConstants.DEP_DIR, false);
+		
+		 Deployment mngDep = null;
+		 Deployment apiGatewayDep = null;
+		 
+		 for(String c : children) {
+			String data = op.getData(ChoyConstants.DEP_DIR+"/" + c);
+			if(StringUtils.isNotEmpty(data)) {
+				Deployment dep = JsonUtils.getIns().fromJson(data, Deployment.class);
+				if(dep.getJarFile().startsWith("jmicro-main.mng-") && dep.isEnable()) {
+					mngDep = dep;
+				}else if(dep.getJarFile().startsWith("jmicro-main.apigateway-")  && dep.isEnable()) {
+					apiGatewayDep = dep;
+				}
+			}
+		 }
+		 
+		 if(mngDep == null) {
+			 mngDep = new Deployment();
+			 String id = idServer.getStringId(Deployment.class);
+			 mngDep.setId(id);
+			 mngDep.setArgs("-Xmx128m -Xms32m -DenableMasterSlaveModel=true");
+			 mngDep.setAssignStrategy("defautAssignStrategy");
+			 mngDep.setEnable(true);
+			 mngDep.setForceRestart(false);
+			 mngDep.setInstanceNum(1);
+			 
+			 if(StringUtils.isNotEmpty(cfg.getString("mngJarFile", null))) {
+				 mngDep.setJarFile(cfg.getString("mngJarFile", null));
+			 } else {
+				 mngDep.setJarFile("jmicro-main.mng-0.0.1-SNAPSHOT-jar-with-dependencies.jar");
+			 }
+			 
+			 mngDep.setStrategyArgs("-DsortPriority=instanceNum");
+			 String jo = JsonUtils.getIns().toJson(mngDep);
+			 logger.info("Create origin mng Deployment: " + jo);
+			 op.createNodeOrSetData(ChoyConstants.DEP_DIR+"/"+id, jo , false);
+		 }
+		 
+		 if(apiGatewayDep == null) {
+			 apiGatewayDep = new Deployment();
+			 String id = idServer.getStringId(Deployment.class);
+			 apiGatewayDep.setId(id);
+			 
+			 String exportHttpIp = cfg.getString("apiGatewayExportHttpIP", null);
+			 if(StringUtils.isEmpty(exportHttpIp)) {
+				 throw new CommonException("apiGatewayExportHttpIP" + " cannot be null when create inti api gateway service!");
+			 }
+			 
+			 String mngCxtRoot = cfg.getString("/StaticResourceHttpHandler/staticResourceRoot_mng", null);
+			 if(StringUtils.isEmpty(mngCxtRoot)) {
+				 throw new CommonException("/StaticResourceHttpHandler/staticResourceRoot_mng cannot be null when create inti api gateway service!");
+			 }
+			 
+			 apiGatewayDep.setArgs("-Xmx128m -Xms32m -DinstanceName=apigateway -DlistenHttpIP=0.0.0.0 -DexportHttpIP="+exportHttpIp+" -DnettyHttpPort=9090 -D/StaticResourceHttpHandler/staticResourceRoot_mng="+mngCxtRoot);
+			 apiGatewayDep.setAssignStrategy("defautAssignStrategy");
+			 apiGatewayDep.setEnable(true);
+			 apiGatewayDep.setForceRestart(false);
+			 apiGatewayDep.setInstanceNum(1);
+			 
+			 if(StringUtils.isNotEmpty(cfg.getString("apiGatewayJarFile", null))) {
+				 apiGatewayDep.setJarFile(cfg.getString("apiGatewayJarFile", null));
+			 } else {
+				 apiGatewayDep.setJarFile("jmicro-main.apigateway-0.0.1-SNAPSHOT-jar-with-dependencies.jar");
+			 }
+			 
+			 apiGatewayDep.setStrategyArgs("-DsortPriority=instanceNum");
+			 String jo = JsonUtils.getIns().toJson(apiGatewayDep);
+			 logger.info("Create origin api gateway Deployment: " + jo);
+			 op.createNodeOrSetData(ChoyConstants.DEP_DIR+"/"+id, jo , false);
+		 }
+		
+	}
+
+	private void ready0() {
 		 String conRootPath = ChoyConstants.ROOT_CONTROLLER + "/" + this.processInfo.getId();
 		 if(op.exist(conRootPath)) {
 			 op.deleteNode(conRootPath);

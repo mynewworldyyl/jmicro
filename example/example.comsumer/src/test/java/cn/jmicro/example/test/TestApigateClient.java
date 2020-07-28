@@ -16,10 +16,10 @@
  */
 package cn.jmicro.example.test;
 
-import org.junit.Before;
 import org.junit.Test;
 
 import cn.jmicro.api.JMicro;
+import cn.jmicro.api.test.Person;
 import cn.jmicro.common.Constants;
 import cn.jmicro.example.api.ITestRpcService;
 import cn.jmicro.example.api.rpc.ISimpleRpc;
@@ -28,23 +28,25 @@ import cn.jmicro.gateway.client.ApiGatewayConfig;
 
 public class TestApigateClient {
 
-	private ApiGatewayClient client = new ApiGatewayClient(new ApiGatewayConfig(Constants.TYPE_SOCKET));
+	//private ApiGatewayClient socketClient = new ApiGatewayClient(new ApiGatewayConfig(Constants.TYPE_SOCKET,"192.168.56.1",9091));
 	
-	@Before
-	public void setUp() {
-		
-		client.getConfig().setDebug(true);
-		
-		client.getConfig().setClientType(Constants.TYPE_SOCKET);
-		client.getConfig().setPort(62688);
-		
-		/*client.getConfig().setPort(9090);
-		client.getConfig().setClientType(Constants.TYPE_HTTP);*/
+	//private ApiGatewayClient socketClient = new ApiGatewayClient(new ApiGatewayConfig(Constants.TYPE_HTTP,"192.168.56.1",9090));
+	private ApiGatewayClient socketClient = new ApiGatewayClient(new ApiGatewayConfig(Constants.TYPE_HTTP,"124.70.152.7",80));
+	
+	//private ApiGatewayClient socketClient = new ApiGatewayClient(new ApiGatewayConfig(Constants.TYPE_SOCKET,"124.70.152.7",80));
+	
+	//private ApiGatewayClient wsClient = new ApiGatewayClient(new ApiGatewayConfig(Constants.TYPE_WEBSOCKET,"192.168.56.1",9090));
+	
+	@Test
+	public void testHiPerson() {
+		ISimpleRpc srv = socketClient.getService(ISimpleRpc.class,
+				"simpleRpc", "0.0.1");
+		System.out.println(srv.hi(new Person()));
 	}
 	
 	@Test
 	public void testGetService() {
-		ISimpleRpc srv = client.getService(ISimpleRpc.class,
+		ISimpleRpc srv = socketClient.getService(ISimpleRpc.class,
 				"simpleRpc", "0.0.1");
 		System.out.println(srv.hello("Hello api gateway"));
 	}
@@ -52,16 +54,16 @@ public class TestApigateClient {
 	@Test
 	public void testCallService() {
 		String[] args = new String[] {"hello"};
-		String result =(String) client.callService(ISimpleRpc.class.getName(),
-		"simpleRpc", "0.0.1","hello",args);
+		String result = socketClient.callService(ISimpleRpc.class.getName(),
+		"simpleRpc", "0.0.1", "hello", String.class, args);
 		System.out.println(result);
 	}
 	
 	@Test
 	public void testCallTestRpcService() {
 		String[] args = new String[] {"hello"};
-		String result =(String) client.callService(ITestRpcService.class.getName(),
-		"testrpc", "0.0.1","subscrite",args, (msg,f)->{
+		String result = (String) socketClient.callService(ITestRpcService.class.getName(),
+		"testrpc", "0.0.1","subscrite",args,String.class, (msg,f)->{
 			System.out.println("Got server msg:"+msg);
 		});
 		System.out.println(result);

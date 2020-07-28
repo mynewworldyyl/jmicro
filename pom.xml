@@ -406,11 +406,10 @@
             <artifactId>junit</artifactId>
             <scope>test</scope>
         </dependency>
-       <dependency>
+         <dependency>
 			<groupId>cn.jmicro</groupId>
 			<artifactId>codegenerator</artifactId>
-			<scope>provided</scope>
-		</dependency>
+		</dependency>  
     </dependencies>
 
     <profiles> 
