@@ -39,6 +39,7 @@ import cn.jmicro.api.raft.IChildrenListener;
 import cn.jmicro.api.raft.IDataOperator;
 import cn.jmicro.api.registry.IRegistry;
 import cn.jmicro.api.registry.ServiceItem;
+import cn.jmicro.api.timer.TimerTicker;
 import cn.jmicro.codegenerator.AsyncClientProxy;
 import cn.jmicro.common.Constants;
 
@@ -53,6 +54,8 @@ public class RpcClassLoader extends ClassLoader {
     private Map<String,byte[]> clazzesData = new HashMap<>();
     
     private Map<String,Set<String>> classesName2Instance = new HashMap<>();
+    
+    private Set<String> ownerClasses = new HashSet<>();
     
     @Inject
     private IDataOperator op;
@@ -106,7 +109,23 @@ public class RpcClassLoader extends ClassLoader {
     
     public void ready() {
     	op.addChildrenListener(CLASS_IDR,classNodeListener);
+    	TimerTicker.doInBaseTicker(30, "RpcClassLoader-registRemoteClassChecker", null, (key,att)->{
+    		doCheck();
+    	});
 	}
+    
+    private void doCheck() {
+    	if(ownerClasses.isEmpty()) {
+    		return;
+    	}
+    	
+    	for(String insPath : ownerClasses) {
+    		if(!op.exist(insPath)) {
+        		op.createNodeOrSetData(insPath, Config.getExportSocketHost(), true);
+        	}
+    	}
+    	
+    }
     
     public void addClassInstance(String className) {
     	if(className.startsWith("cn.jmicro.api")) {
@@ -122,6 +141,7 @@ public class RpcClassLoader extends ClassLoader {
     	if(!op.exist(insPath)) {
     		op.createNodeOrSetData(insPath, Config.getExportSocketHost(), true);
     	}
+    	ownerClasses.add(insPath);
     }  
 
 	@Override
@@ -180,7 +200,15 @@ public class RpcClassLoader extends ClassLoader {
 					 pkgName = pkgName.substring(0, pkgName.indexOf(AsyncClientProxy.PKG_SUBFIX));
 					 String simpleClassName = "I"+cn.substring(cn.lastIndexOf(".")+1,cn.length());
 					 String iname = pkgName + simpleClassName;
+					 
 					 insNames = this.classesName2Instance.get(iname);
+					 
+					 if(insNames == null) {
+						 simpleClassName = cn.substring(cn.lastIndexOf(".")+1,cn.length());
+						 iname = pkgName + simpleClassName;
+						 insNames = this.classesName2Instance.get(iname);
+					 }
+					 
 				 }else if(className.endsWith(AsyncClientProxy.INT_SUBFIX)) {
 					 String cn = className.substring(0, className.indexOf(AsyncClientProxy.INT_SUBFIX));
 					 String pkgName = cn.substring(0,cn.lastIndexOf("."));
@@ -191,7 +219,7 @@ public class RpcClassLoader extends ClassLoader {
 				 }
 				 
 				 if(insNames  == null || insNames.isEmpty()) {
-					 logger.warn("class owner servernot found: {} ",className);
+					 logger.warn("class owner server not found: {} ",className);
 					 return null;
 				 }
 				 

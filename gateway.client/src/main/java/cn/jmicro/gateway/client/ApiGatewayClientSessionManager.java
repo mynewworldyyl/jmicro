@@ -56,7 +56,7 @@ public class ApiGatewayClientSessionManager implements IClientSessionManager {
 	static final Logger logger = LoggerFactory.getLogger(ApiGatewayClientSessionManager.class);
 
 	private static final AttributeKey<IClientSession> sessionKey = 
-			AttributeKey.newInstance(Constants.IO_SESSION_KEY+System.currentTimeMillis());
+			AttributeKey.newInstance(Constants.IO_SESSION_KEY + System.currentTimeMillis());
 	
 	AttributeKey<Boolean> monitorEnableKey = AttributeKey.newInstance(JMicroContext.IS_MONITORENABLE);
 	

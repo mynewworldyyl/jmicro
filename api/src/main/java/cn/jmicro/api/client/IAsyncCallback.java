@@ -25,5 +25,5 @@ import cn.jmicro.api.async.AsyncFailResult;
  */
 public interface IAsyncCallback<R> {
 
-	void onMessage(R msg, AsyncFailResult fail);
+	void onResult(R msg, AsyncFailResult fail);
 }

@@ -89,6 +89,10 @@ class RemoteProxyServiceFieldListener implements IServiceListener{
 	@Override
 	public void serviceChanged(int type, ServiceItem item) {
 		
+		/*if("cn.jmicro.api.choreography.IAgentProcessService".equals(item.getKey().getServiceName())) {
+			logger.debug("test debug");
+		}*/
+		
 		if(!item.getKey().getServiceName().equals(srvType.getName())) {
 			return;
 		}

@@ -62,7 +62,7 @@ import cn.jmicro.common.Constants;
  * @author Yulei Ye
  * @date 2018年10月9日-下午5:51:20
  */
-@Component(lazy=false,active=true,value="serverReceiver",side=Constants.SIDE_PROVIDER,level=100000)
+@Component(lazy=false,active=true,value="serverReceiver",side=Constants.SIDE_PROVIDER,level=1000)
 public class ServerMessageReceiver implements IMessageReceiver{
 
 	static final Logger logger = LoggerFactory.getLogger(ServerMessageReceiver.class);

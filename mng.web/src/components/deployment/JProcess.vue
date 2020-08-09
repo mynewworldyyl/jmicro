@@ -28,7 +28,7 @@
         name: 'JProcess',
         data () {
             return {
-                showAll:false,
+                showAll:true,
                 processList:[],
                 adminPer : false,
             }

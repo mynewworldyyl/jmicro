@@ -113,7 +113,7 @@ public class AsyncMessageHandler implements IMessageHandler{
 			logger.error("Service [ "+key+"] not found!");
 			return;
 		}
-		callback.onMessage(resp.getResult(),null);
+		callback.onResult(resp.getResult(),null);
 		
 		/*try {
 			Class<?>[] pts = ServiceLoader.getMethodParamsType((Object[])resp.getResult());

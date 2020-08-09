@@ -30,7 +30,7 @@ public class PromiseImpl<R> implements IPromise<R>{
 		
 		this.callback = callback;
 		if(done) {
-			callback.onMessage(result, fail);
+			callback.onResult(result, fail);
 		}
 	}
 	
@@ -46,7 +46,7 @@ public class PromiseImpl<R> implements IPromise<R>{
 		}
 		done = true;
 		if(callback != null) {
-			callback.onMessage(result, fail);
+			callback.onResult(result, fail);
 		} 
 	}
 

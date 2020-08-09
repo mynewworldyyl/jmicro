@@ -24,7 +24,7 @@
         name: 'JConfigList',
 
         mounted(){
-            let self = this;
+             let self = this;
              this.__getChildren(null,window.jm.mng.CONFIG_ROOT,function(data){
                  self.configs = data;
              });

@@ -437,6 +437,21 @@ public class RegistryImpl implements IRegistry {
 		}	
 	}
 	
+	@Override
+	public ServiceItem getOwnItem(int code) {
+		if(localRegistedItems.isEmpty()) {
+			return null;
+		}
+		
+		for(ServiceItem si : localRegistedItems.values()) {
+			if(si.getCode() == code) {
+				return si;
+			}
+		}
+		
+		return null;
+	}
+	
 	private ServiceItem getServiceByCode0(int code) {
 		for(ServiceItem si : this.srvManager.getAllItems()){
 			if(this.openDebug) {

@@ -7,11 +7,26 @@ import java.util.List;
 
 import org.junit.Test;
 
+import cn.jmicro.api.Resp;
 import cn.jmicro.api.choreography.ChoyConstants;
+import cn.jmicro.api.choreography.IAgentProcessService;
+import cn.jmicro.common.util.JsonUtils;
 import cn.jmicro.test.JMicroBaseTestCase;
 
-public class TestServiceAgent/* extends JMicroBaseTestCase*/{
+public class TestServiceAgent extends JMicroBaseTestCase {
 
+	@Test
+	public void testIAgentProcessService() throws InterruptedException {
+		
+		IAgentProcessService ms = of.get(IAgentProcessService.class);
+		
+		Boolean resp = ms.startLogMonitor("450", "output.log", 1);
+		
+		System.out.println(resp);
+		
+		this.waitForReady(Long.MAX_VALUE);
+	}
+	
 	@Test
 	public void testStartLocalProcess() {
 		

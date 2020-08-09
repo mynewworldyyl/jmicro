@@ -45,7 +45,7 @@ import cn.jmicro.common.util.TimeUtils;
  * @author Yulei Ye
  * @date 2018年10月10日-下午12:56:02
  */
-@Component(active=true,side=Constants.SIDE_COMSUMER)
+@Component(active=true,side=Constants.SIDE_COMSUMER,level=11)
 public class ClientMessageReceiver implements IMessageReceiver{
 
 	static final Logger logger = LoggerFactory.getLogger(ClientMessageReceiver.class);

@@ -2,7 +2,6 @@ package cn.jmicro.api.choreography;
 
 import cn.jmicro.api.annotation.IDStrategy;
 import cn.jmicro.api.annotation.SO;
-import cn.jmicro.common.util.StringUtils;
 
 @SO
 @IDStrategy(1)

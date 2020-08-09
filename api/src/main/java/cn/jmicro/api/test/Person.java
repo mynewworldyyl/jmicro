@@ -1,11 +1,9 @@
 package cn.jmicro.api.test;
 
-import java.io.Serializable;
-
 import cn.jmicro.api.annotation.SO;
 
 @SO
-public final class Person implements Serializable{
+public final class Person {
 	
 	private String username ="Yeu";
 	private int id = 222;

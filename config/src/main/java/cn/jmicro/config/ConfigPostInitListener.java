@@ -41,6 +41,7 @@ import cn.jmicro.api.objectfactory.ProxyObject;
 import cn.jmicro.common.CommonException;
 import cn.jmicro.common.Utils;
 import cn.jmicro.common.util.StringUtils;
+
 /**
  * 
  * @author Yulei Ye
@@ -70,7 +71,7 @@ public class ConfigPostInitListener extends PostInitAdapter {
 		 List<Field> fields = new ArrayList<>();
 		 Utils.getIns().getFields(fields, cls);
 		 
-		if(cls.getName().equals("cn.jmicro.transport.netty.server.httpandws.NettyHttpServer")) {
+		 if(cls.getName().equals("cn.jmicro.api.service.ServiceManager")) {
 			 logger.debug("preInit");
 		 }
 
@@ -118,27 +119,33 @@ public class ConfigPostInitListener extends PostInitAdapter {
 				}
 				
 			} else if(Collection.class.isAssignableFrom(f.getType())) {
-				if(!prefix.endsWith("*")) {
+				/*if(!prefix.endsWith("*")) {
 					throw new CommonException("Class ["+cls.getName()+",Field:"+f.getName()+"] invalid map path ["+cfgAnno.value()+"] should end with '*'") ;
-				}
+				}*/
 				//符合条件的全部值都要监听，只要有增加进来，都加到Map里面去
 				
 				//优先类全名组成路径
-				Collection coll = new ArrayList();
+				Collection<String> coll = new ArrayList<>();
 				path = "/" + cls.getName() + prefix;
-				getCollectionConfig(cfg,path,coll);
-				watch(f,obj,path,cfg);
+				boolean succ = getCollectionConfig(cfg,path,coll);
+				if(succ) {
+					watch(f,obj,path,cfg);
+				}
 				
 				path = "/" + cls.getSimpleName() + prefix;
-				getCollectionConfig(cfg,path,coll);
-				watch(f,obj,path,cfg);
+				succ = getCollectionConfig(cfg,path,coll);
+				if(succ) {
+					watch(f,obj,path,cfg);
+				}
 				
 				path = prefix;
-				getCollectionConfig(cfg,path,coll);
-				watch(f,obj,path,cfg);
+				succ = getCollectionConfig(cfg,path,coll);
+				if(succ) {
+					watch(f,obj,path,cfg);
+				}
 				
 				if(!coll.isEmpty()) {
-					 setCollValue(f,obj,coll);
+					 setCollValue(f,obj,coll,cfgAnno.toValType());
 				}
 				
 			} else {
@@ -186,7 +193,8 @@ public class ConfigPostInitListener extends PostInitAdapter {
 		}
 	}
 	
-	private void setCollValue(Field f, Object obj, Collection<String> newColl) {
+	@SuppressWarnings("rawtypes")
+	private void setCollValue(Field f, Object obj, Collection<String> newColl, String vt) {
 		Collection oldColl = (Collection)this.getFieldValue(f, obj);
 		if(oldColl == null) {
 			if(Set.class.isAssignableFrom(f.getType())) {
@@ -205,9 +213,19 @@ public class ConfigPostInitListener extends PostInitAdapter {
 		Class<?> valType = (Class<?>)genericType.getActualTypeArguments()[0];
 		
 		for(String strv : newColl) {
-			Object v = Utils.getIns().getValue(valType, strv, null);
-			if(v != null) {
-				oldColl.add(v);
+			if(Cfg.VT_SPLIT.equals(vt)) {
+				String[] vts = strv.split(",");
+				for(String v : vts) {
+					Object vv = Utils.getIns().getValue(valType, v, null);
+					if(vv != null) {
+						oldColl.add(vv);
+					}
+				}
+			}else if(Cfg.VT_SPLIT.equals(vt)) {
+				Object v = Utils.getIns().getValue(valType, strv, null);
+				if(v != null) {
+					oldColl.add(v);
+				}
 			}
 		}
 		
@@ -278,11 +296,13 @@ public class ConfigPostInitListener extends PostInitAdapter {
 		}
 	}
 	
-	private void getCollectionConfig(Config cfg,String key,Collection l) {
+	private boolean getCollectionConfig(Config cfg,String key,Collection l) {
 		Map<String,String> result = cfg.getParamByPattern(key);
 		if(result != null && !result.isEmpty()) {
 			l.addAll(result.values());
+			return true;
 		}
+		return false;
 	}
 	
 	private String getValueFromCommand(String prefix, Field f) {

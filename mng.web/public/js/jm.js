@@ -121,16 +121,15 @@ jm.mng = {
                     reso(0);
                 });
             }
-
+            let self = this;
             let req =  this.__ccreq();
             req.method = 'subscribe';
-            req.args = [topic, ctx | {}];
-            if(!this.listeners[topic]) {
-                this.listeners[topic] = [];
+            req.args = [topic, ctx || {}];
+            if(!self.listeners[topic]) {
+                self.listeners[topic] = [];
             }
             self.listeners[topic].push(callback);
 
-            let self = this;
             return new Promise(function(reso,reje){
                 jm.mng.callRpc(req,jm.rpc.Constants.PROTOCOL_JSON, jm.rpc.Constants.PROTOCOL_JSON)
                     .then((id)=>{
@@ -755,6 +754,75 @@ jm.mng = {
         },
 
         sn:'cn.jmicro.api.gateway.IHostNamedService',
+        ns : 'mng',
+        v:'0.0.1',
+    },
+
+    agentLogSrv : {
+
+        getAllLogFileEntry : function() {
+            return jm.mng.callRpcWithParams(this.sn, this.ns, this.v, 'getAllLogFileEntry', []);
+        },
+
+        startLogMonitor : function(processId,logFilePath,agentId,offsetFromLastLine) {
+            return jm.mng.callRpcWithParams(this.sn, this.ns, this.v, 'startLogMonitor', [processId,logFilePath,
+                agentId, offsetFromLastLine]);
+        },
+
+        stopLogMonitor : function(processId,logFilePath,agentId) {
+            return jm.mng.callRpcWithParams(this.sn, this.ns, this.v, 'stopLogMonitor', [processId,logFilePath,
+                agentId]);
+        },
+
+        subscribeLog: function (processId,logFilePath,agentId,offsetFromLastLine, callback){
+            let self = this;
+            let topic = "/" + processId + '/logs/'　+ logFilePath;
+            //先订阅主题
+            return new Promise(function(reso,reje){
+                jm.mng.ps.subscribe(topic,{},callback)
+                    .then(id =>{
+                        if(id < 0) {
+                            reje("Fail to subscribe topic:"+topic+', please check server log for detail info');
+                        } else {
+                            self.startLogMonitor(processId,logFilePath,agentId,offsetFromLastLine)
+                                .then(resp =>{
+                                    if(resp && resp.data) {
+                                        reso(true);
+                                    } else {
+                                        //jm.mng.ps.unsubscribe(topic,callback)
+                                        reje(resp.msg);
+                                    }
+                                }).catch(err => {
+                                    reje(err);
+                            });
+                        }
+                    }).catch(err => {
+                        reje(err);
+                });
+            });
+        },
+
+        unsubscribeLog : function (logFilePath, callback){
+            let self =this;
+            return new Promise((reso,reje)=>{
+                let topic = logFilePath;
+                jm.mng.ps.unsubscribe(topic,callback)
+                    .then(rst => {
+                        if(!!rst || rst == 0) {
+                            self.stopLogMonitor(logFilePath)
+                                .then(r=>{
+                                    reso(r);
+                                }).catch(err =>{
+                                reje(err);
+                            });
+                        }
+                    }).catch(err => {
+                        reje(err);
+                });
+            });
+        },
+
+        sn:'cn.jmicro.mng.api.IAgentLogService',
         ns : 'mng',
         v:'0.0.1',
     },

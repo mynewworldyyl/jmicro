@@ -69,6 +69,11 @@
 			<artifactId>choreography.api</artifactId>
 		</dependency>
 		
+		<dependency>
+			<groupId>cn.jmicro</groupId>
+			<artifactId>mng</artifactId>
+		</dependency>
+		
 	</dependencies>
 
 	<build>

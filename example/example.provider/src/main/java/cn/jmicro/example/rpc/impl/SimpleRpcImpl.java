@@ -62,7 +62,7 @@ public class SimpleRpcImpl implements ISimpleRpc {
 			//1秒钟内异常超50%，熔断服务，熔断后每80毫秒做一次测试
 			breakingRule = @SBreakingRule(enable=true,percent=50,checkInterval=5000),
 			logLevel=MC.LOG_DEBUG,
-			testingArgs="[\"test args\"]",//测试参数
+			testingArgs="[{\"username\":\"Zhangsan\",\"id\":\"1\"}]",//测试参数
 			monitorEnable=1,
 			timeWindow=5*60000,//统计时间窗口5分钟
 			slotInterval=100,

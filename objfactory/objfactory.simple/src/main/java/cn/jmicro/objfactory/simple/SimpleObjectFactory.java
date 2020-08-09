@@ -419,7 +419,7 @@ public class SimpleObjectFactory implements IObjectFactory {
 			clses.removeAll(configLoaderCls);
 			
 			Set<Object> systemObjs = new HashSet<>();
-			createComponentOrService(dataOperator,systemObjs,clses);
+			createComponentOrService(dataOperator,systemObjs,clses,cfg);
 			
 			//IDataOperator注册其内部实例到ObjectFactory
 			dataOperator.objectFactoryStarted(this);
@@ -475,7 +475,7 @@ public class SimpleObjectFactory implements IObjectFactory {
 				//组件开始初始化,在此注入Cfg配置，enable字段也在此注入
 				preInitPostListener0(lobjs,cfg,systemObjs);
 				
-				for(Iterator<Object> ite = lobjs.iterator() ;ite.hasNext();){
+				for( Iterator<Object> ite = lobjs.iterator(); ite.hasNext(); ){
 					Object o = ite.next();
 					if(!this.isEnable(o)) {
 						//删除enable=false的组合
@@ -632,6 +632,7 @@ public class SimpleObjectFactory implements IObjectFactory {
 			}
 			
 			haveInits.add(o);
+			//logger.debug(o.getClass().getName());
 			doInit(o);
 		}
 	}
@@ -677,27 +678,28 @@ public class SimpleObjectFactory implements IObjectFactory {
 	}
 
 	private void preInitPostListener0(List<Object> lobjs, Config cfg,Set<Object> systemObjs) {
-		Set<Object> haveInits = new HashSet<>();
+		//Set<Object> haveInits = new HashSet<>();
 		
 		for(int i =0; i < lobjs.size(); i++){
-			Object obj = lobjs.get(i);
-			//System.out.println(obj.getClass().getName());
+			 Object obj = lobjs.get(i);
 			
 			 if(obj instanceof ProxyObject){
 	    		continue;
 	    	 }
 			 
-			if(systemObjs.contains(obj) ||  haveInits.contains(obj)) {
+			if(systemObjs.contains(obj)) {
 				continue;
 			}
-			haveInits.add(obj);
+			
+			//haveInits.add(obj);
 			//只要在初始化前注入配置信息
 			notifyPreInitPostListener(obj,cfg);
 		}
 		
 	}
 
-	private void createComponentOrService(IDataOperator dop, Set<Object> systemObjs, Set<Class<?>> clses) {
+	private void createComponentOrService(IDataOperator dop, Set<Object> systemObjs, Set<Class<?>> clses,
+			Config cfg) {
 		
 		//是否只启动服务端实例，命令行或环境变量中做配置
 		boolean serverOnly = Config.isServerOnly();
@@ -745,11 +747,13 @@ public class SimpleObjectFactory implements IObjectFactory {
 		}
 		
 		srvManager.setDataOperator(dop);
+		notifyPreInitPostListener(srvManager,cfg);
 		srvManager.init();
 		
 		registry.setDataOperator(dop);
 		registry.setSrvManager(srvManager);
 		registry.init();
+		notifyPreInitPostListener(registry,cfg);
 		
 	}
 
@@ -1504,7 +1508,7 @@ public class SimpleObjectFactory implements IObjectFactory {
 		
 		if(processInfoData.exists()) {
 			json = SystemUtils.getFileString(processInfoData);
-		}else {
+		} else {
 			try {
 				processInfoData.createNewFile();
 			} catch (IOException e) {
@@ -1572,7 +1576,7 @@ public class SimpleObjectFactory implements IObjectFactory {
 		
 		logger.info("Update ProcessInfo:" + js);
 		
-		initProcessInfoPath = cfg.getString(Constants.INSTANCE_DATA_DIR,null) + File.separatorChar + "processInfo.json";
+		//initProcessInfoPath = cfg.getString(Constants.INSTANCE_DATA_DIR,null) + File.separatorChar + "processInfo.json";
 		SystemUtils.setFileString(initProcessInfoPath, js);
 		
 		op.addNodeListener(p, (int type, String path,String data)->{

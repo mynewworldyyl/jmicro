@@ -30,6 +30,10 @@ import java.lang.annotation.Target;
 @Retention(RUNTIME)
 public @interface Cfg {
 
+	public static final String VT_ORIGIN = "origin";
+	
+	public static final String VT_SPLIT = "split";
+	
 	/**
 	 * value值以“/”开始，以非“/”结束
 	 * 对于Map，可以以*号结尾，表示匹配的条目全部放Map中，Key即配置的Key值，字符串类型，通过Map的泛型解析Value的类型
@@ -57,4 +61,14 @@ public @interface Cfg {
 	 * @return
 	 */
 	public boolean defGlobal() default false;
+	
+	/**
+	 * 将配置值转为结果值方式
+	 * origin: 默认，不做任何处理
+	 * split: 由英文逗号隔开
+	 * @return
+	 */
+	public String toValType() default "origin";
+	
+	
 }

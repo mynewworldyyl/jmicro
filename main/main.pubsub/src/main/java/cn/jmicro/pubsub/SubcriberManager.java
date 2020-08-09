@@ -326,7 +326,6 @@ class SubcriberManager {
 	    	newTs.addAll(Arrays.asList(curTs));
 	    }
 	    
-	    //oldTs剩下的主题就是要删除的主题
 	    oldTs.removeAll(newTs);
 
 	    for(String t : oldTs) {

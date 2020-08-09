@@ -35,8 +35,6 @@ import org.slf4j.LoggerFactory;
 import cn.jmicro.api.ClassScannerUtils;
 import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.raft.IDataOperator;
-import cn.jmicro.api.service.DefaultServiceInstanceNameProvider;
-import cn.jmicro.api.service.IServiceInstanceNameGenerator;
 import cn.jmicro.common.CommonException;
 import cn.jmicro.common.Constants;
 import cn.jmicro.common.Utils;
@@ -95,7 +93,7 @@ public class Config implements IConfigChangeListener{
 	
 	private static String[] commandArgs = null;
 	
-	private static String LocalDataDir = "";
+	//private static String LocalDataDir = "";
 	
 	private static String  exportHttpIP = null;
 	private static String  exportSocketIP = null;
@@ -536,7 +534,7 @@ public class Config implements IConfigChangeListener{
 	//@JMethod("init")
 	public void init0(){
 		
-		LocalDataDir = this.getValue(Constants.LOCAL_DATA_DIR,true);
+		//LocalDataDir = this.getValue(Constants.LOCAL_DATA_DIR,true);
 		
 		List<String> ips = Utils.getIns().getLocalIPList();
         if(ips.isEmpty()){

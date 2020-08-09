@@ -219,8 +219,7 @@ export default {
                 idKey = idKey.substring(8);
             }
             if(self.cache.started) {
-                window.jm.mng.statis.unsubscribeData(idKey,2,this.callback
-                ).then(rst =>{
+                window.jm.mng.statis.unsubscribeData(idKey,2,this.callback).then(rst =>{
                     self.$Message.success(rst);
                     self.cache.started = false;
                     self.btnTitle = 'Start';
@@ -228,7 +227,7 @@ export default {
                     self.$Message.error(err);
                     self.cache.started = true;
                 });
-            }else {
+            } else {
                 window.jm.mng.statis.subscribeData(idKey,2,this.callback)
                     .then(rst =>{
                         self.$Message.success(rst);
@@ -239,7 +238,6 @@ export default {
                     self.cache.started = false;
                 });
             }
-
         }
 
     }

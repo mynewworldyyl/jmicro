@@ -124,11 +124,13 @@ public class ServiceLoader{
 			return;
 		}
 		
-		this.of.masterSlaveListen((type,isMaster)->{
+		/*this.of.masterSlaveListen((type,isMaster)->{
 			if(isMaster && (IMasterChangeListener.MASTER_ONLINE == type || IMasterChangeListener.MASTER_NOTSUPPORT == type)) {
 				doExportService();
 			}
-		});
+		});*/
+		
+		doExportService();
 	}
 	
 	private void doExportService() {
@@ -188,7 +190,6 @@ public class ServiceLoader{
 			sr.setHost(host);
 			sr.setPort(port);
 			sr.setProtocol(sano.transport());
-			
 			
 		}
 		

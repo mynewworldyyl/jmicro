@@ -87,13 +87,14 @@ public class NettyHttpServer implements IServer{
 			return;
 		}
 
-		this.of.masterSlaveListen((type,isMaster)->{
+		/*this.of.masterSlaveListen((type,isMaster)->{
 			if(isMaster && (IMasterChangeListener.MASTER_ONLINE == type || IMasterChangeListener.MASTER_NOTSUPPORT == type)) {
 				//主从模式
 				start();
 			}
-		});
+		});*/
 	
+		start();
 	}
 	
 	@Override

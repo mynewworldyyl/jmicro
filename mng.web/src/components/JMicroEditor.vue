@@ -28,6 +28,7 @@
                     <JShell v-else-if="item.group == 'shell'" :item="item"></JShell>
                     <JTesting v-else-if="item.group == 'testing'" :item="item"></JTesting>
                     <JAbout v-else-if="item.group == 'about'" :item="item"></JAbout>
+                    <JLog v-else-if="item.group == 'fileLog'" :item="item"></JLog>
 
                     <JRepository v-else-if="item.group == 'repository'" :item="item"></JRepository>
                     <JHost v-else-if="item.group == 'host'" :item="item"></JHost>
@@ -113,6 +114,7 @@
             JTesting : () => import('./shell/JTesting.vue'),
             JAgent : () => import('./deployment/JAgent.vue'),
             JProcess : () => import('./deployment/JProcess.vue'),
+            JLog : () => import('./log/JLog.vue'),
 
             JTypeConfig : () => import('./monitor/JTypeConfig.vue'),
 
@@ -154,6 +156,8 @@
             this.mountServiceSelect('namedTypeSelect');
 
             this.mountServiceSelect('threadPoolSelect');
+
+            this.mountServiceSelect('logFileSelect');
 
             window.jm.vue.$emit('openEditorSelect','about');
         },

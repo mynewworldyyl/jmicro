@@ -348,18 +348,20 @@ public class ApiRawRequestMessageHandler implements IMessageHandler{
 			
 			int i = 0;
 			int j = 0;
+			Object arg = null;
 			try {
 				for(; i < clses.length; i++){
 					Class<?> pt = clses[i];
 					if(ISession.class.isAssignableFrom(pt)) {
 						args[i] = sess;
 					} else {
-						Object a = JsonUtils.getIns().fromJson(JsonUtils.getIns().toJson(jsonArgs[j++]), pt);
+						arg = jsonArgs[j++];
+						Object a = JsonUtils.getIns().fromJson(JsonUtils.getIns().toJson(arg), pt);
 						args[i] = a;
 					}
 				}
 			} catch (Exception e) {
-				e.printStackTrace();
+				logger.error(srvCls+"." + methodName + ": " +(arg == null ? "":arg),e);
 			}
 			return args;
 		}

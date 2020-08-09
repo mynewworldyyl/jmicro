@@ -160,7 +160,8 @@ public class DeploymentAssignment {
 	
 	public void ready() {
 		
-		if(StringUtils.isNotEmpty(cfg.getString("apiGatewayExportHttpIP", null))) {
+		boolean initGatewayAndMng = cfg.getBoolean("initGatewayAndMng", false);
+		if(initGatewayAndMng) {
 			createInitDeployment();
 		}
 		

@@ -29,6 +29,9 @@ import cn.jmicro.api.IListener;
 import cn.jmicro.api.annotation.Cfg;
 import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.config.Config;
+import cn.jmicro.api.executor.IExecutorInfo;
+import cn.jmicro.api.monitor.IMonitorAdapter;
+import cn.jmicro.api.monitor.IMonitorDataSubscriber;
 import cn.jmicro.api.raft.IChildrenListener;
 import cn.jmicro.api.raft.IDataListener;
 import cn.jmicro.api.raft.IDataOperator;
@@ -55,6 +58,15 @@ public class ServiceManager {
 
 	private final static Logger logger = LoggerFactory.getLogger(ServiceManager.class);
 	
+	private static final Set<String> excludeServices = new HashSet<>();
+	
+	static {
+		excludeServices.add(IExecutorInfo.class.getName());
+		excludeServices.add("cn.jmicro.api.choreography.IAgentProcessService");
+		excludeServices.add(IMonitorDataSubscriber.class.getName());
+		excludeServices.add(IMonitorAdapter.class.getName());
+	}
+	
 	//服务实例级列表
 	private Map<String,ServiceItem> path2SrvItems = new HashMap<>();
 	
@@ -69,7 +81,10 @@ public class ServiceManager {
 	
 	private IDataOperator dataOperator;
 	
-	@Cfg("/ServiceManager/openDebug")
+	@Cfg(value="/includeServices",toValType=Cfg.VT_SPLIT)
+	private Set<String> includeServices = new HashSet<>();
+	
+	@Cfg("/openDebug")
 	private boolean openDebug = false;
 	
 	private ReentrantReadWriteLock rwLocker = new ReentrantReadWriteLock();
@@ -121,6 +136,12 @@ public class ServiceManager {
 		dataOperator.addChildrenListener(Config.ServiceRegistDir, new IChildrenListener() {
 			@Override
 			public void childrenChanged(int type,String parent, String child,String data) {
+				String srvName = child.split(ServiceItem.KEY_SEPERATOR)[0];
+				if(!includeServices.contains(srvName) && excludeServices.contains(srvName)) {
+					logger.debug("exclude servcie: "+child);
+					return;
+				}
+				
 				String p = parent+"/"+child;
 				if(IListener.ADD == type) {
 					if(openDebug) {

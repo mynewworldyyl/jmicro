@@ -13,7 +13,8 @@
                   </Menu-group>
                   <Menu-group title="LOG">
                       <Menu-item name="invokeLinkView"><Icon type="ios-cog"></Icon>INVOKE LINK</Menu-item>
-                      <Menu-item name="logItemView"><Icon type="ios-cog"></Icon>LOG</Menu-item>
+                      <Menu-item name="logItemView"><Icon type="ios-cog"></Icon>Monitor LOG</Menu-item>
+                      <Menu-item name="processLog"><Icon type="ios-cog"></Icon>Process Log</Menu-item>
                   </Menu-group>
                   <Menu-group title="CFG">
                       <Menu-item name="warning"><Icon type="ios-alert" />WARNING</Menu-item>
@@ -109,6 +110,11 @@
                               group="threadPool"></JThreadPoolMonitorList>
           </Drawer>
 
+          <Drawer  v-model="cache.processLog.drawerStatus" :closable="false" placement="left" :transfer="true"
+                   :draggable="true" :scrollable="true" width="50">
+              <JLogList slId="processLog"></JLogList>
+          </Drawer>
+
           <!-- route outlet -->
           <router-view></router-view>
       </div>
@@ -126,12 +132,14 @@
     import JMonitorTypeKeyList from './components/monitor/JMonitorTypeKeyList.vue'
     import JNamedTypeList from './components/monitor/JNamedTypeList.vue'
     import JThreadPoolMonitorList from './components/monitor/JThreadPoolMonitorList.vue'
+    import JLogList  from './components/log/JLogList.vue'
 
     let cache = null;
 
 export default {
   name: 'App',
     mounted() {
+        //window.jm.rpc.config.ip='';
         window.jm.rpc.init();
         //jm.mng.init();
     },
@@ -145,6 +153,7 @@ export default {
         JMonitorTypeKeyList,
         JNamedTypeList,
         JThreadPoolMonitorList,
+        JLogList,
 
     },
 
@@ -214,6 +223,11 @@ export default {
             drawerBtnStyle:{left:'0px',},
         };
 
+        cache['processLog']={
+            key: 'processLog',
+            drawerStatus:false,
+            drawerBtnStyle:{left:'0px',},
+        };
 
       return {
           curSelect: cache[cache.curSelectKey],

@@ -21,6 +21,11 @@ public class AsyncFailResult {
 	public void setMsg(String msg) {
 		this.msg = msg;
 	}
+
+	@Override
+	public String toString() {
+		return "AsyncFailResult [code=" + code + ", msg=" + msg + "]";
+	}
 	
 	
 }

@@ -328,43 +328,60 @@ class ClientServiceProxyManager {
 	}
 	
 	private Class<?> loadClass(String instanceName,String clsName,RpcClassLoader cl) {
+		Class<?> cls = null;
 		try {
-			return Thread.currentThread().getContextClassLoader().loadClass(clsName);
-		} catch (ClassNotFoundException e) {
+			cls = Thread.currentThread().getContextClassLoader().loadClass(clsName);
+			if(cls != null) {
+				return cls;
+			}
+		} catch (ClassNotFoundException e) {}
+
+		try {
+			 cls = this.getClass().getClassLoader().loadClass(clsName);
+			 if(cls != null) {
+					return cls;
+			 }
+		} catch (ClassNotFoundException e1) {}
+		
+
+		if(cl == null) {
+			cl = of.get(RpcClassLoader.class);
+		}
+		
+		if(cl != null) {
+			
 			try {
-				 return this.getClass().getClassLoader().loadClass(clsName);
-			} catch (ClassNotFoundException e1) {
-				if(cl == null) {
-					cl = of.get(RpcClassLoader.class);
+				cls = cl.loadClass(clsName);
+				if(cls != null) {
+					Thread.currentThread().setContextClassLoader(cl);
 				}
-				
-				if(cl != null) {
-					boolean setDirectServiceItem = false;
-					ServiceItem oldItem = null;
-					Class<?> cls = null;
-					try {
-						ServiceItem clsLoadItem = cl.getClassLoaderItemByInstanceName(instanceName);
-						if(clsLoadItem != null) {
-							setDirectServiceItem = true;
-							oldItem = JMicroContext.get().getParam(Constants.DIRECT_SERVICE_ITEM, null);
-							JMicroContext.get().setParam(Constants.DIRECT_SERVICE_ITEM, clsLoadItem);
-							cls = cl.loadClass(clsName);
-							if(cls != null) {
-								Thread.currentThread().setContextClassLoader(cl);
-							}
-						}
-						return cls;
-					} catch (ClassNotFoundException e2) {}
-					finally {
-						if(setDirectServiceItem) {
-							JMicroContext.get().setParam(Constants.DIRECT_SERVICE_ITEM, oldItem);
-							//JMicroContext.get().removeParam(Constants.DIRECT_SERVICE_ITEM);
-						}
+			} catch (ClassNotFoundException e) {
+				logger.error("",e);
+			}
+			
+			/*
+			boolean setDirectServiceItem = false;
+			ServiceItem oldItem = null;
+			try {
+				ServiceItem clsLoadItem = cl.getClassLoaderItemByInstanceName(instanceName);
+				if(clsLoadItem != null) {
+					setDirectServiceItem = true;
+					oldItem = JMicroContext.get().getParam(Constants.DIRECT_SERVICE_ITEM, null);
+					JMicroContext.get().setParam(Constants.DIRECT_SERVICE_ITEM, clsLoadItem);
+					cls = cl.loadClass(clsName);
+					if(cls != null) {
+						Thread.currentThread().setContextClassLoader(cl);
 					}
 				}
-				throw new CommonException("class["+clsName+"] not found",e);
+			} catch (ClassNotFoundException e2) {}
+			finally {
+				if(setDirectServiceItem) {
+					JMicroContext.get().setParam(Constants.DIRECT_SERVICE_ITEM, oldItem);
+					//JMicroContext.get().removeParam(Constants.DIRECT_SERVICE_ITEM);
+				}
 			}
-		}
+		*/}
+		return cls;
 	}
 	
     private Object createRefService(Object srcObj,Field f){

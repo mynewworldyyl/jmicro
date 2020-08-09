@@ -59,9 +59,9 @@ jm.socket = {
                    msg.decode(buf);
 
                    if(msg.type == jm.mng.ps.MSG_TYPE_ASYNC_RESP) {
-                       if(!msg.success) {
+                      /* if(!msg.success) {
                            throw 'fail:' + msg.payload;
-                       }
+                       }*/
                        /*let dataInput = new jm.utils.JDataInput( msg.payload);
                        let byteArray = [];
                        let len = dataInput.remaining();

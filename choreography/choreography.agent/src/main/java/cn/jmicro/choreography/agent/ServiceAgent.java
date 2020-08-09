@@ -669,12 +669,17 @@ public class ServiceAgent {
 		wd.mkdirs();
 		pb.directory(wd);
 		
-		File errorFile = new File(wd,"output.log");
-		pb.redirectError(errorFile);
-		//File outputFile = new File(wd,"output.log");
-		pb.redirectOutput(errorFile);
+		File logDir = new File(wd,"logs");
+		if(!logDir.exists()) {
+			logDir.mkdir();
+		}
 		
-		File processInfoData = new File(wd,a.getInsId()+".json");
+		File logFile = new File(logDir,"output.log");
+		pb.redirectError(logFile);
+		//File outputFile = new File(wd,"output.log");
+		pb.redirectOutput(logFile);
+		
+		File processInfoData = new File(wd,"processInfo.json");
 		
 		list.add("-D"+ChoyConstants.PROCESS_INFO_FILE + "=" + processInfoData.getAbsolutePath());
 		
@@ -821,4 +826,6 @@ public class ServiceAgent {
 			logger.info("Stop process: " + data);
 		}
 	}
+	
+	
 }

@@ -13,8 +13,7 @@
        <dependency>
 			<groupId>cn.jmicro</groupId>
 			<artifactId>api</artifactId>
-		</dependency>
-		 
+		</dependency>	 
     </dependencies>
     
    

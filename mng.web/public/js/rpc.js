@@ -17,16 +17,16 @@
 
 window.jm = window.jm || {};
 
-jm.config ={
+jm.config = {
     //ip:"192.168.3.3",
     // ip:'192.168.1.129',
-    //ip:'192.168.56.1',
-    ip:'124.70.152.7',
+    ip:'192.168.56.1',
+    //ip:'124.70.152.7',
     // ip:'jmicro.cn',
     //ip:'192.168.101.22',
     //ip:'172.18.0.1',
-    //port:'9090',
-    port:'80',
+    port:'9090',
+    //port:'80',
     txtContext : '_txt_',
     binContext : '_bin_',
     httpContext : '/_http_',
@@ -87,7 +87,7 @@ jm.transport = {
 
 jm.rpc = {
     idCache:{},
-    init:function(){
+    init : function(){
         if(jm.config.useWs && !window.WebSocket){
             jm.config.useWs = false;
         }

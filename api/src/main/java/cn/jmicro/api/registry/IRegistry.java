@@ -50,6 +50,8 @@ public interface IRegistry{
 	
 	ServiceItem getServiceByCode(int code);
 	
+	ServiceItem getOwnItem(int code);
+	
 	/**
 	 * 务名称，名称空间，版本维度做他量监听
 	 */

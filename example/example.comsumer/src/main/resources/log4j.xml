@@ -4,24 +4,34 @@
 	
 	<appender name="CONSOLE" class="org.apache.log4j.ConsoleAppender">
 		<param name="Target" value="System.err"/>
-		<param name="Threshold" value="INFO"/>
+		<param name="Threshold" value="DEBUG"/>
 		<layout class="org.apache.log4j.PatternLayout">
 			<param name="ConversionPattern" value="[%L],[%t],[%d][%p,%c{1}] %m%n"/>
 		</layout>
 	</appender>
 	
 	<appender name="NORMALLOG" class="org.apache.log4j.DailyRollingFileAppender">
-		<param name="File" value="${user.dir}/logs/jmicro/work.log"/>
+		<param name="File" value="${user.dir}/logs/work.log"/>
 		<param name="DatePattern" value="'.'yyyyMMdd"/>
 		<param name="Append" value="true"/>
 		<param name="Threshold" value="DEBUG"/>
 		<layout class="org.apache.log4j.PatternLayout">
-			<param name="ConversionPattern" value="[%d][%p,%c{1}] %m%n"/>
+			<param name="ConversionPattern" value="[%L],[%t],[%d][%p,%c{1}] %m%n"/>
+		</layout>
+	</appender>
+	
+	<appender name="SF" class="org.apache.log4j.DailyRollingFileAppender">
+		<param name="File" value="${user.dir}/logs/sf.log"/>
+		<param name="DatePattern" value="'.'yyyyMMdd"/>
+		<param name="Append" value="true"/>
+		<param name="Threshold" value="DEBUG"/>
+		<layout class="org.apache.log4j.PatternLayout">
+			<param name="ConversionPattern" value="[%L],[%t],[%d][%p,%c{1}] %m%n"/>
 		</layout>
 	</appender>
 
 	<appender name="jmicro_info" class="org.apache.log4j.DailyRollingFileAppender">
-		<param name="File" value="${user.dir}/logs/jmicro/info.log"/>
+		<param name="File" value="${user.dir}/logs/info.log"/>
 		<param name="DatePattern" value="'.'yyyyMMdd"/>
 		<param name="Append" value="true"/>
 		<param name="Threshold" value="INFO"/>
@@ -31,7 +41,7 @@
 	</appender>
 	
 	<appender name="jmicro_error" class="org.apache.log4j.DailyRollingFileAppender">
-		<param name="File" value="${user.dir}/logs/jmicro/error.log"/>
+		<param name="File" value="${user.dir}/logs/error.log"/>
 		<param name="DatePattern" value="'.'yyyyMMdd"/>
 		<param name="Append" value="true"/>
 		<param name="Threshold" value="ERROR"/>
@@ -41,7 +51,7 @@
 	</appender>
 	
 	<appender name="jmicro_debug" class="org.apache.log4j.DailyRollingFileAppender">
-		<param name="File" value="${user.dir}/logs/jmicro/debug.log"/>
+		<param name="File" value="${user.dir}/logs/debug.log"/>
 		<param name="DatePattern" value="'.'yyyyMMdd"/>
 		<param name="Append" value="true"/>
 		<param name="Threshold" value="DEBUG"/>
@@ -51,7 +61,7 @@
 	</appender>
 	
 	<appender name="jmicro_scpecail" class="org.apache.log4j.DailyRollingFileAppender">
-		<param name="File" value="${user.dir}/logs/jmicro/specail.log"/>
+		<param name="File" value="${user.dir}/logs/specail.log"/>
 		<param name="DatePattern" value="'.'yyyyMMdd"/>
 		<param name="Append" value="true"/>
 		<param name="Threshold" value="DEBUG"/>
@@ -100,6 +110,11 @@
 		</layout>
 	</appender>
 	
+	<logger name="cn.jmicro.api.monitor.sf">
+		<level value="INFO"/>
+		<appender-ref ref="SF"/>
+	</logger>
+	
 	<logger name="io.netty.handler.logging">
 		<level value="WARN"/>
 		<appender-ref ref="jmicro_error"/>
@@ -109,6 +124,7 @@
 		<level value="DEBUG"/>
 		<appender-ref ref="jmicro_A"/>
 	</logger>
+	
 	<logger name="cn.jmicro.api.debug.b">
 		<level value="DEBUG"/>
 		<appender-ref ref="jmicro_B"/>
@@ -129,30 +145,37 @@
 
 	<logger name="cn.jmicro">
 		<level value="DEBUG"/>
+		<appender-ref ref="NORMALLOG"/>
 	</logger>
 	
-	<logger name="cn.jmicro.api.codec">
-		<level value="DEBUG"/>
-		<appender-ref ref="jmicro_debug"/>
-	</logger>
-	
-	<logger name="cn.apache.zookeeper">
-		<level value="ERROR"/>
-		<appender-ref ref="jmicro_error"/>
+	<logger name="org.apache.zookeeper">
+		<level value="INFO"/>
+		<appender-ref ref="NORMALLOG"/>
 	</logger>
 	
 	<logger name="org.apache.mina">
-		<level value="ERROR"/>
-		<appender-ref ref="jmicro_error"/>
+		<level value="INFO"/>
+		<appender-ref ref="NORMALLOG"/>
 	</logger>
+	
 	<logger name="io.netty">
 		<level value="INFO"/>
-		<appender-ref ref="CONSOLE"/>
+		<appender-ref ref="NORMALLOG"/>
 	</logger>
 	
 	<logger name="org.jboss">
 		<level value="INFO"/>
-		<appender-ref ref="CONSOLE"/>
+		<appender-ref ref="NORMALLOG"/>
+	</logger>
+	              
+	<logger name="com.mongodb">
+		<level value="INFO"/>
+		<appender-ref ref="NORMALLOG"/>
+	</logger>
+	
+	<logger name="org.mongodb">
+		<level value="INFO"/>
+		<appender-ref ref="NORMALLOG"/>
 	</logger>
 	 
 	<root>	
