@@ -9,7 +9,7 @@ public interface IMonitorServerManager {
 
 	 MonitorServerStatus[] status(String[] srvKeys);
 	
-	 boolean enable(String srvKey,Boolean enable);
+	 Boolean enable(String srvKey,Boolean enable);
 	
 	 MonitorInfo[]  serverList();
 	 

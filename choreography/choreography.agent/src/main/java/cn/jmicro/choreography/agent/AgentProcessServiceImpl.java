@@ -21,6 +21,7 @@ import cn.jmicro.api.choreography.IAgentProcessService;
 import cn.jmicro.api.choreography.ProcessInfo;
 import cn.jmicro.api.config.Config;
 import cn.jmicro.api.mng.LogFileEntry;
+import cn.jmicro.api.pubsub.ILocalCallback;
 import cn.jmicro.api.pubsub.PSData;
 import cn.jmicro.api.pubsub.PubSubManager;
 import cn.jmicro.api.timer.TimerTicker;
@@ -53,6 +54,8 @@ public class AgentProcessServiceImpl implements IAgentProcessService {
 	
 	private Map<String,FileWatcher> fileWatchers = new HashMap<>();
 	
+	private Set<LogFileReader> fileReaders = new HashSet<>();
+	
 	private File workDirFile;
 	
 	private File agentLogDirFile;
@@ -63,10 +66,75 @@ public class AgentProcessServiceImpl implements IAgentProcessService {
 		agentLogDirFile = new File(System.getProperty("user.dir") + File.separatorChar + "logs");
 		
 		TimerTicker.doInBaseTicker(1, "fileWatchers", null, (key,att) -> {
+			doReader();
 			doWatch();
 		});
 	}
 	
+	private void doReader() {
+		if(fileReaders.isEmpty()) {
+			return;
+		}
+		
+		Set<LogFileReader> ws = new HashSet<>();
+		synchronized(fileReaders) {
+			ws.addAll(this.fileReaders);
+		}
+		
+		for(LogFileReader r : ws) {
+			if(-1 == r.readOne()) {
+				//读到文件最后一行，开始做监听
+				fileReaders.remove(r);
+				registWatch(r.getProcessId(), r.getLogFile(), r.fileLength);
+			}
+		}
+		
+	}
+
+	private void registWatch(String processId, String logFile,long fileLength) {
+		
+		String piLogDir =  processId + File.separatorChar + "logs";
+		String fullPath = processId + File.separatorChar + "logs" + File.separatorChar + logFile;
+		
+		boolean pactive = im.getProcessesByInsId(processId, false) != null;
+		if(!pactive) {
+			logger.info(processId + " : " + logFile + ", pactive: " + pactive);
+			return;
+		}
+		
+		if(!fileWatchers.containsKey(processId)) {
+			synchronized(fileWatchers) {
+				if(!fileWatchers.containsKey(processId)) {
+					FileWatcher fw = new FileWatcher(workDirFile.getAbsolutePath() + File.separatorChar + piLogDir);
+					fw.start();
+					fileWatchers.put(processId, fw);
+				}
+			}
+		}
+		
+		String topic0 = "/" + fullPath.replaceAll("\\\\", "/");
+		
+		FileWatcher fw = fileWatchers.get(processId);
+		if(!fw.containsFile(logFile)) {
+			fw.addFile(logFile, fileLength, (type,fileName,content)->{
+				if(type == FileWatcher.NORMAL) {
+					publishLog(topic0,content,(code,item)->{
+						if(code == PubSubManager.PUB_TOPIC_INVALID) {
+							 boolean initStatus = fw.getTopicStatus(logFile);
+		           			 if(!initStatus) {
+		           				 //从可用状态进入不可用状态
+		           				 stopLogMonitor(processId,fileName);
+		           			 }
+	           		 	}
+					});
+				}else if(type == FileWatcher.FILE_DELETE) {
+					stopLogMonitor(processId,fileName);
+				}
+			});
+		}
+		
+	}
+
 	private void doWatch() {
 		
 		if(fileWatchers.isEmpty()) {
@@ -93,7 +161,7 @@ public class AgentProcessServiceImpl implements IAgentProcessService {
 		if(StringUtils.isEmpty(depId)) {
 			return null;
 		}
-		Set<ProcessInfo> ps = getAllProcesses() ;
+		Set<ProcessInfo> ps = getAllProcesses();
 		Iterator<ProcessInfo> ite = ps.iterator();
 		while(ite.hasNext()) {
 			ProcessInfo pi = ite.next();
@@ -208,6 +276,25 @@ public class AgentProcessServiceImpl implements IAgentProcessService {
 
 	@Override
 	public boolean startLogMonitor(String processId, String logFile, int lineNum) {
+		
+		if(lineNum > 0) {
+			LogFileReader reader = new LogFileReader(processId,logFile,lineNum);
+			reader.init();
+			synchronized(fileReaders) {
+				fileReaders.add(reader);
+			}
+		} else {
+			boolean pactive = im.getProcessesByInsId(processId, false) == null;
+			if(!pactive) {
+				logger.info(processId + " : " + logFile +  ", pactive: " + pactive);
+				return false;
+			}
+			String apath = workDirFile.getAbsolutePath()  +  "/" + processId + "/" + "logs" +  "/" + logFile;
+			File lf = new File(apath);
+			this.registWatch(processId, logFile, lf.length());
+		}
+		return true;
+		/*
 		String piLogDir =  processId + File.separatorChar + "logs";
 		String fullPath = piLogDir + File.separatorChar + logFile;
 		
@@ -238,99 +325,185 @@ public class AgentProcessServiceImpl implements IAgentProcessService {
 		}
 		
 		return true;
+		*/
 	}
 
 	@Override
 	public boolean stopLogMonitor(String processId, String logFile) {
+		logger.info("stopLogMonitor processId: {}  logFile: {}",processId,logFile);
 		FileWatcher fw = fileWatchers.get(processId);
 		if(fw != null && fw.containsFile(logFile)) {
 			fw.removeFile(logFile);
 		}
 		
-		if(fw.isEmpty()) {
+		if(fw != null && fw.isEmpty()) {
 			fileWatchers.remove(processId);
 		}
+		
+		LogFileReader lf = new LogFileReader(processId,logFile,0);
+		synchronized(fileReaders) {
+			if(this.fileReaders.contains(lf)) {
+				fileReaders.remove(lf);
+			}
+		}
+		
 		return true;
 	}
-	
-    private long readReverse(String filename, String charset, int lineNum) {
-        RandomAccessFile rf = null;
-        
-        String topic = "/" + filename.replaceAll("\\\\", "/");
-        try {
-        	String apath = this.workDirFile.getAbsolutePath() + File.separatorChar + filename;
-            rf = new RandomAccessFile(apath, "r");
-            long fileLength = rf.length();
-            
-            if(lineNum <= 0 || fileLength == 0) {
-            	return fileLength;
-            }
-            
-            long start = rf.getFilePointer(); //返回此文件中的当前偏移量
-            long readIndex = start + fileLength - 1;
-            rf.seek(readIndex); //设置偏移量为文件末尾
-            int c = -1;
-            
-            while (readIndex > start ) {
-                c = rf.read();
-                readIndex--;
-                rf.seek(readIndex);
-                if (c == '\n' || c == '\r') {
-                	readIndex--;
-                	rf.seek(readIndex);
-                	if(--lineNum < 0 || readIndex < 0) {
-                    	break;
-                    }
-                }
-            }
-            
-            if(readIndex < 0) {
-            	readIndex = 0;
-            }
-            
-            rf.seek(readIndex+3);
-            
-            StringBuffer sb = new StringBuffer();
-            String line = null;
-            while((line = rf.readLine()) != null) {
-            	  sb.append(line).append("<br/>");
-            	  if(sb.length() > 9192) {
-            		  //pm.publish(null, topic, sb.toString(), PSData.FLAG_PUBSUB);
-            		  publishLog(topic,sb.toString());
-            		  //System.out.print(sb.toString());
-            		  sb.delete(0, sb.length());
-            	  }
-            }
-            
-            if(sb.length() > 0) {
-            	 publishLog(topic,sb.toString());
-            	 //pm.publish(null, topic, sb.toString(), PSData.FLAG_PUBSUB);
-            	//System.out.print(sb.toString());
-            }
-           
-            return fileLength;
-        } catch (IOException e) {
-            logger.error("Read error: " +filename,e);
-            return -1;
-        } finally {
-            try {
-                if (rf != null) {
-                	 rf.close();
-                }
-            } catch (IOException e) {
-            	logger.error("Close error: " +filename,e);
-            }
-        }
-    }
     
-    public void publishLog(String topic,String content) {
-    	logger.debug(topic + " : "+content);
+    public void publishLog(String topic,String content,ILocalCallback cb) {
+    	//logger.debug(topic + " : " + content);
     	PSData item = new PSData();
 		item.setTopic(topic);
 		item.setData(new Object[] {content});
 		item.setContext(null);
+		item.setLocalCallback(cb);
 		item.setFlag(PSData.FLAG_PUBSUB);
 		pm.publish(item);
+    }
+    
+    private class LogFileReader {
+    	
+    	private String processId;
+    	private String logFile;
+    	private int lineNum;
+    	
+    	private RandomAccessFile rf = null;
+    	
+    	private long fileLength;
+    	
+    	private String topic;
+    	
+    	private boolean initStatus = true;
+    	
+    	public LogFileReader(String processId, String logFile, int lineNum) {
+    		this.processId = processId;
+    		this.logFile = logFile;
+    		this.lineNum = lineNum;
+    	}
+    	
+    	public long init() {
+    		
+    		try {
+    			topic = "/" + processId + "/" + "logs" +  "/" + logFile;
+    			String apath = workDirFile.getAbsolutePath()  + topic;
+				rf = new RandomAccessFile(apath, "r");
+				fileLength = rf.length();
+				
+				if(lineNum <= 0 || fileLength == 0) {
+					return fileLength;
+				}
+				
+				long start = rf.getFilePointer(); //返回此文件中的当前偏移量
+				long readIndex = start + fileLength - 1;
+				rf.seek(readIndex); //设置偏移量为文件末尾
+				int c = -1;
+				
+				while (readIndex > start ) {
+				    c = rf.read();
+				    readIndex--;
+				    rf.seek(readIndex);
+				    if(c == '\n' || c == '\r') {
+				    	readIndex--;
+				    	rf.seek(readIndex);
+				    	if(--lineNum < 0 || readIndex < 0) {
+				        	break;
+				        }
+				    }
+				}
+				
+				if(readIndex < 0) {
+					readIndex = 0;
+				}
+				
+				rf.seek(readIndex+3);
+			} catch (IOException e) {
+				logger.error("init error",e);
+			}
+            
+    		return fileLength;
+    	}
+    	
+        private long readOne() {
+           
+        	if(!pm.hasTopic(this.topic)) {
+        		logger.info("topic {} is invalid now!",this.topic );
+        		return 1;
+        	}
+        	
+        	String line = null;
+            try {
+            	StringBuffer sb = new StringBuffer();
+                while((line = rf.readLine()) != null) {
+                	  sb.append(line).append("<br/>");
+                	  //break;
+                	  if(sb.length() > 9192) {
+                		 break;
+                	  }
+                }
+                
+                if(sb.length() > 0) {
+                	 publishLog(topic,sb.toString(),(code,item)->{
+                		 if(code == PubSubManager.PUB_TOPIC_INVALID) {
+                			 if(!initStatus) {
+                				 //从可用状态进入不可用状态
+                				 stopLogMonitor(this.processId,this.logFile);
+                			 }else {
+                				 //topic进入可用状态
+                				 initStatus = false;
+                			 }
+                		 }
+                	 });
+                	 //pm.publish(null, topic, sb.toString(), PSData.FLAG_PUBSUB);
+                	 //System.out.print(sb.toString());
+                }
+                
+                if(line == null) {
+                	return -1;
+                }else {
+                	return sb.length();
+                }
+            } catch (IOException e) {
+                logger.error("Read error: " + logFile,e);
+                return -1;
+            } finally {
+                try {
+                	if(line == null && rf != null) {
+                		rf.close();
+                    }
+                } catch (IOException e) {
+                	logger.error("Close error: " +logFile,e);
+                }
+            }
+        }
+
+		public String getProcessId() {
+			return processId;
+		}
+
+		public String getLogFile() {
+			return logFile;
+		}
+
+		@Override
+		public int hashCode() {
+			return (this.processId + this.logFile).hashCode();
+		}
+
+		@Override
+		public boolean equals(Object obj) {
+			if(obj == null) {
+				return false;
+			}
+			
+			if(!(obj instanceof LogFileReader)) {
+				return false;
+			}
+			
+			LogFileReader lf = (LogFileReader)obj;
+			
+			return this.processId.equals(lf.processId) && this.logFile.equals(lf.logFile);
+		}
+        
     }
 
 }

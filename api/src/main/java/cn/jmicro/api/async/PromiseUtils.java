@@ -2,6 +2,10 @@ package cn.jmicro.api.async;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.Map;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import cn.jmicro.api.JMicroContext;
 import cn.jmicro.api.internal.async.IClientAsyncCallback;
@@ -12,8 +16,12 @@ import cn.jmicro.common.Constants;
 
 public class PromiseUtils {
 
-	public static <R> IPromise<R> callService(Object remoteServiceProxy, String remoteMethod, Object... args) {
+	private static final Logger logger = LoggerFactory.getLogger(PromiseUtils.class);
+	
+	public static <R> IPromise<R> callService(Object remoteServiceProxy, String remoteMethod,Map<String,Object> context, Object... args) {
 		PromiseImpl<R> p = new PromiseImpl<R>();
+		p.setContext(context);
+		
 		final JMicroContext cxt = JMicroContext.get();
 		IClientAsyncCallback cb = new IClientAsyncCallback() {
 			@SuppressWarnings("unchecked")
@@ -35,12 +43,11 @@ public class PromiseUtils {
 					}
 					p.setFail(f);
 				}
-				cxt.removeParam(Constants.CONTEXT_CALLBACK_CLIENT);
 				p.done();
 			}
 		};
 		
-		JMicroContext.get().setObject(Constants.CONTEXT_CALLBACK_CLIENT, cb);
+		cxt.setObject(Constants.CONTEXT_CALLBACK_CLIENT, cb);
 		
 		Class<?>[] types = null;
 		if(args.length > 0) {
@@ -48,15 +55,25 @@ public class PromiseUtils {
 			for(int i = 0; i < args.length; i++) {
 				types[i] = args[i].getClass();
 			}
-		}else {
+		} else {
 			types = new Class[0];
 		}
 		
 		try {
-			Method m = remoteServiceProxy.getClass().getMethod(remoteMethod, types);
+			
+			Method m = null;
+			for(Method sm : remoteServiceProxy.getClass().getMethods()){
+				if(sm.getName().equals(remoteMethod)) {
+					m = sm;
+					break;
+				}
+			}
+			//Method m = remoteServiceProxy.getClass().getMethod(remoteMethod, types);
 			m.invoke(remoteServiceProxy, args);
-		} catch (NoSuchMethodException | SecurityException | IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
-			e.printStackTrace();
+		} catch (SecurityException | IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
+			logger.error("",e);
+		}finally {
+			cxt.removeParam(Constants.CONTEXT_CALLBACK_CLIENT);
 		}
 		
 		return p;

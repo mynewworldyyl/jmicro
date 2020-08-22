@@ -16,11 +16,13 @@ import cn.jmicro.api.annotation.Cfg;
 import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Inject;
 import cn.jmicro.api.annotation.Reference;
+import cn.jmicro.api.async.AsyncFailResult;
+import cn.jmicro.api.client.IAsyncCallback;
 import cn.jmicro.api.config.Config;
 import cn.jmicro.api.executor.ExecutorConfig;
 import cn.jmicro.api.executor.ExecutorFactory;
 import cn.jmicro.api.idgenerator.ComponentIdServer;
-import cn.jmicro.api.internal.pubsub.IInternalSubRpc;
+import cn.jmicro.api.internal.pubsub.genclient.IInternalSubRpc$JMAsyncClient;
 import cn.jmicro.api.net.Message;
 import cn.jmicro.api.objectfactory.ProxyObject;
 import cn.jmicro.api.raft.IDataOperator;
@@ -45,7 +47,7 @@ public class PubSubManager {
 	//消息服务线程队列已满,客户端可以重发,或等待一会再重发,可以考虑增加消息服务线程池大小,或增加消息服务
 	public static final int PUB_SERVER_BUSUY = -3;
 	
-	public static final int PUB_TOPIC_NOT_VALID= -4;
+	public static final int PUB_TOPIC_INVALID= -4;
 
 	private final static Logger logger = LoggerFactory.getLogger(PubSubManager.class);
 	
@@ -59,7 +61,7 @@ public class PubSubManager {
 	 * default pubsub server
 	 */
 	@Reference(namespace=Constants.DEFAULT_PUBSUB,version="0.0.1",required=false)
-	private IInternalSubRpc defaultServer;
+	private IInternalSubRpc$JMAsyncClient defaultServer;
 	
 	private ExecutorService executor = null;
 	
@@ -96,14 +98,16 @@ public class PubSubManager {
 	private Boolean isRunning = false;
 	
 	public void ready() {
-
 		logger.info("Init object :" +this.hashCode());
 		ExecutorConfig config = new ExecutorConfig();
 		config.setMsMaxSize(60);
 		config.setTaskQueueSize(500);
 		config.setThreadNamePrefix("PubSubManager");
 		executor = ef.createExecutor(config);
-		
+	}
+	
+	public boolean hasTopic(String topic) {
+		return defaultServer.hasTopic(topic);
 	}
 	
 	public boolean isPubsubEnable(int itemNum) {
@@ -191,7 +195,7 @@ public class PubSubManager {
 		
 		if(!this.isRunning) {
 			 startChecker();
-		 }
+		}
 		
 		curItemCount.incrementAndGet();
 		
@@ -237,7 +241,6 @@ public class PubSubManager {
 				}
 				lastLoopTime = System.currentTimeMillis();
 				*/
-				
 				
 				while(curItemCount.get() == 0) {
 					//没有数据，等待
@@ -329,7 +332,7 @@ public class PubSubManager {
 					}
 
 					int size = l.size();
-					int result = 0;
+					//int result = 0;
 
 					if (size == 1) {
 						PSData psd = l.get(0);
@@ -338,7 +341,7 @@ public class PubSubManager {
 							// 大于0时表示客户端已经预设置值,给客户端一些选择，比如业务需要提前知道消息ID做关联记录的场景
 							psd.setId(idGenerator.getIntId(PSData.class));
 						}
-						result = defaultServer.publishItem(psd);
+						defaultServer.publishItemJMAsync(null,psd).then(new AsyncCallback(l));
 					} else if (size > 1) {
 						Long[] ids = idGenerator.getLongIds(PSData.class.getName(), l.size());
 
@@ -352,52 +355,89 @@ public class PubSubManager {
 								pd[i].setId(ids[i]);
 							}
 						}
-						result = defaultServer.publishItems(e.getKey(), pd);
+						
+						defaultServer.publishItemsJMAsync(null,e.getKey(), pd).then(new AsyncCallback(l));
 					}
 					
-					curItemCount.addAndGet(-size);
-
-					if (PUB_SERVER_BUSUY == result) {
-						logger.warn("Got bussy result and sleep one seconds");
-						for(PSData d : l) {
-							if(d.getFailCnt() < 3) {
-								//重发3次
-								d.setFailCnt(d.getFailCnt()+1);
-								Thread.sleep(1000);
-								if((result = publish(d)) != PUB_OK) {
-									if(d.getCallback() != null && Message.is(d.getFlag(), PSData.FLAG_MESSAGE_CALLBACK)) {
-										//消息通知
-										siManager.call(d.getCallback(), new Object[] {PUB_SERVER_BUSUY, d.getId(), d.getContext()});
-									} else {
-										logger.error("Pubsub Server is busuy so disgard msg:" + JsonUtils.getIns().toJson(d));
-									}
-								}
-							} else {
-								if(d.getCallback() != null && Message.is(d.getFlag(), PSData.FLAG_MESSAGE_CALLBACK)) {
-									//消息通知
-									siManager.call(d.getCallback(), new Object[] {PUB_SERVER_BUSUY, d.getId(), d.getContext()});
-								} else {
-									logger.error("Pubsub Server is busuy and retry failure :" + JsonUtils.getIns().toJson(d));
-								}
-							}
-						}
-					} else if (PubSubManager.PUB_SERVER_NOT_AVAILABALE == result
-							|| PubSubManager.PUB_SERVER_DISCARD == result
-							|| PubSubManager.PUB_TOPIC_NOT_VALID == result) {
-						for(PSData d : l) {
-							if(d.getCallback() != null && Message.is(d.getFlag(), PSData.FLAG_MESSAGE_CALLBACK)) {
-								//消息通知
-								siManager.call(d.getCallback(), new Object[] {result, d.getId(), d.getContext()});
-							} else {
-								logger.error("Publish message failure with code:"+result +" ,topic:"+d.getTopic() +" , message: " + JsonUtils.getIns().toJson(d));
-							}
-						}
-					}
-				
 				} catch (Throwable ex) {
 					logger.error("", ex);
 				}
 
+			}
+		}
+	}
+	
+	private class AsyncCallback implements IAsyncCallback<Integer> {
+
+		private List<PSData> list;
+		
+		private AsyncCallback(List<PSData> l) {
+			this.list = l;
+		}
+		
+		public void onResult(Integer result, AsyncFailResult fail,Map<String,Object> context) {
+
+			curItemCount.addAndGet(-list.size());
+			
+			logger.info("Got result: {}",result);
+			
+			if (PUB_SERVER_BUSUY == result) {
+				logger.warn("Got bussy result and sleep one seconds");
+				for(PSData d : list) {
+					if(d.getFailCnt() < 3) {
+						//重发3次
+						d.setFailCnt(d.getFailCnt()+1);
+						if((result = publish(d)) != PUB_OK) {
+							if(d.getCallback() != null && Message.is(d.getFlag(), PSData.FLAG_MESSAGE_CALLBACK)) {
+								//消息通知
+								//siManager.call(d.getCallback(), new Object[] {PUB_SERVER_BUSUY, d.getId(), d.getContext()});
+								siManager.callAsync(d.getCallback(), new Object[] {PUB_SERVER_BUSUY, d.getId(), d.getContext()})
+								.then((rst,f,cxt)->{
+									if(f != null) {
+										logger.error(f.toString());
+									}
+								});
+							} else {
+								logger.error("Pubsub Server is busuy so disgard msg:" + JsonUtils.getIns().toJson(d));
+							}
+						}
+					} else {
+						if(d.getLocalCallback() != null) {
+							d.getLocalCallback().call(result, d);
+						}else if(d.getCallback() != null && Message.is(d.getFlag(), PSData.FLAG_MESSAGE_CALLBACK)) {
+							//消息通知
+							//siManager.call(d.getCallback(), new Object[] {PUB_SERVER_BUSUY, d.getId(), d.getContext()});
+							siManager.callAsync(d.getCallback(), new Object[] {PUB_SERVER_BUSUY, d.getId(), d.getContext()})
+							.then((rst,f,cxt)->{
+								if(f != null) {
+									logger.error(f.toString());
+								}
+							});
+						} else {
+							logger.error("Pubsub Server is busuy and retry failure :" + JsonUtils.getIns().toJson(d));
+						}
+					}
+				}
+			} else if (PubSubManager.PUB_SERVER_NOT_AVAILABALE == result
+					|| PubSubManager.PUB_SERVER_DISCARD == result
+					|| PubSubManager.PUB_TOPIC_INVALID == result) {
+				for(PSData d : list) {
+					if(d.getLocalCallback() != null) {
+						d.getLocalCallback().call(result, d);
+					}else if(d.getCallback() != null && Message.is(d.getFlag(), PSData.FLAG_MESSAGE_CALLBACK)) {
+						//消息通知
+						//siManager.call(d.getCallback(), new Object[] {result, d.getId(), d.getContext()});
+						siManager.callAsync(d.getCallback(), new Object[] {result, d.getId(), d.getContext()})
+						.then((rst,f,cxt)->{
+							if(f != null) {
+								logger.error(f.toString());
+							}
+						});
+						
+					} else {
+						logger.error("Publish message failure with code:"+result +" ,topic:"+d.getTopic() +" , message: " + JsonUtils.getIns().toJson(d));
+					}
+				}
 			}
 		}
 	}

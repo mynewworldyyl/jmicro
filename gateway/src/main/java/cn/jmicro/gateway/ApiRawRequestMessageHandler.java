@@ -32,6 +32,8 @@ import cn.jmicro.api.JMicroContext;
 import cn.jmicro.api.annotation.Cfg;
 import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Inject;
+import cn.jmicro.api.async.IPromise;
+import cn.jmicro.api.async.PromiseUtils;
 import cn.jmicro.api.codec.ICodecFactory;
 import cn.jmicro.api.codec.JDataInput;
 import cn.jmicro.api.gateway.ApiRequest;
@@ -49,6 +51,7 @@ import cn.jmicro.api.registry.ServiceItem;
 import cn.jmicro.api.registry.ServiceMethod;
 import cn.jmicro.api.security.ActInfo;
 import cn.jmicro.api.security.IAccountService;
+import cn.jmicro.codegenerator.AsyncClientProxy;
 import cn.jmicro.common.CommonException;
 import cn.jmicro.common.Constants;
 import cn.jmicro.common.util.JsonUtils;
@@ -119,7 +122,7 @@ public class ApiRawRequestMessageHandler implements IMessageHandler{
 				}
 				
 			} catch (IOException e) {
-				e.printStackTrace();
+				throw new CommonException("",e);
 			}
 			
 		}
@@ -176,7 +179,7 @@ public class ApiRawRequestMessageHandler implements IMessageHandler{
 						//SF.doRequestLog(MC.MT_PLATFORM_LOG,MC.LOG_ERROR, TAG, null," service not found");
 						throw new CommonException("Service["+req.getServiceName()+"] namespace ["+req.getNamespace()+"] not found");
 					} else if(si.isExternal()) {
-						Method m = this.getSrvMethod(req.getServiceName(), req.getMethod());
+						Method m = this.getSrvMethod(srv.getClass(), req.getMethod(),true);
 						JMicroContext.get().setParam(JMicroContext.LOCAL_HOST, session.localHost());
 						JMicroContext.get().setParam(JMicroContext.LOCAL_PORT, session.localPort()+"");
 						JMicroContext.get().setParam(JMicroContext.REMOTE_HOST, session.remoteHost());
@@ -200,10 +203,29 @@ public class ApiRawRequestMessageHandler implements IMessageHandler{
 								SF.eventLog(MC.MT_PLATFORM_LOG,MC.LOG_DEBUG, TAG," no need response");
 							}
 							return;
+						} else {
+							
+							//IPromise<?> p = (IPromise<?>)m.invoke(srv, req.getArgs());
+							
+							PromiseUtils.callService(srv, req.getMethod(), null, req.getArgs())
+							.then((r,fail,ctx)->{
+								if(fail == null) {
+									resp.setResult(r);
+									resp.setSuccess(true);
+								} else {
+									ServerError se = new ServerError(fail.getCode(),fail.getMsg());
+									resp.setSuccess(false);
+									resp.setResult(se);
+								}
+								
+								if(msg.getDownProtocol() == Message.PROTOCOL_JSON) {
+									msg.setPayload(ICodecFactory.encode(codecFactory, resp, msg.getDownProtocol()));
+								} else {
+									msg.setPayload(resp.encode());
+								}
+								session.write(msg);
+							});
 						}
-						
-						result = m.invoke(srv, req.getArgs());
-						resp.setResult(result);
 					} else {
 						String msgStr = "Service["+req.getServiceName()+"] namespace ["+req.getNamespace()+"] is not external!";
 						throw new CommonException(msgStr);
@@ -224,16 +246,19 @@ public class ApiRawRequestMessageHandler implements IMessageHandler{
 			}
 		}
 		
-		if(msg.getDownProtocol() == Message.PROTOCOL_JSON) {
-			msg.setPayload(ICodecFactory.encode(codecFactory, resp, msg.getDownProtocol()));
-		} else {
-			msg.setPayload(resp.encode());
-		}
-		
 		if(SF.isLoggable(MC.LOG_DEBUG, msg.getLogLevel())) {
 			SF.eventLog(MC.MT_PLATFORM_LOG,MC.LOG_DEBUG, TAG,"one response");
 		}
-		session.write(msg);
+		
+		if(result != null) {
+			
+			if(msg.getDownProtocol() == Message.PROTOCOL_JSON) {
+				msg.setPayload(ICodecFactory.encode(codecFactory, resp, msg.getDownProtocol()));
+			} else {
+				msg.setPayload(resp.encode());
+			}
+			session.write(msg);
+		}
 		
 	}
 
@@ -246,7 +271,7 @@ public class ApiRawRequestMessageHandler implements IMessageHandler{
 			throw new CommonException("Class ["+serviceName+"] not found");
 		}
 		
-		Method m = getSrvMethod(serviceName,method);
+		Method m = getSrvMethod(srvClazz,method,false);
 		
 		if(m == null) {
 			throw new CommonException("Class ["+serviceName+"] method ["+method+"] not found"); 
@@ -318,14 +343,18 @@ public class ApiRawRequestMessageHandler implements IMessageHandler{
 		return args;
 	}
 	
-	private Method getSrvMethod(String srvCls,String methodName) {
-		Class<?> srvClazz = JMicro.getObjectFactory().loadCls(srvCls);
+	private Method getSrvMethod(Class<?> srvCls,String methodName,boolean async) {
+		
+		if(async && !methodName.endsWith(AsyncClientProxy.ASYNC_METHOD_SUBFIX)) {
+			methodName = methodName + AsyncClientProxy.ASYNC_METHOD_SUBFIX;
+		}
+		/*Class<?> srvClazz = JMicro.getObjectFactory().loadCls(srvCls);
 		if(srvClazz == null) {
 			throw new CommonException("Class ["+srvCls+"] not found");
-		}
+		}*/
 		
 		Method m = null;
-		for(Method sm : srvClazz.getMethods()){
+		for(Method sm : srvCls.getMethods()){
 			if(sm.getName().equals(methodName)) {
 				m = sm;
 				break;
@@ -340,8 +369,11 @@ public class ApiRawRequestMessageHandler implements IMessageHandler{
 		if(jsonArgs== null || jsonArgs.length ==0){
 			return new Object[0];
 		} else {
-			
-			Method m = this.getSrvMethod(srvCls, methodName);
+			Class<?> srvClazz = JMicro.getObjectFactory().loadCls(srvCls);
+			if(srvClazz == null) {
+				throw new CommonException(srvCls);
+			}
+			Method m = this.getSrvMethod(srvClazz, methodName,false);
 			
 			Class<?>[] clses = m.getParameterTypes();
 			Object[] args = new Object[clses.length];

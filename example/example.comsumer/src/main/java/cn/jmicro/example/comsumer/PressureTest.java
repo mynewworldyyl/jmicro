@@ -11,7 +11,7 @@ public class PressureTest {
 
 	public static void main(String[] args) {
 		IObjectFactory of = JMicro.getObjectFactoryAndStart(new String[] {"-DinstanceName=PressureTest"});
-		for(int i = 0; i < 5;i++){
+		for(int i = 0; i < 1;i++){
 			new Thread(new Worker(of,i)).start();
 		}
 	}
@@ -30,7 +30,7 @@ class Worker implements Runnable{
 	
 	@Override
 	public void run() {
-		ISimpleRpc sayHello = of.get(ISimpleRpc.class);
+		ISimpleRpc sayHello = of.getRemoteServie(ISimpleRpc.class.getName(),"simpleRpc","0.0.1", null);
 		JMicroContext.get().removeParam(JMicroContext.LINKER_ID);
 		
 		for(;;){

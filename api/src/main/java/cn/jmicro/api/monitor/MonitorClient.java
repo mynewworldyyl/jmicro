@@ -32,13 +32,14 @@ import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Inject;
 import cn.jmicro.api.annotation.JMethod;
 import cn.jmicro.api.annotation.Reference;
+import cn.jmicro.api.async.AsyncFailResult;
 import cn.jmicro.api.basket.BasketFactory;
 import cn.jmicro.api.basket.IBasket;
 import cn.jmicro.api.config.Config;
 import cn.jmicro.api.executor.ExecutorConfig;
 import cn.jmicro.api.executor.ExecutorFactory;
+import cn.jmicro.api.monitor.genclient.IMonitorServer$JMAsyncClient;
 import cn.jmicro.api.objectfactory.AbstractClientServiceProxyHolder;
-import cn.jmicro.api.objectfactory.ClientServiceProxyHolder;
 import cn.jmicro.api.objectfactory.IObjectFactory;
 import cn.jmicro.api.raft.IDataOperator;
 import cn.jmicro.api.registry.IServiceListener;
@@ -66,7 +67,7 @@ public class MonitorClient {
 	private String[] typeLabels = null; 
 	
 	@Reference(namespace="monitorServer",version="0.0.1",changeListener="enableWork")
-	private IMonitorServer monitorServer;
+	private IMonitorServer$JMAsyncClient monitorServer;
 	
 	private boolean checkerWorking = false;
 	
@@ -454,6 +455,12 @@ public class MonitorClient {
 			this.items = items;
 		}
 		
+		public void onresult(Object rst, AsyncFailResult fail,Map<String,Object> cxt) {
+			if(fail != null) {
+				logger.warn(fail.toString());
+			}
+		}
+		
 		@Override
 		public void run() {
 			
@@ -477,7 +484,9 @@ public class MonitorClient {
 					for(MRpcItem mi: items) {
 						logger.info("lid:" +mi.getLinkId() +", reqId: " + mi.getReqId()+", parentId: " + mi.getReqParentId());
 					}
-					monitorServer.submit(items);
+					
+					monitorServer.submitJMAsync(null,items).then(this::onresult);
+					
 					if(statusMonitorAdapter.isMonitoralbe()) {
 						statusMonitorAdapter.getServiceCounter().add(MC.Ms_TaskSuccessItemCnt, items.length);
 					}

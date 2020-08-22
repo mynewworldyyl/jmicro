@@ -62,6 +62,8 @@ public class MessageServiceImpl implements IGatewayMessageCallback{
 	public static final String MESSAGE_SERVICE_REG_ID = "__messageServiceRegId";
 	public static final String TIMER_KEY = "__MessageRegistionStatusCheck";
 	
+	//public static final String APPEND_ID2_TOPIC_PATH = "appendId2TopicPath";
+	
 	public static final String TAG = MessageServiceImpl.class.getName();
 	
 	private Map<String,Set<Registion>> topic2Sessions = new HashMap<>();
@@ -99,6 +101,7 @@ public class MessageServiceImpl implements IGatewayMessageCallback{
 			logger.error("Topic cannot be NULL");
 			return -1;
 		}
+		
 		Set<Registion> sess = this.topic2Sessions.get(topic);
 		if(sess == null) {
 			sess = new HashSet<Registion>();

@@ -76,25 +76,20 @@ public class TestMonitorSubmiterV2 extends JMicroBaseTestCase{
 	@Test
 	public void testSubmitLog() {
 		
-		//setSayHelloContext();
-		
-		MRpcItem mi= ssubItem();
-		
 		for(;;){
 			
 			try {
-				SF.eventLog(MC.MT_PLATFORM_LOG,MC.LOG_ERROR,TestMonitorSubmiterV2.class, "testmonitor");
+				SF.eventLog(MC.MT_PLATFORM_LOG,MC.LOG_ERROR,TestMonitorSubmiterV2.class, "testmonitorPresure");
 			} catch (Throwable e1) {
 				e1.printStackTrace();
 			}
 			
 			try {
-				Thread.sleep(300);
+				Thread.sleep(50);
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}
 		}
-		
 	}
 	
 	/* @Test
@@ -133,10 +128,6 @@ public class TestMonitorSubmiterV2 extends JMicroBaseTestCase{
 			}
 				//JMicro.waitForShutdown();
 		}
-		
-		
-		@Test
-		
 		
 		@Test
 		public void testSayHelloToPrintRouterLog() {

@@ -22,17 +22,35 @@ public class FileWatcher {
 
 	private final Logger logger = LoggerFactory.getLogger(FileWatcher.class);
 	
+	public static final int NORMAL = 0;
+	
+	public static final int FILE_DELETE = 1;
+	
+	public static final int NO_CHANGE = 2;
+	
 	private String dir;
 	
-	//private Set<String> fileNames = new HashSet<>();
+	//主题是否在可用状态，或初始化状态
+	//如果是初始化状态，则等侍主题可用，如果是可用状态，则主题进入不可用状时，需要停止日志分发
+	private Map<String,LogFileEntry> logFileEntries = new HashMap<>();
 	
 	private WatchService watchService;
 	
-	private Map<String,Consumer<String>> consumers = new HashMap<>();
-	
-	private Map<String,Long> bpoints = new HashMap<>();
-	
 	private  WatchKey key;
+	
+	private class LogFileEntry {
+		private String logFileName;
+		private boolean initStatus = true;
+		private IFileListener listener;
+		private long readPoint;
+		
+		LogFileEntry(String fileName, long points, IFileListener consumer) {
+			this.logFileName = fileName;
+			this.initStatus = true;
+			this.listener = consumer;
+			this.readPoint = points;
+		}
+	}
 	
 	public FileWatcher(String dir) {
 		 this.dir = dir;
@@ -50,35 +68,40 @@ public class FileWatcher {
 		}
 	}
 	
-	public boolean addFile(String fileName,Long points,Consumer<String> consumer) {
-		if(!bpoints.containsKey(fileName)) {
-			consumers.put(fileName, consumer);
-			bpoints.put(fileName, points);
+	public boolean addFile(String fileName, long points, IFileListener consumer) {
+		if(!logFileEntries.containsKey(fileName)) {
+			LogFileEntry le = new LogFileEntry(fileName,points,consumer);
+			logFileEntries.put(fileName, le);
 			return true;
 		}
 		return false;
 	}
 	
+	public boolean getTopicStatus(String fileName) {
+		return logFileEntries.get(fileName).initStatus;
+	}
+	
+	
 	public boolean containsFile(String fileName) {
-		return consumers.containsKey(fileName);
+		return logFileEntries.containsKey(fileName);
 	}
 	
 	public boolean isEmpty() {
-		return consumers.isEmpty();
+		return logFileEntries.isEmpty();
 	}
 	
 	public void removeFile(String fileName) {
-		if(!bpoints.containsKey(fileName)) {
-			consumers.remove(fileName);
-			bpoints.remove(fileName);
+		if(!logFileEntries.containsKey(fileName)) {
+			logFileEntries.remove(fileName);
 		}
 	}
 	
     public void watcherLog() throws IOException, InterruptedException {
     	key = watchService.poll();
     	if(key == null) {
-    		return;
+    		return ;
     	}
+    	
         List<WatchEvent<?>> watchEvents = key.pollEvents();
         for(WatchEvent<?> e : watchEvents) {
         	/*if (e.count() > 1) {
@@ -86,27 +109,28 @@ public class FileWatcher {
             }*/
         	
         	String n = ((Path) e.context()).getFileName().toString();
-        	if(!bpoints.containsKey(n)) {
+        	if(!logFileEntries.containsKey(n)) {
         		continue;
         	}
         	
+        	LogFileEntry le = logFileEntries.get(n);
+        	
         	if(StandardWatchEventKinds.ENTRY_DELETE == e.kind()) {
-        		bpoints.remove(n);
-        		consumers.remove(n);
+        		le.listener.onEvent(FILE_DELETE, n,null);
+        		logFileEntries.remove(n);
+        		logger.info("Logfile delete: " + n);
         		continue;
         	}
         	
         	if(StandardWatchEventKinds.ENTRY_MODIFY == e.kind()) {
-        		  
         		  File configFile = Paths.get(dir + "/" + e.context()).toFile();
                   StringBuilder str = new StringBuilder();
-                  long len = getFileContent(configFile, bpoints.get(n), str);
-                  bpoints.put(n, len);
-                  Consumer<String> c = consumers.get(n);
-                  if (str.length() != 0 && c != null ) {
-                      c.accept(str.toString());
+                  long len = getFileContent(configFile, le.readPoint, str);
+                  le.readPoint = len;
+                  if (str.length() != 0 ) {
+                	  le.listener.onEvent(NORMAL, n, str.toString());
                   }
-        	} 
+        	}
         }
         
         key.reset();

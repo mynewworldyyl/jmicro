@@ -39,6 +39,7 @@ import cn.jmicro.api.registry.ServiceMethod;
 import cn.jmicro.api.registry.UniqueServiceKey;
 import cn.jmicro.api.service.ServiceManager;
 import cn.jmicro.api.timer.TimerTicker;
+import cn.jmicro.codegenerator.AsyncClientUtils;
 import cn.jmicro.common.Constants;
 import cn.jmicro.common.util.JsonUtils;
 import cn.jmicro.common.util.StringUtils;
@@ -196,12 +197,12 @@ public class RegistryImpl implements IRegistry {
 	 */
 	@Override
 	public void addExistsServiceNameListener(String key,IServiceListener lis) {
-		addServiceListener(this.serviceNameExistsListeners,key,lis);	
+		addServiceListener(this.serviceNameExistsListeners,AsyncClientUtils.genServiceName(key),lis);	
 	}
 
 	@Override
 	public void removeExistsServiceNameListener(String key,IServiceListener lis) {
-		removeServiceListener(this.serviceNameExistsListeners,key,lis);
+		removeServiceListener(this.serviceNameExistsListeners,AsyncClientUtils.genServiceName(key),lis);
 	}
 	
 	/**
@@ -236,12 +237,12 @@ public class RegistryImpl implements IRegistry {
 	 */
 	@Override
 	public void addServiceNameListener(String serviceName, IServiceListener lis) {
-		addServiceListener(this.serviceNameListeners,serviceName,lis);
+		addServiceListener(this.serviceNameListeners,AsyncClientUtils.genServiceName(serviceName),lis);
 	}
 	
 	@Override
 	public void removeServiceNameListener(String key, IServiceListener lis) {
-		removeServiceListener(this.serviceNameListeners,key,lis);
+		removeServiceListener(this.serviceNameListeners,AsyncClientUtils.genServiceName(key),lis);
 	}
 	
 	private void removeServiceListener(Map<String,Set<IServiceListener>> listeners, String key,IServiceListener lis){
@@ -406,12 +407,13 @@ public class RegistryImpl implements IRegistry {
 	 */
 	@Override
 	public Set<ServiceItem> getServices(String serviceName) {
+		String sn = AsyncClientUtils.genServiceName(serviceName);
 		if(this.needWaiting) {
 			logger.warn("Do getServices(String serviceName) waiting get serviceName:{}",serviceName);
 			setNeedWaiting();
-			return IWaitingAction.doAct(()->srvManager.getServiceItems(serviceName,null,null),null);
+			return IWaitingAction.doAct(()->srvManager.getServiceItems(sn,null,null),null);
 		} else {
-			return this.srvManager.getServiceItems(serviceName,null,null);
+			return this.srvManager.getServiceItems(sn,null,null);
 		}	
 	}
 
@@ -542,11 +544,10 @@ public class RegistryImpl implements IRegistry {
 	}
 
 	private Set<ServiceItem> matchServiceItems(String serviceName,String namespace,String version){
-		return this.srvManager.getServiceItems(serviceName,namespace,version);
+		return this.srvManager.getServiceItems(AsyncClientUtils.genServiceName(serviceName),namespace,version);
 	}
 
 	/** +++++++++++++++++++++++Service QUERY for consumer END ++++++++++++++++++**/
-	
 	private void persisFromConfig(ServiceItem item){
         if(item== null){
         	logger.error("Item is NULL");

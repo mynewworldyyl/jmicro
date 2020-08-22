@@ -31,7 +31,6 @@ import cn.jmicro.api.annotation.Reference;
 import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.monitor.SF;
 import cn.jmicro.api.objectfactory.AbstractClientServiceProxyHolder;
-import cn.jmicro.api.objectfactory.ClientServiceProxyHolder;
 import cn.jmicro.api.objectfactory.ProxyObject;
 import cn.jmicro.api.registry.AsyncConfig;
 import cn.jmicro.api.registry.IRegistry;
@@ -89,9 +88,9 @@ class RemoteProxyServiceFieldListener implements IServiceListener{
 	@Override
 	public void serviceChanged(int type, ServiceItem item) {
 		
-		/*if("cn.jmicro.api.choreography.IAgentProcessService".equals(item.getKey().getServiceName())) {
+		if("cn.jmicro.api.monitor.IMonitorDataSubscriber".equals(item.getKey().getServiceName())) {
 			logger.debug("test debug");
-		}*/
+		}
 		
 		if(!item.getKey().getServiceName().equals(srvType.getName())) {
 			return;
@@ -207,23 +206,25 @@ class RemoteProxyServiceFieldListener implements IServiceListener{
 		Class<?> cls = ProxyObject.getTargetCls(this.refField.getDeclaringClass());
 		try {
 			 m =  cls.getMethod(cfg.changeListener(),new Class[]{AbstractClientServiceProxyHolder.class,Integer.TYPE} );
-			 if(m != null){
-				 m.invoke(this.srcObj,po,opType);
-			 }
-		} catch (NoSuchMethodException | SecurityException | IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
+		} catch (NoSuchMethodException | SecurityException | IllegalArgumentException e) {
 			//System.out.println(e); 
 			try {
 				m =  cls.getMethod(cfg.changeListener(),new Class[0] );
-				if(m != null){
-					 m.invoke(this.srcObj);
-				}
-			} catch (NoSuchMethodException | SecurityException | IllegalAccessException | IllegalArgumentException | InvocationTargetException e1) {
+			} catch (NoSuchMethodException | SecurityException | IllegalArgumentException e1) {
 				//System.out.println(e1);
-				logger.error("",e);
+				logger.error(po.getHolder().getItem().getKey().toKey(true, true, true),e);
 				SF.eventLog(MC.MT_PLATFORM_LOG,MC.LOG_ERROR, RemoteProxyServiceFieldListener.class,
 						 "Listener method ["+cfg.changeListener()+"] not found!",e);
 			}
 		}
+		
+		 if(m != null){
+			 try {
+				m.invoke(this.srcObj,po,opType);
+			} catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
+				logger.error(po.getHolder().getItem().getKey().toKey(true, true, true),e);
+			}
+		 }
 		
 	}
 

@@ -774,7 +774,7 @@ jm.mng = {
                 agentId]);
         },
 
-        subscribeLog: function (processId,logFilePath,agentId,offsetFromLastLine, callback){
+        subscribeLog: function (processId, logFilePath, agentId, offsetFromLastLine, callback){
             let self = this;
             let topic = "/" + processId + '/logs/'　+ logFilePath;
             //先订阅主题
@@ -802,18 +802,18 @@ jm.mng = {
             });
         },
 
-        unsubscribeLog : function (logFilePath, callback){
-            let self =this;
+        unsubscribeLog : function(processId, logFilePath, agentId, callback){
+            let self = this;
             return new Promise((reso,reje)=>{
-                let topic = logFilePath;
+                let topic = "/" + processId + '/logs/'　+ logFilePath;
                 jm.mng.ps.unsubscribe(topic,callback)
                     .then(rst => {
                         if(!!rst || rst == 0) {
-                            self.stopLogMonitor(logFilePath)
+                            self.stopLogMonitor(processId,logFilePath,agentId)
                                 .then(r=>{
                                     reso(r);
                                 }).catch(err =>{
-                                reje(err);
+                                    reje(err);
                             });
                         }
                     }).catch(err => {

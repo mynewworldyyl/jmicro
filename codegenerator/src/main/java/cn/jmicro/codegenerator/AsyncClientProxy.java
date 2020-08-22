@@ -31,7 +31,9 @@ public @interface AsyncClientProxy {
 	
 	public static final String INT_SUBFIX = "$JMAsyncClient";
 	
-	public static final String IMPL_SUBFIX = INT_SUBFIX + "Impl";
+	public static final String IMPL =  "Impl";
+	
+	public static final String IMPL_SUBFIX = INT_SUBFIX + IMPL;
 	
 	public static final String ASYNC_METHOD_SUBFIX = "JMAsync";
 	

@@ -133,8 +133,8 @@ public class TestPubSubServer extends JMicroBaseTestCase{
 		new Thread(r).start();
 		new Thread(r).start();
 		new Thread(r).start();
-		new Thread(r).start();
-		new Thread(r).start();
+		//new Thread(r).start();
+		//new Thread(r).start();
 		
 		JMicro.waitForShutdown();
 	}

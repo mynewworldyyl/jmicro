@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.CountDownLatch;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -14,10 +15,10 @@ import cn.jmicro.api.annotation.Reference;
 import cn.jmicro.api.annotation.Service;
 import cn.jmicro.api.executor.ExecutorInfo;
 import cn.jmicro.api.executor.IExecutorInfo;
+import cn.jmicro.api.executor.genclient.IExecutorInfo$JMAsyncClient;
 import cn.jmicro.api.mng.IThreadPoolMonitor;
 import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.objectfactory.AbstractClientServiceProxyHolder;
-import cn.jmicro.api.objectfactory.ClientServiceProxyHolder;
 import cn.jmicro.api.registry.ServiceItem;
 import cn.jmicro.common.util.StringUtils;
 
@@ -29,7 +30,7 @@ public class ThreadPoolMonitorImpl implements IThreadPoolMonitor {
 	private static final Logger logger = LoggerFactory.getLogger(ThreadPoolMonitorImpl.class);
 	
 	@Reference(namespace="*",version="*",type="ins")
-	private List<IExecutorInfo> monitorServers = new ArrayList<>();
+	private List<IExecutorInfo$JMAsyncClient> monitorServers = new ArrayList<>();
 	
 	@Override
 	public Resp<List<ExecutorInfo>> serverList() {
@@ -39,14 +40,24 @@ public class ThreadPoolMonitorImpl implements IThreadPoolMonitor {
 			resp.setData(null);
 		}
 		
+		CountDownLatch cd = new CountDownLatch(this.monitorServers.size());
+		
 		List<ExecutorInfo> l = new ArrayList<>();
 		resp.setData(l);
-		for(IExecutorInfo iei : this.monitorServers) {
-			//logger.debug("getInfo begin time: " + System.currentTimeMillis() );
-			ExecutorInfo ei = iei.getInfo();
-			if(ei != null) {
-				l.add(ei);
-			}
+		for(IExecutorInfo$JMAsyncClient iei : this.monitorServers) {
+			iei.getInfoJMAsync(null).then((ei,fail,ctx)->{
+				cd.countDown();
+				if(ei != null) {
+					l.add(ei);
+				} else {
+					logger.error(fail.toString());
+				}
+			});
+		}
+		
+		try {
+			cd.await();
+		} catch (InterruptedException e) {
 		}
 		return resp;
 	}

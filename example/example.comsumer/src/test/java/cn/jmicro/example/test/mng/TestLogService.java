@@ -8,20 +8,20 @@ import cn.jmicro.api.registry.ServiceItem;
 import cn.jmicro.api.registry.ServiceMethod;
 import cn.jmicro.api.service.ServiceLoader;
 import cn.jmicro.common.util.JsonUtils;
-import cn.jmicro.example.api.DynamicInterface;
+import cn.jmicro.example.api.IDynamicInterface;
 import cn.jmicro.mng.api.IAgentLogService;
 import cn.jmicro.test.JMicroBaseTestCase;
 
 public class TestLogService   extends JMicroBaseTestCase{
 
 	private void registService() {
-		DynamicInterface r = (data)->{
+		IDynamicInterface r = (data)->{
 			System.out.println(data);
 		};
-		of.regist(DynamicInterface.class, r);
+		of.regist(IDynamicInterface.class, r);
 		
 		ServiceLoader sl = of.get(ServiceLoader.class);
-		ServiceItem si = sl.createSrvItem(DynamicInterface.class.getName(), Config.getInstanceName()+"_DynamicRegistryService", "0.0.1", DynamicInterface.class.getName());
+		ServiceItem si = sl.createSrvItem(IDynamicInterface.class.getName(), Config.getInstanceName()+"_DynamicRegistryService", "0.0.1", IDynamicInterface.class.getName());
 		
 		ServiceMethod sm = sl.createSrvMethod(si, "run", new Class[] {String.class});
 		sm.setMonitorEnable(1);
@@ -37,7 +37,7 @@ public class TestLogService   extends JMicroBaseTestCase{
 		
 		IAgentLogService ms = of.getRemoteServie(IAgentLogService.class.getName(), "mng", "0.0.1", null);
 		
-		Resp<Boolean> resp = ms.startLogMonitor("450", "output.log", "JMicroAgent0", 10);
+		Resp<Boolean> resp = ms.startLogMonitor("450", "output.log", "JMicroAgent0", 100);
 		
 		System.out.println(JsonUtils.getIns().toJson(resp));
 		

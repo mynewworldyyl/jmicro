@@ -18,6 +18,7 @@ import com.alibaba.dubbo.common.serialize.kryo.utils.ReflectUtils;
 import cn.jmicro.api.codec.typecoder.TypeCoder;
 import cn.jmicro.common.CommonException;
 import cn.jmicro.common.Utils;
+import javassist.ClassPool;
 
 public class SerializeProxyFactory {
 
@@ -52,7 +53,7 @@ public class SerializeProxyFactory {
 			throw new CommonException("should be public class [" + cls.getName() + "]");
 		 }
 		
-		 ClassGenerator classGenerator = ClassGenerator.newInstance(Thread.currentThread().getContextClassLoader());
+		 ClassGenerator classGenerator = ClassGenerator.newInstance(cls.getClassLoader());
 		 classGenerator.setClassName(cls.getName()+"$Serializer");
 		 //classGenerator.setSuperClass(SerializeObject.class);
 		 classGenerator.addInterface(ISerializer.class);
@@ -67,12 +68,14 @@ public class SerializeProxyFactory {
 		 try {
 			cache.put(cls, (ISerializer)clazz.newInstance());
 		} catch (InstantiationException | IllegalAccessException e) {
-			e.printStackTrace();
+			logger.error("",e);
+		} finally {
+			classGenerator.release();
 		}
 	
 	}
 
-	private static  String getDecodeMethod(Class cls) {
+	private static  String getDecodeMethod(Class<?> cls) {
 
 		StringBuffer sb = new StringBuffer("public Object decode(java.io.DataInput __buffer)   throws java.io.IOException {\n");
 		sb.append(" cn.jmicro.api.codec.typecoder.TypeCoder __coder = cn.jmicro.api.codec.TypeCoderFactory.getDefaultCoder();\n\n");
@@ -132,7 +135,7 @@ public class SerializeProxyFactory {
 	
 	}
 
-	private static String getEncodeMethod(Class cls) {
+	private static String getEncodeMethod(Class<?> cls) {
 		StringBuffer sb = new StringBuffer("public void encode(java.io.DataOutput __buffer,Object obj)   throws java.io.IOException { \n");
 		sb.append(cls.getName() ).append(" __obj =  (").append(cls.getName()).append(")").append("obj; \n");
 		

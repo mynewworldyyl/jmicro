@@ -34,6 +34,7 @@ import cn.jmicro.api.monitor.MonitorInfo;
 import cn.jmicro.api.monitor.MonitorServerStatus;
 import cn.jmicro.api.monitor.OneItem;
 import cn.jmicro.api.monitor.ServiceCounter;
+import cn.jmicro.api.monitor.genclient.IMonitorDataSubscriber$JMAsyncClient;
 import cn.jmicro.api.objectfactory.AbstractClientServiceProxyHolder;
 import cn.jmicro.api.objectfactory.IObjectFactory;
 import cn.jmicro.api.registry.IServiceListener;
@@ -53,8 +54,8 @@ public class MonitorServerImpl implements IMonitorServer {
 	//@Cfg(value="/MonitorServerImpl/monitoralbe", changeListener = "")
 	private boolean monitoralbe = false;
 	
-	@Reference(required=false,changeListener="subscriberChange")
-	private Set<IMonitorDataSubscriber> subsribers = new HashSet<>();
+	@Reference(namespace="*", version="*", type="ins",required=false,changeListener="subscriberChange")
+	private Set<IMonitorDataSubscriber$JMAsyncClient> subsribers = new HashSet<>();
 	
 	//@Inject
 	//private MonitorClient monitorManager;
@@ -128,8 +129,7 @@ public class MonitorServerImpl implements IMonitorServer {
 	}
 	
 	@Override
-	@SMethod(timeout=5000,retryCnt=0,needResponse=false,debugMode=0,
-			monitorEnable=0,logLevel=MC.LOG_ERROR)
+	@SMethod(timeout=5000,retryCnt=0,needResponse=false,debugMode=0,monitorEnable=0,logLevel=MC.LOG_ERROR)
 	public void submit(MRpcItem[] items) {
 		if(items == null || items.length == 0) {
 			/*if(monitoralbe) {
@@ -222,7 +222,7 @@ public class MonitorServerImpl implements IMonitorServer {
 		
 		while (true) {
 			try {
-				if (!addMonitors.isEmpty()) {
+				if(!addMonitors.isEmpty()) {
 					synchronized (addMonitors) {
 						for (Iterator<IMonitorDataSubscriber> ite = this.addMonitors.iterator(); ite.hasNext();) {
 							IMonitorDataSubscriber m = ite.next();
@@ -231,10 +231,10 @@ public class MonitorServerImpl implements IMonitorServer {
 							}
 						}
 					}
-					// doSubmitCacheItems();
+					//doSubmitCacheItems();
 				}
 
-				if (!deleteMonitors.isEmpty()) {
+				if(!deleteMonitors.isEmpty()) {
 					synchronized (deleteMonitors) {
 						for (Iterator<IMonitorDataSubscriber> ite = this.deleteMonitors.iterator(); ite.hasNext();) {
 							IMonitorDataSubscriber m = ite.next();
@@ -321,20 +321,20 @@ public class MonitorServerImpl implements IMonitorServer {
 			Set<Short> types = this.mtManager.intrest(skey);
 			if(types != null && types.size() > 0) {
 				RegItem ri = new RegItem();
+
+				//订阅者和服务器部署同一个JVM，做本地调用，不使用RPC
+				Class<?> cls = null;
 				try {
-					//订阅者和服务器部署同一个JVM，做本地调用，不使用RPC
-					Class<?> cls = MonitorServerImpl.class.getClassLoader().loadClass(po.getHolder().getItem().getImpl());
-					if(cls != null && IMonitorDataSubscriber.class.isAssignableFrom(cls) && cls.isAnnotationPresent(Component.class)) {
-						IMonitorDataSubscriber sub = (IMonitorDataSubscriber)of.get(cls);
-						ri.sub = sub;
-					}
+					cls = MonitorServerImpl.class.getClassLoader().loadClass(po.getHolder().getItem().getImpl());
 				} catch (Throwable e) {
 				}
 				
-				if(ri.sub == null) {
-					ri.sub = m;
+				if(cls != null && IMonitorDataSubscriber.class.isAssignableFrom(cls) && cls.isAnnotationPresent(Component.class)) {
+					IMonitorDataSubscriber sub = (IMonitorDataSubscriber)of.get(cls);
+					ri.localSub = sub;
+				} else {
+					ri.sub = (IMonitorDataSubscriber$JMAsyncClient)m;
 				}
-				
 				Short[] ts = new Short[types.size()];
 				types.toArray(ts);
 				ri.types = ts;
@@ -381,8 +381,6 @@ public class MonitorServerImpl implements IMonitorServer {
 					ri.isWorking = false;
 					return;
 				}
-				//自身所有代码不加入日志统计，否则会进入死循环
-				//如果有需要，可以选择其他方式，如slf4j等
 				JMicroContext.get().setBoolean(JMicroContext.IS_MONITORENABLE, false);
 				JMicroContext.get().setBoolean(Constants.FROM_MONITOR, true);
 				
@@ -394,7 +392,17 @@ public class MonitorServerImpl implements IMonitorServer {
 					log(items);
 				}
 				
-				ri.sub.onSubmit(items);
+				if(ri.localSub != null) {
+					ri.localSub.onSubmit(items);
+				} else {
+					ri.sub.onSubmitJMAsync(null,items)
+					.then((rst,fail,ctx)->{
+						if(fail != null) {
+							logger.error("submit error: " + fail.toString());
+						}
+					});
+				}
+				
 				if(monitoralbe) {
 					sc.add(MC.Ms_TaskSuccessItemCnt, items.length);
 				}
@@ -412,7 +420,10 @@ public class MonitorServerImpl implements IMonitorServer {
 	}
 
 	private class RegItem {
-		public IMonitorDataSubscriber sub;
+		public IMonitorDataSubscriber$JMAsyncClient sub;
+		
+		public IMonitorDataSubscriber localSub;
+		
 		public Short[] types = null;
 		
 		public List<MRpcItem> cacheItems = new ArrayList<>();

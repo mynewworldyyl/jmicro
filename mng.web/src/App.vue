@@ -1,41 +1,41 @@
 <template>
 
   <div>
-      <div style="position: fixed;right: 0px;left: 0px; height: 60px;top: 0px;z-index:100">
+      <div style="position:fixed; right:0px; left:0px; height:60px; top:0px; z-index:100">
           <Menu mode="horizontal" theme="light" active-key="service" @on-select="toRouter">
               <Submenu name="mo">
                   <template slot="title"><Icon type="ios-cog" />MONITOR</template>
                   <Menu-group title="MONITOR">
-                      <Menu-item name="service" ><Icon type="ios-paper"></Icon>SERVICE</Menu-item>
-                      <Menu-item name="statis"><Icon type="ios-stats" />STATIS</Menu-item>
-                      <Menu-item name="monitors"><Icon type="ios-cog"></Icon>MONITORS</Menu-item>
-                      <Menu-item name="threadPool"><Icon type="ios-cog"></Icon>THREAD</Menu-item>
+                      <Menu-item name="__service" ><Icon type="ios-paper"></Icon>SERVICE</Menu-item>
+                      <Menu-item name="__statis"><Icon type="ios-stats" />STATIS</Menu-item>
+                      <Menu-item name="__monitors"><Icon type="ios-cog"></Icon>MONITORS</Menu-item>
+                      <Menu-item name="__threadPool"><Icon type="ios-cog"></Icon>THREAD</Menu-item>
                   </Menu-group>
                   <Menu-group title="LOG">
-                      <Menu-item name="invokeLinkView"><Icon type="ios-cog"></Icon>INVOKE LINK</Menu-item>
-                      <Menu-item name="logItemView"><Icon type="ios-cog"></Icon>Monitor LOG</Menu-item>
-                      <Menu-item name="processLog"><Icon type="ios-cog"></Icon>Process Log</Menu-item>
+                      <Menu-item name="__invokeLinkView"><Icon type="ios-cog"></Icon>INVOKE LINK</Menu-item>
+                      <Menu-item name="__logItemView"><Icon type="ios-cog"></Icon>Monitor LOG</Menu-item>
+                      <Menu-item name="__processLog"><Icon type="ios-cog"></Icon>Process Log</Menu-item>
                   </Menu-group>
                   <Menu-group title="CFG">
-                      <Menu-item name="warning"><Icon type="ios-alert" />WARNING</Menu-item>
-                      <Menu-item name="typeConfig"><Icon type="ios-cog"></Icon>TYPE CONFIG</Menu-item>
-                      <Menu-item name="monitorType"><Icon type="ios-cog"></Icon>MONITOR TYPES</Menu-item>
-                      <Menu-item name="monitorTypeServiceMethod"><Icon type="ios-cog"></Icon>SERVICE TYPES</Menu-item>
-                      <Menu-item name="namedType"><Icon type="ios-cog"></Icon>NAMED TYPES</Menu-item>
+                      <Menu-item name="__warning"><Icon type="ios-alert" />WARNING</Menu-item>
+                      <Menu-item name="__typeConfig"><Icon type="ios-cog"></Icon>TYPE CONFIG</Menu-item>
+                      <Menu-item name="__monitorType"><Icon type="ios-cog"></Icon>MONITOR TYPES</Menu-item>
+                      <Menu-item name="__monitorTypeServiceMethod"><Icon type="ios-cog"></Icon>SERVICE TYPES</Menu-item>
+                      <Menu-item name="__namedType"><Icon type="ios-cog"></Icon>NAMED TYPES</Menu-item>
                   </Menu-group>
-                   </Submenu>
+               </Submenu>
 
               <Submenu name="d">
                   <template slot="title">
                       <Icon type="ios-analytics" />
                       DEPLOYMENT
                   </template>
-                  <Menu-item name="deploymentDesc"><Icon type="ios-alert" />DEPLOY DESC</Menu-item>
-                  <Menu-item name="agent"><Icon type="ios-cog"></Icon>AGENTS</Menu-item>
-                  <Menu-item name="process"><Icon type="ios-cog"></Icon>PROCESS</Menu-item>
-                  <Menu-item name="repository"><Icon type="ios-people"></Icon>REPOSITORY</Menu-item>
-                  <Menu-item name="choreography"><Icon type="ios-cog"></Icon>CHOREOGRAPHY</Menu-item>
-                  <Menu-item name="host"><Icon type="ios-cog"></Icon>HOST</Menu-item>
+                  <Menu-item name="__deploymentDesc"><Icon type="ios-alert" />DEPLOY DESC</Menu-item>
+                  <Menu-item name="__agent"><Icon type="ios-cog"></Icon>AGENTS</Menu-item>
+                  <Menu-item name="__process"><Icon type="ios-cog"></Icon>PROCESS</Menu-item>
+                  <Menu-item name="__repository"><Icon type="ios-people"></Icon>REPOSITORY</Menu-item>
+                  <Menu-item name="__choreography"><Icon type="ios-cog"></Icon>CHOREOGRAPHY</Menu-item>
+                  <Menu-item name="__host"><Icon type="ios-cog"></Icon>HOST</Menu-item>
               </Submenu>
 
               <Submenu name="o">
@@ -43,17 +43,29 @@
                       <Icon type="ios-analytics" />
                       OTHERS
                   </template>
-                  <Menu-item name="config"><Icon type="ios-construct"></Icon>CONFIG</Menu-item>
-                  <Menu-item name="router"><Icon type="ios-people"></Icon>ROUTER</Menu-item>
-                  <Menu-item name="shell"><Icon type="ios-cog"></Icon>SHELL</Menu-item>
+                  <Menu-item name="__config"><Icon type="ios-construct"></Icon>CONFIG</Menu-item>
+                  <Menu-item name="__router"><Icon type="ios-people"></Icon>ROUTER</Menu-item>
+                  <Menu-item name="__shell"><Icon type="ios-cog"></Icon>SHELL</Menu-item>
                  <!-- <Menu-item name="log"><Icon type="ios-filing"></Icon>LOG</Menu-item>-->
-                  <MenuItem name="help"> <Icon type="ios-cog"></Icon>HELP</MenuItem>
-                  <MenuItem name="about"> <Icon type="ios-cog"></Icon>ABOUT</MenuItem>
+                  <MenuItem name="__help"> <Icon type="ios-cog"></Icon>HELP</MenuItem>
+                  <MenuItem name="__about"> <Icon type="ios-cog"></Icon>ABOUT</MenuItem>
                  <!-- <MenuItem name="contact"> <Icon type="ios-cog"></Icon>CONTACT ME</MenuItem>-->
-                  <MenuItem name="testing"> <Icon type="ios-cog"></Icon>TESTING</MenuItem>
+                  <MenuItem name="__testing"> <Icon type="ios-cog"></Icon>TESTING</MenuItem>
+              </Submenu>
+
+              <Submenu name="me">
+                  <template slot="title">
+                      <Icon type="ios-analytics" />
+                      MENUS
+                  </template>
+
+                  <MenuItem  v-for="mi in menus" :name="mi.name" :key="mi.name">
+                      <Icon :type="mi.icon"></Icon>{{mi.label}}</MenuItem>
+
               </Submenu>
 
           </Menu>
+          <JToolBar></JToolBar>
           <JAccount></JAccount>
       </div>
 
@@ -129,6 +141,7 @@
     import JMonitorList from './components/monitor/JMonitorList.vue'
     import JRouterList from './components/route/JRouterList.vue'
     import JAccount from './components/common/JAccount.vue'
+    import JToolBar from './components/common/JToolBar.vue'
     import JMonitorTypeKeyList from './components/monitor/JMonitorTypeKeyList.vue'
     import JNamedTypeList from './components/monitor/JNamedTypeList.vue'
     import JThreadPoolMonitorList from './components/monitor/JThreadPoolMonitorList.vue'
@@ -137,11 +150,39 @@
     let cache = null;
 
 export default {
-  name: 'App',
+    name: 'App',
     mounted() {
         //window.jm.rpc.config.ip='';
         window.jm.rpc.init();
         //jm.mng.init();
+        let self = this;
+
+        window.jm.vue.$on('editorOpen',function(opts) {
+            if(!opts.editorId) {
+                throw 'editorId is NULL';
+            }
+
+            if(!opts.menus) {
+                opts.menus = [];
+            }
+
+            self.activeEditorId = opts.editorId;
+            self.menusMap[opts.editorId] = opts.menus;
+            self.menus = self.menusMap[opts.editorId];
+        });
+
+        window.jm.vue.$on('editorClosed',function(editorId) {
+            delete self.menusMap[editorId];
+            if(editorId == self.activeEditorId) {
+                self.menus = [];
+            }
+        });
+
+        window.jm.vue.$on('editorActive',function(editorId) {
+            self.activeEditorId = editorId;
+            self.menus = self.menusMap[editorId];
+        });
+
     },
 
   components: {
@@ -150,6 +191,7 @@ export default {
         JMonitorList,
         JRouterList,
         JAccount,
+        JToolBar,
         JMonitorTypeKeyList,
         JNamedTypeList,
         JThreadPoolMonitorList,
@@ -232,6 +274,12 @@ export default {
       return {
           curSelect: cache[cache.curSelectKey],
           cache: cache,
+          menus:[/*{name:"test1",label:"label1",icon:"ios-cog"},
+              {name:"test2",label:"label2",icon:"ios-people"}*/],
+          activeEditorId : null,
+          menusMap:{
+
+          }
       };
     },
 
@@ -244,33 +292,52 @@ export default {
       },
 
       toRouter(key) {
-          if(key == 'o' || key == 'd' || key =='mo') {
+          if(key == 'o' || key == 'd' || key =='mo' || key == 'me') {
               return
-          }else if(key == cache.curSelectKey  ) {
-              this.openDrawer();
-          } else if(cache[key]) {
-              this.curSelect.drawerStatus = false;
-              this.curSelect.drawerBtnStyle.zindex = -10000;
-              cache.curSelectKey = key;
-              this.curSelect = cache[key];
-              this.openDrawer();
-          }else {
-              this.curSelect.drawerStatus = false;
-              this.curSelect.drawerBtnStyle.zindex = -10000;
-              this.curSelect.drawerBtnStyle.left = '-100px';
-              window.jm.vue.$emit('openEditorSelect',key);
+          }else if( key.startWith('__')) {
+              key  = key.substring(2);
+              if(key == cache.curSelectKey  ) {
+                  this.openDrawer();
+              } else if(cache[key]) {
+                  this.curSelect.drawerStatus = false;
+                  this.curSelect.drawerBtnStyle.zindex = -10000;
+                  cache.curSelectKey = key;
+                  this.curSelect = cache[key];
+                  this.openDrawer();
+              } else {
+                  this.curSelect.drawerStatus = false;
+                  this.curSelect.drawerBtnStyle.zindex = -10000;
+                  this.curSelect.drawerBtnStyle.left = '-100px';
+                  window.jm.vue.$emit('openEditorSelect',key);
+              }
+          } else {
+              let f = false;
+              for(let i = 0; i < this.menus.length; i++) {
+                  let mi = this.menus[i];
+                  if(mi.name == key) {
+                      mi.call();
+                      f = true;
+                      break;
+                  }
+              }
+              if(!f) {
+                  this.$Message.error(key + " method not found!");
+              }
           }
+
           /* this.$router.push('/'+key); */
       },
 
       doLoginOrLogout(){
 
       }
+
   }
 }
 </script>
 
 <style>
+
 #app {
   font-family: A
   venir, Helvetica, Arial, sans-serif;
@@ -278,28 +345,6 @@ export default {
   -moz-osx-font-smoothing: grayscale;
   text-align: center;
   color: #2c3e50;
-}
-.JHeader{
-    width:auto;
-    height:39px;
-    position: relative;
-    top: 0px;
-    left: 0px;
-    border-radius: 3px;
-    background-color:lightsteelblue;
-    vertical-align: middle;
-    line-height: 39px;
-    text-align: left;
-    padding-left:6px;
-    font-weight:bold;
-}
-
-.mainMenuItem{
-    display:inline-block;
-    width:50px;
-    height:auto;
-    padding:5px 8px;
-    margin: 0px 8px;
 }
 
 .drawerBtnStatu{

@@ -72,10 +72,13 @@ import cn.jmicro.api.service.ServiceManager;
 import cn.jmicro.api.timer.TimerTicker;
 import cn.jmicro.common.CommonException;
 import cn.jmicro.common.Constants;
+import cn.jmicro.common.JmicroClassPool;
 import cn.jmicro.common.Utils;
 import cn.jmicro.common.util.JsonUtils;
 import cn.jmicro.common.util.StringUtils;
 import cn.jmicro.common.util.SystemUtils;
+import javassist.CtClass;
+import javassist.CtMethod;
 
 /**
  * 1. 创建对像全部单例,所以不保证线程安全
@@ -1274,150 +1277,192 @@ public class SimpleObjectFactory implements IObjectFactory {
 	}
 	
 	public Object createDynamicService(Class<?> cls) {
-		 ClassGenerator classGenerator = ClassGenerator.newInstance(Thread.currentThread().getContextClassLoader());
-		 classGenerator.setClassName(cls.getName()+"$JmicroSrv"+SimpleObjectFactory.idgenerator.getAndIncrement());
-		 classGenerator.setSuperClass(cls);
-		 classGenerator.addInterface(IServerServiceProxy.class);
-		 classGenerator.addDefaultConstructor();
-		 
-		 Service srvAnno = cls.getAnnotation(Service.class);
-		 Class<?> srvInterface = srvAnno.infs();
-		 if(srvInterface == null || srvInterface == Void.class){
-			 if(cls.getInterfaces() == null || cls.getInterfaces().length != 1) {
-				 throw new CommonException("Class ["+cls.getName()+"] must implements one and only one service interface");
-			 }
-			 srvInterface = cls.getInterfaces()[0];
-		 }
-		 classGenerator.addInterface(srvInterface);
-		 
-		 
-		 //classGenerator.addField("public static java.lang.reflect.Method[] methods;");
-		 //classGenerator.addField("private " + InvocationHandler.class.getName() + " handler = new cn.jmicro.api.client.ServiceInvocationHandler(this);");
-      
-/*		 classGenerator.addField("private boolean enable=true;");
-		 classGenerator.addMethod("public java.lang.String getNamespace(){ return \"" + ServiceItem.namespace(srvAnno.namespace()) + "\";}");
-		 classGenerator.addMethod("public java.lang.String getVersion(){ return \"" + ServiceItem.version(srvAnno.version()) + "\";}");
-		 classGenerator.addMethod("public java.lang.String getServiceName(){ return \"" + srvInterface.getName() + "\";}");
-		 classGenerator.addMethod("public boolean enable(){  return this.enable;}");
-		 classGenerator.addMethod("public void enable(boolean en){ this.enable=en;}");*/
-		 classGenerator.addMethod("public java.lang.String wayd(java.lang.String msg){ return msg;}");
-		 
-		 //只为代理接口生成代理方法,别的方法继承自原始类
-		 Method[] ms1 = srvInterface.getMethods();
-		 
-		 //Method[] ms2 = new Method[ms1.length];
-		/* if(cls.getName().equals("cn.jmicro.example.provider.TestRpcServiceImpl")) {
-			 System.out.println("");
-		 }*/
-		 logger.debug("Create Service: {}",cls.getName());
-		 for(int i =0; i < ms1.length; i++) {
-		     //Method m1 = ms1[i];
-		     Method m = null;
-			try {
-				m = cls.getMethod(ms1[i].getName(), ms1[i].getParameterTypes());
-			} catch (NoSuchMethodException | SecurityException e) {
-				throw new CommonException("Method not found: " + ms1[i].getName());
+		//String wayd(String msg);
+		 ClassLoader cl = Thread.currentThread().getContextClassLoader();
+		 JmicroClassPool cp = new JmicroClassPool(true);
+		 try {
+			 CtClass ct = cp.makeClass(cls.getName() + "$JmicroSrv" + SimpleObjectFactory.idgenerator.getAndIncrement());
+			 ct.setSuperclass(cp.getCtClass(cls.getName()));
+			 ct.setInterfaces(new CtClass[]{cp.getCtClass(IServerServiceProxy.class.getName())});
+			 CtMethod waydMethod = CtMethod.make("public java.lang.String wayd(java.lang.String msg){ return msg;}", ct);
+			 ct.addMethod(waydMethod);
+			 Class<?> clazz = ct.toClass(cls.getClassLoader(),cls.getProtectionDomain());
+			 Object proxy = clazz.newInstance();
+			 return proxy;
+		} catch (Throwable e) {
+			 throw new CommonException("Gen service class error: ",e);
+		}finally {
+			if(cp != null) {
+				cp.release();
 			}
-			 if (m.getDeclaringClass() == Object.class || !Modifier.isPublic(m.getModifiers())){
-				 continue;
-		     }
-			 
-		   //ms2[i] = m;
-		   
-		   Class<?> rt = m.getReturnType();
-           Class<?>[] pts = m.getParameterTypes();
-
-           StringBuilder code = new StringBuilder();
-
-           if(!Void.TYPE.equals(rt)) {
-        	   code.append(ReflectUtils.getName(rt)).append(" ret = ");
-           }
-           code.append(" super.").append(m.getName()).append("(");
-           for(int j = 0; j < pts.length; j++){
-          	 code.append("$").append(j + 1);
-          	 if(j < pts.length-1){
-          		code.append(",");
-          	 }
-           }
-           code.append(");");
-           
-           if (!Void.TYPE.equals(rt)) {
-        	   code.append(" return ret;");
-           }
-           logger.debug(code.toString());
-           classGenerator.addMethod(m.getName(), m.getModifiers(), rt, pts, m.getExceptionTypes(), code.toString());      
-		 }
-		 
-		   Class<?> clazz = classGenerator.toClass();
-       try {
-      	    //clazz.getField("methods").set(null, ms2);
-			Object proxy = clazz.newInstance();
-			return proxy; 
-		} catch (InstantiationException | IllegalArgumentException | IllegalAccessException | SecurityException e1) {
-			throw new CommonException("Fail to create proxy ["+ cls.getName()+"]");
+			 if(cl != null) {
+				 Thread.currentThread().setContextClassLoader(cl);
+			 }
 		}
 	}
+	
+	/*public Object createDynamicService(Class<?> cls) {
+		 if(cls.getName().equals("cn.jmicro.example.pubsub.impl.AsyncRpcCallbackImpl")
+			|| cls.getName().equals("cn.jmicro.example.pubsub.impl.SimplePubsubImpl")) {
+			 logger.debug("createDynamicService");
+		 }
+		 ClassGenerator classGenerator = ClassGenerator.newInstance(cls.getClassLoader());
+		 
+		try {
+			classGenerator
+					.setClassName(cls.getName() + "$JmicroSrv" + SimpleObjectFactory.idgenerator.getAndIncrement());
+			classGenerator.setSuperClass(cls);
+			classGenerator.addInterface(IServerServiceProxy.class);
+			classGenerator.addDefaultConstructor();
+
+			Service srvAnno = cls.getAnnotation(Service.class);
+			Class<?> srvInterface = srvAnno.infs();
+			if (srvInterface == null || srvInterface == Void.class) {
+				if (cls.getInterfaces() == null || cls.getInterfaces().length != 1) {
+					throw new CommonException(
+							"Class [" + cls.getName() + "] must implements one and only one service interface");
+				}
+				srvInterface = cls.getInterfaces()[0];
+			}
+			classGenerator.addInterface(srvInterface);
+
+			// classGenerator.addField("public static java.lang.reflect.Method[] methods;");
+			// classGenerator.addField("private " + InvocationHandler.class.getName() + "
+			// handler = new cn.jmicro.api.client.ServiceInvocationHandler(this);");
+
+			
+			 * classGenerator.addField("private boolean enable=true;");
+			 * classGenerator.addMethod("public java.lang.String getNamespace(){ return \""
+			 * + ServiceItem.namespace(srvAnno.namespace()) + "\";}");
+			 * classGenerator.addMethod("public java.lang.String getVersion(){ return \"" +
+			 * ServiceItem.version(srvAnno.version()) + "\";}"); classGenerator.
+			 * addMethod("public java.lang.String getServiceName(){ return \"" +
+			 * srvInterface.getName() + "\";}");
+			 * classGenerator.addMethod("public boolean enable(){  return this.enable;}");
+			 * classGenerator.addMethod("public void enable(boolean en){ this.enable=en;}");
+			 
+			classGenerator.addMethod("public java.lang.String wayd(java.lang.String msg){ return msg;}");
+
+			// 只为代理接口生成代理方法,别的方法继承自原始类
+			Method[] ms1 = srvInterface.getMethods();
+
+			// Method[] ms2 = new Method[ms1.length];
+			
+			 * if(cls.getName().equals("cn.jmicro.example.provider.TestRpcServiceImpl")) {
+			 * System.out.println(""); }
+			 
+			logger.debug("Create Service: {}", cls.getName());
+			for (int i = 0; i < ms1.length; i++) {
+				// Method m1 = ms1[i];
+				Method m = null;
+				try {
+					m = cls.getMethod(ms1[i].getName(), ms1[i].getParameterTypes());
+				} catch (NoSuchMethodException | SecurityException e) {
+					throw new CommonException("Method not found: " + ms1[i].getName());
+				}
+				if (m.getDeclaringClass() == Object.class || !Modifier.isPublic(m.getModifiers())) {
+					continue;
+				}
+
+				// ms2[i] = m;
+
+				Class<?> rt = m.getReturnType();
+				Class<?>[] pts = m.getParameterTypes();
+
+				StringBuilder code = new StringBuilder();
+
+				if (!Void.TYPE.equals(rt)) {
+					code.append(ReflectUtils.getName(rt)).append(" ret = ");
+				}
+				code.append(" super.").append(m.getName()).append("(");
+				for (int j = 0; j < pts.length; j++) {
+					code.append("$").append(j + 1);
+					if (j < pts.length - 1) {
+						code.append(",");
+					}
+				}
+				code.append(");");
+
+				if (!Void.TYPE.equals(rt)) {
+					code.append(" return ret;");
+				}
+				logger.debug(code.toString());
+				classGenerator.addMethod(m.getName(), m.getModifiers(), rt, pts, m.getExceptionTypes(),
+						code.toString());
+			}
+
+			Class<?> clazz = classGenerator.toClass(cls.getClassLoader(),cls.getProtectionDomain());
+			// clazz.getField("methods").set(null, ms2);
+			Object proxy = clazz.newInstance();
+			return proxy;
+		} catch (Throwable e1) {
+			throw new CommonException("Fail to create proxy ["+ cls.getName()+"]",e1);
+		 } finally {
+			 classGenerator.release();
+		}
+	}*/
 
 	@SuppressWarnings("unchecked")
 	private <T>  T createLazyProxyObject(Class<T> cls) {
 		logger.debug("createLazyProxyObject: " + cls.getName());
-		ClassGenerator cg = ClassGenerator.newInstance(Thread.currentThread().getContextClassLoader());
-		cg.setClassName(cls.getName()+"$Jmicro"+idgenerator.getAndIncrement());
-		cg.setSuperClass(cls.getName());
-		cg.addInterface(ProxyObject.class);
-		//cg.addDefaultConstructor();
-		Constructor<?>[] cons = cls.getConstructors();
-		Map<String,java.lang.reflect.Constructor<?>> consMap = new HashMap<>();
-		String conbody = "this.conArgs=$args; for(int i = 0; i < $args.length; i++) { Object arg = $args[i]; this.conKey = this.conKey + arg.getClass().getName();}";
-		for(Constructor<?> c : cons){
-			String key = null;
-			Class<?>[] ps = c.getParameterTypes();
-			for(Class<?> p: ps){
-				key = key + p.getName();
-			}
-			consMap.put(key, c);
-			cg.addConstructor(c.getModifiers(),c.getParameterTypes(),c.getExceptionTypes(),conbody);
-		}
 		
-		cg.addMethod("private void _init0() { if (this.init) return; this.init=true; this.target = ("+cls.getName()+")(factory.createNoProxy("+cls.getName()+".class));}");
-		cg.addMethod("public Object getTarget(){ _init0(); return this.target;}");
-		
-		int index = 0;
-		List<Method> methods = new ArrayList<>();
-		Utils.getIns().getMethods(methods, cls);
-		for(Method m : methods){
-			if(Modifier.isPrivate(m.getModifiers()) || m.getDeclaringClass() == Object.class){
-				continue;
-			}
-			StringBuffer sb = new StringBuffer();
-			//sb.append("if (!this.init) { System.out.println( \"lazy init class:"+cls.getName()+"\"); this.init=true; this.target = ("+cls.getName()+")((java.lang.reflect.Constructor)constructors.get(this.conKey)).newInstance(this.conArgs);}");
-			sb.append(" _init0();");
-			Class<?> rt = m.getReturnType();
-			
-			if (!Void.TYPE.equals(rt)) {
-				sb.append(ReflectUtils.getName(rt)).append(" v = ");
-			}
-			
-			sb.append(" methods[").append(index).append("].invoke(this.target,$args); ");	
-			
-			if (!Void.TYPE.equals(rt)) {
-				sb.append(" return v ;");
-			}
-			cg.addMethod(m.getName(), m.getModifiers(), m.getReturnType(), m.getParameterTypes(),
-					m.getExceptionTypes(), sb.toString());
-			index++;
-		} 
-		cg.addField("private boolean init=false;");
-		cg.addField("private "+cls.getName()+" target=null; ");
-		cg.addField("private java.lang.String conKey;");
-		cg.addField("private java.lang.Object[] conArgs;");
-		
-		cg.addField("public static java.lang.reflect.Method[] methods;");
-		cg.addField("public static cn.jmicro.objfactory.simple.SimpleObjectFactory factory;");
-		
-		Class<?> cl = cg.toClass();
-		
+		ClassGenerator cg = ClassGenerator.newInstance(cls.getClassLoader());
 		try {
+			cg.setClassName(cls.getName()+"$Jmicro"+idgenerator.getAndIncrement());
+			cg.setSuperClass(cls.getName());
+			cg.addInterface(ProxyObject.class);
+			//cg.addDefaultConstructor();
+			Constructor<?>[] cons = cls.getConstructors();
+			Map<String,java.lang.reflect.Constructor<?>> consMap = new HashMap<>();
+			String conbody = "this.conArgs=$args; for(int i = 0; i < $args.length; i++) { Object arg = $args[i]; this.conKey = this.conKey + arg.getClass().getName();}";
+			for(Constructor<?> c : cons){
+				String key = null;
+				Class<?>[] ps = c.getParameterTypes();
+				for(Class<?> p: ps){
+					key = key + p.getName();
+				}
+				consMap.put(key, c);
+				cg.addConstructor(c.getModifiers(),c.getParameterTypes(),c.getExceptionTypes(),conbody);
+			}
+			
+			cg.addMethod("private void _init0() { if (this.init) return; this.init=true; this.target = ("+cls.getName()+")(factory.createNoProxy("+cls.getName()+".class));}");
+			cg.addMethod("public Object getTarget(){ _init0(); return this.target;}");
+			
+			int index = 0;
+			List<Method> methods = new ArrayList<>();
+			Utils.getIns().getMethods(methods, cls);
+			for(Method m : methods){
+				if(Modifier.isPrivate(m.getModifiers()) || m.getDeclaringClass() == Object.class){
+					continue;
+				}
+				StringBuffer sb = new StringBuffer();
+				//sb.append("if (!this.init) { System.out.println( \"lazy init class:"+cls.getName()+"\"); this.init=true; this.target = ("+cls.getName()+")((java.lang.reflect.Constructor)constructors.get(this.conKey)).newInstance(this.conArgs);}");
+				sb.append(" _init0();");
+				Class<?> rt = m.getReturnType();
+				
+				if (!Void.TYPE.equals(rt)) {
+					sb.append(ReflectUtils.getName(rt)).append(" v = ");
+				}
+				
+				sb.append(" methods[").append(index).append("].invoke(this.target,$args); ");	
+				
+				if (!Void.TYPE.equals(rt)) {
+					sb.append(" return v ;");
+				}
+				cg.addMethod(m.getName(), m.getModifiers(), m.getReturnType(), m.getParameterTypes(),
+						m.getExceptionTypes(), sb.toString());
+				index++;
+			} 
+			cg.addField("private boolean init=false;");
+			cg.addField("private "+cls.getName()+" target=null; ");
+			cg.addField("private java.lang.String conKey;");
+			cg.addField("private java.lang.Object[] conArgs;");
+			
+			cg.addField("public static java.lang.reflect.Method[] methods;");
+			cg.addField("public static cn.jmicro.objfactory.simple.SimpleObjectFactory factory;");
+			
+			Class<?> cl = cg.toClass(cls.getClassLoader(),cls.getProtectionDomain());
+			
 			cl.getField("methods").set(null, cls.getMethods());
 			cl.getField("factory").set(null, this);
 			Object o = cl.newInstance();
@@ -1425,6 +1470,8 @@ public class SimpleObjectFactory implements IObjectFactory {
 			return (T)o;
 		} catch (IllegalArgumentException | IllegalAccessException | NoSuchFieldException | SecurityException | InstantiationException e) {
 			logger.error("Create lazy proxy error for: "+ cls.getName(), e);
+		}finally {
+			cg.release();
 		}
 		return null;
 	}

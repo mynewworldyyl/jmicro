@@ -43,12 +43,12 @@ public class TestApigateClient {
 		//System.out.println(srv.hi(new Person()));
 		
 		ISimpleRpc$JMAsyncClient srv = socketClient.getService(ISimpleRpc$JMAsyncClient.class,"simpleRpc", "0.0.1");
-		srv.hiJMAsync(new Person()).then((val,fail) -> {
+		srv.hiJMAsync(null,new Person()).then((val,fail,ctx) -> {
 			System.out.println("Hi: " +val);
 			//System.out.println(fail);
 		});
 		
-		srv.helloJMAsync("Hello jmicro: ").then((val,fail) -> {
+		srv.helloJMAsync(null,"Hello jmicro: ").then((val,fail,ctx) -> {
 			System.out.println("Hello: " +val);
 			//System.out.println(fail);
 		});
@@ -83,7 +83,7 @@ public class TestApigateClient {
 	public void testCallTestRpcService() {
 		Object[] args = new Object[] {"hello"};
 		socketClient.callService(ITestRpcService.class.getName(),
-		"testrpc", "0.0.1","subscrite", String.class, args, (msg,f)->{
+		"testrpc", "0.0.1","subscrite", String.class, args, (msg,f,ctx)->{
 			System.out.println("Got server msg:"+msg);
 		});
 		JMicro.waitForShutdown();

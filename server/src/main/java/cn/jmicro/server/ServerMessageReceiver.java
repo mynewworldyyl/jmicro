@@ -113,20 +113,20 @@ public class ServerMessageReceiver implements IMessageReceiver{
 	
 	public void init(){
 		ExecutorConfig config = new ExecutorConfig();
-		config.setMsCoreSize(5);
+		config.setMsCoreSize(10);
 		config.setMsMaxSize(20);
-		config.setTaskQueueSize(100);
+		config.setTaskQueueSize(500);
 		config.setThreadNamePrefix("ServerMessageReceiver-default");
 		config.setRejectedExecutionHandler(new JicroAbortPolicy());
 		defaultExecutor = ef.createExecutor(config);
 		
-		ExecutorConfig gateWayCfg = new ExecutorConfig();
+		/*ExecutorConfig gateWayCfg = new ExecutorConfig();
 		gateWayCfg.setMsCoreSize(5);
 		gateWayCfg.setMsMaxSize(20);
-		gateWayCfg.setTaskQueueSize(100);
+		gateWayCfg.setTaskQueueSize(500);
 		gateWayCfg.setThreadNamePrefix("ServerMessageReceiver-gateway");
 		gateWayCfg.setRejectedExecutionHandler(new JicroAbortPolicy());
-		gatewayExecutor = ef.createExecutor(gateWayCfg);
+		gatewayExecutor = ef.createExecutor(gateWayCfg);*/
 		
 		//系统级RPC处理器，如ID请求处理器，和普通RPC处理理器同一个实例，但是TYPE标识不同，需要特殊处理
 		//registHandler(jrpcHandler);
@@ -186,12 +186,13 @@ public class ServerMessageReceiver implements IMessageReceiver{
 			JMicroTask t = this.popTask();
 			t.setMsg(msg);
 			t.setS((IServerSession)s);
+			defaultExecutor.execute(t);
 			
-			if(Constants.MSG_TYPE_REQ_RAW == msg.getType()) {
+			/*if(Constants.MSG_TYPE_REQ_RAW == msg.getType()) {
 				this.gatewayExecutor.execute(t);
 			}else {
 				defaultExecutor.execute(t);
-			}
+			}*/
 			
 		} else {
 			doReceive((IServerSession) s, msg);

@@ -18,7 +18,6 @@ package cn.jmicro.transport.netty.client;
 
 import java.nio.ByteBuffer;
 import java.util.Map;
-import java.util.Timer;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.slf4j.Logger;
@@ -100,7 +99,7 @@ public class NettyClientSessionManager implements IClientSessionManager{
 	@Cfg(value="/NettyClientSessionManager/waitBeforeCloseSession",defGlobal=false)
 	private Long waitBeforeCloseSession  = 1000*3L;
 	
-	private Timer ticker = new Timer("ClientSessionHeardbeatWorker",true);
+	//private Timer ticker = new Timer("ClientSessionHeardbeatWorker",true);
 	
 	public void openDebugChange() {
 		for(IClientSession s : sessions.values()) {
@@ -151,7 +150,7 @@ public class NettyClientSessionManager implements IClientSessionManager{
 		if(!session.isClose() && session.waitingClose()) {
 			if(waitBeforeCloseSession > 0) {
 				//在真正关闭会话前待指时间，使已经发送的请求得到正常响应
-				TimerTicker.getDefault(this.waitBeforeCloseSession).addListener(CLOSE_SESSION_TIMER+session.getId(),
+				TimerTicker.getDefault(this.waitBeforeCloseSession).addListener(CLOSE_SESSION_TIMER + session.getId(),
 						null,(key,att)->{
 							session.close(true);
 							TimerTicker.getDefault(this.waitBeforeCloseSession).removeListener(key, true);

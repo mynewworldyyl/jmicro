@@ -1,7 +1,5 @@
 package cn.jmicro.api.objectfactory;
 
-import java.lang.reflect.Array;
-
 import cn.jmicro.api.registry.IServiceListener;
 import cn.jmicro.api.registry.ServiceItem;
 
@@ -23,7 +21,7 @@ public abstract class AbstractClientServiceProxyHolder implements IServiceListen
 	}
 	
 
-	public <T> T[] convertArray(Class<T> targetType, Object[] arrayObjects) {
+	/*public <T> T[] convertArray(Class<T> targetType, Object[] arrayObjects) {
         if (targetType == null) {
             return (T[]) arrayObjects;
         }
@@ -37,7 +35,7 @@ public abstract class AbstractClientServiceProxyHolder implements IServiceListen
         	e.printStackTrace();
         }
         return targetArray;
-    }
+    }*/
 
 	
 }

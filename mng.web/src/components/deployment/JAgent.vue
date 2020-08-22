@@ -1,7 +1,9 @@
 <template>
     <div class="JAgent">
-        <a @click="refresh()">REFRESH</a>
-        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input type="checkbox" v-model="showAll"/>SHOW ALL
+
+       <!-- <a @click="refresh()">REFRESH</a>
+        <input type="checkbox" v-model="showAll"/>SHOW ALL-->
+
         <table class="configItemTalbe" width="99%">
             <thead><tr><td>ID</td><td>PRIVATE</td><td>ACTIVE</td> <td>DEPS</td><td>INTS</td>
                 <td>START TIME</td><td>CONTINUTE</td>
@@ -26,6 +28,8 @@
 </template>
 
 <script>
+
+    const cid = 'agent';
 
     export default {
         name: 'JAgent',
@@ -108,6 +112,13 @@
         mounted () {
             window.jm.mng.act.addListener('JAgent',this.refresh);
             this.refresh();
+            let self = this;
+            window.jm.vue.$emit("editorOpen",
+                {"editorId":cid,
+                    "menus":[{name:"ShowAll",label:"Show All",icon:"ios-cog",call: ()=>{
+                        self.showAll = !self.showAll; self.refresh(); }},
+                        {name:"REFRESH",label:"Refresh",icon:"ios-cog",call:self.refresh}]
+                });
         },
     }
 </script>

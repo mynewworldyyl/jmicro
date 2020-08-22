@@ -214,7 +214,6 @@ public class Config implements IConfigChangeListener{
 		}
 		
 		CommadParams.put(Constants.LOCAL_DATA_DIR, dataDir);
-	
 		
 	}
 	

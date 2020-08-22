@@ -66,9 +66,12 @@ public class DefaultCoder implements TypeCoder<Object> {
 	public void encode(DataOutput buffer, Object val, Class<?> fieldDeclareType
 			, Type genericType) throws IOException {
 		//val impossible to be null
-		Class valCls = val.getClass();
-		
 		if(fieldDeclareType == null) {
+			if(val == null) {
+				buffer.write(Decoder.PREFIX_TYPE_NULL);
+				return;
+			}
+			Class valCls = val.getClass();
 			if(valCls == byte.class || valCls == Byte.TYPE || valCls == Byte.class ) {
 				buffer.write(Decoder.PREFIX_TYPE_BYTE);
 				buffer.writeByte((byte)val);
@@ -111,38 +114,77 @@ public class DefaultCoder implements TypeCoder<Object> {
 				return;
 			}
 		} else {
+			
 			if(fieldDeclareType == byte.class || fieldDeclareType == Byte.TYPE || fieldDeclareType == Byte.class ) {
+				if(val == null) {
+					val = 0;
+				}
 				buffer.writeByte((byte)val);
 				return;
 			}else if(fieldDeclareType == short.class || fieldDeclareType == Short.TYPE || fieldDeclareType == Short.class ) {
+				if(val == null) {
+					val = 0;
+				}
 				buffer.writeShort((short)val);
 				return;
 			}else if(fieldDeclareType == int.class || fieldDeclareType == Integer.TYPE || fieldDeclareType == Integer.class ) {
+				if(val == null) {
+					val = 0;
+				}
 				buffer.writeInt((int)val);
 				return;
 			}else if(fieldDeclareType == long.class || fieldDeclareType == Long.TYPE || fieldDeclareType == Long.class ) {
+				if(val == null) {
+					val = 0;
+				}
 				buffer.writeLong((long)val);
 				return;
 			}else if(fieldDeclareType == float.class || fieldDeclareType == Float.TYPE || fieldDeclareType == Float.class ) {
+				if(val == null) {
+					val = 0;
+				}
 				buffer.writeFloat((float)val);
 				return;
 			}else if(fieldDeclareType == double.class || fieldDeclareType == Double.TYPE || fieldDeclareType == Double.class ) {
+				if(val == null) {
+					val = 0;
+				}
 				buffer.writeDouble((double)val);
 				return;
 			}else if(fieldDeclareType == boolean.class || fieldDeclareType == Boolean.TYPE || fieldDeclareType == Boolean.class ) {
+				if(val == null) {
+					val = false;
+				}
 				buffer.writeBoolean((boolean)val);
 				return;
 			}else if(fieldDeclareType == char.class || fieldDeclareType == Character.TYPE || fieldDeclareType == Character.class ) {
-				buffer.writeChar((char)val);
+				if(val == null) {
+					buffer.writeChar(0);
+				}else {
+					buffer.writeChar((char)val);
+				}
 				return;
 			}else if(fieldDeclareType == String.class ) {
+				if(val == null) {
+					val = "";
+				}
 				buffer.writeUTF((String)val);
 				return;
 			}else if(fieldDeclareType == Date.class ) {
+				if(val == null) {
+					val = 0L;
+				}
 				buffer.writeLong(((Date)val).getTime());
 				return;
 			}
 		}
+		
+		if(val == null) {
+			buffer.write(Decoder.PREFIX_TYPE_NULL);
+			return;
+		}
+		
+		Class<?> valCls = val.getClass();
 		
 		if(Collection.class.isAssignableFrom(valCls) ||
 				Map.class.isAssignableFrom(valCls) || valCls.isArray()) {

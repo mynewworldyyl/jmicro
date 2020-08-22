@@ -13,13 +13,15 @@ import java.util.Iterator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.alibaba.dubbo.common.bytecode.ClassGenerator;
+
 import cn.jmicro.api.annotation.SO;
 import cn.jmicro.api.codec.ISerializeObject;
 import cn.jmicro.api.codec.TypeCoderFactory;
 import cn.jmicro.api.codec.typecoder.TypeCoder;
+import cn.jmicro.common.JmicroClassPool;
 import cn.jmicro.common.util.StringUtils;
 import javassist.CannotCompileException;
-import javassist.ClassPool;
 import javassist.CtClass;
 import javassist.CtField;
 import javassist.CtMethod;
@@ -29,9 +31,11 @@ public class SerializeProxyFactory {
 
 	public static final Logger logger = LoggerFactory.getLogger(SerializeProxyFactory.class);
 	
-	public static byte[] getSerializeData(byte[] classData, Class cls,String className) throws IOException, RuntimeException, NotFoundException, CannotCompileException {
+	public static byte[] getSerializeData(byte[] classData, Class<?> cls,String className) throws IOException, RuntimeException, NotFoundException, CannotCompileException {
 
-		 ClassPool cp = ClassPool.getDefault();
+		 ClassLoader cl = Thread.currentThread().getContextClassLoader();
+		
+		 JmicroClassPool cp = new JmicroClassPool(true);
 		 CtClass ct = cp.makeClass(new ByteArrayInputStream(classData));
 		 if(!ct.hasAnnotation(SO.class)) {
 			 return null;
@@ -49,6 +53,10 @@ public class SerializeProxyFactory {
 		 
 		 byte[] data = ct.toBytecode();
 		 ct.detach();
+		 
+		 cp.release();
+		 
+		 Thread.currentThread().setContextClassLoader(cl);
 		 
 		 return data;
 		 
@@ -232,7 +240,7 @@ public class SerializeProxyFactory {
 		return sb.toString();
 	}
 	
-	public static Object newInstance(Class cls) {
+	public static Object newInstance(Class<?> cls) {
 		try {
 			return cls.newInstance();
 		} catch (InstantiationException | IllegalAccessException e) {
@@ -242,7 +250,7 @@ public class SerializeProxyFactory {
 	
 	}
 	
-	public static Class loadClazz(String clsName) {
+	public static Class<?> loadClazz(String clsName) {
 		if(clsName == null) {
 			throw new NullPointerException();
 		}
@@ -250,19 +258,17 @@ public class SerializeProxyFactory {
 		if(cl == null) {
 			cl = SerializeProxyFactory.class.getClassLoader();
 		}
-		Class cls = null;
+		Class<?> cls = null;
 		if(clsName.startsWith("[L")) {
 			clsName = clsName.substring(2,clsName.length()-1);
 			//cls = TypeCoder.loadClassFromCache(clsName);
-			Class c = TypeCoder.loadClassFromCache(clsName);
+			Class<?> c = TypeCoder.loadClassFromCache(clsName);
 			cls = Array.newInstance(c, 0).getClass();
 		} else {
 			cls =  TypeCoder.loadClassFromCache(clsName);
 		}
 		return cls;
 	}
-	
-
 	
 	private static String getGenericType(String gs) {
 		//Ljava/util/Set<Lorg/jmicro/api/test/Person;>

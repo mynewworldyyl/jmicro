@@ -145,7 +145,7 @@ public class ApiGatewayClient {
 						final PromiseImpl<T> p = new PromiseImpl<T>();
 						IAsyncCallback<T> cb = new IAsyncCallback<T>() {
 							@Override
-							public void onResult(T val, AsyncFailResult fail) {
+							public void onResult(T val, AsyncFailResult fail,Map<String,Object> ctx) {
 								if(fail == null) {
 									p.setResult(val);
 								} else {
@@ -259,16 +259,16 @@ public class ApiGatewayClient {
 					Object val = null;
 					 if(respMsg1.getType() == Constants.MSG_TYPE_ID_RESP) {
 						 val = this.decoder.decode((ByteBuffer)respMsg1.getPayload());
-						 cb.onResult((T)val, null);
+						 cb.onResult((T)val, null,null);
 					} else {
 						 try {
 							 val = parseResult(respMsg1,returnType);
-							 cb.onResult((T)val, null);
+							 cb.onResult((T)val, null,null);
 						} catch (Exception e) {
 							AsyncFailResult f = new AsyncFailResult();
 							f.setMsg(e.getMessage());
 							f.setCode(1);
-							cb.onResult(null, f);
+							cb.onResult(null, f,null);
 						}
 					}
 				}

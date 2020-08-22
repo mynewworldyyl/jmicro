@@ -46,9 +46,9 @@ public class TestLinkRpc extends JMicroBaseTestCase{
 	public void testAsyncLinkRpc() {
 		ISimpleRpc sayHelloSrv = of.getRemoteServie(ISimpleRpc.class.getName(),"simpleRpc","0.0.1",null);
 		
-		IPromise<String> p = PromiseUtils.callService(sayHelloSrv, "linkRpc", "Test link async");
+		IPromise<String> p = PromiseUtils.callService(sayHelloSrv, "linkRpc",null, "Test link async");
 		
-		p.then((msg,fail) -> {
+		p.then((msg,fail,ctx) -> {
 			System.out.println(msg);
 		});
 		

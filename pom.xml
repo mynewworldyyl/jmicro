@@ -99,10 +99,11 @@
     </properties>
 
     <modules>
+    	<module>agent</module>
+    	<module>codegenerator</module>
     	<module>common</module>
 		<module>api</module>
 		<module>ext</module>
-		<module>agent</module>
 		<module>config</module>
 		<module>idgenerator</module>
 		<module>zk</module>

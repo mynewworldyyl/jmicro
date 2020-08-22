@@ -282,6 +282,7 @@ class SubcriberManager {
 			}
 			
 			cb = new SubCallbackImpl(sui.sm, srv, this.of);
+			cb.init();
 
 			callbacks.put(k, cb);
 		
@@ -385,6 +386,7 @@ class SubcriberManager {
 			}
 			
 			cb = new SubCallbackImpl(sui.sm, srv, this.of);
+			cb.init();
 
 			callbacks.put(k, cb);
 		}

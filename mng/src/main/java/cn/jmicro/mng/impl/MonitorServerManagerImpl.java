@@ -1,10 +1,17 @@
 package cn.jmicro.mng.impl;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import cn.jmicro.api.JMicroContext;
 import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Inject;
 import cn.jmicro.api.annotation.Reference;
@@ -15,9 +22,11 @@ import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.monitor.MonitorClient;
 import cn.jmicro.api.monitor.MonitorInfo;
 import cn.jmicro.api.monitor.MonitorServerStatus;
+import cn.jmicro.api.monitor.genclient.IMonitorAdapter$JMAsyncClient;
 import cn.jmicro.api.objectfactory.AbstractClientServiceProxyHolder;
-import cn.jmicro.api.objectfactory.ClientServiceProxyHolder;
 import cn.jmicro.api.registry.ServiceItem;
+import cn.jmicro.api.service.IServiceAsyncResponse;
+import cn.jmicro.common.Constants;
 import cn.jmicro.common.util.StringUtils;
 
 @Component
@@ -25,18 +34,19 @@ import cn.jmicro.common.util.StringUtils;
 monitorEnable=0, logLevel=MC.LOG_ERROR, retryCnt=0, external=true,showFront=false)
 public class MonitorServerManagerImpl implements IMonitorServerManager{
 	
+	private final static Logger logger = LoggerFactory.getLogger(MonitorServerManagerImpl.class);
+	
 	@Reference(namespace="*",version="*",type="ins")//每个服务实例一个代理对象
-	private List<IMonitorAdapter> monitorServers = new ArrayList<>();
+	private List<IMonitorAdapter$JMAsyncClient> monitorServers = new ArrayList<>();
 	
 	//private Map<String,MonitorInfo> minfos = new HashMap<>();
-	
 	//private Short[] types = null; 
 	
 	@Inject
 	private MonitorClient monitorManager;
 	
 	public void ready() {
-	/*	typeLabels = new String[MonitorServerStatus.TYPES.length];
+	   /*typeLabels = new String[MonitorServerStatus.TYPES.length];
 		for(int i = 0; i < MonitorServerStatus.TYPES.length; i++) {
 			typeLabels[i] = MonitorConstant.MONITOR_VAL_2_KEY.get(MonitorServerStatus.TYPES[i]);
 		}*/
@@ -93,13 +103,35 @@ public class MonitorServerManagerImpl implements IMonitorServerManager{
 	}
 
 	@Override
-	public boolean enable(String srvKey,Boolean enable) {
-		IMonitorAdapter s = this.getServerByKey(srvKey);
-		if(s != null) {
-			s.enableMonitor(enable);
-			return true;
+	public Boolean enable(String srvKey,Boolean enable) {
+		
+		JMicroContext cxt = JMicroContext.get();
+		
+		IServiceAsyncResponse cb = cxt.getParam(Constants.CONTEXT_SERVICE_RESPONSE,null);
+		if(cxt.isAsync() && cb == null) {
+			logger.error(Constants.CONTEXT_SERVICE_RESPONSE + " is null in async context");
 		}
-		return false;
+		
+		if(cxt.isAsync() && cb != null) {
+			IMonitorAdapter$JMAsyncClient s = this.getServerByKey(srvKey);
+			s.enableMonitorJMAsync(null,enable)
+			.then((rst,fail,actx) -> {
+				if(fail == null) {
+					cb.result(true);
+				} else {
+					logger.error(fail.toString());
+					cb.result(false);
+				}
+			});
+			return null;
+		} else {
+			IMonitorAdapter$JMAsyncClient s = this.getServerByKey(srvKey);
+			if(s != null) {
+				s.enableMonitor(enable);
+				return true;
+			}
+			return false;
+		}
 	}
 
 	@Override
@@ -114,38 +146,90 @@ public class MonitorServerManagerImpl implements IMonitorServerManager{
 				
 			}
 		}
-		
 	}
 
 	@Override
 	public MonitorInfo[] serverList() {
 		
-		Set<MonitorInfo> set = new HashSet<>();
-		for(int i = 0; i < this.monitorServers.size(); i++) {
+		JMicroContext cxt = JMicroContext.get();
+		
+		if(cxt.isAsync()) {
+			AtomicInteger ai = new AtomicInteger(this.monitorServers.size());
+			IServiceAsyncResponse cb = cxt.getParam(Constants.CONTEXT_SERVICE_RESPONSE,null);
+			Set<MonitorInfo> set = new HashSet<>();
 			
-			IMonitorAdapter s = this.monitorServers.get(i);
-			
-			AbstractClientServiceProxyHolder proxy = (AbstractClientServiceProxyHolder)((Object)s);
-			if(!proxy.getHolder().isUsable()) {
-				continue;
+			for(int i = 0; i < this.monitorServers.size(); i++) {
+				IMonitorAdapter$JMAsyncClient s = this.monitorServers.get(i);
+				AbstractClientServiceProxyHolder proxy = (AbstractClientServiceProxyHolder)((Object)s);
+				if(!proxy.getHolder().isUsable()) {
+					int cnt = ai.decrementAndGet();
+					if(cnt == 0 ) {
+						MonitorInfo[] infos = null;
+						if(set.size() > 0) {
+							infos = new MonitorInfo[set.size()];
+							set.toArray(infos);
+						}
+						cb.result(infos);
+					}
+					continue;
+				}
+				
+				Map<String,Object> actx = new HashMap<>();
+				actx.put("proxy", proxy);
+				
+				s.infoJMAsync(actx).then((in,fail,ctx0) -> {
+					if(fail != null) {
+						logger.error(fail.toString());
+					}
+					
+					if (in != null) {
+						AbstractClientServiceProxyHolder p = (AbstractClientServiceProxyHolder) ctx0.get("proxy");
+						ServiceItem si = p.getHolder().getItem();
+						String srvKey = si.getKey().toKey(true, true, true);
+						in.setSrvKey(srvKey);
+						set.add(in);
+					}
+					
+					int cnt = ai.decrementAndGet();
+					if(cnt == 0 ) {
+						MonitorInfo[] infos = null;
+						if(set.size() > 0) {
+							infos = new MonitorInfo[set.size()];
+							set.toArray(infos);
+						}
+						cb.result(infos);
+					}
+				});
 			}
 			
-			ServiceItem si = proxy.getHolder().getItem();
-			String srvKey = si.getKey().toKey(true, true, true);
+			return null;
 			
-			MonitorInfo in = s.info();
-			if(in != null) {
-				in.setSrvKey(srvKey);
-				set.add(in);
+		} else {
+			Set<MonitorInfo> set = new HashSet<>();
+			for(int i = 0; i < this.monitorServers.size(); i++) {
+				IMonitorAdapter$JMAsyncClient s = this.monitorServers.get(i);
+				AbstractClientServiceProxyHolder proxy = (AbstractClientServiceProxyHolder)((Object)s);
+				if(!proxy.getHolder().isUsable()) {
+					continue;
+				}
+				MonitorInfo in = s.info();
+				if(in != null) {
+					ServiceItem si = proxy.getHolder().getItem();
+					String srvKey = si.getKey().toKey(true, true, true);
+					in.setSrvKey(srvKey);
+					set.add(in);
+				}
 			}
+			
+			MonitorInfo[] infos = new MonitorInfo[set.size()];
+			set.toArray(infos);
+			
+			return infos;
 		}
 		
-		MonitorInfo[] infos = new MonitorInfo[set.size()];
-		set.toArray(infos);
-		return infos;
 	}
 	
-	private IMonitorAdapter getServerByKey(String key) {
+	private IMonitorAdapter$JMAsyncClient getServerByKey(String key) {
 		if(StringUtils.isEmpty(key)) {
 			return null;
 		}

@@ -349,7 +349,15 @@ public class ServiceManager {
 	
 	public Set<ServiceItem> getAllItems() {
 		Set<ServiceItem> sets = new HashSet<>();
-		sets.addAll(this.path2SrvItems.values());
+		ReentrantReadWriteLock.ReadLock l = rwLocker.readLock();
+		try {
+			l.lock();
+			sets.addAll(this.path2SrvItems.values());
+		} finally {
+			if(l != null) {
+				l.unlock();
+			}
+		}
 		return sets;
 	}
 	
@@ -396,10 +404,17 @@ public class ServiceManager {
 	}
 	
 	private void serviceRemove(String path) {
+		
+		ReentrantReadWriteLock.WriteLock l = rwLocker.writeLock();
 		ServiceItem si = null;
-		synchronized(path2Hash) {
+		try {
+			l.lock();
 			this.path2Hash.remove(path);
 			si = this.path2SrvItems.remove(path);
+		} finally {
+			if(l != null) {
+				l.unlock();
+			}
 		}
 		
 		if(si == null) {
@@ -458,9 +473,8 @@ public class ServiceManager {
 		
 		logger.info("Service added, Code: " + si.getCode() + ", Service: " + si.getKey().toSnv());
 		
-		ReentrantReadWriteLock.WriteLock l = null;
+		ReentrantReadWriteLock.WriteLock l = rwLocker.writeLock();
 		try {
-			l = rwLocker.writeLock();
 			l.lock();
 			this.path2Hash.put(path, hash);
 			this.path2SrvItems.put(path, si);

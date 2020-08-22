@@ -41,6 +41,7 @@ import cn.jmicro.api.net.RpcRequest;
 import cn.jmicro.api.net.RpcResponse;
 import cn.jmicro.api.net.ServerError;
 import cn.jmicro.api.registry.IRegistry;
+import cn.jmicro.api.registry.ServiceMethod;
 import cn.jmicro.api.security.ActInfo;
 import cn.jmicro.api.security.IAccountService;
 import cn.jmicro.api.service.IServiceAsyncResponse;
@@ -142,7 +143,7 @@ public class JRPCReqRespHandler implements IMessageHandler{
 						SF.eventLog(MC.MT_INVALID_LOGIN_INFO,MC.LOG_ERROR, TAG,se.toString());
 						resp2Client(resp,s,msg);
 						return;
-					}else {
+					} else {
 						JMicroContext.get().setString(JMicroContext.LOGIN_KEY, lk);
 						JMicroContext.get().setAccount(ai);;
 					}
@@ -163,7 +164,12 @@ public class JRPCReqRespHandler implements IMessageHandler{
 				return;
 			}
 			
-			if(msg.isAsyncReturnResult()) {
+			ServiceMethod sm = JMicroContext.get().getParam(Constants.SERVICE_METHOD_KEY, null);
+			if(StringUtils.isEmpty(sm.getKey().getReturnParam())) {
+				
+			}
+			
+			if(msg.isAsyncReturnResult() && !"V".equals(sm.getKey().getReturnParam())) {
 				final RpcResponse r = resp;
 				JMicroContext cxt = JMicroContext.get();
 				//异步响应
@@ -183,8 +189,10 @@ public class JRPCReqRespHandler implements IMessageHandler{
 				};
 				cxt.setParam(Constants.CONTEXT_SERVICE_RESPONSE, cb);
 				IResponse rr = interceptorManger.handleRequest(req);
+				
 				if(rr != null && rr.getResult() != null) {
 					//同步返回结果
+					//如果业务方法是异步返回结果，一定要同步返回NULL值
 					cxt.removeParam(Constants.CONTEXT_SERVICE_RESPONSE);
 					resp2Client(rr,s,msg);
 				}
@@ -198,7 +206,6 @@ public class JRPCReqRespHandler implements IMessageHandler{
 				}
 				resp2Client(resp,s,msg);
 			}
-			
 		} catch (Throwable e) {
 			doException(req,s,msg,e);
 		} finally {

@@ -41,6 +41,7 @@ import cn.jmicro.api.registry.IRegistry;
 import cn.jmicro.api.registry.ServiceItem;
 import cn.jmicro.api.timer.TimerTicker;
 import cn.jmicro.codegenerator.AsyncClientProxy;
+import cn.jmicro.codegenerator.AsyncClientUtils;
 import cn.jmicro.common.Constants;
 
 
@@ -188,41 +189,17 @@ public class RpcClassLoader extends ClassLoader {
 	
 	private synchronized byte[] getData(String className) {
 
+		String originClsName = className;
 		className = this.getClassName(className);
 		if(clazzesData.containsKey(className)) {
 			return clazzesData.get(className);
 		} else {
+			 className = AsyncClientUtils.genServiceName(className);
 			 Set<String> insNames = this.classesName2Instance.get(className);
+			 
 			 if(insNames  == null || insNames.isEmpty()) {
-				 if(className.endsWith(AsyncClientProxy.IMPL_SUBFIX)) {
-					 String cn = className.substring(0, className.indexOf(AsyncClientProxy.IMPL_SUBFIX));
-					 String pkgName = cn.substring(0,cn.lastIndexOf("."));
-					 pkgName = pkgName.substring(0, pkgName.indexOf(AsyncClientProxy.PKG_SUBFIX));
-					 String simpleClassName = "I"+cn.substring(cn.lastIndexOf(".")+1,cn.length());
-					 String iname = pkgName + simpleClassName;
-					 
-					 insNames = this.classesName2Instance.get(iname);
-					 
-					 if(insNames == null) {
-						 simpleClassName = cn.substring(cn.lastIndexOf(".")+1,cn.length());
-						 iname = pkgName + simpleClassName;
-						 insNames = this.classesName2Instance.get(iname);
-					 }
-					 
-				 }else if(className.endsWith(AsyncClientProxy.INT_SUBFIX)) {
-					 String cn = className.substring(0, className.indexOf(AsyncClientProxy.INT_SUBFIX));
-					 String pkgName = cn.substring(0,cn.lastIndexOf("."));
-					 pkgName = pkgName.substring(0, pkgName.indexOf(AsyncClientProxy.PKG_SUBFIX));
-					 String simpleClassName = cn.substring(cn.lastIndexOf(".")+1,cn.length());
-					 String iname = pkgName + simpleClassName;
-					 insNames = this.classesName2Instance.get(iname);
-				 }
-				 
-				 if(insNames  == null || insNames.isEmpty()) {
-					 logger.warn("class owner server not found: {} ",className);
-					 return null;
-				 }
-				 
+				 logger.error("class " + originClsName + " not found!");
+				 return null;
 			 }
 			 
 			 Set<ServiceItem> items = this.registry.getServices(IClassloaderRpc.class.getName());
@@ -249,11 +226,12 @@ public class RpcClassLoader extends ClassLoader {
 
 				 	JMicroContext.get().setParam(Constants.DIRECT_SERVICE_ITEM, directItem);
 					try {
-						bytes = this.rpcLlassloader.getClassData(className);
+						bytes = this.rpcLlassloader.getClassData(originClsName);
 					} catch (Throwable e) {}
 					
 					if(bytes != null && bytes.length > 0) {
-						logger.warn("load class {} from {} ",className,directItem.getKey().toKey(true, true, true));
+						logger.warn("load class {} from {} ",originClsName,directItem.getKey().toKey(true, true, true));
+						clazzesData.put(originClsName, bytes);
 						break;
 					}
 				 }
@@ -266,9 +244,8 @@ public class RpcClassLoader extends ClassLoader {
 			}
 	         
 	         if(bytes == null || bytes.length == 0) {
-	        	 logger.warn("class[{}] not found from [{}] ",className,insNames.toString());
+	        	 logger.warn("class[{}] not found from [{}] ",originClsName,insNames.toString());
 	         }
-			
         	
 	         return bytes;
 		}	

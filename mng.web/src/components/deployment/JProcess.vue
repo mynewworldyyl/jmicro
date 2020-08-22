@@ -1,7 +1,8 @@
 <template>
     <div class="JProcess">
-        <a @click="refresh()">REFRESH</a>
-        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input type="checkbox" v-model="showAll"/>ALL
+        <!--<a @click="refresh()">REFRESH</a>
+        <input type="checkbox" v-model="showAll"/>ALL-->
+
         <table class="configItemTalbe" width="99%">
             <thead><tr><td>ID</td><td>NAME</td><td>ACTIVE</td><td>HA ENABLE</td><td>IS MASTER</td><td>WORK DIR</td>
                 <td>PROCESS ID</td><td>START TIME</td><td>CONTINUTE</td><td>HOST</td>
@@ -23,6 +24,8 @@
 </template>
 
 <script>
+
+    const cid = 'process';
 
     export default {
         name: 'JProcess',
@@ -78,6 +81,17 @@
             //has admin permission, only control the show of the button
             window.jm.mng.act.addListener('JProcess',this.refresh);
             this.refresh();
+            let self = this;
+            window.jm.vue.$emit("editorOpen",
+                {"editorId":cid,
+                    "menus":[{name:"ShowAll",label:"Show All",icon:"ios-cog",call: ()=>{
+                                self.showAll = !self.showAll;
+                                self.refresh();
+                            }
+                        },
+                        {name:"REFRESH",label:"Refresh",icon:"ios-cog",call:self.refresh}]
+                });
+
         },
     }
 </script>
@@ -86,7 +100,4 @@
     .JProcess{
 
     }
-
-
-
 </style>

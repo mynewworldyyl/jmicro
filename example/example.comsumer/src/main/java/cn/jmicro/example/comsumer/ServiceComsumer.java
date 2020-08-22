@@ -43,13 +43,13 @@ public class ServiceComsumer {
 		ISimpleRpc$JMAsyncClient src = (ISimpleRpc$JMAsyncClient)of.get(ISimpleRpc.class);
 		//invoke remote service
 		//System.out.println(src.hello("Hello JMicro"));
-		src.helloJMAsync("Hello JMicro").then((rst, fail)->{
+		src.helloJMAsync(null,"Hello JMicro").then((rst, fail,ctx)->{
 			System.out.println(rst);
 			
 			String r = src.hello("Hello two");
 			System.out.println(r);
 			
-			src.helloJMAsync("Hello two").then((rst1, fail1)->{
+			src.helloJMAsync(null,"Hello two").then((rst1, fail1,ctx0)->{
 				System.out.println(rst);
 			});
 			

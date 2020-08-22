@@ -118,6 +118,9 @@ public class PubSubServer implements IInternalSubRpc{
 	@Cfg(value="/PubSubServer/doResendInterval",changeListener="resetResendTimer")
 	private long doResendInterval = 1000;
 	
+	private int batchSize = 100;
+	private int sendInterval = 300;
+	
 	//当前内存消息数量
 	//private AtomicInteger memoryItemsCnt = new AtomicInteger();
 	
@@ -203,7 +206,6 @@ public class PubSubServer implements IInternalSubRpc{
 		
 		String group = "PubsubServer";
 		statusMonitorAdapter = new MonitorClientStatusAdapter(TYPES,typeLabels,Config.getInstanceName()+"_PubsubServerStatuCheck",group);
-		
 
 		ServiceLoader sl = of.get(ServiceLoader.class);
 		ServiceItem si = sl.createSrvItem(IMonitorAdapter.class, Config.getInstanceName()+"."+group, "0.0.1", IMonitorAdapter.class.getName());
@@ -216,6 +218,11 @@ public class PubSubServer implements IInternalSubRpc{
 		
 	}
 	
+	@Override
+	public boolean hasTopic(String topic) {
+		return this.subManager.isValidTopic(topic);
+	}
+
 	/**
 	 * asyncable=false，此方法不能是异步方法，否则会构成异步死循环
 	 */
@@ -231,7 +238,7 @@ public class PubSubServer implements IInternalSubRpc{
 	@SMethod(timeout=5000,retryCnt=0,asyncable=false,debugMode=0)
 	public int publishString(String topic,String content) {
 		if(!this.subManager.isValidTopic(topic)) {
-			return PubSubManager.PUB_TOPIC_NOT_VALID;
+			return PubSubManager.PUB_TOPIC_INVALID;
 		}
 		
 		PSData item = new PSData();
@@ -247,6 +254,11 @@ public class PubSubServer implements IInternalSubRpc{
 	@Override
 	@SMethod(timeout=5000,retryCnt=0,asyncable=false,debugMode=0)
 	public int publishItems(String topic,PSData[] items) {
+		
+		/*if(openDebug) {
+			logger.info("GOT: " + topic);
+		}*/
+		
 		boolean me = this.statusMonitorAdapter.monitoralbe;
 		ServiceCounter sc = this.statusMonitorAdapter.getServiceCounter();
 		
@@ -258,7 +270,7 @@ public class PubSubServer implements IInternalSubRpc{
 			if(me) {
 				sc.add(MC.Ms_TopicInvalid, items.length);
 			}
-			return PubSubManager.PUB_TOPIC_NOT_VALID;
+			return PubSubManager.PUB_TOPIC_INVALID;
 		}
 		
 		if(items == null || StringUtils.isEmpty(topic) || items.length == 0) {
@@ -299,6 +311,9 @@ public class PubSubServer implements IInternalSubRpc{
 						len = items.length - pos;
 					}	
 					if(b.write(items,pos,len)) {
+						/*if(openDebug) {
+							logger.info("basket isEmpty: {}",b.isEmpty());
+						}*/
 						boolean rst = basketFactory.returnWriteBasket(b, true);
 						if(rst) {
 							pos += len;
@@ -311,7 +326,6 @@ public class PubSubServer implements IInternalSubRpc{
 							logger.error("Fail to return basket fail size: "+ (items.length - pos));
 							break;
 						}
-						
 					} else {
 						basketFactory.returnWriteBasket(b, true);
 						logger.error("Fail write basket size: "+ (items.length - pos));
@@ -330,7 +344,6 @@ public class PubSubServer implements IInternalSubRpc{
 					break;
 				}
 			}
-			
 		} else {
 			this.cacheStorage.push(topic,items,0,items.length);
 			cacheItemsCnt.addAndGet(items.length);
@@ -349,6 +362,10 @@ public class PubSubServer implements IInternalSubRpc{
 		if(JMicroContext.get().isDebug()) {
 			JMicroContext.get().appendCurUseTime("pubsub server finishTime",true);
 		}
+		
+		/*if(openDebug) {
+			logger.info("Resp OK: " + topic);
+		}*/
 		
 		return PubSubManager.PUB_OK;
 	}
@@ -404,8 +421,6 @@ public class PubSubServer implements IInternalSubRpc{
 	
 	private void doCheck() {
 
-		int batchSize = 100;
-		int sendInterval = 300;
 		//long lastLoopTime = System.currentTimeMillis();
 		while (true) {
 			try {
@@ -448,31 +463,45 @@ public class PubSubServer implements IInternalSubRpc{
 				len = basketFactory.size();
 				
 				if (len == 0) {
-					synchronized (syncLocker) {
-						syncLocker.wait(1000);
+					boolean dor = false;
+					for(String topic : sendCache.keySet()) {
+						List<PSData> ll = sendCache.get(topic);
+						if(!ll.isEmpty() && (ll.size() > batchSize || curTime - lastSendTimes.get(topic) > sendInterval)) {
+							dor = true;
+							break;
+						}
 					}
-					// 没有待发送消息，进入下一轮循环
-					if (openDebug) {
-						//logger.info("No data to submit:");
+					
+					if(dor) {
+						doSend(curTime,sc);
+					} else {
+						synchronized (syncLocker) {
+							syncLocker.wait(1000);
+						}
+						// 没有待发送消息，进入下一轮循环
+						/*if (openDebug) {
+							logger.info("No data to submit:");
+						}*/
 					}
 					continue;
 				}
 				
-				int sendSize = 0;
-				
 				IBasket<PSData> rb = null;
 				Iterator<IBasket<PSData>> readIte = this.basketFactory.iterator(true);
-				
 				while ((rb = readIte.next()) != null) {
-
-					PSData[] psd = new PSData[rb.remainding()];
+					int rm = rb.remainding();
+					if(rm <= 0) {
+						continue;
+					}
+					PSData[] psd = new PSData[rm];
 					if(!rb.readAll(psd)) {
 						this.basketFactory.returnReadSlot(rb, false);
 						if(openDebug) {
 							logger.info("Fail to get element from basket remaiding:{}",rb.remainding());
-						}//消息数量及距上次发送时间间隔都不到，直接路过
+						}
+						//消息数量及距上次发送时间间隔都不到，直接路过
 						continue;
-					}else {
+					} else {
 						this.basketFactory.returnReadSlot(rb, true);
 					}
 					
@@ -483,46 +512,11 @@ public class PubSubServer implements IInternalSubRpc{
 						this.sendCache.put(topic, (ll = new ArrayList<PSData>()));
 					}
 					ll.addAll(Arrays.asList(psd));
-					
-					
-					long lastSendTime = lastSendTimes.get(topic);
-					
-					if(ll.size() < batchSize && System.currentTimeMillis() - lastSendTime < sendInterval) {
-						if(openDebug) {
-							//logger.info("size :{},interval:{}",ll.size(),System.currentTimeMillis() - lastSendTime);
-						}//消息数量及距上次发送时间间隔都不到，直接路过
-						continue;
-					}
-
-					//更新发送时间
-					lastSendTimes.put(topic, System.currentTimeMillis());
-					
-					int size = ll.size();
-					if (size > batchSize) {
-						// 每批次最多能同时发送batchSize个消息
-						size = batchSize;
-					}
-
-					PSData[] items = new PSData[size];
-
-					int i = 0;
-					for (Iterator<PSData> ite = ll.iterator(); ite.hasNext() && i < size; i++) {
-						items[i] = ite.next();
-						ite.remove();
-					}
-				
-					sendSize += items.length;
-					this.executor.submit(new Worker(items, topic));
-					
-					if(me) {
-						sc.add(MC.Ms_SubmitTaskCnt, 1);
-					}
 				}
 				
-				if(me) {
-					sc.add(MC.Ms_CheckerSubmitItemCnt, sendSize);
+				if(!sendCache.isEmpty()) {
+					doSend(curTime,sc);
 				}
-				
 
 			} catch (Throwable e) {
 				// 永不结束线程
@@ -532,6 +526,61 @@ public class PubSubServer implements IInternalSubRpc{
 		}
 		
 	}
+	
+	private void doSend(long curTime,ServiceCounter sc) {
+		
+		int sendSize = 0;
+		
+		boolean me = this.statusMonitorAdapter.monitoralbe;
+		
+		for(String topic : sendCache.keySet()) {
+			
+			long lastSendTime = lastSendTimes.get(topic);
+			
+			List<PSData> ll = sendCache.get(topic);
+			
+			if(ll.isEmpty() || ll.size() < batchSize && curTime - lastSendTime < sendInterval) {
+				if(openDebug) {
+					//logger.info("size :{},interval:{}",ll.size(),System.currentTimeMillis() - lastSendTime);
+				}//消息数量及距上次发送时间间隔都不到，直接路过
+				continue;
+			}
+
+			//更新发送时间
+			lastSendTimes.put(topic, System.currentTimeMillis());
+			
+			int size = ll.size();
+			if (size > batchSize) {
+				// 每批次最多能同时发送batchSize个消息
+				size = batchSize;
+			}
+
+			PSData[] items = new PSData[size];
+
+			int i = 0;
+			for (Iterator<PSData> ite = ll.iterator(); ite.hasNext() && i < size; i++) {
+				items[i] = ite.next();
+				ite.remove();
+			}
+			
+			sendSize += items.length;
+			
+			/*if(openDebug) {
+				logger.info("Submit {} size: {} " ,topic,sendSize);
+			}*/
+			
+			this.executor.submit(new Worker(items, topic));
+			
+			if(me) {
+				sc.add(MC.Ms_SubmitTaskCnt, 1);
+			}
+		}
+		
+		if(me) {
+			sc.add(MC.Ms_CheckerSubmitItemCnt, sendSize);
+		}
+	}
+	
 
 	private class Worker implements Runnable{
 		
@@ -554,6 +603,8 @@ public class PubSubServer implements IInternalSubRpc{
 				boolean me = statusMonitorAdapter.monitoralbe;
 				ServiceCounter sc = statusMonitorAdapter.getServiceCounter();
 				
+				//logger.info("Dispatch {} size: {} " ,topic,items.length);
+				
 				if(callbacks == null || callbacks.isEmpty()) {
 					//没有对应主题的监听器，直接进入重发队列，此时回调cb==null
 					SendItem si = new SendItem(SendItem.TYPY_RESEND, null, items, 0);
@@ -564,34 +615,40 @@ public class PubSubServer implements IInternalSubRpc{
 					logger.error("Push to resend component topic:"+topic);
 				} else {
 					for (ISubCallback cb : callbacks) {
-						PSData[] psds = null;
 						try {
-							psds = cb.onMessage(items);
+							cb.onMessage(items)
+							.then((psds,fail,ctx)->{
+								if(psds != null && psds.length > 0) {
+									if(fail != null) {
+										logger.error(fail.toString());
+									}
+
+									SendItem si = new SendItem(SendItem.TYPY_RESEND, cb, psds, 0);
+									resendManager.queueItem(si);
+									if(me) {
+										sc.add(MC.Ms_DoResendCnt, psds.length);
+									}
+									
+									logger.error("Push to resend component:"+cb.getSm().getKey().toKey(true, true, true));
+								}
+							});
 							if(me) {
 								sc.add(MC.Ms_TaskSuccessItemCnt, items.length);
 							}
 						} catch (Throwable e) {
 							// 进入重发队列
-							if (psds != null && psds.length > 0) {
-								SendItem si = new SendItem(SendItem.TYPY_RESEND, cb, psds, 0);
-								resendManager.queueItem(si);
-								if(me) {
-									sc.add(MC.Ms_DoResendCnt, psds.length);
-								}
-								logger.error("Push to resend component:"+cb.getSm().getKey().toKey(true, true, true));
-							 }else {
-								if(me) {
-									sc.add(MC.Ms_TaskFailItemCnt, psds.length);
-								}
+							SendItem si = new SendItem(SendItem.TYPY_RESEND, cb, items, 0);
+							resendManager.queueItem(si);
+							if(me) {
+								sc.add(MC.Ms_DoResendCnt, items.length);
 							}
 							logger.error("Worker get exception", e);
-							
-							
 							//SF.doBussinessLog(MonitorConstant.LOG_ERROR, PubSubServer.class, e, "Subscribe mybe down: "+cb.getSm().getKey().toKey(true, true, true));
 						}
 					}
 				}
 			} finally {
+				 Thread.currentThread().setContextClassLoader(null);
 				if(openDebug) {
 					//logger.info("Do decrement memoryItemsCnt cur:"+memoryItemsCnt.get()+", before:"+size);
 				}

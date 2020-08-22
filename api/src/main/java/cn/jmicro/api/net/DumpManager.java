@@ -83,10 +83,18 @@ public class DumpManager {
 			dumpFileName = Config.getInstanceName()+"-"+ DateUtils.formatDate(new Date(), "YYYYMMddHHmm");
 		}
 		
+		File f = new File(dumpFileDir+"/"+dumpFileName+".dump");
+		if(!f.getParentFile().exists()) {
+			f.getParentFile().mkdirs();
+		}
+		
 		if(this.dumpStream == null) {
 			try {
-				this.dumpStream = new FileOutputStream(dumpFileDir+"/"+dumpFileName+".dump");
-			} catch (FileNotFoundException e) {
+				if(!f.exists()) {
+					f.createNewFile();
+				}
+				this.dumpStream = new FileOutputStream(f);
+			} catch (IOException e) {
 				logger.error("",e);
 				return;
 			}

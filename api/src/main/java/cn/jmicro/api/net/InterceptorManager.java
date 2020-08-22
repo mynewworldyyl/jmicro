@@ -44,15 +44,15 @@ public class InterceptorManager {
     	
     	String key = reqMethodKey(req);
     	
-    	if(hs.containsKey(key)){
+    	if( hs.containsKey(key) ){
     		handler = hs.get(key);
     	} else {
     		String handlerKey = JMicroContext.get().getString(handlerName,handlerName);
     		handler = JMicro.getObjectFactory().getByName(handlerKey);
-    		if(handler == null){
+    		if( handler == null ){
     			handler = JMicro.getObjectFactory().getByName(handlerName);
     		}
-    		if(handler == null){
+    		if( handler == null ){
     			throw new CommonException("Interceptor ["+handlerKey + " not found]");
     		}
     		hs.put(key, handler);

@@ -143,10 +143,7 @@ class ResendManager {
 					ite.remove();
 				}
 			}
-			
-			
 		}
-		
 	}
 	
 	private class Worker implements Runnable{
@@ -173,25 +170,32 @@ class ResendManager {
 					queueItem(item);
 				} else {
 					if(callback != null) {
-						PSData[] psds = callback.onMessage(item.items);
-						 if(psds != null && psds.length > 0) {
-							 item.items = psds;
-							 queueItem(item);
-						 }
-					}else {
+						 callback.onMessage(item.items)
+						 .then((psds,fail,ctx)->{
+							 if(psds != null && psds.length > 0) {
+								 item.items = psds;
+								 queueItem(item);
+							 } else if(fail != null) {
+								 logger.error(fail.toString());
+							 }
+						 });
+					} else {
 						if(this.callbacks.isEmpty()) {
 							 queueItem(item);
 						} else {
 							for(ISubCallback c : this.callbacks) {
-								PSData[] psds = c.onMessage(item.items);
-								 if(psds != null && psds.length > 0) {
-									 SendItem si = new SendItem(SendItem.TYPY_RESEND, c, psds, item.retryCnt);
-									 queueItem(si);
-								 }
+								 c.onMessage(item.items)
+								 .then((psds,fail,ctx)->{
+									 if(psds != null && psds.length > 0) {
+										 SendItem si = new SendItem(SendItem.TYPY_RESEND, c, psds, item.retryCnt);
+										 queueItem(si);
+									 } else if(fail != null) {
+										 logger.error(fail.toString());
+									 }
+								 });
 							}
 						}
 					}
-					 
 				}
 			} catch (Throwable e) {
 				logger.error("",e);

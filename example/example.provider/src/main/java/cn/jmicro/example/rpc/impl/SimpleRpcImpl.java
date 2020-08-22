@@ -2,6 +2,9 @@ package cn.jmicro.example.rpc.impl;
 
 import java.util.Random;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import cn.jmicro.api.JMicroContext;
 import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Reference;
@@ -22,6 +25,8 @@ baseTimeUnit=Constants.TIME_SECONDS, clientId=1000,external=true)
 @Component
 public class SimpleRpcImpl implements ISimpleRpc {
 
+	private final Logger logger = LoggerFactory.getLogger(SimpleRpcImpl.class);
+	
 	@Reference(namespace="rpca", version="0.0.1")
 	private IRpcA$JMAsyncClient rpca;
 	
@@ -52,7 +57,8 @@ public class SimpleRpcImpl implements ISimpleRpc {
 		if(rv < 50) {
 			throw new CommonException("test breaker exception");
 		}*/
-		System.out.println("Server hello: " +name);
+		//System.out.println("Server hello: " +name);
+		logger.info("Server hello: " +name);
 		return "Server say hello to: "+name;
 	}
 	
@@ -91,11 +97,11 @@ public class SimpleRpcImpl implements ISimpleRpc {
 		
 		//IPromise<String> p = PromiseUtils.callService(this.rpca, "invokeRpcA","linkRpc call IRpcA with: " + msg);
 		
-		IPromise<String> p = this.rpca.invokeRpcAJMAsync("invokeRpcA");
+		IPromise<String> p = this.rpca.invokeRpcAJMAsync(null,"invokeRpcA");
 		JMicroContext cxt = JMicroContext.get();
 		if(cxt.isAsync()) {
 			IServiceAsyncResponse cb = cxt.getParam(Constants.CONTEXT_SERVICE_RESPONSE,null);
-			p.then((rst,fail) -> {
+			p.then((rst,fail,ctx0) -> {
 				cb.result(rst);
 			});
 			return null;

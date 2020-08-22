@@ -1,53 +1,53 @@
 <template>
     <div class="JMainContentEditor">
-        <div>
-            <Tabs :value="!!selectNode ? selectNode.id:''" type="card" :closable="true" @on-tab-remove="handleTabRemove" :animated="false">
+            <Tabs :value="!!selectNode ? selectNode.id:''" type="card" :closable="true" :animated="false"
+                  @on-tab-remove="handleTabRemove" @on-click="handleTabActive">
                 <TabPane v-for="(item) in items"  :name="item.id" :label="item.label ? item.label : item.title"  v-bind:key="item.id">
                     <!-- RPC  config -->
-                    <JServiceItem v-if="item.group == 'service' && item.type == 'sn'" :item="item"></JServiceItem>
-                    <JInstanceItem v-else-if="item.group == 'service' && item.type == 'ins'" :item="item"></JInstanceItem>
-                    <JMethodItem v-else-if="item.group == 'service' && item.type == 'method'" :meth="item"></JMethodItem>
+                    <div class="editorBody">
+                        <JServiceItem v-if="item.group == 'service' && item.type == 'sn'" :item="item"></JServiceItem>
+                        <JInstanceItem v-else-if="item.group == 'service' && item.type == 'ins'" :item="item"></JInstanceItem>
+                        <JMethodItem v-else-if="item.group == 'service' && item.type == 'method'" :meth="item"></JMethodItem>
 
-                    <!--  RPC statis -->
-                    <JStatisServiceItemView v-else-if="item.group == 'statis' && item.type == 'sn'" :serviceNode="item"></JStatisServiceItemView>
-                    <JStatisServerItemView v-else-if="item.group == 'statis' && item.type == 'ins'" :serverNode="item"></JStatisServerItemView>
-                    <JStatisSMethodItemView v-else-if="item.group == 'statis' && item.type == 'method'" :meth="item"></JStatisSMethodItemView>
-                    <JStatisServiceItemView v-else-if="item.group == 'statis' && item.type == 'snv'" :serviceNode="item"></JStatisServiceItemView>
+                        <!--  RPC statis -->
+                        <JStatisServiceItemView v-else-if="item.group == 'statis' && item.type == 'sn'" :serviceNode="item"></JStatisServiceItemView>
+                        <JStatisServerItemView v-else-if="item.group == 'statis' && item.type == 'ins'" :serverNode="item"></JStatisServerItemView>
+                        <JStatisSMethodItemView v-else-if="item.group == 'statis' && item.type == 'method'" :meth="item"></JStatisSMethodItemView>
+                        <JStatisServiceItemView v-else-if="item.group == 'statis' && item.type == 'snv'" :serviceNode="item"></JStatisServiceItemView>
 
-                    <!--  server monitor -->
-                    <JMonitorEditor v-else-if="item.group == 'monitors'" :group="item"> </JMonitorEditor>
+                        <!--  server monitor -->
+                        <JMonitorEditor v-else-if="item.group == 'monitors'" :group="item"> </JMonitorEditor>
 
-                    <!--  service router -->
-                    <JRouterType v-else-if="item.group == 'router' && item.type == 't'" :selectItem="item"></JRouterType>
-                    <JRouterGroup v-else-if="item.group == 'router' && item.type == 'g'" :selectItem="item"></JRouterGroup>
+                        <!--  service router -->
+                        <JRouterType v-else-if="item.group == 'router' && item.type == 't'" :selectItem="item"></JRouterType>
+                        <JRouterGroup v-else-if="item.group == 'router' && item.type == 'g'" :selectItem="item"></JRouterGroup>
 
-                    <!--  Config -->
-                    <JConfigItem v-else-if="item.group == 'config'" :item="item"></JConfigItem>
+                        <!--  Config -->
+                        <JConfigItem v-else-if="item.group == 'config'" :item="item"></JConfigItem>
 
-                    <!-- Shell -->
-                    <JShell v-else-if="item.group == 'shell'" :item="item"></JShell>
-                    <JTesting v-else-if="item.group == 'testing'" :item="item"></JTesting>
-                    <JAbout v-else-if="item.group == 'about'" :item="item"></JAbout>
-                    <JLog v-else-if="item.group == 'fileLog'" :item="item"></JLog>
+                        <!-- Shell -->
+                        <JShell v-else-if="item.group == 'shell'" :item="item"></JShell>
+                        <JTesting v-else-if="item.group == 'testing'" :item="item"></JTesting>
+                        <JAbout v-else-if="item.group == 'about'" :item="item"></JAbout>
+                        <JLog v-else-if="item.group == 'fileLog'" :item="item"></JLog>
 
-                    <JRepository v-else-if="item.group == 'repository'" :item="item"></JRepository>
-                    <JHost v-else-if="item.group == 'host'" :item="item"></JHost>
-                    <JDeploymentDesc v-else-if="item.group == 'deploymentDesc'" :item="item"></JDeploymentDesc>
+                        <JRepository v-else-if="item.group == 'repository'" :item="item"></JRepository>
+                        <JHost v-else-if="item.group == 'host'" :item="item"></JHost>
+                        <JDeploymentDesc v-else-if="item.group == 'deploymentDesc'" :item="item"></JDeploymentDesc>
 
-                    <JAgent v-else-if="item.group == 'agent'" :item="item"></JAgent>
-                    <JProcess v-else-if="item.group == 'process'" :item="item"></JProcess>
+                        <JAgent v-else-if="item.group == 'agent'" :item="item"></JAgent>
+                        <JProcess v-else-if="item.group == 'process'" :item="item"></JProcess>
 
-                    <JTypeConfig v-else-if="item.group == 'typeConfig'" :item="item"></JTypeConfig>
-                    <JMonitorTypeKeyEditor v-else-if="item.group == 'monitorTye'" :item="item"></JMonitorTypeKeyEditor>
-                    <JMonitorTypeServiceMethodEditor v-else-if="item.group == 'mtsm'" :item="item"></JMonitorTypeServiceMethodEditor>
-                    <JInvokeLinkView v-else-if="item.group == 'invokeLinkView'" :item="item"></JInvokeLinkView>
-                    <JLogItemView v-else-if="item.group == 'logItemView'" :item="item"></JLogItemView>
-                    <JNamedTypeEditor v-else-if="item.group == 'namedType'" :item="item"></JNamedTypeEditor>
-                    <JThreadPoolMonitorEditor v-else-if="item.group == 'threadPool'" :item="item"></JThreadPoolMonitorEditor>
-
+                        <JTypeConfig v-else-if="item.group == 'typeConfig'" :item="item"></JTypeConfig>
+                        <JMonitorTypeKeyEditor v-else-if="item.group == 'monitorTye'" :item="item"></JMonitorTypeKeyEditor>
+                        <JMonitorTypeServiceMethodEditor v-else-if="item.group == 'mtsm'" :item="item"></JMonitorTypeServiceMethodEditor>
+                        <JInvokeLinkView v-else-if="item.group == 'invokeLinkView'" :item="item"></JInvokeLinkView>
+                        <JLogItemView v-else-if="item.group == 'logItemView'" :item="item"></JLogItemView>
+                        <JNamedTypeEditor v-else-if="item.group == 'namedType'" :item="item"></JNamedTypeEditor>
+                        <JThreadPoolMonitorEditor v-else-if="item.group == 'threadPool'" :item="item"></JThreadPoolMonitorEditor>
+                    </div>
                 </TabPane>
             </Tabs>
-        </div>
 
     </div>
 </template>
@@ -379,8 +379,11 @@
                     } else {
                         self.selectNode = it;
                     }
-
                 });
+            },
+
+            handleTabActive(id) {
+                window.jm.vue.$emit('editorActive',id);
             },
 
             handleTabRemove (id) {
@@ -392,7 +395,8 @@
                     }
                 }
                 if(i > -1) {
-                    //let it = this.items[i];
+                    let it = this.items[i];
+
                     this.items.splice(i,1);
 
                     if(this.items.length > 0) {
@@ -404,6 +408,10 @@
                     }else {
                         this.selectNode = null;
                     }
+
+                    window.jm.mng.act.removeListener(it.id);
+                    window.jm.vue.$emit('tabItemRemove',it.id);
+                    window.jm.vue.$emit('editorClosed',it.id);
                 }
             },
 
@@ -444,9 +452,27 @@
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped>
     .JMainContentEditor{
-        height:auto;
+        height:100%;
         /* min-height: 500px;*/
         overflow:hidden;
+       /* position:relative;*/
+    }
+
+    .editorBody {
+        height: 84%;
+        overflow-y: auto;
+        box-sizing: border-box;
+        margin-bottom: 1000px;
+    }
+
+    .editorToolBar{
+        height:30px;
+        width:100%;
+        position:absolute;
+        left: 0px;
+        top:91px;
+        right:0px;
+        border-bottom: 1px solid lightgray;
     }
 
 </style>

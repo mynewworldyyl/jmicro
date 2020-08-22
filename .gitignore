@@ -305,6 +305,7 @@ monitor/monitor.common/logs/
 monitor/monitor.common/bin/
 monitor/monitor.common/data/
 monitor/monitor.common/src/main/gen
+monitor/monitor.common/dumpDir/
 monitor/monitor.persist2db/target/
 monitor/monitor.persist2db/.classpath
 monitor/monitor.persist2db/.project
@@ -313,6 +314,7 @@ monitor/monitor.persist2db/logs/
 monitor/monitor.persist2db/bin/
 monitor/monitor.persist2db/data/
 monitor/monitor.persist2db/src/main/gen
+monitor/monitor.persist2db/dumpDir/
 main/main.rcptool/target/
 main/main.rcptool/.classpath
 main/main.rcptool/.project
@@ -335,6 +337,7 @@ main/main.pubsub/logs/
 main/main.pubsub/data/
 main/main.pubsub/bin/
 main/main.pubsub/src/main/gen
+main/main.pubsub/dumpDir/
 main/main.breaker/target/
 main/main.breaker/.classpath
 main/main.breaker/.project
@@ -343,6 +346,7 @@ main/main.breaker/logs/
 main/main.breaker/data/
 main/main.breaker/bin/
 main/main.breaker/src/main/gen
+main/main.breaker/dumpDir/
 main/main.init/target/
 main/main.init/.classpath
 main/main.init/.project
@@ -359,6 +363,7 @@ main/main.push/logs/
 main/main.push/data/
 main/main.push/bin/
 main/main.push/src/main/gen
+main/main.push/dumpDir/
 main/main.apigateway/target/
 main/main.apigateway/.classpath
 main/main.apigateway/.project
@@ -367,6 +372,7 @@ main/main.apigateway/logs/
 main/main.apigateway/data/
 main/main.apigateway/bin/
 main/main.apigateway/src/main/gen
+main/main.apigateway/dumpDir/
 main/main.mng/target/
 main/main.mng/.classpath
 main/main.mng/.project
@@ -375,6 +381,7 @@ main/main.mng/logs/
 main/main.mng/data/
 main/main.mng/bin/
 main/main.mng/src/main/gen
+main/main.mng/dumpDir/
 choreography/choreography.agent/target/
 choreography/choreography.agent/.classpath
 choreography/choreography.agent/.project
@@ -385,6 +392,7 @@ choreography/choreography.agent/data/
 choreography/choreography.agent/bin/
 choreography/choreography.agent/resourceDir/
 choreography/choreography.agent/src/main/gen
+choreography/choreography.agent/dumpDir/
 choreography/choreography.controller/target/
 choreography/choreography.controller/.classpath
 choreography/choreography.controller/.project
@@ -393,6 +401,7 @@ choreography/choreography.controller/logs/
 choreography/choreography.controller/data/
 choreography/choreography.controller/bin/
 choreography/choreography.controller/src/main/gen
+choreography/choreography.controller/dumpDir/
 choreography/choreography.repository/target/
 choreography/choreography.repository/.classpath
 choreography/choreography.repository/.project
@@ -401,6 +410,7 @@ choreography/choreography.repository/logs/
 choreography/choreography.repository/data/
 choreography/choreography.repository/bin/
 choreography/choreography.repository/src/main/gen
+choreography/choreography.repository/dumpDir/
 choreography/choreography.api/target/
 choreography/choreography.api/.classpath
 choreography/choreography.api/.project

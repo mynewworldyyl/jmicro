@@ -21,11 +21,15 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import cn.jmicro.api.JMicroContext;
+import cn.jmicro.api.async.IPromise;
+import cn.jmicro.api.async.PromiseUtils;
+import cn.jmicro.api.internal.async.PromiseImpl;
 import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.monitor.SF;
 import cn.jmicro.api.net.Message;
@@ -35,6 +39,7 @@ import cn.jmicro.api.pubsub.PubSubManager;
 import cn.jmicro.api.registry.IRegistry;
 import cn.jmicro.api.registry.ServiceMethod;
 import cn.jmicro.api.registry.UniqueServiceMethodKey;
+import cn.jmicro.codegenerator.AsyncClientUtils;
 import cn.jmicro.common.CommonException;
 
 /**
@@ -44,7 +49,7 @@ import cn.jmicro.common.CommonException;
  */
 public class SubCallbackImpl implements ISubCallback{
 
-	private static final Class TAG = SubCallbackImpl.class;
+	private static final Class<?> TAG = SubCallbackImpl.class;
 	
 	//接收PSData数组作为参数，同一主题批量数据传输，效率高
 	private static final int ARR = 1;
@@ -85,139 +90,191 @@ public class SubCallbackImpl implements ISubCallback{
 		this.srvProxy = srv;
 		this.reg = of.get(IRegistry.class);
 		
-		setMt();
 	}
 	
 	@Override
-	public PSData[] onMessage(PSData[] items) {
+	public IPromise<PSData[]> onMessage(PSData[] items) {
 		switch(type) {
-		case ARR:
-			//PSData数组作为参数
-			return callAsArra(items);
-		case DATA:
-			////以每个PSData.data作为参数调用主题方法，如异步RPC
-			return callAsyncRpc(items);
-		case SINGLE:
-			//接收单个PSData作为参数的RPC，效率底
-			return callOneByOne(items);
-		case NONE:
-			//接收单个PSData作为参数的RPC，效率底
-			return callNone(items);
+			case ARR:
+				//PSData数组作为参数
+				return callAsArra(items);
+			case DATA:
+			case SINGLE:
+			case NONE:
+				return callOneByOne(items,type);
 		}
-		throw new CommonException("onMessage topic:"+sm.getTopic(),sm.getKey().toKey(false, false, false));
+		throw new CommonException("onMessage topic:"+sm.getTopic()+", type: " + type, sm.getKey().toKey(false, false, false));
 	}
 
-	private PSData[] callAsArra(PSData[] items) {
-		PSData[] fails = null;
+	private IPromise<PSData[]> callAsArra(PSData[] items) {
+		PromiseImpl<PSData[]> p = new PromiseImpl<>();
 		try {
 			//多个消息作为整体发送，没办法实现结果回调通知，因为回调信息放置于PSData.context中，多个items,没办法确定使用那个
-			Object obj = m.invoke(this.srvProxy, new Object[] {items});
-			List<PSData> fs = notifyResult(obj,items);
-			if(fs != null && !fs.isEmpty()) {
-				fails = new PSData[fs.size()];
-				fs.toArray(fails);
-			}
-			return fails;
+			PromiseUtils.callService(srvProxy, sm.getKey().getMethod(), null,  new Object[] {items}) //m.invoke(this.srvProxy, new Object[] {items});
+			.then((obj,fail,ctx)-> {
+				if(fail == null) {
+					IPromise<List<PSData>>  fsPro = notifyResult(obj,items);
+					fsPro.then((fs,fa,actx)->{
+						if(fs != null && !fs.isEmpty()) {
+							PSData[] failItems = new PSData[fs.size()];
+							fs.toArray(failItems);
+							p.setResult(failItems);
+						}else {
+							p.setResult(null);
+						}
+						p.done();
+					});
+				} else {
+					p.setFail(fail);
+					p.done();
+				}
+			});
+			return p;
 		} catch (Throwable e) {
 			String msg = "callAsArra topic:"+sm.getTopic()+",mkey:"+sm.getKey().toKey(false, false, false);
 			logger.error(msg, e);
 			SF.eventLog(MC.MT_PUBSUB_LOG,MC.LOG_ERROR, TAG,msg,e);
-			return items;
+			p.setResult(items);
+			p.setFail(1,msg);
+			p.done();
 		}
+		return p;
 	}
 
-	private List<PSData> notifyResult(Object obj, PSData[] items) {
+	private IPromise<List<PSData>> notifyResult(Object obj, PSData[] items) {
+		PromiseImpl<List<PSData>> outp = new PromiseImpl<>();
+		
 		List<PSData> fails = new ArrayList<>();
+		
+		AtomicInteger cbcnt = new AtomicInteger(0);
+		
 		for (PSData pd : items) {
-			try {
-				if (pd.getCallback() != null) {
-					callback(pd, obj,PubSubManager.PUB_OK);
-				}
-			} catch (Throwable e) {
-				String msg = "callOneByOne pd:"+pd.getId()+", topic:"+pd.getTopic()+",mkey:"+sm.getKey().toKey(false, false, false);
-				logger.error(msg, e);
-				SF.eventLog(MC.MT_PUBSUB_LOG,MC.LOG_ERROR, TAG, msg,e);
-				fails.add(pd);
+			if(pd.getCallback() != null) {
+				cbcnt.incrementAndGet();
 			}
 		}
-		return fails;
+		
+		if(cbcnt.get() == 0) {
+			outp.setResult(null);
+			outp.done();
+		}else {
+			for (PSData pd : items) {
+				try {
+					if(pd.getCallback() != null) {
+						IPromise<PSData> pro = callback(pd, obj, PubSubManager.PUB_OK);
+						pro.then((proData,f,ctx)->{
+							if(proData != null) {
+								fails.add(proData);
+								logger.error(f.toString());
+							}
+							int cnt = cbcnt.decrementAndGet();
+							if(cnt == 0) {
+								//全部通知返回结束
+								outp.setResult(fails);
+								outp.setDone(true);
+							}
+						});
+					}
+				} catch (Throwable e) {
+					String msg = "callOneByOne pd:"+pd.getId()+", topic:"+pd.getTopic()+",mkey:"+sm.getKey().toKey(false, false, false);
+					logger.error(msg, e);
+					SF.eventLog(MC.MT_PUBSUB_LOG,MC.LOG_ERROR, TAG, msg,e);
+					fails.add(pd);
+				}
+			}
+		}
+		
+		return outp;
 	}
 
-	private PSData[] callOneByOne(PSData[] items) {
+	private IPromise<PSData[]> callOneByOne(PSData[] items,int type) {
+		
+		PromiseImpl<PSData[]> p = new PromiseImpl<>();
+		p.setResult(null);
+		
 		List<PSData> fails = new ArrayList<>();
+		
+		AtomicInteger ai = new AtomicInteger(items.length);
+		
 		for (PSData pd : items) {
 			try {
-				Object obj = m.invoke(this.srvProxy, pd);;
-				callback(pd, obj,PubSubManager.PUB_OK);
+				
+				IPromise<?> rePromise = null;
+				if(type == SINGLE) {
+					rePromise = PromiseUtils.callService(srvProxy, sm.getKey().getMethod(), null,  new Object[] {pd});
+					//rePromise = (IPromise<?>)m.invoke(this.srvProxy, pd);
+				} else if(type == NONE){
+					rePromise = PromiseUtils.callService(srvProxy, sm.getKey().getMethod(), null,  new Object[0]);
+					//rePromise = (IPromise<?>)m.invoke(this.srvProxy, new Object[0]);
+				} else if(type == DATA) {
+					Object[] args = (Object[]) pd.getData();
+					rePromise = PromiseUtils.callService(srvProxy, sm.getKey().getMethod(), null,  args);
+					//rePromise = (IPromise<?>)m.invoke(this.srvProxy, args);
+				}
+				
+				rePromise.then((obj,fail,ctx)->{
+					if(fail == null && pd.getCallback() != null) {
+						IPromise<PSData> inPro = callback(pd, obj,PubSubManager.PUB_OK);
+						inPro.then((iobj,ifail,actx)->{
+							int cnt = ai.decrementAndGet();
+							if(cnt == 0) {
+								if(!fails.isEmpty()) {
+									PSData[] pds = new PSData[fails.size()];
+									fails.toArray(pds);
+									p.setResult(pds);
+									p.setFail(1, "fail item in result");
+								}
+								p.done();
+							}
+						});
+					} else {
+						logger.error(fail.toString());
+						fails.add(pd);
+						int cnt = ai.decrementAndGet();
+						if(cnt == 0) {
+							if(!fails.isEmpty()) {
+								PSData[] pds = new PSData[fails.size()];
+								fails.toArray(pds);
+								p.setResult(pds);
+								p.setFail(1, "fail item in result");
+							}
+							p.done();
+						}
+					}
+				});
 			} catch (Throwable e) {
 				String msg = "callOneByOne pd:"+pd.getId()+", topic:"+pd.getTopic()+",mkey:"+sm.getKey().toKey(false, false, false);
 				logger.error(msg, e);
 				SF.eventLog(MC.MT_PUBSUB_LOG,MC.LOG_ERROR, TAG,msg,e);
 				fails.add(pd);
+				
+				int cnt = ai.decrementAndGet();
+				
+				if(cnt == 0) {
+					if(!fails.isEmpty()) {
+						PSData[] pds = new PSData[fails.size()];
+						fails.toArray(pds);
+						p.setResult(pds);
+						p.setFail(1, "fail item in result");
+					}
+					p.done();
+				}
+				
 			}
 		}
-		if(!fails.isEmpty()) {
-			PSData[] pds = new PSData[fails.size()];
-			fails.toArray(pds);
-			return pds;
-		}
-		return null;
-	}
-	
-	private PSData[] callNone(PSData[] items) {
-
-		List<PSData> fails = new ArrayList<>();
-		
-		for (PSData pd : items) {
-			try {
-				Object obj = null;
-				obj = m.invoke(this.srvProxy, new Object[0]);
-				callback(pd, obj,PubSubManager.PUB_OK);
-			} catch (Throwable e) {
-				String msg = "callAsyncRpc pd:"+pd.getId()+", topic:"+pd.getTopic()+",mkey:"+sm.getKey().toKey(false, false, false);
-				logger.error(msg, e);
-				SF.eventLog(MC.MT_PUBSUB_LOG,MC.LOG_ERROR, TAG, msg, e);
-				fails.add(pd);
-			}
-		}
-		if(!fails.isEmpty()) {
-			PSData[] pds = new PSData[fails.size()];
-			fails.toArray(pds);
-			return pds;
-		}
-		return null;
-	}
-
-	private PSData[] callAsyncRpc(PSData[] items) {
-
-		List<PSData> fails = new ArrayList<>();
-		
-		for (PSData pd : items) {
-			try {
-				Object obj = null;
-				Object[] args = (Object[]) pd.getData();
-				obj = m.invoke(this.srvProxy, args);
-				callback(pd, obj,PubSubManager.PUB_OK);
-			} catch (Throwable e) {
-				String msg = "callAsyncRpc pd:"+pd.getId()+", topic:"+pd.getTopic()+",mkey:"+sm.getKey().toKey(false, false, false);
-				logger.error(msg, e);
-				SF.eventLog(MC.MT_PUBSUB_LOG,MC.LOG_ERROR, TAG, msg, e);
-				fails.add(pd);
-			}
-		}
-		if(!fails.isEmpty()) {
-			PSData[] pds = new PSData[fails.size()];
-			fails.toArray(pds);
-			return pds;
-		}
-		return null;
+		return p;
 	}
 
 	//异步回调用返回值，如异步RPC时，返回结果给调用者
-	public boolean callback(PSData item,Object obj,int statuCode) {
+	public IPromise<PSData> callback(PSData item,Object obj,int statuCode) {
 
+		PromiseImpl<PSData> p = new PromiseImpl<>();
+		p.setResult(null);
+		
 		if (item.getCallback() == null) {
-			return true;
+			p.setFail(-1, "callback is null");
+			p.done();
+			return p;
 		}
 		
 		Map<String,Object> cxt = item.getContext();
@@ -229,8 +286,9 @@ public class SubCallbackImpl implements ISubCallback{
 		try {
 			
 			Holder h = null;
-			if(this.key2Holder.containsKey(key)) {
-				h = this.key2Holder.get(key);
+			String k = key.toKey(false, false, false);
+			if(this.key2Holder.containsKey(k)) {
+				h = this.key2Holder.get(k);
 			} else {
 				h = new Holder();
 				h.srv  = of.getRemoteServie(key.getServiceName(),key.getNamespace(),key.getVersion(),null);
@@ -238,52 +296,76 @@ public class SubCallbackImpl implements ISubCallback{
 					String msg = "Fail to create async service proxy src:" + sm.getKey().toString()+",target:"+ key.toKey(false, false, false);
 					SF.eventLog(MC.MT_PUBSUB_LOG,MC.LOG_ERROR,SubCallbackImpl.class,msg);
 					//即使返回false重发此条消息，也是同样的错误，没办法回调了，记录日志，只能通过人工处理
-					return true;
+					p.setFail(1, msg);
+					p.done();
+					return p;
 				}
 				h.key = key;
 				
 				if(Message.is(item.getFlag(), PSData.FLAG_ASYNC_METHOD)) {
 					//异步方法
-					h.m = h.srv.getClass().getMethod(key.getMethod(),obj.getClass());
+					h.m = h.srv.getClass().getMethod(AsyncClientUtils.genAsyncMethodName(key.getMethod()),obj.getClass());
 				}else if(Message.is(item.getFlag(), PSData.FLAG_MESSAGE_CALLBACK)) {
 					//消息通知
-					h.m = h.srv.getClass().getMethod(key.getMethod(),Integer.TYPE,Long.TYPE,Map.class);
+					h.m = h.srv.getClass().getMethod(AsyncClientUtils.genAsyncMethodName(key.getMethod()),Integer.TYPE,Long.TYPE,Map.class);
 				}
 				
 				if(h.m == null) {
 					String msg = "Async service method not found: src:" + sm.getKey().toString()+",target:"+ key.toKey(false, false, false);
 					SF.eventLog(MC.MT_PUBSUB_LOG,MC.LOG_ERROR,SubCallbackImpl.class, msg);
 					//即使返回false重发此条消息，也是同样的错误，没办法回调了，记录日志，只能通过人工处理
-					return true;
+					p.setFail(2, msg);
+					return p;
 				}
-			
+				
+				key2Holder.put(k, h);
+				
 			}
-
+			
 			//JMicroContext.get().setParam(key, val);
 			JMicroContext.get().setLong(JMicroContext.LINKER_ID, linkId);
 			//JMicroContext.get().setLong(JMicroContext.REQ_ID, reqId);
+			IPromise<?> cp = null;
 			if(Message.is(item.getFlag(), PSData.FLAG_ASYNC_METHOD)) {
 				//异步方法
-				h.m.invoke(h.srv, obj);
+				cp = PromiseUtils.callService(h.srv, h.key.getMethod(), null,  new Object[] {obj});
+				//cp = (IPromise<?>)h.m.invoke(h.srv, obj);
 			}else if(Message.is(item.getFlag(), PSData.FLAG_MESSAGE_CALLBACK)) {
 				//消息通知
-				h.m.invoke(h.srv, statuCode,item.getId(),item.getContext());
+				cp = PromiseUtils.callService(h.srv, h.key.getMethod(), null,  
+						new Object[] {statuCode,item.getId(),item.getContext()});
+				//cp = (IPromise<?>)h.m.invoke(h.srv, statuCode,item.getId(),item.getContext());
 			}
-			return true;
-		
+			
+			if(cp == null) {
+				p.setFail(3, "Invkke error: " + k);
+				p.setResult(item);
+			} else {
+				cp.then((c,fai,actx)->{
+					if(fai != null) {
+						p.setResult(item);
+						p.setFail(fai);
+					}
+				});
+			}
+			p.setDone(true);
+			return p;
 		} catch (Throwable e) {
 			String msg = "Fail to callback src service:" + sm.getKey().toString()+ ",c allback: "+ key.toKey(false, false, false);
 			SF.eventLog(MC.MT_PUBSUB_LOG,MC.LOG_ERROR,SubCallbackImpl.class, msg,e);
 			logger.error("",e);
-			return false;
+			p.setResult(item);
+			p.setFail(5, msg);
+			return p;
 		}
 	
 	}
 
-	private void setMt() {
+	public void init() {
 		try {
 			Class<?>[] argsCls = UniqueServiceMethodKey.paramsClazzes(sm.getKey().getParamsStr());
-			this.m = this.srvProxy.getClass().getMethod(sm.getKey().getMethod(), argsCls);
+			String method = AsyncClientUtils.genAsyncMethodName(sm.getKey().getMethod());
+			this.m = AsyncClientUtils.getMethod(this.srvProxy.getClass(), method);
 			if(argsCls == null || argsCls.length ==0) {
 				//无参数
 				this.type = NONE;
@@ -297,7 +379,9 @@ public class SubCallbackImpl implements ISubCallback{
 				//PSData.data数组作为RPC参数
 				this.type = DATA;
 			}
-		} catch (NoSuchMethodException | SecurityException e) {
+		} catch (Throwable e) {
+			logger.error("init error: "+sm.getKey() + ", error " + e.getMessage());
+			throw new CommonException("",e);
 		}
 	}
 	

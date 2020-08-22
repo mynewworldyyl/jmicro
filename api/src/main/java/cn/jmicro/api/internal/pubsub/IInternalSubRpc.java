@@ -52,4 +52,11 @@ public interface IInternalSubRpc {
 	 */
 	int publishString(String topic,String content);
 	
+	/**
+	 * 检测是否存在指定主题的订阅者
+	 * @param topic
+	 * @return
+	 */
+	boolean hasTopic(String topic);
+	
 }

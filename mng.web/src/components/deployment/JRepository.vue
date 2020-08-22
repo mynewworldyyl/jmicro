@@ -1,8 +1,8 @@
 <template>
     <div class="JRepository">
-        <a @click="addNode()">ADD</a>&nbsp;&nbsp;
+       <!-- <a @click="addNode()">ADD</a>&nbsp;&nbsp;
         <a @click="testArrayBuffer()">TEST</a>&nbsp;&nbsp;
-        <a @click="refresh()">REFRESH</a>
+        <a @click="refresh()">REFRESH</a>-->
         <table class="configItemTalbe" width="99%">
             <thead><tr><td>NAME</td><td>SIZE</td><td>FINISH</td><td>OPERATION</td></tr></thead>
             <tr v-for="c in resList" :key="c.id">
@@ -27,6 +27,8 @@
 </template>
 
 <script>
+
+    const cid = 'repository';
 
     export default {
         name: 'JRepository',
@@ -303,8 +305,14 @@
         },
 
         mounted () {
-            window.jm.mng.act.addListener('JRepository',this.refresh);
+            window.jm.mng.act.addListener(cid,this.refresh);
             this.refresh();
+            let self = this;
+            window.jm.vue.$emit("editorOpen",
+                {"editorId":cid,
+                    "menus":[{name:"addNode",label:"Add Node",icon:"ios-cog",call: ()=>{self.addNode(); }},
+                        {name:"REFRESH",label:"Refresh",icon:"ios-cog",call:self.refresh}]
+                });
         },
     }
 </script>

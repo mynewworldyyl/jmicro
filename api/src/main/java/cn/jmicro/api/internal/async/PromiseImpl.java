@@ -1,5 +1,7 @@
 package cn.jmicro.api.internal.async;
 
+import java.util.Map;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -21,6 +23,8 @@ public class PromiseImpl<R> implements IPromise<R>{
 	
 	private Object locker = new Object();
 	
+	private Map<String,Object> context = null;
+	
 	@Override
 	public void then(IAsyncCallback<R> callback) {
 		if(this.callback != null) {
@@ -30,7 +34,7 @@ public class PromiseImpl<R> implements IPromise<R>{
 		
 		this.callback = callback;
 		if(done) {
-			callback.onResult(result, fail);
+			callback.onResult(result, fail,context);
 		}
 	}
 	
@@ -46,7 +50,7 @@ public class PromiseImpl<R> implements IPromise<R>{
 		}
 		done = true;
 		if(callback != null) {
-			callback.onResult(result, fail);
+			callback.onResult(result, fail,context);
 		} 
 	}
 
@@ -82,5 +86,14 @@ public class PromiseImpl<R> implements IPromise<R>{
 	public void setFail(AsyncFailResult fail) {
 		this.fail = fail;
 	}
+	
+	public void setFail(int code, String msg) {
+		 fail = new AsyncFailResult(code,msg);
+	}
 
+	public void setContext(Map<String, Object> context) {
+		this.context = context;
+	}
+
+	
 }

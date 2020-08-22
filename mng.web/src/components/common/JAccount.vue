@@ -1,8 +1,10 @@
 <template>
     <div class="accountStatuBar">
-        <span class="loginBtn"><a href="javascript:void(0);" @click="doLoginOrLogout()">
-            {{ actInfo && actInfo.success  ? 'LOGOUT':'LOGIN'}}</a></span>
-        <span class="accountBar">{{actInfo.actName}}</span>
+        <div class="loginBtn">
+            <span href="javascript:void(0);" @click="doLoginOrLogout()">
+            {{ actInfo && actInfo.success  ? 'LOGOUT':'LOGIN'}}</span>
+        </div>
+        <div class="accountBar">{{actInfo.actName}}</div>
 
         <Modal v-model="loginDialog" :loading="true" width="360" @on-ok="doLogin()" ref="loginDialog">
             <table>
@@ -91,19 +93,21 @@ export default {
         top: 0px;
         z-index: 1000;
         height: 60px;
-        line-height: 60px;
+        width:100px
     }
 
-    .loginBtn{
-        display: inline-block;
-        padding:6px;
-        margin-right: 5px;
+    .loginBtn,.accountBar {
+        height:28px;
+        position:relative;
+        text-align: center;
+        line-height: 30px;
     }
 
-    .accountBar{
-        display: inline-block;
-        padding:6px;
-        margin-right: 5px;
+    .loginBtn span {
+        display:inline-block;
+        height:100%;
+        width:100%;
+        cursor: pointer;
     }
 
 </style>

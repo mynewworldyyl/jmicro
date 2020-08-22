@@ -1,7 +1,9 @@
 package cn.jmicro.codegenerator;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import javax.annotation.processing.AbstractProcessor;
@@ -30,6 +32,7 @@ import com.squareup.javapoet.ArrayTypeName;
 import com.squareup.javapoet.ClassName;
 import com.squareup.javapoet.JavaFile;
 import com.squareup.javapoet.MethodSpec;
+import com.squareup.javapoet.MethodSpec.Builder;
 import com.squareup.javapoet.ParameterSpec;
 import com.squareup.javapoet.ParameterizedTypeName;
 import com.squareup.javapoet.TypeName;
@@ -58,7 +61,7 @@ public class ClientServiceProxyGenerator extends AbstractProcessor {
 		
 		for (Element element : roundEnv.getElementsAnnotatedWith(AsyncClientProxy.class)) {
 			 String tn = element.getSimpleName().toString();
-			 if (element.getKind() != ElementKind.INTERFACE) {
+			 if(element.getKind() != ElementKind.INTERFACE) {
 				 throw new RuntimeException(AsyncClientProxy.class + " only support interface, not suport " + tn);
 		     }
 			 
@@ -178,6 +181,8 @@ public class ClientServiceProxyGenerator extends AbstractProcessor {
 		   
 		    parseReturnType(m,builder,promise);
 		    
+		    addContextParameter(builder);
+		    
 		  	String psString = "";
 		  	for(VariableElement pe : m.getParameters()) {
 		  		builder.addParameter(ParameterSpec.get(pe));
@@ -189,14 +194,14 @@ public class ClientServiceProxyGenerator extends AbstractProcessor {
 		  	}
 		  	
 		  	if("".equals(psString)) {
-		  		builder.addCode("return cn.jmicro.api.async.PromiseUtils.callService(this, $S);",
+		  		builder.addCode("return cn.jmicro.api.async.PromiseUtils.callService(this, $S,context);",
 			  			m.getSimpleName());
 		  	} else {
 		  		if(m.getParameters().size() == 1) {
-		  			builder.addCode("return cn.jmicro.api.async.PromiseUtils.callService(this, $S, (java.lang.Object)($L));",
+		  			builder.addCode("return cn.jmicro.api.async.PromiseUtils.callService(this, $S,context, (java.lang.Object)($L));",
 				  			m.getSimpleName(),psString);
 	  			}else {
-	  				builder.addCode("return cn.jmicro.api.async.PromiseUtils.callService(this, $S, $L);",
+	  				builder.addCode("return cn.jmicro.api.async.PromiseUtils.callService(this, $S,context, $L);",
 				  			m.getSimpleName(),psString);
 	  			}
 		  	}
@@ -393,11 +398,21 @@ public class ClientServiceProxyGenerator extends AbstractProcessor {
 	  	
 	  	List<? extends VariableElement> ps = m.getParameters();
 	  	//List<? extends TypeParameterElement> tpes = m.getTypeParameters();
+	  	addContextParameter(builder);
 	  	
 	  	for(VariableElement pe : ps) {
 	  		builder.addParameter(ParameterSpec.get(pe));
 	  	}
+	  	
 	    return builder.build();
+	}
+
+	private void addContextParameter(Builder builder) {
+		List<TypeName> bounds = new ArrayList<>();
+	  	bounds.add(TypeName.get(String.class));
+	  	bounds.add(TypeName.get(Object.class));
+	  	TypeName cxtType = ParameterizedTypeName.get(Map.class, String.class,Object.class);
+	  	builder.addParameter(cxtType,"context");
 	}
 	
 	

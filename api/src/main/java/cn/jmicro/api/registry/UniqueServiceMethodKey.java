@@ -268,6 +268,14 @@ public final class UniqueServiceMethodKey {
 		this.paramsStr = paramsStr;
 	}
 
+	public String getReturnParam() {
+		return returnParam;
+	}
+
+	public void setReturnParam(String returnParam) {
+		this.returnParam = returnParam;
+	}
+
 	public String toString() {
 		return toKey(true,true,true);
 	}

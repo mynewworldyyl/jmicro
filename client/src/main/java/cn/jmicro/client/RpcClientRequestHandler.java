@@ -59,6 +59,7 @@ import cn.jmicro.api.registry.Server;
 import cn.jmicro.api.registry.ServiceItem;
 import cn.jmicro.api.registry.ServiceMethod;
 import cn.jmicro.api.service.ServiceManager;
+import cn.jmicro.api.timer.TimerTicker;
 import cn.jmicro.common.CommonException;
 import cn.jmicro.common.Constants;
 import cn.jmicro.common.util.TimeUtils;
@@ -77,6 +78,8 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
 	private final static Map<Long,IResponseHandler> waitForResponse = new ConcurrentHashMap<>();
 	
 	private final static Map<Long,IResponseHandler> asyncResponse = new ConcurrentHashMap<>();
+	
+	private final static Map<Long,Long> timeouts = new ConcurrentHashMap<>();
 	
 	@Cfg("/RpcClientRequestHandler/openDebug")
 	private boolean openDebug=false;
@@ -124,8 +127,13 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
 						);
 			}, null);
 		}*/
+		
+		TimerTicker.doInBaseTicker(5, Config.getInstanceName()+"_RpcClientRequestHandler-checker", null,
+			(key,att)->{
+				doChecker();
+		});
 	}
-	
+
 	@Override
 	public IResponse onRequest(IRequest request) {
 		ClientServiceProxyHolder proxy =  (ClientServiceProxyHolder)JMicroContext.get().getObject(Constants.PROXY, null);
@@ -262,6 +270,8 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
 		msg.setVersion(Message.MSG_VERSION);
 		msg.setPriority(Message.PRIORITY_NORMAL);
 		
+		long curTime = System.currentTimeMillis();
+		
         do {
         	
         	if(si == null) {
@@ -330,7 +340,7 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
 	    		if(cxt.isDebug()) {
 	    			//开启Debug模式，设置更多信息在消息包中，网络流及编码会有损耗，但更晚于问题追踪
 	    			msg.setInstanceName(Config.getInstanceName());
-	    			msg.setTime(System.currentTimeMillis());
+	    			msg.setTime(curTime);
 	    			msg.setMethod(sm.getKey().toSnvm());
 	    		}
 	    		
@@ -346,8 +356,13 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
 	    		
 	        	//超时重试不需要重复注册监听器
 	    		if(sm.isNeedResponse()) {
+	    			//5倍超时时间作为最后清理时间
+	    			
 	    			if(!cxt.exists(Constants.CONTEXT_CALLBACK_CLIENT)) {
 	    				//只有需要响应的请求才需要等待结果
+	    				if(sm.getTimeout() <= 0) {
+	    					timeouts.put(req.getRequestId(), curTime + 30000L);
+	    				}
 		    			waitForResponse.put(req.getRequestId(), (message)->{
 		    				mh.msg = message;
 		    				//在请求响应之间做同步
@@ -356,38 +371,44 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
 		        			}
 		    			});
 	    			} else {
+	    				if(sm.getTimeout() > 0) {
+	    					timeouts.put(req.getRequestId(), curTime + sm.getTimeout()*3);
+	    				} else {
+	    					timeouts.put(req.getRequestId(), curTime + 30000L);
+	    				}
+	    				
 	    				msg.setAsyncReturnResult(true);
 	    				Map<String,Object> cxtParams = new HashMap<>();
 	    				cxt.getAllParams(cxtParams);
-	    				cxt.removeParam(Constants.CONTEXT_CALLBACK_CLIENT);
+	    				
+	    				IClientAsyncCallback cb = cxt.getParam(Constants.CONTEXT_CALLBACK_CLIENT, null);
 	    				asyncResponse.put(req.getRequestId(), (respMsg)->{
+	    					JMicroContext actx = JMicroContext.get();
 	    					try {
-	    						JMicroContext.get().mergeParams(cxtParams);
-	    						if(JMicroContext.get().isDebug()) {
-	    							JMicroContext.get().appendCurUseTime("Got async resp ",true);
+	    						actx.mergeParams(cxtParams);
+	    						if(actx.isDebug()) {
+	    							actx.appendCurUseTime("Got async resp ",true);
 		    		    		}
 	    						RpcResponse resp = ICodecFactory.decode(this.codecFactory, respMsg.getPayload(),
 		    							RpcResponse.class, msg.getUpProtocol());
 		    					resp.setMsg(respMsg);
-		    					asyncResponse.remove(req.getRequestId());
-		    					IClientAsyncCallback cb = (IClientAsyncCallback)JMicroContext.get().getObject(Constants.CONTEXT_CALLBACK_CLIENT, null);
-		    					JMicroContext.get().removeParam(Constants.CONTEXT_CALLBACK_CLIENT);
 		    					cb.onResponse(resp);
 	    					}catch( Throwable e) {
 	    						String errMsg = "Client callback error reqID:"+req.getRequestId()+",linkId:"+msg.getLinkId()+",Service: "+sm.getKey().toKey(true, true, true);
 	    						logger.error(errMsg,e);
 	    			    		SF.eventLog(MC.MT_REQ_ERROR, MC.LOG_ERROR, TAG,errMsg);
 	    					} finally {
-    							if(JMicroContext.get().getObject(Constants.NEW_LINKID,null) != null &&
-    									JMicroContext.get().getBoolean(Constants.NEW_LINKID,false) ) {
+    							if(actx.getObject(Constants.NEW_LINKID,null) != null &&
+    									actx.getBoolean(Constants.NEW_LINKID,false) ) {
     								//RPC链路结束
     								SF.eventLog(MC.MT_LINK_END, MC.LOG_NO, TAG, null);
     							}
-    							JMicroContext.get().debugLog(0);
-    							JMicroContext.get().submitMRpcItem(monitor);
+    							actx.debugLog(0);
+    							actx.submitMRpcItem(monitor);
     							JMicroContext.clear();
 	    					}
 		    			});
+	    				
 	    			}
 	    		}
         	}
@@ -443,6 +464,10 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
         		}
     			return null;
     		}
+    		
+    		/*if("getInfo".equals(req.getMethod())) {
+				logger.info("getInfo");
+			}*/
     		
     		synchronized(req) {
     			try {
@@ -607,10 +632,10 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
 			SF.eventLog(MC.MT_PLATFORM_LOG,MC.LOG_DEBUG,TAG," receive message");
 		}
 		
-		IResponseHandler handler = waitForResponse.get(msg.getReqId());
+		IResponseHandler handler = waitForResponse.remove(msg.getReqId());
 		
 		if(handler == null) {
-			handler = asyncResponse.get(msg.getReqId());
+			handler = asyncResponse.remove(msg.getReqId());
 		}
 		
 		if(handler!= null){
@@ -624,7 +649,31 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
 		}
 	}
 	
-	private static interface IResponseHandler{
+	private void doChecker() {
+		if(timeouts.isEmpty()) {
+			return;
+		}
+		Map<Long,Long> ts = new HashMap<>();
+		synchronized(timeouts) {
+			ts.putAll(ts);
+		}
+		long cutTime = System.currentTimeMillis();
+		for(Long k : ts.keySet()) {
+			long t = timeouts.get(k);
+			if(cutTime > t) {
+				timeouts.remove(k);
+				if(asyncResponse.containsKey(k)) {
+					logger.error("asyncResponse callback timeout reqID: " + k);
+					asyncResponse.remove(k);
+				}else if(waitForResponse.containsKey(k)) {
+					logger.error("waitForResponse callback timeout reqID: " + k);
+					waitForResponse.remove(k);
+				}
+			}
+		}
+	}
+	
+	private interface IResponseHandler{
 		void onResponse(Message msg);
 	}
 	

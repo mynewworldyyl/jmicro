@@ -16,7 +16,6 @@
  */
 package com.alibaba.dubbo.common.bytecode;
 
-import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -33,6 +32,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import com.alibaba.dubbo.common.serialize.kryo.utils.ReflectUtils;
 import com.alibaba.dubbo.common.utils.ClassHelper;
 
+import cn.jmicro.common.JmicroClassPool;
 import javassist.CannotCompileException;
 import javassist.ClassPool;
 import javassist.CtClass;
@@ -50,8 +50,8 @@ import javassist.NotFoundException;
 public final class ClassGenerator {
     private static final AtomicLong CLASS_NAME_COUNTER = new AtomicLong(0);
     private static final String SIMPLE_NAME_TAG = "<init>";
-    private static final Map<ClassLoader, ClassPool> POOL_MAP = new ConcurrentHashMap<ClassLoader, ClassPool>(); //ClassLoader - ClassPool
-    private ClassPool mPool;
+    private static final Map<ClassLoader, JmicroClassPool> POOL_MAP = new ConcurrentHashMap<ClassLoader, JmicroClassPool>(); //ClassLoader - ClassPool
+    private JmicroClassPool mPool;
     private CtClass mCtc;
     private String mClassName, mSuperClass;
     private Set<String> mInterfaces;
@@ -63,7 +63,7 @@ public final class ClassGenerator {
     private ClassGenerator() {
     }
 
-    private ClassGenerator(ClassPool pool) {
+    private ClassGenerator(JmicroClassPool pool) {
         mPool = pool;
     }
 
@@ -78,15 +78,23 @@ public final class ClassGenerator {
     public static boolean isDynamicClass(Class<?> cl) {
         return ClassGenerator.DC.class.isAssignableFrom(cl);
     }
+    
+    public static JmicroClassPool getClassPool(Class<?> cl) {
+        return getClassPool(cl.getClassLoader());
+    }
 
-    public static ClassPool getClassPool(ClassLoader loader) {
-        if (loader == null)
-            return ClassPool.getDefault();
-
-        ClassPool pool = POOL_MAP.get(loader);
+    public static JmicroClassPool getClassPool(ClassLoader loader) {
+        if (loader == null) {
+        	JmicroClassPool dp = new JmicroClassPool(true);
+        	dp.appendSystemPath();
+            return dp;
+        }
+        
+        JmicroClassPool pool = POOL_MAP.get(loader);
         if (pool == null) {
-            pool = new ClassPool(true);
+            pool = new JmicroClassPool(false);
             pool.appendClassPath(new LoaderClassPath(loader));
+            //pool.appendClassPath(new LoaderClassPath(ClassLoader.getSystemClassLoader()));
             POOL_MAP.put(loader, pool);
         }
         return pool;
@@ -322,6 +330,9 @@ public final class ClassGenerator {
         if (mConstructors != null) mConstructors.clear();
         if (mCopyMethods != null) mCopyMethods.clear();
         if (mCopyConstructors != null) mCopyConstructors.clear();
+        //POOL_MAP.clear();
+        //mPool = null;
+        if(mPool != null) mPool.release();
     }
 
     private CtClass getCtClass(Class<?> c) throws NotFoundException {

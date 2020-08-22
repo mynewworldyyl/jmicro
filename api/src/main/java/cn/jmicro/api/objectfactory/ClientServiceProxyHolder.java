@@ -93,76 +93,104 @@ public class ClientServiceProxyHolder implements IServiceListener{
 	
 	@SuppressWarnings("unchecked")
 	public <T> T invoke(String methodName, Object... args) {
-		backupAndSetContext();
+
+		boolean sdirect = false;
+
+		JMicroContext cxt = JMicroContext.get();
 		
-		ServiceItem si = this.item;
-		if(si == null) {
-			if(!isUsable()) {
-				String msg = "Service Item is NULL when call method ["
-						+methodName+"] with params ["+ UniqueServiceMethodKey.paramsStr(args) +"] proxy ["
-						+this.getClass().getName()+"]";
-				logger.error(msg);
-				throw new CommonException(msg);
-			} else {
-				si = this.item;
-			}
-		}
-		
-		InvocationHandler h = targetHandler;
-		if(h == null) {
-			synchronized(this) {
-				h = targetHandler;
-				if(h == null) {
-					String handler = si.getHandler();
-					if(StringUtils.isEmpty(handler)) {
-			    		handler = Constants.DEFAULT_INVOCATION_HANDLER;
-			    	}
-			    	h = of.getByName(handler);
-			    	if(h == null) {
-			    		String msg = "Handler not found when call method ["
-								+methodName+"] with params ["+ UniqueServiceMethodKey.paramsStr(args) +"] proxy ["
-								+this.getClass().getName()+"]";
-						logger.error(msg);
-						throw new CommonException(msg);
-			    	}
-			    	targetHandler = h;
+		try {
+
+			backupAndSetContext();
+
+			ServiceItem si = this.item;
+			if (si == null) {
+				if (!isUsable()) {
+					String msg = "Service Item is NULL when call method [" + methodName + "] with params ["
+							+ UniqueServiceMethodKey.paramsStr(args) + "] proxy [" + this.getClass().getName() + "]";
+					logger.error(msg);
+					throw new CommonException(msg);
+				} else {
+					si = this.item;
 				}
 			}
-		}
-		
-		ServiceMethod sm = si.getMethod(methodName, args);
-		
-		if(sm == null){
-			throw new CommonException("cls["+si.getImpl()+"] method ["+methodName+"] method not found");
-		}
-		
-		JMicroContext.get().setString(cn.jmicro.api.JMicroContext.CLIENT_NAMESPACE, this.getNamespace());
-		JMicroContext.get().setString(cn.jmicro.api.JMicroContext.CLIENT_SERVICE, this.getNamespace());
-		JMicroContext.get().setString(cn.jmicro.api.JMicroContext.CLIENT_VERSION, this.getNamespace());
-		JMicroContext.get().setString(cn.jmicro.api.JMicroContext.CLIENT_METHOD, this.getNamespace());
-		
-		JMicroContext.get().setParam(Constants.CLIENT_REF_METHOD, methodName);
-		JMicroContext.get().setObject(Constants.PROXY, this);
-		
-		JMicroContext.configComsumer(sm,si);
-		
-		boolean sdirect = false;
-		if(JMicroContext.get().getParam(Constants.DIRECT_SERVICE_ITEM, null) == null) {
-			if(this.isDirect()) {
-				sdirect = true;
-				JMicroContext.get().setParam(Constants.DIRECT_SERVICE_ITEM, this.item);
+
+			InvocationHandler h = targetHandler;
+			if (h == null) {
+				synchronized (this) {
+					h = targetHandler;
+					if (h == null) {
+						String handler = si.getHandler();
+						if (StringUtils.isEmpty(handler)) {
+							handler = Constants.DEFAULT_INVOCATION_HANDLER;
+						}
+						h = of.getByName(handler);
+						if (h == null) {
+							String msg = "Handler not found when call method [" + methodName + "] with params ["
+									+ UniqueServiceMethodKey.paramsStr(args) + "] proxy [" + this.getClass().getName()
+									+ "]";
+							logger.error(msg);
+							throw new CommonException(msg);
+						}
+						targetHandler = h;
+					}
+				}
 			}
-		}
-		try {
-			T to = (T)h.invoke(this, methodName, args);
+
+			ServiceMethod sm = si.getMethod(methodName, args);
+
+			if (sm == null) {
+				throw new CommonException("cls[" + si.getImpl() + "] method [" + methodName + "] method not found");
+			}
+
+			cxt.setString(cn.jmicro.api.JMicroContext.CLIENT_NAMESPACE, this.getNamespace());
+			cxt.setString(cn.jmicro.api.JMicroContext.CLIENT_SERVICE, this.getNamespace());
+			cxt.setString(cn.jmicro.api.JMicroContext.CLIENT_VERSION, this.getNamespace());
+			cxt.setString(cn.jmicro.api.JMicroContext.CLIENT_METHOD, this.getNamespace());
+
+			cxt.setParam(Constants.CLIENT_REF_METHOD, methodName);
+			cxt.setObject(Constants.PROXY, this);
+
+			JMicroContext.configComsumer(sm, si);
+
+			if (JMicroContext.get().getParam(Constants.DIRECT_SERVICE_ITEM, null) == null) {
+				if (this.isDirect()) {
+					sdirect = true;
+					JMicroContext.get().setParam(Constants.DIRECT_SERVICE_ITEM, this.item);
+				}
+			}
+
+			Object retVal = h.invoke(this, methodName, args);
+			T to = null;
+			if (retVal != null) {
+				to = (T) retVal;
+			} else {
+				Class<?> rt = sm.getKey().getReturnParamClass();
+				if (rt == null || rt == Void.class || rt == Void.TYPE) {
+					return null;
+				} else if (rt == Byte.TYPE) {
+					to = (T) new Byte((byte) 0);
+				} else if (rt == Short.TYPE) {
+					to = (T) new Short((byte) 0);
+				} else if (rt == Integer.TYPE) {
+					to = (T) new Integer((byte) 0);
+				} else if (rt == Long.TYPE) {
+					to = (T) new Long((byte) 0);
+				} else if (rt == Float.TYPE) {
+					to = (T) new Float((byte) 0);
+				} else if (rt == Double.TYPE) {
+					to = (T) new Double((byte) 0);
+				} else if (rt == Boolean.TYPE) {
+					to = (T) Boolean.FALSE;
+				}
+			}
 			return to;
-		}finally {
-			if(sdirect) {
-				JMicroContext.get().removeParam(Constants.DIRECT_SERVICE_ITEM);
+		} finally {
+			if (sdirect) {
+				cxt.removeParam(Constants.DIRECT_SERVICE_ITEM);
 			}
 			this.restoreContext();
 		}
-		
+
 	}
 	
 	public boolean isUsable() {
@@ -202,64 +230,65 @@ public class ClientServiceProxyHolder implements IServiceListener{
 	
 	public void backupAndSetContext(){
 		//System.out.println("backupAndSetContext");
-		boolean breakFlag = JMicroContext.get().getBoolean(Constants.BREAKER_TEST_CONTEXT, false);
+		JMicroContext cxt = JMicroContext.get();
+		boolean breakFlag = cxt.getBoolean(Constants.BREAKER_TEST_CONTEXT, false);
 		
-		Reference ref = JMicroContext.get().getParam(Constants.REF_ANNO, null);
+		Reference ref = cxt.getParam(Constants.REF_ANNO, null);
 		
-		ServiceItem dsi = JMicroContext.get().getParam(Constants.DIRECT_SERVICE_ITEM, null);
+		ServiceItem dsi = cxt.getParam(Constants.DIRECT_SERVICE_ITEM, null);
 		
-		AsyncConfig async = JMicroContext.get().getParam(Constants.ASYNC_CONFIG, null);
+		AsyncConfig async = cxt.getParam(Constants.ASYNC_CONFIG, null);
 		
-		ActInfo ai = JMicroContext.get().getAccount();
+		ActInfo ai = cxt.getAccount();
 		
-		String lk = JMicroContext.get().getParam(JMicroContext.LOGIN_KEY, null);
+		String loginKey = cxt.getParam(JMicroContext.LOGIN_KEY, null);
 		
-		Long linkId = JMicroContext.get().getParam(JMicroContext.LINKER_ID, null);
+		Long linkId = cxt.getParam(JMicroContext.LINKER_ID, null);
 		
-		Long preRequestId = JMicroContext.get().getParam(JMicroContext.REQ_ID, null);
+		Long preRequestId = cxt.getParam(JMicroContext.REQ_ID, null);
 		
-		IClientAsyncCallback cb = JMicroContext.get().getParam(Constants.CONTEXT_CALLBACK_CLIENT,null);
+		IClientAsyncCallback cb = cxt.getParam(Constants.CONTEXT_CALLBACK_CLIENT,null);
 		
 		//backup the rpc context from here
-		JMicroContext.get().backupAndClear();
+		cxt.backupAndClear();
 		
 		//Start a new RPC context from here
 		//false表示不是provider端
 		JMicroContext.callSideProdiver(false);
 		if(breakFlag) {
-			JMicroContext.get().setBoolean(Constants.BREAKER_TEST_CONTEXT, true);
+			cxt.setBoolean(Constants.BREAKER_TEST_CONTEXT, true);
 		}
 		if(ref != null) {
-			JMicroContext.get().setParam(Constants.REF_ANNO, ref);
+			cxt.setParam(Constants.REF_ANNO, ref);
 		}
 		
 		if(cb != null) {
-			JMicroContext.get().setParam(Constants.CONTEXT_CALLBACK_CLIENT,cb);
+			cxt.setParam(Constants.CONTEXT_CALLBACK_CLIENT,cb);
 		}
 		
 		if(dsi != null) {
-			JMicroContext.get().setParam(Constants.DIRECT_SERVICE_ITEM, dsi);
+			cxt.setParam(Constants.DIRECT_SERVICE_ITEM, dsi);
 		}
 		
 		if(async != null) {
-			JMicroContext.get().setParam(Constants.ASYNC_CONFIG, async);
+			cxt.setParam(Constants.ASYNC_CONFIG, async);
 		}
 		
-		if(lk != null) {
-			JMicroContext.get().setParam(JMicroContext.LOGIN_KEY, lk);
+		if(loginKey != null) {
+			cxt.setParam(JMicroContext.LOGIN_KEY, loginKey);
 		}
 		
 		if(linkId != null && linkId > 0) {
-			JMicroContext.get().setParam(JMicroContext.LINKER_ID, linkId);
+			cxt.setParam(JMicroContext.LINKER_ID, linkId);
 		}
 		
 		if(preRequestId != null && preRequestId > 0) {
 			//pre request ID is the parent ID of this request
-			JMicroContext.get().setParam(JMicroContext.REQ_PARENT_ID, preRequestId);
+			cxt.setParam(JMicroContext.REQ_PARENT_ID, preRequestId);
 		}
 		
 		if(ai != null) {
-			JMicroContext.get().setAccount(ai);
+			cxt.setAccount(ai);
 		}
 		
 	}

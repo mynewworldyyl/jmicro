@@ -1,7 +1,10 @@
 <template>
     <div class="JDeploymentDesc">
-        <a @click="addDeploy()">ADD</a>&nbsp;&nbsp;&nbsp;
-        <a @click="refresh()">REFRESH</a>
+       <!-- <div style="height:30px;line-height: 30px">
+            <a @click="addDeploy()">ADD</a>&nbsp;&nbsp;&nbsp;
+            <a @click="refresh()">REFRESH</a>
+        </div>-->
+
         <table class="configItemTalbe" width="99%">
             <thead><tr><td>ID</td><td>JAR FILE</td><td>ENABLE</td><td>INSTANCE NUM</td><td>STRATEGY</td>
                 <td>STRATEGY ARGS</td><td>ARGS</td><td>OPERATION</td></tr>
@@ -47,6 +50,7 @@
 
 <script>
 
+    const cid = 'deploymentDesc';
     export default {
         name: 'JDeploymentDesc',
         data () {
@@ -165,17 +169,30 @@
             },
         },
 
+        editorRemove(it) {
+            if(this.item.id != it.id) {
+                return;
+            }
+            window.jm.vue.$off('tabItemRemove',this.editorRemove);
+        },
+
         mounted () {
             let self = this;
-            window.jm.mng.act.addListener(self.name,self.refresh);
+            window.jm.mng.act.addListener(cid,self.refresh);
             this.refresh();
+            window.jm.vue.$on('tabItemRemove',self.editorRemove);
+            window.jm.vue.$emit("editorOpen",
+                {"editorId":cid,
+                    "menus":[{name:"ADD",label:"ADD",icon:"ios-cog",call:self.addDeploy},
+                        {name:"REFRESH",label:"REFRESH",icon:"ios-cog",call:self.refresh}]
+             });
         },
     }
 </script>
 
 <style>
     .JDeploymentDesc{
-
+        height: 100%;
     }
 
 </style>

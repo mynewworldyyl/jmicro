@@ -31,6 +31,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.alibaba.dubbo.common.serialize.kryo.utils.ReflectUtils;
+
 import cn.jmicro.api.ClassScannerUtils;
 import cn.jmicro.api.JMicro;
 import cn.jmicro.api.annotation.Cfg;
@@ -665,6 +667,7 @@ public class ServiceLoader{
 			sm.getKey().setUsk(usk);
 			sm.getKey().setMethod(m.getName());
 			sm.getKey().setParamsStr(UniqueServiceMethodKey.paramsStr(m.getParameterTypes()));
+			sm.getKey().setReturnParam(ReflectUtils.getDesc(m.getReturnType()));
 			
 			Type[] types = m.getGenericParameterTypes();
 			 Class<?>[]  pts = m.getParameterTypes();

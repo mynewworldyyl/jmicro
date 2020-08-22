@@ -16,6 +16,7 @@
  */
 package cn.jmicro.pubsub;
 
+import cn.jmicro.api.async.IPromise;
 import cn.jmicro.api.pubsub.PSData;
 import cn.jmicro.api.registry.ServiceMethod;
 
@@ -26,7 +27,7 @@ import cn.jmicro.api.registry.ServiceMethod;
  */
 public interface ISubCallback {
 
-	PSData[]  onMessage(PSData[] item);
+	IPromise<PSData[]>  onMessage(PSData[] item);
 	
 	String info();
 	

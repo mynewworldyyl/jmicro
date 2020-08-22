@@ -14,14 +14,16 @@ import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.alibaba.dubbo.common.bytecode.ClassGenerator;
+
 import cn.jmicro.api.annotation.SO;
 import cn.jmicro.api.codec.ISerializeObject;
 import cn.jmicro.api.codec.TypeCoderFactory;
 import cn.jmicro.api.codec.typecoder.TypeCoder;
 import cn.jmicro.common.CommonException;
+import cn.jmicro.common.JmicroClassPool;
 import cn.jmicro.common.util.StringUtils;
 import javassist.CannotCompileException;
-import javassist.ClassPool;
 import javassist.CtClass;
 import javassist.CtField;
 import javassist.CtMethod;
@@ -33,7 +35,7 @@ public class SerializeProxyFactoryBackup {
 	
 	public static byte[] getSerializeData(byte[] classData, Class cls,String className) throws IOException, RuntimeException, NotFoundException, CannotCompileException {
 
-		 ClassPool cp = ClassPool.getDefault();
+		 JmicroClassPool cp = ClassGenerator.getClassPool(SerializeProxyFactoryBackup.class);
 		 CtClass ct = cp.makeClass(new ByteArrayInputStream(classData));
 		 if(!ct.hasAnnotation(SO.class)) {
 			 return null;
@@ -55,7 +57,7 @@ public class SerializeProxyFactoryBackup {
 
 	private static  String getDecodeMethod(CtClass cls) throws NotFoundException, CannotCompileException {
 
-		ClassPool cp = ClassPool.getDefault();
+		JmicroClassPool cp = ClassGenerator.getClassPool(SerializeProxyFactoryBackup.class);
 		
 		StringBuffer sb = new StringBuffer(" public void decode(java.io.DataInput __buffer)  throws java.io.IOException {\n");
 		
@@ -408,7 +410,7 @@ public class SerializeProxyFactoryBackup {
 		sb.append(" cn.jmicro.api.codec.JDataOutput out = (cn.jmicro.api.codec.JDataOutput)__buffer;\n");
 		sb.append(" cn.jmicro.api.codec.typecoder.TypeCoder __coder = cn.jmicro.api.codec.TypeCoderFactory.getDefaultCoder(); \n");
 		
-		ClassPool cp = ClassPool.getDefault();
+		JmicroClassPool cp = ClassGenerator.getClassPool(SerializeProxyFactoryBackup.class);
 		
 		/*List<Field> fields = new ArrayList<>();
 		Utils.getIns().getFields(fields, cls);

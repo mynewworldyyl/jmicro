@@ -21,6 +21,9 @@ import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import cn.jmicro.api.annotation.Cfg;
 import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Inject;
@@ -40,6 +43,8 @@ import cn.jmicro.common.util.JsonUtils;
 @Component(value=Constants.DEFAULT_CODEC_FACTORY,lazy=false)
 public class SimpleCodecFactory implements ICodecFactory{
 
+	private final static Logger logger = LoggerFactory.getLogger(SimpleCodecFactory.class);
+	
 	private Map<Byte,IDecoder> decoders = new HashMap<>();
 	
 	private Map<Byte,IEncoder> encoders = new HashMap<>();
@@ -84,7 +89,10 @@ public class SimpleCodecFactory implements ICodecFactory{
 			try {
 				Thread.currentThread().setContextClassLoader(cl);
 				return (R)prefixCoder.decode(data);
-			}finally {
+			}catch (Throwable e) {
+				logger.error(e.getMessage() + ": " + clazz.getName());
+				throw e;
+			} finally {
 				Thread.currentThread().setContextClassLoader(c);
 			}
 			
@@ -97,7 +105,12 @@ public class SimpleCodecFactory implements ICodecFactory{
 			ByteBuffer bb = null;
 			//ByteBuffer.allocate(defaultEncodeBufferSize);
 			//Encoder.encodeObject(bb,obj);
-			bb = prefixCoder.encode(obj);
+			try {
+				bb = prefixCoder.encode(obj);
+			} catch (Throwable e) {
+				logger.error(e.getMessage() + ": " +JsonUtils.getIns().toJson(obj));
+				throw e;
+			}
 			//bb.flip();
 			return bb;
 		}

@@ -1,3 +1,29 @@
+*{
+    scrollbar-3dlight-color:#D4D0C8;
+    scrollbar-highlight-color:#fff;
+    scrollbar-face-color:#E4E4E4;
+    scrollbar-arrow-color:#666;
+    scrollbar-shadow-color:#808080;
+    scrollbar-darkshadow-color:#D7DCE0;
+    scrollbar-base-color:#D7DCE0;
+    margin:0px;
+    padding: 0px;
+  }
+
+html {
+    overflow-y: hidden;
+}
+
+.toolBar{
+    height: 31px;
+    border-radius: 10px;
+    border-bottom: 1px solid lightgray;
+}
+
+.toolBar .ivu-dropdown{
+    display:inline-block;float:right;padding-right:10px;
+}
+
 .configItemTalbe {
     border-collapse: collapse;
     margin: 0 auto;
@@ -7,7 +33,6 @@
 .configItemTalbe th {
     font-size: medium;
     font-family: "Microsoft Yahei", "微软雅黑", Tahoma, Arial, Helvetica, STHeiti;
-
 }
 
 .configItemTalbe td, table th {

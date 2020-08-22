@@ -94,9 +94,9 @@ public class JMicroContext  {
 	public static final String SESSION_KEY="_sessionKey";
 	private static final ThreadLocal<JMicroContext> cxt = new ThreadLocal<JMicroContext>();
 	
-	private Stack<Map<String,Object>> stack = new Stack<>();
+	private Stack<Map<String,Object>> ctxes = new Stack<>();
 	
-	protected Map<String,Object> params = new HashMap<String,Object>();
+	protected Map<String,Object> curCxt = new HashMap<String,Object>();
 	
 	private JMicroContext() {}
 	
@@ -313,9 +313,9 @@ public class JMicroContext  {
 	 */
 	public void backupAndClear() {
 		Map<String,Object> ps = new HashMap<>();
-		ps.putAll(cxt.get().params);
-		stack.push(ps);
-		cxt.get().params.clear();
+		ps.putAll(cxt.get().curCxt);
+		ctxes.push(ps);
+		cxt.get().curCxt.clear();
 	}
 	
 	public ActInfo getAccount() {
@@ -344,16 +344,16 @@ public class JMicroContext  {
 	}
 	
 	public void restore() {
-		cxt.get().params.clear();
-		Map<String,Object> ps = stack.pop();
-		if(ps == null) {
-			throw new CommonException("JMicro Context stack invalid");
+		cxt.get().curCxt.clear();
+		if(ctxes.isEmpty()) {
+			throw new CommonException("JMicro Context stack is empty");
 		}
-		cxt.get().params.putAll(ps);;
+		Map<String,Object> ps = ctxes.pop();
+		cxt.get().curCxt.putAll(ps);
 	}
 	
 	public void getAllParams(Map<String,Object> params) {
-		params.putAll(this.params);
+		params.putAll(this.curCxt);
 	}
 	
 	public boolean isDebug(){
@@ -422,17 +422,17 @@ public class JMicroContext  {
 			return;
 		}
 		for(Map.Entry<String, Object> p : params.entrySet()){
-			this.params.put(p.getKey(), p.getValue());
+			this.curCxt.put(p.getKey(), p.getValue());
 		}
 	}
 	
 	public boolean exists(String key){
-		return this.params.containsKey(key);
+		return this.curCxt.containsKey(key);
 	}
 	
 	@SuppressWarnings("unchecked")
 	public <T> T getParam(String key,T defautl){
-		T v = (T)this.params.get(key);
+		T v = (T)this.curCxt.get(key);
 		if(v == null){
 			return defautl;
 		}
@@ -440,11 +440,11 @@ public class JMicroContext  {
 	}
 	
 	public void removeParam(String key){
-	    this.params.remove(key);
+	    this.curCxt.remove(key);
 	}
 	
 	public <T> void setParam(String key,T val){
-		this.params.put(key,val);
+		this.curCxt.put(key,val);
 	}
 	
 	public void setInt(String key,int defautl){
