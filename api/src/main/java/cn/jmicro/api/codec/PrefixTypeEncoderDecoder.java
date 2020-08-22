@@ -24,6 +24,8 @@ import org.slf4j.LoggerFactory;
 
 import cn.jmicro.api.annotation.Cfg;
 import cn.jmicro.api.annotation.Component;
+import cn.jmicro.api.annotation.Inject;
+import cn.jmicro.api.classloader.RpcClassLoader;
 import cn.jmicro.api.codec.typecoder.TypeCoder;
 import cn.jmicro.common.CommonException;
 
@@ -42,6 +44,9 @@ public class PrefixTypeEncoderDecoder{
 	
 	private TypeCoder<Object> dc = null;
 	
+	@Cfg(value="/OnePrefixTypeEncoder",defGlobal=true,required=true)
+	private int encodeBufferSize = 4092;
+	
 	public void ready() {
 		dc = TypeCoderFactory.getIns().getDefaultCoder();
 	}
@@ -58,10 +63,6 @@ public class PrefixTypeEncoderDecoder{
 		
 		return (V)dc.decode(input, null, null);
 	}
-	
-	
-	@Cfg(value="/OnePrefixTypeEncoder",defGlobal=true,required=true)
-	private int encodeBufferSize = 4092;
 	
 	public ByteBuffer encode(Object obj) {
 		if(obj == null) {

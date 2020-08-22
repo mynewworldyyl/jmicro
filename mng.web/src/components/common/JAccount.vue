@@ -2,7 +2,7 @@
     <div class="accountStatuBar">
         <div class="loginBtn">
             <span href="javascript:void(0);" @click="doLoginOrLogout()">
-            {{ actInfo && actInfo.success  ? 'LOGOUT':'LOGIN'}}</span>
+            {{ actInfo && actInfo.success  ? 'Logout':'Login'}}</span>
         </div>
         <div class="accountBar">{{actInfo.actName}}</div>
 

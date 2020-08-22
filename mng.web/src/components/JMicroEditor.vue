@@ -181,6 +181,10 @@
                     let is = self.items;
                     let it = null;
 
+                   /* if(self.selectNode) {
+                        self.handleTabDeactive(self.selectNode.id);
+                    }*/
+                    self.handleTabOpen(node.id);
                     if(self.allowMany ) {
                         for(let i = 0; i < self.items.length; i++) {
                             if(self.items[i].id == node.id) {
@@ -201,6 +205,7 @@
                         self.items = is;
                         self.selectNode = node;
                     }
+
                 });
             },
 
@@ -218,6 +223,10 @@
                         return;
                     }
 
+                   /* if(self.selectNode) {
+                        self.handleTabDeactive(self.selectNode.id);
+                    }*/
+                    self.handleTabOpen(node.id);
                     let is = self.items;
                     let it = null;
 
@@ -257,6 +266,10 @@
                         return;
                     }
 
+                   /* if(self.selectNode) {
+                        self.handleTabDeactive(self.selectNode.id);
+                    }*/
+                    self.handleTabOpen(node.id);
                     let idx = null;
 
                     for(let i = 0; i < self.items.length; i++) {
@@ -291,6 +304,10 @@
                     let is = self.items;
                     let it = null;
 
+                  /*  if(self.selectNode) {
+                        self.handleTabDeactive(self.selectNode.id);
+                    }*/
+                    self.handleTabOpen(node.id);
                     if(self.allowMany ) {
                         for(let i = 0; i < self.items.length; i++) {
                             if(self.items[i].id == node.id ) {
@@ -326,6 +343,12 @@
                     if(!!self.selectNode && self.selectNode.id == node.id) {
                         return;
                     }
+
+                    /*if(self.selectNode) {
+                        self.handleTabDeactive(self.selectNode.id);
+                    }*/
+
+                    self.handleTabOpen(node.id);
 
                     let is = self.items;
                     let idx = null;
@@ -365,6 +388,10 @@
                     let is = self.items;
                     let it = null;
 
+                    /*if(self.selectNode) {
+                        self.handleTabDeactive(self.selectNode.id);
+                    }*/
+                    self.handleTabOpen(node.id);
                     for(let i = 0; i < self.items.length; i++) {
                         if(self.items[i].id == node.id ) {
                             it = self.items[i];
@@ -384,6 +411,18 @@
 
             handleTabActive(id) {
                 window.jm.vue.$emit('editorActive',id);
+            },
+
+            handleTabDeactive(id) {
+                window.jm.vue.$emit('editorDeactive',id);
+            },
+
+            handleTabOpen(id) {
+                window.jm.vue.$emit("editorOpen",
+                    {
+                        "editorId":id,
+                        "menus":[]
+                    });
             },
 
             handleTabRemove (id) {
@@ -426,6 +465,11 @@
                     let title = editorId;
                     let it = null;
 
+                    /*if(self.selectNode) {
+                        self.handleTabDeactive(self.selectNode.id);
+                    }*/
+
+                    self.handleTabOpen(title);
                     for(let i = 0; i < self.items.length; i++) {
                         if(self.items[i].group == title ) {
                             it = self.items[i];

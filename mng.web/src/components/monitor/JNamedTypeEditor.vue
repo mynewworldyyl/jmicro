@@ -1,10 +1,10 @@
 <template>
     <div class="JMonitorTypeKeyList">
-        <a @click="refresh()">REFRESH</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+       <!-- <a @click="refresh()">REFRESH</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
         <a  v-if="adminPer"   @click="selectAll(true)">SELECTALL</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
         <a  v-if="adminPer"   @click="selectAll(false)">UNSELECTALL</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
         <a  v-if="adminPer"  @click="update()">UPDATE</a>
-        <br/>
+        <br/>-->
         <p>{{item.id}}</p>
         <table class="configItemTalbe" width="99%">
             <thead><tr><td>GROUP</td> <td>LABEL</td><td>FIELD NAME</td><td>TYPE CODE</td> <td>DESC</td><td>OPERATION</td></tr></thead>
@@ -156,21 +156,17 @@
         },
 
         mounted () {
-            //let self = this;
+            let self = this;
             window.jm.mng.act.addListener(this.item.id,()=>{
                 this.refresh();
             });
-
-            let self = this;
-            window.jm.vue.$on('userLogin',() => {
-                self.refresh();
-            });
-
-            window.jm.vue.$on('userLogout',() => {
-                self.refresh();
-            });
-
             this.refresh();
+
+            let menus = [{name:"REFRESH",label:"refresh",icon:"ios-cog",call:self.refresh},
+                { name:"SELECTALL", label:"Select All", icon:"ios-cog",call : ()=>{self.selectAll(true);}, needAdmin:true },
+                { name:"UNSELECTALL", label: "Unselect All", icon : "ios-cog",call : ()=>{self.selectAll(false);}, needAdmin:true },
+                { name:"UPDATE", label:"Update", icon:"ios-cog",call : ()=>{self.update();}, needAdmin:true }];
+            window.jm.vue.$emit("editorOpen", {"editorId":this.item.id, "menus":menus});
         },
 
         beforeDestroy() {

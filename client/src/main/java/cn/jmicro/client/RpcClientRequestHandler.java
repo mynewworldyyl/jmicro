@@ -29,6 +29,7 @@ import cn.jmicro.api.JMicroContext;
 import cn.jmicro.api.annotation.Cfg;
 import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Inject;
+import cn.jmicro.api.classloader.RpcClassLoader;
 import cn.jmicro.api.client.IClientSession;
 import cn.jmicro.api.client.IClientSessionManager;
 import cn.jmicro.api.codec.ICodecFactory;
@@ -377,11 +378,13 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
 	    					timeouts.put(req.getRequestId(), curTime + 30000L);
 	    				}
 	    				
+	    				IClientAsyncCallback cb = cxt.getParam(Constants.CONTEXT_CALLBACK_CLIENT, null);
+	    				cxt.removeParam(Constants.CONTEXT_CALLBACK_CLIENT);
+	    				
 	    				msg.setAsyncReturnResult(true);
 	    				Map<String,Object> cxtParams = new HashMap<>();
 	    				cxt.getAllParams(cxtParams);
 	    				
-	    				IClientAsyncCallback cb = cxt.getParam(Constants.CONTEXT_CALLBACK_CLIENT, null);
 	    				asyncResponse.put(req.getRequestId(), (respMsg)->{
 	    					JMicroContext actx = JMicroContext.get();
 	    					try {
@@ -389,6 +392,7 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
 	    						if(actx.isDebug()) {
 	    							actx.appendCurUseTime("Got async resp ",true);
 		    		    		}
+	    						
 	    						RpcResponse resp = ICodecFactory.decode(this.codecFactory, respMsg.getPayload(),
 		    							RpcResponse.class, msg.getUpProtocol());
 		    					resp.setMsg(respMsg);
@@ -397,6 +401,10 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
 	    						String errMsg = "Client callback error reqID:"+req.getRequestId()+",linkId:"+msg.getLinkId()+",Service: "+sm.getKey().toKey(true, true, true);
 	    						logger.error(errMsg,e);
 	    			    		SF.eventLog(MC.MT_REQ_ERROR, MC.LOG_ERROR, TAG,errMsg);
+	    			    		RpcResponse resp = new RpcResponse();
+	    			    		resp.setSuccess(false);
+	    			    		resp.setResult(new ServerError(10,e.getMessage()));
+	    			    		cb.onResponse(resp);
 	    					} finally {
     							if(actx.getObject(Constants.NEW_LINKID,null) != null &&
     									actx.getBoolean(Constants.NEW_LINKID,false) ) {

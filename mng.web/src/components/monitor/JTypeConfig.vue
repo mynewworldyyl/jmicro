@@ -1,7 +1,7 @@
 <template>
     <div class="JTypeConfig">
-        <a @click="refresh()">REFRESH</a>
-        &nbsp;&nbsp;&nbsp;&nbsp;<a v-if="adminPer" @click="add()">ADD</a>
+       <!-- <a @click="refresh()">REFRESH</a>
+        <a v-if="adminPer" @click="add()">ADD</a>-->
         <table class="configItemTalbe" width="99%">
             <thead><tr><td>GROUP</td> <td>LABEL</td><td>FIELD NAME</td><td>TYPE CODE</td> <td>DESC</td><td>OPERATION</td></tr></thead>
             <tr v-for="a in typeList" :key="a.id">
@@ -51,10 +51,10 @@
 
 <script>
 
-    const cid = 'JTypeConfig';
+    const cid = 'typeConfig';
 
     export default {
-        name: cid,
+        name: 'JTypeConfig',
         data () {
             return {
                 groups:[],
@@ -172,6 +172,10 @@
             });
             window.jm.mng.act.addListener(cid,this.refresh);
             this.refresh();
+
+            let menus = [{name:"REFRESH",label:"REFRESH",icon:"ios-cog",call:self.refresh},
+                { name:"ADD", label:"ADD", icon:"ios-cog",call : self.addDeploy, needAdmin:true }];
+            window.jm.vue.$emit("editorOpen", {"editorId":cid, "menus":menus});
         },
 
         beforeDestroy() {

@@ -39,6 +39,8 @@ public class PromiseUtils {
 						f.setCode(1);
 						if(resp.getResult() != null) {
 							f.setMsg(resp.getResult().toString());
+						}else {
+							f.setMsg("Promise got error result");
 						}
 					}
 					p.setFail(f);

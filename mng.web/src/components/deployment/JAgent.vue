@@ -110,7 +110,7 @@
         },
 
         mounted () {
-            window.jm.mng.act.addListener('JAgent',this.refresh);
+            window.jm.mng.act.addListener(cid,this.refresh);
             this.refresh();
             let self = this;
             window.jm.vue.$emit("editorOpen",
@@ -118,7 +118,7 @@
                     "menus":[{name:"ShowAll",label:"Show All",icon:"ios-cog",call: ()=>{
                         self.showAll = !self.showAll; self.refresh(); }},
                         {name:"REFRESH",label:"Refresh",icon:"ios-cog",call:self.refresh}]
-                });
+            });
         },
     }
 </script>

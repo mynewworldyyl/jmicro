@@ -622,7 +622,11 @@ public interface TypeCoder<T> extends Comparable<TypeCoder<T>>{
 						throw new CommonException("class not found:" + clazzName,e);
 					}
 				}
+				if(cls == null) {
+					throw new CommonException("class not found:" + clazzName);
+				}
 				classCache.put(clazzName, cls);
+				
 				return cls;
 			}
 		}

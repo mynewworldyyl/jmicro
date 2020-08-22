@@ -183,8 +183,8 @@
             window.jm.vue.$on('tabItemRemove',self.editorRemove);
             window.jm.vue.$emit("editorOpen",
                 {"editorId":cid,
-                    "menus":[{name:"ADD",label:"ADD",icon:"ios-cog",call:self.addDeploy},
-                        {name:"REFRESH",label:"REFRESH",icon:"ios-cog",call:self.refresh}]
+                    "menus":[{name:"ADD",label:"Add",icon:"ios-cog",call:self.addDeploy},
+                        {name:"REFRESH",label:"Refresh",icon:"ios-cog",call:self.refresh}]
              });
         },
     }

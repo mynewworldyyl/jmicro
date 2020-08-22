@@ -95,7 +95,6 @@ public class SimpleCodecFactory implements ICodecFactory{
 			} finally {
 				Thread.currentThread().setContextClassLoader(c);
 			}
-			
 		}
 	};
 	

@@ -4,63 +4,64 @@
       <div style="position:fixed; right:0px; left:0px; height:60px; top:0px; z-index:100">
           <Menu mode="horizontal" theme="light" active-key="service" @on-select="toRouter">
               <Submenu name="mo">
-                  <template slot="title"><Icon type="ios-cog" />MONITOR</template>
+                  <template slot="title"><Icon type="ios-cog" />Monitor</template>
                   <Menu-group title="MONITOR">
-                      <Menu-item name="__service" ><Icon type="ios-paper"></Icon>SERVICE</Menu-item>
-                      <Menu-item name="__statis"><Icon type="ios-stats" />STATIS</Menu-item>
-                      <Menu-item name="__monitors"><Icon type="ios-cog"></Icon>MONITORS</Menu-item>
-                      <Menu-item name="__threadPool"><Icon type="ios-cog"></Icon>THREAD</Menu-item>
+                      <Menu-item name="__service" ><Icon type="ios-paper"></Icon>Service</Menu-item>
+                      <Menu-item name="__statis"><Icon type="ios-stats" />Statis</Menu-item>
+                      <Menu-item name="__monitors"><Icon type="ios-cog"></Icon>Monitors</Menu-item>
+                      <Menu-item name="__threadPool"><Icon type="ios-cog"></Icon>Thread</Menu-item>
                   </Menu-group>
                   <Menu-group title="LOG">
-                      <Menu-item name="__invokeLinkView"><Icon type="ios-cog"></Icon>INVOKE LINK</Menu-item>
-                      <Menu-item name="__logItemView"><Icon type="ios-cog"></Icon>Monitor LOG</Menu-item>
+                      <Menu-item name="__invokeLinkView"><Icon type="ios-cog"></Icon>Invoke Link</Menu-item>
+                      <Menu-item name="__logItemView"><Icon type="ios-cog"></Icon>Monitor Log</Menu-item>
                       <Menu-item name="__processLog"><Icon type="ios-cog"></Icon>Process Log</Menu-item>
                   </Menu-group>
                   <Menu-group title="CFG">
-                      <Menu-item name="__warning"><Icon type="ios-alert" />WARNING</Menu-item>
-                      <Menu-item name="__typeConfig"><Icon type="ios-cog"></Icon>TYPE CONFIG</Menu-item>
-                      <Menu-item name="__monitorType"><Icon type="ios-cog"></Icon>MONITOR TYPES</Menu-item>
-                      <Menu-item name="__monitorTypeServiceMethod"><Icon type="ios-cog"></Icon>SERVICE TYPES</Menu-item>
-                      <Menu-item name="__namedType"><Icon type="ios-cog"></Icon>NAMED TYPES</Menu-item>
+                      <Menu-item name="__warning"><Icon type="ios-alert" />Warning</Menu-item>
+                      <Menu-item name="__typeConfig"><Icon type="ios-cog"></Icon>Type Config</Menu-item>
+                      <Menu-item name="__monitorType"><Icon type="ios-cog"></Icon>Monitor Types</Menu-item>
+                      <Menu-item name="__monitorTypeServiceMethod"><Icon type="ios-cog"></Icon>Service Types</Menu-item>
+                      <Menu-item name="__namedType"><Icon type="ios-cog"></Icon>Named Types</Menu-item>
                   </Menu-group>
                </Submenu>
 
               <Submenu name="d">
                   <template slot="title">
                       <Icon type="ios-analytics" />
-                      DEPLOYMENT
+                      Deployment
                   </template>
-                  <Menu-item name="__deploymentDesc"><Icon type="ios-alert" />DEPLOY DESC</Menu-item>
-                  <Menu-item name="__agent"><Icon type="ios-cog"></Icon>AGENTS</Menu-item>
-                  <Menu-item name="__process"><Icon type="ios-cog"></Icon>PROCESS</Menu-item>
-                  <Menu-item name="__repository"><Icon type="ios-people"></Icon>REPOSITORY</Menu-item>
-                  <Menu-item name="__choreography"><Icon type="ios-cog"></Icon>CHOREOGRAPHY</Menu-item>
-                  <Menu-item name="__host"><Icon type="ios-cog"></Icon>HOST</Menu-item>
+                  <Menu-item name="__deploymentDesc"><Icon type="ios-alert" />Deploy Desc</Menu-item>
+                  <Menu-item name="__agent"><Icon type="ios-cog"></Icon>Agents</Menu-item>
+                  <Menu-item name="__process"><Icon type="ios-cog"></Icon>Process</Menu-item>
+                  <Menu-item name="__repository"><Icon type="ios-people"></Icon>Repository</Menu-item>
+                  <Menu-item name="__choreography"><Icon type="ios-cog"></Icon>Choreography</Menu-item>
+                  <Menu-item name="__host"><Icon type="ios-cog"></Icon>Host</Menu-item>
               </Submenu>
 
               <Submenu name="o">
                   <template slot="title">
                       <Icon type="ios-analytics" />
-                      OTHERS
+                      Others
                   </template>
-                  <Menu-item name="__config"><Icon type="ios-construct"></Icon>CONFIG</Menu-item>
-                  <Menu-item name="__router"><Icon type="ios-people"></Icon>ROUTER</Menu-item>
-                  <Menu-item name="__shell"><Icon type="ios-cog"></Icon>SHELL</Menu-item>
+                  <Menu-item name="__config"><Icon type="ios-construct"></Icon>Config</Menu-item>
+                  <Menu-item name="__router"><Icon type="ios-people"></Icon>Router</Menu-item>
+                  <Menu-item name="__shell"><Icon type="ios-cog"></Icon>Shell</Menu-item>
                  <!-- <Menu-item name="log"><Icon type="ios-filing"></Icon>LOG</Menu-item>-->
-                  <MenuItem name="__help"> <Icon type="ios-cog"></Icon>HELP</MenuItem>
-                  <MenuItem name="__about"> <Icon type="ios-cog"></Icon>ABOUT</MenuItem>
+                  <MenuItem name="__help"> <Icon type="ios-cog"></Icon>Help</MenuItem>
+                  <MenuItem name="__about"> <Icon type="ios-cog"></Icon>About</MenuItem>
                  <!-- <MenuItem name="contact"> <Icon type="ios-cog"></Icon>CONTACT ME</MenuItem>-->
-                  <MenuItem name="__testing"> <Icon type="ios-cog"></Icon>TESTING</MenuItem>
+                  <MenuItem name="__testing"> <Icon type="ios-cog"></Icon>Testing</MenuItem>
               </Submenu>
 
               <Submenu name="me">
                   <template slot="title">
                       <Icon type="ios-analytics" />
-                      MENUS
+                      Menus
                   </template>
 
                   <MenuItem  v-for="mi in menus" :name="mi.name" :key="mi.name">
-                      <Icon :type="mi.icon"></Icon>{{mi.label}}</MenuItem>
+                      <Icon :type="mi.icon"></Icon>{{mi.label}}
+                  </MenuItem>
 
               </Submenu>
 
@@ -149,6 +150,8 @@
 
     let cache = null;
 
+const  cid = 'jmicroApp';
+
 export default {
     name: 'App',
     mounted() {
@@ -156,6 +159,13 @@ export default {
         window.jm.rpc.init();
         //jm.mng.init();
         let self = this;
+
+        window.jm.mng.act.addListener(cid,()=>{
+            self.adminPer = window.jm.mng.comm.adminPer;
+            if( self.activeEditorId) {
+                self.selectMenu(self.activeEditorId);
+            }
+        });
 
         window.jm.vue.$on('editorOpen',function(opts) {
             if(!opts.editorId) {
@@ -168,19 +178,30 @@ export default {
 
             self.activeEditorId = opts.editorId;
             self.menusMap[opts.editorId] = opts.menus;
-            self.menus = self.menusMap[opts.editorId];
+            self.menusMapCommon[opts.editorId] = self.filterMenus(opts.editorId);
+            self.selectMenu(opts.editorId);
+
         });
 
         window.jm.vue.$on('editorClosed',function(editorId) {
             delete self.menusMap[editorId];
+            delete self.menusMapCommon[editorId];
             if(editorId == self.activeEditorId) {
                 self.menus = [];
+                self.activeEditorId  = null;
             }
         });
 
         window.jm.vue.$on('editorActive',function(editorId) {
             self.activeEditorId = editorId;
-            self.menus = self.menusMap[editorId];
+            self.selectMenu(editorId);
+        });
+
+        window.jm.vue.$on('editorDeactive',function(editorId) {
+            if(self.activeEditorId == editorId) {
+                self.menus = [];
+                self.activeEditorId  = null;
+            }
         });
 
     },
@@ -274,12 +295,12 @@ export default {
       return {
           curSelect: cache[cache.curSelectKey],
           cache: cache,
+          adminPer : false,
           menus:[/*{name:"test1",label:"label1",icon:"ios-cog"},
               {name:"test2",label:"label2",icon:"ios-people"}*/],
           activeEditorId : null,
-          menusMap:{
-
-          }
+          menusMap:{},
+          menusMapCommon:{},
       };
     },
 
@@ -330,6 +351,31 @@ export default {
 
       doLoginOrLogout(){
 
+      },
+
+      selectMenu(editorId) {
+          let self = this;
+          if(self.adminPer) {
+              self.menus = self.menusMap[editorId];
+          } else {
+              self.menus = self.menusMapCommon[editorId];
+          }
+      },
+
+      filterMenus(editorId) {
+        let ms = this.menusMap[editorId];
+        if(!ms) {
+            return [];
+        }
+
+        let cms = [];
+        for(let i = 0; i < ms.length; i++) {
+            let m = ms[i];
+            if(!m.needAdmin) {
+                cms.push(m);
+            }
+        }
+        return cms;
       }
 
   }
