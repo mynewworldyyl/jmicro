@@ -52,7 +52,7 @@ public class DefaultRouter  extends AbstractRouter implements IRouter{
 		return RouteUtils.maxPriorityRule(rs);
 	}
 
-	public Set<ServiceItem> doRoute(RouteRule rule,Set<ServiceItem> services, String srvName, String method, Class<?>[] args,
+	public Set<ServiceItem> doRoute(RouteRule rule,Set<ServiceItem> services, String srvName, String method, /*Class<?>[] args,*/
 			String namespace, String version, String transport) {
 		
 		Set<RouteRule> rules = this.ruleManager.getRouteRules();

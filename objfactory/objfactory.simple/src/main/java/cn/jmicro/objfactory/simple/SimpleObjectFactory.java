@@ -454,15 +454,31 @@ public class SimpleObjectFactory implements IObjectFactory {
 				public int compare(Object o1, Object o2) {
 					Component c1 = ProxyObject.getTargetCls(o1.getClass()).getAnnotation(Component.class);
 					Component c2 = ProxyObject.getTargetCls(o2.getClass()).getAnnotation(Component.class);
-					if(c1 == null && c2 == null) {
-						return 0;
-					} else if(c1 == null && c2 != null) {
-						return -1;
-					} else if(c1 != null && c2 == null) {
-						return 1;
-					} else {
-						return c1.level() > c2.level()?1:c1.level() == c2.level()?0:-1;
+					int l1 = 0;
+					int l2 = 0;
+					
+					if(c1 == null) {
+						if(o1.getClass() == RpcClassLoader.class) {
+							l1 = 10;
+						}else {
+							l1 = 0;
+						}
+					}else {
+						l1 = c1.level();
 					}
+					
+					if(c2 == null) {
+						if(o2.getClass() == RpcClassLoader.class) {
+							l2 = 10;
+						}else {
+							l2 = 0;
+						}
+					} else {
+						l2 = c2.level();
+					}
+					
+					return l1 > l2 ? 1: l1 == l2 ? 0 : -1;
+					
 				}
 			});
 			
@@ -505,6 +521,8 @@ public class SimpleObjectFactory implements IObjectFactory {
 			ClassLoader oldCl = Thread.currentThread().getContextClassLoader();
 			
 			Thread.currentThread().setContextClassLoader(rpcClassLoader);
+			
+			rpcClassLoader.registRemoteClass();
 			
 			//对像工厂初始化后监听器
 			for(IPostFactoryListener lis : this.postReadyListeners){

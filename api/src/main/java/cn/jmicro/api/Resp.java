@@ -14,6 +14,8 @@ public class Resp<T> {
 	private int code;
 	private T data;
 	
+	private String key;
+	
 	private int total;
 	private int pageSize;
 	private int curPage;
@@ -57,6 +59,12 @@ public class Resp<T> {
 	}
 	public void setCurPage(int curPage) {
 		this.curPage = curPage;
+	}
+	public String getKey() {
+		return key;
+	}
+	public void setKey(String key) {
+		this.key = key;
 	}
 	
 	

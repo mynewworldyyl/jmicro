@@ -51,7 +51,7 @@ public class PromiseUtils {
 		
 		cxt.setObject(Constants.CONTEXT_CALLBACK_CLIENT, cb);
 		
-		Class<?>[] types = null;
+		/*Class<?>[] types = null;
 		if(args.length > 0) {
 			types = new Class[args.length];
 			for(int i = 0; i < args.length; i++) {
@@ -59,7 +59,7 @@ public class PromiseUtils {
 			}
 		} else {
 			types = new Class[0];
-		}
+		}*/
 		
 		try {
 			

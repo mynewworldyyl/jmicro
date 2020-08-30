@@ -27,8 +27,10 @@ import java.util.concurrent.atomic.AtomicLong;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import cn.jmicro.api.Resp;
 import cn.jmicro.api.annotation.Service;
 import cn.jmicro.api.async.AsyncFailResult;
+import cn.jmicro.api.async.IPromise;
 import cn.jmicro.api.client.IAsyncCallback;
 import cn.jmicro.api.client.IClientSession;
 import cn.jmicro.api.codec.Decoder;
@@ -42,16 +44,19 @@ import cn.jmicro.api.monitor.Linker;
 import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.net.IMessageHandler;
 import cn.jmicro.api.net.IRequest;
-import cn.jmicro.api.net.IResponse;
 import cn.jmicro.api.net.ISession;
 import cn.jmicro.api.net.Message;
 import cn.jmicro.api.net.ServerError;
+import cn.jmicro.api.pubsub.PSData;
+import cn.jmicro.api.security.ActInfo;
 import cn.jmicro.codegenerator.AsyncClientProxy;
+import cn.jmicro.codegenerator.AsyncClientUtils;
 import cn.jmicro.common.CommonException;
 import cn.jmicro.common.Constants;
 import cn.jmicro.common.Utils;
 import cn.jmicro.common.util.JsonUtils;
 import cn.jmicro.common.util.StringUtils;
+import cn.jmicro.gateway.pubsub.ApiGatewayPubsubClient;
 
 /**
  * 
@@ -78,12 +83,17 @@ public class ApiGatewayClient {
 	
 	private IdClient idClient = null;
 	
+	private ApiGatewayPubsubClient pubsubClient;
+	
+	private ActInfo actInfo;
+	
 	public ApiGatewayClient(ApiGatewayConfig cfg) {
 		if(StringUtils.isEmpty(cfg.getHost())) {
 			cfg.setHost(Utils.getIns().getLocalIPList().get(0));
 		}
 		this.config = cfg;
 		this.idClient = new IdClient();
+		this.pubsubClient = new ApiGatewayPubsubClient(this);
 		init();
 	}
 	
@@ -128,6 +138,20 @@ public class ApiGatewayClient {
 			}
 		});
 		
+		sessionManager.registerMessageHandler(new IMessageHandler(){
+			@Override
+			public Byte type() {
+				return Constants.MSG_TYPE_ASYNC_RESP;
+			}
+			
+			@Override
+			public void onMessage(ISession session, Message msg) {
+				session.active();
+				PSData pd = parseResult(msg,PSData.class);
+				pubsubClient.onMsg(pd);
+			}
+		});
+		
 		//Decoder.setTransformClazzLoader(this::getEntityClazz);
 	}
 	
@@ -157,14 +181,77 @@ public class ApiGatewayClient {
 						//String serviceName, String namespace, String version, String methodName, 
 						//Class<?> returnType, Object[] args, IAsyncCallback<T> cb
 						Class<?> returnType = TypeUtils.finalParameterType(method.getGenericReturnType(), 0);
+						
+						Object[] as = null;
+						if(args.length > 1) {
+							 as = new Object[args.length-1];
+							 System.arraycopy(args, 1, as, 0, as.length);
+						}else {
+							 as = new Object[0];
+						}
 						callService(serviceClass.getName(), namespace, version, method.getName(), 
-								returnType, args, cb);
+								returnType, as, cb);
 						return p;
 					} else {
 						return callService(serviceClass,method,args,namespace,version,null);
 					}
 		});
 		return (T)srv;
+	}
+	
+	public IPromise<ActInfo> loginJMAsync(String actName,String pwd) {
+		final PromiseImpl<ActInfo> p = new PromiseImpl<>();
+		if(actInfo != null) {
+			p.setFail(1, "Have login and have to logout before relogin");
+			p.setResult(null);
+			p.done();
+		} else {
+			IAsyncCallback<ActInfo> cb = new IAsyncCallback<ActInfo>() {
+				@Override
+				public void onResult(ActInfo ai, AsyncFailResult fail,Map<String,Object> ctx) {
+					if(fail == null && ai.isSuccess()) {
+						setActInfo(ai);
+						p.setResult(ai);
+					} else {
+						p.setFail(fail);
+					}
+					p.done();
+				}
+			};
+			this.callService("cn.jmicro.mng.api.IMngAccountService", "mng", "0.0.1", "login", 
+					ActInfo.class, new Object[] {actName, pwd}, cb);
+		}
+		return p;
+	} 
+	
+	public IPromise<Boolean> logoutJMAsync() {
+		final PromiseImpl<Boolean> p = new PromiseImpl<>();
+		if(actInfo == null) {
+			p.setResult(null);
+			p.setFail(1, "Not login");
+			p.done();
+		} else {
+			IAsyncCallback<Resp<Boolean>> cb = new IAsyncCallback<Resp<Boolean>>() {
+				@Override
+				public void onResult(Resp<Boolean> resp, AsyncFailResult fail,Map<String,Object> ctx) {
+					if(fail == null && resp.getData()) {
+						p.setResult(true);
+						setActInfo(null);
+					} else {
+						p.setFail(fail);
+					}
+					p.done();
+				}
+			};
+			this.callService("cn.jmicro.mng.api.IMngAccountService", "mng", "0.0.1", "logout", 
+					Resp.class, new Object[] {}, cb);
+		}
+		
+		return p;
+	} 
+	
+	private void setActInfo(ActInfo ai) {
+		this.actInfo = ai;
 	}
 	
     public Class<?> getEntityClazz(Short type) {
@@ -344,6 +431,9 @@ public class ApiGatewayClient {
 		req.setServiceName(generatorSrvName(serviceName));
 		req.setNamespace(namespace);
 		req.setVersion(version);
+		if(this.actInfo != null) {
+			req.getParams().put("loginKey", this.actInfo.getLoginKey());
+		}
 		
 		Message msg = new Message();
 		msg.setType(Constants.MSG_TYPE_REQ_RAW);
@@ -379,22 +469,11 @@ public class ApiGatewayClient {
     }
     
     private String generatorSrvName(String className) {
-		if(className.endsWith(AsyncClientProxy.INT_SUBFIX)) {
-			 String cn = className.substring(0, className.indexOf(AsyncClientProxy.INT_SUBFIX));
-			 String pkgName = cn.substring(0,cn.lastIndexOf("."));
-			 pkgName = pkgName.substring(0, pkgName.indexOf(AsyncClientProxy.PKG_SUBFIX));
-			 String simpleClassName = cn.substring(cn.lastIndexOf(".")+1,cn.length());
-			 String iname = pkgName + simpleClassName;
-			return iname;
-		 }
-		return className;
+		return AsyncClientUtils.genAsyncServiceName(className);
 	}
     
     private String generatorSrvMethodName(String method) {
-    	if(method.endsWith(AsyncClientProxy.ASYNC_METHOD_SUBFIX)) {
-    		return method.substring(0,method.indexOf(AsyncClientProxy.ASYNC_METHOD_SUBFIX));
-    	}
-		return method;
+		return AsyncClientUtils.genSyncMethodName(method);
 	}
 
 	@SuppressWarnings("unchecked")
@@ -444,4 +523,10 @@ public class ApiGatewayClient {
 	public ApiGatewayConfig getConfig() {
 		return config;
 	}
+
+	public ApiGatewayPubsubClient getPubsubClient() {
+		return pubsubClient;
+	}
+	
+	
 }

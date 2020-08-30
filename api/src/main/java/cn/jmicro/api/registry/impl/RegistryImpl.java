@@ -197,12 +197,12 @@ public class RegistryImpl implements IRegistry {
 	 */
 	@Override
 	public void addExistsServiceNameListener(String key,IServiceListener lis) {
-		addServiceListener(this.serviceNameExistsListeners,AsyncClientUtils.genServiceName(key),lis);	
+		addServiceListener(this.serviceNameExistsListeners,AsyncClientUtils.genSyncServiceName(key),lis);	
 	}
 
 	@Override
 	public void removeExistsServiceNameListener(String key,IServiceListener lis) {
-		removeServiceListener(this.serviceNameExistsListeners,AsyncClientUtils.genServiceName(key),lis);
+		removeServiceListener(this.serviceNameExistsListeners,AsyncClientUtils.genSyncServiceName(key),lis);
 	}
 	
 	/**
@@ -237,12 +237,12 @@ public class RegistryImpl implements IRegistry {
 	 */
 	@Override
 	public void addServiceNameListener(String serviceName, IServiceListener lis) {
-		addServiceListener(this.serviceNameListeners,AsyncClientUtils.genServiceName(serviceName),lis);
+		addServiceListener(this.serviceNameListeners,AsyncClientUtils.genSyncServiceName(serviceName),lis);
 	}
 	
 	@Override
 	public void removeServiceNameListener(String key, IServiceListener lis) {
-		removeServiceListener(this.serviceNameListeners,AsyncClientUtils.genServiceName(key),lis);
+		removeServiceListener(this.serviceNameListeners,AsyncClientUtils.genSyncServiceName(key),lis);
 	}
 	
 	private void removeServiceListener(Map<String,Set<IServiceListener>> listeners, String key,IServiceListener lis){
@@ -340,7 +340,7 @@ public class RegistryImpl implements IRegistry {
 	
 	/** +++++++++++++++++++++++Service QUERY for consumer START ++++++++++++++++++**/
 	
-	@Override
+	/*@Override
 	public Set<ServiceItem> getServices(String serviceName, String method, Object[] args
 			,String namespace,String version,String transport) {
 		Class<?>[] clazzes = null;
@@ -354,7 +354,7 @@ public class RegistryImpl implements IRegistry {
 			clazzes = new Class<?>[0];
 		}
 		return this.getServices(serviceName, method, clazzes,namespace,version,transport);
-	}
+	}*/
 	
 	@Override
 	public boolean isExists(String serviceName, String namespace, String version) {
@@ -407,7 +407,7 @@ public class RegistryImpl implements IRegistry {
 	 */
 	@Override
 	public Set<ServiceItem> getServices(String serviceName) {
-		String sn = AsyncClientUtils.genServiceName(serviceName);
+		String sn = AsyncClientUtils.genSyncServiceName(serviceName);
 		if(this.needWaiting) {
 			logger.warn("Do getServices(String serviceName) waiting get serviceName:{}",serviceName);
 			setNeedWaiting();
@@ -481,20 +481,20 @@ public class RegistryImpl implements IRegistry {
 	}
 	
 	@Override
-	public Set<ServiceItem> getServices(String serviceName,String method,Class<?>[] args
+	public Set<ServiceItem> getServices(String serviceName,String method/*,Class<?>[] args*/
 			,String namespace,String version,String transport) {
 		if(this.needWaiting) {
 			logger.warn("Do getServices waiting get key:{},method:{},transport:{}",UniqueServiceKey.serviceName(serviceName, namespace, version),
 					method,transport);
 			setNeedWaiting();
 			return IWaitingAction.doAct(
-					()->getServices0(serviceName,method,args,namespace,version,transport),null);
+					()->getServices0(serviceName,method,/*args,*/namespace,version,transport),null);
 		} else {
-			return getServices0(serviceName,method,args,namespace,version,transport);
+			return getServices0(serviceName,method,/*args,*/namespace,version,transport);
 		}	
 	}
 	
-	private Set<ServiceItem> getServices0(String serviceName,String method,Class<?>[] args
+	private Set<ServiceItem> getServices0(String serviceName,String method/*,Class<?>[] args*/
 			,String namespace,String version,String transport) {
 		
 		//namespace = UniqueServiceKey.namespace(namespace);
@@ -515,7 +515,7 @@ public class RegistryImpl implements IRegistry {
 			if(!checkTransport(si,transport)){
 				continue;
 			}
-			ServiceMethod sm = si.getMethod(method, args);
+			ServiceMethod sm = si.getMethod(method/*, args*/);
 			if(sm.isBreaking()){
 				breakings.add(si);
 			} else {
@@ -544,7 +544,7 @@ public class RegistryImpl implements IRegistry {
 	}
 
 	private Set<ServiceItem> matchServiceItems(String serviceName,String namespace,String version){
-		return this.srvManager.getServiceItems(AsyncClientUtils.genServiceName(serviceName),namespace,version);
+		return this.srvManager.getServiceItems(AsyncClientUtils.genSyncServiceName(serviceName),namespace,version);
 	}
 
 	/** +++++++++++++++++++++++Service QUERY for consumer END ++++++++++++++++++**/

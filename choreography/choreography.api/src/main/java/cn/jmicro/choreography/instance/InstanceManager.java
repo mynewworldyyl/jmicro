@@ -287,6 +287,11 @@ public class InstanceManager {
 		return false;
 	}
 	
+	public boolean isExistByProcessId(String processId) {
+		String p = ChoyConstants.INS_ROOT +"/" + processId;
+		return op.exist(p);
+	}
+	
 	public void addListener(IInstanceListener l) {
 		if(!listeners.contains(l)) {
 			listeners.add(l);

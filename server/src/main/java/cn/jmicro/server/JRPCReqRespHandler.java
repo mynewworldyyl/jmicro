@@ -42,8 +42,9 @@ import cn.jmicro.api.net.RpcResponse;
 import cn.jmicro.api.net.ServerError;
 import cn.jmicro.api.registry.IRegistry;
 import cn.jmicro.api.registry.ServiceMethod;
+import cn.jmicro.api.security.AccountManager;
 import cn.jmicro.api.security.ActInfo;
-import cn.jmicro.api.security.IAccountService;
+import cn.jmicro.api.security.PermisionManager;
 import cn.jmicro.api.service.IServiceAsyncResponse;
 import cn.jmicro.api.service.ServiceLoader;
 import cn.jmicro.common.Constants;
@@ -82,10 +83,13 @@ public class JRPCReqRespHandler implements IMessageHandler{
 	private IRegistry registry = null;
 	
 	@Inject
-	private IAccountService accountManager;
+	private AccountManager accountManager;
 	
 	@Inject
 	private MonitorClient monitor;
+	
+	@Inject
+	private PermisionManager pm;
 	
 	@Override
 	public Byte type() {
@@ -150,6 +154,16 @@ public class JRPCReqRespHandler implements IMessageHandler{
 				}
 			}
 			
+			ServiceMethod sm = JMicroContext.get().getParam(Constants.SERVICE_METHOD_KEY, null);
+			ServerError se = pm.permissionCheck(ai,sm);
+			
+			if(se != null) {
+				resp.setResult(se);
+				resp.setSuccess(false);
+				resp2Client(resp,s,msg);
+				return;
+			}
+			
 			if(!msg.isNeedResponse()){
 				//无需返回值
 				//数据发送后，不需要返回结果，也不需要请求确认包，直接返回
@@ -164,18 +178,18 @@ public class JRPCReqRespHandler implements IMessageHandler{
 				return;
 			}
 			
-			ServiceMethod sm = JMicroContext.get().getParam(Constants.SERVICE_METHOD_KEY, null);
-			if(StringUtils.isEmpty(sm.getKey().getReturnParam())) {
-				
-			}
-			
 			if(msg.isAsyncReturnResult() && !"V".equals(sm.getKey().getReturnParam())) {
 				final RpcResponse r = resp;
 				JMicroContext cxt = JMicroContext.get();
+				boolean finish[] = new boolean[] {false};
 				//异步响应
 				IServiceAsyncResponse cb = new IServiceAsyncResponse() {
 					@Override
 					public <R> void result(R result) {
+						if(finish[0]) {
+							logger.warn("ReqId: " + req1.getRequestId() +", linkId: " + msg.getLinkId() + " has synchronized response!");
+							return;
+						}
 						r.setSuccess(true);
 						r.setResult(result);
 						resp2Client(r,s,msg);
@@ -193,6 +207,7 @@ public class JRPCReqRespHandler implements IMessageHandler{
 				if(rr != null && rr.getResult() != null) {
 					//同步返回结果
 					//如果业务方法是异步返回结果，一定要同步返回NULL值
+					finish[0] = true;
 					cxt.removeParam(Constants.CONTEXT_SERVICE_RESPONSE);
 					resp2Client(rr,s,msg);
 				}

@@ -1,7 +1,7 @@
 <template>
 
   <div>
-      <div style="position:fixed; right:0px; left:0px; height:60px; top:0px; z-index:100">
+      <div style="position:fixed; right:0px; left:0px; height:35px; top:0px; z-index:100">
           <Menu mode="horizontal" theme="light" active-key="service" @on-select="toRouter">
               <Submenu name="mo">
                   <template slot="title"><Icon type="ios-cog" />Monitor</template>
@@ -43,14 +43,22 @@
                       <Icon type="ios-analytics" />
                       Others
                   </template>
-                  <Menu-item name="__config"><Icon type="ios-construct"></Icon>Config</Menu-item>
-                  <Menu-item name="__router"><Icon type="ios-people"></Icon>Router</Menu-item>
-                  <Menu-item name="__shell"><Icon type="ios-cog"></Icon>Shell</Menu-item>
-                 <!-- <Menu-item name="log"><Icon type="ios-filing"></Icon>LOG</Menu-item>-->
-                  <MenuItem name="__help"> <Icon type="ios-cog"></Icon>Help</MenuItem>
-                  <MenuItem name="__about"> <Icon type="ios-cog"></Icon>About</MenuItem>
-                 <!-- <MenuItem name="contact"> <Icon type="ios-cog"></Icon>CONTACT ME</MenuItem>-->
-                  <MenuItem name="__testing"> <Icon type="ios-cog"></Icon>Testing</MenuItem>
+                  <Menu-group title="System">
+                      <Menu-item name="__config"><Icon type="ios-construct"></Icon>Config</Menu-item>
+                      <Menu-item name="__router"><Icon type="ios-people"></Icon>Router</Menu-item>
+                      <Menu-item name="__shell"><Icon type="ios-cog"></Icon>Shell</Menu-item>
+                  </Menu-group>
+                  <Menu-group title="Security">
+                      <Menu-item name="__account"><Icon type="ios-alert" />Account</Menu-item>
+                      <!--<Menu-item name="__permission"><Icon type="ios-cog"></Icon>Permission</Menu-item>-->
+                     <!-- <Menu-item name="__role"><Icon type="ios-cog"></Icon>Role</Menu-item>-->
+                  </Menu-group>
+                  <Menu-group title="Info">
+                     <!-- <MenuItem name="__help"> <Icon type="ios-cog"></Icon>Help</MenuItem>-->
+                      <MenuItem name="__about"> <Icon type="ios-cog"></Icon>About</MenuItem>
+                      <MenuItem name="__testing"> <Icon type="ios-cog"></Icon>Testing</MenuItem>
+                      <MenuItem name="__testingPubsub"> <Icon type="ios-cog"></Icon>Testing Pubsub</MenuItem>
+                  </Menu-group>
               </Submenu>
 
               <Submenu name="me">
@@ -66,14 +74,14 @@
               </Submenu>
 
           </Menu>
-          <JToolBar></JToolBar>
+         <!-- <JToolBar></JToolBar>-->
           <JAccount></JAccount>
       </div>
 
       <!-- 屏幕左边的打开抽屉按钮 -->
       <div :style="curSelect.drawerBtnStyle" class="drawerBtnStatu" @mouseenter="openDrawer()"></div>
 
-      <div style="margin-top:60px;">
+      <div style="margin-top:35px;">
           <!-- 服务监控列表 -->
           <Drawer  v-model="cache.service.drawerStatus" :closable="false" placement="left" :transfer="true"
                    :draggable="true" :scrollable="true" width="50">
@@ -142,7 +150,7 @@
     import JMonitorList from './components/monitor/JMonitorList.vue'
     import JRouterList from './components/route/JRouterList.vue'
     import JAccount from './components/common/JAccount.vue'
-    import JToolBar from './components/common/JToolBar.vue'
+   /* import JToolBar from './components/common/JToolBar.vue'*/
     import JMonitorTypeKeyList from './components/monitor/JMonitorTypeKeyList.vue'
     import JNamedTypeList from './components/monitor/JNamedTypeList.vue'
     import JThreadPoolMonitorList from './components/monitor/JThreadPoolMonitorList.vue'
@@ -156,11 +164,11 @@ export default {
     name: 'App',
     mounted() {
         //window.jm.rpc.config.ip='';
-        window.jm.rpc.init();
+        window.jm.rpc.init(window.jm.config.ip,window.jm.config.port);
         //jm.mng.init();
         let self = this;
 
-        window.jm.mng.act.addListener(cid,()=>{
+        window.jm.rpc.addListener(cid,()=>{
             self.adminPer = window.jm.mng.comm.adminPer;
             if( self.activeEditorId) {
                 self.selectMenu(self.activeEditorId);
@@ -212,7 +220,7 @@ export default {
         JMonitorList,
         JRouterList,
         JAccount,
-        JToolBar,
+        /*JToolBar,*/
         JMonitorTypeKeyList,
         JNamedTypeList,
         JThreadPoolMonitorList,

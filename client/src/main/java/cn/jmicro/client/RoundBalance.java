@@ -44,7 +44,7 @@ public class RoundBalance implements ISelector{
 	private int next = 0;
 	
 	
-	private ServiceItem getService(String srvName,String method,Class<?>[] args,String namespace,String version,
+	public ServiceItem getService(String srvName,String method,/*Class<?>[] args,*/String namespace,String version,
 			String transport) {
 		
 		//客户端指定了服务实例，不需要做路由
@@ -53,13 +53,13 @@ public class RoundBalance implements ISelector{
 			return dsi;
 		}
 		
-		Set<ServiceItem> srvItems = registry.getServices(srvName,method,args,namespace,version,transport);
+		Set<ServiceItem> srvItems = registry.getServices(srvName,method,/*args,*/namespace,version,transport);
 		if(srvItems == null || srvItems.isEmpty()) {
 			return null;
 		}
 		
 		if(routerManager != null) {
-			srvItems = this.routerManager.doRoute(srvItems, srvName, method, args, namespace, version, transport);
+			srvItems = this.routerManager.doRoute(srvItems, srvName, method,/* args, */namespace, version, transport);
 		}
 		
 		if(srvItems == null || srvItems.isEmpty()) {
@@ -81,20 +81,4 @@ public class RoundBalance implements ISelector{
 		return arr[next];
 	}
 
-	@Override
-	public ServiceItem getService(String srvName, String method, Object[] args,String namespace,String version,
-			String transport) {
-		Class<?>[] clazzes = null;
-		if(args != null && args.length > 0){
-			int i = 0;
-			clazzes = new Class<?>[args.length];
-			for(Object a : args){
-				clazzes[i++] = a.getClass();
-			}
-		} else {
-			clazzes = new Class<?>[0];
-		}
-		return this.getService(srvName, method, clazzes,namespace,version,transport);
-	}
-	
 }

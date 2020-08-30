@@ -11,7 +11,9 @@
           </Dropdown>
       </div>
       <div>
-          <Tree :data="routers" ref="routers"  @on-select-change="nodeSelect($event)"></Tree>
+
+          <Tree v-if="adminPer" :data="routers" ref="routers"  @on-select-change="nodeSelect($event)"></Tree>
+          <span v-if="!adminPer">No permission</span>
       </div>
 
   </div>
@@ -29,6 +31,7 @@
             return {
                 routers :[],
                 srcRouters:[],
+                adminPer:false,
             }
         },
 
@@ -48,15 +51,39 @@
         },
 
         mounted(){
-            this.loadRouters((routerList)=>{
-                this.routers = routerList;
-            });
+            window.jm.rpc.addListener(GROUP,this.refresh);
+            window.jm.vue.$on('tabItemRemove',this.editorRemove);
         },
+
+        beforeDestroy() {
+            window.jm.vue.$off('tabItemRemove',this.editorRemove);
+            window.jm.rpc.removeListener(GROUP);
+        },
+
 
         methods:{
 
+            editorRemove(it) {
+                if(GROUP != it.id) {
+                    return;
+                }
+                window.jm.vue.$off('tabItemRemove',this.editorRemove);
+                window.jm.mng.act.removeListener(GROUP);
+            },
+
+
             nodeSelect(evt){
                window.jm.vue.$emit('routerNodeSelect',evt);
+            },
+
+            refresh() {
+                this.adminPer = window.jm.mng.comm.adminPer;
+                if(this.adminPer) {
+                    let self = this;
+                    this.loadRouters((routerList)=>{
+                        self.routers = routerList;
+                    });
+                }
             },
 
             loadRouters(cb) {

@@ -21,43 +21,17 @@ jm.mng = {
         jm.mng.comm.init(cb);
     },
 
-    callRpc : function(req,upProtocol,downProtocol) {
-        return new Promise(function(reso,reje){
-            jm.rpc.callRpc(req, null, upProtocol,downProtocol)
-                .then((data)=>{
-                    if(downProtocol == jm.rpc.Constants.PROTOCOL_BIN) {
-                        reso(jm.utils.parseJson(data));
-                    } else {
-                        reso(data);
-                    }
-                })
-                .catch((err)=>{
-                    reje(err);
-                })
-        });
-    },
-
-    callRpcWithParams : function(service,namespace,version,method,args) {
-        let req = {};
-        req.serviceName = service;
-        req.namespace = namespace;
-        req.version = version;
-        req.method = method;
-        req.args = args;
-        return jm.mng.callRpc(req,jm.rpc.Constants.PROTOCOL_JSON, jm.rpc.Constants.PROTOCOL_JSON);
-    },
-
     srv : {
         getServices: function (){
-            return jm.mng.callRpcWithParams(this.sn,this.ns,this.v,'getServices',[]);
+            return jm.rpc.callRpcWithParams(this.sn,this.ns,this.v,'getServices',[]);
         },
 
         updateItem: function (si){
-            return jm.mng.callRpcWithParams(this.sn,this.ns,this.v,'updateItem',[si]);
+            return jm.rpc.callRpcWithParams(this.sn,this.ns,this.v,'updateItem',[si]);
         },
 
         updateMethod: function (method){
-            return jm.mng.callRpcWithParams(this.sn,this.ns,this.v,'updateMethod',[method]);
+            return jm.rpc.callRpcWithParams(this.sn,this.ns,this.v,'updateMethod',[method]);
         },
 
         sn:'cn.jmicro.api.mng.IManageService',
@@ -67,133 +41,23 @@ jm.mng = {
 
     conf:{
         getChildren : function (path,all){
-            return jm.mng.callRpcWithParams(this.sn,this.ns,this.v,'getChildren',[path,all]);
+            return jm.rpc.callRpcWithParams(this.sn,this.ns,this.v,'getChildren',[path,all]);
         },
 
         update: function (path,val){
-            return jm.mng.callRpcWithParams(this.sn,this.ns,this.v,'update',[path,val]);
+            return jm.rpc.callRpcWithParams(this.sn,this.ns,this.v,'update',[path,val]);
         },
 
         delete: function (path){
-            return jm.mng.callRpcWithParams(this.sn,this.ns,this.v,'delete',[path]);
+            return jm.rpc.callRpcWithParams(this.sn,this.ns,this.v,'delete',[path]);
         },
 
         add: function (path,val,isDir){
-            return jm.mng.callRpcWithParams(this.sn,this.ns,this.v,'add',[path,val,isDir]);
+            return jm.rpc.callRpcWithParams(this.sn,this.ns,this.v,'add',[path,val,isDir]);
         },
 
         sn:'cn.jmicro.api.mng.IConfigManager',
         ns: MNG,
-        v:'0.0.1',
-    },
-
-    ps : {
-
-        listeners:{},
-
-        onMsg : function(msg) {
-            let cbs = this.listeners[msg.topic];
-            for(let i = 0; i < cbs.length; i++){
-                if(!!cbs[i]) {
-                    cbs[i](msg);
-                }
-            }
-        },
-
-        subscribe: function (topic,ctx,callback){
-
-            if(this.listeners[topic] && this.listeners[topic].length > 0) {
-                let cs = this.listeners[topic];
-                callback.id = 0; //已经由别的接口订阅此主题，现在只需要注入回调即可
-                let flag = false;
-                //排除同一个回调方法重复订阅同一主题的情况
-                for(let i = 0; i < cs.length; i++) {
-                    if(cs[i] == callback) {
-                        flag = true;
-                        break;
-                    }
-                }
-                if(!flag) {
-                    cs.push(callback);
-                }
-
-                return new Promise(function(reso){
-                    reso(0);
-                });
-            }
-            let self = this;
-            let req =  this.__ccreq();
-            req.method = 'subscribe';
-            req.args = [topic, ctx || {}];
-            if(!self.listeners[topic]) {
-                self.listeners[topic] = [];
-            }
-            self.listeners[topic].push(callback);
-
-            return new Promise(function(reso,reje){
-                jm.mng.callRpc(req,jm.rpc.Constants.PROTOCOL_JSON, jm.rpc.Constants.PROTOCOL_JSON)
-                    .then((id)=>{
-                        if( id > 0 && !!callback ) {
-                            callback.id = id;
-                        }
-                        reso(id);
-                    }).catch(err =>{
-                        reje(err);
-                });
-            });
-        },
-
-        unsubscribe: function (topic,callback){
-            let cs = this.listeners[topic];
-            if(cs && cs.length > 0) {
-                let idx = -1;
-                for(let i =0; i < cs.length; i++) {
-                    if(cs[i] == callback) {
-                        idx = i;
-                        break;
-                    }
-                }
-                if(idx >= 0) {
-                    cs.splice(idx,1);
-                }
-            }
-
-            if(!!cs && cs.length > 0) {
-                return new Promise(function(reso,reje){
-                    reso(0);
-                });
-            }
-
-            let req =  this.__ccreq();
-            req.method = 'unsubscribe';
-            req.args = [callback.id];
-            return new Promise(function(reso,reje){
-                jm.mng.callRpc(req,jm.rpc.Constants.PROTOCOL_JSON, jm.rpc.Constants.PROTOCOL_JSON)
-                    .then((rst)=>{
-                        if(!rst) {
-                            //console.log("Fail to unsubscribe topic:"+topic);
-                            reje("Fail to unsubscribe topic:"+topic)
-                        }else {
-                            reso(rst);
-                        }
-                    }).catch(err =>{
-                        reje(err);
-                });
-            });
-        },
-
-        __ccreq:function(){
-            let req = {};
-            req.serviceName=this.sn;
-            req.namespace = this.ns;
-            req.version = this.v;
-            return req;
-        },
-
-        MSG_TYPE_ASYNC_RESP : 0x06,
-
-        sn:'cn.jmicro.gateway.MessageServiceImpl',
-        ns:MNG,
         v:'0.0.1',
     },
 
@@ -217,7 +81,7 @@ jm.mng = {
                             let req =  self.__ccreq();
                             req.method = 'startStatis';
                             req.args = [mkey, t];
-                            jm.mng.callRpc(req,jm.rpc.Constants.PROTOCOL_JSON, jm.rpc.Constants.PROTOCOL_JSON)
+                            jm.rpc.callRpc(req)
                                 .then(status =>{
                                     if(status) {
                                         reso(status);
@@ -245,7 +109,7 @@ jm.mng = {
                           let req =  this.__ccreq();
                           req.method = 'stopStatis';
                           req.args = [mkey,t];
-                          jm.mng.callRpc(req,jm.rpc.Constants.PROTOCOL_JSON, jm.rpc.Constants.PROTOCOL_JSON)
+                          jm.rpc.callRpc(req,jm.rpc.Constants.PROTOCOL_JSON, jm.rpc.Constants.PROTOCOL_JSON)
                               .then(r=>{
                                   reso(r);
                               }).catch(err =>{
@@ -266,7 +130,7 @@ jm.mng = {
                 let req =  this.__ccreq();
                 req.method = 'index2Label';
                 req.args = [];
-                jm.mng.callRpc(req,jm.rpc.Constants.PROTOCOL_JSON, jm.rpc.Constants.PROTOCOL_JSON)
+                jm.rpc.callRpc(req,jm.rpc.Constants.PROTOCOL_JSON, jm.rpc.Constants.PROTOCOL_JSON)
                     .then(r=>{
                         self.type2Labels = r.indexes;
                         self.types = r.types;
@@ -348,7 +212,7 @@ jm.mng = {
             req.method = 'getI18NValues';
             req.args = [lang];
             let self = this;
-            jm.mng.callRpc(req,jm.rpc.Constants.PROTOCOL_JSON, jm.rpc.Constants.PROTOCOL_JSON)
+            jm.rpc.callRpc(req,jm.rpc.Constants.PROTOCOL_JSON, jm.rpc.Constants.PROTOCOL_JSON)
                 .then((data)=>{
                 self.data = data;
                 callback();
@@ -373,99 +237,69 @@ jm.mng = {
     },
 
     act : {
-        actInfo:null,
-        actListeners:{},
 
-        addListener : function(key,l) {
-            if(!!this.actListeners[key]) {
-                throw 'Exist listener: ' + key;
-            }
-            this.actListeners[key] = l;
-        },
-
-        removeListener : function(key) {
-            if(!this.actListeners[key]) {
-               return;
-            }
-            delete this.actListeners[key];
-        },
-
-        _notify : function(type) {
-            for(let key in this.actListeners) {
-                if(this.actListeners[key]) {
-                    this.actListeners[key](type,this.actInfo);
-                }
-            }
-        },
-
-        login: function (actName,pwd,cb){
-            if(this.actInfo && cb) {
-                cb(this.actInfo,null);
-                return;
-            }
-            let self = this;
-            let req =  this.__ccreq();
-            req.method = 'login';
-            req.args = [actName,pwd];
-            jm.mng.callRpc(req,jm.rpc.Constants.PROTOCOL_JSON, jm.rpc.Constants.PROTOCOL_JSON)
-                .then(( actInfo )=>{
-                    if(actInfo && actInfo.success) {
-                        self.actInfo = actInfo;
-                        cb(actInfo,null);
-                        jm.mng.init(function(suc){
-                            self._notify(jm.rpc.Constants.LOGIN);
-                        });
+        updatePwd: function (newPwd,oldPwd,cb){
+            jm.rpc.callRpc(this.__ccreq('updatePwd',[newPwd,oldPwd]))
+                .then(( resp )=>{
+                    if(resp && resp.code == 0) {
+                        cb('success',null);
                     } else {
-                        cb(null,actInfo.msg);
+                        cb(null,resp.msg);
                     }
                 }).catch((err)=>{
-                    console.log(err);
-                    cb(null,err);
-                });;
+                console.log(err);
+                cb(null,err);
+            });;
         },
 
-        logout: function (cb){
-            if(!this.actInfo) {
-                if(cb) {
-                    cb(true,null)
-                }
-                return;
-            }
+        regist: function (actName,pwd,cb){
             let self = this;
-            let req =  this.__ccreq();
-            req.method = 'logout';
-            req.args = [ this.actInfo.loginKey ];
-            jm.mng.callRpc(req,jm.rpc.Constants.PROTOCOL_JSON, jm.rpc.Constants.PROTOCOL_JSON)
-                .then(( actInfo )=>{
-                    if(actInfo) {
-                        self.actInfo = null;
-                        jm.mng.comm.adminPer = false;
-                        if(cb) {
-                            cb(true,null)
-                        }
-                        jm.mng.init(function(suc){
-                            self._notify(jm.rpc.Constants.LOGOUT);
-                        });
-                    }else {
-                        if(cb) {
-                            cb(false,'logout fail')
-                        }
+            jm.rpc.callRpc(this.__ccreq('regist',[actName,pwd]))
+                .then(( resp )=>{
+                    if(resp && resp.code == 0) {
+                        cb('success',null);
+                    } else {
+                        cb(null,resp.msg);
                     }
                 }).catch((err)=>{
-                    console.log(err);
-                    if(cb) {
-                        cb(false,err)
-                    }
-            });
+                console.log(err);
+                cb(null,err);
+            });;
         },
 
-        __ccreq:function(){
-            let req = {};
-            req.serviceName = 'cn.jmicro.api.security.IAccountService';
-            req.namespace = 'act';
-            req.version = '0.0.1';
-            return req;
+        getAccountList : function (query,pageSize,curPage){
+            return jm.rpc.callRpc(this.__ccreq('getAccountList',[query,pageSize,curPage]));
         },
+
+        countAccount : function (query){
+            return jm.rpc.callRpc(this.__ccreq('countAccount',[query]));
+        },
+
+        getPermissionsByActName : function (actName){
+            return jm.rpc.callRpc(this.__ccreq('getPermissionsByActName',[actName]));
+        },
+
+        updateActPermissions : function (actName,adds,dels){
+            return jm.rpc.callRpc(this.__ccreq('updateActPermissions',[actName,adds,dels]));
+        },
+
+        changeAccountStatus : function (actName,status){
+            return jm.rpc.callRpc(this.__ccreq('changeAccountStatus',[actName,status]));
+        },
+
+        getAllPermissions : function (){
+            return jm.rpc.callRpc(this.__ccreq('getAllPermissions',[]));
+        },
+
+        __ccreq : function(method,args){
+            let req = {};
+            req.serviceName = 'cn.jmicro.mng.api.IMngAccountService';
+            req.namespace = 'mng';
+            req.version = '0.0.1';
+            req.args = args;
+            req.method = method;
+            return req;
+        }
 
     },
 
@@ -473,15 +307,15 @@ jm.mng = {
         data:{},
 
         serverList: function (){
-            return jm.mng.callRpcWithParams(this.sn,this.ns,this.v,'serverList',[]);
+            return jm.rpc.callRpcWithParams(this.sn,this.ns,this.v,'serverList',[]);
         },
 
         status: function (srvKeys){
-            return jm.mng.callRpcWithParams(this.sn,this.ns,this.v,'status',[srvKeys]);
+            return jm.rpc.callRpcWithParams(this.sn,this.ns,this.v,'status',[srvKeys]);
         },
 
         enable: function (srvKey,enable){
-            return jm.mng.callRpcWithParams(this.sn,this.ns,this.v,'enable',[srvKey,enable]);
+            return jm.rpc.callRpcWithParams(this.sn,this.ns,this.v,'enable',[srvKey,enable]);
         },
 
         sn:'cn.jmicro.api.mng.IMonitorServerManager',
@@ -492,11 +326,11 @@ jm.mng = {
     repository : {
 
         getResourceList: function (onlyFinish){
-            return jm.mng.callRpcWithParams(this.sn,this.ns,this.v,'getResourceList',[onlyFinish]);
+            return jm.rpc.callRpcWithParams(this.sn,this.ns,this.v,'getResourceList',[onlyFinish]);
         },
 
         addResource: function (name,size){
-            return jm.mng.callRpcWithParams(this.sn,this.ns,this.v,'addResource',[name,size]);
+            return jm.rpc.callRpcWithParams(this.sn,this.ns,this.v,'addResource',[name,size]);
         },
 
         addResourceData: function (name,data,blockNum){
@@ -508,11 +342,11 @@ jm.mng = {
 
             req.method = 'addResourceData';
             req.args = [name,data,blockNum];
-            return jm.mng.callRpc(req,jm.rpc.Constants.PROTOCOL_BIN, jm.rpc.Constants.PROTOCOL_JSON);
+            return jm.rpc.callRpc(req,jm.rpc.Constants.PROTOCOL_BIN, jm.rpc.Constants.PROTOCOL_JSON);
         },
 
         deleteResource: function (name){
-            return jm.mng.callRpcWithParams(this.sn,this.ns,this.v,'deleteResource',[name]);
+            return jm.rpc.callRpcWithParams(this.sn,this.ns,this.v,'deleteResource',[name]);
         },
 
         sn:'cn.jmicro.choreography.api.IResourceResponsitory',
@@ -523,48 +357,44 @@ jm.mng = {
     choy : {
 
         getDeploymentList: function (){
-            return jm.mng.callRpcWithParams(this.sn,this.ns,this.v,'getDeploymentList',[]);
+            return jm.rpc.callRpcWithParams(this.sn,this.ns,this.v,'getDeploymentList',[]);
         },
 
         addDeployment: function (deployment){
-            return jm.mng.callRpcWithParams(this.sn,this.ns,this.v,'addDeployment',[deployment]);
+            return jm.rpc.callRpcWithParams(this.sn,this.ns,this.v,'addDeployment',[deployment]);
         },
 
         deleteDeployment: function (id){
-            return jm.mng.callRpcWithParams(this.sn,this.ns,this.v,'deleteDeployment',[id]);
+            return jm.rpc.callRpcWithParams(this.sn,this.ns,this.v,'deleteDeployment',[id]);
         },
 
         updateDeployment: function (deployment){
-            return jm.mng.callRpcWithParams(this.sn,this.ns,this.v,'updateDeployment',[deployment]);
+            return jm.rpc.callRpcWithParams(this.sn,this.ns,this.v,'updateDeployment',[deployment]);
         },
 
         stopProcess: function (insId){
-            return jm.mng.callRpcWithParams(this.sn,this.ns,this.v,'stopProcess',[insId]);
+            return jm.rpc.callRpcWithParams(this.sn,this.ns,this.v,'stopProcess',[insId]);
         },
 
         getProcessInstanceList: function (all){
-            return jm.mng.callRpcWithParams(this.sn,this.ns,this.v,'getProcessInstanceList',[all]);
+            return jm.rpc.callRpcWithParams(this.sn,this.ns,this.v,'getProcessInstanceList',[all]);
         },
 
         getAgentList: function (showAll){
-            return jm.mng.callRpcWithParams(this.sn,this.ns,this.v,'getAgentList',[showAll]);
+            return jm.rpc.callRpcWithParams(this.sn,this.ns,this.v,'getAgentList',[showAll]);
         },
 
         changeAgentState: function (agentId){
-            return jm.mng.callRpcWithParams(this.sn,this.ns,this.v,'changeAgentState',[agentId]);
+            return jm.rpc.callRpcWithParams(this.sn,this.ns,this.v,'changeAgentState',[agentId]);
         },
 
         clearResourceCache: function (agentId){
-            return jm.mng.callRpcWithParams(this.sn,this.ns,this.v,'clearResourceCache',[agentId]);
+            return jm.rpc.callRpcWithParams(this.sn,this.ns,this.v,'clearResourceCache',[agentId]);
         },
 
         stopAllInstance:function(agentId) {
-            return jm.mng.callRpcWithParams(this.sn,this.ns,this.v,'stopAllInstance',[agentId]);
+            return jm.rpc.callRpcWithParams(this.sn,this.ns,this.v,'stopAllInstance',[agentId]);
         },
-
-
-
-
 
         sn:'cn.jmicro.api.mng.IChoreographyService',
         ns : 'mng',
@@ -591,7 +421,7 @@ jm.mng = {
         },
 
         hasPermission: function (per){
-            return jm.mng.callRpcWithParams(this.sn,this.ns,this.v,'hasPermission',[per]);
+            return jm.rpc.callRpcWithParams(this.sn,this.ns,this.v,'hasPermission',[per]);
         },
 
         getDicts: function (keys){
@@ -610,7 +440,7 @@ jm.mng = {
                 if(nokeys.length == 0) {
                     reso(ds);
                 } else {
-                    jm.mng.callRpcWithParams(self.sn,self.ns,self.v,'getDicts',[nokeys])
+                    jm.rpc.callRpcWithParams(self.sn,self.ns,self.v,'getDicts',[nokeys])
                         .then((resp)=>{
                             if(resp.code != 0) {
                                 reje(resp.msg);
@@ -637,15 +467,15 @@ jm.mng = {
     moType : {
 
         getAllConfigs: function (){
-            return jm.mng.callRpcWithParams(this.sn,this.ns,this.v,'getAllConfigs',[]);
+            return jm.rpc.callRpcWithParams(this.sn,this.ns,this.v,'getAllConfigs',[]);
         },
 
         update: function (mcConfig){
-            return jm.mng.callRpcWithParams(this.sn,this.ns,this.v,'update',[mcConfig]);
+            return jm.rpc.callRpcWithParams(this.sn,this.ns,this.v,'update',[mcConfig]);
         },
 
         delete: function (mcConfig){
-            return jm.mng.callRpcWithParams(this.sn,this.ns,this.v,'delete',[mcConfig]);
+            return jm.rpc.callRpcWithParams(this.sn,this.ns,this.v,'delete',[mcConfig]);
         },
 
         add: function (mcConfig){
@@ -653,43 +483,43 @@ jm.mng = {
         },
 
         getConfigByMonitorKey: function (key){
-            return jm.mng.callRpcWithParams(this.sn,this.ns,this.v,'getConfigByMonitorKey',[key]);
+            return jm.rpc.callRpcWithParams(this.sn,this.ns,this.v,'getConfigByMonitorKey',[key]);
         },
 
         updateMonitorTypes: function (key,adds,dels){
-            return jm.mng.callRpcWithParams(this.sn,this.ns,this.v,'updateMonitorTypes',[key,adds,dels]);
+            return jm.rpc.callRpcWithParams(this.sn,this.ns,this.v,'updateMonitorTypes',[key,adds,dels]);
         },
 
         getMonitorKeyList: function (){
-            return jm.mng.callRpcWithParams(this.sn,this.ns,this.v,'getMonitorKeyList',[]);
+            return jm.rpc.callRpcWithParams(this.sn,this.ns,this.v,'getMonitorKeyList',[]);
         },
 
         getConfigByServiceMethodKey: function (key){
-            return jm.mng.callRpcWithParams(this.sn,this.ns,this.v,'getConfigByServiceMethodKey',[key]);
+            return jm.rpc.callRpcWithParams(this.sn,this.ns,this.v,'getConfigByServiceMethodKey',[key]);
         },
 
         updateServiceMethodMonitorTypes: function (key,adds,dels){
-            return jm.mng.callRpcWithParams(this.sn,this.ns,this.v,'updateServiceMethodMonitorTypes',[key,adds,dels]);
+            return jm.rpc.callRpcWithParams(this.sn,this.ns,this.v,'updateServiceMethodMonitorTypes',[key,adds,dels]);
         },
 
         getAllConfigsByGroup: function (groups){
-            return jm.mng.callRpcWithParams(this.sn,this.ns,this.v,'getAllConfigsByGroup',[groups]);
+            return jm.rpc.callRpcWithParams(this.sn,this.ns,this.v,'getAllConfigsByGroup',[groups]);
         },
 
         addNamedTypes: function (name){
-            return jm.mng.callRpcWithParams(this.sn,this.ns,this.v,'addNamedTypes',[name]);
+            return jm.rpc.callRpcWithParams(this.sn,this.ns,this.v,'addNamedTypes',[name]);
         },
 
         getTypesByNamed: function (name){
-            return jm.mng.callRpcWithParams(this.sn,this.ns,this.v,'getTypesByNamed',[name]);
+            return jm.rpc.callRpcWithParams(this.sn,this.ns,this.v,'getTypesByNamed',[name]);
         },
 
         updateNamedTypes: function (key,adds,dels){
-            return jm.mng.callRpcWithParams(this.sn,this.ns,this.v,'updateNamedTypes',[key,adds,dels]);
+            return jm.rpc.callRpcWithParams(this.sn,this.ns,this.v,'updateNamedTypes',[key,adds,dels]);
         },
 
         getNamedList: function (){
-            return jm.mng.callRpcWithParams(this.sn,this.ns,this.v,'getNamedList',[]);
+            return jm.rpc.callRpcWithParams(this.sn,this.ns,this.v,'getNamedList',[]);
         },
 
         sn:'cn.jmicro.api.mng.IMonitorTypeService',
@@ -700,27 +530,27 @@ jm.mng = {
     logSrv : {
 
         count: function (params) {
-            return jm.mng.callRpcWithParams(this.sn, this.ns, this.v, 'count', [params]);
+            return jm.rpc.callRpcWithParams(this.sn, this.ns, this.v, 'count', [params]);
         },
 
         query: function (params,pageSize,curPage) {
-            return jm.mng.callRpcWithParams(this.sn, this.ns, this.v, 'query', [params,pageSize,curPage]);
+            return jm.rpc.callRpcWithParams(this.sn, this.ns, this.v, 'query', [params,pageSize,curPage]);
         },
 
         queryDict: function () {
-            return jm.mng.callRpcWithParams(this.sn, this.ns, this.v, 'queryDict', []);
+            return jm.rpc.callRpcWithParams(this.sn, this.ns, this.v, 'queryDict', []);
         },
 
         getByLinkId: function(linkId) {
-            return jm.mng.callRpcWithParams(this.sn, this.ns, this.v, 'getByLinkId', [linkId]);
+            return jm.rpc.callRpcWithParams(this.sn, this.ns, this.v, 'getByLinkId', [linkId]);
         },
 
         countLog: function (params) {
-            return jm.mng.callRpcWithParams(this.sn, this.ns, this.v, 'countLog', [params]);
+            return jm.rpc.callRpcWithParams(this.sn, this.ns, this.v, 'countLog', [params]);
         },
 
         queryLog: function (params,pageSize,curPage) {
-            return jm.mng.callRpcWithParams(this.sn, this.ns, this.v, 'queryLog', [params,pageSize,curPage]);
+            return jm.rpc.callRpcWithParams(this.sn, this.ns, this.v, 'queryLog', [params,pageSize,curPage]);
         },
 
         sn:'cn.jmicro.api.mng.ILogService',
@@ -731,11 +561,11 @@ jm.mng = {
     threadPoolSrv : {
 
         serverList : function () {
-            return jm.mng.callRpcWithParams(this.sn, this.ns, this.v, 'serverList', []);
+            return jm.rpc.callRpcWithParams(this.sn, this.ns, this.v, 'serverList', []);
         },
 
         getInfo : function (key,type) {
-            return jm.mng.callRpcWithParams(this.sn, this.ns, this.v, 'getInfo', [key,type]);
+            return jm.rpc.callRpcWithParams(this.sn, this.ns, this.v, 'getInfo', [key,type]);
         },
 
         sn:'cn.jmicro.api.mng.IThreadPoolMonitor',
@@ -746,11 +576,11 @@ jm.mng = {
     hostNameSrv : {
 
         getHosts : function(name) {
-            return jm.mng.callRpcWithParams(this.sn, this.ns, this.v, 'getHosts', [name]);
+            return jm.rpc.callRpcWithParams(this.sn, this.ns, this.v, 'getHosts', [name]);
         },
 
         bestHost : function () {
-            return jm.mng.callRpcWithParams(this.sn, this.ns, this.v, 'bestHost', []);
+            return jm.rpc.callRpcWithParams(this.sn, this.ns, this.v, 'bestHost', []);
         },
 
         sn:'cn.jmicro.api.gateway.IHostNamedService',
@@ -761,16 +591,16 @@ jm.mng = {
     agentLogSrv : {
 
         getAllLogFileEntry : function() {
-            return jm.mng.callRpcWithParams(this.sn, this.ns, this.v, 'getAllLogFileEntry', []);
+            return jm.rpc.callRpcWithParams(this.sn, this.ns, this.v, 'getAllLogFileEntry', []);
         },
 
         startLogMonitor : function(processId,logFilePath,agentId,offsetFromLastLine) {
-            return jm.mng.callRpcWithParams(this.sn, this.ns, this.v, 'startLogMonitor', [processId,logFilePath,
+            return jm.rpc.callRpcWithParams(this.sn, this.ns, this.v, 'startLogMonitor', [processId,logFilePath,
                 agentId, offsetFromLastLine]);
         },
 
         stopLogMonitor : function(processId,logFilePath,agentId) {
-            return jm.mng.callRpcWithParams(this.sn, this.ns, this.v, 'stopLogMonitor', [processId,logFilePath,
+            return jm.rpc.callRpcWithParams(this.sn, this.ns, this.v, 'stopLogMonitor', [processId,logFilePath,
                 agentId]);
         },
 
@@ -782,7 +612,11 @@ jm.mng = {
                 jm.mng.ps.subscribe(topic,{},callback)
                     .then(id =>{
                         if(id < 0) {
-                            reje("Fail to subscribe topic:"+topic+', please check server log for detail info');
+                            if(id == -2) {
+                                reje('Pubsub server is DISABLE');
+                            }else {
+                                reje("Fail to subscribe topic:"+topic+', please check server log for detail info');
+                            }
                         } else {
                             self.startLogMonitor(processId,logFilePath,agentId,offsetFromLastLine)
                                 .then(resp =>{

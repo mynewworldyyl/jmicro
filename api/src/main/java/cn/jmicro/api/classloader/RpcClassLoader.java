@@ -34,13 +34,14 @@ import cn.jmicro.api.IListener;
 import cn.jmicro.api.JMicroContext;
 import cn.jmicro.api.annotation.Inject;
 import cn.jmicro.api.annotation.Reference;
+import cn.jmicro.api.async.IPromise;
+import cn.jmicro.api.classloader.genclient.IClassloaderRpc$JMAsyncClient;
 import cn.jmicro.api.config.Config;
 import cn.jmicro.api.raft.IChildrenListener;
 import cn.jmicro.api.raft.IDataOperator;
 import cn.jmicro.api.registry.IRegistry;
 import cn.jmicro.api.registry.ServiceItem;
 import cn.jmicro.api.timer.TimerTicker;
-import cn.jmicro.codegenerator.AsyncClientProxy;
 import cn.jmicro.codegenerator.AsyncClientUtils;
 import cn.jmicro.common.Constants;
 
@@ -50,6 +51,10 @@ public class RpcClassLoader extends ClassLoader {
 	private static final String CLASS_IDR = Config.BASE_DIR + "/remote_classes";
 	
 	private final static Logger logger = LoggerFactory.getLogger(RpcClassLoader.class);
+	
+	static {
+		registerAsParallelCapable();
+	}
 	
     private Map<String,Class<?>> clazzes = new HashMap<>();
     private Map<String,byte[]> clazzesData = new HashMap<>();
@@ -65,39 +70,70 @@ public class RpcClassLoader extends ClassLoader {
     private IRegistry registry;
     
     @Reference(required = true)
-    private IClassloaderRpc rpcLlassloader = null;
+    private IClassloaderRpc$JMAsyncClient rpcLlassloader = null;
     
     private ClassLoader parent = null;
     
-    private IChildrenListener insNodeListener = (type,parent,child,data)->{
+    private IChildrenListener insNodeListener = (type,parent,instanceName,data)->{
+    	String clsName = parent.substring(CLASS_IDR.length()+1);
+    	
+    	//logger.info("Remote class: {} from {}",clsName,instanceName);
+    	
+    	try {
+			if(ownerClasses.contains(clsName) || RpcClassLoader.class.getClassLoader().loadClass(clsName) != null) {
+				return;
+			}
+		} catch (ClassNotFoundException e1) {}
+    	
 		if(type == IListener.ADD) {
-			String clsName = parent.substring(CLASS_IDR.length()+1);
 			Set<String> inses = classesName2Instance.get(clsName);
 			if(inses == null) {
-    			classesName2Instance.put(child, (inses = new HashSet<String>()));
+    			classesName2Instance.put(instanceName, (inses = new HashSet<String>()));
     		}
-			inses.add(child);
+			inses.add(instanceName);
+			
+			if(!clazzes.containsKey(clsName)) {
+				try {
+					//logger.info("Try to load remote class: {}",clsName);
+					//getClassDataByInstanceName(clsName,instanceName,true);
+					//getClassDataByInstanceName(AsyncClientUtils.genAsyncServiceName(clsName),instanceName,true);
+					//getClassDataByInstanceName(AsyncClientUtils.genAsyncServiceImplName(clsName),instanceName,true);
+				} catch (Throwable e) {
+					logger.error(clsName,e);
+				}
+			}
+			
 		} else if(type == IListener.REMOVE) {
-			Set<String> inses = classesName2Instance.get(child);
+			Set<String> inses = classesName2Instance.get(clsName);
 			if(inses != null) {
-				inses.remove(child);
+				inses.remove(instanceName);
+				if(inses.isEmpty()) {
+					clazzes.remove(clsName);
+					//clazzesData.remove(clsName);
+				}
 			}
 		}
 	};
 	
     
-    private IChildrenListener classNodeListener = (type,parent,child,data)->{
+    private IChildrenListener classNodeListener = (type,parent,clsName,data)->{
+    	logger.info("Notify remote class: {}",clsName);
+    	try {
+			if(ownerClasses.contains(clsName)  || RpcClassLoader.class.getClassLoader().loadClass(clsName) != null) {
+				return;
+			}
+		} catch (ClassNotFoundException e) {
+		}
 		if(type == IListener.ADD) {
-			Set<String> inses = classesName2Instance.get(child);
+			Set<String> inses = classesName2Instance.get(clsName);
 			if(inses == null) {
-    			classesName2Instance.put(child, (inses = new HashSet<String>()));
+    			classesName2Instance.put(clsName, (inses = new HashSet<String>()));
     		}
-			String p = CLASS_IDR + "/" + child;
+			String p = CLASS_IDR + "/" + clsName;
 			op.addChildrenListener(p, insNodeListener);
-		
 		} else if(type == IListener.REMOVE) {
-			classesName2Instance.remove(child);
-			String p = CLASS_IDR + "/" + child;
+			classesName2Instance.remove(clsName);
+			String p = CLASS_IDR + "/" + clsName;
 			op.removeChildrenListener(p, insNodeListener);
 		}
 	};
@@ -115,17 +151,22 @@ public class RpcClassLoader extends ClassLoader {
     	});
 	}
     
-    private void doCheck() {
+    public void registRemoteClass() {
+    	
     	if(ownerClasses.isEmpty()) {
     		return;
     	}
     	
     	for(String insPath : ownerClasses) {
     		if(!op.exist(insPath)) {
+    			logger.info("Regist remote class: {}", insPath);
         		op.createNodeOrSetData(insPath, Config.getExportSocketHost(), true);
         	}
     	}
-    	
+    }
+    
+    private void doCheck() {
+    	registRemoteClass();
     }
     
     public void addClassInstance(String className) {
@@ -139,10 +180,15 @@ public class RpcClassLoader extends ClassLoader {
     	}
     	
     	String insPath = path + "/" + Config.getInstanceName();
-    	if(!op.exist(insPath)) {
-    		op.createNodeOrSetData(insPath, Config.getExportSocketHost(), true);
-    	}
     	ownerClasses.add(insPath);
+    	
+    	/*if(!op.exist(insPath)) {
+    		//延迟10秒注册类，待服务准备好接收
+    		TimerTicker.doInBaseTicker(10, className, null, (key,att)->{
+    			op.createNodeOrSetData(insPath, Config.getExportSocketHost(), true);
+    			TimerTicker.getBaseTimer().removeListener(className, true);
+        	});
+    	}*/
     }  
 
 	@Override
@@ -178,63 +224,64 @@ public class RpcClassLoader extends ClassLoader {
 			is = this.parent.getResourceAsStream(name);
 			if(is == null) {
 				name = this.getClassName(name);
-				byte[] bytes = this.getData(name);
-				if(bytes != null && bytes.length > 0) {
-					is = new ByteArrayInputStream(bytes);
+				byte[] byteData = null;
+				if(clazzesData.containsKey(name)) {
+					byteData = clazzesData.get(name);
+				} else {
+					String originName = name;
+					name = this.getClassName(name);
+					name = AsyncClientUtils.genSyncServiceName(name);
+					
+					Set<String> ins = this.classesName2Instance.get(name);
+					if(ins != null && !ins.isEmpty()) {
+						Iterator<String> ite = ins.iterator();
+						while(ite.hasNext()) {
+							 String insName = ite.next();
+							 byteData = getByteData(originName,insName,true);
+							 if(byteData != null && byteData.length > 0) {
+								break;
+							}
+						}
+					}
+				}
+				
+				if(byteData != null && byteData.length > 0) {
+					is = new ByteArrayInputStream(byteData);
 				}
 			}
 		}
 		return is;
 	}
 	
-	private synchronized byte[] getData(String className) {
+	private Class<?> getClass0(String className) {
 
 		String originClsName = className;
 		className = this.getClassName(className);
-		if(clazzesData.containsKey(className)) {
-			return clazzesData.get(className);
+		if(clazzes.containsKey(className)) {
+			return clazzes.get(className);
 		} else {
-			 className = AsyncClientUtils.genServiceName(className);
+			 className = AsyncClientUtils.genSyncServiceName(className);
 			 Set<String> insNames = this.classesName2Instance.get(className);
+			 insNames.remove(Config.getInstanceName());
 			 
 			 if(insNames  == null || insNames.isEmpty()) {
 				 logger.error("class " + originClsName + " not found!");
 				 return null;
 			 }
-			 
-			 Set<ServiceItem> items = this.registry.getServices(IClassloaderRpc.class.getName());
-			 ServiceItem directItem = null;
+			
 	         Iterator<String> ite = insNames.iterator();
-	         byte[] bytes=null;
+	         Class<?> cls=null;
 	         
 	         ServiceItem oldItem = JMicroContext.get().getParam(Constants.DIRECT_SERVICE_ITEM,null);
 	         
 	         try {
 				while(ite.hasNext()) {
-					
 					 String insName = ite.next();
-					 for(ServiceItem si: items) {
-				    	 if(si.getKey().getInstanceName().equals(insName)) {
-				    		 directItem = si;
-				    		 break;
-				    	 }
-				     }
-				     
-				     if(directItem == null) {
-				    	continue;
-				     }
-
-				 	JMicroContext.get().setParam(Constants.DIRECT_SERVICE_ITEM, directItem);
-					try {
-						bytes = this.rpcLlassloader.getClassData(originClsName);
-					} catch (Throwable e) {}
-					
-					if(bytes != null && bytes.length > 0) {
-						logger.warn("load class {} from {} ",originClsName,directItem.getKey().toKey(true, true, true));
-						clazzesData.put(originClsName, bytes);
+					 cls = getClassDataByInstanceName(originClsName,insName,true);
+					 if(cls != null) {
 						break;
-					}
-				 }
+					 }
+				}
 			} finally {
 				if(oldItem != null) {
 					JMicroContext.get().setParam(Constants.DIRECT_SERVICE_ITEM, oldItem);
@@ -243,13 +290,115 @@ public class RpcClassLoader extends ClassLoader {
 				}
 			}
 	         
-	         if(bytes == null || bytes.length == 0) {
+	         if(cls == null) {
 	        	 logger.warn("class[{}] not found from [{}] ",originClsName,insNames.toString());
 	         }
         	
-	         return bytes;
+	         return cls;
 		}	
 	}
+	
+	private byte[] getByteData(String originClsName,String insName,boolean sync) {
+
+		Set<ServiceItem> items = this.registry.getServices(IClassloaderRpc.class.getName());
+		ServiceItem directItem = null;
+
+		for (ServiceItem si : items) {
+			if (si.getKey().getInstanceName().equals(insName)) {
+				directItem = si;
+				break;
+			}
+		}
+
+		if (directItem != null) {
+			try {
+				JMicroContext.get().setParam(Constants.DIRECT_SERVICE_ITEM, directItem);
+				IPromise<byte[]> p = this.rpcLlassloader.getClassDataJMAsync(null, originClsName);
+				if(sync) {
+					byte[] bytes = p.getResult();
+					if (bytes != null && bytes.length > 0) {
+						clazzesData.put(originClsName, bytes);
+						logger.info("Success load data: {} from {}", originClsName,
+								directItem.getKey().toKey(true, true, true));
+						return bytes;
+					}else {
+						return null;
+					}
+					
+				}else {
+					p.then((bytes,fail,cxt)->{
+						if (bytes != null && bytes.length > 0) {
+							logger.info("Success load data: {} from {}", originClsName,insName);
+							clazzesData.put(originClsName, bytes);
+						}else if(fail != null) {
+							logger.error(fail.toString());
+						}
+					});
+					return null;
+				}
+			} catch (Throwable e) {
+				logger.error("error load class from: " + directItem.getKey().toKey(true, true, true), e);
+			}
+		}
+
+		return null;
+
+	}
+	
+	
+	private Class<?> getClassDataByInstanceName(String originClsName, String insName,boolean sync) {
+
+		Set<ServiceItem> items = this.registry.getServices(IClassloaderRpc.class.getName());
+		ServiceItem directItem = null;
+
+		for (ServiceItem si : items) {
+			if (si.getKey().getInstanceName().equals(insName)) {
+				directItem = si;
+				break;
+			}
+		}
+
+		if (directItem != null) {
+			try {
+				JMicroContext.get().setParam(Constants.DIRECT_SERVICE_ITEM, directItem);
+				IPromise<byte[]> p = this.rpcLlassloader.getClassDataJMAsync(null, originClsName);
+				if(sync) {
+					byte[] bytes = p.getResult();
+					if (bytes != null && bytes.length > 0) {
+						//clazzesData.put(originClsName, bytes);
+						logger.info("Success load class: {} from {}", originClsName,
+								directItem.getKey().toKey(true, true, true));
+						Class<?> myClass = dfClass(originClsName,bytes);
+			        	return myClass;
+					}else {
+						return null;
+					}
+				}else {
+					p.then((bytes,fail,cxt)->{
+						if (bytes != null && bytes.length > 0) {
+							dfClass(originClsName,bytes);
+							logger.info("Success load class: {} from {}", originClsName,insName);
+						}else if(fail != null) {
+							logger.error(fail.toString());
+						}
+					});
+					return null;
+				}
+			} catch (Throwable e) {
+				logger.error("error load class from: " + directItem.getKey().toKey(true, true, true), e);
+			}
+		}
+		return null;
+	}
+	
+	private Class<?> dfClass(String originClsName, byte[] bytes) {
+		Class<?> myClass =  defineClass(originClsName, bytes, 0, bytes.length);
+    	resolveClass(myClass);
+    	this.clazzes.put(originClsName, myClass);
+    	ClassScannerUtils.getIns().putCls(originClsName, myClass);
+    	return myClass;
+	}
+	
 	
 	private String getClassName(String clazz) {
 		if(clazz.indexOf("/") > 0) {
@@ -274,7 +423,7 @@ public class RpcClassLoader extends ClassLoader {
 
 	@Override
     public Class<?> findClass(String className){
-		logger.debug(className);
+		 logger.info("Find class: {}",className);
 		
 		 className = this.getClassName(className);
 		
@@ -291,28 +440,7 @@ public class RpcClassLoader extends ClassLoader {
     		return this.clazzes.get(className);
     	}
     	
-    	String locker = className.intern();
-    	
-    	synchronized(locker) {
-    		
-    		if(clazzes.containsKey(className)) {
-        		return this.clazzes.get(className);
-        	}
-    		
-		 	byte[] bytes = this.getData(className);
-	        
-	        Class<?> myClass = null;
-	        if(bytes != null && bytes.length > 0) {
-	        	myClass =  defineClass(className, bytes, 0, bytes.length);
-	        	resolveClass(myClass);
-	        	this.clazzes.put(className, myClass);
-	        	ClassScannerUtils.getIns().putCls(className, myClass);
-	        }
-	        return myClass;
-    	}
-    	
-       
-        
+    	return this.getClass0(className);
        
     }
 	

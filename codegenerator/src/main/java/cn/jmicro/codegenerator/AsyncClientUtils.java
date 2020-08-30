@@ -5,7 +5,7 @@ import java.lang.reflect.Method;
 public class AsyncClientUtils {
 
 	
-	public static final String genServiceName(String fullName) {
+	public static final String genSyncServiceName(String fullName) {
 		String iname = fullName;
 		if(fullName.endsWith(AsyncClientProxy.IMPL_SUBFIX)) {
 			 String cn = fullName.substring(0, fullName.indexOf(AsyncClientProxy.IMPL_SUBFIX));
@@ -82,6 +82,13 @@ public class AsyncClientUtils {
 	public static final String genAsyncMethodName(String methodName) {
 		if(!methodName.endsWith(AsyncClientProxy.ASYNC_METHOD_SUBFIX)) {
 			return methodName + AsyncClientProxy.ASYNC_METHOD_SUBFIX;
+		}
+		return methodName;
+	}
+	
+	public static final String genSyncMethodName(String methodName) {
+		if(methodName.endsWith(AsyncClientProxy.ASYNC_METHOD_SUBFIX)) {
+			return methodName.substring(0, methodName.length() - AsyncClientProxy.ASYNC_METHOD_SUBFIX.length());
 		}
 		return methodName;
 	}

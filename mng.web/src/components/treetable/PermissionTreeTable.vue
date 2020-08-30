@@ -49,12 +49,12 @@
 </template>
 
 <script>
-    //import treeItem from './TreeItem.vue'
+    //import treeItem from './LinkLogTreeItem.vue'
     export default {
         name: 'treeTable',
         props: ['list'],
         components: {
-            treeItem: () => import('./TreeItem.vue')
+            treeItem: () => import('./PermissionTreeItem.vue')
         },
         data() {
             return {

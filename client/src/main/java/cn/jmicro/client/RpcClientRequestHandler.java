@@ -277,7 +277,7 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
         	
         	if(si == null) {
         		//此方法可能抛出FusingException
-        		si = selector.getService(req.getServiceName(),req.getMethod(),req.getArgs(),req.getNamespace(),
+        		si = selector.getService(req.getServiceName(),req.getMethod(),/*req.getArgs(),*/req.getNamespace(),
             			req.getVersion(), Constants.TRANSPORT_NETTY);
         	}
         	

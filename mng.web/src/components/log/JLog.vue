@@ -1,6 +1,6 @@
 <template>
-  <div class="JLog" v-html="content">
-  </div>
+  <div id="logContentId" v-html="logContent"></div>
+
 </template>
 
 <script>
@@ -10,8 +10,38 @@
     export default {
         name: cid,
         data() {
+            let self = this;
             return {
-                content:''
+                logContent:'',
+                autoScroll2Bottom : true,
+                stop:true,
+                autoSl: {name:"AutoScroll",label:"Stop Scroll",icon:"ios-cog",call:self.autoScroll},
+                stopLg: {name:"StopLog",label:"Stop Log",icon:"ios-cog",call:self.changeLogStatus}
+            }
+        },
+
+        watch: {
+            logContent() {
+                let self = this;
+                if(self.autoScroll2Bottom) {
+                    self.$nextTick(() => {
+                        //self.$el.scrollTop = self.$el.scrollHeight;
+                        //self.$refs.bottonTag.scrollIntoView();
+                        //let c = document.querySelector(".editorBody");
+                        //c.style.height = self.$el.scrollHeight;
+                        //c.scrollTop = this.$el.scrollHeight;
+                        window.jm.vue.$emit("scroptto",self.$el.scrollHeight);
+                    })
+                }
+            }
+        },
+
+        updated(){
+            if(this.autoScroll2Bottom) {
+                //let c = document.querySelector(".editorBody");
+                //c.style.height = this.$el.scrollHeight;
+                //c.scrollTop = this.$el.scrollHeight;
+                window.jm.vue.$emit("scroptto",this.$el.scrollHeight);
             }
         },
 
@@ -23,61 +53,63 @@
         },
 
         methods: {
-
-            getLog() {
-                let self = this;
-                let le = self.item.val;
-                window.jm.mng.agentLogSrv.subscribeLog(le.processId,self.item.title,le.agentId,10,self.callback)
-                    .then(rst =>{
-                        self.$Message.success(rst);
-                    }).catch(err =>{
-                        self.$Message.error(err || "subscribe error");
-                });
-            },
-
             callback(it) {
-                this.content = this.content + it.data[0];
+                this.logContent = this.logContent + it.data[0];
                 //console.log(it.data[0]);
-            },
-
-            refresh() {
-
             },
 
             editorRemove(it) {
                 if(this.item.id != it.id) {
                    return;
                 }
+                window.jm.vue.$off('tabItemRemove',this.editorRemove);
+                this.changeLogStatus(true);
+            },
+
+            changeLogStatus(force) {
                 let self = this;
                 let le = self.item.val;
-                window.jm.vue.$off('tabItemRemove',self.editorRemove);
-                window.jm.mng.agentLogSrv.unsubscribeLog(le.processId,self.item.title, le.agentId,self.callback)
-                    .then(rst =>{
-                        self.$Message.success(rst);
-                    }).catch(err =>{
-                    self.$Message.error(err || "subscribe error");
-                });
+                if(!force && self.stop) {
+                    let self = this;
+                    let le = self.item.val;
+                    window.jm.mng.agentLogSrv.subscribeLog(le.processId,self.item.title,le.agentId,100,self.callback)
+                        .then(rst =>{
+                            if(rst) {
+                                self.stop = false;
+                                self.stopLg.label="Stop Log";
+                            }else {
+                                self.$Message.success(rst);
+                            }
+                        }).catch(err =>{
+                        self.$Message.error(err || "subscribe error");
+                    });
+                } else if(force || !force && !self.stop) {
+                    window.jm.mng.agentLogSrv.unsubscribeLog(le.processId,self.item.title, le.agentId,self.callback)
+                        .then(rst =>{
+                            self.$Message.success(rst);
+                            self.stop = true;
+                            self.stopLg.label="Start Log";
+                        }).catch(err =>{
+                        self.$Message.error(err || "subscribe error");
+                    });
+                }
             },
 
             autoScroll() {
-
-            },
-
-            stopScroll() {
-
+                this.autoScroll2Bottom =  !this.autoScroll2Bottom;
+                if(this.autoScroll2Bottom) {
+                    this.autoSl.label = "Stop Scroll";
+                }else {
+                    this.autoSl.label = "Auto Scroll";
+                }
             },
         },
 
         mounted () {
             let self = this;
             window.jm.vue.$on('tabItemRemove',this.editorRemove);
-            this.getLog();
-            window.jm.vue.$emit("editorOpen",
-                {
-                    "editorId":self.item.id,
-                    "menus":[{name:"AutoScroll",label:"Auto Scroll",icon:"ios-cog",call:self.autoScroll},
-                        {name:"StopScroll",label:"Stop Scroll",icon:"ios-cog",call:self.stopScroll}]
-                });
+            this.changeLogStatus();
+            window.jm.vue.$emit("editorOpen", {"editorId":self.item.id, "menus":[self.autoSl,self.stopLg]});
         },
 
         beforeDestroy() {
@@ -97,10 +129,10 @@
 
 <style scoped>
   .JLog{
-      height:auto;
       width:100%;
       position: relative;
       padding-left: 10px;
+      overflow-y: auto;
   }
 
 </style>

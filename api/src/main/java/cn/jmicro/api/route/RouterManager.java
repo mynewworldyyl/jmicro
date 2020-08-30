@@ -48,7 +48,7 @@ public class RouterManager {
 	@Inject
 	private RuleManager ruleManager;
 	
-	public Set<ServiceItem> doRoute(Set<ServiceItem> services,String srvName,String method,Class<?>[] args
+	public Set<ServiceItem> doRoute(Set<ServiceItem> services,String srvName,String method/*,Class<?>[] args*/
 			,String namespace,String version,String transport){
 		
 		if(routers.isEmpty()) {
@@ -62,7 +62,7 @@ public class RouterManager {
 			IRouter r = routers.get(routerSort);
 			RouteRule ru = r.getRouteRule();
 			if(r != null && ru != null) {
-				return r.doRoute(ru, services, srvName, method, args, namespace, version, transport);
+				return r.doRoute(ru, services, srvName, method, /*args, */namespace, version, transport);
 			} else {
 				//logger.error("Router {} not defined, try to use by default config",routerSort);
 				throw new CommonException("Router "+routerSort+" not defined");
@@ -75,7 +75,7 @@ public class RouterManager {
 			if(r != null) {
 				RouteRule rr = r.getRouteRule();
 				if(rr != null) {
-					return r.doRoute(rr, services, srvName, method, args, namespace, version, transport);
+					return r.doRoute(rr, services, srvName, method,/* args, */namespace, version, transport);
 				}
 			} else {
 				logger.error("Router {} not defined",key);

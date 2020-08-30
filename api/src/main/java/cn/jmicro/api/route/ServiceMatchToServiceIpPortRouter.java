@@ -97,7 +97,7 @@ public class ServiceMatchToServiceIpPortRouter extends AbstractRouter implements
 	}
 
 	@Override
-	public Set<ServiceItem> doRoute(RouteRule rule,Set<ServiceItem> services, String srvName, String method, Class<?>[] args,
+	public Set<ServiceItem> doRoute(RouteRule rule,Set<ServiceItem> services, String srvName, String method,/* Class<?>[] args,*/
 			String namespace, String version, String transport) {
 		return filterServicesByTargetIpPort(rule,services,transport);
 	}

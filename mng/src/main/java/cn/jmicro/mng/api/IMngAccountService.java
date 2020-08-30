@@ -1,0 +1,39 @@
+package cn.jmicro.mng.api;
+
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+import cn.jmicro.api.Resp;
+import cn.jmicro.api.security.ActInfo;
+import cn.jmicro.api.security.Permission;
+import cn.jmicro.codegenerator.AsyncClientProxy;
+
+@AsyncClientProxy
+public interface IMngAccountService {
+
+	ActInfo login(String actName,String pwd);
+	
+	Resp<Boolean> logout();
+	
+	Resp<Boolean> isLogin(String loginKey);
+	
+	Resp<ActInfo> getAccount(String loginKey);
+	
+	Resp<Boolean> regist(String actName, String pwd);
+	
+	Resp<Boolean> updateActPermissions(String actName,Set<String> adds,Set<String> dels);
+	
+	Resp<Boolean> updatePwd(String newPwd,String oldPwd);
+	
+	Resp<Boolean> changeAccountStatus(String actName,boolean enableStatus);
+	
+	Resp<Integer> countAccount(Map<String, String> queryConditions);
+	
+	Resp<List<ActInfo>> getAccountList(Map<String, String> queryConditions, int pageSize, int curPage);
+	
+	Resp<Map<String, Set<Permission>>> getPermissionsByActName(String actName);
+	
+	Resp<Map<String, Set<Permission>>> getAllPermissions();
+	
+}

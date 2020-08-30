@@ -28,8 +28,11 @@
                         <!-- Shell -->
                         <JShell v-else-if="item.group == 'shell'" :item="item"></JShell>
                         <JTesting v-else-if="item.group == 'testing'" :item="item"></JTesting>
+                        <JTestingPubsub v-else-if="item.group == 'testingPubsub'" :item="item"></JTestingPubsub>
                         <JAbout v-else-if="item.group == 'about'" :item="item"></JAbout>
                         <JLog v-else-if="item.group == 'fileLog'" :item="item"></JLog>
+
+                        <JAccountEditor v-else-if="item.group == 'account'" :item="item"></JAccountEditor>
 
                         <JRepository v-else-if="item.group == 'repository'" :item="item"></JRepository>
                         <JHost v-else-if="item.group == 'host'" :item="item"></JHost>
@@ -112,9 +115,12 @@
             JShell : () => import('./shell/JShell.vue'),
             JAbout : () => import('./shell/JAbout.vue'),
             JTesting : () => import('./shell/JTesting.vue'),
+            JTestingPubsub : () => import('./shell/JTestingPubsub.vue'),
             JAgent : () => import('./deployment/JAgent.vue'),
             JProcess : () => import('./deployment/JProcess.vue'),
             JLog : () => import('./log/JLog.vue'),
+
+            JAccountEditor:()=> import('./security/JAccountEditor.vue'),
 
             JTypeConfig : () => import('./monitor/JTypeConfig.vue'),
 
@@ -140,7 +146,7 @@
         },
 
         mounted : function() {
-            //let self = this;
+            let self = this;
             this.mountServiceSelect('serviceNodeSelect');
             this.mountStatisSelect();
             this.mountConfigSelect();
@@ -160,6 +166,32 @@
             this.mountServiceSelect('logFileSelect');
 
             window.jm.vue.$emit('openEditorSelect','about');
+
+            window.jm.vue.$on("scroptto",(to) => {
+                this.$nextTick(() => {
+                    let c = self.$el.querySelector(".editorBody");
+                    //c.scrollTop = to
+                    c.scrollTo(0,to);
+                });
+            });
+
+            window.addEventListener("scroll",(/*e*/)=>{
+                //console.log(e);
+                /*let c = document.querySelector(".editorBody");
+                console.log('editorBody: ' + c.scrollTop);*/
+               /* self.$nextTick(() => {
+                    let c = self.$el.querySelector(".editorBody");
+                    c.scrollTop = c.scrollHeight
+                });*/
+            },true);
+
+        },
+
+        updated() {
+           /* this.$nextTick(() => {
+                let c = this.$el.querySelector(".editorBody");
+                c.scrollTop = c.scrollHeight
+            });*/
         },
 
         methods: {
@@ -436,6 +468,16 @@
                 if(i > -1) {
                     let it = this.items[i];
 
+                    if(i>0) {
+                        this.handleTabActive(this.items[i-1].id);
+                    }else if(this.items.length > 1) {
+                        this.handleTabActive(this.items[i+1].id);
+                    }
+
+                    window.jm.rpc.removeListener(it.id);
+                    this.$emit('tabItemRemove',it.id);
+                    this.$emit('editorClosed',it.id);
+
                     this.items.splice(i,1);
 
                     if(this.items.length > 0) {
@@ -447,10 +489,6 @@
                     }else {
                         this.selectNode = null;
                     }
-
-                    window.jm.mng.act.removeListener(it.id);
-                    window.jm.vue.$emit('tabItemRemove',it.id);
-                    window.jm.vue.$emit('editorClosed',it.id);
                 }
             },
 

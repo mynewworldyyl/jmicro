@@ -26,6 +26,7 @@ import cn.jmicro.api.internal.pubsub.genclient.IInternalSubRpc$JMAsyncClient;
 import cn.jmicro.api.net.Message;
 import cn.jmicro.api.objectfactory.ProxyObject;
 import cn.jmicro.api.raft.IDataOperator;
+import cn.jmicro.api.security.ActInfo;
 import cn.jmicro.api.service.ServiceInvokeManager;
 import cn.jmicro.common.Constants;
 import cn.jmicro.common.util.JsonUtils;
@@ -110,9 +111,15 @@ public class PubSubManager {
 		return defaultServer.hasTopic(topic);
 	}
 	
+	
+	
 	public boolean isPubsubEnable(int itemNum) {
-		return this.defaultServer != null && this.curItemCount.get() + itemNum <= this.maxPsItem 
-				&& ProxyObject.isUsableRemoteProxy(this.defaultServer);
+		if(itemNum == 0) {
+			return this.defaultServer != null;
+		}else {
+			return this.defaultServer != null && this.curItemCount.get() + itemNum <= this.maxPsItem 
+					&& ProxyObject.isUsableRemoteProxy(this.defaultServer);
+		}
 	}
 	
 	public int publish(String topic,byte flag,Object[] args) {
@@ -169,8 +176,12 @@ public class PubSubManager {
 		 
 		curItemCount.addAndGet(items.length);
 		 
+		ActInfo ai = JMicroContext.get().getAccount();
 		synchronized (topicSubmitItems) {
 			for (PSData d : items) {
+				if(ai != null) {
+					d.setSrcClientId(ai.getClientId());
+				}
 				List<PSData> is = topicSubmitItems.get(d.getTopic());
 				if (is == null) {
 					topicSubmitItems.put(d.getTopic(), is = new ArrayList<>());
@@ -195,6 +206,11 @@ public class PubSubManager {
 		
 		if(!this.isRunning) {
 			 startChecker();
+		}
+		
+		ActInfo ai = JMicroContext.get().getAccount();
+		if(ai != null) {
+			item.setSrcClientId(ai.getClientId());
 		}
 		
 		curItemCount.incrementAndGet();

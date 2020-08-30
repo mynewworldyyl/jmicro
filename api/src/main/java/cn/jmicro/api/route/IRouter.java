@@ -42,6 +42,6 @@ public interface IRouter {
 	
 	RouteRule getRouteRule();
 	
-	Set<ServiceItem> doRoute(RouteRule rule,Set<ServiceItem> service,String srvName,String method,Class<?>[] args
+	Set<ServiceItem> doRoute(RouteRule rule,Set<ServiceItem> service,String srvName,String method/*,Class<?>[] args*/
 			,String namespace,String version,String transport);
 }

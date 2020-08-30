@@ -614,6 +614,7 @@ public interface TypeCoder<T> extends Comparable<TypeCoder<T>>{
 				}
 				Class<?> cls=null;
 				try {
+					logger.info("Try to lodad class: " + clazzName);
 					cls = Thread.currentThread().getContextClassLoader().loadClass(clazzName);
 				} catch (Throwable e) {
 					try {

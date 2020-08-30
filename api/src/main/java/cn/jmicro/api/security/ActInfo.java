@@ -1,9 +1,11 @@
 package cn.jmicro.api.security;
 
+import java.util.Set;
+
 import cn.jmicro.api.annotation.SO;
 
 @SO
-public class ActInfo implements Cloneable{
+public class ActInfo implements Cloneable {
 
 	private String actName;
 	private String loginKey;
@@ -11,6 +13,13 @@ public class ActInfo implements Cloneable{
 	private String pwd;
 	
 	private String msg;
+	
+	private boolean enable;
+	
+	private long registTime;
+	
+	private Set<String> pers;
+	
 	private boolean success = false;
 	
 	public ActInfo() {};
@@ -79,6 +88,30 @@ public class ActInfo implements Cloneable{
 		
 		//ai.setLoginKey(""+LOGIN_KEY.getAndIncrement());
 		return ai;
+	}
+
+	public Set<String> getPers() {
+		return pers;
+	}
+
+	public void setPers(Set<String> pers) {
+		this.pers = pers;
+	}
+
+	public boolean isEnable() {
+		return enable;
+	}
+
+	public void setEnable(boolean enable) {
+		this.enable = enable;
+	}
+
+	public long getRegistTime() {
+		return registTime;
+	}
+
+	public void setRegistTime(long registTime) {
+		this.registTime = registTime;
 	}
 	
 }

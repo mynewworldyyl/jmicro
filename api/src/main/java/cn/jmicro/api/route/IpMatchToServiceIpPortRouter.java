@@ -148,8 +148,8 @@ public class IpMatchToServiceIpPortRouter extends AbstractRouter implements IRou
 	}
 
 	@Override
-	public Set<ServiceItem> doRoute(RouteRule rule,Set<ServiceItem> services, String srvName, String method, Class<?>[] args,
-			String namespace, String version, String transport) {
+	public Set<ServiceItem> doRoute(RouteRule rule,Set<ServiceItem> services, String srvName,
+			String method,/* Class<?>[] args,*/String namespace, String version, String transport) {
 		return filterServicesByTargetIpPort(rule,services,transport);
 	}
 

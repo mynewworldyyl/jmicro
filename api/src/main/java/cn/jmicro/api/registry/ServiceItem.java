@@ -461,6 +461,15 @@ public final class ServiceItem implements Comparable<ServiceItem>{
 		return getMethod(methodName, mkStr);
 	}
 	
+	public ServiceMethod getMethod(String methodName){
+		for(ServiceMethod sm : this.methods){
+			if(methodName.equals(sm.getKey().getMethod())){
+				return sm;
+			}
+		}
+		return null;
+	}
+	
 	//服务实例标识,带上实例名和主机IP
 	public String path(String root){
 		return this.key.path(root, true, true, true);

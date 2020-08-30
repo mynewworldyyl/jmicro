@@ -57,6 +57,8 @@ public final class PSData implements Serializable{
 	
 	private String topic;
 	
+	private int srcClientId;
+	
 	private Object data;
 	
 	//消息发送结果回调的RPC方法，用于消息服务器给发送者回调
@@ -152,6 +154,14 @@ public final class PSData implements Serializable{
 
 	public void setFailCnt(int failCnt) {
 		this.failCnt = failCnt;
+	}
+
+	public int getSrcClientId() {
+		return srcClientId;
+	}
+
+	public void setSrcClientId(int clientId) {
+		this.srcClientId = clientId;
 	}
 	
 	

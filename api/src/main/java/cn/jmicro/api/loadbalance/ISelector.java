@@ -26,5 +26,5 @@ public interface ISelector {
 
 	//ServiceItem getService(String srvName,String method,Class<?>[] args,String namespace,String version,String transport);
 	
-	ServiceItem getService(String srvName,String method,Object[] args,String namespace,String version,String transport);
+	ServiceItem getService(String srvName,String method,/*Object[] args,*/String namespace,String version,String transport);
 }

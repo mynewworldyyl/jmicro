@@ -83,6 +83,7 @@ public class SimpleRpcImpl implements ISimpleRpc {
 		if(SF.isLoggable(MC.LOG_DEBUG)) {
 			SF.eventLog(MC.MT_PLATFORM_LOG,MC.LOG_DEBUG,SimpleRpcImpl.class, person.getUsername());
 		}
+		System.out.println("Got: " + person.toString());
 		return "Server say hello to: " + person.toString();
 	}
 

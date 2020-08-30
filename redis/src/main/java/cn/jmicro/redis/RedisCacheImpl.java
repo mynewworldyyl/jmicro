@@ -135,11 +135,11 @@ public class RedisCacheImpl implements ICache {
 				//命中缓存,理想情况下,大部份缓存都走到这里返回
 				return (T)codeFactory.getDecoder(Message.PROTOCOL_BIN).decode(ByteBuffer.wrap(val), null);
 			} else {
-				//上次从源读取过相同数据,但是数据不存在,则判断和上次更新时间是否超过0.5秒,是则更新缓存，否则直接返回空
+				//上次从源读取过相同数据,但是数据不存在,则判断和上次更新时间是否超过1秒,是则更新缓存，否则直接返回空
 				if(notExistData.containsKey(key)) {
 					long interval = System.currentTimeMillis() - notExistData.get(key);
-					if(interval < 500) {
-						//间隔时间太小,直接返回空,意味数据最大延迟500毫秒
+					if(interval < 1000) {
+						//间隔时间太小,直接返回空,意味数据最大延迟1000毫秒
 						return null;
 					}
 					notExistData.remove(key);

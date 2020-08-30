@@ -28,6 +28,12 @@ public final class ServerError {
 	public static final int SE_ASYNC_PUBSUB_FAIL = 0x00000003;
 	
 	public static final int SE_INVLID_LOGIN_KEY = 0x00000004;
+	
+	public static final int SE_NO_PERMISSION = 0x00000005;
+	
+	public static final int SE_NOT_LOGIN = 0x00000006;
+	
+	public static final int SE_SERVICE_NOT_FOUND= 0x00000007;
 
 	private int errorCode;
 	private String msg;

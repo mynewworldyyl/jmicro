@@ -34,9 +34,9 @@ public interface IRegistry{
 	
 	void unregist(ServiceItem si);
 	
-	Set<ServiceItem> getServices(String serviceName,String method,Class<?>[] args,String namespace,String version,String transport);
+	Set<ServiceItem> getServices(String serviceName,String method,/*Class<?>[] args,*/String namespace,String version,String transport);
 	
-	Set<ServiceItem> getServices(String serviceName,String method,Object[] args,String namespace,String version,String transport);
+	//Set<ServiceItem> getServices(String serviceName,String method,/*Object[] args,*/String namespace,String version,String transport);
 	
 	boolean isExists(String serviceName,String namespace,String version);
 	boolean isExists(String serviceName);

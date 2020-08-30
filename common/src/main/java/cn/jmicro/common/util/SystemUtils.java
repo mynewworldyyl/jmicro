@@ -36,6 +36,9 @@ public class SystemUtils {
 	public static String getFileString(File file) {
 		FileInputStream is = null;
 		try {
+			if(!file.exists()) {
+				return null;
+			}
 			is = new FileInputStream(file);
 			byte[] data = new byte[(int)file.length()];
 			is.read(data, 0, (int)file.length());

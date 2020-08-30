@@ -79,7 +79,7 @@
 
         mounted () {
             //has admin permission, only control the show of the button
-            window.jm.mng.act.addListener('JProcess',this.refresh);
+            window.jm.rpc.addListener('JProcess',this.refresh);
             this.refresh();
             let self = this;
             window.jm.vue.$emit("editorOpen",

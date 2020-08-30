@@ -116,6 +116,11 @@ public class ClientServiceProxyGenerator extends AbstractProcessor {
 			 clientProxyHolderBuilder.addMethod(addSyncClassMethod((ExecutableElement)e));
 		 });
 		 
+		/* MethodSpec.Builder isValidMethod = MethodSpec.methodBuilder("isReady")
+				  .addModifiers(Modifier.PUBLIC,Modifier.ABSTRACT);
+		 isValidMethod.returns(TypeName.BOOLEAN);
+		 isValidMethod.addCode(codeBlock);*/
+		 
 	    TypeSpec typeSpec = clientProxyHolderBuilder.build();
 	 
 	    JavaFile javaFile = JavaFile.builder(pkgName, typeSpec).build();
@@ -367,6 +372,10 @@ public class ClientServiceProxyGenerator extends AbstractProcessor {
 			 clientProxyHolderBuilder.addMethod(addInterfaceMethod(m));
 		 });
 			
+		 MethodSpec.Builder isValidMethod = MethodSpec.methodBuilder("isReady")
+				  .addModifiers(Modifier.PUBLIC,Modifier.ABSTRACT);
+		 isValidMethod.returns(TypeName.BOOLEAN);
+		 clientProxyHolderBuilder.addMethod(isValidMethod.build());
 		 
 	    TypeSpec typeSpec = clientProxyHolderBuilder.build();
 	 

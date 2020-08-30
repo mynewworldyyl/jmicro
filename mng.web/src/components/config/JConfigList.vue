@@ -10,7 +10,8 @@
               </DropdownMenu>
           </Dropdown>
       </div>
-      <Tree :data="configs" :load-data="loadChildren" @on-select-change="nodeSelect($event)"></Tree>
+      <Tree  v-if="adminPer" :data="configs" :load-data="loadChildren" @on-select-change="nodeSelect($event)"></Tree>
+      <span v-if="!adminPer">No permission</span>
   </div>
 </template>
 
@@ -24,13 +25,29 @@
         name: 'JConfigList',
 
         mounted(){
-             let self = this;
-             this.__getChildren(null,window.jm.mng.CONFIG_ROOT,function(data){
-                 self.configs = data;
-             });
+            window.jm.rpc.addListener(GROUP,this.refresh);
+            window.jm.vue.$on('tabItemRemove',this.editorRemove);
+        },
+
+        beforeDestroy(it) {
+            if(GROUP != it.id) {
+                return;
+            }
+            window.jm.vue.$off('tabItemRemove',this.editorRemove);
+            window.jm.rpc.removeListener(GROUP);
         },
 
         methods:{
+
+            refresh() {
+                this.adminPer = window.jm.mng.comm.adminPer;
+                if(this.adminPer) {
+                    let self = this;
+                    this.__getChildren(null,window.jm.mng.CONFIG_ROOT,function(data){
+                        self.configs = data;
+                    });
+                }
+            },
 
             nodeSelect(evt){
                window.jm.vue.$emit('configNodeSelect',evt);
@@ -84,10 +101,10 @@
                             valNode.children.push(nodes[i]);
                         }
                     }
+
                     if(valNode.children.length > 0){
                         ch.push(root);
                     }
-
                     cb([root]);
                 }).catch(function(err){
                     window.console.log(err);
@@ -105,7 +122,8 @@
 
         data () {
             return {
-                configs: []
+                configs: [],
+                adminPer:false,
             }
         },
 

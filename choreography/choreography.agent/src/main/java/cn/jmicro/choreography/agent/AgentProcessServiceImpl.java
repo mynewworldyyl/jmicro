@@ -127,7 +127,7 @@ public class AgentProcessServiceImpl implements IAgentProcessService {
 		           			 }
 	           		 	}
 					});
-				}else if(type == FileWatcher.FILE_DELETE) {
+				}else if(type == FileWatcher.FILE_DELETE || type == FileWatcher.IDLE_TIMEOUT) {
 					stopLogMonitor(processId,fileName);
 				}
 			});
@@ -181,9 +181,11 @@ public class AgentProcessServiceImpl implements IAgentProcessService {
 		for(String fn : fnames) {
 			String path = this.workDirFile.getAbsolutePath() + File.separatorChar + fn + File.separatorChar + "processInfo.json";
 			String json = SystemUtils.getFileString(path);
-			ProcessInfo p = JsonUtils.getIns().fromJson(json, ProcessInfo.class);
-			if(p != null ) {
-				ps.add(p);
+			if(StringUtils.isNotEmpty(json)) {
+				ProcessInfo p = JsonUtils.getIns().fromJson(json, ProcessInfo.class);
+				if(p != null ) {
+					ps.add(p);
+				}
 			}
 		}
 		return ps;
@@ -338,12 +340,15 @@ public class AgentProcessServiceImpl implements IAgentProcessService {
 		
 		if(fw != null && fw.isEmpty()) {
 			fileWatchers.remove(processId);
+			fw.close();
 		}
 		
-		LogFileReader lf = new LogFileReader(processId,logFile,0);
-		synchronized(fileReaders) {
-			if(this.fileReaders.contains(lf)) {
-				fileReaders.remove(lf);
+		if(!fileReaders.isEmpty()) {
+			LogFileReader lf = new LogFileReader(processId,logFile,0);
+			synchronized(fileReaders) {
+				if(this.fileReaders.contains(lf)) {
+					fileReaders.remove(lf);
+				}
 			}
 		}
 		
@@ -425,10 +430,10 @@ public class AgentProcessServiceImpl implements IAgentProcessService {
     	
         private long readOne() {
            
-        	if(!pm.hasTopic(this.topic)) {
+        	/*if(!pm.hasTopic(this.topic)) {
         		logger.info("topic {} is invalid now!",this.topic );
         		return 1;
-        	}
+        	}*/
         	
         	String line = null;
             try {

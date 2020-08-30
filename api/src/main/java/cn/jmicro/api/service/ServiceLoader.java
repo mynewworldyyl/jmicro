@@ -595,6 +595,8 @@ public class ServiceLoader{
 				sm.setLogLevel(MC.LOG_ERROR);
 				sm.setDebugMode(-1);
 				sm.setMaxSpeed(item.getMaxSpeed());
+				sm.setPerType(false);
+				sm.setNeedLogin(false);
 				
 			} else {
 				 if(manno != null ) {
@@ -626,7 +628,8 @@ public class ServiceLoader{
 					sm.setDebugMode(manno.debugMode()!=-1 || intMAnno == null ? manno.debugMode() : intMAnno.debugMode());
 					
 					sm.setAsyncable(manno.asyncable());
-					
+					sm.setPerType(manno.perType());
+					sm.setNeedLogin(manno.needLogin());
 				 } else {
 					 //使用接口方法配置
 					sbr = intMAnno.breakingRule();
@@ -655,6 +658,8 @@ public class ServiceLoader{
 					sm.setBaseTimeUnit(StringUtils.isEmpty(intMAnno.baseTimeUnit())? item.getBaseTimeUnit():intMAnno.baseTimeUnit());
 					
 					sm.setAsyncable(intMAnno.asyncable());
+					sm.setPerType(intMAnno.perType());
+					sm.setNeedLogin(intMAnno.needLogin());
 				 }
 				 
 				sm.getBreakingRule().setBreakTimeInterval(sbr.breakTimeInterval());

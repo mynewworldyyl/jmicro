@@ -26,6 +26,7 @@ import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import cn.jmicro.api.JMicroContext;
 import cn.jmicro.api.annotation.Cfg;
 import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Inject;
@@ -39,9 +40,11 @@ import cn.jmicro.api.net.ISession;
 import cn.jmicro.api.net.ISessionListener;
 import cn.jmicro.api.net.Message;
 import cn.jmicro.api.pubsub.PSData;
+import cn.jmicro.api.pubsub.PubSubManager;
 import cn.jmicro.api.registry.IRegistry;
 import cn.jmicro.api.registry.ServiceItem;
 import cn.jmicro.api.registry.ServiceMethod;
+import cn.jmicro.api.security.ActInfo;
 import cn.jmicro.api.timer.ITickerAction;
 import cn.jmicro.api.timer.TimerTicker;
 import cn.jmicro.common.Constants;
@@ -82,6 +85,9 @@ public class MessageServiceImpl implements IGatewayMessageCallback{
 	@Inject
 	private ICodecFactory codecFactory;
 	
+	@Inject
+	private PubSubManager pm;
+	
 	private ISessionListener seeesionListener = (int type, ISession s)->{
 		if(type == ISession.EVENT_TYPE_CLOSE) {
 			Set<Integer> ids = s.getParam(MESSAGE_SERVICE_REG_ID);
@@ -95,11 +101,14 @@ public class MessageServiceImpl implements IGatewayMessageCallback{
 		}
 	};
 	
-	
-	public int subscribe(ISession session, String topic, Map<String, Object> ctx) {
+	public int subscribe(ISession session, String topic,Map<String, Object> ctx) {
 		if(StringUtils.isEmpty(topic)) {
 			logger.error("Topic cannot be NULL");
 			return -1;
+		}
+		
+		if(!pm.isPubsubEnable(0)) {
+			return -2;
 		}
 		
 		Set<Registion> sess = this.topic2Sessions.get(topic);
@@ -121,6 +130,7 @@ public class MessageServiceImpl implements IGatewayMessageCallback{
 		for(ServiceItem si : items) {
 			ServiceMethod sm = si.getMethod("onMessage", new Class[] {new PSData[0].getClass()});
 			if(sm != null) {
+				
 				flag = true;
 				if(StringUtils.isNotEmpty(sm.getTopic())) {
 					String[] ts = sm.getTopic().split(Constants.TOPIC_SEPERATOR);
@@ -151,6 +161,7 @@ public class MessageServiceImpl implements IGatewayMessageCallback{
 			r.id = this.idServer.getIntId(MessageServiceImpl.class);
 			r.sess = session;
 			r.topic = topic;
+			r.clientId = JMicroContext.get().getAccount().getClientId();
 			r.lastActiveTime = System.currentTimeMillis();
 			sess.add(r);
 			Set<Integer> ids = session.getParam(MESSAGE_SERVICE_REG_ID);
@@ -167,14 +178,11 @@ public class MessageServiceImpl implements IGatewayMessageCallback{
 		return -1;
 	}
 
-	
 	public boolean unsubscribe(Integer id) {
 		String topic = this.id2Topic.get(id);
 		if(StringUtils.isEmpty(topic)) {
 			return true;
 		}
-		
-		this.id2Topic.remove(id);
 		
 		Set<Registion> sess = this.topic2Sessions.get(topic);
 		if(sess == null) {
@@ -189,6 +197,15 @@ public class MessageServiceImpl implements IGatewayMessageCallback{
 			}
 		}
 		
+		/*if(rr != null) {
+			ActInfo ai = JMicroContext.get().getAccount();
+			if(ai == null || ai.getClientId() != rr.clientId) {
+				return false;
+			}
+		}*/
+		
+		this.id2Topic.remove(id);
+		
 		if(rr != null) {
 			Set<Integer> ids = rr.sess.getParam(MESSAGE_SERVICE_REG_ID);
 			if(ids != null) {
@@ -196,6 +213,8 @@ public class MessageServiceImpl implements IGatewayMessageCallback{
 			}
 			sess.remove(rr);
 		}
+		
+		logger.debug("unregist topic:{} id:{} ",rr.topic,rr.id);
 		
 		if(sess.isEmpty()) {
 			Set<ServiceItem> items = reg.getServices(IGatewayMessageCallback.class.getName());
@@ -207,6 +226,7 @@ public class MessageServiceImpl implements IGatewayMessageCallback{
 			for(ServiceItem si : items) {
 				ServiceMethod sm = si.getMethod("onMessage", new Class[] {new PSData[0].getClass()});
 				if(sm != null) {
+					logger.debug("remmove topic:{} from:{} ",rr.topic,sm.getKey().toKey(false, false, false));
 					if(StringUtils.isNotEmpty(sm.getTopic())) {
 						String[] ts = sm.getTopic().split(Constants.TOPIC_SEPERATOR);
 						StringBuffer sb = new StringBuffer();
@@ -266,6 +286,10 @@ public class MessageServiceImpl implements IGatewayMessageCallback{
 				}
 				
 				for(Registion r : rs) {
+					if(i.getSrcClientId() > 0 && r.clientId != i.getSrcClientId()) {
+						continue;
+					}
+					
 					if(context != null && r.ctx != null && !r.ctx.isEmpty()) {
 						i.getContext().clear();
 						i.getContext().putAll(context);
@@ -291,7 +315,7 @@ public class MessageServiceImpl implements IGatewayMessageCallback{
 		
 	}
 	
-	private ITickerAction tickerAct = new ITickerAction() {
+	private ITickerAction<Object> tickerAct = new ITickerAction<Object>() {
 		public void act(String key,Object attachement) {
 			Set<Integer> ids = new HashSet<>();
 			for(Set<Registion> rs : topic2Sessions.values()) {
@@ -299,9 +323,9 @@ public class MessageServiceImpl implements IGatewayMessageCallback{
 					continue;
 				}
 
-				for(Iterator<Registion> ite = rs.iterator(); ite.hasNext() ; ) {
+				for(Iterator<Registion> ite = rs.iterator(); ite.hasNext();) {
 					Registion r = ite.next();
-					if(System.currentTimeMillis() - r.lastActiveTime > registSessionTimeout) {
+					if(r.sess.isClose()) {
 						ids.add(r.id);
 					}
 				}
@@ -321,6 +345,7 @@ public class MessageServiceImpl implements IGatewayMessageCallback{
 
 	private class Registion{
 		public int id;
+		public int clientId;
 		public ISession sess;
 		public String topic;
 		public Map<String,Object> ctx;

@@ -4,6 +4,7 @@ import java.util.Set;
 
 import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Inject;
+import cn.jmicro.api.annotation.SMethod;
 import cn.jmicro.api.annotation.Service;
 import cn.jmicro.api.config.Config;
 import cn.jmicro.api.mng.ConfigNode;
@@ -19,6 +20,7 @@ public class ConfigManagerImpl implements IConfigManager {
 	private IDataOperator op;
 	
 	@Override
+	@SMethod(perType=true)
 	public ConfigNode[] getChildren(String path,Boolean getAll) {
 		Set<String> clist = op.getChildren(path, false);
 		if(clist == null || clist.isEmpty()) {
@@ -48,6 +50,7 @@ public class ConfigManagerImpl implements IConfigManager {
 	}
 
 	@Override
+	@SMethod(perType=true)
 	public boolean update(String path, String val) {
 		try {
 			op.setData(path, val);
@@ -60,6 +63,7 @@ public class ConfigManagerImpl implements IConfigManager {
 	}
 
 	@Override
+	@SMethod(perType=true)
 	public boolean delete(String path) {
 		try {
 			op.deleteNode(path);
@@ -71,6 +75,7 @@ public class ConfigManagerImpl implements IConfigManager {
 	}
 
 	@Override
+	@SMethod(perType=true)
 	public boolean add(String path, String val,Boolean isDir) {
 		try {
 			if(isDir && val == null) {

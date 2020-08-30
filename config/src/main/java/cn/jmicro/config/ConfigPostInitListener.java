@@ -71,7 +71,7 @@ public class ConfigPostInitListener extends PostInitAdapter {
 		 List<Field> fields = new ArrayList<>();
 		 Utils.getIns().getFields(fields, cls);
 		 
-		 if(cls.getName().equals("cn.jmicro.api.service.ServiceManager")) {
+		 if(cls.getName().equals("cn.jmicro.transport.netty.server.httpandws.StaticResourceHttpHandler")) {
 			 logger.debug("preInit");
 		 }
 
@@ -221,7 +221,7 @@ public class ConfigPostInitListener extends PostInitAdapter {
 						oldColl.add(vv);
 					}
 				}
-			}else if(Cfg.VT_SPLIT.equals(vt)) {
+			}else if(Cfg.VT_ORIGIN.equals(vt)) {
 				Object v = Utils.getIns().getValue(valType, strv, null);
 				if(v != null) {
 					oldColl.add(v);

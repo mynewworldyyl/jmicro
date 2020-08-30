@@ -38,7 +38,7 @@ public class TestApigateClient {
 	//private ApiGatewayClient wsClient = new ApiGatewayClient(new ApiGatewayConfig(Constants.TYPE_WEBSOCKET,"192.168.56.1",9090));
 	
 	public static void main(String[] args) {
-		ApiGatewayClient socketClient = new ApiGatewayClient(new ApiGatewayConfig(Constants.TYPE_HTTP,"124.70.152.7",80));
+		ApiGatewayClient socketClient = new ApiGatewayClient(new ApiGatewayConfig(Constants.TYPE_HTTP,"192.168.56.1",9090));
 		//ISimpleRpc srv = socketClient.getService(ISimpleRpc.class,"simpleRpc", "0.0.1");
 		//System.out.println(srv.hi(new Person()));
 		
@@ -56,7 +56,7 @@ public class TestApigateClient {
 		JMicro.waitForShutdown();
 	}
 	
-	private ApiGatewayClient socketClient = new ApiGatewayClient(new ApiGatewayConfig(Constants.TYPE_HTTP,"124.70.152.7",80));
+	private ApiGatewayClient socketClient = new ApiGatewayClient(new ApiGatewayConfig(Constants.TYPE_SOCKET,"192.168.56.1",9092));
 	
 	@Test
 	public void testHiPerson() {
@@ -86,6 +86,48 @@ public class TestApigateClient {
 		"testrpc", "0.0.1","subscrite", String.class, args, (msg,f,ctx)->{
 			System.out.println("Got server msg:"+msg);
 		});
+		JMicro.waitForShutdown();
+	}
+	
+	@Test
+	public void testLoginLogout() {
+		socketClient.loginJMAsync("test01", "1")
+		.success((ai,cxt)->{
+			System.out.println("Success login"+ai.getActName());
+			socketClient.logoutJMAsync()
+			.then((succ,fail0,cxt0)->{
+				if(fail0 == null) {
+					System.out.println("Success logout: "+succ);
+				}else {
+					System.out.println("Fail logout: "+fail0.toString());
+				}
+			});
+		})
+		.fail((code,msg,cxt)->{
+			System.out.println("Fail login: code"+ code + ", msg: " + msg);
+		});
+		
+		JMicro.waitForShutdown();
+	}
+	
+	@Test
+	public void testPublishString() {
+		socketClient.loginJMAsync("test01", "1")
+		.success((ai,cxt)->{
+			System.out.println("Success login: "+ai.getActName());
+			 socketClient.getPubsubClient()
+			.publishStringJMAsync(null, null, "/jmicro/test/topic01", "Message from java client!")
+			.success((id,cxt0)->{
+				System.out.println("Publish result: "+id);
+			})
+			.fail((code,msg,cxt1)->{
+				System.out.println("Fail pubilish content: code: "+ code + ", msg: " + msg);
+			});
+		})
+		.fail((code,msg,cxt)->{
+			System.out.println("Fail login: code"+ code + ", msg: " + msg);
+		});
+		
 		JMicro.waitForShutdown();
 	}
 	

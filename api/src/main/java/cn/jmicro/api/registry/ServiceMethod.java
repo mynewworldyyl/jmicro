@@ -133,6 +133,12 @@ public final class ServiceMethod {
 	//如果客户端RPC异步调用，此topic值必须是方法全限定名，参考toKey方法实现
 	private String topic = null;
 	
+	//是否需要强制赋予账号权限才能使用
+	private boolean perType = false;
+	
+	//必须登陆才能使用
+	private boolean needLogin = false;
+	
 	public void formPersisItem(ServiceMethod p){
 		this.monitorEnable = p.monitorEnable;
 
@@ -165,6 +171,9 @@ public final class ServiceMethod {
 		this.debugMode = p.debugMode;
 		
 		this.topic = p.topic;
+		
+		this.perType = p.perType;
+		this.needLogin = p.needLogin;
 	}
 	
 	public String toJson(){
@@ -429,6 +438,22 @@ public final class ServiceMethod {
 
 	public void setAsyncable(boolean asyncable) {
 		this.asyncable = asyncable;
+	}
+
+	public boolean isPerType() {
+		return perType;
+	}
+
+	public void setPerType(boolean perType) {
+		this.perType = perType;
+	}
+
+	public boolean isNeedLogin() {
+		return needLogin;
+	}
+
+	public void setNeedLogin(boolean needLogin) {
+		this.needLogin = needLogin;
 	}
 
 

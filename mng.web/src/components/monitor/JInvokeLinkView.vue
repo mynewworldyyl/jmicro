@@ -183,7 +183,7 @@
 
 <script>
 
-    import treeTable from '../treetable/TreeTable.vue'
+    import treeTable from '../treetable/LinkLogTreeTable.vue'
     import JLinkDetailView from './JLinkDetailView.vue'
 
     const cid = 'JInvokeLinkView';

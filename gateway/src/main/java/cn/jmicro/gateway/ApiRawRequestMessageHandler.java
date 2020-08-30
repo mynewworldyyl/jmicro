@@ -32,7 +32,6 @@ import cn.jmicro.api.JMicroContext;
 import cn.jmicro.api.annotation.Cfg;
 import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Inject;
-import cn.jmicro.api.async.IPromise;
 import cn.jmicro.api.async.PromiseUtils;
 import cn.jmicro.api.codec.ICodecFactory;
 import cn.jmicro.api.codec.JDataInput;
@@ -49,8 +48,9 @@ import cn.jmicro.api.objectfactory.AbstractClientServiceProxyHolder;
 import cn.jmicro.api.objectfactory.IObjectFactory;
 import cn.jmicro.api.registry.ServiceItem;
 import cn.jmicro.api.registry.ServiceMethod;
+import cn.jmicro.api.security.AccountManager;
 import cn.jmicro.api.security.ActInfo;
-import cn.jmicro.api.security.IAccountService;
+import cn.jmicro.api.security.PermisionManager;
 import cn.jmicro.codegenerator.AsyncClientProxy;
 import cn.jmicro.common.CommonException;
 import cn.jmicro.common.Constants;
@@ -72,7 +72,10 @@ public class ApiRawRequestMessageHandler implements IMessageHandler{
 	private ComponentIdServer idGenerator;
 	
 	@Inject
-	private IAccountService accountManager;
+	private PermisionManager pm;
+	
+	@Inject
+	private AccountManager accountManager;
 	
 	@Inject
 	private ICodecFactory codecFactory;
@@ -148,6 +151,7 @@ public class ApiRawRequestMessageHandler implements IMessageHandler{
 					resp.setResult(se);
 					resp.setSuccess(false);
 					doLogick = false;
+					result = se;
 				} else {
 					JMicroContext.get().setString(JMicroContext.LOGIN_KEY, lk);
 					JMicroContext.get().setAccount(ai);	
@@ -156,17 +160,22 @@ public class ApiRawRequestMessageHandler implements IMessageHandler{
 		}
 		
 		if(doLogick && MessageServiceImpl.TAG.equals(req.getServiceName())) {
-			if("subscribe".equals(req.getMethod())) {
-				String topic = (String)req.getArgs()[1];
-				Map<String, Object> ctx = (Map<String, Object>)req.getArgs()[2];
-				result = ms.subscribe((ISession)req.getArgs()[0], topic, ctx);
-			} else if("unsubscribe".equals(req.getMethod())){
-				result = ms.unsubscribe((int)req.getArgs()[0]);
+			if(ai != null) {
+				if("subscribe".equals(req.getMethod())) {
+					String topic = (String)req.getArgs()[1];
+					Map<String, Object> ctx = (Map<String, Object>)req.getArgs()[2];
+					result = ms.subscribe((ISession)req.getArgs()[0], topic, ctx);
+				} else if("unsubscribe".equals(req.getMethod())){
+					result = ms.unsubscribe((int)req.getArgs()[0]);
+				} else {
+					logger.error("Method:"+req.getMethod()+" not found!");
+					result = new ServerError(ServerError.SE_SERVICE_NOT_FOUND,"Method:"+req.getMethod()+" not found!");
+					resp.setSuccess(false);
+				}
 			} else {
-				logger.error("Method:"+req.getMethod()+" not found!");
-				result = false;
+				resp.setSuccess(false);
+				result = new ServerError(ServerError.SE_NOT_LOGIN,"Have to login before use pubsub service!");
 			}
-			resp.setResult(result);
 		} else if(doLogick){
 			
 			Object srv = objFactory.getRemoteServie(req.getServiceName(), req.getNamespace(), req.getVersion(),null);
@@ -193,38 +202,42 @@ public class ApiRawRequestMessageHandler implements IMessageHandler{
 							throw new CommonException(errMsg);
 						}
 						
-						if(SF.isLoggable(MC.LOG_DEBUG, msg.getLogLevel())) {
-							SF.eventLog(MC.MT_PLATFORM_LOG,MC.LOG_DEBUG, TAG," got request");
-						}
-						
-						if(!sm.isNeedResponse()) {
-							m.invoke(srv, req.getArgs());
+						ServerError se = pm.permissionCheck(ai,sm);
+						if(se != null){
+							result = se;
+							resp.setSuccess(false);
+						} else  {
 							if(SF.isLoggable(MC.LOG_DEBUG, msg.getLogLevel())) {
-								SF.eventLog(MC.MT_PLATFORM_LOG,MC.LOG_DEBUG, TAG," no need response");
+								SF.eventLog(MC.MT_PLATFORM_LOG,MC.LOG_DEBUG, TAG," got request");
 							}
-							return;
-						} else {
-							
-							//IPromise<?> p = (IPromise<?>)m.invoke(srv, req.getArgs());
-							
-							PromiseUtils.callService(srv, req.getMethod(), null, req.getArgs())
-							.then((r,fail,ctx)->{
-								if(fail == null) {
-									resp.setResult(r);
-									resp.setSuccess(true);
-								} else {
-									ServerError se = new ServerError(fail.getCode(),fail.getMsg());
-									resp.setSuccess(false);
-									resp.setResult(se);
+							if(!sm.isNeedResponse()) {
+								m.invoke(srv, req.getArgs());
+								if(SF.isLoggable(MC.LOG_DEBUG, msg.getLogLevel())) {
+									SF.eventLog(MC.MT_PLATFORM_LOG,MC.LOG_DEBUG, TAG," no need response");
 								}
+								return;
+							} else {
+								//IPromise<?> p = (IPromise<?>)m.invoke(srv, req.getArgs());
 								
-								if(msg.getDownProtocol() == Message.PROTOCOL_JSON) {
-									msg.setPayload(ICodecFactory.encode(codecFactory, resp, msg.getDownProtocol()));
-								} else {
-									msg.setPayload(resp.encode());
-								}
-								session.write(msg);
-							});
+								PromiseUtils.callService(srv, req.getMethod(), null, req.getArgs())
+								.then((r,fail,ctx)->{
+									if(fail == null) {
+										resp.setResult(r);
+										resp.setSuccess(true);
+									} else {
+										ServerError se1 = new ServerError(fail.getCode(),fail.getMsg());
+										resp.setSuccess(false);
+										resp.setResult(se1);
+									}
+									
+									if(msg.getDownProtocol() == Message.PROTOCOL_JSON) {
+										msg.setPayload(ICodecFactory.encode(codecFactory, resp, msg.getDownProtocol()));
+									} else {
+										msg.setPayload(resp.encode());
+									}
+									session.write(msg);
+								});
+							}
 						}
 					} else {
 						String msgStr = "Service["+req.getServiceName()+"] namespace ["+req.getNamespace()+"] is not external!";
@@ -235,14 +248,12 @@ public class ApiRawRequestMessageHandler implements IMessageHandler{
 					logger.error("",e);
 					result = new ServerError(0,e.getMessage());
 					resp.setSuccess(false);
-					resp.setResult(result);
 					SF.eventLog(MC.MT_SERVER_ERROR,MC.LOG_ERROR, TAG,"", e);
 				}
 			} else {
 				resp.setSuccess(false);
 				String msgStr = "Service["+req.getServiceName()+"] namespace ["+req.getNamespace()+"] instance not found!";
 				result = new ServerError(0,msgStr);
-				resp.setResult(result);
 			}
 		}
 		
@@ -250,8 +261,8 @@ public class ApiRawRequestMessageHandler implements IMessageHandler{
 			SF.eventLog(MC.MT_PLATFORM_LOG,MC.LOG_DEBUG, TAG,"one response");
 		}
 		
-		if(result != null) {
-			
+		if(result != null ) {
+			resp.setResult(result);
 			if(msg.getDownProtocol() == Message.PROTOCOL_JSON) {
 				msg.setPayload(ICodecFactory.encode(codecFactory, resp, msg.getDownProtocol()));
 			} else {

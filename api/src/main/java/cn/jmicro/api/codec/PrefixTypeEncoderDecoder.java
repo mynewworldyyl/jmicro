@@ -24,8 +24,6 @@ import org.slf4j.LoggerFactory;
 
 import cn.jmicro.api.annotation.Cfg;
 import cn.jmicro.api.annotation.Component;
-import cn.jmicro.api.annotation.Inject;
-import cn.jmicro.api.classloader.RpcClassLoader;
 import cn.jmicro.api.codec.typecoder.TypeCoder;
 import cn.jmicro.common.CommonException;
 
@@ -34,7 +32,7 @@ import cn.jmicro.common.CommonException;
  * @author Yulei Ye
  * @date 2018年11月8日 上午11:43:13
  */
-@Component(value="prefixTypeDecoder",lazy=false,level=2000)
+@Component(value="prefixTypeDecoder",lazy=false,level=3)
 public class PrefixTypeEncoderDecoder{
 	
 	private static final Logger logger = LoggerFactory.getLogger(PrefixTypeEncoderDecoder.class);

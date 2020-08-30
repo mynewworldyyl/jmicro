@@ -169,18 +169,11 @@
             },
         },
 
-        editorRemove(it) {
-            if(this.item.id != it.id) {
-                return;
-            }
-            window.jm.vue.$off('tabItemRemove',this.editorRemove);
-        },
-
         mounted () {
             let self = this;
-            window.jm.mng.act.addListener(cid,self.refresh);
+            window.jm.rpc.addListener(cid,self.refresh);
             this.refresh();
-            window.jm.vue.$on('tabItemRemove',self.editorRemove);
+            //window.jm.vue.$on('tabItemRemove',self.editorRemove);
             window.jm.vue.$emit("editorOpen",
                 {"editorId":cid,
                     "menus":[{name:"ADD",label:"Add",icon:"ios-cog",call:self.addDeploy},

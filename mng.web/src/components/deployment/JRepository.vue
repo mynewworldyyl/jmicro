@@ -305,7 +305,7 @@
         },
 
         mounted () {
-            window.jm.mng.act.addListener(cid,this.refresh);
+            window.jm.rpc.addListener(cid,this.refresh);
             this.refresh();
             let self = this;
             window.jm.vue.$emit("editorOpen",
