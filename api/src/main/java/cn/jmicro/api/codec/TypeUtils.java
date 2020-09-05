@@ -24,6 +24,7 @@ import java.lang.reflect.Type;
 import java.nio.ByteBuffer;
 import java.util.Collection;
 import java.util.Map;
+import java.util.Set;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -67,6 +68,33 @@ public class TypeUtils {
 		}
 		return type;
 	}
+	
+	public static void finalParameterType(Type type,Set<Class<?>> clses) {
+		if (type == null) {
+			return;
+		}
+		
+		if (type instanceof ParameterizedType) {
+			ParameterizedType ft = (ParameterizedType) type;
+			Type[] types = ft.getActualTypeArguments();
+			if(types == null || types.length == 0) {
+				return;
+			}
+			
+			for(Type t : types) {
+				finalParameterType(t,clses);
+			}
+		}else if(type instanceof Class<?>) {
+			Class<?> c = (Class<?>) type;
+			clses.add(c);
+			if(c.isArray()) {
+				clses.add(c.getComponentType());
+			}
+			
+			finalParameterType(c.getGenericSuperclass(),clses);
+		}
+	}
+	
 	
 	public static Object getFieldValue(Object obj,Field f) {
 		if(obj == null) {

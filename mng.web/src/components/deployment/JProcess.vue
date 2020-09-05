@@ -16,7 +16,7 @@
                 <td>{{a.pid}}</td><td>{{ a.startTime0 }}</td><td>{{ a.continue }}</td><td>{{a.host}}</td>
                 <td>{{a.agentId}}</td><!--<td>{{a.agentProcessId}}</td>--><td>{{a.depId}}</td>
                 <td>&nbsp;
-                   <a v-if="adminPer" @click="stopProcess(a.id)"> STOP </a>
+                   <a v-if="isLogin" @click="stopProcess(a.id)"> STOP </a>
                 </td>
             </tr>
         </table>
@@ -25,7 +25,7 @@
 
 <script>
 
-    const cid = 'process';
+    const cid = 'JProcess';
 
     export default {
         name: 'JProcess',
@@ -33,14 +33,18 @@
             return {
                 showAll:true,
                 processList:[],
-                adminPer : false,
+                isLogin : false,
             }
         },
         methods: {
 
             refresh(){
                 let self = this;
-                this.adminPer = window.jm.mng.comm.adminPer;
+                this.isLogin = window.jm.rpc.isLogin();
+                if(!this.isLogin) {
+                    this.processList = [];
+                    return;
+                }
                 window.jm.mng.choy.getProcessInstanceList(self.showAll).then((resp)=>{
                     if(resp.code != 0 || !resp.data || resp.data.length == 0 ) {
                         self.$Message.success(resp.msg || "No data to show");
@@ -79,11 +83,10 @@
 
         mounted () {
             //has admin permission, only control the show of the button
-            window.jm.rpc.addListener('JProcess',this.refresh);
-            this.refresh();
+            window.jm.rpc.addActListener(cid,this.refresh);
             let self = this;
             window.jm.vue.$emit("editorOpen",
-                {"editorId":cid,
+                {"editorId":'process',
                     "menus":[{name:"ShowAll",label:"Show All",icon:"ios-cog",call: ()=>{
                                 self.showAll = !self.showAll;
                                 self.refresh();
@@ -91,7 +94,12 @@
                         },
                         {name:"REFRESH",label:"Refresh",icon:"ios-cog",call:self.refresh}]
                 });
+            let ec = function() {
+                window.jm.rpc.removeActListener(cid);
+                window.jm.vue.$off('editorClosed',ec);
+            }
 
+            window.jm.vue.$on('editorClosed',ec);
         },
     }
 </script>

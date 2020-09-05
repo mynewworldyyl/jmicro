@@ -28,11 +28,14 @@
                         <!-- Shell -->
                         <JShell v-else-if="item.group == 'shell'" :item="item"></JShell>
                         <JTesting v-else-if="item.group == 'testing'" :item="item"></JTesting>
-                        <JTestingPubsub v-else-if="item.group == 'testingPubsub'" :item="item"></JTestingPubsub>
                         <JAbout v-else-if="item.group == 'about'" :item="item"></JAbout>
                         <JLog v-else-if="item.group == 'fileLog'" :item="item"></JLog>
 
+                        <JTestingPubsub v-else-if="item.group == 'testingPubsub'" :item="item"></JTestingPubsub>
+                        <JPubsubItemView v-else-if="item.group == 'pubsubItem'" :item="item"></JPubsubItemView>
+
                         <JAccountEditor v-else-if="item.group == 'account'" :item="item"></JAccountEditor>
+                        <JUserProfileEditor v-else-if="item.group == 'userProfile'" :item="item"></JUserProfileEditor>
 
                         <JRepository v-else-if="item.group == 'repository'" :item="item"></JRepository>
                         <JHost v-else-if="item.group == 'host'" :item="item"></JHost>
@@ -115,14 +118,18 @@
             JShell : () => import('./shell/JShell.vue'),
             JAbout : () => import('./shell/JAbout.vue'),
             JTesting : () => import('./shell/JTesting.vue'),
-            JTestingPubsub : () => import('./shell/JTestingPubsub.vue'),
+
             JAgent : () => import('./deployment/JAgent.vue'),
             JProcess : () => import('./deployment/JProcess.vue'),
             JLog : () => import('./log/JLog.vue'),
 
             JAccountEditor:()=> import('./security/JAccountEditor.vue'),
+            JUserProfileEditor:()=> import('./security/JUserProfileEditor.vue'),
 
             JTypeConfig : () => import('./monitor/JTypeConfig.vue'),
+
+            JTestingPubsub : () => import('./pubsub/JTestingPubsub.vue'),
+            JPubsubItemView : () => import('./pubsub/JPubsubItemView.vue'),
 
             JMonitorTypeKeyEditor : () => import('./monitor/JMonitorTypeKeyEditor.vue'),
             JMonitorTypeServiceMethodEditor : () => import('./monitor/JMonitorTypeServiceMethodEditor.vue'),
@@ -149,7 +156,10 @@
             let self = this;
             this.mountServiceSelect('serviceNodeSelect');
             this.mountStatisSelect();
-            this.mountConfigSelect();
+
+            this.mountConfigSelect('configNodeSelect','config');
+            this.mountConfigSelect('userProfileSelect','userProfile');
+
             this.mountMonitorsSelect();
             this.mountRouterSelect();
 
@@ -363,10 +373,10 @@
                 });
             },
 
-            mountConfigSelect(){
+            mountConfigSelect(evtName,groupName){
                 let self = this;
                 //console.log(window.jm.utils.isBrowser('ie'));
-                window.jm.vue.$on('configNodeSelect',function(nodes) {
+                window.jm.vue.$on(evtName,function(nodes) {
                     if(!nodes || nodes.length ==0) {
                         return;
                     }
@@ -386,7 +396,7 @@
                     let idx = null;
 
                     for(let i = 0; i < self.items.length; i++) {
-                        if(node.group == 'config' && self.items[i].group == node.group) {
+                        if(node.group == groupName && self.items[i].group == node.group) {
                             idx = i;
                             break;
                         }
@@ -474,7 +484,7 @@
                         this.handleTabActive(this.items[i+1].id);
                     }
 
-                    window.jm.rpc.removeListener(it.id);
+                    window.jm.rpc.removeActListener(it.id);
                     this.$emit('tabItemRemove',it.id);
                     this.$emit('editorClosed',it.id);
 

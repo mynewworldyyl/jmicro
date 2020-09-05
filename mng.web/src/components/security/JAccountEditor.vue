@@ -1,7 +1,7 @@
 <template>
     <div class="JAccountEditor" style="position:relative;height:auto">
 
-        <div v-if="adminPer" style="position:relative;height:auto;margin-top:10px;">
+        <div v-if="isLogin" style="position:relative;height:auto;margin-top:10px;">
             <table class="configItemTalbe" width="99%">
                 <thead><tr><td>Act Name</td><td>Client ID</td><td>Regist Time</td><td>Enable</td><td>OPERATION</td></tr>
                 </thead>
@@ -9,27 +9,27 @@
                     <td>{{c.actName}}</td><td>{{c.clientId}}</td><td>{{c.registTime | formatDate}}</td>
                     <td>{{c.enable}}</td>
                     <td>
-                        &nbsp;<a v-if="adminPer" @click="openActInfoDrawer(c)">Permissions</a> &nbsp;&nbsp;&nbsp;&nbsp;
-                          <a v-if="adminPer" @click="changeAccountStatus(c)">ChangeStatus</a>
+                        &nbsp;<a v-if="isLogin" @click="openActInfoDrawer(c)">Permissions</a> &nbsp;&nbsp;&nbsp;&nbsp;
+                          <a v-if="isLogin" @click="changeAccountStatus(c)">ChangeStatus</a>
                     </td>
                 </tr>
             </table>
         </div>
 
-        <div v-if="adminPer" style="position:relative;text-align:center;">
+        <div v-if="isLogin" style="position:relative;text-align:center;">
             <Page ref="pager" :total="totalNum" :page-size="pageSize" :current="curPage"
                   show-elevator show-sizer show-total @on-change="curPageChange"
                   @on-page-size-change="pageSizeChange" :page-size-opts="[10, 30, 60,100]"></Page>
         </div>
 
-        <div v-if="!adminPer">
+        <div v-if="!isLogin">
             No permission!
         </div>
 
         <Drawer  v-model="actInfoDrawer.drawerStatus" :closable="false" placement="left" :transfer="true"
                  :draggable="true" :scrollable="true" width="80">
             <div>
-                <a v-if="adminPer" @click="addPermissions()">Config Permissions</a>
+                <a v-if="isLogin" @click="addPermissions()">Config Permissions</a>
             </div>
 
             <div style="position:relative;height:auto;margin-top:10px;">
@@ -41,7 +41,7 @@
         <Drawer ref="permissionListDrawer"  v-model="permissionListDrawer.drawerStatus" :closable="false" placement="right" :transfer="true"
                  :draggable="true" :scrollable="true" width="50">
             <div>
-                <a v-if="adminPer" @click="doAddPermission()">Confirm</a>
+                <a v-if="isLogin" @click="doAddPermission()">Confirm</a>
             </div>
             <div>
                 <Tree ref="plTree" v-if="curActParsedPermissions" :data="curActParsedPermissions" show-checkbox multiple class="permissionTree"></Tree>
@@ -64,7 +64,7 @@
         },
         data() {
             return {
-                adminPer:false,
+                isLogin:false,
                 actList: [],
                 queryParams:{},
                 totalNum:0,
@@ -340,8 +340,8 @@
 
             refresh() {
                 let self = this;
-                this.adminPer = window.jm.mng.comm.adminPer;
-                if(this.adminPer) {
+                this.isLogin = window.jm.rpc.isLogin();
+                if(this.isLogin) {
                     let params = this.getQueryConditions();
                     window.jm.mng.act.getAccountList(params,this.pageSize,this.curPage-1).then((resp)=>{
                         if(resp.code != 0) {
@@ -353,6 +353,8 @@
                     }).catch((err)=>{
                         window.console.log(err);
                     });
+                }else {
+                    self.actList = [];
                 }
             },
 
@@ -362,16 +364,23 @@
         },
 
         mounted () {
-            window.jm.rpc.addListener(cid,this.refresh);
+            window.jm.rpc.addActListener(cid,this.refresh);
             this.refresh();
             let self = this;
             window.jm.vue.$emit("editorOpen",
                 {"editorId":cid, "menus":[{name:"REFRESH",label:"Refresh",icon:"ios-cog",call:self.refresh}]
                 });
+
+            let ec = function() {
+                window.jm.rpc.removeActListener(cid);
+                window.jm.vue.$off('editorClosed',ec);
+            }
+
+            window.jm.vue.$on('editorClosed',ec);
         },
 
         beforeDestroy() {
-            window.jm.rpc.removeListener(cid);
+            window.jm.rpc.removeActListener(cid);
         },
 
         filters: {

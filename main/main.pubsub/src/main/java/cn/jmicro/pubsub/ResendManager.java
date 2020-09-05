@@ -16,7 +16,7 @@ import cn.jmicro.api.executor.ExecutorFactory;
 import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.monitor.SF;
 import cn.jmicro.api.objectfactory.IObjectFactory;
-import cn.jmicro.api.pubsub.PSData;
+import cn.jmicro.api.persist.IObjectStorage;
 import cn.jmicro.api.timer.TimerTicker;
 import cn.jmicro.common.util.JsonUtils;
 
@@ -45,7 +45,6 @@ class ResendManager {
 	private SubcriberManager subManager;
 	
 	private ExecutorService executor = null;
-	
 	
 	ResendManager(IObjectFactory of,boolean openDebug,int maxFailItemCount,long doResendInterval) {
 		this.openDebug = openDebug;
@@ -150,9 +149,9 @@ class ResendManager {
 		
 		private SendItem item = null;
 		
-		private Set<ISubCallback> callbacks = null;
+		private Set<ISubscriberCallback> callbacks = null;
 		
-		private ISubCallback callback = null;
+		private ISubscriberCallback callback = null;
 		
 		public Worker(SendItem item) {
 			this.item = item;
@@ -183,7 +182,7 @@ class ResendManager {
 						if(this.callbacks.isEmpty()) {
 							 queueItem(item);
 						} else {
-							for(ISubCallback c : this.callbacks) {
+							for(ISubscriberCallback c : this.callbacks) {
 								 c.onMessage(item.items)
 								 .then((psds,fail,ctx)->{
 									 if(psds != null && psds.length > 0) {

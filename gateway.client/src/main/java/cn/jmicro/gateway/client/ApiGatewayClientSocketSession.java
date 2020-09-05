@@ -53,6 +53,7 @@ public class ApiGatewayClientSocketSession extends AbstractSession implements IC
 	public void write(Message msg) {
 		//String json = JsonUtils.getIns().toJson(msg);
 		ByteBuffer bb = msg.encode();
+		this.writeSum.addAndGet(bb.limit());
 		ByteBuf bbf = Unpooled.copiedBuffer(bb);
 		ctx.channel().writeAndFlush(bbf);
 	}

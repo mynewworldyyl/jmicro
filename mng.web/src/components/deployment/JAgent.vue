@@ -18,9 +18,9 @@
                 <td>{{ a.agentInfo.host }}</td>
                 <td>{{JSON.stringify(a.agentInfo.ss)}}</td>
                 <td>
-                    <a v-if="adminPer && ( !a.intIds || a.intIds.length == 0)" @click="privateAgent(a.agentInfo.id)">ChangeStatu</a>
-                    &nbsp;&nbsp;&nbsp;<a v-if="adminPer" @click="clearResourceCache(a.agentInfo.id)">ClearRes</a>
-                    &nbsp; &nbsp; &nbsp;<a v-if="adminPer" @click="stopAllInstance(a.agentInfo.id)">StopAllInstance</a>
+                    <a v-if="isLogin && ( !a.intIds || a.intIds.length == 0)" @click="privateAgent(a.agentInfo.id)">ChangeStatu</a>
+                    &nbsp;&nbsp;&nbsp;<a v-if="isLogin" @click="clearResourceCache(a.agentInfo.id)">ClearRes</a>
+                    &nbsp; &nbsp; &nbsp;<a v-if="isLogin" @click="stopAllInstance(a.agentInfo.id)">StopAllInstance</a>
                 </td>
             </tr>
         </table>
@@ -37,14 +37,18 @@
             return {
                 agentList:[],
                 showAll:false,
-                adminPer:false,
+                isLogin:false,
             }
         },
         methods: {
 
             refresh(){
                 let self = this;
-                this.adminPer = window.jm.mng.comm.adminPer;
+                this.isLogin = window.jm.rpc.isLogin();
+                if(this.isLogin) {
+                    this.agentList =[];
+                    return;
+                }
                 window.jm.mng.choy.getAgentList(this.showAll).then((resp)=>{
                     if(resp.code != 0 && !resp.data || resp.data.length == 0 ) {
                         self.$Message.success(resp.msg || "no data");
@@ -110,8 +114,7 @@
         },
 
         mounted () {
-            window.jm.rpc.addListener(cid,this.refresh);
-            this.refresh();
+            window.jm.rpc.addActListener(cid,this.refresh);
             let self = this;
             window.jm.vue.$emit("editorOpen",
                 {"editorId":cid,
@@ -119,6 +122,14 @@
                         self.showAll = !self.showAll; self.refresh(); }},
                         {name:"REFRESH",label:"Refresh",icon:"ios-cog",call:self.refresh}]
             });
+
+            let ec = function() {
+                window.jm.rpc.removeActListener(cid);
+                window.jm.vue.$off('editorClosed',ec);
+            }
+
+            window.jm.vue.$on('editorClosed',ec);
+
         },
     }
 </script>

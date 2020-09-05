@@ -139,6 +139,8 @@ public final class ServiceMethod {
 	//必须登陆才能使用
 	private boolean needLogin = false;
 	
+	private int maxPacketSize = 0;
+	
 	public void formPersisItem(ServiceMethod p){
 		this.monitorEnable = p.monitorEnable;
 
@@ -174,6 +176,7 @@ public final class ServiceMethod {
 		
 		this.perType = p.perType;
 		this.needLogin = p.needLogin;
+		this.maxPacketSize = p.maxPacketSize;
 	}
 	
 	public String toJson(){
@@ -454,6 +457,14 @@ public final class ServiceMethod {
 
 	public void setNeedLogin(boolean needLogin) {
 		this.needLogin = needLogin;
+	}
+
+	public int getMaxPacketSize() {
+		return maxPacketSize;
+	}
+
+	public void setMaxPacketSize(int maxPacketSize) {
+		this.maxPacketSize = maxPacketSize;
 	}
 
 

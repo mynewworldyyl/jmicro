@@ -55,7 +55,10 @@
 
             refresh(){
                let self = this;
-                this.adminPer = window.jm.mng.comm.adminPer;
+                this.isLogin = window.jm.rpc.isLogin();
+                if(!this.isLogin) {
+                    return;
+                }
                 window.jm.mng.threadPoolSrv.getInfo(this.item.id,this.item.type).then((resp)=>{
                     if(resp.code != 0 && resp.data.length > 0) {
                         self.$Message.success(resp.msg);
@@ -87,15 +90,22 @@
         },
 
         mounted () {
-            //let self = this;
-            window.jm.mng.act.addListener(this.item.id,()=>{
-                //this.refresh();
+            let self = this;
+            window.jm.mng.act.addListener(cid,()=>{
+                self.refresh();
             });
-            //this.refresh();
+
+            let ec = function() {
+                window.jm.rpc.removeActListener(cid);
+                window.jm.vue.$off('editorClosed',ec);
+            }
+
+            window.jm.vue.$on('editorClosed',ec);
+
         },
 
         beforeDestroy() {
-            window.jm.mng.act.removeListener(this.item.id);
+            window.jm.mng.act.removeActListener(cid);
         },
 
     }

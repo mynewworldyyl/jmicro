@@ -16,6 +16,7 @@ import cn.jmicro.api.raft.IDataOperator;
 import cn.jmicro.api.security.genclient.IAccountService$JMAsyncClient;
 import cn.jmicro.api.service.IServiceAsyncResponse;
 import cn.jmicro.common.Constants;
+import cn.jmicro.common.Md5Utils;
 import cn.jmicro.common.util.JsonUtils;
 import cn.jmicro.common.util.StringUtils;
 
@@ -57,7 +58,7 @@ public class AccountManager {
 	public ActInfo login(String actName, String pwd) {
 		if(as == null || !as.isReady()) {
 			ActInfo ai = getAccountFromZK(actName);
-			if(ai != null && ai.getPwd().equals(pwd)) {
+			if(ai != null && (ai.getPwd().equals(pwd) || Md5Utils.getMd5(pwd).equals(ai.getPwd()))) {
 				String akey = JMicroContext.CACHE_LOGIN_KEY + ai.getActName();
 				ActInfo la = cache.get(akey);
 				if(la == null) {
@@ -84,7 +85,7 @@ public class AccountManager {
 			}
 			
 			if(cxt.isAsync() && cb != null) {
-				as.loginJMAsync(null, actName, pwd)
+				as.loginJMAsync(actName, pwd)
 				.then((ai,fail,cxt0)->{
 					if(fail == null) {
 						cb.result(ai);
@@ -128,5 +129,5 @@ public class AccountManager {
 		}
 		return null;
 	}
-
+	
 }

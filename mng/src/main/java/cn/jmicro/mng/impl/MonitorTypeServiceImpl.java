@@ -12,6 +12,7 @@ import cn.jmicro.api.Resp;
 import cn.jmicro.api.annotation.Cfg;
 import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Inject;
+import cn.jmicro.api.annotation.SMethod;
 import cn.jmicro.api.annotation.Service;
 import cn.jmicro.api.config.Config;
 import cn.jmicro.api.mng.ICommonManager;
@@ -20,6 +21,7 @@ import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.monitor.MCConfig;
 import cn.jmicro.api.monitor.MCTypesManager;
 import cn.jmicro.api.raft.IDataOperator;
+import cn.jmicro.api.security.PermissionManager;
 import cn.jmicro.common.Constants;
 import cn.jmicro.common.util.StringUtils;
 
@@ -53,23 +55,31 @@ public class MonitorTypeServiceImpl implements IMonitorTypeService {
 	};
 	
 	@Override
+	@SMethod(perType=false,needLogin=true,maxSpeed=5,maxPacketSize=512)
 	public Resp<List<MCConfig>> getAllConfigs() {
 		Resp<List<MCConfig>> resp = new Resp<List<MCConfig>>();
-		List<MCConfig> l = new ArrayList<>();
-		Set<MCConfig> rst = mtm.getAll();
-		if(rst != null) {
-			l.addAll(rst);
-			l.sort(com);
+		if(PermissionManager.isCurAdmin()) {
+			List<MCConfig> l = new ArrayList<>();
+			Set<MCConfig> rst = mtm.getAll();
+			if(rst != null) {
+				l.addAll(rst);
+				l.sort(com);
+			}
+			resp.setCode(Resp.CODE_SUCCESS);
+			resp.setData(l);
+		}else {
+			resp.setCode(1);
+			resp.setKey("NoPermission");
+			resp.setMsg("no permission");
 		}
-		resp.setCode(Resp.CODE_SUCCESS);
-		resp.setData(l);
 		return resp;
 	}
 
 	@Override
+	@SMethod(perType=false,needLogin=true,maxSpeed=5,maxPacketSize=512)
 	public Resp<Void> update(MCConfig mc) {
 		Resp<Void> resp = new Resp<Void>();
-		if(!commonManager.hasPermission(this.adminPermissionLevel)) {
+		if(!PermissionManager.isCurAdmin()) {
 			resp.setCode(Resp.CODE_NO_PERMISSION);
 			resp.setMsg("No permission!");
 			return resp;
@@ -85,9 +95,10 @@ public class MonitorTypeServiceImpl implements IMonitorTypeService {
 	}
 
 	@Override
+	@SMethod(perType=false,needLogin=true,maxSpeed=5,maxPacketSize=256)
 	public Resp<Void> delete(short type) {
 		Resp<Void> resp = new Resp<Void>();
-		if(!commonManager.hasPermission(this.adminPermissionLevel)) {
+		if(!PermissionManager.isCurAdmin()) {
 			resp.setCode(Resp.CODE_NO_PERMISSION);
 			resp.setMsg("No permission!");
 			return resp;
@@ -107,9 +118,10 @@ public class MonitorTypeServiceImpl implements IMonitorTypeService {
 	}
 
 	@Override
+	@SMethod(perType=false,needLogin=true,maxSpeed=5,maxPacketSize=256)
 	public Resp<Void> add(MCConfig mc) {
 		Resp<Void> resp = new Resp<Void>();
-		if(!commonManager.hasPermission(this.adminPermissionLevel)) {
+		if(!PermissionManager.isCurAdmin()) {
 			resp.setCode(Resp.CODE_NO_PERMISSION);
 			resp.setMsg("No permission!");
 			return resp;
@@ -135,6 +147,7 @@ public class MonitorTypeServiceImpl implements IMonitorTypeService {
 	}
 	
 	@Override
+	@SMethod(perType=false,needLogin=true,maxSpeed=5,maxPacketSize=256)
 	public Resp<Map<String,String>> getMonitorKeyList() {
 		Resp<Map<String,String>> resp = new Resp<>();
 		Map<String,String> key2val = new HashMap<>();
@@ -152,6 +165,7 @@ public class MonitorTypeServiceImpl implements IMonitorTypeService {
 
 
 	@Override
+	@SMethod(perType=false,needLogin=true,maxSpeed=5,maxPacketSize=256)
 	public Resp<List<Short>> getConfigByMonitorKey(String key) {
 		List<Short> l = getTypeByKey(Config.MonitorTypesDir + "/" + key);
 		Resp<List<Short>> resp = new Resp<List<Short>>();
@@ -254,6 +268,7 @@ public class MonitorTypeServiceImpl implements IMonitorTypeService {
 	
 	
 	@Override
+	@SMethod(perType=false,needLogin=true,maxSpeed=5,maxPacketSize=256)
 	public Resp<Void> updateMonitorTypes(String key, Short[] adds, Short[] dels) {
 		Resp<Void> resp = new Resp<Void>();
 		if(!commonManager.hasPermission(this.adminPermissionLevel)) {
@@ -301,6 +316,7 @@ public class MonitorTypeServiceImpl implements IMonitorTypeService {
 	}
 
 	@Override
+	@SMethod(perType=false,needLogin=true,maxSpeed=5,maxPacketSize=256)
 	public Resp<List<Short>> getConfigByServiceMethodKey(String key) {
 		if(key.contains("/")) {
 			key = key.replaceAll("/", Constants.PATH_EXCAPE);
@@ -313,10 +329,11 @@ public class MonitorTypeServiceImpl implements IMonitorTypeService {
 	}
 
 	@Override
+	@SMethod(perType=false,needLogin=true,maxSpeed=5,maxPacketSize=256)
 	public Resp<Void> updateServiceMethodMonitorTypes(String key, Short[] adds, Short[] dels) {
 
 		Resp<Void> resp = new Resp<Void>();
-		if(!commonManager.hasPermission(this.adminPermissionLevel)) {
+		if(!PermissionManager.isCurAdmin()) {
 			resp.setCode(Resp.CODE_NO_PERMISSION);
 			resp.setMsg("No permission!");
 			return resp;
@@ -352,6 +369,7 @@ public class MonitorTypeServiceImpl implements IMonitorTypeService {
 	}
 
 	@Override
+	@SMethod(perType=false,needLogin=true,maxSpeed=5,maxPacketSize=256)
 	public Resp<List<MCConfig>> getAllConfigsByGroup(String[] groups) {
 		Resp<List<MCConfig>> resp = new Resp<List<MCConfig>>();
 		if(groups == null || groups.length == 0) {
@@ -395,6 +413,7 @@ public class MonitorTypeServiceImpl implements IMonitorTypeService {
 	}
 	
 	@Override
+	@SMethod(perType=false,needLogin=true,maxSpeed=5,maxPacketSize=256)
 	public Resp<List<String>> getNamedList() {
 		Set<String> ls = op.getChildren(Config.NamedTypesDir,false);
 		Resp<List<String>> resp = new Resp<>();
@@ -406,6 +425,7 @@ public class MonitorTypeServiceImpl implements IMonitorTypeService {
 
 	
 	@Override
+	@SMethod(perType=false,needLogin=true,maxSpeed=5,maxPacketSize=256)
 	public Resp<List<Short>> getTypesByNamed(String name) {
 		if(name.contains("/")) {
 			name = name.replaceAll("/", Constants.PATH_EXCAPE);
@@ -418,10 +438,11 @@ public class MonitorTypeServiceImpl implements IMonitorTypeService {
 	}
 
 	@Override
+	@SMethod(perType=false,needLogin=true,maxSpeed=5,maxPacketSize=256)
 	public Resp<Void> updateNamedTypes(String name, Short[] adds, Short[] dels) {
 
 		Resp<Void> resp = new Resp<Void>();
-		if(!commonManager.hasPermission(this.adminPermissionLevel)) {
+		if(!PermissionManager.isCurAdmin()) {
 			resp.setCode(Resp.CODE_NO_PERMISSION);
 			resp.setMsg("No permission!");
 			return resp;
@@ -456,13 +477,20 @@ public class MonitorTypeServiceImpl implements IMonitorTypeService {
 	}
 	
 	@Override
+	@SMethod(perType=false,needLogin=true,maxSpeed=5,maxPacketSize=256)
 	public Resp<Void> addNamedTypes(String name) {
+		 Resp<Void> resp = new Resp<>();
+		if(!PermissionManager.isCurAdmin()) {
+			resp.setCode(Resp.CODE_NO_PERMISSION);
+			resp.setMsg("No permission!");
+			return resp;
+		}
+		
 		 String key0 = name;
 		 if(name.contains("/")) {
 			 key0 = name.replaceAll("/", Constants.PATH_EXCAPE);
 		 }
 		
-		 Resp<Void> resp = new Resp<>();
 		 resp.setCode(Resp.CODE_SUCCESS);
 		 
 		 String p = Config.NamedTypesDir + "/" + key0;

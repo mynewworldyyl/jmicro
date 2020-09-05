@@ -25,7 +25,7 @@ import cn.jmicro.api.registry.ServiceMethod;
  * @author Yulei Ye
  * @date 2018年12月22日 下午11:10:15
  */
-public interface ISubCallback {
+public interface ISubscriberCallback {
 
 	IPromise<PSData[]>  onMessage(PSData[] item);
 	

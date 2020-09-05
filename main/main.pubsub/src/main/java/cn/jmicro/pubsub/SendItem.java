@@ -10,7 +10,7 @@ public class SendItem {
 
 	transient public static final int TYPY_RESEND = 1;
 	
-	transient public ISubCallback cb;
+	transient public ISubscriberCallback cb;
 	public PSData[] items;
 	public int retryCnt=0;
 	
@@ -22,7 +22,7 @@ public class SendItem {
 	
 	public SendItem() {}
 	
-	public SendItem(int type,ISubCallback cb,PSData[] items,int retryCnt) {
+	public SendItem(int type,ISubscriberCallback cb,PSData[] items,int retryCnt) {
 		if(items == null || items.length == 0 || items[0] == null) {
 			throw new CommonException("SendItem items PSData cannot be NULL");
 		}

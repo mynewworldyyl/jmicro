@@ -2,9 +2,11 @@ package cn.jmicro.api.pubsub;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -25,11 +27,14 @@ import cn.jmicro.api.idgenerator.ComponentIdServer;
 import cn.jmicro.api.internal.pubsub.genclient.IInternalSubRpc$JMAsyncClient;
 import cn.jmicro.api.net.Message;
 import cn.jmicro.api.objectfactory.ProxyObject;
+import cn.jmicro.api.persist.IObjectStorage;
+import cn.jmicro.api.profile.ProfileManager;
 import cn.jmicro.api.raft.IDataOperator;
 import cn.jmicro.api.security.ActInfo;
 import cn.jmicro.api.service.ServiceInvokeManager;
 import cn.jmicro.common.Constants;
 import cn.jmicro.common.util.JsonUtils;
+import cn.jmicro.common.util.StringUtils;
 
 /**
  * 
@@ -39,16 +44,20 @@ import cn.jmicro.common.util.JsonUtils;
 @Component(value="pubSubManager")
 public class PubSubManager {
 	
-	//生产者成功将消息放入消息队列,但并不意味着消息被消费者成功消费
-	public static final int PUB_OK = 0;
-	//无消息服务可用,需要启动消息服务
-	public static final int PUB_SERVER_NOT_AVAILABALE = -1;
-	//消息队列已经满了,客户端可以重发,或等待一会再重发
-	public static final int PUB_SERVER_DISCARD = -2;
-	//消息服务线程队列已满,客户端可以重发,或等待一会再重发,可以考虑增加消息服务线程池大小,或增加消息服务
-	public static final int PUB_SERVER_BUSUY = -3;
+	public static final String PROFILE_PUBSUB = "pubsub";
 	
-	public static final int PUB_TOPIC_INVALID= -4;
+	public static final String TABLE_PUBSUB_ITEMS = "t_pubsub_items";
+	
+	//生产者成功将消息放入消息队列,但并不意味着消息被消费者成功消费
+	public static final int PUB_OK = PSData.PUB_OK;
+	//无消息服务可用,需要启动消息服务
+	public static final int PUB_SERVER_NOT_AVAILABALE = PSData.PUB_SERVER_NOT_AVAILABALE;
+	//消息队列已经满了,客户端可以重发,或等待一会再重发
+	public static final int PUB_SERVER_DISCARD = PSData.PUB_SERVER_DISCARD;
+	//消息服务线程队列已满,客户端可以重发,或等待一会再重发,可以考虑增加消息服务线程池大小,或增加消息服务
+	public static final int PUB_SERVER_BUSUY = PSData.PUB_SERVER_BUSUY;
+	
+	public static final int PUB_TOPIC_INVALID= PSData.PUB_TOPIC_INVALID;
 
 	private final static Logger logger = LoggerFactory.getLogger(PubSubManager.class);
 	
@@ -87,6 +96,12 @@ public class PubSubManager {
 	@Inject
 	private ExecutorFactory ef;
 	
+	@Inject
+	private ProfileManager pm;
+	
+	@Inject(required=false)
+	private IObjectStorage objStorage;
+	
 	private Map<String,List<PSData>> topicSubmitItems = new HashMap<>();
 	
 	private Map<String,Long> topicLastSubmitTime = new HashMap<>();
@@ -111,8 +126,6 @@ public class PubSubManager {
 		return defaultServer.hasTopic(topic);
 	}
 	
-	
-	
 	public boolean isPubsubEnable(int itemNum) {
 		if(itemNum == 0) {
 			return this.defaultServer != null;
@@ -122,7 +135,7 @@ public class PubSubManager {
 		}
 	}
 	
-	public int publish(String topic,byte flag,Object[] args) {
+	public int publish(String topic,Object[] args,byte flag, Map<String, Object> itemContext) {
 
 		if(!this.isPubsubEnable(1)) {
 			return PUB_SERVER_NOT_AVAILABALE;
@@ -131,13 +144,13 @@ public class PubSubManager {
 		PSData item = new PSData();
 		item.setTopic(topic);
 		item.setData(args);
-		item.setContext(null);
+		item.setContext(itemContext);
 		item.setFlag(flag);
 		return publish(item);
 	}
 	
 	
-	public int publish(Map<String,Object> context, String topic, String content,byte flag) {
+	public int publish(String topic, String content,byte flag,Map<String,Object> context) {
 		if(!this.isPubsubEnable(1)) {
 			return PUB_SERVER_NOT_AVAILABALE;
 		}
@@ -151,7 +164,7 @@ public class PubSubManager {
 		
 	}
 	
-	public int publish(Map<String,Object> context,String topic, byte[] content,byte flag) {
+	public int publish(String topic, byte[] content,byte flag,Map<String,Object> context) {
 		if(!this.isPubsubEnable(1)) {
 			return PUB_SERVER_NOT_AVAILABALE;
 		}
@@ -166,9 +179,9 @@ public class PubSubManager {
 	
 	public int publish(PSData[] items) {
 		
-		if(!this.isPubsubEnable(1)) {
+		 if(!this.isPubsubEnable(1)) {
 			return PUB_SERVER_NOT_AVAILABALE;
-		}
+		 }
 		 
 		 if(!this.isRunning) {
 			 startChecker();
@@ -177,6 +190,10 @@ public class PubSubManager {
 		curItemCount.addAndGet(items.length);
 		 
 		ActInfo ai = JMicroContext.get().getAccount();
+		if(ai != null && pm.getVal(ai.getClientId(), PROFILE_PUBSUB, "needPersist",false, Boolean.class)) {
+			persist2Db(ai.getClientId(),items);
+		}
+		
 		synchronized (topicSubmitItems) {
 			for (PSData d : items) {
 				if(ai != null) {
@@ -209,8 +226,10 @@ public class PubSubManager {
 		}
 		
 		ActInfo ai = JMicroContext.get().getAccount();
-		if(ai != null) {
-			item.setSrcClientId(ai.getClientId());
+		if(ai != null && item.isPersist()) {
+			if(pm.getVal(item.getSrcClientId(), PROFILE_PUBSUB, "needPersist",false, Boolean.class)) {
+				persit2Db(ai.getClientId(),item);
+			}
 		}
 		
 		curItemCount.incrementAndGet();
@@ -232,6 +251,52 @@ public class PubSubManager {
 		return PUB_OK;
 	}
 	
+	private void persit2Db(int clientId,PSData item) {
+		if(!item.isPersist()) {
+			return;
+		}
+		
+		if(item.getId() <= 0) {
+			item.setId(idGenerator.getIntId(PSData.class));
+		}
+		item.setSrcClientId(clientId);
+		item.setPersist(true);
+		
+		if(objStorage != null) {
+			objStorage.save(TABLE_PUBSUB_ITEMS, item,true);
+		}
+	}
+	
+	private void persist2Db(int clientId, PSData[] items) {
+		
+		Set<PSData> set = null;
+		
+		for(PSData d : items) {
+			if(!d.isPersist()) {
+				continue;
+			}
+			
+			if(d.getId() <= 0) {
+				d.setId(idGenerator.getIntId(PSData.class));
+			}
+			d.setSrcClientId(clientId);
+			d.setPersist(true);
+			
+			if(objStorage != null) {
+				if(set == null) {
+					set = new HashSet<>();
+				}
+				set.add(d);
+			}
+		}
+		
+		if(objStorage != null && !set.isEmpty()) {
+			PSData[] pds = new PSData[set.size()];
+			set.toArray(pds);
+			objStorage.save(TABLE_PUBSUB_ITEMS, pds,true);
+		}
+	}
+
 	private void startChecker() {
 		 synchronized(this.runLocker) {
 			 if(this.isRunning) {
@@ -312,7 +377,6 @@ public class PubSubManager {
 					
 					}
 				}
-			
 				
 				if(cnt > 0) {
 					executor.submit(new Worker(ms));
@@ -357,7 +421,7 @@ public class PubSubManager {
 							// 大于0时表示客户端已经预设置值,给客户端一些选择，比如业务需要提前知道消息ID做关联记录的场景
 							psd.setId(idGenerator.getIntId(PSData.class));
 						}
-						defaultServer.publishItemJMAsync(null,psd).then(new AsyncCallback(l));
+						defaultServer.publishItemJMAsync(psd,null).then(new AsyncCallback(l));
 					} else if (size > 1) {
 						Long[] ids = idGenerator.getLongIds(PSData.class.getName(), l.size());
 
@@ -371,8 +435,7 @@ public class PubSubManager {
 								pd[i].setId(ids[i]);
 							}
 						}
-						
-						defaultServer.publishItemsJMAsync(null,e.getKey(), pd).then(new AsyncCallback(l));
+						defaultServer.publishItemsJMAsync(e.getKey(), pd).then(new AsyncCallback(l));
 					}
 					
 				} catch (Throwable ex) {
@@ -391,7 +454,7 @@ public class PubSubManager {
 			this.list = l;
 		}
 		
-		public void onResult(Integer result, AsyncFailResult fail,Map<String,Object> context) {
+		public void onResult(Integer result, AsyncFailResult fail,Object context) {
 
 			curItemCount.addAndGet(-list.size());
 			
@@ -404,31 +467,22 @@ public class PubSubManager {
 						//重发3次
 						d.setFailCnt(d.getFailCnt()+1);
 						if((result = publish(d)) != PUB_OK) {
-							if(d.getCallback() != null && Message.is(d.getFlag(), PSData.FLAG_MESSAGE_CALLBACK)) {
-								//消息通知
-								//siManager.call(d.getCallback(), new Object[] {PUB_SERVER_BUSUY, d.getId(), d.getContext()});
-								siManager.callAsync(d.getCallback(), new Object[] {PUB_SERVER_BUSUY, d.getId(), d.getContext()})
-								.then((rst,f,cxt)->{
-									if(f != null) {
-										logger.error(f.toString());
-									}
-								});
-							} else {
-								logger.error("Pubsub Server is busuy so disgard msg:" + JsonUtils.getIns().toJson(d));
+							doCallback(d,result);
+							if(objStorage != null ) {
+								objStorage.updateOrSave(TABLE_PUBSUB_ITEMS,d.getId(),d,true);
 							}
 						}
 					} else {
+						
+						if(objStorage != null ) {
+							objStorage.updateOrSave(TABLE_PUBSUB_ITEMS,d.getId(),d,true);
+						}
+						
 						if(d.getLocalCallback() != null) {
 							d.getLocalCallback().call(result, d);
-						}else if(d.getCallback() != null && Message.is(d.getFlag(), PSData.FLAG_MESSAGE_CALLBACK)) {
+						}else if(StringUtils.isNotEmpty(d.getCallback())) {
 							//消息通知
-							//siManager.call(d.getCallback(), new Object[] {PUB_SERVER_BUSUY, d.getId(), d.getContext()});
-							siManager.callAsync(d.getCallback(), new Object[] {PUB_SERVER_BUSUY, d.getId(), d.getContext()})
-							.then((rst,f,cxt)->{
-								if(f != null) {
-									logger.error(f.toString());
-								}
-							});
+							doCallback(d,result);
 						} else {
 							logger.error("Pubsub Server is busuy and retry failure :" + JsonUtils.getIns().toJson(d));
 						}
@@ -438,24 +492,45 @@ public class PubSubManager {
 					|| PubSubManager.PUB_SERVER_DISCARD == result
 					|| PubSubManager.PUB_TOPIC_INVALID == result) {
 				for(PSData d : list) {
+					
+					if(objStorage != null ) {
+						objStorage.updateOrSave(TABLE_PUBSUB_ITEMS,d.getId(),d,true);
+					}
+					
 					if(d.getLocalCallback() != null) {
+						//本地回调
 						d.getLocalCallback().call(result, d);
-					}else if(d.getCallback() != null && Message.is(d.getFlag(), PSData.FLAG_MESSAGE_CALLBACK)) {
-						//消息通知
-						//siManager.call(d.getCallback(), new Object[] {result, d.getId(), d.getContext()});
-						siManager.callAsync(d.getCallback(), new Object[] {result, d.getId(), d.getContext()})
-						.then((rst,f,cxt)->{
-							if(f != null) {
-								logger.error(f.toString());
-							}
-						});
-						
+					}else if(StringUtils.isNotEmpty(d.getCallback())) {
+						doCallback(d,result);
 					} else {
 						logger.error("Publish message failure with code:"+result +" ,topic:"+d.getTopic() +" , message: " + JsonUtils.getIns().toJson(d));
 					}
 				}
 			}
 		}
+	}
+	
+	public void doCallback(PSData d,int cbRst) {
+
+		if(StringUtils.isNotEmpty(d.getCallback())) {
+			if(Message.is(d.getFlag(), PSData.FLAG_CALLBACK_METHOD)) {
+				siManager.callAsync(d.getCallback(), new Object[] {cbRst, d.getId(), d.getContext()})
+				.then((rst,f,cxt)->{
+					if(f != null) {
+						logger.error(f.toString());
+					}
+				});
+			} else if(Message.is(d.getFlag(), PSData.FLAG_CALLBACK_TOPIC)) {
+				if(cbRst != PUB_SERVER_BUSUY &&  cbRst != PUB_SERVER_NOT_AVAILABALE && cbRst != PUB_SERVER_DISCARD) {
+					this.publish(d.getCallback(), new Object[] {cbRst, d.getId()}, PSData.FLAG_DEFALUT,  d.getContext());
+				}else {
+					logger.error("Pubsub Server is disable now:" + JsonUtils.getIns().toJson(d));
+				}
+			}
+		} else {
+			logger.error("Pubsub Server is disable now:" + JsonUtils.getIns().toJson(d));
+		}
+		
 	}
 	
 }

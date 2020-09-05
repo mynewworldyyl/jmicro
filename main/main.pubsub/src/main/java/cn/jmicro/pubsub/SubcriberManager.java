@@ -61,12 +61,12 @@ class SubcriberManager {
 	/**
 	 * 订阅ID到回调之间映射关系
 	 */
-	private Map<String, ISubCallback> callbacks = new ConcurrentHashMap<>();
+	private Map<String, ISubscriberCallback> callbacks = new ConcurrentHashMap<>();
 
 	/**
 	 * 主题与回调服务关联关系，每个主题可以有0到N个服务
 	 */
-	private Map<String, Set<ISubCallback>> topic2Callbacks = new ConcurrentHashMap<>();
+	private Map<String, Set<ISubscriberCallback>> topic2Callbacks = new ConcurrentHashMap<>();
 
 	private Queue<SubcribeItem> waitingLoadClazz = new ConcurrentLinkedQueue<>();
 	private ClassLoadingWorker clWorker = null;
@@ -91,14 +91,14 @@ class SubcriberManager {
 		clWorker.start();
 	}
 
-	Set<ISubCallback> getCallback(String topic) {
+	Set<ISubscriberCallback> getCallback(String topic) {
 		return topic2Callbacks.get(topic);
 	}
 
-	ISubCallback getCallback(ServiceMethod sm) {
-		Set<ISubCallback> calls = topic2Callbacks.get(sm.getTopic());
+	ISubscriberCallback getCallback(ServiceMethod sm) {
+		Set<ISubscriberCallback> calls = topic2Callbacks.get(sm.getTopic());
 		if (calls != null && !calls.isEmpty()) {
-			for (ISubCallback c : calls) {
+			for (ISubscriberCallback c : calls) {
 				if (c.getSm().equals(sm)) {
 					return c;
 				}
@@ -201,7 +201,7 @@ class SubcriberManager {
 
 		String k = srvMethod.getKey().toKey(false, false, false);
 		
-		ISubCallback cb = callbacks.get(k);
+		ISubscriberCallback cb = callbacks.get(k);
 		String[] ts = topic.split(Constants.TOPIC_SEPERATOR);
 		
 		boolean flag = false;
@@ -242,7 +242,7 @@ class SubcriberManager {
 
 		String k = sui.sm.getKey().toKey(false, false, false);
 		
-		SubCallbackImpl cb = (SubCallbackImpl)callbacks.get(k);
+		SubscriberCallbackImpl cb = (SubscriberCallbackImpl)callbacks.get(k);
 		
 		if(cb == null) {
 
@@ -281,7 +281,7 @@ class SubcriberManager {
 				return false;
 			}
 			
-			cb = new SubCallbackImpl(sui.sm, srv, this.of);
+			cb = new SubscriberCallbackImpl(sui.sm, srv, this.of);
 			cb.init();
 
 			callbacks.put(k, cb);
@@ -294,7 +294,7 @@ class SubcriberManager {
 		}
 		
 		Set<String> oldTs = new HashSet<>();
-		for(Map.Entry<String, Set<ISubCallback>> e: this.topic2Callbacks.entrySet()) {
+		for(Map.Entry<String, Set<ISubscriberCallback>> e: this.topic2Callbacks.entrySet()) {
 			//查找出当前服务方法所订阅的全部主题
 			if(e.getValue().contains(cb)) {
 				oldTs.add(e.getKey());
@@ -311,7 +311,7 @@ class SubcriberManager {
 	    if(!newTs.isEmpty()) {
 	    	for(String t : newTs) {
 				if (!topic2Callbacks.containsKey(t)) {
-					topic2Callbacks.put(t, new HashSet<ISubCallback>());
+					topic2Callbacks.put(t, new HashSet<ISubscriberCallback>());
 				}
 				if(!topic2Callbacks.get(t).contains(cb)) {
 					topic2Callbacks.get(t).add(cb);
@@ -349,7 +349,7 @@ class SubcriberManager {
 
 		String k = sui.sm.getKey().toKey(false, false, false);
 		
-		SubCallbackImpl cb = (SubCallbackImpl)callbacks.get(k);
+		SubscriberCallbackImpl cb = (SubscriberCallbackImpl)callbacks.get(k);
 		if (cb == null) {
 			Set<ServiceItem> sis = registry.getServices(sui.sm.getKey().getServiceName(), sui.sm.getKey().getNamespace(),
 					sui.sm.getKey().getVersion());
@@ -385,7 +385,7 @@ class SubcriberManager {
 				return false;
 			}
 			
-			cb = new SubCallbackImpl(sui.sm, srv, this.of);
+			cb = new SubscriberCallbackImpl(sui.sm, srv, this.of);
 			cb.init();
 
 			callbacks.put(k, cb);
@@ -394,7 +394,7 @@ class SubcriberManager {
 		String[] ts = sui.topic.split(Constants.TOPIC_SEPERATOR);
 		for(String t : ts) {
 			if (!topic2Callbacks.containsKey(t)) {
-				topic2Callbacks.put(t, new HashSet<ISubCallback>());
+				topic2Callbacks.put(t, new HashSet<ISubscriberCallback>());
 			}
 			if(!topic2Callbacks.get(t).contains(cb)) {
 				topic2Callbacks.get(t).add(cb);
@@ -453,11 +453,11 @@ class SubcriberManager {
 				logger.debug("Unsubscribe CB:{} topic: {}", k, topic);
 			}
 
-			ISubCallback cb = callbacks.remove(k);
+			ISubscriberCallback cb = callbacks.remove(k);
 			
 			String[] ts = topic.split(Constants.TOPIC_SEPERATOR);
 			for(String t : ts) {
-				Set<ISubCallback> q = topic2Callbacks.get(t);
+				Set<ISubscriberCallback> q = topic2Callbacks.get(t);
 				if (q != null) {
 					q.remove(cb);
 				}

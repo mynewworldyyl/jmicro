@@ -23,11 +23,12 @@ import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoCursor;
 import com.mongodb.client.MongoDatabase;
 
+import cn.jmicro.api.JMicroContext;
 import cn.jmicro.api.Resp;
 import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Inject;
+import cn.jmicro.api.annotation.SMethod;
 import cn.jmicro.api.annotation.Service;
-import cn.jmicro.api.mng.ILogService;
 import cn.jmicro.api.mng.LogEntry;
 import cn.jmicro.api.mng.LogItem;
 import cn.jmicro.api.monitor.MC;
@@ -36,8 +37,10 @@ import cn.jmicro.api.net.IReq;
 import cn.jmicro.api.net.IResp;
 import cn.jmicro.api.net.RpcRequest;
 import cn.jmicro.api.net.RpcResponse;
+import cn.jmicro.api.security.PermissionManager;
 import cn.jmicro.common.util.JsonUtils;
 import cn.jmicro.common.util.StringUtils;
+import cn.jmicro.mng.api.ILogService;
 
 @Component
 @Service(namespace="mng", version="0.0.1",external=true,debugMode=1,showFront=false)
@@ -54,6 +57,7 @@ public class LogServiceImpl implements ILogService {
 	         .build();
 	
 	@Override
+	@SMethod(perType=false,needLogin=true,maxSpeed=10,maxPacketSize=256)
 	public Resp<LogEntry> getByLinkId(Long linkId) {
 		 Resp<LogEntry> resp = new Resp<>();
 		 if(linkId == null || linkId <= 0) {
@@ -64,6 +68,10 @@ public class LogServiceImpl implements ILogService {
 		 MongoCollection<Document> rpcLogColl = mongoDb.getCollection("rpc_log");
 		 Document match = new Document();
 		 match.put("linkId", linkId);
+		 
+		 if(!PermissionManager.isCurAdmin()) {
+			 match.put("clientId", JMicroContext.get().getAccount().getClientId());
+		 }
 		
 		 Map<Long,LogEntry> logComsumerMap = new HashMap<>();
 		 
@@ -108,6 +116,7 @@ public class LogServiceImpl implements ILogService {
 	}
 
 	@Override
+	@SMethod(perType=false,needLogin=true,maxSpeed=10,maxPacketSize=256)
 	public Resp<List<LogEntry>> query(Map<String, String> queryConditions, int pageSize, int curPage) {
 
 		Document qryMatch = this.getCondtions(queryConditions);
@@ -162,6 +171,7 @@ public class LogServiceImpl implements ILogService {
 	}
 	
 	@Override
+	@SMethod(perType=false,needLogin=true,maxSpeed=10,maxPacketSize=2048)
 	public Resp<Long> count(Map<String, String> queryConditions) {
 		Document match = this.getCondtions(queryConditions);
 		MongoCollection<Document> rpcLogColl = mongoDb.getCollection("rpc_log");
@@ -174,6 +184,7 @@ public class LogServiceImpl implements ILogService {
 	}
 	
 	@Override
+	@SMethod(perType=false,needLogin=true,maxSpeed=10,maxPacketSize=256)
 	public Resp<Map<String,Object>> queryDict() {
 		
 		Map<String,Object> dists = new HashMap<>();
@@ -264,6 +275,7 @@ public class LogServiceImpl implements ILogService {
 	}
 	
 	@Override
+	@SMethod(perType=false,needLogin=true,maxSpeed=10,maxPacketSize=2048)
 	public Resp<Integer> countLog(Map<String, String> queryConditions) {
 
 		Resp<Integer> resp = new Resp<>();
@@ -306,6 +318,7 @@ public class LogServiceImpl implements ILogService {
 	}
 
 	@Override
+	@SMethod(perType=false,needLogin=true,maxSpeed=10,maxPacketSize=2048)
 	public Resp<List<LogItem>> queryLog(Map<String, String> queryConditions, int pageSize, int curPage) {
 
 		Document qryMatch = this.getLogCondtions(queryConditions);
@@ -361,6 +374,10 @@ public class LogServiceImpl implements ILogService {
 	private Document getLogCondtions(Map<String, String> queryConditions) {
 		Document match = this.getCondtions(queryConditions);
 		
+		if(!PermissionManager.isCurAdmin()) {
+			 match.put("clientId", JMicroContext.get().getAccount().getClientId());
+		 }
+		 
 		String key = "reqParentId";
 		String val = queryConditions.get(key);
 		if(StringUtils.isEmpty(val)) {
@@ -392,6 +409,10 @@ public class LogServiceImpl implements ILogService {
 	private Document getCondtions(Map<String, String> queryConditions) {
 		Document match = new Document();
 		
+		 if(!PermissionManager.isCurAdmin()) {
+			 match.put("clientId", JMicroContext.get().getAccount().getClientId());
+		 }
+		 
 		String key = "reqParentId";
 		String val = queryConditions.get(key);
 		if(StringUtils.isNotEmpty(val)) {

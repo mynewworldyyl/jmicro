@@ -51,6 +51,7 @@ import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.monitor.MonitorClientStatusAdapter;
 import cn.jmicro.api.monitor.ServiceCounter;
 import cn.jmicro.api.objectfactory.IObjectFactory;
+import cn.jmicro.api.persist.IObjectStorage;
 import cn.jmicro.api.pubsub.PSData;
 import cn.jmicro.api.pubsub.PubSubManager;
 import cn.jmicro.api.raft.IDataOperator;
@@ -159,7 +160,7 @@ public class PubSubServer implements IInternalSubRpc{
 	private Object syncLocker = new Object();
 	
 	public static void main(String[] args) {
-		 JMicro.getObjectFactoryAndStart(new String[] {});
+		 JMicro.getObjectFactoryAndStart(args);
 		 Utils.getIns().waitForShutdown();
 	}
 	
@@ -586,14 +587,14 @@ public class PubSubServer implements IInternalSubRpc{
 		
 		private PSData[] items = null;
 		
-		private Set<ISubCallback> callbacks = null;
+		private Set<ISubscriberCallback> subscribers = null;
 		
 		private String topic = null;
 		
 		public Worker(PSData[] items,String topic) {
 			this.items = items;
 			this.topic = topic;
-			this.callbacks =  subManager.getCallback(topic);
+			this.subscribers =  subManager.getCallback(topic);
 		}
 		
 		@Override
@@ -605,7 +606,7 @@ public class PubSubServer implements IInternalSubRpc{
 				
 				//logger.info("Dispatch {} size: {} " ,topic,items.length);
 				
-				if(callbacks == null || callbacks.isEmpty()) {
+				if(subscribers == null || subscribers.isEmpty()) {
 					//没有对应主题的监听器，直接进入重发队列，此时回调cb==null
 					SendItem si = new SendItem(SendItem.TYPY_RESEND, null, items, 0);
 					resendManager.queueItem(si);
@@ -614,7 +615,7 @@ public class PubSubServer implements IInternalSubRpc{
 					}
 					logger.error("Push to resend component topic:"+topic);
 				} else {
-					for (ISubCallback cb : callbacks) {
+					for (ISubscriberCallback cb : subscribers) {
 						try {
 							cb.onMessage(items)
 							.then((psds,fail,ctx)->{

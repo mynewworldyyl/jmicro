@@ -28,16 +28,16 @@ public class ApiGatewayPubsubClient {
 		pcs = client.getService(IPubSubClientService$JMAsyncClient.class,"mng", "0.0.1");
 	}
 
-	public int callService(String topic, Object[] args) {
-		return pcs.callService(topic, args);
+	public int callService(String topic, Object[] args,byte flag,Map<String,Object> itemContext) {
+		return publishOneItem(item(topic,args,flag,itemContext));
 	}
 
-	public int publishString(Map<String, Object> itemContext, String topic, String content) {
-		return pcs.publishString(itemContext, topic, content);
+	public int publishString(String topic, String content,byte flag,Map<String, Object> itemContext) {
+		return publishOneItem(item(topic,content,flag,itemContext));
 	}
 
-	public int publishBytes(Map<String, Object> itemContext, String topic, byte[] content) {
-		return pcs.publishBytes(itemContext, topic, content);
+	public int publishBytes(String topic, byte[] content,byte flag,Map<String, Object> itemContext) {
+		return publishOneItem(item(topic,content,flag,itemContext));
 	}
 
 	public int publishMutilItems(PSData[] items) {
@@ -48,33 +48,66 @@ public class ApiGatewayPubsubClient {
 		return pcs.publishOneItem(item);
 	}
 	
-	public IPromise<Integer> callServiceJMAsync(Map<String, Object> context, String topic, Object[] args) {
-		return pcs.callServiceJMAsync(context, topic, args);
+	private PSData item(String topic, Object data,byte flag,Map<String, Object> itemContext) {
+		PSData item = new PSData();
+		item.setTopic(topic);
+		item.setData(data);
+		item.setContext(itemContext);
+		item.setFlag(flag);
+		return item;
+	}
+	
+	public IPromise<Integer> callServiceJMAsync(String topic, Object[] args,byte flag,
+			Map<String, Object> itemContext) {
+		return pcs.publishOneItemJMAsync(item(topic,args,flag,itemContext));
 	}
 
-	public IPromise<Integer> publishStringJMAsync(Map<String, Object> context, Map<String, Object> itemContext,
-			String topic, String content) {
-		return pcs.publishStringJMAsync(context, itemContext, topic, content);
+	public IPromise<Integer> publishStringJMAsync(
+			String topic, String content,byte flag, Map<String, Object> itemContext,Object context) {
+		return pcs.publishOneItemJMAsync(item(topic,content,flag,itemContext),context);
 	}
 
-	public IPromise<Integer> publishBytesJMAsync(Map<String, Object> context, Map<String, Object> itemContext,
-			String topic, byte[] content) {
-		return pcs.publishBytesJMAsync(context, itemContext, topic, content);
+	public IPromise<Integer> publishBytesJMAsync(
+			String topic, byte[] content,byte flag,Map<String, Object> itemContext,Object context) {
+		return pcs.publishOneItemJMAsync(item(topic,content,flag,itemContext),context);
 	}
 
-	public IPromise<Integer> publishMutilItemsJMAsync(Map<String, Object> context, PSData[] items) {
-		return pcs.publishMutilItemsJMAsync(context, items);
+	public IPromise<Integer> publishMutilItemsJMAsync(PSData[] items,Object context) {
+		return pcs.publishMutilItemsJMAsync(items,context);
 	}
 
-	public IPromise<Integer> publishOneItemJMAsync(Map<String, Object> context, PSData item) {
-		return pcs.publishOneItemJMAsync(context, item);
+	public IPromise<Integer> publishOneItemJMAsync( PSData item,Object context) {
+		return pcs.publishOneItemJMAsync(item,context);
+	}
+	
+	public IPromise<Integer> callServiceJMAsync(String topic, Object[] args,byte flag,
+			Map<String, Object> itemContext ,Object context) {
+		return pcs.publishOneItemJMAsync(item(topic,args,flag,itemContext),context);
+	}
+
+	public IPromise<Integer> publishStringJMAsync(
+			String topic, String content,byte flag,Map<String, Object> itemContext) {
+		return pcs.publishOneItemJMAsync(item(topic,content,flag,itemContext));
+	}
+
+	public IPromise<Integer> publishBytesJMAsync(
+			String topic, byte[] content,byte flag,Map<String, Object> itemContext) {
+		return pcs.publishOneItemJMAsync(item(topic,content,flag,itemContext));
+	}
+
+	public IPromise<Integer> publishMutilItemsJMAsync(PSData[] items) {
+		return pcs.publishMutilItemsJMAsync(items);
+	}
+
+	public IPromise<Integer> publishOneItemJMAsync(PSData item) {
+		return pcs.publishOneItemJMAsync(item);
 	}
 	
 	public IPromise<Integer> subscribeJMAsync(String topic,Map<String, Object> ctx, PSDataListener lis) {
 		final PromiseImpl<Integer> p = new PromiseImpl<>();
 		IAsyncCallback<Integer> cb = new IAsyncCallback<Integer>() {
 			@Override
-			public void onResult(Integer val, AsyncFailResult fail,Map<String,Object> ctx) {
+			public void onResult(Integer val, AsyncFailResult fail,Object ctx) {
 				if(fail == null) {
 					Set<PSDataListener> ls = listeners.get(topic);
 					if(ls == null) {
@@ -98,7 +131,7 @@ public class ApiGatewayPubsubClient {
 		final PromiseImpl<Boolean> p = new PromiseImpl<>();
 		IAsyncCallback<Boolean> cb = new IAsyncCallback<Boolean>() {
 			@Override
-			public void onResult(Boolean val, AsyncFailResult fail,Map<String,Object> ctx) {
+			public void onResult(Boolean val, AsyncFailResult fail,Object ctx) {
 				if(fail == null) {
 					Set<PSDataListener> ls = listeners.get(topic);
 					if(ls != null && !ls.isEmpty()) {

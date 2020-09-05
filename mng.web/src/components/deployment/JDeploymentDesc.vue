@@ -5,7 +5,7 @@
             <a @click="refresh()">REFRESH</a>
         </div>-->
 
-        <table class="configItemTalbe" width="99%">
+        <table v-if="isLogin" class="configItemTalbe" width="99%">
             <thead><tr><td>ID</td><td>JAR FILE</td><td>ENABLE</td><td>INSTANCE NUM</td><td>STRATEGY</td>
                 <td>STRATEGY ARGS</td><td>ARGS</td><td>OPERATION</td></tr>
             </thead>
@@ -13,11 +13,13 @@
                 <td>{{c.id}}</td><td>{{c.jarFile}}</td><td>{{c.enable}}</td><td>{{c.instanceNum}}</td>
                 <td>{{c.assignStrategy}}</td><td>{{c.strategyArgs}}</td><td>{{c.args}}</td>
                 <td>&nbsp;
-                    <a v-if="adminPer" @click="deleteDeployment(c)">DELETE</a>&nbsp;&nbsp;&nbsp;
-                    <a v-if="adminPer" @click="updateDeployment(c)">UPDATE</a>
+                    <a v-if="isLogin" @click="deleteDeployment(c)">DELETE</a>&nbsp;&nbsp;&nbsp;
+                    <a v-if="isLogin" @click="updateDeployment(c)">UPDATE</a>
                 </td>
             </tr>
         </table>
+
+        <div v-if="!isLogin">not login</div>
 
         <Modal v-model="addResourceDialog" :loading="true" ref="addNodeDialog" width="360" @on-ok="onAddOk()">
             <div>
@@ -59,6 +61,7 @@
                 addResourceDialog:false,
                 errMsg:'',
                 doUpdate:false,
+                isLogin:false,
 
                 deployment:{
                     id:null,
@@ -155,7 +158,11 @@
 
             refresh(){
                 let self = this;
-                this.adminPer = window.jm.mng.comm.adminPer;
+                this.isLogin = window.jm.rpc.isLogin();
+                if(!this.isLogin) {
+                    this.deployList = [];
+                    return;
+                }
                 window.jm.mng.choy.getDeploymentList().then((resp)=>{
                     if(resp.code != 0 ) {
                         self.$Message.error(resp.msg);
@@ -171,14 +178,21 @@
 
         mounted () {
             let self = this;
-            window.jm.rpc.addListener(cid,self.refresh);
-            this.refresh();
-            //window.jm.vue.$on('tabItemRemove',self.editorRemove);
+            window.jm.rpc.addActListener(cid,self.refresh);
+
             window.jm.vue.$emit("editorOpen",
                 {"editorId":cid,
                     "menus":[{name:"ADD",label:"Add",icon:"ios-cog",call:self.addDeploy},
                         {name:"REFRESH",label:"Refresh",icon:"ios-cog",call:self.refresh}]
              });
+
+            let ec = function() {
+                window.jm.rpc.removeActListener(cid);
+                window.jm.vue.$off('editorClosed',ec);
+            }
+
+            window.jm.vue.$on('editorClosed',ec);
+
         },
     }
 </script>

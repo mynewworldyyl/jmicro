@@ -57,6 +57,7 @@ public class ApiGatewayClientHttpSession extends AbstractSession implements ICli
 	@Override
 	public void write(Message msg) {
 		ByteBuffer bb = msg.encode();
+		this.writeSum.addAndGet(bb.limit());
 		new Thread(() -> {
 			Map<String,String> headers = new HashMap<>();
 			headers.put(Constants.HTTP_HEADER_ENCODER, Message.PROTOCOL_BIN+"");

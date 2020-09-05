@@ -25,6 +25,8 @@
 
     const GROUP = 'router';
 
+    const cid = 'JRouterList';
+
     export default {
         name: 'JRouterList',
         data () {
@@ -51,13 +53,22 @@
         },
 
         mounted(){
-            window.jm.rpc.addListener(GROUP,this.refresh);
-            window.jm.vue.$on('tabItemRemove',this.editorRemove);
+
+            let self = this;
+            window.jm.rpc.addActListener(cid,()=>{
+                self.isLogin = window.jm.rpc.isLogin();
+                if( self.isLogin) {
+                    self.refresh();
+                }
+            });
+
+            window.jm.vue.$on('editorClosed',self.editorRemove);
+
         },
 
         beforeDestroy() {
             window.jm.vue.$off('tabItemRemove',this.editorRemove);
-            window.jm.rpc.removeListener(GROUP);
+            window.jm.rpc.removeActListener(GROUP);
         },
 
 
@@ -68,7 +79,7 @@
                     return;
                 }
                 window.jm.vue.$off('tabItemRemove',this.editorRemove);
-                window.jm.mng.act.removeListener(GROUP);
+                window.jm.mng.act.removeActListener(cid);
             },
 
 

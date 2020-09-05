@@ -40,6 +40,7 @@ import cn.jmicro.api.registry.ServiceItem;
 import cn.jmicro.api.registry.ServiceMethod;
 import cn.jmicro.api.registry.UniqueServiceKey;
 import cn.jmicro.api.registry.UniqueServiceMethodKey;
+import cn.jmicro.api.security.PermissionManager;
 import cn.jmicro.common.CommonException;
 import cn.jmicro.common.Constants;
 import cn.jmicro.common.HashUtils;
@@ -170,8 +171,13 @@ public class ServiceManager {
 
 	protected void childrenAdd(String path, String data) {
 		ServiceItem si = this.fromJson(data);
+		
 		if(si == null){
 			logger.warn("Item NULL,path:{},data:{}",path,data);
+			return;
+		}
+		
+		if(!PermissionManager.checkClientPermission(si.getClientId())) {
 			return;
 		}
 		
@@ -271,6 +277,7 @@ public class ServiceManager {
 	}
 	
 	public void updateOrCreate(ServiceItem item,String path,boolean isel) {
+		item.setClientId(Config.getClientId());
 		String data = JsonUtils.getIns().toJson(item);
 		if(dataOperator.exist(path)){
 			dataOperator.setData(path, data);
@@ -422,6 +429,10 @@ public class ServiceManager {
 			return;
 		}
 		
+		if(!PermissionManager.checkClientPermission(si.getClientId())) {
+			return;
+		}
+		
 		//logger.warn("Remove service:{}",path);
 		//path = si.path(Config.ServiceRegistDir);
 		this.notifyServiceChange(IServiceListener.REMOVE, si, path);
@@ -439,6 +450,10 @@ public class ServiceManager {
 	private void updateItemData(String path, String data, boolean isConfig) {
 		ServiceItem si = this.fromJson(data);
 
+		if(!PermissionManager.checkClientPermission(si.getClientId())) {
+			return;
+		}
+		
 		String srvPath = si.path(Config.ServiceRegistDir);
 		ServiceItem srvItem = this.path2SrvItems.get(srvPath);
 		

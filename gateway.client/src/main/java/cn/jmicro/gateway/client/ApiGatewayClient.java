@@ -169,7 +169,7 @@ public class ApiGatewayClient {
 						final PromiseImpl<T> p = new PromiseImpl<T>();
 						IAsyncCallback<T> cb = new IAsyncCallback<T>() {
 							@Override
-							public void onResult(T val, AsyncFailResult fail,Map<String,Object> ctx) {
+							public void onResult(T val, AsyncFailResult fail,Object ctx) {
 								if(fail == null) {
 									p.setResult(val);
 								} else {
@@ -208,7 +208,7 @@ public class ApiGatewayClient {
 		} else {
 			IAsyncCallback<ActInfo> cb = new IAsyncCallback<ActInfo>() {
 				@Override
-				public void onResult(ActInfo ai, AsyncFailResult fail,Map<String,Object> ctx) {
+				public void onResult(ActInfo ai, AsyncFailResult fail,Object ctx) {
 					if(fail == null && ai.isSuccess()) {
 						setActInfo(ai);
 						p.setResult(ai);
@@ -233,7 +233,7 @@ public class ApiGatewayClient {
 		} else {
 			IAsyncCallback<Resp<Boolean>> cb = new IAsyncCallback<Resp<Boolean>>() {
 				@Override
-				public void onResult(Resp<Boolean> resp, AsyncFailResult fail,Map<String,Object> ctx) {
+				public void onResult(Resp<Boolean> resp, AsyncFailResult fail,Object ctx) {
 					if(fail == null && resp.getData()) {
 						p.setResult(true);
 						setActInfo(null);

@@ -17,11 +17,10 @@
 package cn.jmicro.api.service;
 
 import java.lang.reflect.Method;
-import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -45,11 +44,8 @@ import cn.jmicro.api.annotation.Service;
 import cn.jmicro.api.annotation.Subscribe;
 import cn.jmicro.api.classloader.RpcClassLoader;
 import cn.jmicro.api.codec.TypeUtils;
-import cn.jmicro.api.codec.typecoder.TypeCoder;
 import cn.jmicro.api.config.Config;
 import cn.jmicro.api.idgenerator.ComponentIdServer;
-import cn.jmicro.api.masterelection.IMasterChangeListener;
-import cn.jmicro.api.masterelection.VoterPerson;
 import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.net.IServer;
 import cn.jmicro.api.objectfactory.IObjectFactory;
@@ -440,9 +436,13 @@ public class ServiceLoader{
 		
 		item.addMethod(sm);
 		
+		Set<Class<?>> clses = new HashSet<>();
+		
 		for(Class<?> acls : args) {
-			this.needRegist(acls,null);
+			this.getClassByType(acls, clses);
 		}
+		
+		this.needRegist(clses);
 		
 		return sm;
 	
@@ -460,7 +460,7 @@ public class ServiceLoader{
 		if(interfacez == null || interfacez == Void.class){
 			if(proxySrv.isInterface()) {
 				interfacez = srvCls;
-			}else {
+			} else {
 				Class<?>[] ints = srvCls.getInterfaces();
 				if(ints == null || ints.length != 1) {
 					throw new CommonException("service ["+srvCls.getName()+"] have to implement one and only one interface.");
@@ -478,7 +478,7 @@ public class ServiceLoader{
 		ServiceItem item = new ServiceItem();
 		
 		//Netty Socket 作为必选端口开放
-		
+		item.setClientId(Config.getClientId());
 		item.getServers().add(this.nettyServer);
 		item.getServers().add(this.httpServer);
 		
@@ -597,6 +597,7 @@ public class ServiceLoader{
 				sm.setMaxSpeed(item.getMaxSpeed());
 				sm.setPerType(false);
 				sm.setNeedLogin(false);
+				sm.setMaxPacketSize(0);
 				
 			} else {
 				 if(manno != null ) {
@@ -630,6 +631,7 @@ public class ServiceLoader{
 					sm.setAsyncable(manno.asyncable());
 					sm.setPerType(manno.perType());
 					sm.setNeedLogin(manno.needLogin());
+					sm.setMaxPacketSize(manno.maxPacketSize());
 				 } else {
 					 //使用接口方法配置
 					sbr = intMAnno.breakingRule();
@@ -660,6 +662,7 @@ public class ServiceLoader{
 					sm.setAsyncable(intMAnno.asyncable());
 					sm.setPerType(intMAnno.perType());
 					sm.setNeedLogin(intMAnno.needLogin());
+					sm.setMaxPacketSize(intMAnno.maxPacketSize());
 				 }
 				 
 				sm.getBreakingRule().setBreakTimeInterval(sbr.breakTimeInterval());
@@ -674,14 +677,21 @@ public class ServiceLoader{
 			sm.getKey().setParamsStr(UniqueServiceMethodKey.paramsStr(m.getParameterTypes()));
 			sm.getKey().setReturnParam(ReflectUtils.getDesc(m.getReturnType()));
 			
+			Set<Class<?>> clses = new HashSet<>();
+			
 			Type[] types = m.getGenericParameterTypes();
 			 Class<?>[]  pts = m.getParameterTypes();
 			 
 			for(int i = 0; i < types.length; i++) {
-				needRegist(pts[i],types[i]);
+				//needRegist(pts[i]/*,types[i]*/);
+				getClassByType(pts[i],clses);
+				getClassByType(types[i],clses);
 			}
 			
-			needRegist(m.getReturnType(),m.getGenericReturnType());
+			getClassByType(m.getReturnType(),clses);
+			getClassByType(m.getGenericReturnType(),clses);
+			
+			needRegist(clses);
 			
 			if(sm.isAsyncable()) {
 				//允许异步调用的RPC必须以方法全限定名为主题
@@ -694,39 +704,76 @@ public class ServiceLoader{
 		return item;
 	}
 	
+	private void getClassByType(Type type,Set<Class<?>> clses) {
+		TypeUtils.finalParameterType(type, clses);
+	}
 	
-	private void needRegist(Class<?> cls,Type genericType) {
+	
+	private void needRegist(Set<Class<?>>  clses) {
 		
-		if(cls == null || void.class == cls) {
-			return;
+		
+		
+		/*if(type.getName().equals("cn.jmicro.api.Resp")) {
+			logger.debug("");
+		}*/
+		
+		/*Set<Class<?>> clses = new HashSet<>();
+		
+		TypeUtils.finalParameterType(type, clses);
+		
+		if(cls.isArray()) {
+			TypeUtils.finalParameterType(cls.getComponentType(), clses);
+			clses.add(cls.getComponentType());
+		} else {
+			clses.add(cls);
+		}
+		*/
+		
+		for(Class<?> c : clses) {
+			if(c == null || void.class == c) {
+				continue;
+			}
+			
+			if(c.isPrimitive()||
+					c.getName().startsWith("java") || 
+					c.getName().startsWith("sun") ||
+					c.getName().startsWith("com.sun") ||
+					c.getClassLoader() == null || 
+					c.getClassLoader().getClass().getName().startsWith("sun.misc.Launcher$ExtClassLoader")) {
+				continue;
+			}
+			
+			logger.debug(c.getName());
+			cl.addClassInstance(c.getName());
+			
+			/*if(cls.isArray()) {
+				needRegist(cls.getComponentType(),cls.getComponentType().getGenericSuperclass());
+			} else {
+				
+			}*/
 		}
 		
-		if(Collection.class.isAssignableFrom(cls)) {
+		
+		
+		/*if(Collection.class.isAssignableFrom(cls)) {
 			ParameterizedType gt = TypeCoder.genericType(genericType);
 			Class<?> eltType = TypeUtils.finalParameterType(gt, 0);
-			needRegist(eltType,null);
+			needRegist(eltType,eltType.getGenericSuperclass());
 		} else if(Map.class.isAssignableFrom(cls)) {
 			ParameterizedType gt = TypeCoder.genericType(cls.getGenericSuperclass());
 			Class<?> keyType = TypeUtils.finalParameterType(gt, 0);
 			Class<?> valueType = TypeUtils.finalParameterType(gt, 1);
 			needRegist(keyType,null);
 			needRegist(valueType,null);
-		}
+		}else if(Resp.class == cls) {
+			ParameterizedType gt = TypeCoder.genericType(genericType);
+			Class<?> eltType = TypeUtils.finalParameterType(gt, 0);
+			if(eltType != null) {
+				needRegist(eltType,eltType.getGenericSuperclass());
+			}
+		} */
 		
-		if(cls.isPrimitive()||
-				cls.getName().startsWith("java") || 
-				cls.getName().startsWith("sun") ||
-				cls.getName().startsWith("com.sun") ||
-				cls.getClassLoader() == null || 
-				cls.getClassLoader().getClass().getName().startsWith("sun.misc.Launcher$ExtClassLoader")) {
-			return;
-		}
 		
-		if(cls.isArray()) {
-			needRegist(cls.getComponentType(),null);
-		} else {
-			cl.addClassInstance(cls.getName());
-		}
 	}
 	
 	private  String getFieldValue(String anno, String intAnno,String defau) {

@@ -44,7 +44,21 @@
         },
 
         mounted(){
-            this.loadMonitors();
+            let self = this;
+            window.jm.rpc.addActListener(self.slId,()=>{
+                self.isLogin = window.jm.rpc.isLogin();
+                if( self.isLogin) {
+                    self.loadMonitors();
+                }
+            });
+
+            let ec = function() {
+                window.jm.rpc.removeActListener(self.slId);
+                window.jm.vue.$off('editorClosed',ec);
+            }
+
+            window.jm.vue.$on('editorClosed',ec);
+
         },
 
         methods:{

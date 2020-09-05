@@ -1,6 +1,5 @@
 package cn.jmicro.breaker.test.integration;
 
-import java.util.HashMap;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -27,8 +26,7 @@ public class TestBreakerSubscriberImpl extends JMicroBaseTestCase{
 				try {
 					//Thread.sleep(2000);
 					Thread.sleep(ran.nextInt(100));
-					psm.publish(new HashMap<String,Object>(), TOPIC, 
-							"test pubsub server id: "+id.getAndIncrement(),PSData.FLAG_PUBSUB);
+					psm.publish(TOPIC, "test pubsub server id: "+id.getAndIncrement(),PSData.FLAG_PUBSUB,null);
 				} catch (Throwable e) {
 					System.out.println(e.getMessage());;
 				}

@@ -15,6 +15,7 @@ import cn.jmicro.api.JMicroContext;
 import cn.jmicro.api.Resp;
 import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Reference;
+import cn.jmicro.api.annotation.SMethod;
 import cn.jmicro.api.annotation.Service;
 import cn.jmicro.api.choreography.IAgentProcessService;
 import cn.jmicro.api.choreography.genclient.IAgentProcessService$JMAsyncClient;
@@ -45,6 +46,7 @@ public class AgentLogServiceImpl implements IAgentLogService {
 	}
 	
 	@Override
+	@SMethod(needLogin=true,maxSpeed=5,maxPacketSize=256)
 	public Resp<List<LogFileEntry>> getAllLogFileEntry() {
 		Resp<List<LogFileEntry>> resp = new Resp<>();
 		resp.setCode(0);
@@ -70,7 +72,7 @@ public class AgentLogServiceImpl implements IAgentLogService {
 			AtomicInteger ai = new AtomicInteger(agentServices.size());
 			
 			for(IAgentProcessService$JMAsyncClient aps : agentServices) {
-				aps.getProcessesLogFileListJMAsync(null)
+				aps.getProcessesLogFileListJMAsync()
 				.then((rl,fail,actx) -> {
 					ai.decrementAndGet();
 					if(fail == null) {
@@ -98,6 +100,7 @@ public class AgentLogServiceImpl implements IAgentLogService {
 	}
 
 	@Override
+	@SMethod(needLogin=true,maxSpeed=5,maxPacketSize=512)
 	public Resp<Boolean> startLogMonitor(String processId,String logFile, String agentId, 
 			int offsetFromLastLine) {
 		
@@ -118,7 +121,7 @@ public class AgentLogServiceImpl implements IAgentLogService {
 		
 		if(cxt.isAsync() && cb != null) {
 			IAgentProcessService$JMAsyncClient aps = this.id2Aps.get(agentId);
-			aps.startLogMonitorJMAsync(null,processId, logFile, offsetFromLastLine)
+			aps.startLogMonitorJMAsync(processId, logFile, offsetFromLastLine)
 			.then((rst,fail,actx) -> {
 				if(fail == null) {
 					resp.setData(rst);
@@ -139,6 +142,7 @@ public class AgentLogServiceImpl implements IAgentLogService {
 	}
 
 	@Override
+	@SMethod(needLogin=true,maxSpeed=5,maxPacketSize=512)
 	public Resp<Boolean> stopLogMonitor(String processId,String logFile, String agentId) {
 		
 		Resp<Boolean> resp = new Resp<Boolean>();
@@ -158,7 +162,7 @@ public class AgentLogServiceImpl implements IAgentLogService {
 		
 		if(cxt.isAsync() && cb != null) {
 			IAgentProcessService$JMAsyncClient aps = this.id2Aps.get(agentId);
-			aps.stopLogMonitorJMAsync(null,processId,logFile)
+			aps.stopLogMonitorJMAsync(processId,logFile)
 			.then((rst,fail,actx) -> {
 				if(fail == null) {
 					resp.setData(rst);

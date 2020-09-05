@@ -9,6 +9,8 @@ public class Deployment {
 
 	private String id;
 	
+	private int clientId;
+	
 	private String jarFile;
 	
 	private int instanceNum;
@@ -85,6 +87,14 @@ public class Deployment {
 
 	public void setStrategyArgs(String strategyArgs) {
 		this.strategyArgs = strategyArgs;
+	}
+
+	public int getClientId() {
+		return clientId;
+	}
+
+	public void setClientId(int clientId) {
+		this.clientId = clientId;
 	}
 
 	@Override

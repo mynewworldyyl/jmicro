@@ -119,6 +119,12 @@ public class Config implements IConfigChangeListener{
 	
 	private static Map<String,String> extConfig = new HashMap<>();
 	
+	private static int clientId = -1;
+	
+	private static int adminClientId = -1;
+	
+	private static boolean adminSystem = false;
+	
 	private Map<String,Set<IConfigChangeListener>> configChangeListeners = new HashMap<>();
 	
 	private Map<String,Set<IConfigChangeListener>> patternConfigChangeListeners = new HashMap<>();
@@ -155,6 +161,15 @@ public class Config implements IConfigChangeListener{
 				CommadParams.put(key,val);
 			}
 		}
+		
+		clientId = getCommandParam(Constants.CLIENT_ID,Integer.class,-1);
+		if(clientId < 0) {
+			throw new CommonException("Invalid clientId :" + clientId);
+		}
+		
+		adminClientId = getCommandParam(Constants.ADMIN_CLIENT_ID,Integer.class,-1);
+		
+		adminSystem = adminClientId > -1 && clientId == adminClientId;
 		
 		loadExtConfig();
 		
@@ -360,6 +375,18 @@ public class Config implements IConfigChangeListener{
 			extConfig.putAll(params);
 		}
 		
+	}
+	
+	public static boolean isAdminSystem() {
+		return adminSystem;
+	}
+	
+	public static int getClientId() {
+		return clientId;
+	}
+	
+	public static int getAdminClientId() {
+		return adminClientId;
 	}
 	
 	public static long getSystemStartTime() {

@@ -253,7 +253,7 @@ public class MessageServiceImpl implements IGatewayMessageCallback{
 
 
 	@Override
-	@SMethod(asyncable=true,timeout=5000,retryCnt=0,needResponse=false)
+	@SMethod(asyncable=true,timeout=5000,retryCnt=0,needResponse=true)
 	public void onMessage(PSData[] items) {
 		if(items == null || items.length == 0) {
 			return;

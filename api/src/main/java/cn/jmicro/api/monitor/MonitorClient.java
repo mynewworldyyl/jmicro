@@ -455,7 +455,7 @@ public class MonitorClient {
 			this.items = items;
 		}
 		
-		public void onresult(Object rst, AsyncFailResult fail,Map<String,Object> cxt) {
+		public void onresult(Object rst, AsyncFailResult fail,Object cxt) {
 			if(fail != null) {
 				logger.warn(fail.toString());
 			}
@@ -485,7 +485,7 @@ public class MonitorClient {
 						logger.info("lid:" +mi.getLinkId() +", reqId: " + mi.getReqId()+", parentId: " + mi.getReqParentId());
 					}
 					
-					monitorServer.submitJMAsync(null,items).then(this::onresult);
+					monitorServer.submitJMAsync(items).then(this::onresult);
 					
 					if(statusMonitorAdapter.isMonitoralbe()) {
 						statusMonitorAdapter.getServiceCounter().add(MC.Ms_TaskSuccessItemCnt, items.length);

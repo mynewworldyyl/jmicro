@@ -37,7 +37,7 @@ public class TestPubsubManager extends JMicroBaseTestCase{
 		PSData d = new PSData();
 		d.setTopic(TOPIC);
 		d.setData("testSubcribe");
-		org.junit.Assert.assertTrue(PubSubManager.PUB_OK == m.publish(null,TOPIC,"testPubsubManagerPublishString",PSData.FLAG_PUBSUB));
+		org.junit.Assert.assertTrue(PubSubManager.PUB_OK == m.publish(TOPIC,"testPubsubManagerPublishString",PSData.FLAG_PUBSUB,null));
 		//JMicro.waitForShutdown();
 	}
 	
@@ -47,7 +47,7 @@ public class TestPubsubManager extends JMicroBaseTestCase{
 		PSData d = new PSData();
 		d.setTopic(TOPIC);
 		d.setData("testSubcribe");
-		org.junit.Assert.assertTrue(PubSubManager.PUB_OK == m.publish(null,TOPIC,"testPubsubManagerPublishString".getBytes(),PSData.FLAG_PUBSUB));
+		org.junit.Assert.assertTrue(PubSubManager.PUB_OK == m.publish(TOPIC,"testPubsubManagerPublishString".getBytes(),PSData.FLAG_PUBSUB,null));
 		//JMicro.waitForShutdown();
 	}
 	

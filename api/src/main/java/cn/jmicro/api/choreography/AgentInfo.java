@@ -25,6 +25,8 @@ public final class AgentInfo {
 	//每个Agent每次运行分配唯一ID
 	private String id;
 	
+	private int clientId;
+	
 	//JMicro instance name
 	//private String name;
 	
@@ -105,6 +107,14 @@ public final class AgentInfo {
 
 	public void setInitDepIds(String initDepIds) {
 		this.initDepIds = initDepIds;
+	}
+
+	public int getClientId() {
+		return clientId;
+	}
+
+	public void setClientId(int clientId) {
+		this.clientId = clientId;
 	}
 
 	@Override

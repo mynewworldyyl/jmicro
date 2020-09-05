@@ -1,18 +1,16 @@
 package cn.jmicro.api.pubsub;
 
-import java.util.Map;
-
-import cn.jmicro.api.pubsub.PSData;
 import cn.jmicro.codegenerator.AsyncClientProxy;
 
 @AsyncClientProxy
 public interface IPubSubClientService {
 
-	int callService(String topic, Object[] args);
 	
-	int publishString(Map<String,Object> itemContext, String topic, String content);
+/*	int callService(String topic, Object[] args,byte flag, Map<String,Object> itemContext);
 	
-	int publishBytes(Map<String,Object> itemContext, String topic, byte[] content);
+	int publishString(String topic, String content,byte flag, Map<String,Object> itemContext);
+	
+	int publishBytes(String topic, byte[] content,byte flag, Map<String,Object> itemContext);*/
 	
 	int publishMutilItems(PSData[] items);
 	

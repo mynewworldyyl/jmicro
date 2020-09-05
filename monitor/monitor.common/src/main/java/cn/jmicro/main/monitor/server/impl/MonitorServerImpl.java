@@ -395,7 +395,7 @@ public class MonitorServerImpl implements IMonitorServer {
 				if(ri.localSub != null) {
 					ri.localSub.onSubmit(items);
 				} else {
-					ri.sub.onSubmitJMAsync(null,items)
+					ri.sub.onSubmitJMAsync(items)
 					.then((rst,fail,ctx)->{
 						if(fail != null) {
 							logger.error("submit error: " + fail.toString());

@@ -179,7 +179,7 @@
         },
 
         beforeDestroy() {
-            window.jm.mng.act.removeListener(cid);
+            window.jm.mng.act.removeActListener(cid);
         },
     }
 </script>

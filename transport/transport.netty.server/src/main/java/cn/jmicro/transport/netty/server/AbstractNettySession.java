@@ -79,6 +79,8 @@ public abstract class AbstractNettySession extends AbstractSession implements IS
 		ByteBuffer bb = msg.encode();
 		bb.mark();
 		ByteBuf bbf = Unpooled.copiedBuffer(bb);
+		this.writeSum.addAndGet(bb.limit());
+		
 		if(this.type == Constants.TYPE_HTTP) {
 			FullHttpResponse response =  new DefaultFullHttpResponse(HTTP_1_1, OK,bbf);
 			response.headers().set(HttpHeaderNames.CONTENT_TYPE, HttpHeaderValues.BINARY);

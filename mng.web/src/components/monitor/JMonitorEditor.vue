@@ -1,7 +1,7 @@
 <template>
   <div class="JMonitorEditor">
     <p stype="word-break: break-all;padding: 0px 10px;font-size: medium;">{{group.id}}</p>
-    <div v-for="(s,idx ) in cache.serverList" :key="s.srvKey">
+    <div v-for="(s,idx ) in cache.serverList" :key="s.srvKey+idx">
         <p class="header">
                <span v-if="idx!=0">
                   <a @click="btnClick(s)">{{ s.status ?  'Stop' : 'Start' }}</a>

@@ -25,6 +25,7 @@ import cn.jmicro.api.security.Permission;
 import cn.jmicro.api.security.genclient.IAccountService$JMAsyncClient;
 import cn.jmicro.api.service.IServiceAsyncResponse;
 import cn.jmicro.common.Constants;
+import cn.jmicro.common.Md5Utils;
 import cn.jmicro.common.util.JsonUtils;
 import cn.jmicro.common.util.StringUtils;
 import cn.jmicro.mng.LocalAccountManager;
@@ -57,6 +58,7 @@ public class MngAccountServiceImpl implements IMngAccountService {
 	}
 
 	@Override
+	@SMethod(needLogin=true,maxSpeed=3)
 	public Resp<Boolean> logout() {
 		ActInfo ai = JMicroContext.get().getAccount();
 		Resp<Boolean> r = new Resp<>();
@@ -70,6 +72,7 @@ public class MngAccountServiceImpl implements IMngAccountService {
 	}
 
 	@Override
+	@SMethod(maxSpeed=100)
 	public Resp<Boolean> isLogin(String loginKey) {
 		Boolean rst = am.isLogin(loginKey);
 		Resp<Boolean> r = new Resp<>();
@@ -79,6 +82,7 @@ public class MngAccountServiceImpl implements IMngAccountService {
 	}
 
 	@Override
+	@SMethod(maxSpeed=100)
 	public Resp<ActInfo> getAccount(String loginKey) {
 		ActInfo ai = am.getAccount(loginKey);
 		Resp<ActInfo> r = new Resp<>();
@@ -88,10 +92,21 @@ public class MngAccountServiceImpl implements IMngAccountService {
 	}
 	
 	@Override
+	@SMethod(maxSpeed=10)
 	public Resp<Boolean> regist(String actName, String pwd) {
+		
+		if(StringUtils.isEmpty(pwd)) {
+			Resp<Boolean> r = new Resp<>();
+			r.setCode(1);
+			r.setData(false);
+			r.setKey("PwdIsNull");
+			r.setMsg("New password cannot be null!");
+			return r;
+		}
+		
 		ActInfo ai = new ActInfo();
 		ai.setActName(actName);
-		ai.setPwd(pwd);
+		ai.setPwd(Md5Utils.getMd5(pwd));
 		
 		Resp<Boolean> r = checkAccountParam(ai);
 		if(r != null) {
@@ -106,7 +121,7 @@ public class MngAccountServiceImpl implements IMngAccountService {
 				logger.error(Constants.CONTEXT_SERVICE_RESPONSE + " is null in async context");
 			}
 			if(cb != null) {
-				as.registJMAsync(null, actName,pwd).then((rst,fail,rcxt)->{
+				as.registJMAsync(actName,pwd).then((rst,fail,rcxt)->{
 					if(fail == null) {
 						cb.result(rst);
 					} else {
@@ -143,6 +158,7 @@ public class MngAccountServiceImpl implements IMngAccountService {
 	
 	
 	@Override
+	@SMethod(needLogin=true,maxSpeed=5)
 	public Resp<Boolean> updatePwd(String newPwd,String oldPwd) {
 		Resp<Boolean> r = new Resp<>();
 		ActInfo ai = JMicroContext.get().getAccount();
@@ -163,19 +179,19 @@ public class MngAccountServiceImpl implements IMngAccountService {
 			return r;
 		}
 		
-		if(StringUtils.isEquals(ai.getPwd(),oldPwd)) {
-			r.setCode(1);
-			r.setData(false);
-			r.setKey("PwdIsNotValid");
-			r.setMsg("Old password is invalid!");
-			return r;
-		}
-		
 		if(StringUtils.isEmpty(oldPwd)) {
 			r.setCode(1);
 			r.setData(false);
 			r.setKey("PwdIsNull");
 			r.setMsg("Old password cannot be null!");
+			return r;
+		}
+		
+		if(!(ai.getPwd().equals(oldPwd) || Md5Utils.getMd5(oldPwd).equals(ai.getPwd()))) {
+			r.setCode(1);
+			r.setData(false);
+			r.setKey("PwdIsNotValid");
+			r.setMsg("Old password is invalid!");
 			return r;
 		}
 		
@@ -186,7 +202,7 @@ public class MngAccountServiceImpl implements IMngAccountService {
 				logger.error(Constants.CONTEXT_SERVICE_RESPONSE + " is null in async context");
 			}
 			if(cb != null) {
-				as.updatePwdJMAsync(null,newPwd, oldPwd).then((rst,fail,rcxt)->{
+				as.updatePwdJMAsync(newPwd, oldPwd).then((rst,fail,rcxt)->{
 					if(fail == null) {
 						cb.result(rst);
 					} else {
@@ -214,6 +230,7 @@ public class MngAccountServiceImpl implements IMngAccountService {
 	}
 	
 	@Override
+	@SMethod(perType=true,needLogin=true,maxSpeed=5,maxPacketSize=512)
 	public Resp<Boolean> changeAccountStatus(String actName,boolean enableStatus) {
 		Resp<Boolean> r = new Resp<>();
 		
@@ -232,7 +249,7 @@ public class MngAccountServiceImpl implements IMngAccountService {
 				logger.error(Constants.CONTEXT_SERVICE_RESPONSE + " is null in async context");
 			}
 			if(cb != null) {
-				as.changeAccountStatusJMAsync(null, actName, enableStatus).then((rst,fail,rcxt)->{
+				as.changeAccountStatusJMAsync(actName, enableStatus).then((rst,fail,rcxt)->{
 					if(fail == null) {
 						cb.result(rst);
 					} else {
@@ -279,7 +296,7 @@ public class MngAccountServiceImpl implements IMngAccountService {
 	
 	
 	@Override
-	@SMethod(perType=true)
+	@SMethod(perType=true,needLogin=true,maxSpeed=5,maxPacketSize=2048)
 	public Resp<Boolean> updateActPermissions(String actName,Set<String> adds,Set<String> dels) {
 		
 		if(as != null && as.isReady()) {
@@ -289,7 +306,7 @@ public class MngAccountServiceImpl implements IMngAccountService {
 				logger.error(Constants.CONTEXT_SERVICE_RESPONSE + " is null in async context");
 			}
 			if(cb != null) {
-				as.updatePermissionsJMAsync(null, actName,adds,dels).then((rst,fail,rcxt)->{
+				as.updatePermissionsJMAsync(actName,adds,dels).then((rst,fail,rcxt)->{
 					if(fail == null) {
 						cb.result(rst);
 					} else {
@@ -340,6 +357,7 @@ public class MngAccountServiceImpl implements IMngAccountService {
 	}
 	
 	@Override
+	@SMethod(perType=true,needLogin=true,maxSpeed=5,maxPacketSize=512)
 	public Resp<Integer> countAccount(Map<String, String> queryConditions) {
 		
 		if(as != null && as.isReady()) {
@@ -349,7 +367,7 @@ public class MngAccountServiceImpl implements IMngAccountService {
 				logger.error(Constants.CONTEXT_SERVICE_RESPONSE + " is null in async context");
 			}
 			if(cb != null) {
-				as.countAccountJMAsync(null, queryConditions).then((rst,fail,rcxt)->{
+				as.countAccountJMAsync(queryConditions).then((rst,fail,rcxt)->{
 					if(fail == null) {
 						cb.result(rst);
 					} else {
@@ -375,6 +393,7 @@ public class MngAccountServiceImpl implements IMngAccountService {
 	}
 	
 	@Override
+	@SMethod(perType=true,needLogin=true,maxSpeed=5,maxPacketSize=1024)
 	public Resp<List<ActInfo>> getAccountList(Map<String, String> queryConditions, int pageSize, int curPage) {
 		if(as != null && as.isReady()) {
 			JMicroContext cxt = JMicroContext.get();
@@ -383,7 +402,7 @@ public class MngAccountServiceImpl implements IMngAccountService {
 				logger.error(Constants.CONTEXT_SERVICE_RESPONSE + " is null in async context");
 			}
 			if(cb != null) {
-				as.getAccountListJMAsync(null, queryConditions,pageSize,curPage).then((rst,fail,rcxt)->{
+				as.getAccountListJMAsync(queryConditions,pageSize,curPage).then((rst,fail,rcxt)->{
 					if(fail == null) {
 						cb.result(rst);
 					} else {
@@ -416,7 +435,7 @@ public class MngAccountServiceImpl implements IMngAccountService {
 	}
 	
 	@Override
-	@SMethod(perType=true)
+	@SMethod(perType=true,needLogin=true,maxSpeed=5,maxPacketSize=2048)
 	public Resp<Map<String, Set<Permission>>> getPermissionsByActName(String actName) {
 		if(as != null && as.isReady()) {
 			JMicroContext cxt = JMicroContext.get();
@@ -425,7 +444,7 @@ public class MngAccountServiceImpl implements IMngAccountService {
 				logger.error(Constants.CONTEXT_SERVICE_RESPONSE + " is null in async context");
 			}
 			if(cb != null) {
-				as.getPermissionsByActNameJMAsync(null, actName).then((rst,fail,rcxt)->{
+				as.getPermissionsByActNameJMAsync(actName).then((rst,fail,rcxt)->{
 					if(fail == null) {
 						cb.result(rst);
 					} else {
@@ -450,6 +469,7 @@ public class MngAccountServiceImpl implements IMngAccountService {
 	}
 	
 	@Override
+	@SMethod(perType=true,needLogin=true,maxSpeed=5,maxPacketSize=256)
 	public Resp<Map<String, Set<Permission>>> getAllPermissions() {
 		if(as != null && as.isReady()) {
 			JMicroContext cxt = JMicroContext.get();
@@ -458,7 +478,7 @@ public class MngAccountServiceImpl implements IMngAccountService {
 				logger.error(Constants.CONTEXT_SERVICE_RESPONSE + " is null in async context");
 			}
 			if(cb != null) {
-				as.getAllPermissionsJMAsync(null).then((rst,fail,rcxt)->{
+				as.getAllPermissionsJMAsync().then((rst,fail,rcxt)->{
 					if(fail == null) {
 						cb.result(rst);
 					} else {

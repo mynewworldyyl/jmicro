@@ -69,7 +69,7 @@ public class RpcClassLoader extends ClassLoader {
     @Inject
     private IRegistry registry;
     
-    @Reference(required = true)
+    @Reference(required = false)
     private IClassloaderRpc$JMAsyncClient rpcLlassloader = null;
     
     private ClassLoader parent = null;
@@ -313,7 +313,7 @@ public class RpcClassLoader extends ClassLoader {
 		if (directItem != null) {
 			try {
 				JMicroContext.get().setParam(Constants.DIRECT_SERVICE_ITEM, directItem);
-				IPromise<byte[]> p = this.rpcLlassloader.getClassDataJMAsync(null, originClsName);
+				IPromise<byte[]> p = this.rpcLlassloader.getClassDataJMAsync(originClsName);
 				if(sync) {
 					byte[] bytes = p.getResult();
 					if (bytes != null && bytes.length > 0) {
@@ -361,7 +361,7 @@ public class RpcClassLoader extends ClassLoader {
 		if (directItem != null) {
 			try {
 				JMicroContext.get().setParam(Constants.DIRECT_SERVICE_ITEM, directItem);
-				IPromise<byte[]> p = this.rpcLlassloader.getClassDataJMAsync(null, originClsName);
+				IPromise<byte[]> p = this.rpcLlassloader.getClassDataJMAsync(originClsName);
 				if(sync) {
 					byte[] bytes = p.getResult();
 					if (bytes != null && bytes.length > 0) {

@@ -1,4 +1,4 @@
-package cn.jmicro.pubsub;
+package cn.jmicro.cmd;
 
 import cn.jmicro.api.JMicro;
 import cn.jmicro.api.annotation.Component;
@@ -7,8 +7,9 @@ import cn.jmicro.api.choreography.ChoyConstants;
 import cn.jmicro.api.choreography.Deployment;
 import cn.jmicro.api.config.Config;
 import cn.jmicro.api.idgenerator.ComponentIdServer;
+import cn.jmicro.api.objectfactory.IObjectFactory;
 import cn.jmicro.api.raft.IDataOperator;
-import cn.jmicro.common.CommonException;
+import cn.jmicro.api.security.AccountManager;
 import cn.jmicro.common.util.JsonUtils;
 import cn.jmicro.common.util.StringUtils;
 
@@ -24,15 +25,23 @@ public class InitJmicroEnv {
 	@Inject
 	private ComponentIdServer idServer;
 	
+	@Inject
+	private AccountManager am;
+	
+	@Inject
+	private CmdProcessor cp;
+	
 	public static void main(String[] args) {
-		JMicro.getObjectFactoryAndStart(args);
+		IObjectFactory of = JMicro.getObjectFactoryAndStart(args);
+		CmdProcessor cp = of.get(CmdProcessor.class);
+		cp.cmdLoop(true);
 	}
 	
 	public void ready() {
 		
 		String initDepTypeStr = this.cfg.getString("initDepTypes",null);
 		if(StringUtils.isEmpty(initDepTypeStr)) {
-			throw new CommonException("initDepTypes cannot be null");
+			return;
 		}
 		
 		String[] initDepTypes = initDepTypeStr.split(",");
@@ -55,6 +64,8 @@ public class InitJmicroEnv {
 				System.out.println("Invalid module name: " + t);
 			}
 		}
+		
+		
 	}
 	
 	private void createMonitorDeployment() {

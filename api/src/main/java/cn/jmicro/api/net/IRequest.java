@@ -68,4 +68,6 @@ public interface IRequest extends IReq{
 	int getLogLevel();
 	
 	void putObject(String key,Object value);
+	
+	public int getPacketSize();
 }

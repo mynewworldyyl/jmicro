@@ -30,6 +30,7 @@ import cn.jmicro.api.net.IReq;
 import cn.jmicro.api.net.IResp;
 import cn.jmicro.api.net.Message;
 import cn.jmicro.api.registry.ServiceMethod;
+import cn.jmicro.api.security.ActInfo;
 import cn.jmicro.common.Constants;
 import cn.jmicro.common.util.JsonUtils;
 
@@ -54,7 +55,7 @@ public class SF {
 		if(isMonitorable(type)) {
 			MRpcItem mi = JMicroContext.get().getMRpcItem();
 			mi.setResp(resp);
-			mi.addOneItem(type,level,tag,"");
+			OneItem oi = mi.addOneItem(type,level,tag,"");
 			return true;
 		}else {
 			if(level >= MC.LOG_INFO && logger.isDebugEnabled()) {
@@ -69,7 +70,7 @@ public class SF {
 		if(isMonitorable(type)) {
 			MRpcItem mi = JMicroContext.get().getMRpcItem();
 			mi.setReq(req);
-			mi.addOneItem(type,level,tag,desc);
+			OneItem oi =mi.addOneItem(type,level,tag,desc);
 			return true;
 		}else {
 			if(level >= MC.LOG_INFO && logger.isDebugEnabled()) {
@@ -93,6 +94,10 @@ public class SF {
 			if(mi == null) {
 				 f = true;
 				 mi = new MRpcItem();
+				 ActInfo ai = JMicroContext.get().getAccount();
+					if(ai != null) {
+						mi.setClientId(ai.getClientId());
+					}
 			}
 			
 			OneItem oi = mi.addOneItem(type,level, tag.getName(),desc);
@@ -151,6 +156,10 @@ public class SF {
 		if(mi == null) {
 			mi = new MRpcItem();
 			f = true;
+			ActInfo ai = JMicroContext.get().getAccount();
+			if(ai != null) {
+				mi.setClientId(ai.getClientId());
+			}
 		}
 		
 		OneItem oi = mi.addOneItem(type,level,cls.getName(),desc);
@@ -195,10 +204,15 @@ public class SF {
 		if(mi == null) {
 			mi = new MRpcItem();
 			f = true;
+			ActInfo ai = JMicroContext.get().getAccount();
+			if(ai != null) {
+				mi.setClientId(ai.getClientId());
+			}
 		}
 		
 		OneItem oi = mi.addOneItem(type, tag);
 		oi.setVal(num);
+		
 		if(f) {
 			setCommon(mi);
 			return m.submit2Cache(mi);
@@ -206,13 +220,17 @@ public class SF {
 		return true;
 	}
 	
-	private static void doLog(short type,byte level,Class<?> cls,Message msg,Throwable exp, String desc) {
+	private static void doLog(short type, byte level, Class<?> cls, Message msg, Throwable exp, String desc) {
 		if(isMonitorable(type)) {
 			int lineNum = Thread.currentThread().getStackTrace()[3].getLineNumber();
 			MRpcItem mi = JMicroContext.get().getMRpcItem();
 			boolean f = false;
 			if(mi == null) {
 				mi = new MRpcItem();
+				ActInfo ai = JMicroContext.get().getAccount();
+				if(ai != null) {
+					mi.setClientId(ai.getClientId());
+				}
 				f = true;
 			}
 			desc += ", Line: " + lineNum;
@@ -224,6 +242,7 @@ public class SF {
 			OneItem oi = mi.addOneItem(type,level, cls.getName(),desc);
 			oi.setEx(serialEx(exp));
 			mi.setMsg(msg);
+			
 			if(f) {
 				setCommon(mi);
 				m.submit2Cache(mi);

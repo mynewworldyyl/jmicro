@@ -9,6 +9,8 @@ public class ProcessInfo {
 
 	private String id;
 	
+	private int clientId;
+	
 	private String host;
 	
 	private String instanceName;
@@ -185,6 +187,14 @@ public class ProcessInfo {
 
 	public void setTimeOut(long timeOut) {
 		this.timeOut = timeOut;
+	}
+
+	public int getClientId() {
+		return clientId;
+	}
+
+	public void setClientId(int clientId) {
+		this.clientId = clientId;
 	}
 
 	@Override

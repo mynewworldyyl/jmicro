@@ -26,11 +26,10 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import cn.jmicro.api.debug.LogUtil;
 
 /**
  * 
@@ -63,6 +62,10 @@ public abstract class AbstractSession implements ISession{
 	private boolean dumpDownStream = false;
 	
 	private boolean dumpUpStream = false;
+	
+	protected AtomicLong readSum = new AtomicLong(0);
+	
+	protected AtomicLong writeSum = new AtomicLong(0);
 	
 	//protected ServiceCounter counter = null;
 	
@@ -190,6 +193,7 @@ public abstract class AbstractSession implements ISession{
               			message.getReqId(),message.getMethod(),(startTime-message.getTime()),(curTIme - startTime));
               }*/
               
+             this.readSum.addAndGet(message.getLen());
              receiver.receive(this,message);
      	 }
      	
@@ -398,5 +402,12 @@ public abstract class AbstractSession implements ISession{
 	public void setReceiver(IMessageReceiver receiver) {
 		this.receiver = receiver;
 	}
-	
+
+	public long getReadSum() {
+		return readSum.get();
+	}
+
+	public long getWriteSum() {
+		return writeSum.get();
+	}
 }

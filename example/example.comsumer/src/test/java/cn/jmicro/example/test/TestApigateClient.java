@@ -19,6 +19,7 @@ package cn.jmicro.example.test;
 import org.junit.Test;
 
 import cn.jmicro.api.JMicro;
+import cn.jmicro.api.pubsub.PSData;
 import cn.jmicro.api.test.Person;
 import cn.jmicro.common.Constants;
 import cn.jmicro.example.api.ITestRpcService;
@@ -43,12 +44,12 @@ public class TestApigateClient {
 		//System.out.println(srv.hi(new Person()));
 		
 		ISimpleRpc$JMAsyncClient srv = socketClient.getService(ISimpleRpc$JMAsyncClient.class,"simpleRpc", "0.0.1");
-		srv.hiJMAsync(null,new Person()).then((val,fail,ctx) -> {
+		srv.hiJMAsync(new Person()).then((val,fail,ctx) -> {
 			System.out.println("Hi: " +val);
 			//System.out.println(fail);
 		});
 		
-		srv.helloJMAsync(null,"Hello jmicro: ").then((val,fail,ctx) -> {
+		srv.helloJMAsync("Hello jmicro: ").then((val,fail,ctx) -> {
 			System.out.println("Hello: " +val);
 			//System.out.println(fail);
 		});
@@ -116,7 +117,7 @@ public class TestApigateClient {
 		.success((ai,cxt)->{
 			System.out.println("Success login: "+ai.getActName());
 			 socketClient.getPubsubClient()
-			.publishStringJMAsync(null, null, "/jmicro/test/topic01", "Message from java client!")
+			.publishStringJMAsync("/jmicro/test/topic01", "Message from java client!",PSData.FLAG_DEFALUT,null)
 			.success((id,cxt0)->{
 				System.out.println("Publish result: "+id);
 			})
@@ -130,5 +131,54 @@ public class TestApigateClient {
 		
 		JMicro.waitForShutdown();
 	}
+	
+	@Test
+	public void testPublishByte() {
+		socketClient.loginJMAsync("test01", "1")
+		.success((ai,cxt)->{
+			System.out.println("Success login: "+ai.getActName());
+			 socketClient.getPubsubClient()
+			.publishBytesJMAsync("/jmicro/test/topic01", "Message from java client!".getBytes(),PSData.FLAG_DEFALUT,null)
+			.success((id,cxt0)->{
+				System.out.println("Publish result: "+id);
+			})
+			.fail((code,msg,cxt1)->{
+				System.out.println("Fail pubilish content: code: "+ code + ", msg: " + msg);
+			});
+		})
+		.fail((code,msg,cxt)->{
+			System.out.println("Fail login: code"+ code + ", msg: " + msg);
+		});
+		
+		JMicro.waitForShutdown();
+	}
+	
+	@Test
+	public void testPublishMutilItems() {
+		socketClient.loginJMAsync("test01", "1")
+		.success((ai,cxt)->{
+			System.out.println("Success login: "+ai.getActName());
+			
+			 PSData pd = new PSData();
+			 pd.setTopic("/jmicro/test/topic01");
+			 pd.setData("Message from java client!");
+			 
+			 socketClient.getPubsubClient()
+			//.publishOneItemJMAsync(null, pd)
+			.publishMutilItemsJMAsync(new PSData[] {pd})
+			.success((id,cxt0)->{
+				System.out.println("Publish result: "+id);
+			})
+			.fail((code,msg,cxt1)->{
+				System.out.println("Fail pubilish content: code: "+ code + ", msg: " + msg);
+			});
+		})
+		.fail((code,msg,cxt)->{
+			System.out.println("Fail login: code"+ code + ", msg: " + msg);
+		});
+		
+		JMicro.waitForShutdown();
+	}
+	
 	
 }

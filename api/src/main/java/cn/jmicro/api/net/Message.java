@@ -168,6 +168,10 @@ public final class Message {
 		return (flag & mask) != 0;
 	}
 	
+	public static short set(boolean isTrue,short f,short mask) {
+		return isTrue ?(f |= mask) : (f &= ~mask);
+	}
+	
 	/*public static boolean is(byte flag, short mask) {
 		return (flag & mask) != 0;
 	}*/
@@ -207,10 +211,6 @@ public final class Message {
 	
 	public void setDebugMode(boolean f) {
 		flag = set(f,flag,FLAG_DEBUG_MODE);
-	}
-	
-	public static short set(boolean isTrue,short f,short mask) {
-		return isTrue ?(f |= mask) : (f &= ~mask);
 	}
 	
 	public boolean isMonitorable() {
@@ -338,7 +338,7 @@ public final class Message {
 				msg.setPayload(null);
 			}
 			
-			msg.setLen(len + Message.HEADER_LEN);
+			msg.setLen(len /*+ Message.HEADER_LEN*/);
 			
 			return msg;
 		} catch (IOException e) {

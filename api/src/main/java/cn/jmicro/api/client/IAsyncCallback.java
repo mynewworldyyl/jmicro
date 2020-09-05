@@ -16,8 +16,6 @@
  */
 package cn.jmicro.api.client;
 
-import java.util.Map;
-
 import cn.jmicro.api.async.AsyncFailResult;
 
 /**
@@ -27,5 +25,5 @@ import cn.jmicro.api.async.AsyncFailResult;
  */
 public interface IAsyncCallback<R> {
 
-	void onResult(R msg, AsyncFailResult fail, Map<String,Object> context);
+	void onResult(R msg, AsyncFailResult fail, Object context);
 }

@@ -1,7 +1,7 @@
 <template>
     <div class="JLogItemView" style="position:relative;height:auto">
 
-        <div style="position:relative;height:auto;margin-top:10px;">
+        <div v-if="isLogin" style="position:relative;height:auto;margin-top:10px;">
             <table class="configItemTalbe" width="99%">
                 <thead><tr><td style="width:300px">TAG</td><td  style="width:165px">TIME</td><td style="width:135px">LEVEL</td>
                     <td  style="width:130px">TYPE</td><td  style="width:38px">TYPE</td><td  style="width:38px">TYPE</td>
@@ -13,15 +13,17 @@
             </table>
         </div>
 
-        <div style="position:relative;text-align:center;">
+        <div v-if="isLogin"  style="position:relative;text-align:center;">
             <Page ref="pager" :total="totalNum" :page-size="pageSize" :current="curPage"
                   show-elevator show-sizer show-total @on-change="curPageChange"
                   @on-page-size-change="pageSizeChange" :page-size-opts="[10, 30, 60,100]"></Page>
         </div>
 
-        <div :style="drawer.drawerBtnStyle" class="drawerJinvokeBtnStatu" @mouseenter="openDrawer()"></div>
+        <div v-if="!isLogin" >Not login</div>
 
-        <Drawer  v-model="drawer.drawerStatus" :closable="false" placement="left" :transfer="true"
+        <div v-if="isLogin"  :style="drawer.drawerBtnStyle" class="drawerJinvokeBtnStatu" @mouseenter="openDrawer()"></div>
+
+        <Drawer v-if="isLogin"   v-model="drawer.drawerStatus" :closable="false" placement="left" :transfer="true"
                  :draggable="true" :scrollable="true" width="50">
             <table id="queryTable">
                 <tr>
@@ -203,6 +205,7 @@
         name: cid,
         data() {
             return {
+                isLogin:false,
                 logList: [],
                 queryParams:{noLog:"true"},
                 totalNum:0,
@@ -264,7 +267,10 @@
 
             refresh() {
                 let self = this;
-                this.adminPer = window.jm.mng.comm.adminPer;
+                this.isLogin = window.jm.rpc.isLogin();
+                if(!this.isLogin) {
+                    return;
+                }
                 let params = this.getQueryConditions();
                 window.jm.mng.logSrv.queryLog(params,this.pageSize,this.curPage-1).then((resp)=>{
                     if(resp.code != 0) {
@@ -323,42 +329,58 @@
                 this.detail.drawerBtnStyle.right = '0px';
             },
 
+            q() {
+                let self = this;
+                self.isLogin = window.jm.rpc.isLogin();
+                if(!this.isLogin) {
+                    return;
+                }
+                window.jm.mng.comm.getDicts(['logKey2Val','mtKey2Val']).then((dicts)=>{
+                    if(dicts) {
+                        for(let k in dicts) {
+                            let k2v = dicts[k];
+                            let v2k = {};
+                            self.ds[k] = v2k;
+                            for(let kk in k2v) {
+                                v2k[k2v[kk]] = kk;
+                            }
+                        }
+                    }
+                }).catch((err)=>{
+                    throw err;
+                });
+
+                window.jm.mng.logSrv.queryDict().then((resp)=>{
+                    if(resp.code != 0) {
+                        self.$Message.success(resp.msg);
+                        return;
+                    }
+                    self.selOptions = resp.data;
+                    window.jm.mng.act.addListener(cid,this.refresh);
+                    self.doQuery();
+
+                }).catch((err)=>{
+                    window.console.log(err);
+                });
+            }
+
         },
 
         mounted () {
             let self = this;
-            window.jm.mng.comm.getDicts(['logKey2Val','mtKey2Val']).then((dicts)=>{
-                if(dicts) {
-                    for(let k in dicts) {
-                        let k2v = dicts[k];
-                        let v2k = {};
-                        self.ds[k] = v2k;
-                        for(let kk in k2v) {
-                            v2k[k2v[kk]] = kk;
-                        }
-                    }
-                }
-            }).catch((err)=>{
-                throw err;
-            });
+            window.jm.rpc.addActListener(cid,self.q);
+            let ec = function() {
+                window.jm.rpc.removeActListener(cid);
+                window.jm.vue.$off('editorClosed',ec);
+            }
+            window.jm.vue.$on('editorClosed',ec);
 
-            window.jm.mng.logSrv.queryDict().then((resp)=>{
-                if(resp.code != 0) {
-                    self.$Message.success(resp.msg);
-                    return;
-                }
-                self.selOptions = resp.data;
-                window.jm.mng.act.addListener(cid,this.refresh);
-                self.doQuery();
 
-            }).catch((err)=>{
-                window.console.log(err);
-            });
 
         },
 
         beforeDestroy() {
-            window.jm.mng.act.removeListener(cid);
+            window.jm.rpc.removeActListener(cid);
         },
 
         filters: {

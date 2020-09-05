@@ -220,7 +220,7 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
 				throw new RpcException(req,msg);
 			}
 			
-			data.setCallback(callback.getKey());
+			data.setCallback(callback.getKey().toKey(false, false, false));
 			data.mergeContext(ac.getContext());
 		}
 		

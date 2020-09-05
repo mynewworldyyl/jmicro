@@ -35,6 +35,8 @@
     //服务名称，名称空间，版本分组服务方法
     const GROUP_SNV = 'snv';
 
+    //const cid = 'JServiceList';
+
     export default {
         name: 'JServiceList',
         data () {
@@ -75,17 +77,21 @@
         },
 
         mounted(){
-            this.loadServices((srvTrees)=>{
-                this.services = srvTrees;
-            });
             let self = this;
-            window.jm.vue.$on('userLogin',() => {
-                self.loadServices();
+            window.jm.rpc.addActListener(this.slId,()=>{
+                self.isLogin = window.jm.rpc.isLogin();
+                if( self.isLogin) {
+                    self.loadServices();
+                }
             });
 
-            window.jm.vue.$on('userLogout',() => {
-                self.loadServices();
-            });
+            let ec = function() {
+                window.jm.rpc.removeActListener(self.slId);
+                window.jm.vue.$off('editorClosed',ec);
+            }
+
+            window.jm.vue.$on('editorClosed',ec);
+
         },
 
         methods:{

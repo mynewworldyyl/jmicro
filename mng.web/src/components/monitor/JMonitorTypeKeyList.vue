@@ -23,6 +23,8 @@
 
     const GROUP = 'monitorTye';
 
+    const cid = 'JMonitorTypeKeyList';
+
     export default {
         name: 'JMonitorTypeKeyList',
         data () {
@@ -44,7 +46,21 @@
         },
 
         mounted(){
-            this.loadMonitors();
+            let self = this;
+            window.jm.rpc.addActListener(cid,()=>{
+                self.isLogin = window.jm.rpc.isLogin();
+                if( self.isLogin) {
+                    self.loadMonitors();
+                }
+            });
+
+            let ec = function() {
+                window.jm.rpc.removeActListener(cid);
+                window.jm.vue.$off('editorClosed',ec);
+            }
+
+            window.jm.vue.$on('editorClosed',ec);
+
         },
 
         methods:{

@@ -23,6 +23,14 @@ public abstract class AbstractClientServiceProxyHolder implements IServiceListen
 	public boolean isReady() {
 		return proxyHolder.getItem() != null;
 	}
+	
+	public int clientId() {
+		return proxyHolder.getItem() == null?-1:proxyHolder.getItem().getClientId();
+	}
+	
+	public ServiceItem getItem() {
+		return proxyHolder.getItem();
+	}
 
 	/*public <T> T[] convertArray(Class<T> targetType, Object[] arrayObjects) {
         if (targetType == null) {

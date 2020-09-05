@@ -34,6 +34,8 @@ public final class ServerError {
 	public static final int SE_NOT_LOGIN = 0x00000006;
 	
 	public static final int SE_SERVICE_NOT_FOUND= 0x00000007;
+	
+	public static final int SE_PACKET_TOO_MAX = 0x00000008;
 
 	private int errorCode;
 	private String msg;

@@ -301,6 +301,15 @@ public final class MC {
 	@MCA(value="线程池拒绝任务提交", group=Constants.EXECUTOR_POOL, desc="")
 	public static final short MT_EXECUTOR_REJECT = 0x0051;
 	
+	@MCA(value="RPC参数大小超过限定大小", desc="")
+	public static final short MT_PACKET_TOO_MAX = 0x0052;
+	
+	@MCA(value="clientId权限拒绝", desc="")
+	public static final short MT_CLIENT_ID_REJECT = 0x0053;
+	
+	@MCA(value="账号权限拒绝", desc="")
+	public static final short MT_ACT_PERMISSION_REJECT = 0x0054;
+	
 	public static final short KEEP_MAX_VAL = 0x0FFF;
 	
 	//每秒响应数定义为 QPS？ 

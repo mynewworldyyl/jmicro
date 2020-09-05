@@ -1,14 +1,10 @@
 package cn.jmicro.codegenerator;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 import javax.annotation.processing.AbstractProcessor;
-import javax.annotation.processing.Filer;
-import javax.annotation.processing.Messager;
 import javax.annotation.processing.ProcessingEnvironment;
 import javax.annotation.processing.RoundEnvironment;
 import javax.annotation.processing.SupportedAnnotationTypes;
@@ -24,8 +20,6 @@ import javax.lang.model.type.ArrayType;
 import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
-import javax.lang.model.util.Elements;
-import javax.lang.model.util.Types;
 import javax.tools.Diagnostic.Kind;
 
 import com.squareup.javapoet.ArrayTypeName;
@@ -42,18 +36,18 @@ import com.squareup.javapoet.TypeSpec;
 @SupportedSourceVersion(SourceVersion.RELEASE_8)
 public class ClientServiceProxyGenerator extends AbstractProcessor {
 
-	private Types mTypeUtils;
+/*	private Types mTypeUtils;
     private Messager mMessager;
     private Filer mFiler;
-    private Elements mElementUtils;
+    private Elements mElementUtils;*/
 
 	@Override
 	public void init(ProcessingEnvironment processingEnvironment) {
 	    super.init(processingEnvironment);
-		mTypeUtils = processingEnvironment.getTypeUtils();
+		/*mTypeUtils = processingEnvironment.getTypeUtils();
 	    mMessager = processingEnvironment.getMessager();
 	    mFiler = processingEnvironment.getFiler();
-	    mElementUtils = processingEnvironment.getElementUtils();
+	    mElementUtils = processingEnvironment.getElementUtils();*/
 	}
 	
 	@Override
@@ -71,8 +65,9 @@ public class ClientServiceProxyGenerator extends AbstractProcessor {
 			 
 			 TypeElement typeElement = (TypeElement)element;	
 		     generateInterfaceClass(typeElement);
-			
 		     generateImplClass(typeElement);
+		     
+		     
 		     
 		}
 		return true;
@@ -112,7 +107,8 @@ public class ClientServiceProxyGenerator extends AbstractProcessor {
 			 if(e.getKind() != ElementKind.METHOD) {
 				 return;
 			 }
-			 clientProxyHolderBuilder.addMethod(addAsyncClassMethod((ExecutableElement)e));
+			 clientProxyHolderBuilder.addMethod(addAsyncClassMethod((ExecutableElement)e,false));
+			 clientProxyHolderBuilder.addMethod(addAsyncClassMethod((ExecutableElement)e,true));
 			 clientProxyHolderBuilder.addMethod(addSyncClassMethod((ExecutableElement)e));
 		 });
 		 
@@ -177,7 +173,7 @@ public class ClientServiceProxyGenerator extends AbstractProcessor {
 	    return builder.build();
 	}
 
-	private MethodSpec addAsyncClassMethod(ExecutableElement m) {
+	private MethodSpec addAsyncClassMethod(ExecutableElement m,boolean withContext) {
 
 		    MethodSpec.Builder builder = MethodSpec.methodBuilder(m.getSimpleName().toString() + AsyncClientProxy.ASYNC_METHOD_SUBFIX)
 			  .addModifiers(Modifier.PUBLIC);
@@ -186,30 +182,48 @@ public class ClientServiceProxyGenerator extends AbstractProcessor {
 		   
 		    parseReturnType(m,builder,promise);
 		    
-		    addContextParameter(builder);
-		    
 		  	String psString = "";
 		  	for(VariableElement pe : m.getParameters()) {
 		  		builder.addParameter(ParameterSpec.get(pe));
 		  		psString = psString + "," + pe.getSimpleName();
 		  	}
 		  	
+		  	if(withContext) {
+		    	 addContextParameter(builder);
+		    }
+		  	
 		  	if(psString.startsWith(",")) {
 		  		psString = psString.substring(1);
 		  	}
 		  	
-		  	if("".equals(psString)) {
-		  		builder.addCode("return cn.jmicro.api.async.PromiseUtils.callService(this, $S,context);",
-			  			m.getSimpleName());
-		  	} else {
-		  		if(m.getParameters().size() == 1) {
-		  			builder.addCode("return cn.jmicro.api.async.PromiseUtils.callService(this, $S,context, (java.lang.Object)($L));",
-				  			m.getSimpleName(),psString);
-	  			}else {
-	  				builder.addCode("return cn.jmicro.api.async.PromiseUtils.callService(this, $S,context, $L);",
-				  			m.getSimpleName(),psString);
-	  			}
+		  	if(withContext) {
+		  		if("".equals(psString)) {
+			  		builder.addCode("return cn.jmicro.api.async.PromiseUtils.callService(this, $S,context);",
+				  			m.getSimpleName());
+			  	} else {
+			  		if(m.getParameters().size() == 1) {
+			  			builder.addCode("return cn.jmicro.api.async.PromiseUtils.callService(this, $S,context, (java.lang.Object)($L));",
+					  			m.getSimpleName(),psString);
+		  			}else {
+		  				builder.addCode("return cn.jmicro.api.async.PromiseUtils.callService(this, $S,context, $L);",
+					  			m.getSimpleName(),psString);
+		  			}
+			  	}
+		  	}else {
+		  		if("".equals(psString)) {
+			  		builder.addCode("return cn.jmicro.api.async.PromiseUtils.callService(this, $S,null);",
+				  			m.getSimpleName());
+			  	} else {
+			  		if(m.getParameters().size() == 1) {
+			  			builder.addCode("return cn.jmicro.api.async.PromiseUtils.callService(this, $S,null, (java.lang.Object)($L));",
+					  			m.getSimpleName(),psString);
+		  			}else {
+		  				builder.addCode("return cn.jmicro.api.async.PromiseUtils.callService(this, $S, null, $L);",
+					  			m.getSimpleName(),psString);
+		  			}
+			  	}
 		  	}
+		  
 		  	
 		    return builder.build();
 		
@@ -369,13 +383,24 @@ public class ClientServiceProxyGenerator extends AbstractProcessor {
 				 return;
 			 }
 			 ExecutableElement m = (ExecutableElement)e;
-			 clientProxyHolderBuilder.addMethod(addInterfaceMethod(m));
+			 clientProxyHolderBuilder.addMethod(addInterfaceMethod(m,true));
+			 clientProxyHolderBuilder.addMethod(addInterfaceMethod(m,false));
 		 });
 			
 		 MethodSpec.Builder isValidMethod = MethodSpec.methodBuilder("isReady")
 				  .addModifiers(Modifier.PUBLIC,Modifier.ABSTRACT);
 		 isValidMethod.returns(TypeName.BOOLEAN);
 		 clientProxyHolderBuilder.addMethod(isValidMethod.build());
+		 
+		 MethodSpec.Builder clientId = MethodSpec.methodBuilder("clientId")
+				  .addModifiers(Modifier.PUBLIC,Modifier.ABSTRACT);
+		 clientId.returns(TypeName.INT);
+		 clientProxyHolderBuilder.addMethod(clientId.build());
+		 
+		 MethodSpec.Builder getItem = MethodSpec.methodBuilder("getItem")
+				  .addModifiers(Modifier.PUBLIC,Modifier.ABSTRACT);
+		 getItem.returns(ClassName.get("cn.jmicro.api.registry", "ServiceItem"));
+		 clientProxyHolderBuilder.addMethod(getItem.build());
 		 
 	    TypeSpec typeSpec = clientProxyHolderBuilder.build();
 	 
@@ -390,38 +415,42 @@ public class ClientServiceProxyGenerator extends AbstractProcessor {
 		
 	}
 
-	private MethodSpec addInterfaceMethod(ExecutableElement m) {
+	private MethodSpec addInterfaceMethod(ExecutableElement m,boolean widthContext) {
 	  MethodSpec.Builder builder = MethodSpec.methodBuilder(m.getSimpleName().toString() + AsyncClientProxy.ASYNC_METHOD_SUBFIX)
 		  .addModifiers(Modifier.PUBLIC,Modifier.ABSTRACT);
 	  
 	    ClassName promise = ClassName.get("cn.jmicro.api.async", "IPromise");
 	    parseReturnType(m, builder, promise);
 	    
-	    /*ParameterizedTypeName ppromise = null;
+	    /*
+	    ParameterizedTypeName ppromise = null;
 	    if( returnTypeName != null ) {
 	    	ppromise = ParameterizedTypeName.get(promise, returnTypeName);
 	    } else {
 	    	ppromise = ParameterizedTypeName.get(promise, ClassName.get(java.lang.Void.class) );
 	    }
-	  	builder.returns(ppromise);*/
+	  	builder.returns(ppromise);
+	  	*/
 	  	
 	  	List<? extends VariableElement> ps = m.getParameters();
 	  	//List<? extends TypeParameterElement> tpes = m.getTypeParameters();
-	  	addContextParameter(builder);
-	  	
 	  	for(VariableElement pe : ps) {
 	  		builder.addParameter(ParameterSpec.get(pe));
+	  	}
+	  	
+	  	if(widthContext) {
+	  		addContextParameter(builder);
 	  	}
 	  	
 	    return builder.build();
 	}
 
 	private void addContextParameter(Builder builder) {
-		List<TypeName> bounds = new ArrayList<>();
+		/*List<TypeName> bounds = new ArrayList<>();
 	  	bounds.add(TypeName.get(String.class));
-	  	bounds.add(TypeName.get(Object.class));
-	  	TypeName cxtType = ParameterizedTypeName.get(Map.class, String.class,Object.class);
-	  	builder.addParameter(cxtType,"context");
+	  	bounds.add(TypeName.get(Object.class));*/
+	  	//TypeName cxtType = ParameterizedTypeName.get(Map.class, String.class,Object.class);
+	  	builder.addParameter(TypeName.get(Object.class),"context");
 	}
 	
 	

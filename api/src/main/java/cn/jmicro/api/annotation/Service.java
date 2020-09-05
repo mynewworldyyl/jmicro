@@ -124,9 +124,9 @@ public @interface Service {
 	public int maxFailBeforeFusing() default 500;
 	
 	/**
-	 * 支持的最高QPS
+	 * 每秒最大支持的最高QPS
 	 */
-	public int maxSpeed() default 0; //0无限制
+	public int maxSpeed() default 10000; //0无限制,大于0，限速
 	
 	//统计服务数据基本时长，单位同baseTimeUnit确定  @link SMethod
 	public long timeWindow() default 1000*60;

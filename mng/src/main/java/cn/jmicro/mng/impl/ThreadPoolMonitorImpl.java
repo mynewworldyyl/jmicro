@@ -12,6 +12,7 @@ import org.slf4j.LoggerFactory;
 import cn.jmicro.api.Resp;
 import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Reference;
+import cn.jmicro.api.annotation.SMethod;
 import cn.jmicro.api.annotation.Service;
 import cn.jmicro.api.executor.ExecutorInfo;
 import cn.jmicro.api.executor.IExecutorInfo;
@@ -20,6 +21,7 @@ import cn.jmicro.api.mng.IThreadPoolMonitor;
 import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.objectfactory.AbstractClientServiceProxyHolder;
 import cn.jmicro.api.registry.ServiceItem;
+import cn.jmicro.api.security.PermissionManager;
 import cn.jmicro.common.util.StringUtils;
 
 @Component
@@ -33,6 +35,7 @@ public class ThreadPoolMonitorImpl implements IThreadPoolMonitor {
 	private List<IExecutorInfo$JMAsyncClient> monitorServers = new ArrayList<>();
 	
 	@Override
+	@SMethod(timeout=60000,retryCnt=0,needLogin=true,maxSpeed=5,maxPacketSize=256)
 	public Resp<List<ExecutorInfo>> serverList() {
 		Resp<List<ExecutorInfo>> resp = new Resp<>();
 		resp.setCode(Resp.CODE_SUCCESS);
@@ -45,14 +48,18 @@ public class ThreadPoolMonitorImpl implements IThreadPoolMonitor {
 		List<ExecutorInfo> l = new ArrayList<>();
 		resp.setData(l);
 		for(IExecutorInfo$JMAsyncClient iei : this.monitorServers) {
-			iei.getInfoJMAsync(null).then((ei,fail,ctx)->{
+			if(PermissionManager.checkAccountClientPermission(iei.clientId())) {
+				iei.getInfoJMAsync().then((ei,fail,ctx)->{
+					cd.countDown();
+					if(ei != null) {
+						l.add(ei);
+					} else {
+						logger.error(fail.toString());
+					}
+				});
+			}else {
 				cd.countDown();
-				if(ei != null) {
-					l.add(ei);
-				} else {
-					logger.error(fail.toString());
-				}
-			});
+			}
 		}
 		
 		try {
@@ -63,27 +70,48 @@ public class ThreadPoolMonitorImpl implements IThreadPoolMonitor {
 	}
 
 	@Override
+	@SMethod(needLogin=true,maxSpeed=5,maxPacketSize=512)
 	public Resp<List<ExecutorInfo>> getInfo(String key,String type) {
-		Set<IExecutorInfo> iei = getServerByKey(key,type);
+		Set<IExecutorInfo$JMAsyncClient> iei = getServerByKey(key,type);
 		
 		Resp<List<ExecutorInfo>> resp = new Resp<>();
 		resp.setCode(Resp.CODE_SUCCESS);
 		
-		if(iei != null) {
+		if(iei != null && !iei.isEmpty()) {
+			CountDownLatch cd = new CountDownLatch(iei.size());
 			List<ExecutorInfo> l = new ArrayList<>();
 			resp.setData(l);
-			for(IExecutorInfo ei : iei) {
-				ExecutorInfo info = ei.getInfo();
-				if(info != null) {
-					l.add(info);
+			for(IExecutorInfo$JMAsyncClient ei : iei) {
+				if(PermissionManager.checkAccountClientPermission(ei.clientId())) {
+					ei.getInfoJMAsync()
+					.success((info,cxt)->{
+						//ExecutorInfo info = ei.getInfo();
+						if(info != null) {
+							l.add(info);
+						}
+						cd.countDown();
+					})
+					.fail((code,err,cxt)->{
+						logger.error(err);
+						cd.countDown();
+					});
+				}else {
+					cd.countDown();
 				}
 			}
+			
+			try {
+				cd.await();
+			} catch (InterruptedException e) {
+			}
+			
 		}
+		
 		return resp;
 	}
 
 	
-	private Set<IExecutorInfo> getServerByKey(String key,String type) {
+	private Set<IExecutorInfo$JMAsyncClient> getServerByKey(String key,String type) {
 		if(StringUtils.isEmpty(key)) {
 			return null;
 		}
@@ -92,7 +120,7 @@ public class ThreadPoolMonitorImpl implements IThreadPoolMonitor {
 			byIns = true;
 		}
 		
-		Set<IExecutorInfo> eis = new HashSet<>();
+		Set<IExecutorInfo$JMAsyncClient> eis = new HashSet<>();
 		
 		for(int i = 0; i < this.monitorServers.size(); i++) {
 			AbstractClientServiceProxyHolder s = (AbstractClientServiceProxyHolder)((Object)this.monitorServers.get(i));

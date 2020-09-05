@@ -16,23 +16,21 @@
  */
 package cn.jmicro.limit;
 
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import cn.jmicro.api.JMicroContext;
 import cn.jmicro.api.annotation.Component;
-import cn.jmicro.api.annotation.JMethod;
+import cn.jmicro.api.annotation.Inject;
 import cn.jmicro.api.limitspeed.ILimiter;
 import cn.jmicro.api.monitor.MC;
-import cn.jmicro.api.monitor.SF;
 import cn.jmicro.api.monitor.ServiceCounter;
 import cn.jmicro.api.net.IRequest;
 import cn.jmicro.api.registry.ServiceMethod;
+import cn.jmicro.api.security.AccountRelatedStatis;
+import cn.jmicro.api.security.ActInfo;
 import cn.jmicro.common.Constants;
 
 /**
@@ -43,100 +41,54 @@ import cn.jmicro.common.Constants;
 @Component(lazy=false,value="limiterName")
 public class DefaultSpeedLimiter extends AbstractLimiter implements ILimiter{
 	
-	static final Logger logger = LoggerFactory.getLogger(DefaultSpeedLimiter.class);
+	private static final Logger logger = LoggerFactory.getLogger(DefaultSpeedLimiter.class);
+	
 	private static final Class<?> TAG = DefaultSpeedLimiter.class;
 	
-	private static final Short[] TYPES = new Short[] {MC.MT_REQ_START};
-	
-	private Map<String,AtomicInteger> als = new ConcurrentHashMap<>();
-	
-	private Map<String,ServiceCounter> limiterData = new ConcurrentHashMap<>();
-	
-	@JMethod("init")
-	public void init(){
-	}
-	
+	@Inject
+	private AccountRelatedStatis actStatisManager;
+
 	@Override
 	public boolean enter(IRequest req) {
 		
-		//not support method override
 		ServiceMethod sm = JMicroContext.get().getParam(Constants.SERVICE_METHOD_KEY, null);
+		
 		if(sm.getMaxSpeed() <= 0) {
 			return true;
 		}
 		
-		ServiceCounter sc =  null;
-		AtomicInteger al = null;
+		String key = counterKey(sm,req);
 		
-		String key = sm.getKey().toKey(true, true, true);
-		
-		if(!limiterData.containsKey(key)){
-			key = key.intern();
-			synchronized(key) {
-				if(!limiterData.containsKey(key)){
-					sc =  new ServiceCounter(key, TYPES,120,1,TimeUnit.SECONDS);
-					this.limiterData.put(key, sc);
-					al = new AtomicInteger(0);
-					this.als.put(key, al);
-				} else {
-					sc = limiterData.get(key);
-					al = this.als.get(key);
-				}
-			}
-		} else {
-			sc = limiterData.get(key);
-			al = this.als.get(key);
-		}
-		
-		double qps = sc.getQps(TimeUnit.SECONDS,MC.MT_REQ_START);
-		//logger.info("qps:{},key:{}",qps,sm.getKey().getMethod());
-		
-		if(qps > sm.getMaxSpeed()){
-			
-			int cnt = al.get()+1;
-			int needWaitTime = (int)((1000.0*cnt)/ sm.getMaxSpeed());
-			
-			if(needWaitTime >= sm.getTimeout()) {
-				String errMsg = "qps:"+qps+",maxQps:"+sm.getMaxSpeed()+",key:"+key;
-				SF.eventLog(MC.MT_SERVICE_SPEED_LIMIT, MC.LOG_WARN, TAG, errMsg);
-				logger.info(errMsg);
-				return false;
-			} 
-			
-			if(needWaitTime > 0) {
-				try {
-					Thread.sleep(needWaitTime);
-				} catch (InterruptedException e) {
-					logger.error("Limit wait timeout error",e);
-				}
-			}
-			
-			logger.info("wait:{},cnt:{},maxSpeed:{}",needWaitTime,cnt,sm.getMaxSpeed());
-			
-		}
-		
-		//logger.info("apply cnt:{}",al.incrementAndGet());
+		ServiceCounter sc =  this.actStatisManager.getCounter(key);
 		
 		sc.increment(MC.MT_REQ_END);
+		
+		double qps = sc.getQps(TimeUnit.SECONDS,MC.MT_REQ_START);
+		
+		sc.setLastActiveTime(System.currentTimeMillis());
+		
+		if(qps > sm.getMaxSpeed()){
+			logger.info("{} cur qps:{},{} maxSpeed:{}",key,qps,sm.getKey().toKey(false, false, false),sm.getMaxSpeed());
+			return false;
+		}
 		
 		return true;
 	}
 
+	private String counterKey(ServiceMethod sm,IRequest req) {
+		String key = "";
+		ActInfo ai = JMicroContext.get().getAccount();
+		if(ai == null) {
+			key = req.getSession().remoteHost();
+		}else {
+			key = ai.getActName();
+		}
+		return key;
+	}
+
 	@Override
 	public void end(IRequest req) {
-		ServiceMethod sm = JMicroContext.get().getParam(Constants.SERVICE_METHOD_KEY, null);
-		if(sm.getMaxSpeed() <= 0) {
-			return;
-		}
-		String key = sm.getKey().toKey(true, true, true);
-		AtomicInteger al = this.als.get(key);
-		if(al != null) {
-			int v = al.decrementAndGet();
-			//logger.info("END cnt:{}",v);
-			if(v <= 0) {
-				al.set(0);
-			}
-		}
+		
 	}
 	
 }

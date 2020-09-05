@@ -16,7 +16,7 @@ public interface IChoreographyService {
 	 
 	 Resp<List<Deployment>> getDeploymentList();
 	 
-	 Resp<Boolean> deleteDeployment(int id);
+	 Resp<Boolean> deleteDeployment(String id);
 	 
 	 Resp<Boolean> updateDeployment(Deployment dep);
 	 

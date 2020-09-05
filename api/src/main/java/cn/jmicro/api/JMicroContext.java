@@ -109,6 +109,12 @@ public class JMicroContext  {
 		if(this.isMonitorable()) {
 			MRpcItem item = getMRpcItem();
 			if(item != null ) {
+				if(item.getClientId() < 0) {
+					ActInfo ai = this.getAccount();
+					if(ai != null) {
+						item.setClientId(ai.getClientId());
+					}
+				}
 				SF.setCommon(item);
 				item.setCostTime(System.currentTimeMillis() - item.getCreateTime());
 				mo.readySubmit(item);
@@ -191,6 +197,10 @@ public class JMicroContext  {
 			MRpcItem item = context.getMRpcItem();
 			if(item == null) {
 				item = new MRpcItem();
+				ActInfo ai = context.getAccount();
+				if(ai != null) {
+					item.setClientId(ai.getClientId());
+				}
 				context.setParam(MRPC_ITEM, item);
 			}
 			item.setLinkId(msg.getLinkId());
@@ -227,6 +237,10 @@ public class JMicroContext  {
 					item = context.getMRpcItem();
 					if(item == null) {
 						item = new MRpcItem();
+						ActInfo ai = context.getAccount();
+						if(ai != null) {
+							item.setClientId(ai.getClientId());
+						}
 						//the pre RPC Request ID as the parent ID of this request
 						context.setParam(MRPC_ITEM, item);
 					}

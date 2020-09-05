@@ -20,7 +20,7 @@ public class ConfigManagerImpl implements IConfigManager {
 	private IDataOperator op;
 	
 	@Override
-	@SMethod(perType=true)
+	@SMethod(perType=true,maxSpeed=10,maxPacketSize=512)
 	public ConfigNode[] getChildren(String path,Boolean getAll) {
 		Set<String> clist = op.getChildren(path, false);
 		if(clist == null || clist.isEmpty()) {
@@ -50,7 +50,7 @@ public class ConfigManagerImpl implements IConfigManager {
 	}
 
 	@Override
-	@SMethod(perType=true)
+	@SMethod(perType=true,maxSpeed=10,maxPacketSize=1024)
 	public boolean update(String path, String val) {
 		try {
 			op.setData(path, val);
@@ -63,7 +63,7 @@ public class ConfigManagerImpl implements IConfigManager {
 	}
 
 	@Override
-	@SMethod(perType=true)
+	@SMethod(perType=true,maxSpeed=10,maxPacketSize=256)
 	public boolean delete(String path) {
 		try {
 			op.deleteNode(path);
@@ -75,7 +75,7 @@ public class ConfigManagerImpl implements IConfigManager {
 	}
 
 	@Override
-	@SMethod(perType=true)
+	@SMethod(perType=true,maxSpeed=10,maxPacketSize=2048)
 	public boolean add(String path, String val,Boolean isDir) {
 		try {
 			if(isDir && val == null) {

@@ -42,6 +42,8 @@ public final class MRpcItem{
 	
 	private long reqParentId=-1L;
 	
+	private int clientId = -1;;
+	
 	private IReq req = null;
 	
 	private IResp resp = null;
@@ -109,6 +111,7 @@ public final class MRpcItem{
 		mi.implCls = this.implCls;
 		mi.inputTime = this.inputTime;
 		mi.costTime = this.costTime;
+		mi.clientId = this.clientId;
 		return mi;
 	}
 	
@@ -127,6 +130,7 @@ public final class MRpcItem{
 		implCls = null;
 		createTime = System.currentTimeMillis();
 		inputTime = 0;
+		this.clientId = -1;
 		
 	}
 	
@@ -173,6 +177,14 @@ public final class MRpcItem{
 			}
 		}
 		return null;
+	}
+
+	public int getClientId() {
+		return clientId;
+	}
+
+	public void setClientId(int clientId) {
+		this.clientId = clientId;
 	}
 
 	public long getCreateTime() {

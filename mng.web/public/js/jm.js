@@ -221,8 +221,6 @@ jm.mng = {
             });
         },
 
-
-
         __ccreq:function(){
             let req = {};
             req.serviceName=this.sn;
@@ -553,7 +551,7 @@ jm.mng = {
             return jm.rpc.callRpcWithParams(this.sn, this.ns, this.v, 'queryLog', [params,pageSize,curPage]);
         },
 
-        sn:'cn.jmicro.api.mng.ILogService',
+        sn:'cn.jmicro.mng.api.ILogService',
         ns : 'mng',
         v:'0.0.1',
     },
@@ -584,6 +582,29 @@ jm.mng = {
         },
 
         sn:'cn.jmicro.api.gateway.IHostNamedService',
+        ns : 'mng',
+        v:'0.0.1',
+    },
+
+    profile : {
+
+        getKvs : function() {
+            return jm.rpc.callRpcWithParams(this.sn, this.ns, this.v, 'getKvs', []);
+        },
+
+        getModuleList : function () {
+            return jm.rpc.callRpcWithParams(this.sn, this.ns, this.v, 'getModuleList', []);
+        },
+
+        getModuleKvs : function (module) {
+            return jm.rpc.callRpcWithParams(this.sn, this.ns, this.v, 'getModuleKvs', [module]);
+        },
+
+        updateKv : function (module,kv) {
+            return jm.rpc.callRpcWithParams(this.sn, this.ns, this.v, 'updateKv', [module,kv]);
+        },
+
+        sn:'cn.jmicro.mng.api.IProfileService',
         ns : 'mng',
         v:'0.0.1',
     },
@@ -661,6 +682,21 @@ jm.mng = {
         v:'0.0.1',
     },
 
+    psDataSrv : {
+
+        count: function (query) {
+            return jm.rpc.callRpcWithParams(this.sn, this.ns, this.v, 'count', [query]);
+        },
+
+        query: function (queryConditions,pageSize,curPage) {
+            return jm.rpc.callRpcWithParams(this.sn, this.ns, this.v, 'query', [queryConditions, pageSize,curPage]);
+        },
+
+        sn:'cn.jmicro.mng.api.IPSDataService',
+        ns : 'mng',
+        v:'0.0.1',
+
+    }
 }
 
 /*

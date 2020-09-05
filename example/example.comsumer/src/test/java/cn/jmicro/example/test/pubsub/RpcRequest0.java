@@ -291,6 +291,12 @@ public class RpcRequest0 extends AbstractObjectMapSupport implements IRequest {
 		// TODO Auto-generated method stub
 		return 0;
 	}
+
+	@Override
+	public int getPacketSize() {
+		// TODO Auto-generated method stub
+		return 0;
+	}
 	
 	
 	

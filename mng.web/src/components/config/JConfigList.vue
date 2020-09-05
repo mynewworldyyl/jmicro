@@ -21,20 +21,36 @@
 
     const GROUP = 'config';
 
+    const cid = 'JConfigList';
+
     export default {
         name: 'JConfigList',
 
         mounted(){
-            window.jm.rpc.addListener(GROUP,this.refresh);
-            window.jm.vue.$on('tabItemRemove',this.editorRemove);
+
+            let self = this;
+            window.jm.rpc.addActListener(cid,()=>{
+                self.isLogin = window.jm.rpc.isLogin();
+                if( self.isLogin) {
+                    self.refresh();
+                }
+            });
+
+            let ec = function() {
+                window.jm.rpc.removeActListener(cid);
+                window.jm.vue.$off('editorClosed',ec);
+            }
+
+            window.jm.vue.$on('editorClosed',ec);
+
         },
 
         beforeDestroy(it) {
             if(GROUP != it.id) {
                 return;
             }
-            window.jm.vue.$off('tabItemRemove',this.editorRemove);
-            window.jm.rpc.removeListener(GROUP);
+            window.jm.vue.$off('editorClosed',this.editorRemove);
+            window.jm.rpc.removeActListener(cid);
         },
 
         methods:{

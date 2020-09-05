@@ -3,16 +3,30 @@
         <div >{{msg}}</div>
         <div class="publishCon">
             <Button @click="doSend()">Send</Button><br/>
+
             <label for="Topic">Topic</label>
             <Input id="Topic" v-model="topic" placeholder=""/>
 
             <label for="Content">Content</label>
             <Input id="Content" v-model="content" placeholder=""/>
+
+            <br/><br/>
+            <Button id="needResult" @click="changeResultSubStatus()">{{needSendResult?'No Need Result':'Need Result'}}</Button>
+            <Button   @click="clearSendResult()">Clear Result</Button>
+            <br/>
+
+            <label for="SendResultTopic">Send Result Topic</label>
+            <Input id="SendResultTopic" v-model="sendResultTopic"/>
+
+            <label for="sendResultBox">Result</label>&nbsp;&nbsp;&nbsp;
+            <Input id="sendResultBox"  class='textarea' type="textarea" v-model="sendResult"/>
+
         </div>
 
         <div class="subscribeCon">
             <Button v-if="subState" @click="doSubscribe()">Unsubscribe</Button>
             <Button  v-if="!subState"  @click="doSubscribe()">Subscribe</Button>
+            <Button   @click="clear()">Clear</Button>
             <br/>
             <label for="Result">Result</label>
             <Input id="Result"  class='textarea' type="textarea" v-model="result"/>
@@ -37,9 +51,60 @@
                 result:'',
                 msg:'',
                 subState:false,
+
+                needSendResult:false,
+                sendResult:'',
+                sendResultTopic:'/jmicro/testresult/topic01',
             }
         },
         methods: {
+
+            sendResultCallback(msg) {
+                if(!msg || msg.length == 0) {
+                    this.$Message.info("Pubsub topic is disconnected by server")
+                    this.changeResultSubStatus();
+                }else {
+                    let d = msg.data;
+                    this.sendResult += 'Result: ' + d[0] + ', ID: '+ d[1] + ', Status Code: ' + d[2] + "\n";
+                }
+            },
+
+            changeResultSubStatus() {
+                if(!this.sendResultTopic || this.sendResultTopic.length == 0) {
+                    this.$Message.info("Send result topic cannot be null!");
+                    return;
+                }
+
+                let self = this;
+                if(this.needSendResult) {
+                    window.jm.ps.unsubscribe(this.sendResultTopic,this.sendResultCallback)
+                        .then((succ)=>{
+                            if(succ==true) {
+                                self.needSendResult=false;
+                            } else {
+                                window.console.log(succ);
+                            }
+                        });
+                } else {
+                    window.jm.ps.subscribe(this.sendResultTopic,{},this.sendResultCallback)
+                        .then((rst)=>{
+                            if(rst >= 0) {
+                                self.needSendResult=true;
+                            }else {
+                                console.log(rst);
+                            }
+                        });
+                }
+            },
+
+            clear(){
+                this.result="";
+            },
+
+            clearSendResult(){
+                this.sendResult = '';
+            },
+
             doSend() {
                 if(!this.content || this.content.length == 0) {
                     this.msg = '发送内容不能为空';
@@ -49,7 +114,18 @@
                     this.msg = '主题不能为空';
                     return;
                 }
-                window.jm.ps.publishString({}, this.topic,this.content)
+
+                let cb = null;
+                if(this.needSendResult) {
+                    if(!this.sendResultTopic || this.sendResultTopic.length == 0) {
+                        this.msg = '发送结果主题不能为空';
+                        return;
+                    } else {
+                        cb = this.sendResultTopic;
+                    }
+                }
+
+                window.jm.ps.publishString(this.topic,this.content,true,false,cb,{})
                     .then(rst=>{
                         console.log(rst);
                     }).catch(err=>{
@@ -62,7 +138,7 @@
                     this.$Message.info("Pubsub topic is disconnected by server")
                     this.doSubscribe();
                 }else {
-                    this.result += msg.data+"\n";
+                    this.result += msg.id + ": "+ msg.data+"\n";
                 }
             },
 
@@ -125,6 +201,10 @@
 
     .textarea{
         height: 100%;
+    }
+
+    #sendResultBox{
+        height: 50%;
     }
 
     textarea.ivu-input{

@@ -17,6 +17,8 @@
 package cn.jmicro.api.persist;
 
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * 
@@ -26,9 +28,19 @@ import java.util.List;
  */
 public interface IObjectStorage {
 
-	boolean save(Object obj);
+	boolean save(String table,Object val,boolean async);
 	
-	<T> List<T> get(Class<T> cls,int offset,int size);
+	boolean save(String table,Object[] val,boolean async);
 	
+	boolean update(String table,Object id,Object val,boolean async);
 	
+	boolean updateOrSave(String table,Object id,Object val,boolean async);
+	
+	boolean deleteById(String table,Object id);
+	
+	 <T> Set<T>  distinct(String table, String fieldName,Class<T> cls);
+	
+    int deleteByQuery(String table, Object query);
+	
+	<T> List<T> query(String table,Map<String,Object> queryConditions,int offset,int pageSize);
 }

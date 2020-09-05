@@ -98,7 +98,7 @@ public class SimpleRpcImpl implements ISimpleRpc {
 		
 		//IPromise<String> p = PromiseUtils.callService(this.rpca, "invokeRpcA","linkRpc call IRpcA with: " + msg);
 		
-		IPromise<String> p = this.rpca.invokeRpcAJMAsync(null,"invokeRpcA");
+		IPromise<String> p = this.rpca.invokeRpcAJMAsync("invokeRpcA");
 		JMicroContext cxt = JMicroContext.get();
 		if(cxt.isAsync()) {
 			IServiceAsyncResponse cb = cxt.getParam(Constants.CONTEXT_SERVICE_RESPONSE,null);

@@ -9,8 +9,10 @@ import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import cn.jmicro.api.JMicroContext;
 import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Inject;
+import cn.jmicro.api.config.Config;
 import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.monitor.SF;
 import cn.jmicro.api.net.ServerError;
@@ -20,19 +22,57 @@ import cn.jmicro.api.registry.ServiceMethod;
 import cn.jmicro.api.service.ServiceManager;
 
 @Component
-public class PermisionManager {
+public class PermissionManager {
 	
-	private static final Class<?> TAG = PermisionManager.class;
+	private static final Class<?> TAG = PermissionManager.class;
 
-	private final static Logger logger = LoggerFactory.getLogger(PermisionManager.class);
+	private final static Logger logger = LoggerFactory.getLogger(PermissionManager.class);
 	
 	@Inject
-	private PermisionManager pm;
+	private PermissionManager pm;
 	
 	@Inject
 	private ServiceManager sm;
 	
 	private Map<String,Set<Permission>> pers = new HashMap<>();
+	
+	public static final boolean checkClientPermission(int srcClientId) {
+		
+		if(Config.isAdminSystem()) {
+			return true;
+		}
+		
+		if(srcClientId == Config.getAdminClientId()) {
+			//系统账户启动有服务
+			return true;
+		}
+		
+		if(srcClientId == Config.getClientId()) {
+			//一般账户启动的服务
+			return true;
+		}
+		return false;
+	}
+	
+	public static final boolean checkAccountClientPermission(int srcClientId) {
+		
+		ActInfo ai = JMicroContext.get().getAccount();
+		if(ai != null) {
+			return srcClientId == ai.getClientId() 
+					|| ai.getClientId() == Config.getAdminClientId();
+		}
+		return false;
+	}
+	
+	public static final boolean isCurAdmin() {
+		
+		ActInfo ai = JMicroContext.get().getAccount();
+		if(ai != null) {
+			return ai.getClientId() == Config.getAdminClientId();
+		}
+		
+		return false;
+	}
 	
 	public void ready() {
 		sm.addListener((type,si)->{
@@ -61,7 +101,7 @@ public class PermisionManager {
 		return Collections.unmodifiableMap(pers);
 	}
 	
-	public ServerError permissionCheck(ActInfo ai,ServiceMethod sm) {
+	public ServerError permissionCheck(ActInfo ai,ServiceMethod sm,int srcClientId ) {
 		if(ai == null && sm.isNeedLogin()){
 			ServerError se = new ServerError(ServerError.SE_NOT_LOGIN,
 					 "Have to login for invoking to " + sm.getKey().toKey(false, false, false));
@@ -71,10 +111,16 @@ public class PermisionManager {
 		} else if(sm.isPerType() && (ai == null || ai.getPers() == null || !ai.getPers().contains(sm.getKey().toKey(false, false, false)))) {
 			ServerError se = new ServerError(ServerError.SE_NO_PERMISSION,
 					(ai!= null?ai.getActName():" Not login") + " permission reject to invoke "+ sm.getKey().toKey(false, false, false));
-			SF.eventLog(MC.MT_INVALID_LOGIN_INFO,MC.LOG_ERROR, TAG,se.toString());
+			SF.eventLog(MC.MT_ACT_PERMISSION_REJECT,MC.LOG_ERROR, TAG,se.toString());
 			logger.warn(se.toString());
 			return se;
-		}
+		}/*else if(checkAccountClientPermission(srcClientId)) {
+			ServerError se = new ServerError(ServerError.SE_NO_PERMISSION,
+					(ai!= null?ai.getActName():" Not login") + " permission reject to invoke "+ srcClientId);
+			SF.eventLog(MC.MT_CLIENT_ID_REJECT,MC.LOG_ERROR, TAG,se.toString());
+			logger.warn(se.toString());
+			return se;
+		}*/
 		return null;
 	}
 	

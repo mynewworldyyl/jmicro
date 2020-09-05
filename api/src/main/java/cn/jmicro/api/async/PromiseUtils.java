@@ -18,9 +18,9 @@ public class PromiseUtils {
 
 	private static final Logger logger = LoggerFactory.getLogger(PromiseUtils.class);
 	
-	public static <R> IPromise<R> callService(Object remoteServiceProxy, String remoteMethod,Map<String,Object> context, Object... args) {
+	public static <R> IPromise<R> callService(Object remoteServiceProxy, String remoteMethod,Object contextObj, Object... args) {
 		PromiseImpl<R> p = new PromiseImpl<R>();
-		p.setContext(context);
+		p.setContext(contextObj);
 		
 		final JMicroContext cxt = JMicroContext.get();
 		IClientAsyncCallback cb = new IClientAsyncCallback() {

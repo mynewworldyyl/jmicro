@@ -44,7 +44,8 @@
                 costTime:'',
                 uploadSpeed:'',
                 progressVal:0,
-                onUpload:false
+                onUpload:false,
+                isLogin:false,
             }
         },
         methods: {
@@ -291,6 +292,11 @@
 
             refresh(){
                 let self = this;
+                this.isLogin = window.jm.rpc.isLogin();
+                if(!this.isLogin) {
+                    this.resList = [];
+                    return;
+                }
                 window.jm.mng.repository.getResourceList(false).then((resList)=>{
                     if(!resList || resList.length == 0 ) {
                         self.$Message.success("No data to show");
@@ -305,14 +311,21 @@
         },
 
         mounted () {
-            window.jm.rpc.addListener(cid,this.refresh);
-            this.refresh();
+            window.jm.rpc.addActListener(cid,this.refresh);
             let self = this;
             window.jm.vue.$emit("editorOpen",
                 {"editorId":cid,
                     "menus":[{name:"addNode",label:"Add Node",icon:"ios-cog",call: ()=>{self.addNode(); }},
                         {name:"REFRESH",label:"Refresh",icon:"ios-cog",call:self.refresh}]
                 });
+
+            let ec = function() {
+                window.jm.rpc.removeActListener(cid);
+                window.jm.vue.$off('editorClosed',ec);
+            }
+
+            window.jm.vue.$on('editorClosed',ec);
+
         },
     }
 </script>

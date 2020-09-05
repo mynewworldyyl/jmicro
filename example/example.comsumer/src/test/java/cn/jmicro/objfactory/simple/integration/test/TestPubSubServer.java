@@ -54,7 +54,7 @@ public class TestPubSubServer extends JMicroBaseTestCase{
 	public void testPublishArgs() {
 		PubSubManager psm = of.get(PubSubManager.class);
 		Object[] args = new String[] {"test publish args"};
-		long msgid = psm.publish(TOPIC,PSData.flag(PSData.FLAG_PUBSUB,PSData.FLAG_MESSAGE_CALLBACK),args);
+		long msgid = psm.publish(TOPIC,args,PSData.flag(PSData.FLAG_PUBSUB,PSData.FLAG_MESSAGE_CALLBACK),null);
 		System.out.println("pubsub msgID:"+msgid);
 		JMicro.waitForShutdown();
 	}
@@ -70,7 +70,7 @@ public class TestPubSubServer extends JMicroBaseTestCase{
 		psd.setData("test publish args");
 		psd.setTopic(TOPIC);
 		psd.setFlag(PSData.flag(PSData.FLAG_PUBSUB,PSData.FLAG_MESSAGE_CALLBACK));
-		psd.setCallback(sm.getKey());
+		psd.setCallback(sm.getKey().toKey(false, false, false));
 		psd.put("tst", 222);
 		psd.put("22f", "String");
 		psd.put("sm2", sm);
@@ -142,7 +142,7 @@ public class TestPubSubServer extends JMicroBaseTestCase{
 	@Test
 	public void testPublishStringMessage() {
 		PubSubManager psm = of.get(PubSubManager.class);
-		psm.publish(new HashMap<String,Object>(), TOPIC, "test pubsub server",PSData.FLAG_PUBSUB);
+		psm.publish(TOPIC, "test pubsub server",PSData.FLAG_PUBSUB,null);
 		JMicro.waitForShutdown();
 	}
 

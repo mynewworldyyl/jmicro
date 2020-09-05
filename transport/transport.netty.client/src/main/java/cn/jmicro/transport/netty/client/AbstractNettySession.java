@@ -88,6 +88,8 @@ public abstract class AbstractNettySession extends AbstractSession implements IC
 				throw new CommonException("data is NULL");
 			}
 			
+			this.writeSum.addAndGet(bb.limit());
+			
 			bb.mark();
 			ctx.channel().writeAndFlush(Unpooled.copiedBuffer(bb));
 			

@@ -143,6 +143,11 @@ public class ServiceInvokeManager {
 		return callAsync(si,sm,args);
 	}
 	
+	public <T> IPromise<T> callAsync(String strKey, Object[] args) {
+		UniqueServiceMethodKey mkey = UniqueServiceMethodKey.fromKey(strKey);
+		return callAsync(mkey,args);
+	}
+	
 	@SuppressWarnings("unchecked")
 	public <T> IPromise<T> callAsync(ServiceItem si, ServiceMethod sm, Object[] args) {
 		

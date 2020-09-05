@@ -1043,7 +1043,7 @@ public final class ReflectUtils {
     
     public static Class<?> getPrimitiveClazz(Class<?> cl) {
 		 if(cl.isPrimitive() || Number.class.isAssignableFrom(cl)) {
-	            if (Byte.TYPE == cl ||  Boolean.class == cl)
+	            if (Byte.TYPE == cl ||  Byte.class == cl)
 	            	 return Byte.TYPE;
 	            if (Double.TYPE == cl ||  Double.class == cl)
 	            	 return Double.TYPE;

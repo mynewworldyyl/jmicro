@@ -50,14 +50,20 @@
                   </Menu-group>
                   <Menu-group title="Security">
                       <Menu-item name="__account"><Icon type="ios-alert" />Account</Menu-item>
+                      <Menu-item name="__userProfile"><Icon type="ios-alert" />Profile</Menu-item>
                       <!--<Menu-item name="__permission"><Icon type="ios-cog"></Icon>Permission</Menu-item>-->
                      <!-- <Menu-item name="__role"><Icon type="ios-cog"></Icon>Role</Menu-item>-->
                   </Menu-group>
+
+                  <Menu-group title="Pubsub">
+                      <Menu-item name="__pubsubItem"><Icon type="ios-alert" />Pubsub Items</Menu-item>
+                      <MenuItem name="__testingPubsub"> <Icon type="ios-cog"></Icon>Pubsub Testing </MenuItem>
+                  </Menu-group>
+
                   <Menu-group title="Info">
                      <!-- <MenuItem name="__help"> <Icon type="ios-cog"></Icon>Help</MenuItem>-->
                       <MenuItem name="__about"> <Icon type="ios-cog"></Icon>About</MenuItem>
                       <MenuItem name="__testing"> <Icon type="ios-cog"></Icon>Testing</MenuItem>
-                      <MenuItem name="__testingPubsub"> <Icon type="ios-cog"></Icon>Testing Pubsub</MenuItem>
                   </Menu-group>
               </Submenu>
 
@@ -136,6 +142,11 @@
               <JLogList slId="processLog"></JLogList>
           </Drawer>
 
+          <Drawer  v-model="cache.userProfile.drawerStatus" :closable="false" placement="left" :transfer="true"
+                   :draggable="true" :scrollable="true" width="50">
+              <JUserProfileList slId="userProfile"></JUserProfileList>
+          </Drawer>
+
           <!-- route outlet -->
           <router-view></router-view>
       </div>
@@ -155,6 +166,7 @@
     import JNamedTypeList from './components/monitor/JNamedTypeList.vue'
     import JThreadPoolMonitorList from './components/monitor/JThreadPoolMonitorList.vue'
     import JLogList  from './components/log/JLogList.vue'
+    import JUserProfileList from "./components/security/JUserProfileList";
 
     let cache = null;
 
@@ -168,8 +180,8 @@ export default {
         //jm.mng.init();
         let self = this;
 
-        window.jm.rpc.addListener(cid,()=>{
-            self.adminPer = window.jm.mng.comm.adminPer;
+        window.jm.rpc.addActListener(cid,()=>{
+            self.isLogin = window.jm.rpc.isLogin()
             if( self.activeEditorId) {
                 self.selectMenu(self.activeEditorId);
             }
@@ -215,6 +227,7 @@ export default {
     },
 
   components: {
+      JUserProfileList,
         JServiceList,
         JConfigList,
         JMonitorList,
@@ -294,6 +307,12 @@ export default {
             drawerBtnStyle:{left:'0px',},
         };
 
+        cache['userProfile']={
+            key: 'userProfile',
+            drawerStatus:false,
+            drawerBtnStyle:{left:'0px',},
+        };
+
         cache['processLog']={
             key: 'processLog',
             drawerStatus:false,
@@ -303,7 +322,7 @@ export default {
       return {
           curSelect: cache[cache.curSelectKey],
           cache: cache,
-          adminPer : false,
+          isLogin : false,
           menus:[/*{name:"test1",label:"label1",icon:"ios-cog"},
               {name:"test2",label:"label2",icon:"ios-people"}*/],
           activeEditorId : null,
@@ -363,7 +382,7 @@ export default {
 
       selectMenu(editorId) {
           let self = this;
-          if(self.adminPer) {
+          if(self.isLogin) {
               self.menus = self.menusMap[editorId];
           } else {
               self.menus = self.menusMapCommon[editorId];

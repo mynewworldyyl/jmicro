@@ -50,7 +50,7 @@ import cn.jmicro.api.registry.ServiceItem;
 import cn.jmicro.api.registry.ServiceMethod;
 import cn.jmicro.api.security.AccountManager;
 import cn.jmicro.api.security.ActInfo;
-import cn.jmicro.api.security.PermisionManager;
+import cn.jmicro.api.security.PermissionManager;
 import cn.jmicro.codegenerator.AsyncClientProxy;
 import cn.jmicro.common.CommonException;
 import cn.jmicro.common.Constants;
@@ -72,7 +72,7 @@ public class ApiRawRequestMessageHandler implements IMessageHandler{
 	private ComponentIdServer idGenerator;
 	
 	@Inject
-	private PermisionManager pm;
+	private PermissionManager pm;
 	
 	@Inject
 	private AccountManager accountManager;
@@ -202,7 +202,7 @@ public class ApiRawRequestMessageHandler implements IMessageHandler{
 							throw new CommonException(errMsg);
 						}
 						
-						ServerError se = pm.permissionCheck(ai,sm);
+						ServerError se = pm.permissionCheck(ai,sm,si.getClientId());
 						if(se != null){
 							result = se;
 							resp.setSuccess(false);

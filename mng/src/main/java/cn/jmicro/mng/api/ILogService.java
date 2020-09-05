@@ -1,9 +1,11 @@
-package cn.jmicro.api.mng;
+package cn.jmicro.mng.api;
 
 import java.util.List;
 import java.util.Map;
 
 import cn.jmicro.api.Resp;
+import cn.jmicro.api.mng.LogEntry;
+import cn.jmicro.api.mng.LogItem;
 import cn.jmicro.codegenerator.AsyncClientProxy;
 
 @AsyncClientProxy

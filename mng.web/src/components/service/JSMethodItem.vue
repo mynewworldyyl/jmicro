@@ -51,7 +51,7 @@
               <Icon type="ios-film-outline"></Icon>
               Monitor And Debug
           </p>
-          <a v-if="adminPer"  href="javascript:void(0);" slot="extra"  @click="save()">
+          <a v-if="isLogin"  href="javascript:void(0);" slot="extra"  @click="save()">
               <Icon type="ios-loop-strong"></Icon>
               Save
           </a>
@@ -84,7 +84,7 @@
               <Icon type="ios-film-outline"></Icon>
               Timeout
           </p>
-          <a v-if="adminPer" href="javascript:void(0);" slot="extra"  @click="save()">
+          <a v-if="isLogin" href="javascript:void(0);" slot="extra"  @click="save()">
               <Icon type="ios-loop-strong"></Icon>
               Save
           </a>
@@ -108,7 +108,7 @@
               <Icon type="ios-film-outline"></Icon>
               Statis Timer
           </p>
-          <a v-if="adminPer"  href="javascript:void(0);" slot="extra" @click="save()">
+          <a v-if="isLogin"  href="javascript:void(0);" slot="extra" @click="save()">
               <Icon type="ios-loop-strong"></Icon>
               Save
           </a>
@@ -142,7 +142,7 @@
               <Icon type="ios-film-outline"></Icon>
               Break Rule
           </p>
-          <a v-if="adminPer" slot="extra" @click="save()" href="javascript:void(0);">
+          <a v-if="isLogin" slot="extra" @click="save()" href="javascript:void(0);">
               <Icon type="ios-loop-strong"></Icon>
               Save
           </a>
@@ -172,7 +172,7 @@
               <Icon type="ios-film-outline"></Icon>
               Testing
           </p>
-          <a v-if="adminPer" slot="extra" @click="save()" href="javascript:void(0);">
+          <a v-if="isLogin" slot="extra" @click="save()" href="javascript:void(0);">
               <Icon type="ios-loop-strong"></Icon>
               Save
           </a>
@@ -222,9 +222,17 @@ export default {
 
     mounted() {
         let self = this;
-        window.jm.mng.act.addListener(cid,()=>{
-            self.adminPer = window.jm.mng.comm.adminPer;
+        window.jm.rpc.addActListener(cid,()=>{
+            self.isLogin = window.jm.rpc.isLogin();
         });
+
+        let ec = function() {
+            window.jm.rpc.removeActListener(cid);
+            window.jm.vue.$off('editorClosed',ec);
+        }
+
+        window.jm.vue.$on('editorClosed',ec);
+
     },
 
     methods: {
@@ -292,7 +300,7 @@ export default {
     data(){
         return {
             node : this.meth,
-            adminPer : false,
+            isLogin : false,
             testingResult:'',
             invokeNum:1,
             invokeInterval:5000,

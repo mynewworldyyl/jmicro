@@ -83,6 +83,10 @@ public interface ISession{
 	
 	ServiceCounter getServiceCounter();*/
 	
+	long getReadSum();
+	 
+	long getWriteSum();
+	
 	void addSessionListener(ISessionListener lis);
 	
 	void removeSessionListener(ISessionListener lis);

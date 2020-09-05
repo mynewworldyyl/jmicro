@@ -70,7 +70,9 @@ public class HttpServerSession extends AbstractSession implements IServerSession
 	        responseHeaders.set("Content-Type", "application/json");
 			exchange.sendResponseHeaders(200, 0);
 			String json = JsonUtils.getIns().toJson(msg);
-			exchange.getResponseBody().write(json.getBytes(Constants.CHARSET));
+			byte[] data = json.getBytes(Constants.CHARSET);
+			this.writeSum.addAndGet(data.length);
+			exchange.getResponseBody().write(data);
 			this.close(true);
 		} catch (IOException e) {
 			e.printStackTrace();

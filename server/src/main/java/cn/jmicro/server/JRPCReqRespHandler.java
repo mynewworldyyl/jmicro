@@ -41,10 +41,11 @@ import cn.jmicro.api.net.RpcRequest;
 import cn.jmicro.api.net.RpcResponse;
 import cn.jmicro.api.net.ServerError;
 import cn.jmicro.api.registry.IRegistry;
+import cn.jmicro.api.registry.ServiceItem;
 import cn.jmicro.api.registry.ServiceMethod;
 import cn.jmicro.api.security.AccountManager;
 import cn.jmicro.api.security.ActInfo;
-import cn.jmicro.api.security.PermisionManager;
+import cn.jmicro.api.security.PermissionManager;
 import cn.jmicro.api.service.IServiceAsyncResponse;
 import cn.jmicro.api.service.ServiceLoader;
 import cn.jmicro.common.Constants;
@@ -89,7 +90,7 @@ public class JRPCReqRespHandler implements IMessageHandler{
 	private MonitorClient monitor;
 	
 	@Inject
-	private PermisionManager pm;
+	private PermissionManager pm;
 	
 	@Override
 	public Byte type() {
@@ -120,8 +121,18 @@ public class JRPCReqRespHandler implements IMessageHandler{
 			
 	    	JMicroContext.config(req1,serviceLoader,registry);
 	    	
+	    	ServiceMethod sm = JMicroContext.get().getParam(Constants.SERVICE_METHOD_KEY, null);
 	    	if(msg.isMonitorable()) {
 				SF.netIoRead(TAG.getName(),MC.MT_SERVER_JRPC_GET_REQUEST, msg.getLen());
+			}
+	    	
+	    	if(sm.getMaxPacketSize() > 0 && req.getPacketSize() > sm.getMaxPacketSize()) {
+	    		ServerError se = new ServerError(MC.MT_PACKET_TOO_MAX,"Packet too max "+req.getPacketSize()+ " limit size: " + sm.getMaxPacketSize());
+				resp.setResult(se);
+				resp.setSuccess(false);
+				SF.eventLog(MC.MT_PACKET_TOO_MAX,MC.LOG_ERROR, TAG,se.toString());
+				resp2Client(resp,s,msg);
+				return;
 			}
 	    	
 			resp.setReqId(msg.getReqId());
@@ -154,8 +165,9 @@ public class JRPCReqRespHandler implements IMessageHandler{
 				}
 			}
 			
-			ServiceMethod sm = JMicroContext.get().getParam(Constants.SERVICE_METHOD_KEY, null);
-			ServerError se = pm.permissionCheck(ai,sm);
+			ServiceItem si = JMicroContext.get().getParam(Constants.SERVICE_ITEM_KEY, null);
+			
+			ServerError se = pm.permissionCheck(ai,sm,si.getClientId());
 			
 			if(se != null) {
 				resp.setResult(se);

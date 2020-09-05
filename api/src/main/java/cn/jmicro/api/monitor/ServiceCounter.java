@@ -66,6 +66,8 @@ public class ServiceCounter implements IServiceCounter<Short>{
 	
 	private boolean staring = false;
 	
+	private long lastActiveTime = System.currentTimeMillis();
+	
 	//统计事件的类型,每种类型对应一种计数器
 	private ConcurrentHashMap<Short,Counter> counters = new ConcurrentHashMap<>();
 	
@@ -293,6 +295,14 @@ public class ServiceCounter implements IServiceCounter<Short>{
 		}
 		
 	}*/
+
+	public long getLastActiveTime() {
+		return lastActiveTime;
+	}
+
+	public void setLastActiveTime(long lastActiveTime) {
+		this.lastActiveTime = lastActiveTime;
+	}
 
 	/**
 	 * 指定类型所占总请求数的百分比

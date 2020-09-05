@@ -265,5 +265,10 @@ public final class RpcRequest implements IRequest{
 				+ ", namespace=" + namespace + ", version=" + version + ", impl=" + impl + ", transport=" + transport
 				+ ", reqId=" + reqId + "]";
 	}
+
+	@Override
+	public int getPacketSize() {
+		return msg != null ? msg.getLen() : 0;
+	}
 	
 }

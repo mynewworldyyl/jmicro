@@ -336,25 +336,37 @@
             }
         },
 
-        mounted () {
+        refresh() {
             let self = this;
+            self.isLogin = window.jm.rpc.isLogin();
+            if(!this.isLogin) {
+                self.selOptions = [];
+                return;
+            }
             window.jm.mng.logSrv.queryDict().then((resp)=>{
                 if(resp.code != 0) {
                     self.$Message.success(resp.msg);
                     return;
                 }
                 self.selOptions = resp.data;
-                window.jm.mng.act.addListener(cid,this.refresh);
                 self.doQuery();
-
             }).catch((err)=>{
                 window.console.log(err);
             });
+        },
 
+        mounted () {
+            let self = this;
+            window.jm.rpc.addActListener(cid,self.refresh);
+            let ec = function() {
+                window.jm.rpc.removeActListener(cid);
+                window.jm.vue.$off('editorClosed',ec);
+            }
+            window.jm.vue.$on('editorClosed',ec);
         },
 
         beforeDestroy() {
-            window.jm.mng.act.removeListener(cid);
+            window.jm.mng.act.removeActListener(cid);
         },
 
     }

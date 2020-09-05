@@ -16,6 +16,7 @@ import org.slf4j.LoggerFactory;
 
 import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Inject;
+import cn.jmicro.api.annotation.SMethod;
 import cn.jmicro.api.annotation.Service;
 import cn.jmicro.api.choreography.IAgentProcessService;
 import cn.jmicro.api.choreography.ProcessInfo;
@@ -24,6 +25,7 @@ import cn.jmicro.api.mng.LogFileEntry;
 import cn.jmicro.api.pubsub.ILocalCallback;
 import cn.jmicro.api.pubsub.PSData;
 import cn.jmicro.api.pubsub.PubSubManager;
+import cn.jmicro.api.security.PermissionManager;
 import cn.jmicro.api.timer.TimerTicker;
 import cn.jmicro.choreography.instance.InstanceManager;
 import cn.jmicro.common.Constants;
@@ -96,9 +98,9 @@ public class AgentProcessServiceImpl implements IAgentProcessService {
 		String piLogDir =  processId + File.separatorChar + "logs";
 		String fullPath = processId + File.separatorChar + "logs" + File.separatorChar + logFile;
 		
-		boolean pactive = im.getProcessesByInsId(processId, false) != null;
-		if(!pactive) {
-			logger.info(processId + " : " + logFile + ", pactive: " + pactive);
+		ProcessInfo pi = im.getProcessesByInsId(processId, false);
+		if(pi == null) {
+			logger.info(processId + " : " + logFile + ", pactive: false");
 			return;
 		}
 		
@@ -157,6 +159,7 @@ public class AgentProcessServiceImpl implements IAgentProcessService {
 	}
 
 	@Override
+	@SMethod(needLogin=true,maxSpeed=5,maxPacketSize=512)
 	public Set<ProcessInfo> getProcessesByDepId(String depId) {
 		if(StringUtils.isEmpty(depId)) {
 			return null;
@@ -164,15 +167,19 @@ public class AgentProcessServiceImpl implements IAgentProcessService {
 		Set<ProcessInfo> ps = getAllProcesses();
 		Iterator<ProcessInfo> ite = ps.iterator();
 		while(ite.hasNext()) {
-			ProcessInfo pi = ite.next();
-			if(!pi.getDepId().equals(depId)) {
-				ite.remove();
+			if(PermissionManager.checkAccountClientPermission(pi.getClientId())) {
+				ProcessInfo pi = ite.next();
+				if(!pi.getDepId().equals(depId)) {
+					ite.remove();
+				}
 			}
+			
 		}
 		return ps;
 	}
 
 	@Override
+	@SMethod(needLogin=true,maxSpeed=5,maxPacketSize=512)
 	public Set<ProcessInfo> getAllProcesses() {
 		
 		Set<ProcessInfo> ps = new HashSet<>();
@@ -183,15 +190,19 @@ public class AgentProcessServiceImpl implements IAgentProcessService {
 			String json = SystemUtils.getFileString(path);
 			if(StringUtils.isNotEmpty(json)) {
 				ProcessInfo p = JsonUtils.getIns().fromJson(json, ProcessInfo.class);
-				if(p != null ) {
-					ps.add(p);
+				if(PermissionManager.checkAccountClientPermission(p.getClientId())) {
+					if(p != null ) {
+						ps.add(p);
+					}
 				}
+				
 			}
 		}
 		return ps;
 	}
 
 	@Override
+	@SMethod(needLogin=true,maxSpeed=5,maxPacketSize=512)
 	public List<LogFileEntry> getProcessesLogFileList() {
 		
 		Set<ProcessInfo> ps = getAllProcesses();
@@ -201,14 +212,16 @@ public class AgentProcessServiceImpl implements IAgentProcessService {
 		
 		List<LogFileEntry> logs = new ArrayList<>();
 		for(ProcessInfo pi : ps) {
-			LogFileEntry le = new LogFileEntry();
-			le.setAgentId(pi.getAgentId());
-			le.setInstanceName(pi.getInstanceName());
-			le.setProcessId(pi.getId());
-			le.setActive(im.getProcessesByInsId(pi.getId(), false) != null);
-			List<String> logFiles = getLogFiles(pi.getId());
-			le.setLogFileList(logFiles);
-			logs.add(le);
+			if(PermissionManager.checkAccountClientPermission(pi.getClientId())) {
+				LogFileEntry le = new LogFileEntry();
+				le.setAgentId(pi.getAgentId());
+				le.setInstanceName(pi.getInstanceName());
+				le.setProcessId(pi.getId());
+				le.setActive(im.getProcessesByInsId(pi.getId(), false) != null);
+				List<String> logFiles = getLogFiles(pi.getId());
+				le.setLogFileList(logFiles);
+				logs.add(le);
+			}
 		}
 		
 		return logs;
@@ -235,6 +248,7 @@ public class AgentProcessServiceImpl implements IAgentProcessService {
 	}
 
 	@Override
+	@SMethod(needLogin=true,maxSpeed=5,maxPacketSize=512)
 	public LogFileEntry getItselfLogFileList() {
 		List<String> files = new ArrayList<>();
 		File[] fs = agentLogDirFile.listFiles();
@@ -277,7 +291,13 @@ public class AgentProcessServiceImpl implements IAgentProcessService {
 	}
 
 	@Override
+	@SMethod(needLogin=true,maxSpeed=5,maxPacketSize=512)
 	public boolean startLogMonitor(String processId, String logFile, int lineNum) {
+		
+		int processClientId = this.getProcessClientId(processId);
+		if(processClientId == -1 || !PermissionManager.checkAccountClientPermission(processClientId)) {
+			return false;
+		}
 		
 		if(lineNum > 0) {
 			LogFileReader reader = new LogFileReader(processId,logFile,lineNum);
@@ -286,53 +306,30 @@ public class AgentProcessServiceImpl implements IAgentProcessService {
 				fileReaders.add(reader);
 			}
 		} else {
-			boolean pactive = im.getProcessesByInsId(processId, false) == null;
-			if(!pactive) {
-				logger.info(processId + " : " + logFile +  ", pactive: " + pactive);
+			ProcessInfo pi = im.getProcessesByInsId(processId, false);
+			if(pi == null) {
+				logger.info(processId + " : " + logFile +  ", pactive: " + true);
 				return false;
 			}
+
 			String apath = workDirFile.getAbsolutePath()  +  "/" + processId + "/" + "logs" +  "/" + logFile;
 			File lf = new File(apath);
 			this.registWatch(processId, logFile, lf.length());
+			return true;
 		}
-		return true;
-		/*
-		String piLogDir =  processId + File.separatorChar + "logs";
-		String fullPath = piLogDir + File.separatorChar + logFile;
-		
-		long readPoint = readReverse(fullPath, Constants.CHARSET, lineNum);
-		boolean pactive = im.getProcessesByInsId(processId, false) == null;
-		if(readPoint == -1 || !pactive) {
-			logger.info(processId + " : " + logFile + ", rp: " + readPoint + ", pactive: " + pactive);
-			return false;
-		}
-		
-		if(!fileWatchers.containsKey(processId)) {
-			synchronized(fileWatchers) {
-				if(!fileWatchers.containsKey(processId)) {
-					FileWatcher fw = new FileWatcher(workDirFile.getAbsolutePath() + File.separatorChar + piLogDir);
-					fw.start();
-					fileWatchers.put(processId, fw);
-				}
-			}
-		}
-		
-		String topic0 = "/" + fullPath.replaceAll("\\\\", "/");
-		
-		FileWatcher fw = fileWatchers.get(processId);
-		if(!fw.containsFile(logFile)) {
-			fw.addFile(logFile, readPoint, (content)->{
-				publishLog(topic0,content);
-			});
-		}
-		
-		return true;
-		*/
+		return false;
 	}
 
 	@Override
+	@SMethod(needLogin=true,maxSpeed=5,maxPacketSize=512)
 	public boolean stopLogMonitor(String processId, String logFile) {
 		logger.info("stopLogMonitor processId: {}  logFile: {}",processId,logFile);
+		
+		int processClientId = this.getProcessClientId(processId);
+		if(processClientId == -1 || !PermissionManager.checkAccountClientPermission(processClientId)) {
+			return false;
+		}
+		
 		FileWatcher fw = fileWatchers.get(processId);
 		if(fw != null && fw.containsFile(logFile)) {
 			fw.removeFile(logFile);
@@ -354,6 +351,26 @@ public class AgentProcessServiceImpl implements IAgentProcessService {
 		
 		return true;
 	}
+	
+	public int getProcessClientId(String insId) {
+		
+		ProcessInfo pi = this.im.getProcessesByInsId(insId, true);
+		if(pi != null) {
+			return pi.getClientId();
+		}
+		
+		String path = this.workDirFile.getAbsolutePath() + File.separatorChar + insId + File.separatorChar + "processInfo.json";
+		String json = SystemUtils.getFileString(path);
+		if(StringUtils.isNotEmpty(json)) {
+			ProcessInfo p = JsonUtils.getIns().fromJson(json, ProcessInfo.class);
+			if(p!= null) {
+				return p.getClientId();
+			}
+		}
+	
+		return -1;
+	}
+
     
     public void publishLog(String topic,String content,ILocalCallback cb) {
     	//logger.debug(topic + " : " + content);

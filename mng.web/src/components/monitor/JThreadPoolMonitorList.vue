@@ -23,6 +23,8 @@
 
     const GROUP = 'threadPool';
 
+    const cid = 'JThreadPoolMonitorList';
+
     export default {
         name: 'JThreadPoolMonitorList',
         data () {
@@ -37,10 +39,24 @@
         },
 
         created() {
-            this.loadServerList();
+
         },
 
         mounted(){
+            let self = this;
+            window.jm.rpc.addActListener(cid,()=>{
+                self.isLogin = window.jm.rpc.isLogin();
+                if( self.isLogin) {
+                    self.loadServerList();
+                }
+            });
+
+            let ec = function() {
+                window.jm.rpc.removeActListener(cid);
+                window.jm.vue.$off('editorClosed',ec);
+            }
+
+            window.jm.vue.$on('editorClosed',ec);
 
         },
 

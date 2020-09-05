@@ -134,7 +134,9 @@ public @interface SMethod {
 	/**
 	 * max qps
 	 */
-	public int maxSpeed() default 0;//无限速
+	public int maxSpeed() default 200;
+	
+	public int maxPacketSize() default 2048;//以字节为单位的包最大小
 	
 	/**
 	 *  milliseconds
