@@ -250,6 +250,7 @@
 
             doQuery() {
                 let self = this;
+                this.isLogin = window.jm.rpc.isLogin();
                 let params = this.getQueryConditions();
                 window.jm.mng.logSrv.countLog(params).then((resp)=>{
                     if(resp.code != 0) {

@@ -18,7 +18,7 @@ public interface IAccountService {
 	
 	ActInfo getAccount(String loginKey);
 	
-	Resp<Boolean> regist(String actName,String pwd);
+	Resp<Boolean> regist(String actName, String pwd,String mail,String mobile);
 	
 	Resp<Boolean> updatePwd(String newPwd,String oldPwd);
 	

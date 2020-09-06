@@ -200,6 +200,10 @@ jm.utils = {
         return myReg.test(value);
     },
 
+    checkMobile: function (phone){
+        return /^1(3|4|5|6|7|8|9)\d{9}$/.test(phone);
+    },
+
     checkIP:   function (value)   {
         var re='/^(\d+)\.(\d+)\.(\d+)\.(\d+)$/';
         if(re.test( value ))  {
@@ -273,47 +277,6 @@ jm.utils = {
             this.isBrowser(jm.utils.Constants.IE8) ||
             this.isBrowser(jm.utils.Constants.IE7) ||
             this.isBrowser(jm.utils.Constants.IE6)
-    },
-
-    toJson : function(obj) {
-        if(typeof obj === 'string') {
-            return obj;
-        } else if(typeof obj === 'object') {
-            return JSON.stringify(obj);
-        }else {
-            throw 'obj cannot transfor to Json'
-        }
-    },
-
-    fromJson : function(jsonStr) {
-        console.log(typeof jsonStr);
-        if(typeof jsonStr === 'string') {
-            var msg = eval('('+jsonStr+')');
-            if(msg.status){
-                msg.status = eval('('+msg.status+')');
-            }
-            return new jm.Message(msg);
-        }else if(typeof jsonStr === 'object') {
-            return jsonStr;
-        } else  {
-            throw 'fail from Json: ' + jsonStr;
-        }
-
-    },
-
-    fromJ : function(jsonStr) {
-        if(typeof jsonStr === 'string') {
-            var msg = eval('('+jsonStr+')');
-            if(msg.status){
-                msg.status = eval('('+msg.status+')');
-            }
-            return msg;
-        }else if(typeof jsonStr === 'object') {
-            return jsonStr;
-        } else  {
-            throw 'fail from Json: ' + jsonStr;
-        }
-
     },
 
     clone : function(jsObj) {
@@ -701,20 +664,20 @@ jm.rpc = {
         }
         let self = this;
         jm.rpc.callRpc(this.__actreq('login',[actName,pwd]))
-            .then(( actInfo )=>{
-                if(actInfo && actInfo.success) {
-                    self.actInfo = actInfo;
+            .then(( resp )=>{
+                if(resp.code == 0) {
+                    self.actInfo = resp.data;
                     if(!!jm.mng) {
                         jm.mng.init(function(suc){
-                            cb(actInfo,null);
+                            cb(self.actInfo,null);
                             self._notify(jm.rpc.Constants.LOGIN);
                         });
                     }else {
-                        cb(actInfo,null);
+                        cb(self.actInfo,null);
                         self._notify(jm.rpc.Constants.LOGIN);
                     }
                 } else {
-                    cb(null,actInfo.msg);
+                    cb(null,resp.msg);
                 }
             }).catch((err)=>{
             console.log(err);
@@ -964,7 +927,7 @@ jm.rpc = {
                 msg.id = msg.reqId;
             }
 
-            if(!!jm.rpc && !!jm.rpc.actInfo && jm.rpc.actInfo.success ) {
+            if(!!jm.rpc && !!jm.rpc.actInfo) {
                 req.params['loginKey'] = jm.rpc.actInfo.loginKey;
             }
 

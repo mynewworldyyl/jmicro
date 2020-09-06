@@ -1,16 +1,18 @@
 package cn.jmicro.api.security;
 
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.Set;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import cn.jmicro.api.JMicroContext;
+import cn.jmicro.api.Resp;
 import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Inject;
 import cn.jmicro.api.annotation.Reference;
 import cn.jmicro.api.cache.ICache;
-import cn.jmicro.api.config.Config;
 import cn.jmicro.api.idgenerator.ComponentIdServer;
 import cn.jmicro.api.raft.IDataOperator;
 import cn.jmicro.api.security.genclient.IAccountService$JMAsyncClient;
@@ -25,11 +27,10 @@ public class AccountManager {
 
 	private final Logger logger = LoggerFactory.getLogger(AccountManager.class);
 	
-	private static final ActInfo admin = new ActInfo("jmicro","jmicro123", 0);
-	
-	private static final ActInfo act0 = new ActInfo("jmicro0","jmicro123", 10);
-	
-	private static final ActInfo act1 = new ActInfo("jmicro1","jmicro123", 100);
+	private static final ActInfo jmicro = new ActInfo("jmicro","jmicro123", 0);
+	private static final String[] PERS = new String[] {
+		"cn.jmicro.mng.api.IMngAccountService##mng##0.0.1########updateActPermissions##Ljava/lang/String;Ljava/util/Set;Ljava/util/Set;","cn.jmicro.api.mng.IConfigManager##mng##0.0.1########getChildren##Ljava/lang/String;Ljava/lang/Boolean;","cn.jmicro.mng.api.IMngAccountService##mng##0.0.1########getPermissionsByActName##Ljava/lang/String;","cn.jmicro.mng.api.IMngAccountService##mng##0.0.1########getAccountList##Ljava/util/Map;II","cn.jmicro.mng.api.IMngAccountService##mng##0.0.1########getAllPermissions##","cn.jmicro.api.mng.IConfigManager##mng##0.0.1########add##Ljava/lang/String;Ljava/lang/String;Ljava/lang/Boolean;","cn.jmicro.api.mng.IConfigManager##mng##0.0.1########delete##Ljava/lang/String;","cn.jmicro.api.mng.IConfigManager##mng##0.0.1########update##Ljava/lang/String;Ljava/lang/String;","cn.jmicro.api.pubsub.IPubSubClientService##mng##0.0.1########publishMutilItems##[Lcn/jmicro/api/pubsub/PSData;","cn.jmicro.api.pubsub.IPubSubClientService##mng##0.0.1########publishOneItem##Lcn/jmicro/api/pubsub/PSData;","cn.jmicro.api.pubsub.IPubSubClientService##mng##0.0.1########publishString##Ljava/util/Map;Ljava/lang/String;Ljava/lang/String;","cn.jmicro.api.pubsub.IPubSubClientService##mng##0.0.1########publishBytes##Ljava/util/Map;Ljava/lang/String;[B","cn.jmicro.api.pubsub.IPubSubClientService##mng##0.0.1########callService##Ljava/lang/String;[Ljava/lang/Object;","cn.jmicro.api.mng.IChoreographyService##mng##0.0.1########stopProcess##Ljava/lang/String;","cn.jmicro.api.mng.IChoreographyService##mng##0.0.1########deleteDeployment##I","cn.jmicro.api.mng.IChoreographyService##mng##0.0.1########stopAllInstance##Ljava/lang/String;","cn.jmicro.api.mng.IChoreographyService##mng##0.0.1########getDeploymentList##","cn.jmicro.api.mng.IChoreographyService##mng##0.0.1########addDeployment##Lcn/jmicro/api/choreography/Deployment;","cn.jmicro.api.mng.IChoreographyService##mng##0.0.1########getProcessInstanceList##Z","cn.jmicro.api.mng.IChoreographyService##mng##0.0.1########changeAgentState##Ljava/lang/String;","cn.jmicro.api.mng.IChoreographyService##mng##0.0.1########getAgentList##Z","cn.jmicro.api.mng.IChoreographyService##mng##0.0.1########updateDeployment##Lcn/jmicro/api/choreography/Deployment;","cn.jmicro.api.mng.IManageService##mng##0.0.1########getServices##","cn.jmicro.api.mng.IManageService##mng##0.0.1########updateItem##Lcn/jmicro/api/registry/ServiceItem;","cn.jmicro.api.mng.IManageService##mng##0.0.1########updateMethod##Lcn/jmicro/api/registry/ServiceMethod;","cn.jmicro.mng.api.IMngAccountService##mng##0.0.1########countAccount##Ljava/util/Map;","cn.jmicro.mng.api.IMngAccountService##mng##0.0.1########changeAccountStatus##Ljava/lang/String;Z"
+	};
 	
 	@Reference(namespace="*",version="*")
 	private IAccountService$JMAsyncClient as;
@@ -44,36 +45,67 @@ public class AccountManager {
 	private ComponentIdServer idGenerator;
 	
 	public void ready() {
-		Set<String> acts = op.getChildren(Config.AccountDir, false);
+		Set<String> acts = op.getChildren(AccountManager.ActDir, false);
 		if(acts == null || acts.isEmpty()) {
-			String p = Config.AccountDir +"/"+ admin.getActName();
-			op.createNodeOrSetData(p, JsonUtils.getIns().toJson(admin), IDataOperator.PERSISTENT);
-			p = Config.AccountDir +"/"+ act0.getActName();
-			op.createNodeOrSetData(p, JsonUtils.getIns().toJson(act0), IDataOperator.PERSISTENT);
-			p = Config.AccountDir +"/"+ act1.getActName();
-			op.createNodeOrSetData(p, JsonUtils.getIns().toJson(act1), IDataOperator.PERSISTENT);
+			String p = AccountManager.ActDir +"/"+ jmicro.getActName();
+			jmicro.setStatuCode(ActInfo.SC_ACTIVED);
+			Set<String> pers = new HashSet<>();
+			pers.addAll(Arrays.asList(PERS));
+			jmicro.setPers(pers);
+			op.createNodeOrSetData(p, JsonUtils.getIns().toJson(jmicro), IDataOperator.PERSISTENT);
+			
 		}
 	}
+	
+	public boolean checkEmailExist(String email) {
+		return op.exist(AccountManager.EmailDir +"/"+ email);
+	}
+	
+	public boolean checkMobileExist(String mobile) {
+		return op.exist(AccountManager.MobileDir +"/"+ mobile);
+	}
 
-	public ActInfo login(String actName, String pwd) {
+	public Resp<ActInfo> login(String actName, String pwd) {
+		Resp<ActInfo> r = new Resp<ActInfo>();
+		
 		if(as == null || !as.isReady()) {
 			ActInfo ai = getAccountFromZK(actName);
-			if(ai != null && (ai.getPwd().equals(pwd) || Md5Utils.getMd5(pwd).equals(ai.getPwd()))) {
+			
+			if(ai == null) {
+				r.setCode(Resp.CODE_FAIL);
+				r.setMsg("Account not exist or password error!");
+				return r;
+			}
+			
+			if(ai.getStatuCode() != ActInfo.SC_ACTIVED) {
+				r.setCode(Resp.CODE_FAIL);
+				r.setMsg("Account invalid now!");
+				return r;
+			}
+			
+			if(ai.getPwd().equals(pwd) || Md5Utils.getMd5(pwd).equals(ai.getPwd())) {
 				String akey = JMicroContext.CACHE_LOGIN_KEY + ai.getActName();
-				ActInfo la = cache.get(akey);
-				if(la == null) {
-					la = ai;
-					ai.setLoginKey(JMicroContext.CACHE_LOGIN_KEY + this.idGenerator.getStringId(ActInfo.class));
-					cache.put(akey, ai);
-					cache.put(ai.getLoginKey(), ai);
+				
+				String oldLk = null;
+				if(cache.exist(akey)) {
+					oldLk = cache.get(akey);
 				}
-				la.setSuccess(true);
-				return la;
+				
+				if(oldLk == null) {
+					ai.setLoginKey(JMicroContext.CACHE_LOGIN_KEY + this.idGenerator.getStringId(ActInfo.class));
+					cache.put(ai.getLoginKey(), ai);
+					cache.put(akey, ai.getLoginKey());
+					cache.put(ai.getClientId()+"", ai.getLoginKey());
+				}else {
+					ai = cache.get(oldLk);
+				}
+				r.setCode(Resp.CODE_SUCCESS);
+				r.setData(ai);
+				return r;
 			} else {
-				ActInfo rst = new ActInfo();
-				rst.setSuccess(false);
-				rst.setMsg("Account not exist or password error!");
-				return rst;
+				r.setCode(Resp.CODE_FAIL);
+				r.setMsg("Account not exist or password error!");
+				return r;
 			}
 		} else {
 			
@@ -96,7 +128,7 @@ public class AccountManager {
 				});
 				return null;
 			} else {
-				return as.login(actName, pwd).getData();
+				return as.login(actName, pwd);
 			}
 			
 		}
@@ -121,7 +153,7 @@ public class AccountManager {
 	}
 	
 	public ActInfo getAccountFromZK(String actName) {
-		String p = Config.AccountDir +"/"+ actName;
+		String p = AccountManager.ActDir +"/"+ actName;
 		String data = op.getData(p);
 		if(StringUtils.isNotEmpty(data)) {
 			ActInfo ai = JsonUtils.getIns().fromJson(data, ActInfo.class);

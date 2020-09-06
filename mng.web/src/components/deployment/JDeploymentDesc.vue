@@ -178,8 +178,8 @@
 
         mounted () {
             let self = this;
+            self.refresh();
             window.jm.rpc.addActListener(cid,self.refresh);
-
             window.jm.vue.$emit("editorOpen",
                 {"editorId":cid,
                     "menus":[{name:"ADD",label:"Add",icon:"ios-cog",call:self.addDeploy},

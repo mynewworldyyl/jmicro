@@ -1,0 +1,56 @@
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width,initial-scale=1.0">
+    <link rel="stylesheet" href="./style.css">
+    <link rel="icon" href="./jmicro.png">
+    <script type="text/javascript" src="./js/rpc.js"></script>
+    <script type="text/javascript" src="./js/jquery.js"></script>
+    <title>JMicro active account</title>
+    <style>
+
+    </style>
+  </head>
+  <body>
+      <div id="msg"></div>
+      <div>
+        <a href="javascript:void(0)" id="activeBtn"></a>
+        <span id="accountName"></span>
+      </div>
+  </body>
+
+<script  type="text/javascript">
+
+    $(function(){
+        let ps = jm.utils.parseUrlParams(window.location.href);
+        let actName = ps['actName'];
+        let token = ps['token'];
+        if(!token || !actName) {
+            $("#msg").text("无效页面");
+            return;
+        }
+
+        $("#activeBtn").text("点击我击活你的账号:");
+        $("#accountName").text(actName);
+
+        $("#activeBtn").click(function(){
+            let sn = "cn.jmicro.mng.api.IMngAccountService";
+            let ns = "mng";
+            let v = "0.0.1";
+            jm.rpc.callRpcWithParams(sn,ns,v,'activeAccount',[actName,token])
+                .then(rst=>{
+                    $("#activeBtn").unbind('click');
+                    if(rst.code == 0) {
+                        $("#msg").text("激活成功");
+                    }else {
+                        $("#msg").text(rst.msg);
+                    }
+                }).catch(err=>{
+                console.log(err)
+            });
+        })
+    })
+
+</script>
+</html>

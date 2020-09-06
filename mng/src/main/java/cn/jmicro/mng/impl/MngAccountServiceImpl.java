@@ -5,12 +5,15 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import cn.jmicro.api.JMicroContext;
 import cn.jmicro.api.Resp;
+import cn.jmicro.api.annotation.Cfg;
 import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Inject;
 import cn.jmicro.api.annotation.Reference;
@@ -30,12 +33,25 @@ import cn.jmicro.common.util.JsonUtils;
 import cn.jmicro.common.util.StringUtils;
 import cn.jmicro.mng.LocalAccountManager;
 import cn.jmicro.mng.api.IMngAccountService;
+import cn.jmicro.mng.mail.MailSender;
 
 @Component
 @Service(namespace="mng", version="0.0.1",retryCnt=0,external=true,debugMode=1,showFront=false)
 public class MngAccountServiceImpl implements IMngAccountService {
 
 	private final Logger logger = LoggerFactory.getLogger(MngAccountServiceImpl.class);
+	
+	@Cfg(value="/accountActivePage",defGlobal=true)
+	private String accountActivePage="http://192.168.56.1:9090/activeAccount.html?";
+	
+	private static final String EMAIL_CHECKER = "\\w+(\\.\\w)*@\\w+(\\.\\w{2,3}){1,3}";
+	
+	private static final Pattern HK_PATTERN = Pattern.compile("^(5|6|8|9)\\d{7}$");
+    private static final Pattern CHINA_PATTERN = Pattern.compile("^((13[0-9])|(14[0,1,4-9])|(15[0-3,5-9])|(16[2,5,6,7])|(17[0-8])|(18[0-9])|(19[0-3,5-9]))\\d{8}$");
+	private static final Pattern NUM_PATTERN = Pattern.compile("[0-9]+");
+	    
+	@Inject
+	private MailSender mailSender;
 	
 	@Inject
 	private LocalAccountManager lam;
@@ -53,7 +69,7 @@ public class MngAccountServiceImpl implements IMngAccountService {
 	private ComponentIdServer idGenerator;
 	
 	@Override
-	public ActInfo login(String actName, String pwd) {
+	public Resp<ActInfo> login(String actName, String pwd) {
 		return am.login(actName, pwd);
 	}
 
@@ -93,7 +109,68 @@ public class MngAccountServiceImpl implements IMngAccountService {
 	
 	@Override
 	@SMethod(maxSpeed=10)
-	public Resp<Boolean> regist(String actName, String pwd) {
+	public Resp<Boolean> activeAccount(String actName, String token) {
+		Resp<Boolean> r = new Resp<>();
+		ActInfo ai = this.am.getAccountFromZK(actName);
+		if(ai == null || StringUtils.isEmpty(actName) || StringUtils.isEmpty(token) 
+				|| StringUtils.isEmpty(ai.getToken())|| !token.equals(ai.getToken()) 
+				|| ai.getStatuCode() != ActInfo.SC_WAIT_ACTIVE) {
+			r.setCode(Resp.CODE_FAIL);
+			r.setData(false);
+			r.setMsg("Invalid info!");
+			return r;
+		}
+		
+		String p = AccountManager.ActDir +"/"+ ai.getActName();
+		ai.setStatuCode(ActInfo.SC_ACTIVED);
+		ai.setToken("");
+		op.createNodeOrSetData(p, JsonUtils.getIns().toJson(ai), IDataOperator.PERSISTENT);
+		
+		return r;
+	}
+	
+	@Override
+	@SMethod(maxSpeed=10)
+	public Resp<Boolean> regist(String actName, String pwd,String mail,String mobile) {
+		
+		if(StringUtils.isEmpty(mail)) {
+			Resp<Boolean> r = new Resp<>();
+			r.setCode(Resp.CODE_FAIL);
+			r.setData(false);
+			r.setKey("MailIsNull");
+			r.setMsg("Mail address cannot be null!");
+			return r;
+		}
+		
+		mail = mail.trim();
+		if(!mail.matches(EMAIL_CHECKER)) {
+			Resp<Boolean> r = new Resp<>();
+			r.setCode(Resp.CODE_FAIL);
+			r.setData(false);
+			r.setKey("MailFormatInvalid");
+			r.setMsg("Mail address format is invalid!");
+			return r;
+		}
+		
+		if(StringUtils.isEmpty(mobile)) {
+			Resp<Boolean> r = new Resp<>();
+			r.setCode(Resp.CODE_FAIL);
+			r.setData(false);
+			r.setKey("MobileIsNull");
+			r.setMsg("Mobile number cannot be null!");
+			return r;
+		}
+		
+		mobile = mobile.trim();
+		Matcher m = CHINA_PATTERN.matcher(mobile);
+		if(!m.matches()) {
+			Resp<Boolean> r = new Resp<>();
+			r.setCode(Resp.CODE_FAIL);
+			r.setData(false);
+			r.setKey("MobileFormatInvalid");
+			r.setMsg("Mobile number is invalid!");
+			return r;
+		}
 		
 		if(StringUtils.isEmpty(pwd)) {
 			Resp<Boolean> r = new Resp<>();
@@ -103,6 +180,26 @@ public class MngAccountServiceImpl implements IMngAccountService {
 			r.setMsg("New password cannot be null!");
 			return r;
 		}
+		
+		if(am.checkEmailExist(mail)) {
+			Resp<Boolean> r = new Resp<>();
+			r.setCode(1);
+			r.setData(false);
+			r.setKey("mailHaveRegist");
+			r.setMsg("Your mail "+mail+" have been registed!");
+			return r;
+		}
+		
+		mobile = mobile.trim();
+		if(am.checkMobileExist(mobile)) {
+			Resp<Boolean> r = new Resp<>();
+			r.setCode(1);
+			r.setData(false);
+			r.setKey("mobileHaveRegist");
+			r.setMsg("Your mobile " +mobile+" have been registed!");
+			return r;
+		}
+		
 		
 		ActInfo ai = new ActInfo();
 		ai.setActName(actName);
@@ -121,7 +218,7 @@ public class MngAccountServiceImpl implements IMngAccountService {
 				logger.error(Constants.CONTEXT_SERVICE_RESPONSE + " is null in async context");
 			}
 			if(cb != null) {
-				as.registJMAsync(actName,pwd).then((rst,fail,rcxt)->{
+				as.registJMAsync(actName,pwd,mail,mobile).then((rst,fail,rcxt)->{
 					if(fail == null) {
 						cb.result(rst);
 					} else {
@@ -135,24 +232,75 @@ public class MngAccountServiceImpl implements IMngAccountService {
 				//异步请求同步返回NULL
 				r = null;
 			} else {
-				return as.regist(actName,pwd);
+				return as.regist(actName,pwd,mail,mobile);
 			}
 		} else {
 			r.setCode(0);
-			String p = Config.AccountDir +"/"+ ai.getActName();
-			ai.setEnable(true);
-			ai.setClientId(this.idGenerator.getIntId(ActInfo.class));
+			String p = AccountManager.ActDir +"/"+ ai.getActName();
 			if(op.exist(p)) {
 				r.setCode(1);
 				r.setData(false);
 				r.setMsg("Account exist");
 				r.setKey("accountExist");
 			} else {
+				ai.setStatuCode(ActInfo.SC_WAIT_ACTIVE);
+				ai.setClientId(this.idGenerator.getIntId(ActInfo.class));
+				ai.setMail(mail);
+				ai.setMobile(mobile);
+				ai.setRegistTime(System.currentTimeMillis());
+				
+				String token = this.idGenerator.getStringId(ActInfo.class);
+				token = Md5Utils.getMd5(token);
+				ai.setToken(token);
+				
+				op.createNodeOrSetData( AccountManager.MobileDir+"/" + mobile, JsonUtils.getIns().toJson(ai), IDataOperator.PERSISTENT);
+				op.createNodeOrSetData( AccountManager.EmailDir+"/" + mail, JsonUtils.getIns().toJson(ai), IDataOperator.PERSISTENT);
+				
 				op.createNodeOrSetData(p, JsonUtils.getIns().toJson(ai), IDataOperator.PERSISTENT);
 				r.setCode(0);
 				r.setData(true);
+				
+				StringBuffer sb = new StringBuffer();
+				sb.append("点击以下连接激活你的账号：\n").append(this.accountActivePage)
+				.append("actName=").append(actName)
+				.append("&token=").append(token);
+				this.mailSender.send(mail, "账号激活", sb.toString());
 			}
 		}
+		return r;
+	}
+	
+	public Resp<Boolean> resendActiveEmail(String actName) {
+		ActInfo ai = this.am.getAccountFromZK(actName);
+		Resp<Boolean> r = new Resp<>();
+		if(ai == null) {
+			r.setCode(Resp.CODE_FAIL);
+			r.setData(false);
+			r.setMsg("Account exist");
+			r.setKey("accountExist");
+			return r;
+		}
+		
+		if(ai.getStatuCode() == ActInfo.SC_ACTIVED) {
+			r.setCode(Resp.CODE_FAIL);
+			r.setData(false);
+			r.setMsg("Account is active!");
+			r.setKey("accountIsActive");
+			return r;
+		}
+		
+		if(ai.getStatuCode() == ActInfo.SC_WAIT_ACTIVE) {
+			StringBuffer sb = new StringBuffer();
+			sb.append("点击以下连接激活你的账号：\n").append(this.accountActivePage);
+			this.mailSender.send(ai.getMail(), "账号激活", sb.toString());
+		}else {
+			r.setCode(Resp.CODE_FAIL);
+			r.setData(false);
+			r.setMsg("Account statu exception!");
+			r.setKey("accountStatuIsInvalid");
+			return r;
+		}
+		
 		return r;
 	}
 	
@@ -220,7 +368,7 @@ public class MngAccountServiceImpl implements IMngAccountService {
 			}
 		} else {
 			ai.setPwd(newPwd);
-			String p = Config.AccountDir +"/"+ ai.getActName();
+			String p = AccountManager.ActDir +"/"+ ai.getActName();
 			op.createNodeOrSetData(p, JsonUtils.getIns().toJson(ai), IDataOperator.PERSISTENT);
 			r.setCode(0);
 			r.setData(true);
@@ -276,19 +424,30 @@ public class MngAccountServiceImpl implements IMngAccountService {
 				return r;
 			}
 			
-			if(ai.isEnable() == enableStatus) {
-				r.setCode(0);
-				r.setData(true);
+			if(ai.getStatuCode() == ActInfo.SC_WAIT_ACTIVE) {
+				r.setCode(Resp.CODE_FAIL);
+				r.setData(false);
+				r.setMsg("Account wait for mail active!");
 				return r;
 			}
 			
-			ai.setEnable(enableStatus);
+			if(ai.getStatuCode() == ActInfo.SC_FREEZE) {
+				ai.setStatuCode(ActInfo.SC_ACTIVED);
+			}else if(ai.getStatuCode() == ActInfo.SC_ACTIVED) {
+				ai.setStatuCode(ActInfo.SC_FREEZE);
+			}else {
+				r.setCode(Resp.CODE_FAIL);
+				r.setData(false);
+				r.setMsg("Account statu not support this operation!");
+				return r;
+			}
 			
-			String p = Config.AccountDir +"/"+ ai.getActName();
+			String p = AccountManager.ActDir +"/"+ ai.getActName();
 			op.createNodeOrSetData(p, JsonUtils.getIns().toJson(ai), IDataOperator.PERSISTENT);
 			r.setCode(0);
 			r.setData(true);
-			return r;
+			//退出重机关报登陆
+			return logout();
 		}
 		
 		return r;
@@ -347,7 +506,7 @@ public class MngAccountServiceImpl implements IMngAccountService {
 				pers.addAll(adds);
 			}
 			
-			String p = Config.AccountDir +"/"+ ai.getActName();
+			String p = AccountManager.ActDir +"/"+ ai.getActName();
 			op.createNodeOrSetData(p, JsonUtils.getIns().toJson(ai), IDataOperator.PERSISTENT);
 			r.setCode(0);
 			r.setData(true);
@@ -384,7 +543,7 @@ public class MngAccountServiceImpl implements IMngAccountService {
 				return as.countAccount(queryConditions);
 			}
 		} else {
-			Set<String> acts = op.getChildren(Config.AccountDir, false);
+			Set<String> acts = op.getChildren(AccountManager.ActDir, false);
 			Resp<Integer> r = new Resp<Integer>();
 			r.setCode(0);
 			r.setData(acts.size());
@@ -420,7 +579,7 @@ public class MngAccountServiceImpl implements IMngAccountService {
 			}
 		} else {
 			List<ActInfo> rst = new ArrayList<>();
-			Set<String> acts = op.getChildren(Config.AccountDir, false);
+			Set<String> acts = op.getChildren(AccountManager.ActDir, false);
 			for(String an : acts) {
 				ActInfo ai = am.getAccountFromZK(an);
 				if(ai != null) {

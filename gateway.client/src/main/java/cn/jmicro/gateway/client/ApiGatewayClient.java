@@ -200,12 +200,12 @@ public class ApiGatewayClient {
 			p.setResult(null);
 			p.done();
 		} else {
-			IAsyncCallback<ActInfo> cb = new IAsyncCallback<ActInfo>() {
+			IAsyncCallback<Resp<ActInfo>> cb = new IAsyncCallback<Resp<ActInfo>>() {
 				@Override
-				public void onResult(ActInfo ai, AsyncFailResult fail,Object ctx) {
-					if(fail == null && ai.isSuccess()) {
-						setActInfo(ai);
-						p.setResult(ai);
+				public void onResult(Resp<ActInfo> resp, AsyncFailResult fail,Object ctx) {
+					if(fail == null && resp.getCode() == Resp.CODE_SUCCESS) {
+						setActInfo(resp.getData());
+						p.setResult(resp.getData());
 					} else {
 						p.setFail(fail);
 					}

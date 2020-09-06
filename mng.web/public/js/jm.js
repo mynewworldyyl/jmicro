@@ -250,9 +250,9 @@ jm.mng = {
             });;
         },
 
-        regist: function (actName,pwd,cb){
+        regist: function (actName,pwd,email,mobile,cb){
             let self = this;
-            jm.rpc.callRpc(this.__ccreq('regist',[actName,pwd]))
+            jm.rpc.callRpc(this.__ccreq('regist',[actName,pwd,email,mobile]))
                 .then(( resp )=>{
                     if(resp && resp.code == 0) {
                         cb('success',null);

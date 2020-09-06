@@ -7,20 +7,27 @@ import cn.jmicro.api.annotation.SO;
 @SO
 public class ActInfo implements Cloneable {
 
+	public static final byte SC_WAIT_ACTIVE = 1;
+	
+	public static final byte SC_ACTIVED = 2;
+	
+	//异常账号，系统冻结
+	public static final byte SC_FREEZE = 4;
+	
 	private String actName;
 	private String loginKey;
 	private int clientId;
 	private String pwd;
+	private String mail;
+	private String mobile;
 	
-	private String msg;
-	
-	private boolean enable;
+	private String token;
 	
 	private long registTime;
 	
-	private Set<String> pers;
+	private byte statuCode;
 	
-	private boolean success = false;
+	private Set<String> pers;
 	
 	public ActInfo() {};
 	
@@ -64,20 +71,12 @@ public class ActInfo implements Cloneable {
 		this.pwd = pwd;
 	}
 
-	public String getMsg() {
-		return msg;
+	public String getMobile() {
+		return mobile;
 	}
 
-	public void setMsg(String msg) {
-		this.msg = msg;
-	}
-
-	public boolean isSuccess() {
-		return success;
-	}
-
-	public void setSuccess(boolean success) {
-		this.success = success;
+	public void setMobile(String mobile) {
+		this.mobile = mobile;
 	}
 
 	@Override
@@ -98,20 +97,36 @@ public class ActInfo implements Cloneable {
 		this.pers = pers;
 	}
 
-	public boolean isEnable() {
-		return enable;
-	}
-
-	public void setEnable(boolean enable) {
-		this.enable = enable;
-	}
-
 	public long getRegistTime() {
 		return registTime;
 	}
 
 	public void setRegistTime(long registTime) {
 		this.registTime = registTime;
+	}
+
+	public byte getStatuCode() {
+		return statuCode;
+	}
+
+	public void setStatuCode(byte statuCode) {
+		this.statuCode = statuCode;
+	}
+
+	public String getMail() {
+		return mail;
+	}
+
+	public void setMail(String mail) {
+		this.mail = mail;
+	}
+
+	public String getToken() {
+		return token;
+	}
+
+	public void setToken(String token) {
+		this.token = token;
 	}
 	
 }

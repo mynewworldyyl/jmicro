@@ -3,11 +3,13 @@
 
         <div v-if="isLogin" style="position:relative;height:auto;margin-top:10px;">
             <table class="configItemTalbe" width="99%">
-                <thead><tr><td>Act Name</td><td>Client ID</td><td>Regist Time</td><td>Enable</td><td>OPERATION</td></tr>
+                <thead><tr><td>Act Name</td><td>Client ID</td><td>Regist Time</td><td>Statu Code</td>
+                    <td>Mobile</td><td>Email</td>
+                    <td>OPERATION</td></tr>
                 </thead>
                 <tr v-for="c in actList" :key="c._id">
                     <td>{{c.actName}}</td><td>{{c.clientId}}</td><td>{{c.registTime | formatDate}}</td>
-                    <td>{{c.enable}}</td>
+                    <td>{{c.statuCode}}</td> <td>{{c.mobile}}</td> <td>{{c.email}}</td>
                     <td>
                         &nbsp;<a v-if="isLogin" @click="openActInfoDrawer(c)">Permissions</a> &nbsp;&nbsp;&nbsp;&nbsp;
                           <a v-if="isLogin" @click="changeAccountStatus(c)">ChangeStatus</a>

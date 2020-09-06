@@ -1,7 +1,7 @@
 <template>
     <div class="JInvokeLinkView" style="position:relative;height:auto">
 
-        <div style="position:relative;height:auto;margin-top:10px;">
+        <div v-if="isLogin" style="position:relative;height:auto;margin-top:10px;">
             <treeTable ref="recTree"
                        :list.sync="logList"
                        @callMethod="callMethod"
@@ -10,14 +10,16 @@
             </treeTable>
         </div>
 
-        <div style="position:relative;text-align:center;">
+        <div v-if="!isLogin" > Not login</div>
+
+        <div v-if="isLogin"  style="position:relative;text-align:center;">
             <Page ref="pager" :total="totalNum" :page-size="pageSize" :current="curPage" show-elevator show-sizer show-total
                   @on-change="curPageChange" @on-page-size-change="pageSizeChange"  :page-size-opts="[10, 30, 60,100]"></Page>
         </div>
 
-        <div :style="drawer.drawerBtnStyle" class="drawerJinvokeBtnStatu" @mouseenter="openDrawer()"></div>
+        <div v-if="isLogin"  :style="drawer.drawerBtnStyle" class="drawerJinvokeBtnStatu" @mouseenter="openDrawer()"></div>
 
-        <Drawer  v-model="drawer.drawerStatus" :closable="false" placement="left" :transfer="true"
+        <Drawer v-if="isLogin"   v-model="drawer.drawerStatus" :closable="false" placement="left" :transfer="true"
                  :draggable="true" :scrollable="true" width="50">
             <table id="queryTable">
                 <tr>
@@ -173,7 +175,7 @@
 
       <!--  <div :style="detail.drawerBtnStyle" class="detailJinvokeBtnStatu" @mouseenter="openDetailDrawer()"></div>-->
 
-        <Drawer  v-model="detail.drawerStatus" :closable="false" placement="right" :transfer="true"
+        <Drawer v-if="isLogin"  v-model="detail.drawerStatus" :closable="false" placement="right" :transfer="true"
                  :draggable="true" :scrollable="true" width="95">
             <JLinkDetailView :linkId="curDetailLinkId"></JLinkDetailView>
         </Drawer>

@@ -1,15 +1,16 @@
 <template>
     <div class="accountStatuBar">
         <span class="loginBtn" href="javascript:void(0);" @click="doLoginOrLogout()">
-           {{ actInfo && actInfo.success  ? 'Logout':'Login'}}
+           {{ !!actInfo ? 'Logout':'Login'}}
         </span>
 
-        <span v-if="!actInfo  || !actInfo.success" class="registBtn" href="javascript:void(0);" @click="regist()">
+        <span v-if="!actInfo" class="registBtn" href="javascript:void(0);" @click="regist()">
            {{ 'Regist'}}
         </span>
 
-        <span v-if="actInfo && actInfo.success" class="accountBtn" href="javascript:void(0);" @click="changePwd()">
-            {{actInfo.actName}}</span>
+        <span v-if="actInfo != null" class="accountBtn" href="javascript:void(0);" @click="changePwd()">
+            {{actInfo != null ? actInfo.actName:''}}
+        </span>
 
         <Modal v-model="loginDialog" :loading="true" width="360" @on-ok="doLogin()" ref="loginDialog">
             <table>
@@ -22,16 +23,18 @@
 
         <Modal v-model="registDialog" :loading="true" width="360" @on-ok="doRegist()" ref="registDialog">
             <table>
-                <tr><td>actName</td><td><input type="input"  v-model="actName"/></td></tr>
+                <tr><td>Accountt Name</td><td><input type="input"  v-model="actName"/></td></tr>
                 <tr><td>Password</td><td><input type="password"  v-model="pwd"/></td></tr>
-                <tr><td>confirm Password</td><td><input type="password"  v-model="confirmPwd"/></td></tr>
+                <tr><td>Confirm Password</td><td><input type="password"  v-model="confirmPwd"/></td></tr>
+                <tr><td>Mobile</td><td><input type="input"  v-model="mobile"/></td></tr>
+                <tr><td>Email</td><td><input type="input"  v-model="email"/></td></tr>
                 <tr><td colspan="2">{{msg}}</td></tr>
             </table>
         </Modal>
 
         <Modal v-model="changePwdDialog" :loading="true" width="360" @on-ok="doChangePwd()" ref="changePwdDialog">
             <table>
-                <tr><td>actName</td><td><input type="input"  readonly="true" v-model="actInfo.actName"/></td></tr>
+                <tr><td>actName</td><td><input v-if="actInfo" type="input"  readonly="true" v-model="actInfo.actName"/></td></tr>
                 <tr><td>Old Password</td><td><input type="password"  v-model="oldPwd"/></td></tr>
                 <tr><td>Password</td><td><input type="password"  v-model="pwd"/></td></tr>
                 <tr><td>confirm Password</td><td><input type="password"  v-model="confirmPwd"/></td></tr>
@@ -57,19 +60,22 @@ export default {
             registDialog: false,
             changePwdDialog: false,
 
+            email:null,
+            mobile:null,
             actName : null,
             pwd : null,
             confirmPwd : null,
             oldPwd:null,
 
-            actInfo : {actName:'',success:false},
+            actInfo : null,
+            isLogin:false,
             msg:''
         };
     },
 
     methods: {
         doLoginOrLogout(){
-            if(this.actInfo.success) {
+            if(this.actInfo) {
                 this.doLogout();
             } else {
                this.actName = window.jm.localStorage.get("actName"),
@@ -150,6 +156,15 @@ export default {
                 this.msg = "Password cannot be NULL";
             }
 
+            if(!this.email) {
+                this.msg = "Email cannot be NULL";
+                return;
+            }
+
+            if(!this.mobile) {
+                this.msg = "Mobile cannot be NULL";
+            }
+
             if(!this.confirmPwd) {
                 this.msg = "confirm password cannot be NULL!";
                 return;
@@ -159,10 +174,21 @@ export default {
                 this.msg = "Confirm password is not equal password!";
                 return;
             }
+
+            if(!window.jm.utils.checkEmail(this.email)) {
+                this.msg = "Email format invalid!";
+                return;
+            }
+
+            if(!window.jm.utils.checkMobile(this.mobile)) {
+                this.msg = "Mobile number format invalid!";
+                return;
+            }
+
             this.msg = "";
 
             let self = this;
-            window.jm.mng.act.regist(this.actName,this.pwd,(state,errmsg)=>{
+            window.jm.mng.act.regist(this.actName,this.pwd,this.email,this.mobile,(state,errmsg)=>{
                 if(state) {
                     self.$Message.success("Regist successfully")
                     self.registDialog = false;
@@ -183,14 +209,16 @@ export default {
             }
             self.msg = '';
             window.jm.rpc.login(this.actName,this.pwd,(actInfo,err)=>{
-                if(!err && actInfo.success) {
+                if(!err && actInfo) {
                     self.actInfo = actInfo;
+                    self.isLogin = true;
                     self.msg = '';
                     this.loginDialog = false;
                     window.jm.localStorage.set("actName",self.actName);
                     window.jm.localStorage.set("pwd",self.pwd);
                     //window.jm.vue.$emit('userLogin',actInfo);
                 }else {
+                    self.isLogin = false;
                     self.msg = err.msg | 'Login fail';
                 }
             });
@@ -200,8 +228,9 @@ export default {
             let self = this;
             window.jm.rpc.logout((sus,err)=>{
                 if(!err && sus) {
-                    self.actInfo = { actName:'',success:false };
+                    self.actInfo = null;
                     self.msg = '';
+                    self.isLogin = false;
                     //window.jm.vue.$emit('userLogout');
                 } else {
                     self.msg = 'Login fail';

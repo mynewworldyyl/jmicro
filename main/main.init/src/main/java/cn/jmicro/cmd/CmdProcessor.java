@@ -193,7 +193,7 @@ public class CmdProcessor {
 		}
 
 		ai.getPers().add(permission);
-		String p = Config.AccountDir +"/"+ ai.getActName();
+		String p = AccountManager.ActDir +"/"+ ai.getActName();
 		op.createNodeOrSetData(p, JsonUtils.getIns().toJson(ai), IDataOperator.PERSISTENT);
 	
 	}

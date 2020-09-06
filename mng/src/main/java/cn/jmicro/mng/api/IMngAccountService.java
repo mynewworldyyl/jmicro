@@ -12,7 +12,11 @@ import cn.jmicro.codegenerator.AsyncClientProxy;
 @AsyncClientProxy
 public interface IMngAccountService {
 
-	ActInfo login(String actName,String pwd);
+	Resp<Boolean> activeAccount(String actName, String token);
+	
+	Resp<Boolean> resendActiveEmail(String actName);
+	
+	Resp<ActInfo> login(String actName,String pwd);
 	
 	Resp<Boolean> logout();
 	
@@ -20,7 +24,7 @@ public interface IMngAccountService {
 	
 	Resp<ActInfo> getAccount(String loginKey);
 	
-	Resp<Boolean> regist(String actName, String pwd);
+	Resp<Boolean> regist(String actName, String pwd,String mail,String mobile);
 	
 	Resp<Boolean> updateActPermissions(String actName,Set<String> adds,Set<String> dels);
 	

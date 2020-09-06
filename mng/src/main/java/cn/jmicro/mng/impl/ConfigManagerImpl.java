@@ -20,7 +20,7 @@ public class ConfigManagerImpl implements IConfigManager {
 	private IDataOperator op;
 	
 	@Override
-	@SMethod(perType=true,maxSpeed=10,maxPacketSize=512)
+	@SMethod(perType=true,needLogin=true,maxSpeed=10,maxPacketSize=512)
 	public ConfigNode[] getChildren(String path,Boolean getAll) {
 		Set<String> clist = op.getChildren(path, false);
 		if(clist == null || clist.isEmpty()) {
