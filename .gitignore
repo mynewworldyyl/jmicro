@@ -40,6 +40,14 @@ api/bin/
 api/data/
 api/logs/
 api/src/main/gen/
+apics/target/
+apics/.classpath
+apics/.project
+apics/.settings/
+apics/logs/
+apics/bin/
+apics/data/
+apics/src/main/gen
 build/target/
 build/.classpath
 build/.project

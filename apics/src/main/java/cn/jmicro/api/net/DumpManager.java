@@ -4,7 +4,6 @@ import java.io.BufferedWriter;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -25,10 +24,7 @@ import java.util.concurrent.TimeUnit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import cn.jmicro.api.codec.OnePrefixDecoder;
-import cn.jmicro.api.config.Config;
-import cn.jmicro.common.util.DateUtils;
-import cn.jmicro.common.util.StringUtils;
+import cn.jmicro.api.utils.DateUtils;
 
 
 public class DumpManager {
@@ -45,11 +41,7 @@ public class DumpManager {
 				return ins;
 			}
 			ins = new DumpManager();
-			String dumpDir = Config.getCommandParam("dumpDir");
-			if(StringUtils.isEmpty(dumpDir)) {
-				dumpDir = System.getProperty("user.dir") + File.separator + "/dumpDir";
-			}
-			ins.dumpFileDir = dumpDir;
+			ins.dumpFileDir =  System.getProperty("user.dir") + File.separator + "/dumpDir";
 		}
 		return ins;
 	}
@@ -58,7 +50,7 @@ public class DumpManager {
 		executor = new ThreadPoolExecutor(1,5,1000*10,TimeUnit.MILLISECONDS,new ArrayBlockingQueue<Runnable>(100));
 	}
 	
-	private OnePrefixDecoder decoder =  new OnePrefixDecoder();
+	//private OnePrefixDecoder decoder =  new OnePrefixDecoder();
 	
 	private String dumpFileDir = "D:\\opensource\\github\\dumpdir";
 	
@@ -80,7 +72,7 @@ public class DumpManager {
 		}
 		
 		if(this.dumpFileName == null || "".equals(dumpFileName.trim())) {
-			dumpFileName = Config.getInstanceName()+"-"+ DateUtils.formatDate(new Date(), "YYYYMMddHHmm");
+			dumpFileName =  DateUtils.formatDate(new Date(), "YYYYMMddHHmm");
 		}
 		
 		File f = new File(dumpFileDir+"/"+dumpFileName+".dump");
@@ -186,7 +178,7 @@ public class DumpManager {
 		
 		for(Message m : msgs) {
 			if(linkId== -1 || m.getLinkId() == linkId) {
-				logger.info("{} MSG {},resp {}",linkId,m.toString(),decoder.decode((ByteBuffer)m.getPayload()));
+				logger.info("{} MSG {},resp {}",linkId,m.toString(),/*decoder.decode((ByteBuffer)m.getPayload())*/"" );
 			}
 		}
 	}
@@ -252,7 +244,7 @@ public class DumpManager {
 					if(m.getPayload() != null) {
 						Object resp = null;
 						try {
-							resp = decoder.decode((ByteBuffer)m.getPayload());
+							resp = null;// decoder.decode((ByteBuffer)m.getPayload());
 						} catch (Throwable e) {
 							bw.write("decode error for: "+e.getMessage());
 							bw.write(m.getPayload().toString());

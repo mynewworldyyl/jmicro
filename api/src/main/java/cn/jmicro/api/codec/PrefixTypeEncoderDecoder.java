@@ -19,9 +19,6 @@ package cn.jmicro.api.codec;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import cn.jmicro.api.annotation.Cfg;
 import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.codec.typecoder.TypeCoder;
@@ -35,7 +32,7 @@ import cn.jmicro.common.CommonException;
 @Component(value="prefixTypeDecoder",lazy=false,level=3)
 public class PrefixTypeEncoderDecoder{
 	
-	private static final Logger logger = LoggerFactory.getLogger(PrefixTypeEncoderDecoder.class);
+	//private static final Logger logger = LoggerFactory.getLogger(PrefixTypeEncoderDecoder.class);
 	
 	//@Inject
 	//private TypeCoderFactory typeCf;

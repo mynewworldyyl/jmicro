@@ -22,6 +22,7 @@ import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
 import javax.tools.Diagnostic.Kind;
 
+import com.squareup.javapoet.AnnotationSpec;
 import com.squareup.javapoet.ArrayTypeName;
 import com.squareup.javapoet.ClassName;
 import com.squareup.javapoet.JavaFile;
@@ -190,6 +191,8 @@ public class ClientServiceProxyGenerator extends AbstractProcessor {
 		  	
 		  	if(withContext) {
 		    	 addContextParameter(builder);
+		    	 AnnotationSpec.Builder ab = AnnotationSpec.builder(ClassName.get("cn.jmicro.api.annotation", "WithContext"));
+			  	 builder.addAnnotation(ab.build());
 		    }
 		  	
 		  	if(psString.startsWith(",")) {
@@ -440,6 +443,8 @@ public class ClientServiceProxyGenerator extends AbstractProcessor {
 	  	
 	  	if(widthContext) {
 	  		addContextParameter(builder);
+	  		AnnotationSpec.Builder ab = AnnotationSpec.builder(ClassName.get("cn.jmicro.api.annotation", "WithContext"));
+	  		builder.addAnnotation(ab.build());
 	  	}
 	  	
 	    return builder.build();

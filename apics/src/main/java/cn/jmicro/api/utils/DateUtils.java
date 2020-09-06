@@ -24,7 +24,7 @@
  * <http://www.apache.org/>.
  *
  */
-package cn.jmicro.common.util;
+package cn.jmicro.api.utils;
 
 import java.lang.ref.SoftReference;
 import java.text.ParsePosition;

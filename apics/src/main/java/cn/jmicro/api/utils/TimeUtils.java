@@ -1,4 +1,4 @@
-package cn.jmicro.common.util;
+package cn.jmicro.api.utils;
 
 import java.util.HashMap;
 import java.util.Map;

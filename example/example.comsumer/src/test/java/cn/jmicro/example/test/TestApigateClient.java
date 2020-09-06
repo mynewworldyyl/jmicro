@@ -16,6 +16,9 @@
  */
 package cn.jmicro.example.test;
 
+import java.util.Timer;
+import java.util.TimerTask;
+
 import org.junit.Test;
 
 import cn.jmicro.api.JMicro;
@@ -27,6 +30,7 @@ import cn.jmicro.example.api.rpc.ISimpleRpc;
 import cn.jmicro.example.api.rpc.genclient.ISimpleRpc$JMAsyncClient;
 import cn.jmicro.gateway.client.ApiGatewayClient;
 import cn.jmicro.gateway.client.ApiGatewayConfig;
+import cn.jmicro.gateway.pubsub.ApiGatewayPubsubClient;
 
 public class TestApigateClient {
 
@@ -44,7 +48,7 @@ public class TestApigateClient {
 		//System.out.println(srv.hi(new Person()));
 		
 		ISimpleRpc$JMAsyncClient srv = socketClient.getService(ISimpleRpc$JMAsyncClient.class,"simpleRpc", "0.0.1");
-		srv.hiJMAsync(new Person()).then((val,fail,ctx) -> {
+		srv.hiJMAsync(new Person(),null).then((val,fail,ctx) -> {
 			System.out.println("Hi: " +val);
 			//System.out.println(fail);
 		});
@@ -113,7 +117,7 @@ public class TestApigateClient {
 	
 	@Test
 	public void testPublishString() {
-		socketClient.loginJMAsync("test01", "1")
+		socketClient.loginJMAsync("test03", "1")
 		.success((ai,cxt)->{
 			System.out.println("Success login: "+ai.getActName());
 			 socketClient.getPubsubClient()
@@ -172,6 +176,36 @@ public class TestApigateClient {
 			.fail((code,msg,cxt1)->{
 				System.out.println("Fail pubilish content: code: "+ code + ", msg: " + msg);
 			});
+		})
+		.fail((code,msg,cxt)->{
+			System.out.println("Fail login: code"+ code + ", msg: " + msg);
+		});
+		
+		JMicro.waitForShutdown();
+	}
+	
+	@Test
+	public void testPublishStringPresure() {
+		socketClient.loginJMAsync("test03", "1")
+		.success((ai,cxt)->{
+			
+			System.out.println("Success login: "+ai.getActName());
+			
+			ApiGatewayPubsubClient cl = socketClient.getPubsubClient();
+			 
+			new Timer().scheduleAtFixedRate(new TimerTask() {
+				@Override
+				public void run() {
+					cl.publishStringJMAsync("/jmicro/test/topic01", "Message from java client!",PSData.FLAG_DEFALUT,null)
+					.success((id,cxt0)->{
+						System.out.println("Publish result: "+id);
+					})
+					.fail((code,msg,cxt1)->{
+						System.out.println("Fail pubilish content: code: "+ code + ", msg: " + msg);
+					});
+				}
+			}, 10, 500);
+			 
 		})
 		.fail((code,msg,cxt)->{
 			System.out.println("Fail login: code"+ code + ", msg: " + msg);

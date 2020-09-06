@@ -30,14 +30,10 @@ import java.util.Map;
 
 import cn.jmicro.api.gateway.ApiRequest;
 import cn.jmicro.api.gateway.ApiResponse;
-import cn.jmicro.api.monitor.MRpcItem;
 import cn.jmicro.api.net.Message;
-import cn.jmicro.api.net.RpcRequest;
-import cn.jmicro.api.net.RpcResponse;
 import cn.jmicro.common.CommonException;
 import cn.jmicro.common.Constants;
 import cn.jmicro.common.Utils;
-import cn.jmicro.common.util.StringUtils;
 /**
  * 
  * @author Yulei Ye
@@ -119,11 +115,11 @@ public class Decoder {
 		registType(String.class,type--);
 		registType(ByteBuffer.class,type--);
 		registType(Message.class,type--);
-		registType(RpcRequest.class,type--);
-		registType(RpcResponse.class,type--);
+		//registType(RpcRequest.class,type--);
+		//registType(RpcResponse.class,type--);
 		registType(ApiRequest.class,type--);
 		registType(ApiResponse.class,type--);
-		registType(MRpcItem.class,type--);
+		//registType(MRpcItem.class,type--);
 		registType(java.util.Date.class,type--);
 		registType(java.sql.Date.class,type--);
    }
@@ -269,7 +265,7 @@ public class Decoder {
 	private static Object decodeByReflect(ByteBuffer buffer,Class<?> cls) {
 		if(cls == null){
 			String clsName = decodeString(buffer);
-			if(StringUtils.isEmpty(clsName)){
+			if(Utils.isEmpty(clsName)){
 				throw new CommonException("invalid class type: "+ clsName);
 			}
 			try {

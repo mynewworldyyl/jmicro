@@ -29,24 +29,19 @@ import org.slf4j.LoggerFactory;
 
 import cn.jmicro.api.Resp;
 import cn.jmicro.api.annotation.Service;
+import cn.jmicro.api.annotation.WithContext;
 import cn.jmicro.api.async.AsyncFailResult;
 import cn.jmicro.api.async.IPromise;
 import cn.jmicro.api.client.IAsyncCallback;
 import cn.jmicro.api.client.IClientSession;
-import cn.jmicro.api.codec.Decoder;
-import cn.jmicro.api.codec.PrefixTypeEncoderDecoder;
 import cn.jmicro.api.codec.TypeUtils;
 import cn.jmicro.api.gateway.ApiRequest;
 import cn.jmicro.api.gateway.ApiResponse;
-import cn.jmicro.api.idgenerator.IdRequest;
 import cn.jmicro.api.internal.async.PromiseImpl;
-import cn.jmicro.api.monitor.Linker;
-import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.net.IMessageHandler;
 import cn.jmicro.api.net.IRequest;
 import cn.jmicro.api.net.ISession;
 import cn.jmicro.api.net.Message;
-import cn.jmicro.api.net.ServerError;
 import cn.jmicro.api.pubsub.PSData;
 import cn.jmicro.api.security.ActInfo;
 import cn.jmicro.codegenerator.AsyncClientProxy;
@@ -55,7 +50,6 @@ import cn.jmicro.common.CommonException;
 import cn.jmicro.common.Constants;
 import cn.jmicro.common.Utils;
 import cn.jmicro.common.util.JsonUtils;
-import cn.jmicro.common.util.StringUtils;
 import cn.jmicro.gateway.pubsub.ApiGatewayPubsubClient;
 
 /**
@@ -69,7 +63,7 @@ public class ApiGatewayClient {
 	
 	private static final AtomicLong reqId = new AtomicLong(1);
 	
-	private PrefixTypeEncoderDecoder decoder = new PrefixTypeEncoderDecoder();
+	//private PrefixTypeEncoderDecoder decoder = new PrefixTypeEncoderDecoder();
 	
 	private ApiGatewayClientSessionManager sessionManager = new ApiGatewayClientSessionManager();
 	
@@ -88,7 +82,7 @@ public class ApiGatewayClient {
 	private ActInfo actInfo;
 	
 	public ApiGatewayClient(ApiGatewayConfig cfg) {
-		if(StringUtils.isEmpty(cfg.getHost())) {
+		if(Utils.isEmpty(cfg.getHost())) {
 			cfg.setHost(Utils.getIns().getLocalIPList().get(0));
 		}
 		this.config = cfg;
@@ -183,11 +177,11 @@ public class ApiGatewayClient {
 						Class<?> returnType = TypeUtils.finalParameterType(method.getGenericReturnType(), 0);
 						
 						Object[] as = null;
-						if(args.length > 1) {
+						if(method.isAnnotationPresent(WithContext.class)) {
 							 as = new Object[args.length-1];
-							 System.arraycopy(args, 1, as, 0, as.length);
+							 System.arraycopy(args, 0, as, 0, args.length-1);
 						}else {
-							 as = new Object[0];
+							as = args;
 						}
 						callService(serviceClass.getName(), namespace, version, method.getName(), 
 								returnType, as, cb);
@@ -265,27 +259,27 @@ public class ApiGatewayClient {
 		msg.setUpProtocol(Message.PROTOCOL_BIN);
 		msg.setId(idClient.getLongId(Message.class.getName()));
 		msg.setReqId(req.getReqId());
-		msg.setLinkId(idClient.getLongId(Linker.class.getName()));
+		//msg.setLinkId(idClient.getLongId(Linker.class.getName()));
 		
 		//msg.setStream(false);
 		msg.setDumpDownStream(false);
 		msg.setDumpUpStream(false);
 		msg.setNeedResponse(true);
-		msg.setLogLevel(MC.LOG_NO);
+		//msg.setLogLevel(MC.LOG_NO);
 		msg.setMonitorable(false);
 		msg.setDebugMode(false);
 		
-		ByteBuffer bb = decoder.encode(req);
+		ByteBuffer bb = null;//decoder.encode(req);
 		
 		msg.setPayload(bb);
 		msg.setVersion(Message.MSG_VERSION);
 		
 		String clazzName =(String) getResponse(msg,String.class,null);
 		
-		if(StringUtils.isEmpty(clazzName)) {
+		if(Utils.isEmpty(clazzName)) {
 			try {
 				Class<?> clazz = Thread.currentThread().getContextClassLoader().loadClass(clazzName);
-				Decoder.registType(clazz,type);
+				//Decoder.registType(clazz,type);
 				return clazz;
 			} catch (ClassNotFoundException e) {
 				logger.error("",e);
@@ -299,19 +293,19 @@ public class ApiGatewayClient {
 		
 		Service srvAnno = method.getAnnotation(Service.class);
 		
-		if(srvAnno == null && StringUtils.isEmpty(namespace)) {
+		if(srvAnno == null && Utils.isEmpty(namespace)) {
 			throw new CommonException("Service ["+serviceClass.getName() +"] not specify namespage");
 		}
 		
-		if(srvAnno != null && StringUtils.isEmpty(namespace)) {
+		if(srvAnno != null && Utils.isEmpty(namespace)) {
 			namespace = srvAnno.namespace();
 		}
 		
-		if(srvAnno == null && StringUtils.isEmpty(version)) {
+		if(srvAnno == null && Utils.isEmpty(version)) {
 			throw new CommonException("Service ["+serviceClass.getName() + "] not specify version");
 		}
 		
-		if(srvAnno != null && StringUtils.isEmpty(version)) {
+		if(srvAnno != null && Utils.isEmpty(version)) {
 			version = srvAnno.version();
 		}
 		
@@ -345,7 +339,7 @@ public class ApiGatewayClient {
 				if(respMsg1 != null) {
 					Object val = null;
 					 if(respMsg1.getType() == Constants.MSG_TYPE_ID_RESP) {
-						 val = this.decoder.decode((ByteBuffer)respMsg1.getPayload());
+						 //val = this.decoder.decode((ByteBuffer)respMsg1.getPayload());
 						 cb.onResult((T)val, null,null);
 					} else {
 						 try {
@@ -387,7 +381,7 @@ public class ApiGatewayClient {
 		}
 		
 		if(resqMsg.getType() == Constants.MSG_TYPE_ID_RESP) {
-			return this.decoder.decode((ByteBuffer)resqMsg.getPayload());
+			return null;//this.decoder.decode((ByteBuffer)resqMsg.getPayload());
 		} else {
 			return (T)parseResult(resqMsg,returnType);
 		}
@@ -447,7 +441,7 @@ public class ApiGatewayClient {
 		msg.setDumpDownStream(false);
 		msg.setDumpUpStream(false);
 		msg.setNeedResponse(true);
-		msg.setLogLevel(MC.LOG_NO);
+		//msg.setLogLevel(MC.LOG_NO);
 		msg.setMonitorable(false);
 		msg.setDebugMode(false);
 		//全部异步返回，服务器可以异步返回，也可以同步返回
@@ -476,7 +470,7 @@ public class ApiGatewayClient {
 		return AsyncClientUtils.genSyncMethodName(method);
 	}
 
-	@SuppressWarnings("unchecked")
+	/*@SuppressWarnings("unchecked")
 	public Object[] getIds(String clazz, int num, byte type) {
     	
     	IdRequest req = new IdRequest();
@@ -509,7 +503,7 @@ public class ApiGatewayClient {
 			return (Object[])v ;
 		}
 		
-	}
+	}*/
 
     private static interface IResponseHandler{
 		void onResponse(Message msg);

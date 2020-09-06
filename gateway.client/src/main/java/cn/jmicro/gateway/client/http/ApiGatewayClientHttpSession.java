@@ -25,9 +25,9 @@ import cn.jmicro.api.client.IClientSession;
 import cn.jmicro.api.codec.JDataInput;
 import cn.jmicro.api.net.AbstractSession;
 import cn.jmicro.api.net.Message;
-import cn.jmicro.client.ClientMessageReceiver;
 import cn.jmicro.common.CommonException;
 import cn.jmicro.common.Constants;
+import cn.jmicro.gateway.client.ClientMessageReceiver;
 
 /**
  * 

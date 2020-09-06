@@ -37,9 +37,9 @@ import cn.jmicro.api.net.IMessageHandler;
 import cn.jmicro.api.net.IMessageReceiver;
 import cn.jmicro.api.net.ISession;
 import cn.jmicro.api.net.Message;
+import cn.jmicro.api.utils.TimeUtils;
 import cn.jmicro.common.Constants;
 import cn.jmicro.common.util.StringUtils;
-import cn.jmicro.common.util.TimeUtils;
 
 /** 
  * @author Yulei Ye

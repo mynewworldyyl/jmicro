@@ -25,14 +25,11 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import cn.jmicro.api.JMicroContext;
 import cn.jmicro.api.client.IClientSession;
 import cn.jmicro.api.client.IClientSessionManager;
-import cn.jmicro.api.codec.Decoder;
 import cn.jmicro.api.net.IMessageHandler;
 import cn.jmicro.api.net.ISession;
 import cn.jmicro.api.net.Message;
-import cn.jmicro.client.ClientMessageReceiver;
 import cn.jmicro.common.CommonException;
 import cn.jmicro.common.Constants;
 import cn.jmicro.gateway.client.http.ApiGatewayClientHttpSession;
@@ -58,7 +55,7 @@ public class ApiGatewayClientSessionManager implements IClientSessionManager {
 	private static final AttributeKey<IClientSession> sessionKey = 
 			AttributeKey.newInstance(Constants.IO_SESSION_KEY + System.currentTimeMillis());
 	
-	AttributeKey<Boolean> monitorEnableKey = AttributeKey.newInstance(JMicroContext.IS_MONITORENABLE);
+	AttributeKey<Boolean> monitorEnableKey = AttributeKey.newInstance("_is_monitorenable");
 	
 	private final Map<String,IClientSession> sessions = new ConcurrentHashMap<>();
 	

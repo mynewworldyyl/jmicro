@@ -15,9 +15,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import cn.jmicro.api.ClassScannerUtils;
 import cn.jmicro.api.annotation.SO;
 import cn.jmicro.api.codec.typecoder.AbstractComparableTypeCoder;
@@ -46,7 +43,7 @@ import cn.jmicro.common.CommonException;
 //@Component
 public class TypeCoderFactory {
 
-	private static final Logger logger = LoggerFactory.getLogger(TypeCoderFactory.class);
+	//private static final Logger logger = LoggerFactory.getLogger(TypeCoderFactory.class);
 
 	private static final TypeCoderFactory ins = new TypeCoderFactory();
 
@@ -399,7 +396,7 @@ public class TypeCoderFactory {
 	public synchronized void registCoder(TypeCoder<?> coder) {
 		checkTcp();
 		if (clazz2Coder.containsKey(coder.type())) {
-			logger.error("clazz[" + coder.type().getName() + "], code [" + coder.code() + "] REregist");
+			System.out.println("clazz[" + coder.type().getName() + "], code [" + coder.code() + "] REregist");
 			return;
 		}
 		clazz2Coder.put(coder.type(), coder);

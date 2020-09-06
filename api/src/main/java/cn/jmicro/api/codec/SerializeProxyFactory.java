@@ -9,20 +9,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import com.alibaba.dubbo.common.bytecode.ClassGenerator;
-import com.alibaba.dubbo.common.serialize.kryo.utils.ReflectUtils;
-
 import cn.jmicro.api.codec.typecoder.TypeCoder;
-import cn.jmicro.common.CommonException;
 import cn.jmicro.common.Utils;
-import javassist.ClassPool;
 
 public class SerializeProxyFactory {
 
-	public static final Logger logger = LoggerFactory.getLogger(SerializeProxyFactory.class);
+	//public static final Logger logger = LoggerFactory.getLogger(SerializeProxyFactory.class);
 	
 	public static Map<Class<?>,ISerializer> cache = new HashMap<>();
 	
@@ -37,7 +29,7 @@ public class SerializeProxyFactory {
 				return cache.get(cls);
 			}
 			
-			createProxyClass(cls);
+			//createProxyClass(cls);
 			
 			if(cache.containsKey(cls)) {
 				return cache.get(cls);
@@ -46,7 +38,7 @@ public class SerializeProxyFactory {
 		return null;
 	}
 	
-	private static <T> void createProxyClass(Class<T> cls) {
+	/*private static <T> void createProxyClass(Class<T> cls) {
 
 		 if(!Modifier.isPublic(cls.getModifiers())) {
 			// 非公有类，不能做序列化
@@ -68,12 +60,13 @@ public class SerializeProxyFactory {
 		 try {
 			cache.put(cls, (ISerializer)clazz.newInstance());
 		} catch (InstantiationException | IllegalAccessException e) {
-			logger.error("",e);
+			//logger.error("",e);
+			e.printStackTrace();
 		} finally {
 			classGenerator.release();
 		}
 	
-	}
+	}*/
 
 	private static  String getDecodeMethod(Class<?> cls) {
 
@@ -108,7 +101,7 @@ public class SerializeProxyFactory {
 				.append(" coder.encode(__buffer,vv,").append(f.getType().getName()).append(".class,").append(" f.getGenericType() );");
 			}
 			
-			sb.append(" ").append(ReflectUtils.getName(f.getType())).append(" _"+valStr+" =").append(Utils.getIns().asArgument(f.getType(), "__"+valStr)).append(";\n");
+			sb.append(" ").append(getName(f.getType())).append(" _"+valStr+" =").append(asArgument(f.getType(), "__"+valStr)).append(";\n");
 			
 			String setMethodName = "set"+f.getName().substring(0, 1).toUpperCase()+f.getName().substring(1);
 			Method setMethod = null;
@@ -157,17 +150,17 @@ public class SerializeProxyFactory {
 			}
 			
 			if(m != null) {
-				sb.append(" ").append(ReflectUtils.getName(fieldDeclareType)).append(" __val"+i).append("=");
+				sb.append(" ").append(getName(fieldDeclareType)).append(" __val"+i).append("=");
 				sb.append(" __obj.").append(getMethodName).append("();\n");
 			}else if(Modifier.isPublic(f.getModifiers())) {
-				sb.append(" ").append(ReflectUtils.getName(fieldDeclareType)).append(" __val"+i).append("=");
+				sb.append(" ").append(getName(fieldDeclareType)).append(" __val"+i).append("=");
 				sb.append(" __obj.").append(f.getName()).append(";\n");
 			} else {
-				sb.append(" ").append(ReflectUtils.getName(fieldDeclareType)).append(" __val"+i).append(" = ").append(Utils.getIns().defaultVal(fieldDeclareType)).append("; \n");
+				sb.append(" ").append(getName(fieldDeclareType)).append(" __val"+i).append(" = ").append(Utils.getIns().defaultVal(fieldDeclareType)).append("; \n");
 				sb.append("try { \n");
 				sb.append(" java.lang.reflect.Field f0 = ").append("__obj.getClass().getDeclaredField(\"").append(f.getName()).append("\");\n");
 				sb.append(" Object v = cn.jmicro.api.codec.TypeUtils.getFieldValue(__obj,f0);\n");
-				sb.append(" __val"+i).append("=").append(Utils.getIns().asArgument(fieldDeclareType, "v")).append(";\n");
+				sb.append(" __val"+i).append("=").append(asArgument(fieldDeclareType, "v")).append(";\n");
 				sb.append(" } catch(Exception e) { e.printStackTrace(); }\n");
 			}
 			
@@ -212,5 +205,42 @@ public class SerializeProxyFactory {
 		
 		return sb.toString();
 	}
+	
+	public static String asArgument(Class<?> cl, String name) {
+        if (cl.isPrimitive()) {
+            if (Boolean.TYPE == cl)
+                return name + "==null?false:((Boolean)" + name + ").booleanValue()";
+            if (Byte.TYPE == cl)
+                return name + "==null?(byte)0:((Byte)" + name + ").byteValue()";
+            if (Character.TYPE == cl)
+                return name + "==null?(char)0:((Character)" + name + ").charValue()";
+            if (Double.TYPE == cl)
+                return name + "==null?(double)0:((Double)" + name + ").doubleValue()";
+            if (Float.TYPE == cl)
+                return name + "==null?(float)0:((Float)" + name + ").floatValue()";
+            if (Integer.TYPE == cl)
+                return name + "==null?(int)0:((Integer)" + name + ").intValue()";
+            if (Long.TYPE == cl)
+                return name + "==null?(long)0:((Long)" + name + ").longValue()";
+            if (Short.TYPE == cl)
+                return name + "==null?(short)0:((Short)" + name + ").shortValue()";
+            throw new RuntimeException(name + " is unknown primitive type.");
+        }
+        return "(" + getName(cl) + ")" + name;
+    }
 
+	public static String getName(Class<?> c) {
+        if (c.isArray()) {
+            StringBuilder sb = new StringBuilder();
+            do {
+                sb.append("[]");
+                c = c.getComponentType();
+            }
+            while (c.isArray());
+
+            return c.getName() + sb.toString();
+        }
+        return c.getName();
+    }
+	
 }

@@ -8,8 +8,8 @@ import org.junit.Assert;
 import org.junit.Test;
 
 import cn.jmicro.api.Resp;
-import cn.jmicro.api.mng.ILogService;
 import cn.jmicro.api.mng.LogEntry;
+import cn.jmicro.mng.api.ILogService;
 import cn.jmicro.test.JMicroBaseTestCase;
 
 public class TestLogService  extends JMicroBaseTestCase{

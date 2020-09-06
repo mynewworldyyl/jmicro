@@ -8,7 +8,7 @@ import cn.jmicro.api.JMicro;
 import cn.jmicro.api.JMicroContext;
 import cn.jmicro.api.net.DumpManager;
 import cn.jmicro.api.objectfactory.IObjectFactory;
-import cn.jmicro.common.util.DateUtils;
+import cn.jmicro.api.utils.DateUtils;
 
 public class TestDumpManager {
 

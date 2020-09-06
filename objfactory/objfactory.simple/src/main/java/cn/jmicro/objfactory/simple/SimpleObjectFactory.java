@@ -70,13 +70,13 @@ import cn.jmicro.api.registry.ServiceItem;
 import cn.jmicro.api.service.IServerServiceProxy;
 import cn.jmicro.api.service.ServiceManager;
 import cn.jmicro.api.timer.TimerTicker;
+import cn.jmicro.api.utils.SystemUtils;
 import cn.jmicro.common.CommonException;
 import cn.jmicro.common.Constants;
 import cn.jmicro.common.JmicroClassPool;
 import cn.jmicro.common.Utils;
 import cn.jmicro.common.util.JsonUtils;
 import cn.jmicro.common.util.StringUtils;
-import cn.jmicro.common.util.SystemUtils;
 import javassist.CtClass;
 import javassist.CtMethod;
 

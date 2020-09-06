@@ -52,6 +52,7 @@ import cn.jmicro.api.raft.IDataListener;
 import cn.jmicro.api.raft.IDataOperator;
 import cn.jmicro.api.sysstatis.SystemStatisManager;
 import cn.jmicro.api.timer.TimerTicker;
+import cn.jmicro.api.utils.SystemUtils;
 import cn.jmicro.choreography.api.IAssignStrategy;
 import cn.jmicro.choreography.api.IResourceResponsitory;
 import cn.jmicro.choreography.assign.Assign;
@@ -61,7 +62,6 @@ import cn.jmicro.common.CommonException;
 import cn.jmicro.common.Constants;
 import cn.jmicro.common.util.JsonUtils;
 import cn.jmicro.common.util.StringUtils;
-import cn.jmicro.common.util.SystemUtils;
 
 /**
  * 

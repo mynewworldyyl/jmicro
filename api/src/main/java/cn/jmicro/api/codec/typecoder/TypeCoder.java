@@ -17,9 +17,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import cn.jmicro.api.codec.Decoder;
 import cn.jmicro.api.codec.JDataInput;
 import cn.jmicro.api.codec.JDataOutput;
@@ -30,7 +27,7 @@ import cn.jmicro.common.Utils;
 
 public interface TypeCoder<T> extends Comparable<TypeCoder<T>>{
 	
-	public static final Logger logger = LoggerFactory.getLogger(TypeCoder.class);
+	//public static final Logger logger = LoggerFactory.getLogger(TypeCoder.class);
 	
 	public static final Map<String,Class<?>> classCache = new HashMap<>();
 	public static final Object loadingLock = new Object();
@@ -366,8 +363,8 @@ public interface TypeCoder<T> extends Comparable<TypeCoder<T>>{
 		int m = cls.getModifiers();
 		
 		if(Modifier.isAbstract(m) || Modifier.isInterface(m) || !Modifier.isPublic(m)){
-			logger.warn("decodeByReflect class [{}] not support decode",cls.getName());
-			throw new CommonException("invalid class modifier: "+ cls.getName());
+			//logger.warn("decodeByReflect class [{}] not support decode",cls.getName());
+			throw new CommonException("decodeByReflect class not support decode: "+ cls.getName());
 		}
 		
 		Object obj = null;
@@ -393,7 +390,7 @@ public interface TypeCoder<T> extends Comparable<TypeCoder<T>>{
 				TypeUtils.setFieldValue(obj, v, f);
 			} catch (CommonException e) {
 				e.setOthers(e.getOthers()+" | fieldName:"+f.getName()+", obj:"+obj.toString());
-			    logger.error("",e);
+			    //logger.error("",e);
 				throw e;
 			}
 			
@@ -407,7 +404,8 @@ public interface TypeCoder<T> extends Comparable<TypeCoder<T>>{
 		try {
 			len = buffer.readShort();
 		} catch (IOException e) {
-			logger.error("decodeMap",e);
+			//logger.error("decodeMap",e);
+			System.err.println(e.getStackTrace());
 		}
 		if(len <= 0) {
 			return Collections.EMPTY_MAP;
@@ -423,7 +421,8 @@ public interface TypeCoder<T> extends Comparable<TypeCoder<T>>{
 			try {
 				map = (Map<Object,Object>)mapType.newInstance();
 			} catch (InstantiationException | IllegalAccessException e) {
-				logger.error("",e);
+				//logger.error("",e);
+				e.printStackTrace();
 			}
 		}
 		
@@ -447,7 +446,8 @@ public interface TypeCoder<T> extends Comparable<TypeCoder<T>>{
 				map.put(key, value);
 				
 			} catch (IOException e) {
-				logger.error("decodeMap",e);
+				//logger.error("decodeMap",e);
+				e.printStackTrace();
 			}
 			
 		}
@@ -614,7 +614,7 @@ public interface TypeCoder<T> extends Comparable<TypeCoder<T>>{
 				}
 				Class<?> cls=null;
 				try {
-					logger.info("Try to lodad class: " + clazzName);
+					//logger.info("Try to lodad class: " + clazzName);
 					cls = Thread.currentThread().getContextClassLoader().loadClass(clazzName);
 				} catch (Throwable e) {
 					try {

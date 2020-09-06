@@ -18,7 +18,7 @@ package cn.jmicro.gateway.client;
 
 import cn.jmicro.common.CommonException;
 import cn.jmicro.common.Constants;
-import cn.jmicro.common.util.StringUtils;
+import cn.jmicro.common.Utils;
 
 /**
  * 
@@ -52,7 +52,7 @@ public class ApiGatewayConfig {
 	}
 
 	public void setHost(String host) {
-		if(StringUtils.isEmpty(host)) {
+		if(Utils.isEmpty(host)) {
 			throw new CommonException("Host cannot be NULL");
 		}
 		this.host = host;

@@ -29,11 +29,11 @@ import cn.jmicro.api.annotation.IDStrategy;
 import cn.jmicro.api.annotation.SO;
 import cn.jmicro.api.config.Config;
 import cn.jmicro.api.monitor.MC;
+import cn.jmicro.api.utils.TimeUtils;
 import cn.jmicro.common.CommonException;
 import cn.jmicro.common.Constants;
 import cn.jmicro.common.Utils;
 import cn.jmicro.common.util.StringUtils;
-import cn.jmicro.common.util.TimeUtils;
 
 /**
  *  单位时间处理速度，类似QPS，但是间单位可定制

@@ -27,11 +27,11 @@ import cn.jmicro.api.pubsub.PSData;
 import cn.jmicro.api.pubsub.PubSubManager;
 import cn.jmicro.api.security.PermissionManager;
 import cn.jmicro.api.timer.TimerTicker;
+import cn.jmicro.api.utils.SystemUtils;
 import cn.jmicro.choreography.instance.InstanceManager;
 import cn.jmicro.common.Constants;
 import cn.jmicro.common.util.JsonUtils;
 import cn.jmicro.common.util.StringUtils;
-import cn.jmicro.common.util.SystemUtils;
 
 @Component
 @Service(namespace="chro", version="0.0.1")

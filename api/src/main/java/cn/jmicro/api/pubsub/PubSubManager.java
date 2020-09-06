@@ -458,7 +458,7 @@ public class PubSubManager {
 
 			curItemCount.addAndGet(-list.size());
 			
-			logger.info("Got result: {}",result);
+			//logger.info("Got result: {}",result);
 			
 			if (PUB_SERVER_BUSUY == result) {
 				logger.warn("Got bussy result and sleep one seconds");

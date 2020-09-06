@@ -1,6 +1,6 @@
 #  请移步到个人博客查看更多信息 https://www.cnblogs.com/jmicro/
 Demo
-http://124.70.152.7
+http://jmicro.cn
 
 # JMicro说明
 1. 以简单方式实现微服务相关功能，包括服务注册，服务发现，服务监控，超时，重试，限速，降级，熔断，负载均衡等

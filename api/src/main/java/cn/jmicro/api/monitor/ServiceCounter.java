@@ -30,9 +30,9 @@ import org.slf4j.LoggerFactory;
 
 import cn.jmicro.api.timer.ITickerAction;
 import cn.jmicro.api.timer.TimerTicker;
+import cn.jmicro.api.utils.TimeUtils;
 import cn.jmicro.common.CommonException;
 import cn.jmicro.common.util.StringUtils;
-import cn.jmicro.common.util.TimeUtils;
 
 /**
  * 

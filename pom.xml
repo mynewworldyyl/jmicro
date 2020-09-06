@@ -101,6 +101,7 @@
     <modules>
     	<module>agent</module>
     	<module>codegenerator</module>
+    	<module>apics</module>
     	<module>common</module>
 		<module>api</module>
 		<module>ext</module>
@@ -133,7 +134,11 @@
 				 <artifactId>all</artifactId>
 				 <version>${jmicro.version}</version>
 	        </dependency>
-	        
+	        <dependency>
+        	<groupId>cn.jmicro</groupId>
+			<artifactId>apics</artifactId>
+			 <version>${jmicro.version}</version>
+       </dependency>
              <dependency>
                  <groupId>cn.jmicro</groupId>
 				 <artifactId>api</artifactId>

@@ -26,9 +26,6 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 /**
  * 
  * @author Yulei Ye
@@ -37,7 +34,7 @@ import org.slf4j.LoggerFactory;
  */
 public class TypeUtils {
 
-	private static final Logger logger = LoggerFactory.getLogger(TypeUtils.class);
+	//private static final Logger logger = LoggerFactory.getLogger(TypeUtils.class);
 	
 	private TypeUtils() {
 	}

@@ -22,7 +22,6 @@ import java.nio.ByteBuffer;
 
 import cn.jmicro.api.codec.JDataInput;
 import cn.jmicro.api.codec.JDataOutput;
-import cn.jmicro.api.monitor.MC;
 import cn.jmicro.common.CommonException;
 import cn.jmicro.common.Constants;
 import cn.jmicro.common.util.JsonUtils;
@@ -202,7 +201,7 @@ public final class Message {
 	}
 	
 	public boolean isLoggable() {
-		return this.getLogLevel() > MC.LOG_NO;
+		return this.getLogLevel() > 0;
 	}
 	
 	public boolean isDebugMode() {
@@ -258,7 +257,7 @@ public final class Message {
 	}
 	//000 001 010 011 100 101 110 111
 	public void setLogLevel(int v) {
-		if(v < MC.LOG_NO || v > MC.LOG_FINAL) {
+		if(v < 0 || v > 6) {
 			 new CommonException("Invalid Log level: "+v);
 		}
 		this.flag = (byte)((v << 10) | this.flag);

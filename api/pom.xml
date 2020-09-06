@@ -11,6 +11,10 @@
     <description>Jmicro API Module</description>
     
     <dependencies>
+     	<dependency>
+        	<groupId>cn.jmicro</groupId>
+			<artifactId>apics</artifactId>
+       </dependency>
        <dependency>
         	<groupId>cn.jmicro</groupId>
 			<artifactId>common</artifactId>
