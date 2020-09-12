@@ -10,8 +10,8 @@
               </DropdownMenu>
           </Dropdown>
       </div>
-      <Tree  v-if="adminPer" :data="configs" :load-data="loadChildren" @on-select-change="nodeSelect($event)"></Tree>
-      <span v-if="!adminPer">No permission</span>
+      <Tree  v-if="isLogin" :data="configs" :load-data="loadChildren" @on-select-change="nodeSelect($event)"></Tree>
+      <span v-if="!isLogin">No permission</span>
   </div>
 </template>
 
@@ -56,8 +56,8 @@
         methods:{
 
             refresh() {
-                this.adminPer = window.jm.mng.comm.adminPer;
-                if(this.adminPer) {
+                this.isLogin = window.jm.rpc.isLogin();
+                if(this.isLogin) {
                     let self = this;
                     this.__getChildren(null,window.jm.mng.CONFIG_ROOT,function(data){
                         self.configs = data;
@@ -139,7 +139,7 @@
         data () {
             return {
                 configs: [],
-                adminPer:false,
+                isLogin:false,
             }
         },
 

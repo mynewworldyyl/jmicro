@@ -24,32 +24,34 @@
 
     $(function(){
         let ps = jm.utils.parseUrlParams(window.location.href);
-        let actName = ps['actName'];
-        let token = ps['token'];
-        if(!token || !actName) {
+        let actName = ps['a'];
+        let token = ps['t'];
+        let y = ps['y'];
+        if(!token || !actName || !y) {
             $("#msg").text("无效页面");
             return;
         }
 
-        $("#activeBtn").text("点击我击活你的账号:");
-        $("#accountName").text(actName);
-
-        $("#activeBtn").click(function(){
-            let sn = "cn.jmicro.mng.api.IMngAccountService";
-            let ns = "mng";
-            let v = "0.0.1";
-            jm.rpc.callRpcWithParams(sn,ns,v,'activeAccount',[actName,token])
-                .then(rst=>{
-                    $("#activeBtn").unbind('click');
-                    if(rst.code == 0) {
-                        $("#msg").text("激活成功");
-                    }else {
-                        $("#msg").text(rst.msg);
-                    }
-                }).catch(err=>{
-                console.log(err)
-            });
-        })
+        if(y == 1) {
+            $("#activeBtn").text("点击我击活你的账号:");
+            $("#accountName").text(actName);
+            $("#activeBtn").click(function(){
+                let sn = "cn.jmicro.mng.api.IMngAccountService";
+                let ns = "mng";
+                let v = "0.0.1";
+                jm.rpc.callRpcWithParams(sn,ns,v,'activeAccount',[actName,token])
+                    .then(rst=>{
+                        $("#activeBtn").unbind('click');
+                        if(rst.code == 0) {
+                            $("#msg").text("激活成功");
+                        }else {
+                            $("#msg").text(rst.msg);
+                        }
+                    }).catch(err=>{
+                    console.log(err)
+                });
+            })
+        }
     })
 
 </script>

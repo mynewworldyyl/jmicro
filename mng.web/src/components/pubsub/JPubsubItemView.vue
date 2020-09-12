@@ -3,14 +3,14 @@
 
         <div v-if="isLogin" style="position:relative;height:auto;margin-top:10px;">
             <table class="configItemTalbe" width="99%">
-                <thead><tr><td>ID</td><td>ClientId</td><td>Topic</td><td>callback</td>
-                    <td>CreatedTime</td><td>UpdatedTime</td>
-                    <td>Result</td><td>Data</td><td>Operations</td></tr></thead>
+                <thead><tr><td>{{'ID'|i18n}}</td><td>{{'ClientId'|i18n}}</td><td>{{'Topic'|i18n}}</td>
+                    <td>{{'Callback'|i18n}}</td><td>{{'CreatedTime'|i18n}}</td><td>{{'UpdatedTime'|i18n}}</td>
+                    <td>{{'Result'|i18n}}</td><td>{{'Data'|i18n}}</td><td>{{'Operations'|i18n}}</td></tr></thead>
                 <tr v-for="c in itemList" :key="c._id">
                     <td>{{c.psData.id}}</td><td>{{c.psData.srcClientId}}</td><td>{{c.psData.topic}}</td><td>{{c.psData.callback}}</td>
                     <td>{{c.createdTime | formatDate}}</td><td>{{c.updatedTime | formatDate}}</td>
                     <td>{{c.result}}</td><td>{{c.psData.data}}</td>
-                    <td><a @click="resend(c.psData)">Resend</a></td>
+                    <td><a @click="resend(c.psData)">{{'Resend'|i18n}}</a></td>
                 </tr>
             </table>
         </div>
@@ -21,7 +21,7 @@
                   @on-page-size-change="pageSizeChange" :page-size-opts="[10, 30, 60,100]"></Page>
         </div>
 
-        <div v-if="!isLogin">Not login</div>
+        <div v-if="!isLogin">{{'Notlogin'|i18n}}</div>
 
         <div v-if="isLogin" :style="drawer.drawerBtnStyle" class="drawerJinvokeBtnStatu" @mouseenter="openDrawer()"></div>
 
@@ -30,7 +30,7 @@
             <table id="queryTable">
                 <tr>
                 <tr>
-                    <td><i-button @click="doQuery()">QUERY</i-button></td><td></td>
+                    <td><i-button @click="doQuery()">{{'Query'|i18n}}</i-button></td><td></td>
                 </tr>
             </table>
         </Drawer>

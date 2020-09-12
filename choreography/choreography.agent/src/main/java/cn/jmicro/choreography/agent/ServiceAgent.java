@@ -82,7 +82,7 @@ public class ServiceAgent {
 	private String resourceDir; // = System.getProperty("user.dir") + "/resourceDir";
 
 	@Cfg(value = "/ServiceAgent/javaAgentJarFile", defGlobal = true)
-	private String javaAgentJarFile = "jmicro-agent-0.0.1-SNAPSHOT.jar";
+	private String javaAgentJarFile = "jmicro-agent-0.0.1-RELEASE.jar";
 
 	@Cfg(value = "/ResourceReponsitoryService/uploadBlockSize", defGlobal = true)
 	private int uploadBlockSize = 65300;// 1024*1024;
@@ -652,7 +652,9 @@ public class ServiceAgent {
 		list.add("-D" + ChoyConstants.ARG_MYPARENT_ID + "=" + SystemUtils.getProcessId());
 		list.add("-D" + ChoyConstants.ARG_DEP_ID + "=" + dep.getId());
 		list.add("-D" + ChoyConstants.ARG_AGENT_ID + "=" + this.agentInfo.getId());
-
+		list.add("-D" + Constants.CLIENT_ID + "=" + dep.getClientId());
+		list.add("-D" + Constants.ADMIN_CLIENT_ID + "=" + 0);
+		
 		logger.info("Dep args: " + dep.getArgs());
 		// list.add(dep.getArgs());
 		if (StringUtils.isNotEmpty(dep.getArgs())) {

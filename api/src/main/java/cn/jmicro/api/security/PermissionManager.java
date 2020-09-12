@@ -110,7 +110,7 @@ public class PermissionManager {
 			return se;
 		} else if(sm.isPerType() && (ai == null || ai.getPers() == null || !ai.getPers().contains(sm.getKey().toKey(false, false, false)))) {
 			ServerError se = new ServerError(ServerError.SE_NO_PERMISSION,
-					(ai!= null?ai.getActName():" Not login") + " permission reject to invoke "+ sm.getKey().toKey(false, false, false));
+					(ai!= null?ai.getActName():" Not login") + " no permission for this operation ");
 			SF.eventLog(MC.MT_ACT_PERMISSION_REJECT,MC.LOG_ERROR, TAG,se.toString());
 			logger.warn(se.toString());
 			return se;

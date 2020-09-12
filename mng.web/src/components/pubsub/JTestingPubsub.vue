@@ -1,34 +1,47 @@
 <template>
     <div class="JTestingPubsub" id="testing">
-        <div >{{msg}}</div>
+
         <div class="publishCon">
-            <Button @click="doSend()">Send</Button><br/>
+            <div >{{msg}}</div>
+            <Button :disabled="!isLogin" @click="doSend()">{{'Send'|i18n}}</Button>
+            &nbsp;&nbsp;
+            <Button :disabled="!isLogin" id="needResult" @click="changeResultSubStatus()">
+                {{needSendResult?getMsg('NoNeedResult'):getMsg('NeedResult')}}
+            </Button>
+            &nbsp;&nbsp;
+            <Button :disabled="!isLogin" @click="clearSendResult()">{{'ClearResult'|i18n}}</Button>
 
-            <label for="Topic">Topic</label>
-            <Input id="Topic" v-model="topic" placeholder=""/>
+            <div>
+                <label for="Topic">{{'SendTopic'|i18n}}</label>
+                <Input id="Topic" v-model="topic" placeholder=""/>
+            </div>
 
-            <label for="Content">Content</label>
-            <Input id="Content" v-model="content" placeholder=""/>
+            <div>
+                <label for="Content">{{'SendContent'|i18n}}</label>
+                <Input id="Content" v-model="content" placeholder=""/>
+            </div>
 
-            <br/><br/>
-            <Button id="needResult" @click="changeResultSubStatus()">{{needSendResult?'No Need Result':'Need Result'}}</Button>
-            <Button   @click="clearSendResult()">Clear Result</Button>
             <br/>
 
-            <label for="SendResultTopic">Send Result Topic</label>
-            <Input id="SendResultTopic" v-model="sendResultTopic"/>
+            <div v-if="needSendResult">
+                <label for="SendResultTopic">{{'SendResultTopic'|i18n}}</label>
+                <Input id="SendResultTopic" v-model="sendResultTopic"/>
+            </div>
 
-            <label for="sendResultBox">Result</label>&nbsp;&nbsp;&nbsp;
-            <Input id="sendResultBox"  class='textarea' type="textarea" v-model="sendResult"/>
+            <div v-if="needSendResult">
+                <label for="sendResultBox">{{'SendResult'|i18n}}</label>&nbsp;&nbsp;&nbsp;
+                <Input id="sendResultBox"  class='textarea' type="textarea" v-model="sendResult"/>
+            </div>
 
         </div>
 
         <div class="subscribeCon">
-            <Button v-if="subState" @click="doSubscribe()">Unsubscribe</Button>
-            <Button  v-if="!subState"  @click="doSubscribe()">Subscribe</Button>
-            <Button   @click="clear()">Clear</Button>
+            <Button :disabled="!isLogin" v-if="subState" @click="doSubscribe()">{{'Unsubscribe'|i18n}}</Button>
+            <Button :disabled="!isLogin" v-if="!subState"  @click="doSubscribe()">{{'Subscribe'|i18n}}</Button>
+            &nbsp;&nbsp;
+            <Button :disabled="!isLogin"   @click="clear()">{{'Clear'|i18n}}</Button>
             <br/>
-            <label for="Result">Result</label>
+            <label for="Result">{{'RecieveMessage'|i18n}}</label>
             <Input id="Result"  class='textarea' type="textarea" v-model="result"/>
         </div>
     </div>
@@ -36,7 +49,7 @@
 
 <script>
 
-    //const cid="testingPubsub";
+    const cid="testingPubsub";
 
     export default {
         name: 'JTestingPubsub',
@@ -46,6 +59,7 @@
 
         data () {
             return {
+                isLogin:false,
                 topic:'/jmicro/test/topic01',
                 content:'test content',
                 result:'',
@@ -58,6 +72,10 @@
             }
         },
         methods: {
+
+            getMsg(key) {
+                return  window.jm.mng.i18n.get(key);
+            },
 
             sendResultCallback(msg) {
                 if(!msg || msg.length == 0) {
@@ -171,7 +189,18 @@
         },
 
         mounted () {
+            let self = this;
+            self.isLogin = window.jm.rpc.isLogin();
+            window.jm.rpc.addActListener(cid,()=>{
+                self.isLogin = window.jm.rpc.isLogin();
+            });
 
+            let ec = function() {
+                window.jm.rpc.removeActListener(cid);
+                window.jm.vue.$off('editorClosed',ec);
+            }
+
+            window.jm.vue.$on('editorClosed',ec);
         },
 
         beforeDestroy () {
@@ -189,10 +218,12 @@
     .publishCon, .subscribeCon{
         height:100%;
         width:50%;
+        padding: 10px 0px 10px 10px;
     }
 
     .publishCon{
         float:left;
+
     }
     .subscribeCon{
         float:right;
@@ -209,6 +240,10 @@
 
     textarea.ivu-input{
         height:100%;
+    }
+
+    .JTestingPubsub label {
+        font-weight: bold;
     }
 
 </style>

@@ -6,19 +6,20 @@
         <Button @click="loadServerList('monitor','serverList')">monitor.serverList</Button>
         <Button @click="loadServerList('conf','getChildren','/jmicro/JMICRO',true)">conf.getChildren</Button>
         <Button @click="loadServerList('comm','getDicts',['logKey2Val'])">comm.getDicts</Button>
+        <Button @click="loadServerList('i18n','init',[])">i18n.init</Button>
         <br/>
-        <JCustTree></JCustTree>
+       <!-- <JCustTree></JCustTree>-->
     </div>
 </template>
 
 <script>
 
-    import JCustTree from '../common/JCustTree.vue'
+   /* import JCustTree from '../common/JCustTree.vue'*/
 
     export default {
         name: 'JTesting',
         components:{
-            JCustTree
+          /*  JCustTree*/
         },
 
         data () {
@@ -30,13 +31,16 @@
         methods: {
             loadServerList(module,method,arg0,arg1,arg2,arg3) {
                 //let self = this;
-                window.jm.mng[module][method](arg0,arg1,arg2,arg3)
-                    .then((resp) => {
-                       //self.$Message.info(JSON.stringify(resp));
-                        console.log(resp);
-                    }).catch((err) => {
-                    window.console.log(err);
-                });
+              let p =  window.jm.mng[module][method](arg0,arg1,arg2,arg3)
+                    if(p) {
+                        p.then((resp) => {
+                            //self.$Message.info(JSON.stringify(resp));
+                            console.log(resp);
+                        }).catch((err) => {
+                            window.console.log(err);
+                        });
+                    }
+
             }
         },
 

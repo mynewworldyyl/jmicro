@@ -208,7 +208,7 @@ public class DeploymentAssignment {
 			 if(StringUtils.isNotEmpty(cfg.getString("mngJarFile", null))) {
 				 mngDep.setJarFile(cfg.getString("mngJarFile", null));
 			 } else {
-				 mngDep.setJarFile("jmicro-main.mng-0.0.1-SNAPSHOT-jar-with-dependencies.jar");
+				 mngDep.setJarFile("jmicro-main.mng-0.0.1-RELEASE-jar-with-dependencies.jar");
 			 }
 			 
 			 mngDep.setStrategyArgs("-DsortPriority=instanceNum");
@@ -241,7 +241,7 @@ public class DeploymentAssignment {
 			 if(StringUtils.isNotEmpty(cfg.getString("apiGatewayJarFile", null))) {
 				 apiGatewayDep.setJarFile(cfg.getString("apiGatewayJarFile", null));
 			 } else {
-				 apiGatewayDep.setJarFile("jmicro-main.apigateway-0.0.1-SNAPSHOT-jar-with-dependencies.jar");
+				 apiGatewayDep.setJarFile("jmicro-main.apigateway-0.0.1-RELEASE-jar-with-dependencies.jar");
 			 }
 			 
 			 apiGatewayDep.setStrategyArgs("-DsortPriority=instanceNum");

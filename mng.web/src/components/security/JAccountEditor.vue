@@ -11,8 +11,10 @@
                     <td>{{c.actName}}</td><td>{{c.clientId}}</td><td>{{c.registTime | formatDate}}</td>
                     <td>{{c.statuCode}}</td> <td>{{c.mobile}}</td> <td>{{c.email}}</td>
                     <td>
-                        &nbsp;<a v-if="isLogin" @click="openActInfoDrawer(c)">Permissions</a> &nbsp;&nbsp;&nbsp;&nbsp;
-                          <a v-if="isLogin" @click="changeAccountStatus(c)">ChangeStatus</a>
+                        &nbsp;<a v-if="c.statuCode==2" @click="openActInfoDrawer(c)">Permissions</a> &nbsp;&nbsp;&nbsp;&nbsp;
+                          <a v-if="c.statuCode == 4" @click="changeAccountStatus(c)">Unfreeze</a>
+                          <a v-if="c.statuCode == 2" @click="changeAccountStatus(c)">Freeze</a>
+                          <a v-if="c.statuCode == 1" @click="resendActiveEmail(c)">Send Email</a>
                     </td>
                 </tr>
             </table>
@@ -101,11 +103,24 @@
             callMethod2() {
             },
 
+            resendActiveEmail(c) {
+                let self = this;
+                window.jm.mng.act.resendActiveEmail(c.actName).then((resp) => {
+                    if (resp.code == 0) {
+                        self.$Message.info("Successfully");
+                    } else {
+                        self.$Message.info(resp.msg);
+                    }
+                }).catch((err) => {
+                    window.console.log(err);
+                });
+            },
+
             changeAccountStatus(act) {
                 let self = this;
-                window.jm.mng.act.changeAccountStatus(act.actName, !act.enable).then((resp) => {
+                window.jm.mng.act.changeAccountStatus(act.actName).then((resp) => {
                     if (resp.code == 0) {
-                        act.enable = !act.enable
+                        self.refresh();
                     } else {
                         self.$Message.success(resp.msg);
                     }

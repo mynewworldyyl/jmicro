@@ -25,6 +25,7 @@ import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.FileNameMap;
 import java.net.URLConnection;
+import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -54,7 +55,6 @@ import io.netty.handler.codec.http.HttpVersion;
  * @author Yulei Ye
  * @date 2018年10月21日-下午9:16:29
  */
-@SuppressWarnings("restriction")
 @Component(value="nettyStaticResourceHandler",lazy=false)
 public class StaticResourceHttpHandler  {
 
@@ -80,13 +80,16 @@ public class StaticResourceHttpHandler  {
 
 	public void handle(ChannelHandlerContext ctx,FullHttpRequest request) throws IOException {
 		String path = request.uri();
+		if(path.contains("?")) {
+			path = path.substring(0,path.indexOf("?"));
+		}
 		
 		FullHttpResponse response = new DefaultFullHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.OK);
 		//response.headers().set("content-Type",getContentType(path));
 		
 		//LOG.debug(path);
-		
-		byte[] content = this.getContent(path,response);
+		String path0 = URLDecoder.decode(path, Constants.CHARSET);
+		byte[] content = this.getContent(path0,response);
 
 		response.headers().set("content-Length",content.length);
 		
@@ -186,7 +189,7 @@ public class StaticResourceHttpHandler  {
 		}
 		
 		if(bisr == null) {
-			LOG.error(absPath);
+			LOG.error("Resource not found: "+path);
 			try {
 				return "404 page not found!".getBytes(Constants.CHARSET);
 			} catch (UnsupportedEncodingException e) {

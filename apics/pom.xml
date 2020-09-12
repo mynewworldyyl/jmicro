@@ -3,13 +3,17 @@
     <parent>
          <groupId>cn.jmicro</groupId>
 		 <artifactId>parent</artifactId>
-		 <version>0.0.1-SNAPSHOT</version>
+		 <version>0.0.1-RELEASE</version>
     </parent>
     <artifactId>apics</artifactId>
     <packaging>jar</packaging>
     <name>${project.artifactId}</name>
     <description>classes shared by server and client</description>
     <dependencies>
+    <dependency>
+			<groupId>cn.jmicro</groupId>
+			<artifactId>codegenerator</artifactId>
+		</dependency>
         <dependency>
 		    <groupId>com.google.code.gson</groupId>
 		    <artifactId>gson</artifactId>

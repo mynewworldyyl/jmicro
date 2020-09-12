@@ -3,7 +3,7 @@
   <parent>
     <artifactId>parent</artifactId>
     <groupId>cn.jmicro</groupId>
-    <version>0.0.1-SNAPSHOT</version>
+    <version>0.0.1-RELEASE</version>
   </parent>
   <modelVersion>4.0.0</modelVersion>
   <artifactId>all</artifactId>
@@ -52,7 +52,7 @@
                     <Bundle-Name>cn.jmicro.all</Bundle-Name>
                     <Bundle-Vendor>JMicro</Bundle-Vendor>
                     <Bundle-SymbolicName>cn.jmicro.all;singleton:=true</Bundle-SymbolicName>
-                    <Bundle-Version>0.0.1.SNAPSHOT</Bundle-Version>
+                    <Bundle-Version>0.0.1.RELEASE</Bundle-Version>
                     <Export-Package />
                   </manifestEntries>
                 </transformer>
@@ -63,11 +63,94 @@
       </plugin>
     </plugins>
   </build>
+  <profiles>
+    <profile>
+      <id>release2maven</id>
+      <build>
+        <plugins>
+          <plugin>
+            <artifactId>maven-shade-plugin</artifactId>
+            <executions>
+              <execution>
+                <phase>package</phase>
+                <goals>
+                  <goal>shade</goal>
+                </goals>
+                <configuration>
+                  <createSourcesJar>true</createSourcesJar>
+                  <promoteTransitiveDependencies>true</promoteTransitiveDependencies>
+                  <createDependencyReducedPom>true</createDependencyReducedPom>
+                  <artifactSet>
+                    <includes>
+                      <include>cn.jmicro:common</include>
+                      <include>cn.jmicro:api</include>
+                      <include>cn.jmicro:server</include>
+                      <include>cn.jmicro:client</include>
+                      <include>cn.jmicro:idgenerator</include>
+                      <include>cn.jmicro:test</include>
+                      <include>cn.jmicro:objfactory.simple</include>
+                      <include>cn.jmicro:classloader</include>
+                      <include>cn.jmicro:redis</include>
+                      <include>cn.jmicro:limit</include>
+                      <include>cn.jmicro:transport.netty.server</include>
+                      <include>cn.jmicro:transport.netty.client</include>
+                      <include>cn.jmicro:config</include>
+                      <include>cn.jmicro:zk</include>
+                    </includes>
+                  </artifactSet>
+                  <transformers>
+                    <transformer>
+                      <manifestEntries>
+                        <Main-Class>cn.jmicro.api.JMicro</Main-Class>
+                        <X-Compile-Source-JDK>${maven.compile.source}</X-Compile-Source-JDK>
+                        <X-Compile-Target-JDK>${maven.compile.target}</X-Compile-Target-JDK>
+                        <Manifest-Version>1.0</Manifest-Version>
+                        <Bundle-ManifestVersion>2</Bundle-ManifestVersion>
+                        <Bundle-Name>cn.jmicro.all</Bundle-Name>
+                        <Bundle-Vendor>JMicro</Bundle-Vendor>
+                        <Bundle-SymbolicName>cn.jmicro.all;singleton:=true</Bundle-SymbolicName>
+                        <Bundle-Version>0.0.1.RELEASE</Bundle-Version>
+                        <Export-Package />
+                      </manifestEntries>
+                    </transformer>
+                  </transformers>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+          <plugin>
+            <artifactId>maven-gpg-plugin</artifactId>
+            <executions>
+              <execution>
+                <id>sign-artifacts</id>
+                <phase>verify</phase>
+                <goals>
+                  <goal>sign</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+  </profiles>
   <dependencies>
     <dependency>
       <groupId>cn.jmicro</groupId>
       <artifactId>apics</artifactId>
-      <version>0.0.1-SNAPSHOT</version>
+      <version>0.0.1-RELEASE</version>
+      <scope>compile</scope>
+    </dependency>
+    <dependency>
+      <groupId>cn.jmicro</groupId>
+      <artifactId>codegenerator</artifactId>
+      <version>0.0.1-RELEASE</version>
+      <scope>compile</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.squareup</groupId>
+      <artifactId>javapoet</artifactId>
+      <version>1.13.0</version>
       <scope>compile</scope>
     </dependency>
     <dependency>
@@ -164,18 +247,6 @@
       <groupId>io.netty</groupId>
       <artifactId>netty-all</artifactId>
       <version>4.1.30.Final</version>
-      <scope>compile</scope>
-    </dependency>
-    <dependency>
-      <groupId>cn.jmicro</groupId>
-      <artifactId>codegenerator</artifactId>
-      <version>0.0.1-SNAPSHOT</version>
-      <scope>compile</scope>
-    </dependency>
-    <dependency>
-      <groupId>com.squareup</groupId>
-      <artifactId>javapoet</artifactId>
-      <version>1.13.0</version>
       <scope>compile</scope>
     </dependency>
   </dependencies>

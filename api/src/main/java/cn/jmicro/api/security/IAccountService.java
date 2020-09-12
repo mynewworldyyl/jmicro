@@ -22,7 +22,7 @@ public interface IAccountService {
 	
 	Resp<Boolean> updatePwd(String newPwd,String oldPwd);
 	
-	Resp<Boolean> changeAccountStatus(String actName,boolean enableStatus);
+	Resp<Boolean> changeAccountStatus(String actName);
 	
 	boolean checkActNameExist(String actName);
 	

@@ -19,7 +19,7 @@ public class ApiGatewayPubsubClient {
 	
 	private ApiGatewayClient apiGc;
 	
-	private String messageServiceImplName = "cn.jmicro.gateway.MessageServiceImpl";
+	public static String messageServiceImplName = "cn.jmicro.gateway.MessageServiceImpl";
 	
 	private IPubSubClientService$JMAsyncClient pcs;
 	
@@ -116,6 +116,7 @@ public class ApiGatewayPubsubClient {
 					}
 					lis.setSubId(val);
 					ls.add(lis);
+					p.setResult(val);
 				} else {
 					p.setFail(fail);
 				}

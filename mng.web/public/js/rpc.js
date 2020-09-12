@@ -22,10 +22,10 @@ jm.config = {
     // ip:'192.168.1.129',
     ip:'192.168.56.1',
     //ip:'47.112.161.111',
-    // ip:'jmicro.cn',
+    //ip:'jmicro.cn',
     //ip:'192.168.101.22',
     //ip:'172.18.0.1',
-   port:'9090',
+    port:'9090',
     //port:'80',
     txtContext : '_txt_',
     binContext : '_bin_',
@@ -949,11 +949,16 @@ jm.rpc = {
                     let rst = rstMsg.payload.result
                     console.log(rst);
                     if(rst && rst.errorCode != 0) {
-                        alert(rst.msg);
+                        //alert(rst.msg);
                     }
                     reje(err || rst);
                 } else {
-                    reso(rstMsg.payload.result);
+                    let rst = rstMsg.payload.result;
+                    if(rst != null && rst.hasOwnProperty('errorCode') && rst.hasOwnProperty('msg')) {
+                        reje(rst);
+                    }else {
+                        reso(rst);
+                    }
                 }
             });
         });

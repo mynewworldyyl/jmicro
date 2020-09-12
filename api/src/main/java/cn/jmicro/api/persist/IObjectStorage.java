@@ -28,17 +28,27 @@ import java.util.Set;
  */
 public interface IObjectStorage {
 
-	boolean save(String table,Object val,boolean async);
+	public static final String UPDATED_TIME = "updatedTime";
 	
-	boolean save(String table,Object[] val,boolean async);
+	public static final String CREATED_TIME = "createdTime";
+	
+	public static final String ID = "id";
+	
+	<T> boolean  save(String table,T val,boolean async);
+	
+	<T> boolean  save(String table,Set<T> val,boolean async);
+	
+	<T> boolean  save(String table,T[] val,boolean async);
 	
 	boolean update(String table,Object id,Object val,boolean async);
 	
 	boolean updateOrSave(String table,Object id,Object val,boolean async);
 	
+	boolean update(String table, Object filter, Object updater);
+	
 	boolean deleteById(String table,Object id);
 	
-	 <T> Set<T>  distinct(String table, String fieldName,Class<T> cls);
+	<T> Set<T>  distinct(String table, String fieldName,Class<T> cls);
 	
     int deleteByQuery(String table, Object query);
 	

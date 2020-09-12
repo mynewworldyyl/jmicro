@@ -883,8 +883,7 @@ public class SimpleObjectFactory implements IObjectFactory {
 		if(cls == null) {
 			try {
 				cls = this.getClass().getClassLoader().loadClass(clsName);
-			} catch (ClassNotFoundException e) {
-			}
+			} catch (ClassNotFoundException e) {}
 		}
 		
 		if(cls == null) {

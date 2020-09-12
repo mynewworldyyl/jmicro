@@ -33,6 +33,7 @@
 
                         <JTestingPubsub v-else-if="item.group == 'testingPubsub'" :item="item"></JTestingPubsub>
                         <JPubsubItemView v-else-if="item.group == 'pubsubItem'" :item="item"></JPubsubItemView>
+                        <JPubsubStatisView v-else-if="item.group == 'pubsubStatis'" :item="item"></JPubsubStatisView>
 
                         <JAccountEditor v-else-if="item.group == 'account'" :item="item"></JAccountEditor>
                         <JUserProfileEditor v-else-if="item.group == 'userProfile'" :item="item"></JUserProfileEditor>
@@ -130,6 +131,7 @@
 
             JTestingPubsub : () => import('./pubsub/JTestingPubsub.vue'),
             JPubsubItemView : () => import('./pubsub/JPubsubItemView.vue'),
+            JPubsubStatisView: ()=> import('./pubsub/JPubsubStatisView.vue'),
 
             JMonitorTypeKeyEditor : () => import('./monitor/JMonitorTypeKeyEditor.vue'),
             JMonitorTypeServiceMethodEditor : () => import('./monitor/JMonitorTypeServiceMethodEditor.vue'),

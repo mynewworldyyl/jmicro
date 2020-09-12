@@ -19,7 +19,7 @@
    <parent>
          <groupId>cn.jmicro</groupId>
 		 <artifactId>jmicro.parent</artifactId>
-		 <version>0.0.1-SNAPSHOT</version>
+		 <version>0.0.1-RELEASE</version>
     </parent>
     <artifactId>jmicro.idgenerator</artifactId>
     <packaging>jar</packaging>

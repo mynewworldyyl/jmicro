@@ -168,6 +168,7 @@ public class PubSubManager {
 		if(!this.isPubsubEnable(1)) {
 			return PUB_SERVER_NOT_AVAILABALE;
 		}
+		
 		PSData item = new PSData();
 		item.setTopic(topic);
 		item.setData(content);
@@ -178,6 +179,10 @@ public class PubSubManager {
 	}
 	
 	public int publish(PSData[] items) {
+		
+		if(items == null || items.length == 0) {
+			return PSData.PUB_ITEM_IS_NULL;
+		}
 		
 		 if(!this.isPubsubEnable(1)) {
 			return PUB_SERVER_NOT_AVAILABALE;
@@ -216,6 +221,14 @@ public class PubSubManager {
 	}
 
 	public int publish(PSData item) {
+		
+		if(item == null) {
+			return PSData.PUB_ITEM_IS_NULL;
+		}
+		
+		if(StringUtils.isEmpty(item.getTopic())) {
+			return PSData.PUB_TOPIC_IS_NULL;
+		}
 		
 		if(!this.isPubsubEnable(1)) {
 			return PUB_SERVER_NOT_AVAILABALE;

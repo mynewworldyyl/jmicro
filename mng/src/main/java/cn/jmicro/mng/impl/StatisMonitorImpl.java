@@ -117,7 +117,7 @@ public class StatisMonitorImpl implements IStatisMonitor {
 	};
 	
 	@Override
-	@SMethod(timeout=60000,retryCnt=0,needLogin=true,maxSpeed=5,maxPacketSize=512)
+	@SMethod(perType=true,retryCnt=0,needLogin=true,maxSpeed=5,maxPacketSize=512)
 	public boolean startStatis(String mkey, Integer t) {
 		
 		AbstractClientServiceProxyHolder ds = (AbstractClientServiceProxyHolder)((Object)dataServer);
@@ -161,7 +161,7 @@ public class StatisMonitorImpl implements IStatisMonitor {
 	}
 
 	@Override
-	@SMethod(timeout=60000,retryCnt=0,needLogin=true,maxSpeed=5,maxPacketSize=512)
+	@SMethod(perType=true,retryCnt=0,needLogin=true,maxSpeed=5,maxPacketSize=512)
 	public boolean stopStatis(String mkey,Integer t) {
 		if(dataServer == null) {
 			logger.error("Monitor server is not available, do you start it!");

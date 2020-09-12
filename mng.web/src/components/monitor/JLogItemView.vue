@@ -1,7 +1,7 @@
 <template>
     <div class="JLogItemView" style="position:relative;height:auto">
 
-        <div v-if="isLogin" style="position:relative;height:auto;margin-top:10px;">
+        <div v-if="isLogin && logList && logList.length > 0" style="position:relative;height:auto;margin-top:10px;">
             <table class="configItemTalbe" width="99%">
                 <thead><tr><td style="width:300px">TAG</td><td  style="width:165px">TIME</td><td style="width:135px">LEVEL</td>
                     <td  style="width:130px">TYPE</td><td  style="width:38px">TYPE</td><td  style="width:38px">TYPE</td>
@@ -13,13 +13,15 @@
             </table>
         </div>
 
-        <div v-if="isLogin"  style="position:relative;text-align:center;">
+        <div v-if="isLogin  && logList && logList.length > 0"  style="position:relative;text-align:center;">
             <Page ref="pager" :total="totalNum" :page-size="pageSize" :current="curPage"
                   show-elevator show-sizer show-total @on-change="curPageChange"
                   @on-page-size-change="pageSizeChange" :page-size-opts="[10, 30, 60,100]"></Page>
         </div>
 
         <div v-if="!isLogin" >Not login</div>
+
+        <div v-if="isLogin  && (!logList || logList.length == 0)" >No data</div>
 
         <div v-if="isLogin"  :style="drawer.drawerBtnStyle" class="drawerJinvokeBtnStatu" @mouseenter="openDrawer()"></div>
 
@@ -251,6 +253,10 @@
             doQuery() {
                 let self = this;
                 this.isLogin = window.jm.rpc.isLogin();
+                if(!this.isLogin) {
+                    return;
+                }
+
                 let params = this.getQueryConditions();
                 window.jm.mng.logSrv.countLog(params).then((resp)=>{
                     if(resp.code != 0) {
@@ -357,9 +363,7 @@
                         return;
                     }
                     self.selOptions = resp.data;
-                    window.jm.mng.act.addListener(cid,this.refresh);
                     self.doQuery();
-
                 }).catch((err)=>{
                     window.console.log(err);
                 });
@@ -375,9 +379,7 @@
                 window.jm.vue.$off('editorClosed',ec);
             }
             window.jm.vue.$on('editorClosed',ec);
-
-
-
+            self.q();
         },
 
         beforeDestroy() {

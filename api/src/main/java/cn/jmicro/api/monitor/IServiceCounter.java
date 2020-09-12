@@ -35,6 +35,8 @@ public interface IServiceCounter<T> {
 	
 	boolean add(T type,long val);
 	
+	boolean add(Short type, long val,long actTime) ;
+	
 	/**
 	 * 计数器启动以来的总数
 	 * @param type
@@ -43,6 +45,8 @@ public interface IServiceCounter<T> {
 	Long getTotal(T... type);
 	
 	boolean increment(T type);
+	
+	boolean increment(Short type,long actTime);
 	
 	boolean addCounter(T type);	
 	

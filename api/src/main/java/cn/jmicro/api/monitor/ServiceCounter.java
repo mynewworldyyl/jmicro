@@ -194,6 +194,19 @@ public class ServiceCounter implements IServiceCounter<Short>{
 	public boolean add(Short type, long val) {
 		Counter c = getCounter(type,true);
 		if(c != null) {
+			this.setLastActiveTime(System.currentTimeMillis());
+			c.add(val);
+			return true;
+		}
+		//失败
+		return false;
+	}
+	
+	@Override
+	public boolean add(Short type, long val,long actTime) {
+		Counter c = getCounter(type,true);
+		if(c != null) {
+			this.setLastActiveTime(actTime);
 			c.add(val);
 			return true;
 		}
@@ -213,13 +226,26 @@ public class ServiceCounter implements IServiceCounter<Short>{
 		}
 		return sum;
 	}
+	
+	public Long getAndResetTotal(Short... types) {
+		long sum = 0;
+		for(Short type : types) {
+			Counter c = getCounter(type,false);
+			if(c == null) {
+				continue;
+			}
+			sum += c.getTotal();
+			c.resetTotal();
+		}
+		return sum;
+	}
+	
 	/**
-	 * 
 	 * @param tounit
 	 * @param types
 	 * @return
 	 */
-	public double getQps(TimeUnit tounit,Short... types) {
+	public double getQps(TimeUnit tounit, Short... types) {
 		if(types.length == 1) {
 			Counter c = getCounter(types[0],false);
 			if(c != null) {
@@ -238,6 +264,18 @@ public class ServiceCounter implements IServiceCounter<Short>{
 	public boolean increment(Short type) {
 		Counter c = getCounter(type,true);
 		if(c != null) {
+			this.setLastActiveTime(System.currentTimeMillis());
+			c.add(1);
+			return true;
+		}
+		return false;
+	}
+	
+	@Override
+	public boolean increment(Short type,long actTime) {
+		Counter c = getCounter(type,true);
+		if(c != null) {
+			this.setLastActiveTime(actTime);
 			c.add(1);
 			return true;
 		}
@@ -562,6 +600,10 @@ public class ServiceCounter implements IServiceCounter<Short>{
 			this.header = 0;
 			total.set(0);
 			this.slots[0].setTimeEnd(System.currentTimeMillis()+slotSizeInMilliseconds);
+		}
+		
+		public void resetTotal() {
+			total.set(0);
 		}
 	}
 	

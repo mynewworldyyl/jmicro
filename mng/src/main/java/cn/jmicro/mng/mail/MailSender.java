@@ -1,5 +1,7 @@
 package cn.jmicro.mng.mail;
 
+import java.security.Security;
+import java.util.Date;
 import java.util.Properties;
 
 import javax.mail.Authenticator;
@@ -22,32 +24,25 @@ public class MailSender {
 	private final static Logger logger = LoggerFactory.getLogger(MailSender.class);
 	
 	@Cfg(value="/MailSender/from",defGlobal=true)
-	private  String mailFrom = "378862956@qq.com";// 指明邮件的发件人
+	private  String mailFrom = "";// 指明邮件的发件人
 	
 	private  String passwordMailFrom = "";// 指明邮件的发件人登陆密码
 	
 	@Cfg(value="/MailSender/host",defGlobal=true)
-	private  String mailHost ="smtp.qq.com";	// 邮件的服务器域名
+	private  String mailHost ="";	// 邮件的服务器域名
 	
 	@Cfg(value="/MailSender/code",defGlobal=true)
 	private String code = "";
 	
 	public static void main(String[] args) throws Exception {
-		/*
-		mailFrom = "378862956@qq.com";
-		password_mailFrom="test";
-		mailTo = "mynewworldyyl@gmail.com";
-		mailTittle="节日快乐2！";
-		mailText = "这是一个简单的邮件";
-		mail_host="smtp.qq.com";
-		*/
-		
 		new MailSender().send("mynewworldyyl@gmail.com", "节日快乐", "测试发送邮件");
 	}
 	
-	public boolean send(String to, String title, String content) {
+	public boolean send0(String to, String title, String content) {
+		logger.info("code:" + this.code + ", mail from: " + this.mailFrom);
 		Properties prop = new Properties();
 		prop.setProperty("mail.host", mailHost);
+		prop.setProperty("mail.port", "465");
 		prop.setProperty("mail.transport.protocol", "smtp");
 		prop.setProperty("mail.smtp.auth", "true");
 		try {
@@ -97,6 +92,51 @@ public class MailSender {
 		// 返回创建好的邮件对象
 		return message;
 	}
+	
+	
+	public  void send(String to,String title, String message) {
+        try {
+            Security.addProvider(new com.sun.net.ssl.internal.ssl.Provider());
+            final String SSL_FACTORY = "javax.net.ssl.SSLSocketFactory";
+            //设置邮件会话参数
+            Properties props = new Properties();
+            //邮箱的发送服务器地址
+            props.setProperty("mail.smtp.host", this.mailHost);
+            props.setProperty("mail.smtp.socketFactory.class", SSL_FACTORY);
+            props.setProperty("mail.smtp.socketFactory.fallback", "false");
+            //邮箱发送服务器端口,这里设置为465端口
+            props.setProperty("mail.smtp.port", "465");
+            props.setProperty("mail.smtp.socketFactory.port", "465");
+            props.put("mail.smtp.auth", "true");
+            //获取到邮箱会话,利用匿名内部类的方式,将发送者邮箱用户名和密码授权给jvm
+            Session session = Session.getDefaultInstance(props, new Authenticator() {
+                protected PasswordAuthentication getPasswordAuthentication() {
+                    return new PasswordAuthentication(mailFrom, code);
+                }
+            });
+        	//session.setDebug(true);
+            //通过会话,得到一个邮件,用于发送
+            Message msg = new MimeMessage(session);
+            //设置发件人
+            msg.setFrom(new InternetAddress(mailFrom));
+            //设置收件人,to为收件人,cc为抄送,bcc为密送
+            msg.setRecipients(Message.RecipientType.TO, InternetAddress.parse(to, false));
+            msg.setRecipients(Message.RecipientType.CC, InternetAddress.parse(to, false));
+            msg.setRecipients(Message.RecipientType.BCC, InternetAddress.parse(to, false));
+            msg.setSubject(message);
+            //设置邮件消息
+            msg.setText(message);
+            //设置发送的日期
+            msg.setSentDate(new Date());
+            
+            //调用Transport的send方法去发送邮件
+            Transport.send(msg);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+    }
 
 	
 }

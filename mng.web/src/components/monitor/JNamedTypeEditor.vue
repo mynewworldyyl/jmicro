@@ -157,8 +157,8 @@
 
         mounted () {
             let self = this;
-            window.jm.mng.act.addListener(this.item.id,()=>{
-                this.refresh();
+            window.jm.mng.act.addActListener(this.item.id,()=>{
+                self.refresh();
             });
             this.refresh();
 

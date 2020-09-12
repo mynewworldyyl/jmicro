@@ -14,18 +14,27 @@ public class ActInfo implements Cloneable {
 	//异常账号，系统冻结
 	public static final byte SC_FREEZE = 4;
 	
+	public static final byte TOKEN_INVALID = 0;
+	
+	public static final byte TOKEN_ACTIVE_ACT = 1;
+	
+	public static final byte TOKEN_RESET_PWD = 2;
+	
 	private String actName;
 	private String loginKey;
 	private int clientId;
 	private String pwd;
-	private String mail;
+	private String email;
 	private String mobile;
 	
 	private String token;
+	private byte tokenType;
 	
 	private long registTime;
 	
 	private byte statuCode;
+	
+	private long lastActiveTime;
 	
 	private Set<String> pers;
 	
@@ -84,7 +93,6 @@ public class ActInfo implements Cloneable {
 		ActInfo ai =(ActInfo) super.clone();
 		ai.setActName(this.actName);
 		ai.setClientId(ai.getClientId());
-		
 		//ai.setLoginKey(""+LOGIN_KEY.getAndIncrement());
 		return ai;
 	}
@@ -113,12 +121,12 @@ public class ActInfo implements Cloneable {
 		this.statuCode = statuCode;
 	}
 
-	public String getMail() {
-		return mail;
+	public String getEmail() {
+		return email;
 	}
 
-	public void setMail(String mail) {
-		this.mail = mail;
+	public void setEmail(String email) {
+		this.email = email;
 	}
 
 	public String getToken() {
@@ -127,6 +135,22 @@ public class ActInfo implements Cloneable {
 
 	public void setToken(String token) {
 		this.token = token;
+	}
+
+	public byte getTokenType() {
+		return tokenType;
+	}
+
+	public void setTokenType(byte tokenType) {
+		this.tokenType = tokenType;
+	}
+
+	public long getLastActiveTime() {
+		return lastActiveTime;
+	}
+
+	public void setLastActiveTime(long lastActiveTime) {
+		this.lastActiveTime = lastActiveTime;
 	}
 	
 }

@@ -5,6 +5,7 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.lang.management.ManagementFactory;
+import java.util.Random;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -19,6 +20,20 @@ public class SystemUtils {
 	
 	
 	private static EPlatform platform = null;
+	
+	public static String getRandomStr(int n) {
+		String val = "";
+		Random random = new Random();
+		for (int i = 0; i < n; i++) {
+			if (random.nextInt(2) % 2 == 0) {
+				int nextInt = random.nextInt(2) % 2 == 0 ? 65 : 97;
+				val += (char) (nextInt + random.nextInt(26));
+			} else {
+				val += String.valueOf(random.nextInt(10));
+			}
+		}
+		return val;
+	}
 	
 	public static String getProcessId() {
 		String name = ManagementFactory.getRuntimeMXBean().getName();  

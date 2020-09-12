@@ -217,13 +217,12 @@ public class RedisCacheImpl implements ICache {
 		Jedis jedis = null;
 		try {
 			 jedis = jeditPool.getResource();
-			 jedis.exists(k);
+			 return jedis.exists(k);
 		} finally {
 			if(jedis != null) {
 				jedis.close();
 			}
 		}
-		return false;
 	}
 
 	@Override

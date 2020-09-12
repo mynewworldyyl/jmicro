@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -19,7 +20,6 @@ import cn.jmicro.api.annotation.Inject;
 import cn.jmicro.api.annotation.Reference;
 import cn.jmicro.api.annotation.SMethod;
 import cn.jmicro.api.annotation.Service;
-import cn.jmicro.api.config.Config;
 import cn.jmicro.api.idgenerator.ComponentIdServer;
 import cn.jmicro.api.raft.IDataOperator;
 import cn.jmicro.api.security.AccountManager;
@@ -27,6 +27,7 @@ import cn.jmicro.api.security.ActInfo;
 import cn.jmicro.api.security.Permission;
 import cn.jmicro.api.security.genclient.IAccountService$JMAsyncClient;
 import cn.jmicro.api.service.IServiceAsyncResponse;
+import cn.jmicro.api.utils.SystemUtils;
 import cn.jmicro.common.Constants;
 import cn.jmicro.common.Md5Utils;
 import cn.jmicro.common.util.JsonUtils;
@@ -50,6 +51,9 @@ public class MngAccountServiceImpl implements IMngAccountService {
     private static final Pattern CHINA_PATTERN = Pattern.compile("^((13[0-9])|(14[0,1,4-9])|(15[0-3,5-9])|(16[2,5,6,7])|(17[0-8])|(18[0-9])|(19[0-3,5-9]))\\d{8}$");
 	private static final Pattern NUM_PATTERN = Pattern.compile("[0-9]+");
 	    
+	
+	private Random r = new Random();
+	
 	@Inject
 	private MailSender mailSender;
 	
@@ -96,6 +100,81 @@ public class MngAccountServiceImpl implements IMngAccountService {
 		r.setData(rst);
 		return r;
 	}
+	
+	@Override
+	@SMethod(maxSpeed=1)
+	public Resp<Boolean> checkAccountExist(String actName) {
+		Resp<Boolean> r = new Resp<>();
+		r.setCode(Resp.CODE_SUCCESS);
+		r.setData(am.existActName(actName));
+		return r;
+	}
+	
+	@Override
+	@SMethod(maxSpeed=1)
+	public Resp<Boolean> resetPwdEmail(String actName,String checkCode) {
+		Resp<Boolean> r = new Resp<>();
+		boolean rst = am.existActName(actName);
+		if(!rst) {
+			r.setCode(Resp.CODE_FAIL);
+			r.setData(false);
+			r.setMsg("Account not exist");
+			r.setKey("accountExist");
+			return r;
+		}
+		
+		ActInfo ai = am.getAccountFromZK(actName);
+		
+		if(ActInfo.TOKEN_INVALID == ai.getTokenType()) {
+			ai.setToken(SystemUtils.getRandomStr(6));
+			ai.setTokenType(ActInfo.TOKEN_RESET_PWD);
+			String p = AccountManager.ActDir + "/" + actName;
+			op.createNodeOrSetData(p, JsonUtils.getIns().toJson(ai), IDataOperator.PERSISTENT);
+		}
+		
+		if(ActInfo.TOKEN_RESET_PWD == ai.getTokenType()) {
+			StringBuffer sb = new StringBuffer();
+			sb.append("JMicro密码重置校验码如下：\n")
+			.append(ai.getToken());
+			this.mailSender.send(ai.getEmail(), "密码重置", sb.toString());
+			r.setCode(Resp.CODE_SUCCESS);
+			r.setData(true);
+		} else {
+			r.setMsg("Invalid account status!");
+			r.setCode(Resp.CODE_FAIL);
+			r.setData(false);
+		}
+		
+		return r;
+	}
+	
+	@Override
+	@SMethod(maxSpeed=10)
+	public Resp<Boolean> resetPwd(String actName, String token, String newPwd) {
+		Resp<Boolean> r = new Resp<>();
+		ActInfo ai = this.am.getAccountFromZK(actName);
+		if(ai == null || StringUtils.isEmpty(actName) || StringUtils.isEmpty(token) 
+				|| StringUtils.isEmpty(ai.getToken())|| !token.equals(ai.getToken()) 
+				|| ai.getStatuCode() != ActInfo.SC_ACTIVED 
+				|| ai.getTokenType() != ActInfo.TOKEN_RESET_PWD) {
+			r.setCode(Resp.CODE_FAIL);
+			r.setData(false);
+			r.setMsg("Invalid account or status!");
+			return r;
+		}
+		
+		logger.warn("Reset account: " + actName+" password");
+		String p = AccountManager.ActDir + "/" + ai.getActName();
+		ai.setPwd(Md5Utils.getMd5(newPwd));
+		ai.setToken("");
+		ai.setTokenType(ActInfo.TOKEN_INVALID);
+		op.createNodeOrSetData(p, JsonUtils.getIns().toJson(ai), IDataOperator.PERSISTENT);
+		
+		r.setCode(Resp.CODE_SUCCESS);
+		r.setData(true);
+		return r;
+	}
+	
 
 	@Override
 	@SMethod(maxSpeed=100)
@@ -108,7 +187,7 @@ public class MngAccountServiceImpl implements IMngAccountService {
 	}
 	
 	@Override
-	@SMethod(maxSpeed=10)
+	@SMethod(maxSpeed=1)
 	public Resp<Boolean> activeAccount(String actName, String token) {
 		Resp<Boolean> r = new Resp<>();
 		ActInfo ai = this.am.getAccountFromZK(actName);
@@ -124,13 +203,14 @@ public class MngAccountServiceImpl implements IMngAccountService {
 		String p = AccountManager.ActDir +"/"+ ai.getActName();
 		ai.setStatuCode(ActInfo.SC_ACTIVED);
 		ai.setToken("");
+		ai.setTokenType(ActInfo.TOKEN_INVALID);
 		op.createNodeOrSetData(p, JsonUtils.getIns().toJson(ai), IDataOperator.PERSISTENT);
 		
 		return r;
 	}
 	
 	@Override
-	@SMethod(maxSpeed=10)
+	@SMethod(maxSpeed=1)
 	public Resp<Boolean> regist(String actName, String pwd,String mail,String mobile) {
 		
 		if(StringUtils.isEmpty(mail)) {
@@ -245,25 +325,27 @@ public class MngAccountServiceImpl implements IMngAccountService {
 			} else {
 				ai.setStatuCode(ActInfo.SC_WAIT_ACTIVE);
 				ai.setClientId(this.idGenerator.getIntId(ActInfo.class));
-				ai.setMail(mail);
+				ai.setEmail(mail);
 				ai.setMobile(mobile);
 				ai.setRegistTime(System.currentTimeMillis());
 				
 				String token = this.idGenerator.getStringId(ActInfo.class);
 				token = Md5Utils.getMd5(token);
 				ai.setToken(token);
+				ai.setTokenType(ActInfo.TOKEN_ACTIVE_ACT);
 				
-				op.createNodeOrSetData( AccountManager.MobileDir+"/" + mobile, JsonUtils.getIns().toJson(ai), IDataOperator.PERSISTENT);
-				op.createNodeOrSetData( AccountManager.EmailDir+"/" + mail, JsonUtils.getIns().toJson(ai), IDataOperator.PERSISTENT);
+				op.createNodeOrSetData( AccountManager.MobileDir+"/" + mobile, ai.getActName(), IDataOperator.PERSISTENT);
+				op.createNodeOrSetData( AccountManager.EmailDir+"/" + mail, ai.getActName(), IDataOperator.PERSISTENT);
 				
 				op.createNodeOrSetData(p, JsonUtils.getIns().toJson(ai), IDataOperator.PERSISTENT);
 				r.setCode(0);
 				r.setData(true);
 				
 				StringBuffer sb = new StringBuffer();
-				sb.append("点击以下连接激活你的账号：\n").append(this.accountActivePage)
-				.append("actName=").append(actName)
-				.append("&token=").append(token);
+				sb.append("点击以下连接完成激活你的账号：\n").append(this.accountActivePage)
+				.append("a=").append(actName)
+				.append("&t=").append(token)
+				.append("&y=").append(ai.getTokenType());
 				this.mailSender.send(mail, "账号激活", sb.toString());
 			}
 		}
@@ -291,8 +373,11 @@ public class MngAccountServiceImpl implements IMngAccountService {
 		
 		if(ai.getStatuCode() == ActInfo.SC_WAIT_ACTIVE) {
 			StringBuffer sb = new StringBuffer();
-			sb.append("点击以下连接激活你的账号：\n").append(this.accountActivePage);
-			this.mailSender.send(ai.getMail(), "账号激活", sb.toString());
+			sb.append("点击以下连接完成重置你的JMicro账号：\n").append(this.accountActivePage)
+			.append("a=").append(actName)
+			.append("&t=").append(ai.getToken())
+			.append("&y=").append(ai.getTokenType());
+			this.mailSender.send(ai.getEmail(), "账号激活", sb.toString());
 		}else {
 			r.setCode(Resp.CODE_FAIL);
 			r.setData(false);
@@ -367,7 +452,7 @@ public class MngAccountServiceImpl implements IMngAccountService {
 				return as.updatePwd(newPwd,oldPwd);
 			}
 		} else {
-			ai.setPwd(newPwd);
+			ai.setPwd(Md5Utils.getMd5(newPwd));
 			String p = AccountManager.ActDir +"/"+ ai.getActName();
 			op.createNodeOrSetData(p, JsonUtils.getIns().toJson(ai), IDataOperator.PERSISTENT);
 			r.setCode(0);
@@ -379,7 +464,7 @@ public class MngAccountServiceImpl implements IMngAccountService {
 	
 	@Override
 	@SMethod(perType=true,needLogin=true,maxSpeed=5,maxPacketSize=512)
-	public Resp<Boolean> changeAccountStatus(String actName,boolean enableStatus) {
+	public Resp<Boolean> changeAccountStatus(String actName) {
 		Resp<Boolean> r = new Resp<>();
 		
 		if(StringUtils.isEmpty(actName)) {
@@ -390,6 +475,14 @@ public class MngAccountServiceImpl implements IMngAccountService {
 			return r;
 		}
 		
+		if(actName.equals(JMicroContext.get().getAccount().getActName())) {
+			r.setCode(1);
+			r.setData(false);
+			r.setKey("CannotFreezeCurrentLoginAccount");
+			r.setMsg("Can Not Freeze Current Login Account");
+			return r;
+		}
+		
 		if(as != null && as.isReady()) {
 			JMicroContext cxt = JMicroContext.get();
 			IServiceAsyncResponse cb = cxt.getParam(Constants.CONTEXT_SERVICE_RESPONSE,null);
@@ -397,7 +490,7 @@ public class MngAccountServiceImpl implements IMngAccountService {
 				logger.error(Constants.CONTEXT_SERVICE_RESPONSE + " is null in async context");
 			}
 			if(cb != null) {
-				as.changeAccountStatusJMAsync(actName, enableStatus).then((rst,fail,rcxt)->{
+				as.changeAccountStatusJMAsync(actName).then((rst,fail,rcxt)->{
 					if(fail == null) {
 						cb.result(rst);
 					} else {
@@ -411,10 +504,10 @@ public class MngAccountServiceImpl implements IMngAccountService {
 				//异步请求同步返回NULL
 				r = null;
 			} else {
-				return as.changeAccountStatus( actName, enableStatus);
+				return as.changeAccountStatus(actName);
 			}
 		} else {
-			 r = new Resp<>();
+			r = new Resp<>();
 			ActInfo ai = am.getAccountFromZK(actName);
 			if(ai == null) {
 				r.setCode(1);
@@ -432,10 +525,12 @@ public class MngAccountServiceImpl implements IMngAccountService {
 			}
 			
 			if(ai.getStatuCode() == ActInfo.SC_FREEZE) {
+				logger.warn("Account "+actName+" unfreeze by: " + JMicroContext.get().getAccount().getActName());
 				ai.setStatuCode(ActInfo.SC_ACTIVED);
 			}else if(ai.getStatuCode() == ActInfo.SC_ACTIVED) {
+				logger.warn("Account "+actName+" freeze by: " + JMicroContext.get().getAccount().getActName());
 				ai.setStatuCode(ActInfo.SC_FREEZE);
-			}else {
+			} else {
 				r.setCode(Resp.CODE_FAIL);
 				r.setData(false);
 				r.setMsg("Account statu not support this operation!");
@@ -446,14 +541,19 @@ public class MngAccountServiceImpl implements IMngAccountService {
 			op.createNodeOrSetData(p, JsonUtils.getIns().toJson(ai), IDataOperator.PERSISTENT);
 			r.setCode(0);
 			r.setData(true);
-			//退出重机关报登陆
-			return logout();
+		
+			if(ai.getStatuCode() == ActInfo.SC_FREEZE) {
+				//退出重机关报登陆
+				am.forceAccountLogout(actName);
+			}
 		}
 		
 		return r;
 	}
 	
 	
+	
+
 	@Override
 	@SMethod(perType=true,needLogin=true,maxSpeed=5,maxPacketSize=2048)
 	public Resp<Boolean> updateActPermissions(String actName,Set<String> adds,Set<String> dels) {

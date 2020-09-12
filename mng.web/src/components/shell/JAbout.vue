@@ -1,6 +1,6 @@
 <template>
     <div class="JAbout" id="JAbout">
-        <img src="jmicro.png"/>
+        <!--<img src="jmicro.png"/>-->
         <!--
         <h3>为什么写JMicro</h3>
         <p>

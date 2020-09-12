@@ -2,8 +2,13 @@
 	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
 	<modelVersion>4.0.0</modelVersion>
-	<groupId>cn.jmicro</groupId>
-	<version>0.0.1-SNAPSHOT</version>
+	
+	<parent>
+         <groupId>cn.jmicro</groupId>
+		 <artifactId>parent</artifactId>
+		 <version>0.0.1-RELEASE</version>
+    </parent>
+
 	<artifactId>codegenerator</artifactId>
 	<packaging>jar</packaging>
 	<name>${project.artifactId}</name>
@@ -14,20 +19,9 @@
 			<artifactId>javapoet</artifactId>
 			<version>1.13.0</version>
 		</dependency>
-		<!--  <dependency>
-			<groupId>cn.jmicro</groupId>
-			<artifactId>api</artifactId>
-			<version>0.0.1-SNAPSHOT</version>
-		</dependency> -->
-		<!-- <dependency>
-			<groupId>com.google.auto.service</groupId>
-			<artifactId>auto-service</artifactId>
-			<version>1.0-rc7</version>
-		</dependency> -->
 		<dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
-            <version>4.12</version>
             <scope>test</scope>
         </dependency>
 	</dependencies>

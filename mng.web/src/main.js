@@ -7,6 +7,11 @@ import 'view-design/dist/styles/iview.css'
 
 import JMicroEditor from  './components/JMicroEditor.vue'
 
+import * as filters from './components/common/JFilters'
+Object.keys(filters).forEach(key => {
+    Vue.filter(key, filters[key])
+})
+
 /*
 import JService from './components/service/JService.vue'
 import JConfig from './components/config/JConfig.vue'
@@ -38,14 +43,18 @@ const router = new VueRouter({
     routes // short for `routes: routes`
 })
 
-
-window.jm.vue = new Vue({
-    render: h => h(App),
-    router,
-});
-
 //window.vue = window.jm.vue;
 //window.vue.jm = window.jm;
+window.jm.mng.i18n.init(()=>{
+    window.jm.vue = new Vue({
+        render: h => h(App),
+        router,
+    });
+    window.jm.vue.$mount('#app')
+});
 
-window.jm.vue.$mount('#app')
+
+
+
+
 

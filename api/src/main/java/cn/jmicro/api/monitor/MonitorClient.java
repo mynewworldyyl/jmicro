@@ -240,14 +240,15 @@ public class MonitorClient {
 		while(checkerWorking) {
 			try {
 				
+				long beginTime = System.currentTimeMillis();
+				
 				if(this.statusMonitorAdapter.isMonitoralbe()) {
-					this.statusMonitorAdapter.getServiceCounter().add(MC.Ms_CheckLoopCnt, 1);
+					this.statusMonitorAdapter.getServiceCounter().add(MC.Ms_CheckLoopCnt, 1,beginTime);
 				}
 				
 				IBasket<MRpcItem> readBasket = this.basketFactory.borrowReadSlot();
 				if(readBasket == null) {
 					//超过5秒钟的缓存包，强制提交为读状态
-					long beginTime = System.currentTimeMillis();
 					IBasket<MRpcItem> wb = null;
 					Iterator<IBasket<MRpcItem>> writeIte = this.cacheBasket.iterator(false);
 					while((wb = writeIte.next()) != null) {
@@ -318,7 +319,7 @@ public class MonitorClient {
 					//System.out.println("submit: " +mrs.length);
 					
 					if(this.statusMonitorAdapter.isMonitoralbe()) {
-						this.statusMonitorAdapter.getServiceCounter().add(MC.Ms_CheckerSubmitItemCnt, items.size());
+						this.statusMonitorAdapter.getServiceCounter().add(MC.Ms_CheckerSubmitItemCnt, items.size(),beginTime);
 					}
 					
 					this.executor.submit(new Worker(mrs));
@@ -430,7 +431,6 @@ public class MonitorClient {
 		result.clear();
 		
 	}
-
 
 	private boolean canDoLog(MRpcItem mi) {
 		Iterator<OneItem> oiIte = mi.getItems().iterator();

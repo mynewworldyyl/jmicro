@@ -30,11 +30,9 @@ public class AsyncClientUtils {
 		 }
 
 		 if(fullName.endsWith(AsyncClientProxy.IMPL_SUBFIX)) {
-			 //fullName是异步接口实现类
 			 return fullName.substring(0,fullName.length() - AsyncClientProxy.IMPL_SUBFIX.length());
 		 }
 		
-		 //fullName是服务名称
 		 String pkgName = "";
 		 
 		 int idx = fullName.lastIndexOf(".");
@@ -55,11 +53,9 @@ public class AsyncClientUtils {
 		 }
 
 		 if(fullName.endsWith(AsyncClientProxy.INT_SUBFIX)) {
-			 //fullName是异步接口名称
 			 return fullName + AsyncClientProxy.IMPL;
 		 }
 		
-		 //fullName是服务名称
 		 String pkgName = "";
 		 
 		 int idx = fullName.lastIndexOf(".");

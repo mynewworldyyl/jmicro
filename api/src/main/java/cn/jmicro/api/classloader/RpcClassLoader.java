@@ -262,13 +262,14 @@ public class RpcClassLoader extends ClassLoader {
 		} else {
 			 className = AsyncClientUtils.genSyncServiceName(className);
 			 Set<String> insNames = this.classesName2Instance.get(className);
-			 insNames.remove(Config.getInstanceName());
 			 
 			 if(insNames  == null || insNames.isEmpty()) {
 				 logger.error("class " + originClsName + " not found!");
 				 return null;
 			 }
-			
+			 
+			 insNames.remove(Config.getInstanceName());
+			 
 	         Iterator<String> ite = insNames.iterator();
 	         Class<?> cls=null;
 	         

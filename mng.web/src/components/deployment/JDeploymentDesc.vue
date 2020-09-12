@@ -152,7 +152,11 @@
                     }
                 }).catch((err)=>{
                     window.console.log(err);
-                    self.$Message.error(err);
+                    if(err && err.errorCode && err.msg) {
+                        self.$Message.error(err.msg);
+                    }else {
+                        self.$Message.error(err);
+                    }
                 });
             },
 
@@ -171,7 +175,11 @@
                     this.deployList = resp.data;
                 }).catch((err)=>{
                     window.console.log(err);
-                    self.$Message.error(err);
+                    if(err && err.errorCode && err.msg) {
+                        self.$Message.error(err.msg);
+                    }else {
+                        self.$Message.error(err);
+                    }
                 });
             },
         },

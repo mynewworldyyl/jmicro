@@ -4,77 +4,78 @@
       <div style="position:fixed; right:0px; left:0px; height:35px; top:0px; z-index:100">
           <Menu mode="horizontal" theme="light" active-key="service" @on-select="toRouter">
               <Submenu name="mo">
-                  <template slot="title"><Icon type="ios-cog" />Monitor</template>
-                  <Menu-group title="MONITOR">
-                      <Menu-item name="__service" ><Icon type="ios-paper"></Icon>Service</Menu-item>
-                      <Menu-item name="__statis"><Icon type="ios-stats" />Statis</Menu-item>
-                      <Menu-item name="__monitors"><Icon type="ios-cog"></Icon>Monitors</Menu-item>
-                      <Menu-item name="__threadPool"><Icon type="ios-cog"></Icon>Thread</Menu-item>
+                  <template slot="title"><Icon type="ios-cog" />{{"Monitor" | i18n }}</template>
+                  <Menu-group :title="'Monitor'|i18n">
+                      <Menu-item name="__service" ><Icon type="ios-paper"></Icon>{{"Service"|i18n}}</Menu-item>
+                      <Menu-item name="__statis"><Icon type="ios-stats" />{{"Statis"|i18n}}</Menu-item>
+                      <Menu-item name="__monitors"><Icon type="ios-cog"></Icon>{{"Monitors"|i18n}}</Menu-item>
+                      <Menu-item name="__threadPool"><Icon type="ios-cog"></Icon>{{"Thread"|i18n}}</Menu-item>
                   </Menu-group>
-                  <Menu-group title="LOG">
-                      <Menu-item name="__invokeLinkView"><Icon type="ios-cog"></Icon>Invoke Link</Menu-item>
-                      <Menu-item name="__logItemView"><Icon type="ios-cog"></Icon>Monitor Log</Menu-item>
-                      <Menu-item name="__processLog"><Icon type="ios-cog"></Icon>Process Log</Menu-item>
+                  <Menu-group :title="'Log'|i18n">
+                      <Menu-item name="__invokeLinkView"><Icon type="ios-cog"></Icon>{{"InvokeLink"|i18n("Invoke Link")}}</Menu-item>
+                      <Menu-item name="__logItemView"><Icon type="ios-cog"></Icon>{{"MonitorLog"|i18n("Monitor Log")}}</Menu-item>
+                      <Menu-item name="__processLog"><Icon type="ios-cog"></Icon>{{"ProcessLog"|i18n("Process Log")}}</Menu-item>
                   </Menu-group>
-                  <Menu-group title="CFG">
-                      <Menu-item name="__warning"><Icon type="ios-alert" />Warning</Menu-item>
-                      <Menu-item name="__typeConfig"><Icon type="ios-cog"></Icon>Type Config</Menu-item>
-                      <Menu-item name="__monitorType"><Icon type="ios-cog"></Icon>Monitor Types</Menu-item>
-                      <Menu-item name="__monitorTypeServiceMethod"><Icon type="ios-cog"></Icon>Service Types</Menu-item>
-                      <Menu-item name="__namedType"><Icon type="ios-cog"></Icon>Named Types</Menu-item>
+                  <Menu-group :title="'Config'|i18n">
+                      <Menu-item name="__warning"><Icon type="ios-alert" />{{"Warning"|i18n}}</Menu-item>
+                      <Menu-item name="__typeConfig"><Icon type="ios-cog"></Icon>{{"TypeConfig"|i18n("Type Config")}}</Menu-item>
+                      <Menu-item name="__monitorType"><Icon type="ios-cog"></Icon>{{"MonitorTypes"|i18n("Monitor Types")}}</Menu-item>
+                      <Menu-item name="__monitorTypeServiceMethod"><Icon type="ios-cog"></Icon>{{"ServiceTypes"|i18n("Service Types")}}</Menu-item>
+                      <Menu-item name="__namedType"><Icon type="ios-cog"></Icon>{{"NamedTypes"|i18n("Named Types")}}</Menu-item>
                   </Menu-group>
                </Submenu>
 
               <Submenu name="d">
                   <template slot="title">
                       <Icon type="ios-analytics" />
-                      Deployment
+                      {{"Deployment"|i18n}}
                   </template>
-                  <Menu-item name="__deploymentDesc"><Icon type="ios-alert" />Deploy Desc</Menu-item>
-                  <Menu-item name="__agent"><Icon type="ios-cog"></Icon>Agents</Menu-item>
-                  <Menu-item name="__process"><Icon type="ios-cog"></Icon>Process</Menu-item>
-                  <Menu-item name="__repository"><Icon type="ios-people"></Icon>Repository</Menu-item>
-                  <Menu-item name="__choreography"><Icon type="ios-cog"></Icon>Choreography</Menu-item>
-                  <Menu-item name="__host"><Icon type="ios-cog"></Icon>Host</Menu-item>
+                  <Menu-item name="__deploymentDesc"><Icon type="ios-alert" />{{"DeployDesc"|i18n("Deploy Desc")}}</Menu-item>
+                  <Menu-item name="__agent"><Icon type="ios-cog"></Icon>{{"Agents"|i18n}}</Menu-item>
+                  <Menu-item name="__process"><Icon type="ios-cog"></Icon>{{"Process"|i18n}}</Menu-item>
+                  <Menu-item name="__repository"><Icon type="ios-people"></Icon>{{"Repository"|i18n}}</Menu-item>
+                  <Menu-item name="__choreography"><Icon type="ios-cog"></Icon>{{"Choreography"|i18n}}</Menu-item>
+                  <Menu-item name="__host"><Icon type="ios-cog"></Icon>{{"Host"|i18n}}</Menu-item>
               </Submenu>
 
               <Submenu name="o">
                   <template slot="title">
                       <Icon type="ios-analytics" />
-                      Others
+                      {{'Others'|i18n}}
                   </template>
-                  <Menu-group title="System">
-                      <Menu-item name="__config"><Icon type="ios-construct"></Icon>Config</Menu-item>
-                      <Menu-item name="__router"><Icon type="ios-people"></Icon>Router</Menu-item>
-                      <Menu-item name="__shell"><Icon type="ios-cog"></Icon>Shell</Menu-item>
+                  <Menu-group :title="'System'|i18n">
+                      <Menu-item name="__config"><Icon type="ios-construct"></Icon>{{"Config"|i18n}}</Menu-item>
+                      <Menu-item name="__router"><Icon type="ios-people"></Icon>{{"Router"|i18n}}</Menu-item>
+                      <Menu-item name="__shell"><Icon type="ios-cog"></Icon>{{"Shell"|i18n}}</Menu-item>
                   </Menu-group>
-                  <Menu-group title="Security">
-                      <Menu-item name="__account"><Icon type="ios-alert" />Account</Menu-item>
-                      <Menu-item name="__userProfile"><Icon type="ios-alert" />Profile</Menu-item>
+                  <Menu-group :title="'Security'|i18n">
+                      <Menu-item name="__account"><Icon type="ios-alert" />{{"Account"|i18n}}</Menu-item>
+                      <Menu-item name="__userProfile"><Icon type="ios-alert" />{{"Profile"|i18n}}</Menu-item>
                       <!--<Menu-item name="__permission"><Icon type="ios-cog"></Icon>Permission</Menu-item>-->
                      <!-- <Menu-item name="__role"><Icon type="ios-cog"></Icon>Role</Menu-item>-->
                   </Menu-group>
 
-                  <Menu-group title="Pubsub">
-                      <Menu-item name="__pubsubItem"><Icon type="ios-alert" />Pubsub Items</Menu-item>
-                      <MenuItem name="__testingPubsub"> <Icon type="ios-cog"></Icon>Pubsub Testing </MenuItem>
+                  <Menu-group :title="'Pubsub'|i18n">
+                      <Menu-item name="__pubsubItem"><Icon type="ios-alert" />{{"PubsubItems"|i18n("Pubsub Items")}}</Menu-item>
+                      <Menu-item name="__pubsubStatis"><Icon type="ios-alert" />{{"PubsubStatis"|i18n("Pubsub Statis")}}</Menu-item>
+                      <MenuItem name="__testingPubsub"> <Icon type="ios-cog"></Icon>{{"PubsubTesting"|i18n("Pubsub Testing")}} </MenuItem>
                   </Menu-group>
 
-                  <Menu-group title="Info">
+                  <Menu-group :title="'Info'|i18n">
                      <!-- <MenuItem name="__help"> <Icon type="ios-cog"></Icon>Help</MenuItem>-->
-                      <MenuItem name="__about"> <Icon type="ios-cog"></Icon>About</MenuItem>
-                      <MenuItem name="__testing"> <Icon type="ios-cog"></Icon>Testing</MenuItem>
+                      <MenuItem name="__about"> <Icon type="ios-cog"></Icon>{{"About"|i18n}}</MenuItem>
+                      <MenuItem name="__testing"> <Icon type="ios-cog"></Icon>{{"Testing"|i18n}}</MenuItem>
                   </Menu-group>
               </Submenu>
 
               <Submenu name="me">
                   <template slot="title">
                       <Icon type="ios-analytics" />
-                      Menus
+                      {{"Menus"|i18n}}
                   </template>
 
                   <MenuItem  v-for="mi in menus" :name="mi.name" :key="mi.name">
-                      <Icon :type="mi.icon"></Icon>{{mi.label}}
+                      <Icon :type="mi.icon"></Icon>{{mi.label|i18n}}
                   </MenuItem>
 
               </Submenu>
@@ -180,8 +181,9 @@ export default {
         //jm.mng.init();
         let self = this;
 
+
         window.jm.rpc.addActListener(cid,()=>{
-            self.isLogin = window.jm.rpc.isLogin()
+            self.isLogin = window.jm.rpc.isLogin();
             if( self.activeEditorId) {
                 self.selectMenu(self.activeEditorId);
             }

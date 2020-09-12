@@ -28,6 +28,7 @@ import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.RejectedExecutionHandler;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Consumer;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -46,17 +47,11 @@ import cn.jmicro.api.config.Config;
 import cn.jmicro.api.executor.ExecutorConfig;
 import cn.jmicro.api.executor.ExecutorFactory;
 import cn.jmicro.api.internal.pubsub.IInternalSubRpc;
-import cn.jmicro.api.monitor.IMonitorAdapter;
 import cn.jmicro.api.monitor.MC;
-import cn.jmicro.api.monitor.MonitorClientStatusAdapter;
-import cn.jmicro.api.monitor.ServiceCounter;
 import cn.jmicro.api.objectfactory.IObjectFactory;
-import cn.jmicro.api.persist.IObjectStorage;
 import cn.jmicro.api.pubsub.PSData;
 import cn.jmicro.api.pubsub.PubSubManager;
 import cn.jmicro.api.raft.IDataOperator;
-import cn.jmicro.api.registry.ServiceItem;
-import cn.jmicro.api.service.ServiceLoader;
 import cn.jmicro.common.Constants;
 import cn.jmicro.common.Utils;
 import cn.jmicro.common.util.StringUtils;
@@ -67,26 +62,12 @@ import redis.clients.jedis.JedisPool;
  * @author Yulei Ye
  * @date 2018年12月22日 下午11:10:21
  */
-//@Component(value=Constants.DEFAULT_PUBSUB,limit2Packages="org.jmicro.api.pubsub.PubSubManager")
 @Service(limit2Packages="org.jmicro.api.pubsub.PubSubManager",
 namespace=Constants.DEFAULT_PUBSUB,version="0.0.1",retryCnt=0, monitorEnable=0,timeout=5000)
 @Component(level=5)
 public class PubSubServer implements IInternalSubRpc{
 	
 	private final static Logger logger = LoggerFactory.getLogger(PubSubServer.class);
-	
-	private final Short[] TYPES  = {
-			MC.Ms_ReceiveItemCnt,MC.Ms_SubmitCnt,MC.Ms_CheckLoopCnt,
-			MC.Ms_CheckerSubmitItemCnt,MC.Ms_SubmitTaskCnt,MC.Ms_TaskSuccessItemCnt,
-			MC.Ms_Pub2Cache,MC.Ms_DoResendWithCbNullCnt,MC.Ms_DoResendCnt,
-			MC.Ms_TopicInvalid,MC.Ms_ServerDisgard,MC.Ms_ServerBusy,
-			MC.Ms_Fail2BorrowBasket,MC.Ms_FailReturnWriteBasket,
-			MC.Ms_TaskFailItemCnt,
-	};
-	
-	private String[] typeLabels = null; 
-	
-	private MonitorClientStatusAdapter statusMonitorAdapter;
 	
 	//private static final String DISCARD_TIMER = "PubsubServerAbortPolicy";
 	
@@ -142,6 +123,9 @@ public class PubSubServer implements IInternalSubRpc{
 	
 	@Inject
 	private IDataOperator dataOp;
+	
+	@Inject
+	private PubsubMessageStatis sta;
 	
 	private SubcriberManager subManager;
 	
@@ -200,18 +184,6 @@ public class PubSubServer implements IInternalSubRpc{
 	}
 	
 	public void ready() {
-		typeLabels = new String[TYPES.length];
-		for(int i = 0; i < TYPES.length; i++) {
-			typeLabels[i] = MC.MONITOR_VAL_2_KEY.get(TYPES[i]);
-		}
-		
-		String group = "PubsubServer";
-		statusMonitorAdapter = new MonitorClientStatusAdapter(TYPES,typeLabels,Config.getInstanceName()+"_PubsubServerStatuCheck",group);
-
-		ServiceLoader sl = of.get(ServiceLoader.class);
-		ServiceItem si = sl.createSrvItem(IMonitorAdapter.class, Config.getInstanceName()+"."+group, "0.0.1", IMonitorAdapter.class.getName());
-		of.regist("MonitorManagerStatuCheckAdapter", statusMonitorAdapter);
-		sl.registService(si,statusMonitorAdapter);
 		
 		Thread checkThread = new Thread(this::doCheck,"JMicro-"+Config.getInstanceName()+"-PubSubServer");
 		checkThread.setDaemon(true);
@@ -248,6 +220,14 @@ public class PubSubServer implements IInternalSubRpc{
 		return publishItems(topic,new PSData[]{item});
 	}
 	
+	private void foreachItem(PSData[] items,Consumer<PSData> c) {
+		for(PSData pd: items) {
+			if(pd != null) {
+				c.accept(pd);
+			}
+		}
+	}
+	
 	/**
 	 * 同一主题的多个消息。
 	 * asyncable=false，此方法不能是异步方法，否则会构成异步死循环
@@ -260,44 +240,62 @@ public class PubSubServer implements IInternalSubRpc{
 			logger.info("GOT: " + topic);
 		}*/
 		
-		boolean me = this.statusMonitorAdapter.monitoralbe;
-		ServiceCounter sc = this.statusMonitorAdapter.getServiceCounter();
-		
-		if(items != null && me) {
-			sc.add(MC.Ms_ReceiveItemCnt,items.length);
+		/*boolean me = this.statusMonitorAdapter.monitoralbe;
+		ServiceCounter sc = this.statusMonitorAdapter.getServiceCounter();*/
+		long curTime = System.currentTimeMillis();
+		if(items != null && items.length > 0) {
+			/*if(me) {
+				sc.add(MC.Ms_ReceiveItemCnt,items.length);
+			}*/
+			foreachItem(items,(pd)->{
+				this.sta.getSc(pd.getTopic(),pd.getSrcClientId()).add(MC.Ms_ReceiveItemCnt, 1,curTime);
+			});
 		}
 		
 		if(!this.subManager.isValidTopic(topic)) {
-			if(me) {
+			/*if(me) {
 				sc.add(MC.Ms_TopicInvalid, items.length);
-			}
+			}*/
+			foreachItem(items,(pd)->{
+				this.sta.getSc(pd.getTopic(),pd.getSrcClientId()).add(MC.Ms_TopicInvalid, 1,curTime);
+			});
 			return PubSubManager.PUB_TOPIC_INVALID;
 		}
 		
 		if(items == null || StringUtils.isEmpty(topic) || items.length == 0) {
 			//无效消息
-			if(me) {
+			/*if(me) {
 				sc.add(MC.Ms_ServerDisgard, 1);
-			}
+			}*/
+			foreachItem(items,(pd)->{
+				this.sta.getSc(pd.getTopic(),pd.getSrcClientId()).add(MC.Ms_ServerDisgard, 1,curTime);
+			});
 			return PubSubManager.PUB_SERVER_DISCARD;
 		}
 		
 		long size = basketFactory.size() + items.length;
 		if(size > this.maxMemoryItem && (items.length + cacheItemsCnt.get()) > this.maxCachePersistItem) {
 			//无效消息
-			if(me) {
+			/*if(me) {
 				sc.add(MC.Ms_ServerBusy,1);
-			}
+			}*/
+			foreachItem(items,(pd)->{
+				this.sta.getSc(pd.getTopic(),pd.getSrcClientId()).add(MC.Ms_ServerBusy, 1,curTime);
+			});
 			return PubSubManager.PUB_SERVER_BUSUY;
 		}
 		
 		if(!lastSendTimes.containsKey(topic)) {
-			lastSendTimes.put(topic, System.currentTimeMillis());
+			lastSendTimes.put(topic, curTime);
 		}
 		
-		if(me) {
+		/*if(me) {
 			sc.add(MC.Ms_SubmitCnt, items.length);
-		}
+		}*/
+		
+		foreachItem(items,(pd)->{
+			this.sta.getSc(pd.getTopic(),pd.getSrcClientId()).add(MC.Ms_SubmitCnt, 1,curTime);
+		});
 		
 		//IBasket<PSData> b = this.basketFactory.borrowWriteBasket(true);
 		
@@ -320,27 +318,38 @@ public class PubSubServer implements IInternalSubRpc{
 							pos += len;
 							continue;
 						}else {
-							if(me) {
+							/*if(me) {
 								sc.add(MC.Ms_FailReturnWriteBasket, 1);
 								sc.add(MC.Ms_FailItemCount, items.length);
-							}
+							}*/
+							foreachItem(items,(pd)->{
+								this.sta.getSc(pd.getTopic(),pd.getSrcClientId()).add(MC.Ms_FailReturnWriteBasket, 1,curTime);
+								this.sta.getSc(pd.getTopic(),pd.getSrcClientId()).add(MC.Ms_FailItemCount, 1,curTime);
+							});
 							logger.error("Fail to return basket fail size: "+ (items.length - pos));
 							break;
 						}
 					} else {
 						basketFactory.returnWriteBasket(b, true);
 						logger.error("Fail write basket size: "+ (items.length - pos));
-						if(me) {
+						/*if(me) {
 							//sc.add(MonitorConstant.Ms_Fail2BorrowBasket, 1);
 							sc.add(MC.Ms_FailItemCount, items.length - pos);
-						}
+						}*/
+						foreachItem(items,(pd)->{
+							this.sta.getSc(pd.getTopic(),pd.getSrcClientId()).add(MC.Ms_FailItemCount, 1,curTime);
+						});
 						break;
 					}	
 				} else {
-					if(me) {
+					/*if(me) {
 						sc.add(MC.Ms_FailReturnWriteBasket, 1);
 						sc.add(MC.Ms_FailItemCount, items.length);
-					}
+					}*/
+					foreachItem(items,(pd)->{
+						this.sta.getSc(pd.getTopic(),pd.getSrcClientId()).add(MC.Ms_FailReturnWriteBasket, 1,curTime);
+						this.sta.getSc(pd.getTopic(),pd.getSrcClientId()).add(MC.Ms_FailItemCount, 1,curTime);
+					});
 					logger.error("Fail size: "+ (items.length - pos));
 					break;
 				}
@@ -348,9 +357,12 @@ public class PubSubServer implements IInternalSubRpc{
 		} else {
 			this.cacheStorage.push(topic,items,0,items.length);
 			cacheItemsCnt.addAndGet(items.length);
-			if(me) {
+			/*if(me) {
 				sc.add(MC.Ms_Pub2Cache, items.length);
-			}
+			}*/
+			foreachItem(items,(pd)->{
+				this.sta.getSc(pd.getTopic(),pd.getSrcClientId()).add(MC.Ms_Pub2Cache, 1,curTime);
+			});
 			if(openDebug) {
 				logger.info("push to cache :{},total:{}",items.length,cacheItemsCnt.get());
 			}
@@ -371,10 +383,10 @@ public class PubSubServer implements IInternalSubRpc{
 		return PubSubManager.PUB_OK;
 	}
 	
-	private int writeBasket(PSData[] items) {
+	private int writeBasket(PSData[] items,long curTime) {
 		
-		boolean me = this.statusMonitorAdapter.monitoralbe;
-		ServiceCounter sc = this.statusMonitorAdapter.getServiceCounter();
+		/*boolean me = this.statusMonitorAdapter.monitoralbe;
+		ServiceCounter sc = this.statusMonitorAdapter.getServiceCounter();*/
 		
 		int pos = 0;
 		while(pos < items.length) {
@@ -391,10 +403,16 @@ public class PubSubServer implements IInternalSubRpc{
 						pos += len;
 						continue;
 					}else {
-						if(me) {
+						/*if(me) {
 							sc.add(MC.Ms_FailReturnWriteBasket, 1);
 							sc.add(MC.Ms_FailItemCount, items.length - pos);
-						}
+						}*/
+						
+						foreachItem(items,(pd)->{
+							this.sta.getSc(pd.getTopic(),pd.getSrcClientId()).add(MC.Ms_FailReturnWriteBasket, 1,curTime);
+							this.sta.getSc(pd.getTopic(),pd.getSrcClientId()).add(MC.Ms_FailItemCount, 1,curTime);
+						});
+						
 						logger.error("Fail to return basket fail size: "+ (items.length - pos));
 						break;
 					}
@@ -402,17 +420,26 @@ public class PubSubServer implements IInternalSubRpc{
 				} else {
 					basketFactory.returnWriteBasket(b, true);
 					logger.error("Fail write basket size: "+ (items.length - pos));
-					if(me) {
+					/*if(me) {
 						//sc.add(MonitorConstant.Ms_Fail2BorrowBasket, 1);
 						sc.add(MC.Ms_FailItemCount, items.length - pos);
-					}
+					}*/
+					foreachItem(items,(pd)->{
+						this.sta.getSc(pd.getTopic(),pd.getSrcClientId()).add(MC.Ms_FailItemCount, 1,curTime);
+					});
 					break;
 				}	
 			} else {
-				if(me) {
+				/*if(me) {
 					sc.add(MC.Ms_FailReturnWriteBasket, 1);
 					sc.add(MC.Ms_FailItemCount, items.length);
-				}
+				}*/
+				
+				foreachItem(items,(pd)->{
+					this.sta.getSc(pd.getTopic(),pd.getSrcClientId()).add(MC.Ms_FailReturnWriteBasket, 1,curTime);
+					this.sta.getSc(pd.getTopic(),pd.getSrcClientId()).add(MC.Ms_FailItemCount, 1,curTime);
+				});
+				
 				logger.error("Fail size: "+ (items.length - pos));
 				break;
 			}
@@ -426,12 +453,12 @@ public class PubSubServer implements IInternalSubRpc{
 		while (true) {
 			try {
 
-				boolean me = this.statusMonitorAdapter.monitoralbe;
-				ServiceCounter sc = this.statusMonitorAdapter.getServiceCounter();
+				/*boolean me = this.statusMonitorAdapter.monitoralbe;
+				ServiceCounter sc = this.statusMonitorAdapter.getServiceCounter();*/
 				
-				if(me) {
+				/*if(me) {
 					sc.add(MC.Ms_CheckLoopCnt, 1);
-				}
+				}*/
 				
 				long len = basketFactory.size();
 				long curTime = System.currentTimeMillis();
@@ -447,7 +474,7 @@ public class PubSubServer implements IInternalSubRpc{
 							PSData[] arr = new PSData[items.size()];
 							items.toArray(arr);
 							
-							int size = writeBasket(arr);
+							int size = writeBasket(arr,curTime);
 							
 							if(size < arr.length) {
 								this.cacheStorage.push(e.getKey(), arr,size,arr.length-size);
@@ -474,7 +501,7 @@ public class PubSubServer implements IInternalSubRpc{
 					}
 					
 					if(dor) {
-						doSend(curTime,sc);
+						doSend(curTime);
 					} else {
 						synchronized (syncLocker) {
 							syncLocker.wait(1000);
@@ -516,7 +543,7 @@ public class PubSubServer implements IInternalSubRpc{
 				}
 				
 				if(!sendCache.isEmpty()) {
-					doSend(curTime,sc);
+					doSend(curTime);
 				}
 
 			} catch (Throwable e) {
@@ -528,11 +555,11 @@ public class PubSubServer implements IInternalSubRpc{
 		
 	}
 	
-	private void doSend(long curTime,ServiceCounter sc) {
+	private void doSend(long curTime/*,ServiceCounter sc*/) {
 		
 		int sendSize = 0;
 		
-		boolean me = this.statusMonitorAdapter.monitoralbe;
+		//boolean me = this.statusMonitorAdapter.monitoralbe;
 		
 		for(String topic : sendCache.keySet()) {
 			
@@ -548,7 +575,7 @@ public class PubSubServer implements IInternalSubRpc{
 			}
 
 			//更新发送时间
-			lastSendTimes.put(topic, System.currentTimeMillis());
+			lastSendTimes.put(topic, curTime);
 			
 			int size = ll.size();
 			if (size > batchSize) {
@@ -572,14 +599,19 @@ public class PubSubServer implements IInternalSubRpc{
 			
 			this.executor.submit(new Worker(items, topic));
 			
-			if(me) {
+			/*if(me) {
 				sc.add(MC.Ms_SubmitTaskCnt, 1);
-			}
+			}*/
+			
+			foreachItem(items,(pd)->{
+				this.sta.getSc(pd.getTopic(),pd.getSrcClientId()).add(MC.Ms_SubmitTaskCnt, 1,curTime);
+			});
+			
 		}
 		
-		if(me) {
+		/*if(me) {
 			sc.add(MC.Ms_CheckerSubmitItemCnt, sendSize);
-		}
+		}*/
 	}
 	
 
@@ -600,9 +632,10 @@ public class PubSubServer implements IInternalSubRpc{
 		@Override
 		public void run() {
 			try {
+				long curTime = System.currentTimeMillis();
 				
-				boolean me = statusMonitorAdapter.monitoralbe;
-				ServiceCounter sc = statusMonitorAdapter.getServiceCounter();
+			/*	boolean me = statusMonitorAdapter.monitoralbe;
+				ServiceCounter sc = statusMonitorAdapter.getServiceCounter();*/
 				
 				//logger.info("Dispatch {} size: {} " ,topic,items.length);
 				
@@ -610,9 +643,15 @@ public class PubSubServer implements IInternalSubRpc{
 					//没有对应主题的监听器，直接进入重发队列，此时回调cb==null
 					SendItem si = new SendItem(SendItem.TYPY_RESEND, null, items, 0);
 					resendManager.queueItem(si);
-					if(me) {
+					
+					/*if(me) {
 						sc.add(MC.Ms_DoResendWithCbNullCnt, items.length);
-					}
+					}*/
+					
+					foreachItem(items,(pd)->{
+						sta.getSc(pd.getTopic(),pd.getSrcClientId()).add(MC.Ms_DoResendWithCbNullCnt, 1,curTime);
+					});
+					
 					logger.error("Push to resend component topic:"+topic);
 				} else {
 					for (ISubscriberCallback cb : subscribers) {
@@ -626,23 +665,31 @@ public class PubSubServer implements IInternalSubRpc{
 
 									SendItem si = new SendItem(SendItem.TYPY_RESEND, cb, psds, 0);
 									resendManager.queueItem(si);
-									if(me) {
+									/*if(me) {
 										sc.add(MC.Ms_DoResendCnt, psds.length);
-									}
-									
+									}*/
+									foreachItem(items,(pd)->{
+										sta.getSc(pd.getTopic(),pd.getSrcClientId()).add(MC.Ms_DoResendCnt, 1,curTime);
+									});
 									logger.error("Push to resend component:"+cb.getSm().getKey().toKey(true, true, true));
 								}
 							});
-							if(me) {
+							/*if(me) {
 								sc.add(MC.Ms_TaskSuccessItemCnt, items.length);
-							}
+							}*/
+							foreachItem(items,(pd)->{
+								sta.getSc(pd.getTopic(),pd.getSrcClientId()).add(MC.Ms_TaskSuccessItemCnt, 1,curTime);
+							});
 						} catch (Throwable e) {
 							// 进入重发队列
 							SendItem si = new SendItem(SendItem.TYPY_RESEND, cb, items, 0);
 							resendManager.queueItem(si);
-							if(me) {
+							/*if(me) {
 								sc.add(MC.Ms_DoResendCnt, items.length);
-							}
+							}*/
+							foreachItem(items,(pd)->{
+								sta.getSc(pd.getTopic(),pd.getSrcClientId()).add(MC.Ms_DoResendCnt, 1,curTime);
+							});
 							logger.error("Worker get exception", e);
 							//SF.doBussinessLog(MonitorConstant.LOG_ERROR, PubSubServer.class, e, "Subscribe mybe down: "+cb.getSm().getKey().toKey(true, true, true));
 						}

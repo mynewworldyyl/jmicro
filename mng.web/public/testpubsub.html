@@ -54,8 +54,7 @@
       <Button id="subscribe" onclick="doSubscribe()">Subscribe</Button>
       <br/>
       <label for="Result">Result</label>
-      <textarea id="Result"  class='textarea' >
-      </textarea>
+      <textarea id="Result"  class='textarea'></textarea>
     </div>
   </div>
   </body>
@@ -63,9 +62,9 @@
 <script  type="text/javascript">
     $(function(){
         jm.rpc.init(window.jm.config.ip,window.jm.config.port);
-        jm.rpc.login("test01","1",(rst,err)=>{
+        jm.rpc.login("test01","2",(rst,err)=>{
             if(err) {
-                alert(err);
+                $("#msg").text('账号或密码错误')
             }
         });
     })
@@ -85,7 +84,7 @@
         }
         $("#msg").empty();
 
-        window.jm.ps.publishString({}, topic,content)
+        window.jm.ps.publishString(topic,content,false,false,null,null)
             .then(rst=>{
                 console.log(rst);
             }).catch(err=>{

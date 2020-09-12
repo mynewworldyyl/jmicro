@@ -16,6 +16,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import cn.jmicro.api.codec.Decoder;
 import cn.jmicro.api.codec.JDataInput;
@@ -520,7 +521,16 @@ public interface TypeCoder<T> extends Comparable<TypeCoder<T>>{
 		if(readEvery) {
 			objs = Array.newInstance(Object.class, len);
 		}else {
-			objs = Array.newInstance(eltType, len);
+			if(Map.class.isAssignableFrom(eltType)) {
+				objs = Array.newInstance(Map.class, len);
+			}else if(List.class.isAssignableFrom(eltType)) {
+				objs = Array.newInstance(List.class, len);
+			}else if(Set.class.isAssignableFrom(eltType)) {
+				objs = Array.newInstance(Set.class, len);
+			}else {
+				objs = Array.newInstance(eltType, len);
+			}
+			
 		}
 		
 		for(int i = 0; i < len; i++){

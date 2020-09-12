@@ -42,15 +42,13 @@ public final class MRpcItem{
 	
 	private long reqParentId=-1L;
 	
-	private int clientId = -1;;
+	private int clientId = -1;
 	
 	private IReq req = null;
 	
 	private IResp resp = null;
 	
 	private ServiceMethod sm = null;
-	
-	private ActInfo act;
 	
 	private String implCls;
 	
@@ -330,14 +328,6 @@ public final class MRpcItem{
 
 	public void setReqId(long reqId) {
 		this.reqId = reqId;
-	}
-
-	public ActInfo getAct() {
-		return act;
-	}
-
-	public void setAct(ActInfo act) {
-		this.act = act;
 	}
 
 }

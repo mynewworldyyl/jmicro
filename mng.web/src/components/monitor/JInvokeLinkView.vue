@@ -1,7 +1,7 @@
 <template>
     <div class="JInvokeLinkView" style="position:relative;height:auto">
 
-        <div v-if="isLogin" style="position:relative;height:auto;margin-top:10px;">
+        <div v-if="isLogin && logList && logList.length > 0" style="position:relative;height:auto;margin-top:10px;">
             <treeTable ref="recTree"
                        :list.sync="logList"
                        @callMethod="callMethod"
@@ -11,8 +11,9 @@
         </div>
 
         <div v-if="!isLogin" > Not login</div>
+        <div v-if="isLogin && (!logList || logList.length == 0)" >No data</div>
 
-        <div v-if="isLogin"  style="position:relative;text-align:center;">
+        <div v-if="isLogin && logList && logList.length > 0 "  style="position:relative;text-align:center;">
             <Page ref="pager" :total="totalNum" :page-size="pageSize" :current="curPage" show-elevator show-sizer show-total
                   @on-change="curPageChange" @on-page-size-change="pageSizeChange"  :page-size-opts="[10, 30, 60,100]"></Page>
         </div>
@@ -194,7 +195,7 @@
         name: cid,
         data() {
             return {
-                adminPer:false,
+                isLogin:false,
                 list: [], // 请求原始数据
                 logList: [],
                 queryParams:{},
@@ -271,7 +272,10 @@
 
             refresh() {
                 let self = this;
-                this.adminPer = window.jm.mng.comm.adminPer;
+                this.isLogin = window.jm.rpc.isLogin();
+                if(!this.isLogin) {
+                    return;
+                }
                 let params = this.getQueryConditions();
                 window.jm.mng.logSrv.query(params,this.pageSize,this.curPage-1).then((resp)=>{
                     if(resp.code != 0) {
@@ -365,10 +369,11 @@
                 window.jm.vue.$off('editorClosed',ec);
             }
             window.jm.vue.$on('editorClosed',ec);
+            self.refresh();
         },
 
         beforeDestroy() {
-            window.jm.mng.act.removeActListener(cid);
+            window.jm.rpc.removeActListener(cid);
         },
 
     }

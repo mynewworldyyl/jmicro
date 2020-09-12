@@ -79,7 +79,7 @@ public class InitJmicroEnv {
 		
 		String jar = cfg.getString(Module.monitor.name()+".jar", null);
 		if(jar == null) {
-			jar = "jmicro-monitor-0.0.1-SNAPSHOT-jar-with-dependencies.jar";
+			jar = "jmicro-monitor-0.0.1-RELEASE-jar-with-dependencies.jar";
 		}
 		
 		respDep.setJarFile(jar);
@@ -101,7 +101,7 @@ public class InitJmicroEnv {
 		
 		String jar = cfg.getString(Module.breaker.name()+".jar", null);
 		if(jar == null) {
-			jar = "jmicro-breaker-0.0.1-SNAPSHOT-jar-with-dependencies.jar";
+			jar = "jmicro-breaker-0.0.1-RELEASE-jar-with-dependencies.jar";
 		}
 		respDep.setJarFile(jar);
 		
@@ -122,7 +122,7 @@ public class InitJmicroEnv {
 		
 		String jar = cfg.getString(Module.pubsub.name()+".jar", null);
 		if(jar == null) {
-			jar = "jmicro-pubsub-0.0.1-SNAPSHOT-jar-with-dependencies.jar";
+			jar = "jmicro-pubsub-0.0.1-RELEASE-jar-with-dependencies.jar";
 		}
 		respDep.setJarFile(jar);
 		
@@ -143,7 +143,7 @@ public class InitJmicroEnv {
 
 		String jar = cfg.getString(Module.gateway.name()+".jar", null);
 		if(jar == null) {
-			jar = "jmicro-example.provider-0.0.1-SNAPSHOT-jar-with-dependencies.jar";
+			jar = "jmicro-example.provider-0.0.1-RELEASE-jar-with-dependencies.jar";
 		}
 		respDep.setJarFile(jar);
 		
@@ -165,7 +165,7 @@ public class InitJmicroEnv {
 		
 		String jar = cfg.getString(Module.controller.name()+".jar", null);
 		if(jar == null) {
-			jar = "jmicro-choreography.controller-0.0.1-SNAPSHOT-jar-with-dependencies.jar";
+			jar = "jmicro-choreography.controller-0.0.1-RELEASE-jar-with-dependencies.jar";
 		}
 		respDep.setJarFile(jar);
 		
@@ -186,7 +186,7 @@ public class InitJmicroEnv {
 		
 		String jar = cfg.getString(Module.repository.name()+".jar", null);
 		if(jar == null) {
-			jar = "jmicro-choreography.repository-0.0.1-SNAPSHOT-jar-with-dependencies.jar";
+			jar = "jmicro-choreography.repository-0.0.1-RELEASE-jar-with-dependencies.jar";
 		}
 		respDep.setJarFile(jar);
 		

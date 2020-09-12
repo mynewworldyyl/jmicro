@@ -17,8 +17,8 @@
 package cn.jmicro.gateway.client;
 
 import java.io.UnsupportedEncodingException;
-import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
+import java.lang.reflect.Type;
 import java.nio.ByteBuffer;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -27,14 +27,14 @@ import java.util.concurrent.atomic.AtomicLong;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.gson.reflect.TypeToken;
+
 import cn.jmicro.api.Resp;
-import cn.jmicro.api.annotation.Service;
 import cn.jmicro.api.annotation.WithContext;
 import cn.jmicro.api.async.AsyncFailResult;
 import cn.jmicro.api.async.IPromise;
 import cn.jmicro.api.client.IAsyncCallback;
 import cn.jmicro.api.client.IClientSession;
-import cn.jmicro.api.codec.TypeUtils;
 import cn.jmicro.api.gateway.ApiRequest;
 import cn.jmicro.api.gateway.ApiResponse;
 import cn.jmicro.api.internal.async.PromiseImpl;
@@ -157,6 +157,8 @@ public class ApiGatewayClient {
 				new Class[] {serviceClass}, 
 				(proxy,method,args) -> {
 					
+					Type returnType = getType(method.getReturnType(),method.getGenericReturnType());
+					
 					if(serviceClass.getName().endsWith(AsyncClientProxy.INT_SUBFIX) && 
 							method.getName().endsWith(AsyncClientProxy.ASYNC_METHOD_SUBFIX)) {
 						//异步RPC方法调用
@@ -174,7 +176,8 @@ public class ApiGatewayClient {
 						};
 						//String serviceName, String namespace, String version, String methodName, 
 						//Class<?> returnType, Object[] args, IAsyncCallback<T> cb
-						Class<?> returnType = TypeUtils.finalParameterType(method.getGenericReturnType(), 0);
+						//Class<?> returnType = TypeUtils.finalParameterType(method.getGenericReturnType(), 0);
+						//TypeToken<?>  returnType = TypeToken.get(method.getGenericReturnType());
 						
 						Object[] as = null;
 						if(method.isAnnotationPresent(WithContext.class)) {
@@ -187,14 +190,15 @@ public class ApiGatewayClient {
 								returnType, as, cb);
 						return p;
 					} else {
-						return callService(serviceClass,method,args,namespace,version,null);
+						return callService(serviceClass.getName(), namespace, version, method.getName(), 
+								returnType, args, null);
 					}
 		});
 		return (T)srv;
 	}
 	
-	public IPromise<ActInfo> loginJMAsync(String actName,String pwd) {
-		final PromiseImpl<ActInfo> p = new PromiseImpl<>();
+	public IPromise<Resp<ActInfo>> loginJMAsync(String actName,String pwd) {
+		final PromiseImpl<Resp<ActInfo>> p = new PromiseImpl<>();
 		if(actInfo != null) {
 			p.setFail(1, "Have login and have to logout before relogin");
 			p.setResult(null);
@@ -202,18 +206,20 @@ public class ApiGatewayClient {
 		} else {
 			IAsyncCallback<Resp<ActInfo>> cb = new IAsyncCallback<Resp<ActInfo>>() {
 				@Override
-				public void onResult(Resp<ActInfo> resp, AsyncFailResult fail,Object ctx) {
+				public void onResult(Resp<ActInfo> resp, AsyncFailResult fail, Object ctx) {
 					if(fail == null && resp.getCode() == Resp.CODE_SUCCESS) {
 						setActInfo(resp.getData());
-						p.setResult(resp.getData());
+						p.setResult(resp);
 					} else {
 						p.setFail(fail);
 					}
 					p.done();
 				}
 			};
+			//TypeToken<?>  returnType
+			Type returnType = TypeToken.getParameterized(Resp.class, ActInfo.class).getType();
 			this.callService("cn.jmicro.mng.api.IMngAccountService", "mng", "0.0.1", "login", 
-					ActInfo.class, new Object[] {actName, pwd}, cb);
+					returnType, new Object[] {actName, pwd}, cb);
 		}
 		return p;
 	} 
@@ -237,8 +243,9 @@ public class ApiGatewayClient {
 					p.done();
 				}
 			};
+			Type returnType = TypeToken.getParameterized(Resp.class, Boolean.class).getType();
 			this.callService("cn.jmicro.mng.api.IMngAccountService", "mng", "0.0.1", "logout", 
-					Resp.class, new Object[] {}, cb);
+					returnType, new Object[] {}, cb);
 		}
 		
 		return p;
@@ -287,46 +294,40 @@ public class ApiGatewayClient {
 		}
 		return null;
 	}
-	
-	private <T> T callService(Class<?> serviceClass, Method method, Object[] args,
-			String namespace, String version, IAsyncCallback<T> cb) {
-		
-		Service srvAnno = method.getAnnotation(Service.class);
-		
-		if(srvAnno == null && Utils.isEmpty(namespace)) {
-			throw new CommonException("Service ["+serviceClass.getName() +"] not specify namespage");
-		}
-		
-		if(srvAnno != null && Utils.isEmpty(namespace)) {
-			namespace = srvAnno.namespace();
-		}
-		
-		if(srvAnno == null && Utils.isEmpty(version)) {
-			throw new CommonException("Service ["+serviceClass.getName() + "] not specify version");
-		}
-		
-		if(srvAnno != null && Utils.isEmpty(version)) {
-			version = srvAnno.version();
-		}
-		
-		Message msg = this.createMessage(serviceClass.getName(), namespace, version, method.getName(), args);
-		return getResponse(msg ,method.getReturnType(),cb);
-	}
+    
+    private Type getType(Class<?> rawType,Type gt) {
+    	if(gt == null) {
+    		return rawType;
+    	}
+    	return TypeToken.get(gt).getType();
+    	
+    }
 	
 	public <T> T callService(String serviceName, String namespace, String version, String methodName, 
-			Class<?> returnType, Object[] args, IAsyncCallback<T> cb) {
+			Type  returnType, Object[] args, IAsyncCallback<T> cb) {
+		if(Utils.isEmpty(serviceName)) {
+			throw new CommonException("Service cabnot be null");
+		}
+		
+		if(Utils.isEmpty(namespace)) {
+			throw new CommonException("Namespace cabnot be null");
+		}
+		
+		if(Utils.isEmpty(version)) {
+			throw new CommonException("Version cabnot be null");
+		}
+		
+		if(Utils.isEmpty(methodName)) {
+			throw new CommonException("Method name cabnot be null");
+		}
+		
 		Message msg = this.createMessage(serviceName, namespace, version, methodName, args);
 		return getResponse(msg ,returnType,cb);
 	}
 	
-	/*public <T> T callService(String serviceName, String namespace, String version, String methodName, 
-			Class<T> returnType, Object[] args, IAsyncCallback<T> cb) {
-		Message msg = this.createMessage(serviceName, namespace, version, methodName, args);
-		return getResponse(msg,returnType,cb);
-	}*/
 	
 	//@SuppressWarnings("unchecked")
-	private <T> T getResponse(Message msg, Class<?> returnType, final IAsyncCallback<T> cb) {
+	private <T> T getResponse(Message msg, Type  returnType, final IAsyncCallback<T> cb) {
 		//streamComfirmFlag.put(msg.getReqId(), true);
 		waitForResponses.put(msg.getReqId(), respMsg1 -> {
 			//streamComfirmFlag.remove(msg.getReqId());
@@ -387,29 +388,35 @@ public class ApiGatewayClient {
 		}
 	}
 	
-	private <R> R parseResult(Message resqMsg, Class<R> returnType) {
+	private <R> R parseResult(Message respMsg, Type returnType) {
 		 
-		 if(resqMsg == null) {
+		 if(respMsg == null) {
 			 return null;
 		 }
 		
 		//Object v = this.decoder.decode((ByteBuffer)resqMsg.getPayload());
-		ByteBuffer bb =  (ByteBuffer)resqMsg.getPayload();
+		ByteBuffer bb =  (ByteBuffer)respMsg.getPayload();
 		String json = null;
 		try {
 			json = new String(bb.array(),Constants.CHARSET);
-			ApiResponse apiResp = JsonUtils.getIns().fromJson(json, ApiResponse.class);
-			if(apiResp.isSuccess()) {
-				 if(apiResp.getResult() == null || returnType == Void.class || Void.TYPE == returnType) {
-					 return null;
-				 } else {
-					 String js = JsonUtils.getIns().toJson(apiResp.getResult());
-					 R rst = JsonUtils.getIns().fromJson(js, returnType);
-					 return rst;
-				 }
-			} else {
-				throw new CommonException(apiResp.toString());
+			if(respMsg.getType() == Constants.MSG_TYPE_ASYNC_RESP) {
+				R psData = JsonUtils.getIns().fromJson(json, returnType);
+				return psData;
+			}else {
+				ApiResponse apiResp = JsonUtils.getIns().fromJson(json, ApiResponse.class);
+				if(apiResp.isSuccess()) {
+					 if(apiResp.getResult() == null || returnType == Void.class || Void.TYPE == returnType) {
+						 return null;
+					 } else {
+						 String js = JsonUtils.getIns().toJson(apiResp.getResult());
+						 R rst = JsonUtils.getIns().fromJson(js, returnType);
+						 return rst;
+					 }
+				} else {
+					throw new CommonException(apiResp.toString());
+				}
 			}
+			
 		} catch (UnsupportedEncodingException e) {
 			throw new CommonException(json,e);
 		}
@@ -422,7 +429,11 @@ public class ApiGatewayClient {
     	req.setReqId(idClient.getLongId(IRequest.class.getName()));
 		req.setArgs(args);
 		req.setMethod(generatorSrvMethodName(method));
-		req.setServiceName(generatorSrvName(serviceName));
+		if(!ApiGatewayPubsubClient.messageServiceImplName.equals(serviceName)) {
+			req.setServiceName(generatorSrvName(serviceName));
+		}else {
+			req.setServiceName(serviceName);
+		}
 		req.setNamespace(namespace);
 		req.setVersion(version);
 		if(this.actInfo != null) {
@@ -469,41 +480,6 @@ public class ApiGatewayClient {
     private String generatorSrvMethodName(String method) {
 		return AsyncClientUtils.genSyncMethodName(method);
 	}
-
-	/*@SuppressWarnings("unchecked")
-	public Object[] getIds(String clazz, int num, byte type) {
-    	
-    	IdRequest req = new IdRequest();
-		req.setClazz(clazz);
-		req.setNum(num);
-		req.setType(type);
-		
-		Message msg = new Message();
-		msg.setType(Constants.MSG_TYPE_ID_REQ);
-		msg.setUpProtocol(Message.PROTOCOL_BIN);
-		msg.setId(reqId.getAndIncrement());
-		msg.setReqId(msg.getId());
-		msg.setLinkId(reqId.getAndIncrement());
-		
-		//msg.setStream(false);
-		msg.setDumpDownStream(false);
-		msg.setDumpUpStream(false);
-		msg.setNeedResponse(true);
-		msg.setLogLevel(MC.LOG_NO);
-		msg.setMonitorable(false);
-		msg.setDebugMode(false);
-		
-		ByteBuffer bb = decoder.encode(req);
-		msg.setPayload(bb);
-		msg.setVersion(Message.MSG_VERSION);
-		Object v = getResponse(msg,Long.class,null);
-		if(v != null && v instanceof ServerError) {
-			throw new CommonException(v.toString());
-		} else {
-			return (Object[])v ;
-		}
-		
-	}*/
 
     private static interface IResponseHandler{
 		void onResponse(Message msg);

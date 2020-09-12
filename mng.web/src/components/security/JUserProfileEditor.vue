@@ -1,21 +1,22 @@
 <template>
     <div class="JUserProfileEditor">
         <table v-if="item.val" class="configItemTalbe" width="99%">
-            <thead><tr><td>Key</td><td>Value</td><td>Type</td><td>Operation</td></tr></thead>
+            <thead><tr><td>{{'Key'|i18n}}</td><td>{{'Value'|i18n}}</td><td>{{'Type'|i18n}}</td>
+                <td>{{'Operation'|i18n}}</td></tr></thead>
             <tr v-for="c in item.val" :key="c.id">
                 <td>{{c.key}}</td><td>{{c.val}}</td><td>{{c.type}}</td>
                 <td>
-                    <a v-if="isLogin" @click="update(c)">Modify</a>
+                    <a v-if="isLogin" @click="update(c)">{{'Modify'|i18n}}</a>
                 </td>
             </tr>
         </table>
-        <div v-if="!item.val">No data</div>
-        <div v-if="!isLogin">Not login</div>
+        <div v-if="!item.val">{{'NoData'|i18n}}</div>
+        <div v-if="!isLogin">{{'NotLogin'|i18n}}</div>
 
        <Modal v-model="modifyDialog" :loading="true" width="360" @on-ok="doUpdate()" ref="modifyDialog">
             <table>
-                <tr><td>Key</td><td><input v-if="modifyProfile" type="input" readonly="true"  v-model="modifyProfile.key"/></td></tr>
-                <tr><td>Value</td><td><input v-if="modifyProfile" type="input"  v-model="modifyProfile.val"/></td></tr>
+                <tr><td>{{'Key'|i18n}}</td><td><input v-if="modifyProfile" type="input" readonly="true"  v-model="modifyProfile.key"/></td></tr>
+                <tr><td>{{'Value'|i18n}}</td><td><input v-if="modifyProfile" type="input"  v-model="modifyProfile.val"/></td></tr>
                 <tr><td colspan="2">{{msg}}</td></tr>
             </table>
         </Modal>

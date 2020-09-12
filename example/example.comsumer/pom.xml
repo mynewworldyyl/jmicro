@@ -5,14 +5,14 @@
 	<parent>
          <groupId>cn.jmicro</groupId>
 		 <artifactId>parent</artifactId>
-		 <version>0.0.1-SNAPSHOT</version>
+		 <version>0.0.1-RELEASE</version>
     </parent>
 	<artifactId>example.comsumer</artifactId>
 	<packaging>jar</packaging>
 	<name>${project.artifactId}</name>
 	<description>Jmicro example service comsumer for testing</description>
 	<properties>
-		<jmicro.version>0.0.1-SNAPSHOT</jmicro.version>
+		<jmicro.version>0.0.1-RELEASE</jmicro.version>
 	</properties>
 	<dependencies>
 		 <dependency>
@@ -26,7 +26,7 @@
 		<dependency>
 			<groupId>cn.jmicro</groupId>
 			<artifactId>example.api</artifactId>
-			<version>0.0.1-SNAPSHOT</version>
+			<version>0.0.1-RELEASE</version>
 		</dependency>
 		
 		<dependency>
@@ -61,7 +61,7 @@
         <dependency>
 			<groupId>cn.jmicro</groupId>
 			<artifactId>agent</artifactId>
-			<version>0.0.1-SNAPSHOT</version>
+			<version>0.0.1-RELEASE</version>
 			<scope>test</scope>
 		</dependency>
 		<dependency>

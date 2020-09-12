@@ -271,7 +271,8 @@ public class SF {
 		}
 
 		if(JMicroContext.existRpcContext()) {
-			si.setAct(JMicroContext.get().getAccount());
+			ActInfo ai = JMicroContext.get().getAccount();
+			si.setClientId(ai.getClientId());
 			//在RPC上下文中才有以上信息
 			si.setLinkId(JMicroContext.lid());
 			si.setLocalPort(JMicroContext.get().getString(JMicroContext.LOCAL_PORT, ""));

@@ -12,6 +12,12 @@ import cn.jmicro.codegenerator.AsyncClientProxy;
 @AsyncClientProxy
 public interface IMngAccountService {
 
+	Resp<Boolean> checkAccountExist(String actName);
+	
+	Resp<Boolean> resetPwdEmail(String actName,String checkCode);
+	
+	Resp<Boolean> resetPwd(String actName, String token, String newPwd);
+	
 	Resp<Boolean> activeAccount(String actName, String token);
 	
 	Resp<Boolean> resendActiveEmail(String actName);
@@ -30,7 +36,7 @@ public interface IMngAccountService {
 	
 	Resp<Boolean> updatePwd(String newPwd,String oldPwd);
 	
-	Resp<Boolean> changeAccountStatus(String actName,boolean enableStatus);
+	Resp<Boolean> changeAccountStatus(String actName);
 	
 	Resp<Integer> countAccount(Map<String, String> queryConditions);
 	

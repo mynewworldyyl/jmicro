@@ -38,10 +38,10 @@ public class TestServiceAgent extends JMicroBaseTestCase {
 		
 		list.add("java");
 		
-		list.add("-javaagent:" + workDir + "resourceDir\\jmicro.agent-0.0.1-SNAPSHOT.jar");
+		list.add("-javaagent:" + workDir + "resourceDir\\jmicro.agent-0.0.1-RELEASE.jar");
 		
 		list.add("-jar");
-		list.add(workDir + "resourceDir\\jmicro.pubsub-0.0.1-SNAPSHOT-jar-with-dependencies.jar");
+		list.add(workDir + "resourceDir\\jmicro.pubsub-0.0.1-RELEASE-jar-with-dependencies.jar");
 		
 		
 		list.add("-D"+ChoyConstants.ARG_INSTANCE_ID+"=" + 23);

@@ -31,8 +31,11 @@ import cn.jmicro.example.api.rpc.genclient.ISimpleRpc$JMAsyncClient;
 import cn.jmicro.gateway.client.ApiGatewayClient;
 import cn.jmicro.gateway.client.ApiGatewayConfig;
 import cn.jmicro.gateway.pubsub.ApiGatewayPubsubClient;
+import cn.jmicro.gateway.pubsub.PSDataListener;
 
 public class TestApigateClient {
+	
+	private String TOPIC = "/jmicro/test/topic01";
 
 	//private ApiGatewayClient socketClient = new ApiGatewayClient(new ApiGatewayConfig(Constants.TYPE_SOCKET,"192.168.56.1",9091));
 	
@@ -97,8 +100,8 @@ public class TestApigateClient {
 	@Test
 	public void testLoginLogout() {
 		socketClient.loginJMAsync("test01", "1")
-		.success((ai,cxt)->{
-			System.out.println("Success login"+ai.getActName());
+		.success((resp,cxt)->{
+			System.out.println("Success login"+resp.getData().getActName());
 			socketClient.logoutJMAsync()
 			.then((succ,fail0,cxt0)->{
 				if(fail0 == null) {
@@ -118,8 +121,8 @@ public class TestApigateClient {
 	@Test
 	public void testPublishString() {
 		socketClient.loginJMAsync("test03", "1")
-		.success((ai,cxt)->{
-			System.out.println("Success login: "+ai.getActName());
+		.success((resp,cxt)->{
+			System.out.println("Success login: "+resp.getData().getActName());
 			 socketClient.getPubsubClient()
 			.publishStringJMAsync("/jmicro/test/topic01", "Message from java client!",PSData.FLAG_DEFALUT,null)
 			.success((id,cxt0)->{
@@ -139,8 +142,8 @@ public class TestApigateClient {
 	@Test
 	public void testPublishByte() {
 		socketClient.loginJMAsync("test01", "1")
-		.success((ai,cxt)->{
-			System.out.println("Success login: "+ai.getActName());
+		.success((resp,cxt)->{
+			System.out.println("Success login: "+resp.getData().getActName());
 			 socketClient.getPubsubClient()
 			.publishBytesJMAsync("/jmicro/test/topic01", "Message from java client!".getBytes(),PSData.FLAG_DEFALUT,null)
 			.success((id,cxt0)->{
@@ -160,8 +163,8 @@ public class TestApigateClient {
 	@Test
 	public void testPublishMutilItems() {
 		socketClient.loginJMAsync("test01", "1")
-		.success((ai,cxt)->{
-			System.out.println("Success login: "+ai.getActName());
+		.success((resp,cxt)->{
+			System.out.println("Success login: "+resp.getData().getActName());
 			
 			 PSData pd = new PSData();
 			 pd.setTopic("/jmicro/test/topic01");
@@ -187,9 +190,9 @@ public class TestApigateClient {
 	@Test
 	public void testPublishStringPresure() {
 		socketClient.loginJMAsync("test03", "1")
-		.success((ai,cxt)->{
+		.success((resp,cxt)->{
 			
-			System.out.println("Success login: "+ai.getActName());
+			System.out.println("Success login: "+resp.getData().getActName());
 			
 			ApiGatewayPubsubClient cl = socketClient.getPubsubClient();
 			 
@@ -205,6 +208,51 @@ public class TestApigateClient {
 					});
 				}
 			}, 10, 500);
+			 
+		})
+		.fail((code,msg,cxt)->{
+			System.out.println("Fail login: code"+ code + ", msg: " + msg);
+		});
+		
+		JMicro.waitForShutdown();
+	}
+	
+	
+	@Test
+	public void testSubscribeTopic() {
+		PSDataListener lis = new PSDataListener() {
+			int id = 0;
+			
+			@Override
+			public void onMsg(PSData item) {
+				System.out.println("Got message: " + item.getData().toString());
+			}
+
+			@Override
+			public int getSubId() {
+				return id;
+			}
+
+			@Override
+			public void setSubId(int id) {
+				this.id = id;
+			}
+			
+		};
+		
+		socketClient.loginJMAsync("test01", "2")
+		.success((resp,cxt)->{
+			
+			System.out.println("Success login: "+resp.getData().getActName());
+			
+			socketClient.getPubsubClient()
+			.subscribeJMAsync(TOPIC, null, lis)
+			.success((id,cxt0)->{
+				System.out.println("Subscribe success: "+id);
+			})
+			.fail((code,msg,cxt1)->{
+				System.out.println("Fail to subscribe code: "+ code + ", msg: " + msg);
+			});
 			 
 		})
 		.fail((code,msg,cxt)->{

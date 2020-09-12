@@ -51,6 +51,13 @@
                 }
             });
 
+            window.jm.vue.$emit("editorOpen",
+                {"editorId":cid,
+                    "menus":[
+                        {name:"REFRESH",label:"Refresh",icon:"ios-cog",call:self.refresh}]
+                });
+
+
             let ec = function() {
                 window.jm.rpc.removeActListener(cid);
                 window.jm.vue.$off('editorClosed',ec);

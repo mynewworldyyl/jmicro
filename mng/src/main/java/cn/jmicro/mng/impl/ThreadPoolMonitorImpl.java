@@ -15,7 +15,6 @@ import cn.jmicro.api.annotation.Reference;
 import cn.jmicro.api.annotation.SMethod;
 import cn.jmicro.api.annotation.Service;
 import cn.jmicro.api.executor.ExecutorInfo;
-import cn.jmicro.api.executor.IExecutorInfo;
 import cn.jmicro.api.executor.genclient.IExecutorInfo$JMAsyncClient;
 import cn.jmicro.api.mng.IThreadPoolMonitor;
 import cn.jmicro.api.monitor.MC;
@@ -35,7 +34,7 @@ public class ThreadPoolMonitorImpl implements IThreadPoolMonitor {
 	private List<IExecutorInfo$JMAsyncClient> monitorServers = new ArrayList<>();
 	
 	@Override
-	@SMethod(timeout=60000,retryCnt=0,needLogin=true,maxSpeed=5,maxPacketSize=256)
+	@SMethod(perType=true,timeout=60000,retryCnt=0,needLogin=true,maxSpeed=5,maxPacketSize=256)
 	public Resp<List<ExecutorInfo>> serverList() {
 		Resp<List<ExecutorInfo>> resp = new Resp<>();
 		resp.setCode(Resp.CODE_SUCCESS);
@@ -70,7 +69,7 @@ public class ThreadPoolMonitorImpl implements IThreadPoolMonitor {
 	}
 
 	@Override
-	@SMethod(needLogin=true,maxSpeed=5,maxPacketSize=512)
+	@SMethod(perType=true,needLogin=true,maxSpeed=5,maxPacketSize=512)
 	public Resp<List<ExecutorInfo>> getInfo(String key,String type) {
 		Set<IExecutorInfo$JMAsyncClient> iei = getServerByKey(key,type);
 		

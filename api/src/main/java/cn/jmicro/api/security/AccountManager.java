@@ -34,6 +34,10 @@ public class AccountManager {
 	public static final String EmailDir = Config.AccountDir + "/emails";
 	public static final String MobileDir = Config.AccountDir + "/mobiles";
 	
+	private static final long expired = 10*60*1000;
+	
+	private static final long updateExpired = expired >> 2;
+	
 	private static final String[] PERS = new String[] {
 		"cn.jmicro.mng.api.IMngAccountService##mng##0.0.1########updateActPermissions##Ljava/lang/String;Ljava/util/Set;Ljava/util/Set;","cn.jmicro.api.mng.IConfigManager##mng##0.0.1########getChildren##Ljava/lang/String;Ljava/lang/Boolean;","cn.jmicro.mng.api.IMngAccountService##mng##0.0.1########getPermissionsByActName##Ljava/lang/String;","cn.jmicro.mng.api.IMngAccountService##mng##0.0.1########getAccountList##Ljava/util/Map;II","cn.jmicro.mng.api.IMngAccountService##mng##0.0.1########getAllPermissions##","cn.jmicro.api.mng.IConfigManager##mng##0.0.1########add##Ljava/lang/String;Ljava/lang/String;Ljava/lang/Boolean;","cn.jmicro.api.mng.IConfigManager##mng##0.0.1########delete##Ljava/lang/String;","cn.jmicro.api.mng.IConfigManager##mng##0.0.1########update##Ljava/lang/String;Ljava/lang/String;","cn.jmicro.api.pubsub.IPubSubClientService##mng##0.0.1########publishMutilItems##[Lcn/jmicro/api/pubsub/PSData;","cn.jmicro.api.pubsub.IPubSubClientService##mng##0.0.1########publishOneItem##Lcn/jmicro/api/pubsub/PSData;","cn.jmicro.api.pubsub.IPubSubClientService##mng##0.0.1########publishString##Ljava/util/Map;Ljava/lang/String;Ljava/lang/String;","cn.jmicro.api.pubsub.IPubSubClientService##mng##0.0.1########publishBytes##Ljava/util/Map;Ljava/lang/String;[B","cn.jmicro.api.pubsub.IPubSubClientService##mng##0.0.1########callService##Ljava/lang/String;[Ljava/lang/Object;","cn.jmicro.api.mng.IChoreographyService##mng##0.0.1########stopProcess##Ljava/lang/String;","cn.jmicro.api.mng.IChoreographyService##mng##0.0.1########deleteDeployment##I","cn.jmicro.api.mng.IChoreographyService##mng##0.0.1########stopAllInstance##Ljava/lang/String;","cn.jmicro.api.mng.IChoreographyService##mng##0.0.1########getDeploymentList##","cn.jmicro.api.mng.IChoreographyService##mng##0.0.1########addDeployment##Lcn/jmicro/api/choreography/Deployment;","cn.jmicro.api.mng.IChoreographyService##mng##0.0.1########getProcessInstanceList##Z","cn.jmicro.api.mng.IChoreographyService##mng##0.0.1########changeAgentState##Ljava/lang/String;","cn.jmicro.api.mng.IChoreographyService##mng##0.0.1########getAgentList##Z","cn.jmicro.api.mng.IChoreographyService##mng##0.0.1########updateDeployment##Lcn/jmicro/api/choreography/Deployment;","cn.jmicro.api.mng.IManageService##mng##0.0.1########getServices##","cn.jmicro.api.mng.IManageService##mng##0.0.1########updateItem##Lcn/jmicro/api/registry/ServiceItem;","cn.jmicro.api.mng.IManageService##mng##0.0.1########updateMethod##Lcn/jmicro/api/registry/ServiceMethod;","cn.jmicro.mng.api.IMngAccountService##mng##0.0.1########countAccount##Ljava/util/Map;","cn.jmicro.mng.api.IMngAccountService##mng##0.0.1########changeAccountStatus##Ljava/lang/String;Z"
 	};
@@ -90,7 +94,7 @@ public class AccountManager {
 			}
 			
 			if(ai.getPwd().equals(pwd) || Md5Utils.getMd5(pwd).equals(ai.getPwd())) {
-				String akey = JMicroContext.CACHE_LOGIN_KEY + ai.getActName();
+				String akey = key(ai.getActName());
 				
 				String oldLk = null;
 				if(cache.exist(akey)) {
@@ -98,11 +102,12 @@ public class AccountManager {
 				}
 				
 				if(oldLk == null) {
-					ai.setLoginKey(JMicroContext.CACHE_LOGIN_KEY + this.idGenerator.getStringId(ActInfo.class));
-					cache.put(ai.getLoginKey(), ai);
-					cache.put(akey, ai.getLoginKey());
-					cache.put(ai.getClientId()+"", ai.getLoginKey());
-				}else {
+					ai.setLoginKey(key(this.idGenerator.getStringId(ActInfo.class)));
+					ai.setLastActiveTime(System.currentTimeMillis());
+					cache.put(ai.getLoginKey(), ai,expired);
+					cache.put(akey, ai.getLoginKey(),expired);
+					cache.put(key(ai.getClientId()+""), ai.getLoginKey(),expired);
+				} else {
 					ai = cache.get(oldLk);
 				}
 				r.setCode(Resp.CODE_SUCCESS);
@@ -140,16 +145,50 @@ public class AccountManager {
 		}
 	}
 	
+	private String key(String subfix) {
+		return JMicroContext.CACHE_LOGIN_KEY+subfix;
+	}
+	
+	public boolean forceAccountLogout(String actName) {
+		String akey = key(actName);
+		if(cache.exist(akey)) {
+			String lk = cache.get(akey);
+			if(StringUtils.isNotEmpty(lk)) {
+				logger.warn("Account "+actName+" force logout by: " + JMicroContext.get().getAccount().getActName());
+				this.logout(lk);
+			}else {
+				cache.del(akey);
+			}
+			
+		}
+		return true;
+	}
+	
 	public ActInfo getAccount(String loginKey) {
-		ActInfo ai = cache.get(loginKey);
-		return ai;
+		if(cache.exist(loginKey)) {
+			ActInfo ai = cache.get(loginKey);
+			long curTime = System.currentTimeMillis();
+			if(curTime - ai.getLastActiveTime() > updateExpired) {
+				setActInfoCache(ai,curTime);
+			}
+			return ai;
+		}
+		return null;
+	}
+	
+	private void setActInfoCache(ActInfo ai,long curTime) {
+		ai.setLastActiveTime(curTime);
+		cache.put(ai.getLoginKey(), ai,expired);
+		cache.expire(key(ai.getActName()),expired);
+		cache.expire(key(ai.getClientId()+""),expired);
 	}
 
 	public boolean logout(String loginKey) {
 		ActInfo ai = this.getAccount(loginKey);
 		if(ai != null) {
 			cache.del(loginKey);
-			cache.del(JMicroContext.CACHE_LOGIN_KEY + ai.getActName());
+			cache.del(key(ai.getActName()));
+			cache.del(key(ai.getClientId()+""));
 		}
 		return true;
 	}
@@ -166,6 +205,10 @@ public class AccountManager {
 			return ai;
 		}
 		return null;
+	}
+
+	public Boolean existActName(String actName) {
+		return op.exist(AccountManager.ActDir +"/"+ actName);
 	}
 	
 }

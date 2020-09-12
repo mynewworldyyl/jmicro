@@ -1,9 +1,12 @@
 <template>
     <div class="JThreadPoolMonitorEditor">
-        <a @click="refresh()">REFRESH</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-        <br/>
-        <p>{{item.key}}</p>
-        <table class="configItemTalbe" width="99%">
+        <div  v-if="isLogin">
+            <a @click="refresh()">REFRESH</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+            <br/>
+            <p>{{item.key}}</p>
+        </div>
+
+        <table v-if="isLogin && itemList && itemList.length > 0" class="configItemTalbe" width="99%">
             <thead><tr><td>instanceName</td><td>activeCount</td> <td>completedTaskCount</td><td>largestPoolSize</td><td>poolSize</td>
                 <td>taskCount</td><td>curQueueCnt</td><td>startCnt</td><td>endCnt</td><td>terminal</td><td>coreSize</td><td>maxPoolSize</td><td>taskQueueSize</td></tr></thead>
            <tr v-for="it in itemList" :key="it.id">
@@ -16,6 +19,9 @@
             </tr>
 
         </table>
+
+        <div v-if="isLogin && itemList && itemList.length == 0">No data</div>
+        <div v-if="!isLogin">Not login</div>
 
     </div>
 </template>
@@ -30,6 +36,7 @@
         data () {
             let its =  this.parseItem();
             return {
+                isLogin : false,
                 itemList : its,
             }
         },
@@ -54,9 +61,10 @@
             },
 
             refresh(){
-               let self = this;
+                let self = this;
                 this.isLogin = window.jm.rpc.isLogin();
                 if(!this.isLogin) {
+                    self.itemList = [];
                     return;
                 }
                 window.jm.mng.threadPoolSrv.getInfo(this.item.id,this.item.type).then((resp)=>{
@@ -84,14 +92,12 @@
                 }).catch((err)=>{
                     window.console.log(err);
                 });
-
-
             },
         },
 
         mounted () {
             let self = this;
-            window.jm.mng.act.addListener(cid,()=>{
+            window.jm.rpc.addActListener(cid,()=>{
                 self.refresh();
             });
 
@@ -101,11 +107,11 @@
             }
 
             window.jm.vue.$on('editorClosed',ec);
-
+            self.refresh();
         },
 
         beforeDestroy() {
-            window.jm.mng.act.removeActListener(cid);
+            window.jm.rpc.removeActListener(cid);
         },
 
     }

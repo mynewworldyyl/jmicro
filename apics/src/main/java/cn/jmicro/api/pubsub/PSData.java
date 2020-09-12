@@ -70,6 +70,10 @@ public class PSData implements Serializable{
 	
 	public static final int PUB_TOPIC_INVALID= -4;
 	
+	public static final int PUB_ITEM_IS_NULL= -5;
+	
+	public static final int PUB_TOPIC_IS_NULL= -6;
+	
 	//消息服务器不可用
 	public static final byte RESULT_FAIL_SERVER_DISABLE = -5;
 	

@@ -2,19 +2,18 @@
     <div class="JTypeConfig">
        <!-- <a @click="refresh()">REFRESH</a>
         <a v-if="adminPer" @click="add()">ADD</a>-->
-        <table class="configItemTalbe" width="99%">
-            <thead><tr><td>GROUP</td> <td>LABEL</td><td>FIELD NAME</td><td>TYPE CODE</td> <td>DESC</td><td>OPERATION</td></tr></thead>
-            <tr v-for="a in typeList" :key="a.id">
-                <td>{{ a.group }}</td><td>{{a.label}}</td><td>{{a.fieldName}}</td>
-                <td>{{ a.type }}&nbsp;/&nbsp;0X{{ a.type.toString(16).toUpperCase() }}</td>
-                <td>{{ a.desc }}</td>
-                <td>&nbsp;
-                    <a v-if="adminPer && a.type > 0X0FFF" @click="deleteCfg(a.type)">DELETE</a>
-                    &nbsp;&nbsp;&nbsp;&nbsp;
-                    <a v-if="adminPer" @click="update(a)">UPDATE</a>
-                </td>
-            </tr>
-        </table>
+        <table v-if="isLogin && typeList && typeList.length > 0" class="configItemTalbe" width="99%">
+        <thead><tr><td>GROUP</td> <td>LABEL</td><td>FIELD NAME</td><td>TYPE CODE</td> <td>DESC</td><td>OPERATION</td></tr></thead>
+        <tr v-for="a in typeList" :key="a.id">
+            <td>{{ a.group }}</td><td>{{a.label}}</td><td>{{a.fieldName}}</td>
+            <td>{{ a.type }}&nbsp;/&nbsp;0X{{ a.type.toString(16).toUpperCase() }}</td>
+            <td>{{ a.desc }}</td>
+            <td>&nbsp;
+                <a v-if="isLogin && a.type > 0X0FFF" @click="deleteCfg(a.type)">DELETE</a>&nbsp;&nbsp;&nbsp;&nbsp;
+                <a v-if="isLogin" @click="update(a)">UPDATE</a>
+            </td>
+        </tr>
+    </table>
 
         <Modal v-model="addConfigDialog" :loading="true" ref="addConfigDialog" width="360" @on-ok="onAddOk()">
             <div>
@@ -57,6 +56,7 @@
         name: 'JTypeConfig',
         data () {
             return {
+                isLogin:false,
                 groups:[],
                 errMsg:'',
                 typeList : [],
@@ -89,7 +89,10 @@
 
             refresh(){
                 let self = this;
-                this.adminPer = window.jm.mng.comm.adminPer;
+                this.isLogin = window.jm.rpc.isLogin();
+                if(!this.isLogin) {
+                    return;
+                }
                 window.jm.mng.moType.getAllConfigs().then((resp)=>{
                     if(resp.code != 0) {
                         self.$Message.success(resp.msg);
@@ -161,17 +164,14 @@
         },
 
         mounted () {
-            //let self = this;
             let self = this;
-            window.jm.vue.$on('userLogin',() => {
-                self.refresh();
-            });
-
-            window.jm.vue.$on('userLogout',() => {
-                self.refresh();
-            });
-            window.jm.mng.act.addListener(cid,this.refresh);
-            this.refresh();
+            window.jm.rpc.addActListener(cid,self.refresh);
+            let ec = function() {
+                window.jm.rpc.removeActListener(cid);
+                window.jm.vue.$off('editorClosed',ec);
+            }
+            window.jm.vue.$on('editorClosed',ec);
+            self.refresh();
 
             let menus = [{name:"REFRESH",label:"REFRESH",icon:"ios-cog",call:self.refresh},
                 { name:"ADD", label:"ADD", icon:"ios-cog",call : self.addDeploy, needAdmin:true }];
@@ -179,7 +179,7 @@
         },
 
         beforeDestroy() {
-            window.jm.mng.act.removeActListener(cid);
+            window.jm.rpc.removeActListener(cid);
         },
     }
 </script>
