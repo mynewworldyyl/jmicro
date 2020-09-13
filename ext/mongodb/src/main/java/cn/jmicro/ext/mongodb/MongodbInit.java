@@ -1,11 +1,17 @@
 package cn.jmicro.ext.mongodb;
 
+import static org.bson.codecs.configuration.CodecRegistries.fromProviders;
+import static org.bson.codecs.configuration.CodecRegistries.fromRegistries;
+
+import org.bson.codecs.configuration.CodecRegistry;
+import org.bson.codecs.pojo.PojoCodecProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.mongodb.DB;
 import com.mongodb.MongoClient;
 import com.mongodb.MongoClientOptions;
+import com.mongodb.MongoClientSettings;
 import com.mongodb.MongoCredential;
 import com.mongodb.ServerAddress;
 import com.mongodb.client.MongoDatabase;
@@ -64,6 +70,10 @@ public class MongodbInit implements IPostFactoryListener{
  
         //获取数据库对象
         MongoDatabase mdb = client.getDatabase(dbname);
+        
+        CodecRegistry pojoCodecRegistry = fromRegistries(MongoClientSettings.getDefaultCodecRegistry(),
+                fromProviders(PojoCodecProvider.builder().automatic(true).build()));
+        mdb = mdb.withCodecRegistry(pojoCodecRegistry);
         
         DB db = client.getDB(dbname);
 

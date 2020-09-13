@@ -26,6 +26,7 @@ import org.slf4j.LoggerFactory;
 
 import cn.jmicro.api.JMicro;
 import cn.jmicro.api.JMicroContext;
+import cn.jmicro.api.Resp;
 import cn.jmicro.api.annotation.Cfg;
 import cn.jmicro.api.annotation.Inject;
 import cn.jmicro.api.codec.ICodecFactory;
@@ -42,6 +43,7 @@ import cn.jmicro.api.objectfactory.AbstractClientServiceProxyHolder;
 import cn.jmicro.api.objectfactory.IObjectFactory;
 import cn.jmicro.api.registry.ServiceItem;
 import cn.jmicro.api.registry.ServiceMethod;
+import cn.jmicro.api.security.AccountManager;
 import cn.jmicro.api.security.ActInfo;
 import cn.jmicro.api.security.IAccountService;
 import cn.jmicro.common.CommonException;
@@ -63,7 +65,7 @@ public class ApiRequestMessageHandler implements IMessageHandler{
 	private ComponentIdServer idGenerator;
 	
 	@Inject
-	private IAccountService accountManager;
+	private AccountManager accountManager;
 	
 	@Inject
 	private ICodecFactory codecFactory;

@@ -30,6 +30,7 @@
                         <JTesting v-else-if="item.group == 'testing'" :item="item"></JTesting>
                         <JAbout v-else-if="item.group == 'about'" :item="item"></JAbout>
                         <JLog v-else-if="item.group == 'fileLog'" :item="item"></JLog>
+                        <JTopicListView v-else-if="item.group == 'topicList'" :item="item"></JTopicListView>
 
                         <JTestingPubsub v-else-if="item.group == 'testingPubsub'" :item="item"></JTestingPubsub>
                         <JPubsubItemView v-else-if="item.group == 'pubsubItem'" :item="item"></JPubsubItemView>
@@ -119,7 +120,7 @@
             JShell : () => import('./shell/JShell.vue'),
             JAbout : () => import('./shell/JAbout.vue'),
             JTesting : () => import('./shell/JTesting.vue'),
-
+            JTopicListView:() => import('./shell/JTopicListView.vue'),
             JAgent : () => import('./deployment/JAgent.vue'),
             JProcess : () => import('./deployment/JProcess.vue'),
             JLog : () => import('./log/JLog.vue'),

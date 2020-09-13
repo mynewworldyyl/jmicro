@@ -65,6 +65,7 @@
                      <!-- <MenuItem name="__help"> <Icon type="ios-cog"></Icon>Help</MenuItem>-->
                       <MenuItem name="__about"> <Icon type="ios-cog"></Icon>{{"About"|i18n}}</MenuItem>
                       <MenuItem name="__testing"> <Icon type="ios-cog"></Icon>{{"Testing"|i18n}}</MenuItem>
+                      <MenuItem name="__topicList"> <Icon type="ios-cog"></Icon>{{"topicList"|i18n}}</MenuItem>
                   </Menu-group>
               </Submenu>
 

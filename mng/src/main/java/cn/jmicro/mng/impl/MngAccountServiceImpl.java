@@ -15,30 +15,25 @@ import org.slf4j.LoggerFactory;
 import cn.jmicro.api.JMicroContext;
 import cn.jmicro.api.Resp;
 import cn.jmicro.api.annotation.Cfg;
-import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Inject;
 import cn.jmicro.api.annotation.Reference;
 import cn.jmicro.api.annotation.SMethod;
-import cn.jmicro.api.annotation.Service;
+import cn.jmicro.api.email.genclient.IEmailSender$JMAsyncClient;
 import cn.jmicro.api.idgenerator.ComponentIdServer;
 import cn.jmicro.api.raft.IDataOperator;
 import cn.jmicro.api.security.AccountManager;
 import cn.jmicro.api.security.ActInfo;
+import cn.jmicro.api.security.IAccountService;
 import cn.jmicro.api.security.Permission;
-import cn.jmicro.api.security.genclient.IAccountService$JMAsyncClient;
-import cn.jmicro.api.service.IServiceAsyncResponse;
 import cn.jmicro.api.utils.SystemUtils;
-import cn.jmicro.common.Constants;
 import cn.jmicro.common.Md5Utils;
 import cn.jmicro.common.util.JsonUtils;
 import cn.jmicro.common.util.StringUtils;
 import cn.jmicro.mng.LocalAccountManager;
-import cn.jmicro.mng.api.IMngAccountService;
-import cn.jmicro.mng.mail.MailSender;
 
-@Component
-@Service(namespace="mng", version="0.0.1",retryCnt=0,external=true,debugMode=1,showFront=false)
-public class MngAccountServiceImpl implements IMngAccountService {
+//@Component
+//@Service(namespace="mng", version="0.0.1",retryCnt=0,external=true,debugMode=1,showFront=false)
+public class MngAccountServiceImpl implements IAccountService {
 
 	private final Logger logger = LoggerFactory.getLogger(MngAccountServiceImpl.class);
 	
@@ -50,12 +45,11 @@ public class MngAccountServiceImpl implements IMngAccountService {
 	private static final Pattern HK_PATTERN = Pattern.compile("^(5|6|8|9)\\d{7}$");
     private static final Pattern CHINA_PATTERN = Pattern.compile("^((13[0-9])|(14[0,1,4-9])|(15[0-3,5-9])|(16[2,5,6,7])|(17[0-8])|(18[0-9])|(19[0-3,5-9]))\\d{8}$");
 	private static final Pattern NUM_PATTERN = Pattern.compile("[0-9]+");
-	    
 	
 	private Random r = new Random();
 	
-	@Inject
-	private MailSender mailSender;
+	@Reference
+	private IEmailSender$JMAsyncClient mailSender;
 	
 	@Inject
 	private LocalAccountManager lam;
@@ -63,9 +57,6 @@ public class MngAccountServiceImpl implements IMngAccountService {
 	@Inject
 	private AccountManager am;
 
-	@Reference(namespace="*",version="*")
-	private IAccountService$JMAsyncClient as;
-	
 	@Inject
 	private IDataOperator op;
 	
@@ -136,7 +127,15 @@ public class MngAccountServiceImpl implements IMngAccountService {
 			StringBuffer sb = new StringBuffer();
 			sb.append("JMicro密码重置校验码如下：\n")
 			.append(ai.getToken());
-			this.mailSender.send(ai.getEmail(), "密码重置", sb.toString());
+			//.send(ai.getEmail(), "密码重置", sb.toString())
+			this.mailSender.sendJMAsync(ai.getEmail(), "密码重置", sb.toString(), ai)
+			.success((succe,cxt)->{
+				logger.debug("reset pwd email send success: " + ai.getActName());
+			})
+			.fail((code,msg,cxt)->{
+				logger.error("reset pwd email send fail: " + ai.getActName());
+			});
+			
 			r.setCode(Resp.CODE_SUCCESS);
 			r.setData(true);
 		} else {
@@ -291,64 +290,51 @@ public class MngAccountServiceImpl implements IMngAccountService {
 		}
 		
 		r = new Resp<>();
-		if(as != null && as.isReady()) {
-			JMicroContext cxt = JMicroContext.get();
-			IServiceAsyncResponse cb = cxt.getParam(Constants.CONTEXT_SERVICE_RESPONSE,null);
-			if(cxt.isAsync() && cb == null) {
-				logger.error(Constants.CONTEXT_SERVICE_RESPONSE + " is null in async context");
-			}
-			if(cb != null) {
-				as.registJMAsync(actName,pwd,mail,mobile).then((rst,fail,rcxt)->{
-					if(fail == null) {
-						cb.result(rst);
-					} else {
-						Resp<Boolean> rr = new Resp<>();
-						rr.setCode(1);
-						rr.setData(false);
-						rr.setMsg(fail.toString());
-						cb.result(rr);
-					}
-				});
-				//异步请求同步返回NULL
-				r = null;
-			} else {
-				return as.regist(actName,pwd,mail,mobile);
-			}
+
+		r.setCode(0);
+		String p = AccountManager.ActDir +"/"+ ai.getActName();
+		if(op.exist(p)) {
+			r.setCode(1);
+			r.setData(false);
+			r.setMsg("Account exist");
+			r.setKey("accountExist");
 		} else {
+			ai.setStatuCode(ActInfo.SC_WAIT_ACTIVE);
+			ai.setClientId(this.idGenerator.getIntId(ActInfo.class));
+			ai.setEmail(mail);
+			ai.setMobile(mobile);
+			ai.setRegistTime(System.currentTimeMillis());
+			
+			String token = this.idGenerator.getStringId(ActInfo.class);
+			token = Md5Utils.getMd5(token);
+			ai.setToken(token);
+			ai.setTokenType(ActInfo.TOKEN_ACTIVE_ACT);
+			
+			op.createNodeOrSetData(AccountManager.MobileDir+"/" + mobile, ai.getActName(), IDataOperator.PERSISTENT);
+			op.createNodeOrSetData(AccountManager.EmailDir+"/" + mail, ai.getActName(), IDataOperator.PERSISTENT);
+			op.createNodeOrSetData(p, JsonUtils.getIns().toJson(ai), IDataOperator.PERSISTENT);
+			
 			r.setCode(0);
-			String p = AccountManager.ActDir +"/"+ ai.getActName();
-			if(op.exist(p)) {
-				r.setCode(1);
-				r.setData(false);
-				r.setMsg("Account exist");
-				r.setKey("accountExist");
-			} else {
-				ai.setStatuCode(ActInfo.SC_WAIT_ACTIVE);
-				ai.setClientId(this.idGenerator.getIntId(ActInfo.class));
-				ai.setEmail(mail);
-				ai.setMobile(mobile);
-				ai.setRegistTime(System.currentTimeMillis());
-				
-				String token = this.idGenerator.getStringId(ActInfo.class);
-				token = Md5Utils.getMd5(token);
-				ai.setToken(token);
-				ai.setTokenType(ActInfo.TOKEN_ACTIVE_ACT);
-				
-				op.createNodeOrSetData( AccountManager.MobileDir+"/" + mobile, ai.getActName(), IDataOperator.PERSISTENT);
-				op.createNodeOrSetData( AccountManager.EmailDir+"/" + mail, ai.getActName(), IDataOperator.PERSISTENT);
-				
-				op.createNodeOrSetData(p, JsonUtils.getIns().toJson(ai), IDataOperator.PERSISTENT);
-				r.setCode(0);
-				r.setData(true);
-				
-				StringBuffer sb = new StringBuffer();
-				sb.append("点击以下连接完成激活你的账号：\n").append(this.accountActivePage)
-				.append("a=").append(actName)
-				.append("&t=").append(token)
-				.append("&y=").append(ai.getTokenType());
-				this.mailSender.send(mail, "账号激活", sb.toString());
-			}
+			r.setData(true);
+			
+			StringBuffer sb = new StringBuffer();
+			sb.append("点击以下连接完成激活你的账号：\n").append(this.accountActivePage)
+			.append("a=").append(actName)
+			.append("&t=").append(token)
+			.append("&y=").append(ai.getTokenType());
+			
+			//this.mailSender.send(mail, "账号激活", sb.toString());
+			
+			this.mailSender.sendJMAsync(ai.getEmail(), "账号激活", sb.toString(), ai)
+			.success((succe,cxt)->{
+				logger.debug("active account email send success: " + ai.getActName());
+			})
+			.fail((code,msg,cxt)->{
+				logger.error("active account email send fail: " + ai.getActName());
+			});
+			
 		}
+	
 		return r;
 	}
 	
@@ -377,7 +363,14 @@ public class MngAccountServiceImpl implements IMngAccountService {
 			.append("a=").append(actName)
 			.append("&t=").append(ai.getToken())
 			.append("&y=").append(ai.getTokenType());
-			this.mailSender.send(ai.getEmail(), "账号激活", sb.toString());
+			//this.mailSender.send(ai.getEmail(), "账号激活", sb.toString());
+			this.mailSender.sendJMAsync(ai.getEmail(), "密码重置", sb.toString(), ai)
+			.success((succe,cxt)->{
+				logger.debug("Resend active account email send success: " + ai.getActName());
+			})
+			.fail((code,msg,cxt)->{
+				logger.error("Resend active account email send fail: " + ai.getActName());
+			});
 		}else {
 			r.setCode(Resp.CODE_FAIL);
 			r.setData(false);
@@ -428,36 +421,12 @@ public class MngAccountServiceImpl implements IMngAccountService {
 			return r;
 		}
 		
-		if(as != null && as.isReady()) {
-			JMicroContext cxt = JMicroContext.get();
-			IServiceAsyncResponse cb = cxt.getParam(Constants.CONTEXT_SERVICE_RESPONSE,null);
-			if(cxt.isAsync() && cb == null) {
-				logger.error(Constants.CONTEXT_SERVICE_RESPONSE + " is null in async context");
-			}
-			if(cb != null) {
-				as.updatePwdJMAsync(newPwd, oldPwd).then((rst,fail,rcxt)->{
-					if(fail == null) {
-						cb.result(rst);
-					} else {
-						Resp<Boolean> rr = new Resp<>();
-						rr.setCode(1);
-						rr.setData(false);
-						rr.setMsg(fail.toString());
-						cb.result(rr);
-					}
-				});
-				//异步请求同步返回NULL
-				r = null;
-			} else {
-				return as.updatePwd(newPwd,oldPwd);
-			}
-		} else {
-			ai.setPwd(Md5Utils.getMd5(newPwd));
-			String p = AccountManager.ActDir +"/"+ ai.getActName();
-			op.createNodeOrSetData(p, JsonUtils.getIns().toJson(ai), IDataOperator.PERSISTENT);
-			r.setCode(0);
-			r.setData(true);
-		}
+
+		ai.setPwd(Md5Utils.getMd5(newPwd));
+		String p = AccountManager.ActDir +"/"+ ai.getActName();
+		op.createNodeOrSetData(p, JsonUtils.getIns().toJson(ai), IDataOperator.PERSISTENT);
+		r.setCode(0);
+		r.setData(true);
 		
 		return r;
 	}
@@ -483,282 +452,135 @@ public class MngAccountServiceImpl implements IMngAccountService {
 			return r;
 		}
 		
-		if(as != null && as.isReady()) {
-			JMicroContext cxt = JMicroContext.get();
-			IServiceAsyncResponse cb = cxt.getParam(Constants.CONTEXT_SERVICE_RESPONSE,null);
-			if(cxt.isAsync() && cb == null) {
-				logger.error(Constants.CONTEXT_SERVICE_RESPONSE + " is null in async context");
-			}
-			if(cb != null) {
-				as.changeAccountStatusJMAsync(actName).then((rst,fail,rcxt)->{
-					if(fail == null) {
-						cb.result(rst);
-					} else {
-						Resp<Boolean> rr = new Resp<>();
-						rr.setCode(1);
-						rr.setData(false);
-						rr.setMsg(fail.toString());
-						cb.result(rr);
-					}
-				});
-				//异步请求同步返回NULL
-				r = null;
-			} else {
-				return as.changeAccountStatus(actName);
-			}
-		} else {
-			r = new Resp<>();
-			ActInfo ai = am.getAccountFromZK(actName);
-			if(ai == null) {
-				r.setCode(1);
-				r.setData(false);
-				r.setMsg("Account not exist");
-				r.setKey("accountExist");
-				return r;
-			}
-			
-			if(ai.getStatuCode() == ActInfo.SC_WAIT_ACTIVE) {
-				r.setCode(Resp.CODE_FAIL);
-				r.setData(false);
-				r.setMsg("Account wait for mail active!");
-				return r;
-			}
-			
-			if(ai.getStatuCode() == ActInfo.SC_FREEZE) {
-				logger.warn("Account "+actName+" unfreeze by: " + JMicroContext.get().getAccount().getActName());
-				ai.setStatuCode(ActInfo.SC_ACTIVED);
-			}else if(ai.getStatuCode() == ActInfo.SC_ACTIVED) {
-				logger.warn("Account "+actName+" freeze by: " + JMicroContext.get().getAccount().getActName());
-				ai.setStatuCode(ActInfo.SC_FREEZE);
-			} else {
-				r.setCode(Resp.CODE_FAIL);
-				r.setData(false);
-				r.setMsg("Account statu not support this operation!");
-				return r;
-			}
-			
-			String p = AccountManager.ActDir +"/"+ ai.getActName();
-			op.createNodeOrSetData(p, JsonUtils.getIns().toJson(ai), IDataOperator.PERSISTENT);
-			r.setCode(0);
-			r.setData(true);
+
+		r = new Resp<>();
+		ActInfo ai = am.getAccountFromZK(actName);
+		if(ai == null) {
+			r.setCode(1);
+			r.setData(false);
+			r.setMsg("Account not exist");
+			r.setKey("accountExist");
+			return r;
+		}
 		
-			if(ai.getStatuCode() == ActInfo.SC_FREEZE) {
-				//退出重机关报登陆
-				am.forceAccountLogout(actName);
-			}
+		if(ai.getStatuCode() == ActInfo.SC_WAIT_ACTIVE) {
+			r.setCode(Resp.CODE_FAIL);
+			r.setData(false);
+			r.setMsg("Account wait for mail active!");
+			return r;
+		}
+		
+		if(ai.getStatuCode() == ActInfo.SC_FREEZE) {
+			logger.warn("Account "+actName+" unfreeze by: " + JMicroContext.get().getAccount().getActName());
+			ai.setStatuCode(ActInfo.SC_ACTIVED);
+		}else if(ai.getStatuCode() == ActInfo.SC_ACTIVED) {
+			logger.warn("Account "+actName+" freeze by: " + JMicroContext.get().getAccount().getActName());
+			ai.setStatuCode(ActInfo.SC_FREEZE);
+		} else {
+			r.setCode(Resp.CODE_FAIL);
+			r.setData(false);
+			r.setMsg("Account statu not support this operation!");
+			return r;
+		}
+		
+		String p = AccountManager.ActDir +"/"+ ai.getActName();
+		op.createNodeOrSetData(p, JsonUtils.getIns().toJson(ai), IDataOperator.PERSISTENT);
+		r.setCode(0);
+		r.setData(true);
+	
+		if(ai.getStatuCode() == ActInfo.SC_FREEZE) {
+			//退出重机关报登陆
+			am.forceAccountLogout(actName);
 		}
 		
 		return r;
 	}
-	
-	
-	
 
 	@Override
 	@SMethod(perType=true,needLogin=true,maxSpeed=5,maxPacketSize=2048)
 	public Resp<Boolean> updateActPermissions(String actName,Set<String> adds,Set<String> dels) {
 		
-		if(as != null && as.isReady()) {
-			JMicroContext cxt = JMicroContext.get();
-			IServiceAsyncResponse cb = cxt.getParam(Constants.CONTEXT_SERVICE_RESPONSE,null);
-			if(cxt.isAsync() && cb == null) {
-				logger.error(Constants.CONTEXT_SERVICE_RESPONSE + " is null in async context");
-			}
-			if(cb != null) {
-				as.updatePermissionsJMAsync(actName,adds,dels).then((rst,fail,rcxt)->{
-					if(fail == null) {
-						cb.result(rst);
-					} else {
-						Resp<Boolean> rr = new Resp<>();
-						rr.setCode(1);
-						rr.setData(false);
-						rr.setMsg(fail.toString());
-						cb.result(rr);
-					}
-				});
-				//异步请求同步返回NULL
-			    return null;
-			} else {
-				return as.updatePermissions(actName,adds,dels);
-			}
-		} else {
-			Resp<Boolean> r = new Resp<>();
-			ActInfo ai = am.getAccountFromZK(actName);
-			if(ai == null) {
-				r.setCode(1);
-				r.setData(false);
-				r.setMsg("Account not exist");
-				r.setKey("accountExist");
-				return r;
-			}
-			
-			Set<String> pers = ai.getPers();
-			if(pers == null) {
-				pers = new HashSet<>();
-				ai.setPers(pers);
-			}
-			
-			if(dels != null && !dels.isEmpty()) {
-				pers.removeAll(dels);
-			}
-			
-			if(adds != null && !adds.isEmpty()) {
-				pers.addAll(adds);
-			}
-			
-			String p = AccountManager.ActDir +"/"+ ai.getActName();
-			op.createNodeOrSetData(p, JsonUtils.getIns().toJson(ai), IDataOperator.PERSISTENT);
-			r.setCode(0);
-			r.setData(true);
+		Resp<Boolean> r = new Resp<>();
+		ActInfo ai = am.getAccountFromZK(actName);
+		if(ai == null) {
+			r.setCode(1);
+			r.setData(false);
+			r.setMsg("Account not exist");
+			r.setKey("accountExist");
 			return r;
-			
 		}
+		
+		HashSet<String> pers = ai.getPers();
+		if(pers == null) {
+			pers = new HashSet<>();
+			ai.setPers(pers);
+		}
+		
+		if(dels != null && !dels.isEmpty()) {
+			pers.removeAll(dels);
+		}
+		
+		if(adds != null && !adds.isEmpty()) {
+			pers.addAll(adds);
+		}
+		
+		String p = AccountManager.ActDir +"/"+ ai.getActName();
+		op.createNodeOrSetData(p, JsonUtils.getIns().toJson(ai), IDataOperator.PERSISTENT);
+		r.setCode(0);
+		r.setData(true);
+		return r;
+	
 	}
 	
 	@Override
 	@SMethod(perType=true,needLogin=true,maxSpeed=5,maxPacketSize=512)
-	public Resp<Integer> countAccount(Map<String, String> queryConditions) {
-		
-		if(as != null && as.isReady()) {
-			JMicroContext cxt = JMicroContext.get();
-			IServiceAsyncResponse cb = cxt.getParam(Constants.CONTEXT_SERVICE_RESPONSE,null);
-			if(cxt.isAsync() && cb == null) {
-				logger.error(Constants.CONTEXT_SERVICE_RESPONSE + " is null in async context");
-			}
-			if(cb != null) {
-				as.countAccountJMAsync(queryConditions).then((rst,fail,rcxt)->{
-					if(fail == null) {
-						cb.result(rst);
-					} else {
-						Resp<Boolean> rr = new Resp<>();
-						rr.setCode(1);
-						rr.setData(false);
-						rr.setMsg(fail.toString());
-						cb.result(rr);
-					}
-				});
-				//异步请求同步返回NULL
-				return null;
-			} else {
-				return as.countAccount(queryConditions);
-			}
-		} else {
-			Set<String> acts = op.getChildren(AccountManager.ActDir, false);
-			Resp<Integer> r = new Resp<Integer>();
-			r.setCode(0);
-			r.setData(acts.size());
-			return r;
-		}
+	public Resp<Integer> countAccount(Map<String, Object> queryConditions) {
+
+		Set<String> acts = op.getChildren(AccountManager.ActDir, false);
+		Resp<Integer> r = new Resp<Integer>();
+		r.setCode(0);
+		r.setData(acts.size());
+		return r;
+	
 	}
 	
 	@Override
 	@SMethod(perType=true,needLogin=true,maxSpeed=5,maxPacketSize=1024)
-	public Resp<List<ActInfo>> getAccountList(Map<String, String> queryConditions, int pageSize, int curPage) {
-		if(as != null && as.isReady()) {
-			JMicroContext cxt = JMicroContext.get();
-			IServiceAsyncResponse cb = cxt.getParam(Constants.CONTEXT_SERVICE_RESPONSE,null);
-			if(cxt.isAsync() && cb == null) {
-				logger.error(Constants.CONTEXT_SERVICE_RESPONSE + " is null in async context");
+	public Resp<List<ActInfo>> getAccountList(Map<String, Object> queryConditions, int pageSize, int curPage) {
+
+		List<ActInfo> rst = new ArrayList<>();
+		Set<String> acts = op.getChildren(AccountManager.ActDir, false);
+		for(String an : acts) {
+			ActInfo ai = am.getAccountFromZK(an);
+			if(ai != null) {
+				rst.add(ai);
 			}
-			if(cb != null) {
-				as.getAccountListJMAsync(queryConditions,pageSize,curPage).then((rst,fail,rcxt)->{
-					if(fail == null) {
-						cb.result(rst);
-					} else {
-						Resp<Boolean> rr = new Resp<>();
-						rr.setCode(1);
-						rr.setData(false);
-						rr.setMsg(fail.toString());
-						cb.result(rr);
-					}
-				});
-				//异步请求同步返回NULL
-				return null;
-			} else {
-				return as.getAccountList(queryConditions,pageSize,curPage);
-			}
-		} else {
-			List<ActInfo> rst = new ArrayList<>();
-			Set<String> acts = op.getChildren(AccountManager.ActDir, false);
-			for(String an : acts) {
-				ActInfo ai = am.getAccountFromZK(an);
-				if(ai != null) {
-					rst.add(ai);
-				}
-			}
-			Resp<List<ActInfo>> r = new Resp<>();
-			r.setCode(0);
-			r.setData(rst);
-			return r;
 		}
+		Resp<List<ActInfo>> r = new Resp<>();
+		r.setCode(0);
+		r.setData(rst);
+		return r;
+	
 	}
 	
 	@Override
 	@SMethod(perType=true,needLogin=true,maxSpeed=5,maxPacketSize=2048)
 	public Resp<Map<String, Set<Permission>>> getPermissionsByActName(String actName) {
-		if(as != null && as.isReady()) {
-			JMicroContext cxt = JMicroContext.get();
-			IServiceAsyncResponse cb = cxt.getParam(Constants.CONTEXT_SERVICE_RESPONSE,null);
-			if(cxt.isAsync() && cb == null) {
-				logger.error(Constants.CONTEXT_SERVICE_RESPONSE + " is null in async context");
-			}
-			if(cb != null) {
-				as.getPermissionsByActNameJMAsync(actName).then((rst,fail,rcxt)->{
-					if(fail == null) {
-						cb.result(rst);
-					} else {
-						Resp<Map<String, Set<Permission>>> rr = new Resp<>();
-						rr.setCode(1);
-						rr.setData(null);
-						rr.setMsg(fail.toString());
-						cb.result(rr);
-					}
-				});
-				//异步请求同步返回NULL
-				return null;
-			} else {
-				return as.getPermissionsByActName(actName);
-			}
-		} else {
-			Resp<Map<String, Set<Permission>>> rst = new Resp<>();
-			rst.setCode(0);
-			rst.setData(lam.getPermissionByAccountName(actName));
-			return rst;
-		}
+		Resp<Map<String, Set<Permission>>> rst = new Resp<>();
+		rst.setCode(0);
+		rst.setData(lam.getPermissionByAccountName(actName));
+		return rst;
 	}
 	
 	@Override
 	@SMethod(perType=true,needLogin=true,maxSpeed=5,maxPacketSize=256)
 	public Resp<Map<String, Set<Permission>>> getAllPermissions() {
-		if(as != null && as.isReady()) {
-			JMicroContext cxt = JMicroContext.get();
-			IServiceAsyncResponse cb = cxt.getParam(Constants.CONTEXT_SERVICE_RESPONSE,null);
-			if(cxt.isAsync() && cb == null) {
-				logger.error(Constants.CONTEXT_SERVICE_RESPONSE + " is null in async context");
-			}
-			if(cb != null) {
-				as.getAllPermissionsJMAsync().then((rst,fail,rcxt)->{
-					if(fail == null) {
-						cb.result(rst);
-					} else {
-						Resp<Map<String, Set<Permission>>> rr = new Resp<>();
-						rr.setCode(1);
-						rr.setData(null);
-						rr.setMsg(fail.toString());
-						cb.result(rr);
-					}
-				});
-				//异步请求同步返回NULL
-				return null;
-			} else {
-				return as.getAllPermissions();
-			}
-		} else {
-			Resp<Map<String, Set<Permission>>> rst = new Resp<>();
-			rst.setCode(0);
-			rst.setData(lam.getServiceMethodPermissions());
-			return rst;
-		}
+
+		Resp<Map<String, Set<Permission>>> rst = new Resp<>();
+		rst.setCode(0);
+		rst.setData(lam.getServiceMethodPermissions());
+		return rst;
+	
 	}
 	
 	private Resp<Boolean> checkAccountParam(ActInfo ai) {

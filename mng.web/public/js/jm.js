@@ -308,8 +308,8 @@ jm.mng = {
 
         __ccreq : function(method,args){
             let req = {};
-            req.serviceName = 'cn.jmicro.mng.api.IMngAccountService';
-            req.namespace = 'mng';
+            req.serviceName = 'cn.jmicro.api.security.IAccountService';
+            req.namespace = 'sec';
             req.version = '0.0.1';
             req.args = args;
             req.method = method;

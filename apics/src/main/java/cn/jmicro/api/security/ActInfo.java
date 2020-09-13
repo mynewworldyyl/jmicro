@@ -1,6 +1,6 @@
 package cn.jmicro.api.security;
 
-import java.util.Set;
+import java.util.HashSet;
 
 import cn.jmicro.api.annotation.SO;
 
@@ -20,6 +20,9 @@ public class ActInfo implements Cloneable {
 	
 	public static final byte TOKEN_RESET_PWD = 2;
 	
+	//@BsonId
+	private long id;
+	
 	private String actName;
 	private String loginKey;
 	private int clientId;
@@ -36,7 +39,7 @@ public class ActInfo implements Cloneable {
 	
 	private long lastActiveTime;
 	
-	private Set<String> pers;
+	private HashSet<String> pers = new HashSet<>();
 	
 	public ActInfo() {};
 	
@@ -97,11 +100,11 @@ public class ActInfo implements Cloneable {
 		return ai;
 	}
 
-	public Set<String> getPers() {
+	public HashSet<String> getPers() {
 		return pers;
 	}
 
-	public void setPers(Set<String> pers) {
+	public void setPers(HashSet<String> pers) {
 		this.pers = pers;
 	}
 
@@ -151,6 +154,14 @@ public class ActInfo implements Cloneable {
 
 	public void setLastActiveTime(long lastActiveTime) {
 		this.lastActiveTime = lastActiveTime;
+	}
+
+	public long getId() {
+		return id;
+	}
+
+	public void setId(long id) {
+		this.id = id;
 	}
 	
 }

@@ -38,9 +38,9 @@ public interface IMngAccountService {
 	
 	Resp<Boolean> changeAccountStatus(String actName);
 	
-	Resp<Integer> countAccount(Map<String, String> queryConditions);
+	Resp<Integer> countAccount(Map<String, Object> queryConditions);
 	
-	Resp<List<ActInfo>> getAccountList(Map<String, String> queryConditions, int pageSize, int curPage);
+	Resp<List<ActInfo>> getAccountList(Map<String, Object> queryConditions, int pageSize, int curPage);
 	
 	Resp<Map<String, Set<Permission>>> getPermissionsByActName(String actName);
 	

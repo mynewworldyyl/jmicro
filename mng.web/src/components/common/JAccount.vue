@@ -196,7 +196,7 @@ export default {
                 return;
             }
 
-            if(this.pwd != this.oldPwd) {
+            if(this.pwd == this.oldPwd) {
                 this.msg = "New password equals to old password!";
                 return;
             }
@@ -306,7 +306,7 @@ export default {
                     //window.jm.vue.$emit('userLogin',actInfo);
                 }else {
                     self.isLogin = false;
-                    self.msg = err.msg | 'Login fail';
+                    self.msg = err || 'Login fail';
                 }
             });
         },

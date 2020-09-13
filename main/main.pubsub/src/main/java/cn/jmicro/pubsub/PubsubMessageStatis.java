@@ -1,8 +1,10 @@
 package cn.jmicro.pubsub;
 
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
@@ -102,8 +104,8 @@ public class PubsubMessageStatis {
 
 	private void saveData(Set<String> temp) {
 		
-		Set<Document> baseData = new HashSet<Document>();
-		Set<Document> qpsData = new HashSet<Document>();
+		List<Document> baseData = new ArrayList<Document>();
+		List<Document> qpsData = new ArrayList<Document>();
 		
 		long curTime = System.currentTimeMillis();
 		Calendar cd = Calendar.getInstance();
@@ -149,12 +151,12 @@ public class PubsubMessageStatis {
 			qpsData.add(qd);
 			//totalData.add(td);
 			
-			os.update(PUBSUB_TOTAL, tdFilter, new Document("$inc",td));
+			os.update(PUBSUB_TOTAL, tdFilter, new Document("$inc",td),Document.class);
 			
 		}
 		
-		os.save(PUBSUB_BASE_DATA, baseData, true);
-		os.save(PUBSUB_QPS_DATA, qpsData, true);
+		os.save(PUBSUB_BASE_DATA, baseData,Document.class, true);
+		os.save(PUBSUB_QPS_DATA, qpsData,Document.class, true);
 		
 	}
 

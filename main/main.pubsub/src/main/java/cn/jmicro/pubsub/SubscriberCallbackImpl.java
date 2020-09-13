@@ -349,7 +349,7 @@ public class SubscriberCallbackImpl implements ISubscriberCallback{
 			if(pda.isPersist() || b != PSData.RESULT_SUCCCESS) {
 				Document d = Document.parse(JsonUtils.getIns().toJson(pda));
 				d.put("result", b);
-				this.os.updateOrSave(PubSubManager.TABLE_PUBSUB_ITEMS, pda.getId(), d,true);
+				this.os.updateOrSave(PubSubManager.TABLE_PUBSUB_ITEMS, pda.getId(),d, Document.class,true);
 			}
 		} catch (Exception e) {
 			logger.error("resultItem",e);

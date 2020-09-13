@@ -36,8 +36,8 @@
             $("#activeBtn").text("点击我击活你的账号:");
             $("#accountName").text(actName);
             $("#activeBtn").click(function(){
-                let sn = "cn.jmicro.mng.api.IMngAccountService";
-                let ns = "mng";
+                let sn = "cn.jmicro.api.security.IAccountService";
+                let ns = "sec";
                 let v = "0.0.1";
                 jm.rpc.callRpcWithParams(sn,ns,v,'activeAccount',[actName,token])
                     .then(rst=>{

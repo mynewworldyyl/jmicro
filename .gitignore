@@ -448,6 +448,11 @@ ext/mongodb/.classpath
 ext/mongodb/.project
 ext/mongodb/.settings/
 ext/mongodb/src/main/gen
+ext/bbs/target/
+ext/bbs/.classpath
+ext/bbs/.project
+ext/bbs/.settings/
+ext/bbs/src/main/gen
 agent/target/
 agent/.classpath
 agent/.project

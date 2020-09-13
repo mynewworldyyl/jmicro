@@ -2,27 +2,30 @@
     <modelVersion>4.0.0</modelVersion>
     <parent>
          <groupId>cn.jmicro</groupId>
-		 <artifactId>parent</artifactId>
+		 <artifactId>ext</artifactId>
 		 <version>0.0.1-RELEASE</version>
     </parent>
-    <version>0.0.01-RELEASE</version>
-    <artifactId>gateway.client</artifactId>
+    <artifactId>bbs</artifactId>
     <packaging>jar</packaging>
     <name>${project.artifactId}</name>
-    <description>jmicro gateway java client</description>
-	<dependencies>
+    <description>bbs extension</description>
+    
+    <dependencies>
+        <dependency>
+			<groupId>cn.jmicro</groupId>
+			<artifactId>all</artifactId>
+		</dependency>
 		<dependency>
 			<groupId>cn.jmicro</groupId>
-			<artifactId>apics</artifactId>
+			<artifactId>mongodb</artifactId>
 		</dependency>
-		<dependency>
-		    <groupId>org.apache.httpcomponents</groupId>
-		    <artifactId>httpclient</artifactId>
+		
+	    <dependency>
+			<groupId>cn.jmicro</groupId>
+			<artifactId>test</artifactId>
+			<scope>test</scope>
 		</dependency>
-		<dependency>
-		    <groupId>io.netty</groupId>
-		    <artifactId>netty-all</artifactId>
-		</dependency>
-	</dependencies>
-    
+		
+    </dependencies>
+   
 </project>

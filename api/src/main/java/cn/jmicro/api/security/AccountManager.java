@@ -42,9 +42,6 @@ public class AccountManager {
 		"cn.jmicro.mng.api.IMngAccountService##mng##0.0.1########updateActPermissions##Ljava/lang/String;Ljava/util/Set;Ljava/util/Set;","cn.jmicro.api.mng.IConfigManager##mng##0.0.1########getChildren##Ljava/lang/String;Ljava/lang/Boolean;","cn.jmicro.mng.api.IMngAccountService##mng##0.0.1########getPermissionsByActName##Ljava/lang/String;","cn.jmicro.mng.api.IMngAccountService##mng##0.0.1########getAccountList##Ljava/util/Map;II","cn.jmicro.mng.api.IMngAccountService##mng##0.0.1########getAllPermissions##","cn.jmicro.api.mng.IConfigManager##mng##0.0.1########add##Ljava/lang/String;Ljava/lang/String;Ljava/lang/Boolean;","cn.jmicro.api.mng.IConfigManager##mng##0.0.1########delete##Ljava/lang/String;","cn.jmicro.api.mng.IConfigManager##mng##0.0.1########update##Ljava/lang/String;Ljava/lang/String;","cn.jmicro.api.pubsub.IPubSubClientService##mng##0.0.1########publishMutilItems##[Lcn/jmicro/api/pubsub/PSData;","cn.jmicro.api.pubsub.IPubSubClientService##mng##0.0.1########publishOneItem##Lcn/jmicro/api/pubsub/PSData;","cn.jmicro.api.pubsub.IPubSubClientService##mng##0.0.1########publishString##Ljava/util/Map;Ljava/lang/String;Ljava/lang/String;","cn.jmicro.api.pubsub.IPubSubClientService##mng##0.0.1########publishBytes##Ljava/util/Map;Ljava/lang/String;[B","cn.jmicro.api.pubsub.IPubSubClientService##mng##0.0.1########callService##Ljava/lang/String;[Ljava/lang/Object;","cn.jmicro.api.mng.IChoreographyService##mng##0.0.1########stopProcess##Ljava/lang/String;","cn.jmicro.api.mng.IChoreographyService##mng##0.0.1########deleteDeployment##I","cn.jmicro.api.mng.IChoreographyService##mng##0.0.1########stopAllInstance##Ljava/lang/String;","cn.jmicro.api.mng.IChoreographyService##mng##0.0.1########getDeploymentList##","cn.jmicro.api.mng.IChoreographyService##mng##0.0.1########addDeployment##Lcn/jmicro/api/choreography/Deployment;","cn.jmicro.api.mng.IChoreographyService##mng##0.0.1########getProcessInstanceList##Z","cn.jmicro.api.mng.IChoreographyService##mng##0.0.1########changeAgentState##Ljava/lang/String;","cn.jmicro.api.mng.IChoreographyService##mng##0.0.1########getAgentList##Z","cn.jmicro.api.mng.IChoreographyService##mng##0.0.1########updateDeployment##Lcn/jmicro/api/choreography/Deployment;","cn.jmicro.api.mng.IManageService##mng##0.0.1########getServices##","cn.jmicro.api.mng.IManageService##mng##0.0.1########updateItem##Lcn/jmicro/api/registry/ServiceItem;","cn.jmicro.api.mng.IManageService##mng##0.0.1########updateMethod##Lcn/jmicro/api/registry/ServiceMethod;","cn.jmicro.mng.api.IMngAccountService##mng##0.0.1########countAccount##Ljava/util/Map;","cn.jmicro.mng.api.IMngAccountService##mng##0.0.1########changeAccountStatus##Ljava/lang/String;Z"
 	};
 	
-	@Reference(namespace="*",version="*")
-	private IAccountService$JMAsyncClient as;
-	
 	@Inject
 	private ICache cache;
 	
@@ -59,7 +56,7 @@ public class AccountManager {
 		if(acts == null || acts.isEmpty()) {
 			String p = AccountManager.ActDir +"/"+ jmicro.getActName();
 			jmicro.setStatuCode(ActInfo.SC_ACTIVED);
-			Set<String> pers = new HashSet<>();
+			HashSet<String> pers = new HashSet<>();
 			pers.addAll(Arrays.asList(PERS));
 			jmicro.setPers(pers);
 			op.createNodeOrSetData(p, JsonUtils.getIns().toJson(jmicro), IDataOperator.PERSISTENT);
@@ -77,72 +74,47 @@ public class AccountManager {
 
 	public Resp<ActInfo> login(String actName, String pwd) {
 		Resp<ActInfo> r = new Resp<ActInfo>();
+
+		ActInfo ai = getAccountFromZK(actName);
 		
-		if(as == null || !as.isReady()) {
-			ActInfo ai = getAccountFromZK(actName);
-			
-			if(ai == null) {
-				r.setCode(Resp.CODE_FAIL);
-				r.setMsg("Account not exist or password error!");
-				return r;
-			}
-			
-			if(ai.getStatuCode() != ActInfo.SC_ACTIVED) {
-				r.setCode(Resp.CODE_FAIL);
-				r.setMsg("Account invalid now!");
-				return r;
-			}
-			
-			if(ai.getPwd().equals(pwd) || Md5Utils.getMd5(pwd).equals(ai.getPwd())) {
-				String akey = key(ai.getActName());
-				
-				String oldLk = null;
-				if(cache.exist(akey)) {
-					oldLk = cache.get(akey);
-				}
-				
-				if(oldLk == null) {
-					ai.setLoginKey(key(this.idGenerator.getStringId(ActInfo.class)));
-					ai.setLastActiveTime(System.currentTimeMillis());
-					cache.put(ai.getLoginKey(), ai,expired);
-					cache.put(akey, ai.getLoginKey(),expired);
-					cache.put(key(ai.getClientId()+""), ai.getLoginKey(),expired);
-				} else {
-					ai = cache.get(oldLk);
-				}
-				r.setCode(Resp.CODE_SUCCESS);
-				r.setData(ai);
-				return r;
-			} else {
-				r.setCode(Resp.CODE_FAIL);
-				r.setMsg("Account not exist or password error!");
-				return r;
-			}
-		} else {
-			
-			JMicroContext cxt = JMicroContext.get();
-			
-			IServiceAsyncResponse cb = cxt.getParam(Constants.CONTEXT_SERVICE_RESPONSE,null);
-			if(cxt.isAsync() && cb == null) {
-				logger.error(Constants.CONTEXT_SERVICE_RESPONSE + " is null in async context");
-			}
-			
-			if(cxt.isAsync() && cb != null) {
-				as.loginJMAsync(actName, pwd)
-				.then((ai,fail,cxt0)->{
-					if(fail == null) {
-						cb.result(ai);
-					} else {
-						logger.error("Login error: " + fail.toString());
-						cb.result(null);
-					}
-				});
-				return null;
-			} else {
-				return as.login(actName, pwd);
-			}
-			
+		if(ai == null) {
+			r.setCode(Resp.CODE_FAIL);
+			r.setMsg("Account not exist or password error!");
+			return r;
 		}
+		
+		if(ai.getStatuCode() != ActInfo.SC_ACTIVED) {
+			r.setCode(Resp.CODE_FAIL);
+			r.setMsg("Account invalid now!");
+			return r;
+		}
+		
+		if(ai.getPwd().equals(pwd) || Md5Utils.getMd5(pwd).equals(ai.getPwd())) {
+			String akey = key(ai.getActName());
+			
+			String oldLk = null;
+			if(cache.exist(akey)) {
+				oldLk = cache.get(akey);
+			}
+			
+			if(oldLk == null) {
+				ai.setLoginKey(key(this.idGenerator.getStringId(ActInfo.class)));
+				ai.setLastActiveTime(System.currentTimeMillis());
+				cache.put(ai.getLoginKey(), ai,expired);
+				cache.put(akey, ai.getLoginKey(),expired);
+				cache.put(key(ai.getClientId()+""), ai.getLoginKey(),expired);
+			} else {
+				ai = cache.get(oldLk);
+			}
+			r.setCode(Resp.CODE_SUCCESS);
+			r.setData(ai);
+			return r;
+		} else {
+			r.setCode(Resp.CODE_FAIL);
+			r.setMsg("Account not exist or password error!");
+			return r;
+		}
+	
 	}
 	
 	private String key(String subfix) {

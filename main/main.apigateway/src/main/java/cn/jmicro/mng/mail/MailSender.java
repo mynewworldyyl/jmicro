@@ -17,9 +17,12 @@ import org.slf4j.LoggerFactory;
 
 import cn.jmicro.api.annotation.Cfg;
 import cn.jmicro.api.annotation.Component;
+import cn.jmicro.api.annotation.Service;
+import cn.jmicro.api.email.IEmailSender;
 
 @Component
-public class MailSender {
+@Service(namespace="mng", version="0.0.1",retryCnt=0,external=false,debugMode=1,showFront=false)
+public class MailSender implements IEmailSender{
 
 	private final static Logger logger = LoggerFactory.getLogger(MailSender.class);
 	
@@ -94,7 +97,7 @@ public class MailSender {
 	}
 	
 	
-	public  void send(String to,String title, String message) {
+	public boolean send(String to,String title, String message) {
         try {
             Security.addProvider(new com.sun.net.ssl.internal.ssl.Provider());
             final String SSL_FACTORY = "javax.net.ssl.SSLSocketFactory";
@@ -131,9 +134,10 @@ public class MailSender {
             
             //调用Transport的send方法去发送邮件
             Transport.send(msg);
-
+            return true;
         } catch (Exception e) {
             e.printStackTrace();
+            return false;
         }
 
     }

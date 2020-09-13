@@ -276,7 +276,7 @@ public class PubSubManager {
 		item.setPersist(true);
 		
 		if(objStorage != null) {
-			objStorage.save(TABLE_PUBSUB_ITEMS, item,true);
+			objStorage.save(TABLE_PUBSUB_ITEMS, item,PSData.class,true);
 		}
 	}
 	
@@ -306,7 +306,7 @@ public class PubSubManager {
 		if(objStorage != null && !set.isEmpty()) {
 			PSData[] pds = new PSData[set.size()];
 			set.toArray(pds);
-			objStorage.save(TABLE_PUBSUB_ITEMS, pds,true);
+			objStorage.save(TABLE_PUBSUB_ITEMS, pds,PSData.class,true);
 		}
 	}
 
@@ -482,13 +482,13 @@ public class PubSubManager {
 						if((result = publish(d)) != PUB_OK) {
 							doCallback(d,result);
 							if(objStorage != null ) {
-								objStorage.updateOrSave(TABLE_PUBSUB_ITEMS,d.getId(),d,true);
+								objStorage.updateOrSave(TABLE_PUBSUB_ITEMS,d.getId(),d,PSData.class,true);
 							}
 						}
 					} else {
 						
 						if(objStorage != null ) {
-							objStorage.updateOrSave(TABLE_PUBSUB_ITEMS,d.getId(),d,true);
+							objStorage.updateOrSave(TABLE_PUBSUB_ITEMS,d.getId(),d,PSData.class,true);
 						}
 						
 						if(d.getLocalCallback() != null) {
@@ -507,7 +507,7 @@ public class PubSubManager {
 				for(PSData d : list) {
 					
 					if(objStorage != null ) {
-						objStorage.updateOrSave(TABLE_PUBSUB_ITEMS,d.getId(),d,true);
+						objStorage.updateOrSave(TABLE_PUBSUB_ITEMS,d.getId(),d,PSData.class,true);
 					}
 					
 					if(d.getLocalCallback() != null) {

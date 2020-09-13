@@ -10,13 +10,25 @@ import cn.jmicro.codegenerator.AsyncClientProxy;
 @AsyncClientProxy
 public interface IAccountService {
 
+	Resp<ActInfo> getAccount(String loginKey);
+	
+	//Resp<Boolean> checkAccountExist(String actName);
+	
+	Resp<Boolean> resetPwdEmail(String actName,String checkCode);
+	
+	Resp<Boolean> resetPwd(String actName, String token, String newPwd);
+	
+	Resp<Boolean> activeAccount(String actName, String token);
+	
+	Resp<Boolean> resendActiveEmail(String actName);
+	
 	Resp<ActInfo> login(String actName,String pwd);
 	
-	boolean logout(String loginKey);
+	Resp<Boolean> logout();
 	
-	boolean isLogin(String loginKey);
+	Resp<Boolean> isLogin(String loginKey);
 	
-	ActInfo getAccount(String loginKey);
+	//Resp<ActInfo> getAccountByLoginkey(String loginKey);
 	
 	Resp<Boolean> regist(String actName, String pwd,String mail,String mobile);
 	
@@ -24,13 +36,14 @@ public interface IAccountService {
 	
 	Resp<Boolean> changeAccountStatus(String actName);
 	
-	boolean checkActNameExist(String actName);
+	Resp<Boolean> checkAccountExist(String actName);
 	
-	Resp<Boolean> updatePermissions(String actName,Set<String> adds,Set<String> dels);
+	//Resp<Boolean> updatePermissions(String actName,Set<String> adds,Set<String> dels);
+	Resp<Boolean> updateActPermissions(String actName,Set<String> adds,Set<String> dels);
 	
-	Resp<Integer> countAccount(Map<String, String> queryConditions);
+	Resp<Integer> countAccount(Map<String, Object> queryConditions);
 	
-	Resp<List<ActInfo>> getAccountList(Map<String, String> queryConditions, int pageSize, int curPage);
+	Resp<List<ActInfo>> getAccountList(Map<String, Object> queryConditions, int pageSize, int curPage);
 	
 	Resp<Map<String, Set<Permission>>> getPermissionsByActName(String actName);
 

@@ -19,6 +19,7 @@ import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Inject;
 import cn.jmicro.api.annotation.SMethod;
 import cn.jmicro.api.annotation.Service;
+import cn.jmicro.api.persist.IObjectStorage;
 import cn.jmicro.api.pubsub.PSData;
 import cn.jmicro.api.pubsub.PubSubManager;
 import cn.jmicro.api.security.PermissionManager;
@@ -60,7 +61,7 @@ public class PSDataServiceImpl implements IPSDataService {
 		Document match = new Document("$match", qryMatch);
 		// Document group = new Document("$group", sub_group);
 
-		Document sortFields = new Document("createdTime", -1);
+		Document sortFields = new Document(IObjectStorage.CREATED_TIME, -1);
 
 		Document sort = new Document("$sort", sortFields);
 
@@ -109,7 +110,7 @@ public class PSDataServiceImpl implements IPSDataService {
 		if(StringUtils.isNotEmpty(val)) {
 			Document st = new Document();
 			st.put("$gte", Long.parseLong(val));
-			match.put("createTime", st);
+			match.put(IObjectStorage.CREATED_TIME, st);
 		}
 		
 		return match;

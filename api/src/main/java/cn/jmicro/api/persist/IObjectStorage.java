@@ -34,17 +34,17 @@ public interface IObjectStorage {
 	
 	public static final String ID = "id";
 	
-	<T> boolean  save(String table,T val,boolean async);
+	<T> boolean  save(String table,T val,Class<T> cls,boolean async);
 	
-	<T> boolean  save(String table,Set<T> val,boolean async);
+	<T> boolean  save(String table,List<T> val,Class<T> cls,boolean async);
 	
-	<T> boolean  save(String table,T[] val,boolean async);
+	<T> boolean  save(String table,T[] val,Class<T> cls,boolean async);
 	
-	boolean update(String table,Object id,Object val,boolean async);
+	<T> boolean update(String table,Object id,T val,Class<T> cls,boolean async);
 	
-	boolean updateOrSave(String table,Object id,Object val,boolean async);
+	<T> boolean updateOrSave(String table,Object id,T val,Class<T> cls,boolean async);
 	
-	boolean update(String table, Object filter, Object updater);
+	<T> boolean update(String table, Object filter, Object updater, Class<T> cls);
 	
 	boolean deleteById(String table,Object id);
 	
@@ -52,5 +52,13 @@ public interface IObjectStorage {
 	
     int deleteByQuery(String table, Object query);
 	
-	<T> List<T> query(String table,Map<String,Object> queryConditions,int offset,int pageSize);
+	<T> List<T> query(String table,Map<String,Object> queryConditions, Class<T> targetClass,int pageSize,int curPage);
+	
+	<T> List<T> query(String table, Map<String, Object> queryConditions, Class<T> targetClass);
+	
+	long count(String table,Map<String,Object> queryConditions);
+	
+	<T> T getOne(String table,Map<String,Object> queryConditions,Class<T> targetClass);
+	
+	boolean registClass(Class<?> targetClass,String table);
 }
