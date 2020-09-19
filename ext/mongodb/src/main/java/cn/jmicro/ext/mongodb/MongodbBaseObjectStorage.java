@@ -55,15 +55,11 @@ public class MongodbBaseObjectStorage implements IObjectStorage {
 	
 	private long timeout = 1000*3;
 	
-	private Map<Class,String> class2Table = new HashMap<>();
+	private Map<String,SaveOp> saves = new HashMap<>();
+	private Map<String,SaveOp> tempAdds = new HashMap<>();
 	
-	private Map<String,List<?>> adds = new HashMap<>();
-	
-	private Map<String,List<?>> updates = new HashMap<>();
-	
-	private Map<String,List<?>> tempAdds = new HashMap<>();
-	
-	private Map<String,List<?>> tempUpdates = new HashMap<>();
+	private Map<String,List<Document>> updates = new HashMap<>();
+	private Map<String,List<Document>> tempUpdates = new HashMap<>();
 	
 	private AtomicInteger addCnt = new AtomicInteger(0);
 	
@@ -77,7 +73,7 @@ public class MongodbBaseObjectStorage implements IObjectStorage {
 		while(true) {
 			try {
 
-				if(adds.isEmpty() && updates.isEmpty()) {
+				if(saves.isEmpty() && updates.isEmpty()) {
 					synchronized(syncLocker) {
 						try {
 							syncLocker.wait(timeout);
@@ -89,23 +85,24 @@ public class MongodbBaseObjectStorage implements IObjectStorage {
 				}
 				
 				long curTime = System.currentTimeMillis();
-				if(!adds.isEmpty()) {
+				if(!saves.isEmpty()) {
 					if(addCnt.get() > this.maxCacheSize || curTime - lastAddTime > this.timeout) {
 						
 						boolean ls = addLocker.tryLock();
 						if(ls) {
 							try {
 								addCnt.set(0);
-								tempAdds.putAll(this.adds);
-								this.adds.clear();
+								tempAdds.putAll(this.saves);
+								this.saves.clear();
 							}finally {
 								if(ls) {
 									addLocker.unlock();
 								}
 							}
 							if(!tempAdds.isEmpty()) {
-								for(Map.Entry<String, List<?>> e : this.tempAdds.entrySet()) {
-									//doSave(e.getKey(),e.getValue());
+								for(Map.Entry<String, SaveOp> e : this.tempAdds.entrySet()) {
+									//doSaveForAsync(e.getValue());
+									e.getValue().coll.insertMany(e.getValue().vals);
 								}
 								tempAdds.clear();
 							}
@@ -128,8 +125,11 @@ public class MongodbBaseObjectStorage implements IObjectStorage {
 								}
 							}
 							if(!tempUpdates.isEmpty()) {
-								for(Map.Entry<String, List<?>> e : this.tempUpdates.entrySet()) {
-									//doUpdate(e.getKey(),e.getValue());
+								for(Map.Entry<String, List<Document>> e : this.tempUpdates.entrySet()) {
+									MongoCollection<Document> coll = mdb.getCollection(e.getKey());
+									for(Document o : e.getValue()) {
+										this.updateOneById(coll, o, curTime);
+									}
 								}
 								tempUpdates.clear();
 							}
@@ -143,17 +143,18 @@ public class MongodbBaseObjectStorage implements IObjectStorage {
 		}
 	}
 	
-	private void doUpdate(String table,List<Document> batchUpdates) {
-		long curTime = System.currentTimeMillis();
-		MongoCollection<Document> coll = mdb.getCollection(table);
-		for(Document d : batchUpdates) {
-			updateOne(coll,d,curTime);
-		}
-	}
-	
-	private boolean updateOne(MongoCollection<Document> coll, Document d, long curTime) {
+	private boolean updateOneById(MongoCollection<Document> coll, Document d, long curTime) {
 		Document filter = new Document();
-		filter.put(ID, d.getInteger(ID));
+		try {
+			if(d.containsKey(ID)) {
+				//无下横线整数ID优先级最高
+				filter.put(ID, d.getLong(ID));
+			} else {
+				filter.put(_ID, d.getLong(_ID));
+			}
+		} catch (Exception e) {
+			filter.put(_ID, d.getObjectId(_ID));
+		}
 		
 		Document update = new Document();
 		
@@ -167,33 +168,43 @@ public class MongodbBaseObjectStorage implements IObjectStorage {
 		
 		update.put("$set",  d);
 		
-		
 		UpdateResult ur = coll.updateOne(filter,update,new UpdateOptions().upsert(true));
 		return ur.getModifiedCount() != 0;
 	}
 
-	private <T> void doSave(String table,List<T> batchAdds,Class<T> targetClass) {
+	private <T> void doSave(String table, List<T> batchAdds, Class<T> targetClass) {
 		mdb.getCollection(table,targetClass).insertMany(batchAdds);
 	}
 	
 	@Override
-	public <T> boolean save(String table, List<T> val,Class<T> cls,boolean async) {
+	public <T> boolean save(String table, List<T> val, Class<T> cls,boolean async,boolean toDocument) {
 
 		if(val == null || val.isEmpty()) {
 			return false;
 		}
 		
-		long curTime = System.currentTimeMillis();
+		MongoCollection coll = null;
+		List lis = val;
 		
-		if(false) {
+		if(toDocument) {
+			lis = new ArrayList();
+			for(Object v : val) {
+				lis.add(toDocument(v));
+			}
+			coll = mdb.getCollection(table);
+		} else {
+			coll = mdb.getCollection(table,cls);
+		}
+		
+		if(async) {
 			boolean ls = addLocker.tryLock();
 			if(ls) {
 				try {
-					addCnt.addAndGet(val.size());
-					if(!this.adds.containsKey(table)) {
-						this.adds.put(table, new ArrayList<>());
+					if(!this.saves.containsKey(table)) {
+						createOp(table,cls,coll);
 					}
-					//this.adds.get(table).addAll(val);
+					this.saves.get(table).addAll(lis);
+					addCnt.addAndGet(val.size());
 				} finally {
 					if(ls) {
 						addLocker.unlock();
@@ -207,24 +218,33 @@ public class MongodbBaseObjectStorage implements IObjectStorage {
 				}
 			}
 		} else {
-			mdb.getCollection(table,cls).insertMany(val);
+			coll.insertMany(lis);
 		}
 		
 		return true;
 	
 	}
 
-	@Override
-	public <T> boolean save(String table, T val,Class<T> cls,boolean async) {
-		if(val == null) {
-			return false;
-		}
-		
-		/*Document d = null;
+	private void createOp(String table, Class<?> cls, MongoCollection coll) {
+		SaveOp op = new SaveOp();
+		op.cls = cls;
+		op.coll = coll;
+		op.vals = new ArrayList();
+		this.saves.put(table,op);
+	}
+	
+	private Document toDocument(Object val) {
+		Document d = null;
 		if(val instanceof Document) {
 			d = (Document)val;
 		} else {
 			d = Document.parse(JsonUtils.getIns().toJson(val));
+		}
+		
+		if(d.containsKey(ID)) {
+			try {
+				d.put(ID, new Long(d.getInteger(ID)));
+			} catch (Exception e) {}
 		}
 		
 		if(!d.containsKey(UPDATED_TIME)) {
@@ -233,17 +253,35 @@ public class MongodbBaseObjectStorage implements IObjectStorage {
 		
 		if(!d.containsKey(CREATED_TIME)) {
 			d.put(CREATED_TIME, System.currentTimeMillis());
-		}*/
+		}
+		return d;
+	}
+
+	@Override
+	public <T> boolean save(String table, T val,Class<T> cls,boolean async,boolean toDocument) {
+		if(val == null) {
+			return false;
+		}
 		
-		if(false) {
+		MongoCollection coll = null;
+		
+		Object v = val;
+		if(toDocument) {
+			v = toDocument(val);
+			coll = mdb.getCollection(table);
+		} else {
+			coll = mdb.getCollection(table,cls);
+		}
+		
+		if(async) {
 			boolean ls = addLocker.tryLock();
 			if(ls) {
 				try {
-					if(!this.adds.containsKey(table)) {
-						this.adds.put(table, new ArrayList<>());
+					if(!this.saves.containsKey(table)) {
+						createOp(table,cls,coll);
 					}
 					addCnt.incrementAndGet();
-					//this.adds.get(table).add(val);
+					this.saves.get(table).add(v);
 				} finally {
 					if(ls) {
 						addLocker.unlock();
@@ -256,45 +294,44 @@ public class MongodbBaseObjectStorage implements IObjectStorage {
 					syncLocker.notify();
 				}
 			}
-			
-		
 		} else {
-			MongoCollection<T> coll = mdb.getCollection(table,cls);
-			coll.insertOne(val);
+			coll.insertOne(v);
 		}
 		
 		return true;
 	}
 
 	@Override
-	public <T> boolean save(String table, T[] vals,Class<T> cls,boolean async) {
+	public <T> boolean save(String table, T[] vals,Class<T> cls,boolean async,boolean toDocument) {
 		if(vals == null || vals.length == 0) {
 			return false;
 		}
+		
 		long curTime = System.currentTimeMillis();
-		/*List<Document> llDocs = new ArrayList<>();
-		for(Object v :vals) {
-			Document d = null;
-			if(v instanceof Document) {
-				d = (Document)v;
-			}else {
-				d = Document.parse(JsonUtils.getIns().toJson(v));
+		MongoCollection coll = null;
+		
+		List lis = Arrays.asList(vals);
+		
+		if(toDocument) {
+			lis = new ArrayList();
+			for(int i = 0; i < vals.length; i++) {
+				lis.add(toDocument(vals[i]));
 			}
-			if(!d.containsKey(CREATED_TIME)) {
-				d.put(CREATED_TIME, curTime);
-			}
+			coll = mdb.getCollection(table);
+		} else {
 			
-			llDocs.add(d);
-		}*/
-		if(false) {
+			coll = mdb.getCollection(table,cls);
+		}
+		
+		if(async) {
 			boolean ls = addLocker.tryLock();
 			if(ls) {
 				try {
-					addCnt.addAndGet(vals.length);
-					if(!this.adds.containsKey(table)) {
-						this.adds.put(table, new ArrayList<>());
+					if(!this.saves.containsKey(table)) {
+						createOp(table,cls,coll);
 					}
-					//this.adds.get(table).addAll(Arrays.asList(vals));
+					addCnt.incrementAndGet();
+					this.saves.get(table).addAll(lis);;
 				} finally {
 					if(ls) {
 						addLocker.unlock();
@@ -308,14 +345,14 @@ public class MongodbBaseObjectStorage implements IObjectStorage {
 				}
 			}
 		} else {
-			mdb.getCollection(table,cls).insertMany(Arrays.asList(vals));
+			coll.insertMany(lis);
 		}
 		
 		return true;
 	}
 
 	@Override
-	public <T>  boolean update(String table, Object id, T val,Class<T> targetClass,boolean async) {
+	public <T>  boolean updateById(String table,T val,Class<T> targetClass,boolean async) {
 		
 		Document d = null;
 		if(val instanceof Document) {
@@ -324,7 +361,7 @@ public class MongodbBaseObjectStorage implements IObjectStorage {
 			 d = Document.parse(JsonUtils.getIns().toJson(val));
 		}
 		
-		if(false) {
+		if(async) {
 			
 			boolean ls = updateLocker.tryLock();
 			if(ls) {
@@ -333,7 +370,7 @@ public class MongodbBaseObjectStorage implements IObjectStorage {
 					if(!this.updates.containsKey(table)) {
 						this.updates.put(table, new ArrayList<>());
 					}
-					//this.updates.get(table).add(d);
+					this.updates.get(table).add(d);
 				}finally {
 					if(ls) {
 						updateLocker.unlock();
@@ -348,15 +385,15 @@ public class MongodbBaseObjectStorage implements IObjectStorage {
 			return true;
 		} else {
 			MongoCollection<Document> coll = mdb.getCollection(table);
-			return updateOne(coll,d,System.currentTimeMillis());
+			return updateOneById(coll,d,System.currentTimeMillis());
 		}
 	}
 
 	@Override
-	public boolean deleteById(String table, Object id) {
+	public boolean deleteById(String table, Object id,String idName) {
 		MongoCollection<Document> coll = mdb.getCollection(table);
 		Document filter = new Document();
-		filter.put(ID, id);
+		filter.put(idName, id);
 		DeleteResult rst = coll.deleteOne(filter);
 		return rst.getDeletedCount() > 0;
 	}
@@ -404,9 +441,13 @@ public class MongodbBaseObjectStorage implements IObjectStorage {
 	}
 
 	@Override
-	public <T> boolean updateOrSave(String table, Object id, T val,Class<T> cls,boolean async) {
-		if(!update(table,id,val,cls,async)) {
-			return save(table,val,cls,async);
+	public <T> boolean updateOrSaveById(String table, T val,Class<T> cls,boolean async) {
+		if(async) {
+			updateById(table,val,cls,true);
+		} else {
+			if(!updateById(table,val,cls,false)) {
+				return save(table,val,cls,false,true);
+			}
 		}
 		return true;
 	}
@@ -477,12 +518,19 @@ public class MongodbBaseObjectStorage implements IObjectStorage {
 		 FindIterable<T> rst = mdb.getCollection(table,targetClass).find(match, targetClass);
 		 return rst.first();
 	}
-
-	@Override
-	public boolean registClass(Class<?> targetClass, String table) {
-		this.class2Table.put(targetClass, table);
-		return true;
+	
+	class SaveOp {
+		List vals;
+		Class<?> cls;
+		MongoCollection<?> coll;
+		
+		void addAll(List l) {
+			vals.addAll(l);
+		}
+		
+		void add(Object obj) {
+			vals.add(obj);
+		}
 	}
-
 	
 }

@@ -41,7 +41,7 @@ import cn.jmicro.common.Utils;
  */
 public class ClientMessageReceiver implements IMessageReceiver{
 
-	static final Logger logger = LoggerFactory.getLogger(ClientMessageReceiver.class);
+	//static final Logger logger = LoggerFactory.getLogger(ClientMessageReceiver.class);
 	
 	private Map<Byte,IMessageHandler> handlers = new HashMap<>();
 	
@@ -62,7 +62,8 @@ public class ClientMessageReceiver implements IMessageReceiver{
 		cfg.setRejectedExecutionHandler(new RejectedExecutionHandler() {
 			@Override
 			public void rejectedExecution(Runnable r, ThreadPoolExecutor executor) {
-				logger.error("Reject task: " + r.toString());
+				//logger.error("Reject task: " + r.toString());
+				System.out.println("Reject task: " + r.toString());
 			}
 		});
 		
@@ -88,10 +89,12 @@ public class ClientMessageReceiver implements IMessageReceiver{
 				});
 			} else {
 				String errMsg = "Handler not found:" + Integer.toHexString(msg.getType());
-				logger.error("Handler not found:" + Integer.toHexString(msg.getType()));
+				//logger.error("Handler not found:" + Integer.toHexString(msg.getType()));
+				System.out.println("Handler not found:" + Integer.toHexString(msg.getType()));
 			}
 		} catch (Throwable e) {
-			logger.error("reqHandler error: {}",msg,e);
+			//logger.error("reqHandler error: {}",msg,e);
+			e.printStackTrace();
 		}
 	}
 

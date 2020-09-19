@@ -13,9 +13,8 @@ import java.util.Iterator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.alibaba.dubbo.common.bytecode.ClassGenerator;
-
 import cn.jmicro.api.annotation.SO;
+import cn.jmicro.api.classloader.RpcClassLoader;
 import cn.jmicro.api.codec.ISerializeObject;
 import cn.jmicro.api.codec.TypeCoderFactory;
 import cn.jmicro.api.codec.typecoder.TypeCoder;
@@ -25,17 +24,24 @@ import javassist.CannotCompileException;
 import javassist.CtClass;
 import javassist.CtField;
 import javassist.CtMethod;
+import javassist.LoaderClassPath;
 import javassist.NotFoundException;
 
 public class SerializeProxyFactory {
 
 	public static final Logger logger = LoggerFactory.getLogger(SerializeProxyFactory.class);
 	
+	//private static JmicroClassPool cp = new JmicroClassPool(true);
+	
 	public static byte[] getSerializeData(byte[] classData, Class<?> cls,String className) throws IOException, RuntimeException, NotFoundException, CannotCompileException {
 
 		 ClassLoader cl = Thread.currentThread().getContextClassLoader();
-		
+		 
 		 JmicroClassPool cp = new JmicroClassPool(true);
+		 if(cl != null && (cl instanceof RpcClassLoader)) {
+			 cp.appendClassPath(new LoaderClassPath(cl));
+		 }
+		
 		 CtClass ct = cp.makeClass(new ByteArrayInputStream(classData));
 		 if(!ct.hasAnnotation(SO.class)) {
 			 return null;
@@ -54,7 +60,7 @@ public class SerializeProxyFactory {
 		 byte[] data = ct.toBytecode();
 		 ct.detach();
 		 
-		 cp.release();
+		 //cp.release();
 		 
 		 Thread.currentThread().setContextClassLoader(cl);
 		 

@@ -33,20 +33,24 @@ public interface IObjectStorage {
 	public static final String CREATED_TIME = "createdTime";
 	
 	public static final String ID = "id";
+	public static final String _ID = "_id";
 	
-	<T> boolean  save(String table,T val,Class<T> cls,boolean async);
+	public static final byte UPDATE_TYPE_ID = 1;
+	public static final byte UPDATE_TYPE_FILTER = 2;
 	
-	<T> boolean  save(String table,List<T> val,Class<T> cls,boolean async);
+	<T> boolean  save(String table,T val,Class<T> cls,boolean async,boolean toDocument);
 	
-	<T> boolean  save(String table,T[] val,Class<T> cls,boolean async);
+	<T> boolean  save(String table,List<T> val,Class<T> cls,boolean async,boolean toDocument);
 	
-	<T> boolean update(String table,Object id,T val,Class<T> cls,boolean async);
+	<T> boolean  save(String table,T[] val,Class<T> cls,boolean async,boolean toDocument);
 	
-	<T> boolean updateOrSave(String table,Object id,T val,Class<T> cls,boolean async);
+	<T> boolean updateById(String table,T val,Class<T> targetClass,boolean async);
+	
+	<T> boolean updateOrSaveById(String table, T val,Class<T> cls,boolean async);
 	
 	<T> boolean update(String table, Object filter, Object updater, Class<T> cls);
 	
-	boolean deleteById(String table,Object id);
+	boolean deleteById(String table,Object id,String idName);
 	
 	<T> Set<T>  distinct(String table, String fieldName,Class<T> cls);
 	
@@ -60,5 +64,4 @@ public interface IObjectStorage {
 	
 	<T> T getOne(String table,Map<String,Object> queryConditions,Class<T> targetClass);
 	
-	boolean registClass(Class<?> targetClass,String table);
 }

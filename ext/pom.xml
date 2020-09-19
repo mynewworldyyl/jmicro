@@ -3,7 +3,7 @@
     <parent>
          <groupId>cn.jmicro</groupId>
 		 <artifactId>parent</artifactId>
-		 <version>0.0.1-RELEASE</version>
+		 <version>0.0.2-SNAPSHOT</version>
     </parent>
     <artifactId>ext</artifactId>
     <packaging>pom</packaging>
@@ -15,5 +15,7 @@
     <modules>
         <module>mybatis</module>
 		<module>mongodb</module>
+		 <module>bbs</module>
+		<module>security</module>
     </modules>
 </project>

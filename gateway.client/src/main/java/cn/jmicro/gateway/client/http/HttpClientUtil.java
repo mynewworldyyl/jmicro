@@ -22,7 +22,7 @@ import org.apache.http.util.EntityUtils;
  */
 public class HttpClientUtil {
 
-	private static final Log LOG = LogFactory.getLog(HttpClientUtil.class);
+	//private static final Log LOG = LogFactory.getLog(HttpClientUtil.class);
 
 	public static byte[] doPostData(String url, ByteBuffer data,Map<String,String> headers){
 			byte[] result = new byte[0];
@@ -60,7 +60,8 @@ public class HttpClientUtil {
 				response.close();
 				
 			} catch (IOException e) {
-				LOG.error("",e);
+				//LOG.error("",e);
+				e.printStackTrace();
 			}
 			return result;
 		}

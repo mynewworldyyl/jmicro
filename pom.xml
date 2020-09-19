@@ -20,7 +20,7 @@
 
     <groupId>cn.jmicro</groupId>
     <artifactId>parent</artifactId>
-    <version>0.0.1-RELEASE</version>
+    <version>0.0.2-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <name>${project.artifactId}</name>
@@ -105,7 +105,7 @@
         <maven_checkstyle_version>3.0.0</maven_checkstyle_version>
         <maven_jacoco_version>0.8.1</maven_jacoco_version>
         <apache-rat-plugin.version>0.12</apache-rat-plugin.version>
-        <jmicro.version>0.0.1-RELEASE</jmicro.version>
+        <jmicro.version>${project.version}</jmicro.version>
         <sl4j.version>1.7.5</sl4j.version>
         <zookeeper.version>3.4.13</zookeeper.version>
         <curator.version>4.0.1</curator.version>
@@ -140,7 +140,7 @@
 		<module>test</module>
 		<module>main</module>
 		<module>monitor</module>
-		<!-- <module>example</module> -->
+		<module>example</module>
     </modules>
 
     <dependencyManagement>
@@ -151,10 +151,10 @@
 				 <version>${jmicro.version}</version>
 	        </dependency>
 	        <dependency>
-        	<groupId>cn.jmicro</groupId>
-			<artifactId>apics</artifactId>
-			 <version>${jmicro.version}</version>
-       </dependency>
+	        	<groupId>cn.jmicro</groupId>
+				<artifactId>apics</artifactId>
+				<version>${jmicro.version}</version>
+       		</dependency>
              <dependency>
                  <groupId>cn.jmicro</groupId>
 				 <artifactId>api</artifactId>
@@ -572,6 +572,19 @@
                 </executions>
             </plugin> -->
             
+            <!-- 
+	            mvn -N versions:update-child-modules
+	            mvn versions:set -DnewVersion=1.0.1-SNAPSHOT
+             -->
+            <plugin>
+	            <groupId>org.codehaus.mojo</groupId>
+	            <artifactId>versions-maven-plugin</artifactId>
+	            <version>2.3</version>
+	            <configuration>
+	                <generateBackupPoms>false</generateBackupPoms>
+	            </configuration>
+        	</plugin>
+        
             <plugin>  
 	            <groupId>org.codehaus.mojo</groupId>  
 	            <artifactId>build-helper-maven-plugin</artifactId>  

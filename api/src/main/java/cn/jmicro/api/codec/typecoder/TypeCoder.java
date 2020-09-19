@@ -598,8 +598,8 @@ public interface TypeCoder<T> extends Comparable<TypeCoder<T>>{
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-		if(clsName == null) {
-			throw new CommonException("Decode invalid class full name!");
+		if(Utils.isEmpty(clsName)) {
+			throw new CommonException("Decode invalid class name!");
 		}
 		Class<?> cls = null;
 

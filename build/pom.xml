@@ -5,7 +5,7 @@
 	<parent>
 		<groupId>cn.jmicro</groupId>
 		<artifactId>parent</artifactId>
-		<version>0.0.1-RELEASE</version>
+		<version>0.0.2-SNAPSHOT</version>
 	</parent>
 	<artifactId>all</artifactId>
 	<packaging>jar</packaging>
@@ -107,7 +107,7 @@
 											<Bundle-Name>cn.jmicro.all</Bundle-Name>
 											<Bundle-Vendor>JMicro</Bundle-Vendor> 
 											<Bundle-SymbolicName>cn.jmicro.all;singleton:=true</Bundle-SymbolicName>
-											<Bundle-Version>0.0.1.RELEASE</Bundle-Version>
+											<Bundle-Version>${project.version}</Bundle-Version>
 						                    <Export-Package></Export-Package>
 						                    
 						                  </manifestEntries>
@@ -189,7 +189,7 @@
 										<Bundle-Name>cn.jmicro.all</Bundle-Name>
 										<Bundle-Vendor>JMicro</Bundle-Vendor> 
 										<Bundle-SymbolicName>cn.jmicro.all;singleton:=true</Bundle-SymbolicName>
-										<Bundle-Version>0.0.1.RELEASE</Bundle-Version>
+										<Bundle-Version>${project.version}</Bundle-Version>
 					                    <Export-Package></Export-Package>
 					                    
 					                  </manifestEntries>

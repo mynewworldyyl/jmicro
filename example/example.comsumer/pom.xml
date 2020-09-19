@@ -4,29 +4,29 @@
 	<modelVersion>4.0.0</modelVersion>
 	<parent>
          <groupId>cn.jmicro</groupId>
-		 <artifactId>parent</artifactId>
-		 <version>0.0.1-RELEASE</version>
+		 <artifactId>example</artifactId>
+		 <version>0.0.2-SNAPSHOT</version>
     </parent>
 	<artifactId>example.comsumer</artifactId>
 	<packaging>jar</packaging>
 	<name>${project.artifactId}</name>
 	<description>Jmicro example service comsumer for testing</description>
-	<properties>
-		<jmicro.version>0.0.1-RELEASE</jmicro.version>
-	</properties>
+	
 	<dependencies>
 		 <dependency>
 			<groupId>cn.jmicro</groupId>
 			<artifactId>all</artifactId>
 		</dependency>
+		
 		 <dependency>
 			<groupId>cn.jmicro</groupId>
 			<artifactId>gateway.client</artifactId>
 		</dependency>
+		
 		<dependency>
 			<groupId>cn.jmicro</groupId>
 			<artifactId>example.api</artifactId>
-			<version>0.0.1-RELEASE</version>
+			<version>${project.version}</version>
 		</dependency>
 		
 		<dependency>
@@ -61,7 +61,7 @@
         <dependency>
 			<groupId>cn.jmicro</groupId>
 			<artifactId>agent</artifactId>
-			<version>0.0.1-RELEASE</version>
+			<version>${project.version}</version>
 			<scope>test</scope>
 		</dependency>
 		<dependency>

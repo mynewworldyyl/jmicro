@@ -43,7 +43,9 @@ import cn.jmicro.api.registry.IRegistry;
 import cn.jmicro.api.registry.ServiceItem;
 import cn.jmicro.api.timer.TimerTicker;
 import cn.jmicro.codegenerator.AsyncClientUtils;
+import cn.jmicro.common.CommonException;
 import cn.jmicro.common.Constants;
+import cn.jmicro.common.Utils;
 
 
 public class RpcClassLoader extends ClassLoader {
@@ -417,7 +419,9 @@ public class RpcClassLoader extends ClassLoader {
 			 return false;
 		 }
 		 String cn = className.substring(className.lastIndexOf(".")+1);
-		 
+		 if(Utils.isEmpty(cn)) {
+			 throw new CommonException("Invalid class name: " + className);
+		 }
 		 return Character.isUpperCase(cn.charAt(0));
 		 
 	}

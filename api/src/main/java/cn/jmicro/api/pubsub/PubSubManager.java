@@ -264,7 +264,7 @@ public class PubSubManager {
 		return PUB_OK;
 	}
 	
-	private void persit2Db(int clientId,PSData item) {
+	public void persit2Db(int clientId,PSData item) {
 		if(!item.isPersist()) {
 			return;
 		}
@@ -276,11 +276,11 @@ public class PubSubManager {
 		item.setPersist(true);
 		
 		if(objStorage != null) {
-			objStorage.save(TABLE_PUBSUB_ITEMS, item,PSData.class,true);
+			objStorage.save(TABLE_PUBSUB_ITEMS, item,PSData.class,true,true);
 		}
 	}
 	
-	private void persist2Db(int clientId, PSData[] items) {
+	public void persist2Db(int clientId, PSData[] items) {
 		
 		Set<PSData> set = null;
 		
@@ -306,7 +306,7 @@ public class PubSubManager {
 		if(objStorage != null && !set.isEmpty()) {
 			PSData[] pds = new PSData[set.size()];
 			set.toArray(pds);
-			objStorage.save(TABLE_PUBSUB_ITEMS, pds,PSData.class,true);
+			objStorage.save(TABLE_PUBSUB_ITEMS, pds,PSData.class,true,true);
 		}
 	}
 
@@ -482,13 +482,13 @@ public class PubSubManager {
 						if((result = publish(d)) != PUB_OK) {
 							doCallback(d,result);
 							if(objStorage != null ) {
-								objStorage.updateOrSave(TABLE_PUBSUB_ITEMS,d.getId(),d,PSData.class,true);
+								objStorage.updateOrSaveById(TABLE_PUBSUB_ITEMS,d,PSData.class,true);
 							}
 						}
 					} else {
 						
 						if(objStorage != null ) {
-							objStorage.updateOrSave(TABLE_PUBSUB_ITEMS,d.getId(),d,PSData.class,true);
+							objStorage.updateOrSaveById(TABLE_PUBSUB_ITEMS,d,PSData.class,true);
 						}
 						
 						if(d.getLocalCallback() != null) {
@@ -507,7 +507,7 @@ public class PubSubManager {
 				for(PSData d : list) {
 					
 					if(objStorage != null ) {
-						objStorage.updateOrSave(TABLE_PUBSUB_ITEMS,d.getId(),d,PSData.class,true);
+						objStorage.updateOrSaveById(TABLE_PUBSUB_ITEMS,d,PSData.class,true);
 					}
 					
 					if(d.getLocalCallback() != null) {

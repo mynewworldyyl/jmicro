@@ -334,9 +334,7 @@ public class DefaultCoder implements TypeCoder<Object> {
 					} else {
 						TypeCoder cd = TypeCoderFactory.getIns().getCoder(cls);
 						if(cd != null && cd != this) {
-							
-							 Object o = cd.decode(buffer,cls,null);
-							 return o;
+							return cd.decode(buffer,cls,null);
 						} else {
 							return TypeCoder.decodeByReflect(buffer, cls, genericType);
 						}

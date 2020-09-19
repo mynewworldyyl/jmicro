@@ -6,7 +6,6 @@ import java.util.Map;
 import cn.jmicro.api.Resp;
 import cn.jmicro.codegenerator.AsyncClientProxy;
 import cn.jmicro.ext.bbs.entities.Note;
-import cn.jmicro.ext.bbs.entities.NoteVo;
 import cn.jmicro.ext.bbs.entities.Topic;
 import cn.jmicro.ext.bbs.entities.TopicVo;
 
@@ -19,7 +18,13 @@ public interface IBbsService {
 	
 	public static final String T_TOPIC_TYPE="t_note";
 	
+	public static final String T_USER = "t_user";
+	
 	Resp<Boolean> createTopic(Topic topic);
+	
+	Resp<Boolean> updateTopic(Topic topic);
+	
+	Resp<Boolean> deleteTopic(Long topicId);
 	
 	Resp<List<Topic>> topicList(Map<String,String> qry,int pageSize,int offset);
 	
@@ -27,8 +32,11 @@ public interface IBbsService {
 	
 	Resp<TopicVo> getTopic(long topicId);
 	
-	Resp<List<NoteVo>> topicNoteList(long topicId, int pageSize, int curPage);
+	Resp<List<Note>> topicNoteList(long topicId, int pageSize, int curPage);
 	
-	Resp<Boolean> createNote(Note note);
+	Resp<Note> createNote(Note note);
 	
+	Resp<Boolean> updateNote(Note note);
+	
+	Resp<Boolean> deleteNote(Long noteId);
 }

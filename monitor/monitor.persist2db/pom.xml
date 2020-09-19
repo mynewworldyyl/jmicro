@@ -3,7 +3,7 @@
     <parent>
           <groupId>cn.jmicro</groupId>
 		 <artifactId>monitor</artifactId>
-		 <version>0.0.1-RELEASE</version>
+		 <version>0.0.2-SNAPSHOT</version>
     </parent>
     <artifactId>monitor.persist2db</artifactId>
     <packaging>jar</packaging>

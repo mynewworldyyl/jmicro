@@ -3,7 +3,7 @@
   <parent>
     <artifactId>parent</artifactId>
     <groupId>cn.jmicro</groupId>
-    <version>0.0.1-RELEASE</version>
+    <version>${project.version}</version>
   </parent>
   <modelVersion>4.0.0</modelVersion>
   <artifactId>gateway.client</artifactId>
@@ -44,7 +44,7 @@
                         <Bundle-Name>cn.jmicro.all</Bundle-Name>
                         <Bundle-Vendor>JMicro</Bundle-Vendor>
                         <Bundle-SymbolicName>cn.jmicro.all;singleton:=true</Bundle-SymbolicName>
-                        <Bundle-Version>0.0.1.RELEASE</Bundle-Version>
+                        <Bundle-Version>${project.version}</Bundle-Version>
                         <Export-Package />
                       </manifestEntries>
                     </transformer>

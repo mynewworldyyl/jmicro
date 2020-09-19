@@ -1,28 +1,32 @@
 <template>
     <div class="JTopicListView" style="position:relative;height:auto">
 
-        <div v-if="isLogin" style="position:relative;height:auto;margin-top:10px;">
+        <div style="position:relative;height:auto;margin-top:10px;">
             <table class="configItemTalbe" width="99%">
-                <thead><tr><td>{{'topicTitle'|i18n}}</td><td>{{'CreatedTime'|i18n}}</td><td>{{'Operations'|i18n}}</td></tr></thead>
+                <thead><tr><td>{{'topicTitle'|i18n}}</td><td>{{'TopicType'|i18n}}</td><td>{{'CreatedTime'|i18n}}</td>
+                    <td>{{'Operations'|i18n}}</td></tr></thead>
                 <tr v-for="c in itemList" :key="c._id">
                     <td>{{c.title}}</td>
+                    <td>{{c.topicType | i18n}}</td>
                     <td>{{c.createdTime | formatDate}}</td>
-                    <td><a @click="viewDetail(c)">{{'View'|i18n}}</a></td>
+                    <td>
+                        <a @click="viewTopic(c)">{{'View'|i18n}}</a>&nbsp;&nbsp;
+                        <a v-if="act && c.createdBy==act.id" @click="editTopic(c)">{{'Edit'|i18n}}</a>&nbsp;&nbsp;
+                        <a v-if="act && c.createdBy==act.id" @click="deleteTopic(c.id)">{{'Delete'|i18n}}</a>
+                    </td>
                 </tr>
             </table>
         </div>
 
-        <div v-if="isLogin" style="position:relative;text-align:center;">
+        <div style="position:relative;text-align:center;">
             <Page ref="pager" :total="totalNum" :page-size="pageSize" :current="curPage"
                   show-elevator show-sizer show-total @on-change="curPageChange"
                   @on-page-size-change="pageSizeChange" :page-size-opts="[10, 30, 60,100]"></Page>
         </div>
 
-        <div v-if="!isLogin">{{'Notlogin'|i18n}}</div>
+        <div :style="drawer.drawerBtnStyle" class="drawerJinvokeBtnStatu" @mouseenter="openDrawer()"></div>
 
-        <div v-if="isLogin" :style="drawer.drawerBtnStyle" class="drawerJinvokeBtnStatu" @mouseenter="openDrawer()"></div>
-
-        <Drawer v-if="isLogin"  v-model="drawer.drawerStatus" :closable="false" placement="left" :transfer="true"
+        <Drawer  v-model="drawer.drawerStatus" :closable="false" placement="left" :transfer="true"
                  :draggable="true" :scrollable="true" width="50">
             <table id="queryTable">
                 <tr>
@@ -31,31 +35,56 @@
             </table>
         </Drawer>
 
-        <Drawer v-if="isLogin"  v-model="detail.drawerStatus" :closable="false" placement="right" :transfer="true"
-                :draggable="true" :scrollable="true" width="90">
-            <div v-if="curViewTopic" class="detailTopicTitle">{{curViewTopic.title }}</div>
-            <div  v-if="curViewTopic" class="detailTopicContent">
-               <div>{{curViewTopic.content }}</div>
-            </div>
+        <Drawer id="topicDrawerViewId"  v-model="detail.drawerStatus" :closable="false" placement="right" :transfer="true"
+                :draggable="true" :scrollable="true" width="70">
+           <JTopicView :topic="curViewTopic"></JTopicView>
         </Drawer>
 
-        <Modal v-model="createTopicDialog" :loading="true" width="360" @on-ok="doCreateTopic()" ref="createTopicDialog">
-           <div style="color:red;">{{msg}}</div>
+        <Modal v-if="isLogin" v-model="createTopicDialog" :closable="false" :loading="true" fullscreen
+               class-name="createTopicDialog" @on-ok="doCreateTopic()" ref="createTopicDialog">
+                <!--<JCreateTopicView  :item="topic" @contentChange="contentChange"></JCreateTopicView>-->
+            <div style="color:red;">{{msg}}</div>
+
             <div>
                 <label for="topicTitle">{{'topicTitle'|i18n}}</label>
-                <Input id="topicTitle" v-model="topic.title"/>
+                <Input v-if="topic" id="topicTitle" v-model="topic.title"/>
             </div>
 
             <div>
-                <label for="topicContent">{{'topicContent'|i18n}}</label>&nbsp;&nbsp;&nbsp;
-                <Input id="topicContent"  class='textarea' type="textarea" v-model="topic.content"/>
+                <Label for="topicType">Type</Label>
+                <Select id="topicType" v-model="topic.topicType">
+                    <Option v-for="v in topicTypes" :value="v" :key="'type_'+v">{{v | i18n}}</Option>
+                </Select>
             </div>
+
+            <!--<div>
+                <label for="topicContent">{{'topicContent'|i18n}}</label>&nbsp;&nbsp;&nbsp;
+                <Input id="topicContent" style=""  class='textarea' type="textarea" v-model="topic.content"/>
+            </div>-->
+
+            <quill-editor v-if="topic"
+                          ref="myQuillEditor"
+                          v-model="topic.content"
+                          :options="editorOption"
+                          @blur="onEditorBlur($event)"
+                          @focus="onEditorFocus($event)"
+                          @ready="onEditorReady($event)"
+            />
         </Modal>
 
     </div>
 </template>
 
 <script>
+
+    import JTopicView from './JTopicView.vue'
+    //import JCreateTopicView from "./JCreateTopicView.vue";
+
+    import { quillEditor } from "vue-quill-editor";
+
+    import 'quill/dist/quill.core.css'
+    import 'quill/dist/quill.snow.css'
+    import 'quill/dist/quill.bubble.css'
 
     const cid = 'JTopicListView';
     const sn = 'cn.jmicro.ext.bbs.api.IBbsService';
@@ -64,19 +93,28 @@
 
     export default {
         name: cid,
+        components: {
+            JTopicView,
+            quillEditor,
+        },
+
         data() {
             return {
+                topicTypes:["Pubsub","Other"],
 
                 createTopicDialog:false,
-                topic:{'title':'','content':''},
+                topic:{'title':'','content':'',topicType:'other'},
                 msg:'',
+                updateMode:false,
 
                 isLogin:false,
+                act:null,
+
                 itemList: [],
                 queryParams:{noLog:"true"},
                 totalNum:0,
                 pageSize:10,
-                curPage:0,
+                curPage:1,
 
                 curViewTopic:null,
                 curTopics:{},
@@ -91,46 +129,83 @@
                     drawerBtnStyle:{right:'0px',zindex:1000},
                 },
 
-                selOptions:{},
+                editorOption: {
 
+                }
             }
-        },
-
-        components: {
-
         },
 
         methods: {
 
-            createTopic() {
+            editTopic(topic) {
+                this.updateMode = true;
+                this.topic = topic;
                 this.createTopicDialog = true;
             },
 
-            doCreateTopic() {
+            createTopic() {
+                this.updateMode = false;
+                this.createTopicDialog = true;
+            },
+
+            deleteTopic(topicId) {
                 let self = this;
-                if(!this.topic.title || this.topic.title.length == 0) {
-                    self.msg = '主题标题不能为空';
-                }
-                if(!this.topic.content || this.topic.content.length == 0) {
-                    self.msg = '主题内容不能为空';
-                }
-
-                this.topic.topicType='question';
-                self.msg = '';
-
-                window.jm.rpc.callRpcWithParams(sn, ns, v, 'createTopic',[this.topic]).then((resp)=>{
+                window.jm.rpc.callRpcWithParams(sn, ns, v, 'deleteTopic',[topicId]).then((resp)=>{
                     if(resp.code == 0) {
-                        self.createTopicDialog = false;
                         self.refresh();
                     }else {
-                        self.msg = resp.msg;
+                        self.$Message.info(resp.msg);
                     }
                 }).catch((err)=>{
                     window.console.log(err);
                 });
             },
 
-            viewDetail(mi) {
+            doCreateTopic() {
+                let self = this;
+                if(!this.topic.title || this.topic.title.length == 0) {
+                    self.$Message.info( '主题标题不能为空');
+                    return;
+                }
+                if(!this.topic.content || this.topic.content.length == 0) {
+                    self.$Message.info( '主题内容不能为空');
+                    return;
+                }
+
+                if(!this.topic.topicType || this.topic.topicType.length == 0) {
+                    self.$Message.info( '主题类型不能为空');
+                    return;
+                }
+
+                self.msg = '';
+
+                if(this.updateMode) {
+                    let o = {id: this.topic.id,content:this.topic.content,title:this.topic.title};
+                    window.jm.rpc.callRpcWithParams(sn, ns, v, 'updateTopic',[o]).then((resp)=>{
+                        if(resp.code == 0) {
+                            self.createTopicDialog = false;
+                            self.refresh();
+                        }else {
+                            self.msg = resp.msg;
+                        }
+                    }).catch((err)=>{
+                        window.console.log(err);
+                    });
+                }else {
+                    window.jm.rpc.callRpcWithParams(sn, ns, v, 'createTopic',[this.topic]).then((resp)=>{
+                        if(resp.code == 0) {
+                            self.createTopicDialog = false;
+                            self.refresh();
+                        }else {
+                            self.msg = resp.msg;
+                        }
+                    }).catch((err)=>{
+                        window.console.log(err);
+                    });
+                }
+            },
+
+            viewTopic(mi) {
                 if(this.curTopics[mi.id]) {
                     this.curViewTopic = this.curTopics[mi.id];
                     this.detail.drawerStatus = true;
@@ -167,9 +242,7 @@
 
             doQuery() {
                 this.isLogin = window.jm.rpc.isLogin();
-                if(!this.isLogin) {
-                    return;
-                }
+                this.act = window.jm.rpc.actInfo;
                 let self = this;
                 let params = this.getQueryConditions();
                 window.jm.rpc.callRpcWithParams(sn, ns, v, 'countTopic',[params]).then((resp)=>{
@@ -189,9 +262,8 @@
             refresh() {
                 let self = this;
                 this.isLogin = window.jm.rpc.isLogin();
-                if(!this.isLogin) {
-                    return;
-                }
+                this.act = window.jm.rpc.actInfo;
+
                 let params = this.getQueryConditions();
                 window.jm.rpc.callRpcWithParams(sn, ns, v, 'topicList', [params,this.pageSize, this.curPage])
                  .then((resp)=>{
@@ -238,15 +310,31 @@
                 this.drawer.drawerBtnStyle.left = '0px';
             },
 
+            onEditorFocus() {
+
+            },
+
+            onEditorBlur() {
+
+            },
+
+            onEditorReady() {
+                this.$emit("contentChange",this.topic);
+            },
+
         },
 
         mounted () {
             let self = this;
+            window.jm.vue.$on("editTopic",this.editTopic);
+
+            this.act = window.jm.rpc.actInfo;
             window.jm.rpc.addActListener(cid,self.doQuery);
             self.doQuery();
             let ec = function() {
                 window.jm.rpc.removeActListener(cid);
                 window.jm.vue.$off('editorClosed',ec);
+                window.jm.vue.$off('editTopic',this.editTopic);
             }
             window.jm.vue.$on('editorClosed',ec);
 
@@ -271,6 +359,10 @@
         min-height: 500px;
     }
 
+    .createTopicDialog{
+
+    }
+
     #queryTable td {
         padding-left: 8px;
     }
@@ -292,10 +384,13 @@
         text-align: center;
     }
 
-    .detailTopicTitle{
-        text-align: center;
-        font-size: larger;
-        font-weight: bold;
+
+    #topicDrawerViewId .ivu-drawer-body{
+        padding:0px;
+    }
+
+    textarea.ivu-input{
+        height:100%;width:100%;
     }
 
 </style>

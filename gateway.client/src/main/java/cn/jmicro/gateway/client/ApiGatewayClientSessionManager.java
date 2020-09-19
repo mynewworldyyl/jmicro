@@ -50,7 +50,7 @@ import io.netty.util.AttributeKey;
  */
 public class ApiGatewayClientSessionManager implements IClientSessionManager {
 
-	static final Logger logger = LoggerFactory.getLogger(ApiGatewayClientSessionManager.class);
+	//static final Logger logger = LoggerFactory.getLogger(ApiGatewayClientSessionManager.class);
 
 	private static final AttributeKey<IClientSession> sessionKey = 
 			AttributeKey.newInstance(Constants.IO_SESSION_KEY + System.currentTimeMillis());
@@ -93,7 +93,8 @@ public class ApiGatewayClientSessionManager implements IClientSessionManager {
 			final ByteBuffer bb = ByteBuffer.wrap("Hello".getBytes(Constants.CHARSET));
 			hearbeat.setPayload(bb);
 		} catch (UnsupportedEncodingException e) {
-			logger.error("",e);
+			//logger.error("",e);
+			e.printStackTrace();
 		}		
 	}
 	
@@ -201,6 +202,7 @@ public class ApiGatewayClientSessionManager implements IClientSessionManager {
                  @Override
                  public void channelReadComplete(ChannelHandlerContext ctx) {
                     ctx.flush();
+                    //System.out.println("Read complete!");
                  }
 
                  @Override
@@ -208,9 +210,11 @@ public class ApiGatewayClientSessionManager implements IClientSessionManager {
                 	 try {
 						super.exceptionCaught(ctx, cause);
 					} catch (Exception e) {
-						logger.error("",e);
+						//logger.error("",e);
+						e.printStackTrace();
 					}
-        			 logger.error("exceptionCaught",cause);
+        			 //logger.error("exceptionCaught",cause);
+                	 cause.printStackTrace();
         			 //ApiGatewaySession session = (ApiGatewaySession)ctx.channel().attr(sessionKey);
                  }
              });
@@ -225,10 +229,11 @@ public class ApiGatewayClientSessionManager implements IClientSessionManager {
             ctx.channel().attr(sessionKey).set(s);
             
            //LOG.info("session connected : {}", session);
-           logger.debug("connection finish,host:"+host+",port:"+port);
+           //logger.debug("connection finish,host:"+host+",port:"+port);
+           System.out.println("connection finish,host:"+host+",port:"+port);
            return s;
        } catch (Throwable e) {
-    	   logger.error("cannot connect host:" + host + ", port:" + port, e);
+    	   //logger.error("cannot connect host:" + host + ", port:" + port, e);
            throw new CommonException("host:" + host + ", port:" + port,e);
        }
 	}

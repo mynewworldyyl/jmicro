@@ -3,9 +3,8 @@
     <parent>
          <groupId>cn.jmicro</groupId>
 		 <artifactId>parent</artifactId>
-		 <version>0.0.1-RELEASE</version>
+		 <version>0.0.2-SNAPSHOT</version>
     </parent>
-    <version>0.0.01-RELEASE</version>
     <artifactId>gateway.client</artifactId>
     <packaging>jar</packaging>
     <name>${project.artifactId}</name>

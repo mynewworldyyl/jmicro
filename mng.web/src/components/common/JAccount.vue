@@ -16,7 +16,6 @@
             <table>
                 <tr><td>{{'actName'|i18n}}</td><td><input type="input"  v-model="actName"/></td></tr>
                 <tr><td>{{'Password'|i18n}}</td><td><input type="password"  v-model="pwd"/></td></tr>
-                <!--<tr><td>confirm Password</td><td><input type="password"  v-model="cfPwd"/></td></tr>-->
                 <tr>
                     <td colspan="2"><a href="javascript:void(0)" @click="resetPasswordEmail()">{{'ResetPassword'|i18n}}</a></td>
                 </tr>
@@ -87,6 +86,14 @@ export default {
             isLogin:false,
             msg:''
         };
+    },
+
+    mounted(){
+        this.actName = window.jm.localStorage.get("actName");
+        this.pwd = window.jm.localStorage.get("pwd");
+        if(this.actName && this.pwd) {
+            this.doLogin();
+        }
     },
 
     methods: {
@@ -300,11 +307,11 @@ export default {
                     self.actInfo = actInfo;
                     self.isLogin = true;
                     self.msg = '';
-                    this.loginDialog = false;
+                    self.loginDialog = false;
                     window.jm.localStorage.set("actName",self.actName);
                     window.jm.localStorage.set("pwd",self.pwd);
                     //window.jm.vue.$emit('userLogin',actInfo);
-                }else {
+                } else {
                     self.isLogin = false;
                     self.msg = err || 'Login fail';
                 }

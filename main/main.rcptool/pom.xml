@@ -5,7 +5,7 @@
 	<parent>
 		<groupId>cn.jmicro</groupId>
 		<artifactId>main</artifactId>
-		<version>0.0.1-RELEASE</version>
+		<version>0.0.2-SNAPSHOT</version>
 	</parent>
 	<artifactId>main.rcptool</artifactId>
 	<packaging>jar</packaging>
@@ -67,7 +67,7 @@
            <dependency>
                <groupId>cn.jmicro</groupId>
 				 <artifactId>agent</artifactId>
-				 <version>0.0.1-RELEASE</version>
+				 <version>${project.version}</version>
           </dependency>
 	</dependencies>
 

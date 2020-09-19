@@ -1,6 +1,7 @@
 package cn.jmicro.ext.bbs.api;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -27,7 +28,6 @@ import cn.jmicro.api.security.ActInfo;
 import cn.jmicro.common.Utils;
 import cn.jmicro.common.util.StringUtils;
 import cn.jmicro.ext.bbs.entities.Note;
-import cn.jmicro.ext.bbs.entities.NoteVo;
 import cn.jmicro.ext.bbs.entities.Topic;
 import cn.jmicro.ext.bbs.entities.TopicVo;
 
@@ -56,7 +56,93 @@ public class BbsServiceImpl implements IBbsService {
 	}
 	
 	@Override
-	@SMethod(perType=false,needLogin=true,maxSpeed=10,maxPacketSize=2048)
+	@SMethod(perType=false,needLogin=true,maxSpeed=1,maxPacketSize=204800)
+	public Resp<Boolean> updateNote(Note note) {
+		//this.mongoDb.getCollection(T_TOPIC_NAME, Topic.class).
+		Resp<Boolean> r = new Resp<>(Resp.CODE_FAIL);
+		ActInfo ai = JMicroContext.get().getAccount();
+		Map<String,Object> q = new HashMap<>();
+		q.put(IObjectStorage._ID, note.getId());
+		
+		Note t = this.os.getOne(T_NOTE_NAME, q, Note.class);
+		if(t != null && t.getCreatedBy() == ai.getId()) {
+			t.setContent(note.getContent());
+			this.os.update(T_NOTE_NAME, q, t,Note.class);
+			r.setCode(Resp.CODE_SUCCESS);
+			r.setData(true);
+		} else {
+			r.setMsg("No permission");
+			r.setKey("NoPermission");
+		}
+		return r;
+	}
+	
+	@Override
+	@SMethod(perType=false,needLogin=true,maxSpeed=1,maxPacketSize=256)
+	public Resp<Boolean> deleteNote(Long noteId) {
+		
+		Resp<Boolean> r = new Resp<>(Resp.CODE_FAIL);
+		ActInfo ai = JMicroContext.get().getAccount();
+		Map<String,Object> q = new HashMap<>();
+		q.put(IObjectStorage._ID, noteId);
+		
+		Note t = this.os.getOne(T_NOTE_NAME, q, Note.class);
+		if(t != null && t.getCreatedBy() == ai.getId()) {
+			this.os.deleteById(T_NOTE_NAME, noteId, IObjectStorage._ID);
+			r.setCode(Resp.CODE_SUCCESS);
+			r.setData(true);
+		}else {
+			r.setMsg("No permission");
+			r.setKey("NoPermission");
+		}
+		return r;
+	}
+	
+	@Override
+	@SMethod(perType=false,needLogin=true,maxSpeed=1,maxPacketSize=204800)
+	public Resp<Boolean> updateTopic(Topic topic) {
+		//this.mongoDb.getCollection(T_TOPIC_NAME, Topic.class).
+		Resp<Boolean> r = new Resp<>(Resp.CODE_FAIL);
+		ActInfo ai = JMicroContext.get().getAccount();
+		Map<String,Object> q = new HashMap<>();
+		q.put(IObjectStorage._ID, topic.getId());
+		
+		Topic t = this.os.getOne(T_TOPIC_NAME, q, Topic.class);
+		if(t != null && t.getCreatedBy() == ai.getId()) {
+			t.setContent(topic.getContent());
+			t.setTitle(topic.getTitle());
+			this.os.update(T_TOPIC_NAME, q, t,Topic.class);
+			r.setCode(Resp.CODE_SUCCESS);
+			r.setData(true);
+		} else {
+			r.setMsg("No permission");
+			r.setKey("NoPermission");
+		}
+		return r;
+	}
+
+	@Override
+	public Resp<Boolean> deleteTopic(Long topicId) {
+		
+		Resp<Boolean> r = new Resp<>(Resp.CODE_FAIL);
+		ActInfo ai = JMicroContext.get().getAccount();
+		Map<String,Object> q = new HashMap<>();
+		q.put(IObjectStorage._ID, topicId);
+		
+		Topic t = this.os.getOne(T_TOPIC_NAME, q, Topic.class);
+		if(t != null && t.getCreatedBy() == ai.getId()) {
+			this.os.deleteById(T_TOPIC_NAME, topicId,IObjectStorage._ID);
+			r.setCode(Resp.CODE_SUCCESS);
+			r.setData(true);
+		}else {
+			r.setMsg("No permission");
+			r.setKey("NoPermission");
+		}
+		return r;
+	}
+
+	@Override
+	@SMethod(perType=false,needLogin=true,maxSpeed=10,maxPacketSize=204800)
 	public Resp<Boolean> createTopic(Topic topic) {
 		Resp<Boolean> r = new Resp<>(Resp.CODE_FAIL);
 		if(Utils.isEmpty(topic.getContent())) {
@@ -84,14 +170,13 @@ public class BbsServiceImpl implements IBbsService {
 		ActInfo ai = JMicroContext.get().getAccount();
 		
 		topic.setClientId(ai.getClientId());
-		topic.setCreatedBy(ai.getClientId());
-		topic.setUpdatedBy(ai.getClientId());
+		topic.setCreatedBy(ai.getId());
 		topic.setUpdatedTime(curTime);
 		topic.setId(idGenerator.getLongId(Topic.class));
 		topic.setLocked(false);
 		topic.setCreatedTime(curTime);
+		topic.setCreaterName(ai.getActName());
 		
-		//os.save(T_TOPIC_NAME, topic, true);
 		this.mongoDb.getCollection(T_TOPIC_NAME, Topic.class).insertOne(topic);
 		
 		r.setData(true);
@@ -161,17 +246,15 @@ public class BbsServiceImpl implements IBbsService {
 		Document qryMatch = new Document("_id",topicId);
 		FindIterable<Topic> fi = mongoDb.getCollection(T_TOPIC_NAME,Topic.class)
 				.find(qryMatch, Topic.class);
-		if(fi != null) {
+		Topic t = null;
+		if(fi != null && (t=fi.first()) != null) {
 			TopicVo vo = new TopicVo();
-			Topic t = fi.first();
-			//ActInfo ai = this.am.getAccountFromZK(t.getId());
-			//vo.setCreaterId(createrId);
-			Resp<List<NoteVo>> notes = this.topicNoteList(topicId, Integer.MAX_VALUE, 0);
+			vo.setTopic(t);
+			Resp<List<Note>> notes = this.topicNoteList(topicId, Integer.MAX_VALUE, 0);
 			vo.setNotes(notes.getData());
-			
 			resp.setData(vo);
 			resp.setCode(Resp.CODE_SUCCESS);
-		}else {
+		} else {
 			resp.setData(null);
 			resp.setMsg("Not found");
 			resp.setKey("NotFound");
@@ -180,7 +263,7 @@ public class BbsServiceImpl implements IBbsService {
 	}
 
 	@Override
-	public Resp<List<NoteVo>> topicNoteList(long topicId, int pageSize, int curPage) {
+	public Resp<List<Note>> topicNoteList(long topicId, int pageSize, int curPage) {
 		
 		Document qryMatch = new Document("topicId",topicId);
 
@@ -200,21 +283,19 @@ public class BbsServiceImpl implements IBbsService {
 		aggregateList.add(skip);
 		aggregateList.add(limit);
 
-		MongoCollection<Note> rpcLogColl = mongoDb.getCollection(T_TOPIC_NAME,Note.class);
+		MongoCollection<Note> rpcLogColl = mongoDb.getCollection(T_NOTE_NAME,Note.class);
 		AggregateIterable<Note> resultset = rpcLogColl.aggregate(aggregateList,Note.class);
 		MongoCursor<Note> cursor = resultset.iterator();
 
-		Resp<List<NoteVo>> resp = new Resp<>();
-		List<NoteVo> rl = new ArrayList<>();
+		Resp<List<Note>> resp = new Resp<>();
+		List<Note> rl = new ArrayList<>();
 		resp.setData(rl);
 
 		try {
 			while (cursor.hasNext()) {
 				Note vo = cursor.next();
 				if (vo != null) {
-					NoteVo nvo = new NoteVo();
-					nvo.setNote(vo);
-					rl.add(nvo);
+					rl.add(vo);
 				}
 			}
 			resp.setCode(Resp.CODE_SUCCESS);
@@ -227,19 +308,19 @@ public class BbsServiceImpl implements IBbsService {
 	}
 
 	@Override
-	public Resp<Boolean> createNote(Note note) {
-		Resp<Boolean> r = new Resp<>(Resp.CODE_FAIL);
+	public Resp<Note> createNote(Note note) {
+		Resp<Note> r = new Resp<>(Resp.CODE_FAIL);
 		if(Utils.isEmpty(note.getContent())) {
 			r.setMsg("Content cannot be null");
 			r.setKey("ContentIsNull");
-			r.setData(false);
+			r.setData(null);
 			return r;
 		}
 		
 		if(note.getTopicId() <= 0) {
 			r.setMsg("Invalid topic");
 			r.setKey("InvalidTopicId");
-			r.setData(false);
+			r.setData(null);
 			return r;
 		}
 		
@@ -247,15 +328,15 @@ public class BbsServiceImpl implements IBbsService {
 		ActInfo ai = JMicroContext.get().getAccount();
 		
 		note.setClientId(ai.getClientId());
-		note.setCreatedBy(ai.getClientId());
-		note.setUpdatedBy(ai.getClientId());
-		note.setUpdatedTime(curTime);
+		note.setCreatedBy(ai.getId());
 		note.setId(idGenerator.getLongId(Note.class));
 		note.setCreatedTime(curTime);
+		note.setCreaterName(ai.getActName());
 		
-		os.save(T_NOTE_NAME, note,Note.class, true);
-		r.setData(true);
+		os.save(T_NOTE_NAME, note,Note.class, true,false);
+		r.setData(note);
 		r.setCode(Resp.CODE_SUCCESS);
+		
 		return r;
 	}
 	

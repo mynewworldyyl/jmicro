@@ -7,33 +7,23 @@ import cn.jmicro.api.annotation.SO;
 @SO
 public class TopicVo {
 	
-	private String createrId;
-
-	private String createrName;
+	private Topic topic;
 	
-	private List<NoteVo> notes;
+	private List<Note> notes;
 
-	public String getCreaterId() {
-		return createrId;
+	public Topic getTopic() {
+		return topic;
 	}
 
-	public void setCreaterId(String createrId) {
-		this.createrId = createrId;
+	public void setTopic(Topic topic) {
+		this.topic = topic;
 	}
 
-	public String getCreaterName() {
-		return createrName;
-	}
-
-	public void setCreaterName(String createrName) {
-		this.createrName = createrName;
-	}
-
-	public List<NoteVo> getNotes() {
+	public List<Note> getNotes() {
 		return notes;
 	}
 
-	public void setNotes(List<NoteVo> notes) {
+	public void setNotes(List<Note> notes) {
 		this.notes = notes;
 	}
 	

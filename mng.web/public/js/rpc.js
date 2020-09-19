@@ -948,10 +948,39 @@ jm.rpc = {
                 if(err || !rstMsg.payload.success) {
                     let rst = rstMsg.payload.result
                     console.log(rst);
+                    let doFailure = true;
                     if(rst && rst.errorCode != 0) {
                         //alert(rst.msg);
+                        if(rst.errorCode == 0x00000004 || rst.errorCode == 0x00000006) {
+                            let actName = window.jm.localStorage.get("actName");
+                            let pwd = window.jm.localStorage.get("pwd");
+                            if(actName && pwd) {
+                                jm.rpc.actInfo = null;
+                                window.jm.rpc.login(actName,pwd,(actInfo,err)=>{
+                                    if(actInfo && !err) {
+                                        self.callRpcWithTypeAndProtocol(req,type,upProtocol,downProtocol)
+                                            .then(( r,err )=>{
+                                                if(r ) {
+                                                    reso(r);
+                                                } else {
+                                                    reje(err);
+                                                }
+                                            }).catch((err)=>{
+                                            console.log(err);
+                                            reje(err);
+                                        });
+                                    }else {
+                                        reje(err || rst);
+                                    }
+                                });
+                                doFailure = false;
+                            }
+                        }
                     }
-                    reje(err || rst);
+
+                    if(doFailure) {
+                        reje(err || rst);
+                    }
                 } else {
                     let rst = rstMsg.payload.result;
                     if(rst != null && rst.hasOwnProperty('errorCode') && rst.hasOwnProperty('msg')) {
@@ -1228,7 +1257,7 @@ jm.ps = {
 
      pssn:"cn.jmicro.gateway.MessageServiceImpl",
      sn:'cn.jmicro.api.pubsub.IPubSubClientService',
-     ns : jm.Constants.MNG,
+     ns : 'mng',
      v:'0.0.1',
      MSG_TYPE_ASYNC_RESP : 0x06,
 },

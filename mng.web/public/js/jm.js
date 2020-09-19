@@ -262,7 +262,7 @@ jm.mng = {
                 }).catch((err)=>{
                 console.log(err);
                 cb(null,err);
-            });;
+            });
         },
 
         getAccountList : function (query,pageSize,curPage){

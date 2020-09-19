@@ -44,6 +44,7 @@
                       {{'Others'|i18n}}
                   </template>
                   <Menu-group :title="'System'|i18n">
+                      <MenuItem name="__topicList"> <Icon type="ios-cog"></Icon>{{"topicList"|i18n}}</MenuItem>
                       <Menu-item name="__config"><Icon type="ios-construct"></Icon>{{"Config"|i18n}}</Menu-item>
                       <Menu-item name="__router"><Icon type="ios-people"></Icon>{{"Router"|i18n}}</Menu-item>
                       <Menu-item name="__shell"><Icon type="ios-cog"></Icon>{{"Shell"|i18n}}</Menu-item>
@@ -65,7 +66,7 @@
                      <!-- <MenuItem name="__help"> <Icon type="ios-cog"></Icon>Help</MenuItem>-->
                       <MenuItem name="__about"> <Icon type="ios-cog"></Icon>{{"About"|i18n}}</MenuItem>
                       <MenuItem name="__testing"> <Icon type="ios-cog"></Icon>{{"Testing"|i18n}}</MenuItem>
-                      <MenuItem name="__topicList"> <Icon type="ios-cog"></Icon>{{"topicList"|i18n}}</MenuItem>
+
                   </Menu-group>
               </Submenu>
 
@@ -76,7 +77,7 @@
                   </template>
 
                   <MenuItem  v-for="mi in menus" :name="mi.name" :key="mi.name">
-                      <Icon :type="mi.icon"></Icon>{{mi.label|i18n}}
+                      <Icon :type="mi.icon"></Icon>{{mi.name|i18n}}
                   </MenuItem>
 
               </Submenu>

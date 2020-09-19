@@ -13,7 +13,7 @@ public class Note {
 	
 	private long topicId;
 	
-	private long forNote=0;
+	private long forNote = 0;
 	
     private int supportNum=0;
 	
@@ -23,14 +23,12 @@ public class Note {
 	
 	//举报
 	//private int accusation;
-	
-	private int createdBy;
-	
-	private int updatedBy;
+    
+    private String createrName;
+    
+	private long createdBy;
 	
 	private long createdTime;
-
-	private long updatedTime;
 
 	public Long getId() {
 		return id;
@@ -96,20 +94,12 @@ public class Note {
 		this.seq = seq;
 	}
 
-	public int getCreatedBy() {
+	public long getCreatedBy() {
 		return createdBy;
 	}
 
-	public void setCreatedBy(int createdBy) {
+	public void setCreatedBy(long createdBy) {
 		this.createdBy = createdBy;
-	}
-
-	public int getUpdatedBy() {
-		return updatedBy;
-	}
-
-	public void setUpdatedBy(int updatedBy) {
-		this.updatedBy = updatedBy;
 	}
 
 	public long getCreatedTime() {
@@ -120,14 +110,13 @@ public class Note {
 		this.createdTime = createdTime;
 	}
 
-	public long getUpdatedTime() {
-		return updatedTime;
+	public String getCreaterName() {
+		return createrName;
 	}
 
-	public void setUpdatedTime(long updatedTime) {
-		this.updatedTime = updatedTime;
+	public void setCreaterName(String createrName) {
+		this.createrName = createrName;
 	}
 
-	
     
 }

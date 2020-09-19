@@ -12,6 +12,8 @@ public class Topic {
     private String content;
 	
     private String title;
+    
+    private String createrName;
 	
     private int readNum=0;
 	
@@ -34,9 +36,7 @@ public class Topic {
     //举报
   	private int accusation;
   	
-  	private int createdBy;
-  	
-  	private int updatedBy;
+  	private long createdBy;
   	
     private long createdTime;
 
@@ -48,6 +48,14 @@ public class Topic {
 
 	public void setId(long id) {
 		this.id = id;
+	}
+
+	public String getCreaterName() {
+		return createrName;
+	}
+
+	public void setCreaterName(String createrName) {
+		this.createrName = createrName;
 	}
 
 	public int getClientId() {
@@ -154,20 +162,12 @@ public class Topic {
 		this.accusation = accusation;
 	}
 
-	public int getCreatedBy() {
+	public long getCreatedBy() {
 		return createdBy;
 	}
 
-	public void setCreatedBy(int createdBy) {
+	public void setCreatedBy(long createdBy) {
 		this.createdBy = createdBy;
-	}
-
-	public int getUpdatedBy() {
-		return updatedBy;
-	}
-
-	public void setUpdatedBy(int updatedBy) {
-		this.updatedBy = updatedBy;
 	}
 
 	public long getCreatedTime() {

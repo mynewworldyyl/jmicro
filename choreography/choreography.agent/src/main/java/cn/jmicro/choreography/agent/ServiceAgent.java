@@ -82,7 +82,7 @@ public class ServiceAgent {
 	private String resourceDir; // = System.getProperty("user.dir") + "/resourceDir";
 
 	@Cfg(value = "/ServiceAgent/javaAgentJarFile", defGlobal = true)
-	private String javaAgentJarFile = "jmicro-agent-0.0.1-RELEASE.jar";
+	private String javaAgentJarFile = "jmicro-agent-0.0.1-SNAPSHOT.jar";
 
 	@Cfg(value = "/ResourceReponsitoryService/uploadBlockSize", defGlobal = true)
 	private int uploadBlockSize = 65300;// 1024*1024;

@@ -24,9 +24,6 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.google.gson.reflect.TypeToken;
 
 import cn.jmicro.api.Resp;
@@ -35,6 +32,7 @@ import cn.jmicro.api.async.AsyncFailResult;
 import cn.jmicro.api.async.IPromise;
 import cn.jmicro.api.client.IAsyncCallback;
 import cn.jmicro.api.client.IClientSession;
+import cn.jmicro.api.codec.TypeUtils;
 import cn.jmicro.api.gateway.ApiRequest;
 import cn.jmicro.api.gateway.ApiResponse;
 import cn.jmicro.api.internal.async.PromiseImpl;
@@ -59,7 +57,7 @@ import cn.jmicro.gateway.pubsub.ApiGatewayPubsubClient;
  */
 public class ApiGatewayClient {
 	
-	private final static Logger logger = LoggerFactory.getLogger(ApiGatewayClient.class);
+	//private final static Logger logger = LoggerFactory.getLogger(ApiGatewayClient.class);
 	
 	private static final AtomicLong reqId = new AtomicLong(1);
 	
@@ -80,6 +78,10 @@ public class ApiGatewayClient {
 	private ApiGatewayPubsubClient pubsubClient;
 	
 	private ActInfo actInfo;
+	
+	private static final String SEC_SRV = "cn.jmicro.api.security.IAccountService";
+	private static final String SEC_NS = "sec";
+	private static final String SEC_VER = "0.0.1";
 	
 	public ApiGatewayClient(ApiGatewayConfig cfg) {
 		if(Utils.isEmpty(cfg.getHost())) {
@@ -157,8 +159,6 @@ public class ApiGatewayClient {
 				new Class[] {serviceClass}, 
 				(proxy,method,args) -> {
 					
-					Type returnType = getType(method.getReturnType(),method.getGenericReturnType());
-					
 					if(serviceClass.getName().endsWith(AsyncClientProxy.INT_SUBFIX) && 
 							method.getName().endsWith(AsyncClientProxy.ASYNC_METHOD_SUBFIX)) {
 						//异步RPC方法调用
@@ -179,6 +179,8 @@ public class ApiGatewayClient {
 						//Class<?> returnType = TypeUtils.finalParameterType(method.getGenericReturnType(), 0);
 						//TypeToken<?>  returnType = TypeToken.get(method.getGenericReturnType());
 						
+						Class<?> returnType = TypeUtils.finalParameterType(method.getGenericReturnType(), 0);
+						
 						Object[] as = null;
 						if(method.isAnnotationPresent(WithContext.class)) {
 							 as = new Object[args.length-1];
@@ -190,6 +192,7 @@ public class ApiGatewayClient {
 								returnType, as, cb);
 						return p;
 					} else {
+						Type returnType = getType(method.getReturnType(),method.getGenericReturnType());
 						return callService(serviceClass.getName(), namespace, version, method.getName(), 
 								returnType, args, null);
 					}
@@ -211,6 +214,11 @@ public class ApiGatewayClient {
 						setActInfo(resp.getData());
 						p.setResult(resp);
 					} else {
+						if(fail == null) {
+							fail = new AsyncFailResult();
+							fail.setCode(resp.getCode());
+							fail.setMsg(resp.getMsg());
+						}
 						p.setFail(fail);
 					}
 					p.done();
@@ -218,7 +226,7 @@ public class ApiGatewayClient {
 			};
 			//TypeToken<?>  returnType
 			Type returnType = TypeToken.getParameterized(Resp.class, ActInfo.class).getType();
-			this.callService("cn.jmicro.mng.api.IMngAccountService", "mng", "0.0.1", "login", 
+			this.callService(SEC_SRV, SEC_NS, SEC_VER, "login", 
 					returnType, new Object[] {actName, pwd}, cb);
 		}
 		return p;
@@ -238,13 +246,18 @@ public class ApiGatewayClient {
 						p.setResult(true);
 						setActInfo(null);
 					} else {
+						if(fail == null) {
+							fail = new AsyncFailResult();
+							fail.setCode(resp.getCode());
+							fail.setMsg(resp.getMsg());
+						}
 						p.setFail(fail);
 					}
 					p.done();
 				}
 			};
 			Type returnType = TypeToken.getParameterized(Resp.class, Boolean.class).getType();
-			this.callService("cn.jmicro.mng.api.IMngAccountService", "mng", "0.0.1", "logout", 
+			this.callService(SEC_SRV, SEC_NS, SEC_VER, "logout", 
 					returnType, new Object[] {}, cb);
 		}
 		
@@ -289,7 +302,8 @@ public class ApiGatewayClient {
 				//Decoder.registType(clazz,type);
 				return clazz;
 			} catch (ClassNotFoundException e) {
-				logger.error("",e);
+				//logger.error("",e);
+				e.printStackTrace();
 			}
 		}
 		return null;
@@ -347,6 +361,7 @@ public class ApiGatewayClient {
 							 val = parseResult(respMsg1,returnType);
 							 cb.onResult((T)val, null,null);
 						} catch (Exception e) {
+							e.printStackTrace();
 							AsyncFailResult f = new AsyncFailResult();
 							f.setMsg(e.getMessage());
 							f.setCode(1);

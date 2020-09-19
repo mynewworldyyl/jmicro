@@ -26,6 +26,9 @@ public class ProfileServiceImpl implements IProfileService {
 	@Inject
 	private IDataOperator op;
 	
+	@Inject
+	private ProfileManager pm;
+	
 	@Override
 	@SMethod(needLogin=true,maxSpeed=5,maxPacketSize=256)
 	public Resp<Set<String>> getModuleList() {
@@ -154,36 +157,9 @@ public class ProfileServiceImpl implements IProfileService {
 	public Resp<Boolean> updateKv(String module,KV kv) {
 		ActInfo ai = JMicroContext.get().getAccount();
 		Resp<Boolean> resp = new Resp<>();
-		if(ai == null) {
-			resp.setData(false);
-			resp.setCode(1);
-			resp.setKey("NotLogin");
-			resp.setMsg("Account not login!");
-			return resp;
-		}
-		
-		String path = ProfileManager.ROOT + "/" + ai.getClientId() + "/" + module + "/" + kv.getKey();
-		
-		String data = op.getData(path);
-		if(StringUtils.isEmpty(data)) {
-			resp.setData(false);
-			resp.setCode(1);
-			resp.setKey("DataNotExist");
-			resp.setMsg("/" + module + "/" + kv.getKey() + " not exist");
-			return resp;
-		}
-		
-		KV existKv = JsonUtils.getIns().fromJson(data, KV.class);
-		if(existKv != null) {
-			existKv.setVal(kv.getVal());
-		}
-		
-		data = JsonUtils.getIns().toJson(existKv);
-		op.createNodeOrSetData(path, data, IDataOperator.PERSISTENT);
-		
+		pm.setVal(ai.getClientId(), module, kv.getKey(), kv.getVal());
 		resp.setCode(0);
 		resp.setData(true);
-		
 		return resp;
 	}
 
