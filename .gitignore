@@ -196,6 +196,14 @@ example/example.comsumer/logs/
 example/example.comsumer/data/
 example/example.comsumer/bin/
 example/example.comsumer/src/main/gen
+example/gatewayclientapp/target/
+example/gatewayclientapp/.classpath
+example/gatewayclientapp/.project
+example/gatewayclientapp/.settings/
+example/gatewayclientapp/logs/
+example/gatewayclientapp/data/
+example/gatewayclientapp/bin/
+example/gatewayclientapp/src/main/gen
 config/target/
 config/.classpath
 config/.project

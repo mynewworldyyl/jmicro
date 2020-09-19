@@ -126,7 +126,7 @@ public class NettySocketHandler extends ChannelInboundHandlerAdapter {
     
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
-    	logger.error("exceptionCaught close session",cause);
+    	logger.error("exceptionCaught close session",cause.getMessage());
     	ctx.channel().attr(sessionKey).get().close(true);
     	ctx.channel().attr(sessionKey).remove();
     	ctx.close();
