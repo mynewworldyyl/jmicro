@@ -9,65 +9,66 @@
     <script type="text/javascript" src="./js/jquery.js"></script>
     <title>TestPubsub</title>
     <style>
-      .JTestingPubsub{
-        margin-bottom: 20px;
-        height:90%;
-      }
 
-      .publishCon, .subscribeCon{
-        height:100%;
-        width:50%;
-      }
-
-      .publishCon{
-        float:left;
-      }
-      .subscribeCon{
-        float:right;
-        height: 90%;
-      }
-
-      .textarea{
-        height: 100%;
-        width: 80%;
-      }
-
-      textarea.ivu-input{
-        height:100%;
-      }
     </style>
   </head>
   <body>
+  <div id="msg" style="color:red;"></div>
 
   <div class="JTestingPubsub" id="testing">
-    <div id="msg">msg</div>
+    <div>
+      <Button onclick="doLogin()">Login</Button><br/>
+      <label for="actName">Account</label>
+      <Input id="actName"  placeholder="" value=""/>
+      <br/>
+      <label for="pwd">Password</label>
+      <Input id="pwd" value=""/>
+    </div>
+
     <div class="publishCon">
-      <Button onclick="doSend()">Send</Button><br/>
+      <Button  disabled id="sendBtn" onclick="doSend()">Send</Button><br/>
       <label for="Topic">Topic</label>
-      <Input id="Topic" v-model="topic" placeholder="" value="/test/topic/01"/>
+      <Input id="Topic"  placeholder="" value="/test/topic/01"/>
       <br/>
       <label for="Content">Content</label>
-      <Input id="Content" v-model="content" value="test content"/>
+      <Input id="Content"  value="test content"/>
     </div>
 
     <div class="subscribeCon">
-      <Button id="subscribe" onclick="doSubscribe()">Subscribe</Button>
+      <Button disabled id="subscribe" onclick="doSubscribe()">Subscribe</Button>
       <br/>
       <label for="Result">Result</label>
-      <textarea id="Result"  class='textarea'></textarea>
+      <textarea id="Result"  class='textarea' style="width:60%;height: 70%"></textarea>
     </div>
   </div>
   </body>
 
 <script  type="text/javascript">
     $(function(){
-        jm.rpc.init(window.jm.config.ip,window.jm.config.port);
-        jm.rpc.login("test01","2",(rst,err)=>{
+        jm.rpc.init("jmicro.cn",80);
+    })
+
+    function doLogin(){
+        let actName = $("#actName").val();
+        if(!actName || actName.length == 0) {
+            $("#msg").text('账号不能为空')
+            return;
+        }
+
+        let pwd = $("#pwd").val();
+        if(!pwd || pwd.length == 0) {
+            $("#msg").text('密码不能为空')
+            return;
+        }
+
+        jm.rpc.login(actName,pwd,(rst,err)=>{
             if(err) {
                 $("#msg").text('账号或密码错误')
             }
+            $("#sendBtn").removeAttr("disabled","true");
+            $("#subscribe").removeAttr("disabled","true");
         });
-    })
+    }
 
     function doSend() {
 

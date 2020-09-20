@@ -667,15 +667,8 @@ jm.rpc = {
             .then(( resp )=>{
                 if(resp.code == 0) {
                     self.actInfo = resp.data;
-                    if(!!jm.mng) {
-                        jm.mng.init(function(suc){
-                            cb(self.actInfo,null);
-                            self._notify(jm.rpc.Constants.LOGIN);
-                        });
-                    }else {
-                        cb(self.actInfo,null);
-                        self._notify(jm.rpc.Constants.LOGIN);
-                    }
+                    cb(self.actInfo,null);
+                    self._notify(jm.rpc.Constants.LOGIN);
                 } else {
                     cb(null,resp.msg);
                 }
@@ -705,13 +698,10 @@ jm.rpc = {
             .then(( resp )=>{
                 if(resp.data) {
                     self.actInfo = null;
-                    jm.rpcadminPer = false;
-                    jm.mng.init(function(suc){
-                        if(cb) {
-                            cb(true,null)
-                        }
-                        self._notify(jm.rpc.Constants.LOGOUT);
-                    });
+                    if(cb) {
+                        cb(true,null)
+                    }
+                    self._notify(jm.rpc.Constants.LOGOUT);
                 }else {
                     if(cb) {
                         cb(false,'logout fail')
@@ -1198,22 +1188,30 @@ jm.ps = {
         });
     },
 
+    //byteArray： 发送byte数组
+    //persist: 指示消息服务器是否持久化消息，如果为true，则持久化到数据库存储24小时，在24小时内可以通过消息历史记录页面查询到已经发送的消息。
+    //queue: 目前未使用
+    //callback: 接收消息发送结果主题，需要单独订阅此主题接收结果通知
+    //itemContext：每个消息都有一个上下文，有于存储消息相关的附加信息
     publishBytes: function(topic, byteArray,persist,queue,callback,itemContext){
         return this._publishItem(topic, byteArray,persist,queue,callback,itemContext);
     },
-
+    //发送字符串消息
     publishString: function(topic,content,persist,queue,callback,itemContext){
         return this._publishItem(topic, content,persist,queue,callback,itemContext);
     },
 
+    //通过消息服务器调用别外一个RPC方法，args为RPC方法的参数
     callService: function (topic,args,persist,queue,callback,itemContext){
         return this._publishItem(topic,args,persist,queue,callback,itemContext);
     },
 
+    //同时发送多个消息，psItems为消息数组
     publishMultiItems: function (psItems){
         return jm.rpc.callRpcWithParams(this.sn,this.ns,this.v,'publishMutilItems',[psItems]);
     },
 
+    //发送单个消息
     publishOneItem: function (psItem){
         return jm.rpc.callRpcWithParams(this.sn,this.ns,this.v,'publishOneItem',[psItem]);
     },

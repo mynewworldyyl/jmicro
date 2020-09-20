@@ -13,7 +13,7 @@
 
             <div>
                 <label for="Topic">{{'SendTopic'|i18n}}</label>
-                <Input id="Topic" v-model="topic" placeholder=""/>
+                <Input id="Topic" v-model="sendTopic" placeholder=""/>
             </div>
 
             <div>
@@ -36,13 +36,22 @@
         </div>
 
         <div class="subscribeCon">
-            <Button :disabled="!isLogin" v-if="subState" @click="doSubscribe()">{{'Unsubscribe'|i18n}}</Button>
-            <Button :disabled="!isLogin" v-if="!subState"  @click="doSubscribe()">{{'Subscribe'|i18n}}</Button>
-            &nbsp;&nbsp;
-            <Button :disabled="!isLogin"   @click="clear()">{{'Clear'|i18n}}</Button>
-            <br/>
-            <label for="Result">{{'RecieveMessage'|i18n}}</label>
-            <Input id="Result"  class='textarea' type="textarea" v-model="result"/>
+            <div>
+                <Button :disabled="!isLogin" v-if="subState" @click="doSubscribe()">{{'Unsubscribe'|i18n}}</Button>
+                <Button :disabled="!isLogin" v-if="!subState"  @click="doSubscribe()">{{'Subscribe'|i18n}}</Button>
+                &nbsp;&nbsp;
+                <Button :disabled="!isLogin"   @click="clear()">{{'Clear'|i18n}}</Button>
+            </div>
+
+            <div>
+                <label for="SubTopic">{{'SubTopic'|i18n}}</label>
+                <Input id="SubTopic" v-model="subTopic" placeholder=""/>
+            </div>
+            <div>
+                <label for="Result">{{'RecieveMessage'|i18n}}</label>
+                <Input id="Result"  class='textarea' type="textarea" v-model="result"/>
+            </div>
+
         </div>
     </div>
 </template>
@@ -60,7 +69,8 @@
         data () {
             return {
                 isLogin:false,
-                topic:'/jmicro/test/topic01',
+                sendTopic:'/jmicro/test/topic01',
+                subTopic:'/jmicro/test/topic01',
                 content:'test content',
                 result:'',
                 msg:'',
@@ -128,7 +138,7 @@
                     this.msg = '发送内容不能为空';
                     return;
                 }
-                if(!this.topic || this.topic.length == 0) {
+                if(!this.sendTopic || this.sendTopic.length == 0) {
                     this.msg = '主题不能为空';
                     return;
                 }
@@ -143,7 +153,7 @@
                     }
                 }
 
-                window.jm.ps.publishString(this.topic,this.content,true,false,cb,{})
+                window.jm.ps.publishString(this.sendTopic,this.content,true,false,cb,{})
                     .then(rst=>{
                         console.log(rst);
                     }).catch(err=>{
@@ -161,13 +171,13 @@
             },
 
             doSubscribe(){
-                if(!this.topic || this.topic.length == 0) {
+                if(!this.subTopic || this.subTopic.length == 0) {
                     this.msg = '主题不能为空';
                     return;
                 }
                 let self = this;
                 if(this.subState) {
-                    window.jm.ps.unsubscribe(this.topic,this.msgCallback)
+                    window.jm.ps.unsubscribe(this.subTopic,this.msgCallback)
                         .then((succ)=>{
                         if(succ==true) {
                             self.subState=false;
@@ -176,7 +186,7 @@
                         }
                     });
                 }else {
-                    window.jm.ps.subscribe(this.topic,{},this.msgCallback)
+                    window.jm.ps.subscribe(this.subTopic,{},this.msgCallback)
                         .then((rst)=>{
                         if(rst >= 0) {
                             self.subState=true;

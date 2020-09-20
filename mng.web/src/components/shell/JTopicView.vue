@@ -132,7 +132,6 @@
             },
 
             editTopic() {
-                //this.$emit("editTopic",this.topic);
                 window.jm.vue.$emit("editTopic",this.topic.topic);
             },
 
@@ -204,12 +203,19 @@
         },
 
         mounted () {
-            //let self = this;
+            let self = this;
             this.act = window.jm.rpc.actInfo;
+            window.jm.rpc.addActListener(cid,self.doQuery);
+            let ec = function() {
+                window.jm.rpc.removeActListener(cid);
+                window.jm.vue.$off('editorClosed',ec);
+            }
+            window.jm.vue.$on('editorClosed',ec);
+
         },
 
         beforeDestroy() {
-
+            window.jm.rpc.removeActListener(cid);
         },
 
     }

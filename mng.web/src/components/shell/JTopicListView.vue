@@ -4,11 +4,19 @@
         <div style="position:relative;height:auto;margin-top:10px;">
             <table class="configItemTalbe" width="99%">
                 <thead><tr><td>{{'topicTitle'|i18n}}</td><td>{{'TopicType'|i18n}}</td><td>{{'CreatedTime'|i18n}}</td>
+                    <td>{{'Creater'|i18n}}</td>
+
+                    <td v-if="act && act.id==0">{{'ReadNum'|i18n}}</td>
+                    <td v-if="act && act.id==0">{{'NoteNum'|i18n}}</td>
+
                     <td>{{'Operations'|i18n}}</td></tr></thead>
                 <tr v-for="c in itemList" :key="c._id">
                     <td>{{c.title}}</td>
                     <td>{{c.topicType | i18n}}</td>
-                    <td>{{c.createdTime | formatDate}}</td>
+                    <td>{{c.createdTime | formatDate(2)}}</td>
+                    <td>{{c.createrName}}</td>
+                    <td v-if="act && act.id==0">{{c.readNum}}</td>
+                    <td v-if="act && act.id==0">{{c.noteNum}}</td>
                     <td>
                         <a @click="viewTopic(c)">{{'View'|i18n}}</a>&nbsp;&nbsp;
                         <a v-if="act && c.createdBy==act.id" @click="editTopic(c)">{{'Edit'|i18n}}</a>&nbsp;&nbsp;
@@ -100,7 +108,7 @@
 
         data() {
             return {
-                topicTypes:["Pubsub","Other"],
+                topicTypes:["Pubsub","MicroService","Monitor","ConfigMng","ServiceMng","NewFeature","Other"],
 
                 createTopicDialog:false,
                 topic:{'title':'','content':'',topicType:'other'},
@@ -138,9 +146,27 @@
         methods: {
 
             editTopic(topic) {
-                this.updateMode = true;
-                this.topic = topic;
-                this.createTopicDialog = true;
+                if(topic.content && topic.content.length > 0) {
+                    this.updateMode = true;
+                    this.topic = topic;
+                    this.createTopicDialog = true;
+                } else {
+                    let self = this;
+                    window.jm.rpc.callRpcWithParams(sn, ns, v, 'getTopic',[topic.id]).then((resp)=>{
+                        if(resp.code != 0) {
+                            self.$Message.success(resp.msg);
+                        }else {
+                            self.curTopics[topic.id] = resp.data;
+                            topic.content = resp.data.topic.content;
+                            self.updateMode = true;
+                            self.topic = resp.data.topic;
+                            self.createTopicDialog = true;
+                        }
+                    }).catch((err)=>{
+                        window.console.log(err);
+                    });
+                }
+
             },
 
             createTopic() {
@@ -180,7 +206,8 @@
                 self.msg = '';
 
                 if(this.updateMode) {
-                    let o = {id: this.topic.id,content:this.topic.content,title:this.topic.title};
+                    let o = {id: this.topic.id,content:this.topic.content,title:this.topic.title,
+                        topicType:this.topic.topicType};
                     window.jm.rpc.callRpcWithParams(sn, ns, v, 'updateTopic',[o]).then((resp)=>{
                         if(resp.code == 0) {
                             self.createTopicDialog = false;
@@ -218,6 +245,8 @@
                             self.$Message.success(resp.msg);
                         }else {
                             self.curViewTopic = resp.data;
+                            self.curTopics[mi.id] = resp.data;
+                            mi.content = resp.data.topic.content;
                             self.detail.drawerStatus = true;
                             self.detail.drawerBtnStyle.zindex = 10000;
                             self.detail.drawerBtnStyle.right = '0px';
@@ -327,10 +356,9 @@
         mounted () {
             let self = this;
             window.jm.vue.$on("editTopic",this.editTopic);
-
-            this.act = window.jm.rpc.actInfo;
             window.jm.rpc.addActListener(cid,self.doQuery);
             self.doQuery();
+
             let ec = function() {
                 window.jm.rpc.removeActListener(cid);
                 window.jm.vue.$off('editorClosed',ec);

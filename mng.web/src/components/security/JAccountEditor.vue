@@ -1,15 +1,16 @@
 <template>
     <div class="JAccountEditor" style="position:relative;height:auto">
 
-        <div v-if="isLogin" style="position:relative;height:auto;margin-top:10px;">
+        <div v-if="isLogin && actList && actList.length > 0" style="position:relative;height:auto;margin-top:10px;">
             <table class="configItemTalbe" width="99%">
                 <thead><tr><td>Act Name</td><td>Client ID</td><td>Regist Time</td><td>Statu Code</td>
-                    <td>Mobile</td><td>Email</td>
+                    <td>Mobile</td><td>Email</td><td>LoginNum</td><td>LastLoginTime</td>
                     <td>OPERATION</td></tr>
                 </thead>
                 <tr v-for="c in actList" :key="c._id">
-                    <td>{{c.actName}}</td><td>{{c.clientId}}</td><td>{{c.registTime | formatDate}}</td>
+                    <td>{{c.actName}}</td><td>{{c.clientId}}</td><td>{{c.registTime | formatDate(1)}}</td>
                     <td>{{c.statuCode}}</td> <td>{{c.mobile}}</td> <td>{{c.email}}</td>
+                    <td>{{c.loginNum}}</td><td>{{c.lastLoginTime | formatDate(2)}}</td>
                     <td>
                         &nbsp;<a v-if="c.statuCode==2" @click="openActInfoDrawer(c)">Permissions</a> &nbsp;&nbsp;&nbsp;&nbsp;
                           <a v-if="c.statuCode == 4" @click="changeAccountStatus(c)">Unfreeze</a>
@@ -20,13 +21,13 @@
             </table>
         </div>
 
-        <div v-if="isLogin" style="position:relative;text-align:center;">
+        <div v-if="isLogin && actList && actList.length > 0" style="position:relative;text-align:center;">
             <Page ref="pager" :total="totalNum" :page-size="pageSize" :current="curPage"
                   show-elevator show-sizer show-total @on-change="curPageChange"
                   @on-page-size-change="pageSizeChange" :page-size-opts="[10, 30, 60,100]"></Page>
         </div>
 
-        <div v-if="!isLogin">
+        <div v-if="!isLogin || !actList || actList.length == 0">
             No permission!
         </div>
 

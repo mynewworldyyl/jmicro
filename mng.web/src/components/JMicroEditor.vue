@@ -178,7 +178,7 @@
 
             this.mountServiceSelect('logFileSelect');
 
-            window.jm.vue.$emit('openEditorSelect','about');
+            window.jm.vue.$emit('openEditorSelect','topicList');
 
             window.jm.vue.$on("scroptto",(to) => {
                 this.$nextTick(() => {

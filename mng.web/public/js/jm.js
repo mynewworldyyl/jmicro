@@ -417,23 +417,7 @@ jm.mng = {
     },
 
     comm : {
-        adminPer:false,
         dicts:{},
-
-        init:function(cb) {
-            let self = this;
-            window.jm.mng.comm.hasPermission(1).then((rst)=>{
-                self.adminPer = rst;
-                if(cb) {
-                    cb(true);
-                }
-            }).catch((err)=>{
-                window.console.log(err);
-                if(cb) {
-                    cb(false);
-                }
-            });
-        },
 
         hasPermission: function (per){
             return jm.rpc.callRpcWithParams(this.sn,this.ns,this.v,'hasPermission',[per]);
