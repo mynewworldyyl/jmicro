@@ -98,6 +98,23 @@ public class BbsServiceImpl implements IBbsService {
 		return r;
 	}
 	
+	private void addReadNum(Topic t) {
+		Map<String,Object> q = new HashMap<>();
+		q.put(IObjectStorage._ID, t.getId());
+		t.setReadNum(t.getReadNum()+1);
+		this.os.update(T_TOPIC_NAME, q, t,Topic.class);
+	}
+	
+	private void addNoteNum(long tid) {
+		Map<String,Object> q = new HashMap<>();
+		q.put(IObjectStorage._ID, tid);
+		Topic t = this.os.getOne(T_TOPIC_NAME, q, Topic.class);
+		if(t != null) {
+			t.setNoteNum(t.getNoteNum()+1);
+			this.os.update(T_TOPIC_NAME, q, t,Topic.class);
+		}
+	}
+	
 	@Override
 	@SMethod(perType=false,needLogin=true,maxSpeed=1,maxPacketSize=204800)
 	public Resp<Boolean> updateTopic(Topic topic) {
@@ -111,6 +128,7 @@ public class BbsServiceImpl implements IBbsService {
 		if(t != null && t.getCreatedBy() == ai.getId()) {
 			t.setContent(topic.getContent());
 			t.setTitle(topic.getTitle());
+			t.setTopicType(topic.getTopicType());
 			this.os.update(T_TOPIC_NAME, q, t,Topic.class);
 			r.setCode(Resp.CODE_SUCCESS);
 			r.setData(true);
@@ -217,6 +235,7 @@ public class BbsServiceImpl implements IBbsService {
 		try {
 			while (cursor.hasNext()) {
 				Topic vo = cursor.next();
+				vo.setContent("");
 				if (vo != null) {
 					rl.add(vo);
 				}
@@ -254,6 +273,7 @@ public class BbsServiceImpl implements IBbsService {
 			vo.setNotes(notes.getData());
 			resp.setData(vo);
 			resp.setCode(Resp.CODE_SUCCESS);
+			addReadNum(t);
 		} else {
 			resp.setData(null);
 			resp.setMsg("Not found");
@@ -334,6 +354,9 @@ public class BbsServiceImpl implements IBbsService {
 		note.setCreaterName(ai.getActName());
 		
 		os.save(T_NOTE_NAME, note,Note.class, true,false);
+		
+		addNoteNum(note.getTopicId());
+		
 		r.setData(note);
 		r.setCode(Resp.CODE_SUCCESS);
 		

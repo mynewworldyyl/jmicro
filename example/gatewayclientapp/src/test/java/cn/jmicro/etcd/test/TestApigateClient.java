@@ -31,12 +31,15 @@ import cn.jmicro.gateway.pubsub.PSDataListener;
 
 public class TestApigateClient {
 	
+	//主题
 	private String TOPIC = "/jmicro/test/topic01";
 	
 	//private ApiGatewayClient socketClient = new ApiGatewayClient(new ApiGatewayConfig(Constants.TYPE_HTTP,"jmicro.cn",80));
 	private ApiGatewayClient socketClient = new ApiGatewayClient(new ApiGatewayConfig(Constants.TYPE_SOCKET,"jmicro.cn",9092));
 	
+	//账号名
 	private static final String ACT = "test01";
+	//密码
 	private static final String PWD = "1";
 	
 	@Test

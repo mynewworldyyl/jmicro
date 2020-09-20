@@ -39,6 +39,12 @@ public class ActInfo implements Cloneable {
 	
 	private long lastActiveTime;
 	
+	//最后一次登陆时间
+	private long lastLoginTime;
+	
+	//登陆次数
+	private long loginNum;
+	
 	private HashSet<String> pers = new HashSet<>();
 	
 	public ActInfo() {};
@@ -162,6 +168,22 @@ public class ActInfo implements Cloneable {
 
 	public void setId(long id) {
 		this.id = id;
+	}
+
+	public long getLastLoginTime() {
+		return lastLoginTime;
+	}
+
+	public void setLastLoginTime(long lastLoginTime) {
+		this.lastLoginTime = lastLoginTime;
+	}
+
+	public long getLoginNum() {
+		return loginNum;
+	}
+
+	public void setLoginNum(long loginNum) {
+		this.loginNum = loginNum;
 	}
 	
 }

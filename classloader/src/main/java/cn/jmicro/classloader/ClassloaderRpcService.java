@@ -52,8 +52,13 @@ public class ClassloaderRpcService implements IClassloaderRpc {
 			while((len = is.read(data, 0, data.length)) > 0) {
 				bais.write(data, 0, len);
 			}
-			logger.info("return class data:" + resName);
-			return bais.toByteArray();
+			
+			byte[] clsData = bais.toByteArray();
+			
+			logger.info("return class: {}, data length: {}", resName,clsData.length);
+			
+			return clsData;
+			
 		} catch (ClassNotFoundException e) {
 			logger.warn(clazz);
 		}catch (IOException e) {

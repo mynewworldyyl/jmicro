@@ -215,34 +215,40 @@ public class RpcClassLoader extends ClassLoader {
 	}
 	
 	@Override
-	public InputStream getResourceAsStream(String name) {
+	public InputStream getResourceAsStream(String name0) {
 
-		if(!checkResp(name)) {
-			return super.getResourceAsStream(name);
+		if(!checkResp(name0)) {
+			return super.getResourceAsStream(name0);
 		}
 		
-		InputStream is = super.getResourceAsStream(name);
+		String loname = this.getClassName(name0);
+		if(clazzesData.containsKey(loname)) {
+			//优先用本地缓存数据
+			byte[] byteData = clazzesData.get(loname);
+			if(byteData != null && byteData.length > 0) {
+				return new ByteArrayInputStream(byteData);
+			}
+		}
+		
+		InputStream is = super.getResourceAsStream(name0);
+		
 		if(is == null) {
-			is = this.parent.getResourceAsStream(name);
+			is = this.parent.getResourceAsStream(name0);
 			if(is == null) {
-				name = this.getClassName(name);
+				
 				byte[] byteData = null;
-				if(clazzesData.containsKey(name)) {
-					byteData = clazzesData.get(name);
-				} else {
-					String originName = name;
-					name = this.getClassName(name);
-					name = AsyncClientUtils.genSyncServiceName(name);
-					
-					Set<String> ins = this.classesName2Instance.get(name);
-					if(ins != null && !ins.isEmpty()) {
-						Iterator<String> ite = ins.iterator();
-						while(ite.hasNext()) {
-							 String insName = ite.next();
-							 byteData = getByteData(originName,insName,true);
-							 if(byteData != null && byteData.length > 0) {
-								break;
-							}
+
+				String originName = name0;
+				loname = AsyncClientUtils.genSyncServiceName(loname);
+				
+				Set<String> ins = this.classesName2Instance.get(loname);
+				if(ins != null && !ins.isEmpty()) {
+					Iterator<String> ite = ins.iterator();
+					while(ite.hasNext()) {
+						 String insName = ite.next();
+						 byteData = getByteData(originName,insName,true);
+						 if(byteData != null && byteData.length > 0) {
+							break;
 						}
 					}
 				}
@@ -368,8 +374,8 @@ public class RpcClassLoader extends ClassLoader {
 				if(sync) {
 					byte[] bytes = p.getResult();
 					if (bytes != null && bytes.length > 0) {
-						//clazzesData.put(originClsName, bytes);
-						logger.info("Success load class: {} from {}", originClsName,
+						clazzesData.put(originClsName, bytes);
+						logger.info("Success sync load class: {}, length:{}, from {}", originClsName,bytes.length,
 								directItem.getKey().toKey(true, true, true));
 						Class<?> myClass = dfClass(originClsName,bytes);
 			        	return myClass;
@@ -379,8 +385,9 @@ public class RpcClassLoader extends ClassLoader {
 				}else {
 					p.then((bytes,fail,cxt)->{
 						if (bytes != null && bytes.length > 0) {
+							clazzesData.put(originClsName, bytes);
 							dfClass(originClsName,bytes);
-							logger.info("Success load class: {} from {}", originClsName,insName);
+							logger.info("Success async load class: {}, length:{}, from {}", originClsName,bytes.length,insName);
 						}else if(fail != null) {
 							logger.error(fail.toString());
 						}

@@ -83,6 +83,8 @@ public class PSData implements Serializable{
 	//回调结果通知失败
 	public static final byte RESULT_FAIL_CALLBACK = -7;
 	
+	public static final byte INVALID_ITEM_COUNT = -8;
+	
 	private Map<String,Object> cxt = null;
 	
 	//消息ID,唯一标识一个消息

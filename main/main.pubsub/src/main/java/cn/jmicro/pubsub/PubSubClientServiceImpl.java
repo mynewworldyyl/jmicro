@@ -44,20 +44,23 @@ public class PubSubClientServiceImpl implements IPubSubClientService {
 	}*/
 
 	@Override
-	@SMethod(perType=true,needLogin=true,maxSpeed=100,maxPacketSize=9192)
+	@SMethod(perType=true,needLogin=true,maxSpeed=50,maxPacketSize=81920)
 	public int publishMutilItems(PSData[] items) {
-		if(items.length > 0) {
-			ActInfo ai = JMicroContext.get().getAccount();
-			if(pm.getVal(ai.getClientId(),  PubSubManager.PROFILE_PUBSUB, "needPersist",false, Boolean.class)) {
-				psMng.persist2Db(ai.getClientId(),items);
-			}
-			return psServer.publishItems(items[0].getTopic(),items);
+		if(items.length == 0 || items.length > 10) {
+			return PSData.INVALID_ITEM_COUNT;
 		}
-		return PSData.PUB_TOPIC_INVALID;
+
+		ActInfo ai = JMicroContext.get().getAccount();
+		if(pm.getVal(ai.getClientId(),  PubSubManager.PROFILE_PUBSUB, "needPersist",false, Boolean.class)) {
+			psMng.persist2Db(ai.getClientId(),items);
+		}
+		return psServer.publishItems(items[0].getTopic(),items);
+	
+		//return PSData.PUB_TOPIC_INVALID;
 	}
 
 	@Override
-	@SMethod(perType=false,needLogin=true,maxSpeed=100,maxPacketSize=9192)
+	@SMethod(perType=false,needLogin=true,maxSpeed=50,maxPacketSize=8192)
 	public int publishOneItem(PSData item) {
 		ActInfo ai = JMicroContext.get().getAccount();
 		if(item.isPersist()) {
