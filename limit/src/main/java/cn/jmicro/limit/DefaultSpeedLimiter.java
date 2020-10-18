@@ -45,6 +45,8 @@ public class DefaultSpeedLimiter extends AbstractLimiter implements ILimiter{
 	
 	private static final Class<?> TAG = DefaultSpeedLimiter.class;
 	
+	private static final String Act_SM_SEPERATOR = ":";
+	
 	@Inject
 	private AccountRelatedStatis actStatisManager;
 
@@ -61,7 +63,7 @@ public class DefaultSpeedLimiter extends AbstractLimiter implements ILimiter{
 		
 		ServiceCounter sc =  this.actStatisManager.getCounter(key);
 		
-		sc.increment(MC.MT_REQ_END);
+		sc.increment(MC.MT_REQ_START);
 		
 		double qps = sc.getQps(TimeUnit.SECONDS,MC.MT_REQ_START);
 		
@@ -83,7 +85,8 @@ public class DefaultSpeedLimiter extends AbstractLimiter implements ILimiter{
 		}else {
 			key = ai.getActName();
 		}
-		return key;
+		//账号+RPC方法KEY
+		return key + Act_SM_SEPERATOR + sm.getKey().toKey(false, false, false);
 	}
 
 	@Override

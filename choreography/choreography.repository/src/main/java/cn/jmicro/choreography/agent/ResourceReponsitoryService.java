@@ -12,7 +12,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -49,8 +48,8 @@ public class ResourceReponsitoryService implements IResourceResponsitory{
 	@Cfg(value="/ResourceReponsitoryService/resTimeout", defGlobal=true)
 	private long resTimeout = 3*60*1000;
 	
-	@Cfg(value="/devMode", defGlobal=false)
-	private boolean devMode = false;//1024*1024;
+	@Cfg(value="/ResourceReponsitoryService/devMode", defGlobal=true)
+	private boolean devMode = true;//1024*1024;
 	
 	@Inject
 	private ICodecFactory codecFactory;
@@ -360,8 +359,21 @@ public class ResourceReponsitoryService implements IResourceResponsitory{
 				rst.put(n, file);
 			}
 		}else {
-			File[] fs = file.listFiles();
+			File[] fs = file.listFiles((File dir, String name)->{
+				if(name.equals("mng.web")) {
+					return false;
+				}
+				
+				File f = new File(dir,name);
+				if(f.isDirectory()) {
+					return true;
+				} else {
+					return name.endsWith(".jar");
+				}
+			});
+			
 			for(File f : fs) {
+				//LOG.debug(f.getAbsolutePath());
 				findFile0(rst,f);
 			}
 		}

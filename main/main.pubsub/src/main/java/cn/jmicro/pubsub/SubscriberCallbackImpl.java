@@ -33,15 +33,14 @@ import cn.jmicro.api.async.IPromise;
 import cn.jmicro.api.async.PromiseUtils;
 import cn.jmicro.api.internal.async.PromiseImpl;
 import cn.jmicro.api.internal.pubsub.IInternalSubRpc;
+import cn.jmicro.api.monitor.LG;
 import cn.jmicro.api.monitor.MC;
-import cn.jmicro.api.monitor.SF;
 import cn.jmicro.api.net.Message;
 import cn.jmicro.api.net.ServerError;
 import cn.jmicro.api.objectfactory.IObjectFactory;
 import cn.jmicro.api.persist.IObjectStorage;
 import cn.jmicro.api.pubsub.PSData;
 import cn.jmicro.api.pubsub.PubSubManager;
-import cn.jmicro.api.registry.IRegistry;
 import cn.jmicro.api.registry.ServiceMethod;
 import cn.jmicro.api.registry.UniqueServiceMethodKey;
 import cn.jmicro.codegenerator.AsyncClientUtils;
@@ -195,7 +194,7 @@ public class SubscriberCallbackImpl implements ISubscriberCallback{
 		} catch (Throwable e) {
 			String msg = "callAsArra topic:"+sm.getTopic()+",mkey:"+sm.getKey().toKey(false, false, false);
 			logger.error(msg, e);
-			SF.eventLog(MC.MT_PUBSUB_LOG,MC.LOG_ERROR, TAG,msg,e);
+			LG.log(MC.LOG_ERROR, TAG,msg,e);
 			resultItem(items,PSData.RESULT_FAIL_DISPATCH);
 			p.setResult(items);
 			p.setFail(1,msg);
@@ -242,7 +241,7 @@ public class SubscriberCallbackImpl implements ISubscriberCallback{
 				} catch (Throwable e) {
 					String msg = "callOneByOne pd:"+pd.getId()+", topic:"+pd.getTopic()+",mkey:"+sm.getKey().toKey(false, false, false);
 					logger.error(msg, e);
-					SF.eventLog(MC.MT_PUBSUB_LOG,MC.LOG_ERROR, TAG, msg,e);
+					LG.log(MC.LOG_ERROR, TAG, msg,e);
 					fails.add(pd);
 					int cnt = cbcnt.decrementAndGet();
 					if(cnt <= 0) {
@@ -322,7 +321,7 @@ public class SubscriberCallbackImpl implements ISubscriberCallback{
 			} catch (Throwable e) {
 				String msg = "callOneByOne pd:"+pd.getId()+", topic:"+pd.getTopic()+",mkey:"+sm.getKey().toKey(false, false, false);
 				logger.error(msg, e);
-				SF.eventLog(MC.MT_PUBSUB_LOG,MC.LOG_ERROR, TAG,msg,e);
+				LG.log(MC.LOG_ERROR, TAG,msg,e);
 				fails.add(pd);
 				
 				resultItem(pd,PSData.RESULT_FAIL_DISPATCH);
@@ -418,7 +417,7 @@ public class SubscriberCallbackImpl implements ISubscriberCallback{
 				h.srv  = of.getRemoteServie(mkey.getServiceName(),mkey.getNamespace(),mkey.getVersion(),null);
 				if(h.srv == null) {
 					String msg = "Fail to create async service proxy src:" + sm.getKey().toString()+",target:"+ key;
-					SF.eventLog(MC.MT_PUBSUB_LOG,MC.LOG_ERROR,SubscriberCallbackImpl.class,msg);
+					LG.log(MC.LOG_ERROR,SubscriberCallbackImpl.class,msg);
 					//即使返回false重发此条消息，也是同样的错误，没办法回调了，记录日志，只能通过人工处理
 					p.setFail(1, msg);
 					p.done();
@@ -436,7 +435,7 @@ public class SubscriberCallbackImpl implements ISubscriberCallback{
 				
 				if(h.m == null) {
 					String msg = "Async service method not found: src:" + sm.getKey().toString()+",target:"+ key;
-					SF.eventLog(MC.MT_PUBSUB_LOG,MC.LOG_ERROR,SubscriberCallbackImpl.class, msg);
+					LG.log(MC.LOG_ERROR,SubscriberCallbackImpl.class, msg);
 					//即使返回false重发此条消息，也是同样的错误，没办法回调了，记录日志，只能通过人工处理
 					p.setFail(2, msg);
 					return p;
@@ -477,7 +476,7 @@ public class SubscriberCallbackImpl implements ISubscriberCallback{
 			return p;
 		} catch (Throwable e) {
 			String msg = "Fail to callback src service:" + sm.getKey().toString()+ ",c allback: "+ key;
-			SF.eventLog(MC.MT_PUBSUB_LOG,MC.LOG_ERROR,SubscriberCallbackImpl.class, msg,e);
+			LG.log(MC.LOG_ERROR,SubscriberCallbackImpl.class, msg,e);
 			logger.error("",e);
 			p.setResult(item);
 			p.setFail(5, msg);

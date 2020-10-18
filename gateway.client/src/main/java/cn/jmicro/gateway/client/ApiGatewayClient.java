@@ -59,6 +59,8 @@ public class ApiGatewayClient {
 	
 	//private final static Logger logger = LoggerFactory.getLogger(ApiGatewayClient.class);
 	
+	private static ApiGatewayClient client;
+	
 	private static final AtomicLong reqId = new AtomicLong(1);
 	
 	//private PrefixTypeEncoderDecoder decoder = new PrefixTypeEncoderDecoder();
@@ -83,7 +85,25 @@ public class ApiGatewayClient {
 	private static final String SEC_NS = "sec";
 	private static final String SEC_VER = "0.0.1";
 	
-	public ApiGatewayClient(ApiGatewayConfig cfg) {
+	public static final ApiGatewayClient getClient() {
+		if(!isInit()) {
+			throw new NullPointerException("ApiGatewayClient not init");
+		}
+		return client;
+	}
+	
+	public static final boolean isInit() {
+		return client != null;
+	}
+	
+	public static final synchronized boolean initClient(ApiGatewayConfig cfg) {
+		if(client == null) {
+			client = new ApiGatewayClient(cfg);
+		}	
+		return true;
+	}
+	
+	private ApiGatewayClient(ApiGatewayConfig cfg) {
 		if(Utils.isEmpty(cfg.getHost())) {
 			cfg.setHost(Utils.getIns().getLocalIPList().get(0));
 		}
@@ -489,7 +509,7 @@ public class ApiGatewayClient {
     }
     
     private String generatorSrvName(String className) {
-		return AsyncClientUtils.genAsyncServiceName(className);
+		return AsyncClientUtils.genSyncServiceName(className);
 	}
     
     private String generatorSrvMethodName(String method) {

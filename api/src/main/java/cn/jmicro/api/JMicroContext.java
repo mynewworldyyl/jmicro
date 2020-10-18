@@ -25,11 +25,14 @@ import org.slf4j.LoggerFactory;
 
 import cn.jmicro.api.config.Config;
 import cn.jmicro.api.idgenerator.ComponentIdServer;
+import cn.jmicro.api.monitor.LG;
 import cn.jmicro.api.monitor.Linker;
+import cn.jmicro.api.monitor.LogMonitorClient;
 import cn.jmicro.api.monitor.MC;
-import cn.jmicro.api.monitor.MRpcItem;
-import cn.jmicro.api.monitor.MonitorClient;
-import cn.jmicro.api.monitor.SF;
+import cn.jmicro.api.monitor.MRpcLogItem;
+import cn.jmicro.api.monitor.MRpcStatisItem;
+import cn.jmicro.api.monitor.MT;
+import cn.jmicro.api.monitor.StatisMonitorClient;
 import cn.jmicro.api.net.IRequest;
 import cn.jmicro.api.net.ISession;
 import cn.jmicro.api.net.Message;
@@ -41,6 +44,7 @@ import cn.jmicro.api.security.ActInfo;
 import cn.jmicro.api.service.ServiceLoader;
 import cn.jmicro.common.CommonException;
 import cn.jmicro.common.Constants;
+import cn.jmicro.common.util.StringUtils;
 
 /**
  * 
@@ -64,6 +68,8 @@ public class JMicroContext  {
 	
 	public static final String LOGIN_KEY = "loginKey";
 	
+	public static final String SM_LOG_LEVEL = "__smLogLevel";
+	
 	public static final String CACHE_LOGIN_KEY = "__ActLoginKey_";
 	
 	
@@ -83,10 +89,12 @@ public class JMicroContext  {
 	public static final String CLIENT_METHOD = "clientMehtod";
 	public static final String CLIENT_ARGSTR= "argStr";
 	
-	public static final String MRPC_ITEM = "_mrpc_item";
+	public static final String MRPC_LOG_ITEM = "_mrpc_log_item";
 	public static final String CLIENT_UP_TIME = "_client_up_time";
 	public static final String SERVER_GOT_TIME = "_server_got_time";
 	public static final String DEBUG_LOG = "_debug_loggner";
+	
+	public static final String MRPC_STATIS_ITEM = "_mrpc_statis_item";
 	
 	public static final String SESSION_KEY="_sessionKey";
 	private static final ThreadLocal<JMicroContext> cxt = new ThreadLocal<JMicroContext>();
@@ -97,25 +105,47 @@ public class JMicroContext  {
 	
 	private JMicroContext() {}
 	
-	public MRpcItem getMRpcItem() {
+	public MRpcLogItem getMRpcLogItem() {
 		//使用者需要调用isMonitor()或isDebug()判断是否可用状态
-		return this.getParam(MRPC_ITEM, null);
+		return this.getParam(MRPC_LOG_ITEM, null);
 	}
 	
-	public void submitMRpcItem(MonitorClient mo) {
+	public MRpcStatisItem getMRpcStatisItem() {
+		return this.getParam(MRPC_STATIS_ITEM, null);
+	}
+	
+	public void submitMRpcItem(LogMonitorClient mo,StatisMonitorClient smc) {
+		
+		MRpcLogItem item = getMRpcLogItem();
+		if(item != null && item.getItems() != null && item.getItems().size() > 0 ) {
+			if(StringUtils.isEmpty(item.getActName())) {
+				ActInfo ai = this.getAccount();
+				if(ai != null) {
+					item.setClientId(ai.getClientId());
+					ai.setActName(ai.getActName());
+				}
+			}
+			LG.setCommon(item);
+			item.setCostTime(System.currentTimeMillis() - item.getCreateTime());
+			mo.readySubmit(item);
+			JMicroContext.get().removeParam(MRPC_LOG_ITEM);
+		}
+	
+		
 		if(this.isMonitorable()) {
-			MRpcItem item = getMRpcItem();
-			if(item != null ) {
-				if(item.getClientId() < 0) {
+			MRpcStatisItem sItem = getMRpcStatisItem();
+			if(sItem != null ) {
+				if(StringUtils.isEmpty(item.getActName())) {
 					ActInfo ai = this.getAccount();
 					if(ai != null) {
 						item.setClientId(ai.getClientId());
+						ai.setActName(ai.getActName());
 					}
 				}
-				SF.setCommon(item);
-				item.setCostTime(System.currentTimeMillis() - item.getCreateTime());
-				mo.readySubmit(item);
-				JMicroContext.get().removeParam(MRPC_ITEM);
+				MT.setCommon(sItem);
+				sItem.setCostTime(System.currentTimeMillis() - sItem.getCreateTime());
+				smc.readySubmit(sItem);
+				JMicroContext.get().removeParam(MRPC_STATIS_ITEM);
 			}
 		}
 	}
@@ -128,7 +158,7 @@ public class JMicroContext  {
 	}
 	
 	public static boolean existRpcContext() {
-		return cxt.get() != null && get().exists(Constants.SERVICE_METHOD_KEY);
+		return cxt.get() != null && get().exists(JMicroContext.REQ_ID);
 	}
 	
 	public static JMicroContext get(){
@@ -175,6 +205,8 @@ public class JMicroContext  {
 		context.setParam(JMicroContext.LINKER_ID, msg.getLinkId());
 		context.setParam(Constants.NEW_LINKID, false);
 		
+		context.setParam(JMicroContext.SM_LOG_LEVEL, msg.getLogLevel());
+		
 		//context.isLoggable = msg.isLoggable();
 		//debug mode 下才有效
 		context.setParam(IS_DEBUG, msg.isDebugMode());
@@ -191,19 +223,54 @@ public class JMicroContext  {
 		boolean iMonitorable = msg.isMonitorable();
 		context.setParam(IS_MONITORENABLE, iMonitorable);
 		if(iMonitorable) {
-			MRpcItem item = context.getMRpcItem();
-			if(item == null) {
-				item = new MRpcItem();
-				ActInfo ai = context.getAccount();
-				if(ai != null) {
-					item.setClientId(ai.getClientId());
-				}
-				context.setParam(MRPC_ITEM, item);
-			}
-			item.setLinkId(msg.getLinkId());
-			item.setMsg(msg);
-			item.setProvider(true);
+			initMrpcStatisItem();
 		}
+		initMrpcLogItem();
+	}
+	
+	private static void initMrpcStatisItem() {
+		JMicroContext context = cxt.get();
+		MRpcStatisItem item = context.getMRpcStatisItem();
+		if(item == null) {
+			synchronized(MRpcStatisItem.class) {
+				item = context.getMRpcStatisItem();
+				if(item == null) {
+					item = new MRpcStatisItem();
+					ActInfo ai = context.getAccount();
+					if(ai != null) {
+						item.setClientId(ai.getClientId());
+						item.setActName(ai.getActName());
+					}
+					//the pre RPC Request ID as the parent ID of this request
+					context.setParam(MRPC_STATIS_ITEM, item);
+				}
+			}
+		}
+	
+	}
+	
+	private static void initMrpcLogItem() {
+		
+		JMicroContext context = cxt.get();
+		MRpcLogItem item = context.getMRpcLogItem();
+		if(item == null) {
+			synchronized(MRpcLogItem.class) {
+				item = context.getMRpcLogItem();
+				if(item == null) {
+					item = new MRpcLogItem();
+					ActInfo ai = context.getAccount();
+					if(ai != null) {
+						item.setClientId(ai.getClientId());
+						item.setActName(ai.getActName());
+					}
+					//the pre RPC Request ID as the parent ID of this request
+					context.setParam(MRPC_LOG_ITEM, item);
+				}
+			}
+		}
+		
+		item.setProvider(false);
+		item.setReqParentId(context.getLong(REQ_PARENT_ID, 0L));
 	}
 	
 	public static boolean enableOrDisable(int siCfg,int smCfg) {
@@ -228,25 +295,9 @@ public class JMicroContext  {
 		boolean iMonitorable = enableOrDisable(si.getMonitorEnable(),sm.getMonitorEnable());
 		context.setParam(IS_MONITORENABLE, iMonitorable);
 		if(iMonitorable) {
-			MRpcItem item = context.getMRpcItem();
-			if(item == null) {
-				synchronized(MRpcItem.class) {
-					item = context.getMRpcItem();
-					if(item == null) {
-						item = new MRpcItem();
-						ActInfo ai = context.getAccount();
-						if(ai != null) {
-							item.setClientId(ai.getClientId());
-						}
-						//the pre RPC Request ID as the parent ID of this request
-						context.setParam(MRPC_ITEM, item);
-					}
-				}
-			}
-			item.setProvider(false);
-			item.setReqParentId(context.getLong(REQ_PARENT_ID, 0L));
+			initMrpcStatisItem() ;
 		}
-		
+		initMrpcLogItem();
 	}
 	
 	
@@ -254,7 +305,8 @@ public class JMicroContext  {
 		
 		Object obj = serviceLoader.getService(Integer.parseInt(req.getImpl()));
 		if(obj == null){
-			SF.eventLog(MC.MT_PLATFORM_LOG,MC.LOG_ERROR,JMicroContext.class," service INSTANCE not found");
+			LG.log(MC.LOG_ERROR,JMicroContext.class," service INSTANCE not found");
+			MT.nonRpcEvent(Config.getInstanceName(), MC.MT_PLATFORM_LOG);
 			//SF.doSubmit(MonitorConstant.SERVER_REQ_SERVICE_NOT_FOUND,req,null);
 			throw new CommonException("Service not found,srv: "+req.getImpl());
 		}
@@ -267,20 +319,14 @@ public class JMicroContext  {
 		//context.setLong(JMicroContext.REQ_PARENT_ID, req.getRequestId());
 		context.setParam(JMicroContext.REQ_ID, req.getRequestId());
 		
-		if(context.isMonitorable()) {
-			MRpcItem mi = context.getMRpcItem();
-			mi.setReqParentId(req.getReqParentId());
-			mi.setReqId(req.getRequestId());
-			mi.setReq(req);
-		}
-		
 		context.setParam(JMicroContext.CLIENT_ARGSTR, UniqueServiceMethodKey.paramsStr(req.getArgs()));
 		context.mergeParams(req.getRequestParams());
 		
 		ServiceItem si = registry.getOwnItem(Integer.parseInt(req.getImpl()));
 		if(si == null){
-			if(SF.isLoggable(MC.LOG_ERROR,req.getLogLevel())) {
-				SF.eventLog(MC.MT_SERVICE_ITEM_NOT_FOUND,MC.LOG_ERROR,JMicroContext.class," service ITEM not found");
+			if(LG.isLoggable(MC.LOG_ERROR,req.getLogLevel())) {
+				LG.log(MC.LOG_ERROR,JMicroContext.class," service ITEM not found");
+				MT.nonRpcEvent(Config.getInstanceName(), MC.MT_SERVICE_ITEM_NOT_FOUND);
 			}
 			//SF.doSubmit(MonitorConstant.SERVER_REQ_SERVICE_NOT_FOUND,req,null);
 			throw new CommonException("Service not found impl："+req.getImpl()+", srv: " + req.getServiceName());
@@ -290,6 +336,16 @@ public class JMicroContext  {
 		context.setObject(Constants.SERVICE_ITEM_KEY, si);
 		context.setObject(Constants.SERVICE_METHOD_KEY, sm);
 		context.setObject(Constants.SERVICE_OBJ_KEY, obj);
+		
+		MRpcLogItem mi = context.getMRpcLogItem();
+		
+		if( mi != null) {
+			mi.setReqParentId(req.getReqParentId());
+			mi.setReqId(req.getRequestId());
+			mi.setReq(req);
+			mi.setImplCls(si.getImpl());
+			mi.setSmKey(sm.getKey());
+		}
 		
 	}
 	

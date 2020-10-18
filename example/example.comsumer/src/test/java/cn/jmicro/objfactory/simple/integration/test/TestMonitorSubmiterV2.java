@@ -4,44 +4,40 @@ import org.junit.Test;
 
 import cn.jmicro.api.mng.ReportData;
 import cn.jmicro.api.monitor.IMonitorDataSubscriber;
-import cn.jmicro.api.monitor.IMonitorServer;
+import cn.jmicro.api.monitor.ILogMonitorServer;
 import cn.jmicro.api.monitor.MC;
-import cn.jmicro.api.monitor.MRpcItem;
-import cn.jmicro.api.monitor.MonitorClient;
-import cn.jmicro.api.monitor.SF;
+import cn.jmicro.api.monitor.MRpcLogItem;
+import cn.jmicro.api.monitor.MRpcStatisItem;
+import cn.jmicro.api.monitor.StatisMonitorClient;
+import cn.jmicro.api.monitor.LG;
 import cn.jmicro.api.registry.ServiceMethod;
 import cn.jmicro.common.util.JsonUtils;
 import cn.jmicro.test.JMicroBaseTestCase;
 
 public class TestMonitorSubmiterV2 extends JMicroBaseTestCase{
 	
-	private MRpcItem ssubItem() {
-		MRpcItem si = new MRpcItem();
-		si.addOneItem(MC.MT_PLATFORM_LOG,MC.LOG_DEBUG, TestMonitorSubmiterV2.class.getName(),
+	private MRpcLogItem logItem() {
+		MRpcLogItem si = new MRpcLogItem();
+		si.addOneItem(MC.LOG_DEBUG, TestMonitorSubmiterV2.class.getName(),
 				"Test Monitor server");
 		si.setLinkId(22L);
 		return si;
 	}
 	
-	@Test
-	public void testSubmitItem() {
-		this.setSayHelloContextv2();
-		IMonitorDataSubscriber m = of.getRemoteServie(IMonitorDataSubscriber.class.getName()
-				, "printLogMonitor", "0.0.1",null);
-		MRpcItem[] sis = new MRpcItem[1];
-		sis[0] = ssubItem();
-		m.onSubmit(sis);
-		
-		this.waitForReady(1000*10);
+	private MRpcStatisItem statisItem() {
+		MRpcStatisItem si = new MRpcStatisItem();
+		si.addType(MC.MT_REQ_END, 1, 2);
+		return si;
 	}
+	
 	
 	@Test
 	public void testMonitorServer() {
 		this.setSayHelloContextv2();
-		IMonitorServer m = of.getRemoteServie(IMonitorServer.class.getName()
+		ILogMonitorServer m = of.getRemoteServie(ILogMonitorServer.class.getName()
 				, "monitorServer", "0.0.1",null);
-		MRpcItem[] sis = new MRpcItem[1];
-		sis[0] = ssubItem();
+		MRpcLogItem[] sis = new MRpcLogItem[1];
+		sis[0] = logItem();
 		m.submit(sis);
 		this.waitForReady(1000*10);
 	}
@@ -60,8 +56,8 @@ public class TestMonitorSubmiterV2 extends JMicroBaseTestCase{
 	
 	@Test
 	public void testMonitorDataSubmiter() {
-		MonitorClient m = of.get(MonitorClient.class);
-		m.readySubmit(ssubItem());
+		StatisMonitorClient m = of.get(StatisMonitorClient.class);
+		m.readySubmit(statisItem());
 		this.waitForReady(1000000);
 	}
 	
@@ -69,7 +65,8 @@ public class TestMonitorSubmiterV2 extends JMicroBaseTestCase{
 	public void testSFSubmit() {
 		//SF.doBussinessLog(MonitorConstant.LOG_ERROR, TestMonitorSubmiterV2.class, null, "Hello");
 		//SF.netIo(MonitorConstant.LOG_ERROR, "testmonitor", TestMonitorSubmiterV2.class, null);
-		SF.eventLog(MC.MT_PLATFORM_LOG,MC.LOG_ERROR,TestMonitorSubmiterV2.class, "testmonitor");
+		LG.log(MC.LOG_ERROR,TestMonitorSubmiterV2.class, "testmonitor");
+		
 		this.waitForReady(1000000);
 	}
 	
@@ -79,7 +76,7 @@ public class TestMonitorSubmiterV2 extends JMicroBaseTestCase{
 		for(;;){
 			
 			try {
-				SF.eventLog(MC.MT_PLATFORM_LOG,MC.LOG_ERROR,TestMonitorSubmiterV2.class, "testmonitorPresure");
+				LG.log(MC.LOG_ERROR,TestMonitorSubmiterV2.class, "testmonitorPresure");
 			} catch (Throwable e1) {
 				e1.printStackTrace();
 			}

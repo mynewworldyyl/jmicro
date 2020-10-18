@@ -19,6 +19,7 @@ package cn.jmicro.etcd.test;
 import java.util.Timer;
 import java.util.TimerTask;
 
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 import cn.jmicro.api.pubsub.PSData;
@@ -35,7 +36,13 @@ public class TestApigateClient {
 	private String TOPIC = "/jmicro/test/topic01";
 	
 	//private ApiGatewayClient socketClient = new ApiGatewayClient(new ApiGatewayConfig(Constants.TYPE_HTTP,"jmicro.cn",80));
-	private ApiGatewayClient socketClient = new ApiGatewayClient(new ApiGatewayConfig(Constants.TYPE_SOCKET,"jmicro.cn",9092));
+	private ApiGatewayClient socketClient = null;
+	
+	@BeforeClass
+	public void setUp() {
+		ApiGatewayClient.initClient(new ApiGatewayConfig(Constants.TYPE_SOCKET,"jmicro.cn",9092));
+		socketClient =  ApiGatewayClient.getClient();
+	}
 	
 	//账号名
 	private static final String ACT = "test01";

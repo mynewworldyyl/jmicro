@@ -20,7 +20,7 @@ import cn.jmicro.api.annotation.Service;
 import cn.jmicro.api.mng.IMonitorServerManager;
 import cn.jmicro.api.monitor.IMonitorAdapter;
 import cn.jmicro.api.monitor.MC;
-import cn.jmicro.api.monitor.MonitorClient;
+import cn.jmicro.api.monitor.StatisMonitorClient;
 import cn.jmicro.api.monitor.MonitorInfo;
 import cn.jmicro.api.monitor.MonitorServerStatus;
 import cn.jmicro.api.monitor.genclient.IMonitorAdapter$JMAsyncClient;
@@ -45,7 +45,7 @@ public class MonitorServerManagerImpl implements IMonitorServerManager{
 	//private Short[] types = null; 
 	
 	@Inject
-	private MonitorClient monitorManager;
+	private StatisMonitorClient monitorManager;
 	
 	public void ready() {
 	   /*typeLabels = new String[MonitorServerStatus.TYPES.length];

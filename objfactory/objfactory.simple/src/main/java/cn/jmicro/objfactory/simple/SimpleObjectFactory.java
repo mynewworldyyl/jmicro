@@ -58,7 +58,8 @@ import cn.jmicro.api.config.IConfigLoader;
 import cn.jmicro.api.masterelection.IMasterChangeListener;
 import cn.jmicro.api.masterelection.VoterPerson;
 import cn.jmicro.api.monitor.MC;
-import cn.jmicro.api.monitor.SF;
+import cn.jmicro.api.monitor.MT;
+import cn.jmicro.api.monitor.LG;
 import cn.jmicro.api.objectfactory.IObjectFactory;
 import cn.jmicro.api.objectfactory.IPostFactoryListener;
 import cn.jmicro.api.objectfactory.IPostInitListener;
@@ -562,8 +563,9 @@ public class SimpleObjectFactory implements IObjectFactory {
 					 }
 					 r.run();
 					 
-					 SF.eventLog(MC.MT_SERVER_START, MC.LOG_INFO, SimpleObjectFactory.class
-							 , JsonUtils.getIns().toJson(pi));
+					 LG.log(MC.LOG_INFO, SimpleObjectFactory.class
+							 , "Got master and started: "+JsonUtils.getIns().toJson(pi));
+					 MT.nonRpcEvent(Config.getInstanceName(), MC.MT_SERVER_START);
 				} else if(isMast[0]) {
 					//失去master资格，退出
 					if(pi.isMaster()) {
@@ -572,8 +574,12 @@ public class SimpleObjectFactory implements IObjectFactory {
 						final String js = JsonUtils.getIns().toJson(pi);
 						dataOperator.setData(p, js);
 					}
-					 SF.eventLog(MC.MT_PLATFORM_LOG, MC.LOG_INFO, SimpleObjectFactory.class
-							 , JsonUtils.getIns().toJson(pi));
+					
+					 LG.log(MC.LOG_INFO, SimpleObjectFactory.class
+							 , "Lost master and exit: "+JsonUtils.getIns().toJson(pi));
+					 MT.nonRpcEvent(Config.getInstanceName(), MC.MT_SERVER_STOP);
+					 JMicro.waitTime(3000);
+					 
 					 logger.info(Config.getInstanceName() + " lost master, need restart server!");
 					 System.exit(0);
 				}
@@ -1058,12 +1064,13 @@ public class SimpleObjectFactory implements IObjectFactory {
 			Object srv = null;
 			boolean isRequired = false;
 			Class<?> refCls = f.getType();
+			
+			/*if(refCls.getName().equals("cn.jmicro.api.objectfactory.IObjectFactory")) {
+				logger.debug("cn.jmicro.api.objectfactory.IObjectFactory");
+			}*/
+			
 			//对某些类,命令行可以指定特定组件实例名称,系统对该类使用指定实例,忽略别的实例
 			srv = this.getCommandSpecifyConponent(f);
-			
-			/*if(refCls.getName().equals("cn.apache.ibatis.session.SqlSessionFactory")) {
-				logger.debug("cn.jmicro.ext.mybatis.CurSqlSessionFactory");
-			}*/
 			
 			if(srv == null && f.isAnnotationPresent(Inject.class)){
 				//Inject the local component
@@ -1287,7 +1294,10 @@ public class SimpleObjectFactory implements IObjectFactory {
 			if(srv != null) {
 				setObjectVal(obj, f, srv);
 			} else if(isRequired) {
-				throw new CommonException("Class ["+cls.getName()+"] field ["+ f.getName()+"] dependency ["+f.getType().getName()+"] not found");
+				String msg = "Class ["+cls.getName()+"] field ["+ f.getName()+"] dependency ["+f.getType().getName()+"] not found";
+				LG.log(MC.LOG_ERROR, getClass(), msg);
+				JMicro.waitTime(5000);
+				throw new CommonException(msg);
 			}
 		}
 		
@@ -1629,6 +1639,8 @@ public class SimpleObjectFactory implements IObjectFactory {
 		if(op.exist(p)) {
 			String oldJson = op.getData(p);
 			ProcessInfo pri = JsonUtils.getIns().fromJson(oldJson, ProcessInfo.class);
+			//LG.log(MC.LOG_ERROR,getClass(),"Process exist[" +oldJson+"]");
+			//JMicro.waitTime(5000);
 			if(pri != null && pri.isActive()) {
 				throw new CommonException("Process exist[" +oldJson+"]");
 			}
@@ -1648,17 +1660,13 @@ public class SimpleObjectFactory implements IObjectFactory {
 			if(type == IListener.DATA_CHANGE) {
 				ProcessInfo pi0 = JsonUtils.getIns().fromJson(data, ProcessInfo.class);
 				if(!pi0.isActive()) {
+					pi.setActive(false);
 					op.deleteNode(p);
-					logger.warn("JVM exit by other system");
-					SF.eventLog(MC.MT_PROCESS_REMOVE,MC.LOG_WARN, this.getClass(),data);
-					synchronized(this) {
-						try {
-							//等日志发送完成
-							this.wait(2000);
-						} catch (InterruptedException e) {
-							e.printStackTrace();
-						}
-					}
+					String msg = "JVM exit by other system";
+					LG.log(MC.LOG_WARN, this.getClass(),msg+"data: "+data);
+					MT.nonRpcEvent(Config.getInstanceName(), MC.MT_PROCESS_REMOVE);
+					logger.warn(msg);
+					JMicro.waitTime(4000);
 					System.exit(0);
 				}else {
 					pi.setHaEnable(pi0.isHaEnable());
@@ -1675,7 +1683,7 @@ public class SimpleObjectFactory implements IObjectFactory {
 				String js0 = JsonUtils.getIns().toJson(pi);
 				String msg = "Recreate process info node by checker: " + js0;
 				logger.warn(msg);
-				SF.eventLog(MC.MT_PROCESS_LOG,MC.LOG_WARN, this.getClass(),msg);
+				LG.log(MC.LOG_WARN, this.getClass(),msg);
 				op.createNodeOrSetData(p,js0,true);
 			}
 		});

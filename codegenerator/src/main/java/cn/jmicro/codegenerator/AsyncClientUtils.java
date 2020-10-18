@@ -7,7 +7,13 @@ public class AsyncClientUtils {
 	
 	public static final String genSyncServiceName(String fullName) {
 		String iname = fullName;
-		if(fullName.endsWith(AsyncClientProxy.IMPL_SUBFIX)) {
+		if(fullName.endsWith(AsyncClientProxy.INT_GATEWAY_CLASS)) {
+			 String cn = fullName.substring(0, fullName.indexOf(AsyncClientProxy.INT_GATEWAY_CLASS));
+			 String pkgName = cn.substring(0,cn.lastIndexOf("."));
+			 pkgName = pkgName.substring(0, pkgName.indexOf(AsyncClientProxy.PKG_SUBFIX));
+			 String simpleClassName = cn.substring(cn.lastIndexOf(".")+1,cn.length());
+			 iname = pkgName + simpleClassName;
+		 }else if(fullName.endsWith(AsyncClientProxy.IMPL_SUBFIX)) {
 			 String cn = fullName.substring(0, fullName.indexOf(AsyncClientProxy.IMPL_SUBFIX));
 			 String pkgName = cn.substring(0,cn.lastIndexOf("."));
 			 pkgName = pkgName.substring(0, pkgName.indexOf(AsyncClientProxy.PKG_SUBFIX));
@@ -25,12 +31,16 @@ public class AsyncClientUtils {
 	
 	public static final String genAsyncServiceName(String fullName) {
 
-		 if(fullName.endsWith(AsyncClientProxy.INT_SUBFIX)) {
-			 return fullName;
+		 if(fullName.endsWith(AsyncClientProxy.INT_GATEWAY_CLASS)) {
+			 return fullName.substring(0,fullName.length() - AsyncClientProxy.INT_GATEWAY_CLASS.length());
 		 }
-
+		 
 		 if(fullName.endsWith(AsyncClientProxy.IMPL_SUBFIX)) {
 			 return fullName.substring(0,fullName.length() - AsyncClientProxy.IMPL_SUBFIX.length());
+		 }
+		 
+		 if(fullName.endsWith(AsyncClientProxy.INT_SUBFIX)) {
+			 return fullName;
 		 }
 		
 		 String pkgName = "";
@@ -51,9 +61,19 @@ public class AsyncClientUtils {
 		 if(fullName.endsWith(AsyncClientProxy.IMPL_SUBFIX)) {
 			 return fullName;
 		 }
+		 
+		 if(fullName.endsWith(AsyncClientProxy.INT_GATEWAY_CLASS)) {
+			 fullName = genAsyncServiceName(fullName);
+		 }
 
 		 if(fullName.endsWith(AsyncClientProxy.INT_SUBFIX)) {
-			 return fullName + AsyncClientProxy.IMPL;
+			 int idx = fullName.lastIndexOf(".");
+			 String pkgName = fullName.substring(0,idx);
+			 String cn = fullName.substring(idx+1);
+			 if(cn.startsWith("I")) {
+				 cn = cn.substring(1);
+			 }
+			 return pkgName + "." + cn + AsyncClientProxy.IMPL;
 		 }
 		
 		 String pkgName = "";
@@ -92,10 +112,12 @@ public class AsyncClientUtils {
 	
 	public static final Class<?> parseServiceClass(Class<?> type) {
 		String cn = type.getSimpleName();
-		if(cn.endsWith(AsyncClientProxy.INT_SUBFIX)) {
+		if(cn.endsWith(AsyncClientProxy.INT_GATEWAY_CLASS)) {
 			return type.getInterfaces()[0];
-		}else if(cn.endsWith(AsyncClientProxy.IMPL_SUBFIX)) {
+		}else if(cn.endsWith(AsyncClientProxy.INT_SUBFIX)) {
 			return type.getInterfaces()[0].getInterfaces()[0];
+		}else if(cn.endsWith(AsyncClientProxy.IMPL_SUBFIX)) {
+			return type.getInterfaces()[0].getInterfaces()[0].getInterfaces()[0];
 		}
 		return type;
 	}

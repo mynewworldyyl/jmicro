@@ -32,7 +32,8 @@ import cn.jmicro.api.executor.ExecutorConfig;
 import cn.jmicro.api.executor.ExecutorFactory;
 import cn.jmicro.api.executor.NamedThreadFactory;
 import cn.jmicro.api.monitor.MC;
-import cn.jmicro.api.monitor.SF;
+import cn.jmicro.api.monitor.MT;
+import cn.jmicro.api.monitor.LG;
 import cn.jmicro.api.net.IMessageHandler;
 import cn.jmicro.api.net.IMessageReceiver;
 import cn.jmicro.api.net.ISession;
@@ -116,12 +117,26 @@ public class ClientMessageReceiver implements IMessageReceiver{
 				});
 			} else {
 				String errMsg = "Handler not found:" + Integer.toHexString(msg.getType());
-				SF.eventLog(MC.MT_HANDLER_NOT_FOUND,MC.LOG_ERROR, ClientMessageReceiver.class,errMsg);
+				
 				logger.error("Handler not found:" + Integer.toHexString(msg.getType()));
+				
+				if(msg.isLoggable()) {
+					LG.log(MC.LOG_ERROR, ClientMessageReceiver.class,errMsg);
+				}
+				
+				if(msg.isMonitorable()) {
+					MT.rpcEvent(MC.MT_HANDLER_NOT_FOUND, 1, 1);
+				}
 			}
 		} catch (Throwable e) {
 			logger.error("reqHandler error: {}",msg,e);
-			SF.eventLog(MC.MT_REQ_ERROR,MC.LOG_ERROR, ClientMessageReceiver.class,"receive error",e);
+			if(msg.isLoggable()) {
+				LG.log(MC.LOG_ERROR, ClientMessageReceiver.class,"receive error",e);
+			}
+			
+			if(msg.isMonitorable()) {
+				MT.rpcEvent(MC.MT_REQ_ERROR, 1, 1);
+			}
 		}
 	}
 

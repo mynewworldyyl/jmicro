@@ -6,7 +6,7 @@ import org.junit.runners.BlockJUnit4ClassRunner;
 
 import cn.jmicro.api.JMicro;
 import cn.jmicro.api.JMicroContext;
-import cn.jmicro.api.monitor.MonitorClient;
+import cn.jmicro.api.monitor.StatisMonitorClient;
 import cn.jmicro.api.objectfactory.IObjectFactory;
 import cn.jmicro.api.registry.IRegistry;
 import cn.jmicro.api.registry.ServiceItem;
@@ -32,7 +32,7 @@ public class JMicroBaseTestCase {
 	}
 	
 	protected static String[] getArgs() {
-		return new String[] {"-DinstanceName=JMicroBaseTestCase"};
+		return new String[] {"-DinstanceName=JMicroBaseTestCase","-DclientId=0","-DadminClientId=0"};
 	}
 	
 	protected <T> T get(Class<T> cls) {
@@ -98,7 +98,7 @@ public class JMicroBaseTestCase {
 	protected void setSayHelloContextv2() {
 		
 		JMicroContext.get().setBoolean(JMicroContext.IS_MONITORENABLE, true);
-		MonitorClient monitor = of.get(MonitorClient.class);
+		StatisMonitorClient monitor = of.get(StatisMonitorClient.class);
 		
 		ServiceMethod sm = sayHelloServiceMethod();
 		JMicroContext.get().setParam(Constants.SERVICE_METHOD_KEY,sm);

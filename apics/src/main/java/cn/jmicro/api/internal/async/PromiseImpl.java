@@ -152,9 +152,11 @@ public class PromiseImpl<R> implements IPromise<R>{
 		public void onResult(R msg, AsyncFailResult fail, Object cxt) {
 			if(fail == null) {
 				for(int i = 0; i < this.successCbs.length; i++) {
-					this.successCbs[i].success(msg, cxt);
+					if(this.successCbs[i] != null) {
+						this.successCbs[i].success(msg, cxt);
+					}
 				}
-			}else {
+			} else {
 				for(int i = 0; i < this.failCbs.length; i++) {
 					if(this.failCbs[i] != null) {
 						this.failCbs[i].fail(fail.getCode(), fail.getMsg(), cxt);

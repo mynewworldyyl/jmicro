@@ -25,7 +25,8 @@ import org.slf4j.LoggerFactory;
 import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.limitspeed.ILimiter;
 import cn.jmicro.api.monitor.MC;
-import cn.jmicro.api.monitor.SF;
+import cn.jmicro.api.monitor.MT;
+import cn.jmicro.api.monitor.LG;
 import cn.jmicro.api.net.IRequest;
 
 /**
@@ -60,7 +61,8 @@ public class TokenBucketLimiter extends AbstractLimiter implements ILimiter{
 		int rst = b.applyToken(1);
 		if(rst < 0) {
 			String errMsg = "speed:"+speed+",key:"+key;
-			SF.eventLog(MC.MT_SERVICE_SPEED_LIMIT, MC.LOG_WARN, TAG, errMsg);
+			LG.log(MC.LOG_WARN, TAG, errMsg);
+			MT.rpcEvent(MC.MT_SERVICE_SPEED_LIMIT);
 			logger.info(errMsg);
 			return false;
 		} else {

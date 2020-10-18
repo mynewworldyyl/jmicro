@@ -13,10 +13,9 @@ import org.slf4j.LoggerFactory;
 
 import cn.jmicro.api.executor.ExecutorConfig;
 import cn.jmicro.api.executor.ExecutorFactory;
+import cn.jmicro.api.monitor.LG;
 import cn.jmicro.api.monitor.MC;
-import cn.jmicro.api.monitor.SF;
 import cn.jmicro.api.objectfactory.IObjectFactory;
-import cn.jmicro.api.persist.IObjectStorage;
 import cn.jmicro.api.timer.TimerTicker;
 import cn.jmicro.common.util.JsonUtils;
 
@@ -220,7 +219,7 @@ class ResendManager {
 				failStorage.push(item.topic, item);
 				logger.error("缓存消息量已经达上限："+JsonUtils.getIns().toJson(item));
 				//没办法，服务器吃不消了，直接丢弃
-				SF.eventLog(MC.MT_PUBSUB_LOG,MC.LOG_ERROR,PubSubServer.class, 
+				LG.log(MC.LOG_ERROR,PubSubServer.class, 
 						"缓存消息量已经达上限："+JsonUtils.getIns().toJson(item));
 			}
 		}

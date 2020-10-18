@@ -34,6 +34,7 @@ import org.slf4j.LoggerFactory;
 
 import cn.jmicro.api.ClassScannerUtils;
 import cn.jmicro.api.annotation.Component;
+import cn.jmicro.api.monitor.LG;
 import cn.jmicro.api.raft.IDataOperator;
 import cn.jmicro.common.CommonException;
 import cn.jmicro.common.Constants;
@@ -52,6 +53,8 @@ public class Config implements IConfigChangeListener{
 	
 	private static String RegistryProtocol = "zookeeper";
 	private static String RegistryHost = "localhost:2181";
+	
+	public static final String JMICRO_VERSION = "0.0.2";
 	//private static String RegistryPort = "2181";
 	
 	//private static String Host = "";
@@ -166,6 +169,8 @@ public class Config implements IConfigChangeListener{
 		if(clientId < 0) {
 			throw new CommonException("Invalid clientId :" + clientId);
 		}
+		
+		LG.SYSTEM_LOG_LEVEL = getCommandParam(Constants.SYSTEM_LOG_LEVEL, Byte.class, LG.SYSTEM_LOG_LEVEL);
 		
 		adminClientId = getCommandParam(Constants.ADMIN_CLIENT_ID,Integer.class,-1);
 		

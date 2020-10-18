@@ -253,6 +253,16 @@ public class JMicro {
 		Utils.getIns().waitForShutdown();
 	}
 	
+	public static void waitTime(int i) {
+		try {
+			synchronized(objFactorys) {
+				objFactorys.wait(i);
+			}
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
+	}
+	
 	public static <T> T getRpcServiceTestingArgs(Class<T> srvClazz,Map<String,String> result, byte protocol) {
 		Object srv = Proxy.newProxyInstance(Thread.currentThread().getContextClassLoader(),
 				new Class[] {srvClazz}, 

@@ -53,6 +53,9 @@
                         <JLogItemView v-else-if="item.group == 'logItemView'" :item="item"></JLogItemView>
                         <JNamedTypeEditor v-else-if="item.group == 'namedType'" :item="item"></JNamedTypeEditor>
                         <JThreadPoolMonitorEditor v-else-if="item.group == 'threadPool'" :item="item"></JThreadPoolMonitorEditor>
+                        <JLogWarningConfigView v-else-if="item.group == 'warningConfig'" :item="item"></JLogWarningConfigView>
+
+                        <JBottomBar></JBottomBar>
                     </div>
                 </TabPane>
             </Tabs>
@@ -63,6 +66,7 @@
 <script>
 
     import TreeNode from "./common/JTreeNode.js"
+    import JBottomBar from './common/JBottomBar.vue'
 
     //import JServiceItem from './service/JServiceItem.vue'
     /*import JMethodItem from './service/JSMethodItem.vue'
@@ -100,6 +104,7 @@
     export default {
         name: 'JMicroEditor',
         components: {
+            JBottomBar,
             JServiceItem : () => import('./service/JServiceItem.vue'),
             JMethodItem: () => import('./service/JSMethodItem.vue'),
             JInstanceItem : () => import('./service/JInstanceItem.vue'),
@@ -124,6 +129,7 @@
             JAgent : () => import('./deployment/JAgent.vue'),
             JProcess : () => import('./deployment/JProcess.vue'),
             JLog : () => import('./log/JLog.vue'),
+            JLogWarningConfigView: () => import('./monitor/JLogWarningConfigView.vue'),
 
             JAccountEditor:()=> import('./security/JAccountEditor.vue'),
             JUserProfileEditor:()=> import('./security/JUserProfileEditor.vue'),
@@ -178,7 +184,7 @@
 
             this.mountServiceSelect('logFileSelect');
 
-            window.jm.vue.$emit('openEditorSelect','topicList');
+            //window.jm.vue.$emit('openEditorSelect','topicList');
 
             window.jm.vue.$on("scroptto",(to) => {
                 this.$nextTick(() => {
@@ -554,10 +560,11 @@
     }
 
     .editorBody {
-        height: 84%;
+        height: 90%;
         overflow-y: auto;
         box-sizing: border-box;
-        margin-bottom: 1000px;
+        position: relative;
+        /*margin-bottom: 1000px;*/
     }
 
     .editorToolBar{

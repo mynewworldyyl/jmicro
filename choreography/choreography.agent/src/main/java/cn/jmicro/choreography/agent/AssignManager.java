@@ -14,6 +14,8 @@ import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Inject;
 import cn.jmicro.api.choreography.AgentInfo;
 import cn.jmicro.api.choreography.ChoyConstants;
+import cn.jmicro.api.monitor.LG;
+import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.raft.IChildrenListener;
 import cn.jmicro.api.raft.IDataListener;
 import cn.jmicro.api.raft.IDataOperator;
@@ -43,7 +45,9 @@ public class AssignManager {
 	private IDataListener assignDataListener = (path,data)->{
 		Assign a = this.getAssignByJson(data);
 		if(a == null) {
-			logger.error("Data listener assign is null for: " +path + ", data: " + data);
+			String msg = "Data listener assign is null for: " +path + ", data: " + data;
+			LG.log(MC.LOG_ERROR, AssignManager.class, msg);
+			logger.error(msg);
 			return;
 		}
 		addOrUpdate(a);
@@ -54,7 +58,9 @@ public class AssignManager {
 		if(type == IListener.ADD) {
 			Assign a = getAssignByJson(data);
 			if(a == null) {
-				logger.error("Child listener assign is null for: " +p + ", data: " + data);
+				String msg = "Child listener assign is null for: " +p + ", data: " + data;
+				LG.log(MC.LOG_ERROR, AssignManager.class, msg);
+				logger.error(msg);
 				return;
 			}
 			addOrUpdate(a);
@@ -106,13 +112,17 @@ public class AssignManager {
 
 	private Assign getAssignByJson(String data) {
 		if(StringUtils.isEmpty(data)) {
-			logger.warn("Data is NULL for path: " + data);
+			String msg = "Data is NULL for path: " + data;
+			LG.log(MC.LOG_WARN, AssignManager.class, msg);
+			logger.warn(msg);
 			return null;
 		}
 		
 		Assign a = JsonUtils.getIns().fromJson(data, Assign.class);
 		if(a == null) {
-			logger.error("Agent  data: " + data);
+			String msg = "Agent  data: " + data;
+			LG.log(MC.LOG_ERROR, AssignManager.class, msg);
+			logger.error(msg);
 			return null;
 		}
 		return a;
@@ -144,7 +154,9 @@ public class AssignManager {
 			op.setData(path, JsonUtils.getIns().toJson(a));
 		} else {
 			removeLocalCache(a);
-			logger.error("Not exist assing when update: " + a.toString());
+			String msg = "Not exist assing when update: " + a.toString();
+			LG.log(MC.LOG_ERROR, AssignManager.class, msg);
+			logger.error(msg);
 		}
 	}
 	

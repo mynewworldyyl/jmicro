@@ -64,16 +64,56 @@ public class ClientServiceProxyGenerator extends AbstractProcessor {
 				 System.out.println("ClientServiceProxyGenerator: "+tn);
 			 }*/
 			 
-			 TypeElement typeElement = (TypeElement)element;	
+			 TypeElement typeElement = (TypeElement)element;
+			 generateGatewayInterfaceClass(typeElement);
 		     generateInterfaceClass(typeElement);
 		     generateImplClass(typeElement);
-		     
-		     
 		     
 		}
 		return true;
 	}
 
+
+	private void generateGatewayInterfaceClass(TypeElement typeElement) {
+
+		 String tn = typeElement.getSimpleName().toString();
+		 String srcTn = typeElement.getQualifiedName().toString();
+		 String pkgName = "";
+		 
+		 int idx = srcTn.lastIndexOf(".");
+		 if(idx > 0) {
+			 pkgName = srcTn.substring(0,idx) + "." + AsyncClientProxy.PKG_SUBFIX;
+		 } else {
+			 pkgName = AsyncClientProxy.PKG_SUBFIX;
+		 }
+		 
+		 ClassName supperInterface = ClassName.get(srcTn.substring(0,idx), tn);
+		 TypeSpec.Builder clientProxyHolderBuilder = TypeSpec.interfaceBuilder(tn + AsyncClientProxy.INT_GATEWAY + AsyncClientProxy.INT_SUBFIX)
+			      .addModifiers(Modifier.PUBLIC)
+			      .addSuperinterface(supperInterface);
+
+		 List<? extends Element> childElements = typeElement.getEnclosedElements();
+		 childElements.forEach((e)->{
+			 if(e.getKind() != ElementKind.METHOD) {
+				 return;
+			 }
+			 ExecutableElement m = (ExecutableElement)e;
+			 clientProxyHolderBuilder.addMethod(addInterfaceMethod(m,true));
+			 clientProxyHolderBuilder.addMethod(addInterfaceMethod(m,false));
+		 });
+		 
+	    TypeSpec typeSpec = clientProxyHolderBuilder.build();
+	 
+	    JavaFile javaFile = JavaFile.builder(pkgName, typeSpec).build();
+
+	    try {
+			javaFile.writeTo(processingEnv.getFiler());
+		} catch (IOException e1) {
+			e1.printStackTrace();
+			processingEnv.getMessager().printMessage(Kind.ERROR,e1.toString(),typeElement);
+		}
+		
+	}
 
 	private void generateImplClass(TypeElement typeElement) {
 
@@ -375,20 +415,10 @@ public class ClientServiceProxyGenerator extends AbstractProcessor {
 			 pkgName = AsyncClientProxy.PKG_SUBFIX;
 		 }
 		 
-		 ClassName supperInterface = ClassName.get(srcTn.substring(0,idx), tn);
+		 ClassName supperInterface = ClassName.get(pkgName, tn + AsyncClientProxy.INT_GATEWAY + AsyncClientProxy.INT_SUBFIX);
 		 TypeSpec.Builder clientProxyHolderBuilder = TypeSpec.interfaceBuilder(tn + AsyncClientProxy.INT_SUBFIX)
 			      .addModifiers(Modifier.PUBLIC)
 			      .addSuperinterface(supperInterface);
-
-		 List<? extends Element> childElements = typeElement.getEnclosedElements();
-		 childElements.forEach((e)->{
-			 if(e.getKind() != ElementKind.METHOD) {
-				 return;
-			 }
-			 ExecutableElement m = (ExecutableElement)e;
-			 clientProxyHolderBuilder.addMethod(addInterfaceMethod(m,true));
-			 clientProxyHolderBuilder.addMethod(addInterfaceMethod(m,false));
-		 });
 			
 		 MethodSpec.Builder isValidMethod = MethodSpec.methodBuilder("isReady")
 				  .addModifiers(Modifier.PUBLIC,Modifier.ABSTRACT);

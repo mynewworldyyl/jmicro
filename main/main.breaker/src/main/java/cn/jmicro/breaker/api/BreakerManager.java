@@ -36,8 +36,8 @@ import cn.jmicro.api.codec.JDataInput;
 import cn.jmicro.api.codec.TypeCoderFactory;
 import cn.jmicro.api.mng.ReportData;
 import cn.jmicro.api.monitor.IMonitorDataSubscriber;
+import cn.jmicro.api.monitor.LG;
 import cn.jmicro.api.monitor.MC;
-import cn.jmicro.api.monitor.SF;
 import cn.jmicro.api.objectfactory.AbstractClientServiceProxyHolder;
 import cn.jmicro.api.objectfactory.IObjectFactory;
 import cn.jmicro.api.registry.BreakRule;
@@ -142,7 +142,8 @@ public class BreakerManager{
 				
 				long interval = TimeUtils.getMilliseconds(rule.getBreakTimeInterval(), sm.getBaseTimeUnit());
 				TimerTicker.getTimer(timers,interval).removeListener(key+"/dotesting", true);
-				SF.breakService("close", sm, "" + rd.getCurPercent()[0]);
+				LG.breakService(MC.LOG_WARN,"close", sm, "" + rd.getCurPercent()[0]);
+				
 			}
 		} else {
 			//没有熔断,判断是否需要熔断
@@ -161,7 +162,7 @@ public class BreakerManager{
 				long interval = TimeUtils.getMilliseconds(rule.getBreakTimeInterval(), sm.getBaseTimeUnit());
 				TimerTicker.getTimer(timers,interval).addListener(key+"/dotesting", sm, doTestImpl);
 				
-				SF.breakService("open", sm, ""+rd.getCurPercent()[0]);
+				LG.breakService(MC.LOG_WARN,"open", sm, ""+rd.getCurPercent()[0]);
 			}
 		}
 	}	

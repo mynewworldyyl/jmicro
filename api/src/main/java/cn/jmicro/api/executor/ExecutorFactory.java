@@ -22,7 +22,8 @@ import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Inject;
 import cn.jmicro.api.config.Config;
 import cn.jmicro.api.monitor.MC;
-import cn.jmicro.api.monitor.SF;
+import cn.jmicro.api.monitor.MT;
+import cn.jmicro.api.monitor.LG;
 import cn.jmicro.api.objectfactory.IObjectFactory;
 import cn.jmicro.api.registry.ServiceItem;
 import cn.jmicro.api.service.ServiceLoader;
@@ -191,8 +192,9 @@ public class ExecutorFactory {
 			//if pool size less than 2, you should know what you doing
 			if(this.cfg.getTaskQueueSize() > 2 && e.getPoolSize() > this.warnSize) {
 				setInfo();
-				SF.eventLog(MC.EP_TASK_WARNING, MC.LOG_WARN, JmicroThreadPoolExecutor.class,
+				LG.log(MC.LOG_WARN, JmicroThreadPoolExecutor.class,
 						JsonUtils.getIns().toJson(this.ei));
+				MT.rpcEvent(MC.EP_TASK_WARNING);
 			}
 		}
 
@@ -229,8 +231,10 @@ public class ExecutorFactory {
 		@Override
 		protected void terminated() {
 			this.ei.setTerminal(true);
-			SF.eventLog(MC.EP_TERMINAL, MC.LOG_WARN, JmicroThreadPoolExecutor.class,
+			LG.log(MC.LOG_WARN, JmicroThreadPoolExecutor.class,
 					JsonUtils.getIns().toJson(ei));
+			MT.rpcEvent(MC.EP_TERMINAL);
+			
 			super.terminated();
 		}
 

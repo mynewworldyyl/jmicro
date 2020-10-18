@@ -3,14 +3,14 @@ package cn.jmicro.api.mng;
 import java.util.ArrayList;
 import java.util.List;
 
-import cn.jmicro.api.monitor.MRpcItem;
+import cn.jmicro.api.monitor.MRpcLogItem;
 
 public class LogEntry {
 
 	//client request and response item
-	private MRpcItem item;
+	private MRpcLogItem item;
 	
-	private List<MRpcItem> providerItems = null;
+	private List<MRpcLogItem> providerItems = null;
 	
 	//reqId
 	private String id;
@@ -21,23 +21,23 @@ public class LogEntry {
 
 	public LogEntry() {}
 	
-	public LogEntry(MRpcItem item) {
+	public LogEntry(MRpcLogItem item) {
 		this.item = item;
 	}
 	
-	public MRpcItem getItem() {
+	public MRpcLogItem getItem() {
 		return item;
 	}
 
-	public void setItem(MRpcItem item) {
+	public void setItem(MRpcLogItem item) {
 		this.item = item;
 	}
 
-	public List<MRpcItem> getProviderItems() {
+	public List<MRpcLogItem> getProviderItems() {
 		return providerItems;
 	}
 
-	public void setProviderItems(List<MRpcItem> providerItems) {
+	public void setProviderItems(List<MRpcLogItem> providerItems) {
 		this.providerItems = providerItems;
 	}
 

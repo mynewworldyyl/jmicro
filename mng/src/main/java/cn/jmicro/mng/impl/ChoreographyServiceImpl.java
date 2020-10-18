@@ -27,8 +27,8 @@ import cn.jmicro.api.mng.ConfigNode;
 import cn.jmicro.api.mng.IChoreographyService;
 import cn.jmicro.api.mng.ICommonManager;
 import cn.jmicro.api.mng.IConfigManager;
+import cn.jmicro.api.monitor.LG;
 import cn.jmicro.api.monitor.MC;
-import cn.jmicro.api.monitor.SF;
 import cn.jmicro.api.raft.IDataOperator;
 import cn.jmicro.api.security.ActInfo;
 import cn.jmicro.api.security.PermissionManager;
@@ -150,7 +150,7 @@ public class ChoreographyServiceImpl implements IChoreographyService {
 			} else {
 				msg += "No login account to update deployment: " + id; 
 			}
-			SF.eventLog(MC.MT_DEPLOYMENT_REMOVE,MC.LOG_WARN, TAG,msg);
+			LG.log(MC.LOG_WARN, TAG,msg);
 			logger.warn(msg);
 			resp.setCode(1);
 			resp.setMsg(msg);
@@ -182,7 +182,7 @@ public class ChoreographyServiceImpl implements IChoreographyService {
 			} else {
 				msg += "No login account to update deployment: " + dep.toString(); 
 			}
-			SF.eventLog(MC.MT_DEPLOYMENT_LOG,MC.LOG_ERROR, TAG,msg);
+			LG.log(MC.LOG_ERROR, TAG,msg);
 			logger.warn(msg);
 			resp.setCode(1);
 			resp.setMsg(msg);
@@ -211,7 +211,7 @@ public class ChoreographyServiceImpl implements IChoreographyService {
 		dep.setClientId(d.getClientId());
 		
 		String data = JsonUtils.getIns().toJson(dep);
-		SF.eventLog(MC.MT_DEPLOYMENT_LOG,MC.LOG_INFO, TAG,data);
+		LG.log(MC.LOG_INFO, TAG,data);
 		op.setData(ChoyConstants.DEP_DIR+"/"+dep.getId(), data);
 		return resp;
 	}
@@ -259,7 +259,7 @@ public class ChoreographyServiceImpl implements IChoreographyService {
 			ActInfo ai = JMicroContext.get().getAccount();
 			String msg = "Stop process by Account [" + ai.getActName() + "], Process: " + data;
 			logger.warn(msg);
-			SF.eventLog(MC.MT_DEPLOYMENT_LOG,MC.LOG_WARN, TAG,msg);
+			LG.log(MC.LOG_WARN, TAG,msg);
 			return resp;
 		} else {
 			String msg = "";
@@ -270,7 +270,7 @@ public class ChoreographyServiceImpl implements IChoreographyService {
 				msg = "Nor login account to stop process ID: " + insId;
 			}
 			logger.warn(msg);
-			SF.eventLog(MC.MT_DEPLOYMENT_LOG,MC.LOG_WARN, TAG,msg);
+			LG.log(MC.LOG_WARN, TAG,msg);
 			resp.setData(false);
 			resp.setCode(1);
 			resp.setMsg(msg);

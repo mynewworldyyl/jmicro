@@ -19,6 +19,7 @@ package cn.jmicro.example.test;
 import java.util.Timer;
 import java.util.TimerTask;
 
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 import cn.jmicro.api.JMicro;
@@ -46,25 +47,40 @@ public class TestApigateClient {
 	//private ApiGatewayClient wsClient = new ApiGatewayClient(new ApiGatewayConfig(Constants.TYPE_WEBSOCKET,"192.168.56.1",9090));
 	
 	public static void main(String[] args) {
-		ApiGatewayClient socketClient = new ApiGatewayClient(new ApiGatewayConfig(Constants.TYPE_HTTP,"192.168.56.1",9090));
+		//ApiGatewayClient socketClient = new ApiGatewayClient(new ApiGatewayConfig(Constants.TYPE_HTTP,"192.168.56.1",9090));
 		//ISimpleRpc srv = socketClient.getService(ISimpleRpc.class,"simpleRpc", "0.0.1");
 		//System.out.println(srv.hi(new Person()));
 		
+		//private ApiGatewayClient socketClient = null;
+		
+		ApiGatewayClient.initClient(new ApiGatewayConfig(Constants.TYPE_SOCKET,"192.168.56.1",9092));
+		ApiGatewayClient socketClient =  ApiGatewayClient.getClient();
+		
 		ISimpleRpc$JMAsyncClient srv = socketClient.getService(ISimpleRpc$JMAsyncClient.class,"simpleRpc", "0.0.1");
-		srv.hiJMAsync(new Person(),null).then((val,fail,ctx) -> {
+		/*srv.hiJMAsync(new Person(),null).then((val,fail,ctx) -> {
 			System.out.println("Hi: " +val);
 			//System.out.println(fail);
-		});
+		});*/
 		
-		srv.helloJMAsync("Hello jmicro: ").then((val,fail,ctx) -> {
+		/*srv.helloJMAsync("Hello jmicro: ").then((val,fail,ctx) -> {
 			System.out.println("Hello: " +val);
 			//System.out.println(fail);
-		});
+		});*/
+		
+		System.out.println("Hello: " +srv.hello("Hello jmicro: "));
 		
 		JMicro.waitForShutdown();
 	}
 	
-	private ApiGatewayClient socketClient = new ApiGatewayClient(new ApiGatewayConfig(Constants.TYPE_SOCKET,"192.168.56.1",9092));
+	//private ApiGatewayClient socketClient = new ApiGatewayClient(new ApiGatewayConfig(Constants.TYPE_SOCKET,"192.168.56.1",9092));
+	
+	private ApiGatewayClient socketClient = null;
+	
+	@BeforeClass
+	public void setUp() {
+		ApiGatewayClient.initClient(new ApiGatewayConfig(Constants.TYPE_SOCKET,"jmicro.cn",9092));
+		socketClient =  ApiGatewayClient.getClient();
+	}
 	
 	@Test
 	public void testHiPerson() {

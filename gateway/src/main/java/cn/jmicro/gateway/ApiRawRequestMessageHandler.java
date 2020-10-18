@@ -17,8 +17,6 @@
  */
 package cn.jmicro.gateway;
 
-import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.nio.ByteBuffer;
 import java.util.HashMap;
@@ -38,8 +36,9 @@ import cn.jmicro.api.codec.JDataInput;
 import cn.jmicro.api.gateway.ApiRequest;
 import cn.jmicro.api.gateway.ApiResponse;
 import cn.jmicro.api.idgenerator.ComponentIdServer;
+import cn.jmicro.api.monitor.LG;
 import cn.jmicro.api.monitor.MC;
-import cn.jmicro.api.monitor.SF;
+import cn.jmicro.api.monitor.MT;
 import cn.jmicro.api.net.IMessageHandler;
 import cn.jmicro.api.net.ISession;
 import cn.jmicro.api.net.Message;
@@ -98,11 +97,15 @@ public class ApiRawRequestMessageHandler implements IMessageHandler{
 	public void onMessage(ISession session, Message msg) {
 		ApiRequest req = null;
 		JDataInput ji = null;
-		if(msg.getUpProtocol() == Message.PROTOCOL_JSON) {
-			req = ICodecFactory.decode(codecFactory, msg.getPayload(), ApiRequest.class, msg.getUpProtocol());
-			req.setArgs(getArgs(req.getServiceName(),req.getMethod(),req.getArgs(),session));
-		} else {
-			try {
+		final ApiResponse resp =  new ApiResponse();
+		
+		try {
+
+			if(msg.getUpProtocol() == Message.PROTOCOL_JSON) {
+				req = ICodecFactory.decode(codecFactory, msg.getPayload(), ApiRequest.class, msg.getUpProtocol());
+				req.setArgs(getArgs(req.getServiceName(),req.getMethod(),req.getArgs(),session));
+			} else {
+				
 				req = new ApiRequest();
 				ji = new JDataInput((ByteBuffer)msg.getPayload());
 				req.setReqId(ji.readLong());
@@ -123,65 +126,59 @@ public class ApiRawRequestMessageHandler implements IMessageHandler{
 				if(argLen > 0) {
 					req.setArgs(getArgs(req.getServiceName(),req.getMethod(),session,ji));
 				}
+			}
+		
+			Object result = null;
+			
+			msg.setType(Constants.MSG_TYPE_RRESP_RAW);
+			resp.setReqId(req.getReqId());
+			resp.setMsg(msg);
+			resp.setSuccess(true);
+			resp.setId(idGenerator.getLongId(ApiResponse.class));
+			
+			ActInfo ai = null;
+			
+			boolean doLogick = true;
+			if(req.getParams().containsKey(JMicroContext.LOGIN_KEY)) {
+				String lk = (String)req.getParams().get(JMicroContext.LOGIN_KEY);
+				if(StringUtils.isNotEmpty(lk)) {
+					ai = this.accountManager.getAccount(lk);
+					if(ai == null) {
+						ServerError se = new ServerError(ServerError.SE_INVLID_LOGIN_KEY,"Invalid login key!");
+						resp.setResult(se);
+						resp.setSuccess(false);
+						doLogick = false;
+						result = se;
+					} else {
+						JMicroContext.get().setString(JMicroContext.LOGIN_KEY, lk);
+						JMicroContext.get().setAccount(ai);	
+					}
+				}
+			}
+			
+			if(doLogick && MessageServiceImpl.TAG.equals(req.getServiceName())) {
+				if(ai != null) {
+					if("subscribe".equals(req.getMethod())) {
+						String topic = (String)req.getArgs()[1];
+						Map<String, Object> ctx = (Map<String, Object>)req.getArgs()[2];
+						result = ms.subscribe((ISession)req.getArgs()[0], topic, ctx);
+					} else if("unsubscribe".equals(req.getMethod())){
+						result = ms.unsubscribe((int)req.getArgs()[0]);
+					} else {
+						logger.error("Method:"+req.getMethod()+" not found!");
+						result = new ServerError(ServerError.SE_SERVICE_NOT_FOUND,"Method:"+req.getMethod()+" not found!");
+						resp.setSuccess(false);
+					}
+				} else {
+					resp.setSuccess(false);
+					result = new ServerError(ServerError.SE_NOT_LOGIN,"Have to login before use pubsub service!");
+				}
+			} else if(doLogick){
 				
-			} catch (IOException e) {
-				throw new CommonException("",e);
-			}
-			
-		}
-		 
-		ApiResponse resp = new ApiResponse();
-		Object result = null;
-		
-		msg.setType(Constants.MSG_TYPE_RRESP_RAW);
-		resp.setReqId(req.getReqId());
-		resp.setMsg(msg);
-		resp.setSuccess(true);
-		resp.setId(idGenerator.getLongId(ApiResponse.class));
-		
-		ActInfo ai = null;
-		
-		boolean doLogick = true;
-		if(req.getParams().containsKey(JMicroContext.LOGIN_KEY)) {
-			String lk = (String)req.getParams().get(JMicroContext.LOGIN_KEY);
-			if(StringUtils.isNotEmpty(lk)) {
-				ai = this.accountManager.getAccount(lk);
-				if(ai == null) {
-					ServerError se = new ServerError(ServerError.SE_INVLID_LOGIN_KEY,"Invalid login key!");
-					resp.setResult(se);
-					resp.setSuccess(false);
-					doLogick = false;
-					result = se;
-				} else {
-					JMicroContext.get().setString(JMicroContext.LOGIN_KEY, lk);
-					JMicroContext.get().setAccount(ai);	
-				}
-			}
-		}
-		
-		if(doLogick && MessageServiceImpl.TAG.equals(req.getServiceName())) {
-			if(ai != null) {
-				if("subscribe".equals(req.getMethod())) {
-					String topic = (String)req.getArgs()[1];
-					Map<String, Object> ctx = (Map<String, Object>)req.getArgs()[2];
-					result = ms.subscribe((ISession)req.getArgs()[0], topic, ctx);
-				} else if("unsubscribe".equals(req.getMethod())){
-					result = ms.unsubscribe((int)req.getArgs()[0]);
-				} else {
-					logger.error("Method:"+req.getMethod()+" not found!");
-					result = new ServerError(ServerError.SE_SERVICE_NOT_FOUND,"Method:"+req.getMethod()+" not found!");
-					resp.setSuccess(false);
-				}
-			} else {
-				resp.setSuccess(false);
-				result = new ServerError(ServerError.SE_NOT_LOGIN,"Have to login before use pubsub service!");
-			}
-		} else if(doLogick){
-			
-			Object srv = objFactory.getRemoteServie(req.getServiceName(), req.getNamespace(), req.getVersion(),null);
-			
-			if(srv != null){
-				try {
+				Object srv = objFactory.getRemoteServie(req.getServiceName(), req.getNamespace(), req.getVersion(),null);
+				
+				if(srv != null){
+
 					AbstractClientServiceProxyHolder proxy = (AbstractClientServiceProxyHolder)srv;
 					ServiceItem si = proxy.getHolder().getItem();
 					if(si == null) {
@@ -198,7 +195,8 @@ public class ApiRawRequestMessageHandler implements IMessageHandler{
 						ServiceMethod sm = si.getMethod(req.getMethod(), m.getParameterTypes());
 						if(sm == null) {
 							String errMsg = "Service mehtod ["+req.getServiceName()+"] method ["+req.getMethod()+"] not found";
-							SF.eventLog(MC.MT_SERVICE_METHOD_NOT_FOUND,MC.LOG_ERROR, TAG, errMsg);
+							LG.log(MC.LOG_ERROR, TAG, errMsg);
+							MT.rpcEvent(MC.MT_SERVICE_METHOD_NOT_FOUND);
 							throw new CommonException(errMsg);
 						}
 						
@@ -207,13 +205,13 @@ public class ApiRawRequestMessageHandler implements IMessageHandler{
 							result = se;
 							resp.setSuccess(false);
 						} else  {
-							if(SF.isLoggable(MC.LOG_DEBUG, msg.getLogLevel())) {
-								SF.eventLog(MC.MT_PLATFORM_LOG,MC.LOG_DEBUG, TAG," got request");
+							if(LG.isLoggable(MC.LOG_DEBUG, msg.getLogLevel())) {
+								LG.log(MC.LOG_DEBUG, TAG," got request");
 							}
 							if(!sm.isNeedResponse()) {
 								m.invoke(srv, req.getArgs());
-								if(SF.isLoggable(MC.LOG_DEBUG, msg.getLogLevel())) {
-									SF.eventLog(MC.MT_PLATFORM_LOG,MC.LOG_DEBUG, TAG," no need response");
+								if(LG.isLoggable(MC.LOG_DEBUG, msg.getLogLevel())) {
+									LG.log(MC.LOG_DEBUG, TAG," no need response");
 								}
 								return;
 							} else {
@@ -228,6 +226,7 @@ public class ApiRawRequestMessageHandler implements IMessageHandler{
 										ServerError se1 = new ServerError(fail.getCode(),fail.getMsg());
 										resp.setSuccess(false);
 										resp.setResult(se1);
+										logger.error("",fail.toString());
 									}
 									
 									if(msg.getDownProtocol() == Message.PROTOCOL_JSON) {
@@ -237,38 +236,64 @@ public class ApiRawRequestMessageHandler implements IMessageHandler{
 									}
 									session.write(msg);
 								});
+								
 							}
 						}
 					} else {
 						String msgStr = "Service["+req.getServiceName()+"] namespace ["+req.getNamespace()+"] is not external!";
 						throw new CommonException(msgStr);
 					}
-				} catch ( SecurityException | IllegalAccessException 
-						| IllegalArgumentException | InvocationTargetException | CommonException e) {
-					logger.error("",e);
-					result = new ServerError(0,e.getMessage());
+				
+				} else {
 					resp.setSuccess(false);
-					SF.eventLog(MC.MT_SERVER_ERROR,MC.LOG_ERROR, TAG,"", e);
+					String msgStr = "Service["+req.getServiceName()+"] namespace ["+req.getNamespace()+"] instance not found!";
+					result = new ServerError(0,msgStr);
+					LG.log(MC.LOG_ERROR, TAG,msgStr);
 				}
-			} else {
-				resp.setSuccess(false);
-				String msgStr = "Service["+req.getServiceName()+"] namespace ["+req.getNamespace()+"] instance not found!";
-				result = new ServerError(0,msgStr);
 			}
-		}
-		
-		if(SF.isLoggable(MC.LOG_DEBUG, msg.getLogLevel())) {
-			SF.eventLog(MC.MT_PLATFORM_LOG,MC.LOG_DEBUG, TAG,"one response");
-		}
-		
-		if(result != null ) {
-			resp.setResult(result);
-			if(msg.getDownProtocol() == Message.PROTOCOL_JSON) {
-				msg.setPayload(ICodecFactory.encode(codecFactory, resp, msg.getDownProtocol()));
-			} else {
-				msg.setPayload(resp.encode());
+			
+			if(LG.isLoggable(MC.LOG_DEBUG, msg.getLogLevel())) {
+				LG.log(MC.LOG_DEBUG, TAG,"one response");
 			}
-			session.write(msg);
+			
+			if(result != null ) {
+				if(msg.isNeedResponse()) {
+					resp.setResult(result);
+					if(msg.getDownProtocol() == Message.PROTOCOL_JSON) {
+						msg.setPayload(ICodecFactory.encode(codecFactory, resp, msg.getDownProtocol()));
+					} else {
+						msg.setPayload(resp.encode());
+					}
+					session.write(msg);
+				} else {
+					logger.warn(result.toString());
+				}
+			}
+			
+		} catch (Throwable e) {
+			CommonException ce = null;
+			if(e instanceof CommonException) {
+				ce = (CommonException)e;
+				ce.setReq(req);
+				ce.setResp(resp);
+			}else {
+				ce = new CommonException("",e,req);
+				ce.setResp(resp);
+			}
+			
+			if(req != null && req.getParams().containsKey(JMicroContext.LOGIN_KEY)) {
+				String lk = (String)req.getParams().get(JMicroContext.LOGIN_KEY);
+				if(StringUtils.isNotEmpty(lk)) {
+					ActInfo ai = this.accountManager.getAccount(lk);
+					if(ai != null) {
+						JMicroContext.get().setString(JMicroContext.LOGIN_KEY, lk);
+						JMicroContext.get().setAccount(ai);	
+						ce.setAi(ai);
+					}
+				}
+			}
+			
+			throw ce;
 		}
 		
 	}
@@ -382,7 +407,7 @@ public class ApiRawRequestMessageHandler implements IMessageHandler{
 		} else {
 			Class<?> srvClazz = JMicro.getObjectFactory().loadCls(srvCls);
 			if(srvClazz == null) {
-				throw new CommonException(srvCls);
+				throw new CommonException("Service class not found: "+srvCls);
 			}
 			Method m = this.getSrvMethod(srvClazz, methodName,false);
 			

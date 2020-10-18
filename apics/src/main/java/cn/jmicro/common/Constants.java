@@ -29,6 +29,8 @@ public interface Constants {
 
 	public static final String CLIENT_ID="clientId";
 	
+	public static final String SYSTEM_LOG_LEVEL="sysLogLevel";
+	
 	public static final String ADMIN_CLIENT_ID = "adminClientId";
 	
 	public static final String CLIENT_ONLY="client";
@@ -164,10 +166,10 @@ public interface Constants {
 	public static final byte MSG_TYPE_REQ_JRPC = 0x01; //普通RPC调用请求，发送端发IRequest，返回端返回IResponse
 	public static final byte MSG_TYPE_RRESP_JRPC = 0x02;//返回端返回IResponse
 	
-	public static final byte MSG_TYPE_REQ_RAW = 0x03; //纯二进制数据请求
-	public static final byte MSG_TYPE_RRESP_RAW = 0x04;//纯二进制数据响应
+	public static final byte MSG_TYPE_REQ_RAW = 0x03; //Api网关请求
+	public static final byte MSG_TYPE_RRESP_RAW = 0x04;//Api网关响应
 	
-	public static final byte MSG_TYPE_ASYNC_REQ = 0x05; //异步请求，不需求等待响应返回
+	public static final byte MSG_TYPE_ASYNC_REQ = 0x05; //异步请求，不需要等待响应返回
 	public static final byte MSG_TYPE_ASYNC_RESP = 0x06; //异步响应，通过回调用返回
 	
 	public static final byte MSG_TYPE_API_CLASS_REQ = (byte)0x07; //API网关请求

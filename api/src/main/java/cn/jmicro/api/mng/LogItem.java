@@ -2,12 +2,12 @@ package cn.jmicro.api.mng;
 
 import cn.jmicro.api.annotation.SO;
 import cn.jmicro.api.monitor.MC;
-import cn.jmicro.api.monitor.MRpcItem;
+import cn.jmicro.api.monitor.MRpcLogItem;
 
 @SO
 public class LogItem {
 
-	private MRpcItem item;
+	private MRpcLogItem item;
 	
 	private short type = 0;
 	
@@ -22,11 +22,11 @@ public class LogItem {
 	
 	private String instanceName;
 
-	public MRpcItem getItem() {
+	public MRpcLogItem getItem() {
 		return item;
 	}
 
-	public void setItem(MRpcItem item) {
+	public void setItem(MRpcLogItem item) {
 		this.item = item;
 	}
 

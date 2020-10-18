@@ -1,23 +1,25 @@
 <template>
-    <div class="JCreateTopicView">
+    <div v-if="topic" class="JCreateTopicView">
         <div style="color:red;">{{msg}}</div>
+
         <div>
             <label for="topicTitle">{{'topicTitle'|i18n}}</label>
             <Input v-if="topic" id="topicTitle" v-model="topic.title"/>
         </div>
 
-        <!--<div>
-            <label for="topicContent">{{'topicContent'|i18n}}</label>&nbsp;&nbsp;&nbsp;
-            <Input id="topicContent" style=""  class='textarea' type="textarea" v-model="topic.content"/>
-        </div>-->
-
+        <div>
+            <Label for="topicType">Type</Label>
+            <Select id="topicType" v-model="topic.topicType">
+                <Option v-for="v in topicTypes" :value="v" :key="'type_'+v">{{v | i18n}}</Option>
+            </Select>
+        </div>
         <quill-editor v-if="topic"
-                ref="myQuillEditor"
-                v-model="topic.content"
-                :options="editorOption"
-                @blur="onEditorBlur($event)"
-                @focus="onEditorFocus($event)"
-                @ready="onEditorReady($event)"
+                      ref="myQuillEditor"
+                      v-model="topic.content"
+                      :options="editorOption"
+                      @blur="onEditorBlur($event)"
+                      @focus="onEditorFocus($event)"
+                      @ready="onEditorReady($event)"
         />
 
     </div>
@@ -41,6 +43,7 @@
         name: cid,
         data() {
             return {
+                topicTypes:["Pubsub","MicroService","Monitor","ConfigMng","ServiceMng","NewFeature","Other"],
                 msg:'',
                 isLogin:false,
                 editorOption:{
@@ -52,7 +55,6 @@
         props:{
             topic:{
                 type:Object,
-                default:()=>{return {}},
             }
         },
 

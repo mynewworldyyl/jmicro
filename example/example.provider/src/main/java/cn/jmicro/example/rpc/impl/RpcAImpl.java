@@ -4,7 +4,7 @@ import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Reference;
 import cn.jmicro.api.annotation.Service;
 import cn.jmicro.api.monitor.MC;
-import cn.jmicro.api.monitor.SF;
+import cn.jmicro.api.monitor.LG;
 import cn.jmicro.common.Constants;
 import cn.jmicro.example.api.rpc.IRpcA;
 import cn.jmicro.example.api.rpc.IRpcB;
@@ -19,8 +19,8 @@ public class RpcAImpl implements IRpcA {
 	
 	@Override
 	public String invokeRpcA(String aargs) {
-		if(SF.isLoggable(MC.LOG_DEBUG)) {
-			SF.eventLog(MC.MT_APP_LOG,MC.LOG_DEBUG,SimpleRpcImpl.class, aargs + ": invokeRpcA => invokeRpcB");
+		if(LG.isLoggable(MC.LOG_DEBUG)) {
+			LG.log(MC.LOG_DEBUG,SimpleRpcImpl.class, aargs + ": invokeRpcA => invokeRpcB");
 		}
 		System.out.println("invokeRpcA: " + aargs);
 		//return "invokeRpcA: " + aargs;

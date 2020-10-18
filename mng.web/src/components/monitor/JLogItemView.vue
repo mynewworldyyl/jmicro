@@ -2,21 +2,26 @@
     <div class="JLogItemView" style="position:relative;height:auto">
 
         <div v-if="isLogin && logList && logList.length > 0" style="position:relative;height:auto;margin-top:10px;">
-            <table class="configItemTalbe" width="99%">
-                <thead><tr><td style="width:300px">TAG</td><td  style="width:165px">TIME</td><td style="width:135px">LEVEL</td>
+            <table class="configItemTalbe" border="0" width="99%">
+               <!-- <thead><tr><td style="width:300px">TAG</td><td  style="width:165px">TIME</td><td style="width:135px">LEVEL</td>
                     <td  style="width:130px">TYPE</td><td  style="width:38px">TYPE</td><td  style="width:38px">TYPE</td>
                     <td>LOG</td></tr></thead>
                 <tr v-for="c in logList" :key="c._id">
                     <td>{{c.tag}}</td><td>{{c.time | formatDate}}</td><td>{{c.levelLabel}}</td>
                     <td>{{c.typeLabel}}</td><td>{{c.val}}</td><td>{{c.num}}</td><td style="text-align:left;">{{c.desc}}</td>
+                </tr>-->
+
+                <tr v-for="c in logList" :key="c._id">
+                    <td style="padding:5px 3px"><p v-html="toLog(c)"></p></td>
                 </tr>
+
             </table>
         </div>
 
         <div v-if="isLogin  && logList && logList.length > 0"  style="position:relative;text-align:center;">
             <Page ref="pager" :total="totalNum" :page-size="pageSize" :current="curPage"
                   show-elevator show-sizer show-total @on-change="curPageChange"
-                  @on-page-size-change="pageSizeChange" :page-size-opts="[10, 30, 60,100]"></Page>
+                  @on-page-size-change="pageSizeChange" :page-size-opts="[60,100,150,200,500]"></Page>
         </div>
 
         <div v-if="!isLogin" >Not login</div>
@@ -52,7 +57,7 @@
                     <td>PARENT ID</td><td> <Input v-model="queryParams.reqParentId"/></td>
                     <td>ACT</td>
                    <td>
-                       <Select :filterable="true"
+                       <Select v-if="selOptions.act" :filterable="true"
                                 :allowCreate="true" ref="actSelect" :label-in-value="true" v-model="queryParams.act">
                            <Option value="">none</Option>
                            <Option :value="v" v-for="v in selOptions.act" v-bind:key="v">{{v}}</Option>
@@ -63,14 +68,14 @@
                 <tr>
                     <td>LOG LEVEL</td>
                     <td>
-                        <Select :filterable="true" ref="levelSelect" :label-in-value="true" v-model="queryParams.level">
+                        <Select v-if="selOptions.level" :filterable="true" ref="levelSelect" :label-in-value="true" v-model="queryParams.level">
                             <Option value="" >none</Option>
                             <Option :value="v" v-for="(v,k) in selOptions.level" v-bind:key="k">{{k}}</Option>
                         </Select>
                     </td>
                     <td>TYPE</td>
                     <td>
-                        <Select :filterable="true"
+                        <Select v-if="selOptions.type" :filterable="true"
                                 :allowCreate="true" ref="typeSelect" :label-in-value="true" v-model="queryParams.type">
                             <Option value="" >none</Option>
                             <Option :value="v" v-for="(v,k) in selOptions.type" v-bind:key="k">{{k}}</Option>
@@ -80,7 +85,7 @@
 
                 <tr><td>REMOTE HOST</td>
                     <td>
-                        <Select :filterable="true"
+                        <Select v-if="selOptions.remoteHost" :filterable="true"
                                 :allowCreate="true" ref="remoteHostSelect"  :label-in-value="true" v-model="queryParams.remoteHost">
                             <Option value="">none</Option>
                             <Option :value="v" v-for="(v) in selOptions.remoteHost" v-bind:key="v">{{v}}</Option>
@@ -92,7 +97,7 @@
                 <tr>
                     <td>LOCAL HOST</td>
                     <td>
-                        <Select :filterable="true"
+                        <Select v-if="selOptions.localHost" :filterable="true"
                                 :allowCreate="true" ref="localHostSelect"  :label-in-value="true" v-model="queryParams.localHost">
                             <Option value="">none</Option>
                             <Option :value="v" v-for="(v) in selOptions.localHost" v-bind:key="v">{{v}}</Option>
@@ -100,7 +105,7 @@
                     </td>
                     <td>INSTANCE NAME</td>
                     <td>
-                        <Select :filterable="true"
+                        <Select v-if="selOptions.instanceName" :filterable="true"
                                 :allowCreate="true" ref="instanceNameSelect"  :label-in-value="true"
                                 v-model="queryParams.instanceName">
                             <Option value="">none</Option>
@@ -111,7 +116,7 @@
 
                 <tr><td>SERVICE NAME</td>
                     <td>
-                        <Select :filterable="true"
+                        <Select  v-if="selOptions.serviceName" :filterable="true"
                                 :allowCreate="true" ref="serviceNameSelect"  :label-in-value="true"
                                 v-model="queryParams.serviceName">
                             <Option value="">none</Option>
@@ -120,7 +125,7 @@
                     </td>
                     <td>NAMESPACE</td>
                     <td>
-                        <Select :filterable="true"
+                        <Select v-if="selOptions.namespace" :filterable="true"
                                 :allowCreate="true" ref="namespaceSelect"  :label-in-value="true"
                                 v-model="queryParams.namespace">
                             <Option value="">none</Option>
@@ -132,16 +137,18 @@
                 <tr>
                     <td>VERSION</td>
                     <td>
-                        <Select :filterable="true"
+                        <Select v-if="selOptions.version" :filterable="true"
                                 :allowCreate="true" ref="versionSelect"  :label-in-value="true"
                                 v-model="queryParams.version">
                             <Option value="">none</Option>
+
                             <Option :value="v" v-for="(v) in selOptions.version" v-bind:key="v">{{v}}</Option>
+
                         </Select>
                     </td>
                     <td>METHOD</td>
                     <td>
-                        <Select :filterable="true"
+                        <Select v-if="selOptions.method" :filterable="true"
                                 :allowCreate="true" ref="methodSelect"  :label-in-value="true"
                                 v-model="queryParams.method">
                             <Option value="">none</Option>
@@ -188,6 +195,16 @@
                         </Select>
                     </td>
                 </tr>
+                <tr>
+                    <td>ConfigId</td>
+                    <td>
+                        <Input  v-model="queryParams.configId"/>
+                    </td>
+                    <td>Config Tag</td>
+                    <td>
+                        <Input  v-model="queryParams.configTag"/>
+                    </td>
+                </tr>
 
                 <tr>
                     <td><i-button @click="doQuery()">QUERY</i-button></td><td></td>
@@ -201,7 +218,13 @@
 
 <script>
 
-    const cid = 'JLogItemView';
+    const cid = 'logItemView';
+
+    const LOG2LEVEL = {2:'LOG_DEBUG', 5:'LOG_ERROR', 6:'LOG_FINAL', 3:'LOG_INFO', 0:'LOG_NO',
+        1: 'LOG_TRANCE', 4:'LOG_WARN'};
+
+    const LEVEL2COLOR = {2:'debugTag', 5:'errorTag', 6:'finalTag', 3:'infoTag', 0:'noLogTag',
+        1: 'tranceTag', 4:'warnTag'};
 
     export default {
         name: cid,
@@ -211,7 +234,7 @@
                 logList: [],
                 queryParams:{noLog:"true"},
                 totalNum:0,
-                pageSize:10,
+                pageSize:60,
                 curPage:1,
 
                 curLogId:-1,
@@ -248,6 +271,76 @@
                 this.pageSize = pageSize;
                 this.curPage = 1;
                 this.refresh();
+            },
+
+            toLog(c){
+                let v = '';
+                if(c.tag) {
+                    v = v +  "TAG:" + c.tag + ', '
+                }
+
+                if(c.instanceName) {
+                    v = v +  "INS:" + c.instanceName + ', '
+                }
+
+                if(c.createTime > 0) {
+                    let pv = new Date(c.createTime).format('yyyy/MM/dd hh:mm:ss S');
+                    v = v + "CT:" + pv + ', '
+                }
+
+                if(c.smKey) {
+                    v +='MK[' + c.smKey.usk.serviceName+"##"+c.smKey.usk.namespace + '##'+ c.smKey.usk.version;
+                    v = v +'##'+c.smKey.usk.instanceName+'##'+c.smKey.usk.host+'##'+c.smKey.usk.port+'##' + c.smKey.method + '##' + c.smKey.paramsStr;
+                    v+='] '
+                }
+
+                if(c.req){
+                    v += 'REQ[' + c.req.serviceName+"##"+c.req.namespace + '##'+ c.req.version;
+                    v = v +'##'+c.req.method ;
+                    if(c.req.args && c.req.args.length > 0) {
+                       v += '##' + JSON.stringify(c.req.args)+", ";
+                    }
+                    v += '] ';
+                }
+
+                if(c.resp){
+                    v += 'RESP['
+                    v += ', respId:'+ c.resp.id;
+                    v += ', reqId:'+ c.resp.reqId
+                    v += ', result:'+ JSON.stringify(c.resp.result)
+                    v += ', success:'+ c.resp.success + '] '
+                }
+
+                for(let a in c) {
+                    if(a != '_id' && a != 'items' && c[a] && c[a] != -1 && a != 'tag' && a != 'createTime'
+                        && a != 'inputTime' && a != 'instanceName' && a != 'smKey' && a != 'req' && a != 'resp') {
+                        v = v + a + ":" + c[a] + ', '
+                    }
+                }
+
+                v = '<span style="font-weight: bold">' + v + '</span>'
+
+                if(c.items && c.items.length > 0 ) {
+                    for(let i = 0; i < c.items.length; i++) {
+                        let l = c.items[i];
+                        let lv = '<span class="' + LEVEL2COLOR[l.level]+'">' + LOG2LEVEL[l.level] + '</span> : ';
+                            lv += l.tag  + " : ";
+
+                            if(l.lineNo) {
+                                lv += l.lineNo  +" : "
+                            }
+                        lv += new Date(l.time).format('yyyy/MM/dd hh:mm:ss S')+" : ";
+                        lv += l.desc;
+
+                        if( l.ex ) {
+                            lv += " <pre>"+l.ex+"</pre>" ;
+                        }
+
+                        v += '<br/>' + lv;
+                    }
+                }
+
+                return v;
             },
 
             doQuery() {
@@ -372,13 +465,22 @@
         },
 
         mounted () {
+
+            window.jm.rpc.addActListener(cid,this.q);
             let self = this;
-            window.jm.rpc.addActListener(cid,self.q);
+            window.jm.vue.$emit("editorOpen",
+                {"editorId":cid,
+                    "menus":[
+                        {name:"REFRESH",label:"Refresh",icon:"ios-cog",call:self.q}]
+                });
+
             let ec = function() {
                 window.jm.rpc.removeActListener(cid);
                 window.jm.vue.$off('editorClosed',ec);
             }
+
             window.jm.vue.$on('editorClosed',ec);
+
             self.q();
         },
 
@@ -403,6 +505,7 @@
 
     #queryTable td {
         padding-left: 8px;
+        border:none;
     }
 
     .drawerJinvokeBtnStatu{
@@ -419,7 +522,47 @@
     }
 
     .configItemTalbe td {
-        text-align: center;
+        text-align: left;
+        border:none;
+    }
+
+    .debugTag{
+        background-color: mediumspringgreen;
+        color:crimson;
+    }
+
+    .errorTag{
+        background-color: red;
+        color: aliceblue;
+    }
+
+    .noLogTag {
+        background-color: red;
+        color:black;
+    }
+
+    .finalTag {
+        background-color: darkred;
+        color: aliceblue;
+    }
+
+    .tranceTag {
+        background-color: palegreen;
+        color:crimson;
+    }
+
+    .warnTag {
+        background-color: yellow;
+        color:crimson;
+    }
+
+    .infoTag {
+        background-color: blue;
+        color: aliceblue;
+    }
+
+    .errorTag,.warnTag,.tranceTag,.finalTag,.noLogTag,.debugTag, .infoTag{
+        border-radius: 3px;
     }
 
 </style>

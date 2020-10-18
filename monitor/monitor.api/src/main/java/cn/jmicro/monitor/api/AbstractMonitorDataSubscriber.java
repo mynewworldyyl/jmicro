@@ -6,7 +6,10 @@ import org.slf4j.LoggerFactory;
 import cn.jmicro.api.config.Config;
 import cn.jmicro.api.mng.ReportData;
 import cn.jmicro.api.monitor.IMonitorDataSubscriber;
+import cn.jmicro.api.monitor.MC;
+import cn.jmicro.api.monitor.MRpcStatisItem;
 import cn.jmicro.api.monitor.MonitorAndService2TypeRelationshipManager;
+import cn.jmicro.api.monitor.StatisItem;
 import cn.jmicro.api.raft.IDataOperator;
 import cn.jmicro.api.registry.UniqueServiceKey;
 
@@ -44,6 +47,30 @@ public abstract class AbstractMonitorDataSubscriber implements IMonitorDataSubsc
 		
 		op.createNodeOrSetData(path, sb.toString(), IDataOperator.PERSISTENT);
 		
+	}
+	
+	protected String toLog(MRpcStatisItem si,StatisItem oi) {
+		StringBuilder sb = new StringBuilder();
+		
+		sb.append("INS [").append(si.getInstanceName())
+		.append(" M[").append(si.getSm() == null?"":si.getSm().getKey().getMethod()).append("]");
+		sb.append(",Cnt[").append(oi.getCnt()).append("]")
+		.append(",Val[").append(oi.getSum()).append("]")
+		.append(",Type[").append(oi.getType()).append("]");
+		
+		return sb.toString();
+	}
+
+	protected void log(MRpcStatisItem si) {
+		for(StatisItem oi : si.getTypeStatis().values()) {
+			StringBuffer sb = new StringBuffer();
+			sb.append("GOT: " + MC.MONITOR_VAL_2_KEY.get(oi.getType()));
+			if(si.getSm() != null) {
+				sb.append(", SM: ").append(si.getSm().getKey().getMethod());
+			}
+			sb.append(", actName: ").append(si.getActName());
+			logger.debug(sb.toString()); 
+		}
 	}
 	
 }

@@ -9,18 +9,19 @@ import cn.jmicro.api.JMicro;
 import cn.jmicro.api.JMicroContext;
 import cn.jmicro.api.monitor.IMonitorDataSubscriber;
 import cn.jmicro.api.monitor.MC;
-import cn.jmicro.api.monitor.MRpcItem;
-import cn.jmicro.api.monitor.SF;
+import cn.jmicro.api.monitor.MRpcStatisItem;
+import cn.jmicro.api.monitor.MT;
 import cn.jmicro.api.objectfactory.IObjectFactory;
 import cn.jmicro.example.api.rpc.ISimpleRpc;
+import cn.jmicro.example.api.rpc.genclient.ISimpleRpc$JMAsyncClient;
 import cn.jmicro.example.comsumer.TestRpcClient;
 import cn.jmicro.test.JMicroBaseTestCase;
 
 public class TestMonitorSubmiter extends JMicroBaseTestCase{
 	
-	private MRpcItem ssubItem() {
-		MRpcItem si = new MRpcItem();
-		si.setLinkId(22L);
+	private MRpcStatisItem ssubItem() {
+		MRpcStatisItem si = new MRpcStatisItem();
+		si.addType(MC.MT_REQ_END, 1, 2);
 		return si;
 	}
 	
@@ -28,7 +29,7 @@ public class TestMonitorSubmiter extends JMicroBaseTestCase{
 	public void testSubmitItem() {
 		IMonitorDataSubscriber m = of.getRemoteServie(IMonitorDataSubscriber.class.getName()
 				, "printLogMonitor", "0.0.1",null);
-		MRpcItem[] sis = new MRpcItem[1];
+		MRpcStatisItem[] sis = new MRpcStatisItem[1];
 		sis[0] = ssubItem();
 		m.onSubmit(sis);
 		
@@ -87,7 +88,7 @@ public class TestMonitorSubmiter extends JMicroBaseTestCase{
 			IMonitorDataSubscriber m = of.getRemoteServie(IMonitorDataSubscriber.class.getName()
 					, "printLogMonitor", "0.0.1",null);
 			
-			MRpcItem[] sis = new MRpcItem[1];
+			MRpcStatisItem[] sis = new MRpcStatisItem[1];
 			sis[0] = ssubItem();
 		
 			setSayHelloContext();
@@ -99,7 +100,8 @@ public class TestMonitorSubmiter extends JMicroBaseTestCase{
 				
 				try {
 					//m.onSubmit(sis);
-					SF.eventLog(MC.MT_PLATFORM_LOG,MC.LOG_DEBUG,this.getClass(),"testSubmitLog");
+					//LG.eventLog(MC.MT_PLATFORM_LOG,MC.LOG_DEBUG,this.getClass(),"testSubmitLog");
+					MT.nonRpcEvent(MC.MT_PLATFORM_LOG);
 				} catch (Throwable e1) {
 					e1.printStackTrace();
 				}
@@ -121,7 +123,7 @@ public class TestMonitorSubmiter extends JMicroBaseTestCase{
 			IObjectFactory of = JMicro.getObjectFactoryAndStart(new String[] {"-DinstanceName=testSayHelloToPrintRouterLog","-Dclient=true"});
 			
 			JMicroContext.get().setBoolean(JMicroContext.IS_MONITORENABLE, true);
-			ISimpleRpc sayHello = of.get(ISimpleRpc.class);
+			ISimpleRpc$JMAsyncClient sayHello = (ISimpleRpc$JMAsyncClient)of.getRemoteServie(ISimpleRpc.class, null);
 			JMicroContext.get().removeParam(JMicroContext.LINKER_ID);
 			String result = sayHello.hello("Hello LOG");
 			System.out.println(result);

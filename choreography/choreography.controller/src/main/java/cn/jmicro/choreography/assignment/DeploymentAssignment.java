@@ -13,7 +13,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import cn.jmicro.api.IListener;
-import cn.jmicro.api.annotation.Cfg;
 import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Inject;
 import cn.jmicro.api.cache.lock.ILockerManager;
@@ -23,9 +22,9 @@ import cn.jmicro.api.choreography.Deployment;
 import cn.jmicro.api.choreography.ProcessInfo;
 import cn.jmicro.api.config.Config;
 import cn.jmicro.api.idgenerator.ComponentIdServer;
-import cn.jmicro.api.masterelection.IMasterChangeListener;
+import cn.jmicro.api.monitor.LG;
 import cn.jmicro.api.monitor.MC;
-import cn.jmicro.api.monitor.SF;
+import cn.jmicro.api.monitor.MT;
 import cn.jmicro.api.objectfactory.IObjectFactory;
 import cn.jmicro.api.raft.IChildrenListener;
 import cn.jmicro.api.raft.IConnectionStateChangeListener;
@@ -51,8 +50,8 @@ public class DeploymentAssignment {
 	
 	private static final Class<?> TAG = DeploymentAssignment.class;
 	
-	@Cfg("/enableMasterSlaveModel")
-	private boolean isMasterSlaveModel = false;
+	/*@Cfg("/enableMasterSlaveModel")
+	private boolean isMasterSlaveModel = false;*/
 	
 	@Inject
 	private AssignManager assingManager;
@@ -144,7 +143,7 @@ public class DeploymentAssignment {
 		}
 	};
 	
-	private IMasterChangeListener mcl = (type,isMaster)->{
+	/*private IMasterChangeListener mcl = (type,isMaster)->{
 		if(isMaster && ( IMasterChangeListener.MASTER_ONLINE == type 
 				|| IMasterChangeListener.MASTER_NOTSUPPORT == type )) {
 			 //参选成功
@@ -156,7 +155,7 @@ public class DeploymentAssignment {
 			 isMaster = false;
 			 lostMaster();
 		}
-	};
+	};*/
 	
 	public void ready() {
 		
@@ -169,11 +168,13 @@ public class DeploymentAssignment {
 			op.createNodeOrSetData(ChoyConstants.ID_PATH, "0", IDataOperator.PERSISTENT);
 		}
 		
-		if(isMasterSlaveModel) {
+		ready0();
+		
+		/*if(isMasterSlaveModel) {
 			of.masterSlaveListen(mcl);
 		} else {
 			ready0();
-		}
+		}*/
 		
 	}
 	
@@ -199,7 +200,7 @@ public class DeploymentAssignment {
 			 mngDep = new Deployment();
 			 String id = idServer.getStringId(Deployment.class);
 			 mngDep.setId(id);
-			 mngDep.setArgs("-Xmx128m -Xms32m -DenableMasterSlaveModel=true");
+			 mngDep.setArgs("-Xmx128m -Xms32m -DenableMasterSlaveModel=true -DsysLogLevel=5  -DclientId=0 -DadminClientId=0");
 			 mngDep.setAssignStrategy("defautAssignStrategy");
 			 mngDep.setEnable(true);
 			 mngDep.setForceRestart(false);
@@ -208,12 +209,13 @@ public class DeploymentAssignment {
 			 if(StringUtils.isNotEmpty(cfg.getString("mngJarFile", null))) {
 				 mngDep.setJarFile(cfg.getString("mngJarFile", null));
 			 } else {
-				 mngDep.setJarFile("jmicro-main.mng-0.0.1-SNAPSHOT-jar-with-dependencies.jar");
+				 mngDep.setJarFile("jmicro-main.mng-"+Config.JMICRO_VERSION+"-SNAPSHOT-jar-with-dependencies.jar");
 			 }
 			 
 			 mngDep.setStrategyArgs("-DsortPriority=instanceNum");
 			 String jo = JsonUtils.getIns().toJson(mngDep);
-			 logger.info("Create origin mng Deployment: " + jo);
+			 //logger.info("Create origin mng Deployment: " + jo);
+			 LG.log(MC.LOG_INFO, TAG, "Create origin mng Deployment: " + jo);
 			 op.createNodeOrSetData(ChoyConstants.DEP_DIR+"/"+id, jo , false);
 		 }
 		 
@@ -232,7 +234,7 @@ public class DeploymentAssignment {
 				 throw new CommonException("/StaticResourceHttpHandler/staticResourceRoot_mng cannot be null when create inti api gateway service!");
 			 }
 			 
-			 apiGatewayDep.setArgs("-Xmx128m -Xms32m -DinstanceName=apigateway -DlistenHttpIP=0.0.0.0 -DexportHttpIP="+exportHttpIp+" -DnettyHttpPort=9090 -D/StaticResourceHttpHandler/staticResourceRoot_mng="+mngCxtRoot);
+			 apiGatewayDep.setArgs("-DsysLogLevel=5  -DclientId=0 -DadminClientId=0 -Xmx128m -Xms32m -DinstanceName=apigateway -DlistenHttpIP=0.0.0.0 -DexportHttpIP="+exportHttpIp+" -DnettyHttpPort=9090 -D/StaticResourceHttpHandler/staticResourceRoot_mng="+mngCxtRoot);
 			 apiGatewayDep.setAssignStrategy("defautAssignStrategy");
 			 apiGatewayDep.setEnable(true);
 			 apiGatewayDep.setForceRestart(false);
@@ -241,12 +243,13 @@ public class DeploymentAssignment {
 			 if(StringUtils.isNotEmpty(cfg.getString("apiGatewayJarFile", null))) {
 				 apiGatewayDep.setJarFile(cfg.getString("apiGatewayJarFile", null));
 			 } else {
-				 apiGatewayDep.setJarFile("jmicro-main.apigateway-0.0.1-SNAPSHOT-jar-with-dependencies.jar");
+				 apiGatewayDep.setJarFile("jmicro-main.apigateway-"+Config.JMICRO_VERSION+"-SNAPSHOT-jar-with-dependencies.jar");
 			 }
 			 
 			 apiGatewayDep.setStrategyArgs("-DsortPriority=instanceNum");
 			 String jo = JsonUtils.getIns().toJson(apiGatewayDep);
-			 logger.info("Create origin api gateway Deployment: " + jo);
+			 //logger.info("Create origin api gateway Deployment: " + jo);
+			 LG.log(MC.LOG_INFO, TAG, "Create origin api gateway Deployment: " + jo);
 			 op.createNodeOrSetData(ChoyConstants.DEP_DIR+"/"+id, jo , false);
 		 }
 		
@@ -260,10 +263,11 @@ public class DeploymentAssignment {
 		 op.createNodeOrSetData(conRootPath, this.processInfo.getId(), IDataOperator.EPHEMERAL);
 		 actKey = Config.getInstanceName() + "_DeploymentAssignmentChecker";
 		 op.addListener(connListener);
-		 TimerTicker.getDefault(1000*5L).addListener(actKey,null,act);
+		 TimerTicker.getDefault(5000L).addListener(actKey,null,act);
+		 LG.log(MC.LOG_INFO, TAG, "Controller with PID [" + this.processInfo.getId()+"] started!");
 	 }
 	
-	private void lostMaster() {
+	/*private void lostMaster() {
 		 
 		 logger.warn(Config.getInstanceName() + " lost master resposibility");
 		 TimerTicker.getDefault(1000*5L).removeListener(actKey, true);
@@ -279,7 +283,7 @@ public class DeploymentAssignment {
 		 }
 		 deployments.clear();
 		 nextDeployTimeout.clear();
-	 }
+	 }*/
 	
 	private void registListener() {
 		op.addChildrenListener(ChoyConstants.DEP_DIR, depListener);
@@ -302,7 +306,7 @@ public class DeploymentAssignment {
 				 //starting timeout
 				 logger.error("Starting timeout: " + a.toString());
 				 //SF.event(MonitorConstant.Ms_PROCESS_LOG, TAG, "Timeout: "+ a.toString());
-				 SF.eventLog(MC.MT_ASSIGN_LOG, MC.LOG_WARN, TAG, "Timeout: "+ a.toString());
+				 LG.log(MC.LOG_WARN, TAG, "Starting timeout and cacel it: "+ a.toString());
 				 cancelAssign(a);
 				 continue;
 			 }
@@ -311,30 +315,35 @@ public class DeploymentAssignment {
 				 //stoping timeout
 				 String piPath = ChoyConstants.INS_ROOT + "/" + a.getInsId();
 				 if(!op.exist(piPath)) {
-					 logger.error("Delete invalid assign: " + a.toString());
+					 //logger.error("Delete invalid assign: " + a.toString());
+					 LG.log(MC.LOG_WARN, TAG, "Delete invalid assign: " + a.toString());
 					 this.assingManager.remove(a);
 				 } else {
 					 String data = op.getData(piPath);
 					 if(StringUtils.isEmpty(data)) {
-						 logger.warn("Delete invalid process node: " + piPath);
+						 //logger.warn("Delete invalid process node: " + piPath);
+						 LG.log(MC.LOG_WARN, TAG, "Delete invalid process node: " + piPath);
 						 op.deleteNode(piPath);
 						 this.assingManager.remove(a);
 					 } else {
 						 if(a.checkTime > 100) {
 							 op.deleteNode(piPath);
 							 this.assingManager.remove(a);
-							 logger.error("Process stop exception Assign: " + a.toString());
-							 logger.error("Process stop exception processInfo: " + data);
-							 logger.error("You should check it by your hand, sorry for this case!");
+							 //logger.error("Process stop exception Assign: " + a.toString());
+							 //logger.error("Process stop exception processInfo: " + data);
+							 //logger.error("You should check it by your hand, sorry for this case!");
+							 LG.log(MC.LOG_WARN, TAG, "Process exception for check count too exceep: " + data);
 						 } else {
 							 ProcessInfo pi = JsonUtils.getIns().fromJson(data, ProcessInfo.class);
 							 a.checkTime++;
 							 this.assingManager.update(a);
 							 if(pi.isActive()) {
-								 logger.warn("Do cancel time["+a.checkTime+"] again: " + data);
+								 //logger.warn("Do cancel time["+a.checkTime+"] again: " + data);
+								 LG.log(MC.LOG_WARN, TAG, "Do cancel time["+a.checkTime+"] again: " + data);
 								 this.cancelAssign(a);
 							 } else {
-								 logger.warn("Process in stoping time["+a.checkTime+"] state: " + data);
+								 //logger.warn("Process in stoping time["+a.checkTime+"] state: " + data);
+								 LG.log(MC.LOG_WARN, TAG, "Process in stoping time["+a.checkTime+"] state: " + data);
 							 }
 						 }
 					 }
@@ -347,7 +356,8 @@ public class DeploymentAssignment {
 				 String piPath = ChoyConstants.INS_ROOT + "/" + a.getInsId();
 				 if(!op.exist(piPath)) {
 					 //实例已经不存在
-					 logger.error("Process exit: " + piPath);
+					 //logger.error("Process exit: " + piPath);
+					 LG.log(MC.LOG_ERROR, TAG, "Process started timeout and remove it: " + a.toString());
 					 instanceRemoved(a.getInsId());
 					 continue;
 				 }
@@ -362,7 +372,8 @@ public class DeploymentAssignment {
 				 //logger.warn("Stop deployment: "+ dep.toString());
 				 stopDeployment(dep.getId());
 			 }else if(dep.isForceRestart()) {
-				 logger.warn("Force restart deployment: "+ dep.toString());
+				 //logger.warn("Force restart deployment: "+ dep.toString());
+				 LG.log(MC.LOG_INFO, TAG, "Force restart deployment: "+ dep.toString());
 				 stopDeployment(dep.getId());
 				 dep.setForceRestart(false);
 			 } else if(dep.isEnable()) {
@@ -383,12 +394,11 @@ public class DeploymentAssignment {
 	private void instanceRemoved(String insId) {
 		Assign a = this.assingManager.getAssignByInfoId(insId);
 		if(a != null) {
-			if(logger.isInfoEnabled()) {
-				logger.info("Instance remove: " + a.toString());
-			}
-			SF.eventLog(MC.MT_PROCESS_REMOVE,MC.LOG_WARN, TAG,JsonUtils.getIns().toJson(a));
+			LG.log(MC.LOG_WARN, TAG,"Instance remove: "+JsonUtils.getIns().toJson(a));
 			cancelAssign(a);
 			assingManager.remove(a);
+		}else {
+			LG.log(MC.LOG_WARN, TAG,"Remove instance not exist: "+insId);
 		}
 	}
 	
@@ -401,17 +411,13 @@ public class DeploymentAssignment {
 		Assign a = assingManager.getAssignByInfoId(pi.getId());
 		if(a == null) {
 			//初次启动时，对已经存在的实例做实例化
-			if(logger.isInfoEnabled()) {
-				logger.info("Instance add for origint: " + pi.toString());
-			}
+			LG.log(MC.LOG_INFO, TAG, "Instance add for origint: " + pi.toString());
 			a = new Assign(pi.getDepId(),pi.getAgentId(),pi.getId());
 		} else {
-			if(logger.isInfoEnabled()) {
-				logger.info("Instance start success: " + pi.toString());
-			}
+			LG.log(MC.LOG_INFO, TAG, "Instance start success: " + pi.toString());
 		}
 		
-		SF.eventLog(MC.MT_PROCESS_ADD,MC.LOG_WARN, TAG,  JsonUtils.getIns().toJson(pi));
+		//LG.log(MC.LOG_WARN, TAG,  "Process success started: "+JsonUtils.getIns().toJson(pi));
 		
 		a.opTime = System.currentTimeMillis();
 		a.state = AssignState.STARTED;
@@ -419,11 +425,7 @@ public class DeploymentAssignment {
 	}
 
 	private void deploymentRemoved(String d, String data) {
-		if(logger.isInfoEnabled()) {
-			logger.info("Remove deployment ID: "+d);
-		}
-		
-		SF.eventLog(MC.MT_DEPLOYMENT_REMOVE,MC.LOG_WARN, TAG,data);
+		LG.log(MC.LOG_WARN, TAG,data);
 		deployments.remove(d);
 		stopDeployment(d);
 	}
@@ -433,17 +435,18 @@ public class DeploymentAssignment {
 		if(ownerAgents == null || ownerAgents.isEmpty()) {
 			return;
 		}
-		if(logger.isInfoEnabled()) {
+		/*if(logger.isInfoEnabled()) {
 			logger.info("Stop deployment: "+depId);
-		}
+		}*/
+		LG.log(MC.LOG_INFO, TAG, "Stop deployment: "+depId);
 		
 		for(Assign a : ownerAgents) {
 			if(a.state == AssignState.STARTING || a.state == AssignState.STARTED ||
 					a.state == AssignState.INIT || a.state == AssignState.DOWNLOAD_RES) {
-				if(logger.isInfoEnabled()) {
+				/*if(logger.isInfoEnabled()) {
 					logger.info("Cancel assign: "+a.toString());
-				}
-				SF.eventLog(MC.MT_DEPLOYMENT_LOG,MC.LOG_WARN, TAG,a.toString());
+				}*/
+				LG.log(MC.LOG_WARN, TAG,"To cancel assign: "+a.toString());
 				cancelAssign(a);
 			}
 		}
@@ -455,14 +458,14 @@ public class DeploymentAssignment {
 				assingManager.remove(a);
 			}
 			String msg = "Assign is on stoping state: depId: " + a.toString();
-			logger.warn(msg);
-			SF.eventLog(MC.MT_ASSIGN_REMOVE,MC.LOG_WARN, TAG,msg);
+			/*logger.warn(msg);*/
+			LG.log(MC.LOG_WARN, TAG,msg);
 			return;
 		}
 		
-		String msg = "Cancel dep ["+a.getDepId()+"], agentId [" + a.getAgentId()+"]";
-		SF.eventLog(MC.MT_ASSIGN_REMOVE,MC.LOG_WARN, TAG,msg);
-		logger.info(msg);
+		/*String msg = "Cancel :"+a.toString();
+		LG.log(MC.LOG_WARN, TAG,msg);
+		logger.info(msg);*/
 		
 		Set<Assign> set = assingManager.getAssignByDepIdAndAgentId(a.getDepId(), a.getAgentId());
 		String path = ChoyConstants.ROOT_AGENT+"/" + a.getAgentId() + "/" + a.getInsId();
@@ -474,15 +477,17 @@ public class DeploymentAssignment {
 				pi.setActive(false);
 				String data = JsonUtils.getIns().toJson(pi);
 				op.setData(p, data);
-				logger.info("Stop process: " + data);
+				//logger.info("Stop process: " + data);
+				LG.log(MC.LOG_INFO,TAG,"Stop process: " + data);
 			} else {
 				assingManager.remove(a);
 			}
 		} else {
-			logger.debug("Delete deploy: " + path);
+			//logger.debug("Delete deploy: " + path);
 			a.state = AssignState.STOPING;
 			a.opTime = System.currentTimeMillis();
 			assingManager.update(a);
+			LG.log(MC.LOG_INFO,TAG,"Cammand agent to stop process: " + a.toString());
 		}
 		
 		if(!fails.containsKey(a.getAgentId())) {
@@ -497,6 +502,8 @@ public class DeploymentAssignment {
 		Deployment newDep = JsonUtils.getIns().fromJson(data, Deployment.class);
 		if(newDep != null) {
 			deployments.put(depId, newDep);
+		} else {
+			 LG.log(MC.LOG_ERROR, TAG, "Deployment data invalid" + data);
 		}
 	}
 
@@ -652,7 +659,8 @@ public class DeploymentAssignment {
 		String msg = "Force direct stop [" + dep.getId() + "], count [" + (-cnt) + "] ";
 		logger.warn(msg);
 		
-		SF.eventLog(MC.MT_ASSIGN_REMOVE,MC.LOG_WARN, TAG,msg);
+		LG.log(MC.LOG_WARN, TAG,msg);
+		MT.nonRpcEvent(Config.getInstanceName(), MC.MT_ASSIGN_REMOVE);
 		
 		Set<Assign> as = assingManager.getAssignByDepId(dep.getId());
 		if(as.size() > 0) {
@@ -686,7 +694,8 @@ public class DeploymentAssignment {
 			//只保留指定的Agent，其他的删除
 			filterByAgentId(sortList,dep,cnt,agentIds);
 			if(sortList == null || sortList.isEmpty()) {
-				logger.debug("doAddAssign: Agent ID: " + agentIds + " not on line for dep: " + dep.toString());
+				//logger.debug("doAddAssign: Agent ID: " + agentIds + " not on line for dep: " + dep.toString());
+				LG.log(MC.LOG_INFO, TAG, "doAddAssign: Specify agent ID: " + agentIds + " not started for dep: " + dep.toString());
 				return;
 			}
 		} else { 
@@ -697,7 +706,8 @@ public class DeploymentAssignment {
 		}
 		
 		if(sortList.isEmpty()) {
-			logger.error("No agent for assign dep [" + dep.toString() + "]");
+			//logger.error("No agent for assign dep [" + dep.toString() + "]");
+			LG.log(MC.LOG_WARN, TAG, "No agent for assign dep [" + dep.toString() + "]");
 			return;
 		}
 		
@@ -717,10 +727,11 @@ public class DeploymentAssignment {
 			a.state = AssignState.INIT;
 			assingManager.add(a);
 			
-			String msg = a.toString();
-			SF.eventLog(MC.MT_ASSIGN_ADD,MC.LOG_INFO, TAG,msg);
+			String msg = "Assign dep: "+ a.toString();
+			LG.log(MC.LOG_INFO, TAG,msg);
+			MT.nonRpcEvent(MC.MT_ASSIGN_ADD);
 			
-			logger.info("Assign: " + msg);
+			//logger.info("Assign: " + msg);
 			
 			nextDeployTimeout.put(dep.getId(), curTime);
 
@@ -789,25 +800,28 @@ public class DeploymentAssignment {
 			AgentInfo ai = ite.next();
 			if(curTime - ai.getStartTime() < 15000) {
 				//启动后15秒内不给做任务分配，以使Agent达到稳定状态
-				logger.info(ai.getId() + " exclude since start time less than 15 seconds!");
+				//logger.info(ai.getId() + " exclude since start time less than 15 seconds!");
+				LG.log(MC.LOG_DEBUG, TAG,ai.getId() + " exclude since start time less than 15 seconds!");
 				ite.remove();
 				continue;
 			}
 			
 			Set<Assign> as = assingManager.getAssignByDepIdAndAgentId(dep.getId(), ai.getId());
 			if(!as.isEmpty()) {
-				if(logger.isDebugEnabled()) {
+				/*if(logger.isDebugEnabled()) {
 					logger.debug(dep.getJarFile() + " is assigned: " + ai.getId() );
-				}
+				}*/
+				LG.log(MC.LOG_DEBUG, TAG,dep.getJarFile() + " have been assigned to agent " + ai.getId() );
 				ite.remove();
 				continue;
 			}
 			
 			if(fails.containsKey(ai.getId())) {
 				if(fails.get(ai.getId()).contains(dep.getId())) {
-					if(logger.isDebugEnabled()) {
-						logger.debug( dep.getJarFile() + " is failure in recent for: " + ai.getId() );
-					}
+					/*if(logger.isDebugEnabled()) {
+						logger.debug(dep.getJarFile() + " is failure in recent for: " + ai.getId() );
+					}*/
+					LG.log(MC.LOG_DEBUG, TAG,dep.getJarFile() + " is failure in recent by agent: " + ai.getId());
 					ite.remove();
 					continue;
 				}
@@ -825,7 +839,8 @@ public class DeploymentAssignment {
 			}
 			
 			if(flag) {
-				logger.info("Do reassign depId: " + dep.getId());
+				LG.log(MC.LOG_DEBUG, TAG,dep.getJarFile() + "Do reassign depId: " + dep.getId());
+				//logger.info("Do reassign depId: " + dep.getId());
 				doAddAssign(sortList,dep,cnt);
 			}
 			return ;
@@ -840,12 +855,14 @@ public class DeploymentAssignment {
 			s = of.getByName(dep.getAssignStrategy());
 			if(s == null) {
 				s = this.defaultAssignStrategy;
-				logger.error("Assign strategy [" + dep.getAssignStrategy() + "] not found, use default strategy");
+				//logger.error("Assign strategy [" + dep.getAssignStrategy() + "] not found, use default strategy");
+				LG.log(MC.LOG_DEBUG, TAG,"Assign strategy [" + dep.getAssignStrategy() + "] not found, use default strategy");
 			}
 		}
 		
 		if(!s.doStrategy(sortList, dep)) {
-			logger.error("Assign fail with strategy [" + dep.getAssignStrategy() + "]");
+			//logger.error("Assign fail with strategy [" + dep.getAssignStrategy() + "]");
+			LG.log(MC.LOG_DEBUG, TAG,"Assign fail with strategy [" + dep.getAssignStrategy() + "]");
 			return;
 		}
 	}

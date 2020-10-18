@@ -14,7 +14,8 @@ import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Inject;
 import cn.jmicro.api.config.Config;
 import cn.jmicro.api.monitor.MC;
-import cn.jmicro.api.monitor.SF;
+import cn.jmicro.api.monitor.MT;
+import cn.jmicro.api.monitor.LG;
 import cn.jmicro.api.net.ServerError;
 import cn.jmicro.api.registry.IServiceListener;
 import cn.jmicro.api.registry.ServiceItem;
@@ -105,13 +106,15 @@ public class PermissionManager {
 		if(ai == null && sm.isNeedLogin()){
 			ServerError se = new ServerError(ServerError.SE_NOT_LOGIN,
 					 "Have to login for invoking to " + sm.getKey().toKey(false, false, false));
-			SF.eventLog(MC.MT_INVALID_LOGIN_INFO,MC.LOG_ERROR, TAG,se.toString());
+			LG.log(MC.LOG_ERROR, TAG,se.toString());
+			MT.rpcEvent(MC.MT_INVALID_LOGIN_INFO);
 			logger.warn(se.toString());
 			return se;
 		} else if(sm.isPerType() && (ai == null || ai.getPers() == null || !ai.getPers().contains(sm.getKey().toKey(false, false, false)))) {
 			ServerError se = new ServerError(ServerError.SE_NO_PERMISSION,
 					(ai!= null?ai.getActName():" Not login") + " no permission for this operation ");
-			SF.eventLog(MC.MT_ACT_PERMISSION_REJECT,MC.LOG_ERROR, TAG,se.toString());
+			LG.log(MC.LOG_ERROR, TAG,se.toString());
+			MT.rpcEvent(MC.MT_ACT_PERMISSION_REJECT);
 			logger.warn(se.toString());
 			return se;
 		}/*else if(checkAccountClientPermission(srcClientId)) {

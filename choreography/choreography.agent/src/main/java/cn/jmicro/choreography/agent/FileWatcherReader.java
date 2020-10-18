@@ -17,6 +17,9 @@ import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import cn.jmicro.api.monitor.LG;
+import cn.jmicro.api.monitor.MC;
+
 public class FileWatcherReader {
 
 	private final Logger logger = LoggerFactory.getLogger(FileWatcherReader.class);
@@ -63,6 +66,7 @@ public class FileWatcherReader {
 			return true;
 		} catch (IOException e) {
 			logger.error("", e);
+			LG.log(MC.LOG_ERROR, FileWatcherReader.class, "", e);
 			return false;
 		}
 	}
@@ -125,7 +129,9 @@ public class FileWatcherReader {
         	if(StandardWatchEventKinds.ENTRY_DELETE == e.kind()) {
         		le.listener.onEvent(FILE_DELETE, n,null);
         		logFileEntries.remove(n);
-        		logger.info("Logfile delete: " + n);
+        		String msg = "Logfile delete: " + n;
+        		logger.info(msg);
+        		LG.log(MC.LOG_INFO, FileWatcherReader.class, msg);
         		continue;
         	}
         	
@@ -162,7 +168,9 @@ public class FileWatcherReader {
             }
             return file.getFilePointer();
         } catch (IOException e) {
-            logger.error("Read File error: " + configFile.getAbsolutePath(),e);
+        	String msg = "Read File error: " + configFile.getAbsolutePath();
+            logger.error(msg,e);
+            LG.log(MC.LOG_ERROR, FileWatcherReader.class, "", e);
             return -1;
         } finally {
             if (file != null) {

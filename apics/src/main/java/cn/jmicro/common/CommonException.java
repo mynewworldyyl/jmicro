@@ -18,6 +18,10 @@ package cn.jmicro.common;
 
 import java.io.Serializable;
 
+import cn.jmicro.api.net.IReq;
+import cn.jmicro.api.net.IResp;
+import cn.jmicro.api.security.ActInfo;
+
 /**
  * 
  * @author Yulei Ye
@@ -30,6 +34,12 @@ public class CommonException extends RuntimeException implements Serializable{
 	private String key = "";
 	
 	private String others = "";
+	
+	private IReq req;
+	
+	private IResp resp;
+	
+	private ActInfo ai;
 
 	public CommonException(String cause){
 		super(cause);
@@ -37,6 +47,16 @@ public class CommonException extends RuntimeException implements Serializable{
 	
 	public CommonException(String cause,Throwable exp){
 		super(cause,exp);
+	}
+	
+	public CommonException(String cause,Throwable exp,IReq req){
+		super(cause,exp);
+		this.req = req;
+	}
+	
+	public CommonException(String cause,Throwable exp,IResp resp){
+		super(cause,exp);
+		this.resp = resp;
 	}
 	
 	public CommonException(String key,String cause){
@@ -59,6 +79,30 @@ public class CommonException extends RuntimeException implements Serializable{
 
 	public void setOthers(String others) {
 		this.others = others;
+	}
+
+	public IReq getReq() {
+		return req;
+	}
+
+	public void setReq(IReq req) {
+		this.req = req;
+	}
+
+	public IResp getResp() {
+		return resp;
+	}
+
+	public void setResp(IResp resp) {
+		this.resp = resp;
+	}
+
+	public ActInfo getAi() {
+		return ai;
+	}
+
+	public void setAi(ActInfo ai) {
+		this.ai = ai;
 	}
 	
 	

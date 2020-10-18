@@ -34,7 +34,8 @@ import cn.jmicro.api.gateway.ApiRequest;
 import cn.jmicro.api.gateway.ApiResponse;
 import cn.jmicro.api.idgenerator.ComponentIdServer;
 import cn.jmicro.api.monitor.MC;
-import cn.jmicro.api.monitor.SF;
+import cn.jmicro.api.monitor.MT;
+import cn.jmicro.api.monitor.LG;
 import cn.jmicro.api.net.IMessageHandler;
 import cn.jmicro.api.net.ISession;
 import cn.jmicro.api.net.Message;
@@ -110,7 +111,8 @@ public class ApiRequestMessageHandler implements IMessageHandler{
 					resp.setResult(se);
 					resp.setSuccess(false);
 					msg.setPayload(ICodecFactory.encode(codecFactory, resp, msg.getUpProtocol()));
-					SF.eventLog(MC.MT_INVALID_LOGIN_INFO,MC.LOG_ERROR, TAG,lk);
+					LG.log(MC.LOG_ERROR, TAG,lk);
+					MT.rpcEvent(MC.MT_INVALID_LOGIN_INFO);
 					session.write(msg);
 					return;
 				} else {
@@ -137,8 +139,8 @@ public class ApiRequestMessageHandler implements IMessageHandler{
 			
 			resp.setResult(result);
 			msg.setPayload(ICodecFactory.encode(codecFactory, resp, msg.getUpProtocol()));
-			if(SF.isLoggable(MC.LOG_DEBUG, msg.getLogLevel())) {
-				SF.eventLog(MC.MT_PLATFORM_LOG,MC.LOG_DEBUG, TAG," one response");
+			if(LG.isLoggable(MC.LOG_DEBUG, msg.getLogLevel())) {
+				LG.log(MC.LOG_DEBUG, TAG," one response");
 			}
 			session.write(msg);
 			
@@ -178,13 +180,15 @@ public class ApiRequestMessageHandler implements IMessageHandler{
 					ServiceItem si = proxy.getHolder().getItem();
 					if(si == null) {
 						String errMsg = "Service["+req.getServiceName()+"] namespace ["+req.getNamespace()+"] not found";
-						SF.eventLog(MC.MT_SERVICE_ITEM_NOT_FOUND,MC.LOG_ERROR, TAG," service not found");
+						LG.log(MC.LOG_ERROR, TAG," service not found");
+						MT.rpcEvent(MC.MT_SERVICE_ITEM_NOT_FOUND);
 						throw new CommonException(errMsg);
 					}
 					ServiceMethod sm = si.getMethod(req.getMethod(), clazzes);
 					if(sm == null) {
 						String errMsg = "Service mehtod ["+req.getServiceName()+"] method ["+req.getMethod()+"] not found";
-						SF.eventLog(MC.MT_PLATFORM_LOG,MC.LOG_ERROR, TAG,errMsg);
+						LG.log(MC.LOG_ERROR, TAG,errMsg);
+						MT.rpcEvent(MC.MT_SERVICE_METHOD_NOT_FOUND);
 						throw new CommonException(errMsg);
 					}
 					
@@ -192,14 +196,14 @@ public class ApiRequestMessageHandler implements IMessageHandler{
 					
 					//JMicroContext.get().configMonitor(sm.getMonitorEnable(), si.getMonitorEnable());
 					
-					if(SF.isLoggable(MC.LOG_DEBUG, msg.getLogLevel())) {
-						SF.eventLog(MC.MT_PLATFORM_LOG,MC.LOG_DEBUG, TAG," got request");
+					if(LG.isLoggable(MC.LOG_DEBUG, msg.getLogLevel())) {
+						LG.log(MC.LOG_DEBUG, TAG," got request");
 					}
 					
 					if(!sm.isNeedResponse()) {
 						m.invoke(srv, req.getArgs());
-						if(SF.isLoggable(MC.LOG_DEBUG, msg.getLogLevel())) {
-							SF.eventLog(MC.MT_PLATFORM_LOG,MC.LOG_DEBUG, TAG," no need response");
+						if(LG.isLoggable(MC.LOG_DEBUG, msg.getLogLevel())) {
+							LG.log(MC.LOG_DEBUG, TAG," no need response");
 						}
 						return;
 					}
@@ -208,8 +212,8 @@ public class ApiRequestMessageHandler implements IMessageHandler{
 					
 					resp.setResult(result);
 					msg.setPayload(ICodecFactory.encode(codecFactory, resp, msg.getUpProtocol()));
-					if(SF.isLoggable(MC.LOG_DEBUG, msg.getLogLevel())) {
-						SF.eventLog(MC.MT_PLATFORM_LOG,MC.LOG_DEBUG, TAG," one response");
+					if(LG.isLoggable(MC.LOG_DEBUG, msg.getLogLevel())) {
+						LG.log(MC.LOG_DEBUG, TAG," one response");
 					}
 					session.write(msg);
 				
@@ -219,18 +223,19 @@ public class ApiRequestMessageHandler implements IMessageHandler{
 					result = new ServerError(0,e.getMessage());
 					resp.setSuccess(false);
 					resp.setResult(result);
-					SF.eventLog(MC.MT_PLATFORM_LOG,MC.LOG_ERROR, TAG," service error", e);
+					LG.log(MC.LOG_ERROR, TAG," service error", e);
+					MT.rpcEvent(MC.MT_SERVER_ERROR);
 				}
 			} else {
 				resp.setSuccess(false);
 				resp.setResult(result);
 				msg.setPayload(ICodecFactory.encode(codecFactory, resp, msg.getUpProtocol()));
-				SF.eventLog(MC.MT_SERVICE_RROXY_NOT_FOUND,MC.LOG_ERROR, TAG,req.getServiceName());
+				LG.log(MC.LOG_ERROR, TAG,req.getServiceName());
+				MT.rpcEvent(MC.MT_SERVICE_RROXY_NOT_FOUND);
+				
 				session.write(msg);
 			}
 		}
-		
-		
 	}
 
 	

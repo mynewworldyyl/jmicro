@@ -249,7 +249,7 @@ public final class Message {
 		if(l > PRIORITY_3 || l < PRIORITY_0) {
 			 new CommonException("Invalid priority: "+l);
 		}
-		this.flag = (byte)((l << 3) | this.flag);
+		this.flag = (short)((l << 3) | this.flag);
 	}
 	
 	public byte getLogLevel() {
@@ -260,7 +260,7 @@ public final class Message {
 		if(v < 0 || v > 6) {
 			 new CommonException("Invalid Log level: "+v);
 		}
-		this.flag = (byte)((v << 10) | this.flag);
+		this.flag = (short)((v << 10) | this.flag);
 	}
 	
 	public byte getUpProtocol() {

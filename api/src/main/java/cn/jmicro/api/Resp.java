@@ -11,7 +11,7 @@ public class Resp<T> {
 	public static final int CODE_NO_PERMISSION = 2;
 	
 	private String msg;
-	private int code;
+	private int code = CODE_SUCCESS;
 	private T data;
 	
 	private String key;

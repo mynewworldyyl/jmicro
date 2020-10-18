@@ -682,6 +682,9 @@
 			        <filesets>
 			            <fileset>
 			                <directory>${basedir}/src/main/gen</directory>
+			                <directory>${basedir}/logs</directory>
+			                <directory>${basedir}/data</directory>
+			                <directory>${basedir}/dumpDir</directory>
 			                <!--是否跟随符号链接 (symbolic links)-->
 			                <followSymlinks>false</followSymlinks>
 			                <!--默认有些文件是不会被清理的,比如.svn文件,如果设置成false,则全部按照自定义的来处理-->
@@ -695,6 +698,15 @@
 			                    <exclude>nc*</exclude>
 			                </excludes>
 			            </fileset>
+			            
+			          <fileset>
+                        <directory>logs</directory>
+                        <followSymlinks>false</followSymlinks>
+                        <includes>
+                            <include>*</include>
+                        </includes>
+                      </fileset>
+                    
 			        </filesets>
 			    </configuration>
 			</plugin>

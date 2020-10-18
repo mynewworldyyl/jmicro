@@ -22,6 +22,8 @@ import cn.jmicro.api.choreography.IAgentProcessService;
 import cn.jmicro.api.choreography.ProcessInfo;
 import cn.jmicro.api.config.Config;
 import cn.jmicro.api.mng.LogFileEntry;
+import cn.jmicro.api.monitor.LG;
+import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.pubsub.ILocalCallback;
 import cn.jmicro.api.pubsub.PSData;
 import cn.jmicro.api.pubsub.PubSubManager;
@@ -100,7 +102,9 @@ public class AgentProcessServiceImpl implements IAgentProcessService {
 		
 		ProcessInfo pi = im.getProcessesByInsId(processId, false);
 		if(pi == null) {
-			logger.info(processId + " : " + logFile + ", pactive: false");
+			String msg = processId + " : " + logFile + ", pactive: false";
+            LG.log(MC.LOG_INFO, FileWatcherReader.class, "");
+			logger.info(msg);
 			return;
 		}
 		
@@ -152,7 +156,9 @@ public class AgentProcessServiceImpl implements IAgentProcessService {
 			try {
 				w.watcherLog();
 			} catch (IOException | InterruptedException e) {
+	            LG.log(MC.LOG_INFO, FileWatcherReader.class, "",e);
 				logger.error("",e);
+				
 			}
 		}
 		
@@ -323,7 +329,9 @@ public class AgentProcessServiceImpl implements IAgentProcessService {
 	@Override
 	@SMethod(needLogin=true,maxSpeed=5,maxPacketSize=512)
 	public boolean stopLogMonitor(String processId, String logFile) {
-		logger.info("stopLogMonitor processId: {}  logFile: {}",processId,logFile);
+		String msg = "stopLogMonitor processId: "+processId+"  logFile: "+logFile;
+        LG.log(MC.LOG_INFO, FileWatcherReader.class, "");
+		logger.info(msg);
 		
 		int processClientId = this.getProcessClientId(processId);
 		if(processClientId == -1 || !PermissionManager.checkAccountClientPermission(processClientId)) {
@@ -439,7 +447,9 @@ public class AgentProcessServiceImpl implements IAgentProcessService {
 				
 				rf.seek(readIndex+3);
 			} catch (IOException e) {
-				logger.error("init error",e);
+				String msg = "init error";
+		        LG.log(MC.LOG_ERROR, FileWatcherReader.class, "",e);
+				logger.error(msg,e);
 			}
             
     		return fileLength;
@@ -485,7 +495,9 @@ public class AgentProcessServiceImpl implements IAgentProcessService {
                 	return sb.length();
                 }
             } catch (IOException e) {
-                logger.error("Read error: " + logFile,e);
+            	String msg = "Read error: " + logFile;
+		        LG.log(MC.LOG_ERROR, FileWatcherReader.class, "");
+                logger.error(msg,e);
                 return -1;
             } finally {
                 try {

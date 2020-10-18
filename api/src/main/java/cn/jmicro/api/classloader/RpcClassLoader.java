@@ -263,6 +263,10 @@ public class RpcClassLoader extends ClassLoader {
 	
 	private Class<?> getClass0(String className) {
 
+		if(className.endsWith("II8NService$Gateway$JMAsyncClient")) {
+			logger.debug("getClass0");
+		}
+		
 		String originClsName = className;
 		className = this.getClassName(className);
 		if(clazzes.containsKey(className)) {
@@ -440,8 +444,8 @@ public class RpcClassLoader extends ClassLoader {
 		 className = this.getClassName(className);
 		
 		 if(this.rpcLlassloader == null) {
-	    		logger.error("RpcClassLoader is NULL when load:{}",className);
-	    		return null;
+    		logger.error("RpcClassLoader is NULL when load:{}",className);
+    		return null;
 	     }
 		 
 		if(!checkResp(className)) {

@@ -50,34 +50,8 @@
 
         <Modal v-if="isLogin" v-model="createTopicDialog" :closable="false" :loading="true" fullscreen
                class-name="createTopicDialog" @on-ok="doCreateTopic()" ref="createTopicDialog">
-                <!--<JCreateTopicView  :item="topic" @contentChange="contentChange"></JCreateTopicView>-->
-            <div style="color:red;">{{msg}}</div>
-
-            <div>
-                <label for="topicTitle">{{'topicTitle'|i18n}}</label>
-                <Input v-if="topic" id="topicTitle" v-model="topic.title"/>
-            </div>
-
-            <div>
-                <Label for="topicType">Type</Label>
-                <Select id="topicType" v-model="topic.topicType">
-                    <Option v-for="v in topicTypes" :value="v" :key="'type_'+v">{{v | i18n}}</Option>
-                </Select>
-            </div>
-
-            <!--<div>
-                <label for="topicContent">{{'topicContent'|i18n}}</label>&nbsp;&nbsp;&nbsp;
-                <Input id="topicContent" style=""  class='textarea' type="textarea" v-model="topic.content"/>
-            </div>-->
-
-            <quill-editor v-if="topic"
-                          ref="myQuillEditor"
-                          v-model="topic.content"
-                          :options="editorOption"
-                          @blur="onEditorBlur($event)"
-                          @focus="onEditorFocus($event)"
-                          @ready="onEditorReady($event)"
-            />
+                <JCreateTopicView v-if="isLogin && createTopicDialog"  :topic="topic"
+                                  @contentChange="contentChange"></JCreateTopicView>
         </Modal>
 
     </div>
@@ -87,14 +61,8 @@
 
     import JTopicView from './JTopicView.vue'
     //import JCreateTopicView from "./JCreateTopicView.vue";
-
-    import { quillEditor } from "vue-quill-editor";
-
-    import 'quill/dist/quill.core.css'
-    import 'quill/dist/quill.snow.css'
-    import 'quill/dist/quill.bubble.css'
-
-    const cid = 'JTopicListView';
+    //import { quillEditor } from "vue-quill-editor";
+    const cid = 'topicList';
     const sn = 'cn.jmicro.ext.bbs.api.IBbsService';
     const ns = 'bbs';
     const v = '0.0.1';
@@ -102,14 +70,12 @@
     export default {
         name: cid,
         components: {
+            JCreateTopicView : () => import("./JCreateTopicView.vue"),
             JTopicView,
-            quillEditor,
         },
 
         data() {
             return {
-                topicTypes:["Pubsub","MicroService","Monitor","ConfigMng","ServiceMng","NewFeature","Other"],
-
                 createTopicDialog:false,
                 topic:{'title':'','content':'',topicType:'other'},
                 msg:'',
@@ -136,14 +102,14 @@
                     drawerStatus:false,
                     drawerBtnStyle:{right:'0px',zindex:1000},
                 },
-
-                editorOption: {
-
-                }
             }
         },
 
         methods: {
+
+            contentChange(topic) {
+                this.topic = topic;
+            },
 
             editTopic(topic) {
                 if(topic.content && topic.content.length > 0) {

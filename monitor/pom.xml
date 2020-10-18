@@ -14,7 +14,7 @@
     </properties>
     <modules>
 		<module>monitor.api</module>	
-        <module>monitor.common</module>
+        <module>monitor.server</module>
 		<module>monitor.persist2db</module>	
     </modules>
 </project>

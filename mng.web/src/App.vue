@@ -17,7 +17,8 @@
                       <Menu-item name="__processLog"><Icon type="ios-cog"></Icon>{{"ProcessLog"|i18n("Process Log")}}</Menu-item>
                   </Menu-group>
                   <Menu-group :title="'Config'|i18n">
-                      <Menu-item name="__warning"><Icon type="ios-alert" />{{"Warning"|i18n}}</Menu-item>
+                      <Menu-item name="__warningConfig"><Icon type="ios-alert" />{{"warningConfig"|i18n}}</Menu-item>
+                      <Menu-item name="__logWarning"><Icon type="ios-alert" />{{"LogWarning"|i18n}}</Menu-item>
                       <Menu-item name="__typeConfig"><Icon type="ios-cog"></Icon>{{"TypeConfig"|i18n("Type Config")}}</Menu-item>
                       <Menu-item name="__monitorType"><Icon type="ios-cog"></Icon>{{"MonitorTypes"|i18n("Monitor Types")}}</Menu-item>
                       <Menu-item name="__monitorTypeServiceMethod"><Icon type="ios-cog"></Icon>{{"ServiceTypes"|i18n("Service Types")}}</Menu-item>

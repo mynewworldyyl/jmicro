@@ -32,7 +32,7 @@ import cn.jmicro.api.annotation.Service;
 import cn.jmicro.api.mng.LogEntry;
 import cn.jmicro.api.mng.LogItem;
 import cn.jmicro.api.monitor.MC;
-import cn.jmicro.api.monitor.MRpcItem;
+import cn.jmicro.api.monitor.MRpcLogItem;
 import cn.jmicro.api.net.IReq;
 import cn.jmicro.api.net.IResp;
 import cn.jmicro.api.net.RpcRequest;
@@ -75,13 +75,13 @@ public class LogServiceImpl implements ILogService {
 		
 		 Map<Long,LogEntry> logComsumerMap = new HashMap<>();
 		 
-		 Map<Long,List<MRpcItem>> logProviderMap = new HashMap<>();
+		 Map<Long,List<MRpcLogItem>> logProviderMap = new HashMap<>();
 		 
 		 LogEntry root = null;
 		 
 		 FindIterable<Document>  rst = rpcLogColl.find(match);
 		 for(Document doc : rst) {
-			 MRpcItem mi = fromJson(doc.toJson(settings));
+			 MRpcLogItem mi = fromJson(doc.toJson(settings));
 			 if(mi.isProvider()) {
 				if(!logProviderMap.containsKey(mi.getReqId())) {
 					logProviderMap.put(mi.getReqId(), new ArrayList<>());
@@ -155,7 +155,7 @@ public class LogServiceImpl implements ILogService {
 				LogEntry le = new LogEntry();
 				rl.add(le);
 				Document log = cursor.next();
-				MRpcItem mi = fromJson(log.toJson(settings));
+				MRpcLogItem mi = fromJson(log.toJson(settings));
 				le.setItem(mi);
 				le.setId(mi.getReqId()+"");
 				if(mi.getLinkId() > 0) {
@@ -288,12 +288,12 @@ public class LogServiceImpl implements ILogService {
 		groupDoc.put("total", new Document("$sum",1));
 		
 		Document match = new Document("$match", qryMatch);
-		Document unwind = new Document("$unwind", "$items");
+		//Document unwind = new Document("$unwind", "$items");
 		Document group = new Document("$group", groupDoc);
 
 		List<Document> aggregateList = new ArrayList<Document>();
 		aggregateList.add(match);
-		aggregateList.add(unwind);
+		//aggregateList.add(unwind);
 		
 		String val = queryConditions.get("noLog");
 		if(StringUtils.isNotEmpty(val) && "true".equals(val)) {
@@ -318,8 +318,67 @@ public class LogServiceImpl implements ILogService {
 	}
 
 	@Override
-	@SMethod(perType=false,needLogin=true,maxSpeed=10,maxPacketSize=2048)
-	public Resp<List<LogItem>> queryLog(Map<String, String> queryConditions, int pageSize, int curPage) {
+	@SMethod(perType=false,needLogin=true,maxSpeed=10,maxPacketSize=2048,logLevel=MC.LOG_ERROR)
+	public Resp<List<MRpcLogItem>> queryLog(Map<String, String> queryConditions, int pageSize, int curPage) {
+
+		Document qryMatch = this.getLogCondtions(queryConditions);
+		
+		Document match = new Document("$match", qryMatch);
+		//Document unwind = new Document("$unwind", "$items");
+		
+		Document sort = new Document("$sort", new Document("createTime", -1));
+		Document skip = new Document("$skip", pageSize*curPage);
+		Document limit = new Document("$limit", pageSize);
+		
+		List<Document> aggregateList = new ArrayList<Document>();
+		aggregateList.add(match);
+		//aggregateList.add(unwind);
+		
+		String val = queryConditions.get("noLog");
+		if(StringUtils.isNotEmpty(val) && "true".equals(val)) {
+			aggregateList.add(new Document("$match",new Document("items.level",new Document("$ne",MC.LOG_NO))));
+		}
+		
+		aggregateList.add(sort);
+		aggregateList.add(skip);
+		aggregateList.add(limit);
+		
+		MongoCollection<Document> rpcLogColl = mongoDb.getCollection("rpc_log");
+		AggregateIterable<Document> resultset = rpcLogColl.aggregate(aggregateList);
+		MongoCursor<Document> cursor = resultset.iterator();
+		
+		Resp<List<MRpcLogItem>> resp = new Resp<>();
+		List<MRpcLogItem> rl = new ArrayList<>();
+		resp.setData(rl);
+		
+		try {
+			while(cursor.hasNext()) {
+				Document log = cursor.next();
+				/*Document liDoc = log.get("items", Document.class);
+				LogItem li = JsonUtils.getIns().fromJson(liDoc.toJson(settings), LogItem.class);
+				log.remove("items");*/
+				MRpcLogItem mi = fromJson(log.toJson(settings));
+				//mi.setItems(null);
+				//li.setItem(mi);
+				if(mi.getItems() != null && !mi.getItems().isEmpty()) {
+					mi.getItems().sort((i1,i2)->{
+						return i1.getTime() > i2.getTime() ? -1 : (i1.getTime() == i2.getTime() ? 0 : 1);
+					});
+				}
+				rl.add(mi);
+			}
+			resp.setCode(Resp.CODE_SUCCESS);
+		} finally {
+			cursor.close();
+		}
+		
+		return resp;
+	
+	}
+	
+	//@Override
+	//@SMethod(perType=false,needLogin=true,maxSpeed=10,maxPacketSize=2048)
+	public Resp<List<LogItem>> queryLog1(Map<String, String> queryConditions, int pageSize, int curPage) {
 
 		Document qryMatch = this.getLogCondtions(queryConditions);
 		
@@ -357,7 +416,7 @@ public class LogServiceImpl implements ILogService {
 				Document liDoc = log.get("items", Document.class);
 				LogItem li = JsonUtils.getIns().fromJson(liDoc.toJson(settings), LogItem.class);
 				log.remove("items");
-				MRpcItem mi = fromJson(log.toJson(settings));
+				MRpcLogItem mi = fromJson(log.toJson(settings));
 				mi.setItems(null);
 				li.setItem(mi);
 				rl.add(li);
@@ -539,6 +598,18 @@ public class LogServiceImpl implements ILogService {
 			match.put("resp.success", Boolean.parseBoolean(val));
 		}
 		
+		key = "configId";
+		val = queryConditions.get(key);
+		if(StringUtils.isNotEmpty(val)) {
+			match.put(key, val);
+		}
+		
+		key = "configTag";
+		val = queryConditions.get(key);
+		if(StringUtils.isNotEmpty(val)) {
+			match.put("tag", val);
+		}
+		
 		return match;
 	}
 	
@@ -553,7 +624,7 @@ public class LogServiceImpl implements ILogService {
 		 
 		 FindIterable<Document>  rst = rpcLogColl.find(match);
 		 for(Document doc : rst) {
-			 MRpcItem mi = fromJson(doc.toJson(settings));
+			 MRpcLogItem mi = fromJson(doc.toJson(settings));
 			 LogEntry le = new LogEntry(mi);
 			 le.setId(mi.getReqId()+"");
 			 logMap.put(mi.getReqId(), le);
@@ -579,13 +650,13 @@ public class LogServiceImpl implements ILogService {
 		}
 	}
 	
-	private MRpcItem fromJson(String json) {
+	private MRpcLogItem fromJson(String json) {
 		GsonBuilder builder = new GsonBuilder();
 		//builder.registerTypeAdapter(IReq.class,rpcTpeAdatper);
 		//builder.registerTypeAdapter(IResp.class, respTypeAdapter);
 		builder.registerTypeAdapter(IReq.class, this.rpcTpeAdatper);
 		builder.registerTypeAdapter(IResp.class, this.respTypeAdapter);
-		return builder.create().fromJson(json, MRpcItem.class);
+		return builder.create().fromJson(json, MRpcLogItem.class);
 	}
 
 	private class RpcRequesetDeserializedTypeAdapter implements JsonDeserializer<IReq> {

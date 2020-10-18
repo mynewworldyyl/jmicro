@@ -20,7 +20,7 @@ import com.alibaba.dubbo.common.serialize.kryo.utils.ReflectUtils;
 
 import cn.jmicro.api.annotation.SO;
 import cn.jmicro.common.CommonException;
-import cn.jmicro.common.util.StringUtils;
+import cn.jmicro.common.Utils;
 
 /**
  * 在服务标识基础上加上方法签名
@@ -42,6 +42,7 @@ public final class UniqueServiceMethodKey {
 	private String returnParam;
 	
 	private transient String cacheFullKey = null;
+	
 	private transient String cacheMethodKey = null;
 	
 	public Class<?>[] getParameterClasses() {
@@ -57,7 +58,8 @@ public final class UniqueServiceMethodKey {
 		}
 	}
 	
-	/*public static String paramsStr(String[] clazzes) {
+	/*
+	 public static String paramsStr(String[] clazzes) {
 		if(clazzes == null || clazzes.length == 0) {
 			return "";
 		}
@@ -68,7 +70,8 @@ public final class UniqueServiceMethodKey {
 		}
 		sb.append(clazzes[offset]);
 		return sb.toString();
-	}*/
+	 }
+	*/
 	
 	public static String paramsStr(Class<?>[] args) {
 		return ReflectUtils.getDesc(args);
@@ -104,7 +107,7 @@ public final class UniqueServiceMethodKey {
 	
 	public static Class<?>[] paramsClazzes(String paramDesc) {
 		try {
-			if(StringUtils.isEmpty(paramDesc)) {
+			if(Utils.isEmpty(paramDesc)) {
 				return null;
 			}
 			return ReflectUtils.desc2classArray(paramDesc);
@@ -178,7 +181,7 @@ public final class UniqueServiceMethodKey {
 			usk.setHost(strs[++idx]);
 		}
 		
-		if(strs.length > 5 && !StringUtils.isEmpty(strs[++idx])) {
+		if(strs.length > 5 && !Utils.isEmpty(strs[++idx])) {
 			usk.setPort(Integer.parseInt(strs[++idx]));
 		}
 		

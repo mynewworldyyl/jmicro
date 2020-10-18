@@ -24,94 +24,10 @@
     line-height: 35px;
   }
 
-  .icp , .ba{
-    display:inline-block;text-decoration:none;height:20px;line-height:20px;
-  }
-
-  .jCopyRight{
-    color: white;
-  }
-
-  #bottomBar {
-    width: 600px;margin: 0 auto;position: absolute;bottom:-80px;text-align: center;
-    height: 50px;padding:5px auto;
-    line-height: 20px;
-    background-color: currentColor;
-  }
-
 </style>
 <div id="app"></div>
-
-<div id="bottomBar">
-  <a target="_blank" class="icp" href="http://beian.miit.gov.cn"><pre>粤ICP备2020078757号</pre></a>
-  <a target="_blank" href="http://www.beian.gov.cn/portal/registerSystemInfo?recordcode=44030602004897"
-     class="ba">
-    <img src="ba.png" style="float:left;"/>
-    <pre>粤公网安备 44030602004897号</pre>
-  </a>
-  <p class="jCopyRight">© CopyRight 2020, JMICRO.CN, Inc.All Rights Reserved</p>
-</div>
-
 </body>
 
 <script  type="text/javascript">
-</script>
-<script  type="text/javascript">
-    let bb = document.getElementById("bottomBar");
-    bb.style.width=document.body.clientWidth+'px';
-    let timer = null;
-    let scrollFunc = function (e) {
-        let val = 0;
-        e = e || window.event;
-        if (e.wheelDelta) {  //判断浏览器IE，谷歌滑轮事件
-            val = e.wheelDelta;
-        } else if (e.detail) {  //Firefox滑轮事件
-            val = e.detail;
-        }
-        //console.log(-val);
-        if(val > 0) {
-            //bb.style.bottom='-80px';
-            //console.log(-val);
-            let p = parseInt(bb.style.bottom);
-            if(!timer && p != -80) {
-                timer = setInterval(function(){
-                    p = parseInt(bb.style.bottom);
-                    if(p >= -80) {
-                        p = p-5;
-                        bb.style.bottom=p+"px";
-                        //console.log(p);
-                    }else {
-                        bb.style.bottom="-80px";
-                        clearTimeout(timer);
-                        timer  = null;
-                    }
-                },10);
-            }
-        } else {
-            let p = parseInt(bb.style.bottom);
-            if(!timer && p != 0) {
-                timer = setInterval(function(){
-                    p = parseInt(bb.style.bottom);
-                    if(p<=0) {
-                        p = p+5;
-                        bb.style.bottom=p+"px";
-                        //console.log(p);
-                    }else {
-                        bb.style.bottom="0px";
-                        clearTimeout(timer);
-                        timer  = null;
-                    }
-                },10);
-            }
-        }
-
-    }
-    //给页面绑定滑轮滚动事件
-    if (document.addEventListener) {
-        document.addEventListener('DOMMouseScroll', scrollFunc, false);
-    }
-    //滚动滑轮触发scrollFunc方法
-    window.onmousewheel = document.onmousewheel = scrollFunc;
-
 </script>
 </html>

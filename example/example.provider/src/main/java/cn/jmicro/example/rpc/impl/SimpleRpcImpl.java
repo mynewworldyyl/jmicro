@@ -13,7 +13,7 @@ import cn.jmicro.api.annotation.SMethod;
 import cn.jmicro.api.annotation.Service;
 import cn.jmicro.api.async.IPromise;
 import cn.jmicro.api.monitor.MC;
-import cn.jmicro.api.monitor.SF;
+import cn.jmicro.api.monitor.LG;
 import cn.jmicro.api.service.IServiceAsyncResponse;
 import cn.jmicro.api.test.Person;
 import cn.jmicro.common.Constants;
@@ -50,8 +50,8 @@ public class SimpleRpcImpl implements ISimpleRpc {
 			baseTimeUnit=Constants.TIME_MILLISECONDS
 	)
 	public String hello(String name) {
-		if(SF.isLoggable(MC.LOG_DEBUG)) {
-			SF.eventLog(MC.MT_PLATFORM_LOG,MC.LOG_DEBUG,SimpleRpcImpl.class, name);
+		if(LG.isLoggable(MC.LOG_DEBUG)) {
+			LG.log(MC.LOG_DEBUG,SimpleRpcImpl.class, name);
 		}
 		/*int rv = r.nextInt();
 		if(rv < 50) {
@@ -80,8 +80,8 @@ public class SimpleRpcImpl implements ISimpleRpc {
 			baseTimeUnit=Constants.TIME_MILLISECONDS
 	)
 	public String hi(Person person) {
-		if(SF.isLoggable(MC.LOG_DEBUG)) {
-			SF.eventLog(MC.MT_PLATFORM_LOG,MC.LOG_DEBUG,SimpleRpcImpl.class, person.getUsername());
+		if(LG.isLoggable(MC.LOG_DEBUG)) {
+			LG.log(MC.LOG_DEBUG,SimpleRpcImpl.class, person.getUsername());
 		}
 		System.out.println("Got: " + person.toString());
 		return "Server say hello to: " + person.toString();
@@ -89,8 +89,8 @@ public class SimpleRpcImpl implements ISimpleRpc {
 
 	@Override
 	public String linkRpc(String msg) {
-		if(SF.isLoggable(MC.LOG_DEBUG)) {
-			SF.eventLog(MC.MT_APP_LOG,MC.LOG_DEBUG,SimpleRpcImpl.class, "linkRpc call IRpcA with: " + msg);
+		if(LG.isLoggable(MC.LOG_DEBUG)) {
+			LG.log(MC.LOG_DEBUG,SimpleRpcImpl.class, "linkRpc call IRpcA with: " + msg);
 		}
 		
 		System.out.println("linkRpc: " + msg);

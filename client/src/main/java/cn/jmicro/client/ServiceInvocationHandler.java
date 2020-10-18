@@ -26,10 +26,11 @@ import cn.jmicro.api.annotation.Inject;
 import cn.jmicro.api.client.InvocationHandler;
 import cn.jmicro.api.exception.RpcException;
 import cn.jmicro.api.idgenerator.ComponentIdServer;
+import cn.jmicro.api.monitor.LogMonitorClient;
 import cn.jmicro.api.monitor.MC;
-import cn.jmicro.api.monitor.MRpcItem;
-import cn.jmicro.api.monitor.MonitorClient;
-import cn.jmicro.api.monitor.SF;
+import cn.jmicro.api.monitor.MRpcLogItem;
+import cn.jmicro.api.monitor.MT;
+import cn.jmicro.api.monitor.StatisMonitorClient;
 import cn.jmicro.api.net.IRequest;
 import cn.jmicro.api.net.IResponse;
 import cn.jmicro.api.net.InterceptorManager;
@@ -60,7 +61,10 @@ public class ServiceInvocationHandler implements InvocationHandler{
 	private ComponentIdServer idGenerator;
 	
 	@Inject
-	private MonitorClient monitor;
+	private LogMonitorClient logMonitor;
+	
+	@Inject
+	private StatisMonitorClient monitor;
 	
 	public ServiceInvocationHandler(){}
 	
@@ -93,14 +97,15 @@ public class ServiceInvocationHandler implements InvocationHandler{
 				JMicroContext.lid();
 				cxt.setParam(Constants.NEW_LINKID, true);
 				if(JMicroContext.get().isMonitorable()) {
-					SF.eventLog(MC.MT_LINK_START, MC.LOG_NO, TAG, null);
+					//LG.eventLog(MC.MT_LINK_START, MC.LOG_NO, TAG, null);
+					MT.rpcEvent(MC.MT_LINK_START);
 				}
 			} else {
 				cxt.setParam(Constants.NEW_LINKID, false);
 			}
 			
 			if(JMicroContext.get().isMonitorable()) {
-				MRpcItem mi = cxt.getMRpcItem();
+				MRpcLogItem mi = cxt.getMRpcLogItem();
 				mi.setReq(req);
 				mi.setReqId(req.getRequestId());
 				mi.setLinkId(JMicroContext.lid());
@@ -129,13 +134,13 @@ public class ServiceInvocationHandler implements InvocationHandler{
 				if(JMicroContext.get().getObject(Constants.NEW_LINKID,null) != null &&
 						JMicroContext.get().getBoolean(Constants.NEW_LINKID,false) ) {
 					//RPC链路结束
-					SF.eventLog(MC.MT_LINK_END, MC.LOG_NO, TAG, null);
+					//LG.eventLog(MC.MT_LINK_END, MC.LOG_NO, TAG, null);
+					MT.rpcEvent(MC.MT_LINK_END);
 					JMicroContext.get().removeParam(Constants.NEW_LINKID);
 				}
 				JMicroContext.get().debugLog(0);
-				JMicroContext.get().submitMRpcItem(monitor);
+				JMicroContext.get().submitMRpcItem(logMonitor,monitor);
 			}
-			
 		}
        /* if("intrest".equals(method.getName())) {
         	//代码仅用于测试

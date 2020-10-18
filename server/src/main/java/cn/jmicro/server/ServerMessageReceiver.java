@@ -36,15 +36,16 @@ import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Inject;
 import cn.jmicro.api.codec.ICodecFactory;
 import cn.jmicro.api.config.Config;
-import cn.jmicro.api.debug.LogUtil;
 import cn.jmicro.api.executor.ExecutorConfig;
 import cn.jmicro.api.executor.ExecutorFactory;
 import cn.jmicro.api.gateway.ApiRequest;
 import cn.jmicro.api.idgenerator.ComponentIdServer;
 import cn.jmicro.api.idgenerator.IdRequest;
+import cn.jmicro.api.monitor.LG;
+import cn.jmicro.api.monitor.LogMonitorClient;
 import cn.jmicro.api.monitor.MC;
-import cn.jmicro.api.monitor.MonitorClient;
-import cn.jmicro.api.monitor.SF;
+import cn.jmicro.api.monitor.MT;
+import cn.jmicro.api.monitor.StatisMonitorClient;
 import cn.jmicro.api.net.DumpManager;
 import cn.jmicro.api.net.IMessageHandler;
 import cn.jmicro.api.net.IMessageReceiver;
@@ -75,7 +76,10 @@ public class ServerMessageReceiver implements IMessageReceiver{
 	private boolean openDebug;
 	
 	@Inject(required=false)
-	private MonitorClient monitor;
+	private LogMonitorClient logMonitor;
+	
+	@Inject(required=false)
+	private StatisMonitorClient monitor;
 	
 	@Inject
 	private ComponentIdServer idGenerator;
@@ -218,14 +222,15 @@ public class ServerMessageReceiver implements IMessageReceiver{
 				.append(",linkId:").append(JMicroContext.lid());
 			}*/
 			
-			if(SF.isLoggable(MC.LOG_DEBUG,msg.getLogLevel())) {
-				SF.eventLog(MC.MT_PLATFORM_LOG,MC.LOG_DEBUG, TAG,"doReceive");
+			if(LG.isLoggable(MC.LOG_DEBUG,msg.getLogLevel())) {
+				LG.log(MC.LOG_DEBUG, TAG,LG.messageLog("doReceive",msg));
 			}
 			
 			IMessageHandler h = handlers.get(msg.getType());
 			if(h == null) {
 				String errMsg = "Message type ["+Integer.toHexString(msg.getType())+"] handler not found!";
-				SF.eventLog(MC.MT_HANDLER_NOT_FOUND,MC.LOG_ERROR, TAG,errMsg);
+				LG.log(MC.LOG_ERROR, TAG,errMsg);
+				MT.rpcEvent(MC.MT_HANDLER_NOT_FOUND);
 				throw new CommonException(errMsg);
 			} else {
 				h.onMessage(s, msg);
@@ -233,23 +238,27 @@ public class ServerMessageReceiver implements IMessageReceiver{
 		} catch (Throwable e) {
 			//SF.doMessageLog(MonitorConstant.LOG_ERROR, TAG, msg,e);
 			//SF.doSubmit(MonitorConstant.SERVER_REQ_ERROR);
+			
 			logger.error("reqHandler error msg:{} ",msg);
 			logger.error("doReceive",e);
 			
-			SF.eventLog(MC.MT_SERVER_ERROR,MC.LOG_ERROR, TAG,"error",e);
+			LG.log(MC.LOG_ERROR, TAG,"error",e);
+			MT.rpcEvent(MC.MT_SERVER_ERROR);
 			
-			RpcResponse resp = new RpcResponse(msg.getReqId(),new ServerError(0,e.getMessage()));
-			resp.setSuccess(false);
-			msg.setPayload(ICodecFactory.encode(codeFactory,resp,msg.getUpProtocol()));
-			msg.setType((byte)(msg.getType()+1));
-			s.write(msg);
+			if(msg.isNeedResponse()) {
+				RpcResponse resp = new RpcResponse(msg.getReqId(),new ServerError(0,e.getMessage()));
+				resp.setSuccess(false);
+				msg.setPayload(ICodecFactory.encode(codeFactory,resp,msg.getUpProtocol()));
+				msg.setType((byte)(msg.getType()+1));
+				s.write(msg);
+			}
 		} finally {
 			if(!msg.isAsyncReturnResult()) {
 				if(JMicroContext.get().isDebug()) {
 					JMicroContext.get().appendCurUseTime("respTime",false);
 					JMicroContext.get().debugLog(0);
 				}
-				JMicroContext.get().submitMRpcItem(monitor);
+				JMicroContext.get().submitMRpcItem(logMonitor,monitor);
 			}else {
 				JMicroContext.get().appendCurUseTime("Async req service return",false);
 			}
@@ -352,8 +361,8 @@ public class ServerMessageReceiver implements IMessageReceiver{
         		logger.error(sb.toString());
         		
         		//invalid for monitor server
-        		SF.reqEvent(MC.MT_EXECUTOR_REJECT, MC.LOG_ERROR, req, 
-        				JicroAbortPolicy.class.getName(),sb.toString());
+        		LG.reqEvent(MC.LOG_ERROR, req, JicroAbortPolicy.class.getName(),sb.toString());
+        		MT.rpcEvent(MC.MT_EXECUTOR_REJECT);
         		
         	} else {
         		throw new RejectedExecutionException("Task " + r.toString() +

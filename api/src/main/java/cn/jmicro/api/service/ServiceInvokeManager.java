@@ -26,8 +26,9 @@ import cn.jmicro.api.JMicroContext;
 import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Inject;
 import cn.jmicro.api.async.IPromise;
+import cn.jmicro.api.monitor.LG;
 import cn.jmicro.api.monitor.MC;
-import cn.jmicro.api.monitor.SF;
+import cn.jmicro.api.monitor.MT;
 import cn.jmicro.api.objectfactory.AbstractClientServiceProxyHolder;
 import cn.jmicro.api.objectfactory.IObjectFactory;
 import cn.jmicro.api.registry.AsyncConfig;
@@ -67,14 +68,16 @@ public class ServiceInvokeManager {
 		ServiceItem si = items.iterator().next();
 		if(si == null) {
 			String msg = "Service item not found for: "+mkey.toKey(false, false, false);
-			SF.eventLog(MC.MT_SERVICE_ITEM_NOT_FOUND,MC.LOG_ERROR, TAG, msg);
+			LG.log(MC.LOG_ERROR, TAG, msg);
+			MT.rpcEvent(MC.MT_SERVICE_ITEM_NOT_FOUND);
 			throw new CommonException(msg);
 		}
 		
 		ServiceMethod sm = si.getMethod(mkey.getMethod(), mkey.getParamsStr());
 		if(sm == null) {
 			String msg = "Service method not found for: "+mkey.toKey(false, false, false);
-			SF.eventLog(MC.MT_SERVICE_METHOD_NOT_FOUND,MC.LOG_ERROR, TAG, msg);
+			LG.log(MC.LOG_ERROR, TAG, msg);
+			MT.rpcEvent(MC.MT_SERVICE_METHOD_NOT_FOUND);
 			throw new CommonException(msg);
 		}
 		return call(si,sm,args,ac);
@@ -106,7 +109,8 @@ public class ServiceInvokeManager {
 		
 		if(si == null) {
 			String msg = "Cannot call service for NULL ServiceItem";
-			SF.eventLog(MC.MT_SERVICE_ITEM_NOT_FOUND,MC.LOG_ERROR, TAG, msg);
+			LG.log(MC.LOG_ERROR, TAG, msg);
+			MT.rpcEvent(MC.MT_SERVICE_ITEM_NOT_FOUND);
 			throw new CommonException(msg);
 		}
 		
@@ -118,7 +122,8 @@ public class ServiceInvokeManager {
 			m = p.getClass().getMethod(sm.getKey().getMethod(), argTypes);
 		} catch (NoSuchMethodException | SecurityException e) {
 			String msg = "Service method not found: "+si.getKey().toKey(true, true, true);
-			SF.eventLog(MC.MT_PLATFORM_LOG,MC.LOG_ERROR, TAG, msg);
+			LG.log(MC.LOG_ERROR, TAG, msg);
+			MT.nonRpcEvent(sm.getKey().toKey(true, true, true),MC.MT_SERVICE_METHOD_NOT_FOUND);
 			throw new CommonException(msg,e);
 		}
 		
@@ -153,7 +158,8 @@ public class ServiceInvokeManager {
 		
 		if(sm == null) {
 			String msg = "Cannot call service for NULL ServiceMethod:"+si.getKey().toKey(false, false, false);
-			SF.eventLog(MC.MT_SERVICE_METHOD_NOT_FOUND,MC.LOG_ERROR, TAG, msg);
+			LG.log(MC.LOG_ERROR, TAG, msg);
+			MT.nonRpcEvent(sm.getKey().toKey(true, true, true),MC.MT_SERVICE_METHOD_NOT_FOUND);
 			throw new CommonException(msg);
 		}
 		
@@ -166,7 +172,8 @@ public class ServiceInvokeManager {
 			m = p.getClass().getMethod(asyncName, argTypes);
 		} catch (NoSuchMethodException | SecurityException e) {
 			String msg = "Service method not found: "+si.getKey().toKey(true, true, true);
-			SF.eventLog(MC.MT_PLATFORM_LOG,MC.LOG_ERROR, TAG, msg);
+			LG.log(MC.LOG_ERROR, TAG, msg);
+			MT.nonRpcEvent(sm.getKey().toKey(true, true, true),MC.MT_SERVICE_METHOD_NOT_FOUND);
 			throw new CommonException(msg,e);
 		}
 		
@@ -183,7 +190,8 @@ public class ServiceInvokeManager {
 	private AbstractClientServiceProxyHolder getProxy(ServiceItem si) {
 		if(si == null) {
 			String msg = "Cannot call service for NULL ServiceItem";
-			SF.eventLog(MC.MT_SERVICE_ITEM_NOT_FOUND,MC.LOG_ERROR, TAG, msg);
+			LG.log(MC.LOG_ERROR, TAG, msg);
+			MT.nonRpcEvent(si.getKey().toKey(true, true, true),MC.MT_SERVICE_ITEM_NOT_FOUND);
 			throw new CommonException(msg);
 		}
 		
@@ -195,7 +203,8 @@ public class ServiceInvokeManager {
 			p = of.getRemoteServie(si, null);
 			if(p == null) {
 				String msg = "Fail to create remote service proxy: "+key;
-				SF.eventLog(MC.MT_SERVICE_RROXY_NOT_FOUND,MC.LOG_ERROR, TAG, msg);
+				LG.log(MC.LOG_ERROR, TAG, msg);
+				MT.nonRpcEvent(key,MC.MT_SERVICE_ITEM_NOT_FOUND);
 				throw new CommonException(msg);
 			}
 			proxes.put(key, p);
@@ -210,14 +219,16 @@ public class ServiceInvokeManager {
 		Set<ServiceItem> items = this.srvManager.getServiceItems(srvName, ns,ver);
 		if(items == null || items.isEmpty()) {
 			String msg = "Service item not found for: "+ UniqueServiceKey.serviceName(srvName, ns, ver);
-			SF.eventLog(MC.MT_SERVICE_ITEM_NOT_FOUND,MC.LOG_ERROR, TAG, msg);
+			LG.log(MC.LOG_ERROR, TAG, msg);
+			MT.nonRpcEvent(UniqueServiceKey.serviceName(srvName,ns,ver),MC.MT_SERVICE_ITEM_NOT_FOUND);
 			throw new CommonException(msg);
 		}
 		
 		ServiceItem si = items.iterator().next();
 		if(si == null) {
 			String msg = "Service item not found for: "+ UniqueServiceKey.serviceName(srvName, ns, ver);
-			SF.eventLog(MC.MT_SERVICE_ITEM_NOT_FOUND,MC.LOG_ERROR, TAG, msg);
+			LG.log(MC.LOG_ERROR, TAG, msg);
+			MT.nonRpcEvent(UniqueServiceKey.serviceName(srvName,ns,ver),MC.MT_SERVICE_ITEM_NOT_FOUND);
 			throw new CommonException(msg);
 		}
 		return si;
@@ -228,7 +239,8 @@ public class ServiceInvokeManager {
 		if(sm == null) {
 			String msg = "Service method not found for: " + si.getKey().toKey(false, false, false)
 					+UniqueServiceMethodKey.SEP+method + UniqueServiceMethodKey.SEP + paramStr;
-			SF.eventLog(MC.MT_SERVICE_METHOD_NOT_FOUND,MC.LOG_ERROR, TAG, msg);
+			LG.log(MC.LOG_ERROR, TAG, msg);
+			MT.nonRpcEvent(si.getKey().toSnv(),MC.MT_SERVICE_METHOD_NOT_FOUND);
 			throw new CommonException(msg);
 		}
 		return sm;

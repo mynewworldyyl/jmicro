@@ -156,6 +156,10 @@ class ClientServiceProxyManager {
 		List<Field> fields = new ArrayList<>();
 		Utils.getIns().getFields(fields, cls);
 		
+		/*if(obj.getClass().getName().equals("cn.jmicro.api.classloader.RpcClassLoader")) {
+			logger.debug("processReference");
+		}*/
+		
 		for(Field f : fields) {
 			
 			if(!f.isAnnotationPresent(Reference.class)) {

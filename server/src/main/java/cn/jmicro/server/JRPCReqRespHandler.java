@@ -28,10 +28,12 @@ import cn.jmicro.api.config.Config;
 import cn.jmicro.api.exception.RpcException;
 import cn.jmicro.api.exception.TimeoutException;
 import cn.jmicro.api.idgenerator.ComponentIdServer;
+import cn.jmicro.api.monitor.LG;
+import cn.jmicro.api.monitor.LogMonitorClient;
 import cn.jmicro.api.monitor.MC;
-import cn.jmicro.api.monitor.MRpcItem;
-import cn.jmicro.api.monitor.MonitorClient;
-import cn.jmicro.api.monitor.SF;
+import cn.jmicro.api.monitor.MRpcLogItem;
+import cn.jmicro.api.monitor.MT;
+import cn.jmicro.api.monitor.StatisMonitorClient;
 import cn.jmicro.api.net.IMessageHandler;
 import cn.jmicro.api.net.IResponse;
 import cn.jmicro.api.net.ISession;
@@ -48,6 +50,7 @@ import cn.jmicro.api.security.ActInfo;
 import cn.jmicro.api.security.PermissionManager;
 import cn.jmicro.api.service.IServiceAsyncResponse;
 import cn.jmicro.api.service.ServiceLoader;
+import cn.jmicro.common.CommonException;
 import cn.jmicro.common.Constants;
 import cn.jmicro.common.util.StringUtils;
 
@@ -87,7 +90,10 @@ public class JRPCReqRespHandler implements IMessageHandler{
 	private AccountManager accountManager;
 	
 	@Inject
-	private MonitorClient monitor;
+	private LogMonitorClient logMonitor;
+	
+	@Inject
+	private StatisMonitorClient monitor;
 	
 	@Inject
 	private PermissionManager pm;
@@ -99,7 +105,7 @@ public class JRPCReqRespHandler implements IMessageHandler{
 
 	@Override
 	public void onMessage(ISession s, Message msg) {
-		   
+		
 		RpcRequest req = null;
 		RpcResponse resp =  new RpcResponse();
 		
@@ -121,18 +127,16 @@ public class JRPCReqRespHandler implements IMessageHandler{
 			
 	    	JMicroContext.config(req1,serviceLoader,registry);
 	    	
+	    	if(LG.isLoggable(MC.LOG_DEBUG)) {
+	    		LG.log(MC.LOG_DEBUG, TAG, LG.reqMessage("",req1));
+	    	}
+	    	
+	    	MRpcLogItem mi = JMicroContext.get().getMRpcLogItem();
+			mi.setResp(resp);
+	    	
 	    	ServiceMethod sm = JMicroContext.get().getParam(Constants.SERVICE_METHOD_KEY, null);
 	    	if(msg.isMonitorable()) {
-				SF.netIoRead(TAG.getName(),MC.MT_SERVER_JRPC_GET_REQUEST, msg.getLen());
-			}
-	    	
-	    	if(sm.getMaxPacketSize() > 0 && req.getPacketSize() > sm.getMaxPacketSize()) {
-	    		ServerError se = new ServerError(MC.MT_PACKET_TOO_MAX,"Packet too max "+req.getPacketSize()+ " limit size: " + sm.getMaxPacketSize());
-				resp.setResult(se);
-				resp.setSuccess(false);
-				SF.eventLog(MC.MT_PACKET_TOO_MAX,MC.LOG_ERROR, TAG,se.toString());
-				resp2Client(resp,s,msg);
-				return;
+				MT.rpcEvent(MC.MT_SERVER_JRPC_GET_REQUEST,1, msg.getLen());
 			}
 	    	
 			resp.setReqId(msg.getReqId());
@@ -155,14 +159,25 @@ public class JRPCReqRespHandler implements IMessageHandler{
 						ServerError se = new ServerError(ServerError.SE_INVLID_LOGIN_KEY,"Invalid login key!");
 						resp.setResult(se);
 						resp.setSuccess(false);
-						SF.eventLog(MC.MT_INVALID_LOGIN_INFO,MC.LOG_ERROR, TAG,se.toString());
+						LG.log(MC.LOG_ERROR, TAG,se.toString());
+						MT.rpcEvent(MC.MT_INVALID_LOGIN_INFO);
 						resp2Client(resp,s,msg);
 						return;
 					} else {
 						JMicroContext.get().setString(JMicroContext.LOGIN_KEY, lk);
-						JMicroContext.get().setAccount(ai);;
+						JMicroContext.get().setAccount(ai);
 					}
 				}
+			}
+			
+			if(sm.getMaxPacketSize() > 0 && req.getPacketSize() > sm.getMaxPacketSize()) {
+	    		ServerError se = new ServerError(MC.MT_PACKET_TOO_MAX,"Packet too max "+req.getPacketSize()+ " limit size: " + sm.getMaxPacketSize());
+				resp.setResult(se);
+				resp.setSuccess(false);
+				LG.log(MC.LOG_ERROR, TAG,se.toString());
+				MT.rpcEvent(MC.MT_PACKET_TOO_MAX,1, msg.getLen());
+				resp2Client(resp,s,msg);
+				return;
 			}
 			
 			ServiceItem si = JMicroContext.get().getParam(Constants.SERVICE_ITEM_KEY, null);
@@ -185,7 +200,7 @@ public class JRPCReqRespHandler implements IMessageHandler{
 				interceptorManger.handleRequest(req);
 				//SF.doSubmit(MonitorConstant.SERVER_REQ_OK, req,resp,null);
 				if(msg.isMonitorable()) {
-					SF.netIoRead(TAG.getName(),MC.MT_SERVER_JRPC_RESPONSE_SUCCESS, 0);
+					MT.rpcEvent(MC.MT_SERVER_JRPC_RESPONSE_SUCCESS);
 				}
 				return;
 			}
@@ -210,7 +225,7 @@ public class JRPCReqRespHandler implements IMessageHandler{
 							JMicroContext.get().appendCurUseTime("Async respTime",false);
 							JMicroContext.get().debugLog(0);
 						}
-						JMicroContext.get().submitMRpcItem(monitor);
+						JMicroContext.get().submitMRpcItem(logMonitor,monitor);
 					}
 				};
 				cxt.setParam(Constants.CONTEXT_SERVICE_RESPONSE, cb);
@@ -222,6 +237,7 @@ public class JRPCReqRespHandler implements IMessageHandler{
 					finish[0] = true;
 					cxt.removeParam(Constants.CONTEXT_SERVICE_RESPONSE);
 					resp2Client(rr,s,msg);
+					JMicroContext.get().submitMRpcItem(logMonitor,monitor);
 				}
 			} else {
 				//同步响应
@@ -234,7 +250,7 @@ public class JRPCReqRespHandler implements IMessageHandler{
 				resp2Client(resp,s,msg);
 			}
 		} catch (Throwable e) {
-			doException(req,s,msg,e);
+			doException(req,resp,s,msg,e);
 		} finally {
 			if(!msg.isAsyncReturnResult() && JMicroContext.get().isMonitorable()) {
 				doFinally(req,resp,msg);
@@ -242,14 +258,20 @@ public class JRPCReqRespHandler implements IMessageHandler{
 		}
 	}
 	
-	private void doException(RpcRequest req, ISession s,Message msg,Throwable e) {
+	private void doException(RpcRequest req,RpcResponse resp0, ISession s,Message msg,Throwable e) {
 
 		//返回错误
-		SF.eventLog(MC.MT_SERVER_ERROR,MC.LOG_ERROR, TAG,"JRPCReq error",e);
+		
+		CommonException ce = new CommonException("",e,req);
+		ce.setResp(resp0);
+		
+		LG.log(MC.LOG_ERROR, TAG,"JRPCReq error",ce);
+		
+		MT.rpcEvent(MC.MT_SERVER_ERROR);
 		logger.error("JRPCReq error: ",e);
-		if(msg.isNeedResponse() && req != null ) {
+		if(msg.isNeedResponse()) {
 			//返回错误
-			RpcResponse resp = new RpcResponse(req.getRequestId(),new ServerError(0,e.getMessage()));
+			RpcResponse resp = new RpcResponse(msg.getReqId(),new ServerError(0,e.getMessage()));
 			resp.setSuccess(false);
 			msg.setPayload(ICodecFactory.encode(codeFactory,resp,msg.getUpProtocol()));
 			msg.setType((byte)(msg.getType()+1));
@@ -264,14 +286,24 @@ public class JRPCReqRespHandler implements IMessageHandler{
 	}
 	
 	private void doFinally(RpcRequest req, RpcResponse resp,Message msg) {
-		MRpcItem item = JMicroContext.get().getMRpcItem();
-		item.setReq(req);
-		item.setResp(resp);
-		item.setReqId(req.getRequestId());
+		MRpcLogItem item = JMicroContext.get().getMRpcLogItem();
+		if(req != null) {
+			item.setReq(req);
+			item.setReqId(req.getRequestId());
+		}
+		
+		if(resp != null) {
+			item.setResp(resp);
+		}
+		
 		item.setLinkId(msg.getLinkId());
 	}
 	
 	private void resp2Client(IResponse resp, ISession s,Message msg) {
+		if(!msg.isNeedResponse()){
+			return;
+		}
+		
 		if(msg.isDebugMode()) {
     		JMicroContext.get().appendCurUseTime("Service Return",true);
 		}
@@ -287,9 +319,7 @@ public class JRPCReqRespHandler implements IMessageHandler{
 		//响应消息
 		s.write(msg);
 
-		if(msg.isMonitorable()) {
-			SF.netIoRead(TAG.getName(),MC.MT_SERVER_JRPC_RESPONSE_SUCCESS, msg.getLen());
-		}
+		MT.rpcEvent(MC.MT_SERVER_JRPC_RESPONSE_SUCCESS,1, msg.getLen());
 		
 		if(msg.isDebugMode()) {
     		JMicroContext.get().appendCurUseTime("Server finish write",true);

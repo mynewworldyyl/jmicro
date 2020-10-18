@@ -31,10 +31,14 @@ public @interface AsyncClientProxy {
 	
 	public static final String INT_SUBFIX = "$JMAsyncClient";
 	
+	public static final String INT_GATEWAY = "$Gateway";
+	
 	public static final String IMPL =  "Impl";
 	
 	public static final String IMPL_SUBFIX = INT_SUBFIX + IMPL;
 	
 	public static final String ASYNC_METHOD_SUBFIX = "JMAsync";
+	
+	public static final String INT_GATEWAY_CLASS = INT_GATEWAY +INT_SUBFIX;// "$Gateway$JMAsyncClient";
 	
 }

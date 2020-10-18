@@ -54,7 +54,7 @@ public @interface SMethod {
 	public boolean dumpUpStream() default false;
 	
 	//服务方法级别的日志记录标识，参考monitorEnable说明
-	public int logLevel() default MC.LOG_ERROR;
+	public byte logLevel() default MC.LOG_ERROR;
 	
 	public int retryInterval() default 500;
 	//method must can be retry, or 1
