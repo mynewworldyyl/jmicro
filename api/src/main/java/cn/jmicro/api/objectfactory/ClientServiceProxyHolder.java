@@ -27,6 +27,8 @@ import cn.jmicro.api.JMicroContext;
 import cn.jmicro.api.annotation.Reference;
 import cn.jmicro.api.client.InvocationHandler;
 import cn.jmicro.api.internal.async.IClientAsyncCallback;
+import cn.jmicro.api.monitor.LG;
+import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.registry.AsyncConfig;
 import cn.jmicro.api.registry.IRegistry;
 import cn.jmicro.api.registry.IServiceListener;
@@ -100,8 +102,6 @@ public class ClientServiceProxyHolder implements IServiceListener{
 		
 		try {
 
-			backupAndSetContext();
-
 			ServiceItem si = this.item;
 			if (si == null) {
 				if (!isUsable()) {
@@ -113,7 +113,41 @@ public class ClientServiceProxyHolder implements IServiceListener{
 					si = this.item;
 				}
 			}
+			
+			if(Constants.LICENSE_TYPE_FREE != si.getFeeType()) {
+				ActInfo ai = JMicroContext.get().getAccount();
+				if(ai == null) {
+					String msg = "License need login: " + si.getKey().toKey(false, false, false);
+					LG.log(MC.LOG_INFO, this.getClass(), msg);
+					throw new CommonException(msg);
+				}
+				
+				if(Constants.LICENSE_TYPE_CLIENT == si.getFeeType() && si.getClientId() != ai.getClientId()) {
+					
+					boolean f = false;
+					if(si.getAuthClients() != null && si.getAuthClients().length > 0) {
+						for(int t : si.getAuthClients()) {
+							if(t == ai.getClientId()) {
+								f = true;
+								break;
+							}
+						}
+					}
+					
+					if(!f) {
+						String msg = "Not authronize account ["+ai.getActName()+"] for " + si.getKey().toKey(false, false, false);
+						LG.log(MC.LOG_WARN, this.getClass(), msg);
+						throw new CommonException(msg);
+					}
+				} else if(Constants.LICENSE_TYPE_PRIVATE == si.getFeeType() && si.getClientId() != ai.getClientId()) {
+					String msg = "Private service ["+ai.getActName()+"] for " + si.getKey().toKey(false, false, false);
+					LG.log(MC.LOG_WARN, this.getClass(), msg);
+					throw new CommonException(msg);
+				}
+			}
 
+			backupAndSetContext();
+			
 			InvocationHandler h = targetHandler;
 			if (h == null) {
 				synchronized (this) {

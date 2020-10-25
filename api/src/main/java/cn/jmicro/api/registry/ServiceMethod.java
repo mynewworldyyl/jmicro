@@ -136,6 +136,13 @@ public final class ServiceMethod {
 	//是否需要强制赋予账号权限才能使用
 	private boolean perType = false;
 	
+	private boolean isDownSsl = false;
+	
+	private boolean isUpSsl = false;
+	
+	//0:对称加密，1：RSA 非对称加密
+	private byte encType = 0;
+	
 	//必须登陆才能使用
 	private boolean needLogin = false;
 	
@@ -177,6 +184,10 @@ public final class ServiceMethod {
 		this.perType = p.perType;
 		this.needLogin = p.needLogin;
 		this.maxPacketSize = p.maxPacketSize;
+		
+		this.isUpSsl = p.isUpSsl;
+		this.isDownSsl = p.isDownSsl;
+		this.encType = p.encType;
 	}
 	
 	public String toJson(){
@@ -465,6 +476,30 @@ public final class ServiceMethod {
 
 	public void setMaxPacketSize(int maxPacketSize) {
 		this.maxPacketSize = maxPacketSize;
+	}
+
+	public boolean isDownSsl() {
+		return isDownSsl;
+	}
+
+	public void setDownSsl(boolean isDownSsl) {
+		this.isDownSsl = isDownSsl;
+	}
+
+	public boolean isUpSsl() {
+		return isUpSsl;
+	}
+
+	public void setUpSsl(boolean isUpSsl) {
+		this.isUpSsl = isUpSsl;
+	}
+
+	public boolean isRsa() {
+		return encType==1;
+	}
+
+	public void setEncType(byte encType) {
+		this.encType = encType;
 	}
 
 

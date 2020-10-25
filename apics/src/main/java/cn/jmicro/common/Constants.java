@@ -23,6 +23,22 @@ package cn.jmicro.common;
  */
 public interface Constants {
 	
+	//自由调用
+	public static final byte LICENSE_TYPE_FREE = 0;
+	
+	//设定cliengtId可以调用
+	public static final byte LICENSE_TYPE_CLIENT = 1;
+	
+	//只有自己能调用
+	public static final byte LICENSE_TYPE_PRIVATE = 2;
+	
+	public static final String PUBLIC_KEYS_FILES = "publicKeyFiles";
+	public static final String PRIVATE_KEY_PWD = "priKeyPwd";
+	
+	public static final String JMICRO_VERSION = "0.0.2";
+	
+	public static final String JMICRO_RELEASE_LABEL = "SNAPSHOT";
+	
 	public static final String PATH_EXCAPE = "#@!";
 	
 	public static final String TOPIC_SEPERATOR=",";
@@ -113,7 +129,6 @@ public interface Constants {
 	public static final String ListenSocketIP = "listenSocketIP";
 	public static final String ListenHttpIP = "listenHttpIP";
 	
-	
 	public static final String BASE_PACKAGES_KEY = "basePackages";
 	public static final String INSTANCE_NAME = "instanceName";
 	public static final String INSTANCE_NAME_GEN_CLASS = "instanceNameGenClass";
@@ -175,8 +190,8 @@ public interface Constants {
 	public static final byte MSG_TYPE_API_CLASS_REQ = (byte)0x07; //API网关请求
 	public static final byte MSG_TYPE_API_CLASS_RESP = (byte)0x08;//API网关请求响应
 	
-	//public static final byte MSG_TYPE_API_REQ = (byte)0x09; //API网关请求
-	//public static final byte MSG_TYPE_API_RESP = (byte)0x0A;//API网关请求响应
+	public static final byte MSG_TYPE_EXSECRET_REQ = (byte)0x09; //API网关请求
+	public static final byte MSG_TYPE_EXSECRET_RESP = (byte)0x0A;//API网关请求响应
 	
 	public static final byte MSG_TYPE_ID_REQ = (byte)0x0B; //Id请求
 	public static final byte MSG_TYPE_ID_RESP = (byte)0x0C;//Id请求响应

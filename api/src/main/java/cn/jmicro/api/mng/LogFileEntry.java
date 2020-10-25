@@ -11,7 +11,7 @@ public class LogFileEntry {
 	
 	private String instanceName;
 	
-	private String processId;
+	private int processId;
 	
 	private List<String> logFileList;
 	
@@ -33,11 +33,11 @@ public class LogFileEntry {
 		this.instanceName = instanceName;
 	}
 
-	public String getProcessId() {
+	public int getProcessId() {
 		return processId;
 	}
 
-	public void setProcessId(String processId) {
+	public void setProcessId(int processId) {
 		this.processId = processId;
 	}
 

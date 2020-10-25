@@ -28,6 +28,7 @@
                 terminalSocket: null
             }
         },
+
         methods: {
             loadServerList(module,method,arg0,arg1,arg2,arg3) {
                 //let self = this;
@@ -40,7 +41,6 @@
                             window.console.log(err);
                         });
                     }
-
             }
         },
 

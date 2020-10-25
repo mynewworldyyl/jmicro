@@ -104,8 +104,8 @@ public class ServiceInvocationHandler implements InvocationHandler{
 				cxt.setParam(Constants.NEW_LINKID, false);
 			}
 			
-			if(JMicroContext.get().isMonitorable()) {
-				MRpcLogItem mi = cxt.getMRpcLogItem();
+			MRpcLogItem mi = cxt.getMRpcLogItem();
+			if(mi != null) {
 				mi.setReq(req);
 				mi.setReqId(req.getRequestId());
 				mi.setLinkId(JMicroContext.lid());

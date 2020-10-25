@@ -52,6 +52,22 @@ public class ExecutorInfo {
 		return key;
 	}
 
+	public int getStartCnt() {
+		return startCnt;
+	}
+
+	public void setStartCnt(int startCnt) {
+		this.startCnt = startCnt;
+	}
+
+	public int getEndCnt() {
+		return endCnt;
+	}
+
+	public void setEndCnt(int endCnt) {
+		this.endCnt = endCnt;
+	}
+
 	public void setKey(String key) {
 		this.key = key;
 	}

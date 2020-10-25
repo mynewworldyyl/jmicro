@@ -309,7 +309,7 @@ public class ServiceManager {
 		try {
 			l.lock();
 			this.path2SrvItems.forEach((key,si) -> {
-				//logger.debug("prefix {}, key: {}" ,srvPrefix,key);
+				//logger.debug("key: {}" ,key);
 				if(si.getKey().getServiceName().equals(serviceName)) {
 					if(StringUtils.isEmpty(version) && StringUtils.isEmpty(namespace)) {
 						sets.add(si);
@@ -317,7 +317,6 @@ public class ServiceManager {
 						&& UniqueServiceKey.matchNamespace(namespace,si.getKey().getNamespace())) {
 						sets.add(si);
 						}
-					
 				}
 			});
 		} finally {

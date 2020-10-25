@@ -29,6 +29,7 @@ import cn.jmicro.api.JMicroContext;
 import cn.jmicro.api.annotation.Cfg;
 import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Inject;
+import cn.jmicro.api.choreography.ProcessInfo;
 import cn.jmicro.api.client.IClientSession;
 import cn.jmicro.api.client.IClientSessionManager;
 import cn.jmicro.api.codec.ICodecFactory;
@@ -42,6 +43,7 @@ import cn.jmicro.api.loadbalance.ISelector;
 import cn.jmicro.api.monitor.LG;
 import cn.jmicro.api.monitor.LogMonitorClient;
 import cn.jmicro.api.monitor.MC;
+import cn.jmicro.api.monitor.MRpcLogItem;
 import cn.jmicro.api.monitor.MT;
 import cn.jmicro.api.monitor.StatisMonitorClient;
 import cn.jmicro.api.net.AbstractHandler;
@@ -60,6 +62,7 @@ import cn.jmicro.api.registry.AsyncConfig;
 import cn.jmicro.api.registry.Server;
 import cn.jmicro.api.registry.ServiceItem;
 import cn.jmicro.api.registry.ServiceMethod;
+import cn.jmicro.api.security.SecretManager;
 import cn.jmicro.api.service.ServiceManager;
 import cn.jmicro.api.timer.TimerTicker;
 import cn.jmicro.api.utils.TimeUtils;
@@ -112,6 +115,12 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
 	
 	@Inject
 	private LogMonitorClient logMonitor;
+	
+	@Inject(required=true)
+	private ProcessInfo pi;
+	
+	@Inject
+	private SecretManager secManager;
 	
 	//测试统计模式使用
 	//@Cfg(value="/RpcClientRequestHandler/clientStatis",defGlobal=false)
@@ -315,9 +324,20 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
         		ByteBuffer pl = ICodecFactory.encode(this.codecFactory, req, msg.getUpProtocol());
         		if(sm.getMaxPacketSize() > 0 && pl.limit() >= sm.getMaxPacketSize()) {
         			String m = "Packet too max " + pl.limit() + " limit size: " + sm.getMaxPacketSize();
+        			//m = LG.reqMessage(m, req);
         			LG.log(MC.LOG_ERROR, TAG, m);
         			throw new RpcException(req,m);
         		}
+        		
+        		msg.setEncType(sm.isRsa());
+        		msg.setDownSsl(sm.isDownSsl());
+        		msg.setUpSsl(sm.isUpSsl());
+        		msg.setPayload(pl);
+        		
+        		if(sm.isUpSsl() || sm.isDownSsl()) {
+        			this.secManager.signAndEncrypt(msg,si.getInsId(),true);
+        		}
+        		
         		//超时重试时,只需要执行一次此代码块
         		isFistLoop = false;
         		retryCnt = sm.getRetryCnt();
@@ -353,14 +373,13 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
 	    		msg.setDebugMode(cxt.isDebug());
 	    		
     			msg.setLinkId(JMicroContext.lid());
+    			msg.setInsId(pi.getId());
     			
 	    		if(cxt.isDebug()) {
 	    			//开启Debug模式，设置更多信息在消息包中，网络流及编码会有损耗，但更晚于问题追踪
-	    			msg.setInstanceName(Config.getInstanceName());
 	    			msg.setTime(curTime);
 	    			msg.setMethod(sm.getKey().toSnvm());
 	    		}
-	    		
 	    		
 	    		if(cxt.isDebug()) {
 	    			cxt.appendCurUseTime("Encode Cost ",true);
@@ -369,7 +388,7 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
 	    		/*if(pl == null || pl.position() <= 0) {
 					System.out.println(pl);
 				}*/
-	        	msg.setPayload(pl);
+	        	
 	    		
 	        	//超时重试不需要重复注册监听器
 	    		if(sm.isNeedResponse()) {
@@ -529,6 +548,11 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
 				resp = ICodecFactory.decode(this.codecFactory,respMsg.getPayload(),
 						RpcResponse.class,msg.getUpProtocol());
 				resp.setMsg(respMsg);
+				
+				if(sm.getLogLevel() != MC.LOG_NO) {
+					MRpcLogItem mi = cxt.getMRpcLogItem();
+					mi.setResp(resp);
+				}
 				
 				if(cxt.isDebug()) {
 	    			cxt.appendCurUseTime("Got Resp ",true);

@@ -37,7 +37,7 @@ public class TestLogService   extends JMicroBaseTestCase{
 		
 		IAgentLogService ms = of.getRemoteServie(IAgentLogService.class.getName(), "mng", "0.0.1", null);
 		
-		Resp<Boolean> resp = ms.startLogMonitor("450", "output.log", "JMicroAgent0", 100);
+		Resp<Boolean> resp = ms.startLogMonitor(450, "output.log", "JMicroAgent0", 100);
 		
 		System.out.println(JsonUtils.getIns().toJson(resp));
 		

@@ -53,7 +53,7 @@
                   <Menu-group :title="'Security'|i18n">
                       <Menu-item name="__account"><Icon type="ios-alert" />{{"Account"|i18n}}</Menu-item>
                       <Menu-item name="__userProfile"><Icon type="ios-alert" />{{"Profile"|i18n}}</Menu-item>
-                      <!--<Menu-item name="__permission"><Icon type="ios-cog"></Icon>Permission</Menu-item>-->
+                      <Menu-item name="__publicKeyList"><Icon type="ios-cog"></Icon>{{"publicKeyList"|i18n}}</Menu-item>
                      <!-- <Menu-item name="__role"><Icon type="ios-cog"></Icon>Role</Menu-item>-->
                   </Menu-group>
 

@@ -71,9 +71,9 @@ public class ConfigPostInitListener extends PostInitAdapter {
 		 List<Field> fields = new ArrayList<>();
 		 Utils.getIns().getFields(fields, cls);
 		 
-		 if(cls.getName().equals("cn.jmicro.transport.netty.server.httpandws.StaticResourceHttpHandler")) {
+		 /*if(cls.getName().equals("cn.jmicro.transport.netty.server.httpandws.StaticResourceHttpHandler")) {
 			 logger.debug("preInit");
-		 }
+		 }*/
 
 		 for(Field f : fields){
 			if(!f.isAnnotationPresent(Cfg.class)){
@@ -149,19 +149,10 @@ public class ConfigPostInitListener extends PostInitAdapter {
 				}
 				
 			} else {
-				String value = getValueFromCommand(prefix,f);
-				
-				if(StringUtils.isEmpty(value)) {
-					//优先类全名组成路径
-					path = "/" + cls.getName() + prefix;
-					value = getValueFromConfig(cfg,path,f);
-				}
-				
-				if(StringUtils.isEmpty(value)) {
-					//类简称组成路径
-					path = "/" + cls.getSimpleName() + prefix;
-					value = getValueFromConfig(cfg,path,f);
-				}
+				//String value = getValueFromConfig(cfg,path,f);
+				//优先类全名组成路径
+				path = "/" + cls.getName() + prefix;
+				String value = getValueFromConfig(cfg,path,f);
 				
 				if(StringUtils.isEmpty(value)) {
 					//类简称组成路径
@@ -286,7 +277,6 @@ public class ConfigPostInitListener extends PostInitAdapter {
 		}catch(SecurityException | IllegalAccessException | IllegalArgumentException e1){
 			throw new CommonException("Class ["+obj.getClass().getName()+"] field ["+ f.getName()+"] dependency ["+f.getType().getName()+"] error",e1);
 		}
-	
 	}
 
 	private void getMapConfig(Config cfg,String key,Field f,Map<String,String> params) {
@@ -305,35 +295,14 @@ public class ConfigPostInitListener extends PostInitAdapter {
 		return false;
 	}
 	
-	private String getValueFromCommand(String prefix, Field f) {
-		Class<?> cls = f.getDeclaringClass();
-		String value = null;
-		//优先类全名组成路径
-		
-		String path = "/" + cls.getName() + prefix;
-		
-		value = Config.getCommandParam(path);
-		if(StringUtils.isEmpty(value)) {
-			//类简称组成路径
-			path = "/" + cls.getSimpleName() + prefix;
-			value =  Config.getCommandParam(path);
-		}
-		
-		if(StringUtils.isEmpty(value)){
-			//值直接指定绝对路径
-			path = prefix;
-			value =  Config.getCommandParam(path);
-		}
-		return value;
-	}
-	
 	private String getValueFromConfig(Config cfg,String key,Field f) {
 		//boolean isGlobal = f.getAnnotation(Cfg.class).defGlobal();
 		String val = Config.getCommandParam(key, String.class, null);
+		//String val = getValueFromCommand(key,f);
 		if(!StringUtils.isEmpty(val)) {
 			//在配置中心中建立配置，以便能动态修改，在系统 关闭后，配置会自动删除，以使下次还从命令行读取初始值
 			logger.info("class:{} Field:{} Config from command args:{}={}",f.getDeclaringClass().getName(),f.getName(),key,val);
-			cfg.createConfig(val, key, false,true);
+			//cfg.createConfig(val, key, false,true);
 			return val;
 		}
 		
@@ -351,11 +320,11 @@ public class ConfigPostInitListener extends PostInitAdapter {
 		if(!StringUtils.isEmpty(val)) {
 			//在配置中心中建立配置，以便能动态修改，在系统 关闭后，配置会自动删除，以使下次还从配置文件读取初始值
 			logger.info("class:{} Field:{} Config from extension:{}={}",f.getDeclaringClass().getName(),f.getName(),key,val);
-			cfg.createConfig(val, key, false,true);
+			//cfg.createConfig(val, key, false,true);
 			return val;
 		}
 		
-		 val = Config.getEnvParam(key);
+		val = Config.getEnvParam(key);
 		if(!StringUtils.isEmpty(val)) {
 			//在配置中心中建立配置，以便能动态修改，在系统 关闭后，配置会自动删除，以使下次还从命令行读取初始值
 			logger.info("class:{} Field:{} Config from system env:{}={}",f.getDeclaringClass().getName(),f.getName(),key,val);
@@ -363,7 +332,6 @@ public class ConfigPostInitListener extends PostInitAdapter {
 			return val;
 		}
 		return null;
-	
 		
 	}
 
@@ -454,7 +422,7 @@ public class ConfigPostInitListener extends PostInitAdapter {
 				Map<String,String> ps = new HashMap<>();
 				ps.put(path1, data);
 				this.setMapValue(f, obj, ps);
-			} if(Collection.class.isAssignableFrom(f.getType())){
+			} else if(Collection.class.isAssignableFrom(f.getType())){
 				
 			}else {
 				setValue(f,obj,data);

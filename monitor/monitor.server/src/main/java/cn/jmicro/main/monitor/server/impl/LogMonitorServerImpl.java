@@ -284,7 +284,7 @@ public class LogMonitorServerImpl implements ILogMonitorServer {
 		ExecutorConfig config = new ExecutorConfig();
 		config.setMsMaxSize(60);
 		config.setTaskQueueSize(500);
-		config.setThreadNamePrefix("MonitorServer");
+		config.setThreadNamePrefix("LogMonitorServer");
 		
 		executor = of.get(ExecutorFactory.class).createExecutor(config);
 		basketFactory = new BasketFactory<MRpcLogItem>(1000,10);

@@ -56,7 +56,7 @@ public class AgentProcessServiceImpl implements IAgentProcessService {
 	@Inject
 	private InstanceManager im;
 	
-	private Map<String,FileWatcher> fileWatchers = new HashMap<>();
+	private Map<Integer,FileWatcher> fileWatchers = new HashMap<>();
 	
 	private Set<LogFileReader> fileReaders = new HashSet<>();
 	
@@ -95,7 +95,7 @@ public class AgentProcessServiceImpl implements IAgentProcessService {
 		
 	}
 
-	private void registWatch(String processId, String logFile,long fileLength) {
+	private void registWatch(Integer processId, String logFile,long fileLength) {
 		
 		String piLogDir =  processId + File.separatorChar + "logs";
 		String fullPath = processId + File.separatorChar + "logs" + File.separatorChar + logFile;
@@ -234,7 +234,7 @@ public class AgentProcessServiceImpl implements IAgentProcessService {
 		
 	}
 
-	private List<String> getLogFiles(String processId) {
+	private List<String> getLogFiles(Integer processId) {
 		String parentDir = "";
 		File dir = new File(this.workDirFile.getAbsoluteFile() + File.separator + processId + File.separator  + "logs/",
 				parentDir);
@@ -298,7 +298,7 @@ public class AgentProcessServiceImpl implements IAgentProcessService {
 
 	@Override
 	@SMethod(needLogin=true,maxSpeed=5,maxPacketSize=512)
-	public boolean startLogMonitor(String processId, String logFile, int lineNum) {
+	public boolean startLogMonitor(Integer processId, String logFile, int lineNum) {
 		
 		int processClientId = this.getProcessClientId(processId);
 		if(processClientId == -1 || !PermissionManager.checkAccountClientPermission(processClientId)) {
@@ -328,7 +328,7 @@ public class AgentProcessServiceImpl implements IAgentProcessService {
 
 	@Override
 	@SMethod(needLogin=true,maxSpeed=5,maxPacketSize=512)
-	public boolean stopLogMonitor(String processId, String logFile) {
+	public boolean stopLogMonitor(Integer processId, String logFile) {
 		String msg = "stopLogMonitor processId: "+processId+"  logFile: "+logFile;
         LG.log(MC.LOG_INFO, FileWatcherReader.class, "");
 		logger.info(msg);
@@ -360,7 +360,7 @@ public class AgentProcessServiceImpl implements IAgentProcessService {
 		return true;
 	}
 	
-	public int getProcessClientId(String insId) {
+	public int getProcessClientId(Integer insId) {
 		
 		ProcessInfo pi = this.im.getProcessesByInsId(insId, true);
 		if(pi != null) {
@@ -393,7 +393,7 @@ public class AgentProcessServiceImpl implements IAgentProcessService {
     
     private class LogFileReader {
     	
-    	private String processId;
+    	private Integer processId;
     	private String logFile;
     	private int lineNum;
     	
@@ -405,7 +405,7 @@ public class AgentProcessServiceImpl implements IAgentProcessService {
     	
     	private boolean initStatus = true;
     	
-    	public LogFileReader(String processId, String logFile, int lineNum) {
+    	public LogFileReader(Integer processId, String logFile, int lineNum) {
     		this.processId = processId;
     		this.logFile = logFile;
     		this.lineNum = lineNum;
@@ -510,7 +510,7 @@ public class AgentProcessServiceImpl implements IAgentProcessService {
             }
         }
 
-		public String getProcessId() {
+		public Integer getProcessId() {
 			return processId;
 		}
 

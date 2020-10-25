@@ -5,7 +5,7 @@ import cn.jmicro.api.annotation.Service;
 import cn.jmicro.api.monitor.ILogWarning;
 import cn.jmicro.api.monitor.MRpcLogItem;
 
-@Service(namespace="logmonitor",version="0.0.1", clientId=0)
+@Service(namespace="logmonitor",version="0.0.1")
 @Component
 public class TestLogSubscriber implements ILogWarning {
 	

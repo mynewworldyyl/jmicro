@@ -21,7 +21,7 @@ import cn.jmicro.example.api.rpc.ISimpleRpc;
 import cn.jmicro.example.api.rpc.genclient.IRpcA$JMAsyncClient;
 
 @Service(namespace="simpleRpc", version="0.0.1", monitorEnable=1, maxSpeed=-1,debugMode=1,
-baseTimeUnit=Constants.TIME_SECONDS, clientId=1000,external=true)
+baseTimeUnit=Constants.TIME_SECONDS, external=true)
 @Component
 public class SimpleRpcImpl implements ISimpleRpc {
 
@@ -47,7 +47,8 @@ public class SimpleRpcImpl implements ISimpleRpc {
 			retryInterval=1000,
 			debugMode=1,
 			maxSpeed=1000,
-			baseTimeUnit=Constants.TIME_MILLISECONDS
+			baseTimeUnit=Constants.TIME_MILLISECONDS,
+			upSsl=true,encType=1,downSsl=false
 	)
 	public String hello(String name) {
 		if(LG.isLoggable(MC.LOG_DEBUG)) {
@@ -94,9 +95,6 @@ public class SimpleRpcImpl implements ISimpleRpc {
 		}
 		
 		System.out.println("linkRpc: " + msg);
-		//return this.rpca.invokeRpcA(msg+" linkRpc => invokeRpcA");
-		
-		//IPromise<String> p = PromiseUtils.callService(this.rpca, "invokeRpcA","linkRpc call IRpcA with: " + msg);
 		
 		IPromise<String> p = this.rpca.invokeRpcAJMAsync("invokeRpcA");
 		JMicroContext cxt = JMicroContext.get();
@@ -109,8 +107,6 @@ public class SimpleRpcImpl implements ISimpleRpc {
 		} else {
 			return p.getResult();
 		}
-		
 	}
-
 	
 }

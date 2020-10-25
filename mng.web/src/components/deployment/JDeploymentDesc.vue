@@ -7,7 +7,7 @@
 
         <table v-if="isLogin" class="configItemTalbe" width="99%">
             <thead><tr><td>ID</td><td>JAR FILE</td><td>ENABLE</td><td>INSTANCE NUM</td><td>STRATEGY</td>
-                <td>STRATEGY ARGS</td><td>ARGS</td><td>OPERATION</td></tr>
+            <td>STRATEGY ARGS</td><td>ARGS</td><td>OPERATION</td></tr>
             </thead>
             <tr v-for="c in deployList" :key="c.id">
                 <td>{{c.id}}</td><td>{{c.jarFile}}</td><td>{{c.enable}}</td><td>{{c.instanceNum}}</td>
@@ -207,7 +207,7 @@
 
 <style>
     .JDeploymentDesc{
-        height: 100%;
+        height:auto;
     }
 
 </style>

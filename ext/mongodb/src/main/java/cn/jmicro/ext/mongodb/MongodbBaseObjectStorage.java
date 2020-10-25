@@ -352,14 +352,23 @@ public class MongodbBaseObjectStorage implements IObjectStorage {
 	}
 
 	@Override
-	public <T>  boolean updateById(String table,T val,Class<T> targetClass,boolean async) {
+	public <T>  boolean updateById(String table,T val,Class<T> targetClass,String idName,boolean async) {
 		
 		Document d = null;
 		if(val instanceof Document) {
 			d = (Document)val;
-		}else {
+		} else {
 			 d = Document.parse(JsonUtils.getIns().toJson(val));
 		}
+		
+		/*if(!d.containsKey(idName)) {
+			if(d.containsKey(ID)) {
+				d.put(idName, d.getLong(ID));
+				d.remove(ID);
+			}else if(d.containsKey(_ID)) {
+				d.put(idName, d.getLong(_ID));
+			}
+		}*/
 		
 		if(async) {
 			
@@ -441,11 +450,11 @@ public class MongodbBaseObjectStorage implements IObjectStorage {
 	}
 
 	@Override
-	public <T> boolean updateOrSaveById(String table, T val,Class<T> cls,boolean async) {
+	public <T> boolean updateOrSaveById(String table, T val,Class<T> cls,String tidName,boolean async) {
 		if(async) {
-			updateById(table,val,cls,true);
+			updateById(table,val,cls,tidName,true);
 		} else {
-			if(!updateById(table,val,cls,false)) {
+			if(!updateById(table,val,cls,tidName,false)) {
 				return save(table,val,cls,false,true);
 			}
 		}

@@ -54,7 +54,7 @@
                         <JNamedTypeEditor v-else-if="item.group == 'namedType'" :item="item"></JNamedTypeEditor>
                         <JThreadPoolMonitorEditor v-else-if="item.group == 'threadPool'" :item="item"></JThreadPoolMonitorEditor>
                         <JLogWarningConfigView v-else-if="item.group == 'warningConfig'" :item="item"></JLogWarningConfigView>
-
+                        <JPublicKeyList v-else-if="item.group == 'publicKeyList'" :item="item"></JPublicKeyList>
                         <JBottomBar></JBottomBar>
                     </div>
                 </TabPane>
@@ -133,6 +133,7 @@
 
             JAccountEditor:()=> import('./security/JAccountEditor.vue'),
             JUserProfileEditor:()=> import('./security/JUserProfileEditor.vue'),
+            JPublicKeyList:()=> import('./security/JPublicKeyList.vue'),
 
             JTypeConfig : () => import('./monitor/JTypeConfig.vue'),
 

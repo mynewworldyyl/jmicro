@@ -42,6 +42,7 @@ import cn.jmicro.api.annotation.SBreakingRule;
 import cn.jmicro.api.annotation.SMethod;
 import cn.jmicro.api.annotation.Service;
 import cn.jmicro.api.annotation.Subscribe;
+import cn.jmicro.api.choreography.ProcessInfo;
 import cn.jmicro.api.classloader.RpcClassLoader;
 import cn.jmicro.api.codec.TypeUtils;
 import cn.jmicro.api.config.Config;
@@ -102,6 +103,9 @@ public class ServiceLoader{
 	
 	@Inject
 	private RpcClassLoader cl;
+	
+	@Inject
+	private ProcessInfo pi;
 	
 	private Map<String,IServer> servers = new HashMap<>();
 	
@@ -323,6 +327,7 @@ public class ServiceLoader{
 			cl.addClassInstance(item.getKey().getServiceName());
 		//}
 		
+		item.setInsId(pi.getId());
 		registry.regist(item);
 		
 		return item;
@@ -503,7 +508,7 @@ public class ServiceLoader{
 		
 		item.setKey(usk);
 		item.setImpl(proxySrv.getName());
-		item.setClientId(anno.clientId());
+		item.setClientId(Config.getClientId());
 		item.setExternal(anno.external());
 		item.setShowFront(anno.showFront());
 		
@@ -586,6 +591,9 @@ public class ServiceLoader{
 				sm.setRetryInterval(item.getRetryInterval());
 				//sm.setTestingArgs(item.getTestingArgs());
 				sm.setTimeout(item.getTimeout());
+				if(item.getTimeout() <= 0) {
+					throw new CommonException("Invalid timeout val with 0 for " + item.getImpl());
+				}
 				sm.setMaxSpeed(item.getMaxSpeed());
 				sm.setBaseTimeUnit(item.getBaseTimeUnit());
 				sm.setTimeWindow(item.getTimeWindow());
@@ -598,7 +606,8 @@ public class ServiceLoader{
 				sm.setPerType(false);
 				sm.setNeedLogin(false);
 				sm.setMaxPacketSize(0);
-				
+				sm.setUpSsl(false);
+				sm.setDownSsl(false);
 			} else {
 				 if(manno != null ) {
 					 //实现类方法配置具有高优先级
@@ -632,6 +641,9 @@ public class ServiceLoader{
 					sm.setPerType(manno.perType());
 					sm.setNeedLogin(manno.needLogin());
 					sm.setMaxPacketSize(manno.maxPacketSize());
+					sm.setUpSsl(manno.upSsl());
+					sm.setDownSsl(manno.downSsl());
+					sm.setEncType(manno.encType());
 				 } else {
 					 //使用接口方法配置
 					sbr = intMAnno.breakingRule();
@@ -663,6 +675,14 @@ public class ServiceLoader{
 					sm.setPerType(intMAnno.perType());
 					sm.setNeedLogin(intMAnno.needLogin());
 					sm.setMaxPacketSize(intMAnno.maxPacketSize());
+					
+					sm.setUpSsl(intMAnno.upSsl());
+					sm.setDownSsl(intMAnno.downSsl());
+					sm.setEncType(intMAnno.encType());
+				 }
+				 
+				 if(sm.getTimeout() <= 0) {
+					throw new CommonException("Invalid timeout val with 0 for  " +item.getImpl() + "."+ m.getName());
 				 }
 				 
 				sm.getBreakingRule().setBreakTimeInterval(sbr.breakTimeInterval());

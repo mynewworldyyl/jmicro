@@ -13,6 +13,7 @@ import cn.jmicro.api.registry.ServiceItem;
 import cn.jmicro.api.registry.ServiceMethod;
 import cn.jmicro.api.registry.UniqueServiceKey;
 import cn.jmicro.api.registry.UniqueServiceMethodKey;
+import cn.jmicro.api.security.ISecretService;
 import cn.jmicro.common.Constants;
 import cn.jmicro.common.Utils;
 
@@ -25,18 +26,27 @@ public class JMicroBaseTestCase {
 	
 	protected static IRegistry registry;
 	
-	@BeforeClass //
+	@BeforeClass
 	public static void setupTestClass() {
 		of = JMicro.getObjectFactoryAndStart(getArgs());
 		registry = of.get(IRegistry.class);
 	}
 	
 	protected static String[] getArgs() {
-		return new String[] {"-DinstanceName=JMicroBaseTestCase","-DclientId=0","-DadminClientId=0"};
+		return new String[] {"-DinstanceName=comsumer","-DclientId=0","-DadminClientId=0"};
 	}
 	
 	protected <T> T get(Class<T> cls) {
 		return of.get(cls);
+	}
+	
+	protected <T> T getSrv(Class<T> srvCls,String ns,String ver) {
+		ServiceItem si = registry.getServices(srvCls.getName(),ns,ver)
+				.iterator().next();
+		org.junit.Assert.assertNotNull(si);
+		T srv = of.getRemoteServie(si.getKey().getServiceName(), si.getKey().getNamespace()
+				, si.getKey().getVersion(),null);
+		return srv;
 	}
 	
 	protected ServiceMethod helloTopicMethodKey() {
@@ -56,7 +66,7 @@ public class JMicroBaseTestCase {
 	}
 	
 	protected ServiceItem sayHelloServiceItem() {
-		ServiceItem si = registry.getServiceByImpl("cn.jmicro.example.rpc.impl.SimpleRpcImpl");
+		ServiceItem si = registry.getServices("cn.jmicro.example.api.rpc.ISimpleRpc","simpleRpc","0.0.1").iterator().next();
 		org.junit.Assert.assertNotNull(si);
 		return si;
 	}

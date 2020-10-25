@@ -209,7 +209,7 @@ public class DeploymentAssignment {
 			 if(StringUtils.isNotEmpty(cfg.getString("mngJarFile", null))) {
 				 mngDep.setJarFile(cfg.getString("mngJarFile", null));
 			 } else {
-				 mngDep.setJarFile("jmicro-main.mng-"+Config.JMICRO_VERSION+"-SNAPSHOT-jar-with-dependencies.jar");
+				 mngDep.setJarFile("jmicro-main.mng-"+Constants.JMICRO_VERSION+"-"+Constants.JMICRO_RELEASE_LABEL+"-jar-with-dependencies.jar");
 			 }
 			 
 			 mngDep.setStrategyArgs("-DsortPriority=instanceNum");
@@ -243,7 +243,7 @@ public class DeploymentAssignment {
 			 if(StringUtils.isNotEmpty(cfg.getString("apiGatewayJarFile", null))) {
 				 apiGatewayDep.setJarFile(cfg.getString("apiGatewayJarFile", null));
 			 } else {
-				 apiGatewayDep.setJarFile("jmicro-main.apigateway-"+Config.JMICRO_VERSION+"-SNAPSHOT-jar-with-dependencies.jar");
+				 apiGatewayDep.setJarFile("jmicro-main.apigateway-"+Constants.JMICRO_VERSION+"-"+Constants.JMICRO_RELEASE_LABEL+"-jar-with-dependencies.jar");
 			 }
 			 
 			 apiGatewayDep.setStrategyArgs("-DsortPriority=instanceNum");
@@ -260,7 +260,7 @@ public class DeploymentAssignment {
 		 if(op.exist(conRootPath)) {
 			 op.deleteNode(conRootPath);
 		 }
-		 op.createNodeOrSetData(conRootPath, this.processInfo.getId(), IDataOperator.EPHEMERAL);
+		 op.createNodeOrSetData(conRootPath, this.processInfo.getId()+"", IDataOperator.EPHEMERAL);
 		 actKey = Config.getInstanceName() + "_DeploymentAssignmentChecker";
 		 op.addListener(connListener);
 		 TimerTicker.getDefault(5000L).addListener(actKey,null,act);
@@ -391,7 +391,7 @@ public class DeploymentAssignment {
 		 lastCheckTime = System.currentTimeMillis();
 	}
 	
-	private void instanceRemoved(String insId) {
+	private void instanceRemoved(Integer insId) {
 		Assign a = this.assingManager.getAssignByInfoId(insId);
 		if(a != null) {
 			LG.log(MC.LOG_WARN, TAG,"Instance remove: "+JsonUtils.getIns().toJson(a));
@@ -719,8 +719,8 @@ public class DeploymentAssignment {
 			//String path = ChoyConstants.ROOT_AGENT + "/" + aif.getId() + "/"+dep.getId();
 
 			//String pid = idServer.getStringId(ProcessInfo.class);
-			String pid = (Long.parseLong(op.getData(ChoyConstants.ID_PATH)) +1)+"";
-			op.setData(ChoyConstants.ID_PATH, pid);
+			Integer pid = Integer.parseInt(op.getData(ChoyConstants.ID_PATH)) +1;
+			op.setData(ChoyConstants.ID_PATH, pid+"");
 			
 			Assign a = new Assign(dep.getId(),aif.getId(),pid);
 			a.opTime = curTime;

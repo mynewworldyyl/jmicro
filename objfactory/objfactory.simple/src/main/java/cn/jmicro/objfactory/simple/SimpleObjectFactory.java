@@ -390,17 +390,19 @@ public class SimpleObjectFactory implements IObjectFactory {
 		Config cfg = (Config)this.createOneComponent(Config.class,Config.isClientOnly(),Config.isServerOnly());
 		
 		//初始化配置目录
-		cfg.setDataOperator(dataOperator);
+		//cfg.setDataOperator(dataOperator);
 		//IConfigLoader具体的配置加载类
 		
-		Set<Class<?>> configLoaderCls = ClassScannerUtils.getIns().loadClassByClass(IConfigLoader.class);
+		/*Set<Class<?>> configLoaderCls = ClassScannerUtils.getIns().loadClassByClass(IConfigLoader.class);
 		for(Class<?> c : configLoaderCls) {
 			this.createOneComponent(c, Config.isClientOnly(), Config.isServerOnly());
 		}
 		Set<IConfigLoader> configLoaders = this.getByParent(IConfigLoader.class);
 		//加载配置，并调用init0方法做初始化
 		cfg.loadConfig(configLoaders);
-		configLoaderCls.add(Config.class);
+		configLoaderCls.add(Config.class);*/
+		
+		cfg.loadConfig(dataOperator);
 		
 		createProccessInfo(dataOperator,cfg);
 		
@@ -420,7 +422,7 @@ public class SimpleObjectFactory implements IObjectFactory {
 			}
 			
 			Set<Class<?>> clses = ClassScannerUtils.getIns().getComponentClass();
-			clses.removeAll(configLoaderCls);
+			//clses.removeAll(configLoaderCls);
 			
 			Set<Object> systemObjs = new HashSet<>();
 			createComponentOrService(dataOperator,systemObjs,clses,cfg);
@@ -551,7 +553,7 @@ public class SimpleObjectFactory implements IObjectFactory {
 			logger.info("Wait for master!");
 			this.masterSlaveListen((type,isMaster)->{
 				if(isMaster && (IMasterChangeListener.MASTER_ONLINE == type 
-						|| IMasterChangeListener.MASTER_NOTSUPPORT == type)) {
+				  || IMasterChangeListener.MASTER_NOTSUPPORT == type)) {
 					 //参选成功
 					 isMast[0] = true;
 					 logger.info(Config.getInstanceName() + " got as master");
@@ -1605,15 +1607,15 @@ public class SimpleObjectFactory implements IObjectFactory {
 			
 			String id = Config.getCommandParam(ChoyConstants.ARG_INSTANCE_ID);
 			if(StringUtils.isNotEmpty(id)) {
-				pi.setId(id);
+				pi.setId(Integer.parseInt(id));
 			}else {
-				String processId = "";
+				int processId;
 				if(op.exist(ChoyConstants.ID_PATH)) {
-					processId = (Long.parseLong(op.getData(ChoyConstants.ID_PATH))+1)+"";
-					op.setData(ChoyConstants.ID_PATH, processId);
+					processId = Integer.parseInt(op.getData(ChoyConstants.ID_PATH))+1;
+					op.setData(ChoyConstants.ID_PATH, processId+"");
 				} else {
-					op.createNodeOrSetData(ChoyConstants.ID_PATH, "1", false);
-					processId = "1";
+					processId = 1;
+					op.createNodeOrSetData(ChoyConstants.ID_PATH, processId+"", false);
 				}
 				pi.setId(processId);
 			}

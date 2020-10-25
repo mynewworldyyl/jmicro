@@ -6,8 +6,8 @@ import cn.jmicro.common.util.StringUtils;
 public class Assign {
 
 	
-	public Assign(String depId,String agentId,String insId) {
-		if(StringUtils.isEmpty(insId)) {
+	public Assign(String depId,String agentId,Integer insId) {
+		if(insId == null) {
 			throw new CommonException("Process instance ID cannot be NULL");
 		}
 		
@@ -26,7 +26,7 @@ public class Assign {
 	
 	private String depId;
 	private String agentId;
-	private String insId;
+	private Integer insId;
 	
 	public AssignState state = AssignState.INIT;
 	
@@ -42,16 +42,16 @@ public class Assign {
 		return agentId;
 	}
 
-	public String getInsId() {
+	public Integer getInsId() {
 		return insId;
 	}
 
 	@Override
 	public int hashCode() {
-		if(this.getInsId() == null || "".equals(this.getInsId())) {
+		if(this.insId <= 0) {
 			return (this.agentId + this.depId).hashCode();
 		} else {
-			return Integer.parseInt(this.getInsId());
+			return this.getInsId();
 		}
 	}
 

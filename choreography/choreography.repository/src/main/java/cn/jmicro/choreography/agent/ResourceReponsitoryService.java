@@ -20,15 +20,17 @@ import cn.jmicro.api.Resp;
 import cn.jmicro.api.annotation.Cfg;
 import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Inject;
+import cn.jmicro.api.annotation.SMethod;
 import cn.jmicro.api.annotation.Service;
 import cn.jmicro.api.codec.ICodecFactory;
 import cn.jmicro.api.idgenerator.ComponentIdServer;
+import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.timer.TimerTicker;
 import cn.jmicro.choreography.api.IResourceResponsitory;
 import cn.jmicro.choreography.api.PackageResource;
 
 @Component
-@Service(namespace="rrs",version="0.0.1",timeout=0,retryCnt=0,external=true)
+@Service(namespace="rrs",version="0.0.1",retryCnt=0,external=true)
 public class ResourceReponsitoryService implements IResourceResponsitory{
 
 	private static final Logger LOG = LoggerFactory.getLogger(ResourceReponsitoryService.class);
@@ -49,7 +51,7 @@ public class ResourceReponsitoryService implements IResourceResponsitory{
 	private long resTimeout = 3*60*1000;
 	
 	@Cfg(value="/ResourceReponsitoryService/devMode", defGlobal=true)
-	private boolean devMode = true;//1024*1024;
+	private boolean devMode = false;//1024*1024;
 	
 	@Inject
 	private ICodecFactory codecFactory;
@@ -301,8 +303,6 @@ public class ResourceReponsitoryService implements IResourceResponsitory{
 		}
 	}
 	
-	
-
 	@Override
 	public Resp<Integer> initDownloadResource(String name) {
 
@@ -380,6 +380,7 @@ public class ResourceReponsitoryService implements IResourceResponsitory{
 	}
 
 	@Override
+	@SMethod(logLevel=MC.LOG_NO,retryCnt=0)
 	public byte[] downResourceData(int downloadId, int specifyBlockNum) {
 		InputStream is = this.downloadReses.get(downloadId);
 		if(is == null) {

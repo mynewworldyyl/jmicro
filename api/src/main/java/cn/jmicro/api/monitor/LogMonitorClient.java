@@ -137,7 +137,7 @@ public class LogMonitorClient {
 		ExecutorConfig config = new ExecutorConfig();
 		config.setMsMaxSize(10);
 		config.setTaskQueueSize(500);
-		config.setThreadNamePrefix("MonitorClient");
+		config.setThreadNamePrefix("LogMonitorClient");
 		executor = of.get(ExecutorFactory.class).createExecutor(config);
 		
 		enableWork(msPo,IServiceListener.ADD);
@@ -280,7 +280,7 @@ public class LogMonitorClient {
 									splitMi(mi,maxPackageSize);
 									continue;
 								}
-								if(packageSize+size < maxPackageSize) {
+								if(packageSize + size < maxPackageSize) {
 									packageSize += size;
 									items.add(mi);	
 								} else {
@@ -454,7 +454,7 @@ public class LogMonitorClient {
 		for(Iterator<MRpcLogItem> ite = items.iterator(); ite.hasNext();) {
 			MRpcLogItem mi = ite.next();
 			ite.remove();
-			if(mi.getSmKey() == null) {
+			if(mi.getSmKey() == null || (mi.getSmKey() != null && mi.getReq() == null)) {
 				//非RPC环境下的事件
 				if(nullSMMRpcItem == null) {
 					nullSMMRpcItem = mi;

@@ -12,7 +12,6 @@ import org.slf4j.LoggerFactory;
 import cn.jmicro.api.IListener;
 import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Inject;
-import cn.jmicro.api.choreography.AgentInfo;
 import cn.jmicro.api.choreography.ChoyConstants;
 import cn.jmicro.api.monitor.LG;
 import cn.jmicro.api.monitor.MC;
@@ -20,7 +19,6 @@ import cn.jmicro.api.raft.IChildrenListener;
 import cn.jmicro.api.raft.IDataListener;
 import cn.jmicro.api.raft.IDataOperator;
 import cn.jmicro.choreography.assign.Assign;
-import cn.jmicro.choreography.controller.IAgentListener;
 import cn.jmicro.common.util.JsonUtils;
 import cn.jmicro.common.util.StringUtils;
 
@@ -31,7 +29,7 @@ public class AssignManager {
 	
 	//private Map<String,Set<Assign>> agent2Assigns = Collections.synchronizedMap(new HashMap<>());
 	
-	private Map<String,Assign> ins2Assigns = Collections.synchronizedMap(new HashMap<>());
+	private Map<Integer,Assign> ins2Assigns = Collections.synchronizedMap(new HashMap<>());
 	
 	private Map<String,Set<Assign>> dep2Assigns = Collections.synchronizedMap(new HashMap<>());
 	
@@ -71,9 +69,9 @@ public class AssignManager {
 		} else if(type == IListener.REMOVE) {
 			op.removeDataListener(p+"/"+c, assignDataListener);
 			if(assignListener != null) {
-				assignListener.change(IListener.REMOVE, ins2Assigns.get(c));
+				assignListener.change(IListener.REMOVE, ins2Assigns.get(Integer.parseInt(c)));
 			}
-			Assign a = ins2Assigns.remove(c);
+			Assign a = ins2Assigns.remove(Integer.parseInt(c));
 			dep2Assigns.get(a.getDepId()).remove(a);
 		}
 	};
@@ -169,7 +167,7 @@ public class AssignManager {
 		return ChoyConstants.ROOT_AGENT + "/" + a.getAgentId() + "/" + a.getInsId();
 	}
 	
-	public Assign getAssignByInfoId(String id) {
+	public Assign getAssignByInfoId(Integer id) {
 		return this.ins2Assigns.get(id);
 	}
 	

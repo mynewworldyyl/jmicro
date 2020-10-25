@@ -11,8 +11,8 @@ import cn.jmicro.api.test.Person;
 import cn.jmicro.common.Constants;
 import cn.jmicro.example.api.ITestRpcService;
 
-@Service(timeout=10*60*1000,maxSpeed=100,baseTimeUnit=Constants.TIME_SECONDS,namespace="testrpc",
-version="0.0.1", clientId=1000)
+@Service(maxSpeed=100,baseTimeUnit=Constants.TIME_SECONDS,namespace="testrpc",
+version="0.0.1")
 @Component
 public class TestRpcServiceImpl implements ITestRpcService{
 
@@ -25,14 +25,14 @@ public class TestRpcServiceImpl implements ITestRpcService{
 	public Map<String,String> params = null;
 	
 	@Override
-	@SMethod(monitorEnable=0,maxSpeed=100,baseTimeUnit=Constants.TIME_SECONDS,timeout=0)
+	@SMethod(monitorEnable=0,maxSpeed=100,baseTimeUnit=Constants.TIME_SECONDS)
 	public String hello(String name) {
 		System.out.println("Hello and welcome :" + name);
 		return "Rpc server return : "+name;
 	}
 
 	@Override
-	@SMethod(monitorEnable=0,maxSpeed=100,baseTimeUnit=Constants.TIME_SECONDS,timeout=0)
+	@SMethod(monitorEnable=0,maxSpeed=100,baseTimeUnit=Constants.TIME_SECONDS)
 	public Person getPerson(Person p) {
 		System.out.println(p);
 		p.setUsername("Server update username");

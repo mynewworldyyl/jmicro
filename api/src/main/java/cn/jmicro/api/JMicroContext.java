@@ -158,7 +158,8 @@ public class JMicroContext  {
 	}
 	
 	public static boolean existRpcContext() {
-		return cxt.get() != null && get().exists(JMicroContext.REQ_ID);
+		return cxt.get() != null && (get().exists(JMicroContext.REQ_ID) 
+				|| get().exists(JMicroContext.LINKER_ID));
 	}
 	
 	public static JMicroContext get(){
@@ -225,7 +226,10 @@ public class JMicroContext  {
 		if(iMonitorable) {
 			initMrpcStatisItem();
 		}
-		initMrpcLogItem();
+		
+		if(msg.getLogLevel() != MC.LOG_NO) {
+			initMrpcLogItem();
+		}
 	}
 	
 	private static void initMrpcStatisItem() {
@@ -265,6 +269,8 @@ public class JMicroContext  {
 					}
 					//the pre RPC Request ID as the parent ID of this request
 					context.setParam(MRPC_LOG_ITEM, item);
+					
+					
 				}
 			}
 		}
@@ -284,6 +290,8 @@ public class JMicroContext  {
 		context.setParam(Constants.SERVICE_ITEM_KEY, si);
 		context.setParam(JMicroContext.LOCAL_HOST, Config.getExportSocketHost());
 		
+		context.setParam(JMicroContext.SM_LOG_LEVEL, sm.getLogLevel());
+		
 		//debug mode 下才有效
 		boolean isDebug = enableOrDisable(si.getDebugMode(),sm.getDebugMode());
 		context.setParam(IS_DEBUG, isDebug);
@@ -297,7 +305,21 @@ public class JMicroContext  {
 		if(iMonitorable) {
 			initMrpcStatisItem() ;
 		}
-		initMrpcLogItem();
+		
+		if(sm.getLogLevel() != MC.LOG_NO) {
+			initMrpcLogItem();
+			MRpcLogItem mi = context.getMRpcLogItem();
+			if(mi != null) {
+				mi.setImplCls(si.getImpl());
+				mi.setSmKey(sm.getKey());
+				ActInfo ai = context.getAccount();
+				if(ai != null) {
+					mi.setActName(ai.getActName());
+					mi.setClientId(ai.getClientId());
+				}
+			}
+		}
+		
 	}
 	
 	

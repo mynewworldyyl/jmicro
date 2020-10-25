@@ -105,7 +105,7 @@ public abstract class AbstractNettySession extends AbstractSession implements IS
 				if(sm != null) {
 					if(sm.getTimeout() <= cost) {
 						logger.warn("Client ins[{}],reqId[{}],cost[{}],Method[{}], Timeout reqId[{}],TO[{}]",
-								msg.getInstanceName(),msg.getReqId(),cost,msg.getMethod(),
+								msg.getInsId(),msg.getReqId(),cost,msg.getMethod(),
 								msg.getReqId(),sm.getTimeout());
 					}/*else {
 						logger.debug("Client ins[{}],reqId[{}],cost[{}],method[{}]",msg.getInstanceName(),msg.getReqId(),
@@ -113,7 +113,7 @@ public abstract class AbstractNettySession extends AbstractSession implements IS
 					}*/
 				} else {
 					logger.warn("Null ServiceMethod ins[{}],reqId[{}],cost[{}],method[{}]",
-							msg.getInstanceName(),msg.getReqId(),msg.getMethod());
+							msg.getInsId(),msg.getReqId(),msg.getMethod());
 				}
 			}
 		}

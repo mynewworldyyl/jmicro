@@ -55,6 +55,7 @@ import cn.jmicro.api.net.Message;
 import cn.jmicro.api.net.RpcRequest;
 import cn.jmicro.api.net.RpcResponse;
 import cn.jmicro.api.net.ServerError;
+import cn.jmicro.api.security.SecretManager;
 import cn.jmicro.common.CommonException;
 import cn.jmicro.common.Constants;
 
@@ -82,22 +83,13 @@ public class ServerMessageReceiver implements IMessageReceiver{
 	private StatisMonitorClient monitor;
 	
 	@Inject
-	private ComponentIdServer idGenerator;
-	
-	@Inject
 	private ICodecFactory codeFactory;
-	
-	@Inject
-	private JRPCReqRespHandler jrpcHandler;
 	
 	@Inject
 	private ICodecFactory codecFactory;
 	
-	/*@Inject("idRequestMessageHandler")
-	private IMessageHandler idHandler;*/
-	
-	/*@Cfg(value="/ServerReceiver/receiveBufferSize")
-	private int receiveBufferSize=1000;*/
+	@Inject
+	private SecretManager secretMng;
 	
 	private ExecutorService defaultExecutor = null;
 	
@@ -108,8 +100,6 @@ public class ServerMessageReceiver implements IMessageReceiver{
 	private Boolean finishInit = false;
 	
 	private volatile Map<Byte,IMessageHandler> handlers = new ConcurrentHashMap<>();
-	
-	private AtomicInteger cnt = new AtomicInteger(0);
 	
 	private int maxCacheTaskSize = 10000;
 	
@@ -224,6 +214,10 @@ public class ServerMessageReceiver implements IMessageReceiver{
 			
 			if(LG.isLoggable(MC.LOG_DEBUG,msg.getLogLevel())) {
 				LG.log(MC.LOG_DEBUG, TAG,LG.messageLog("doReceive",msg));
+			}
+			
+			if(msg.isUpSsl() || msg.isDownSsl()) {
+				this.secretMng.checkAndDecrypt(msg,true);
 			}
 			
 			IMessageHandler h = handlers.get(msg.getType());

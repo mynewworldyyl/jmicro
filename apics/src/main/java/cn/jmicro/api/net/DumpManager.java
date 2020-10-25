@@ -235,7 +235,7 @@ public class DumpManager {
 				bw.write(key+"");
 				bw.newLine();
 				for(Message m : map.get(key)) {
-					bw.write("instance:"+m.getInstanceName());
+					bw.write("instance:"+m.getInsId());
 					bw.write(", method:"+m.getMethod());
 					bw.write(", time:"+DateUtils.formatDate(new Date(m.getTime()),DateUtils.PATTERN_YYYY_MM_DD_HHMMSSZZZ));
 					bw.newLine();

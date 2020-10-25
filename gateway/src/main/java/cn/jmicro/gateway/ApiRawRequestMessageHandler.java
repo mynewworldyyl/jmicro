@@ -31,6 +31,7 @@ import cn.jmicro.api.annotation.Cfg;
 import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Inject;
 import cn.jmicro.api.async.PromiseUtils;
+import cn.jmicro.api.choreography.ProcessInfo;
 import cn.jmicro.api.codec.ICodecFactory;
 import cn.jmicro.api.codec.JDataInput;
 import cn.jmicro.api.gateway.ApiRequest;
@@ -50,6 +51,7 @@ import cn.jmicro.api.registry.ServiceMethod;
 import cn.jmicro.api.security.AccountManager;
 import cn.jmicro.api.security.ActInfo;
 import cn.jmicro.api.security.PermissionManager;
+import cn.jmicro.api.security.SecretManager;
 import cn.jmicro.codegenerator.AsyncClientProxy;
 import cn.jmicro.common.CommonException;
 import cn.jmicro.common.Constants;
@@ -84,6 +86,12 @@ public class ApiRawRequestMessageHandler implements IMessageHandler{
 	
 	@Inject
 	private MessageServiceImpl ms;
+	
+	@Inject
+	private SecretManager secretMng;
+	
+	@Inject
+	private ProcessInfo pi;
 	
 	@Cfg("/ApiRawRequestMessageHandler/openDebug")
 	private boolean openDebug = false;
@@ -234,9 +242,21 @@ public class ApiRawRequestMessageHandler implements IMessageHandler{
 									} else {
 										msg.setPayload(resp.encode());
 									}
+									
+									if(resp.isSuccess() && (msg.isUpSsl() || msg.isDownSsl())) {
+										//由客户端决定返回数据加解密方式
+										//msg.setDownSsl(false/*sm.isDownSsl()*/);
+										//msg.setUpSsl(false/*sm.isUpSsl()*/);
+										//msg.setEncType(sm.isRsa());
+										secretMng.signAndEncrypt(msg, msg.getInsId(),false);
+									} else {
+										//错误不需要做加密或签名
+										msg.setDownSsl(false);
+										msg.setUpSsl(false);
+									}
+									msg.setInsId(pi.getId());
 									session.write(msg);
 								});
-								
 							}
 						}
 					} else {
@@ -264,6 +284,9 @@ public class ApiRawRequestMessageHandler implements IMessageHandler{
 					} else {
 						msg.setPayload(resp.encode());
 					}
+					
+					msg.setInsId(pi.getId());
+					msg.setUpSsl(false);
 					session.write(msg);
 				} else {
 					logger.warn(result.toString());
@@ -276,7 +299,7 @@ public class ApiRawRequestMessageHandler implements IMessageHandler{
 				ce = (CommonException)e;
 				ce.setReq(req);
 				ce.setResp(resp);
-			}else {
+			} else {
 				ce = new CommonException("",e,req);
 				ce.setResp(resp);
 			}

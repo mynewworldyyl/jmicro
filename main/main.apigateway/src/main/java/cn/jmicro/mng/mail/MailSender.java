@@ -29,7 +29,8 @@ public class MailSender implements IEmailSender{
 	@Cfg(value="/MailSender/from",defGlobal=true)
 	private  String mailFrom = "";// 指明邮件的发件人
 	
-	private  String passwordMailFrom = "";// 指明邮件的发件人登陆密码
+	// 指明邮件的发件人登陆密码
+	private  String passwordMailFrom = "";
 	
 	@Cfg(value="/MailSender/host",defGlobal=true)
 	private  String mailHost ="";	// 邮件的服务器域名

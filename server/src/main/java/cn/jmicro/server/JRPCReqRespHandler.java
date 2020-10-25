@@ -23,8 +23,8 @@ import cn.jmicro.api.JMicroContext;
 import cn.jmicro.api.annotation.Cfg;
 import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Inject;
+import cn.jmicro.api.choreography.ProcessInfo;
 import cn.jmicro.api.codec.ICodecFactory;
-import cn.jmicro.api.config.Config;
 import cn.jmicro.api.exception.RpcException;
 import cn.jmicro.api.exception.TimeoutException;
 import cn.jmicro.api.idgenerator.ComponentIdServer;
@@ -48,6 +48,7 @@ import cn.jmicro.api.registry.ServiceMethod;
 import cn.jmicro.api.security.AccountManager;
 import cn.jmicro.api.security.ActInfo;
 import cn.jmicro.api.security.PermissionManager;
+import cn.jmicro.api.security.SecretManager;
 import cn.jmicro.api.service.IServiceAsyncResponse;
 import cn.jmicro.api.service.ServiceLoader;
 import cn.jmicro.common.CommonException;
@@ -67,6 +68,9 @@ public class JRPCReqRespHandler implements IMessageHandler{
 	private static final Class<?> TAG = JRPCReqRespHandler.class;
 	
 	private static final Logger logger = LoggerFactory.getLogger(JRPCReqRespHandler.class);
+	
+	@Inject
+	private SecretManager secretMng;
 	
 	@Inject
 	private InterceptorManager interceptorManger;
@@ -97,6 +101,9 @@ public class JRPCReqRespHandler implements IMessageHandler{
 	
 	@Inject
 	private PermissionManager pm;
+	
+	@Inject(required=true)
+	private ProcessInfo pi;
 	
 	@Override
 	public Byte type() {
@@ -132,7 +139,9 @@ public class JRPCReqRespHandler implements IMessageHandler{
 	    	}
 	    	
 	    	MRpcLogItem mi = JMicroContext.get().getMRpcLogItem();
-			mi.setResp(resp);
+	    	if(mi != null) {
+	    		mi.setResp(resp);
+	    	}
 	    	
 	    	ServiceMethod sm = JMicroContext.get().getParam(Constants.SERVICE_METHOD_KEY, null);
 	    	if(msg.isMonitorable()) {
@@ -143,10 +152,11 @@ public class JRPCReqRespHandler implements IMessageHandler{
 			resp.setMsg(msg);
 			resp.setSuccess(true);
 			//resp.setId(idGenerator.getLongId(IResponse.class));
+			//msg.setInsId(pi.getId());
 			
 			if(msg.isDebugMode()) {
 				msg.setId(idGenerator.getLongId(Message.class));
-				msg.setInstanceName(Config.getInstanceName());
+				//msg.setInstanceName(Config.getInstanceName());
 			}
 	    	
 	    	ActInfo ai = null;
@@ -161,7 +171,7 @@ public class JRPCReqRespHandler implements IMessageHandler{
 						resp.setSuccess(false);
 						LG.log(MC.LOG_ERROR, TAG,se.toString());
 						MT.rpcEvent(MC.MT_INVALID_LOGIN_INFO);
-						resp2Client(resp,s,msg);
+						resp2Client(resp,s,msg,sm);
 						return;
 					} else {
 						JMicroContext.get().setString(JMicroContext.LOGIN_KEY, lk);
@@ -176,7 +186,7 @@ public class JRPCReqRespHandler implements IMessageHandler{
 				resp.setSuccess(false);
 				LG.log(MC.LOG_ERROR, TAG,se.toString());
 				MT.rpcEvent(MC.MT_PACKET_TOO_MAX,1, msg.getLen());
-				resp2Client(resp,s,msg);
+				resp2Client(resp,s,msg,sm);
 				return;
 			}
 			
@@ -187,7 +197,7 @@ public class JRPCReqRespHandler implements IMessageHandler{
 			if(se != null) {
 				resp.setResult(se);
 				resp.setSuccess(false);
-				resp2Client(resp,s,msg);
+				resp2Client(resp,s,msg,sm);
 				return;
 			}
 			
@@ -219,7 +229,7 @@ public class JRPCReqRespHandler implements IMessageHandler{
 						}
 						r.setSuccess(true);
 						r.setResult(result);
-						resp2Client(r,s,msg);
+						resp2Client(r,s,msg,sm);
 						cxt.removeParam(Constants.CONTEXT_SERVICE_RESPONSE);
 						if(JMicroContext.get().isDebug()) {
 							JMicroContext.get().appendCurUseTime("Async respTime",false);
@@ -236,7 +246,7 @@ public class JRPCReqRespHandler implements IMessageHandler{
 					//如果业务方法是异步返回结果，一定要同步返回NULL值
 					finish[0] = true;
 					cxt.removeParam(Constants.CONTEXT_SERVICE_RESPONSE);
-					resp2Client(rr,s,msg);
+					resp2Client(rr,s,msg,sm);
 					JMicroContext.get().submitMRpcItem(logMonitor,monitor);
 				}
 			} else {
@@ -247,7 +257,7 @@ public class JRPCReqRespHandler implements IMessageHandler{
 					resp = new RpcResponse(req.getRequestId(),null);
 					resp.setSuccess(true);
 				}
-				resp2Client(resp,s,msg);
+				resp2Client(resp,s,msg,sm);
 			}
 		} catch (Throwable e) {
 			doException(req,resp,s,msg,e);
@@ -261,7 +271,6 @@ public class JRPCReqRespHandler implements IMessageHandler{
 	private void doException(RpcRequest req,RpcResponse resp0, ISession s,Message msg,Throwable e) {
 
 		//返回错误
-		
 		CommonException ce = new CommonException("",e,req);
 		ce.setResp(resp0);
 		
@@ -275,7 +284,8 @@ public class JRPCReqRespHandler implements IMessageHandler{
 			resp.setSuccess(false);
 			msg.setPayload(ICodecFactory.encode(codeFactory,resp,msg.getUpProtocol()));
 			msg.setType((byte)(msg.getType()+1));
-			msg.setInstanceName(Config.getInstanceName());
+			msg.setInsId(pi.getId());
+			msg.setUpSsl(false);
 			msg.setTime(System.currentTimeMillis());
 			s.write(msg);
 		}
@@ -299,7 +309,7 @@ public class JRPCReqRespHandler implements IMessageHandler{
 		item.setLinkId(msg.getLinkId());
 	}
 	
-	private void resp2Client(IResponse resp, ISession s,Message msg) {
+	private void resp2Client(IResponse resp, ISession s,Message msg,ServiceMethod sm) {
 		if(!msg.isNeedResponse()){
 			return;
 		}
@@ -316,9 +326,23 @@ public class JRPCReqRespHandler implements IMessageHandler{
     		JMicroContext.get().appendCurUseTime("Server finish encode",true);
 		}
 		
-		//响应消息
-		s.write(msg);
+		if(resp.isSuccess()) {
+			//响应消息,只有成功的消息才需要加密，失败消息不需要
+			msg.setUpSsl(sm.isUpSsl());
+			msg.setDownSsl(sm.isDownSsl());
+			msg.setEncType(sm.isRsa());
+			if(sm.isUpSsl() || sm.isDownSsl()) {
+				secretMng.signAndEncrypt(msg,msg.getInsId(),false);
+			}
+		} else {
+			//错误不需要做加密或签名
+			msg.setUpSsl(false);
+			msg.setDownSsl(false);
+		}
 
+		msg.setInsId(pi.getId());
+		
+		s.write(msg);
 		MT.rpcEvent(MC.MT_SERVER_JRPC_RESPONSE_SUCCESS,1, msg.getLen());
 		
 		if(msg.isDebugMode()) {

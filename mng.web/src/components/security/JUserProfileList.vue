@@ -47,7 +47,6 @@
             window.jm.rpc.removeActListener(GROUP);
         },
 
-
         methods:{
 
             editorRemove(it) {

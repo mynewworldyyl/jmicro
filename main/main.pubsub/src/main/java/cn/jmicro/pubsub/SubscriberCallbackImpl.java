@@ -349,7 +349,8 @@ public class SubscriberCallbackImpl implements ISubscriberCallback{
 				Document d = Document.parse(JsonUtils.getIns().toJson(pda));
 				d.put("result", b);
 				d.put("id", pda.getId());
-				this.os.updateOrSaveById(PubSubManager.TABLE_PUBSUB_ITEMS,d, Document.class,true);
+				this.os.updateOrSaveById(PubSubManager.TABLE_PUBSUB_ITEMS,d, Document.class,
+						IObjectStorage.ID,true);
 			}
 		} catch (Exception e) {
 			logger.error("resultItem",e);

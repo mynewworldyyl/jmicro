@@ -492,6 +492,8 @@ public class ApiGatewayClient {
 		msg.setDebugMode(false);
 		//全部异步返回，服务器可以异步返回，也可以同步返回
 		msg.setAsyncReturnResult(true);
+		msg.setUpSsl(false);
+		msg.setInsId(0);
 		
 		//ByteBuffer bb = decoder.encode(req);
 		

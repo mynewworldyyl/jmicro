@@ -57,7 +57,7 @@ public class ClientMessageReceiver implements IMessageReceiver{
 		ExecutorConfig cfg = new ExecutorConfig();
 		cfg.setMsCoreSize(1);
 		cfg.setMsMaxSize(10);
-		cfg.setTaskQueueSize(100);
+		cfg.setTaskQueueSize(200);
 		cfg.setThreadNamePrefix("ClientMessageReceiver-client");
 		cfg.setRejectedExecutionHandler(new RejectedExecutionHandler() {
 			@Override

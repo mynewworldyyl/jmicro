@@ -38,6 +38,7 @@ import cn.jmicro.api.net.IMessageHandler;
 import cn.jmicro.api.net.IMessageReceiver;
 import cn.jmicro.api.net.ISession;
 import cn.jmicro.api.net.Message;
+import cn.jmicro.api.security.SecretManager;
 import cn.jmicro.api.utils.TimeUtils;
 import cn.jmicro.common.Constants;
 import cn.jmicro.common.util.StringUtils;
@@ -57,6 +58,9 @@ public class ClientMessageReceiver implements IMessageReceiver{
 	
 	@Inject
 	private ExecutorFactory ef;
+	
+	@Inject
+	private SecretManager secretMng;
 	
 	public ClientMessageReceiver() {}
 	
@@ -89,7 +93,7 @@ public class ClientMessageReceiver implements IMessageReceiver{
 		ExecutorConfig config = new ExecutorConfig();
 		config.setMsCoreSize(5);
 		config.setMsMaxSize(20);
-		config.setTaskQueueSize(10);
+		config.setTaskQueueSize(100);
 		config.setThreadNamePrefix("ClientMessageReceiver-default");
 		config.setRejectedExecutionHandler(new RejectedExecutionHandler() {
 			@Override
@@ -110,6 +114,11 @@ public class ClientMessageReceiver implements IMessageReceiver{
         }*/
         
 		try {
+			
+			if(msg.isUpSsl() || msg.isDownSsl()) {
+				this.secretMng.checkAndDecrypt(msg,false);
+			}
+			
 			IMessageHandler h = handlers.get(msg.getType());
 			if(h != null){
 				defaultExecutor.execute(()->{
@@ -117,13 +126,10 @@ public class ClientMessageReceiver implements IMessageReceiver{
 				});
 			} else {
 				String errMsg = "Handler not found:" + Integer.toHexString(msg.getType());
-				
-				logger.error("Handler not found:" + Integer.toHexString(msg.getType()));
-				
+				logger.error(errMsg);
 				if(msg.isLoggable()) {
 					LG.log(MC.LOG_ERROR, ClientMessageReceiver.class,errMsg);
 				}
-				
 				if(msg.isMonitorable()) {
 					MT.rpcEvent(MC.MT_HANDLER_NOT_FOUND, 1, 1);
 				}

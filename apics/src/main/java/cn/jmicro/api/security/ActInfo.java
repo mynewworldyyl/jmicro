@@ -45,6 +45,8 @@ public class ActInfo implements Cloneable {
 	//登陆次数
 	private long loginNum;
 	
+	private transient boolean isAdmin = false;
+	
 	private HashSet<String> pers = new HashSet<>();
 	
 	public ActInfo() {};
@@ -184,6 +186,14 @@ public class ActInfo implements Cloneable {
 
 	public void setLoginNum(long loginNum) {
 		this.loginNum = loginNum;
+	}
+
+	public boolean isAdmin() {
+		return isAdmin;
+	}
+
+	public void setAdmin(boolean isAdmin) {
+		this.isAdmin = isAdmin;
 	}
 	
 }

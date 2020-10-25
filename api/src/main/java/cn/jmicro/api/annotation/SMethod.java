@@ -152,4 +152,13 @@ public @interface SMethod {
 	//必须登陆才能使用
 	public boolean needLogin() default false;
 	
+	public boolean downSsl() default false;
+	
+	public boolean upSsl()  default false;
+	
+	//public boolean isSsl() default false;
+	
+	//0:对称加密，1：RSA 非对称加密
+	public byte encType() default 0;
+	
 }

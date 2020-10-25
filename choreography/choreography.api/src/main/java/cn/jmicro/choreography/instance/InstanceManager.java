@@ -31,11 +31,11 @@ public class InstanceManager {
 	@Inject
 	private IDataOperator op;
 	
-	private Map<String,ProcessInfo> sysProcesses = new HashMap<>();
+	private Map<Integer,ProcessInfo> sysProcesses = new HashMap<>();
 	
 	private String agentId = null;
 	
-	private Map<String,ProcessInfo> mngProcesses = new HashMap<>();
+	private Map<Integer,ProcessInfo> mngProcesses = new HashMap<>();
 	
 	private Set<IInstanceListener> listeners = new HashSet<>();
 	
@@ -52,7 +52,7 @@ public class InstanceManager {
 			return;
 		}
 		
-		String id = path.substring(ChoyConstants.INS_ROOT.length()+1);
+		int id = Integer.parseInt(path.substring(ChoyConstants.INS_ROOT.length()+1));
 		ProcessInfo pi = JsonUtils.getIns().fromJson(data,ProcessInfo.class);
 		
 		if(this.mngSysProcess && StringUtils.isEmpty(pi.getAgentId())) {
@@ -69,7 +69,7 @@ public class InstanceManager {
 	public void ready() {
 		op.addChildrenListener(ChoyConstants.INS_ROOT, (type,p,c,data)->{
 			if(type == IListener.ADD) {
-				instanceAdded(c,data);
+				instanceAdded(Integer.parseInt(c),data);
 			} else if(type == IListener.REMOVE) {
 				synchronized(notifyObj) {
 					//等待rmTimeout毫秒后，如果结点还是不存在，删除正式删除实例
@@ -136,15 +136,15 @@ public class InstanceManager {
 
 	private void instanceRemoved(String c) {
 		logger.debug("Instance remove ID: " + c);
-		
-		if(mngProcesses.containsKey(c)) {
-			ProcessInfo pi = mngProcesses.remove(c);
+		Integer pid = Integer.parseInt(c);
+		if(mngProcesses.containsKey(pid)) {
+			ProcessInfo pi = mngProcesses.remove(pid);
 			notifyListener(IListener.REMOVE,pi);
 			String p = ChoyConstants.INS_ROOT +"/" + pi.getId();
 			op.removeDataListener(p, this.insDataListener);
 		} else {
-			if(mngSysProcess && sysProcesses.containsKey(c)) {
-				sysProcesses.remove(c);
+			if(mngSysProcess && sysProcesses.containsKey(pid)) {
+				sysProcesses.remove(pid);
 				String p = ChoyConstants.INS_ROOT +"/" + c;
 				op.removeDataListener(p, this.insDataListener);
 			} 
@@ -161,7 +161,7 @@ public class InstanceManager {
 		}
 	}
 
-	private void instanceAdded(String c, String data) {
+	private void instanceAdded(Integer c, String data) {
 		
 		ProcessInfo pi = JsonUtils.getIns().fromJson(data, ProcessInfo.class);
 		if(pi == null) {
@@ -257,7 +257,7 @@ public class InstanceManager {
 		return pis;
 	}
 	
-	public ProcessInfo getProcessesByInsId(String insId,boolean includeSys) {
+	public ProcessInfo getProcessesByInsId(Integer insId,boolean includeSys) {
 		if(mngProcesses.containsKey(insId)) {
 			return mngProcesses.get(insId);
 		}else if(includeSys) {
@@ -287,7 +287,7 @@ public class InstanceManager {
 		return false;
 	}
 	
-	public boolean isExistByProcessId(String processId) {
+	public boolean isExistByProcessId(Integer processId) {
 		String p = ChoyConstants.INS_ROOT +"/" + processId;
 		return op.exist(p);
 	}

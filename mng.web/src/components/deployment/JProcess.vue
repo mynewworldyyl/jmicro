@@ -25,7 +25,7 @@
 
 <script>
 
-    const cid = 'JProcess';
+    const cid = 'process';
 
     export default {
         name: 'JProcess',
@@ -100,12 +100,14 @@
             }
 
             window.jm.vue.$on('editorClosed',ec);
+
+            this.refresh();
         },
     }
 </script>
 
 <style>
     .JProcess{
-
+        height:auto;
     }
 </style>

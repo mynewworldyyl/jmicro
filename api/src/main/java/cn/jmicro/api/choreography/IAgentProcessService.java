@@ -19,8 +19,8 @@ public interface IAgentProcessService {
 	
 	String agentId();
 	
-	boolean startLogMonitor(String processId, String logFile, int offsetFromLastLine);
+	boolean startLogMonitor(Integer processId, String logFile, int offsetFromLastLine);
 	
-	boolean stopLogMonitor(String processId, String logFile);
+	boolean stopLogMonitor(Integer processId, String logFile);
 	
 }

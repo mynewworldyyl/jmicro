@@ -56,6 +56,7 @@ apics/logs/
 apics/bin/
 apics/data/
 apics/src/main/gen
+apics/src/main/resources/META-INF/keys/
 build/target/
 build/.classpath
 build/.project
@@ -188,6 +189,7 @@ example/example.provider/logs/
 example/example.provider/data/
 example/example.provider/bin/
 example/example.provider/src/main/gen
+example/example.provider/src/main/resources/META-INF/keys/
 example/example.comsumer/target/
 example/example.comsumer/.classpath
 example/example.comsumer/.project
@@ -196,6 +198,7 @@ example/example.comsumer/logs/
 example/example.comsumer/data/
 example/example.comsumer/bin/
 example/example.comsumer/src/main/gen
+example/example.comsumer/src/main/resources/META-INF/keys/
 example/gatewayclientapp/target/
 example/gatewayclientapp/.classpath
 example/gatewayclientapp/.project
@@ -296,6 +299,7 @@ gateway/logs/
 gateway/bin/
 gateway/data/
 gateway/src/main/gen
+gateway/src/main/resources/META-INF/keys/
 gateway.client/target/
 gateway.client/.classpath
 gateway.client/.project
@@ -397,6 +401,7 @@ main/main.apigateway/data/
 main/main.apigateway/bin/
 main/main.apigateway/src/main/gen
 main/main.apigateway/dumpDir/
+main/main.apigateway/src/main/resources/META-INF/keys/
 main/main.mng/target/
 main/main.mng/.classpath
 main/main.mng/.project
@@ -474,4 +479,5 @@ test/data/
 test/src/main/gen
 .DS_Store
 Thumbs.db
+PWD.txt
 UserInterfaceState.xcuserstate

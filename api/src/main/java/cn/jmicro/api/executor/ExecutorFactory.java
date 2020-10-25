@@ -6,14 +6,9 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.FutureTask;
-import java.util.concurrent.RunnableFuture;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.ThreadPoolExecutor.AbortPolicy;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -21,9 +16,9 @@ import org.slf4j.LoggerFactory;
 import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Inject;
 import cn.jmicro.api.config.Config;
+import cn.jmicro.api.monitor.LG;
 import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.monitor.MT;
-import cn.jmicro.api.monitor.LG;
 import cn.jmicro.api.objectfactory.IObjectFactory;
 import cn.jmicro.api.registry.ServiceItem;
 import cn.jmicro.api.service.ServiceLoader;
@@ -190,10 +185,10 @@ public class ExecutorFactory {
 
 		public void check() {
 			//if pool size less than 2, you should know what you doing
-			if(this.cfg.getTaskQueueSize() > 2 && e.getPoolSize() > this.warnSize) {
+			if(this.cfg.getTaskQueueSize() > 2 && e.getQueue().size() > this.warnSize) {
 				setInfo();
-				LG.log(MC.LOG_WARN, JmicroThreadPoolExecutor.class,
-						JsonUtils.getIns().toJson(this.ei));
+				LG.log(MC.LOG_WARN, JmicroThreadPoolExecutor.class,this.cfg.getThreadNamePrefix()+": "
+						+ JsonUtils.getIns().toJson(this.ei));
 				MT.rpcEvent(MC.EP_TASK_WARNING);
 			}
 		}

@@ -45,7 +45,7 @@ import cn.jmicro.common.Constants;
  */
 public class LG {
 	
-	private final static Logger logger = LoggerFactory.getLogger("cn.jmicro.api.monitor.sf");
+	private final static Logger logger = LoggerFactory.getLogger(LG.class);
 	
 	private static LogMonitorClient m = null;
 	
@@ -55,7 +55,7 @@ public class LG {
 	
 	//private static boolean isDs = false;
 	
-	public static byte SYSTEM_LOG_LEVEL = MC.LOG_INFO;
+	//public static byte SYSTEM_LOG_LEVEL = MC.LOG_INFO;
 	
 	public static boolean respEvent(byte level,IResp resp,String tag) {
 		if(isLoggable(level)) {
@@ -195,35 +195,29 @@ public class LG {
 		return ex.getMessage();
 	}
 	
-	public static void log(byte level, Class<?> cls, Message msg, Throwable exp, String desc) {
-		if(isLoggable(level)) {
-			int lineNum = Thread.currentThread().getStackTrace()[3].getLineNumber();
-			MRpcLogItem mi = JMicroContext.get().getMRpcLogItem();
-			boolean f = false;
-			if(mi == null) {
-				mi = new MRpcLogItem();
-				ActInfo ai = JMicroContext.get().getAccount();
-				if(ai != null) {
-					mi.setClientId(ai.getClientId());
-				}
-				f = true;
-			}
-			desc += ", Line: " + lineNum;
-			if(msg != null && msg.isDebugMode()) {
-				desc += ", Method: "+ msg.getMethod();
-				mi.setReqId(msg.getReqId());
-				mi.setLinkId(msg.getLinkId());
-			}
-			OneLog oi = mi.addOneItem(level, cls.getName(),desc);
-			setStackTrance(oi,3);
-			oi.setEx(serialEx(exp));
-			mi.setMsg(msg);
-			
-			if(f) {
-				setCommon(mi);
-				m.submit2Cache(mi);
-			}
+	public static void logWithNonRpcContext(byte level, Class<?> tag, String desc) {
+		logWithNonRpcContext0(level,tag,desc,null);
+	}
+	
+	public static void logWithNonRpcContext(byte level, Class<?> tag, String desc, Throwable exp) {
+		logWithNonRpcContext0(level,tag,desc,exp);
+	}
+	
+	public static void logWithNonRpcContext0(byte level, Class<?> tag, String desc, Throwable exp) {
+		if(level == MC.LOG_NO || level < Config.getSystemLogLevel()) {
+			return;
 		}
+
+		MRpcLogItem mi = new MRpcLogItem();
+		OneLog oi = mi.addOneItem(level, tag.getName(),desc);
+		setStackTrance(oi,4);
+		if(exp != null) {
+			oi.setEx(serialEx(exp));
+		}
+
+		setCommon(mi);
+		m.submit2Cache(mi);
+	
 	}
 	
 	public static void setCommon(MRpcLogItem si) {
@@ -248,13 +242,7 @@ public class LG {
 			if(si.getSmKey() == null && sm != null) {
 				si.setSmKey(sm.getKey());
 				si.setLogLevel(sm.getLogLevel());
-			}/*else {
-				ServiceItem si0 = (ServiceItem)JMicroContext.get().getObject(Constants.SERVICE_ITEM_KEY, null);
-				if(si0 != null) {
-					
-				}
-				
-			}*/
+			}
 		}
 		
 		si.setLocalHost(Config.getExportSocketHost());
@@ -282,7 +270,7 @@ public class LG {
 			return false;
 		}
 		
-		byte rpcLevel = SYSTEM_LOG_LEVEL;
+		byte rpcLevel = Config.getSystemLogLevel();
 		if(rpcMethodLevel == null || rpcMethodLevel.length == 0) {
 			if( JMicroContext.existRpcContext()) {
 				rpcLevel = JMicroContext.get().getParam(JMicroContext.SM_LOG_LEVEL, rpcLevel);
@@ -301,7 +289,7 @@ public class LG {
 		sb.append(",msdId:").append(msg.getId());
 		sb.append(",reqId:").append(msg.getReqId());
 		sb.append(",linkId:").append(msg.getLinkId());
-		sb.append(",instanceName:").append(msg.getInstanceName());
+		sb.append(",instanceName:").append(msg.getInsId());
 		sb.append(",method:").append(msg.getMethod());
 		if(msg.getTime() > 0) {
 			sb.append(",cost:").append(System.currentTimeMillis() - msg.getTime());

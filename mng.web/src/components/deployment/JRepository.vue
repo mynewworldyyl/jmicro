@@ -4,7 +4,7 @@
         <a @click="testArrayBuffer()">TEST</a>&nbsp;&nbsp;
         <a @click="refresh()">REFRESH</a>-->
         <table class="configItemTalbe" width="99%">
-            <thead><tr><td>NAME</td><td>SIZE</td><td>FINISH</td><td>OPERATION</td></tr></thead>
+            <thead><tr><td style="width:280px">NAME</td><td>SIZE</td><td>FINISH</td><td>OPERATION</td></tr></thead>
             <tr v-for="c in resList" :key="c.id">
                 <td>{{c.name}}</td><td>{{c.size}}</td><td>{{c.finish}}</td>
                 <td>
@@ -326,13 +326,14 @@
 
             window.jm.vue.$on('editorClosed',ec);
 
+            this.refresh();
         },
     }
 </script>
 
 <style>
     .JRepository{
-
+        height:auto;
     }
 
 </style>

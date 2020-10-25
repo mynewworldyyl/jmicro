@@ -101,7 +101,7 @@ public class AgentLogServiceImpl implements IAgentLogService {
 
 	@Override
 	@SMethod(needLogin=true,maxSpeed=5,maxPacketSize=512)
-	public Resp<Boolean> startLogMonitor(String processId,String logFile, String agentId, 
+	public Resp<Boolean> startLogMonitor(Integer processId,String logFile, String agentId, 
 			int offsetFromLastLine) {
 		
 		Resp<Boolean> resp = new Resp<Boolean>();
@@ -143,7 +143,7 @@ public class AgentLogServiceImpl implements IAgentLogService {
 
 	@Override
 	@SMethod(needLogin=true,maxSpeed=5,maxPacketSize=512)
-	public Resp<Boolean> stopLogMonitor(String processId,String logFile, String agentId) {
+	public Resp<Boolean> stopLogMonitor(Integer processId,String logFile, String agentId) {
 		
 		Resp<Boolean> resp = new Resp<Boolean>();
 		if(!id2Aps.containsKey(agentId)) {

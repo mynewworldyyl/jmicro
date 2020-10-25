@@ -482,13 +482,13 @@ public class PubSubManager {
 						if((result = publish(d)) != PUB_OK) {
 							doCallback(d,result);
 							if(objStorage != null ) {
-								objStorage.updateOrSaveById(TABLE_PUBSUB_ITEMS,d,PSData.class,true);
+								objStorage.updateOrSaveById(TABLE_PUBSUB_ITEMS,d,PSData.class,IObjectStorage._ID,true);
 							}
 						}
 					} else {
 						
 						if(objStorage != null ) {
-							objStorage.updateOrSaveById(TABLE_PUBSUB_ITEMS,d,PSData.class,true);
+							objStorage.updateOrSaveById(TABLE_PUBSUB_ITEMS,d,PSData.class,IObjectStorage.ID,true);
 						}
 						
 						if(d.getLocalCallback() != null) {
@@ -507,7 +507,7 @@ public class PubSubManager {
 				for(PSData d : list) {
 					
 					if(objStorage != null ) {
-						objStorage.updateOrSaveById(TABLE_PUBSUB_ITEMS,d,PSData.class,true);
+						objStorage.updateOrSaveById(TABLE_PUBSUB_ITEMS,d,PSData.class,IObjectStorage._ID,true);
 					}
 					
 					if(d.getLocalCallback() != null) {

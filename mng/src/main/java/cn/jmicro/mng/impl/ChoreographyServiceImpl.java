@@ -22,6 +22,7 @@ import cn.jmicro.api.choreography.AgentInfoVo;
 import cn.jmicro.api.choreography.ChoyConstants;
 import cn.jmicro.api.choreography.Deployment;
 import cn.jmicro.api.choreography.ProcessInfo;
+import cn.jmicro.api.config.Config;
 import cn.jmicro.api.idgenerator.ComponentIdServer;
 import cn.jmicro.api.mng.ConfigNode;
 import cn.jmicro.api.mng.IChoreographyService;
@@ -70,7 +71,7 @@ public class ChoreographyServiceImpl implements IChoreographyService {
 	private Set<PackageResource> packageResources = new HashSet<>();
 	
 	@Override
-	@SMethod(perType=true,needLogin=true,maxSpeed=5,maxPacketSize=512)
+	@SMethod(perType=true,needLogin=true,maxSpeed=5,maxPacketSize=8092)
 	public Resp<Deployment> addDeployment(Deployment dep) {
 		Resp<Deployment> resp = new Resp<>();
 		
@@ -91,9 +92,16 @@ public class ChoreographyServiceImpl implements IChoreographyService {
 		
 		String id = idServer.getStringId(Deployment.class);
 		dep.setId(id);
-		dep.setClientId(JMicroContext.get().getAccount().getClientId());
+		
+		ActInfo ai = JMicroContext.get().getAccount();
+		if(ai.getClientId() != Config.getAdminClientId() || 
+				(ai.getClientId() == Config.getAdminClientId() && dep.getClientId() < 0 )) {
+			dep.setClientId(ai.getClientId());
+		}
 		
 		op.createNodeOrSetData(ChoyConstants.DEP_DIR+"/"+id, JsonUtils.getIns().toJson(dep), false);
+		
+		resp.setData(dep);
 		
 		return resp;
 	}
@@ -162,7 +170,7 @@ public class ChoreographyServiceImpl implements IChoreographyService {
 	}
 
 	@Override
-	@SMethod(perType=true,needLogin=true,maxSpeed=5,maxPacketSize=512)
+	@SMethod(perType=true,needLogin=true,maxSpeed=5,maxPacketSize=8092)
 	public Resp<Boolean> updateDeployment(Deployment dep) {
 		Resp<Boolean> resp = new Resp<>(0);
 		
@@ -232,9 +240,7 @@ public class ChoreographyServiceImpl implements IChoreographyService {
 		 }
 		 
 		result.sort((o1,o2)->{
-			int id1 = Integer.parseInt(o1.getId());
-			int id2 = Integer.parseInt(o2.getId());
-			return id1 > id2 ? 1 : id1 == id2 ? 0 :-1;
+			return o1.getId() > o2.getId() ? 1 : o1.getId() == o2.getId() ? 0 :-1;
 		});
 		resp.setData(result);
 		return resp;
@@ -243,7 +249,7 @@ public class ChoreographyServiceImpl implements IChoreographyService {
 	
 	@Override
 	@SMethod(perType=true,needLogin=true,maxSpeed=5,maxPacketSize=256)
-	public Resp<Boolean> stopProcess(String insId) {
+	public Resp<Boolean> stopProcess(Integer insId) {
 		Resp<Boolean> resp = new Resp<>(0);
 		ProcessInfo pi = this.insManager.getProcessesByInsId(insId, true);
 		if(pi == null) {
@@ -317,7 +323,7 @@ public class ChoreographyServiceImpl implements IChoreographyService {
 			     Iterator<ProcessInfo> ite = pros.iterator();
 				 for(int i = 0; ite.hasNext(); i++) {
 					 ProcessInfo pi = ite.next();
-					 intids[i] = pi.getId();
+					 intids[i] = pi.getId()+"";
 					 depids[i] = pi.getDepId();
 				 }
 				 av.setIntIds(intids);

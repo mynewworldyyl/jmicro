@@ -29,7 +29,7 @@ public class AssignManager {
 	
 	private Map<String,Set<Assign>> agent2Assigns = Collections.synchronizedMap(new HashMap<>());
 	
-	private Map<String,Assign> ins2Assigns = Collections.synchronizedMap(new HashMap<>());
+	private Map<Integer,Assign> ins2Assigns = Collections.synchronizedMap(new HashMap<>());
 	
 	private Map<String,Set<Assign>> dep2Assigns = Collections.synchronizedMap(new HashMap<>());
 	
@@ -149,7 +149,7 @@ public class AssignManager {
 		return ChoyConstants.ROOT_AGENT + "/" + a.getAgentId() + "/" + a.getInsId();
 	}
 	
-	public Assign getAssignByInfoId(String id) {
+	public Assign getAssignByInfoId(Integer id) {
 		return this.ins2Assigns.get(id);
 	}
 	

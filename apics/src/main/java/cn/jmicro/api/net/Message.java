@@ -22,8 +22,10 @@ import java.nio.ByteBuffer;
 
 import cn.jmicro.api.codec.JDataInput;
 import cn.jmicro.api.codec.JDataOutput;
+import cn.jmicro.api.rsa.EncryptUtils;
 import cn.jmicro.common.CommonException;
 import cn.jmicro.common.Constants;
+import cn.jmicro.common.Utils;
 import cn.jmicro.common.util.JsonUtils;
 
 /**
@@ -33,7 +35,9 @@ import cn.jmicro.common.util.JsonUtils;
  */
 public final class Message {
 	
-	public static final int HEADER_LEN = 14;
+	public static final int HEADER_LEN = 18;
+	
+	public static final int SEC_LEN = 128;
 	
 	public static final byte PROTOCOL_BIN = 0;
 	public static final byte PROTOCOL_JSON = 1;
@@ -55,36 +59,50 @@ public final class Message {
 	
 	public static final short MAX_BYTE_VALUE = ((short)Byte.MAX_VALUE)*2;
 	
-	public static final long MAX_INT_VALUE = ((long)Integer.MAX_VALUE) *2;
+	public static final long MAX_INT_VALUE = ((long)Integer.MAX_VALUE)*2;
 	
 	//public static final long MAX_LONG_VALUE = Long.MAX_VALUE*2;
 	
 	public static final byte MSG_VERSION = (byte)1;
 	
 	//长度字段类型，1表示整数，0表示短整数
-    public static final short FLAG_LENGTH_INT = 1 << 0;
+    public static final int FLAG_LENGTH_INT = 1 << 0;
     
 	//调试模式
-	public static final short FLAG_DEBUG_MODE = 1 << 1;
+	public static final int FLAG_DEBUG_MODE = 1 << 1;
 	
 	//需要响应的请求
-	public static final short FLAG_NEED_RESPONSE = 1 << 2;
+	public static final int FLAG_NEED_RESPONSE = 1 << 2;
 	
-	public static final short FLAG_UP_PROTOCOL = 1<<5;
+	public static final int FLAG_UP_PROTOCOL = 1<<5;
 	
-	public static final short FLAG_DOWN_PROTOCOL = 1 << 6;
+	public static final int FLAG_DOWN_PROTOCOL = 1 << 6;
 	
 	//DUMP上行数据
-	public static final short FLAG_DUMP_UP = 1 << 7;
+	public static final int FLAG_DUMP_UP = 1 << 7;
 		
 	//DUMP下行数据
-	public static final short FLAG_DUMP_DOWN = 1 << 8;
+	public static final int FLAG_DUMP_DOWN = 1 << 8;
 	
 	//可监控消息
-	public static final short FLAG_MONITORABLE = 1 << 9;
+	public static final int FLAG_MONITORABLE = 1 << 9;
 	
 	//异步请求响应类消息
-	public static final short FLAG_ASYNC_RESUTN_RESULT = 1 << 13;
+	public static final int FLAG_ASYNC_RESUTN_RESULT = 1 << 13;
+	
+	//加密参数 0：没加密，1：加密
+	public static final int FLAG_UP_SSL = 1 << 14;
+	
+	//是否签名
+	public static final int FLAG_DOWN_SSL = 1 << 15;
+	
+	public static final int FLAG_IS_SEC = 1 << 28;
+	
+	//是否签名： 0:无签名； 1：有签名
+	public static final int FLAG_IS_SIGN = 1 << 29;
+		
+	//加密方式： 0:对称加密，1：RSA 非对称加密
+	public static final int FLAG_ENC_TYPE = 1 << 30;
 	
 	//0B00111000 5---3
 	//public static final short FLAG_LEVEL = 0X38;
@@ -102,6 +120,8 @@ public final class Message {
 	
 	//normal message ID	or JRPC request ID
 	private long reqId;
+	
+	private int insId;
 	
 	//payload length with byte,4 byte length
 	//private int len;
@@ -121,53 +141,323 @@ public final class Message {
 	 * 9        M:       Monitorable
 	 * 10,11,12 LLL      Log level
 	 * 13       A:       async return result，different from async RPC
+	 * 14       US      上行SSL  0:no encrypt 1:encrypt
+	 * 15       DS      下行SSL  0:no encrypt 1:encrypt
 	 * 
-	          A   L  L   L   M  DO UP  DPR  UPR  P    P   N   dm   S
+	 DS   US  A   L  L   L   M  DO UP  DPR  UPR  P    P   N   dm   S
 	 |    |   |   |  |   |   |  |  |   |    |    |    |   |    |   |
      15  14  13  12  11  10  9  8  7   6    5    4    3   2    1   0
      
-	 * @return
-	 */
-	private short flag = 0;
-	
-	/**
-	 * up: dump up stream data
-	 * do: dump down stream data
-	 * M: Monitorable
-	 * L: 日志级别 
-	   A: 异步返回结果，区别于异步RPC
+	* 30       ENT       encrypt type 0:对称加密，1：RSA 非对称加密
+	* 29       SI        是否有签名值 0：无，1：有
+	* 28       SE        密码
+	* 
+	     ENT  SI  SE                                                     
+	 |    |   |   |  |   |   |  |  |   |    |    |    |   |    |   |
+     31  30  29  28  27  26  25 24 23  22   21   20   19  18   17  16
+     
 	 * 
-	 *   A L L L M  do up
-	 * | | | | | |  |  |
-	 * 7 6 5 4 3 2  1  0
 	 * @return
 	 */
-	//private byte flag0 = 0;
-	
-	//request or response
-	//private boolean isReq;
+	private int flag = 0;
 	
 	//2 byte length
 	//private byte ext;
 	
-	private Object payload;	
+	private Object payload;
+	
+	//非对称加密签名
+	private String sign;
+	
+	//对称加密盐值
+	private byte[] salt;
+	
+	//对称加密密钥
+	private byte[] sec;
 	
 	//*****************development mode field begin******************//
 	private long msgId;
 	private long linkId;
 	private long time;
-	private String instanceName;
+	//private String instanceName;
 	private String method;
 	
 	//****************development mode field end*******************//
 	
 	public Message(){}
 	
-	public static boolean is(short flag, short mask) {
+	public static Message decode(JDataInput b) {
+		try {
+			Message msg = new Message();
+			//第0,1,2,3个字节
+			int flag = b.readInt();
+
+			msg.flag =  flag;
+			//ByteBuffer b = ByteBuffer.wrap(data);
+			int len = 0;
+			if(msg.isLengthInt()) {
+				len = b.readInt();
+			} else {
+				len = b.readUnsignedShort(); // len = 数据长度 + 附加数据长度
+			}
+			if(b.remaining() < len){
+				throw new CommonException("Message len not valid");
+			}
+			
+			//第3个字节
+			msg.setVersion(b.readByte());
+			
+			//read type
+			//第4个字节
+			msg.setType(b.readByte());
+			
+			//第5，6，7，8个字节
+			msg.setReqId(b.readInt());
+			
+			//第9，10，11，12个字节
+			msg.setLinkId(b.readInt());
+			
+			//13，14个字节
+			msg.setInsId(b.readUnsignedShort());
+			
+			if(msg.isDebugMode()) {
+				//读取测试数据头部
+				msg.setId(b.readLong());
+				msg.setTime(b.readLong());
+				len -= 16;
+				
+				//msg.setInstanceName(b.readUTF());
+				msg.setMethod(b.readUTF());
+				//减去测试数据头部长度
+				//len -= JDataOutput.encodeStringLen(msg.getInstanceName());
+				len -= JDataOutput.encodeStringLen(msg.getMethod());
+			}
+			
+			if(msg.isSign()) {
+				//非对称加密同时需要签名，对称加密不需要签名
+				msg.setSign(b.readUTF());
+				len -= JDataOutput.encodeStringLen(msg.getSign());
+			}
+			
+			if(!msg.isRsaEnc() && (msg.isUpSsl() || msg.isDownSsl())) {
+				//对称加密盐值
+				byte[] sa = new byte[EncryptUtils.SALT_LEN];
+				b.readFully(sa);
+				len -= EncryptUtils.SALT_LEN;
+				msg.setSalt(sa);
+			}
+			
+			if(msg.isSec()) {
+				byte[] sa = new byte[SEC_LEN];
+				b.readFully(sa);
+				len -= SEC_LEN;
+				msg.setSec(sa);
+			}
+			
+			if(len > 0){
+				byte[] payload = new byte[len];
+				b.readFully(payload,0,len);
+				msg.setPayload(ByteBuffer.wrap(payload));
+			} else {
+				msg.setPayload(null);
+			}
+			
+			msg.setLen(len/*+ Message.HEADER_LEN*/);
+			
+			return msg;
+		} catch (IOException e) {
+			throw new CommonException("error",e);
+		}
+	}
+	
+	public ByteBuffer encode() {
+		
+		JDataOutput b = new JDataOutput(512);
+		
+		boolean debug = this.isDebugMode();
+
+		ByteBuffer data = null;
+		if(this.getPayload() instanceof ByteBuffer) {
+			data = (ByteBuffer)this.getPayload();
+		} else {
+			String json = JsonUtils.getIns().toJson(this.getPayload());
+			try {
+				data = ByteBuffer.wrap(json.getBytes(Constants.CHARSET));
+			} catch (UnsupportedEncodingException e) {
+				e.printStackTrace();
+			}
+		}
+		
+		data.mark();
+		
+		int len = 0;//数据长度 + 附加数据长度
+		if(data != null){
+			len = data.remaining();
+		}
+		
+		if(debug) {
+			len += JDataOutput.encodeStringLen(method);
+			//2个long的长度，2*8=8
+			len += 16;
+		}
+		
+		if(this.isSign()) {
+			len += JDataOutput.encodeStringLen(sign);
+		}
+		
+		if(this.salt != null && this.salt.length > 0) {
+			//对称加密盐值
+			len += this.salt.length;
+		}
+		
+		if(this.isSec()) {
+			len += SEC_LEN;
+		}
+		
+		//第1，2个字节 ,len = 数据长度 + 测试模式时附加数据长度
+		if(len < MAX_SHORT_VALUE) {
+			this.setLengthType(false);
+		} else if(len < MAX_INT_VALUE){
+			this.setLengthType(true);
+		} else {
+			throw new CommonException("Data length too long than :"+MAX_INT_VALUE+", but value "+len);
+		}
+		
+		try {
+			//第0,1,2,3个字节，标志头
+			//b.put(this.flag);
+			b.writeInt(this.flag);
+			
+			if(len < 65535) {
+				//第2，3个字节 ,len = 数据长度 + 测试模式时附加数据长度
+				b.writeUnsignedShort(len);
+			}else if(len < Integer.MAX_VALUE){
+				//消息内内容最大长度为MAX_VALUE 2,3,4,5
+				b.writeInt(len);
+			} else {
+				throw new CommonException("Max int value is :"+ Integer.MAX_VALUE+", but value "+len);
+			}
+			
+			//b.putShort((short)0);
+			
+			//第3个字节
+			//b.put(this.version);
+			b.writeByte(this.version);
+			
+			//第4个字节
+			//writeUnsignedShort(b, this.type);
+			//b.put(this.type);
+			b.writeByte(this.type);
+			
+			//第5，6，7，8个字节
+			//writeUnsignedInt(b, this.reqId);
+			b.writeInt((int)reqId);
+			
+			//第9，10，11，12个字节
+			//writeUnsignedInt(b, this.linkId);
+			b.writeInt((int)linkId);
+			
+			//13，14个字节
+			b.writeUnsignedShort(this.insId);
+			
+			if(debug) {
+				b.writeLong(this.getId());
+				b.writeLong(this.getTime());
+				try {
+					b.writeUTF(this.method);
+				} catch (IOException e) {
+					throw new CommonException("",e);
+				}
+			}
+			
+			if(this.isSign()) {
+				try {
+					b.writeUTF(this.sign);
+				} catch (IOException e) {
+					throw new CommonException("",e);
+				}
+			}
+			
+			if(this.salt != null && this.salt.length > 0) {
+				//对称加密盐值
+				//b.write(this.salt.length);
+				b.write(this.salt);
+			}/*else {
+				b.write(0);
+			}*/
+			
+			if(this.isSec()) {
+				//b.write(this.sec.length);
+				b.write(this.sec);
+			}
+			
+			if(data != null){
+				//b.put(data);
+				b.write(data);
+				data.reset();
+			}
+			
+			//b.flip();
+			ByteBuffer bb = b.getBuf();
+			this.len = bb.limit();
+			return bb;
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		return null;
+	}
+	
+	public static Message readMessage(ByteBuffer cache){
+		
+		//保存读数据位置
+		int pos = cache.position();
+		
+		//数据总长是否可构建一个包的最小长度
+		int totalLen = cache.remaining();
+		if(totalLen < Message.HEADER_LEN) {
+			//可读的数据长度小于头部长度
+			return null;
+		}
+		
+		//取第一个字节标志位
+		int f = cache.getInt();
+		int len = 0;
+		int headerLen = Message.HEADER_LEN;
+		//取第二，第三个字节 数据长度
+	    if(is(f,FLAG_LENGTH_INT)) {
+	    	//数据长度不可能起过整数的最大值
+	    	//len = cache.getInt();
+	    	len = cache.getInt();
+	    	//还原读数据公位置
+			cache.position(pos);
+			headerLen = headerLen + 2;
+	    	if(totalLen < len + headerLen){
+				//还不能构成一个足够长度的数据包
+				return null;
+			}
+	    } else {
+	    	len = Message.readUnsignedShort(cache);
+	    	//还原读数据公位置
+			cache.position(pos);
+	    	if(totalLen < len + headerLen){
+				//还不能构成一个足够长度的数据包
+				return null;
+			}
+	    }
+		
+		byte[] data = new byte[len + headerLen];
+		//从缓存中读一个包,cache的position往前推
+		cache.get(data, 0, len + headerLen);
+		
+		return Message.decode(new JDataInput(ByteBuffer.wrap(data)));
+        
+	}
+	
+	public static boolean is(int flag, int mask) {
 		return (flag & mask) != 0;
 	}
 	
-	public static short set(boolean isTrue,short f,short mask) {
+	public static int set(boolean isTrue,int f,int mask) {
 		return isTrue ?(f |= mask) : (f &= ~mask);
 	}
 	
@@ -181,6 +471,46 @@ public final class Message {
 	
 	public void setAsyncReturnResult(boolean f) {
 		flag = set(f,flag,FLAG_ASYNC_RESUTN_RESULT);
+	}
+	
+	public boolean isUpSsl() {
+		return is(flag,FLAG_UP_SSL);
+	}
+	
+	public void setUpSsl(boolean f) {
+		flag = set(f,flag,FLAG_UP_SSL);
+	}
+	
+	public boolean isDownSsl() {
+		return is(flag,FLAG_DOWN_SSL);
+	}
+	
+	public void setDownSsl(boolean f) {
+		flag = set(f,flag,FLAG_DOWN_SSL);
+	}
+	
+	public boolean isRsaEnc() {
+		return is(flag,FLAG_ENC_TYPE);
+	}
+	
+	public void setEncType(boolean f) {
+		flag = set(f,flag,FLAG_ENC_TYPE);
+	}
+	
+	public boolean isSign() {
+		return is(flag,FLAG_IS_SIGN);
+	}
+	
+	public void setSign(boolean f) {
+		flag = set(f,flag,FLAG_IS_SIGN);
+	}
+	
+	public boolean isSec() {
+		return is(flag, FLAG_IS_SEC);
+	}
+	
+	public void setSec(boolean f) {
+		flag = set(f,flag, FLAG_IS_SEC);
 	}
 	
 	public boolean isDumpUpStream() {
@@ -229,7 +559,6 @@ public final class Message {
 	}
 	
 	/**
-	 * 
 	 * @param f true 表示整数，false表示短整数
 	 */
 	public void setLengthType(boolean f) {
@@ -249,7 +578,7 @@ public final class Message {
 		if(l > PRIORITY_3 || l < PRIORITY_0) {
 			 new CommonException("Invalid priority: "+l);
 		}
-		this.flag = (short)((l << 3) | this.flag);
+		this.flag = (l << 3) | this.flag;
 	}
 	
 	public byte getLogLevel() {
@@ -260,7 +589,7 @@ public final class Message {
 		if(v < 0 || v > 6) {
 			 new CommonException("Invalid Log level: "+v);
 		}
-		this.flag = (short)((v << 10) | this.flag);
+		this.flag = (v << 10) | this.flag;
 	}
 	
 	public byte getUpProtocol() {
@@ -281,240 +610,7 @@ public final class Message {
 		flag = set(protocol == PROTOCOL_JSON,flag,FLAG_DOWN_PROTOCOL);
 	}
 	
-	public static Message decode(JDataInput b) {
-		try {
-			Message msg = null;
-			//第0个字节
-			short flag = b.readShort();
-
-			msg = new Message();
-			msg.flag =  flag;
-			//ByteBuffer b = ByteBuffer.wrap(data);
-			int len = 0;
-			if(is(flag,FLAG_LENGTH_INT)) {
-				len = b.readInt();
-			} else {
-				len = b.readUnsignedShort(); // len = 数据长度 + 测试模式时附加数据长度
-			}
-			if(b.remaining() < len){
-				throw new CommonException("Message len not valid");
-			}
-			
-			//第3个字节
-			msg.setVersion(b.readByte());
-			
-			//read type
-			//第4个字节
-			msg.setType(b.readByte());
-			
-			//第5，6，7，8个字节
-			msg.setReqId(b.readInt());
-			
-			//第9，10，11，12个字节
-			msg.setLinkId(b.readInt());
-			
-			//第13个字节
-			//msg.flag0 = b.readByte();
-			
-			if(msg.isDebugMode()) {
-				//读取测试数据头部
-				msg.setId(b.readLong());
-				msg.setTime(b.readLong());
-				len -= 16;
-				
-				msg.setInstanceName(b.readUTF());
-				msg.setMethod(b.readUTF());
-				//减去测试数据头部长度
-				len -= JDataOutput.encodeStringLen(msg.getInstanceName());
-				len -= JDataOutput.encodeStringLen(msg.getMethod());
-			}
-			
-			if(len > 0){
-				byte[] payload = new byte[len];
-				b.readFully(payload,0,len);
-				msg.setPayload(ByteBuffer.wrap(payload));
-			}else {
-				msg.setPayload(null);
-			}
-			
-			msg.setLen(len /*+ Message.HEADER_LEN*/);
-			
-			return msg;
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-		return null;
-	}
 	
-	public ByteBuffer encode() {
-		
-		JDataOutput b = new JDataOutput(512);
-		
-		//ByteBuffer b =  null;
-		
-		boolean debug = this.isDebugMode();
-
-		ByteBuffer data = null;
-		if(this.getPayload() instanceof ByteBuffer) {
-			data = (ByteBuffer)this.getPayload();
-		} else {
-			String json = JsonUtils.getIns().toJson(this.getPayload());
-			try {
-				data = ByteBuffer.wrap(json.getBytes(Constants.CHARSET));
-			} catch (UnsupportedEncodingException e) {
-				e.printStackTrace();
-			}
-		}
-		
-		data.mark();
-		
-		int len = 0;//数据长度 + 测试模式时附加数据长度
-		if(data != null){
-			len = data.remaining();
-		}
-		
-		if(debug) {
-			len += JDataOutput.encodeStringLen(instanceName);
-			len += JDataOutput.encodeStringLen(method);
-			//2个long的长度，2*8=8
-			len += 16;
-		}
-		
-		//len += Message.HEADER_LEN
-		
-		//第1，2个字节 ,len = 数据长度 + 测试模式时附加数据长度
-		if(len < MAX_SHORT_VALUE) {
-			this.setLengthType(false);
-			//b = ByteBuffer.allocate(len + Message.HEADER_LEN);
-		} else if(len < MAX_INT_VALUE){
-			this.setLengthType(true);
-			//b = ByteBuffer.allocate(len + Message.HEADER_LEN+2);
-		} else {
-			throw new CommonException("Data length too long than :"+MAX_INT_VALUE+", but value "+len);
-		}
-		
-		try {
-			//第0,1个字节，标志头
-			//b.put(this.flag);
-			b.writeShort(this.flag);
-			
-			if(len < 65535) {
-				//第2，3个字节 ,len = 数据长度 + 测试模式时附加数据长度
-				//this.setLengthType(false);
-				//writeUnsignedShort(b, len);
-				b.writeUnsignedShort(len);
-			}else if(len < Integer.MAX_VALUE){
-				//消息内内容最大长度为MAX_VALUE 2,3,4,5
-				//this.setLengthType(true);
-				//b.putInt(len);
-				b.writeInt(len);
-			} else {
-				throw new CommonException("Max int value is :"+ Integer.MAX_VALUE+", but value "+len);
-			}
-			
-			//b.putShort((short)0);
-			
-			//第3个字节
-			//b.put(this.version);
-			b.writeByte(this.version);
-			
-			//第4个字节
-			//writeUnsignedShort(b, this.type);
-			//b.put(this.type);
-			b.writeByte(this.type);
-			
-			//第5，6，7，8个字节
-			//writeUnsignedInt(b, this.reqId);
-			b.writeInt((int)reqId);
-			
-			//第9，10，11，12个字节
-			//writeUnsignedInt(b, this.linkId);
-			b.writeInt((int)linkId);
-			
-			//第13个字节
-			//b.put(this.flag0);
-			//b.writeByte(this.flag0);
-			
-			if(debug) {
-				//b.putLong(this.getId());
-				//b.putLong(this.getTime());
-				b.writeLong(this.getId());
-				b.writeLong(this.getTime());
-				
-				try {
-					//JDataOutput.writeString(b, this.instanceName);
-					//JDataOutput.writeString(b, this.method);
-					b.writeUTF(this.instanceName);
-					b.writeUTF(this.method);
-				} catch (IOException e) {
-					throw new CommonException("",e);
-				}
-				
-				//OnePrefixTypeEncoder.encodeString(b, this.instanceName);
-				//OnePrefixTypeEncoder.encodeString(b, this.method);
-			}
-			
-			if(data != null){
-				//b.put(data);
-				b.write(data);
-				data.reset();
-			}
-			
-			//b.flip();
-			ByteBuffer bb = b.getBuf();
-			this.len = bb.limit();
-			return bb;
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-		return null;
-	}
-	
-	public static Message readMessage(ByteBuffer cache){
-		
-		//保存读数据位置
-		int pos = cache.position();
-		
-		//数据总长是否可构建一个包的最小长度
-		int totalLen = cache.remaining();
-		if(totalLen < Message.HEADER_LEN) {
-			//可读的数据长度小于头部长度
-			return null;
-		}
-		
-		//取第一个字节标志位
-		short f = cache.getShort();
-		int len = 0;
-		int headerLen = Message.HEADER_LEN;
-		//取第二，第三个字节 数据长度
-	    if(is(f,FLAG_LENGTH_INT)) {
-	    	//数据长度不可能起过整数的最大值
-	    	//len = cache.getInt();
-	    	len = cache.getInt();
-	    	//还原读数据公位置
-			cache.position(pos);
-			headerLen = headerLen + 2;
-	    	if(totalLen < len + headerLen){
-				//还不能构成一个足够长度的数据包
-				return null;
-			}
-	    } else {
-	    	len = Message.readUnsignedShort(cache);
-	    	//还原读数据公位置
-			cache.position(pos);
-	    	if(totalLen < len + headerLen){
-				//还不能构成一个足够长度的数据包
-				return null;
-			}
-	    }
-		
-		byte[] data = new byte[len + headerLen];
-		//从缓存中读一个包,cache的position往前推
-		cache.get(data, 0, len+headerLen);
-		
-		return Message.decode(new JDataInput(ByteBuffer.wrap(data)));
-        
-	}
 	
 	public static void writeUnsignedShort(ByteBuffer b,int v) {
 		if(v > MAX_SHORT_VALUE) {
@@ -639,12 +735,20 @@ public final class Message {
 		this.type = type;
 	}
 	
-	public short getFlag() {
+	public int getFlag() {
 		return flag;
 	}
 
-	public void setFlag(short flag) {
+	public void setFlag(int flag) {
 		this.flag = flag;
+	}
+
+	public String getSign() {
+		return sign;
+	}
+
+	public void setSign(String sign) {
+		this.sign = sign;
 	}
 
 	public Object getPayload() {
@@ -678,14 +782,6 @@ public final class Message {
 		this.time = time;
 	}
 
-	public String getInstanceName() {
-		return instanceName;
-	}
-
-	public void setInstanceName(String instanceName) {
-		this.instanceName = instanceName;
-	}
-
 	public String getMethod() {
 		return method;
 	}
@@ -701,6 +797,30 @@ public final class Message {
 	public void setStartTime(long startTime) {
 		this.startTime = startTime;
 	}
+	
+	public int getInsId() {
+		return insId;
+	}
+
+	public void setInsId(int insId) {
+		this.insId = insId;
+	}
+
+	public byte[] getSalt() {
+		return salt;
+	}
+
+	public void setSalt(byte[] salt) {
+		this.salt = salt;
+	}
+	
+	public byte[] getSec() {
+		return sec;
+	}
+
+	public void setSec(byte[] sec) {
+		this.sec = sec;
+	}
 
 	@Override
 	public String toString() {
@@ -710,7 +830,7 @@ public final class Message {
 				+ ", devMode=" + this.isDebugMode() + ", monitorable="+ this.isMonitorable() 
 				+ ", needresp="+ this.isNeedResponse()
 				+ ", upstream=" + this.isDumpUpStream() + ", downstream="+ this.isDumpDownStream() 
-				+ ", instanceName=" + instanceName + ", method=" + method + "]";
+				+ ", insId=" + insId + ", method=" + method + "]";
 	}
 
 	

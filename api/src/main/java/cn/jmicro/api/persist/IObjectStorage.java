@@ -44,9 +44,9 @@ public interface IObjectStorage {
 	
 	<T> boolean  save(String table,T[] val,Class<T> cls,boolean async,boolean toDocument);
 	
-	<T> boolean updateById(String table,T val,Class<T> targetClass,boolean async);
+	<T> boolean updateById(String table,T val,Class<T> targetClass,String idName, boolean async);
 	
-	<T> boolean updateOrSaveById(String table, T val,Class<T> cls,boolean async);
+	<T> boolean updateOrSaveById(String table, T val,Class<T> cls,String tidName,boolean async);
 	
 	<T> boolean update(String table, Object filter, Object updater, Class<T> cls);
 	

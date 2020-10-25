@@ -20,7 +20,7 @@ public class TestServiceAgent extends JMicroBaseTestCase {
 		
 		IAgentProcessService ms = of.get(IAgentProcessService.class);
 		
-		Boolean resp = ms.startLogMonitor("450", "output.log", 1);
+		Boolean resp = ms.startLogMonitor(450, "output.log", 1);
 		
 		System.out.println(resp);
 		

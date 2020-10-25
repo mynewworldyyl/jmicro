@@ -112,7 +112,7 @@ public class TestRpcRequest {
 		msg.setMonitorable(true);
 		msg.setDebugMode(true);
 		
-		msg.setInstanceName(Config.getInstanceName());
+		msg.setInsId(1);
 		msg.setTime(System.currentTimeMillis());
 		msg.setLinkId(333L);
 		msg.setMethod("testmethod");

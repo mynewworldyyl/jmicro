@@ -456,7 +456,7 @@ public class ExpUtils {
 		 }
 	}
 
-	private static boolean isNumber(char charAt) {
+	public static boolean isNumber(char charAt) {
 		return charAt >= '0' && charAt <= '9';
 	}
 

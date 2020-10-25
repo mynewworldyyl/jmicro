@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package cn.jmicro.example.test;
+package cn.jmicro.example.test.apigateway;
 
 import java.util.Timer;
 import java.util.TimerTask;
@@ -23,18 +23,21 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 import cn.jmicro.api.JMicro;
+import cn.jmicro.api.Resp;
 import cn.jmicro.api.pubsub.PSData;
+import cn.jmicro.api.security.ISecretService;
+import cn.jmicro.api.security.JmicroPublicKey;
 import cn.jmicro.api.test.Person;
 import cn.jmicro.common.Constants;
+import cn.jmicro.common.util.JsonUtils;
 import cn.jmicro.example.api.ITestRpcService;
 import cn.jmicro.example.api.rpc.ISimpleRpc;
-import cn.jmicro.example.api.rpc.genclient.ISimpleRpc$JMAsyncClient;
 import cn.jmicro.gateway.client.ApiGatewayClient;
 import cn.jmicro.gateway.client.ApiGatewayConfig;
 import cn.jmicro.gateway.pubsub.ApiGatewayPubsubClient;
 import cn.jmicro.gateway.pubsub.PSDataListener;
 
-public class TestApigateClient {
+public class TestApigateClient  /*extends JMicroBaseTestCase*/{
 	
 	private String TOPIC = "/jmicro/test/topic01";
 
@@ -46,7 +49,7 @@ public class TestApigateClient {
 	
 	//private ApiGatewayClient wsClient = new ApiGatewayClient(new ApiGatewayConfig(Constants.TYPE_WEBSOCKET,"192.168.56.1",9090));
 	
-	public static void main(String[] args) {
+	/*public static void main(String[] args) {
 		//ApiGatewayClient socketClient = new ApiGatewayClient(new ApiGatewayConfig(Constants.TYPE_HTTP,"192.168.56.1",9090));
 		//ISimpleRpc srv = socketClient.getService(ISimpleRpc.class,"simpleRpc", "0.0.1");
 		//System.out.println(srv.hi(new Person()));
@@ -57,27 +60,27 @@ public class TestApigateClient {
 		ApiGatewayClient socketClient =  ApiGatewayClient.getClient();
 		
 		ISimpleRpc$JMAsyncClient srv = socketClient.getService(ISimpleRpc$JMAsyncClient.class,"simpleRpc", "0.0.1");
-		/*srv.hiJMAsync(new Person(),null).then((val,fail,ctx) -> {
+		srv.hiJMAsync(new Person(),null).then((val,fail,ctx) -> {
 			System.out.println("Hi: " +val);
 			//System.out.println(fail);
-		});*/
+		});
 		
-		/*srv.helloJMAsync("Hello jmicro: ").then((val,fail,ctx) -> {
+		srv.helloJMAsync("Hello jmicro: ").then((val,fail,ctx) -> {
 			System.out.println("Hello: " +val);
 			//System.out.println(fail);
-		});*/
+		});
 		
 		System.out.println("Hello: " +srv.hello("Hello jmicro: "));
 		
 		JMicro.waitForShutdown();
-	}
+	}*/
 	
 	//private ApiGatewayClient socketClient = new ApiGatewayClient(new ApiGatewayConfig(Constants.TYPE_SOCKET,"192.168.56.1",9092));
 	
-	private ApiGatewayClient socketClient = null;
+	private static ApiGatewayClient socketClient = null;
 	
 	@BeforeClass
-	public void setUp() {
+	public static void setUp() {
 		ApiGatewayClient.initClient(new ApiGatewayConfig(Constants.TYPE_SOCKET,"jmicro.cn",9092));
 		socketClient =  ApiGatewayClient.getClient();
 	}
@@ -278,5 +281,29 @@ public class TestApigateClient {
 		JMicro.waitForShutdown();
 	}
 	
+	@Test
+	public void testGatewayCreateSecret() {
+		socketClient.loginJMAsync("jmicro", "0")
+		.success((resp,cxt)->{
+			ISecretService secSrv = socketClient.getService(ISecretService.class, "sec","0.0.1");
+			Resp<JmicroPublicKey> rj = secSrv.createSecret("mng", "mng123");
+			
+			org.junit.Assert.assertNotNull(rj);
+			org.junit.Assert.assertTrue(rj.getCode() == 0);
+			org.junit.Assert.assertNotNull(rj.getData());
+			
+			System.out.println(JsonUtils.getIns().toJson(rj.getData()));
+		})
+		.fail((code,msg,cxt)->{
+			System.out.println("Fail login: code"+ code + ", msg: " + msg);
+		});
+		
+		JMicro.waitForShutdown();
+	}
+
+	@Test
+	public void testGatewayCreateSecret01() {
+		System.out.println("test");
+	}
 	
 }

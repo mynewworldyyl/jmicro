@@ -60,6 +60,7 @@ public final class ServiceItem implements Comparable<ServiceItem>{
 	public static final String I_I_SEPERATOR="####";
 	
 	public static final String KV_SEPERATOR="=";
+	
 	public static final String VAL_SEPERATOR="&";
 	
 	public static final String KEY_SEPERATOR="##";
@@ -132,10 +133,16 @@ public final class ServiceItem implements Comparable<ServiceItem>{
 	
 	private int clientId = 0;
 	
+	private int insId  = 0;
+	
 	//configurable from mng UI
 	private boolean showFront = true;
 	
 	private boolean external = false;
+	
+	private byte feeType = Constants.LICENSE_TYPE_FREE;
+	
+	private int[] authClients;
 	
 	private Set<ServiceMethod> methods = new HashSet<>();
 	
@@ -191,6 +198,9 @@ public final class ServiceItem implements Comparable<ServiceItem>{
 		this.external = p.external;
 		this.showFront = p.showFront;
 		this.createdTime = p.createdTime;
+		
+		this.feeType = p.feeType;
+		this.authClients = p.authClients;
 		
 		for(ServiceMethod sm : p.getMethods()){
 			ServiceMethod nsm = this.getMethod(sm.getKey().getMethod(), sm.getKey().getParamsStr());
@@ -583,6 +593,29 @@ public final class ServiceItem implements Comparable<ServiceItem>{
 	public void setClientId(int clientId) {
 		this.clientId = clientId;
 	}
-	
+
+	public byte getFeeType() {
+		return feeType;
+	}
+
+	public void setFeeType(byte feeType) {
+		this.feeType = feeType;
+	}
+
+	public int[] getAuthClients() {
+		return authClients;
+	}
+
+	public void setAuthClients(int[] authClients) {
+		this.authClients = authClients;
+	}
+
+	public int getInsId() {
+		return insId;
+	}
+
+	public void setInsId(int insId) {
+		this.insId = insId;
+	}
 	
 }

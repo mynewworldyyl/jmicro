@@ -11,7 +11,7 @@ public interface IAgentLogService {
 
 	Resp<List<LogFileEntry>> getAllLogFileEntry();
 	
-	Resp<Boolean> startLogMonitor(String processId,String logPath,String agentId, int offsetFromLastLine);
+	Resp<Boolean> startLogMonitor(Integer processId,String logPath,String agentId, int offsetFromLastLine);
 	
-	Resp<Boolean> stopLogMonitor(String processId,String logPath,String agentId);
+	Resp<Boolean> stopLogMonitor(Integer processId,String logPath,String agentId);
 }

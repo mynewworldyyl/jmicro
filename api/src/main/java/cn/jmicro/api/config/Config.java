@@ -16,11 +16,17 @@
  */
 package cn.jmicro.api.config;
 
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.security.interfaces.RSAPrivateKey;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -34,8 +40,11 @@ import org.slf4j.LoggerFactory;
 
 import cn.jmicro.api.ClassScannerUtils;
 import cn.jmicro.api.annotation.Component;
-import cn.jmicro.api.monitor.LG;
+import cn.jmicro.api.exp.ExpUtils;
+import cn.jmicro.api.monitor.MC;
+import cn.jmicro.api.raft.IDataListener;
 import cn.jmicro.api.raft.IDataOperator;
+import cn.jmicro.api.rsa.EncryptUtils;
 import cn.jmicro.common.CommonException;
 import cn.jmicro.common.Constants;
 import cn.jmicro.common.Utils;
@@ -47,14 +56,14 @@ import cn.jmicro.common.util.StringUtils;
  * @date 2018年10月4日-上午11:54:53
  */
 @Component(value="defaultConfig",lazy=false,level = 0)
-public class Config implements IConfigChangeListener{
+public class Config{
 	
 	private final static Logger logger = LoggerFactory.getLogger(Config.class);
 	
 	private static String RegistryProtocol = "zookeeper";
+	
 	private static String RegistryHost = "localhost:2181";
 	
-	public static final String JMICRO_VERSION = "0.0.2";
 	//private static String RegistryPort = "2181";
 	
 	//private static String Host = "";
@@ -114,25 +123,40 @@ public class Config implements IConfigChangeListener{
 	
 	private static String[] BasePackages = {"cn.jmicro"};
 	
-	private final Map<String,String> servicesConfig = new HashMap<>();
+	private static final Map<String,String> servicesConfig = new HashMap<>();
 	
-	private final Map<String,String> globalConfig = new HashMap<>();
+	private static final Map<String,String> globalConfig = new HashMap<>();
 	
 	private static Map<String,String> CommadParams = new HashMap<>();
 	
 	private static Map<String,String> extConfig = new HashMap<>();
-	
-	private static int clientId = -1;
-	
-	private static int adminClientId = -1;
-	
-	private static boolean adminSystem = false;
 	
 	private Map<String,Set<IConfigChangeListener>> configChangeListeners = new HashMap<>();
 	
 	private Map<String,Set<IConfigChangeListener>> patternConfigChangeListeners = new HashMap<>();
 	
 	private IDataOperator dataOperator;
+
+	private IDataListener dataListener = new IDataListener(){
+		@Override
+		public void dataChanged(String path, String val) {
+			if(path.startsWith(GROBAL_CONFIG)) {
+				String supath = path.substring(GROBAL_CONFIG.length(),path.length());
+				globalConfig.put(supath, val);
+				notifiListener(supath,val);
+			}else if(path.startsWith(ServiceConfigDir)) {
+				String supath = path.substring(ServiceConfigDir.length(),path.length());
+				if(CONS_PARAMS_KEYS.containsKey(path)) {
+					return;
+				}
+				servicesConfig.put(supath, val);
+				notifiListener(supath,val);
+			}else {
+				throw new CommonException("Invalid path: " + path);
+			}
+		}
+	};
+
 	
 	public Config() {}
 	
@@ -165,17 +189,6 @@ public class Config implements IConfigChangeListener{
 			}
 		}
 		
-		clientId = getCommandParam(Constants.CLIENT_ID,Integer.class,-1);
-		if(clientId < 0) {
-			throw new CommonException("Invalid clientId :" + clientId);
-		}
-		
-		LG.SYSTEM_LOG_LEVEL = getCommandParam(Constants.SYSTEM_LOG_LEVEL, Byte.class, LG.SYSTEM_LOG_LEVEL);
-		
-		adminClientId = getCommandParam(Constants.ADMIN_CLIENT_ID,Integer.class,-1);
-		
-		adminSystem = adminClientId > -1 && clientId == adminClientId;
-		
 		loadExtConfig();
 		
 		if(contain(Constants.BASE_PACKAGES_KEY,CommadParams)) {
@@ -198,7 +211,6 @@ public class Config implements IConfigChangeListener{
 		if(StringUtils.isEmpty(registry)) {
 			registry = "zookeeper://127.0.0.1:2181";
 		}
-		
 
 		RegistryHost = null;
 		String[] arr = registry.split(",");
@@ -206,7 +218,7 @@ public class Config implements IConfigChangeListener{
 			int index = one.indexOf("://");
 			if(index > 0){
 				RegistryProtocol = one.substring(0,index);
-			}else {
+			} else {
 				throw new CommonException("Invalid registry url: "+ registry);
 			}
 			one = one.substring(index+3);
@@ -240,20 +252,22 @@ public class Config implements IConfigChangeListener{
 	private void initInstanceName() {
 		
 		String dataDir = getCommandParam(Constants.LOCAL_DATA_DIR);
-		
-		String prefix = this.getString(Constants.INSTANCE_NAME,Constants.INSTANCE_NAME);
-		
 		if(StringUtils.isEmpty(dataDir)) {
 			throw new CommonException(dataDir + " cannot be NULL");
 		}
 		
 		String insName = null;
-		
 		File ud = null;
 		File dir = new File(dataDir);
 		
 		if(!dir.exists()) {
 			dir.mkdirs();
+		}
+		
+		String prefix = this.getString(Constants.INSTANCE_NAME,Constants.INSTANCE_NAME);
+		
+		if(ExpUtils.isNumber(prefix.charAt(prefix.length()-1))) {
+			throw new CommonException("Instance name cannot end with number:" + prefix);
 		}
 		
 		//优先在本地目录中寻找
@@ -278,7 +292,6 @@ public class Config implements IConfigChangeListener{
 		
 		if(insName == null) {
 			//实例名前缀，默认前缀是instanceName，
-			
 			for(int i = 0; i < Integer.MAX_VALUE ; i++) {
 				String name = prefix + i;
 				ud = new File(dir,name);
@@ -295,12 +308,14 @@ public class Config implements IConfigChangeListener{
 			throw new CommonException("Fail to get instance name");
 		}
 		
-		String localDataDir = CommadParams.get(Constants.LOCAL_DATA_DIR);
-		File f = new File(localDataDir,insName);
+		//String localDataDir = CommadParams.get(Constants.LOCAL_DATA_DIR);
+		File f = new File(dataDir,insName);
 		if(!f.exists()) {
 			f.mkdir();
 		}
 		CommadParams.put(Constants.INSTANCE_DATA_DIR, f.getAbsolutePath());
+		
+		CommadParams.put(Constants.INSTANCE_NAME, insName);
 		
 		InstanceName = insName;
 	}
@@ -382,15 +397,27 @@ public class Config implements IConfigChangeListener{
 		
 	}
 	
+	public static byte getSystemLogLevel() {
+		return getCommandParam(Constants.SYSTEM_LOG_LEVEL, Byte.class, MC.LOG_ERROR);
+	}
+	
 	public static boolean isAdminSystem() {
+		int clientId = getClientId();
+		int adminClientId = getAdminClientId();
+		boolean adminSystem = adminClientId > -1 && clientId == adminClientId;
 		return adminSystem;
 	}
 	
 	public static int getClientId() {
+		int clientId = getCommandParam(Constants.CLIENT_ID,Integer.class,-1);
+		if(clientId < 0) {
+			throw new CommonException("Invalid clientId :" + clientId);
+		}
 		return clientId;
 	}
 	
 	public static int getAdminClientId() {
+		int adminClientId = getCommandParam(Constants.ADMIN_CLIENT_ID,Integer.class,-1);
 		return adminClientId;
 	}
 	
@@ -409,101 +436,70 @@ public class Config implements IConfigChangeListener{
 		if(basePackages == null || basePackages.size() == 0) {
 			return;
 		}
+		StringBuffer sb = new StringBuffer();
 		Set<String> set = new HashSet<>();
 		for(String p: basePackages) {
 			set.add(p.trim());
+			sb.append(p.trim()).append(",");
 		}
 		for(String p: BasePackages) {
 			set.add(p.trim());
+			sb.append(p.trim()).append(",");
 		}
 		String[] pps = new String[set.size()];
 		set.toArray(pps);
 		BasePackages = pps;
+		
+		if(sb.length() > 0) {
+			sb.deleteCharAt(sb.length()-1);
+		}
+		CommadParams.put(Constants.BASE_PACKAGES_KEY, sb.toString());
 	}
 	
-	public void loadConfig(Set<IConfigLoader> configLoaders){
-		
-		//加载全局配置
-		for(IConfigLoader cl : configLoaders){
-			cl.setDataOperator(this.dataOperator);
-			cl.load(GROBAL_CONFIG,this.globalConfig);
-			cl.setConfigChangeListener(this);
+	private void createParam2Raft() {
+		for(Map.Entry<String, String> e : CommadParams.entrySet()) {
+			String p = e.getKey();
+			if(!p.startsWith("/")) {
+				p = "/" + p;
+			}
+			servicesConfig.put(p, e.getValue());
+			String fullpath = ServiceConfigDir + p;
+			this.dataOperator.createNodeOrSetData(fullpath, e.getValue(),true);
+			if(!CONS_PARAMS_KEYS.containsKey(p)) {
+				dataOperator.addDataListener(fullpath, this.dataListener);
+			}
 		}
 		
-		initInstanceName();
-		
-		String path = Config.InstanceDir +"/"+Config.getInstanceName()+"_ipPort";
-		if(dataOperator.exist(path)) {
-			dataOperator.setData(path, "");
+		for(Map.Entry<String, String> e : extConfig.entrySet()) {
+			String p = e.getKey();
+			if(!p.startsWith("/")) {
+				p = "/" + p;
+			}
+			if(!servicesConfig.containsKey(p)) {
+				createConfig(e.getValue(),p,false,true);
+			}
 		}
-		
-		ServiceConfigDir = CfgDir+"/" + InstanceName;
-		
-		//   /jmicro目录
-		if(!dataOperator.exist(Constants.CFG_ROOT)) {
-			dataOperator.createNodeOrSetData(Constants.CFG_ROOT, "", false);
-		}
-		
-		//   /jmicro/JMICRO
-		if(!dataOperator.exist(Config.BASE_DIR)) {
-			dataOperator.createNodeOrSetData(Config.BASE_DIR, "", false);
-		}
-		
-		 //   /jmicro/JMICRO/config 目录
-		if(!dataOperator.exist(Config.CfgDir)) {
-			dataOperator.createNodeOrSetData(Config.CfgDir, "", false);
-		}
-		
-	    //   /jmicro/JMICRO/config/{实例名称}  目录
-		if(!dataOperator.exist(Config.ServiceConfigDir)) {
-			dataOperator.createNodeOrSetData(Config.ServiceConfigDir, "", false);
-		}
-		
-		//服务注册目录
-		if(!dataOperator.exist(Config.ServiceRegistDir)) {
-			dataOperator.createNodeOrSetData(Config.ServiceRegistDir, "", false);
-		}
-		
-		//全局服务注册目录
-		if(!dataOperator.exist(Config.GrobalServiceRegistDir)) {
-			dataOperator.createNodeOrSetData(Config.GrobalServiceRegistDir, "", false);
-		}
-		
-		//加载服务级配置
-		for(IConfigLoader cl : configLoaders){
-			cl.load(ServiceConfigDir,this.servicesConfig);
-		}
-		
-		init0();
 	}
-	
+
 	public void createConfig(String value, String path, boolean isGlobal){
 		createConfig(value,path,isGlobal,false);
 	}
 	
 	public void createConfig(String value, String path, boolean isGlobal, boolean el){
 		if(isGlobal) {
-			this.globalConfig.put(path, value);
-			this.dataOperator.createNodeOrSetData(GROBAL_CONFIG + path, value,el);
-		} else {
-			this.servicesConfig.put(path, value);
+			if(!globalConfig.containsKey(path)) {
+				globalConfig.put(path, value);
+				this.dataOperator.createNodeOrSetData(GROBAL_CONFIG + path, value,el);
+				if(!CONS_PARAMS_KEYS.containsKey(path)) {
+					dataOperator.addDataListener(GROBAL_CONFIG + path, this.dataListener);
+				}
+			}
+		} else if(!servicesConfig.containsKey(path)) {
+			servicesConfig.put(path, value);
 			this.dataOperator.createNodeOrSetData(ServiceConfigDir + path, value,el);
-		}
-	}
-	
-	@Override
-	public void configChange(String path, String value) {
-		int index = -1;
-		if((index = path.indexOf(ServiceConfigDir)) >= 0 ) {
-			String subPath = path.substring(index + ServiceConfigDir.length(), path.length());
-			this.servicesConfig.put(subPath, value);
-			notifiListener(subPath,value);
-		}else if((index = path.indexOf(GROBAL_CONFIG)) >= 0 )  {
-			String subPath = path.substring(index + GROBAL_CONFIG.length(), path.length());
-			this.globalConfig.put(subPath, value);
-			notifiListener(subPath,value);
-		} else {
-			logger.debug("Invalid config :"+path+",value:"+value);
+			if(!CONS_PARAMS_KEYS.containsKey(path)) {
+				dataOperator.addDataListener(ServiceConfigDir + path, this.dataListener);
+			}
 		}
 	}
 	
@@ -621,7 +617,6 @@ public class Config implements IConfigChangeListener{
 		return listenSocketIP;
 	}
 	
-	
 	public static boolean isClientOnly() {
 		return contain(Constants.CLIENT_ONLY,CommadParams);
 	}
@@ -639,22 +634,51 @@ public class Config implements IConfigChangeListener{
 	}
 	
 	public static <T> T getCommandParam(String key,Class<T> type,T defalutValue) {
-		return getValue(CommadParams.get(key),type,defalutValue);
+		return getValue(getCommandParam(key),type,defalutValue);
 	}
 	
 	public static String getExtParam(String key) {
+		String val = getServiceParam0(key);
+		if(!Utils.isEmpty(val)) {
+			return val;
+		}
 		return getMapVal(key,extConfig,null);
 	}
 	
+	public static String getServiceParam0(String key) {
+		if(!key.startsWith("/")) {
+			key = "/" + key;
+		}
+		if(servicesConfig.containsKey(key)) {
+			return servicesConfig.get(key);
+		}
+		
+		String k0 = getKey(key);
+		if(servicesConfig.containsKey(k0)) {
+			return servicesConfig.get(k0);
+		}
+		
+		return null;
+	}
+	
+	/**
+	 * 如果key 是 a.b.c格式，则转换为 /a/b/c
+	 * 如果key 是/a/b/c格式，则转换为 a.b.c
+	 * @param key
+	 * @return
+	 */
 	private static String getKey(String key) {
 		if(key == null) {
 			return null;
 		}
-		if(key.startsWith("/")) {
-			key = key.substring(1).replace("/", "\\.");
+		if(key.contains("/")) {
+			if(key.startsWith("/")) {
+				key = key.substring(1);
+			}
+			key = key.replace("/", "\\.");
 		} else {
-			key = "/" + key;
 			key = key.replace("\\.", "/");
+			key = "/" + key;
 		}
 		return key;
 	}
@@ -672,9 +696,15 @@ public class Config implements IConfigChangeListener{
 	}
 	
 	public static String getCommandParam(String key) {
-		String v = getMapVal(key,CommadParams,null);
 		
-		while(StringUtils.isEmpty(v)) {
+		//因为命令行配置加载时统一存放到了服务配置列表中，所以如果服务配置列表中有，则直接使用
+		String val = getServiceParam0(key);
+		if(!Utils.isEmpty(val)) {
+			return val;
+		}
+		return getMapVal(key,CommadParams,null);
+		
+		/*while(StringUtils.isEmpty(v)) {
 			if(!key.contains("/")) {
 				break;
 			}
@@ -690,6 +720,7 @@ public class Config implements IConfigChangeListener{
 		}
 		
 		return v;
+		*/
 	}
 	
 	public String getServiceParam(String key) {
@@ -812,17 +843,6 @@ public class Config implements IConfigChangeListener{
 		return (T)v;
 	}
 
-	public IDataOperator getDataOperator() {
-		return dataOperator;
-	}
-
-	public void setDataOperator(IDataOperator dataOperator) {
-		if(dataOperator == null) {
-			throw new CommonException("dataOperator cannot be null");
-		}
-		this.dataOperator = dataOperator;
-	}
-
 	public Map<String,String> getParamByPattern(String key) {
 		
 		Map<String,String> result = new HashMap<>();
@@ -845,7 +865,7 @@ public class Config implements IConfigChangeListener{
 			}
 		}
 		
-		for(Map.Entry<String, String> e : this.globalConfig.entrySet()) {
+		for(Map.Entry<String, String> e : globalConfig.entrySet()) {
 			if(e.getKey().startsWith(key)) {
 				result.put(e.getKey(), e.getValue());
 			}
@@ -858,7 +878,7 @@ public class Config implements IConfigChangeListener{
 			}
 		}
 		
-		for(Map.Entry<String, String> e : this.servicesConfig.entrySet()) {
+		for(Map.Entry<String, String> e : servicesConfig.entrySet()) {
 			if(e.getKey().startsWith(key)) {
 				result.put(e.getKey(), e.getValue());
 			}
@@ -873,5 +893,116 @@ public class Config implements IConfigChangeListener{
 		
 		return result;
 	}
+	
+	private void loadOne(String root,String child,Map<String,String> params) {
+		String fullpath = root+"/"+child;
+		String data = dataOperator.getData(fullpath);
+		if(StringUtils.isNotEmpty(data)){
+			params.put("/"+child, data);
+			dataOperator.addDataListener(fullpath, this.dataListener);
+		} 
+		Set<String> children = dataOperator.getChildren(fullpath,true);
+		 for(String ch: children){
+			 String pa = child + "/"+ch;
+			 loadOne(root,pa,params);
+		 }
+	}
+
+	public void loadConfig(IDataOperator dataOperator) {
+		this.dataOperator = dataOperator;
+		//加载全局配置
+		/*for(IConfigLoader cl : configLoaders){
+			cl.setDataOperator(this.dataOperator);
+			cl.load(GROBAL_CONFIG,globalConfig);
+			cl.setConfigChangeListener(this);
+		}*/
+		
+		 Set<String> children = dataOperator.getChildren(GROBAL_CONFIG,true);
+		 for(String child: children){
+			 loadOne(GROBAL_CONFIG,child,globalConfig);
+		 }
+		
+		initInstanceName();
+		
+		String path = Config.InstanceDir +"/"+Config.getInstanceName()+"_ipPort";
+		if(dataOperator.exist(path)) {
+			dataOperator.setData(path, "");
+		}
+		
+		ServiceConfigDir = CfgDir + "/" + InstanceName;
+		
+		//	/jmicro目录
+		if(!dataOperator.exist(Constants.CFG_ROOT)) {
+			dataOperator.createNodeOrSetData(Constants.CFG_ROOT, "", false);
+		}
+		
+		//   /jmicro/JMICRO
+		if(!dataOperator.exist(Config.BASE_DIR)) {
+			dataOperator.createNodeOrSetData(Config.BASE_DIR, "", false);
+		}
+		
+		 //   /jmicro/JMICRO/config 目录
+		if(!dataOperator.exist(Config.CfgDir)) {
+			dataOperator.createNodeOrSetData(Config.CfgDir, "", false);
+		}
+		
+	    //   /jmicro/JMICRO/config/{实例名称}  目录
+		if(!dataOperator.exist(Config.ServiceConfigDir)) {
+			dataOperator.createNodeOrSetData(Config.ServiceConfigDir, "", false);
+		}
+		
+		//服务注册目录
+		if(!dataOperator.exist(Config.ServiceRegistDir)) {
+			dataOperator.createNodeOrSetData(Config.ServiceRegistDir, "", false);
+		}
+		
+		//全局服务注册目录
+		if(!dataOperator.exist(Config.GrobalServiceRegistDir)) {
+			dataOperator.createNodeOrSetData(Config.GrobalServiceRegistDir, "", false);
+		}
+		
+		//加载服务级配置
+		 Set<String> children0 = dataOperator.getChildren(ServiceConfigDir,true);
+		 for(String child: children0){
+			 loadOne(ServiceConfigDir,child,servicesConfig);
+		 }
+		 
+		/*
+		for(IConfigLoader cl : configLoaders){
+			cl.load(ServiceConfigDir,servicesConfig);
+		}*/
+		
+		init0();
+		
+		createParam2Raft();
+	
+	}
+	
+	public Map<String,String> getConsParamKeys() {
+		return Collections.unmodifiableMap(CONS_PARAMS_KEYS);
+	}
+	
+	@SuppressWarnings("serial")
+	private static final Map<String,String> CONS_PARAMS_KEYS = new HashMap<String,String>() {
+		{
+			put("exportSocketPort", "");
+			put("startSocket", "");
+			put("enableMasterSlaveModel", "");
+			put("instanceName", "");
+			put("instanceDataDir", "");
+			put("respBufferSize", "");
+			put("defaultLimiterName", "");
+			put("exportHttpPort", "");
+			put("startHttp", "");
+			put("registryUrl", "");
+			put("clientId", "");
+			put("nettyHttpPort", "");
+			put("localDataDir", "");
+			put("priKey", "");
+			
+			put(Constants.BASE_PACKAGES_KEY,"");
+			put(Constants.INSTANCE_NAME,"");
+		}
+	};
 	
 }

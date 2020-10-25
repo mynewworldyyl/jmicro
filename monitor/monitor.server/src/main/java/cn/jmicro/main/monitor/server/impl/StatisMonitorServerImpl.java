@@ -101,7 +101,7 @@ public class StatisMonitorServerImpl implements IStatisMonitorServer {
 		ExecutorConfig config = new ExecutorConfig();
 		config.setMsMaxSize(60);
 		config.setTaskQueueSize(500);
-		config.setThreadNamePrefix("MonitorServer");
+		config.setThreadNamePrefix("StatisMonitorServer");
 		
 		executor = of.get(ExecutorFactory.class).createExecutor(config);
 		basketFactory = new BasketFactory<MRpcStatisItem>(1000,10);

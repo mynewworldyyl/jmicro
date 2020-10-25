@@ -138,7 +138,7 @@ public class StatisMonitorClient {
 		ExecutorConfig config = new ExecutorConfig();
 		config.setMsMaxSize(10);
 		config.setTaskQueueSize(500);
-		config.setThreadNamePrefix("MonitorClient");
+		config.setThreadNamePrefix("StatisMonitorClient");
 		executor = of.get(ExecutorFactory.class).createExecutor(config);
 		
 		enableWork(msPo,IServiceListener.ADD);

@@ -7,7 +7,7 @@ import cn.jmicro.api.annotation.SO;
 @IDStrategy(1)
 public class ProcessInfo {
 
-	private String id;
+	private int id;
 	
 	private int clientId;
 	
@@ -45,11 +45,11 @@ public class ProcessInfo {
 	
 	private transient Process process;
 
-	public String getId() {
+	public int getId() {
 		return id;
 	}
 
-	public void setId(String id) {
+	public void setId(int id) {
 		this.id = id;
 	}
 
@@ -199,7 +199,7 @@ public class ProcessInfo {
 
 	@Override
 	public int hashCode() {
-		return this.id == null ? 0 : this.id.hashCode();
+		return this.id;
 	}
 
 	@Override
