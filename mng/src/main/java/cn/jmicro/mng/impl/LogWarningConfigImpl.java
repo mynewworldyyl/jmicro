@@ -38,7 +38,7 @@ public class LogWarningConfigImpl implements ILogWarningConfig {
 	private ComponentIdServer idGenerator;
 	
 	@Override
-	@SMethod(perType=true,needLogin=true,maxSpeed=1,maxPacketSize=256)
+	@SMethod(perType=true,needLogin=true,maxSpeed=1,maxPacketSize=256,downSsl=true,encType=0,upSsl=true)
 	public Resp<List<LogWarningConfig>> query() {
 		Resp<List<LogWarningConfig>> r = new Resp<>();
 		Set<String> ids = op.getChildren(ROOT, false);

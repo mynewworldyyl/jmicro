@@ -248,7 +248,7 @@ public class ApiRawRequestMessageHandler implements IMessageHandler{
 										//msg.setDownSsl(false/*sm.isDownSsl()*/);
 										//msg.setUpSsl(false/*sm.isUpSsl()*/);
 										//msg.setEncType(sm.isRsa());
-										secretMng.signAndEncrypt(msg, msg.getInsId(),false);
+										secretMng.signAndEncrypt(msg, msg.getInsId());
 									} else {
 										//错误不需要做加密或签名
 										msg.setDownSsl(false);

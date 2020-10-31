@@ -33,6 +33,9 @@ public class ApiGatewayConfig {
 	
 	private boolean debug = true;
 	
+	private boolean sslEnable = false;
+	private long pwdUpdateInterval = 1000*60*5L;
+	
 	public ApiGatewayConfig(int clientType) {
 		this.setClientType(clientType);
 	}
@@ -90,5 +93,22 @@ public class ApiGatewayConfig {
 	public void setDebug(boolean debug) {
 		this.debug = debug;
 	}
+
+	public boolean isSslEnable() {
+		return sslEnable;
+	}
+
+	public void setSslEnable(boolean sslEnable) {
+		this.sslEnable = sslEnable;
+	}
+
+	public long getPwdUpdateInterval() {
+		return pwdUpdateInterval;
+	}
+
+	public void setPwdUpdateInterval(long pwdUpdateInterval) {
+		this.pwdUpdateInterval = pwdUpdateInterval;
+	}
+	
 	
 }

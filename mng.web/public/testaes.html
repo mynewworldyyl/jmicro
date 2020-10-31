@@ -1,0 +1,125 @@
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width,initial-scale=1.0">
+    <link rel="stylesheet" href="./style.css">
+    <link rel="icon" href="./jmicro.png">
+    <script type="text/javascript" src="./js/jsencrypt.js"></script>
+    <script type="text/javascript" src="./rollups/aes.js"></script>
+    <script type="text/javascript" src="./js/rpc.js"></script>
+    <script type="text/javascript" src="./js/jquery.js"></script>
+    <title>Test AES</title>
+    <style>
+
+    </style>
+</head>
+<body>
+<div id="msg" style="color:red;"></div>
+
+<div class="JTestingPubsub" id="testing">
+
+    <div>
+        <Button onclick="doEncrypt()">encrypt</Button><br/>
+        <label for="ec">Encrypt Content</label>
+        <Input id="ec"   value="test encrypt content"/>
+        <br/>
+
+        <label for="iv">IV</label>
+        <Input id="iv"   value=""/>
+        <br/>
+
+        <label for="pwd">PWD</label>
+        <Input id="pwd"   value=""/>
+        <br/>
+
+        <textarea id="encryptResult">
+        </textarea>
+    </div>
+
+    <div>
+        <Button onclick="doDecrypt()">decrypt</Button><br/>
+        <textarea id="decryptResult">
+        </textarea>
+    </div>
+
+</div>
+</body>
+
+<script  type="text/javascript">
+    $(function(){
+        jm.config.sslEnable = true;
+        jm.rpc.init("localhost",9090);
+    })
+
+    var iv = CryptoJS.lib.WordArray.random(128/8);
+
+    var keySize = 256;
+    var ivSize = 128;
+    var iterations = 100;
+    var wpwd = '';
+
+    let opts = {
+        mode : CryptoJS.mode.CBC ,
+        padding : CryptoJS.pad.Pkcs7,
+        keySize : 128,
+        iv :null ,
+        salt : null
+    }
+
+    function doEncrypt(){
+        let rst = encrypt($('#ec').val());
+        $('#encryptResult').val(rst);
+    }
+
+    function doDecrypt() {
+        let rst = decrypt($('#encryptResult').val());
+        $('#decryptResult').val(rst);
+    }
+
+    function encrypt (msg) {
+      /* var salt = CryptoJS.lib.WordArray.random(128/8);
+        var key = CryptoJS.PBKDF2(pass, salt, {
+            keySize: keySize/32,
+            iterations: iterations
+        });
+      */
+        let iv = jm.eu.genStrPwd(16);
+        opts.iv = CryptoJS.enc.Utf8.parse(iv);
+        $('#iv').val(opts.iv);
+
+        let pwd = jm.eu.genStrPwd(16);
+        wpwd = CryptoJS.enc.Utf8.parse(pwd);
+        $('#pwd').val(wpwd);
+
+        let arr = jm.utils.toUTF8Array(msg);
+        let ab = new ArrayBuffer(arr.length);
+
+        var encrypted = CryptoJS.AES.encrypt(msg, wpwd,opts);
+
+        // salt, iv will be hex 32 in length
+        // append them to the ciphertext for use  in decryption
+        //var transitmessage = salt.toString()+ iv.toString() + encrypted.toString();
+        return encrypted;
+    }
+
+    function decrypt (transitmessage, pass) {
+       /*
+        var salt = CryptoJS.enc.Hex.parse(transitmessage.substr(0, 32));
+        var iv = CryptoJS.enc.Hex.parse(transitmessage.substr(32, 32))
+        var encrypted = transitmessage.substring(64);
+
+        var key = CryptoJS.PBKDF2(pass, salt, {
+            keySize: keySize/32,
+            iterations: iterations
+        });
+        */
+
+        var decrypted = CryptoJS.AES.decrypt(transitmessage, wpwd,opts);
+        return CryptoJS.enc.Utf8.stringify(decrypted);
+        //return decrypted;
+    }
+
+
+</script>
+</html>

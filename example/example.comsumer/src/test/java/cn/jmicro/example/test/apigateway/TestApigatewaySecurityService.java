@@ -16,13 +16,13 @@
  */
 package cn.jmicro.example.test.apigateway;
 
+import java.io.UnsupportedEncodingException;
+import java.util.Base64;
+
 import org.junit.BeforeClass;
 import org.junit.Test;
 
 import cn.jmicro.api.JMicro;
-import cn.jmicro.api.Resp;
-import cn.jmicro.api.security.ISecretService;
-import cn.jmicro.api.security.JmicroPublicKey;
 import cn.jmicro.api.security.genclient.ISecretService$Gateway$JMAsyncClient;
 import cn.jmicro.common.Constants;
 import cn.jmicro.common.util.JsonUtils;
@@ -35,7 +35,9 @@ public class TestApigatewaySecurityService {
 	
 	@BeforeClass
 	public static void setUp() {
-		ApiGatewayClient.initClient(new ApiGatewayConfig(Constants.TYPE_SOCKET,"192.168.56.1",9092));
+		ApiGatewayConfig config = new ApiGatewayConfig(Constants.TYPE_SOCKET,"192.168.56.1",9092);
+		config.setSslEnable(true);
+		ApiGatewayClient.initClient(config);
 		socketClient =  ApiGatewayClient.getClient();
 	}
 	
@@ -61,6 +63,12 @@ public class TestApigatewaySecurityService {
 		});
 		
 		JMicro.waitForShutdown();
+	}
+	
+	@Test
+	public void testEncodeStr2Base64() throws UnsupportedEncodingException {
+		byte[] arr = "abc".getBytes(Constants.CHARSET);
+		System.out.println(Base64.getEncoder().encodeToString(arr));
 	}
 	
 }

@@ -22,6 +22,7 @@
             <table>
                 <tr><td>{{'Prefix'|i18n}}</td><td>
                     <input type="input"   v-model="updatePrefixVal"/></td></tr>
+
                 <tr><td colspan="2">{{msg}}</td></tr>
             </table>
         </Modal>
@@ -43,9 +44,9 @@
             <table>
                 <tr><td>{{'Prefix'|i18n}}</td><td>
                     <input type="input"  v-model="updatePrefixVal"/></td></tr>
-                <tr><td>{{'Password'|i18n}}</td><td>
-                    <input type="input"  v-model="publicKey"/></td></tr>
-
+                <tr><td>{{'PublicKeyDesc'|i18n}}</td><td>
+                    <Input class='textarea' :rows="5" :autosize="{maxRows:8,minRows: 16}"
+                           type="textarea" v-model="publicKey"/></td></tr>
                 <tr><td colspan="2">{{msg}}</td></tr>
             </table>
         </Modal>
@@ -74,7 +75,6 @@
 
                 addSecretDialog:false,
                 publicKey:'',
-                priKey:'',
 
                 keyList:[],
                 isLogin : false,
@@ -198,7 +198,7 @@
             addSecret() {
                 this.updatePrefixVal = "";
                 this.publicKey = "";
-                this.createSecretDialog = true;
+                this.addSecretDialog = true;
             },
 
             doAddSecret() {
@@ -208,7 +208,7 @@
                     .then((resp)=>{
                         self.updatePrefixVal = null;
                         self.publicKey = null;
-                        self.createSecretDialog = false;
+                        self.addSecretDialog = false;
 
                         if(resp.code != 0) {
                             self.$Message.success(resp.msg);
@@ -219,7 +219,6 @@
                     window.console.log(err);
                 });
             }
-
         },
 
         mounted () {

@@ -217,7 +217,7 @@ public class ServerMessageReceiver implements IMessageReceiver{
 			}
 			
 			if(msg.isUpSsl() || msg.isDownSsl()) {
-				this.secretMng.checkAndDecrypt(msg,true);
+				this.secretMng.checkAndDecrypt(msg);
 			}
 			
 			IMessageHandler h = handlers.get(msg.getType());
@@ -244,6 +244,11 @@ public class ServerMessageReceiver implements IMessageReceiver{
 				resp.setSuccess(false);
 				msg.setPayload(ICodecFactory.encode(codeFactory,resp,msg.getUpProtocol()));
 				msg.setType((byte)(msg.getType()+1));
+				msg.setUpSsl(false);
+				msg.setDownSsl(false);
+				msg.setSign(false);
+				msg.setSec(false);
+				msg.setSalt(null);
 				s.write(msg);
 			}
 		} finally {

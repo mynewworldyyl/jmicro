@@ -5,13 +5,49 @@
   <meta name="viewport" content="width=device-width,initial-scale=1.0">
   <link rel="stylesheet" href="style.css">
   <link rel="icon" href="<%= BASE_URL %>jmicro.png">
-  <script src = "https://cdn.jsdelivr.net/bluebird/latest/bluebird.js"></script>
-  <!-- <script type="text/javascript" src="js/jquery.js"></script>-->
-  <!--<script type="text/javascript" src="js/utils.js"></script>-->
+
+  <script type="text/javascript" src="https://cdn.jsdelivr.net/bluebird/latest/bluebird.js"></script>
+  <script type="text/javascript" src="rollups/aes.js"></script>
+  <script type="text/javascript" src="rollups/lib-typedarrays.js"></script>
+
+  <!--
+  <script type="text/javascript" src="rollups/components/aes.js"></script>
+  <script type="text/javascript" src="rollups/components/cipher-core.js"></script>
+  <script type="text/javascript" src="rollups/components/core.js"></script>
+  <script type="text/javascript" src="rollups/components/enc-base64.js"></script>
+  <script type="text/javascript" src="rollups/components/enc-utf16.js"></script>
+  <script type="text/javascript" src="rollups/components/evpkdf.js"></script>
+  <script type="text/javascript" src="rollups/components/format-hex.js"></script>
+  <script type="text/javascript" src="rollups/components/hmac.js"></script>
+  <script type="text/javascript" src="rollups/components/lib-typedarrays.js"></script>
+  <script type="text/javascript" src="rollups/components/md5.js"></script>
+  <script type="text/javascript" src="rollups/components/mode-cfb.js"></script>
+  <script type="text/javascript" src="rollups/components/mode-ctr-gladman.js"></script>
+  <script type="text/javascript" src="rollups/components/mode-ctr.js"></script>
+  <script type="text/javascript" src="rollups/components/mode-ecb.js"></script>
+  <script type="text/javascript" src="rollups/components/mode-ofb.js"></script>
+  <script type="text/javascript" src="rollups/components/pbkdf2.js"></script>
+  <script type="text/javascript" src="rollups/components/rabbit.js"></script>
+  <script type="text/javascript" src="rollups/components/rabbit-legacy.js.js"></script>
+  <script type="text/javascript" src="rollups/components/rc4.js"></script>
+  <script type="text/javascript" src="rollups/components/ripemd160.js"></script>
+  <script type="text/javascript" src="rollups/components/sha1.js"></script>
+  <script type="text/javascript" src="rollups/components/sha3.js"></script>
+  <script type="text/javascript" src="rollups/components/sha224.js"></script>
+  <script type="text/javascript" src="rollups/components/sha256.js"></script>
+  <script type="text/javascript" src="rollups/components/sha384.js"></script>
+  <script type="text/javascript" src="rollups/components/sha512.js"></script>
+  <script type="text/javascript" src="rollups/components/tripledes.js"></script>
+  <script type="text/javascript" src="rollups/components/x64-core.js"></script>
+  <script type="text/javascript" src="rollups/components/pad-ansix923.js"></script>
+  <script type="text/javascript" src="rollups/components/pad-iso10126.js"></script>
+  <script type="text/javascript" src="rollups/components/pad-iso97971.js"></script>
+  <script type="text/javascript" src="rollups/components/pad-nopadding.js"></script>
+  <script type="text/javascript" src="rollups/components/pad-zeropadding.js"></script>
+  -->
+  <script type="text/javascript" src="js/jsencrypt.js"></script>
   <script type="text/javascript" src="js/rpc.js"></script>
   <script type="text/javascript" src="js/jm.js"></script>
-  <!-- <link rel="stylesheet" type="text/css" href="http://unpkg.com/view-design/dist/styles/iview.css">
-   <script type="text/javascript" src="http://unpkg.com/view-design/dist/iview.min.js"></script>-->
   <title><%= htmlWebpackPlugin.options.title %></title>
 </head>
 <body>

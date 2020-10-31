@@ -19,7 +19,7 @@ window.jm = window.jm || {};
 
 jm.config = {
     //ip:"192.168.3.3",
-    // ip:'192.168.1.129',
+    //ip:'192.168.1.129',
     ip:'192.168.56.1',
     //ip:'47.112.161.111',
     //ip:'jmicro.cn',
@@ -30,7 +30,11 @@ jm.config = {
     txtContext : '_txt_',
     binContext : '_bin_',
     httpContext : '/_http_',
-    useWs : true
+    useWs : true,
+
+    sslEnable:true,
+    publicKey :'MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCt489YTxmLjNVxfFKSORyUgXjr65MQR1a/QdlriFEWXUAaLpVWP41YTlSA5ecG54xVwl2ayLytCv4CJNqYPeYNPUVXPr1tqND1aZYK9iUQQ0K36g2QZaigg+f/NJSY6w4XITQdBz3PnJOOzOK+cOew4R0XiyrR8sHG2Is4Mf9qowIDAQAB',
+    privateKey:''
 }
 
 jm.Constants = {
@@ -371,7 +375,7 @@ jm.utils = {
     },
 
     utf8StringTakeLen : function(str) { //
-        let le = this.toUTF8Array(str).len;
+        let le = this.toUTF8Array(str).length;
         if(le < jm.rpc.Constants.MAX_BYTE_VALUE) {
             return le +1;
         }else if(le < jm.rpc.Constants.MAX_SHORT_VALUE) {
@@ -393,13 +397,107 @@ jm.utils = {
             let byteArray = [];
             let dv = new DataView(data,data.byteLength);
             for(let i = 0; i <data.byteLength; i++) {
-                byteArray.push(dv.getUint8());
+                byteArray.push(dv.getUint8(i));
             }
             let jsonStr = this.fromUTF8Array(byteArray);
             return JSON.parse(data);
         }else {
             return data;
         }
+    },
+
+    b64map : "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/",
+
+    byteArr2Base64: function(byteArr) {
+        let bstr = '';
+        let self = this;
+        let ch = function (c) {
+            return self.b64map.charAt(c);
+        }
+
+        //a          b         c
+        //01100001 01100010 01100011
+        //011000 010110 001001 100011
+        //24       22    9      35
+        //Y        W     J      j
+        let i = 0;
+        for(; i+3 <= byteArr.length; i+=3 ) {
+            //第一个字节高6位
+            bstr += ch(byteArr[i]>>>2);
+            //第一个字节的低两位  连接第二个字节高4位
+            bstr += ch(((byteArr[i] & 0x03) << 4) | (byteArr[i+1] >>> 4));
+            //第二个字节的底4位  连接第3个字节高2位
+            bstr += ch(((byteArr[i+1] & 0x0F)<<2) | (byteArr[i+2] >>6));
+            //第3个字节的底6位
+            bstr += ch(byteArr[i+2] & 0X3F);
+        }
+
+        let mv = byteArr.length % 3;
+        if(mv == 1) {
+            let arr = [byteArr[byteArr.length-1],0,0];
+            bstr += ch(arr[0] >>>2 );
+            //第一个字节的高两位  连接第二个字节底4位
+            bstr += ch(((arr[0] & 0x03) << 4) | (arr[1] >>> 4));
+            bstr += '==';
+        }
+
+        if(mv == 2) {
+            //a          b
+            //01100001 01100010
+            //011000 010110 0010 00
+            //24       22    9      35
+            //Y        W     J      j
+
+            let arr = [byteArr[byteArr.length-2],byteArr[byteArr.length-1],0];
+            bstr += ch(arr[0] >>>2 );
+            //第一个字节的高两位  连接第二个字节底4位
+            bstr += ch(((arr[0] & 0x03) << 4) | (arr[1] >>> 4));
+            bstr += ch(((arr[1] & 0x0F)<<2) | (arr[3] >>6));
+
+            bstr += '=';
+        }
+        return bstr;
+    },
+
+    base642ByteArr: function(base64) {
+        let b = [];
+        if(base64.length % 4 != 0) {
+            throw 'Invalid base64 format!';
+        }
+
+        let self = this;
+        let ch = function (i) {
+            return self.b64map.indexOf(base64.charAt(i));
+        }
+
+        //a          b         c
+        //01100001 01100010 01100011
+        //011000 010110 001001 100011
+        //24       22    9      35
+        //Y        W     J      j
+
+        let blen = base64.length;
+        for(let i = 0; i <= blen; i += 4 ) {
+
+            if(base64.charAt(i) == '=') {
+                break;
+            }
+
+            let c0 = ch(i);
+            let c1 = ch(i+1);
+            let c2 = ch(i+2);
+            let c3 = ch(i+3);
+
+            //011000 010110 001001 100011
+            //01000000
+            //00100011
+            //01100011
+            b.push(c0<<2 | c1 >>> 4);
+            b.push((c1 & 0x0F) << 4 | (c2 >>> 2) & 0x0F);
+            b.push(((c2 & 0x03) << 6) | c3);
+
+        }
+        return b;
     },
 
     flagIs : function( flag,  mask) {
@@ -720,6 +818,10 @@ jm.rpc = {
             jm.config.useWs = false;
         }
 
+        if(jm.config.sslEnable) {
+            jm.eu.init();
+        }
+
         if(ip && ip.length > 0) {
             jm.config.ip = ip;
         }
@@ -776,6 +878,7 @@ jm.rpc = {
         msg.setMonitorable(false);
         msg.setDebugMode(false);
         msg.setLogLevel(jm.rpc.Constants.LOG_NO)//LOG_WARN
+        msg.setFromWeb(true);
 
         return msg;
     }
@@ -1485,6 +1588,8 @@ jm.rpc.Constants = {
 
     FLAG_DOWN_SSL  :  1 << 15,
 
+    FLAG_IS_FROM_WEB : 1 << 27,
+
     FLAG_IS_SEC  :  1 << 28,
 
     FLAG_IS_SIGN  :  1 << 29,
@@ -1752,6 +1857,14 @@ jm.rpc.Message.prototype.isSec = function()  {
     return this.is(this.flag,jm.rpc.Constants.FLAG_IS_SEC);
 }
 
+jm.rpc.Message.prototype.setFromWeb = function(f)  {
+    this.flag  = this.set(f,this.flag ,jm.rpc.Constants.FLAG_IS_FROM_WEB);
+}
+
+jm.rpc.Message.prototype.isFromWeb = function()  {
+    return this.is(this.flag,jm.rpc.Constants.FLAG_IS_FROM_WEB);
+}
+
 jm.rpc.Message.prototype.isSign = function()  {
     return this.is(this.flag,jm.rpc.Constants.FLAG_IS_SIGN);
 }
@@ -1879,20 +1992,21 @@ jm.rpc.Message.prototype.decode = function(b) {
     if(!msg.isRsaEnc() && (msg.isUpSsl() || msg.isDownSsl())) {
         //对称加密盐值
         let pa = [];
-        for(let i = 0; i < 8 ; i++) {
+        for(let i = 0; i < 16 ; i++) {
             pa.push(dataInput.getUByte());
         }
         msg.salt = pa;
-        len -= 8;
+        len -= 16;
     }
 
     if(msg.isSec()) {
+        let l = dataInput.readUnsignedShort();
         let pa = [];
-        for(let i = 0; i < 128 ; i++) {
+        for(let i = 0; i < l ; i++) {
             pa.push(dataInput.getUByte());
         }
         msg.sec = pa;
-        len -= 128;
+        len -= (l+2);
     }
 
     if(len > 0){
@@ -1900,12 +2014,19 @@ jm.rpc.Message.prototype.decode = function(b) {
         for(let i = 0; i < len ; i++) {
             pa.push(dataInput.getUByte());
         }
-        if(this.getDownProtocol() == jm.rpc.Constants.PROTOCOL_JSON) {
-            msg.payload = JSON.parse(jm.utils.fromUTF8Array(pa));
-        } else {
-            msg.payload = pa;
+
+        msg.payload = pa;
+
+        if(msg.isDownSsl()) {
+            jm.eu.checkAndDecrypt(msg);
         }
-    }else {
+
+        if(this.getDownProtocol() == jm.rpc.Constants.PROTOCOL_JSON) {
+            let json = jm.utils.fromUTF8Array(msg.payload);
+            //console.log(json);
+            msg.payload = JSON.parse(json);
+        }
+    } else {
         msg.payload = null;
     }
 
@@ -1925,12 +2046,28 @@ jm.rpc.Message.prototype.encode = function() {
         let json = JSON.stringify(data);
         data = jm.utils.toUTF8Array(json);
         this.setUpProtocol(jm.rpc.Constants.PROTOCOL_JSON)
+    }else if (data instanceof ArrayBuffer) {
+        let arrData = [];
+        let buf = new DataView(data,0, data.byteLength) ;
+        for(let i = 0; i < data.byteLength; i++) {
+            arrData.push(data[i]);
+        }
+        data = arrData;
     }
 
-    if(data instanceof ArrayBuffer) {
-        len = data.byteLength;
-    } else {
-        len = data.length;
+    this.payload = data;
+
+    if(jm.config.sslEnable) {
+        this.setUpSsl(true);
+        this.setEncType(false);
+        this.setDownSsl(true);
+        jm.eu.encrypt(this);
+    }
+
+    if (this.payload instanceof ArrayBuffer) {
+        len = this.payload.byteLength;
+    }else {
+        len = this.payload.length;
     }
 
     if(this.isDebugMode()) {
@@ -1952,7 +2089,7 @@ jm.rpc.Message.prototype.encode = function() {
     }
 
     if(this.isSec()) {
-        len += 128;
+        len += this.sec.length+2;
     }
 
     //len += Message.HEADER_LEN
@@ -2027,17 +2164,17 @@ jm.rpc.Message.prototype.encode = function() {
     }
 
     if(this.salt != null && this.salt.length > 0) {
-        buf.writeUByte(this.salt.length);
+        //buf.writeUByte(this.salt.length);
         this.writeArray(buf,this.salt);
     }
 
     if(this.isSec()) {
-        //buf.writeUByte(this.sec.length);
+        buf.writeUnsignedShort(this.sec.length);
         this.writeArray(buf,this.sec);
     }
 
-    if(data != null){
-        this.writeArray(buf,data);
+    if(this.payload != null){
+        this.writeArray(buf,this.payload);
         /*if(data instanceof ArrayBuffer) {
             let size = data.byteLength;
             let dv = new DataView(data);
@@ -2638,4 +2775,263 @@ jm.sessionStorage = new function() {
             return false;
         }
     }
+}
+
+/**
+ * 实现类似HTTPS或Sockets的功能
+ * 客户端通过api网关公钥加密Aes密钥，在消息中附加此被加密后的密钥和数据一起发送给服务器，Api网关服务器
+ * 通过其私钥解密此AES密钥，从而得到解密后的密钥。
+ * API网关签名其返回的数据，客户端通过公钥验签返回的数据。
+ * @param msg
+ */
+jm.eu = {
+    keySize:128,
+    pwd_table_len : 512,
+    pwdTable:null,
+    rsae : null,
+    rsad : null,
+
+    wpwd:null,
+    pwd:null,
+    lastUpdatePwdTime : new Date().getTime(),
+
+    init:function() {
+        if(this.pwdTable) {
+           return;
+        }
+
+        this.pwdTable = [];
+
+        for(let i = 0; i < this.pwd_table_len; i++) {
+            let rv = parseInt(Math.random()*85+33);
+            this.pwdTable.push(String.fromCharCode(rv));
+        }
+
+        let eopt = {log:true, default_key_size:1024}
+        let encrypt = new JSEncrypt(eopt);
+        encrypt.setPublicKey(jm.config.publicKey);
+        this.rsae = encrypt;
+
+      /*  let dopt = {log:true, default_key_size:1024}
+        let decrypt = new JSEncrypt(dopt);
+        decrypt.setPrivateKey(jm.config.privateKey);
+        this.rsad = decrypt;*/
+    },
+
+    encrypt: function (msg){
+        if(!this.pwdTable) {
+            this.init();
+        }
+
+        msg.setUpSsl(true);
+        msg.setDownSsl(true);
+        msg.setEncType(false);
+
+        let opts = {
+            mode : CryptoJS.mode.CBC ,
+            padding : CryptoJS.pad.Pkcs7,
+            keySize : this.keySize,
+            iv :null ,
+            salt : null
+        };
+
+        let iv = jm.eu.genStrPwd(16);
+        opts.iv = CryptoJS.enc.Utf8.parse(iv);
+        msg.salt = jm.utils.toUTF8Array(iv);
+
+        if(!this.pwd || new Date().getTime() - this.lastUpdatePwdTime > 1000*60*5 ) {
+            this.pwd = jm.eu.genStrPwd(16);
+            msg.setSec(true);
+            msg.sec = this.encryptRas(this.pwd);
+        }
+
+        //let ab = new ArrayBuffer(msg.payload);
+        //var wordArray = CryptoJS.lib.WordArray.create(ab);
+        let b64Str = jm.utils.byteArr2Base64(msg.payload);
+        var encrypted = CryptoJS.AES.encrypt(b64Str, CryptoJS.enc.Utf8.parse(this.pwd),opts);
+        msg.payload = this.wordToByteBuffer(encrypted.ciphertext);
+
+    },
+
+    wordToByteBuffer : function(wordArray) {
+        var arrayOfWords = wordArray.hasOwnProperty("words") ? wordArray.words : [];
+        var length = wordArray.hasOwnProperty("sigBytes") ? wordArray.sigBytes : arrayOfWords.length * 4;
+        var uInt8Array = new Uint8Array(length), index=0, word, i;
+        for (i=0; i<length; i++) {
+            word = arrayOfWords[i];
+            uInt8Array[index++] = word >> 24;
+            uInt8Array[index++] = (word >> 16) & 0xff;
+            uInt8Array[index++] = (word >> 8) & 0xff;
+            uInt8Array[index++] = word & 0xff;
+        }
+        return uInt8Array.buffer;
+    },
+
+    byteBuffer2ByteArray : function(byBuffer) {
+        let byteArray = [];
+        let dv = new DataView(byBuffer,0,byBuffer.byteLength);
+        for(let i = 0; i <byBuffer.byteLength; i++) {
+            byteArray.push(dv.getUint8(i));
+        }
+        return byteArray;
+    },
+
+    hexToByteArray : function(hex) {
+        let arr = [];
+        for(let i = 0; i+2 < hex.length; i+=2) {
+            let hn = hex.substring(i,i+2);
+            arr.push(parseInt(hn,16));
+        }
+        return arr;
+    },
+
+    checkAndDecrypt: function (msg){
+        if(!msg.isDownSsl()) {
+            return;
+        }
+
+        if(!this.pwdTable) {
+            this.init();
+        }
+
+        let ivStr = jm.utils.fromUTF8Array(msg.salt);
+        let iv = CryptoJS.enc.Utf8.parse(ivStr);
+        let opts = {
+            mode : CryptoJS.mode.CBC ,
+            padding : CryptoJS.pad.Pkcs7,
+            keySize : this.keySize,
+            iv : iv ,
+            salt : null
+        };
+
+        let utf8pwd = CryptoJS.enc.Utf8.parse(this.pwd);
+
+        /*var cipherParams = CryptoJS.lib.CipherParams.create({
+            ciphertext: jm.utils.byteArr2Base64(msg.payload)
+        });*/
+        let b64str = jm.utils.byteArr2Base64(msg.payload);
+        var decrypted = CryptoJS.AES.decrypt(b64str,utf8pwd,opts);
+        let dedata = this.byteBuffer2ByteArray(this.wordToByteBuffer(decrypted));
+       /* if(!this.rsae.verify(jm.utils.byteArr2Base64(dedata),msg.sign,CryptoJS.MD5)) {
+            throw "Invalid sign";
+        }*/
+
+        msg.payload = dedata;
+    },
+
+    encryptRas:function(strContent) {
+        if(!this.pwdTable) {
+            this.init();
+        }
+        let rst = this.rsae.encrypt(strContent);
+        //return jm.utils.toUTF8Array(jm.utils.byteArr2Base64(this.hexToByteArray(rst)));
+         return jm.utils.toUTF8Array(rst);
+    },
+
+    decryptRas:function(strContent) {
+        if(!this.pwdTable) {
+            this.init();
+        }
+        return this.rsad.decrypt(strContent);
+    },
+
+    genStrPwd : function(len) {
+        if(!this.pwdTable) {
+            this.init();
+        }
+        let pwd = '';
+        for(let i = 0; i < len; i++) {
+            let idx = parseInt(Math.random()*512);
+            pwd += this.pwdTable[idx];
+        }
+        return pwd;
+    },
+
+    hexStr:'123456789ABCDEF',
+
+    byteArray2Hex:function(byteArr) {
+        let hex = '';
+        for(let i = 0; i < byteArr.length; i++) {
+            let e = byteArr[i];
+            hex += this.hexStr.charAt(e >>> 4);
+            hex += this.hexStr.charAt(e & 0x0F);
+        }
+        return hex;
+    },
+
+    b64map : "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/",
+    b64pad : "=",
+
+    hex2b64: function (h) {
+    var i;
+    var c;
+    var ret = "";
+    //每3个16进制数共3*4=12个bit位刚好等于2*6=12个bit，两个b64字符
+    for(i = 0; i + 3 <= h.length; i += 3) {
+        c = parseInt(h.substring(i, i + 3), 16);
+        ret += this.b64map.charAt(c >> 6) + this.b64map.charAt(c & 63);
+    }
+    if(i + 1 == h.length) {
+        c = parseInt(h.substring(i, i + 1), 16);
+        ret += this.b64map.charAt(c << 2);
+    }
+    else if(i + 2 == h.length) {
+        c = parseInt(h.substring(i, i + 2), 16);
+        ret += this.b64map.charAt(c >> 2) + this.b64map.charAt((c & 3) << 4);
+    }
+    while((ret.length & 3) > 0) {
+        ret += this.b64pad;
+    }
+    return ret;
+},
+
+// convert a base64 string to hex
+    b64tohex: function(s) {
+    var ret = "";
+    var i;
+    var k = 0; // b64 state, 0-3
+    var slop = 0;
+    for (i = 0; i < s.length; ++i) {
+        if (s.charAt(i) == this.b64pad) {
+            //结束字符=
+            break;
+        }
+        var v = this.b64map.indexOf(s.charAt(i));
+        if (v < 0) {
+            //无效b64字符
+            continue;
+        }
+        if (k == 0) {
+            ret += this.int2char(v >> 2);
+            slop = v & 3;
+            k = 1;
+        }
+        else if (k == 1) {
+            ret += this.int2char((slop << 2) | (v >> 4));
+            slop = v & 0xf;
+            k = 2;
+        }
+        else if (k == 2) {
+            ret += this.int2char(slop);
+            ret += this.int2char(v >> 2);
+            slop = v & 3;
+            k = 3;
+        }
+        else {
+            ret += this.int2char((slop << 2) | (v >> 4));
+            ret += this.int2char(v & 0xf);
+            k = 0;
+        }
+    }
+    if (k == 1) {
+        ret += this.int2char(slop << 2);
+    }
+    return ret;
+    },
+
+    BI_RM : "0123456789abcdefghijklmnopqrstuvwxyz",
+ int2char:function(n) {
+    return this.BI_RM.charAt(n);
+}
+
 }

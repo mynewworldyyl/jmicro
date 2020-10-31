@@ -37,7 +37,7 @@ public final class Message {
 	
 	public static final int HEADER_LEN = 18;
 	
-	public static final int SEC_LEN = 128;
+	//public static final int SEC_LEN = 128;
 	
 	public static final byte PROTOCOL_BIN = 0;
 	public static final byte PROTOCOL_JSON = 1;
@@ -96,6 +96,8 @@ public final class Message {
 	//是否签名
 	public static final int FLAG_DOWN_SSL = 1 << 15;
 	
+	public static final int FLAG_IS_FROM_WEB = 1 << 27;
+	
 	public static final int FLAG_IS_SEC = 1 << 28;
 	
 	//是否签名： 0:无签名； 1：有签名
@@ -151,8 +153,9 @@ public final class Message {
 	* 30       ENT       encrypt type 0:对称加密，1：RSA 非对称加密
 	* 29       SI        是否有签名值 0：无，1：有
 	* 28       SE        密码
+	* 29       WE        从Web浏览器过来的请求
 	* 
-	     ENT  SI  SE                                                     
+	     ENT  SI  SE WE                                                    
 	 |    |   |   |  |   |   |  |  |   |    |    |    |   |    |   |
      31  30  29  28  27  26  25 24 23  22   21   20   19  18   17  16
      
@@ -172,7 +175,7 @@ public final class Message {
 	//对称加密盐值
 	private byte[] salt;
 	
-	//对称加密密钥
+	//对称加密密钥,i 
 	private byte[] sec;
 	
 	//*****************development mode field begin******************//
@@ -248,9 +251,10 @@ public final class Message {
 			}
 			
 			if(msg.isSec()) {
-				byte[] sa = new byte[SEC_LEN];
+				int l = b.readUnsignedShort();
+				byte[] sa = new byte[l];
 				b.readFully(sa);
-				len -= SEC_LEN;
+				len -= l+2;
 				msg.setSec(sa);
 			}
 			
@@ -262,7 +266,7 @@ public final class Message {
 				msg.setPayload(null);
 			}
 			
-			msg.setLen(len/*+ Message.HEADER_LEN*/);
+			msg.setLen(len);
 			
 			return msg;
 		} catch (IOException e) {
@@ -311,7 +315,7 @@ public final class Message {
 		}
 		
 		if(this.isSec()) {
-			len += SEC_LEN;
+			len += this.sec.length+2;
 		}
 		
 		//第1，2个字节 ,len = 数据长度 + 测试模式时附加数据长度
@@ -387,7 +391,7 @@ public final class Message {
 			}*/
 			
 			if(this.isSec()) {
-				//b.write(this.sec.length);
+				b.writeUnsignedShort(this.sec.length);
 				b.write(this.sec);
 			}
 			
@@ -511,6 +515,14 @@ public final class Message {
 	
 	public void setSec(boolean f) {
 		flag = set(f,flag, FLAG_IS_SEC);
+	}
+	
+	public boolean isFromWeb() {
+		return is(flag, FLAG_IS_FROM_WEB);
+	}
+	
+	public void setFromWeb(boolean f) {
+		flag = set(f,flag, FLAG_IS_FROM_WEB);
 	}
 	
 	public boolean isDumpUpStream() {
@@ -803,6 +815,9 @@ public final class Message {
 	}
 
 	public void setInsId(int insId) {
+		if(insId < 0) {
+			insId = -insId;
+		}
 		this.insId = insId;
 	}
 

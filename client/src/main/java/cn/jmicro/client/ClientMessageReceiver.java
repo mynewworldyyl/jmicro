@@ -116,7 +116,7 @@ public class ClientMessageReceiver implements IMessageReceiver{
 		try {
 			
 			if(msg.isUpSsl() || msg.isDownSsl()) {
-				this.secretMng.checkAndDecrypt(msg,false);
+				this.secretMng.checkAndDecrypt(msg);
 			}
 			
 			IMessageHandler h = handlers.get(msg.getType());

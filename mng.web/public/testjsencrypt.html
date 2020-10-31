@@ -1,0 +1,59 @@
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width,initial-scale=1.0">
+    <link rel="stylesheet" href="./style.css">
+    <link rel="icon" href="./jmicro.png">
+    <script type="text/javascript" src="./js/jsencrypt.js"></script>
+    <script type="text/javascript" src="./js/rpc.js"></script>
+    <script type="text/javascript" src="./js/jquery.js"></script>
+    <title>TestEncrypt</title>
+    <style>
+
+    </style>
+</head>
+<body>
+<div id="msg" style="color:red;"></div>
+
+<div class="JTestingPubsub" id="testing">
+
+    <div>
+        <Button onclick="doEncrypt()">encrypt</Button><br/>
+        <label for="ec">Encrypt Content</label>
+        <Input id="ec"   value="test encrypt content"/>
+        <br/>
+        <textarea id="encryptResult">
+        </textarea>
+    </div>
+
+    <div>
+        <Button onclick="doDecrypt()">decrypt</Button><br/>
+        <label for="dc">Encrypt Content</label>
+        <Input id="dc"  placeholder="" value=""/>
+        <br/>
+        <textarea id="decryptResult">
+        </textarea>
+    </div>
+
+</div>
+</body>
+
+<script  type="text/javascript">
+    $(function(){
+        jm.config.sslEnable = true;
+        jm.rpc.init("localhost",9090);
+    })
+
+    function doEncrypt(){
+       let rst = jm.eu.encryptRas($('#ec').val());
+       $('#encryptResult').val(rst);
+    }
+
+    function doDecrypt() {
+        let rst = jm.eu.decryptRas($('#encryptResult').val());
+        $('#decryptResult').val(rst);
+    }
+
+</script>
+</html>

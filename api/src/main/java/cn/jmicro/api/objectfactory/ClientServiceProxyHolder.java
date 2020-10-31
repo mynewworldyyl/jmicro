@@ -122,7 +122,8 @@ public class ClientServiceProxyHolder implements IServiceListener{
 					throw new CommonException(msg);
 				}
 				
-				if(Constants.LICENSE_TYPE_CLIENT == si.getFeeType() && si.getClientId() != ai.getClientId()) {
+				if(Constants.LICENSE_TYPE_CLIENT == si.getFeeType() 
+						&& si.getClientId() != ai.getClientId()) {
 					
 					boolean f = false;
 					if(si.getAuthClients() != null && si.getAuthClients().length > 0) {

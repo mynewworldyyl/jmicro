@@ -286,6 +286,11 @@ public class JRPCReqRespHandler implements IMessageHandler{
 			msg.setType((byte)(msg.getType()+1));
 			msg.setInsId(pi.getId());
 			msg.setUpSsl(false);
+			msg.setDownSsl(false);
+			msg.setSign(false);
+			msg.setSec(false);
+			msg.setSalt(null);
+			
 			msg.setTime(System.currentTimeMillis());
 			s.write(msg);
 		}
@@ -332,12 +337,15 @@ public class JRPCReqRespHandler implements IMessageHandler{
 			msg.setDownSsl(sm.isDownSsl());
 			msg.setEncType(sm.isRsa());
 			if(sm.isUpSsl() || sm.isDownSsl()) {
-				secretMng.signAndEncrypt(msg,msg.getInsId(),false);
+				secretMng.signAndEncrypt(msg,msg.getInsId());
 			}
 		} else {
 			//错误不需要做加密或签名
 			msg.setUpSsl(false);
 			msg.setDownSsl(false);
+			msg.setSign(false);
+			msg.setSec(false);
+			msg.setSalt(null);
 		}
 
 		msg.setInsId(pi.getId());

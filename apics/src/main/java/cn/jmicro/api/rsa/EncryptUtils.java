@@ -20,6 +20,7 @@ import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 
 import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
@@ -27,8 +28,10 @@ import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
 import javax.crypto.SecretKey;
 import javax.crypto.SecretKeyFactory;
+import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.PBEKeySpec;
 import javax.crypto.spec.PBEParameterSpec;
+import javax.crypto.spec.SecretKeySpec;
 
 import cn.jmicro.common.CommonException;
 import cn.jmicro.common.Constants;
@@ -40,6 +43,12 @@ public class EncryptUtils {
 	 */
 	private static final char[] HEX_CHAR = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e','f' };
 
+	private static Random rseed = new Random(System.currentTimeMillis());
+	
+	public static final int CHAR_TABLE_LEN = 512;
+	
+	public static final char[] USABLE_CHAR = new char[512];
+	
 	/**
 	 * 签名算法
 	 */
@@ -47,14 +56,41 @@ public class EncryptUtils {
 	
 	public static final String KEY_PBE = "PBEWITHMD5andDES";
 	
-	public static final int SALT_COUNT = 100;
-	public static final int SALT_LEN = 8;
+	public static final String KEY_AES = "AES";
 	
-	public static final byte[] SALT_DEFAULT = new byte[] {1,2,3,4,5,7,3,6};
+	public static final String KEY_AES_MEDEL_PAD = "AES/CBC/PKCS5Padding";
+	
+	public static final String RSA_MODEL = "RSA/ECB/PKCS1Padding";//RSA/CBC/PKCS1Padding
+	
+	public static final int SALT_COUNT = 100;
+	
+	public static final int SALT_LEN = 16;
+	
+	public static final byte[] SALT_DEFAULT = new byte[] {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15};
 	
 	public static final int ENCRY_SEC_LEN = 64;
 	
 	public static final int DECRY_SEC_LEN = 128;
+	
+	static {
+		//Security.addProvider(new org.bouncycastle.jce.provider.BouncyCastleProvider());
+		/*for (Provider provider : Security.getProviders())
+		    System.out.println(provider);*/
+		  
+		int len = CHAR_TABLE_LEN;
+		Random r = new Random(rseed.nextInt());
+		//StringBuffer sb = new StringBuffer();
+		for(int i = 0; i < len; i++) {
+			int rv = r.nextInt();
+			if(rv < 0) {
+				rv = -rv;
+			}
+			int c = (rv % 85) + 33;
+			USABLE_CHAR[i] = (char)c;
+			//sb.append((char)c);
+		}
+		//System.out.println(sb.toString());
+	}
 	
 	/**
 	 * 随机生成密钥对
@@ -63,7 +99,7 @@ public class EncryptUtils {
 		// KeyPairGenerator类用于生成公钥和私钥对，基于RSA算法生成对象
 		KeyPairGenerator keyPairGen = null;
 		try {
-			keyPairGen = KeyPairGenerator.getInstance("RSA");
+			keyPairGen = KeyPairGenerator.getInstance(RSA_MODEL);
 		} catch (NoSuchAlgorithmException e) {
 			throw new CommonException("genKeyPair",e);
 		}
@@ -80,11 +116,11 @@ public class EncryptUtils {
 			RSAPublicKey publicKey = (RSAPublicKey) keyPair.getPublic();
 			
 			String publicKeyString = Base64.getEncoder().encodeToString(publicKey.getEncoded());
-			//
+
 			byte[] priData = privateKey.getEncoded();
 			if(!Utils.isEmpty(pwd)) {
-				SecretKey key = generatorPBEKey(pwd,KEY_PBE);
-				priData = encryptPBE(priData,0,priData.length,null,key);
+				SecretKey key = generatorSecretKey(pwd,KEY_AES);
+				priData = encryptAes(priData,0,priData.length,SALT_DEFAULT,key);
 			}
 			
 			String privateKeyString = Base64.getEncoder().encodeToString(priData);
@@ -97,16 +133,53 @@ public class EncryptUtils {
 		}
 	}
 	
-	public static SecretKey generatorPBEKey(String password,String alg) {
-		//加 密 口令与密钥
+	public static SecretKey generatorSecretKey(String alg) {
+        	String password = generatorStrPwd(16);
+			return generatorSecretKey(password,alg);
+	}
+	
+	public static SecretKey generatorSecretKey(String pwd, String alg) {
         try {
-			PBEKeySpec pbeKeySpec = new PBEKeySpec(password.toCharArray());
-			SecretKeyFactory factory = SecretKeyFactory.getInstance(alg);
-			SecretKey key = factory.generateSecret(pbeKeySpec);
-			return key;
-		} catch (NoSuchAlgorithmException | InvalidKeySpecException e) {
+        	SecretKey secretKey = null;
+        	if(alg.startsWith("AES")) {
+        		if(pwd == null) {
+        			pwd = "";
+        		}
+        		if(pwd.length() > SALT_LEN) {
+        			pwd = pwd.substring(0,SALT_LEN);
+        		} else if (pwd.length() < SALT_LEN){
+        			for(int i = pwd.length(); i < SALT_LEN; i++) {
+        				pwd += "0";
+        			}
+        		}
+        		 secretKey = new SecretKeySpec(pwd.getBytes(Constants.CHARSET),KEY_AES);
+        		/* KeyGenerator kg = KeyGenerator.getInstance(KEY_AES); //获取密匙生成器 
+        		 kg.init(128); //初始化 
+        		 //AES算法可以是128、192、256位 
+        		 secretKey = kg.generateKey(); */
+        		 //生成密匙，可用多种方法来保存密匙 
+        	}else if(alg.startsWith("PBE")) {
+        		char[] password = pwd.toCharArray();
+    			PBEKeySpec pbeKeySpec = new PBEKeySpec(password);
+    			SecretKeyFactory factory = SecretKeyFactory.getInstance(alg);
+    			secretKey = factory.generateSecret(pbeKeySpec);
+        	} else {
+        		throw new CommonException("Not support alg :"+ alg);
+        	}
+        	return secretKey;
+		} catch (NoSuchAlgorithmException | InvalidKeySpecException | UnsupportedEncodingException e) {
 			throw new CommonException("",e);
 		}
+	}
+	
+	public static String generatorStrPwd(int len) {
+		StringBuffer data = new StringBuffer();
+		Random r = new Random(System.currentTimeMillis());
+		for(int i = 0; i < len; i++) {
+			int idx = r.nextInt(1024)%128;
+			data.append(USABLE_CHAR[idx]);
+		}
+		return data.toString();
 	}
 
 	/** 
@@ -147,6 +220,39 @@ public class EncryptUtils {
 			throw new CommonException("encryptPBE error",e);
 		}  
     
+    }  
+	
+	/** 
+     * PBE 解密 
+     * @param data 需要解密的字节数组 
+     * @param key  密钥 
+     * @param salt 盐 
+     * @return 
+     */  
+	public static byte[] decryptAes(byte[] data,int pos,int len,byte[] salt,SecretKey key) {  
+        try {
+			//获取密钥
+			Cipher cipher = Cipher.getInstance(EncryptUtils.KEY_AES_MEDEL_PAD);  
+			if(salt == null || salt.length == 0) {
+        		salt = SALT_DEFAULT;
+        	}
+			cipher.init(Cipher.DECRYPT_MODE, key,new IvParameterSpec(salt));
+			return cipher.doFinal(data,pos,len);
+		} catch (InvalidKeyException | NoSuchAlgorithmException | NoSuchPaddingException | IllegalBlockSizeException
+				| BadPaddingException | InvalidAlgorithmParameterException e) {
+			throw new CommonException("decryptAes error",e);
+		}
+    }  
+	
+	public static byte[] encryptAes(byte[] data,int pos,int len, byte[] salt, SecretKey key) {  
+        try {
+        	Cipher cipher = Cipher.getInstance(KEY_AES_MEDEL_PAD);  
+			cipher.init(Cipher.ENCRYPT_MODE, key, new IvParameterSpec(salt));  
+			return cipher.doFinal(data,pos,len);
+		} catch (InvalidKeyException | NoSuchAlgorithmException | NoSuchPaddingException | IllegalBlockSizeException
+				| BadPaddingException | InvalidAlgorithmParameterException e) {
+			throw new CommonException("encryptAes error",e);
+		}  
     }  
   
 	/**
@@ -189,14 +295,14 @@ public class EncryptUtils {
 	 * @return
 	 * @throws Exception 加密过程中的异常信息
 	 */
-	public static byte[] encrypt(RSAPublicKey publicKey, byte[] plainTextData, int pos, int len0) {
+	public static byte[] encryptRsa(RSAPublicKey publicKey, byte[] plainTextData, int pos, int len0) {
 		if (publicKey == null) {
 			throw new CommonException("加密公钥为空, 请设置");
 		}
 
 		try {
 			//使用默认RSA
-			Cipher cipher = Cipher.getInstance("RSA");
+			Cipher cipher = Cipher.getInstance(RSA_MODEL);
 			//cipher= Cipher.getInstance("RSA", new BouncyCastleProvider());
 			cipher.init(Cipher.ENCRYPT_MODE, publicKey);
 			
@@ -238,14 +344,14 @@ public class EncryptUtils {
 	 * @return 明文
 	 * @throws Exception 解密过程中的异常信息
 	 */
-	public static byte[] decrypt(RSAPrivateKey privateKey, byte[] cipherData,int pos,int len0) {
+	public static byte[] decryptRsa(RSAPrivateKey privateKey, byte[] cipherData,int pos,int len0) {
 		if (privateKey == null) {
-			throw new CommonException("解密私钥为空, 请设置");
+			throw new CommonException("解密私钥为空,请设置");
 		}
 		Cipher cipher = null;
 		try {
 			// 使用默认RSA
-			cipher = Cipher.getInstance("RSA");
+			cipher = Cipher.getInstance(RSA_MODEL);
 			// cipher= Cipher.getInstance("RSA", new BouncyCastleProvider());
 			cipher.init(Cipher.DECRYPT_MODE, privateKey);
 			
@@ -254,7 +360,7 @@ public class EncryptUtils {
 			int offset = pos + len0;
 			
 			for(int i = pos; i < offset; i += DECRY_SEC_LEN) {
-				int len = i+DECRY_SEC_LEN < offset ? DECRY_SEC_LEN : offset - i;
+				int len = i + DECRY_SEC_LEN < offset ? DECRY_SEC_LEN : offset - i;
 				byte[] ed = cipher.doFinal(cipherData, i, len);
 				eds.add(ed);
 			}
@@ -287,13 +393,13 @@ public class EncryptUtils {
 	 * @return 明文
 	 * @throws Exception 解密过程中的异常信息
 	 */
-	public static String decrypt(RSAPrivateKey privateKey, String cipherData) {
+	public static String decryptRsa(RSAPrivateKey privateKey, String cipherData) {
 		if (privateKey == null) {
 			throw new CommonException("解密私钥为空, 请设置");
 		}
 		try {
 			byte[] data = cipherData.getBytes(Constants.CHARSET);
-			return new String(decrypt(privateKey,data,0,data.length));
+			return new String(decryptRsa(privateKey,data,0,data.length));
 		} catch (UnsupportedEncodingException e) {
 			throw new CommonException("",e);
 		}
@@ -327,7 +433,7 @@ public class EncryptUtils {
 	public static String sign(String content, String privateKey, String encode) {
 		try {
 			PKCS8EncodedKeySpec priPKCS8 = new PKCS8EncodedKeySpec(Base64.getDecoder().decode(privateKey));
-			KeyFactory keyf = KeyFactory.getInstance("RSA");
+			KeyFactory keyf = KeyFactory.getInstance(RSA_MODEL);
 			PrivateKey priKey = keyf.generatePrivate(priPKCS8);
 			byte[] data = content.getBytes(Constants.CHARSET);
 			return sign(data,0,data.length,priKey);
@@ -382,10 +488,71 @@ public class EncryptUtils {
 		return doCheck(content,sign,publicKey,Constants.CHARSET);
 	}
 	
-	public static void main(String[] args) {
-		Map<String,String> kp = genRsaKey(null);
-		System.out.println(kp.get("publicKey"));
-		System.out.println(kp.get("privateKey"));
+	public static byte[] pkcs1unpad2(byte[] bytes) {
+		int n  = 128;
+		byte[] out;
+		int i = 0;
+		while (i < bytes.length && bytes[i] == 0)
+			++i;
+		if (bytes.length - i != n - 1 || bytes[i] > 2) {
+			// Environment.writeError("PKCS#1 unpad: i="+i+", expected b[i]==[0,1,2], got
+			// b[i]="+bytes[i]);
+			return null;
+		}
+		++i;
+		while (bytes[i] != 0) {
+			if (++i >= bytes.length) {
+				// Environment.writeError("PKCS#1 unpad: i="+i+", b[i-1]!=0 (="+bytes[i-1]+")");
+				return null;
+			}
+		}
+		out = new byte[(bytes.length - i) + 1];
+		int p = 0;
+		while (++i < bytes.length) {
+			out[p++] = (bytes[i]);
+		}
+		return out;
+	}
+	
+	
+	public static void main(String[] args) throws UnsupportedEncodingException {
 		
+		//String pwd = "jmicroapigateway";
+		//String pwd = "jmicrosecurity12";
+		//String pwd = "mng123";
+		String pwd = "comsumer";
+		
+		Map<String,String> kp = genRsaKey(pwd);
+		
+		String priStr = kp.get("privateKey");
+		byte[] data = Base64.getDecoder().decode(priStr);
+		
+		SecretKey sk = generatorSecretKey(pwd,KEY_AES);
+		//SecretKey sk = generatorSecretKey("jmicrosecurity12",KEY_AES);
+		
+		String decodePriKey = Base64.getEncoder().encodeToString(decryptAes(data,0,data.length,SALT_DEFAULT,sk));
+		
+		String content = "test aes 加密数据";
+		String sign = sign(content,decodePriKey,Constants.CHARSET);
+		
+		boolean checkResult = doCheck(content,sign,kp.get("publicKey"),Constants.CHARSET);
+		
+		System.out.println("check result: " + checkResult);
+		
+		System.out.println(kp.get("publicKey"));
+		System.out.println(priStr);
+		
+		
+		/*String content = "test aes 加密数据";
+		String pwd = generatorStrPwd(16);
+		SecretKey key = generatorSecretKey(pwd,"AES");
+		
+		byte[] data = content.getBytes(Constants.CHARSET);
+		byte[] encData = encryptAes(data,0,data.length,SALT_DEFAULT,key);
+		
+		byte[] decData = decryptAes(encData,0,encData.length,SALT_DEFAULT,key);
+		String decStr = new String(decData,Constants.CHARSET);
+		
+		System.out.println(decStr);*/
 	}
 }

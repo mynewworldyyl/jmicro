@@ -33,7 +33,7 @@ public class JMicroBaseTestCase {
 	}
 	
 	protected static String[] getArgs() {
-		return new String[] {"-DinstanceName=comsumer","-DclientId=0","-DadminClientId=0"};
+		return new String[] {"-DinstanceName=comsumer","-DclientId=0","-DadminClientId=0","-DpriKeyPwd=comsumer"};
 	}
 	
 	protected <T> T get(Class<T> cls) {

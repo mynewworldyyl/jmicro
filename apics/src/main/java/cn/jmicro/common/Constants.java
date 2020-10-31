@@ -241,4 +241,5 @@ public interface Constants {
 	public static final byte NULL_VAL = (byte)0X01;
 	
 	/*==============================================================*/
+	
 }

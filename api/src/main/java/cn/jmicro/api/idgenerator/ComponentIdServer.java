@@ -79,7 +79,7 @@ public class ComponentIdServer /*implements IIdClient,IIdServer*/{
 	public Integer[] getIntIds(String idKey, int num) {
 		if(isNotIdServer) {
 			return idClient.getIntIds(idKey, num);
-		}else {
+		} else {
 			return idServer.getIntIds(idKey, num);
 		}
 	}
@@ -123,7 +123,6 @@ public class ComponentIdServer /*implements IIdClient,IIdServer*/{
 		}
 		
 		synchronized(strIdsCache) {
-				
 			ids = strIdsCache.get(idCls.getName());
 			if(ids == null) {
 				ids = new ConcurrentLinkedQueue<String>();
@@ -134,7 +133,7 @@ public class ComponentIdServer /*implements IIdClient,IIdServer*/{
 				String[] reqIds = this.getStringIds(idCls.getName(), getCacheSize(idCls));
 				ids.addAll(Arrays.asList(reqIds));
 			}
-			}
+		}
 		
 		return ids.poll();
 	}
@@ -151,7 +150,6 @@ public class ComponentIdServer /*implements IIdClient,IIdServer*/{
 		synchronized(intIdsCache) {
 			
 			ids = intIdsCache.get(idCls.getName());
-			
 			if(ids == null) {
 				ids = new ConcurrentLinkedQueue<Integer>();
 				intIdsCache.put(idCls.getName(), ids);
@@ -179,7 +177,7 @@ public class ComponentIdServer /*implements IIdClient,IIdServer*/{
 			size = ids.value();
 			if(size <= 0) {
 				logger.error("IDStragety config size error:{},size:{},set to default:{}",
-						idCls.getName(),size,DEFAULT_CATCHE_SIZE);
+						idCls.getName(), size, DEFAULT_CATCHE_SIZE);
 			}
 		}
 		

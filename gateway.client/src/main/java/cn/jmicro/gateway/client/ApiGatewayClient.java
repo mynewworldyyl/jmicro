@@ -16,13 +16,20 @@
  */
 package cn.jmicro.gateway.client;
 
+import java.io.BufferedReader;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Proxy;
 import java.lang.reflect.Type;
 import java.nio.ByteBuffer;
+import java.security.interfaces.RSAPublicKey;
 import java.util.Map;
+import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
+
+import javax.crypto.SecretKey;
 
 import com.google.gson.reflect.TypeToken;
 
@@ -41,6 +48,7 @@ import cn.jmicro.api.net.IRequest;
 import cn.jmicro.api.net.ISession;
 import cn.jmicro.api.net.Message;
 import cn.jmicro.api.pubsub.PSData;
+import cn.jmicro.api.rsa.EncryptUtils;
 import cn.jmicro.api.security.ActInfo;
 import cn.jmicro.codegenerator.AsyncClientProxy;
 import cn.jmicro.codegenerator.AsyncClientUtils;
@@ -58,6 +66,8 @@ import cn.jmicro.gateway.pubsub.ApiGatewayPubsubClient;
 public class ApiGatewayClient {
 	
 	//private final static Logger logger = LoggerFactory.getLogger(ApiGatewayClient.class);
+	
+	private static final String API_GATEWAY_PUB_KEY_FILE = "/META-INF/keys/jmicro_apigateway_pub.key";
 	
 	private static ApiGatewayClient client;
 	
@@ -114,6 +124,28 @@ public class ApiGatewayClient {
 	}
 	
 	private void init() {
+		if(this.config.isSslEnable()) {
+			
+			InputStream is = ApiGatewayClient.class.getResourceAsStream(API_GATEWAY_PUB_KEY_FILE);
+			
+			StringBuffer sb = new StringBuffer();
+			String line = null;
+			try(BufferedReader br = new BufferedReader(new InputStreamReader(is));) {
+				while ((line = br.readLine()) != null) {
+					sb.append(line);
+				}
+			} catch (Exception e) {
+				throw new CommonException("Fail to load api gateway public key: "+ API_GATEWAY_PUB_KEY_FILE );
+			}
+			
+			this.pubKey = EncryptUtils.loadPublicKeyByStr(sb.toString());
+			
+			if(this.pubKey == null) {
+				throw new CommonException("Fail to load api gateway public key: "+ API_GATEWAY_PUB_KEY_FILE );
+			}
+			
+		}
+		
 		sessionManager.setClientType(getClientType());
 		sessionManager.registerMessageHandler(new IMessageHandler(){
 			@Override
@@ -124,8 +156,13 @@ public class ApiGatewayClient {
 			@Override
 			public void onMessage(ISession session, Message msg) {
 				session.active();
+				if(msg.isDownSsl() && config.isSslEnable()) {
+					checkSignAndDecrypt(msg);
+				}
 				waitForResponses.get(msg.getReqId()).onResponse(msg);
 			}
+
+			
 		});
 		
 		sessionManager.registerMessageHandler(new IMessageHandler(){
@@ -194,6 +231,7 @@ public class ApiGatewayClient {
 								p.done();
 							}
 						};
+						
 						//String serviceName, String namespace, String version, String methodName, 
 						//Class<?> returnType, Object[] args, IAsyncCallback<T> cb
 						//Class<?> returnType = TypeUtils.finalParameterType(method.getGenericReturnType(), 0);
@@ -437,7 +475,7 @@ public class ApiGatewayClient {
 			if(respMsg.getType() == Constants.MSG_TYPE_ASYNC_RESP) {
 				R psData = JsonUtils.getIns().fromJson(json, returnType);
 				return psData;
-			}else {
+			} else {
 				ApiResponse apiResp = JsonUtils.getIns().fromJson(json, ApiResponse.class);
 				if(apiResp.isSuccess()) {
 					 if(apiResp.getResult() == null || returnType == Void.class || Void.TYPE == returnType) {
@@ -495,20 +533,78 @@ public class ApiGatewayClient {
 		msg.setUpSsl(false);
 		msg.setInsId(0);
 		
-		//ByteBuffer bb = decoder.encode(req);
+		msg.setVersion(Message.MSG_VERSION);
 		
 		String json = JsonUtils.getIns().toJson(req);
-		ByteBuffer bb = null;
-		try {
-			bb = ByteBuffer.wrap(json.getBytes(Constants.CHARSET));
-		} catch (UnsupportedEncodingException e) {
-			e.printStackTrace();
-		}
-		msg.setPayload(bb);
-		msg.setVersion(Message.MSG_VERSION);
+		
+		signAndEncrypt(msg,json);
 		
 		return msg;
     }
+    
+    private void signAndEncrypt(Message msg,String json) {
+		
+		try {
+			byte[] data = json.getBytes(Constants.CHARSET);
+			if(config.isSslEnable()) {
+				
+				byte[] salt = getSalt();
+				msg.setSalt(salt);
+				msg.setUpSsl(true);
+				msg.setDownSsl(true);
+				msg.setEncType(false);
+				
+				String insName = config.getHost() + ":" + config.getPort();
+				msg.setInsId(insName.hashCode()%65534);
+				
+				if(sec == null || ((System.currentTimeMillis() - this.lastUpdatePwdTime) > config.getPwdUpdateInterval())) {
+					sec = EncryptUtils.generatorSecretKey(EncryptUtils.KEY_AES);
+					this.lastUpdatePwdTime = System.currentTimeMillis();
+					pwdData = sec.getEncoded();
+					pwdData = EncryptUtils.encryptRsa(pubKey, pwdData, 0, pwdData.length);
+					
+					msg.setSec(pwdData);
+					msg.setSec(true);
+				}
+				
+				data = EncryptUtils.encryptAes(data, 0, data.length, salt, sec);
+			}
+			
+			msg.setPayload(ByteBuffer.wrap(data));
+		} catch (Exception e) {
+			throw new CommonException("Sign or encrypt error: ",e);
+		}
+    }
+    
+    private void checkSignAndDecrypt(Message msg) {
+    	
+    	ByteBuffer bb = (ByteBuffer) msg.getPayload();
+    	byte[] edata = null;
+    	if(msg.isDownSsl()) {
+    		edata = EncryptUtils.decryptAes(bb.array(), 0, bb.limit(), msg.getSalt(), sec);
+    		msg.setPayload(ByteBuffer.wrap(edata));
+    	}
+    	
+    	if(msg.isSign()) {
+    		if(edata != null) {
+    			if (!EncryptUtils.doCheck(edata, 0, edata.length, msg.getSign(), pubKey)) {
+    				throw new CommonException("invalid sign");
+    			}
+    		} else {
+    			if (!EncryptUtils.doCheck(bb.array(), 0, bb.limit(), msg.getSign(), pubKey)) {
+    				throw new CommonException("invalid sign");
+    			}
+    		}
+    	}
+		
+	}
+    
+    private byte[] getSalt() {
+		byte[] salt = new byte[EncryptUtils.SALT_LEN];
+		Random random = new Random();
+		random.nextBytes(salt);
+		return salt;
+	}
     
     private String generatorSrvName(String className) {
 		return AsyncClientUtils.genSyncServiceName(className);
@@ -534,6 +630,14 @@ public class ApiGatewayClient {
 	public ApiGatewayPubsubClient getPubsubClient() {
 		return pubsubClient;
 	}
+	
+	private SecretKey sec = null;
+	
+	private RSAPublicKey pubKey = null;
+	
+	private byte[] pwdData = null;
+	
+	private long lastUpdatePwdTime = System.currentTimeMillis();
 	
 	
 }

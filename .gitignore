@@ -411,6 +411,7 @@ main/main.mng/data/
 main/main.mng/bin/
 main/main.mng/src/main/gen
 main/main.mng/dumpDir/
+main/main.mng/src/main/resources/META-INF/keys/
 choreography/choreography.agent/target/
 choreography/choreography.agent/.classpath
 choreography/choreography.agent/.project

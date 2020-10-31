@@ -335,7 +335,7 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
         		msg.setPayload(pl);
         		
         		if(sm.isUpSsl() || sm.isDownSsl()) {
-        			this.secManager.signAndEncrypt(msg,si.getInsId(),true);
+        			this.secManager.signAndEncrypt(msg,si.getInsId());
         		}
         		
         		//超时重试时,只需要执行一次此代码块
