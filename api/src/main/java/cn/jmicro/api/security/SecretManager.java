@@ -112,11 +112,14 @@ public class SecretManager {
 					byte[] secrect = null;
 					if(msg.isFromWeb()) {
 						//secrect = EncryptUtils.pkcs1unpad2(msg.getSec());
+						//对密钥做utf8解码为字符串，结果是密码密文的base64编码
 						String b64Str = new String(msg.getSec(),Constants.CHARSET);
+						//对密文做base64解码，得到密文的字节数组，
 						byte[] sec = Base64.getDecoder().decode(b64Str);
+						//解密密文，得到字节码形式的AES密码明文，字节码是密码的UTF8编码后的字节数组
 						secrect = EncryptUtils.decryptRsa(myPriKey,sec, 0, sec.length);
-						String srcPwd = new String(secrect,Constants.CHARSET);
-						logger.info(srcPwd);
+					/*	String srcPwd = new String(secrect,Constants.CHARSET);
+						logger.info(srcPwd);*/
 					} else {
 						secrect = EncryptUtils.decryptRsa(myPriKey, msg.getSec(), 0, msg.getSec().length);
 					}
@@ -154,8 +157,10 @@ public class SecretManager {
 				}
 				ByteBuffer bb = (ByteBuffer) msg.getPayload();
 				//byte[] d = EncryptUtils.decryptPBE(bb.array(), 0, bb.limit(), msg.getSalt(), k.key);
+				//msg.getSalt() 是客户端传过来的IV值的utf8编码后的数组，
 				byte[] d = EncryptUtils.decryptAes(bb.array(), 0, bb.limit(), msg.getSalt(), k.key);
 				if(msg.isFromWeb()) {
+					//因为WEB端是将数据做Base64编码为字符串后做的加密，所以Java端同样要将结果做Base64解码
 					d = Base64.getDecoder().decode(d);
 				}
 				msg.setPayload(ByteBuffer.wrap(d));
@@ -210,7 +215,15 @@ public class SecretManager {
 		
 		// 对于上行包，如果下行是安全的，则说明客户端有私钥，所以需要做签名
 		if (!isUp && msg.isUpSsl() || isUp && msg.isDownSsl()) {
-			String sign = EncryptUtils.sign(bb.array(), 0, bb.limit(), this.myPriKey);
+			String sign = null;
+			if(msg.isFromWeb()) {
+				//因为WEB端验签时只认字符串，所以加签前把数据转为Base64字符串
+				byte[] b64Data = Base64.getEncoder().encode(bb.array());
+				sign = EncryptUtils.sign(b64Data, 0, b64Data.length, this.myPriKey);
+			} else {
+				sign = EncryptUtils.sign(bb.array(), 0, bb.limit(), this.myPriKey);
+			}
+			
 			if (Utils.isEmpty(sign)) {
 				throw new CommonException("Fail to sign");
 			}
@@ -255,19 +268,7 @@ public class SecretManager {
 			}
 			
 			byte[] salt = getSalt();
-			byte[] edata =null;
-			if(msg.isFromWeb()) {
-				 /*
-				 byte[] data = new byte[bb.limit()];
-				 bb.get(data);
-				 byte[] b64 = Base64.getEncoder().encode(data);
-				 */
-				 edata = EncryptUtils.encryptAes(bb.array(), 0, bb.limit(), salt, sec.key);
-				 //System.out.println(Base64.getEncoder().encodeToString(edata));
-			}else {
-				 edata = EncryptUtils.encryptAes(bb.array(), 0, bb.limit(), salt, sec.key);
-			}
-			
+			byte[] edata = EncryptUtils.encryptAes(bb.array(), 0, bb.limit(), salt, sec.key);
 			msg.setSalt(salt);
 			msg.setPayload(ByteBuffer.wrap(edata));
 
@@ -407,60 +408,9 @@ public class SecretManager {
 		return null;
 	}
 
-	private String loadKeyContent(String priKey, String defPath) {
-
-		InputStream is = null;
-		String priFile = Config.getCommandParam(priKey);
-
-		try {
-
-			if (!Utils.isEmpty(priFile)) {
-				if (new File(priFile).exists()) {
-					is = new FileInputStream(priFile);
-				}
-				if (is == null) {
-					is = SecretManager.class.getResourceAsStream(priFile);
-				}
-			}
-
-			if (is == null) {
-				priFile = defPath;
-				if (!priFile.startsWith("/")) {
-					priFile = "/" + priFile;
-				}
-				if (new File(priFile).exists()) {
-					is = new FileInputStream(priFile);
-				}
-				if (is == null) {
-					is = SecretManager.class.getResourceAsStream(priFile);
-				}
-			}
-
-		} catch (FileNotFoundException e) {
-			logger.warn("Private key file " + priFile + "  not found", e);
-		}
-
-		if (is == null) {
-			return null;
-		}
-
-		StringBuffer sb = new StringBuffer();
-
-		String line = null;
-		try (BufferedReader br = new BufferedReader(new InputStreamReader(is));) {
-			while ((line = br.readLine()) != null) {
-				sb.append(line);
-			}
-			return sb.toString();
-		} catch (Exception e) {
-			logger.error("error read key file: " + priFile, e);
-		}
-		return null;
-	}
-
 	public void ready() {
-
-		String priStr = loadKeyContent("priKey",
+		String priFile = Config.getCommandParam("priKey");
+		String priStr = EncryptUtils.loadKeyContent(priFile,
 				PUBKEYS_PREFIX + "jmicro_" + getInsPrefix(Config.getInstanceName()) + "_pri.key");
 		if(!Utils.isEmpty(priStr)) {
 			try {
@@ -480,7 +430,7 @@ public class SecretManager {
 
 		List<String> configFiles = ClassScannerUtils.getClasspathResourcePaths("META-INF/keys", "*pub.key");
 		for (String fn : configFiles) {
-			String pstr = loadKeyContent("", fn);
+			String pstr =  EncryptUtils.loadKeyContent("", fn);
 			if (!Utils.isEmpty(pstr)) {
 				try {
 
@@ -525,7 +475,7 @@ public class SecretManager {
 	}
 
 	private void loadPublicKeys(String file, String prefix) {
-		String pstr = loadKeyContent("", file);
+		String pstr =  EncryptUtils.loadKeyContent("", file);
 		if (!Utils.isEmpty(pstr)) {
 			try {
 				RSAPublicKey pkey = EncryptUtils.loadPublicKeyByStr(pstr);

@@ -16,14 +16,13 @@
  */
 package cn.jmicro.gateway.client;
 
-import java.io.BufferedReader;
-import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Proxy;
 import java.lang.reflect.Type;
 import java.nio.ByteBuffer;
+import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
+import java.util.Base64;
 import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
@@ -124,26 +123,34 @@ public class ApiGatewayClient {
 	}
 	
 	private void init() {
-		if(this.config.isSslEnable()) {
+		if(this.config.isUpSsl()) {
+			String keyStr = EncryptUtils.loadKeyContent(config.getApiGwPriKeyFile(),API_GATEWAY_PUB_KEY_FILE);
+			this.pubKey4ApiGateway = EncryptUtils.loadPublicKeyByStr(keyStr);
+			if(this.pubKey4ApiGateway == null) {
+				throw new CommonException("Fail to load api gateway public key: "+ API_GATEWAY_PUB_KEY_FILE );
+			}
+		}
+		
+		if(this.config.isDownSsl()) {
+			String keyStr = EncryptUtils.loadKeyContent(config.getMyPubKeyFile(),null);
+			this.myPubKey = EncryptUtils.loadPublicKeyByStr(keyStr);
 			
-			InputStream is = ApiGatewayClient.class.getResourceAsStream(API_GATEWAY_PUB_KEY_FILE);
-			
-			StringBuffer sb = new StringBuffer();
-			String line = null;
-			try(BufferedReader br = new BufferedReader(new InputStreamReader(is));) {
-				while ((line = br.readLine()) != null) {
-					sb.append(line);
+			try {
+				String priKeyStr = EncryptUtils.loadKeyContent(config.getMyPriKeyFile(),null);
+				if(Utils.isEmpty(priKeyStr)) {
+					throw new CommonException("Private key [" + config.getMyPriKeyFile() + "] not found!");
+				}
+				if (!Utils.isEmpty(config.getMyPriKeyPwd())) {
+					SecretKey key = EncryptUtils.generatorSecretKey(config.getMyPriKeyPwd(), EncryptUtils.KEY_AES);
+					byte[] data = Base64.getDecoder().decode(priKeyStr);
+					data = EncryptUtils.decryptAes(data, 0, data.length, EncryptUtils.SALT_DEFAULT, key);
+					myPriKey = EncryptUtils.loadPrivateKey(data);
+				} else {
+					myPriKey = EncryptUtils.loadPrivateKeyByStr(priKeyStr);
 				}
 			} catch (Exception e) {
-				throw new CommonException("Fail to load api gateway public key: "+ API_GATEWAY_PUB_KEY_FILE );
+				e.printStackTrace();
 			}
-			
-			this.pubKey = EncryptUtils.loadPublicKeyByStr(sb.toString());
-			
-			if(this.pubKey == null) {
-				throw new CommonException("Fail to load api gateway public key: "+ API_GATEWAY_PUB_KEY_FILE );
-			}
-			
 		}
 		
 		sessionManager.setClientType(getClientType());
@@ -156,7 +163,7 @@ public class ApiGatewayClient {
 			@Override
 			public void onMessage(ISession session, Message msg) {
 				session.active();
-				if(msg.isDownSsl() && config.isSslEnable()) {
+				if(msg.isDownSsl()) {
 					checkSignAndDecrypt(msg);
 				}
 				waitForResponses.get(msg.getReqId()).onResponse(msg);
@@ -546,13 +553,13 @@ public class ApiGatewayClient {
 		
 		try {
 			byte[] data = json.getBytes(Constants.CHARSET);
-			if(config.isSslEnable()) {
+			if(config.isUpSsl()) {
 				
 				byte[] salt = getSalt();
 				msg.setSalt(salt);
-				msg.setUpSsl(true);
-				msg.setDownSsl(true);
-				msg.setEncType(false);
+				msg.setUpSsl(config.isUpSsl());
+				msg.setDownSsl(config.isDownSsl());
+				msg.setEncType(config.getEncType()==1);
 				
 				String insName = config.getHost() + ":" + config.getPort();
 				msg.setInsId(insName.hashCode()%65534);
@@ -561,7 +568,7 @@ public class ApiGatewayClient {
 					sec = EncryptUtils.generatorSecretKey(EncryptUtils.KEY_AES);
 					this.lastUpdatePwdTime = System.currentTimeMillis();
 					pwdData = sec.getEncoded();
-					pwdData = EncryptUtils.encryptRsa(pubKey, pwdData, 0, pwdData.length);
+					pwdData = EncryptUtils.encryptRsa(pubKey4ApiGateway, pwdData, 0, pwdData.length);
 					
 					msg.setSec(pwdData);
 					msg.setSec(true);
@@ -587,11 +594,11 @@ public class ApiGatewayClient {
     	
     	if(msg.isSign()) {
     		if(edata != null) {
-    			if (!EncryptUtils.doCheck(edata, 0, edata.length, msg.getSign(), pubKey)) {
+    			if (!EncryptUtils.doCheck(edata, 0, edata.length, msg.getSign(), pubKey4ApiGateway)) {
     				throw new CommonException("invalid sign");
     			}
     		} else {
-    			if (!EncryptUtils.doCheck(bb.array(), 0, bb.limit(), msg.getSign(), pubKey)) {
+    			if (!EncryptUtils.doCheck(bb.array(), 0, bb.limit(), msg.getSign(), pubKey4ApiGateway)) {
     				throw new CommonException("invalid sign");
     			}
     		}
@@ -631,9 +638,15 @@ public class ApiGatewayClient {
 		return pubsubClient;
 	}
 	
+	
+	
 	private SecretKey sec = null;
 	
-	private RSAPublicKey pubKey = null;
+	private RSAPublicKey pubKey4ApiGateway = null;
+	
+	private RSAPublicKey myPubKey = null;
+	
+	private RSAPrivateKey myPriKey;
 	
 	private byte[] pwdData = null;
 	

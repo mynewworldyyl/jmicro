@@ -3116,7 +3116,8 @@ var RSAKey = /** @class */ (function () {
         }
         var unpadded = m.toString(16).replace(/^1f+00/, "");
         var digest = removeDigestHeader(unpadded);
-        return digest == digestMethod(text).toString();
+        var md5S = digestMethod(text).toString();
+        return digest == md5S;
     };
     return RSAKey;
 }());
@@ -5258,7 +5259,6 @@ var JSEncrypt = /** @class */ (function () {
         // Return the encrypted string.
         try {
            return hex2b64(this.getKey().encrypt(str));
-            //return this.getKey().encrypt(str);
         }
         catch (ex) {
             throw ex;

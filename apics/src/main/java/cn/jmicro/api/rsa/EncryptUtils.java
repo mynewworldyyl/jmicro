@@ -1,5 +1,11 @@
 package cn.jmicro.api.rsa;
 
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
@@ -43,16 +49,17 @@ public class EncryptUtils {
 	 */
 	private static final char[] HEX_CHAR = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e','f' };
 
-	private static Random rseed = new Random(System.currentTimeMillis());
-	
+	//一级随机种子
+	private static final Random RSEED = new Random(System.currentTimeMillis());
+	//密码表长度
 	public static final int CHAR_TABLE_LEN = 512;
-	
-	public static final char[] USABLE_CHAR = new char[512];
+	//密码表
+	public static final char[] USABLE_CHAR = new char[CHAR_TABLE_LEN];
 	
 	/**
 	 * 签名算法
 	 */
-	public static final String SIGN_ALGORITHMS = "SHA1WithRSA";
+	public static final String SIGN_ALGORITHMS = "MD5WithRSA";
 	
 	public static final String KEY_PBE = "PBEWITHMD5andDES";
 	
@@ -76,9 +83,13 @@ public class EncryptUtils {
 		//Security.addProvider(new org.bouncycastle.jce.provider.BouncyCastleProvider());
 		/*for (Provider provider : Security.getProviders())
 		    System.out.println(provider);*/
-		  
+		createPwdTable();
+		//System.out.println(sb.toString());
+	}
+	
+	private static void createPwdTable() {
 		int len = CHAR_TABLE_LEN;
-		Random r = new Random(rseed.nextInt());
+		Random r = new Random(RSEED.nextInt());
 		//StringBuffer sb = new StringBuffer();
 		for(int i = 0; i < len; i++) {
 			int rv = r.nextInt();
@@ -89,7 +100,6 @@ public class EncryptUtils {
 			USABLE_CHAR[i] = (char)c;
 			//sb.append((char)c);
 		}
-		//System.out.println(sb.toString());
 	}
 	
 	/**
@@ -176,7 +186,7 @@ public class EncryptUtils {
 		StringBuffer data = new StringBuffer();
 		Random r = new Random(System.currentTimeMillis());
 		for(int i = 0; i < len; i++) {
-			int idx = r.nextInt(1024)%128;
+			int idx = r.nextInt(1024)%CHAR_TABLE_LEN;
 			data.append(USABLE_CHAR[idx]);
 		}
 		return data.toString();
@@ -512,6 +522,60 @@ public class EncryptUtils {
 			out[p++] = (bytes[i]);
 		}
 		return out;
+	}
+	
+	public static String loadKeyContent(String configFile, String defPath) {
+
+		InputStream is = null;
+		//String priFile = Config.getCommandParam(priKey);
+
+		try {
+
+			if (!Utils.isEmpty(configFile)) {
+				if (new File(configFile).exists()) {
+					is = new FileInputStream(configFile);
+				}
+				if (is == null) {
+					is = EncryptUtils.class.getResourceAsStream(configFile);
+				}
+			}
+
+			if (is == null && !Utils.isEmpty(defPath)) {
+				if (!defPath.startsWith("/")) {
+					defPath = "/" + defPath;
+				}
+				if (new File(defPath).exists()) {
+					is = new FileInputStream(defPath);
+				}
+				if (is == null) {
+					is = EncryptUtils.class.getResourceAsStream(defPath);
+				}
+			}
+
+		} catch (FileNotFoundException e) {
+			//logger.warn("Private key file " + priFile + "  not found", e);
+			System.out.println("Private key file " + defPath + "  not found");
+			e.printStackTrace();
+		}
+
+		if (is == null) {
+			return null;
+		}
+
+		StringBuffer sb = new StringBuffer();
+
+		String line = null;
+		try (BufferedReader br = new BufferedReader(new InputStreamReader(is));) {
+			while ((line = br.readLine()) != null) {
+				sb.append(line);
+			}
+			return sb.toString();
+		} catch (Exception e) {
+			//logger.error("error read key file: " + priFile, e);
+			System.out.println("error read key file: " + defPath);
+			e.printStackTrace();
+		}
+		return null;
 	}
 	
 	

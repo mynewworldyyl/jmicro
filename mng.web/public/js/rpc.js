@@ -2835,20 +2835,27 @@ jm.eu = {
             salt : null
         };
 
-        let iv = jm.eu.genStrPwd(16);
-        opts.iv = CryptoJS.enc.Utf8.parse(iv);
-        msg.salt = jm.utils.toUTF8Array(iv);
+        let iv = jm.eu.genStrPwd(16);//通过密码表生成16个字节的动态偏移量
+        opts.iv = CryptoJS.enc.Utf8.parse(iv); //将偏移量转为UTF8编码，服务端使用时也要相应地使用utf8字节数组
+        msg.salt = jm.utils.toUTF8Array(iv);//将偏移量和数据一起发送给服务端，注意是utf8字节编码
 
         if(!this.pwd || new Date().getTime() - this.lastUpdatePwdTime > 1000*60*5 ) {
+            //首次进来或超过5分钟更新一次密码
+            //生成密码，方式和IV相同，但是功能不一样，参考前面关于密码表的说明
             this.pwd = jm.eu.genStrPwd(16);
+            //告诉服务端，有AES密码更新
             msg.setSec(true);
+            //对AES密码做RSA加密
             msg.sec = this.encryptRas(this.pwd);
         }
 
         //let ab = new ArrayBuffer(msg.payload);
         //var wordArray = CryptoJS.lib.WordArray.create(ab);
+        //将要发送的字节数据转为base64字符串格式，因为AES只接受字符串加密，同时方便服务器更好地处理解码
         let b64Str = jm.utils.byteArr2Base64(msg.payload);
+        //开始加密，密钥转为UTF8格式，保证Java服务端相同编码
         var encrypted = CryptoJS.AES.encrypt(b64Str, CryptoJS.enc.Utf8.parse(this.pwd),opts);
+        //encrypted.ciphertext是一个以WordArray，也就是一个整数数组，要将此整数数据转为字节数组
         msg.payload = this.wordToByteBuffer(encrypted.ciphertext);
 
     },
@@ -2912,9 +2919,10 @@ jm.eu = {
         let b64str = jm.utils.byteArr2Base64(msg.payload);
         var decrypted = CryptoJS.AES.decrypt(b64str,utf8pwd,opts);
         let dedata = this.byteBuffer2ByteArray(this.wordToByteBuffer(decrypted));
-       /* if(!this.rsae.verify(jm.utils.byteArr2Base64(dedata),msg.sign,CryptoJS.MD5)) {
+        //let hex = this.b64tohex(msg.sign);
+        if(!this.rsae.verify(jm.utils.byteArr2Base64(dedata), msg.sign, CryptoJS.MD5)) {
             throw "Invalid sign";
-        }*/
+        }
 
         msg.payload = dedata;
     },
@@ -2923,8 +2931,10 @@ jm.eu = {
         if(!this.pwdTable) {
             this.init();
         }
+        //对字符串做RSA加密，加密的结果是base64编码后的十六进制字符串
         let rst = this.rsae.encrypt(strContent);
         //return jm.utils.toUTF8Array(jm.utils.byteArr2Base64(this.hexToByteArray(rst)));
+        //rst是base64编码后的十六进制字符串，此处对这个base64字符串做utf8编码转为字节数组
          return jm.utils.toUTF8Array(rst);
     },
 

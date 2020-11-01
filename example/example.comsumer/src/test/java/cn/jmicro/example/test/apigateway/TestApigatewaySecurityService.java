@@ -35,8 +35,12 @@ public class TestApigatewaySecurityService {
 	
 	@BeforeClass
 	public static void setUp() {
+		
 		ApiGatewayConfig config = new ApiGatewayConfig(Constants.TYPE_SOCKET,"192.168.56.1",9092);
-		config.setSslEnable(true);
+		config.setUpSsl(true);
+		config.setDownSsl(true);
+		config.setEncType(0);
+		
 		ApiGatewayClient.initClient(config);
 		socketClient =  ApiGatewayClient.getClient();
 	}

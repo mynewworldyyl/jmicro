@@ -33,7 +33,16 @@ public class ApiGatewayConfig {
 	
 	private boolean debug = true;
 	
-	private boolean sslEnable = false;
+	private boolean upSsl = false;
+	private boolean downSsl = false;
+	private int encType = 0;
+	
+	private String myPriKeyFile = null;
+	private String myPubKeyFile = null;
+	private String apiGwPriKeyFile = null;
+	
+	private String myPriKeyPwd = null;
+	
 	private long pwdUpdateInterval = 1000*60*5L;
 	
 	public ApiGatewayConfig(int clientType) {
@@ -94,14 +103,6 @@ public class ApiGatewayConfig {
 		this.debug = debug;
 	}
 
-	public boolean isSslEnable() {
-		return sslEnable;
-	}
-
-	public void setSslEnable(boolean sslEnable) {
-		this.sslEnable = sslEnable;
-	}
-
 	public long getPwdUpdateInterval() {
 		return pwdUpdateInterval;
 	}
@@ -109,6 +110,60 @@ public class ApiGatewayConfig {
 	public void setPwdUpdateInterval(long pwdUpdateInterval) {
 		this.pwdUpdateInterval = pwdUpdateInterval;
 	}
-	
-	
+
+	public boolean isUpSsl() {
+		return upSsl;
+	}
+
+	public void setUpSsl(boolean upSsl) {
+		this.upSsl = upSsl;
+	}
+
+	public boolean isDownSsl() {
+		return downSsl;
+	}
+
+	public void setDownSsl(boolean downSsl) {
+		this.downSsl = downSsl;
+	}
+
+	public int getEncType() {
+		return encType;
+	}
+
+	public void setEncType(int encType) {
+		this.encType = encType;
+	}
+
+	public String getMyPriKeyFile() {
+		return myPriKeyFile;
+	}
+
+	public void setMyPriKeyFile(String myPriKeyFile) {
+		this.myPriKeyFile = myPriKeyFile;
+	}
+
+	public String getMyPubKeyFile() {
+		return myPubKeyFile;
+	}
+
+	public void setMyPubKeyFile(String myPubKeyFile) {
+		this.myPubKeyFile = myPubKeyFile;
+	}
+
+	public String getApiGwPriKeyFile() {
+		return apiGwPriKeyFile;
+	}
+
+	public void setApiGwPriKeyFile(String apiGwPriKeyFile) {
+		this.apiGwPriKeyFile = apiGwPriKeyFile;
+	}
+
+	public String getMyPriKeyPwd() {
+		return myPriKeyPwd;
+	}
+
+	public void setMyPriKeyPwd(String myPriKeyPwd) {
+		this.myPriKeyPwd = myPriKeyPwd;
+	}
 }
