@@ -6,6 +6,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import cn.jmicro.api.config.Config;
+import cn.jmicro.api.utils.TimeUtils;
 import cn.jmicro.common.CommonException;
 import cn.jmicro.common.util.StringUtils;
 
@@ -63,7 +64,7 @@ public class MonitorClientStatusAdapter implements IMonitorAdapter {
 	}
 
 	public void checkTimeout() {
-		if (monitoralbe && (System.currentTimeMillis() - lastStatusTime > 300000)) {// 5分钏没有状态请求
+		if (monitoralbe && (TimeUtils.getCurTime() - lastStatusTime > 300000)) {// 5分钏没有状态请求
 			logger.warn("ServiceCounter timeout 5 minutes, and stop it");
 			this.enableMonitor(false);
 		}
@@ -75,7 +76,7 @@ public class MonitorClientStatusAdapter implements IMonitorAdapter {
 			enableMonitor(true);
 		}
 
-		lastStatusTime = System.currentTimeMillis();
+		lastStatusTime = TimeUtils.getCurTime();
 
 		MonitorServerStatus s = new MonitorServerStatus();
 		// s.setInstanceName(Config.getInstanceName());

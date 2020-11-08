@@ -52,6 +52,7 @@ import cn.jmicro.api.objectfactory.IObjectFactory;
 import cn.jmicro.api.pubsub.PSData;
 import cn.jmicro.api.pubsub.PubSubManager;
 import cn.jmicro.api.raft.IDataOperator;
+import cn.jmicro.api.utils.TimeUtils;
 import cn.jmicro.common.Constants;
 import cn.jmicro.common.Utils;
 import cn.jmicro.common.util.StringUtils;
@@ -242,7 +243,7 @@ public class PubSubServer implements IInternalSubRpc{
 		
 		/*boolean me = this.statusMonitorAdapter.monitoralbe;
 		ServiceCounter sc = this.statusMonitorAdapter.getServiceCounter();*/
-		long curTime = System.currentTimeMillis();
+		long curTime = TimeUtils.getCurTime();
 		if(items != null && items.length > 0) {
 			/*if(me) {
 				sc.add(MC.Ms_ReceiveItemCnt,items.length);
@@ -461,7 +462,7 @@ public class PubSubServer implements IInternalSubRpc{
 				}*/
 				
 				long len = basketFactory.size();
-				long curTime = System.currentTimeMillis();
+				long curTime = TimeUtils.getCurTime();
 				if (len < batchSize) {
 					// 优先发送内存中的消息，如果内存中无消息，则发送缓存中的消息
 					for (Map.Entry<String, Long> e : lastSendTimes.entrySet()) {
@@ -632,7 +633,7 @@ public class PubSubServer implements IInternalSubRpc{
 		@Override
 		public void run() {
 			try {
-				long curTime = System.currentTimeMillis();
+				long curTime = TimeUtils.getCurTime();
 				
 			/*	boolean me = statusMonitorAdapter.monitoralbe;
 				ServiceCounter sc = statusMonitorAdapter.getServiceCounter();*/

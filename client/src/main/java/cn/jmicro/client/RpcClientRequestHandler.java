@@ -289,7 +289,7 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
 		msg.setVersion(Message.MSG_VERSION);
 		msg.setPriority(Message.PRIORITY_NORMAL);
 		
-		long curTime = System.currentTimeMillis();
+		long curTime = TimeUtils.getCurTime();
 		
         do {
         	
@@ -718,7 +718,7 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
 		synchronized(timeouts) {
 			ts.putAll(ts);
 		}
-		long cutTime = System.currentTimeMillis();
+		long cutTime = TimeUtils.getCurTime();
 		for(Long k : ts.keySet()) {
 			long t = timeouts.get(k);
 			if(cutTime > t) {

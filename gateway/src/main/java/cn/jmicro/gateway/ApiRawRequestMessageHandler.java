@@ -285,8 +285,18 @@ public class ApiRawRequestMessageHandler implements IMessageHandler{
 						msg.setPayload(resp.encode());
 					}
 					
+					if(resp.isSuccess() && (msg.isUpSsl() || msg.isDownSsl())) {
+						//由客户端决定返回数据加解密方式
+						//msg.setDownSsl(false/*sm.isDownSsl()*/);
+						//msg.setUpSsl(false/*sm.isUpSsl()*/);
+						//msg.setEncType(sm.isRsa());
+						secretMng.signAndEncrypt(msg, msg.getInsId());
+					} else {
+						//错误不需要做加密或签名
+						msg.setDownSsl(false);
+						msg.setUpSsl(false);
+					}
 					msg.setInsId(pi.getId());
-					msg.setUpSsl(false);
 					session.write(msg);
 				} else {
 					logger.warn(result.toString());

@@ -32,6 +32,7 @@ import cn.jmicro.api.raft.IDataListener;
 import cn.jmicro.api.raft.IDataOperator;
 import cn.jmicro.api.timer.ITickerAction;
 import cn.jmicro.api.timer.TimerTicker;
+import cn.jmicro.api.utils.TimeUtils;
 import cn.jmicro.choreography.agent.AgentManager;
 import cn.jmicro.choreography.api.IAssignStrategy;
 import cn.jmicro.choreography.api.IInstanceListener;
@@ -292,7 +293,7 @@ public class DeploymentAssignment {
 	
 	private void doChecker() {
 		 
-		 long curTime = System.currentTimeMillis();
+		 long curTime = TimeUtils.getCurTime();
 		 if(curTime - lastCheckTime < 3000) {
 			 return;
 		 }
@@ -388,7 +389,7 @@ public class DeploymentAssignment {
 				 this.doAssgin(dep);
 			 }
 		 }
-		 lastCheckTime = System.currentTimeMillis();
+		 lastCheckTime = TimeUtils.getCurTime();
 	}
 	
 	private void instanceRemoved(Integer insId) {
@@ -419,7 +420,7 @@ public class DeploymentAssignment {
 		
 		//LG.log(MC.LOG_WARN, TAG,  "Process success started: "+JsonUtils.getIns().toJson(pi));
 		
-		a.opTime = System.currentTimeMillis();
+		a.opTime = TimeUtils.getCurTime();
 		a.state = AssignState.STARTED;
 		this.assingManager.add(a);
 	}
@@ -485,7 +486,7 @@ public class DeploymentAssignment {
 		} else {
 			//logger.debug("Delete deploy: " + path);
 			a.state = AssignState.STOPING;
-			a.opTime = System.currentTimeMillis();
+			a.opTime = TimeUtils.getCurTime();
 			assingManager.update(a);
 			LG.log(MC.LOG_INFO,TAG,"Cammand agent to stop process: " + a.toString());
 		}
@@ -495,7 +496,7 @@ public class DeploymentAssignment {
 		}
 		fails.get(a.getAgentId()).add(a.getDepId());
 		
-		nextDeployTimeout.put(a.getDepId(), System.currentTimeMillis());
+		nextDeployTimeout.put(a.getDepId(), TimeUtils.getCurTime());
 	}
 
 	private void deploymentDataChanged(String depId, String data) {
@@ -675,7 +676,7 @@ public class DeploymentAssignment {
 
 	private void doAddAssign(Collection<AgentInfo> agentInfo, Deployment dep, int cnt) {
 
-		long curTime = System.currentTimeMillis();
+		long curTime = TimeUtils.getCurTime();
 		
 		List<AgentInfo> sortList = new LinkedList<>();
 		sortList.addAll(agentInfo);
@@ -794,7 +795,7 @@ public class DeploymentAssignment {
 			}
 		}
 		
-		long curTime = System.currentTimeMillis();
+		long curTime = TimeUtils.getCurTime();
 		ite = sortList.iterator();
 		while(ite.hasNext()) {
 			AgentInfo ai = ite.next();

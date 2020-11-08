@@ -16,6 +16,7 @@ import cn.jmicro.api.choreography.ChoyConstants;
 import cn.jmicro.api.choreography.ProcessInfo;
 import cn.jmicro.api.raft.IDataListener;
 import cn.jmicro.api.raft.IDataOperator;
+import cn.jmicro.api.utils.TimeUtils;
 import cn.jmicro.choreography.api.IInstanceListener;
 import cn.jmicro.common.util.JsonUtils;
 import cn.jmicro.common.util.StringUtils;
@@ -73,7 +74,7 @@ public class InstanceManager {
 			} else if(type == IListener.REMOVE) {
 				synchronized(notifyObj) {
 					//等待rmTimeout毫秒后，如果结点还是不存在，删除正式删除实例
-					timeouts.put(c, System.currentTimeMillis());
+					timeouts.put(c, TimeUtils.getCurTime());
 					notifyObj.notify();
 				}
 			}
@@ -97,7 +98,7 @@ public class InstanceManager {
 					continue;
 				}
 				
-				long curTime = System.currentTimeMillis();
+				long curTime = TimeUtils.getCurTime();
 				Set<String> set = new HashSet<>();
 				set.addAll(timeouts.keySet());
 				

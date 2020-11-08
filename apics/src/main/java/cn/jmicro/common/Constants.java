@@ -133,6 +133,8 @@ public interface Constants {
 	public static final String INSTANCE_NAME = "instanceName";
 	public static final String INSTANCE_NAME_GEN_CLASS = "instanceNameGenClass";
 	
+	public static final String LOCAL_INSTANCE_NAME = "localInstanceName";
+	
 	//public static final String CONTEXT_CALLBACK_SERVICE = "ServiceCallback";
 	public static final String CONTEXT_CALLBACK_CLIENT = "ClientCallback";
 	public static final String CONTEXT_SERVICE_RESPONSE = "serviceResponse";

@@ -27,9 +27,7 @@ public class TestPrefixTypeED {
 	public void testPrivimiteInt() {
 		
 		int intArra = 3;
-		
 		ByteBuffer bb = decoder.encode(intArra);
-		
 		int intArr1 = decoder.decode(bb);
 		
 		System.out.println(intArr1);

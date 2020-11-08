@@ -24,10 +24,12 @@ import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.atomic.AtomicLong;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import cn.jmicro.api.utils.TimeUtils;
 import cn.jmicro.common.CommonException;
 
 /**
@@ -107,7 +109,7 @@ public class TimerTicker {
 			@Override
 			public void run() {
 				try {
-					long beginTime = System.currentTimeMillis();
+					long beginTime = TimeUtils.getCurTime();
 				
 					long interval = beginTime - lastRunTime; //允许10毫秒误差
 					
@@ -129,7 +131,7 @@ public class TimerTicker {
 						}
 					}
 					
-					lastRunTime = System.currentTimeMillis();
+					lastRunTime = TimeUtils.getCurTime();
 					lastCostTime = lastRunTime - beginTime;
 					if(lastCostTime > ticker) {
 						logger.debug("Action cost time ["+lastCostTime+"] more than ["+ticker+"]!");

@@ -72,6 +72,7 @@ import cn.jmicro.api.service.IServerServiceProxy;
 import cn.jmicro.api.service.ServiceManager;
 import cn.jmicro.api.timer.TimerTicker;
 import cn.jmicro.api.utils.SystemUtils;
+import cn.jmicro.api.utils.TimeUtils;
 import cn.jmicro.common.CommonException;
 import cn.jmicro.common.Constants;
 import cn.jmicro.common.JmicroClassPool;
@@ -1630,7 +1631,7 @@ public class SimpleObjectFactory implements IObjectFactory {
 		pi.setInstanceName(Config.getInstanceName());
 		pi.setHost(Config.getExportSocketHost());
 		pi.setWorkDir(cfg.getString(Constants.INSTANCE_DATA_DIR,null));
-		pi.setOpTime(System.currentTimeMillis());
+		pi.setOpTime(TimeUtils.getCurTime());
 		pi.setHaEnable(ismlModel);
 		pi.setMaster(false);
 		pi.setStartTime(pi.getOpTime());

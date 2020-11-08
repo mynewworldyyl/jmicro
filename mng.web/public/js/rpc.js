@@ -134,6 +134,19 @@ if(typeof Array.prototype.fill == 'undefined') {
     }
 }
 
+if(typeof Array.prototype.join == 'undefined') {
+    Array.prototype.join = function(sep) {
+        var rst = '';
+        for(var i = 0; i < this.length; i++) {
+             rst += this[i] + sep;
+        }
+        if(rst.length > 0) {
+            rst.substring(0, rst.length-1);
+        }
+        return rst;
+    }
+}
+
 if(typeof String.prototype.trim == 'undefined') {
     String.prototype.trim = function(e) {
         return str.replace(/^\s+|\s+$/g,"");
@@ -753,6 +766,10 @@ jm.rpc = {
 
     isLogin: function () {
         return this.actInfo != null;
+    },
+
+    isAdmin: function () {
+        return this.actInfo != null && this.actInfo.isAdmin;
     },
 
     login: function (actName,pwd,cb){
@@ -1523,6 +1540,14 @@ jm.rpc.Constants = {
     MSG_TYPE_RRESP_RAW : 0x04, //纯二进制数据响应
 
     MSG_TYPE_ASYNC_RESP : 0x06,
+
+    SERVICE_NAMES : "serviceNames",
+    SERVICE_NAMESPACES : "namespaces",
+    SERVICE_VERSIONS : "versions",
+    SERVICE_METHODS : "methods",
+    INSTANCES : "instances",
+    NAMED_TYPES : "nameTypes",
+    ALL_INSTANCES : "allInstances",
 
     LOG_NO : 0,
     LOG_FINAL : 6,

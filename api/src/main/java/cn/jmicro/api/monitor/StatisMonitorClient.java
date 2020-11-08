@@ -46,6 +46,7 @@ import cn.jmicro.api.registry.IServiceListener;
 import cn.jmicro.api.registry.ServiceItem;
 import cn.jmicro.api.registry.ServiceMethod;
 import cn.jmicro.api.service.ServiceLoader;
+import cn.jmicro.api.utils.TimeUtils;
 import cn.jmicro.common.Constants;
 
 /**
@@ -215,10 +216,12 @@ public class StatisMonitorClient {
 	public void enableWork(AbstractClientServiceProxyHolder msPo, int opType) {
 		if(!checkerWorking && IServiceListener.ADD == opType) {
 			if(this.msPo != null && msPo.getHolder().isUsable()) {
+				logger.warn("Monitor thread started");
 				checkerWorking = true;
 				new Thread(this::doWork,Config.getInstanceName()+ "_MonitorClient_Worker").start();
 			}
 		} else if(checkerWorking && IServiceListener.REMOVE == opType) {
+			logger.warn("Monitor thread stop by monitor server offline!");
 			checkerWorking = false;
 		}
 	}
@@ -233,14 +236,14 @@ public class StatisMonitorClient {
 		int maxSendInterval = 2000;
 		int checkInterval = 5000;
 		
-		long lastSentTime = System.currentTimeMillis();
+		long lastSentTime = TimeUtils.getCurTime();
 		//long lastLoopTime = System.currentTimeMillis();
 		//long loopCnt = 0;
 		
 		while(checkerWorking) {
 			try {
 				
-				long beginTime = System.currentTimeMillis();
+				long beginTime = TimeUtils.getCurTime();
 				
 				if(this.statusMonitorAdapter.isMonitoralbe()) {
 					this.statusMonitorAdapter.getServiceCounter().add(MC.Ms_CheckLoopCnt, 1,beginTime);
@@ -278,16 +281,14 @@ public class StatisMonitorClient {
 					statusMonitorAdapter.checkTimeout();
 					
 					//中间耗费的时间要算在睡眠时间里面，如果耗费大于需要睡眠时间，则不需要睡眠了，直接进入下一次循环
-					long costTime = System.currentTimeMillis() - beginTime;
-					if((costTime = (checkInterval-costTime)) > 0) {
+					long costTime = TimeUtils.getCurTime() - beginTime;
+					if(items.isEmpty() && (costTime = (checkInterval-costTime)) > 0) {
 						synchronized(syncLocker) {
 							syncLocker.wait(costTime);
 						}
-					}
-					
-					if(items.isEmpty()) {
 						continue;
 					}
+					
 				}
 				
 				while(readBasket != null) {
@@ -298,13 +299,16 @@ public class StatisMonitorClient {
 					readBasket = this.basketFactory.borrowReadSlot();
 				}
 				
-				if(items.size() == 0) {
+				if(items.isEmpty()) {
+					synchronized(syncLocker) {
+						syncLocker.wait(checkInterval);
+					}
 					continue;
 				}
 				
 				merge(items);
 				
-				if(items.size() >= batchSize || (items.size() > 0 && ((System.currentTimeMillis() - lastSentTime) > maxSendInterval))) {
+				if(items.size() >= batchSize || (items.size() > 0 && ((TimeUtils.getCurTime() - lastSentTime) > maxSendInterval))) {
 					
 					IBasket<MRpcStatisItem> cb = null;
 					while((cb = this.cacheBasket.borrowReadSlot()) != null) {
@@ -324,7 +328,12 @@ public class StatisMonitorClient {
 					
 					this.executor.submit(new Worker(mrs));
 					items.clear();
-					lastSentTime = System.currentTimeMillis();
+					lastSentTime = TimeUtils.getCurTime();
+				} else {
+					synchronized(syncLocker) {
+						syncLocker.wait(checkInterval);
+					}
+					continue;
 				}
 				
 			}catch(Throwable ex) {

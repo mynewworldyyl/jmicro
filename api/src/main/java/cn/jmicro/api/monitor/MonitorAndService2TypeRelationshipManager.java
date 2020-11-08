@@ -89,9 +89,10 @@ public class MonitorAndService2TypeRelationshipManager {
 	
 	
 	public void ready() {
+		op.addChildrenListener(Config.MonitorTypesDir, monitorTypeChildrenListener);
+		op.addChildrenListener(Config.MonitorServiceMethodTypesDir, srvChildrenListener);
 		registry.addServiceNameListener("cn.jmicro.api.monitor.IMonitorDataSubscriber", monigotDataSubscribeListener);
-		op.addChildrenListener(Config.MonitorTypesDir,monitorTypeChildrenListener);
-		op.addChildrenListener(Config.MonitorServiceMethodTypesDir,srvChildrenListener);
+		
 	}
 	
 	public Map<String, Set<Short>> getMkey2Types() {

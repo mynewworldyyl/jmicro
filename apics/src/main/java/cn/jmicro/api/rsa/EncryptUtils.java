@@ -39,6 +39,7 @@ import javax.crypto.spec.PBEKeySpec;
 import javax.crypto.spec.PBEParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
+import cn.jmicro.api.utils.TimeUtils;
 import cn.jmicro.common.CommonException;
 import cn.jmicro.common.Constants;
 import cn.jmicro.common.Utils;
@@ -50,7 +51,7 @@ public class EncryptUtils {
 	private static final char[] HEX_CHAR = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e','f' };
 
 	//一级随机种子
-	private static final Random RSEED = new Random(System.currentTimeMillis());
+	private static final Random RSEED = new Random(TimeUtils.getCurTime());
 	//密码表长度
 	public static final int CHAR_TABLE_LEN = 512;
 	//密码表
@@ -67,7 +68,7 @@ public class EncryptUtils {
 	
 	public static final String KEY_AES_MEDEL_PAD = "AES/CBC/PKCS5Padding";
 	
-	public static final String RSA_MODEL = "RSA/ECB/PKCS1Padding";//RSA/CBC/PKCS1Padding
+	public static final String RSA_MODEL = "RSA";//RSA/EBC/PKCS1Padding
 	
 	public static final int SALT_COUNT = 100;
 	
@@ -184,7 +185,7 @@ public class EncryptUtils {
 	
 	public static String generatorStrPwd(int len) {
 		StringBuffer data = new StringBuffer();
-		Random r = new Random(System.currentTimeMillis());
+		Random r = new Random(TimeUtils.getCurTime());
 		for(int i = 0; i < len; i++) {
 			int idx = r.nextInt(1024)%CHAR_TABLE_LEN;
 			data.append(USABLE_CHAR[idx]);
@@ -584,24 +585,21 @@ public class EncryptUtils {
 		//String pwd = "jmicroapigateway";
 		//String pwd = "jmicrosecurity12";
 		//String pwd = "mng123";
-		String pwd = "comsumer";
+		String pwd = "StatisMonitor";
 		
 		Map<String,String> kp = genRsaKey(pwd);
 		
 		String priStr = kp.get("privateKey");
-		byte[] data = Base64.getDecoder().decode(priStr);
-		
-		SecretKey sk = generatorSecretKey(pwd,KEY_AES);
+		//byte[] data = Base64.getDecoder().decode(priStr);
+		//SecretKey sk = generatorSecretKey(pwd,KEY_AES);
 		//SecretKey sk = generatorSecretKey("jmicrosecurity12",KEY_AES);
 		
-		String decodePriKey = Base64.getEncoder().encodeToString(decryptAes(data,0,data.length,SALT_DEFAULT,sk));
+		//String decodePriKey = Base64.getEncoder().encodeToString(decryptAes(data,0,data.length,SALT_DEFAULT,sk));
 		
-		String content = "test aes 加密数据";
+		/*String content = "test aes 加密数据";
 		String sign = sign(content,decodePriKey,Constants.CHARSET);
-		
 		boolean checkResult = doCheck(content,sign,kp.get("publicKey"),Constants.CHARSET);
-		
-		System.out.println("check result: " + checkResult);
+		System.out.println("check result: " + checkResult);*/
 		
 		System.out.println(kp.get("publicKey"));
 		System.out.println(priStr);

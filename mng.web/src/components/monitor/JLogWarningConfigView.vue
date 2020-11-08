@@ -85,7 +85,7 @@
 
 <script>
 
-    const cid = 'JLogWarningConfigView';
+    const cid = 'warningConfig';
 
     const sn = 'cn.jmicro.mng.api.ILogWarningConfig';
     const ns = 'mng';

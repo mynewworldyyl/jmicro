@@ -11,6 +11,7 @@ import cn.jmicro.api.annotation.IDStrategy;
 import cn.jmicro.api.config.Config;
 import cn.jmicro.api.objectfactory.IObjectFactory;
 import cn.jmicro.api.raft.IDataOperator;
+import cn.jmicro.api.utils.TimeUtils;
 import cn.jmicro.common.CommonException;
 import cn.jmicro.common.util.StringUtils;
 
@@ -75,7 +76,7 @@ public class VoterPerson {
 		
 		this.dir = ROOT + "/" + tag;
 		
-		long curTime = System.currentTimeMillis();
+		long curTime = TimeUtils.getCurTime();
 		if(!op.exist(dir)) {
 			//创建目录节点，并在目录上记录开始时间
 			electionStartTime = curTime;
@@ -125,7 +126,7 @@ public class VoterPerson {
 					if(this.electionStartTime ==  t) {
 						//上一任期的时间，说明时间没有更新
 						//最先收到主节点下线通知，宣告重选主节点
-						electionStartTime = System.currentTimeMillis();
+						electionStartTime = TimeUtils.getCurTime();
 						op.setData(dir, electionStartTime + "");
 						logger.info("The start election time [{}] offline, dir: {}", dm,dir);
 					}
@@ -200,12 +201,12 @@ public class VoterPerson {
 	
 	private boolean doWorker() {
 		//等待指定时间后工始计票
-		long besTime = System.currentTimeMillis() - this.electionStartTime;
+		long besTime = TimeUtils.getCurTime() - this.electionStartTime;
 		while( besTime < timeout) {
 			try {
 				logger.debug("Need wait: [" + (besTime / 1000) + "] seconds.");
 				Thread.sleep(1000);
-				besTime = System.currentTimeMillis() - this.electionStartTime;
+				besTime = TimeUtils.getCurTime() - this.electionStartTime;
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}
@@ -215,7 +216,7 @@ public class VoterPerson {
 	}
 
 	private boolean selectMaster() {
-		long curTime = System.currentTimeMillis();
+		long curTime = TimeUtils.getCurTime();
 		if(curTime - this.electionStartTime < this.timeout) {
 			//等一段时间，全部节点上线后才开始选
 			doWorker();

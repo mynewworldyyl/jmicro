@@ -35,6 +35,7 @@ import cn.jmicro.api.net.RpcRequest;
 import cn.jmicro.api.net.RpcResponse;
 import cn.jmicro.api.registry.ServiceMethod;
 import cn.jmicro.api.security.ActInfo;
+import cn.jmicro.api.utils.TimeUtils;
 import cn.jmicro.common.CommonException;
 import cn.jmicro.common.Constants;
 
@@ -272,7 +273,7 @@ public class LG {
 		
 		byte rpcLevel = Config.getSystemLogLevel();
 		if(rpcMethodLevel == null || rpcMethodLevel.length == 0) {
-			if( JMicroContext.existRpcContext()) {
+			if(JMicroContext.existRpcContext()) {
 				rpcLevel = JMicroContext.get().getParam(JMicroContext.SM_LOG_LEVEL, rpcLevel);
 			}
 		} else {
@@ -292,7 +293,7 @@ public class LG {
 		sb.append(",instanceName:").append(msg.getInsId());
 		sb.append(",method:").append(msg.getMethod());
 		if(msg.getTime() > 0) {
-			sb.append(",cost:").append(System.currentTimeMillis() - msg.getTime());
+			sb.append(",cost:").append(TimeUtils.getCurTime() - msg.getTime());
 		}
 		sb.append(",flag:0X").append(Integer.toHexString(msg.getFlag()));
 		return sb.toString();

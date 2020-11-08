@@ -10,6 +10,7 @@ import cn.jmicro.api.persist.IObjectStorage;
 import cn.jmicro.api.profile.ProfileManager;
 import cn.jmicro.api.pubsub.PubSubManager;
 import cn.jmicro.api.timer.TimerTicker;
+import cn.jmicro.api.utils.TimeUtils;
 import cn.jmicro.common.Constants;
 
 @Component
@@ -34,7 +35,7 @@ public class DataClearWorker {
 			return;
 		}
 		
-		long curTime = System.currentTimeMillis();
+		long curTime = TimeUtils.getCurTime();
 		
 		// curTime-3day >= create_itme
 		Document delFilter = new Document();
@@ -56,7 +57,7 @@ public class DataClearWorker {
 			return;
 		}
 		
-		long curTime = System.currentTimeMillis();
+		long curTime = TimeUtils.getCurTime();
 		
 		// curTime-3day >= create_itme
 		Document delFilter = new Document();

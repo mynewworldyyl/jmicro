@@ -42,6 +42,7 @@ import cn.jmicro.api.registry.ServiceMethod;
 import cn.jmicro.api.registry.UniqueServiceMethodKey;
 import cn.jmicro.api.security.ActInfo;
 import cn.jmicro.api.service.ServiceLoader;
+import cn.jmicro.api.utils.TimeUtils;
 import cn.jmicro.common.CommonException;
 import cn.jmicro.common.Constants;
 import cn.jmicro.common.util.StringUtils;
@@ -61,7 +62,7 @@ public class JMicroContext  {
 	public static final String LOCAL_HOST = "_host";
 	public static final String LOCAL_PORT = "_port";
 	
-	public static final String REMOTE_HOST = "remoteHost";
+	public static final String REMOTE_HOST = "_remoteHost";
 	public static final String REMOTE_PORT = "_remotePort";
 	
 	public static final String LOGIN_ACT = "_loginAccount";
@@ -126,7 +127,7 @@ public class JMicroContext  {
 				}
 			}
 			LG.setCommon(item);
-			item.setCostTime(System.currentTimeMillis() - item.getCreateTime());
+			item.setCostTime(TimeUtils.getCurTime() - item.getCreateTime());
 			mo.readySubmit(item);
 			JMicroContext.get().removeParam(MRPC_LOG_ITEM);
 		}
@@ -143,7 +144,7 @@ public class JMicroContext  {
 					}
 				}
 				MT.setCommon(sItem);
-				sItem.setCostTime(System.currentTimeMillis() - sItem.getCreateTime());
+				sItem.setCostTime(TimeUtils.getCurTime() - sItem.getCreateTime());
 				smc.readySubmit(sItem);
 				JMicroContext.get().removeParam(MRPC_STATIS_ITEM);
 			}
@@ -214,7 +215,7 @@ public class JMicroContext  {
 		if(msg.isDebugMode()) {
 			//long clientTime = msg.getTime();
 			StringBuilder sb = new StringBuilder();
-			long curTime = System.currentTimeMillis();
+			long curTime = TimeUtils.getCurTime();
 			sb.append("Provider, Client to server cost: ").append(curTime-msg.getTime()).append(", ");
 			context.setParam(CLIENT_UP_TIME, msg.getTime());
 			context.setParam(SERVER_GOT_TIME, curTime);
@@ -296,7 +297,7 @@ public class JMicroContext  {
 		boolean isDebug = enableOrDisable(si.getDebugMode(),sm.getDebugMode());
 		context.setParam(IS_DEBUG, isDebug);
 		if(isDebug) {
-			context.setParam(CLIENT_UP_TIME, System.currentTimeMillis());
+			context.setParam(CLIENT_UP_TIME, TimeUtils.getCurTime());
 			context.setParam(DEBUG_LOG, new StringBuilder("Comsumer "));
 		}
 		
@@ -463,7 +464,7 @@ public class JMicroContext  {
 		if(isDebug()) {
 			ServiceMethod sm = this.getParam(Constants.SERVICE_METHOD_KEY, null);
 			if(sm != null) {
-				long curTime = System.currentTimeMillis();
+				long curTime = TimeUtils.getCurTime();
 				long cost = curTime - this.getLong(CLIENT_UP_TIME, curTime);
 				if(force || cost > sm.getTimeout()-100) {
 					//超时的请求才记录下来
@@ -481,7 +482,7 @@ public class JMicroContext  {
 
 		StringBuilder log = this.getDebugLog();
 		this.removeParam(DEBUG_LOG);
-		long curTime = System.currentTimeMillis();
+		long curTime = TimeUtils.getCurTime();
 		long cost = curTime - this.getLong(CLIENT_UP_TIME, curTime);
 		if(timeout > 0) {
 			if(cost > timeout) {

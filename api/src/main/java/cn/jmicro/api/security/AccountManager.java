@@ -18,6 +18,7 @@ import cn.jmicro.api.idgenerator.ComponentIdServer;
 import cn.jmicro.api.raft.IDataOperator;
 import cn.jmicro.api.security.genclient.IAccountService$JMAsyncClient;
 import cn.jmicro.api.service.IServiceAsyncResponse;
+import cn.jmicro.api.utils.TimeUtils;
 import cn.jmicro.common.Constants;
 import cn.jmicro.common.Md5Utils;
 import cn.jmicro.common.util.JsonUtils;
@@ -99,7 +100,7 @@ public class AccountManager {
 			
 			if(oldLk == null) {
 				ai.setLoginKey(key(this.idGenerator.getStringId(ActInfo.class)));
-				ai.setLastActiveTime(System.currentTimeMillis());
+				ai.setLastActiveTime(TimeUtils.getCurTime());
 				cache.put(ai.getLoginKey(), ai,expired);
 				cache.put(akey, ai.getLoginKey(),expired);
 				cache.put(key(ai.getClientId()+""), ai.getLoginKey(),expired);
@@ -139,7 +140,7 @@ public class AccountManager {
 	public ActInfo getAccount(String loginKey) {
 		if(cache.exist(loginKey)) {
 			ActInfo ai = cache.get(loginKey);
-			long curTime = System.currentTimeMillis();
+			long curTime = TimeUtils.getCurTime();
 			if(curTime - ai.getLastActiveTime() > updateExpired) {
 				setActInfoCache(ai,curTime);
 			}

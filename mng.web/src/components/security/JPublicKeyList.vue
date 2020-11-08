@@ -75,6 +75,7 @@
 
                 addSecretDialog:false,
                 publicKey:'',
+                priKey:'',
 
                 keyList:[],
                 isLogin : false,

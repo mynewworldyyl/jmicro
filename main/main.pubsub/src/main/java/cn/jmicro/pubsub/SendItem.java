@@ -3,6 +3,7 @@ package cn.jmicro.pubsub;
 import cn.jmicro.api.annotation.SO;
 import cn.jmicro.api.pubsub.PSData;
 import cn.jmicro.api.registry.ServiceMethod;
+import cn.jmicro.api.utils.TimeUtils;
 import cn.jmicro.common.CommonException;
 
 @SO
@@ -29,7 +30,7 @@ public class SendItem {
 		this.cb = cb;
 		this.items = items;
 		this.retryCnt = retryCnt;
-		time = System.currentTimeMillis();
+		time = TimeUtils.getCurTime();
 		if(cb != null) {
 			this.sm = cb.getSm();
 			this.topic = this.sm.getTopic();

@@ -24,6 +24,7 @@ import cn.jmicro.api.choreography.AgentInfo;
 import cn.jmicro.api.choreography.ChoyConstants;
 import cn.jmicro.api.idgenerator.ComponentIdServer;
 import cn.jmicro.api.raft.IDataOperator;
+import cn.jmicro.api.utils.TimeUtils;
 import cn.jmicro.choreography.agent.AgentManager;
 import cn.jmicro.common.util.JsonUtils;
 import cn.jmicro.test.JMicroBaseTestCase;
@@ -40,7 +41,7 @@ public class TestAgentManager extends JMicroBaseTestCase{
 		AgentInfo ai = new AgentInfo();
 		ComponentIdServer idserver = of.get(ComponentIdServer.class);
 		ai.setId("JmicroTestAgentmanager");
-		ai.setStartTime(System.currentTimeMillis());
+		ai.setStartTime(TimeUtils.getCurTime());
 		
 		String path = ChoyConstants.ROOT_AGENT + "/" + ai.getId();
 		String jsonData = JsonUtils.getIns().toJson(ai);

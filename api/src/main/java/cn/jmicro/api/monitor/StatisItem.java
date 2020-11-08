@@ -1,6 +1,7 @@
 package cn.jmicro.api.monitor;
 
 import cn.jmicro.api.annotation.SO;
+import cn.jmicro.api.utils.TimeUtils;
 
 /**
  * 
@@ -19,7 +20,7 @@ public class StatisItem {
 	private long time;
 	
 	public StatisItem() {
-		this.time = System.currentTimeMillis();
+		this.time = TimeUtils.getCurTime();
 	}
 	
 	public StatisItem(short type) {

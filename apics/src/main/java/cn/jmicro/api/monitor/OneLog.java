@@ -17,6 +17,7 @@
 package cn.jmicro.api.monitor;
 
 import cn.jmicro.api.annotation.SO;
+import cn.jmicro.api.utils.TimeUtils;
 
 /**
  * 
@@ -49,7 +50,7 @@ public class OneLog {
 	public OneLog(byte level,String tag,String desc) {
 		this.tag = tag;
 		this.desc = desc;
-		this.time = System.currentTimeMillis();
+		this.time = TimeUtils.getCurTime();
 	}
 
 	public String getTag() {

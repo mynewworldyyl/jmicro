@@ -24,6 +24,7 @@ import cn.jmicro.api.net.IReq;
 import cn.jmicro.api.net.IResp;
 import cn.jmicro.api.net.Message;
 import cn.jmicro.api.registry.UniqueServiceMethodKey;
+import cn.jmicro.api.utils.TimeUtils;
 import cn.jmicro.common.util.JsonUtils;
 
 /**
@@ -63,7 +64,7 @@ public final class MRpcLogItem{
 	
 	private boolean provider;
 	
-	private long createTime = System.currentTimeMillis();
+	private long createTime = TimeUtils.getCurTime();
 	private long inputTime;
 	private long costTime;
 	
@@ -125,7 +126,7 @@ public final class MRpcLogItem{
 		resp = null;
 		provider = false;
 		implCls = null;
-		createTime = System.currentTimeMillis();
+		createTime = TimeUtils.getCurTime();
 		inputTime = 0;
 		this.clientId = -1;
 		this.actName = null;

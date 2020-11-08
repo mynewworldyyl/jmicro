@@ -17,6 +17,7 @@
 package cn.jmicro.limit;
 
 import cn.jmicro.api.registry.ServiceItem;
+import cn.jmicro.api.utils.TimeUtils;
 /**
  * 
  * @author Yulei Ye
@@ -24,7 +25,7 @@ import cn.jmicro.api.registry.ServiceItem;
  */
 public class LimitData {
 
-	private long reqTime = System.currentTimeMillis();
+	private long reqTime = TimeUtils.getCurTime();
 	
 	private ServiceItem si;
 

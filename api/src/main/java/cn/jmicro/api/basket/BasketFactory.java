@@ -5,6 +5,7 @@ import java.util.Iterator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import cn.jmicro.api.utils.TimeUtils;
 import cn.jmicro.common.CommonException;
 
 /**
@@ -212,7 +213,7 @@ public class BasketFactory<T>{
 			if(writeIndex < this.capacity) {
 				s[writeIndex++] = elt;
 				if(firstWriteTime == 0) {
-					firstWriteTime = System.currentTimeMillis();
+					firstWriteTime = TimeUtils.getCurTime();
 				}
 				return true;
 			}else {
@@ -231,7 +232,7 @@ public class BasketFactory<T>{
 				System.arraycopy(elts, srcPosition, s, writeIndex, len);
 				writeIndex += len;
 				if(firstWriteTime == 0) {
-					firstWriteTime = System.currentTimeMillis();
+					firstWriteTime = TimeUtils.getCurTime();
 				}
 				return true;
 			} else {

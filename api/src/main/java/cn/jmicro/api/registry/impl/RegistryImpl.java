@@ -39,6 +39,7 @@ import cn.jmicro.api.registry.ServiceMethod;
 import cn.jmicro.api.registry.UniqueServiceKey;
 import cn.jmicro.api.service.ServiceManager;
 import cn.jmicro.api.timer.TimerTicker;
+import cn.jmicro.api.utils.TimeUtils;
 import cn.jmicro.codegenerator.AsyncClientUtils;
 import cn.jmicro.common.Constants;
 import cn.jmicro.common.util.JsonUtils;
@@ -105,7 +106,7 @@ public class RegistryImpl implements IRegistry {
 	
 	private boolean setNeedWaiting() {
 		if(needWaiting) {
-			this.needWaiting = System.currentTimeMillis() - Config.getSystemStartTime() < waitingActInterval;
+			this.needWaiting = TimeUtils.getCurTime() - Config.getSystemStartTime() < waitingActInterval;
 		}
 		return this.needWaiting;
 	}
@@ -143,7 +144,7 @@ public class RegistryImpl implements IRegistry {
 		
 		if(!localRegistedItems.isEmpty()) {
 			//如果只是服消费者，则没有注册服务
-			long curTime = System.currentTimeMillis();
+			long curTime = TimeUtils.getCurTime();
 			this.localRegistedItems.forEach((path,si) -> {
 				if(curTime - si.getCreatedTime() > 120000 && !this.srvManager.exist(path)) {
 					this.regist(si);

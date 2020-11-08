@@ -10,6 +10,8 @@ import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import cn.jmicro.api.utils.TimeUtils;
+
 public class FileWatcher {
 
 	private final Logger logger = LoggerFactory.getLogger(FileWatcher.class);
@@ -33,7 +35,7 @@ public class FileWatcher {
 		private boolean initStatus = true;
 		private IFileListener listener;
 		private long readPoint;
-		private long lastReadTime = System.currentTimeMillis();
+		private long lastReadTime = TimeUtils.getCurTime();
 		
 		private RandomAccessFile r;
 		
@@ -99,7 +101,7 @@ public class FileWatcher {
 	
     public void watcherLog() throws IOException, InterruptedException {
     	
-    	long curTime = System.currentTimeMillis();
+    	long curTime = TimeUtils.getCurTime();
     	
         Set<String> keys = logFileEntries.keySet();
         for(String k : keys) {

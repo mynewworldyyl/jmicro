@@ -26,6 +26,7 @@ import cn.jmicro.api.security.ActInfo;
 import cn.jmicro.api.security.IAccountService;
 import cn.jmicro.api.security.Permission;
 import cn.jmicro.api.utils.SystemUtils;
+import cn.jmicro.api.utils.TimeUtils;
 import cn.jmicro.common.Md5Utils;
 import cn.jmicro.common.util.JsonUtils;
 import cn.jmicro.common.util.StringUtils;
@@ -303,7 +304,7 @@ public class MngAccountServiceImpl implements IAccountService {
 			ai.setClientId(this.idGenerator.getIntId(ActInfo.class));
 			ai.setEmail(mail);
 			ai.setMobile(mobile);
-			ai.setRegistTime(System.currentTimeMillis());
+			ai.setRegistTime(TimeUtils.getCurTime());
 			
 			String token = this.idGenerator.getStringId(ActInfo.class);
 			token = Md5Utils.getMd5(token);

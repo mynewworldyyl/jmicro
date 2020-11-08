@@ -45,6 +45,7 @@ import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.raft.IDataListener;
 import cn.jmicro.api.raft.IDataOperator;
 import cn.jmicro.api.rsa.EncryptUtils;
+import cn.jmicro.api.utils.TimeUtils;
 import cn.jmicro.common.CommonException;
 import cn.jmicro.common.Constants;
 import cn.jmicro.common.Utils;
@@ -119,7 +120,7 @@ public class Config{
 	//服务实例配置目录,对应服务运行实例
 	public static String ServiceConfigDir = null;
 	
-	public static long systemStartTime = System.currentTimeMillis();
+	public static long systemStartTime = TimeUtils.getCurTime();
 	
 	private static String[] BasePackages = {"cn.jmicro"};
 	

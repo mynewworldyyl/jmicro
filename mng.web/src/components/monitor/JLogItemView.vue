@@ -435,7 +435,7 @@
                 if(!this.isLogin) {
                     return;
                 }
-                window.jm.mng.comm.getDicts(['logKey2Val','mtKey2Val']).then((dicts)=>{
+                window.jm.mng.comm.getDicts(['logKey2Val','mtKey2Val'],'').then((dicts)=>{
                     if(dicts) {
                         for(let k in dicts) {
                             let k2v = dicts[k];

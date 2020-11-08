@@ -25,6 +25,7 @@ import cn.jmicro.api.idgenerator.ComponentIdServer;
 import cn.jmicro.api.persist.IObjectStorage;
 import cn.jmicro.api.security.AccountManager;
 import cn.jmicro.api.security.ActInfo;
+import cn.jmicro.api.utils.TimeUtils;
 import cn.jmicro.common.Utils;
 import cn.jmicro.common.util.StringUtils;
 import cn.jmicro.ext.bbs.entities.Note;
@@ -184,7 +185,7 @@ public class BbsServiceImpl implements IBbsService {
 			return r;
 		}
 		
-		long curTime = System.currentTimeMillis();
+		long curTime = TimeUtils.getCurTime();
 		ActInfo ai = JMicroContext.get().getAccount();
 		
 		topic.setClientId(ai.getClientId());
@@ -344,7 +345,7 @@ public class BbsServiceImpl implements IBbsService {
 			return r;
 		}
 		
-		long curTime = System.currentTimeMillis();
+		long curTime = TimeUtils.getCurTime();
 		ActInfo ai = JMicroContext.get().getAccount();
 		
 		note.setClientId(ai.getClientId());

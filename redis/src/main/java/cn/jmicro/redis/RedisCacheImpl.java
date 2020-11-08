@@ -26,14 +26,20 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import cn.jmicro.api.JMicroContext;
 import cn.jmicro.api.annotation.Cfg;
 import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Inject;
 import cn.jmicro.api.cache.ICache;
 import cn.jmicro.api.cache.ICacheRefresher;
 import cn.jmicro.api.codec.ICodecFactory;
+import cn.jmicro.api.config.Config;
+import cn.jmicro.api.monitor.LG;
+import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.net.Message;
 import cn.jmicro.api.timer.TimerTicker;
+import cn.jmicro.api.utils.TimeUtils;
+import cn.jmicro.common.CommonException;
 import cn.jmicro.common.Constants;
 import cn.jmicro.common.util.StringUtils;
 import redis.clients.jedis.Jedis;
@@ -64,6 +70,10 @@ public class RedisCacheImpl implements ICache {
 	
 	private final Map<Long,TimerTicker> timers = new ConcurrentHashMap<>();
 	
+	private String[] adminPrefixs = new String[] {
+			JMicroContext.CACHE_LOGIN_KEY,
+	};
+	
 	@Cfg("/RedisCacheImpl/openDebug")
 	private boolean openDebug = false;
 	
@@ -73,7 +83,7 @@ public class RedisCacheImpl implements ICache {
 	@Inject
 	private JedisPool jeditPool;
 	
-	private Random r = new Random(System.currentTimeMillis()/10000);
+	private Random r = new Random(TimeUtils.getCurTime()/10000);
 	
 	private Map<String,ICacheRefresher> refreshers = Collections.synchronizedMap(new HashMap<>());
 	
@@ -82,6 +92,7 @@ public class RedisCacheImpl implements ICache {
 	
 	@Override
 	public boolean put(String key, Object val) {
+		checkPermission(key);
 		
 		if(StringUtils.isEmpty(key)) {
 			logger.error("Put key cannot be NULL");
@@ -118,8 +129,19 @@ public class RedisCacheImpl implements ICache {
 		
 	}
 
+	private void checkPermission(String key) {
+		for(String p : adminPrefixs) {
+			if(key.startsWith(p) && !Config.isAdminSystem()) {
+				String msg = "No permission to do this operation";
+				LG.log(MC.LOG_WARN, RedisCacheImpl.class, msg);
+				throw new CommonException(msg);
+			}
+		}
+	}
+
 	@Override
 	public <T> T get(String key) {
+		checkPermission(key);
 		if(StringUtils.isEmpty(key)) {
 			logger.error("Get key cannot be NULL");
 			return null;
@@ -137,7 +159,7 @@ public class RedisCacheImpl implements ICache {
 			} else {
 				//上次从源读取过相同数据,但是数据不存在,则判断和上次更新时间是否超过1秒,是则更新缓存，否则直接返回空
 				if(notExistData.containsKey(key)) {
-					long interval = System.currentTimeMillis() - notExistData.get(key);
+					long interval = TimeUtils.getCurTime() - notExistData.get(key);
 					if(interval < 1000) {
 						//间隔时间太小,直接返回空,意味数据最大延迟1000毫秒
 						return null;
@@ -154,7 +176,7 @@ public class RedisCacheImpl implements ICache {
 						boolean f = update(key);
 						if(!f) {
 							//数据不存在,缓本次更新时间
-							notExistData.put(key, System.currentTimeMillis());
+							notExistData.put(key, TimeUtils.getCurTime());
 							return null;
 						} else {
 							val = jedis.get(k);
@@ -204,6 +226,7 @@ public class RedisCacheImpl implements ICache {
 
 	@Override
 	public boolean exist(String key) {
+		checkPermission(key);
 		if(StringUtils.isEmpty(key)) {
 			logger.error("Expire key cannot be NULL");
 			return false;
@@ -227,6 +250,7 @@ public class RedisCacheImpl implements ICache {
 
 	@Override
 	public boolean expire(String key, long expire) {
+		checkPermission(key);
 		if(StringUtils.isEmpty(key)) {
 			logger.error("Expire key cannot be NULL");
 			return false;
@@ -251,6 +275,7 @@ public class RedisCacheImpl implements ICache {
 
 	@Override
 	public boolean expire(String key, long expire, int randomVal) {
+		checkPermission(key);
 		if(expire > 0 ) {
 			long rv = -1;
 			if(randomVal > 0) {
@@ -265,13 +290,14 @@ public class RedisCacheImpl implements ICache {
 	
 	@Override
 	public void setReflesher(String key, ICacheRefresher ref) {
+		checkPermission(key);
 		refreshers.put(key, ref);
 	}
 	
 
 	@Override
 	public boolean configRefresh(String key, long timerWithMilliseconds,long expire, int randomVal) {
-		
+		checkPermission(key);
 		ICacheRefresher ref = this.refreshers.get(key);
 		if(ref == null) {
 			logger.error(key + " refresh not exist");
@@ -293,6 +319,7 @@ public class RedisCacheImpl implements ICache {
 
 	@Override
 	public boolean del(String key) {
+		checkPermission(key);
 		if(StringUtils.isEmpty(key)) {
 			logger.error("Del key cannot be NULL");
 			return false;

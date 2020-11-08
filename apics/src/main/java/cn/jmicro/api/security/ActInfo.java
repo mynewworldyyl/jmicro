@@ -45,7 +45,7 @@ public class ActInfo implements Cloneable {
 	//登陆次数
 	private long loginNum;
 	
-	private transient boolean isAdmin = false;
+	private boolean isAdmin = false;
 	
 	private HashSet<String> pers = new HashSet<>();
 	

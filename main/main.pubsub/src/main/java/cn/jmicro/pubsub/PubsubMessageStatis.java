@@ -23,6 +23,7 @@ import cn.jmicro.api.persist.IObjectStorage;
 import cn.jmicro.api.registry.ServiceItem;
 import cn.jmicro.api.service.ServiceLoader;
 import cn.jmicro.api.timer.TimerTicker;
+import cn.jmicro.api.utils.TimeUtils;
 
 @Component(level=3)
 public class PubsubMessageStatis {
@@ -107,7 +108,7 @@ public class PubsubMessageStatis {
 		List<Document> baseData = new ArrayList<Document>();
 		List<Document> qpsData = new ArrayList<Document>();
 		
-		long curTime = System.currentTimeMillis();
+		long curTime = TimeUtils.getCurTime();
 		Calendar cd = Calendar.getInstance();
 		cd.set(Calendar.HOUR_OF_DAY, 0);
 		cd.set(Calendar.MINUTE, 0);
@@ -162,7 +163,7 @@ public class PubsubMessageStatis {
 
 	//清除超时计数器，防止内存溢出
 	private void clearTimeout(Set<String> temp) {
-		long curTime = System.currentTimeMillis();
+		long curTime = TimeUtils.getCurTime();
 		Set<String> keys = new HashSet<>();
 		for(String key : temp) {
 			ServiceCounter sc = this.counters.get(key);

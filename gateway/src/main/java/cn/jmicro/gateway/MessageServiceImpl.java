@@ -47,6 +47,7 @@ import cn.jmicro.api.registry.ServiceMethod;
 import cn.jmicro.api.security.ActInfo;
 import cn.jmicro.api.timer.ITickerAction;
 import cn.jmicro.api.timer.TimerTicker;
+import cn.jmicro.api.utils.TimeUtils;
 import cn.jmicro.common.Constants;
 import cn.jmicro.common.util.StringUtils;
 
@@ -162,7 +163,7 @@ public class MessageServiceImpl implements IGatewayMessageCallback{
 			r.sess = session;
 			r.topic = topic;
 			r.clientId = JMicroContext.get().getAccount().getClientId();
-			r.lastActiveTime = System.currentTimeMillis();
+			r.lastActiveTime = TimeUtils.getCurTime();
 			sess.add(r);
 			Set<Integer> ids = session.getParam(MESSAGE_SERVICE_REG_ID);
 			if(ids == null) {
@@ -301,7 +302,7 @@ public class MessageServiceImpl implements IGatewayMessageCallback{
 					
 					try {
 						r.sess.write(msg);
-						r.lastActiveTime = System.currentTimeMillis();
+						r.lastActiveTime = TimeUtils.getCurTime();
 					} catch (Throwable e) {
 						logger.error("onMessage write error will unsubscribe the topic: "+r.topic,e);
 						this.unsubscribe(r.id);
@@ -349,7 +350,7 @@ public class MessageServiceImpl implements IGatewayMessageCallback{
 		public ISession sess;
 		public String topic;
 		public Map<String,Object> ctx;
-		public long lastActiveTime = System.currentTimeMillis();
+		public long lastActiveTime = TimeUtils.getCurTime();
 	}
 	
 	

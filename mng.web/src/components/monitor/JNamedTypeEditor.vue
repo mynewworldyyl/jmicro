@@ -49,7 +49,7 @@
 
             refresh(){
                 let self = this;
-                this.adminPer = window.jm.mng.comm.adminPer;
+                this.adminPer = window.jm.rpc.isAdmin();
                 window.jm.mng.moType.getAllConfigs().then((resp)=>{
                     if(resp.code != 0) {
                         self.$Message.success(resp.msg);
@@ -157,20 +157,21 @@
 
         mounted () {
             let self = this;
-            window.jm.mng.act.addActListener(this.item.id,()=>{
+
+            window.jm.rpc.addActListener(this.item.id,()=>{
                 self.refresh();
             });
             this.refresh();
 
-            let menus = [{name:"REFRESH",label:"refresh",icon:"ios-cog",call:self.refresh},
-                { name:"SELECTALL", label:"Select All", icon:"ios-cog",call : ()=>{self.selectAll(true);}, needAdmin:true },
-                { name:"UNSELECTALL", label: "Unselect All", icon : "ios-cog",call : ()=>{self.selectAll(false);}, needAdmin:true },
-                { name:"UPDATE", label:"Update", icon:"ios-cog",call : ()=>{self.update();}, needAdmin:true }];
+            let menus = [{name:"Refresh",label:"refresh",icon:"ios-cog",call:self.refresh},
+                { name:"SelectAll", label:"Select All", icon:"ios-cog",call : ()=>{self.selectAll(true);}, needAdmin:true },
+                { name:"UnselectAll", label: "Unselect All", icon : "ios-cog",call : ()=>{self.selectAll(false);}, needAdmin:true },
+                { name:"Update", label:"Update", icon:"ios-cog",call : ()=>{self.update();}, needAdmin:true }];
             window.jm.vue.$emit("editorOpen", {"editorId":this.item.id, "menus":menus});
         },
 
         beforeDestroy() {
-            window.jm.mng.act.removeActListener(this.item.id);
+            window.jm.rpc.removeActListener(this.item.id);
         },
 
     }

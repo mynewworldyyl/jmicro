@@ -27,6 +27,7 @@ import com.mongodb.client.result.UpdateResult;
 import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Inject;
 import cn.jmicro.api.persist.IObjectStorage;
+import cn.jmicro.api.utils.TimeUtils;
 import cn.jmicro.common.util.JsonUtils;
 
 @Component
@@ -47,9 +48,9 @@ public class MongodbBaseObjectStorage implements IObjectStorage {
 	
 	private ReentrantLock updateLocker = new ReentrantLock();
 	
-	private long lastAddTime = System.currentTimeMillis();
+	private long lastAddTime = TimeUtils.getCurTime();
 	
-	private long lastUpdateTime = System.currentTimeMillis();
+	private long lastUpdateTime = TimeUtils.getCurTime();
 	
 	private int maxCacheSize = 100;
 	
@@ -84,7 +85,7 @@ public class MongodbBaseObjectStorage implements IObjectStorage {
 					continue;
 				}
 				
-				long curTime = System.currentTimeMillis();
+				long curTime = TimeUtils.getCurTime();
 				if(!saves.isEmpty()) {
 					if(addCnt.get() > this.maxCacheSize || curTime - lastAddTime > this.timeout) {
 						
@@ -248,11 +249,11 @@ public class MongodbBaseObjectStorage implements IObjectStorage {
 		}
 		
 		if(!d.containsKey(UPDATED_TIME)) {
-			d.put(UPDATED_TIME, System.currentTimeMillis());
+			d.put(UPDATED_TIME, TimeUtils.getCurTime());
 		}
 		
 		if(!d.containsKey(CREATED_TIME)) {
-			d.put(CREATED_TIME, System.currentTimeMillis());
+			d.put(CREATED_TIME, TimeUtils.getCurTime());
 		}
 		return d;
 	}
@@ -307,7 +308,7 @@ public class MongodbBaseObjectStorage implements IObjectStorage {
 			return false;
 		}
 		
-		long curTime = System.currentTimeMillis();
+		long curTime = TimeUtils.getCurTime();
 		MongoCollection coll = null;
 		
 		List lis = Arrays.asList(vals);
@@ -394,7 +395,7 @@ public class MongodbBaseObjectStorage implements IObjectStorage {
 			return true;
 		} else {
 			MongoCollection<Document> coll = mdb.getCollection(table);
-			return updateOneById(coll,d,System.currentTimeMillis());
+			return updateOneById(coll,d,TimeUtils.getCurTime());
 		}
 	}
 
@@ -471,10 +472,10 @@ public class MongodbBaseObjectStorage implements IObjectStorage {
 			 up = new Document();
 			 Document up0 = Document.parse(JsonUtils.getIns().toJson(updater));
 			 if(!up0.containsKey(UPDATED_TIME)) {
-				 up0.put(UPDATED_TIME, System.currentTimeMillis());
+				 up0.put(UPDATED_TIME, TimeUtils.getCurTime());
 			 }
 			 if(!up0.containsKey(CREATED_TIME)) {
-				 up0.put(CREATED_TIME, System.currentTimeMillis());
+				 up0.put(CREATED_TIME, TimeUtils.getCurTime());
 			 }
 			 up.put("$set",  up0);
 		}

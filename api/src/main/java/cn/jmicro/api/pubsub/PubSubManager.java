@@ -32,6 +32,7 @@ import cn.jmicro.api.profile.ProfileManager;
 import cn.jmicro.api.raft.IDataOperator;
 import cn.jmicro.api.security.ActInfo;
 import cn.jmicro.api.service.ServiceInvokeManager;
+import cn.jmicro.api.utils.TimeUtils;
 import cn.jmicro.common.Constants;
 import cn.jmicro.common.util.JsonUtils;
 import cn.jmicro.common.util.StringUtils;
@@ -207,7 +208,7 @@ public class PubSubManager {
 				List<PSData> is = topicSubmitItems.get(d.getTopic());
 				if (is == null) {
 					topicSubmitItems.put(d.getTopic(), is = new ArrayList<>());
-					topicLastSubmitTime.put(d.getTopic(), System.currentTimeMillis());
+					topicLastSubmitTime.put(d.getTopic(), TimeUtils.getCurTime());
 				}
 				is.add(d);
 			}
@@ -252,7 +253,7 @@ public class PubSubManager {
 		synchronized (topicSubmitItems) {
 			if (items == null) {
 				topicSubmitItems.put(item.getTopic(), items = new ArrayList<>());
-				topicLastSubmitTime.put(item.getTopic(), System.currentTimeMillis());
+				topicLastSubmitTime.put(item.getTopic(), TimeUtils.getCurTime());
 			}
 			items.add(item);
 		}
@@ -343,7 +344,7 @@ public class PubSubManager {
 					}
 				}
 				
-				long curTime = System.currentTimeMillis();
+				long curTime = TimeUtils.getCurTime();
 				
 				Map<String,List<PSData>> ms = new HashMap<>();
 				
@@ -365,7 +366,7 @@ public class PubSubManager {
 							}
 						}
 						
-						topicLastSubmitTime.put(e.getKey(), System.currentTimeMillis());
+						topicLastSubmitTime.put(e.getKey(), TimeUtils.getCurTime());
 						
 						List<PSData> sl = ms.get(e.getKey());
 						if(!ms.containsKey(e.getKey())) {

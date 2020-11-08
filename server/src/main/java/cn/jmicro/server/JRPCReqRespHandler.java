@@ -51,6 +51,7 @@ import cn.jmicro.api.security.PermissionManager;
 import cn.jmicro.api.security.SecretManager;
 import cn.jmicro.api.service.IServiceAsyncResponse;
 import cn.jmicro.api.service.ServiceLoader;
+import cn.jmicro.api.utils.TimeUtils;
 import cn.jmicro.common.CommonException;
 import cn.jmicro.common.Constants;
 import cn.jmicro.common.util.StringUtils;
@@ -291,7 +292,7 @@ public class JRPCReqRespHandler implements IMessageHandler{
 			msg.setSec(false);
 			msg.setSalt(null);
 			
-			msg.setTime(System.currentTimeMillis());
+			msg.setTime(TimeUtils.getCurTime());
 			s.write(msg);
 		}
 		

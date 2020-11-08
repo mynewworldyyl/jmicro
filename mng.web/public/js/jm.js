@@ -423,14 +423,16 @@ jm.mng = {
             return jm.rpc.callRpcWithParams(this.sn,this.ns,this.v,'hasPermission',[per]);
         },
 
-        getDicts: function (keys){
+        getDicts: function (keys,qry){
             let self = this;
             return new Promise(function(reso,reje){
                 let ds = {};
                 let nokeys = [];
+                let f = !!qry && qry.length > 0;
                 for(let i = 0; i <keys.length; i++) {
-                    if(self.dicts[keys[i]]) {
-                        ds[keys[i]] = self.dicts[keys[i]];
+                    let vk = f ? qry+'_'+keys[i]:keys[i];
+                    if(self.dicts[vk]) {
+                        ds[keys[i]] = self.dicts[vk];
                     } else {
                         nokeys.push(keys[i]);
                     }
@@ -439,13 +441,14 @@ jm.mng = {
                 if(nokeys.length == 0) {
                     reso(ds);
                 } else {
-                    jm.rpc.callRpcWithParams(self.sn,self.ns,self.v,'getDicts',[nokeys])
+                    jm.rpc.callRpcWithParams(self.sn,self.ns,self.v,'getDicts',[nokeys,qry])
                         .then((resp)=>{
                             if(resp.code != 0) {
                                 reje(resp.msg);
                             } else {
                                 for(let i = 0; i < nokeys.length; i++) {
-                                    self.dicts[nokeys[i]] =  resp.data[nokeys[i]];
+                                    let vk = f ? qry + '_'+nokeys[i] : nokeys[i];
+                                    self.dicts[vk] =  resp.data[nokeys[i]];
                                     ds[nokeys[i]] = resp.data[nokeys[i]];
                                 }
                                 reso(ds);

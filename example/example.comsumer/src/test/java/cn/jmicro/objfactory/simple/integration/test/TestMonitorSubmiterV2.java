@@ -66,7 +66,6 @@ public class TestMonitorSubmiterV2 extends JMicroBaseTestCase{
 		//SF.doBussinessLog(MonitorConstant.LOG_ERROR, TestMonitorSubmiterV2.class, null, "Hello");
 		//SF.netIo(MonitorConstant.LOG_ERROR, "testmonitor", TestMonitorSubmiterV2.class, null);
 		LG.log(MC.LOG_ERROR,TestMonitorSubmiterV2.class, "testmonitor");
-		
 		this.waitForReady(1000000);
 	}
 	

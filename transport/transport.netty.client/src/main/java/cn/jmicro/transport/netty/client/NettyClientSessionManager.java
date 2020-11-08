@@ -38,6 +38,7 @@ import cn.jmicro.api.net.IMessageReceiver;
 import cn.jmicro.api.net.ISession;
 import cn.jmicro.api.net.Message;
 import cn.jmicro.api.timer.TimerTicker;
+import cn.jmicro.api.utils.TimeUtils;
 import cn.jmicro.common.CommonException;
 import cn.jmicro.common.Constants;
 import io.netty.bootstrap.Bootstrap;
@@ -64,7 +65,7 @@ public class NettyClientSessionManager implements IClientSessionManager{
 	private static final String TAG = NettyClientSessionManager.class.getName();
 	
 	private static final AttributeKey<IClientSession> sessionKey = 
-			AttributeKey.newInstance(Constants.IO_SESSION_KEY+System.currentTimeMillis());
+			AttributeKey.newInstance(Constants.IO_SESSION_KEY+TimeUtils.getCurTime());
 	
 	AttributeKey<Boolean> monitorEnableKey = AttributeKey.newInstance(JMicroContext.IS_MONITORENABLE);
 	

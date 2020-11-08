@@ -53,6 +53,7 @@ import cn.jmicro.api.raft.IDataOperator;
 import cn.jmicro.api.sysstatis.SystemStatisManager;
 import cn.jmicro.api.timer.TimerTicker;
 import cn.jmicro.api.utils.SystemUtils;
+import cn.jmicro.api.utils.TimeUtils;
 import cn.jmicro.choreography.api.IAssignStrategy;
 import cn.jmicro.choreography.api.genclient.IResourceResponsitory$JMAsyncClient;
 import cn.jmicro.choreography.assign.Assign;
@@ -225,7 +226,7 @@ public class ServiceAgent {
 
 		//agentInfo.setName(Config.getInstanceName());
 		agentInfo.setId(Config.getInstanceName());
-		agentInfo.setStartTime(System.currentTimeMillis());
+		agentInfo.setStartTime(TimeUtils.getCurTime());
 		agentInfo.setAssignTime(agentInfo.getAssignTime());
 		agentInfo.setHost(Config.getExportSocketHost());
 		agentInfo.setSs(ssm.getStatis());
@@ -374,7 +375,7 @@ public class ServiceAgent {
 			Integer pid = Integer.parseInt(op.getData(ChoyConstants.ID_PATH)) + 1;
 			op.setData(ChoyConstants.ID_PATH, pid+"");
 			Assign a = new Assign(dep.getId(), this.agentInfo.getId(), pid);
-			a.opTime = System.currentTimeMillis();
+			a.opTime = TimeUtils.getCurTime();
 			a.state = AssignState.INIT;
 			op.createNodeOrSetData(path + "/" + depId, JsonUtils.getIns().toJson(a), IDataOperator.PERSISTENT);
 		} else {
@@ -386,7 +387,7 @@ public class ServiceAgent {
 	}
 
 	private void recreateAgentInfo() {
-		agentInfo.setAssignTime(System.currentTimeMillis());
+		agentInfo.setAssignTime(TimeUtils.getCurTime());
 		String data = JsonUtils.getIns().toJson(agentInfo);
 		
 		String msg = "Recreate angent info: " + data;
@@ -406,7 +407,7 @@ public class ServiceAgent {
 	}
 
 	private void checkStatus() {
-		long curTime = System.currentTimeMillis();
+		long curTime = TimeUtils.getCurTime();
 		if (curTime - agentInfo.getAssignTime() < 5000) {
 			return;
 		}
@@ -771,7 +772,7 @@ public class ServiceAgent {
 			pi.setAgentProcessId(SystemUtils.getProcessId());
 			pi.setAgentHost(Config.getExportSocketHost());
 			pi.setAgentInstanceName(Config.getInstanceName());
-			pi.setOpTime(System.currentTimeMillis());
+			pi.setOpTime(TimeUtils.getCurTime());
 			pi.setTimeOut(processOpTimeout);
 			// pi.setStartTime(pi.getOpTime());
 
@@ -817,7 +818,7 @@ public class ServiceAgent {
 			LG.log(MC.LOG_ERROR, TAG, msg);
 			throw new CommonException(msg);
 		}
-		a.opTime = System.currentTimeMillis();
+		a.opTime = TimeUtils.getCurTime();
 		if (s != null) {
 			a.state = s;
 		}
@@ -834,7 +835,7 @@ public class ServiceAgent {
 			return false;
 		}
 
-		final long[] curTime = new long[] { System.currentTimeMillis() };
+		final long[] curTime = new long[] { TimeUtils.getCurTime() };
 
 		updateAssign(as, AssignState.DOWNLOAD_RES);
 		
@@ -863,7 +864,7 @@ public class ServiceAgent {
 
 				byte[] data = respo.downResourceData(resp.getData(), 0);
 
-				long ctime = System.currentTimeMillis();
+				long ctime = TimeUtils.getCurTime();
 				if (ctime - curTime[0] > 3000) {
 					//通知Controller分配还在下载数据，不要超时关停此分配
 					updateAssign(as, null);
@@ -974,7 +975,7 @@ public class ServiceAgent {
 		String p = ChoyConstants.INS_ROOT + "/" + pi.getId();
 		if (op.exist(p) && pi.isActive()) {
 			pi.setActive(false);
-			pi.setOpTime(System.currentTimeMillis());
+			pi.setOpTime(TimeUtils.getCurTime());
 			pi.setTimeOut(processOpTimeout);
 			this.stopingProcess.put(pi.getId(), pi);
 			String data = JsonUtils.getIns().toJson(pi);

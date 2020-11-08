@@ -29,6 +29,7 @@ import cn.jmicro.api.JMicroContext;
 import cn.jmicro.api.net.AbstractSession;
 import cn.jmicro.api.net.Message;
 import cn.jmicro.api.registry.ServiceMethod;
+import cn.jmicro.api.utils.TimeUtils;
 import cn.jmicro.common.Constants;
 import cn.jmicro.server.IServerSession;
 import io.netty.buffer.ByteBuf;
@@ -74,7 +75,7 @@ public abstract class AbstractNettySession extends AbstractSession implements IS
 		//客户端Debug模式下上行时记录的时间
 		long oldTime = msg.getTime();
 		//记录下行时间
-		msg.setTime(System.currentTimeMillis());
+		msg.setTime(TimeUtils.getCurTime());
 		
 		ByteBuffer bb = msg.encode();
 		bb.mark();
@@ -99,7 +100,7 @@ public abstract class AbstractNettySession extends AbstractSession implements IS
 		}else/* if(this.type == Constants.NETTY_SOCKET) */{
 			ctx.channel().writeAndFlush(bbf);
 			if(msg.isDebugMode()) {
-				long cost = System.currentTimeMillis() - msg.getStartTime();
+				long cost = TimeUtils.getCurTime() - msg.getStartTime();
 				ServiceMethod sm = JMicroContext.get().getParam(Constants.SERVICE_METHOD_KEY, null);
 				
 				if(sm != null) {
@@ -121,7 +122,7 @@ public abstract class AbstractNettySession extends AbstractSession implements IS
 		bb.reset();
 		this.dump(bb,false,msg);
 		if(JMicroContext.get().isDebug()) {
-			JMicroContext.get().getDebugLog().append(",Encode time:").append(System.currentTimeMillis() - oldTime);
+			JMicroContext.get().getDebugLog().append(",Encode time:").append(TimeUtils.getCurTime() - oldTime);
 		}
 	}
 	

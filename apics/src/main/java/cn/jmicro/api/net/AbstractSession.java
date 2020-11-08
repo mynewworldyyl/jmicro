@@ -31,6 +31,8 @@ import java.util.concurrent.atomic.AtomicLong;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import cn.jmicro.api.utils.TimeUtils;
+
 /**
  * 
  * @author Yulei Ye
@@ -53,7 +55,7 @@ public abstract class AbstractSession implements ISession{
 	
 	private int heardbeatInterval;
 	
-	private long lastActiveTime = System.currentTimeMillis();
+	private long lastActiveTime = TimeUtils.getCurTime();
 	
 	private boolean isClose = false;
 	
@@ -165,7 +167,7 @@ public abstract class AbstractSession implements ISession{
      	}
     	
      	while(true) {
-     		 long startTime = System.currentTimeMillis();
+     		 long startTime = TimeUtils.getCurTime();
      		 Message message = null;
               try {
             	  message =  Message.readMessage(lb);
@@ -287,7 +289,7 @@ public abstract class AbstractSession implements ISession{
 
 	@Override
 	public void active() {
-		lastActiveTime = System.currentTimeMillis();
+		lastActiveTime = TimeUtils.getCurTime();
 	}
 
 	@Override
@@ -297,7 +299,7 @@ public abstract class AbstractSession implements ISession{
 
 	@Override
 	public boolean isActive() {
-		return (System.currentTimeMillis() - this.lastActiveTime) < (this.heardbeatInterval * 1000)*5;
+		return (TimeUtils.getCurTime() - this.lastActiveTime) < (this.heardbeatInterval * 1000)*5;
 	}
 
 	public long getId() {

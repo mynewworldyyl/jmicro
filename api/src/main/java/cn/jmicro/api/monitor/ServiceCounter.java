@@ -66,7 +66,7 @@ public class ServiceCounter implements IServiceCounter<Short>{
 	
 	private boolean staring = false;
 	
-	private long lastActiveTime = System.currentTimeMillis();
+	private long lastActiveTime = TimeUtils.getCurTime();
 	
 	//统计事件的类型,每种类型对应一种计数器
 	private ConcurrentHashMap<Short,Counter> counters = new ConcurrentHashMap<>();
@@ -194,7 +194,7 @@ public class ServiceCounter implements IServiceCounter<Short>{
 	public boolean add(Short type, long val) {
 		Counter c = getCounter(type,true);
 		if(c != null) {
-			this.setLastActiveTime(System.currentTimeMillis());
+			this.setLastActiveTime(TimeUtils.getCurTime());
 			c.add(val);
 			return true;
 		}
@@ -264,7 +264,7 @@ public class ServiceCounter implements IServiceCounter<Short>{
 	public boolean increment(Short type) {
 		Counter c = getCounter(type,true);
 		if(c != null) {
-			this.setLastActiveTime(System.currentTimeMillis());
+			this.setLastActiveTime(TimeUtils.getCurTime());
 			c.add(1);
 			return true;
 		}
@@ -475,7 +475,7 @@ public class ServiceCounter implements IServiceCounter<Short>{
 			
 			this.header = 0;
 			
-			long curTime = System.currentTimeMillis();
+			long curTime = TimeUtils.getCurTime();
 			//槽位 有效时间=slotSizeInMilliseconds ~ (timeStart + slotSizeInMilliseconds)
 			//如果当前时间在有效时间内，则定义为当前槽位
 			for(int i = 0; i < slotSize; i++) {
@@ -599,7 +599,7 @@ public class ServiceCounter implements IServiceCounter<Short>{
 			}
 			this.header = 0;
 			total.set(0);
-			this.slots[0].setTimeEnd(System.currentTimeMillis()+slotSizeInMilliseconds);
+			this.slots[0].setTimeEnd(TimeUtils.getCurTime()+slotSizeInMilliseconds);
 		}
 		
 		public void resetTotal() {

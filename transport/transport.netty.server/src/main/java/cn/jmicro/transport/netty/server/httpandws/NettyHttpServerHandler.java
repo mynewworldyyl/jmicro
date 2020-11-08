@@ -15,6 +15,7 @@ import cn.jmicro.api.idgenerator.ComponentIdServer;
 import cn.jmicro.api.net.IMessageReceiver;
 import cn.jmicro.api.net.ISession;
 import cn.jmicro.api.net.Message;
+import cn.jmicro.api.utils.TimeUtils;
 import cn.jmicro.common.Constants;
 import cn.jmicro.transport.netty.server.NettyServerSession;
 import io.netty.buffer.ByteBuf;
@@ -32,7 +33,7 @@ public class NettyHttpServerHandler extends ChannelInboundHandlerAdapter {
     static final Logger logger = LoggerFactory.getLogger(NettyHttpServerHandler.class);
 	
 	private static final AttributeKey<NettyServerSession> sessionKey = 
-			AttributeKey.newInstance(Constants.IO_SESSION_KEY+"NettyHttp"+System.currentTimeMillis());
+			AttributeKey.newInstance(Constants.IO_SESSION_KEY+"NettyHttp"+TimeUtils.getCurTime());
 	
 	@Cfg("/MinaServer/readBufferSize")
 	private int readBufferSize=1024*4;

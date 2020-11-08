@@ -43,6 +43,7 @@ import cn.jmicro.api.registry.IServiceListener;
 import cn.jmicro.api.registry.ServiceItem;
 import cn.jmicro.api.registry.ServiceMethod;
 import cn.jmicro.api.service.ServiceLoader;
+import cn.jmicro.api.utils.TimeUtils;
 import cn.jmicro.common.CommonException;
 import cn.jmicro.common.Constants;
 import cn.jmicro.common.Utils;
@@ -214,10 +215,12 @@ public class LogMonitorClient {
 	public void enableWork(AbstractClientServiceProxyHolder msPo, int opType) {
 		if(!checkerWorking && IServiceListener.ADD == opType) {
 			if(this.msPo != null && msPo.getHolder().isUsable()) {
+				logger.warn("Monitor server online and restart submit thread!");
 				checkerWorking = true;
 				new Thread(this::doWork,Config.getInstanceName()+ "_MonitorClient_Worker").start();
 			}
 		} else if(checkerWorking && IServiceListener.REMOVE == opType) {
+			logger.warn("Monitor server offline and stop submit thread!");;
 			checkerWorking = false;
 		}
 	}
@@ -232,7 +235,7 @@ public class LogMonitorClient {
 		int maxSendInterval = 2000;
 		int checkInterval = 5000;
 		
-		long lastSentTime = System.currentTimeMillis();
+		long lastSentTime = TimeUtils.getCurTime();
 		//long lastLoopTime = System.currentTimeMillis();
 		//long loopCnt = 0;
 		
@@ -246,7 +249,7 @@ public class LogMonitorClient {
 			try {
 				
 				forceSubmit = false;
-				long beginTime = System.currentTimeMillis();
+				long beginTime = TimeUtils.getCurTime();
 				
 				if(this.statusMonitorAdapter.isMonitoralbe()) {
 					this.statusMonitorAdapter.getServiceCounter().add(MC.Ms_CheckLoopCnt, 1,beginTime);
@@ -388,8 +391,8 @@ public class LogMonitorClient {
 				logger.error("MonitorClient doWork",ex);
 			}
 		}
-		
-		throw new CommonException("MonitorClient work thread exit!");
+		logger.warn("Submit thread exit!");
+		//LG.logWithNonRpcContext(MC.LOG_WARN, LogMonitorClient.class, "Submit thread exit!");
 	}
 	
 	//日志过大，需要分包上传

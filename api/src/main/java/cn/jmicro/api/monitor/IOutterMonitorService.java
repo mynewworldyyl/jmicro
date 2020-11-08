@@ -9,6 +9,4 @@ public interface IOutterMonitorService {
 
 	void submit(Set<OneLog> logs);
 	
-	
-	
 }

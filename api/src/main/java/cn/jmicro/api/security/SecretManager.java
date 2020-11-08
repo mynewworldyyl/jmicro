@@ -35,6 +35,7 @@ import cn.jmicro.api.net.Message;
 import cn.jmicro.api.raft.IDataOperator;
 import cn.jmicro.api.registry.IRegistry;
 import cn.jmicro.api.rsa.EncryptUtils;
+import cn.jmicro.api.utils.TimeUtils;
 import cn.jmicro.common.CommonException;
 import cn.jmicro.common.Constants;
 import cn.jmicro.common.Utils;
@@ -153,7 +154,7 @@ public class SecretManager {
 				}
 
 				if (k == null) {
-					throw new CommonException("PBE key not found for: " + msg.getInsId());
+					throw new CommonException("Secret not found for: " + msg.getInsId());
 				}
 				ByteBuffer bb = (ByteBuffer) msg.getPayload();
 				//byte[] d = EncryptUtils.decryptPBE(bb.array(), 0, bb.limit(), msg.getSalt(), k.key);
@@ -250,7 +251,8 @@ public class SecretManager {
 				sec = insId2AesKey.get(insId);
 			}
 			
-			if(sec == null) {
+			if(sec == null || TimeUtils.getCurTime() - sec.createTime > 300000) {
+				//3分钟更新一次密钥
 				SecretKey sk = EncryptUtils.generatorSecretKey(EncryptUtils.KEY_AES);
 				
 				if(msg.getType() == Constants.MSG_TYPE_RRESP_RAW) {
@@ -492,6 +494,8 @@ public class SecretManager {
 		// 对方的实例ID
 		private int insId;
 		private SecretKey key;
+		
+		private long createTime = TimeUtils.getCurTime();
 
 		private SecKey() {
 

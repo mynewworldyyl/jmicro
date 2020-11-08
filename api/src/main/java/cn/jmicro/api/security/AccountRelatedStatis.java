@@ -9,6 +9,7 @@ import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.monitor.ServiceCounter;
 import cn.jmicro.api.timer.TimerTicker;
+import cn.jmicro.api.utils.TimeUtils;
 
 @Component
 public class AccountRelatedStatis {
@@ -30,7 +31,7 @@ public class AccountRelatedStatis {
 		
 		Map<String,ServiceCounter> lds = new HashMap<>();
 		lds.putAll(this.limiterData);
-		long curTime = System.currentTimeMillis();
+		long curTime = TimeUtils.getCurTime();
 		
 		for(Map.Entry<String,ServiceCounter> e : lds.entrySet()) {
 			if(curTime - e.getValue().getLastActiveTime() > DataTimeout) {

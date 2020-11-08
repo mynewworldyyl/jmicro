@@ -37,32 +37,21 @@ public class PermissionManager {
 	
 	private Map<String,Set<Permission>> pers = new HashMap<>();
 	
-	public static final boolean checkClientPermission(int srcClientId) {
+	public static final boolean checkClientPermission(int loginAccountId,int targetDataClientId) {
 		
-		if(Config.isAdminSystem()) {
-			return true;
-		}
-		
-		if(srcClientId == Config.getAdminClientId()) {
-			//系统账户启动有服务
-			return true;
-		}
-		
-		if(srcClientId == Config.getClientId()) {
+		if(targetDataClientId == loginAccountId || loginAccountId == Config.getAdminClientId()) {
 			//一般账户启动的服务
 			return true;
 		}
 		return false;
 	}
 	
-	public static final boolean checkAccountClientPermission(int srcClientId) {
-		
+	public static final boolean checkAccountClientPermission(int targetDataClientId) {
 		ActInfo ai = JMicroContext.get().getAccount();
-		if(ai != null) {
-			return srcClientId == ai.getClientId() 
-					|| ai.getClientId() == Config.getAdminClientId();
+		if(ai == null) {
+			return false;
 		}
-		return false;
+		return checkClientPermission(ai.getClientId(),targetDataClientId);
 	}
 	
 	public static final boolean isCurAdmin() {

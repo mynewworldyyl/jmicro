@@ -26,6 +26,7 @@ import cn.jmicro.api.codec.ICodecFactory;
 import cn.jmicro.api.idgenerator.ComponentIdServer;
 import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.timer.TimerTicker;
+import cn.jmicro.api.utils.TimeUtils;
 import cn.jmicro.choreography.api.IResourceResponsitory;
 import cn.jmicro.choreography.api.PackageResource;
 
@@ -104,7 +105,7 @@ public class ResourceReponsitoryService implements IResourceResponsitory{
 			return;
 		}
 		
-		long curTime = System.currentTimeMillis();
+		long curTime = TimeUtils.getCurTime();
 		Map<Integer,Long> mtemp = new HashMap<>();
 		mtemp.putAll(this.downloadResourceTimeout);
 				
@@ -330,7 +331,7 @@ public class ResourceReponsitoryService implements IResourceResponsitory{
 		
 		try {
 			this.downloadReses.put(downloadId, new FileInputStream(resFile));
-			downloadResourceTimeout.put(downloadId, System.currentTimeMillis());
+			downloadResourceTimeout.put(downloadId, TimeUtils.getCurTime());
 		} catch (FileNotFoundException e) {
 			String msg = "File [" + downloadId+"] not found";
 			resp.setMsg(msg);
@@ -400,7 +401,7 @@ public class ResourceReponsitoryService implements IResourceResponsitory{
 				downloadResourceTimeout.remove(downloadId);
 				is.close();
 			} else {
-				downloadResourceTimeout.put(downloadId, System.currentTimeMillis());
+				downloadResourceTimeout.put(downloadId, TimeUtils.getCurTime());
 			}
 			
 			if(len > 0 && len < uploadBlockSize) {

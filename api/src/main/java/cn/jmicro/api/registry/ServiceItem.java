@@ -146,7 +146,7 @@ public final class ServiceItem implements Comparable<ServiceItem>{
 	
 	private Set<ServiceMethod> methods = new HashSet<>();
 	
-	private long createdTime = System.currentTimeMillis();
+	private long createdTime = TimeUtils.getCurTime();
 	
 	public ServiceItem() {}
 	

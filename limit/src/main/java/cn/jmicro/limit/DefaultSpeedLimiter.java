@@ -31,6 +31,7 @@ import cn.jmicro.api.net.IRequest;
 import cn.jmicro.api.registry.ServiceMethod;
 import cn.jmicro.api.security.AccountRelatedStatis;
 import cn.jmicro.api.security.ActInfo;
+import cn.jmicro.api.utils.TimeUtils;
 import cn.jmicro.common.Constants;
 
 /**
@@ -67,7 +68,7 @@ public class DefaultSpeedLimiter extends AbstractLimiter implements ILimiter{
 		
 		double qps = sc.getQps(TimeUnit.SECONDS,MC.MT_REQ_START);
 		
-		sc.setLastActiveTime(System.currentTimeMillis());
+		sc.setLastActiveTime(TimeUtils.getCurTime());
 		
 		if(qps > sm.getMaxSpeed()){
 			logger.info("{} cur qps:{},{} maxSpeed:{}",key,qps,sm.getKey().toKey(false, false, false),sm.getMaxSpeed());

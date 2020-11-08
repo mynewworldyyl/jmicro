@@ -5,6 +5,8 @@ import cn.jmicro.api.annotation.SO;
 @SO
 public class MCConfig {
 
+	private int clientId;
+	
 	private String fieldName;
 	
 	private short type;
@@ -82,6 +84,18 @@ public class MCConfig {
 	public String toString() {
 		return "MCConfig [fieldName=" + fieldName + ", type=" + type + ", label=" + label + ", desc=" + desc
 				+ ", group=" + group + "]";
+	}
+
+	public int getClientId() {
+		return clientId;
+	}
+
+	public void setClientId(int clientId) {
+		this.clientId = clientId;
+	}
+
+	public void setType(short type) {
+		this.type = type;
 	}
 
 	

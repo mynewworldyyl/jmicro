@@ -17,6 +17,7 @@
                       <Menu-item name="__processLog"><Icon type="ios-cog"></Icon>{{"ProcessLog"|i18n("Process Log")}}</Menu-item>
                   </Menu-group>
                   <Menu-group :title="'Config'|i18n">
+                      <Menu-item name="__statisConfig"><Icon type="ios-alert" />{{"statisConfig"|i18n}}</Menu-item>
                       <Menu-item name="__warningConfig"><Icon type="ios-alert" />{{"warningConfig"|i18n}}</Menu-item>
                       <Menu-item name="__logWarning"><Icon type="ios-alert" />{{"LogWarning"|i18n}}</Menu-item>
                       <Menu-item name="__typeConfig"><Icon type="ios-cog"></Icon>{{"TypeConfig"|i18n("Type Config")}}</Menu-item>

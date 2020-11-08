@@ -44,6 +44,7 @@ import cn.jmicro.api.security.PermissionManager;
 import cn.jmicro.common.CommonException;
 import cn.jmicro.common.Constants;
 import cn.jmicro.common.HashUtils;
+import cn.jmicro.common.Utils;
 import cn.jmicro.common.util.JsonUtils;
 import cn.jmicro.common.util.StringUtils;
 
@@ -177,7 +178,7 @@ public class ServiceManager {
 			return;
 		}
 		
-		if(!PermissionManager.checkClientPermission(si.getClientId())) {
+		if(!PermissionManager.checkClientPermission(Config.getClientId(), si.getClientId())) {
 			return;
 		}
 		
@@ -367,6 +368,109 @@ public class ServiceManager {
 		return sets;
 	}
 	
+	public Set<String> serviceNames(String prefix) {
+		Set<String> sns = new HashSet<>();
+		boolean ep = Utils.isEmpty(prefix);
+		ReentrantReadWriteLock.ReadLock l = rwLocker.readLock();
+		try {
+			l.lock();
+			for(ServiceItem i : path2SrvItems.values()) {
+				if(ep || i.getKey().getServiceName().startsWith(prefix)) {
+					sns.add(i.getKey().getServiceName());
+				}
+			}
+		} finally {
+			if(l != null) {
+				l.unlock();
+			}
+		}
+		return sns;
+	}
+	
+	public Set<String> serviceVersions(String srvName) {
+		Set<String> sns = new HashSet<>();
+		ReentrantReadWriteLock.ReadLock l = rwLocker.readLock();
+		try {
+			l.lock();
+			for(ServiceItem i : path2SrvItems.values()) {
+				if(srvName.equals(i.getKey().getServiceName())) {
+					sns.add(i.getKey().getVersion());
+				}
+			}
+		} finally {
+			if(l != null) {
+				l.unlock();
+			}
+		}
+		return sns;
+	}
+	
+	public Set<String> serviceNamespaces(String srvName) {
+		Set<String> sns = new HashSet<>();
+		ReentrantReadWriteLock.ReadLock l = rwLocker.readLock();
+		try {
+			l.lock();
+			for(ServiceItem i : path2SrvItems.values()) {
+				if(srvName.equals(i.getKey().getServiceName())) {
+					sns.add(i.getKey().getNamespace());
+				}
+			}
+		} finally {
+			if(l != null) {
+				l.unlock();
+			}
+		}
+		return sns;
+	}
+	
+	public Set<String> serviceMethods(String srvName) {
+		Set<String> sns = new HashSet<>();
+		ReentrantReadWriteLock.ReadLock l = rwLocker.readLock();
+		try {
+			l.lock();
+			Set<ServiceMethod> ms = null;
+			for(ServiceItem i : path2SrvItems.values()) {
+				if(srvName.equals(i.getKey().getServiceName())) {
+					ms = i.getMethods();
+					break;
+				}
+			}
+			
+			if(ms != null && ms.size() > 0) {
+				for(ServiceMethod m : ms) {
+					sns.add(m.getKey().getMethod());
+				}
+			}
+		} finally {
+			if(l != null) {
+				l.unlock();
+			}
+		}
+		return sns;
+	}
+	
+	public Set<String> serviceInstances(String srvName) {
+		Set<String> sns = new HashSet<>();
+		ReentrantReadWriteLock.ReadLock l = rwLocker.readLock();
+		try {
+			l.lock();
+			Set<ServiceMethod> ms = null;
+			boolean f = Utils.isEmpty(srvName);
+			for(ServiceItem i : path2SrvItems.values()) {
+				if(f) {
+					sns.add(i.getKey().getInstanceName());
+				}else if(srvName.equals(i.getKey().getServiceName())){
+					sns.add(i.getKey().getInstanceName());
+				}
+			}
+		} finally {
+			if(l != null) {
+				l.unlock();
+			}
+		}
+		return sns;
+	}
+	
 	public boolean exist(String path) {
 		return this.dataOperator.exist(path);
 	}
@@ -428,7 +532,7 @@ public class ServiceManager {
 			return;
 		}
 		
-		if(!PermissionManager.checkClientPermission(si.getClientId())) {
+		if(!PermissionManager.checkClientPermission(Config.getClientId(),si.getClientId())) {
 			return;
 		}
 		
@@ -441,7 +545,7 @@ public class ServiceManager {
 	}
 	
 	/**
-	 *     配置改变，服务配置信息改变时，从配置信息合并到服务信息，反之则存储到配置信息
+	 * 配置改变，服务配置信息改变时，从配置信息合并到服务信息，反之则存储到配置信息
 	 * @param path
 	 * @param data
 	 * @param isConfig true全局服务配置信息改变， false 服务实例信息改变
@@ -449,7 +553,7 @@ public class ServiceManager {
 	private void updateItemData(String path, String data, boolean isConfig) {
 		ServiceItem si = this.fromJson(data);
 
-		if(!PermissionManager.checkClientPermission(si.getClientId())) {
+		if(!PermissionManager.checkClientPermission(Config.getClientId(),si.getClientId())) {
 			return;
 		}
 		

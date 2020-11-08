@@ -23,33 +23,32 @@ import cn.jmicro.api.annotation.SO;
 import cn.jmicro.api.registry.ServiceMethod;
 
 /**
- * 
  * @author yeyulei
- *
  */
 @SO
 public final class MRpcStatisItem{
 	
 	private int clientId = -1;
 	
-	private String actName=null;
-	
-	private transient ServiceMethod sm = null;
+	private String actName = null;
 	
 	private String key = null;
 	
 	private String localHost = null;
 	private String localPort = null;
+	
 	private String remoteHost = null;
 	private String remotePort = null;
+	
 	private String instanceName = null;
 	
 	private long inputTime;
 	private long costTime;
 	
-	private transient long createTime;
-	
 	private Map<Short,StatisItem> typeStatis = new HashMap<>();
+	
+	private transient long createTime;
+	private transient ServiceMethod sm = null;
 	
 	public MRpcStatisItem() {}
 	
@@ -91,7 +90,9 @@ public final class MRpcStatisItem{
 		}
 		Map<Short,StatisItem> rst = new HashMap<>();
 		for(Short t : types) {
-			rst.put(t, this.typeStatis.get(t));
+			if(this.typeStatis.containsKey(t)) {
+				rst.put(t, this.typeStatis.get(t));
+			}
 		}
 		return rst;
 	}
