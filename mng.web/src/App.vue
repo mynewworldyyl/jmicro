@@ -19,7 +19,6 @@
                   <Menu-group :title="'Config'|i18n">
                       <Menu-item name="__statisConfig"><Icon type="ios-alert" />{{"statisConfig"|i18n}}</Menu-item>
                       <Menu-item name="__warningConfig"><Icon type="ios-alert" />{{"warningConfig"|i18n}}</Menu-item>
-                      <Menu-item name="__logWarning"><Icon type="ios-alert" />{{"LogWarning"|i18n}}</Menu-item>
                       <Menu-item name="__typeConfig"><Icon type="ios-cog"></Icon>{{"TypeConfig"|i18n("Type Config")}}</Menu-item>
                       <Menu-item name="__monitorType"><Icon type="ios-cog"></Icon>{{"MonitorTypes"|i18n("Monitor Types")}}</Menu-item>
                       <Menu-item name="__monitorTypeServiceMethod"><Icon type="ios-cog"></Icon>{{"ServiceTypes"|i18n("Service Types")}}</Menu-item>
@@ -36,9 +35,9 @@
                   <Menu-item name="__agent"><Icon type="ios-cog"></Icon>{{"Agents"|i18n}}</Menu-item>
                   <Menu-item name="__process"><Icon type="ios-cog"></Icon>{{"Process"|i18n}}</Menu-item>
                   <Menu-item name="__repository"><Icon type="ios-people"></Icon>{{"Repository"|i18n}}</Menu-item>
-                  <Menu-item name="__choreography"><Icon type="ios-cog"></Icon>{{"Choreography"|i18n}}</Menu-item>
+              <!--    <Menu-item name="__choreography"><Icon type="ios-cog"></Icon>{{"Choreography"|i18n}}</Menu-item>
                   <Menu-item name="__host"><Icon type="ios-cog"></Icon>{{"Host"|i18n}}</Menu-item>
-              </Submenu>
+          -->    </Submenu>
 
               <Submenu name="o">
                   <template slot="title">

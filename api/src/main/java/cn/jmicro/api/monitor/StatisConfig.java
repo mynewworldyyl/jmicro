@@ -16,30 +16,53 @@ public class StatisConfig {
 	public static final String UNIT_DA="Date";
 	public static final String UNIT_MO="Month";
 	
-	public static final String BY_TYPE_SERVICE = "Service";
-	public static final String BY_TYPE_SERVICE_INSTANCE = "ServiceInstance";
-	public static final String BY_TYPE_SERVICE_ACCOUNT = "ServiceAccount";
+	//public static final String BY_TYPE_SERVICE = "Service";
+	//public static final String BY_TYPE_SERVICE_INSTANCE = "ServiceInstance";
+	//public static final String BY_TYPE_SERVICE_ACCOUNT = "ServiceAccount";
 	
-	public static final String BY_TYPE_SERVICE_METHOD = "ServiceMethod";
+	/*public static final String BY_TYPE_SERVICE_METHOD = "ServiceMethod";
 	public static final String BY_TYPE_SERVICE_INSTANCE_METHOD = "ServiceInstanceMethod";
 	public static final String BY_TYPE_SERVICE_ACCOUNT_METHOD = "ServiceAccountMethod";
-	
 	public static final String BY_TYPE_INSTANCE = "ClientInstance";
-	public static final String BY_TYPE_ACCOUNT= "Account";
+	public static final String BY_TYPE_ACCOUNT= "Account";*/
+	
+	public static final int BY_TYPE_SERVICE_METHOD = 1;
+	//调用此实例下的服务方法时，需要监控
+	public static final int BY_TYPE_SERVICE_INSTANCE_METHOD = 2;
+	//指定账号调用此服务方法时需要监控
+	public static final int BY_TYPE_SERVICE_ACCOUNT_METHOD = 3;
+	
+	//此运行实例的操作需要监控，包括RPC和非RPC
+	public static final int BY_TYPE_INSTANCE = 4;
+	//使用此账号运行的实例及此账号的RPC调用需要监控
+	public static final int BY_TYPE_ACCOUNT= 5;
 	
 	//public static final String BY_TYPE_EXP = "Expression";
 	
+	/*
 	public static final String TO_TYPE_DB = "DB";
 	public static final String TO_TYPE_SERVICE_METHOD = "ServiceMethod";
 	public static final String TO_TYPE_CONSOLE = "Console";
 	public static final String TO_TYPE_FILE = "File";
+	*/
+	
+	public static final int TO_TYPE_DB = 1;
+	public static final int TO_TYPE_SERVICE_METHOD = 2;
+	public static final int TO_TYPE_CONSOLE = 3;
+	public static final int TO_TYPE_FILE = 4;
+	
+	public static final int PREFIX_TOTAL = 1; 		  //"total";
+	public static final int PREFIX_TOTAL_PERCENT = 2; //"totalPercent";
+	public static final int PREFIX_QPS = 3; 		  //"qps";
+	public static final int PREFIX_CUR = 4; 		  //"cur";
+	public static final int PREFIX_CUR_PERCENT =5;    // "curPercent";
 	
 	public static final String  DEFAULT_DB = "t_statis_data";
-	
-	/*public static final int EXP_TYPE_SERVICE = 1;
+	/*
+	public static final int EXP_TYPE_SERVICE = 1;
 	public static final int EXP_TYPE_ACCOUNT = 2;
-	public static final int EXP_TYPE_INSTANCE = 3;*/
-	
+	public static final int EXP_TYPE_INSTANCE = 3;
+	*/
 	private transient BufferedWriter bw;
 	
 	/*
@@ -73,7 +96,7 @@ public class StatisConfig {
 	private int id;
 	
 	//服务方法，实例方法，服务，账户
-	private String byType;
+	private int byType;
 	
 	/*
 	 * byType 下对应的key，如账户：test01, jmicro, *表示全部
@@ -102,7 +125,7 @@ public class StatisConfig {
 	 * @See MC.PREFIX_TOTAL
 	 * @See MC.PREFIX_CUR
 	 */
-	private String[] statisIndexs;
+	private StatisIndex[] statisIndexs;
 	
 	/*
 	 * 采集时间单位 SE：秒  MU:分 HO：时  DA：天，MO：月
@@ -125,7 +148,7 @@ public class StatisConfig {
 	 * @See StatisConfig.TO_TYPE_FILE
 	 * 
 	 */
-	private String toType;
+	private int toType;
 	
 	/*
 	 * 根据toType类型决定其值格式，如存库，表示表名，转发RPC则是RPC方法的KEY，publish则是消息主题，控制台输出格式
@@ -153,9 +176,6 @@ public class StatisConfig {
 		this.id = id;
 	}
 
-	public String getByType() {
-		return byType;
-	}
 
 	public int getTimeCnt() {
 		return timeCnt;
@@ -163,10 +183,6 @@ public class StatisConfig {
 
 	public void setTimeCnt(int timeCnt) {
 		this.timeCnt = timeCnt;
-	}
-
-	public void setByType(String byType) {
-		this.byType = byType;
 	}
 
 	public String getByKey() {
@@ -178,11 +194,11 @@ public class StatisConfig {
 	}
 
 
-	public String[] getStatisIndexs() {
+	public StatisIndex[] getStatisIndexs() {
 		return statisIndexs;
 	}
 
-	public void setStatisIndexs(String[] statisIndexs) {
+	public void setStatisIndexs(StatisIndex[] statisIndexs) {
 		this.statisIndexs = statisIndexs;
 	}
 
@@ -194,14 +210,6 @@ public class StatisConfig {
 		this.timeUnit = timeUnit;
 	}
 
-	public String getToType() {
-		return toType;
-	}
-
-	public void setToType(String toType) {
-		this.toType = toType;
-	}
-
 	public String getToParams() {
 		return toParams;
 	}
@@ -210,13 +218,21 @@ public class StatisConfig {
 		this.toParams = toParams;
 	}
 
-	/*public int getForClientId() {
-		return forClientId;
+	public int getByType() {
+		return byType;
 	}
 
-	public void setForClientId(int forClientId) {
-		this.forClientId = forClientId;
-	}*/
+	public void setByType(int byType) {
+		this.byType = byType;
+	}
+
+	public int getToType() {
+		return toType;
+	}
+
+	public void setToType(int toType) {
+		this.toType = toType;
+	}
 
 	public int getCreatedBy() {
 		return createdBy;

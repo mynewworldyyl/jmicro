@@ -82,6 +82,7 @@
         },
 
         mounted () {
+            this.$el.style.minHeight=(document.body.clientHeight-67)+'px';
             //has admin permission, only control the show of the button
             window.jm.rpc.addActListener(cid,this.refresh);
             let self = this;

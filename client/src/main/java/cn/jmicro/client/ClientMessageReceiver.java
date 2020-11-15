@@ -131,7 +131,7 @@ public class ClientMessageReceiver implements IMessageReceiver{
 					LG.log(MC.LOG_ERROR, ClientMessageReceiver.class,errMsg);
 				}
 				if(msg.isMonitorable()) {
-					MT.rpcEvent(MC.MT_HANDLER_NOT_FOUND, 1, 1);
+					MT.rpcEvent(MC.MT_HANDLER_NOT_FOUND, 1);
 				}
 			}
 		} catch (Throwable e) {
@@ -141,7 +141,7 @@ public class ClientMessageReceiver implements IMessageReceiver{
 			}
 			
 			if(msg.isMonitorable()) {
-				MT.rpcEvent(MC.MT_REQ_ERROR, 1, 1);
+				MT.rpcEvent(MC.MT_REQ_ERROR, 1);
 			}
 		}
 	}

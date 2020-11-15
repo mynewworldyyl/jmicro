@@ -477,7 +477,8 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
     		session.write(msg);
     		
     		if(msg.isMonitorable()) {
-            	  MT.rpcEvent(MC.MT_CLIENT_IOSESSION_WRITE,1, msg.getLen());
+            	  MT.rpcEvent(MC.MT_CLIENT_IOSESSION_WRITE,1);
+            	  MT.rpcEvent(MC.MT_CLIENT_IOSESSION_WRITE_BYTES,msg.getLen());
             }
     		
     		if(cxt.isDebug()) {
@@ -530,8 +531,8 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
     		Message respMsg = mh.msg;
     		
     		if(respMsg != null && respMsg.isMonitorable()) {
-          	  //LG.netIoRead(TAG.getName(),MC.MT_CLIENT_IOSESSION_READ, respMsg.getLen());
-          	  MT.rpcEvent(MC.MT_CLIENT_IOSESSION_READ,1, msg.getLen());
+          	  MT.rpcEvent(MC.MT_CLIENT_IOSESSION_READ,1);
+          	  MT.rpcEvent(MC.MT_CLIENT_IOSESSION_READ_BYTES,msg.getLen());
             }
     		
     		RpcResponse resp = null;

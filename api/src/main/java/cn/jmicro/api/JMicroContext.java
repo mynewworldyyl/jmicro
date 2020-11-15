@@ -135,7 +135,8 @@ public class JMicroContext  {
 		
 		if(this.isMonitorable()) {
 			MRpcStatisItem sItem = getMRpcStatisItem();
-			if(sItem != null ) {
+			if(sItem != null && sItem.getTypeStatis() != null 
+					&& !sItem.getTypeStatis().isEmpty()) {
 				if(StringUtils.isEmpty(item.getActName())) {
 					ActInfo ai = this.getAccount();
 					if(ai != null) {
@@ -159,8 +160,8 @@ public class JMicroContext  {
 	}
 	
 	public static boolean existRpcContext() {
-		return cxt.get() != null && (get().exists(JMicroContext.REQ_ID) 
-				|| get().exists(JMicroContext.LINKER_ID));
+		return cxt.get() != null && (cxt.get().exists(JMicroContext.REQ_ID) 
+				|| cxt.get().exists(JMicroContext.LINKER_ID));
 	}
 	
 	public static JMicroContext get(){

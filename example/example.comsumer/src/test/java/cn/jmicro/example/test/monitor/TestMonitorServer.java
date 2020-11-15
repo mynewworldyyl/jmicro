@@ -45,7 +45,7 @@ public class TestMonitorServer extends JMicroBaseTestCase{
 				"monitorServer", "0.0.1", null);
 		
 		MRpcStatisItem mi = new MRpcStatisItem();
-		mi.addType(MC.EP_START, 1, 2);
+		mi.addType(MC.EP_START, 1);
 		
 		ms.submitJMAsync(new MRpcStatisItem[] { mi })
 		.success((rst,cxt)->{

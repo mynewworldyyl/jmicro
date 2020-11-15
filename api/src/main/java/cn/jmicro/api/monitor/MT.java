@@ -43,48 +43,48 @@ public class MT {
 	
 	private static boolean isDs = false;
 	
-	public static boolean rpcEvent(short type,int cnt,long num) {
-		if(JMicroContext.existRpcContext()) {
-			return nonRpcEvent(Config.getInstanceName(),type,cnt,num);
+	public static boolean rpcEvent(short type,long val) {
+		if(!JMicroContext.existRpcContext()) {
+			return nonRpcEvent(Config.getInstanceName(),type,val);
 		}
 		
 		if(isMonitorable(type)) {
 			MRpcStatisItem mi = JMicroContext.get().getMRpcStatisItem();
-			mi.addType(type,cnt,num);
+			mi.addType(type,val);
 			return true;
 		}
 		return false;
 	} 
 	
-	public static boolean nonRpcEvent(String key,short type,int cnt,long num) {
+	public static boolean nonRpcEvent(String key,short type,long num) {
 		if(!isMonitorable(type)) {
 			return false;
 		}
 		
 		if(JMicroContext.existRpcContext()) {
-			return rpcEvent(type,cnt,num);
+			return rpcEvent(type,num);
 		}
 		
 		MRpcStatisItem mi = new MRpcStatisItem();
 		mi.setKey(key);
 		setCommon(mi);
 		
-		mi.addType(type,cnt,num);
+		mi.addType(type,num);
 		
 		return m.submit2Cache(mi);
 		
 	}
 	
 	public static boolean rpcEvent(short type) {
-		return rpcEvent(type,1,1);
+		return rpcEvent(type,1);
 	} 
 	
 	public static boolean nonRpcEvent(String key,short type) {
-		return nonRpcEvent(key,type,1,1);
+		return nonRpcEvent(key,type,1);
 	}
 	
 	public static boolean nonRpcEvent(short type) {
-		return nonRpcEvent(Config.getInstanceName(),type,1,1);
+		return nonRpcEvent(Config.getInstanceName(),type,1);
 		
 	}
 	
@@ -112,7 +112,8 @@ public class MT {
 			si.setLocalPort(JMicroContext.get().getString(JMicroContext.LOCAL_PORT, ""));
 			si.setRemoteHost(JMicroContext.get().getString(JMicroContext.REMOTE_HOST, ""));
 			si.setRemotePort(JMicroContext.get().getString(JMicroContext.REMOTE_PORT, ""));
-			si.setSm(sm);
+			//si.setKey(sm.getKey().toKey(true, true, true));
+			si.setSmKey(sm.getKey());
 			si.setKey(sm.getKey().toKey(true, true, true));
 			
 		}
@@ -125,8 +126,8 @@ public class MT {
 		
 		if(!isInit) {
 			isInit = true;
-			isMs = JMicro.getObjectFactory().get(StatisMonitorClient.class) != null;
 			m = JMicro.getObjectFactory().get(StatisMonitorClient.class);
+			isMs = null != JMicro.getObjectFactory().get(IStatisMonitorServer.class);
 			isDs = JMicro.getObjectFactory().get(IMonitorDataSubscriber.class) != null;
 		}
 		
@@ -140,7 +141,15 @@ public class MT {
 			return false;
 		}
 		
-		return m.canSubmit(sm(),type);
+		if(JMicroContext.existRpcContext()) {
+			ActInfo ai = JMicroContext.get().getAccount();
+			if(ai != null) {
+				return m.canSubmit(sm(),type,ai.getActName());
+			}
+		}
+		
+		return m.canSubmit(sm(),type,Config.getAccountName());
+		
 	}
 	
 }

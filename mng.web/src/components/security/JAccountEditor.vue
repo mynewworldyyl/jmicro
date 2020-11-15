@@ -1,5 +1,5 @@
 <template>
-    <div class="JAccountEditor" style="position:relative;height:auto">
+    <div class="JAccountEditor">
 
         <div v-if="isLogin && actList && actList.length > 0" style="position:relative;height:auto;margin-top:10px;">
             <table class="configItemTalbe" width="99%">
@@ -382,6 +382,7 @@
         },
 
         mounted () {
+            this.$el.style.minHeight=(document.body.clientHeight-67)+'px';
             window.jm.rpc.addActListener(cid,this.refresh);
             this.refresh();
             let self = this;
@@ -413,7 +414,7 @@
 
 <style>
     .JAccountEditor{
-        min-height: 500px;
+       min-height: 500px;
     }
 
     #queryTable td {

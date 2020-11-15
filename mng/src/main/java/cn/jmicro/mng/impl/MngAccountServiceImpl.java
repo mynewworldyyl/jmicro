@@ -576,7 +576,6 @@ public class MngAccountServiceImpl implements IAccountService {
 	@Override
 	@SMethod(perType=true,needLogin=true,maxSpeed=5,maxPacketSize=256)
 	public Resp<Map<String, Set<Permission>>> getAllPermissions() {
-
 		Resp<Map<String, Set<Permission>>> rst = new Resp<>();
 		rst.setCode(0);
 		rst.setData(lam.getServiceMethodPermissions());
@@ -584,6 +583,12 @@ public class MngAccountServiceImpl implements IAccountService {
 	
 	}
 	
+	@Override
+	public Resp<String> getNameById(Integer id) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
 	private Resp<Boolean> checkAccountParam(ActInfo ai) {
 		
 		if(StringUtils.isEmpty(ai.getActName())) {

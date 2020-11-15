@@ -100,54 +100,54 @@ public class ClientServiceProxyHolder implements IServiceListener{
 
 		JMicroContext cxt = JMicroContext.get();
 		
-		try {
-
-			ServiceItem si = this.item;
-			if (si == null) {
-				if (!isUsable()) {
-					String msg = "Service Item is NULL when call method [" + methodName + "] with params ["
-							+ UniqueServiceMethodKey.paramsStr(args) + "] proxy [" + this.getClass().getName() + "]";
-					logger.error(msg);
-					throw new CommonException(msg);
-				} else {
-					si = this.item;
-				}
+		ServiceItem si = this.item;
+		if (si == null) {
+			if (!isUsable()) {
+				String msg = "Service Item is NULL when call method [" + methodName + "] with params ["
+						+ UniqueServiceMethodKey.paramsStr(args) + "] proxy [" + this.getClass().getName() + "]";
+				logger.error(msg);
+				throw new CommonException(msg);
+			} else {
+				si = this.item;
+			}
+		}
+		
+		if(Constants.LICENSE_TYPE_FREE != si.getFeeType()) {
+			ActInfo ai = JMicroContext.get().getAccount();
+			if(ai == null) {
+				String msg = "License need login: " + si.getKey().toKey(false, false, false);
+				LG.log(MC.LOG_INFO, this.getClass(), msg);
+				throw new CommonException(msg);
 			}
 			
-			if(Constants.LICENSE_TYPE_FREE != si.getFeeType()) {
-				ActInfo ai = JMicroContext.get().getAccount();
-				if(ai == null) {
-					String msg = "License need login: " + si.getKey().toKey(false, false, false);
-					LG.log(MC.LOG_INFO, this.getClass(), msg);
-					throw new CommonException(msg);
-				}
+			if(Constants.LICENSE_TYPE_CLIENT == si.getFeeType() 
+					&& si.getClientId() != ai.getClientId()) {
 				
-				if(Constants.LICENSE_TYPE_CLIENT == si.getFeeType() 
-						&& si.getClientId() != ai.getClientId()) {
-					
-					boolean f = false;
-					if(si.getAuthClients() != null && si.getAuthClients().length > 0) {
-						for(int t : si.getAuthClients()) {
-							if(t == ai.getClientId()) {
-								f = true;
-								break;
-							}
+				boolean f = false;
+				if(si.getAuthClients() != null && si.getAuthClients().length > 0) {
+					for(int t : si.getAuthClients()) {
+						if(t == ai.getClientId()) {
+							f = true;
+							break;
 						}
 					}
-					
-					if(!f) {
-						String msg = "Not authronize account ["+ai.getActName()+"] for " + si.getKey().toKey(false, false, false);
-						LG.log(MC.LOG_WARN, this.getClass(), msg);
-						throw new CommonException(msg);
-					}
-				} else if(Constants.LICENSE_TYPE_PRIVATE == si.getFeeType() && si.getClientId() != ai.getClientId()) {
-					String msg = "Private service ["+ai.getActName()+"] for " + si.getKey().toKey(false, false, false);
+				}
+				
+				if(!f) {
+					String msg = "Not authronize account ["+ai.getActName()+"] for " + si.getKey().toKey(false, false, false);
 					LG.log(MC.LOG_WARN, this.getClass(), msg);
 					throw new CommonException(msg);
 				}
+			} else if(Constants.LICENSE_TYPE_PRIVATE == si.getFeeType() && si.getClientId() != ai.getClientId()) {
+				String msg = "Private service ["+ai.getActName()+"] for " + si.getKey().toKey(false, false, false);
+				LG.log(MC.LOG_WARN, this.getClass(), msg);
+				throw new CommonException(msg);
 			}
-
-			backupAndSetContext();
+		}
+		
+		backupAndSetContext();
+		
+		try {
 			
 			InvocationHandler h = targetHandler;
 			if (h == null) {

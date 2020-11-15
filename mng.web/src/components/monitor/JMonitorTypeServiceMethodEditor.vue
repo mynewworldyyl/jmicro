@@ -170,6 +170,7 @@
         },
 
         mounted () {
+            this.$el.style.minHeight=(document.body.clientHeight-67)+'px';
             let self = this;
             window.jm.rpc.addActListener(this.item.id,this.refresh);
             this.refresh();

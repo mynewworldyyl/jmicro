@@ -11,6 +11,8 @@ public class ProcessInfo {
 	
 	private int clientId;
 	
+	private String actName;
+	
 	private String host;
 	
 	private String instanceName;
@@ -44,6 +46,8 @@ public class ProcessInfo {
 	private boolean master = false;
 	
 	private transient Process process;
+	
+	private boolean monitorable = false;
 
 	public int getId() {
 		return id;
@@ -195,6 +199,22 @@ public class ProcessInfo {
 
 	public void setClientId(int clientId) {
 		this.clientId = clientId;
+	}
+
+	public boolean isMonitorable() {
+		return monitorable;
+	}
+
+	public void setMonitorable(boolean monitorable) {
+		this.monitorable = monitorable;
+	}
+
+	public String getActName() {
+		return actName;
+	}
+
+	public void setActName(String actName) {
+		this.actName = actName;
 	}
 
 	@Override

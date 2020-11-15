@@ -146,7 +146,7 @@ public final class UniqueServiceMethodKey {
 		} else {
 			StringBuilder sb = new StringBuilder(usk.toKey(ins, host, port));
 			sb.append(SEP).append(this.method).append(SEP);
-			sb.append(this.paramsStr);
+			sb.append(this.paramsStr==null ? "":this.paramsStr);
 			if(ins && host && port) {
 				cacheFullKey = sb.toString();
 				return cacheFullKey;
@@ -182,7 +182,7 @@ public final class UniqueServiceMethodKey {
 		}
 		
 		if(strs.length > 5 && !Utils.isEmpty(strs[++idx])) {
-			usk.setPort(Integer.parseInt(strs[++idx]));
+			usk.setPort(Integer.parseInt(strs[idx]));
 		}
 		
 		return usk;

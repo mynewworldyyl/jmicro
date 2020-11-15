@@ -136,7 +136,7 @@ public final class MC {
 	public static final short MT_SERVER_JRPC_RESPONSE_SUCCESS = 0x0018;
 	
 	//网络上行流量
-	@MCA("服务端IO读数据（上行）")
+	@MCA("服务端IO读数据次数（上行包数量）")
 	public static final short MT_SERVER_JRPC_GET_REQUEST =  0x0019;
 	
 	@MCA("服务端网络IO异步")
@@ -312,6 +312,18 @@ public final class MC {
 	
 	@MCA(value="账号权限拒绝", desc="")
 	public static final short MT_ACT_PERMISSION_REJECT = 0x0054;
+	
+	@MCA(value="客户端写字节数", desc="")
+	public static final short MT_CLIENT_IOSESSION_WRITE_BYTES = 0x0055;
+	
+	@MCA(value="客户端读字节数", desc="")
+	public static final short MT_CLIENT_IOSESSION_READ_BYTES = 0x0056;
+	
+	@MCA("服务端IO读数据字节数（上行）")
+	public static final short MT_SERVER_JRPC_GET_REQUEST_READ =  0x0057;
+	
+	@MCA("服务端IO写数据字节数（下行）")
+	public static final short MT_SERVER_JRPC_RESPONSE_WRITE =  0x0058;
 	
 	public static final short KEEP_MAX_VAL = 0x0FFF;
 	

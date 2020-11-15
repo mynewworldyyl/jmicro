@@ -483,7 +483,6 @@ public class ServiceLoader{
 		ServiceItem item = new ServiceItem();
 		
 		//Netty Socket 作为必选端口开放
-		item.setClientId(Config.getClientId());
 		item.getServers().add(this.nettyServer);
 		item.getServers().add(this.httpServer);
 		
@@ -509,6 +508,7 @@ public class ServiceLoader{
 		item.setKey(usk);
 		item.setImpl(proxySrv.getName());
 		item.setClientId(Config.getClientId());
+		item.setActName(Config.getAccountName());
 		item.setExternal(anno.external());
 		item.setShowFront(anno.showFront());
 		

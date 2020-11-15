@@ -21,7 +21,7 @@ public class TestMonitorPersist2Db extends JMicroBaseTestCase{
 				"log2DbMonitor", "0.0.1", null);
 		
 		MRpcStatisItem mi = new MRpcStatisItem();
-		mi.addType(MC.EP_START, 1, 1);
+		mi.addType(MC.EP_START, 1);
 		mds.onSubmit(new MRpcStatisItem[] {mi,mi});
 		
 		this.waitForReady(1000);

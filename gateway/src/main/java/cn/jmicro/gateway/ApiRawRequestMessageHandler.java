@@ -208,6 +208,10 @@ public class ApiRawRequestMessageHandler implements IMessageHandler{
 							throw new CommonException(errMsg);
 						}
 						
+						if(sm.getMonitorEnable() == 1) {
+							
+						}
+						
 						ServerError se = pm.permissionCheck(ai,sm,si.getClientId());
 						if(se != null){
 							result = se;

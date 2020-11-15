@@ -38,6 +38,7 @@
         },
 
         mounted(){
+            this.$el.style.minHeight=(document.body.clientHeight-67)+'px';
             window.jm.rpc.addActListener(cid,this.accountListener);
             window.jm.vue.$on('tabItemRemove',this.editorRemove);
         },

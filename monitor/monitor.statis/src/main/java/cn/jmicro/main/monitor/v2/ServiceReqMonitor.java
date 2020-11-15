@@ -26,7 +26,6 @@ import org.slf4j.LoggerFactory;
 import cn.jmicro.api.annotation.Cfg;
 import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Inject;
-import cn.jmicro.api.annotation.JMethod;
 import cn.jmicro.api.annotation.SMethod;
 import cn.jmicro.api.annotation.Service;
 import cn.jmicro.api.mng.ReportData;
@@ -42,7 +41,6 @@ import cn.jmicro.api.registry.ServiceMethod;
 import cn.jmicro.api.timer.TimerTicker;
 import cn.jmicro.api.utils.TimeUtils;
 import cn.jmicro.common.Constants;
-import cn.jmicro.common.Utils;
 import cn.jmicro.common.util.StringUtils;
 import cn.jmicro.monitor.api.AbstractMonitorDataSubscriber;
 
@@ -124,7 +122,8 @@ public class ServiceReqMonitor  extends AbstractMonitorDataSubscriber implements
 	
 			/*logger.debug("总请求:{}, 总响应:{}",
 					this.getData(key, MonitorConstant.STATIS_TOTAL_REQ),
-					this.getData(key, MonitorConstant.STATIS_TOTAL_RESP));*/
+					this.getData(key, MonitorConstant.STATIS_TOTAL_RESP));
+					*/
 		}
 	}
 
@@ -151,16 +150,16 @@ public class ServiceReqMonitor  extends AbstractMonitorDataSubscriber implements
 				 doStatis(si,key,windowSize,slotSize,tu);
 			}*/
 			
-			ServiceMethod sm = si.getSm();
 			
-			if(sm != null) {
-				
-				 key = sm.getKey().getUsk().toKey(true, true, true);
+			
+			/*if(si.getKey() != null) {
+				 UniqueServiceMethodKey sm = UniqueServiceMethodKey.fromKey(si.getKey());
+				 key = sm.toKey(true, true, true);
 				
 				 doStatis(si,key,windowSize,slotInterval,tu);
 				
 				 //服务数据统计
-				 key = sm.getKey().getUsk().toSnv();
+				 key = sm.getUsk().toSnv();
 				 doStatis(si,key,windowSize,slotInterval,tu);
 				 
 				 windowSize = sm.getTimeWindow();
@@ -179,11 +178,11 @@ public class ServiceReqMonitor  extends AbstractMonitorDataSubscriber implements
 					 doStatis(si,si.getActName(),windowSize,slotInterval,tu);
 				 }
 				 
-			}
+			}*/
+			
 		}
 		
 	}
-
 	
 
 	private void doStatis(MRpcStatisItem si, String key,long windowSize,long slotInterval,TimeUnit tu) {
@@ -207,12 +206,7 @@ public class ServiceReqMonitor  extends AbstractMonitorDataSubscriber implements
 					logger.debug("GOT: " + MonitorConstant.MONITOR_VAL_2_KEY.get(oi.getType()) + " , KEY: " 
 			 + key + " , Num: " + oi.getNum() + " , Val: " + oi.getVal());
 			 }*/
-			 if(MC.MT_CLIENT_IOSESSION_READ == oi.getType()
-				|| MC.MT_SERVER_JRPC_GET_REQUEST == oi.getType()) {
-				 counter.add(oi.getType(), oi.getCnt());
-			 } else {
-				 counter.add(oi.getType(), oi.getSum());
-			 }
+			 counter.add(oi.getType(), oi.getVal());
 		}
 		
 	}

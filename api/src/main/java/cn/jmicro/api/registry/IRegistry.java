@@ -53,7 +53,7 @@ public interface IRegistry{
 	ServiceItem getOwnItem(int code);
 	
 	/**
-	 * 务名称，名称空间，版本维度做他量监听
+	 * 服务名称，名称空间，版本维度做他量监听
 	 */
 	void addServiceListener(String key,IServiceListener lis);
 	void removeServiceListener(String key,IServiceListener lis);

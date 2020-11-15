@@ -64,6 +64,7 @@
           },
         },
         mounted:function() {
+            this.$el.style.minHeight=(document.body.clientHeight-67)+'px';
             var self = this;
             //console.log(window.jm.utils.isBrowser('ie'));
             window.jm.vue.$on('configNodeSelect',function(nodes) {

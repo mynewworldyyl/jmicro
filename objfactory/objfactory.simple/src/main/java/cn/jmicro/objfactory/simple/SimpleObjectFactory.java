@@ -44,6 +44,7 @@ import com.alibaba.dubbo.common.serialize.kryo.utils.ReflectUtils;
 import cn.jmicro.api.ClassScannerUtils;
 import cn.jmicro.api.IListener;
 import cn.jmicro.api.JMicro;
+import cn.jmicro.api.Resp;
 import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Inject;
 import cn.jmicro.api.annotation.JMethod;
@@ -54,12 +55,11 @@ import cn.jmicro.api.choreography.ChoyConstants;
 import cn.jmicro.api.choreography.ProcessInfo;
 import cn.jmicro.api.classloader.RpcClassLoader;
 import cn.jmicro.api.config.Config;
-import cn.jmicro.api.config.IConfigLoader;
 import cn.jmicro.api.masterelection.IMasterChangeListener;
 import cn.jmicro.api.masterelection.VoterPerson;
+import cn.jmicro.api.monitor.LG;
 import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.monitor.MT;
-import cn.jmicro.api.monitor.LG;
 import cn.jmicro.api.objectfactory.IObjectFactory;
 import cn.jmicro.api.objectfactory.IPostFactoryListener;
 import cn.jmicro.api.objectfactory.IPostInitListener;
@@ -68,6 +68,7 @@ import cn.jmicro.api.raft.IDataOperator;
 import cn.jmicro.api.registry.AsyncConfig;
 import cn.jmicro.api.registry.IRegistry;
 import cn.jmicro.api.registry.ServiceItem;
+import cn.jmicro.api.security.IAccountService;
 import cn.jmicro.api.service.IServerServiceProxy;
 import cn.jmicro.api.service.ServiceManager;
 import cn.jmicro.api.timer.TimerTicker;
@@ -381,7 +382,7 @@ public class SimpleObjectFactory implements IObjectFactory {
 		
 		Runtime.getRuntime().addShutdownHook(new Thread() {
 			public void run() {
-				logger.warn("进程终止： "+JsonUtils.getIns().toJson(pi));
+				 logger.warn("进程终止： "+JsonUtils.getIns().toJson(pi));
 				 String p = ChoyConstants.INS_ROOT+"/" + pi.getId();
 				 dataOperator.deleteNode(p);
 			}
@@ -394,14 +395,16 @@ public class SimpleObjectFactory implements IObjectFactory {
 		//cfg.setDataOperator(dataOperator);
 		//IConfigLoader具体的配置加载类
 		
-		/*Set<Class<?>> configLoaderCls = ClassScannerUtils.getIns().loadClassByClass(IConfigLoader.class);
+		/*
+		Set<Class<?>> configLoaderCls = ClassScannerUtils.getIns().loadClassByClass(IConfigLoader.class);
 		for(Class<?> c : configLoaderCls) {
 			this.createOneComponent(c, Config.isClientOnly(), Config.isServerOnly());
 		}
 		Set<IConfigLoader> configLoaders = this.getByParent(IConfigLoader.class);
 		//加载配置，并调用init0方法做初始化
 		cfg.loadConfig(configLoaders);
-		configLoaderCls.add(Config.class);*/
+		configLoaderCls.add(Config.class);
+		*/
 		
 		cfg.loadConfig(dataOperator);
 		
@@ -533,6 +536,8 @@ public class SimpleObjectFactory implements IObjectFactory {
 				lis.afterInit(this);
 			}
 			
+			loadAccountInfo(dataOperator);
+			
 			if(oldCl != null) {
 				Thread.currentThread().setContextClassLoader(oldCl);
 			}
@@ -570,13 +575,13 @@ public class SimpleObjectFactory implements IObjectFactory {
 							 , "Got master and started: "+JsonUtils.getIns().toJson(pi));
 					 MT.nonRpcEvent(Config.getInstanceName(), MC.MT_SERVER_START);
 				} else if(isMast[0]) {
-					//失去master资格，退出
-					if(pi.isMaster()) {
+					 //失去master资格，退出
+					 if(pi.isMaster()) {
 						pi.setMaster(false);
 						String p = ChoyConstants.INS_ROOT+"/" + pi.getId();
 						final String js = JsonUtils.getIns().toJson(pi);
 						dataOperator.setData(p, js);
-					}
+					 }
 					
 					 LG.log(MC.LOG_INFO, SimpleObjectFactory.class
 							 , "Lost master and exit: "+JsonUtils.getIns().toJson(pi));
@@ -609,6 +614,65 @@ public class SimpleObjectFactory implements IObjectFactory {
 	}
 	
 	
+	private void loadAccountInfo(IDataOperator op) {
+		
+			IAccountService as = this.get(IAccountService.class);
+			if(as == null) {
+				try {
+					as = this.getRemoteServie(IAccountService.class.getName(), "*","*",null);
+				} catch(CommonException e) {}
+			}
+			
+			if(as == null) {
+				logger.warn("Security service not found!");
+				return;
+			}
+			
+			int clientId = -1;
+			try {
+				clientId = Config.getClientId();
+			} catch(CommonException e) {}
+			
+			if(clientId < 0) {
+				return;
+			}
+
+			Resp<String> r = as.getNameById(clientId);
+			if(r.getCode() == Resp.CODE_SUCCESS) {
+				Config.setAccountName(r.getData());
+				pi.setActName(Config.getAccountName());
+				String p = ChoyConstants.INS_ROOT+"/" + pi.getId();
+				op.setData(p,JsonUtils.getIns().toJson(pi));
+			} else {
+				throw new CommonException("Account name not found for: " + clientId);
+			}
+		
+			int adminClientId = -1;
+			try {
+				adminClientId = Config.getAdminClientId();
+			} catch(CommonException e) {
+			}
+			
+			if(adminClientId < 0) {
+				return;
+			}
+			
+			if(clientId == adminClientId) {
+				Config.setAdminAccountName(Config.getAccountName());
+				return;
+			}
+
+			Resp<String> rr = as.getNameById(adminClientId);
+			if(rr.getCode() == Resp.CODE_SUCCESS) {
+				Config.setAdminAccountName(rr.getData());
+			} else {
+				throw new CommonException("Account name not found for: " + adminClientId);
+			}
+			
+			
+		
+	}
+
 	private void notifyAfterInitPostListener0(List<Object> lobjs, Config cfg, Set<Object> systemObjs) {
 		Set<Object> haveInits = new HashSet<>();
 		for(int i =0; i < lobjs.size(); i++){
@@ -1675,6 +1739,16 @@ public class SimpleObjectFactory implements IObjectFactory {
 					pi.setHaEnable(pi0.isHaEnable());
 					pi.setOpTime(pi0.getOpTime());
 					pi.setMaster(pi0.isMaster());
+					//pi.setActName(pi0.getActName());
+					pi.setAgentProcessId(pi0.getAgentProcessId());
+					pi.setAgentInstanceName(pi0.getAgentInstanceName());
+					pi.setAgentHost(pi0.getAgentHost());
+					pi.setAgentId(pi0.getAgentId());
+					pi.setCmd(pi0.getCmd());
+					pi.setInstanceName(pi0.getInstanceName());
+					pi.setMonitorable(pi0.isMonitorable());
+					pi.setPid(pi0.getPid());
+					pi.setWorkDir(pi0.getWorkDir());
 				}
 			}
 		});

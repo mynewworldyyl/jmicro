@@ -84,7 +84,10 @@ public class StatisMonitorClient {
 	private IDataOperator op;
 	
 	@Inject
-	private MonitorAndService2TypeRelationshipManager mtManager;
+	private MonitorStatisConfigManager mscm;
+	
+	//private MonitorAndService2TypeRelationshipManager mtManager;
+	//private MonitorStatisConfigManager mtManager;
 	
 	//private Map<String,Boolean> srvMethodMonitorEnable = new HashMap<>();
 	
@@ -359,7 +362,7 @@ public class StatisMonitorClient {
 			MRpcStatisItem mi = ite.next();
 			ite.remove();
 			
-			if(mi.getSm() == null) {
+			if(mi.getSmKey() == null) {
 				//非RPC环境下的事件
 				if(nullSMMRpcItem == null) {
 					nullSMMRpcItem = mi;
@@ -376,7 +379,7 @@ public class StatisMonitorClient {
 						type2Item.put(oi.getType(), oi);
 						continue;
 					}
-					oldOi.add(oi.getCnt(), oi.getSum());
+					oldOi.add(oi.getVal());
 				}
 			} else {
 				result.add(mi);
@@ -459,11 +462,11 @@ public class StatisMonitorClient {
 		return monitorServer != null;
 	}
 	
-	public boolean canSubmit(ServiceMethod sm, Short t) {
+	public boolean canSubmit(ServiceMethod sm, Short t,String actName) {
 		if(!this.checkerWorking || monitorServer == null) {
 			return false;
 		}
-		return this.mtManager.canSubmit(sm,t);
+		return this.mscm.canSubmit(sm,t,actName);
 	}
 
 }

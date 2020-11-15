@@ -26,16 +26,22 @@ export default {
         };
     },
 
+    updated() {
+
+    },
+
     mounted(){
         //给页面绑定滑轮滚动事件
-       /* if (window.document.addEventListener) {
-            window.document.addEventListener('DOMMouseScroll', this.scrollFunc, false);
-        }*/
+        /* if (window.document.addEventListener) {
+             window.document.addEventListener('DOMMouseScroll', this.scrollFunc, false);
+         }*/
         //滚动滑轮触发scrollFunc方法
         //window.onmousewheel = document.onmousewheel = this.scrollFunc;
         this.bb = document.getElementById("bottomBar");
-       // this.bb.style.position='relative';
-       //this.bb.style.width=document.body.clientWidth+'px';
+        //this.bb.previousElementSibling.style.minHeight=(document.body.clientHeight-67)+'px';
+        //this.bb.parentElement.firstChild.style.minHeight=(document.body.clientHeight-67)+'px';
+        // this.bb.style.position='relative';
+        //this.bb.style.width=document.body.clientWidth+'px';
         if(document.body.scrollHeight < document.body.clientHeight) {
             this.btnTop = (document.body.clientHeight-67)+'px';
         }else {

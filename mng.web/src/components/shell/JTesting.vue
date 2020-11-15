@@ -7,6 +7,7 @@
         <Button @click="loadServerList('conf','getChildren','/jmicro/JMICRO',true)">conf.getChildren</Button>
         <Button @click="loadServerList('comm','getDicts',['logKey2Val'])">comm.getDicts</Button>
         <Button @click="loadServerList('i18n','init',[])">i18n.init</Button>
+        <Button @click="loadServerList('ISimpleRpc','hello','Test hello')">ISimpleRpc.hello</Button>
         <br/>
        <!-- <JCustTree></JCustTree>-->
     </div>
@@ -45,6 +46,7 @@
         },
 
         mounted () {
+            this.$el.style.minHeight=(document.body.clientHeight-67)+'px';
         },
 
         beforeDestroy () {

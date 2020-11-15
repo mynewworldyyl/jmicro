@@ -114,6 +114,9 @@ public class Config{
 	private static String  listenHttpIP = null;
 	private static String  listenSocketIP = null;
 	
+	private static String  accountName = null;
+	private static String  adminAccountName = null;
+	
 	//服务在RAFT中的根目录
 	//private static String RaftBaseDir = "";
 	
@@ -415,6 +418,22 @@ public class Config{
 			throw new CommonException("Invalid clientId :" + clientId);
 		}
 		return clientId;
+	}
+	
+	public static String getAccountName() {
+		return accountName;
+	}
+	
+	public static String getAdminAccountName() {
+		return adminAccountName;
+	}
+	
+	public static void setAccountName(String an) {
+		 accountName = an;
+	}
+	
+	public static void setAdminAccountName(String an) {
+		adminAccountName = an;
 	}
 	
 	public static int getAdminClientId() {

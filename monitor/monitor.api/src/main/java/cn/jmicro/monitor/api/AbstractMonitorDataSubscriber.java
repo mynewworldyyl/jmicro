@@ -51,13 +51,11 @@ public abstract class AbstractMonitorDataSubscriber implements IMonitorDataSubsc
 	
 	protected String toLog(MRpcStatisItem si,StatisItem oi) {
 		StringBuilder sb = new StringBuilder();
-		
 		sb.append("INS [").append(si.getInstanceName())
-		.append(" M[").append(si.getSm() == null?"":si.getSm().getKey().getMethod()).append("]");
-		sb.append(",Cnt[").append(oi.getCnt()).append("]")
-		.append(",Val[").append(oi.getSum()).append("]")
+		.append(" M[").append(si.getKey()).append("]");
+		//sb.append(",Cnt[").append(oi.getCnt()).append("]")
+		sb.append(",Val[").append(oi.getVal()).append("]")
 		.append(",Type[").append(oi.getType()).append("]");
-		
 		return sb.toString();
 	}
 
@@ -65,9 +63,7 @@ public abstract class AbstractMonitorDataSubscriber implements IMonitorDataSubsc
 		for(StatisItem oi : si.getTypeStatis().values()) {
 			StringBuffer sb = new StringBuffer();
 			sb.append("GOT: " + MC.MONITOR_VAL_2_KEY.get(oi.getType()));
-			if(si.getSm() != null) {
-				sb.append(", SM: ").append(si.getSm().getKey().getMethod());
-			}
+			sb.append(", SM: ").append(si.getKey());
 			sb.append(", actName: ").append(si.getActName());
 			logger.debug(sb.toString()); 
 		}

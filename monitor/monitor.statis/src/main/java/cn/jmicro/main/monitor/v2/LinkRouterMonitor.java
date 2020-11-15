@@ -117,10 +117,8 @@ import cn.jmicro.monitor.api.AbstractMonitorDataSubscriber;
 			
 			for(MRpcStatisItem si: ls) {
 				
-				String key;
-				if(si.getSm() != null) {
-					key = si.getSm().getKey().toKey(true, true, true);
-				} else {
+				String key= si.getKey();
+				if(key == null) {
 					key = si.getInstanceName();
 				}
 				
@@ -226,10 +224,8 @@ import cn.jmicro.monitor.api.AbstractMonitorDataSubscriber;
 					return;
 				}*/
 				
-				String key;
-				if(si.getSm() != null) {
-					key = si.getSm().getKey().toKey(true, true, true);
-				} else {
+				String key = si.getKey();
+				if(key == null) {
 					key = si.getInstanceName();
 				}
 				

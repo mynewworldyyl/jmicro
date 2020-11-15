@@ -278,7 +278,6 @@ public class ServiceManager {
 	}
 	
 	public void updateOrCreate(ServiceItem item,String path,boolean isel) {
-		item.setClientId(Config.getClientId());
 		String data = JsonUtils.getIns().toJson(item);
 		if(dataOperator.exist(path)){
 			dataOperator.setData(path, data);
@@ -499,6 +498,30 @@ public class ServiceManager {
 		if(dataOperator.exist(path)){
 			dataOperator.setData(path,JsonUtils.getIns().toJson(item));
 		} 
+	}
+	
+	private ServiceMethod getSM(ServiceMethod m) {
+		String path = ServiceItem.pathForKey(m.getKey().getUsk().toKey(true, true, true));
+		ServiceItem item = this.path2SrvItems.get(path);
+		if(item == null) {
+			logger.error("Service [{}] not found",path);
+			return null;
+		}
+		return item.getMethod(m.getKey().getMethod(), m.getKey().getParamsStr());
+	}
+	
+	public void setMonitorable(ServiceMethod sm,int isMo) {
+		ServiceMethod sm1 = this.getSM(sm);
+		if(sm1 != null) {
+			if(isMo != sm1.getMonitorEnable()) {
+				sm1.setMonitorEnable(isMo);
+				String path = ServiceItem.pathForKey(sm1.getKey().getUsk().toKey(true, true, true));
+				ServiceItem item = this.path2SrvItems.get(path);
+				if(dataOperator.exist(path)){
+					dataOperator.setData(path,JsonUtils.getIns().toJson(item));
+				} 
+			}
+		}
 	}
 	 
 	public ServiceItem getServiceByKey(String key) {

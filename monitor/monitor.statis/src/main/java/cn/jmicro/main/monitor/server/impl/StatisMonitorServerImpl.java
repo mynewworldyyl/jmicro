@@ -2,11 +2,7 @@ package cn.jmicro.main.monitor.server.impl;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 
@@ -17,7 +13,6 @@ import cn.jmicro.api.JMicroContext;
 import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Inject;
 import cn.jmicro.api.annotation.JMethod;
-import cn.jmicro.api.annotation.Reference;
 import cn.jmicro.api.annotation.SMethod;
 import cn.jmicro.api.annotation.Service;
 import cn.jmicro.api.basket.BasketFactory;
@@ -26,24 +21,20 @@ import cn.jmicro.api.config.Config;
 import cn.jmicro.api.executor.ExecutorConfig;
 import cn.jmicro.api.executor.ExecutorFactory;
 import cn.jmicro.api.monitor.IMonitorAdapter;
-import cn.jmicro.api.monitor.IMonitorDataSubscriber;
 import cn.jmicro.api.monitor.IStatisMonitorServer;
 import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.monitor.MRpcStatisItem;
 import cn.jmicro.api.monitor.MonitorAndService2TypeRelationshipManager;
 import cn.jmicro.api.monitor.MonitorInfo;
 import cn.jmicro.api.monitor.MonitorServerStatus;
-import cn.jmicro.api.monitor.MonitorStatisConfigManager;
 import cn.jmicro.api.monitor.ServiceCounter;
 import cn.jmicro.api.monitor.StatisItem;
-import cn.jmicro.api.monitor.genclient.IMonitorDataSubscriber$JMAsyncClient;
-import cn.jmicro.api.objectfactory.AbstractClientServiceProxyHolder;
 import cn.jmicro.api.objectfactory.IObjectFactory;
-import cn.jmicro.api.registry.IServiceListener;
 import cn.jmicro.api.registry.ServiceItem;
 import cn.jmicro.api.service.ServiceLoader;
 import cn.jmicro.api.utils.TimeUtils;
 import cn.jmicro.common.Constants;
+import cn.jmicro.monitor.statis.config.StatisManager;
 
 @Component
 @Service(namespace="monitorServer", version="0.0.1", debugMode=0,
@@ -57,11 +48,11 @@ public class StatisMonitorServerImpl implements IStatisMonitorServer {
 	//@Cfg(value="/MonitorServerImpl/monitoralbe", changeListener = "")
 	private boolean monitoralbe = false;
 	
-	@Reference(namespace="*", version="*", type="ins",required=false,changeListener="subscriberChange")
-	private Set<IMonitorDataSubscriber$JMAsyncClient> subsribers = new HashSet<>();
+	//@Reference(namespace="*", version="*", type="ins",required=false,changeListener="subscriberChange")
+	//private Set<IMonitorDataSubscriber$JMAsyncClient> subsribers = new HashSet<>();
 	
 	@Inject
-	private MonitorStatisConfigManager mcm;
+	private StatisManager statisManager;
 	
 	@Inject
 	private IObjectFactory of;
@@ -71,17 +62,13 @@ public class StatisMonitorServerImpl implements IStatisMonitorServer {
 	
 	private ServiceCounter sc = null;
 	
-	private Set<RegItem> regSubs = new HashSet<>();
+	//private Set<RegItem> regSubs = new HashSet<>();
 	
 	//private Queue<MRpcItem> cacheItems = new ConcurrentLinkedQueue<>();
 	
 	private BasketFactory<MRpcStatisItem> basketFactory = null;
 	
-	private Set<IMonitorDataSubscriber> deleteMonitors = new HashSet<>();
-	
-	private Set<IMonitorDataSubscriber> addMonitors = new HashSet<>();
-	
-	private Set<MRpcStatisItem> sentItems = new HashSet<>();
+	//private Set<MRpcStatisItem> sentItems = new HashSet<>();
 	
 	private Object cacheItemsLock = new Object();
 	
@@ -93,9 +80,6 @@ public class StatisMonitorServerImpl implements IStatisMonitorServer {
 	
 	//@Cfg(value="/MonitorServerImpl/openDebug")
 	private boolean openDebug = false;
-	
-	public void init() {
-	}
 	
 	@JMethod("ready")
 	public void ready() {
@@ -118,14 +102,6 @@ public class StatisMonitorServerImpl implements IStatisMonitorServer {
 		sl.registService(si,statusAdapter);
 		
 		new Thread(this::doCheck,Config.getInstanceName()+"_MonitorServer_doCheck").start();
-		
-		//服务启动时执行一次
-		if(!subsribers.isEmpty()) {
-			for(IMonitorDataSubscriber m : this.subsribers){
-				subscriberChange((AbstractClientServiceProxyHolder)m,IServiceListener.ADD);
-			}
-			//doSubmitCacheItems();
-		}
 		
 	}
 	
@@ -199,58 +175,20 @@ public class StatisMonitorServerImpl implements IStatisMonitorServer {
 		
 	}
 	
-	public void subscriberChange(AbstractClientServiceProxyHolder po,int opType) {
-		IMonitorDataSubscriber mds = (IMonitorDataSubscriber)po;
-		logger.info("subscriberChange");
-		if(opType == IServiceListener.ADD) {
-			synchronized(addMonitors) {
-				this.addMonitors.add(mds);
-			}
-		}else if(opType == IServiceListener.REMOVE) {
-			synchronized(deleteMonitors) {
-				this.deleteMonitors.add(mds);
-			}
-		}
-		
-		synchronized(cacheItemsLock) {
-			cacheItemsLock.notify();
-		}
-	}
-	
 	private void doCheck() {
 		
 		int sendInterval = 1000;
 		
+		RegItem ri = new RegItem();
+		
 		while (true) {
 			try {
-				if(!addMonitors.isEmpty()) {
-					synchronized (addMonitors) {
-						for (Iterator<IMonitorDataSubscriber> ite = this.addMonitors.iterator(); ite.hasNext();) {
-							IMonitorDataSubscriber m = ite.next();
-							if (addOneMonitor(m)) {
-								ite.remove();
-							}
-						}
-					}
-					//doSubmitCacheItems();
-				}
-
-				if(!deleteMonitors.isEmpty()) {
-					synchronized (deleteMonitors) {
-						for (Iterator<IMonitorDataSubscriber> ite = this.deleteMonitors.iterator(); ite.hasNext();) {
-							IMonitorDataSubscriber m = ite.next();
-							if (deleteOneMonitor(m)) {
-								ite.remove();
-							}
-						}
-					}
-				}
 				
 				IBasket<MRpcStatisItem> b = null;
 				while((b = basketFactory.borrowReadSlot()) != null) {
 					MRpcStatisItem[] mis = new MRpcStatisItem[b.remainding()];
 					b.readAll(mis);
-					sentItems.addAll(Arrays.asList(mis));
+					ri.cacheItems.addAll(Arrays.asList(mis));
 					if(!basketFactory.returnReadSlot(b, true)) {
 						logger.error("doCheck Fail to return IBasket");
 					}
@@ -260,49 +198,28 @@ public class StatisMonitorServerImpl implements IStatisMonitorServer {
 					sc.add(MC.Ms_CheckLoopCnt, 1);
 				}
 				
-				if(sentItems.isEmpty()) {
+				long curTime = TimeUtils.getCurTime();
+				//Iterator<RegItem> ite = regSubs.iterator();
+				
+				if(ri.cacheItems.isEmpty() || ri.isWorking || curTime - ri.lastSendTime < sendInterval) {
 					//无数据可发送
 					checkStatusMonitor();
 					synchronized(cacheItemsLock) {
-						cacheItemsLock.wait(2000);
+						cacheItemsLock.wait(1000);
 					}
 					continue;
 				}
 				
-				long curTime = TimeUtils.getCurTime();
-				Iterator<RegItem> ite = regSubs.iterator();
-				while(ite.hasNext()) {
-					RegItem ri = ite.next();
-					
-					for(MRpcStatisItem mi : sentItems) {
-						Map<Short,StatisItem> ios = mi.getOneItems(ri.types);
-						if(ios != null && !ios.isEmpty()) {
-							MRpcStatisItem mri = mi.copy();
-							mri.setTypeStatis(ios);
-							ri.cacheItems.add(mri);
-						}
-					}
-					
-					if(ri.isWorking || ri.cacheItems.isEmpty()) {
-						//对应的订阅者正在接收数据 或 无数据可发送
-						continue;
-					}
-					
-					if(curTime - ri.lastSendTime >= sendInterval) {
-						if(monitoralbe) {
-							sc.add(MC.Ms_CheckerSubmitItemCnt, ri.cacheItems.size());
-						}
-						ri.isWorking = true;
-						//将全部数据放到订阅者的发送队列
-						ri.sendItems.addAll(ri.cacheItems);
-						ri.cacheItems.clear();
-						executor.submit(new Worker(ri));
-						ri.lastSendTime = TimeUtils.getCurTime();
-					}
+				if(monitoralbe) {
+					sc.add(MC.Ms_CheckerSubmitItemCnt, ri.cacheItems.size());
 				}
 				
-				//如果没有订阅者，数据也将丢失，后面上线的订阅者收不到前面已经发送的消息
-				sentItems.clear();
+				ri.isWorking = true;
+				ri.lastSendTime = TimeUtils.getCurTime();
+				//将全部数据放到订阅者的发送队列
+				ri.sendItems.addAll(ri.cacheItems);
+				ri.cacheItems.clear();
+				executor.submit(new Worker(ri));
 				
 			} catch (Throwable ex) {
 				//永不结束线程
@@ -312,54 +229,6 @@ public class StatisMonitorServerImpl implements IStatisMonitorServer {
 				}
 			}
 		}
-	}
-	
-	private boolean addOneMonitor(IMonitorDataSubscriber m) {
-		try {
-			AbstractClientServiceProxyHolder po = (AbstractClientServiceProxyHolder)((Object)m);
-			if(po.getHolder().getItem() == null) {
-				return false;
-			}
-			String skey = po.getHolder().getItem().serviceKey();
-			Set<Short> types = this.mtManager.intrest(skey);
-			if(types != null && types.size() > 0) {
-				RegItem ri = new RegItem();
-
-				//订阅者和服务器部署同一个JVM，做本地调用，不使用RPC
-				Class<?> cls = null;
-				try {
-					cls = StatisMonitorServerImpl.class.getClassLoader().loadClass(po.getHolder().getItem().getImpl());
-				} catch (Throwable e) {
-				}
-				
-				if(cls != null && IMonitorDataSubscriber.class.isAssignableFrom(cls) && cls.isAnnotationPresent(Component.class)) {
-					IMonitorDataSubscriber sub = (IMonitorDataSubscriber)of.get(cls);
-					ri.localSub = sub;
-				} else {
-					ri.sub = (IMonitorDataSubscriber$JMAsyncClient)m;
-				}
-				Short[] ts = new Short[types.size()];
-				types.toArray(ts);
-				ri.types = ts;
-				this.regSubs.add(ri);
-				return true;
-			}
-			return false;
-		} catch (Throwable e) {
-			logger.error("Call intrest got error:",e);
-			return false;
-		}
-	}
-	
-	private boolean deleteOneMonitor(IMonitorDataSubscriber m) {
-		for(Iterator<RegItem> ite = this.regSubs.iterator(); ite.hasNext(); ) {
-			RegItem ri = ite.next();
-			if(ri.sub == m) {
-				ite.remove();
-				return true;
-			}
-		}
-		return false;
 	}
 	
 	private void checkStatusMonitor() {
@@ -395,18 +264,7 @@ public class StatisMonitorServerImpl implements IStatisMonitorServer {
 					log(items);
 				}
 				
-				if(ri.localSub != null) {
-					//本地分发
-					ri.localSub.onSubmit(items);
-				} else {
-					//远程分发
-					ri.sub.onSubmitJMAsync(items)
-					.then((rst,fail,ctx)->{
-						if(fail != null) {
-							logger.error("submit error: " + fail.toString());
-						}
-					});
-				}
+				statisManager.onItems(items);
 				
 				if(monitoralbe) {
 					sc.add(MC.Ms_TaskSuccessItemCnt, items.length);
@@ -424,11 +282,11 @@ public class StatisMonitorServerImpl implements IStatisMonitorServer {
 	}
 
 	private class RegItem {
-		public IMonitorDataSubscriber$JMAsyncClient sub;
+		//public IMonitorDataSubscriber$JMAsyncClient sub;
 		
-		public IMonitorDataSubscriber localSub;
+		//public IMonitorDataSubscriber localSub;
 		
-		public Short[] types = null;
+		//public Short[] types = null;
 		
 		public List<MRpcStatisItem> cacheItems = new ArrayList<>();
 		
@@ -544,8 +402,8 @@ public class StatisMonitorServerImpl implements IStatisMonitorServer {
 			for(StatisItem oi : si.getTypeStatis().values()) {
 				StringBuffer sb = new StringBuffer();
 				sb.append("GOT: " + MC.MONITOR_VAL_2_KEY.get(oi.getType()));
-				if(si.getSm() != null) {
-					sb.append(", SM: ").append(si.getSm().getKey().getMethod());
+				if(si.getSmKey() != null) {
+					sb.append(", SM: ").append(si.getSmKey().getMethod());
 				}
 				sb.append(", actName: ").append(si.getActName());
 				logger.debug(sb.toString()); 

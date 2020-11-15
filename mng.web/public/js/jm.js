@@ -812,7 +812,21 @@ jm.mng = {
             return lan.toLowerCase();
         },
 
-    }
+    },
+
+    ISimpleRpc : {
+
+        hello: function (msg) {
+            return jm.rpc.callRpcWithParams(this.sn, this.ns, this.v, 'hello', [msg]);
+        },
+
+        sn:'cn.jmicro.example.api.rpc.ISimpleRpc',
+        ns : 'simpleRpc',
+        v:'0.0.1',
+
+    },
+
+
 }
 
 

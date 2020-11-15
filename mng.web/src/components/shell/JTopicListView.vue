@@ -320,6 +320,7 @@
         },
 
         mounted () {
+            this.$el.style.minHeight=(document.body.clientHeight-67)+'px';
             let self = this;
             window.jm.vue.$on("editTopic",this.editTopic);
             window.jm.rpc.addActListener(cid,self.doQuery);

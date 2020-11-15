@@ -21,6 +21,7 @@ import java.util.Map;
 
 import cn.jmicro.api.annotation.SO;
 import cn.jmicro.api.registry.ServiceMethod;
+import cn.jmicro.api.registry.UniqueServiceMethodKey;
 
 /**
  * @author yeyulei
@@ -48,7 +49,9 @@ public final class MRpcStatisItem{
 	private Map<Short,StatisItem> typeStatis = new HashMap<>();
 	
 	private transient long createTime;
-	private transient ServiceMethod sm = null;
+	//private transient ServiceMethod sm = null;
+	
+	private transient UniqueServiceMethodKey smKey = null;
 	
 	public MRpcStatisItem() {}
 	
@@ -59,7 +62,7 @@ public final class MRpcStatisItem{
 		mi.localPort = this.localPort;
 		mi.remoteHost = this.remoteHost;
 		mi.remotePort = this.remotePort;
-		mi.sm = this.sm;
+		//mi.sm = this.sm;
 		mi.inputTime = this.inputTime;
 		mi.costTime = this.costTime;
 		mi.clientId = this.clientId;
@@ -79,7 +82,8 @@ public final class MRpcStatisItem{
 		this.clientId = -1;
 		this.actName = null;
 		this.key = null;
-		this.sm = null;
+		//this.sm = null;
+		this.smKey = null;
 		this.costTime = 0;
 		this.createTime = 0;
 	}
@@ -97,13 +101,14 @@ public final class MRpcStatisItem{
 		return rst;
 	}
 	
-	public StatisItem addType(Short type,int cnt, double sum) {
+	public StatisItem addType(Short type, long val) {
 		StatisItem si = typeStatis.get(type);
 		if(si == null) {
 			si = new StatisItem();
+			si.setType(type);
 			typeStatis.put(type, si);
 		}
-		si.add(cnt, sum);
+		si.add(val);
 		return si;
 	}
 
@@ -127,12 +132,12 @@ public final class MRpcStatisItem{
 		this.actName = actName;
 	}
 
-	public ServiceMethod getSm() {
-		return sm;
+	public UniqueServiceMethodKey getSmKey() {
+		return smKey;
 	}
 
-	public void setSm(ServiceMethod sm) {
-		this.sm = sm;
+	public void setSmKey(UniqueServiceMethodKey smKey) {
+		this.smKey = smKey;
 	}
 
 	public String getLocalHost() {

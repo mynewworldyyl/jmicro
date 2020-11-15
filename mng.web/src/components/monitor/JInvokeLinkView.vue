@@ -5,8 +5,8 @@
             <treeTable ref="recTree"
                        :list.sync="logList"
                        @callMethod="callMethod"
-                       @viewDetail="viewDetail">
-                       @orderByCost="orderByCost"
+                       @viewDetail="viewDetail"
+                       @orderByCost="orderByCost">
             </treeTable>
         </div>
 
@@ -66,10 +66,10 @@
                     <td>TYPE</td>
                     <td>
                         <Select :filterable="true"
-                                :allowCreate="true" ref="typeSelect" :label-in-value="true" v-model="queryParams.type">
-                            <Option value="" >none</Option>
-                            <Option :value="v" v-for="(v,k) in selOptions.type" v-bind:key="k">{{k}}</Option>
-                        </Select>
+                                         :allowCreate="true" ref="typeSelect" :label-in-value="true" v-model="queryParams.type">
+                        <Option value="" >none</Option>
+                        <Option :value="v" v-for="(v,k) in selOptions.type" v-bind:key="k">{{k}}</Option>
+                    </Select>
                     </td>
                 </tr>
 
@@ -363,6 +363,7 @@
 
         mounted () {
             let self = this;
+            this.$el.style.minHeight=(document.body.clientHeight-67)+'px';
             window.jm.rpc.addActListener(cid,self.refresh);
             let ec = function() {
                 window.jm.rpc.removeActListener(cid);

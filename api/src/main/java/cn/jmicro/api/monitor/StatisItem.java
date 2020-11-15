@@ -13,9 +13,9 @@ public class StatisItem {
 
 	private short type;
 	
-	private int cnt;
+	//private int cnt;
 	
-	private long sum;
+	private long val;
 	
 	private long time;
 	
@@ -27,9 +27,9 @@ public class StatisItem {
 		this.type = type;
 	}
 	
-	public void add(int cnt,double sum) {
-		this.cnt += cnt;
-		this.sum += sum;
+	public void add(long val) {
+		this.val += val;
+		//this.sum += sum;
 	}
 
 	public short getType() {
@@ -40,22 +40,6 @@ public class StatisItem {
 		this.type = type;
 	}
 
-	public int getCnt() {
-		return cnt;
-	}
-
-	public void setCnt(int cnt) {
-		this.cnt = cnt;
-	}
-
-	public long getSum() {
-		return sum;
-	}
-
-	public void setSum(long sum) {
-		this.sum = sum;
-	}
-
 	public long getTime() {
 		return time;
 	}
@@ -63,6 +47,12 @@ public class StatisItem {
 	public void setTime(long time) {
 		this.time = time;
 	}
-	
-	
+
+	public long getVal() {
+		return val;
+	}
+
+	public void setVal(long val) {
+		this.val = val;
+	}
 }

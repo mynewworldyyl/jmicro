@@ -21,7 +21,7 @@ public class TestMonitorSubmiter extends JMicroBaseTestCase{
 	
 	private MRpcStatisItem ssubItem() {
 		MRpcStatisItem si = new MRpcStatisItem();
-		si.addType(MC.MT_REQ_END, 1, 2);
+		si.addType(MC.MT_REQ_END, 1);
 		return si;
 	}
 	

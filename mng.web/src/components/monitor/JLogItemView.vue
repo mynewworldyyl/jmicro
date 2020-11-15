@@ -465,7 +465,7 @@
         },
 
         mounted () {
-
+            this.$el.style.minHeight=(document.body.clientHeight-67)+'px';
             window.jm.rpc.addActListener(cid,this.q);
             let self = this;
             window.jm.vue.$emit("editorOpen",

@@ -146,7 +146,8 @@ public class JRPCReqRespHandler implements IMessageHandler{
 	    	
 	    	ServiceMethod sm = JMicroContext.get().getParam(Constants.SERVICE_METHOD_KEY, null);
 	    	if(msg.isMonitorable()) {
-				MT.rpcEvent(MC.MT_SERVER_JRPC_GET_REQUEST,1, msg.getLen());
+				MT.rpcEvent(MC.MT_SERVER_JRPC_GET_REQUEST,1);
+				MT.rpcEvent(MC.MT_SERVER_JRPC_GET_REQUEST_READ,msg.getLen());
 			}
 	    	
 			resp.setReqId(msg.getReqId());
@@ -186,7 +187,7 @@ public class JRPCReqRespHandler implements IMessageHandler{
 				resp.setResult(se);
 				resp.setSuccess(false);
 				LG.log(MC.LOG_ERROR, TAG,se.toString());
-				MT.rpcEvent(MC.MT_PACKET_TOO_MAX,1, msg.getLen());
+				MT.rpcEvent(MC.MT_PACKET_TOO_MAX,1);
 				resp2Client(resp,s,msg,sm);
 				return;
 			}
@@ -352,7 +353,9 @@ public class JRPCReqRespHandler implements IMessageHandler{
 		msg.setInsId(pi.getId());
 		
 		s.write(msg);
-		MT.rpcEvent(MC.MT_SERVER_JRPC_RESPONSE_SUCCESS,1, msg.getLen());
+		
+		MT.rpcEvent(MC.MT_SERVER_JRPC_RESPONSE_SUCCESS,1);
+		MT.rpcEvent(MC.MT_SERVER_JRPC_RESPONSE_WRITE, msg.getLen());
 		
 		if(msg.isDebugMode()) {
     		JMicroContext.get().appendCurUseTime("Server finish write",true);

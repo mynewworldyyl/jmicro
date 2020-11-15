@@ -60,6 +60,10 @@
           item: { type: Object,required: true },
         },
 
+        mounted() {
+            this.$el.style.minHeight=(document.body.clientHeight-67)+'px';
+        },
+
         data () {
             return {
 

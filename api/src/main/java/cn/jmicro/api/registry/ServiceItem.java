@@ -133,6 +133,8 @@ public final class ServiceItem implements Comparable<ServiceItem>{
 	
 	private int clientId = 0;
 	
+	private String actName;
+	
 	private int insId  = 0;
 	
 	//configurable from mng UI
@@ -201,6 +203,7 @@ public final class ServiceItem implements Comparable<ServiceItem>{
 		
 		this.feeType = p.feeType;
 		this.authClients = p.authClients;
+		this.actName = p.actName;
 		
 		for(ServiceMethod sm : p.getMethods()){
 			ServiceMethod nsm = this.getMethod(sm.getKey().getMethod(), sm.getKey().getParamsStr());
@@ -250,6 +253,14 @@ public final class ServiceItem implements Comparable<ServiceItem>{
 
 	public boolean isExternal() {
 		return external;
+	}
+
+	public String getActName() {
+		return actName;
+	}
+
+	public void setActName(String actName) {
+		this.actName = actName;
 	}
 
 	public boolean isShowFront() {

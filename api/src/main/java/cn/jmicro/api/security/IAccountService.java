@@ -12,6 +12,8 @@ public interface IAccountService {
 
 	Resp<ActInfo> getAccount(String loginKey);
 	
+	Resp<String> getNameById(Integer id);
+	
 	//Resp<Boolean> checkAccountExist(String actName);
 	
 	Resp<Boolean> resetPwdEmail(String actName,String checkCode);
