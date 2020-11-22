@@ -81,11 +81,11 @@ public class LG {
 	} 
 	
 	public static boolean log(byte level,Class<?> tag,String desc) {
-		return log0(level,tag,desc,null);
+		return log(level,tag.getName(),desc,null);
 	}
 	
 	public static boolean log(byte level,Class<?> tag,String desc,Throwable exp) {
-		return log0(level,tag,desc,exp);
+		return log(level,tag.getName(),desc,exp);
 	}
 	
 	private static void setStackTrance(OneLog oi,int idx) {
@@ -94,7 +94,7 @@ public class LG {
 		oi.setFileName(se.getFileName());
 	}
 	
-	private static boolean log0(byte level,Class<?> tag,String desc,Throwable exp) {
+	public static boolean log(byte level,String tag,String desc,Throwable exp) {
 
 		if(isLoggable(level)) {
 			MRpcLogItem mi = null;
@@ -108,7 +108,7 @@ public class LG {
 				 mi = new MRpcLogItem();
 			}
 			
-			OneLog oi = mi.addOneItem(level, tag.getName(),desc);
+			OneLog oi = mi.addOneItem(level, tag,desc);
 			setStackTrance(oi,4);
 			
 			if(exp != null) {
@@ -197,20 +197,20 @@ public class LG {
 	}
 	
 	public static void logWithNonRpcContext(byte level, Class<?> tag, String desc) {
-		logWithNonRpcContext0(level,tag,desc,null);
+		logWithNonRpcContext(level,tag.getName(),desc,null);
 	}
 	
 	public static void logWithNonRpcContext(byte level, Class<?> tag, String desc, Throwable exp) {
-		logWithNonRpcContext0(level,tag,desc,exp);
+		logWithNonRpcContext(level,tag.getName(),desc,exp);
 	}
 	
-	public static void logWithNonRpcContext0(byte level, Class<?> tag, String desc, Throwable exp) {
+	public static void logWithNonRpcContext(byte level, String tag, String desc, Throwable exp) {
 		if(level == MC.LOG_NO || level < Config.getSystemLogLevel()) {
 			return;
 		}
 
 		MRpcLogItem mi = new MRpcLogItem();
-		OneLog oi = mi.addOneItem(level, tag.getName(),desc);
+		OneLog oi = mi.addOneItem(level, tag,desc);
 		setStackTrance(oi,4);
 		if(exp != null) {
 			oi.setEx(serialEx(exp));

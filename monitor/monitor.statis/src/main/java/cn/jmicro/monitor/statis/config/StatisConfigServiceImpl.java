@@ -1,9 +1,7 @@
 package cn.jmicro.monitor.statis.config;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 import org.slf4j.Logger;
@@ -15,21 +13,15 @@ import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Inject;
 import cn.jmicro.api.annotation.SMethod;
 import cn.jmicro.api.annotation.Service;
-import cn.jmicro.api.choreography.ProcessInfo;
 import cn.jmicro.api.config.Config;
 import cn.jmicro.api.idgenerator.ComponentIdServer;
-import cn.jmicro.api.mng.JmicroInstanceManager;
 import cn.jmicro.api.monitor.LG;
 import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.monitor.StatisConfig;
 import cn.jmicro.api.monitor.StatisIndex;
 import cn.jmicro.api.raft.IDataOperator;
-import cn.jmicro.api.registry.IRegistry;
-import cn.jmicro.api.registry.ServiceItem;
-import cn.jmicro.api.registry.ServiceMethod;
 import cn.jmicro.api.registry.UniqueServiceKey;
 import cn.jmicro.api.security.ActInfo;
-import cn.jmicro.api.service.ServiceManager;
 import cn.jmicro.common.Utils;
 import cn.jmicro.common.util.JsonUtils;
 import cn.jmicro.monitor.statis.api.IStatisConfigService;
@@ -40,7 +32,7 @@ public class StatisConfigServiceImpl implements IStatisConfigService {
 
 	private final static Logger logger = LoggerFactory.getLogger(StatisConfigServiceImpl.class);
 	
-	private static final String ROOT = StatisConfigManager.STATIS_WARNING_ROOT;
+	private static final String ROOT = StatisConfig.STATIS_CONFIG_ROOT;
 	
 	@Inject
 	private IDataOperator op;
@@ -105,8 +97,6 @@ public class StatisConfigServiceImpl implements IStatisConfigService {
 		return r;
 	}
 
-	
-
 	@Override
 	@SMethod(perType=true,needLogin=true,maxSpeed=1,maxPacketSize=4096,downSsl=true,encType=0,upSsl=true)
 	public Resp<Boolean> update(StatisConfig cfg) {
@@ -145,6 +135,10 @@ public class StatisConfigServiceImpl implements IStatisConfigService {
 		lw.setToType(cfg.getToType());
 		//lw.setEnable(cfg.isEnable());
 		lw.setTag(cfg.getTag());
+		lw.setExpStr(cfg.getExpStr());
+		lw.setCounterTimeout(cfg.getCounterTimeout());
+		lw.setNamedType(cfg.getNamedType());
+		lw.setMinNotifyTime(cfg.getMinNotifyTime());
 
 		op.setData(path, JsonUtils.getIns().toJson(lw));
 		r.setData(true);
@@ -221,7 +215,7 @@ public class StatisConfigServiceImpl implements IStatisConfigService {
 			return r;
 		}
 		
-		if(cfg.getToType() <= 0 || cfg.getToType() > StatisConfig.TO_TYPE_FILE) {
+		if(cfg.getToType() <= 0 || cfg.getToType() > StatisConfig.TO_TYPE_MESSAGE+10) {
 			r.setCode(Resp.CODE_FAIL);
 			r.setData(false);
 			r.setMsg("目标类型不能为空");
@@ -338,28 +332,17 @@ public class StatisConfigServiceImpl implements IStatisConfigService {
 					msg = "To file cannot be NULL for id: " + lw.getId();
 					return msg;
 				}
-
-				/*File logFile = new File(this.logDir + lw.getId()+"_"+lw.getToParams());
-				if(!logFile.exists()) {
-					try {
-						logFile.createNewFile();
-					} catch (IOException e) {
-						logger.error("Create log file fail",e);
-						LG.logWithNonRpcContext(MC.LOG_ERROR, MonitorStatisConfigManager.class, msg,e);
-						return false;
-					}
+			}else if(StatisConfig.TO_TYPE_MONITOR_LOG == lw.getToType()) {
+				if(Utils.isEmpty(lw.getToParams())) {
+					msg = "Tag cannot be null: " + lw.getId();
+					return msg;
 				}
-				
-				try {
-					BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(logFile)));
-					lw.setBw(bw);
-				} catch (FileNotFoundException e) {
-					logger.error("Create writer fail",e);
-					LG.logWithNonRpcContext(MC.LOG_ERROR, MonitorStatisConfigManager.class, msg,e);
-					return false;
-				}*/
+			}else if(StatisConfig.TO_TYPE_MESSAGE == lw.getToType()) {
+				if(Utils.isEmpty(lw.getToParams())) {
+					msg = "Message topic cannot be null: " + lw.getId();
+					return msg;
+				}
 			}
-			
 		}finally {
 			if(msg != null) {
 				logger.error(msg);
@@ -369,7 +352,35 @@ public class StatisConfigServiceImpl implements IStatisConfigService {
 		
 		return msg;
 	}
-
+	
+	private boolean checkByService(int cfgId, String[] srvs) {
+		String msg = null;
+		try {
+			if(Utils.isEmpty(srvs[0])) {
+				msg = "By service name cannot be NULL for id: " + cfgId;
+				return false;
+			}
+			
+			if(Utils.isEmpty(srvs[1])) {
+				msg = "By namespace cannot be NULL for id: " + cfgId;
+				return false;
+			}
+			
+			if(Utils.isEmpty(srvs[2])) {
+				msg = "By version cannot be NULL for id: " + cfgId;
+				return false;
+			}
+			
+			return true;
+		}finally {
+			if(msg != null) {
+				logger.error(msg);
+				LG.logWithNonRpcContext(MC.LOG_WARN, StatisConfigServiceImpl.class, msg);
+			}
+		}
+		
+	}
+	
 	private String checkByType(StatisConfig lw) {
 		boolean suc = false;
 		int tt = lw.getByType();
@@ -464,33 +475,5 @@ public class StatisConfigServiceImpl implements IStatisConfigService {
 		}
 		
 		return msg;
-	}
-
-	private boolean checkByService(int cfgId, String[] srvs) {
-		String msg = null;
-		try {
-			if(Utils.isEmpty(srvs[0])) {
-				msg = "By service name cannot be NULL for id: " + cfgId;
-				return false;
-			}
-			
-			if(Utils.isEmpty(srvs[1])) {
-				msg = "By namespace cannot be NULL for id: " + cfgId;
-				return false;
-			}
-			
-			if(Utils.isEmpty(srvs[2])) {
-				msg = "By version cannot be NULL for id: " + cfgId;
-				return false;
-			}
-			
-			return true;
-		}finally {
-			if(msg != null) {
-				logger.error(msg);
-				LG.logWithNonRpcContext(MC.LOG_WARN, StatisConfigServiceImpl.class, msg);
-			}
-		}
-		
 	}
 }

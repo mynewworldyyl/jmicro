@@ -112,8 +112,8 @@ public class FirstClientInterceptor extends AbstractInterceptor implements IInte
 		resp.setReqId(req.getRequestId());
 		resp.setMonitorEnable(req.isMonitorEnable());
 		
-		Method method = JMicroContext.get().getParam(Constants.CLIENT_REF_METHOD, null);
-		Class<?> cls = method.getReturnType();
+		ServiceMethod method = JMicroContext.get().getParam(Constants.SERVICE_METHOD_KEY, null);
+		Class<?> cls = method.getKey().getReturnParamClass();
 		if(cls == Void.class) {
 			resp.setResult(null);
 		} else if(!StringUtils.isEmpty(sm.getFailResponse())) {

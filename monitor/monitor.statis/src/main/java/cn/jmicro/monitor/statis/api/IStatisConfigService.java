@@ -3,7 +3,6 @@ package cn.jmicro.monitor.statis.api;
 import java.util.List;
 
 import cn.jmicro.api.Resp;
-import cn.jmicro.api.config.Config;
 import cn.jmicro.api.monitor.StatisConfig;
 import cn.jmicro.codegenerator.AsyncClientProxy;
 

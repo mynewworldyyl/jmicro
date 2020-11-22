@@ -51,6 +51,7 @@ import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.net.IServer;
 import cn.jmicro.api.objectfactory.IObjectFactory;
 import cn.jmicro.api.objectfactory.ProxyObject;
+import cn.jmicro.api.raft.IDataOperator;
 import cn.jmicro.api.registry.IRegistry;
 import cn.jmicro.api.registry.Server;
 import cn.jmicro.api.registry.ServiceItem;
@@ -719,6 +720,11 @@ public class ServiceLoader{
 			}
 			
 			item.addMethod(sm);
+			
+			/*if(sm.getBreakingRule().isEnable()) {
+				sm.setMonitorEnable(1);
+				createStatisConfig(sm);
+			}*/
 		}
 		
 		return item;
@@ -727,7 +733,6 @@ public class ServiceLoader{
 	private void getClassByType(Type type,Set<Class<?>> clses) {
 		TypeUtils.finalParameterType(type, clses);
 	}
-	
 	
 	private void needRegist(Set<Class<?>>  clses) {
 		

@@ -327,7 +327,7 @@ public class ExpUtils {
 			v2.startsWith("\"") && v2.endsWith("\"")) {
 			//只要其中一个是字符串，那么就把另外一个也当字符串处理
 			rst = v1.compareTo(v2) > 0; //字符串字典序比较
-		 }else if(isNumber(v1.charAt(0)) && isNumber(v2.charAt(0))) {
+		 }else if(isNumber(v1) && isNumber(v2)) {
 			 //首字符是数字，必然是数字
 			 rst = Double.parseDouble(v1) > Double.parseDouble(v2);
 		 } else {
@@ -640,7 +640,7 @@ public class ExpUtils {
      * @return
      */
     private static boolean isNumber(String num){
-        return num.matches("\\d+");
+        return num.matches("^[\\-\\+]?\\d+[\\.]?\\d*$");
     }
 
 }

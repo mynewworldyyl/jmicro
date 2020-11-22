@@ -159,6 +159,14 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
 			 //请求开始
 			 //SF.reqStart(TAG.getName(),request);
 			 //LG.reqEvent(MC.MT_REQ_START, MC.LOG_NO, request,TAG.getName(),"");
+			ServiceItem si = JMicroContext.get().getParam(Constants.DIRECT_SERVICE_ITEM,null);
+			if(si == null) {
+        		//此方法可能抛出FusingException
+				//此方法返回熔断异常，所以要放在MC.MT_REQ_START事件之前
+				si = selector.getService(request.getServiceName(),request.getMethod(),/*req.getArgs(),*/request.getNamespace(),
+						request.getVersion(), Constants.TRANSPORT_NETTY);
+        	}
+			
 			 MT.rpcEvent(MC.MT_REQ_START);
 			 //SF.doRequestLog(MonitorConstant.LOG_DEBUG, TAG,null, "request start");
 			
@@ -180,10 +188,10 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
 	        	 } else {
 	        		 //可以异步调用并异步返回结果
 		        	 request.putObject(mkey, ac);
-		        	 resp = doRequest(request,proxy);
+		        	 resp = doRequest(request,proxy,si);
 	        	 }
 	         } else {
-	        	 resp = doRequest(request,proxy);
+	        	 resp = doRequest(request,proxy,si);
 	         }
 		} catch (SecurityException | IllegalArgumentException  e) {
 			LG.log(MC.LOG_ERROR, TAG, e.getMessage(), e);
@@ -264,13 +272,13 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
 		}
 	}
 
-	private RpcResponse doRequest(IRequest req, ClientServiceProxyHolder proxy) {
+	private RpcResponse doRequest(IRequest req, ClientServiceProxyHolder proxy,ServiceItem si) {
         
         ServerError se = null;
         		
         JMicroContext cxt = JMicroContext.get();
         
-        ServiceItem si = cxt.getParam(Constants.DIRECT_SERVICE_ITEM,null);
+       
         ServiceMethod sm = cxt.getParam(Constants.SERVICE_METHOD_KEY, null);
         
         int retryCnt = -1;
@@ -293,11 +301,7 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
 		
         do {
         	
-        	if(si == null) {
-        		//此方法可能抛出FusingException
-        		si = selector.getService(req.getServiceName(),req.getMethod(),/*req.getArgs(),*/req.getNamespace(),
-            			req.getVersion(), Constants.TRANSPORT_NETTY);
-        	}
+        	
         	
         	if(si == null) {
         		//SF.doSubmit(MonitorConstant.CLIENT_REQ_SERVICE_NOT_FOUND, req,null);
@@ -431,7 +435,11 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
 	    						RpcResponse resp = ICodecFactory.decode(this.codecFactory, respMsg.getPayload(),
 		    							RpcResponse.class, msg.getUpProtocol());
 		    					resp.setMsg(respMsg);
+		    					
+		    					MT.rpcEvent(MC.MT_REQ_SUCCESS);
+		    					
 		    					cb.onResponse(resp);
+		    					
 	    					}catch( Throwable e) {
 	    						String errMsg = "Client callback error reqID:"+req.getRequestId()+",linkId:"+msg.getLinkId()+",Service: "+sm.getKey().toKey(true, true, true);
 	    						logger.error(errMsg,e);

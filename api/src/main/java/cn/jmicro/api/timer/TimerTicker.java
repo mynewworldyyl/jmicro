@@ -168,12 +168,11 @@ public class TimerTicker {
 	
 	@SuppressWarnings("rawtypes")
 	public void addListener(String key,Object attachement,boolean replace,ITickerAction act) {
-		if(this.listeners.containsKey(key) && act != this.listeners.get(key)) {
-			if(!replace) {
+		if(this.listeners.containsKey(key)) {
+			if(act != this.listeners.get(key) && !replace) {
 				throw new CommonException("listener with key[" + key+"] have been exists");
-			} else {
-				logger.warn("Replace Listener: " + key);
 			}
+			logger.warn("Replace Listener: " + key);
 		}
 		if(attachement != null) {
 			attachements.put(key, attachement);

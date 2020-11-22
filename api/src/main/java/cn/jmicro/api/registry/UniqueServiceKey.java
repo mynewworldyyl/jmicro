@@ -29,6 +29,16 @@ import cn.jmicro.common.util.StringUtils;
  */
 @SO
 public final class UniqueServiceKey {
+	
+	public static final int INDEX_SN = 0;
+	public static final int INDEX_NS = 1;
+	public static final int INDEX_VER = 2;
+	public static final int INDEX_INS = 3;
+	public static final int INDEX_HOST = 4;
+	public static final int INDEX_PORT = 5;
+	public static final int INDEX_METHOD = 6;
+	public static final int INDEX_ARGS = 7;
+	public static final int INDEX_ACT = 8;
 
 	public static final String SEP = "##";
 	
@@ -133,6 +143,9 @@ public final class UniqueServiceKey {
 	}
 	
 	public static StringBuilder port(boolean ins,StringBuilder sb,int port) {
+		if(port <= 0) {
+			return appendOne(ins,sb,null);
+		}
 		return appendOne(ins,sb,port+"");
 	}
 	

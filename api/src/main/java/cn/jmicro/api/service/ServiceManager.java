@@ -328,6 +328,35 @@ public class ServiceManager {
 		return sets;
 	}
 	
+	public Set<ServiceItem> getServiceItems(String serviceName,String namespace,String version,String insName) {
+		if(StringUtils.isEmpty(serviceName)) {
+			throw new CommonException("Service Name cannot be null");
+		}
+		Set<ServiceItem> sets = new HashSet<>();
+		ReentrantReadWriteLock.ReadLock l = rwLocker.readLock();
+		try {
+			l.lock();
+			this.path2SrvItems.forEach((key,si) -> {
+				//logger.debug("key: {}" ,key);
+				if(si.getKey().getServiceName().equals(serviceName) && si.getKey().getInstanceName().equals(insName)) {
+					if(StringUtils.isEmpty(version) && StringUtils.isEmpty(namespace)) {
+						sets.add(si);
+					}else if(UniqueServiceKey.matchVersion(version,si.getKey().getVersion())
+						&& UniqueServiceKey.matchNamespace(namespace,si.getKey().getNamespace())) {
+						sets.add(si);
+					}
+				}
+			});
+		} finally {
+			if(l != null) {
+				l.unlock();
+			}
+		}
+		
+		return sets;
+	}
+	
+	
 	public Set<ServiceItem> getItemsByInstanceName(String instanceName) {
 		Set<ServiceItem> sets = new HashSet<>();
 		if(StringUtils.isEmpty(instanceName)) {

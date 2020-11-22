@@ -34,8 +34,6 @@ import cn.jmicro.common.util.StringUtils;
 @Component
 public class MonitorStatisConfigManager {
 
-	public static final String STATIS_WARNING_ROOT = Config.BASE_DIR + "/statisConfigs";
-
 	private final Logger logger = LoggerFactory.getLogger(MonitorStatisConfigManager.class);
 	
 	@Inject
@@ -82,15 +80,19 @@ public class MonitorStatisConfigManager {
 	
 	private IRaftListener<StatisConfig> lis = new IRaftListener<StatisConfig>() {
 		public void onEvent(int type,String id, StatisConfig lw) {
-			 if(type == IListener.DATA_CHANGE | type == IListener.ADD) {
-				dataChanged(lw);
+			if(type == IListener.DATA_CHANGE) {
+				statisConfigChanged(lw);
+			}else if(type == IListener.REMOVE){
+				statisConfigRemove(lw);
+			}else if(type == IListener.ADD) {
+				statisConfigAdd(lw);
 			}
 		}
 	};
 	
 	public void ready() {
 		//op.addChildrenListener(STATIS_WARNING_ROOT, lis);
-		configListener = new RaftNodeDataListener<>(op,STATIS_WARNING_ROOT,StatisConfig.class,false);
+		configListener = new RaftNodeDataListener<>(op,StatisConfig.STATIS_CONFIG_ROOT,StatisConfig.class,false);
 		configListener.addListener(lis);
 		srvMng.addListener(snvListener);
 		insManager.addInstanceListner(insListener);
@@ -110,6 +112,10 @@ public class MonitorStatisConfigManager {
 				}
 			}
 		}
+	}
+	
+	public StatisConfig getConfig(Integer cid) {
+		return this.configs.get(cid);
 	}
 
 	//依据服务7要素做初步判断是否需要提交数据到监控服务器
@@ -194,30 +200,36 @@ public class MonitorStatisConfigManager {
 		return cons;
 	}
 
-	private void dataChanged(StatisConfig lw) {
-		if(lw == null) {
+	private void statisConfigRemove(StatisConfig lw) {
+		if(lw == null || !lw.isEnable()) {
 			return;
 		}
-		
-		initStatisConfig(lw);
 		
 		StatisConfig olw = null;
 		synchronized(configs) {
 			olw = configs.get(lw.getId());
 		}
-		
-		if(!lw.isEnable()) {
-			if(olw != null && olw.isEnable()) {
-				//禁用配置
-				parseStatisConfigData(lw,0);
+
+		if(olw != null) {
+			//禁用配置
+			parseStatisConfigData(olw,0);
+		}
+		if(olw != null) {
+			synchronized(configs) {
+				configs.remove(lw.getId());
 			}
-			if(olw != null) {
-				synchronized(configs) {
-					configs.remove(lw.getId());
-				}
-			}
+		}
+		return;
+	
+	}
+
+	private void statisConfigAdd(StatisConfig lw) {
+
+		if(lw == null || !lw.isEnable()) {
 			return;
 		}
+		
+		initStatisConfig(lw);
 		
 		switch(lw.getByType()) {
 		case StatisConfig.BY_TYPE_SERVICE_METHOD:
@@ -234,6 +246,56 @@ public class MonitorStatisConfigManager {
 		synchronized (configs) {
 			configs.put(lw.getId(), lw);
 		}
+		
+		//已经存在的配置从禁用到启用
+		if(!lazyParseConfig) {
+			parseStatisConfigData(lw,1);
+		}
+		return;
+	}
+
+	private void statisConfigChanged(StatisConfig lw) {
+		if(lw == null) {
+			return;
+		}
+		
+		StatisConfig olw = null;
+		synchronized(configs) {
+			olw = configs.get(lw.getId());
+		}
+		
+		if(!lw.isEnable()) {
+			if(olw != null && olw.isEnable()) {
+				//禁用配置
+				//initStatisConfig(lw);
+				parseStatisConfigData(olw,0);
+			}
+			if(olw != null) {
+				synchronized(configs) {
+					configs.remove(lw.getId());
+				}
+			}
+			return;
+		}
+		
+		initStatisConfig(lw);
+		
+		switch(lw.getByType()) {
+		case StatisConfig.BY_TYPE_SERVICE_METHOD:
+		case StatisConfig.BY_TYPE_SERVICE_INSTANCE_METHOD:
+		case StatisConfig.BY_TYPE_SERVICE_ACCOUNT_METHOD:
+			 String[] srvs = lw.getByKey().split(UniqueServiceKey.SEP);
+			 lw.setBysn(srvs[0]);
+			 lw.setByns(srvs[1]);
+			 lw.setByver(srvs[2]);
+			 lw.setByins(srvs[3]);
+			 lw.setByme(srvs[6]);
+		}
+		 
+		synchronized (configs) {
+			configs.put(lw.getId(), lw);
+		}
+		
 		//已经存在的配置从禁用到启用
 		if(!lazyParseConfig) {
 			parseStatisConfigData(lw,1);

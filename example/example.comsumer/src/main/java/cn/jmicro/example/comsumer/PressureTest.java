@@ -10,8 +10,8 @@ import cn.jmicro.example.api.rpc.ISimpleRpc;
 public class PressureTest {
 
 	public static void main(String[] args) {
-		IObjectFactory of = JMicro.getObjectFactoryAndStart(new String[] {"-DinstanceName=PressureTest"});
-		for(int i = 0; i < 1;i++){
+		IObjectFactory of = JMicro.getObjectFactoryAndStart(args);
+		for(int i = 0; i < 3;i++){
 			new Thread(new Worker(of,i)).start();
 		}
 	}

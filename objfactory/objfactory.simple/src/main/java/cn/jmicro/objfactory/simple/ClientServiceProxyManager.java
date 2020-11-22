@@ -91,9 +91,9 @@ class ClientServiceProxyManager {
 		try {
 			Set<ServiceItem> items = registry.getServices(srvName, namespace, version);
 			ServiceItem si = null;
-			if(srvName.equals("cn.jmicro.example.api.rpc.IRpcA")) {
+			/*if(srvName.equals("cn.jmicro.example.api.rpc.IRpcA")) {
 				System.out.println("ClientServiceProxyManager: " + srvName);
-			}
+			}*/
 			if(items == null || items.isEmpty()) {
 				//throw new CommonException("Class not found: "+UniqueServiceKey.serviceName(srvName, namespace, version));
 				proxy = createDynamicServiceProxyWithSNV(Config.getInstanceName(),srvName, namespace, version,cl,acs);

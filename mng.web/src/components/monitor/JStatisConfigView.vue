@@ -7,12 +7,12 @@
                     <td>{{'ID' | i18n }}</td>
                     <td>{{'StatisType' | i18n }}</td>
                     <td>{{'StatisKey' | i18n }}</td>
-                    <td>{{'NamedType' | i18n }}</td>
+                    <td>{{'CTimeout(S)' | i18n }}</td>
                     <td >{{'StatisIndex' | i18n }}</td>
                    <!-- <td>{{'TimeUnit' | i18n }}</td>
                     <td >{{'TimeCnt' | i18n }}</td>-->
-                    <td>{{'DataTarget' | i18n }}</td>
-                    <td>{{'Params' | i18n }}</td>
+                    <td>{{'ToType' | i18n }}</td>
+                    <td>{{'ToParams' | i18n }}</td>
                     <td>{{'Expression' | i18n }}</td>
 
                     <td>{{'Enable' | i18n }}</td>
@@ -24,7 +24,7 @@
                     <td>{{c.id}}</td>
                     <td>{{byTypes[c.byType]}}</td>
                     <td>{{c.byKey}}</td>
-                    <td>{{c.namedType}}</td>
+                    <td>{{c.counterTimeout}}</td>
                     <td><span v-for="va in c.statisIndexs" :key="va.vk">{{ va.vk }},</span></td>
                    <!-- <td>{{c.timeUnit}}</td>
                     <td>{{c.timeCnt}}</td>-->
@@ -39,6 +39,7 @@
                         <a v-if="isLogin && !c.enable" @click="remove(c.id)">{{'Delete' | i18n }}</a>&nbsp;&nbsp;&nbsp;&nbsp;
                         <a v-if="isLogin  && c.enable" @click="enable(c.id)">{{'Disalbe' | i18n }}</a>&nbsp;&nbsp;&nbsp;&nbsp;
                         <a v-if="isLogin  && !c.enable" @click="enable(c.id)">{{'Enable' | i18n }}</a>&nbsp;&nbsp;&nbsp;&nbsp;
+                        <a v-if="isLogin" @click="view(c)">{{'View' | i18n }}</a>&nbsp;&nbsp;
                     </td>
                 </tr>
             </table>
@@ -58,18 +59,36 @@
                 :draggable="true" :scrollable="true" width="80">
 
               <!--  <Checkbox :disabled="true" v-model="cfg.enable">{{ 'Enable' | i18n}}</Checkbox>&nbsp;&nbsp;&nbsp;&nbsp;-->
-                <Button  @click="doSave()">{{'Confirm'|i18n}}</Button><br/>
+                <Button v-if="!readonly" @click="doSave()">{{'Confirm'|i18n}}</Button><br/>
                 <Label v-if="errMsg"  style="color:red">{{errMsg}}</Label><br/>
 
+            <a v-if="!readonly" href="javascript:void(0)" @click="addStatisIndex()" style="text-align: left">{{'Add' | i18n }}</a>
+            <table id="statisIndex" width="99%">
+                <thead>
+                <tr style="width:30px">
+                    <td>{{'IndexType' | i18n }}</td>
+                    <td>{{'Desc' | i18n }}</td>
+                    <td>{{'Key' | i18n }}</td>
+                    <td>{{'Numerator' | i18n }}</td>
+                    <td>{{'Denominator' | i18n }}</td>
+                    <td>{{'Operation' | i18n }}</td>
+                </tr>
+                </thead>
+                <tbody>
+                <JStatisIndex v-for="(si,idx) in cfg.statisIndexs" :key="si.keyName" :si="si"
+                              @delete="delStatisIndex(idx)" :readonly="readonly"/>
+                </tbody>
+            </table>
+
                 <Label for="byType">{{'byType' | i18n}}</Label>
-                <Select id="byType" v-model="cfg.byType" >
+                <Select :disabled="readonly" id="byType" v-model="cfg.byType" >
                     <!--<Option value="*" >none</Option>-->
                     <Option v-for="(key,val) in byTypes" :value="val" :key="key">{{key | i18n}}</Option>
                 </Select>
 
                 <Label v-if="byKeyShow.sn"  for="ByService">{{'ByService' | i18n}}</Label>
                 <!--<Input v-if="byKeyShow.sn"  id="ByService" v-model="byKey.sn"/>-->
-                <Select v-if="byKeyShow.sn"   id="ByService" :filterable="true"
+                <Select :disabled="readonly" v-if="byKeyShow.sn"   id="ByService" :filterable="true"
                          ref="ByService" :label-in-value="true" v-model="byKey.sn">
                   <!--  <Option value="*" >none</Option>-->
                     <Option v-for="(v) in serviceNames"  :value="v"  v-bind:key="v">{{v}}</Option>
@@ -77,7 +96,7 @@
 
                 <Label v-if="byKeyShow.ns"  for="ByNamespace">{{'ByNamespace' | i18n}}</Label>
                 <!--<Input v-if="byKeyShow.ns"  id="ByNamespace" v-model="byKey.ns"/>-->
-                <Select v-if="byKeyShow.sn"   id="ByNamespace" :filterable="true"
+                <Select :disabled="readonly" v-if="byKeyShow.sn"   id="ByNamespace" :filterable="true"
                         ref="ByService" :label-in-value="true" v-model="byKey.ns">
                     <Option value="*" >none</Option>
                     <Option v-for="(v) in byCurNamespaces"  :value="v"  v-bind:key="v">{{v}}</Option>
@@ -85,7 +104,7 @@
 
                 <Label v-if="byKeyShow.ver"  for="ByVersion">{{'ByVersion' | i18n}}</Label>
                 <!--<Input v-if="byKeyShow.ver"  id="ByVersion" v-model="byKey.ver"/>-->
-                <Select v-if="byKeyShow.ver"   id="ByVersion" :filterable="true"
+                <Select :disabled="readonly" v-if="byKeyShow.ver"   id="ByVersion" :filterable="true"
                         ref="ByService" :label-in-value="true" v-model="byKey.ver">
                     <Option value="*" >none</Option>
                     <Option v-for="(v) in byCurVersions"  :value="v"  v-bind:key="v">{{v}}</Option>
@@ -93,48 +112,39 @@
 
                 <Label v-if="byKeyShow.sm"  for="ByMethod">{{'ByMethod' | i18n}}</Label>
                 <!--<Input v-if="byKeyShow.sm"  id="ByMethod" v-model="byKey.sm"/>-->
-                <Select v-if="byKeyShow.sm"   id="ByMethod" :filterable="true"
+                <Select :disabled="readonly" v-if="byKeyShow.sm"   id="ByMethod" :filterable="true"
                         ref="ByService" :label-in-value="true" v-model="byKey.sm">
-                    <!--<Option value="*" >none</Option>-->
+                    <Option value="*" >none</Option>
                     <Option v-for="(v) in byCurMethods"  :value="v"  v-bind:key="v">{{v}}</Option>
                 </Select>
 
                 <Label v-if="byKeyShow.ins"  for="ByIns">{{'ByIns' | i18n}}</Label>
                 <!--<Input v-if="byKeyShow.ins"  id="ByIns" v-model="byKey.ins"/>-->
-                <Select v-if="byKeyShow.ins"   id="ByIns" :filterable="true"
+                <Select :disabled="readonly" v-if="byKeyShow.ins"   id="ByIns" :filterable="true"
                         ref="ByIns" :label-in-value="true" v-model="byKey.ins">
-                    <!-- <Option value="*" >none</Option>-->
+                    <Option value="*" >none</Option>
                     <Option v-for="(v) in byCurInstances"  :value="v"  v-bind:key="v">{{v}}</Option>
                 </Select>
 
                 <Label v-if="byKeyShow.allIns"  for="ByAllIns">{{'ByIns' | i18n}}</Label>
                 <!--<Input v-if="byKeyShow.ins"  id="ByIns" v-model="byKey.ins"/>-->
-                <Select v-if="byKeyShow.allIns"   id="ByAllIns" :filterable="true"
+                <Select :disabled="readonly" v-if="byKeyShow.allIns"   id="ByAllIns" :filterable="true"
                         ref="ByIns" :label-in-value="true" v-model="byKey.ins">
-                   <!-- <Option value="*" >none</Option>-->
+                   <Option value="*" >none</Option>
                     <Option v-for="(v) in allInstances"  :value="v"  v-bind:key="v">{{v}}</Option>
                 </Select>
 
                 <Label v-if="cfg.byType==5 || cfg.byType==3" for="byAccount">{{'Account' | i18n}}</Label>
-                <Input v-if="cfg.byType==5 || cfg.byType==3"  id="byAccount" v-model="cfg.byKey"/>
-
-                <Label  for="byExpression">{{'Expression' | i18n}}</Label>
-                <Input  id="byExpression"  class='textarea'
-                        :autosize="{maxRows:5,minRows: 2}" type="textarea" v-model="cfg.expStr"/>
-
-                <Label for="namedType">{{'NamedType' | i18n}}</Label>&nbsp;&nbsp;&nbsp;<a href="javascript:void(0);" @click="namedTypeDetail()">{{'Detail'|i18n}}</a>
-                <Select id="namedType" v-model="cfg.namedType">
-                    <Option v-for="k in namedTypeNames" :value="k" :key="k">{{k | i18n}}</Option>
-                </Select>
+                <Input :disabled="readonly" v-if="cfg.byType==5 || cfg.byType==3"  id="byAccount" v-model="cfg.byKey"/>
 
                 <Label for="toType">{{'toType' | i18n}}</Label>
-                <Select id="toType" v-model="cfg.toType">
+                <Select :disabled="readonly" id="toType" v-model="cfg.toType">
                     <Option v-for="(key,v) in toTypes" :value="v" :key="key">{{key | i18n}}</Option>
                 </Select>
 
                 <Label v-if="toKeyShow.sn"  for="ToService">{{'ToService' | i18n}}</Label>
                 <!--<Input v-if="toKeyShow.sn"  id="ToService" v-model="smToKey.sn"/>-->
-                <Select v-if="toKeyShow.sn"   id="ToService" :filterable="true"
+                <Select :disabled="readonly" v-if="toKeyShow.sn"   id="ToService" :filterable="true"
                                   ref="ToService" :label-in-value="true" v-model="smToKey.sn">
                     <Option value="*" >none</Option>
                     <Option v-for="v in serviceNames"  :value="v"  v-bind:key="v">{{v}}</Option>
@@ -142,7 +152,7 @@
 
                 <Label v-if="toKeyShow.sn"  for="ToNamespace">{{'ToNamespace' | i18n}}</Label>
                 <!--<Input v-if="toKeyShow.sn"  id="ToNamespace" v-model="smToKey.ns"/>-->
-                <Select v-if="toKeyShow.sn"   id="ToNamespace" :filterable="true"
+                <Select :disabled="readonly" v-if="toKeyShow.sn"   id="ToNamespace" :filterable="true"
                         ref="ToNamespace" :label-in-value="true" v-model="smToKey.ns">
                     <Option value="*" >none</Option>
                     <Option v-for="(v) in toCurNamespaces"  :value="v"  v-bind:key="v">{{v}}</Option>
@@ -150,7 +160,7 @@
 
                 <Label v-if="toKeyShow.sn"  for="ToVersion">{{'ToVersion' | i18n}}</Label>
                <!-- <Input v-if="toKeyShow.sn"  id="ToVersion" v-model="smToKey.ver"/>-->
-                <Select v-if="toKeyShow.sn"   id="ToVersion" :filterable="true"
+                <Select :disabled="readonly" v-if="toKeyShow.sn"   id="ToVersion" :filterable="true"
                         ref="ToVersion" :label-in-value="true" v-model="smToKey.ver">
                     <Option value="*" >none</Option>
                     <Option v-for="(v) in toCurVersions"  :value="v"  v-bind:key="v">{{v}}</Option>
@@ -158,30 +168,35 @@
 
                 <Label v-if="toKeyShow.sn"  for="ToMethod">{{'ToMethod' | i18n}}</Label>
                <!-- <Input v-if="toKeyShow.sn"  id="ToMethod" v-model="smToKey.sm"/>-->
-                <Select v-if="toKeyShow.sn"   id="ToMethod" :filterable="true"
+                <Select :disabled="readonly" v-if="toKeyShow.sn"   id="ToMethod" :filterable="true"
                         ref="ToMethod" :label-in-value="true" v-model="smToKey.sm">
                     <Option value="*" >none</Option>
                     <Option v-for="(v) in toCurMethods"  :value="v"  v-bind:key="v">{{v}}</Option>
                 </Select>
 
                 <Label v-if="cfg.toType == 1 "  for="db">{{'Table' | i18n}}</Label>
-                <Input v-if="cfg.toType ==  1 "  id="db" v-model="cfg.toParams"/>
+                <Input :disabled="readonly" v-if="cfg.toType ==  1 "  id="db" v-model="cfg.toParams"/>
 
                 <Label v-if="cfg.toType == 4 "  for="fileName">{{'File' | i18n}}</Label>
-                <Input v-if="cfg.toType == 4 "  id="fileName" v-model="cfg.toParams"/>
+                <Input :disabled="readonly" v-if="cfg.toType == 4 "  id="fileName" v-model="cfg.toParams"/>
+
+                <Label v-if="cfg.toType == 5 "  for="tag">{{'Tag' | i18n}}</Label>
+                <Input :disabled="readonly" v-if="cfg.toType == 5 "  id="tag" v-model="cfg.toParams"/>
+
+                <Label v-if="cfg.toType == 6 "  for="topic">{{'Topic' | i18n}}</Label>
+                <Input :disabled="readonly" v-if="cfg.toType == 6 "  id="topic" v-model="cfg.toParams"/>
+
+                <Label for="counterTimeout">{{'CounterTimeout' | i18n}}</Label>
+                <Input :disabled="readonly" id="counterTimeout" v-model="cfg.counterTimeout"/>
+
+                <Label for="actName">{{'ActName' | i18n}}</Label>
+                <Input :disabled="readonly" id="actName" v-model="cfg.actName"/>
 
                 <!--<Label for="timeUnit">{{'timeUnit' | i18n}}</Label>
                 <Select id="timeUnit" v-model="cfg.timeUnit">
                     <Option v-for="k in timeUnits" :value="k" :key="k">{{k | i18n}}</Option>
                 </Select>
-
-                <Label for="timeCnt">{{'timeCnt' | i18n}}</Label>
-                <Input id="timeCnt" v-model="cfg.timeCnt"/>-->
-
-              <!--  <Label for="actName">{{'ActName' | i18n}}</Label>
-                <Input id="actName" v-model="cfg.actName"/>-->
-                <Label  for="tag">{{'Tag' | i18n}}</Label>
-                <Input  id="tag" v-model="cfg.tag"/>
+                -->
 
               <!--  <Label for="statisIndex">{{'statisIndex' | i18n}}</Label>-->
                 <!--<CheckboxGroup id="statisIndex" v-model="cfg.statisIndexs">
@@ -189,25 +204,19 @@
                         <span>{{ k | i18n }}</span>
                     </Checkbox>
                 </CheckboxGroup>-->
-                &nbsp;&nbsp;&nbsp;
-                <a href="javascript:void(0)" @click="addStatisIndex()" style="text-align: left">{{'Add' | i18n }}</a>
-                <table id="statisIndex" width="99%">
-                    <thead>
-                        <tr style="width:30px">
-                            <td>{{'IndexType' | i18n }}</td>
-                            <td>{{'Desc' | i18n }}</td>
-                            <td>{{'Key' | i18n }}</td>
-                            <td>{{'Numerator' | i18n }}</td>
-                            <td>{{'Denominator' | i18n }}</td>
-                            <td>{{'Operation' | i18n }}</td>
-                        </tr>
-                    </thead>
-                    <tbody>
-                    <JStatisIndex v-for="(si,idx) in cfg.statisIndexs" :key="si.keyName" :si="si"
-                     @delete="delStatisIndex(idx)"/>
-                    </tbody>
 
-                </table>
+            <Label for="minNotifyTime">{{'minNotifyTime' | i18n}}</Label>
+            <Input :disabled="readonly" id="minNotifyTime" v-model="cfg.minNotifyTime"/>
+
+            <Label for="namedType">{{'NamedType' | i18n}}</Label>&nbsp;&nbsp;&nbsp;<a href="javascript:void(0);" @click="namedTypeDetail()">{{'Detail'|i18n}}</a>
+            <Select :disabled="readonly" id="namedType" v-model="cfg.namedType">
+                <Option value="" >none</Option>
+                <Option v-for="k in namedTypeNames" :value="k" :key="k">{{k | i18n}}</Option>
+            </Select>
+
+            <Label  for="byExpression">{{'Expression' | i18n}}</Label>
+            <Input :disabled="readonly"  id="byExpression"  class='textarea'
+                    :autosize="{maxRows:5,minRows: 2}" type="textarea" v-model="cfg.expStr"/>
 
         </Drawer>
 
@@ -219,11 +228,11 @@
     import JStatisIndex from './JStatisIndex.vue'
 
 
-    const UNIT_SE = "Second";
-    const UNIT_MU = "Munites";
-    const UNIT_HO = "Hour";
-    const UNIT_DA = "Date";
-    const UNIT_MO = "Month";
+    const UNIT_SE = "S";
+    const UNIT_MU = "M";
+    const UNIT_HO = "H";
+    const UNIT_DA = "D";
+    //const UNIT_MO = "Month";
 
    /* const BY_TYPE_SERVICE = "Service";
     const BY_TYPE_SERVICE_ACCOUNT='ServiceAccount';
@@ -254,6 +263,8 @@
     const TO_TYPE_SERVICE_METHOD = 2;
     //const TO_TYPE_CONSOLE = 3;
     const TO_TYPE_FILE = 4;
+    const TO_TYPE_MONITOR_LOG = 5;
+    const TO_TYPE_MESSAGE = 6;
 
     //const PREFIX_TOTAL =1; // "total";
     //const PREFIX_TOTAL_PERCENT = 2; //"totalPercent";
@@ -302,8 +313,8 @@
 
         data() {
             return {
-                timeUnits:[ UNIT_SE,UNIT_MU,UNIT_HO,UNIT_DA,UNIT_MO ],
-                toTypes:{ 1:'Db', 2:"ServiceMethod", 3:'Console', 4:'File' },
+                timeUnits:[ UNIT_SE,UNIT_MU,UNIT_HO,UNIT_DA ],
+                toTypes:{ 1:'Db', 2:"ServiceMethod", 3:'Console', 4:'File',5:'Log',6:'Message'  },
                 byTypes:{ 1:'Method', 2: 'InstanceMethod', 3:'AccountMethod', 4:'Instance'/*,5: 'Account'*/},
                 statisIndex:{1:'Total',2:'TotalPercent',3:'Qps',4:'Cur',5:'CurPercent'},
                 //expTypes:{'Service':EXP_TYPE_SERVICE,'Account':EXP_TYPE_ACCOUNT,'Instance':EXP_TYPE_INSTANCE},
@@ -341,6 +352,8 @@
                 cfg:{},
                 updateMode: false,
                 addStatisConfigDialog:false,
+
+                readonly : false,
             }
         },
 
@@ -422,6 +435,7 @@
                 }
 
                 //this.cfg = {};
+                this.readonly = false;
                 this.addStatisConfigDialog = true;
             },
 
@@ -463,7 +477,7 @@
                 });
             },
 
-            update(cfg) {
+            update(cfg,fromView) {
 
                 let self = this;
                 this.updateMode = true;
@@ -504,7 +518,15 @@
 
                 self.cfg.byType += '';
                 self.cfg.toType += '';
+                if(!fromView) {
+                    this.readonly = false;
+                }
                 this.addStatisConfigDialog = true;
+            },
+
+            view(cfg) {
+                this.readonly = true;
+                this.update(cfg,true);
             },
 
             doSave() {
@@ -562,20 +584,7 @@
                         this.errMsg = '统计账号不能为空';
                         return;
                     }
-                } /*else if(this.cfg.byType == BY_TYPE_EXP) {
-                    if(!this.cfg.byKey || this.cfg.byKey.length == 0) {
-                        this.errMsg = '表达式键值不能为空';
-                        return;
-                    }
-                    if(!this.cfg.expForType || this.cfg.expForType.length == 0) {
-                        this.errMsg = '表达式类型不能为空';
-                        return;
-                    }
-                    if(!this.cfg.byKey || this.cfg.byKey.length == 0) {
-                        this.errMsg = '表达式键值不能为空';
-                        return;
-                    }
-                }*/else {
+                } else {
                     //cn.jmicro.api.security.ISecretService##sec##0.0.1##security0##192.168.56.1##51535##publicKeysList##
                     if(!this.byKey.sn || this.byKey.sn.length == 0) {
                         this.errMsg = '服务名称不不能为空';
@@ -589,8 +598,7 @@
                     }
 
                     if(!this.byKey.sm || this.byKey.sm.length == 0) {
-                        this.errMsg = '统计方法不能为空';
-                        return;
+                        this.byKey.sm='*';
                     }
 
                     if(!this.byKey.ins || this.byKey.ins.length == 0) {
@@ -638,13 +646,17 @@
                     if(!self.cfg.toParams || self.cfg.toParams.length == 0) {
                         self.cfg.toParams = 't_statis_data';
                     }
+                }else if(self.cfg.toType == TO_TYPE_MONITOR_LOG) {
+                    if(!self.cfg.toParams || self.cfg.toParams.length == 0) {
+                        self.errMsg =  '日志标签不能为空';
+                        return;
+                    }
+                }else if(self.cfg.toType == TO_TYPE_MESSAGE) {
+                    if(!self.cfg.toParams || self.cfg.toParams.length == 0) {
+                        self.errMsg =  '消息主题不能为空';
+                        return;
+                    }
                 }
-
-               /* let arr = [];
-                for(let i = 0; i < self.cfg.statisIndexs.length; i++) {
-                    arr.push(parseInt(self.cfg.statisIndexs[i]));
-                }
-                self.cfg.statisIndexs = arr;*/
 
                 if(!this.updateMode) {
                     window.jm.rpc.callRpcWithParams(sn,ns,v, 'add', [self.cfg])
@@ -659,7 +671,7 @@
                         }).catch((err)=>{
                         window.console.log(err);
                     });
-                }else {
+                } else {
                     window.jm.rpc.callRpcWithParams(sn,ns,v, 'update', [self.cfg])
                         .then((resp)=>{
                             if(resp.code != 0) {

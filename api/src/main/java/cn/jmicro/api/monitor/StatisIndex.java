@@ -25,6 +25,12 @@ public class StatisIndex {
 	//分母指标码值
 	private Short[] dens;
 	
+	//当前分子值
+	private transient long curNums;
+		
+	//当前分母值
+	private transient long curDens;
+	
 	private String expStr;
 
 	public byte getType() {
@@ -73,6 +79,22 @@ public class StatisIndex {
 
 	public void setExpStr(String expStr) {
 		this.expStr = expStr;
+	}
+
+	public long getCurNums() {
+		return curNums;
+	}
+
+	public void setCurNums(long curNums) {
+		this.curNums = curNums;
+	}
+
+	public long getCurDens() {
+		return curDens;
+	}
+
+	public void setCurDens(long curDens) {
+		this.curDens = curDens;
 	}
 	
 }

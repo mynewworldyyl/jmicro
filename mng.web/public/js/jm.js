@@ -743,6 +743,10 @@ jm.mng = {
                 throw 'i18n key cannot be null';
             }
 
+            if(!key.trim) {
+                key +='';
+            }
+
             let v = this.resources_[key.trim()];
             if(!v) {
                 if(defaultVal) {

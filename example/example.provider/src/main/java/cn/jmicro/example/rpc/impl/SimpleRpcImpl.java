@@ -12,15 +12,16 @@ import cn.jmicro.api.annotation.SBreakingRule;
 import cn.jmicro.api.annotation.SMethod;
 import cn.jmicro.api.annotation.Service;
 import cn.jmicro.api.async.IPromise;
-import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.monitor.LG;
+import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.service.IServiceAsyncResponse;
 import cn.jmicro.api.test.Person;
+import cn.jmicro.common.CommonException;
 import cn.jmicro.common.Constants;
 import cn.jmicro.example.api.rpc.ISimpleRpc;
 import cn.jmicro.example.api.rpc.genclient.IRpcA$JMAsyncClient;
 
-@Service(namespace="simpleRpc", version="0.0.1", monitorEnable=1, maxSpeed=-1,debugMode=1,
+@Service(namespace="simpleRpc", version="0.0.1", monitorEnable=0, maxSpeed=-1,debugMode=1,
 baseTimeUnit=Constants.TIME_SECONDS, external=true)
 @Component
 public class SimpleRpcImpl implements ISimpleRpc {
@@ -36,10 +37,10 @@ public class SimpleRpcImpl implements ISimpleRpc {
 	@SMethod(
 			//breakingRule="1S 50% 500MS",
 			//1秒钟内异常超50%，熔断服务，熔断后每80毫秒做一次测试
-			breakingRule = @SBreakingRule(enable=true, percent=50, checkInterval=5000),
+			breakingRule = @SBreakingRule(enable=true, percent=50, checkInterval=2000),
 			logLevel=MC.LOG_DEBUG,	
 			testingArgs="[\"test args\"]",//测试参数
-			monitorEnable=1,
+			monitorEnable=0,
 			timeWindow=5*60000,//统计时间窗口5分钟
 			slotInterval=100,
 			checkInterval=5000,//采样周期2S
@@ -48,16 +49,16 @@ public class SimpleRpcImpl implements ISimpleRpc {
 			debugMode=1,
 			maxSpeed=1000,
 			baseTimeUnit=Constants.TIME_MILLISECONDS,
-			upSsl=true,encType=1,downSsl=false
+			upSsl=true,encType=0,downSsl=false
 	)
 	public String hello(String name) {
 		if(LG.isLoggable(MC.LOG_DEBUG)) {
 			LG.log(MC.LOG_DEBUG,SimpleRpcImpl.class, name);
 		}
-		/*int rv = r.nextInt();
+		int rv = r.nextInt(100);
 		if(rv < 50) {
 			throw new CommonException("test breaker exception");
-		}*/
+		}
 		//System.out.println("Server hello: " +name);
 		logger.info("Server hello: " +name);
 		return "Server say hello to: "+name;
@@ -70,7 +71,7 @@ public class SimpleRpcImpl implements ISimpleRpc {
 			breakingRule = @SBreakingRule(enable=true,percent=50,checkInterval=5000),
 			logLevel=MC.LOG_DEBUG,
 			testingArgs="[{\"username\":\"Zhangsan\",\"id\":\"1\"}]",//测试参数
-			monitorEnable=1,
+			monitorEnable=0,
 			timeWindow=5*60000,//统计时间窗口5分钟
 			slotInterval=100,
 			checkInterval=5000,//采样周期2S

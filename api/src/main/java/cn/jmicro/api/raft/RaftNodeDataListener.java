@@ -42,7 +42,7 @@ public class RaftNodeDataListener<NodeType> {
 	private IDataListener dataListener = new IDataListener(){
 		@Override
 		public void dataChanged(String path, String data) {
-			String node = path.substring(dir.length());
+			String node = path.substring(dir.length()+1);
 			updateItemData(node,data);
 		}
 	};

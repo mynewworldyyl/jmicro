@@ -19,6 +19,9 @@ public class StatisData {
 	
 	private int type;
 	
+	public <T> T getIndex(String name) {
+		return (T) statis.get(name);
+	}
 
 	public int getCid() {
 		return cid;

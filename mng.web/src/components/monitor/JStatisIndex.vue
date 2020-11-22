@@ -18,10 +18,10 @@
                         icon="ios-search" @click="selectTypes(si.dens)"/>
             </Input>
         </td>
-        <td><a v-if="status.edit" href="javascript:void(0)"  @click="editStatisIndex()">{{'Edit' | i18n }}</a>&nbsp;&nbsp;&nbsp;
+        <td><a v-if="status.edit && !readonly" href="javascript:void(0)"  @click="editStatisIndex()">{{'Edit' | i18n }}</a>&nbsp;&nbsp;&nbsp;
             <a v-if="status.save" href="javascript:void(0)"  @click="okStatisIndex()">{{'Ok' | i18n }}</a>&nbsp;&nbsp;&nbsp;
             <a v-if="status.cancel" href="javascript:void(0)"  @click="cancelStatisIndex()">{{'Cancel' | i18n }}</a>&nbsp;&nbsp;&nbsp;
-            <a href="javascript:void(0)" @click="delStatisIndex()">{{'Delete' | i18n }}</a>&nbsp;&nbsp;&nbsp;
+            <a v-if="!readonly" href="javascript:void(0)" @click="delStatisIndex()">{{'Delete' | i18n }}</a>&nbsp;&nbsp;&nbsp;
         </td>
 
         <Modal v-model="typesSelectDialog" :loading="true" ref="typesSelectDialog" width="90%"
@@ -39,7 +39,7 @@
 
     export default {
         name: 'JStatisIndex',
-        props: ['si'],
+        props: ['si','readonly'],
 
         components: {
             JMonitorTypeSelector

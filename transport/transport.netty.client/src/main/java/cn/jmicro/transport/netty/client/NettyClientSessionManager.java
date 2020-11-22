@@ -16,6 +16,7 @@
  */
 package cn.jmicro.transport.netty.client;
 
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -31,8 +32,6 @@ import cn.jmicro.api.client.IClientSession;
 import cn.jmicro.api.client.IClientSessionManager;
 import cn.jmicro.api.codec.ICodecFactory;
 import cn.jmicro.api.idgenerator.ComponentIdServer;
-import cn.jmicro.api.monitor.MC;
-import cn.jmicro.api.monitor.LG;
 import cn.jmicro.api.net.IMessageHandler;
 import cn.jmicro.api.net.IMessageReceiver;
 import cn.jmicro.api.net.ISession;
@@ -263,11 +262,15 @@ public class NettyClientSessionManager implements IClientSessionManager{
 	                	 try {
 							super.exceptionCaught(ctx, cause);
 						} catch (Exception e) {
-							logger.error("",e);
+							if(e instanceof IOException) {
+								logger.error("",e.getMessage());
+							}else {
+								logger.error("exceptionCaught",cause);
+							}
 						}
-	        			 logger.error("exceptionCaught",cause);
-	        			 NettyClientSession session = (NettyClientSession)ctx.channel().attr(sessionKey).get();
-	        			/* if(session !=null && monitorEnable(ctx) ){
+	        			 
+	                	 /*  NettyClientSession session = (NettyClientSession)ctx.channel().attr(sessionKey).get();
+	        			if(session !=null && monitorEnable(ctx) ){
 	        	             LG.netIo(MC.MT_CLIENT_IOSESSION_EXCEPTION,MC.LOG_ERROR,
 	        	            		 NettyClientSessionManager.class
 	        	            		 ,"exceptionCaught sessionId:"+session.getId()+"",cause);

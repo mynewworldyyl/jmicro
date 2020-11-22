@@ -192,6 +192,9 @@ public class ServiceCounter implements IServiceCounter<Short>{
 
 	@Override
 	public boolean add(Short type, long val) {
+		if(!staring) {
+			this.start();
+		}
 		Counter c = getCounter(type,true);
 		if(c != null) {
 			this.setLastActiveTime(TimeUtils.getCurTime());
@@ -204,6 +207,9 @@ public class ServiceCounter implements IServiceCounter<Short>{
 	
 	@Override
 	public boolean add(Short type, long val,long actTime) {
+		if(!staring) {
+			this.start();
+		}
 		Counter c = getCounter(type,true);
 		if(c != null) {
 			this.setLastActiveTime(actTime);
@@ -262,6 +268,9 @@ public class ServiceCounter implements IServiceCounter<Short>{
 
 	@Override
 	public boolean increment(Short type) {
+		if(!staring) {
+			this.start();
+		}
 		Counter c = getCounter(type,true);
 		if(c != null) {
 			this.setLastActiveTime(TimeUtils.getCurTime());
@@ -273,6 +282,9 @@ public class ServiceCounter implements IServiceCounter<Short>{
 	
 	@Override
 	public boolean increment(Short type,long actTime) {
+		if(!staring) {
+			this.start();
+		}
 		Counter c = getCounter(type,true);
 		if(c != null) {
 			this.setLastActiveTime(actTime);

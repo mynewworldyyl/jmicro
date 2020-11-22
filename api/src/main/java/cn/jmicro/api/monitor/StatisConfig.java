@@ -3,18 +3,23 @@ package cn.jmicro.api.monitor;
 import java.io.BufferedWriter;
 import java.lang.reflect.Method;
 import java.util.Set;
+import java.util.regex.Pattern;
 
 import cn.jmicro.api.annotation.SO;
+import cn.jmicro.api.config.Config;
 import cn.jmicro.api.exp.Exp;
+import cn.jmicro.api.utils.TimeUtils;
+import cn.jmicro.common.Constants;
 
 @SO
 public class StatisConfig {
 
-	public static final String UNIT_SE="Second";
-	public static final String UNIT_MU="Munites";
-	public static final String UNIT_HO="Hour";
-	public static final String UNIT_DA="Date";
-	public static final String UNIT_MO="Month";
+	public static final String STATIS_CONFIG_ROOT = Config.BASE_DIR + "/statisConfigs";
+	
+	public static final String UNIT_SE=Constants.TIME_SECONDS;
+	public static final String UNIT_MU=Constants.TIME_MINUTES;
+	public static final String UNIT_HO=Constants.TIME_HOUR;
+	public static final String UNIT_DA=Constants.TIME_DAY;
 	
 	//public static final String BY_TYPE_SERVICE = "Service";
 	//public static final String BY_TYPE_SERVICE_INSTANCE = "ServiceInstance";
@@ -27,13 +32,16 @@ public class StatisConfig {
 	public static final String BY_TYPE_ACCOUNT= "Account";*/
 	
 	public static final int BY_TYPE_SERVICE_METHOD = 1;
+	
 	//调用此实例下的服务方法时，需要监控
 	public static final int BY_TYPE_SERVICE_INSTANCE_METHOD = 2;
+	
 	//指定账号调用此服务方法时需要监控
 	public static final int BY_TYPE_SERVICE_ACCOUNT_METHOD = 3;
 	
 	//此运行实例的操作需要监控，包括RPC和非RPC
 	public static final int BY_TYPE_INSTANCE = 4;
+	
 	//使用此账号运行的实例及此账号的RPC调用需要监控
 	public static final int BY_TYPE_ACCOUNT= 5;
 	
@@ -50,12 +58,14 @@ public class StatisConfig {
 	public static final int TO_TYPE_SERVICE_METHOD = 2;
 	public static final int TO_TYPE_CONSOLE = 3;
 	public static final int TO_TYPE_FILE = 4;
+	public static final int TO_TYPE_MONITOR_LOG = 5;
+	public static final int TO_TYPE_MESSAGE = 6;
 	
-	public static final int PREFIX_TOTAL = 1; 		  //"total";
-	public static final int PREFIX_TOTAL_PERCENT = 2; //"totalPercent";
-	public static final int PREFIX_QPS = 3; 		  //"qps";
-	public static final int PREFIX_CUR = 4; 		  //"cur";
-	public static final int PREFIX_CUR_PERCENT =5;    // "curPercent";
+	public static final byte PREFIX_TOTAL = 1; 		  //"total";
+	public static final byte PREFIX_TOTAL_PERCENT = 2; //"totalPercent";
+	public static final byte PREFIX_QPS = 3; 		  //"qps";
+	public static final byte PREFIX_CUR = 4; 		  //"cur";
+	public static final byte PREFIX_CUR_PERCENT =5;    // "curPercent";
 	
 	public static final String  DEFAULT_DB = "t_statis_data";
 	/*
@@ -92,6 +102,14 @@ public class StatisConfig {
 	private transient String toMt;
 	
 	private transient Exp exp;
+	
+	//private transient ServiceCounter sc;
+	
+	private transient Pattern pattern;
+	
+	private transient long lastActiveTime = TimeUtils.getCurTime();
+	
+	private transient long lastNotifyTime = TimeUtils.getCurTime();
 	
 	private int id;
 	
@@ -135,10 +153,14 @@ public class StatisConfig {
 	 * @See StatisConfig.UNIT_DA
 	 * @See StatisConfig.UNIT_MO
 	 */
-	private String timeUnit = UNIT_MU;
+	private String timeUnit = UNIT_SE;
 	
 	//多少个时间单位
 	private int timeCnt=1;
+	
+	private int counterTimeout = 5*60;
+	
+	private int minNotifyTime = 10000;
 	
 	/* 
 	 * 统计结果发送目标，如存库，转发RPC方法，publish消息，输出控制台等
@@ -193,6 +215,14 @@ public class StatisConfig {
 		this.byKey = byKey;
 	}
 
+
+	public long getLastActiveTime() {
+		return lastActiveTime;
+	}
+
+	public void setLastActiveTime(long lastActiveTime) {
+		this.lastActiveTime = lastActiveTime;
+	}
 
 	public StatisIndex[] getStatisIndexs() {
 		return statisIndexs;
@@ -402,5 +432,36 @@ public class StatisConfig {
 		this.expStr = expStr;
 	}
 
+	public Pattern getPattern() {
+		return pattern;
+	}
+
+	public void setPattern(Pattern pattern) {
+		this.pattern = pattern;
+	}
+
+	public int getCounterTimeout() {
+		return counterTimeout;
+	}
+
+	public void setCounterTimeout(int counterTimeout) {
+		this.counterTimeout = counterTimeout;
+	}
+
+	public long getLastNotifyTime() {
+		return lastNotifyTime;
+	}
+
+	public void setLastNotifyTime(long lastNotifyTime) {
+		this.lastNotifyTime = lastNotifyTime;
+	}
+
+	public int getMinNotifyTime() {
+		return minNotifyTime;
+	}
+
+	public void setMinNotifyTime(int minNotifyTime) {
+		this.minNotifyTime = minNotifyTime;
+	}
 
 }
