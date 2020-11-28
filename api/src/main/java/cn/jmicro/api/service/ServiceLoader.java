@@ -51,7 +51,6 @@ import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.net.IServer;
 import cn.jmicro.api.objectfactory.IObjectFactory;
 import cn.jmicro.api.objectfactory.ProxyObject;
-import cn.jmicro.api.raft.IDataOperator;
 import cn.jmicro.api.registry.IRegistry;
 import cn.jmicro.api.registry.Server;
 import cn.jmicro.api.registry.ServiceItem;
@@ -60,6 +59,7 @@ import cn.jmicro.api.registry.UniqueServiceKey;
 import cn.jmicro.api.registry.UniqueServiceMethodKey;
 import cn.jmicro.common.CommonException;
 import cn.jmicro.common.Constants;
+import cn.jmicro.common.util.HashUtils;
 import cn.jmicro.common.util.StringUtils;
 import javassist.Modifier;
 
@@ -95,6 +95,9 @@ public class ServiceLoader{
 	
 	@Inject(required=true)
 	private IRegistry registry;
+	
+	@Inject
+	private ServiceManager srvMng;
 	
 	@Inject
 	private ComponentIdServer idGenerator;
@@ -383,6 +386,8 @@ public class ServiceLoader{
 		usk.setHost(Config.getExportSocketHost());
 		usk.setPort(this.nettyServer.getPort());
 		
+		usk.setSnvHash(HashUtils.FNVHash1(usk.toKey(false, false, false)));
+		
 		item.setKey(usk);
 		item.setImpl(impl);
 		
@@ -438,6 +443,16 @@ public class ServiceLoader{
 			sm.getKey().setParamsStr("");
 		}else {
 			sm.getKey().setParamsStr(UniqueServiceMethodKey.paramsStr(args));
+		}
+		
+		sm.getKey().setSnvHash(HashUtils.FNVHash1(sm.getKey().toKey(false, false, false)));
+		
+		ServiceMethod conflictMethod = srvMng.checkConflictServiceMethodByHash(sm.getKey().getSnvHash(),
+				sm.getKey().toKey(false, false, false));
+		if(conflictMethod != null) {
+			String msg = "Service method hash conflict: [" + sm.getKey().toKey(false, false, false) + 
+					"] with exist sm [" + conflictMethod.getKey().toKey(false, false, false)+"] fail to load service!";
+			throw new CommonException(msg);
 		}
 		
 		item.addMethod(sm);
@@ -506,6 +521,8 @@ public class ServiceLoader{
 			usk.setVersion(getFieldValue(anno.version(),intAnno == null ? null : intAnno.version(),Constants.VERSION));
 		}
 		
+		usk.setSnvHash(HashUtils.FNVHash1(usk.toKey(false, false, false)));
+		
 		item.setKey(usk);
 		item.setImpl(proxySrv.getName());
 		item.setClientId(Config.getClientId());
@@ -552,6 +569,8 @@ public class ServiceLoader{
 		checkMethod.getKey().setParamsStr(UniqueServiceMethodKey.paramsStr(new String[]{"java.lang.String"}));
 		checkMethod.setLogLevel(MC.LOG_ERROR);;
 		checkMethod.setDebugMode(0);
+		checkMethod.getKey().setSnvHash(HashUtils.FNVHash1(checkMethod.getKey().toKey(false, false, false)));
+		
 		item.addMethod(checkMethod);
 		
 		for(Method m : interfacez.getMethods()) {
@@ -562,7 +581,6 @@ public class ServiceLoader{
 			} catch (NoSuchMethodException | SecurityException e) {
 				throw new CommonException("Service not found: "+m.getName(),e);
 			}
-			
 			
 			//具体实现类的注解优先,如果实现类对就方法没有注解,则使用接口对应的方法注解
 			//如果接口和实现类都没有,则使用实现类的Service注解，实现类肯定有Service注解，否则不会成为服务
@@ -645,6 +663,7 @@ public class ServiceLoader{
 					sm.setUpSsl(manno.upSsl());
 					sm.setDownSsl(manno.downSsl());
 					sm.setEncType(manno.encType());
+					sm.setLimitType(manno.limitType());
 				 } else {
 					 //使用接口方法配置
 					sbr = intMAnno.breakingRule();
@@ -680,6 +699,8 @@ public class ServiceLoader{
 					sm.setUpSsl(intMAnno.upSsl());
 					sm.setDownSsl(intMAnno.downSsl());
 					sm.setEncType(intMAnno.encType());
+					
+					sm.setLimitType(intMAnno.limitType());
 				 }
 				 
 				 if(sm.getTimeout() <= 0) {
@@ -697,6 +718,8 @@ public class ServiceLoader{
 			sm.getKey().setMethod(m.getName());
 			sm.getKey().setParamsStr(UniqueServiceMethodKey.paramsStr(m.getParameterTypes()));
 			sm.getKey().setReturnParam(ReflectUtils.getDesc(m.getReturnType()));
+			
+			sm.getKey().setSnvHash(HashUtils.FNVHash1(sm.getKey().toKey(false, false, false)));
 			
 			Set<Class<?>> clses = new HashSet<>();
 			
@@ -720,6 +743,8 @@ public class ServiceLoader{
 			}
 			
 			item.addMethod(sm);
+			
+			
 			
 			/*if(sm.getBreakingRule().isEnable()) {
 				sm.setMonitorEnable(1);

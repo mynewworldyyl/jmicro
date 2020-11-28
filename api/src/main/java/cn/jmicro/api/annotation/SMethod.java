@@ -105,14 +105,6 @@ public @interface SMethod {
 	//after breaking, will test the service with this arguments
 	public String testingArgs() default "";
 	
-	/**
-	 * 时间单位参考：@link cn.jmicro.api.registry.ServiceItem
-	 * 1分钟内超时数超过总请求数的5%, 则将QPS限速降低10%
-	 * 
-	 * 值为空时，不启用
-	 */
-	public String degradeRule() default "1M [7FFFFEF4,7FFFFEF2] 10%";
-	
 	//0: need response, 1:no need response
 	//不需要响应并不等于不需要返回值，但是不需要响应肯定没有返回值，有返回值肯定需要响应
 	//不需要响应说明RPC接口调用不需要确保一定成功，允许在极端情况下失败，比如日志提交，消息订阅发送等场景，以提升系统吞吐量
@@ -132,11 +124,23 @@ public @interface SMethod {
 	//public int speedLimit() default -1;
 	
 	/**
+	 * 时间单位参考：@link cn.jmicro.api.registry.ServiceItem
+	 * 1分钟内超时数超过总请求数的5%, 则将QPS限速降低10%
+	 * 
+	 * 值为空时，不启用
+	 */
+	public String degradeRule() default "1M [7FFFFEF4,7FFFFEF2] 10%";
+	
+	/**
 	 * max qps
 	 */
 	public int maxSpeed() default 200;
 	
-	public int maxPacketSize() default 2048;//以字节为单位的包最大小
+	/**
+	 * 	限速类型,1:本地限速， 2：统计服务限速
+	 * @return
+	 */
+	public byte limitType() default Constants.LIMIT_TYPE_LOCAL;
 	
 	/**
 	 *  milliseconds
@@ -145,6 +149,8 @@ public @interface SMethod {
 	 *  
 	 */
 	public int avgResponseTime() default -1;
+	
+	public int maxPacketSize() default 2048;//以字节为单位的包最大小
 	
 	//是否需要强制赋予账号权限才能使用
 	public boolean perType() default false;

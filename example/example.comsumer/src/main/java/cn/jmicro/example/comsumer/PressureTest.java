@@ -5,7 +5,7 @@ import java.util.Random;
 import cn.jmicro.api.JMicro;
 import cn.jmicro.api.JMicroContext;
 import cn.jmicro.api.objectfactory.IObjectFactory;
-import cn.jmicro.example.api.rpc.ISimpleRpc;
+import cn.jmicro.example.api.rpc.genclient.ISimpleRpc$JMAsyncClient;
 
 public class PressureTest {
 
@@ -30,14 +30,20 @@ class Worker implements Runnable{
 	
 	@Override
 	public void run() {
-		ISimpleRpc sayHello = of.getRemoteServie(ISimpleRpc.class.getName(),"simpleRpc","0.0.1", null);
+		ISimpleRpc$JMAsyncClient sayHello = of.getRemoteServie(ISimpleRpc$JMAsyncClient.class.getName(),"simpleRpc","0.0.1", null);
 		JMicroContext.get().removeParam(JMicroContext.LINKER_ID);
 		
 		for(;;){
-			try {
+			try {/*
 				String result = sayHello.hello(" Hello LOG: "+id);
 				System.out.println(JMicroContext.get().getString(JMicroContext.LINKER_ID, "")+": "+result);
 				JMicroContext.get().removeParam(JMicroContext.LINKER_ID);
+			*/
+				sayHello.helloJMAsync(" Hello LOG: "+id)
+				.fail((code,result,cxt)->{
+					System.out.println(JMicroContext.get().getLong(JMicroContext.LINKER_ID, 0L)+": "+result);
+					JMicroContext.get().removeParam(JMicroContext.LINKER_ID);
+				});
 			} catch (Throwable e) {
 				e.printStackTrace();
 			}

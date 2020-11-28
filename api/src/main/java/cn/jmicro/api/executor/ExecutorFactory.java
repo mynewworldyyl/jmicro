@@ -13,6 +13,7 @@ import java.util.concurrent.ThreadPoolExecutor.AbortPolicy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import cn.jmicro.api.annotation.Cfg;
 import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Inject;
 import cn.jmicro.api.config.Config;
@@ -22,6 +23,7 @@ import cn.jmicro.api.monitor.MT;
 import cn.jmicro.api.objectfactory.IObjectFactory;
 import cn.jmicro.api.registry.ServiceItem;
 import cn.jmicro.api.service.ServiceLoader;
+import cn.jmicro.api.timer.TimerTicker;
 import cn.jmicro.api.utils.TimeUtils;
 import cn.jmicro.common.CommonException;
 import cn.jmicro.common.Constants;
@@ -41,6 +43,9 @@ public class ExecutorFactory {
     
     private final Map<String,ExecutorMonitorServer> emses = new HashMap<>();
     
+    @Cfg(value="/ExecutorFactory/registExecutorInfoService", changeListener="registExecutorInfoStatusChange")
+    private boolean registExecutorInfoService = false;
+    
     @Inject
     private ServiceLoader sl;
     
@@ -51,11 +56,11 @@ public class ExecutorFactory {
 	
 	public void ready() {
 		if(!Config.isClientOnly()) {
-			new Thread(this::doCheck).start();
+			TimerTicker.doInBaseTicker(10, "ExecutorInfoChecker", null, this::doCheck);
 		}
 	}
 	
-	private void doCheck() {
+	private void doCheck(String key,Object cxt) {
 		while(true) {
 			try {
 				
@@ -72,7 +77,7 @@ public class ExecutorFactory {
 					je.check();
 				}
 				
-				Thread.sleep(5000);
+				Thread.sleep(10000);
 				
 			} catch (Throwable e) {
 				
@@ -120,7 +125,7 @@ public class ExecutorFactory {
 		
 		if(!Config.isClientOnly()) {
 			 if(sl.hashServer()) {
-				createExecutorService(cfg);
+				//createExecutorService(cfg);
 			}else {
 				waitingRegist.add(cfg);
 			}
@@ -134,6 +139,7 @@ public class ExecutorFactory {
 		JmicroThreadPoolExecutor executor = this.executors.get(cfg.getThreadNamePrefix());
 		
 		String ns = Config.getInstanceName() + "." + GROUP+"_" + cfg.getThreadNamePrefix();
+		
 		ServiceItem si = sl.createSrvItem(IExecutorInfo.class, ns,"0.0.1", ExecutorMonitorServer.class.getName());
 		executor.getEi().setKey(si.getKey().toKey(true, true, true));
 		
@@ -142,13 +148,26 @@ public class ExecutorFactory {
 		emses.put(cfg.getThreadNamePrefix(),ems);
 		 
 		of.regist(ns, ems);
-		sl.registService(si,ems);
 		
+	}
+	
+	public void registExecutorInfoStatusChange() {
+		if(registExecutorInfoService) {
+			for(ExecutorMonitorServer je: emses.values()) {
+				sl.unregistService(je.si);
+			}
+		} else {
+			for(ExecutorMonitorServer je: emses.values()) {
+				sl.registService(je.si,je);
+			}
+		}
 	}
 
 	public class ExecutorMonitorServer  implements IExecutorInfo {
 		
 		 private final Logger ilog = LoggerFactory.getLogger(ExecutorMonitorServer.class);
+		 
+		 private ServiceItem si;
 		 
 		 private ExecutorInfo ei;
 		 private JmicroThreadPoolExecutor e;

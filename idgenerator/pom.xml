@@ -18,10 +18,10 @@
 			 <groupId>cn.jmicro</groupId>
 			 <artifactId>redis</artifactId>
 	    </dependency>
-	    <dependency>
+	    <!-- <dependency>
 			 <groupId>cn.jmicro</groupId>
 			 <artifactId>limit</artifactId>
-	    </dependency>
+	    </dependency> -->
 	    <dependency>
 			 <groupId>cn.jmicro</groupId>
 			 <artifactId>zk</artifactId>

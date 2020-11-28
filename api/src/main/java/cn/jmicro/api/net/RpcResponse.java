@@ -31,8 +31,6 @@ public final class RpcResponse /*extends AbstractObjectMapSupport*/ implements I
 	
 	protected Map<String,Object> params = new HashMap<String,Object>();
 	
-	private long id;
-	
 	private transient Message msg;
 	
 	private Long reqId;
@@ -87,15 +85,6 @@ public final class RpcResponse /*extends AbstractObjectMapSupport*/ implements I
 
 	public void setMsg(Message msg) {
 		this.msg = msg;
-	}
-
-	public long getId() {
-		// TODO Auto-generated method stub
-		return id;
-	}
-
-	public void setId(long id) {
-		this.id=id;
 	}
 
 	public Long getRequestId() {
@@ -190,7 +179,7 @@ public final class RpcResponse /*extends AbstractObjectMapSupport*/ implements I
 	
 	@Override
 	public String toString() {
-		return "RpcResponse [id=" + id + ", reqId=" + reqId + ", result=" + result + ", isMonitorEnable="
+		return "RpcResponse [reqId=" + reqId + ", result=" + result + ", isMonitorEnable="
 				+ isMonitorEnable + ", success=" + success + "]";
 	}
 

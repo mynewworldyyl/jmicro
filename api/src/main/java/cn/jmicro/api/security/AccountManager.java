@@ -16,8 +16,8 @@ import cn.jmicro.api.config.Config;
 import cn.jmicro.api.idgenerator.ComponentIdServer;
 import cn.jmicro.api.raft.IDataOperator;
 import cn.jmicro.api.utils.TimeUtils;
-import cn.jmicro.common.Md5Utils;
 import cn.jmicro.common.util.JsonUtils;
+import cn.jmicro.common.util.Md5Utils;
 import cn.jmicro.common.util.StringUtils;
 
 @Component

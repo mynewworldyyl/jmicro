@@ -122,7 +122,7 @@ public class ApiRawRequestMessageHandler implements IMessageHandler{
 				req.setVersion(ji.readUTF());
 				req.setMethod(ji.readUTF());
 
-				int len = ji.readUnsignedInt();
+				int len = (int)ji.readUnsignedInt();
 				if(len > 0) {
 					for(int i=0; i< len; i++) {
 						String k = ji.readUTF();
@@ -130,7 +130,7 @@ public class ApiRawRequestMessageHandler implements IMessageHandler{
 						req.getParams().put(k, v);
 					}
 				}
-				int argLen = ji.readUnsignedInt();
+				int argLen = (int)ji.readUnsignedInt();
 				if(argLen > 0) {
 					req.setArgs(getArgs(req.getServiceName(),req.getMethod(),session,ji));
 				}
@@ -206,10 +206,6 @@ public class ApiRawRequestMessageHandler implements IMessageHandler{
 							LG.log(MC.LOG_ERROR, TAG, errMsg);
 							MT.rpcEvent(MC.MT_SERVICE_METHOD_NOT_FOUND);
 							throw new CommonException(errMsg);
-						}
-						
-						if(sm.getMonitorEnable() == 1) {
-							
 						}
 						
 						ServerError se = pm.permissionCheck(ai,sm,si.getClientId());
@@ -388,7 +384,7 @@ public class ApiRawRequestMessageHandler implements IMessageHandler{
 					}else if(pt == String.class) {
 						a = ji.readUTF();
 					}else if(Map.class.isAssignableFrom(pt)) {
-						int len = ji.readUnsignedInt();
+						int len = (int)ji.readUnsignedInt();
 						if(len > 0) {
 							Map<String,String> data = new HashMap<>();
 							for(int x = 0; x< len; x++) {
@@ -399,7 +395,7 @@ public class ApiRawRequestMessageHandler implements IMessageHandler{
 							a = data;
 						}
 					}else if(pt == new byte[0].getClass()) {
-						int len = ji.readUnsignedInt();
+						int len = (int)ji.readUnsignedInt();
 						if(len > 0) {
 							byte[] data = new byte[len];
 							ji.readFully(data, 0, len);

@@ -132,7 +132,6 @@
 		<module>transport</module>
 		<module>mng</module>
 		<module>objfactory</module>
-		<module>limit</module>
 		<module>gateway</module>
 		<module>gateway.client</module>
 		<module>build</module>

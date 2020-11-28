@@ -21,6 +21,7 @@ import com.alibaba.dubbo.common.serialize.kryo.utils.ReflectUtils;
 import cn.jmicro.api.annotation.SO;
 import cn.jmicro.common.CommonException;
 import cn.jmicro.common.Utils;
+import cn.jmicro.common.util.HashUtils;
 
 /**
  * 在服务标识基础上加上方法签名
@@ -41,6 +42,8 @@ public final class UniqueServiceMethodKey {
 	
 	private String returnParam;
 	
+	private int snvHash;
+	
 	private transient String cacheFullKey = null;
 	
 	private transient String cacheMethodKey = null;
@@ -56,6 +59,13 @@ public final class UniqueServiceMethodKey {
 		} else {
 			return rs[0];
 		}
+	}
+	
+	public void form(UniqueServiceMethodKey k) {
+		this.method = k.method;
+		this.paramsStr = k.paramsStr;
+		this.snvHash = k.snvHash;
+		this.usk.form(k.usk);
 	}
 	
 	/*
@@ -133,7 +143,7 @@ public final class UniqueServiceMethodKey {
 		StringBuilder sb = new StringBuilder();
 		sb.append(usk.toSnv());
 		sb.append(SEP).append(this.method).append(SEP);
-		sb.append(this.paramsStr);
+		sb.append(""/*this.paramsStr*/);
 		return sb.toString();
 	}
 	
@@ -146,7 +156,7 @@ public final class UniqueServiceMethodKey {
 		} else {
 			StringBuilder sb = new StringBuilder(usk.toKey(ins, host, port));
 			sb.append(SEP).append(this.method).append(SEP);
-			sb.append(this.paramsStr==null ? "":this.paramsStr);
+			sb.append(""/*this.paramsStr==null ? "":this.paramsStr*/);
 			if(ins && host && port) {
 				cacheFullKey = sb.toString();
 				return cacheFullKey;
@@ -167,9 +177,9 @@ public final class UniqueServiceMethodKey {
 		}
 		UniqueServiceKey usk = new UniqueServiceKey();
 		
-		int idx = -1;
+		int idx = UniqueServiceKey.INDEX_SN;
 		
-		usk.setServiceName(strs[++idx]);
+		usk.setServiceName(strs[idx]);
 		usk.setNamespace(strs[++idx]); 
 		usk.setVersion(strs[++idx]);
 		
@@ -181,9 +191,11 @@ public final class UniqueServiceMethodKey {
 			usk.setHost(strs[++idx]);
 		}
 		
-		if(strs.length > 5 && !Utils.isEmpty(strs[++idx])) {
+		++idx;
+		if(strs.length > 5 && !Utils.isEmpty(strs[idx])) {
 			usk.setPort(Integer.parseInt(strs[idx]));
 		}
+		usk.setSnvHash(HashUtils.FNVHash1(usk.toKey(false, false, false)));
 		
 		return usk;
 	}
@@ -205,6 +217,8 @@ public final class UniqueServiceMethodKey {
 		if(strs.length > 7) {
 			usk.setParamsStr(strs[++idx]);
 		}
+		
+		usk.setSnvHash(HashUtils.FNVHash1(usk.toKey(false, false, false)));
 		
 		return usk;
 	}
@@ -300,5 +314,13 @@ public final class UniqueServiceMethodKey {
 	protected UniqueServiceMethodKey clone() throws CloneNotSupportedException {
 		return (UniqueServiceMethodKey) super.clone();
 	}
-	
+
+	public int getSnvHash() {
+		return snvHash;
+	}
+
+	public void setSnvHash(int snvHash) {
+		this.snvHash = snvHash;
+	}
+
 }

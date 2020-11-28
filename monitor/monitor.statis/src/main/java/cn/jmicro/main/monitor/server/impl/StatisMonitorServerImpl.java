@@ -368,12 +368,8 @@ public class StatisMonitorServerImpl implements IStatisMonitorServer {
 						}
 					}
 				}
-				sc.start();
 				monitoralbe = enable;
 			} else if(!enable && monitoralbe) {
-				if(sc != null) {
-					sc.stop();
-				}
 				monitoralbe = enable;
 			}
 		}

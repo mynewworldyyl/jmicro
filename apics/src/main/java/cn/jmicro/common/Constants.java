@@ -23,6 +23,10 @@ package cn.jmicro.common;
  */
 public interface Constants {
 	
+	public static final byte LIMIT_TYPE_LOCAL = 1;
+	
+	public static final byte LIMIT_TYPE_SS = 2;
+	
 	//自由调用
 	public static final byte LICENSE_TYPE_FREE = 0;
 	

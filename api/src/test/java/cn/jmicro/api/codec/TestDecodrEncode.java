@@ -12,7 +12,7 @@ public class TestDecodrEncode {
 
 	@Test
 	public void testEncode(){
-		Entity e = new Entity();
+		TestEntity e = new TestEntity();
 		ByteBuffer bb = ByteBuffer.allocate(1024*4);
 		Encoder.encodeObject(bb, e);
 		bb.flip();

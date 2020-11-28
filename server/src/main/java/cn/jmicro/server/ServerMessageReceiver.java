@@ -25,7 +25,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.RejectedExecutionHandler;
 import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -39,7 +38,6 @@ import cn.jmicro.api.config.Config;
 import cn.jmicro.api.executor.ExecutorConfig;
 import cn.jmicro.api.executor.ExecutorFactory;
 import cn.jmicro.api.gateway.ApiRequest;
-import cn.jmicro.api.idgenerator.ComponentIdServer;
 import cn.jmicro.api.idgenerator.IdRequest;
 import cn.jmicro.api.monitor.LG;
 import cn.jmicro.api.monitor.LogMonitorClient;
@@ -55,7 +53,9 @@ import cn.jmicro.api.net.Message;
 import cn.jmicro.api.net.RpcRequest;
 import cn.jmicro.api.net.RpcResponse;
 import cn.jmicro.api.net.ServerError;
+import cn.jmicro.api.registry.ServiceMethod;
 import cn.jmicro.api.security.SecretManager;
+import cn.jmicro.api.service.ServiceManager;
 import cn.jmicro.common.CommonException;
 import cn.jmicro.common.Constants;
 
@@ -67,8 +67,8 @@ import cn.jmicro.common.Constants;
 @Component(lazy=false,active=true,value="serverReceiver",side=Constants.SIDE_PROVIDER,level=1000)
 public class ServerMessageReceiver implements IMessageReceiver{
 
-	static final Logger logger = LoggerFactory.getLogger(ServerMessageReceiver.class);
-	static final Class<?> TAG = ServerMessageReceiver.class;
+	private static final Logger logger = LoggerFactory.getLogger(ServerMessageReceiver.class);
+	private static final Class<?> TAG = ServerMessageReceiver.class;
 	
 	@Inject
 	private ExecutorFactory ef;
@@ -83,13 +83,13 @@ public class ServerMessageReceiver implements IMessageReceiver{
 	private StatisMonitorClient monitor;
 	
 	@Inject
-	private ICodecFactory codeFactory;
-	
-	@Inject
 	private ICodecFactory codecFactory;
 	
 	@Inject
 	private SecretManager secretMng;
+	
+	@Inject
+	private ServiceManager srvMng;
 	
 	private ExecutorService defaultExecutor = null;
 	
@@ -105,15 +105,11 @@ public class ServerMessageReceiver implements IMessageReceiver{
 	
 	private Queue<JMicroTask> cacheTasks  = new ConcurrentLinkedQueue<>();
 	
-	public void init(){
-		ExecutorConfig config = new ExecutorConfig();
-		config.setMsCoreSize(10);
-		config.setMsMaxSize(20);
-		config.setTaskQueueSize(500);
-		config.setThreadNamePrefix("ServerMessageReceiver-default");
-		config.setRejectedExecutionHandler(new JicroAbortPolicy());
-		defaultExecutor = ef.createExecutor(config);
-		
+	@Inject
+	private ServiceMethodTaskQueueManager taskWorker;
+	
+	public void ready() {
+	
 		/*ExecutorConfig gateWayCfg = new ExecutorConfig();
 		gateWayCfg.setMsCoreSize(5);
 		gateWayCfg.setMsMaxSize(20);
@@ -125,9 +121,27 @@ public class ServerMessageReceiver implements IMessageReceiver{
 		//系统级RPC处理器，如ID请求处理器，和普通RPC处理理器同一个实例，但是TYPE标识不同，需要特殊处理
 		//registHandler(jrpcHandler);
 		//registHandler(idHandler);
-	}
-	
-	public void ready() {
+		
+		/*
+		String name = Config.getInstanceName()+"_limitDataSubscribe";
+		ServiceItem si = sl.createSrvItem(IStatisDataSubscribe.class, name,"0.0.1", 
+				LimitStatisDataSubscribe.class.getName());
+		LimitStatisDataSubscribe ds = new LimitStatisDataSubscribe();
+		
+		of.regist(name, ds);
+		sl.registService(si,ds);
+		*/
+		
+		ExecutorConfig config = new ExecutorConfig();
+		config.setMsCoreSize(10);
+		config.setMsMaxSize(20);
+		config.setTaskQueueSize(500);
+		config.setThreadNamePrefix("ServerMessageReceiver-default");
+		config.setRejectedExecutionHandler(new JicroAbortPolicy());
+		defaultExecutor = ef.createExecutor(config);
+		
+		taskWorker.setDefaultExecutor(defaultExecutor);
+		
 		finishInit = true;
 		synchronized(finishInit) {
 			finishInit.notifyAll();
@@ -170,6 +184,10 @@ public class ServerMessageReceiver implements IMessageReceiver{
 			}
 		}
 		
+		JMicroTask t = this.popTask();
+		t.setMsg(msg);
+		t.setS((IServerSession)s);
+		
 		if (useExecutorPool) {
 			/*if(msg.isDebugMode()) {
 				 long curTIme = System.currentTimeMillis();
@@ -177,19 +195,36 @@ public class ServerMessageReceiver implements IMessageReceiver{
 	              			msg.getInstanceName(),msg.getReqId(),msg.getMethod(),(curTIme-msg.getTime()));
 			}*/
 			
-			JMicroTask t = this.popTask();
-			t.setMsg(msg);
-			t.setS((IServerSession)s);
-			defaultExecutor.execute(t);
+			ServiceMethod sm = srvMng.getServiceMethodByHash(msg.getSmKeyCode());
+			if(sm == null || sm.getMaxSpeed() <= 0) {
+				//不限速
+				defaultExecutor.execute(t);
+			} else {
+				if(sm.getKey().getSnvHash() != msg.getSmKeyCode()) {
+					String errMsg = "Invalid service method code: [" + msg.getSmKeyCode() + "] but target [" + sm.getKey().getSnvHash()+"] ";
+					errMsg += ", client host: " + s.remoteHost();
+					errMsg += ", smKey: " + sm.getKey().toKey(true, true, true);
+					LG.log(MC.LOG_ERROR, TAG, errMsg);
+					logger.error(errMsg);
+					return;
+		    	}
+				try {
+					taskWorker.sumbit(t,sm);
+				} catch (CommonException e) {
+					responseException(msg,t.s,e);
+				}
+			}
 			
-			/*if(Constants.MSG_TYPE_REQ_RAW == msg.getType()) {
+			/*
+			if(Constants.MSG_TYPE_REQ_RAW == msg.getType()) {
 				this.gatewayExecutor.execute(t);
 			}else {
 				defaultExecutor.execute(t);
-			}*/
+			}
+			*/
 			
 		} else {
-			doReceive((IServerSession) s, msg);
+			doReceive(t);
 		}
 		
 		/*
@@ -201,10 +236,13 @@ public class ServerMessageReceiver implements IMessageReceiver{
 	}
 	
 	//@Suspendable
-	private void doReceive(IServerSession s, Message msg){
+	public void doReceive(JMicroTask task){
+		Message msg = task.msg;
+		IServerSession s = task.s;
 		try {
 			
 			JMicroContext.configProvider(s,msg);
+			
 			/*if(msg.isDebugMode()) {
 				StringBuilder sb = JMicroContext.get().getDebugLog();
 				 sb.append(msg.getMethod())
@@ -230,28 +268,9 @@ public class ServerMessageReceiver implements IMessageReceiver{
 				h.onMessage(s, msg);
 			}
 		} catch (Throwable e) {
-			//SF.doMessageLog(MonitorConstant.LOG_ERROR, TAG, msg,e);
-			//SF.doSubmit(MonitorConstant.SERVER_REQ_ERROR);
-			
-			logger.error("reqHandler error msg:{} ",msg);
-			logger.error("doReceive",e);
-			
-			LG.log(MC.LOG_ERROR, TAG,"error",e);
-			MT.rpcEvent(MC.MT_SERVER_ERROR);
-			
-			if(msg.isNeedResponse()) {
-				RpcResponse resp = new RpcResponse(msg.getReqId(),new ServerError(0,e.getMessage()));
-				resp.setSuccess(false);
-				msg.setPayload(ICodecFactory.encode(codeFactory,resp,msg.getUpProtocol()));
-				msg.setType((byte)(msg.getType()+1));
-				msg.setUpSsl(false);
-				msg.setDownSsl(false);
-				msg.setSign(false);
-				msg.setSec(false);
-				msg.setSalt(null);
-				s.write(msg);
-			}
+			responseException(msg,s,e);
 		} finally {
+			offerTask(task);
 			if(!msg.isAsyncReturnResult()) {
 				if(JMicroContext.get().isDebug()) {
 					JMicroContext.get().appendCurUseTime("respTime",false);
@@ -262,6 +281,30 @@ public class ServerMessageReceiver implements IMessageReceiver{
 				JMicroContext.get().appendCurUseTime("Async req service return",false);
 			}
 			JMicroContext.clear();
+		}
+	}
+	
+	private void responseException(Message msg,IServerSession s,Throwable e) {
+		//SF.doMessageLog(MonitorConstant.LOG_ERROR, TAG, msg,e);
+		//SF.doSubmit(MonitorConstant.SERVER_REQ_ERROR);
+		
+		logger.error("reqHandler error msg:{} ",msg);
+		logger.error("doReceive",e);
+		
+		LG.log(MC.LOG_ERROR, TAG,"error",e);
+		MT.rpcEvent(MC.MT_SERVER_ERROR);
+		
+		if(msg.isNeedResponse()) {
+			RpcResponse resp = new RpcResponse(msg.getReqId(),new ServerError(0,e.getMessage()));
+			resp.setSuccess(false);
+			msg.setPayload(ICodecFactory.encode(codecFactory,resp,msg.getUpProtocol()));
+			msg.setType((byte)(msg.getType()+1));
+			msg.setUpSsl(false);
+			msg.setDownSsl(false);
+			msg.setSign(false);
+			msg.setSec(false);
+			msg.setSalt(null);
+			s.write(msg);
 		}
 	}
 	
@@ -281,23 +324,27 @@ public class ServerMessageReceiver implements IMessageReceiver{
 		}
 	}
 	
-	private class JMicroTask implements Runnable {
+	public class JMicroTask implements Runnable{
 		
 		private Message msg;
 		private IServerSession s;
-	       
-        public JMicroTask() { }
+		//private TaskRunnable r;
+
+        public JMicroTask() {}
 
 		@Override
 		public void run() {
 			try {
 				/*if(msg.isDebugMode())
 					logger.debug(msg.getMethod() + " reqId: "+msg.getReqId()+" Got " + cnt.decrementAndGet());*/
-				doReceive((IServerSession)s, msg);
+				doReceive(this);
+				//r.doReceive(this);
 			} finally{
-			/*	if(msg.isDebugMode())
-					logger.debug(msg.getMethod() + " reqId: "+msg.getReqId()+" Release " + cnt.decrementAndGet());*/
-				offerTask(this);
+			/*	
+			 if(msg.isDebugMode())
+					logger.debug(msg.getMethod() + " reqId: "+msg.getReqId()+" Release " + cnt.decrementAndGet());
+					*/
+				
 			}
 		}
 

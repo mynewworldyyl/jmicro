@@ -110,10 +110,8 @@ public class MonitorClientStatusAdapter implements IMonitorAdapter {
 	@Override
 	public void enableMonitor(boolean enable) {
 		if (enable && !monitoralbe) {
-			sc.start();
 			monitoralbe = true;
 		} else if (!enable && monitoralbe) {
-			sc.stop();
 			monitoralbe = false;
 		}
 	}

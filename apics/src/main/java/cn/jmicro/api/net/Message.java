@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
 
+import cn.jmicro.api.annotation.IDStrategy;
 import cn.jmicro.api.codec.JDataInput;
 import cn.jmicro.api.codec.JDataOutput;
 import cn.jmicro.api.rsa.EncryptUtils;
@@ -33,6 +34,7 @@ import cn.jmicro.common.util.JsonUtils;
  * @author Yulei Ye
  * @date 2018年10月4日-下午12:06:44
  */
+@IDStrategy(100)
 public final class Message {
 	
 	public static final int HEADER_LEN = 18;
@@ -106,6 +108,8 @@ public final class Message {
 	//加密方式： 0:对称加密，1：RSA 非对称加密
 	public static final int FLAG_ENC_TYPE = 1 << 30;
 	
+	public static final int FLAG_RPC_MCODE = 1 << 26;
+	
 	//0B00111000 5---3
 	//public static final short FLAG_LEVEL = 0X38;
 	
@@ -124,6 +128,8 @@ public final class Message {
 	private long reqId;
 	
 	private int insId;
+	
+	private int smKeyCode;
 	
 	//payload length with byte,4 byte length
 	//private int len;
@@ -153,9 +159,10 @@ public final class Message {
 	* 30       ENT       encrypt type 0:对称加密，1：RSA 非对称加密
 	* 29       SI        是否有签名值 0：无，1：有
 	* 28       SE        密码
-	* 29       WE        从Web浏览器过来的请求
+	* 27       WE        从Web浏览器过来的请求
+	* 26       MK        RPC方法编码
 	* 
-	     ENT  SI  SE WE                                                    
+	     ENT  SI  SE WE  MK                                                  
 	 |    |   |   |  |   |   |  |  |   |    |    |    |   |    |   |
      31  30  29  28  27  26  25 24 23  22   21   20   19  18   17  16
      
@@ -222,6 +229,11 @@ public final class Message {
 			
 			//13，14个字节
 			msg.setInsId(b.readUnsignedShort());
+			
+			if(msg.isRpcMk()) {
+				msg.setSmKeyCode(b.readInt());
+				len -= 4;
+			}
 			
 			if(msg.isDebugMode()) {
 				//读取测试数据头部
@@ -318,6 +330,10 @@ public final class Message {
 			len += this.sec.length+2;
 		}
 		
+		if(this.isRpcMk()) {
+			len += 4;
+		}
+		
 		//第1，2个字节 ,len = 数据长度 + 测试模式时附加数据长度
 		if(len < MAX_SHORT_VALUE) {
 			this.setLengthType(false);
@@ -363,6 +379,10 @@ public final class Message {
 			
 			//13，14个字节
 			b.writeUnsignedShort(this.insId);
+			
+			if(this.isRpcMk()) {
+				b.writeInt(this.smKeyCode);
+			}
 			
 			if(debug) {
 				b.writeLong(this.getId());
@@ -523,6 +543,14 @@ public final class Message {
 	
 	public void setFromWeb(boolean f) {
 		flag = set(f,flag, FLAG_IS_FROM_WEB);
+	}
+	
+	public boolean isRpcMk() {
+		return is(flag, FLAG_RPC_MCODE);
+	}
+	
+	public void setRpcMk(boolean f) {
+		flag = set(f,flag, FLAG_RPC_MCODE);
 	}
 	
 	public boolean isDumpUpStream() {
@@ -835,6 +863,14 @@ public final class Message {
 
 	public void setSec(byte[] sec) {
 		this.sec = sec;
+	}
+	
+	public int getSmKeyCode() {
+		return smKeyCode;
+	}
+
+	public void setSmKeyCode(int smKeyCode) {
+		this.smKeyCode = smKeyCode;
 	}
 
 	@Override

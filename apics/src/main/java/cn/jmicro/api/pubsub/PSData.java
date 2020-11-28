@@ -20,6 +20,7 @@ import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 
+import cn.jmicro.api.annotation.IDStrategy;
 import cn.jmicro.api.annotation.SO;
 
 /**
@@ -28,6 +29,7 @@ import cn.jmicro.api.annotation.SO;
  * @date 2018年12月22日 下午11:10:43
  */
 @SO
+@IDStrategy(100)
 public class PSData implements Serializable{
 	
 	private static final long serialVersionUID = 389875668374730999L;

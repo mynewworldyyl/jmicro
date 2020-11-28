@@ -1,10 +1,10 @@
-package cn.jmicro.breaker.api;
+package cn.jmicro.api.monitor;
 
 import cn.jmicro.api.monitor.StatisData;
 import cn.jmicro.codegenerator.AsyncClientProxy;
 
 @AsyncClientProxy
-public interface IBreakerService {
+public interface IStatisDataSubscribe {
 
 	void onData(StatisData sc);
 }

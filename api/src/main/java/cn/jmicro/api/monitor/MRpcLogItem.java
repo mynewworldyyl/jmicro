@@ -19,6 +19,7 @@ package cn.jmicro.api.monitor;
 import java.util.LinkedList;
 import java.util.List;
 
+import cn.jmicro.api.annotation.IDStrategy;
 import cn.jmicro.api.annotation.SO;
 import cn.jmicro.api.net.IReq;
 import cn.jmicro.api.net.IResp;
@@ -33,6 +34,7 @@ import cn.jmicro.common.util.JsonUtils;
  * @date 2018年10月5日-下午12:50:47
  */
 @SO
+@IDStrategy(100)
 public final class MRpcLogItem{
 	
 	private long linkId;

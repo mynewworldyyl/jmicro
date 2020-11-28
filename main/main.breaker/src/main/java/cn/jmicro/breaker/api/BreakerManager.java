@@ -39,6 +39,7 @@ import cn.jmicro.api.codec.JDataInput;
 import cn.jmicro.api.codec.TypeCoderFactory;
 import cn.jmicro.api.config.Config;
 import cn.jmicro.api.idgenerator.ComponentIdServer;
+import cn.jmicro.api.monitor.IStatisDataSubscribe;
 import cn.jmicro.api.monitor.LG;
 import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.monitor.MonitorStatisConfigManager;
@@ -57,10 +58,10 @@ import cn.jmicro.api.service.ServiceManager;
 import cn.jmicro.api.timer.ITickerAction;
 import cn.jmicro.api.timer.TimerTicker;
 import cn.jmicro.api.utils.TimeUtils;
-import cn.jmicro.common.Base64Utils;
 import cn.jmicro.common.CommonException;
 import cn.jmicro.common.Constants;
 import cn.jmicro.common.Utils;
+import cn.jmicro.common.util.Base64Utils;
 import cn.jmicro.common.util.JsonUtils;
 
 /**
@@ -70,7 +71,7 @@ import cn.jmicro.common.util.JsonUtils;
  */
 @Component
 @Service(namespace="breaker", version="0.0.1",showFront=false)
-public class BreakerManager implements IBreakerService{
+public class BreakerManager implements IStatisDataSubscribe{
 	
 	private static final Short[] REQ_FAIL_TYPES = new Short[]{MC.MT_CLIENT_RESPONSE_SERVER_ERROR,MC.MT_REQ_TIMEOUT_FAIL,MC.MT_REQ_ERROR};
 	private static final Short[] REQ_TYPES = new Short[] {MC.MT_REQ_START};
@@ -202,7 +203,7 @@ public class BreakerManager implements IBreakerService{
 		sc.setToType(StatisConfig.TO_TYPE_SERVICE_METHOD);
 		
 		StringBuilder sb = new StringBuilder();
-		sb.append(UniqueServiceKey.serviceName("cn.jmicro.breaker.api.IBreakerService","*", "*"));
+		sb.append(UniqueServiceKey.serviceName(IStatisDataSubscribe.class.getName(),"breaker", "*"));
 		sb.append(UniqueServiceKey.SEP).append(UniqueServiceKey.SEP)
 		.append(UniqueServiceKey.SEP).append(UniqueServiceKey.SEP)
 		.append("onData").append(UniqueServiceKey.SEP);

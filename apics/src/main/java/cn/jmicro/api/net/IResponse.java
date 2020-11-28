@@ -33,7 +33,4 @@ public interface IResponse extends IResp{
 
 	void setSuccess(boolean success);
 	
-	long getId();
-	
-	void setId(long id);
 }

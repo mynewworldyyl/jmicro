@@ -102,9 +102,9 @@ public class PermissionManager {
 		} else if(sm.isPerType() && (ai == null || ai.getPers() == null || !ai.getPers().contains(sm.getKey().toKey(false, false, false)))) {
 			ServerError se = new ServerError(ServerError.SE_NO_PERMISSION,
 					(ai!= null?ai.getActName():" Not login") + " no permission for this operation ");
-			LG.log(MC.LOG_ERROR, TAG,se.toString());
+			LG.log(MC.LOG_ERROR, TAG,se.toString()+",SM: " + sm.getKey().toKey(true, true, true));
 			MT.rpcEvent(MC.MT_ACT_PERMISSION_REJECT);
-			logger.warn(se.toString());
+			logger.warn(se.toString()+",SM: " + sm.getKey().toKey(true, true, true));
 			return se;
 		}/*else if(checkAccountClientPermission(srcClientId)) {
 			ServerError se = new ServerError(ServerError.SE_NO_PERMISSION,

@@ -22,7 +22,7 @@ public class ComponentIdServer /*implements IIdClient,IIdServer*/{
 
 	private final static Logger logger = LoggerFactory.getLogger(ComponentIdServer.class);
 	
-	private static final int DEFAULT_CATCHE_SIZE = 100;
+	private static final int DEFAULT_CATCHE_SIZE = 1;
 	
 	private static final String ID_CONFIG_KEY_PREFIX = "/ComponentIdServer/idgenerator-";
 	
@@ -105,6 +105,11 @@ public class ComponentIdServer /*implements IIdClient,IIdServer*/{
 			
 			if(ids.isEmpty()) {
 				Long[] reqIds = this.getLongIds(idCls.getName(), getCacheSize(idCls));
+				if(reqIds.length == 1) {
+					return reqIds[0];
+				}else {
+					ids.addAll(Arrays.asList(reqIds));
+				}
 				ids.addAll(Arrays.asList(reqIds));
 			}
 			return ids.poll();
@@ -131,6 +136,13 @@ public class ComponentIdServer /*implements IIdClient,IIdServer*/{
 			
 			if(ids.isEmpty()) {
 				String[] reqIds = this.getStringIds(idCls.getName(), getCacheSize(idCls));
+				
+				if(reqIds.length == 1) {
+					return reqIds[0];
+				}else {
+					ids.addAll(Arrays.asList(reqIds));
+				}
+				
 				ids.addAll(Arrays.asList(reqIds));
 			}
 		}
@@ -157,7 +169,11 @@ public class ComponentIdServer /*implements IIdClient,IIdServer*/{
 			
 			if(ids.isEmpty()) {
 				Integer[] reqIds = this.getIntIds(idCls.getName(), getCacheSize(idCls));
-				ids.addAll(Arrays.asList(reqIds));
+				if(reqIds.length == 1) {
+					return reqIds[0];
+				}else {
+					ids.addAll(Arrays.asList(reqIds));
+				}
 			}
 			return ids.poll();
 		}

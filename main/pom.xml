@@ -20,5 +20,6 @@
 		<module>main.push</module>		
 		<module>main.apigateway</module>
 		<module>main.mng</module>
+		<module>main.limit</module>
     </modules>
 </project>

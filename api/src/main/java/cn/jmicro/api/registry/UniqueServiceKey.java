@@ -50,6 +50,10 @@ public final class UniqueServiceKey {
 	private String namespace = Constants.DEFAULT_NAMESPACE;
 	private String version = Constants.VERSION;
 	
+	private int snvHash;
+	
+	//private int insHash;
+	
 	private transient String cacheFullKey = null;
 	private transient String cacheSrvKey = null;
 	private transient String snvKey = null;
@@ -60,6 +64,16 @@ public final class UniqueServiceKey {
 		this.serviceName = serviceName;
 		this.namespace = namespace;
 		this.version = version;
+	}
+	
+	public void form(UniqueServiceKey k) {
+		this.host = k.host;
+		this.instanceName = k.instanceName;
+		this.namespace = k.namespace;
+		this.port = k.port;
+		this.serviceName = k.serviceName;
+		this.version = k.version;
+		this.snvHash = k.snvHash;
 	}
 	
 	public String path(String root,boolean ins,boolean host,boolean port){
@@ -358,5 +372,13 @@ public final class UniqueServiceKey {
 	protected UniqueServiceKey clone() throws CloneNotSupportedException {
 		return (UniqueServiceKey) super.clone();
 	}
-	
+
+	public int getSnvHash() {
+		return snvHash;
+	}
+
+	public void setSnvHash(int snvHash) {
+		this.snvHash = snvHash;
+	}
+
 }

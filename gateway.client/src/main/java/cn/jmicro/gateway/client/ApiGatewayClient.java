@@ -54,6 +54,7 @@ import cn.jmicro.codegenerator.AsyncClientUtils;
 import cn.jmicro.common.CommonException;
 import cn.jmicro.common.Constants;
 import cn.jmicro.common.Utils;
+import cn.jmicro.common.util.HashUtils;
 import cn.jmicro.common.util.JsonUtils;
 import cn.jmicro.gateway.pubsub.ApiGatewayPubsubClient;
 
@@ -527,7 +528,10 @@ public class ApiGatewayClient {
 		msg.setId(req.getReqId()/*idClient.getLongId(Message.class.getName())*/);
 		msg.setReqId(req.getReqId());
 		msg.setLinkId(req.getReqId()/*idClient.getLongId(Linker.class.getName())*/);
+		msg.setRpcMk(true);
+		int hash = HashUtils.FNVHash1(serviceName + "##"+namespace+"##"+version+"########"+method);
 		
+		msg.setSmKeyCode(hash);
 		//msg.setStream(false);
 		msg.setDumpDownStream(false);
 		msg.setDumpUpStream(false);

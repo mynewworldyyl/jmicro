@@ -97,6 +97,8 @@ public final class ServiceMethod {
 	 */
 	private int maxSpeed = -1;
 	
+	private int limitType = 1;
+	
 	/**
 	 *  milliseconds
 	 *  speed up when real response time less avgResponseTime, 
@@ -166,6 +168,7 @@ public final class ServiceMethod {
 
 		this.degrade = p.degrade;
 		this.maxSpeed = p.maxSpeed;
+		this.limitType = p.limitType;
 		this.avgResponseTime = p.avgResponseTime;
 		this.failResponse = p.failResponse;
 		this.needResponse = p.needResponse;
@@ -188,6 +191,7 @@ public final class ServiceMethod {
 		this.isUpSsl = p.isUpSsl;
 		this.isDownSsl = p.isDownSsl;
 		this.encType = p.encType;
+		this.key.form(p.key);
 	}
 	
 	public String toJson(){
@@ -251,6 +255,14 @@ public final class ServiceMethod {
 		}
 	}
 	
+	public int getLimitType() {
+		return limitType;
+	}
+
+	public void setLimitType(int limitType) {
+		this.limitType = limitType;
+	}
+
 	public boolean isDumpDownStream() {
 		return dumpDownStream;
 	}

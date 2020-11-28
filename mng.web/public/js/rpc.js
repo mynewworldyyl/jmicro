@@ -181,6 +181,28 @@ jm.utils = {
         return new Date().getTime();
     },
 
+    fnvHash1 : function(msg) {
+         let data = msg;
+         if(typeof msg != 'string') {
+             data = JSON.stringify(msg);
+         }
+
+         if(typeof data == 'string' ) {
+             data = jm.utils.toUTF8Array(msg);
+         }
+
+        let FNV_32_INIT = 0x811c9dc5;
+        let FNV_32_PRIME = 0x01000193;
+
+        let rv = FNV_32_INIT;
+        let len = data.length;
+        for (let i = 0; i < len; i++) {
+            rv = (rv ^ data[i]);
+            rv = (rv * FNV_32_PRIME);
+        }
+        return rv;
+    },
+
     strByteLength:  function(str)  {
         var i;
         var len;
@@ -740,6 +762,8 @@ jm.rpc = {
     actInfo:null,
     actListeners:{},
 
+    mk2code:{},
+
     addActListener : function(key,l) {
         /*if(!!this.actListeners[key]) {
             throw 'Exist listener: ' + key;
@@ -856,7 +880,7 @@ jm.rpc = {
         }
 
         let req = {};
-        req.serviceName = 'cn.jmicro.api.gateway.IHostNamedService';
+        req.serviceName = 'cn.jmicro.api.gateway.IBaseGatewayService';
         req.namespace = 'gateway';
         req.version = '0.0.1';
         req.method = 'bestHost';
@@ -896,6 +920,7 @@ jm.rpc = {
         msg.setDebugMode(false);
         msg.setLogLevel(jm.rpc.Constants.LOG_NO)//LOG_WARN
         msg.setFromWeb(true);
+        msg.setRpcMk(true);
 
         return msg;
     }
@@ -1018,16 +1043,49 @@ jm.rpc = {
           downProtocol = jm.rpc.Constants.PROTOCOL_BIN;
       }
 
-    return this.callRpcWithTypeAndProtocol(req,type,upProtocol,downProtocol);
+      let smsvnKey = req.serviceName +"##"+req.namespace+"##"+req.version+"########"+req.method;
+      if(this.mk2code[smsvnKey]) {
+          return this.callRpcWithTypeAndProtocol(req,type,upProtocol,downProtocol,this.mk2code[smsvnKey]);
+       } else {
+          let self = this;
+          return new Promise(function(reso,reje){
+
+              let methodCodeReq = new jm.rpc.ApiRequest();
+              methodCodeReq.serviceName = 'cn.jmicro.api.gateway.IBaseGatewayService';
+              methodCodeReq.method = 'fnvHash1a';
+              methodCodeReq.namespace = 'gateway';
+              methodCodeReq.version = '0.0.1';
+              methodCodeReq.args = [smsvnKey];
+              methodCodeReq.needResponse = true;
+
+              self.callRpcWithTypeAndProtocol(methodCodeReq, type, upProtocol,downProtocol,1048130298)
+                  .then((methodCode)=>{
+                      self.mk2code[smsvnKey] = methodCode;
+                      self.callRpcWithTypeAndProtocol(req,type,upProtocol,downProtocol,methodCode)
+                          .then((resp)=>{
+                              reso(resp);
+                          })
+                          .catch((err)=>{
+                              reje(err);
+                          })
+                  })
+                  .catch((err)=>{
+                      reje(err);
+                  })
+          });
+       }
   },
 
-    callRpcWithTypeAndProtocol : function(req,type,upProtocol,downProtocol){
+    callRpcWithTypeAndProtocol : function(req,type,upProtocol,downProtocol,methodCode){
         let self = this;
         return new Promise(function(reso,reje){
 
             let msg =  self.createMsg(type);
             msg.setUpProtocol(upProtocol);
             msg.setDownProtocol(downProtocol);
+
+            msg.setRpcMk(true);
+            msg.smKeyCode = methodCode;
 
             if(req.reqId) {
                 msg.reqId = req.reqId;
@@ -1068,7 +1126,7 @@ jm.rpc = {
                                 jm.rpc.actInfo = null;
                                 window.jm.rpc.login(actName,pwd,(actInfo,err)=>{
                                     if(actInfo && !err) {
-                                        self.callRpcWithTypeAndProtocol(req,type,upProtocol,downProtocol)
+                                        self.callRpcWithTypeAndProtocol(req,type,upProtocol,downProtocol,methodCode)
                                             .then(( r,err )=>{
                                                 if(r ) {
                                                     reso(r);
@@ -1579,6 +1637,7 @@ jm.rpc.Constants = {
     MAX_BYTE_VALUE :0X7F,
 
     MAX_INT_VALUE :0x7FFFFFFF,
+    MAX_UINT_VALUE :0xFFFFFFFF,
 
     //public static final long MAX_LONG_VALUE = Long.MAX_VALUE*2;
 
@@ -1620,6 +1679,8 @@ jm.rpc.Constants = {
     FLAG_IS_SIGN  :  1 << 29,
 
     FLAG_ENC_TYPE  :  1 << 30,
+
+    FLAG_RPC_MCODE  :  1 << 26,
 
 }
 
@@ -1726,6 +1787,8 @@ jm.rpc.Message = function() {
 
     this.insId = 0;
 
+    this.smKeyCode = 0;
+
     //payload length with byte,4 byte length
     //private int len;
     // 1 byte
@@ -1797,21 +1860,25 @@ jm.rpc.Message.prototype.isDumpUpStream = function()  {
     return this.is(this.flag,jm.rpc.Constants.FLAG_DUMP_UP);
 }
 
+jm.rpc.Message.prototype.setDumpUpStream = function(f)  {
+    this.flag  = this.set(f,this.flag ,jm.rpc.Constants.FLAG_DUMP_UP);
+}
+
 //public boolean
 jm.rpc.Message.prototype.isDumpDownStream = function() {
     return this.is(this.flag, jm.rpc.Constants.FLAG_DUMP_DOWN);
 }
 
-//public void
-jm.rpc.Message.prototype.setDumpUpStream = function(f)  {
-    //this.flag |= f ? jm.rpc.Constants.FLAG_DUMP_UP : 0 ;
-    this.flag  = this.set(f,this.flag ,jm.rpc.Constants.FLAG_DUMP_UP);
+jm.rpc.Message.prototype.setDumpDownStream = function(f)  {
+    this.flag  = this.set(f,this.flag ,jm.rpc.Constants.FLAG_DUMP_DOWN);
 }
 
-//public boolean
-jm.rpc.Message.prototype.setDumpDownStream = function(f)  {
-    //return this.is(flag,jm.rpc.Constants.FLAG_DUMP_DOWN);
-    this.flag  = this.set(f,this.flag ,jm.rpc.Constants.FLAG_DUMP_DOWN);
+jm.rpc.Message.prototype.isRpcMk = function() {
+    return this.is(this.flag, jm.rpc.Constants.FLAG_RPC_MCODE);
+}
+
+jm.rpc.Message.prototype.setRpcMk = function(f)  {
+    this.flag  = this.set(f,this.flag ,jm.rpc.Constants.FLAG_RPC_MCODE);
 }
 
 //public boolean
@@ -1991,6 +2058,11 @@ jm.rpc.Message.prototype.decode = function(b) {
     //第13个字节
     //msg.flag = dataInput.getUByte();
 
+    if(msg.isRpcMk()) {
+        msg.smKeyCode = dataInput.readInt();
+        len -= 4;
+    }
+
     if(msg.isDebugMode()) {
         //读取测试数据头部
         msg.id = dataInput.readUnsignedLong();
@@ -2117,6 +2189,10 @@ jm.rpc.Message.prototype.encode = function() {
         len += this.sec.length+2;
     }
 
+    if(this.isRpcMk()) {
+        len += 4;
+    }
+
     //len += Message.HEADER_LEN
 
     //第1，2个字节 ,len = 数据长度 + 测试模式时附加数据长度
@@ -2161,6 +2237,10 @@ jm.rpc.Message.prototype.encode = function() {
     buf.writeInt(this.linkId);
 
     buf.writeUnsignedShort(this.insId);
+
+    if(this.isRpcMk()) {
+        buf.writeInt(this.smKeyCode);
+    }
 
     if(this.isDebugMode()) {
         //b.putLong(this.getId());
@@ -2337,7 +2417,6 @@ jm.rpc.ApiResponse.prototype = {
         }
     }
 }
-
 
 jm.utils.JDataInput = function(buf) {
     if(!buf) {
@@ -2544,8 +2623,8 @@ jm.utils.JDataOutput.prototype.writeUnsignedShort = function(v) {
 
 //public static void
 jm.utils.JDataOutput.prototype.writeUnsignedInt = function(n) {
-    if(n > jm.rpc.Constants.MAX_INT_VALUE) {
-        throw "Max int value is :"+jm.rpc.Constants.MAX_INT_VALUE+", but value "+v;
+    if(n > jm.rpc.Constants.MAX_UINT_VALUE) {
+        throw "Max int value is: "+jm.rpc.Constants.MAX_UINT_VALUE+", but value "+n;
     }
     this.checkCapacity(4);
     n = (n << 1) ^ (n >> 31);
@@ -2871,6 +2950,10 @@ jm.eu = {
             //告诉服务端，有AES密码更新
             msg.setSec(true);
             //对AES密码做RSA加密
+            msg.sec = this.encryptRas(this.pwd);
+        }else if(new Date().getTime() - this.lastUpdatePwdTime < 5*1000) {
+            //前5秒内的包都带上密钥，避免消息发送乱序情况下服务器解密错误
+            msg.setSec(true);
             msg.sec = this.encryptRas(this.pwd);
         }
 

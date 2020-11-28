@@ -69,6 +69,7 @@ import cn.jmicro.api.registry.AsyncConfig;
 import cn.jmicro.api.registry.IRegistry;
 import cn.jmicro.api.registry.ServiceItem;
 import cn.jmicro.api.security.IAccountService;
+import cn.jmicro.api.security.genclient.IAccountService$JMAsyncClient;
 import cn.jmicro.api.service.IServerServiceProxy;
 import cn.jmicro.api.service.ServiceManager;
 import cn.jmicro.api.timer.TimerTicker;
@@ -531,12 +532,12 @@ public class SimpleObjectFactory implements IObjectFactory {
 			
 			rpcClassLoader.registRemoteClass();
 			
+			loadAccountInfo(dataOperator);
+			
 			//对像工厂初始化后监听器
 			for(IPostFactoryListener lis : this.postReadyListeners){
 				lis.afterInit(this);
 			}
-			
-			loadAccountInfo(dataOperator);
 			
 			if(oldCl != null) {
 				Thread.currentThread().setContextClassLoader(oldCl);
@@ -618,14 +619,15 @@ public class SimpleObjectFactory implements IObjectFactory {
 		
 			IAccountService as = this.get(IAccountService.class);
 			if(as == null) {
+				IAccountService$JMAsyncClient asyncAs = null;
 				try {
-					as = this.getRemoteServie(IAccountService.class.getName(), "*","*",null);
+					asyncAs = this.getRemoteServie(IAccountService$JMAsyncClient.class.getName(), "*","*",null);
 				} catch(CommonException e) {}
-			}
-			
-			if(as == null) {
-				logger.warn("Security service not found!");
-				return;
+				if(asyncAs == null || !asyncAs.isReady()) {
+					logger.error("Security account service not found!");
+					return;
+				}
+				as = asyncAs;
 			}
 			
 			int clientId = -1;
@@ -668,8 +670,6 @@ public class SimpleObjectFactory implements IObjectFactory {
 			} else {
 				throw new CommonException("Account name not found for: " + adminClientId);
 			}
-			
-			
 		
 	}
 
@@ -734,7 +734,7 @@ public class SimpleObjectFactory implements IObjectFactory {
 	private void doReady0(List<Object> lobjs, Set<Object> systemObjs) {
 		Set<Object> haveReadies = new HashSet<>();
 		for(int i =0; i < lobjs.size(); i++){
-			Object o = lobjs.get(i);
+			 Object o = lobjs.get(i);
 			
 			 if(o instanceof ProxyObject){
 	    		continue;
@@ -1621,8 +1621,10 @@ public class SimpleObjectFactory implements IObjectFactory {
 		}
 		try {
 			if(readyMethod1 != null) {
+				logger.info(readyMethod1.toString());
 				readyMethod1.invoke(obj, new Object[]{});
 			}else if(readyMethod2 != null){
+				logger.info(readyMethod2.toString());
 				readyMethod2.invoke(obj, new Object[]{});
 			}
 		} catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {

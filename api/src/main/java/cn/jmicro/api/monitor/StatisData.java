@@ -2,9 +2,11 @@ package cn.jmicro.api.monitor;
 
 import java.util.Map;
 
+import cn.jmicro.api.annotation.IDStrategy;
 import cn.jmicro.api.annotation.SO;
 
 @SO
+@IDStrategy(100)
 public class StatisData {
 
 	private int cid;

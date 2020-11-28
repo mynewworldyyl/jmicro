@@ -486,7 +486,8 @@ public class ExpUtils {
             if(ch > 47 && ch < 58){
                 //是数字,判断多位数的情况
                 String str = "";
-                while(index < strExp.length() && strExp.charAt(index) > 47 && strExp.charAt(index) < 58){
+                while(index < strExp.length() && (strExp.charAt(index) > 47 && strExp.charAt(index) < 58
+                		|| strExp.charAt(index) == '.')){
                     str += strExp.charAt(index);
                     index ++;
                 }

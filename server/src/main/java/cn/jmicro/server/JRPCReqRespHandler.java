@@ -145,6 +145,7 @@ public class JRPCReqRespHandler implements IMessageHandler{
 	    	}
 	    	
 	    	ServiceMethod sm = JMicroContext.get().getParam(Constants.SERVICE_METHOD_KEY, null);
+	    	
 	    	if(msg.isMonitorable()) {
 				MT.rpcEvent(MC.MT_SERVER_JRPC_GET_REQUEST,1);
 				MT.rpcEvent(MC.MT_SERVER_JRPC_GET_REQUEST_READ,msg.getLen());

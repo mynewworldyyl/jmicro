@@ -16,7 +16,6 @@ import cn.jmicro.api.monitor.LG;
 import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.service.IServiceAsyncResponse;
 import cn.jmicro.api.test.Person;
-import cn.jmicro.common.CommonException;
 import cn.jmicro.common.Constants;
 import cn.jmicro.example.api.rpc.ISimpleRpc;
 import cn.jmicro.example.api.rpc.genclient.IRpcA$JMAsyncClient;
@@ -47,7 +46,8 @@ public class SimpleRpcImpl implements ISimpleRpc {
 			timeout=5000,
 			retryInterval=1000,
 			debugMode=1,
-			maxSpeed=1000,
+			maxSpeed=100,
+			limitType = Constants.LIMIT_TYPE_SS,
 			baseTimeUnit=Constants.TIME_MILLISECONDS,
 			upSsl=true,encType=0,downSsl=false
 	)
@@ -55,10 +55,10 @@ public class SimpleRpcImpl implements ISimpleRpc {
 		if(LG.isLoggable(MC.LOG_DEBUG)) {
 			LG.log(MC.LOG_DEBUG,SimpleRpcImpl.class, name);
 		}
-		int rv = r.nextInt(100);
+		/*int rv = r.nextInt(100);
 		if(rv < 50) {
 			throw new CommonException("test breaker exception");
-		}
+		}*/
 		//System.out.println("Server hello: " +name);
 		logger.info("Server hello: " +name);
 		return "Server say hello to: "+name;

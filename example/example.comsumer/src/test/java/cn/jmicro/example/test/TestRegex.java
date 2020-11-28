@@ -5,6 +5,8 @@ import java.util.regex.Pattern;
 
 import org.junit.Test;
 
+import cn.jmicro.common.util.HashUtils;
+
 public class TestRegex {
 
 	@Test
@@ -23,7 +25,16 @@ public class TestRegex {
         }else{
             System.out.println("nothing");
         }
-
-		
+	}
+	
+	//-2 + x = 254-256
+	//-1 + x = 255
+	@Test
+	public void testFNVHash() {
+		byte b = (byte)0xFE;
+		String key = "cn.jmicro.api.gateway.IBaseGatewayService##gateway##0.0.1########fnvHash1a";
+		//String key = "cn.jmicro.api.security.IAccountService##sec##0.0.1########login";
+		long val = HashUtils.FNVHash1(key);
+		System.out.println(val);
 	}
 }

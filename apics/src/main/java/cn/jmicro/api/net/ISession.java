@@ -18,11 +18,14 @@ package cn.jmicro.api.net;
 
 import java.nio.ByteBuffer;
 
+import cn.jmicro.api.annotation.IDStrategy;
+
 /**
  * 
  * @author Yulei Ye
  * @date 2018年10月4日-下午12:06:27
  */
+@IDStrategy(100)
 public interface ISession{
 	
 	public static final int EVENT_TYPE_CLOSE = 1;

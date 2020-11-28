@@ -1,4 +1,4 @@
-package cn.jmicro.common;
+package cn.jmicro.common.util;
 
 public class Base64Utils {
 

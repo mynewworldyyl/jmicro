@@ -16,11 +16,14 @@
  */
 package cn.jmicro.api.monitor;
 
+import cn.jmicro.api.annotation.IDStrategy;
+
 /**
  * 链路监控ID生成
  * @author Yulei Ye
  * @date 2018年11月19日 下午10:31:17
  */
+@IDStrategy(100)
 public class Linker {
 
 }

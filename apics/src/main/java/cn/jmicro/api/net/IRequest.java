@@ -17,11 +17,15 @@
 package cn.jmicro.api.net;
 
 import java.util.Map;
+
+import cn.jmicro.api.annotation.IDStrategy;
+
 /**
  * 
  * @author Yulei Ye
  * @date 2018年10月4日-下午12:05:46
  */
+@IDStrategy(100)
 public interface IRequest extends IReq{
 
 	ISession getSession();

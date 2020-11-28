@@ -39,7 +39,7 @@ import cn.jmicro.common.Constants;
  * @author Yulei Ye
  * @date 2018年10月4日-下午12:11:58
  */
-@Component(lazy=false,value="limiterName")
+//@Component(lazy=false,value="limiterName")
 public class DefaultSpeedLimiter extends AbstractLimiter implements ILimiter{
 	
 	private static final Logger logger = LoggerFactory.getLogger(DefaultSpeedLimiter.class);

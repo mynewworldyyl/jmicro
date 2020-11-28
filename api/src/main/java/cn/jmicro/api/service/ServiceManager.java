@@ -32,6 +32,8 @@ import cn.jmicro.api.config.Config;
 import cn.jmicro.api.executor.IExecutorInfo;
 import cn.jmicro.api.monitor.IMonitorAdapter;
 import cn.jmicro.api.monitor.IMonitorDataSubscriber;
+import cn.jmicro.api.monitor.LG;
+import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.raft.IChildrenListener;
 import cn.jmicro.api.raft.IDataListener;
 import cn.jmicro.api.raft.IDataOperator;
@@ -43,8 +45,8 @@ import cn.jmicro.api.registry.UniqueServiceMethodKey;
 import cn.jmicro.api.security.PermissionManager;
 import cn.jmicro.common.CommonException;
 import cn.jmicro.common.Constants;
-import cn.jmicro.common.HashUtils;
 import cn.jmicro.common.Utils;
+import cn.jmicro.common.util.HashUtils;
 import cn.jmicro.common.util.JsonUtils;
 import cn.jmicro.common.util.StringUtils;
 
@@ -71,6 +73,8 @@ public class ServiceManager {
 	
 	//服务实例级列表
 	private Map<String,ServiceItem> path2SrvItems = new HashMap<>();
+	
+	private Map<Integer,ServiceMethod> methodHash2Method = new HashMap<>();
 	
 	//服务hash值
 	private Map<String,Integer> path2Hash = new HashMap<>();
@@ -191,7 +195,7 @@ public class ServiceManager {
 			logger.warn("Service Item no change {}",path);
 			return;
 		}
-				
+		
 		if(!flag) {
 			//logger.info("Service Add: {}",path.substring(Config.ServiceRegistDir.length()));
 			this.notifyServiceChange(IServiceListener.ADD, si,path);
@@ -275,6 +279,26 @@ public class ServiceManager {
 	
 	public void setDataOperator(IDataOperator dataOperator) {
 		this.dataOperator = dataOperator;
+	}
+	
+	public ServiceMethod checkConflictServiceMethodByHash(int hash,String smKey) {
+		if(!this.methodHash2Method.containsKey(hash)) {
+			return null;
+		}
+		
+		for(ServiceItem esi : path2SrvItems.values()) {
+			for(ServiceMethod esm : esi.getMethods()) {
+				if(hash == esm.getKey().getSnvHash() && 
+					!smKey.equals(esm.getKey().toKey(false, false, false))) {
+					return esm;
+				}
+			}
+		}
+		return null;
+	}
+	
+	public ServiceMethod getServiceMethodByHash(int hash) {
+		return this.methodHash2Method.get(hash);
 	}
 	
 	public void updateOrCreate(ServiceItem item,String path,boolean isel) {
@@ -573,6 +597,16 @@ public class ServiceManager {
 			l.lock();
 			this.path2Hash.remove(path);
 			si = this.path2SrvItems.remove(path);
+			if(si != null) {
+				//存储时已经保证不存在全局性重复hash
+				Set<ServiceItem> items = this.getServiceItems(si.getKey().getServiceName(),
+						si.getKey().getNamespace(), si.getKey().getVersion());
+				if(items == null || items.isEmpty()) {
+					for(ServiceMethod sm : si.getMethods()) {
+						this.methodHash2Method.remove(sm.getKey().getSnvHash());
+					}
+				}
+			}
 		} finally {
 			if(l != null) {
 				l.unlock();
@@ -646,6 +680,28 @@ public class ServiceManager {
 		ReentrantReadWriteLock.WriteLock l = rwLocker.writeLock();
 		try {
 			l.lock();
+			
+			for(ServiceMethod sm : si.getMethods()) {
+				int h = sm.getKey().getSnvHash();
+				if(!this.methodHash2Method.containsKey(h)) {
+					this.methodHash2Method.put(h, sm);
+				} else {
+					//检查是否是方法Hash冲突
+					String smKey = sm.getKey().toKey(false, false, false);
+					ServiceMethod conflichMethod = this.checkConflictServiceMethodByHash(h, smKey);
+					if(conflichMethod != null) {
+						String msg = "Service method hash conflict: [" + smKey + 
+								"] with exist sm [" + conflichMethod.getKey().toKey(false, false, false)+"] fail to load service!";
+						logger.error(msg);
+						LG.logWithNonRpcContext(MC.LOG_ERROR, ServiceManager.class, msg);
+						return false;
+					}
+					
+					//同一个方法，保存最新的方法
+					this.methodHash2Method.put(h, sm);
+				}
+			}
+			
 			this.path2Hash.put(path, hash);
 			this.path2SrvItems.put(path, si);
 		} finally {

@@ -60,8 +60,8 @@ public class JDataInput implements DataInput {
 		return Message.readUnsignedShort(buf);
 	}
 	
-	public int readUnsignedInt() throws IOException{
-		return (int)Message.readUnsignedInt(this.buf);
+	public long readUnsignedInt() throws IOException{
+		return Message.readUnsignedInt(this.buf);
 	}
 
 	@Override

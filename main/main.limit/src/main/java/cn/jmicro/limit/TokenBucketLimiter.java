@@ -34,7 +34,7 @@ import cn.jmicro.api.net.IRequest;
  * @author Yulei Ye
  * @date 2018年10月17日-下午1:51:29
  */
-@Component(lazy=false,value="tokenBucketLimiter")
+//@Component(lazy=false,value="tokenBucketLimiter")
 public class TokenBucketLimiter extends AbstractLimiter implements ILimiter{
 
 	private final static Logger logger = LoggerFactory.getLogger(TokenBucketLimiter.class);

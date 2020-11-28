@@ -24,7 +24,6 @@ public class TestOnePrefixCoder {
 	@Test
 	public void testEndoceArrayResult(){
 		RpcResponse resp = new RpcResponse(1,new Integer[]{1,2,3});
-		resp.setId(33l);
 		resp.setMonitorEnable(true);
 		resp.setSuccess(true);
 		resp.getParams().put("key01", 3);
@@ -156,7 +155,7 @@ public class TestOnePrefixCoder {
 	
 	@Test
 	public void testEncodeArray1(){
-		Object[] arrs = {"56",new Person(),new Entity()};
+		Object[] arrs = {"56",new Person(),new TestEntity()};
 		ByteBuffer bb = encoder.encode(arrs);
 		bb.flip();
 		System.out.println(bb.limit());
@@ -281,7 +280,7 @@ public class TestOnePrefixCoder {
 		{
 			map.put("1","testStringVal");
 			map.put("2",new Person());
-			map.put("3",new Entity());
+			map.put("3",new TestEntity());
 		}
 		
 		bb = encoder.encode(map);
@@ -297,7 +296,7 @@ public class TestOnePrefixCoder {
 	public static final class EntityEndoceNullField {
 		private Person p = new Person();
 		//private Person p = null;
-		private Entity e = null;
+		private TestEntity e = null;
 		
 		private Person nullField = new Person();
 		{
@@ -339,13 +338,13 @@ public class TestOnePrefixCoder {
 	
 	@Test
 	public void testIntegerArrayEncodeDecoder(){
-		Entity si = new Entity();
+		TestEntity si = new TestEntity();
 		
 		ByteBuffer bb = encoder.encode(si);
 		
 		bb.flip();
 		
-		Entity si1 = decoder.decode(bb);
+		TestEntity si1 = decoder.decode(bb);
 		
 		//Integer[]  arr = (Integer[])si1.types;
 		//System.out.println(arr);
@@ -354,13 +353,13 @@ public class TestOnePrefixCoder {
 	
 	@Test
 	public void testByteArrayEncodeDecoder(){
-		Entity si = new Entity();
+		TestEntity si = new TestEntity();
 		
 		ByteBuffer bb = encoder.encode(si);
 		
 		bb.flip();
 		
-		Entity si1 = decoder.decode(bb);
+		TestEntity si1 = decoder.decode(bb);
 		
 		System.out.println(si1.data);
 		

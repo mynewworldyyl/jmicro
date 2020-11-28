@@ -25,6 +25,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import cn.jmicro.api.JMicroContext;
+import cn.jmicro.api.annotation.Cfg;
 import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Inject;
 import cn.jmicro.api.annotation.JMethod;
@@ -35,6 +36,7 @@ import cn.jmicro.api.basket.IBasket;
 import cn.jmicro.api.config.Config;
 import cn.jmicro.api.executor.ExecutorConfig;
 import cn.jmicro.api.executor.ExecutorFactory;
+import cn.jmicro.api.executor.ExecutorFactory.ExecutorMonitorServer;
 import cn.jmicro.api.monitor.genclient.ILogMonitorServer$JMAsyncClient;
 import cn.jmicro.api.objectfactory.AbstractClientServiceProxyHolder;
 import cn.jmicro.api.objectfactory.IObjectFactory;
@@ -44,7 +46,6 @@ import cn.jmicro.api.registry.ServiceItem;
 import cn.jmicro.api.registry.ServiceMethod;
 import cn.jmicro.api.service.ServiceLoader;
 import cn.jmicro.api.utils.TimeUtils;
-import cn.jmicro.common.CommonException;
 import cn.jmicro.common.Constants;
 import cn.jmicro.common.Utils;
 
@@ -55,7 +56,7 @@ import cn.jmicro.common.Utils;
  */
 @Component(level=3)
 public class LogMonitorClient {
-	
+
 	private final static Logger logger = LoggerFactory.getLogger(LogMonitorClient.class);
 	
 	private final Short[] TYPES  = {
@@ -69,6 +70,9 @@ public class LogMonitorClient {
 	@Reference(namespace="monitorServer",version="0.0.1",changeListener="enableWork")
 	private ILogMonitorServer$JMAsyncClient monitorServer;
 	
+    @Cfg(value="/LogMonitorClient/registMonitorThreadService", changeListener="registMonitorThreadStatusChange")
+    private boolean registMonitorThreadService = false;
+    
 	private boolean checkerWorking = false;
 	
 	@Inject(required=false)
@@ -85,6 +89,9 @@ public class LogMonitorClient {
 	@Inject
 	private MonitorAndService2TypeRelationshipManager mtManager;
 	
+	@Inject
+	private ServiceLoader sl;
+	
 	//private Map<String,Boolean> srvMethodMonitorEnable = new HashMap<>();
 	
 	private BasketFactory<MRpcLogItem> basketFactory = null;
@@ -96,6 +103,8 @@ public class LogMonitorClient {
 	private ExecutorService executor = null;
 	
 	private MonitorClientStatusAdapter statusMonitorAdapter;
+	
+	private ServiceItem monitorServiceItem;
 	
 	public void init() {
 		
@@ -130,9 +139,8 @@ public class LogMonitorClient {
 				Config.getInstanceName()+"_MonitorClientStatuCheck",group);
 		
 		if(sl.hashServer() && !Config.isClientOnly()) {
-			ServiceItem si = sl.createSrvItem(IMonitorAdapter.class, Config.getInstanceName()+"."+group, "0.0.1", IMonitorAdapter.class.getName());
+			monitorServiceItem = sl.createSrvItem(IMonitorAdapter.class, Config.getInstanceName()+"."+group, "0.0.1", IMonitorAdapter.class.getName());
 			of.regist("LogMonitorClientStatuCheckAdapter", statusMonitorAdapter);
-			sl.registService(si,statusMonitorAdapter);
 		}
 		
 		ExecutorConfig config = new ExecutorConfig();
@@ -144,6 +152,19 @@ public class LogMonitorClient {
 		enableWork(msPo,IServiceListener.ADD);
 		
 	}
+	
+	public void registMonitorThreadStatusChange() {
+		if(monitorServiceItem == null || !sl.hashServer() || Config.isClientOnly()) {
+			logger.warn("Monitor service not valid: hashServer:" + sl.hashServer()+", isClientOnly: "+ Config.isClientOnly());
+			return;
+		}
+		if(registMonitorThreadService) {
+			sl.registService(monitorServiceItem,statusMonitorAdapter);
+		} else {
+			sl.registService(monitorServiceItem,statusMonitorAdapter);
+		}
+	}
+
 	
 	public boolean submit2Cache(MRpcLogItem item) {
 

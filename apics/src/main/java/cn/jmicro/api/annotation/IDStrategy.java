@@ -31,6 +31,6 @@ import java.lang.annotation.Target;
 @Retention(RUNTIME)
 public @interface IDStrategy {
 
-	public int value() default 100;
+	public int value() default 1;
 	
 }

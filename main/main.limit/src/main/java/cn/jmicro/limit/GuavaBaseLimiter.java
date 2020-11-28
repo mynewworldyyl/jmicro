@@ -35,7 +35,7 @@ import cn.jmicro.common.Constants;
  * @author Yulei Ye
  * @date 2018年10月17日-下午5:44:19
  */
-@Component(value="gavaLimiter")
+//@Component(value="gavaLimiter")
 public class GuavaBaseLimiter  implements ILimiter{
 
 	private Map<String,RateLimiter> rateLimiter = new ConcurrentHashMap<>();

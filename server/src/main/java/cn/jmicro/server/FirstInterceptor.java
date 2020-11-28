@@ -36,6 +36,7 @@ import cn.jmicro.api.net.RpcResponse;
 import cn.jmicro.api.net.ServerError;
 import cn.jmicro.common.Constants;
 import cn.jmicro.common.util.StringUtils;
+
 /**
  * 
  * @author Yulei Ye
@@ -47,7 +48,7 @@ public class FirstInterceptor extends AbstractInterceptor implements IIntercepto
 
 	private final static Logger logger = LoggerFactory.getLogger(FirstInterceptor.class);
 	
-	@Cfg(value ="/defaultLimiterName", required=false, changeListener="limiterName")
+	//@Cfg(value ="/defaultLimiterName", required=false, changeListener="limiterName")
 	private String defaultLimiterName="limiterName";
 	
 	@Cfg("/respBufferSize")
@@ -83,7 +84,8 @@ public class FirstInterceptor extends AbstractInterceptor implements IIntercepto
 	
 	@Override
 	public IResponse intercept(IRequestHandler handler, IRequest req) throws RpcException {
-		if(limiter != null){
+		/*
+		 if(limiter != null){
 			boolean r = limiter.enter(req);
 			if(!r){
 				logger.warn("Limit exceep, forbidon this request");
@@ -91,13 +93,14 @@ public class FirstInterceptor extends AbstractInterceptor implements IIntercepto
 				return fastFail(req);
 			}
 		}
+		*/
 		
 		IResponse resp = handler.onRequest(req);
 		
 		//通知限速器结束一个请求
-		if(limiter != null){
+		/*if(limiter != null){
 			limiter.end(req);
-		}
+		}*/
 		
 		return resp;
 	}

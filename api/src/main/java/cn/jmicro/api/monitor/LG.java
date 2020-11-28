@@ -205,7 +205,7 @@ public class LG {
 	}
 	
 	public static void logWithNonRpcContext(byte level, String tag, String desc, Throwable exp) {
-		if(level == MC.LOG_NO || level < Config.getSystemLogLevel()) {
+		if(level == MC.LOG_NO || !isLoggable(level)) {
 			return;
 		}
 

@@ -35,10 +35,10 @@ import cn.jmicro.api.objectfactory.ProxyObject;
 import cn.jmicro.api.raft.IDataOperator;
 import cn.jmicro.api.registry.IRegistry;
 import cn.jmicro.api.registry.UniqueServiceMethodKey;
-import cn.jmicro.common.Base64Utils;
 import cn.jmicro.common.CommonException;
 import cn.jmicro.common.Constants;
 import cn.jmicro.common.Utils;
+import cn.jmicro.common.util.Base64Utils;
 import cn.jmicro.common.util.JsonUtils;
 import cn.jmicro.common.util.StringUtils;
 

@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package cn.jmicro.common;
+package cn.jmicro.common.util;
 
 import java.security.MessageDigest;
 

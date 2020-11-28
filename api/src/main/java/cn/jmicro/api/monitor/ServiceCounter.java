@@ -74,6 +74,11 @@ public class ServiceCounter implements IServiceCounter<Short>{
 	private ITickerAction clock = (key,att) -> {
 		for(Counter cnt : counters.values()) {
 			cnt.act();
+			cnt.getVal();
+			if(cnt.getCheckCurEqualZeroCnt() > 10*slotSize) {
+				//相当于旋转了10圈，结果值都是0，说明计数器长时间没有使用了，停止他，节省系统资源
+				 stop();
+			}
 		}
 	};
 	
@@ -143,7 +148,7 @@ public class ServiceCounter implements IServiceCounter<Short>{
 		}
 	}
 	
-	public void stop() {
+	private void stop() {
 		if(!staring) {
 			return;
 		}
@@ -151,7 +156,7 @@ public class ServiceCounter implements IServiceCounter<Short>{
 		staring = false;
 	}
 	
-	public void start() {
+	 private void start() {
 		if(staring) {
 			return;
 		}
@@ -460,6 +465,9 @@ public class ServiceCounter implements IServiceCounter<Short>{
 		
 		//private final String id;
 		
+		//最后一次检测等于0的时间，用于确定计数器是否长时间处于空闲状态
+		private int checkCurEqualZeroCnt = 0;
+		
 		private final Slot[] slots;
 		
 		private volatile int header = -1;
@@ -529,6 +537,12 @@ public class ServiceCounter implements IServiceCounter<Short>{
 			for(Slot s : slots) {
 				sum += s.getVal();
 			}
+			if(sum == 0) {
+				checkCurEqualZeroCnt++;
+			} else {
+				//有值，可以重新计数
+				checkCurEqualZeroCnt = 0;
+			}
 			return sum;
 		}
 		
@@ -594,7 +608,6 @@ public class ServiceCounter implements IServiceCounter<Short>{
 					locker.unlock();
 				}
 			}
-			
 		}
 
 		/**
@@ -614,6 +627,10 @@ public class ServiceCounter implements IServiceCounter<Short>{
 			this.slots[0].setTimeEnd(TimeUtils.getCurTime()+slotSizeInMilliseconds);
 		}
 		
+		public int getCheckCurEqualZeroCnt() {
+			return checkCurEqualZeroCnt;
+		}
+
 		public void resetTotal() {
 			total.set(0);
 		}

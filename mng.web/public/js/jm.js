@@ -585,8 +585,8 @@ jm.mng = {
             return jm.rpc.callRpcWithParams(this.sn, this.ns, this.v, 'bestHost', []);
         },
 
-        sn:'cn.jmicro.api.gateway.IHostNamedService',
-        ns : 'mng',
+        sn:'cn.jmicro.api.gateway.IBaseGatewayService',
+        ns : 'gateway',
         v:'0.0.1',
     },
 

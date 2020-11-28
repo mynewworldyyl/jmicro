@@ -301,8 +301,6 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
 		
         do {
         	
-        	
-        	
         	if(si == null) {
         		//SF.doSubmit(MonitorConstant.CLIENT_REQ_SERVICE_NOT_FOUND, req,null);
         		//服务未找到，或服务不存在
@@ -337,6 +335,9 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
         		msg.setDownSsl(sm.isDownSsl());
         		msg.setUpSsl(sm.isUpSsl());
         		msg.setPayload(pl);
+        		
+        		msg.setRpcMk(true/*sm.getMaxSpeed() > 0*/);
+        		msg.setSmKeyCode(sm.getKey().getSnvHash());
         		
         		if(sm.isUpSsl() || sm.isDownSsl()) {
         			this.secManager.signAndEncrypt(msg,si.getInsId());

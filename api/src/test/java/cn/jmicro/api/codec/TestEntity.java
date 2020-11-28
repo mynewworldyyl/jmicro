@@ -1,6 +1,6 @@
 package cn.jmicro.api.codec;
 
-public final class Entity {
+public final class TestEntity {
 
 	
 	public byte[] data = new byte[] {1,2,3};

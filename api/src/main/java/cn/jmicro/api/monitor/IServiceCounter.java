@@ -16,6 +16,8 @@
  */
 package cn.jmicro.api.monitor;
 
+import java.util.concurrent.TimeUnit;
+
 /**
  * 
  * @author Yulei Ye
@@ -23,9 +25,9 @@ package cn.jmicro.api.monitor;
  */
 public interface IServiceCounter<T> {
 
-	void stop();
+	//void stop();
 	
-	void start();
+	//void start();
 	/**
 	 *  取指定类型的时间窗口内的统计总数
 	 * @param type
@@ -54,4 +56,6 @@ public interface IServiceCounter<T> {
 	
 	boolean existType(Short type);
 	
+	double getQps(TimeUnit tounit, Short... types);
+
 }
