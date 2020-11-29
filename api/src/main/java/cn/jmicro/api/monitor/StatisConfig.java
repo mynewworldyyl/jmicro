@@ -101,7 +101,8 @@ public class StatisConfig {
 	private transient String toVer;
 	private transient String toMt;
 	
-	private transient Exp exp;
+	private transient Exp[] exp = new Exp[2];
+	private transient int expIndex;
 	
 	//private transient ServiceCounter sc;
 	
@@ -116,7 +117,7 @@ public class StatisConfig {
 	//服务方法，实例方法，服务，账户
 	private int byType;
 	
-	/*
+	/**
 	 * byType 下对应的key，如账户：test01, jmicro, *表示全部
 	 * byType == BY_TYPE_SERVICE  bykey = service key
 	 * byType == BY_TYPE_SERVICE_METHOD  bykey = service method key
@@ -125,7 +126,6 @@ public class StatisConfig {
 	 * byType == BY_TYPE_SERVICE_ACCOUNT  bykey = account name
 	 * byType == BY_TYPE_CLIENT_INSTANCE  bykey = jvm instance name
 	 * BY_TYPE_SERVICE_METHOD_ACCOUNT
-	 * 
 	 */
 	private String byKey;
 	
@@ -134,9 +134,10 @@ public class StatisConfig {
 	
 	private String expStr;
 	
+	private String expStr1;
+	
 	/*
 	 * qps, total,current total, total percent, current percent
-	 * 
 	 * @See MC.PREFIX_QPS
 	 * @See MC.PREFIX_TOTAL_PERCENT
 	 * @See MC.PREFIX_CUR_PERCENT
@@ -174,7 +175,6 @@ public class StatisConfig {
 	
 	/*
 	 * 根据toType类型决定其值格式，如存库，表示表名，转发RPC则是RPC方法的KEY，publish则是消息主题，控制台输出格式
-	 * 
 	 */
 	private String toParams;
 	
@@ -416,14 +416,6 @@ public class StatisConfig {
 		this.toMt = toMt;
 	}
 
-	public Exp getExp() {
-		return exp;
-	}
-
-	public void setExp(Exp exp) {
-		this.exp = exp;
-	}
-
 	public String getExpStr() {
 		return expStr;
 	}
@@ -462,6 +454,32 @@ public class StatisConfig {
 
 	public void setMinNotifyTime(int minNotifyTime) {
 		this.minNotifyTime = minNotifyTime;
+	}
+	
+	public void changeExpIndex() {
+		if(this.exp[1] != null) {
+			this.expIndex =  0 == this.expIndex ? 1 : 0;
+		}
+	}
+
+	public Exp getExp() {
+		return exp[this.expIndex];
+	}
+
+	public void setExp0(Exp exp0) {
+		exp[0] = exp0;
+	}
+	
+	public void setExp1(Exp exp1) {
+		exp[1] = exp1;
+	}
+
+	public String getExpStr1() {
+		return expStr1;
+	}
+
+	public void setExpStr1(String expStr1) {
+		this.expStr1 = expStr1;
 	}
 
 }

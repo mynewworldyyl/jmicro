@@ -13,7 +13,8 @@
                     <td >{{'TimeCnt' | i18n }}</td>-->
                     <td>{{'ToType' | i18n }}</td>
                     <td>{{'ToParams' | i18n }}</td>
-                    <td>{{'Expression' | i18n }}</td>
+                    <td>{{'Exp0' | i18n }}</td>
+                    <td>{{'Exp1' | i18n }}</td>
 
                     <td>{{'Enable' | i18n }}</td>
                     <!--<td>{{'Tag' | i18n }}</td>-->
@@ -31,6 +32,7 @@
                     <td>{{toTypes[c.toType]}}</td>
                     <td>{{c.toParams}}</td>
                     <td>{{c.expStr}}</td>
+                    <td>{{c.expStr1}}</td>
                     <td>{{c.enable}}</td>
                    <!-- <td>{{c.tag}}</td>-->
                    <!-- <td>{{c.createdBy}}</td>-->
@@ -214,9 +216,14 @@
                 <Option v-for="k in namedTypeNames" :value="k" :key="k">{{k | i18n}}</Option>
             </Select>
 
-            <Label  for="byExpression">{{'Expression' | i18n}}</Label>
-            <Input :disabled="readonly"  id="byExpression"  class='textarea'
+            <Label  for="exp0">{{'Exp0' | i18n}}</Label>
+            <Input :disabled="readonly" id="exp0" v-model="cfg.expStr"/>
+          <!--
+          <Input :disabled="readonly"  id="byExpression"  class='textarea'
                     :autosize="{maxRows:5,minRows: 2}" type="textarea" v-model="cfg.expStr"/>
+            -->
+            <Label for="exp1">{{'Exp1' | i18n}}</Label>
+            <Input id="exp1" v-model="cfg.expStr1"/>
 
         </Drawer>
 
@@ -669,7 +676,7 @@
                             self.logList.push(resp.data);
 
                         }).catch((err)=>{
-                        window.console.log(err);
+                            window.console.log(err);
                     });
                 } else {
                     window.jm.rpc.callRpcWithParams(sn,ns,v, 'update', [self.cfg])
@@ -678,10 +685,9 @@
                                 self.$Message.success(resp.msg);
                                 return;
                             }
-
                             this.addStatisConfigDialog = false;
                         }).catch((err)=>{
-                        window.console.log(err);
+                            window.console.log(err);
                     });
                 }
             },

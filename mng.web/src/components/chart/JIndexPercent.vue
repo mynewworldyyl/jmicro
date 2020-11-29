@@ -1,6 +1,6 @@
 <template>
   <div>
-      <Card style="width:350px;float:left;">
+      <Card class="StatisCard">
          <!-- <p slot="title">
               <Icon type="ios-film-outline"></Icon>
               {{titleName}}

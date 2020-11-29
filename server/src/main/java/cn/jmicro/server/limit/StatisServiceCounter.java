@@ -9,7 +9,7 @@ public class StatisServiceCounter implements IServiceCounter<Short>{
 	private String key;
 	private Short[] types;
 	
-	private double qps;
+	private double qps = 0D;
 	
 	public StatisServiceCounter() {}
 	

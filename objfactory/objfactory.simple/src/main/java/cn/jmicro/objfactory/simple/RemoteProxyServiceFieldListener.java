@@ -212,7 +212,7 @@ class RemoteProxyServiceFieldListener implements IServiceListener{
 				m =  cls.getMethod(cfg.changeListener(),new Class[0] );
 			} catch (NoSuchMethodException | SecurityException | IllegalArgumentException e1) {
 				//System.out.println(e1);
-				logger.error(po.getHolder().getItem().getKey().toKey(true, true, true),e);
+				logger.error(cls.getName()+" : "+po.getHolder().getItem().getKey().toKey(true, true, true),e);
 				LG.log(MC.LOG_ERROR, RemoteProxyServiceFieldListener.class,
 						 "Listener method ["+cfg.changeListener()+"] not found!",e);
 			}

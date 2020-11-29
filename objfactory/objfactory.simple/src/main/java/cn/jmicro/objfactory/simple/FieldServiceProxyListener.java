@@ -111,22 +111,22 @@ class FieldServiceProxyListener implements IServiceListener{
 				
 				AbstractClientServiceProxyHolder p = (AbstractClientServiceProxyHolder)o;
 				if(o == null) {
-					//代理还不存在，创建之
+					 //代理还不存在，创建之
 					 p = (AbstractClientServiceProxyHolder)this.rsm.getRefRemoteService(item, null,acs);
 					 if(p != null) {
-							SimpleObjectFactory.setObjectVal(srcObj, refField, p);
-							notifyChange(p,type);
+						SimpleObjectFactory.setObjectVal(srcObj, refField, p);
+						notifyChange(p,type);
+					 } else {
+						String msg = "Fail to create service "+item.getKey().toKey(true, true, true)+" for Class ["+srcObj.getClass().getName()+"] field ["+ refField.getName()+"] dependency ["+refField.getType().getName()+"]";
+						if(ref.required()) {
+							LG.log(MC.LOG_ERROR, FieldServiceProxyListener.class, msg);
+							logger.error(msg);
 						} else {
-							String msg = "Fail to create service "+item.getKey().toKey(true, true, true)+" for Class ["+srcObj.getClass().getName()+"] field ["+ refField.getName()+"] dependency ["+refField.getType().getName()+"]";
-							if(ref.required()) {
-								LG.log(MC.LOG_ERROR, FieldServiceProxyListener.class, msg);
-								logger.error(msg);
-							}else {
-								LG.log(MC.LOG_WARN, FieldServiceProxyListener.class, msg);
-								logger.warn(msg);
-							}
-							return;
+							LG.log(MC.LOG_WARN, FieldServiceProxyListener.class, msg);
+							logger.warn(msg);
 						}
+						return;
+					}
 				} else {
 					notifyChange(p,type);
 					p.getHolder().setItem(item);

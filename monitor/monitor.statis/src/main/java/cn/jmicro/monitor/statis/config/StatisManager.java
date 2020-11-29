@@ -349,6 +349,8 @@ public class StatisManager {
 		if(sc.getExp() != null && !ExpUtils.compute(sc.getExp(), indexes, Boolean.class)) {
 			return;
 		}
+		
+		sc.changeExpIndex();
 
 		StatisData sd = new StatisData();
 		sd.setStatis(indexes);

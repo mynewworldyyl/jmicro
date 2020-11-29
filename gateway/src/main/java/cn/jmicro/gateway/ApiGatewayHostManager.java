@@ -50,7 +50,7 @@ public class ApiGatewayHostManager {
 			seq.set(0);
 			return hosts.get(0);
 		} else {
-			int idx = seq.incrementAndGet()%hosts.size();
+			int idx = seq.incrementAndGet() % hosts.size();
 			return hosts.get(idx);
 		}
 	}

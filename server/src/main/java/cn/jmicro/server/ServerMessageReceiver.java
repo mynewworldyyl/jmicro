@@ -17,6 +17,7 @@
 package cn.jmicro.server;
 
 import java.nio.ByteBuffer;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentHashMap;
@@ -43,6 +44,7 @@ import cn.jmicro.api.monitor.LG;
 import cn.jmicro.api.monitor.LogMonitorClient;
 import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.monitor.MT;
+import cn.jmicro.api.monitor.StatisItem;
 import cn.jmicro.api.monitor.StatisMonitorClient;
 import cn.jmicro.api.net.DumpManager;
 import cn.jmicro.api.net.IMessageHandler;
@@ -64,7 +66,7 @@ import cn.jmicro.common.Constants;
  * @author Yulei Ye
  * @date 2018年10月9日-下午5:51:20
  */
-@Component(lazy=false,active=true,value="serverReceiver",side=Constants.SIDE_PROVIDER,level=1000)
+@Component(lazy=false, active=true, value="serverReceiver", side=Constants.SIDE_PROVIDER, level=1000)
 public class ServerMessageReceiver implements IMessageReceiver{
 
 	private static final Logger logger = LoggerFactory.getLogger(ServerMessageReceiver.class);
@@ -243,12 +245,14 @@ public class ServerMessageReceiver implements IMessageReceiver{
 			
 			JMicroContext.configProvider(s,msg);
 			
-			/*if(msg.isDebugMode()) {
+			/*
+			 if(msg.isDebugMode()) {
 				StringBuilder sb = JMicroContext.get().getDebugLog();
 				 sb.append(msg.getMethod())
 				.append(",MsgId:").append(msg.getId()).append(",reqID:").append(msg.getReqId())
 				.append(",linkId:").append(JMicroContext.lid());
-			}*/
+			}
+			*/
 			
 			if(LG.isLoggable(MC.LOG_DEBUG,msg.getLogLevel())) {
 				LG.log(MC.LOG_DEBUG, TAG,LG.messageLog("doReceive",msg));
@@ -329,6 +333,7 @@ public class ServerMessageReceiver implements IMessageReceiver{
 		private Message msg;
 		private IServerSession s;
 		//private TaskRunnable r;
+		private Map<Short,StatisItem> typeStatis = new HashMap<>();
 
         public JMicroTask() {}
 
@@ -346,6 +351,17 @@ public class ServerMessageReceiver implements IMessageReceiver{
 					*/
 				
 			}
+		}
+		
+		public StatisItem addType(Short type, long val) {
+			StatisItem si = typeStatis.get(type);
+			if(si == null) {
+				si = new StatisItem();
+				si.setType(type);
+				typeStatis.put(type, si);
+			}
+			si.add(val);
+			return si;
 		}
 
 		public Message getMsg() {

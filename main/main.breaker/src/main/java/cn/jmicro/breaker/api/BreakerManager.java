@@ -114,8 +114,7 @@ public class BreakerManager implements IStatisDataSubscribe{
 	
 	private Map<String,Integer> srvMt2ConfigIds = new HashMap<>();
 	
-	private StatisIndex[] fpStatisIndex = new StatisIndex[1];
-	private StatisIndex[] spStatisIndex = new StatisIndex[1];
+	private StatisIndex[] statisIndex = new StatisIndex[2];
 	
 	public void init(){}
 	
@@ -124,19 +123,19 @@ public class BreakerManager implements IStatisDataSubscribe{
 		doTestImpl = this::doTestService;
 		//breakerChecker = this::breakerChecker;
 		
-		fpStatisIndex[0] = new StatisIndex();
-		fpStatisIndex[0].setName("fp");
-		fpStatisIndex[0].setNums(REQ_FAIL_TYPES);
-		fpStatisIndex[0].setDens(REQ_TYPES);
-		fpStatisIndex[0].setDesc("rpc fail percent");
-		fpStatisIndex[0].setType(StatisConfig.PREFIX_CUR_PERCENT);
+		statisIndex[0] = new StatisIndex();
+		statisIndex[0].setName("fp");
+		statisIndex[0].setNums(REQ_FAIL_TYPES);
+		statisIndex[0].setDens(REQ_TYPES);
+		statisIndex[0].setDesc("rpc fail percent");
+		statisIndex[0].setType(StatisConfig.PREFIX_CUR_PERCENT);
 		
-		spStatisIndex[0] = new StatisIndex();
-		spStatisIndex[0].setName("sp");
-		spStatisIndex[0].setNums(REQ_SUCCESS_TYPES);
-		spStatisIndex[0].setDens(REQ_TYPES);
-		spStatisIndex[0].setDesc("rpc success percent");
-		spStatisIndex[0].setType(StatisConfig.PREFIX_CUR_PERCENT);
+		statisIndex[0] = new StatisIndex();
+		statisIndex[0].setName("sp");
+		statisIndex[0].setNums(REQ_SUCCESS_TYPES);
+		statisIndex[0].setDens(REQ_TYPES);
+		statisIndex[0].setDesc("rpc success percent");
+		statisIndex[0].setType(StatisConfig.PREFIX_CUR_PERCENT);
 		
 		srvManager.addListener((type,item)->{
 			if(type == IListener.ADD) {
@@ -194,11 +193,8 @@ public class BreakerManager implements IStatisDataSubscribe{
 		sc.setByType(StatisConfig.BY_TYPE_SERVICE_METHOD);
 		sc.setByKey(key);
 		
-		if(isFp) {
-			sc.setExpStr("fp>"+sm.getBreakingRule().getPercent());
-		}else {
-			sc.setExpStr("sp>"+sm.getBreakingRule().getPercent());
-		}
+		sc.setExpStr("fp>"+sm.getBreakingRule().getPercent());
+		sc.setExpStr1("sp>"+sm.getBreakingRule().getPercent());
 		
 		sc.setToType(StatisConfig.TO_TYPE_SERVICE_METHOD);
 		
@@ -215,7 +211,7 @@ public class BreakerManager implements IStatisDataSubscribe{
 		sc.setTimeCnt(1);
 		sc.setEnable(true);
 		
-		sc.setStatisIndexs(isFp?fpStatisIndex:spStatisIndex);
+		sc.setStatisIndexs(statisIndex);
 		
 		sc.setCreatedBy(Config.getClientId());
 		
@@ -278,11 +274,11 @@ public class BreakerManager implements IStatisDataSubscribe{
 				LG.breakService(MC.LOG_WARN,TAG, sm, "close breaker for: " + key + " sp: " + sp);
 				
 				//切换回计算失败率
-				if(!updateStaticIndex(vo.sd.getCid(),true,sm.getBreakingRule().getPercent())) {
+				/*if(!updateStaticIndex(vo.sd.getCid(),true,sm.getBreakingRule().getPercent())) {
 					String msg = "Fail to update statis config for "+key;;
 					LG.logWithNonRpcContext(MC.LOG_ERROR,TAG, msg,null);
 					logger.error(msg);
-				}
+				}*/
 			}
 		} else {
 			
@@ -295,13 +291,13 @@ public class BreakerManager implements IStatisDataSubscribe{
 			if(fp > sm.getBreakingRule().getPercent()) {
 				sm.setBreaking(true);
 				//切换到计算成功率
-				if(!updateStaticIndex(vo.sd.getCid(),false,sm.getBreakingRule().getPercent())) {
+				/*if(!updateStaticIndex(vo.sd.getCid(),false,sm.getBreakingRule().getPercent())) {
 					//切失败失败，不熔断服务
 					String msg = "Break down service "+key+", fail rate: " +fp;
 					LG.logWithNonRpcContext(MC.LOG_ERROR,TAG, msg,null);
 					logger.error(msg);
 					return;
-				}
+				}*/
 				
 				logger.warn("Break down service {}, fail rate {}",key,fp);
 				
@@ -328,7 +324,7 @@ public class BreakerManager implements IStatisDataSubscribe{
 		}
 	}
 
-	private boolean updateStaticIndex(Integer cid, boolean isFp,int percent) {
+	/*private boolean updateStaticIndex(Integer cid, boolean isFp,int percent) {
 		StatisConfig sc = mc.getConfig(cid);
 		if(sc != null) {
 			if(isFp) {
@@ -343,7 +339,7 @@ public class BreakerManager implements IStatisDataSubscribe{
 			return true;
 		}
 		return false;
-	}
+	}*/
 	
 	private void removeChecker(CheckerVo vo) {
 		long interval = TimeUtils.getMilliseconds(vo.sm.getBreakingRule().getCheckInterval(), vo.sm.getBaseTimeUnit());

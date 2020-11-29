@@ -22,6 +22,7 @@ import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.monitor.StatisConfig;
 import cn.jmicro.api.monitor.StatisData;
 import cn.jmicro.api.monitor.StatisIndex;
+import cn.jmicro.api.objectfactory.AbstractClientServiceProxyHolder;
 import cn.jmicro.api.raft.IDataOperator;
 import cn.jmicro.api.registry.ServiceItem;
 import cn.jmicro.api.registry.ServiceMethod;
@@ -156,7 +157,6 @@ public class LimitServer implements IStatisDataSubscribe {
 			return;
 		}
 		
-		
 		StatisConfig sc = new StatisConfig();
 		sc.setId(idGenerator.getIntId(StatisConfig.class));
 		
@@ -164,9 +164,15 @@ public class LimitServer implements IStatisDataSubscribe {
 		sc.setByKey(key);
 		
 		if(sm.getMaxSpeed() > 10) {
-			sc.setExpStr("qps>"+sm.getMaxSpeed()*0.8);//达到qps的80%通知目标
+			sc.setExpStr("qps>"+sm.getMaxSpeed());//达到qps的80%通知目标
 		} else {
 			sc.setExpStr("qps>"+sm.getMaxSpeed());
+		}
+		
+		if(sm.getMaxSpeed() > 10) {
+			sc.setExpStr1("qps<"+sm.getMaxSpeed());//达到qps的80%通知目标
+		} else {
+			sc.setExpStr1("qps<"+sm.getMaxSpeed());
 		}
 		
 		sc.setToType(StatisConfig.TO_TYPE_SERVICE_METHOD);
@@ -196,15 +202,15 @@ public class LimitServer implements IStatisDataSubscribe {
 		re.sm = sm;
 		re.smInsCount = 1;
 		this.regs.put(key, re);
-		
 	}
 
-	public void subscriberChange(ILimitData$JMAsyncClient srv,int type) {
+	public void subscriberChange(AbstractClientServiceProxyHolder srv,int type) {
 		ServiceItem si = srv.getItem();
 		String insName = si.getKey().getInstanceName();
 		if(type == IListener.ADD) {
+			ILimitData$JMAsyncClient djm = (ILimitData$JMAsyncClient)srv;
 			if(!this.ins2Limiters.containsKey(insName)) {
-				this.ins2Limiters.put(insName, srv);
+				this.ins2Limiters.put(insName, djm);
 			}
 		}else if(type == IListener.REMOVE) {
 			if(this.ins2Limiters.containsKey(insName)) {

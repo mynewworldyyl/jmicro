@@ -1,7 +1,7 @@
 <template>
   <div>
       <p stype="word-break: break-all;padding: 0px 10px;font-size: medium;">{{node.id}}</p>
-      <Card style="width:350px;float:left;">
+      <Card class="ItemCard" >
           <p slot="title">
               <Icon type="ios-film-outline"></Icon>
               Method Key
@@ -20,7 +20,7 @@
           </div>
       </Card>
 
-      <Card style="width:350px;float:left;">
+      <Card class="ItemCard">
           <p slot="title">
               <Icon type="ios-film-outline"></Icon>
               Base Parameters
@@ -46,7 +46,7 @@
           </div>
       </Card>
 
-      <Card style="width:350px;float:left">
+      <Card class="ItemCard">
           <p slot="title">
               <Icon type="ios-film-outline"></Icon>
               Monitor And Debug
@@ -79,7 +79,7 @@
           </div>
       </Card>
 
-      <Card style="width:350px; float:left;clear: left;">
+      <Card class="ItemCard">
           <p slot="title">
               <Icon type="ios-film-outline"></Icon>
               Timeout
@@ -103,7 +103,7 @@
           </div>
       </Card>
 
-      <Card style="width:350px;float:left;">
+      <Card class="ItemCard">
           <p slot="title">
               <Icon type="ios-film-outline"></Icon>
               Statis Timer
@@ -137,7 +137,7 @@
           </div>
       </Card>
 
-      <Card style="width:350px;float:left;">
+      <Card class="ItemCard">
           <p slot="title">
               <Icon type="ios-film-outline"></Icon>
               Break Rule
@@ -167,7 +167,7 @@
           </div>
       </Card>
 
-      <Card style="width:350px;float:left;">
+      <Card class="ItemCard">
           <p slot="title">
               <Icon type="ios-film-outline"></Icon>
               Testing
@@ -221,6 +221,7 @@ export default {
     },
 
     mounted() {
+        this.$el.style.minHeight=(document.body.clientHeight-67)+'px';
         let self = this;
         window.jm.rpc.addActListener(cid,()=>{
             self.isLogin = window.jm.rpc.isLogin();
@@ -311,9 +312,10 @@ export default {
 </script>
 
 <style scoped>
-  .JContent{
-      height:auto;
-      position: relative;
-  }
+
+    .ItemCard {
+        width:350px;
+        display:inline-block
+    }
 
 </style>

@@ -410,7 +410,6 @@ public class StatisConfigManager {
 					l.onEvent(IListener.ADD,sc);
 				}
 			}
-			
 		}
 	}
 	
@@ -594,15 +593,26 @@ public class StatisConfigManager {
 		if(!Utils.isEmpty(lw.getExpStr())) {
 			List<String> suffixExp = ExpUtils.toSuffix(lw.getExpStr());
 			if(!ExpUtils.isValid(suffixExp)) {
-				logger.error("Invalid exp: " + lw.getId() + "---> " + lw.getExpStr());
+				logger.error("Invalid exp0: " + lw.getId() + "---> " + lw.getExpStr());
 				return;
 			}
 			Exp exp = new Exp();
 			exp.setSuffix(suffixExp);
 			exp.setOriEx(lw.getExpStr());
-			lw.setExp(exp);
+			lw.setExp0(exp);
 		}
 		
+		if(!Utils.isEmpty(lw.getExpStr1())) {
+			List<String> suffixExp = ExpUtils.toSuffix(lw.getExpStr1());
+			if(!ExpUtils.isValid(suffixExp)) {
+				logger.error("Invalid exp1: " + lw.getId() + "---> " + lw.getExpStr1());
+				return;
+			}
+			Exp exp = new Exp();
+			exp.setSuffix(suffixExp);
+			exp.setOriEx(lw.getExpStr());
+			lw.setExp1(exp);
+		}
 		lw.setCounterTimeout(lw.getCounterTimeout()*1000);
 	}
 

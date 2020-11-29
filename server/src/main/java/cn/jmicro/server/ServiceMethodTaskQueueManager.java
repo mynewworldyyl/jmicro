@@ -13,7 +13,6 @@ import java.util.concurrent.TimeUnit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import cn.jmicro.api.IListener;
 import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Inject;
 import cn.jmicro.api.annotation.Service;
@@ -21,7 +20,6 @@ import cn.jmicro.api.limit.ILimitData;
 import cn.jmicro.api.monitor.IServiceCounter;
 import cn.jmicro.api.monitor.ServiceCounter;
 import cn.jmicro.api.monitor.StatisData;
-import cn.jmicro.api.registry.ServiceItem;
 import cn.jmicro.api.registry.ServiceMethod;
 import cn.jmicro.api.service.ServiceManager;
 import cn.jmicro.common.CommonException;
@@ -37,7 +35,7 @@ import cn.jmicro.server.limit.StatisServiceCounter;
  */
 @Component
 @Service(namespace="serviceMethodTaskQueue", version="0.0.1", monitorEnable=0, maxSpeed=0,debugMode=0,
-baseTimeUnit=Constants.TIME_SECONDS, external=false)
+baseTimeUnit=Constants.TIME_SECONDS, external=false, showFront=false)
 public class ServiceMethodTaskQueueManager implements ILimitData{
 
 	private static final Logger logger = LoggerFactory.getLogger(ServiceMethodTaskQueueManager.class);
@@ -57,7 +55,8 @@ public class ServiceMethodTaskQueueManager implements ILimitData{
 	private ServiceManager srvManager;
 	
 	public void ready() {
-		srvManager.addListener((type,item)->{
+		/*
+		 srvManager.addListener((type,item)->{
 			if(type == IListener.ADD) {
 				serviceAdd(item);
 			}else if(type == IListener.REMOVE) {
@@ -66,7 +65,7 @@ public class ServiceMethodTaskQueueManager implements ILimitData{
 				serviceDataChange(item);
 			}
 		});
-		
+		*/
 		new Thread(this::run).start();
 	}
 	
@@ -112,7 +111,8 @@ public class ServiceMethodTaskQueueManager implements ILimitData{
 				}
 				
 				Iterator<Integer> ite = keys.iterator();
-				boolean  overStatus = false;
+				//如果一个循环没有数据发送，则说明队列数据为空，可以睡眠更长时间，节约CPU
+				boolean  sleepLong = true;
 				
 				while(ite.hasNext()) {
 					Integer k = ite.next();
@@ -123,34 +123,27 @@ public class ServiceMethodTaskQueueManager implements ILimitData{
 						continue;
 					}
 
-					boolean cansubmit = true;
-					while(cansubmit) {
+					while(tq.canSubmit()) {
 						JMicroTask t = tq.pop();
 						if (t != null) {
 							tq.addCounter(1);
 							defaultExecutor.execute(t);
-							cansubmit = tq.canSubmit();
+							sleepLong = false;
 						} else {
 							break;
 						}
 					}
-					
-					if(cansubmit) {
-						//只要有一个队列在限流状态，则需要快速进入下一次循环
-						overStatus = true;
-					}
-					
 				}
 
-				if(overStatus) {
-					//在限流状态，需要更快地检测并发送数据
-					synchronized (syncObject) {
-						syncObject.wait(waitTimeout);
-					}
-				} else {
+				if(sleepLong) {
 					//队列没数据，可以睡更长时间，等待有数据的通知
 					synchronized (syncObject) {
 						syncObject.wait(emptyDataWaitTimeout);
+					}
+				} else {
+					//在限流状态，需要更快地检测并发送数据
+					synchronized (syncObject) {
+						syncObject.wait(waitTimeout);
 					}
 				}
 			} catch (Throwable e) {
@@ -166,31 +159,13 @@ public class ServiceMethodTaskQueueManager implements ILimitData{
 	public void onData(StatisData sc) {
 		Integer smCode = HashUtils.FNVHash1(sc.getKey());
 		ServiceMethodTaskQueue q = taskQueue.get(smCode);
-		//q.maxQps = (Double)sc.getStatis().get("qps");
 		if(q.ss!= null) {
-			q.ss.setQps((Double)sc.getStatis().get("qps"));
+			Double qps = (Double)sc.getStatis().get("qps");
+			q.ss.setQps(qps);
+			logger.info(sc.getKey() + " qps: " + qps);
 		}
 	}
 
-	private void serviceDataChange(ServiceItem item) {
-		/*for(ServiceMethod sm : item.getMethods()) {
-			String smKey = sm.getKey().toKey(false, false, false);
-			
-		}*/
-	}
-
-	private void serviceRemove(ServiceItem item) {
-		/*for(ServiceMethod sm : item.getMethods()) {
-			
-		}*/
-	}
-
-	private void serviceAdd(ServiceItem item) {
-		/*for(ServiceMethod sm : item.getMethods()) {
-			
-		}*/
-	}
-	
 	private class ServiceMethodTaskQueue {
 		private final Short TYPE = 1;
 		private Queue<JMicroTask> queue = new ConcurrentLinkedQueue<>();
@@ -213,7 +188,7 @@ public class ServiceMethodTaskQueueManager implements ILimitData{
 			if(1 == sm.getLimitType()) {
 				counter = new ServiceCounter(sm.getKey().toKey(false, false, false),
 						new Short[] {TYPE},6000L,100L,TimeUnit.MILLISECONDS);
-			}else {
+			} else {
 				counter = ss = new StatisServiceCounter(sm.getKey().toKey(false, false, false),
 						new Short[] {TYPE});
 			}
@@ -221,8 +196,9 @@ public class ServiceMethodTaskQueueManager implements ILimitData{
 		
 		public void offer(JMicroTask t) {
 			if(queue.size() <= queueSize) {
+				
 				queue.offer(t);
-			}else {
+			} else {
 				throw new CommonException("Queue is full with: " + MAX_QUEUE_SIZE);
 			}
 		}

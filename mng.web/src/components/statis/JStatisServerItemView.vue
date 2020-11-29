@@ -39,9 +39,10 @@
 </script>
 
 <style scoped>
-  .JContent{
-    height:auto;
-    position: relative;
+
+  .StatisCard{
+    width:350px;
+    display:inline-block
   }
 
 

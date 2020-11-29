@@ -463,12 +463,11 @@ public class MonitorStatisConfigManager {
 		if(!Utils.isEmpty(lw.getNamedType())) {
 			String p = Config.NamedTypesDir+"/"+lw.getNamedType();
 			set = this.getTypeByKey(p);
-		}else {
+		} else {
 			set = new HashSet<>();
 		}
 		
 		lw.setTypes(set);
-		
 		for(StatisIndex si : lw.getStatisIndexs()) {
 			set.addAll(Arrays.asList(si.getNums()));
 			if(si.getDens() != null && si.getDens().length > 0) {
@@ -479,13 +478,26 @@ public class MonitorStatisConfigManager {
 		if(!Utils.isEmpty(lw.getExpStr())) {
 			List<String> suffixExp = ExpUtils.toSuffix(lw.getExpStr());
 			if(!ExpUtils.isValid(suffixExp)) {
-				logger.error("Invalid exp: " + lw.getId() + "---> " + lw.getExpStr());
+				logger.error("Invalid exp0: " + lw.getId() + "---> " + lw.getExpStr());
 				return;
 			}
 			Exp exp = new Exp();
 			exp.setSuffix(suffixExp);
 			exp.setOriEx(lw.getExpStr());
-			lw.setExp(exp);
+			lw.setExp0(exp);
 		}
+		
+		if(!Utils.isEmpty(lw.getExpStr1())) {
+			List<String> suffixExp = ExpUtils.toSuffix(lw.getExpStr1());
+			if(!ExpUtils.isValid(suffixExp)) {
+				logger.error("Invalid exp1: " + lw.getId() + "---> " + lw.getExpStr1());
+				return;
+			}
+			Exp exp = new Exp();
+			exp.setSuffix(suffixExp);
+			exp.setOriEx(lw.getExpStr());
+			lw.setExp1(exp);
+		}
+		
 	}
 }

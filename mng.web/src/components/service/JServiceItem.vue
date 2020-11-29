@@ -2,7 +2,7 @@
   <div class="JServiceItem">
       <p stype="word-break: break-all;padding: 0px 10px;font-size: medium;">{{node.id}}</p>
 
-      <Card style="width:350px;float:left;">
+      <Card class="ItemCard">
           <p slot="title">
               <Icon type="ios-film-outline"></Icon>
               Service Coordinate
@@ -25,7 +25,7 @@
           </div>
       </Card>
 
-      <Card style="width:350px;float:left;">
+      <Card  class="ItemCard">
           <p slot="title">
               <Icon type="ios-film-outline"></Icon>
               Server
@@ -60,7 +60,7 @@
           </div>
       </Card>
 
-      <Card style="width:350px;float:left;clear:left">
+      <Card  class="ItemCard">
           <p slot="title">
               <Icon type="ios-film-outline"></Icon>
               Monitor And Debug
@@ -89,7 +89,7 @@
           </div>
       </Card>
 
-      <Card style="width:350px;float:left;">
+      <Card  class="ItemCard">
           <p slot="title">
               <Icon type="ios-film-outline"></Icon>
               Timeout
@@ -110,7 +110,7 @@
           </div>
       </Card>
 
-      <Card style="width:350px;float:left;">
+      <Card  class="ItemCard">
           <p slot="title">
               <Icon type="ios-film-outline"></Icon>
               Statis Timer
@@ -200,6 +200,11 @@ export default {
       word-break: break-all;
       padding: 0px 10px;
       font-size: medium;
+  }
+
+  .ItemCard {
+      width:350px;
+      display:inline-block
   }
 
 </style>

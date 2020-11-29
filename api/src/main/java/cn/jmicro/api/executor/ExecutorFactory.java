@@ -61,28 +61,18 @@ public class ExecutorFactory {
 	}
 	
 	private void doCheck(String key,Object cxt) {
-		while(true) {
-			try {
-				
-				if(!waitingRegist.isEmpty() && sl.hashServer()) {
-					Iterator<ExecutorConfig> ecs = this.waitingRegist.iterator();
-					while(ecs.hasNext()) {
-						ExecutorConfig cfg = ecs.next();
-						ecs.remove();
-						this.createExecutorService(cfg);
-					}
-				}
-				
-				for(ExecutorMonitorServer je: emses.values()) {
-					je.check();
-				}
-				
-				Thread.sleep(10000);
-				
-			} catch (Throwable e) {
-				
+		if(!waitingRegist.isEmpty() && sl.hashServer()) {
+			Iterator<ExecutorConfig> ecs = this.waitingRegist.iterator();
+			while(ecs.hasNext()) {
+				ExecutorConfig cfg = ecs.next();
+				ecs.remove();
+				this.createExecutorService(cfg);
 			}
-		}	
+		}
+		
+		for(ExecutorMonitorServer je: emses.values()) {
+			je.check();
+		}
 	}
 
 	public ExecutorService createExecutor(ExecutorConfig cfg) {

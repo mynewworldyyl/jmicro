@@ -46,7 +46,7 @@ public class SimpleRpcImpl implements ISimpleRpc {
 			timeout=5000,
 			retryInterval=1000,
 			debugMode=1,
-			maxSpeed=100,
+			maxSpeed=10,
 			limitType = Constants.LIMIT_TYPE_SS,
 			baseTimeUnit=Constants.TIME_MILLISECONDS,
 			upSsl=true,encType=0,downSsl=false

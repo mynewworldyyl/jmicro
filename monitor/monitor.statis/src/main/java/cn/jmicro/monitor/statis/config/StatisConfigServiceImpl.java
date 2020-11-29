@@ -139,6 +139,7 @@ public class StatisConfigServiceImpl implements IStatisConfigService {
 		lw.setCounterTimeout(cfg.getCounterTimeout());
 		lw.setNamedType(cfg.getNamedType());
 		lw.setMinNotifyTime(cfg.getMinNotifyTime());
+		lw.setExpStr1(cfg.getExpStr1());
 
 		op.setData(path, JsonUtils.getIns().toJson(lw));
 		r.setData(true);
