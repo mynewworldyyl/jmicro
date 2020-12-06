@@ -1682,6 +1682,8 @@ jm.rpc.Constants = {
 
     FLAG_RPC_MCODE  :  1 << 26,
 
+    FLAG_SECTET_VERSION :  1 << 25,
+
 }
 
 jm.rpc.PSData = function(topic,data) {
@@ -1881,6 +1883,14 @@ jm.rpc.Message.prototype.setRpcMk = function(f)  {
     this.flag  = this.set(f,this.flag ,jm.rpc.Constants.FLAG_RPC_MCODE);
 }
 
+jm.rpc.Message.prototype.isSecretVersion = function() {
+    return this.is(this.flag, jm.rpc.Constants.FLAG_SECTET_VERSION);
+}
+
+jm.rpc.Message.prototype.setSecretVersion = function(f)  {
+    this.flag  = this.set(f,this.flag ,jm.rpc.Constants.FLAG_SECTET_VERSION);
+}
+
 //public boolean
 jm.rpc.Message.prototype.isLoggable = function()  {
     return this.is(this.flag,jm.rpc.Constants.FLAG_LOGGABLE);
@@ -2010,7 +2020,7 @@ jm.rpc.Message.prototype.getUpProtocol=function() {
     return this.is(this.flag,jm.rpc.Constants.FLAG_UP_PROTOCOL) ? 1:0;
 }
 
-jm.rpc.Message.prototype.setUpProtocol=function(protocol) {
+jm.rpc.Message.prototype.setUpProtocol = function(protocol) {
     this.flag  = this.set(protocol == jm.rpc.Constants.PROTOCOL_JSON ,this.flag , jm.rpc.Constants.FLAG_UP_PROTOCOL);
 }
 
@@ -2898,6 +2908,7 @@ jm.eu = {
     wpwd:null,
     pwd:null,
     lastUpdatePwdTime : new Date().getTime(),
+    secretVersion:false,
 
     init:function() {
         if(this.pwdTable) {
@@ -2946,15 +2957,20 @@ jm.eu = {
         if(!this.pwd || new Date().getTime() - this.lastUpdatePwdTime > 1000*60*5 ) {
             //首次进来或超过5分钟更新一次密码
             //生成密码，方式和IV相同，但是功能不一样，参考前面关于密码表的说明
+            if(this.pwd) {
+                this.secretVersion = !this.secretVersion;
+            }
+            msg.setSecretVersion(this.secretVersion);
             this.pwd = jm.eu.genStrPwd(16);
             //告诉服务端，有AES密码更新
             msg.setSec(true);
             //对AES密码做RSA加密
             msg.sec = this.encryptRas(this.pwd);
-        }else if(new Date().getTime() - this.lastUpdatePwdTime < 5*1000) {
+        }else if(new Date().getTime() - this.lastUpdatePwdTime < 2*1000) {
             //前5秒内的包都带上密钥，避免消息发送乱序情况下服务器解密错误
             msg.setSec(true);
             msg.sec = this.encryptRas(this.pwd);
+            msg.setSecretVersion(this.secretVersion);
         }
 
         //let ab = new ArrayBuffer(msg.payload);

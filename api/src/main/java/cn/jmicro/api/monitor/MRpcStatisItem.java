@@ -20,8 +20,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 import cn.jmicro.api.annotation.SO;
-import cn.jmicro.api.registry.ServiceMethod;
 import cn.jmicro.api.registry.UniqueServiceMethodKey;
+import cn.jmicro.api.utils.TimeUtils;
 
 /**
  * @author yeyulei
@@ -43,50 +43,17 @@ public final class MRpcStatisItem{
 	
 	private String instanceName = null;
 	
-	private long inputTime;
-	private long costTime;
+	private long submitTime;//数据从客户端开始提交服务器时间 选项数据等待提交时间 = submitTime - 每个选项创建时间
+	private long costTime;//RPC消耗时间  curTime-createTime
 	
 	private Map<Short,StatisItem> typeStatis = new HashMap<>();
 	
-	private transient long createTime;
-	//private transient ServiceMethod sm = null;
+	private transient long createTime = TimeUtils.getCurTime();
 	
+	//private transient ServiceMethod sm = null;
 	private transient UniqueServiceMethodKey smKey = null;
 	
 	public MRpcStatisItem() {}
-	
-	public MRpcStatisItem copy() {
-		MRpcStatisItem mi = new MRpcStatisItem();
-		mi.instanceName = this.instanceName;
-		mi.localHost = this.localHost;
-		mi.localPort = this.localPort;
-		mi.remoteHost = this.remoteHost;
-		mi.remotePort = this.remotePort;
-		//mi.sm = this.sm;
-		mi.inputTime = this.inputTime;
-		mi.costTime = this.costTime;
-		mi.clientId = this.clientId;
-		mi.actName = this.actName;
-		mi.key = this.key;
-		mi.createTime = this.createTime;
-		return mi;
-	}
-	
-	public void reset() {
-		localHost = null;
-		localPort = null;
-		remoteHost = null;
-		remotePort = null;
-		instanceName = null;
-		inputTime = 0;
-		this.clientId = -1;
-		this.actName = null;
-		this.key = null;
-		//this.sm = null;
-		this.smKey = null;
-		this.costTime = 0;
-		this.createTime = 0;
-	}
 	
 	public Map<Short,StatisItem> getOneItems(Short[] types) {
 		if(types == null || types.length == 0) {
@@ -180,12 +147,12 @@ public final class MRpcStatisItem{
 		this.instanceName = instanceName;
 	}
 
-	public long getInputTime() {
-		return inputTime;
+	public long getSubmitTime() {
+		return submitTime;
 	}
 
-	public void setInputTime(long inputTime) {
-		this.inputTime = inputTime;
+	public void setSubmitTime(long submitTime) {
+		this.submitTime = submitTime;
 	}
 
 	public long getCostTime() {

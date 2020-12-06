@@ -107,7 +107,7 @@ public class ApiRequestMessageHandler implements IMessageHandler{
 			if(StringUtils.isNotEmpty(lk)) {
 				ai = this.accountManager.getAccount(lk);
 				if(ai == null) {
-					ServerError se = new ServerError(ServerError.SE_INVLID_LOGIN_KEY,"Invalid login key!");
+					ServerError se = new ServerError(MC.MT_INVALID_LOGIN_INFO,"Invalid login key!");
 					resp.setResult(se);
 					resp.setSuccess(false);
 					msg.setPayload(ICodecFactory.encode(codecFactory, resp, msg.getUpProtocol()));

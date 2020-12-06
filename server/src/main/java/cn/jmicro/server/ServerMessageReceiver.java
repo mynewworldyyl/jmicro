@@ -160,8 +160,10 @@ public class ServerMessageReceiver implements IMessageReceiver{
 	}
 	
 	@Override
-	//@Suspendable
 	public void receive(ISession s, Message msg) {
+		
+		//确保服务器对称密钥一定是最新的
+		secretMng.updateSecret(msg);
 		
 		if(openDebug) {
 			//SF.getIns().doMessageLog(MonitorConstant.DEBUG, TAG, msg,"receive");
@@ -299,7 +301,13 @@ public class ServerMessageReceiver implements IMessageReceiver{
 		MT.rpcEvent(MC.MT_SERVER_ERROR);
 		
 		if(msg.isNeedResponse()) {
-			RpcResponse resp = new RpcResponse(msg.getReqId(),new ServerError(0,e.getMessage()));
+			RpcResponse resp = null;
+			if(e instanceof CommonException) {
+				CommonException ce = (CommonException)e;
+				resp = new RpcResponse(msg.getReqId(),new ServerError(ce.getKey(),e.getMessage()));
+			} else {
+				resp = new RpcResponse(msg.getReqId(),new ServerError(0,e.getMessage()));
+			}
 			resp.setSuccess(false);
 			msg.setPayload(ICodecFactory.encode(codecFactory,resp,msg.getUpProtocol()));
 			msg.setType((byte)(msg.getType()+1));
@@ -324,6 +332,7 @@ public class ServerMessageReceiver implements IMessageReceiver{
 		if(this.cacheTasks.size() < maxCacheTaskSize) {
 			t.setMsg(null);
 			t.setS(null);
+			t.typeStatis.clear();
 			this.cacheTasks.offer(t);
 		}
 	}

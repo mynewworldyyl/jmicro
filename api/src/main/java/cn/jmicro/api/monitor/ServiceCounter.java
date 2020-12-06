@@ -16,10 +16,7 @@
  */
 package cn.jmicro.api.monitor;
 
-import java.util.Arrays;
-import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
@@ -58,7 +55,7 @@ public class ServiceCounter implements IServiceCounter<Short>{
 	
 	private long timeWindowInMilliseconds;
 	
-	private Set<Short> supportTypes = new HashSet<>();
+	//private Set<Short> supportTypes = new HashSet<>();
 	
 	private long timeWindow;
 	
@@ -132,7 +129,7 @@ public class ServiceCounter implements IServiceCounter<Short>{
 		}
 		
 		if(types != null && types.length > 0) {
-			supportTypes.addAll(Arrays.asList(types));
+			//supportTypes.addAll(Arrays.asList(types));
 			for(Short type : types) {
 				addCounter(type);
 			}
@@ -203,7 +200,7 @@ public class ServiceCounter implements IServiceCounter<Short>{
 		Counter c = getCounter(type,true);
 		if(c != null) {
 			this.setLastActiveTime(TimeUtils.getCurTime());
-			c.add(val);
+			c.add(val,0);
 			return true;
 		}
 		//失败
@@ -211,14 +208,14 @@ public class ServiceCounter implements IServiceCounter<Short>{
 	}
 	
 	@Override
-	public boolean add(Short type, long val,long actTime) {
+	public boolean add(Short type, long val,long timeDiff) {
 		if(!staring) {
 			this.start();
 		}
 		Counter c = getCounter(type,true);
 		if(c != null) {
-			this.setLastActiveTime(actTime);
-			c.add(val);
+			this.setLastActiveTime(TimeUtils.getCurTime());
+			c.add(val,timeDiff);
 			return true;
 		}
 		//失败
@@ -265,7 +262,7 @@ public class ServiceCounter implements IServiceCounter<Short>{
 		} else {
 			double sum = this.getByTypes(types);
 			long time = TimeUtils.getTime(this.timeWindow, this.unit, tounit);
-			return ((double)sum)/time;
+			return sum/time;
 		}
 		
 		return -1;
@@ -279,7 +276,7 @@ public class ServiceCounter implements IServiceCounter<Short>{
 		Counter c = getCounter(type,true);
 		if(c != null) {
 			this.setLastActiveTime(TimeUtils.getCurTime());
-			c.add(1);
+			c.add(1,0);
 			return true;
 		}
 		return false;
@@ -293,7 +290,7 @@ public class ServiceCounter implements IServiceCounter<Short>{
 		Counter c = getCounter(type,true);
 		if(c != null) {
 			this.setLastActiveTime(actTime);
-			c.add(1);
+			c.add(1,0);
 			return true;
 		}
 		return false;
@@ -331,12 +328,12 @@ public class ServiceCounter implements IServiceCounter<Short>{
 		Counter cnt = new Counter(type/*,timeWindowInMilliseconds,slotSizeInMilliseconds*/);
 		//TimerTicker.getTimer(timers, slotSizeInMilliseconds).addListener(key, cnt,null,true);
 		counters.put(type, cnt);
-		supportTypes.add(type);
+		//supportTypes.add(type);
 		return true;
 	}
 	
 	public boolean existType(Short type) {
-		return supportTypes.contains(type);
+		return counters.contains(type);
 	}
 	
 /*	@Override
@@ -476,6 +473,9 @@ public class ServiceCounter implements IServiceCounter<Short>{
 		
 		private volatile AtomicLong total = new  AtomicLong(0);
 		
+		//每个槽位的最大值，如果当前槽位值大于此值，则强制进入下一个槽位
+		//private long maxSlotVal = Integer.MAX_VALUE;
+		
 		/**
 		 * 
 		 * @param timeWindow 统计时间总长值，单位是毫秒
@@ -492,23 +492,20 @@ public class ServiceCounter implements IServiceCounter<Short>{
 			//计算槽位个数
 			//this.slotLen = (int)(timeWindow / slotSizeInMilliseconds);
 			this.slots = new Slot[slotSize];
-			
 			this.header = 0;
 			
-			long curTime = TimeUtils.getCurTime();
+			//long curTime = TimeUtils.getCurTime();
 			//槽位 有效时间=slotSizeInMilliseconds ~ (timeStart + slotSizeInMilliseconds)
 			//如果当前时间在有效时间内，则定义为当前槽位
 			for(int i = 0; i < slotSize; i++) {
 				this.slots[i] = new Slot(0,0);
 			}
 			
-			this.slots[0].setTimeEnd(curTime+slotSizeInMilliseconds);
+			//this.slots[0].setTimeEnd(curTime+slotSizeInMilliseconds);
 			if(openDebug) {
-				logger.info("Create Counter type:{}, timeWindow:{},slotSizeInMilliseconds:{},slotLen:{},curTime:{}",
-						MC.MONITOR_VAL_2_KEY.get(type),
-						timeWindowInMilliseconds,slotSizeInMilliseconds,slotSize,curTime);
+				logger.info("Create Counter type:{}, timeWindow:{},slotSizeInMilliseconds:{},slotLen:{}",
+						MC.MONITOR_VAL_2_KEY.get(type),timeWindowInMilliseconds,slotSizeInMilliseconds,slotSize);
 			}
-			
 			
 		}
 		
@@ -551,16 +548,17 @@ public class ServiceCounter implements IServiceCounter<Short>{
 		 */
 		public void increment() {
 			total.addAndGet(1);
-			currentSlot().increment();
+			currentSlot(0).increment();
 		}
 		
 		/**
 		 * 增加指定值
 		 * @param v
 		 */
-		public void add(long v) {
+		public void add(long v,long timeDiff) {
 			total.addAndGet(v);
-			currentSlot().add(v);
+			Slot s= currentSlot(timeDiff);
+			s.add(v);
 		}
 		
 		/**
@@ -569,11 +567,31 @@ public class ServiceCounter implements IServiceCounter<Short>{
 		 * 如果当前时间在有效时间内，则定义为当前槽位
 		 * @return
 		 */
-		private Slot currentSlot() {
+		private Slot currentSlot(long timeDiff) {
 			boolean isLock = false;
 			try {
-				if((isLock = locker.tryLock(300, TimeUnit.MILLISECONDS))) {
-					return slots[header];
+				if(isLock = locker.tryLock(300, TimeUnit.MILLISECONDS)) {
+					if(timeDiff <= 0) {
+						return slots[header];
+					} else {
+						//还原真实数据产生时间
+						//计算时间差内等价多少个槽位时间间隔
+						int diffIndex = (int)(timeDiff/slotSizeInMilliseconds);
+						
+						//如果超过一个时间周期，则计算在当前周期内，确保数据不丢失
+						diffIndex = diffIndex % slotSize;
+						
+						if(diffIndex == 0) {
+							return slots[header];
+						}
+						
+						//回退idx个
+						int idx = (slotSize - diffIndex + header) % slotSize;
+						if(type == MC.MT_SERVER_LIMIT_MESSAGE_POP) {
+							logger.debug("Cur slot Index: " + idx);
+						}
+						return slots[idx];
+					}
 				}
 			} catch (InterruptedException e) {
 				logger.error("act",e);
@@ -582,6 +600,7 @@ public class ServiceCounter implements IServiceCounter<Short>{
 					locker.unlock();
 				}
 			}
+			//取锁失败时返回原来的槽位
 			logger.warn("数据统计误差范围内：{}",this.type);
 			return slots[header];
 		}
@@ -590,20 +609,21 @@ public class ServiceCounter implements IServiceCounter<Short>{
 		 * 任意时刻Tx，计算槽位Sx是否有效，假定Sxv表示任意槽位有效时间最大值
 	     * Tx－Sxv ＞　timewindow 即表示 Sx为无效槽位，将其值设置为０即可
 		 */
-		
 		public void act(/*String key,Object attachement*/) {
 			boolean isLock = false;
 			try {
 				if((isLock = locker.tryLock(100, TimeUnit.MILLISECONDS))) {
-					Slot preSlot = this.slots[header];
-					header = (header+1) % slotSize;
+					//Slot preSlot = this.slots[this.header];
 					//当前槽位
-					this.slots[header].setTimeEnd(preSlot.getTimeEnd() + slotSizeInMilliseconds);
-					this.slots[header].reset();
+					int h = (this.header+1) % slotSize;
+					//this.slots[this.header].setTimeEnd(preSlot.getTimeEnd() + slotSizeInMilliseconds);
+					this.slots[h].reset();
+					this.header = h;
 				}
+				//maxSlotVal = (this.getVal()/slotSize)*5;
 			} catch (InterruptedException e) {
 				logger.error("act",e);
-			}finally {
+			} finally {
 				if(isLock) {
 					locker.unlock();
 				}
@@ -624,7 +644,7 @@ public class ServiceCounter implements IServiceCounter<Short>{
 			}
 			this.header = 0;
 			total.set(0);
-			this.slots[0].setTimeEnd(TimeUtils.getCurTime()+slotSizeInMilliseconds);
+			//this.slots[0].setTimeEnd(TimeUtils.getCurTime()+slotSizeInMilliseconds);
 		}
 		
 		public int getCheckCurEqualZeroCnt() {
@@ -638,12 +658,12 @@ public class ServiceCounter implements IServiceCounter<Short>{
 	
 	static class Slot {
 		
-		private volatile long timeEnd;
+		//private volatile long timeEnd;
 		
 		private volatile AtomicLong val;
 		
 		public Slot(long timeEnd,long v) {
-			this.timeEnd = timeEnd;
+			//this.timeEnd = timeEnd;
 			this.val = new AtomicLong(v);
 		}
 		
@@ -651,13 +671,13 @@ public class ServiceCounter implements IServiceCounter<Short>{
 			return val.get();
 		}
 
-		public long getTimeEnd() {
+		/*public long getTimeEnd() {
 			return timeEnd;
 		}
 
 		public void setTimeEnd(long timeEnd) {
 			this.timeEnd = timeEnd;
-		}
+		}*/
 
 		public void reset() {
 			this.val.set(0);

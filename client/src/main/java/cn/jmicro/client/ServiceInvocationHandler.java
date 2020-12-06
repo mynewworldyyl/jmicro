@@ -127,7 +127,7 @@ public class ServiceInvocationHandler implements InvocationHandler{
 				throw ex;
 			} else {
 				logger.error("ServiceInvocationHandler error:",ex);
-				throw new RpcException(req,ex);
+				throw new RpcException(req,ex,MC.MT_REQ_ERROR);
 			}
 		} finally {
 			if(!JMicroContext.get().isAsync()) {

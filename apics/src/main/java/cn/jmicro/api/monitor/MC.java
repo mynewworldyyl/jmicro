@@ -325,6 +325,18 @@ public final class MC {
 	@MCA("服务端IO写数据字节数（下行）")
 	public static final short MT_SERVER_JRPC_RESPONSE_WRITE =  0x0058;
 	
+	@MCA("服务端限速队例消息入队")
+	public static final short MT_SERVER_LIMIT_MESSAGE_PUSH =  0x0059;
+	
+	@MCA("服务端限速队例消息拒绝")
+	public static final short MT_SERVER_LIMIT_MESSAGE_REJECT =  0x005A;
+	
+	@MCA("服务端限速队例消息出队列")
+	public static final short MT_SERVER_LIMIT_MESSAGE_POP =  0x005B;
+	
+	@MCA("AES解密错误，需要重密钥")
+	public static final short MT_AES_DECRYPT_ERROR =  0x005C;
+	
 	public static final short KEEP_MAX_VAL = 0x0FFF;
 	
 	//每秒响应数定义为 QPS？ 

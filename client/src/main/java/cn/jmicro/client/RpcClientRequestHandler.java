@@ -195,7 +195,7 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
 	         }
 		} catch (SecurityException | IllegalArgumentException  e) {
 			LG.log(MC.LOG_ERROR, TAG, e.getMessage(), e);
-			throw new RpcException(request,e);
+			throw new RpcException(request,e,MC.MT_REQ_ERROR);
 		} finally {
 			//无论成功或失败都有一个结束事件
 			MT.rpcEvent(MC.MT_REQ_END);
@@ -232,7 +232,7 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
 				logger.error(msg);
 				LG.log(MC.LOG_ERROR, TAG,msg);
 				MT.rpcEvent(MC.MT_SERVICE_ITEM_NOT_FOUND);
-				throw new RpcException(req,msg);
+				throw new RpcException(req,msg,MC.MT_SERVICE_ITEM_NOT_FOUND);
 			}
 			
 			ServiceMethod callback = si.getMethod(ac.getMethod(), ac.getParamStr());
@@ -242,7 +242,7 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
 				//SF.doRequestLog(MC.MT_PLATFORM_LOG,MC.LOG_ERROR, TAG, null, msg);
 				LG.log(MC.LOG_ERROR, TAG, msg);
 				MT.rpcEvent(MC.MT_SERVICE_ITEM_NOT_FOUND);
-				throw new RpcException(req,msg);
+				throw new RpcException(req,msg,MC.MT_SERVICE_ITEM_NOT_FOUND);
 			}
 			
 			data.setCallback(callback.getKey().toKey(false, false, false));
@@ -277,7 +277,6 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
         ServerError se = null;
         		
         JMicroContext cxt = JMicroContext.get();
-        
        
         ServiceMethod sm = cxt.getParam(Constants.SERVICE_METHOD_KEY, null);
         
@@ -308,7 +307,7 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
         		//SF.serviceNotFound(TAG.getSimpleName(), );
         		LG.log(MC.LOG_ERROR, TAG, errMsg);
         		MT.rpcEvent(MC.MT_SERVICE_ITEM_NOT_FOUND);
-    			throw new RpcException(req,errMsg);
+    			throw new RpcException(req,errMsg,MC.MT_SERVICE_ITEM_NOT_FOUND);
     		}
         	
         	req.setImpl(si.getCode()+"");
@@ -328,7 +327,7 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
         			String m = "Packet too max " + pl.limit() + " limit size: " + sm.getMaxPacketSize();
         			//m = LG.reqMessage(m, req);
         			LG.log(MC.LOG_ERROR, TAG, m);
-        			throw new RpcException(req,m);
+        			throw new RpcException(req,m,MC.MT_PACKET_TOO_MAX);
         		}
         		
         		msg.setEncType(sm.isRsa());
@@ -402,7 +401,7 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
 	    			if(!cxt.exists(Constants.CONTEXT_CALLBACK_CLIENT)) {
 	    				//只有需要响应的请求才需要等待结果
 	    				if(sm.getTimeout() <= 0) {
-	    					timeouts.put(req.getRequestId(), curTime + 30000L);
+	    					timeouts.put(req.getRequestId(), TimeUtils.getCurTime() + 30000L);
 	    				}
 		    			waitForResponse.put(req.getRequestId(), (message)->{
 		    				mh.msg = message;
@@ -415,7 +414,7 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
 	    				if(sm.getTimeout() > 0) {
 	    					timeouts.put(req.getRequestId(), curTime + sm.getTimeout()*3);
 	    				} else {
-	    					timeouts.put(req.getRequestId(), curTime + 30000L);
+	    					timeouts.put(req.getRequestId(), curTime + 60000L);
 	    				}
 	    				
 	    				IClientAsyncCallback cb = cxt.getParam(Constants.CONTEXT_CALLBACK_CLIENT, null);
@@ -439,6 +438,9 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
 		    					
 		    					MT.rpcEvent(MC.MT_REQ_SUCCESS);
 		    					
+		    					if(!resp.isSuccess()) {
+		    						processResponseFail(resp,respMsg,req,sm,si);
+		    					}
 		    					cb.onResponse(resp);
 		    					
 	    					}catch( Throwable e) {
@@ -559,6 +561,10 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
 						RpcResponse.class,msg.getUpProtocol());
 				resp.setMsg(respMsg);
 				
+				if(!resp.isSuccess()) {
+					processResponseFail(resp,respMsg,req,sm,si);
+				}
+				
 				if(sm.getLogLevel() != MC.LOG_NO) {
 					MRpcLogItem mi = cxt.getMRpcLogItem();
 					mi.setResp(resp);
@@ -646,7 +652,7 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
 				 waitForResponse.remove(req.getRequestId());
 				 LG.log(MC.LOG_ERROR, TAG,errMsg);
 				 MT.rpcEvent(MC.MT_CLIENT_RESPONSE_SERVER_ERROR);
-				 throw new RpcException(req,errMsg);
+				 throw new RpcException(req,errMsg,se.getErrorCode());
 			} else if(!resp.isSuccess()){
 				 //服务器正常逻辑处理错误，不需要重试，直接失败
 				 String errMsg = "服务器响应错误reqID:"+req.getRequestId()+",linkId:"+msg.getLinkId()+ resp.getResult()+",Service: "+sm.getKey().toKey(true, true, true);
@@ -655,7 +661,7 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
 				 LG.log(MC.LOG_ERROR, TAG,errMsg);
 				 MT.rpcEvent(MC.MT_REQ_ERROR);
 				 waitForResponse.remove(req.getRequestId());
-			     throw new RpcException(req,resp);
+			     throw new RpcException(req,resp,MC.MT_REQ_ERROR);
 			}
     		//waitForResponse.remove(req.getRequestId());
     		//代码不应该走到这里，如果走到这里，说明系统还有问题
@@ -663,7 +669,7 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
     		LG.log(MC.LOG_ERROR, TAG,errMsg);
     		MT.rpcEvent(MC.MT_REQ_ERROR);
     		logger.error(errMsg);
-    		throw new CommonException(errMsg);
+    		throw new CommonException(MC.MT_REQ_ERROR,errMsg);
     		
         }while((retryCnt--) > 0);
         String errMsg ="未知错误2,reqID:"+req.getRequestId()+",linkId:"+msg.getLinkId()+",Service: "+sm.getKey().toKey(true, true, true); 
@@ -671,10 +677,19 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
         LG.log(MC.LOG_ERROR, TAG,errMsg);
         MT.rpcEvent(MC.MT_REQ_ERROR);
         
-        throw new CommonException("Service:"+req.getServiceName()+", Method: "+req.getMethod()+", Params: "+req.getArgs());
+        throw new CommonException(MC.MT_REQ_ERROR,"Service:"+req.getServiceName()+", Method: "+req.getMethod()+", Params: "+req.getArgs());
+	}
+	
+	private void processResponseFail(RpcResponse resp, Message respMsg, IRequest req, ServiceMethod sm,ServiceItem si) {
+		if(resp.getResult() instanceof ServerError) {
+			ServerError se = (ServerError)resp.getResult();
+			if(se.getErrorCode() == MC.MT_AES_DECRYPT_ERROR) {
+				this.secManager.resetLocalSecret(respMsg.getType(),si.getInsId());
+			}
+		}
+		
 	}
 
-	
 	private ServiceItem getServiceItem(AsyncConfig ac) {
 		
 		Set<ServiceItem> items = this.srvManager.getServiceItems(ac.getServiceName(), ac.getNamespace(), ac.getVersion());
@@ -726,7 +741,7 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
 		}
 		Map<Long,Long> ts = new HashMap<>();
 		synchronized(timeouts) {
-			ts.putAll(ts);
+			ts.putAll(timeouts);
 		}
 		long cutTime = TimeUtils.getCurTime();
 		for(Long k : ts.keySet()) {

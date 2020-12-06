@@ -69,10 +69,10 @@
 			<artifactId>choreography.api</artifactId>
 		</dependency>
 		
-		<dependency>
+		<!-- <dependency>
 			<groupId>cn.jmicro</groupId>
 			<artifactId>mng</artifactId>
-		</dependency>
+		</dependency> -->
 		
 	</dependencies>
 

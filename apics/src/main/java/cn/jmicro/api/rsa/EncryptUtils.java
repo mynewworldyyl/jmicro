@@ -39,6 +39,7 @@ import javax.crypto.spec.PBEKeySpec;
 import javax.crypto.spec.PBEParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
+import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.utils.TimeUtils;
 import cn.jmicro.common.CommonException;
 import cn.jmicro.common.Constants;
@@ -251,7 +252,7 @@ public class EncryptUtils {
 			return cipher.doFinal(data,pos,len);
 		} catch (InvalidKeyException | NoSuchAlgorithmException | NoSuchPaddingException | IllegalBlockSizeException
 				| BadPaddingException | InvalidAlgorithmParameterException e) {
-			throw new CommonException("decryptAes error",e);
+			throw new CommonException(MC.MT_AES_DECRYPT_ERROR,"decryptAes error",e);
 		}
     }  
 	

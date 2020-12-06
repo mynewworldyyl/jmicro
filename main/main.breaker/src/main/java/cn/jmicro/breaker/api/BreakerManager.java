@@ -130,12 +130,12 @@ public class BreakerManager implements IStatisDataSubscribe{
 		statisIndex[0].setDesc("rpc fail percent");
 		statisIndex[0].setType(StatisConfig.PREFIX_CUR_PERCENT);
 		
-		statisIndex[0] = new StatisIndex();
-		statisIndex[0].setName("sp");
-		statisIndex[0].setNums(REQ_SUCCESS_TYPES);
-		statisIndex[0].setDens(REQ_TYPES);
-		statisIndex[0].setDesc("rpc success percent");
-		statisIndex[0].setType(StatisConfig.PREFIX_CUR_PERCENT);
+		statisIndex[1] = new StatisIndex();
+		statisIndex[1].setName("sp");
+		statisIndex[1].setNums(REQ_SUCCESS_TYPES);
+		statisIndex[1].setDens(REQ_TYPES);
+		statisIndex[1].setDesc("rpc success percent");
+		statisIndex[1].setType(StatisConfig.PREFIX_CUR_PERCENT);
 		
 		srvManager.addListener((type,item)->{
 			if(type == IListener.ADD) {
@@ -193,8 +193,8 @@ public class BreakerManager implements IStatisDataSubscribe{
 		sc.setByType(StatisConfig.BY_TYPE_SERVICE_METHOD);
 		sc.setByKey(key);
 		
-		sc.setExpStr("fp>"+sm.getBreakingRule().getPercent());
-		sc.setExpStr1("sp>"+sm.getBreakingRule().getPercent());
+		sc.setExpStr("fp>" + sm.getBreakingRule().getPercent());
+		sc.setExpStr1("sp>" + sm.getBreakingRule().getPercent());
 		
 		sc.setToType(StatisConfig.TO_TYPE_SERVICE_METHOD);
 		

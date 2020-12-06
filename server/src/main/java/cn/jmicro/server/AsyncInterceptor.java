@@ -27,6 +27,7 @@ import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Inject;
 import cn.jmicro.api.annotation.Interceptor;
 import cn.jmicro.api.exception.RpcException;
+import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.net.AbstractInterceptor;
 import cn.jmicro.api.net.IInterceptor;
 import cn.jmicro.api.net.IRequest;
@@ -70,7 +71,7 @@ public class AsyncInterceptor extends AbstractInterceptor implements IIntercepto
 		}
 
 		ServerError se = (ServerError)resp.getResult();
-		if(se.getErrorCode() != ServerError.SE_LIMITER) {
+		if(se.getErrorCode() != MC.MT_SERVICE_SPEED_LIMIT) {
 			//非限速返回
 			return resp;
 		}
@@ -120,7 +121,7 @@ public class AsyncInterceptor extends AbstractInterceptor implements IIntercepto
 		
 		if(id >= 0) {
 			//告诉客户端,调用自动转异步调用了,你自己确定怎么办吧
-			se.setErrorCode(ServerError.SE_LIMITER_ENTER_ASYNC);
+			se.setErrorCode(MC.MT_SERVICE_SPEED_LIMIT);
 		}
 		
 		return resp;

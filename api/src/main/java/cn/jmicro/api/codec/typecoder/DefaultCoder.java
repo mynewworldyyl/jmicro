@@ -391,7 +391,7 @@ public class DefaultCoder implements TypeCoder<Object> {
 					throw new CommonException("Invalid Map type coder: " + coder.type().getName());
 				}
 			}  else {
-				throw new CommonException("001","not support prefix type:" 
+				throw new CommonException(0,"not support prefix type:" 
 			+ prefixCodeType+", fieldDeclareType:"+(fieldDeclareType==null?"":fieldDeclareType.getName()));
 			}
 		} catch (IOException e) {

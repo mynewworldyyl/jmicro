@@ -273,7 +273,7 @@ public class LogMonitorClient {
 				long beginTime = TimeUtils.getCurTime();
 				
 				if(this.statusMonitorAdapter.isMonitoralbe()) {
-					this.statusMonitorAdapter.getServiceCounter().add(MC.Ms_CheckLoopCnt, 1,beginTime);
+					this.statusMonitorAdapter.getServiceCounter().add(MC.Ms_CheckLoopCnt, 1);
 				}
 				
 				IBasket<MRpcLogItem> readBasket = this.basketFactory.borrowReadSlot();
@@ -399,7 +399,7 @@ public class LogMonitorClient {
 					//System.out.println("submit: " +mrs.length);
 					
 					if(this.statusMonitorAdapter.isMonitoralbe()) {
-						this.statusMonitorAdapter.getServiceCounter().add(MC.Ms_CheckerSubmitItemCnt, items.size(),beginTime);
+						this.statusMonitorAdapter.getServiceCounter().add(MC.Ms_CheckerSubmitItemCnt, items.size());
 					}
 					
 					this.executor.submit(new Worker(mrs));

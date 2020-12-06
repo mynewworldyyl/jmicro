@@ -110,6 +110,8 @@ public final class Message {
 	
 	public static final int FLAG_RPC_MCODE = 1 << 26;
 	
+	public static final int FLAG_SECTET_VERSION = 1 << 25;
+	
 	//0B00111000 5---3
 	//public static final short FLAG_LEVEL = 0X38;
 	
@@ -161,8 +163,9 @@ public final class Message {
 	* 28       SE        密码
 	* 27       WE        从Web浏览器过来的请求
 	* 26       MK        RPC方法编码
+	* 25       SV        对称密钥版本
 	* 
-	     ENT  SI  SE WE  MK                                                  
+	     ENT  SI  SE WE  MK  SV                                                
 	 |    |   |   |  |   |   |  |  |   |    |    |    |   |    |   |
      31  30  29  28  27  26  25 24 23  22   21   20   19  18   17  16
      
@@ -519,6 +522,14 @@ public final class Message {
 	
 	public void setEncType(boolean f) {
 		flag = set(f,flag,FLAG_ENC_TYPE);
+	}
+	
+	public boolean isSecretVersion() {
+		return is(flag,FLAG_SECTET_VERSION);
+	}
+	
+	public void setSecretVersion(boolean f) {
+		flag = set(f,flag,FLAG_SECTET_VERSION);
 	}
 	
 	public boolean isSign() {

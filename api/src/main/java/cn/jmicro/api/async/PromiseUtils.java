@@ -2,7 +2,6 @@ package cn.jmicro.api.async;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -10,8 +9,11 @@ import org.slf4j.LoggerFactory;
 import cn.jmicro.api.JMicroContext;
 import cn.jmicro.api.internal.async.IClientAsyncCallback;
 import cn.jmicro.api.internal.async.PromiseImpl;
+import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.net.IResponse;
 import cn.jmicro.api.net.ServerError;
+import cn.jmicro.api.registry.ServiceMethod;
+import cn.jmicro.common.CommonException;
 import cn.jmicro.common.Constants;
 
 public class PromiseUtils {
@@ -19,10 +21,18 @@ public class PromiseUtils {
 	private static final Logger logger = LoggerFactory.getLogger(PromiseUtils.class);
 	
 	public static <R> IPromise<R> callService(Object remoteServiceProxy, String remoteMethod,Object contextObj, Object... args) {
-		PromiseImpl<R> p = new PromiseImpl<R>();
-		p.setContext(contextObj);
 		
 		final JMicroContext cxt = JMicroContext.get();
+		
+		PromiseImpl<R> p = new PromiseImpl<R>();
+		
+		ServiceMethod remoteMethd = cxt.getParam(Constants.SERVICE_METHOD_KEY, null);
+		if(remoteMethd != null) {
+			p.setTimeout(remoteMethd.getTimeout()*3);
+		}
+	
+		p.setContext(contextObj);
+		
 		IClientAsyncCallback cb = new IClientAsyncCallback() {
 			@SuppressWarnings("unchecked")
 			@Override
@@ -62,7 +72,6 @@ public class PromiseUtils {
 		}*/
 		
 		try {
-			
 			Method m = null;
 			for(Method sm : remoteServiceProxy.getClass().getMethods()){
 				if(sm.getName().equals(remoteMethod)) {
@@ -72,9 +81,17 @@ public class PromiseUtils {
 			}
 			//Method m = remoteServiceProxy.getClass().getMethod(remoteMethod, types);
 			m.invoke(remoteServiceProxy, args);
-		} catch (SecurityException | IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
-			logger.error("",e);
-		}finally {
+		} catch (InvocationTargetException e) {
+			if(e.getTargetException() instanceof CommonException) {
+				throw (CommonException)e.getTargetException();
+			}else {
+				throw new CommonException(MC.MT_SERVICE_ERROR,remoteServiceProxy.getClass().getName()+"."+remoteMethod,e);
+			}
+		}catch (SecurityException | IllegalAccessException | IllegalArgumentException e) {
+			throw new CommonException(MC.MT_SERVICE_ERROR,remoteServiceProxy.getClass().getName()+"."+remoteMethod,e);
+		}
+		
+		finally {
 			cxt.removeParam(Constants.CONTEXT_CALLBACK_CLIENT);
 		}
 		

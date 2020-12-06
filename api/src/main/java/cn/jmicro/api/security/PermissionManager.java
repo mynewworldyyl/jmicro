@@ -93,14 +93,14 @@ public class PermissionManager {
 	
 	public ServerError permissionCheck(ActInfo ai,ServiceMethod sm,int srcClientId ) {
 		if(ai == null && sm.isNeedLogin()){
-			ServerError se = new ServerError(ServerError.SE_NOT_LOGIN,
+			ServerError se = new ServerError(MC.MT_INVALID_LOGIN_INFO,
 					 "Have to login for invoking to " + sm.getKey().toKey(false, false, false));
 			LG.log(MC.LOG_ERROR, TAG,se.toString());
 			MT.rpcEvent(MC.MT_INVALID_LOGIN_INFO);
 			logger.warn(se.toString());
 			return se;
 		} else if(sm.isPerType() && (ai == null || ai.getPers() == null || !ai.getPers().contains(sm.getKey().toKey(false, false, false)))) {
-			ServerError se = new ServerError(ServerError.SE_NO_PERMISSION,
+			ServerError se = new ServerError(MC.MT_ACT_PERMISSION_REJECT,
 					(ai!= null?ai.getActName():" Not login") + " no permission for this operation ");
 			LG.log(MC.LOG_ERROR, TAG,se.toString()+",SM: " + sm.getKey().toKey(true, true, true));
 			MT.rpcEvent(MC.MT_ACT_PERMISSION_REJECT);

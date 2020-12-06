@@ -34,11 +34,11 @@ public class SessionCloseException extends CommonException {
 		super(cause,exp);
 	}
 	
-	public SessionCloseException(String key,String cause){
+	public SessionCloseException(int key,String cause){
 		this(key,cause,null);
 	}
 	
-	public SessionCloseException(String key,String cause,Throwable exp){
+	public SessionCloseException(int key,String cause,Throwable exp){
 		super(key,cause,exp);
 	}
 

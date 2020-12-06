@@ -94,7 +94,7 @@ public class FirstClientInterceptor extends AbstractInterceptor implements IInte
 		return resp;
 	}
 
-	public static IResponse doFastFail(IRequest req,Throwable e) {
+	public static IResponse doFastFail(IRequest req,Throwable e,int code) {
 		//ServiceItem si = JMicroContext.get().getParam(Constants.SERVICE_ITEM_KEY, null);
 		
 		ServiceMethod sm = JMicroContext.get().getParam(Constants.SERVICE_METHOD_KEY, null);
@@ -103,7 +103,7 @@ public class FirstClientInterceptor extends AbstractInterceptor implements IInte
 			if(e instanceof RpcException) {
 				throw (RpcException)e;
 			}else {
-				throw new RpcException(req,e);
+				throw new RpcException(req,e,code);
 			}
 		}
 		
@@ -124,7 +124,7 @@ public class FirstClientInterceptor extends AbstractInterceptor implements IInte
 			if(e instanceof RpcException) {
 				throw (RpcException)e;
 			}else {
-				throw new RpcException(req,e);
+				throw new RpcException(req,e,code);
 			}
 		}
 		return resp;

@@ -63,7 +63,7 @@ public class SecretManager {
 
 	private Map<Integer, String> processId2InstanceNames = new HashMap<>();
 
-	private final Map<Integer, SecKey> insId2AesKey = new HashMap<>();
+	private final Map<Integer,SecKey> insId2AesKey = new HashMap<>();
 	
 	//API网关没有insId,通过使用ip+":"+port作为Key取密码
 	private final Map<Integer, SecKey> gatewayClientAesKey = new HashMap<>();
@@ -99,57 +99,28 @@ public class SecretManager {
 			if ((msg.isUpSsl() || msg.isDownSsl()) && !msg.isRsaEnc()) {
 				//对称解密
 				SecKey k = null;
-				if (msg.isSec()) {
-					if (msg.getSec() == null || msg.getSec().length == 0) {
-						throw new CommonException("Invalid sec data" + msg.getInsId());
-					}
-					
-					byte[] secrect = null;
-					if(msg.isFromWeb()) {
-						//secrect = EncryptUtils.pkcs1unpad2(msg.getSec());
-						//对密钥做utf8解码为字符串，结果是密码密文的base64编码
-						String b64Str = new String(msg.getSec(),Constants.CHARSET);
-						//对密文做base64解码，得到密文的字节数组，
-						byte[] sec = Base64.getDecoder().decode(b64Str);
-						//解密密文，得到字节码形式的AES密码明文，字节码是密码的UTF8编码后的字节数组
-						secrect = EncryptUtils.decryptRsa(myPriKey,sec, 0, sec.length);
-					/*	String srcPwd = new String(secrect,Constants.CHARSET);
-						logger.info(srcPwd);*/
-					} else {
-						secrect = EncryptUtils.decryptRsa(myPriKey, msg.getSec(), 0, msg.getSec().length);
-					}
-					
-					SecretKey originalKey = new SecretKeySpec(secrect, 0, secrect.length, EncryptUtils.KEY_AES);
-					
-					String insName = null;
-					
-					if(msg.getType() != Constants.MSG_TYPE_REQ_RAW) {
-						insName = this.getInstanceName(msg.getInsId());
-						if (Utils.isEmpty(insName)) {
-							throw new CommonException("Instane name not found: " + msg.getInsId());
-						}
-						k = new SecKey(insName, msg.getInsId(), originalKey);
-						insId2AesKey.put(msg.getInsId(), k);
-					} else {
-						k = new SecKey("",msg.getInsId(), originalKey);
-						gatewayClientAesKey.put(msg.getInsId(), k);
-					}
-					
-					msg.setSec(false);
-					msg.setSec(null);
+
+				if(msg.getType() == Constants.MSG_TYPE_REQ_RAW) {
+					k = gatewayClientAesKey.get(msg.getInsId());
+				} else {
+					k = insId2AesKey.get(msg.getInsId());
 				}
-				
-				if(k == null) {
-					if(msg.getType() == Constants.MSG_TYPE_REQ_RAW) {
-						k = gatewayClientAesKey.get(msg.getInsId());
-					} else {
-						k = insId2AesKey.get(msg.getInsId());
-					}
+				if( k != null && !k.reponseSucc) {
+					k.reponseSucc = true;
 				}
 
 				if (k == null) {
 					throw new CommonException("Secret not found for: " + msg.getInsId());
 				}
+				
+				if(msg.isSecretVersion() != k.secretVersion) {
+					if(k.preKey == null) {
+						throw new CommonException("Secret version not valid " + msg.getInsId());
+					} else {
+						k = k.preKey;//使用前一个版本的密钥
+					}
+				}
+				
 				ByteBuffer bb = (ByteBuffer) msg.getPayload();
 				//byte[] d = EncryptUtils.decryptPBE(bb.array(), 0, bb.limit(), msg.getSalt(), k.key);
 				//msg.getSalt() 是客户端传过来的IV值的utf8编码后的数组，
@@ -201,6 +172,78 @@ public class SecretManager {
 
 		return pri.getInstanceName();
 	}
+	
+	/**
+	 * 任何消息只要带密钥，都确保调用此方法以更新密钥
+	 * @param msg
+	 */
+	public void updateSecret(Message msg) {
+		if(!msg.isSec()) {
+			return;
+		}
+		
+		if(msg.getSec() == null || msg.getSec().length == 0) {
+			throw new CommonException("Invalid sec data" + msg.getInsId());
+		}
+		
+		SecKey ek = null;
+		if(msg.getType() != Constants.MSG_TYPE_REQ_RAW) {
+			ek = insId2AesKey.get(msg.getInsId());
+		} else {
+			ek = gatewayClientAesKey.get(msg.getInsId());//保存前一个密钥，确保延时数据包可以正常解密
+		}
+		
+		/*if(ek != null && ek.secretVersion == msg.isSecretVersion()) {
+			//版本相同，无需更新
+			return ;
+		}*/
+		
+		byte[] secrect = null;
+		if(msg.isFromWeb()) {
+			//secrect = EncryptUtils.pkcs1unpad2(msg.getSec());
+			//对密钥做utf8解码为字符串，结果是密码密文的base64编码
+			try {
+				String b64Str = new String(msg.getSec(),Constants.CHARSET);
+				//对密文做base64解码，得到密文的字节数组，
+				byte[] sec = Base64.getDecoder().decode(b64Str);
+				//解密密文，得到字节码形式的AES密码明文，字节码是密码的UTF8编码后的字节数组
+				secrect = EncryptUtils.decryptRsa(myPriKey,sec, 0, sec.length);
+				/*String srcPwd = new String(secrect,Constants.CHARSET);
+				logger.info(srcPwd);*/
+			} catch (UnsupportedEncodingException e) {
+				logger.error("",e);
+			}
+		} else {
+			secrect = EncryptUtils.decryptRsa(myPriKey, msg.getSec(), 0, msg.getSec().length);
+		}
+		
+		if(secrect == null || secrect.length == 0) {
+			throw new CommonException("Decrypt secret error: " + msg.getInsId());
+		}
+		
+		SecKey k = null;
+		SecretKey originalKey = new SecretKeySpec(secrect, 0, secrect.length, EncryptUtils.KEY_AES);
+		String insName = null;
+		if(msg.getType() != Constants.MSG_TYPE_REQ_RAW) {
+			insName = this.getInstanceName(msg.getInsId());
+			if (Utils.isEmpty(insName)) {
+				throw new CommonException("Instane name not found: " + msg.getInsId());
+			}
+			k = new SecKey(insName, msg.getInsId(), originalKey,msg.isSecretVersion());
+			k.reponseSucc = true;
+			k.preKey = ek;//保存前一个密钥，确保延时数据包可以正常解密
+			insId2AesKey.put(msg.getInsId(), k);
+		} else {
+			k = new SecKey("",msg.getInsId(), originalKey,msg.isSecretVersion());
+			k.reponseSucc = true;
+			k.preKey = ek;//保存前一个密钥，确保延时数据包可以正常解密
+			gatewayClientAesKey.put(msg.getInsId(), k);
+		}
+		
+		msg.setSec(false);
+		msg.setSec(null);
+	
+	}
 
 	public void signAndEncrypt(Message msg, int insId) {
 
@@ -237,7 +280,7 @@ public class SecretManager {
 		}
 
 		if (!msg.isRsaEnc() && (msg.isUpSsl() || msg.isDownSsl())) {
-			// 对称加密
+			//对称加密
 			SecKey sec = null;
 			if(msg.getType() == Constants.MSG_TYPE_RRESP_RAW) {
 				sec = gatewayClientAesKey.get(insId);
@@ -245,26 +288,30 @@ public class SecretManager {
 				sec = insId2AesKey.get(insId);
 			}
 			
-			if(sec == null || TimeUtils.getCurTime() - sec.createTime > 300000) {
-				//3分钟更新一次密钥
+			if(sec == null || TimeUtils.getCurTime() - sec.createTime > 900000) {
+				//9分钟更新一次密钥
+				SecKey preKey = sec;
 				SecretKey sk = EncryptUtils.generatorSecretKey(EncryptUtils.KEY_AES);
-				
 				if(msg.getType() == Constants.MSG_TYPE_RRESP_RAW) {
-					sec = new SecKey("", insId, sk);
+					sec = new SecKey("", insId, sk,preKey == null?false:!preKey.secretVersion);
 					gatewayClientAesKey.put(insId, sec);
 				} else {
-					sec = new SecKey(this.getInstanceName(insId), insId, sk);
+					sec = new SecKey(this.getInstanceName(insId), insId, sk,preKey == null?false:!preKey.secretVersion);
 					insId2AesKey.put(insId, sec);
 				}
+				sec.preKey = preKey;
+			}
+			
+			if(!sec.reponseSucc) {
 				byte[] sedata = sec.key.getEncoded();
 				sedata = this.encryptRsa(sedata, 0, sedata.length, insId);
-
 				msg.setSec(sedata);
 				msg.setSec(true);
 			}
 			
 			byte[] salt = getSalt();
 			byte[] edata = EncryptUtils.encryptAes(bb.array(), 0, bb.limit(), salt, sec.key);
+			msg.setSecretVersion(sec.secretVersion);
 			msg.setSalt(salt);
 			msg.setPayload(ByteBuffer.wrap(edata));
 
@@ -323,7 +370,7 @@ public class SecretManager {
 		}
 
 		if (!publicRsaKeys.containsKey(prefix)) {
-			throw new CommonException("Fail to load public key for instance: " + insId);
+			throw new CommonException("Fail to load public key for instance: " + insId+",prefix:" + prefix);
 		}
 
 		return publicRsaKeys.get(prefix);
@@ -457,6 +504,7 @@ public class SecretManager {
 
 		op.addChildrenListener(ChoyConstants.INS_ROOT, (opType, root, id, data) -> {
 			if (opType == IListener.REMOVE) {
+				logger.info("{} offline",id);
 				Integer iid = Integer.parseInt(id);
 				if (processId2InstanceNames.containsKey(iid)) {
 					processId2InstanceNames.remove(iid);
@@ -483,23 +531,50 @@ public class SecretManager {
 	}
 
 	private class SecKey {
+		
+		//更新前的密钥
+		private SecKey preKey;
+		
 		// 对方的实例名称
 		private String instanceName;
 		// 对方的实例ID
 		private int insId;
+		
 		private SecretKey key;
 		
+		//密钥是否成功传给对方
+		private boolean reponseSucc = false;
+		
+		private boolean secretVersion = false;
+		
 		private long createTime = TimeUtils.getCurTime();
+		
+		private boolean offline = false;
 
 		private SecKey() {
-
+			this.reponseSucc = false;
 		}
 
-		private SecKey(String insName, int insId, SecretKey k) {
+		private SecKey(String insName, int insId, SecretKey k,boolean sv) {
 			this.instanceName = insName;
 			this.insId = insId;
 			this.key = k;
+			this.reponseSucc = false;
+			this.secretVersion = sv;
 		}
 
+	}
+
+	public void resetLocalSecret(short msgType,int insId) {
+		SecKey sec = null;
+		if(msgType == Constants.MSG_TYPE_RRESP_RAW) {
+			sec = gatewayClientAesKey.get(insId);
+		} else {
+			sec = insId2AesKey.get(insId);
+		}
+		if(sec != null) {
+			//促使下次RPC请求时重新生成密钥
+			sec.createTime = 0;
+		}
 	}
 }

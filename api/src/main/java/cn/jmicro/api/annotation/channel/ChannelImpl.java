@@ -62,7 +62,7 @@ public class ChannelImpl<T> implements IChannel<T> {
 
 	public synchronized void addListener(IChannelListener<T> listener) {
 		if(this.isExist(listener.name())) {
-			throw new CommonException("channelListenerNameRepeat","Channel listner "+listener.name()+" exist");
+			throw new CommonException(0,"Channel listner "+listener.name()+" exist");
 		}
 		this.listeners.add(listener);
 		names.put(listener.name(), "");

@@ -33,23 +33,23 @@ public final class RpcException extends CommonException {
 	
 	private IResponse resp = null;
 
-	public RpcException(IRequest req,String cause){
-		super(cause);
+	public RpcException(IRequest req,String cause,int code){
+		super(code,cause);
 		this.req=req;
 	}
 	
-	public RpcException(IRequest req,IResponse resp){
-		super("fail");
+	public RpcException(IRequest req,IResponse resp,int code){
+		super(code,"fail");
 		this.req = req;
 		this.resp = resp;
 	}
 	
 	public RpcException(IRequest req,ServerError se){
-		this(req,"code:"+se.getErrorCode()+":msg"+se.getMsg());
+		this(req,se.getMsg(),se.getErrorCode());
 	}
 	
-	public RpcException(IRequest req,Throwable exp){
-		super("fail",exp);
+	public RpcException(IRequest req,Throwable exp,int code){
+		super(code,"fail",exp);
 		this.req= req;
 	}
 

@@ -31,7 +31,7 @@ public class CommonException extends RuntimeException implements Serializable{
 	 
 	private static final long serialVersionUID = 13434325523L;
 	
-	private String key = "";
+	private int key = 0;
 	
 	private String others = "";
 	
@@ -59,12 +59,12 @@ public class CommonException extends RuntimeException implements Serializable{
 		this.resp = resp;
 	}
 	
-	public CommonException(String key,String cause){
+	public CommonException(int key,String cause){
 		this(key,cause,null);
 	}
 	
-	public CommonException(String key,String cause,Throwable exp){
-		super(cause,exp);
+	public CommonException(int key,String cause,Throwable exp){
+		super("code:" + key + ": "+cause,exp);
 		this.key= key;
 	}
 
@@ -103,6 +103,14 @@ public class CommonException extends RuntimeException implements Serializable{
 
 	public void setAi(ActInfo ai) {
 		this.ai = ai;
+	}
+
+	public int getKey() {
+		return key;
+	}
+
+	public void setKey(int key) {
+		this.key = key;
 	}
 	
 	

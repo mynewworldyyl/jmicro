@@ -296,7 +296,7 @@ public class StatisConfigManager {
 		Set<StatisConfig> cfgs = new HashSet<>();
 		synchronized(configs) {
 			for(StatisConfig sc : this.configs.values()) {
-				if(sc.getToSn().equals(serviceName)) {
+				if(sc.getToSn() != null && sc.getToSn().equals(serviceName)) {
 					cfgs.add(sc);
 				}
 			}

@@ -43,7 +43,7 @@ public class SimpleRpcImpl implements ISimpleRpc {
 			timeWindow=5*60000,//统计时间窗口5分钟
 			slotInterval=100,
 			checkInterval=5000,//采样周期2S
-			timeout=5000,
+			timeout=60000,//1分钟
 			retryInterval=1000,
 			debugMode=1,
 			maxSpeed=10,
@@ -60,7 +60,7 @@ public class SimpleRpcImpl implements ISimpleRpc {
 			throw new CommonException("test breaker exception");
 		}*/
 		//System.out.println("Server hello: " +name);
-		logger.info("Server hello: " +name);
+		//logger.info("Server hello: " +name);
 		return "Server say hello to: "+name;
 	}
 	
@@ -78,14 +78,15 @@ public class SimpleRpcImpl implements ISimpleRpc {
 			timeout=5000,
 			retryInterval=1000,
 			debugMode=0,
-			maxSpeed=1000,
+			limitType = Constants.LIMIT_TYPE_SS,
+			maxSpeed=30,
 			baseTimeUnit=Constants.TIME_MILLISECONDS
 	)
 	public String hi(Person person) {
 		if(LG.isLoggable(MC.LOG_DEBUG)) {
 			LG.log(MC.LOG_DEBUG,SimpleRpcImpl.class, person.getUsername());
 		}
-		System.out.println("Got: " + person.toString());
+		//System.out.println("Got: " + person.toString());
 		return "Server say hello to: " + person.toString();
 	}
 

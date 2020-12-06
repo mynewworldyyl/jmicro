@@ -24,7 +24,7 @@ public class TimeUtils {
 	
 	//每间隔BASE_TIME_INTERVAL毫秒调用一次System.currentTimeMillis()更新当前时间
 	//调用者必须接受在BASE_TIME_INTERVAL毫秒内的误差
-	private static final long BASE_TIME_INTERVAL = 200;
+	private static final long BASE_TIME_INTERVAL = 10;
 	
 	private static final Runnable timeGetter = () -> {
 		isChecking.set(true);

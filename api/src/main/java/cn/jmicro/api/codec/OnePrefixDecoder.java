@@ -71,7 +71,7 @@ public class OnePrefixDecoder /*implements IDecoder*/{
 				return (V)this.decodeList(buffer, null);
 			}else {
 				if(!TypeUtils.isFinal(cls)) {
-					throw new CommonException("class {} must by final class for encode",cls.getName());
+					throw new CommonException("class "+cls.getName()+" must by final class for encode");
 				}
 				if(cls.isArray()) {
 					Class<?> eltType = this.getType(buffer);

@@ -64,7 +64,7 @@ public class LimitServer implements IStatisDataSubscribe {
 	public void ready() {
 		qpsStatisIndex[0] = new StatisIndex();
 		qpsStatisIndex[0].setName("qps");
-		qpsStatisIndex[0].setNums(new Short[]{MC.MT_REQ_START});
+		qpsStatisIndex[0].setNums(new Short[]{MC.MT_SERVER_LIMIT_MESSAGE_PUSH});
 		//qpsStatisIndex[0].setDens(REQ_TYPES);
 		qpsStatisIndex[0].setDesc("service qps");
 		qpsStatisIndex[0].setType(StatisConfig.PREFIX_QPS);
@@ -86,6 +86,9 @@ public class LimitServer implements IStatisDataSubscribe {
 	public void onData(StatisData sc) {
 		UniqueServiceMethodKey k = UniqueServiceMethodKey.fromKey(sc.getKey());
 		Set<ServiceItem> sis = this.srvManager.getServiceItems(k.getServiceName(), k.getNamespace(), k.getVersion());
+		
+		logger.debug("OnData: " + JsonUtils.getIns().toJson(sc));
+		
 		for(ServiceItem si : sis) {
 			ILimitData$JMAsyncClient r = this.ins2Limiters.get(si.getKey().getInstanceName());
 			if(r != null) {

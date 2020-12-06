@@ -169,7 +169,7 @@ public class JRPCReqRespHandler implements IMessageHandler{
 				if(StringUtils.isNotEmpty(lk)) {
 					ai = this.accountManager.getAccount(lk);
 					if(ai == null) {
-						ServerError se = new ServerError(ServerError.SE_INVLID_LOGIN_KEY,"Invalid login key!");
+						ServerError se = new ServerError(MC.MT_INVALID_LOGIN_INFO,"Invalid login key!");
 						resp.setResult(se);
 						resp.setSuccess(false);
 						LG.log(MC.LOG_ERROR, TAG,se.toString());
@@ -274,16 +274,20 @@ public class JRPCReqRespHandler implements IMessageHandler{
 	private void doException(RpcRequest req,RpcResponse resp0, ISession s,Message msg,Throwable e) {
 
 		//返回错误
-		CommonException ce = new CommonException("",e,req);
-		ce.setResp(resp0);
-		
-		LG.log(MC.LOG_ERROR, TAG,"JRPCReq error",ce);
+		LG.log(MC.LOG_ERROR, TAG,"JRPCReq error",e);
 		
 		MT.rpcEvent(MC.MT_SERVER_ERROR);
 		logger.error("JRPCReq error: ",e);
 		if(msg.isNeedResponse()) {
 			//返回错误
-			RpcResponse resp = new RpcResponse(msg.getReqId(),new ServerError(0,e.getMessage()));
+			RpcResponse resp = null;
+			if(e instanceof CommonException) {
+				CommonException ce = (CommonException)e;
+				resp = new RpcResponse(msg.getReqId(),new ServerError(ce.getKey(),e.getMessage()));
+			}else {
+				resp = new RpcResponse(msg.getReqId(),new ServerError(0,e.getMessage()));
+			}
+			
 			resp.setSuccess(false);
 			msg.setPayload(ICodecFactory.encode(codeFactory,resp,msg.getUpProtocol()));
 			msg.setType((byte)(msg.getType()+1));

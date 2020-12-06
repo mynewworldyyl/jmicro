@@ -107,7 +107,7 @@ public class FirstInterceptor extends AbstractInterceptor implements IIntercepto
 
 	private IResponse fastFail(IRequest req) {
 		ServerError se = new ServerError();
-		se.setErrorCode(ServerError.SE_LIMITER);
+		se.setErrorCode(MC.MT_SERVICE_SPEED_LIMIT);
 		se.setMsg("");
 		return new RpcResponse(req.getRequestId(),se);
 	}

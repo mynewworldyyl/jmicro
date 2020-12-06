@@ -31,6 +31,7 @@ import com.alibaba.dubbo.common.serialize.kryo.utils.ReflectUtils;
 import cn.jmicro.api.JMicroContext;
 import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.exception.RpcException;
+import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.net.AbstractHandler;
 import cn.jmicro.api.net.IRequest;
 import cn.jmicro.api.net.IRequestHandler;
@@ -75,7 +76,7 @@ public class RpcRequestHandler extends AbstractHandler implements IRequestHandle
 			resp.setSuccess(true);
 		} catch (SecurityException | IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
 			//logger.error("onRequest:",e);
-			throw new RpcException(request,e);
+			throw new RpcException(request,e,MC.MT_SERVER_ERROR);
 		}
 		return resp;
 	}
@@ -93,7 +94,7 @@ public class RpcRequestHandler extends AbstractHandler implements IRequestHandle
 					return m;
 				}
 			}
-			throw new RpcException(req,e);
+			throw new RpcException(req,e,MC.MT_SERVICE_METHOD_NOT_FOUND);
 		}
 	}
 	

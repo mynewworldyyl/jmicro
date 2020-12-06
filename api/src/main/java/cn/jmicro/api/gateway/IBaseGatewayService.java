@@ -2,7 +2,6 @@ package cn.jmicro.api.gateway;
 
 import java.util.List;
 
-import cn.jmicro.api.Resp;
 import cn.jmicro.codegenerator.AsyncClientProxy;
 
 @AsyncClientProxy

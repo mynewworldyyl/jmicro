@@ -8,6 +8,8 @@ import cn.jmicro.api.async.IPromise;
 import cn.jmicro.api.client.IAsyncCallback;
 import cn.jmicro.api.client.IAsyncFailCallback;
 import cn.jmicro.api.client.IAsyncSuccessCallback;
+import cn.jmicro.api.monitor.MC;
+import cn.jmicro.common.CommonException;
 
 public class PromiseImpl<R> implements IPromise<R>{
 
@@ -26,6 +28,8 @@ public class PromiseImpl<R> implements IPromise<R>{
 	private Object locker = new Object();
 	
 	private Object context = null;
+	
+	private int timeout = 30000;
 	
 	public PromiseImpl() {
 		this.callbacks = new IAsyncCallback[1];
@@ -105,9 +109,10 @@ public class PromiseImpl<R> implements IPromise<R>{
 		if(!done) {
 			synchronized(locker) {
 				try {
-					this.locker.wait();
+					this.locker.wait(timeout);
 				} catch (InterruptedException e) {
 					logger.error("getResult",e);
+					throw new CommonException(MC.MT_REQ_TIMEOUT,"");
 				}
 			}
 		}
@@ -140,6 +145,10 @@ public class PromiseImpl<R> implements IPromise<R>{
 
 	public void setContext(Object context) {
 		this.context = context;
+	}
+
+	public void setTimeout(int timeout) {
+		this.timeout = timeout;
 	}
 
 	private class SuccessCallback<R> implements IAsyncCallback<R>{

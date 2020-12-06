@@ -46,12 +46,12 @@ public class ServiceComsumer {
 		src.helloJMAsync("Hello JMicro").then((rst, fail,ctx)->{
 			System.out.println(rst);
 			
-			String r = src.hello("Hello two");
+			/*String r = src.hello("Hello two");
 			System.out.println(r);
 			
 			src.helloJMAsync("Hello two").then((rst1, fail1,ctx0)->{
 				System.out.println(rst);
-			});
+			});*/
 			
 		});
 		

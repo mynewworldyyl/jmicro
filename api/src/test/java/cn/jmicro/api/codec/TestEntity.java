@@ -11,8 +11,6 @@ public final class TestEntity {
 	
 	//public Object types = new Integer[] {1,2,3};
 	
-	
-	
 /*	private List<Person> persons = new ArrayList<Person>();
 	
 	{

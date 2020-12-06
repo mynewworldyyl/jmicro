@@ -5,6 +5,7 @@ import cn.jmicro.api.annotation.Interceptor;
 import cn.jmicro.api.exception.BreakerException;
 import cn.jmicro.api.exception.RpcException;
 import cn.jmicro.api.exception.TimeoutException;
+import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.net.IInterceptor;
 import cn.jmicro.api.net.IRequest;
 import cn.jmicro.api.net.IRequestHandler;
@@ -21,7 +22,7 @@ public class BreakerInterceptor implements IInterceptor {
 		try {
 			resp = handler.onRequest(req);
 		} catch (BreakerException | TimeoutException e) {
-			resp =  FirstClientInterceptor.doFastFail(req,e);
+			resp =  FirstClientInterceptor.doFastFail(req,e,MC.MT_SERVICE_BREAK);
 		}
 		return resp;
 	}

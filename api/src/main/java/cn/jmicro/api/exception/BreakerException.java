@@ -41,13 +41,13 @@ public class BreakerException extends CommonException {
 		this.sis = si;
 	}
 	
-	public BreakerException(String key,String cause,  Set<ServiceItem>  si){
-		super(key,cause,null);
+	public BreakerException(int code,String cause,  Set<ServiceItem>  si){
+		super(code,cause,null);
 		this.sis=si;
 	}
 	
-	public BreakerException(String key,String cause,Throwable exp,  Set<ServiceItem>  si){
-		super(key,cause,exp);
+	public BreakerException(int code,String cause,Throwable exp,  Set<ServiceItem>  si){
+		super(code,cause,exp);
 		this.sis=si;
 	}
 

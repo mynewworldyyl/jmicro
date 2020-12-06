@@ -47,6 +47,7 @@ import cn.jmicro.api.registry.ServiceItem;
 import cn.jmicro.api.registry.ServiceMethod;
 import cn.jmicro.api.service.ServiceLoader;
 import cn.jmicro.api.utils.TimeUtils;
+import cn.jmicro.common.CommonException;
 import cn.jmicro.common.Constants;
 
 /**
@@ -249,7 +250,7 @@ public class StatisMonitorClient {
 				long beginTime = TimeUtils.getCurTime();
 				
 				if(this.statusMonitorAdapter.isMonitoralbe()) {
-					this.statusMonitorAdapter.getServiceCounter().add(MC.Ms_CheckLoopCnt, 1,beginTime);
+					this.statusMonitorAdapter.getServiceCounter().add(MC.Ms_CheckLoopCnt, 1);
 				}
 				
 				IBasket<MRpcStatisItem> readBasket = this.basketFactory.borrowReadSlot();
@@ -269,7 +270,8 @@ public class StatisMonitorClient {
 					IBasket<MRpcStatisItem> rb = null;
 					Iterator<IBasket<MRpcStatisItem>> readIte = this.cacheBasket.iterator(true);
 					while((rb = readIte.next()) != null) {
-						if(beginTime - rb.firstWriteTime() > 10000) { //超过10秒
+						if(beginTime - rb.firstWriteTime() > 10000) { 
+							//超过10秒
 							MRpcStatisItem[] mrs = new MRpcStatisItem[rb.remainding()];
 							rb.readAll(mrs);
 							items.addAll(Arrays.asList(mrs));
@@ -299,7 +301,7 @@ public class StatisMonitorClient {
 					readBasket.readAll(mrs);
 					items.addAll(Arrays.asList(mrs));
 					basketFactory.returnReadSlot(readBasket, true);
-					readBasket = this.basketFactory.borrowReadSlot();
+					readBasket = basketFactory.borrowReadSlot();
 				}
 				
 				if(items.isEmpty()) {
@@ -326,7 +328,7 @@ public class StatisMonitorClient {
 					//System.out.println("submit: " +mrs.length);
 					
 					if(this.statusMonitorAdapter.isMonitoralbe()) {
-						this.statusMonitorAdapter.getServiceCounter().add(MC.Ms_CheckerSubmitItemCnt, items.size(),beginTime);
+						this.statusMonitorAdapter.getServiceCounter().add(MC.Ms_CheckerSubmitItemCnt, items.size());
 					}
 					
 					this.executor.submit(new Worker(mrs));
@@ -345,7 +347,6 @@ public class StatisMonitorClient {
 		}
 	}
 	
-	
 	private void merge(Set<MRpcStatisItem> items) {
 		
 		Set<MRpcStatisItem> result = new HashSet<>();
@@ -356,7 +357,6 @@ public class StatisMonitorClient {
 		
 		MRpcStatisItem nullSMMRpcItem = null;
 		Map<Short,StatisItem> type2Item = new HashMap<>();
-		
 		
 		for(Iterator<MRpcStatisItem> ite = items.iterator(); ite.hasNext();) {
 			MRpcStatisItem mi = ite.next();
@@ -382,7 +382,20 @@ public class StatisMonitorClient {
 					oldOi.add(oi.getVal());
 				}
 			} else {
+				//合并同一个服务方法的统计参数
 				result.add(mi);
+				
+				/*MRpcStatisItem emi = mprcItems.get(mi.getKey());
+				if(emi == null) {
+					emi = mi;
+					result.add(mi);
+				} else {
+					Iterator<StatisItem> oiIte = mi.getTypeStatis().values().iterator();
+					for(; oiIte.hasNext(); ) {
+						StatisItem oi = oiIte.next();
+						emi.addType(oi.getType(), oi.getVal());
+					}
+				}*/
 			}
 		}
 		
@@ -403,7 +416,7 @@ public class StatisMonitorClient {
 		
 		private MRpcStatisItem[] items = null;
 		
-		public Worker( MRpcStatisItem[] items) {
+		public Worker(MRpcStatisItem[] items) {
 			this.items = items;
 		}
 		
@@ -421,7 +434,17 @@ public class StatisMonitorClient {
 				//JMicroContext.get().configMonitor(0, 0);
 				//发送消息RPC
 				JMicroContext.get().setBoolean(Constants.FROM_MONITOR_CLIENT, true);
-					
+				
+				//用于计算数据从创建到提交时间差，服务器以时间差为标准计算数据时间
+				long curTime = TimeUtils.getCurTime();
+				for(MRpcStatisItem i : items) {
+					logger.info("KEY:{}",i.getKey());
+					for(StatisItem si : i.getTypeStatis().values()) {
+						logger.info("T{}, V{}, TI{}",si.getType(),si.getVal(),si.getTime());
+					}
+					i.setSubmitTime(curTime);
+				}
+				
 				if(localMonitorServer != null) {
 					//本地包不需要RPC，直接本地调用
 					localMonitorServer.submit(items);
@@ -432,10 +455,12 @@ public class StatisMonitorClient {
 					//不能保证百分百发送成功，会有数据丢失
 					//为了提供更高的性能，丢失几个监控数据正常情况下可以接受
 					//如果监控服务同时部署两个以上，而两个监控服务器同时不可用的机率很低，等同于不可能，从而丢数据的可能性也趋于不可能
-					/*logger.info("==========================================================");
+					/*
+					logger.info("==========================================================");
 					for(MRpcStatisItem mi: items) {
 						logger.info("lid:" + mi.getLinkId() +", reqId: " + mi.getReqId()+", parentId: " + mi.getReqParentId());
-					}*/
+					}
+					*/
 					
 					monitorServer.submitJMAsync(items).then(this::onresult);
 					
@@ -448,7 +473,20 @@ public class StatisMonitorClient {
 					}
 					logger.error("Worker Monitor server is NULL");
 				}
-			} catch (Exception e) {
+			} catch (Throwable e) {
+				if(e instanceof CommonException) {
+					CommonException ce = (CommonException)e;
+					if(ce.getKey() == MC.MT_PACKET_TOO_MAX) {
+						logger.warn("Resend items one by one");
+						for(MRpcStatisItem item : this.items) {
+							monitorServer.submitJMAsync(new MRpcStatisItem[] {item},item)
+							.fail((code,msg,faiItem)-> {
+								logger.error("fail to resend item:" + faiItem.toString(),"code:" + code+",msg="+msg);
+							});
+						}
+						return;
+					}
+				}
 				if(statusMonitorAdapter.isMonitoralbe()) {
 					statusMonitorAdapter.getServiceCounter().add(MC.Ms_TaskFailItemCnt, items.length);
 					//statusMonitorAdapter.getServiceCounter().add(MonitorConstant.Ms_TaskExceptionCount, items.length);

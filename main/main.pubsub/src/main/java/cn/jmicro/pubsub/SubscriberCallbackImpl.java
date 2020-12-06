@@ -116,7 +116,7 @@ public class SubscriberCallbackImpl implements ISubscriberCallback{
 			case NONE:
 				return callOneByOne(items,type);
 		}
-		throw new CommonException("onMessage topic:"+sm.getTopic()+", type: " + type, sm.getKey().toKey(false, false, false));
+		throw new CommonException(0,"onMessage topic:"+sm.getTopic()+", type: " + type +"," + sm.getKey().toKey(false, false, false));
 	}
 	
 	private void notiryResultFail(int code,String msg,Object cxt,List<PSData> fs,PromiseImpl<PSData[]> p) {

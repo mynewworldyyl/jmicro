@@ -11,7 +11,7 @@ public class PressureTest {
 
 	public static void main(String[] args) {
 		IObjectFactory of = JMicro.getObjectFactoryAndStart(args);
-		for(int i = 0; i < 3;i++){
+		for(int i = 0; i < 5;i++){
 			new Thread(new Worker(of,i)).start();
 		}
 	}
@@ -34,16 +34,30 @@ class Worker implements Runnable{
 		JMicroContext.get().removeParam(JMicroContext.LINKER_ID);
 		
 		for(;;){
-			try {/*
+			try {
+				/*
 				String result = sayHello.hello(" Hello LOG: "+id);
 				System.out.println(JMicroContext.get().getString(JMicroContext.LINKER_ID, "")+": "+result);
 				JMicroContext.get().removeParam(JMicroContext.LINKER_ID);
-			*/
-				sayHello.helloJMAsync(" Hello LOG: "+id)
-				.fail((code,result,cxt)->{
-					System.out.println(JMicroContext.get().getLong(JMicroContext.LINKER_ID, 0L)+": "+result);
-					JMicroContext.get().removeParam(JMicroContext.LINKER_ID);
-				});
+				 */
+				if(/*r.nextBoolean()*/true) {
+					sayHello.helloJMAsync("Hello LOG: "+id)
+					.fail((code,result,cxt)->{
+						System.out.println(JMicroContext.get().getLong(JMicroContext.LINKER_ID, 0L)+": "+result);
+						JMicroContext.get().removeParam(JMicroContext.LINKER_ID);
+					}).success((result,cxt)->{
+						System.out.println("Result: " +result);
+					});
+				}/*else {
+					sayHello.hiJMAsync(new Person())
+					.fail((code,result,cxt)->{
+						System.out.println(JMicroContext.get().getLong(JMicroContext.LINKER_ID, 0L)+": "+result);
+						JMicroContext.get().removeParam(JMicroContext.LINKER_ID);
+					}).success((result,cxt)->{
+						System.out.println("Result: " +result);
+					});
+				}*/
+				
 			} catch (Throwable e) {
 				e.printStackTrace();
 			}

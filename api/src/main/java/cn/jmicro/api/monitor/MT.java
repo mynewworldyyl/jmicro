@@ -33,8 +33,6 @@ import cn.jmicro.common.Constants;
  */
 public class MT {
 	
-	private final static Logger logger = LoggerFactory.getLogger("cn.jmicro.api.monitor.sf");
-	
 	private static StatisMonitorClient m = null;
 	
 	private static boolean isInit = false;
@@ -42,6 +40,18 @@ public class MT {
 	private static boolean isMs = false;
 	
 	private static boolean isDs = false;
+	
+	public static boolean rpcEvent(ServiceMethod sm,short type,long val) {
+		if(sm != null && sm.getMonitorEnable() == 1 && isInit && m != null 
+				&& m.canSubmit(sm,type,Config.getAccountName())) {
+			MRpcStatisItem mi = new MRpcStatisItem();
+			mi.setKey(sm.getKey().toKey(true, true, true));
+			setCommon(mi);
+			mi.addType(type,val);
+			return m.submit2Cache(mi);
+		}
+		return false;
+	} 
 	
 	public static boolean rpcEvent(short type,long val) {
 		if(!JMicroContext.existRpcContext()) {
@@ -85,7 +95,6 @@ public class MT {
 	
 	public static boolean nonRpcEvent(short type) {
 		return nonRpcEvent(Config.getInstanceName(),type,1);
-		
 	}
 	
 	private static ServiceMethod sm() {
@@ -106,7 +115,6 @@ public class MT {
 				si.setClientId(ai.getClientId());
 				si.setActName(ai.getActName());
 			}
-			
 			//在RPC上下文中才有以上信息
 			ServiceMethod sm = (ServiceMethod)JMicroContext.get().getObject(Constants.SERVICE_METHOD_KEY, null);
 			si.setLocalPort(JMicroContext.get().getString(JMicroContext.LOCAL_PORT, ""));
@@ -115,9 +123,7 @@ public class MT {
 			//si.setKey(sm.getKey().toKey(true, true, true));
 			si.setSmKey(sm.getKey());
 			si.setKey(sm.getKey().toKey(true, true, true));
-			
 		}
-		
 		si.setLocalHost(Config.getExportSocketHost());
 		si.setInstanceName(Config.getInstanceName());
 	}

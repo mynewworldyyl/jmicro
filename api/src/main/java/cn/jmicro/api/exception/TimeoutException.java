@@ -39,11 +39,11 @@ public class TimeoutException extends CommonException {
 		this.req = req;
 	}
 	
-	public TimeoutException(IRequest req,String key,String cause){
+	public TimeoutException(IRequest req,int key,String cause){
 		this(req,key,cause,null);
 	}
 	
-	public TimeoutException(IRequest req,String key,String cause,Throwable exp){
+	public TimeoutException(IRequest req,int key,String cause,Throwable exp){
 		super(key,cause,exp);
 		this.req= req;
 	}

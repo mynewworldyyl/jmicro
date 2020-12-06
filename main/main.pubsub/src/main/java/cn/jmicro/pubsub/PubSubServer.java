@@ -249,7 +249,7 @@ public class PubSubServer implements IInternalSubRpc{
 				sc.add(MC.Ms_ReceiveItemCnt,items.length);
 			}*/
 			foreachItem(items,(pd)->{
-				this.sta.getSc(pd.getTopic(),pd.getSrcClientId()).add(MC.Ms_ReceiveItemCnt, 1,curTime);
+				this.sta.getSc(pd.getTopic(),pd.getSrcClientId()).add(MC.Ms_ReceiveItemCnt, 1);
 			});
 		}
 		
@@ -258,7 +258,7 @@ public class PubSubServer implements IInternalSubRpc{
 				sc.add(MC.Ms_TopicInvalid, items.length);
 			}*/
 			foreachItem(items,(pd)->{
-				this.sta.getSc(pd.getTopic(),pd.getSrcClientId()).add(MC.Ms_TopicInvalid, 1,curTime);
+				this.sta.getSc(pd.getTopic(),pd.getSrcClientId()).add(MC.Ms_TopicInvalid, 1);
 			});
 			return PubSubManager.PUB_TOPIC_INVALID;
 		}
@@ -269,7 +269,7 @@ public class PubSubServer implements IInternalSubRpc{
 				sc.add(MC.Ms_ServerDisgard, 1);
 			}*/
 			foreachItem(items,(pd)->{
-				this.sta.getSc(pd.getTopic(),pd.getSrcClientId()).add(MC.Ms_ServerDisgard, 1,curTime);
+				this.sta.getSc(pd.getTopic(),pd.getSrcClientId()).add(MC.Ms_ServerDisgard, 1);
 			});
 			return PubSubManager.PUB_SERVER_DISCARD;
 		}
@@ -281,7 +281,7 @@ public class PubSubServer implements IInternalSubRpc{
 				sc.add(MC.Ms_ServerBusy,1);
 			}*/
 			foreachItem(items,(pd)->{
-				this.sta.getSc(pd.getTopic(),pd.getSrcClientId()).add(MC.Ms_ServerBusy, 1,curTime);
+				this.sta.getSc(pd.getTopic(),pd.getSrcClientId()).add(MC.Ms_ServerBusy, 1);
 			});
 			return PubSubManager.PUB_SERVER_BUSUY;
 		}
@@ -295,7 +295,7 @@ public class PubSubServer implements IInternalSubRpc{
 		}*/
 		
 		foreachItem(items,(pd)->{
-			this.sta.getSc(pd.getTopic(),pd.getSrcClientId()).add(MC.Ms_SubmitCnt, 1,curTime);
+			this.sta.getSc(pd.getTopic(),pd.getSrcClientId()).add(MC.Ms_SubmitCnt, 1);
 		});
 		
 		//IBasket<PSData> b = this.basketFactory.borrowWriteBasket(true);
@@ -324,8 +324,8 @@ public class PubSubServer implements IInternalSubRpc{
 								sc.add(MC.Ms_FailItemCount, items.length);
 							}*/
 							foreachItem(items,(pd)->{
-								this.sta.getSc(pd.getTopic(),pd.getSrcClientId()).add(MC.Ms_FailReturnWriteBasket, 1,curTime);
-								this.sta.getSc(pd.getTopic(),pd.getSrcClientId()).add(MC.Ms_FailItemCount, 1,curTime);
+								this.sta.getSc(pd.getTopic(),pd.getSrcClientId()).add(MC.Ms_FailReturnWriteBasket, 1);
+								this.sta.getSc(pd.getTopic(),pd.getSrcClientId()).add(MC.Ms_FailItemCount, 1);
 							});
 							logger.error("Fail to return basket fail size: "+ (items.length - pos));
 							break;
@@ -338,7 +338,7 @@ public class PubSubServer implements IInternalSubRpc{
 							sc.add(MC.Ms_FailItemCount, items.length - pos);
 						}*/
 						foreachItem(items,(pd)->{
-							this.sta.getSc(pd.getTopic(),pd.getSrcClientId()).add(MC.Ms_FailItemCount, 1,curTime);
+							this.sta.getSc(pd.getTopic(),pd.getSrcClientId()).add(MC.Ms_FailItemCount, 1);
 						});
 						break;
 					}	
@@ -348,8 +348,8 @@ public class PubSubServer implements IInternalSubRpc{
 						sc.add(MC.Ms_FailItemCount, items.length);
 					}*/
 					foreachItem(items,(pd)->{
-						this.sta.getSc(pd.getTopic(),pd.getSrcClientId()).add(MC.Ms_FailReturnWriteBasket, 1,curTime);
-						this.sta.getSc(pd.getTopic(),pd.getSrcClientId()).add(MC.Ms_FailItemCount, 1,curTime);
+						this.sta.getSc(pd.getTopic(),pd.getSrcClientId()).add(MC.Ms_FailReturnWriteBasket, 1);
+						this.sta.getSc(pd.getTopic(),pd.getSrcClientId()).add(MC.Ms_FailItemCount, 1);
 					});
 					logger.error("Fail size: "+ (items.length - pos));
 					break;
@@ -362,7 +362,7 @@ public class PubSubServer implements IInternalSubRpc{
 				sc.add(MC.Ms_Pub2Cache, items.length);
 			}*/
 			foreachItem(items,(pd)->{
-				this.sta.getSc(pd.getTopic(),pd.getSrcClientId()).add(MC.Ms_Pub2Cache, 1,curTime);
+				this.sta.getSc(pd.getTopic(),pd.getSrcClientId()).add(MC.Ms_Pub2Cache, 1);
 			});
 			if(openDebug) {
 				logger.info("push to cache :{},total:{}",items.length,cacheItemsCnt.get());
@@ -410,8 +410,8 @@ public class PubSubServer implements IInternalSubRpc{
 						}*/
 						
 						foreachItem(items,(pd)->{
-							this.sta.getSc(pd.getTopic(),pd.getSrcClientId()).add(MC.Ms_FailReturnWriteBasket, 1,curTime);
-							this.sta.getSc(pd.getTopic(),pd.getSrcClientId()).add(MC.Ms_FailItemCount, 1,curTime);
+							this.sta.getSc(pd.getTopic(),pd.getSrcClientId()).add(MC.Ms_FailReturnWriteBasket, 1);
+							this.sta.getSc(pd.getTopic(),pd.getSrcClientId()).add(MC.Ms_FailItemCount, 1);
 						});
 						
 						logger.error("Fail to return basket fail size: "+ (items.length - pos));
@@ -426,7 +426,7 @@ public class PubSubServer implements IInternalSubRpc{
 						sc.add(MC.Ms_FailItemCount, items.length - pos);
 					}*/
 					foreachItem(items,(pd)->{
-						this.sta.getSc(pd.getTopic(),pd.getSrcClientId()).add(MC.Ms_FailItemCount, 1,curTime);
+						this.sta.getSc(pd.getTopic(),pd.getSrcClientId()).add(MC.Ms_FailItemCount, 1);
 					});
 					break;
 				}	
@@ -437,8 +437,8 @@ public class PubSubServer implements IInternalSubRpc{
 				}*/
 				
 				foreachItem(items,(pd)->{
-					this.sta.getSc(pd.getTopic(),pd.getSrcClientId()).add(MC.Ms_FailReturnWriteBasket, 1,curTime);
-					this.sta.getSc(pd.getTopic(),pd.getSrcClientId()).add(MC.Ms_FailItemCount, 1,curTime);
+					this.sta.getSc(pd.getTopic(),pd.getSrcClientId()).add(MC.Ms_FailReturnWriteBasket, 1);
+					this.sta.getSc(pd.getTopic(),pd.getSrcClientId()).add(MC.Ms_FailItemCount, 1);
 				});
 				
 				logger.error("Fail size: "+ (items.length - pos));
@@ -605,7 +605,7 @@ public class PubSubServer implements IInternalSubRpc{
 			}*/
 			
 			foreachItem(items,(pd)->{
-				this.sta.getSc(pd.getTopic(),pd.getSrcClientId()).add(MC.Ms_SubmitTaskCnt, 1,curTime);
+				this.sta.getSc(pd.getTopic(),pd.getSrcClientId()).add(MC.Ms_SubmitTaskCnt, 1);
 			});
 			
 		}
@@ -650,7 +650,7 @@ public class PubSubServer implements IInternalSubRpc{
 					}*/
 					
 					foreachItem(items,(pd)->{
-						sta.getSc(pd.getTopic(),pd.getSrcClientId()).add(MC.Ms_DoResendWithCbNullCnt, 1,curTime);
+						sta.getSc(pd.getTopic(),pd.getSrcClientId()).add(MC.Ms_DoResendWithCbNullCnt, 1);
 					});
 					
 					logger.error("Push to resend component topic:"+topic);
@@ -670,7 +670,7 @@ public class PubSubServer implements IInternalSubRpc{
 										sc.add(MC.Ms_DoResendCnt, psds.length);
 									}*/
 									foreachItem(items,(pd)->{
-										sta.getSc(pd.getTopic(),pd.getSrcClientId()).add(MC.Ms_DoResendCnt, 1,curTime);
+										sta.getSc(pd.getTopic(),pd.getSrcClientId()).add(MC.Ms_DoResendCnt, 1);
 									});
 									logger.error("Push to resend component:"+cb.getSm().getKey().toKey(true, true, true));
 								}
@@ -679,7 +679,7 @@ public class PubSubServer implements IInternalSubRpc{
 								sc.add(MC.Ms_TaskSuccessItemCnt, items.length);
 							}*/
 							foreachItem(items,(pd)->{
-								sta.getSc(pd.getTopic(),pd.getSrcClientId()).add(MC.Ms_TaskSuccessItemCnt, 1,curTime);
+								sta.getSc(pd.getTopic(),pd.getSrcClientId()).add(MC.Ms_TaskSuccessItemCnt, 1);
 							});
 						} catch (Throwable e) {
 							// 进入重发队列
@@ -689,7 +689,7 @@ public class PubSubServer implements IInternalSubRpc{
 								sc.add(MC.Ms_DoResendCnt, items.length);
 							}*/
 							foreachItem(items,(pd)->{
-								sta.getSc(pd.getTopic(),pd.getSrcClientId()).add(MC.Ms_DoResendCnt, 1,curTime);
+								sta.getSc(pd.getTopic(),pd.getSrcClientId()).add(MC.Ms_DoResendCnt, 1);
 							});
 							logger.error("Worker get exception", e);
 							//SF.doBussinessLog(MonitorConstant.LOG_ERROR, PubSubServer.class, e, "Subscribe mybe down: "+cb.getSm().getKey().toKey(true, true, true));

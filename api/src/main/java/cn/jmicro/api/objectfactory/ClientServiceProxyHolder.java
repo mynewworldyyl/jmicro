@@ -196,9 +196,9 @@ public class ClientServiceProxyHolder implements IServiceListener{
 
 			Object retVal = h.invoke(this, methodName, args);
 			T to = null;
-			if (retVal != null) {
+			if(retVal != null) {
 				to = (T) retVal;
-			} else {
+			}else {
 				Class<?> rt = sm.getKey().getReturnParamClass();
 				if (rt == null || rt == Void.class || rt == Void.TYPE) {
 					return null;

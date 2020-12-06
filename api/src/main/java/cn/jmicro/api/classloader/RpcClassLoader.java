@@ -93,6 +93,7 @@ public class RpcClassLoader extends ClassLoader {
     			classesName2Instance.put(instanceName, (inses = new HashSet<String>()));
     		}
 			inses.add(instanceName);
+			logger.info("{} own by {}",clsName, instanceName);
 			
 			if(!clazzes.containsKey(clsName)) {
 				try {
@@ -119,17 +120,20 @@ public class RpcClassLoader extends ClassLoader {
 	
     
     private IChildrenListener classNodeListener = (type,parent,clsName,data)->{
+    /*	if(clsName.equals("cn.jmicro.mng.api.II8NService")) {
+    		logger.info("Remote class: {}",clsName);
+    	}*/
     	logger.info("Notify remote class: {}",clsName);
     	try {
 			if(ownerClasses.contains(clsName)  || RpcClassLoader.class.getClassLoader().loadClass(clsName) != null) {
+				//本地类，无需远程加载
 				return;
 			}
 		} catch (ClassNotFoundException e) {
 		}
 		if(type == IListener.ADD) {
-			Set<String> inses = classesName2Instance.get(clsName);
-			if(inses == null) {
-    			classesName2Instance.put(clsName, (inses = new HashSet<String>()));
+			if(!classesName2Instance.containsKey(clsName)) {
+    			classesName2Instance.put(clsName,  new HashSet<String>());
     		}
 			String p = CLASS_IDR + "/" + clsName;
 			op.addChildrenListener(p, insNodeListener);
@@ -276,7 +280,7 @@ public class RpcClassLoader extends ClassLoader {
 			 Set<String> insNames = this.classesName2Instance.get(className);
 			 
 			 if(insNames  == null || insNames.isEmpty()) {
-				 logger.error("class " + originClsName + " not found!");
+				 logger.error("class " + originClsName + " owner server not found!");
 				 return null;
 			 }
 			 
@@ -334,7 +338,7 @@ public class RpcClassLoader extends ClassLoader {
 						logger.info("Success load data: {} from {}", originClsName,
 								directItem.getKey().toKey(true, true, true));
 						return bytes;
-					}else {
+					} else {
 						return null;
 					}
 					
@@ -399,7 +403,7 @@ public class RpcClassLoader extends ClassLoader {
 					return null;
 				}
 			} catch (Throwable e) {
-				logger.error("error load class from: " + directItem.getKey().toKey(true, true, true), e);
+				logger.error("error load class ["+originClsName+"] from: " + directItem.getKey().toKey(true, true, true), e);
 			}
 		}
 		return null;

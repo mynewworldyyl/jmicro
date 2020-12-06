@@ -61,13 +61,15 @@ public class StatisConfig {
 	public static final int TO_TYPE_MONITOR_LOG = 5;
 	public static final int TO_TYPE_MESSAGE = 6;
 	
-	public static final byte PREFIX_TOTAL = 1; 		  //"total";
+	public static final byte PREFIX_TOTAL = 1; 		   //"total";
 	public static final byte PREFIX_TOTAL_PERCENT = 2; //"totalPercent";
-	public static final byte PREFIX_QPS = 3; 		  //"qps";
-	public static final byte PREFIX_CUR = 4; 		  //"cur";
+	public static final byte PREFIX_QPS = 3; 		   //"qps";
+	public static final byte PREFIX_CUR = 4; 		   //"cur";
 	public static final byte PREFIX_CUR_PERCENT =5;    // "curPercent";
 	
 	public static final String  DEFAULT_DB = "t_statis_data";
+	
+	public StatisConfig() {}
 	/*
 	public static final int EXP_TYPE_SERVICE = 1;
 	public static final int EXP_TYPE_ACCOUNT = 2;
@@ -164,12 +166,12 @@ public class StatisConfig {
 	private int minNotifyTime = 10000;
 	
 	/* 
-	 * 统计结果发送目标，如存库，转发RPC方法，publish消息，输出控制台等
+	 *    统计结果发送目标，如存库，转发RPC方法，publish消息，输出控制台等
+	 * 
 	 * @See StatisConfig.TO_TYPE_DB
 	 * @See StatisConfig.TO_TYPE_SERVICE_METHOD
 	 * @See StatisConfig.TO_TYPE_CONSOLE
 	 * @See StatisConfig.TO_TYPE_FILE
-	 * 
 	 */
 	private int toType;
 	

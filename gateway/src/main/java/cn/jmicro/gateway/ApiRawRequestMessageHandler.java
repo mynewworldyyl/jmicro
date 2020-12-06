@@ -152,7 +152,7 @@ public class ApiRawRequestMessageHandler implements IMessageHandler{
 				if(StringUtils.isNotEmpty(lk)) {
 					ai = this.accountManager.getAccount(lk);
 					if(ai == null) {
-						ServerError se = new ServerError(ServerError.SE_INVLID_LOGIN_KEY,"Invalid login key!");
+						ServerError se = new ServerError(MC.MT_INVALID_LOGIN_INFO,"Invalid login key!");
 						resp.setResult(se);
 						resp.setSuccess(false);
 						doLogick = false;
@@ -174,12 +174,12 @@ public class ApiRawRequestMessageHandler implements IMessageHandler{
 						result = ms.unsubscribe((int)req.getArgs()[0]);
 					} else {
 						logger.error("Method:"+req.getMethod()+" not found!");
-						result = new ServerError(ServerError.SE_SERVICE_NOT_FOUND,"Method:"+req.getMethod()+" not found!");
+						result = new ServerError(MC.MT_SERVICE_METHOD_NOT_FOUND,"Method:"+req.getMethod()+" not found!");
 						resp.setSuccess(false);
 					}
 				} else {
 					resp.setSuccess(false);
-					result = new ServerError(ServerError.SE_NOT_LOGIN,"Have to login before use pubsub service!");
+					result = new ServerError(MC.MT_INVALID_LOGIN_INFO,"Have to login before use pubsub service!");
 				}
 			} else if(doLogick){
 				
@@ -438,7 +438,7 @@ public class ApiRawRequestMessageHandler implements IMessageHandler{
 		if(jsonArgs== null || jsonArgs.length ==0){
 			return new Object[0];
 		} else {
-			Class<?> srvClazz = JMicro.getObjectFactory().loadCls(srvCls);
+			Class<?> srvClazz = objFactory.loadCls(srvCls);
 			if(srvClazz == null) {
 				throw new CommonException("Service class not found: "+srvCls);
 			}

@@ -133,10 +133,10 @@ public class StatisManager {
 		}
 	}
 	
-	private void doStatis( ServiceCounter sc,MRpcStatisItem si) {
+	private void doStatis(ServiceCounter sc,MRpcStatisItem si) {
 		if(sc != null) {
 			for(StatisItem oi : si.getTypeStatis().values()) {
-				sc.add(oi.getType(), oi.getVal());
+				sc.add(oi.getType(), oi.getVal(),si.getSubmitTime()- oi.getTime());
 			}
 		}
 	}
@@ -223,6 +223,7 @@ public class StatisManager {
 			for(String k : keys) {
 				ServiceCounter sc = counters.get(k);
 				if(sc != null &&  curTime - sc.getLastActiveTime() > COUNTER_TIMEOUT) {
+					logger.warn("Remove timeout counter: {}",k);
 					counters.remove(k);
 				}
 			}
@@ -261,11 +262,12 @@ public class StatisManager {
 		
 		long curTime = TimeUtils.getCurTime();
 		for(StatisConfig sc : insConfigs) {
-			if(sc.getCounterTimeout() > 0 && ((curTime - sc.getLastActiveTime()) > sc.getCounterTimeout())) {
-				//配置在超时时间内没数据
-				continue;
-			} else {
+			if(sc.getCounterTimeout() < 0 || ((curTime - sc.getLastActiveTime()) < sc.getCounterTimeout())) {
 				finalStatisData(sc);
+			}
+			for(StatisIndex idx : sc.getStatisIndexs()) {
+				idx.setCurDens(0);
+				idx.setCurNums(0);
 			}
 		}
 	}
@@ -290,7 +292,7 @@ public class StatisManager {
 			}
 			
 		}else if(idx.getType() == StatisConfig.PREFIX_QPS) {
-			int v = (int)counter.getQps(TimeUnit.SECONDS, idx.getNums())*1000;
+			int v = (int)(counter.getQps(TimeUnit.SECONDS, idx.getNums())*1000);
 			if(v > 0) {
 				idx.setCurNums(idx.getCurNums() + v);
 			}
@@ -341,13 +343,13 @@ public class StatisManager {
 			} else {
 				logger.error("Not support index type for statis config: " + sc.getId());
 			}
-			
-			idx.setCurDens(0);
-			idx.setCurNums(0);
 		}
 		
 		if(sc.getExp() != null && !ExpUtils.compute(sc.getExp(), indexes, Boolean.class)) {
-			return;
+			if(StatisConfig.TO_TYPE_SERVICE_METHOD != sc.getToType() 
+					|| TimeUtils.getCurTime() - sc.getLastNotifyTime() < 10000) {
+				return;
+			}
 		}
 		
 		sc.changeExpIndex();
