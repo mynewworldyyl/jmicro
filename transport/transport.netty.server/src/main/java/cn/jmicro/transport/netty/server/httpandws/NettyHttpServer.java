@@ -80,8 +80,7 @@ public class NettyHttpServer implements IServer{
 	@Inject
 	private IObjectFactory of;
 	
-	@Override
-	public void init() {
+	public void ready() {
 		if(Config.isClientOnly() || !this.startHttp) {
 			LOG.info("NettyHttpServer is disable");
 			return;

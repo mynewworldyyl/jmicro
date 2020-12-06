@@ -297,8 +297,10 @@ public class RegistryImpl implements IRegistry {
 	public void regist(ServiceItem item) {
 		
 		String srvKey = item.path(Config.ServiceRegistDir);
-		localRegistedItems.put(srvKey, item);
 		
+		if(item.getKey().getInstanceName().equals(Config.getInstanceName())) {
+			localRegistedItems.put(srvKey, item);
+		}
 		/*this.persisFromConfig(item);
 		String configKey = item.path(Config.ServiceItemCofigDir);
 		if(!this.srvManager.exist(configKey)){
@@ -333,7 +335,9 @@ public class RegistryImpl implements IRegistry {
 		logger.debug("regist service: "+key);
 		if(srvManager.exist(key)){
 			srvManager.updateOrCreate(item, key, true);
-			localRegistedItems.put(key, item);
+			if(item.getKey().getInstanceName().equals(Config.getInstanceName())) {
+				localRegistedItems.put(key, item);
+			}
 		} else {
 			logger.debug("update not found: "+key);
 		}
@@ -523,7 +527,6 @@ public class RegistryImpl implements IRegistry {
 				breakings.add(si);
 			} else {
 				set.add(si);
-				break;
 			}
 		}
 		

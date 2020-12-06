@@ -43,6 +43,7 @@ import cn.jmicro.api.registry.ServiceMethod;
 import cn.jmicro.api.registry.UniqueServiceKey;
 import cn.jmicro.api.registry.UniqueServiceMethodKey;
 import cn.jmicro.api.security.PermissionManager;
+import cn.jmicro.api.utils.TimeUtils;
 import cn.jmicro.common.CommonException;
 import cn.jmicro.common.Constants;
 import cn.jmicro.common.Utils;
@@ -188,6 +189,8 @@ public class ServiceManager {
 		
 		//从配置服务合并
 		//this.persisFromConfig(i);
+		//加载时间
+		si.setLoadTime(TimeUtils.getCurTime());
 		
 		boolean flag = this.path2Hash.containsKey(path);
 		
@@ -597,7 +600,7 @@ public class ServiceManager {
 			l.lock();
 			this.path2Hash.remove(path);
 			si = this.path2SrvItems.remove(path);
-			if(si != null) {
+			if(si != null && si.getKey().getInstanceName().equals(Config.getInstanceName())) {
 				//存储时已经保证不存在全局性重复hash
 				Set<ServiceItem> items = this.getServiceItems(si.getKey().getServiceName(),
 						si.getKey().getNamespace(), si.getKey().getVersion());
@@ -658,7 +661,6 @@ public class ServiceManager {
 			}
 		}
 		
-		
 	}
 	
 	private ServiceItem fromJson(String data){
@@ -681,24 +683,25 @@ public class ServiceManager {
 		try {
 			l.lock();
 			
-			for(ServiceMethod sm : si.getMethods()) {
-				int h = sm.getKey().getSnvHash();
-				if(!this.methodHash2Method.containsKey(h)) {
-					this.methodHash2Method.put(h, sm);
-				} else {
-					//检查是否是方法Hash冲突
-					String smKey = sm.getKey().toKey(false, false, false);
-					ServiceMethod conflichMethod = this.checkConflictServiceMethodByHash(h, smKey);
-					if(conflichMethod != null) {
-						String msg = "Service method hash conflict: [" + smKey + 
-								"] with exist sm [" + conflichMethod.getKey().toKey(false, false, false)+"] fail to load service!";
-						logger.error(msg);
-						LG.logWithNonRpcContext(MC.LOG_ERROR, ServiceManager.class, msg);
-						return false;
+			if(si.getKey().getInstanceName().equals(Config.getInstanceName())) {
+				for(ServiceMethod sm : si.getMethods()) {
+					int h = sm.getKey().getSnvHash();
+					if(!this.methodHash2Method.containsKey(h)) {
+						this.methodHash2Method.put(h, sm);
+					} else {
+						//检查是否是方法Hash冲突
+						String smKey = sm.getKey().toKey(false, false, false);
+						ServiceMethod conflichMethod = this.checkConflictServiceMethodByHash(h, smKey);
+						if(conflichMethod != null) {
+							String msg = "Service method hash conflict: [" + smKey + 
+									"] with exist sm [" + conflichMethod.getKey().toKey(false, false, false)+"] fail to load service!";
+							logger.error(msg);
+							LG.logWithNonRpcContext(MC.LOG_ERROR, ServiceManager.class, msg);
+							return false;
+						}
+						//同一个方法，保存最新的方法
+						this.methodHash2Method.put(h, sm);
 					}
-					
-					//同一个方法，保存最新的方法
-					this.methodHash2Method.put(h, sm);
 				}
 			}
 			

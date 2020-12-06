@@ -46,7 +46,7 @@ class Worker implements Runnable{
 						System.out.println(JMicroContext.get().getLong(JMicroContext.LINKER_ID, 0L)+": "+result);
 						JMicroContext.get().removeParam(JMicroContext.LINKER_ID);
 					}).success((result,cxt)->{
-						System.out.println("Result: " +result);
+						//System.out.println("Result: " +result);
 					});
 				}/*else {
 					sayHello.hiJMAsync(new Person())
@@ -63,7 +63,7 @@ class Worker implements Runnable{
 			}
 			
 			try {
-				Thread.sleep(r.nextInt(500));
+				Thread.sleep(r.nextInt(300));
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}

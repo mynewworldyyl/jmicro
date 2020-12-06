@@ -172,9 +172,13 @@ public class ServiceMethodTaskQueueManager implements ILimitData{
 		Integer smCode = HashUtils.FNVHash1(sc.getKey());
 		ServiceMethodTaskQueue q = taskQueue.get(smCode);
 		if(q!= null && q.ss!= null) {
-			Double qps = (Double)sc.getStatis().get("qps");
-			q.ss.setQps(qps);
-			logger.info(sc.getKey() + " qps: " + qps);
+			if(sc.containIndex(StatisData.AVG_QPS)) {
+				q.ss.setQps((Double)sc.getStatis().get(StatisData.AVG_QPS));
+				logger.info(sc.getKey() + " avgQps: " + (Double)sc.getStatis().get(StatisData.AVG_QPS));
+			} else {
+				q.ss.setQps((Double)sc.getStatis().get(StatisData.QPS));
+				logger.info(sc.getKey() + " qps: " + sc.getStatis().get(StatisData.QPS));
+			}
 		}
 	}
 

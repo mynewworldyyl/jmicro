@@ -1,5 +1,6 @@
 package cn.jmicro.api.monitor;
 
+import java.util.HashMap;
 import java.util.Map;
 
 import cn.jmicro.api.annotation.IDStrategy;
@@ -9,6 +10,15 @@ import cn.jmicro.api.annotation.SO;
 @IDStrategy(100)
 public class StatisData {
 
+	//每个运行实例的平均qps
+	public static final String AVG_QPS = "avgQps";
+	
+	//服务总Qps
+	public static final String QPS = "qps";
+	
+	//服务运行实例的数量
+	public static final String INS_SIZE = "insSize";
+	
 	private int cid;
 	
 	private Map<String,Object> statis;
@@ -23,6 +33,18 @@ public class StatisData {
 	
 	public <T> T getIndex(String name) {
 		return (T) statis.get(name);
+	}
+	
+	public boolean containIndex(String name) {
+		return statis.containsKey(name);
+	}
+	
+	public void setIndex(String name,Object val) {
+		if(statis == null) {
+			statis = new HashMap<String,Object>();
+		}
+		statis.put(name, val);
+		return ;
 	}
 
 	public int getCid() {

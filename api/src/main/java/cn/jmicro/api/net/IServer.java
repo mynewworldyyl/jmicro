@@ -23,7 +23,7 @@ package cn.jmicro.api.net;
  */
 public interface IServer{
 
-	void init();
+	//void init();
 	
 	void start();
 	

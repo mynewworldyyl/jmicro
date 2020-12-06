@@ -502,7 +502,7 @@ public class SimpleObjectFactory implements IObjectFactory {
 				//组件开始初始化,在此注入Cfg配置，enable字段也在此注入
 				preInitPostListener0(lobjs,cfg,systemObjs);
 				
-				for( Iterator<Object> ite = lobjs.iterator(); ite.hasNext(); ){
+				for(Iterator<Object> ite = lobjs.iterator(); ite.hasNext(); ){
 					Object o = ite.next();
 					if(!this.isEnable(o)) {
 						//删除enable=false的组合

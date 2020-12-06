@@ -86,6 +86,18 @@ public class LimitServer implements IStatisDataSubscribe {
 	public void onData(StatisData sc) {
 		UniqueServiceMethodKey k = UniqueServiceMethodKey.fromKey(sc.getKey());
 		Set<ServiceItem> sis = this.srvManager.getServiceItems(k.getServiceName(), k.getNamespace(), k.getVersion());
+		sc.setIndex(StatisData.INS_SIZE, sis.size());
+		
+		Double qps = (Double)sc.getStatis().get(StatisData.QPS);
+		
+		if(sc.containIndex(StatisData.INS_SIZE)) {
+			int insSize = sc.getIndex(StatisData.INS_SIZE);
+			if(insSize > 1) {
+				//每个运行实例平均分配QPS
+				Double avgQps = qps/insSize;
+				sc.setIndex(StatisData.AVG_QPS, avgQps);
+			}
+		}
 		
 		logger.debug("OnData: " + JsonUtils.getIns().toJson(sc));
 		

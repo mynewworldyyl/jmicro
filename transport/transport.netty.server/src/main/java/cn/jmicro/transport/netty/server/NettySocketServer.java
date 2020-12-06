@@ -32,7 +32,6 @@ import cn.jmicro.api.annotation.Server;
 import cn.jmicro.api.config.Config;
 import cn.jmicro.api.executor.ExecutorConfig;
 import cn.jmicro.api.executor.ExecutorFactory;
-import cn.jmicro.api.masterelection.IMasterChangeListener;
 import cn.jmicro.api.net.IServer;
 import cn.jmicro.api.objectfactory.IObjectFactory;
 import cn.jmicro.common.CommonException;
@@ -57,7 +56,7 @@ import io.netty.handler.logging.LoggingHandler;
 @Server(transport=Constants.TRANSPORT_NETTY)
 public class NettySocketServer implements IServer {
 
-	static final Logger LOG = LoggerFactory.getLogger(NettySocketServer.class);
+	static final Logger logger = LoggerFactory.getLogger(NettySocketServer.class);
 	
 	private static final String TAG = NettySocketServer.class.getName();
 	
@@ -82,19 +81,21 @@ public class NettySocketServer implements IServer {
 	@Inject(required=false)
 	private Set<IServerListener> serverListener = new HashSet<>();
 	
-	@Override
-	public void init() {
+	//@Override
+	public void ready() {
 		if(Config.isClientOnly() || !this.enable) {
-			LOG.info("NettySocketServer is disable");
+			logger.info("NettySocketServer is disable");
 			return;
 		}
-		this.of.masterSlaveListen((type,isMaster)->{
+		
+		init0();
+		
+		/*this.of.masterSlaveListen((type,isMaster)->{
 			if(isMaster && (IMasterChangeListener.MASTER_ONLINE == type || IMasterChangeListener.MASTER_NOTSUPPORT == type)) {
 				//主从模式
 				init0();
 			}
-		});
-		
+		});*/
 	}
 	
 	private void init0() {
@@ -113,11 +114,6 @@ public class NettySocketServer implements IServer {
 		bossGroupExecutor = of.get(ExecutorFactory.class).createExecutor(config1);
 		
 		start();
-	}
-	
-	@JMethod("ready")
-	public void ready() {
-		
 	}
 	
 	@Override
@@ -147,20 +143,27 @@ public class NettySocketServer implements IServer {
              ChannelFuture channelFuture = server.bind(address).sync();
              //channelFuture.channel().closeFuture().sync();
              address = (InetSocketAddress)channelFuture.channel().localAddress();
+             
+             port = address.getPort();
+             
+             String m = "Running the netty socket server host["+Config.getExportSocketHost()+"],port ["+this.port+"]";
+             logger.info(m);
+             
+             synchronized(server) {
+            	 //让监听端口准备就绪时间，确保服务注册前监听端口处于可用状态
+            	 server.wait(2000);
+             }
+             
+             for(IServerListener l : serverListener) {
+             	l.serverStared(host(), port, Constants.TRANSPORT_NETTY);
+             }
+             
 		} catch (InterruptedException e) {
-			LOG.error("",e);
+			logger.error("",e);
 		}finally{
             //bossGroup.shutdownGracefully();
             //workerGroup.shutdownGracefully();
         }
-        this.port = address.getPort();
-        
-        for(IServerListener l : serverListener) {
-        	l.serverStared(host(), port, Constants.TRANSPORT_NETTY);
-        }
-        
-        String m = "Running the netty socket server host["+Config.getExportSocketHost()+"],port ["+this.port+"]";
-        LOG.debug(m);
         
         //SF.serverStart(TAG, "Server start: " + Constants.TRANSPORT_NETTY+" : "+Config.getHost()+" : "+this.port );
         

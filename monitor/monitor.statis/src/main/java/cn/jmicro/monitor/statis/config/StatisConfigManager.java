@@ -330,10 +330,6 @@ public class StatisConfigManager {
 		
 		for(StatisConfig sc : cfgs) {
 			
-			if(sc.getSrv() != null) {
-				continue;
-			}
-			
 			ServiceMethod sm = si.getMethod(sc.getByme());
 			if(sm == null) {
 				continue;
@@ -345,7 +341,9 @@ public class StatisConfigManager {
 				}
 			}
 			
-			this.createToRemoteService(sc);
+			if(sc.getSrv() == null) {
+				this.createToRemoteService(sc);
+			}
 			
 			srvMng.setMonitorable(sm,1);
 		}

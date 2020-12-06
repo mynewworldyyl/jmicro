@@ -145,6 +145,7 @@ public class NettyClientSessionManager implements IClientSessionManager{
 			logger.error("Session KEY is NULL when close session");
 			return;
 		}
+		logger.warn("Close sesson:"+skey);
 		//阻止新的请求使用此会话
 		sessions.remove(skey);
 		if(!session.isClose() && session.waitingClose()) {
@@ -166,17 +167,20 @@ public class NettyClientSessionManager implements IClientSessionManager{
 	public IClientSession getOrConnect(String targetInstanceName,String host, int port) {
 
 		final String ssKey = host+":"+port;
+		
 		if(sessions.containsKey(ssKey)){
 			return sessions.get(ssKey);
 		}
 		
 		final String sKey = ssKey.intern();
-		synchronized(sKey) {
+		synchronized(this) {
 			
 			if(sessions.containsKey(sKey)){
 				return sessions.get(sKey);
 			}			
 
+			logger.info("Create Connection:{}",ssKey);
+			
 	        // Configure the client.
 	        EventLoopGroup group = new NioEventLoopGroup();
 	        try {

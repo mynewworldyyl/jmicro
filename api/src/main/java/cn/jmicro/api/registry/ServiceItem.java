@@ -150,6 +150,8 @@ public final class ServiceItem implements Comparable<ServiceItem>{
 	
 	private long createdTime = TimeUtils.getCurTime();
 	
+	private  transient long loadTime = TimeUtils.getCurTime();
+	
 	public ServiceItem() {}
 	
 	public ServiceItem(String val) {
@@ -204,6 +206,8 @@ public final class ServiceItem implements Comparable<ServiceItem>{
 		this.feeType = p.feeType;
 		this.authClients = p.authClients;
 		this.actName = p.actName;
+		
+		this.loadTime = p.loadTime;
 		
 		for(ServiceMethod sm : p.getMethods()){
 			ServiceMethod nsm = this.getMethod(sm.getKey().getMethod(), sm.getKey().getParamsStr());
@@ -265,6 +269,14 @@ public final class ServiceItem implements Comparable<ServiceItem>{
 
 	public boolean isShowFront() {
 		return showFront;
+	}
+
+	public long getLoadTime() {
+		return loadTime;
+	}
+
+	public void setLoadTime(long loadTime) {
+		this.loadTime = loadTime;
 	}
 
 	public void setShowFront(boolean showFront) {

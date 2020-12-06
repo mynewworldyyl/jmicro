@@ -439,9 +439,9 @@ public class StatisMonitorClient {
 				long curTime = TimeUtils.getCurTime();
 				for(MRpcStatisItem i : items) {
 					logger.info("KEY:{}",i.getKey());
-					for(StatisItem si : i.getTypeStatis().values()) {
+					/*for(StatisItem si : i.getTypeStatis().values()) {
 						logger.info("T{}, V{}, TI{}",si.getType(),si.getVal(),si.getTime());
-					}
+					}*/
 					i.setSubmitTime(curTime);
 				}
 				

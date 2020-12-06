@@ -12,6 +12,7 @@ import cn.jmicro.api.annotation.SBreakingRule;
 import cn.jmicro.api.annotation.SMethod;
 import cn.jmicro.api.annotation.Service;
 import cn.jmicro.api.async.IPromise;
+import cn.jmicro.api.config.Config;
 import cn.jmicro.api.monitor.LG;
 import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.service.IServiceAsyncResponse;
@@ -60,8 +61,8 @@ public class SimpleRpcImpl implements ISimpleRpc {
 			throw new CommonException("test breaker exception");
 		}*/
 		//System.out.println("Server hello: " +name);
-		//logger.info("Server hello: " +name);
-		return "Server say hello to: "+name;
+		logger.info("Server hello: " +name);
+		return "Server say hello to: "+name+" from : " + Config.getInstanceName();
 	}
 	
 	@Override
