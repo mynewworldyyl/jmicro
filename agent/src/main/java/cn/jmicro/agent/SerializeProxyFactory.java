@@ -10,9 +10,6 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.Iterator;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import cn.jmicro.api.annotation.SO;
 import cn.jmicro.api.classloader.RpcClassLoader;
 import cn.jmicro.api.codec.ISerializeObject;
@@ -29,7 +26,7 @@ import javassist.NotFoundException;
 
 public class SerializeProxyFactory {
 
-	public static final Logger logger = LoggerFactory.getLogger(SerializeProxyFactory.class);
+	//public final Logger logger = LoggerFactory.getLogger(SerializeProxyFactory.class);
 	
 	//private static JmicroClassPool cp = new JmicroClassPool(true);
 	

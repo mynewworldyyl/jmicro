@@ -28,7 +28,6 @@ import cn.jmicro.api.monitor.MonitorAndService2TypeRelationshipManager;
 import cn.jmicro.api.monitor.MonitorInfo;
 import cn.jmicro.api.monitor.MonitorServerStatus;
 import cn.jmicro.api.monitor.ServiceCounter;
-import cn.jmicro.api.monitor.StatisItem;
 import cn.jmicro.api.objectfactory.IObjectFactory;
 import cn.jmicro.api.registry.ServiceItem;
 import cn.jmicro.api.service.ServiceLoader;
@@ -395,9 +394,9 @@ public class StatisMonitorServerImpl implements IStatisMonitorServer {
 	
 	private void log(MRpcStatisItem[] sis) {
 		for(MRpcStatisItem si : sis) {
-			for(StatisItem oi : si.getTypeStatis().values()) {
+			for(Short type : si.getTypeStatis().keySet()) {
 				StringBuffer sb = new StringBuffer();
-				sb.append("GOT: " + MC.MONITOR_VAL_2_KEY.get(oi.getType()));
+				sb.append("GOT: " + MC.MONITOR_VAL_2_KEY.get(type));
 				if(si.getSmKey() != null) {
 					sb.append(", SM: ").append(si.getSmKey().getMethod());
 				}

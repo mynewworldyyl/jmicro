@@ -25,6 +25,7 @@ public class StatisItem {
 	
 	public StatisItem(short type) {
 		this.type = type;
+		this.time = TimeUtils.getCurTime();
 	}
 	
 	public void add(long val) {

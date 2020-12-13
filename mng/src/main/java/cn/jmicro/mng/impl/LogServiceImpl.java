@@ -116,7 +116,7 @@ public class LogServiceImpl implements ILogService {
 	}
 
 	@Override
-	@SMethod(perType=false,needLogin=true,maxSpeed=10,maxPacketSize=256)
+	@SMethod(perType=false,needLogin=true,maxSpeed=10,maxPacketSize=4096)
 	public Resp<List<LogEntry>> query(Map<String, String> queryConditions, int pageSize, int curPage) {
 
 		Document qryMatch = this.getCondtions(queryConditions);

@@ -423,19 +423,23 @@ jm.mng = {
             return jm.rpc.callRpcWithParams(this.sn,this.ns,this.v,'hasPermission',[per]);
         },
 
-        getDicts: function (keys,qry){
+        getDicts: function (keys,qry,forceReflesh){
             let self = this;
             return new Promise(function(reso,reje){
                 let ds = {};
                 let nokeys = [];
                 let f = !!qry && qry.length > 0;
-                for(let i = 0; i <keys.length; i++) {
-                    let vk = f ? qry+'_'+keys[i]:keys[i];
-                    if(self.dicts[vk]) {
-                        ds[keys[i]] = self.dicts[vk];
-                    } else {
-                        nokeys.push(keys[i]);
+                if(!forceReflesh) {
+                    for(let i = 0; i <keys.length; i++) {
+                        let vk = f ? qry+'_'+keys[i]:keys[i];
+                        if(self.dicts[vk]) {
+                            ds[keys[i]] = self.dicts[vk];
+                        } else {
+                            nokeys.push(keys[i]);
+                        }
                     }
+                } else {
+                    nokeys = keys;
                 }
 
                 if(nokeys.length == 0) {

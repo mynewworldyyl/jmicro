@@ -82,6 +82,9 @@ public class CommonManagerImpl implements ICommonManager {
 			case ALL_INSTANCES:
 				dicts.put(k, dictManager.serviceInstances(null));
 				break;
+			case MONITOR_RESOURCE_NAMES:
+				dicts.put(k, dictManager.resourceNames());
+				break;
 			default:
 				dicts.put(k, this.dictManager.getDict(k));
 			}

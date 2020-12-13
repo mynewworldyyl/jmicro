@@ -16,6 +16,7 @@
  */
 package cn.jmicro.main.monitor.v2;
 
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
@@ -201,12 +202,15 @@ public class ServiceReqMonitor  extends AbstractMonitorDataSubscriber implements
 			}
 		}
 		
-		for(StatisItem oi : si.getTypeStatis().values()) {
+		for(Short type : si.getTypeStatis().keySet()) {
+			List<StatisItem> items = si.getTypeStatis().get(type);
+			for(StatisItem oi : items) {
 			/* if(openDebug) {
 					logger.debug("GOT: " + MonitorConstant.MONITOR_VAL_2_KEY.get(oi.getType()) + " , KEY: " 
 			 + key + " , Num: " + oi.getNum() + " , Val: " + oi.getVal());
 			 }*/
 			 counter.add(oi.getType(), oi.getVal());
+			}
 		}
 		
 	}

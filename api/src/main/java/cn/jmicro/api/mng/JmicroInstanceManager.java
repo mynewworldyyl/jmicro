@@ -2,11 +2,13 @@ package cn.jmicro.api.mng;
 
 import java.util.HashSet;
 import java.util.Set;
+import java.util.function.Consumer;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import cn.jmicro.api.IListener;
+import cn.jmicro.api.annotation.Cfg;
 import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Inject;
 import cn.jmicro.api.choreography.ChoyConstants;
@@ -24,6 +26,9 @@ public class JmicroInstanceManager {
 	
 	private Set<IInstanceListener> insListeners = new HashSet<>();
 	
+	@Cfg(value="/enable")
+	private boolean enable = false;
+	
 	@Inject
 	private IDataOperator op;
 	
@@ -35,6 +40,14 @@ public class JmicroInstanceManager {
 		instanceListener.addListener((type,node,pi)->{
 			notifyListener(type,pi);
 		});
+	}
+	
+	public void forEach(Consumer<ProcessInfo> c) {
+		instanceListener.forEachNode(c);
+	}
+	
+	public void forEachProcessInfoName(Consumer<String> c) {
+		instanceListener.forEachNodeName(c);
 	}
 	
 	public ProcessInfo getInstanceById(Integer pid) {

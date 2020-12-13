@@ -150,6 +150,9 @@ public class NodeManager {
 	}
 	
 	public void createNode(String path,String data, int model){
+		if(data == null) {
+			data = "";
+		}
 		if(this.exist(path)) {
 			boolean elp = model == IDataOperator.EPHEMERAL || model == IDataOperator.EPHEMERAL_SEQUENTIAL;
 			if(elp) {
@@ -169,7 +172,7 @@ public class NodeManager {
 		  	    try {
 		  	    	CreateBuilder createBuilder = this.curator.create();
 					createBuilder.withMode(CreateMode.PERSISTENT);
-					createBuilder.forPath(p);
+					createBuilder.forPath(p,new byte[0]);
 				} catch (KeeperException.NoNodeException e) {
 					logger.error(e.getMessage());
 				}catch(Exception e){

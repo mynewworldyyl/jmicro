@@ -1,5 +1,6 @@
 package cn.jmicro.server;
 
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
@@ -47,6 +48,8 @@ public class ServiceMethodTaskQueueManager implements ILimitData{
 	
 	//即将被执行的任务队列
 	private Map<Integer,ServiceMethodTaskQueue> taskQueue = new ConcurrentHashMap<>();
+	
+	private Map<String,LimitCfg> ipLimitCfgs = new ConcurrentHashMap<>();
 	
 	private Set<Integer> tempKeys = new HashSet<>();
 	
@@ -294,6 +297,21 @@ public class ServiceMethodTaskQueueManager implements ILimitData{
 
 	public void setDefaultExecutor(ExecutorService defaultExecutor) {
 		this.defaultExecutor = defaultExecutor;
+	}
+	
+	private class LimitCfg {
+		private int type = ILimitData.LIMIT_SOURCE_IP;
+		private long startTime = TimeUtils.getCurTime();
+		private int cid;
+		private String key;
+		
+		LimitCfg(){}
+		
+		LimitCfg(int type,int cid,String key){
+			this.type = type;
+			this.cid = cid;
+			this.key = key;
+		}
 	}
 	
 }

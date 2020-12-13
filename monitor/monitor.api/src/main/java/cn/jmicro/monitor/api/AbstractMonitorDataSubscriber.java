@@ -1,5 +1,7 @@
 package cn.jmicro.monitor.api;
 
+import java.util.List;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -60,9 +62,10 @@ public abstract class AbstractMonitorDataSubscriber implements IMonitorDataSubsc
 	}
 
 	protected void log(MRpcStatisItem si) {
-		for(StatisItem oi : si.getTypeStatis().values()) {
+		for(Short type : si.getTypeStatis().keySet()) {
+			//List<StatisItem> items = si.getTypeStatis().get(type);
 			StringBuffer sb = new StringBuffer();
-			sb.append("GOT: " + MC.MONITOR_VAL_2_KEY.get(oi.getType()));
+			sb.append("GOT: " + MC.MONITOR_VAL_2_KEY.get(type));
 			sb.append(", SM: ").append(si.getKey());
 			sb.append(", actName: ").append(si.getActName());
 			logger.debug(sb.toString()); 

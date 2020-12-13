@@ -165,6 +165,17 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
 				//此方法返回熔断异常，所以要放在MC.MT_REQ_START事件之前
 				si = selector.getService(request.getServiceName(),request.getMethod(),/*req.getArgs(),*/request.getNamespace(),
 						request.getVersion(), Constants.TRANSPORT_NETTY);
+				
+				if(si == null) {
+	        		//SF.doSubmit(MonitorConstant.CLIENT_REQ_SERVICE_NOT_FOUND, req,null);
+	        		//服务未找到，或服务不存在
+	        		String errMsg = "Service [" + request.getServiceName() + "] not found!";
+	        		//SF.serviceNotFound(TAG.getSimpleName(), );
+	        		LG.log(MC.LOG_ERROR, TAG, errMsg);
+	        		MT.rpcEvent(MC.MT_SERVICE_ITEM_NOT_FOUND);
+	    			throw new RpcException(request,errMsg,MC.MT_SERVICE_ITEM_NOT_FOUND);
+	    		}
+				
         	}
 			
 			 MT.rpcEvent(MC.MT_REQ_START);
@@ -454,7 +465,7 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
 	    			    		cb.onResponse(resp);
 	    					} finally {
     							if(actx.getObject(Constants.NEW_LINKID,null) != null &&
-    									actx.getBoolean(Constants.NEW_LINKID,false) ) {
+    							   actx.getBoolean(Constants.NEW_LINKID,false)) {
     								//RPC链路结束
     								//LG.eventLog(MC.MT_LINK_END, MC.LOG_NO, TAG, null);
     								MT.rpcEvent(MC.MT_LINK_END);
@@ -687,7 +698,6 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
 				this.secManager.resetLocalSecret(respMsg.getType(),si.getInsId());
 			}
 		}
-		
 	}
 
 	private ServiceItem getServiceItem(AsyncConfig ac) {

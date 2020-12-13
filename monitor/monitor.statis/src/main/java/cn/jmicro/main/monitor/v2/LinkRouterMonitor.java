@@ -155,12 +155,13 @@ import cn.jmicro.monitor.api.AbstractMonitorDataSubscriber;
 				
 				logger.info(key+",Take["+(maxTime-minTime)+"(MS)]======================================================");
 				
-				for(Iterator<StatisItem> ite = si.getTypeStatis().values().iterator(); ite.hasNext();) {
-					StatisItem oi = ite.next();
-					ite.remove();
-					if(oi != null) {
-						String msg = toLog(si,oi);
-						logger.info(msg);
+				for(Short type : si.getTypeStatis().keySet()) {
+					List<StatisItem> items = si.getTypeStatis().get(type);
+					for(StatisItem oi : items) {
+						if(oi != null) {
+							String msg = toLog(si,oi);
+							logger.info(msg);
+						}
 					}
 				}
 			}

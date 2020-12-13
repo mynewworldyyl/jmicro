@@ -5,6 +5,7 @@ import java.util.Random;
 import cn.jmicro.api.JMicro;
 import cn.jmicro.api.JMicroContext;
 import cn.jmicro.api.objectfactory.IObjectFactory;
+import cn.jmicro.api.test.Person;
 import cn.jmicro.example.api.rpc.genclient.ISimpleRpc$JMAsyncClient;
 
 public class PressureTest {
@@ -40,23 +41,23 @@ class Worker implements Runnable{
 				System.out.println(JMicroContext.get().getString(JMicroContext.LINKER_ID, "")+": "+result);
 				JMicroContext.get().removeParam(JMicroContext.LINKER_ID);
 				 */
-				if(/*r.nextBoolean()*/true) {
+				if(r.nextBoolean()) {
 					sayHello.helloJMAsync("Hello LOG: "+id)
+					.fail((code,result,cxt)->{
+						//System.out.println(JMicroContext.get().getLong(JMicroContext.LINKER_ID, 0L)+": "+result);
+						JMicroContext.get().removeParam(JMicroContext.LINKER_ID);
+					}).success((result,cxt)->{
+						//System.out.println("Result: " +result);
+					});
+				}else {
+					sayHello.hiJMAsync(new Person())
 					.fail((code,result,cxt)->{
 						System.out.println(JMicroContext.get().getLong(JMicroContext.LINKER_ID, 0L)+": "+result);
 						JMicroContext.get().removeParam(JMicroContext.LINKER_ID);
 					}).success((result,cxt)->{
 						//System.out.println("Result: " +result);
 					});
-				}/*else {
-					sayHello.hiJMAsync(new Person())
-					.fail((code,result,cxt)->{
-						System.out.println(JMicroContext.get().getLong(JMicroContext.LINKER_ID, 0L)+": "+result);
-						JMicroContext.get().removeParam(JMicroContext.LINKER_ID);
-					}).success((result,cxt)->{
-						System.out.println("Result: " +result);
-					});
-				}*/
+				}
 				
 			} catch (Throwable e) {
 				e.printStackTrace();

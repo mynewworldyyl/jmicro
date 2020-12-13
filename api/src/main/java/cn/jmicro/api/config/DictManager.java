@@ -7,8 +7,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import cn.jmicro.api.CfgMetadata;
 import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Inject;
+import cn.jmicro.api.mng.JmicroInstanceManager;
 import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.service.ServiceManager;
 
@@ -19,6 +21,9 @@ public class DictManager {
 	
 	@Inject
 	private ServiceManager sm;
+	
+	@Inject
+	private JmicroInstanceManager insManager;
 	
 	public void ready() {
 		this.mergeDict("logKey2Val", MC.LogKey2Val);
@@ -99,5 +104,15 @@ public class DictManager {
 	
 	public Set<String> serviceInstances(String sn) {
 		return this.sm.serviceInstances(sn);
+	}
+	
+	public Set<String> resourceNames() {
+		Set<String> insNames = new HashSet<>();
+		this.insManager.forEach((pi)->{
+			for(CfgMetadata cm : pi.getMetadatas()) {
+				insNames.add(cm.getResName());
+			}
+		});
+		return insNames;
 	}
 }

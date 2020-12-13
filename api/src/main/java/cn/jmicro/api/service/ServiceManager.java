@@ -447,9 +447,15 @@ public class ServiceManager {
 		ReentrantReadWriteLock.ReadLock l = rwLocker.readLock();
 		try {
 			l.lock();
-			for(ServiceItem i : path2SrvItems.values()) {
-				if(srvName.equals(i.getKey().getServiceName())) {
+			if(Utils.isEmpty(srvName)) {
+				for(ServiceItem i : path2SrvItems.values()) {
 					sns.add(i.getKey().getVersion());
+				}
+			}else {
+				for(ServiceItem i : path2SrvItems.values()) {
+					if(srvName.equals(i.getKey().getServiceName())) {
+						sns.add(i.getKey().getVersion());
+					}
 				}
 			}
 		} finally {
@@ -465,11 +471,18 @@ public class ServiceManager {
 		ReentrantReadWriteLock.ReadLock l = rwLocker.readLock();
 		try {
 			l.lock();
-			for(ServiceItem i : path2SrvItems.values()) {
-				if(srvName.equals(i.getKey().getServiceName())) {
+			if(Utils.isEmpty(srvName)) {
+				for(ServiceItem i : path2SrvItems.values()) {
 					sns.add(i.getKey().getNamespace());
 				}
+			}else {
+				for(ServiceItem i : path2SrvItems.values()) {
+					if(srvName.equals(i.getKey().getServiceName())) {
+						sns.add(i.getKey().getNamespace());
+					}
+				}
 			}
+			
 		} finally {
 			if(l != null) {
 				l.unlock();
@@ -484,18 +497,30 @@ public class ServiceManager {
 		try {
 			l.lock();
 			Set<ServiceMethod> ms = null;
-			for(ServiceItem i : path2SrvItems.values()) {
-				if(srvName.equals(i.getKey().getServiceName())) {
+			if(Utils.isEmpty(srvName)) {
+				for(ServiceItem i : path2SrvItems.values()) {
 					ms = i.getMethods();
-					break;
+					if(ms != null && ms.size() > 0) {
+						for(ServiceMethod m : ms) {
+							sns.add(m.getKey().getMethod());
+						}
+					}
+				}
+			} else {
+				for(ServiceItem i : path2SrvItems.values()) {
+					if(srvName.equals(i.getKey().getServiceName())) {
+						ms = i.getMethods();
+						break;
+					}
+				}
+				
+				if(ms != null && ms.size() > 0) {
+					for(ServiceMethod m : ms) {
+						sns.add(m.getKey().getMethod());
+					}
 				}
 			}
 			
-			if(ms != null && ms.size() > 0) {
-				for(ServiceMethod m : ms) {
-					sns.add(m.getKey().getMethod());
-				}
-			}
 		} finally {
 			if(l != null) {
 				l.unlock();

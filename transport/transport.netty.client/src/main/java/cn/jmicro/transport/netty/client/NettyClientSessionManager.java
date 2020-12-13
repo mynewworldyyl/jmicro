@@ -70,7 +70,7 @@ public class NettyClientSessionManager implements IClientSessionManager{
 	
 	private final Map<String,IClientSession> sessions = new ConcurrentHashMap<>();
 	
-	private final Map<String,IClientSession> tempSessions = new ConcurrentHashMap<>();
+	//private final Map<String,IClientSession> tempSessions = new ConcurrentHashMap<>();
 	
 	@Cfg(value="/NettyClientSessionManager/openDebug",defGlobal=false,changeListener="openDebugChange")
 	private boolean openDebug=false;
@@ -167,16 +167,16 @@ public class NettyClientSessionManager implements IClientSessionManager{
 	public IClientSession getOrConnect(String targetInstanceName,String host, int port) {
 
 		final String ssKey = host+":"+port;
+		//logger.info("Use: " + ssKey);
 		
 		if(sessions.containsKey(ssKey)){
 			return sessions.get(ssKey);
 		}
 		
-		final String sKey = ssKey.intern();
 		synchronized(this) {
 			
-			if(sessions.containsKey(sKey)){
-				return sessions.get(sKey);
+			if(sessions.containsKey(ssKey)){
+				return sessions.get(ssKey);
 			}			
 
 			logger.info("Create Connection:{}",ssKey);
@@ -204,7 +204,7 @@ public class NettyClientSessionManager implements IClientSessionManager{
 	                    NettyClientSession s = new NettyClientSession(ctx,readBufferSize,heardbeatInterval,false);
 	                    s.setReceiver(receiver);
 	                    s.putParam(Constants.IO_SESSION_KEY, ctx);
-	                    s.putParam(SKEY, sKey);
+	                    s.putParam(SKEY, ssKey);
 	                   
 	   	                s.setId(idGenerator.getLongId(ISession.class));
 	      	            s.putParam(Constants.IO_SESSION_KEY, ctx);
@@ -218,7 +218,7 @@ public class NettyClientSessionManager implements IClientSessionManager{
 	      	            s.setDumpDownStream(dumpDownStream);
 	        		    s.setDumpUpStream(dumpUpStream);
 	                   
-	                    tempSessions.put(sKey, s);
+	    	            sessions.put(ssKey, s);
 					}
 
 					@Override
@@ -236,7 +236,7 @@ public class NettyClientSessionManager implements IClientSessionManager{
 	                 	
 	                	NettyClientSession cs = (NettyClientSession)ctx.channel().attr(sessionKey).get();
 	                	if(cs == null) {
-	                		logger.error("Got NULL Session when read data {},data:{}",sKey,msg);
+	                		logger.error("Got NULL Session when read data {},data:{}",ssKey,msg);
 	                		return;
 	                	}
 
@@ -297,7 +297,7 @@ public class NettyClientSessionManager implements IClientSessionManager{
 					}
 
 					private void closeCtx(ChannelHandlerContext ctx) {
-						logger.warn("Session Close for : {} ",sKey);
+						 logger.warn("Session Close for: {} ",ssKey);
 						 NettyClientSession session = (NettyClientSession)ctx.channel().attr(sessionKey).get();
 						 if(session != null && !session.isClose()) {
 							 ctx.channel().attr(sessionKey).set(null);;
@@ -312,17 +312,16 @@ public class NettyClientSessionManager implements IClientSessionManager{
 	            		
 	            cf.sync();
 
+	            NettyClientSession s = (NettyClientSession)sessions.get(ssKey);
+	            
+	            s.init();
+	            
 	            // Wait until the connection is closed.
 	            //f.channel().closeFuture().sync();
 	            
-	            NettyClientSession s = (NettyClientSession)tempSessions.get(sKey);
-	            tempSessions.remove(sKey);
-	            
-	            sessions.put(sKey, s);
-	            s.init();
-	            
+	           
 	           //LOG.info("session connected : {}", session);
-	           logger.debug("Connection finish,host:" + host + ", port:" + s.getRemoteAddress().getPort()+", instanceName: "+ targetInstanceName);
+	           logger.debug("Connection finish,host:" + host + ", port:" + s.remotePort() + ", instanceName: "+ targetInstanceName);
 	           return s;
 	       } catch (Throwable e) {
 	    	   String msg = "Cannot connect " + host + ":" + port;

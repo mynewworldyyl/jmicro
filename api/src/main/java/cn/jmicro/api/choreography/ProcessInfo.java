@@ -1,5 +1,9 @@
 package cn.jmicro.api.choreography;
 
+import java.util.HashSet;
+import java.util.Set;
+
+import cn.jmicro.api.CfgMetadata;
 import cn.jmicro.api.annotation.IDStrategy;
 import cn.jmicro.api.annotation.SO;
 
@@ -33,6 +37,8 @@ public class ProcessInfo {
 	
 	private String workDir;
 	
+	private String infoFilePath;
+	
 	private boolean active;
 	
 	private long opTime;
@@ -48,6 +54,16 @@ public class ProcessInfo {
 	private transient Process process;
 	
 	private boolean monitorable = false;
+	
+	protected Set<CfgMetadata> metadatas = new HashSet<>();
+
+	public Set<CfgMetadata> getMetadatas() {
+		return metadatas;
+	}
+
+	public void setMetadatas(Set<CfgMetadata> metadatas) {
+		this.metadatas = metadatas;
+	}
 
 	public int getId() {
 		return id;
@@ -67,6 +83,14 @@ public class ProcessInfo {
 
 	public boolean isMaster() {
 		return master;
+	}
+
+	public String getInfoFilePath() {
+		return infoFilePath;
+	}
+
+	public void setInfoFilePath(String infoFilePath) {
+		this.infoFilePath = infoFilePath;
 	}
 
 	public void setMaster(boolean master) {

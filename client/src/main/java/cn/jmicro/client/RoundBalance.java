@@ -16,7 +16,10 @@
  */
 package cn.jmicro.client;
 
+import java.util.Iterator;
+import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 import cn.jmicro.api.JMicroContext;
 import cn.jmicro.api.annotation.Component;
@@ -24,7 +27,9 @@ import cn.jmicro.api.annotation.Inject;
 import cn.jmicro.api.loadbalance.ISelector;
 import cn.jmicro.api.registry.IRegistry;
 import cn.jmicro.api.registry.ServiceItem;
+import cn.jmicro.api.registry.UniqueServiceKey;
 import cn.jmicro.api.route.RouterManager;
+import cn.jmicro.api.utils.TimeUtils;
 import cn.jmicro.common.Constants;
 
 /**
@@ -41,8 +46,7 @@ public class RoundBalance implements ISelector{
 	@Inject
 	private RouterManager routerManager;
 	
-	private int next = 0;
-	
+	private Map<String,Integer> indexMap = new ConcurrentHashMap<>();
 	
 	public ServiceItem getService(String srvName,String method,/*Class<?>[] args,*/String namespace,String version,
 			String transport) {
@@ -58,6 +62,21 @@ public class RoundBalance implements ISelector{
 			return null;
 		}
 		
+		long curTime = TimeUtils.getCurTime();
+		Iterator<ServiceItem> ite = srvItems.iterator();
+		for(;ite.hasNext();) {
+			//加载时间小于5秒的服务不使用
+			ServiceItem si = ite.next();
+			if(/*si.getLoadTime() - si.getCreatedTime() > 300000 ||  */curTime - si.getLoadTime() < 5000) {
+				try {
+					Thread.sleep(5000);
+				} catch (InterruptedException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			}
+		}
+		
 		if(routerManager != null) {
 			srvItems = this.routerManager.doRoute(srvItems, srvName, method,/* args, */namespace, version, transport);
 		}
@@ -70,15 +89,31 @@ public class RoundBalance implements ISelector{
 			return srvItems.iterator().next();
 		}
 		
-		return doBalance(srvItems);
+		String srvKey = curIndex(srvName,namespace,version,method);
+		
+		return doBalance(srvItems,srvKey);
 	
 	}
 
-	private ServiceItem doBalance(Set<ServiceItem> srvItems) {
+	private String curIndex(String srvName, String namespace, String version, String method) {
+		return srvName+UniqueServiceKey.SEP+namespace+UniqueServiceKey.SEP+version+UniqueServiceKey.SEP+method;
+	}
+
+	private ServiceItem doBalance(Set<ServiceItem> srvItems,String srvKey) {
 		ServiceItem[] arr = new ServiceItem[srvItems.size()];
 		srvItems.toArray(arr);
-		int next = this.next++%arr.length;
-		return arr[next];
+		
+		if(!this.indexMap.containsKey(srvKey)) {
+			indexMap.put(srvKey, 0);
+		}
+		
+		int idx = indexMap.get(srvKey);
+		
+		idx %= arr.length;
+		
+		indexMap.put(srvKey, idx+1);
+		
+		return arr[idx];
 	}
 
 }

@@ -71,9 +71,9 @@ public class ConfigPostInitListener extends PostInitAdapter {
 		 List<Field> fields = new ArrayList<>();
 		 Utils.getIns().getFields(fields, cls);
 		 
-		 /*if(cls.getName().equals("cn.jmicro.transport.netty.server.httpandws.StaticResourceHttpHandler")) {
-			 logger.debug("preInit");
-		 }*/
+		 if(cls.getName().equals("cn.jmicro.resource.CpuAndMemoryResource")) {
+			 logger.debug("Config preInit");
+		 }
 
 		 for(Field f : fields){
 			if(!f.isAnnotationPresent(Cfg.class)){
@@ -85,6 +85,10 @@ public class ConfigPostInitListener extends PostInitAdapter {
 			if(StringUtils.isBlank(cfgAnno.value())){
 				//配置路径不能为NULL或空格
 				throw new CommonException("Class ["+cls.getName()+",Field:"+f.getName()+"],Cfg path is NULL");
+			}
+			
+			if(cfgAnno.value().equals("/nettyHttpPort")) {
+				logger.debug("Debug config inject");
 			}
 			
 			String prefix = cfgAnno.value();
@@ -123,7 +127,6 @@ public class ConfigPostInitListener extends PostInitAdapter {
 					throw new CommonException("Class ["+cls.getName()+",Field:"+f.getName()+"] invalid map path ["+cfgAnno.value()+"] should end with '*'") ;
 				}*/
 				//符合条件的全部值都要监听，只要有增加进来，都加到Map里面去
-				
 				//优先类全名组成路径
 				Collection<String> coll = new ArrayList<>();
 				path = "/" + cls.getName() + prefix;

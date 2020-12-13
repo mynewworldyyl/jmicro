@@ -10,6 +10,11 @@ import cn.jmicro.codegenerator.AsyncClientProxy;
  */
 @AsyncClientProxy
 public interface ILimitData {
+	
+	public static final int LIMIT_SOURCE_IP = 1;
+	
+	public static final int LIMIT_SOURCE_ACCOUNT = 2;
+	
 
 	void onData(StatisData sc);
 	

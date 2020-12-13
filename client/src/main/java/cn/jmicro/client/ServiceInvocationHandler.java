@@ -16,6 +16,9 @@
  */
 package cn.jmicro.client;
 
+import java.util.HashSet;
+import java.util.Set;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -66,6 +69,8 @@ public class ServiceInvocationHandler implements InvocationHandler{
 	@Inject
 	private StatisMonitorClient monitor;
 	
+	private Set<Long> ids = new HashSet<>();
+	
 	public ServiceInvocationHandler(){}
 	
 	
@@ -87,6 +92,11 @@ public class ServiceInvocationHandler implements InvocationHandler{
 			req.setVersion(si.getKey().getVersion());
 			req.setArgs(args);
 			req.setRequestId(idGenerator.getLongId(IRequest.class));
+			/*if(ids.contains(req.getRequestId())) {
+				throw new CommonException("Reqeust ID repeated: " +methodName);
+			} else {
+				ids.add(req.getRequestId());
+			}*/
 			req.setTransport(Constants.TRANSPORT_NETTY);
 			req.setImpl(si.getImpl());
 			req.putObject(JMicroContext.LOGIN_KEY, cxt.getString(JMicroContext.LOGIN_KEY, null));

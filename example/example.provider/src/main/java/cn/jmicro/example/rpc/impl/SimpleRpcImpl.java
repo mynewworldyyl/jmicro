@@ -61,7 +61,7 @@ public class SimpleRpcImpl implements ISimpleRpc {
 			throw new CommonException("test breaker exception");
 		}*/
 		//System.out.println("Server hello: " +name);
-		logger.info("Server hello: " +name);
+		//logger.info("Server hello: " +name);
 		return "Server say hello to: "+name+" from : " + Config.getInstanceName();
 	}
 	

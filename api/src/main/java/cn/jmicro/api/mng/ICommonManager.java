@@ -21,6 +21,8 @@ public interface ICommonManager {
 	public static final String ALL_INSTANCES = "allInstances";
 	
 	public static final String NAMED_TYPES = "nameTypes";
+	
+	public static final String MONITOR_RESOURCE_NAMES = "resourceNames";
 
 	Map<String,String> getI18NValues(String lang);
 

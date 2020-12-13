@@ -16,14 +16,9 @@
  */
 package cn.jmicro.api.config;
 
-import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.security.interfaces.RSAPrivateKey;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -44,7 +39,6 @@ import cn.jmicro.api.exp.ExpUtils;
 import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.raft.IDataListener;
 import cn.jmicro.api.raft.IDataOperator;
-import cn.jmicro.api.rsa.EncryptUtils;
 import cn.jmicro.api.utils.TimeUtils;
 import cn.jmicro.common.CommonException;
 import cn.jmicro.common.Constants;
@@ -355,7 +349,7 @@ public class Config{
 				for(Object k : p.keySet()) {
 					String key = k.toString();
 					String v = p.getProperty(key);
-					logger.debug("****{}={}", key, p.getProperty(key, ""));
+					logger.info("{}={}", key, p.getProperty(key, ""));
 					if(Constants.BASE_PACKAGES_KEY.equals(key)) {
 						String ps = p.getProperty(key, null);
 						if(!StringUtils.isEmpty(ps)){

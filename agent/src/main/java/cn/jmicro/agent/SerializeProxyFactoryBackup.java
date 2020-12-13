@@ -31,7 +31,7 @@ import javassist.NotFoundException;
 
 public class SerializeProxyFactoryBackup {
 
-	public static final Logger logger = LoggerFactory.getLogger(SerializeProxyFactoryBackup.class);
+	public final Logger logger = LoggerFactory.getLogger(SerializeProxyFactoryBackup.class);
 	
 	public static byte[] getSerializeData(byte[] classData, Class cls,String className) throws IOException, RuntimeException, NotFoundException, CannotCompileException {
 

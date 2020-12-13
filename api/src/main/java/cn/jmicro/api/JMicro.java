@@ -24,6 +24,9 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.apache.log4j.PropertyConfigurator;
+import org.apache.log4j.xml.DOMConfigurator;
+
 import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.ObjFactory;
 import cn.jmicro.api.codec.JDataOutput;
@@ -164,7 +167,43 @@ public class JMicro {
 	}
 	
 	public static IObjectFactory getObjectFactoryNotStart(String[] args,String name){
+		
+		for(String arg : args){
+			if(arg.startsWith("-D")){
+				String ar = arg.substring(2);
+				if(ar == null || "".equals(ar.trim())) {
+					continue;
+				}
+				
+				ar = ar.trim();
+				String key = "";
+				String val = "";
+				
+				if(ar.indexOf("=") > 0){
+					String[] ars = ar.split("=");
+					key = ars[0].trim();
+					val = ars[1].trim();
+				}
+				
+				if(key != null && "log4j.configuration".equals(key)) {
+					System.out.println(val);
+					//System.setProperty("log4j.configuration", val);
+					//System.setProperty("log4j.debug", "true");
+					//DOMConfigurator.configure("D:\\opensource\\github\\jmicro\\main\\main.apigateway\\log4j.xml");
+					if(val != null && !"".equals(val.trim())) {
+						if(val.endsWith("xml")) {
+							DOMConfigurator.configure(val);
+						}else {
+							PropertyConfigurator.configure(val);
+						}
+					}
+					break;
+				}
+			}
+		}
+		
 		Config.parseArgs(args);
+		
 		init0();
 		if(StringUtils.isEmpty(name)){
 			name = JMicroContext.get().getString(Constants.OBJ_FACTORY_KEY,Constants.DEFAULT_OBJ_FACTORY);

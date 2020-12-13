@@ -260,7 +260,7 @@
                     if(resp.code != 0) {
                         self.$Message.success(resp.msg);
                         return;
-                    }else {
+                    } else {
                         self.totalNum = resp.data;
                         self.curPage = 1;
                         self.refresh();

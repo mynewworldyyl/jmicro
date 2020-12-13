@@ -120,8 +120,8 @@ public class JRPCReqRespHandler implements IMessageHandler{
 	    try {
 	    	
 	    	//req1为内部类访问
-	    	final RpcRequest req1 = ICodecFactory.decode(this.codeFactory,msg.getPayload(),
-					RpcRequest.class,msg.getUpProtocol());
+	    	final RpcRequest req1 = ICodecFactory.decode(this.codeFactory, msg.getPayload(),
+					RpcRequest.class, msg.getUpProtocol());
 	    	
 	    	if(msg.isDebugMode()) {
 	    		JMicroContext.get().appendCurUseTime("Server end decode req",true);
@@ -278,6 +278,8 @@ public class JRPCReqRespHandler implements IMessageHandler{
 		
 		MT.rpcEvent(MC.MT_SERVER_ERROR);
 		logger.error("JRPCReq error: ",e);
+		logger.error("doException msg: "+msg);
+		
 		if(msg.isNeedResponse()) {
 			//返回错误
 			RpcResponse resp = null;
@@ -299,6 +301,10 @@ public class JRPCReqRespHandler implements IMessageHandler{
 			msg.setSalt(null);
 			
 			msg.setTime(TimeUtils.getCurTime());
+			
+			StackTraceElement se = Thread.currentThread().getStackTrace()[1];
+			logger.debug(se.getLineNumber() + "　doException msg: "+msg);
+			
 			s.write(msg);
 		}
 		
@@ -357,13 +363,19 @@ public class JRPCReqRespHandler implements IMessageHandler{
 
 		msg.setInsId(pi.getId());
 		
-		s.write(msg);
-		
-		MT.rpcEvent(MC.MT_SERVER_JRPC_RESPONSE_SUCCESS,1);
-		MT.rpcEvent(MC.MT_SERVER_JRPC_RESPONSE_WRITE, msg.getLen());
-		
-		if(msg.isDebugMode()) {
-    		JMicroContext.get().appendCurUseTime("Server finish write",true);
+		try {
+			StackTraceElement se = Thread.currentThread().getStackTrace()[2];
+			//logger.debug(se.getLineNumber() + " resp2Client msg: "+msg);
+			s.write(msg);
+			MT.rpcEvent(MC.MT_SERVER_JRPC_RESPONSE_SUCCESS,1);
+			MT.rpcEvent(MC.MT_SERVER_JRPC_RESPONSE_WRITE, msg.getLen());
+			
+			if(msg.isDebugMode()) {
+				JMicroContext.get().appendCurUseTime("Server finish write",true);
+			}
+		} catch (Throwable e) {
+			//到这里不能再抛出异常，否则可能会造成重复响应
+			logger.error("",e);
 		}
 	}
 

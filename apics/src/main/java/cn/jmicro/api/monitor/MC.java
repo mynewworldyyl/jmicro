@@ -60,35 +60,35 @@ public final class MC {
 	
 	private MC(){}
 
-	@MCA("请求开始")
+	@MCA(group="rpc", value="请求开始")
 	public static final short MT_REQ_START  = 0x0001;
-	@MCA("请求结束")
+	@MCA(group="rpc", value="请求结束")
 	public static final short MT_REQ_END  = 0X0002;
 	
-	@MCA("链路开始")
+	@MCA(group="rpc", value="链路开始")
 	public static final short MT_LINK_START  = 0X0003;
 	
-	@MCA("链路结束")
+	@MCA(group="rpc", value="链路结束")
 	public static final short MT_LINK_END  = 0X0004;
 	
-	@MCA("请求超时 ")
+	@MCA(group="rpc", value="请求超时 ")
 	public static final short MT_REQ_TIMEOUT = 0x0005;
 	
-	@MCA(value="服务未找到",desc="ServiceItem未找到")
+	@MCA(group="rpc", value="服务未找到",desc="ServiceItem未找到")
 	public static final short MT_SERVICE_ITEM_NOT_FOUND = 0x0006;
 	
 	//客户端接收到服务器错误，非业务逻辑返回错误 246
-	@MCA(value="服务器错误",desc="客户端收到ServerError实例")
+	@MCA(group="rpc",value="服务器错误",desc="客户端收到ServerError实例")
 	public static final short MT_CLIENT_RESPONSE_SERVER_ERROR = 0x0007;
 	
 	//服务业务错误，即业务逻辑错误
 	@MCA(value="服务业务错误 ", desc = "由应用自行提交，平台将其作为一种错误标识并加以应用")
 	public static final short MT_SERVICE_ERROR = 0x0008;
 	
-	@MCA(value="服务器开启 ", desc="MT_PROCESS_REMOVE对应服务退出，开启服务编排器情况下才可监测到")
+	@MCA(group="instance", value="服务器开启 ", desc="MT_PROCESS_REMOVE对应服务退出，开启服务编排器情况下才可监测到")
 	public static final short MT_SERVER_START = 0x0009;
 	
-	@MCA(value="服务停止 ", desc="MT_PROCESS_REMOVE对应服务退出，开启服务编排器情况下才可监测到")
+	@MCA(group="instance", value="服务停止 ", desc="MT_PROCESS_REMOVE对应服务退出，开启服务编排器情况下才可监测到")
 	public static final short MT_SERVER_STOP = 0x000A;
 	
 	/*@MCA("线程池拒绝任务")
@@ -97,104 +97,104 @@ public final class MC {
 	/*@MCA("服务端服务不存在")
 	public static final short MT_SERVER_REQ_SERVICE_NOT_FOUND = 0x000B;*/
 	
-	@MCA("服务限速")
+	@MCA(group="rpc",value="服务限速")
 	public static final short MT_SERVICE_SPEED_LIMIT = 0x000C;
 	
-	@MCA("请求超时失败")
+	@MCA(group="rpc",value="请求超时失败")
 	public static final short MT_REQ_TIMEOUT_FAIL = 0x000D;
 	
-	@MCA("客户端网络通信关闭")
+	@MCA(group="clientNetIo",value="客户端网络通信关闭")
 	public static final short MT_CLIENT_IOSESSION_CLOSE = 0x000E;
 	
-	@MCA("客户端网络通信打开")
+	@MCA(group="clientNetIo",value="客户端网络通信打开")
 	public static final short MT_CLIENT_IOSESSION_OPEN = 0x000F;
 	
-	@MCA("客户端网络链路空闲事件")
+	@MCA(group="clientNetIo",value="客户端网络链路空闲事件")
 	public static final short MT_CLIENT_IOSESSION_IDLE = 0x0010;
 	
-	@MCA("客户端IO写数据（上行）")
+	@MCA(group="clientNetIo",value="客户端IO写数据（上行）")
 	public static final short MT_CLIENT_IOSESSION_WRITE = 0x012;
 	
 	//网络下行流量
-	@MCA("客户端IO读数据（下行）")
+	@MCA(group="clientNetIo",value="客户端IO读数据（下行）")
 	public static final short MT_CLIENT_IOSESSION_READ =  0x0013;
 	
-	@MCA("客户端网络IO异步")
+	@MCA(group="clientNetIo",value="客户端网络IO异步")
 	public static final short MT_CLIENT_IOSESSION_EXCEPTION = 0x0014;
 	//public static final short CLIENT_PACKAGE_SESSION_ID_ERR = 0X00E5;
 	
-	@MCA("服务端网络关闭")
+	@MCA(group="serverNetIo",value="服务端网络关闭")
 	public static final short MT_SERVER_IOSESSION_CLOSE = 0x0015;
 	
-	@MCA("服务端网络打开")
+	@MCA(group="serverNetIo",value="服务端网络打开")
 	public static final short MT_SERVER_IOSESSION_OPEN =  0x0016;
 	
-	@MCA("服务端链路空闲事件")
+	@MCA(group="serverNetIo",value="服务端链路空闲事件")
 	public static final short MT_SERVER_IOSESSION_IDLE =  0x0017;
 	
-	@MCA("服务端IO写数据（下行）")
+	@MCA(group="serverNetIo",value="服务端IO写数据（下行）")
 	public static final short MT_SERVER_JRPC_RESPONSE_SUCCESS = 0x0018;
 	
 	//网络上行流量
-	@MCA("服务端IO读数据次数（上行包数量）")
+	@MCA(group="serverNetIo",value="服务端IO读数据次数（上行包数量）")
 	public static final short MT_SERVER_JRPC_GET_REQUEST =  0x0019;
 	
-	@MCA("服务端网络IO异步")
+	@MCA(group="serverNetIo",value="服务端网络IO异步")
     public static final short MT_SERVER_IOSESSION_EXCEPTION = 0x001A;
     
     //public static final short LINKER_ROUTER_MONITOR = 0X00EC;
-	@MCA("客户端连接失败")
+	@MCA(group="clientNetIo",value="客户端连接失败")
     public static final short MT_CLIENT_CONNECT_FAIL = 0x001B;
     
-	@MCA("请求超时重试")
+	@MCA(group="rpc",value="请求超时重试")
 	public static final short MT_REQ_TIMEOUT_RETRY = 0x001C;
 	
-	@MCA("未知错误")
+	@MCA(group="rpc",value="未知错误")
 	public static final short MT_REQ_ERROR = 0x001D;
 	
-	@MCA("请求成功")
+	@MCA(group="rpc",value="请求成功")
 	public static final short MT_REQ_SUCCESS = 0x001E;
 	
-	@MCA("服务熔断")
+	@MCA(group="rpc",value="服务熔断")
 	public static final short MT_SERVICE_BREAK = 0x001F;
 	
-	@MCA("消息处理器未找到")
+	@MCA(group="rpc",value="消息处理器未找到")
 	public static final short MT_HANDLER_NOT_FOUND = 0x0020;
 	
-	@MCA("异步RPC失败")
+	@MCA(group="rpc",value="异步RPC失败")
 	public static final short MT_ASYNC_RPC_FAIL = 0x0021;
 	
-	@MCA("服务方法未找到")
+	@MCA(group="rpc",value="服务方法未找到")
 	public static final short MT_SERVICE_METHOD_NOT_FOUND = 0x0022;
 	
-	@MCA("进程启动")
+	@MCA(group="choyController", value="进程启动")
 	public static final short MT_PROCESS_ADD = 0x0023;
-	@MCA("进程关闭")
+	@MCA(group="choyController", value="进程关闭")
 	public static final short MT_PROCESS_REMOVE = 0x0024;
-	@MCA("进程日志")
+	@MCA(group="choyController", value="进程日志")
 	public static final short MT_PROCESS_LOG = 0x0025;
 	
-	@MCA("主机代理启动")
+	@MCA(group="choyAgent", value="主机代理启动")
 	public static final short MT_AGENT_ADD = 0x0026;
-	@MCA("主机代理关闭")
+	@MCA(group="choyAgent", value="主机代理关闭")
 	public static final short MT_AGENT_REMOVE = 0x0027;
-	@MCA("主机代理日志")
+	@MCA(group="choyAgent", value="主机代理日志")
 	public static final short MT_AGENT_LOG = 0x0028;
 	
-	@MCA("服务部署描述加入")
+	@MCA(group="choyController", value="服务部署描述加入")
 	public static final short MT_DEPLOYMENT_ADD = 0x0029;
-	@MCA("服务部署描述移除")
+	@MCA(group="choyController", value="服务部署描述移除")
 	public static final short MT_DEPLOYMENT_REMOVE = 0x002A;
-	@MCA("服务部署描述更新")
+	@MCA(group="choyController", value="服务部署描述更新")
 	public static final short MT_DEPLOYMENT_UPDATE = 0x002B;
-	@MCA("服务部署描述日志")
+	@MCA(group="choyController", value="服务部署描述日志")
 	public static final short MT_DEPLOYMENT_LOG = 0x002C;
 	
-	@MCA("服务分配增加")
+	@MCA(group="choyController", value="服务分配增加")
 	public static final short MT_ASSIGN_ADD = 0x002D;
-	@MCA("服务分配移除")
+	@MCA(group="choyController", value="服务分配移除")
 	public static final short MT_ASSIGN_REMOVE = 0x002E;
-	@MCA("服务分配日志")
+	@MCA(group="choyController", value="服务分配日志")
 	public static final short MT_ASSIGN_LOG = 0x002F;
 	
 	@MCA("消息订阅日志")
@@ -304,7 +304,7 @@ public final class MC {
 	@MCA(value="线程池拒绝任务提交", group=Constants.EXECUTOR_POOL, desc="")
 	public static final short MT_EXECUTOR_REJECT = 0x0051;
 	
-	@MCA(value="RPC参数大小超过限定大小", desc="")
+	@MCA(group="rpc",value="RPC参数大小超过限定大小", desc="")
 	public static final short MT_PACKET_TOO_MAX = 0x0052;
 	
 	@MCA(value="clientId权限拒绝", desc="")
@@ -313,28 +313,28 @@ public final class MC {
 	@MCA(value="账号权限拒绝", desc="")
 	public static final short MT_ACT_PERMISSION_REJECT = 0x0054;
 	
-	@MCA(value="客户端写字节数", desc="")
+	@MCA(group="clientNetIo",value="客户端写字节数", desc="")
 	public static final short MT_CLIENT_IOSESSION_WRITE_BYTES = 0x0055;
 	
-	@MCA(value="客户端读字节数", desc="")
+	@MCA(group="clientNetIo",value="客户端读字节数", desc="")
 	public static final short MT_CLIENT_IOSESSION_READ_BYTES = 0x0056;
 	
-	@MCA("服务端IO读数据字节数（上行）")
+	@MCA(group="serverNetIo",value="服务端IO读数据字节数（上行）")
 	public static final short MT_SERVER_JRPC_GET_REQUEST_READ =  0x0057;
 	
-	@MCA("服务端IO写数据字节数（下行）")
+	@MCA(group="serverNetIo",value="服务端IO写数据字节数（下行）")
 	public static final short MT_SERVER_JRPC_RESPONSE_WRITE =  0x0058;
 	
-	@MCA("服务端限速队例消息入队")
+	@MCA(group="rpc",value="服务端限速队例消息入队")
 	public static final short MT_SERVER_LIMIT_MESSAGE_PUSH =  0x0059;
 	
-	@MCA("服务端限速队例消息拒绝")
+	@MCA(group="rpc",value="服务端限速队例消息拒绝")
 	public static final short MT_SERVER_LIMIT_MESSAGE_REJECT =  0x005A;
 	
-	@MCA("服务端限速队例消息出队列")
+	@MCA(group="rpc",value="服务端限速队例消息出队列")
 	public static final short MT_SERVER_LIMIT_MESSAGE_POP =  0x005B;
 	
-	@MCA("AES解密错误，需要重密钥")
+	@MCA(group="rpc",value="AES解密错误，需要重密钥")
 	public static final short MT_AES_DECRYPT_ERROR =  0x005C;
 	
 	public static final short KEEP_MAX_VAL = 0x0FFF;

@@ -21,5 +21,6 @@
 		<module>main.apigateway</module>
 		<module>main.mng</module>
 		<module>main.limit</module>
+		<module>main.resource</module>
     </modules>
 </project>

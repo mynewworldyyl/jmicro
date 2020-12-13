@@ -16,6 +16,7 @@ import cn.jmicro.api.choreography.ChoyConstants;
 import cn.jmicro.api.choreography.ProcessInfo;
 import cn.jmicro.api.raft.IDataListener;
 import cn.jmicro.api.raft.IDataOperator;
+import cn.jmicro.api.timer.TimerTicker;
 import cn.jmicro.api.utils.TimeUtils;
 import cn.jmicro.choreography.api.IInstanceListener;
 import cn.jmicro.common.util.JsonUtils;
@@ -41,7 +42,6 @@ public class InstanceManager {
 	private Set<IInstanceListener> listeners = new HashSet<>();
 	
 	private Map<String,Long> timeouts = new HashMap<>();
-	private Object notifyObj = new Object();
 	
 	private long rmTimeout = 10000;
 	
@@ -72,47 +72,37 @@ public class InstanceManager {
 			if(type == IListener.ADD) {
 				instanceAdded(Integer.parseInt(c),data);
 			} else if(type == IListener.REMOVE) {
-				synchronized(notifyObj) {
-					//等待rmTimeout毫秒后，如果结点还是不存在，删除正式删除实例
-					timeouts.put(c, TimeUtils.getCurTime());
-					notifyObj.notify();
-				}
+				//等待rmTimeout毫秒后，如果结点还是不存在，删除正式删除实例
+				timeouts.put(c, TimeUtils.getCurTime());
+				//notifyObj.notify();
 			}
 		});
-		new Thread(this::check).start();
+		
+		TimerTicker.doInBaseTicker(5, "InstanceManager-checker", null,
+		(key,att)->{
+			check();
+		});
 		
 	}
 	
 	public void check() {
-		while(true) {
-			synchronized(notifyObj) {
-				if(timeouts.isEmpty()) {
-					try {
-						notifyObj.wait(rmTimeout);
-					} catch (InterruptedException e) {
-						e.printStackTrace();
-					}
-				}
 
-				if(timeouts.isEmpty()) {
-					continue;
+		if(timeouts.isEmpty()) {
+			return;
+		}
+		
+		long curTime = TimeUtils.getCurTime();
+		Set<String> set = new HashSet<>();
+		set.addAll(timeouts.keySet());
+		
+		for(String to : set) {
+			if(curTime - timeouts.get(to) > rmTimeout) {
+				String p = ChoyConstants.INS_ROOT +"/" + to;
+				if(!op.exist(p)) {
+					//结点删除
+					instanceRemoved(to);
+					timeouts.remove(to);
 				}
-				
-				long curTime = TimeUtils.getCurTime();
-				Set<String> set = new HashSet<>();
-				set.addAll(timeouts.keySet());
-				
-				for(String to : set) {
-					if(curTime - timeouts.get(to) > rmTimeout) {
-						String p = ChoyConstants.INS_ROOT +"/" + to;
-						if(!op.exist(p)) {
-							//结点删除
-							instanceRemoved(to);
-							timeouts.remove(to);
-						}
-					}
-				}
-			
 			}
 		}
 		

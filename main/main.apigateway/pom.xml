@@ -21,6 +21,11 @@
 			<groupId>cn.jmicro</groupId>
 			<artifactId>gateway</artifactId>
 		</dependency>
+		
+		 <dependency>
+			<groupId>cn.jmicro</groupId>
+			<artifactId>resource</artifactId>
+		</dependency>
 	
 	    <dependency>
 			<groupId>cn.jmicro</groupId>

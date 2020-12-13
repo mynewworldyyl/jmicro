@@ -28,6 +28,7 @@ import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Enumeration;
@@ -47,6 +48,8 @@ import cn.jmicro.common.util.JsonUtils;
  */
 public class Utils {
 
+	private DecimalFormat DECIMALFORMAT = new DecimalFormat("#.##");
+	
 	private static Utils ins = new Utils();
 
 	private Utils() {
@@ -299,5 +302,43 @@ public class Utils {
 	        }
 	        return "null";
 	    }
+	 	
+	 	public String bestDataSizeVal(double val) {
+	 		String unit = "";
+	 		Double retVal = 0D;
+	 		if(val < KB) {
+	 			unit="B";
+	 			retVal = val;
+	 		}else if(val < MB) {
+	 			unit="KB";
+	 			retVal = val/KB;
+	 		}else if(val < GB) {
+	 			unit="MB";
+	 			retVal = val/MB;
+	 		}else if(val < TB) {
+	 			unit="GB";
+	 			retVal = val/GB;
+	 		}else if(val < PB) {
+	 			unit="TB";
+	 			retVal = val/TB;
+	 		}else {
+	 			unit="PB";
+	 			retVal = val/PB;
+	 		}
+	 		return DECIMALFORMAT.format(retVal) + unit;
+	 	}
 	
+	 	
+	 private final double B = 1;
+	 	 
+	 private final double KB = 1024;
+	 	
+	 private final double MB = KB*1024;
+	 
+	 private final double GB = MB*1024;
+	 
+	 private final double TB = GB*1024;
+	 
+	 private final double PB = TB*1024;
+	 
 }

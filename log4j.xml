@@ -14,7 +14,7 @@
 		<param name="File" value="${user.dir}/logs/work.log"/>
 		<param name="DatePattern" value="'.'yyyyMMdd"/>
 		<param name="Append" value="true"/>
-		<param name="Threshold" value="DEBUG"/>
+		<param name="Threshold" value="INFO"/>
 		<layout class="org.apache.log4j.PatternLayout">
 			<param name="ConversionPattern" value="[%L],[%t],[%d][%p,%c{1}] %m%n"/>
 		</layout>
@@ -24,7 +24,7 @@
 		<param name="File" value="${user.dir}/logs/sf.log"/>
 		<param name="DatePattern" value="'.'yyyyMMdd"/>
 		<param name="Append" value="true"/>
-		<param name="Threshold" value="DEBUG"/>
+		<param name="Threshold" value="INFO"/>
 		<layout class="org.apache.log4j.PatternLayout">
 			<param name="ConversionPattern" value="[%L],[%t],[%d][%p,%c{1}] %m%n"/>
 		</layout>
@@ -54,7 +54,7 @@
 		<param name="File" value="${user.dir}/logs/debug.log"/>
 		<param name="DatePattern" value="'.'yyyyMMdd"/>
 		<param name="Append" value="true"/>
-		<param name="Threshold" value="DEBUG"/>
+		<param name="Threshold" value="INFO"/>
 		<layout class="org.apache.log4j.PatternLayout">
 			<param name="ConversionPattern" value="[%d][%p,%c{1}] %m%n"/>
 		</layout>
@@ -64,17 +64,17 @@
 		<param name="File" value="${user.dir}/logs/specail.log"/>
 		<param name="DatePattern" value="'.'yyyyMMdd"/>
 		<param name="Append" value="true"/>
-		<param name="Threshold" value="DEBUG"/>
+		<param name="Threshold" value="INFO"/>
 		<layout class="org.apache.log4j.PatternLayout">
 			<param name="ConversionPattern" value="[%d][%p,%c{1}] %m%n"/>
 		</layout>
 	</appender>
 	
-		<appender name="jmicro_A" class="org.apache.log4j.DailyRollingFileAppender">
+	<appender name="jmicro_A" class="org.apache.log4j.DailyRollingFileAppender">
 		<param name="File" value="${user.dir}/logs/per/A.log"/>
 		<param name="DatePattern" value="'.'yyyyMMdd"/>
 		<param name="Append" value="true"/>
-		<param name="Threshold" value="DEBUG"/>
+		<param name="Threshold" value="INFO"/>
 		<layout class="org.apache.log4j.PatternLayout">
 			<param name="ConversionPattern" value="[%L],[%t],[%d][%p,%c{1}] %m%n"/>
 		</layout>
@@ -84,7 +84,7 @@
 		<param name="File" value="${user.dir}/logs/per/B.log"/>
 		<param name="DatePattern" value="'.'yyyyMMdd"/>
 		<param name="Append" value="true"/>
-		<param name="Threshold" value="DEBUG"/>
+		<param name="Threshold" value="INFO"/>
 		<layout class="org.apache.log4j.PatternLayout">
 			<param name="ConversionPattern" value="[%L],[%t],[%d][%p,%c{1}] %m%n"/>
 		</layout>
@@ -94,7 +94,7 @@
 		<param name="File" value="${user.dir}/logs/per/C.log"/>
 		<param name="DatePattern" value="'.'yyyyMMdd"/>
 		<param name="Append" value="true"/>
-		<param name="Threshold" value="DEBUG"/>
+		<param name="Threshold" value="INFO"/>
 		<layout class="org.apache.log4j.PatternLayout">
 			<param name="ConversionPattern" value="[%L],[%t],[%d][%p,%c{1}] %m%n"/>
 		</layout>
@@ -104,7 +104,7 @@
 		<param name="File" value="${user.dir}/logs/per/D.log"/>
 		<param name="DatePattern" value="'.'yyyyMMdd"/>
 		<param name="Append" value="true"/>
-		<param name="Threshold" value="DEBUG"/>
+		<param name="Threshold" value="INFO"/>
 		<layout class="org.apache.log4j.PatternLayout">
 			<param name="ConversionPattern" value="[%L],[%t],[%d][%p,%c{1}] %m%n"/>
 		</layout>
@@ -121,30 +121,30 @@
 	</logger>
 	
 	<logger name="cn.jmicro.api.debug.a">
-		<level value="DEBUG"/>
+		<level value="INFO"/>
 		<appender-ref ref="jmicro_A"/>
 	</logger>
 	
 	<logger name="cn.jmicro.api.debug.b">
-		<level value="DEBUG"/>
+		<level value="INFO"/>
 		<appender-ref ref="jmicro_B"/>
 	</logger>
 	<logger name="cn.jmicro.api.debug.c">
-		<level value="DEBUG"/>
+		<level value="INFO"/>
 		<appender-ref ref="jmicro_C"/>
 	</logger>
 	<logger name="cn.jmicro.api.debug.d">
-		<level value="DEBUG"/>
+		<level value="INFO"/>
 		<appender-ref ref="jmicro_D"/>
 	</logger>
 	
 	<logger name="cn.jmicro.client.specail">
-		<level value="DEBUG"/>
+		<level value="INFO"/>
 		<appender-ref ref="jmicro_scpecail"/>
 	</logger>
 
 	<logger name="cn.jmicro">
-		<level value="DEBUG"/>
+		<level value="INFO"/>
 		<appender-ref ref="NORMALLOG"/>
 	</logger>
 	
@@ -179,8 +179,9 @@
 	</logger>
 	 
 	<root>	
-	    <level value="INFO"/>
-		<appender-ref ref="NORMALLOG"/>
+	    <level value="DEBUG"/>
+	   <!--  <appender-ref ref="NORMALLOG"/> -->
+		<appender-ref ref="CONSOLE"/>
 	</root>
 	
 </log4j:configuration>

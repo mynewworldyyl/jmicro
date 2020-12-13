@@ -1,9 +1,9 @@
 package cn.jmicro.api.raft;
 
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 
 import org.slf4j.Logger;
@@ -65,7 +65,7 @@ public class RaftNodeDataListener<NodeType> {
 		this.nodeClazz = clazz;
 		
 		if(maintainDataList) {
-			this.datas = new HashMap<>();
+			this.datas = new ConcurrentHashMap<>();
 		}
 		
 		op.addChildrenListener(this.dir, new IChildrenListener() {
@@ -188,7 +188,8 @@ public class RaftNodeDataListener<NodeType> {
 			for(String k : keys) {
 				c.accept(k);
 			}
-		}else {
+			
+		} else {
 			Set<String> children = this.op.getChildren(this.dir, false);
 			if(children != null && !children.isEmpty()) {
 				for(String ke : children) {

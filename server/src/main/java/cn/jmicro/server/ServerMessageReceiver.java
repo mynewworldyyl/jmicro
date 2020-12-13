@@ -163,7 +163,11 @@ public class ServerMessageReceiver implements IMessageReceiver{
 	public void receive(ISession s, Message msg) {
 		
 		//确保服务器对称密钥一定是最新的
-		secretMng.updateSecret(msg);
+		try {
+			secretMng.updateSecret(msg);
+		} catch (Exception e1) {
+			responseException(msg,(IServerSession)s,e1);
+		}
 		
 		if(openDebug) {
 			//SF.getIns().doMessageLog(MonitorConstant.DEBUG, TAG, msg,"receive");
@@ -294,7 +298,8 @@ public class ServerMessageReceiver implements IMessageReceiver{
 		//SF.doMessageLog(MonitorConstant.LOG_ERROR, TAG, msg,e);
 		//SF.doSubmit(MonitorConstant.SERVER_REQ_ERROR);
 		
-		logger.error("reqHandler error msg:{} ",msg);
+		StackTraceElement se = Thread.currentThread().getStackTrace()[1];
+		logger.error(se.getLineNumber() + " reqHandler error msg:{} ",msg);
 		logger.error("doReceive",e);
 		
 		LG.log(MC.LOG_ERROR, TAG,"error",e);

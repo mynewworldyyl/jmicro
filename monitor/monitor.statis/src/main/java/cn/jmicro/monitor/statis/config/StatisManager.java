@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -135,8 +136,11 @@ public class StatisManager {
 	
 	private void doStatis(ServiceCounter sc,MRpcStatisItem si) {
 		if(sc != null) {
-			for(StatisItem oi : si.getTypeStatis().values()) {
-				sc.add(oi.getType(), oi.getVal(),si.getSubmitTime()- oi.getTime());
+			for(Short type : si.getTypeStatis().keySet()) {
+				List<StatisItem> items = si.getTypeStatis().get(type);
+				for(StatisItem oi : items) {
+					sc.add(oi.getType(), oi.getVal(),si.getSubmitTime()- oi.getTime());
+				}
 			}
 		}
 	}
@@ -176,14 +180,17 @@ public class StatisManager {
 
 	
 	protected void log(MRpcStatisItem si) {
-		for(StatisItem oi : si.getTypeStatis().values()) {
-			StringBuffer sb = new StringBuffer();
-			sb.append("GOT: " + MC.MONITOR_VAL_2_KEY.get(oi.getType()));
-			if(si.getSmKey() != null) {
-				sb.append(", SM: ").append(si.getSmKey().getMethod());
+		for(Short type : si.getTypeStatis().keySet()) {
+			List<StatisItem> items = si.getTypeStatis().get(type);
+			for(StatisItem oi : items) {
+				StringBuffer sb = new StringBuffer();
+				sb.append("GOT: " + MC.MONITOR_VAL_2_KEY.get(oi.getType()));
+				if(si.getSmKey() != null) {
+					sb.append(", SM: ").append(si.getSmKey().getMethod());
+				}
+				sb.append(", actName: ").append(si.getActName());
+				logger.debug(sb.toString()); 
 			}
-			sb.append(", actName: ").append(si.getActName());
-			logger.debug(sb.toString()); 
 		}
 	}
 	

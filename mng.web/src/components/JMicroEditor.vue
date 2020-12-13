@@ -55,6 +55,7 @@
                         <JThreadPoolMonitorEditor v-else-if="item.group == 'threadPool'" :item="item"></JThreadPoolMonitorEditor>
                         <JLogWarningConfigView v-else-if="item.group == 'warningConfig'" :item="item"></JLogWarningConfigView>
                         <JStatisConfigView v-else-if="item.group == 'statisConfig'" :item="item"></JStatisConfigView>
+                        <JResourceConfigView v-else-if="item.group == 'resourceConfig'" :item="item"></JResourceConfigView>
                         <JPublicKeyList v-else-if="item.group == 'publicKeyList'" :item="item"></JPublicKeyList>
                         <JBottomBar></JBottomBar>
                     </div>
@@ -132,6 +133,7 @@
             JLog : () => import('./log/JLog.vue'),
             JLogWarningConfigView: () => import('./monitor/JLogWarningConfigView.vue'),
             JStatisConfigView: () => import('./monitor/JStatisConfigView.vue'),
+            JResourceConfigView: () => import('./monitor/JResourceConfigView.vue'),
 
             JAccountEditor:()=> import('./security/JAccountEditor.vue'),
             JUserProfileEditor:()=> import('./security/JUserProfileEditor.vue'),

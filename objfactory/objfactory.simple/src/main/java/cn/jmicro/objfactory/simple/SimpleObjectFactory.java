@@ -105,6 +105,9 @@ public class SimpleObjectFactory implements IObjectFactory {
 	
 	private static AtomicInteger isInit = new AtomicInteger(0);
 	
+	//代表当前JMicro进程实例
+	private ProcessInfo pi = null;
+	
 	private boolean fromLocal = true;
 	
 	private List<IPostFactoryListener> postReadyListeners = new ArrayList<>();
@@ -538,6 +541,8 @@ public class SimpleObjectFactory implements IObjectFactory {
 			for(IPostFactoryListener lis : this.postReadyListeners){
 				lis.afterInit(this);
 			}
+			
+			persistProcessInfo(dataOperator);
 			
 			if(oldCl != null) {
 				Thread.currentThread().setContextClassLoader(oldCl);
@@ -1094,6 +1099,9 @@ public class SimpleObjectFactory implements IObjectFactory {
 	Object getCommandSpecifyConponent(Field f) {
 		//系统启动时可以为某些类指定特定的实现
 		Object srv = null;
+		/*if(f.getType().getName().equals("cn.jmicro.api.mng.JmicroInstanceManager")) {
+			logger.debug(f.getType().getName());
+		}*/
 		String commandComName = Config.getCommandParam(f.getType().getName(), String.class, null);
 		if(!StringUtils.isEmpty(commandComName) && ( f.isAnnotationPresent(Inject.class) || f.isAnnotationPresent(Reference.class) )) {
 			//对于注入或引用的服务,命令行指定实现组件名称
@@ -1632,8 +1640,6 @@ public class SimpleObjectFactory implements IObjectFactory {
 		}
 	}
 	
-	private ProcessInfo pi = null;
-	
 	private void createProccessInfo(IDataOperator op,Config cfg) {
 	
 		String initProcessInfoPath = cfg.getString(ChoyConstants.PROCESS_INFO_FILE,null);
@@ -1701,6 +1707,7 @@ public class SimpleObjectFactory implements IObjectFactory {
 		pi.setHaEnable(ismlModel);
 		pi.setMaster(false);
 		pi.setStartTime(pi.getOpTime());
+		pi.setInfoFilePath(initProcessInfoPath);
 		//pi.setTimeOut(0);
 		
 		String p = ChoyConstants.INS_ROOT+"/" + pi.getId();
@@ -1717,12 +1724,20 @@ public class SimpleObjectFactory implements IObjectFactory {
 			op.deleteNode(p);
 		}
 		
-		op.createNodeOrSetData(p,js ,IDataOperator.EPHEMERAL);
+		this.cacheObj(ProcessInfo.class, pi,null);
 		
-		logger.info("Update ProcessInfo:" + js);
+		//SF.eventLog(MC.MT_PROCESS_ADD,MC.LOG_INFO, this.getClass().getSimpleName(),js);
 		
+	}
+	
+	//JMICRO容器启的最后调用
+	private void persistProcessInfo(IDataOperator op) {
 		//initProcessInfoPath = cfg.getString(Constants.INSTANCE_DATA_DIR,null) + File.separatorChar + "processInfo.json";
-		SystemUtils.setFileString(initProcessInfoPath, js);
+		String js = JsonUtils.getIns().toJson(pi);
+		String p = ChoyConstants.INS_ROOT+"/" + pi.getId();
+		SystemUtils.setFileString(pi.getInfoFilePath(), js);
+		op.createNodeOrSetData(p,js ,IDataOperator.EPHEMERAL);
+		logger.info("Update ProcessInfo:" + js);
 		
 		op.addNodeListener(p, (int type, String path,String data)->{
 			//防止被误删除，只要此进程还在，此结点就不应该消失
@@ -1737,7 +1752,7 @@ public class SimpleObjectFactory implements IObjectFactory {
 					logger.warn(msg);
 					JMicro.waitTime(4000);
 					System.exit(0);
-				}else {
+				} else {
 					pi.setHaEnable(pi0.isHaEnable());
 					pi.setOpTime(pi0.getOpTime());
 					pi.setMaster(pi0.isMaster());
@@ -1751,12 +1766,11 @@ public class SimpleObjectFactory implements IObjectFactory {
 					pi.setMonitorable(pi0.isMonitorable());
 					pi.setPid(pi0.getPid());
 					pi.setWorkDir(pi0.getWorkDir());
+					pi.setMetadatas(pi0.getMetadatas());
 				}
 			}
 		});
-		
-		this.cacheObj(ProcessInfo.class, pi,null);
-		
+			
 		TimerTicker.doInBaseTicker(60,Config.getInstanceName() + "_Choy_checker",null,(key,at)->{
 			if(!op.exist(p) && pi.isActive()) {
 				String js0 = JsonUtils.getIns().toJson(pi);
@@ -1766,9 +1780,6 @@ public class SimpleObjectFactory implements IObjectFactory {
 				op.createNodeOrSetData(p,js0,true);
 			}
 		});
-		
-		//SF.eventLog(MC.MT_PROCESS_ADD,MC.LOG_INFO, this.getClass().getSimpleName(),js);
-		
 	}
 
 }

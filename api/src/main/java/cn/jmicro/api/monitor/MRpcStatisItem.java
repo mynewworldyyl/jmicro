@@ -16,7 +16,9 @@
  */
 package cn.jmicro.api.monitor;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import cn.jmicro.api.annotation.SO;
@@ -46,7 +48,7 @@ public final class MRpcStatisItem{
 	private long submitTime;//数据从客户端开始提交服务器时间 选项数据等待提交时间 = submitTime - 每个选项创建时间
 	private long costTime;//RPC消耗时间  curTime-createTime
 	
-	private Map<Short,StatisItem> typeStatis = new HashMap<>();
+	private Map<Short,List<StatisItem>> typeStatis = new HashMap<>();
 	
 	private transient long createTime = TimeUtils.getCurTime();
 	
@@ -55,7 +57,7 @@ public final class MRpcStatisItem{
 	
 	public MRpcStatisItem() {}
 	
-	public Map<Short,StatisItem> getOneItems(Short[] types) {
+	/*public Map<Short,StatisItem> getOneItems(Short[] types) {
 		if(types == null || types.length == 0) {
 			return null;
 		}
@@ -66,16 +68,29 @@ public final class MRpcStatisItem{
 			}
 		}
 		return rst;
+	}*/
+	
+	public void addType(StatisItem si) {
+		List<StatisItem> sis = typeStatis.get(si.getType());
+		if(sis == null) {
+			typeStatis.put(si.getType(), new ArrayList<>());
+			sis = typeStatis.get(si.getType());
+		}
+		sis.add(si);
 	}
 	
 	public StatisItem addType(Short type, long val) {
-		StatisItem si = typeStatis.get(type);
-		if(si == null) {
-			si = new StatisItem();
-			si.setType(type);
-			typeStatis.put(type, si);
+		List<StatisItem> sis = typeStatis.get(type);
+		if(sis == null) {
+			typeStatis.put(type, new ArrayList<>());
+			sis = typeStatis.get(type);
 		}
+		
+		StatisItem si = new StatisItem();
+		si.setType(type);
 		si.add(val);
+		
+		sis.add(si);
 		return si;
 	}
 
@@ -163,11 +178,11 @@ public final class MRpcStatisItem{
 		this.costTime = costTime;
 	}
 
-	public Map<Short, StatisItem> getTypeStatis() {
+	public Map<Short, List<StatisItem>> getTypeStatis() {
 		return typeStatis;
 	}
 
-	public void setTypeStatis(Map<Short, StatisItem> typeStatis) {
+	public void setTypeStatis(Map<Short, List<StatisItem>> typeStatis) {
 		this.typeStatis = typeStatis;
 	}
 

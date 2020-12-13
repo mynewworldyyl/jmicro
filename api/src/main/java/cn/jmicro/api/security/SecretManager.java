@@ -6,8 +6,12 @@ import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
 import java.util.Base64;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
@@ -25,10 +29,12 @@ import cn.jmicro.api.choreography.ChoyConstants;
 import cn.jmicro.api.choreography.ProcessInfo;
 import cn.jmicro.api.config.Config;
 import cn.jmicro.api.exp.ExpUtils;
+import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.net.Message;
 import cn.jmicro.api.raft.IDataOperator;
 import cn.jmicro.api.registry.IRegistry;
 import cn.jmicro.api.rsa.EncryptUtils;
+import cn.jmicro.api.timer.TimerTicker;
 import cn.jmicro.api.utils.TimeUtils;
 import cn.jmicro.common.CommonException;
 import cn.jmicro.common.Constants;
@@ -61,12 +67,12 @@ public class SecretManager {
 
 	private Map<String, RSAPublicKey> publicRsaKeys = new HashMap<>();
 
-	private Map<Integer, String> processId2InstanceNames = new HashMap<>();
+	private Map<Integer, String> processId2InstanceNames = new ConcurrentHashMap<>();
 
-	private final Map<Integer,SecKey> insId2AesKey = new HashMap<>();
+	private final Map<Integer,SecKey> insId2AesKey = new ConcurrentHashMap<>();
 	
 	//API网关没有insId,通过使用ip+":"+port作为Key取密码
-	private final Map<Integer, SecKey> gatewayClientAesKey = new HashMap<>();
+	private final Map<Integer, SecKey> gatewayClientAesKey = new ConcurrentHashMap<>();
 	
 	public String getPublicKey(String prefix) {
 		if (!publicRsaKeys.containsKey(prefix)) {
@@ -105,6 +111,7 @@ public class SecretManager {
 				} else {
 					k = insId2AesKey.get(msg.getInsId());
 				}
+				
 				if( k != null && !k.reponseSucc) {
 					k.reponseSucc = true;
 				}
@@ -124,7 +131,19 @@ public class SecretManager {
 				ByteBuffer bb = (ByteBuffer) msg.getPayload();
 				//byte[] d = EncryptUtils.decryptPBE(bb.array(), 0, bb.limit(), msg.getSalt(), k.key);
 				//msg.getSalt() 是客户端传过来的IV值的utf8编码后的数组，
-				byte[] d = EncryptUtils.decryptAes(bb.array(), 0, bb.limit(), msg.getSalt(), k.key);
+				
+				byte[] d = null;
+				CommonException ex = null;
+				do {
+					try {
+						d = EncryptUtils.decryptAes(bb.array(), 0, bb.limit(), msg.getSalt(), k.key);
+					} catch (CommonException e) {
+						ex = e;
+						k = k.preKey;
+					}
+				} while(d == null && k != null && ex != null && ex.getKey() == MC.MT_AES_DECRYPT_ERROR);
+				
+				
 				if(msg.isFromWeb()) {
 					//因为WEB端是将数据做Base64编码为字符串后做的加密，所以Java端同样要将结果做Base64解码
 					d = Base64.getDecoder().decode(d);
@@ -372,7 +391,6 @@ public class SecretManager {
 		if (!publicRsaKeys.containsKey(prefix)) {
 			throw new CommonException("Fail to load public key for instance: " + insId+",prefix:" + prefix);
 		}
-
 		return publicRsaKeys.get(prefix);
 	}
 
@@ -509,13 +527,56 @@ public class SecretManager {
 				if (processId2InstanceNames.containsKey(iid)) {
 					processId2InstanceNames.remove(iid);
 				}
-				
 				if(insId2AesKey.containsKey(iid)) {
 					insId2AesKey.remove(iid);
 				}
 			}
 		});
+		
+		TimerTicker.doInBaseTicker(30, "SecretChecker", null, (key,att)->{
+			doCheck();
+		});
 
+	}
+
+	private void doCheck() {
+		
+		Set<Integer> ids = new HashSet<>();
+		
+		if(!insId2AesKey.isEmpty()) {
+			//存在并发问题，但是报错也没关系，下次可以继续
+			ids.addAll(insId2AesKey.keySet());
+			checkOne(ids,insId2AesKey);
+		}
+		
+		ids.clear();
+		
+		if(!gatewayClientAesKey.isEmpty()) {
+			//存在并发问题，但是报错也没关系，下次可以继续
+			ids.addAll(gatewayClientAesKey.keySet());
+			checkOne(ids,gatewayClientAesKey);
+		}
+		
+	}
+	
+	private void checkOne(Set<Integer> ids, Map<Integer,SecKey> insId2AesKey) {
+		Iterator<Integer> ite = ids.iterator();
+		long curTime = TimeUtils.getCurTime();
+		while(ite.hasNext()) {
+			SecKey ek = insId2AesKey.get(ite.next());
+			if(ek == null) {
+				continue;
+			}
+			
+			while(ek.preKey != null) {
+				if(curTime - ek.preKey.createTime > 6000000) {
+					ek.preKey = null;//释放超过10分钟的密钥
+					break;
+				} else {
+					ek = ek.preKey; //检测下一个密钥
+				}
+			}
+		}
 	}
 
 	private void loadPublicKeys(String file, String prefix) {

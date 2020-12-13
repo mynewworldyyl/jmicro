@@ -66,7 +66,7 @@ public class MongodbInit implements IPostFactoryListener{
         ServerAddress serverAddress = new ServerAddress(host, port);
  
         //获取数据库链接client
-        MongoClient client = new MongoClient(serverAddress,mongoClientOptions);
+        MongoClient client = new MongoClient(serverAddress,mongoCredential,mongoClientOptions);
  
         //获取数据库对象
         MongoDatabase mdb = client.getDatabase(dbname);

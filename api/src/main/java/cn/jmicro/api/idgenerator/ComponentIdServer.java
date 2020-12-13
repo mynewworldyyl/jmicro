@@ -2,8 +2,10 @@ package cn.jmicro.api.idgenerator;
 
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Queue;
+import java.util.Set;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 import org.slf4j.Logger;
@@ -63,7 +65,7 @@ public class ComponentIdServer /*implements IIdClient,IIdServer*/{
 	public String[] getStringIds(String idKey, int num) {
 		if(isNotIdServer) {
 			return idClient.getStringIds(idKey, num);
-		}else {
+		} else {
 			return idServer.getStringIds(idKey, num);
 		}
 	}
@@ -83,6 +85,8 @@ public class ComponentIdServer /*implements IIdClient,IIdServer*/{
 			return idServer.getIntIds(idKey, num);
 		}
 	}
+	
+	private Map<String,Set<Long>> repeatIds = new HashMap<>();
 	
 	public Long getLongId(Class<?> idCls) {
 		
@@ -110,13 +114,31 @@ public class ComponentIdServer /*implements IIdClient,IIdServer*/{
 				}else {
 					ids.addAll(Arrays.asList(reqIds));
 				}
-				ids.addAll(Arrays.asList(reqIds));
 			}
+			//checkRepeat(ids,idCls.getName());
 			return ids.poll();
 		}
-		
-		
 	}
+	
+	
+    private void checkRepeat(Queue<Long> ids,String key) {
+    	Set<Long> rids = repeatIds.get(key);
+    	if(rids == null) {
+    		rids = new HashSet<>();
+    		repeatIds.put(key, rids);
+    	}
+    	for(Long id: ids) {
+    		if(rids.contains(id)) {
+    			logger.info("KEY: {}",key);
+    			logger.error("New: "+ids.toString());
+    			logger.error("History: "+rids.toString());
+    			throw new CommonException("Repeat ID: " + id);
+    		}else {
+    			rids.add(id);
+    		}
+    	}
+	}
+
 
 	public String getStringId(Class<?> idCls) {
 		Queue<String> ids = strIdsCache.get(idCls.getName());
@@ -142,8 +164,6 @@ public class ComponentIdServer /*implements IIdClient,IIdServer*/{
 				}else {
 					ids.addAll(Arrays.asList(reqIds));
 				}
-				
-				ids.addAll(Arrays.asList(reqIds));
 			}
 		}
 		
@@ -171,7 +191,7 @@ public class ComponentIdServer /*implements IIdClient,IIdServer*/{
 				Integer[] reqIds = this.getIntIds(idCls.getName(), getCacheSize(idCls));
 				if(reqIds.length == 1) {
 					return reqIds[0];
-				}else {
+				} else {
 					ids.addAll(Arrays.asList(reqIds));
 				}
 			}

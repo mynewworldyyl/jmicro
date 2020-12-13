@@ -19,6 +19,7 @@
                   <Menu-group :title="'Config'|i18n">
                       <Menu-item name="__statisConfig"><Icon type="ios-alert" />{{"statisConfig"|i18n}}</Menu-item>
                       <Menu-item name="__warningConfig"><Icon type="ios-alert" />{{"warningConfig"|i18n}}</Menu-item>
+                      <Menu-item name="__resourceConfig"><Icon type="ios-alert" />{{"resourceConfig"|i18n}}</Menu-item>
                       <Menu-item name="__typeConfig"><Icon type="ios-cog"></Icon>{{"TypeConfig"|i18n("Type Config")}}</Menu-item>
                       <Menu-item name="__monitorType"><Icon type="ios-cog"></Icon>{{"MonitorTypes"|i18n("Monitor Types")}}</Menu-item>
                       <Menu-item name="__monitorTypeServiceMethod"><Icon type="ios-cog"></Icon>{{"ServiceTypes"|i18n("Service Types")}}</Menu-item>

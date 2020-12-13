@@ -356,7 +356,6 @@ public class StatisMonitorClient {
 		Map<String,MRpcStatisItem> mprcItems = new HashMap<>();
 		
 		MRpcStatisItem nullSMMRpcItem = null;
-		Map<Short,StatisItem> type2Item = new HashMap<>();
 		
 		for(Iterator<MRpcStatisItem> ite = items.iterator(); ite.hasNext();) {
 			MRpcStatisItem mi = ite.next();
@@ -369,33 +368,34 @@ public class StatisMonitorClient {
 					//第一个，不用处理，别的合并到这个选项下面
 					continue;
 				}
-				Iterator<StatisItem> oiIte = mi.getTypeStatis().values().iterator();
-				for(; oiIte.hasNext(); ) {
-					StatisItem oi = oiIte.next();
-					oiIte.remove();
-					
-					StatisItem oldOi = type2Item.get(oi.getType());
-					if(oldOi == null) {
-						type2Item.put(oi.getType(), oi);
-						continue;
-					}
-					oldOi.add(oi.getVal());
-				}
-			} else {
-				//合并同一个服务方法的统计参数
-				result.add(mi);
 				
-				/*MRpcStatisItem emi = mprcItems.get(mi.getKey());
-				if(emi == null) {
-					emi = mi;
-					result.add(mi);
-				} else {
-					Iterator<StatisItem> oiIte = mi.getTypeStatis().values().iterator();
+				Set<Short> types = mi.getTypeStatis().keySet();
+				for(Short t : types) {
+					Iterator<StatisItem> oiIte = mi.getTypeStatis().get(t).iterator();
 					for(; oiIte.hasNext(); ) {
 						StatisItem oi = oiIte.next();
-						emi.addType(oi.getType(), oi.getVal());
+						nullSMMRpcItem.addType(oi);
 					}
-				}*/
+				}
+				
+			} else {
+				//合并同一个服务方法的统计参数
+				//result.add(mi);
+				
+				MRpcStatisItem emi = mprcItems.get(mi.getKey());
+				if(emi == null) {
+					mprcItems.put(mi.getKey(),mi);
+					result.add(mi);
+				} else {
+					Set<Short> types = mi.getTypeStatis().keySet();
+					for(Short t : types) {
+						Iterator<StatisItem> oiIte = mi.getTypeStatis().get(t).iterator();
+						for(; oiIte.hasNext(); ) {
+							StatisItem oi = oiIte.next();
+							emi.addType(oi);
+						}
+					}
+				}
 			}
 		}
 		
@@ -438,7 +438,7 @@ public class StatisMonitorClient {
 				//用于计算数据从创建到提交时间差，服务器以时间差为标准计算数据时间
 				long curTime = TimeUtils.getCurTime();
 				for(MRpcStatisItem i : items) {
-					logger.info("KEY:{}",i.getKey());
+					//logger.info("KEY:{}",i.getKey());
 					/*for(StatisItem si : i.getTypeStatis().values()) {
 						logger.info("T{}, V{}, TI{}",si.getType(),si.getVal(),si.getTime());
 					}*/
