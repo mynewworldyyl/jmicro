@@ -1,8 +1,17 @@
 package cn.jmicro.resource;
 
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.OutputStreamWriter;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -17,11 +26,15 @@ import com.mongodb.client.MongoDatabase;
 import cn.jmicro.api.CfgMetadata;
 import cn.jmicro.api.IListener;
 import cn.jmicro.api.JMicro;
+import cn.jmicro.api.JMicroContext;
+import cn.jmicro.api.Resp;
 import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Inject;
 import cn.jmicro.api.annotation.Reference;
 import cn.jmicro.api.async.PromiseUtils;
 import cn.jmicro.api.choreography.ProcessInfo;
+import cn.jmicro.api.email.genclient.IEmailSender$JMAsyncClient;
+import cn.jmicro.api.exp.Exp;
 import cn.jmicro.api.exp.ExpUtils;
 import cn.jmicro.api.idgenerator.ComponentIdServer;
 import cn.jmicro.api.mng.JmicroInstanceManager;
@@ -40,10 +53,12 @@ import cn.jmicro.api.raft.RaftNodeDataListener;
 import cn.jmicro.api.registry.IRegistry;
 import cn.jmicro.api.registry.ServiceItem;
 import cn.jmicro.api.registry.UniqueServiceKey;
+import cn.jmicro.api.service.IServiceAsyncResponse;
 import cn.jmicro.api.service.ServiceManager;
 import cn.jmicro.api.timer.TimerTicker;
 import cn.jmicro.api.utils.TimeUtils;
 import cn.jmicro.common.CommonException;
+import cn.jmicro.common.Constants;
 import cn.jmicro.common.util.JsonUtils;
 import cn.jmicro.common.util.StringUtils;
 
@@ -51,6 +66,8 @@ import cn.jmicro.common.util.StringUtils;
 public class ResourceMonitorServer{
 
 	private static final Logger logger = LoggerFactory.getLogger(ResourceMonitorServer.class);
+	
+	private String logDir;
 	
 	public static void main(String[] args) {
 		JMicro.getObjectFactoryAndStart(args);
@@ -60,6 +77,9 @@ public class ResourceMonitorServer{
 	@Inject
 	private ComponentIdServer idGenerator;
 	
+	@Reference
+	private IEmailSender$JMAsyncClient mailSender;
+	
 	@Reference(namespace="monitorResourceService", version="*", type="ins",required=false,changeListener="resourceServiceChange")
 	private Set<IResourceService$JMAsyncClient> resourceServices = Collections.synchronizedSet(new HashSet<>());
 	
@@ -67,7 +87,7 @@ public class ResourceMonitorServer{
 	
 	private Set<IResourceService$JMAsyncClient> dels = new HashSet<>();
 	
-	//private Map<Integer,Set<String>> config2Ins = new ConcurrentHashMap<>();
+	//private Map<String,Set<CfgMetadata>> resourceMetadatas = new ConcurrentHashMap<>();
 	
 	private Map<String,Reg> srv2Regs = new ConcurrentHashMap<>();
 	
@@ -86,9 +106,6 @@ public class ResourceMonitorServer{
 	private JmicroInstanceManager insMng;
 	
 	@Inject
-	private ResourceMonitorConfigManager configManager;
-	
-	@Inject
 	private IObjectFactory of;
 	
 	@Inject
@@ -99,16 +116,29 @@ public class ResourceMonitorServer{
 	
 	public void ready() {
 		
+		logDir = System.getProperty("user.dir")+"/logs/resLog/";
+		File d = new File(logDir);
+		if(!d.exists()) {
+			d.mkdirs();
+		}
+		
 		configListener = new RaftNodeDataListener<>(op,ResourceMonitorConfig.RES_MONITOR_CONFIG_ROOT,
 				ResourceMonitorConfig.class,false);
 		
 		configListener.addListener((type,node,pi)->{
-			notifyConfigEvent(type,pi);
+			notifyConfigEvent(type,Integer.parseInt(node),pi);
 		});
 		
 		if(!resourceServices.isEmpty()) {
 			this.adds.addAll(resourceServices);
 		}
+		
+		/*insMng.addInstanceListner((type,pi)->{
+			if(type == IListener.REMOVE) {
+				return;
+			}
+			parseProcessMetadata(pi);
+		});*/
 		
 		TimerTicker.doInBaseTicker(3, ResourceMonitorServer.class.getName(), null, (key,att)->{
 			checkResourceServiceAdd();
@@ -116,6 +146,20 @@ public class ResourceMonitorServer{
 			doWorker();
 		});
 	}
+
+	/*
+	private void parseProcessMetadata(ProcessInfo pi) {
+		Set<CfgMetadata> cms = pi.getMetadatas();
+		if(cms != null && !cms.isEmpty()) {
+			for(CfgMetadata cm : cms) {
+				if(!resourceMetadatas.containsKey(cm.getResName())) {
+					resourceMetadatas.put(cm.getResName(), new HashSet<>());
+				}
+				resourceMetadatas.get(cm.getResName()).add(cm);
+			}
+		}
+	}
+	*/
 
 	@SuppressWarnings("unchecked")
 	private void doWorker() {
@@ -135,13 +179,37 @@ public class ResourceMonitorServer{
 			
 			if(r.configs.isEmpty() || r.running && TimeUtils.getCurTime() - r.lastCheckTime < 30000) continue;
 			
+			boolean con = false;
+			long curTime = TimeUtils.getCurTime();
+			for(ResourceMonitorConfig cfg : r.configs.values()) {
+				if(curTime - cfg.getLastNotifyTime() > cfg.getT()) {
+					con = true;
+					break;
+				}
+			}
+			
+			if(!con) {
+				continue;
+			}
+			
+			Set<String> resNames = new HashSet<>();
+			Map<String,String> expMap = new HashMap<>();
+			
+			for(ResourceMonitorConfig cfg : r.configs.values()) {
+				resNames.add(cfg.getResName());
+				if(StringUtils.isNotEmpty(cfg.getExpStr())) {
+					expMap.put(cfg.getResName(), cfg.getExpStr());
+				}
+			}
+			
 			r.running = true;
 			try {
-				r.resSrv.getResourceJMAsync(new HashMap<>(),r)
+				r.lastCheckTime = TimeUtils.getCurTime();
+				r.resSrv.getResourceJMAsync(resNames,new HashMap<>(),expMap,r)
 				.success((result,reg)->{
 					Reg rr = (Reg)reg;
 					notifyResourceMonitorResult(rr,(Set<ResourceData>)result);
-					rr.lastCheckTime = TimeUtils.getCurTime();
+					r.lastCheckTime = TimeUtils.getCurTime();
 					rr.running = false;
 				}).fail((code,msg,reg)->{
 					Reg rr = (Reg)reg;
@@ -151,7 +219,7 @@ public class ResourceMonitorServer{
 				});
 			}catch(Throwable e) {
 				logger.error("",e);
-				r.running = false;
+				//r.running = false;
 				r.lastCheckTime = TimeUtils.getCurTime();
 			}
 		}
@@ -168,15 +236,29 @@ public class ResourceMonitorServer{
 		}
 		
 		for(Integer cid : cids) {
+			//每一个Config只对一种资源感兴趣
 			ResourceMonitorConfig cfg = rr.configs.get(cid);
 			if(cfg == null) continue;
+			
 			ResourceData rd = rdsMap.get(cfg.getResName());
 			if(rd == null) continue;
 			
-			if(cfg.getExp() != null && !ExpUtils.compute(cfg.getExp(), rd.getMetaData(), Boolean.class)) {
+			if(TimeUtils.getCurTime() - cfg.getLastNotifyTime() < cfg.getT()) {
+				//没达到一个通知周期
 				continue;
 			}
 			
+			if(cfg.getExp() != null) {
+				rd = filterByExp(cfg.getExp(),rd);
+			}
+			
+			if(rd == null) {
+				continue;
+			}
+			
+			rd.setCid(cfg.getId());
+			
+			cfg.setLastNotifyTime(TimeUtils.getCurTime());
 			switch(cfg.getToType()) {
 			case StatisConfig.TO_TYPE_SERVICE_METHOD:
 				if(cfg.getToSrv() == null) {
@@ -186,43 +268,83 @@ public class ResourceMonitorServer{
 						return;
 					}
 				}
-				PromiseUtils.callService(cfg.getToSrv(), cfg.getToMt(), null, result)
+				PromiseUtils.callService(cfg.getToSrv(), cfg.getToMt(), null, rd)
 				.fail((code,msg,cxt)->{
 					logger.error("Notify fail: " + cfg.getToSn() +"##"+cfg.getToNs() +"##" + cfg.getToVer()+"##"+ cfg.getToMt());
 				});
 				break;
 			case StatisConfig.TO_TYPE_CONSOLE:
-				logger.info(JsonUtils.getIns().toJson(result));
+				logger.info(JsonUtils.getIns().toJson(rd));
 				break;
 			case StatisConfig.TO_TYPE_MESSAGE:
 				PSData pd = new PSData();
-				pd.setData(result);
+				pd.setData(rd);
 				pd.setTopic(cfg.getToParams());
 				pd.setPersist(false);
 				pd.setId(idGenerator.getIntId(PSData.class));
 				this.pubsubMng.publish(pd);
 				break;
 			case StatisConfig.TO_TYPE_DB:
+				rd.setTag(cfg.getExtParams());
 				MongoCollection<Document> coll = mongoDb.getCollection(cfg.getToParams());
-				coll.insertOne(Document.parse(JsonUtils.getIns().toJson(result)));
+				coll.insertOne(Document.parse(JsonUtils.getIns().toJson(rd)));
 				break;
 			case StatisConfig.TO_TYPE_MONITOR_LOG:
-				LG.log(MC.LOG_INFO, cfg.getToParams(), JsonUtils.getIns().toJson(result),null);
+				rd.setTag(cfg.getToParams());
+				LG.log(MC.LOG_INFO, cfg.getToParams(), JsonUtils.getIns().toJson(rd),null);
 				break;
 			case StatisConfig.TO_TYPE_EMAIL:
-				LG.log(MC.LOG_INFO, cfg.getToParams(), JsonUtils.getIns().toJson(result),null);
+				if(mailSender != null) {
+					mailSender.sendJMAsync(cfg.getToParams(), cfg.getExtParams(),  
+							JsonUtils.getIns().toJson(rd), cfg)
+					.fail((code,msg,cxt)->{
+						logger.error("code:" + code+", msg: " + msg);
+					});
+				} else {
+					logger.error("Email sender not found!");
+				}
 				break;
 			case StatisConfig.TO_TYPE_FILE:
-				/*try {
-					sc.getBw().write(JsonUtils.getIns().toJson(sd)+"\n");
+				try {
+					cfg.getBw().write(JsonUtils.getIns().toJson(rd)+"\n");
 				} catch (IOException e) {
-					logger.error("",JsonUtils.getIns().toJson(sd));
-				}*/
+					logger.error("",JsonUtils.getIns().toJson(rd));
+				}
 				break;
 			}
-			
-			
 		}
+	}
+
+	@SuppressWarnings("unchecked")
+	private ResourceData filterByExp(Exp exp, ResourceData rd) {
+		if(rd.getMetaData() == null || rd.getMetaData().isEmpty()) {
+			return null;
+		}
+		
+		if(rd.getMetaData().size() == 1) {
+			Map.Entry<String, Object> vo = rd.getMetaData().entrySet().iterator().next();
+			if(vo.getValue() instanceof Collection) {
+				List<Map<String,Object>> rst = new ArrayList<>();
+				
+				Collection<Map<String,Object>> col = (Collection<Map<String,Object>>)vo.getValue();
+				for(Map<String,Object> omap: col) {
+					if(ExpUtils.compute(exp, omap, Boolean.class)) {
+						rst.add(omap);
+					}
+				}
+				
+				if(!rst.isEmpty()) {
+					ResourceData rd0 = new ResourceData();
+					rd0.setBelongInsId(rd.getBelongInsId());
+					rd0.setBelongInsName(rd0.getBelongInsName());
+					rd0.setResName(rd.getResName());
+					rd0.putData(vo.getKey(), rst);
+					return rd0;
+				}
+				return null;
+			}
+		}
+		return ExpUtils.compute(exp, rd.getMetaData(), Boolean.class) ? rd : null;
 	}
 
 	private void checkResourceServiceDelete() {
@@ -263,7 +385,9 @@ public class ResourceMonitorServer{
 				Reg r = new Reg(srv);
 				
 				this.configListener.forEachNode((cfg)->{
-					this.addService2Reg(cfg, r);
+					if(cfg.isEnable()) {
+						this.addConfig2Reg(cfg, r);
+					}
 				});
 				
 				this.srv2Regs.put(insName, r);
@@ -282,7 +406,7 @@ public class ResourceMonitorServer{
 		}
 	}
 	
-	private void notifyConfigEvent(int type, ResourceMonitorConfig cfg) {
+	private void notifyConfigEvent(int type,int cid, ResourceMonitorConfig cfg) {
 		if(type == IListener.ADD) {
 			if(cfg.isEnable()) {
 				configAdd(cfg);
@@ -298,10 +422,12 @@ public class ResourceMonitorServer{
 						continue;
 					}
 				}
-				this.addService2Reg(cfg, r);
+				if(cfg.isEnable()) {
+					this.addConfig2Reg(cfg, r);
+				}
 			}
 		}else if(type == IListener.REMOVE) {
-			configRemove(cfg);
+			configRemove(cid);
 		}
 	}
 	
@@ -311,23 +437,30 @@ public class ResourceMonitorServer{
 		for(String insName : srvKeys) {
 			Reg r = this.srv2Regs.get(insName);
 			if(r != null) {
-				this.addService2Reg(cfg, r);
+				this.addConfig2Reg(cfg, r);
 			}
 		}
 	}
 	
-	private void configRemove(ResourceMonitorConfig cfg) {
+	private void configRemove(Integer cid) {
 		Set<String> srvKeys = new HashSet<>();
 		srvKeys.addAll(this.srv2Regs.keySet());
 		for(String insName : srvKeys) {
 			Reg r = this.srv2Regs.get(insName);
-			if(r != null && r.configs.containsKey(cfg.getId())) {
-				r.configs.remove(cfg.getId());
+			if(r != null && r.configs.containsKey(cid)) {
+				ResourceMonitorConfig cfg = r.configs.remove(cid);
+				if(cfg != null && cfg.getBw() != null) {
+					try {
+						cfg.getBw().close();
+					} catch (IOException e) {
+						logger.error("",e);
+					}
+				}
 			}
 		}
 	}
 	
-	private void addService2Reg(ResourceMonitorConfig cfg, Reg r) {
+	private void addConfig2Reg(ResourceMonitorConfig cfg, Reg r) {
 		
 		String macherInsName = cfg.getMonitorInsName();
 		if(macherInsName != null && "*".equals(macherInsName)) {
@@ -348,12 +481,15 @@ public class ResourceMonitorServer{
 		ProcessInfo pi = this.insMng.getProcessByName(insName);
 		
 		boolean f = false;
-		Set<CfgMetadata> metadata = pi.getMetadatas();
-		for(CfgMetadata cm : metadata) {
-			if(cm.getResName().equals(resName)) {
-				f = true;
+		Set<CfgMetadata> metadata = pi.getMetadatas(resName);
+		if(metadata != null) {
+			for(CfgMetadata cm : metadata) {
+				if(cm.getResName().equals(resName)) {
+					f = true;
+				}
 			}
 		}
+		
 		
 		if(f) {
 			/*if(!config2Ins.containsKey(cfg.getId())) {
@@ -363,6 +499,29 @@ public class ResourceMonitorServer{
 			if(cfg.getToSn() == null) {
 				reparseConfig(cfg);
 			}
+			
+			if(StatisConfig.TO_TYPE_FILE == cfg.getToType()) {
+				File logFile = new File(this.logDir + cfg.getId() + "_" + cfg.getToParams());
+				if (!logFile.exists()) {
+					try {
+						logFile.createNewFile();
+					} catch (IOException e) {
+						String msg ="Create log file fail";
+						logger.error(msg, e);
+						LG.logWithNonRpcContext(MC.LOG_ERROR, this.getClass(), msg, e);
+					}
+				}
+
+				try {
+					BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(logFile)));
+					cfg.setBw(bw);
+				} catch (FileNotFoundException e) {
+					String msg ="Create writer fail";
+					logger.error(msg, e);
+					LG.logWithNonRpcContext(MC.LOG_ERROR, this.getClass(), msg, e);
+				}
+			}
+			
 			r.configs.put(cfg.getId(), cfg);
 		}
 	}
@@ -376,6 +535,20 @@ public class ResourceMonitorServer{
 			 cfg.setToMt(ps[UniqueServiceKey.INDEX_METHOD]);
 			 createToRemoteService(cfg);
 		}
+		
+		if(!StringUtils.isEmpty(cfg.getExpStr())) {
+			List<String> suffix = ExpUtils.toSuffix(cfg.getExpStr());
+			if(ExpUtils.isValid(suffix)) {
+				Exp ex = new Exp();
+				ex.setOriEx(cfg.getExpStr());
+				ex.setSuffix(suffix);
+				cfg.setExp(ex);
+			} else {
+				logger.error("Invalid exp:" + cfg.getExpStr()+" for cfg: " + cfg.getId());
+			}
+		}
+		
+		
 	}
 	
 	public boolean createToRemoteService(ResourceMonitorConfig cfg) {
@@ -407,6 +580,26 @@ public class ResourceMonitorServer{
 			return false;
 		}
 	}
+	
+	public Set<CfgMetadata> getResMetadata(String resName) {
+		 Set<CfgMetadata> ms = new HashSet<>();
+		this.insMng.forEach((pi)->{
+			if(pi.getMetadatas(resName) != null) {
+				ms.addAll(pi.getMetadatas(resName)) ;
+			}
+		});
+		return ms;
+	}
+	
+	public Map<String,Map<String,Set<CfgMetadata>>> getInstanceResourceList() {
+		Map<String,Map<String,Set<CfgMetadata>>> ms = new HashMap<>();
+		this.insMng.forEach((pi)->{
+			Map<String,Set<CfgMetadata>> maps = new HashMap<String,Set<CfgMetadata>>();
+			ms.put(pi.getInstanceName(), maps);
+			maps.putAll(pi.getMetadatas());
+		});
+		return ms;
+	}
 
 	private class Reg{
 		
@@ -420,6 +613,91 @@ public class ResourceMonitorServer{
 		private long lastCheckTime = 0;
 		private boolean running = false;
 		
+	}
+
+	public Resp<Map<String, Set<ResourceData>>> getInstanceResourceData(String insName) {
+		
+		Resp<Map<String,Set<ResourceData>>> r = new Resp<>();
+		//Map<String,Set<ResourceData>> resDatas = new HashMap<>();
+		
+		Reg reg = srv2Regs.get(insName);
+		if(reg == null) {
+			r.setMsg("Instance [" + insName + "] offline!");
+			r.setCode(Resp.CODE_FAIL);
+			return r;
+		}
+		
+		if(reg.configs == null || reg.configs.isEmpty()) {
+			r.setMsg("Instance [" + insName + "] support on resources!");
+			r.setCode(Resp.CODE_FAIL);
+			return r;
+		}
+		
+		IServiceAsyncResponse cb = JMicroContext.get().getParam(Constants.CONTEXT_SERVICE_RESPONSE, null);
+		
+		ProcessInfo pi = this.insMng.getProcessByName(insName);
+		if(pi == null) {
+			r.setMsg("Instance [" + insName + "] offline!");
+			r.setCode(Resp.CODE_FAIL);
+			return r;
+		}
+		
+		Set<String> resNames = new HashSet<>();
+		resNames.addAll(pi.getMetadatas().keySet());
+		
+		Map<String,String> expMap = new HashMap<>();
+		
+		try {
+			reg.resSrv.getResourceJMAsync(resNames,new HashMap<>(),expMap,reg)
+			.success((result,reg0)->{
+				//Reg rr = (Reg)reg0;
+				r.setData((Map<String,Set<ResourceData>>)result);
+				if(cb != null) {
+					cb.result(r);
+				} else {
+					r.notify();
+				}
+			}).fail((code,msg,reg0)->{
+				Reg rr = (Reg)reg0;
+				String desc = "code: " + code + ", msg: " + msg +",srv: "+ rr.resSrv.getItem().getKey().toKey(true, true, true);
+				logger.error(desc);
+				LG.log(MC.LOG_ERROR, this.getClass(), desc);
+				if(cb != null) {
+					r.setMsg("Instance [" + insName + "] offline!");
+					r.setCode(Resp.CODE_FAIL);
+					cb.result(r);
+				} else {
+					r.notify();
+				}
+			});
+		}catch(Throwable e) {
+			logger.error("",e);
+		}
+		
+		if(cb == null) {
+			try {
+				r.wait(10000*30);
+			} catch (InterruptedException e) {
+				String msg = "Resource service timeout " + insName + "] "+reg.resSrv.getItem().getKey().toKey(true, true, true);
+				r.setCode(Resp.CODE_FAIL);
+				r.setMsg(msg);
+				logger.error("",e);
+				LG.log(MC.LOG_ERROR, this.getClass(), msg);
+			}
+			return r;
+		}else {
+			//多重RPC异步返回结果
+			return null;
+		}
+	}
+
+	public Resp<Map<String, Set<ResourceData>>> getDirectResourceData(String insName, String resName,
+			Map<String, String> params) {
+		Resp<Map<String,Set<ResourceData>>> r = new Resp<>();
+		
+		
+		
+		return r;
 	}
 	
 }

@@ -20,7 +20,7 @@
                 </thead>
                 <tr v-for="c in logList" :key="c.id">
                     <td>{{c.id}}</td>
-                    <td>{{c.resourceNames}}</td>
+                    <td>{{c.resName}}</td>
                     <td>{{c.monitorInsName}}</td>
                     <td>{{c.t}}</td>
                     <td>{{toTypes[c.toType]}}</td>
@@ -46,9 +46,9 @@
                   @on-page-size-change="pageSizeChange" :page-size-opts="[10, 30, 60,100]"></Page>
         </div>-->
 
-        <div v-if="!isLogin" >Not login</div>
+        <div v-if="!isLogin" >{{msg}}</div>
 
-        <div v-if="isLogin  && (!logList || logList.length == 0)" >No data</div>
+        <div v-if="isLogin  && (!logList || logList.length == 0)" >{{msg}}</div>
 
         <Drawer v-model="addConfigDialog" :closable="false" placement="right" :transfer="true"
                 :draggable="true" :scrollable="true" width="80">
@@ -59,15 +59,17 @@
             <Label for="resourceNames">{{'resourceNames' | i18n}}</Label>
             <!--<Input v-if="byKeyShow.sn"  id="ByService" v-model="byKey.sn"/>-->
             <Select :disabled="readonly" id="resourceNames" :filterable="true"
-                    ref="resourceNames" :label-in-value="true" v-model="cfg.resName">
+                    ref="resourceNames" :label-in-value="true" v-model="cfg.resName"
+            @change="resourceNameChange">
                 <!--  <Option value="*" >none</Option>-->
                 <Option v-for="(v) in resourceNames"  :value="v"  v-bind:key="v">{{v}}</Option>
             </Select>
 
             <Label for="monitorInsName">{{'monitorInsName' | i18n}}</Label>
-            <Select :disabled="readonly" id="monitorInsName" v-model="cfg.monitorInsName" >
+            <Select :disabled="readonly" id="monitorInsName" v-model="cfg.monitorInsName"
+                    filterable allow-create>
                 <Option value="*" >{{'All' | i18n}}</Option>
-                <Option v-for="(key) in allInstances" :value="key" :key="key">{{key | i18n}}</Option>
+                <Option v-for="key in allInstances" :value="key" :key="key">{{key | i18n}}</Option>
             </Select>
 
             <Label for="period">{{'period' | i18n}}({{'MS' | i18n}})</Label>
@@ -125,11 +127,33 @@
             <Label v-if="cfg.toType == 7 "  for="email">{{'Email' | i18n}}</Label>
             <Input :disabled="readonly" v-if="cfg.toType == 7 "  id="email" v-model="cfg.toParams"/>
 
-            <Label  for="exp0">{{'Exp0' | i18n}}</Label>
-            <Input :disabled="readonly" id="exp0" v-model="cfg.expStr"/>
-
             <Label for="extParams">{{'extParams' | i18n}}</Label>
             <Input id="extParams" v-model="cfg.extParams"/>
+
+            <Label  for="exp0">{{'Exp' | i18n}}</Label>
+            <Input :disabled="readonly" id="exp0" v-model="cfg.expStr"/>
+
+            <Label for="metadataName" style="font-weight: bold">{{cfg.resName}}<a href="javascript:void(0)"
+            @click="reloadResourceMetadata()">
+                {{'Refresh'|i18n}}</a></Label>
+            <table id="metadataName" width="99%">
+                <thead>
+                    <tr style="width:30px">
+                        <!--<td>{{'ResName' | i18n }}</td>-->
+                        <td>{{'Name' | i18n }}</td>
+                        <td>{{'Type' | i18n }}</td>
+                        <td>{{'Desc' | i18n }}</td>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr  v-for="si in curResourceMetadatas" :key="si.name">
+                       <!-- <td>{{si.resName}}</td>-->
+                        <td>{{si.name}}</td>
+                        <td>{{dataTypes[si.dataType]}}</td>
+                        <td>{{si.desc}}</td>
+                    </tr>
+                </tbody>
+            </table>
 
         </Drawer>
 
@@ -183,6 +207,10 @@
         window.jm.rpc.Constants.SERVICE_VERSIONS,
         window.jm.rpc.Constants.INSTANCES];
 
+    const DATA_TYPES = {
+        4:"Integer", 3:"Float", 2:"Boolean", 1:"String"
+    }
+
    /* const EXP_TYPE_SERVICE = 1;
     const EXP_TYPE_ACCOUNT = 2;
     const EXP_TYPE_INSTANCE = 3;*/
@@ -202,6 +230,12 @@
         },
         watch:{
 
+            "cfg.resName":function(resName) {
+                if(resName && resName.length > 0) {
+                    this.resourceNameChange(resName,false);
+                }
+            },
+
             'cfg.toType':function(val){
                 this.toTypeChange(val);
             },
@@ -213,14 +247,17 @@
 
         data() {
             return {
+                msg:'',
                 timeUnits:[ UNIT_SE,UNIT_MU,UNIT_HO,UNIT_DA ],
                 toTypes:{ 1:'Db', 2:"ServiceMethod", 3:'Console', 4:'File',5:'Log',6:'Message',7:'Email'  },
+                dataTypes:DATA_TYPES,
 
                 services:[],
                 namespaces:{},
                 versions:{},
                 methods:{},
                 instances:{},
+                resourceMetadatas:{},
 
                 resourceNames:[],
                 namedTypeNames:[],
@@ -245,10 +282,38 @@
                 addConfigDialog:false,
 
                 readonly : false,
+                curResourceMetadatas:[],
             }
         },
 
         methods: {
+
+            reloadResourceMetadata() {
+                if(this.cfg.resName && this.cfg.resName.length > 0) {
+                    this.resourceNameChange(this.cfg.resName,true);
+                }
+            },
+
+            resourceNameChange(resName,refresh){
+                if(!this.cfg.resName || this.cfg.resName.length == 0) {
+                    return;
+                }
+                if(!refresh && this.resourceMetadatas[resName]) {
+                    this.curResourceMetadatas = this.resourceMetadatas[resName];
+                } else {
+                    let self = this;
+                    window.jm.rpc.callRpcWithParams(sn,ns,v, 'getResourceMetadata', [resName,refresh])
+                        .then((resp)=>{
+                            if(resp.code != 0) {
+                                self.$Message.success(resp.msg);
+                                return;
+                            }
+                            self.curResourceMetadatas = self.resourceMetadatas[resName] = resp.data;
+                        }).catch((err)=>{
+                        window.console.log(err);
+                    });
+                }
+            },
 
             toServiceTypeChange(curToType) {
                 let self = this;
@@ -319,6 +384,8 @@
                 let self = this;
                 this.updateMode = true;
                 this.cfg = cfg;
+
+                self.resourceNameChange(cfg.resName,false);
 
                 if(self.cfg.toType == TO_TYPE_SERVICE_METHOD) {
                     if(self.cfg.toParams && self.cfg.toParams.length > 0) {
@@ -453,7 +520,11 @@
                     self.logList = ll;
 
                 }).catch((err)=>{
-                    window.console.log(err);
+                    if(err && !!err.errorCode) {
+                        self.msg = err.msg;
+                    }else {
+                        self.msg = err;
+                    }
                 });
             },
 
@@ -515,6 +586,7 @@
             window.jm.rpc.addActListener(cid,this.refresh);
             let self = this;
             this.getServiceNames();
+
             window.jm.vue.$emit("editorOpen",
                 {"editorId":cid,
                     "menus":[

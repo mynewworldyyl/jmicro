@@ -183,17 +183,27 @@ public class JMicroContext  {
 		cxt.set(null);
 	}
 	
-	public static boolean callSideProdiver(Boolean ... flag){
-		if(flag == null || flag.length == 0) {
-			return get().getBoolean(JMicroContext.CALL_SIDE_PROVIDER, true);
-		} else {
-			get().setBoolean(JMicroContext.CALL_SIDE_PROVIDER, flag[0]);
+	public static void setCallSide(Boolean flag){
+		get().setBoolean(JMicroContext.CALL_SIDE_PROVIDER, flag);
+	}
+	
+	public static boolean isContainCallSide(){
+		return get().exists(JMicroContext.CALL_SIDE_PROVIDER);
+	}
+	
+	public static boolean isCallSideService(){
+		if(isContainCallSide()) {
+			return get().getBoolean(JMicroContext.CALL_SIDE_PROVIDER, false);
 		}
-		return flag[0];
+		throw new CommonException("Non RPC Context!");
+	}
+	
+	public static boolean isCallSideClient(){
+		return !isCallSideService();
 	}
 	
 	public static void configProvider(ISession s,Message msg) {
-		callSideProdiver(true);
+		setCallSide(true);
 		
 		JMicroContext context = get();
 		
@@ -287,13 +297,7 @@ public class JMicroContext  {
 	
 	public static void configComsumer(ServiceMethod sm,ServiceItem si) {
 		JMicroContext context = cxt.get();
-		//context.setObject(JMicroContext.MONITOR, JMicro.getObjectFactory().get(MonitorManager.class));
-		context.setParam(Constants.SERVICE_METHOD_KEY, sm);
-		context.setParam(Constants.SERVICE_ITEM_KEY, si);
-		context.setParam(JMicroContext.LOCAL_HOST, Config.getExportSocketHost());
-		
-		context.setParam(JMicroContext.SM_LOG_LEVEL, sm.getLogLevel());
-		
+		setCallSide(false);
 		//debug mode 下才有效
 		boolean isDebug = enableOrDisable(si.getDebugMode(),sm.getDebugMode());
 		context.setParam(IS_DEBUG, isDebug);
@@ -392,7 +396,7 @@ public class JMicroContext  {
 	}
 	
 	public boolean isAsync() {
-		if(this.exists(JMicroContext.CALL_SIDE_PROVIDER)) {
+		if(isContainCallSide() && isCallSideService()) {
 			return this.exists(Constants.CONTEXT_SERVICE_RESPONSE);
 		} else {
 			return this.exists(Constants.CONTEXT_CALLBACK_CLIENT);

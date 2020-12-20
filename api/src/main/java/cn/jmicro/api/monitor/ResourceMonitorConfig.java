@@ -1,5 +1,7 @@
 package cn.jmicro.api.monitor;
 
+import java.io.BufferedWriter;
+
 import cn.jmicro.api.annotation.IDStrategy;
 import cn.jmicro.api.annotation.SO;
 import cn.jmicro.api.config.Config;
@@ -16,9 +18,14 @@ public class ResourceMonitorConfig {
 	private transient String toNs;
 	private transient String toVer;
 	private transient String toMt;
+	
 	private transient Exp exp;
 	
 	private transient Object toSrv;
+	
+	private transient long lastNotifyTime;
+	
+	private transient BufferedWriter bw;
 	
 	//要监听的资源指标的KEYS
 	//private transient Set<String> medataKey;
@@ -93,6 +100,14 @@ public class ResourceMonitorConfig {
 		return monitorInsName;
 	}
 
+	public long getLastNotifyTime() {
+		return lastNotifyTime;
+	}
+
+	public void setLastNotifyTime(long lastNotifyTime) {
+		this.lastNotifyTime = lastNotifyTime;
+	}
+
 	public void setMonitorInsName(String monitorInsName) {
 		this.monitorInsName = monitorInsName;
 	}
@@ -151,6 +166,14 @@ public class ResourceMonitorConfig {
 
 	public void setCreatedBy(int createdBy) {
 		this.createdBy = createdBy;
+	}
+
+	public BufferedWriter getBw() {
+		return bw;
+	}
+
+	public void setBw(BufferedWriter bw) {
+		this.bw = bw;
 	}
 
 	public int getToType() {

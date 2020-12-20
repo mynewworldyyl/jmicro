@@ -34,7 +34,7 @@ public class I18NManager {
 			Locale locale = Locale.forLanguageTag(lan);
 			ResourceBundle bundle = ResourceBundle.getBundle(path, locale, I18NManager.class.getClassLoader());
 			for(String k: bundle.keySet()) {
-				rst.put(k, new String(bundle.getString(k).getBytes("ISO-8859-1"),Constants.CHARSET));
+				rst.put(k.toLowerCase(), new String(bundle.getString(k).getBytes("ISO-8859-1"),Constants.CHARSET));
 			}
 			return rst;
 		} catch (Exception e) {
@@ -50,6 +50,10 @@ public class I18NManager {
 			bundle = ResourceBundle.getBundle(path, locale, loader);
 		} catch (Exception e) {
 		}
+		
+		/*if(key != null) {
+			key = key.toLowerCase();
+		}*/
 		
 		String msg = null;
 		try {

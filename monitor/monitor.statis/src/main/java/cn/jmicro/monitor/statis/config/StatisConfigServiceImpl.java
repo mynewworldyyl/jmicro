@@ -14,6 +14,8 @@ import cn.jmicro.api.annotation.Inject;
 import cn.jmicro.api.annotation.SMethod;
 import cn.jmicro.api.annotation.Service;
 import cn.jmicro.api.config.Config;
+import cn.jmicro.api.exp.Exp;
+import cn.jmicro.api.exp.ExpUtils;
 import cn.jmicro.api.idgenerator.ComponentIdServer;
 import cn.jmicro.api.monitor.LG;
 import cn.jmicro.api.monitor.MC;
@@ -285,6 +287,20 @@ public class StatisConfigServiceImpl implements IStatisConfigService {
 				logger.error(msg);
 				LG.logWithNonRpcContext(MC.LOG_ERROR, StatisConfigServiceImpl.class, msg);
 				return msg;
+			}
+		}
+		
+		if(!Utils.isEmpty(lw.getExpStr())) {
+			List<String> suffixExp = ExpUtils.toSuffix(lw.getExpStr());
+			if(!ExpUtils.isValid(suffixExp)) {
+				 msg = "Invalid exp0: " + lw.getId() + "---> " + lw.getExpStr();
+			}
+		}
+		
+		if(!Utils.isEmpty(lw.getExpStr1())) {
+			List<String> suffixExp = ExpUtils.toSuffix(lw.getExpStr1());
+			if(!ExpUtils.isValid(suffixExp)) {
+				 msg = "Invalid exp1: " + lw.getId() + " ---> " + lw.getExpStr1();
 			}
 		}
 		

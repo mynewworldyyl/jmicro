@@ -164,10 +164,13 @@ public interface Constants {
 	public static final String TRANSPORT_NETTY = "netty";
 	public static final String TRANSPORT_NETTY_HTTP = "nettyhttp";
 	
+	//熔断器自动检测目标服务是否可用尝试上下文，服务管理器根据此值判断是否可以返回被熔断服务信息
+	//此值应该在整个RPC链路中透明传递
 	public static final String BREAKER_TEST_CONTEXT = "breakerTestContext";
 	
-	public static final String REF_ANNO = "referenceAnno";
-	
+	//public static final String REF_ANNO = "referenceAnno";
+	//调用服务实例前，指定要调用的服务实例，不做服务负载载均衡及服务路由,在RpcClientRequestHandler获取对应的ServiceItem后
+	//应该删除此值
 	public static final String DIRECT_SERVICE_ITEM = "directServiceItem";
 	
 	public static final String ROUTER_KEY = "routerKey";

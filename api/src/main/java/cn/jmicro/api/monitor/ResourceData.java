@@ -14,6 +14,14 @@ public class ResourceData {
 	
 	private String resName = "";
 	
+	private String host = "";
+	
+	private long time;
+	
+	private int cid;
+	
+	private String tag;
+	
 	private Map<String,Object> metaData = new HashMap<>();
 	
 	public void putData(String key,Object val) {
@@ -73,6 +81,36 @@ public class ResourceData {
 		ResourceData rd = (ResourceData)obj;
 		return this.resName.equals(rd.resName);
 	}
-	
-	
+
+	public long getTime() {
+		return time;
+	}
+
+	public void setTime(long time) {
+		this.time = time;
+	}
+
+	public int getCid() {
+		return cid;
+	}
+
+	public void setCid(int cid) {
+		this.cid = cid;
+	}
+
+	public String getTag() {
+		return tag;
+	}
+
+	public void setTag(String tag) {
+		this.tag = tag;
+	}
+
+	public String getHost() {
+		return host;
+	}
+
+	public void setHost(String host) {
+		this.host = host;
+	}
 }

@@ -133,6 +133,10 @@ public class JRPCReqRespHandler implements IMessageHandler{
 			
 			//logger.info(req.getServiceName()+" debugMode: " + msg.isDebugMode()+", method: " + msg.getMethod());
 			
+			if(req1.getMethod().equals("send")) {
+				logger.debug("");
+			}
+			
 	    	JMicroContext.config(req1,serviceLoader,registry);
 	    	
 	    	if(LG.isLoggable(MC.LOG_DEBUG)) {

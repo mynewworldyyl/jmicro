@@ -8,6 +8,6 @@ import cn.jmicro.codegenerator.AsyncClientProxy;
 @AsyncClientProxy
 public interface IResourceService {
 
-	Set<ResourceData> getResource(Map<String,Object> params);
+	Set<ResourceData> getResource(Set<String> resNames, Map<String,Object> params, Map<String,String> exps);
 	
 }

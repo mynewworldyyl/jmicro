@@ -9,14 +9,17 @@ public class CfgMetadata {
 	private String name ="";
 	private String resName="";
 	private int dataType;
-	private String defVal="";
+	private String desc="";
+	/*private String defVal="";
 	private String val;
 	private int uiBoxType = CfgMetadata.UiType.Text.getCode();
 	private boolean required = false;
 	private boolean readonly = false;
 	private boolean enable = false;
-	private int hc = 0;
-	private String validVals;
+	
+	private String validVals;*/
+	
+	private transient int hc = 0;
 	
 	public CfgMetadata() {}
 	
@@ -48,60 +51,12 @@ public class CfgMetadata {
 		this.dataType = dataType;
 	}
 
-	public String getDefVal() {
-		return defVal;
+	public String getDesc() {
+		return desc;
 	}
 
-	public void setDefVal(String defVal) {
-		this.defVal = defVal;
-	}
-
-	public String getVal() {
-		return val;
-	}
-
-	public void setVal(String val) {
-		this.val = val;
-	}
-
-	public int getUiBoxType() {
-		return uiBoxType;
-	}
-
-	public boolean isReadonly() {
-		return readonly;
-	}
-
-	public void setReadonly(boolean readonly) {
-		this.readonly = readonly;
-	}
-
-	public boolean isEnable() {
-		return enable;
-	}
-
-	public void setEnable(boolean enable) {
-		this.enable = enable;
-	}
-
-	public void setUiBoxType(int uiBoxType) {
-		this.uiBoxType = uiBoxType;
-	}
-
-	public boolean isRequired() {
-		return required;
-	}
-
-	public void setRequired(boolean required) {
-		this.required = required;
-	}
-
-	public String getValidVals() {
-		return validVals;
-	}
-
-	public void setValidVals(String validVals) {
-		this.validVals = validVals;
+	public void setDesc(String desc) {
+		this.desc = desc;
 	}
 
 	@Override
@@ -125,19 +80,16 @@ public class CfgMetadata {
 	protected Object clone() throws CloneNotSupportedException {
 		CfgMetadata cm = (CfgMetadata)super.clone();
 		cm.setDataType(this.dataType);
-		cm.setDefVal(this.defVal);
 		cm.setResName(this.getResName());
 		cm.setName(this.name);
-		cm.setRequired(this.isRequired());
-		cm.setUiBoxType(this.getUiBoxType());
-		cm.setVal(this.val);
 		return cm;
 	}
 
+	
+
 	@Override
 	public String toString() {
-		return "CfgMetadata [name=" + name + ", group=" + resName + ", dataType=" + dataType + ", defVal=" + defVal
-				+ ", val=" + val + ", uiBoxType=" + uiBoxType + ", required=" + required + "]";
+		return "CfgMetadata [name=" + name + ", resName=" + resName + ", dataType=" + dataType + "]";
 	}
 
 	public enum UiType {

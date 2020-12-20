@@ -1,6 +1,7 @@
 package cn.jmicro.api.exp;
 
 import java.util.ArrayList;
+import java.util.EmptyStackException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -99,7 +100,12 @@ public class ExpUtils {
             }
         }
         
-        Object v = stack.pop();
+        Object v = null;
+        try {
+        	 v = stack.pop();
+        }catch(EmptyStackException e) {
+        	return false;
+        }
         
         return v != null && stack.size() == 0;
 	

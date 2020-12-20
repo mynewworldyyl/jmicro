@@ -115,7 +115,7 @@ public class IpMatchToServiceIpPortRouter extends AbstractRouter implements IRou
 		}
 		
 		String clientIp;
-		if(JMicroContext.callSideProdiver()) {
+		if(JMicroContext.isCallSideService()) {
 			//在服务端做路由，取远程IP作为客户端IP,比如API网关
 			clientIp =  JMicroContext.get().getString(JMicroContext.REMOTE_HOST, null);
 		}else {

@@ -52,6 +52,7 @@ public class Exp {
 
 	public void setSuffix(List<String> suffix) {
 		this.suffix = suffix;
+		parseVar();
 	}
 	
 }

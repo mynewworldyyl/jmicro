@@ -763,6 +763,9 @@ jm.rpc = {
     actListeners:{},
 
     mk2code:{},
+    errCode2Msg:{
+        0x06:"Service not available maybe not started",
+    },
 
     addActListener : function(key,l) {
         /*if(!!this.actListeners[key]) {
@@ -1101,7 +1104,7 @@ jm.rpc = {
 
             if(upProtocol == jm.rpc.Constants.PROTOCOL_JSON) {
                 msg.payload =  jm.utils.toUTF8Array(JSON.stringify(req));
-            } else if(upProtocol == jm.rpc.Constants.PROTOCOL_BIN ){
+            } else if( upProtocol == jm.rpc.Constants.PROTOCOL_BIN ){
                 if(typeof req.encode == 'function') {
                     msg.payload = req.encode(jm.rpc.Constants.PROTOCOL_BIN);
                 }
@@ -1119,7 +1122,7 @@ jm.rpc = {
                     let doFailure = true;
                     if(rst && rst.errorCode != 0) {
                         //alert(rst.msg);
-                        if(rst.errorCode == 0x00000004 || rst.errorCode == 0x00000006) {
+                        if(rst.errorCode == 0x00000004 /*|| rst.errorCode == 0x00000006*/) {
                             let actName = window.jm.localStorage.get("actName");
                             let pwd = window.jm.localStorage.get("pwd");
                             if(actName && pwd) {
@@ -1147,18 +1150,33 @@ jm.rpc = {
                     }
 
                     if(doFailure) {
-                        reje(err || rst);
+                       // reje(err || rst);
+                        self.doReject(reje, err || rst);
                     }
+
                 } else {
                     let rst = rstMsg.payload.result;
                     if(rst != null && rst.hasOwnProperty('errorCode') && rst.hasOwnProperty('msg')) {
-                        reje(rst);
+                        //reje(rst);
+                        self.doReject(reje,rstMsg);
                     }else {
                         reso(rst);
                     }
                 }
             });
         });
+    },
+
+    doReject : function(reje,rst) {
+        if(rst && rst.hasOwnProperty('errorCode')) {
+            if(this.errCode2Msg[rst.errorCode]) {
+                reje(this.errCode2Msg[rst.errorCode]);
+            }else {
+                reje(rst.msg);
+            }
+        }else {
+            reje(rst);
+        }
     },
 
   callWithObject:function(params,type,upProtocol,downProtocol){

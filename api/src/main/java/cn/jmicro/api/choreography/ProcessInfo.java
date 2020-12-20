@@ -1,6 +1,7 @@
 package cn.jmicro.api.choreography;
 
-import java.util.HashSet;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Set;
 
 import cn.jmicro.api.CfgMetadata;
@@ -55,14 +56,22 @@ public class ProcessInfo {
 	
 	private boolean monitorable = false;
 	
-	protected Set<CfgMetadata> metadatas = new HashSet<>();
+	protected Map<String,Set<CfgMetadata>> metadatas = new HashMap<>();
 
-	public Set<CfgMetadata> getMetadatas() {
-		return metadatas;
+	public Set<CfgMetadata> getMetadatas(String resName) {
+		return metadatas.get(resName);
 	}
 
-	public void setMetadatas(Set<CfgMetadata> metadatas) {
+	public void setMetadatas(String resName,Set<CfgMetadata> metadatas) {
+		this.metadatas.put(resName, metadatas);
+	}
+	
+	public void setMetadatas(Map<String,Set<CfgMetadata>> metadatas) {
 		this.metadatas = metadatas;
+	}
+	
+	public Map<String,Set<CfgMetadata>> getMetadatas() {
+		return metadatas;
 	}
 
 	public int getId() {

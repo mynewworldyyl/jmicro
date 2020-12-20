@@ -27,19 +27,20 @@ public class MailSender implements IEmailSender{
 	private final static Logger logger = LoggerFactory.getLogger(MailSender.class);
 	
 	@Cfg(value="/MailSender/from",defGlobal=true)
-	private  String mailFrom = "";// 指明邮件的发件人
+	private  String mailFrom = "378862956@qq.com";// 指明邮件的发件人
 	
 	// 指明邮件的发件人登陆密码
 	private  String passwordMailFrom = "";
 	
 	@Cfg(value="/MailSender/host",defGlobal=true)
-	private  String mailHost ="";	// 邮件的服务器域名
+	private  String mailHost ="smtp.qq.com";	// 邮件的服务器域名
 	
 	@Cfg(value="/MailSender/code",defGlobal=true)
 	private String code = "";
 	
 	public static void main(String[] args) throws Exception {
-		new MailSender().send("mynewworldyyl@gmail.com", "节日快乐", "测试发送邮件");
+		//new MailSender().send("mynewworldyyl@gmail.com", "节日快乐", "测试发送邮件");
+		new MailSender().send("xiaoruanfang@sina.com", "节日快乐", "测试发送邮件");
 	}
 	
 	public boolean send0(String to, String title, String content) {
@@ -127,7 +128,7 @@ public class MailSender implements IEmailSender{
             msg.setRecipients(Message.RecipientType.TO, InternetAddress.parse(to, false));
             msg.setRecipients(Message.RecipientType.CC, InternetAddress.parse(to, false));
             msg.setRecipients(Message.RecipientType.BCC, InternetAddress.parse(to, false));
-            msg.setSubject(message);
+            msg.setSubject(title);
             //设置邮件消息
             msg.setText(message);
             //设置发送的日期

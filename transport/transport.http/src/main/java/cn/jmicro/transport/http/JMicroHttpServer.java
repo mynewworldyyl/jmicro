@@ -97,7 +97,7 @@ public class JMicroHttpServer implements IServer{
 	private HttpHandler httpHandler = new HttpHandler(){
         @Override
         public void handle(HttpExchange exchange) {
-        	JMicroContext.callSideProdiver(true);
+        	JMicroContext.setCallSide(true);
         	HttpServerSession session = new HttpServerSession(exchange,readBufferSize,heardbeatInterval);
 			session.init();
         	try {

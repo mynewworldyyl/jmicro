@@ -6,16 +6,20 @@ import java.util.Map;
 import java.util.Set;
 
 import cn.jmicro.api.CfgMetadata;
+import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.monitor.AbstractResource;
 import cn.jmicro.api.monitor.IResource;
 import cn.jmicro.api.monitor.ResourceData;
+import cn.jmicro.api.utils.TimeUtils;
 import cn.jmicro.common.util.StringUtils;
 
-public class MemoryResource extends AbstractResource  implements IResource {
+@Component
+public class CpuResource extends AbstractResource implements IResource {
 	
-	private static final String RES_NAME = "memory";
-	private static final String FREE_MEMORY_SIZE = "freePhysicalMemorySize";
-	private static final String TOTAL_MEMORY_SIZE = "totalPhysicalMemorySize";
+	private static final String RES_NAME = "cpu";
+	private static final String SYSTEM_CPU_LOAD = "systemCpuLoad";
+	private static final String SYSTEM_LOAD_AVERAGE = "systemLoadAverage";
+	private static final String AVAILABLE_CPUS = "availableCpus";
 	private static final String OS_NAME = "osName";
 	
 	@SuppressWarnings("restriction")
@@ -26,9 +30,11 @@ public class MemoryResource extends AbstractResource  implements IResource {
 	@SuppressWarnings("restriction")
 	public ResourceData getResource(Map<String,Object> query,String expStr) {
 		ResourceData data = this.getData();
-		data.putData(FREE_MEMORY_SIZE, osBean.getFreePhysicalMemorySize());
-		data.putData(TOTAL_MEMORY_SIZE, osBean.getTotalPhysicalMemorySize());
+		data.putData(SYSTEM_CPU_LOAD, osBean.getSystemCpuLoad());
+		data.putData(SYSTEM_LOAD_AVERAGE, osBean.getSystemLoadAverage());
+		data.putData(AVAILABLE_CPUS, osBean.getAvailableProcessors());
 		data.putData(OS_NAME, System.getProperty("os.name"));
+		
 		if(StringUtils.isNotEmpty(expStr) && !this.compuleByExp(expStr, data.getMetaData())) {
 			return null;
 		}
@@ -48,16 +54,23 @@ public class MemoryResource extends AbstractResource  implements IResource {
 		
 		CfgMetadata md = new CfgMetadata();
 		md.setResName(RES_NAME);
-		md.setName(FREE_MEMORY_SIZE);
+		md.setName(SYSTEM_CPU_LOAD);
 		md.setDataType(CfgMetadata.DataType.Float.getCode());
-		md.setDesc("剩余的物理内存");
+		md.setDesc("CPU Load");
 		metadatas.add(md);
 		
 		md = new CfgMetadata();
 		md.setResName(RES_NAME);
-		md.setName(TOTAL_MEMORY_SIZE);
+		md.setName(SYSTEM_LOAD_AVERAGE);
 		md.setDataType(CfgMetadata.DataType.Float.getCode());
-		md.setDesc("总的物理内存");
+		md.setDesc("System load average");
+		metadatas.add(md);
+		
+		md = new CfgMetadata();
+		md.setResName(RES_NAME);
+		md.setName(AVAILABLE_CPUS);
+		md.setDataType(CfgMetadata.DataType.Integer.getCode());
+		md.setDesc("CPU个数");
 		metadatas.add(md);
 		
 		md = new CfgMetadata();
@@ -73,5 +86,5 @@ public class MemoryResource extends AbstractResource  implements IResource {
 	public String getResourceName() {
 		return RES_NAME;
 	}
-
+	
 }

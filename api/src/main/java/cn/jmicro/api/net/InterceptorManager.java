@@ -31,7 +31,7 @@ public class InterceptorManager {
 	
     public IResponse handleRequest(RpcRequest req) {
 		
-    	boolean callSideProvider = JMicroContext.callSideProdiver();
+    	boolean callSideProvider = JMicroContext.isCallSideService();
     	
     	Map<String,IRequestHandler> hs = this.consumerHandlers;
     	String handlerName = Constants.DEFAULT_CLIENT_HANDLER;
@@ -67,7 +67,7 @@ public class InterceptorManager {
     
     private IRequestHandler buildHanderChain(IRequestHandler handler) {
 
-    	boolean callSideProvider = JMicroContext.callSideProdiver();
+    	boolean callSideProvider = JMicroContext.isCallSideService();
     	String firstIntName=null,lastIntName=null;
     	if(callSideProvider) {
     		firstIntName = Constants.FIRST_INTERCEPTOR;
@@ -170,7 +170,7 @@ public class InterceptorManager {
 	}
     
     private Collection<IInterceptor> getInterceptors() {
-    	boolean callSideProvider = JMicroContext.callSideProdiver();
+    	boolean callSideProvider = JMicroContext.isCallSideService();
     	Collection<IInterceptor> coll = JMicro.getObjectFactory().getByParent(IInterceptor.class);
     	for(Iterator<IInterceptor> ite = coll.iterator();ite.hasNext();){
 			IInterceptor h = ite.next();

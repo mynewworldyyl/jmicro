@@ -7,7 +7,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import cn.jmicro.api.CfgMetadata;
 import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Inject;
 import cn.jmicro.api.mng.JmicroInstanceManager;
@@ -109,9 +108,7 @@ public class DictManager {
 	public Set<String> resourceNames() {
 		Set<String> insNames = new HashSet<>();
 		this.insManager.forEach((pi)->{
-			for(CfgMetadata cm : pi.getMetadatas()) {
-				insNames.add(cm.getResName());
-			}
+			insNames.addAll(pi.getMetadatas().keySet());
 		});
 		return insNames;
 	}

@@ -2,7 +2,8 @@
     <div class="JMainContentEditor">
             <Tabs :value="!!selectNode ? selectNode.id:''" type="card" :closable="true" :animated="false"
                   @on-tab-remove="handleTabRemove" @on-click="handleTabActive">
-                <TabPane v-for="(item) in items"  :name="item.id" :label="item.label ? item.label : item.title"  v-bind:key="item.id">
+                <TabPane v-for="(item) in items"  :name="item.id" v-bind:key="item.id"
+                         :label="(item.label ? item.label :item.title) | i18n ">
                     <!-- RPC  config -->
                     <div class="editorBody">
                         <JServiceItem v-if="item.group == 'service' && item.type == 'sn'" :item="item"></JServiceItem>
@@ -14,6 +15,7 @@
                         <JStatisServerItemView v-else-if="item.group == 'statis' && item.type == 'ins'" :serverNode="item"></JStatisServerItemView>
                         <JStatisSMethodItemView v-else-if="item.group == 'statis' && item.type == 'method'" :meth="item"></JStatisSMethodItemView>
                         <JStatisServiceItemView v-else-if="item.group == 'statis' && item.type == 'snv'" :serviceNode="item"></JStatisServiceItemView>
+                        <JResourceMonitorView v-else-if="item.group == 'resourceMonitorView'" :item="item"></JResourceMonitorView>
 
                         <!--  server monitor -->
                         <JMonitorEditor v-else-if="item.group == 'monitors'" :group="item"> </JMonitorEditor>
@@ -51,12 +53,14 @@
                         <JMonitorTypeServiceMethodEditor v-else-if="item.group == 'mtsm'" :item="item"></JMonitorTypeServiceMethodEditor>
                         <JInvokeLinkView v-else-if="item.group == 'invokeLinkView'" :item="item"></JInvokeLinkView>
                         <JLogItemView v-else-if="item.group == 'logItemView'" :item="item"></JLogItemView>
+                        <JPublicKeyList v-else-if="item.group == 'publicKeyList'" :item="item"></JPublicKeyList>
                         <JNamedTypeEditor v-else-if="item.group == 'namedType'" :item="item"></JNamedTypeEditor>
                         <JThreadPoolMonitorEditor v-else-if="item.group == 'threadPool'" :item="item"></JThreadPoolMonitorEditor>
                         <JLogWarningConfigView v-else-if="item.group == 'warningConfig'" :item="item"></JLogWarningConfigView>
                         <JStatisConfigView v-else-if="item.group == 'statisConfig'" :item="item"></JStatisConfigView>
                         <JResourceConfigView v-else-if="item.group == 'resourceConfig'" :item="item"></JResourceConfigView>
                         <JPublicKeyList v-else-if="item.group == 'publicKeyList'" :item="item"></JPublicKeyList>
+
                         <JBottomBar></JBottomBar>
                     </div>
                 </TabPane>
@@ -134,6 +138,7 @@
             JLogWarningConfigView: () => import('./monitor/JLogWarningConfigView.vue'),
             JStatisConfigView: () => import('./monitor/JStatisConfigView.vue'),
             JResourceConfigView: () => import('./monitor/JResourceConfigView.vue'),
+            JResourceMonitorView: () => import('./monitor/JResourceMonitorView.vue'),
 
             JAccountEditor:()=> import('./security/JAccountEditor.vue'),
             JUserProfileEditor:()=> import('./security/JUserProfileEditor.vue'),
@@ -161,6 +166,7 @@
                     items:[],
                     selectNode:null,
                     allowMany:true,
+                    //tabTitle:'',
                 };
             }
             return d;

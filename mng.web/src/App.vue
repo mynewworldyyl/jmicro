@@ -3,35 +3,43 @@
   <div>
       <div style="position:fixed; right:0px; left:0px; height:35px; top:0px; z-index:100">
           <Menu mode="horizontal" theme="light" active-key="service" @on-select="toRouter">
-              <Submenu name="mo">
+              <Submenu name="srv">
                   <template slot="title"><Icon type="ios-cog" />{{"Monitor" | i18n }}</template>
                   <Menu-group :title="'Monitor'|i18n">
                       <Menu-item name="__service" ><Icon type="ios-paper"></Icon>{{"Service"|i18n}}</Menu-item>
                       <Menu-item name="__statis"><Icon type="ios-stats" />{{"Statis"|i18n}}</Menu-item>
                       <Menu-item name="__monitors"><Icon type="ios-cog"></Icon>{{"Monitors"|i18n}}</Menu-item>
                       <Menu-item name="__threadPool"><Icon type="ios-cog"></Icon>{{"Thread"|i18n}}</Menu-item>
+                      <Menu-item name="__resourceMonitorView">
+                          <Icon type="ios-cog"></Icon>{{"ResourceMonitor"|i18n("Resource Monitor")}}
+                      </Menu-item>
                   </Menu-group>
                   <Menu-group :title="'Log'|i18n">
                       <Menu-item name="__invokeLinkView"><Icon type="ios-cog"></Icon>{{"InvokeLink"|i18n("Invoke Link")}}</Menu-item>
                       <Menu-item name="__logItemView"><Icon type="ios-cog"></Icon>{{"MonitorLog"|i18n("Monitor Log")}}</Menu-item>
                       <Menu-item name="__processLog"><Icon type="ios-cog"></Icon>{{"ProcessLog"|i18n("Process Log")}}</Menu-item>
                   </Menu-group>
+               </Submenu>
+
+              <Submenu name="cfg">
+                  <template slot="title"><Icon type="ios-analytics" />{{"Config"|i18n}}</template>
                   <Menu-group :title="'Config'|i18n">
+                      <Menu-item name="__config"><Icon type="ios-construct"></Icon>{{"SysConfig"|i18n('Sys Config')}}</Menu-item>
                       <Menu-item name="__statisConfig"><Icon type="ios-alert" />{{"statisConfig"|i18n}}</Menu-item>
                       <Menu-item name="__warningConfig"><Icon type="ios-alert" />{{"warningConfig"|i18n}}</Menu-item>
                       <Menu-item name="__resourceConfig"><Icon type="ios-alert" />{{"resourceConfig"|i18n}}</Menu-item>
-                      <Menu-item name="__typeConfig"><Icon type="ios-cog"></Icon>{{"TypeConfig"|i18n("Type Config")}}</Menu-item>
+                   </Menu-group>
+                  <Menu-group :title="'TypeConfig'|i18n">
+                      <Menu-item name="__typeConfig"><Icon type="ios-cog"></Icon>{{"BaseConfig"|i18n("Base Config")}}</Menu-item>
                       <Menu-item name="__monitorType"><Icon type="ios-cog"></Icon>{{"MonitorTypes"|i18n("Monitor Types")}}</Menu-item>
                       <Menu-item name="__monitorTypeServiceMethod"><Icon type="ios-cog"></Icon>{{"ServiceTypes"|i18n("Service Types")}}</Menu-item>
                       <Menu-item name="__namedType"><Icon type="ios-cog"></Icon>{{"NamedTypes"|i18n("Named Types")}}</Menu-item>
                   </Menu-group>
-               </Submenu>
 
-              <Submenu name="d">
-                  <template slot="title">
-                      <Icon type="ios-analytics" />
-                      {{"Deployment"|i18n}}
-                  </template>
+              </Submenu>
+
+              <Submenu name="dep">
+                  <template slot="title"><Icon type="ios-analytics" />{{"Deployment"|i18n}}</template>
                   <Menu-item name="__deploymentDesc"><Icon type="ios-alert" />{{"DeployDesc"|i18n("Deploy Desc")}}</Menu-item>
                   <Menu-item name="__agent"><Icon type="ios-cog"></Icon>{{"Agents"|i18n}}</Menu-item>
                   <Menu-item name="__process"><Icon type="ios-cog"></Icon>{{"Process"|i18n}}</Menu-item>
@@ -40,14 +48,10 @@
                   <Menu-item name="__host"><Icon type="ios-cog"></Icon>{{"Host"|i18n}}</Menu-item>
           -->    </Submenu>
 
-              <Submenu name="o">
-                  <template slot="title">
-                      <Icon type="ios-analytics" />
-                      {{'Others'|i18n}}
-                  </template>
+              <Submenu name="oth">
+                  <template slot="title"><Icon type="ios-analytics" />{{'Others'|i18n}}</template>
                   <Menu-group :title="'System'|i18n">
                       <MenuItem name="__topicList"> <Icon type="ios-cog"></Icon>{{"topicList"|i18n}}</MenuItem>
-                      <Menu-item name="__config"><Icon type="ios-construct"></Icon>{{"Config"|i18n}}</Menu-item>
                       <Menu-item name="__router"><Icon type="ios-people"></Icon>{{"Router"|i18n}}</Menu-item>
                       <Menu-item name="__shell"><Icon type="ios-cog"></Icon>{{"Shell"|i18n}}</Menu-item>
                   </Menu-group>
@@ -68,23 +72,17 @@
                      <!-- <MenuItem name="__help"> <Icon type="ios-cog"></Icon>Help</MenuItem>-->
                       <MenuItem name="__about"> <Icon type="ios-cog"></Icon>{{"About"|i18n}}</MenuItem>
                       <MenuItem name="__testing"> <Icon type="ios-cog"></Icon>{{"Testing"|i18n}}</MenuItem>
-
                   </Menu-group>
               </Submenu>
 
-              <Submenu name="me">
-                  <template slot="title">
-                      <Icon type="ios-analytics" />
-                      {{"Menus"|i18n}}
-                  </template>
-
+              <Submenu name="op">
+                  <template slot="title"><Icon type="ios-analytics" />{{"Operations"|i18n}}</template>
                   <MenuItem  v-for="mi in menus" :name="mi.name" :key="mi.name">
                       <Icon :type="mi.icon"></Icon>{{mi.name|i18n}}
                   </MenuItem>
-
               </Submenu>
-
           </Menu>
+
          <!-- <JToolBar></JToolBar>-->
           <JAccount></JAccount>
       </div>
@@ -326,6 +324,12 @@ export default {
             drawerBtnStyle:{left:'0px',},
         };
 
+        /*cache['resourceMonitorView']={
+            key: 'resourceMonitorView',
+            drawerStatus:false,
+            drawerBtnStyle:{left:'0px',},
+        };*/
+
       return {
           curSelect: cache[cache.curSelectKey],
           cache: cache,
@@ -347,7 +351,7 @@ export default {
       },
 
       toRouter(key) {
-          if(key == 'o' || key == 'd' || key =='mo' || key == 'me') {
+          if(key == 'srv' || key == 'dep' || key =='cfg' || key == 'oth' || key=='op') {
               return
           }else if( key.startWith('__')) {
               key  = key.substring(2);

@@ -2,20 +2,24 @@ package cn.jmicro.resource.impl;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import cn.jmicro.api.CfgMetadata;
 import cn.jmicro.api.JMicroContext;
 import cn.jmicro.api.Resp;
 import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Inject;
 import cn.jmicro.api.annotation.SMethod;
 import cn.jmicro.api.annotation.Service;
+import cn.jmicro.api.exp.ExpUtils;
 import cn.jmicro.api.idgenerator.ComponentIdServer;
 import cn.jmicro.api.monitor.LG;
 import cn.jmicro.api.monitor.MC;
+import cn.jmicro.api.monitor.ResourceData;
 import cn.jmicro.api.monitor.ResourceMonitorConfig;
 import cn.jmicro.api.monitor.StatisConfig;
 import cn.jmicro.api.raft.IDataOperator;
@@ -25,6 +29,7 @@ import cn.jmicro.common.Utils;
 import cn.jmicro.common.util.JsonUtils;
 import cn.jmicro.common.util.StringUtils;
 import cn.jmicro.resource.IMngResourceService;
+import cn.jmicro.resource.ResourceMonitorServer;
 
 @Component
 @Service(namespace="mng", version="0.0.1",external=true,timeout=10000,debugMode=1,showFront=false)
@@ -39,6 +44,9 @@ public class MngResourceServiceImpl implements IMngResourceService{
 	
 	@Inject
 	private ComponentIdServer idGenerator;
+	
+	@Inject
+	private ResourceMonitorServer mserver;
 	
 	@Override
 	@SMethod(perType=true,needLogin=true,maxSpeed=1,maxPacketSize=1024,downSsl=true,encType=0,upSsl=true)
@@ -175,23 +183,76 @@ public class MngResourceServiceImpl implements IMngResourceService{
 		
 		return r;
 	}
+	
+	@Override
+	@SMethod(perType=false,needLogin=true,maxSpeed=1,maxPacketSize=4096)
+	public Resp<Set<CfgMetadata>> getResourceMetadata(String resName,boolean refreshCache) {
+		Resp<Set<CfgMetadata>> r = new Resp<>();
+		r.setData(mserver.getResMetadata(resName));
+		return r;
+	}
+	
+	@Override
+	@SMethod(perType=false,needLogin=true,maxSpeed=1,maxPacketSize=4096)
+	public Resp<Map<String,Map<String,Set<CfgMetadata>>>> getInstanceResourceList() {
+		Resp<Map<String,Map<String,Set<CfgMetadata>>>> r = new Resp<>();
+		r.setData(mserver.getInstanceResourceList());
+		return r;
+	}
+	
+	@Override
+	@SMethod(perType=false,needLogin=true,maxSpeed=1,maxPacketSize=4096)
+	public Resp<Map<String,Set<ResourceData>>> getInstanceResourceData(Map<String,String> params) {
+		
+		Resp<Map<String,Set<ResourceData>>> r = new Resp<> ();
+		
+		String resName = params.get("resName");
+		String insName = params.get("insName");
+		if(StringUtils.isEmpty(resName) && StringUtils.isEmpty(insName)) {
+			r.setMsg("Resource name and instance name have to select one!");
+			r.setCode(Resp.CODE_FAIL);
+			return r;
+		}
+		
+		int toType = StatisConfig.TO_TYPE_DIRECT;
+		if(params.containsKey("toType")) {
+			toType = Integer.parseInt(params.get("toType"));
+		}
+		
+		/*String groupBy = params.get("groupBy");
+		if(StringUtils.isEmpty(groupBy)) {
+			groupBy = "ins";
+		}*/
+		
+		if(toType == StatisConfig.TO_TYPE_DIRECT) {
+			return mserver.getDirectResourceData(insName,resName,params);
+		}
+		
+		return r;
+		//return mserver.getInstanceResourceData(insName);
+	}
 
 	private Resp<Boolean> checkAndSet(ResourceMonitorConfig cfg) {
 		
 		Resp<Boolean> r = new Resp<>();
 		
-		String msg = checkConfig(cfg);
+		String msg = checkToType(cfg);
+		
+		if(msg == null && StringUtils.isEmpty(cfg.getResName())) {
+			msg = "资源名称不能为空";
+		}
+		
+		if(!Utils.isEmpty(cfg.getExpStr())) {
+			List<String> suffixExp = ExpUtils.toSuffix(cfg.getExpStr());
+			if(!ExpUtils.isValid(suffixExp)) {
+				 msg = "Invalid exp: " + cfg.getId() + ", exp: " + cfg.getExpStr();
+			}
+		}
+		
 		if(msg != null) {
 			r.setMsg(msg);
 			r.setCode(1);
 			r.setData(false);
-			return r;
-		}
-		
-		if(StringUtils.isEmpty(cfg.getResName())) {
-			r.setCode(Resp.CODE_FAIL);
-			r.setData(false);
-			r.setMsg("资源名称不能为空");
 			return r;
 		}
 		
@@ -201,6 +262,11 @@ public class MngResourceServiceImpl implements IMngResourceService{
 	public String checkConfig(ResourceMonitorConfig lw) {
 		String msg = checkToType(lw);
 		if(msg != null) {
+			return msg;
+		}
+		
+		if(Utils.getIns().checkEmail(lw.getToParams())) {
+			msg = "Email format invalid: " + lw.getToParams()+ " for id: " + lw.getId();
 			return msg;
 		}
 		
@@ -259,8 +325,13 @@ public class MngResourceServiceImpl implements IMngResourceService{
 					msg = "Message topic cannot be null: " + lw.getId();
 					return msg;
 				}
+			}else if(StatisConfig.TO_TYPE_EMAIL == lw.getToType()) {
+				if(!Utils.getIns().checkEmail(lw.getToParams())) {
+					msg = "Email format invalid: " + lw.getToParams();
+					return msg;
+				}
 			}
-		}finally {
+		} finally {
 			if(msg != null) {
 				logger.error(msg);
 				LG.logWithNonRpcContext(MC.LOG_WARN, this.getClass() , msg);

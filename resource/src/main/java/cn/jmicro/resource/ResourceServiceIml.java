@@ -25,18 +25,21 @@ public class ResourceServiceIml implements IResourceService {
 	private ProcessInfo pi;
 	
 	@Override
-	public Set<ResourceData> getResource(Map<String,Object> params) {
+	public Set<ResourceData> getResource(Set<String> resNames, 
+			Map<String,Object> params, Map<String,String> exps) {
 		Set<ResourceData> rs = new HashSet<>();
 		for(IResource r : resources) {
-			if(r.isEnable()) {
-				rs.add(r.getResource(params));
+			String resName = r.getResourceName();
+			if(r.isEnable() && resNames.contains(resName)) {
+				ResourceData rd = r.getResource(params,exps.get(resName));
+				if(rd != null) {
+					rs.add(rd);
+				}
 			}
 		}
 		return rs;
 	}
 	
-	public void ready() {
-		
-	}
+	public void ready() {}
 	
 }

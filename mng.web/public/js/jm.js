@@ -751,7 +751,7 @@ jm.mng = {
                 key +='';
             }
 
-            let v = this.resources_[key.trim()];
+            let v = this.resources_[key.toLowerCase().trim()];
             if(!v) {
                 if(defaultVal) {
                     return defaultVal

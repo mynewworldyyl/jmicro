@@ -33,6 +33,7 @@ import cn.jmicro.api.annotation.Reference;
 import cn.jmicro.api.annotation.Service;
 import cn.jmicro.api.classloader.RpcClassLoader;
 import cn.jmicro.api.config.Config;
+import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.objectfactory.AbstractClientServiceProxyHolder;
 import cn.jmicro.api.objectfactory.ClientServiceProxyHolder;
 import cn.jmicro.api.objectfactory.ProxyObject;
@@ -538,7 +539,7 @@ class ClientServiceProxyManager {
 		
 		Class<?> cls = this.loadClass(si.getKey().getInstanceName(), clientProxyClsName, cl);
 		if(cls == null) {
-			throw new CommonException("Client holder class not found: "+clientProxyClsName);
+			throw new CommonException(MC.MT_SERVICE_ITEM_NOT_FOUND,"Client holder class not found: "+clientProxyClsName);
 		}
 		
 		try {
@@ -570,7 +571,7 @@ class ClientServiceProxyManager {
 		
 		Class<?> cls = this.loadClass(instanceName, clientProxyClsName, cl);
 		if(cls == null) {
-			throw new CommonException("Client holder class not found: "+clientProxyClsName);
+			throw new CommonException(MC.MT_SERVICE_ITEM_NOT_FOUND,"Client holder class not found: "+clientProxyClsName);
 		}
 		
 		try {

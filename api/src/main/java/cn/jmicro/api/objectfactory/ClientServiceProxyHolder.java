@@ -26,6 +26,7 @@ import org.slf4j.LoggerFactory;
 import cn.jmicro.api.JMicroContext;
 import cn.jmicro.api.annotation.Reference;
 import cn.jmicro.api.client.InvocationHandler;
+import cn.jmicro.api.config.Config;
 import cn.jmicro.api.internal.async.IClientAsyncCallback;
 import cn.jmicro.api.monitor.LG;
 import cn.jmicro.api.monitor.MC;
@@ -96,10 +97,10 @@ public class ClientServiceProxyHolder implements IServiceListener{
 	@SuppressWarnings("unchecked")
 	public <T> T invoke(String methodName, Object... args) {
 
-		boolean sdirect = false;
-
-		JMicroContext cxt = JMicroContext.get();
+		backupAndSetContext();
 		
+		
+		JMicroContext cxt = JMicroContext.get();
 		ServiceItem si = this.item;
 		if (si == null) {
 			if (!isUsable()) {
@@ -112,8 +113,15 @@ public class ClientServiceProxyHolder implements IServiceListener{
 			}
 		}
 		
+		ServiceMethod sm = si.getMethod(methodName, args);
+		if (sm == null) {
+			throw new CommonException("cls[" + si.getImpl() + "] method [" + methodName + "] method not found");
+		}
+		
+		JMicroContext.configComsumer(sm, si);
+		
 		if(Constants.LICENSE_TYPE_FREE != si.getFeeType()) {
-			ActInfo ai = JMicroContext.get().getAccount();
+			ActInfo ai = cxt.getAccount();
 			if(ai == null) {
 				String msg = "License need login: " + si.getKey().toKey(false, false, false);
 				LG.log(MC.LOG_INFO, this.getClass(), msg);
@@ -122,7 +130,6 @@ public class ClientServiceProxyHolder implements IServiceListener{
 			
 			if(Constants.LICENSE_TYPE_CLIENT == si.getFeeType() 
 					&& si.getClientId() != ai.getClientId()) {
-				
 				boolean f = false;
 				if(si.getAuthClients() != null && si.getAuthClients().length > 0) {
 					for(int t : si.getAuthClients()) {
@@ -145,7 +152,7 @@ public class ClientServiceProxyHolder implements IServiceListener{
 			}
 		}
 		
-		backupAndSetContext();
+		boolean sdirect = false;
 		
 		try {
 			
@@ -171,12 +178,6 @@ public class ClientServiceProxyHolder implements IServiceListener{
 				}
 			}
 
-			ServiceMethod sm = si.getMethod(methodName, args);
-
-			if (sm == null) {
-				throw new CommonException("cls[" + si.getImpl() + "] method [" + methodName + "] method not found");
-			}
-
 			cxt.setString(cn.jmicro.api.JMicroContext.CLIENT_NAMESPACE, this.getNamespace());
 			cxt.setString(cn.jmicro.api.JMicroContext.CLIENT_SERVICE, this.getNamespace());
 			cxt.setString(cn.jmicro.api.JMicroContext.CLIENT_VERSION, this.getNamespace());
@@ -185,7 +186,13 @@ public class ClientServiceProxyHolder implements IServiceListener{
 			cxt.setParam(Constants.CLIENT_REF_METHOD, methodName);
 			cxt.setObject(Constants.PROXY, this);
 
-			JMicroContext.configComsumer(sm, si);
+			//context.setObject(JMicroContext.MONITOR, JMicro.getObjectFactory().get(MonitorManager.class));
+			cxt.setParam(Constants.SERVICE_METHOD_KEY, sm);
+			cxt.setParam(Constants.SERVICE_ITEM_KEY, si);
+			cxt.setParam(JMicroContext.LOCAL_HOST, Config.getExportSocketHost());
+			cxt.setParam(JMicroContext.SM_LOG_LEVEL, sm.getLogLevel());
+			
+			
 
 			if (JMicroContext.get().getParam(Constants.DIRECT_SERVICE_ITEM, null) == null) {
 				if (this.isDirect()) {
@@ -198,7 +205,7 @@ public class ClientServiceProxyHolder implements IServiceListener{
 			T to = null;
 			if(retVal != null) {
 				to = (T) retVal;
-			}else {
+			} else {
 				Class<?> rt = sm.getKey().getReturnParamClass();
 				if (rt == null || rt == Void.class || rt == Void.TYPE) {
 					return null;
@@ -268,7 +275,7 @@ public class ClientServiceProxyHolder implements IServiceListener{
 		JMicroContext cxt = JMicroContext.get();
 		boolean breakFlag = cxt.getBoolean(Constants.BREAKER_TEST_CONTEXT, false);
 		
-		Reference ref = cxt.getParam(Constants.REF_ANNO, null);
+		//Reference ref = cxt.getParam(Constants.REF_ANNO, null);
 		
 		ServiceItem dsi = cxt.getParam(Constants.DIRECT_SERVICE_ITEM, null);
 		
@@ -284,18 +291,21 @@ public class ClientServiceProxyHolder implements IServiceListener{
 		
 		IClientAsyncCallback cb = cxt.getParam(Constants.CONTEXT_CALLBACK_CLIENT,null);
 		
+		boolean isProvider = JMicroContext.isContainCallSide() ? JMicroContext.isCallSideService() : false;
+		
 		//backup the rpc context from here
 		cxt.backupAndClear();
 		
 		//Start a new RPC context from here
 		//false表示不是provider端
-		JMicroContext.callSideProdiver(false);
+		JMicroContext.setCallSide(false);
 		if(breakFlag) {
 			cxt.setBoolean(Constants.BREAKER_TEST_CONTEXT, true);
 		}
-		if(ref != null) {
+		
+		/*if(ref != null) {
 			cxt.setParam(Constants.REF_ANNO, ref);
-		}
+		}*/
 		
 		if(cb != null) {
 			cxt.setParam(Constants.CONTEXT_CALLBACK_CLIENT,cb);
@@ -313,11 +323,11 @@ public class ClientServiceProxyHolder implements IServiceListener{
 			cxt.setParam(JMicroContext.LOGIN_KEY, loginKey);
 		}
 		
-		if(linkId != null && linkId > 0) {
+		if(isProvider && linkId != null && linkId > 0) {
 			cxt.setParam(JMicroContext.LINKER_ID, linkId);
 		}
 		
-		if(preRequestId != null && preRequestId > 0) {
+		if(isProvider && preRequestId != null && preRequestId > 0) {
 			//pre request ID is the parent ID of this request
 			cxt.setParam(JMicroContext.REQ_PARENT_ID, preRequestId);
 		}

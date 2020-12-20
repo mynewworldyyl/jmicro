@@ -61,6 +61,7 @@ public class StatisConfig {
 	public static final int TO_TYPE_MONITOR_LOG = 5;
 	public static final int TO_TYPE_MESSAGE = 6;
 	public static final int TO_TYPE_EMAIL = 7;
+	public static final int TO_TYPE_DIRECT = 8;
 	
 	public static final byte PREFIX_TOTAL = 1; 		   //"total";
 	public static final byte PREFIX_TOTAL_PERCENT = 2; //"totalPercent";

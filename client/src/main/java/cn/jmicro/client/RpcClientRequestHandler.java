@@ -175,7 +175,8 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
 	        		MT.rpcEvent(MC.MT_SERVICE_ITEM_NOT_FOUND);
 	    			throw new RpcException(request,errMsg,MC.MT_SERVICE_ITEM_NOT_FOUND);
 	    		}
-				
+        	} else {
+        		JMicroContext.get().removeParam(Constants.DIRECT_SERVICE_ITEM);
         	}
 			
 			 MT.rpcEvent(MC.MT_REQ_START);
@@ -189,6 +190,8 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
 	        	 if(!ac.getForMethod().equals(request.getMethod())) {
 	        		 //不属于当前方法的异步配置
 	        		 ac = null;
+	        	 } else {
+	        		 JMicroContext.get().removeParam(Constants.ASYNC_CONFIG);
 	        	 }
 	         }
 	         
@@ -438,22 +441,22 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
 	    				asyncResponse.put(req.getRequestId(), (respMsg)->{
 	    					JMicroContext actx = JMicroContext.get();
 	    					try {
+	    						
 	    						actx.mergeParams(cxtParams);
 	    						if(actx.isDebug()) {
 	    							actx.appendCurUseTime("Got async resp ",true);
 		    		    		}
 	    						
-	    						RpcResponse resp = ICodecFactory.decode(this.codecFactory, respMsg.getPayload(),
-		    							RpcResponse.class, msg.getUpProtocol());
-		    					resp.setMsg(respMsg);
-		    					
-		    					MT.rpcEvent(MC.MT_REQ_SUCCESS);
-		    					
-		    					if(!resp.isSuccess()) {
-		    						processResponseFail(resp,respMsg,req,sm,si);
-		    					}
-		    					cb.onResponse(resp);
-		    					
+	    						MT.rpcEvent(MC.MT_REQ_SUCCESS);
+
+								RpcResponse resp = ICodecFactory.decode(this.codecFactory, respMsg.getPayload(),
+										RpcResponse.class, msg.getUpProtocol());
+								resp.setMsg(respMsg);
+								if(!resp.isSuccess()) {
+									processResponseFail(resp,respMsg,req,sm,si);
+								}
+								cb.onResponse(resp);
+	    						
 	    					}catch( Throwable e) {
 	    						String errMsg = "Client callback error reqID:"+req.getRequestId()+",linkId:"+msg.getLinkId()+",Service: "+sm.getKey().toKey(true, true, true);
 	    						logger.error(errMsg,e);
