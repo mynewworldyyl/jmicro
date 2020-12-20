@@ -693,8 +693,29 @@ public class ResourceMonitorServer{
 
 	public Resp<Map<String, Set<ResourceData>>> getDirectResourceData(String insName, String resName,
 			Map<String, String> params) {
+		
 		Resp<Map<String,Set<ResourceData>>> r = new Resp<>();
 		
+		Set<String> resNames = new HashSet<>();
+		if(StringUtils.isNotEmpty(resName)) {
+			resNames.add(resName);
+		}
+		
+		if(StringUtils.isNotEmpty(insName)) {
+			final Reg reg = this.srv2Regs.get(insName);
+			if(reg != null) {
+				try {
+					reg.resSrv.getResourceJMAsync(resNames,new HashMap<>(),null)
+					.success((result,rrr)->{
+						
+					}).fail((code,msg,rrr)->{
+						logger.error("code: " + code + ", msg: " + msg +",srv: "+ reg.resSrv.getItem().getKey().toKey(true, true, true));
+					});
+				}catch(Throwable e) {
+					logger.error("",e);
+				}
+			}
+		}
 		
 		
 		return r;
