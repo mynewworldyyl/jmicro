@@ -21,6 +21,7 @@ import org.slf4j.LoggerFactory;
 
 import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Interceptor;
+import cn.jmicro.api.async.IPromise;
 import cn.jmicro.api.exception.RpcException;
 import cn.jmicro.api.net.AbstractInterceptor;
 import cn.jmicro.api.net.IInterceptor;
@@ -41,9 +42,9 @@ public class LastInterceptor extends AbstractInterceptor implements IInterceptor
 	private final static Logger logger = LoggerFactory.getLogger(LastInterceptor.class);
 	
 	@Override
-	public IResponse intercept(IRequestHandler handler, IRequest request) throws RpcException {
+	public IPromise<Object>  intercept(IRequestHandler handler, IRequest request) throws RpcException {
 		//logger.debug("LastInterceptor before");
-		IResponse resp = handler.onRequest(request);
+		IPromise<Object>  resp = handler.onRequest(request);
 		//logger.debug("LastInterceptor after");
 		return resp;
 	}

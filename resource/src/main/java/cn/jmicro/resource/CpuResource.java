@@ -10,7 +10,6 @@ import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.monitor.AbstractResource;
 import cn.jmicro.api.monitor.IResource;
 import cn.jmicro.api.monitor.ResourceData;
-import cn.jmicro.api.utils.TimeUtils;
 import cn.jmicro.common.util.StringUtils;
 
 @Component
@@ -33,7 +32,6 @@ public class CpuResource extends AbstractResource implements IResource {
 		data.putData(SYSTEM_CPU_LOAD, osBean.getSystemCpuLoad());
 		data.putData(SYSTEM_LOAD_AVERAGE, osBean.getSystemLoadAverage());
 		data.putData(AVAILABLE_CPUS, osBean.getAvailableProcessors());
-		data.putData(OS_NAME, System.getProperty("os.name"));
 		
 		if(StringUtils.isNotEmpty(expStr) && !this.compuleByExp(expStr, data.getMetaData())) {
 			return null;
@@ -42,9 +40,8 @@ public class CpuResource extends AbstractResource implements IResource {
 	}
 
 	@SuppressWarnings("restriction")
-	@Override
 	public void ready() {
-		super.ready();
+		super.ready0();
 		
 		osBean = ManagementFactory.getPlatformMXBean(com.sun.management.OperatingSystemMXBean.class);
 		mngBean = ManagementFactory.getPlatformMXBean(java.lang.management.OperatingSystemMXBean.class);
@@ -70,14 +67,7 @@ public class CpuResource extends AbstractResource implements IResource {
 		md.setResName(RES_NAME);
 		md.setName(AVAILABLE_CPUS);
 		md.setDataType(CfgMetadata.DataType.Integer.getCode());
-		md.setDesc("CPU个数");
-		metadatas.add(md);
-		
-		md = new CfgMetadata();
-		md.setResName(RES_NAME);
-		md.setName(OS_NAME);
-		md.setDataType(CfgMetadata.DataType.String.getCode());
-		md.setDesc("操作系统名称");
+		md.setDesc("CPU Num");
 		metadatas.add(md);
 		
 	}

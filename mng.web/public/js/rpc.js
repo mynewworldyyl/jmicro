@@ -804,6 +804,7 @@ jm.rpc = {
             cb(this.actInfo,null);
             return;
         }
+        this.actInfo = null;
         let self = this;
         jm.rpc.callRpc(this.__actreq('login',[actName,pwd]))
             .then(( resp )=>{
@@ -1122,7 +1123,7 @@ jm.rpc = {
                     let doFailure = true;
                     if(rst && rst.errorCode != 0) {
                         //alert(rst.msg);
-                        if(rst.errorCode == 0x00000004 /*|| rst.errorCode == 0x00000006*/) {
+                        if(rst.errorCode == 0x00000004 || rst.errorCode == 0x004C) {
                             let actName = window.jm.localStorage.get("actName");
                             let pwd = window.jm.localStorage.get("pwd");
                             if(actName && pwd) {

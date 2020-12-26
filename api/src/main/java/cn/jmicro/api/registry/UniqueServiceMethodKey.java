@@ -118,7 +118,7 @@ public final class UniqueServiceMethodKey {
 	public static Class<?>[] paramsClazzes(String paramDesc) {
 		try {
 			if(Utils.isEmpty(paramDesc)) {
-				return null;
+				return new Class[0];
 			}
 			return ReflectUtils.desc2classArray(paramDesc);
 		} catch (ClassNotFoundException e) {
@@ -193,7 +193,7 @@ public final class UniqueServiceMethodKey {
 		
 		++idx;
 		if(strs.length > 5 && !Utils.isEmpty(strs[idx])) {
-			usk.setPort(Integer.parseInt(strs[idx]));
+			usk.setPort(strs[idx]);
 		}
 		usk.setSnvHash(HashUtils.FNVHash1(usk.toKey(false, false, false)));
 		
@@ -253,11 +253,11 @@ public final class UniqueServiceMethodKey {
 	public void setHost(String host) {
 		this.getUsk().setHost(host);
 	}
-	public int getPort() {
+	public String getPort() {
 		return this.getUsk().getPort();
 	}
 	
-	public void setPort(int port) {
+	public void setPort(String port) {
 		this.getUsk().setPort(port);
 	}
 	

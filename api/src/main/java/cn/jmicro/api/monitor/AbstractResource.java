@@ -5,9 +5,9 @@ import java.util.Map;
 import java.util.Set;
 
 import cn.jmicro.api.CfgMetadata;
-import cn.jmicro.api.annotation.Cfg;
 import cn.jmicro.api.annotation.Inject;
 import cn.jmicro.api.choreography.ProcessInfo;
+import cn.jmicro.api.config.Config;
 import cn.jmicro.api.exp.Exp;
 import cn.jmicro.api.exp.ExpUtils;
 import cn.jmicro.api.utils.TimeUtils;
@@ -20,13 +20,17 @@ public abstract class AbstractResource implements IResource {
 	@Inject
 	protected ProcessInfo pi;
 	
-	@Cfg(value="/enable")
-	private boolean enable = false;
+	//@Cfg(value="/enable")
+	private boolean enable = true;
 	
-	public void ready() {
+	public void ready0() {
 		data.setBelongInsId(pi.getId());
 		data.setBelongInsName(pi.getInstanceName());
 		data.setResName(this.getResourceName());
+		data.setOsName(System.getProperty("os.name"));
+		data.setSocketHost(Config.getExportSocketHost());
+		data.setHttpHost(Config.getExportHttpHost());
+		data.setClientId(pi.getClientId());
 	}
 	
 	@Override

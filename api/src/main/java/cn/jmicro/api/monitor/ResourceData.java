@@ -8,19 +8,25 @@ import cn.jmicro.api.annotation.SO;
 @SO
 public class ResourceData {
 
+	private int clientId;
+	
 	private int belongInsId;
 	
 	private String belongInsName;
 	
 	private String resName = "";
 	
-	private String host = "";
+	private String httpHost = "";
+	
+	private String socketHost = "";
 	
 	private long time;
 	
 	private int cid;
 	
 	private String tag;
+	
+	private String osName;
 	
 	private Map<String,Object> metaData = new HashMap<>();
 	
@@ -32,6 +38,14 @@ public class ResourceData {
 		return this.metaData.get(key);
 	}
 	
+	public String getOsName() {
+		return osName;
+	}
+
+	public void setOsName(String osName) {
+		this.osName = osName;
+	}
+
 	public <T> T removeData(String key) {
 		return (T)this.metaData.remove(key);
 	}
@@ -42,6 +56,14 @@ public class ResourceData {
 
 	public void setBelongInsId(int belongInsId) {
 		this.belongInsId = belongInsId;
+	}
+
+	public int getClientId() {
+		return clientId;
+	}
+
+	public void setClientId(int clientId) {
+		this.clientId = clientId;
 	}
 
 	public String getBelongInsName() {
@@ -106,11 +128,19 @@ public class ResourceData {
 		this.tag = tag;
 	}
 
-	public String getHost() {
-		return host;
+	public String getHttpHost() {
+		return httpHost;
 	}
 
-	public void setHost(String host) {
-		this.host = host;
+	public void setHttpHost(String httpHost) {
+		this.httpHost = httpHost;
+	}
+
+	public String getSocketHost() {
+		return socketHost;
+	}
+
+	public void setSocketHost(String socketHost) {
+		this.socketHost = socketHost;
 	}
 }

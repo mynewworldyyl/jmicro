@@ -76,7 +76,7 @@ public class JMicroHttpServer implements IServer{
 	private String host;
 	
 	@Cfg(value="/port",required=false)
-	private int port=9990;
+	private String port="9990";
 	
 	@Cfg("/MinaServer/readBufferSize")
 	private int readBufferSize=1024*4;
@@ -148,7 +148,7 @@ public class JMicroHttpServer implements IServer{
         }
         
         //InetAddress.getByAddress(Array(127, 0, 0, 1))
-        InetSocketAddress address = new InetSocketAddress(this.host,this.port);
+        InetSocketAddress address = new InetSocketAddress(this.host,Integer.parseInt(this.port));
         try {
         	 server = HttpServer.create(address, 0);
         	 server.createContext("/jmicro", this.httpHandler);
@@ -158,7 +158,7 @@ public class JMicroHttpServer implements IServer{
 		} catch (IOException e) {
 			LOG.error("",e);
 		}
-        this.port = address.getPort();
+        this.port = address.getPort()+"";
         
         String m = "Running the server host["+this.host+"],port ["+this.port+"]";
         LOG.debug(m);    
@@ -180,7 +180,7 @@ public class JMicroHttpServer implements IServer{
 	}
 
 	@Override
-	public int port() {
+	public String port() {
 		return this.port;
 	}
 
@@ -188,7 +188,7 @@ public class JMicroHttpServer implements IServer{
 		this.host = host;
 	}
 
-	public void setPort(int port) {
+	public void setPort(String port) {
 		this.port = port;
 	}
 

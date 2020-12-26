@@ -12,7 +12,7 @@ public class PressureTest {
 
 	public static void main(String[] args) {
 		IObjectFactory of = JMicro.getObjectFactoryAndStart(args);
-		for(int i = 0; i < 5;i++){
+		for(int i = 0; i < 1;i++){
 			new Thread(new Worker(of,i)).start();
 		}
 	}
@@ -47,7 +47,7 @@ class Worker implements Runnable{
 						//System.out.println(JMicroContext.get().getLong(JMicroContext.LINKER_ID, 0L)+": "+result);
 						JMicroContext.get().removeParam(JMicroContext.LINKER_ID);
 					}).success((result,cxt)->{
-						//System.out.println("Result: " +result);
+						System.out.println("Result: " +result);
 					});
 				}else {
 					sayHello.hiJMAsync(new Person())
@@ -55,7 +55,7 @@ class Worker implements Runnable{
 						System.out.println(JMicroContext.get().getLong(JMicroContext.LINKER_ID, 0L)+": "+result);
 						JMicroContext.get().removeParam(JMicroContext.LINKER_ID);
 					}).success((result,cxt)->{
-						//System.out.println("Result: " +result);
+						System.out.println("Result: " +result);
 					});
 				}
 				
@@ -64,7 +64,7 @@ class Worker implements Runnable{
 			}
 			
 			try {
-				Thread.sleep(r.nextInt(300));
+				Thread.sleep(r.nextInt(1000));
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}

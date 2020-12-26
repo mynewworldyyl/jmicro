@@ -24,7 +24,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import cn.jmicro.api.JMicroContext;
-import cn.jmicro.api.annotation.Reference;
+import cn.jmicro.api.async.IPromise;
 import cn.jmicro.api.client.InvocationHandler;
 import cn.jmicro.api.config.Config;
 import cn.jmicro.api.internal.async.IClientAsyncCallback;
@@ -38,8 +38,11 @@ import cn.jmicro.api.registry.ServiceMethod;
 import cn.jmicro.api.registry.UniqueServiceKey;
 import cn.jmicro.api.registry.UniqueServiceMethodKey;
 import cn.jmicro.api.security.ActInfo;
+import cn.jmicro.codegenerator.AsyncClientProxy;
+import cn.jmicro.codegenerator.AsyncClientUtils;
 import cn.jmicro.common.CommonException;
 import cn.jmicro.common.Constants;
+import cn.jmicro.common.Utils;
 import cn.jmicro.common.util.StringUtils;
 
 /**
@@ -65,7 +68,7 @@ public class ClientServiceProxyHolder implements IServiceListener{
 	
 	private boolean direct = false;
 	
-	private volatile InvocationHandler targetHandler = null;
+	private InvocationHandler targetHandler = null;
 	
 	public IObjectFactory getOf() {
 		return of;
@@ -95,14 +98,22 @@ public class ClientServiceProxyHolder implements IServiceListener{
 	}
 	
 	@SuppressWarnings("unchecked")
-	public <T> T invoke(String methodName, Object... args) {
+	public <T> T invoke(String originMethod,Object rpcContext, Object... args) {
 
 		backupAndSetContext();
 		
-		
 		JMicroContext cxt = JMicroContext.get();
 		ServiceItem si = this.item;
-		if (si == null) {
+		
+		boolean isAsync = originMethod.endsWith(AsyncClientProxy.ASYNC_METHOD_SUBFIX);
+		
+		String methodName = originMethod;
+		
+		if(isAsync) {
+			methodName = AsyncClientUtils.genSyncMethodName(originMethod);
+		}
+		
+		if(si == null) {
 			if (!isUsable()) {
 				String msg = "Service Item is NULL when call method [" + methodName + "] with params ["
 						+ UniqueServiceMethodKey.paramsStr(args) + "] proxy [" + this.getClass().getName() + "]";
@@ -116,6 +127,13 @@ public class ClientServiceProxyHolder implements IServiceListener{
 		ServiceMethod sm = si.getMethod(methodName, args);
 		if (sm == null) {
 			throw new CommonException("cls[" + si.getImpl() + "] method [" + methodName + "] method not found");
+		}
+		
+		if(!isAsync) {
+			String returnTypeName = sm.getKey().getReturnParam();
+			if(!Utils.isEmpty(returnTypeName)) {
+				isAsync = sm.getKey().getReturnParam().startsWith("Lcn/jmicro/api/async/IPromise");
+			}
 		}
 		
 		JMicroContext.configComsumer(sm, si);
@@ -191,48 +209,63 @@ public class ClientServiceProxyHolder implements IServiceListener{
 			cxt.setParam(Constants.SERVICE_ITEM_KEY, si);
 			cxt.setParam(JMicroContext.LOCAL_HOST, Config.getExportSocketHost());
 			cxt.setParam(JMicroContext.SM_LOG_LEVEL, sm.getLogLevel());
-			
-			
 
-			if (JMicroContext.get().getParam(Constants.DIRECT_SERVICE_ITEM, null) == null) {
+			if(JMicroContext.get().getParam(Constants.DIRECT_SERVICE_ITEM, null) == null) {
 				if (this.isDirect()) {
 					sdirect = true;
 					JMicroContext.get().setParam(Constants.DIRECT_SERVICE_ITEM, this.item);
 				}
 			}
 
-			Object retVal = h.invoke(this, methodName, args);
-			T to = null;
-			if(retVal != null) {
-				to = (T) retVal;
+			IPromise<Object> p = h.invoke(this, methodName, args);
+			
+			if(isAsync) {
+				if(rpcContext != null) {
+					p.then((rst,fail,cxt0)->{
+						p.setContext(rpcContext);
+					});
+				}
+				return (T)p;
 			} else {
-				Class<?> rt = sm.getKey().getReturnParamClass();
-				if (rt == null || rt == Void.class || rt == Void.TYPE) {
-					return null;
-				} else if (rt == Byte.TYPE) {
-					to = (T) new Byte((byte) 0);
-				} else if (rt == Short.TYPE) {
-					to = (T) new Short((byte) 0);
-				} else if (rt == Integer.TYPE) {
-					to = (T) new Integer((byte) 0);
-				} else if (rt == Long.TYPE) {
-					to = (T) new Long((byte) 0);
-				} else if (rt == Float.TYPE) {
-					to = (T) new Float((byte) 0);
-				} else if (rt == Double.TYPE) {
-					to = (T) new Double((byte) 0);
-				} else if (rt == Boolean.TYPE) {
-					to = (T) Boolean.FALSE;
+				//同步返回结果
+				if(p.isSuccess()) {
+					return getVal(p.getResult(),sm.getKey().getReturnParamClass());
+				} else {
+					throw new CommonException(p.getFailCode(),p.getFailMsg());
 				}
 			}
-			return to;
 		} finally {
 			if (sdirect) {
 				cxt.removeParam(Constants.DIRECT_SERVICE_ITEM);
 			}
 			this.restoreContext();
 		}
-
+	}
+	
+	private <T> T getVal(Object retVal,Class<?> rt) {
+		T to = null;
+		if(retVal != null) {
+			to = (T) retVal;
+		} else {
+			if (rt == null || rt == Void.class || rt == Void.TYPE) {
+				return null;
+			} else if (rt == Byte.TYPE) {
+				to = (T) new Byte((byte) 0);
+			} else if (rt == Short.TYPE) {
+				to = (T) new Short((byte) 0);
+			} else if (rt == Integer.TYPE) {
+				to = (T) new Integer((byte) 0);
+			} else if (rt == Long.TYPE) {
+				to = (T) new Long((byte) 0);
+			} else if (rt == Float.TYPE) {
+				to = (T) new Float((byte) 0);
+			} else if (rt == Double.TYPE) {
+				to = (T) new Double((byte) 0);
+			} else if (rt == Boolean.TYPE) {
+				to = (T) Boolean.FALSE;
+			}
+		}
+		return to;
 	}
 	
 	public boolean isUsable() {
@@ -289,8 +322,6 @@ public class ClientServiceProxyHolder implements IServiceListener{
 		
 		Long preRequestId = cxt.getParam(JMicroContext.REQ_ID, null);
 		
-		IClientAsyncCallback cb = cxt.getParam(Constants.CONTEXT_CALLBACK_CLIENT,null);
-		
 		boolean isProvider = JMicroContext.isContainCallSide() ? JMicroContext.isCallSideService() : false;
 		
 		//backup the rpc context from here
@@ -306,10 +337,6 @@ public class ClientServiceProxyHolder implements IServiceListener{
 		/*if(ref != null) {
 			cxt.setParam(Constants.REF_ANNO, ref);
 		}*/
-		
-		if(cb != null) {
-			cxt.setParam(Constants.CONTEXT_CALLBACK_CLIENT,cb);
-		}
 		
 		if(dsi != null) {
 			cxt.setParam(Constants.DIRECT_SERVICE_ITEM, dsi);

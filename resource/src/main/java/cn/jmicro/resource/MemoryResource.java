@@ -6,11 +6,13 @@ import java.util.Map;
 import java.util.Set;
 
 import cn.jmicro.api.CfgMetadata;
+import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.monitor.AbstractResource;
 import cn.jmicro.api.monitor.IResource;
 import cn.jmicro.api.monitor.ResourceData;
 import cn.jmicro.common.util.StringUtils;
 
+@Component
 public class MemoryResource extends AbstractResource  implements IResource {
 	
 	private static final String RES_NAME = "memory";
@@ -28,7 +30,6 @@ public class MemoryResource extends AbstractResource  implements IResource {
 		ResourceData data = this.getData();
 		data.putData(FREE_MEMORY_SIZE, osBean.getFreePhysicalMemorySize());
 		data.putData(TOTAL_MEMORY_SIZE, osBean.getTotalPhysicalMemorySize());
-		data.putData(OS_NAME, System.getProperty("os.name"));
 		if(StringUtils.isNotEmpty(expStr) && !this.compuleByExp(expStr, data.getMetaData())) {
 			return null;
 		}
@@ -36,9 +37,8 @@ public class MemoryResource extends AbstractResource  implements IResource {
 	}
 
 	@SuppressWarnings("restriction")
-	@Override
 	public void ready() {
-		super.ready();
+		super.ready0();
 		
 		osBean = ManagementFactory.getPlatformMXBean(com.sun.management.OperatingSystemMXBean.class);
 		mngBean = ManagementFactory.getPlatformMXBean(java.lang.management.OperatingSystemMXBean.class);
@@ -60,12 +60,12 @@ public class MemoryResource extends AbstractResource  implements IResource {
 		md.setDesc("总的物理内存");
 		metadatas.add(md);
 		
-		md = new CfgMetadata();
+		/*md = new CfgMetadata();
 		md.setResName(RES_NAME);
 		md.setName(OS_NAME);
 		md.setDataType(CfgMetadata.DataType.String.getCode());
 		md.setDesc("操作系统名称");
-		metadatas.add(md);
+		metadatas.add(md);*/
 		
 	}
 

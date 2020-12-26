@@ -154,9 +154,9 @@ public class ApiRequestMessageHandler implements IMessageHandler{
 			}
 			
 			JMicroContext.get().setParam(JMicroContext.LOCAL_HOST, session.localHost());
-			JMicroContext.get().setParam(JMicroContext.LOCAL_PORT, session.localPort()+"");
+			JMicroContext.get().setParam(JMicroContext.LOCAL_PORT, session.localPort());
 			JMicroContext.get().setParam(JMicroContext.REMOTE_HOST, session.remoteHost());
-			JMicroContext.get().setParam(JMicroContext.REMOTE_PORT, session.remotePort()+"");
+			JMicroContext.get().setParam(JMicroContext.REMOTE_PORT, session.remotePort());
 			
 			JMicroContext.get().mergeParams(req.getParams());
 			

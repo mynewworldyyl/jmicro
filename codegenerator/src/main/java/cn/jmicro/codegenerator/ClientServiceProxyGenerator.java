@@ -60,9 +60,9 @@ public class ClientServiceProxyGenerator extends AbstractProcessor {
 				 throw new RuntimeException(AsyncClientProxy.class + " only support interface, not suport " + tn);
 		     }
 			 
-			/* if(tn.contains("IGenelizedType")) {
+			 if(tn.contains("ISimpleRpc")) {
 				 System.out.println("ClientServiceProxyGenerator: "+tn);
-			 }*/
+			 }
 			 
 			 TypeElement typeElement = (TypeElement)element;
 			 generateGatewayInterfaceClass(typeElement);
@@ -98,6 +98,10 @@ public class ClientServiceProxyGenerator extends AbstractProcessor {
 				 return;
 			 }
 			 ExecutableElement m = (ExecutableElement)e;
+			 if(isOriginAsyncMethod(m)) {
+				 return ;
+			 }
+			 
 			 clientProxyHolderBuilder.addMethod(addInterfaceMethod(m,true));
 			 clientProxyHolderBuilder.addMethod(addInterfaceMethod(m,false));
 		 });
@@ -113,6 +117,11 @@ public class ClientServiceProxyGenerator extends AbstractProcessor {
 			processingEnv.getMessager().printMessage(Kind.ERROR,e1.toString(),typeElement);
 		}
 		
+	}
+	
+	private boolean isOriginAsyncMethod(ExecutableElement m) {
+		 TypeMirror tm = m.getReturnType();
+		 return tm.toString().startsWith("cn.jmicro.api.async.IPromise");
 	}
 
 	private void generateImplClass(TypeElement typeElement) {
@@ -148,9 +157,14 @@ public class ClientServiceProxyGenerator extends AbstractProcessor {
 			 if(e.getKind() != ElementKind.METHOD) {
 				 return;
 			 }
-			 clientProxyHolderBuilder.addMethod(addAsyncClassMethod((ExecutableElement)e,false));
-			 clientProxyHolderBuilder.addMethod(addAsyncClassMethod((ExecutableElement)e,true));
-			 clientProxyHolderBuilder.addMethod(addSyncClassMethod((ExecutableElement)e));
+			 
+			 ExecutableElement m = (ExecutableElement)e;
+			 if(!isOriginAsyncMethod(m)) {
+				 clientProxyHolderBuilder.addMethod(addAsyncClassMethod(m,false));
+			 }
+			 clientProxyHolderBuilder.addMethod(addSyncClassMethod(m));
+			 clientProxyHolderBuilder.addMethod(addAsyncClassMethod(m,true));
+			 
 		 });
 		 
 		/* MethodSpec.Builder isValidMethod = MethodSpec.methodBuilder("isReady")
@@ -189,24 +203,24 @@ public class ClientServiceProxyGenerator extends AbstractProcessor {
 	  	if(m.getReturnType().getKind() == TypeKind.VOID) {
 	  		if(!psString.equals("")) {
 	  			if(m.getParameters().size() == 1) {
-	  				builder.addCode("this.proxyHolder.invoke($S, (java.lang.Object)($L));",m.getSimpleName(),psString);
+	  				builder.addCode("this.proxyHolder.invoke($S, null,(java.lang.Object)($L));",m.getSimpleName(),psString);
 	  			}else {
-	  				builder.addCode("this.proxyHolder.invoke($S, $L);",m.getSimpleName(),psString);
+	  				builder.addCode("this.proxyHolder.invoke($S,null, $L);",m.getSimpleName(),psString);
 	  			}
 	  		}else {
-	  			builder.addCode("this.proxyHolder.invoke($S);",m.getSimpleName());
+	  			builder.addCode("this.proxyHolder.invoke($S,null);",m.getSimpleName());
 	  		}
 	  	} else {
 	  		if(!psString.equals("")) {
 	  			if(m.getParameters().size() == 1) {
-	  				builder.addCode("return ($L) this.proxyHolder.invoke($S, (java.lang.Object)($L));", m.getReturnType().toString(), 
+	  				builder.addCode("return ($L) this.proxyHolder.invoke($S,null, (java.lang.Object)($L));", m.getReturnType().toString(), 
 				  			m.getSimpleName(),psString);
 	  			} else {
-	  				builder.addCode("return ($L) this.proxyHolder.invoke($S, $L);",m.getReturnType().toString(), 
+	  				builder.addCode("return ($L) this.proxyHolder.invoke($S,null, $L);",m.getReturnType().toString(), 
 				  			m.getSimpleName(),psString);
 	  			}
 	  		}else {
-	  			builder.addCode("return ($L) this.proxyHolder.invoke($S);",m.getReturnType().toString(), 
+	  			builder.addCode("return ($L) this.proxyHolder.invoke($S,null);",m.getReturnType().toString(), 
 			  			m.getSimpleName());
 	  		}
 	  	}
@@ -216,7 +230,8 @@ public class ClientServiceProxyGenerator extends AbstractProcessor {
 
 	private MethodSpec addAsyncClassMethod(ExecutableElement m,boolean withContext) {
 
-		    MethodSpec.Builder builder = MethodSpec.methodBuilder(m.getSimpleName().toString() + AsyncClientProxy.ASYNC_METHOD_SUBFIX)
+			String asyncMethodName = m.getSimpleName().toString() + AsyncClientProxy.ASYNC_METHOD_SUBFIX;
+		    MethodSpec.Builder builder = MethodSpec.methodBuilder(asyncMethodName)
 			  .addModifiers(Modifier.PUBLIC);
 
 		    ClassName promise = ClassName.get("cn.jmicro.api.async", "IPromise");
@@ -239,10 +254,34 @@ public class ClientServiceProxyGenerator extends AbstractProcessor {
 		  		psString = psString.substring(1);
 		  	}
 		  	
+		  
 		  	if(withContext) {
+		  		if(!psString.equals("")) {
+		  			if(m.getParameters().size() == 1) {
+		  				builder.addCode("return this.proxyHolder.invoke($S,context,(java.lang.Object)($L));",asyncMethodName,psString);
+		  			}else {
+		  				builder.addCode("return this.proxyHolder.invoke($S,context, $L);",asyncMethodName,psString);
+		  			}
+		  		}else {
+		  			builder.addCode("return this.proxyHolder.invoke($S,context);",asyncMethodName);
+		  		}
+		  	} else {
+		  		if(!psString.equals("")) {
+		  			if(m.getParameters().size() == 1) {
+		  				builder.addCode("return  this.proxyHolder.invoke($S, null, (java.lang.Object)($L));", asyncMethodName,psString);
+		  			} else {
+		  				builder.addCode("return  this.proxyHolder.invoke($S, null, $L);",asyncMethodName,psString);
+		  			}
+		  		}else {
+		  			builder.addCode("return this.proxyHolder.invoke($S,null);",asyncMethodName);
+		  		}
+		  	}
+		  	 
+		  	
+		  	/*if(withContext) {
 		  		if("".equals(psString)) {
 			  		builder.addCode("return cn.jmicro.api.async.PromiseUtils.callService(this, $S,context);",
-				  			m.getSimpleName());
+			  				asyncMethodName);
 			  	} else {
 			  		if(m.getParameters().size() == 1) {
 			  			builder.addCode("return cn.jmicro.api.async.PromiseUtils.callService(this, $S,context, (java.lang.Object)($L));",
@@ -265,7 +304,7 @@ public class ClientServiceProxyGenerator extends AbstractProcessor {
 					  			m.getSimpleName(),psString);
 		  			}
 			  	}
-		  	}
+		  	}*/
 		  
 		  	
 		    return builder.build();
@@ -275,7 +314,12 @@ public class ClientServiceProxyGenerator extends AbstractProcessor {
 	private ClassName parseReturnType(ExecutableElement m, MethodSpec.Builder builder,ClassName promise) {
 		ClassName returnTypeName = null;
 		TypeMirror tm = m.getReturnType();
-		if(tm.getKind() == TypeKind.DECLARED) {
+		if(this.isOriginAsyncMethod(m)) {
+			DeclaredType returnTm = (DeclaredType)m.getReturnType();
+		    TypeElement classTypeElement = (TypeElement) returnTm.asElement();
+		    returnTypeName = ClassName.get(classTypeElement);
+		    builder.returns(returnTypeName);
+		}else if(tm.getKind() == TypeKind.DECLARED) {
     	 	DeclaredType returnTm = (DeclaredType)m.getReturnType();
 		    TypeElement classTypeElement = (TypeElement) returnTm.asElement();
 		    returnTypeName = ClassName.get(classTypeElement);

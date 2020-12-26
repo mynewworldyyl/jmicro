@@ -15,11 +15,14 @@
  * limitations under the License.
  */
 package cn.jmicro.api.net;
+
+import cn.jmicro.api.async.IPromise;
+
 /**
  * 
  * @author Yulei Ye
  * @date 2018年10月4日-下午12:05:53
  */
 public interface IRequestHandler {
-	public IResponse onRequest(IRequest request);
+	public IPromise<Object>  onRequest(IRequest request);
 }

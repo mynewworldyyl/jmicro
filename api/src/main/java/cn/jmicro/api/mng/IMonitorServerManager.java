@@ -1,5 +1,6 @@
 package cn.jmicro.api.mng;
 
+import cn.jmicro.api.async.IPromise;
 import cn.jmicro.api.monitor.MonitorInfo;
 import cn.jmicro.api.monitor.MonitorServerStatus;
 import cn.jmicro.codegenerator.AsyncClientProxy;
@@ -7,12 +8,12 @@ import cn.jmicro.codegenerator.AsyncClientProxy;
 @AsyncClientProxy
 public interface IMonitorServerManager {
 
-	 MonitorServerStatus[] status(String[] srvKeys);
+	IPromise<MonitorServerStatus[]> status(String[] srvKeys);
 	
-	 Boolean enable(String srvKey,Boolean enable);
+	IPromise<Boolean> enable(String srvKey,Boolean enable);
 	
-	 MonitorInfo[]  serverList();
+	IPromise<MonitorInfo[]>  serverList();
 	 
-	 void reset(String[] srvKeys);
+	IPromise<Void> reset(String[] srvKeys);
 	
 }

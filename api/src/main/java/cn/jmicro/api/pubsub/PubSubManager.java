@@ -528,7 +528,7 @@ public class PubSubManager {
 
 		if(StringUtils.isNotEmpty(d.getCallback())) {
 			if(Message.is(d.getFlag(), PSData.FLAG_CALLBACK_METHOD)) {
-				siManager.callAsync(d.getCallback(), new Object[] {cbRst, d.getId(), d.getContext()})
+				siManager.call(d.getCallback(), new Object[] {cbRst, d.getId(), d.getContext()})
 				.then((rst,f,cxt)->{
 					if(f != null) {
 						logger.error(f.toString());

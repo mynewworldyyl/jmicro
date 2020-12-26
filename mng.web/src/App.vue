@@ -175,6 +175,8 @@
 
 const  cid = 'jmicroApp';
 
+  const  mainMenus = {'op':true,'oth':true,'dep':true,'srv':true,'cfg':true};
+
 export default {
     name: 'App',
     mounted() {
@@ -183,7 +185,6 @@ export default {
         window.jm.rpc.init(window.jm.config.ip,window.jm.config.port);
         //jm.mng.init();
         let self = this;
-
 
         window.jm.rpc.addActListener(cid,()=>{
             self.isLogin = window.jm.rpc.isLogin();
@@ -351,9 +352,10 @@ export default {
       },
 
       toRouter(key) {
-          if(key == 'srv' || key == 'dep' || key =='cfg' || key == 'oth' || key=='op') {
-              return
-          }else if( key.startWith('__')) {
+          if(mainMenus[key]) {
+              return;
+          }
+          if(key.startWith('__')) {
               key  = key.substring(2);
               if(key == cache.curSelectKey  ) {
                   this.openDrawer();
@@ -373,7 +375,7 @@ export default {
               let f = false;
               for(let i = 0; i < this.menus.length; i++) {
                   let mi = this.menus[i];
-                  if(mi.name == key) {
+                  if(mi.name == key && typeof mi.call == 'function') {
                       mi.call();
                       f = true;
                       break;

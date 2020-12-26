@@ -1,12 +1,9 @@
 package cn.jmicro.mng.impl;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,18 +14,18 @@ import cn.jmicro.api.annotation.Inject;
 import cn.jmicro.api.annotation.Reference;
 import cn.jmicro.api.annotation.SMethod;
 import cn.jmicro.api.annotation.Service;
+import cn.jmicro.api.async.IPromise;
+import cn.jmicro.api.internal.async.PromiseImpl;
 import cn.jmicro.api.mng.IMonitorServerManager;
 import cn.jmicro.api.monitor.IMonitorAdapter;
 import cn.jmicro.api.monitor.MC;
-import cn.jmicro.api.monitor.StatisMonitorClient;
 import cn.jmicro.api.monitor.MonitorInfo;
 import cn.jmicro.api.monitor.MonitorServerStatus;
+import cn.jmicro.api.monitor.StatisMonitorClient;
 import cn.jmicro.api.monitor.genclient.IMonitorAdapter$JMAsyncClient;
 import cn.jmicro.api.objectfactory.AbstractClientServiceProxyHolder;
 import cn.jmicro.api.registry.ServiceItem;
 import cn.jmicro.api.security.PermissionManager;
-import cn.jmicro.api.service.IServiceAsyncResponse;
-import cn.jmicro.common.Constants;
 import cn.jmicro.common.util.StringUtils;
 
 @Component
@@ -56,9 +53,13 @@ public class MonitorServerManagerImpl implements IMonitorServerManager{
 	
 	@Override
 	@SMethod(needLogin=true,maxSpeed=5,maxPacketSize=4096)
-	public MonitorServerStatus[] status(String[] srvKeys) {
+	public IPromise<MonitorServerStatus[]> status(String[] srvKeys) {
+		
+		PromiseImpl<MonitorServerStatus[]> p = new PromiseImpl<>();
+		
 		if(this.monitorServers.isEmpty() || srvKeys == null || srvKeys.length == 0) {
-			return null;
+			p.done();
+			return p;
 		}
 		
 		MonitorServerStatus[] status = new MonitorServerStatus[srvKeys.length+1];
@@ -102,52 +103,52 @@ public class MonitorServerManagerImpl implements IMonitorServerManager{
 			}
 		}
 		
-		return status;
+		p.setResult(status);
+		p.done();
+		return p;
 	}
 
 	@Override
 	@SMethod(needLogin=true,maxSpeed=5,maxPacketSize=4096)
-	public Boolean enable(String srvKey,Boolean enable) {
+	public IPromise<Boolean> enable(String srvKey,Boolean enable) {
 		
 		JMicroContext cxt = JMicroContext.get();
 		
+		PromiseImpl<Boolean> p = new PromiseImpl<>(false);
+		
 		IMonitorAdapter$JMAsyncClient s = this.getServerByKey(srvKey);
 		if(s == null) {
-			return false;
+			p.done();
+			return p;
 		}
 		
 		if(!PermissionManager.checkAccountClientPermission(s.clientId())) {
 			logger.warn("Permission reject for " + cxt.getAccount().getActName() + " to enable " +srvKey);
-			return false;
+			p.done();
+			return p;
 		}
-		
-		IServiceAsyncResponse cb = cxt.getParam(Constants.CONTEXT_SERVICE_RESPONSE,null);
-		if(cxt.isAsync() && cb == null) {
-			logger.error(Constants.CONTEXT_SERVICE_RESPONSE + " is null in async context");
-		}
-		
-		if(cxt.isAsync() && cb != null) {
-			s.enableMonitorJMAsync(enable)
-			.then((rst,fail,actx) -> {
-				if(fail == null) {
-					cb.result(true);
-				} else {
-					logger.error(fail.toString());
-					cb.result(false);
-				}
-			});
-			return null;
-		} else {
-			s.enableMonitor(enable);
-			return true;
-		}
+
+		s.enableMonitorJMAsync(enable)
+		.then((rst,fail,actx) -> {
+			if(fail == null) {
+				p.setResult(true);
+			} else {
+				logger.error(fail.toString());
+			}
+			p.done();
+		});
+		return p;
 	}
 
 	@Override
 	@SMethod(needLogin=true,maxSpeed=5,maxPacketSize=4096)
-	public void reset(String[] srvKeys) {
+	public IPromise<Void> reset(String[] srvKeys) {
+		
+		PromiseImpl<Void> p = new PromiseImpl<>();
+		
 		if(this.monitorServers.isEmpty() || srvKeys == null || srvKeys.length == 0) {
-			return;
+			p.done();
+			return p;
 		}
 		
 		for(int i = 0; i < srvKeys.length ; i++) {
@@ -156,85 +157,59 @@ public class MonitorServerManagerImpl implements IMonitorServerManager{
 				
 			}
 		}
+		return p;
 	}
 
 	@Override
 	@SMethod(needLogin=true,maxSpeed=5,maxPacketSize=4096)
-	public MonitorInfo[] serverList() {
+	public IPromise<MonitorInfo[]> serverList() {
+		
+		PromiseImpl<MonitorInfo[]> p = new PromiseImpl<>();
 		
 		JMicroContext cxt = JMicroContext.get();
 		
-		if(cxt.isAsync()) {
-			
-			IServiceAsyncResponse cb = cxt.getParam(Constants.CONTEXT_SERVICE_RESPONSE,null);
-			Set<MonitorInfo> set = new HashSet<>();
-			
-			Set<IMonitorAdapter$JMAsyncClient> servers = new HashSet<>();
-			for(int i = 0; i < this.monitorServers.size(); i++) {
-				IMonitorAdapter$JMAsyncClient s = this.monitorServers.get(i);
-				if(s.isReady() && PermissionManager.checkAccountClientPermission(s.clientId())) {
-					servers.add(s);
-				}
+		Set<MonitorInfo> set = new HashSet<>();
+		
+		Set<IMonitorAdapter$JMAsyncClient> servers = new HashSet<>();
+		for(int i = 0; i < this.monitorServers.size(); i++) {
+			IMonitorAdapter$JMAsyncClient s = this.monitorServers.get(i);
+			if(s.isReady() && PermissionManager.checkAccountClientPermission(s.clientId())) {
+				servers.add(s);
 			}
-			
-			if(servers.isEmpty()) {
-				return new MonitorInfo[0];
-			}
-			
-			AtomicInteger ai = new AtomicInteger(servers.size());
-			
-			for(IMonitorAdapter$JMAsyncClient s : servers) {
-				
-				s.infoJMAsync(s.getItem().getKey().toKey(true, true, true)).then((in,fail,ctx0) -> {
-					if(fail != null) {
-						logger.error(fail.toString());
-					}
-					
-					if (in != null) {
-						
-						in.setSrvKey((String)ctx0);
-						set.add(in);
-					}
-					
-					int cnt = ai.decrementAndGet();
-					if(cnt == 0 ) {
-						MonitorInfo[] infos = null;
-						if(set.size() > 0) {
-							infos = new MonitorInfo[set.size()];
-							set.toArray(infos);
-						}
-						cb.result(infos);
-					}
-				});
-			}
-			
-			return null;
-			
-		} else {
-			Set<MonitorInfo> set = new HashSet<>();
-			for(int i = 0; i < this.monitorServers.size(); i++) {
-				IMonitorAdapter$JMAsyncClient s = this.monitorServers.get(i);
-				if(!s.isReady()) {
-					continue;
-				}
-				if(PermissionManager.checkAccountClientPermission(s.clientId())) {
-					MonitorInfo in = s.info();
-					if(in != null) {
-						AbstractClientServiceProxyHolder proxy = (AbstractClientServiceProxyHolder)((Object)s);
-						ServiceItem si = proxy.getHolder().getItem();
-						String srvKey = si.getKey().toKey(true, true, true);
-						in.setSrvKey(srvKey);
-						set.add(in);
-					}
-				}
-			}
-			
-			MonitorInfo[] infos = new MonitorInfo[set.size()];
-			set.toArray(infos);
-			
-			return infos;
 		}
 		
+		if(servers.isEmpty()) {
+			p.done();
+			return p;
+		}
+		
+		p.setCounter(servers.size());
+		
+		for(IMonitorAdapter$JMAsyncClient s : servers) {
+			
+			s.infoJMAsync(s.getItem().getKey().toKey(true, true, true)).then((in,fail,ctx0) -> {
+				if(fail != null) {
+					logger.error(fail.toString());
+				}
+				
+				if (in != null) {
+					in.setSrvKey((String)ctx0);
+					set.add(in);
+				}
+				
+				if(p.decCounter(1,false)) {
+					MonitorInfo[] infos = null;
+					if(set.size() > 0) {
+						infos = new MonitorInfo[set.size()];
+						set.toArray(infos);
+					}
+					p.setResult(infos);
+					p.done();
+				}
+			});
+		}
+		
+		return p;
 	}
 	
 	private IMonitorAdapter$JMAsyncClient getServerByKey(String key) {

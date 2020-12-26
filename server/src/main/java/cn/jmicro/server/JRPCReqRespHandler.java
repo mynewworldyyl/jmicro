@@ -23,6 +23,7 @@ import cn.jmicro.api.JMicroContext;
 import cn.jmicro.api.annotation.Cfg;
 import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Inject;
+import cn.jmicro.api.async.IPromise;
 import cn.jmicro.api.choreography.ProcessInfo;
 import cn.jmicro.api.codec.ICodecFactory;
 import cn.jmicro.api.exception.RpcException;
@@ -49,7 +50,6 @@ import cn.jmicro.api.security.AccountManager;
 import cn.jmicro.api.security.ActInfo;
 import cn.jmicro.api.security.PermissionManager;
 import cn.jmicro.api.security.SecretManager;
-import cn.jmicro.api.service.IServiceAsyncResponse;
 import cn.jmicro.api.service.ServiceLoader;
 import cn.jmicro.api.utils.TimeUtils;
 import cn.jmicro.common.CommonException;
@@ -155,7 +155,6 @@ public class JRPCReqRespHandler implements IMessageHandler{
 				MT.rpcEvent(MC.MT_SERVER_JRPC_GET_REQUEST_READ,msg.getLen());
 			}
 	    	
-			resp.setReqId(msg.getReqId());
 			resp.setMsg(msg);
 			resp.setSuccess(true);
 			//resp.setId(idGenerator.getLongId(IResponse.class));
@@ -172,15 +171,15 @@ public class JRPCReqRespHandler implements IMessageHandler{
 				String lk = (String)req1.getParams().get(JMicroContext.LOGIN_KEY);
 				if(StringUtils.isNotEmpty(lk)) {
 					ai = this.accountManager.getAccount(lk);
-					if(ai == null) {
-						ServerError se = new ServerError(MC.MT_INVALID_LOGIN_INFO,"Invalid login key!");
+					if(ai == null && sm.isNeedLogin()) {
+						ServerError se = new ServerError(MC.MT_INVALID_LOGIN_INFO,"JRPC check invalid login key!");
 						resp.setResult(se);
 						resp.setSuccess(false);
 						LG.log(MC.LOG_ERROR, TAG,se.toString());
 						MT.rpcEvent(MC.MT_INVALID_LOGIN_INFO);
 						resp2Client(resp,s,msg,sm);
 						return;
-					} else {
+					} else if(ai != null) {
 						JMicroContext.get().setString(JMicroContext.LOGIN_KEY, lk);
 						JMicroContext.get().setAccount(ai);
 					}
@@ -221,55 +220,43 @@ public class JRPCReqRespHandler implements IMessageHandler{
 				}
 				return;
 			}
+
+			final RpcResponse r = resp;
+			boolean finish[] = new boolean[] {false};
 			
-			if(msg.isAsyncReturnResult() && !"V".equals(sm.getKey().getReturnParam())) {
-				final RpcResponse r = resp;
-				JMicroContext cxt = JMicroContext.get();
-				boolean finish[] = new boolean[] {false};
-				//异步响应
-				IServiceAsyncResponse cb = new IServiceAsyncResponse() {
-					@Override
-					public <R> void result(R result) {
-						if(finish[0]) {
-							logger.warn("ReqId: " + req1.getRequestId() +", linkId: " + msg.getLinkId() + " has synchronized response!");
-							return;
-						}
-						r.setSuccess(true);
-						r.setResult(result);
-						resp2Client(r,s,msg,sm);
-						cxt.removeParam(Constants.CONTEXT_SERVICE_RESPONSE);
-						if(JMicroContext.get().isDebug()) {
-							JMicroContext.get().appendCurUseTime("Async respTime",false);
-							JMicroContext.get().debugLog(0);
-						}
-						JMicroContext.get().submitMRpcItem(logMonitor,monitor);
+			//cxt.setParam(Constants.CONTEXT_SERVICE_RESPONSE, cb);
+			IPromise<Object> rr = interceptorManger.handleRequest(req);
+			if(rr != null) {
+				rr.success((rst,resultCxt)->{
+					if(finish[0]) {
+						logger.warn("ReqId: " + req1.getRequestId() +", linkId: " + msg.getLinkId() + " has synchronized response!");
+						return;
 					}
-				};
-				cxt.setParam(Constants.CONTEXT_SERVICE_RESPONSE, cb);
-				IResponse rr = interceptorManger.handleRequest(req);
-				
-				if(rr != null && rr.getResult() != null) {
-					//同步返回结果
-					//如果业务方法是异步返回结果，一定要同步返回NULL值
-					finish[0] = true;
-					cxt.removeParam(Constants.CONTEXT_SERVICE_RESPONSE);
-					resp2Client(rr,s,msg,sm);
+					r.setSuccess(true);
+					r.setResult(rst);
+					resp2Client(r,s,msg,sm);
+					if(JMicroContext.get().isDebug()) {
+						JMicroContext.get().appendCurUseTime("Async respTime",false);
+						JMicroContext.get().debugLog(0);
+					}
 					JMicroContext.get().submitMRpcItem(logMonitor,monitor);
-				}
+				})
+				.fail((code,errorMsg,resultCxt)->{
+					ServerError se0 = new ServerError(code,errorMsg);
+					r.setSuccess(false);
+					r.setResult(se0);
+					resp2Client(r,s,msg,sm);
+				});
 			} else {
-				//同步响应
-				resp = (RpcResponse)interceptorManger.handleRequest(req);
-				if(resp == null){
-					//返回空值情况处理
-					resp = new RpcResponse(req.getRequestId(),null);
-					resp.setSuccess(true);
-				}
-				resp2Client(resp,s,msg,sm);
+				ServerError se0 = new ServerError(MC.MT_SERVER_ERROR,"Got null result!");
+				r.setSuccess(false);
+				r.setResult(se0);
+				resp2Client(r,s,msg,sm);
 			}
 		} catch (Throwable e) {
 			doException(req,resp,s,msg,e);
 		} finally {
-			if(!msg.isAsyncReturnResult() && JMicroContext.get().isMonitorable()) {
+			if(JMicroContext.get().isMonitorable()) {
 				doFinally(req,resp,msg);
 			}
 		}
@@ -369,14 +356,16 @@ public class JRPCReqRespHandler implements IMessageHandler{
 		
 		try {
 			StackTraceElement se = Thread.currentThread().getStackTrace()[2];
-			//logger.debug(se.getLineNumber() + " resp2Client msg: "+msg);
+			
 			s.write(msg);
+			
 			MT.rpcEvent(MC.MT_SERVER_JRPC_RESPONSE_SUCCESS,1);
 			MT.rpcEvent(MC.MT_SERVER_JRPC_RESPONSE_WRITE, msg.getLen());
 			
 			if(msg.isDebugMode()) {
 				JMicroContext.get().appendCurUseTime("Server finish write",true);
 			}
+			
 		} catch (Throwable e) {
 			//到这里不能再抛出异常，否则可能会造成重复响应
 			logger.error("",e);

@@ -43,16 +43,49 @@ public class ServiceComsumer {
 		ISimpleRpc$JMAsyncClient src = (ISimpleRpc$JMAsyncClient)of.get(ISimpleRpc.class);
 		//invoke remote service
 		//System.out.println(src.hello("Hello JMicro"));
-		src.helloJMAsync("Hello JMicro").then((rst, fail,ctx)->{
+		/*src.helloJMAsync("Hello JMicro").then((rst, fail,ctx)->{
 			System.out.println(rst);
 			
-			/*String r = src.hello("Hello two");
+			String r = src.hello("Hello two");
 			System.out.println(r);
 			
 			src.helloJMAsync("Hello two").then((rst1, fail1,ctx0)->{
 				System.out.println(rst);
-			});*/
+			});
 			
+		});*/
+		
+		src.linkRpcAs("test out linkRpcAs")
+		.success((rst,cxt)->{
+			System.out.println(rst);
+
+			src.linkRpcAs("inner linkRpcAs0")
+			.success((rst0,cxt0)->{
+				System.out.println(rst);
+			})
+			.fail((code,msg,cxt0)->{
+				System.out.println("code: " + code +", msg: " + msg);
+			});
+			
+			src.linkRpcAs("inner linkRpcAs1")
+			.success((rst0,cxt0)->{
+				System.out.println(rst);
+			})
+			.fail((code,msg,cxt0)->{
+				System.out.println("code: " + code +", msg: " + msg);
+			});
+			
+			src.linkRpcAs("inner linkRpcAs2")
+			.success((rst0,cxt0)->{
+				System.out.println(rst);
+			})
+			.fail((code,msg,cxt0)->{
+				System.out.println("code: " + code +", msg: " + msg);
+			});
+			
+		})
+		.fail((code,msg,cxt)->{
+			System.out.println("code: " + code +", msg: " + msg);
 		});
 		
 		try {

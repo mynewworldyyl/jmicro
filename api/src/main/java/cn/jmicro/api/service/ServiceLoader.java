@@ -37,7 +37,6 @@ import cn.jmicro.api.JMicro;
 import cn.jmicro.api.annotation.Cfg;
 import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Inject;
-import cn.jmicro.api.annotation.JMethod;
 import cn.jmicro.api.annotation.SBreakingRule;
 import cn.jmicro.api.annotation.SMethod;
 import cn.jmicro.api.annotation.Service;
@@ -83,7 +82,7 @@ public class ServiceLoader{
 	
 	//导出服务时使用的端口，格式为IP的字符串形式,此值不建议在全局配置目录中配置，否则将导致全部服务会绑定在此端口上
 	@Cfg(value = "/exportSocketPort",required=false,defGlobal=false)
-	private int exportSocketPort = 0;
+	private String exportSocketPort = null;
 	
 	//导出服务时使用的IP和端口，格式为IP的字符串形式,此值不建议在全局配置目录中配置，否则将导致全部服务会绑定在此ＩＰ上
 	@Cfg(value = "/"+Constants.ExportHttpIP,required=false,defGlobal=false)
@@ -91,7 +90,7 @@ public class ServiceLoader{
 	
 	//导出服务时使用的端口，格式为IP的字符串形式,此值不建议在全局配置目录中配置，否则将导致全部服务会绑定在此端口上
 	@Cfg(value = "/exportHttpPort",required=false,defGlobal=false)
-	private int exportHttpPort = 0;
+	private String exportHttpPort = null;
 	
 	@Inject(required=true)
 	private IRegistry registry;
@@ -148,8 +147,8 @@ public class ServiceLoader{
 						+ servers.get(anno.transport()) + " with same transport name :" + anno.transport());
 			}
 			int cnt = 0;
-			while(cnt < 10 && (s.port() <=0)) {
-				logger.info(" Waiting for transport:{} ready {}S",anno.transport(),cnt+1);
+			while(cnt < 10 && (StringUtils.isEmpty(s.port()) || "0".equals(s.port()))) {
+				logger.info("Waiting for transport:{} ready {}S",anno.transport(),cnt+1);
 				try {
 					Thread.sleep(1000);
 				} catch (InterruptedException e) {
@@ -157,7 +156,7 @@ public class ServiceLoader{
 				}
 				cnt++;
 			}
-			if(s.port()<=0) {
+			if(StringUtils.isEmpty(s.port())) {
 				throw new CommonException("Fail to get port for transport: " +anno.transport()
 				+", server:" + ss.getClass().getName());
 			}
@@ -168,7 +167,7 @@ public class ServiceLoader{
 		for(IServer s : this.servers.values()){
 			
 			String host = s.host();
-			int port = s.port();
+			String port = s.port();
 				
 			Server sr = new Server();
 			cn.jmicro.api.annotation.Server sano = ProxyObject.getTargetCls(s.getClass())
@@ -177,7 +176,7 @@ public class ServiceLoader{
 			if(Constants.TRANSPORT_NETTY.equals(sano.transport())) {
 				if( this.exportSocketIP != null) {
 					host = this.exportSocketIP;
-					if(this.exportSocketPort > 0) {
+					if(StringUtils.isNotEmpty(this.exportSocketPort)  && !"0".equals(this.exportSocketPort)) {
 						port = this.exportSocketPort;
 					}
 				}
@@ -185,7 +184,7 @@ public class ServiceLoader{
 			} else if(Constants.TRANSPORT_NETTY_HTTP.equals(sano.transport())) {
 				if(this.exportHttpIP != null) {
 					host = this.exportHttpIP;
-					if(this.exportHttpPort > 0) {
+					if(StringUtils.isNotEmpty(this.exportHttpPort) && !"0".equals(this.exportHttpPort)) {
 						port = this.exportHttpPort;
 					}
 				}
@@ -565,7 +564,7 @@ public class ServiceLoader{
 		
 		checkMethod.getKey().setUsk(usk);
 		checkMethod.getKey().setMethod("wayd");
-		checkMethod.getKey().setParamsStr(UniqueServiceMethodKey.paramsStr(new String[]{"java.lang.String"}));
+		checkMethod.getKey().setParamsStr(UniqueServiceMethodKey.paramsStr(new Class[] {String.class}));
 		checkMethod.setLogLevel(MC.LOG_ERROR);;
 		checkMethod.setDebugMode(0);
 		checkMethod.getKey().setSnvHash(HashUtils.FNVHash1(checkMethod.getKey().toKey(false, false, false)));
@@ -657,7 +656,7 @@ public class ServiceLoader{
 					
 					sm.setAsyncable(manno.asyncable());
 					sm.setPerType(manno.perType());
-					sm.setNeedLogin(manno.needLogin());
+					sm.setNeedLogin(manno.needLogin() || manno.perType());
 					sm.setMaxPacketSize(manno.maxPacketSize());
 					sm.setUpSsl(manno.upSsl());
 					sm.setDownSsl(manno.downSsl());
@@ -692,7 +691,7 @@ public class ServiceLoader{
 					
 					sm.setAsyncable(intMAnno.asyncable());
 					sm.setPerType(intMAnno.perType());
-					sm.setNeedLogin(intMAnno.needLogin());
+					sm.setNeedLogin(intMAnno.needLogin()  || intMAnno.perType());
 					sm.setMaxPacketSize(intMAnno.maxPacketSize());
 					
 					sm.setUpSsl(intMAnno.upSsl());

@@ -87,11 +87,8 @@ public class StatisConfig {
 	private transient int forClientId = -1;
 	
 	//toType == TO_TYPE_SERVICE_METHOD时有效
-	private transient Object srv;
 	
 	//toType == TO_TYPE_SERVICE_METHOD时有效
-	private transient Method srvMethod;
-	
 	private transient Set<Short> types;
 	
 	private transient String bysn;
@@ -322,22 +319,6 @@ public class StatisConfig {
 
 	public void setForClientId(int forClientId) {
 		this.forClientId = forClientId;
-	}
-
-	public Object getSrv() {
-		return srv;
-	}
-
-	public void setSrv(Object srv) {
-		this.srv = srv;
-	}
-
-	public Method getSrvMethod() {
-		return srvMethod;
-	}
-
-	public void setSrvMethod(Method srvMethod) {
-		this.srvMethod = srvMethod;
 	}
 
 	public Set<Short> getTypes() {

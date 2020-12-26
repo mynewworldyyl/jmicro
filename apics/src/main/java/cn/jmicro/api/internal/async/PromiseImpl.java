@@ -1,8 +1,11 @@
 package cn.jmicro.api.internal.async;
 
+import java.util.concurrent.atomic.AtomicInteger;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import cn.jmicro.api.Resp;
 import cn.jmicro.api.async.AsyncFailResult;
 import cn.jmicro.api.async.IPromise;
 import cn.jmicro.api.client.IAsyncCallback;
@@ -31,8 +34,15 @@ public class PromiseImpl<R> implements IPromise<R>{
 	
 	private int timeout = 30000;
 	
+	private AtomicInteger ai = null;
+	
 	public PromiseImpl() {
 		this.callbacks = new IAsyncCallback[1];
+	}
+	
+	public PromiseImpl(R defResult) {
+		this();
+		this.setResult(defResult);
 	}
 	
 	@Override
@@ -111,8 +121,8 @@ public class PromiseImpl<R> implements IPromise<R>{
 				try {
 					this.locker.wait(timeout);
 				} catch (InterruptedException e) {
-					logger.error("getResult",e);
-					throw new CommonException(MC.MT_REQ_TIMEOUT,"");
+					//logger.error("getResult",e);
+					this.setFail(MC.MT_REQ_TIMEOUT, "timeout");
 				}
 			}
 		}
@@ -142,9 +152,67 @@ public class PromiseImpl<R> implements IPromise<R>{
 	public void setFail(int code, String msg) {
 		 fail = new AsyncFailResult(code,msg);
 	}
+	
+	public void setCounter(int cnt) {
+		if(cnt <= 0) {
+			throw new CommonException("Count val cannot be null");
+		}
+		this.ai = new AtomicInteger(cnt);
+	}
 
-	public void setContext(Object context) {
+	public boolean decCounter(int cnt,boolean doDone) {
+		if(this.ai.addAndGet(-cnt)<=0) {
+			if(doDone) {
+				this.done();
+			}
+			return true;
+		}else {
+			return false;
+		}
+	}
+	
+	public boolean counterFinish() {
+		return ai != null && ai.get() <= 0;
+	}
+
+	@Override
+	public AsyncFailResult getFailResult() {
+		getResult();
+		return getFail();
+	}
+
+	@Override
+	public String getFailMsg() {
+		getResult();
+		if(fail != null) {
+			return fail.getMsg();
+		} else {
+			return null;
+		}
+	}
+	
+	@Override
+	public boolean isSuccess() {
+		getResult();
+		return fail == null;
+	}
+
+	@Override
+	public int getFailCode() {
+		getResult();
+		if(fail != null) {
+			return fail.getCode();
+		}else {
+			return Resp.CODE_SUCCESS;
+		}
+	}
+
+	public <T> void setContext(T context) {
 		this.context = context;
+	}
+
+	public <T> T getContext() {
+		return (T)context;
 	}
 
 	public void setTimeout(int timeout) {

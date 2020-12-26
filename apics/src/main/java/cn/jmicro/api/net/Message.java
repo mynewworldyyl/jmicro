@@ -90,7 +90,7 @@ public final class Message {
 	public static final int FLAG_MONITORABLE = 1 << 9;
 	
 	//异步请求响应类消息
-	public static final int FLAG_ASYNC_RESUTN_RESULT = 1 << 13;
+	//public static final int FLAG_ASYNC_RESUTN_RESULT = 1 << 13;
 	
 	//加密参数 0：没加密，1：加密
 	public static final int FLAG_UP_SSL = 1 << 14;
@@ -150,7 +150,7 @@ public final class Message {
 	 * 8        do:      dump down stream data
 	 * 9        M:       Monitorable
 	 * 10,11,12 LLL      Log level
-	 * 13       A:       async return result，different from async RPC
+	 * 13       
 	 * 14       US      上行SSL  0:no encrypt 1:encrypt
 	 * 15       DS      下行SSL  0:no encrypt 1:encrypt
 	 * 
@@ -492,13 +492,13 @@ public final class Message {
 		return (flag & mask) != 0;
 	}*/
 	
-	public boolean isAsyncReturnResult() {
+	/*public boolean isAsyncReturnResult() {
 		return is(flag,FLAG_ASYNC_RESUTN_RESULT);
 	}
 	
 	public void setAsyncReturnResult(boolean f) {
 		flag = set(f,flag,FLAG_ASYNC_RESUTN_RESULT);
-	}
+	}*/
 	
 	public boolean isUpSsl() {
 		return is(flag,FLAG_UP_SSL);

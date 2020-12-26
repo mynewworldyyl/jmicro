@@ -5,7 +5,6 @@ import java.util.Random;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import cn.jmicro.api.JMicroContext;
 import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Reference;
 import cn.jmicro.api.annotation.SBreakingRule;
@@ -13,9 +12,9 @@ import cn.jmicro.api.annotation.SMethod;
 import cn.jmicro.api.annotation.Service;
 import cn.jmicro.api.async.IPromise;
 import cn.jmicro.api.config.Config;
+import cn.jmicro.api.internal.async.PromiseImpl;
 import cn.jmicro.api.monitor.LG;
 import cn.jmicro.api.monitor.MC;
-import cn.jmicro.api.service.IServiceAsyncResponse;
 import cn.jmicro.api.test.Person;
 import cn.jmicro.common.Constants;
 import cn.jmicro.example.api.rpc.ISimpleRpc;
@@ -50,7 +49,7 @@ public class SimpleRpcImpl implements ISimpleRpc {
 			maxSpeed=10,
 			limitType = Constants.LIMIT_TYPE_SS,
 			baseTimeUnit=Constants.TIME_MILLISECONDS,
-			upSsl=true,encType=0,downSsl=false
+			upSsl=false,encType=0,downSsl=false
 	)
 	public String hello(String name) {
 		if(LG.isLoggable(MC.LOG_DEBUG)) {
@@ -92,24 +91,40 @@ public class SimpleRpcImpl implements ISimpleRpc {
 	}
 
 	@Override
-	public String linkRpc(String msg) {
+	public IPromise<String> linkRpc(String msg) {
+		if(LG.isLoggable(MC.LOG_DEBUG)) {
+			LG.log(MC.LOG_DEBUG,SimpleRpcImpl.class, "linkRpc call IRpcA with: " + msg);
+		}
+		System.out.println("linkRpc: " + msg);
+		return this.rpca.invokeRpcAJMAsync("invokeRpcA");
+	}
+	
+	@Override
+	public IPromise<String> linkRpcAs(String msg) {
+		
+		PromiseImpl<String> resultPro = new PromiseImpl<>();
+		
 		if(LG.isLoggable(MC.LOG_DEBUG)) {
 			LG.log(MC.LOG_DEBUG,SimpleRpcImpl.class, "linkRpc call IRpcA with: " + msg);
 		}
 		
-		System.out.println("linkRpc: " + msg);
+		System.out.println("async return val: " + msg);
+		resultPro.setResult("async return val: " + msg);
+		resultPro.done();
 		
-		IPromise<String> p = this.rpca.invokeRpcAJMAsync("invokeRpcA");
-		JMicroContext cxt = JMicroContext.get();
-		if(cxt.isAsync()) {
-			IServiceAsyncResponse cb = cxt.getParam(Constants.CONTEXT_SERVICE_RESPONSE,null);
-			p.then((rst,fail,ctx0) -> {
-				cb.result(rst);
-			});
-			return null;
-		} else {
-			return p.getResult();
-		}
+		//IPromise<String> p = this.rpca.invokeRpcAJMAsync("invokeRpcA");
+		//JMicroContext cxt = JMicroContext.get();
+
+		/*p.success((rst,ctx0) -> {
+			resultPro.setResult(rst);
+			resultPro.done();
+		})
+		.fail((code,errMsg,cxt0)->{
+			resultPro.setFail(code, errMsg);
+			resultPro.done();
+		});*/
+		
+		return resultPro;
 	}
 	
 }

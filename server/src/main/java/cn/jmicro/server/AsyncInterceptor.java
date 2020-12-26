@@ -16,29 +16,17 @@
  */
 package cn.jmicro.server;
 
-import java.util.HashMap;
-import java.util.Map;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import cn.jmicro.api.JMicroContext;
-import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Inject;
-import cn.jmicro.api.annotation.Interceptor;
+import cn.jmicro.api.async.IPromise;
 import cn.jmicro.api.exception.RpcException;
-import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.net.AbstractInterceptor;
 import cn.jmicro.api.net.IInterceptor;
 import cn.jmicro.api.net.IRequest;
 import cn.jmicro.api.net.IRequestHandler;
-import cn.jmicro.api.net.IResponse;
-import cn.jmicro.api.net.ServerError;
-import cn.jmicro.api.pubsub.PSData;
 import cn.jmicro.api.pubsub.PubSubManager;
-import cn.jmicro.api.registry.AsyncConfig;
-import cn.jmicro.api.registry.ServiceMethod;
-import cn.jmicro.common.Constants;
 
 /**
  * 
@@ -46,8 +34,8 @@ import cn.jmicro.common.Constants;
  * @author Yulei Ye
  * @date 2020年1月19日
  */
-@Component(value="asyncInterceptor",lazy=false,side=Constants.SIDE_PROVIDER)
-@Interceptor(order = 1)
+/*@Component(value="asyncInterceptor",lazy=false,side=Constants.SIDE_PROVIDER)
+@Interceptor(order = 1)*/
 public class AsyncInterceptor extends AbstractInterceptor implements IInterceptor{
 
 	private final static Logger logger = LoggerFactory.getLogger(AsyncInterceptor.class);
@@ -62,9 +50,9 @@ public class AsyncInterceptor extends AbstractInterceptor implements IIntercepto
 	}
 	
 	@Override
-	public IResponse intercept(IRequestHandler handler, IRequest req) throws RpcException {
+	public IPromise<Object> intercept(IRequestHandler handler, IRequest req) throws RpcException {
 		
-		IResponse resp = handler.onRequest(req);
+		/*IPromise<Object> p = handler.onRequest(req);
 		if(!(resp.getResult() instanceof ServerError)) {
 			//正常返回
 			return resp;
@@ -124,7 +112,8 @@ public class AsyncInterceptor extends AbstractInterceptor implements IIntercepto
 			se.setErrorCode(MC.MT_SERVICE_SPEED_LIMIT);
 		}
 		
-		return resp;
+		return resp;*/
+		return null;
 	}
 
 }

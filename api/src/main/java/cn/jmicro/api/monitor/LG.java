@@ -251,7 +251,7 @@ public class LG {
 	}
 	
 	/**
-	 * 日志输出4个条件
+	 * 	日志输出4个条件
 	 * 1. 对应组件打开debug模式，isDebug=true 或者服务方法loggable=true;
 	 * 2. 日志级别大开
 	 * 
@@ -326,7 +326,6 @@ public class LG {
 		if(r instanceof RpcResponse) {
 			RpcResponse req = (RpcResponse)r;
 			sb.append(",success:").append(req.isSuccess());
-			sb.append(",reqId:").append(req.getRequestId());
 			sb.append(",result:").append(req.getResult());
 		}else if(r instanceof ApiResponse) {
 			ApiResponse req = (ApiResponse)r;

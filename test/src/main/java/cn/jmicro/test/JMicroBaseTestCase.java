@@ -56,7 +56,7 @@ public class JMicroBaseTestCase {
 		UniqueServiceKey.version(sb, "0.0.1");
 		UniqueServiceKey.instanceName(true, sb, "provider");
 		UniqueServiceKey.host(true, sb, Utils.getIns().getLocalIPList().get(0));
-		UniqueServiceKey.port(false, sb, 0);
+		UniqueServiceKey.port(false, sb, "0");
 		sb.append("helloTopic").append(UniqueServiceMethodKey.SEP);
 		sb.append("cn.jmicro.api.pubsub.PSData");
 		UniqueServiceMethodKey key = UniqueServiceMethodKey.fromKey(sb.toString());

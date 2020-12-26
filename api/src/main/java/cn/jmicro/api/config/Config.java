@@ -408,9 +408,9 @@ public class Config{
 	
 	public static int getClientId() {
 		int clientId = getCommandParam(Constants.CLIENT_ID,Integer.class,-1);
-		if(clientId < 0) {
+		/*if(clientId < 0) {
 			throw new CommonException("Invalid clientId :" + clientId);
-		}
+		}*/
 		return clientId;
 	}
 	

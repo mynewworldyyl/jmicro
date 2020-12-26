@@ -30,12 +30,13 @@ import com.alibaba.dubbo.common.serialize.kryo.utils.ReflectUtils;
 
 import cn.jmicro.api.JMicroContext;
 import cn.jmicro.api.annotation.Component;
+import cn.jmicro.api.async.IPromise;
 import cn.jmicro.api.exception.RpcException;
+import cn.jmicro.api.internal.async.PromiseImpl;
 import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.net.AbstractHandler;
 import cn.jmicro.api.net.IRequest;
 import cn.jmicro.api.net.IRequestHandler;
-import cn.jmicro.api.net.IResponse;
 import cn.jmicro.api.net.RpcResponse;
 import cn.jmicro.common.Constants;
 
@@ -50,13 +51,13 @@ public class RpcRequestHandler extends AbstractHandler implements IRequestHandle
 	private static final Logger logger = LoggerFactory.getLogger(RpcRequestHandler.class);
 	
 	@Override
-	public IResponse onRequest(IRequest request) {
+	public IPromise<Object> onRequest(IRequest request) {
 		Object obj = JMicroContext.get().getObject(Constants.SERVICE_OBJ_KEY, null);
-		RpcResponse resp = null;
+		PromiseImpl<Object> p = null;
 		try {
 			Method m = getServiceMethod(obj, request);
 			/*if(m.getName().equals("publishData")) {
-			logger.debug("debug info");
+				logger.debug("debug info");
 			}*/
 			boolean f = m.isAccessible();
 			if(!f) {
@@ -65,20 +66,28 @@ public class RpcRequestHandler extends AbstractHandler implements IRequestHandle
 					m.setAccessible(true);
 				}
 			}
-			Object result = m.invoke(obj, request.getArgs());
 			
+			Object result = m.invoke(obj, request.getArgs());
 			if(!f) {
 				//正常的非public方法调用不到跑到这里，所以可以直接设置即可
 				m.setAccessible(f);
 			}
-			resp = new RpcResponse(request.getRequestId(),result);
-			resp.setMonitorEnable(request.isMonitorEnable());
-			resp.setSuccess(true);
+			
+			if(result != null && result instanceof IPromise) {
+				return (IPromise<Object>)result;
+			}
+			
+			p = new PromiseImpl<Object>();
+			p.setResult(result);
+			p.done();
+			
 		} catch (SecurityException | IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
-			//logger.error("onRequest:",e);
-			throw new RpcException(request,e,MC.MT_SERVER_ERROR);
+			logger.error("onRequest:",e);
+			p = new PromiseImpl<Object>();
+			p.setFail(MC.MT_SERVER_ERROR, e.getMessage());
+			p.done();
 		}
-		return resp;
+		return p;
 	}
 	
 	public static Method getServiceMethod(Object obj ,IRequest req){

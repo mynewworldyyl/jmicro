@@ -2,6 +2,7 @@ package cn.jmicro.client;
 
 import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Interceptor;
+import cn.jmicro.api.async.IPromise;
 import cn.jmicro.api.exception.BreakerException;
 import cn.jmicro.api.exception.RpcException;
 import cn.jmicro.api.exception.TimeoutException;
@@ -17,8 +18,8 @@ import cn.jmicro.common.Constants;
 public class BreakerInterceptor implements IInterceptor {
 
 	@Override
-	public IResponse intercept(IRequestHandler handler, IRequest req) throws RpcException {
-		IResponse resp = null;
+	public IPromise<Object> intercept(IRequestHandler handler, IRequest req) throws RpcException {
+		IPromise<Object> resp = null;
 		try {
 			resp = handler.onRequest(req);
 		} catch (BreakerException | TimeoutException e) {

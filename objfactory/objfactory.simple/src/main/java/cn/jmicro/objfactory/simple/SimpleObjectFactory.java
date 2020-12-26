@@ -1669,6 +1669,7 @@ public class SimpleObjectFactory implements IObjectFactory {
 		
 		if(StringUtils.isNotEmpty(json)) {
 			pi = JsonUtils.getIns().fromJson(json, ProcessInfo.class);
+			pi.getMetadatas().clear();
 			//编排环境下启动的实例
 			//checkPreProcess(pi);
 		} else {
@@ -1708,6 +1709,8 @@ public class SimpleObjectFactory implements IObjectFactory {
 		pi.setMaster(false);
 		pi.setStartTime(pi.getOpTime());
 		pi.setInfoFilePath(initProcessInfoPath);
+		pi.setOsName(System.getProperty("os.name"));
+		
 		//pi.setTimeOut(0);
 		
 		String p = ChoyConstants.INS_ROOT+"/" + pi.getId();

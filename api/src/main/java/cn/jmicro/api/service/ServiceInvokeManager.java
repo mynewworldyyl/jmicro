@@ -20,12 +20,16 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Set;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import cn.jmicro.api.IListener;
 import cn.jmicro.api.JMicroContext;
 import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Inject;
 import cn.jmicro.api.async.IPromise;
+import cn.jmicro.api.internal.async.PromiseImpl;
 import cn.jmicro.api.monitor.LG;
 import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.monitor.MT;
@@ -36,9 +40,10 @@ import cn.jmicro.api.registry.ServiceItem;
 import cn.jmicro.api.registry.ServiceMethod;
 import cn.jmicro.api.registry.UniqueServiceKey;
 import cn.jmicro.api.registry.UniqueServiceMethodKey;
-import cn.jmicro.codegenerator.AsyncClientUtils;
+import cn.jmicro.codegenerator.AsyncClientProxy;
 import cn.jmicro.common.CommonException;
 import cn.jmicro.common.Constants;
+import cn.jmicro.common.util.JsonUtils;
 
 /**
  * 
@@ -49,9 +54,11 @@ import cn.jmicro.common.Constants;
 @Component
 public class ServiceInvokeManager {
 
-	private static final Class TAG = ServiceInvokeManager.class;
+	private static final Class<?> TAG = ServiceInvokeManager.class;
 	
 	private Map<String,AbstractClientServiceProxyHolder> proxes = new HashMap<>();
+	
+	private final static Logger logger = LoggerFactory.getLogger(ServiceInvokeManager.class);
 	
 	@Inject
 	private IObjectFactory of = null;
@@ -59,143 +66,150 @@ public class ServiceInvokeManager {
 	@Inject
 	private ServiceManager srvManager = null;
 	
-	public <T> T call(UniqueServiceMethodKey mkey, Object[] args,AsyncConfig ac) {
-		Set<ServiceItem> items = this.srvManager.getServiceItems(mkey.getServiceName(), mkey.getNamespace(), mkey.getVersion());
-		if(items == null || items.isEmpty()) {
-			return null;
+	@SuppressWarnings("unchecked")
+	public <T> IPromise<T> call(String srvName,String ns,String ver,String method, 
+			Class<?> returnParamClazz, Class<?>[] paramsCls, Object[] args,AsyncConfig ac) {
+		IPromise<T> promise = null;
+		
+		String key = UniqueServiceKey.serviceName(srvName,ns,ver);
+		
+		AbstractClientServiceProxyHolder proxy = getProxy(srvName,ns,ver);
+		if(proxy == null) {
+			PromiseImpl<T> p = new PromiseImpl<T>();
+			p.setFail(MC.MT_SERVICE_RROXY_NOT_FOUND,"Service not found: " +key);
+			p.done();
+			return p;
 		}
 		
-		ServiceItem si = items.iterator().next();
-		if(si == null) {
-			String msg = "Service item not found for: "+mkey.toKey(false, false, false);
-			LG.log(MC.LOG_ERROR, TAG, msg);
-			MT.rpcEvent(MC.MT_SERVICE_ITEM_NOT_FOUND);
-			throw new CommonException(msg);
+		Method m = getSrvMethod(proxy.getClass(),method,returnParamClazz,paramsCls,args);
+		
+		if(m == null) {
+			PromiseImpl<T> p = new PromiseImpl<T>();
+			p.setFail(MC.MT_SERVICE_METHOD_NOT_FOUND,"Service method not found: " + key + UniqueServiceKey.SEP + method);
+			p.done();
+			return p;
 		}
 		
-		ServiceMethod sm = si.getMethod(mkey.getMethod(), mkey.getParamsStr());
-		if(sm == null) {
-			String msg = "Service method not found for: "+mkey.toKey(false, false, false);
-			LG.log(MC.LOG_ERROR, TAG, msg);
-			MT.rpcEvent(MC.MT_SERVICE_METHOD_NOT_FOUND);
-			throw new CommonException(msg);
+
+		final AsyncConfig oldAc = JMicroContext.get().getParam(Constants.ASYNC_CONFIG,null);
+		
+		if(ac != null) {
+			JMicroContext.get().setParam(Constants.ASYNC_CONFIG,ac);
 		}
-		return call(si,sm,args,ac);
+		
+		try {
+			
+			boolean f = m.isAccessible();
+			if(!f) {
+				//通过Lambda动态注册的服务方法,，会报方法调用异常，应该是内部生成的类是非public导致，在此暂时做此处理
+				if(proxy.getClass().getName().contains("$$Lambda$")) {
+					m.setAccessible(true);
+				}
+			}
+			
+			/*if("bestHost".equals(req.getMethod())) {
+				logger.info("");
+			}*/
+			
+			Object result = m.invoke(proxy, args);
+			if(!f) {
+				//正常的非public方法调用不到跑到这里，所以可以直接设置即可
+				m.setAccessible(f);
+			}
+			
+			if(result != null && result instanceof IPromise) {
+				promise = (IPromise<T>)result;
+			}else {
+				PromiseImpl<T> p = new PromiseImpl<T>();
+				promise = p ;
+				p.setResult((T)result);
+				p.done();
+			}
+			
+			if(ac != null) {
+				promise.then((rst,fail,cxt)->{
+					if(oldAc != null) {
+						JMicroContext.get().setParam(Constants.ASYNC_CONFIG,oldAc);
+					} else {
+						JMicroContext.get().removeParam(Constants.ASYNC_CONFIG);
+					}
+				});
+			}
+		} catch (SecurityException | IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
+			logger.error("onRequest:" +srvName + "." + m.getName()+ ",arg: "+ JsonUtils.getIns().toJson(args),e);
+			PromiseImpl<T> p = new PromiseImpl<T>();
+			promise = p ;
+			p.setFail(MC.MT_SERVER_ERROR, e.getMessage());
+			p.done();
+			
+			if(oldAc != null) {
+				JMicroContext.get().setParam(Constants.ASYNC_CONFIG,oldAc);
+			} else {
+				JMicroContext.get().removeParam(Constants.ASYNC_CONFIG);
+			}
+		}
+		return promise;
 	}
 	
-	public <T> T call(UniqueServiceMethodKey mkey, Object[] args) {
-		return call(mkey,args,null);
+	public <T> IPromise<T> call(String srvName,String ns,String ver,String method,
+			Class<?> returnParamClazz,Class<?>[] paramsCls, Object[] args) {
+		return call( srvName, ns, ver, method, returnParamClazz,paramsCls, args,null);
 	}
 	
-	public <T> T call(ServiceItem si, ServiceMethod sm, Object[] args) {
-		return call(si,sm,args,null);
+	public <T> IPromise<T> call(UniqueServiceMethodKey mkey, Object[] args) {
+		return call(mkey.getServiceName(),mkey.getNamespace(),mkey.getVersion(),mkey.getMethod(),
+				mkey.getReturnParamClass(),mkey.getParameterClasses(),args,null);
 	}
 	
-	public <T> T callDirect(ServiceItem si, ServiceMethod sm, Object[] args) {
+	public <T> IPromise<T> call(ServiceMethod sm, Object[] args) {
+		return call(sm.getKey(),args);
+	}
+	
+	public <T> IPromise<T> call(String strSmKey, Object[] args) {
+		UniqueServiceMethodKey mkey = UniqueServiceMethodKey.fromKey(strSmKey);
+		return call(mkey.getServiceName(),mkey.getNamespace(),mkey.getVersion(),mkey.getMethod(),
+				mkey.getReturnParamClass(),mkey.getParameterClasses(),args,null);
+	}
+	
+	public <T> IPromise<T> callDirect(ServiceItem si, ServiceMethod sm, Object[] args) {
 		ServiceItem oldDirectItem = JMicroContext.get().getParam(Constants.DIRECT_SERVICE_ITEM, null);
 		JMicroContext.get().setParam(Constants.DIRECT_SERVICE_ITEM, si);
+		IPromise<T> p = null;
 		try {
-			return call(si,sm,args,null);
-		}finally{
+			p = call(sm,args);
+			p.then((rst,fail,cxt)->{
+				if(oldDirectItem != null) {
+					JMicroContext.get().setParam(Constants.DIRECT_SERVICE_ITEM, oldDirectItem);
+				}else {
+					JMicroContext.get().removeParam(Constants.DIRECT_SERVICE_ITEM);
+				}
+			});
+			return p;
+		}catch(Throwable e){
+			if(p ==null) {
+				PromiseImpl<T> promise = new PromiseImpl<T>();
+				p = promise ;
+				promise.setFail(MC.MT_SERVER_ERROR, e.getMessage());
+				promise.done();
+			}
 			if(oldDirectItem != null) {
 				JMicroContext.get().setParam(Constants.DIRECT_SERVICE_ITEM, oldDirectItem);
 			}else {
 				JMicroContext.get().removeParam(Constants.DIRECT_SERVICE_ITEM);
 			}
 		}	
+		return p;
 	}
 	
-	public <T> T call(ServiceItem si, ServiceMethod sm, Object[] args, AsyncConfig ac) {
-		
+	public AbstractClientServiceProxyHolder getProxy(ServiceItem si) {
 		if(si == null) {
 			String msg = "Cannot call service for NULL ServiceItem";
 			LG.log(MC.LOG_ERROR, TAG, msg);
-			MT.rpcEvent(MC.MT_SERVICE_ITEM_NOT_FOUND);
+			//MT.nonRpcEvent(si.getKey().toKey(true, true, true),MC.MT_SERVICE_ITEM_NOT_FOUND);
 			throw new CommonException(msg);
 		}
 		
-		AbstractClientServiceProxyHolder p = getProxy(si);
-		
-		Method m = null;
-		try {
-			Class<?>[] argTypes = UniqueServiceMethodKey.paramsClazzes(args);
-			m = p.getClass().getMethod(sm.getKey().getMethod(), argTypes);
-		} catch (NoSuchMethodException | SecurityException e) {
-			String msg = "Service method not found: "+si.getKey().toKey(true, true, true);
-			LG.log(MC.LOG_ERROR, TAG, msg);
-			MT.nonRpcEvent(sm.getKey().toKey(true, true, true),MC.MT_SERVICE_METHOD_NOT_FOUND);
-			throw new CommonException(msg,e);
-		}
-		
-		try {
-			if(ac != null) {
-				JMicroContext.get().setParam(Constants.ASYNC_CONFIG,ac);
-			}
-			return (T) m.invoke(p, args);
-		} catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
-			String msg = "Invoke service error: "+si.getKey().toKey(true, true, true)+",msg:"+e.getMessage();
-			throw new CommonException(msg,e);
-		} finally {
-			if(ac != null) {
-				JMicroContext.get().removeParam(Constants.ASYNC_CONFIG);
-			}
-		}
-	}
-	
-	public <T> IPromise<T> callAsync(UniqueServiceMethodKey mkey, Object[] args) {
-		ServiceItem si = getServiceItem(mkey.getServiceName(),mkey.getNamespace(),mkey.getVersion());
-		ServiceMethod sm = getServiceMethod(si,mkey.getMethod(), mkey.getParamsStr());
-		return callAsync(si,sm,args);
-	}
-	
-	public <T> IPromise<T> callAsync(String strKey, Object[] args) {
-		UniqueServiceMethodKey mkey = UniqueServiceMethodKey.fromKey(strKey);
-		return callAsync(mkey,args);
-	}
-	
-	@SuppressWarnings("unchecked")
-	public <T> IPromise<T> callAsync(ServiceItem si, ServiceMethod sm, Object[] args) {
-		
-		if(sm == null) {
-			String msg = "Cannot call service for NULL ServiceMethod:"+si.getKey().toKey(false, false, false);
-			LG.log(MC.LOG_ERROR, TAG, msg);
-			MT.nonRpcEvent(sm.getKey().toKey(true, true, true),MC.MT_SERVICE_METHOD_NOT_FOUND);
-			throw new CommonException(msg);
-		}
-		
-		AbstractClientServiceProxyHolder p = getProxy(si);
-		
-		Method m = null;
-		try {
-			Class<?>[] argTypes = UniqueServiceMethodKey.paramsClazzes(args);
-			String asyncName = AsyncClientUtils.genAsyncMethodName(sm.getKey().getMethod());
-			m = p.getClass().getMethod(asyncName, argTypes);
-		} catch (NoSuchMethodException | SecurityException e) {
-			String msg = "Service method not found: "+si.getKey().toKey(true, true, true);
-			LG.log(MC.LOG_ERROR, TAG, msg);
-			MT.nonRpcEvent(sm.getKey().toKey(true, true, true),MC.MT_SERVICE_METHOD_NOT_FOUND);
-			throw new CommonException(msg,e);
-		}
-		
-		try {
-			return (IPromise<T>) m.invoke(p, args);
-		} catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
-			String msg = "Invoke service error: "+si.getKey().toKey(false, false, false)+",msg:"+e.getMessage();
-			throw new CommonException(msg,e);
-		} finally {
-		}
-	}
-
-
-	private AbstractClientServiceProxyHolder getProxy(ServiceItem si) {
-		if(si == null) {
-			String msg = "Cannot call service for NULL ServiceItem";
-			LG.log(MC.LOG_ERROR, TAG, msg);
-			MT.nonRpcEvent(si.getKey().toKey(true, true, true),MC.MT_SERVICE_ITEM_NOT_FOUND);
-			throw new CommonException(msg);
-		}
-		
-		String key = si.getKey().toKey(false, false, false);
+		String key = si.getKey().toSnv();
 		
 		AbstractClientServiceProxyHolder p = null;
 		
@@ -215,35 +229,125 @@ public class ServiceInvokeManager {
 		return p;
 	}
 	
-	private ServiceItem getServiceItem(String srvName,String ns,String ver) {
-		Set<ServiceItem> items = this.srvManager.getServiceItems(srvName, ns,ver);
-		if(items == null || items.isEmpty()) {
-			String msg = "Service item not found for: "+ UniqueServiceKey.serviceName(srvName, ns, ver);
-			LG.log(MC.LOG_ERROR, TAG, msg);
-			MT.nonRpcEvent(UniqueServiceKey.serviceName(srvName,ns,ver),MC.MT_SERVICE_ITEM_NOT_FOUND);
-			throw new CommonException(msg);
+	public AbstractClientServiceProxyHolder getProxy(String srvName,String ns,String ver) {
+		AbstractClientServiceProxyHolder p = null;
+		String key = UniqueServiceKey.serviceName(srvName,ns,ver);
+		if(!proxes.containsKey(key)) {
+			p = of.getRemoteServie(srvName,ns,ver,null);
+			if(p == null) {
+				String msg = "Fail to create remote service proxy: "+key;
+				LG.log(MC.LOG_ERROR, TAG, msg);
+				MT.nonRpcEvent(key,MC.MT_SERVICE_ITEM_NOT_FOUND);
+				throw new CommonException(msg);
+			}
+			proxes.put(key, p);
+		} else {
+			p = this.proxes.get(key);
 		}
-		
-		ServiceItem si = items.iterator().next();
-		if(si == null) {
-			String msg = "Service item not found for: "+ UniqueServiceKey.serviceName(srvName, ns, ver);
-			LG.log(MC.LOG_ERROR, TAG, msg);
-			MT.nonRpcEvent(UniqueServiceKey.serviceName(srvName,ns,ver),MC.MT_SERVICE_ITEM_NOT_FOUND);
-			throw new CommonException(msg);
-		}
-		return si;
+		return p;
 	}
 	
-	private ServiceMethod getServiceMethod(ServiceItem si, String method, String paramStr) {
-		ServiceMethod sm = si.getMethod(method, paramStr);
-		if(sm == null) {
-			String msg = "Service method not found for: " + si.getKey().toKey(false, false, false)
-					+UniqueServiceMethodKey.SEP+method + UniqueServiceMethodKey.SEP + paramStr;
-			LG.log(MC.LOG_ERROR, TAG, msg);
-			MT.nonRpcEvent(si.getKey().toSnv(),MC.MT_SERVICE_METHOD_NOT_FOUND);
-			throw new CommonException(msg);
+	public Method getSrvMethod(Class<?> srvCls, String methodName, Class<?> returnParamClazz,
+			Class<?>[] paramsCls, Object args[]) {
+		
+		Method m = null;
+		
+		if(((paramsCls == null || paramsCls.length ==0) && args.length > 0) || (paramsCls.length != args.length)) {
+			paramsCls = new Class<?>[args.length];
+			for(int i = 0; i < args.length; i++) {
+				Object ar = args[i];
+				if(ar == null) {
+					paramsCls[i] = Object.class;
+				} else {
+					paramsCls[i] = ar.getClass();
+				}
+			}
 		}
-		return sm;
+		
+		if(returnParamClazz == null) {
+			String asyncMethod = methodName;
+			if(!methodName.endsWith(AsyncClientProxy.ASYNC_METHOD_SUBFIX)) {
+				asyncMethod = methodName + AsyncClientProxy.ASYNC_METHOD_SUBFIX;
+			}
+			
+			try {
+				m = srvCls.getMethod(asyncMethod, paramsCls);
+				if(m != null) {
+					return m;
+				}
+				
+				for(Method m0 : srvCls.getMethods()){
+					if(m0.getName().equals(asyncMethod)) {
+						return m0;
+					}
+				}
+				
+			} catch (NoSuchMethodException | SecurityException e) {
+				logger.warn(e.getMessage());
+			}
+			
+			try {
+				m = srvCls.getMethod(methodName, paramsCls);
+				if(m != null) {
+					return m;
+				}
+				
+				for(Method m0 : srvCls.getMethods()){
+					if(m0.getName().equals(asyncMethod)) {
+						return m0;
+					}
+				}
+			} catch (NoSuchMethodException | SecurityException e) {
+				logger.warn(e.getMessage());
+			}
+			
+		} else if(returnParamClazz == IPromise.class) {
+			//服务原生异步方法
+			try {
+				m = srvCls.getMethod(methodName, paramsCls);
+			} catch (NoSuchMethodException | SecurityException e) {
+				logger.warn(e.getMessage());
+			}
+			
+			for(Method m0 : srvCls.getMethods()){
+				if(m0.getName().equals(methodName) && IPromise.class.isAssignableFrom(m0.getReturnType()) ) {
+					return m0;
+				}
+			}
+			
+		} else {
+			if(!methodName.endsWith(AsyncClientProxy.ASYNC_METHOD_SUBFIX)) {
+				methodName = methodName + AsyncClientProxy.ASYNC_METHOD_SUBFIX;
+			}
+			try {
+				m = srvCls.getMethod(methodName, paramsCls);
+			} catch (NoSuchMethodException | SecurityException e) {
+				logger.warn(e.getMessage());
+			}
+		}
+		
+		if(m != null) {
+			return m;
+		}
+		
+		for(Method m0 : srvCls.getMethods()){
+			if(m0.getName().equals(methodName)) {
+				return m0;
+			}
+		}
+		
+		return null;
 	}
-
+	
+	public void ready() {
+		this.srvManager.addListener((type,item)->{
+			if(type == IListener.REMOVE || type == IListener.DATA_CHANGE) {
+				String snv = item.getKey().toSnv();
+				if(this.proxes.containsKey(snv)) {
+					this.proxes.remove(snv);
+				}
+			}
+		});
+	}
+	
 }

@@ -13,7 +13,7 @@ public class DefaultServerListener implements IServerListener {
 	private IDataOperator dop ;
 	
 	@Override
-	public void serverStared(String ip, int port, String transport) {
+	public void serverStared(String ip, String port, String transport) {
 		//String path = Config.getRaftBaseDir();
 		String path = Config.InstanceDir +"/"+Config.getInstanceName()+"_ipPort";
 		String d = transport+":"+ip+":"+port;

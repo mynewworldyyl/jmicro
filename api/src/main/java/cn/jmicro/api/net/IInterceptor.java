@@ -16,6 +16,7 @@
  */
 package cn.jmicro.api.net;
 
+import cn.jmicro.api.async.IPromise;
 import cn.jmicro.api.exception.RpcException;
 /**
  * 
@@ -24,5 +25,5 @@ import cn.jmicro.api.exception.RpcException;
  */
 public interface IInterceptor {
 	
-	IResponse intercept(IRequestHandler handler,IRequest req) throws RpcException;
+	IPromise<Object> intercept(IRequestHandler handler,IRequest req) throws RpcException;
 }

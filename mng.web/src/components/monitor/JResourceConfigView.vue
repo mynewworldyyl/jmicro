@@ -450,11 +450,11 @@
                         self.errMsg =  self.cfg.type == 2 ? '数据库表名不能为空':'文件名不能为空';
                         return;
                     }
-                }else if(self.cfg.toType == TO_TYPE_DB) {
+                }/*else if(self.cfg.toType == TO_TYPE_DB) {
                     if(!self.cfg.toParams || self.cfg.toParams.length == 0) {
                         self.cfg.toParams = 't_statis_data';
                     }
-                }else if(self.cfg.toType == TO_TYPE_MONITOR_LOG) {
+                }*/else if(self.cfg.toType == TO_TYPE_MONITOR_LOG) {
                     if(!self.cfg.toParams || self.cfg.toParams.length == 0) {
                         self.errMsg =  '日志标签不能为空';
                         return;

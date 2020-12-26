@@ -23,10 +23,11 @@ import cn.jmicro.api.JMicro;
 import cn.jmicro.api.annotation.Cfg;
 import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Interceptor;
+import cn.jmicro.api.async.IPromise;
 import cn.jmicro.api.exception.RpcException;
 import cn.jmicro.api.limitspeed.ILimiter;
-import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.monitor.LG;
+import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.net.AbstractInterceptor;
 import cn.jmicro.api.net.IInterceptor;
 import cn.jmicro.api.net.IRequest;
@@ -83,7 +84,7 @@ public class FirstInterceptor extends AbstractInterceptor implements IIntercepto
 	}
 	
 	@Override
-	public IResponse intercept(IRequestHandler handler, IRequest req) throws RpcException {
+	public IPromise<Object> intercept(IRequestHandler handler, IRequest req) throws RpcException {
 		/*
 		 if(limiter != null){
 			boolean r = limiter.enter(req);
@@ -95,20 +96,14 @@ public class FirstInterceptor extends AbstractInterceptor implements IIntercepto
 		}
 		*/
 		
-		IResponse resp = handler.onRequest(req);
+		IPromise<Object>  p = handler.onRequest(req);
 		
 		//通知限速器结束一个请求
 		/*if(limiter != null){
 			limiter.end(req);
 		}*/
 		
-		return resp;
+		return p;
 	}
 
-	private IResponse fastFail(IRequest req) {
-		ServerError se = new ServerError();
-		se.setErrorCode(MC.MT_SERVICE_SPEED_LIMIT);
-		se.setMsg("");
-		return new RpcResponse(req.getRequestId(),se);
-	}
 }

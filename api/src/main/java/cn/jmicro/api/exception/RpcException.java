@@ -16,6 +16,7 @@
  */
 package cn.jmicro.api.exception;
 
+import cn.jmicro.api.async.AsyncFailResult;
 import cn.jmicro.api.net.IRequest;
 import cn.jmicro.api.net.IResponse;
 import cn.jmicro.api.net.ServerError;

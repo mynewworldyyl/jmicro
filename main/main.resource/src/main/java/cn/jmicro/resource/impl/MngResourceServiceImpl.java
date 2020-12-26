@@ -1,12 +1,23 @@
 package cn.jmicro.resource.impl;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.bson.Document;
+import org.bson.json.JsonWriterSettings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.google.gson.GsonBuilder;
+import com.mongodb.client.AggregateIterable;
+import com.mongodb.client.MongoCollection;
+import com.mongodb.client.MongoCursor;
+import com.mongodb.client.MongoDatabase;
 
 import cn.jmicro.api.CfgMetadata;
 import cn.jmicro.api.JMicroContext;
@@ -15,8 +26,10 @@ import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Inject;
 import cn.jmicro.api.annotation.SMethod;
 import cn.jmicro.api.annotation.Service;
+import cn.jmicro.api.async.IPromise;
 import cn.jmicro.api.exp.ExpUtils;
 import cn.jmicro.api.idgenerator.ComponentIdServer;
+import cn.jmicro.api.internal.async.PromiseImpl;
 import cn.jmicro.api.monitor.LG;
 import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.monitor.ResourceData;
@@ -25,10 +38,12 @@ import cn.jmicro.api.monitor.StatisConfig;
 import cn.jmicro.api.raft.IDataOperator;
 import cn.jmicro.api.registry.UniqueServiceKey;
 import cn.jmicro.api.security.ActInfo;
+import cn.jmicro.api.security.PermissionManager;
 import cn.jmicro.common.Utils;
 import cn.jmicro.common.util.JsonUtils;
 import cn.jmicro.common.util.StringUtils;
 import cn.jmicro.resource.IMngResourceService;
+import cn.jmicro.resource.ResourceDataReq;
 import cn.jmicro.resource.ResourceMonitorServer;
 
 @Component
@@ -38,6 +53,13 @@ public class MngResourceServiceImpl implements IMngResourceService{
 	private final static Logger logger = LoggerFactory.getLogger(MngResourceServiceImpl.class);
 	
 	private static final String ROOT = ResourceMonitorConfig.RES_MONITOR_CONFIG_ROOT;
+	
+	private JsonWriterSettings settings = JsonWriterSettings.builder()
+	         .int64Converter((value, writer) -> writer.writeNumber(value.toString()))
+	         .build();
+	
+	@Inject
+	private MongoDatabase mongoDb;
 	
 	@Inject
 	private IDataOperator op;
@@ -58,7 +80,7 @@ public class MngResourceServiceImpl implements IMngResourceService{
 			r.setMsg("NoData");
 			return r;
 		}
-		
+	
 		List<ResourceMonitorConfig> ll = new ArrayList<>();
 		r.setData(ll);
 		
@@ -186,7 +208,7 @@ public class MngResourceServiceImpl implements IMngResourceService{
 	
 	@Override
 	@SMethod(perType=false,needLogin=true,maxSpeed=1,maxPacketSize=4096)
-	public Resp<Set<CfgMetadata>> getResourceMetadata(String resName,boolean refreshCache) {
+	public Resp<Set<CfgMetadata>> getResourceMetadata(String resName) {
 		Resp<Set<CfgMetadata>> r = new Resp<>();
 		r.setData(mserver.getResMetadata(resName));
 		return r;
@@ -202,36 +224,125 @@ public class MngResourceServiceImpl implements IMngResourceService{
 	
 	@Override
 	@SMethod(perType=false,needLogin=true,maxSpeed=1,maxPacketSize=4096)
-	public Resp<Map<String,Set<ResourceData>>> getInstanceResourceData(Map<String,String> params) {
+	public IPromise<Resp<Map<String,List<ResourceData>>>> getInstanceResourceData(ResourceDataReq req) {
 		
-		Resp<Map<String,Set<ResourceData>>> r = new Resp<> ();
+		PromiseImpl<Resp<Map<String,List<ResourceData>>>> p = new PromiseImpl<>();
 		
-		String resName = params.get("resName");
-		String insName = params.get("insName");
-		if(StringUtils.isEmpty(resName) && StringUtils.isEmpty(insName)) {
+		Resp<Map<String,List<ResourceData>>> r = new Resp<> ();
+		p.setResult(r);
+		
+		String[] resNames = req.getResNames();
+		String[] insNames = req.getInsNames();
+		if((resNames == null || resNames.length == 0) && (insNames == null || insNames.length == 0)) {
 			r.setMsg("Resource name and instance name have to select one!");
 			r.setCode(Resp.CODE_FAIL);
-			return r;
-		}
-		
-		int toType = StatisConfig.TO_TYPE_DIRECT;
-		if(params.containsKey("toType")) {
-			toType = Integer.parseInt(params.get("toType"));
+			p.done();
+			return p;
 		}
 		
 		/*String groupBy = params.get("groupBy");
 		if(StringUtils.isEmpty(groupBy)) {
 			groupBy = "ins";
 		}*/
-		
-		if(toType == StatisConfig.TO_TYPE_DIRECT) {
-			return mserver.getDirectResourceData(insName,resName,params);
+		switch(req.getToType()) {
+		case StatisConfig.TO_TYPE_DIRECT:
+			return mserver.getDirectResourceData(req);
+		case StatisConfig.TO_TYPE_DB:
+			return queryFromDb(req);
 		}
-		
-		return r;
-		//return mserver.getInstanceResourceData(insName);
+		return p;
 	}
 
+	private IPromise<Resp<Map<String, List<ResourceData>>>> queryFromDb(ResourceDataReq req) {
+
+		Document qryMatch = this.getLogCondtions(req);
+		
+		Document match = new Document("$match", qryMatch);
+		//Document unwind = new Document("$unwind", "$items");
+		
+		int ps = req.getPageSize() > 0? req.getPageSize():10;
+		int cp = req.getCurPage() >= 0? req.getCurPage():0;
+		
+		Document sort = new Document("$sort", new Document("time", -1));
+		Document skip = new Document("$skip", ps*cp);
+		Document limit = new Document("$limit", ps);
+		
+		List<Document> aggregateList = new ArrayList<Document>();
+		aggregateList.add(match);
+		
+		aggregateList.add(sort);
+		aggregateList.add(skip);
+		aggregateList.add(limit);
+		
+		MongoCollection<ResourceData> rpcLogColl = 
+				mongoDb.getCollection(ResourceMonitorConfig.DEFAULT_RESOURCE_TABLE_NAME,ResourceData.class);
+		AggregateIterable<ResourceData> resultset = rpcLogColl.aggregate(aggregateList);
+		MongoCursor<ResourceData> cursor = resultset.iterator();
+		
+		Resp<Map<String, List<ResourceData>>> resp = new Resp<>();
+		Map<String, List<ResourceData>> maps = new HashMap<>();
+		resp.setData(maps);
+		
+		try {
+			while(cursor.hasNext()) {
+				ResourceData mi = cursor.next();
+				/*String json = log.toJson(settings);
+				ResourceData mi = fromJson(json);*/
+				if(!maps.containsKey(mi.getBelongInsName())) {
+					maps.put(mi.getBelongInsName(), new ArrayList<ResourceData>());
+				}
+				maps.get(mi.getBelongInsName()).add(mi);
+			}
+			resp.setCode(Resp.CODE_SUCCESS);
+		} finally {
+			cursor.close();
+		}
+		
+		PromiseImpl<Resp<Map<String, List<ResourceData>>>> p = new PromiseImpl<>();
+		p.setResult(resp);
+		p.done();
+		
+		return p;
+	}
+	
+	private Document getLogCondtions(ResourceDataReq req) {
+		Document match = new Document();;
+		
+		if(!PermissionManager.isCurAdmin()) {
+			 match.put("clientId", JMicroContext.get().getAccount().getClientId());
+		}
+		
+		if(req.getStartTime() > 0) {
+			Document st = new Document();
+			st.put("$gte", req.getStartTime());
+			match.put("time", st);
+		}
+		
+		if(req.getEndTime() > 0) {
+			Document st = new Document();
+			st.put("$lte", req.getEndTime());
+			match.put("time", st);
+		}
+		
+		if(req.getResNames() != null && req.getResNames().length > 0) {
+			Document st = new Document();
+			st.put("$in", Arrays.asList(req.getResNames()));
+			match.put("resName", st);
+		}
+
+		if(req.getInsNames() != null && req.getInsNames().length > 0) {
+			Document st = new Document();
+			st.put("$in", Arrays.asList(req.getInsNames()));
+			match.put("belongInsName", st);
+		}
+		
+		if(StringUtils.isNotEmpty(req.getTag())) {
+			match.put("tag", req.getTag());
+		}
+		
+		return match;
+	}
+	
 	private Resp<Boolean> checkAndSet(ResourceMonitorConfig cfg) {
 		
 		Resp<Boolean> r = new Resp<>();
@@ -309,7 +420,9 @@ public class MngResourceServiceImpl implements IMngResourceService{
 				lw.setToMt(ps[6]);
 				
 			}else if(StatisConfig.TO_TYPE_DB == lw.getToType()) {
-				lw.setToParams(StatisConfig.DEFAULT_DB);
+				if(StringUtils.isEmpty(lw.getToParams())) {
+					lw.setToParams(ResourceMonitorConfig.DEFAULT_RESOURCE_TABLE_NAME);
+				}
 			}else if(StatisConfig.TO_TYPE_FILE == lw.getToType()) {
 				if(Utils.isEmpty(lw.getToParams())) {
 					msg = "To file cannot be NULL for id: " + lw.getId();

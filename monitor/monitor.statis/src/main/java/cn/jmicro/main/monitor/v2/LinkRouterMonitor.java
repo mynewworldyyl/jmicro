@@ -285,9 +285,9 @@ import cn.jmicro.monitor.api.AbstractMonitorDataSubscriber;
 	}
 
 	private void rpcResponse(StringBuilder sb, IResponse resp) {
-		sb.append("reqId[").append(resp.getRequestId()).append("] success[")
-		.append(resp.isSuccess()).append("] monitorable[")
-		.append(resp.isMonitorEnable()).append("] result[")
+		sb.append("success[")
+		.append(resp.isSuccess())
+		.append("] result[")
 		.append(resp.getResult()).append("]");
 	}
 

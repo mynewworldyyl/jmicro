@@ -23,11 +23,11 @@ package cn.jmicro.api.net;
  */
 public interface IResponse extends IResp{
 
-	Long getRequestId();
+	//Long getRequestId();
 	
 	Object getResult();
 	
-	boolean isMonitorEnable();
+	//boolean isMonitorEnable();
 	
 	boolean isSuccess();
 

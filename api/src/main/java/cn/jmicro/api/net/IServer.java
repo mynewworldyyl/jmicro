@@ -31,5 +31,5 @@ public interface IServer{
 	
 	String host();
 	
-	int port();
+	String port();
 }

@@ -44,7 +44,7 @@ public final class UniqueServiceKey {
 	
 	private String instanceName;
 	private String host;
-	private int port;
+	private String port;
 	
 	private String serviceName;
 	private String namespace = Constants.DEFAULT_NAMESPACE;
@@ -86,13 +86,10 @@ public final class UniqueServiceKey {
 	public String toSnv() {
 		if(this.snvKey != null) {
 			return snvKey;
+		}else {
+			this.snvKey = serviceName(this.serviceName,this.namespace,this.version);
+			return this.snvKey;
 		}
-		StringBuilder sb = new StringBuilder();
-		serviceName(sb,this.serviceName);
-		namespace(sb,this.namespace);
-		version(sb,this.version);
-		this.snvKey = sb.substring(0, sb.length() - SEP.length());
-		return this.snvKey;
 	}
 	
 	public String toKey(boolean ins,boolean host,boolean port) {
@@ -103,7 +100,7 @@ public final class UniqueServiceKey {
 			return this.cacheSrvKey;
 		}
 		
-		if(port && this.port <= 0) {
+		if(port && this.port == null) {
 			throw new CommonException("Port is not set yet");
 		}
 		
@@ -156,11 +153,11 @@ public final class UniqueServiceKey {
 		return appendOne(ins,sb,host);
 	}
 	
-	public static StringBuilder port(boolean ins,StringBuilder sb,int port) {
-		if(port <= 0) {
+	public static StringBuilder port(boolean ins,StringBuilder sb,String port) {
+		if(StringUtils.isEmpty(port)) {
 			return appendOne(ins,sb,null);
 		}
-		return appendOne(ins,sb,port+"");
+		return appendOne(ins,sb,port);
 	}
 	
 	public static StringBuilder namespace(StringBuilder sb,String namespace){
@@ -348,10 +345,10 @@ public final class UniqueServiceKey {
 	public void setHost(String host) {
 		this.host = host;
 	}
-	public int getPort() {
+	public String getPort() {
 		return port;
 	}
-	public void setPort(int port) {
+	public void setPort(String port) {
 		this.port = port;
 	}
 

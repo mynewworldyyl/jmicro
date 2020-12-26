@@ -103,7 +103,7 @@ public class ApiGatewayClientSessionManager implements IClientSessionManager {
 	}
 
 	@Override
-	public IClientSession getOrConnect(String instanceName,String host, int port) {
+	public IClientSession getOrConnect(String instanceName,String host, String port) {
 
 		final String ssKey = host +":"+ port;
 		if(sessions.containsKey(ssKey)){
@@ -137,18 +137,18 @@ public class ApiGatewayClientSessionManager implements IClientSessionManager {
 		}
 	}
 
-	private void createWebSocketSession(String sKey, String host, int port) {		
+	private void createWebSocketSession(String sKey, String host, String port) {		
 		
 	}
 
-	private void createHttpSession(String sKey, String host, int port) {
+	private void createHttpSession(String sKey, String host, String port) {
 		String url = "http://" + host + ":" + port;
 		ApiGatewayClientHttpSession s = new ApiGatewayClientHttpSession(receiver,url,readBufferSize,heardbeatInterval);
         //s.putParam(Constants.SESSION_KEY, null);
         sessions.put(sKey, s);
 	}
 
-	private IClientSession createSocketSession(final String sKey,String host, int port) {
+	private IClientSession createSocketSession(final String sKey,String host, String port) {
 		 // Configure the client.
         EventLoopGroup group = new NioEventLoopGroup();
         try {
@@ -220,7 +220,7 @@ public class ApiGatewayClientSessionManager implements IClientSessionManager {
              });
 
             // Start the client.
-            b.connect(host, port).sync();
+            b.connect(host, Integer.parseInt(port)).sync();
 
             ApiGatewayClientSocketSession s = (ApiGatewayClientSocketSession)sessions.get(sKey);
             ChannelHandlerContext ctx = (ChannelHandlerContext)s.getParam(Constants.IO_SESSION_KEY);

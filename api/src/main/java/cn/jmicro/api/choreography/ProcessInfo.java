@@ -20,6 +20,8 @@ public class ProcessInfo {
 	
 	private String host;
 	
+	private String osName;
+	
 	private String instanceName;
 	
 	private String agentHost;
@@ -70,6 +72,14 @@ public class ProcessInfo {
 		this.metadatas = metadatas;
 	}
 	
+	public String getOsName() {
+		return osName;
+	}
+
+	public void setOsName(String osName) {
+		this.osName = osName;
+	}
+
 	public Map<String,Set<CfgMetadata>> getMetadatas() {
 		return metadatas;
 	}

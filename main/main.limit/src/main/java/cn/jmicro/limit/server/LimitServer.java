@@ -13,7 +13,9 @@ import cn.jmicro.api.JMicro;
 import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Inject;
 import cn.jmicro.api.annotation.Reference;
+import cn.jmicro.api.annotation.SMethod;
 import cn.jmicro.api.annotation.Service;
+import cn.jmicro.api.async.IPromise;
 import cn.jmicro.api.config.Config;
 import cn.jmicro.api.idgenerator.ComponentIdServer;
 import cn.jmicro.api.limit.genclient.ILimitData$JMAsyncClient;
@@ -83,7 +85,8 @@ public class LimitServer implements IStatisDataSubscribe {
 	}
 	
 	@Override
-	public void onData(StatisData sc) {
+	@SMethod(needResponse=false)
+	public IPromise<Void> onData(StatisData sc) {
 		UniqueServiceMethodKey k = UniqueServiceMethodKey.fromKey(sc.getKey());
 		Set<ServiceItem> sis = this.srvManager.getServiceItems(k.getServiceName(), k.getNamespace(), k.getVersion());
 		sc.setIndex(StatisData.INS_SIZE, sis.size());
@@ -110,6 +113,7 @@ public class LimitServer implements IStatisDataSubscribe {
 				});
 			}
 		}
+		return null;
 	}
 	
 	private void serviceDataChange(ServiceItem item) {

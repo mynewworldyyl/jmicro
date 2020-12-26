@@ -43,6 +43,8 @@ public interface IRegistry{
 	
 	Set<ServiceItem> getServices(String serviceName,String namespace,String version);
 	
+	ServiceItem getServiceSingleItem(String serviceName,String namespace,String version);
+	
 	//get by service name, use for collection inject
 	Set<ServiceItem> getServices(String serviceName);
 	

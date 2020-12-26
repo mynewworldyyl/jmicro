@@ -1,6 +1,7 @@
 package cn.jmicro.example.api.rpc;
 
 import cn.jmicro.api.annotation.Service;
+import cn.jmicro.api.async.IPromise;
 import cn.jmicro.api.test.Person;
 import cn.jmicro.codegenerator.AsyncClientProxy;
 
@@ -12,6 +13,7 @@ public interface ISimpleRpc {
 	
 	String hi(Person p);
 	
-	String linkRpc(String msg);
+	 IPromise<String> linkRpc(String msg);
 	
+	IPromise<String> linkRpcAs(String msg);
 }

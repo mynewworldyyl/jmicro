@@ -36,6 +36,7 @@ import cn.jmicro.api.net.IServer;
 import cn.jmicro.api.objectfactory.IObjectFactory;
 import cn.jmicro.common.CommonException;
 import cn.jmicro.common.Constants;
+import cn.jmicro.common.Utils;
 import cn.jmicro.common.util.StringUtils;
 import cn.jmicro.server.IServerListener;
 import io.netty.bootstrap.ServerBootstrap;
@@ -72,7 +73,7 @@ public class NettySocketServer implements IServer {
 	private NettySocketChannelInitializer initializer;
 	
 	@Cfg(value="/NettySocketServer/nettyPort",required=false,defGlobal=false)
-	private int port=0;
+	private String port=null;
 	
 	private ExecutorService workerGroupExecutor = null;
 	
@@ -125,8 +126,10 @@ public class NettySocketServer implements IServer {
         	throw new CommonException("IP not found");
         }
         
+        int p = Utils.isEmpty(this.port) ? 0 : Integer.parseInt(this.port);
+        
         //InetAddress.getByAddress(Array(127, 0, 0, 1))
-        InetSocketAddress address = new InetSocketAddress(Config.getExportSocketHost(),this.port);
+        InetSocketAddress address = new InetSocketAddress(Config.getExportSocketHost(),p);
         EventLoopGroup bossGroup = new NioEventLoopGroup(/*0,bossGroupExecutor*/);
         EventLoopGroup workerGroup = new NioEventLoopGroup(/*0,workerGroupExecutor*/);
         
@@ -144,7 +147,7 @@ public class NettySocketServer implements IServer {
              //channelFuture.channel().closeFuture().sync();
              address = (InetSocketAddress)channelFuture.channel().localAddress();
              
-             port = address.getPort();
+             port = address.getPort()+"";
              
              String m = "Running the netty socket server host["+Config.getExportSocketHost()+"],port ["+this.port+"]";
              logger.info(m);
@@ -183,11 +186,11 @@ public class NettySocketServer implements IServer {
 	}
 
 	@Override
-	public int port() {
+	public String port() {
 		return this.port;
 	}
 
-	public void setPort(int port) {
+	public void setPort(String port) {
 		this.port = port;
 	}
 }

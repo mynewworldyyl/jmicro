@@ -164,7 +164,7 @@ public class NettyClientSessionManager implements IClientSessionManager{
 	}
 
 	@Override
-	public IClientSession getOrConnect(String targetInstanceName,String host, int port) {
+	public IClientSession getOrConnect(String targetInstanceName,String host, String port) {
 
 		final String ssKey = host+":"+port;
 		//logger.info("Use: " + ssKey);
@@ -308,7 +308,7 @@ public class NettyClientSessionManager implements IClientSessionManager{
 	             });
 
 	            // Start the client.
-	            ChannelFuture cf = b.connect(host, port);
+	            ChannelFuture cf = b.connect(host, Integer.parseInt(port));
 	            		
 	            cf.sync();
 

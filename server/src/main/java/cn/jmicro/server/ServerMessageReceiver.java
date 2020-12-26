@@ -281,16 +281,6 @@ public class ServerMessageReceiver implements IMessageReceiver{
 			responseException(msg,s,e);
 		} finally {
 			offerTask(task);
-			if(!msg.isAsyncReturnResult()) {
-				if(JMicroContext.get().isDebug()) {
-					JMicroContext.get().appendCurUseTime("respTime",false);
-					JMicroContext.get().debugLog(0);
-				}
-				JMicroContext.get().submitMRpcItem(logMonitor,monitor);
-			}else {
-				JMicroContext.get().appendCurUseTime("Async req service return",false);
-			}
-			JMicroContext.clear();
 		}
 	}
 	

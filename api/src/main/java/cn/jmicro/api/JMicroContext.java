@@ -81,6 +81,7 @@ public class JMicroContext  {
 	public static final String IS_MONITORENABLE = "_monitorEnable";
 	public static final String REQ_ID = "_reqId";
 	public static final String MSG_ID = "_msgId";
+	public static final String REQ_INS = "_reqIns";
 	
 	//public static final String MONITOR = "monitor";
 	
@@ -210,7 +211,7 @@ public class JMicroContext  {
 		context.setParam(JMicroContext.SESSION_KEY, s);
 			
 		context.setParam(JMicroContext.REMOTE_HOST, s.remoteHost());
-		context.setParam(JMicroContext.REMOTE_PORT, s.remotePort()+"");
+		context.setParam(JMicroContext.REMOTE_PORT, s.remotePort());
 		
 		context.setParam(JMicroContext.LOCAL_HOST, s.localHost());
 		context.setParam(JMicroContext.LOCAL_PORT, s.localPort()+"");
@@ -393,14 +394,6 @@ public class JMicroContext  {
 			c.setLong(LINKER_ID, id);
 		}
 		return id;
-	}
-	
-	public boolean isAsync() {
-		if(isContainCallSide() && isCallSideService()) {
-			return this.exists(Constants.CONTEXT_SERVICE_RESPONSE);
-		} else {
-			return this.exists(Constants.CONTEXT_CALLBACK_CLIENT);
-		}
 	}
 	
 	/**

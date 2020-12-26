@@ -6,6 +6,7 @@ import java.util.Set;
 
 import cn.jmicro.api.CfgMetadata;
 import cn.jmicro.api.Resp;
+import cn.jmicro.api.async.IPromise;
 import cn.jmicro.api.monitor.ResourceData;
 import cn.jmicro.api.monitor.ResourceMonitorConfig;
 import cn.jmicro.codegenerator.AsyncClientProxy;
@@ -23,10 +24,10 @@ public interface IMngResourceService {
 	
 	Resp<ResourceMonitorConfig> add(ResourceMonitorConfig cfg);
 	
-	Resp<Set<CfgMetadata>> getResourceMetadata(String resName,boolean refreshCache);
-	 
+	Resp<Set<CfgMetadata>> getResourceMetadata(String resName);
+	
 	Resp<Map<String,Map<String,Set<CfgMetadata>>>> getInstanceResourceList();
 	
-	Resp<Map<String,Set<ResourceData>>> getInstanceResourceData(Map<String,String> params);
+	IPromise<Resp<Map<String,List<ResourceData>>>> getInstanceResourceData(ResourceDataReq req);
 	
 }

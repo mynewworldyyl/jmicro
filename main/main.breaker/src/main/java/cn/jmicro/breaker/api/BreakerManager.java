@@ -34,6 +34,7 @@ import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Inject;
 import cn.jmicro.api.annotation.JMethod;
 import cn.jmicro.api.annotation.Service;
+import cn.jmicro.api.async.IPromise;
 import cn.jmicro.api.async.PromiseUtils;
 import cn.jmicro.api.codec.JDataInput;
 import cn.jmicro.api.codec.TypeCoderFactory;
@@ -53,7 +54,6 @@ import cn.jmicro.api.registry.ServiceItem;
 import cn.jmicro.api.registry.ServiceMethod;
 import cn.jmicro.api.registry.UniqueServiceKey;
 import cn.jmicro.api.registry.UniqueServiceMethodKey;
-import cn.jmicro.api.service.ServiceInvokeManager;
 import cn.jmicro.api.service.ServiceManager;
 import cn.jmicro.api.timer.ITickerAction;
 import cn.jmicro.api.timer.TimerTicker;
@@ -95,9 +95,6 @@ public class BreakerManager implements IStatisDataSubscribe{
 	
 	@Inject
 	private IRegistry reg;
-	
-	@Inject
-	private ServiceInvokeManager invokeManager;
 	
 	@Inject
 	private IDataOperator op;
@@ -431,7 +428,7 @@ public class BreakerManager implements IStatisDataSubscribe{
 	}
 	
 	@Override
-	public void onData(StatisData sd) {
+	public IPromise<Void> onData(StatisData sd) {
 		
 		if(!this.srvMt2ConfigIds.containsKey(sd.getKey())) {
 			this.srvMt2ConfigIds.put(sd.getKey(), sd.getCid());
@@ -450,6 +447,7 @@ public class BreakerManager implements IStatisDataSubscribe{
 		
 		breakerChecker(vo);
 		
+		return null;
 	}
 	
 	private class CheckerVo {

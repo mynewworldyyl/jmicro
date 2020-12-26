@@ -13,6 +13,7 @@ import cn.jmicro.api.JMicro;
 import cn.jmicro.api.JMicroContext;
 import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Interceptor;
+import cn.jmicro.api.async.IPromise;
 import cn.jmicro.api.objectfactory.ProxyObject;
 import cn.jmicro.api.registry.UniqueServiceMethodKey;
 import cn.jmicro.common.CommonException;
@@ -29,7 +30,7 @@ public class InterceptorManager {
 	
 	private volatile Map<String,IRequestHandler> consumerHandlers = new ConcurrentHashMap<>();
 	
-    public IResponse handleRequest(RpcRequest req) {
+    public IPromise<Object> handleRequest(RpcRequest req) {
 		
     	boolean callSideProvider = JMicroContext.isCallSideService();
     	
@@ -154,14 +155,13 @@ public class InterceptorManager {
 			});
 		}
 		
-		
 		IRequestHandler last = handler;
 		for(int i = handlers.length-1; i >= 0; i--) {
 			IInterceptor in = handlers[i];
 			IRequestHandler next = last;
 			last = new IRequestHandler(){
 				@Override
-				public IResponse onRequest(IRequest request) {
+				public IPromise<Object> onRequest(IRequest request) {
 					return in.intercept(next, request);
 				}
 			};

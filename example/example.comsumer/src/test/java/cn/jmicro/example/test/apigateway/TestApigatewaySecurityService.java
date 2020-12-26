@@ -36,7 +36,7 @@ public class TestApigatewaySecurityService {
 	@BeforeClass
 	public static void setUp() {
 		
-		ApiGatewayConfig config = new ApiGatewayConfig(Constants.TYPE_SOCKET,"192.168.56.1",9092);
+		ApiGatewayConfig config = new ApiGatewayConfig(Constants.TYPE_SOCKET,"192.168.56.1","9092");
 		config.setUpSsl(true);
 		config.setDownSsl(true);
 		config.setEncType(0);

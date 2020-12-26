@@ -40,7 +40,7 @@ public class TestApigateClient {
 	
 	@BeforeClass
 	public void setUp() {
-		ApiGatewayClient.initClient(new ApiGatewayConfig(Constants.TYPE_SOCKET,"jmicro.cn",9092));
+		ApiGatewayClient.initClient(new ApiGatewayConfig(Constants.TYPE_SOCKET,"jmicro.cn","9092"));
 		socketClient =  ApiGatewayClient.getClient();
 	}
 	

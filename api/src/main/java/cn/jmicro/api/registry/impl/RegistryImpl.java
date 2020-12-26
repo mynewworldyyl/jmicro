@@ -398,6 +398,17 @@ public class RegistryImpl implements IRegistry {
 		}	
 	}
 	
+	
+	
+	@Override
+	public ServiceItem getServiceSingleItem(String serviceName, String namespace, String version) {
+		 Set<ServiceItem> sis = this.getServices(serviceName, namespace, version);
+		 if(sis != null && !sis.isEmpty()) {
+			 return sis.iterator().next();
+		 }
+		return null;
+	}
+
 	private Set<ServiceItem> getServices0(String serviceName, String namespace, String version) {
 		//namespace = UniqueServiceKey.namespace(namespace);
 		//version = UniqueServiceKey.version(version);

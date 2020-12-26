@@ -16,28 +16,22 @@
  */
 package cn.jmicro.client;
 
-import java.lang.reflect.Method;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import cn.jmicro.api.JMicro;
-import cn.jmicro.api.JMicroContext;
 import cn.jmicro.api.annotation.Cfg;
 import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Interceptor;
+import cn.jmicro.api.async.IPromise;
 import cn.jmicro.api.exception.RpcException;
+import cn.jmicro.api.internal.async.PromiseImpl;
 import cn.jmicro.api.limitspeed.ILimiter;
 import cn.jmicro.api.net.AbstractInterceptor;
 import cn.jmicro.api.net.IInterceptor;
 import cn.jmicro.api.net.IRequest;
 import cn.jmicro.api.net.IRequestHandler;
-import cn.jmicro.api.net.IResponse;
-import cn.jmicro.api.net.RpcResponse;
-import cn.jmicro.api.registry.ServiceMethod;
 import cn.jmicro.common.Constants;
-import cn.jmicro.common.Utils;
-import cn.jmicro.common.util.StringUtils;
 
 /**
  * 
@@ -75,7 +69,7 @@ public class FirstClientInterceptor extends AbstractInterceptor implements IInte
 	}
 	
 	@Override
-	public IResponse intercept(IRequestHandler handler, IRequest req) throws RpcException {
+	public IPromise<Object> intercept(IRequestHandler handler, IRequest req) throws RpcException {
 		
 		//logger.debug(Constants.FIRST_CLIENT_INTERCEPTOR + " before");
 		
@@ -87,46 +81,17 @@ public class FirstClientInterceptor extends AbstractInterceptor implements IInte
 			}
 		}*/
 		
-		IResponse resp = handler.onRequest(req);
+		return handler.onRequest(req);
 		
 		//logger.debug(Constants.FIRST_CLIENT_INTERCEPTOR + " after");
 		
-		return resp;
+		//return resp;
 	}
 
-	public static IResponse doFastFail(IRequest req,Throwable e,int code) {
-		//ServiceItem si = JMicroContext.get().getParam(Constants.SERVICE_ITEM_KEY, null);
-		
-		ServiceMethod sm = JMicroContext.get().getParam(Constants.SERVICE_METHOD_KEY, null);
-		if(!sm.isBreaking()) {
-			//不支持熔断
-			if(e instanceof RpcException) {
-				throw (RpcException)e;
-			}else {
-				throw new RpcException(req,e,code);
-			}
-		}
-		
-		RpcResponse resp = new RpcResponse();
-		resp.setSuccess(true);
-		resp.setReqId(req.getRequestId());
-		resp.setMonitorEnable(req.isMonitorEnable());
-		
-		ServiceMethod method = JMicroContext.get().getParam(Constants.SERVICE_METHOD_KEY, null);
-		Class<?> cls = method.getKey().getReturnParamClass();
-		if(cls == Void.class) {
-			resp.setResult(null);
-		} else if(!StringUtils.isEmpty(sm.getFailResponse())) {
-			//Object result = JsonUtils.getIns().fromJson(sm.getFailResponse(), cls);
-			Object v = Utils.getIns().getValue(cls,sm.getFailResponse(),cls);
-			resp.setResult(v);
-		} else {
-			if(e instanceof RpcException) {
-				throw (RpcException)e;
-			}else {
-				throw new RpcException(req,e,code);
-			}
-		}
-		return resp;
+	public static IPromise<Object> doFastFail(IRequest req,Throwable e,int code) {
+		PromiseImpl<Object> p = new PromiseImpl<>();
+		p.setFail(code, e.getLocalizedMessage());
+		p.done();
+		return p;
 	}
 }

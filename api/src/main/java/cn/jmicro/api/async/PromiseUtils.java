@@ -59,8 +59,6 @@ public class PromiseUtils {
 			}
 		};
 		
-		cxt.setObject(Constants.CONTEXT_CALLBACK_CLIENT, cb);
-		
 		/*Class<?>[] types = null;
 		if(args.length > 0) {
 			types = new Class[args.length];
@@ -89,10 +87,6 @@ public class PromiseUtils {
 			}
 		}catch (SecurityException | IllegalAccessException | IllegalArgumentException e) {
 			throw new CommonException(MC.MT_SERVICE_ERROR,remoteServiceProxy.getClass().getName()+"."+remoteMethod,e);
-		}
-		
-		finally {
-			cxt.removeParam(Constants.CONTEXT_CALLBACK_CLIENT);
 		}
 		
 		return p;

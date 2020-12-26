@@ -1,6 +1,9 @@
 package cn.jmicro.resource;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -25,18 +28,32 @@ public class ResourceServiceIml implements IResourceService {
 	private ProcessInfo pi;
 	
 	@Override
-	public Set<ResourceData> getResource(Set<String> resNames, 
+	public List<ResourceData> getResource(Set<String> resNames, 
 			Map<String,Object> params, Map<String,String> exps) {
-		Set<ResourceData> rs = new HashSet<>();
-		for(IResource r : resources) {
-			String resName = r.getResourceName();
-			if(r.isEnable() && resNames.contains(resName)) {
+		List<ResourceData> rs = new ArrayList<>();
+		if(exps == null) {
+			exps = new HashMap<>();
+		}
+		if(resNames != null && !resNames.isEmpty()) {
+			for(IResource r : resources) {
+				String resName = r.getResourceName();
+				if(r.isEnable() && resNames.contains(resName)) {
+					ResourceData rd = r.getResource(params,exps.get(resName));
+					if(rd != null) {
+						rs.add(rd);
+					}
+				}
+			}
+		} else {
+			for(IResource r : resources) {
+				String resName = r.getResourceName();
 				ResourceData rd = r.getResource(params,exps.get(resName));
 				if(rd != null) {
 					rs.add(rd);
 				}
 			}
 		}
+		
 		return rs;
 	}
 	

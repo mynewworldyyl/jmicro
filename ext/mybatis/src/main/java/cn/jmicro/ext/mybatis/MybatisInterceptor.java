@@ -22,12 +22,12 @@ import org.slf4j.LoggerFactory;
 import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Inject;
 import cn.jmicro.api.annotation.Interceptor;
+import cn.jmicro.api.async.IPromise;
 import cn.jmicro.api.exception.RpcException;
 import cn.jmicro.api.net.AbstractInterceptor;
 import cn.jmicro.api.net.IInterceptor;
 import cn.jmicro.api.net.IRequest;
 import cn.jmicro.api.net.IRequestHandler;
-import cn.jmicro.api.net.IResponse;
 import cn.jmicro.common.Constants;
 
 /**
@@ -47,19 +47,29 @@ public class MybatisInterceptor extends AbstractInterceptor implements IIntercep
 	public MybatisInterceptor() {}
 	
 	@Override
-	public IResponse intercept(IRequestHandler handler, IRequest req) throws RpcException {
-		IResponse resp = null;
+	public IPromise<Object> intercept(IRequestHandler handler, IRequest req) throws RpcException {
+		IPromise<Object> p = null;
 		try {
-			resp = handler.onRequest(req);
+			p = handler.onRequest(req);
 			if(curSqlSessionManager.curSession() != null) {
-				curSqlSessionManager.commitAndCloseCurSession();
+				p.success((rst,cxt)->{
+					if(curSqlSessionManager.curSession() != null) {
+						curSqlSessionManager.commitAndCloseCurSession();
+					}
+				})
+				.fail((code,msg,cxt)->{
+					if(curSqlSessionManager.curSession() != null) {
+						curSqlSessionManager.rollbackAndCloseCurSession();
+					}
+				});
 			}
+			return p;
 		} catch (Throwable e) {
 			if(curSqlSessionManager.curSession() != null) {
 				curSqlSessionManager.rollbackAndCloseCurSession();
 			}
 		}
-		return resp;
+		return p;
 	}
 
 }

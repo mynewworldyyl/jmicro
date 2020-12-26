@@ -29,7 +29,7 @@ public class ApiGatewayConfig {
 
 	private int clientType = Constants.TYPE_SOCKET;
 	private String host = null;
-	private int port= 9090;
+	private String port= "9090";
 	
 	private boolean debug = true;
 	
@@ -49,12 +49,12 @@ public class ApiGatewayConfig {
 		this.setClientType(clientType);
 	}
 	
-	public ApiGatewayConfig(int clientType,int port) {
+	public ApiGatewayConfig(int clientType,String port) {
 		this(clientType);
 		this.setPort(port);
 	}
 	
-	public ApiGatewayConfig(int clientType,String host,int port) {
+	public ApiGatewayConfig(int clientType,String host,String port) {
 		this(clientType,port);
 		this.setHost(host);
 	}
@@ -70,8 +70,8 @@ public class ApiGatewayConfig {
 		this.host = host;
 	}
 
-	public void setPort(int port) {
-		if(port <= 0) {
+	public void setPort(String port) {
+		if(Utils.isEmpty(port)) {
 			throw new CommonException("port is invalid: "+port);
 		}
 		this.port = port;
@@ -91,7 +91,7 @@ public class ApiGatewayConfig {
 		
 	}
 
-	public int getPort() {
+	public String getPort() {
 		return port;
 	}
 

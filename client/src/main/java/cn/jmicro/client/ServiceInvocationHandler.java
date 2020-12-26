@@ -26,6 +26,7 @@ import cn.jmicro.api.JMicroContext;
 import cn.jmicro.api.annotation.Cfg;
 import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Inject;
+import cn.jmicro.api.async.IPromise;
 import cn.jmicro.api.client.InvocationHandler;
 import cn.jmicro.api.exception.RpcException;
 import cn.jmicro.api.idgenerator.ComponentIdServer;
@@ -76,9 +77,8 @@ public class ServiceInvocationHandler implements InvocationHandler{
 	
 	public <T> T invoke(Object proxy, String methodName, Object[] args){
 		
-		Object obj = null;
 		RpcRequest req = null;
-		IResponse resp = null;
+		
 		try {
 			
 			JMicroContext cxt = JMicroContext.get();
@@ -129,9 +129,9 @@ public class ServiceInvocationHandler implements InvocationHandler{
 				.append(",linkId:").append(JMicroContext.lid());
 			}
 			
-			resp = this.intManager.handleRequest(req);
+			 return (T)this.intManager.handleRequest(req);
 			
-			obj = resp == null ? null : resp.getResult();
+			//obj = resp == null ? null : resp.getResult();
 		} catch(Throwable ex) {
 			if(ex instanceof CommonException) {
 				throw ex;
@@ -140,24 +140,8 @@ public class ServiceInvocationHandler implements InvocationHandler{
 				throw new RpcException(req,ex,MC.MT_REQ_ERROR);
 			}
 		} finally {
-			if(!JMicroContext.get().isAsync()) {
-				if(JMicroContext.get().getObject(Constants.NEW_LINKID,null) != null &&
-						JMicroContext.get().getBoolean(Constants.NEW_LINKID,false) ) {
-					//RPC链路结束
-					//LG.eventLog(MC.MT_LINK_END, MC.LOG_NO, TAG, null);
-					MT.rpcEvent(MC.MT_LINK_END);
-					JMicroContext.get().removeParam(Constants.NEW_LINKID);
-				}
-				JMicroContext.get().debugLog(0);
-				JMicroContext.get().submitMRpcItem(logMonitor,monitor);
-			}
+			
 		}
-       /* if("intrest".equals(method.getName())) {
-        	//代码仅用于测试
-        	logger.debug("result type:{},value:{}",obj.getClass().getName(),obj.toString());
-        }*/
-		
-        return (T)obj;
 	
 	}
 	

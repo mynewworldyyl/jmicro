@@ -21,12 +21,12 @@ import org.slf4j.LoggerFactory;
 
 import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Interceptor;
+import cn.jmicro.api.async.IPromise;
 import cn.jmicro.api.exception.RpcException;
 import cn.jmicro.api.net.AbstractInterceptor;
 import cn.jmicro.api.net.IInterceptor;
 import cn.jmicro.api.net.IRequest;
 import cn.jmicro.api.net.IRequestHandler;
-import cn.jmicro.api.net.IResponse;
 import cn.jmicro.common.Constants;
 
 /**
@@ -41,11 +41,11 @@ public class LastClientInterceptor extends AbstractInterceptor implements IInter
 	private final static Logger logger = LoggerFactory.getLogger(LastClientInterceptor.class);
 	
 	@Override
-	public IResponse intercept(IRequestHandler handler, IRequest request) throws RpcException {
+	public IPromise<Object> intercept(IRequestHandler handler, IRequest request) throws RpcException {
 		//logger.debug(Constants.LAST_CLIENT_INTERCEPTOR + " before");
-		IResponse resp = handler.onRequest(request);
+		return handler.onRequest(request);
 		//logger.debug(Constants.LAST_CLIENT_INTERCEPTOR + " after");
-		return resp;
+		//return resp;
 	}
 	
 	

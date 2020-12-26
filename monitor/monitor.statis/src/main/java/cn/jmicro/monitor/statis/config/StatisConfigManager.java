@@ -91,7 +91,7 @@ public class StatisConfigManager {
 	
 	private IServiceListener snvListener = (type,item)->{
 		if(type == IListener.REMOVE) {
-			onServiceRemove(item);
+			//onServiceRemove(item);
 		}else if(type == IListener.ADD) {
 			onServiceAdd(item);
 		}
@@ -304,23 +304,6 @@ public class StatisConfigManager {
 		return cfgs;
 	}
 	
-	private void onServiceRemove(ServiceItem si) {
-		Set<StatisConfig> cfgs = this.getByConfigByServiceName(si.getKey().getServiceName());
-		if(cfgs.isEmpty()) {
-			return;
-		}
-		
-		for(StatisConfig sc : cfgs) {
-			if(sc.getSrv() == null || sc.getToType() != StatisConfig.TO_TYPE_SERVICE_METHOD) {
-				continue;
-			}
-			
-			if(!reg.isExists(sc.getToSn(), sc.getToNs(), sc.getToVer())) {
-				sc.setSrv(null);
-			}
-		}
-	}
-	
 	private void onServiceAdd(ServiceItem si) {
 		Set<StatisConfig> cfgs = this.getByConfigByServiceName(si.getKey().getServiceName());
 		
@@ -339,10 +322,6 @@ public class StatisConfigManager {
 				if(!sm.getKey().getInstanceName().equals(sc.getByins())) {
 					continue;
 				}
-			}
-			
-			if(sc.getSrv() == null) {
-				this.createToRemoteService(sc);
 			}
 			
 			srvMng.setMonitorable(sm,1);
@@ -461,40 +440,9 @@ public class StatisConfigManager {
 		return this.configs.get(cid);
 	}
 	
-	public boolean createToRemoteService(StatisConfig lw) {
-		if(lw.getSrv() != null) {
-			return true;
-		}
-		if(reg.isExists(lw.getToSn(), lw.getToNs(), lw.getToVer())) {
-			Object srv = null;
-			try {
-				 srv = of.getRemoteServie(lw.getToSn(),lw.getToNs(),lw.getToVer(),null);
-			}catch(CommonException e) {
-				logger.error(e.getMessage());
-				return false;
-			}
-			
-			if(srv == null) {
-				String msg2 = "Fail to create service proxy ["+lw.getToSn() +"##"+lw.getToNs()+"##"+ lw.getToVer()+"] not found for id: " + lw.getId();
-				logger.warn(msg2);
-				LG.logWithNonRpcContext(MC.LOG_WARN, StatisManager.class, msg2);
-				return false;
-			}
-			lw.setSrv(srv);
-			return true;
-		} else {
-			//服务还不在在，可能后续上线，这里只发一个警告
-			String msg2 = "Now config service ["+lw.getToSn() +"##"+lw.getToNs()+"##"+ lw.getToVer()+"] not found for id: " + lw.getId();
-			logger.warn(msg2);
-			return false;
-		}
-	}
-	
 	private void statisConfigAdd0(StatisConfig lw) {
 
-		if(StatisConfig.TO_TYPE_SERVICE_METHOD == lw.getToType()) {
-			createToRemoteService(lw);
-		} else if(StatisConfig.TO_TYPE_DB == lw.getToType()) {
+		if(StatisConfig.TO_TYPE_DB == lw.getToType()) {
 			if(Utils.isEmpty(lw.getToParams())) {
 				lw.setToParams(StatisConfig.DEFAULT_DB);
 			}

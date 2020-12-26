@@ -750,7 +750,7 @@ public final class ReflectUtils {
      * @return Class[] class array.
      * @throws ClassNotFoundException
      */
-    private static Class<?>[] desc2classArray(ClassLoader cl, String desc) throws ClassNotFoundException {
+    public static Class<?>[] desc2classArray(ClassLoader cl, String desc) throws ClassNotFoundException {
         if (desc.length() == 0)
             return EMPTY_CLASS_ARRAY;
 

@@ -20,7 +20,7 @@ import com.mongodb.client.MongoDatabase;
 import cn.jmicro.api.annotation.Cfg;
 import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Inject;
-import cn.jmicro.api.async.PromiseUtils;
+import cn.jmicro.api.async.IPromise;
 import cn.jmicro.api.exp.Exp;
 import cn.jmicro.api.exp.ExpUtils;
 import cn.jmicro.api.idgenerator.ComponentIdServer;
@@ -36,6 +36,7 @@ import cn.jmicro.api.pubsub.PSData;
 import cn.jmicro.api.pubsub.PubSubManager;
 import cn.jmicro.api.registry.UniqueServiceKey;
 import cn.jmicro.api.registry.UniqueServiceMethodKey;
+import cn.jmicro.api.service.ServiceInvokeManager;
 import cn.jmicro.api.timer.TimerTicker;
 import cn.jmicro.api.utils.TimeUtils;
 import cn.jmicro.common.Utils;
@@ -73,6 +74,9 @@ public class StatisManager {
 	
 	@Inject
 	private ComponentIdServer idGenerator;
+	
+	@Inject
+	private ServiceInvokeManager invokeMng;
 	
 	/**
 	 * 服务，名称空间，版本，方法，实例，IP，账号
@@ -245,14 +249,6 @@ public class StatisManager {
 		
 		Set<StatisConfig> insConfigs = this.mscm.getConfigByType(types);
 		for(StatisConfig sc : insConfigs) {
-			if(sc.getToType() == StatisConfig.TO_TYPE_SERVICE_METHOD) {
-				if(sc.getSrv() == null) {
-					if(!mscm.createToRemoteService(sc)) {
-						//接收目标还没上线
-						continue;
-					}
-				}
-			}
 			Iterator<String> insNames = set.iterator();
 			while(insNames.hasNext()) {
 				String insName = insNames.next();
@@ -372,7 +368,9 @@ public class StatisManager {
 		switch(sc.getToType()) {
 		case StatisConfig.TO_TYPE_SERVICE_METHOD:
 			sc.setLastNotifyTime(TimeUtils.getCurTime());
-			PromiseUtils.callService(sc.getSrv(), sc.getToMt(), null, sd)
+			//PromiseUtils.callService(sc.getSrv(), sc.getToMt(), null, sd)
+			this.invokeMng.call(sc.getToSn(), sc.getToNs(), sc.getToVer(),
+					sc.getToMt(), IPromise.class, new Class[]{StatisData.class}, new Object[] {sd})
 			.fail((code,msg,cxt)->{
 				logger.error("Notify fail: " + sc.getToSn() +"##"+sc.getToNs() +"##" + sc.getToVer()+"##"+ sc.getToMt());
 			});

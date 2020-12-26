@@ -2,7 +2,7 @@
     <div class="JProcess">
         <!--<a @click="refresh()">REFRESH</a>
         <input type="checkbox" v-model="showAll"/>ALL-->
-
+        <div v-if="msg">{{msg}}</div>
         <table class="configItemTalbe" width="99%">
             <thead><tr><td>ID</td><td>NAME</td><td>ACTIVE</td><td>HA ENABLE</td><td>IS MASTER</td><td>WORK DIR</td>
                 <td>PROCESS ID</td><td>START TIME</td><td>CONTINUTE</td><td>HOST</td>
@@ -31,6 +31,7 @@
         name: 'JProcess',
         data () {
             return {
+                msg:null,
                 showAll:true,
                 processList:[],
                 isLogin : false,
@@ -39,10 +40,12 @@
         methods: {
 
             refresh(){
+                this.msg = null;
                 let self = this;
                 this.isLogin = window.jm.rpc.isLogin();
                 if(!this.isLogin) {
                     this.processList = [];
+                    this.msg = 'Not login';
                     return;
                 }
                 window.jm.mng.choy.getProcessInstanceList(self.showAll).then((resp)=>{

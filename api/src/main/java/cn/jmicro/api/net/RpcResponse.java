@@ -19,7 +19,6 @@ package cn.jmicro.api.net;
 import java.util.HashMap;
 import java.util.Map;
 
-import cn.jmicro.api.AbstractObjectMapSupport;
 import cn.jmicro.api.annotation.SO;
 /**
  * 
@@ -33,51 +32,24 @@ public final class RpcResponse /*extends AbstractObjectMapSupport*/ implements I
 	
 	private transient Message msg;
 	
-	private Long reqId;
+	//private Long reqId;
 	
 	private Object result;
-	
-	private boolean isMonitorEnable = false;
 	
 	private boolean success = true;
 	
 	
 	public RpcResponse(long reqId,Object result){
-		this.reqId = reqId;
+		//this.reqId = reqId;
 		this.result = result;
 	}
 	
-	public RpcResponse(long reqId){
+/*	public RpcResponse(long reqId){
 		this.reqId = reqId;
-	}
+	}*/
 	
 	public RpcResponse(){
 	}
-	
-	/*@Override
-	public void decode(ByteBuffer ois) {
-		super.decode(ois);
-		this.id = ois.getLong();
-		this.reqId = ois.getLong();
-		this.success = ois.get()==0?false:true;
-		this.result = Decoder.decodeObject(ois);
-	}
-
-	@Override
-	public ByteBuffer encode() {
-		ByteBuffer bb = super.encode();
-		bb.putLong(this.id);
-		bb.putLong(this.reqId);
-		bb.put(this.success?(byte)1:(byte)0);
-		Encoder.encodeObject(bb, result);
-		bb.flip();
-		return bb;
-	}
-
-	@Override
-	public ByteBuffer newBuffer() {
-		return ByteBuffer.allocate(bufferSize);
-	}*/
 
 	public Message getMsg() {
 		return msg;
@@ -85,22 +57,6 @@ public final class RpcResponse /*extends AbstractObjectMapSupport*/ implements I
 
 	public void setMsg(Message msg) {
 		this.msg = msg;
-	}
-
-	public Long getRequestId() {
-		return reqId;
-	}
-
-	public void setReqId(Long reqId) {
-		this.reqId = reqId;
-	}
-
-	public boolean isMonitorEnable() {
-		return isMonitorEnable;
-	}
-
-	public void setMonitorEnable(boolean isMonitorEnable) {
-		this.isMonitorEnable = isMonitorEnable;
 	}
 
 	public Object getResult() {
@@ -119,10 +75,6 @@ public final class RpcResponse /*extends AbstractObjectMapSupport*/ implements I
 		this.success = success;
 	}
 
-	public Long getReqId() {
-		return reqId;
-	}
-	
 	@SuppressWarnings("unchecked")
 	public <T> T getParam(String key,T defautl){
 		T v = (T)this.params.get(key);
@@ -179,8 +131,7 @@ public final class RpcResponse /*extends AbstractObjectMapSupport*/ implements I
 	
 	@Override
 	public String toString() {
-		return "RpcResponse [reqId=" + reqId + ", result=" + result + ", isMonitorEnable="
-				+ isMonitorEnable + ", success=" + success + "]";
+		return "RpcResponse [" + "result=" + result +  ", success=" + success + "]";
 	}
 
 }

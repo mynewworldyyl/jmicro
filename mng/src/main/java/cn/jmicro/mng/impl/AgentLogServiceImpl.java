@@ -17,8 +17,10 @@ import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Reference;
 import cn.jmicro.api.annotation.SMethod;
 import cn.jmicro.api.annotation.Service;
+import cn.jmicro.api.async.IPromise;
 import cn.jmicro.api.choreography.IAgentProcessService;
 import cn.jmicro.api.choreography.genclient.IAgentProcessService$JMAsyncClient;
+import cn.jmicro.api.internal.async.PromiseImpl;
 import cn.jmicro.api.mng.LogFileEntry;
 import cn.jmicro.api.objectfactory.AbstractClientServiceProxyHolder;
 import cn.jmicro.api.registry.IServiceListener;
@@ -47,140 +49,105 @@ public class AgentLogServiceImpl implements IAgentLogService {
 	
 	@Override
 	@SMethod(needLogin=true,maxSpeed=5,maxPacketSize=256)
-	public Resp<List<LogFileEntry>> getAllLogFileEntry() {
+	public IPromise<Resp<List<LogFileEntry>>> getAllLogFileEntry() {
 		Resp<List<LogFileEntry>> resp = new Resp<>();
 		resp.setCode(0);
+		
+		PromiseImpl<Resp<List<LogFileEntry>>> p = new PromiseImpl<>();
+		p.setResult(resp);
 		
 		if(agentServices.isEmpty()) {
 			resp.setCode(1);
 			resp.setMsg("No data");
-			return resp;
+			p.done();
+			return p;
 		}
 		
-		JMicroContext cxt = JMicroContext.get();
+		List<LogFileEntry> list = new ArrayList<>();
+		resp.setData(list);
 		
-		IServiceAsyncResponse cb = cxt.getParam(Constants.CONTEXT_SERVICE_RESPONSE,null);
-		if(cxt.isAsync() && cb == null) {
-			logger.error(Constants.CONTEXT_SERVICE_RESPONSE + " is null in async context");
-		}
+		p.setCounter(agentServices.size());
 		
-		if(cxt.isAsync() && cb != null) {
-			
-			List<LogFileEntry> list = new ArrayList<>();
-			resp.setData(list);
-			
-			AtomicInteger ai = new AtomicInteger(agentServices.size());
-			
-			for(IAgentProcessService$JMAsyncClient aps : agentServices) {
-				aps.getProcessesLogFileListJMAsync()
-				.then((rl,fail,actx) -> {
-					ai.decrementAndGet();
-					if(fail == null) {
-						if(rl != null) {
-							list.addAll((List<LogFileEntry>)rl);
-						}
-					} else {
-						logger.error(fail.toString());
+		for(IAgentProcessService$JMAsyncClient aps : agentServices) {
+			aps.getProcessesLogFileListJMAsync()
+			.then((rl,fail,actx) -> {
+				if(fail == null) {
+					if(rl != null) {
+						list.addAll((List<LogFileEntry>)rl);
 					}
-					if(ai.get() == 0) {
-						cb.result(resp);
-					}
-				});
-			}
-			return null;
-		} else {
-			List<LogFileEntry> list = new ArrayList<>();
-			resp.setData(list);
-			for(IAgentProcessService$JMAsyncClient aps : agentServices) {
-				List<LogFileEntry> logs = aps.getProcessesLogFileList();
-				list.addAll(logs);
-			}
-			return resp;
+				} else {
+					logger.error(fail.toString());
+				}
+				p.decCounter(1,true);
+			});
 		}
+		return p;
 	}
 
 	@Override
 	@SMethod(needLogin=true,maxSpeed=5,maxPacketSize=512)
-	public Resp<Boolean> startLogMonitor(Integer processId,String logFile, String agentId, 
+	public IPromise<Resp<Boolean>> startLogMonitor(Integer processId,String logFile, String agentId, 
 			int offsetFromLastLine) {
 		
 		Resp<Boolean> resp = new Resp<Boolean>();
+		
+		PromiseImpl<Resp<Boolean>> p = new PromiseImpl<>();
+		p.setResult(resp);
+		
 		if(!id2Aps.containsKey(agentId)) {
 			resp.setData(false);
 			resp.setCode(1);
 			resp.setMsg("Agent: " + agentId + " not found!");
-			return resp;
+			p.done();
+			return p;
 		}
+
+		IAgentProcessService$JMAsyncClient aps = this.id2Aps.get(agentId);
+		aps.startLogMonitorJMAsync(processId, logFile, offsetFromLastLine)
+		.then((rst,fail,actx) -> {
+			if(fail == null) {
+				resp.setData(rst);
+			} else {
+				logger.error(fail.toString());
+				resp.setData(false);
+				resp.setMsg(fail.toString());
+			}
+			p.done();
+		});
 		
-		JMicroContext cxt = JMicroContext.get();
-		
-		IServiceAsyncResponse cb = cxt.getParam(Constants.CONTEXT_SERVICE_RESPONSE,null);
-		if(cxt.isAsync() && cb == null) {
-			logger.error(Constants.CONTEXT_SERVICE_RESPONSE + " is null in async context");
-		}
-		
-		if(cxt.isAsync() && cb != null) {
-			IAgentProcessService$JMAsyncClient aps = this.id2Aps.get(agentId);
-			aps.startLogMonitorJMAsync(processId, logFile, offsetFromLastLine)
-			.then((rst,fail,actx) -> {
-				if(fail == null) {
-					resp.setData(rst);
-				} else {
-					logger.error(fail.toString());
-					resp.setData(false);
-					resp.setMsg(fail.toString());
-				}
-				cb.result(resp);
-			});
-			return null;
-		} else {
-			IAgentProcessService aps = this.id2Aps.get(agentId);
-			boolean rst = aps.startLogMonitor(processId, logFile, offsetFromLastLine);
-			resp.setData(rst);
-			return resp;
-		}
+		return p;
 	}
 
 	@Override
 	@SMethod(needLogin=true,maxSpeed=5,maxPacketSize=512)
-	public Resp<Boolean> stopLogMonitor(Integer processId,String logFile, String agentId) {
+	public IPromise<Resp<Boolean>> stopLogMonitor(Integer processId,String logFile, String agentId) {
 		
 		Resp<Boolean> resp = new Resp<Boolean>();
+		
+		PromiseImpl<Resp<Boolean>> p = new PromiseImpl<>();
+		p.setResult(resp);
+		
 		if(!id2Aps.containsKey(agentId)) {
 			resp.setData(false);
 			resp.setCode(1);
 			resp.setMsg("Agent: " + agentId + " not found!");
-			return resp;
+			p.done();
+			return p;
 		}
-		
-		JMicroContext cxt = JMicroContext.get();
-		
-		IServiceAsyncResponse cb = cxt.getParam(Constants.CONTEXT_SERVICE_RESPONSE,null);
-		if(cxt.isAsync() && cb == null) {
-			logger.error(Constants.CONTEXT_SERVICE_RESPONSE + " is null in async context");
-		}
-		
-		if(cxt.isAsync() && cb != null) {
-			IAgentProcessService$JMAsyncClient aps = this.id2Aps.get(agentId);
-			aps.stopLogMonitorJMAsync(processId,logFile)
-			.then((rst,fail,actx) -> {
-				if(fail == null) {
-					resp.setData(rst);
-				} else {
-					logger.error(fail.toString());
-					resp.setData(false);
-					resp.setMsg(fail.toString());
-				}
-				cb.result(resp);
-			});
-			return null;
-		} else {
-			IAgentProcessService aps = this.id2Aps.get(agentId);
-			boolean rst = aps.stopLogMonitor(processId,logFile);
-			resp.setData(rst);
-			return resp;
-		}
-		
+
+		IAgentProcessService$JMAsyncClient aps = this.id2Aps.get(agentId);
+		aps.stopLogMonitorJMAsync(processId,logFile)
+		.then((rst,fail,actx) -> {
+			if(fail == null) {
+				resp.setData(rst);
+			} else {
+				logger.error(fail.toString());
+				resp.setData(false);
+				resp.setMsg(fail.toString());
+			}
+			p.done();
+		});
+		return p;
 	}
 	
 	public void changeListener(AbstractClientServiceProxyHolder po,int opType) {

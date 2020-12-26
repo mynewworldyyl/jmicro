@@ -24,7 +24,6 @@ public class TestOnePrefixCoder {
 	@Test
 	public void testEndoceArrayResult(){
 		RpcResponse resp = new RpcResponse(1,new Integer[]{1,2,3});
-		resp.setMonitorEnable(true);
 		resp.setSuccess(true);
 		resp.getParams().put("key01", 3);
 		resp.getParams().put("key02","hello");

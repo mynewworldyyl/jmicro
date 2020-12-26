@@ -6,7 +6,7 @@ import cn.jmicro.api.annotation.SO;
 public final class Server {
 
 	private String host;
-	private int port;
+	private String port;
 	private String protocol;
 	
 	public String getHost() {
@@ -15,10 +15,10 @@ public final class Server {
 	public void setHost(String host) {
 		this.host = host;
 	}
-	public int getPort() {
+	public String getPort() {
 		return port;
 	}
-	public void setPort(int port) {
+	public void setPort(String port) {
 		this.port = port;
 	}
 	public String getProtocol() {
@@ -33,7 +33,7 @@ public final class Server {
 		final int prime = 31;
 		int result = 1;
 		result = prime * result + ((host == null) ? 0 : host.hashCode());
-		result = prime * result + port;
+		result = prime * result + ((port == null) ? 0 : port.hashCode());
 		result = prime * result + ((protocol == null) ? 0 : protocol.hashCode());
 		return result;
 	}

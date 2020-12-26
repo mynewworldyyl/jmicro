@@ -13,6 +13,10 @@ public class ResourceMonitorConfig {
 
 	public static final String RES_MONITOR_CONFIG_ROOT = Config.BASE_DIR + "/resMonitorConfigs";
 	
+	public static final String DEFAULT_RESOURCE_TABLE_PREFIX = "t_res_table_";
+	
+	public static final String DEFAULT_RESOURCE_TABLE_NAME = DEFAULT_RESOURCE_TABLE_PREFIX + "default";
+	
 	//toType == TO_TYPE_SERVICE_METHOD时有效
 	private transient String toSn;
 	private transient String toNs;
@@ -20,8 +24,6 @@ public class ResourceMonitorConfig {
 	private transient String toMt;
 	
 	private transient Exp exp;
-	
-	private transient Object toSrv;
 	
 	private transient long lastNotifyTime;
 	
@@ -211,14 +213,6 @@ public class ResourceMonitorConfig {
 	@Override
 	public int hashCode() {
 		return this.id;
-	}
-
-	public Object getToSrv() {
-		return toSrv;
-	}
-
-	public void setToSrv(Object toSrv) {
-		this.toSrv = toSrv;
 	}
 
 	@Override
