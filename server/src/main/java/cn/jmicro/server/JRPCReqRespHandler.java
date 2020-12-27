@@ -26,6 +26,7 @@ import cn.jmicro.api.annotation.Inject;
 import cn.jmicro.api.async.IPromise;
 import cn.jmicro.api.choreography.ProcessInfo;
 import cn.jmicro.api.codec.ICodecFactory;
+import cn.jmicro.api.config.Config;
 import cn.jmicro.api.exception.RpcException;
 import cn.jmicro.api.exception.TimeoutException;
 import cn.jmicro.api.idgenerator.ComponentIdServer;
@@ -36,6 +37,7 @@ import cn.jmicro.api.monitor.MRpcLogItem;
 import cn.jmicro.api.monitor.MT;
 import cn.jmicro.api.monitor.StatisMonitorClient;
 import cn.jmicro.api.net.IMessageHandler;
+import cn.jmicro.api.net.IRequest;
 import cn.jmicro.api.net.IResponse;
 import cn.jmicro.api.net.ISession;
 import cn.jmicro.api.net.InterceptorManager;
@@ -46,6 +48,7 @@ import cn.jmicro.api.net.ServerError;
 import cn.jmicro.api.registry.IRegistry;
 import cn.jmicro.api.registry.ServiceItem;
 import cn.jmicro.api.registry.ServiceMethod;
+import cn.jmicro.api.registry.UniqueServiceMethodKey;
 import cn.jmicro.api.security.AccountManager;
 import cn.jmicro.api.security.ActInfo;
 import cn.jmicro.api.security.PermissionManager;
@@ -116,6 +119,7 @@ public class JRPCReqRespHandler implements IMessageHandler{
 		
 		RpcRequest req = null;
 		RpcResponse resp =  new RpcResponse();
+		boolean finish[] = new boolean[] {false};
 		
 	    try {
 	    	
@@ -123,29 +127,24 @@ public class JRPCReqRespHandler implements IMessageHandler{
 	    	final RpcRequest req1 = ICodecFactory.decode(this.codeFactory, msg.getPayload(),
 					RpcRequest.class, msg.getUpProtocol());
 	    	
-	    	if(msg.isDebugMode()) {
-	    		JMicroContext.get().appendCurUseTime("Server end decode req",true);
-    		}
+	    	config(req1,resp,msg.getLinkId());
 	    	
 	    	req = req1;
 			req.setSession(s);
 			req.setMsg(msg);
+	    	
+	    	if(msg.isDebugMode()) {
+	    		JMicroContext.get().appendCurUseTime("Server end decode req",true);
+    		}
 			
 			//logger.info(req.getServiceName()+" debugMode: " + msg.isDebugMode()+", method: " + msg.getMethod());
 			
-			if(req1.getMethod().equals("send")) {
+			/*if(req1.getMethod().equals("send")) {
 				logger.debug("");
-			}
-			
-	    	JMicroContext.config(req1,serviceLoader,registry);
+			}*/
 	    	
 	    	if(LG.isLoggable(MC.LOG_DEBUG)) {
 	    		LG.log(MC.LOG_DEBUG, TAG, LG.reqMessage("",req1));
-	    	}
-	    	
-	    	MRpcLogItem mi = JMicroContext.get().getMRpcLogItem();
-	    	if(mi != null) {
-	    		mi.setResp(resp);
 	    	}
 	    	
 	    	ServiceMethod sm = JMicroContext.get().getParam(Constants.SERVICE_METHOD_KEY, null);
@@ -218,11 +217,11 @@ public class JRPCReqRespHandler implements IMessageHandler{
 				if(msg.isMonitorable()) {
 					MT.rpcEvent(MC.MT_SERVER_JRPC_RESPONSE_SUCCESS);
 				}
+				submitItem();
 				return;
 			}
 
 			final RpcResponse r = resp;
-			boolean finish[] = new boolean[] {false};
 			
 			//cxt.setParam(Constants.CONTEXT_SERVICE_RESPONSE, cb);
 			IPromise<Object> rr = interceptorManger.handleRequest(req);
@@ -232,32 +231,35 @@ public class JRPCReqRespHandler implements IMessageHandler{
 						logger.warn("ReqId: " + req1.getRequestId() +", linkId: " + msg.getLinkId() + " has synchronized response!");
 						return;
 					}
+					finish[0]=true;
 					r.setSuccess(true);
 					r.setResult(rst);
 					resp2Client(r,s,msg,sm);
-					if(JMicroContext.get().isDebug()) {
-						JMicroContext.get().appendCurUseTime("Async respTime",false);
-						JMicroContext.get().debugLog(0);
-					}
-					JMicroContext.get().submitMRpcItem(logMonitor,monitor);
 				})
 				.fail((code,errorMsg,resultCxt)->{
+					if(finish[0]) {
+						return;
+					}
+					finish[0]=true;
 					ServerError se0 = new ServerError(code,errorMsg);
 					r.setSuccess(false);
 					r.setResult(se0);
 					resp2Client(r,s,msg,sm);
 				});
 			} else {
+				if(finish[0]) {
+					return;
+				}
+				finish[0]=true;
 				ServerError se0 = new ServerError(MC.MT_SERVER_ERROR,"Got null result!");
 				r.setSuccess(false);
 				r.setResult(se0);
 				resp2Client(r,s,msg,sm);
 			}
 		} catch (Throwable e) {
-			doException(req,resp,s,msg,e);
-		} finally {
-			if(JMicroContext.get().isMonitorable()) {
-				doFinally(req,resp,msg);
+			if(!finish[0]) {
+				finish[0]=true;
+				doException(req,resp,s,msg,e);
 			}
 		}
 	}
@@ -299,27 +301,17 @@ public class JRPCReqRespHandler implements IMessageHandler{
 			s.write(msg);
 		}
 		
+		submitItem();
+		
 		if(!((e instanceof RpcException) || (e instanceof TimeoutException))) {
 			s.close(true);
 		}
 	}
 	
-	private void doFinally(RpcRequest req, RpcResponse resp,Message msg) {
-		MRpcLogItem item = JMicroContext.get().getMRpcLogItem();
-		if(req != null) {
-			item.setReq(req);
-			item.setReqId(req.getRequestId());
-		}
-		
-		if(resp != null) {
-			item.setResp(resp);
-		}
-		
-		item.setLinkId(msg.getLinkId());
-	}
 	
 	private void resp2Client(IResponse resp, ISession s,Message msg,ServiceMethod sm) {
 		if(!msg.isNeedResponse()){
+			submitItem();
 			return;
 		}
 		
@@ -366,10 +358,71 @@ public class JRPCReqRespHandler implements IMessageHandler{
 				JMicroContext.get().appendCurUseTime("Server finish write",true);
 			}
 			
+			submitItem();
+			
 		} catch (Throwable e) {
 			//到这里不能再抛出异常，否则可能会造成重复响应
 			logger.error("",e);
 		}
 	}
+	
+	private void submitItem() {
+		if(JMicroContext.get().isDebug()) {
+			JMicroContext.get().appendCurUseTime("Async respTime",false);
+			JMicroContext.get().debugLog(0);
+		}
+		JMicroContext.get().submitMRpcItem(logMonitor,monitor);
+	}
 
+	
+	private void config(IRequest req,RpcResponse resp,Long linkId) {
+		
+		Object obj = serviceLoader.getService(Integer.parseInt(req.getImpl()));
+		if(obj == null){
+			LG.log(MC.LOG_ERROR,JMicroContext.class," service INSTANCE not found");
+			MT.nonRpcEvent(Config.getInstanceName(), MC.MT_PLATFORM_LOG);
+			//SF.doSubmit(MonitorConstant.SERVER_REQ_SERVICE_NOT_FOUND,req,null);
+			throw new CommonException("Service not found,srv: "+req.getImpl());
+		}
+		
+		JMicroContext cxt = JMicroContext.get();
+		cxt.setString(JMicroContext.CLIENT_SERVICE, req.getServiceName());
+		cxt.setString(JMicroContext.CLIENT_NAMESPACE, req.getNamespace());
+		cxt.setString(JMicroContext.CLIENT_METHOD, req.getMethod());
+		cxt.setString(JMicroContext.CLIENT_VERSION, req.getVersion());
+		//context.setLong(JMicroContext.REQ_PARENT_ID, req.getRequestId());
+		cxt.setParam(JMicroContext.REQ_ID, req.getRequestId());
+		
+		cxt.setParam(JMicroContext.CLIENT_ARGSTR, UniqueServiceMethodKey.paramsStr(req.getArgs()));
+		cxt.mergeParams(req.getRequestParams());
+		
+		ServiceItem si = registry.getOwnItem(Integer.parseInt(req.getImpl()));
+		if(si == null){
+			if(LG.isLoggable(MC.LOG_ERROR,req.getLogLevel())) {
+				LG.log(MC.LOG_ERROR,JMicroContext.class," service ITEM not found");
+				MT.nonRpcEvent(Config.getInstanceName(), MC.MT_SERVICE_ITEM_NOT_FOUND);
+			}
+			//SF.doSubmit(MonitorConstant.SERVER_REQ_SERVICE_NOT_FOUND,req,null);
+			throw new CommonException("Service not found impl："+req.getImpl()+", srv: " + req.getServiceName());
+		}
+		
+		ServiceMethod sm = si.getMethod(req.getMethod(), req.getArgs());
+		cxt.setObject(Constants.SERVICE_ITEM_KEY, si);
+		cxt.setObject(Constants.SERVICE_METHOD_KEY, sm);
+		cxt.setObject(Constants.SERVICE_OBJ_KEY, obj);
+		
+		MRpcLogItem mi = cxt.getMRpcLogItem();
+		
+		if( mi != null) {
+			mi.setReqParentId(req.getReqParentId());
+			mi.setReqId(req.getRequestId());
+			mi.setReq(req);
+			mi.setImplCls(si.getImpl());
+			mi.setSmKey(sm.getKey());
+			mi.setResp(resp);
+			mi.setLinkId(linkId);
+		}
+		
+	}
+	
 }

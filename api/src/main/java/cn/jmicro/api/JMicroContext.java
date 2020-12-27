@@ -282,13 +282,11 @@ public class JMicroContext  {
 					}
 					//the pre RPC Request ID as the parent ID of this request
 					context.setParam(MRPC_LOG_ITEM, item);
-					
-					
 				}
 			}
 		}
 		
-		item.setProvider(false);
+		item.setProvider(true);
 		item.setReqParentId(context.getLong(REQ_PARENT_ID, 0L));
 	}
 	
@@ -325,55 +323,6 @@ public class JMicroContext  {
 					mi.setClientId(ai.getClientId());
 				}
 			}
-		}
-		
-	}
-	
-	
-	public static void config(IRequest req, ServiceLoader serviceLoader,IRegistry registry) {
-		
-		Object obj = serviceLoader.getService(Integer.parseInt(req.getImpl()));
-		if(obj == null){
-			LG.log(MC.LOG_ERROR,JMicroContext.class," service INSTANCE not found");
-			MT.nonRpcEvent(Config.getInstanceName(), MC.MT_PLATFORM_LOG);
-			//SF.doSubmit(MonitorConstant.SERVER_REQ_SERVICE_NOT_FOUND,req,null);
-			throw new CommonException("Service not found,srv: "+req.getImpl());
-		}
-		
-		JMicroContext context = cxt.get();
-		context.setString(JMicroContext.CLIENT_SERVICE, req.getServiceName());
-		context.setString(JMicroContext.CLIENT_NAMESPACE, req.getNamespace());
-		context.setString(JMicroContext.CLIENT_METHOD, req.getMethod());
-		context.setString(JMicroContext.CLIENT_VERSION, req.getVersion());
-		//context.setLong(JMicroContext.REQ_PARENT_ID, req.getRequestId());
-		context.setParam(JMicroContext.REQ_ID, req.getRequestId());
-		
-		context.setParam(JMicroContext.CLIENT_ARGSTR, UniqueServiceMethodKey.paramsStr(req.getArgs()));
-		context.mergeParams(req.getRequestParams());
-		
-		ServiceItem si = registry.getOwnItem(Integer.parseInt(req.getImpl()));
-		if(si == null){
-			if(LG.isLoggable(MC.LOG_ERROR,req.getLogLevel())) {
-				LG.log(MC.LOG_ERROR,JMicroContext.class," service ITEM not found");
-				MT.nonRpcEvent(Config.getInstanceName(), MC.MT_SERVICE_ITEM_NOT_FOUND);
-			}
-			//SF.doSubmit(MonitorConstant.SERVER_REQ_SERVICE_NOT_FOUND,req,null);
-			throw new CommonException("Service not found impl："+req.getImpl()+", srv: " + req.getServiceName());
-		}
-		
-		ServiceMethod sm = si.getMethod(req.getMethod(), req.getArgs());
-		context.setObject(Constants.SERVICE_ITEM_KEY, si);
-		context.setObject(Constants.SERVICE_METHOD_KEY, sm);
-		context.setObject(Constants.SERVICE_OBJ_KEY, obj);
-		
-		MRpcLogItem mi = context.getMRpcLogItem();
-		
-		if( mi != null) {
-			mi.setReqParentId(req.getReqParentId());
-			mi.setReqId(req.getRequestId());
-			mi.setReq(req);
-			mi.setImplCls(si.getImpl());
-			mi.setSmKey(sm.getKey());
 		}
 		
 	}

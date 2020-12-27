@@ -12,7 +12,7 @@ public class PressureTest {
 
 	public static void main(String[] args) {
 		IObjectFactory of = JMicro.getObjectFactoryAndStart(args);
-		for(int i = 0; i < 1;i++){
+		for(int i = 0; i < 5;i++){
 			new Thread(new Worker(of,i)).start();
 		}
 	}
@@ -31,6 +31,46 @@ class Worker implements Runnable{
 	
 	@Override
 	public void run() {
+		//singleRpc();
+		linkRpc();
+	}
+	
+	private void linkRpc() {
+
+		ISimpleRpc$JMAsyncClient sayHello = of.getRemoteServie(ISimpleRpc$JMAsyncClient.class.getName(),"simpleRpc","0.0.1", null);
+		JMicroContext.get().removeParam(JMicroContext.LINKER_ID);
+		
+		for(;;){
+			try {
+				/*
+				String result = sayHello.hello(" Hello LOG: "+id);
+				System.out.println(JMicroContext.get().getString(JMicroContext.LINKER_ID, "")+": "+result);
+				JMicroContext.get().removeParam(JMicroContext.LINKER_ID);
+				 */
+				sayHello.linkRpc("Hello LOG: "+id)
+				.fail((code,result,cxt)->{
+					System.out.println(JMicroContext.get().getLong(JMicroContext.LINKER_ID, 0L)+": "+result);
+					JMicroContext.get().removeParam(JMicroContext.LINKER_ID);
+				}).success((result,cxt)->{
+					System.out.println("Result: " +result);
+				});
+				
+			} catch (Throwable e) {
+				e.printStackTrace();
+			}
+			
+			try {
+				Thread.sleep(r.nextInt(1000));
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+		}
+	
+	}
+	
+	
+	private void singleRpc() {
+
 		ISimpleRpc$JMAsyncClient sayHello = of.getRemoteServie(ISimpleRpc$JMAsyncClient.class.getName(),"simpleRpc","0.0.1", null);
 		JMicroContext.get().removeParam(JMicroContext.LINKER_ID);
 		
@@ -69,6 +109,7 @@ class Worker implements Runnable{
 				e.printStackTrace();
 			}
 		}
+	
 	}
 	
 }

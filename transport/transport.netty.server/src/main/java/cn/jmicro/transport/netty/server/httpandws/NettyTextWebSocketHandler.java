@@ -71,7 +71,6 @@ public class NettyTextWebSocketHandler extends SimpleChannelInboundHandler<TextW
     protected void channelRead0(ChannelHandlerContext ctx, TextWebSocketFrame text) throws Exception {
     	NettyServerSession session = ctx.channel().attr(sessionKey).get();
     	Message msg = JsonUtils.getIns().fromJson(text.text(), Message.class);
-    	JMicroContext.configProvider(session,msg);
 		receiver.receive(session,msg);
     }
     

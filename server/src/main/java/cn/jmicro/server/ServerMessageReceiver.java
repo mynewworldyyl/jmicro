@@ -247,10 +247,8 @@ public class ServerMessageReceiver implements IMessageReceiver{
 	public void doReceive(JMicroTask task){
 		Message msg = task.msg;
 		IServerSession s = task.s;
+		JMicroContext.configProvider(s,msg);
 		try {
-			
-			JMicroContext.configProvider(s,msg);
-			
 			/*
 			 if(msg.isDebugMode()) {
 				StringBuilder sb = JMicroContext.get().getDebugLog();
@@ -271,13 +269,15 @@ public class ServerMessageReceiver implements IMessageReceiver{
 			IMessageHandler h = handlers.get(msg.getType());
 			if(h == null) {
 				String errMsg = "Message type ["+Integer.toHexString(msg.getType())+"] handler not found!";
-				LG.log(MC.LOG_ERROR, TAG,errMsg);
 				MT.rpcEvent(MC.MT_HANDLER_NOT_FOUND);
-				throw new CommonException(errMsg);
+				LG.log(MC.LOG_ERROR, TAG,errMsg,null);
+				responseException(msg,s,null);
 			} else {
 				h.onMessage(s, msg);
 			}
 		} catch (Throwable e) {
+			MT.rpcEvent(MC.MT_SERVER_ERROR);
+			LG.log(MC.LOG_ERROR, TAG,e.getMessage(),e);
 			responseException(msg,s,e);
 		} finally {
 			offerTask(task);
@@ -285,15 +285,9 @@ public class ServerMessageReceiver implements IMessageReceiver{
 	}
 	
 	private void responseException(Message msg,IServerSession s,Throwable e) {
-		//SF.doMessageLog(MonitorConstant.LOG_ERROR, TAG, msg,e);
-		//SF.doSubmit(MonitorConstant.SERVER_REQ_ERROR);
 		
 		StackTraceElement se = Thread.currentThread().getStackTrace()[1];
-		logger.error(se.getLineNumber() + " reqHandler error msg:{} ",msg);
-		logger.error("doReceive",e);
-		
-		LG.log(MC.LOG_ERROR, TAG,"error",e);
-		MT.rpcEvent(MC.MT_SERVER_ERROR);
+		logger.error(se.getLineNumber() + " reqHandler error msg:{} ",msg,e);
 		
 		if(msg.isNeedResponse()) {
 			RpcResponse resp = null;
@@ -327,7 +321,7 @@ public class ServerMessageReceiver implements IMessageReceiver{
 		if(this.cacheTasks.size() < maxCacheTaskSize) {
 			t.setMsg(null);
 			t.setS(null);
-			t.typeStatis.clear();
+			//t.typeStatis.clear();
 			this.cacheTasks.offer(t);
 		}
 	}
@@ -337,7 +331,7 @@ public class ServerMessageReceiver implements IMessageReceiver{
 		private Message msg;
 		private IServerSession s;
 		//private TaskRunnable r;
-		private Map<Short,StatisItem> typeStatis = new HashMap<>();
+		//private Map<Short,StatisItem> typeStatis = new HashMap<>();
 
         public JMicroTask() {}
 
@@ -357,7 +351,7 @@ public class ServerMessageReceiver implements IMessageReceiver{
 			}
 		}
 		
-		public StatisItem addType(Short type, long val) {
+		/*public StatisItem addType(Short type, long val) {
 			StatisItem si = typeStatis.get(type);
 			if(si == null) {
 				si = new StatisItem();
@@ -366,7 +360,7 @@ public class ServerMessageReceiver implements IMessageReceiver{
 			}
 			si.add(val);
 			return si;
-		}
+		}*/
 
 		public Message getMsg() {
 			return msg;

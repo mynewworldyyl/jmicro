@@ -367,8 +367,8 @@ public abstract class AbstractSession implements ISession{
 	}
 
 	@Override
-	public int remotePort() {
-		return this.getRemoteAddress().getPort();
+	public String remotePort() {
+		return this.getRemoteAddress().getPort()+"";
 	}
 
 	@Override
@@ -377,8 +377,8 @@ public abstract class AbstractSession implements ISession{
 	}
 
 	@Override
-	public int localPort() {
-		return this.getLocalAddress().getPort();
+	public String localPort() {
+		return this.getLocalAddress().getPort()+"";
 	}
 	
 	public boolean isDumpDownStream() {

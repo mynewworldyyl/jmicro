@@ -60,11 +60,11 @@ public interface ISession{
 	
 	String remoteHost();
 	
-	int remotePort();
+	String remotePort();
 	
 	String localHost();
 	
-	int localPort();
+	String localPort();
 	
     long getId();
 	

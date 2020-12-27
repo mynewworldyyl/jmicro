@@ -107,7 +107,7 @@ public class JMicroHttpServer implements IServer{
 					in.read(data, 0, data.length);
 		        	String json = new String(data,0,data.length, Constants.CHARSET);
 		        	Message msg = JsonUtils.getIns().fromJson(json, Message.class);
-		        	JMicroContext.configProvider(session,msg);
+		        	//JMicroContext.configProvider(session,msg);
 		 			receiver.receive(session,msg);
 				} else {
 					Message msg = new Message();

@@ -45,17 +45,14 @@ public class ServiceComsumer {
 		//System.out.println(src.hello("Hello JMicro"));
 		/*src.helloJMAsync("Hello JMicro").then((rst, fail,ctx)->{
 			System.out.println(rst);
-			
-			String r = src.hello("Hello two");
-			System.out.println(r);
-			
-			src.helloJMAsync("Hello two").then((rst1, fail1,ctx0)->{
-				System.out.println(rst);
-			});
-			
 		});*/
 		
-		src.linkRpcAs("test out linkRpcAs")
+		src.linkRpc("Hello Link RPC")
+		.then((rst, fail,ctx)->{
+			System.out.println(rst);
+		});
+		
+		/*src.linkRpcAs("test out linkRpcAs")
 		.success((rst,cxt)->{
 			System.out.println(rst);
 
@@ -86,7 +83,7 @@ public class ServiceComsumer {
 		})
 		.fail((code,msg,cxt)->{
 			System.out.println("code: " + code +", msg: " + msg);
-		});
+		});*/
 		
 		try {
 			Thread.sleep(1000*30);
