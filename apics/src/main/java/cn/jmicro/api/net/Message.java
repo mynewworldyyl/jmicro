@@ -886,14 +886,11 @@ public final class Message {
 
 	@Override
 	public String toString() {
-		return "Message [version=" + version + ", msgId=" + msgId + ", reqId=" + reqId + ", linkId=" + linkId 
-				+ ", type=" + type + ", flag=" + Integer.toHexString(flag)
-				+ ", payload=" + payload + ", time="+ time 
-				+ ", devMode=" + this.isDebugMode() + ", monitorable="+ this.isMonitorable() 
-				+ ", needresp="+ this.isNeedResponse()
-				+ ", upstream=" + this.isDumpUpStream() + ", downstream="+ this.isDumpDownStream() 
-				+ ", insId=" + insId + ", method=" + method + "]";
+		return "Message [version=" + version + ", reqId=" + reqId + ", insId=" + insId + ", smKeyCode=" + smKeyCode
+				+ ", type=" + type + ", flag=" + flag + ", msgId=" + msgId + ", linkId=" + linkId + ", time=" + time
+				+ ", method=" + method + "]";
 	}
+
 
 	
 }

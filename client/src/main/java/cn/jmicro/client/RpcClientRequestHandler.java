@@ -357,6 +357,7 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
     		
     		msg.setRpcMk(true/*sm.getMaxSpeed() > 0*/);
     		msg.setSmKeyCode(sm.getKey().getSnvHash());
+    		//logger.info("RpcclientRequest: " + sm.getKey().getSnvHash()+" => " + sm.getKey().toKey(true, true, true));
     		
     		if(sm.isUpSsl() || sm.isDownSsl()) {
     			this.secManager.signAndEncrypt(msg,si.getInsId());

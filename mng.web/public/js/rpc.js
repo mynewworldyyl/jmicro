@@ -762,7 +762,10 @@ jm.rpc = {
     actInfo:null,
     actListeners:{},
 
-    mk2code:{},
+    mk2code:{
+        "cn.jmicro.api.gateway.IBaseGatewayService##gateway##0.0.1########fnvHash1a":1048130298,
+    },
+
     errCode2Msg:{
         0x06:"Service not available maybe not started",
     },
@@ -1062,7 +1065,8 @@ jm.rpc = {
               methodCodeReq.args = [smsvnKey];
               methodCodeReq.needResponse = true;
 
-              self.callRpcWithTypeAndProtocol(methodCodeReq, type, upProtocol,downProtocol,1048130298)
+              self.callRpcWithTypeAndProtocol(methodCodeReq, type, upProtocol,downProtocol,
+                  self.mk2code[jm.rpc.Constants.FNV_HASH_METHOD_KEY])
                   .then((methodCode)=>{
                       self.mk2code[smsvnKey] = methodCode;
                       self.callRpcWithTypeAndProtocol(req,type,upProtocol,downProtocol,methodCode)
@@ -1090,6 +1094,8 @@ jm.rpc = {
 
             msg.setRpcMk(true);
             msg.smKeyCode = methodCode;
+
+            //console.log(req.method+" => " + methodCode);
 
             if(req.reqId) {
                 msg.reqId = req.reqId;
@@ -1617,6 +1623,8 @@ jm.rpc.Constants = {
     MSG_TYPE_RRESP_RAW : 0x04, //纯二进制数据响应
 
     MSG_TYPE_ASYNC_RESP : 0x06,
+
+    FNV_HASH_METHOD_KEY: "cn.jmicro.api.gateway.IBaseGatewayService##gateway##0.0.1########fnvHash1a",
 
     SERVICE_NAMES : "serviceNames",
     SERVICE_NAMESPACES : "namespaces",

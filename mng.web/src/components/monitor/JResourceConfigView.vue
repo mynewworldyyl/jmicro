@@ -188,7 +188,7 @@
     const TO_TYPE_CONSOLE = "Console";
     const TO_TYPE_FILE = "File";
     */
-    const TO_TYPE_DB = 1;
+    //const TO_TYPE_DB = 1;
     const TO_TYPE_SERVICE_METHOD = 2;
     //const TO_TYPE_CONSOLE = 3;
     const TO_TYPE_FILE = 4;

@@ -26,7 +26,6 @@ import cn.jmicro.api.JMicroContext;
 import cn.jmicro.api.annotation.Cfg;
 import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Inject;
-import cn.jmicro.api.async.IPromise;
 import cn.jmicro.api.client.InvocationHandler;
 import cn.jmicro.api.exception.RpcException;
 import cn.jmicro.api.idgenerator.ComponentIdServer;
@@ -36,7 +35,6 @@ import cn.jmicro.api.monitor.MRpcLogItem;
 import cn.jmicro.api.monitor.MT;
 import cn.jmicro.api.monitor.StatisMonitorClient;
 import cn.jmicro.api.net.IRequest;
-import cn.jmicro.api.net.IResponse;
 import cn.jmicro.api.net.InterceptorManager;
 import cn.jmicro.api.net.RpcRequest;
 import cn.jmicro.api.registry.ServiceItem;
@@ -70,10 +68,9 @@ public class ServiceInvocationHandler implements InvocationHandler{
 	@Inject
 	private StatisMonitorClient monitor;
 	
-	private Set<Long> ids = new HashSet<>();
+	//private Set<Long> ids = new HashSet<>();
 	
 	public ServiceInvocationHandler(){}
-	
 	
 	public <T> T invoke(Object proxy, String methodName, Object[] args){
 		
@@ -84,12 +81,8 @@ public class ServiceInvocationHandler implements InvocationHandler{
 			JMicroContext cxt = JMicroContext.get();
 			
 			ServiceItem si = cxt.getParam(Constants.SERVICE_ITEM_KEY, null);
-			
 			req = new RpcRequest();
-			req.setMethod(methodName);
-			req.setServiceName(si.getKey().getServiceName());
-			req.setNamespace(si.getKey().getNamespace());
-			req.setVersion(si.getKey().getVersion());
+			req.setSm(cxt.getParam(Constants.SERVICE_METHOD_KEY, null));
 			req.setArgs(args);
 			req.setRequestId(idGenerator.getLongId(IRequest.class));
 			/*if(ids.contains(req.getRequestId())) {

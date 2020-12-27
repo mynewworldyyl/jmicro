@@ -509,14 +509,14 @@ public class ApiGatewayClient {
     	ApiRequest req = new ApiRequest();
     	req.setReqId(idClient.getLongId(IRequest.class.getName()));
 		req.setArgs(args);
-		req.setMethod(generatorSrvMethodName(method));
+		/*req.setMethod(generatorSrvMethodName(method));
 		if(!ApiGatewayPubsubClient.messageServiceImplName.equals(serviceName)) {
 			req.setServiceName(generatorSrvName(serviceName));
 		}else {
 			req.setServiceName(serviceName);
 		}
 		req.setNamespace(namespace);
-		req.setVersion(version);
+		req.setVersion(version);*/
 		if(this.actInfo != null) {
 			req.getParams().put("loginKey", this.actInfo.getLoginKey());
 		}
@@ -529,7 +529,8 @@ public class ApiGatewayClient {
 		msg.setReqId(req.getReqId());
 		msg.setLinkId(req.getReqId()/*idClient.getLongId(Linker.class.getName())*/);
 		msg.setRpcMk(true);
-		int hash = HashUtils.FNVHash1(serviceName + "##"+namespace+"##"+version+"########"+method);
+		String mn = generatorSrvMethodName(method);
+		int hash = HashUtils.FNVHash1(serviceName + "##"+namespace+"##"+version+"########"+mn);
 		
 		msg.setSmKeyCode(hash);
 		//msg.setStream(false);

@@ -54,6 +54,7 @@ import cn.jmicro.api.security.ActInfo;
 import cn.jmicro.api.security.PermissionManager;
 import cn.jmicro.api.security.SecretManager;
 import cn.jmicro.api.service.ServiceLoader;
+import cn.jmicro.api.service.ServiceManager;
 import cn.jmicro.api.utils.TimeUtils;
 import cn.jmicro.common.CommonException;
 import cn.jmicro.common.Constants;
@@ -106,6 +107,9 @@ public class JRPCReqRespHandler implements IMessageHandler{
 	@Inject
 	private PermissionManager pm;
 	
+	@Inject
+	private ServiceManager srvMng;
+	
 	@Inject(required=true)
 	private ProcessInfo pi;
 	
@@ -126,6 +130,8 @@ public class JRPCReqRespHandler implements IMessageHandler{
 	    	//req1为内部类访问
 	    	final RpcRequest req1 = ICodecFactory.decode(this.codeFactory, msg.getPayload(),
 					RpcRequest.class, msg.getUpProtocol());
+	    	
+	    	req1.setSm(JMicroContext.get().getParam(Constants.SERVICE_METHOD_KEY, null));
 	    	
 	    	config(req1,resp,msg.getLinkId());
 	    	
@@ -206,25 +212,36 @@ public class JRPCReqRespHandler implements IMessageHandler{
 				return;
 			}
 			
+			IPromise<Object> rr = interceptorManger.handleRequest(req);
+			
 			if(!msg.isNeedResponse()){
 				//无需返回值
 				//数据发送后，不需要返回结果，也不需要请求确认包，直接返回
-    			if(openDebug) {
-        			//logger.info("Not need response req:"+req.getMethod()+",Service:" + req.getServiceName()+", Namespace:"+req.getNamespace());
-        		}
-				interceptorManger.handleRequest(req);
-				//SF.doSubmit(MonitorConstant.SERVER_REQ_OK, req,resp,null);
-				if(msg.isMonitorable()) {
-					MT.rpcEvent(MC.MT_SERVER_JRPC_RESPONSE_SUCCESS);
+				if(rr != null) {
+					rr.then((rst,fail,resultCxt)->{
+	    				 if(fail != null) {
+	    					    LG.log(MC.LOG_ERROR, TAG,fail.toString());
+	    						MT.rpcEvent(MC.MT_SERVER_ERROR);
+	    						logger.error("JRPCReq error: ",fail.toString());
+	    				 } else {
+	    					 if(msg.isMonitorable()) {
+	    						MT.rpcEvent(MC.MT_SERVER_JRPC_RESPONSE_SUCCESS);
+	    					 }
+	    				 }
+	    				 submitItem();
+					});
+				} else {
+					String errMsg = "Got null promise: " + sm.getKey().toKey(true, true, true);
+					LG.log(MC.LOG_ERROR, TAG,errMsg);
+					MT.rpcEvent(MC.MT_SERVER_ERROR);
+					logger.error("JRPCReq error: ",errMsg);
+					submitItem();
 				}
-				submitItem();
 				return;
 			}
 
 			final RpcResponse r = resp;
 			
-			//cxt.setParam(Constants.CONTEXT_SERVICE_RESPONSE, cb);
-			IPromise<Object> rr = interceptorManger.handleRequest(req);
 			if(rr != null) {
 				rr.success((rst,resultCxt)->{
 					if(finish[0]) {
@@ -323,11 +340,8 @@ public class JRPCReqRespHandler implements IMessageHandler{
 		//请求类型码比响应类型码大1，
 		msg.setType((byte)(msg.getType()+1));
 		
-		if(msg.isDebugMode()) {
-    		JMicroContext.get().appendCurUseTime("Server finish encode",true);
-		}
-		
 		if(resp.isSuccess()) {
+			MT.rpcEvent(MC.MT_SERVER_JRPC_RESPONSE_SUCCESS,1);
 			//响应消息,只有成功的消息才需要加密，失败消息不需要
 			msg.setUpSsl(sm.isUpSsl());
 			msg.setDownSsl(sm.isDownSsl());
@@ -336,6 +350,7 @@ public class JRPCReqRespHandler implements IMessageHandler{
 				secretMng.signAndEncrypt(msg,msg.getInsId());
 			}
 		} else {
+			MT.rpcEvent(MC.MT_SERVER_ERROR,1);
 			//错误不需要做加密或签名
 			msg.setUpSsl(false);
 			msg.setDownSsl(false);
@@ -347,13 +362,8 @@ public class JRPCReqRespHandler implements IMessageHandler{
 		msg.setInsId(pi.getId());
 		
 		try {
-			StackTraceElement se = Thread.currentThread().getStackTrace()[2];
-			
 			s.write(msg);
-			
-			MT.rpcEvent(MC.MT_SERVER_JRPC_RESPONSE_SUCCESS,1);
 			MT.rpcEvent(MC.MT_SERVER_JRPC_RESPONSE_WRITE, msg.getLen());
-			
 			if(msg.isDebugMode()) {
 				JMicroContext.get().appendCurUseTime("Server finish write",true);
 			}
@@ -375,7 +385,7 @@ public class JRPCReqRespHandler implements IMessageHandler{
 	}
 
 	
-	private void config(IRequest req,RpcResponse resp,Long linkId) {
+	private void config(RpcRequest req,RpcResponse resp,Long linkId) {
 		
 		Object obj = serviceLoader.getService(Integer.parseInt(req.getImpl()));
 		if(obj == null){

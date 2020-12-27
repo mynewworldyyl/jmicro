@@ -48,6 +48,7 @@ import cn.jmicro.api.objectfactory.IObjectFactory;
 import cn.jmicro.api.registry.IRegistry;
 import cn.jmicro.api.registry.ServiceItem;
 import cn.jmicro.api.registry.ServiceMethod;
+import cn.jmicro.api.registry.UniqueServiceMethodKey;
 import cn.jmicro.api.security.AccountManager;
 import cn.jmicro.api.security.ActInfo;
 import cn.jmicro.api.security.PermissionManager;
@@ -117,15 +118,14 @@ public class ApiRawRequestMessageHandler implements IMessageHandler{
 		final ApiResponse resp =  new ApiResponse();
 		
 		try {
-			
-			ServiceItem si = null;
-			ServiceMethod sm = null;
+			ServiceMethod sm = JMicroContext.get().getParam(Constants.SERVICE_METHOD_KEY, null);
+			ServiceItem si =  getServiceItem(sm.getKey());
 			Class<?>[] paramsCls = null;
 			
 			if(msg.getUpProtocol() == Message.PROTOCOL_JSON) {
 				req = ICodecFactory.decode(codecFactory, msg.getPayload(), ApiRequest.class, msg.getUpProtocol());
-				si = getServiceItem(req); 
-				sm = getServiceMethod(si,req);
+				//si = getServiceItem(req); 
+				//sm = getServiceMethod(si,req);
 				paramsCls = ReflectUtils.desc2classArray(rpcClassloader, sm.getKey().getParamsStr());
 				req.setArgs(getArgs(paramsCls,req.getArgs(),session));
 			} else {
@@ -133,10 +133,10 @@ public class ApiRawRequestMessageHandler implements IMessageHandler{
 				req = new ApiRequest();
 				ji = new JDataInput((ByteBuffer)msg.getPayload());
 				req.setReqId(ji.readLong());
-				req.setServiceName(ji.readUTF());
-				req.setNamespace(ji.readUTF());
-				req.setVersion(ji.readUTF());
-				req.setMethod(ji.readUTF());
+				//req.setServiceName(ji.readUTF());
+				//req.setNamespace(ji.readUTF());
+				//req.setVersion(ji.readUTF());
+				//req.setMethod(ji.readUTF());
 
 				int len = (int)ji.readUnsignedInt();
 				if(len > 0) {
@@ -147,8 +147,8 @@ public class ApiRawRequestMessageHandler implements IMessageHandler{
 					}
 				}
 				
-				si = getServiceItem(req); 
-				sm = getServiceMethod(si,req);
+				//si = getServiceItem(req); 
+				//sm = getServiceMethod(si,req);
 				paramsCls = ReflectUtils.desc2classArray(rpcClassloader, sm.getKey().getParamsStr());
 				
 				int argLen = (int)ji.readUnsignedInt();
@@ -186,17 +186,17 @@ public class ApiRawRequestMessageHandler implements IMessageHandler{
 				}
 			}
 			
-			if(doLogick && MessageServiceImpl.TAG.equals(req.getServiceName())) {
+			if(doLogick && MessageServiceImpl.TAG.equals(sm.getKey().getServiceName())) {
 				if(ai != null) {
-					if("subscribe".equals(req.getMethod())) {
+					if("subscribe".equals(sm.getKey().getMethod())) {
 						String topic = (String)req.getArgs()[1];
 						Map<String, Object> ctx = (Map<String, Object>)req.getArgs()[2];
 						result = ms.subscribe((ISession)req.getArgs()[0], topic, ctx);
-					} else if("unsubscribe".equals(req.getMethod())){
+					} else if("unsubscribe".equals(sm.getKey().getMethod())){
 						result = ms.unsubscribe((int)req.getArgs()[0]);
 					} else {
-						logger.error("Method:"+req.getMethod()+" not found!");
-						result = new ServerError(MC.MT_SERVICE_METHOD_NOT_FOUND,"Method:"+req.getMethod()+" not found!");
+						logger.error("Method:"+sm.getKey().getMethod()+" not found!");
+						result = new ServerError(MC.MT_SERVICE_METHOD_NOT_FOUND,"Method:"+sm.getKey().getMethod()+" not found!");
 						resp.setSuccess(false);
 					}
 				} else {
@@ -320,27 +320,17 @@ public class ApiRawRequestMessageHandler implements IMessageHandler{
 		
 	}
 	
-	private ServiceItem getServiceItem(ApiRequest req) {
-		ServiceItem si = reg.getServiceSingleItem(req.getServiceName(), req.getNamespace(), req.getVersion());
+	private ServiceItem getServiceItem(UniqueServiceMethodKey key) {
+		ServiceItem si = reg.getServiceSingleItem(key.getServiceName(), key.getNamespace(), key.getVersion());
 		if(si == null) {
-			String msgStr = "Service["+req.getServiceName()+"] namespace ["+req.getNamespace()+"] version ["+req.getVersion()+"] not found!";
+			String msgStr = "Service["+key.getServiceName()+"] namespace ["+key.getNamespace()+"] version ["+key.getVersion()+"] not found!";
 			throw new CommonException(msgStr);
 		}
 		if(!si.isExternal()) {
-			String msgStr = "Service["+req.getServiceName()+"] namespace ["+req.getNamespace()+"] version ["+req.getVersion()+ "] is not external!";
+			String msgStr = "Service["+key.getServiceName()+"] namespace ["+key.getNamespace()+"] version ["+key.getVersion()+ "] is not external!";
 			throw new CommonException(msgStr);
 		}
 		return si;
-	}
-	
-	private ServiceMethod getServiceMethod(ServiceItem si, ApiRequest req) {
-		ServiceMethod sm = si.getMethod(req.getMethod());
-		if(sm == null) {
-			String msgStr = "Service["+req.getServiceName()+"] namespace ["+req.getNamespace()
-			+"] version ["+req.getVersion()+"] method["+req.getMethod()+"] not found!";
-			throw new CommonException(msgStr);
-		}
-		return sm;
 	}
 	
 	private Object[] getArgs(Class<?>[] clses, ISession session, JDataInput ji) {

@@ -34,19 +34,21 @@ public final class ApiRequest implements IReq {
 	
 	private Map<String,Object> params = new HashMap<>();
 	
-	private String serviceName = "";
+	//private String serviceName = "";
 	
-	private String namespace = "";
+	//private String namespace = "";
 	
-	private String version = "";
+	//private String version = "";
 	
-	private String method = "";
+	//private String method = "";
 	
 	private Object[] args = null;
 	
 	private Long reqId = -1L;
 	
 	//private int impCode = 0;
+	
+	//private transient ServiceMethod sm ;
 	
 	private transient Message msg = null;
 	
@@ -56,36 +58,14 @@ public final class ApiRequest implements IReq {
 	public void setParams(Map<String, Object> params) {
 		this.params = params;
 	}
-	public String getServiceName() {
-		return serviceName;
-	}
-	public void setServiceName(String serviceName) {
-		this.serviceName = serviceName;
-	}
-	public String getMethod() {
-		return method;
-	}
-	public void setMethod(String method) {
-		this.method = method;
-	}
+	
 	public Object[] getArgs() {
 		return args;
 	}
 	public void setArgs(Object[] args) {
 		this.args = args;
 	}
-	public String getNamespace() {
-		return namespace;
-	}
-	public void setNamespace(String namespace) {
-		this.namespace = namespace;
-	}
-	public String getVersion() {
-		return version;
-	}
-	public void setVersion(String version) {
-		this.version = version;
-	}
+	
 	public Long getReqId() {
 		return reqId;
 	}

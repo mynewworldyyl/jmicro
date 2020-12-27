@@ -142,10 +142,6 @@ public final class ServiceItem implements Comparable<ServiceItem>{
 	
 	private boolean external = false;
 	
-	private byte feeType = Constants.LICENSE_TYPE_FREE;
-	
-	private int[] authClients;
-	
 	private Set<ServiceMethod> methods = new HashSet<>();
 	
 	private long createdTime = TimeUtils.getCurTime();
@@ -203,8 +199,6 @@ public final class ServiceItem implements Comparable<ServiceItem>{
 		this.showFront = p.showFront;
 		this.createdTime = p.createdTime;
 		
-		this.feeType = p.feeType;
-		this.authClients = p.authClients;
 		this.actName = p.actName;
 		
 		this.loadTime = p.loadTime;
@@ -616,23 +610,7 @@ public final class ServiceItem implements Comparable<ServiceItem>{
 	public void setClientId(int clientId) {
 		this.clientId = clientId;
 	}
-
-	public byte getFeeType() {
-		return feeType;
-	}
-
-	public void setFeeType(byte feeType) {
-		this.feeType = feeType;
-	}
-
-	public int[] getAuthClients() {
-		return authClients;
-	}
-
-	public void setAuthClients(int[] authClients) {
-		this.authClients = authClients;
-	}
-
+	
 	public int getInsId() {
 		return insId;
 	}

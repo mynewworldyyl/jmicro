@@ -78,7 +78,7 @@
         },
         methods: {
             initTreeData() {
-                console.log('处理前的:', JSON.parse(JSON.stringify(this.list)))
+                //console.log('处理前的:', JSON.parse(JSON.stringify(this.list)))
                 // 这里一定要转化，要不然他们的值监听不到变化
                 let tempData = JSON.parse(JSON.stringify(this.list))
                 let reduceDataFunc = (data, level) => {

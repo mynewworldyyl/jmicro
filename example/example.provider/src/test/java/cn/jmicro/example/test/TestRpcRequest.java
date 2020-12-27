@@ -13,7 +13,6 @@ import cn.jmicro.api.codec.IDecoder;
 import cn.jmicro.api.codec.IEncoder;
 import cn.jmicro.api.codec.JDataInput;
 import cn.jmicro.api.codec.JDataOutput;
-import cn.jmicro.api.config.Config;
 import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.net.Message;
 import cn.jmicro.api.net.RpcRequest;
@@ -33,11 +32,11 @@ public class TestRpcRequest {
 		 //req.setSession();
 		 
 		 //req.setImpl("cn.jmicro.objfactory.simple.TestRpcService");
-		 req.setServiceName("cn.jmicro.objfactory.simple.ITestRpcService");
+		/* req.setServiceName("cn.jmicro.objfactory.simple.ITestRpcService");
 		 req.setMethod("hello");
-		 req.setArgs(new Object[]{"Yyl"});
 		 req.setNamespace("test");
-		 req.setVersion("1.0.0");
+		 req.setVersion("1.0.0");*/
+		 req.setArgs(new Object[]{"Yyl"});
 		 req.setRequestId(1000L);
 		 
 		// JmicroManager.getIns().addRequest(req);
@@ -125,9 +124,9 @@ public class TestRpcRequest {
 		req.setFinish(true);
 		req.setRequestId(222L);
 		req.setImpl("test");
-		req.setNamespace("ns");
 		req.setRequestId(355L);
-		req.setServiceName("3333");
+		/*req.setNamespace("ns");
+		req.setServiceName("3333");*/
 
 		ByteBuffer bb = (ByteBuffer) encoder.encode(req);
 		

@@ -150,6 +150,10 @@ public final class ServiceMethod {
 	
 	private int maxPacketSize = 0;
 	
+	private byte feeType = Constants.LICENSE_TYPE_FREE;
+	
+	private int[] authClients;
+	
 	public void formPersisItem(ServiceMethod p){
 		this.monitorEnable = p.monitorEnable;
 
@@ -191,6 +195,10 @@ public final class ServiceMethod {
 		this.isUpSsl = p.isUpSsl;
 		this.isDownSsl = p.isDownSsl;
 		this.encType = p.encType;
+		
+		this.feeType = p.feeType;
+		this.authClients = p.authClients;
+		
 		this.key.form(p.key);
 	}
 	
@@ -255,6 +263,22 @@ public final class ServiceMethod {
 		}
 	}
 	
+	public byte getFeeType() {
+		return feeType;
+	}
+
+	public void setFeeType(byte feeType) {
+		this.feeType = feeType;
+	}
+
+	public int[] getAuthClients() {
+		return authClients;
+	}
+
+	public void setAuthClients(int[] authClients) {
+		this.authClients = authClients;
+	}
+
 	public int getLimitType() {
 		return limitType;
 	}

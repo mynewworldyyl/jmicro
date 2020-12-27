@@ -617,13 +617,12 @@ public class TestCodec {
 		req.setArgs(new Object[] { 1, "string" });
 		req.setRequestId(111L);
 		req.setImpl("tset");
-		req.setMethod("method");
+		/*req.setMethod("method");
 		req.setNamespace("ns");
 		req.setServiceName("sn");
-		req.setSuccess(true);
-		req.setVersion("1");
+		req.setVersion("1");*/
 		req.getParams().put("p2", "222");
-
+		req.setSuccess(true);
 		PrefixTypeEncoderDecoder decoder = new PrefixTypeEncoderDecoder();
 		ByteBuffer bb = decoder.encode(req);
 

@@ -18,10 +18,10 @@ public class TestDecodeEncodeRpcRequest extends JMicroBaseTestCase {
 	public void testEncodeDecodeRpcRequest() throws IOException {
 
 		RpcRequest req = new RpcRequest();
-		req.setMethod("method");
+		/*req.setMethod("method");
 		req.setServiceName("serviceName");
 		req.setNamespace("namespace");
-		req.setVersion("0.0.1");
+		req.setVersion("0.0.1");*/
 		Map<String,String> arg1 = new HashMap<>();
 		arg1.put("test", "");
 		Object[] args = new Object[] {arg1};

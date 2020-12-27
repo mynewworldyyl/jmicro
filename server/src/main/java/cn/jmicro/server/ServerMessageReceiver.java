@@ -31,6 +31,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import cn.jmicro.api.JMicroContext;
+import cn.jmicro.api.Resp;
 import cn.jmicro.api.annotation.Cfg;
 import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Inject;
@@ -162,19 +163,6 @@ public class ServerMessageReceiver implements IMessageReceiver{
 	@Override
 	public void receive(ISession s, Message msg) {
 		
-		//确保服务器对称密钥一定是最新的
-		try {
-			secretMng.updateSecret(msg);
-		} catch (Exception e1) {
-			responseException(msg,(IServerSession)s,e1);
-		}
-		
-		if(openDebug) {
-			//SF.getIns().doMessageLog(MonitorConstant.DEBUG, TAG, msg,"receive");
-		}
-		//JMicroContext jc = JMicroContext.get();
-		//直接协程处理，IO LOOP线程返回
-		
 		/*
 		 new Fiber<Void>(() -> {
 			JMicroContext.get().mergeParams(jc);
@@ -192,9 +180,29 @@ public class ServerMessageReceiver implements IMessageReceiver{
 			}
 		}
 		
+		ServiceMethod sm = null;
+		if(msg.getType() == Constants.MSG_TYPE_REQ_RAW 
+				|| msg.getType() == Constants.MSG_TYPE_REQ_JRPC) {
+			sm = srvMng.getServiceMethodByHash(msg.getSmKeyCode());
+			if(sm == null) {
+				String errMsg = "Invalid message method code: [" + msg.toString() + "]";
+				errMsg += ",client host: " + s.remoteHost()+",remotePort: " + s.remotePort();
+				LG.log(MC.LOG_ERROR, TAG, errMsg);
+				responseException(msg,(IServerSession)s, new CommonException(Resp.CODE_FAIL,errMsg));
+				return;
+			}
+		}
+		//确保服务器对称密钥一定是最新的
+		try {
+			secretMng.updateSecret(msg);
+		} catch (Exception e1) {
+			responseException(msg,(IServerSession)s,e1);
+		}
+		
 		JMicroTask t = this.popTask();
 		t.setMsg(msg);
 		t.setS((IServerSession)s);
+		t.setSm(sm);
 		
 		if (useExecutorPool) {
 			/*if(msg.isDebugMode()) {
@@ -203,7 +211,6 @@ public class ServerMessageReceiver implements IMessageReceiver{
 	              			msg.getInstanceName(),msg.getReqId(),msg.getMethod(),(curTIme-msg.getTime()));
 			}*/
 			
-			ServiceMethod sm = srvMng.getServiceMethodByHash(msg.getSmKeyCode());
 			if(sm == null || sm.getMaxSpeed() <= 0) {
 				//不限速
 				defaultExecutor.execute(t);
@@ -248,6 +255,9 @@ public class ServerMessageReceiver implements IMessageReceiver{
 		Message msg = task.msg;
 		IServerSession s = task.s;
 		JMicroContext.configProvider(s,msg);
+		if(task.sm != null) {
+			JMicroContext.get().setParam(Constants.SERVICE_METHOD_KEY, task.sm);
+		}
 		try {
 			/*
 			 if(msg.isDebugMode()) {
@@ -291,11 +301,12 @@ public class ServerMessageReceiver implements IMessageReceiver{
 		
 		if(msg.isNeedResponse()) {
 			RpcResponse resp = null;
+			String errMsg = e == null?"":e.getMessage();
 			if(e instanceof CommonException) {
 				CommonException ce = (CommonException)e;
-				resp = new RpcResponse(msg.getReqId(),new ServerError(ce.getKey(),e.getMessage()));
+				resp = new RpcResponse(msg.getReqId(),new ServerError(ce.getKey(),errMsg));
 			} else {
-				resp = new RpcResponse(msg.getReqId(),new ServerError(0,e.getMessage()));
+				resp = new RpcResponse(msg.getReqId(),new ServerError(Resp.CODE_FAIL,errMsg));
 			}
 			resp.setSuccess(false);
 			msg.setPayload(ICodecFactory.encode(codecFactory,resp,msg.getUpProtocol()));
@@ -319,8 +330,9 @@ public class ServerMessageReceiver implements IMessageReceiver{
 	
 	private final void offerTask(JMicroTask t) {
 		if(this.cacheTasks.size() < maxCacheTaskSize) {
-			t.setMsg(null);
-			t.setS(null);
+			t.msg = null;
+			t.s = null;
+			t.sm = null;
 			//t.typeStatis.clear();
 			this.cacheTasks.offer(t);
 		}
@@ -330,6 +342,8 @@ public class ServerMessageReceiver implements IMessageReceiver{
 		
 		private Message msg;
 		private IServerSession s;
+		
+		private ServiceMethod sm = null;
 		//private TaskRunnable r;
 		//private Map<Short,StatisItem> typeStatis = new HashMap<>();
 
@@ -377,6 +391,15 @@ public class ServerMessageReceiver implements IMessageReceiver{
 		public void setS(IServerSession s) {
 			this.s = s;
 		}
+
+		public ServiceMethod getSm() {
+			return sm;
+		}
+
+		public void setSm(ServiceMethod sm) {
+			this.sm = sm;
+		}
+		
     }
 	
 	public class JicroAbortPolicy implements RejectedExecutionHandler {

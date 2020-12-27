@@ -94,6 +94,9 @@ public class ServiceManager {
 	@Cfg("/openDebug")
 	private boolean openDebug = false;
 	
+	@Cfg("/gatewayModel")
+	private boolean gatewayModel = false;
+	
 	private ReentrantReadWriteLock rwLocker = new ReentrantReadWriteLock();
 
 	/*private INodeListener nodeListener = new INodeListener(){
@@ -143,8 +146,10 @@ public class ServiceManager {
 		dataOperator.addChildrenListener(Config.ServiceRegistDir, new IChildrenListener() {
 			@Override
 			public void childrenChanged(int type,String parent, String child,String data) {
-				String srvName = child.split(ServiceItem.KEY_SEPERATOR)[0];
-				if(!includeServices.contains(srvName) && excludeServices.contains(srvName)) {
+				String[] splitArr = child.split(ServiceItem.KEY_SEPERATOR);
+				if(!includeServices.contains(splitArr[UniqueServiceKey.INDEX_SN]) 
+						&& excludeServices.contains(splitArr[UniqueServiceKey.INDEX_SN])
+						&& !Config.getInstanceName().equals(splitArr[UniqueServiceKey.INDEX_INS])) {
 					logger.debug("exclude servcie: "+child);
 					return;
 				}
@@ -617,6 +622,11 @@ public class ServiceManager {
 		return item;
 	}
 	
+	private boolean needCacheHashMethod(ServiceItem si) {
+		return si != null && (si.getKey().getInstanceName().equals(Config.getInstanceName()) 
+				|| this.gatewayModel && si.isExternal());
+	}
+	
 	private void serviceRemove(String path) {
 		
 		ReentrantReadWriteLock.WriteLock l = rwLocker.writeLock();
@@ -625,7 +635,7 @@ public class ServiceManager {
 			l.lock();
 			this.path2Hash.remove(path);
 			si = this.path2SrvItems.remove(path);
-			if(si != null && si.getKey().getInstanceName().equals(Config.getInstanceName())) {
+			if(needCacheHashMethod(si)) {
 				//存储时已经保证不存在全局性重复hash
 				Set<ServiceItem> items = this.getServiceItems(si.getKey().getServiceName(),
 						si.getKey().getNamespace(), si.getKey().getVersion());
@@ -708,10 +718,11 @@ public class ServiceManager {
 		try {
 			l.lock();
 			
-			if(si.getKey().getInstanceName().equals(Config.getInstanceName())) {
+			if(needCacheHashMethod(si)) {
 				for(ServiceMethod sm : si.getMethods()) {
 					int h = sm.getKey().getSnvHash();
 					if(!this.methodHash2Method.containsKey(h)) {
+						//logger.info("Hash: " + h + " => " + sm.getKey().toKey(true, true, true));
 						this.methodHash2Method.put(h, sm);
 					} else {
 						//检查是否是方法Hash冲突

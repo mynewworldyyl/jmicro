@@ -61,8 +61,9 @@
                 :draggable="true" :scrollable="true" width="80">
 
               <!--  <Checkbox :disabled="true" v-model="cfg.enable">{{ 'Enable' | i18n}}</Checkbox>&nbsp;&nbsp;&nbsp;&nbsp;-->
-                <Button v-if="!readonly" @click="doSave()">{{'Confirm'|i18n}}</Button><br/>
-                <Label v-if="errMsg"  style="color:red">{{errMsg}}</Label><br/>
+            <Button v-if="!readonly" @click="doSave()">{{'Confirm'|i18n}}</Button>
+            <Button v-if="!readonly" @click="doRefreshDict()">{{'RefreshDict'|i18n}}</Button><br/>
+            <Label v-if="errMsg"  style="color:red">{{errMsg}}</Label><br/>
 
             <a v-if="!readonly" href="javascript:void(0)" @click="addStatisIndex()" style="text-align: left">{{'Add' | i18n }}</a>
             <table id="statisIndex" width="99%">
@@ -234,7 +235,6 @@
 
     import JStatisIndex from './JStatisIndex.vue'
 
-
     const UNIT_SE = "S";
     const UNIT_MU = "M";
     const UNIT_HO = "H";
@@ -396,6 +396,11 @@
                 if(curByType == '*') {
                     return;
                 }
+
+                if(!this.byKeyShow.sn) {
+                    return;
+                }
+
                 let self = this;
                 let fun = () => {
                     self.byCurNamespaces = self.namespaces[curByType];
@@ -408,6 +413,10 @@
                 } else {
                     fun();
                 }
+            },
+
+            doRefreshDict(){
+                this.getServiceNames(true);
             },
 
             toServiceTypeChange(curToType) {
@@ -705,24 +714,32 @@
                         self.$Message.success(resp.msg);
                         return;
                     }
-
                     let ll = resp.data;
                     self.logList = ll;
-
                 }).catch((err)=>{
                     window.console.log(err);
                 });
             },
 
-            getServiceNames() {
+            getServiceNames(forceRefresh) {
                 let self = this;
                 window.jm.mng.comm.getDicts([window.jm.rpc.Constants.SERVICE_NAMES,
-                    window.jm.rpc.Constants.NAMED_TYPES,window.jm.rpc.Constants.ALL_INSTANCES,],'')
+                    window.jm.rpc.Constants.NAMED_TYPES,window.jm.rpc.Constants.ALL_INSTANCES,],'',forceRefresh)
                     .then((opts)=>{
                         if(opts) {
+
+                            self.namespaces = {};
+                            self.versions = {};
+                            self.methods = {};
+                            self.instances = {};
+
                             self.serviceNames = opts[window.jm.rpc.Constants.SERVICE_NAMES];
                             self.namedTypeNames = opts[window.jm.rpc.Constants.NAMED_TYPES];
                             self.allInstances = opts[window.jm.rpc.Constants.ALL_INSTANCES];
+
+                            if(self.byKeyShow.sn && self.byType) {
+                                self.byServiceTypeChange(self.byType);
+                            }
                         }
                 }).catch((err)=>{
                     throw err;
@@ -752,7 +769,6 @@
                                 cb();
                             }
                         }
-
                     }).catch((err)=>{
                     throw err;
                 });

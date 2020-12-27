@@ -26,11 +26,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import cn.jmicro.api.annotation.Cfg;
-import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Inject;
 import cn.jmicro.api.annotation.JMethod;
 import cn.jmicro.api.annotation.SMethod;
-import cn.jmicro.api.annotation.Service;
 import cn.jmicro.api.gateway.ApiRequest;
 import cn.jmicro.api.gateway.ApiResponse;
 import cn.jmicro.api.idgenerator.IdRequest;
@@ -47,7 +45,6 @@ import cn.jmicro.api.net.Message;
 import cn.jmicro.api.raft.IDataOperator;
 import cn.jmicro.api.registry.UniqueServiceKey;
 import cn.jmicro.api.utils.TimeUtils;
-import cn.jmicro.common.Constants;
 import cn.jmicro.monitor.api.AbstractMonitorDataSubscriber;
 
 /**
@@ -259,8 +256,7 @@ import cn.jmicro.monitor.api.AbstractMonitorDataSubscriber;
 	private void reqeust(StringBuilder sb, ApiRequest req) {
 		if(req == null) return;
 		sb.append("reqId[").append(req.getReqId()).append("]");
-		service(sb, req.getServiceName(), req.getNamespace(), req.getVersion(), req.getMethod(),
-				req.getArgs());
+		service(sb,"", "", "","",req.getArgs());
 	}
 
 	private void response(StringBuilder sb, MRpcLogItem si,OneLog oi) {

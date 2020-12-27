@@ -138,7 +138,7 @@ public class ClientServiceProxyHolder implements IServiceListener{
 		
 		JMicroContext.configComsumer(sm, si);
 		
-		if(Constants.LICENSE_TYPE_FREE != si.getFeeType()) {
+		if(Constants.LICENSE_TYPE_FREE != sm.getFeeType()) {
 			ActInfo ai = cxt.getAccount();
 			if(ai == null) {
 				String msg = "License need login: " + si.getKey().toKey(false, false, false);
@@ -146,11 +146,11 @@ public class ClientServiceProxyHolder implements IServiceListener{
 				throw new CommonException(msg);
 			}
 			
-			if(Constants.LICENSE_TYPE_CLIENT == si.getFeeType() 
+			if(Constants.LICENSE_TYPE_CLIENT == sm.getFeeType() 
 					&& si.getClientId() != ai.getClientId()) {
 				boolean f = false;
-				if(si.getAuthClients() != null && si.getAuthClients().length > 0) {
-					for(int t : si.getAuthClients()) {
+				if(sm.getAuthClients() != null && sm.getAuthClients().length > 0) {
+					for(int t : sm.getAuthClients()) {
 						if(t == ai.getClientId()) {
 							f = true;
 							break;
@@ -163,7 +163,7 @@ public class ClientServiceProxyHolder implements IServiceListener{
 					LG.log(MC.LOG_WARN, this.getClass(), msg);
 					throw new CommonException(msg);
 				}
-			} else if(Constants.LICENSE_TYPE_PRIVATE == si.getFeeType() && si.getClientId() != ai.getClientId()) {
+			} else if(Constants.LICENSE_TYPE_PRIVATE == sm.getFeeType() && si.getClientId() != ai.getClientId()) {
 				String msg = "Private service ["+ai.getActName()+"] for " + si.getKey().toKey(false, false, false);
 				LG.log(MC.LOG_WARN, this.getClass(), msg);
 				throw new CommonException(msg);

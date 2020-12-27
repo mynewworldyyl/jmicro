@@ -312,10 +312,13 @@ public class LG {
 			sb.append(",parentId:").append(req.getReqParentId());
 		}else if(r instanceof ApiRequest) {
 			ApiRequest req = (ApiRequest)r;
-			sb.append(",sn:").append(req.getServiceName());
-			sb.append(",ns:").append(req.getNamespace());
-			sb.append(",ver:").append(req.getVersion());
-			sb.append(",method:").append(req.getMethod());
+			ServiceMethod sm = JMicroContext.get().getParam(Constants.SERVICE_METHOD_KEY, null);
+			if(sm != null) {
+				sb.append(",sn:").append(sm.getKey().getServiceName());
+				sb.append(",ns:").append(sm.getKey().getNamespace());
+				sb.append(",ver:").append(sm.getKey().getVersion());
+				sb.append(",method:").append(sm.getKey().getMethod());
+			}
 			sb.append(",params:").append(req.getArgs());
 		}
 		return sb.toString();

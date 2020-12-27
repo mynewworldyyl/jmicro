@@ -192,12 +192,12 @@ public class TestOnePrefixCoder {
 		ApiRequest req = new ApiRequest();
 		String[] args = new String[] {"hello smsg"};
 		req.setArgs(args);
-		req.setMethod("hello");
+		/*req.setMethod("hello");
 		req.setNamespace("testnamsp");
-		req.setReqId(22L);
 		req.setServiceName("ssss");
-		req.setVersion("0.0.1");
+		req.setVersion("0.0.1");*/
 		
+		req.setReqId(22L);
 		Message msg = new Message();
 		msg.setType(Constants.MSG_TYPE_REQ_RAW);
 		msg.setUpProtocol(Message.PROTOCOL_BIN);
@@ -216,7 +216,7 @@ public class TestOnePrefixCoder {
 		
 		ApiRequest respReq = decoder.decode((ByteBuffer)respMsg.getPayload());
 		
-		System.out.println(respReq.getServiceName());
+		System.out.println(respReq.getReqId());
 	}
 	
 	

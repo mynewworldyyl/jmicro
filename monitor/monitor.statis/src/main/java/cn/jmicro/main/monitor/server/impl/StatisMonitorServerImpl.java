@@ -97,7 +97,7 @@ public class StatisMonitorServerImpl implements IStatisMonitorServer {
 		
 		ServiceLoader sl = of.get(ServiceLoader.class);
 		ServiceItem si = sl.createSrvItem(IMonitorAdapter.class, 
-				Config.getInstanceName()+"."+MonitorServerStatusAdapter.class.getName(), "0.0.1", null);
+				Config.getInstanceName()+".StatisMonitorServer", "0.0.1", null);
 		sl.registService(si,statusAdapter);
 		
 		new Thread(this::doCheck,Config.getInstanceName()+"_MonitorServer_doCheck").start();

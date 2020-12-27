@@ -130,7 +130,7 @@ public class StatisMonitorClient {
 		}
 		
 		ServiceLoader sl = of.get(ServiceLoader.class);
-		String group = "MonitorClient";
+		String group = "StatisMonitorClient";
 		statusMonitorAdapter = new MonitorClientStatusAdapter(TYPES,typeLabels,
 				Config.getInstanceName()+"_MonitorClientStatuCheck",group);
 		

@@ -23,7 +23,7 @@ import io.netty.util.AttributeKey;
 @Sharable
 public class NettySocketHandler extends ChannelInboundHandlerAdapter {
 	
-    static final Logger logger = LoggerFactory.getLogger(NettySocketHandler.class);
+    private Logger logger = LoggerFactory.getLogger(NettySocketHandler.class);
 	
 	private static final AttributeKey<NettyServerSession> sessionKey = 
 			AttributeKey.newInstance(Constants.IO_SESSION_KEY+"Netty" + TimeUtils.getCurTime());

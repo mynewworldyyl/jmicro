@@ -134,7 +134,7 @@ public class LogMonitorClient {
 		}
 		
 		ServiceLoader sl = of.get(ServiceLoader.class);
-		String group = "MonitorClient";
+		String group = "LogMonitorClient";
 		statusMonitorAdapter = new MonitorClientStatusAdapter(TYPES,typeLabels,
 				Config.getInstanceName()+"_MonitorClientStatuCheck",group);
 		

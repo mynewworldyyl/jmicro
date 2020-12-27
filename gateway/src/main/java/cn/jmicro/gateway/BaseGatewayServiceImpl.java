@@ -2,6 +2,9 @@ package cn.jmicro.gateway;
 
 import java.util.List;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Inject;
 import cn.jmicro.api.annotation.Service;
@@ -12,6 +15,8 @@ import cn.jmicro.common.util.HashUtils;
 @Component
 public class BaseGatewayServiceImpl implements IBaseGatewayService {
 
+	 private Logger logger = LoggerFactory.getLogger(BaseGatewayServiceImpl.class);
+	 
 	@Inject
 	private ApiGatewayHostManager hostManager;
 	
@@ -27,6 +32,8 @@ public class BaseGatewayServiceImpl implements IBaseGatewayService {
 
 	@Override
 	public int fnvHash1a(String methodKey) {
+		//int code = HashUtils.FNVHash1(methodKey);
+		//logger.info("fnvHash1a: " + code + " => " + methodKey);
 		return HashUtils.FNVHash1(methodKey);
 	}
 	

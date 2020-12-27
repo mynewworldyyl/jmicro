@@ -296,7 +296,7 @@ public class LogMonitorServerImpl implements ILogMonitorServer {
 
 		ServiceLoader sl = of.get(ServiceLoader.class);
 		ServiceItem si = sl.createSrvItem(IMonitorAdapter.class, 
-				Config.getInstanceName()+"."+MonitorServerStatusAdapter.class.getName(), "0.0.1", null);
+				Config.getInstanceName()+".LogMonitorServer", "0.0.1", null);
 		sl.registService(si,statusAdapter);
 	
 		

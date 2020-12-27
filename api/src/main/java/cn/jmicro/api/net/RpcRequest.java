@@ -22,6 +22,7 @@ import java.util.Map;
 
 import cn.jmicro.api.annotation.SO;
 import cn.jmicro.api.monitor.MC;
+import cn.jmicro.api.registry.ServiceMethod;
 
 /**
  * 
@@ -33,16 +34,8 @@ public final class RpcRequest implements IRequest{
 	
 	protected Map<String,Object> params = new HashMap<String,Object>();
 	
-	private String serviceName;
-	
-	private String method;
-	
 	private Object[] args;
-	
-	private String namespace;
-	
-	private String version;
-	
+
 	private String impl;
 	
 	private String transport;
@@ -51,11 +44,21 @@ public final class RpcRequest implements IRequest{
 	
 	protected long reqParentId = -1L;
 	
+	private  transient  String serviceName;
+	
+	private  transient  String method;
+	
+	private  transient  String namespace;
+	
+	private  transient  String version;
+	
 	private transient ISession session;
 	
 	private transient boolean isMonitorEnable = false;
 	
 	private transient Message msg;
+	
+	private transient ServiceMethod sm;
 	
 	private transient boolean success = false;
 	
@@ -109,6 +112,14 @@ public final class RpcRequest implements IRequest{
 
 	public void setTransport(String transport) {
 		this.transport = transport;
+	}
+
+	public ServiceMethod getSm() {
+		return sm;
+	}
+
+	public void setSm(ServiceMethod sm) {
+		this.sm = sm;
 	}
 
 	public void setFinish(boolean finish) {
@@ -183,40 +194,20 @@ public final class RpcRequest implements IRequest{
 		this.impl = impl;
 	}
 
-	public void setVersion(String version){
-		this.version=version;
-	}
-	
 	public String getServiceName() {
-		return serviceName;
-	}
-
-	public void setServiceName(String serviceName) {
-		this.serviceName = serviceName;
+		return this.sm.getKey().getServiceName();
 	}
 
 	public String getNamespace() {
-		return namespace;
-	}
-
-	public void setNamespace(String namespace) {
-		this.namespace = namespace;
+		return this.sm.getKey().getNamespace();
 	}
 
 	public String getVersion() {
-		return version;
-	}
-
-	public void Namespace(String version) {
-		this.version = version;
+		return this.sm.getKey().getVersion();
 	}
 
 	public String getMethod() {
-		return method;
-	}
-
-	public void setMethod(String method) {
-		this.method = method;
+		return this.sm.getKey().getMethod();
 	}
 
 	public Object[] getArgs() {
