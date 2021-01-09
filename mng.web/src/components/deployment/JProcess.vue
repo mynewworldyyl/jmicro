@@ -23,7 +23,7 @@
         </table>
 
         <Drawer  v-if="isLogin && editPi"  v-model="drawer.drawerStatus" :closable="false" placement="right" :transfer="true"
-                 :draggable="true" :scrollable="true" width="50">
+                 :draggable="true" :scrollable="true" width="50" @close="closeDrawer()">
             <div><i-button @click="saveProcessInfo()">{{'Confirm'|i18n}}</i-button></div>
             <table>
                 <tr>
@@ -80,10 +80,17 @@
             editProcessDrawer(pi) {
                 this.editPi = pi;
                 pi.logLevel = '' + pi.logLevel;
-
                 this.drawer.drawerStatus = true;
                 this.drawer.drawerBtnStyle.zindex = 10000;
                 this.drawer.drawerBtnStyle.left = '0px';
+            },
+
+            closeDrawer() {
+                if(!this.editPi) {
+                    return;
+                }
+                this.drawer.drawerStatus = false;
+                this.drawer.drawerBtnStyle.zindex = 100;
             },
 
             saveProcessInfo(){
@@ -95,8 +102,7 @@
                 window.jm.mng.choy.updateProcess(pi)
                  .then((resp)=>{
                     if(resp.code == 0) {
-                        self.drawer.drawerStatus = false;
-                        self.drawer.drawerBtnStyle.zindex = 100;
+                        self.closeDrawer();
                         self.$Message.success("Success update process");
                     } else {
                         self.$Message.success(resp.msg);

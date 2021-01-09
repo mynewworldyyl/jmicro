@@ -1,208 +1,241 @@
 <template>
   <div>
-      <p stype="word-break: break-all;padding: 0px 10px;font-size: medium;">{{node.id}}</p>
-      <Card class="ItemCard" >
-          <p slot="title">
-              <Icon type="ios-film-outline"></Icon>
-              Method Key
-          </p>
-          <div>
-              <label for="method">Method Name</label>
-              <Input id="method" :value="node.val.key.method" disabled/>
+      <p stype="word-break: break-all;padding: 0px 0px;font-size: medium;">{{node.id}}</p>
 
-              <label for="paramStr">Method Parameters</label>
-              <Input id="paramStr" :value="node.val.key.paramsStr" disabled/>
-
-              <label for="topic">Topic</label>
-              <Input id="topic"  class='textarea' :rows="5" :autosize="{maxRows:5,minRows: 5}"
-                     v-model="node.val.topic" type="textarea" disabled/>
-              <!--<textarea id="topic" v-model="node.val.topic" disabled/>-->
+      <div class="itemRow">
+          <div class="ItemCard">
+              <div class="ItemCardHeader"><h3 class="ItemCardTitle">Method Key</h3></div>
+              <table class="SMethodTable">
+                  <!--<thead><tr><td>{{"Name"|i18n}}</td><td>{{'Value'|i18n}}</td></tr></thead>-->
+                  <tr><td>Method Name</td> <td><Input :value="node.val.key.method" disabled/></td></tr>
+                  <tr><td>Method Parameters</td> <td><Input :value="node.val.key.paramsStr" disabled/></td></tr>
+                  <tr><td>Return Parameter</td> <td><Input id="paramStr" :value="node.val.key.paramsStr" disabled/></td></tr>
+                  <tr><td>Method Code</td> <td> <Input id="snvHash" :value="node.val.key.snvHash" disabled/></td></tr>
+                  <tr><td>Topic</td>
+                      <td>
+                      <Input class='textarea' :rows="5" :autosize="{maxRows:5,minRows: 5}"
+                           v-model="node.val.topic" type="textarea" disabled/>
+                      </td>
+                  </tr>
+              </table>
           </div>
-      </Card>
 
-      <Card class="ItemCard">
-          <p slot="title">
-              <Icon type="ios-film-outline"></Icon>
-              Base Parameters
-          </p>
-          <a  href="javascript:void(0);" slot="extra"  @click="save()">
-              <Icon type="ios-loop-strong"></Icon>
-              Save
-          </a>
-          <div>
-              <label for="degrade">Degrade Status</label>
-              <Input id="degrade" v-model="node.val.degrade" placeholder="Degrade"/>
+          <div  class="ItemCard">
+              <div class="ItemCardHeader">
+                  <h3 class="ItemCardTitle">Base Parameters</h3>
+                  <div class="ItemCardBtnBar">
+                      <a class="ItemCardBtn" v-show="isLogin" slot="extra" @click="save()" href="javascript:void(0);">
+                          Save
+                      </a>
+                  </div>
+              </div>
+              <table class="SMethodTable">
+                  <tr><td>Asyncable</td>
+                      <td><Checkbox id="asyncable" v-model="node.val.asyncable" disabled></Checkbox></td>
+                  </tr>
+                  <tr><td>Need Response</td> <td><Checkbox v-model="node.val.needResponse"></Checkbox></td></tr>
+                  <tr><td>Degrade Status</td>
+                      <td><Input id="degrade" v-model="node.val.degrade" placeholder="Degrade"/></td></tr>
+                  <tr><td>Max Fail Before Degrade</td>
+                      <td><Input id="maxFailBeforeDegrade" v-model="node.val.maxFailBeforeDegrade"/></td></tr>
+                  <tr><td>Max Speed</td>
+                      <td><Input id="maxSpeed" v-model="node.val.maxSpeed" placeholder="Max Speed"/></td></tr>
+                  <tr><td>{{"LimitSpeedType"|i18n}}</td>
+                      <td><Select id="LimitSpeedType" v-model="node.val.limitType">
+                          <Option value="1">{{"BySelf"|i18n}}</Option>
+                          <Option value="2">{{"ByStatisServer"|i18n}}</Option>
+                      </Select></td></tr>
+                  <tr><td>Service Average Response Time</td>
+                      <td><Input id="avgResponseTime"  v-model="node.val.avgResponseTime" placeholder="Average Response Time"/>
+                      </td></tr>
 
-              <label for="maxFailBeforeDegrade">Max Fail Before Degrade</label>
-              <Input id="maxFailBeforeDegrade" v-model="node.val.maxFailBeforeDegrade"/>
-
-              <label for="maxSpeed">Max Speed</label>
-              <Input id="maxSpeed" v-model="node.val.maxSpeed" placeholder="Max Speed"/>
-
-              <label for="avgResponseTime">Service Average Response Time</label>
-              <Input id="avgResponseTime"  v-model="node.val.avgResponseTime" placeholder="Average Response Time"/>
-              <Checkbox id="asyncable" v-model="node.val.asyncable" disabled>Asyncable</Checkbox>
-              <Checkbox v-model="node.val.needResponse">Need Response</Checkbox>
+              </table>
           </div>
-      </Card>
 
-      <Card class="ItemCard">
-          <p slot="title">
-              <Icon type="ios-film-outline"></Icon>
-              Monitor And Debug
-          </p>
-          <a v-if="isLogin"  href="javascript:void(0);" slot="extra"  @click="save()">
-              <Icon type="ios-loop-strong"></Icon>
-              Save
-          </a>
-          <div>
-              <Label for="monitorEnable">Monitor Enable</Label>
-              <Select id="monitorEnable" v-model="node.val.monitorEnable">
-                  <Option v-for="v in [-1,0,1]" :value="v" :key="'monitorEnable'+v">{{v}}</Option>
-              </Select>
+          <div class="ItemCard">
+              <div class="ItemCardHeader">
+                  <h3 class="ItemCardTitle">Monitor And Debug</h3>
+                  <div class="ItemCardBtnBar">
+                      <a class="ItemCardBtn" v-show="isLogin" slot="extra" @click="save()" href="javascript:void(0);">
+                          Save
+                      </a>
+                  </div>
+              </div>
 
-              <Label for="debugMode">Debug Enable</Label>
-              <Select id="debugMode" v-model="node.val.debugMode">
-                  <Option v-for="v in [-1,0,1]" :value="v" :key="'debugMode'+v">{{v}}</Option>
-              </Select>
+              <table class="SMethodTable">
 
-              <Label for="logLevel">Log Level</Label>
-              <Select id="logLevel" v-model="node.val.logLevel">
-                  <Option  v-for="(v,index) in ['Trance','Debug','Info','Warn','Error','Final']" :key="'logLevel'+index"
-                           :value="index+1">{{v}}
-                  </Option>
-              </Select>
+                  <tr><td>Dump Down</td> <td><Checkbox v-model="node.val.dumpDownStream"></Checkbox></td></tr>
+                  <tr><td>Dump Up</td> <td> <Checkbox v-model="node.val.dumpUpStream"></Checkbox></td></tr>
+                  <tr><td>Monitor Enable</td>
+                      <td><Select id="monitorEnable" v-model="node.val.monitorEnable">
+                          <Option v-for="v in [-1,0,1]" :value="v" :key="'monitorEnable'+v">{{v}}</Option>
+                      </Select></td>
+                  </tr>
+                  <tr><td>Debug Enable</td>
+                      <td>  <Select id="debugMode" v-model="node.val.debugMode">
+                          <Option v-for="v in [-1,0,1]" :value="v" :key="'debugMode'+v">{{v}}</Option>
+                      </Select></td></tr>
 
-              <Checkbox v-model="node.val.dumpDownStream">Dump Down Stream Data</Checkbox>
-              <Checkbox v-model="node.val.dumpUpStream">Dump Up Stream Data</Checkbox>
-
+                  <tr><td>Log Level</td>
+                      <td>  <Select id="logLevel" v-model="node.val.logLevel">
+                          <Option  v-for="(v,index) in ['Trance','Debug','Info','Warn','Error','Final']" :key="'logLevel'+index"
+                                   :value="index+1">{{v}}
+                          </Option>
+                      </Select></td></tr>
+              </table>
           </div>
-      </Card>
 
-      <Card class="ItemCard">
-          <p slot="title">
-              <Icon type="ios-film-outline"></Icon>
-              Timeout
-          </p>
-          <a v-if="isLogin" href="javascript:void(0);" slot="extra"  @click="save()">
-              <Icon type="ios-loop-strong"></Icon>
-              Save
-          </a>
-          <div>
-              <label for="timeout">Timeout</label>
-              <Input id="timeout" v-model="node.val.timeout" placeholder="Timeout"/>
+      </div>
 
-              <label for="retryCnt">Retry Count</label>
-              <Input id="retryCnt" v-model="node.val.retryCnt" placeholder="Retry Count"/>
+      <div class="itemRow">
+          <div  class="ItemCard">
+              <div class="ItemCardHeader">
+                  <h3 class="ItemCardTitle">Timeout</h3>
+                  <div class="ItemCardBtnBar">
+                      <a class="ItemCardBtn" v-show="isLogin" slot="extra" @click="save()" href="javascript:void(0);">
+                          Save
+                      </a>
+                  </div>
+              </div>
 
-              <label for="retryInterval">Retry Interval</label>
-              <Input id="retryInterval" v-model="node.val.retryInterval" placeholder="retryInterval"/>
-              <br/>
-
-
+              <table class="SMethodTable">
+                  <tr><td>Timeout</td>
+                      <td><Input id="timeout" v-model="node.val.timeout" placeholder="Timeout"/></td></tr>
+                  <tr><td>Retry Count</td>
+                      <td><Input id="retryCnt" v-model="node.val.retryCnt" placeholder="Retry Count"/></td></tr>
+                  <tr><td>Retry Interval</td>
+                      <td><Input id="retryInterval" v-model="node.val.retryInterval" placeholder="retryInterval"/></td></tr>
+              </table>
           </div>
-      </Card>
 
-      <Card class="ItemCard">
-          <p slot="title">
-              <Icon type="ios-film-outline"></Icon>
-              Statis Timer
-          </p>
-          <a v-if="isLogin"  href="javascript:void(0);" slot="extra" @click="save()">
-              <Icon type="ios-loop-strong"></Icon>
-              Save
-          </a>
-          <div>
-
-              <Label for="baseTimeUnit">Time Unit</Label>
-              <Select id="baseTimeUnit" v-model="node.val.baseTimeUnit">
-                  <Option value="D">天</Option>
-                  <Option value="H">时</Option>
-                  <Option value="M">分</Option>
-                  <Option value="S">秒</Option>
-                  <Option value="MS">毫秒</Option>
-                  <Option value="MC">微秒</Option>
-                  <Option value="N">纳秒</Option>
-              </Select>
-
-              <label for="timeWindow">Time Window</label>
-              <Input id="timeWindow" v-model="node.val.timeWindow" placeholder="Time"/>
-
-              <label for="slotSize">Slot Interval</label>
-              <Input id="slotSize" v-model="node.val.slotIndterval" placeholder="slot Size"/>
-
-              <label for="checkInterval">Check Interval</label>
-              <Input id="checkInterval" v-model="node.val.checkInterval" placeholder="checkInterval"/>
-
+          <div class="ItemCard">
+              <div class="ItemCardHeader">
+                  <h3 class="ItemCardTitle">Statis Timer</h3>
+                  <div class="ItemCardBtnBar">
+                      <a class="ItemCardBtn" v-show="isLogin" slot="extra" @click="save()" href="javascript:void(0);">
+                          Save
+                      </a>
+                  </div>
+              </div>
+              <table class="SMethodTable">
+                  <tr><td>Time Unit</td>
+                      <td><Select id="baseTimeUnit" v-model="node.val.baseTimeUnit">
+                          <Option value="D">天</Option>
+                          <Option value="H">时</Option>
+                          <Option value="M">分</Option>
+                          <Option value="S">秒</Option>
+                          <Option value="MS">毫秒</Option>
+                          <Option value="MC">微秒</Option>
+                          <Option value="N">纳秒</Option>
+                      </Select></td></tr>
+                  <tr><td>Time Window</td>
+                      <td><Input id="timeWindow" v-model="node.val.timeWindow" placeholder="Time"/></td></tr>
+                  <tr><td>Slot Interval</td>
+                      <td><Input id="slotSize" v-model="node.val.slotIndterval" placeholder="slot Size"/></td></tr>
+                  <tr><td>Check Interval</td>
+                      <td><Input id="checkInterval" v-model="node.val.checkInterval" placeholder="checkInterval"/></td></tr>
+              </table>
           </div>
-      </Card>
 
-      <Card class="ItemCard">
-          <p slot="title">
-              <Icon type="ios-film-outline"></Icon>
-              Break Rule
-          </p>
-          <a v-if="isLogin" slot="extra" @click="save()" href="javascript:void(0);">
-              <Icon type="ios-loop-strong"></Icon>
-              Save
-          </a>
-          <div>
-
-              <Checkbox v-model="node.val.breakingRule.enable">Enable</Checkbox>
-              <br/>
-
-              <label for="breakTimeInterval">Break Time Interval</label>
-              <Input id="breakTimeInterval" v-model="node.val.breakingRule.breakTimeInterval"
-                     placeholder=""/>
-
-              <label for="breakPercent">Break Percent</label>
-              <Input id="breakPercent" v-model="node.val.breakingRule.percent" placeholder=""/>
-
-              <label for="bcheckInterval">Break Check Interval</label>
-              <Input id="bcheckInterval" v-model="node.val.breakingRule.checkInterval" placeholder=""/>
-
-              <label for="failResponse">Fail Response</label>
-              <Input id="failResponse" v-model="node.val.failResponse"/>
-
+          <div  class="ItemCard">
+              <div class="ItemCardHeader">
+                  <h3 class="ItemCardTitle">Break Rule</h3>
+                  <div class="ItemCardBtnBar">
+                      <a class="ItemCardBtn" v-show="isLogin" slot="extra" @click="save()" href="javascript:void(0);">
+                          Save
+                      </a>
+                  </div>
+              </div>
+              <table class="SMethodTable">
+                  <tr><td>Is Breaking</td>
+                      <td><Checkbox v-model="node.val.breaking"></Checkbox></td></tr>
+                  <tr><td>Enable</td>
+                      <td><Checkbox v-model="node.val.breakingRule.enable"></Checkbox></td></tr>
+                  <tr><td>Break Time Interval</td>
+                      <td><Input id="breakTimeInterval" v-model="node.val.breakingRule.breakTimeInterval"
+                                 placeholder=""/></td></tr>
+                  <tr><td>Break Percent</td>
+                      <td><Input id="breakPercent" v-model="node.val.breakingRule.percent" placeholder=""/></td></tr>
+                  <tr><td>Break Check Interval</td>
+                      <td><Input id="bcheckInterval" v-model="node.val.breakingRule.checkInterval" placeholder=""/></td></tr>
+                  <tr><td>Fail Response</td> <td> <Input id="failResponse" v-model="node.val.failResponse"/></td></tr>
+              </table>
           </div>
-      </Card>
 
-      <Card class="ItemCard">
-          <p slot="title">
-              <Icon type="ios-film-outline"></Icon>
-              Testing
-          </p>
-          <a v-if="isLogin" slot="extra" @click="save()" href="javascript:void(0);">
-              <Icon type="ios-loop-strong"></Icon>
-              Save
-          </a>
-          <a slot="extra" @click="doTesting(node.val)" href="javascript:void(0);">
-              <Icon type="ios-loop-strong"></Icon>
-              {{timerId == -1? 'Start':'Stop'}}
-          </a>
-          <a slot="extra" @click="testingResult=''" href="javascript:void(0);">
-              <Icon type="ios-loop-strong"></Icon>
-              Clear
-          </a>
-          <div>
+      </div>
 
-              <label for="testingArgs">Testing Args</label>
-              <!-- <Input id="testingArgs" v-model="node.val.testingArgs"/> -->
-              <Input id="testingArgs"  class='textarea' :rows="5" :autosize="{maxRows:5,minRows: 5}"
-                      type="textarea" v-model="node.val.testingArgs"/>
+      <div class="itemRow">
+          <div  class="ItemCard">
+              <div class="ItemCardHeader">
+                  <h3 class="ItemCardTitle">{{'Security'|i18n}}</h3>
+                  <div class="ItemCardBtnBar">
+                      <a class="ItemCardBtn" v-show="isLogin" slot="extra" @click="save()" href="javascript:void(0);">
+                          Save
+                      </a>
+                  </div>
+              </div>
+              <table class="SMethodTable">
+                  <tr><td>{{"NeedLogin"|i18n}}</td>
+                      <td><Checkbox v-model="node.val.needLogin"></Checkbox></td></tr>
+                  <tr><td>{{"InvokePer2Account"|i18n}}</td>
+                      <td><Checkbox v-model="node.val.perType"></Checkbox></td></tr>
+                  <tr><td>{{"DownSsl"|i18n}}</td>
+                      <td><Checkbox v-model="node.val.isDownSsl"></Checkbox></td></tr>
+                  <tr><td>{{"UpSsl"|i18n}}</td>
+                      <td><Checkbox v-model="node.val.isUpSsl"></Checkbox></td></tr>
 
-              <label for="testingResult">Testing Result</label>
-              <Input id="testingResult"  class='textarea' :rows="5" :autosize="{maxRows:5,minRows: 5}"
-                     type="textarea" v-model="testingResult"/>
+                  <tr><td>{{"EncryptType"|i18n}}</td>
+                      <td><Select id="encType" v-model="node.val.encType">
+                          <Option value="0">AES</Option>
+                          <Option value="1">RSA</Option>
+                      </Select></td></tr>
 
-              <label for="InvokeNum">Testing Num</label>
-              <Input id="InvokeNum" v-model="invokeNum"/>
+                  <tr><td>{{"MaxPacketSize"|i18n}}</td>
+                      <td><Input id="maxPacketSize" v-model="node.val.maxPacketSize" placeholder=""/></td></tr>
 
-              <label for="InvokeInterval">Interval with Milliseconds</label>
-              <Input id="InvokeInterval"  v-model="invokeInterval"/>
+                  <tr><td>{{"FeeType"|i18n}}</td>
+                      <td><Select id="FeeType" v-model="node.val.feeType">
+                      <Option value="0">{{"Free"|i18n}}</Option>
+                      <Option value="1">{{"Client"|i18n}}</Option>
+                      <Option value="2">{{"Private"|i18n}}</Option>
+                  </Select></td></tr>
 
+                  <tr><td>{{"authClients"|i18n}}</td>
+                      <td><span v-for="val in node.val.authClients" :key="val">{{val}}</span></td></tr>
+
+              </table>
           </div>
-      </Card>
+
+          <div class="ItemCard">
+              <div class="ItemCardHeader">
+                  <h3 class="ItemCardTitle">Testing</h3>
+                  <div class="ItemCardBtnBar">
+                      <a class="ItemCardBtn" v-show="isLogin" slot="extra" @click="save()" href="javascript:void(0);">
+                          Save
+                      </a>
+                      <a class="ItemCardBtn" v-show="isLogin" slot="extra" @click="doTesting(node.val)" href="javascript:void(0);">
+                          {{timerId == -1? 'Start':'Stop'}}
+                      </a>
+                      <a  class="ItemCardBtn"  v-show="isLogin" slot="extra" @click="testingResult=''" href="javascript:void(0);">
+                          <Icon type="ios-loop-strong"></Icon>
+                          Clear
+                      </a>
+                  </div>
+              </div>
+              <table class="SMethodTable">
+                  <tr><td>Testing Args</td>
+                      <td><Input id="testingArgs"  class='textarea' :rows="5" :autosize="{maxRows:5,minRows: 5}"
+                                                       type="textarea" v-model="node.val.testingArgs"/></td></tr>
+                  <tr><td>Testing Result</td>
+                      <td><Input id="testingResult"  class='textarea' :rows="5" :autosize="{maxRows:5,minRows: 5}"
+                                                         type="textarea" v-model="testingResult"/></td></tr>
+                  <tr><td>Testing Num</td>
+                      <td><Input id="InvokeNum" v-model="invokeNum"/></td></tr>
+                  <tr><td>Interval with Milliseconds</td>
+                      <td><Input id="InvokeInterval"  v-model="invokeInterval"/></td></tr>
+              </table>
+          </div>
+      </div>
 
   </div>
 </template>
@@ -223,6 +256,9 @@ export default {
     mounted() {
         this.$el.style.minHeight=(document.body.clientHeight-67)+'px';
         let self = this;
+
+        this.isLogin = window.jm.rpc.isLogin();
+
         window.jm.rpc.addActListener(cid,()=>{
             self.isLogin = window.jm.rpc.isLogin();
         });
@@ -299,6 +335,10 @@ export default {
     },
 
     data(){
+        this.meth.val.encType=this.meth.val.encType+"";
+        this.meth.val.feeType=this.meth.val.feeType+"";
+        this.meth.val.limitType = this.meth.val.limitType+"";
+
         return {
             node : this.meth,
             isLogin : false,
@@ -314,8 +354,31 @@ export default {
 <style scoped>
 
     .ItemCard {
-        width:350px;
-        display:inline-block
+        display:inline-block;width:30%;text-align: center;
+        margin: 0px 8px;
     }
 
+    .itemRow{
+        position:relative ;margin: 10px 0px;
+    }
+
+    .ItemCardHeader{
+        background-color: lightgray; border-radius: 3px;position:relative;
+    }
+
+    .ItemCardTitle{
+        display:inline-block;
+    }
+
+    .ItemCardBtnBar{
+        display:inline-block; position: absolute; right: 0px;top: 0px;
+    }
+
+    .ItemCardBtn{
+        padding-right: 5px;
+    }
+
+    .SMethodTable {
+        width: 100%;
+    }
 </style>

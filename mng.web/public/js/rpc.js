@@ -1129,7 +1129,7 @@ jm.rpc = {
                     let doFailure = true;
                     if(rst && rst.errorCode != 0) {
                         //alert(rst.msg);
-                        if(rst.errorCode == 0x00000004 || rst.errorCode == 0x004C) {
+                        if(rst.errorCode == 0x00000004 || rst.errorCode == 0x004C || rst.errorCode == 76) {
                             let actName = window.jm.localStorage.get("actName");
                             let pwd = window.jm.localStorage.get("pwd");
                             if(actName && pwd) {

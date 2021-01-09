@@ -1,51 +1,47 @@
 <template>
     <div class="JDeploymentDesc">
-       <!-- <div style="height:30px;line-height: 30px">
-            <a @click="addDeploy()">ADD</a>&nbsp;&nbsp;&nbsp;
-            <a @click="refresh()">REFRESH</a>
-        </div>-->
-
         <table v-if="isLogin" class="configItemTalbe" width="99%">
-            <thead><tr><td>ID</td><td>JAR FILE</td><td>ENABLE</td><td>INSTANCE NUM</td><td>STRATEGY</td>
-            <td>STRATEGY ARGS</td><td>ARGS</td><td>OPERATION</td></tr>
+            <thead><tr><td>ID</td><td style="width:390px;">{{'jarFile'|i18n}}</td><td>{{'Enable'|i18n}}</td>
+                <td style="width:80px;">{{'instanceNum'|i18n}}</td><td>{{'Stragety'|i18n}}</td>
+            <!--<td>STRATEGY ARGS</td><td>ARGS</td>--><td style="width:110px">{{'Operation'|i18n}}</td></tr>
             </thead>
             <tr v-for="c in deployList" :key="c.id">
                 <td>{{c.id}}</td><td>{{c.jarFile}}</td><td>{{c.enable}}</td><td>{{c.instanceNum}}</td>
-                <td>{{c.assignStrategy}}</td><td>{{c.strategyArgs}}</td><td>{{c.args}}</td>
+                <td>{{c.assignStrategy}}</td><!--<td>{{c.strategyArgs}}</td><td>{{c.args}}</td>-->
                 <td>&nbsp;
-                    <a v-if="isLogin" @click="deleteDeployment(c)">DELETE</a>&nbsp;&nbsp;&nbsp;
-                    <a v-if="isLogin" @click="updateDeployment(c)">UPDATE</a>
+                    <a v-if="isLogin" @click="viewDetail(c)">{{'Detail'|i18n}}</a>&nbsp;&nbsp;
+                    <a v-if="isLogin" @click="updateDeployment(c)">{{'Update'|i18n}}</a>&nbsp;&nbsp;
+                    <a v-if="isLogin" @click="deleteDeployment(c)">{{'Delete'|i18n}}</a>
                 </td>
             </tr>
         </table>
 
         <div v-if="!isLogin">not login</div>
 
-        <Modal v-model="addResourceDialog" :loading="true" ref="addNodeDialog" width="360" @on-ok="onAddOk()">
-            <div>
-                <Checkbox v-model="deployment.enable">ENABLE</Checkbox>
-                <br/>
-                <div style="color:red">{{errMsg}}</div>
+        <Drawer  v-if="isLogin && deployment"  v-model="drawer.drawerStatus" :closable="false" placement="right" :transfer="true"
+                 :draggable="true" :scrollable="true" width="50" @close="closeDrawer()">
+            <div><i-button v-if="drawerModel!=3" @click="onAddOk()">{{'Confirm'|i18n}}</i-button></div>
+            <Checkbox :disabled="drawerModel==3" v-model="deployment.enable">{{'Enable'|i18n}}</Checkbox>
+            <br/>
+            <div style="color:red">{{errMsg}}</div>
 
-                <Label for="jarFile">JAR FILE</Label>
-                <Input id="jarFile"  v-model="deployment.jarFile"/>
+            <Label for="jarFile">JAR FILE</Label>
+            <Input id="jarFile" :disabled="drawerModel==3"  v-model="deployment.jarFile"/>
 
-                <Label for="instanceNum">INSTANCE NUM</Label>
-                <Input id="instanceNum" v-model="deployment.instanceNum"/>
+            <Label for="instanceNum">INSTANCE NUM</Label>
+            <Input :disabled="drawerModel==3" id="instanceNum" v-model="deployment.instanceNum"/>
 
-                <Label for="assignStrategy">STRATEGY</Label>
-                <Input id="assignStrategy" v-model="deployment.assignStrategy"/>
+            <Label for="assignStrategy">STRATEGY</Label>
+            <Input :disabled="drawerModel==3" id="assignStrategy" v-model="deployment.assignStrategy"/>
 
-                <Label for="strategyArgs">STRATEGY ARGS</Label>
-                <Input id="strategyArgs"  class='textarea' :rows="5" :autosize="{maxRows:3,minRows: 3}"
-                       type="textarea" v-model="deployment.strategyArgs"/>
+            <Label for="strategyArgs">STRATEGY ARGS</Label>
+            <Input :disabled="drawerModel==3" id="strategyArgs"  class='textarea' :rows="5" :autosize="{maxRows:3,minRows: 3}"
+                   type="textarea" v-model="deployment.strategyArgs"/>
 
-                <Label for="args">ARGS</Label>
-                <Input id="args"  class='textarea' :rows="5" :autosize="{maxRows:3,minRows: 3}"
-                       type="textarea" v-model="deployment.args"/>
-
-              </div>
-        </Modal>
+            <Label for="args">ARGS</Label>
+            <Input :disabled="drawerModel==3" id="args"  class='textarea' :rows="5" :autosize="{maxRows:3,minRows: 3}"
+                   type="textarea" v-model="deployment.args"/>
+        </Drawer>
 
     </div>
 </template>
@@ -58,9 +54,8 @@
         data () {
             return {
                 deployList:[],
-                addResourceDialog:false,
                 errMsg:'',
-                doUpdate:false,
+                drawerModel:0,//0无效，1:新增，2：更新，3：查看明细
                 isLogin:false,
 
                 deployment:{
@@ -68,21 +63,40 @@
                     jarFile:'',
                     instanceNum:1,
                     args:'',
-                    enable:true
-                }
+                    enable:false
+                },
+
+                drawer: {
+                    drawerStatus:false,
+                    drawerBtnStyle:{right:'0px',zindex:1005},
+                },
+
             }
         },
         methods: {
 
+            viewDetail(pi) {
+                this.drawerModel = 3;
+                this.deployment = pi;
+                this.drawer.drawerStatus = true;
+            },
+
+            closeDrawer(){
+                this.drawer.drawerStatus = false;
+                this.drawerModel = 0;
+                this.resetDeployment();
+            },
+
             addDeploy() {
-                this.doUpdate = false;
-                this.addResourceDialog = true;
+                this.resetDeployment();
+                this.drawer.drawerStatus = true;
+                this.drawerModel = 1;
             },
 
             updateDeployment(dep) {
                 this.deployment = dep;
-                this.doUpdate = true;
-                this.addResourceDialog = true;
+                this.drawer.drawerStatus = true;
+                this.drawerModel = 2;
             },
 
             resetDeployment() {
@@ -91,7 +105,7 @@
                     jarFile:'',
                     instanceNum:1,
                     args:'',
-                    enable:true
+                    enable:false
                 }
             },
 
@@ -110,23 +124,20 @@
                     return;
                 }
 
-                if(self.doUpdate) {
+                if(self.drawerModel == 2) {
                     window.jm.mng.choy.updateDeployment(self.deployment).then((resp)=>{
                         if( resp.code != 0 || !resp.data ) {
                             self.$Message.success(resp.msg);
-                            this.addResourceDialog = false;
+                            this.closeDrawer();
                         }
-                        self.resetDeployment();
                     }).catch((err)=>{
                         window.console.log(err);
-                        self.resetDeployment();
                     });
-                }else {
+                }else if(self.drawerModel == 1) {
                     window.jm.mng.choy.addDeployment(self.deployment).then((resp)=>{
                         if( resp.code == 0 ) {
                             self.deployList.push(resp.data);
-                            self.resetDeployment();
-                            this.addResourceDialog = false;
+                            this.closeDrawer();
                         } else {
                             self.$Message.error(resp.msg);
                         }
