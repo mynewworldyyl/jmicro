@@ -12,6 +12,8 @@ import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Service;
 import cn.jmicro.api.classloader.IClassloaderRpc;
 import cn.jmicro.api.config.Config;
+import cn.jmicro.api.monitor.LG;
+import cn.jmicro.api.monitor.MC;
 
 @Service(namespace="classloaderrpc",version="0.0.1",timeout=30000,showFront=false)
 @Component
@@ -55,16 +57,16 @@ public class ClassloaderRpcService implements IClassloaderRpc {
 			
 			byte[] clsData = bais.toByteArray();
 			
-			logger.info("return class: {}, data length: {}", resName,clsData.length);
+			String msg = "return class: "+resName+", data length: " + clsData.length;
+			logger.info(msg);
+			LG.log(MC.LOG_INFO, this.getClass(), msg);
 			
 			return clsData;
 			
-		} catch (ClassNotFoundException e) {
+		} catch (ClassNotFoundException | IOException e) {
 			logger.warn(clazz);
-		}catch (IOException e) {
-			logger.error(clazz);
+			LG.log(MC.LOG_ERROR, this.getClass(), "Fail to loadd class: "+clazz,e);
 		}
-
 		return null;
 	}
 

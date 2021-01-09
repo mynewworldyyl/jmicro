@@ -7,6 +7,7 @@ import java.util.Set;
 import cn.jmicro.api.CfgMetadata;
 import cn.jmicro.api.annotation.IDStrategy;
 import cn.jmicro.api.annotation.SO;
+import cn.jmicro.api.monitor.MC;
 
 @SO
 @IDStrategy(1)
@@ -57,6 +58,8 @@ public class ProcessInfo {
 	private transient Process process;
 	
 	private boolean monitorable = false;
+	
+	private byte logLevel = MC.LOG_INFO;
 	
 	protected Map<String,Set<CfgMetadata>> metadatas = new HashMap<>();
 
@@ -271,6 +274,14 @@ public class ProcessInfo {
 			return false;
 		}
 		return this.hashCode() == obj.hashCode();
+	}
+
+	public byte getLogLevel() {
+		return logLevel;
+	}
+
+	public void setLogLevel(byte logLevel) {
+		this.logLevel = logLevel;
 	}
 
 	@Override

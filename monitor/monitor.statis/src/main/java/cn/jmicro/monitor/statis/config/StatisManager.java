@@ -242,16 +242,16 @@ public class StatisManager {
 	}
 
 	private void configMatchCount(Map<String,ServiceCounter> counters, int ...types) {
-		Set<String> set  = new HashSet<>();
+		Set<String> methodKeys  = new HashSet<>();
 		synchronized(counters) {
-			set.addAll(counters.keySet());
+			methodKeys.addAll(counters.keySet());
 		}
 		
 		Set<StatisConfig> insConfigs = this.mscm.getConfigByType(types);
 		for(StatisConfig sc : insConfigs) {
-			Iterator<String> insNames = set.iterator();
-			while(insNames.hasNext()) {
-				String insName = insNames.next();
+			Iterator<String> methodKeyIte = methodKeys.iterator();
+			while(methodKeyIte.hasNext()) {
+				String insName = methodKeyIte.next();
 				if(sc.getPattern().matcher(insName).find()) {
 					//记录配置上次活跃时间
 					sc.setLastActiveTime(TimeUtils.getCurTime());
@@ -391,7 +391,7 @@ public class StatisManager {
 			coll.insertOne(Document.parse(JsonUtils.getIns().toJson(sd)));
 			break;
 		case StatisConfig.TO_TYPE_MONITOR_LOG:
-			LG.log(MC.LOG_INFO, sc.getToParams(), JsonUtils.getIns().toJson(sd),null);
+			LG.logWithNonRpcContext(MC.LOG_INFO, sc.getToParams(), JsonUtils.getIns().toJson(sd),null,MC.MT_DEFAULT,true);
 			break;
 		case StatisConfig.TO_TYPE_FILE:
 			try {

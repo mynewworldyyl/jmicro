@@ -124,6 +124,10 @@ public class ResourceMonitorServer{
 			d.mkdirs();
 		}
 		
+		if(!op.exist(ResourceMonitorConfig.RES_MONITOR_CONFIG_ROOT)) {
+			op.createNodeOrSetData(ResourceMonitorConfig.RES_MONITOR_CONFIG_ROOT, "", IDataOperator.PERSISTENT);
+		}
+		
 		configListener = new RaftNodeDataListener<>(op,ResourceMonitorConfig.RES_MONITOR_CONFIG_ROOT,
 				ResourceMonitorConfig.class,false);
 		
@@ -221,7 +225,7 @@ public class ResourceMonitorServer{
 				});
 			}catch(Throwable e) {
 				logger.error("",e);
-				LG.logWithNonRpcContext(MC.LOG_ERROR, this.getClass(), "invoke getResourceJMAsync error", e);
+				LG.logWithNonRpcContext(MC.LOG_ERROR, this.getClass().getName(),"invoke getResourceJMAsync error", e,MC.MT_DEFAULT,true);
 				r.lastCheckTime = TimeUtils.getCurTime();
 			}
 		}
@@ -287,7 +291,7 @@ public class ResourceMonitorServer{
 				break;
 			case StatisConfig.TO_TYPE_MONITOR_LOG:
 				rd.setTag(cfg.getToParams());
-				LG.log(MC.LOG_INFO, cfg.getToParams(), JsonUtils.getIns().toJson(rd),null);
+				LG.log(MC.LOG_INFO, cfg.getToParams(), JsonUtils.getIns().toJson(rd),MC.MT_DEFAULT);
 				break;
 			case StatisConfig.TO_TYPE_EMAIL:
 				if(mailSender != null) {
@@ -360,6 +364,11 @@ public class ResourceMonitorServer{
 				String insName = si.getKey().getInstanceName();
 				if(this.srv2Regs.containsKey(insName)) {
 					Reg r = this.srv2Regs.remove(insName);
+					
+					if(LG.isLoggable(MC.LOG_DEBUG)){
+						LG.log(MC.LOG_DEBUG, ResourceMonitorServer.class, "Resource service remove for instance: " + insName);
+					}
+					
 					/*for(Integer cid : r.configs.keySet()) {
 						Set<String> s = this.config2Ins.get(cid);
 						if(s != null) {
@@ -392,6 +401,10 @@ public class ResourceMonitorServer{
 					}
 				});
 				
+				if(LG.isLoggable(MC.LOG_DEBUG)){
+					LG.log(MC.LOG_DEBUG, ResourceMonitorServer.class, "Resource service add for instance: " + insName);
+				}
+				
 				this.srv2Regs.put(insName, r);
 			}
 			adds.clear();
@@ -402,9 +415,15 @@ public class ResourceMonitorServer{
 	public void resourceServiceChange(AbstractClientServiceProxyHolder srv,int type) {
 		IResourceService$JMAsyncClient djm = (IResourceService$JMAsyncClient)srv;
 		if(type == IListener.ADD) {
-			this.adds.add(djm);
+			if(LG.isLoggable(MC.LOG_DEBUG)) {
+				LG.log(MC.LOG_DEBUG, this.getClass(), "Resource service add: " + djm.getItem().getKey().getInstanceName());
+			}
+			adds.add(djm);
 		}else if(type == IListener.REMOVE) {
-			this.dels.add(djm);
+			if(LG.isLoggable(MC.LOG_INFO)) {
+				LG.log(MC.LOG_INFO, this.getClass(), "Resource service remove: " + djm.getItem().getKey().getInstanceName());
+			}
+			dels.add(djm);
 		}
 	}
 	
@@ -533,7 +552,7 @@ public class ResourceMonitorServer{
 				} catch (IOException e) {
 					String msg ="Create log file fail";
 					logger.error(msg, e);
-					LG.logWithNonRpcContext(MC.LOG_ERROR, this.getClass(), msg, e);
+					LG.logWithNonRpcContext(MC.LOG_ERROR, this.getClass().getName(), msg, e,MC.MT_DEFAULT,true);
 				}
 			}
 
@@ -543,7 +562,7 @@ public class ResourceMonitorServer{
 			} catch (FileNotFoundException e) {
 				String msg ="Create writer fail";
 				logger.error(msg, e);
-				LG.logWithNonRpcContext(MC.LOG_ERROR, this.getClass(), msg, e);
+				LG.logWithNonRpcContext(MC.LOG_ERROR, this.getClass().getName(), msg, e,MC.MT_DEFAULT,true);
 			}
 		}
 		
@@ -675,9 +694,11 @@ public class ResourceMonitorServer{
 					resMap.put(insName, result);
 					p.decCounter(1, true);
 				}).fail((code,msg,rrr)->{
-					logger.error("code: " + code + ", msg: " + msg +",srv: "+ reg.resSrv.getItem().getKey().toKey(true, true, true));
+					String errMsg = "code: " + code + ", msg: " + msg +",srv: "+ reg.resSrv.getItem().getKey().toKey(true, true, true);
+					logger.error(errMsg);
 					p.setFail(code, msg);
 					p.decCounter(1, true);
+					LG.log(MC.LOG_ERROR, ResourceMonitorServer.class, errMsg);
 				});
 			}
 		} else {
@@ -686,6 +707,9 @@ public class ResourceMonitorServer{
 			//查询全部实例上的资源
 			p.setCounter(this.srv2Regs.size());
 			for(Map.Entry<String, Reg> reg : this.srv2Regs.entrySet()) {
+				if(LG.isLoggable(MC.LOG_DEBUG)){
+					LG.log(MC.LOG_DEBUG, ResourceMonitorServer.class, reg.getKey());
+				}
 				reg.getValue().resSrv.getResourceJMAsync(resNames,new HashMap<>(),null,reg)
 				.success((result,cxt)->{
 					Map.Entry<String, Reg> rrr = (Map.Entry<String, Reg>)cxt;

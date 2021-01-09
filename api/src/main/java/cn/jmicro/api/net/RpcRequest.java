@@ -250,11 +250,11 @@ public final class RpcRequest implements IRequest{
 	public void putObject(String key,Object value){
 		 this.params.put(key, value);
 	}
+
 	@Override
 	public String toString() {
-		return "RpcRequest [serviceName=" + serviceName + ", method=" + method + ", args=" + Arrays.toString(args)
-				+ ", namespace=" + namespace + ", version=" + version + ", impl=" + impl + ", transport=" + transport
-				+ ", reqId=" + reqId + "]";
+		return "RpcRequest [params=" + params + ", args=" + Arrays.toString(args) + ", impl=" + impl + ", transport="
+				+ transport + ", reqId=" + reqId + ", reqParentId=" + reqParentId + "]";
 	}
 
 	@Override

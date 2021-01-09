@@ -59,14 +59,18 @@ public class RaftNodeDataListener<NodeType> {
 			throw new CommonException("Node class cannot be NULL");
 		}
 		
+		if(maintainDataList) {
+			this.datas = new ConcurrentHashMap<>();
+		}
+		
+		if(!op.exist(dir)) {
+			op.createNodeOrSetData(dir, "", IDataOperator.PERSISTENT);
+		}
+		
 		this.dir = dir;
 		this.op = op;
 		this.maintainDataList = maintainDataList;
 		this.nodeClazz = clazz;
-		
-		if(maintainDataList) {
-			this.datas = new ConcurrentHashMap<>();
-		}
 		
 		op.addChildrenListener(this.dir, new IChildrenListener() {
 			@Override
@@ -95,7 +99,7 @@ public class RaftNodeDataListener<NodeType> {
 	protected void nodeAdd(String node, String data) {
 		NodeType n = JsonUtils.getIns().fromJson(data, this.nodeClazz);
 		op.addDataListener(this.dir + "/" + node, this.dataListener);
-		if(this.maintainDataList) {
+		if(this.datas != null) {
 			synchronized(syncLock) {
 				this.datas.put(node, n);
 			}
@@ -105,9 +109,9 @@ public class RaftNodeDataListener<NodeType> {
 	
 	private void updateItemData(String node, String data) {
 		NodeType n = JsonUtils.getIns().fromJson(data, this.nodeClazz);
-		if(this.maintainDataList) {
+		if(this.datas != null) {
 			synchronized(syncLock) {
-				this.datas.put(node, n);
+				datas.put(node, n);
 			}
 		}
 		notify(IListener.DATA_CHANGE,node,n);
@@ -127,8 +131,8 @@ public class RaftNodeDataListener<NodeType> {
 		if(rl.contains(lis)) {
 			throw new CommonException("Listener exist!");
 		}else {
-			if(this.maintainDataList ) {
-				if(this.datas != null && !this.datas.isEmpty()) {
+			if(this.datas != null) {
+				if(!this.datas.isEmpty()) {
 					synchronized(syncLock) {
 						for(String ke : this.datas.keySet()) {
 							lis.onEvent(IListener.ADD,ke , this.datas.get(ke));
@@ -163,7 +167,7 @@ public class RaftNodeDataListener<NodeType> {
 	}
 	
 	public NodeType getData(String node) {
-		if(this.maintainDataList) {
+		if(this.datas != null) {
 			return this.datas.get(node);
 		} else {
 			String path = ChoyConstants.INS_ROOT+"/"+node;
@@ -176,7 +180,7 @@ public class RaftNodeDataListener<NodeType> {
 	}
 	
 	public void forEachNodeName(Consumer<String> c) {
-		if(this.maintainDataList) {
+		if(this.datas != null) {
 			if(this.datas.isEmpty()) {
 				return;
 			}
@@ -201,7 +205,7 @@ public class RaftNodeDataListener<NodeType> {
 	}
 	
 	public void forEachNode(Consumer<NodeType> c) {
-		if(this.maintainDataList) {
+		if(this.datas != null) {
 			if(this.datas.isEmpty()) {
 				return;
 			}

@@ -18,4 +18,11 @@
 		<module>choreography.agent</module>
 		<module>choreography.repository</module>
     </modules>
+    
+    <dependencies>
+    	<dependency>
+			<groupId>cn.jmicro</groupId>
+			<artifactId>resource</artifactId>
+		</dependency>
+    </dependencies>
 </project>

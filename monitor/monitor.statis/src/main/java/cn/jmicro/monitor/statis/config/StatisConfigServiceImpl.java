@@ -250,7 +250,7 @@ public class StatisConfigServiceImpl implements IStatisConfigService {
 		if(lw.getStatisIndexs() == null || lw.getStatisIndexs().length == 0) {
 			 msg = "Statis index cannot be null for config id: " + lw.getId();
 			logger.error(msg);
-			LG.logWithNonRpcContext(MC.LOG_ERROR, StatisConfigServiceImpl.class, msg);
+			LG.logWithNonRpcContext(MC.LOG_ERROR, StatisConfigServiceImpl.class, msg,MC.MT_DEFAULT,true);
 			return msg;
 		}
 		
@@ -285,7 +285,7 @@ public class StatisConfigServiceImpl implements IStatisConfigService {
 			if(!op.exist(p)) {
 				 msg = "NamedType ["+lw.getNamedType()+"] not exist for config id: " + lw.getId();
 				logger.error(msg);
-				LG.logWithNonRpcContext(MC.LOG_ERROR, StatisConfigServiceImpl.class, msg);
+				LG.logWithNonRpcContext(MC.LOG_ERROR, StatisConfigServiceImpl.class, msg,MC.MT_DEFAULT,true);
 				return msg;
 			}
 		}
@@ -363,7 +363,7 @@ public class StatisConfigServiceImpl implements IStatisConfigService {
 		}finally {
 			if(msg != null) {
 				logger.error(msg);
-				LG.logWithNonRpcContext(MC.LOG_WARN, StatisConfigServiceImpl.class, msg);
+				LG.logWithNonRpcContext(MC.LOG_WARN, StatisConfigServiceImpl.class, msg,MC.MT_DEFAULT,true);
 			}
 		}
 		
@@ -392,7 +392,7 @@ public class StatisConfigServiceImpl implements IStatisConfigService {
 		}finally {
 			if(msg != null) {
 				logger.error(msg);
-				LG.logWithNonRpcContext(MC.LOG_WARN, StatisConfigServiceImpl.class, msg);
+				LG.logWithNonRpcContext(MC.LOG_WARN, StatisConfigServiceImpl.class, msg,MC.MT_DEFAULT,true);
 			}
 		}
 		
@@ -421,11 +421,11 @@ public class StatisConfigServiceImpl implements IStatisConfigService {
 						suc = checkByService(lw.getId(),srvs);
 						
 						if(suc) {
-							lw.setBysn(srvs[0]);
-							lw.setByns(srvs[1]);
-							lw.setByver(srvs[2]);
-							lw.setByins(srvs[3]);
-							lw.setByme(srvs[6]);
+							 lw.setBysn(srvs[UniqueServiceKey.INDEX_SN]);
+							 lw.setByns(srvs[UniqueServiceKey.INDEX_NS]);
+							 lw.setByver(srvs[UniqueServiceKey.INDEX_VER]);
+							 lw.setByins(srvs[UniqueServiceKey.INDEX_INS]);
+							 lw.setByme(srvs[UniqueServiceKey.INDEX_METHOD]);
 							
 							switch(tt) {
 							case StatisConfig.BY_TYPE_SERVICE_METHOD:
@@ -487,7 +487,7 @@ public class StatisConfigServiceImpl implements IStatisConfigService {
 		}finally {
 			if(msg != null) {
 				logger.error(msg);
-				LG.logWithNonRpcContext(MC.LOG_WARN, StatisConfigServiceImpl.class, msg);
+				LG.logWithNonRpcContext(MC.LOG_WARN, StatisConfigServiceImpl.class, msg,MC.MT_DEFAULT,true);
 			}
 		}
 		

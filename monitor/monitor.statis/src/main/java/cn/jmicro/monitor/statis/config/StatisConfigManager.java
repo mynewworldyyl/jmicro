@@ -179,7 +179,8 @@ public class StatisConfigManager {
 				try {
 					lw.getBw().close();
 				} catch (IOException e) {
-					LG.logWithNonRpcContext(MC.LOG_ERROR, StatisManager.class, "Close buffer error for: " + lw.getId(), e);
+					LG.logWithNonRpcContext(MC.LOG_ERROR, StatisManager.class.getName(), 
+							"Close buffer error for: " + lw.getId(), e,MC.MT_DEFAULT,true);
 				}
 			}
 		}
@@ -455,7 +456,7 @@ public class StatisConfigManager {
 				} catch (IOException e) {
 					String msg ="Create log file fail";
 					logger.error(msg, e);
-					LG.logWithNonRpcContext(MC.LOG_ERROR, StatisManager.class, msg, e);
+					LG.logWithNonRpcContext(MC.LOG_ERROR, StatisManager.class.getName(), msg, e,MC.MT_DEFAULT,true);
 				}
 			}
 
@@ -465,7 +466,7 @@ public class StatisConfigManager {
 			} catch (FileNotFoundException e) {
 				String msg ="Create writer fail";
 				logger.error(msg, e);
-				LG.logWithNonRpcContext(MC.LOG_ERROR, StatisManager.class, msg, e);
+				LG.logWithNonRpcContext(MC.LOG_ERROR, StatisManager.class.getName(), msg, e,MC.MT_DEFAULT,true);
 			}
 		}
 		
@@ -507,7 +508,7 @@ public class StatisConfigManager {
 			 }
 			 
 			 //方法参数
-			 regex += "[;\\]\\.\\/,a-zA-Z0-9]*##";
+			 //regex += "[;\\]\\.\\/,a-zA-Z0-9]*##";
 			 
 			 //账号
 			 if(Utils.isEmpty(lw.getActName()) || "*".equals(lw.getActName())) {

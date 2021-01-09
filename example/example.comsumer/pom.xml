@@ -69,11 +69,6 @@
 			<artifactId>choreography.api</artifactId>
 		</dependency>
 		
-		<!-- <dependency>
-			<groupId>cn.jmicro</groupId>
-			<artifactId>mng</artifactId>
-		</dependency> -->
-		
 	</dependencies>
 
 	<build>
@@ -83,28 +78,23 @@
 				<configuration>
 					<archive>
 						<manifest>
-							 <mainClass>cn.jmicro.example.comsumer.ServiceComsumer</mainClass>
-							<!-- <mainClass>cn.jmicro.example.comsumer.PressureTest</mainClass> -->
+							<mainClass>cn.jmicro.example.comsumer.PressureTest</mainClass>
 						</manifest>
 					</archive>
+					<descriptorRefs>
+						<descriptorRef>jar-with-dependencies</descriptorRef>
+					</descriptorRefs>
 				</configuration>
+				<executions>
+					<execution>
+						<id>make-assembly</id>
+						<phase>package</phase>
+						<goals>
+							<goal>single</goal>
+						</goals>
+					</execution>
+				</executions>
 			</plugin>
-			
-			<!-- <plugin>
-			    <groupId>org.bsc.maven</groupId>
-			    <artifactId>maven-processor-plugin</artifactId>
-			    <version>2.0.5</version>
-			    <executions>
-			        <execution>
-			            <id>process</id>
-			            <goals>
-			                <goal>process</goal>
-			            </goals>
-			            <phase>generate-sources</phase>
-			        </execution>
-			    </executions>
-		    </plugin> -->
-			
 		</plugins>
 	</build>
 

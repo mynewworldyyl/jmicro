@@ -23,7 +23,6 @@ import java.util.Stack;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import cn.jmicro.api.config.Config;
 import cn.jmicro.api.idgenerator.ComponentIdServer;
 import cn.jmicro.api.monitor.LG;
 import cn.jmicro.api.monitor.Linker;
@@ -33,15 +32,11 @@ import cn.jmicro.api.monitor.MRpcLogItem;
 import cn.jmicro.api.monitor.MRpcStatisItem;
 import cn.jmicro.api.monitor.MT;
 import cn.jmicro.api.monitor.StatisMonitorClient;
-import cn.jmicro.api.net.IRequest;
 import cn.jmicro.api.net.ISession;
 import cn.jmicro.api.net.Message;
-import cn.jmicro.api.registry.IRegistry;
 import cn.jmicro.api.registry.ServiceItem;
 import cn.jmicro.api.registry.ServiceMethod;
-import cn.jmicro.api.registry.UniqueServiceMethodKey;
 import cn.jmicro.api.security.ActInfo;
-import cn.jmicro.api.service.ServiceLoader;
 import cn.jmicro.api.utils.TimeUtils;
 import cn.jmicro.common.CommonException;
 import cn.jmicro.common.Constants;
@@ -73,7 +68,6 @@ public class JMicroContext  {
 	
 	public static final String CACHE_LOGIN_KEY = "__ActLoginKey_";
 	
-	
 	public static final String LINKER_ID = "_linkerId";
 	public static final String REQ_PARENT_ID = "_reqParentId";
 	//控制RPC方法在每个服务中输出日志，区加于往监控服务器上传日志
@@ -99,13 +93,19 @@ public class JMicroContext  {
 	public static final String MRPC_STATIS_ITEM = "_mrpc_statis_item";
 	
 	public static final String SESSION_KEY="_sessionKey";
+	
 	private static final ThreadLocal<JMicroContext> cxt = new ThreadLocal<JMicroContext>();
 	
-	private Stack<Map<String,Object>> ctxes = new Stack<>();
+	//private final Stack<Map<String,Object>> ctxes = new Stack<>();
 	
+	//当前上下文
 	protected Map<String,Object> curCxt = new HashMap<String,Object>();
 	
 	private JMicroContext() {}
+	
+	public Map<String,Object> cxtData() {
+		return curCxt;
+	}
 	
 	public MRpcLogItem getMRpcLogItem() {
 		//使用者需要调用isMonitor()或isDebug()判断是否可用状态
@@ -128,7 +128,7 @@ public class JMicroContext  {
 				}
 			}
 			LG.setCommon(item);
-			item.setCostTime(TimeUtils.getCurTime() - item.getCreateTime());
+			item.setCostTime(System.currentTimeMillis() - item.getCreateTime());
 			mo.readySubmit(item);
 			JMicroContext.get().removeParam(MRPC_LOG_ITEM);
 		}
@@ -241,7 +241,7 @@ public class JMicroContext  {
 		}
 		
 		if(msg.getLogLevel() != MC.LOG_NO) {
-			initMrpcLogItem();
+			initMrpcLogItem(true);
 		}
 	}
 	
@@ -266,7 +266,7 @@ public class JMicroContext  {
 	
 	}
 	
-	private static void initMrpcLogItem() {
+	private static void initMrpcLogItem(boolean sideProdiver) {
 		
 		JMicroContext context = cxt.get();
 		MRpcLogItem item = context.getMRpcLogItem();
@@ -286,7 +286,7 @@ public class JMicroContext  {
 			}
 		}
 		
-		item.setProvider(true);
+		item.setProvider(sideProdiver);
 		item.setReqParentId(context.getLong(REQ_PARENT_ID, 0L));
 	}
 	
@@ -312,7 +312,7 @@ public class JMicroContext  {
 		}
 		
 		if(sm.getLogLevel() != MC.LOG_NO) {
-			initMrpcLogItem();
+			initMrpcLogItem(false);
 			MRpcLogItem mi = context.getMRpcLogItem();
 			if(mi != null) {
 				mi.setImplCls(si.getImpl());
@@ -348,12 +348,21 @@ public class JMicroContext  {
 	/**
 	 * 同一个线程多个RPC之间上下文切换
 	 */
-	public void backupAndClear() {
+	/*public void backupAndClear() {
 		Map<String,Object> ps = new HashMap<>();
-		ps.putAll(cxt.get().curCxt);
+		ps.putAll(get().curCxt);
 		ctxes.push(ps);
-		cxt.get().curCxt.clear();
+		get().curCxt.clear();
 	}
+	
+	public void restore() {
+		get().curCxt.clear();
+		if(ctxes.isEmpty()) {
+			throw new CommonException("JMicro Context stack is empty");
+		}
+		Map<String,Object> ps = ctxes.pop();
+		get().curCxt.putAll(ps);
+	}*/
 	
 	public ActInfo getAccount() {
 		 return JMicroContext.get().getParam(JMicroContext.LOGIN_ACT, null);
@@ -378,15 +387,6 @@ public class JMicroContext  {
 		 } else {
 			 return defaultLevel <= reqLevel;
 		 }
-	}
-	
-	public void restore() {
-		cxt.get().curCxt.clear();
-		if(ctxes.isEmpty()) {
-			throw new CommonException("JMicro Context stack is empty");
-		}
-		Map<String,Object> ps = ctxes.pop();
-		cxt.get().curCxt.putAll(ps);
 	}
 	
 	public void getAllParams(Map<String,Object> params) {
@@ -454,7 +454,7 @@ public class JMicroContext  {
 	}
 	
 
-	public void mergeParams(Map<String,Object> params){
+	public void putAllParams(Map<String,Object> params){
 		if(params == null || params.isEmpty()) {
 			return;
 		}

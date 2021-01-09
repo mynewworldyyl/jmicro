@@ -30,8 +30,12 @@ public class OneLog {
 	
 	private long time = 0;
 	
+	private short type = 0;
+	
 	private byte level = MC.LOG_NO;
+	
 	private String tag = null;
+	
 	private String desc = null;
 	
 	private int lineNo = -1;
@@ -93,11 +97,6 @@ public class OneLog {
 		this.ex = ex;
 	}
 
-	@Override
-	public String toString() {
-		return "OneLog [time=" + time + ", level=" + level + ", tag=" + tag + ", desc=" + desc + ", ex=" + ex + "]";
-	}
-
 	public int getLineNo() {
 		return lineNo;
 	}
@@ -112,6 +111,20 @@ public class OneLog {
 
 	public void setFileName(String fileName) {
 		this.fileName = fileName;
+	}
+
+	public short getType() {
+		return type;
+	}
+
+	public void setType(short type) {
+		this.type = type;
+	}
+
+	@Override
+	public String toString() {
+		return "OneLog [time=" + time + ", type=" + type + ", level=" + level + ", tag=" + tag + ", desc=" + desc
+				+ ", lineNo=" + lineNo + ", fileName=" + fileName + ", ex=" + ex + "]";
 	}
 
 }

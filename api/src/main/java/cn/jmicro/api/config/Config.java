@@ -395,9 +395,9 @@ public class Config{
 		
 	}
 	
-	public static byte getSystemLogLevel() {
+	/*public static byte getSystemLogLevel() {
 		return getCommandParam(Constants.SYSTEM_LOG_LEVEL, Byte.class, MC.LOG_ERROR);
-	}
+	}*/
 	
 	public static boolean isAdminSystem() {
 		int clientId = getClientId();

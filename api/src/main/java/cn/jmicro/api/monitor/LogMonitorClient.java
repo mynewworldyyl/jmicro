@@ -36,7 +36,6 @@ import cn.jmicro.api.basket.IBasket;
 import cn.jmicro.api.config.Config;
 import cn.jmicro.api.executor.ExecutorConfig;
 import cn.jmicro.api.executor.ExecutorFactory;
-import cn.jmicro.api.executor.ExecutorFactory.ExecutorMonitorServer;
 import cn.jmicro.api.monitor.genclient.ILogMonitorServer$JMAsyncClient;
 import cn.jmicro.api.objectfactory.AbstractClientServiceProxyHolder;
 import cn.jmicro.api.objectfactory.IObjectFactory;

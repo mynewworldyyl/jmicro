@@ -447,7 +447,7 @@ public class MngResourceServiceImpl implements IMngResourceService{
 		} finally {
 			if(msg != null) {
 				logger.error(msg);
-				LG.logWithNonRpcContext(MC.LOG_WARN, this.getClass() , msg);
+				LG.logWithNonRpcContext(MC.LOG_WARN, this.getClass() ,msg,MC.MT_DEFAULT,true);
 			}
 		}
 		
@@ -476,7 +476,7 @@ public class MngResourceServiceImpl implements IMngResourceService{
 		}finally {
 			if(msg != null) {
 				logger.error(msg);
-				LG.logWithNonRpcContext(MC.LOG_WARN, this.getClass(), msg);
+				LG.logWithNonRpcContext(MC.LOG_WARN, this.getClass(), msg,MC.MT_DEFAULT,true);
 			}
 		}
 		

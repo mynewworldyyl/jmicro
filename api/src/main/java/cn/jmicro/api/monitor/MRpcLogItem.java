@@ -39,7 +39,7 @@ public final class MRpcLogItem{
 	
 	private long linkId;
 	
-	private long reqId;
+	private long reqId=0;
 	
 	private long reqParentId = -1L;
 	
@@ -81,12 +81,6 @@ public final class MRpcLogItem{
 	private transient Message msg  = null;
 	
 	public MRpcLogItem() {}
-	
-	public MRpcLogItem(long lid,long reqId) {
-		this.linkId = lid;
-		this.reqId = reqId;
-	}
-	
 	
 	public MRpcLogItem copy() {
 		MRpcLogItem mi = new MRpcLogItem();
@@ -157,11 +151,8 @@ public final class MRpcLogItem{
 		return oi;
 	}
 	
-	public OneLog addOneItem(byte logLevel,String tag,Throwable ex) {
+	public OneLog addOneItem(byte logLevel,String tag) {
 		OneLog oi = new OneLog(logLevel,tag,"");
-		if(ex != null) {
-			oi.setEx(LG.serialEx(ex));
-		}
 		this.items.add(oi);
 		return oi;
 	}

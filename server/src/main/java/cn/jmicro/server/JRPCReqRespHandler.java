@@ -37,7 +37,6 @@ import cn.jmicro.api.monitor.MRpcLogItem;
 import cn.jmicro.api.monitor.MT;
 import cn.jmicro.api.monitor.StatisMonitorClient;
 import cn.jmicro.api.net.IMessageHandler;
-import cn.jmicro.api.net.IRequest;
 import cn.jmicro.api.net.IResponse;
 import cn.jmicro.api.net.ISession;
 import cn.jmicro.api.net.InterceptorManager;
@@ -135,6 +134,13 @@ public class JRPCReqRespHandler implements IMessageHandler{
 	    	
 	    	config(req1,resp,msg.getLinkId());
 	    	
+	    	if(msg.isMonitorable()) {
+				MT.rpcEvent(MC.MT_SERVER_JRPC_GET_REQUEST,1);
+				MT.rpcEvent(MC.MT_SERVER_JRPC_GET_REQUEST_READ,msg.getLen());
+			}
+	    	
+	    	LG.log(MC.LOG_DEBUG, TAG.getName(), MC.MT_SERVER_JRPC_GET_REQUEST);
+	    	
 	    	req = req1;
 			req.setSession(s);
 			req.setMsg(msg);
@@ -154,11 +160,6 @@ public class JRPCReqRespHandler implements IMessageHandler{
 	    	}
 	    	
 	    	ServiceMethod sm = JMicroContext.get().getParam(Constants.SERVICE_METHOD_KEY, null);
-	    	
-	    	if(msg.isMonitorable()) {
-				MT.rpcEvent(MC.MT_SERVER_JRPC_GET_REQUEST,1);
-				MT.rpcEvent(MC.MT_SERVER_JRPC_GET_REQUEST_READ,msg.getLen());
-			}
 	    	
 			resp.setMsg(msg);
 			resp.setSuccess(true);
@@ -224,9 +225,7 @@ public class JRPCReqRespHandler implements IMessageHandler{
 	    						MT.rpcEvent(MC.MT_SERVER_ERROR);
 	    						logger.error("JRPCReq error: ",fail.toString());
 	    				 } else {
-	    					 if(msg.isMonitorable()) {
-	    						MT.rpcEvent(MC.MT_SERVER_JRPC_RESPONSE_SUCCESS);
-	    					 }
+	    					 MT.rpcEvent(MC.MT_SERVER_JRPC_RESPONSE_SUCCESS);
 	    				 }
 	    				 submitItem();
 					});
@@ -284,7 +283,7 @@ public class JRPCReqRespHandler implements IMessageHandler{
 	private void doException(RpcRequest req,RpcResponse resp0, ISession s,Message msg,Throwable e) {
 
 		//返回错误
-		LG.log(MC.LOG_ERROR, TAG,"JRPCReq error",e);
+		LG.log(MC.LOG_ERROR, TAG.getName(),"JRPCReq error",e,MC.MT_SERVER_ERROR);
 		
 		MT.rpcEvent(MC.MT_SERVER_ERROR);
 		logger.error("JRPCReq error: ",e);
@@ -342,6 +341,7 @@ public class JRPCReqRespHandler implements IMessageHandler{
 		
 		if(resp.isSuccess()) {
 			MT.rpcEvent(MC.MT_SERVER_JRPC_RESPONSE_SUCCESS,1);
+			LG.log(MC.LOG_DEBUG, TAG.getName(), MC.MT_SERVER_JRPC_RESPONSE_SUCCESS);
 			//响应消息,只有成功的消息才需要加密，失败消息不需要
 			msg.setUpSsl(sm.isUpSsl());
 			msg.setDownSsl(sm.isDownSsl());
@@ -350,6 +350,7 @@ public class JRPCReqRespHandler implements IMessageHandler{
 				secretMng.signAndEncrypt(msg,msg.getInsId());
 			}
 		} else {
+			LG.log(MC.LOG_ERROR, TAG.getName(), MC.MT_SERVER_ERROR);
 			MT.rpcEvent(MC.MT_SERVER_ERROR,1);
 			//错误不需要做加密或签名
 			msg.setUpSsl(false);
@@ -404,7 +405,7 @@ public class JRPCReqRespHandler implements IMessageHandler{
 		cxt.setParam(JMicroContext.REQ_ID, req.getRequestId());
 		
 		cxt.setParam(JMicroContext.CLIENT_ARGSTR, UniqueServiceMethodKey.paramsStr(req.getArgs()));
-		cxt.mergeParams(req.getRequestParams());
+		cxt.putAllParams(req.getRequestParams());
 		
 		ServiceItem si = registry.getOwnItem(Integer.parseInt(req.getImpl()));
 		if(si == null){

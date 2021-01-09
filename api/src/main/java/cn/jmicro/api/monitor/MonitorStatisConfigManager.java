@@ -92,6 +92,9 @@ public class MonitorStatisConfigManager {
 	
 	public void ready() {
 		//op.addChildrenListener(STATIS_WARNING_ROOT, lis);
+		if(!op.exist(StatisConfig.STATIS_CONFIG_ROOT)) {
+			op.createNodeOrSetData(StatisConfig.STATIS_CONFIG_ROOT, "", IDataOperator.PERSISTENT);
+		}
 		configListener = new RaftNodeDataListener<>(op,StatisConfig.STATIS_CONFIG_ROOT,StatisConfig.class,false);
 		configListener.addListener(lis);
 		srvMng.addListener(snvListener);
@@ -125,7 +128,6 @@ public class MonitorStatisConfigManager {
 			if(!ins2Types2ConfigNum.containsKey(pi.getInstanceName()) && this.lazyParseConfig) {
 				parseStatisConfigByInstaneName(pi.getInstanceName());
 			}
-			
 			return ins2Types2ConfigNum.containsKey(pi.getInstanceName()) &&
 					ins2Types2ConfigNum.get(pi.getInstanceName()).containsKey(t);
 		} else {
@@ -133,7 +135,7 @@ public class MonitorStatisConfigManager {
 			String withoutAct = smKey + UniqueServiceKey.SEP;
 			
 			if(!sm2Types2ConfigNum.containsKey(withoutAct) && this.lazyParseConfig) {
-				parseStatisConfigByServiceMethod(sm);
+				parseStatisConfigByServiceMethod(sm,withoutAct);
 			}
 			
 			if(sm2Types2ConfigNum.containsKey(withoutAct) 
@@ -143,7 +145,7 @@ public class MonitorStatisConfigManager {
 			
 			String withAct = smKey + UniqueServiceKey.SEP + actName;
 			if(!sm2Types2ConfigNum.containsKey(withAct) && this.lazyParseConfig) {
-				parseStatisConfigByServiceMethod(sm);
+				parseStatisConfigByServiceMethod(sm,withAct);
 			}
 			
 			if(sm2Types2ConfigNum.containsKey(withAct) 
@@ -175,7 +177,7 @@ public class MonitorStatisConfigManager {
 		}
 	}
 
-	private void parseStatisConfigByServiceMethod(ServiceMethod sm) {
+	private void parseStatisConfigByServiceMethod(ServiceMethod sm,String key) {
 		Set<StatisConfig> cons = copyConfigs();
 		for(StatisConfig c : cons) {
 			switch(c.getByType()) {
@@ -185,7 +187,7 @@ public class MonitorStatisConfigManager {
 				if(sm.getKey().getServiceName().equals(c.getBysn()) 
 						&& UniqueServiceKey.matchNamespace(c.getByns(), sm.getKey().getNamespace())
 						&& UniqueServiceKey.matchVersion(c.getByver(), sm.getKey().getVersion())) {
-					parseServiceConfigData(c,1);
+					parseServiceConfigData(c,1,key);
 					
 				}
 			}
@@ -236,11 +238,11 @@ public class MonitorStatisConfigManager {
 		case StatisConfig.BY_TYPE_SERVICE_INSTANCE_METHOD:
 		case StatisConfig.BY_TYPE_SERVICE_ACCOUNT_METHOD:
 			 String[] srvs = lw.getByKey().split(UniqueServiceKey.SEP);
-			 lw.setBysn(srvs[0]);
-			 lw.setByns(srvs[1]);
-			 lw.setByver(srvs[2]);
-			 lw.setByins(srvs[3]);
-			 lw.setByme(srvs[6]);
+			 lw.setBysn(srvs[UniqueServiceKey.INDEX_SN]);
+			 lw.setByns(srvs[UniqueServiceKey.INDEX_NS]);
+			 lw.setByver(srvs[UniqueServiceKey.INDEX_VER]);
+			 lw.setByins(srvs[UniqueServiceKey.INDEX_INS]);
+			 lw.setByme(srvs[UniqueServiceKey.INDEX_METHOD]);
 		}
 		 
 		synchronized (configs) {
@@ -285,11 +287,11 @@ public class MonitorStatisConfigManager {
 		case StatisConfig.BY_TYPE_SERVICE_INSTANCE_METHOD:
 		case StatisConfig.BY_TYPE_SERVICE_ACCOUNT_METHOD:
 			 String[] srvs = lw.getByKey().split(UniqueServiceKey.SEP);
-			 lw.setBysn(srvs[0]);
-			 lw.setByns(srvs[1]);
-			 lw.setByver(srvs[2]);
-			 lw.setByins(srvs[3]);
-			 lw.setByme(srvs[6]);
+			 lw.setBysn(srvs[UniqueServiceKey.INDEX_SN]);
+			 lw.setByns(srvs[UniqueServiceKey.INDEX_NS]);
+			 lw.setByver(srvs[UniqueServiceKey.INDEX_VER]);
+			 lw.setByins(srvs[UniqueServiceKey.INDEX_INS]);
+			 lw.setByme(srvs[UniqueServiceKey.INDEX_METHOD]);
 		}
 		 
 		synchronized (configs) {
@@ -311,12 +313,12 @@ public class MonitorStatisConfigManager {
 		case StatisConfig.BY_TYPE_SERVICE_INSTANCE_METHOD:
 		case StatisConfig.BY_TYPE_SERVICE_ACCOUNT_METHOD:
 			 String[] srvs = lw.getByKey().split(UniqueServiceKey.SEP);
-			 lw.setBysn(srvs[0]);
-			 lw.setByns(srvs[1]);
-			 lw.setByver(srvs[2]);
-			 lw.setByins(srvs[3]);
-			 lw.setByme(srvs[6]);
-			 parseServiceConfigData(lw,enable);
+			 lw.setBysn(srvs[UniqueServiceKey.INDEX_SN]);
+			 lw.setByns(srvs[UniqueServiceKey.INDEX_NS]);
+			 lw.setByver(srvs[UniqueServiceKey.INDEX_VER]);
+			 lw.setByins(srvs[UniqueServiceKey.INDEX_INS]);
+			 lw.setByme(srvs[UniqueServiceKey.INDEX_METHOD]);
+			 parseServiceConfigData(lw,enable,lw.getByKey());
 			 break;
 		case StatisConfig.BY_TYPE_INSTANCE:
 			parseInstanceConfigData(lw,enable);
@@ -328,7 +330,7 @@ public class MonitorStatisConfigManager {
 		parseType2ConfigNum(this.ins2Types2ConfigNum,lw,insName,enable);
 	}
 
-	private void parseServiceConfigData(StatisConfig lw,int enable) {
+	private void parseServiceConfigData(StatisConfig lw,int enable,String key) {
 		
 		Set<ServiceItem> items = reg.getServices(lw.getBysn(), lw.getByns(), lw.getByver());
 		if(items == null || items.isEmpty()) {
@@ -353,15 +355,15 @@ public class MonitorStatisConfigManager {
 				}
 			}
 			
-			String smKey = sm.getKey().toKey(true, true, true);
+			/*String smKey = sm.getKey().toKey(true, true, true);
 			
 			if(lw.getByType() == StatisConfig.BY_TYPE_SERVICE_ACCOUNT_METHOD) {
-				smKey += "##" + lw.getActName(); 
+				smKey += UniqueServiceKey.SEP + lw.getActName(); 
 			} else {
-				smKey += "##" ; 
-			}
+				smKey += UniqueServiceKey.SEP ; 
+			}*/
 			
-			parseType2ConfigNum(this.sm2Types2ConfigNum,lw,smKey,enable);
+			parseType2ConfigNum(this.sm2Types2ConfigNum,lw,key,enable);
 			
 			/*if(enable == 0) {
 				this.removeServiceListener(sm.getKey().getServiceName(),

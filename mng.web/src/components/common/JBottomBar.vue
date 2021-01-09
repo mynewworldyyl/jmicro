@@ -6,7 +6,7 @@
             <img src="ba.png" style="float:left;"/>
             <pre>粤公网安备 44030602004897号</pre>
         </a>
-        <p class="jCopyRight">© CopyRight 2020, JMICRO.CN, Inc.All Rights Reserved</p>
+        <p class="jCopyRight">© CopyRight 2018-{{year()}}, JMICRO.CN, Inc.All Rights Reserved</p>
     </div>
 </template>
 
@@ -50,6 +50,10 @@ export default {
     },
 
     methods: {
+        year() {
+            return new Date().format('yyyy');
+        },
+
         scrollFunc(e0) {
 
             let timer = null;

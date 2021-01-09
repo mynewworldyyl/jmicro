@@ -2,7 +2,7 @@
     <div class="JLogItemView" style="position:relative;height:auto">
 
         <div v-if="isLogin && logList && logList.length > 0" style="position:relative;height:auto;margin-top:10px;">
-            <table class="configItemTalbe" border="0" width="99%">
+            <table class="logConfigItemTalbe" border="0" width="99%">
                <!-- <thead><tr><td style="width:300px">TAG</td><td  style="width:165px">TIME</td><td style="width:135px">LEVEL</td>
                     <td  style="width:130px">TYPE</td><td  style="width:38px">TYPE</td><td  style="width:38px">TYPE</td>
                     <td>LOG</td></tr></thead>
@@ -220,8 +220,7 @@
 
     const cid = 'logItemView';
 
-    const LOG2LEVEL = {2:'LOG_DEBUG', 5:'LOG_ERROR', 6:'LOG_FINAL', 3:'LOG_INFO', 0:'LOG_NO',
-        1: 'LOG_TRANCE', 4:'LOG_WARN'};
+    const LOG2LEVEL = window.jm.mng.LOG2LEVEL;
 
     const LEVEL2COLOR = {2:'debugTag', 5:'errorTag', 6:'finalTag', 3:'infoTag', 0:'noLogTag',
         1: 'tranceTag', 4:'warnTag'};
@@ -521,7 +520,7 @@
         z-index: 1000000;
     }
 
-    .configItemTalbe td {
+    .logConfigItemTalbe td {
         text-align: left;
         border:none;
     }

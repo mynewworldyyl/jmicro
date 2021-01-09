@@ -19,12 +19,14 @@ package cn.jmicro.api.monitor;
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 import java.io.UnsupportedEncodingException;
+import java.util.Iterator;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import cn.jmicro.api.JMicro;
 import cn.jmicro.api.JMicroContext;
+import cn.jmicro.api.choreography.ProcessInfo;
 import cn.jmicro.api.config.Config;
 import cn.jmicro.api.gateway.ApiRequest;
 import cn.jmicro.api.gateway.ApiResponse;
@@ -54,86 +56,77 @@ public class LG {
 	
 	private static boolean isMs = false;
 	
-	//private static boolean isDs = false;
+	private static ProcessInfo pi = null;
 	
-	//public static byte SYSTEM_LOG_LEVEL = MC.LOG_INFO;
+	private static MRpcLogItem beforeInitItem = null;
 	
-	public static boolean respEvent(byte level,IResp resp,String tag) {
-		if(isLoggable(level)) {
-			MRpcLogItem mi = JMicroContext.get().getMRpcLogItem();
-			mi.setResp(resp);
-			OneLog oi = mi.addOneItem(level,tag,"");
-			setStackTrance(oi,3);
-			return true;
-		}
-		return false;
-	} 
-	
-	public static boolean reqEvent(byte level,IReq req,String tag,String desc) {
-		if(isLoggable(level)) {
-			MRpcLogItem mi = JMicroContext.get().getMRpcLogItem();
-			mi.setReq(req);
-			OneLog oi = mi.addOneItem(level,tag,desc);
-			setStackTrance(oi,3);
-			return true;
-		}
-		return false;
-	} 
+	public static boolean log(byte level,String tag,String desc,short type) {
+		return log(level,tag,desc,null,type);
+	}
 	
 	public static boolean log(byte level,Class<?> tag,String desc) {
-		return log(level,tag.getName(),desc,null);
+		return log(level,tag.getName(),desc,null,MC.MT_DEFAULT);
 	}
 	
 	public static boolean log(byte level,Class<?> tag,String desc,Throwable exp) {
-		return log(level,tag.getName(),desc,exp);
+		return log(level,tag.getName(),desc,exp,MC.MT_DEFAULT);
 	}
 	
-	private static void setStackTrance(OneLog oi,int idx) {
-		StackTraceElement se = Thread.currentThread().getStackTrace()[idx];
-		oi.setLineNo(se.getLineNumber());
-		oi.setFileName(se.getFileName());
+	public static boolean log(byte level,String tag,short type) {
+		return log(level,tag,"",null,type);
 	}
 	
-	public static boolean log(byte level,String tag,String desc,Throwable exp) {
+	public static boolean log(byte level,String tag,String desc,Throwable exp,short type) {
 
-		if(isLoggable(level)) {
-			MRpcLogItem mi = null;
-			if(JMicroContext.existRpcContext()) {
-				 mi = JMicroContext.get().getMRpcLogItem();
-			}
-			
-			boolean f = false;
-			if(mi == null) {
-				 f = true;
-				 mi = new MRpcLogItem();
-			}
-			
-			OneLog oi = mi.addOneItem(level, tag,desc);
-			setStackTrance(oi,4);
-			
-			if(exp != null) {
-				if(exp instanceof CommonException) {
-					CommonException ce = (CommonException)exp;
-					if(ce.getReq() != null) {
-						mi.setReq(ce.getReq());
-					}
-					if(ce.getResp() != null) {
-						mi.setResp(ce.getResp());
-					}
-					if(ce.getAi() != null) {
-						mi.setClientId(ce.getAi().getClientId());
-						mi.setActName(ce.getAi().getActName());
-					}
-				}
-				oi.setEx(serialEx(exp));
-			}
-			
-			if(f) {
-				setCommon(mi);
-				return m.readySubmit(mi);
-			}
+		if(!isLoggable(level)) {
+			return false;
 		}
-		return false;
+
+		MRpcLogItem mi = null;
+		if(JMicroContext.existRpcContext()) {
+			 mi = JMicroContext.get().getMRpcLogItem();
+		}
+		
+		if(mi == null && !isInit) {
+			if(beforeInitItem == null) {
+				beforeInitItem = new MRpcLogItem();
+			}
+			mi = beforeInitItem;
+		}
+		
+		boolean f = false;
+		if(mi == null) {
+			 f = true;
+			 mi = new MRpcLogItem();
+		}
+		
+		OneLog oi = mi.addOneItem(level, tag,desc);
+		oi.setType(type);
+		setStackTrance(oi,4);
+		
+		if(exp != null) {
+			if(exp instanceof CommonException) {
+				CommonException ce = (CommonException)exp;
+				if(ce.getReq() != null) {
+					mi.setReq(ce.getReq());
+				}
+				if(ce.getResp() != null) {
+					mi.setResp(ce.getResp());
+				}
+				if(ce.getAi() != null) {
+					mi.setClientId(ce.getAi().getClientId());
+					mi.setActName(ce.getAi().getActName());
+				}
+			}
+			oi.setEx(serialEx(exp));
+		}
+		
+		if(f) {
+			setCommon(mi);
+			return m.readySubmit(mi);
+		}
+	
+		return true;
 	
 	}
 	
@@ -158,6 +151,13 @@ public class LG {
 		MRpcLogItem mi = null;
 		if(JMicroContext.existRpcContext()) {
 			mi = JMicroContext.get().getMRpcLogItem();
+		}
+		
+		if(mi == null && !isInit) {
+			if(beforeInitItem == null) {
+				beforeInitItem = new MRpcLogItem();
+			}
+			mi = beforeInitItem;
 		}
 		
 		boolean f = false;
@@ -196,29 +196,50 @@ public class LG {
 		return ex.getMessage();
 	}
 	
-	public static void logWithNonRpcContext(byte level, Class<?> tag, String desc) {
-		logWithNonRpcContext(level,tag.getName(),desc,null);
+	public static MRpcLogItem logWithNonRpcContext(byte level, Class<?> tag, String desc,short type,boolean submit) {
+		return logWithNonRpcContext(level,tag.getName(),desc,null,type,submit);
 	}
 	
-	public static void logWithNonRpcContext(byte level, Class<?> tag, String desc, Throwable exp) {
-		logWithNonRpcContext(level,tag.getName(),desc,exp);
+	public static MRpcLogItem logWithNonRpcContext(byte level, Class<?> tag, String desc, Throwable exp,boolean submit) {
+		return logWithNonRpcContext(level,tag.getName(),desc,exp,MC.MT_DEFAULT,submit);
 	}
 	
-	public static void logWithNonRpcContext(byte level, String tag, String desc, Throwable exp) {
+	public static MRpcLogItem logWithNonRpcContext(byte level, String tag, String desc, Throwable exp,short type,boolean submit) {
 		if(level == MC.LOG_NO || !isLoggable(level)) {
-			return;
+			return null;
+		}
+		
+		MRpcLogItem mi = null;
+		
+		if(!isInit) {
+			if(beforeInitItem == null) {
+				beforeInitItem = new MRpcLogItem();
+			}
+			mi = beforeInitItem;
+		}else {
+			mi = new MRpcLogItem();
 		}
 
-		MRpcLogItem mi = new MRpcLogItem();
 		OneLog oi = mi.addOneItem(level, tag,desc);
+		oi.setType(type);
 		setStackTrance(oi,4);
 		if(exp != null) {
 			oi.setEx(serialEx(exp));
 		}
 
 		setCommon(mi);
-		m.submit2Cache(mi);
 	
+		if(submit) {
+			submit2Cache(mi);
+		}
+		
+		return mi;
+	}
+	
+	public static void submit2Cache(MRpcLogItem mi) {
+		if(isInit) {
+			m.submit2Cache(mi);
+		}
 	}
 	
 	public static void setCommon(MRpcLogItem si) {
@@ -250,10 +271,34 @@ public class LG {
 		si.setInstanceName(Config.getInstanceName());
 	}
 	
+	
+	public static void initLog() {
+		if(isInit) return;
+
+		isInit = true;
+		m = JMicro.getObjectFactory().get(LogMonitorClient.class);
+		isMs = m != null;
+		pi = JMicro.getObjectFactory().get(ProcessInfo.class);
+		if(beforeInitItem != null) {
+			Iterator<OneLog> items = beforeInitItem.getItems().iterator();
+			while(items.hasNext()) {
+				OneLog i = items.next();
+				if(!isLoggable(i.getLevel())) {
+					items.remove();
+				}
+			}
+			if(beforeInitItem.getItems().size() > 0) {
+				m.readySubmit(beforeInitItem);
+			}
+			beforeInitItem = null;
+		}
+	
+	}
+	
 	/**
 	 * 	日志输出4个条件
 	 * 1. 对应组件打开debug模式，isDebug=true 或者服务方法loggable=true;
-	 * 2. 日志级别大开
+	 * 2. 日志级别打开
 	 * 
 	 * @param isComOpen
 	 * @param level
@@ -262,16 +307,11 @@ public class LG {
 	public static boolean isLoggable(int needLevel, int ...rpcMethodLevel) {
 		
 		if(!isInit) {
-			isInit = true;
-			m = JMicro.getObjectFactory().get(LogMonitorClient.class);
-			isMs = m != null;
+			//logger.warn("Log not init");
+			return true;
 		}
 		
-		if(!isMs || !m.isServerReady() || needLevel == MC.LOG_NO) {
-			return false;
-		}
-		
-		byte rpcLevel = Config.getSystemLogLevel();
+		byte rpcLevel = pi.getLogLevel();
 		if(rpcMethodLevel == null || rpcMethodLevel.length == 0) {
 			if(JMicroContext.existRpcContext()) {
 				rpcLevel = JMicroContext.get().getParam(JMicroContext.SM_LOG_LEVEL, rpcLevel);
@@ -339,4 +379,9 @@ public class LG {
 		return sb.toString();
 	}
 	
+	private static void setStackTrance(OneLog oi,int idx) {
+		StackTraceElement se = Thread.currentThread().getStackTrace()[idx];
+		oi.setLineNo(se.getLineNumber());
+		oi.setFileName(se.getFileName());
+	}
 }

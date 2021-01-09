@@ -4,22 +4,49 @@
         <input type="checkbox" v-model="showAll"/>ALL-->
         <div v-if="msg">{{msg}}</div>
         <table class="configItemTalbe" width="99%">
-            <thead><tr><td>ID</td><td>NAME</td><td>ACTIVE</td><td>HA ENABLE</td><td>IS MASTER</td><td>WORK DIR</td>
-                <td>PROCESS ID</td><td>START TIME</td><td>CONTINUTE</td><td>HOST</td>
+            <thead><tr><td>ID</td><td>NAME</td><td>ACTIVE</td><td>HA ENABLE</td><td>IS MASTER</td>
+                <td>Log Level</td><td>PROCESS ID</td><td>START TIME</td><td>CONTINUTE</td><td>HOST</td>
                 <td>AGENT ID</td> <!--<td>AGENT PROCESS ID</td>-->
                 <td>DEP ID</td>
                 <td>OPERATION</td></tr>
             </thead>
             <tr v-for="a in processList" :key="a.id">
                 <td>{{a.id}}</td> <td>{{a.instanceName}}</td>
-                <td>{{a.active}}</td><td>{{a.haEnable}}</td> <td>{{a.master}}</td><td :title="a.workDir">dir</td>
+                <td>{{a.active}}</td><td>{{a.haEnable}}</td> <td>{{a.master}}</td><td>{{logLevels[a.logLevel]}}</td>
                 <td>{{a.pid}}</td><td>{{ a.startTime0 }}</td><td>{{ a.continue }}</td><td>{{a.host}}</td>
                 <td>{{a.agentId}}</td><!--<td>{{a.agentProcessId}}</td>--><td>{{a.depId}}</td>
                 <td>&nbsp;
-                   <a v-if="isLogin" @click="stopProcess(a.id)"> STOP </a>
+                   <a v-if="isLogin" @click="stopProcess(a)"> {{ "Stop" |i18n }} </a>
+                    <a v-if="isLogin" @click="editProcessDrawer(a)"> {{ "Edit" |i18n }} </a>
                 </td>
             </tr>
         </table>
+
+        <Drawer  v-if="isLogin && editPi"  v-model="drawer.drawerStatus" :closable="false" placement="right" :transfer="true"
+                 :draggable="true" :scrollable="true" width="50">
+            <div><i-button @click="saveProcessInfo()">{{'Confirm'|i18n}}</i-button></div>
+            <table>
+                <tr>
+                    <td>{{'logLevel' | i18n}}</td>
+                    <td>
+                        <Select  ref="levelSelect" :label-in-value="true" v-model="editPi.logLevel">
+                            <Option :value="k" v-for="(v,k) in logLevels" v-bind:key="k">{{v}}</Option>
+                        </Select>
+                    </td>
+                    <td></td>
+                    <td></td>
+                </tr>
+
+                <tr>
+                    <td>{{'workDir' | i18n}}</td>
+                    <td colspan="3">
+                        {{editPi.workDir}}
+                    </td>
+                </tr>
+
+            </table>
+        </Drawer>
+
     </div>
 </template>
 
@@ -35,9 +62,50 @@
                 showAll:true,
                 processList:[],
                 isLogin : false,
+
+                drawer: {
+                    drawerStatus:false,
+                    drawerBtnStyle:{right:'0px',zindex:1005},
+                },
+
+                logLevels: window.jm.mng.LOG2LEVEL,
+
+                editPi: null,
+
             }
         },
+
         methods: {
+
+            editProcessDrawer(pi) {
+                this.editPi = pi;
+                pi.logLevel = '' + pi.logLevel;
+
+                this.drawer.drawerStatus = true;
+                this.drawer.drawerBtnStyle.zindex = 10000;
+                this.drawer.drawerBtnStyle.left = '0px';
+            },
+
+            saveProcessInfo(){
+                if(!this.editPi) {
+                    return;
+                }
+                let self = this;
+                let pi = {id:this.editPi.id, logLevel:parseInt(this.editPi.logLevel)};
+                window.jm.mng.choy.updateProcess(pi)
+                 .then((resp)=>{
+                    if(resp.code == 0) {
+                        self.drawer.drawerStatus = false;
+                        self.drawer.drawerBtnStyle.zindex = 100;
+                        self.$Message.success("Success update process");
+                    } else {
+                        self.$Message.success(resp.msg);
+                    }
+                }).catch((err)=>{
+                    window.console.log(err);
+                    self.$Message.error(err);
+                });
+            },
 
             refresh(){
                 this.msg = null;
@@ -68,10 +136,11 @@
                 });
             },
 
-            stopProcess(insId) {
+            stopProcess(pi) {
                 let self = this;
-                window.jm.mng.choy.stopProcess(insId).then((resp)=>{
+                window.jm.mng.choy.stopProcess(pi.id).then((resp)=>{
                     if(resp.code == 0) {
+                        pi.active = false;
                         self.$Message.success("Success stop process");
                     }else {
                         self.$Message.success(resp.msg);
@@ -113,5 +182,18 @@
 <style>
     .JProcess{
         height:auto;
+    }
+
+    .ProcessDrawerBtnStatus{
+        position: fixed;
+        left: 0px;
+        top: 30%;
+        bottom: 30%;
+        height: 39%;
+        width: 1px;
+        border-left: 1px solid lightgray;
+        background-color: lightgray;
+        border-radius: 3px;
+        z-index: 1000000;
     }
 </style>

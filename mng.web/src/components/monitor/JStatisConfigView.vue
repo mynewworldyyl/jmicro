@@ -39,7 +39,7 @@
                     <td>
                         <a v-if="isLogin && !c.enable" @click="update(c)">{{'Update' | i18n }}</a>&nbsp;&nbsp;&nbsp;&nbsp;
                         <a v-if="isLogin && !c.enable" @click="remove(c.id)">{{'Delete' | i18n }}</a>&nbsp;&nbsp;&nbsp;&nbsp;
-                        <a v-if="isLogin  && c.enable" @click="enable(c.id)">{{'Disalbe' | i18n }}</a>&nbsp;&nbsp;&nbsp;&nbsp;
+                        <a v-if="isLogin  && c.enable" @click="enable(c.id)">{{'Disable' | i18n }}</a>&nbsp;&nbsp;&nbsp;&nbsp;
                         <a v-if="isLogin  && !c.enable" @click="enable(c.id)">{{'Enable' | i18n }}</a>&nbsp;&nbsp;&nbsp;&nbsp;
                         <a v-if="isLogin" @click="view(c)">{{'View' | i18n }}</a>&nbsp;&nbsp;
                     </td>
@@ -621,7 +621,7 @@
                         this.byKey.ins='*';
                     }
 
-                    this.cfg.byKey = this.byKey.sn+'##'+this.byKey.ns+'##'+this.byKey.ver+'##'+this.byKey.ins+'######'+this.byKey.sm+'##';
+                    this.cfg.byKey = this.byKey.sn+'##'+this.byKey.ns+'##'+this.byKey.ver+'##'+this.byKey.ins+'######'+this.byKey.sm;
                 }
 
                 if(!this.cfg.timeUnit || this.cfg.timeUnit.length == 0) {
@@ -652,7 +652,7 @@
                         self.errMsg = '接收数据目标方法不能为空';
                         return;
                     }
-                    this.cfg.toParams = this.smToKey.sn+'##'+this.smToKey.ns+'##'+this.smToKey.ver+'########'+this.smToKey.sm+'##';
+                    this.cfg.toParams = this.smToKey.sn+'##'+this.smToKey.ns+'##'+this.smToKey.ver+'########'+this.smToKey.sm;
                 }else if(self.cfg.toType == TO_TYPE_FILE ) {
                     if(!self.cfg.toParams || self.cfg.toParams.length == 0) {
                         self.errMsg =  self.cfg.type == 2 ? '数据库表名不能为空':'文件名不能为空';

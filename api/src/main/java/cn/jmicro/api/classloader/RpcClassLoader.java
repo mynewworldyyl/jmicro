@@ -37,6 +37,8 @@ import cn.jmicro.api.annotation.Reference;
 import cn.jmicro.api.async.IPromise;
 import cn.jmicro.api.classloader.genclient.IClassloaderRpc$JMAsyncClient;
 import cn.jmicro.api.config.Config;
+import cn.jmicro.api.monitor.LG;
+import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.raft.IChildrenListener;
 import cn.jmicro.api.raft.IDataOperator;
 import cn.jmicro.api.registry.IRegistry;
@@ -165,7 +167,9 @@ public class RpcClassLoader extends ClassLoader {
     	
     	for(String insPath : ownerClasses) {
     		if(!op.exist(insPath)) {
-    			logger.info("Regist remote class: {}", insPath);
+    			String msg = "Regist remote class:" + insPath;
+    			logger.info(msg);
+    			LG.log(MC.LOG_DEBUG, this.getClass(), msg);
         		op.createNodeOrSetData(insPath, Config.getExportSocketHost(), true);
         	}
     	}
@@ -267,9 +271,9 @@ public class RpcClassLoader extends ClassLoader {
 	
 	private Class<?> getClass0(String className) {
 
-		if(className.endsWith("II8NService$Gateway$JMAsyncClient")) {
+		/*if(className.endsWith("II8NService$Gateway$JMAsyncClient")) {
 			logger.debug("getClass0");
-		}
+		}*/
 		
 		String originClsName = className;
 		className = this.getClassName(className);
@@ -335,20 +339,36 @@ public class RpcClassLoader extends ClassLoader {
 					byte[] bytes = p.getResult();
 					if (bytes != null && bytes.length > 0) {
 						clazzesData.put(originClsName, bytes);
-						logger.info("Success load data: {} from {}", originClsName,
-								directItem.getKey().toKey(true, true, true));
+						
+						String desc = "Success sync load class: "+originClsName+", length:"+bytes.length+", from " + directItem.getKey().toKey(true, true, true);
+						logger.info(desc);
+						LG.log(MC.LOG_INFO, this.getClass(), desc);
+						
 						return bytes;
 					} else {
+						
+						String desc = "Fail to sync load class: "+originClsName+", from " + directItem.getKey().toKey(true, true, true);
+						logger.info(desc);
+						LG.log(MC.LOG_ERROR, this.getClass(), desc);
+						
 						return null;
 					}
 					
 				}else {
+					final ServiceItem directItem0 = directItem;
+					
 					p.then((bytes,fail,cxt)->{
 						if (bytes != null && bytes.length > 0) {
-							logger.info("Success load data: {} from {}", originClsName,insName);
 							clazzesData.put(originClsName, bytes);
+							
+							String desc = "Success async load class: "+originClsName+", length:"+bytes.length+", from " + directItem0.getKey().toKey(true, true, true);
+							logger.info(desc);
+							LG.log(MC.LOG_INFO, this.getClass(), desc);
+							
 						}else if(fail != null) {
-							logger.error(fail.toString());
+							String desc = "Fail to async load class: "+originClsName+", from " + directItem0.getKey().toKey(true, true, true)+", with error: " + fail.toString();
+							logger.info(desc);
+							LG.log(MC.LOG_ERROR, this.getClass(), desc);
 						}
 					});
 					return null;
@@ -357,7 +377,9 @@ public class RpcClassLoader extends ClassLoader {
 				logger.error("error load class from: " + directItem.getKey().toKey(true, true, true), e);
 			}
 		}
-
+		String desc = "Owner server not found for resource ["+originClsName+"]";
+		logger.error(desc);
+		LG.log(MC.LOG_ERROR, this.getClass(), desc);
 		return null;
 
 	}
@@ -383,29 +405,45 @@ public class RpcClassLoader extends ClassLoader {
 					byte[] bytes = p.getResult();
 					if (bytes != null && bytes.length > 0) {
 						clazzesData.put(originClsName, bytes);
-						logger.info("Success sync load class: {}, length:{}, from {}", originClsName,bytes.length,
-								directItem.getKey().toKey(true, true, true));
+						String desc = "Success sync load class: "+originClsName+", length:"+bytes.length+", from " + directItem.getKey().toKey(true, true, true);
+						logger.info(desc);
+						LG.log(MC.LOG_INFO, this.getClass(), desc);
 						Class<?> myClass = dfClass(originClsName,bytes);
 			        	return myClass;
 					}else {
+						String desc = "Fail to sync load class: "+originClsName+", from " + directItem.getKey().toKey(true, true, true);
+						logger.info(desc);
+						LG.log(MC.LOG_ERROR, this.getClass(), desc);
 						return null;
 					}
 				}else {
+					final ServiceItem directItem0 = directItem;
 					p.then((bytes,fail,cxt)->{
 						if (bytes != null && bytes.length > 0) {
 							clazzesData.put(originClsName, bytes);
 							dfClass(originClsName,bytes);
-							logger.info("Success async load class: {}, length:{}, from {}", originClsName,bytes.length,insName);
+							//logger.info("Success async load class: {}, length:{}, from {}", originClsName,bytes.length,insName);
+							String desc = "Success async load class: "+originClsName+", length:"+bytes.length+", from " + directItem0.getKey().toKey(true, true, true);
+							logger.info(desc);
+							LG.log(MC.LOG_INFO, this.getClass(), desc);
+							
 						}else if(fail != null) {
-							logger.error(fail.toString());
+							String desc = "Fail to async load class: "+originClsName+", from " + directItem0.getKey().toKey(true, true, true)+", with error: " + fail.toString();
+							logger.info(desc);
+							LG.log(MC.LOG_ERROR, this.getClass(), desc);
 						}
 					});
 					return null;
 				}
 			} catch (Throwable e) {
-				logger.error("error load class ["+originClsName+"] from: " + directItem.getKey().toKey(true, true, true), e);
+				String desc = "error load class ["+originClsName+"] from: " + directItem.getKey().toKey(true, true, true);
+				logger.error(desc,e);
+				LG.log(MC.LOG_ERROR, this.getClass(), desc,e);
 			}
 		}
+		String desc = "Owner server not found for ["+originClsName+"]";
+		logger.error(desc);
+		LG.log(MC.LOG_ERROR, this.getClass(), desc);
 		return null;
 	}
 	

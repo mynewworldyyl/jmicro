@@ -7,16 +7,16 @@
             <div class="overViewCls" v-if="curMi && curMi.item" >
                 <h3 :class="{'failCls' : !curMi.item.resp.success}">OVERVIEW</h3>
                 <Row type="flex">
-                    <i-col span="12" order="1">SERVICE | {{curMi.item.req.serviceName}}</i-col>
+                    <i-col span="12" order="1">SERVICE | {{curMi.item.smKey.usk.serviceName}}</i-col>
                     <i-col span="12" order="2">  IMPL | {{curMi.item.implCls}}</i-col>
                 </Row>
                 <Row type="flex">
-                    <i-col span="6" order="1">NAMESPACE | {{curMi.item.req.namespace}}</i-col>
-                    <i-col span="6" order="2">VERSION | {{curMi.item.req.version}}</i-col>
-                    <i-col span="6" order="3">METHOD | {{curMi.item.req.method}}</i-col>
+                    <i-col span="6" order="1">NAMESPACE | {{curMi.item.smKey.usk.namespace}}</i-col>
+                    <i-col span="6" order="2">VERSION | {{curMi.item.smKey.usk.version}}</i-col>
+                    <i-col span="6" order="3">METHOD | {{curMi.item.smKey.method}}</i-col>
                 </Row>
                 <Row type="flex">
-                    <i-col span="12" order="1">PARAMS TYPE | {{curMi.item.sm.key.paramsStr}}</i-col>
+                    <i-col span="12" order="1">PARAMS TYPE | {{curMi.item.smKey.paramsStr}}</i-col>
                     <i-col span="12" order="2">  ARGS | {{ curMi.item.req.args }}</i-col>
                 </Row>
                 <Row type="flex">
@@ -45,12 +45,13 @@
 
             <div>
                 <div v-if="curMi && curMi.item" class="tableCls">
+                    <h3>COMSUMER</h3>
                     <table class="configItemTalbe" width="99%">
-                        <caption>COMSUMER</caption>
-                        <thead><tr><td class="tagCls">TAG</td><td>TYPE</td><td class="levelCls">LEVEL</td><td  class="timeCls">TIME</td><td>DESC</td><td>VAL</td><td>NUN</td></tr></thead>
+                        <thead><tr><td class="tagCls">TAG</td><td>TYPE</td><td class="levelCls">LEVEL</td>
+                            <td  class="timeCls">TIME</td><td>DESC</td><td>LineNo</td><td>FileName</td><td>Ex</td></tr></thead>
                         <tr v-for="c in curMi.item.items" :key="c.type +'_'+ c.time">
                             <td>{{c.tag}}</td><td>{{c.typeLabel}}</td><td>{{c.levelLabel}}</td><td>{{c.time | formatDate}}</td>
-                            <td>{{c.desc}}</td><td>{{c.val}}</td><td>{{c.num}}</td>
+                            <td>{{c.desc}}</td><td>{{c.lineNo}}</td><td>{{c.fileName}}</td><td :title="c.ex||'N'">{{c.ex ? "Detail":""}}</td>
                         </tr>
                     </table>
                 </div>
@@ -80,10 +81,11 @@
 
                         </div>
                         <table class="configItemTalbe" width="99%">
-                            <thead><tr><td class="tagCls">TAG</td><td>TYPE</td><td class="levelCls">LEVEL</td><td class="timeCls">TIME</td><td>DESC</td><td>VAL</td><td>NUN</td></tr></thead>
+                            <thead><tr><td class="tagCls">TAG</td><td>TYPE</td><td class="levelCls">LEVEL</td>
+                                <td class="timeCls">TIME</td><td>DESC</td><td>LineNo</td><td>FileName</td><td>Ex</td></tr></thead>
                             <tr v-for="c in mi.items" :key="c.type +'_'+ c.time">
                                 <td>{{c.tag}}</td><td>{{c.typeLabel}}</td><td>{{c.levelLabel}}</td><td>{{c.time | formatDate}}</td>
-                                <td>{{c.desc}}</td><td>{{c.val}}</td><td>{{c.num}}</td>
+                                <td>{{c.desc}}</td><td>{{c.lineNo}}</td><td>{{c.fileName}}</td><td :title="c.ex||''">{{c.ex?'Detail':"N"}}</td>
                             </tr>
                         </table>
                     </div>
@@ -180,7 +182,7 @@
                     self.cacheModels[self.linkId] = resp.data;
                     self.curModel = resp.data;
                     self.parseTree(self.curModel);
-                    this.curMi = self.curModel;
+                    self.curMi = self.curModel;
                 }).catch((err)=>{
                     window.console.log(err);
                 });

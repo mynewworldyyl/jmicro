@@ -59,6 +59,9 @@ import cn.jmicro.common.Utils;
 public final class MC {
 	
 	private MC(){}
+	
+	@MCA(group="deft", value="默认类型")
+	public static final short MT_DEFAULT  = 0;
 
 	@MCA(group="rpc", value="请求开始")
 	public static final short MT_REQ_START  = 0x0001;
@@ -359,6 +362,8 @@ public final class MC {
     public static final byte LOG_ERROR = 5;
     
     public static final byte LOG_FINAL = 6;
+    
+    public static final byte LOG_FORCE = 7;
     
     public static final String PREFIX_TOTAL = "total";
     public static final String PREFIX_TOTAL_PERCENT = "totalPercent";

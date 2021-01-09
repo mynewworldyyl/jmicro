@@ -177,7 +177,7 @@
       <!--  <div :style="detail.drawerBtnStyle" class="detailJinvokeBtnStatu" @mouseenter="openDetailDrawer()"></div>-->
 
         <Drawer v-if="isLogin"  v-model="detail.drawerStatus" :closable="false" placement="right" :transfer="true"
-                 :draggable="true" :scrollable="true" width="95">
+                 :draggable="true" :scrollable="true" width="90">
             <JLinkDetailView :linkId="curDetailLinkId"></JLinkDetailView>
         </Drawer>
 
@@ -189,7 +189,7 @@
     import treeTable from '../treetable/LinkLogTreeTable.vue'
     import JLinkDetailView from './JLinkDetailView.vue'
 
-    const cid = 'JInvokeLinkView';
+    const cid = 'invokeLinkView';
 
     export default {
         name: cid,
@@ -244,16 +244,16 @@
 
             curPageChange(curPage){
                 this.curPage = curPage;
-                this.refresh();
+                this.doQuery();
             },
 
             pageSizeChange(pageSize){
                 this.pageSize = pageSize;
                 this.curPage = 1;
-                this.refresh();
+                this.doQuery();
             },
 
-            doQuery() {
+            refresh() {
                 let self = this;
                 let params = this.getQueryConditions();
                 window.jm.mng.logSrv.count(params).then((resp)=>{
@@ -263,14 +263,14 @@
                     } else {
                         self.totalNum = resp.data;
                         self.curPage = 1;
-                        self.refresh();
+                        self.doQuery();
                     }
                 }).catch((err)=>{
                     window.console.log(err);
                 });
             },
 
-            refresh() {
+            doQuery() {
                 let self = this;
                 this.isLogin = window.jm.rpc.isLogin();
                 if(!this.isLogin) {
@@ -339,38 +339,48 @@
                     }
                     this.groups.push(val);
                 }
-            }
-        },
+            },
 
-        refresh() {
-            let self = this;
-            self.isLogin = window.jm.rpc.isLogin();
-            if(!this.isLogin) {
-                self.selOptions = [];
-                return;
-            }
-            window.jm.mng.logSrv.queryDict().then((resp)=>{
-                if(resp.code != 0) {
-                    self.$Message.success(resp.msg);
+            refreshDict() {
+                let self = this;
+                self.isLogin = window.jm.rpc.isLogin();
+                if(!this.isLogin) {
+                    self.selOptions = [];
                     return;
                 }
-                self.selOptions = resp.data;
-                self.doQuery();
-            }).catch((err)=>{
-                window.console.log(err);
-            });
+                window.jm.mng.logSrv.queryDict().then((resp)=>{
+                    if(resp.code != 0) {
+                        self.$Message.success(resp.msg);
+                        return;
+                    }
+                    self.selOptions = resp.data;
+                    self.refresh();
+                }).catch((err)=>{
+                    window.console.log(err);
+                });
+            },
         },
 
         mounted () {
             let self = this;
             this.$el.style.minHeight=(document.body.clientHeight-67)+'px';
-            window.jm.rpc.addActListener(cid,self.refresh);
+            window.jm.rpc.addActListener(cid,this.refreshDict);
+
+            window.jm.vue.$emit("editorOpen",
+                {"editorId":cid,
+                    "menus":[
+                        {name:"Refresh",label:"Refresh",icon:"ios-cog",call:self.refreshDict}
+                    ]
+                });
+
             let ec = function() {
                 window.jm.rpc.removeActListener(cid);
                 window.jm.vue.$off('editorClosed',ec);
             }
-            window.jm.vue.$on('editorClosed',ec);
+
             self.refresh();
+            window.jm.vue.$on('editorClosed',ec);
+
         },
 
         beforeDestroy() {

@@ -309,6 +309,25 @@ public class ServiceManager {
 		return this.methodHash2Method.get(hash);
 	}
 	
+	public ServiceMethod getServiceMethodWithHashBySearch(int hash) {
+		ReentrantReadWriteLock.ReadLock l = rwLocker.readLock();
+		try {
+			l.lock();
+			for(ServiceItem i : path2SrvItems.values()) {
+				for(ServiceMethod s : i.getMethods()) {
+					if(s.getKey().getSnvHash() == hash) {
+						return s;
+					}
+				}
+			}
+		} finally {
+			if(l != null) {
+				l.unlock();
+			}
+		}
+		return null;
+	}
+	
 	public void updateOrCreate(ServiceItem item,String path,boolean isel) {
 		String data = JsonUtils.getIns().toJson(item);
 		if(dataOperator.exist(path)){
@@ -732,7 +751,7 @@ public class ServiceManager {
 							String msg = "Service method hash conflict: [" + smKey + 
 									"] with exist sm [" + conflichMethod.getKey().toKey(false, false, false)+"] fail to load service!";
 							logger.error(msg);
-							LG.logWithNonRpcContext(MC.LOG_ERROR, ServiceManager.class, msg);
+							LG.logWithNonRpcContext(MC.LOG_ERROR, ServiceManager.class,msg,MC.MT_DEFAULT,true);
 							return false;
 						}
 						//同一个方法，保存最新的方法

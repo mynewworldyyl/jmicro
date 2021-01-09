@@ -115,7 +115,7 @@ public interface Constants {
 	//public static final String SPECIAL_INVOCATION_HANDLER = "specailInvocationHandler";
 	
 	public static final String DEFAULT_NAMESPACE = "defaultNamespace";
-	public static final String VERSION = "0.0.1";
+	public static final String VERSION = "0.0.2";
 	public static final String DEFAULT_IDGENERATOR = "defaultGenerator";
 	
 	public static final String CHARSET = "UTF-8";

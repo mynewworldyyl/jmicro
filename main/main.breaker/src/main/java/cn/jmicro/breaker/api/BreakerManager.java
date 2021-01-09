@@ -391,7 +391,7 @@ public class BreakerManager implements IStatisDataSubscribe{
 				String msg2 = "Now config service ["+smKey.getServiceName() 
 				+"##"+smKey.getNamespace()+"##"+ smKey.getVersion()+"] not found";
 				logger.warn(msg2);
-				LG.logWithNonRpcContext(MC.LOG_WARN, BreakerManager.class, msg2);
+				LG.logWithNonRpcContext(MC.LOG_WARN, BreakerManager.class, msg2,MC.MT_DEFAULT,true);
 				removeChecker(vo);
 				return;
 			}
@@ -400,7 +400,7 @@ public class BreakerManager implements IStatisDataSubscribe{
 			if(srv == null) {
 				String msg2 = "Fail to create service proxy ["+smKey.getServiceName() +"##"+smKey.getNamespace()+"##"+ smKey.getVersion()+"] not found";
 				logger.warn(msg2);
-				LG.logWithNonRpcContext(MC.LOG_WARN, BreakerManager.class, msg2);
+				LG.logWithNonRpcContext(MC.LOG_WARN, BreakerManager.class, msg2,MC.MT_DEFAULT,true);
 				removeChecker(vo);
 				return;
 			}

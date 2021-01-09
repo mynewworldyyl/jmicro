@@ -124,12 +124,11 @@ public class ApiRawRequestMessageHandler implements IMessageHandler{
 			
 			if(msg.getUpProtocol() == Message.PROTOCOL_JSON) {
 				req = ICodecFactory.decode(codecFactory, msg.getPayload(), ApiRequest.class, msg.getUpProtocol());
-				//si = getServiceItem(req); 
+				//si = getServiceItem(req);
 				//sm = getServiceMethod(si,req);
 				paramsCls = ReflectUtils.desc2classArray(rpcClassloader, sm.getKey().getParamsStr());
 				req.setArgs(getArgs(paramsCls,req.getArgs(),session));
 			} else {
-				
 				req = new ApiRequest();
 				ji = new JDataInput((ByteBuffer)msg.getPayload());
 				req.setReqId(ji.readLong());
@@ -209,7 +208,7 @@ public class ApiRawRequestMessageHandler implements IMessageHandler{
 				JMicroContext.get().setParam(JMicroContext.LOCAL_PORT, session.localPort());
 				JMicroContext.get().setParam(JMicroContext.REMOTE_HOST, session.remoteHost());
 				JMicroContext.get().setParam(JMicroContext.REMOTE_PORT, session.remotePort());
-				JMicroContext.get().mergeParams(req.getParams());
+				JMicroContext.get().putAllParams(req.getParams());
 				
 				ServerError se = pm.permissionCheck(ai,sm,si.getClientId());
 				if(se != null){

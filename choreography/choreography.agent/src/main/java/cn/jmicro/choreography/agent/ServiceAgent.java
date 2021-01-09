@@ -61,6 +61,7 @@ import cn.jmicro.choreography.assign.AssignState;
 import cn.jmicro.choreography.instance.InstanceManager;
 import cn.jmicro.common.CommonException;
 import cn.jmicro.common.Constants;
+import cn.jmicro.common.Utils;
 import cn.jmicro.common.util.JsonUtils;
 import cn.jmicro.common.util.StringUtils;
 
@@ -562,7 +563,7 @@ public class ServiceAgent {
 
 	private void assignAdded(Assign as) {
 		if (this.agentInfo.isPrivat()) {
-			if (this.initDepIds == null || this.initDepIds.length == 0) {
+			if(this.initDepIds == null || this.initDepIds.length == 0) {
 				
 				String msg = "Private agent but initDepIds is null!";
 				LG.log(MC.LOG_ERROR, TAG, msg);
@@ -735,7 +736,7 @@ public class ServiceAgent {
 				if (logger.isDebugEnabled()) {
 					logger.debug(e.getKey() + "=" + e.getValue());
 				}
-				list.add("-D" + e.getKey() + "=" + e.getValue());
+				list.add("-D" + e.getKey() + "=" + getArgVal(e.getValue()));
 			}
 		}
 
@@ -810,6 +811,53 @@ public class ServiceAgent {
 		}
 	}
 
+	private String getArgVal(String value) {
+		if(Utils.isEmpty(value)) {
+			return "";
+		}
+		
+		value = value.trim();
+		
+		String[] splits = value.split("/");
+		if(splits == null || splits.length <= 1) {
+			return value;
+		}
+		
+		StringBuffer sb = null;
+
+		if(value.startsWith("/")) {
+			sb = new StringBuffer("/");
+		}else {
+			sb = new StringBuffer();
+		}
+		
+		for(String v : splits) {
+			 if(Utils.isEmpty(v)) {
+				continue;
+			 }
+			 
+			String tv = v;
+			
+			if(tv.startsWith("$")) {
+				 tv = tv.substring(1);
+				 tv = cfg.getString(tv, "");
+				 if(Utils.isEmpty(tv)) {
+					String errMsg = "Evn var "+v+" not found for: " + value;
+					LG.log(MC.LOG_ERROR, TAG, errMsg);
+					throw new CommonException(errMsg);
+				 }
+			}
+			sb.append(tv).append("/");
+		}
+		
+		String rst = sb.toString();
+		if(rst.endsWith("/")) {
+			rst = rst.substring(0, rst.length()-1);
+		}
+		
+		return rst;
+	}
+
 	private void updateAssign(Assign as, AssignState s) {
 		String data = op.getData(this.path + "/" + as.getInsId());
 		Assign a = JsonUtils.getIns().fromJson(data, Assign.class);
@@ -873,11 +921,11 @@ public class ServiceAgent {
 
 				if (data != null && data.length > 0) {
 					String msg0 = "Got one block: " + data.length + "B";
-					LG.logWithNonRpcContext(MC.LOG_DEBUG, TAG, msg0);
+					LG.logWithNonRpcContext(MC.LOG_DEBUG, TAG, msg0,MC.MT_DEFAULT,true);
 					try {
 						fos.write(data, 0, data.length);
 					} catch (IOException e) {
-						LG.logWithNonRpcContext(MC.LOG_ERROR, TAG, "Write jar file error", e);
+						LG.logWithNonRpcContext(MC.LOG_ERROR, TAG.getName(), "Write jar file error", e,MC.MT_DEFAULT,true);
 						f.delete();
 						return false;
 					}
@@ -885,7 +933,7 @@ public class ServiceAgent {
 
 				if (data == null || data.length == 0 || data.length < this.uploadBlockSize) {
 					String msg0 = "Finish download: " + jarFile + " with size: " + f.length();
-					LG.logWithNonRpcContext(MC.LOG_INFO, TAG, msg0);
+					LG.logWithNonRpcContext(MC.LOG_INFO, TAG, msg0,MC.MT_DEFAULT,true);
 					return true;
 				}
 				

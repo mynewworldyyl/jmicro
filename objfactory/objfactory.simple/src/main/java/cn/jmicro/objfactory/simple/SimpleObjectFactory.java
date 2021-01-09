@@ -523,6 +523,8 @@ public class SimpleObjectFactory implements IObjectFactory {
 				//注入服务引用
 				processReference0(lobjs,cfg,systemObjs);
 				
+				LG.initLog();
+				
 				//组件初始化完成
 				notifyAfterInitPostListener0(lobjs,cfg,systemObjs);
 				
@@ -1682,7 +1684,7 @@ public class SimpleObjectFactory implements IObjectFactory {
 			String id = Config.getCommandParam(ChoyConstants.ARG_INSTANCE_ID);
 			if(StringUtils.isNotEmpty(id)) {
 				pi.setId(Integer.parseInt(id));
-			}else {
+			} else {
 				int processId;
 				if(op.exist(ChoyConstants.ID_PATH)) {
 					processId = Integer.parseInt(op.getData(ChoyConstants.ID_PATH))+1;
@@ -1710,6 +1712,7 @@ public class SimpleObjectFactory implements IObjectFactory {
 		pi.setStartTime(pi.getOpTime());
 		pi.setInfoFilePath(initProcessInfoPath);
 		pi.setOsName(System.getProperty("os.name"));
+		pi.setLogLevel(Config.getCommandParam(Constants.SYSTEM_LOG_LEVEL, Byte.class, MC.LOG_INFO));
 		
 		//pi.setTimeOut(0);
 		
@@ -1728,6 +1731,8 @@ public class SimpleObjectFactory implements IObjectFactory {
 		}
 		
 		this.cacheObj(ProcessInfo.class, pi,null);
+		
+		op.createNodeOrSetData(p,js ,IDataOperator.EPHEMERAL);
 		
 		//SF.eventLog(MC.MT_PROCESS_ADD,MC.LOG_INFO, this.getClass().getSimpleName(),js);
 		
@@ -1748,11 +1753,11 @@ public class SimpleObjectFactory implements IObjectFactory {
 				ProcessInfo pi0 = JsonUtils.getIns().fromJson(data, ProcessInfo.class);
 				if(!pi0.isActive()) {
 					pi.setActive(false);
-					op.deleteNode(p);
 					String msg = "JVM exit by other system";
 					LG.log(MC.LOG_WARN, this.getClass(),msg+"data: "+data);
 					MT.nonRpcEvent(Config.getInstanceName(), MC.MT_PROCESS_REMOVE);
 					logger.warn(msg);
+					op.deleteNode(p);
 					JMicro.waitTime(4000);
 					System.exit(0);
 				} else {
@@ -1770,6 +1775,8 @@ public class SimpleObjectFactory implements IObjectFactory {
 					pi.setPid(pi0.getPid());
 					pi.setWorkDir(pi0.getWorkDir());
 					pi.setMetadatas(pi0.getMetadatas());
+					pi.setLogLevel(pi0.getLogLevel());
+					
 				}
 			}
 		});

@@ -248,6 +248,43 @@ public class ChoreographyServiceImpl implements IChoreographyService {
 	}
 	
 	@Override
+	@SMethod(perType=true,needLogin=true,maxSpeed=5,maxPacketSize=8194)
+	public Resp<Boolean> updateProcess(ProcessInfo updatePi) {
+		Resp<Boolean> resp = new Resp<>(0);
+		ProcessInfo pi = this.insManager.getProcessesByInsId(updatePi.getId(), true);
+		if(pi == null) {
+			resp.setData(true);
+			return resp;
+		}
+		
+		if(PermissionManager.checkAccountClientPermission(pi.getClientId())) {
+			String p = ChoyConstants.INS_ROOT + "/" + pi.getId();
+			pi.setLogLevel(updatePi.getLogLevel());
+			String data = JsonUtils.getIns().toJson(pi);
+			op.setData(p, data);
+			ActInfo ai = JMicroContext.get().getAccount();
+			String msg = "Update process by Account [" + ai.getActName() + "], Process: " + data;
+			logger.warn(msg);
+			LG.log(MC.LOG_WARN, TAG,msg);
+			return resp;
+		} else {
+			String msg = "";
+			ActInfo ai = JMicroContext.get().getAccount();
+			if(ai != null) {
+				msg = "No permission to update process [" + ai.getActName() + "], Process ID: " + updatePi.getId();
+			}else {
+				msg = "Nor login account to update process ID: " + updatePi.getId();
+			}
+			logger.warn(msg);
+			LG.log(MC.LOG_WARN, TAG,msg);
+			resp.setData(false);
+			resp.setCode(1);
+			resp.setMsg(msg);
+			return resp;
+		}
+	}
+	
+	@Override
 	@SMethod(perType=true,needLogin=true,maxSpeed=5,maxPacketSize=256)
 	public Resp<Boolean> stopProcess(Integer insId) {
 		Resp<Boolean> resp = new Resp<>(0);

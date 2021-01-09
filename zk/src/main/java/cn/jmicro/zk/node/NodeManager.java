@@ -154,13 +154,9 @@ public class NodeManager {
 			data = "";
 		}
 		if(this.exist(path)) {
-			boolean elp = model == IDataOperator.EPHEMERAL || model == IDataOperator.EPHEMERAL_SEQUENTIAL;
-			if(elp) {
-				throw new CommonException("elp node ["+path+"] have been exists");
-			} else {
-				//如果结点已经存在，则直接更新数数
-				this.setData(path, data);
-			}
+			//boolean elp = model == IDataOperator.EPHEMERAL || model == IDataOperator.EPHEMERAL_SEQUENTIAL;
+			//如果结点已经存在，则直接更新数数
+			this.setData(path, data);
 			return;
 		}
 		

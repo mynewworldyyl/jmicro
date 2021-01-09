@@ -16,9 +16,6 @@
  */
 package cn.jmicro.client;
 
-import java.util.HashSet;
-import java.util.Set;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -27,12 +24,11 @@ import cn.jmicro.api.annotation.Cfg;
 import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Inject;
 import cn.jmicro.api.client.InvocationHandler;
-import cn.jmicro.api.exception.RpcException;
 import cn.jmicro.api.idgenerator.ComponentIdServer;
+import cn.jmicro.api.monitor.LG;
 import cn.jmicro.api.monitor.LogMonitorClient;
 import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.monitor.MRpcLogItem;
-import cn.jmicro.api.monitor.MT;
 import cn.jmicro.api.monitor.StatisMonitorClient;
 import cn.jmicro.api.net.IRequest;
 import cn.jmicro.api.net.InterceptorManager;
@@ -75,10 +71,9 @@ public class ServiceInvocationHandler implements InvocationHandler{
 	public <T> T invoke(Object proxy, String methodName, Object[] args){
 		
 		RpcRequest req = null;
+		JMicroContext cxt = JMicroContext.get();
 		
 		try {
-			
-			JMicroContext cxt = JMicroContext.get();
 			
 			ServiceItem si = cxt.getParam(Constants.SERVICE_ITEM_KEY, null);
 			req = new RpcRequest();
@@ -99,10 +94,8 @@ public class ServiceInvocationHandler implements InvocationHandler{
 				//新建一个RPC链路开始
 				JMicroContext.lid();
 				cxt.setParam(Constants.NEW_LINKID, true);
-				if(JMicroContext.get().isMonitorable()) {
-					//LG.eventLog(MC.MT_LINK_START, MC.LOG_NO, TAG, null);
-					MT.rpcEvent(MC.MT_LINK_START);
-				}
+				//MT.rpcEvent(MC.MT_LINK_START);
+				LG.log(MC.LOG_DEBUG,TAG.getName(),MC.MT_LINK_START);
 			} else {
 				cxt.setParam(Constants.NEW_LINKID, false);
 			}
@@ -115,6 +108,14 @@ public class ServiceInvocationHandler implements InvocationHandler{
 				mi.setReqParentId(req.getReqParentId());
 			}
 			
+			/*MRpcStatisItem ms = cxt.getMRpcStatisItem();
+			if(ms != null) {
+				ms.setReq(req);
+				ms.setReqId(req.getRequestId());
+				ms.setLinkId(JMicroContext.lid());
+				ms.setReqParentId(req.getReqParentId());
+			}*/
+			
 			if(JMicroContext.get().isDebug()) {
 				JMicroContext.get().getDebugLog()
 				.append(methodName)
@@ -124,16 +125,15 @@ public class ServiceInvocationHandler implements InvocationHandler{
 			
 			 return (T)this.intManager.handleRequest(req);
 			
-			//obj = resp == null ? null : resp.getResult();
 		} catch(Throwable ex) {
+			cxt.debugLog(0);
+			cxt.submitMRpcItem(logMonitor,monitor);
+			JMicroContext.clear();
 			if(ex instanceof CommonException) {
 				throw ex;
 			} else {
-				logger.error("ServiceInvocationHandler error:",ex);
-				throw new RpcException(req,ex,MC.MT_REQ_ERROR);
+				throw new CommonException("",ex);
 			}
-		} finally {
-			
 		}
 	
 	}

@@ -5,6 +5,9 @@ let MNG = 'mng';
 
 jm.mng = {
 
+    LOG2LEVEL : {2:'LOG_DEBUG', 5:'LOG_ERROR', 6:'LOG_FINAL', 3:'LOG_INFO', 0:'LOG_NO',
+        1: 'LOG_TRANCE', 4:'LOG_WARN'},
+
     ROUTER_ROOT : ROOT + '/routeRules',
     CONFIG_ROOT : ROOT,
     AGENT_ROOT : ROOT + '/choreography/agents',
@@ -389,6 +392,10 @@ jm.mng = {
 
         stopProcess: function (insId){
             return jm.rpc.callRpcWithParams(this.sn,this.ns,this.v,'stopProcess',[insId]);
+        },
+
+        updateProcess: function (pi){
+            return jm.rpc.callRpcWithParams(this.sn,this.ns,this.v,'updateProcess',[pi]);
         },
 
         getProcessInstanceList: function (all){

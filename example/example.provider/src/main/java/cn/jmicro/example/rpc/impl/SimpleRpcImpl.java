@@ -20,8 +20,8 @@ import cn.jmicro.common.Constants;
 import cn.jmicro.example.api.rpc.ISimpleRpc;
 import cn.jmicro.example.api.rpc.genclient.IRpcA$JMAsyncClient;
 
-@Service(namespace="simpleRpc", version="0.0.1", monitorEnable=0, maxSpeed=-1,debugMode=1,
-baseTimeUnit=Constants.TIME_SECONDS, external=true)
+@Service(namespace="simpleRpc", version="0.0.1", monitorEnable=0, 
+maxSpeed=-1,debugMode=1,baseTimeUnit=Constants.TIME_SECONDS, external=true)
 @Component
 public class SimpleRpcImpl implements ISimpleRpc {
 
@@ -37,7 +37,7 @@ public class SimpleRpcImpl implements ISimpleRpc {
 			//breakingRule="1S 50% 500MS",
 			//1秒钟内异常超50%，熔断服务，熔断后每80毫秒做一次测试
 			breakingRule = @SBreakingRule(enable=true, percent=50, checkInterval=2000),
-			logLevel=MC.LOG_DEBUG,	
+			logLevel=MC.LOG_DEBUG,
 			testingArgs="[\"test args\"]",//测试参数
 			monitorEnable=1,
 			timeWindow=5*60000,//统计时间窗口5分钟
@@ -61,7 +61,7 @@ public class SimpleRpcImpl implements ISimpleRpc {
 		}*/
 		//System.out.println("Server hello: " +name);
 		//logger.info("Server hello: " +name);
-		return "Server say hello to: "+name+" from : " + Config.getInstanceName();
+		return "Server say hello to: " + name + " from : " + Config.getInstanceName();
 	}
 	
 	@Override
@@ -101,7 +101,7 @@ public class SimpleRpcImpl implements ISimpleRpc {
 			timeWindow=5*60000,//统计时间窗口5分钟
 			slotInterval=100,
 			checkInterval=5000,//采样周期2S
-			timeout=5000,
+			timeout=9999999,
 			retryInterval=1000,
 			debugMode=1,
 			limitType = Constants.LIMIT_TYPE_SS,
@@ -110,10 +110,13 @@ public class SimpleRpcImpl implements ISimpleRpc {
 	)
 	public IPromise<String> linkRpc(String msg) {
 		if(LG.isLoggable(MC.LOG_DEBUG)) {
-			LG.log(MC.LOG_DEBUG,SimpleRpcImpl.class, "linkRpc call IRpcA with: " + msg);
+			LG.log(MC.LOG_DEBUG,SimpleRpcImpl.class, "LinkRpc to call IRpcA with: " + msg);
 		}
 		System.out.println("linkRpc: " + msg);
-		return this.rpca.invokeRpcAJMAsync("invokeRpcA");
+		return this.rpca.invokeRpcAJMAsync("invokeRpcA")
+				.then((rst,fail,cxt0)->{
+			rpca.invokeRpcA("invoke in invokeRpcA result");
+		});
 	}
 	
 	@Override
@@ -122,7 +125,7 @@ public class SimpleRpcImpl implements ISimpleRpc {
 		PromiseImpl<String> resultPro = new PromiseImpl<>();
 		
 		if(LG.isLoggable(MC.LOG_DEBUG)) {
-			LG.log(MC.LOG_DEBUG,SimpleRpcImpl.class, "linkRpc call IRpcA with: " + msg);
+			LG.log(MC.LOG_DEBUG, SimpleRpcImpl.class, "linkRpc call IRpcA with: " + msg);
 		}
 		
 		System.out.println("async return val: " + msg);

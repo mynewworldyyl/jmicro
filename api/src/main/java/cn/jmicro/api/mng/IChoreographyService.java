@@ -29,6 +29,7 @@ public interface IChoreographyService {
 	 Resp<List<ProcessInfo>> getProcessInstanceList(boolean all);
 	 
 	 Resp<Boolean> stopProcess(Integer insId);
+	 Resp<Boolean> updateProcess(ProcessInfo pi);
 	 
 	 Resp<String> changeAgentState(String agentId);
 	 

@@ -30,7 +30,7 @@ public class RpcAImpl implements IRpcA {
 			timeWindow=5*60000,//统计时间窗口5分钟
 			slotInterval=100,
 			checkInterval=5000,//采样周期2S
-			timeout=5000,
+			timeout=9999999,
 			retryInterval=1000,
 			debugMode=1,
 			limitType = Constants.LIMIT_TYPE_SS,
@@ -38,12 +38,14 @@ public class RpcAImpl implements IRpcA {
 			baseTimeUnit=Constants.TIME_MILLISECONDS
 	)
 	public String invokeRpcA(String aargs) {
+		String msg  = "From RpcA service return "+aargs;
 		if(LG.isLoggable(MC.LOG_DEBUG)) {
-			LG.log(MC.LOG_DEBUG,SimpleRpcImpl.class, aargs + ": invokeRpcA => invokeRpcB");
+			LG.log(MC.LOG_DEBUG,SimpleRpcImpl.class, msg);
 		}
-		System.out.println("invokeRpcA: " + aargs);
-		//return "invokeRpcA: " + aargs;
-		return this.rpcb.invokeRpcB(aargs + " : invokeRpcA => invokeRpcB");
+		System.out.println(msg);
+		//return msg;
+		this.rpcb.invokeRpcB(aargs + " First invokeRpcA => invokeRpcB");
+		return this.rpcb.invokeRpcB(aargs + "Second invokeRpcA => invokeRpcB");
 	}
 
 }

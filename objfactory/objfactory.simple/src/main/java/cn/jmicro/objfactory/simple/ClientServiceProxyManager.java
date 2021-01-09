@@ -33,6 +33,7 @@ import cn.jmicro.api.annotation.Reference;
 import cn.jmicro.api.annotation.Service;
 import cn.jmicro.api.classloader.RpcClassLoader;
 import cn.jmicro.api.config.Config;
+import cn.jmicro.api.monitor.LG;
 import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.objectfactory.AbstractClientServiceProxyHolder;
 import cn.jmicro.api.objectfactory.ClientServiceProxyHolder;
@@ -179,8 +180,10 @@ class ClientServiceProxyManager {
 				srv = createRefService(obj,f);
 			} catch (CommonException e) {
 				if(!isRequired) {
-					logger.error("optional dependence cls ["+ f.getType().getName()
-							+"] not found for class ["+obj.getClass().getName()+"]",e.getMessage());
+					String msg = "optional dependence cls ["+ f.getType().getName()
+							+"] not found for class ["+obj.getClass().getName()+"]"+e.getMessage();
+					logger.warn(msg);
+					LG.log(MC.LOG_WARN, this.getClass(), msg);
 				} else {
 					throw e;
 				}
@@ -190,9 +193,13 @@ class ClientServiceProxyManager {
 			if(srv != null) {
 				SimpleObjectFactory.setObjectVal(obj, f, srv);
 			} else if(isRequired) {
-				throw new CommonException("Class ["+cls.getName()+"] field ["+ f.getName()+"] dependency ["+f.getType().getName()+"] not found");
+				String desc = "Class ["+cls.getName()+"] field ["+ f.getName()+"] dependency ["+f.getType().getName()+"] not found";
+				LG.log(MC.LOG_ERROR, this.getClass(), desc);
+				throw new CommonException(desc);
 			} else {
-				logger.warn("Class ["+cls.getName()+"] field ["+ f.getName()+"] dependency ["+f.getType().getName()+"] not found");
+				String desc = "Class ["+cls.getName()+"] field ["+ f.getName()+"] dependency ["+f.getType().getName()+"] not found";
+				LG.log(MC.LOG_WARN, this.getClass(), desc);
+				logger.warn(desc);
 			}
 			
 		}

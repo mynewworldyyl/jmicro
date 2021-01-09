@@ -106,6 +106,7 @@
         },
 
         mounted () {
+            this.$el.style.minHeight=(document.body.clientHeight-67)+'px';
             let self = this;
             window.jm.vue.$on('tabItemRemove',this.editorRemove);
             this.changeLogStatus();

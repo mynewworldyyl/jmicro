@@ -25,6 +25,11 @@
 		
 		<dependency>
 			<groupId>cn.jmicro</groupId>
+			<artifactId>resource</artifactId>
+		</dependency>
+		
+		<dependency>
+			<groupId>cn.jmicro</groupId>
 			<artifactId>agent</artifactId>
 			<scope>test</scope>
 			<version>${project.version}</version>

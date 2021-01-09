@@ -16,10 +16,10 @@
                                 </div>
                             </td>
                             <td class="td2">{{model.item.costTime}}MS</td>
-                            <td class="td3">{{model.item.req.method}}</td>
-                            <td class="td5">{{model.item.req.serviceName}}</td>
-                            <td class="td6">{{model.item.req.namespace}}</td>
-                            <td class="td7">{{model.item.req.version}}</td>
+                            <td class="td3">{{ model.item.smKey ? model.item.smKey.method:'' }}</td>
+                            <td class="td5">{{ model.item.smKey ? model.item.smKey.usk.serviceName:''}}</td>
+                            <td class="td6">{{ model.item.smKey ? model.item.smKey.usk.namespace:''}}</td>
+                            <td class="td7">{{model.item.smKey ? model.item.smKey.usk.version:''}}</td>
                             <td class="td4">
                                 <span :title="model.item.instanceName" class="ellipsis">{{model.item.instanceName}}</span>
                             </td>

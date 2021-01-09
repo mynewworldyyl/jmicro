@@ -48,12 +48,14 @@ import cn.jmicro.api.monitor.MonitorInfo;
 import cn.jmicro.api.monitor.MonitorServerStatus;
 import cn.jmicro.api.monitor.OneLog;
 import cn.jmicro.api.monitor.ServiceCounter;
+import cn.jmicro.api.monitor.StatisConfig;
 import cn.jmicro.api.monitor.genclient.ILogWarning$JMAsyncClient;
 import cn.jmicro.api.net.RpcRequest;
 import cn.jmicro.api.objectfactory.IObjectFactory;
-import cn.jmicro.api.raft.IChildrenListener;
 import cn.jmicro.api.raft.IDataListener;
 import cn.jmicro.api.raft.IDataOperator;
+import cn.jmicro.api.raft.IRaftListener;
+import cn.jmicro.api.raft.RaftNodeDataListener;
 import cn.jmicro.api.registry.IRegistry;
 import cn.jmicro.api.registry.ServiceItem;
 import cn.jmicro.api.registry.UniqueServiceMethodKey;
@@ -92,6 +94,8 @@ public class LogMonitorServerImpl implements ILogMonitorServer {
 	@Inject
 	private MonitorAndService2TypeRelationshipManager mtManager;
 	
+	private RaftNodeDataListener<LogWarningConfig> configListener;
+	
 	private ServiceCounter sc = null;
 	
 	//private Queue<MRpcItem> cacheItems = new ConcurrentLinkedQueue<>();
@@ -121,48 +125,67 @@ public class LogMonitorServerImpl implements ILogMonitorServer {
 	@Inject
 	private IRegistry reg;
 	
-	private IDataListener warnDataChangeListener = new IDataListener() {
-		public void dataChanged(String path, String data) {
-			String id = path.substring(path.lastIndexOf("/")+1);
-			
-			LogWarningConfig lw = parseWarningConfig(data,id);
-			if(lw == null) {
-				return;
-			}
-			
-			if(!warningConfigs.containsKey(id)) {
-				logger.error("Not exist LogWarningConfig for update: " + id);
-				return;
-			}
+	private IRaftListener<LogWarningConfig> lis = new IRaftListener<LogWarningConfig>() {
+		public void onEvent(int type,String key, LogWarningConfig lw) {
 
-			LogWarningConfig olw = warningConfigs.get(id);
-			
-			if(!lw.isEnable()) {
-				if(olw != null && olw.isEnable()) {
-					//禁用配置
-					synchronized(deleteMonitors) {
-						deleteMonitors.add(id);
-					}
-				}
-				return;
-			}
-			
-			if(olw == null) {
-				//启动配置
-				synchronized(addMonitors) {
-					addMonitors.put(id,lw);
+			if(type == IListener.DATA_CHANGE) {
+
+				lw = parseWarningConfig(lw,key);
+				if(lw == null) {
+					return;
 				}
 				
-				op.addDataListener(path, warnDataChangeListener);
-				synchronized(cacheItemsLock) {
-					cacheItemsLock.notify();
+				if(!lw.isEnable() && !warningConfigs.containsKey(key)) {
+					return;
 				}
-				return;
-			}
-			
-			if(olw.getType() != lw.getType()) {
-				if(LogWarningConfig.TYPE_FORWARD_SRV == lw.getType() 
-						|| LogWarningConfig.TYPE_SAVE_FILE == lw.getType()) {
+
+				LogWarningConfig olw = warningConfigs.get(key);
+				
+				if(!lw.isEnable()) {
+					if(olw != null && olw.isEnable()) {
+						//禁用配置
+						synchronized(deleteMonitors) {
+							deleteMonitors.add(key);
+						}
+					}
+					return;
+				}
+				
+				if(olw == null) {
+					//启动配置
+					synchronized(addMonitors) {
+						addMonitors.put(key,lw);
+					}
+					
+					//op.addDataListener(path, warnDataChangeListener);
+					synchronized(cacheItemsLock) {
+						cacheItemsLock.notify();
+					}
+					return;
+				}
+				
+				if(olw.getType() != lw.getType()) {
+					if(LogWarningConfig.TYPE_FORWARD_SRV == lw.getType() 
+							|| LogWarningConfig.TYPE_SAVE_FILE == lw.getType()) {
+						if(initLogWarningConfig(lw)) {
+							if(olw.getBw() != null) {
+								try {
+									olw.getBw().close();
+								} catch (IOException e) {
+									logger.error("Close writer fail");
+								}
+							}
+							olw.setBw(lw.getBw());
+							olw.setSrv(lw.getSrv());
+						}else {
+							logger.error("Init LogWarningConfig fail: "+JsonUtils.getIns().toJson(lw));
+							return;
+						}
+					}
+					olw.setType(lw.getType());
+				} else if((LogWarningConfig.TYPE_FORWARD_SRV == lw.getType() 
+							|| LogWarningConfig.TYPE_SAVE_FILE == lw.getType()) 
+						&& !lw.getCfgParams().equals(olw.getCfgParams())) {
 					if(initLogWarningConfig(lw)) {
 						if(olw.getBw() != null) {
 							try {
@@ -174,46 +197,35 @@ public class LogMonitorServerImpl implements ILogMonitorServer {
 						olw.setBw(lw.getBw());
 						olw.setSrv(lw.getSrv());
 					}else {
-						logger.error("Init LogWarningConfig fail: "+data);
+						logger.error("Init LogWarningConfig fail: "+JsonUtils.getIns().toJson(lw));
 						return;
 					}
 				}
-				olw.setType(lw.getType());
-			} else if((LogWarningConfig.TYPE_FORWARD_SRV == lw.getType() 
-						|| LogWarningConfig.TYPE_SAVE_FILE == lw.getType()) 
-					&& !lw.getCfgParams().equals(olw.getCfgParams())) {
-				if(initLogWarningConfig(lw)) {
-					if(olw.getBw() != null) {
-						try {
-							olw.getBw().close();
-						} catch (IOException e) {
-							logger.error("Close writer fail");
-						}
-					}
-					olw.setBw(lw.getBw());
-					olw.setSrv(lw.getSrv());
-				}else {
-					logger.error("Init LogWarningConfig fail: "+data);
+				
+				olw.setExp(lw.getExp());
+				olw.setExpStr(lw.getExpStr());
+				olw.setMinNotifyInterval(lw.getMinNotifyInterval());
+				olw.setTag(lw.getTag());
+				olw.setCfgParams(lw.getCfgParams());
+				
+				synchronized(cacheItemsLock) {
+					cacheItemsLock.notify();
+				}
+			
+			}else if(type == IListener.REMOVE){
+				if(!warningConfigs.containsKey(key)) {
+					//删除没有启用的配置，无需处理
 					return;
 				}
-			}
-			
-			olw.setExp(lw.getExp());
-			olw.setExpStr(lw.getExpStr());
-			olw.setMinNotifyInterval(lw.getMinNotifyInterval());
-			olw.setTag(lw.getTag());
-			olw.setCfgParams(lw.getCfgParams());
-			
-			synchronized(cacheItemsLock) {
-				cacheItemsLock.notify();
-			}
-		}
-	};
-	
-	private IChildrenListener lis = new IChildrenListener() {
-		public void childrenChanged(int type, String parent, String key, String data) {
-			if(type == IListener.ADD) {
-				LogWarningConfig lw = parseWarningConfig(data,key);
+				synchronized(deleteMonitors) {
+					deleteMonitors.add(key);
+				}
+				//op.removeDataListener(LOG_WARNING_ROOT+"/"+key, warnDataChangeListener);
+				synchronized(cacheItemsLock) {
+					cacheItemsLock.notify();
+				}
+			}else if(type == IListener.ADD) {
+				lw = parseWarningConfig(lw,key);
 				if(lw == null || !lw.isEnable()) {
 					return;
 				}
@@ -222,19 +234,7 @@ public class LogMonitorServerImpl implements ILogMonitorServer {
 					addMonitors.put(key,lw);
 				}
 				
-				op.addDataListener(parent+"/"+key, warnDataChangeListener);
-				synchronized(cacheItemsLock) {
-					cacheItemsLock.notify();
-				}
-			}else if(type == IListener.REMOVE) {
-				if(!warningConfigs.containsKey(key)) {
-					//删除没有启用的配置，无需处理
-					return;
-				}
-				synchronized(deleteMonitors) {
-					deleteMonitors.add(key);
-				}
-				op.removeDataListener(parent+"/"+key, warnDataChangeListener);
+				//op.addDataListener(LOG_WARNING_ROOT+"/"+key, warnDataChangeListener);
 				synchronized(cacheItemsLock) {
 					cacheItemsLock.notify();
 				}
@@ -242,11 +242,11 @@ public class LogMonitorServerImpl implements ILogMonitorServer {
 		}
 	};
 	
-	private LogWarningConfig parseWarningConfig(String data, String id) {
-		LogWarningConfig lw = JsonUtils.getIns().fromJson(data, LogWarningConfig.class);
+	private LogWarningConfig parseWarningConfig(LogWarningConfig lw, String id) {
+		//LogWarningConfig lw = JsonUtils.getIns().fromJson(data, LogWarningConfig.class);
 		
 		if(Utils.isEmpty(lw.getExpStr())) {
-			logger.error("Invalid config: " + data);
+			logger.error("Invalid config: " + JsonUtils.getIns().toJson(lw));
 			return null;
 		}
 		
@@ -298,9 +298,11 @@ public class LogMonitorServerImpl implements ILogMonitorServer {
 		ServiceItem si = sl.createSrvItem(IMonitorAdapter.class, 
 				Config.getInstanceName()+".LogMonitorServer", "0.0.1", null);
 		sl.registService(si,statusAdapter);
-	
 		
-		op.addChildrenListener(LOG_WARNING_ROOT, lis);
+		configListener = new RaftNodeDataListener<>(op,LOG_WARNING_ROOT,LogWarningConfig.class,false);
+		configListener.addListener(lis);
+		
+		//op.addChildrenListener(LOG_WARNING_ROOT, lis);
 				
 		new Thread(this::doCheck,Config.getInstanceName()+"_MonitorServer_doCheck").start();
 		
@@ -308,7 +310,7 @@ public class LogMonitorServerImpl implements ILogMonitorServer {
 	
 	@Override
 	@SMethod(timeout=5000,retryCnt=0,needResponse=false,debugMode=0,monitorEnable=0,logLevel=MC.LOG_ERROR
-	,maxPacketSize=16384)
+	,maxPacketSize=1048576)
 	public void submit(MRpcLogItem[] items) {
 		if(items == null || items.length == 0) {
 			/*if(monitoralbe) {
@@ -485,6 +487,7 @@ public class LogMonitorServerImpl implements ILogMonitorServer {
 			//this.subsribers.put(cfg.getId(),srv);
 			if(initLogWarningConfig(lw)) {
 				this.warningConfigs.put(lw.getId(), lw);
+				return true;
 			}
 			return false;
 		} catch (Throwable e) {
@@ -606,7 +609,7 @@ public class LogMonitorServerImpl implements ILogMonitorServer {
 				}*/
 				
 				Exp exp = cfg.getExp();
-				if(exp.containerVar("tag") 
+				if(exp != null && exp.containerVar("tag") 
 				   || exp.containerVar("level")
 				   || exp.containerVar("time")
 				   || exp.containerVar("ex")) {

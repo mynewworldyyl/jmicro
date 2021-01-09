@@ -27,9 +27,10 @@ import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import cn.jmicro.api.IListener;
 import cn.jmicro.api.annotation.Reference;
-import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.monitor.LG;
+import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.objectfactory.AbstractClientServiceProxyHolder;
 import cn.jmicro.api.objectfactory.ProxyObject;
 import cn.jmicro.api.registry.AsyncConfig;
@@ -96,6 +97,10 @@ class RemoteProxyServiceFieldListener implements IServiceListener{
 			return;
 		}
 		
+		if(LG.isLoggable(MC.LOG_DEBUG)) {
+			LG.log(MC.LOG_DEBUG, this.getClass(), item.getKey().toSnv()+(type == IListener.ADD?"online":"offline"));
+		}
+		
 		if(!UniqueServiceKey.matchVersion(ref.version(),item.getKey().getVersion()) || 
 				!UniqueServiceKey.matchNamespace(ref.namespace(),item.getKey().getNamespace())) {
 				return;
@@ -114,10 +119,16 @@ class RemoteProxyServiceFieldListener implements IServiceListener{
 					for(;ite.hasNext();){
 						AbstractClientServiceProxyHolder p = (AbstractClientServiceProxyHolder)ite.next();
 						if(p.getHolder().getItem() == null) {
+							if(LG.isLoggable(MC.LOG_WARN)) {
+								LG.log(MC.LOG_WARN, this.getClass(), ekey + " service item is null and remove it!");
+							}
 							ite.remove();
 						} else {
 							if(p.getHolder().getItem().getKey().toKey(true, true, true).equals(ekey)){
 								//服务代理已经存在,不需要重新创建
+								if(LG.isLoggable(MC.LOG_DEBUG)) {
+									LG.log(MC.LOG_DEBUG, this.getClass(), "direct service " + ekey + " proxy exist no need to create again!");
+								}
 								return;
 							}
 						}
@@ -128,6 +139,9 @@ class RemoteProxyServiceFieldListener implements IServiceListener{
 						AbstractClientServiceProxyHolder p = (AbstractClientServiceProxyHolder)o;
 						if(p.getHolder().serviceKey().equals(ekey)){
 							//服务代理已经存在,不需要重新创建
+							if(LG.isLoggable(MC.LOG_DEBUG)) {
+								LG.log(MC.LOG_DEBUG, this.getClass(), ekey+" proxy exist no need to create again!");
+							}
 							return;
 						}
 					}
@@ -140,14 +154,19 @@ class RemoteProxyServiceFieldListener implements IServiceListener{
 				if(p!=null){
 					p.getHolder().setDirect(direct);
 					set.add(p);
-					logger.debug("Add proxy for,Size:{} Field:{},Item:{}",set.size(),
-							refField.toString(),item.getKey().toKey(false, false, false));
 					//通知组件服务元素增加
 					notifyChange(p,type);
+					
+					if(LG.isLoggable(MC.LOG_DEBUG)) {
+						String msg = "Add proxy for,Size:"+set.size()+" Field:"+refField.toString()+",Item:" + item.getKey().toKey(false, false, false);
+						LG.log(MC.LOG_DEBUG, this.getClass(), msg);
+					}
 				} else {
-					String msg = "Fail to create item proxy: " + item.getKey().toKey(true, true, true);
-					LG.log(MC.LOG_ERROR, RemoteProxyServiceFieldListener.class, msg);
-					logger.error("Fail to create item proxy :{}",msg);
+					if(LG.isLoggable(MC.LOG_WARN)) {
+						String msg = "Fail to create item proxy: " + item.getKey().toKey(true, true, true);
+						LG.log(MC.LOG_WARN, this.getClass(), msg);
+						logger.error("Fail to create item proxy :{}",msg);
+					}
 				}
 				
 			}else if(IServiceListener.REMOVE == type) {
@@ -167,10 +186,13 @@ class RemoteProxyServiceFieldListener implements IServiceListener{
 						}
 						if(po != null){
 							set.remove(po);
-							logger.debug("Remove proxy for,Size:{}, Field:{},Item:{}",set.size(),refField.toString(),
-									item.getKey().toKey(false, false, false));
 							//通知组件服务元素删除
 							notifyChange(po,type);
+							
+							if(LG.isLoggable(MC.LOG_INFO)) {
+								String msg = "Remove proxy for,Size:"+set.size()+" Field:"+refField.toString()+",Item:" + item.getKey().toKey(false, false, false);
+								LG.log(MC.LOG_INFO, this.getClass(), msg);
+							}
 						}
 					}
 				} else {
@@ -185,8 +207,12 @@ class RemoteProxyServiceFieldListener implements IServiceListener{
 					}
 					if(po != null){
 						set.remove(po);
-						logger.debug("Remove proxy for,Size:{}, Field:{},Item:{}",set.size(),refField.toString(),
-								item.getKey().toKey(false, false, false));
+						
+						if(LG.isLoggable(MC.LOG_INFO)) {
+							String msg = "Remove proxy for,Size:"+set.size()+" Field:"+refField.toString()+",Item:" + item.getKey().toKey(false, false, false);
+							LG.log(MC.LOG_INFO, this.getClass(), msg);
+						}
+						
 						//通知组件服务元素删除
 						notifyChange(po,type);
 					}
@@ -223,6 +249,7 @@ class RemoteProxyServiceFieldListener implements IServiceListener{
 				m.invoke(this.srcObj,po,opType);
 			} catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
 				logger.error(po.getHolder().getItem().getKey().toKey(true, true, true),e);
+				LG.log(MC.LOG_ERROR, this.getClass(), "Notify error for: " + this.refField.toString(),e);
 			}
 		 }
 		

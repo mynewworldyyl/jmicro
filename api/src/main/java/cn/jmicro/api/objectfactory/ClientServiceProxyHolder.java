@@ -27,7 +27,6 @@ import cn.jmicro.api.JMicroContext;
 import cn.jmicro.api.async.IPromise;
 import cn.jmicro.api.client.InvocationHandler;
 import cn.jmicro.api.config.Config;
-import cn.jmicro.api.internal.async.IClientAsyncCallback;
 import cn.jmicro.api.monitor.LG;
 import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.registry.AsyncConfig;
@@ -98,9 +97,9 @@ public class ClientServiceProxyHolder implements IServiceListener{
 	}
 	
 	@SuppressWarnings("unchecked")
-	public <T> T invoke(String originMethod,Object rpcContext, Object... args) {
+	public <T> T invoke(String originMethod,final Object rpcContext, Object... args) {
 
-		backupAndSetContext();
+		Map<String,Object> curCxt = backupAndResetContext();
 		
 		JMicroContext cxt = JMicroContext.get();
 		ServiceItem si = this.item;
@@ -118,6 +117,7 @@ public class ClientServiceProxyHolder implements IServiceListener{
 				String msg = "Service Item is NULL when call method [" + methodName + "] with params ["
 						+ UniqueServiceMethodKey.paramsStr(args) + "] proxy [" + this.getClass().getName() + "]";
 				logger.error(msg);
+				restoreContext(curCxt);
 				throw new CommonException(msg);
 			} else {
 				si = this.item;
@@ -126,6 +126,7 @@ public class ClientServiceProxyHolder implements IServiceListener{
 		
 		ServiceMethod sm = si.getMethod(methodName, args);
 		if (sm == null) {
+			restoreContext(curCxt);
 			throw new CommonException("cls[" + si.getImpl() + "] method [" + methodName + "] method not found");
 		}
 		
@@ -143,6 +144,7 @@ public class ClientServiceProxyHolder implements IServiceListener{
 			if(ai == null) {
 				String msg = "License need login: " + si.getKey().toKey(false, false, false);
 				LG.log(MC.LOG_INFO, this.getClass(), msg);
+				restoreContext(curCxt);
 				throw new CommonException(msg);
 			}
 			
@@ -161,11 +163,13 @@ public class ClientServiceProxyHolder implements IServiceListener{
 				if(!f) {
 					String msg = "Not authronize account ["+ai.getActName()+"] for " + si.getKey().toKey(false, false, false);
 					LG.log(MC.LOG_WARN, this.getClass(), msg);
+					restoreContext(curCxt);
 					throw new CommonException(msg);
 				}
 			} else if(Constants.LICENSE_TYPE_PRIVATE == sm.getFeeType() && si.getClientId() != ai.getClientId()) {
 				String msg = "Private service ["+ai.getActName()+"] for " + si.getKey().toKey(false, false, false);
 				LG.log(MC.LOG_WARN, this.getClass(), msg);
+				restoreContext(curCxt);
 				throw new CommonException(msg);
 			}
 		}
@@ -189,6 +193,7 @@ public class ClientServiceProxyHolder implements IServiceListener{
 									+ UniqueServiceMethodKey.paramsStr(args) + "] proxy [" + this.getClass().getName()
 									+ "]";
 							logger.error(msg);
+							restoreContext(curCxt);
 							throw new CommonException(msg);
 						}
 						targetHandler = h;
@@ -211,7 +216,7 @@ public class ClientServiceProxyHolder implements IServiceListener{
 			cxt.setParam(JMicroContext.SM_LOG_LEVEL, sm.getLogLevel());
 
 			if(JMicroContext.get().getParam(Constants.DIRECT_SERVICE_ITEM, null) == null) {
-				if (this.isDirect()) {
+				if(isDirect()){
 					sdirect = true;
 					JMicroContext.get().setParam(Constants.DIRECT_SERVICE_ITEM, this.item);
 				}
@@ -219,16 +224,20 @@ public class ClientServiceProxyHolder implements IServiceListener{
 
 			IPromise<Object> p = h.invoke(this, methodName, args);
 			
+			restoreContext(curCxt);
+			
 			if(isAsync) {
-				if(rpcContext != null) {
-					p.then((rst,fail,cxt0)->{
+				p.then((rst,fail,cxt0)->{
+					if(rpcContext != null) {
 						p.setContext(rpcContext);
-					});
-				}
+					}
+					restoreContext(curCxt);
+				});
 				return (T)p;
 			} else {
 				//同步返回结果
 				if(p.isSuccess()) {
+					//p.getResult()直到服务端数据返回或超时失败才后才会返回
 					return getVal(p.getResult(),sm.getKey().getReturnParamClass());
 				} else {
 					throw new CommonException(p.getFailCode(),p.getFailMsg());
@@ -238,10 +247,14 @@ public class ClientServiceProxyHolder implements IServiceListener{
 			if (sdirect) {
 				cxt.removeParam(Constants.DIRECT_SERVICE_ITEM);
 			}
-			this.restoreContext();
 		}
 	}
 	
+	private void restoreContext(Map<String, Object> curCxt) {
+		JMicroContext.clear();
+		JMicroContext.get().putAllParams(curCxt);
+	}
+
 	private <T> T getVal(Object retVal,Class<?> rt) {
 		T to = null;
 		if(retVal != null) {
@@ -303,9 +316,11 @@ public class ClientServiceProxyHolder implements IServiceListener{
 		return this.sn;
 	}
 	
-	public void backupAndSetContext(){
+	public Map<String,Object>  backupAndResetContext(){
 		//System.out.println("backupAndSetContext");
+		
 		JMicroContext cxt = JMicroContext.get();
+		
 		boolean breakFlag = cxt.getBoolean(Constants.BREAKER_TEST_CONTEXT, false);
 		
 		//Reference ref = cxt.getParam(Constants.REF_ANNO, null);
@@ -325,7 +340,14 @@ public class ClientServiceProxyHolder implements IServiceListener{
 		boolean isProvider = JMicroContext.isContainCallSide() ? JMicroContext.isCallSideService() : false;
 		
 		//backup the rpc context from here
-		cxt.backupAndClear();
+		//cxt.backupAndClear();
+		
+		Map<String,Object> curCxt = new HashMap<>();
+		cxt.getAllParams(curCxt);
+		
+		JMicroContext.clear();
+		
+		cxt = JMicroContext.get();
 		
 		//Start a new RPC context from here
 		//false表示不是provider端
@@ -363,13 +385,9 @@ public class ClientServiceProxyHolder implements IServiceListener{
 			cxt.setAccount(ai);
 		}
 		
+		return curCxt;
 	}
 	
-	public void restoreContext(){
-		//System.out.println("restoreContext");
-		JMicroContext.get().restore();
-	}
-
 	//public abstract  boolean enable();
 	//public abstract void enable(boolean enable);
 	

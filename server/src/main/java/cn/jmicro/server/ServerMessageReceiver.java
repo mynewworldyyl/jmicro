@@ -17,7 +17,6 @@
 package cn.jmicro.server;
 
 import java.nio.ByteBuffer;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentHashMap;
@@ -44,8 +43,8 @@ import cn.jmicro.api.idgenerator.IdRequest;
 import cn.jmicro.api.monitor.LG;
 import cn.jmicro.api.monitor.LogMonitorClient;
 import cn.jmicro.api.monitor.MC;
+import cn.jmicro.api.monitor.MRpcLogItem;
 import cn.jmicro.api.monitor.MT;
-import cn.jmicro.api.monitor.StatisItem;
 import cn.jmicro.api.monitor.StatisMonitorClient;
 import cn.jmicro.api.net.DumpManager;
 import cn.jmicro.api.net.IMessageHandler;
@@ -185,8 +184,14 @@ public class ServerMessageReceiver implements IMessageReceiver{
 				|| msg.getType() == Constants.MSG_TYPE_REQ_JRPC) {
 			sm = srvMng.getServiceMethodByHash(msg.getSmKeyCode());
 			if(sm == null) {
+				sm = srvMng.getServiceMethodWithHashBySearch(msg.getSmKeyCode());
 				String errMsg = "Invalid message method code: [" + msg.toString() + "]";
 				errMsg += ",client host: " + s.remoteHost()+",remotePort: " + s.remotePort();
+				
+				if(sm != null) {
+					errMsg += ", sm key: " + sm.getKey().toKey(true, true, true);
+				}
+				
 				LG.log(MC.LOG_ERROR, TAG, errMsg);
 				responseException(msg,(IServerSession)s, new CommonException(Resp.CODE_FAIL,errMsg));
 				return;
@@ -429,23 +434,38 @@ public class ServerMessageReceiver implements IMessageReceiver{
         		sb.append(" corePoolSize[").append(e.getCorePoolSize()).append("]");
         		sb.append(" maximumPoolSize[").append(e.getMaximumPoolSize()).append("]");
         		
-        		IReq req = null;
-        		if(Constants.MSG_TYPE_REQ_RAW == msg.getType()) {
-        			 req = ICodecFactory.decode(codecFactory, msg.getPayload(), ApiRequest.class,
-        					msg.getUpProtocol());
-        		} else if(Constants.MSG_TYPE_ID_REQ == msg.getType()) {
-        			req = ICodecFactory.decode(codecFactory, msg.getPayload(), RpcRequest.class,
-        					msg.getUpProtocol());
-        		}else {
-        			req = ICodecFactory.decode(codecFactory, msg.getPayload(), IdRequest.class,
-        					msg.getUpProtocol());
+        		MRpcLogItem mi = LG.logWithNonRpcContext(MC.LOG_ERROR, JicroAbortPolicy.class,sb.toString(),MC.MT_EXECUTOR_REJECT,false);
+        		
+        		if(mi != null) {
+        			mi.setLinkId(msg.getLinkId());
+        			mi.setProvider(true);
+        			
+        			if(t.sm != null) {
+        				mi.setSmKey(t.sm.getKey());
+        			}
+        			
+        			if(Constants.MSG_TYPE_REQ_RAW == msg.getType()) {
+            			ApiRequest re = ICodecFactory.decode(codecFactory, msg.getPayload(), ApiRequest.class,
+            					msg.getUpProtocol());
+            			 mi.setReq(re);
+            			 mi.setReqId(re.getReqId());
+            			
+            		} else if(Constants.MSG_TYPE_ID_REQ == msg.getType()) {
+            			IdRequest re = ICodecFactory.decode(codecFactory, msg.getPayload(), IdRequest.class,
+            					msg.getUpProtocol());
+            		} else {
+            			RpcRequest re = ICodecFactory.decode(codecFactory, msg.getPayload(), RpcRequest.class,
+            					msg.getUpProtocol());
+            			mi.setReq(re);
+            			mi.setReqId(re.getRequestId());
+            			mi.setReqParentId(re.getReqParentId());
+            		}
         		}
         		
         		logger.error(sb.toString());
         		
-        		//invalid for monitor server
-        		LG.reqEvent(MC.LOG_ERROR, req, JicroAbortPolicy.class.getName(),sb.toString());
         		MT.rpcEvent(MC.MT_EXECUTOR_REJECT);
+        		LG.submit2Cache(mi);
         		
         	} else {
         		throw new RejectedExecutionException("Task " + r.toString() +

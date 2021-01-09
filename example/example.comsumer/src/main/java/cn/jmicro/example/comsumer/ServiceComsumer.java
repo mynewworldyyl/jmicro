@@ -17,8 +17,8 @@
 package cn.jmicro.example.comsumer;
 
 import cn.jmicro.api.JMicro;
-import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.monitor.LG;
+import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.objectfactory.IObjectFactory;
 import cn.jmicro.example.api.rpc.ISimpleRpc;
 import cn.jmicro.example.api.rpc.genclient.ISimpleRpc$JMAsyncClient;
@@ -26,7 +26,6 @@ import cn.jmicro.example.api.rpc.genclient.ISimpleRpc$JMAsyncClient;
 /**
  * 
  * @author Yulei Ye
- *
  * @date: 2018年11月10日 下午9:23:25
  */
 public class ServiceComsumer {
@@ -43,11 +42,12 @@ public class ServiceComsumer {
 		ISimpleRpc$JMAsyncClient src = (ISimpleRpc$JMAsyncClient)of.get(ISimpleRpc.class);
 		//invoke remote service
 		//System.out.println(src.hello("Hello JMicro"));
-		/*src.helloJMAsync("Hello JMicro").then((rst, fail,ctx)->{
+		/*src.helloJMAsync("Hello JMicro")
+		.then((rst, fail,ctx)->{
 			System.out.println(rst);
 		});*/
 		
-		src.linkRpc("Hello Link RPC")
+	   src.linkRpc("Client to call linkRpc")
 		.then((rst, fail,ctx)->{
 			System.out.println(rst);
 		});
@@ -83,7 +83,8 @@ public class ServiceComsumer {
 		})
 		.fail((code,msg,cxt)->{
 			System.out.println("code: " + code +", msg: " + msg);
-		});*/
+		});
+		*/
 		
 		try {
 			Thread.sleep(1000*30);
