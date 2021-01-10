@@ -9,7 +9,7 @@ public class Deployment {
 
 	private String id;
 	
-	private int clientId=1;
+	private int clientId=-1000;
 	
 	private String jarFile;
 	

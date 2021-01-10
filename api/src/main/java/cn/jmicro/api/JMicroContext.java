@@ -123,7 +123,7 @@ public class JMicroContext  {
 			if(StringUtils.isEmpty(item.getActName())) {
 				ActInfo ai = this.getAccount();
 				if(ai != null) {
-					item.setClientId(ai.getClientId());
+					item.setClientId(ai.getId());
 					ai.setActName(ai.getActName());
 				}
 			}
@@ -141,7 +141,7 @@ public class JMicroContext  {
 				if(StringUtils.isEmpty(item.getActName())) {
 					ActInfo ai = this.getAccount();
 					if(ai != null) {
-						item.setClientId(ai.getClientId());
+						item.setClientId(ai.getId());
 						ai.setActName(ai.getActName());
 					}
 				}
@@ -255,7 +255,7 @@ public class JMicroContext  {
 					item = new MRpcStatisItem();
 					ActInfo ai = context.getAccount();
 					if(ai != null) {
-						item.setClientId(ai.getClientId());
+						item.setClientId(ai.getId());
 						item.setActName(ai.getActName());
 					}
 					//the pre RPC Request ID as the parent ID of this request
@@ -277,7 +277,7 @@ public class JMicroContext  {
 					item = new MRpcLogItem();
 					ActInfo ai = context.getAccount();
 					if(ai != null) {
-						item.setClientId(ai.getClientId());
+						item.setClientId(ai.getId());
 						item.setActName(ai.getActName());
 					}
 					//the pre RPC Request ID as the parent ID of this request
@@ -320,7 +320,7 @@ public class JMicroContext  {
 				ActInfo ai = context.getAccount();
 				if(ai != null) {
 					mi.setActName(ai.getActName());
-					mi.setClientId(ai.getClientId());
+					mi.setClientId(ai.getId());
 				}
 			}
 		}
@@ -383,7 +383,7 @@ public class JMicroContext  {
 	public boolean hasPermission(int reqLevel, int defaultLevel) {
 		 ActInfo ai =  getAccount();
 		 if(ai != null) {
-			return ai.getClientId() <= reqLevel;
+			return ai.getId() <= reqLevel;
 		 } else {
 			 return defaultLevel <= reqLevel;
 		 }

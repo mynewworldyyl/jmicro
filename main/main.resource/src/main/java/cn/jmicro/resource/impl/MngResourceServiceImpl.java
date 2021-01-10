@@ -196,7 +196,7 @@ public class MngResourceServiceImpl implements IMngResourceService{
 		
 		ActInfo ai = JMicroContext.get().getAccount();
 		cfg.setCreatedByAct(ai.getActName());
-		cfg.setCreatedBy(ai.getClientId());
+		cfg.setCreatedBy(ai.getId());
 		cfg.setId(this.idGenerator.getIntId(ResourceMonitorConfig.class));
 		
 		String path = ROOT + "/" + cfg.getId();
@@ -309,7 +309,7 @@ public class MngResourceServiceImpl implements IMngResourceService{
 		Document match = new Document();;
 		
 		if(!PermissionManager.isCurAdmin()) {
-			 match.put("clientId", JMicroContext.get().getAccount().getClientId());
+			 match.put("clientId", JMicroContext.get().getAccount().getId());
 		}
 		
 		if(req.getStartTime() > 0) {

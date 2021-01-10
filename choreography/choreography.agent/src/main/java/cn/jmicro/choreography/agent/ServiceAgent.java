@@ -722,6 +722,7 @@ public class ServiceAgent {
 		list.add("-D" + ChoyConstants.ARG_MYPARENT_ID + "=" + SystemUtils.getProcessId());
 		list.add("-D" + ChoyConstants.ARG_DEP_ID + "=" + dep.getId());
 		list.add("-D" + ChoyConstants.ARG_AGENT_ID + "=" + this.agentInfo.getId());
+		
 		list.add("-D" + Constants.CLIENT_ID + "=" + dep.getClientId());
 		list.add("-D" + Constants.ADMIN_CLIENT_ID + "=" + Config.getAdminClientId());
 		
@@ -736,7 +737,20 @@ public class ServiceAgent {
 				if (logger.isDebugEnabled()) {
 					logger.debug(e.getKey() + "=" + e.getValue());
 				}
-				list.add("-D" + e.getKey() + "=" + getArgVal(e.getValue()));
+				
+				if(Constants.CLIENT_ID.equals(e.getKey()) ||
+						Constants.ADMIN_CLIENT_ID.equals(e.getKey())) {
+					if(dep.getClientId() == Config.getAdminClientId()) {
+						list.add("-D" + e.getKey() + "=" + getArgVal(e.getValue()));
+					} else {
+						String errMsg = "No permission to set arg [" + e.getKey()+"] for dep[" + dep.toString()+"]";
+						logger.warn(errMsg);
+						LG.log(MC.LOG_WARN, this.getClass(), errMsg);
+					}
+				} else {
+					list.add("-D" + e.getKey() + "=" + getArgVal(e.getValue()));
+				}
+				
 			}
 		}
 

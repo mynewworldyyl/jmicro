@@ -394,6 +394,8 @@ public class ServiceLoader{
 		item.setExternal(false);
 		item.setShowFront(true);
 		
+		item.setClientId(Config.getClientId());
+		
 		//item.setMaxFailBeforeDegrade(anno.maxFailBeforeDegrade()!=100 || intAnno == null ?anno.maxFailBeforeDegrade():intAnno.maxFailBeforeDegrade());
 		//item.setRetryCnt();
 		//item.setRetryInterval();
@@ -527,6 +529,12 @@ public class ServiceLoader{
 		item.setActName(Config.getAccountName());
 		item.setExternal(anno.external());
 		item.setShowFront(anno.showFront());
+		
+		if(anno.clientId() == Constants.USE_SYSTEM_CLIENT_ID) {
+			item.setClientId(Config.getClientId());
+		} else {
+			item.setClientId(anno.clientId());
+		}
 		
 		//item.setMaxFailBeforeDegrade(anno.maxFailBeforeDegrade()!=100 || intAnno == null ?anno.maxFailBeforeDegrade():intAnno.maxFailBeforeDegrade());
 		item.setRetryCnt(anno.retryCnt()!=3 || intAnno == null ?anno.retryCnt():intAnno.retryCnt());

@@ -5,6 +5,7 @@ import java.util.Map;
 import cn.jmicro.api.Resp;
 import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Inject;
+import cn.jmicro.api.annotation.SMethod;
 import cn.jmicro.api.annotation.Service;
 import cn.jmicro.mng.api.II8NService;
 import cn.jmicro.mng.i18n.I18NManager;
@@ -17,6 +18,7 @@ public class I8NServiceImpl implements II8NService {
 	private I18NManager im;
 	
 	@Override
+	@SMethod(needLogin=false)
 	public Resp<Map<String, String>> keyValues(String resPath, String lang) {
 		Resp<Map<String, String>> resp = new Resp<>();
 		resp.setCode(Resp.CODE_SUCCESS);

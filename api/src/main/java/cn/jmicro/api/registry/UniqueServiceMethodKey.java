@@ -221,6 +221,16 @@ public final class UniqueServiceMethodKey {
 		return usk;
 	}
 	
+	public static String methodKey(String sn,String ns,String ver,String ins,String host,String port,String method) {
+		StringBuilder sb = new StringBuilder(UniqueServiceKey.serviceName(sn, ns, ver));
+		sb.append(SEP);
+		UniqueServiceKey.instanceName(true, sb, ins);
+		UniqueServiceKey.host(true, sb, host);
+		UniqueServiceKey.port(true, sb, port);
+		UniqueServiceKey.appendOne(true, sb, method);
+		return sb.substring(0, sb.length()-2);
+	}
+	
 	public String getServiceName() {
 		return this.getUsk().getServiceName();
 	}

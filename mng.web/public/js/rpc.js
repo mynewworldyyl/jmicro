@@ -809,10 +809,28 @@ jm.rpc = {
         }
         this.actInfo = null;
         let self = this;
+
+        if(!actName) {
+            //自动建立匿名账号
+            actName = "";
+        }
+
+        if(!pwd) {
+            pwd = "";
+        }
+
         jm.rpc.callRpc(this.__actreq('login',[actName,pwd]))
             .then(( resp )=>{
                 if(resp.code == 0) {
                     self.actInfo = resp.data;
+
+                    window.jm.localStorage.set("actName",self.actInfo.actName);
+
+                    let rememberPwd = window.jm.localStorage.get("rememberPwd");
+                    if(rememberPwd || self.actInfo.actName.startWith("guest_")) {
+                        window.jm.localStorage.set("pwd",pwd);
+                    }
+
                     cb(self.actInfo,null);
                     self._notify(jm.rpc.Constants.LOGIN);
                 } else {
@@ -821,7 +839,7 @@ jm.rpc = {
             }).catch((err)=>{
             console.log(err);
             cb(null,err);
-        });;
+        });
     },
 
     _notify : function(type) {
@@ -1131,8 +1149,12 @@ jm.rpc = {
                         //alert(rst.msg);
                         if(rst.errorCode == 0x00000004 || rst.errorCode == 0x004C || rst.errorCode == 76) {
                             let actName = window.jm.localStorage.get("actName");
-                            let pwd = window.jm.localStorage.get("pwd");
-                            if(actName && pwd) {
+                            let rememberPwd = window.jm.localStorage.get("rememberPwd");
+                            if(rememberPwd || !actName || actName.startWith("guest_")) {
+                                let pwd = window.jm.localStorage.get("pwd");
+                                if(!pwd) {
+                                    pwd="";
+                                }
                                 jm.rpc.actInfo = null;
                                 window.jm.rpc.login(actName,pwd,(actInfo,err)=>{
                                     if(actInfo && !err) {
@@ -3015,8 +3037,8 @@ jm.eu = {
     wordToByteBuffer : function(wordArray) {
         var arrayOfWords = wordArray.hasOwnProperty("words") ? wordArray.words : [];
         var length = wordArray.hasOwnProperty("sigBytes") ? wordArray.sigBytes : arrayOfWords.length * 4;
-        var uInt8Array = new Uint8Array(length), index=0, word, i;
-        for (i=0; i<length; i++) {
+        var uInt8Array = new Uint8Array(length), index=0, word;
+        for (let i=0; i<length; i++) {
             word = arrayOfWords[i];
             uInt8Array[index++] = word >> 24;
             uInt8Array[index++] = (word >> 16) & 0xff;

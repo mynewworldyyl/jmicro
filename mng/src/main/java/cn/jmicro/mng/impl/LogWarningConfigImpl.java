@@ -142,7 +142,7 @@ public class LogWarningConfigImpl implements ILogWarningConfig {
 		
 		ActInfo ai = JMicroContext.get().getAccount();
 		
-		cfg.setClientId(ai.getClientId());
+		cfg.setClientId(ai.getId());
 		cfg.setId(this.idGenerator.getStringId(LogWarningConfig.class));
 		
 		String path = ROOT + "/" + cfg.getId();

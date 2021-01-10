@@ -69,6 +69,17 @@ public class Utils {
 			return true;
 		return false;
 	}
+	
+	public static boolean formSystemPackagePermission() {
+		StackTraceElement se = Thread.currentThread().getStackTrace()[3];
+		String dcls = se.getClassName();
+		for(String pname : Constants.SYSTEM_PCK_NAME_PREFIXES) {
+			if(dcls.startsWith(pname)) {
+				return true;
+			}
+		}
+		return false;
+	}
 
 	public String toString(Object[] arr) {
 		StringBuilder sb = new StringBuilder("[");

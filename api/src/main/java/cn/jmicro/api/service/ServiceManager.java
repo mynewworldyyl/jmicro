@@ -447,14 +447,14 @@ public class ServiceManager {
 		return sets;
 	}
 	
-	public Set<String> serviceNames(String prefix) {
+	public Set<String> serviceNames(String prefix,int loginAccountId) {
 		Set<String> sns = new HashSet<>();
 		boolean ep = Utils.isEmpty(prefix);
 		ReentrantReadWriteLock.ReadLock l = rwLocker.readLock();
 		try {
 			l.lock();
 			for(ServiceItem i : path2SrvItems.values()) {
-				if(ep || i.getKey().getServiceName().startsWith(prefix)) {
+				if(PermissionManager.checkClientPermission(loginAccountId, i.getClientId()) && (ep || i.getKey().getServiceName().startsWith(prefix))) {
 					sns.add(i.getKey().getServiceName());
 				}
 			}
@@ -466,18 +466,21 @@ public class ServiceManager {
 		return sns;
 	}
 	
-	public Set<String> serviceVersions(String srvName) {
+	public Set<String> serviceVersions(String srvName,int loginAccountId) {
 		Set<String> sns = new HashSet<>();
 		ReentrantReadWriteLock.ReadLock l = rwLocker.readLock();
 		try {
 			l.lock();
 			if(Utils.isEmpty(srvName)) {
 				for(ServiceItem i : path2SrvItems.values()) {
-					sns.add(i.getKey().getVersion());
+					if(PermissionManager.checkClientPermission(loginAccountId, i.getClientId())) {
+						sns.add(i.getKey().getVersion());
+					}
 				}
 			}else {
 				for(ServiceItem i : path2SrvItems.values()) {
-					if(srvName.equals(i.getKey().getServiceName())) {
+					if(PermissionManager.checkClientPermission(loginAccountId, i.getClientId()) && 
+							srvName.equals(i.getKey().getServiceName())) {
 						sns.add(i.getKey().getVersion());
 					}
 				}
@@ -490,18 +493,21 @@ public class ServiceManager {
 		return sns;
 	}
 	
-	public Set<String> serviceNamespaces(String srvName) {
+	public Set<String> serviceNamespaces(String srvName,int loginAccountId) {
 		Set<String> sns = new HashSet<>();
 		ReentrantReadWriteLock.ReadLock l = rwLocker.readLock();
 		try {
 			l.lock();
 			if(Utils.isEmpty(srvName)) {
 				for(ServiceItem i : path2SrvItems.values()) {
-					sns.add(i.getKey().getNamespace());
+					if(PermissionManager.checkClientPermission(loginAccountId, i.getClientId())) {
+						sns.add(i.getKey().getNamespace());
+					}
 				}
 			}else {
 				for(ServiceItem i : path2SrvItems.values()) {
-					if(srvName.equals(i.getKey().getServiceName())) {
+					if(PermissionManager.checkClientPermission(loginAccountId, i.getClientId()) 
+							&& srvName.equals(i.getKey().getServiceName())) {
 						sns.add(i.getKey().getNamespace());
 					}
 				}
@@ -515,7 +521,7 @@ public class ServiceManager {
 		return sns;
 	}
 	
-	public Set<String> serviceMethods(String srvName) {
+	public Set<String> serviceMethods(String srvName,int loginAccountId) {
 		Set<String> sns = new HashSet<>();
 		ReentrantReadWriteLock.ReadLock l = rwLocker.readLock();
 		try {
@@ -523,16 +529,20 @@ public class ServiceManager {
 			Set<ServiceMethod> ms = null;
 			if(Utils.isEmpty(srvName)) {
 				for(ServiceItem i : path2SrvItems.values()) {
-					ms = i.getMethods();
-					if(ms != null && ms.size() > 0) {
-						for(ServiceMethod m : ms) {
-							sns.add(m.getKey().getMethod());
+					if(PermissionManager.checkClientPermission(loginAccountId, i.getClientId())) {
+						ms = i.getMethods();
+						if(ms != null && ms.size() > 0) {
+							for(ServiceMethod m : ms) {
+								sns.add(m.getKey().getMethod());
+							}
 						}
 					}
+					
 				}
 			} else {
 				for(ServiceItem i : path2SrvItems.values()) {
-					if(srvName.equals(i.getKey().getServiceName())) {
+					if(PermissionManager.checkClientPermission(loginAccountId, i.getClientId()) 
+							&& srvName.equals(i.getKey().getServiceName())) {
 						ms = i.getMethods();
 						break;
 					}
@@ -553,19 +563,21 @@ public class ServiceManager {
 		return sns;
 	}
 	
-	public Set<String> serviceInstances(String srvName) {
+	public Set<String> serviceInstances(String srvName,int loginAccountId) {
 		Set<String> sns = new HashSet<>();
 		ReentrantReadWriteLock.ReadLock l = rwLocker.readLock();
 		try {
 			l.lock();
-			Set<ServiceMethod> ms = null;
 			boolean f = Utils.isEmpty(srvName);
 			for(ServiceItem i : path2SrvItems.values()) {
-				if(f) {
-					sns.add(i.getKey().getInstanceName());
-				}else if(srvName.equals(i.getKey().getServiceName())){
-					sns.add(i.getKey().getInstanceName());
+				if(PermissionManager.checkClientPermission(loginAccountId, i.getClientId())) {
+					if(f) {
+						sns.add(i.getKey().getInstanceName());
+					}else if(srvName.equals(i.getKey().getServiceName())){
+						sns.add(i.getKey().getInstanceName());
+					}
 				}
+				
 			}
 		} finally {
 			if(l != null) {
@@ -869,6 +881,36 @@ public class ServiceManager {
 		}
 		
 		return false;
+	}
+	
+	public void registSmCode(String sn,String ns,String ver,String method,Class<?>[] argCls) {
+		
+		if(!Utils.formSystemPackagePermission()) {
+			throw new CommonException("No permission to regist Service method code: " + UniqueServiceMethodKey.methodKey(sn, ns, ver, Config.getInstanceName(),
+					Config.getExportSocketHost(), "", method));
+		}
+		
+		String smKey = UniqueServiceMethodKey.methodKey(sn, ns, ver, "", "", "", method);
+		int smCode = HashUtils.FNVHash1(smKey);
+		
+		UniqueServiceKey usk = new UniqueServiceKey();
+		usk.setNamespace(ns);
+		usk.setServiceName(sn);
+		usk.setVersion(ver);
+		usk.setInstanceName(Config.getInstanceName());
+		usk.setHost(Config.getExportSocketHost());
+		usk.setPort("");
+		
+		usk.setSnvHash(HashUtils.FNVHash1(usk.toKey(false, false, false)));
+		
+		ServiceMethod sm = new ServiceMethod();
+		sm.getKey().setUsk(usk);
+		sm.getKey().setMethod(method);
+		sm.getKey().setSnvHash(smCode);
+		sm.getKey().setParamsStr(UniqueServiceMethodKey.paramsStr(argCls));
+		
+		this.methodHash2Method.put(smCode, sm);
+		
 	}
 	
 	

@@ -51,8 +51,8 @@ public class PubSubClientServiceImpl implements IPubSubClientService {
 		}
 
 		ActInfo ai = JMicroContext.get().getAccount();
-		if(pm.getVal(ai.getClientId(),  PubSubManager.PROFILE_PUBSUB, "needPersist",false, Boolean.class)) {
-			psMng.persist2Db(ai.getClientId(),items);
+		if(pm.getVal(ai.getId(),  PubSubManager.PROFILE_PUBSUB, "needPersist",false, Boolean.class)) {
+			psMng.persist2Db(ai.getId(),items);
 		}
 		return psServer.publishItems(items[0].getTopic(),items);
 	
@@ -65,7 +65,7 @@ public class PubSubClientServiceImpl implements IPubSubClientService {
 		ActInfo ai = JMicroContext.get().getAccount();
 		if(item.isPersist()) {
 			if(pm.getVal(item.getSrcClientId(), PubSubManager.PROFILE_PUBSUB, "needPersist",false, Boolean.class)) {
-				psMng.persit2Db(ai.getClientId(),item);
+				psMng.persit2Db(ai.getId(),item);
 			}
 		}
 		return psServer.publishItem(item);

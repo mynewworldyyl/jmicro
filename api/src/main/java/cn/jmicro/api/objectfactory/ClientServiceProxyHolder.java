@@ -149,11 +149,11 @@ public class ClientServiceProxyHolder implements IServiceListener{
 			}
 			
 			if(Constants.LICENSE_TYPE_CLIENT == sm.getFeeType() 
-					&& si.getClientId() != ai.getClientId()) {
+					&& si.getClientId() != ai.getId()) {
 				boolean f = false;
 				if(sm.getAuthClients() != null && sm.getAuthClients().length > 0) {
 					for(int t : sm.getAuthClients()) {
-						if(t == ai.getClientId()) {
+						if(t == ai.getId()) {
 							f = true;
 							break;
 						}
@@ -166,7 +166,7 @@ public class ClientServiceProxyHolder implements IServiceListener{
 					restoreContext(curCxt);
 					throw new CommonException(msg);
 				}
-			} else if(Constants.LICENSE_TYPE_PRIVATE == sm.getFeeType() && si.getClientId() != ai.getClientId()) {
+			} else if(Constants.LICENSE_TYPE_PRIVATE == sm.getFeeType() && si.getClientId() != ai.getId()) {
 				String msg = "Private service ["+ai.getActName()+"] for " + si.getKey().toKey(false, false, false);
 				LG.log(MC.LOG_WARN, this.getClass(), msg);
 				restoreContext(curCxt);

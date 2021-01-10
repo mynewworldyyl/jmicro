@@ -49,8 +49,8 @@ public class StatisMonitorImpl implements IStatisMonitor {
 	private static final String STATIS_MONITOR_DIR = Config.BASE_DIR + "/statisMonitorKeys";
 	
 	private static final String RES_LOCK = "statisCounterRegLock";
-	private static final String[] DATA_TYPE = new String[] {MC.PREFIX_QPS,
-			MC.PREFIX_TOTAL_PERCENT,MC.PREFIX_TOTAL};
+	
+	private static final String[] DATA_TYPE = new String[] {MC.PREFIX_QPS,MC.PREFIX_TOTAL_PERCENT,MC.PREFIX_TOTAL};
 	
 	private final Map<Long,TimerTicker> timers = new ConcurrentHashMap<>();
 	

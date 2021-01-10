@@ -219,7 +219,8 @@ export default {
                 idKey = idKey.substring(8);
             }
             if(self.cache.started) {
-                window.jm.mng.statis.unsubscribeData(idKey,2,this.callback).then(rst =>{
+                window.jm.mng.statis.unsubscribeData(idKey,2,this.callback)
+                    .then(rst =>{
                     self.$Message.success(rst);
                     self.cache.started = false;
                     self.btnTitle = 'Start';

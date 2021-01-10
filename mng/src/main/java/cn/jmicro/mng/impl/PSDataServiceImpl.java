@@ -102,7 +102,7 @@ public class PSDataServiceImpl implements IPSDataService {
 		Document match = new Document();
 		
 		 if(!PermissionManager.isCurAdmin()) {
-			 match.put("srcClientId", JMicroContext.get().getAccount().getClientId());
+			 match.put("srcClientId", JMicroContext.get().getAccount().getId());
 		 }
 		
 		String key = "startTime";

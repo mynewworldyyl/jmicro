@@ -15,6 +15,7 @@ import cn.jmicro.api.config.DictManager;
 import cn.jmicro.api.i18n.I18NManager;
 import cn.jmicro.api.mng.ICommonManager;
 import cn.jmicro.api.raft.IDataOperator;
+import cn.jmicro.api.security.ActInfo;
 import cn.jmicro.common.Utils;
 
 @Component
@@ -55,6 +56,7 @@ public class CommonManagerImpl implements ICommonManager {
 	@Override
 	public Resp<Map<String,Object>> getDicts(String[] keys,String qry) {
 		Map<String,Object> dicts = new HashMap<>();
+		ActInfo ai = JMicroContext.get().getAccount();
 		for(String k : keys) {
 			if(Utils.isEmpty(k)) {
 				continue;
@@ -62,25 +64,25 @@ public class CommonManagerImpl implements ICommonManager {
 
 			switch(k) {
 			case SERVICE_METHODS:
-				dicts.put(k, dictManager.serviceMethods(qry));
+				dicts.put(k, dictManager.serviceMethods(qry,ai.getId()));
 				break;
 			case SERVICE_NAMESPACES:
-				dicts.put(k, dictManager.serviceNamespaces(qry));
+				dicts.put(k, dictManager.serviceNamespaces(qry,ai.getId()));
 				break;
 			case SERVICE_NAMES:
-				dicts.put(k, dictManager.serviceNames(qry));
+				dicts.put(k, dictManager.serviceNames(qry,ai.getId()));
 				break;
 			case SERVICE_VERSIONS:
-				dicts.put(k, dictManager.serviceVersions(qry));
+				dicts.put(k, dictManager.serviceVersions(qry,ai.getId()));
 				break;
 			case INSTANCES:
-				dicts.put(k, dictManager.serviceInstances(qry));
+				dicts.put(k, dictManager.serviceInstances(qry,ai.getId()));
 				break;
 			case NAMED_TYPES:
 				dicts.put(k, getNamedTypeNameList());
 				break;
 			case ALL_INSTANCES:
-				dicts.put(k, dictManager.serviceInstances(null));
+				dicts.put(k, dictManager.serviceInstances(null,ai.getId()));
 				break;
 			case MONITOR_RESOURCE_NAMES:
 				dicts.put(k, dictManager.resourceNames());

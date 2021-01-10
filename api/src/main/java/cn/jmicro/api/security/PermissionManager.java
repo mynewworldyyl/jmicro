@@ -21,6 +21,7 @@ import cn.jmicro.api.registry.IServiceListener;
 import cn.jmicro.api.registry.ServiceItem;
 import cn.jmicro.api.registry.ServiceMethod;
 import cn.jmicro.api.service.ServiceManager;
+import cn.jmicro.common.Constants;
 
 @Component
 public class PermissionManager {
@@ -38,8 +39,7 @@ public class PermissionManager {
 	private Map<String,Set<Permission>> pers = new HashMap<>();
 	
 	public static final boolean checkClientPermission(int loginAccountId,int targetDataClientId) {
-		
-		if(targetDataClientId == loginAccountId || loginAccountId == Config.getAdminClientId()) {
+		if(targetDataClientId == Constants.NO_CLIENT_ID || targetDataClientId == loginAccountId || loginAccountId == Config.getAdminClientId()) {
 			//一般账户启动的服务
 			return true;
 		}
@@ -51,14 +51,14 @@ public class PermissionManager {
 		if(ai == null) {
 			return false;
 		}
-		return checkClientPermission(ai.getClientId(),targetDataClientId);
+		return checkClientPermission(ai.getId(),targetDataClientId);
 	}
 	
 	public static final boolean isCurAdmin() {
 		
 		ActInfo ai = JMicroContext.get().getAccount();
 		if(ai != null) {
-			return ai.getClientId() == Config.getAdminClientId();
+			return ai.getId() == Config.getAdminClientId();
 		}
 		
 		return false;

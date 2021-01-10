@@ -42,7 +42,7 @@ public class ProfileServiceImpl implements IProfileService {
 			return resp;
 		}
 		
-		String path = ProfileManager.ROOT + "/" + ai.getClientId();
+		String path = ProfileManager.ROOT + "/" + ai.getId();
 		if(op.exist(path)) {
 			Set<String> modules = op.getChildren(path, false);
 			resp.setData(modules);
@@ -71,7 +71,7 @@ public class ProfileServiceImpl implements IProfileService {
 			return resp;
 		}
 		
-		String mpath = ProfileManager.ROOT + "/" + ai.getClientId()+"/"+module;
+		String mpath = ProfileManager.ROOT + "/" + ai.getId()+"/"+module;
 		if(!op.exist(mpath)) {
 			resp.setData(null);
 			resp.setCode(1);
@@ -112,7 +112,7 @@ public class ProfileServiceImpl implements IProfileService {
 			return resp;
 		}
 		
-		String path = ProfileManager.ROOT + "/" + ai.getClientId();
+		String path = ProfileManager.ROOT + "/" + ai.getId();
 		Set<String> modules = op.getChildren(path, false);
 		if(modules == null || modules.isEmpty()) {
 			resp.setData(null);
@@ -157,7 +157,7 @@ public class ProfileServiceImpl implements IProfileService {
 	public Resp<Boolean> updateKv(String module,KV kv) {
 		ActInfo ai = JMicroContext.get().getAccount();
 		Resp<Boolean> resp = new Resp<>();
-		pm.setVal(ai.getClientId(), module, kv.getKey(), kv.getVal());
+		pm.setVal(ai.getId(), module, kv.getKey(), kv.getVal());
 		resp.setCode(0);
 		resp.setData(true);
 		return resp;

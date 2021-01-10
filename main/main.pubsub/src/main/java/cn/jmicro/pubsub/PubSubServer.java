@@ -47,6 +47,7 @@ import cn.jmicro.api.config.Config;
 import cn.jmicro.api.executor.ExecutorConfig;
 import cn.jmicro.api.executor.ExecutorFactory;
 import cn.jmicro.api.internal.pubsub.IInternalSubRpc;
+import cn.jmicro.api.monitor.LG;
 import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.objectfactory.IObjectFactory;
 import cn.jmicro.api.pubsub.PSData;
@@ -212,6 +213,9 @@ public class PubSubServer implements IInternalSubRpc{
 	@SMethod(timeout=5000,retryCnt=0,asyncable=false,debugMode=0)
 	public int publishString(String topic,String content) {
 		if(!this.subManager.isValidTopic(topic)) {
+			if(LG.isLoggable(MC.LOG_DEBUG)) {
+				LG.log(MC.LOG_DEBUG, this.getClass(), " PUB_TOPIC_INVALID for: " + topic);
+			}
 			return PubSubManager.PUB_TOPIC_INVALID;
 		}
 		
@@ -260,6 +264,9 @@ public class PubSubServer implements IInternalSubRpc{
 			foreachItem(items,(pd)->{
 				this.sta.getSc(pd.getTopic(),pd.getSrcClientId()).add(MC.Ms_TopicInvalid, 1);
 			});
+			if(LG.isLoggable(MC.LOG_DEBUG)) {
+				LG.log(MC.LOG_DEBUG, this.getClass(), " PUB_TOPIC_INVALID for: " + topic);
+			}
 			return PubSubManager.PUB_TOPIC_INVALID;
 		}
 		
@@ -271,6 +278,11 @@ public class PubSubServer implements IInternalSubRpc{
 			foreachItem(items,(pd)->{
 				this.sta.getSc(pd.getTopic(),pd.getSrcClientId()).add(MC.Ms_ServerDisgard, 1);
 			});
+			
+			if(LG.isLoggable(MC.LOG_DEBUG)) {
+				LG.log(MC.LOG_DEBUG, this.getClass(), " PUB_SERVER_DISCARD null items for: " + topic);
+			}
+			
 			return PubSubManager.PUB_SERVER_DISCARD;
 		}
 		
@@ -283,6 +295,12 @@ public class PubSubServer implements IInternalSubRpc{
 			foreachItem(items,(pd)->{
 				this.sta.getSc(pd.getTopic(),pd.getSrcClientId()).add(MC.Ms_ServerBusy, 1);
 			});
+			
+			if(LG.isLoggable(MC.LOG_WARN)) {
+				LG.log(MC.LOG_WARN, this.getClass(), " PUB_SERVER_BUSUY : " + topic +"send len: " + 
+						items.length+" max "+this.maxCachePersistItem);
+			}
+			
 			return PubSubManager.PUB_SERVER_BUSUY;
 		}
 		
@@ -327,12 +345,16 @@ public class PubSubServer implements IInternalSubRpc{
 								this.sta.getSc(pd.getTopic(),pd.getSrcClientId()).add(MC.Ms_FailReturnWriteBasket, 1);
 								this.sta.getSc(pd.getTopic(),pd.getSrcClientId()).add(MC.Ms_FailItemCount, 1);
 							});
-							logger.error("Fail to return basket fail size: "+ (items.length - pos));
+							String errMsg = "Fail to return basket fail size: "+ (items.length - pos);
+							LG.log(MC.LOG_ERROR, this.getClass(), errMsg);
+							logger.error(errMsg);
 							break;
 						}
 					} else {
 						basketFactory.returnWriteBasket(b, true);
-						logger.error("Fail write basket size: "+ (items.length - pos));
+						String errMsg = "Fail write basket size: "+ (items.length - pos);
+						LG.log(MC.LOG_ERROR, this.getClass(), errMsg);
+						logger.error(errMsg);
 						/*if(me) {
 							//sc.add(MonitorConstant.Ms_Fail2BorrowBasket, 1);
 							sc.add(MC.Ms_FailItemCount, items.length - pos);
@@ -351,7 +373,9 @@ public class PubSubServer implements IInternalSubRpc{
 						this.sta.getSc(pd.getTopic(),pd.getSrcClientId()).add(MC.Ms_FailReturnWriteBasket, 1);
 						this.sta.getSc(pd.getTopic(),pd.getSrcClientId()).add(MC.Ms_FailItemCount, 1);
 					});
-					logger.error("Fail size: "+ (items.length - pos));
+					String errMsg = "Fail size: "+ (items.length - pos);
+					LG.log(MC.LOG_ERROR, this.getClass(), errMsg);
+					logger.error(errMsg);
 					break;
 				}
 			}
@@ -364,9 +388,10 @@ public class PubSubServer implements IInternalSubRpc{
 			foreachItem(items,(pd)->{
 				this.sta.getSc(pd.getTopic(),pd.getSrcClientId()).add(MC.Ms_Pub2Cache, 1);
 			});
-			if(openDebug) {
-				logger.info("push to cache :{},total:{}",items.length,cacheItemsCnt.get());
-			}
+			
+			String errMsg = "push to cache :"+items.length+",total:"+cacheItemsCnt.get();
+			LG.log(MC.LOG_WARN, this.getClass(), errMsg);
+			logger.warn(errMsg);
 		}
 		
 		synchronized(syncLocker) {
@@ -413,14 +438,17 @@ public class PubSubServer implements IInternalSubRpc{
 							this.sta.getSc(pd.getTopic(),pd.getSrcClientId()).add(MC.Ms_FailReturnWriteBasket, 1);
 							this.sta.getSc(pd.getTopic(),pd.getSrcClientId()).add(MC.Ms_FailItemCount, 1);
 						});
-						
-						logger.error("Fail to return basket fail size: "+ (items.length - pos));
+						String errMsg = "Fail to return basket fail size: "+ (items.length - pos);
+						LG.log(MC.LOG_ERROR, this.getClass(), errMsg);
+						logger.error(errMsg);
 						break;
 					}
 					
 				} else {
 					basketFactory.returnWriteBasket(b, true);
-					logger.error("Fail write basket size: "+ (items.length - pos));
+					String errMsg = "Fail write basket size: "+ (items.length - pos);
+					LG.log(MC.LOG_ERROR, this.getClass(), errMsg);
+					logger.error(errMsg);
 					/*if(me) {
 						//sc.add(MonitorConstant.Ms_Fail2BorrowBasket, 1);
 						sc.add(MC.Ms_FailItemCount, items.length - pos);
@@ -440,8 +468,9 @@ public class PubSubServer implements IInternalSubRpc{
 					this.sta.getSc(pd.getTopic(),pd.getSrcClientId()).add(MC.Ms_FailReturnWriteBasket, 1);
 					this.sta.getSc(pd.getTopic(),pd.getSrcClientId()).add(MC.Ms_FailItemCount, 1);
 				});
-				
-				logger.error("Fail size: "+ (items.length - pos));
+				String errMsg = "Fail size: "+ (items.length - pos);
+				LG.log(MC.LOG_ERROR, this.getClass(), errMsg);
+				logger.error(errMsg);
 				break;
 			}
 		}
@@ -480,6 +509,11 @@ public class PubSubServer implements IInternalSubRpc{
 							if(size < arr.length) {
 								this.cacheStorage.push(e.getKey(), arr,size,arr.length-size);
 								cacheItemsCnt.addAndGet(-size);
+							}
+							
+							if(LG.isLoggable(MC.LOG_DEBUG)) {
+								String errMsg = "begin get items from cache topic:"+e.getKey();
+								LG.log(MC.LOG_DEBUG, this.getClass(), errMsg);
 							}
 							
 							if(openDebug) {
@@ -525,6 +559,12 @@ public class PubSubServer implements IInternalSubRpc{
 					PSData[] psd = new PSData[rm];
 					if(!rb.readAll(psd)) {
 						this.basketFactory.returnReadSlot(rb, false);
+						
+						if(LG.isLoggable(MC.LOG_DEBUG)) {
+							String errMsg = "Fail to get element from basket remaiding:"+rb.remainding();
+							LG.log(MC.LOG_DEBUG, this.getClass(), errMsg);
+						}
+						
 						if(openDebug) {
 							logger.info("Fail to get element from basket remaiding:{}",rb.remainding());
 						}
@@ -550,6 +590,7 @@ public class PubSubServer implements IInternalSubRpc{
 			} catch (Throwable e) {
 				// 永不结束线程
 				logger.error("doCheck异常", e);
+				LG.log(MC.LOG_ERROR, this.getClass(), "",e);
 				//SF.doBussinessLog(MonitorConstant.LOG_ERROR, PubSubServer.class, e, "doCheck异常");
 			}
 		}
@@ -653,7 +694,9 @@ public class PubSubServer implements IInternalSubRpc{
 						sta.getSc(pd.getTopic(),pd.getSrcClientId()).add(MC.Ms_DoResendWithCbNullCnt, 1);
 					});
 					
-					logger.error("Push to resend component topic:"+topic);
+					String errMsg = "Push to resend component topic:"+topic;
+					LG.log(MC.LOG_ERROR, this.getClass(), errMsg);
+					logger.error(errMsg);
 				} else {
 					for (ISubscriberCallback cb : subscribers) {
 						try {
@@ -672,7 +715,9 @@ public class PubSubServer implements IInternalSubRpc{
 									foreachItem(items,(pd)->{
 										sta.getSc(pd.getTopic(),pd.getSrcClientId()).add(MC.Ms_DoResendCnt, 1);
 									});
-									logger.error("Push to resend component:"+cb.getSm().getKey().toKey(true, true, true));
+									String errMsg = "Push to resend component:"+cb.getSm().getKey().toKey(true, true, true);
+									LG.log(MC.LOG_ERROR, this.getClass(), errMsg);
+									logger.error(errMsg);
 								}
 							});
 							/*if(me) {
@@ -691,16 +736,18 @@ public class PubSubServer implements IInternalSubRpc{
 							foreachItem(items,(pd)->{
 								sta.getSc(pd.getTopic(),pd.getSrcClientId()).add(MC.Ms_DoResendCnt, 1);
 							});
-							logger.error("Worker get exception", e);
+							String errMsg = "Worker get exception";
+							LG.log(MC.LOG_ERROR, this.getClass(), errMsg,e);
+							logger.error(errMsg, e);
 							//SF.doBussinessLog(MonitorConstant.LOG_ERROR, PubSubServer.class, e, "Subscribe mybe down: "+cb.getSm().getKey().toKey(true, true, true));
 						}
 					}
 				}
 			} finally {
 				 Thread.currentThread().setContextClassLoader(null);
-				if(openDebug) {
+				/*if(openDebug) {
 					//logger.info("Do decrement memoryItemsCnt cur:"+memoryItemsCnt.get()+", before:"+size);
-				}
+				}*/
 			}
 		}
 	}
@@ -710,9 +757,9 @@ public class PubSubServer implements IInternalSubRpc{
 	        public PubsubServerAbortPolicy() { }
 	
 	        public void rejectedExecution(Runnable r, ThreadPoolExecutor e) {
-	            throw new RejectedExecutionException("JMcro Pubsub Server Task " + r.toString() +
-	                                                 " rejected from " +
-	                                                 e.toString());
+	        	String errMsg = "JMcro Pubsub Server Task " + r.toString() +" rejected from " +e.toString();
+	        	LG.log(MC.LOG_ERROR, getClass(), errMsg);
+	            throw new RejectedExecutionException(errMsg);
 	        }
 	    }
 	 

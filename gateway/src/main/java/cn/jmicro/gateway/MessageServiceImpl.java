@@ -44,7 +44,7 @@ import cn.jmicro.api.pubsub.PubSubManager;
 import cn.jmicro.api.registry.IRegistry;
 import cn.jmicro.api.registry.ServiceItem;
 import cn.jmicro.api.registry.ServiceMethod;
-import cn.jmicro.api.security.ActInfo;
+import cn.jmicro.api.service.ServiceManager;
 import cn.jmicro.api.timer.ITickerAction;
 import cn.jmicro.api.timer.TimerTicker;
 import cn.jmicro.api.utils.TimeUtils;
@@ -58,7 +58,7 @@ import cn.jmicro.common.util.StringUtils;
  * @date 2020年3月26日
  */
 @Component
-@Service(namespace="mng", version="0.0.1",showFront=false)
+@Service(namespace="mng", version="0.0.1",showFront=false,external=true)
 public class MessageServiceImpl implements IGatewayMessageCallback{
 
 	private final static Logger logger = LoggerFactory.getLogger(MessageServiceImpl.class);
@@ -88,6 +88,9 @@ public class MessageServiceImpl implements IGatewayMessageCallback{
 	
 	@Inject
 	private PubSubManager pm;
+	
+	@Inject
+	private ServiceManager srvManager;
 	
 	private ISessionListener seeesionListener = (int type, ISession s)->{
 		if(type == ISession.EVENT_TYPE_CLOSE) {
@@ -162,7 +165,7 @@ public class MessageServiceImpl implements IGatewayMessageCallback{
 			r.id = this.idServer.getIntId(MessageServiceImpl.class);
 			r.sess = session;
 			r.topic = topic;
-			r.clientId = JMicroContext.get().getAccount().getClientId();
+			r.clientId = JMicroContext.get().getAccount().getId();
 			r.lastActiveTime = TimeUtils.getCurTime();
 			sess.add(r);
 			Set<Integer> ids = session.getParam(MESSAGE_SERVICE_REG_ID);
@@ -342,6 +345,12 @@ public class MessageServiceImpl implements IGatewayMessageCallback{
 	public void ready() {
 		TimerTicker timer = TimerTicker.getDefault(30*1000L);
 		timer.addListener(TIMER_KEY, null, tickerAct);
+		//-2120102654
+		//-1331833745
+		srvManager.registSmCode("cn.jmicro.gateway.MessageServiceImpl","mng", "0.0.1", "subscribe",
+				new Class[] {ISession.class,String.class,Map.class});
+		srvManager.registSmCode("cn.jmicro.gateway.MessageServiceImpl","mng", "0.0.1", "unsubscribe",
+				new Class[] {Integer.class});
 	}
 
 	private class Registion{

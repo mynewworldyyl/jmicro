@@ -25,6 +25,8 @@ import cn.jmicro.api.executor.ExecutorConfig;
 import cn.jmicro.api.executor.ExecutorFactory;
 import cn.jmicro.api.idgenerator.ComponentIdServer;
 import cn.jmicro.api.internal.pubsub.genclient.IInternalSubRpc$JMAsyncClient;
+import cn.jmicro.api.monitor.LG;
+import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.net.Message;
 import cn.jmicro.api.objectfactory.ProxyObject;
 import cn.jmicro.api.persist.IObjectStorage;
@@ -131,14 +133,29 @@ public class PubSubManager {
 		if(itemNum == 0) {
 			return this.defaultServer != null;
 		}else {
-			return this.defaultServer != null && this.curItemCount.get() + itemNum <= this.maxPsItem 
+			 return this.defaultServer != null && this.curItemCount.get() + itemNum <= this.maxPsItem 
 					&& ProxyObject.isUsableRemoteProxy(this.defaultServer);
+		}
+	}
+	
+	private void doLog(int itemNum,String msg) {
+		if(LG.isLoggable(MC.LOG_DEBUG)) {
+			StringBuffer sb = new StringBuffer(msg + " Pubsub disable by: ");
+			if(this.defaultServer == null) {
+				sb.append("Pubsub server is disable!");
+			}else if(this.curItemCount.get() + itemNum > this.maxPsItem ) {
+				sb.append("cur item ["+this.curItemCount.get()+"] send count ["+ itemNum + "] is too max with " + this.maxPsItem);
+			}else {
+				sb.append("pubsub server not ready now!");
+			}
+			LG.log(MC.LOG_DEBUG, this.getClass(), sb.toString());
 		}
 	}
 	
 	public int publish(String topic,Object[] args,byte flag, Map<String, Object> itemContext) {
 
 		if(!this.isPubsubEnable(1)) {
+			doLog(1,"return code: " + PUB_SERVER_NOT_AVAILABALE+" for topic: " + topic);
 			return PUB_SERVER_NOT_AVAILABALE;
 		}
 		
@@ -153,6 +170,7 @@ public class PubSubManager {
 	
 	public int publish(String topic, String content,byte flag,Map<String,Object> context) {
 		if(!this.isPubsubEnable(1)) {
+			doLog(1,"return code: " + PUB_SERVER_NOT_AVAILABALE+" for topic: " + topic);
 			return PUB_SERVER_NOT_AVAILABALE;
 		}
 		
@@ -167,6 +185,7 @@ public class PubSubManager {
 	
 	public int publish(String topic, byte[] content,byte flag,Map<String,Object> context) {
 		if(!this.isPubsubEnable(1)) {
+			doLog(1,"return code: " + PUB_SERVER_NOT_AVAILABALE+" for topic: " + topic);
 			return PUB_SERVER_NOT_AVAILABALE;
 		}
 		
@@ -182,10 +201,14 @@ public class PubSubManager {
 	public int publish(PSData[] items) {
 		
 		if(items == null || items.length == 0) {
+			if(LG.isLoggable(MC.LOG_DEBUG)) {
+				LG.log(MC.LOG_DEBUG, this.getClass(), "send null items");
+			}
 			return PSData.PUB_ITEM_IS_NULL;
 		}
 		
 		 if(!this.isPubsubEnable(1)) {
+			doLog(1,"return code: " + PUB_SERVER_NOT_AVAILABALE);
 			return PUB_SERVER_NOT_AVAILABALE;
 		 }
 		 
@@ -196,14 +219,14 @@ public class PubSubManager {
 		curItemCount.addAndGet(items.length);
 		 
 		ActInfo ai = JMicroContext.get().getAccount();
-		if(ai != null && pm.getVal(ai.getClientId(), PROFILE_PUBSUB, "needPersist",false, Boolean.class)) {
-			persist2Db(ai.getClientId(),items);
+		if(ai != null && pm.getVal(ai.getId(), PROFILE_PUBSUB, "needPersist",false, Boolean.class)) {
+			persist2Db(ai.getId(),items);
 		}
 		
 		synchronized (topicSubmitItems) {
 			for (PSData d : items) {
 				if(ai != null) {
-					d.setSrcClientId(ai.getClientId());
+					d.setSrcClientId(ai.getId());
 				}
 				List<PSData> is = topicSubmitItems.get(d.getTopic());
 				if (is == null) {
@@ -224,14 +247,21 @@ public class PubSubManager {
 	public int publish(PSData item) {
 		
 		if(item == null) {
+			if(LG.isLoggable(MC.LOG_DEBUG)) {
+				LG.log(MC.LOG_DEBUG, this.getClass(),"return PUB_ITEM_IS_NULL=" + PSData.PUB_ITEM_IS_NULL);
+			}
 			return PSData.PUB_ITEM_IS_NULL;
 		}
 		
 		if(StringUtils.isEmpty(item.getTopic())) {
+			if(LG.isLoggable(MC.LOG_DEBUG)) {
+				LG.log(MC.LOG_DEBUG, this.getClass(),"return PUB_TOPIC_IS_NULL=" + PSData.PUB_TOPIC_IS_NULL);
+			}
 			return PSData.PUB_TOPIC_IS_NULL;
 		}
 		
 		if(!this.isPubsubEnable(1)) {
+			doLog(1,"return code: " + PUB_SERVER_NOT_AVAILABALE);
 			return PUB_SERVER_NOT_AVAILABALE;
 		}
 		
@@ -242,7 +272,7 @@ public class PubSubManager {
 		ActInfo ai = JMicroContext.get().getAccount();
 		if(ai != null && item.isPersist()) {
 			if(pm.getVal(item.getSrcClientId(), PROFILE_PUBSUB, "needPersist",false, Boolean.class)) {
-				persit2Db(ai.getClientId(),item);
+				persit2Db(ai.getId(),item);
 			}
 		}
 		
@@ -316,6 +346,11 @@ public class PubSubManager {
 			 if(this.isRunning) {
 				 return;
 			 }
+			 
+			 if(LG.isLoggable(MC.LOG_INFO)) {
+				LG.log(MC.LOG_INFO, this.getClass(),"Rerun checker thread: "+Config.getInstanceName()+"_PubSubManager_Checker");
+			 }
+			 
 			 this.isRunning = true;
 			 Thread t = new Thread(this::doWork);
 			 t.setName(Config.getInstanceName()+"_PubSubManager_Checker");

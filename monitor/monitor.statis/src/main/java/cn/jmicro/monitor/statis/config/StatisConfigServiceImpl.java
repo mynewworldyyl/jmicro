@@ -175,7 +175,7 @@ public class StatisConfigServiceImpl implements IStatisConfigService {
 		
 		ActInfo ai = JMicroContext.get().getAccount();
 		
-		cfg.setCreatedBy(ai.getClientId());
+		cfg.setCreatedBy(ai.getId());
 		cfg.setId(this.idGenerator.getIntId(StatisConfig.class));
 		
 		String path = ROOT + "/" + cfg.getId();

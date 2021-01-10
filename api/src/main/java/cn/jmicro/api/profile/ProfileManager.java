@@ -28,7 +28,7 @@ public class ProfileManager {
 		if(ai == null) {
 			throw new CommonException("Not login to get user profile!");
 		}
-		return this.getVal(ai.getClientId(), module, key,defaultVal,type);
+		return this.getVal(ai.getId(), module, key,defaultVal,type);
 	}
 	
 	public <T> T getVal(Integer clientId,String module,String key, T defaultVal, Class<T> type) {

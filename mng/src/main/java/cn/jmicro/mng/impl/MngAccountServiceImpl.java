@@ -301,7 +301,7 @@ public class MngAccountServiceImpl implements IAccountService {
 			r.setKey("accountExist");
 		} else {
 			ai.setStatuCode(ActInfo.SC_WAIT_ACTIVE);
-			ai.setClientId(this.idGenerator.getIntId(ActInfo.class));
+			ai.setId(this.idGenerator.getIntId(ActInfo.class));
 			ai.setEmail(mail);
 			ai.setMobile(mobile);
 			ai.setRegistTime(TimeUtils.getCurTime());

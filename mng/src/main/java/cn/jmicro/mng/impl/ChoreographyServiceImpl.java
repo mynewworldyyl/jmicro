@@ -94,10 +94,7 @@ public class ChoreographyServiceImpl implements IChoreographyService {
 		dep.setId(id);
 		
 		ActInfo ai = JMicroContext.get().getAccount();
-		if(ai.getClientId() != Config.getAdminClientId() || 
-				(ai.getClientId() == Config.getAdminClientId() && dep.getClientId() < 0 )) {
-			dep.setClientId(ai.getClientId());
-		}
+		dep.setClientId(ai.getId());
 		
 		op.createNodeOrSetData(ChoyConstants.DEP_DIR+"/"+id, JsonUtils.getIns().toJson(dep), false);
 		

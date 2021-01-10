@@ -14,7 +14,7 @@ import cn.jmicro.common.Constants;
 import cn.jmicro.common.util.JsonUtils;
 import cn.jmicro.example.api.pubsub.ISimplePubsub;
 
-@Service(maxSpeed=-1,baseTimeUnit=Constants.TIME_SECONDS)
+@Service(maxSpeed=-1,baseTimeUnit=Constants.TIME_SECONDS,clientId=Constants.NO_CLIENT_ID)
 @Component
 public class SimplePubsubImpl implements ISimplePubsub {
 

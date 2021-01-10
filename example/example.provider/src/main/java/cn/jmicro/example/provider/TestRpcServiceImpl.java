@@ -12,7 +12,7 @@ import cn.jmicro.common.Constants;
 import cn.jmicro.example.api.ITestRpcService;
 
 @Service(maxSpeed=100,baseTimeUnit=Constants.TIME_SECONDS,namespace="testrpc",
-version="0.0.1")
+version="0.0.1",clientId=Constants.NO_CLIENT_ID)
 @Component
 public class TestRpcServiceImpl implements ITestRpcService{
 

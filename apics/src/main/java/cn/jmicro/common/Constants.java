@@ -23,6 +23,10 @@ package cn.jmicro.common;
  */
 public interface Constants {
 	
+	public static final byte USE_SYSTEM_CLIENT_ID = -2;
+	
+	public static final byte NO_CLIENT_ID = -1;
+	
 	public static final byte LIMIT_TYPE_LOCAL = 1;
 	
 	public static final byte LIMIT_TYPE_SS = 2;
@@ -35,6 +39,8 @@ public interface Constants {
 	
 	//只有自己能调用
 	public static final byte LICENSE_TYPE_PRIVATE = 2;
+	
+	public static final String[] SYSTEM_PCK_NAME_PREFIXES = new String[] {"cn.jmicro"};
 	
 	public static final String PUBLIC_KEYS_FILES = "publicKeyFiles";
 	public static final String PRIVATE_KEY_PWD = "priKeyPwd";

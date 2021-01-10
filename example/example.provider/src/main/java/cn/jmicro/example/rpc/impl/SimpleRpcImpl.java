@@ -20,7 +20,7 @@ import cn.jmicro.common.Constants;
 import cn.jmicro.example.api.rpc.ISimpleRpc;
 import cn.jmicro.example.api.rpc.genclient.IRpcA$JMAsyncClient;
 
-@Service(namespace="simpleRpc", version="0.0.1", monitorEnable=0, 
+@Service(namespace="simpleRpc", version="0.0.1", monitorEnable=0, clientId=Constants.NO_CLIENT_ID,
 maxSpeed=-1,debugMode=1,baseTimeUnit=Constants.TIME_SECONDS, external=true)
 @Component
 public class SimpleRpcImpl implements ISimpleRpc {

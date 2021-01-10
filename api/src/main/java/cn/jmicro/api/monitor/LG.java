@@ -114,7 +114,7 @@ public class LG {
 					mi.setResp(ce.getResp());
 				}
 				if(ce.getAi() != null) {
-					mi.setClientId(ce.getAi().getClientId());
+					mi.setClientId(ce.getAi().getId());
 					mi.setActName(ce.getAi().getActName());
 				}
 			}
@@ -166,7 +166,7 @@ public class LG {
 			f = true;
 			ActInfo ai = JMicroContext.get().getAccount();
 			if(ai != null) {
-				mi.setClientId(ai.getClientId());
+				mi.setClientId(ai.getId());
 			}
 		}
 		
@@ -250,7 +250,7 @@ public class LG {
 		if(JMicroContext.existRpcContext()) {
 			ActInfo ai = JMicroContext.get().getAccount();
 			if(ai != null) {
-				si.setClientId(ai.getClientId());
+				si.setClientId(ai.getId());
 				si.setActName(ai.getActName());
 			}
 			

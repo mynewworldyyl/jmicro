@@ -112,7 +112,7 @@ public class MT {
 		if(JMicroContext.existRpcContext()) {
 			ActInfo ai = JMicroContext.get().getAccount();
 			if(ai != null && si.getActName() == null) {
-				si.setClientId(ai.getClientId());
+				si.setClientId(ai.getId());
 				si.setActName(ai.getActName());
 			}
 			//在RPC上下文中才有以上信息

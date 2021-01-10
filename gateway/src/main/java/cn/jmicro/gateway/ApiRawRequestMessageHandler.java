@@ -119,7 +119,13 @@ public class ApiRawRequestMessageHandler implements IMessageHandler{
 		
 		try {
 			ServiceMethod sm = JMicroContext.get().getParam(Constants.SERVICE_METHOD_KEY, null);
-			ServiceItem si =  getServiceItem(sm.getKey());
+			
+			ServiceItem si =  null;
+			
+			if(!MessageServiceImpl.TAG.equals(sm.getKey().getServiceName())) {
+				si = getServiceItem(sm.getKey());
+			}
+			
 			Class<?>[] paramsCls = null;
 			
 			if(msg.getUpProtocol() == Message.PROTOCOL_JSON) {

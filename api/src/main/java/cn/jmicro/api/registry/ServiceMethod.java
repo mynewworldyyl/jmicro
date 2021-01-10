@@ -538,5 +538,10 @@ public final class ServiceMethod {
 		this.encType = encType;
 	}
 
+	public byte getEncType() {
+		return encType;
+	}
+
+	
 
 }

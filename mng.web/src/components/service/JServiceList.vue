@@ -82,6 +82,9 @@
                 self.isLogin = window.jm.rpc.isLogin();
                 if( self.isLogin) {
                     self.loadServices();
+                }else {
+                    self.srcNodes =[];
+                    self.services = [];
                 }
             });
 

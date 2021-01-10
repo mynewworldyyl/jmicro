@@ -99,7 +99,7 @@ public class AccountManager {
 				ai.setLastActiveTime(TimeUtils.getCurTime());
 				cache.put(ai.getLoginKey(), ai,expired);
 				cache.put(akey, ai.getLoginKey(),expired);
-				cache.put(key(ai.getClientId()+""), ai.getLoginKey(),expired);
+				cache.put(key(ai.getId()+""), ai.getLoginKey(),expired);
 			} else {
 				ai = cache.get(oldLk);
 			}
@@ -149,7 +149,7 @@ public class AccountManager {
 		ai.setLastActiveTime(curTime);
 		cache.put(ai.getLoginKey(), ai,expired);
 		cache.expire(key(ai.getActName()),expired);
-		cache.expire(key(ai.getClientId()+""),expired);
+		cache.expire(key(ai.getId()+""),expired);
 	}
 
 	public boolean logout(String loginKey) {
@@ -157,7 +157,7 @@ public class AccountManager {
 		if(ai != null) {
 			cache.del(loginKey);
 			cache.del(key(ai.getActName()));
-			cache.del(key(ai.getClientId()+""));
+			cache.del(key(ai.getId()+""));
 		}
 		return true;
 	}

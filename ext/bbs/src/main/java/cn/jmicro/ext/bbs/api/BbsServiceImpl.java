@@ -188,7 +188,7 @@ public class BbsServiceImpl implements IBbsService {
 		long curTime = TimeUtils.getCurTime();
 		ActInfo ai = JMicroContext.get().getAccount();
 		
-		topic.setClientId(ai.getClientId());
+		topic.setClientId(ai.getId());
 		topic.setCreatedBy(ai.getId());
 		topic.setUpdatedTime(curTime);
 		topic.setId(idGenerator.getLongId(Topic.class));
@@ -348,7 +348,7 @@ public class BbsServiceImpl implements IBbsService {
 		long curTime = TimeUtils.getCurTime();
 		ActInfo ai = JMicroContext.get().getAccount();
 		
-		note.setClientId(ai.getClientId());
+		note.setClientId(ai.getId());
 		note.setCreatedBy(ai.getId());
 		note.setId(idGenerator.getLongId(Note.class));
 		note.setCreatedTime(curTime);

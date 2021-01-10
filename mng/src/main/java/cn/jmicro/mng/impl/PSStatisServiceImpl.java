@@ -103,7 +103,7 @@ public class PSStatisServiceImpl implements IPSStatisService {
 		Document match = new Document();
 		
 		 if(!PermissionManager.isCurAdmin()) {
-			 match.put(Constants.CLIENT_ID, JMicroContext.get().getAccount().getClientId());
+			 match.put(Constants.CLIENT_ID, JMicroContext.get().getAccount().getId());
 		 }
 		
 		/*String key = "startTime";

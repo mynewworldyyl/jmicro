@@ -70,7 +70,7 @@ public class LogServiceImpl implements ILogService {
 		 match.put("linkId", linkId);
 		 
 		 if(!PermissionManager.isCurAdmin()) {
-			 match.put("clientId", JMicroContext.get().getAccount().getClientId());
+			 match.put("clientId", JMicroContext.get().getAccount().getId());
 		 }
 		
 		 Map<Long,LogEntry> logComsumerMap = new HashMap<>();
@@ -434,7 +434,7 @@ public class LogServiceImpl implements ILogService {
 		Document match = this.getCondtions(queryConditions);
 		
 		if(!PermissionManager.isCurAdmin()) {
-			 match.put("clientId", JMicroContext.get().getAccount().getClientId());
+			 match.put("clientId", JMicroContext.get().getAccount().getId());
 		 }
 		 
 		String key = "reqParentId";
@@ -469,7 +469,7 @@ public class LogServiceImpl implements ILogService {
 		Document match = new Document();
 		
 		 if(!PermissionManager.isCurAdmin()) {
-			 match.put("clientId", JMicroContext.get().getAccount().getClientId());
+			 match.put("clientId", JMicroContext.get().getAccount().getId());
 		 }
 		 
 		String key = "reqParentId";

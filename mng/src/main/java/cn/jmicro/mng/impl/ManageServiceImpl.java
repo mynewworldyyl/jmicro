@@ -4,7 +4,6 @@ import java.util.Set;
 import java.util.TreeSet;
 
 import cn.jmicro.api.JMicroContext;
-import cn.jmicro.api.annotation.Cfg;
 import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Inject;
 import cn.jmicro.api.annotation.SMethod;
@@ -21,9 +20,6 @@ import cn.jmicro.api.service.ServiceManager;
 @Service(namespace="mng", version="0.0.1",external=true,timeout=10000,debugMode=1,showFront=false)
 public class ManageServiceImpl implements IManageService {
 
-	@Cfg(value="/notLonginClientId",defGlobal=true)
-	private int notLonginClientId = 10;
-	
 	@Inject
 	private IRegistry reg;
 	
@@ -118,6 +114,14 @@ public class ManageServiceImpl implements IManageService {
 		    		sm.setMaxFailBeforeDegrade(method.getMaxFailBeforeDegrade());
 		    		sm.setTestingArgs(method.getTestingArgs());
 		    		sm.setTopic(method.getTopic());
+		    		sm.setDownSsl(method.isDownSsl());
+		    		sm.setUpSsl(method.isUpSsl());
+		    		sm.setNeedLogin(method.isNeedLogin());
+		    		sm.setPerType(method.isPerType());
+		    		sm.setEncType(method.getEncType());
+		    		sm.setMaxPacketSize(method.getMaxPacketSize());
+		    		sm.setFeeType(method.getFeeType());
+		    		sm.setLimitType(method.getLimitType());
 		    		
 			    	reg.update(si);
 			    	return true;

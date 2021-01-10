@@ -9,16 +9,28 @@
         <span v-if="!actInfo" class="registBtn" href="javascript:void(0);" @click="regist()">
            {{ 'Regist'|i18n}}
         </span>
-        <span v-if="actInfo != null" class="accountBtn" href="javascript:void(0);" @click="changePwd()">
+        <span v-if="actInfo != null && !actInfo.guest " class="accountBtn" href="javascript:void(0);" @click="changePwd()">
             {{actInfo != null ? actInfo.actName:''}}
         </span>
+
+        <span v-if="actInfo != null && actInfo.guest" class="accountBtn" href="javascript:void(0);" @click="regist()">
+            {{actInfo != null ? actInfo.actName:''}}
+        </span>
+
         <Modal v-model="loginDialog" :loading="true" width="360" @on-ok="doLogin()" ref="loginDialog">
             <table>
                 <tr><td>{{'actName'|i18n}}</td><td><input type="input"  v-model="actName"/></td></tr>
                 <tr><td>{{'Password'|i18n}}</td><td><input type="password"  v-model="pwd"/></td></tr>
+
                 <tr>
-                    <td colspan="2"><a href="javascript:void(0)" @click="resetPasswordEmail()">{{'ResetPassword'|i18n}}</a></td>
+                    <td><input type="checkbox"  v-model="rememberPwd" @change="rememberPwdChange()"/>{{'RememberPwd'|i18n}}</td>
+                    <td><a href="javascript:void(0)" @click="resetPasswordEmail()">{{'ResetPassword'|i18n}}</a></td>
                 </tr>
+
+               <!-- <tr><td>
+                    <td><input :disabled="!rememberPwd" type="check"  v-model="autoLogin"/>{{'AutoLogin'|i18n}}</td>
+                </tr>-->
+
                 <tr><td colspan="2">{{msg}}</td></tr>
             </table>
         </Modal>
@@ -60,6 +72,8 @@
 
 <script>
 
+    const cid = 'JAccount';
+
 export default {
     name: 'JAccount',
 
@@ -84,14 +98,32 @@ export default {
 
             actInfo : null,
             isLogin:false,
-            msg:''
+            msg:'',
+
+            rememberPwd:true,
         };
     },
 
     mounted(){
+        let self = this;
+        window.jm.rpc.addActListener(cid,(type,ai)=>{
+            if(type == window.jm.rpc.Constants.LOGIN) {
+                self.actInfo = ai;
+                self.isLogin = true;
+                self.msg = '';
+            }else if(type == window.jm.rpc.Constants.LOGOUT) {
+                self.isLogin = false;
+                self.actInfo = null;
+                self.msg = '';
+            }
+        });
+
+        this.rememberPwd = window.jm.localStorage.get("rememberPwd");
+
         this.actName = window.jm.localStorage.get("actName");
         this.pwd = window.jm.localStorage.get("pwd");
-        if(this.actName && this.pwd) {
+
+        if(this.rememberPwd || !this.actName || this.actName.endWith('guest_')) {
             this.doLogin();
         }
     },
@@ -103,7 +135,19 @@ export default {
             } else {
                this.actName = window.jm.localStorage.get("actName"),
                this.pwd = window.jm.localStorage.get("pwd"),
+               this.rememberPwd = window.jm.localStorage.get("rememberPwd");
                this.loginDialog = true;
+            }
+        },
+
+        rememberPwdChange(){
+            window.jm.localStorage.set("rememberPwd",this.rememberPwd);
+            if(this.rememberPwd) {
+                window.jm.localStorage.set("actName",this.actName);
+                window.jm.localStorage.set("pwd",this.pwd);
+            }else {
+                window.jm.localStorage.remove("pwd");
+                window.jm.localStorage.remove("actName");
             }
         },
 
@@ -298,9 +342,13 @@ export default {
             this.$refs.loginDialog.buttonLoading = false;
 
             if(!this.pwd) {
-                self.msg = 'Invalid pwd';
-                return;
+               this.pwd = "";
             }
+
+            if(!this.actName) {
+                this.actName = window.jm.localStorage.get("actName");
+            }
+
             self.msg = '';
             window.jm.rpc.login(this.actName,this.pwd,(actInfo,err)=>{
                 if(!err && actInfo) {
@@ -308,8 +356,6 @@ export default {
                     self.isLogin = true;
                     self.msg = '';
                     self.loginDialog = false;
-                    window.jm.localStorage.set("actName",self.actName);
-                    window.jm.localStorage.set("pwd",self.pwd);
                     //window.jm.vue.$emit('userLogin',actInfo);
                 } else {
                     self.isLogin = false;

@@ -85,24 +85,24 @@ public class DictManager {
 		}
 	}
 	
-	public Set<String> serviceNames(String prefix) {
-		return this.sm.serviceNames(prefix);
+	public Set<String> serviceNames(String prefix,int loginClientId) {
+		return this.sm.serviceNames(prefix,loginClientId);
 	}
 	
-	public Set<String> serviceNamespaces(String sn) {
-		return this.sm.serviceNamespaces(sn);
+	public Set<String> serviceNamespaces(String sn,int loginClientId) {
+		return this.sm.serviceNamespaces(sn,loginClientId);
 	}
 	
-	public Set<String> serviceVersions(String sn) {
-		return this.sm.serviceVersions(sn);
+	public Set<String> serviceVersions(String sn,int loginClientId) {
+		return this.sm.serviceVersions(sn,loginClientId);
 	}
 	
-	public Set<String> serviceMethods(String sn) {
-		return this.sm.serviceMethods(sn);
+	public Set<String> serviceMethods(String sn,int loginClientId) {
+		return this.sm.serviceMethods(sn,loginClientId);
 	}
 	
-	public Set<String> serviceInstances(String sn) {
-		return this.sm.serviceInstances(sn);
+	public Set<String> serviceInstances(String sn,int loginClientId) {
+		return this.sm.serviceInstances(sn,loginClientId);
 	}
 	
 	public Set<String> resourceNames() {

@@ -20,12 +20,14 @@ public class ActInfo implements Cloneable {
 	
 	public static final byte TOKEN_RESET_PWD = 2;
 	
+	public static final String GUEST = "guest_";
+	
 	//@BsonId
-	private long id;
+	private int id;
 	
 	private String actName;
 	private String loginKey;
-	private int clientId;
+	//private int clientId;
 	private String pwd;
 	private String email;
 	private String mobile;
@@ -47,19 +49,21 @@ public class ActInfo implements Cloneable {
 	
 	private boolean isAdmin = false;
 	
+	private boolean guest = true;
+	
 	private HashSet<String> pers = new HashSet<>();
 	
 	public ActInfo() {};
 	
-	public ActInfo(String actName,String pwd,int clientId) {
+	public ActInfo(String actName,String pwd,int id) {
 		this.actName = actName;
-		this.clientId = clientId;
+		this.id = id;
 		this.pwd = pwd;
 	};
 	
-	public ActInfo(String actName,int clientId) {
+	public ActInfo(String actName,int id) {
 		this.actName = actName;
-		this.clientId = clientId;
+		this.id = id;
 	};
 	
 	public String getActName() {
@@ -75,12 +79,12 @@ public class ActInfo implements Cloneable {
 		this.loginKey = loginKey;
 	}
 
-	public int getClientId() {
-		return clientId;
+	public boolean isGuest() {
+		return guest;
 	}
 
-	public void setClientId(int clientId) {
-		this.clientId = clientId;
+	public void setGuest(boolean guest) {
+		this.guest = guest;
 	}
 
 	public String getPwd() {
@@ -103,7 +107,7 @@ public class ActInfo implements Cloneable {
 	public ActInfo clone() throws CloneNotSupportedException {
 		ActInfo ai =(ActInfo) super.clone();
 		ai.setActName(this.actName);
-		ai.setClientId(ai.getClientId());
+		ai.setId(ai.getId());
 		//ai.setLoginKey(""+LOGIN_KEY.getAndIncrement());
 		return ai;
 	}
@@ -164,11 +168,11 @@ public class ActInfo implements Cloneable {
 		this.lastActiveTime = lastActiveTime;
 	}
 
-	public long getId() {
+	public int getId() {
 		return id;
 	}
 
-	public void setId(long id) {
+	public void setId(int id) {
 		this.id = id;
 	}
 

@@ -11,7 +11,7 @@ import cn.jmicro.common.Constants;
 import cn.jmicro.example.api.rpc.IRpcA;
 import cn.jmicro.example.api.rpc.IRpcB;
 
-@Service(namespace="rpca", version="0.0.1", monitorEnable=1, maxSpeed=-1,
+@Service(namespace="rpca", version="0.0.1", monitorEnable=1, maxSpeed=-1, clientId=Constants.NO_CLIENT_ID,
 baseTimeUnit=Constants.TIME_SECONDS, external=true)
 @Component
 public class RpcAImpl implements IRpcA {

@@ -156,7 +156,7 @@ public @interface SMethod {
 	public boolean perType() default false;
 	
 	//必须登陆才能使用
-	public boolean needLogin() default false;
+	public boolean needLogin() default true;
 	
 	public boolean downSsl() default false;
 	
