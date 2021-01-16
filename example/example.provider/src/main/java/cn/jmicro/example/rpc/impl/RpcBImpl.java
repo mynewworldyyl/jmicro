@@ -9,7 +9,8 @@ import cn.jmicro.api.monitor.LG;
 import cn.jmicro.common.Constants;
 import cn.jmicro.example.api.rpc.IRpcB;
 
-@Service(namespace="rpcb", version="0.0.1", monitorEnable=1, maxSpeed=-1, clientId=Constants.NO_CLIENT_ID,
+@Service(namespace="rpcb", version="0.0.1", monitorEnable=1, maxSpeed=-1,
+clientId=Constants.USE_SYSTEM_CLIENT_ID,
 baseTimeUnit=Constants.TIME_SECONDS, external=true)
 @Component
 public class RpcBImpl implements IRpcB {

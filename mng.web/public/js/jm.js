@@ -343,15 +343,19 @@ jm.mng = {
 
     repository : {
 
-        getResourceList: function (onlyFinish){
-            return jm.rpc.callRpcWithParams(this.sn,this.ns,this.v,'getResourceList',[onlyFinish]);
+        getResourceList: function (qry,pageSize,curPage){
+            return jm.rpc.callRpcWithParams(this.sn,this.ns,this.v,'getResourceList',[qry,pageSize,curPage]);
         },
 
         addResource: function (name,size){
             return jm.rpc.callRpcWithParams(this.sn,this.ns,this.v,'addResource',[name,size]);
         },
 
-        addResourceData: function (name,data,blockNum){
+        updateResource: function (res,updateFile){
+            return jm.rpc.callRpcWithParams(this.sn,this.ns,this.v,'updateResource',[res,updateFile]);
+        },
+
+        addResourceData: function (resId,data,blockNum){
             let req = {};
 
             req.serviceName=this.sn;
@@ -359,12 +363,24 @@ jm.mng = {
             req.version = this.v;
 
             req.method = 'addResourceData';
-            req.args = [name,data,blockNum];
+            req.args = [resId,data,blockNum];
             return jm.rpc.callRpc(req,jm.rpc.Constants.PROTOCOL_BIN, jm.rpc.Constants.PROTOCOL_JSON);
         },
 
         deleteResource: function (name){
             return jm.rpc.callRpcWithParams(this.sn,this.ns,this.v,'deleteResource',[name]);
+        },
+
+        queryDict: function (){
+            return jm.rpc.callRpcWithParams(this.sn,this.ns,this.v,'queryDict',[]);
+        },
+
+        waitingResList: function (resId){
+            return jm.rpc.callRpcWithParams(this.sn,this.ns,this.v,'waitingResList',[resId]);
+        },
+
+        dependencyList: function (resId){
+            return jm.rpc.callRpcWithParams(this.sn,this.ns,this.v,'dependencyList',[resId]);
         },
 
         sn:'cn.jmicro.choreography.api.IResourceResponsitory',

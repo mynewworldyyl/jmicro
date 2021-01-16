@@ -74,7 +74,7 @@ public class InitJmicroEnv {
 		respDep.setId(id);
 		respDep.setAssignStrategy("defautAssignStrategy");
 		respDep.setStrategyArgs("-DsortPriority=maxCPURate,minFreeMemory,coreNum -DagentId=0,1");
-		respDep.setEnable(true);
+		respDep.setStatus(Deployment.STATUS_ENABLE);
 		respDep.setInstanceNum(2);
 		
 		String jar = cfg.getString(Module.monitor.name()+".jar", null);
@@ -96,7 +96,7 @@ public class InitJmicroEnv {
 		respDep.setId(id);
 		respDep.setAssignStrategy("defautAssignStrategy");
 		respDep.setStrategyArgs("-DsortPriority=maxCPURate,minFreeMemory,coreNum -DagentId=0,1");
-		respDep.setEnable(true);
+		respDep.setStatus(Deployment.STATUS_ENABLE);
 		respDep.setInstanceNum(2);
 		
 		String jar = cfg.getString(Module.breaker.name()+".jar", null);
@@ -117,7 +117,7 @@ public class InitJmicroEnv {
 		respDep.setId(id);
 		respDep.setAssignStrategy("defautAssignStrategy");
 		respDep.setStrategyArgs("-DsortPriority=maxCPURate,minFreeMemory,coreNum -DagentId=0,1");
-		respDep.setEnable(true);
+		respDep.setStatus(Deployment.STATUS_ENABLE);
 		respDep.setInstanceNum(2);
 		
 		String jar = cfg.getString(Module.pubsub.name()+".jar", null);
@@ -138,7 +138,7 @@ public class InitJmicroEnv {
 		respDep.setId(id);
 		respDep.setAssignStrategy("defautAssignStrategy");
 		respDep.setStrategyArgs("-DsortPriority=maxCPURate,minFreeMemory,coreNum -DagentId=0,1");
-		respDep.setEnable(true);
+		respDep.setStatus(Deployment.STATUS_ENABLE);
 		respDep.setInstanceNum(2);
 
 		String jar = cfg.getString(Module.gateway.name()+".jar", null);
@@ -159,7 +159,7 @@ public class InitJmicroEnv {
 		respDep.setId(id);
 		respDep.setAssignStrategy("defautAssignStrategy");
 		respDep.setStrategyArgs("-DsortPriority=maxCPURate,minFreeMemory,coreNum -DagentId=0,1");
-		respDep.setEnable(true);
+		respDep.setStatus(Deployment.STATUS_ENABLE);
 		respDep.setInstanceNum(2);
 		respDep.setArgs("-Dclient=true -DenableMasterSlaveModel=true");
 		
@@ -180,7 +180,7 @@ public class InitJmicroEnv {
 		respDep.setId(id);
 		respDep.setAssignStrategy("defautAssignStrategy");
 		respDep.setStrategyArgs("-DsortPriority=maxCPURate,minFreeMemory,coreNum -DagentId=0,1");
-		respDep.setEnable(true);
+		respDep.setStatus(Deployment.STATUS_ENABLE);
 		respDep.setInstanceNum(2);
 		respDep.setArgs("-DResourceReponsitoryService.dataDir="+"D:\\opensource\\resDataDir -DenableMasterSlaveModel=true");
 		

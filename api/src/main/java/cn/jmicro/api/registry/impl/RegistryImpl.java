@@ -314,8 +314,8 @@ public class RegistryImpl implements IRegistry {
 		}*/
 		logger.debug("code:" + item.getCode() + ", Service: " + item.getKey().toSnv());
 		
-		item.setClientId(Config.getClientId());
-		item.setActName(Config.getAccountName());
+		//item.setClientId(Config.getClientId());
+		//item.setActName(Config.getAccountName());
 		this.srvManager.updateOrCreate(item,srvKey, true);
 	}
 

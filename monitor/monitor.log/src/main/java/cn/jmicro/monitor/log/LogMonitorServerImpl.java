@@ -296,7 +296,7 @@ public class LogMonitorServerImpl implements ILogMonitorServer {
 
 		ServiceLoader sl = of.get(ServiceLoader.class);
 		ServiceItem si = sl.createSrvItem(IMonitorAdapter.class, 
-				Config.getInstanceName()+".LogMonitorServer", "0.0.1", null);
+				Config.getInstanceName()+".LogMonitorServer", "0.0.1", null,Config.getClientId());
 		sl.registService(si,statusAdapter);
 		
 		configListener = new RaftNodeDataListener<>(op,LOG_WARNING_ROOT,LogWarningConfig.class,false);
@@ -310,7 +310,7 @@ public class LogMonitorServerImpl implements ILogMonitorServer {
 	
 	@Override
 	@SMethod(timeout=5000,retryCnt=0,needResponse=false,debugMode=0,monitorEnable=0,logLevel=MC.LOG_ERROR
-	,maxPacketSize=1048576)
+	,maxPacketSize=1048576,needLogin=false)
 	public void submit(MRpcLogItem[] items) {
 		if(items == null || items.length == 0) {
 			/*if(monitoralbe) {

@@ -54,6 +54,14 @@ public class PermissionManager {
 		return checkClientPermission(ai.getId(),targetDataClientId);
 	}
 	
+	public static final boolean isOwner(int targetDataClientId) {
+		ActInfo ai = JMicroContext.get().getAccount();
+		if(ai == null) {
+			return false;
+		}
+		return ai.getId() == targetDataClientId || ai.getId() == Config.getAdminClientId();
+	}
+	
 	public static final boolean isCurAdmin() {
 		
 		ActInfo ai = JMicroContext.get().getAccount();

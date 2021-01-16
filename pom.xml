@@ -19,11 +19,10 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>cn.jmicro</groupId>
-    <artifactId>parent</artifactId>
+    <artifactId>jmicro.parent</artifactId>
     <version>0.0.2-SNAPSHOT</version>
     <packaging>pom</packaging>
 
-    <name>${project.artifactId}</name>
     <description>The parent project of jmicro</description>
     <url>http://www.jmicro.cn</url>
     <inceptionYear>2018</inceptionYear>
@@ -85,6 +84,9 @@
 	</repositories>  
 
     <properties>
+   		<AssemblyFile>../../assembly/without-jmicro-core.xml</AssemblyFile>
+   		<collect-jars>../../assembly/collect-jars.xml</collect-jars>
+   		<with-jmicro-core>../../assembly/with-jmicro-core.xml</with-jmicro-core>
     	<encoding>UTF-8</encoding>
     	<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     	<java_source_version>1.8</java_source_version>
@@ -148,74 +150,79 @@
         <dependencies>
 	        <dependency>
 				 <groupId>cn.jmicro</groupId>
-				 <artifactId>all</artifactId>
+				 <artifactId>jmicro.all</artifactId>
 				 <version>${jmicro.version}</version>
 	        </dependency>
 	        <dependency>
 	        	<groupId>cn.jmicro</groupId>
-				<artifactId>apics</artifactId>
+				<artifactId>jmicro.apics</artifactId>
 				<version>${jmicro.version}</version>
        		</dependency>
              <dependency>
                  <groupId>cn.jmicro</groupId>
-				 <artifactId>api</artifactId>
-				 <version>${jmicro.version}</version>
-            </dependency>
-            
-             <dependency>
-                 <groupId>cn.jmicro</groupId>
-				 <artifactId>main.monitor.log</artifactId>
-				 <version>${jmicro.version}</version>
-            </dependency>
-			 <dependency>
-                 <groupId>cn.jmicro</groupId>
-				 <artifactId>redis</artifactId>
-				 <version>${jmicro.version}</version>
-            </dependency>
-			 <dependency>
-                 <groupId>cn.jmicro</groupId>
-				 <artifactId>breaker</artifactId>
-				 <version>${jmicro.version}</version>
-            </dependency>
-			 <dependency>
-                 <groupId>cn.jmicro</groupId>
-				 <artifactId>pubsub</artifactId>
+				 <artifactId>jmicro.api</artifactId>
 				 <version>${jmicro.version}</version>
             </dependency>
               <dependency>
 			 <groupId>cn.jmicro</groupId>
-			 <artifactId>monitor.api</artifactId>
+			 <artifactId>jmicro.monitor.api</artifactId>
 			  <version>${jmicro.version}</version>
-	    </dependency>
-			  <dependency>
+	    	</dependency>
+             <dependency>
                  <groupId>cn.jmicro</groupId>
-				 <artifactId>etcd</artifactId>
+				 <artifactId>jmicro.main.monitor.log</artifactId>
 				 <version>${jmicro.version}</version>
             </dependency>
              <dependency>
                  <groupId>cn.jmicro</groupId>
-				 <artifactId>common</artifactId>
+				 <artifactId>main.monitor.statis</artifactId>
+				 <version>${jmicro.version}</version>
+            </dependency>
+			 <dependency>
+                 <groupId>cn.jmicro</groupId>
+				 <artifactId>jmicro.redis</artifactId>
+				 <version>${jmicro.version}</version>
+            </dependency>
+			 <dependency>
+                 <groupId>cn.jmicro</groupId>
+				 <artifactId>jmicro.breaker</artifactId>
+				 <version>${jmicro.version}</version>
+            </dependency>
+			 <dependency>
+                 <groupId>cn.jmicro</groupId>
+				 <artifactId>jmicro.pubsub</artifactId>
+				 <version>${jmicro.version}</version>
+            </dependency>
+            
+			  <dependency>
+                 <groupId>cn.jmicro</groupId>
+				 <artifactId>jmicro.etcd</artifactId>
+				 <version>${jmicro.version}</version>
+            </dependency>
+             <dependency>
+                 <groupId>cn.jmicro</groupId>
+				 <artifactId>jmicro.common</artifactId>
 				 <version>${jmicro.version}</version>
             </dependency>
             <dependency>
                  <groupId>cn.jmicro</groupId>
-				 <artifactId>zk</artifactId>
+				 <artifactId>jmicro.zk</artifactId>
 				 <version>${jmicro.version}</version>
             </dependency>
              <dependency>
                  <groupId>cn.jmicro</groupId>
-				 <artifactId>gateway</artifactId>
+				 <artifactId>jmicro.gateway</artifactId>
 				 <version>${jmicro.version}</version>
             </dependency>
 			   <dependency>
                  <groupId>cn.jmicro</groupId>
-				 <artifactId>classloader</artifactId>
+				 <artifactId>jmicro.classloader</artifactId>
 				 <version>${jmicro.version}</version>
             </dependency>
              
             <dependency>
 			 <groupId>cn.jmicro</groupId>
-			 <artifactId>gateway.client</artifactId>
+			 <artifactId>jmicro.gateway.client</artifactId>
 			 <version>${jmicro.version}</version>
         	</dependency>
 
@@ -226,108 +233,109 @@
 	        </dependency> -->
 	         <dependency>
 				 <groupId>cn.jmicro</groupId>
-				 <artifactId>transport.http</artifactId>
+				 <artifactId>jmicro.transport.http</artifactId>
 				  <version>${jmicro.version}</version>
 	        </dependency>
 	          <dependency>
 				 <groupId>cn.jmicro</groupId>
-				 <artifactId>transport.netty.client</artifactId>
+				 <artifactId>jmicro.transport.netty.client</artifactId>
 				  <version>${jmicro.version}</version>
 	        </dependency>
 			  <dependency>
 				 <groupId>cn.jmicro</groupId>
-				 <artifactId>transport.netty.server</artifactId>
+				 <artifactId>jmicro.transport.netty.server</artifactId>
 				  <version>${jmicro.version}</version>
 	        </dependency>
 	         <dependency>
 				 <groupId>cn.jmicro</groupId>
-				 <artifactId>registry.zk</artifactId>
+				 <artifactId>jmicro.registry.zk</artifactId>
 				  <version>${jmicro.version}</version>
 	        </dependency>
             <dependency>
 				 <groupId>cn.jmicro</groupId>
-				 <artifactId>objfactory.simple</artifactId>
+				 <artifactId>jmicro.objfactory.simple</artifactId>
 				  <version>${jmicro.version}</version>
 	        </dependency>
 	          <dependency>
 				 <groupId>cn.jmicro</groupId>
-				 <artifactId>config</artifactId>
+				 <artifactId>jmicro.config</artifactId>
 				  <version>${jmicro.version}</version>
 	        </dependency>
 			 <dependency>
 				 <groupId>cn.jmicro</groupId>
-				 <artifactId>mng</artifactId>
+				 <artifactId>jmicro.mng</artifactId>
 				  <version>${jmicro.version}</version>
 	        </dependency>
-	         <dependency>
+	        <!--  <dependency>
 				 <groupId>cn.jmicro</groupId>
-				 <artifactId>limit</artifactId>
+				 <artifactId>jmicro.limit</artifactId>
 				 <version>${jmicro.version}</version>
-        	</dependency>
-			<dependency>
-			 <groupId>cn.jmicro</groupId>
-			 <artifactId>monitor.dashboard</artifactId>
-			 <version>${jmicro.version}</version>
-			 </dependency>
+        	</dependency> -->
+	
 			 <dependency>
 			 <groupId>cn.jmicro</groupId>
-			 <artifactId>submiter</artifactId>
+			 <artifactId>jmicro.submiter</artifactId>
 			 <version>${jmicro.version}</version>
 			 </dependency>
 			 <dependency>
 			<groupId>cn.jmicro</groupId>
-			<artifactId>choreography.api</artifactId>
+			<artifactId>jmicro.choreography.api</artifactId>
 			<version>${jmicro.version}</version>
 			</dependency>
 			  <dependency>
 			 <groupId>cn.jmicro</groupId>
-			 <artifactId>server</artifactId>
+			 <artifactId>jmicro.server</artifactId>
 			  <version>${jmicro.version}</version>
 		        </dependency>
 		         <dependency>
 					 <groupId>cn.jmicro</groupId>
-					 <artifactId>client</artifactId>
+					 <artifactId>jmicro.client</artifactId>
 					  <version>${jmicro.version}</version>
 		        </dependency>
 	        
 	         <dependency>
 				 <groupId>cn.jmicro</groupId>
-				 <artifactId>idgenerator</artifactId>
+				 <artifactId>jmicro.idgenerator</artifactId>
 				  <version>${jmicro.version}</version>
 	        </dependency>
 	         <dependency>
 				 <groupId>cn.jmicro</groupId>
-				 <artifactId>choregraphy.agent</artifactId>
+				 <artifactId>jmicro.choregraphy.agent</artifactId>
 				  <version>${jmicro.version}</version>
 	        </dependency>
 	         <dependency>
 				 <groupId>cn.jmicro</groupId>
-				 <artifactId>choregraphy.controller</artifactId>
+				 <artifactId>jmicro.choregraphy.controller</artifactId>
 				  <version>${jmicro.version}</version>
 	        </dependency>
 	        <dependency>
 				 <groupId>cn.jmicro</groupId>
-				 <artifactId>test</artifactId>
+				 <artifactId>jmicro.test</artifactId>
 				  <version>${jmicro.version}</version>
 	        </dependency>
 			 <dependency>
 				 <groupId>cn.jmicro</groupId>
-				 <artifactId>resource</artifactId>
+				 <artifactId>jmicro.resource</artifactId>
 				  <version>${jmicro.version}</version>
 	        </dependency>
 			<dependency>
 				 <groupId>cn.jmicro</groupId>
-				 <artifactId>mybatis</artifactId>
+				 <artifactId>jmicro.mybatis</artifactId>
 				 <version>${jmicro.version}</version>
 	        </dependency>
 	        <dependency>
 				 <groupId>cn.jmicro</groupId>
-				 <artifactId>main.rcptool</artifactId>
+				 <artifactId>jmicro.main.rcptool</artifactId>
 				 <version>${jmicro.version}</version>
 	        </dependency>
 	        <dependency>
 				 <groupId>cn.jmicro</groupId>
-				 <artifactId>mongodb</artifactId>
+				 <artifactId>jmicro.main.limit</artifactId>
+				 <version>${jmicro.version}</version>
+	        </dependency>
+	        <dependency>
+				 <groupId>cn.jmicro</groupId>
+				 <artifactId>jmicro.mongodb</artifactId>
 				 <version>${jmicro.version}</version>
 	        </dependency>
             <dependency>
@@ -424,7 +432,7 @@
         
         <dependency>
 			<groupId>cn.jmicro</groupId>
-			<artifactId>codegenerator</artifactId>
+			<artifactId>jmicro.codegenerator</artifactId>
 			 <version>${jmicro.version}</version>
 		</dependency>  
         </dependencies>
@@ -493,7 +501,7 @@
                             <encoding>${project.build.sourceEncoding}</encoding>
                             <docencoding>${project.build.sourceEncoding}</docencoding>
                             <links>
-                                <link>http://docs.oracle.com/javase/7/docs/api</link>
+                                <link>http://docs.oracle.com/javase/8/docs/api</link>
                             </links>
                         </configuration>
                     </plugin>
@@ -515,14 +523,66 @@
         </profile>
         
         <profile>
-            <id>build-main</id>
+            <id>collect-dep-jars</id>
             <activation>
-	            <!-- 设置默认激活这个配置 -->
 	            <activeByDefault>false</activeByDefault>
         	</activation>
             <build>
 		        <plugins>
+		           <plugin>
+		                <artifactId>maven-assembly-plugin</artifactId>
+		                <configuration>
+		                    <descriptors>
+								<descriptor>${collect-jars}</descriptor>
+							</descriptors>
+		                </configuration>
+		                <executions>
+		                    <execution>
+		                        <id>make-assembly</id>
+		                        <phase>initialize</phase>
+		                        <goals>
+		                            <goal>single</goal>
+		                        </goals>
+		                    </execution>
+		                </executions>
+		            </plugin>
+			         
+		        </plugins>
+		    </build>
+        </profile>
+        
+        <profile>
+            <id>without-deps</id>
+            <activation>
+	            <!-- 设置默认激活这个配置 -->
+	            <!-- <activeByDefault>false</activeByDefault> -->
+	            <file><exists>src/main/resources/main</exists></file>
+        	</activation>
+            <build>
+		        <plugins>
 		            <plugin>
+					    <groupId>org.apache.maven.plugins</groupId>
+					    <artifactId>maven-dependency-plugin</artifactId>
+					    <executions>
+					        <execution>
+					            <id>list-dependencies</id>
+					            <phase>package</phase>
+					            <goals>
+					                <goal>list</goal>
+					            </goals>
+					            <configuration>
+					            	<outputScope>false</outputScope>
+					            	<appendOutput>true</appendOutput>
+					            	<!-- <includeGroupIds>cn.jmicro,io.protostuff</includeGroupIds> -->
+					            	<outputFile>${project.build.outputDirectory}/jmicro_deps.txt</outputFile>
+					                <overWriteReleases>true</overWriteReleases>
+					                <overWriteSnapshots>true</overWriteSnapshots>
+					                <overWriteIfNewer>true</overWriteIfNewer>
+					            </configuration>
+					        </execution>
+					    </executions>
+					</plugin>
+			         <plugin>
 		                <artifactId>maven-assembly-plugin</artifactId>
 		                <configuration>
 		                    <archive>
@@ -530,9 +590,11 @@
 		                            <mainClass>cn.jmicro.api.JMicro</mainClass>
 		                        </manifest>
 		                    </archive>
-		                    <descriptorRefs>
-		                        <descriptorRef>jar-with-dependencies</descriptorRef>
-		                    </descriptorRefs>
+		                    
+		                    <descriptors>
+								<descriptor>${AssemblyFile}</descriptor>
+							</descriptors>
+					
 		                </configuration>
 		                <executions>
 		                    <execution>
@@ -547,12 +609,49 @@
 		        </plugins>
 		    </build>
         </profile>
+        
+         <profile>
+            <id>with-deps</id>
+            <activation>
+	            <!-- 设置默认激活这个配置 -->
+	            <activeByDefault>false</activeByDefault>
+        	</activation>
+            <build>
+		        <plugins>
+		            <plugin>
+		                <artifactId>maven-assembly-plugin</artifactId>
+		                <configuration>
+		                    <archive>
+		                        <manifest>
+		                            <mainClass>cn.jmicro.api.JMicro</mainClass>
+		                        </manifest>
+		                    </archive>
+		                    
+		                    <descriptors>
+								<descriptor>${with-jmicro-core}</descriptor>
+							</descriptors>
+					
+		                </configuration>
+		                <executions>
+		                    <execution>
+		                        <id>make-assembly</id>
+		                        <phase>package</phase>
+		                        <goals>
+		                            <goal>single</goal>
+		                        </goals>
+		                    </execution>
+		                </executions>
+		            </plugin>
+		            
+		        </plugins>
+		    </build>
+        </profile>
     
     </profiles>
 
     <build>
         <!-- Used for packaging NOTICE & LICENSE to each sub-module jar-->
-        <finalName>jmicro-${project.artifactId}-${project.version}</finalName>
+        <finalName>${project.artifactId}-${project.version}</finalName>
         <resources>
             <resource>
                 <directory>src/main/resources</directory>
@@ -637,18 +736,6 @@
                     </archive>
                 </configuration>
             </plugin>
-            
-             <plugin>
-				<artifactId>maven-dependency-plugin</artifactId>
-				<executions>
-					<execution>
-						<id>getClasspathFilenames</id>
-						<goals>
-							<goal>properties</goal>
-						</goals>
-					</execution>
-				</executions>
-			</plugin> 
 
              <plugin>
                 <groupId>org.apache.maven.plugins</groupId>

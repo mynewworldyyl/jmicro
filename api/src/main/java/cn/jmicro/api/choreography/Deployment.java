@@ -6,8 +6,18 @@ import cn.jmicro.api.annotation.SO;
 @SO
 @IDStrategy(1)
 public class Deployment {
+	
+	public static final int STATUS_DRAFT = 1;
 
+	public static final int STATUS_ENABLE = 2;
+	
+	public static final int STATUS_CHECK = 3;
+	
+	//public static final int STATUS_INIT = 1;
+	
 	private String id;
+	
+	private int resId;
 	
 	private int clientId=-1000;
 	
@@ -17,7 +27,9 @@ public class Deployment {
 	
 	private String args;
 	
-	private boolean enable;
+	private int status = STATUS_DRAFT;
+	
+	private String desc;
 	
 	private boolean forceRestart;
 	
@@ -41,6 +53,14 @@ public class Deployment {
 		this.instanceNum = instanceNum;
 	}
 
+	public int getResId() {
+		return resId;
+	}
+
+	public void setResId(int resId) {
+		this.resId = resId;
+	}
+
 	public String getArgs() {
 		return args;
 	}
@@ -57,14 +77,6 @@ public class Deployment {
 		this.id = id;
 	}
 
-	public boolean isEnable() {
-		return enable;
-	}
-
-	public void setEnable(boolean enable) {
-		this.enable = enable;
-	}
-	
 	public boolean isForceRestart() {
 		return forceRestart;
 	}
@@ -99,9 +111,25 @@ public class Deployment {
 
 	@Override
 	public String toString() {
-		return "Deployment [id=" + id + ", jarFile=" + jarFile + ", instanceNum=" + instanceNum + ", args=" + args
-				+ ", enable=" + enable + ", forceRestart=" + forceRestart + ", assignStrategy=" + assignStrategy
-				+ ", strategyArgs=" + strategyArgs + "]";
+		return "Deployment [id=" + id + ", clientId=" + clientId + ", jarFile=" + jarFile + ", instanceNum="
+				+ instanceNum + ", args=" + args + ", status=" + status + ", desc=" + desc + ", forceRestart="
+				+ forceRestart + ", assignStrategy=" + assignStrategy + ", strategyArgs=" + strategyArgs + "]";
+	}
+
+	public int getStatus() {
+		return status;
+	}
+
+	public void setStatus(int status) {
+		this.status = status;
+	}
+
+	public String getDesc() {
+		return desc;
+	}
+
+	public void setDesc(String desc) {
+		this.desc = desc;
 	}
 	
 }

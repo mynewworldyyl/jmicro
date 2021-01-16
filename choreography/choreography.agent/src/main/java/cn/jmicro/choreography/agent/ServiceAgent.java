@@ -86,7 +86,7 @@ public class ServiceAgent {
 	private String resourceDir; // = System.getProperty("user.dir") + "/resourceDir";
 
 	//@Cfg(value = "/ServiceAgent/javaAgentJarFile", defGlobal = true)
-	private String javaAgentJarFile = "jmicro-agent-"+Constants.VERSION+"-"+Constants.JMICRO_RELEASE_LABEL+".jar";
+	private String javaAgentJarFile = "jmicro.agent-"+Constants.VERSION+"-"+Constants.JMICRO_RELEASE_LABEL+".jar";
 
 	@Cfg(value = "/ResourceReponsitoryService/uploadBlockSize", defGlobal = true)
 	private int uploadBlockSize = 65300;// 1024*1024;
@@ -144,7 +144,7 @@ public class ServiceAgent {
 	private IAssignListener assignListener = new IAssignListener() {
 		@Override
 		public void change(int type, Assign as) {
-			if (type == IListener.ADD) {
+			if(type == IListener.ADD) {
 				LG.log(MC.LOG_DEBUG, TAG, "Got assign add: " + as.toString());
 				assignAdded(as);
 			} else if (type == IListener.REMOVE) {
@@ -349,7 +349,7 @@ public class ServiceAgent {
 		}
 		depId = depId.trim();
 		Deployment dep = this.getDeployment(depId);
-		if (dep == null || !dep.isEnable()) {
+		if (dep == null || dep.getStatus() != Deployment.STATUS_ENABLE) {
 			return;
 		}
 
@@ -599,7 +599,7 @@ public class ServiceAgent {
 			return;
 		}
 
-		if (!dep.isEnable()) {
+		if (dep.getStatus() != Deployment.STATUS_ENABLE) {
 			deleteAssignDepNode(as.getInsId());
 			return;
 		}
@@ -663,7 +663,7 @@ public class ServiceAgent {
 			//String msg = "Begin download: " + dep.getJarFile();
 			//LG.log(MC.LOG_INFO, TAG, msg);
 			//logger.info(msg);
-			doContinue = downloadJarFile(dep.getJarFile(), as);
+			doContinue = downloadJarFile(dep.getClientId(),dep.getResId(),dep.getJarFile(), as);
 		}
 
 		if (!checkRes(this.javaAgentJarFile)) {
@@ -671,10 +671,10 @@ public class ServiceAgent {
 			//String msg = "Begin download: " + this.javaAgentJarFile;
 			//LG.log(MC.LOG_INFO, TAG, msg);
 			//logger.info(msg);
-			doContinue = downloadJarFile(this.javaAgentJarFile, as);
+			doContinue = downloadJarFile(dep.getClientId(),-1000,this.javaAgentJarFile, as);
 		}
 
-		if (!doContinue) {
+		if(!doContinue) {
 			String msg = "Start deployment fail pls check yourself dep: " + dep.toString();
 			LG.log(MC.LOG_ERROR, TAG, msg);
 			logger.error(msg);
@@ -888,10 +888,10 @@ public class ServiceAgent {
 		return;
 	}
 
-	private boolean downloadJarFile(String jarFile, Assign as) {
-		final Resp<Integer> resp = respo.initDownloadResource(jarFile);
+	private boolean downloadJarFile(int actId,int resId,String resName, Assign as) {
+		final Resp<Integer> resp = respo.initDownloadResource(actId,resId);
 		if (resp.getCode() != 0) {
-			String msg = "Download [" + jarFile + "] fail with error: " + resp.getMsg();
+			String msg = "Download [" + resName + "] fail with error: " + resp.getMsg();
 			LG.log(MC.LOG_ERROR, TAG, msg);
 			logger.error(msg);
 			return false;
@@ -902,7 +902,7 @@ public class ServiceAgent {
 		updateAssign(as, AssignState.DOWNLOAD_RES);
 		
 		//final FileOutputStream fos;
-		File f = new File(this.resourceDir, jarFile);
+		File f = new File(this.resourceDir, resName);
 		try {
 			f.createNewFile();
 		} catch (IOException e1) {
@@ -915,7 +915,7 @@ public class ServiceAgent {
 		
 		try(FileOutputStream fos = new FileOutputStream(f)) {
 
-			String msg = "Begin download: " + jarFile;
+			String msg = "Begin download: " + resName+", res id: " + resId;
 			LG.log(MC.LOG_INFO, TAG, msg);
 			
 			//logger.info(msg);
@@ -946,7 +946,7 @@ public class ServiceAgent {
 				}
 
 				if (data == null || data.length == 0 || data.length < this.uploadBlockSize) {
-					String msg0 = "Finish download: " + jarFile + " with size: " + f.length();
+					String msg0 = "Finish download: " + resName + " with size: " + f.length();
 					LG.logWithNonRpcContext(MC.LOG_INFO, TAG, msg0,MC.MT_DEFAULT,true);
 					return true;
 				}
@@ -1006,7 +1006,7 @@ public class ServiceAgent {
 			}
 		} catch (Throwable e) {
 			f.delete();
-			String msg = "Fail to download [" + jarFile + "]";
+			String msg = "Fail to download [" + resName + "]";
 			LG.log(MC.LOG_ERROR, TAG, msg);
 			//logger.error(msg, e);
 			rst[0] = false;

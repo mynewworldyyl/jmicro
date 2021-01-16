@@ -3,21 +3,25 @@
         <!--<a @click="refresh()">REFRESH</a>
         <input type="checkbox" v-model="showAll"/>ALL-->
         <div v-if="msg">{{msg}}</div>
-        <table class="configItemTalbe" width="99%">
-            <thead><tr><td>ID</td><td>NAME</td><td>ACTIVE</td><td>HA ENABLE</td><td>IS MASTER</td>
-                <td>Log Level</td><td>PROCESS ID</td><td>START TIME</td><td>CONTINUTE</td><td>HOST</td>
-                <td>AGENT ID</td> <!--<td>AGENT PROCESS ID</td>-->
-                <td>DEP ID</td>
-                <td>OPERATION</td></tr>
+        <div v-if="!processList || processList.length == 0">{{"NoProcess"|i18n("No process")}}</div>
+        <table v-if="processList && processList.length > 0" class="configItemTalbe" width="99%">
+            <thead><tr><td>ID</td><td>{{'NAME'|i18n}}</td><td>{{'ACTIVE'|i18n}}</td><td>{{'HAENABLE'|i18n('HA ENABLE')}}</td>
+                <td>{{'ISMASTER'|i18n('IS MASTER')}} </td>
+                <td>{{'LogLevel'|i18n("Log Level")}}</td><td>{{'PROCESS ID'|i18n("PROCESS ID")}}</td>
+                <td>{{'STARTTIME'|i18n("START TIME")}}</td><td>{{'CONTINUTE'|i18n}}</td><td>{{'HOST'|i18n}}</td>
+                <td>{{'AGENT ID'|i18n("AGENT ID")}}</td><td>{{'DEPID'|i18n("DEP ID")}}</td>
+                <td>{{'ClientId'|i18n("Client")}}</td><td>{{'ActName'|i18n("Account")}}</td>
+                <td>{{'OPERATION'|i18n}}</td></tr>
             </thead>
             <tr v-for="a in processList" :key="a.id">
                 <td>{{a.id}}</td> <td>{{a.instanceName}}</td>
                 <td>{{a.active}}</td><td>{{a.haEnable}}</td> <td>{{a.master}}</td><td>{{logLevels[a.logLevel]}}</td>
                 <td>{{a.pid}}</td><td>{{ a.startTime0 }}</td><td>{{ a.continue }}</td><td>{{a.host}}</td>
                 <td>{{a.agentId}}</td><!--<td>{{a.agentProcessId}}</td>--><td>{{a.depId}}</td>
+                <td>{{a.clientId}}</td><td>{{a.actName}}</td>
                 <td>&nbsp;
-                   <a v-if="isLogin" @click="stopProcess(a)"> {{ "Stop" |i18n }} </a>
-                    <a v-if="isLogin" @click="editProcessDrawer(a)"> {{ "Edit" |i18n }} </a>
+                   <a v-if="isLogin && actInfo.isAdmin" @click="stopProcess(a)"> {{ "Stop" |i18n }} </a>
+                    <a v-if="isLogin && actInfo.isAdmin" @click="editProcessDrawer(a)"> {{ "Edit" |i18n }} </a>
                 </td>
             </tr>
         </table>
@@ -62,6 +66,7 @@
                 showAll:true,
                 processList:[],
                 isLogin : false,
+                actInfo:null,
 
                 drawer: {
                     drawerStatus:false,
@@ -117,6 +122,7 @@
                 this.msg = null;
                 let self = this;
                 this.isLogin = window.jm.rpc.isLogin();
+                this.actInfo = window.jm.rpc.actInfo;
                 if(!this.isLogin) {
                     this.processList = [];
                     this.msg = 'Not login';

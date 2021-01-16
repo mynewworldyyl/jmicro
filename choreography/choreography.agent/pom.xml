@@ -4,83 +4,52 @@
 	<modelVersion>4.0.0</modelVersion>
 	<parent>
 		<groupId>cn.jmicro</groupId>
-		<artifactId>choreography</artifactId>
+		<artifactId>jmicro.choreography</artifactId>
 		<version>0.0.2-SNAPSHOT</version>
 	</parent>
-	<artifactId>choreography.agent</artifactId>
+	<artifactId>jmicro.choreography.agent</artifactId>
 	<packaging>jar</packaging>
-	<name>${project.artifactId}</name>
 	<description>jmicro choreography agent</description>
+	
 	<dependencies>
 		<dependency>
 			<groupId>cn.jmicro</groupId>
-			<artifactId>api</artifactId>
+			<artifactId>jmicro.api</artifactId>
 		</dependency>
 		<dependency>
 			<groupId>cn.jmicro</groupId>
-			<artifactId>choreography.api</artifactId>
+			<artifactId>jmicro.choreography.api</artifactId>
 		</dependency>
 		<dependency>
 			<groupId>cn.jmicro</groupId>
-			<artifactId>transport.netty.server</artifactId>
+			<artifactId>jmicro.transport.netty.server</artifactId>
 		</dependency>
 		<dependency>
 			<groupId>cn.jmicro</groupId>
-			<artifactId>transport.netty.client</artifactId>
+			<artifactId>jmicro.transport.netty.client</artifactId>
 		</dependency>
 
 		<dependency>
 			<groupId>cn.jmicro</groupId>
-			<artifactId>objfactory.simple</artifactId>
+			<artifactId>jmicro.objfactory.simple</artifactId>
 		</dependency>
 		<dependency>
 			<groupId>cn.jmicro</groupId>
-			<artifactId>config</artifactId>
+			<artifactId>jmicro.config</artifactId>
 		</dependency>
 		<dependency>
 			<groupId>cn.jmicro</groupId>
-			<artifactId>limit</artifactId>
+			<artifactId>jmicro.idgenerator</artifactId>
 		</dependency>
 		<dependency>
 			<groupId>cn.jmicro</groupId>
-			<artifactId>idgenerator</artifactId>
+			<artifactId>jmicro.classloader</artifactId>
 		</dependency>
 		<dependency>
 			<groupId>cn.jmicro</groupId>
-			<artifactId>classloader</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>cn.jmicro</groupId>
-			<artifactId>test</artifactId>
+			<artifactId>jmicro.test</artifactId>
 			<scope>test</scope>
 		</dependency>
 	</dependencies>
-
-	<build>
-		<plugins>
-			<plugin>
-				<artifactId>maven-assembly-plugin</artifactId>
-				<configuration>
-					<archive>
-						<manifest>
-							<mainClass>cn.jmicro.api.JMicro</mainClass>
-						</manifest>
-					</archive>
-					<descriptorRefs>
-						<descriptorRef>jar-with-dependencies</descriptorRef>
-					</descriptorRefs>
-				</configuration>
-				<executions>
-					<execution>
-						<id>make-assembly</id>
-						<phase>package</phase>
-						<goals>
-							<goal>single</goal>
-						</goals>
-					</execution>
-				</executions>
-			</plugin>
-		</plugins>
-	</build>
 
 </project>

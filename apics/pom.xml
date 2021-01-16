@@ -2,17 +2,17 @@
     <modelVersion>4.0.0</modelVersion>
     <parent>
          <groupId>cn.jmicro</groupId>
-		 <artifactId>parent</artifactId>
+		 <artifactId>jmicro.parent</artifactId>
 		 <version>0.0.2-SNAPSHOT</version>
     </parent>
-    <artifactId>apics</artifactId>
+    <artifactId>jmicro.apics</artifactId>
     <packaging>jar</packaging>
     <name>${project.artifactId}</name>
     <description>classes shared by server and client</description>
     <dependencies>
     <dependency>
 			<groupId>cn.jmicro</groupId>
-			<artifactId>codegenerator</artifactId>
+			<artifactId>jmicro.codegenerator</artifactId>
 		</dependency>
         <dependency>
 		    <groupId>com.google.code.gson</groupId>

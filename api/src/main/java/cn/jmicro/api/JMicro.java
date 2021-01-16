@@ -121,7 +121,7 @@ public class JMicro {
 		Class<?> objCls = loadClass(objClass);
 		
 		dataOperator = (IDataOperator)newInstance(objCls);
-		dataOperator.init();
+		dataOperator.init0();
 		
 		return dataOperator;
 	}

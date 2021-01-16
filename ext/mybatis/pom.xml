@@ -2,10 +2,10 @@
     <modelVersion>4.0.0</modelVersion>
     <parent>
          <groupId>cn.jmicro</groupId>
-		 <artifactId>ext</artifactId>
+		 <artifactId>jmicro.ext</artifactId>
 		 <version>0.0.2-SNAPSHOT</version>
     </parent>
-    <artifactId>mybatis</artifactId>
+    <artifactId>jmicro.mybatis</artifactId>
     <packaging>jar</packaging>
     <name>${project.artifactId}</name>
     <description>registry mybatis extion</description>
@@ -13,15 +13,15 @@
     <dependencies>
          <dependency>
 			 <groupId>cn.jmicro</groupId>
-			 <artifactId>zk</artifactId>
+			 <artifactId>jmicro.zk</artifactId>
         </dependency>
         <dependency>
 			 <groupId>cn.jmicro</groupId>
-			 <artifactId>api</artifactId>
+			 <artifactId>jmicro.api</artifactId>
         </dependency>
          <dependency>
 			 <groupId>cn.jmicro</groupId>
-			 <artifactId>common</artifactId>
+			 <artifactId>jmicro.common</artifactId>
         </dependency>
         
          <dependency>

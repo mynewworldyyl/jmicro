@@ -290,6 +290,10 @@ public class ServiceLoader{
 			throw new CommonException("fail to export server, service instance is NULL "+c.getName());
 		}
 		
+		/*if(c.getName().contains("AccountService")) {
+			logger.info(c.getName());
+		}*/
+		
 		ServiceItem si = createSrvItemByClass(c);
 		
 		int code = idGenerator.getIntId(ServiceItem.class);
@@ -345,7 +349,7 @@ public class ServiceLoader{
 		return item;
 	}
 	
-	public ServiceItem createSrvItem(Class<?> interfacez, String ns, String ver, String impl) {
+	public ServiceItem createSrvItem(Class<?> interfacez, String ns, String ver, String impl,int clientId) {
 		if(Config.isClientOnly()) {
 			logger.warn("Client only cannot export service!");
 			return null;
@@ -361,7 +365,7 @@ public class ServiceLoader{
 				si.setImpl(impl);
 			}
 		} else {
-			si = this.createSrvItem(interfacez.getName(), ns, ver, impl);
+			si = this.createSrvItem(interfacez.getName(), ns, ver, impl,clientId);
 			for(Method m : interfacez.getMethods()) {
 				createSrvMethod(si,m.getName(),m.getParameterTypes());
 			}
@@ -374,7 +378,7 @@ public class ServiceLoader{
 		return si;
 	}
 	
-	public ServiceItem createSrvItem(String srvName, String ns, String ver, String impl) {
+	public ServiceItem createSrvItem(String srvName, String ns, String ver, String impl,int clientId) {
 		ServiceItem item = new ServiceItem();
 		UniqueServiceKey usk = new UniqueServiceKey();
 		usk.setNamespace(ns);
@@ -394,7 +398,8 @@ public class ServiceLoader{
 		item.setExternal(false);
 		item.setShowFront(true);
 		
-		item.setClientId(Config.getClientId());
+		item.setClientId(clientId);
+		item.setCreatedBy(Config.getClientId());
 		
 		//item.setMaxFailBeforeDegrade(anno.maxFailBeforeDegrade()!=100 || intAnno == null ?anno.maxFailBeforeDegrade():intAnno.maxFailBeforeDegrade());
 		//item.setRetryCnt();
@@ -525,10 +530,11 @@ public class ServiceLoader{
 		
 		item.setKey(usk);
 		item.setImpl(proxySrv.getName());
-		item.setClientId(Config.getClientId());
 		item.setActName(Config.getAccountName());
 		item.setExternal(anno.external());
 		item.setShowFront(anno.showFront());
+		
+		item.setCreatedBy(Config.getClientId());
 		
 		if(anno.clientId() == Constants.USE_SYSTEM_CLIENT_ID) {
 			item.setClientId(Config.getClientId());

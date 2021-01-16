@@ -41,6 +41,7 @@ import cn.jmicro.api.timer.TimerTicker;
 import cn.jmicro.api.utils.TimeUtils;
 import cn.jmicro.common.CommonException;
 import cn.jmicro.common.Constants;
+import cn.jmicro.common.Utils;
 import cn.jmicro.common.util.StringUtils;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
@@ -131,7 +132,7 @@ public class RedisCacheImpl implements ICache {
 
 	private void checkPermission(String key) {
 		for(String p : adminPrefixs) {
-			if(key.startsWith(p) && !Config.isAdminSystem()) {
+			if(key.startsWith(p) && !(Utils.formSystemPackagePermission(4) || Config.isAdminSystem())) {
 				String msg = "No permission to do this operation";
 				LG.log(MC.LOG_WARN, RedisCacheImpl.class, msg);
 				throw new CommonException(msg);

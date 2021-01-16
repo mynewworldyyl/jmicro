@@ -632,6 +632,7 @@ public class SimpleObjectFactory implements IObjectFactory {
 				} catch(CommonException e) {}
 				if(asyncAs == null || !asyncAs.isReady()) {
 					logger.error("Security account service not found!");
+					pi.setActName(null);
 					return;
 				}
 				as = asyncAs;
@@ -643,6 +644,7 @@ public class SimpleObjectFactory implements IObjectFactory {
 			} catch(CommonException e) {}
 			
 			if(clientId < 0) {
+				pi.setActName(null);
 				return;
 			}
 
@@ -653,6 +655,7 @@ public class SimpleObjectFactory implements IObjectFactory {
 				String p = ChoyConstants.INS_ROOT+"/" + pi.getId();
 				op.setData(p,JsonUtils.getIns().toJson(pi));
 			} else {
+				pi.setActName(null);
 				throw new CommonException("Account name not found for: " + clientId);
 			}
 		
@@ -1713,6 +1716,7 @@ public class SimpleObjectFactory implements IObjectFactory {
 		pi.setInfoFilePath(initProcessInfoPath);
 		pi.setOsName(System.getProperty("os.name"));
 		pi.setLogLevel(Config.getCommandParam(Constants.SYSTEM_LOG_LEVEL, Byte.class, MC.LOG_INFO));
+		pi.setClientId(Config.getClientId());
 		
 		//pi.setTimeOut(0);
 		

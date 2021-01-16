@@ -51,6 +51,8 @@ public interface IAssignStrategy {
 				} else {
 					params.put(ar, null);
 				}
+			} else {
+				params.put(arg, "");
 			}
 		}
 		

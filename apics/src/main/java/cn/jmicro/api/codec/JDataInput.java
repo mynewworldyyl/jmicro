@@ -43,6 +43,10 @@ public class JDataInput implements DataInput {
 	public boolean readBoolean() throws IOException {
 		return buf.get() == 1;
 	}
+	
+	public Boolean readBoolean0() throws IOException {
+		return new Boolean(buf.get() == 1);
+	}
 
 	@Override
 	public byte readByte() throws IOException {
@@ -78,6 +82,21 @@ public class JDataInput implements DataInput {
 	public int readInt() throws IOException {
 		return buf.getInt();
 		//return readInt0();
+	}
+	
+	public long readUsignedLong() {
+		return Message.readUnsignedLong(buf);
+	}
+	
+	public void writeUsignedLong(long v) {
+		 this.buf.put((byte)((v >>> 56)&0xFF));
+		 this.buf.put((byte)((v >>> 48)&0xFF));
+		 this.buf.put((byte)((v >>> 40)&0xFF));
+		 this.buf.put((byte)((v >>> 32)&0xFF));
+		 this.buf.put((byte)((v >>> 24)&0xFF));
+		 this.buf.put((byte)((v >>> 16)&0xFF));
+		 this.buf.put((byte)((v >>> 8)&0xFF));
+		 this.buf.put((byte)((v >>> 0)&0xFF));
 	}
 
 	@Override

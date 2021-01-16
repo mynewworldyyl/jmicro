@@ -18,7 +18,7 @@ public interface IChoreographyService {
 	 
 	 Resp<Boolean> deleteDeployment(String id);
 	 
-	 Resp<Boolean> updateDeployment(Deployment dep);
+	 Resp<Deployment> updateDeployment(Deployment dep);
 	 
 	 //Agent
 	 Resp<List<AgentInfoVo>> getAgentList(boolean showAll);

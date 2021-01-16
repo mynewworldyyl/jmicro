@@ -1,7 +1,6 @@
 package cn.jmicro.mng.impl;
 
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -511,11 +510,11 @@ public class MngAccountServiceImpl implements IAccountService {
 			return r;
 		}
 		
-		HashSet<String> pers = ai.getPers();
-		if(pers == null) {
+		Set<String> pers = ai.getPers();
+		/*if(pers == null) {
 			pers = new HashSet<>();
 			ai.setPers(pers);
-		}
+		}*/
 		
 		if(dels != null && !dels.isEmpty()) {
 			pers.removeAll(dels);

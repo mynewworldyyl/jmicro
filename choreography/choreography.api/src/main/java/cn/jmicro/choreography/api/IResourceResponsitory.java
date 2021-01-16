@@ -1,6 +1,7 @@
 package cn.jmicro.choreography.api;
 
 import java.util.List;
+import java.util.Map;
 
 import cn.jmicro.api.Resp;
 import cn.jmicro.codegenerator.AsyncClientProxy;
@@ -8,17 +9,26 @@ import cn.jmicro.codegenerator.AsyncClientProxy;
 @AsyncClientProxy
 public interface IResourceResponsitory {
 
-	List<PackageResource> getResourceList(boolean onlyFinish);
+	Resp<List<PackageResource>> getResourceList(Map<String,Object> qry,int pageSize,int curPage);
 	
-	Resp<Integer> addResource(String name, int totalSize);
+	Resp<PackageResource> addResource(PackageResource pr);
 	
-	Resp<Boolean> addResourceData(String name, byte[] data, int blockNum);
+	Resp<PackageResource> updateResource(PackageResource pr,boolean updateFile);
 	
-	Resp<Boolean> deleteResource(String name);
+	Resp<Boolean> addResourceData(int id, byte[] data, int blockNum);
+	
+	Resp<Boolean> deleteResource(int id);
 	
 	byte[] downResourceData(int downloadId, int blockNum);
 	
-	Resp<Integer> initDownloadResource(String name);
+	Resp<Integer> initDownloadResource(int actId,int resId);
+	
+	Resp<Map<String,Object>> queryDict();
+	
+	Resp<List<Map<String,Object>>> waitingResList(int resId);
+	
+	Resp<List<Map<String,Object>>> dependencyList(int resId);
+	
 	
 	
 }

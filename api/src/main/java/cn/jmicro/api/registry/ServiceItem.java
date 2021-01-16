@@ -133,6 +133,8 @@ public final class ServiceItem implements Comparable<ServiceItem>{
 	
 	private int clientId = 0;
 	
+	private int createdBy = 0;
+	
 	private String actName;
 	
 	private int insId  = 0;
@@ -202,6 +204,11 @@ public final class ServiceItem implements Comparable<ServiceItem>{
 		this.actName = p.actName;
 		
 		this.loadTime = p.loadTime;
+		
+		this.clientId = p.clientId;
+		this.createdBy = p.createdBy;
+		
+		this.insId = p.insId;
 		
 		for(ServiceMethod sm : p.getMethods()){
 			ServiceMethod nsm = this.getMethod(sm.getKey().getMethod(), sm.getKey().getParamsStr());
@@ -617,6 +624,14 @@ public final class ServiceItem implements Comparable<ServiceItem>{
 
 	public void setInsId(int insId) {
 		this.insId = insId;
+	}
+
+	public int getCreatedBy() {
+		return createdBy;
+	}
+
+	public void setCreatedBy(int createdBy) {
+		this.createdBy = createdBy;
 	}
 	
 }

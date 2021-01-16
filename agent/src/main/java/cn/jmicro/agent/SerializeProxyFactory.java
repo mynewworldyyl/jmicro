@@ -82,6 +82,8 @@ public class SerializeProxyFactory {
 			return "";
 		}
 		
+		boolean d = cls.getName().contains("ActInfo");
+		
 		for(int i = 0; i < fields.length; i++) {
 			CtField f = fields[i];
 			if(Modifier.isTransient(f.getModifiers())  || Modifier.isStatic(f.getModifiers()) 
@@ -113,8 +115,10 @@ public class SerializeProxyFactory {
 				sb.append(varName).append(" = in.readFloat();\n");
 			}else if(fieldDeclareType == CtClass.doubleType || fieldDeclareType.getName().equals(Double.class.getName()) ) {
 				sb.append(varName).append(" = in.readDouble();\n");
-			}else if(fieldDeclareType == CtClass.booleanType || fieldDeclareType.getName().equals(Boolean.class.getName()) ) {
+			}else if(fieldDeclareType == CtClass.booleanType) {
 				sb.append(varName).append(" = in.readBoolean();\n");
+			}else if(fieldDeclareType.getName().equals(Boolean.class.getName())) {
+				sb.append(varName).append(" = new java.lang.Boolean(in.readBoolean());\n");
 			}else if(fieldDeclareType == CtClass.charType || fieldDeclareType.getName().equals(Character.class.getName()) ) {
 				sb.append(varName).append(" = in.readChar();\n");
 			}else  if(fieldDeclareType.getName().equals(Date.class.getName())) {
@@ -142,9 +146,9 @@ public class SerializeProxyFactory {
 		//System.out.println("\n\n");
 		//System.out.println(sb.toString());
 		
-		if("cn.jmicro.api.net.RpcRequest".equals(cls.getName())) {
-			//System.out.println(sb.toString());
-		}
+		/*if(d) {
+			System.out.println("SerializeProxyFactory: "+sb.toString());
+		}*/
 		
 		return sb.toString();
 	
@@ -164,6 +168,8 @@ public class SerializeProxyFactory {
 			return "";
 		}*/
 		
+		boolean d = cls.getName().contains("ActInfo");
+		
 		CtField[] fields = cls.getDeclaredFields();
 		
 		for(int i = 0; i < fields.length; i++) {
@@ -175,6 +181,10 @@ public class SerializeProxyFactory {
 			}
 			
 			CtClass fieldDeclareType = f.getType();
+			
+			/*if(d) {
+				System.out.println("SerializeProxyFactory: "+f.getName());
+			}*/
 			
 			//cls.addField(f);
 			
@@ -197,7 +207,7 @@ public class SerializeProxyFactory {
 			}else if(fieldDeclareType.getName().equals(Byte.class.getName()) ) {
 				sb.append(" out.writeByte(").append(" __val"+i).append(" == null ? new java.lang.Byte((byte)0) : __val"+i+"); \n");
 			}else if(fieldDeclareType.getName().equals(Short.class.getName()) ) {
-				sb.append(" out.writeShort(").append(" __val"+i).append(" == null ? new java.lang.Byte((short)0) : __val"+i+"); \n");
+				sb.append(" out.writeShort(").append(" __val"+i).append(" == null ? new java.lang.Short((short)0) : __val"+i+"); \n");
 			}else if(fieldDeclareType == CtClass.shortType) {
 				sb.append(" out.writeShort(").append(" __val").append(i).append("); \n");
 			}else  if(fieldDeclareType == CtClass.floatType) {
@@ -207,11 +217,11 @@ public class SerializeProxyFactory {
 			}else if(fieldDeclareType == CtClass.doubleType) {
 				sb.append(" out.writeDouble(").append(" __val").append(i).append("); \n");
 			}else if(fieldDeclareType.getName().equals(Double.class.getName()) ) {
-				sb.append(" out.writeDouble(").append(" __val"+i).append(" == null ?  new java.lang.Double((double)0): __val"+i+"); \n");
+				sb.append(" out.writeDouble(").append(" __val"+i).append(" == null ?  (double)0: __val"+i+".doubleValue()); \n");
 			}else if(fieldDeclareType == CtClass.booleanType ) {
 				sb.append(" out.writeBoolean(").append(" __val").append(i).append("); \n");
 			}else if(fieldDeclareType.getName().equals(Boolean.class.getName()) ) {
-				sb.append(" out.writeBoolean(").append(" __val"+i).append(" == null ? java.lang.Boolean(false) : __val"+i+"); \n");
+				sb.append(" out.writeBoolean(").append(" __val"+i).append(" == null ? false : __val"+i+".booleanValue()); \n");
 			}else if(fieldDeclareType.getName().equals(Character.class.getName()) ) {
 				sb.append(" out.writeChar(").append(" __val").append(" == null ? '' : __val"+i+"); \n");
 			}else if(fieldDeclareType == CtClass.charType) {
@@ -237,9 +247,9 @@ public class SerializeProxyFactory {
 		sb.append("}");
 		
 		//System.out.println("\n\n");
-		if("cn.jmicro.api.net.RpcRequest".equals(cls.getName())) {
-			//System.out.println(sb.toString());
-		}
+		/*if(d) {
+			System.out.println(sb.toString());
+		}*/
 		return sb.toString();
 	}
 	

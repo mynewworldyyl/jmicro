@@ -146,14 +146,6 @@ public class ServiceManager {
 		dataOperator.addChildrenListener(Config.ServiceRegistDir, new IChildrenListener() {
 			@Override
 			public void childrenChanged(int type,String parent, String child,String data) {
-				String[] splitArr = child.split(ServiceItem.KEY_SEPERATOR);
-				if(!includeServices.contains(splitArr[UniqueServiceKey.INDEX_SN]) 
-						&& excludeServices.contains(splitArr[UniqueServiceKey.INDEX_SN])
-						&& !Config.getInstanceName().equals(splitArr[UniqueServiceKey.INDEX_INS])) {
-					logger.debug("exclude servcie: "+child);
-					return;
-				}
-				
 				String p = parent+"/"+child;
 				if(IListener.ADD == type) {
 					if(openDebug) {
@@ -162,7 +154,9 @@ public class ServiceManager {
 					childrenAdd(p,data);
 				}else if(IListener.REMOVE == type) {
 					logger.debug("Service remove, path:{}",p.substring(Config.ServiceRegistDir.length()+1));
-					serviceRemove(p);
+					if(path2Hash.containsKey(p)) {
+						serviceRemove(p);
+					}
 				}else if(IListener.DATA_CHANGE == type){
 					logger.debug("Invalid service data change event, path:{}",p.substring(Config.ServiceRegistDir.length()+1));
 				}
@@ -188,9 +182,19 @@ public class ServiceManager {
 			return;
 		}
 		
+		/*if(path.contains("IAccountService")) {
+			logger.info("" + path);
+		}*/
+		
 		if(!PermissionManager.checkClientPermission(Config.getClientId(), si.getClientId())) {
+			logger.info("No permisstion for: " + path);
 			return;
 		}
+		
+		if(logger.isInfoEnabled()) {
+			logger.info("Remote service add: " + path);
+		}
+		
 		
 		//从配置服务合并
 		//this.persisFromConfig(i);
@@ -885,7 +889,7 @@ public class ServiceManager {
 	
 	public void registSmCode(String sn,String ns,String ver,String method,Class<?>[] argCls) {
 		
-		if(!Utils.formSystemPackagePermission()) {
+		if(!Utils.formSystemPackagePermission(3)) {
 			throw new CommonException("No permission to regist Service method code: " + UniqueServiceMethodKey.methodKey(sn, ns, ver, Config.getInstanceName(),
 					Config.getExportSocketHost(), "", method));
 		}

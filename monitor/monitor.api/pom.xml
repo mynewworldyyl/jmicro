@@ -2,21 +2,21 @@
     <modelVersion>4.0.0</modelVersion>
     <parent>
           <groupId>cn.jmicro</groupId>
-		 <artifactId>monitor</artifactId>
+		 <artifactId>jmicro.monitor</artifactId>
 		 <version>0.0.2-SNAPSHOT</version>
     </parent>
-    <artifactId>monitor.api</artifactId>
+    <artifactId>jmicro.monitor.api</artifactId>
     <packaging>jar</packaging>
     <name>${project.artifactId}</name>
     <description>persist log to db server</description>
     <dependencies>
        <dependency>
 			 <groupId>cn.jmicro</groupId>
-			 <artifactId>api</artifactId>
+			 <artifactId>jmicro.api</artifactId>
 	    </dependency>
 	     <dependency>
 			 <groupId>cn.jmicro</groupId>
-			 <artifactId>mongodb</artifactId>
+			 <artifactId>jmicro.mongodb</artifactId>
 	    </dependency>
     </dependencies>
    

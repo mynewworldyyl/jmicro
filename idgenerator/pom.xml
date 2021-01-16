@@ -2,37 +2,37 @@
     <modelVersion>4.0.0</modelVersion>
     <parent>
          <groupId>cn.jmicro</groupId>
-		 <artifactId>parent</artifactId>
+		 <artifactId>jmicro.parent</artifactId>
 		 <version>0.0.2-SNAPSHOT</version>
     </parent>
-    <artifactId>idgenerator</artifactId>
+    <artifactId>jmicro.idgenerator</artifactId>
     <packaging>jar</packaging>
     <name>${project.artifactId}</name>
     <description>idgenerator Module</description>
     <dependencies>
  		<dependency>
 			 <groupId>cn.jmicro</groupId>
-			 <artifactId>api</artifactId>
+			 <artifactId>jmicro.api</artifactId>
 	    </dependency>
 	    <dependency>
 			 <groupId>cn.jmicro</groupId>
-			 <artifactId>redis</artifactId>
+			 <artifactId>jmicro.redis</artifactId>
 	    </dependency>
 	    <!-- <dependency>
 			 <groupId>cn.jmicro</groupId>
-			 <artifactId>limit</artifactId>
+			 <artifactId>jmicro.limit</artifactId>
 	    </dependency> -->
 	    <dependency>
 			 <groupId>cn.jmicro</groupId>
-			 <artifactId>zk</artifactId>
+			 <artifactId>jmicro.zk</artifactId>
 	    </dependency>
 	    <dependency>
 			 <groupId>cn.jmicro</groupId>
-			 <artifactId>objfactory.simple</artifactId>
+			 <artifactId>jmicro.objfactory.simple</artifactId>
 	    </dependency>
        <dependency>
 			 <groupId>cn.jmicro</groupId>
-			 <artifactId>transport.netty.server</artifactId>
+			 <artifactId>jmicro.transport.netty.server</artifactId>
 	    </dependency>
 	    <!--  <dependency>
 			 <groupId>cn.jmicro</groupId>
@@ -40,7 +40,7 @@
 	    </dependency> -->
 	    <dependency>
 			 <groupId>cn.jmicro</groupId>
-			 <artifactId>config</artifactId>
+			 <artifactId>jmicro.config</artifactId>
 	    </dependency>
 	    <!--  <dependency>
 			 <groupId>cn.jmicro</groupId>

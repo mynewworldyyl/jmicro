@@ -2,25 +2,25 @@
     <modelVersion>4.0.0</modelVersion>
     <parent>
          <groupId>cn.jmicro</groupId>
-		 <artifactId>parent</artifactId>
+		 <artifactId>jmicro.parent</artifactId>
 		 <version>0.0.2-SNAPSHOT</version>
     </parent>
-    <artifactId>config</artifactId>
+    <artifactId>jmicro.config</artifactId>
     <packaging>jar</packaging>
     <name>${project.artifactId}</name>
     <description>config Module</description>
     <dependencies>
     	<dependency>
 			 <groupId>cn.jmicro</groupId>
-			 <artifactId>zk</artifactId>
+			 <artifactId>jmicro.zk</artifactId>
         </dependency>  
          <dependency>
 			 <groupId>cn.jmicro</groupId>
-			 <artifactId>common</artifactId>
+			 <artifactId>jmicro.common</artifactId>
         </dependency>
         <dependency>
 		      <groupId>cn.jmicro</groupId>
-			  <artifactId>api</artifactId>
+			  <artifactId>jmicro.api</artifactId>
         </dependency>
     </dependencies>
    

@@ -679,6 +679,28 @@ public final class Message {
 		int anUnsignedShort  = (int) (firstByte << 8 | secondByte);
         return anUnsignedShort;
 	 }
+	 
+	 public static long readUnsignedLong(ByteBuffer b) {
+			int firstByte = (0xFF & ((int)b.get()));
+			int secondByte = (0xFF & ((int)b.get()));
+			int thirdByte = (0xFF & ((int)b.get()));
+			int fourByte = (0xFF & ((int)b.get()));
+			
+			int fiveByte = (0xFF & ((int)b.get()));
+			int sixByte = (0xFF & ((int)b.get()));
+			int sevenByte = (0xFF & ((int)b.get()));
+			int eigthByte = (0xFF & ((int)b.get()));
+			
+			int anUnsignedShort  = (int) (
+					firstByte << 56 | secondByte<<48
+					| thirdByte << 40 | fourByte<<32
+					| fiveByte << 24 | sixByte<<16
+					| sevenByte << 8 | eigthByte
+					);
+	        return anUnsignedShort;
+	}
+	 
+	 
 	
 	public static void writeUnsignedByte(ByteBuffer b,short v) {
 		if(v > MAX_BYTE_VALUE) {

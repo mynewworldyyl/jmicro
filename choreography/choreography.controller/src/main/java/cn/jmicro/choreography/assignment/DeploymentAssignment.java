@@ -189,9 +189,9 @@ public class DeploymentAssignment {
 			String data = op.getData(ChoyConstants.DEP_DIR+"/" + c);
 			if(StringUtils.isNotEmpty(data)) {
 				Deployment dep = JsonUtils.getIns().fromJson(data, Deployment.class);
-				if(dep.getJarFile().startsWith("jmicro-main.mng-") && dep.isEnable()) {
+				if(dep.getJarFile().startsWith("jmicro-main.mng-") && dep.getStatus() == Deployment.STATUS_ENABLE) {
 					mngDep = dep;
-				}else if(dep.getJarFile().startsWith("jmicro-main.apigateway-")  && dep.isEnable()) {
+				}else if(dep.getJarFile().startsWith("jmicro-main.apigateway-")  && dep.getStatus() == Deployment.STATUS_ENABLE) {
 					apiGatewayDep = dep;
 				}
 			}
@@ -203,7 +203,7 @@ public class DeploymentAssignment {
 			 mngDep.setId(id);
 			 mngDep.setArgs("-Xmx128m -Xms32m -DenableMasterSlaveModel=true -DsysLogLevel=5  -DclientId=0 -DadminClientId=0");
 			 mngDep.setAssignStrategy("defautAssignStrategy");
-			 mngDep.setEnable(true);
+			 mngDep.setStatus(Deployment.STATUS_ENABLE);;
 			 mngDep.setForceRestart(false);
 			 mngDep.setInstanceNum(1);
 			 
@@ -237,7 +237,7 @@ public class DeploymentAssignment {
 			 
 			 apiGatewayDep.setArgs("-DsysLogLevel=5  -DclientId=0 -DadminClientId=0 -Xmx128m -Xms32m -DinstanceName=apigateway -DlistenHttpIP=0.0.0.0 -DexportHttpIP="+exportHttpIp+" -DnettyHttpPort=9090 -D/StaticResourceHttpHandler/staticResourceRoot_mng="+mngCxtRoot);
 			 apiGatewayDep.setAssignStrategy("defautAssignStrategy");
-			 apiGatewayDep.setEnable(true);
+			 apiGatewayDep.setStatus(Deployment.STATUS_ENABLE);;
 			 apiGatewayDep.setForceRestart(false);
 			 apiGatewayDep.setInstanceNum(1);
 			 
@@ -369,7 +369,7 @@ public class DeploymentAssignment {
 		 deps.addAll(this.deployments.values());
 		 
 		 for(Deployment dep : deps) {
-			 if(!dep.isEnable()) {
+			 if(dep.getStatus() != Deployment.STATUS_ENABLE) {
 				 //logger.warn("Stop deployment: "+ dep.toString());
 				 stopDeployment(dep.getId());
 			 }else if(dep.isForceRestart()) {
@@ -377,7 +377,7 @@ public class DeploymentAssignment {
 				 LG.log(MC.LOG_INFO, TAG, "Force restart deployment: "+ dep.toString());
 				 stopDeployment(dep.getId());
 				 dep.setForceRestart(false);
-			 } else if(dep.isEnable()) {
+			 } else if(dep.getStatus() == Deployment.STATUS_ENABLE) {
 				 if(nextDeployTimeout.containsKey(dep.getId())) {
 					 if(curTime - nextDeployTimeout.get(dep.getId()) < 10000 ) {
 						 //两次分配动作之间最少等待一分钟
@@ -513,7 +513,7 @@ public class DeploymentAssignment {
 	}
 
 	private void doAssgin(Deployment dep) {
-		if(!dep.isEnable()) {
+		if(dep.getStatus() != Deployment.STATUS_ENABLE) {
 			return;
 		}
 		Set<Assign> ass = assingManager.getAssignByDepId(dep.getId());

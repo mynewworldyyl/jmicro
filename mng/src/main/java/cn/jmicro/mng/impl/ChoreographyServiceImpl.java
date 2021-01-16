@@ -1,9 +1,9 @@
 package cn.jmicro.mng.impl;
 
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import org.slf4j.Logger;
@@ -33,9 +33,11 @@ import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.raft.IDataOperator;
 import cn.jmicro.api.security.ActInfo;
 import cn.jmicro.api.security.PermissionManager;
+import cn.jmicro.choreography.api.IAssignStrategy;
 import cn.jmicro.choreography.api.IResourceResponsitory;
-import cn.jmicro.choreography.api.PackageResource;
 import cn.jmicro.choreography.instance.InstanceManager;
+import cn.jmicro.common.Constants;
+import cn.jmicro.common.Utils;
 import cn.jmicro.common.util.JsonUtils;
 import cn.jmicro.common.util.StringUtils;
 
@@ -68,10 +70,10 @@ public class ChoreographyServiceImpl implements IChoreographyService {
 	@Inject
 	private ICommonManager commonManager;
 	
-	private Set<PackageResource> packageResources = new HashSet<>();
+	//private Set<PackageResource> packageResources = new HashSet<>();
 	
 	@Override
-	@SMethod(perType=true,needLogin=true,maxSpeed=5,maxPacketSize=8092)
+	@SMethod(perType=false,needLogin=true,maxSpeed=5,maxPacketSize=8092,logLevel=MC.LOG_INFO)
 	public Resp<Deployment> addDeployment(Deployment dep) {
 		Resp<Deployment> resp = new Resp<>();
 		
@@ -82,29 +84,165 @@ public class ChoreographyServiceImpl implements IChoreographyService {
 			resp.setMsg(msg);
 			return resp;
 		}
-		if(!checkPackageResource(dep.getJarFile())) {
+		
+		/*if(!checkPackageResource(dep.getJarFile())) {
 			String msg = "PackageResource [" + dep.getJarFile()+"] not found!";
+			logger.error(msg);
+			resp.setCode(1);
+			resp.setMsg(msg);
+			return resp;
+		}*/
+		
+		final ActInfo ai = JMicroContext.get().getAccount();
+		
+		if(ai.isGuest() && !Utils.isEmpty(dep.getArgs())) {
+			String msg = "Guest account deployment cannot contain any args!";
 			logger.error(msg);
 			resp.setCode(1);
 			resp.setMsg(msg);
 			return resp;
 		}
 		
+		if(!PermissionManager.isCurAdmin()) {
+			List<Deployment> l = getDeploymentList().getData();
+			long cnt = l.stream().filter(e -> {return e.getClientId() == ai.getId();}).count();
+			if(ai.isGuest() && cnt >= 5) {
+				String msg = "Guest account max deployment count is 5 pls regist normal account if you want more";
+				resp.setCode(1);
+				resp.setMsg(msg);
+				return resp;
+			}else if(cnt >= 10) {
+				String msg = "Your acount max deployment count is 10, pls contact admin if you want more";
+				resp.setCode(1);
+				resp.setMsg(msg);
+				return resp;
+			}
+			
+			if(dep.getStatus() == Deployment.STATUS_ENABLE) {
+				long ecnt = l.stream().filter(e -> {return e.getClientId() == ai.getId() && e.getStatus() == Deployment.STATUS_ENABLE;}).count();
+				if(ai.isGuest() && ecnt >= 1) {
+					String msg = "Guest account max enable deployment count is 1 pls regist normal account if you want more";
+					resp.setCode(1);
+					resp.setMsg(msg);
+					return resp;
+				}else if(ecnt >= 3) {
+					String msg = "Your acount max enable deployment count is 3, pls contact admin if you want more";
+					resp.setCode(1);
+					resp.setMsg(msg);
+					return resp;
+				}
+			}
+			
+		}
+		
+		Map<String, String> params = IAssignStrategy.parseArgs(dep.getArgs());
+		if(dep.getStatus() == Deployment.STATUS_ENABLE && !PermissionManager.isCurAdmin()) {
+			 //非Admin添加的部署需要严格验证参数
+			 checkNonAdminArgs(dep,params);
+		}
+		
+		dep.setClientId(ai.getId());
+		
 		String id = idServer.getStringId(Deployment.class);
 		dep.setId(id);
 		
-		ActInfo ai = JMicroContext.get().getAccount();
-		dep.setClientId(ai.getId());
+		if(dep.getStatus() == Deployment.STATUS_ENABLE) {
+			setEnableDepArgs(params,dep);
+		}
 		
 		op.createNodeOrSetData(ChoyConstants.DEP_DIR+"/"+id, JsonUtils.getIns().toJson(dep), false);
 		
 		resp.setData(dep);
+
+		String data = JsonUtils.getIns().toJson(dep);
+		LG.log(MC.LOG_INFO, TAG,"Add: " +data);
 		
 		return resp;
 	}
 
+	private void setEnableDepArgs(Map<String, String> params,Deployment dep) {
+		dep.setDesc("");
+		
+		if(!params.containsKey(Constants.CLIENT_ID)) {
+			dep.setArgs(dep.getArgs() + " -D"+Constants.CLIENT_ID + "="+dep.getClientId());
+		}
+		
+		if(!params.containsKey(Constants.ADMIN_CLIENT_ID)) {
+			dep.setArgs(dep.getArgs() + " -D"+Constants.ADMIN_CLIENT_ID + "="+Config.getAdminClientId());
+		}
+		
+		int xmsArg = getIntSizeJvmArg(params,"-Xms");
+		if(xmsArg==0) {
+			dep.setArgs(dep.getArgs() + " -Xms16M");
+		}
+		
+		int XmxArg = getIntSizeJvmArg(params,"-Xmx");
+		if(XmxArg==0) {
+			dep.setArgs(dep.getArgs() + " -Xmx32M");
+		}
+		
+	}
+
+	private int getIntSizeJvmArg(Map<String, String> params, String keyPrefix) {
+		String val = getJvmArg(params,keyPrefix);
+		if(Utils.isEmpty(val)) {
+			return 0;
+		}
+		
+		int size = 0;
+		if(val.endsWith("b") || val.endsWith("B")) {
+			size = Integer.parseInt(val.substring(keyPrefix.length(),val.length()-1));
+		}else if(val.endsWith("K") || val.endsWith("k")) {
+			size = Integer.parseInt(val.substring(keyPrefix.length(),val.length()-1))*1024;
+		}else if(val.endsWith("M") || val.endsWith("m")) {
+			size = Integer.parseInt(val.substring(keyPrefix.length(),val.length()-1))*1024*1024;
+		}
+		return size;
+	}
+	
+	private String getJvmArg(Map<String, String> params, String keyPrefix) {
+		for(Map.Entry<String, String> e : params.entrySet()) {
+			if(e.getKey().startsWith(keyPrefix)) {
+				return e.getKey();
+			}
+		}
+		return null;
+	}
+
+	private void checkNonAdminArgs(Deployment dep,Map<String, String> params) {
+		if(Utils.isEmpty(dep.getArgs())) {
+			return;
+		}
+
+		ActInfo ai = JMicroContext.get().getAccount();
+		
+		for(Map.Entry<String, String> e : params.entrySet()) {
+			String key = e.getKey();
+			if(key.startsWith("-X")) {
+				dep.setStatus(Deployment.STATUS_CHECK);
+				dep.setDesc("Need system admin check with jvm args, you can wait for approving or delete jvm args to enable this deployment!");
+			}
+			
+			if(key.equals(Constants.ADMIN_CLIENT_ID) ) {
+				int adminClient = Integer.parseInt(e.getValue());
+				if(adminClient != Config.getAdminClientId()) {
+					dep.setStatus(Deployment.STATUS_CHECK);
+					dep.setDesc("Need system admin check with ["+Constants.ADMIN_CLIENT_ID+"] args, you can wait for approving or delete the args to enable this deployment!");
+				}
+			}
+			
+			if(key.equals(Constants.CLIENT_ID)) {
+				int clientId = Integer.parseInt(e.getValue());
+				if(clientId != ai.getId()) {
+					dep.setStatus(Deployment.STATUS_CHECK);
+					dep.setDesc("Need system admin check with ["+Constants.CLIENT_ID+"] args, you can wait for approving or delete the args to enable this deployment!");
+				}
+			}
+		}
+	}
+
 	@Override
-	@SMethod(perType=true,needLogin=true,maxSpeed=5,maxPacketSize=256)
+	@SMethod(perType=false,needLogin=true,maxSpeed=5,maxPacketSize=256)
 	public Resp<List<Deployment>> getDeploymentList() {
 		Resp<List<Deployment>> resp = new Resp<>();
 		Set<String> children = op.getChildren(ChoyConstants.DEP_DIR, false);
@@ -118,7 +256,7 @@ public class ChoreographyServiceImpl implements IChoreographyService {
 		
 		for(String c : children) {
 			Deployment dep = this.getDeploymentById(c);
-			if(dep != null && PermissionManager.checkAccountClientPermission(dep.getClientId())) {
+			if(dep != null && PermissionManager.isOwner(dep.getClientId())) {
 				result.add(dep);
 			}
 		}
@@ -135,7 +273,7 @@ public class ChoreographyServiceImpl implements IChoreographyService {
 	}
 
 	@Override
-	@SMethod(perType=true,needLogin=true,maxSpeed=5,maxPacketSize=256)
+	@SMethod(perType=false,needLogin=true,maxSpeed=5,maxPacketSize=256)
 	public Resp<Boolean> deleteDeployment(String id) {
 		Resp<Boolean> resp = new Resp<>(0);
 		
@@ -146,7 +284,7 @@ public class ChoreographyServiceImpl implements IChoreographyService {
 			return resp;
 		}
 		
-		if(!PermissionManager.checkAccountClientPermission(dep.getClientId())) {
+		if(!PermissionManager.isOwner(dep.getClientId())) {
 			ActInfo ai = JMicroContext.get().getAccount();
 			String msg = "";
 			
@@ -167,9 +305,9 @@ public class ChoreographyServiceImpl implements IChoreographyService {
 	}
 
 	@Override
-	@SMethod(perType=true,needLogin=true,maxSpeed=5,maxPacketSize=8092)
-	public Resp<Boolean> updateDeployment(Deployment dep) {
-		Resp<Boolean> resp = new Resp<>(0);
+	@SMethod(perType=false,needLogin=true,maxSpeed=5,maxPacketSize=8092,logLevel=MC.LOG_INFO)
+	public Resp<Deployment> updateDeployment(Deployment dep) {
+		Resp<Deployment> resp = new Resp<>(0);
 		
 		Deployment d = this.getDeploymentById(dep.getId());
 		if(d == null) {
@@ -178,15 +316,23 @@ public class ChoreographyServiceImpl implements IChoreographyService {
 			return resp;
 		}
 		
-		if(!PermissionManager.checkAccountClientPermission(d.getClientId())) {
-			ActInfo ai = JMicroContext.get().getAccount();
+		ActInfo ai = JMicroContext.get().getAccount();
+		
+		if(ai.isGuest() && !Utils.isEmpty(dep.getArgs())) {
+			String msg = "Guest account deployment cannot contain any args!";
+			logger.error(msg);
+			resp.setCode(1);
+			resp.setMsg(msg);
+			return resp;
+		}
+		
+		if(ai.isGuest() && dep.getStatus() == Deployment.STATUS_CHECK) {
+			dep.setStatus(Deployment.STATUS_DRAFT);
+		}
+		
+		if(!PermissionManager.isOwner(d.getClientId())) {
 			String msg = "";
-			
-			if(ai != null) {
-				msg += ai.getActName() + " has not permission to update deployment: " + dep.toString(); 
-			} else {
-				msg += "No login account to update deployment: " + dep.toString(); 
-			}
+			msg += ai.getActName() + " has not permission to update deployment: " + dep.toString(); 
 			LG.log(MC.LOG_ERROR, TAG,msg);
 			logger.warn(msg);
 			resp.setCode(1);
@@ -194,6 +340,21 @@ public class ChoreographyServiceImpl implements IChoreographyService {
 			return resp;
 		}
 		
+		if(dep.getStatus() == Deployment.STATUS_ENABLE) {
+			List<Deployment> l = this.getDeploymentList().getData();
+			long ecnt = l.stream().filter(e -> {return e.getClientId() == dep.getClientId() && e.getStatus() == Deployment.STATUS_ENABLE;}).count();
+			if(ai.isGuest() && ecnt >= 1) {
+				String msg =  "Guest ID ["+dep.getClientId()+"] enable deployment count is 1 pls regist normal account if you want more";
+				resp.setCode(1);
+				resp.setMsg(msg);
+				return resp;
+			}else if(ecnt >= 3) {
+				String msg = "Client ID ["+dep.getClientId()+"] max enable deployment count is 3, pls contact admin if you want more";
+				resp.setCode(1);
+				resp.setMsg(msg);
+				return resp;
+			}
+		}
 		
 		if(StringUtils.isEmpty(dep.getJarFile())) {
 			String msg = "Jar file cannot be null when do update: " +dep.toString();
@@ -203,7 +364,7 @@ public class ChoreographyServiceImpl implements IChoreographyService {
 			return resp;
 		}
 		
-		if(!dep.getJarFile().equals(d.getJarFile())) {
+		/*if(!dep.getJarFile().equals(d.getJarFile())) {
 			//更新了JarFile，判断更新的JAR是否存在
 			if(!checkPackageResource(dep.getJarFile())) {
 				String msg = "Jar file cannot not found: " +dep.getJarFile();
@@ -212,40 +373,52 @@ public class ChoreographyServiceImpl implements IChoreographyService {
 				resp.setMsg(msg);
 				return resp;
 			}
+		}*/
+		
+		Map<String, String> params = IAssignStrategy.parseArgs(dep.getArgs());
+		if(dep.getStatus() == Deployment.STATUS_ENABLE && !PermissionManager.isCurAdmin()) {
+			//非Admin添加的部署需要严格验证参数
+			checkNonAdminArgs(dep,params);
 		}
+		
+		if(dep.getStatus() == Deployment.STATUS_ENABLE) {
+			setEnableDepArgs(params,dep);
+		}
+		
 		dep.setClientId(d.getClientId());
 		
 		String data = JsonUtils.getIns().toJson(dep);
-		LG.log(MC.LOG_INFO, TAG,data);
+		LG.log(MC.LOG_INFO, TAG,"Update: "+data);
 		op.setData(ChoyConstants.DEP_DIR+"/"+dep.getId(), data);
+		resp.setData(dep);
 		return resp;
 	}
 	
 	@Override
-	@SMethod(perType=true,needLogin=true,maxSpeed=5,maxPacketSize=256)
+	@SMethod(perType=false,needLogin=true,maxSpeed=5,maxPacketSize=256)
 	public Resp<List<ProcessInfo>> getProcessInstanceList(boolean all) {
 		Resp<List<ProcessInfo>> resp = new Resp<>(0);
 		Set<ProcessInfo> set = this.insManager.getProcesses(all);
-		 if(set == null || set.isEmpty()) {
-			 return resp;
-		 }
-		 List<ProcessInfo> result = new ArrayList<>();
-		 for(ProcessInfo pi : set) {
-			 if(PermissionManager.checkAccountClientPermission(pi.getClientId())) {
-				 result.add(pi);
-			 }
-		 }
-		 
-		result.sort((o1,o2)->{
-			return o1.getId() > o2.getId() ? 1 : o1.getId() == o2.getId() ? 0 :-1;
+		if (set == null || set.isEmpty()) {
+			return resp;
+		}
+
+		List<ProcessInfo> result = new ArrayList<>();
+		for (ProcessInfo pi : set) {
+			if (PermissionManager.isOwner(pi.getClientId())) {
+				result.add(pi);
+			}
+		}
+
+		result.sort((o1, o2) -> {
+			return o1.getId() > o2.getId() ? 1 : o1.getId() == o2.getId() ? 0 : -1;
 		});
 		resp.setData(result);
 		return resp;
-		
 	}
 	
 	@Override
-	@SMethod(perType=true,needLogin=true,maxSpeed=5,maxPacketSize=8194)
+	@SMethod(perType=false,needLogin=true,maxSpeed=5,maxPacketSize=8194)
 	public Resp<Boolean> updateProcess(ProcessInfo updatePi) {
 		Resp<Boolean> resp = new Resp<>(0);
 		ProcessInfo pi = this.insManager.getProcessesByInsId(updatePi.getId(), true);
@@ -254,7 +427,7 @@ public class ChoreographyServiceImpl implements IChoreographyService {
 			return resp;
 		}
 		
-		if(PermissionManager.checkAccountClientPermission(pi.getClientId())) {
+		if(PermissionManager.isOwner(pi.getClientId())) {
 			String p = ChoyConstants.INS_ROOT + "/" + pi.getId();
 			pi.setLogLevel(updatePi.getLogLevel());
 			String data = JsonUtils.getIns().toJson(pi);
@@ -270,7 +443,7 @@ public class ChoreographyServiceImpl implements IChoreographyService {
 			if(ai != null) {
 				msg = "No permission to update process [" + ai.getActName() + "], Process ID: " + updatePi.getId();
 			}else {
-				msg = "Nor login account to update process ID: " + updatePi.getId();
+				msg = "Not login account to update process ID: " + updatePi.getId();
 			}
 			logger.warn(msg);
 			LG.log(MC.LOG_WARN, TAG,msg);
@@ -291,7 +464,7 @@ public class ChoreographyServiceImpl implements IChoreographyService {
 			return resp;
 		}
 		
-		if(PermissionManager.checkAccountClientPermission(pi.getClientId())) {
+		if(PermissionManager.isOwner(pi.getClientId())) {
 			String p = ChoyConstants.INS_ROOT + "/" + pi.getId();
 			pi.setActive(false);
 			String data = JsonUtils.getIns().toJson(pi);
@@ -425,7 +598,7 @@ public class ChoreographyServiceImpl implements IChoreographyService {
 	}
 
 	@Override
-	@SMethod(perType=true,needLogin=true,maxSpeed=5,maxPacketSize=256)
+	@SMethod(perType=false,needLogin=true,maxSpeed=5,maxPacketSize=256)
 	public Resp<String> changeAgentState(String agentId) {
 		Resp<String> resp = new Resp<>(0);
 		
@@ -476,23 +649,4 @@ public class ChoreographyServiceImpl implements IChoreographyService {
 		return JsonUtils.getIns().fromJson(data, Deployment.class);
 	}
 	
-	private boolean checkPackageResource(String name) {
-		Iterator<PackageResource> ite = this.packageResources.iterator();
-		while (ite.hasNext()) {
-			if (name.equals(ite.next().getName())) {
-				return true;
-			}
-		}
-
-		List<PackageResource> news = respo.getResourceList(true);
-		this.packageResources.addAll(news);
-		Iterator<PackageResource> it = this.packageResources.iterator();
-		while (it.hasNext()) {
-			if (name.equals(it.next().getName())) {
-				return true;
-			}
-		}
-		return false;
-	}
-
 }

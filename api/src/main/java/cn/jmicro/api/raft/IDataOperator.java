@@ -65,7 +65,7 @@ public interface IDataOperator {
 	
 	void deleteNode(String path);
 	
-	void init();
+	void init0();
 	
 	void objectFactoryStarted(IObjectFactory of);
 

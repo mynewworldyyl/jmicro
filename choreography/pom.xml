@@ -2,10 +2,10 @@
     <modelVersion>4.0.0</modelVersion>
     <parent>
          <groupId>cn.jmicro</groupId>
-		 <artifactId>parent</artifactId>
+		 <artifactId>jmicro.parent</artifactId>
 		 <version>0.0.2-SNAPSHOT</version>
     </parent>
-    <artifactId>choreography</artifactId>
+    <artifactId>jmicro.choreography</artifactId>
     <packaging>pom</packaging>
     <name>${project.artifactId}</name>
     <description>jmicro choreography</description>
@@ -22,7 +22,7 @@
     <dependencies>
     	<dependency>
 			<groupId>cn.jmicro</groupId>
-			<artifactId>resource</artifactId>
+			<artifactId>jmicro.resource</artifactId>
 		</dependency>
     </dependencies>
 </project>

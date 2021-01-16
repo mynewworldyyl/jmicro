@@ -137,7 +137,7 @@ public class ApiRawRequestMessageHandler implements IMessageHandler{
 			} else {
 				req = new ApiRequest();
 				ji = new JDataInput((ByteBuffer)msg.getPayload());
-				req.setReqId(ji.readLong());
+				req.setReqId(ji.readUsignedLong());
 				//req.setServiceName(ji.readUTF());
 				//req.setNamespace(ji.readUTF());
 				//req.setVersion(ji.readUTF());

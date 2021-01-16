@@ -138,7 +138,8 @@ public class LogMonitorClient {
 				Config.getInstanceName()+"_MonitorClientStatuCheck",group);
 		
 		if(sl.hashServer() && !Config.isClientOnly()) {
-			monitorServiceItem = sl.createSrvItem(IMonitorAdapter.class, Config.getInstanceName()+"."+group, "0.0.1", IMonitorAdapter.class.getName());
+			monitorServiceItem = sl.createSrvItem(IMonitorAdapter.class, Config.getInstanceName()+"."+group, "0.0.1",
+					IMonitorAdapter.class.getName(),Config.getClientId());
 			of.regist("LogMonitorClientStatuCheckAdapter", statusMonitorAdapter);
 		}
 		

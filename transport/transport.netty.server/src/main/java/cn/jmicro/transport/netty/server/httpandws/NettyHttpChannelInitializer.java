@@ -60,7 +60,8 @@ public class NettyHttpChannelInitializer extends ChannelInitializer<SocketChanne
          //将一个Http的消息组装成一个完成的HttpRequest或者HttpResponse
         pipeline.addLast("httpObjectAggregator", new HttpObjectAggregator(8192));
         
-        pipeline.addLast("binWebSocketServerProtocolHandler", new WebSocketServerProtocolHandler(binaryWebsocketContextPath));
+        pipeline.addLast("binWebSocketServerProtocolHandler", 
+        		new WebSocketServerProtocolHandler(binaryWebsocketContextPath,null,false,65536));
         pipeline.addLast("binWebSocketWsHandler", binWsHandler);
         
       /*  pipeline.addLast("webSocketServerProtocolHandler", new WebSocketServerProtocolHandler(textWebsocketContextPath));

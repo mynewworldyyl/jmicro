@@ -2,17 +2,17 @@
     <modelVersion>4.0.0</modelVersion>
     <parent>
          <groupId>cn.jmicro</groupId>
-		 <artifactId>parent</artifactId>
+		 <artifactId>jmicro.parent</artifactId>
 		 <version>0.0.2-SNAPSHOT</version>
     </parent>
-    <artifactId>test</artifactId>
+    <artifactId>jmicro.test</artifactId>
     <packaging>jar</packaging>
     <name>${project.artifactId}</name>
     <description>unit test Module</description>
     <dependencies>
          <dependency>
             <groupId>cn.jmicro</groupId>
-            <artifactId>api</artifactId>
+            <artifactId>jmicro.api</artifactId>
         </dependency>
 		 <dependency>
             <groupId>junit</groupId>

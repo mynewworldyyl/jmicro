@@ -30,7 +30,8 @@ public class TestDynamicRegistryService extends JMicroBaseTestCase{
 		of.regist(IDynamicInterface.class, r);
 		
 		ServiceLoader sl = of.get(ServiceLoader.class);
-		ServiceItem si = sl.createSrvItem(IDynamicInterface.class.getName(), Config.getInstanceName()+"_DynamicRegistryService", "0.0.1", IDynamicInterface.class.getName());
+		ServiceItem si = sl.createSrvItem(IDynamicInterface.class.getName(), Config.getInstanceName()+"_DynamicRegistryService", "0.0.1",
+				IDynamicInterface.class.getName(),Config.getClientId());
 		
 		ServiceMethod sm = sl.createSrvMethod(si, "run", new Class[] {String.class});
 		sm.setMonitorEnable(1);

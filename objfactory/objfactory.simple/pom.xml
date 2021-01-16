@@ -2,10 +2,10 @@
     <modelVersion>4.0.0</modelVersion>
     <parent>
          <groupId>cn.jmicro</groupId>
-		 <artifactId>objfactory.parent</artifactId>
+		 <artifactId>jmicro.objfactory.parent</artifactId>
 		 <version>0.0.2-SNAPSHOT</version>
     </parent>
-    <artifactId>objfactory.simple</artifactId>
+    <artifactId>jmicro.objfactory.simple</artifactId>
     <packaging>jar</packaging>
     <name>${project.artifactId}</name>
     <description>object factory Implement</description>
@@ -13,7 +13,7 @@
     <dependencies>
         <dependency>
 			 <groupId>cn.jmicro</groupId>
-			 <artifactId>api</artifactId>
+			 <artifactId>jmicro.api</artifactId>
         </dependency>
     </dependencies>
    

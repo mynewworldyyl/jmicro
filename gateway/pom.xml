@@ -2,21 +2,21 @@
     <modelVersion>4.0.0</modelVersion>
     <parent>
          <groupId>cn.jmicro</groupId>
-		 <artifactId>parent</artifactId>
+		 <artifactId>jmicro.parent</artifactId>
 		 <version>0.0.2-SNAPSHOT</version>
     </parent>
-    <artifactId>gateway</artifactId>
+    <artifactId>jmicro.gateway</artifactId>
     <packaging>jar</packaging>
     <name>${project.artifactId}</name>
     <description>jmicro gateway Module</description>
 	<dependencies>
 		<dependency>
 			 <groupId>cn.jmicro</groupId>
-			 <artifactId>api</artifactId>
+			 <artifactId>jmicro.api</artifactId>
 	    </dependency>
 	     <dependency>
 			 <groupId>cn.jmicro</groupId>
-			 <artifactId>redis</artifactId>
+			 <artifactId>jmicro.redis</artifactId>
 	    </dependency>
 	</dependencies>
    

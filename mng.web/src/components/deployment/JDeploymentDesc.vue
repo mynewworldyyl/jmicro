@@ -1,13 +1,14 @@
 <template>
     <div class="JDeploymentDesc">
         <table v-if="isLogin" class="configItemTalbe" width="99%">
-            <thead><tr><td>ID</td><td style="width:390px;">{{'jarFile'|i18n}}</td><td>{{'Enable'|i18n}}</td>
+            <thead><tr><td>ID</td><td style="width:390px;">{{'jarFile'|i18n}}</td><td>{{'Status'|i18n}}</td>
                 <td style="width:80px;">{{'instanceNum'|i18n}}</td><td>{{'Stragety'|i18n}}</td>
+                <td>{{'ClientId'|i18n}}</td>
             <!--<td>STRATEGY ARGS</td><td>ARGS</td>--><td style="width:110px">{{'Operation'|i18n}}</td></tr>
             </thead>
             <tr v-for="c in deployList" :key="c.id">
-                <td>{{c.id}}</td><td>{{c.jarFile}}</td><td>{{c.enable}}</td><td>{{c.instanceNum}}</td>
-                <td>{{c.assignStrategy}}</td><!--<td>{{c.strategyArgs}}</td><td>{{c.args}}</td>-->
+                <td>{{c.id}}</td><td>{{c.jarFile}}</td><td>{{ statusMap[c.status] | i18n }}</td><td>{{c.instanceNum}}</td>
+                <td>{{c.assignStrategy}}</td><td>{{c.clientId}}</td><!--<td>{{c.strategyArgs}}</td><td>{{c.args}}</td>-->
                 <td>&nbsp;
                     <a v-if="isLogin" @click="viewDetail(c)">{{'Detail'|i18n}}</a>&nbsp;&nbsp;
                     <a v-if="isLogin" @click="updateDeployment(c)">{{'Update'|i18n}}</a>&nbsp;&nbsp;
@@ -21,8 +22,13 @@
         <Drawer  v-if="isLogin && deployment"  v-model="drawer.drawerStatus" :closable="false" placement="right" :transfer="true"
                  :draggable="true" :scrollable="true" width="50" @close="closeDrawer()">
             <div><i-button v-if="drawerModel!=3" @click="onAddOk()">{{'Confirm'|i18n}}</i-button></div>
-            <Checkbox :disabled="drawerModel==3" v-model="deployment.enable">{{'Enable'|i18n}}</Checkbox>
-            <br/>
+
+           <!-- <Checkbox :disabled="drawerModel==3" v-model="deployment.enable">{{'Enable'|i18n}}</Checkbox>-->
+            <Label for="status">{{"Status"|i18n}}</Label>
+            <Select id="status" ref="levelSelect" :label-in-value="true" v-model="deployment.status">
+                <Option :value="k" v-for="(v,k) in statusMap" v-bind:key="k">{{v}}</Option>
+            </Select>
+
             <div style="color:red">{{errMsg}}</div>
 
             <Label for="jarFile">JAR FILE</Label>
@@ -41,6 +47,13 @@
             <Label for="args">ARGS</Label>
             <Input :disabled="drawerModel==3" id="args"  class='textarea' :rows="5" :autosize="{maxRows:3,minRows: 3}"
                    type="textarea" v-model="deployment.args"/>
+
+            <Label for="desc">{{"Desc"|i18n}}</Label>
+            <Input id="desc"  class='textarea' :rows="5" :autosize="{maxRows:3,minRows: 3}"
+                   type="textarea" v-model="deployment.desc"/>
+
+            <Label for="clientId">{{"ClientId"|i18n}}</Label>
+            <Input id="clientId" :disabled="true"  v-model="deployment.clientId"/>
         </Drawer>
 
     </div>
@@ -53,6 +66,7 @@
         name: 'JDeploymentDesc',
         data () {
             return {
+                statusMap:{'1':'Draft','2':'Enable','3':"Check"},
                 deployList:[],
                 errMsg:'',
                 drawerModel:0,//0无效，1:新增，2：更新，3：查看明细
@@ -63,7 +77,8 @@
                     jarFile:'',
                     instanceNum:1,
                     args:'',
-                    enable:false
+                    status:'1',
+                    desc:'',
                 },
 
                 drawer: {
@@ -78,6 +93,7 @@
             viewDetail(pi) {
                 this.drawerModel = 3;
                 this.deployment = pi;
+                pi.status = pi.status +'';
                 this.drawer.drawerStatus = true;
             },
 
@@ -95,6 +111,7 @@
 
             updateDeployment(dep) {
                 this.deployment = dep;
+                dep.status = dep.status +'';
                 this.drawer.drawerStatus = true;
                 this.drawerModel = 2;
             },
@@ -105,7 +122,9 @@
                     jarFile:'',
                     instanceNum:1,
                     args:'',
-                    enable:false
+                    status:'1',
+                    desc:'',
+                    clientId:window.jm.rpc.actInfo.id
                 }
             },
 
@@ -126,9 +145,15 @@
 
                 if(self.drawerModel == 2) {
                     window.jm.mng.choy.updateDeployment(self.deployment).then((resp)=>{
-                        if( resp.code != 0 || !resp.data ) {
+                        if( resp.code == 0 ) {
+                            self.deployment.status = resp.data.status;
+                            self.deployment.desc = resp.data.desc;
+                            self.deployment.args = resp.data.args;
+                            self.errMsg = '';
                             self.$Message.success(resp.msg);
-                            this.closeDrawer();
+                            self.closeDrawer();
+                        }else {
+                            self.errMsg = resp.msg;
                         }
                     }).catch((err)=>{
                         window.console.log(err);
@@ -137,9 +162,11 @@
                     window.jm.mng.choy.addDeployment(self.deployment).then((resp)=>{
                         if( resp.code == 0 ) {
                             self.deployList.push(resp.data);
-                            this.closeDrawer();
+                            self.closeDrawer();
+                            self.errMsg = '';
                         } else {
-                            self.$Message.error(resp.msg);
+                            //self.$Message.error(resp.msg);
+                            self.errMsg = resp.msg;
                         }
                     }).catch((err)=>{
                         window.console.log(err);
@@ -183,7 +210,7 @@
                         self.$Message.error(resp.msg);
                         return;
                     }
-                    this.deployList = resp.data;
+                    self.deployList = resp.data;
                 }).catch((err)=>{
                     window.console.log(err);
                     if(err && err.errorCode && err.msg) {

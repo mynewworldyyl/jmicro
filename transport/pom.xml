@@ -2,10 +2,10 @@
     <modelVersion>4.0.0</modelVersion>
     <parent>
          <groupId>cn.jmicro</groupId>
-		 <artifactId>parent</artifactId>
+		 <artifactId>jmicro.parent</artifactId>
 		 <version>0.0.2-SNAPSHOT</version>
     </parent>
-    <artifactId>transport.parent</artifactId>
+    <artifactId>jmicro.transport.parent</artifactId>
     <packaging>pom</packaging>
     <name>${project.artifactId}</name>
     <description>jmicro transport parent</description>

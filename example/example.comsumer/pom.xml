@@ -4,10 +4,10 @@
 	<modelVersion>4.0.0</modelVersion>
 	<parent>
          <groupId>cn.jmicro</groupId>
-		 <artifactId>example</artifactId>
+		 <artifactId>jmicro.example</artifactId>
 		 <version>0.0.2-SNAPSHOT</version>
     </parent>
-	<artifactId>example.comsumer</artifactId>
+	<artifactId>jmicro.example.comsumer</artifactId>
 	<packaging>jar</packaging>
 	<name>${project.artifactId}</name>
 	<description>Jmicro example service comsumer for testing</description>
@@ -15,17 +15,17 @@
 	<dependencies>
 		 <dependency>
 			<groupId>cn.jmicro</groupId>
-			<artifactId>all</artifactId>
+			<artifactId>jmicro.all</artifactId>
 		</dependency>
 		
 		 <dependency>
 			<groupId>cn.jmicro</groupId>
-			<artifactId>gateway.client</artifactId>
+			<artifactId>jmicro.gateway.client</artifactId>
 		</dependency>
 		
 		<dependency>
 			<groupId>cn.jmicro</groupId>
-			<artifactId>example.api</artifactId>
+			<artifactId>jmicro.example.api</artifactId>
 			<version>${project.version}</version>
 		</dependency>
 		
@@ -60,42 +60,15 @@
         </dependency>
         <dependency>
 			<groupId>cn.jmicro</groupId>
-			<artifactId>agent</artifactId>
+			<artifactId>jmicro.agent</artifactId>
 			<version>${project.version}</version>
 			<scope>test</scope>
 		</dependency>
 		<dependency>
 			<groupId>cn.jmicro</groupId>
-			<artifactId>choreography.api</artifactId>
+			<artifactId>jmicro.choreography.api</artifactId>
 		</dependency>
 		
 	</dependencies>
-
-	<build>
-		<plugins>
-			<plugin>
-				<artifactId>maven-assembly-plugin</artifactId>
-				<configuration>
-					<archive>
-						<manifest>
-							<mainClass>cn.jmicro.example.comsumer.PressureTest</mainClass>
-						</manifest>
-					</archive>
-					<descriptorRefs>
-						<descriptorRef>jar-with-dependencies</descriptorRef>
-					</descriptorRefs>
-				</configuration>
-				<executions>
-					<execution>
-						<id>make-assembly</id>
-						<phase>package</phase>
-						<goals>
-							<goal>single</goal>
-						</goals>
-					</execution>
-				</executions>
-			</plugin>
-		</plugins>
-	</build>
 
 </project>

@@ -2,10 +2,10 @@
     <modelVersion>4.0.0</modelVersion>
     <parent>
          <groupId>cn.jmicro</groupId>
-		 <artifactId>transport.parent</artifactId>
+		 <artifactId>jmicro.transport.parent</artifactId>
 		 <version>0.0.2-SNAPSHOT</version>
     </parent>
-    <artifactId>transport.netty.server</artifactId>
+    <artifactId>jmicro.transport.netty.server</artifactId>
     <packaging>jar</packaging>
     <name>${project.artifactId}</name>
     <description>Transport netty server implements</description>
@@ -15,15 +15,15 @@
     <dependencies>
         <dependency>
 			 <groupId>cn.jmicro</groupId>
-			 <artifactId>api</artifactId>
+			 <artifactId>jmicro.api</artifactId>
         </dependency>
          <dependency>
 			 <groupId>cn.jmicro</groupId>
-			 <artifactId>common</artifactId>
+			 <artifactId>jmicro.common</artifactId>
         </dependency>
          <dependency>
 			 <groupId>cn.jmicro</groupId>
-			 <artifactId>server</artifactId>
+			 <artifactId>jmicro.server</artifactId>
         </dependency>
 		<dependency>
 		    <groupId>io.netty</groupId>

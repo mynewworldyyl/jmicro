@@ -2,33 +2,33 @@
     <modelVersion>4.0.0</modelVersion>
     <parent>
          <groupId>cn.jmicro</groupId>
-		 <artifactId>parent</artifactId>
+		 <artifactId>jmicro.parent</artifactId>
 		 <version>0.0.2-SNAPSHOT</version>
     </parent>
-    <artifactId>mng</artifactId>
+    <artifactId>jmicro.mng</artifactId>
     <packaging>jar</packaging>
     <name>${project.artifactId}</name>
     <description>managerment Module</description>
     <dependencies>
          <dependency>
             <groupId>cn.jmicro</groupId>
-            <artifactId>api</artifactId>
+            <artifactId>jmicro.api</artifactId>
         </dependency>
 		 <dependency>
             <groupId>cn.jmicro</groupId>
-            <artifactId>config</artifactId>
+            <artifactId>jmicro.config</artifactId>
         </dependency>
         <dependency>
 			 <groupId>cn.jmicro</groupId>
-			 <artifactId>mongodb</artifactId>
+			 <artifactId>jmicro.mongodb</artifactId>
 	    </dependency>
         <dependency>
             <groupId>cn.jmicro</groupId>
-            <artifactId>redis</artifactId>
+            <artifactId>jmicro.redis</artifactId>
         </dependency>
         <dependency>
             <groupId>cn.jmicro</groupId>
-            <artifactId>choreography.api</artifactId>
+            <artifactId>jmicro.choreography.api</artifactId>
         </dependency>
 		<dependency>
 		    <groupId>com.beust</groupId>

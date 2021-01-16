@@ -1,11 +1,16 @@
 package cn.jmicro.api.security;
 
+import java.util.Collections;
 import java.util.HashSet;
+import java.util.Set;
 
 import cn.jmicro.api.annotation.SO;
+import cn.jmicro.api.monitor.MC;
+import cn.jmicro.common.CommonException;
+import cn.jmicro.common.Utils;
 
 @SO
-public class ActInfo implements Cloneable {
+public class ActInfo {
 
 	public static final byte SC_WAIT_ACTIVE = 1;
 	
@@ -47,11 +52,11 @@ public class ActInfo implements Cloneable {
 	//登陆次数
 	private long loginNum;
 	
-	private boolean isAdmin = false;
+	private Boolean isAdmin;
 	
-	private boolean guest = true;
+	private Boolean guest;
 	
-	private HashSet<String> pers = new HashSet<>();
+	private Set<String> pers = new HashSet<>();
 	
 	public ActInfo() {};
 	
@@ -70,12 +75,18 @@ public class ActInfo implements Cloneable {
 		return actName;
 	}
 	public void setActName(String actName) {
+		if(this.actName != null && !Utils.formSystemPackagePermission(3)) {
+			 throw new CommonException(MC.MT_ACT_PERMISSION_REJECT,"非法设置账号名称");
+		 }
 		this.actName = actName;
 	}
 	public String getLoginKey() {
 		return loginKey;
 	}
 	public void setLoginKey(String loginKey) {
+		if(this.loginKey != null && !Utils.formSystemPackagePermission(3)) {
+			 throw new CommonException(MC.MT_ACT_PERMISSION_REJECT,"非法设置登陆键");
+		 }
 		this.loginKey = loginKey;
 	}
 
@@ -84,14 +95,29 @@ public class ActInfo implements Cloneable {
 	}
 
 	public void setGuest(boolean guest) {
+		if(this.guest != null && !Utils.formSystemPackagePermission(3)) {
+			 throw new CommonException(MC.MT_ACT_PERMISSION_REJECT,"非法设置账号游客标识");
+		 }
 		this.guest = guest;
 	}
 
 	public String getPwd() {
+		if(!Utils.formSystemPackagePermission(3)) {
+			StackTraceElement[] ses = Thread.currentThread().getStackTrace();
+			for(StackTraceElement se:ses ) {
+				if(se.getClassName().startsWith("cn.jmicro.center.SecurityPersistImpl")) {
+					return pwd;
+				}
+			}
+			 throw new CommonException(MC.MT_ACT_PERMISSION_REJECT,"非法获取账号密码");
+		 }
 		return pwd;
 	}
 
 	public void setPwd(String pwd) {
+		if(this.pwd != null && !Utils.formSystemPackagePermission(3)) {
+			 throw new CommonException(MC.MT_ACT_PERMISSION_REJECT,"非法设置账号密码");
+		 }
 		this.pwd = pwd;
 	}
 
@@ -112,11 +138,18 @@ public class ActInfo implements Cloneable {
 		return ai;
 	}
 
-	public HashSet<String> getPers() {
-		return pers;
+	public Set<String> getPers() {
+		if(!Utils.formSystemPackagePermission(3)) {
+			 return Collections.unmodifiableSet(this.pers);
+		 }else {
+			 return pers;
+		 }
 	}
 
-	public void setPers(HashSet<String> pers) {
+	public void setPers(Set<String> pers) {
+		if(!this.pers.isEmpty() && !Utils.formSystemPackagePermission(3)) {
+			 throw new CommonException(MC.MT_ACT_PERMISSION_REJECT,"非法设置账号权限");
+		 }
 		this.pers = pers;
 	}
 
@@ -133,6 +166,9 @@ public class ActInfo implements Cloneable {
 	}
 
 	public void setStatuCode(byte statuCode) {
+		if(this.statuCode != 0 && !Utils.formSystemPackagePermission(3)) {
+			 throw new CommonException(MC.MT_ACT_PERMISSION_REJECT,"非法设置账号状态码");
+		 }
 		this.statuCode = statuCode;
 	}
 
@@ -149,6 +185,9 @@ public class ActInfo implements Cloneable {
 	}
 
 	public void setToken(String token) {
+		if(this.token != null && !Utils.formSystemPackagePermission(3)) {
+			 throw new CommonException(MC.MT_ACT_PERMISSION_REJECT,"非法设置Token");
+		 }
 		this.token = token;
 	}
 
@@ -157,6 +196,9 @@ public class ActInfo implements Cloneable {
 	}
 
 	public void setTokenType(byte tokenType) {
+		if(this.tokenType != 0 && !Utils.formSystemPackagePermission(3)) {
+			 throw new CommonException(MC.MT_ACT_PERMISSION_REJECT,"非法设置Token类型");
+		 }
 		this.tokenType = tokenType;
 	}
 
@@ -173,6 +215,9 @@ public class ActInfo implements Cloneable {
 	}
 
 	public void setId(int id) {
+		if(this.id != 0 && !Utils.formSystemPackagePermission(3)) {
+			 throw new CommonException(MC.MT_ACT_PERMISSION_REJECT,"非法设置账号ID");
+		}
 		this.id = id;
 	}
 
@@ -197,6 +242,9 @@ public class ActInfo implements Cloneable {
 	}
 
 	public void setAdmin(boolean isAdmin) {
+		 if( this.isAdmin != null && !Utils.formSystemPackagePermission(3)) {
+			 throw new CommonException(MC.MT_ACT_PERMISSION_REJECT,"非法设置Admin状态");
+		 }
 		this.isAdmin = isAdmin;
 	}
 	

@@ -2,17 +2,17 @@
     <modelVersion>4.0.0</modelVersion>
     <parent>
          <groupId>cn.jmicro</groupId>
-		 <artifactId>parent</artifactId>
+		 <artifactId>jmicro.parent</artifactId>
 		 <version>0.0.2-SNAPSHOT</version>
     </parent>
-    <artifactId>resource</artifactId>
+    <artifactId>jmicro.resource</artifactId>
     <packaging>jar</packaging>
     <name>${project.artifactId}</name>
     <description>common resource module</description>
     <dependencies>
          <dependency>
             <groupId>cn.jmicro</groupId>
-            <artifactId>api</artifactId>
+            <artifactId>jmicro.api</artifactId>
         </dependency>
         
     </dependencies>

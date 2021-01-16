@@ -5,11 +5,11 @@
 	
 	<parent>
          <groupId>cn.jmicro</groupId>
-		 <artifactId>parent</artifactId>
+		 <artifactId>jmicro.parent</artifactId>
 		 <version>0.0.2-SNAPSHOT</version>
     </parent>
 
-	<artifactId>codegenerator</artifactId>
+	<artifactId>jmicro.codegenerator</artifactId>
 	<packaging>jar</packaging>
 	<name>${project.artifactId}</name>
 	<description>codegenerator Module</description>

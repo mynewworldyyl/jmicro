@@ -2,10 +2,10 @@
     <modelVersion>4.0.0</modelVersion>
     <parent>
          <groupId>cn.jmicro</groupId>
-		 <artifactId>parent</artifactId>
+		 <artifactId>jmicro.parent</artifactId>
 		 <version>0.0.2-SNAPSHOT</version>
     </parent>
-    <artifactId>api</artifactId>
+    <artifactId>jmicro.api</artifactId>
     <packaging>jar</packaging>
     <name>${project.artifactId}</name>
     <description>Jmicro API Module</description>
@@ -13,11 +13,11 @@
     <dependencies>
      	<dependency>
         	<groupId>cn.jmicro</groupId>
-			<artifactId>apics</artifactId>
+			<artifactId>jmicro.apics</artifactId>
        </dependency>
        <dependency>
         	<groupId>cn.jmicro</groupId>
-			<artifactId>common</artifactId>
+			<artifactId>jmicro.common</artifactId>
        </dependency>
        <dependency>
 			<groupId>org.slf4j</groupId>

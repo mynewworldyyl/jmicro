@@ -4,10 +4,10 @@
 	<modelVersion>4.0.0</modelVersion>
 	<parent>
 		<groupId>cn.jmicro</groupId>
-		<artifactId>parent</artifactId>
+		<artifactId>jmicro.parent</artifactId>
 		<version>0.0.2-SNAPSHOT</version>
 	</parent>
-	<artifactId>all</artifactId>
+	<artifactId>jmicro.all</artifactId>
 	<packaging>jar</packaging>
 	<name>${project.artifactId}</name>
 	<description>build Module</description>
@@ -15,39 +15,39 @@
 	<dependencies>
 		<dependency>
 			<groupId>cn.jmicro</groupId>
-			<artifactId>classloader</artifactId>
+			<artifactId>jmicro.classloader</artifactId>
 		</dependency>
 		<dependency>
 			<groupId>cn.jmicro</groupId>
-			<artifactId>client</artifactId>
+			<artifactId>jmicro.client</artifactId>
 		</dependency>
 		<dependency>
 			<groupId>cn.jmicro</groupId>
-			<artifactId>objfactory.simple</artifactId>
+			<artifactId>jmicro.objfactory.simple</artifactId>
 		</dependency>
 		<dependency>
 			<groupId>cn.jmicro</groupId>
-			<artifactId>idgenerator</artifactId>
+			<artifactId>jmicro.idgenerator</artifactId>
 		</dependency>
 		 <dependency>
 			 <groupId>cn.jmicro</groupId>
-			 <artifactId>transport.netty.client</artifactId>
+			 <artifactId>jmicro.transport.netty.client</artifactId>
 	    </dependency>
 	     <dependency>
 			 <groupId>cn.jmicro</groupId>
-			 <artifactId>transport.netty.server</artifactId>
+			 <artifactId>jmicro.transport.netty.server</artifactId>
 	    </dependency>
 
 		<!-- 
 		<dependency>
 			<groupId>cn.jmicro</groupId>
-			<artifactId>gateway.client</artifactId>
+			<artifactId>jmicro.gateway.client</artifactId>
 		</dependency> 
 		-->
 		
 		<dependency>
 			<groupId>cn.jmicro</groupId>
-			<artifactId>test</artifactId>
+			<artifactId>jmicro.test</artifactId>
 		</dependency>
 		
 	</dependencies>
@@ -72,21 +72,21 @@
 								<createDependencyReducedPom>true</createDependencyReducedPom>
 								<artifactSet>
 									<includes>
-										<include>cn.jmicro:common</include>
-										<include>cn.jmicro:api</include>
-										<include>cn.jmicro:server</include>
-										<include>cn.jmicro:client</include>
-										<include>cn.jmicro:idgenerator</include>
-										<include>cn.jmicro:test</include>
-										<include>cn.jmicro:objfactory.simple</include>
-										<include>cn.jmicro:classloader</include>
-										<include>cn.jmicro:redis</include>
-										<include>cn.jmicro:limit</include>
-										<include>cn.jmicro:transport.netty.server</include>
-										<include>cn.jmicro:transport.netty.client</include>
-										<include>cn.jmicro:config</include>
-										<include>cn.jmicro:zk</include>
-										<!-- <include>cn.jmicro:gateway.client</include> -->
+										<include>cn.jmicro:jmicro.common</include>
+										<include>cn.jmicro:jmicro.api</include>
+										<include>cn.jmicro:jmicro.server</include>
+										<include>cn.jmicro:jmicro.client</include>
+										<include>cn.jmicro:jmicro.idgenerator</include>
+										<include>cn.jmicro:jmicro.test</include>
+										<include>cn.jmicro:jmicro.objfactory.simple</include>
+										<include>cn.jmicro:jmicro.classloader</include>
+										<include>cn.jmicro:jmicro.redis</include>
+										<include>cn.jmicro:jmicro.limit</include>
+										<include>cn.jmicro:jmicro.transport.netty.server</include>
+										<include>cn.jmicro:jmicro.transport.netty.client</include>
+										<include>cn.jmicro:jmicro.config</include>
+										<include>cn.jmicro:jmicro.zk</include>
+										<!-- <include>cn.jmicro:jmicro.gateway.client</include> -->
 									</includes>
 								</artifactSet>
 								<transformers>

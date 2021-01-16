@@ -41,6 +41,7 @@ import java.util.Set;
 import java.util.regex.Pattern;
 
 import cn.jmicro.common.util.JsonUtils;
+
 /**
  * 
  * @author Yulei Ye
@@ -70,8 +71,8 @@ public class Utils {
 		return false;
 	}
 	
-	public static boolean formSystemPackagePermission() {
-		StackTraceElement se = Thread.currentThread().getStackTrace()[3];
+	public static boolean formSystemPackagePermission(int idx) {
+		StackTraceElement se = Thread.currentThread().getStackTrace()[idx];
 		String dcls = se.getClassName();
 		for(String pname : Constants.SYSTEM_PCK_NAME_PREFIXES) {
 			if(dcls.startsWith(pname)) {

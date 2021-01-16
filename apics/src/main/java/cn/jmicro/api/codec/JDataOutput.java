@@ -80,11 +80,6 @@ public class JDataOutput implements DataOutput {
 		this.writeByte(v ? 1 : 0);
 	}
 	
-	public void writeBoolean(Boolean v) throws IOException {
-		buf = checkCapacity(buf,1);
-		this.writeByte(v ? 1 : 0);
-	}
-
 	@Override
 	public void writeByte(int v) throws IOException {
 		buf = checkCapacity(buf,Byte.BYTES);

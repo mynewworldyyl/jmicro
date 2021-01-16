@@ -16,6 +16,7 @@
  */
 package cn.jmicro.api;
 
+import java.lang.reflect.Field;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Stack;
@@ -28,6 +29,8 @@ import cn.jmicro.api.monitor.LG;
 import cn.jmicro.api.monitor.Linker;
 import cn.jmicro.api.monitor.LogMonitorClient;
 import cn.jmicro.api.monitor.MC;
+import cn.jmicro.api.monitor.MCA;
+import cn.jmicro.api.monitor.MCConfig;
 import cn.jmicro.api.monitor.MRpcLogItem;
 import cn.jmicro.api.monitor.MRpcStatisItem;
 import cn.jmicro.api.monitor.MT;
@@ -40,6 +43,7 @@ import cn.jmicro.api.security.ActInfo;
 import cn.jmicro.api.utils.TimeUtils;
 import cn.jmicro.common.CommonException;
 import cn.jmicro.common.Constants;
+import cn.jmicro.common.Utils;
 import cn.jmicro.common.util.StringUtils;
 
 /**
@@ -99,13 +103,9 @@ public class JMicroContext  {
 	//private final Stack<Map<String,Object>> ctxes = new Stack<>();
 	
 	//当前上下文
-	protected Map<String,Object> curCxt = new HashMap<String,Object>();
+	protected final Map<String,Object> curCxt = new HashMap<String,Object>();
 	
 	private JMicroContext() {}
-	
-	public Map<String,Object> cxtData() {
-		return curCxt;
-	}
 	
 	public MRpcLogItem getMRpcLogItem() {
 		//使用者需要调用isMonitor()或isDebug()判断是否可用状态
@@ -154,6 +154,9 @@ public class JMicroContext  {
 	}
 	
 	public static void remove(){
+		if(!Utils.formSystemPackagePermission(3)) {
+			 throw new CommonException(MC.MT_ACT_PERMISSION_REJECT,"非法操作");
+		}
 		JMicroContext c = cxt.get();
 		if(c != null) {
 			cxt.remove();
@@ -369,6 +372,9 @@ public class JMicroContext  {
 	}
 	
 	public void setAccount(ActInfo act) {
+		 if(!Utils.formSystemPackagePermission(3)) {
+			 throw new CommonException(MC.MT_ACT_PERMISSION_REJECT,"非法设置当前账号");
+		 }
 		 JMicroContext.get().setParam(JMicroContext.LOGIN_ACT, act);
 	}
 	
@@ -458,6 +464,11 @@ public class JMicroContext  {
 		if(params == null || params.isEmpty()) {
 			return;
 		}
+		
+		if(!Utils.formSystemPackagePermission(3)) {
+			 throw new CommonException(MC.MT_ACT_PERMISSION_REJECT,"非法操作");
+		}
+		
 		for(Map.Entry<String, Object> p : params.entrySet()){
 			this.curCxt.put(p.getKey(), p.getValue());
 		}
@@ -477,39 +488,53 @@ public class JMicroContext  {
 	}
 	
 	public void removeParam(String key){
+		checkPermission(key);
 	    this.curCxt.remove(key);
 	}
 	
 	public <T> void setParam(String key,T val){
+		checkPermission(key);
 		this.curCxt.put(key,val);
 	}
 	
 	public void setInt(String key,int defautl){
+		checkPermission(key);
 	    this.setParam(key,defautl);
 	}
 	
 	public void setString(String key,String val){
+		 checkPermission(key);
 		 this.setParam(key,val);
 	}
 	
 	public void setBoolean(String key,boolean val){
+		 checkPermission(key);
 		 this.setParam(key,val);
 	}
 	
+	private static void checkPermission(String key) {
+		if(SYSTEM_KEYS.containsKey(key) && !Utils.formSystemPackagePermission(4)) {
+			 throw new CommonException(MC.MT_ACT_PERMISSION_REJECT,"非法操作");
+		}
+	}
 	
 	public void setFloat(String key,Float val){
+		checkPermission(key);
 		 this.setParam(key,val);
 	}
 	
 	public void setDouble(String key,Double val){
+		checkPermission(key);
 		 this.setParam(key,val);
 	}
 	
 	public void setLong(String key,Long val){
+		checkPermission(key);
 		 this.setParam(key,val);
 	}
 	
 	public void setObject(String key,Object val){
+		checkPermission(key);
 		 this.setParam(key,val);
 	}
 	
@@ -539,5 +564,20 @@ public class JMicroContext  {
 	
 	public Object getObject(String key,Object defautl){
 		return this.getParam(key,defautl);
+	}
+	
+	public static final Map<String,String> SYSTEM_KEYS = new HashMap<>();
+	static {
+		
+		Field[] fs = MC.class.getDeclaredFields();
+		for(Field f: fs){
+			try {
+				if(f.getType() == String.class) {
+					SYSTEM_KEYS.put(f.get(null).toString(), "");
+				}
+			} catch (IllegalArgumentException | IllegalAccessException e) {
+				e.printStackTrace();
+			}
+		}
 	}
 }

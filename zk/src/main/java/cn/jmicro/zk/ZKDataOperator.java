@@ -40,7 +40,9 @@ import cn.jmicro.api.raft.IConnectionStateChangeListener;
 import cn.jmicro.api.raft.IDataListener;
 import cn.jmicro.api.raft.IDataOperator;
 import cn.jmicro.api.raft.INodeListener;
+import cn.jmicro.common.CommonException;
 import cn.jmicro.common.Constants;
+import cn.jmicro.common.Utils;
 import cn.jmicro.zk.children.ChildrenManager;
 import cn.jmicro.zk.data.DataManager;
 import cn.jmicro.zk.node.NodeManager;
@@ -76,7 +78,10 @@ public class ZKDataOperator implements IDataOperator{
 	
 	public ZKDataOperator(){}
 	
-	public void init(){
+	public void init0(){
+		if(!Utils.formSystemPackagePermission(3)) {
+			throw new CommonException("Permission reject to init data operator");
+		}
 		if(isInit){
 			return;
 		}
@@ -91,6 +96,9 @@ public class ZKDataOperator implements IDataOperator{
 	
 	@Override
 	public void objectFactoryStarted(IObjectFactory of) {
+		if(!Utils.formSystemPackagePermission(3)) {
+			throw new CommonException("Permission reject to set objectfactory");
+		}
 		of.regist(CuratorFramework.class, curator);
 	}
 	
@@ -171,22 +179,34 @@ public class ZKDataOperator implements IDataOperator{
 	@Override
 	public void setData(String path, String data) {
 		//this.childrenManager.removeCache(path);
+		if(path.startsWith(Constants.CFG_ROOT) && !Utils.formSystemPackagePermission(3)) {
+			throw new CommonException("Permission reject to set node data with path: " + path);
+		}
 		this.nodeManager.setData(path, data);
 	}
 
 	@Override
 	public void createNodeOrSetData(String path, String data, boolean elp) {
+		if(path.startsWith(Constants.CFG_ROOT) && !Utils.formSystemPackagePermission(3)) {
+			throw new CommonException("Permission reject to create node with path: " + path);
+		}
 		this.nodeManager.createNode(path, data, elp);
 	}
 
 	@Override
 	public void createNodeOrSetData(String path, String data, int model) {
+		if(path.startsWith(Constants.CFG_ROOT) && !Utils.formSystemPackagePermission(3)) {
+			throw new CommonException("Permission reject to create or set node with path: " + path);
+		}
 		this.nodeManager.createNode(path, data, model);
 	}
 
 	@Override
 	public void deleteNode(String path) {
 		//this.childrenManager.removeCache(path);
+		if(path.startsWith(Constants.CFG_ROOT) && !Utils.formSystemPackagePermission(3)) {
+			throw new CommonException("Permission reject to delete node with path: " + path);
+		}
 		this.nodeManager.deleteNode(path);
 	}
 	

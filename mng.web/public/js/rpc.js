@@ -32,7 +32,7 @@ jm.config = {
     httpContext : '/_http_',
     useWs : true,
 
-    sslEnable:true,
+    sslEnable:false,
     publicKey :'MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCt489YTxmLjNVxfFKSORyUgXjr65MQR1a/QdlriFEWXUAaLpVWP41YTlSA5ecG54xVwl2ayLytCv4CJNqYPeYNPUVXPr1tqND1aZYK9iUQQ0K36g2QZaigg+f/NJSY6w4XITQdBz3PnJOOzOK+cOew4R0XiyrR8sHG2Is4Mf9qowIDAQAB',
     privateKey:''
 }
@@ -812,7 +812,10 @@ jm.rpc = {
 
         if(!actName) {
             //自动建立匿名账号
-            actName = "";
+            actName = window.jm.localStorage.get("guestName");
+            if(!actName) {
+                actName = "";
+            }
         }
 
         if(!pwd) {
@@ -829,6 +832,10 @@ jm.rpc = {
                     let rememberPwd = window.jm.localStorage.get("rememberPwd");
                     if(rememberPwd || self.actInfo.actName.startWith("guest_")) {
                         window.jm.localStorage.set("pwd",pwd);
+                    }
+
+                    if(self.actInfo.actName.startWith("guest_")) {
+                        window.jm.localStorage.set("guestName",self.actInfo.actName);
                     }
 
                     cb(self.actInfo,null);
@@ -988,10 +995,10 @@ jm.rpc = {
   },
 
     callRpc : function(req,upProtocol,downProtocol) {
-        if(!upProtocol) {
+        if(!(upProtocol == 0 || upProtocol == 1)) {
             upProtocol = jm.rpc.Constants.PROTOCOL_JSON;
         }
-        if(!downProtocol) {
+        if(!(downProtocol == 0 || downProtocol == 1)) {
             downProtocol = jm.rpc.Constants.PROTOCOL_JSON;
         }
         let self = this;
@@ -1011,12 +1018,11 @@ jm.rpc = {
     },
 
     callRpc0 : function(param,type,upProtocol,downProtocol){
-        if(!upProtocol) {
-            upProtocol = jm.rpc.Constants.PROTOCOL_BIN;
+        if(!(upProtocol == 0 || upProtocol == 1)) {
+            upProtocol = jm.rpc.Constants.PROTOCOL_JSON;
         }
-
-        if(!downProtocol) {
-            downProtocol = jm.rpc.Constants.PROTOCOL_BIN;
+        if(!(downProtocol == 0 || downProtocol == 1)) {
+            downProtocol = jm.rpc.Constants.PROTOCOL_JSON;
         }
 
         if(!type) {
@@ -1061,11 +1067,11 @@ jm.rpc = {
     }
 
       if(typeof upProtocol == 'undefined') {
-          upProtocol = jm.rpc.Constants.PROTOCOL_BIN;
+          upProtocol = jm.rpc.Constants.PROTOCOL_JSON;
       }
 
       if(typeof downProtocol == 'undefined') {
-          downProtocol = jm.rpc.Constants.PROTOCOL_BIN;
+          downProtocol = jm.rpc.Constants.PROTOCOL_JSON;
       }
 
       let smsvnKey = req.serviceName +"##"+req.namespace+"##"+req.version+"########"+req.method;
@@ -1083,7 +1089,8 @@ jm.rpc = {
               methodCodeReq.args = [smsvnKey];
               methodCodeReq.needResponse = true;
 
-              self.callRpcWithTypeAndProtocol(methodCodeReq, type, upProtocol,downProtocol,
+              self.callRpcWithTypeAndProtocol(methodCodeReq, type, jm.rpc.Constants.PROTOCOL_JSON,
+                  jm.rpc.Constants.PROTOCOL_JSON,
                   self.mk2code[jm.rpc.Constants.FNV_HASH_METHOD_KEY])
                   .then((methodCode)=>{
                       self.mk2code[smsvnKey] = methodCode;
@@ -2207,7 +2214,7 @@ jm.rpc.Message.prototype.encode = function() {
         let arrData = [];
         let buf = new DataView(data,0, data.byteLength) ;
         for(let i = 0; i < data.byteLength; i++) {
-            arrData.push(data[i]);
+            arrData.push(buf.getUint8(i));
         }
         data = arrData;
     }
@@ -2416,10 +2423,10 @@ jm.rpc.ApiRequest.prototype = {
         if(protocol == jm.rpc.Constants.PROTOCOL_BIN) {
             let buf =  new jm.utils.JDataOutput(1024);
             buf.writeUnsignedLong(this.reqId);
-            buf.writeUtf8String(this.serviceName);
-            buf.writeUtf8String(this.namespace);
-            buf.writeUtf8String(this.version);
-            buf.writeUtf8String(this.method);
+            //buf.writeUtf8String(this.serviceName);
+            //buf.writeUtf8String(this.namespace);
+           // buf.writeUtf8String(this.version);
+            //buf.writeUtf8String(this.method);
             buf.writeObject(this.params);
             buf.writeObjectArray(this.args);
             return buf.getBuf();
@@ -2712,15 +2719,16 @@ jm.utils.JDataOutput.prototype.writeUnsignedLong = function(v) {
     if(v > jm.rpc.Constants.MAX_INT_VALUE) {
         throw "Max int value is :"+jm.rpc.Constants.MAX_INT_VALUE+", but value "+v;
     }
+    //JS无64位表示
     this.checkCapacity(8);
-    this.writeUByte((v >>> 56)&0xFF);
-    this.writeUByte((v >>> 48)&0xFF);
-    this.writeUByte((v >>> 40)&0xFF);
-    this.writeUByte((v >>> 32)&0xFF);
-    this.writeUByte((v >>> 24)&0xFF);
-    this.writeUByte((v >>> 16)&0xFF);
-    this.writeUByte((v >>> 8)&0xFF);
-    this.writeUByte((v >>> 0)&0xFF);
+    this.writeUByte(0);
+    this.writeUByte(0);
+    this.writeUByte(0);
+    this.writeUByte(0);
+    this.writeUByte((v >>> 24) & 0xFF);
+    this.writeUByte((v >>> 16) & 0xFF);
+    this.writeUByte((v >>> 8) & 0xFF);
+    this.writeUByte((v >>> 0) & 0xFF);
 }
 
 jm.utils.JDataOutput.prototype.writeByteArray = function(arr) {

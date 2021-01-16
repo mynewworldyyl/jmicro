@@ -2,43 +2,17 @@
     <modelVersion>4.0.0</modelVersion>
     <parent>
          <groupId>cn.jmicro</groupId>
-		 <artifactId>main</artifactId>
+		 <artifactId>jmicro.main</artifactId>
 		 <version>0.0.2-SNAPSHOT</version>
     </parent>
-    <artifactId>main.push</artifactId>
+    <artifactId>jmicro.main.push</artifactId>
     <packaging>jar</packaging>
     <name>${project.artifactId}</name>
     <description>message push platform</description>
 	<dependencies>
 		<dependency>
 			 <groupId>cn.jmicro</groupId>
-			 <artifactId>all</artifactId>
+			 <artifactId>jmicro.all</artifactId>
 	    </dependency>
 	</dependencies>
-	<build>
-		<plugins>
-			<plugin>
-				<artifactId>maven-assembly-plugin</artifactId>
-				<configuration>
-					<archive>
-						<manifest>
-							<mainClass>cn.jmicro.api.JMicro</mainClass>
-						</manifest>
-					</archive>
-					<descriptorRefs>
-						<descriptorRef>jar-with-dependencies</descriptorRef>
-					</descriptorRefs>
-				</configuration>
-				<executions>
-					<execution>
-						<id>make-assembly</id>
-						<phase>package</phase>
-						<goals>
-							<goal>single</goal>
-						</goals>
-					</execution>
-				</executions>
-			</plugin>
-		</plugins>
-	</build>
 </project>

@@ -1,7 +1,6 @@
 package cn.jmicro.api.security;
 
 import java.util.Arrays;
-import java.util.HashSet;
 import java.util.Set;
 
 import org.slf4j.Logger;
@@ -25,7 +24,7 @@ public class AccountManager {
 
 	private final Logger logger = LoggerFactory.getLogger(AccountManager.class);
 	
-	private static final ActInfo jmicro = new ActInfo("jmicro","jmicro123", 0);
+	private static ActInfo jmicro = null;
 	
 	public static final String ActDir = Config.AccountDir + "/accounts";
 	public static final String EmailDir = Config.AccountDir + "/emails";
@@ -52,12 +51,10 @@ public class AccountManager {
 		Set<String> acts = op.getChildren(AccountManager.ActDir, false);
 		if(acts == null || acts.isEmpty()) {
 			String p = AccountManager.ActDir +"/"+ jmicro.getActName();
+			jmicro = new ActInfo("jmicro","jmicro123", 0);
 			jmicro.setStatuCode(ActInfo.SC_ACTIVED);
-			HashSet<String> pers = new HashSet<>();
-			pers.addAll(Arrays.asList(PERS));
-			jmicro.setPers(pers);
+			jmicro.getPers().addAll(Arrays.asList(PERS));
 			op.createNodeOrSetData(p, JsonUtils.getIns().toJson(jmicro), IDataOperator.PERSISTENT);
-			
 		}
 	}
 	

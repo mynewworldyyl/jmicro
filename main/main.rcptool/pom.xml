@@ -4,95 +4,71 @@
 	<modelVersion>4.0.0</modelVersion>
 	<parent>
 		<groupId>cn.jmicro</groupId>
-		<artifactId>main</artifactId>
+		<artifactId>jmicro.main</artifactId>
 		<version>0.0.2-SNAPSHOT</version>
 	</parent>
-	<artifactId>main.rcptool</artifactId>
+	<artifactId>jmicro.main.rcptool</artifactId>
 	<packaging>jar</packaging>
 	<name>${project.artifactId}</name>
 	<description>rcptool server</description>
 	<dependencies>
 		<dependency>
 			<groupId>cn.jmicro</groupId>
-			<artifactId>api</artifactId>
+			<artifactId>jmicro.api</artifactId>
 		</dependency>
 		<dependency>
 			<groupId>cn.jmicro</groupId>
-			<artifactId>redis</artifactId>
+			<artifactId>jmicro.redis</artifactId>
 		</dependency>
 		<dependency>
 			<groupId>cn.jmicro</groupId>
-			<artifactId>etcd</artifactId>
+			<artifactId>jmicro.etcd</artifactId>
 		</dependency>
 		<dependency>
 			<groupId>cn.jmicro</groupId>
-			<artifactId>common</artifactId>
+			<artifactId>jmicro.common</artifactId>
 		</dependency>
 		<dependency>
 			<groupId>cn.jmicro</groupId>
-			<artifactId>zk</artifactId>
+			<artifactId>jmicro.zk</artifactId>
 		</dependency>
 		<dependency>
 			<groupId>cn.jmicro</groupId>
-			<artifactId>objfactory.simple</artifactId>
+			<artifactId>jmicro.objfactory.simple</artifactId>
 		</dependency>
 		<dependency>
 			<groupId>cn.jmicro</groupId>
-			<artifactId>config</artifactId>
+			<artifactId>jmicro.config</artifactId>
 		</dependency>
 		<dependency>
 			<groupId>cn.jmicro</groupId>
-			<artifactId>transport.netty.server</artifactId>
+			<artifactId>jmicro.transport.netty.server</artifactId>
 		</dependency>
 		<dependency>
 			<groupId>cn.jmicro</groupId>
-			<artifactId>server</artifactId>
+			<artifactId>jmicro.server</artifactId>
 		</dependency>
 		<dependency>
 			<groupId>cn.jmicro</groupId>
-			<artifactId>client</artifactId>
+			<artifactId>jmicro.client</artifactId>
 		</dependency>
 		<dependency>
 			<groupId>cn.jmicro</groupId>
-			<artifactId>idgenerator</artifactId>
+			<artifactId>jmicro.idgenerator</artifactId>
 		</dependency>
 		 <dependency>
 			 <groupId>cn.jmicro</groupId>
-			 <artifactId>transport.netty.client</artifactId>
+			 <artifactId>jmicro.transport.netty.client</artifactId>
         </dependency>
         <dependency>
                <groupId>cn.jmicro</groupId>
-		 <artifactId>classloader</artifactId>
+		 <artifactId>jmicro.classloader</artifactId>
           </dependency>
            <dependency>
                <groupId>cn.jmicro</groupId>
-				 <artifactId>agent</artifactId>
+				 <artifactId>jmicro.agent</artifactId>
 				 <version>${project.version}</version>
           </dependency>
 	</dependencies>
 
-	<!-- <build>
-		<plugins>
-			<plugin>
-				<artifactId>maven-assembly-plugin</artifactId>
-				<configuration>
-					<archive>
-						<manifestFile>src/main/resources/META-INF/MANIFEST.MF</manifestFile>
-					</archive>
-					<descriptorRefs>
-						<descriptorRef>jar-with-dependencies</descriptorRef>
-					</descriptorRefs>
-				</configuration>
-				<executions>
-					<execution>
-						<id>make-assembly</id>
-						<phase>package</phase>
-						<goals>
-							<goal>single</goal>
-						</goals>
-					</execution>
-				</executions>
-			</plugin>
-		</plugins>
-	</build> -->
 </project>

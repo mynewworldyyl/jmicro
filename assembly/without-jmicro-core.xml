@@ -1,0 +1,76 @@
+<assembly xmlns="http://maven.apache.org/plugins/maven-assembly-plugin/assembly/1.1.2"
+          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xsi:schemaLocation="http://maven.apache.org/plugins/maven-assembly-plugin/assembly/1.1.2 http://maven.apache.org/xsd/assembly-1.1.2.xsd">
+    <id>without-core</id>
+    <formats>
+        <format>jar</format>
+    </formats>
+    <includeBaseDirectory>false</includeBaseDirectory>
+   <!--  <baseDirectory>Service</baseDirectory> -->
+    <dependencySets>
+        <dependencySet>
+            <outputDirectory>/</outputDirectory>
+            <useProjectArtifact>true</useProjectArtifact>
+            <unpack>true</unpack>
+            <scope>runtime</scope>
+            <excludes>
+                <exclude>cn.jmicro:*:*</exclude>
+                <exclude>io.protostuff:protostuff-runtime:*</exclude>
+                <exclude>io.protostuff:protostuff-core:*</exclude>
+                <exclude>redis.clients:jedis:*</exclude>
+                <exclude>org.apache.commons:commons-pool2:*</exclude>
+                <exclude>org.apache.zookeeper:zookeeper:*</exclude>
+                <exclude>org.apache.curator:curator-client:*</exclude>
+                <exclude>org.apache.curator:curator-framework:*</exclude>
+                <exclude>org.slf4j:slf4j-api:*</exclude>
+                <exclude>org.slf4j:slf4j-log4j12:*</exclude>
+                <exclude>log4j:log4j:*</exclude>
+                <exclude>jline:jline:*</exclude>
+                <exclude>org.apache.yetus:audience-annotations:*</exclude>
+                <exclude>io.netty:netty:*</exclude>
+                <exclude>jline:jline:*</exclude>
+                <exclude>org.apache.curator:curator-recipes:*</exclude>
+                <exclude>com.google.guava:guava:*</exclude>
+                <exclude>org.javassist:javassist:*</exclude>
+                <exclude>com.google.code.gson:gson:*</exclude>
+                <exclude>io.netty:netty-all:*</exclude>
+                <exclude>com.squareup:javapoet:*</exclude>
+                <exclude>io.protostuff:protostuff-api:*</exclude>
+                <exclude>io.protostuff:protostuff-collectionschema:*</exclude>
+                <exclude>io.protostuff:protostuff-core:*</exclude>
+                <exclude>org.mongodb:bson:*</exclude>
+                <exclude>org.mongodb:mongodb-driver-core:*</exclude>
+                <exclude>org.mongodb:mongodb-driver:*</exclude>
+                <exclude>javax.activation:activation:*</exclude>
+                <exclude>com.sun.mail:all:*</exclude>
+                <exclude>org.apache.httpcomponents:httpclient:*</exclude>
+                <exclude>org.apache.httpcomponents:httpcore:*</exclude>
+                <exclude>commons-logging:commons-logging:*</exclude>
+                <exclude>commons-codec:commons-codec:*</exclude>
+                <exclude>mysql:mysql-connector-java:*</exclude>
+                <exclude>com.beust:jcommander:</exclude>
+            </excludes>
+        </dependencySet>
+    </dependencySets>
+    
+    <fileSets>
+    	<fileSet>
+    		<directory>${project.build.outputDirectory}</directory>
+    		<outputDirectory>/</outputDirectory>
+    		 <includes>
+                <include>**/*</include>
+            </includes>
+    	</fileSet>
+    </fileSets>
+    
+    <!--
+     <files>
+    	<file>
+    		<outputDirectory>/</outputDirectory>
+    		<source>pom.xml</source>
+    		<destName>jmicro_pom.xml</destName>
+		</file>
+    </files> 
+    -->
+    
+</assembly>
