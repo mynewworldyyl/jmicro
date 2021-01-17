@@ -61,6 +61,7 @@ import cn.jmicro.common.Utils;
 @Service(namespace="rrs",version="0.0.1",retryCnt=0,external=true)
 public class ResourceReponsitoryService implements IResourceResponsitory{
 
+	private static final String ID2NAME_SEP = "#$#";
 	private static final Logger LOG = LoggerFactory.getLogger(ResourceReponsitoryService.class);
 	
 	private static final String REF_FILE_SUBFIX = "-jar-with-dependencies.jar";
@@ -258,6 +259,11 @@ public class ResourceReponsitoryService implements IResourceResponsitory{
 			conditions.put(key, new Document("$regex",conditions.get(key)));
 		}
 		
+		key = "main";
+		if(conditions.containsKey(key)) {
+			conditions.put(key,conditions.get(key));
+		}
+		
 		ActInfo ai = JMicroContext.get().getAccount();
 		//Document clientCond = new Document("$OR",);
 		if(!qry.containsKey(Constants.CLIENT_ID) && !PermissionManager.isCurAdmin()) {
@@ -304,7 +310,7 @@ public class ResourceReponsitoryService implements IResourceResponsitory{
 		
 		os.deleteById(PackageResource.TABLE_NAME, pr.getId(), IObjectStorage._ID);
 		
-		File res = new File(resDir,pr.getId()+".jar");
+		File res = new File(resDir,getJarFileName(pr));
 		if(res.exists()) {
 			res.delete();
 		}
@@ -408,6 +414,11 @@ public class ResourceReponsitoryService implements IResourceResponsitory{
 			filter.put(IObjectStorage._ID, pr.getId());
 			os.update(PackageResource.TABLE_NAME, filter, updater, PackageResource.class);
 		}
+		
+		if(updater.containsKey("status") && pr.getStatus() == PackageResource.STATUS_ENABLE) {
+			this.updateMainWaiting(pr.getId());
+		}
+		
 		resp.setData(pr0);
 		return resp;
 	}
@@ -582,7 +593,7 @@ public class ResourceReponsitoryService implements IResourceResponsitory{
 			}
 			
 			if(zkrr.getFinishBlockNum() == zkrr.getTotalBlockNum()) {
-				finishFileUpload(zkrr);
+				mergeUploadFile(zkrr);
 				
 				Map<String,Object> filter = new HashMap<>();
 				filter.put(IObjectStorage._ID, zkrr.getId());
@@ -634,7 +645,7 @@ public class ResourceReponsitoryService implements IResourceResponsitory{
 		
 		JarFile jf = null;
 		try {
-			File resFile = new File(this.dir , zkrr.getId()+".jar");
+			File resFile = new File(this.dir , this.getJarFileName(zkrr));
 			jf = new JarFile(resFile,true);
 			ActInfo ai = JMicroContext.get().getAccount();
 			if(!ai.isAdmin()) {
@@ -706,8 +717,10 @@ public class ResourceReponsitoryService implements IResourceResponsitory{
 							}
 							
 							depRes = downloadResFromMaven(group,arti,ver);
+						}
+						
+						if(depRes.getStatus() != PackageResource.STATUS_ENABLE) {
 							zkrr.getWaitingRes().add(depRes.getId());
-							
 							zkrr.setStatus(PackageResource.STATUS_WAITING);
 						}
 						
@@ -734,6 +747,10 @@ public class ResourceReponsitoryService implements IResourceResponsitory{
 			
 			os.update(PackageResource.TABLE_NAME, filter,updater, PackageResource.class);
 			
+			if(zkrr.getStatus() == PackageResource.STATUS_ENABLE) {
+				updateMainWaiting(zkrr.getId());
+			}
+			
 			return rst;
 		} catch (IOException e) {
 			LG.log(MC.LOG_ERROR, this.getClass(), e.getMessage() +", "+zkrr);
@@ -747,6 +764,34 @@ public class ResourceReponsitoryService implements IResourceResponsitory{
 				}
 			}
 		}
+	}
+
+	private void updateMainWaiting(int prid) {
+		Map<String,Object> depQry = new HashMap<>();
+		//depQry.put("status", PackageResource.STATUS_WAITING);
+		depQry.put("waitingRes",prid);
+		
+		List<PackageResource> depRes = os.query(PackageResource.TABLE_NAME, depQry,
+				PackageResource.class, 10000, 0);
+		if(depRes != null && !depRes.isEmpty()) {
+			for(PackageResource r : depRes) {
+				r.getWaitingRes().remove(prid);
+				
+				Map<String,Object> f = new HashMap<>();
+				f.put(IObjectStorage._ID, r.getId());
+				
+				Map<String,Object> up = new HashMap<>();
+				if(r.getWaitingRes().isEmpty()) {
+					up.put("status", PackageResource.STATUS_READY);
+					up.put("waitingRes", null);
+					LG.log(MC.LOG_INFO, this.getClass(), "Resource ready: " + r.toString());
+				}else {
+					up.put("waitingRes", r.getWaitingRes());
+				}
+				os.update(PackageResource.TABLE_NAME, f, up, PackageResource.class);
+			}
+		}
+		
 	}
 
 	private PackageResource downloadResFromMaven(String group, String arti, String ver) {
@@ -777,6 +822,7 @@ public class ResourceReponsitoryService implements IResourceResponsitory{
 		pr.setCreatedBy(JMicroContext.get().getAccount().getId());
 		pr.setId(this.idGenerator.getIntId(PackageResource.class));
 		pr.setName(arti+"-"+ver+".jar");
+		pr.setResExtType("jar");
 		os.save(PackageResource.TABLE_NAME, pr,PackageResource.class, false, false);
 		return pr;
 		
@@ -980,7 +1026,7 @@ public class ResourceReponsitoryService implements IResourceResponsitory{
 	}
 	
 
-	private void finishFileUpload(PackageResource zkrr) {
+	private void mergeUploadFile(PackageResource zkrr) {
 		
 		String bp = this.tempDir.getAbsolutePath() + "/" + zkrr.getId();
 		File bpDir = new File(bp);
@@ -995,7 +1041,7 @@ public class ResourceReponsitoryService implements IResourceResponsitory{
 			return num1 > num2?1:num1==num2?0:-1;
 		});
 		
-		File resFile = new File(this.dir , zkrr.getId()+".jar");
+		File resFile = new File(this.dir,getJarFileName(zkrr));
 		FileOutputStream fos = null;
 		try {
 			 fos = new FileOutputStream(resFile);
@@ -1027,6 +1073,10 @@ public class ResourceReponsitoryService implements IResourceResponsitory{
 		}
 	}
 	
+	private String getJarFileName(PackageResource zkrr) {
+		return  zkrr.getId()+ ID2NAME_SEP + zkrr.getName();
+	}
+
 	private void downloadRes() {
 		//org/sdase/commons/sda-commons-server-dropwizard/2.16.1/sda-commons-server-dropwizard-2.16.1.jar
 		
@@ -1115,22 +1165,19 @@ public class ResourceReponsitoryService implements IResourceResponsitory{
 		
 		@Override
 		public void run() {
-			
-			while(true) {
-				try {
-					Iterator<PackageResource> ite = resList.iterator();
-					while(ite.hasNext()) {
-						PackageResource pr = ite.next();
-						ite.remove();
-						lastStartTime = TimeUtils.getCurTime();
-						downloadOne(pr);
-					}
-				}catch(Throwable e) {
-					LOG.error("",e);
-					LG.log(MC.LOG_ERROR, this.getClass(), "",e);
-				}finally {
-					running = false;
+			try {
+				Iterator<PackageResource> ite = resList.iterator();
+				while(ite.hasNext()) {
+					PackageResource pr = ite.next();
+					ite.remove();
+					lastStartTime = TimeUtils.getCurTime();
+					downloadOne(pr);
 				}
+			}catch(Throwable e) {
+				LOG.error("",e);
+				LG.log(MC.LOG_ERROR, this.getClass(), "",e);
+			}finally {
+				running = false;
 			}
 		}
 	}
@@ -1141,7 +1188,7 @@ public class ResourceReponsitoryService implements IResourceResponsitory{
 		url += pr.getArtifactId()+"/"+pr.getVersion()+"/";
 		url += pr.getName();
 		
-		File jarFile = new File(this.dir,pr.getId()+".jar");
+		File jarFile = new File(this.dir,getJarFileName(pr));
 		if(!jarFile.exists()) {
 			try {
 				jarFile.createNewFile();
@@ -1168,30 +1215,7 @@ public class ResourceReponsitoryService implements IResourceResponsitory{
 		updater.put("uploadTime", TimeUtils.getCurTime());
 		os.update(PackageResource.TABLE_NAME, filter,updater, PackageResource.class);
 		
-		Map<String,Object> depQry = new HashMap<>();
-		depQry.put("status", PackageResource.STATUS_WAITING);
-		depQry.put("waitingRes",pr.getId());
-		
-		List<PackageResource> depRes = os.query(PackageResource.TABLE_NAME, depQry,
-				PackageResource.class, 1, 0);
-		if(depRes != null && !depRes.isEmpty()) {
-			for(PackageResource r : depRes) {
-				r.getWaitingRes().remove(pr.getId());
-				
-				Map<String,Object> f = new HashMap<>();
-				f.put(IObjectStorage._ID, r.getId());
-				
-				Map<String,Object> up = new HashMap<>();
-				if(r.getWaitingRes().isEmpty()) {
-					up.put("status", PackageResource.STATUS_READY);
-					updater.put("waitingRes", null);
-					LG.log(MC.LOG_INFO, this.getClass(), "Resource ready: " + r.toString());
-				}else {
-					updater.put("waitingRes", r.getWaitingRes());
-				}
-				os.update(PackageResource.TABLE_NAME, f, updater, PackageResource.class);
-			}
-		}
+		updateMainWaiting(pr.getId());
 		
 		return true;
 	

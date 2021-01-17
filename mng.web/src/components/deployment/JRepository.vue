@@ -117,9 +117,13 @@
                     <td>
                         <Input  v-model="queryParams.version"/>
                     </td>
-                    <td></td>
+                    <td>{{"Main"|i18n}}</td>
                     <td>
-
+                        <Select v-model="queryParams.main">
+                            <Option value="">{{"None" | i18n}}</Option>
+                            <Option value="true">{{"True"|i18n}}</Option>
+                            <Option value="false" >{{"False" | i18n}}</Option>
+                        </Select>
                     </td>
                 </tr>
             </table>
@@ -268,11 +272,11 @@
                     return;
                 }
                 let file = this.$refs.resFile.files[0];
-                let idx = this.res0.name.indexOf("-");
+                let idx = file.name.indexOf("-");
                 if(idx >0 ) {
                     let n = file.name;
                     let atName = n.substring(0,idx)
-                    let ver = n.substring(idx+1,this.res0.name.lastIndexOf("."));
+                    let ver = n.substring(idx+1,n.lastIndexOf("."));
 
                     if(!atName || !ver) {
                         this.errMsg = "文件名称与资源名称不匹配";
@@ -292,7 +296,6 @@
                         this.res0.artifactId = atName ;
                         this.res0.version = ver;
                     }
-
                 }else {
                     this.errMsg = "选择文件命名不合法，必须符合Maven打包命名规范";
                     return;
@@ -349,6 +352,10 @@
                 }
                 if(this.queryParams.artifactId) {
                     ps.artifactId = this.queryParams.artifactId;
+                }
+
+                if(this.queryParams.main) {
+                    ps.main = this.queryParams.main=='true';
                 }
                 return ps;
             },
