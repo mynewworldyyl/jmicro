@@ -102,7 +102,14 @@ public class ClientServiceProxyHolder implements IServiceListener{
 		Map<String,Object> curCxt = backupAndResetContext();
 		
 		JMicroContext cxt = JMicroContext.get();
+		
+		ServiceItem dsi = cxt.getParam(Constants.DIRECT_SERVICE_ITEM, null);
+		
 		ServiceItem si = this.item;
+		
+		if(dsi != null) {
+			si = dsi;
+		}
 		
 		boolean isAsync = originMethod.endsWith(AsyncClientProxy.ASYNC_METHOD_SUBFIX);
 		

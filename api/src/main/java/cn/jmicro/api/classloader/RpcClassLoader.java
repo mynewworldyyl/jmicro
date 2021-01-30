@@ -73,7 +73,7 @@ public class RpcClassLoader extends ClassLoader {
     @Inject
     private IRegistry registry;
     
-    @Reference(required = false)
+    @Reference(required = false,namespace="*",version="0.0.1")
     private IClassloaderRpc$JMAsyncClient rpcLlassloader = null;
     
     private ClassLoader parent = null;
@@ -179,11 +179,13 @@ public class RpcClassLoader extends ClassLoader {
     	registRemoteClass();
     }
     
-    public void addClassInstance(String className) {
+    public void addClassInstance(Class<?> clazz) {
+    	String className = clazz.getName();
     	if(className.startsWith("cn.jmicro.api")) {
     		//系统类不需要远程加载，全部JMICRO应用都依赖于cn.jmicro:api包
     		return;
     	}
+    	
     	String path = CLASS_IDR +"/" + className;
     	if(!op.exist(path)) {
     		op.createNodeOrSetData(path, "", false);

@@ -3,11 +3,11 @@
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 	<parent>
-		<groupId>cn.jmicro</groupId>
-		<artifactId>jmicro.example</artifactId>
+		<groupId>cn.expjmicro</groupId>
+		<artifactId>expjmicro.example</artifactId>
 		<version>0.0.2-SNAPSHOT</version>
 	</parent>
-	<artifactId>jmicro.example.provider</artifactId>
+	<artifactId>expjmicro.example.provider</artifactId>
 	<packaging>jar</packaging>
 	<description>Jmicro service provider for testing</description>
 	
@@ -18,8 +18,8 @@
 		</dependency>
 		
 		<dependency>
-			<groupId>cn.jmicro</groupId>
-			<artifactId>jmicro.example.api</artifactId>
+			<groupId>cn.expjmicro</groupId>
+			<artifactId>expjmicro.example.api</artifactId>
 			<version>${project.version}</version>
 		</dependency>
 		

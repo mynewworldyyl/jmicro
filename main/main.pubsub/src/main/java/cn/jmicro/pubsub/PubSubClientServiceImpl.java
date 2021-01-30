@@ -13,7 +13,7 @@ import cn.jmicro.api.pubsub.PubSubManager;
 import cn.jmicro.api.security.ActInfo;
 
 @Component
-@Service(namespace="mng", version="0.0.1", external=true, debugMode=0, showFront=false)
+@Service(version="0.0.1", external=true, debugMode=0, showFront=false)
 public class PubSubClientServiceImpl implements IPubSubClientService {
 
 	@Inject

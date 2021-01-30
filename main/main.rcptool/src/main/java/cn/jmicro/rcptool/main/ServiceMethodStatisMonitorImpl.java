@@ -16,7 +16,7 @@ import cn.jmicro.common.Constants;
 import cn.jmicro.rcptool.main.api.IServiceMethodStatisMonitor;
 import cn.jmicro.rcptool.main.api.StatisDataListenerManager;
 
-@Service(maxSpeed=-1,baseTimeUnit=Constants.TIME_SECONDS,namespace="rcpToolsMonitor",version="0.0.1")
+@Service(maxSpeed=-1,baseTimeUnit=Constants.TIME_SECONDS,version="0.0.1")
 @Component
 public class ServiceMethodStatisMonitorImpl implements IServiceMethodStatisMonitor {
 

@@ -36,8 +36,7 @@ import cn.jmicro.common.Constants;
 import cn.jmicro.monitor.statis.config.StatisManager;
 
 @Component
-@Service(namespace="monitorServer", version="0.0.1", debugMode=0,
-monitorEnable=0, logLevel=MC.LOG_WARN, retryCnt=0)
+@Service(version="0.0.1", debugMode=0,monitorEnable=0, logLevel=MC.LOG_WARN, retryCnt=0)
 public class StatisMonitorServerImpl implements IStatisMonitorServer {
 
 	private final static Logger logger = LoggerFactory.getLogger(StatisMonitorServerImpl.class);
@@ -97,7 +96,7 @@ public class StatisMonitorServerImpl implements IStatisMonitorServer {
 		
 		ServiceLoader sl = of.get(ServiceLoader.class);
 		ServiceItem si = sl.createSrvItem(IMonitorAdapter.class, 
-				Config.getInstanceName()+".StatisMonitorServer", "0.0.1", null,Config.getClientId());
+				Config.getNamespace()+".StatisMonitorServer", "0.0.1", null,Config.getClientId());
 		sl.registService(si,statusAdapter);
 		
 		new Thread(this::doCheck,Config.getInstanceName()+"_MonitorServer_doCheck").start();

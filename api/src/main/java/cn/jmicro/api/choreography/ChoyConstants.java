@@ -41,6 +41,10 @@ public interface ChoyConstants {
 	
 	public static final String ARG_DEP_ID = "depId";
 	
+	public static final String RES_ID = "resId";
+	
+	public static final String RES_OWNER_ID = "resOwnerId";
+	
 	public static final String ARG_AGENT_ID = "agentId";
 	
 	public static final String ARG_AGENT_PRIVATE = "private";

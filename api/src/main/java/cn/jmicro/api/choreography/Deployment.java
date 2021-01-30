@@ -19,7 +19,7 @@ public class Deployment {
 	
 	private int resId;
 	
-	private int clientId=-1000;
+	private int clientId = -1000;
 	
 	private String jarFile;
 	
@@ -36,6 +36,12 @@ public class Deployment {
 	private String assignStrategy="defautAssignStrategy";
 	
 	private String strategyArgs;
+	
+	private String jvmArgs;
+	
+	private long createdTime;
+	
+	private long updatedTime;
 
 	public String getJarFile() {
 		return jarFile;
@@ -130,6 +136,30 @@ public class Deployment {
 
 	public void setDesc(String desc) {
 		this.desc = desc;
+	}
+
+	public String getJvmArgs() {
+		return jvmArgs;
+	}
+
+	public void setJvmArgs(String jvmArgs) {
+		this.jvmArgs = jvmArgs;
+	}
+
+	public long getCreatedTime() {
+		return createdTime;
+	}
+
+	public void setCreatedTime(long createdTime) {
+		this.createdTime = createdTime;
+	}
+
+	public long getUpdatedTime() {
+		return updatedTime;
+	}
+
+	public void setUpdatedTime(long updatedTime) {
+		this.updatedTime = updatedTime;
 	}
 	
 }

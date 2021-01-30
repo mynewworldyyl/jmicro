@@ -34,9 +34,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import cn.jmicro.api.ClassScannerUtils;
+import cn.jmicro.api.JMicro;
 import cn.jmicro.api.annotation.Component;
+import cn.jmicro.api.choreography.ChoyConstants;
+import cn.jmicro.api.choreography.ProcessInfo;
 import cn.jmicro.api.exp.ExpUtils;
-import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.raft.IDataListener;
 import cn.jmicro.api.raft.IDataOperator;
 import cn.jmicro.api.utils.TimeUtils;
@@ -96,7 +98,10 @@ public class Config{
 	public static final String NamedTypesDir = MonitorDir +"/namedTypesDir";
 	
 	//当前启动实例名称
-	private static String InstanceName = "";
+	private static String instanceName = "";
+	
+	//作为服务名称空间
+	private static String instanceRrefix = "";
 	
 	private static String[] commandArgs = null;
 	
@@ -109,7 +114,7 @@ public class Config{
 	private static String  listenSocketIP = null;
 	
 	private static String  accountName = null;
-	private static String  adminAccountName = null;
+	//private static String  adminAccountName = null;
 	
 	//服务在RAFT中的根目录
 	//private static String RaftBaseDir = "";
@@ -262,15 +267,19 @@ public class Config{
 			dir.mkdirs();
 		}
 		
-		String prefix = this.getString(Constants.INSTANCE_NAME,Constants.INSTANCE_NAME);
+		instanceRrefix = this.getString(Constants.INSTANCE_PREFIX,null);
 		
-		if(ExpUtils.isNumber(prefix.charAt(prefix.length()-1))) {
-			throw new CommonException("Instance name cannot end with number:" + prefix);
+		if(Utils.isEmpty(instanceRrefix)) {
+			throw new CommonException("Instance prefix name cannot be null!");
+		}
+		
+		if(ExpUtils.isNumber(instanceRrefix.charAt(instanceRrefix.length()-1))) {
+			throw new CommonException("Instance name cannot end with number:" + instanceRrefix);
 		}
 		
 		//优先在本地目录中寻找
 		for(File f : dir.listFiles()) {
-			if(!f.isDirectory() || !f.getName().startsWith(prefix)) {
+			if(!f.isDirectory() || !f.getName().startsWith(instanceRrefix)) {
 				continue;
 			}
 			
@@ -291,7 +300,7 @@ public class Config{
 		if(insName == null) {
 			//实例名前缀，默认前缀是instanceName，
 			for(int i = 0; i < Integer.MAX_VALUE ; i++) {
-				String name = prefix + i;
+				String name = instanceRrefix + i;
 				ud = new File(dir,name);
 				String path = Config.InstanceDir + "/" + name;
 				if(!ud.exists() && !dataOperator.exist(path)) {
@@ -313,9 +322,9 @@ public class Config{
 		}
 		CommadParams.put(Constants.INSTANCE_DATA_DIR, f.getAbsolutePath());
 		
-		CommadParams.put(Constants.INSTANCE_NAME, insName);
+		CommadParams.put(Constants.INSTANCE_PREFIX, insName);
 		
-		InstanceName = insName;
+		instanceName = insName;
 	}
 	
 	private void doTag(IDataOperator dataOperator,File dir,String path) {
@@ -415,20 +424,21 @@ public class Config{
 	}
 	
 	public static String getAccountName() {
+		if(accountName != null) {
+			return accountName;
+		}
+		accountName = getCommandParam(Constants.CLIENT_NAME,String.class,null);
 		return accountName;
-	}
-	
-	public static String getAdminAccountName() {
-		return adminAccountName;
 	}
 	
 	public static void setAccountName(String an) {
 		 accountName = an;
+		 CommadParams.put(Constants.CLIENT_NAME, an);
 	}
 	
-	public static void setAdminAccountName(String an) {
+	/*public static void setAdminAccountName(String an) {
 		adminAccountName = an;
-	}
+	}*/
 	
 	public static int getAdminClientId() {
 		int adminClientId = getCommandParam(Constants.ADMIN_CLIENT_ID,Integer.class,-1);
@@ -440,10 +450,39 @@ public class Config{
 	}
 	
 	public static String getInstanceName(){
-		if(StringUtils.isEmpty(InstanceName)){
+		if(StringUtils.isEmpty(instanceName)){
 			throw new CommonException("InstanceName cannot be NULL");
 		}
-		return InstanceName;
+		return instanceName;
+	}
+	
+	public static String getInstancePrefix(){
+		if(StringUtils.isEmpty(instanceRrefix)){
+			throw new CommonException("instanceRrefix cannot be NULL");
+		}
+		return instanceRrefix;
+	}
+	
+	public static String getNamespace(){
+		String prefix = getInstancePrefix();
+		String resOwner = getCommandParam(ChoyConstants.RES_OWNER_ID);
+		if(resOwner == null) {
+			return prefix;
+		}
+		
+		if(Config.getClientId() != Integer.parseInt(resOwner)) {
+			return prefix + "." + getAccountName();
+		}
+		
+		return prefix;
+	}
+	
+	public static boolean isOwnerRes(){
+		String resOwner = getCommandParam(ChoyConstants.RES_OWNER_ID);
+		if(resOwner == null) {
+			return true;
+		}
+		return Config.getClientId() == Integer.parseInt(resOwner);
 	}
 	
 	public synchronized static void setBasePackages0(Collection<String>  basePackages) {
@@ -943,7 +982,7 @@ public class Config{
 			dataOperator.setData(path, "");
 		}
 		
-		ServiceConfigDir = CfgDir + "/" + InstanceName;
+		ServiceConfigDir = CfgDir + "/" + instanceName;
 		
 		//	/jmicro目录
 		if(!dataOperator.exist(Constants.CFG_ROOT)) {
@@ -1015,7 +1054,7 @@ public class Config{
 			put("priKey", "");
 			
 			put(Constants.BASE_PACKAGES_KEY,"");
-			put(Constants.INSTANCE_NAME,"");
+			put(Constants.INSTANCE_PREFIX,"");
 		}
 	};
 	

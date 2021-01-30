@@ -33,7 +33,7 @@ import cn.jmicro.ext.bbs.entities.Topic;
 import cn.jmicro.ext.bbs.entities.TopicVo;
 
 @Component(level=20001)
-@Service(namespace="bbs", version="0.0.1", external=true, debugMode=0, showFront=false)
+@Service(version="0.0.1", external=true, debugMode=0, showFront=false)
 public class BbsServiceImpl implements IBbsService {
 
 	@Inject

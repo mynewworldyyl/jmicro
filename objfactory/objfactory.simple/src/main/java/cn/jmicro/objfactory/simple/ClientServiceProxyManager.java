@@ -111,10 +111,10 @@ class ClientServiceProxyManager {
 		return (T)proxy;
 	}
 	
-	<T> T  getRefRemoteService(String srvName, AsyncConfig[] acs){
+	<T> T  getRefRemoteService(String srvName,String ns, AsyncConfig[] acs){
 		//srvName = parseServiceClass(srvName);
 		Class<?> cls = loadClass(Config.getInstanceName(),srvName,null);
-		return getRefRemoteService(cls,acs);
+		return getRefRemoteService(cls,ns,acs);
 	}
 	
 	/**
@@ -122,7 +122,7 @@ class ClientServiceProxyManager {
 	 * @param srvClazz
 	 * @return
 	 */
-	<T> T getRefRemoteService(Class<?> srvClazz, AsyncConfig[] acs){
+	<T> T getRefRemoteService(Class<?> srvClazz,String ns, AsyncConfig[] acs){
 		if(!srvClazz.isAnnotationPresent(Service.class)){
 			//通过接口创建的服务必须有Service注解,否则没办法获取服务3个座标信息
 			throw new CommonException("Cannot create service proxy ["+srvClazz.getName()
@@ -130,7 +130,7 @@ class ClientServiceProxyManager {
 		}
 		srvClazz = AsyncClientUtils.parseServiceClass(srvClazz);
 		Service srvAnno = srvClazz.getAnnotation(Service.class);
-		return this.getRefRemoteService(srvClazz.getName(), srvAnno.namespace(),srvAnno.version(), null,acs);
+		return this.getRefRemoteService(srvClazz.getName(), ns,srvAnno.version(), null,acs);
 	}
 	
 	/**

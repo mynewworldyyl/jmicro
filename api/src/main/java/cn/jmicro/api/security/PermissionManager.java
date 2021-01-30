@@ -13,9 +13,9 @@ import cn.jmicro.api.JMicroContext;
 import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Inject;
 import cn.jmicro.api.config.Config;
+import cn.jmicro.api.monitor.LG;
 import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.monitor.MT;
-import cn.jmicro.api.monitor.LG;
 import cn.jmicro.api.net.ServerError;
 import cn.jmicro.api.registry.IServiceListener;
 import cn.jmicro.api.registry.ServiceItem;
@@ -85,7 +85,6 @@ public class PermissionManager {
 		for(ServiceMethod sm : si.getMethods()) {
 			if(sm.isPerType()) {
 				Permission p = new Permission();
-				p.setPid(sm.getKey().toKey(false, false, false));
 				p.setLabel(sm.getKey().getMethod());
 				p.setModelName(si.getKey().toSnv());
 				p.setDesc(sm.getKey().getMethod()+"(" +sm.getKey().getParamsStr()+")");
@@ -99,7 +98,12 @@ public class PermissionManager {
 		return Collections.unmodifiableMap(pers);
 	}
 	
-	public ServerError permissionCheck(ActInfo ai,ServiceMethod sm,int srcClientId ) {
+	public ServerError permissionCheck(ServiceMethod sm,int srcClientId ) {
+		if(isCurAdmin()) {
+			return null;
+		}
+		
+		ActInfo ai = JMicroContext.get().getAccount();
 		if(ai == null && sm.isNeedLogin()){
 			ServerError se = new ServerError(MC.MT_INVALID_LOGIN_INFO,
 					 "Have to login for invoking to " + sm.getKey().toKey(false, false, false));
@@ -107,7 +111,8 @@ public class PermissionManager {
 			MT.rpcEvent(MC.MT_INVALID_LOGIN_INFO);
 			logger.warn(se.toString());
 			return se;
-		} else if(sm.isPerType() && (ai == null || ai.getPers() == null || !ai.getPers().contains(sm.getKey().toKey(false, false, false)))) {
+		} else if(sm.isPerType() && (ai == null || ai.getPers() == null 
+				|| !ai.getPers().contains(sm.getKey().getSnvHash()))) {
 			ServerError se = new ServerError(MC.MT_ACT_PERMISSION_REJECT,
 					(ai!= null?ai.getActName():" Not login") + " no permission for this operation ");
 			LG.log(MC.LOG_ERROR, TAG,se.toString()+",SM: " + sm.getKey().toKey(true, true, true));

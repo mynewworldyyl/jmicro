@@ -5,10 +5,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-import cn.jmicro.api.async.AsyncFailResult;
 import cn.jmicro.api.async.IPromise;
-import cn.jmicro.api.client.IAsyncCallback;
-import cn.jmicro.api.internal.async.PromiseImpl;
 import cn.jmicro.api.pubsub.PSData;
 import cn.jmicro.api.pubsub.genclient.IPubSubClientService$JMAsyncClient;
 import cn.jmicro.gateway.client.ApiGatewayClient;
@@ -25,7 +22,7 @@ public class ApiGatewayPubsubClient {
 	
 	public ApiGatewayPubsubClient(ApiGatewayClient client) {
 		this.apiGc = client;
-		pcs = client.getService(IPubSubClientService$JMAsyncClient.class,"mng", "0.0.1");
+		pcs = client.getService(IPubSubClientService$JMAsyncClient.class,ApiGatewayClient.NS_MNG, "0.0.1");
 	}
 
 	public int callService(String topic, Object[] args,byte flag,Map<String,Object> itemContext) {
@@ -104,52 +101,40 @@ public class ApiGatewayPubsubClient {
 	}
 	
 	public IPromise<Integer> subscribeJMAsync(String topic,Map<String, Object> ctx, PSDataListener lis) {
-		final PromiseImpl<Integer> p = new PromiseImpl<>();
-		IAsyncCallback<Integer> cb = new IAsyncCallback<Integer>() {
-			@Override
-			public void onResult(Integer val, AsyncFailResult fail,Object ctx) {
-				if(fail == null) {
-					Set<PSDataListener> ls = listeners.get(topic);
-					if(ls == null) {
-						ls = new HashSet<>();
-						listeners.put(topic, ls);
-					}
-					lis.setSubId(val);
-					ls.add(lis);
-					p.setResult(val);
-				} else {
-					p.setFail(fail);
-				}
-				p.done();
+		final IPromise<Integer> p = this.apiGc.callService(messageServiceImplName, ApiGatewayClient.NS_MNG, "0.0.1", "subscribe", 
+				Integer.class, new Object[] {topic, ctx});
+		p.success((rst,cxt0)->{
+			Set<PSDataListener> ls = listeners.get(topic);
+			if(ls == null) {
+				ls = new HashSet<>();
+				listeners.put(topic, ls);
 			}
-		};
-		this.apiGc.callService(messageServiceImplName, "mng", "0.0.1", "subscribe", 
-				Integer.class, new Object[] {topic, ctx}, cb);
+			lis.setSubId(rst);
+			ls.add(lis);
+		
+		})
+		.fail((code,err,cxt0)->{
+			System.out.println("code:" + code+", err: " + err);
+		});
+		
 		return p;
 	}
 	
 	public IPromise<Boolean>  unsubscribeJMAsync(String topic, PSDataListener lis) {
-		final PromiseImpl<Boolean> p = new PromiseImpl<>();
-		IAsyncCallback<Boolean> cb = new IAsyncCallback<Boolean>() {
-			@Override
-			public void onResult(Boolean val, AsyncFailResult fail,Object ctx) {
-				if(fail == null) {
-					Set<PSDataListener> ls = listeners.get(topic);
-					if(ls != null && !ls.isEmpty()) {
-						ls.remove(lis);
-					}
-					if(ls.isEmpty()) {
-						listeners.remove(topic);
-					}
-					p.setResult(val);
-				} else {
-					p.setFail(fail);
-				}
-				p.done();
+		IPromise<Boolean> p = this.apiGc.callService(messageServiceImplName, ApiGatewayClient.NS_MNG, "0.0.1", "unsubscribe", 
+				Integer.class, new Object[] {lis.getSubId()});
+		p.success((rst,cxt0)->{
+			Set<PSDataListener> ls = listeners.get(topic);
+			if(ls != null && !ls.isEmpty()) {
+				ls.remove(lis);
 			}
-		};
-		this.apiGc.callService(messageServiceImplName, "mng", "0.0.1", "unsubscribe", 
-				Integer.class, new Object[] {lis.getSubId()}, cb);
+			if(ls.isEmpty()) {
+				listeners.remove(topic);
+			}
+		})
+		.fail((code,err,cxt0)->{
+			System.out.println("code:" + code+", err: " + err);
+		});
 		return p;
 	}
 

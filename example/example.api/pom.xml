@@ -5,7 +5,8 @@
 		 <artifactId>jmicro.example</artifactId>
 		 <version>0.0.2-SNAPSHOT</version>
     </parent>
-    <artifactId>jmicro.example.api</artifactId>
+     <groupId>cn.expjmicro</groupId>
+    <artifactId>expjmicro.example.api</artifactId>
     <packaging>jar</packaging>
     <name>${project.artifactId}</name>
     <description>Jmicro example api testing</description>

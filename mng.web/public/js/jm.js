@@ -8,6 +8,8 @@ jm.mng = {
     LOG2LEVEL : {2:'LOG_DEBUG', 5:'LOG_ERROR', 6:'LOG_FINAL', 3:'LOG_INFO', 0:'LOG_NO',
         1: 'LOG_TRANCE', 4:'LOG_WARN'},
 
+    RES_STATUS: {"1":"Uploading","2":"Ready","3":"Enable","4":"Error","5":"WAITING","6":"Download"},
+    DEP_STATUS:{'1':'Draft','2':'Enable','3':"Check"},
     ROUTER_ROOT : ROOT + '/routeRules',
     CONFIG_ROOT : ROOT,
     AGENT_ROOT : ROOT + '/choreography/agents',
@@ -38,7 +40,7 @@ jm.mng = {
         },
 
         sn:'cn.jmicro.api.mng.IManageService',
-        ns : MNG,
+        ns : window.jm.Constants.NS_MNG,
         v:'0.0.1',
     },
 
@@ -60,7 +62,7 @@ jm.mng = {
         },
 
         sn:'cn.jmicro.api.mng.IConfigManager',
-        ns: MNG,
+        ns: window.jm.Constants.NS_MNG,
         v:'0.0.1',
     },
 
@@ -201,7 +203,7 @@ jm.mng = {
         },
 
         sn:'cn.jmicro.api.mng.IStatisMonitor',
-        ns:'mng',
+        ns:window.jm.Constants.NS_MNG,
         v:'0.0.1',
     },
 
@@ -233,7 +235,7 @@ jm.mng = {
         },
 
         sn:'cn.jmicro.api.mng.ICommonManager',
-        ns : MNG,
+        ns : window.jm.Constants.NS_MNG,
         v:'0.0.1',
     },
 
@@ -312,7 +314,7 @@ jm.mng = {
         __ccreq : function(method,args){
             let req = {};
             req.serviceName = 'cn.jmicro.api.security.IAccountService';
-            req.namespace = 'sec';
+            req.namespace = window.jm.Constants.NS_SECURITY;
             req.version = '0.0.1';
             req.args = args;
             req.method = method;
@@ -337,7 +339,7 @@ jm.mng = {
         },
 
         sn:'cn.jmicro.api.mng.IMonitorServerManager',
-        ns : MNG,
+        ns : window.jm.Constants.NS_MNG,
         v:'0.0.1',
     },
 
@@ -384,7 +386,7 @@ jm.mng = {
         },
 
         sn:'cn.jmicro.choreography.api.IResourceResponsitory',
-        ns : 'rrs',
+        ns : window.jm.Constants.NS_RESPOSITORY,
         v:'0.0.1',
     },
 
@@ -435,7 +437,7 @@ jm.mng = {
         },
 
         sn:'cn.jmicro.api.mng.IChoreographyService',
-        ns : 'mng',
+        ns : window.jm.Constants.NS_MNG,
         v:'0.0.1',
     },
 
@@ -489,7 +491,7 @@ jm.mng = {
         },
 
         sn:'cn.jmicro.api.mng.ICommonManager',
-        ns : MNG,
+        ns : window.jm.Constants.NS_MNG,
         v:'0.0.1',
     },
 
@@ -552,7 +554,7 @@ jm.mng = {
         },
 
         sn:'cn.jmicro.api.mng.IMonitorTypeService',
-        ns : 'mng',
+        ns : window.jm.Constants.NS_MNG,
         v:'0.0.1',
     },
 
@@ -583,7 +585,7 @@ jm.mng = {
         },
 
         sn:'cn.jmicro.mng.api.ILogService',
-        ns : 'mng',
+        ns : window.jm.Constants.NS_MNG,
         v:'0.0.1',
     },
 
@@ -598,7 +600,7 @@ jm.mng = {
         },
 
         sn:'cn.jmicro.api.mng.IThreadPoolMonitor',
-        ns : 'mng',
+        ns : window.jm.Constants.NS_MNG,
         v:'0.0.1',
     },
 
@@ -613,7 +615,7 @@ jm.mng = {
         },
 
         sn:'cn.jmicro.api.gateway.IBaseGatewayService',
-        ns : 'gateway',
+        ns : window.jm.Constants.NS_API_GATEWAY,
         v:'0.0.1',
     },
 
@@ -636,7 +638,7 @@ jm.mng = {
         },
 
         sn:'cn.jmicro.mng.api.IProfileService',
-        ns : 'mng',
+        ns : window.jm.Constants.NS_MNG,
         v:'0.0.1',
     },
 
@@ -709,7 +711,7 @@ jm.mng = {
         },
 
         sn:'cn.jmicro.mng.api.IAgentLogService',
-        ns : 'mng',
+        ns : window.jm.Constants.NS_MNG,
         v:'0.0.1',
     },
 
@@ -724,7 +726,7 @@ jm.mng = {
         },
 
         sn:'cn.jmicro.mng.api.IPSDataService',
-        ns : 'mng',
+        ns : window.jm.Constants.NS_MNG,
         v:'0.0.1',
 
     },
@@ -740,14 +742,14 @@ jm.mng = {
         },
 
         sn:'cn.jmicro.mng.api.IPSStatisService',
-        ns : 'mng',
+        ns : window.jm.Constants.NS_MNG,
         v:'0.0.1',
 
     },
 
     i18n : {
         sn:'cn.jmicro.mng.api.II8NService',
-        ns : 'mng',
+        ns : window.jm.Constants.NS_MNG,
         v:'0.0.1',
         //resource name is : i18n_zh.properties
         resources_ : {},
@@ -852,7 +854,7 @@ jm.mng = {
         },
 
         sn:'cn.jmicro.example.api.rpc.ISimpleRpc',
-        ns : 'simpleRpc',
+        ns : 'exampleProdiver',
         v:'0.0.1',
 
     },

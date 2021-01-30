@@ -66,8 +66,7 @@ import cn.jmicro.common.Utils;
 import cn.jmicro.common.util.JsonUtils;
 
 @Component
-@Service(namespace="monitorServer",version="0.0.1",debugMode=0,
-monitorEnable=0,logLevel=MC.LOG_WARN,retryCnt=0)
+@Service(version="0.0.1",debugMode=0,monitorEnable=0,logLevel=MC.LOG_WARN,retryCnt=0)
 public class LogMonitorServerImpl implements ILogMonitorServer {
 
 	private final static Logger logger = LoggerFactory.getLogger(LogMonitorServerImpl.class);
@@ -296,7 +295,7 @@ public class LogMonitorServerImpl implements ILogMonitorServer {
 
 		ServiceLoader sl = of.get(ServiceLoader.class);
 		ServiceItem si = sl.createSrvItem(IMonitorAdapter.class, 
-				Config.getInstanceName()+".LogMonitorServer", "0.0.1", null,Config.getClientId());
+				Config.getNamespace()+".LogMonitorServer", "0.0.1", null,Config.getClientId());
 		sl.registService(si,statusAdapter);
 		
 		configListener = new RaftNodeDataListener<>(op,LOG_WARNING_ROOT,LogWarningConfig.class,false);

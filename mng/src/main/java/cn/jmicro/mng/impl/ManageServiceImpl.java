@@ -17,7 +17,7 @@ import cn.jmicro.api.security.PermissionManager;
 import cn.jmicro.api.service.ServiceManager;
 
 @Component
-@Service(namespace="mng", version="0.0.1",external=true,timeout=10000,debugMode=1,showFront=false)
+@Service(version="0.0.1",external=true,timeout=10000,debugMode=1,showFront=false)
 public class ManageServiceImpl implements IManageService {
 
 	@Inject
@@ -41,7 +41,7 @@ public class ManageServiceImpl implements IManageService {
 				 if(!si.isShowFront()) {
 					 continue;
 				 }
-				 if(PermissionManager.checkAccountClientPermission(si.getClientId())) {
+				 if(PermissionManager.isOwner(si.getCreatedBy())) {
 					 sis.add(si);
 				 }
 			 }
@@ -55,7 +55,7 @@ public class ManageServiceImpl implements IManageService {
 	    ServiceItem si = srvManager.getServiceByKey(item.getKey().toKey(true, true, true));
 	    
 	    if(si != null) {
-	    	 if(!PermissionManager.checkAccountClientPermission(si.getClientId())) {
+	    	 if(!PermissionManager.isOwner(si.getCreatedBy())) {
 				return false;
 			 }
 	    	
@@ -85,7 +85,7 @@ public class ManageServiceImpl implements IManageService {
 		
 		 ServiceItem si = srvManager.getServiceByServiceMethod(method);
 		    if(si != null) {
-		    	 if(!PermissionManager.checkAccountClientPermission(si.getClientId())) {
+		    	 if(!PermissionManager.isOwner(si.getCreatedBy())) {
 						return false;
 				  }
 		    	 

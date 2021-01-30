@@ -12,7 +12,7 @@ import cn.jmicro.api.annotation.Service;
 import cn.jmicro.api.gateway.IBaseGatewayService;
 import cn.jmicro.common.util.HashUtils;
 
-@Service(external=true,namespace="gateway",version="0.0.1")
+@Service(external=true,version="0.0.1")
 @Component
 public class BaseGatewayServiceImpl implements IBaseGatewayService {
 

@@ -9,7 +9,7 @@ import cn.jmicro.api.annotation.Service;
 import cn.jmicro.mng.api.IDeploymentDemoService;
 
 @Component
-@Service(external=true,showFront=true,namespace="mng",version="0.0.1")
+@Service(external=true,showFront=true,version="0.0.1")
 public class DeploymentDemoServiceImpl implements IDeploymentDemoService {
 
 	private final static Logger logger = LoggerFactory.getLogger(DeploymentDemoServiceImpl.class);

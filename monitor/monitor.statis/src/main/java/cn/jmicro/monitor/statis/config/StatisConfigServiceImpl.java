@@ -29,7 +29,7 @@ import cn.jmicro.common.util.JsonUtils;
 import cn.jmicro.monitor.statis.api.IStatisConfigService;
 
 @Component
-@Service(namespace="mng", version="0.0.1",external=true,timeout=10000,debugMode=1,showFront=false)
+@Service(version="0.0.1",external=true,timeout=10000,debugMode=1,showFront=false)
 public class StatisConfigServiceImpl implements IStatisConfigService {
 
 	private final static Logger logger = LoggerFactory.getLogger(StatisConfigServiceImpl.class);

@@ -33,6 +33,7 @@ import cn.jmicro.api.annotation.Reference;
 import cn.jmicro.api.async.AsyncFailResult;
 import cn.jmicro.api.basket.BasketFactory;
 import cn.jmicro.api.basket.IBasket;
+import cn.jmicro.api.choreography.ProcessInfo;
 import cn.jmicro.api.config.Config;
 import cn.jmicro.api.executor.ExecutorConfig;
 import cn.jmicro.api.executor.ExecutorFactory;
@@ -66,7 +67,7 @@ public class LogMonitorClient {
 	
 	private String[] typeLabels = null; 
 	
-	@Reference(namespace="monitorServer",version="0.0.1",changeListener="enableWork")
+	@Reference(namespace="*",version="0.0.1",changeListener="enableWork")
 	private ILogMonitorServer$JMAsyncClient monitorServer;
 	
     @Cfg(value="/LogMonitorClient/registMonitorThreadService", changeListener="registMonitorThreadStatusChange")
@@ -138,7 +139,7 @@ public class LogMonitorClient {
 				Config.getInstanceName()+"_MonitorClientStatuCheck",group);
 		
 		if(sl.hashServer() && !Config.isClientOnly()) {
-			monitorServiceItem = sl.createSrvItem(IMonitorAdapter.class, Config.getInstanceName()+"."+group, "0.0.1",
+			monitorServiceItem = sl.createSrvItem(IMonitorAdapter.class, Config.getNamespace()+"."+group, "0.0.1",
 					IMonitorAdapter.class.getName(),Config.getClientId());
 			of.regist("LogMonitorClientStatuCheckAdapter", statusMonitorAdapter);
 		}

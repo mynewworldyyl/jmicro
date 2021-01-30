@@ -61,8 +61,8 @@ public class TestSerializeObject implements Serializable, ISerializeObject {
 						|| cn.jmicro.api.codec.ISerializeObject.class.isAssignableFrom(java.lang.Object.class))) {
 					flag2 |= cn.jmicro.common.Constants.GENERICTYPEFINAL;
 				} else { // block2
-					boolean sameElt = cn.jmicro.agent.SerializeProxyFactory.sameArrayTypeEles(__val2);
-					boolean isFinal = cn.jmicro.agent.SerializeProxyFactory.seriaFinalClass(__val2[0].getClass());
+					boolean sameElt = cn.jmicro.agent.AddSerializedToObject.sameArrayTypeEles(__val2);
+					boolean isFinal = cn.jmicro.agent.AddSerializedToObject.seriaFinalClass(__val2[0].getClass());
 					if (sameElt && isFinal) { // block3
 						flag2 |= cn.jmicro.common.Constants.HEADER_ELETMENT;
 						writeEvery = false;
@@ -85,7 +85,7 @@ public class TestSerializeObject implements Serializable, ISerializeObject {
 						Short cc2 = cn.jmicro.api.codec.TypeCoderFactory.getIns().getCodeByClass(v.getClass());
 						__buffer.writeShort(cc2.intValue());
 					}
-					cn.jmicro.agent.SerializeProxyFactory.encodeListElement(__buffer, v);
+					cn.jmicro.agent.AddSerializedToObject.encodeListElement(__buffer, v);
 				} // end for loop block5
 				out.write(flagIndex2, flag2);
 			} // end if block1
@@ -142,7 +142,7 @@ public class TestSerializeObject implements Serializable, ISerializeObject {
 							eleCls = cn.jmicro.api.codec.TypeCoderFactory.getIns().getClassByCode(new Short(c));
 						} else {
 							clsName = __buffer.readUTF();
-							eleCls = cn.jmicro.agent.SerializeProxyFactory.loadClazz(clsName);
+							eleCls = cn.jmicro.agent.AddSerializedToObject.loadClazz(clsName);
 						}
 					}
 				} // blockgenic
@@ -156,7 +156,7 @@ public class TestSerializeObject implements Serializable, ISerializeObject {
 						c = __buffer.readShort();
 						eleCls = cn.jmicro.api.codec.TypeCoderFactory.getIns().getClassByCode(new Short(c));
 					} // block6
-					java.lang.Object elt = (java.lang.Object) cn.jmicro.agent.SerializeProxyFactory
+					java.lang.Object elt = (java.lang.Object) cn.jmicro.agent.AddSerializedToObject
 							.decodeListElement(__buffer, eleCls);
 					if (elt != null) { // block7
 						__val2[i] = elt;

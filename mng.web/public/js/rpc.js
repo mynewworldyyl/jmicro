@@ -48,6 +48,11 @@ jm.Constants = {
   DEFAULT_NAMESPACE : 'defaultNamespace',
   DEFAULT_VERSION : "0.0.0",
   MNG:'mng',
+  NS_MNG : 'mng',
+  NS_SECURITY : "security",
+  NS_API_GATEWAY : "apigateway",
+  NS_RESPOSITORY : "repository",
+  NS_PUBSUB_SERVER : "pubSubServer",
 }
 
 jm.goTo = function(url) {
@@ -763,7 +768,7 @@ jm.rpc = {
     actListeners:{},
 
     mk2code:{
-        "cn.jmicro.api.gateway.IBaseGatewayService##gateway##0.0.1########fnvHash1a":1048130298,
+        "cn.jmicro.api.gateway.IBaseGatewayService##apigateway##0.0.1########fnvHash1a":1630526296,
     },
 
     errCode2Msg:{
@@ -787,7 +792,7 @@ jm.rpc = {
     __actreq : function(method,args){
         let req = {};
         req.serviceName = 'cn.jmicro.api.security.IAccountService';
-        req.namespace = 'sec';
+        req.namespace = window.jm.Constants.NS_SECURITY;
         req.version = '0.0.1';
         req.args = args;
         req.method = method;
@@ -913,7 +918,7 @@ jm.rpc = {
 
         let req = {};
         req.serviceName = 'cn.jmicro.api.gateway.IBaseGatewayService';
-        req.namespace = 'gateway';
+        req.namespace = window.jm.Constants.NS_API_GATEWAY;
         req.version = '0.0.1';
         req.method = 'bestHost';
         req.args = [];
@@ -1084,7 +1089,7 @@ jm.rpc = {
               let methodCodeReq = new jm.rpc.ApiRequest();
               methodCodeReq.serviceName = 'cn.jmicro.api.gateway.IBaseGatewayService';
               methodCodeReq.method = 'fnvHash1a';
-              methodCodeReq.namespace = 'gateway';
+              methodCodeReq.namespace = window.jm.Constants.NS_API_GATEWAY;
               methodCodeReq.version = '0.0.1';
               methodCodeReq.args = [smsvnKey];
               methodCodeReq.needResponse = true;
@@ -1487,7 +1492,7 @@ jm.ps = {
 
      pssn:"cn.jmicro.gateway.MessageServiceImpl",
      sn:'cn.jmicro.api.pubsub.IPubSubClientService',
-     ns : 'mng',
+     ns : window.jm.Constants.NS_MNG,
      v:'0.0.1',
      MSG_TYPE_ASYNC_RESP : 0x06,
 },
@@ -1653,7 +1658,7 @@ jm.rpc.Constants = {
 
     MSG_TYPE_ASYNC_RESP : 0x06,
 
-    FNV_HASH_METHOD_KEY: "cn.jmicro.api.gateway.IBaseGatewayService##gateway##0.0.1########fnvHash1a",
+    FNV_HASH_METHOD_KEY: "cn.jmicro.api.gateway.IBaseGatewayService##apigateway##0.0.1########fnvHash1a",
 
     SERVICE_NAMES : "serviceNames",
     SERVICE_NAMESPACES : "namespaces",

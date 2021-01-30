@@ -18,11 +18,9 @@ package cn.jmicro.api.service;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -58,6 +56,7 @@ import cn.jmicro.api.registry.UniqueServiceKey;
 import cn.jmicro.api.registry.UniqueServiceMethodKey;
 import cn.jmicro.common.CommonException;
 import cn.jmicro.common.Constants;
+import cn.jmicro.common.Utils;
 import cn.jmicro.common.util.HashUtils;
 import cn.jmicro.common.util.StringUtils;
 import javassist.Modifier;
@@ -205,7 +204,7 @@ public class ServiceLoader{
 		return !this.servers.isEmpty();
 	}
 
-	private Object getService(String clsName,String namespace,String version){
+	/*private Object getService(String clsName,String namespace,String version){
 		
 		namespace = UniqueServiceKey.namespace(namespace);
 		version = UniqueServiceKey.version(version);
@@ -235,7 +234,7 @@ public class ServiceLoader{
 		}else {
 			return null;
 		}
-	}
+	}*/
 	
 	public Object getService(Integer code){
 		//Class<?> cls = ClassScannerUtils.getIns().getClassByName(impl);
@@ -330,7 +329,12 @@ public class ServiceLoader{
 		}
 		
 		//if(item.getClientId() >10) {
-			cl.addClassInstance(item.getKey().getServiceName());
+		try {
+			Class<?> clazz = this.getClass().getClassLoader().loadClass(item.getKey().getServiceName());
+			cl.addClassInstance(clazz);
+		} catch (ClassNotFoundException e) {
+			throw new CommonException("",e);
+		}
 		//}
 		
 		item.setInsId(pi.getId());
@@ -365,7 +369,7 @@ public class ServiceLoader{
 				si.setImpl(impl);
 			}
 		} else {
-			si = this.createSrvItem(interfacez.getName(), ns, ver, impl,clientId);
+			si = this.createSrvItem(interfacez.getName(),ns, ver, impl,clientId);
 			for(Method m : interfacez.getMethods()) {
 				createSrvMethod(si,m.getName(),m.getParameterTypes());
 			}
@@ -378,10 +382,15 @@ public class ServiceLoader{
 		return si;
 	}
 	
-	public ServiceItem createSrvItem(String srvName, String ns, String ver, String impl,int clientId) {
+	public ServiceItem createSrvItem(String srvName,String ns,String ver, String impl,int clientId) {
 		ServiceItem item = new ServiceItem();
 		UniqueServiceKey usk = new UniqueServiceKey();
-		usk.setNamespace(ns);
+		if(Utils.isEmpty(ns)) {
+			usk.setNamespace(Config.getNamespace());
+		}else {
+			usk.setNamespace(ns);
+		}
+		
 		usk.setServiceName(srvName);
 		usk.setVersion(ver);
 		usk.setInstanceName(Config.getInstanceName());
@@ -474,7 +483,7 @@ public class ServiceLoader{
 	
 	}
 
-	private ServiceItem getServiceItems(Class<?> proxySrv,String namespace,String version) {
+	private ServiceItem getServiceItems(Class<?> proxySrv,String ns,String version) {
 		Class<?> srvCls = ProxyObject.getTargetCls(proxySrv);
 		if(!srvCls.isAnnotationPresent(Service.class)){
 			throw new CommonException("Not a service class ["+srvCls.getName()+"] annotated with ["+Service.class.getName()+"]");
@@ -514,10 +523,12 @@ public class ServiceLoader{
 		usk.setInstanceName(Config.getInstanceName());
 		usk.setHost(Config.getExportSocketHost());
 		
-		if(StringUtils.isNotEmpty(namespace)) {
-			usk.setNamespace(UniqueServiceKey.namespace(namespace));
-		}else {
-			usk.setNamespace(getFieldValue(anno.namespace(),intAnno == null ? null : intAnno.namespace(),Constants.DEFAULT_NAMESPACE));
+		if(Utils.isEmpty(ns)) {
+			usk.setNamespace(Config.getNamespace());
+		}else if(Config.isOwnerRes()) {
+			usk.setNamespace(ns);
+		} else {
+			usk.setNamespace(ns + "." + Config.getAccountName());
 		}
 		
 		if(StringUtils.isNotEmpty(version)) {
@@ -728,6 +739,12 @@ public class ServiceLoader{
 			
 			sm.getKey().setUsk(usk);
 			sm.getKey().setMethod(m.getName());
+			/*if(m.getName().equals("updateActPermissions")) {
+				logger.debug("debug");
+			}*/
+			
+			Type[] types = m.getGenericParameterTypes();
+			
 			sm.getKey().setParamsStr(UniqueServiceMethodKey.paramsStr(m.getParameterTypes()));
 			sm.getKey().setReturnParam(ReflectUtils.getDesc(m.getReturnType()));
 			
@@ -735,7 +752,7 @@ public class ServiceLoader{
 			
 			Set<Class<?>> clses = new HashSet<>();
 			
-			Type[] types = m.getGenericParameterTypes();
+			//Type[] types = m.getGenericParameterTypes();
 			 Class<?>[]  pts = m.getParameterTypes();
 			 
 			for(int i = 0; i < types.length; i++) {
@@ -755,8 +772,6 @@ public class ServiceLoader{
 			}
 			
 			item.addMethod(sm);
-			
-			
 			
 			/*if(sm.getBreakingRule().isEnable()) {
 				sm.setMonitorEnable(1);
@@ -806,7 +821,7 @@ public class ServiceLoader{
 			}
 			
 			logger.debug(c.getName());
-			cl.addClassInstance(c.getName());
+			cl.addClassInstance(c);
 			
 			/*if(cls.isArray()) {
 				needRegist(cls.getComponentType(),cls.getComponentType().getGenericSuperclass());

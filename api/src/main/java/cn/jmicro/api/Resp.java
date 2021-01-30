@@ -24,6 +24,8 @@ public class Resp<T> {
 	public Resp(int code) {this.code = code;};
 	public Resp(int code,String msg) {this.code = code;this.msg=msg;};
 	
+	public Resp(int code,T data) {this.code = code;this.data = data;};
+	
 	public String getMsg() {
 		return msg;
 	}

@@ -24,7 +24,7 @@ import cn.jmicro.common.util.JsonUtils;
 import cn.jmicro.mng.api.ILogWarningConfig;
 
 @Component
-@Service(namespace="mng", version="0.0.1",external=true,timeout=10000,debugMode=1,showFront=false)
+@Service(version="0.0.1",external=true,timeout=10000,debugMode=1,showFront=false)
 public class LogWarningConfigImpl implements ILogWarningConfig {
 
 	private final static Logger logger = LoggerFactory.getLogger(LogWarningConfigImpl.class);

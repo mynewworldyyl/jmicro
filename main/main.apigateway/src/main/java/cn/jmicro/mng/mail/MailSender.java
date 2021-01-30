@@ -21,7 +21,7 @@ import cn.jmicro.api.annotation.Service;
 import cn.jmicro.api.email.IEmailSender;
 
 @Component
-@Service(namespace="mng", version="0.0.1",retryCnt=0,external=false,debugMode=1,showFront=false)
+@Service(version="0.0.1",retryCnt=0,external=false,debugMode=1,showFront=false)
 public class MailSender implements IEmailSender{
 
 	private final static Logger logger = LoggerFactory.getLogger(MailSender.class);

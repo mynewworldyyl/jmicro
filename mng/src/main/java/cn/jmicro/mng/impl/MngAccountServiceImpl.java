@@ -498,7 +498,7 @@ public class MngAccountServiceImpl implements IAccountService {
 
 	@Override
 	@SMethod(perType=true,needLogin=true,maxSpeed=5,maxPacketSize=2048)
-	public Resp<Boolean> updateActPermissions(String actName,Set<String> adds,Set<String> dels) {
+	public Resp<Boolean> updateActPermissions(String actName,Set<Integer> adds,Set<Integer> dels) {
 		
 		Resp<Boolean> r = new Resp<>();
 		ActInfo ai = am.getAccountFromZK(actName);
@@ -510,7 +510,7 @@ public class MngAccountServiceImpl implements IAccountService {
 			return r;
 		}
 		
-		Set<String> pers = ai.getPers();
+		Set<Integer> pers = ai.getPers();
 		/*if(pers == null) {
 			pers = new HashSet<>();
 			ai.setPers(pers);

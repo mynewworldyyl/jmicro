@@ -48,7 +48,7 @@ public class SecretManager {
 
 	private static final String PUBKEYS_PREFIX = "META-INF/keys/";
 
-	@Reference(namespace = "sec", version = "*", required = false)
+	@Reference(namespace ="*", version = "*", required = false)
 	private ISecretService secretSrv;
 	
 	@Inject(required=false)

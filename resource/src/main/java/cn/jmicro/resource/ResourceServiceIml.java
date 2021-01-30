@@ -17,7 +17,7 @@ import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.monitor.ResourceData;
 
 @Component
-@Service(namespace="monitorResourceService", version="0.0.1", debugMode=0,
+@Service(version="0.0.1", debugMode=0,
 monitorEnable=0, logLevel=MC.LOG_WARN, retryCnt=0, showFront=false, external=true)
 public class ResourceServiceIml implements IResourceService {
 

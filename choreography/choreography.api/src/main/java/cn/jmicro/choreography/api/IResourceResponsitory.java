@@ -13,6 +13,8 @@ public interface IResourceResponsitory {
 	
 	Resp<PackageResource> addResource(PackageResource pr);
 	
+	Resp<PackageResource> getResource(int resId);
+	
 	Resp<PackageResource> updateResource(PackageResource pr,boolean updateFile);
 	
 	Resp<Boolean> addResourceData(int id, byte[] data, int blockNum);
@@ -29,6 +31,13 @@ public interface IResourceResponsitory {
 	
 	Resp<List<Map<String,Object>>> dependencyList(int resId);
 	
+	Resp<List<Map<String,Object>>> getResourceListForDeployment(Map<String,Object> qry);
+	
+	Resp<PackageResource> getAgentPackage(String version);
+	
+	Resp<Boolean> clearInvalidDbFile();
+	
+	Resp<Boolean> clearInvalidResourceFile();
 	
 	
 }

@@ -5,7 +5,9 @@
 		 <artifactId>jmicro.parent</artifactId>
 		 <version>0.0.2-SNAPSHOT</version>
     </parent>
-    <artifactId>jmicro.example</artifactId>
+    
+     <groupId>cn.expjmicro</groupId>
+    <artifactId>expjmicro.example</artifactId>
     <packaging>pom</packaging>
     <name>${project.artifactId}</name>
     <description>jmicro hello demo</description>

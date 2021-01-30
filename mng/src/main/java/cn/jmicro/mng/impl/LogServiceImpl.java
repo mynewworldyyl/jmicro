@@ -43,7 +43,7 @@ import cn.jmicro.common.util.StringUtils;
 import cn.jmicro.mng.api.ILogService;
 
 @Component
-@Service(namespace="mng", version="0.0.1",external=true,debugMode=1,showFront=false)
+@Service(version="0.0.1",external=true,debugMode=1,showFront=false)
 public class LogServiceImpl implements ILogService {
 
 	@Inject

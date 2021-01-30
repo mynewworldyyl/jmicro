@@ -59,7 +59,8 @@
                       <Menu-item name="__account"><Icon type="ios-alert" />{{"Account"|i18n}}</Menu-item>
                       <Menu-item name="__userProfile"><Icon type="ios-alert" />{{"Profile"|i18n}}</Menu-item>
                       <Menu-item name="__publicKeyList"><Icon type="ios-cog"></Icon>{{"publicKeyList"|i18n}}</Menu-item>
-                     <!-- <Menu-item name="__role"><Icon type="ios-cog"></Icon>Role</Menu-item>-->
+                      <Menu-item name="__serviceMethodList"><Icon type="ios-cog"></Icon>{{"serviceMethodList"|i18n}}</Menu-item>
+                      <!-- <Menu-item name="__role"><Icon type="ios-cog"></Icon>Role</Menu-item>-->
                   </Menu-group>
 
                   <Menu-group :title="'Pubsub'|i18n">
@@ -206,6 +207,24 @@ export default {
             self.menusMap[opts.editorId] = opts.menus;
             self.menusMapCommon[opts.editorId] = self.filterMenus(opts.editorId);
             self.selectMenu(opts.editorId);
+
+        });
+
+        window.jm.vue.$on('menuChange',function(opts) {
+            if(!opts.editorId) {
+                throw 'editorId is NULL';
+            }
+
+            if(!opts.menus) {
+                opts.menus = [];
+            }
+
+            self.menusMap[opts.editorId] = opts.menus;
+            self.menusMapCommon[opts.editorId] = self.filterMenus(opts.editorId);
+
+            if(self.activeEditorId == opts.editorId) {
+                self.selectMenu(opts.editorId);
+            }
 
         });
 

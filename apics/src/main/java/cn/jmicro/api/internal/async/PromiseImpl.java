@@ -1,9 +1,7 @@
 package cn.jmicro.api.internal.async;
 
+import java.lang.reflect.Type;
 import java.util.concurrent.atomic.AtomicInteger;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import cn.jmicro.api.Resp;
 import cn.jmicro.api.async.AsyncFailResult;
@@ -16,13 +14,13 @@ import cn.jmicro.common.CommonException;
 
 public class PromiseImpl<R> implements IPromise<R>{
 
-	private final static Logger logger = LoggerFactory.getLogger(PromiseImpl.class);
-	
 	private IAsyncCallback<R>[] callbacks ;
 	
 	private SuccessCallback<R> custCb = null;
 	
 	private R result;
+	
+	private Type resultType;
 	
 	private boolean done = false;
 	
@@ -101,7 +99,6 @@ public class PromiseImpl<R> implements IPromise<R>{
 		}
 		
 		if(done) {
-			logger.error("callback have been call: ");
 			return;
 		}
 		
@@ -266,4 +263,11 @@ public class PromiseImpl<R> implements IPromise<R>{
 		
 	}
 	
+	public Type resultType() {
+		return this.resultType;
+	}
+	
+	public void setResultType(Type rt) {
+		this.resultType = rt;
+	}
 }

@@ -44,13 +44,13 @@ public final class RpcRequest implements IRequest{
 	
 	protected long reqParentId = -1L;
 	
-	private  transient  String serviceName;
+/*	private  transient  String serviceName;
 	
 	private  transient  String method;
 	
 	private  transient  String namespace;
 	
-	private  transient  String version;
+	private  transient  String version;*/
 	
 	private transient ISession session;
 	

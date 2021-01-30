@@ -136,7 +136,7 @@
                 let curSelNodes = this.$refs.plTree.getCheckedNodes();
                 for (let k = 0; k <  curSelNodes.length; k++) {
                     if(curSelNodes[k].srcData) {
-                        perms.push(curSelNodes[k].srcData.pid);
+                        perms.push(curSelNodes[k].srcData.haCode);
                     }
 
                 }
@@ -176,29 +176,33 @@
                     }
                 }
 
-
                 if (adds.length > 0 || dels.length > 0) {
                     let self = this;
-                    window.jm.mng.act.updateActPermissions(this.curAct.actName, adds, dels).then((resp) => {
-                        if (resp.code == 0) {
-                            self.curAct.pers = perms;
-                            self.curAct.permissionParseEntires = [];
-                            self.openActInfoDrawer(self.curAct);
-                        } else {
-                            self.$Message.success(resp.msg);
-                        }
-                    }).catch((err) => {
+                    let sn = 'cn.jmicro.security.api.IServiceMethodListService';
+                    let ns = window.jm.Constants.NS_SECURITY;
+                    let v = '0.0.1';
+                    window.jm.rpc.callRpcWithParams(sn, ns, v, 'updateActPermissions',
+                        [this.curAct.actName, adds, dels])
+                        .then((resp) => {
+                            if (resp.code == 0) {
+                                self.curAct.pers = perms;
+                                self.curAct.permissionParseEntires = [];
+                                self.openActInfoDrawer(self.curAct);
+                            } else {
+                                self.$Message.success(resp.msg);
+                            }
+                        }).catch((err) => {
                         window.console.log(err);
                     });
                 }
-
             },
 
             addPermissions() {
                 if(!this.srcPermissions || this.srcPermissions.length == 0) {
                     let self = this;
-                    window.jm.mng.act.getAllPermissions().then((resp)=>{
-                        if(resp.code == 0 ) {
+                    window.jm.mng.act.getAllPermissions()
+                        .then((resp)=>{
+                        if(resp.code == 0) {
                             self.srcPermissions = resp.data;
                             if(self.srcPermissions) {
                                 self.curActParsedPermissions =  self.parsePermissionData();
@@ -257,17 +261,21 @@
 
             parseActPermissionData() {
                 let pl = [];
-                for(let k in this.curAct.permissionEntires ) {
-                    let srcPs = this.curAct.permissionEntires[k];
+                if(!this.curAct.pers) {
+                    this.curAct.pers= [];
+                }
+                for(let modelKey in this.curAct.permissionEntires ) {
+                    let srcPs = this.curAct.permissionEntires[modelKey];
                     if(!srcPs || srcPs.length == 0) {
                         continue;
                     }
 
                     let children = [];
-                    pl.push({ title: k, children:children});
+                    pl.push({ title: modelKey, children:children});
 
                     for(let i = 0; i < srcPs.length; i++) {
                         let sp = srcPs[i];
+                        this.curAct.pers.push(sp.haCode);
                         let e = {
                             title : sp.label,
                             expanded : true,
@@ -291,19 +299,19 @@
             parsePermissionData() {
                 let pl = [];
                 let self = this;
-                for(let k in self.srcPermissions) {
-                    let srcPs = self.srcPermissions[k];
+                for(let modelKey in self.srcPermissions) {
+                    let srcPs = self.srcPermissions[modelKey];
                     if(!srcPs || srcPs.length == 0) {
                         continue;
                     }
 
                     let children = [];
-                    pl.push({ title: k, children:children});
+                    pl.push({ title: modelKey, children:children});
 
-                    let isCheck = (pid) => {
+                    let isCheck = (haCode) => {
                         if(self.curAct.pers) {
                             for(let i = 0; i < self.curAct.pers.length; i++) {
-                                if(pid == self.curAct.pers[i]) {
+                                if(haCode == self.curAct.pers[i]) {
                                     return true;
                                 }
                             }
@@ -317,7 +325,7 @@
                             title: sp.label,
                             srcData : sp,
                             expand: true,
-                            checked: isCheck(sp.pid),
+                            checked: isCheck(sp.haCode),
                             render: (h/*,params*/) => {
                                 return h('span',[
                                     h('span',{

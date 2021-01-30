@@ -29,7 +29,7 @@ import cn.jmicro.common.Constants;
 import cn.jmicro.mng.api.IAgentLogService;
 
 @Component(level=20001)
-@Service(namespace="mng", version="0.0.1", external=true, debugMode=0, showFront=false)
+@Service(version="0.0.1", external=true, debugMode=0, showFront=false)
 public class AgentLogServiceImpl implements IAgentLogService {
 
 	private final Logger logger = LoggerFactory.getLogger(AgentLogServiceImpl.class);

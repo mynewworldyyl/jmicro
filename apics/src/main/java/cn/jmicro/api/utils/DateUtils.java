@@ -59,6 +59,8 @@ public final class DateUtils {
 	 
 	 public static final String PATTERN_HHMMSSZZZ = "HH:mm:ss SSS";
 	 
+	 public static final String PATTERN_YYYYMMDD = "yyyyMMdd";
+	 
    /**
     * Date format pattern used to parse HTTP date headers in RFC 1123 format.
     */

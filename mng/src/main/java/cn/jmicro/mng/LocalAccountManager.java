@@ -26,10 +26,10 @@ public class LocalAccountManager {
 		Map<String,Set<Permission>> rst = new HashMap<>();
 		ActInfo ai = am.getAccountFromZK(actName);
 		if(ai.getPers() != null && !ai.getPers().isEmpty()) {
-			for(String mk : ai.getPers()) {
-				UniqueServiceMethodKey k = UniqueServiceMethodKey.fromKey(mk);
+			for(Integer mk : ai.getPers()) {
+				UniqueServiceMethodKey k = UniqueServiceMethodKey.fromKey(mk+"");
 				Permission p = new Permission();
-				p.setPid(k.toKey(false, false, false));
+				//p.setPid(k.toKey(false, false, false));
 				p.setLabel(k.getMethod());
 				p.setModelName(k.getUsk().toSnv());
 				p.setDesc(k.getMethod()+"(" +k.getParamsStr()+")");

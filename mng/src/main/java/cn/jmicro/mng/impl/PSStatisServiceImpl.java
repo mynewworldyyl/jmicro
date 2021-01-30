@@ -24,7 +24,7 @@ import cn.jmicro.common.Constants;
 import cn.jmicro.mng.api.IPSStatisService;
 
 @Component(level=20001)
-@Service(namespace="mng", version="0.0.1", external=true, debugMode=0, showFront=false)
+@Service(version="0.0.1", external=true, debugMode=0, showFront=false)
 public class PSStatisServiceImpl implements IPSStatisService {
 
 	public static final String PUTSUB_TOTAL = "t_pubsub_total";

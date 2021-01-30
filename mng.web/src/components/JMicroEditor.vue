@@ -60,6 +60,7 @@
                         <JStatisConfigView v-else-if="item.group == 'statisConfig'" :item="item"></JStatisConfigView>
                         <JResourceConfigView v-else-if="item.group == 'resourceConfig'" :item="item"></JResourceConfigView>
                         <JPublicKeyList v-else-if="item.group == 'publicKeyList'" :item="item"></JPublicKeyList>
+                        <JServiceMethodList v-else-if="item.group == 'serviceMethodList'" :item="item"></JServiceMethodList>
 
                         <JBottomBar></JBottomBar>
                     </div>
@@ -143,6 +144,7 @@
             JAccountEditor:()=> import('./security/JAccountEditor.vue'),
             JUserProfileEditor:()=> import('./security/JUserProfileEditor.vue'),
             JPublicKeyList:()=> import('./security/JPublicKeyList.vue'),
+            JServiceMethodList:()=> import('./security/JServiceMethodList.vue'),
 
             JTypeConfig : () => import('./monitor/JTypeConfig.vue'),
 

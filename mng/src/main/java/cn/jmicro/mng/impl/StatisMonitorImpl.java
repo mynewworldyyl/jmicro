@@ -41,7 +41,7 @@ import cn.jmicro.common.Constants;
  * @date 2020年3月27日
  */
 @Component(level=1001)
-@Service(namespace="mng",version="0.0.1",external=true,showFront=false)
+@Service(version="0.0.1",external=true,showFront=false)
 public class StatisMonitorImpl implements IStatisMonitor {
 
 	private final static Logger logger = LoggerFactory.getLogger(StatisMonitorImpl.class);
@@ -69,7 +69,7 @@ public class StatisMonitorImpl implements IStatisMonitor {
 	@Inject
 	private I18NManager i18nManager;
 	
-	@Reference(namespace="rpcStatisMonitor", version="0.0.1",required=false)
+	@Reference(namespace="*", version="0.0.1",required=false)
 	private IMonitorDataSubscriber dataServer;
 	
 	private String prefix = "statis.index.";

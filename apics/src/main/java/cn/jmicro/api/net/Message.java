@@ -700,6 +700,21 @@ public final class Message {
 	        return anUnsignedShort;
 	}
 	 
+	 public static void wiriteUnsignedLong(ByteBuffer b,long val) {
+			
+		    b.put((byte)(0xFF & (val >>> 56)));
+			b.put((byte)(0xFF & (val >>> 48)));
+			b.put((byte)(0xFF & (val >>> 40)));
+			b.put((byte)(0xFF & (val >>> 32)));
+			
+			b.put((byte)(0xFF & (val >>> 24)));
+			b.put((byte)(0xFF & (val >>> 16)));
+			b.put((byte)(0xFF & (val >>> 8)));
+			b.put((byte)(0xFF & (val >>> 0)));
+			
+			return;
+	}
+	 
 	 
 	
 	public static void writeUnsignedByte(ByteBuffer b,short v) {

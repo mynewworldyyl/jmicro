@@ -9,6 +9,8 @@ import cn.jmicro.api.annotation.SO;
 @IDStrategy
 public class PackageResource {
 	
+	//public static final String ID2NAME_SEP = "#$#";
+	
 	public static final String TABLE_NAME = "t_resources";
 	
 	public static final String DEP_FILE = "jmicro_deps.txt";
@@ -24,6 +26,8 @@ public class PackageResource {
 	public static final int STATUS_WAITING = 5; //等待依赖下载完成
 	
 	public static final int STATUS_CHECK_FOR_DOWNLOAD = 6;//待下载，从第3方服务器下载，如maven仓库
+	
+	public static final int STATUS_CHECK_SECURITY = 7;//系统检测包存在安全问题
 
 	private int id;
 	
@@ -44,8 +48,6 @@ public class PackageResource {
 	private Set<Integer> depIds;
 	
 	private Set<Integer> waitingRes;
-	
-	private String depStr;
 	
 	private boolean main;
 	
@@ -103,14 +105,6 @@ public class PackageResource {
 
 	public int getTotalBlockNum() {
 		return totalBlockNum;
-	}
-
-	public String getDepStr() {
-		return depStr;
-	}
-
-	public void setDepStr(String depStr) {
-		this.depStr = depStr;
 	}
 
 	public void setTotalBlockNum(int totalBlockNum) {

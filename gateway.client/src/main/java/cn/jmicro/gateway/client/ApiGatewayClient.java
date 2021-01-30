@@ -23,10 +23,10 @@ import java.nio.ByteBuffer;
 import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
 import java.util.Base64;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicLong;
 
 import javax.crypto.SecretKey;
 
@@ -36,7 +36,6 @@ import cn.jmicro.api.Resp;
 import cn.jmicro.api.annotation.WithContext;
 import cn.jmicro.api.async.AsyncFailResult;
 import cn.jmicro.api.async.IPromise;
-import cn.jmicro.api.client.IAsyncCallback;
 import cn.jmicro.api.client.IClientSession;
 import cn.jmicro.api.codec.TypeUtils;
 import cn.jmicro.api.gateway.ApiRequest;
@@ -46,6 +45,7 @@ import cn.jmicro.api.net.IMessageHandler;
 import cn.jmicro.api.net.IRequest;
 import cn.jmicro.api.net.ISession;
 import cn.jmicro.api.net.Message;
+import cn.jmicro.api.net.ServerError;
 import cn.jmicro.api.pubsub.PSData;
 import cn.jmicro.api.rsa.EncryptUtils;
 import cn.jmicro.api.security.ActInfo;
@@ -67,21 +67,18 @@ public class ApiGatewayClient {
 	
 	//private final static Logger logger = LoggerFactory.getLogger(ApiGatewayClient.class);
 	
+	public static final String NS_API_GATEWAY="apigateway";
+	public static final String NS_MNG="mng";
+	public static final String NS_SECURITY="security";
+	public static final String NS_REPONSITORY="repository";
+	
 	private static final String API_GATEWAY_PUB_KEY_FILE = "/META-INF/keys/jmicro_apigateway_pub.key";
 	
 	private static ApiGatewayClient client;
 	
-	private static final AtomicLong reqId = new AtomicLong(1);
-	
-	//private PrefixTypeEncoderDecoder decoder = new PrefixTypeEncoderDecoder();
-	
 	private ApiGatewayClientSessionManager sessionManager = new ApiGatewayClientSessionManager();
 	
-	private volatile Map<Long,IResponseHandler> waitForResponses = new ConcurrentHashMap<>();
-	
-	private volatile Map<Long,Message> resqMsgCache = new ConcurrentHashMap<>();
-	
-	//private volatile Map<Long,Boolean> streamComfirmFlag = new ConcurrentHashMap<>();
+	private final Map<Long,PromiseImpl<?>> waitForResponse = new ConcurrentHashMap<>();
 	
 	private ApiGatewayConfig config = null;
 	
@@ -92,7 +89,7 @@ public class ApiGatewayClient {
 	private ActInfo actInfo;
 	
 	private static final String SEC_SRV = "cn.jmicro.api.security.IAccountService";
-	private static final String SEC_NS = "sec";
+	private static final String SEC_NS = ApiGatewayClient.NS_SECURITY;
 	private static final String SEC_VER = "0.0.1";
 	
 	public static final ApiGatewayClient getClient() {
@@ -167,35 +164,7 @@ public class ApiGatewayClient {
 				if(msg.isDownSsl()) {
 					checkSignAndDecrypt(msg);
 				}
-				waitForResponses.get(msg.getReqId()).onResponse(msg);
-			}
-
-			
-		});
-		
-		sessionManager.registerMessageHandler(new IMessageHandler(){
-			@Override
-			public Byte type() {
-				return Constants.MSG_TYPE_API_CLASS_RESP;
-			}
-			
-			@Override
-			public void onMessage(ISession session, Message msg) {
-				session.active();
-				waitForResponses.get(msg.getReqId()).onResponse(msg);
-			}
-		});
-		
-		sessionManager.registerMessageHandler(new IMessageHandler(){
-			@Override
-			public Byte type() {
-				return Constants.MSG_TYPE_ID_RESP;
-			}
-			
-			@Override
-			public void onMessage(ISession session, Message msg) {
-				session.active();
-				waitForResponses.get(msg.getReqId()).onResponse(msg);
+				notifyOnMessage(msg);
 			}
 		});
 		
@@ -208,7 +177,7 @@ public class ApiGatewayClient {
 			@Override
 			public void onMessage(ISession session, Message msg) {
 				session.active();
-				PSData pd = parseResult(msg,PSData.class);
+				PSData pd = parseResult(msg,PSData.class,null);
 				pubsubClient.onMsg(pd);
 			}
 		});
@@ -216,6 +185,11 @@ public class ApiGatewayClient {
 		//Decoder.setTransformClazzLoader(this::getEntityClazz);
 	}
 	
+	protected void notifyOnMessage(Message msg) {
+		PromiseImpl p = this.waitForResponse.remove(msg.getReqId());
+		parseResult(msg,p.resultType(),p);
+	}
+
 	public <T> T getService(Class<?> serviceClass, String namespace, String version) {		
 		if(!serviceClass.isInterface()) {
 			throw new CommonException(serviceClass.getName() + " have to been insterface");
@@ -227,7 +201,7 @@ public class ApiGatewayClient {
 					if(serviceClass.getName().endsWith(AsyncClientProxy.INT_SUBFIX) && 
 							method.getName().endsWith(AsyncClientProxy.ASYNC_METHOD_SUBFIX)) {
 						//异步RPC方法调用
-						final PromiseImpl<T> p = new PromiseImpl<T>();
+						/*final PromiseImpl<T> p = new PromiseImpl<T>();
 						IAsyncCallback<T> cb = new IAsyncCallback<T>() {
 							@Override
 							public void onResult(T val, AsyncFailResult fail,Object ctx) {
@@ -238,7 +212,7 @@ public class ApiGatewayClient {
 								}
 								p.done();
 							}
-						};
+						};*/
 						
 						//String serviceName, String namespace, String version, String methodName, 
 						//Class<?> returnType, Object[] args, IAsyncCallback<T> cb
@@ -247,84 +221,62 @@ public class ApiGatewayClient {
 						
 						Class<?> returnType = TypeUtils.finalParameterType(method.getGenericReturnType(), 0);
 						
-						Object[] as = null;
+						Object[] reqArgs = null;
 						if(method.isAnnotationPresent(WithContext.class)) {
-							 as = new Object[args.length-1];
-							 System.arraycopy(args, 0, as, 0, args.length-1);
-						}else {
-							as = args;
+							reqArgs = new Object[args.length-1];
+							 System.arraycopy(args, 0, reqArgs, 0, args.length-1);
+						} else {
+							reqArgs = args;
 						}
-						callService(serviceClass.getName(), namespace, version, method.getName(), 
-								returnType, as, cb);
+						IPromise<T> p = callService(serviceClass.getName(), namespace, version, method.getName(), 
+								returnType, reqArgs);
 						return p;
 					} else {
 						Type returnType = getType(method.getReturnType(),method.getGenericReturnType());
-						return callService(serviceClass.getName(), namespace, version, method.getName(), 
-								returnType, args, null);
+						IPromise<T> p = callService(serviceClass.getName(), namespace, version, method.getName(), 
+								returnType, args);
+						return (T) p.getResult();
 					}
 		});
 		return (T)srv;
 	}
 	
 	public IPromise<Resp<ActInfo>> loginJMAsync(String actName,String pwd) {
-		final PromiseImpl<Resp<ActInfo>> p = new PromiseImpl<>();
+		IPromise<Resp<ActInfo>> p = null;
+		
 		if(actInfo != null) {
-			p.setFail(1, "Have login and have to logout before relogin");
-			p.setResult(null);
-			p.done();
+			PromiseImpl<Resp<ActInfo>> p0 = new PromiseImpl<>();
+			p0.setFail(1, "Have login and have to logout before relogin");
+			p0.setResult(null);
+			p0.done();
+			p = p0;
 		} else {
-			IAsyncCallback<Resp<ActInfo>> cb = new IAsyncCallback<Resp<ActInfo>>() {
-				@Override
-				public void onResult(Resp<ActInfo> resp, AsyncFailResult fail, Object ctx) {
-					if(fail == null && resp.getCode() == Resp.CODE_SUCCESS) {
-						setActInfo(resp.getData());
-						p.setResult(resp);
-					} else {
-						if(fail == null) {
-							fail = new AsyncFailResult();
-							fail.setCode(resp.getCode());
-							fail.setMsg(resp.getMsg());
-						}
-						p.setFail(fail);
-					}
-					p.done();
-				}
-			};
-			//TypeToken<?>  returnType
 			Type returnType = TypeToken.getParameterized(Resp.class, ActInfo.class).getType();
-			this.callService(SEC_SRV, SEC_NS, SEC_VER, "login", 
-					returnType, new Object[] {actName, pwd}, cb);
+			p = this.callService(SEC_SRV, SEC_NS, SEC_VER, "login", 
+					returnType, new Object[] {actName, pwd});
+			p.then((Resp<ActInfo> resp, AsyncFailResult fail, Object ctx)->{
+				if(fail == null && resp.getCode() == Resp.CODE_SUCCESS) {
+					setActInfo(resp.getData());
+				}
+			});
 		}
 		return p;
 	} 
 	
 	public IPromise<Boolean> logoutJMAsync() {
-		final PromiseImpl<Boolean> p = new PromiseImpl<>();
+		IPromise<Boolean> p = null;
 		if(actInfo == null) {
-			p.setResult(null);
-			p.setFail(1, "Not login");
-			p.done();
+			PromiseImpl<Boolean> p0 = new PromiseImpl<>();
+			p0.setResult(null);
+			p0.setFail(1, "Not login");
+			p0.done();
+			p = p0;
 		} else {
-			IAsyncCallback<Resp<Boolean>> cb = new IAsyncCallback<Resp<Boolean>>() {
-				@Override
-				public void onResult(Resp<Boolean> resp, AsyncFailResult fail,Object ctx) {
-					if(fail == null && resp.getData()) {
-						p.setResult(true);
-						setActInfo(null);
-					} else {
-						if(fail == null) {
-							fail = new AsyncFailResult();
-							fail.setCode(resp.getCode());
-							fail.setMsg(resp.getMsg());
-						}
-						p.setFail(fail);
-					}
-					p.done();
-				}
-			};
 			Type returnType = TypeToken.getParameterized(Resp.class, Boolean.class).getType();
-			this.callService(SEC_SRV, SEC_NS, SEC_VER, "logout", 
-					returnType, new Object[] {}, cb);
+			p = callService(SEC_SRV, SEC_NS, SEC_VER, "logout", returnType, new Object[] {});
+			p.success((rst,cxt0)->{
+				setActInfo(null);
+			});
 		}
 		
 		return p;
@@ -360,7 +312,7 @@ public class ApiGatewayClient {
 		msg.setPayload(bb);
 		msg.setVersion(Message.MSG_VERSION);
 		
-		String clazzName =(String) getResponse(msg,String.class,null);
+		String clazzName = null;//getResponse(msg,String.class,null);
 		
 		if(Utils.isEmpty(clazzName)) {
 			try {
@@ -383,8 +335,8 @@ public class ApiGatewayClient {
     	
     }
 	
-	public <T> T callService(String serviceName, String namespace, String version, String methodName, 
-			Type  returnType, Object[] args, IAsyncCallback<T> cb) {
+	public <T> IPromise<T> callService(String serviceName, String namespace, String version, String methodName, 
+			Type  returnType, Object[] args) {
 		if(Utils.isEmpty(serviceName)) {
 			throw new CommonException("Service cabnot be null");
 		}
@@ -402,74 +354,18 @@ public class ApiGatewayClient {
 		}
 		
 		Message msg = this.createMessage(serviceName, namespace, version, methodName, args);
-		return getResponse(msg ,returnType,cb);
-	}
-	
-	
-	//@SuppressWarnings("unchecked")
-	private <T> T getResponse(Message msg, Type  returnType, final IAsyncCallback<T> cb) {
-		//streamComfirmFlag.put(msg.getReqId(), true);
-		waitForResponses.put(msg.getReqId(), respMsg1 -> {
-			//streamComfirmFlag.remove(msg.getReqId());
-			if(cb == null) {
-				resqMsgCache.put(msg.getReqId(), respMsg1);
-				synchronized (msg) {
-					msg.notify();
-				}
-			} else {
-				if(respMsg1 != null) {
-					Object val = null;
-					 if(respMsg1.getType() == Constants.MSG_TYPE_ID_RESP) {
-						 //val = this.decoder.decode((ByteBuffer)respMsg1.getPayload());
-						 cb.onResult((T)val, null,null);
-					} else {
-						 try {
-							 val = parseResult(respMsg1,returnType);
-							 cb.onResult((T)val, null,null);
-						} catch (Exception e) {
-							e.printStackTrace();
-							AsyncFailResult f = new AsyncFailResult();
-							f.setMsg(e.getMessage());
-							f.setCode(1);
-							cb.onResult(null, f,null);
-						}
-					}
-				}
-			}
-			return;
-		});
+		final PromiseImpl<T> p = new PromiseImpl<T>();
+		p.setResultType(returnType);
+		waitForResponse.put(msg.getReqId(), (PromiseImpl<?>)p);
 		
 		IClientSession sessin = sessionManager.getOrConnect(null,this.config.getHost(),
 				this.config.getPort());
 		sessin.write(msg);
-	
-		if(cb != null) {
-			//异步RPC
-			return null;
-		}
 		
-		synchronized (msg) {
-			try {
-				msg.wait(60*1000);
-			} catch (InterruptedException e) {
-				e.printStackTrace();
-			}
-		}
-		
-		Message resqMsg = resqMsgCache.remove(msg.getReqId());
-		
-		if(resqMsg == null) {
-			throw new CommonException("Timeout");
-		}
-		
-		if(resqMsg.getType() == Constants.MSG_TYPE_ID_RESP) {
-			return null;//this.decoder.decode((ByteBuffer)resqMsg.getPayload());
-		} else {
-			return (T)parseResult(resqMsg,returnType);
-		}
+		return p;
 	}
 	
-	private <R> R parseResult(Message respMsg, Type returnType) {
+	private <R> R parseResult(Message respMsg, Type resultType, PromiseImpl p) {
 		 
 		 if(respMsg == null) {
 			 return null;
@@ -481,30 +377,46 @@ public class ApiGatewayClient {
 		try {
 			json = new String(bb.array(),Constants.CHARSET);
 			if(respMsg.getType() == Constants.MSG_TYPE_ASYNC_RESP) {
-				R psData = JsonUtils.getIns().fromJson(json, returnType);
+				R psData = JsonUtils.getIns().fromJson(json, resultType);
 				return psData;
 			} else {
 				ApiResponse apiResp = JsonUtils.getIns().fromJson(json, ApiResponse.class);
 				if(apiResp.isSuccess()) {
-					 if(apiResp.getResult() == null || returnType == Void.class || Void.TYPE == returnType) {
-						 return null;
+					 if(apiResp.getResult() == null || resultType == Void.class || Void.TYPE == resultType) {
+						 p.done();
 					 } else {
 						 String js = JsonUtils.getIns().toJson(apiResp.getResult());
-						 R rst = JsonUtils.getIns().fromJson(js, returnType);
+						 R rst = JsonUtils.getIns().fromJson(js, resultType);
+						 p.setResult(rst);
+						 p.done();
 						 return rst;
 					 }
 				} else {
-					throw new CommonException(apiResp.toString());
+					 String js = JsonUtils.getIns().toJson(apiResp.getResult());
+					 ServerError se = JsonUtils.getIns().fromJson(js, ServerError.class);
+					 if(se != null) {
+						 p.setFail(se.getErrorCode(), se.getMsg());
+					 }else {
+						 p.setFail(Resp.CODE_FAIL, js);
+					 }
+					 p.done();
+					 System.out.println(p.getResult());
+					//throw new CommonException(apiResp.toString());
+					 return null;
 				}
 			}
 			
 		} catch (UnsupportedEncodingException e) {
-			throw new CommonException(json,e);
+			p.setFail(Resp.CODE_FAIL, e.getMessage());
+			p.done();
+			//throw new CommonException(json,e);
 		}
-		
+		 return null;
 	}
     
     private Message createMessage(String serviceName, String namespace, String version, String method, Object[] args) {
+    	
+    	byte upp = getUpProtocol(args);
     	
     	ApiRequest req = new ApiRequest();
     	req.setReqId(idClient.getLongId(IRequest.class.getName()));
@@ -523,14 +435,29 @@ public class ApiGatewayClient {
 		
 		Message msg = new Message();
 		msg.setType(Constants.MSG_TYPE_REQ_RAW);
-		msg.setUpProtocol(Message.PROTOCOL_JSON);
+		
+		/*msg.setUpProtocol(Message.PROTOCOL_JSON);
+		msg.setDownProtocol(Message.PROTOCOL_JSON);*/
+		
+		msg.setUpProtocol(upp);
 		msg.setDownProtocol(Message.PROTOCOL_JSON);
+		
 		msg.setId(req.getReqId()/*idClient.getLongId(Message.class.getName())*/);
 		msg.setReqId(req.getReqId());
 		msg.setLinkId(req.getReqId()/*idClient.getLongId(Linker.class.getName())*/);
 		msg.setRpcMk(true);
+		
 		String mn = generatorSrvMethodName(method);
-		int hash = HashUtils.FNVHash1(serviceName + "##"+namespace+"##"+version+"########"+mn);
+		String sn = serviceName;
+		if(!ApiGatewayPubsubClient.messageServiceImplName.equals(serviceName)) {
+			sn = AsyncClientUtils.genSyncServiceName(sn);
+		}
+		
+		String key = sn + "##"+namespace+"##"+version+"########"+mn;
+		Integer hash = this.methodCodes.get(key);
+		if(hash == null) {
+			hash = HashUtils.FNVHash1(key);
+		}
 		
 		msg.setSmKeyCode(hash);
 		//msg.setStream(false);
@@ -546,17 +473,42 @@ public class ApiGatewayClient {
 		
 		msg.setVersion(Message.MSG_VERSION);
 		
-		String json = JsonUtils.getIns().toJson(req);
+		byte[] data = null;
+		if(Message.PROTOCOL_BIN == upp) {
+			ByteBuffer buf = req.encode();
+			data = new byte[buf.remaining()];
+			buf.get(data, 0, buf.remaining());
+		} else {
+			String json = JsonUtils.getIns().toJson(req);
+			try {
+				data = json.getBytes(Constants.CHARSET);
+			} catch (UnsupportedEncodingException e) {
+				throw new CommonException(json,e);
+			}
+		}
 		
-		signAndEncrypt(msg,json);
+		signAndEncrypt(msg,data);
 		
 		return msg;
     }
     
-    private void signAndEncrypt(Message msg,String json) {
+    private byte getUpProtocol(Object[] args) {
+		if(args == null || args.length == 0) {
+			return Message.PROTOCOL_JSON;
+		}else {
+			for(Object ar : args) {
+				if(ar.getClass() == new byte[0].getClass() || ar.getClass() == ByteBuffer.class) {
+					return Message.PROTOCOL_BIN;
+				}
+			}
+		}
+		return Message.PROTOCOL_JSON;
+	}
+
+	private void signAndEncrypt(Message msg,byte[] data) {
 		
 		try {
-			byte[] data = json.getBytes(Constants.CHARSET);
+			
 			if(config.isUpSsl()) {
 				
 				byte[] salt = getSalt();
@@ -617,10 +569,6 @@ public class ApiGatewayClient {
 		return salt;
 	}
     
-    private String generatorSrvName(String className) {
-		return AsyncClientUtils.genSyncServiceName(className);
-	}
-    
     private String generatorSrvMethodName(String method) {
 		return AsyncClientUtils.genSyncMethodName(method);
 	}
@@ -642,7 +590,7 @@ public class ApiGatewayClient {
 		return pubsubClient;
 	}
 	
-	
+	private Map<String,Integer> methodCodes = new HashMap<>();
 	
 	private SecretKey sec = null;
 	

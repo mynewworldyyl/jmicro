@@ -70,7 +70,7 @@ import cn.jmicro.common.util.JsonUtils;
  * @date 2018年10月5日-下午12:49:55
  */
 @Component
-@Service(namespace="breaker", version="0.0.1",showFront=false)
+@Service(version="0.0.1",showFront=false)
 public class BreakerManager implements IStatisDataSubscribe{
 	
 	private static final Short[] REQ_FAIL_TYPES = new Short[]{MC.MT_CLIENT_RESPONSE_SERVER_ERROR,MC.MT_REQ_TIMEOUT_FAIL,MC.MT_REQ_ERROR};

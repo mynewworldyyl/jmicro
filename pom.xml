@@ -589,6 +589,9 @@
 		                        <manifest>
 		                            <mainClass>cn.jmicro.api.JMicro</mainClass>
 		                        </manifest>
+		                          <manifestEntries>
+								    <Jmicro-Version>${jmicro.version}</Jmicro-Version>
+								  </manifestEntries>
 		                    </archive>
 		                    
 		                    <descriptors>
@@ -625,6 +628,9 @@
 		                        <manifest>
 		                            <mainClass>cn.jmicro.api.JMicro</mainClass>
 		                        </manifest>
+		                         <manifestEntries>
+								    <Jmicro-Version>${jmicro.version}</Jmicro-Version>
+								  </manifestEntries>
 		                    </archive>
 		                    
 		                    <descriptors>

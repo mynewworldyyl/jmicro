@@ -20,7 +20,7 @@ import cn.jmicro.common.util.StringUtils;
 import cn.jmicro.mng.api.IProfileService;
 
 @Component
-@Service(namespace="mng", version="0.0.1",retryCnt=0,external=true,debugMode=0,showFront=false)
+@Service(version="0.0.1",retryCnt=0,external=true,debugMode=0,showFront=false)
 public class ProfileServiceImpl implements IProfileService {
 
 	@Inject

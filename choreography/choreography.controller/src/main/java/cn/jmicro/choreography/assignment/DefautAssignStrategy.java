@@ -40,7 +40,7 @@ public class DefautAssignStrategy implements IAssignStrategy{
 		
 		Map<String,String> params = null;
 		if(StringUtils.isNotEmpty(dep.getStrategyArgs())) {
-			params = IAssignStrategy.parseArgs(dep.getStrategyArgs());
+			params = IAssignStrategy.parseProgramArgs(dep.getStrategyArgs());
 			if(params.containsKey(IAssignStrategy.AGENT_HOST)) {
 				filterHost(agents,params.get(IAssignStrategy.AGENT_HOST));
 			}

@@ -7,6 +7,7 @@
               <div class="ItemCardHeader"><h3 class="ItemCardTitle">Method Key</h3></div>
               <table class="SMethodTable">
                   <!--<thead><tr><td>{{"Name"|i18n}}</td><td>{{'Value'|i18n}}</td></tr></thead>-->
+                  <!--<tr><td>Client ID</td> <td><Input :value="node.val.key.method" disabled/></td></tr>-->
                   <tr><td>Method Name</td> <td><Input :value="node.val.key.method" disabled/></td></tr>
                   <tr><td>Method Parameters</td> <td><Input :value="node.val.key.paramsStr" disabled/></td></tr>
                   <tr><td>Return Parameter</td> <td><Input id="paramStr" :value="node.val.key.paramsStr" disabled/></td></tr>

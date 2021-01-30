@@ -204,7 +204,7 @@ public class JRPCReqRespHandler implements IMessageHandler{
 			
 			ServiceItem si = JMicroContext.get().getParam(Constants.SERVICE_ITEM_KEY, null);
 			
-			ServerError se = pm.permissionCheck(ai,sm,si.getClientId());
+			ServerError se = pm.permissionCheck(sm,si.getClientId());
 			
 			if(se != null) {
 				resp.setResult(se);

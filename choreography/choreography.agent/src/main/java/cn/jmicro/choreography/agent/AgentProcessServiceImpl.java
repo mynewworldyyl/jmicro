@@ -36,7 +36,7 @@ import cn.jmicro.common.util.JsonUtils;
 import cn.jmicro.common.util.StringUtils;
 
 @Component
-@Service(namespace="chro", version="0.0.1")
+@Service(version="0.0.1")
 public class AgentProcessServiceImpl implements IAgentProcessService {
 
 	private final static Logger logger = LoggerFactory.getLogger(AgentProcessServiceImpl.class);

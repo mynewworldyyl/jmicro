@@ -40,14 +40,14 @@ public class TestApigateClient {
 	
 	@BeforeClass
 	public void setUp() {
-		ApiGatewayClient.initClient(new ApiGatewayConfig(Constants.TYPE_SOCKET,"jmicro.cn","9092"));
+		ApiGatewayClient.initClient(new ApiGatewayConfig(Constants.TYPE_SOCKET,"localhost","9092"));
 		socketClient =  ApiGatewayClient.getClient();
 	}
 	
 	//账号名
-	private static final String ACT = "test01";
+	private static final String ACT = "jmicro";
 	//密码
-	private static final String PWD = "1";
+	private static final String PWD = "0";
 	
 	@Test
 	public void testLoginLogout() {

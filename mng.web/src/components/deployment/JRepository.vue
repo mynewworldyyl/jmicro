@@ -46,8 +46,8 @@
                 </tr>
                 <tr><td>{{"Open"|i18n}}</td><td>
                     <Select :disabled="!editable()" :label-in-value="true" v-model="res0.clientId">
-                        <Option disabled="!(actInfo && actInfo.isAdmin)" :value="-1"  v-bind:key="-1">{{"Public" | i18n}}</Option>
-                        <Option :value="owner"  v-bind:key="-3">{{"Private" | i18n}}</Option>
+                        <Option :disabled="!(actInfo && actInfo.isAdmin)" :value="-1">{{"Public" | i18n}}</Option>
+                        <Option :value="owner" >{{"Private" | i18n}}</Option>
                     </Select>
                 </td></tr>
 
@@ -120,9 +120,9 @@
                     <td>{{"Main"|i18n}}</td>
                     <td>
                         <Select v-model="queryParams.main">
-                            <Option value="">{{"None" | i18n}}</Option>
-                            <Option value="true">{{"True"|i18n}}</Option>
-                            <Option value="false" >{{"False" | i18n}}</Option>
+                            <Option value="">{{"none" | i18n}}</Option>
+                            <Option value="true">{{"true"|i18n}}</Option>
+                            <Option value="false" >{{"false" | i18n}}</Option>
                         </Select>
                     </td>
                 </tr>
@@ -145,7 +145,7 @@
 
                 queryParams:{},
                 totalNum:0,
-                pageSize:10,
+                pageSize:100,
                 curPage:1,
 
                 errMsg:'',
@@ -175,7 +175,7 @@
                     drawerBtnStyle:{left:'0px',zindex:1000},
                 },
 
-                status: {"1":"Uploading","2":"Ready","3":"Enable","4":"Error","5":"WAITING","6":"Download"},
+                status: window.jm.mng.RES_STATUS,
 
                 res0 : this.resetRes(),
                 model:0,
@@ -695,6 +695,7 @@
 
             refresh(){
                 let self = this;
+                this.errMsg = "";
                 this.isLogin = window.jm.rpc.isLogin();
                 this.actInfo = window.jm.rpc.actInfo;
 
@@ -735,18 +736,78 @@
                 }
 
             },
+
+            clearInvalidResourceFile() {
+                let self = this;
+                window.jm.rpc.callRpcWithParams(window.jm.mng.repository.sn, window.jm.mng.repository.ns,
+                    window.jm.mng.repository.v, 'clearInvalidResourceFile', [])
+                    .then((resp)=>{
+                        if(resp.code == 0){
+                            self.$Message.success("Successfully submit task to clear invalid file");
+                        } else {
+                            window.console.log(resp.msg);
+                        }
+                    }).catch((err)=>{
+                    window.console.log(err);
+                });
+            },
+
+            clearInvalidDbFile() {
+                let self = this;
+                window.jm.rpc.callRpcWithParams(window.jm.mng.repository.sn, window.jm.mng.repository.ns,
+                    window.jm.mng.repository.v, 'clearInvalidDbFile', [])
+                    .then((resp)=>{
+                        if(resp.code == 0){
+                            self.$Message.success("Successfully submit task to clear invalid db resource data");
+                        } else {
+                            window.console.log(resp.msg);
+                        }
+                    }).catch((err)=>{
+                    window.console.log(err);
+                });
+            },
         },
 
         mounted () {
-            this.$el.style.minHeight=(document.body.clientHeight-67)+'px';
-            window.jm.rpc.addActListener(cid,this.refresh);
-
             let self = this;
-            window.jm.vue.$emit("editorOpen",
-                {"editorId":cid,
-                    "menus":[{name:"addNode",label:"Add Node",icon:"ios-cog",call: ()=>{self.addNode(); }},
-                        {name:"REFRESH",label:"Refresh",icon:"ios-cog",call:self.refresh}]
-                });
+            this.isLogin = window.jm.rpc.isLogin();
+            this.actInfo = window.jm.rpc.actInfo;
+
+            this.$el.style.minHeight=(document.body.clientHeight-67)+'px';
+
+            let menus = [{name:"addNode",label:"Add Node",icon:"ios-cog",call: ()=>{ self.addNode(); }},
+                {name:"Refresh",label:"Refresh",icon:"ios-cog",call:self.refresh}
+            ];
+
+            let clearFileMenu = {name:"ClearInvalidResourceFile",label:"ClearInvalidResourceFile",icon:"ios-cog",
+                call:self.clearInvalidResourceFile};
+
+            let clearDbFileMenu = {name:"clearInvalidDbFile",label:"clearInvalidDbFile",icon:"ios-cog",
+                call:self.clearInvalidDbFile};
+
+            if(this.actInfo && this.actInfo.isAdmin) {
+                menus.push(clearFileMenu);
+                menus.push(clearDbFileMenu);
+            }
+
+            window.jm.rpc.addActListener(cid,function(type,ai){
+                self.refresh();
+                if(type == window.jm.rpc.Constants.LOGOUT) {
+                    if(menus.length == 4){
+                        menus.splice(2,1);
+                        menus.splice(2,1);
+                        window.jm.vue.$emit("menuChange", {"editorId":cid, "menus":menus});
+                    }
+                }else if(type == window.jm.rpc.Constants.LOGIN) {
+                    if(ai.isAdmin){
+                        menus.push(clearFileMenu);
+                        menus.push(clearDbFileMenu);
+                        window.jm.vue.$emit("menuChange", {"editorId":cid, "menus":menus});
+                    }
+                }
+            });
+
+            window.jm.vue.$emit("editorOpen", {"editorId":cid, "menus":menus});
 
             let ec = function() {
                 window.jm.rpc.removeActListener(cid);

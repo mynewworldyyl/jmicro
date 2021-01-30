@@ -89,7 +89,7 @@ public interface IObjectFactory {
 	
 	<T> T getRemoteServie(ServiceItem item,AsyncConfig[] acs);
 	
-	<T> T getRemoteServie(Class<T> srvCls,AsyncConfig[] acs);
+	<T> T getRemoteServie(Class<T> srvCls,String ns,AsyncConfig[] acs);
 	
 	/**
 	 * 取得所有子类的实例

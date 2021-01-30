@@ -238,4 +238,8 @@ public class JDataOutput implements DataOutput {
 		 Message.writeUnsignedInt(this.buf,v);
 	}
 	
+	public void writeUnsignedLong(long v){
+		 Message.wiriteUnsignedLong(buf, v);
+	}
+	
 }

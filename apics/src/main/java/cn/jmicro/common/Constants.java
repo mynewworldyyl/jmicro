@@ -43,6 +43,7 @@ public interface Constants {
 	public static final String[] SYSTEM_PCK_NAME_PREFIXES = new String[] {"cn.jmicro"};
 	
 	public static final String PUBLIC_KEYS_FILES = "publicKeyFiles";
+	
 	public static final String PRIVATE_KEY_PWD = "priKeyPwd";
 	
 	public static final String JMICRO_VERSION = "0.0.2";
@@ -54,6 +55,8 @@ public interface Constants {
 	public static final String TOPIC_SEPERATOR=",";
 
 	public static final String CLIENT_ID="clientId";
+	
+	public static final String CLIENT_NAME="actName";
 	
 	public static final String SYSTEM_LOG_LEVEL="sysLogLevel";
 	
@@ -120,7 +123,6 @@ public interface Constants {
 	public static final String DEFAULT_INVOCATION_HANDLER = "defaultInvocationHandler";
 	//public static final String SPECIAL_INVOCATION_HANDLER = "specailInvocationHandler";
 	
-	public static final String DEFAULT_NAMESPACE = "defaultNamespace";
 	public static final String VERSION = "0.0.2";
 	public static final String DEFAULT_IDGENERATOR = "defaultGenerator";
 	
@@ -140,7 +142,7 @@ public interface Constants {
 	public static final String ListenHttpIP = "listenHttpIP";
 	
 	public static final String BASE_PACKAGES_KEY = "basePackages";
-	public static final String INSTANCE_NAME = "instanceName";
+	public static final String INSTANCE_PREFIX = "instanceName";
 	public static final String INSTANCE_NAME_GEN_CLASS = "instanceNameGenClass";
 	
 	public static final String LOCAL_INSTANCE_NAME = "localInstanceName";

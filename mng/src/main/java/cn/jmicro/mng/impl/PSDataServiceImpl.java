@@ -28,7 +28,7 @@ import cn.jmicro.mng.api.IPSDataService;
 import cn.jmicro.mng.api.PSDataVo;
 
 @Component(level=20001)
-@Service(namespace="mng", version="0.0.1", external=true, debugMode=0, showFront=false)
+@Service(version="0.0.1", external=true, debugMode=0, showFront=false)
 public class PSDataServiceImpl implements IPSDataService {
 
 	private JsonWriterSettings settings = JsonWriterSettings.builder()

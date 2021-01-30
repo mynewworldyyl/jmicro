@@ -82,7 +82,7 @@ public class ResourceMonitorServer{
 	@Reference
 	private IEmailSender$JMAsyncClient mailSender;
 	
-	@Reference(namespace="monitorResourceService", version="*", type="ins",required=false,changeListener="resourceServiceChange")
+	@Reference(namespace="*", version="*", type="ins",required=false,changeListener="resourceServiceChange")
 	private Set<IResourceService$JMAsyncClient> resourceServices = Collections.synchronizedSet(new HashSet<>());
 	
 	private Set<IResourceService$JMAsyncClient> adds = new HashSet<>();

@@ -6,7 +6,8 @@
             <img src="ba.png" style="float:left;"/>
             <pre>粤公网安备 44030602004897号</pre>
         </a>
-        <p class="jCopyRight">© CopyRight 2018-{{year()}}, JMICRO.CN, Inc.All Rights Reserved</p>
+        <p class="jCopyRight">© CopyRight 2016-{{year()}}, JMICRO.CN, Inc.All Rights Reserved</p>
+        <!--<p><a target="_blank" href="https://github.com/mynewworldyyl/jmicro">Source Code</a></p>-->
     </div>
 </template>
 
@@ -123,7 +124,7 @@ export default {
         margin: 0 auto;
         position: relative;
         text-align: center;
-        height: 60px;
+        height:auto;
         padding:10px;
         line-height: 25px;
         background-color: lightgray;

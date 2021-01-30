@@ -17,6 +17,8 @@
  */
 package cn.jmicro.gateway;
 
+import java.lang.reflect.Method;
+import java.lang.reflect.Type;
 import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Map;
@@ -133,7 +135,8 @@ public class ApiRawRequestMessageHandler implements IMessageHandler{
 				//si = getServiceItem(req);
 				//sm = getServiceMethod(si,req);
 				paramsCls = ReflectUtils.desc2classArray(rpcClassloader, sm.getKey().getParamsStr());
-				req.setArgs(getArgs(paramsCls,req.getArgs(),session));
+				Type[] types = getParameterClasses(sm,paramsCls);
+				req.setArgs(getArgs(paramsCls,types,req.getArgs(),session));
 			} else {
 				req = new ApiRequest();
 				ji = new JDataInput((ByteBuffer)msg.getPayload());
@@ -216,7 +219,7 @@ public class ApiRawRequestMessageHandler implements IMessageHandler{
 				JMicroContext.get().setParam(JMicroContext.REMOTE_PORT, session.remotePort());
 				JMicroContext.get().putAllParams(req.getParams());
 				
-				ServerError se = pm.permissionCheck(ai,sm,si.getClientId());
+				ServerError se = pm.permissionCheck(sm,si.getClientId());
 				if(se != null){
 					result = se;
 					resp.setSuccess(false);
@@ -325,6 +328,12 @@ public class ApiRawRequestMessageHandler implements IMessageHandler{
 		
 	}
 	
+	private Type[] getParameterClasses(ServiceMethod sm,Class<?>[] paramsCls) throws ClassNotFoundException, NoSuchMethodException, SecurityException {
+		Class<?> srvClass = rpcClassloader.loadClass(sm.getKey().getServiceName());
+		Method m = srvClass.getMethod(sm.getKey().getMethod(), paramsCls);
+		return m.getGenericParameterTypes();
+	}
+
 	private ServiceItem getServiceItem(UniqueServiceMethodKey key) {
 		ServiceItem si = reg.getServiceSingleItem(key.getServiceName(), key.getNamespace(), key.getVersion());
 		if(si == null) {
@@ -411,7 +420,7 @@ public class ApiRawRequestMessageHandler implements IMessageHandler{
 		return args;
 	}
 
-	private Object[] getArgs(Class<?>[] clses, Object[] jsonArgs, ISession sess){
+	private Object[] getArgs(Class<?>[] clses,Type[] types, Object[] jsonArgs, ISession sess){
 
 		if(clses== null || clses.length ==0){
 			return new Object[0];
@@ -427,7 +436,7 @@ public class ApiRawRequestMessageHandler implements IMessageHandler{
 					args[i] = sess;
 				} else {
 					arg = jsonArgs[j++];
-					Object a = JsonUtils.getIns().fromJson(JsonUtils.getIns().toJson(arg), pt);
+					Object a = JsonUtils.getIns().fromJson(JsonUtils.getIns().toJson(arg), types[i]);
 					args[i] = a;
 				}
 			}

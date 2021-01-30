@@ -1,8 +1,5 @@
 package cn.jmicro.api.security;
 
-import java.util.Arrays;
-import java.util.Set;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -24,7 +21,7 @@ public class AccountManager {
 
 	private final Logger logger = LoggerFactory.getLogger(AccountManager.class);
 	
-	private static ActInfo jmicro = null;
+	//private static ActInfo jmicro = null;
 	
 	public static final String ActDir = Config.AccountDir + "/accounts";
 	public static final String EmailDir = Config.AccountDir + "/emails";
@@ -32,11 +29,11 @@ public class AccountManager {
 	
 	private static final long expired = 10*60*1000;
 	
-	private static final long updateExpired = expired >> 2;
+	private static final long updateExpired = expired >> 1;
 	
-	private static final String[] PERS = new String[] {
+	/*private static final String[] PERS = new String[] {
 		"cn.jmicro.api.security.IAccountService##sec##0.0.1########updateActPermissions##Ljava/lang/String;Ljava/util/Set;Ljava/util/Set;","cn.jmicro.api.security.IAccountService##sec##0.0.1########getPermissionsByActName##Ljava/lang/String;","cn.jmicro.api.security.IAccountService##sec##0.0.1########getAccountList##Ljava/util/Map;II","cn.jmicro.api.security.IAccountService##sec##0.0.1########getAllPermissions##","cn.jmicro.api.mng.IChoreographyService##mng##0.0.1########getProcessInstanceList##Z","cn.jmicro.api.mng.IChoreographyService##mng##0.0.1########changeAgentState##Ljava/lang/String;","cn.jmicro.api.mng.IChoreographyService##mng##0.0.1########getAgentList##Z","cn.jmicro.api.mng.IChoreographyService##mng##0.0.1########updateDeployment##Lcn/jmicro/api/choreography/Deployment;","cn.jmicro.api.mng.IManageService##mng##0.0.1########getServices##","cn.jmicro.api.mng.IManageService##mng##0.0.1########updateItem##Lcn/jmicro/api/registry/ServiceItem;","cn.jmicro.api.mng.IManageService##mng##0.0.1########updateMethod##Lcn/jmicro/api/registry/ServiceMethod;","cn.jmicro.api.security.IAccountService##sec##0.0.1########countAccount##Ljava/util/Map;","cn.jmicro.api.security.IAccountService##sec##0.0.1########changeAccountStatus##Ljava/lang/String;Z"
-	};
+	};*/
 	
 	@Inject
 	private ICache cache;
@@ -48,14 +45,14 @@ public class AccountManager {
 	private ComponentIdServer idGenerator;
 	
 	public void ready() {
-		Set<String> acts = op.getChildren(AccountManager.ActDir, false);
+		/*Set<String> acts = op.getChildren(AccountManager.ActDir, false);
 		if(acts == null || acts.isEmpty()) {
 			String p = AccountManager.ActDir +"/"+ jmicro.getActName();
 			jmicro = new ActInfo("jmicro","jmicro123", 0);
 			jmicro.setStatuCode(ActInfo.SC_ACTIVED);
 			jmicro.getPers().addAll(Arrays.asList(PERS));
 			op.createNodeOrSetData(p, JsonUtils.getIns().toJson(jmicro), IDataOperator.PERSISTENT);
-		}
+		}*/
 	}
 	
 	public boolean checkEmailExist(String email) {

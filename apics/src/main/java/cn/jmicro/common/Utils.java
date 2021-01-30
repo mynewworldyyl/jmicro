@@ -40,6 +40,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
 
+import cn.jmicro.api.monitor.MC;
 import cn.jmicro.common.util.JsonUtils;
 
 /**
@@ -76,6 +77,17 @@ public class Utils {
 		String dcls = se.getClassName();
 		for(String pname : Constants.SYSTEM_PCK_NAME_PREFIXES) {
 			if(dcls.startsWith(pname)) {
+				return true;
+			}
+		}
+		return false;
+	}
+	
+	public static boolean callPathExistPackage(String pckPrefix) {
+		StackTraceElement[] ses = Thread.currentThread().getStackTrace();
+		for(StackTraceElement se:ses ) {
+			
+			if(se.getClassName().startsWith(pckPrefix)) {
 				return true;
 			}
 		}

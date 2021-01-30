@@ -58,7 +58,7 @@ import cn.jmicro.common.util.StringUtils;
  * @date 2020年3月26日
  */
 @Component
-@Service(namespace="mng", version="0.0.1",showFront=false,external=true)
+@Service(version="0.0.1",showFront=false,external=true)
 public class MessageServiceImpl implements IGatewayMessageCallback{
 
 	private final static Logger logger = LoggerFactory.getLogger(MessageServiceImpl.class);

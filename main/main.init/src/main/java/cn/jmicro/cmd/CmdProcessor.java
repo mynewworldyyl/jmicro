@@ -185,6 +185,8 @@ public class CmdProcessor {
 			return;
 		}
 		
+		Integer hCode= Integer.parseInt(permission);
+		
 		ActInfo ai = this.am.getAccountFromZK(actName);
 		if(ai == null) {
 			c.setResult("Account with name " + actName +" not found!");
@@ -192,7 +194,7 @@ public class CmdProcessor {
 			return;
 		}
 
-		ai.getPers().add(permission);
+		ai.getPers().add(hCode);
 		String p = AccountManager.ActDir +"/"+ ai.getActName();
 		op.createNodeOrSetData(p, JsonUtils.getIns().toJson(ai), IDataOperator.PERSISTENT);
 	

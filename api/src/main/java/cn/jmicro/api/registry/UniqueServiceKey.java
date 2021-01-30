@@ -17,6 +17,7 @@
 package cn.jmicro.api.registry;
 
 import cn.jmicro.api.annotation.SO;
+import cn.jmicro.api.config.Config;
 import cn.jmicro.common.CommonException;
 import cn.jmicro.common.Constants;
 import cn.jmicro.common.util.StringUtils;
@@ -47,7 +48,7 @@ public final class UniqueServiceKey {
 	private String port;
 	
 	private String serviceName;
-	private String namespace = Constants.DEFAULT_NAMESPACE;
+	private String namespace = null;
 	private String version = Constants.VERSION;
 	
 	private int snvHash;
@@ -166,7 +167,7 @@ public final class UniqueServiceKey {
 	
 	public static String namespace(String namespace){
 		if(StringUtils.isEmpty(namespace)){
-			namespace = Constants.DEFAULT_NAMESPACE;
+			namespace = Config.getNamespace();
 		}
 		return namespace;
 	}

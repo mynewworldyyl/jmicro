@@ -73,7 +73,7 @@ public class PubsubMessageStatis {
 				PubsubMessageStatis.typeLabels,Config.getInstanceName()+"_PubsubServerStatuCheck",group);
 
 		ServiceLoader sl = of.get(ServiceLoader.class);
-		ServiceItem si = sl.createSrvItem(IMonitorAdapter.class, Config.getInstanceName()+"."+group, 
+		ServiceItem si = sl.createSrvItem(IMonitorAdapter.class, Config.getNamespace()+"."+group, 
 				"0.0.1", IMonitorAdapter.class.getName(),Config.getClientId());
 		of.regist("MonitorManagerStatuCheckAdapter", statusMonitorAdapter);
 		sl.registService(si,statusMonitorAdapter);

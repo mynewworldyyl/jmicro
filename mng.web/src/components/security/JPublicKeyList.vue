@@ -58,7 +58,7 @@
 
     const cid = 'publicKeyList';
     const sn = 'cn.jmicro.api.security.ISecretService';
-    const ns = 'sec';
+    const ns = window.jm.Constants.NS_SECURITY;
     const v = '0.0.1';
 
     export default {

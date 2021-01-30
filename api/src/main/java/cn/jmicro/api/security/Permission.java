@@ -13,8 +13,9 @@ public class Permission {
 	public static final String ACT_QUERY = "Query";
 	
 	//public static final String NAME_INVOKE = "invoke";
+	private int haCode;
 	
-	private String pid;
+	//private String pid;
 	
 	private String label;
 	
@@ -26,17 +27,17 @@ public class Permission {
 	
 	//比如某个服务方法的KEY
 	//private String key;
-	
-	public String getPid() {
-		return pid;
-	}
-	
-	public void setPid(String pid) {
-		this.pid = pid;
-	}
-	
+
 	public String getLabel() {
 		return label;
+	}
+
+	public int getHaCode() {
+		return haCode;
+	}
+
+	public void setHaCode(int haCode) {
+		this.haCode = haCode;
 	}
 
 	public void setLabel(String label) {

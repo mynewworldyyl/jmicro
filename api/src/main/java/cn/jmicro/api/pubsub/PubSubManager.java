@@ -73,7 +73,7 @@ public class PubSubManager {
 	/**
 	 * default pubsub server
 	 */
-	@Reference(namespace=Constants.DEFAULT_PUBSUB,version="0.0.1",required=false)
+	@Reference(namespace="*",version="0.0.1",required=false)
 	private IInternalSubRpc$JMAsyncClient defaultServer;
 	
 	private ExecutorService executor = null;

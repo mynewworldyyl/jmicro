@@ -32,8 +32,10 @@ import org.bson.Document;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.mongodb.client.AggregateIterable;
 import com.mongodb.client.DistinctIterable;
 import com.mongodb.client.MongoCollection;
+import com.mongodb.client.MongoCursor;
 import com.mongodb.client.MongoDatabase;
 
 import cn.jmicro.api.JMicroContext;
@@ -50,6 +52,7 @@ import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.persist.IObjectStorage;
 import cn.jmicro.api.security.ActInfo;
 import cn.jmicro.api.security.PermissionManager;
+import cn.jmicro.api.task.TaskManager;
 import cn.jmicro.api.timer.TimerTicker;
 import cn.jmicro.api.utils.TimeUtils;
 import cn.jmicro.choreography.api.IResourceResponsitory;
@@ -58,13 +61,11 @@ import cn.jmicro.common.Constants;
 import cn.jmicro.common.Utils;
 
 @Component
-@Service(namespace="rrs",version="0.0.1",retryCnt=0,external=true)
+@Service(version="0.0.1",retryCnt=0,external=true)
 public class ResourceReponsitoryService implements IResourceResponsitory{
 
-	private static final String ID2NAME_SEP = "#$#";
+	//private static final String ID2NAME_SEP = PackageResource.ID2NAME_SEP;
 	private static final Logger LOG = LoggerFactory.getLogger(ResourceReponsitoryService.class);
-	
-	private static final String REF_FILE_SUBFIX = "-jar-with-dependencies.jar";
 	
 	@Cfg(value="/ResourceReponsitoryService/dataDir", defGlobal=true)
 	private String resDir = System.getProperty("user.dir") + "/resDataDir";
@@ -93,6 +94,7 @@ public class ResourceReponsitoryService implements IResourceResponsitory{
 	
 	//private String zkDir = Config.BASE_DIR + "/resDataDir";
 	
+	//当前资源存放目录
 	private File dir = null;
 	
 	private File tempDir = null;
@@ -111,9 +113,7 @@ public class ResourceReponsitoryService implements IResourceResponsitory{
 	@Inject
 	private MongoDatabase mongoDb;
 	
-	private DownloadWorker downloadWorker = new DownloadWorker();
-	
-	private Thread wt = null;
+	private TaskManager taskMng = null;
 	
 	/*
 	@Inject
@@ -121,21 +121,24 @@ public class ResourceReponsitoryService implements IResourceResponsitory{
 	*/
 	
 	public void ready() {
-		dir = new File(resDir);
+		
+		this.dir = new File(resDir);
 		if(!dir.exists()) {
 			dir.mkdir();
 		}
 		
-		String td = resDir + "/temp";
+		String td = resDir + "/.temp";
 		tempDir = new File(td);
 		if(!tempDir.exists()) {
 			tempDir.mkdir();
 		}
 		
+		taskMng = new TaskManager(5000);
+		
 		TimerTicker.doInBaseTicker(120, "ResourceReponsitoryChecker", null, (key,att)->{
 			try {
 				doChecker();
-				downloadRes();
+				downloadRes();		
 			} catch (Throwable e) {
 				LOG.error("doChecker",e);
 			}
@@ -216,6 +219,7 @@ public class ResourceReponsitoryService implements IResourceResponsitory{
 					e.put("name", pr0.getName());
 					e.put("status", pr0.getStatus());
 					e.put("id", pr0.getId());
+					e.put("group", pr0.getGroup());
 					l.add(e);
 				}
 			}
@@ -224,44 +228,124 @@ public class ResourceReponsitoryService implements IResourceResponsitory{
 		return resp;
 	
 	}
+	
+	@Override
+	public Resp<PackageResource> getAgentPackage(String version) {
+		Map<String,Object> filter = new HashMap<>();
+		
+		filter.put("version", version);
+		filter.put("group", "cn.jmicro");
+		filter.put("artifactId", "jmicro.agent");
+		filter.put("status", PackageResource.STATUS_ENABLE);
+		
+		List<PackageResource> res = os.query(PackageResource.TABLE_NAME, filter,PackageResource.class,1, 0);
+		
+		Resp<PackageResource> resp = new Resp<>();
+		if(res == null || res.isEmpty()) {
+			resp.setCode(Resp.CODE_FAIL);
+		} else {
+			resp.setData(res.iterator().next());
+		}
+		
+		return resp;
+	}
+
+	@Override
+	public Resp<List<Map<String,Object>>> getResourceListForDeployment(Map<String,Object> qry) {
+		Resp<List<Map<String,Object>>> resp = new Resp<>(0);
+		
+		Map<String,Object> conditions = new HashMap<>();
+		
+		String key = "version";
+		if(conditions.containsKey(key)) {
+			conditions.put(key, new Document("$regex",conditions.get(key)));
+		}
+		
+		key = "group";
+		if(conditions.containsKey(key)) {
+			conditions.put(key, new Document("$regex",conditions.get(key)));
+		}
+		
+		key = "artifactId";
+		if(conditions.containsKey(key)) {
+			conditions.put(key, new Document("$regex",conditions.get(key)));
+		}
+		
+		conditions.put("main",true);
+		conditions.put("status",3);
+		
+		ActInfo ai = JMicroContext.get().getAccount();
+		
+		if(!PermissionManager.isCurAdmin()) {
+			List<Document> ql = new ArrayList<>();
+			ql.add(new Document("clientId",ai.getId()));
+			ql.add(new Document("clientId",Constants.NO_CLIENT_ID));
+			conditions.put("$or",ql);
+		}else if(qry.containsKey("clientId")) {
+			conditions.put(key,new Double(Double.parseDouble(qry.get("clientId").toString())).intValue());
+		}
+		
+		List<PackageResource> res = os.query(PackageResource.TABLE_NAME, conditions,PackageResource.class,
+				Integer.MAX_VALUE, 0);
+		
+		if(res != null && !res.isEmpty()) {
+			List<Map<String,Object>> l = new ArrayList<>();
+			for(PackageResource pr : res) {
+				Map<String,Object> m = new HashMap<>();
+				m.put("id", pr.getId());
+				m.put("name", pr.getName());
+				l.add(m);
+			}
+			resp.setData(l);
+		}
+		
+		return resp;
+	}
 
 	@Override
 	public Resp<List<PackageResource>> getResourceList(Map<String,Object> qry,int pageSize,int curPage) {
 		Resp<List<PackageResource>> resp = new Resp<>(0);
 		
 		Map<String,Object> conditions = new HashMap<>();
-		if(qry != null && !qry.isEmpty()) {
+		/*if(qry != null && !qry.isEmpty()) {
 			conditions.putAll(qry);
-		}
+		}*/
 		
 		String key = "status";
-		if(conditions.containsKey(key)) {
+		if(qry.containsKey(key)) {
 			conditions.put(key,new Double(Double.parseDouble(qry.get(key).toString())).intValue());
 		}
 		
-		 key = "clientId";
-		if(conditions.containsKey(key)) {
+		key = "clientId";
+		if(qry.containsKey(key)) {
 			conditions.put(key,new Double(Double.parseDouble(qry.get(key).toString())).intValue());
 		}
 		
 		 key = "version";
-		if(conditions.containsKey(key)) {
+		if(qry.containsKey(key)) {
 			conditions.put(key, new Document("$regex",conditions.get(key)));
 		}
 		
 		 key = "group";
-		if(conditions.containsKey(key)) {
-			conditions.put(key, new Document("$regex",conditions.get(key)));
+		if(qry.containsKey(key)) {
+			conditions.put(key, new Document("$regex",qry.get(key)));
 		}
 		
-		 key = "artifactId";
-		if(conditions.containsKey(key)) {
-			conditions.put(key, new Document("$regex",conditions.get(key)));
+		key = "artifactId";
+		if(qry.containsKey(key)) {
+			conditions.put(key, new Document("$regex",qry.get(key)));
 		}
+		
+		key = "artifactIds";
+		if(qry.containsKey(key)) {
+			List<String> ats = Arrays.asList(qry.get(key).toString().split(","));
+			conditions.put("artifactId", new Document("$in",ats));
+		}
+		
 		
 		key = "main";
-		if(conditions.containsKey(key)) {
-			conditions.put(key,conditions.get(key));
+		if(qry.containsKey(key)) {
+			conditions.put(key,qry.get(key));
 		}
 		
 		ActInfo ai = JMicroContext.get().getAccount();
@@ -310,13 +394,17 @@ public class ResourceReponsitoryService implements IResourceResponsitory{
 		
 		os.deleteById(PackageResource.TABLE_NAME, pr.getId(), IObjectStorage._ID);
 		
-		File res = new File(resDir,getJarFileName(pr));
+		File res = new File(getResParentDir(pr),pr.getName());
 		if(res.exists()) {
 			res.delete();
 		}
 		
 		resp.setData(true);
 		return resp;
+	}
+
+	private String getResParentDir(PackageResource pr) {
+		return this.resDir + "/" + this.getJarFileSubDir(pr.getGroup());
 	}
 
 	@Override
@@ -382,16 +470,17 @@ public class ResourceReponsitoryService implements IResourceResponsitory{
 			pr.setClientId(pr0.getClientId());
 		}
 		
-		if(updateFile ) {
+		if(updateFile) {
 			if(pr.getStatus() == PackageResource.STATUS_CHECK_FOR_DOWNLOAD
 					|| pr.getStatus() == PackageResource.STATUS_ERROR
-					|| pr.getStatus() == PackageResource.STATUS_UPLOADING) {
+					|| pr.getStatus() == PackageResource.STATUS_UPLOADING 
+					|| PermissionManager.isCurAdmin()) {
 				pr0.setBlockSize(this.uploadBlockSize);
 				updater.put("blockSize", this.uploadBlockSize);
 				updater.put("size", pr0.getSize());
 				updater.put("resVer", pr.getResVer()+1);
 				updater.put("totalBlockNum", this.getBlockNum(pr0.getSize()));
-				updater.put("uploadTime", pr0.getUploadTime());
+				updater.put("uploadTime", TimeUtils.getCurTime());
 				updater.put("modifiedTime", pr0.getModifiedTime());
 				updater.put("finishBlockNum", 0);
 				updater.put("status", PackageResource.STATUS_UPLOADING);
@@ -513,7 +602,7 @@ public class ResourceReponsitoryService implements IResourceResponsitory{
 		pr.setId(this.idGenerator.getIntId(PackageResource.class));
 		pr.setBlockSize(this.uploadBlockSize);
 		
-		File resD = new File(this.tempDir,""+pr.getId());
+		File resD = new File(this.tempDir,"" + pr.getId());
 		if(!resD.exists()) {
 			resD.mkdir();
 		}
@@ -522,6 +611,13 @@ public class ResourceReponsitoryService implements IResourceResponsitory{
 		pr.setTotalBlockNum(getBlockNum(pr.getSize()));
 		pr.setResVer(1);
 		
+		String msg = createResDir(pr);
+		if(msg != null) {
+			resp.setMsg(msg);
+			resp.setCode(1);
+			return resp;
+		}
+		
 		os.save(PackageResource.TABLE_NAME, pr, PackageResource.class, false, false);
 		
 		LOG.info("Add resource: " + pr.toString());
@@ -529,6 +625,44 @@ public class ResourceReponsitoryService implements IResourceResponsitory{
 		return resp;
 	}
 	
+	private String createResDir(PackageResource pr) {
+		
+		String[] grpArr = pr.getGroup().split("\\.");
+		
+		File f = this.dir;
+		
+		for(String p : grpArr) {
+			f = new File(f,p);
+			if(!f.exists()) {
+				f.mkdir();
+			}
+		}
+		
+		/*f = new File(f,pr.getArtifactId());
+		if(!f.exists()) {
+			f.mkdir();
+		}
+		
+		f = new File(f,pr.getVersion());
+		if(!f.exists()) {
+			f.mkdir();
+		}*/
+		
+		/*f = new File(f,pr.getName());
+		if(!f.exists()) {
+			try {
+				f.createNewFile();
+				return null;
+			} catch (IOException e) {
+				String msg = "Fail to create file: " + f.getAbsolutePath();
+				LOG.error(msg,e);
+				LG.log(MC.LOG_ERROR, this.getClass(), msg);
+				return msg;
+			}
+		}*/
+		return null;
+	}
+
 	public int getBlockNum(long size) {
 		int bn = (int)(size/this.uploadBlockSize);
 		if(size % this.uploadBlockSize > 0) {
@@ -538,6 +672,7 @@ public class ResourceReponsitoryService implements IResourceResponsitory{
 	}
 
 	@Override
+	@SMethod
 	public Resp<Boolean> addResourceData(int id, byte[] data, int blockNum) {
 		Resp<Boolean> resp = new Resp<>(0);
 		PackageResource zkrr = this.getPkg(id);
@@ -598,7 +733,7 @@ public class ResourceReponsitoryService implements IResourceResponsitory{
 				Map<String,Object> filter = new HashMap<>();
 				filter.put(IObjectStorage._ID, zkrr.getId());
 				
-				if(!checkRes(zkrr)) {
+				if(!checkDependencies(zkrr)) {
 					String msg = zkrr.getName() + " is not valid!";
 					resp.setMsg(msg);
 					resp.setCode(1);
@@ -641,11 +776,112 @@ public class ResourceReponsitoryService implements IResourceResponsitory{
 		}
 	}
 	
-	private boolean checkRes(PackageResource zkrr) {
+	@Override
+	public Resp<PackageResource> getResource(int resId) {
+		Map<String,Object> filter = new HashMap<>();
+		filter.put(IObjectStorage._ID, resId);
+		PackageResource pr = os.getOne(PackageResource.TABLE_NAME, filter, PackageResource.class);
+		Resp<PackageResource> resp = new Resp<>();
+		if(pr == null) {
+			resp.setCode(Resp.CODE_FAIL);
+			resp.setMsg("No data");
+		}else {
+			resp.setData(pr);
+		}
+		return resp;
+	}
+	
+	@Override
+	public Resp<Boolean> clearInvalidDbFile() {
+		this.taskMng.submitTask(()->{
+			doClearInvalidDbFile();
+		});
+		return new Resp<Boolean>(0,true);
+	}
+	
+	private void doClearInvalidDbFile() {
+		long startTime = TimeUtils.getCurTime();
+		MongoCollection<Document> coll = mongoDb.getCollection(PackageResource.TABLE_NAME);
+		long size = coll.countDocuments();
+		int pageSize = 100;
+		
+		int batchNum = (int)(size/100);
+		if((size % 100) > 0) {
+			batchNum++;
+		}
+		
+		List<Document> aggregateList = new ArrayList<Document>();
+		
+		Document prj = new Document();
+		prj.put(IObjectStorage._ID, 1);
+		prj.put("name", 1);
+		prj.put("group", 1);
+		aggregateList.add(new Document("$project",prj));
+	
+		Document skip = new Document("$skip", 0);
+		Document limit = new Document("$limit", pageSize);
+		aggregateList.add(skip);
+		aggregateList.add(limit);
+		
+		for(int i = 0; i < batchNum; i++) {
+			skip.put("$skip", pageSize*i);
+			AggregateIterable<Document> resultset = coll.aggregate(aggregateList);
+			MongoCursor<Document> cursor = resultset.iterator();
+			try {
+				while(cursor.hasNext()) {
+					Document pr = cursor.next();
+					int id = pr.getInteger(IObjectStorage._ID);
+					String name = pr.getString("name");
+					String grp = pr.getString("group");
+					if(!new File(this.resDir+"/"+this.getJarFileSubDir(grp),name).exists()) {
+						coll.deleteOne(new Document(IObjectStorage._ID,id));
+					}
+				}
+			} finally {
+				cursor.close();
+			}
+		}
+		
+		String msg = "doClearInvalidDbFile cost time: " + (TimeUtils.getCurTime() - startTime)+"MS";
+		LOG.info(msg);
+		LG.log(MC.LOG_INFO, this.getClass(), msg);
+		
+	}
+
+	@Override
+	public Resp<Boolean> clearInvalidResourceFile() {
+		this.taskMng.submitTask(()->{
+			doClearInvalidResourceFile();
+		});
+		return new Resp<Boolean>(0,true);
+	}
+
+	private void doClearInvalidResourceFile() {
+		long startTime = TimeUtils.getCurTime();
+		File[] files = this.dir.listFiles();
+		
+		MongoCollection<Document> coll = mongoDb.getCollection(PackageResource.TABLE_NAME);
+		Document filter = new Document(IObjectStorage._ID,0);
+		for(int i = 0; i < files.length; i++) {
+			File f = files[i];
+			String[] arr = f.getName().split("#\\$#");
+			if(arr.length == 2) {
+				filter.put(IObjectStorage._ID,Integer.parseInt(arr[0]));
+				if(coll.countDocuments(filter) == 0) {
+					f.delete();
+				}
+			}
+		}
+		String msg = "doClearInvalidResourceFile cost time: " + (TimeUtils.getCurTime() - startTime)+"MS";
+		LOG.info(msg);
+		LG.log(MC.LOG_INFO, this.getClass(), msg);
+	}
+
+	private boolean checkDependencies(PackageResource zkrr) {
 		
 		JarFile jf = null;
 		try {
-			File resFile = new File(this.dir , this.getJarFileName(zkrr));
+			File resFile = new File(this.getResParentDir(zkrr),zkrr.getName());
 			jf = new JarFile(resFile,true);
 			ActInfo ai = JMicroContext.get().getAccount();
 			if(!ai.isAdmin()) {
@@ -683,8 +919,6 @@ public class ResourceReponsitoryService implements IResourceResponsitory{
 				Set<Integer> depResIds = new HashSet<>();
 				zkrr.setDepIds(depResIds);
 				
-				StringBuffer sb = new StringBuffer();
-				
 				ZipEntry je = jf.getEntry(PackageResource.DEP_FILE);
 				if(je != null) {
 					InputStream ji = jf.getInputStream(je);
@@ -694,8 +928,6 @@ public class ResourceReponsitoryService implements IResourceResponsitory{
 					br.readLine();
 					String line = br.readLine();
 					while(!Utils.isEmpty(line)) {
-						sb.append(line).append("\\n");
-						
 						String[] arr = line.split(":");
 						String group = arr[0].trim();
 						String arti = arr[1].trim();
@@ -730,7 +962,6 @@ public class ResourceReponsitoryService implements IResourceResponsitory{
 					}
 				}
 				rst = true;
-				zkrr.setDepStr(sb.toString());
 			}
 			
 			Map<String,Object> updater = new HashMap<>();
@@ -738,7 +969,6 @@ public class ResourceReponsitoryService implements IResourceResponsitory{
 			updater.put("finishBlockNum", zkrr.getFinishBlockNum());
 			updater.put("main", zkrr.isMain());
 			updater.put("depIds", zkrr.getDepIds());
-			updater.put("depStr", zkrr.getDepStr());
 			updater.put("waitingRes", zkrr.getWaitingRes());
 			updater.put("uploadTime", TimeUtils.getCurTime());
 			
@@ -818,11 +1048,21 @@ public class ResourceReponsitoryService implements IResourceResponsitory{
 		pr.setArtifactId(arti);
 		pr.setVersion(ver);
 		pr.setClientId(Constants.NO_CLIENT_ID);
-		pr.setStatus(PackageResource.STATUS_CHECK_FOR_DOWNLOAD);
 		pr.setCreatedBy(JMicroContext.get().getAccount().getId());
 		pr.setId(this.idGenerator.getIntId(PackageResource.class));
 		pr.setName(arti+"-"+ver+".jar");
 		pr.setResExtType("jar");
+		
+		this.createResDir(pr);
+		
+		File jf = new File(this.getResParentDir(pr),pr.getName());
+		if(jf.exists() && jf.length() > 0) {
+			//文件已经存在，不用重新下载
+			pr.setStatus(PackageResource.STATUS_ENABLE);
+		}else {
+			pr.setStatus(PackageResource.STATUS_CHECK_FOR_DOWNLOAD);
+		}
+		
 		os.save(PackageResource.TABLE_NAME, pr,PackageResource.class, false, false);
 		return pr;
 		
@@ -880,7 +1120,7 @@ public class ResourceReponsitoryService implements IResourceResponsitory{
 		
 		Integer downloadId = this.idGenerator.getIntId(PackageResource.class);
 		
-		File resFile = new File(this.dir, pr.getId()+".jar");
+		File resFile = new File(this.getResParentDir(pr),pr.getName());
 		/*if(this.devMode) {
 			File devFile = findResFile(name);
 			if(devFile != null) {
@@ -921,46 +1161,10 @@ public class ResourceReponsitoryService implements IResourceResponsitory{
 		resp.setData(downloadId);
 		return resp;
 	}
-
-	private File findResFile(String name) {
-		if(!(name.endsWith(REF_FILE_SUBFIX) || name.startsWith("jmicro-agent-"))) {
-			LOG.warn("Resource name invalid: " + name);
-			return null;
-		}
-		Map<String,File> rst = new HashMap<>();
-		findFile0(rst,dir);
-		return rst.get(name);
-	}
-
-	private void findFile0(Map<String,File> rst, File file) {
-		if(file.isFile()) {
-			String n = file.getName();
-			if(file.getAbsolutePath().indexOf("target") > 1 && (n.endsWith(REF_FILE_SUBFIX) || n.startsWith("jmicro-agent-"))) {
-				rst.put(n, file);
-			}
-		}else {
-			File[] fs = file.listFiles((File dir, String name)->{
-				if(name.equals("mng.web")) {
-					return false;
-				}
-				
-				File f = new File(dir,name);
-				if(f.isDirectory()) {
-					return true;
-				} else {
-					return name.endsWith(".jar");
-				}
-			});
-			
-			for(File f : fs) {
-				//LOG.debug(f.getAbsolutePath());
-				findFile0(rst,f);
-			}
-		}
-	}
+	
 
 	@Override
-	@SMethod(logLevel=MC.LOG_NO,retryCnt=0)
+	@SMethod(needLogin=false,logLevel=MC.LOG_NO,retryCnt=0)
 	public byte[] downResourceData(int downloadId, int specifyBlockNum) {
 		InputStream is = this.downloadReses.get(downloadId);
 		if(is == null) {
@@ -1041,9 +1245,13 @@ public class ResourceReponsitoryService implements IResourceResponsitory{
 			return num1 > num2?1:num1==num2?0:-1;
 		});
 		
-		File resFile = new File(this.dir,getJarFileName(zkrr));
+		File resFile = new File(this.getResParentDir(zkrr), zkrr.getName());
+		
 		FileOutputStream fos = null;
 		try {
+			 if(!resFile.exists()) {
+				 resFile.createNewFile();
+			 }
 			 fos = new FileOutputStream(resFile);
 			 for(File f : blockFiles) {
 				 FileInputStream fis = null;
@@ -1073,19 +1281,13 @@ public class ResourceReponsitoryService implements IResourceResponsitory{
 		}
 	}
 	
-	private String getJarFileName(PackageResource zkrr) {
-		return  zkrr.getId()+ ID2NAME_SEP + zkrr.getName();
+	private String getJarFileSubDir(String grp) {
+		return grp.replaceAll("\\.", "/");
 	}
 
+	private boolean running = false;
 	private void downloadRes() {
 		//org/sdase/commons/sda-commons-server-dropwizard/2.16.1/sda-commons-server-dropwizard-2.16.1.jar
-		
-		if(this.downloadWorker.running) {
-			if(TimeUtils.getCurTime() - this.downloadWorker.lastStartTime > 10*60*1000) {//大于10分钟
-				this.wt.interrupt();//停止
-			}
-			return;
-		}
 		
 		Map<String,Object> conditions = new HashMap<>();
 		conditions.put("status", PackageResource.STATUS_CHECK_FOR_DOWNLOAD);
@@ -1095,17 +1297,14 @@ public class ResourceReponsitoryService implements IResourceResponsitory{
 		if(res == null || res.isEmpty()) {
 			return;
 		}
-		
-		this.downloadWorker.resList.addAll(res);
-		this.downloadWorker.running = true;
-		
-		this.wt = new Thread(this.downloadWorker);
-		this.wt.start();
+		running = true;
+		this.taskMng.submitTask(new DownloadWorker(res));
 		
 	}
 	
-	public boolean getJar(String url, File targetFilePath) {
+	public boolean downloadFromMavenCenterJar(String url, File targetFilePath) {
 		
+		LG.log(MC.LOG_INFO, this.getClass(), "Begin download: " +url);
 		BufferedReader in = null;
 		FileOutputStream out = null;
 		try {
@@ -1153,33 +1352,39 @@ public class ResourceReponsitoryService implements IResourceResponsitory{
 		return false;
 	}
 	
-	
-	
 	private class DownloadWorker implements Runnable{
 
-		private boolean running = false;
+		private List<PackageResource> resList = null;
 		
-		private Set<PackageResource> resList = new HashSet<>();
-		
-		private long lastStartTime = 0;
+		private DownloadWorker(List<PackageResource> resList) {
+			this.resList = resList;
+		}
 		
 		@Override
 		public void run() {
-			try {
-				Iterator<PackageResource> ite = resList.iterator();
-				while(ite.hasNext()) {
-					PackageResource pr = ite.next();
-					ite.remove();
-					lastStartTime = TimeUtils.getCurTime();
-					downloadOne(pr);
+			while(true) {
+				try {
+					
+					if(resList.isEmpty()) {
+						running = false;
+						return;
+					}
+					
+					Iterator<PackageResource> ite = resList.iterator();
+					while(ite.hasNext()) {
+						PackageResource pr = ite.next();
+						if(downloadOne(pr)) {
+							ite.remove();
+						}
+					}
+				}catch(Throwable e) {
+					LOG.error("",e);
+					LG.log(MC.LOG_ERROR, this.getClass(), "",e);
 				}
-			}catch(Throwable e) {
-				LOG.error("",e);
-				LG.log(MC.LOG_ERROR, this.getClass(), "",e);
-			}finally {
-				running = false;
 			}
+			
 		}
+		
 	}
 
 	public boolean downloadOne(PackageResource pr) {
@@ -1188,7 +1393,7 @@ public class ResourceReponsitoryService implements IResourceResponsitory{
 		url += pr.getArtifactId()+"/"+pr.getVersion()+"/";
 		url += pr.getName();
 		
-		File jarFile = new File(this.dir,getJarFileName(pr));
+		File jarFile = new File(this.getResParentDir(pr),pr.getName());
 		if(!jarFile.exists()) {
 			try {
 				jarFile.createNewFile();
@@ -1200,25 +1405,73 @@ public class ResourceReponsitoryService implements IResourceResponsitory{
 			}
 		}
 		
-		if(!getJar(url,jarFile)) {
+		if(!downloadFromMavenCenterJar(url,jarFile)) {
 			return false;
 		}
 		
-		LG.log(MC.LOG_INFO, this.getClass(), "Resource from:" + url + " ready: " + pr.toString());
-		
-		Map<String,Object> filter = new HashMap<>();
-		filter.put(IObjectStorage._ID, pr.getId());
-		
-		Map<String,Object> updater = new HashMap<>();
-		updater.put("status", PackageResource.STATUS_ENABLE);
-		updater.put("size", jarFile.length());
-		updater.put("uploadTime", TimeUtils.getCurTime());
-		os.update(PackageResource.TABLE_NAME, filter,updater, PackageResource.class);
-		
-		updateMainWaiting(pr.getId());
+		if(!securityChecked(jarFile)) {
+			LG.log(MC.LOG_INFO, this.getClass(), "Jar with securyty issue from: " + url + " jar: " + jarFile.getAbsolutePath());
+			
+			Map<String,Object> filter = new HashMap<>();
+			filter.put(IObjectStorage._ID, pr.getId());
+			
+			Map<String,Object> updater = new HashMap<>();
+			updater.put("status", PackageResource.STATUS_CHECK_SECURITY);
+			updater.put("size", jarFile.length());
+			updater.put("uploadTime", TimeUtils.getCurTime());
+			
+			os.update(PackageResource.TABLE_NAME, filter,updater, PackageResource.class);
+		} else {
+			LG.log(MC.LOG_INFO, this.getClass(), "Resource from:" + url + " ready: " + pr.toString());
+			
+			Map<String,Object> filter = new HashMap<>();
+			filter.put(IObjectStorage._ID, pr.getId());
+			
+			Map<String,Object> updater = new HashMap<>();
+			updater.put("status", PackageResource.STATUS_ENABLE);
+			updater.put("size", jarFile.length());
+			updater.put("uploadTime", TimeUtils.getCurTime());
+			os.update(PackageResource.TABLE_NAME, filter,updater, PackageResource.class);
+			
+			updateMainWaiting(pr.getId());
+		}
 		
 		return true;
 	
+	}
+
+	private boolean securityChecked(File jarFile) {
+		JarFile jf = null;
+		try {
+			jf = new JarFile(jarFile,true);
+			Enumeration<JarEntry> jes = jf.entries();
+			while(jes.hasMoreElements()) {
+				JarEntry je  = jes.nextElement();
+				String name = je.getName();
+				if(name.endsWith("/")) {
+					name = name.substring(0,name.length()-1);
+				}
+				name = name.replace("/", ".");
+				for(String pkg : Constants.SYSTEM_PCK_NAME_PREFIXES) {
+					if(name.startsWith(pkg)) {
+						return false;
+					}
+				}
+			}
+			
+		} catch (IOException e) {
+			LG.log(MC.LOG_ERROR, this.getClass(), "", e);
+			return false;
+		}finally {
+			if(jf != null) {
+				try {
+					jf.close();
+				} catch (IOException e) {
+				}
+			}
+		}
+	
+		return true;
 	}
 	
 

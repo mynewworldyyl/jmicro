@@ -19,7 +19,7 @@ import cn.jmicro.api.security.ActInfo;
 import cn.jmicro.common.Utils;
 
 @Component
-@Service(namespace="mng", version="0.0.1",external=true,debugMode=1,showFront=false)
+@Service(version="0.0.1",external=true,debugMode=1,showFront=false)
 public class CommonManagerImpl implements ICommonManager {
 
 	@Cfg("/notLonginClientId")

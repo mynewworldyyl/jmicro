@@ -1,6 +1,7 @@
 package cn.jmicro.mng.impl;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -33,6 +34,7 @@ import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.raft.IDataOperator;
 import cn.jmicro.api.security.ActInfo;
 import cn.jmicro.api.security.PermissionManager;
+import cn.jmicro.api.utils.TimeUtils;
 import cn.jmicro.choreography.api.IAssignStrategy;
 import cn.jmicro.choreography.api.IResourceResponsitory;
 import cn.jmicro.choreography.instance.InstanceManager;
@@ -42,7 +44,7 @@ import cn.jmicro.common.util.JsonUtils;
 import cn.jmicro.common.util.StringUtils;
 
 @Component
-@Service(namespace="mng", version="0.0.1",retryCnt=0,external=true,debugMode=1,showFront=false)
+@Service( version="0.0.1",retryCnt=0,external=true,debugMode=1,showFront=false)
 public class ChoreographyServiceImpl implements IChoreographyService {
 
 	private final static Logger logger = LoggerFactory.getLogger(ChoreographyServiceImpl.class);
@@ -58,7 +60,7 @@ public class ChoreographyServiceImpl implements IChoreographyService {
 	@Inject
 	private ComponentIdServer idServer;
 	
-	@Reference(namespace="rrs",version="*")
+	@Reference(namespace="repository",version="*")
 	private IResourceResponsitory respo;
 	
 	@Inject
@@ -132,13 +134,26 @@ public class ChoreographyServiceImpl implements IChoreographyService {
 					return resp;
 				}
 			}
-			
 		}
 		
-		Map<String, String> params = IAssignStrategy.parseArgs(dep.getArgs());
+		String msg = checkProgramArgs(dep.getArgs());
+		if(msg != null) {
+			resp.setCode(1);
+			resp.setMsg(msg);
+			return resp;
+		}
+		
+		msg = checkAndSetJVMArgs(dep,null);
+		if(msg != null) {
+			resp.setCode(1);
+			resp.setMsg(msg);
+			return resp;
+		}
+		
+		
 		if(dep.getStatus() == Deployment.STATUS_ENABLE && !PermissionManager.isCurAdmin()) {
 			 //非Admin添加的部署需要严格验证参数
-			 checkNonAdminArgs(dep,params);
+			 checkNonAdminProgramArgs(dep);
 		}
 		
 		dep.setClientId(ai.getId());
@@ -147,8 +162,11 @@ public class ChoreographyServiceImpl implements IChoreographyService {
 		dep.setId(id);
 		
 		if(dep.getStatus() == Deployment.STATUS_ENABLE) {
-			setEnableDepArgs(params,dep);
+			setEnableDepArgs(dep);
 		}
+		
+		dep.setCreatedTime(TimeUtils.getCurTime());
+		dep.setUpdatedTime(TimeUtils.getCurTime());
 		
 		op.createNodeOrSetData(ChoyConstants.DEP_DIR+"/"+id, JsonUtils.getIns().toJson(dep), false);
 		
@@ -160,68 +178,123 @@ public class ChoreographyServiceImpl implements IChoreographyService {
 		return resp;
 	}
 
-	private void setEnableDepArgs(Map<String, String> params,Deployment dep) {
-		dep.setDesc("");
+	private String checkAndSetJVMArgs(Deployment dep,Deployment oldDep) {
 		
+		String[] jvmArgs = null;
+		
+		if(Utils.isEmpty(dep.getJvmArgs())) {
+			jvmArgs = new String[0];
+		}else {
+			jvmArgs = dep.getJvmArgs().split("\\s+");
+			for(String a : jvmArgs) {
+				if(!a.startsWith("-X")) {
+					return "Invalid JVM arg: " + a;
+				}
+			}
+		}
+		
+		ActInfo ai = JMicroContext.get().getAccount();
+		
+		if(!ai.isAdmin() && jvmArgs.length > 0) {
+			if(oldDep == null || !dep.getJvmArgs().equals(oldDep.getJvmArgs())) {
+				dep.setStatus(Deployment.STATUS_CHECK);
+				dep.setDesc("Need system admin check with jvm args, you can wait for approving or delete jvm args to enable this deployment!");
+				return null;
+			}
+		}
+		
+		if(jvmArgs != null && jvmArgs.length > 0) {
+			int xmsArg = getIntSizeJvmArg(jvmArgs,"-Xms");
+			if(xmsArg==0) {
+				dep.setJvmArgs(dep.getJvmArgs() + " -Xms16M");
+			}
+			
+			int XmxArg = getIntSizeJvmArg(jvmArgs,"-Xmx");
+			if(XmxArg==0) {
+				dep.setJvmArgs(dep.getJvmArgs() + " -Xmx32M");
+			}
+		} else {
+			dep.setJvmArgs(dep.getJvmArgs() + " -Xms16M");
+			dep.setJvmArgs(dep.getJvmArgs() + " -Xmx32M");
+		}
+	
+		return null;
+	}
+
+	private String checkProgramArgs(String argStr) {
+		
+		if(Utils.isEmpty(argStr)) {
+			return null;
+		}
+		String[] args = argStr.split("\\s+");
+		for(String arg : args){
+			if(Utils.isEmpty(arg)) {
+				continue;
+			}
+			if(!arg.startsWith("-D")){
+				return "Invalid program: " + arg;
+			}
+		}
+		return null;
+	}
+
+	private void setEnableDepArgs(Deployment dep) {
+		dep.setDesc("");
+		Map<String, String> params = IAssignStrategy.parseProgramArgs(dep.getArgs());
 		if(!params.containsKey(Constants.CLIENT_ID)) {
-			dep.setArgs(dep.getArgs() + " -D"+Constants.CLIENT_ID + "="+dep.getClientId());
+			dep.setArgs(dep.getArgs() + " -D"+Constants.CLIENT_ID + "="+ dep.getClientId());
 		}
 		
 		if(!params.containsKey(Constants.ADMIN_CLIENT_ID)) {
-			dep.setArgs(dep.getArgs() + " -D"+Constants.ADMIN_CLIENT_ID + "="+Config.getAdminClientId());
+			dep.setArgs(dep.getArgs() + " -D"+Constants.ADMIN_CLIENT_ID + "=" + Config.getAdminClientId());
 		}
-		
-		int xmsArg = getIntSizeJvmArg(params,"-Xms");
-		if(xmsArg==0) {
-			dep.setArgs(dep.getArgs() + " -Xms16M");
-		}
-		
-		int XmxArg = getIntSizeJvmArg(params,"-Xmx");
-		if(XmxArg==0) {
-			dep.setArgs(dep.getArgs() + " -Xmx32M");
-		}
-		
 	}
 
-	private int getIntSizeJvmArg(Map<String, String> params, String keyPrefix) {
-		String val = getJvmArg(params,keyPrefix);
+	private int getIntSizeJvmArg(String[] jvmArgs, String keyPrefix) {
+		String val = getJvmArg(jvmArgs,keyPrefix);
 		if(Utils.isEmpty(val)) {
 			return 0;
 		}
 		
 		int size = 0;
 		if(val.endsWith("b") || val.endsWith("B")) {
-			size = Integer.parseInt(val.substring(keyPrefix.length(),val.length()-1));
+			size = Integer.parseInt(val.substring(0,val.length()-1));
 		}else if(val.endsWith("K") || val.endsWith("k")) {
-			size = Integer.parseInt(val.substring(keyPrefix.length(),val.length()-1))*1024;
+			size = Integer.parseInt(val.substring(0,val.length()-1))*1024;
 		}else if(val.endsWith("M") || val.endsWith("m")) {
-			size = Integer.parseInt(val.substring(keyPrefix.length(),val.length()-1))*1024*1024;
+			size = Integer.parseInt(val.substring(0,val.length()-1))*1024*1024;
 		}
 		return size;
 	}
 	
-	private String getJvmArg(Map<String, String> params, String keyPrefix) {
-		for(Map.Entry<String, String> e : params.entrySet()) {
-			if(e.getKey().startsWith(keyPrefix)) {
-				return e.getKey();
+	private String getJvmArg(String[] jvmArgs, String keyPrefix) {
+		for(String e: jvmArgs) {
+			if(e.startsWith(keyPrefix) && e.length() > keyPrefix.length()) {
+				int idx = e.indexOf(":");
+				if(idx > 0) {
+					return e.substring(idx+1);
+				}else {
+					return e.substring(keyPrefix.length());
+				}
 			}
 		}
 		return null;
 	}
 
-	private void checkNonAdminArgs(Deployment dep,Map<String, String> params) {
+	private void checkNonAdminProgramArgs(Deployment dep) {
+		
+		Map<String, String> params = null;
+		
 		if(Utils.isEmpty(dep.getArgs())) {
-			return;
+			 params = new HashMap<>();
+		}else {
+			 params = IAssignStrategy.parseProgramArgs(dep.getArgs());
 		}
-
+		
 		ActInfo ai = JMicroContext.get().getAccount();
 		
 		for(Map.Entry<String, String> e : params.entrySet()) {
 			String key = e.getKey();
-			if(key.startsWith("-X")) {
-				dep.setStatus(Deployment.STATUS_CHECK);
-				dep.setDesc("Need system admin check with jvm args, you can wait for approving or delete jvm args to enable this deployment!");
-			}
 			
 			if(key.equals(Constants.ADMIN_CLIENT_ID) ) {
 				int adminClient = Integer.parseInt(e.getValue());
@@ -318,7 +391,7 @@ public class ChoreographyServiceImpl implements IChoreographyService {
 		
 		ActInfo ai = JMicroContext.get().getAccount();
 		
-		if(ai.isGuest() && !Utils.isEmpty(dep.getArgs())) {
+		if(ai.isGuest() && (!Utils.isEmpty(dep.getArgs()) || !Utils.isEmpty(dep.getJvmArgs()))) {
 			String msg = "Guest account deployment cannot contain any args!";
 			logger.error(msg);
 			resp.setCode(1);
@@ -364,28 +437,32 @@ public class ChoreographyServiceImpl implements IChoreographyService {
 			return resp;
 		}
 		
-		/*if(!dep.getJarFile().equals(d.getJarFile())) {
-			//更新了JarFile，判断更新的JAR是否存在
-			if(!checkPackageResource(dep.getJarFile())) {
-				String msg = "Jar file cannot not found: " +dep.getJarFile();
-				logger.error(msg);
-				resp.setCode(1);
-				resp.setMsg(msg);
-				return resp;
-			}
-		}*/
+		String msg = checkProgramArgs(dep.getArgs());
+		if(msg != null) {
+			resp.setCode(1);
+			resp.setMsg(msg);
+			return resp;
+		}
 		
-		Map<String, String> params = IAssignStrategy.parseArgs(dep.getArgs());
+		msg = checkAndSetJVMArgs(dep,d);
+		if(msg != null) {
+			resp.setCode(1);
+			resp.setMsg(msg);
+			return resp;
+		}
+		
+		Map<String, String> params = IAssignStrategy.parseProgramArgs(dep.getArgs());
 		if(dep.getStatus() == Deployment.STATUS_ENABLE && !PermissionManager.isCurAdmin()) {
 			//非Admin添加的部署需要严格验证参数
-			checkNonAdminArgs(dep,params);
+			checkNonAdminProgramArgs(dep);
 		}
 		
 		if(dep.getStatus() == Deployment.STATUS_ENABLE) {
-			setEnableDepArgs(params,dep);
+			setEnableDepArgs(dep);
 		}
 		
 		dep.setClientId(d.getClientId());
+		dep.setUpdatedTime(TimeUtils.getCurTime());
 		
 		String data = JsonUtils.getIns().toJson(dep);
 		LG.log(MC.LOG_INFO, TAG,"Update: "+data);

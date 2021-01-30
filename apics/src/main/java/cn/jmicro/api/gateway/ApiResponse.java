@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 
 import cn.jmicro.api.annotation.SO;
+import cn.jmicro.api.codec.JDataInput;
 import cn.jmicro.api.codec.JDataOutput;
 import cn.jmicro.api.net.IResp;
 import cn.jmicro.api.net.Message;
@@ -67,6 +68,32 @@ public final class ApiResponse implements IResp {
 			throw new CommonException("encode error: ",e);
 		}
 		return jo.getBuf();
+	}
+	
+	public void decode(ByteBuffer buf) {
+		JDataInput ji = new JDataInput(buf);
+		try {
+			
+			this.id = ji.readLong();
+			this.reqId = ji.readLong();
+			this.success = ji.readBoolean();
+			
+			byte[] data = null;
+			
+			if(result.getClass() ==  new byte[0].getClass()) {
+				data = (byte[]) this.result;
+			} else if(result instanceof ByteBuffer) {
+				ByteBuffer bb = (ByteBuffer)result;
+				data = new byte[bb.remaining()];
+				bb.get(data, 0, data.length);
+			} else {
+				String json = JsonUtils.getIns().toJson(this.result);
+				data = json.getBytes(Constants.CHARSET);
+			}
+			
+		} catch (IOException e) {
+			throw new CommonException("encode error: ",e);
+		}
 	}
 	
 	public Long getId() {

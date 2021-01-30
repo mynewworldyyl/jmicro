@@ -32,6 +32,7 @@ public interface IClassloaderRpc {
 	 */
 	byte[] getClassData(String clazz);
 	
-	String info();
+	//String info();
 	
+	//Resp<Boolean> registRemoteClass(String clazzName);
 }

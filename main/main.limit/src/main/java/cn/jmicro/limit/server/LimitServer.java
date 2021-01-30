@@ -35,7 +35,7 @@ import cn.jmicro.common.Constants;
 import cn.jmicro.common.util.JsonUtils;
 
 @Component
-@Service(namespace="limitServer", version="0.0.1",external=false)
+@Service(version="0.0.1",external=false)
 public class LimitServer implements IStatisDataSubscribe {
 
 	private static final Logger logger = LoggerFactory.getLogger(LimitServer.class);

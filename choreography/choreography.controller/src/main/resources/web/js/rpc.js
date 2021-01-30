@@ -35,7 +35,7 @@ jmicro.Constants = {
   Integer : 3,
   LOng : 4,
   String : 5,
-  DEFAULT_NAMESPACE : 'defaultNamespace',
+  //DEFAULT_NAMESPACE : 'defaultNamespace',
   DEFAULT_VERSION : "0.0.0",
   STREAM : 1 << 2,
   NEED_RESPONSE : 1 << 1

@@ -35,6 +35,7 @@ import cn.jmicro.api.annotation.Reference;
 import cn.jmicro.api.async.AsyncFailResult;
 import cn.jmicro.api.basket.BasketFactory;
 import cn.jmicro.api.basket.IBasket;
+import cn.jmicro.api.choreography.ProcessInfo;
 import cn.jmicro.api.config.Config;
 import cn.jmicro.api.executor.ExecutorConfig;
 import cn.jmicro.api.executor.ExecutorFactory;
@@ -68,7 +69,7 @@ public class StatisMonitorClient {
 	
 	private String[] typeLabels = null; 
 	
-	@Reference(namespace="monitorServer",version="0.0.1",changeListener="enableWork")
+	@Reference(namespace="*",version="0.0.1",changeListener="enableWork")
 	private IStatisMonitorServer$JMAsyncClient monitorServer;
 	
 	private boolean checkerWorking = false;
@@ -135,7 +136,7 @@ public class StatisMonitorClient {
 				Config.getInstanceName()+"_MonitorClientStatuCheck",group);
 		
 		if(sl.hashServer() && !Config.isClientOnly()) {
-			ServiceItem si = sl.createSrvItem(IMonitorAdapter.class, Config.getInstanceName()+"."+group,
+			ServiceItem si = sl.createSrvItem(IMonitorAdapter.class, Config.getNamespace()+"."+group,
 					"0.0.1", IMonitorAdapter.class.getName(),Config.getClientId());
 			of.regist("StatisMonitorClientStatuCheckAdapter", statusMonitorAdapter);
 			sl.registService(si,statusMonitorAdapter);

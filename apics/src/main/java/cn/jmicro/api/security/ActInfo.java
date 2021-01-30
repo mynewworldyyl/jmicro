@@ -52,11 +52,11 @@ public class ActInfo {
 	//登陆次数
 	private long loginNum;
 	
-	private Boolean isAdmin;
+	private Boolean isAdmin=Boolean.FALSE;
 	
-	private Boolean guest;
+	private Boolean guest=Boolean.TRUE;
 	
-	private Set<String> pers = new HashSet<>();
+	private Set<Integer> pers = new HashSet<>();
 	
 	public ActInfo() {};
 	
@@ -76,7 +76,7 @@ public class ActInfo {
 	}
 	public void setActName(String actName) {
 		if(this.actName != null && !Utils.formSystemPackagePermission(3)) {
-			 throw new CommonException(MC.MT_ACT_PERMISSION_REJECT,"非法设置账号名称");
+			checkPath("非法设置账号名称");
 		 }
 		this.actName = actName;
 	}
@@ -85,7 +85,7 @@ public class ActInfo {
 	}
 	public void setLoginKey(String loginKey) {
 		if(this.loginKey != null && !Utils.formSystemPackagePermission(3)) {
-			 throw new CommonException(MC.MT_ACT_PERMISSION_REJECT,"非法设置登陆键");
+			checkPath("非法设置登陆键");
 		 }
 		this.loginKey = loginKey;
 	}
@@ -93,30 +93,31 @@ public class ActInfo {
 	public boolean isGuest() {
 		return guest;
 	}
+	
+	private boolean checkPath(String errMsg) {
+		 if(!Utils.callPathExistPackage("cn.jmicro.security")) {
+			 throw new CommonException(MC.MT_ACT_PERMISSION_REJECT,errMsg);
+		  }
+		 return true;
+	}
 
 	public void setGuest(boolean guest) {
 		if(this.guest != null && !Utils.formSystemPackagePermission(3)) {
-			 throw new CommonException(MC.MT_ACT_PERMISSION_REJECT,"非法设置账号游客标识");
+			checkPath("非法设置账号游客标识");
 		 }
 		this.guest = guest;
 	}
 
 	public String getPwd() {
 		if(!Utils.formSystemPackagePermission(3)) {
-			StackTraceElement[] ses = Thread.currentThread().getStackTrace();
-			for(StackTraceElement se:ses ) {
-				if(se.getClassName().startsWith("cn.jmicro.center.SecurityPersistImpl")) {
-					return pwd;
-				}
-			}
-			 throw new CommonException(MC.MT_ACT_PERMISSION_REJECT,"非法获取账号密码");
+			checkPath("非法获取账号密码");
 		 }
 		return pwd;
 	}
 
 	public void setPwd(String pwd) {
 		if(this.pwd != null && !Utils.formSystemPackagePermission(3)) {
-			 throw new CommonException(MC.MT_ACT_PERMISSION_REJECT,"非法设置账号密码");
+			 checkPath("非法设置账号密码");
 		 }
 		this.pwd = pwd;
 	}
@@ -138,17 +139,17 @@ public class ActInfo {
 		return ai;
 	}
 
-	public Set<String> getPers() {
+	public Set<Integer> getPers() {
 		if(!Utils.formSystemPackagePermission(3)) {
 			 return Collections.unmodifiableSet(this.pers);
-		 }else {
+		 } else {
 			 return pers;
 		 }
 	}
 
-	public void setPers(Set<String> pers) {
+	public void setPers(Set<Integer> pers) {
 		if(!this.pers.isEmpty() && !Utils.formSystemPackagePermission(3)) {
-			 throw new CommonException(MC.MT_ACT_PERMISSION_REJECT,"非法设置账号权限");
+			checkPath("非法设置账号权限");
 		 }
 		this.pers = pers;
 	}
@@ -167,7 +168,7 @@ public class ActInfo {
 
 	public void setStatuCode(byte statuCode) {
 		if(this.statuCode != 0 && !Utils.formSystemPackagePermission(3)) {
-			 throw new CommonException(MC.MT_ACT_PERMISSION_REJECT,"非法设置账号状态码");
+			checkPath("非法设置账号状态码");
 		 }
 		this.statuCode = statuCode;
 	}
@@ -186,7 +187,7 @@ public class ActInfo {
 
 	public void setToken(String token) {
 		if(this.token != null && !Utils.formSystemPackagePermission(3)) {
-			 throw new CommonException(MC.MT_ACT_PERMISSION_REJECT,"非法设置Token");
+			checkPath("非法设置Token");
 		 }
 		this.token = token;
 	}
@@ -197,7 +198,7 @@ public class ActInfo {
 
 	public void setTokenType(byte tokenType) {
 		if(this.tokenType != 0 && !Utils.formSystemPackagePermission(3)) {
-			 throw new CommonException(MC.MT_ACT_PERMISSION_REJECT,"非法设置Token类型");
+			checkPath("非法设置Token类型");
 		 }
 		this.tokenType = tokenType;
 	}
@@ -216,7 +217,7 @@ public class ActInfo {
 
 	public void setId(int id) {
 		if(this.id != 0 && !Utils.formSystemPackagePermission(3)) {
-			 throw new CommonException(MC.MT_ACT_PERMISSION_REJECT,"非法设置账号ID");
+			checkPath("非法设置账号ID");
 		}
 		this.id = id;
 	}
@@ -243,7 +244,7 @@ public class ActInfo {
 
 	public void setAdmin(boolean isAdmin) {
 		 if( this.isAdmin != null && !Utils.formSystemPackagePermission(3)) {
-			 throw new CommonException(MC.MT_ACT_PERMISSION_REJECT,"非法设置Admin状态");
+			 checkPath("非法设置Admin状态");
 		 }
 		this.isAdmin = isAdmin;
 	}

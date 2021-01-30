@@ -28,13 +28,13 @@ import cn.jmicro.common.Constants;
 @Retention(RUNTIME)
 public @interface Service {
 
-	public String value() default "";
+	//public String value() default "";
 	
 	/**
 	 * 服务使用的注册表，如将来同时使用实现ZK或Etcd，此属性目前感觉没必要，一个就足够了，
 	 * 真想不明白同时用两种类型注册表有什么用
 	 */
-	public String registry() default Constants.DEFAULT_REGISTRY;
+	//public String registry() default Constants.DEFAULT_REGISTRY;
 	
 	/**
 	 * 是否可通过api网关使用
@@ -57,7 +57,7 @@ public @interface Service {
 	 * 服务命名空间，服务之间以命名空间作为区别，如出库单服务，入库单服务可以用不同的命名空间相区别，利于服务管理
 	 * 客户端使用服务时，可以指定命名空间
 	 */
-	public String namespace() default "";
+	//public String namespace() default "";
 
 	/**
 	 * 服务版本，每个服务接口可以有多个版本，版本格式为 DD.DD.DD,6个数字用英方步点号隔开
@@ -103,7 +103,7 @@ public @interface Service {
 	/**
 	 * 系统检测自动带上的参数 
 	 */
-	public String testingArgs() default "";
+	//public String testingArgs() default "";
 	
 	/**
 	 * 服务降级前最大失败次数，如降底QPS，提高响应时间等策略
@@ -163,4 +163,5 @@ public @interface Service {
 	
 	public int clientId() default Constants.USE_SYSTEM_CLIENT_ID;
 	
+	public int clazzVersion() default 0;
 }

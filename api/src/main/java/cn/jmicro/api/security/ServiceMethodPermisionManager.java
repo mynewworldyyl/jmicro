@@ -35,7 +35,7 @@ public class ServiceMethodPermisionManager {
 		for(ServiceMethod sm : si.getMethods()) {
 			if(sm.isPerType()) {
 				Permission p = new Permission();
-				p.setPid(sm.getKey().toKey(false, false, false));
+				//p.setPid(sm.getKey().toKey(false, false, false));
 				p.setLabel(sm.getKey().getMethod());
 				p.setModelName(si.getKey().toSnv());
 				p.setDesc(sm.getKey().getMethod()+"(" +sm.getKey().getParamsStr()+")");

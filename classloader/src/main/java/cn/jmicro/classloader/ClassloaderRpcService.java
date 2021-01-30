@@ -7,24 +7,22 @@ import java.io.InputStream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import cn.jmicro.api.annotation.Cfg;
+import cn.jmicro.api.Resp;
 import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Service;
 import cn.jmicro.api.classloader.IClassloaderRpc;
-import cn.jmicro.api.config.Config;
 import cn.jmicro.api.monitor.LG;
 import cn.jmicro.api.monitor.MC;
 import cn.jmicro.common.Constants;
 
-@Service(namespace="classloaderrpc",version="0.0.1",timeout=30000,showFront=false
-,clientId=Constants.NO_CLIENT_ID)
+@Service(version="0.0.1",timeout=30000,showFront=false,clientId=Constants.NO_CLIENT_ID)
 @Component
 public class ClassloaderRpcService implements IClassloaderRpc {
 
 	private final static Logger logger = LoggerFactory.getLogger(ClassloaderRpcService.class);
 	
-	@Cfg(value="/")
-	private String jarResp;
+	/*@Cfg(value="/")
+	private String jarResp;*/
 	
 	@Override
 	public byte[] getClassData(String clazz) {
@@ -72,13 +70,4 @@ public class ClassloaderRpcService implements IClassloaderRpc {
 		return null;
 	}
 
-	@Override
-	public String info() {
-		StringBuffer sb = new StringBuffer();
-		sb.append("host:").append(Config.getExportSocketHost());
-		sb.append(",instanceName:").append(Config.getInstanceName());
-		return sb.toString();
-	}
-
-	
 }

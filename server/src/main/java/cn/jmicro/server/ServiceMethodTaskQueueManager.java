@@ -38,7 +38,7 @@ import cn.jmicro.server.limit.StatisServiceCounter;
  * @author yeyulei
  */
 @Component
-@Service(namespace="serviceMethodTaskQueue", version="0.0.1", monitorEnable=0, maxSpeed=0,debugMode=0,
+@Service(version="0.0.1", monitorEnable=0, maxSpeed=0,debugMode=0,
 baseTimeUnit=Constants.TIME_SECONDS, external=false, showFront=false)
 public class ServiceMethodTaskQueueManager implements ILimitData{
 

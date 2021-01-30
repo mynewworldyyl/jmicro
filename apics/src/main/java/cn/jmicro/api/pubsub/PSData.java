@@ -58,8 +58,6 @@ public class PSData implements Serializable{
 	//0:只需要确保其中一个消费者成功消费消息即可认为消息发送成功，即使别的消费者消费失败，也不会重发消息
 	//public static final byte FLAG_SUCCESS_ALL = 1<<1;
 	
-	
-	
 	public static final byte RESULT_SUCCCESS = 0;
 	
 	public static final int PUB_OK = RESULT_SUCCCESS;

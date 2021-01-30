@@ -41,7 +41,7 @@ public interface IAccountService {
 	Resp<Boolean> checkAccountExist(String actName);
 	
 	//Resp<Boolean> updatePermissions(String actName,Set<String> adds,Set<String> dels);
-	Resp<Boolean> updateActPermissions(String actName,Set<String> adds,Set<String> dels);
+	Resp<Boolean> updateActPermissions(String actName,Set<Integer> adds,Set<Integer> dels);
 	
 	Resp<Integer> countAccount(Map<String, Object> queryConditions);
 	

@@ -47,7 +47,7 @@ import cn.jmicro.resource.ResourceDataReq;
 import cn.jmicro.resource.ResourceMonitorServer;
 
 @Component
-@Service(namespace="mng", version="0.0.1",external=true,timeout=10000,debugMode=1,showFront=false)
+@Service(version="0.0.1",external=true,timeout=10000,debugMode=1,showFront=false)
 public class MngResourceServiceImpl implements IMngResourceService{
 
 	private final static Logger logger = LoggerFactory.getLogger(MngResourceServiceImpl.class);

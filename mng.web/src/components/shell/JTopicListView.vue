@@ -62,6 +62,7 @@
     import JTopicView from './JTopicView.vue'
     //import JCreateTopicView from "./JCreateTopicView.vue";
     //import { quillEditor } from "vue-quill-editor";
+
     const cid = 'topicList';
     const sn = 'cn.jmicro.ext.bbs.api.IBbsService';
     const ns = 'bbs';

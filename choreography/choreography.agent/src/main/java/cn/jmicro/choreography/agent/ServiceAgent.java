@@ -17,7 +17,6 @@
 package cn.jmicro.choreography.agent;
 
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.ArrayList;
@@ -34,6 +33,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import cn.jmicro.api.IListener;
+import cn.jmicro.api.JMicro;
 import cn.jmicro.api.Resp;
 import cn.jmicro.api.annotation.Cfg;
 import cn.jmicro.api.annotation.Component;
@@ -50,12 +50,12 @@ import cn.jmicro.api.monitor.LG;
 import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.raft.IDataListener;
 import cn.jmicro.api.raft.IDataOperator;
+import cn.jmicro.api.security.IAccountService;
 import cn.jmicro.api.sysstatis.SystemStatisManager;
 import cn.jmicro.api.timer.TimerTicker;
 import cn.jmicro.api.utils.SystemUtils;
 import cn.jmicro.api.utils.TimeUtils;
 import cn.jmicro.choreography.api.IAssignStrategy;
-import cn.jmicro.choreography.api.genclient.IResourceResponsitory$JMAsyncClient;
 import cn.jmicro.choreography.assign.Assign;
 import cn.jmicro.choreography.assign.AssignState;
 import cn.jmicro.choreography.instance.InstanceManager;
@@ -73,23 +73,14 @@ import cn.jmicro.common.util.StringUtils;
 @Component(level = 100)
 public class ServiceAgent {
 
-	private static final Logger logger = LoggerFactory.getLogger(ServiceAgent.class);
-
 	private static final Class<?> TAG = ServiceAgent.class;
+	
+	private static final Logger logger = LoggerFactory.getLogger(TAG);
 
 	// @Cfg("/ServiceAgent/workDir")
 	private String workDir;
 	
 	//private byte logLevel = LG.SYSTEM_LOG_LEVEL;
-
-	// @Cfg("/ServiceAgent/resourceDir")
-	private String resourceDir; // = System.getProperty("user.dir") + "/resourceDir";
-
-	//@Cfg(value = "/ServiceAgent/javaAgentJarFile", defGlobal = true)
-	private String javaAgentJarFile = "jmicro.agent-"+Constants.VERSION+"-"+Constants.JMICRO_RELEASE_LABEL+".jar";
-
-	@Cfg(value = "/ResourceReponsitoryService/uploadBlockSize", defGlobal = true)
-	private int uploadBlockSize = 65300;// 1024*1024;
 
 	// will be cancel the start process when start time
 	// will be force stop the process when process not response to stop action
@@ -102,8 +93,6 @@ public class ServiceAgent {
 
 	private File workDirFile = null;
 
-	private File resourceDirFile = null;
-
 	private Map<Integer, ProcessInfo> startingProcess = new HashMap<>();
 
 	private Map<Integer, ProcessInfo> stopingProcess = new HashMap<>();
@@ -112,9 +101,9 @@ public class ServiceAgent {
 
 	private Queue<Assign> startAssigns = new ConcurrentLinkedQueue<>();
 
-	@Reference(namespace = "rrs", version = "*")
-	private IResourceResponsitory$JMAsyncClient respo;
-
+	@Reference(namespace="security",version="*",required=true)
+	private IAccountService actSrv;
+	
 	@Inject
 	private InstanceManager insManager;
 
@@ -134,6 +123,9 @@ public class ServiceAgent {
 
 	@Inject
 	private ILockerManager lockMgn;
+	
+	@Inject
+	private PackageManager pckMng;
 
 	private String path;
 
@@ -169,7 +161,7 @@ public class ServiceAgent {
 			String msg = "Clear resource by cmd: " + cmd;
 			logger.warn(msg);
 			LG.log(MC.LOG_WARN, TAG, msg);
-			clearLocalRes();
+			pckMng.clearLocalRes();
 			break;
 		case ChoyConstants.AGENT_CMD_STOP_ALL_INSTANCE:
 			 msg = "Stop all process by cmd: " + cmd;
@@ -192,12 +184,6 @@ public class ServiceAgent {
 			workDirFile.mkdir();
 		}
 
-		resourceDir = cfg.getString(Constants.INSTANCE_DATA_DIR, "") + File.separatorChar + "resourceDir";
-		resourceDirFile = new File(resourceDir);
-		if (!resourceDirFile.exists()) {
-			resourceDirFile.mkdir();
-		}
-
 		File infoFile = new File(cfg.getString(Constants.INSTANCE_DATA_DIR, ""), "agent.json");
 		if (infoFile.exists()) {
 			String existAgentJson = SystemUtils.getFileString(infoFile);
@@ -205,7 +191,7 @@ public class ServiceAgent {
 				agentInfo = JsonUtils.getIns().fromJson(existAgentJson, AgentInfo.class);
 				activePath = ChoyConstants.ROOT_ACTIVE_AGENT + "/" + agentInfo.getId();
 				if (op.exist(activePath)) {
-					logger.warn("Only one agent can be exist for one resourceDir: " + resourceDir);
+					logger.warn("Only one agent can be exist for one resourceDir: " + workDir);
 					System.exit(0);
 					return;
 				}
@@ -290,7 +276,7 @@ public class ServiceAgent {
 
 	private void stopAllInstance() {
 		Set<ProcessInfo> ps = this.insManager.getProcessesByAgentId(this.agentInfo.getId());
-		if (ps != null && !ps.isEmpty()) {
+		if(ps != null && !ps.isEmpty()) {
 			for (ProcessInfo pi : ps) {
 				stopProcess(pi);
 			}
@@ -298,15 +284,6 @@ public class ServiceAgent {
 			String msg = "No process to stop by stop command";
 			logger.warn(msg);
 			LG.log(MC.LOG_WARN, TAG, msg);
-		}
-	}
-
-	private void clearLocalRes() {
-		File[] fs = new File(resourceDir).listFiles();
-		for (File f : fs) {
-			if (f.isFile()) {
-				f.delete();
-			}
 		}
 	}
 
@@ -353,7 +330,7 @@ public class ServiceAgent {
 			return;
 		}
 
-		Map<String, String> params = IAssignStrategy.parseArgs(dep.getStrategyArgs());
+		Map<String, String> params = IAssignStrategy.parseProgramArgs(dep.getStrategyArgs());
 		String agentIds = params.get(IAssignStrategy.AGENT_ID);
 		if (StringUtils.isEmpty(agentIds)) {
 			String msg = "Deployment ID [" + depId + "] not contain angent ID [" + agentInfo.getId() + "]";
@@ -643,12 +620,12 @@ public class ServiceAgent {
 		return dep;
 	}
 
-	private boolean startDep(Assign as) {
+	private void startDep(Assign as) {
 		if (as == null) {
 			String msg = "Invalid dep for NULL!";
 			LG.log( MC.LOG_ERROR, TAG, msg);
 			logger.error(msg);
-			return false;
+			return;
 		}
 		
 		Deployment dep = getDeployment(as.getDepId());
@@ -657,31 +634,29 @@ public class ServiceAgent {
 			
 		}*/
 		
-		boolean doContinue = true;
-		if (!checkRes(dep.getJarFile())) {
-			// Jar文件还不存在，先下载资源
-			//String msg = "Begin download: " + dep.getJarFile();
-			//LG.log(MC.LOG_INFO, TAG, msg);
-			//logger.info(msg);
-			doContinue = downloadJarFile(dep.getClientId(),dep.getResId(),dep.getJarFile(), as);
-		}
-
-		if (!checkRes(this.javaAgentJarFile)) {
-			// Jar文件还不存在，先下载资源
-			//String msg = "Begin download: " + this.javaAgentJarFile;
-			//LG.log(MC.LOG_INFO, TAG, msg);
-			//logger.info(msg);
-			doContinue = downloadJarFile(dep.getClientId(),-1000,this.javaAgentJarFile, as);
-		}
-
-		if(!doContinue) {
-			String msg = "Start deployment fail pls check yourself dep: " + dep.toString();
-			LG.log(MC.LOG_ERROR, TAG, msg);
+		if(dep == null) {
+			String msg = "Deployment "+as.getDepId()+" not found";
+			LG.log( MC.LOG_ERROR, TAG, msg);
 			logger.error(msg);
-			deleteAssignDepNode(as.getInsId());
-			return false;
+			return;
 		}
+		
+		this.pckMng.prepareDeployment(as, dep, (suc,agentFile,javaassistFile,cp,args)->{
+			if(!suc) {
+				String msg = "Start deployment fail pls check yourself dep: " + dep.toString();
+				LG.log(MC.LOG_ERROR, TAG, msg);
+				logger.error(msg);
+				deleteAssignDepNode(as.getInsId());
+			}else {
+				doStartProcess(as,dep,agentFile,javaassistFile,cp,args);
+			}
+		});
+		
+	}
 
+	private void doStartProcess(Assign as, Deployment dep,String agentFile,
+			String javaassistFile,String cp, String[] args) {
+		
 		updateAssign(as, AssignState.STARTING);
 
 		String assignData = op.getData(this.path + "/" + as.getInsId()); // idServer.getStringId(ProcessInfo.class);
@@ -690,41 +665,57 @@ public class ServiceAgent {
 			LG.log(MC.LOG_ERROR, TAG, msg);
 			throw new CommonException(msg);
 		}
+		
+		Resp<String> r = this.actSrv.getNameById(dep.getClientId());
+		if(r.getCode() != Resp.CODE_SUCCESS) {
+			throw new CommonException(r.getCode()+" : "+r.getMsg());
+		}
 
 		Assign a = JsonUtils.getIns().fromJson(assignData, Assign.class);
 
-		String args = dep.getArgs();
+		//String args = dep.getArgs();
 
 		List<String> list = new ArrayList<String>();
 
 		list.add("java");
-		list.add("-javaagent:" + this.resourceDir + File.separatorChar + this.javaAgentJarFile);
+		
+		list.add("-Xbootclasspath/a:"+javaassistFile);
+		
+		if(!Utils.isEmpty(cp)) {
+			list.add("-classpath");
+			list.add(cp);
+		}
+		
+		list.add("-javaagent:"+agentFile);
 
-		list.add("-jar");
-		list.add(this.resourceDir + File.separatorChar + dep.getJarFile());
-
-		if (StringUtils.isNotEmpty(args)) {
-			list.add(args);
+		list.add(JMicro.class.getName());
+		
+		if(StringUtils.isNotEmpty(dep.getJvmArgs())) {
+			list.add(dep.getJvmArgs());
 		}
 
 		if(SystemUtils.isWindows()) {
 
-		} else if (SystemUtils.isLinux()) {
+		}else if (SystemUtils.isLinux()) {
 
-		} else {
+		}else {
 			String msg = "Not support operation system:" + SystemUtils.getOSname();
 			LG.log(MC.LOG_ERROR, TAG, msg);
 			logger.error(msg);
-			return false;
 		}
-
+		
 		list.add("-D" + ChoyConstants.ARG_INSTANCE_ID + "=" + a.getInsId());
 		list.add("-D" + ChoyConstants.ARG_MYPARENT_ID + "=" + SystemUtils.getProcessId());
 		list.add("-D" + ChoyConstants.ARG_DEP_ID + "=" + dep.getId());
 		list.add("-D" + ChoyConstants.ARG_AGENT_ID + "=" + this.agentInfo.getId());
 		
 		list.add("-D" + Constants.CLIENT_ID + "=" + dep.getClientId());
+		list.add("-D" + Constants.CLIENT_NAME + "=" + r.getData());
 		list.add("-D" + Constants.ADMIN_CLIENT_ID + "=" + Config.getAdminClientId());
+		
+		if(args != null && args.length > 0) {
+			list.addAll(Arrays.asList(args));
+		}
 		
 		String msg = "Start process args: " + dep.getArgs();
 		LG.log(MC.LOG_INFO, TAG, msg);
@@ -732,7 +723,7 @@ public class ServiceAgent {
 		
 		// list.add(dep.getArgs());
 		if (StringUtils.isNotEmpty(dep.getArgs())) {
-			Map<String, String> params = IAssignStrategy.parseArgs(dep.getArgs());
+			Map<String, String> params = IAssignStrategy.parseProgramArgs(dep.getArgs());
 			for (Map.Entry<String, String> e : params.entrySet()) {
 				if (logger.isDebugEnabled()) {
 					logger.debug(e.getKey() + "=" + e.getValue());
@@ -750,7 +741,6 @@ public class ServiceAgent {
 				} else {
 					list.add("-D" + e.getKey() + "=" + getArgVal(e.getValue()));
 				}
-				
 			}
 		}
 
@@ -773,6 +763,8 @@ public class ServiceAgent {
 
 		list.add("-D" + ChoyConstants.PROCESS_INFO_FILE + "=" + processInfoData.getAbsolutePath());
 
+		logger.info(list.toString().replaceAll(",", " "));
+		
 		OutputStream os = null;
 
 		try {
@@ -809,11 +801,9 @@ public class ServiceAgent {
 			 msg = "Start process: " + data;
 			 LG.log(MC.LOG_INFO, TAG, msg);
 			logger.info(msg);
-			return true;
 		} catch (IOException e) {
 			LG.log(MC.LOG_ERROR, TAG, "", e);
 			logger.error("", e);
-			return false;
 		} finally {
 			if (os != null) {
 				try {
@@ -872,7 +862,7 @@ public class ServiceAgent {
 		return rst;
 	}
 
-	private void updateAssign(Assign as, AssignState s) {
+	protected void updateAssign(Assign as, AssignState s) {
 		String data = op.getData(this.path + "/" + as.getInsId());
 		Assign a = JsonUtils.getIns().fromJson(data, Assign.class);
 		if (a == null) {
@@ -886,144 +876,6 @@ public class ServiceAgent {
 		}
 		op.setData(this.path + "/" + as.getInsId(), JsonUtils.getIns().toJson(a));
 		return;
-	}
-
-	private boolean downloadJarFile(int actId,int resId,String resName, Assign as) {
-		final Resp<Integer> resp = respo.initDownloadResource(actId,resId);
-		if (resp.getCode() != 0) {
-			String msg = "Download [" + resName + "] fail with error: " + resp.getMsg();
-			LG.log(MC.LOG_ERROR, TAG, msg);
-			logger.error(msg);
-			return false;
-		}
-
-		final long[] curTime = new long[] { TimeUtils.getCurTime() };
-
-		updateAssign(as, AssignState.DOWNLOAD_RES);
-		
-		//final FileOutputStream fos;
-		File f = new File(this.resourceDir, resName);
-		try {
-			f.createNewFile();
-		} catch (IOException e1) {
-			logger.error("",e1);
-			LG.log(MC.LOG_ERROR, TAG, "create file error",e1);
-			return false;
-		}
-		
-		boolean[] rst = new boolean[] {true};
-		
-		try(FileOutputStream fos = new FileOutputStream(f)) {
-
-			String msg = "Begin download: " + resName+", res id: " + resId;
-			LG.log(MC.LOG_INFO, TAG, msg);
-			
-			//logger.info(msg);
-			
-			boolean[] loop = new boolean[] {true};
-			
-			while (loop[0]) {
-
-				byte[] data = respo.downResourceData(resp.getData(), 0);
-
-				long ctime = TimeUtils.getCurTime();
-				if (ctime - curTime[0] > 3000) {
-					//通知Controller分配还在下载数据，不要超时关停此分配
-					updateAssign(as, null);
-					curTime[0] = ctime;
-				}
-
-				if (data != null && data.length > 0) {
-					String msg0 = "Got one block: " + data.length + "B";
-					LG.logWithNonRpcContext(MC.LOG_DEBUG, TAG, msg0,MC.MT_DEFAULT,true);
-					try {
-						fos.write(data, 0, data.length);
-					} catch (IOException e) {
-						LG.logWithNonRpcContext(MC.LOG_ERROR, TAG.getName(), "Write jar file error", e,MC.MT_DEFAULT,true);
-						f.delete();
-						return false;
-					}
-				}
-
-				if (data == null || data.length == 0 || data.length < this.uploadBlockSize) {
-					String msg0 = "Finish download: " + resName + " with size: " + f.length();
-					LG.logWithNonRpcContext(MC.LOG_INFO, TAG, msg0,MC.MT_DEFAULT,true);
-					return true;
-				}
-				
-				/*respo.downResourceDataJMAsync(resp.getData(), 0)
-				.success((data,cxt)->{
-
-					long ctime = System.currentTimeMillis();
-					if (ctime - curTime[0] > 3000) {
-						//通知Controller分配还在下载数据，不要超时关停此分配
-						updateAssign(as, null);
-						curTime[0] = ctime;
-					}
-
-					if (data != null && data.length > 0) {
-						String msg0 = "Got one block: " + data.length + "B";
-						LG.logWithNonRpcContext(MC.LOG_DEBUG, TAG, msg0);
-						try {
-							fos.write(data, 0, data.length);
-						} catch (IOException e) {
-							LG.logWithNonRpcContext(MC.LOG_ERROR, TAG, "Write jar file error", e);
-							rst[0] = false;
-							loop[0] = false;
-						}
-					}
-
-					if (data == null || data.length == 0 || data.length < this.uploadBlockSize) {
-						String msg0 = "Finish download: " + jarFile + " with size: " + f.length();
-						LG.logWithNonRpcContext(MC.LOG_INFO, TAG, msg0);
-						rst[0] = true;
-						loop[0] = false;
-					}
-					
-					synchronized(resp) {
-						resp.notify();
-					}
-				
-				})
-				.fail((code,err,cxt)->{
-					LG.logWithNonRpcContext(MC.LOG_ERROR, TAG, "Req jar file data error: " + jarFile+" with " + err);
-					rst[0] = false;
-					loop[0] = false;
-					synchronized(resp) {
-						resp.notify();
-					}
-				});
-				
-				synchronized(resp) {
-					try {
-						resp.wait(8000);
-					} catch (InterruptedException e1) {
-						LG.log(MC.LOG_ERROR, TAG, "Req jar file data error: " + jarFile,e1);
-						rst[0] = false;
-						loop[0] = false;
-					}
-				}*/
-			}
-		} catch (Throwable e) {
-			f.delete();
-			String msg = "Fail to download [" + resName + "]";
-			LG.log(MC.LOG_ERROR, TAG, msg);
-			//logger.error(msg, e);
-			rst[0] = false;
-		} /*finally {
-			if (fos != null) {
-				try {
-					fos.close();
-				} catch (IOException e) {
-					logger.error("", e);
-				}
-			}
-		}*/
-		return rst[0];
-	}
-
-	private boolean checkRes(String jarFile) {
-		return new File(this.resourceDir, jarFile).exists();
 	}
 
 	private void stopProcess(ProcessInfo pi) {

@@ -10,7 +10,7 @@ import cn.jmicro.api.pubsub.PSData;
 import cn.jmicro.api.registry.ServiceItem;
 import cn.jmicro.api.registry.ServiceMethod;
 import cn.jmicro.api.service.ServiceLoader;
-import cn.jmicro.example.api.IDynamicInterface;
+import cn.expjmicro.example.api.IDynamicInterface;
 import cn.jmicro.test.JMicroBaseTestCase;
 
 public class TestDynamicRegistryService extends JMicroBaseTestCase{

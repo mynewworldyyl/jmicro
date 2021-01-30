@@ -593,7 +593,7 @@ public class DeploymentAssignment {
 		
 		String agentIds = null;
 		if(StringUtils.isNotEmpty(dep.getStrategyArgs())) {
-			Map<String,String> params = IAssignStrategy.parseArgs(dep.getStrategyArgs());
+			Map<String,String> params = IAssignStrategy.parseProgramArgs(dep.getStrategyArgs());
 			agentIds = params.get(IAssignStrategy.AGENT_ID);
 		}
 		
@@ -686,7 +686,7 @@ public class DeploymentAssignment {
 		
 		String agentIds = null;
 		if(StringUtils.isNotEmpty(dep.getStrategyArgs())) {
-			Map<String,String> params = IAssignStrategy.parseArgs(dep.getStrategyArgs());
+			Map<String,String> params = IAssignStrategy.parseProgramArgs(dep.getStrategyArgs());
 			//指定Agent运行部署
 			agentIds = params.get(IAssignStrategy.AGENT_ID);
 		}

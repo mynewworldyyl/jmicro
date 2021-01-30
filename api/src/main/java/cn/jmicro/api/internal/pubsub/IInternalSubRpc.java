@@ -26,7 +26,7 @@ import cn.jmicro.common.Constants;
  * @author Yulei Ye
  * @date 2018年12月22日 下午11:10:01
  */
-@Service(namespace=Constants.DEFAULT_PUBSUB,version="0.0.1")
+@Service(version="0.0.1")
 @AsyncClientProxy
 public interface IInternalSubRpc {
 

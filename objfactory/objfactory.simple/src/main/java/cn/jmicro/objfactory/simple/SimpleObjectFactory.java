@@ -140,8 +140,8 @@ public class SimpleObjectFactory implements IObjectFactory {
 
 	@SuppressWarnings("unchecked")
 	@Override
-	public <T> T getRemoteServie(Class<T> srvCls, AsyncConfig[] acs) {
-		return (T)this.clientServiceProxyManager.getRefRemoteService(srvCls,acs);
+	public <T> T getRemoteServie(Class<T> srvCls,String ns, AsyncConfig[] acs) {
+		return (T)this.clientServiceProxyManager.getRefRemoteService(srvCls,ns,acs);
 	}
 
 	@SuppressWarnings("unchecked")
@@ -157,7 +157,7 @@ public class SimpleObjectFactory implements IObjectFactory {
 				throw new CommonException("More than one instance of class ["+cls.getName()+"].");
 			}
 			if(obj == null && cls.isAnnotationPresent(Service.class)){
-				obj = this.clientServiceProxyManager.getRefRemoteService(cls, null);
+				obj = this.clientServiceProxyManager.getRefRemoteService(cls,Config.getNamespace(),null);
 			}
 		} else {
 			obj = objs.get(cls);
@@ -624,6 +624,10 @@ public class SimpleObjectFactory implements IObjectFactory {
 	
 	private void loadAccountInfo(IDataOperator op) {
 		
+		    if(pi.getActName() != null) {
+		    	return;
+		    }
+		
 			IAccountService as = this.get(IAccountService.class);
 			if(as == null) {
 				IAccountService$JMAsyncClient asyncAs = null;
@@ -659,7 +663,7 @@ public class SimpleObjectFactory implements IObjectFactory {
 				throw new CommonException("Account name not found for: " + clientId);
 			}
 		
-			int adminClientId = -1;
+			/*int adminClientId = -1;
 			try {
 				adminClientId = Config.getAdminClientId();
 			} catch(CommonException e) {
@@ -679,7 +683,7 @@ public class SimpleObjectFactory implements IObjectFactory {
 				Config.setAdminAccountName(rr.getData());
 			} else {
 				throw new CommonException("Account name not found for: " + adminClientId);
-			}
+			}*/
 		
 	}
 
@@ -1704,6 +1708,7 @@ public class SimpleObjectFactory implements IObjectFactory {
 		boolean ismlModel = cfg.getBoolean(Constants.Ml_MODEL_ENABLE, false);
 		String pid = SystemUtils.getProcessId();
 		logger.info("Process ID:" + pid);
+		pi.setActName(Config.getAccountName());
 		pi.setPid(pid);
 		pi.setActive(true);
 		pi.setInstanceName(Config.getInstanceName());
