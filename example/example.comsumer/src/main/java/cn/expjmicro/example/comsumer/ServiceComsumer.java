@@ -40,7 +40,7 @@ public class ServiceComsumer {
 		LG.log(MC.LOG_DEBUG, ServiceComsumer.class, "test submit nonrpc log");
 		//ISimpleRpc src = of.get(ISimpleRpc.class);
 		ISimpleRpc$JMAsyncClient src = (ISimpleRpc$JMAsyncClient)of
-				.getRemoteServie(ISimpleRpc.class, "exampleProdiver.test00", null);
+				.getRemoteServie(ISimpleRpc.class, "exampleProdiver", null);
 		//invoke remote service
 		System.out.println(src.hello("Hello JMicro"));
 		/*src.helloJMAsync("Hello JMicro")

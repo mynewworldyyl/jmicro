@@ -13,7 +13,8 @@
                 <td>{{"Size"|i18n}}</td><td v-if="actInfo && actInfo.isAdmin">{{"actId"|i18n}}</td>
                 <td>{{"Operation"|i18n}}</td></tr></thead>
             <tr v-for="c in resList" :key="c.id">
-                <td>{{c.name}}</td><td>{{c.group}}</td><td>{{c.clientId==-1}}</td>
+                <td>{{c.name}}</td><td>{{c.group}}</td>
+                <td>{{c.clientId==-1? i18nVal("Public") : i18nVal("Private")}}</td>
                 <td>{{status[c.status]|i18n}}</td><td>{{c.id}}</td><td>{{c.size}}</td>
                 <td v-if="actInfo && actInfo.isAdmin">{{c.createdBy}}</td>
                 <td>
@@ -48,9 +49,9 @@
                 </td>
                 </tr>
                 <tr><td>{{"Open"|i18n}}</td><td>
-                    <Select :disabled="!editable()" :label-in-value="true" v-model="res0.clientId">
-                        <Option :disabled="!(actInfo && actInfo.isAdmin)" :value="-1">{{"Public" | i18n}}</Option>
-                        <Option :value="owner" >{{"Private" | i18n}}</Option>
+                    <Select :disabled="!editable()" :label-in-value="true" v-model="owner">
+                        <Option :disabled="!(actInfo && actInfo.isAdmin)" :value="1">{{"Public" | i18n}}</Option>
+                        <Option :value="2" >{{"Private" | i18n}}</Option>
                     </Select>
                 </td></tr>
 
@@ -138,6 +139,8 @@
 
 <script>
 
+    import {i18n} from "../common/JFilters.js";
+
     const cid = 'repository';
 
     export default {
@@ -147,7 +150,7 @@
                 resList:[],
                 dicts:{},
 
-                queryParams:{},
+                queryParams:{main:"true"},
                 totalNum:0,
                 pageSize:100,
                 curPage:1,
@@ -168,6 +171,7 @@
 
                 isLogin:false,
                 actInfo:null,
+                owner:2,
 
                 drawer: {
                     drawerStatus:false,
@@ -186,7 +190,21 @@
             }
         },
 
+        watch:{
+            "owner" : function(n){
+                if(n == 1) {
+                    this.res0.clientId = -1;
+                }else {
+                    this.res0.clientId = this.actInfo.id;
+                }
+            },
+        },
+
         methods: {
+
+            i18nVal(key) {
+                return i18n(key);
+            },
 
             parseRemoteClass(res) {
                 if(res.fromMavenCenter) {
@@ -274,7 +292,11 @@
 
             resetRes(){
                 this.errMsg = "";
-                let cid = this.owner = this.actInfo ? this.actInfo.id:'-3';
+
+                let cid = this.actInfo ? this.actInfo.id:'-1';
+
+                this.owner = 1;
+
                 return this.res0  = {
                     name:"",
                     status:"1",
@@ -339,7 +361,7 @@
                 this.res0.status += '';
                 this.model = 0;
                 this.drawer.drawerStatus = true;
-                this.owner = r.clientId;
+                this.owner = r.clientId==-1?1:2;
             },
 
             openQeuryDrawer() {
@@ -352,7 +374,7 @@
                 this.errMsg = "";
                 this.viewDetail(r)
                 this.model = 2;
-                this.owner = r.clientId;
+                this.owner = r.clientId==-1?1:2;
             },
 
             getQueryConditions() {

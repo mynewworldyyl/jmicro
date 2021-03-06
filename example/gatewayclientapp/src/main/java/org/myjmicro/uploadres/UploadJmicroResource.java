@@ -46,8 +46,8 @@ public class UploadJmicroResource {
 			return;
 		}
 		
-		//ApiGatewayClient.initClient(new ApiGatewayConfig(Constants.TYPE_SOCKET,"192.168.56.1","9092"));
-		ApiGatewayClient.initClient(new ApiGatewayConfig(Constants.TYPE_SOCKET,"47.112.161.111","9092"));
+		ApiGatewayClient.initClient(new ApiGatewayConfig(Constants.TYPE_SOCKET,"192.168.56.1","9092"));
+		//ApiGatewayClient.initClient(new ApiGatewayConfig(Constants.TYPE_SOCKET,"47.112.161.111","9092"));
 		ApiGatewayClient socketClient =  ApiGatewayClient.getClient();
 		
 		IResourceResponsitory$Gateway$JMAsyncClient rr = 

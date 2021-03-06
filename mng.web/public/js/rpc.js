@@ -20,13 +20,13 @@ window.jm = window.jm || {};
 jm.config = {
     //ip:"192.168.3.3",
     //ip:'192.168.1.129',
-    //ip:'192.168.56.1',
+    ip:'192.168.56.1',
     //ip:'47.112.161.111',
-    ip:'jmicro.cn',
+    //ip:'jmicro.cn',
     //ip:'192.168.101.22',
     //ip:'172.18.0.1',
-    //port:'9090',
-    port:'80',
+    port:'9090',
+    //port:'80',
     txtContext : '_txt_',
     binContext : '_bin_',
     httpContext : '/_http_',
@@ -1445,12 +1445,12 @@ jm.ps = {
 
     //同时发送多个消息，psItems为消息数组
     publishMultiItems: function (psItems){
-        return jm.rpc.callRpcWithParams(this.sn,this.ns,this.v,'publishMutilItems',[psItems]);
+        return jm.rpc.callRpcWithParams(this.sn,this.pns,this.v,'publishMutilItems',[psItems]);
     },
 
     //发送单个消息
     publishOneItem: function (psItem){
-        return jm.rpc.callRpcWithParams(this.sn,this.ns,this.v,'publishOneItem',[psItem]);
+        return jm.rpc.callRpcWithParams(this.sn,this.pns,this.v,'publishOneItem',[psItem]);
     },
 
     _item: function(topic, data,persist,queue,callback,itemContext) {
@@ -1493,6 +1493,7 @@ jm.ps = {
      pssn:"cn.jmicro.gateway.MessageServiceImpl",
      sn:'cn.jmicro.api.pubsub.IPubSubClientService',
      ns : window.jm.Constants.NS_MNG,
+     pns:"pubSubServer",
      v:'0.0.1',
      MSG_TYPE_ASYNC_RESP : 0x06,
 },

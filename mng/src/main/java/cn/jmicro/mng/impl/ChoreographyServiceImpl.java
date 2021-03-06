@@ -413,7 +413,15 @@ public class ChoreographyServiceImpl implements IChoreographyService {
 			return resp;
 		}
 		
-		if(dep.getStatus() == Deployment.STATUS_ENABLE) {
+		if(StringUtils.isEmpty(dep.getJarFile())) {
+			String msg = "Jar file cannot be null when do update: " +dep.toString();
+			logger.error(msg);
+			resp.setCode(1);
+			resp.setMsg(msg);
+			return resp;
+		}
+		
+		if(!PermissionManager.isCurAdmin() && dep.getStatus() == Deployment.STATUS_ENABLE) {
 			List<Deployment> l = this.getDeploymentList().getData();
 			long ecnt = l.stream().filter(e -> {return e.getClientId() == dep.getClientId() && e.getStatus() == Deployment.STATUS_ENABLE;}).count();
 			if(ai.isGuest() && ecnt >= 1) {
@@ -427,14 +435,6 @@ public class ChoreographyServiceImpl implements IChoreographyService {
 				resp.setMsg(msg);
 				return resp;
 			}
-		}
-		
-		if(StringUtils.isEmpty(dep.getJarFile())) {
-			String msg = "Jar file cannot be null when do update: " +dep.toString();
-			logger.error(msg);
-			resp.setCode(1);
-			resp.setMsg(msg);
-			return resp;
 		}
 		
 		String msg = checkProgramArgs(dep.getArgs());

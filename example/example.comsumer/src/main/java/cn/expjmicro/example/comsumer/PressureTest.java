@@ -39,7 +39,7 @@ class Worker implements Runnable{
 	
 	private void linkRpc() {
 
-		ISimpleRpc$JMAsyncClient sayHello = of.getRemoteServie(ISimpleRpc$JMAsyncClient.class.getName(),"simpleRpc","0.0.1", null);
+		ISimpleRpc$JMAsyncClient sayHello = of.getRemoteServie(ISimpleRpc$JMAsyncClient.class.getName(),"exampleProdiver","0.0.1", null);
 		JMicroContext.get().removeParam(JMicroContext.LINKER_ID);
 		
 		for(;;){
@@ -74,7 +74,7 @@ class Worker implements Runnable{
 	
 	private void singleRpc() {
 
-		ISimpleRpc$JMAsyncClient sayHello = of.getRemoteServie(ISimpleRpc$JMAsyncClient.class.getName(),"simpleRpc","0.0.1", null);
+		ISimpleRpc$JMAsyncClient sayHello = of.getRemoteServie(ISimpleRpc$JMAsyncClient.class.getName(),"exampleProdiver","0.0.1", null);
 		JMicroContext.get().removeParam(JMicroContext.LINKER_ID);
 		
 		for(;;){
