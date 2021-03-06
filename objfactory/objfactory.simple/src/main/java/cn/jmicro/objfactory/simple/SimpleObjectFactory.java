@@ -68,6 +68,7 @@ import cn.jmicro.api.raft.IDataOperator;
 import cn.jmicro.api.registry.AsyncConfig;
 import cn.jmicro.api.registry.IRegistry;
 import cn.jmicro.api.registry.ServiceItem;
+import cn.jmicro.api.security.ActInfo;
 import cn.jmicro.api.security.IAccountService;
 import cn.jmicro.api.security.genclient.IAccountService$JMAsyncClient;
 import cn.jmicro.api.service.IServerServiceProxy;
@@ -110,6 +111,8 @@ public class SimpleObjectFactory implements IObjectFactory {
 	
 	private boolean fromLocal = true;
 	
+	private boolean rpcReady = false;
+	
 	private List<IPostFactoryListener> postReadyListeners = new ArrayList<>();
 	
 	private List<IPostInitListener> postListeners = new ArrayList<>();
@@ -122,10 +125,25 @@ public class SimpleObjectFactory implements IObjectFactory {
 	
 	private ClientServiceProxyManager clientServiceProxyManager = null;
 	
-	private HttpHandlerManager httpHandlerManager = new HttpHandlerManager(this);
+	//private HttpHandlerManager httpHandlerManager = new HttpHandlerManager(this);
 	
 	private RpcClassLoader rpcClassLoader = null;
 	
+	@Override
+	public boolean isSysLogin() {
+		return pi!= null && pi.isLogin();
+	}
+	
+	@Override
+	public boolean isRpcReady() {
+		return this.rpcReady;
+	}
+	
+	@Override
+	public ProcessInfo getProcessInfo() {
+		return this.pi;
+	}
+
 	@SuppressWarnings("unchecked")
 	@Override
 	public <T> T getRemoteServie(String srvName, String namespace, String version,AsyncConfig[] acs) {
@@ -531,13 +549,13 @@ public class SimpleObjectFactory implements IObjectFactory {
 				doReady0(lobjs,systemObjs);
 			}
 			
+			rpcReady = true;
+			
 			ClassLoader oldCl = Thread.currentThread().getContextClassLoader();
 			
 			Thread.currentThread().setContextClassLoader(rpcClassLoader);
 			
-			rpcClassLoader.registRemoteClass();
-			
-			loadAccountInfo(dataOperator);
+			loadAccountInfo(dataOperator,cfg);
 			
 			//对像工厂初始化后监听器
 			for(IPostFactoryListener lis : this.postReadyListeners){
@@ -545,6 +563,8 @@ public class SimpleObjectFactory implements IObjectFactory {
 			}
 			
 			persistProcessInfo(dataOperator);
+			
+			rpcClassLoader.registRemoteClass();
 			
 			if(oldCl != null) {
 				Thread.currentThread().setContextClassLoader(oldCl);
@@ -577,7 +597,15 @@ public class SimpleObjectFactory implements IObjectFactory {
 						 String js = JsonUtils.getIns().toJson(pi);
 					     dataOperator.setData(p, js);
 					 }
-					 r.run();
+					 
+					 try {
+						r.run();
+					} catch (Throwable e) {
+						logger.error("", e);
+						LG.log(MC.LOG_ERROR,SimpleObjectFactory.class , "", e);
+						JMicro.waitTime(5000);
+						System.exit(0);
+					}
 					 
 					 LG.log(MC.LOG_INFO, SimpleObjectFactory.class
 							 , "Got master and started: "+JsonUtils.getIns().toJson(pi));
@@ -622,7 +650,7 @@ public class SimpleObjectFactory implements IObjectFactory {
 	}
 	
 	
-	private void loadAccountInfo(IDataOperator op) {
+	private void loadAccountInfo(IDataOperator op,Config cfg) {
 		
 		    if(pi.getActName() != null) {
 		    	return;
@@ -630,6 +658,7 @@ public class SimpleObjectFactory implements IObjectFactory {
 		
 			IAccountService as = this.get(IAccountService.class);
 			if(as == null) {
+				//非Security实例
 				IAccountService$JMAsyncClient asyncAs = null;
 				try {
 					asyncAs = this.getRemoteServie(IAccountService$JMAsyncClient.class.getName(), "*","*",null);
@@ -651,10 +680,18 @@ public class SimpleObjectFactory implements IObjectFactory {
 				pi.setActName(null);
 				return;
 			}
+			
+			String pwd = cfg.getString("pwd", null);
+			if(Utils.isEmpty(pwd)) {
+				throw new CommonException("Pwd cannot be null when specify clientId to start server: " + clientId);
+			}
+			
+			Resp<ActInfo> r = as.loginWithId(clientId, pwd);
 
-			Resp<String> r = as.getNameById(clientId);
+			//Resp<String> r = as.getNameById(clientId);
 			if(r.getCode() == Resp.CODE_SUCCESS) {
-				Config.setAccountName(r.getData());
+				pi.setAi(r.getData());
+				Config.setAccountName(r.getData().getActName());
 				pi.setActName(Config.getAccountName());
 				String p = ChoyConstants.INS_ROOT+"/" + pi.getId();
 				op.setData(p,JsonUtils.getIns().toJson(pi));

@@ -10,6 +10,8 @@ import com.squareup.javapoet.JavaFile;
 import com.squareup.javapoet.MethodSpec;
 import com.squareup.javapoet.TypeSpec;
 
+import cn.jmicro.codegenerator.AsyncClientUtils;
+
 public class TestJavaPoet {
 
 	private static MethodSpec whatsMyName(String name) {
@@ -34,4 +36,37 @@ public class TestJavaPoet {
 
 			  javaFile.writeTo(System.out);
 	}
+	
+	@Test
+	public void testGetGatewayFullName() throws IOException {
+		//String name = AsyncClientUtils.genGatewayServiceName("cn.jmicro.mng.api.genclient.AgentLogService$JMAsyncClientImpl");
+		//String name = AsyncClientUtils.genGatewayServiceName("cn.jmicro.mng.api.genclient.IAgentLogService$JMAsyncClient");
+		String name = AsyncClientUtils.genGatewayServiceName("cn.jmicro.mng.api.IAgentLogService");
+		System.out.println(name);
+	}
+	
+	@Test
+	public void testGenAsyncServiceImplName() throws IOException {
+		//String name = AsyncClientUtils.genAsyncServiceImplName("cn.jmicro.mng.api.genclient.IAgentLogService$Gateway$JMAsyncClient");
+		//String name = AsyncClientUtils.genAsyncServiceImplName("cn.jmicro.mng.api.genclient.IAgentLogService$JMAsyncClient");
+		String name = AsyncClientUtils.genAsyncServiceImplName("cn.jmicro.mng.api.IAgentLogService");
+		System.out.println(name);
+	}
+	
+	@Test
+	public void testGenAsyncServiceName() throws IOException {
+		//String name = AsyncClientUtils.genAsyncServiceName("cn.jmicro.mng.api.genclient.IAgentLogService$Gateway$JMAsyncClient");
+		//String name = AsyncClientUtils.genAsyncServiceName("cn.jmicro.mng.api.genclient.AgentLogService$JMAsyncClientImpl");
+		String name = AsyncClientUtils.genAsyncServiceName("cn.jmicro.mng.api.IAgentLogService");
+		System.out.println(name);
+	}
+	
+	@Test
+	public void testGenSyncServiceName() throws IOException {
+		//String name = AsyncClientUtils.genSyncServiceName("cn.jmicro.mng.api.genclient.IAgentLogService$Gateway$JMAsyncClient");
+		String name = AsyncClientUtils.genSyncServiceName("cn.jmicro.mng.api.genclient.AgentLogService$JMAsyncClientImpl");
+		//String name = AsyncClientUtils.genSyncServiceName("cn.jmicro.mng.api.genclient.IAgentLogService$Gateway$JMAsyncClient");
+		System.out.println(name);
+	}
+	
 }

@@ -88,7 +88,7 @@
     const cid = 'warningConfig';
 
     const sn = 'cn.jmicro.mng.api.ILogWarningConfig';
-    const ns = 'mng';
+    const ns = window.jm.Constants.NS_MNG;
     const v = '0.0.1';
 
     //const LOGS = ['No','Trance','Debug','Info','Warn','Error','Final'];

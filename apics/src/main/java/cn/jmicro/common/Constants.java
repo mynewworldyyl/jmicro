@@ -31,6 +31,17 @@ public interface Constants {
 	
 	public static final byte LIMIT_TYPE_SS = 2;
 	
+	//服务方法客户端账号类型
+	
+	//服务方法只供登陆用户调用，基于登陆账号做权利限验证
+	public static final byte FOR_TYPE_USER = 1;
+	
+	//服务方法只供运行实例用户调用，典型的如远程类加载方法
+	public static final byte FOR_TYPE_SYS = 2;
+	
+	//全部可以调用
+	public static final byte FOR_TYPE_ALL = 3;
+	
 	//自由调用
 	public static final byte LICENSE_TYPE_FREE = 0;
 	

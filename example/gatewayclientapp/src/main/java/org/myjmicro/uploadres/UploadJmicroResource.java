@@ -46,7 +46,8 @@ public class UploadJmicroResource {
 			return;
 		}
 		
-		ApiGatewayClient.initClient(new ApiGatewayConfig(Constants.TYPE_SOCKET,"192.168.56.1","9092"));
+		//ApiGatewayClient.initClient(new ApiGatewayConfig(Constants.TYPE_SOCKET,"192.168.56.1","9092"));
+		ApiGatewayClient.initClient(new ApiGatewayConfig(Constants.TYPE_SOCKET,"47.112.161.111","9092"));
 		ApiGatewayClient socketClient =  ApiGatewayClient.getClient();
 		
 		IResourceResponsitory$Gateway$JMAsyncClient rr = 
@@ -55,7 +56,7 @@ public class UploadJmicroResource {
 		
 		socketClient.loginJMAsync("jmicro", "0")
 		.success((act,cxt) -> {
-			System.out.println("Successfully login: " + act.getData().getActName());
+			System.out.println("Successfully login: " + act.getData().getActName()+",LKEY: " + act.getData().getLoginKey());
 			doUpload(jarfiles,rr,ats);
 		})
 		.fail((code,msg,cxt)->{
@@ -94,13 +95,13 @@ public class UploadJmicroResource {
 		res.setModifiedTime(file.lastModified());
 		res.setSize(file.length());
 		
-		System.out.println("Update res: " + res.getName());
+		//System.out.println("Update res: " + res.getName());
 		Resp<PackageResource> resp  = rr.updateResource(res, true);
 		if(resp.getCode() == 0) {
 			PackageResource pr = resp.getData();
 			int num = (int)(file.length() / pr.getBlockSize());
 			
-			System.out.println("Upload data: " + res.getName());
+			//System.out.println("Upload data: " + res.getName());
 			
 			FileInputStream fi = null;
 			try {
@@ -123,7 +124,7 @@ public class UploadJmicroResource {
 						rr.addResourceData(pr.getId(), data, num+1);
 					}
 				}
-				System.out.println("Upload finished: " + res.getName());
+				System.out.println("Finished: " + res.getName());
 			}catch(Exception e) {
 				e.printStackTrace();
 			}finally {
@@ -147,11 +148,13 @@ public class UploadJmicroResource {
 				if(filters != null && filters.length > 0) {
 					for(String fl : filters) {
 						if(n.contains(fl)) {
+							System.out.println(n);
 							rst.put(n, file);
 							break;
 						}
 					}
 				} else {
+					System.out.println(n);
 					rst.put(n, file);
 				}
 			}

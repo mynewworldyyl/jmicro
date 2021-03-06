@@ -289,7 +289,7 @@
     const cid = 'statisConfig';
 
     const sn = 'cn.jmicro.monitor.statis.api.IStatisConfigService';
-    const ns = 'mng';
+    const ns = 'StatisMonitor';
     const v = '0.0.1';
 
     //const LOGS = ['No','Trance','Debug','Info','Warn','Error','Final'];

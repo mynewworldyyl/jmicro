@@ -88,7 +88,7 @@ public class ClientServiceProxyGenerator extends AbstractProcessor {
 		 }
 		 
 		 ClassName supperInterface = ClassName.get(srcTn.substring(0,idx), tn);
-		 TypeSpec.Builder clientProxyHolderBuilder = TypeSpec.interfaceBuilder(tn + AsyncClientProxy.INT_GATEWAY + AsyncClientProxy.INT_SUBFIX)
+		 TypeSpec.Builder clientProxyHolderBuilder = TypeSpec.interfaceBuilder(tn + AsyncClientProxy.INT_GATEWAY_CLASS)
 			      .addModifiers(Modifier.PUBLIC)
 			      .addSuperinterface(supperInterface);
 

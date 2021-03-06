@@ -385,6 +385,10 @@ jm.mng = {
             return jm.rpc.callRpcWithParams(this.sn,this.ns,this.v,'dependencyList',[resId]);
         },
 
+        parseRemoteClass(resId) {
+            return jm.rpc.callRpcWithParams(this.sn,this.ns,this.v,'parseRemoteClazz',[resId]);
+        },
+
         sn:'cn.jmicro.choreography.api.IResourceResponsitory',
         ns : window.jm.Constants.NS_RESPOSITORY,
         v:'0.0.1',
@@ -853,7 +857,7 @@ jm.mng = {
             return jm.rpc.callRpcWithParams(this.sn, this.ns, this.v, 'hello', [msg]);
         },
 
-        sn:'cn.jmicro.example.api.rpc.ISimpleRpc',
+        sn:'cn.expjmicro.example.api.rpc.ISimpleRpc',
         ns : 'exampleProdiver',
         v:'0.0.1',
 

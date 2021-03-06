@@ -65,8 +65,11 @@ public class JMicroContext  {
 	public static final String REMOTE_PORT = "_remotePort";
 	
 	public static final String LOGIN_ACT = "_loginAccount";
+	public static final String LOGIN_ACT_SYS = "_loginAccountSys";
 	
 	public static final String LOGIN_KEY = "loginKey";
+	
+	public static final String LOGIN_KEY_SYS = "loginKeySys";
 	
 	public static final String SM_LOG_LEVEL = "__smLogLevel";
 	
@@ -376,6 +379,17 @@ public class JMicroContext  {
 			 throw new CommonException(MC.MT_ACT_PERMISSION_REJECT,"非法设置当前账号");
 		 }
 		 JMicroContext.get().setParam(JMicroContext.LOGIN_ACT, act);
+	}
+	
+	public ActInfo getSysAccount() {
+		 return JMicroContext.get().getParam(JMicroContext.LOGIN_ACT_SYS, null);
+	}
+	
+	public void setSysAccount(ActInfo act) {
+		 if(!Utils.formSystemPackagePermission(3)) {
+			 throw new CommonException(MC.MT_ACT_PERMISSION_REJECT,"非法设置当前系统登陆账号");
+		 }
+		 JMicroContext.get().setParam(JMicroContext.LOGIN_ACT_SYS, act);
 	}
 	
 	public boolean hasPermission(int reqLevel) {

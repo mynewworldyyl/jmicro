@@ -11,6 +11,7 @@ import cn.jmicro.api.Resp;
 import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Service;
 import cn.jmicro.api.classloader.IClassloaderRpc;
+import cn.jmicro.api.classloader.RemoteClassRegister;
 import cn.jmicro.api.monitor.LG;
 import cn.jmicro.api.monitor.MC;
 import cn.jmicro.common.Constants;
@@ -25,7 +26,7 @@ public class ClassloaderRpcService implements IClassloaderRpc {
 	private String jarResp;*/
 	
 	@Override
-	public byte[] getClassData(String clazz) {
+	public byte[] getClassData(String clazz,Integer dataVersion,boolean isTesting) {
 		
 		try {
 			
@@ -70,4 +71,10 @@ public class ClassloaderRpcService implements IClassloaderRpc {
 		return null;
 	}
 
+	@Override
+	public Resp<Boolean> registRemoteClass(RemoteClassRegister r) {
+		return new Resp<>(Resp.CODE_FAIL,false);
+	}
+
+	
 }

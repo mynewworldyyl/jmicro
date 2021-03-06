@@ -299,8 +299,7 @@ public class ClassScannerUtils {
                 } else if ("jar".equals(protocol)) {
                     JarFile jar;  
                     try {  
-                        jar = ((JarURLConnection) url.openConnection())  
-                                .getJarFile();  
+                        jar = ((JarURLConnection) url.openConnection())  .getJarFile();  
                         Enumeration<JarEntry> entries = jar.entries();  
                         while (entries.hasMoreElements()) {  
                             JarEntry entry = entries.nextElement();  
@@ -380,7 +379,7 @@ public class ClassScannerUtils {
                 try {  
                 	cn = packageName + '.' + className;
                 	Class<?> cls = Thread.currentThread().getContextClassLoader().loadClass(cn);
-                    classes.add(cls);    
+                    classes.add(cls);
                     } catch (ClassNotFoundException e) {  
 	                    logger.error("ERROR: "+file.getAbsolutePath() +" for class " + cn,e);  
                     }  catch (SecurityException e) {

@@ -58,6 +58,7 @@ import cn.jmicro.api.security.SecretManager;
 import cn.jmicro.api.service.ServiceInvokeManager;
 import cn.jmicro.common.CommonException;
 import cn.jmicro.common.Constants;
+import cn.jmicro.common.Utils;
 import cn.jmicro.common.util.JsonUtils;
 import cn.jmicro.common.util.StringUtils;
 
@@ -151,6 +152,11 @@ public class ApiRawRequestMessageHandler implements IMessageHandler{
 					for(int i=0; i< len; i++) {
 						String k = ji.readUTF();
 						String v = ji.readUTF();
+						if(!Utils.isEmpty(v)) {
+							v = JsonUtils.getIns().fromJson(v, String.class);
+						}else {
+							v = "";
+						}
 						req.getParams().put(k, v);
 					}
 				}
@@ -178,10 +184,12 @@ public class ApiRawRequestMessageHandler implements IMessageHandler{
 			boolean doLogick = true;
 			if(req.getParams().containsKey(JMicroContext.LOGIN_KEY)) {
 				String lk = (String)req.getParams().get(JMicroContext.LOGIN_KEY);
+				//System.out.println("LKEY: " +lk+", Method: " +sm.getKey().getMethod());
 				if(StringUtils.isNotEmpty(lk)) {
 					ai = this.accountManager.getAccount(lk);
 					if(ai == null && sm.isNeedLogin()) {
-						ServerError se = new ServerError(MC.MT_INVALID_LOGIN_INFO,"Gateway check invalid login key!");
+						ServerError se = new ServerError(MC.MT_INVALID_LOGIN_INFO,
+								"Gateway check invalid login key ["+lk+"] for: " +sm.getKey().getMethod());
 						resp.setResult(se);
 						resp.setSuccess(false);
 						doLogick = false;
@@ -209,7 +217,7 @@ public class ApiRawRequestMessageHandler implements IMessageHandler{
 					}
 				} else {
 					resp.setSuccess(false);
-					result = new ServerError(MC.MT_INVALID_LOGIN_INFO,"Have to login before use pubsub service!");
+					result = new ServerError(MC.MT_INVALID_LOGIN_INFO,"Have to login before use pubsub service: "+ sm.getKey().getMethod());
 				}
 			} else if(doLogick){
 

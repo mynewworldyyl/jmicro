@@ -18,6 +18,7 @@ package cn.jmicro.api.objectfactory;
 
 import java.util.Set;
 
+import cn.jmicro.api.choreography.ProcessInfo;
 import cn.jmicro.api.masterelection.IMasterChangeListener;
 import cn.jmicro.api.raft.IDataOperator;
 import cn.jmicro.api.registry.AsyncConfig;
@@ -130,5 +131,9 @@ public interface IObjectFactory {
 	
 	void masterSlaveListen(IMasterChangeListener l);
 	
+	boolean isSysLogin();
 	
+	boolean isRpcReady();
+	
+	ProcessInfo getProcessInfo();
 }

@@ -84,7 +84,7 @@
                 let reduceDataFunc = (data, level) => {
                     //console.log(level);
                     data.map((m, i) => {
-                        //console.log(i);
+                        console.log(i);
                         m.isExpand = false
                         m.children = m.children || []
                         m.level = level

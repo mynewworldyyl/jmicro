@@ -8,6 +8,7 @@ import cn.jmicro.api.CfgMetadata;
 import cn.jmicro.api.annotation.IDStrategy;
 import cn.jmicro.api.annotation.SO;
 import cn.jmicro.api.monitor.MC;
+import cn.jmicro.api.security.ActInfo;
 
 @SO
 @IDStrategy(1)
@@ -57,12 +58,18 @@ public class ProcessInfo {
 	
 	private transient Process process;
 	
+	private transient ActInfo ai;
+	
 	private boolean monitorable = false;
 	
 	private byte logLevel = MC.LOG_INFO;
 	
 	protected Map<String,Set<CfgMetadata>> metadatas = new HashMap<>();
 
+	public boolean isLogin() {
+		return ai != null;
+	}
+	
 	public Set<CfgMetadata> getMetadatas(String resName) {
 		return metadatas.get(resName);
 	}
@@ -81,6 +88,14 @@ public class ProcessInfo {
 
 	public void setOsName(String osName) {
 		this.osName = osName;
+	}
+
+	public ActInfo getAi() {
+		return ai;
+	}
+
+	public void setAi(ActInfo ai) {
+		this.ai = ai;
 	}
 
 	public Map<String,Set<CfgMetadata>> getMetadatas() {

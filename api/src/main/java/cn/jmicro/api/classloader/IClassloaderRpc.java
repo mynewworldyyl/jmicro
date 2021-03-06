@@ -16,6 +16,7 @@
  */
 package cn.jmicro.api.classloader;
 
+import cn.jmicro.api.Resp;
 import cn.jmicro.api.annotation.Service;
 import cn.jmicro.codegenerator.AsyncClientProxy;
 
@@ -23,16 +24,12 @@ import cn.jmicro.codegenerator.AsyncClientProxy;
 @AsyncClientProxy
 public interface IClassloaderRpc {
 	
-	public static final String NS = IClassloaderRpc.class.getName();
-
 	/**
 	 * 加载指定类的二进制形式
 	 * @param clazz
 	 * @return
 	 */
-	byte[] getClassData(String clazz);
+	byte[] getClassData(String clazz,Integer dataVersion,boolean isTesting);
 	
-	//String info();
-	
-	//Resp<Boolean> registRemoteClass(String clazzName);
+	Resp<Boolean> registRemoteClass(RemoteClassRegister r);
 }

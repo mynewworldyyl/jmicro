@@ -173,7 +173,10 @@ public class ZKDataOperator implements IDataOperator{
 
 	@Override
 	public String getData(String path) {
-		return this.nodeManager.getData(path);
+		if(this.nodeManager.exist(path)) {
+			return this.nodeManager.getData(path);
+		}
+		return null;
 	}
 
 	@Override

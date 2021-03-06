@@ -23,7 +23,9 @@ import cn.jmicro.api.JMicroContext;
 import cn.jmicro.api.annotation.Cfg;
 import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Inject;
+import cn.jmicro.api.choreography.ProcessInfo;
 import cn.jmicro.api.client.InvocationHandler;
+import cn.jmicro.api.config.Config;
 import cn.jmicro.api.idgenerator.ComponentIdServer;
 import cn.jmicro.api.monitor.LG;
 import cn.jmicro.api.monitor.LogMonitorClient;
@@ -34,6 +36,7 @@ import cn.jmicro.api.net.IRequest;
 import cn.jmicro.api.net.InterceptorManager;
 import cn.jmicro.api.net.RpcRequest;
 import cn.jmicro.api.registry.ServiceItem;
+import cn.jmicro.api.registry.ServiceMethod;
 import cn.jmicro.common.CommonException;
 import cn.jmicro.common.Constants;
 
@@ -64,6 +67,9 @@ public class ServiceInvocationHandler implements InvocationHandler{
 	@Inject
 	private StatisMonitorClient monitor;
 	
+	@Inject
+	private ProcessInfo pi;
+	
 	//private Set<Long> ids = new HashSet<>();
 	
 	public ServiceInvocationHandler(){}
@@ -76,8 +82,9 @@ public class ServiceInvocationHandler implements InvocationHandler{
 		try {
 			
 			ServiceItem si = cxt.getParam(Constants.SERVICE_ITEM_KEY, null);
+			ServiceMethod sm = cxt.getParam(Constants.SERVICE_METHOD_KEY, null);
 			req = new RpcRequest();
-			req.setSm(cxt.getParam(Constants.SERVICE_METHOD_KEY, null));
+			req.setSm(sm);
 			req.setArgs(args);
 			req.setRequestId(idGenerator.getLongId(IRequest.class));
 			/*if(ids.contains(req.getRequestId())) {
@@ -88,6 +95,17 @@ public class ServiceInvocationHandler implements InvocationHandler{
 			req.setTransport(Constants.TRANSPORT_NETTY);
 			req.setImpl(si.getImpl());
 			req.putObject(JMicroContext.LOGIN_KEY, cxt.getString(JMicroContext.LOGIN_KEY, null));
+			
+			if(sm.getForType() == Constants.FOR_TYPE_SYS && !pi.isLogin()) {
+				String desc = Config.getInstanceName() + " need system login for method: " + sm.getKey().toKey(false, false, false);
+				LG.log(MC.LOG_ERROR, this.getClass(), desc);
+				throw new CommonException(desc);
+			}
+			
+			if(sm.getForType() != Constants.FOR_TYPE_USER && pi.isLogin()) {
+				req.putObject(JMicroContext.LOGIN_KEY_SYS, pi.getAi().getLoginKey());
+			}
+			
 			req.setReqParentId(cxt.getLong(JMicroContext.REQ_PARENT_ID, 0L));
 			
 			if(!JMicroContext.existLinkId() ) {

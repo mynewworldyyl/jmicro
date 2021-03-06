@@ -167,4 +167,6 @@ public @interface SMethod {
 	//0:对称加密，1：RSA 非对称加密
 	public byte encType() default 0;
 	
+	public int forType() default Constants.FOR_TYPE_ALL;
+	
 }

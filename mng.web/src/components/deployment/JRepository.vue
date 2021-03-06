@@ -7,16 +7,19 @@
         <div v-if="!resList || resList.length == 0 ">{{"NoData" | i18n("No data")}}</div>
 
         <table v-if="resList && resList.length > 0" class="configItemTalbe" width="99%">
-            <thead><tr><td style="width:280px">{{"Name"|i18n}}</td><td>{{"Group"|i18n}}</td><td>{{"Open"|i18n}}</td>
+            <thead><tr><td style="text-align:left;width:280px">{{"Name"|i18n}}</td>
+                <td>{{"Group"|i18n}}</td><td>{{"Open"|i18n}}</td>
                 <td>{{"Status"|i18n}}</td><td>{{"ID"|i18n}}</td>
                 <td>{{"Size"|i18n}}</td><td v-if="actInfo && actInfo.isAdmin">{{"actId"|i18n}}</td>
-                <td>{{"OPERATION"|i18n}}</td></tr></thead>
+                <td>{{"Operation"|i18n}}</td></tr></thead>
             <tr v-for="c in resList" :key="c.id">
                 <td>{{c.name}}</td><td>{{c.group}}</td><td>{{c.clientId==-1}}</td>
                 <td>{{status[c.status]|i18n}}</td><td>{{c.id}}</td><td>{{c.size}}</td>
                 <td v-if="actInfo && actInfo.isAdmin">{{c.createdBy}}</td>
                 <td>
                     <a @click="viewDetail(c)">{{"Detail"|i18n}}</a>&nbsp;&nbsp;&nbsp;
+                    <!--<a v-if="(c.createdBy==actInfo.id || actInfo.isAdmin) && !res0.fromMavenCenter"
+                       @click="parseRemoteClass(c)">{{"parseRemoteClass"|i18n}}</a>&nbsp;-->&nbsp;&nbsp;
                     <a v-if="c.createdBy==actInfo.id || actInfo.isAdmin" @click="updateDetail(c)">{{"Update"|i18n}}</a>&nbsp;&nbsp;&nbsp;
                     <a v-if="c.createdBy==actInfo.id || actInfo.isAdmin" @click="deleteRes(c)">{{"Delete"|i18n}}</a>&nbsp;&nbsp;&nbsp;
                 </td>
@@ -63,6 +66,7 @@
                 <tr><td>{{"Name"|i18n}}</td><td>{{res0.name}}</td></tr>
                 <tr><td>{{"downloadNum"|i18n}}</td><td>{{res0.downloadNum}}</td></tr>
                 <tr><td>{{"ID"|i18n}}</td><td>{{res0.id}}</td></tr>
+                <tr><td>{{"FromMavenCenter"|i18n}}</td><td>{{res0.fromMavenCenter}}</td></tr>
 
                 <tr v-if="res0.depIds && res0.depIds.length > 0">
                     <td colspan="2">{{"Dependencies"|i18n}}
@@ -183,6 +187,23 @@
         },
 
         methods: {
+
+            parseRemoteClass(res) {
+                if(res.fromMavenCenter) {
+                    return;
+                }
+                let self = this;
+                self.errMsg = '';
+                window.jm.mng.repository.parseRemoteClass(res.id).then((resp)=>{
+                    if(resp.code != 0) {
+                        self.errMsg = resp.msg;
+                    }else {
+                        self.$Message.success("Successfully");
+                    }
+                }).catch((err)=>{
+                    window.console.log(err);
+                });
+            },
 
             showDep(d) {
                 if(typeof d == 'object') {

@@ -202,6 +202,36 @@ public class JRPCReqRespHandler implements IMessageHandler{
 				return;
 			}
 			
+			ActInfo sai = null;
+			if(req1.getParams().containsKey(JMicroContext.LOGIN_KEY_SYS)) {
+				String slk = (String)req1.getParams().get(JMicroContext.LOGIN_KEY_SYS);
+				if(StringUtils.isNotEmpty(slk)) {
+					sai = this.accountManager.getAccount(slk);
+					if(sai == null && sm.getForType() == Constants.FOR_TYPE_SYS) {
+						ServerError se = new ServerError(MC.MT_INVALID_LOGIN_INFO,"Invalid system login key: " + slk);
+						resp.setResult(se);
+						resp.setSuccess(false);
+						LG.log(MC.LOG_ERROR, TAG,se.toString());
+						MT.rpcEvent(MC.MT_INVALID_LOGIN_INFO);
+						resp2Client(resp,s,msg,sm);
+						return;
+					} else if(sai != null) {
+						JMicroContext.get().setString(JMicroContext.LOGIN_KEY_SYS, slk);
+						JMicroContext.get().setSysAccount(sai);
+					}
+				}
+			}
+			
+			if(sai == null && sm.getForType() == Constants.FOR_TYPE_SYS) {
+				ServerError se = new ServerError(MC.MT_INVALID_LOGIN_INFO,"Need system login: " + sm.getKey().toKey(true, true, true));
+				resp.setResult(se);
+				resp.setSuccess(false);
+				LG.log(MC.LOG_ERROR, TAG,se.toString());
+				MT.rpcEvent(MC.MT_INVALID_LOGIN_INFO);
+				resp2Client(resp,s,msg,sm);
+				return;
+			}
+			
 			ServiceItem si = JMicroContext.get().getParam(Constants.SERVICE_ITEM_KEY, null);
 			
 			ServerError se = pm.permissionCheck(sm,si.getClientId());

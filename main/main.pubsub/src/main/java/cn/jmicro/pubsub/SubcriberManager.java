@@ -31,6 +31,8 @@ import cn.jmicro.api.JMicroContext;
 import cn.jmicro.api.classloader.IClassloaderRpc;
 import cn.jmicro.api.classloader.RpcClassLoader;
 import cn.jmicro.api.config.Config;
+import cn.jmicro.api.monitor.LG;
+import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.objectfactory.IObjectFactory;
 import cn.jmicro.api.registry.IRegistry;
 import cn.jmicro.api.registry.IServiceListener;
@@ -427,6 +429,7 @@ class SubcriberManager {
 		} catch (ClassNotFoundException e1) {
 			String k = sui.sm.getKey().toKey(false, false, false);
 			logger.warn("Service {} not found.{}", k, e1);
+			LG.log(MC.LOG_ERROR, this.getClass(), k,e1);
 		}finally {
 			if(setDirectServiceItem) {
 				if(oldItem == null) {

@@ -14,32 +14,34 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package cn.jmicro.codegenerator;
+package cn.jmicro.api.classloader;
 
-import static java.lang.annotation.ElementType.TYPE;
+import cn.jmicro.api.annotation.IDStrategy;
+import cn.jmicro.api.annotation.SO;
 
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
+@SO
+@IDStrategy
+public class RemoteClassRegister {
+	
+	private ClassInfo ci = new ClassInfo();
+	
+	private byte[] data;
 
+	public ClassInfo getCi() {
+		return ci;
+	}
 
-@Target({TYPE})
-@Retention(RetentionPolicy.RUNTIME)
-public @interface AsyncClientProxy {
+	public void setCi(ClassInfo ci) {
+		this.ci = ci;
+	}
+
+	public byte[] getData() {
+		return data;
+	}
+
+	public void setData(byte[] data) {
+		this.data = data;
+	}
 	
-	public static final String PKG_SUBFIX = "genclient";
 	
-	public static final String INT_SUBFIX = "$JMAsyncClient";
-	
-	public static final String INT_GATEWAY = "$Gateway";
-	
-	public static final String IMPL =  "Impl";
-	
-	public static final String IMPL_SUBFIX = INT_SUBFIX + IMPL;
-	
-	public static final String ASYNC_METHOD_SUBFIX = "JMAsync";
-	
-	public static final String INT_GATEWAY_CLASS = INT_GATEWAY +INT_SUBFIX;// "$Gateway$JMAsyncClient";
-	
-	public int dataVersion() default 0;
 }

@@ -69,6 +69,11 @@ public class MngAccountServiceImpl implements IAccountService {
 	}
 
 	@Override
+	public Resp<ActInfo> loginWithId(int id, String pwd) {
+		return null;
+	}
+
+	@Override
 	@SMethod(needLogin=true,maxSpeed=3)
 	public Resp<Boolean> logout() {
 		ActInfo ai = JMicroContext.get().getAccount();

@@ -148,6 +148,9 @@ public final class ServiceMethod {
 	//必须登陆才能使用
 	private boolean needLogin = false;
 	
+	//
+	private int forType;
+	
 	private int maxPacketSize = 0;
 	
 	private byte feeType = Constants.LICENSE_TYPE_FREE;
@@ -198,6 +201,8 @@ public final class ServiceMethod {
 		
 		this.feeType = p.feeType;
 		this.authClients = p.authClients;
+		
+		this.forType = p.forType;
 		
 		this.key.form(p.key);
 	}
@@ -277,6 +282,14 @@ public final class ServiceMethod {
 
 	public void setAuthClients(int[] authClients) {
 		this.authClients = authClients;
+	}
+
+	public int getForType() {
+		return forType;
+	}
+
+	public void setForType(int forType) {
+		this.forType = forType;
 	}
 
 	public int getLimitType() {

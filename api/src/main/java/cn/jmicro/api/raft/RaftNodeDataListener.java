@@ -10,7 +10,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import cn.jmicro.api.IListener;
-import cn.jmicro.api.choreography.ChoyConstants;
 import cn.jmicro.common.CommonException;
 import cn.jmicro.common.Utils;
 import cn.jmicro.common.util.JsonUtils;
@@ -170,7 +169,7 @@ public class RaftNodeDataListener<NodeType> {
 		if(this.datas != null) {
 			return this.datas.get(node);
 		} else {
-			String path = ChoyConstants.INS_ROOT+"/"+node;
+			String path = this.dir+"/"+node;
 			String ndata = op.getData(path);
 			if(!Utils.isEmpty(ndata)) {
 				return JsonUtils.getIns().fromJson(ndata, this.nodeClazz);
@@ -192,7 +191,6 @@ public class RaftNodeDataListener<NodeType> {
 			for(String k : keys) {
 				c.accept(k);
 			}
-			
 		} else {
 			Set<String> children = this.op.getChildren(this.dir, false);
 			if(children != null && !children.isEmpty()) {
@@ -220,9 +218,7 @@ public class RaftNodeDataListener<NodeType> {
 			Set<String> children = this.op.getChildren(this.dir, false);
 			if(children != null && !children.isEmpty()) {
 				for(String ke : children) {
-					String path = this.dir + "/" + ke;
-					String ndata = op.getData(path);
-					NodeType n = JsonUtils.getIns().fromJson(ndata, this.nodeClazz);
+					NodeType n = getData(ke);
 					if(n != null) {
 						c.accept(n);
 					}

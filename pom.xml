@@ -618,6 +618,9 @@
             <activation>
 	            <!-- 设置默认激活这个配置 -->
 	            <activeByDefault>false</activeByDefault>
+	             <file>  
+      				<exists>withdeps</exists>  
+    			</file>
         	</activation>
             <build>
 		        <plugins>

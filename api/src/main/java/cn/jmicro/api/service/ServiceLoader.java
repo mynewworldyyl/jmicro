@@ -37,6 +37,7 @@ import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Inject;
 import cn.jmicro.api.annotation.SBreakingRule;
 import cn.jmicro.api.annotation.SMethod;
+import cn.jmicro.api.annotation.SO;
 import cn.jmicro.api.annotation.Service;
 import cn.jmicro.api.annotation.Subscribe;
 import cn.jmicro.api.choreography.ProcessInfo;
@@ -369,6 +370,11 @@ public class ServiceLoader{
 				si.setImpl(impl);
 			}
 		} else {
+			
+			Set<Class<?>> clses = new HashSet<>();
+			clses.add(interfacez);
+			this.needRegist(clses);
+			
 			si = this.createSrvItem(interfacez.getName(),ns, ver, impl,clientId);
 			for(Method m : interfacez.getMethods()) {
 				createSrvMethod(si,m.getName(),m.getParameterTypes());
@@ -687,6 +693,7 @@ public class ServiceLoader{
 					sm.setDownSsl(manno.downSsl());
 					sm.setEncType(manno.encType());
 					sm.setLimitType(manno.limitType());
+					sm.setForType(manno.forType());
 				 } else {
 					 //使用接口方法配置
 					sbr = intMAnno.breakingRule();
@@ -724,6 +731,7 @@ public class ServiceLoader{
 					sm.setEncType(intMAnno.encType());
 					
 					sm.setLimitType(intMAnno.limitType());
+					sm.setForType(intMAnno.forType());
 				 }
 				 
 				 if(sm.getTimeout() <= 0) {
@@ -764,6 +772,7 @@ public class ServiceLoader{
 			getClassByType(m.getReturnType(),clses);
 			getClassByType(m.getGenericReturnType(),clses);
 			
+			clses.add(interfacez);
 			needRegist(clses);
 			
 			if(sm.isAsyncable()) {
@@ -787,8 +796,6 @@ public class ServiceLoader{
 	}
 	
 	private void needRegist(Set<Class<?>>  clses) {
-		
-		
 		
 		/*if(type.getName().equals("cn.jmicro.api.Resp")) {
 			logger.debug("");
@@ -829,8 +836,6 @@ public class ServiceLoader{
 				
 			}*/
 		}
-		
-		
 		
 		/*if(Collection.class.isAssignableFrom(cls)) {
 			ParameterizedType gt = TypeCoder.genericType(genericType);

@@ -26,6 +26,8 @@ public interface IAccountService {
 	
 	Resp<ActInfo> login(String actName,String pwd);
 	
+	Resp<ActInfo> loginWithId(int id,String pwd);
+	
 	Resp<Boolean> logout();
 	
 	Resp<Boolean> isLogin(String loginKey);

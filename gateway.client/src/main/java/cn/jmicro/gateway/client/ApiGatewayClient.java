@@ -430,6 +430,7 @@ public class ApiGatewayClient {
 		req.setNamespace(namespace);
 		req.setVersion(version);*/
 		if(this.actInfo != null) {
+			//System.out.println("LKEY: " +this.actInfo.getLoginKey());
 			req.getParams().put("loginKey", this.actInfo.getLoginKey());
 		}
 		
