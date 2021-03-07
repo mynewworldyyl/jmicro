@@ -66,6 +66,10 @@ public class Resp<T> {
 	public void setKey(String key) {
 		this.key = key;
 	}
-	
+	@Override
+	public String toString() {
+		return "Resp [msg=" + msg + ", code=" + code + ", key=" + key + ", total=" + total + ", pageSize=" + pageSize
+				+ ", curPage=" + curPage + "]";
+	}
 	
 }

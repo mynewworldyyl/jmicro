@@ -45,7 +45,7 @@
             refresh(){
                 let self = this;
                 this.isLogin = window.jm.rpc.isLogin();
-                if(this.isLogin) {
+                if(!this.isLogin) {
                     this.agentList =[];
                     return;
                 }

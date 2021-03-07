@@ -32,8 +32,11 @@ public class JMicroBaseTestCase {
 		registry = of.get(IRegistry.class);
 	}
 	
+	//-DinstanceName=ServiceComsumer -DclientId=0 -DadminClientId=0  
+	//-Dlog4j.configuration=../../log4j.xml -DsysLogLevel=1 -Dpwd=0
 	protected static String[] getArgs() {
-		return new String[] {"-DinstanceName=comsumer","-DclientId=0","-DadminClientId=0","-DpriKeyPwd=comsumer"};
+		return new String[] {"-DinstanceName=JMicroBaseTestCase","-DclientId=0","-DadminClientId=0","-DpriKeyPwd=comsumer"
+		,"-DsysLogLevel=1","-Dlog4j.configuration=../../log4j.xml","-Dpwd=0","-DsysLogLevel=1"};
 	}
 	
 	protected <T> T get(Class<T> cls) {

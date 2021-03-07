@@ -6,12 +6,10 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import cn.jmicro.api.JMicroContext;
 import cn.jmicro.api.Resp;
 import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Reference;
@@ -24,8 +22,6 @@ import cn.jmicro.api.internal.async.PromiseImpl;
 import cn.jmicro.api.mng.LogFileEntry;
 import cn.jmicro.api.objectfactory.AbstractClientServiceProxyHolder;
 import cn.jmicro.api.registry.IServiceListener;
-import cn.jmicro.api.service.IServiceAsyncResponse;
-import cn.jmicro.common.Constants;
 import cn.jmicro.mng.api.IAgentLogService;
 
 @Component(level=20001)

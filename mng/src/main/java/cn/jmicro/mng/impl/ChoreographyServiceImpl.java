@@ -593,7 +593,7 @@ public class ChoreographyServiceImpl implements IChoreographyService {
 			aivs.add(av);
 			
 			AgentInfo ai = JsonUtils.getIns().fromJson(cn.getVal(), AgentInfo.class);
-			if(PermissionManager.checkAccountClientPermission(ai.getClientId())) {
+			if(!PermissionManager.checkAccountClientPermission(ai.getClientId())) {
 				continue;
 			}
 			
