@@ -5,10 +5,12 @@ import java.util.Map;
 
 import org.junit.Test;
 
+import cn.jmicro.api.EnterMain;
 import cn.jmicro.api.JMicro;
 import cn.jmicro.api.async.IPromise;
 import cn.jmicro.api.async.PromiseUtils;
 import cn.jmicro.api.net.Message;
+import cn.jmicro.api.objectfactory.IObjectFactory;
 import cn.jmicro.api.service.ICheckable;
 import cn.expjmicro.example.api.IDynamicInterface;
 import cn.expjmicro.example.api.ITestRpcService;
@@ -20,7 +22,7 @@ public class TestRpcRequest extends JMicroBaseTestCase{
 
 	public static void main(String[] args) {
 		Map<String,String> result = new HashMap<>();
-		ISimpleRpc sayHelloSrv = JMicro.getRpcServiceTestingArgs(ISimpleRpc.class,result,Message.PROTOCOL_BIN);
+		ISimpleRpc sayHelloSrv = EnterMain.getRpcServiceTestingArgs(ISimpleRpc.class,result,Message.PROTOCOL_BIN);
 		sayHelloSrv.hello("Are you OK");
 		System.out.println(result);
 	}

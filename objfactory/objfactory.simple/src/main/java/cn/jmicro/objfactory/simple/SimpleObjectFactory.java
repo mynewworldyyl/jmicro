@@ -42,8 +42,8 @@ import com.alibaba.dubbo.common.bytecode.ClassGenerator;
 import com.alibaba.dubbo.common.serialize.kryo.utils.ReflectUtils;
 
 import cn.jmicro.api.ClassScannerUtils;
+import cn.jmicro.api.EnterMain;
 import cn.jmicro.api.IListener;
-import cn.jmicro.api.JMicro;
 import cn.jmicro.api.Resp;
 import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Inject;
@@ -54,6 +54,7 @@ import cn.jmicro.api.annotation.Service;
 import cn.jmicro.api.choreography.ChoyConstants;
 import cn.jmicro.api.choreography.ProcessInfo;
 import cn.jmicro.api.classloader.RpcClassLoader;
+import cn.jmicro.api.classloader.RpcClassLoaderHelper;
 import cn.jmicro.api.config.Config;
 import cn.jmicro.api.masterelection.IMasterChangeListener;
 import cn.jmicro.api.masterelection.VoterPerson;
@@ -226,6 +227,7 @@ public class SimpleObjectFactory implements IObjectFactory {
 					&& c.isAnnotationPresent(Component.class)) {
 				Component anno = c.getAnnotation(Component.class);
 				if(anno != null && anno.active()) {
+					logger.info(c.getName());
 					Object obj = this.get(c);
 					/*if(obj != null) {
 						set.add((T)obj);
@@ -402,6 +404,42 @@ public class SimpleObjectFactory implements IObjectFactory {
 			return;
 		}
 		
+		final RpcClassLoaderHelper clHelper = new RpcClassLoaderHelper();
+		
+		ClassLoader cl = Thread.currentThread().getContextClassLoader();
+		
+		if(cl != null && cl instanceof RpcClassLoader) {
+			rpcClassLoader = (RpcClassLoader) cl;
+		} else {
+			if(cl != null) {
+				rpcClassLoader = new RpcClassLoader(cl);
+			} else {
+				rpcClassLoader = new RpcClassLoader(RpcClassLoader.class.getClassLoader());
+			}
+		}
+		
+		if(dataOperator == null) {
+			throw new CommonException("Data operator cannot be NULL");
+		}
+		
+		clHelper.setClassLoader(this.rpcClassLoader);
+		rpcClassLoader.setHelper(clHelper);
+		rpcClassLoader.setBasePackages(Config.getBasePackages());
+		
+		ClassScannerUtils.setClassLoader(clHelper);
+		
+		//logger.debug(RpcClassLoaderHelper.class.getClassLoader().toString());
+		//logger.debug(ClassScannerUtils.class.getClassLoader().toString());
+		
+		this.cacheObj(RpcClassLoaderHelper.class, clHelper,"rpcClHelper");
+		this.cacheObj(RpcClassLoader.class, rpcClassLoader,"rpcClassLoader");
+		
+		/*rpcClassLoader = new RpcClassLoader(this.getClass().getClassLoader());
+		if(!clsNameToObjs.containsKey(RpcClassLoader.class.getName())) {
+		}*/
+		
+		Thread.currentThread().setContextClassLoader(rpcClassLoader);
+		
 		Runtime.getRuntime().addShutdownHook(new Thread() {
 			public void run() {
 				 logger.warn("进程终止： "+JsonUtils.getIns().toJson(pi));
@@ -432,21 +470,20 @@ public class SimpleObjectFactory implements IObjectFactory {
 		
 		createProccessInfo(dataOperator,cfg);
 		
+		ClassLoader oldCl = Thread.currentThread().getContextClassLoader();
+		
+		/**
+		 * 意味着此两个参数只能在命令行或环境变量中做配置，不能在ZK中配置，因为此时ZK还没启动，此配置正是ZK的启动配置
+		 * 后其可以使用其他实现，如ETCD等
+		 */
+		//String dataOperatorName = Config.getCommandParam(Constants.DATA_OPERATOR, String.class, Constants.DEFAULT_DATA_OPERATOR);
+		
+		
 		Runnable r = ()-> {
+			
 			//查找全部对像初始化监听器
 			createPostListener();
 			//registerSOClass();
-			
-			/**
-			 * 意味着此两个参数只能在命令行或环境变量中做配置，不能在ZK中配置，因为此时ZK还没启动，此配置正是ZK的启动配置
-			 * 后其可以使用其他实现，如ETCD等
-			 */
-			//String dataOperatorName = Config.getCommandParam(Constants.DATA_OPERATOR, String.class, Constants.DEFAULT_DATA_OPERATOR);
-			rpcClassLoader = new RpcClassLoader(this.getClass().getClassLoader());
-			if(!clsNameToObjs.containsKey(RpcClassLoader.class.getName())) {
-				this.cacheObj(RpcClassLoader.class, rpcClassLoader,"rpcClassLoader");
-			}
-			
 			Set<Class<?>> clses = ClassScannerUtils.getIns().getComponentClass();
 			//clses.removeAll(configLoaderCls);
 			
@@ -551,23 +588,14 @@ public class SimpleObjectFactory implements IObjectFactory {
 			
 			rpcReady = true;
 			
-			ClassLoader oldCl = Thread.currentThread().getContextClassLoader();
-			
-			Thread.currentThread().setContextClassLoader(rpcClassLoader);
-			
 			loadAccountInfo(dataOperator,cfg);
-			
-			//对像工厂初始化后监听器
-			for(IPostFactoryListener lis : this.postReadyListeners){
-				lis.afterInit(this);
-			}
 			
 			persistProcessInfo(dataOperator);
 			
-			rpcClassLoader.registRemoteClass();
-			
-			if(oldCl != null) {
-				Thread.currentThread().setContextClassLoader(oldCl);
+			if(pi.isLogin()) {
+				clHelper.registRemoteClass();
+			}else {
+				logger.warn("System not in security model so not regist remote class!");
 			}
 			
 			fromLocal = false;
@@ -576,6 +604,12 @@ public class SimpleObjectFactory implements IObjectFactory {
 			synchronized(isInit){
 				isInit.notifyAll();
 			}
+			
+			//对像工厂初始化后监听器
+			for(IPostFactoryListener lis : this.postReadyListeners){
+				lis.afterInit(this);
+			}
+			
 		};
 		
 		boolean ismlModel = cfg.getBoolean(Constants.Ml_MODEL_ENABLE, false);
@@ -603,7 +637,7 @@ public class SimpleObjectFactory implements IObjectFactory {
 					} catch (Throwable e) {
 						logger.error("", e);
 						LG.log(MC.LOG_ERROR,SimpleObjectFactory.class , "", e);
-						JMicro.waitTime(5000);
+						EnterMain.waitTime(5000);
 						System.exit(0);
 					}
 					 
@@ -622,7 +656,7 @@ public class SimpleObjectFactory implements IObjectFactory {
 					 LG.log(MC.LOG_INFO, SimpleObjectFactory.class
 							 , "Lost master and exit: "+JsonUtils.getIns().toJson(pi));
 					 MT.nonRpcEvent(Config.getInstanceName(), MC.MT_SERVER_STOP);
-					 JMicro.waitTime(3000);
+					 EnterMain.waitTime(3000);
 					 
 					 logger.info(Config.getInstanceName() + " lost master, need restart server!");
 					 System.exit(0);
@@ -631,6 +665,10 @@ public class SimpleObjectFactory implements IObjectFactory {
 			
 		} else {
 			 r.run();
+		}
+		
+		if(oldCl != null) {
+			Thread.currentThread().setContextClassLoader(oldCl);
 		}
 		
 		//if(Config.isClientOnly()) {}
@@ -652,9 +690,9 @@ public class SimpleObjectFactory implements IObjectFactory {
 	
 	private void loadAccountInfo(IDataOperator op,Config cfg) {
 		
-		    if(pi.getActName() != null) {
+		   /* if(pi.getActName() != null) {
 		    	return;
-		    }
+		    }*/
 		
 			IAccountService as = this.get(IAccountService.class);
 			if(as == null) {
@@ -664,7 +702,7 @@ public class SimpleObjectFactory implements IObjectFactory {
 					asyncAs = this.getRemoteServie(IAccountService$JMAsyncClient.class.getName(), "*","*",null);
 				} catch(CommonException e) {}
 				if(asyncAs == null || !asyncAs.isReady()) {
-					logger.error("Security account service not found!");
+					logger.error("Security account service not found work int not secrity model!");
 					pi.setActName(null);
 					return;
 				}
@@ -806,7 +844,9 @@ public class SimpleObjectFactory implements IObjectFactory {
 		Set<Object> dones = new HashSet<>();
 		for(int i =0; i < lobjs.size(); i++){
 			Object o = lobjs.get(i);
-			
+			if(o.getClass().getName().equals(RpcClassLoaderHelper.class.getName())) {
+				logger.info("Debug test: " + o.getClass().getName());
+			}
 			 //代理对像,还没真正创建目标对象,所以不需要
 			 if(o instanceof ProxyObject){
 	    		continue;
@@ -860,6 +900,10 @@ public class SimpleObjectFactory implements IObjectFactory {
 		
 		if(clses != null && !clses.isEmpty()) {
 			for(Class<?> c : clses){
+				//logger.info("Conponent class: " + c.getName());
+				if(!(c.isAnnotationPresent(Service.class) || c.isAnnotationPresent(Component.class))) {
+					continue;
+				}
 				
 				Object obj = createOneComponent(c,clientOnly,serverOnly);
 				if(obj == null) {
@@ -1129,6 +1173,11 @@ public class SimpleObjectFactory implements IObjectFactory {
 				f.setAccessible(true);
 			}
 			try {
+				if(f.getName().equals("respo")) {
+					ClassLoader cl0 = f.getDeclaringClass().getClassLoader();
+					ClassLoader cl1 = srv.getClass().getClassLoader();
+					logger.debug("test respo debug");
+				}
 				f.set(obj, srv);
 			} catch (IllegalArgumentException | IllegalAccessException e) {
 				throw new CommonException("",e);
@@ -1180,6 +1229,9 @@ public class SimpleObjectFactory implements IObjectFactory {
 		
 		boolean isProvider = isProviderSide(ProxyObject.getTargetCls(obj.getClass()));
 		boolean isComsumer =  isComsumerSide(ProxyObject.getTargetCls(obj.getClass()));
+		
+		//logger.debug(obj.getClass().getName()+" : "+ Inject.class.getClassLoader().toString());
+		logger.debug(obj.getClass().getName()+" : "+ obj.getClass().getClassLoader().toString());
 		
 		for(Field f : fields) {
 			Object srv = null;
@@ -1378,7 +1430,7 @@ public class SimpleObjectFactory implements IObjectFactory {
 						}
 					} else if(l != null && !l.isEmpty()){
 						for(Object s : l) {
-							String n = JMicro.getClassAnnoName(s.getClass());
+							String n = EnterMain.getClassAnnoName(s.getClass());
 							if(name.equals(n)){
 								srv = s;
 							}
@@ -1417,7 +1469,7 @@ public class SimpleObjectFactory implements IObjectFactory {
 			} else if(isRequired) {
 				String msg = "Class ["+cls.getName()+"] field ["+ f.getName()+"] dependency ["+f.getType().getName()+"] not found";
 				LG.log(MC.LOG_ERROR, getClass(), msg);
-				JMicro.waitTime(5000);
+				EnterMain.waitTime(5000);
 				throw new CommonException(msg);
 			}
 		}
@@ -1625,7 +1677,7 @@ public class SimpleObjectFactory implements IObjectFactory {
 	}
 
 	 private String getComName(Class<?> cls) {
-		 return JMicro.getClassAnnoName(cls);
+		 return EnterMain.getClassAnnoName(cls);
 	 }
 	 
 	private void doInit(Object obj) {
@@ -1804,7 +1856,7 @@ public class SimpleObjectFactory implements IObjectFactory {
 					MT.nonRpcEvent(Config.getInstanceName(), MC.MT_PROCESS_REMOVE);
 					logger.warn(msg);
 					op.deleteNode(p);
-					JMicro.waitTime(4000);
+					EnterMain.waitTime(4000);
 					System.exit(0);
 				} else {
 					pi.setHaEnable(pi0.isHaEnable());

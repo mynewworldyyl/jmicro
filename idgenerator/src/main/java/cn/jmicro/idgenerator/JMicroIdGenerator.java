@@ -16,16 +16,13 @@
  */
 package cn.jmicro.idgenerator;
 
-import cn.jmicro.api.JMicro;
 import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Inject;
-import cn.jmicro.api.annotation.Service;
 import cn.jmicro.api.config.Config;
 import cn.jmicro.api.idgenerator.IIdServer;
 import cn.jmicro.api.raft.IDataOperator;
 import cn.jmicro.api.raft.RaftBaseIdGenerator;
 import cn.jmicro.common.Constants;
-import cn.jmicro.common.Utils;
 
 /**
  * @author Yulei Ye
@@ -37,12 +34,12 @@ public class JMicroIdGenerator implements IIdServer {
 	
 	private static final String ID_IDR = Config.BASE_DIR + "/id/";
 	
-	public static void main(String[] args) {
+	/*public static void main(String[] args) {
 		 JMicro.getObjectFactoryAndStart(new String[] {"-DinstanceName=ZkBaseIdServer",
 				 "-Dserver=true",
 				 "-Dorg.jmicro.api.idgenerator.IIdServer=uniqueIdGenerator"});
 		 Utils.getIns().waitForShutdown();
-	}
+	}*/
 	
 	@Inject(required=true)
 	private IDataOperator dataOperator;

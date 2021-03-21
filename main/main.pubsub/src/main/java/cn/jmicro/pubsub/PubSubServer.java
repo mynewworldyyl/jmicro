@@ -145,6 +145,8 @@ public class PubSubServer implements IInternalSubRpc{
 	private Object syncLocker = new Object();
 	
 	public static void main(String[] args) {
+		/* RpcClassLoader cl = new RpcClassLoader(RpcClassLoader.class.getClassLoader());
+		 Thread.currentThread().setContextClassLoader(cl);*/
 		 JMicro.getObjectFactoryAndStart(args);
 		 Utils.getIns().waitForShutdown();
 	}
@@ -558,6 +560,7 @@ public class PubSubServer implements IInternalSubRpc{
 					PSData[] psd = new PSData[rm];
 					if(!rb.readAll(psd)) {
 						this.basketFactory.returnReadSlot(rb, false);
+						rb = null;
 						
 						if(LG.isLoggable(MC.LOG_DEBUG)) {
 							String errMsg = "Fail to get element from basket remaiding:"+rb.remainding();
@@ -571,6 +574,7 @@ public class PubSubServer implements IInternalSubRpc{
 						continue;
 					} else {
 						this.basketFactory.returnReadSlot(rb, true);
+						rb = null;
 					}
 					
 					String topic = psd[0].getTopic();

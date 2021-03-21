@@ -16,6 +16,7 @@ import cn.jmicro.api.annotation.Reference;
 import cn.jmicro.api.annotation.SMethod;
 import cn.jmicro.api.annotation.Service;
 import cn.jmicro.api.async.IPromise;
+import cn.jmicro.api.classloader.RpcClassLoader;
 import cn.jmicro.api.config.Config;
 import cn.jmicro.api.idgenerator.ComponentIdServer;
 import cn.jmicro.api.limit.genclient.ILimitData$JMAsyncClient;
@@ -41,6 +42,8 @@ public class LimitServer implements IStatisDataSubscribe {
 	private static final Logger logger = LoggerFactory.getLogger(LimitServer.class);
 	
 	public static void main(String[] args) {
+		/* RpcClassLoader cl = new RpcClassLoader(RpcClassLoader.class.getClassLoader());
+		 Thread.currentThread().setContextClassLoader(cl);*/
 		JMicro.getObjectFactoryAndStart(args);
 		JMicro.waitForShutdown();
 	}

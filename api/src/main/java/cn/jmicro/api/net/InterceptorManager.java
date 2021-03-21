@@ -9,7 +9,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import cn.jmicro.api.JMicro;
+import cn.jmicro.api.EnterMain;
 import cn.jmicro.api.JMicroContext;
 import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Interceptor;
@@ -49,9 +49,9 @@ public class InterceptorManager {
     		handler = hs.get(key);
     	} else {
     		String handlerKey = JMicroContext.get().getString(handlerName,handlerName);
-    		handler = JMicro.getObjectFactory().getByName(handlerKey);
+    		handler = EnterMain.getObjectFactory().getByName(handlerKey);
     		if( handler == null ){
-    			handler = JMicro.getObjectFactory().getByName(handlerName);
+    			handler = EnterMain.getObjectFactory().getByName(handlerName);
     		}
     		if( handler == null ){
     			throw new CommonException("Interceptor ["+handlerKey + " not found]");
@@ -171,7 +171,7 @@ public class InterceptorManager {
     
     private Collection<IInterceptor> getInterceptors() {
     	boolean callSideProvider = JMicroContext.isCallSideService();
-    	Collection<IInterceptor> coll = JMicro.getObjectFactory().getByParent(IInterceptor.class);
+    	Collection<IInterceptor> coll = EnterMain.getObjectFactory().getByParent(IInterceptor.class);
     	for(Iterator<IInterceptor> ite = coll.iterator();ite.hasNext();){
 			IInterceptor h = ite.next();
 			Class<?> cls = ProxyObject.getTargetCls(h.getClass());

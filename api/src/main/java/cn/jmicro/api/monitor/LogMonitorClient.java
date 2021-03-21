@@ -33,7 +33,6 @@ import cn.jmicro.api.annotation.Reference;
 import cn.jmicro.api.async.AsyncFailResult;
 import cn.jmicro.api.basket.BasketFactory;
 import cn.jmicro.api.basket.IBasket;
-import cn.jmicro.api.choreography.ProcessInfo;
 import cn.jmicro.api.config.Config;
 import cn.jmicro.api.executor.ExecutorConfig;
 import cn.jmicro.api.executor.ExecutorFactory;
@@ -72,6 +71,9 @@ public class LogMonitorClient {
 	
     @Cfg(value="/LogMonitorClient/registMonitorThreadService", changeListener="registMonitorThreadStatusChange")
     private boolean registMonitorThreadService = false;
+    
+    @Cfg(value="/LogMonitorClient/singleItemMaxSize")
+    private int singleItemMaxSize = 8192;
     
 	private boolean checkerWorking = false;
 	
@@ -138,7 +140,7 @@ public class LogMonitorClient {
 		statusMonitorAdapter = new MonitorClientStatusAdapter(TYPES,typeLabels,
 				Config.getInstanceName()+"_MonitorClientStatuCheck",group);
 		
-		if(sl.hashServer() && !Config.isClientOnly()) {
+		if(sl.hasServer() && !Config.isClientOnly()) {
 			monitorServiceItem = sl.createSrvItem(IMonitorAdapter.class, Config.getNamespace()+"."+group, "0.0.1",
 					IMonitorAdapter.class.getName(),Config.getClientId());
 			of.regist("LogMonitorClientStatuCheckAdapter", statusMonitorAdapter);
@@ -155,8 +157,8 @@ public class LogMonitorClient {
 	}
 	
 	public void registMonitorThreadStatusChange() {
-		if(monitorServiceItem == null || !sl.hashServer() || Config.isClientOnly()) {
-			logger.warn("Monitor service not valid: hashServer:" + sl.hashServer()+", isClientOnly: "+ Config.isClientOnly());
+		if(monitorServiceItem == null || !sl.hasServer() || Config.isClientOnly()) {
+			logger.warn("Monitor service not valid: hashServer:" + sl.hasServer()+", isClientOnly: "+ Config.isClientOnly());
 			return;
 		}
 		if(registMonitorThreadService) {
@@ -171,6 +173,11 @@ public class LogMonitorClient {
 
 		if(this.cacheBasket == null) {
 			logger.error("cacheBasket is NULL");
+			return false;
+		}
+		
+		if(checkMaxSize(item)) {
+			logger.warn("Too max message: " + item);
 			return false;
 		}
 		
@@ -205,6 +212,12 @@ public class LogMonitorClient {
 		if(!checkerWorking) {
 			return false;
 		}
+		
+		if(checkMaxSize(item)) {
+			logger.warn("Too max message: " + item);
+			return false;
+		}
+		
 		IBasket<MRpcLogItem> b = basketFactory.borrowWriteBasket(true);
 		if(b == null) {
 			if(this.statusMonitorAdapter != null && this.statusMonitorAdapter.isMonitoralbe()) {
@@ -234,6 +247,10 @@ public class LogMonitorClient {
 	}
 	
 	
+	private boolean checkMaxSize(MRpcLogItem item) {
+		return getItemSize(item) > this.singleItemMaxSize;
+	}
+
 	public void enableWork(AbstractClientServiceProxyHolder msPo, int opType) {
 		if(!checkerWorking && IServiceListener.ADD == opType) {
 			if(this.msPo != null && msPo.getHolder().isUsable()) {
@@ -284,7 +301,7 @@ public class LogMonitorClient {
 					Iterator<IBasket<MRpcLogItem>> writeIte = this.cacheBasket.iterator(false);
 					while((wb = writeIte.next()) != null) {
 						if(!wb.isEmpty() && (beginTime - wb.firstWriteTime()) > 2000) {
-							this.cacheBasket.returnWriteBasket(wb, true);
+							this.cacheBasket.returnWriteBasket(wb, true);//转为读状态
 						} else {
 							this.cacheBasket.returnWriteBasket(wb, false);
 						}
@@ -298,19 +315,21 @@ public class LogMonitorClient {
 							MRpcLogItem[] mrs = new MRpcLogItem[rb.remainding()];
 							rb.readAll(mrs);
 							cacheBasket.returnReadSlot(rb, true);
+							rb = null;
 							
 							for(MRpcLogItem mi : mrs) {
 								int size = getItemSize(mi);
-								if(size > maxPackageSize) {
+								if(size > maxPackageSize && mi.getItems().size() > 1) {
 									splitMi(mi,maxPackageSize);
 									continue;
 								}
+								
 								if(packageSize + size < maxPackageSize) {
 									packageSize += size;
 									items.add(mi);	
 								} else {
 									forceSubmit = true;
-									readySubmit(mi);
+									readySubmit(mi);//将剩余的放回缓存
 								}
 							}
 							//items.addAll(Arrays.asList(mrs));
@@ -320,6 +339,7 @@ public class LogMonitorClient {
 						} else {
 							//没超过3分钟，不做单独发送，等等下次正常RPC做附带发送，或下次检测超时
 							cacheBasket.returnReadSlot(rb, false);
+							rb = null;
 						}
 					}
 					
@@ -337,6 +357,11 @@ public class LogMonitorClient {
 				}
 				
 				if(!forceSubmit) {
+					
+					if(readBasket == null) {
+						readBasket = this.basketFactory.borrowReadSlot();
+					}
+					
 					while(readBasket != null && packageSize < maxPackageSize) {
 						MRpcLogItem[] mrs = new MRpcLogItem[readBasket.remainding()];
 						readBasket.readAll(mrs);
@@ -346,7 +371,7 @@ public class LogMonitorClient {
 						for(MRpcLogItem mi : mrs) {
 							
 							int size = getItemSize(mi);
-							if(size > maxPackageSize) {
+							if(size > maxPackageSize && mi.getItems().size() > 1) {
 								splitMi(mi,maxPackageSize);
 								continue;
 							}
@@ -371,7 +396,7 @@ public class LogMonitorClient {
 				
 				
 				if(readBasket != null) {
-					basketFactory.returnReadSlot(readBasket, true);
+					basketFactory.returnReadSlot(readBasket, readBasket.remainding() <= 0);
 				}
 				
 				if(items.size() == 0) {
@@ -443,7 +468,10 @@ public class LogMonitorClient {
 			}
 		}
 		
-		readySubmit(copy);
+		if(copy.getItems().size() > 0) {
+			readySubmit(copy);
+		}
+		
 	}
 
 	private int getItemSize(MRpcLogItem mi) {

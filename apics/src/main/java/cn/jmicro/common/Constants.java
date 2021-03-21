@@ -23,6 +23,8 @@ package cn.jmicro.common;
  */
 public interface Constants {
 	
+	public static final String CORE_CLASS="cn.jmicro.api";
+	
 	public static final byte USE_SYSTEM_CLIENT_ID = -2;
 	
 	public static final byte NO_CLIENT_ID = -1;
@@ -192,7 +194,7 @@ public interface Constants {
 	//应该删除此值
 	public static final String DIRECT_SERVICE_ITEM = "directServiceItem";
 	
-	public static final String ROUTER_KEY = "routerKey";
+	public static final String ROUTER_TYPE = "routerKey";
 	
     public static final int TYPE_HTTP = 1;
 	public static final int TYPE_SOCKET = 2;

@@ -10,7 +10,7 @@ public class TestLocalDb  extends JMicroBaseTestCase{
 
 	@Test
 	public void testInsertData() {
-		LocalDataManager db = new LocalDataManager(of);
+		LocalDataManager db = of.get(LocalDataManager.class);
 		db.registTableClass("t_test_data", TestDbTable.class);
 		
 		TestDbTable d = new TestDbTable();

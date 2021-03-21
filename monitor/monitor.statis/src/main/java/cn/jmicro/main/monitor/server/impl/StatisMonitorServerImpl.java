@@ -190,6 +190,7 @@ public class StatisMonitorServerImpl implements IStatisMonitorServer {
 					if(!basketFactory.returnReadSlot(b, true)) {
 						logger.error("doCheck Fail to return IBasket");
 					}
+					b = null;
 				}
 				
 				if(monitoralbe) {

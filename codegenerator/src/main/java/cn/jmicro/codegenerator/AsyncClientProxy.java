@@ -42,4 +42,6 @@ public @interface AsyncClientProxy {
 	public static final String INT_GATEWAY_CLASS = INT_GATEWAY +INT_SUBFIX;// "$Gateway$JMAsyncClient";
 	
 	public int dataVersion() default 0;
+	
+	public int clientId() default -1;
 }

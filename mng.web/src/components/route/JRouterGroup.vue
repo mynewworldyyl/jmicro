@@ -4,11 +4,8 @@
           <Button @click="createNode">Create</Button>
       </div>
       <table class="configItemTalbe" width="99%">
-       <!--   <caption style="text-align: left;padding-bottom: 3px;">{{item.id}}</caption>-->
-          <thead><tr><td>TYPE</td><td>SRC</td><td>TARGET</td>
-              <td>STATUS</td><td>PRIORITY</td><td>OP</td></tr>
-          </thead>
-
+          <!--<caption style="text-align: left;padding-bottom: 3px;">{{item.id}}</caption>-->
+          <thead><tr><td>TYPE</td><td>SRC</td><td>TARGET</td><td>STATUS</td><td>PRIORITY</td><td>OP</td></tr></thead>
           <tr v-for="(c,index) in item.val" :key="c.path">
               <td>{{c.val.type}}</td><td>{{c.val.from}}</td><td>{{c.val.to}}</td>
               <td>{{c.val.enable}}</td><td>{{c.val.priority}}</td>

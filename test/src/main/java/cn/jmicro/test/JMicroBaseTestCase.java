@@ -4,7 +4,7 @@ import org.junit.BeforeClass;
 import org.junit.runner.RunWith;
 import org.junit.runners.BlockJUnit4ClassRunner;
 
-import cn.jmicro.api.JMicro;
+import cn.jmicro.api.EnterMain;
 import cn.jmicro.api.JMicroContext;
 import cn.jmicro.api.monitor.StatisMonitorClient;
 import cn.jmicro.api.objectfactory.IObjectFactory;
@@ -13,7 +13,6 @@ import cn.jmicro.api.registry.ServiceItem;
 import cn.jmicro.api.registry.ServiceMethod;
 import cn.jmicro.api.registry.UniqueServiceKey;
 import cn.jmicro.api.registry.UniqueServiceMethodKey;
-import cn.jmicro.api.security.ISecretService;
 import cn.jmicro.common.Constants;
 import cn.jmicro.common.Utils;
 
@@ -28,7 +27,9 @@ public class JMicroBaseTestCase {
 	
 	@BeforeClass
 	public static void setupTestClass() {
-		of = JMicro.getObjectFactoryAndStart(getArgs());
+		/* RpcClassLoader cl = new RpcClassLoader(RpcClassLoader.class.getClassLoader());
+		 Thread.currentThread().setContextClassLoader(cl);*/
+		of = EnterMain.getObjectFactoryAndStart(getArgs());
 		registry = of.get(IRegistry.class);
 	}
 	

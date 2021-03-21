@@ -16,6 +16,7 @@
  */
 package cn.jmicro.api.service;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -81,7 +82,7 @@ public class ServiceManager {
 	private Map<String,Integer> path2Hash = new HashMap<>();
 	
 	//服务监听器，监听特定路径的服务
-	private HashMap<String,Set<IServiceListener>> serviceListeners = new HashMap<>();
+	private Map<String,Set<IServiceListener>> serviceListeners = Collections.synchronizedMap(new HashMap<>());
 	
 	//监听全部服务
 	private Set<IServiceListener> listeners = new HashSet<>();
@@ -222,23 +223,26 @@ public class ServiceManager {
 	}
 	
 	public void addServiceListener(String srvPath,IServiceListener lis) {
-		HashMap<String,Set<IServiceListener>> serviceListeners = this.serviceListeners;
+		Map<String,Set<IServiceListener>> serviceListeners = this.serviceListeners;
 		if(serviceListeners.containsKey(srvPath)){
 			Set<IServiceListener> l = serviceListeners.get(srvPath);
 			boolean flag = false;
-			for(IServiceListener al : l){
-				if(al == lis){
-					flag = true;
-					break;
+			
+			synchronized(l) {
+				for(IServiceListener al : l){
+					if(al == lis){
+						flag = true;
+						break;
+					}
 				}
-			}
-			if(!flag){
-				l.add(lis);
+				if(!flag){
+					l.add(lis);
+				}
 			}
 		} else {
 			Set<IServiceListener> l = new HashSet<>();
-			serviceListeners.put(srvPath, l);
 			l.add(lis);
+			serviceListeners.put(srvPath, l);
 		}
 
 		ServiceItem si = this.path2SrvItems.get(srvPath);
@@ -248,18 +252,21 @@ public class ServiceManager {
 	}
 	
 	public void removeServiceListener(String key, IServiceListener lis) {
-		HashMap<String,Set<IServiceListener>> serviceListeners = this.serviceListeners;
+		Map<String,Set<IServiceListener>> serviceListeners = this.serviceListeners;
 		if(!serviceListeners.containsKey(key)){
 			return;
 		}
 		
 		Set<IServiceListener> l = serviceListeners.get(key);
 		if(l == null){
+			serviceListeners.remove(key);
 			return;
 		}
-		for(IServiceListener al : l){
-			if(al == lis){
-				l.remove(lis);
+		synchronized(l) {
+			for(IServiceListener al : l){
+				if(al == lis){
+					l.remove(lis);
+				}
 			}
 		}
 	}
@@ -279,13 +286,19 @@ public class ServiceManager {
 					}
 				}
 			}
-			this.listeners.add(lis);
+			
+			synchronized(this.listeners) {
+				this.listeners.add(lis);
+			}
+			
 		}
 	}
 	
 	public void removeListener(IServiceListener lis) {
-		if(this.listeners.contains(lis)) {
-			this.listeners.remove(lis);
+		synchronized(this.listeners) {
+			if(this.listeners.contains(lis)) {
+				this.listeners.remove(lis);
+			}
 		}
 	}
 	
@@ -827,15 +840,20 @@ public class ServiceManager {
 		Set<IServiceListener> ls = this.serviceListeners.get(path);
 		if(ls != null && !ls.isEmpty()){
 			//服务名称，名称空间，版本 三维一体服务监听
-			for(IServiceListener l : ls){
-				l.serviceChanged(type, item);
+			synchronized(ls) {
+				for(IServiceListener l : ls){
+					l.serviceChanged(type, item);
+				}
 			}
 		}
+		
 		ls = this.listeners;
 		if(ls != null && !ls.isEmpty()){
-			for(IServiceListener l : ls){
-				//服务运行实例监听器
-				l.serviceChanged(type, item);
+			synchronized(ls) {
+				for(IServiceListener l : ls){
+					//服务运行实例监听器
+					l.serviceChanged(type, item);
+				}
 			}
 		}
 	}

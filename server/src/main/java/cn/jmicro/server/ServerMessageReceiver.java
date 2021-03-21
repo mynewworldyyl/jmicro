@@ -301,8 +301,8 @@ public class ServerMessageReceiver implements IMessageReceiver{
 	
 	private void responseException(Message msg,IServerSession s,Throwable e) {
 		
-		StackTraceElement se = Thread.currentThread().getStackTrace()[1];
-		logger.error(se.getLineNumber() + " reqHandler error msg:{} ",msg,e);
+		StackTraceElement se = Thread.currentThread().getStackTrace()[2];
+		logger.error("From line [" + se.getLineNumber() + "] reqHandler error msg:{}, exp:{} ",msg,e);
 		
 		if(msg.isNeedResponse()) {
 			RpcResponse resp = null;

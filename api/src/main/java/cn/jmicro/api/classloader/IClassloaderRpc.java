@@ -20,7 +20,6 @@ import cn.jmicro.api.Resp;
 import cn.jmicro.api.annotation.Service;
 import cn.jmicro.codegenerator.AsyncClientProxy;
 
-@Service
 @AsyncClientProxy
 public interface IClassloaderRpc {
 	

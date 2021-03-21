@@ -175,10 +175,13 @@ public class VoterPerson {
 	}
 
 	private void notify(int masterOffline, boolean b) {
+		ClassLoader cl = Thread.currentThread().getContextClassLoader();
 		new Thread(()-> {
+			if(cl != null) Thread.currentThread().setContextClassLoader(cl);
 			for(IMasterChangeListener l : this.listeners) {
 				l.masterChange(masterOffline, b);
 			}
+			
 		}).start();
 	}
 

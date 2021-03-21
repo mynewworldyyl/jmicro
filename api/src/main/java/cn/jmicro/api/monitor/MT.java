@@ -16,10 +16,7 @@
  */
 package cn.jmicro.api.monitor;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import cn.jmicro.api.JMicro;
+import cn.jmicro.api.EnterMain;
 import cn.jmicro.api.JMicroContext;
 import cn.jmicro.api.config.Config;
 import cn.jmicro.api.registry.ServiceMethod;
@@ -132,9 +129,9 @@ public class MT {
 		
 		if(!isInit) {
 			isInit = true;
-			m = JMicro.getObjectFactory().get(StatisMonitorClient.class);
-			isMs = null != JMicro.getObjectFactory().get(IStatisMonitorServer.class);
-			isDs = JMicro.getObjectFactory().get(IMonitorDataSubscriber.class) != null;
+			m = EnterMain.getObjectFactory().get(StatisMonitorClient.class);
+			isMs = null != EnterMain.getObjectFactory().get(IStatisMonitorServer.class);
+			isDs = EnterMain.getObjectFactory().get(IMonitorDataSubscriber.class) != null;
 		}
 		
 		if(JMicroContext.existRpcContext() && !JMicroContext.get().isMonitorable()

@@ -417,6 +417,7 @@ public class LogMonitorServerImpl implements ILogMonitorServer {
 					if(!basketFactory.returnReadSlot(b, true)) {
 						logger.error("doCheck Fail to return IBasket");
 					}
+					b = null;
 				}
 				
 				/*if(monitoralbe) {

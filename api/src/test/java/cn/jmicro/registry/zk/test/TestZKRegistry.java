@@ -2,7 +2,7 @@ package cn.jmicro.registry.zk.test;
 
 import org.junit.Test;
 
-import cn.jmicro.api.JMicro;
+import cn.jmicro.api.EnterMain;
 import cn.jmicro.api.config.Config;
 import cn.jmicro.api.objectfactory.IObjectFactory;
 import cn.jmicro.api.raft.IDataOperator;
@@ -34,7 +34,7 @@ public class TestZKRegistry {
 	@Test
 	public void testNodeCreate() {
 		Config.parseArgs(new String[0]);
-		IObjectFactory of = JMicro.getObjectFactory();
+		IObjectFactory of = EnterMain.getObjectFactory();
 		of.get(IDataOperator.class).addNodeListener("/jmicro/config/test",
 			(type,path,data)->{
 				System.out.println(type);

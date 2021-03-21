@@ -31,6 +31,8 @@ public class JMicroRcpServer   {
 	private final static Logger logger = LoggerFactory.getLogger(JMicroRcpServer.class);
 	
 	public static void main(String[] args) {
+		 /*RpcClassLoader cl = new RpcClassLoader(RpcClassLoader.class.getClassLoader());
+		 Thread.currentThread().setContextClassLoader(cl);*/
 		 JMicro.getObjectFactoryAndStart(new String[] {});
 		 Utils.getIns().waitForShutdown();
 	}

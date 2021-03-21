@@ -1,6 +1,7 @@
 package cn.jmicro.api.classloader;
 
 import cn.jmicro.api.annotation.SO;
+import cn.jmicro.common.Constants;
 
 @SO
 public class ClassInfo {
@@ -13,7 +14,9 @@ public class ClassInfo {
 	
 	private boolean testing;
 	
-	private long time = System.currentTimeMillis();
+	private long modifiedTime;
+	
+	private int clientId = Constants.NO_CLIENT_ID;
 
 	public String getClazzName() {
 		return clazzName;
@@ -47,13 +50,22 @@ public class ClassInfo {
 		this.testing = testing;
 	}
 
-	public long getTime() {
-		return time;
+	public long getModifiedTime() {
+		return modifiedTime;
 	}
 
-	public void setTime(long time) {
-		this.time = time;
+	public void setModifiedTime(long modifiedTime) {
+		this.modifiedTime = modifiedTime;
 	}
+
+	public int getClientId() {
+		return clientId;
+	}
+
+	public void setClientId(int clientId) {
+		this.clientId = clientId;
+	}
+
 	
 	
 }

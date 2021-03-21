@@ -9,6 +9,8 @@ import cn.jmicro.api.annotation.IDStrategy;
 import cn.jmicro.api.annotation.SO;
 import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.security.ActInfo;
+import cn.jmicro.common.CommonException;
+import cn.jmicro.common.Utils;
 
 @SO
 @IDStrategy(1)
@@ -95,6 +97,9 @@ public class ProcessInfo {
 	}
 
 	public void setAi(ActInfo ai) {
+		if(!Utils.formSystemPackagePermission(3)) {
+			 throw new CommonException(MC.MT_ACT_PERMISSION_REJECT,"非法操作");
+		}
 		this.ai = ai;
 	}
 
@@ -139,6 +144,9 @@ public class ProcessInfo {
 	}
 
 	public void setWorkDir(String workDir) {
+		if(!Utils.formSystemPackagePermission(3)) {
+			 throw new CommonException(MC.MT_ACT_PERMISSION_REJECT,"非法操作");
+		}
 		this.workDir = workDir;
 	}
 
@@ -179,6 +187,9 @@ public class ProcessInfo {
 	}
 
 	public void setActive(boolean active) {
+		if(!Utils.formSystemPackagePermission(3)) {
+			 throw new CommonException(MC.MT_ACT_PERMISSION_REJECT,"非法操作");
+		}
 		this.active = active;
 	}
 
@@ -211,6 +222,9 @@ public class ProcessInfo {
 	}
 
 	public void setInstanceName(String instanceName) {
+		if(!Utils.formSystemPackagePermission(3)) {
+			 throw new CommonException(MC.MT_ACT_PERMISSION_REJECT,"非法操作");
+		}
 		this.instanceName = instanceName;
 	}
 
@@ -259,6 +273,9 @@ public class ProcessInfo {
 	}
 
 	public void setClientId(int clientId) {
+		if(!Utils.formSystemPackagePermission(3)) {
+			 throw new CommonException(MC.MT_ACT_PERMISSION_REJECT,"非法操作");
+		}
 		this.clientId = clientId;
 	}
 
@@ -275,6 +292,9 @@ public class ProcessInfo {
 	}
 
 	public void setActName(String actName) {
+		if(!Utils.formSystemPackagePermission(3)) {
+			 throw new CommonException(MC.MT_ACT_PERMISSION_REJECT,"非法操作");
+		}
 		this.actName = actName;
 	}
 

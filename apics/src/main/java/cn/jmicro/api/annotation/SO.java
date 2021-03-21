@@ -22,6 +22,8 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
 
+import cn.jmicro.common.Constants;
+
 /**
  * 
  * @author Yulei Ye
@@ -31,4 +33,6 @@ import java.lang.annotation.Target;
 @Retention(RUNTIME)
 public @interface SO {
 	public int dataVersion() default 0;
+	
+	public int clientId() default Constants.NO_CLIENT_ID;
 }

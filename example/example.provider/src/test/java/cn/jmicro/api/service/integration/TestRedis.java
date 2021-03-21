@@ -1,6 +1,5 @@
 package cn.jmicro.api.service.integration;
 
-import java.util.Arrays;
 import java.util.Random;
 
 import org.junit.Test;
@@ -33,7 +32,7 @@ public class TestRedis extends JMicroBaseTestCase{
 		
 		final Random ran = new Random();
 		
-		IObjectFactory of = JMicro.getObjectFactoryAndStart(new String[] {
+		IObjectFactory of = (IObjectFactory)JMicro.getObjectFactoryAndStart(new String[] {
 				"-DinstanceName=testGetIdGenerator",
 				"-Dclient=true"});
 		

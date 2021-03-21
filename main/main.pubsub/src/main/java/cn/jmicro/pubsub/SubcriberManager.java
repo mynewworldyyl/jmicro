@@ -408,6 +408,16 @@ class SubcriberManager {
 		return true;
 	}
 	
+	private ServiceItem getClassLoaderItemByInstanceName(String instanceName) {
+    	Set<ServiceItem> items = this.registry.getServices(IClassloaderRpc.class.getName());
+		for (ServiceItem si : items) {
+			if (si.getKey().getInstanceName().equals(instanceName)) {
+				return si;
+			}
+		}
+		return null;
+    }
+	
 	
 	private Object getRemoteService(SubcribeItem sui,ServiceItem sitem) {
 
@@ -416,7 +426,7 @@ class SubcriberManager {
 		ServiceItem oldItem = null;
 		try {
 			//Set<ServiceItem> items = this.registry.getServices(IClassloaderRpc.class.getName());
-			ServiceItem clsLoadItem = this.cl.getClassLoaderItemByInstanceName(sitem.getKey().getInstanceName());
+			ServiceItem clsLoadItem = getClassLoaderItemByInstanceName(sitem.getKey().getInstanceName());
 			if(clsLoadItem != null) {
 				oldItem = JMicroContext.get().getParam(Constants.DIRECT_SERVICE_ITEM, null);
 				JMicroContext.get().setParam(Constants.DIRECT_SERVICE_ITEM, clsLoadItem);

@@ -24,7 +24,7 @@ import java.util.Iterator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import cn.jmicro.api.JMicro;
+import cn.jmicro.api.EnterMain;
 import cn.jmicro.api.JMicroContext;
 import cn.jmicro.api.choreography.ProcessInfo;
 import cn.jmicro.api.config.Config;
@@ -276,9 +276,9 @@ public class LG {
 		if(isInit) return;
 
 		isInit = true;
-		m = JMicro.getObjectFactory().get(LogMonitorClient.class);
+		m = EnterMain.getObjectFactory().get(LogMonitorClient.class);
 		isMs = m != null;
-		pi = JMicro.getObjectFactory().get(ProcessInfo.class);
+		pi = EnterMain.getObjectFactory().get(ProcessInfo.class);
 		if(beforeInitItem != null) {
 			Iterator<OneLog> items = beforeInitItem.getItems().iterator();
 			while(items.hasNext()) {

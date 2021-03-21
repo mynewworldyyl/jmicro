@@ -23,7 +23,7 @@ import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
-import cn.jmicro.api.JMicro;
+import cn.jmicro.api.EnterMain;
 import cn.jmicro.api.JMicroContext;
 import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.registry.ServiceItem;
@@ -57,7 +57,7 @@ public class IdClient implements IIdGenerator{
 			/*
 			 * IIdServer本身的RPC也要ID，此种情况直接从ZK取，不做RPC，否则会陷入死循坏
 			 */
-			UniqueIdGenerator localUidGenerator = JMicro.getObjectFactory().getByName("uniqueIdGenerator");
+			UniqueIdGenerator localUidGenerator = EnterMain.getObjectFactory().getByName("uniqueIdGenerator");
 			if(insType == Integer.class) {
 				return localUidGenerator.getIntIds(idType, num);
 			}else if(insType == Long.class) {

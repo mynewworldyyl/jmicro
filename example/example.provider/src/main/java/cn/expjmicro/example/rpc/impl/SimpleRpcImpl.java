@@ -50,7 +50,8 @@ public class SimpleRpcImpl implements ISimpleRpc {
 			maxSpeed=10,
 			limitType = Constants.LIMIT_TYPE_SS,
 			baseTimeUnit=Constants.TIME_MILLISECONDS,
-			upSsl=false,encType=0,downSsl=false,needLogin=false
+			upSsl=false,encType=0,downSsl=false,needLogin=true,
+			perType=true,forType=Constants.FOR_TYPE_USER
 	)
 	public String hello(String name) {
 		if(LG.isLoggable(MC.LOG_DEBUG)) {

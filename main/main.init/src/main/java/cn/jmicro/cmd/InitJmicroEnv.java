@@ -1,10 +1,13 @@
 package cn.jmicro.cmd;
 
+import java.lang.reflect.InvocationTargetException;
+
 import cn.jmicro.api.JMicro;
 import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Inject;
 import cn.jmicro.api.choreography.ChoyConstants;
 import cn.jmicro.api.choreography.Deployment;
+import cn.jmicro.api.classloader.RpcClassLoader;
 import cn.jmicro.api.config.Config;
 import cn.jmicro.api.idgenerator.ComponentIdServer;
 import cn.jmicro.api.objectfactory.IObjectFactory;
@@ -32,9 +35,16 @@ public class InitJmicroEnv {
 	private CmdProcessor cp;
 	
 	public static void main(String[] args) {
-		IObjectFactory of = JMicro.getObjectFactoryAndStart(args);
-		CmdProcessor cp = of.get(CmdProcessor.class);
-		cp.cmdLoop(true);
+		/* RpcClassLoader cl = new RpcClassLoader(RpcClassLoader.class.getClassLoader());
+		 Thread.currentThread().setContextClassLoader(cl);*/
+		Object of = JMicro.getObjectFactoryAndStart(args);
+		try {
+			CmdProcessor cp = (CmdProcessor)of.getClass().getMethod("get", Class.class).invoke(of, CmdProcessor.class);
+			cp.cmdLoop(true);
+		} catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException | NoSuchMethodException
+				| SecurityException e) {
+			e.printStackTrace();
+		}
 	}
 	
 	public void ready() {

@@ -62,12 +62,12 @@ public class RoundBalance implements ISelector{
 			return null;
 		}
 		
-		long curTime = TimeUtils.getCurTime();
+		/*long curTime = TimeUtils.getCurTime();
 		Iterator<ServiceItem> ite = srvItems.iterator();
 		for(;ite.hasNext();) {
 			//加载时间小于5秒的服务不使用
 			ServiceItem si = ite.next();
-			if(/*si.getLoadTime() - si.getCreatedTime() > 300000 ||  */curTime - si.getLoadTime() < 5000) {
+			if(si.getLoadTime() - si.getCreatedTime() > 300000 ||  curTime - si.getLoadTime() < 5000) {
 				try {
 					Thread.sleep(5000);
 				} catch (InterruptedException e) {
@@ -75,11 +75,9 @@ public class RoundBalance implements ISelector{
 					e.printStackTrace();
 				}
 			}
-		}
-		
-		if(routerManager != null) {
-			srvItems = this.routerManager.doRoute(srvItems, srvName, method,/* args, */namespace, version, transport);
-		}
+		}*/
+
+		srvItems = this.routerManager.doRoute(srvItems, srvName, method,namespace, version, transport);
 		
 		if(srvItems == null || srvItems.isEmpty()) {
 			return null;

@@ -4,6 +4,7 @@ import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import cn.jmicro.api.EnterMain;
 import cn.jmicro.api.JMicro;
 import cn.jmicro.api.classloader.RpcClassLoader;
 import cn.jmicro.api.objectfactory.IObjectFactory;
@@ -16,8 +17,9 @@ public class TestClassloader {
     
     @Test
 	public void testGetClassFromRpc() throws ClassNotFoundException {
-		
-		IObjectFactory of = JMicro.getObjectFactoryAndStart(new String[] {
+    	/* RpcClassLoader cl = new RpcClassLoader(RpcClassLoader.class.getClassLoader());
+		 Thread.currentThread().setContextClassLoader(cl);*/
+		IObjectFactory of = (IObjectFactory)EnterMain.getObjectFactoryAndStart(new String[] {
 				"-DinstanceName=testGetClassFromRpc"});
 		
 		//IIdServer idServer = of.getServie(IIdServer.class.getName(), "RedisBaseIdServer", "0.0.1");

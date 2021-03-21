@@ -64,7 +64,6 @@
                         e.agentInfo.continue = d.toDecDay();
                         this.agentList.push(e);
                     }
-
                 }).catch((err)=>{
                     window.console.log(err);
                 });

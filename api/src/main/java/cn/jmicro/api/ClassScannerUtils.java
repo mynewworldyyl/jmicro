@@ -26,12 +26,10 @@ import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Enumeration;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
@@ -45,6 +43,8 @@ import cn.jmicro.api.annotation.ObjFactory;
 import cn.jmicro.api.annotation.PostListener;
 import cn.jmicro.api.annotation.SO;
 import cn.jmicro.api.annotation.Service;
+import cn.jmicro.api.classloader.RpcClassLoader;
+import cn.jmicro.api.classloader.RpcClassLoaderHelper;
 import cn.jmicro.api.config.Config;
 import cn.jmicro.common.util.StringUtils;
 /**
@@ -59,26 +59,39 @@ public class ClassScannerUtils {
 	private static final ClassScannerUtils instance = new ClassScannerUtils();
 	private ClassScannerUtils() {}
 	
-	private Map<String,Class<?>> classes = new HashMap<String,Class<?>>();
+	private Boolean isinit = new Boolean(false);
+	
+	private static RpcClassLoaderHelper clHelper = null;
+	
+	public static void setClassLoader(RpcClassLoaderHelper clHelper0) {
+		clHelper = clHelper0;
+	}
 	
 	public static ClassScannerUtils getIns() {
-		if(instance.classes.isEmpty()) {
-			instance.getClassesByParent(Config.getBasePackages(),null);
-		}
+		//initLoad()
 		return instance;
 	}
 	
-	public void putCls(String clsName,Class<?> cls){
-		logger.info("PUT class: "+clsName);
-		classes.put(clsName, cls);
-	}
-	
 	public Set<Class<?>> getAll(){
+		initLoad();
 		Set<Class<?>> all = new HashSet<>();
-		all.addAll(this.classes.values());
+		all.addAll(clHelper.getComClass().values());
 		return all;
 	}
 	
+	private void initLoad() {
+		if(isinit) {
+			return;
+		}else {
+			synchronized(isinit) {
+				if(isinit) {
+					return;
+				}
+				isinit = true;
+				this.getClassesWithAnnotation(Config.getBasePackages(), null);
+			}
+		}
+	}
 	
 	interface Checker{
 		boolean accept(Class<?> cls);
@@ -86,12 +99,14 @@ public class ClassScannerUtils {
 	
 	public Set<Class<?>> loadClassesByAnno(Class<? extends Annotation> annaCls){
 		
-		if(this.classes.isEmpty()){
+		initLoad();
+		
+		if(getAll().isEmpty()){
 			Set<Class<?>> clses = this.getClassesWithAnnotation(Config.getBasePackages(), annaCls);
 			return clses;
-		}else {
+		} else {
 			Set<Class<?>> set = new HashSet<Class<?>>();
-			for(Class<?> c : this.classes.values()){
+			for(Class<?> c : getAll()){
 				if(c.isAnnotationPresent(annaCls)){
 					set.add(c);
 				}
@@ -101,11 +116,12 @@ public class ClassScannerUtils {
 	}
 	
 	public Set<Class<?>> loadClassByClass(Class<?> parentCls){
-		if(this.classes.isEmpty()){
+		initLoad();
+		if(clHelper.getComClass().isEmpty()){
 			return this.getClassesByParent(Config.getBasePackages(), parentCls);
 		}else {
 			Set<Class<?>> set = new HashSet<Class<?>>();
-			for(Class<?> c : classes.values()){
+			for(Class<?> c : clHelper.getComClass().values()){
 				if(parentCls.isAssignableFrom(c)){
 					set.add(c);
 				}
@@ -115,8 +131,13 @@ public class ClassScannerUtils {
 	}
 	
 	public Set<Class<?>> getComponentClass(){
+		initLoad();
+		
+		logger.debug("Test: " + Service.class.getClassLoader().getClass().getName()+",ID:"+Service.class.getClassLoader());
+		logger.debug("Test: " + this.getClass().getClassLoader().getClass().getName()+",ID:"+this.getClass().getClassLoader());
+		
 		Set<Class<?>> clazzes = new HashSet<>();
-		for(Class<?> c : classes.values()){
+		for(Class<?> c : getAll()){
 			if(this.isComponentClass(c)){
 				clazzes.add(c);
 			}
@@ -125,10 +146,9 @@ public class ClassScannerUtils {
 	}
 	
 	public Class<?> getClassByName(String clsName){
-		if(classes.isEmpty()){
-			this.getClassesByParent(Config.getBasePackages(), null);
-		}
-		Class<?> cls = this.classes.get(clsName);
+		initLoad();
+		
+		Class<?> cls = clHelper.getComClass().get(clsName);
 		if(cls == null){
 			try {
 				cls = Thread.currentThread().getContextClassLoader().loadClass(clsName);
@@ -140,7 +160,8 @@ public class ClassScannerUtils {
 	}
 	
 	public Class<?> getClassByAnnoName(String annoName) {
-		for(Class<?> cls : classes.values()) {
+		initLoad();
+		for(Class<?> cls : getAll()) {
 			if(cls.isAnnotationPresent(Component.class)){
 				Component n = cls.getAnnotation(Component.class);
 				if(annoName.equals(n.value())) {
@@ -257,14 +278,14 @@ public class ClassScannerUtils {
 				Iterator<Class<?>> ite = cset.iterator();
 				while(ite.hasNext()){
 					Class<?> c = ite.next();
-					if(this.isComponentClass(c)){
-						this.classes.put(c.getName(), c);
+					/*if(this.isComponentClass(c)){
+						//this.classes.put(c.getName(), c);
 						for(Class<?> inr : c.getInterfaces()){
 							if(!this.classes.containsKey(inr.getName())){
 								this.classes.put(inr.getName(), inr);
 							}
 						}
-					}
+					}*/
 					//logger.debug(c.getName());
 					/*if(c.getName().equals("cn.jmicro.api.server.FirstInterceptor")) {
 						logger.debug(c.getName());
@@ -287,19 +308,25 @@ public class ClassScannerUtils {
         String packageName = pack;  
         String packageDirName = packageName.replace('.', '/');  
         Enumeration<URL> dirs;  
-        try {  
-            dirs = Thread.currentThread().getContextClassLoader().getResources(packageDirName);  
+        try {
+        	ClassLoader cl = Thread.currentThread().getContextClassLoader();
+        	if(cl == null) {
+        		cl = this.getClass().getClassLoader();
+        	}
+        	logger.info("Use class loader: " + cl.getClass().getName());
+        	
+            dirs = cl.getResources(packageDirName);  
             while (dirs.hasMoreElements()) {  
                 URL url = dirs.nextElement();  
                 String f = url.getFile();
                 String protocol = url.getProtocol();  
-                if ("file".equals(protocol)) {
+                if("file".equals(protocol)) {
                     String filePath = URLDecoder.decode(url.getFile(), "UTF-8");  
                     findAndAddClassesInPackageByFile(pack, filePath,recursive, classes);  
                 } else if ("jar".equals(protocol)) {
                     JarFile jar;  
                     try {  
-                        jar = ((JarURLConnection) url.openConnection())  .getJarFile();  
+                        jar = ((JarURLConnection) url.openConnection()).getJarFile();  
                         Enumeration<JarEntry> entries = jar.entries();  
                         while (entries.hasMoreElements()) {  
                             JarEntry entry = entries.nextElement();  
@@ -320,11 +347,15 @@ public class ClassScannerUtils {
                                                 packageName.length() + 1, name  
                                                         .length() - 6);  
                                         try {  
-                                            classes.add(Class  
-                                                    .forName(packageName + '.'  
-                                                            + className));  
+                                        	Class<?> c = cl.loadClass(packageName + '.'  + className);
+                                        	if(c != null) {
+                                        		 classes.add(c);
+                                        	} else {
+                                        		logger.error("Class not found: " + packageName + '.'  + className);
+                                        	}
+                                           
                                         } catch (ClassNotFoundException e) {  
-                                            e.printStackTrace();  
+                                        	logger.error("",e);
                                         }  
                                     }  
                                 }  
@@ -369,18 +400,26 @@ public class ClassScannerUtils {
                 return (recursive && file.isDirectory())  || (file.getName().endsWith(".class"));  
             }  
         });  
-        
-        for (File file : dirfiles) {  
+        ClassLoader cl = Thread.currentThread().getContextClassLoader();
+        if(cl == null) {
+        	cl = this.getClass().getClassLoader();
+        }
+        for(File file : dirfiles) {
             if (file.isDirectory()) {  
                 findAndAddClassesInPackageByFile(packageName + "."  + file.getName(), file.getAbsolutePath(), recursive,  classes);  
-            } else {  
+            } else {
                 String className = file.getName().substring(0,  file.getName().length() - 6);                 
                 String cn = null;
-                try {  
-                	cn = packageName + '.' + className;
-                	Class<?> cls = Thread.currentThread().getContextClassLoader().loadClass(cn);
-                    classes.add(cls);
-                    } catch (ClassNotFoundException e) {  
+				try {
+					cn = packageName + '.' + className;
+					//logger.debug(cn);
+					Class<?> cls = cl.loadClass(cn);
+					if (cls != null) {
+						classes.add(cls);
+					} else {
+						logger.error("Class " + cn + " not found!");
+					}
+				} catch (ClassNotFoundException e) {  
 	                    logger.error("ERROR: "+file.getAbsolutePath() +" for class " + cn,e);  
                     }  catch (SecurityException e) {
                     	 logger.error("ERROR: "+file.getAbsolutePath() +" for class " + cn,e);  

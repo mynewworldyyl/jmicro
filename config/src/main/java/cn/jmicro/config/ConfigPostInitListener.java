@@ -304,7 +304,7 @@ public class ConfigPostInitListener extends PostInitAdapter {
 		//String val = getValueFromCommand(key,f);
 		if(!StringUtils.isEmpty(val)) {
 			//在配置中心中建立配置，以便能动态修改，在系统 关闭后，配置会自动删除，以使下次还从命令行读取初始值
-			logger.info("class:{} Field:{} Config from command args:{}={}",f.getDeclaringClass().getName(),f.getName(),key,val);
+			//logger.info("class:{} Field:{} Config from command args:{}={}",f.getDeclaringClass().getName(),f.getName(),key,val);
 			//cfg.createConfig(val, key, false,true);
 			return val;
 		}

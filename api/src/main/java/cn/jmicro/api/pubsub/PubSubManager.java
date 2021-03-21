@@ -117,7 +117,7 @@ public class PubSubManager {
 	private Boolean isRunning = false;
 	
 	public void ready() {
-		logger.info("Init object :" +this.hashCode());
+		//logger.info("Init object :" +this.hashCode());
 		ExecutorConfig config = new ExecutorConfig();
 		config.setMsMaxSize(60);
 		config.setTaskQueueSize(500);

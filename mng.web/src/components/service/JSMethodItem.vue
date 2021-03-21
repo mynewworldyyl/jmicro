@@ -320,7 +320,7 @@ export default {
 
         callRpc(method,args) {
             let self = this;
-            window.jm.mng.callRpcWithParams(method.key.usk.serviceName, method.key.usk.namespace,
+            window.jm.rpc.callRpcWithParams(method.key.usk.serviceName, method.key.usk.namespace,
                 method.key.usk.version, method.key.method, args)
                 .then(rst=>{
                     //rst = window.jm.utils.parseJson(rst);

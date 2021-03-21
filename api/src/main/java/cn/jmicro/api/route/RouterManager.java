@@ -24,6 +24,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import cn.jmicro.api.JMicroContext;
+import cn.jmicro.api.annotation.Cfg;
 import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Inject;
 import cn.jmicro.api.registry.ServiceItem;
@@ -42,6 +43,18 @@ public class RouterManager {
 
 	private final static Logger logger = LoggerFactory.getLogger(RouterManager.class);
 	
+	//@Cfg(value ="/RuleManager/routerSort",defGlobal=true/*,changeListener="addRouteType"*/)
+	private String[] routerTypes = {
+			RouteRule.TYPE_FROM_NONLOGIN_ROUTER,
+			RouteRule.TYPE_FROM_GUEST_ROUTER,
+			RouteRule.TYPE_FROM_ACCOUNT_ROUTER,
+			RouteRule.TYPE_FROM_INSTANCE_ROUTER,
+			RouteRule.TYPE_FROM_INSTANCE_PREFIX_ROUTER,
+			/*RouteRule.TYPE_FROM_SERVICE_ROUTER,*/
+			RouteRule.TYPE_FROM_TAG_ROUTER,
+			RouteRule.TYPE_FROM_IP_ROUTER,
+	};
+	
 	@Inject
 	private volatile Map<String,IRouter> routers = new HashMap<>();
 	
@@ -51,11 +64,7 @@ public class RouterManager {
 	public Set<ServiceItem> doRoute(Set<ServiceItem> services,String srvName,String method/*,Class<?>[] args*/
 			,String namespace,String version,String transport){
 		
-		if(routers.isEmpty()) {
-			return services;
-		}
-		
-		String routerSort = JMicroContext.get().getParam(Constants.ROUTER_KEY, null);
+		String routerSort = JMicroContext.get().getParam(Constants.ROUTER_TYPE, null);
 		
 		if(StringUtils.isNotEmpty(routerSort)) {
 			routerSort = routerSort.trim();
@@ -65,22 +74,24 @@ public class RouterManager {
 				return r.doRoute(ru, services, srvName, method, /*args, */namespace, version, transport);
 			} else {
 				//logger.error("Router {} not defined, try to use by default config",routerSort);
-				throw new CommonException("Router "+routerSort+" not defined");
+				throw new CommonException("Router ["+routerSort+"] not defined");
 			}
 		}
 		
-		Map<String,IRouter> rs = this.routers;
-		for(String key: this.ruleManager.getRouterTypes()) {
-			IRouter r = rs.get(key);
+		for(String key: routerTypes) {
+			IRouter r = this.routers.get(key);
 			if(r != null) {
 				RouteRule rr = r.getRouteRule();
 				if(rr != null) {
 					return r.doRoute(rr, services, srvName, method,/* args, */namespace, version, transport);
 				}
-			} else {
-				logger.error("Router {} not defined",key);
 			}
 		}
 		return services;
 	}
+	
+	public String[] getRouterTypes() {
+		return routerTypes;
+	}
+	
 }

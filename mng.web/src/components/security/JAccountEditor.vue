@@ -5,17 +5,17 @@
             <table class="configItemTalbe" width="99%">
                 <thead><tr><td>Act Name</td><td>Client ID</td><td>Regist Time</td><td>Statu Code</td>
                     <td>Mobile</td><td>Email</td><td>LoginNum</td><td>LastLoginTime</td>
-                    <td>OPERATION</td></tr>
+                    <td>{{"Operation"|i18n}}</td></tr>
                 </thead>
                 <tr v-for="c in actList" :key="c._id">
                     <td>{{c.actName}}</td><td>{{c.clientId}}</td><td>{{c.registTime | formatDate(1)}}</td>
                     <td>{{c.statuCode}}</td> <td>{{c.mobile}}</td> <td>{{c.email}}</td>
                     <td>{{c.loginNum}}</td><td>{{c.lastLoginTime | formatDate(2)}}</td>
                     <td>
-                        &nbsp;<a v-if="c.statuCode==2" @click="openActInfoDrawer(c)">Permissions</a> &nbsp;&nbsp;&nbsp;&nbsp;
-                          <a v-if="c.statuCode == 4" @click="changeAccountStatus(c)">Unfreeze</a>
-                          <a v-if="c.statuCode == 2" @click="changeAccountStatus(c)">Freeze</a>
-                          <a v-if="c.statuCode == 1" @click="resendActiveEmail(c)">Send Email</a>
+                        &nbsp;<a v-if="c.statuCode==2" @click="openActInfoDrawer(c)">{{"Permission"|i18n}}</a> &nbsp;&nbsp;&nbsp;&nbsp;
+                          <a v-if="c.statuCode == 4" @click="changeAccountStatus(c)">{{"Unfreeze"|i18n}}</a>
+                          <a v-if="c.statuCode == 2" @click="changeAccountStatus(c)">{{"Freeze"|i18n}}</a>
+                          <a v-if="c.statuCode == 1" @click="resendActiveEmail(c)">{{"SendEmail"|i18n}}</a>
                     </td>
                 </tr>
             </table>

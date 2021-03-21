@@ -5,6 +5,9 @@ import java.util.Set;
 
 import org.junit.Test;
 
+import cn.expjmicro.example.api.rpc.ISimpleRpc;
+import cn.expjmicro.example.api.rpc.genclient.ISimpleRpc$JMAsyncClient;
+import cn.expjmicro.example.comsumer.TestRpcClient;
 import cn.jmicro.api.JMicro;
 import cn.jmicro.api.JMicroContext;
 import cn.jmicro.api.monitor.IMonitorDataSubscriber;
@@ -12,9 +15,6 @@ import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.monitor.MRpcStatisItem;
 import cn.jmicro.api.monitor.MT;
 import cn.jmicro.api.objectfactory.IObjectFactory;
-import cn.expjmicro.example.api.rpc.ISimpleRpc;
-import cn.expjmicro.example.api.rpc.genclient.ISimpleRpc$JMAsyncClient;
-import cn.expjmicro.example.comsumer.TestRpcClient;
 import cn.jmicro.test.JMicroBaseTestCase;
 
 public class TestMonitorSubmiter extends JMicroBaseTestCase{
@@ -119,7 +119,8 @@ public class TestMonitorSubmiter extends JMicroBaseTestCase{
 		
 		@Test
 		public void testSayHelloToPrintRouterLog() {
-			
+			/* RpcClassLoader cl = new RpcClassLoader(RpcClassLoader.class.getClassLoader());
+			 Thread.currentThread().setContextClassLoader(cl);*/
 			IObjectFactory of = JMicro.getObjectFactoryAndStart(new String[] {"-DinstanceName=testSayHelloToPrintRouterLog","-Dclient=true"});
 			
 			JMicroContext.get().setBoolean(JMicroContext.IS_MONITORENABLE, true);

@@ -16,13 +16,18 @@
  */
 package cn.jmicro.api.route;
 
+import cn.jmicro.api.annotation.SO;
+
 /**
  * 
  * @author Yulei Ye
  *
  * @date: 2018年11月10日 下午10:27:53
  */
-public class RouteEndpoint {
+@SO
+public class FromRouteEndpoint {
+	
+	private String type;
 	
     private String serviceName;
 	
@@ -32,12 +37,17 @@ public class RouteEndpoint {
 	
 	private String method;
 	
-	private String ipPort;
-	
 	private String tagKey;
 	
-	private String tagVal;
-	
+	private String val;
+
+	public String getType() {
+		return type;
+	}
+
+	public void setType(String type) {
+		this.type = type;
+	}
 
 	public String getServiceName() {
 		return serviceName;
@@ -77,28 +87,12 @@ public class RouteEndpoint {
 	}
 
 	
-	public String getIpPort() {
-		return ipPort;
-	}
-
-	public void setIpPort(String ipPort) {
-		this.ipPort = ipPort;
-	}
-
 	public String getTagKey() {
 		return tagKey;
 	}
 
 	public void setTagKey(String tagKey) {
 		this.tagKey = tagKey;
-	}
-
-	public String getTagVal() {
-		return tagVal;
-	}
-
-	public void setTagVal(String tagVal) {
-		this.tagVal = tagVal;
 	}
 
 	@Override
@@ -110,18 +104,13 @@ public class RouteEndpoint {
 		return this.toString().equals(rr.toString());
 	}
 
-
-	@Override
-	public String toString() {
-		StringBuffer sb = new StringBuffer();
-		sb.append("ipPort=").append(this.getIpPort())
-		.append(",tagKey=").append(this.getTagKey()).append(",tagVal=").append(this.getTagVal())
-		.append(",sn=").append(this.serviceName)
-		.append(",ns=").append(this.namespace)
-		.append(",version=").append(this.version);
-		
-		return sb.toString();
+	public String getVal() {
+		return val;
 	}
-	
-	
+
+	public void setVal(String val) {
+		this.val = val;
+	}
+
+
 }

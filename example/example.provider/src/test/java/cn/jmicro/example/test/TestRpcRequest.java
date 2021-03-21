@@ -93,7 +93,7 @@ public class TestRpcRequest {
 	
 	@Test
 	public void testEncodeDecodeMessage() {
-		IObjectFactory of = JMicro.getObjectFactoryAndStart(new String[] { "-DinstanceName=TestCodec" });
+		IObjectFactory of = (IObjectFactory)JMicro.getObjectFactoryAndStart(new String[] { "-DinstanceName=TestCodec" });
 		ICodecFactory codeFactory = of.get(ICodecFactory.class);
 
 		Message msg = new Message();
@@ -181,7 +181,7 @@ public class TestRpcRequest {
 	
 	@Test
 	public void testGetService() {
-		IObjectFactory of = JMicro.getObjectFactoryAndStart(new String[]{"-DinstanceName=testGetService"});
+		IObjectFactory of = (IObjectFactory)JMicro.getObjectFactoryAndStart(new String[]{"-DinstanceName=testGetService"});
 		IRegistry registry = of.get(IRegistry.class);
 		//registry.get
 		//cn.jmicro.example.api.ITestRpcService&testrpc&0.0.1

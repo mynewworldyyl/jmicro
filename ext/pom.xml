@@ -15,8 +15,7 @@
     <modules>
         <module>mybatis</module>
 		<module>mongodb</module>
-		 <module>bbs</module>
-		<module>security</module>
+		
     </modules>
 		    
 </project>

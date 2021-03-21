@@ -1,19 +1,10 @@
 package cn.jmicro.example.test;
 
-import org.junit.Test;
-
-import cn.jmicro.api.JMicro;
-import cn.jmicro.api.objectfactory.IObjectFactory;
-import cn.jmicro.api.route.IRouter;
-import cn.jmicro.api.route.RouteEndpoint;
-import cn.jmicro.api.route.RouteRule;
-import cn.jmicro.api.route.RuleManager;
-
 public class TestRouter {
 
-	@Test
+	/*@Test
 	public void testAddRule() {
-		IObjectFactory of = JMicro.getObjectFactoryAndStart(new String[]{"-DinstanceName=TestRouter -Dclient=true"});
+		IObjectFactory of = (IObjectFactory)JMicro.getObjectFactoryAndStart(new String[]{"-DinstanceName=TestRouter -Dclient=true"});
 		RuleManager ruleManager = of.get(RuleManager.class);
 		
 		//ip rule
@@ -78,6 +69,6 @@ public class TestRouter {
 		rr.setTo(to);
 		
 		ruleManager.addOrUpdate(rr);
-	}
+	}*/
 	
 }

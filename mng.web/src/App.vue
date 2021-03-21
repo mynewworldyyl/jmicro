@@ -52,7 +52,8 @@
                   <template slot="title"><Icon type="ios-analytics" />{{'Others'|i18n}}</template>
                   <Menu-group :title="'System'|i18n">
                       <MenuItem name="__topicList"> <Icon type="ios-cog"></Icon>{{"topicList"|i18n}}</MenuItem>
-                      <Menu-item name="__router"><Icon type="ios-people"></Icon>{{"Router"|i18n}}</Menu-item>
+                      <!--<Menu-item name="__router"><Icon type="ios-people"></Icon>{{"Router"|i18n}}</Menu-item>-->
+                      <Menu-item name="__routeRuleEditor"><Icon type="ios-people"></Icon>{{"Router"|i18n}}</Menu-item>
                       <Menu-item name="__shell"><Icon type="ios-cog"></Icon>{{"Shell"|i18n}}</Menu-item>
                   </Menu-group>
                   <Menu-group :title="'Security'|i18n">
@@ -113,10 +114,10 @@
               <JMonitorList slId="monitorListId" evt-name="monitorNodeSelect"></JMonitorList>
           </Drawer>
 
-          <Drawer  v-model="cache.router.drawerStatus" :closable="false" placement="left" :transfer="true"
+         <!-- <Drawer  v-model="cache.router.drawerStatus" :closable="false" placement="left" :transfer="true"
                    :draggable="true" :scrollable="true" width="50">
               <JRouterList></JRouterList>
-          </Drawer>
+          </Drawer>-->
 
           <Drawer  v-model="cache.monitorType.drawerStatus" :closable="false" placement="left" :transfer="true"
                    :draggable="true" :scrollable="true" width="50">
@@ -163,7 +164,7 @@
     import JServiceList from './components/service/JServiceList.vue'
     import JConfigList from './components/config/JConfigList.vue'
     import JMonitorList from './components/monitor/JMonitorList.vue'
-    import JRouterList from './components/route/JRouterList.vue'
+    /*import JRouterList from './components/route/JRouterList.vue'*/
     import JAccount from './components/common/JAccount.vue'
    /* import JToolBar from './components/common/JToolBar.vue'*/
     import JMonitorTypeKeyList from './components/monitor/JMonitorTypeKeyList.vue'
@@ -256,7 +257,7 @@ export default {
         JServiceList,
         JConfigList,
         JMonitorList,
-        JRouterList,
+        /*JRouterList,*/
         JAccount,
         /*JToolBar,*/
         JMonitorTypeKeyList,

@@ -163,5 +163,5 @@ public @interface Service {
 	
 	public int clientId() default Constants.USE_SYSTEM_CLIENT_ID;
 	
-	public int clazzVersion() default 0;
+	//public int clazzVersion() default 0;
 }

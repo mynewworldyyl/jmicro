@@ -19,7 +19,7 @@ package cn.jmicro.server;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import cn.jmicro.api.JMicro;
+import cn.jmicro.api.EnterMain;
 import cn.jmicro.api.annotation.Cfg;
 import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Interceptor;
@@ -32,9 +32,6 @@ import cn.jmicro.api.net.AbstractInterceptor;
 import cn.jmicro.api.net.IInterceptor;
 import cn.jmicro.api.net.IRequest;
 import cn.jmicro.api.net.IRequestHandler;
-import cn.jmicro.api.net.IResponse;
-import cn.jmicro.api.net.RpcResponse;
-import cn.jmicro.api.net.ServerError;
 import cn.jmicro.common.Constants;
 import cn.jmicro.common.util.StringUtils;
 
@@ -69,7 +66,7 @@ public class FirstInterceptor extends AbstractInterceptor implements IIntercepto
 		}
 		
 		if("defaultLimiterName".equals(fieldName.trim())){
-			ILimiter l = JMicro.getObjectFactory().getByName(defaultLimiterName);
+			ILimiter l = EnterMain.getObjectFactory().getByName(defaultLimiterName);
 			if(l != null) {
 				limiter = l;
 				logger.warn("Change limit to :{}",this.defaultLimiterName);

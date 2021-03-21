@@ -62,7 +62,7 @@ public class TestCodec {
 	@SuppressWarnings({ "rawtypes", "unchecked" })
 	@Test
 	public void testEncodeDecodeResponse() {
-		IObjectFactory of = JMicro.getObjectFactoryAndStart(new String[] { "-DinstanceName=TestCodec" });
+		IObjectFactory of = (IObjectFactory)JMicro.getObjectFactoryAndStart(new String[] { "-DinstanceName=TestCodec" });
 		ICodecFactory codeFactory = of.get(ICodecFactory.class);
 
 		IEncoder encoder = codeFactory.getEncoder(Message.PROTOCOL_BIN);
@@ -84,7 +84,7 @@ public class TestCodec {
 	
 	@Test
 	public void testEncodeDecodeRequest() {
-		IObjectFactory of = JMicro.getObjectFactoryAndStart(new String[] { "-DinstanceName=TestCodec" });
+		IObjectFactory of = (IObjectFactory)JMicro.getObjectFactoryAndStart(new String[] { "-DinstanceName=TestCodec" });
 		ICodecFactory codeFactory = of.get(ICodecFactory.class);
 
 		IEncoder encoder = codeFactory.getEncoder(Message.PROTOCOL_BIN);

@@ -96,14 +96,14 @@ public class ServiceInvocationHandler implements InvocationHandler{
 			req.setImpl(si.getImpl());
 			req.putObject(JMicroContext.LOGIN_KEY, cxt.getString(JMicroContext.LOGIN_KEY, null));
 			
-			if(sm.getForType() == Constants.FOR_TYPE_SYS && !pi.isLogin()) {
-				String desc = Config.getInstanceName() + " need system login for method: " + sm.getKey().toKey(false, false, false);
-				LG.log(MC.LOG_ERROR, this.getClass(), desc);
-				throw new CommonException(desc);
-			}
-			
-			if(sm.getForType() != Constants.FOR_TYPE_USER && pi.isLogin()) {
-				req.putObject(JMicroContext.LOGIN_KEY_SYS, pi.getAi().getLoginKey());
+			if(sm.getForType() == Constants.FOR_TYPE_SYS) {
+				if(pi.isLogin()) {
+					req.putObject(JMicroContext.LOGIN_KEY_SYS, pi.getAi().getLoginKey());
+				} else {
+					String desc = Config.getInstanceName() + " need system login for method: " + sm.getKey().toKey(false, false, false);
+					LG.log(MC.LOG_ERROR, this.getClass(), desc);
+					throw new CommonException(desc);
+				}
 			}
 			
 			req.setReqParentId(cxt.getLong(JMicroContext.REQ_PARENT_ID, 0L));

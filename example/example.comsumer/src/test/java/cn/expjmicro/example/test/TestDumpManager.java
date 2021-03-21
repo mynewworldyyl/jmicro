@@ -4,6 +4,7 @@ import java.util.Date;
 
 import org.junit.Test;
 
+import cn.jmicro.api.EnterMain;
 import cn.jmicro.api.JMicro;
 import cn.jmicro.api.JMicroContext;
 import cn.jmicro.api.net.DumpManager;
@@ -21,7 +22,9 @@ public class TestDumpManager {
 	
 	@Test
 	public void testParseDump() {
-		IObjectFactory of = JMicro.getObjectFactoryAndStart(new String[] {"-DinstanceName=testParseDump","-Dclient=true"});
+		/* RpcClassLoader cl = new RpcClassLoader(RpcClassLoader.class.getClassLoader());
+		 Thread.currentThread().setContextClassLoader(cl);*/
+		IObjectFactory of = (IObjectFactory)EnterMain.getObjectFactoryAndStart(new String[] {"-DinstanceName=testParseDump","-Dclient=true"});
 		JMicroContext.get().setBoolean(JMicroContext.IS_MONITORENABLE, true);
 		DumpManager.getIns().printByLinkId(clientPath, -1);
 	}

@@ -343,7 +343,7 @@ public class JMicroContext  {
 		if(id != null) {
 			return id;
 		}
-		ComponentIdServer idGenerator = JMicro.getObjectFactory().get(ComponentIdServer.class);
+		ComponentIdServer idGenerator = EnterMain.getObjectFactory().get(ComponentIdServer.class);
 		if(idGenerator != null) {
 			id = idGenerator.getLongId(Linker.class);
 			c.setLong(LINKER_ID, id);

@@ -47,7 +47,11 @@ public class PermissionManager {
 	}
 	
 	public static final boolean checkAccountClientPermission(int targetDataClientId) {
-		ActInfo ai = JMicroContext.get().getAccount();
+		return checkAccountClientPermission(Constants.FOR_TYPE_USER,targetDataClientId);
+	}
+	
+	public static final boolean checkAccountClientPermission(int forType,int targetDataClientId) {
+		ActInfo ai = getAccount(forType);
 		if(ai == null) {
 			return false;
 		}
@@ -62,14 +66,41 @@ public class PermissionManager {
 		return ai.getId() == targetDataClientId || ai.getId() == Config.getAdminClientId();
 	}
 	
-	public static final boolean isCurAdmin() {
+	public static final boolean isCurAdmin(int forType) {
 		
-		ActInfo ai = JMicroContext.get().getAccount();
-		if(ai != null) {
-			return ai.getId() == Config.getAdminClientId();
+		switch (forType) {
+		case Constants.FOR_TYPE_ALL:
+			ActInfo ai = JMicroContext.get().getAccount();
+			if (ai != null && ai.getId() == Config.getAdminClientId()) {
+				return true;
+			}
+			ai = JMicroContext.get().getSysAccount();
+			if (ai != null && ai.getId() == Config.getAdminClientId()) {
+				return true;
+			}
+			return false;
+		case Constants.FOR_TYPE_USER:
+			ai = JMicroContext.get().getAccount();
+			if (ai != null) {
+				return ai.getId() == Config.getAdminClientId();
+			} else {
+				return false;
+			}
+
+		case Constants.FOR_TYPE_SYS:
+			ai = JMicroContext.get().getSysAccount();
+			if (ai != null) {
+				return ai.getId() == Config.getAdminClientId();
+			} else {
+				return false;
+			}
 		}
-		
+
 		return false;
+	}
+	
+	public static final boolean isCurAdmin() {
+		return isCurAdmin(Constants.FOR_TYPE_USER);
 	}
 	
 	public void ready() {
@@ -99,19 +130,28 @@ public class PermissionManager {
 	}
 	
 	public ServerError permissionCheck(ServiceMethod sm,int srcClientId ) {
-		if(isCurAdmin()) {
+		if(isCurAdmin(sm.getForType()) || sm.getForType() == Constants.FOR_TYPE_ALL) {
 			return null;
 		}
 		
 		ActInfo ai = JMicroContext.get().getAccount();
-		if(ai == null && sm.isNeedLogin()){
+		ActInfo sai = JMicroContext.get().getSysAccount();
+		
+		if((ai == null && Constants.FOR_TYPE_USER == sm.getForType()
+			|| sai == null && Constants.FOR_TYPE_SYS == sm.getForType()) && sm.isNeedLogin()){
 			ServerError se = new ServerError(MC.MT_INVALID_LOGIN_INFO,
 					 "Have to login for invoking to " + sm.getKey().toKey(false, false, false));
 			LG.log(MC.LOG_ERROR, TAG,se.toString());
 			MT.rpcEvent(MC.MT_INVALID_LOGIN_INFO);
 			logger.warn(se.toString());
 			return se;
-		} else if(sm.isPerType() && (ai == null || ai.getPers() == null 
+		}
+		
+		if(sm.getForType() == Constants.FOR_TYPE_SYS) {
+			ai = sai;
+		}
+		
+		if(sm.isPerType() && (ai == null || ai.getPers() == null 
 				|| !ai.getPers().contains(sm.getKey().getSnvHash()))) {
 			ServerError se = new ServerError(MC.MT_ACT_PERMISSION_REJECT,
 					(ai!= null?ai.getActName():" Not login") + " no permission for this operation ");
@@ -126,6 +166,21 @@ public class PermissionManager {
 			logger.warn(se.toString());
 			return se;
 		}*/
+		return null;
+	}
+	
+	private static final ActInfo getAccount(int forType) {
+		if(forType == Constants.FOR_TYPE_SYS) {
+			return JMicroContext.get().getSysAccount();
+		} else if(forType == Constants.FOR_TYPE_USER) {
+			return JMicroContext.get().getAccount();
+		} else if(forType == Constants.FOR_TYPE_ALL) {
+			if(JMicroContext.get().getAccount() != null) {
+				return JMicroContext.get().getAccount();
+			} else {
+				JMicroContext.get().getSysAccount();
+			}
+		}
 		return null;
 	}
 	

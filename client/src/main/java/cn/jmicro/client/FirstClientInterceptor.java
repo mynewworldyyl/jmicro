@@ -19,7 +19,7 @@ package cn.jmicro.client;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import cn.jmicro.api.JMicro;
+import cn.jmicro.api.EnterMain;
 import cn.jmicro.api.annotation.Cfg;
 import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Interceptor;
@@ -64,7 +64,7 @@ public class FirstClientInterceptor extends AbstractInterceptor implements IInte
 		}
 		
 		if(fieldName.trim().equals("defaultLimiterName")){
-			limiter = JMicro.getObjectFactory().getByName(defaultLimiterName);
+			limiter = EnterMain.getObjectFactory().getByName(defaultLimiterName);
 		}
 	}
 	

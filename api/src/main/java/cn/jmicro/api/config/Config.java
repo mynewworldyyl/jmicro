@@ -506,6 +506,7 @@ public class Config{
 		if(sb.length() > 0) {
 			sb.deleteCharAt(sb.length()-1);
 		}
+		logger.info("Base package: " + Arrays.asList(BasePackages));
 		CommadParams.put(Constants.BASE_PACKAGES_KEY, sb.toString());
 	}
 	

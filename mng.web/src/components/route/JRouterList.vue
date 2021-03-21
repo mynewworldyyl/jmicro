@@ -12,8 +12,8 @@
       </div>
       <div>
 
-          <Tree v-if="adminPer" :data="routers" ref="routers"  @on-select-change="nodeSelect($event)"></Tree>
-          <span v-if="!adminPer">No permission</span>
+          <Tree v-if="isLogin" :data="routers" ref="routers"  @on-select-change="nodeSelect($event)"></Tree>
+          <span v-if="!isLogin">No permission</span>
       </div>
 
   </div>
@@ -33,7 +33,7 @@
             return {
                 routers :[],
                 srcRouters:[],
-                adminPer:false,
+                isLogin:false,
             }
         },
 
@@ -55,6 +55,7 @@
         mounted(){
 
             let self = this;
+            self.isLogin = window.jm.rpc.isLogin();
             window.jm.rpc.addActListener(cid,()=>{
                 self.isLogin = window.jm.rpc.isLogin();
                 if( self.isLogin) {
@@ -70,7 +71,6 @@
             window.jm.vue.$off('tabItemRemove',this.editorRemove);
             window.jm.rpc.removeActListener(GROUP);
         },
-
 
         methods:{
 
@@ -88,8 +88,8 @@
             },
 
             refresh() {
-                this.adminPer = window.jm.mng.comm.adminPer;
-                if(this.adminPer) {
+                this.isLogin = window.jm.rpc.isLogin();
+                if(this.isLogin) {
                     let self = this;
                     this.loadRouters((routerList)=>{
                         self.routers = routerList;

@@ -4,7 +4,9 @@ import java.nio.ByteBuffer;
 
 import org.junit.Test;
 
+import cn.jmicro.api.EnterMain;
 import cn.jmicro.api.JMicro;
+import cn.jmicro.api.classloader.RpcClassLoader;
 import cn.jmicro.api.idgenerator.IdClient;
 import cn.jmicro.api.net.IRequest;
 import cn.jmicro.api.net.Message;
@@ -15,7 +17,9 @@ public class TestIdGenerator {
 
 	@Test
 	public void testLongIDGenerator(){
-		IObjectFactory of = JMicro.getObjectFactoryAndStart(new String[] {"-DinstanceName=testLongIDGenerator",
+		/* RpcClassLoader cl = new RpcClassLoader(RpcClassLoader.class.getClassLoader());
+		 Thread.currentThread().setContextClassLoader(cl);*/
+		IObjectFactory of = (IObjectFactory)EnterMain.getObjectFactoryAndStart(new String[] {"-DinstanceName=testLongIDGenerator",
 				"-Dorg.jmicro.api.idgenerator.IIdClient=idClient"});
 		IdClient g = of.get(IdClient.class);
 		g.getLongId(Message.class.getName());
@@ -58,8 +62,9 @@ public class TestIdGenerator {
 	
 	@Test
 	public void testIdClientGetId() {
-		
-		IObjectFactory of = JMicro.getObjectFactoryAndStart(new String[] {
+		/* RpcClassLoader cl = new RpcClassLoader(RpcClassLoader.class.getClassLoader());
+		 Thread.currentThread().setContextClassLoader(cl);*/
+		IObjectFactory of = (IObjectFactory)EnterMain.getObjectFactoryAndStart(new String[] {
 				"-DinstanceName=testIdClientGetId",
 				"-Dclient=true"});
 		

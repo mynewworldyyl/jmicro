@@ -31,17 +31,16 @@ import org.slf4j.LoggerFactory;
 import com.alibaba.dubbo.common.serialize.kryo.utils.ReflectUtils;
 
 import cn.jmicro.api.ClassScannerUtils;
-import cn.jmicro.api.JMicro;
+import cn.jmicro.api.EnterMain;
 import cn.jmicro.api.annotation.Cfg;
 import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Inject;
 import cn.jmicro.api.annotation.SBreakingRule;
 import cn.jmicro.api.annotation.SMethod;
-import cn.jmicro.api.annotation.SO;
 import cn.jmicro.api.annotation.Service;
 import cn.jmicro.api.annotation.Subscribe;
 import cn.jmicro.api.choreography.ProcessInfo;
-import cn.jmicro.api.classloader.RpcClassLoader;
+import cn.jmicro.api.classloader.RpcClassLoaderHelper;
 import cn.jmicro.api.codec.TypeUtils;
 import cn.jmicro.api.config.Config;
 import cn.jmicro.api.idgenerator.ComponentIdServer;
@@ -105,7 +104,7 @@ public class ServiceLoader{
 	private IObjectFactory of;
 	
 	@Inject
-	private RpcClassLoader cl;
+	private RpcClassLoaderHelper cl;
 	
 	@Inject
 	private ProcessInfo pi;
@@ -138,7 +137,7 @@ public class ServiceLoader{
 	}
 	
 	private void doExportService() {
-		Set<IServer> ss = JMicro.getObjectFactory().getByParent(IServer.class);
+		Set<IServer> ss = EnterMain.getObjectFactory().getByParent(IServer.class);
 		for(IServer s : ss){
 			cn.jmicro.api.annotation.Server anno = 
 					s.getClass().getAnnotation(cn.jmicro.api.annotation.Server.class);
@@ -201,7 +200,7 @@ public class ServiceLoader{
 		logger.info("export service finish!");
 	}
 	
-	public boolean hashServer() {
+	public boolean hasServer() {
 		return !this.servers.isEmpty();
 	}
 
@@ -285,7 +284,7 @@ public class ServiceLoader{
 			return;
 		}
 		
-		Object srv = JMicro.getObjectFactory().get(c);
+		Object srv = EnterMain.getObjectFactory().get(c);
 		if(srv == null){
 			throw new CommonException("fail to export server, service instance is NULL "+c.getName());
 		}

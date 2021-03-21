@@ -8,6 +8,14 @@ public final class Person {
 	private String username ="Yeu";
 	private int id = 222;
 	
+	public Person() {
+	}
+	
+	public Person(int id,String name) {
+		this.username = name;
+		this.id = id;
+	}
+	
 	public String getUsername() {
 		return username;
 	}

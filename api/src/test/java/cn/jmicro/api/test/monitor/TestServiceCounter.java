@@ -7,10 +7,9 @@ import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import cn.jmicro.api.JMicro;
+import cn.jmicro.api.EnterMain;
 import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.monitor.ServiceCounter;
-import cn.jmicro.api.net.ISession;
 import cn.jmicro.api.timer.TimerTicker;
 
 public class TestServiceCounter {
@@ -119,7 +118,7 @@ public class TestServiceCounter {
 		new Thread(r,"testMutilThreadCounter5").start();
 		new Thread(r,"testMutilThreadCounter6").start();
 		
-		JMicro.waitForShutdown();
+		EnterMain.waitForShutdown();
 	}
 	
 	
@@ -154,7 +153,7 @@ public class TestServiceCounter {
 		new Thread(r,"testMutilThreadCounter5").start();
 		new Thread(r,"testMutilThreadCounter6").start();
 		
-		JMicro.waitForShutdown();
+		EnterMain.waitForShutdown();
 	}
 	
 }

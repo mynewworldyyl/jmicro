@@ -16,8 +16,9 @@
  */
 package cn.jmicro.api.route;
 
+import java.util.Collection;
 import java.util.Iterator;
-import java.util.Set;
+import java.util.List;
 
 import cn.jmicro.api.JMicroContext;
 import cn.jmicro.common.util.StringUtils;
@@ -33,14 +34,14 @@ public class RouteUtils {
 	private RouteUtils() {}
 	
 	public static boolean filterByClient(String key, String val) {
-		String ctxVal = getCtxParam(key);
+		String ctxVal = JMicroContext.get().getParam(key, null);
 		if(StringUtils.isEmpty(ctxVal) || StringUtils.isEmpty(key) || StringUtils.isEmpty(val)) {
 			return false;
 		}
 		return !ctxVal.equals(val);
 	}
 
-	public static  boolean isEmpty(Set<RouteRule> rs) {
+	public static  boolean isEmpty(Collection<RouteRule> rs) {
 		return rs == null || rs.isEmpty();
 	}
 	
@@ -48,32 +49,29 @@ public class RouteUtils {
 		return !StringUtils.isEmpty(ruleVal) && !ruleVal.equals(val);
 	}
 	
-	public static  boolean filterByClientTag(RouteEndpoint ep) {
-		if(StringUtils.isEmpty(ep.getTagKey()) || StringUtils.isEmpty(ep.getTagVal())) {
+	public static  boolean filterByClientTag(FromRouteEndpoint ep) {
+		if(StringUtils.isEmpty(ep.getTagKey()) || StringUtils.isEmpty(ep.getVal())) {
 			return false;
 		}
 		
-		String ctxTagValue = getCtxParam(ep.getTagKey());
+		String ctxTagValue = JMicroContext.get().getParam(ep.getTagKey(), null);
 		if(StringUtils.isEmpty(ctxTagValue)) {
 			return false;
 		}
-		return !ctxTagValue.equals(ep.getTagVal());
+		return !ctxTagValue.equals(ep.getVal());
 	}
 	
-	public static  boolean filterByClientIpPort(RouteEndpoint ep) {
-		String clientIp = getCtxParam(JMicroContext.REMOTE_HOST);
+	public static  boolean filterByClientIpPort(FromRouteEndpoint ep) {
+		String clientIp = JMicroContext.get().getString(JMicroContext.REMOTE_HOST, "");
+		//getCtxParam(JMicroContext.REMOTE_HOST);
 		Integer clientPort = JMicroContext.get().getInt(JMicroContext.LOCAL_PORT,0);
-		if(clientPort == null || StringUtils.isEmpty(ep.getIpPort()) || StringUtils.isEmpty(clientIp)) {
+		if(clientPort == null || StringUtils.isEmpty(ep.getVal()) || StringUtils.isEmpty(clientIp)) {
 			return false;
 		}
-		return !(clientIp+":"+clientPort).equals(ep.getIpPort());
+		return !(clientIp+":"+clientPort).equals(ep.getVal());
 	}
 	
-	public static String getCtxParam(String key) {
-		return JMicroContext.get().getString(key, "");
-	}
-	
-	public static RouteRule maxPriorityRule(Set<RouteRule> rs) {
+	public static RouteRule maxPriorityRule(List<RouteRule> rs) {
 		if(isEmpty(rs)) {
 			return null;
 		}

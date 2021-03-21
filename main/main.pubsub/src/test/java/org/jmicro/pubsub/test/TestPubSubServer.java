@@ -1,25 +1,14 @@
 package org.jmicro.pubsub.test;
 
-import java.util.HashMap;
-
 import org.junit.Assert;
-import org.junit.BeforeClass;
 import org.junit.Test;
 
-import cn.jmicro.api.JMicro;
 import cn.jmicro.api.pubsub.PubSubManager;
-import cn.jmicro.api.registry.IRegistry;
 import cn.jmicro.pubsub.PubSubServer;
 import cn.jmicro.test.JMicroBaseTestCase;
 
 public class TestPubSubServer extends JMicroBaseTestCase{
 
-	@BeforeClass
-	public static void setupTestClass() {
-		of = JMicro.getObjectFactoryAndStart(getArgs());
-		registry = of.get(IRegistry.class);
-	}
-	
 	protected static String[] getArgs() {
 		return new String[] {"-DinstanceName=TestPubSubServer"};
 	}

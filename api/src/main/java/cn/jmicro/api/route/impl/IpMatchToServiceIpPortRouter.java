@@ -14,19 +14,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package cn.jmicro.api.route;
-
-import java.util.Iterator;
-import java.util.Set;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+package cn.jmicro.api.route.impl;
 
 import cn.jmicro.api.JMicroContext;
 import cn.jmicro.api.annotation.Component;
-import cn.jmicro.api.annotation.Inject;
-import cn.jmicro.api.registry.ServiceItem;
-import cn.jmicro.common.util.JsonUtils;
+import cn.jmicro.api.route.AbstractRouter;
+import cn.jmicro.api.route.IRouter;
+import cn.jmicro.api.route.RouteRule;
 import cn.jmicro.common.util.StringUtils;
 
 /**
@@ -99,22 +93,16 @@ import cn.jmicro.common.util.StringUtils;
  * @author Yulei Ye
  * @date: 2018年11月11日 下午3:56:55
  */
-@Component(value="ipRouter",lazy=false)
+@Component(value=RouteRule.TYPE_FROM_IP_ROUTER,lazy=false)
 public class IpMatchToServiceIpPortRouter extends AbstractRouter implements IRouter {
 
-	private final static Logger logger = LoggerFactory.getLogger(IpMatchToServiceIpPortRouter.class);
-	
-	@Inject
-	private RuleManager ruleManager;
-	
+	public IpMatchToServiceIpPortRouter() {
+		super(RouteRule.TYPE_FROM_IP_ROUTER);
+	}
+
 	@Override
-	public RouteRule getRouteRule() {
-		Set<RouteRule> rules = ruleManager.getRouteRulesByType(IRouter.TYPE_IP_TO_IP);
-		if(rules == null || rules.isEmpty()) {
-			return null;
-		}
-		
-		String clientIp;
+	protected boolean accept(RouteRule r) {
+		String clientIp = null;
 		if(JMicroContext.isCallSideService()) {
 			//在服务端做路由，取远程IP作为客户端IP,比如API网关
 			clientIp =  JMicroContext.get().getString(JMicroContext.REMOTE_HOST, null);
@@ -123,34 +111,13 @@ public class IpMatchToServiceIpPortRouter extends AbstractRouter implements IRou
 		}
 		
 		if(StringUtils.isEmpty(clientIp)) {
-			return null;
+			return false;
 		}
 		
-		Iterator<RouteRule> ite = rules.iterator();
-		while(ite.hasNext()) {
-			RouteRule r = ite.next();
-			if(StringUtils.isEmpty(r.getFrom().getIpPort())) {
-				//规则定义的源IP和端口是NULL，无效
-				logger.error("Invalid rule: {}",JsonUtils.getIns().toJson(r));
-				ite.remove();
-				if(rules.isEmpty()) {
-					return null;
-				}
-				continue;
-			}
-			if(!r.getFrom().getIpPort().startsWith(clientIp)) {
-				//规则定义的源IP和端口不匹配当前请求客户端
-				ite.remove();
-				continue;
-			}
+		if(r.getFrom().getVal().startsWith(clientIp)) {
+			return true;
 		}
-		return RouteUtils.maxPriorityRule(rules);
+		
+		return false;
 	}
-
-	@Override
-	public Set<ServiceItem> doRoute(RouteRule rule,Set<ServiceItem> services, String srvName,
-			String method,/* Class<?>[] args,*/String namespace, String version, String transport) {
-		return filterServicesByTargetIpPort(rule,services,transport);
-	}
-
 }

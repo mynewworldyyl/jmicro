@@ -14,7 +14,7 @@
 		<param name="File" value="${user.dir}/logs/work.log"/>
 		<param name="DatePattern" value="'.'yyyyMMdd"/>
 		<param name="Append" value="true"/>
-		<param name="Threshold" value="INFO"/>
+		<param name="Threshold" value="DEBUG"/>
 		<layout class="org.apache.log4j.PatternLayout">
 			<param name="ConversionPattern" value="[%L],[%t],[%d][%p,%c{1}] %m%n"/>
 		</layout>
@@ -144,7 +144,7 @@
 	</logger>
 
 	<logger name="cn.jmicro">
-		<level value="INFO"/>
+		<level value="DEBUG"/>
 		<appender-ref ref="NORMALLOG"/>
 	</logger>
 	

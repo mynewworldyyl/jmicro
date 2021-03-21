@@ -21,8 +21,10 @@
                         <JMonitorEditor v-else-if="item.group == 'monitors'" :group="item"> </JMonitorEditor>
 
                         <!--  service router -->
-                        <JRouterType v-else-if="item.group == 'router' && item.type == 't'" :selectItem="item"></JRouterType>
+                        <!--<JRouterType v-else-if="item.group == 'router' && item.type == 't'" :selectItem="item"></JRouterType>
                         <JRouterGroup v-else-if="item.group == 'router' && item.type == 'g'" :selectItem="item"></JRouterGroup>
+                        -->
+                        <JRouteRuleEditor v-else-if="item.group == 'routeRuleEditor'" :selectItem="item"></JRouteRuleEditor>
 
                         <!--  Config -->
                         <JConfigItem v-else-if="item.group == 'config'" :item="item"></JConfigItem>
@@ -122,8 +124,8 @@
 
             JMonitorEditor : () => import('./monitor/JMonitorEditor.vue'),
 
-            JRouterGroup : () => import('./route/JRouterType.vue'),
-            JRouterType : () => import('./route/JRouterGroup.vue'),
+           /* JRouterGroup : () => import('./route/JRouterType.vue'),
+            JRouterType : () => import('./route/JRouterGroup.vue'),*/
 
             JConfigItem : () => import('./config/JConfigItem.vue'),
             JHost : () => import('./deployment/JHost.vue'),
@@ -158,6 +160,8 @@
             JLogItemView : () => import('./monitor/JLogItemView.vue'),
             JNamedTypeEditor : () => import('./monitor/JNamedTypeEditor.vue'),
             JThreadPoolMonitorEditor : () => import('./monitor/JThreadPoolMonitorEditor.vue'),
+            JRouteRuleEditor : () => import('./route/JRouteRuleEditor.vue'),
+
         },
 
         data () {

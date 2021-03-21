@@ -7,7 +7,7 @@
                 <JRouterType v-if="item.type == 't'" :selectItem="item"></JRouterType>
                 <JRouterGroup v-else-if="item.type == 'g'" :selectItem="item"></JRouterGroup>
             </TabPane>
-        </Tabs>
+      </Tabs>
     </div>
 
   </div>
@@ -33,11 +33,9 @@
         },
 
         props:{
-          allowMany: {
-              type: Boolean,
-              default: false
-          },
+          allowMany: {type: Boolean, default: false},
         },
+
         mounted:function() {
             let self = this;
             window.jm.vue.$on('routerNodeSelect',(nodes) => {

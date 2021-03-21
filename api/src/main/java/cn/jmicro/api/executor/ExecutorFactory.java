@@ -61,7 +61,7 @@ public class ExecutorFactory {
 	}
 	
 	private void doCheck(String key,Object cxt) {
-		if(!waitingRegist.isEmpty() && sl.hashServer()) {
+		if(!waitingRegist.isEmpty() && sl.hasServer()) {
 			Iterator<ExecutorConfig> ecs = this.waitingRegist.iterator();
 			while(ecs.hasNext()) {
 				ExecutorConfig cfg = ecs.next();
@@ -114,7 +114,7 @@ public class ExecutorFactory {
 		executors.put(cfg.getThreadNamePrefix(), executor);
 		
 		if(!Config.isClientOnly()) {
-			 if(sl.hashServer()) {
+			 if(sl.hasServer()) {
 				//createExecutorService(cfg);
 			}else {
 				waitingRegist.add(cfg);

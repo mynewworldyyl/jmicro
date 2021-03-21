@@ -135,7 +135,7 @@ public class StatisMonitorClient {
 		statusMonitorAdapter = new MonitorClientStatusAdapter(TYPES,typeLabels,
 				Config.getInstanceName()+"_MonitorClientStatuCheck",group);
 		
-		if(sl.hashServer() && !Config.isClientOnly()) {
+		if(sl.hasServer() && !Config.isClientOnly()) {
 			ServiceItem si = sl.createSrvItem(IMonitorAdapter.class, Config.getNamespace()+"."+group,
 					"0.0.1", IMonitorAdapter.class.getName(),Config.getClientId());
 			of.regist("StatisMonitorClientStatuCheckAdapter", statusMonitorAdapter);
