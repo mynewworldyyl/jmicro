@@ -105,7 +105,7 @@ public class EnterMain {
 		String objClass  = Config.getValue(key, String.class, defaultVal);
 		
 		if(StringUtils.isEmpty(objClass) && dataOperator != null) {
-			String path = Config.GROBAL_CONFIG + "/" + key;
+			String path = Config.getRaftBasePath(Config.GROBAL_CONFIG) + "/" + key;
 			objClass = dataOperator.getData(path);
 		}
 		
@@ -143,11 +143,34 @@ public class EnterMain {
 	
 	public static IObjectFactory getObjectFactoryNotStart(String[] args,String name){
 		
-		System.out.println(EnterMain.class.getClassLoader().getClass().getName());
+		//System.out.println(EnterMain.class.getClassLoader().getClass().getName());
+		//System.out.println(Config.class.getClassLoader().getClass().getName());
 		
-		System.out.println(Config.class.getClassLoader().getClass().getName());
+		Map<String,String> params = new HashMap<>();
 		
-		Config.parseArgs(args);
+		for(String arg : args){
+			if(arg.startsWith("-D")){
+				String ar = arg.substring(2);
+				if(StringUtils.isEmpty(ar)){
+					throw new CommonException("Invalid arg: "+ arg);
+				}
+				ar = ar.trim();
+				String key;
+				String val;
+				
+				if(ar.indexOf("=") > 0){
+					String[] ars = ar.split("=");
+					key = ars[0].trim();
+					val = ars[1].trim();
+				} else {
+					key = ar;
+					val = null;
+				}
+				params.put(key,val);
+			}
+		}
+		
+		Config.parseArgs(params);
 		
 		init0();
 		if(StringUtils.isEmpty(name)){

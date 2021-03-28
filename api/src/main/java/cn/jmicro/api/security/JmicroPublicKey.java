@@ -7,6 +7,8 @@ public class JmicroPublicKey {
 
 	private long id;
 	
+	private int clientId;
+	
 	private String instancePrefix;
 	
 	private String publicKey;
@@ -83,6 +85,14 @@ public class JmicroPublicKey {
 
 	public void setId(long id) {
 		this.id = id;
+	}
+
+	public int getClientId() {
+		return clientId;
+	}
+
+	public void setClientId(int clientId) {
+		this.clientId = clientId;
 	}
 	
 }

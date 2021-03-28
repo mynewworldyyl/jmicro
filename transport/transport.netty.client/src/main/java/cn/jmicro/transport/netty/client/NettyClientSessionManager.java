@@ -78,10 +78,10 @@ public class NettyClientSessionManager implements IClientSessionManager{
 	@Inject
 	private ICodecFactory codeFactory;
 	
-	@Cfg("/MinaClientSessionManager/readBufferSize")
+	@Cfg("/NettyClientSessionManager/readBufferSize")
 	private int readBufferSize=1024*4;
 	
-	@Cfg("/MinaClientSessionManager/heardbeatInterval")
+	@Cfg("/NettyClientSessionManager/heardbeatInterval")
 	private int heardbeatInterval = 3; //seconds to send heardbeat Rate
 	
 	@Inject

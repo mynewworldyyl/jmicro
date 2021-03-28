@@ -573,15 +573,15 @@ public class ChoreographyServiceImpl implements IChoreographyService {
 	@SMethod(perType=true,needLogin=true,maxSpeed=5,maxPacketSize=256)
 	public Resp<List<AgentInfoVo>> getAgentList(boolean showAll) {
 		Resp<List<AgentInfoVo>> resp = new Resp<>(0);
-		ConfigNode[] agents = this.configManager.getChildren(ChoyConstants.ROOT_AGENT, true);
-		if(agents == null || agents.length == 0) {
+		Resp<ConfigNode[]> agents = this.configManager.getChildren(ChoyConstants.ROOT_AGENT, true);
+		if(agents == null || agents.getCode() != Resp.CODE_SUCCESS || agents.getData() == null) {
 			resp.setMsg("no data");
 			return resp;
 		}
 		
 		List<AgentInfoVo> aivs = new ArrayList<>();
 		
-		for(ConfigNode cn : agents) {
+		for(ConfigNode cn : agents.getData()) {
 			
 			String acPath = ChoyConstants.ROOT_ACTIVE_AGENT + "/" + cn.getName();
 			boolean isActive = op.exist(acPath);

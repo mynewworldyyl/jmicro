@@ -144,22 +144,22 @@ public class ServiceManager {
 		});
 		
 		logger.info("add listener");
-		dataOperator.addChildrenListener(Config.ServiceRegistDir, new IChildrenListener() {
+		dataOperator.addChildrenListener(Config.getRaftBasePath(Config.ServiceRegistDir), new IChildrenListener() {
 			@Override
 			public void childrenChanged(int type,String parent, String child,String data) {
 				String p = parent+"/"+child;
 				if(IListener.ADD == type) {
 					if(openDebug) {
-						logger.debug("Service add,path:{}",p.substring(Config.ServiceRegistDir.length()+1));
+						logger.debug("Service add,path:{}",p.substring(Config.getRaftBasePath(Config.ServiceRegistDir).length()+1));
 					}
 					childrenAdd(p,data);
 				}else if(IListener.REMOVE == type) {
-					logger.debug("Service remove, path:{}",p.substring(Config.ServiceRegistDir.length()+1));
+					logger.debug("Service remove, path:{}",p.substring(Config.getRaftBasePath(Config.ServiceRegistDir).length()+1));
 					if(path2Hash.containsKey(p)) {
 						serviceRemove(p);
 					}
 				}else if(IListener.DATA_CHANGE == type){
-					logger.debug("Invalid service data change event, path:{}",p.substring(Config.ServiceRegistDir.length()+1));
+					logger.debug("Invalid service data change event, path:{}",p.substring(Config.getRaftBasePath(Config.ServiceRegistDir).length()+1));
 				}
 			}
 		});
@@ -167,9 +167,9 @@ public class ServiceManager {
 	}
 	
 	private void refleshChildren() {
-		Set<String> children = this.dataOperator.getChildren(Config.ServiceRegistDir,true);
+		Set<String> children = this.dataOperator.getChildren(Config.getRaftBasePath(Config.ServiceRegistDir),true);
 		for(String child : children) {
-			String path = Config.ServiceRegistDir+"/"+child;
+			String path = Config.getRaftBasePath(Config.ServiceRegistDir)+"/"+child;
 			String data = this.dataOperator.getData(path);
 			childrenAdd(path,data);
 		}
@@ -729,7 +729,7 @@ public class ServiceManager {
 			return;
 		}
 		
-		String srvPath = si.path(Config.ServiceRegistDir);
+		String srvPath = si.path(Config.getRaftBasePath(Config.ServiceRegistDir));
 		ServiceItem srvItem = this.path2SrvItems.get(srvPath);
 		
 		if(srvItem == null) {

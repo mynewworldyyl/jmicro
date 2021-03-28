@@ -42,7 +42,7 @@ public class TestLocalDb  extends JMicroBaseTestCase{
 	
 	@Test
 	public void testInsertDataByOutID() {
-		LocalDataManager db = new LocalDataManager(of);
+		LocalDataManager db = new LocalDataManager();
 		db.registTableClass("t_test_data", TestDbTable.class);
 		
 		TestDbTable d = new TestDbTable();

@@ -10,8 +10,9 @@
               </DropdownMenu>
           </Dropdown>
       </div>
-      <Tree  v-if="isLogin" :data="configs" :load-data="loadChildren" @on-select-change="nodeSelect($event)"></Tree>
+      <Tree  v-if="isLogin && configs" :data="configs" :load-data="loadChildren" @on-select-change="nodeSelect($event)"></Tree>
       <span v-if="!isLogin">No permission</span>
+      <span v-else-if="!configs">No data</span>
   </div>
 </template>
 
@@ -70,13 +71,13 @@
             },
 
             loadChildren(item,cb){
-                this.__getChildren(item,item.path,cb);
+                this.__getCJConfigListhildren(item,item.path,cb);
             },
 
             __getChildren(parent,path,cb) {
                 let parseNode = function(valNode) {
 
-                    if(!valNode.children || valNode.children.length == 0) {
+                    if(!valNode || !valNode.children || valNode.children.length == 0) {
                         return null;
                     }
 
@@ -101,7 +102,14 @@
                 }
 
                 window.jm.mng.conf.getChildren(path,true)
-                    .then(function(nodes){
+                    .then(function(resp){
+                        if(!resp || resp.code != 0 || !resp.data) {
+                            window.console.log(resp.msg);
+                            cb(null);
+                            return;
+                        }
+
+                    let nodes = resp.data;
                     let ch = [];
                     let valNode = { path: path, name:path, val:null,children:[]};
                     let root = new TreeNode(path, path, [], null, valNode, valNode.name);
@@ -110,6 +118,9 @@
                         root.expand = true;
 
                     for(let i = 0; i < nodes.length; i++) {
+                        if(!nodes[i]) {
+                            continue;
+                        }
                         let o = parseNode(nodes[i]);
                         if(o) {
                            root.addChild(o);
@@ -130,7 +141,11 @@
             ,menuSelect(name){
                 if(name == 'refresh') {
                     this.__getChildren(null,window.jm.mng.CONFIG_ROOT,(data)=>{
-                        this.configs = data;
+                        if(data) {
+                            this.configs = data;
+                        }else {
+                            this.configs = [];
+                        }
                     });
                 }
             }

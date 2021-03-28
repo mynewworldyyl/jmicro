@@ -46,7 +46,7 @@ public class StatisMonitorImpl implements IStatisMonitor {
 
 	private final static Logger logger = LoggerFactory.getLogger(StatisMonitorImpl.class);
 	
-	private static final String STATIS_MONITOR_DIR = Config.BASE_DIR + "/statisMonitorKeys";
+	private static final String STATIS_MONITOR_DIR = Config.getRaftBasePath("") + "/statisMonitorKeys";
 	
 	private static final String RES_LOCK = "statisCounterRegLock";
 	

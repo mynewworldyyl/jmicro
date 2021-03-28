@@ -4,8 +4,8 @@ import org.junit.Test;
 
 import cn.jmicro.api.monitor.LG;
 import cn.jmicro.api.monitor.MC;
-import cn.jmicro.api.monitor.MRpcLogItem;
-import cn.jmicro.api.monitor.MRpcStatisItem;
+import cn.jmicro.api.monitor.JMLogItem;
+import cn.jmicro.api.monitor.JMStatisItem;
 import cn.jmicro.api.monitor.genclient.ILogMonitorServer$JMAsyncClient;
 import cn.jmicro.api.monitor.genclient.IStatisMonitorServer$JMAsyncClient;
 import cn.jmicro.test.JMicroBaseTestCase;
@@ -17,10 +17,10 @@ public class TestMonitorServer extends JMicroBaseTestCase{
 		ILogMonitorServer$JMAsyncClient ms = of.getRemoteServie(ILogMonitorServer$JMAsyncClient.class.getName(), 
 				"monitorServer", "0.0.1", null);
 		
-		MRpcLogItem mi = new MRpcLogItem();
+		JMLogItem mi = new JMLogItem();
 		mi.addOneItem(MC.LOG_DEBUG, "test","test desc");
 		
-		ms.submitJMAsync(new MRpcLogItem[] { mi })
+		ms.submitJMAsync(new JMLogItem[] { mi })
 		.success((rst,cxt)->{
 			System.out.println("Success: " + rst);
 		})
@@ -44,10 +44,10 @@ public class TestMonitorServer extends JMicroBaseTestCase{
 		IStatisMonitorServer$JMAsyncClient ms = of.getRemoteServie(IStatisMonitorServer$JMAsyncClient.class.getName(), 
 				"monitorServer", "0.0.1", null);
 		
-		MRpcStatisItem mi = new MRpcStatisItem();
+		JMStatisItem mi = new JMStatisItem();
 		mi.addType(MC.EP_START, 1);
 		
-		ms.submitJMAsync(new MRpcStatisItem[] { mi })
+		ms.submitJMAsync(new JMStatisItem[] { mi })
 		.success((rst,cxt)->{
 			System.out.println("Success: " + rst);
 		})

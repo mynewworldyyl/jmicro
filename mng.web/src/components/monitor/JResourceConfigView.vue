@@ -6,6 +6,7 @@
                 <thead>
                     <tr>
                         <td>{{'ID' | i18n }}</td>
+                        <td>{{'clientId' | i18n }}</td>
                         <td>{{'Resource' | i18n }}</td>
                         <td>{{'InstanceName' | i18n }}</td>
                         <td>{{'Interval' | i18n }}</td>
@@ -20,6 +21,7 @@
                 </thead>
                 <tr v-for="c in logList" :key="c.id">
                     <td>{{c.id}}</td>
+                    <td>{{c.clientId}}</td>
                     <td>{{c.resName}}</td>
                     <td>{{c.monitorInsName}}</td>
                     <td>{{c.t}}</td>
@@ -211,9 +213,9 @@
         4:"Integer", 3:"Float", 2:"Boolean", 1:"String"
     }
 
-   /* const EXP_TYPE_SERVICE = 1;
-    const EXP_TYPE_ACCOUNT = 2;
-    const EXP_TYPE_INSTANCE = 3;*/
+    /* const EXP_TYPE_SERVICE = 1;
+     const EXP_TYPE_ACCOUNT = 2;
+     const EXP_TYPE_INSTANCE = 3;*/
 
     const cid = 'resourceConfig';
 

@@ -20,18 +20,18 @@ import cn.jmicro.api.config.Config;
 
 public interface ChoyConstants {
 
-	public static final String ROOT_ACTIVE_AGENT = Config.ChoreographyDir + "/activeAgents";
+	public static final String ROOT_ACTIVE_AGENT = Config.getRaftBasePath(Config.ChoreographyDir) + "/activeAgents";
 	
-	public static final String ROOT_AGENT = Config.ChoreographyDir + "/agents";
+	public static final String ROOT_AGENT = Config.getRaftBasePath(Config.ChoreographyDir) + "/agents";
 	
-	public static final String DEP_DIR = Config.ChoreographyDir + "/deployments";
+	public static final String DEP_DIR = Config.getRaftBasePath(Config.ChoreographyDir) + "/deployments";
 	
-	public static final String INS_ROOT = Config.ChoreographyDir + "/instances";
+	public static final String INS_ROOT = Config.getRaftBasePath(Config.ChoreographyDir) + "/instances";
 	
 	//controller存活标志
-	public static final String ROOT_CONTROLLER = Config.ChoreographyDir + "/controllers";
+	public static final String ROOT_CONTROLLER = Config.getRaftBasePath(Config.ChoreographyDir) + "/controllers";
 	
-	public static final String ID_PATH = Config.ChoreographyDir + "/" + ProcessInfo.class.getName();
+	public static final String ID_PATH = Config.getRaftBasePath(Config.ChoreographyDir) + "/" + ProcessInfo.class.getName();
 	
 	public static final String PROCESS_INFO_FILE = "processInfoFile";
 	

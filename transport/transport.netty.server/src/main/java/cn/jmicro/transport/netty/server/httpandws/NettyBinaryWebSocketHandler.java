@@ -54,10 +54,10 @@ public class NettyBinaryWebSocketHandler extends SimpleChannelInboundHandler<Bin
 	@Cfg(value="/NettyBinaryWebSocketHandler/openDebug",required=false,defGlobal=false)
 	private boolean openDebug=false;
 	
-	@Cfg("/MinaServer/readBufferSize")
+	@Cfg("/NettyBinaryWebSocketHandler/readBufferSize")
 	private int readBufferSize = 1024*4;
 	
-	@Cfg("/MinaClientSessionManager/heardbeatInterval")
+	@Cfg("/NettyBinaryWebSocketHandler/heardbeatInterval")
 	private int heardbeatInterval = 3; //seconds to send heardbeat Rate
 	
 	@Inject

@@ -296,7 +296,7 @@ public class RegistryImpl implements IRegistry {
 	@Override
 	public void regist(ServiceItem item) {
 		
-		String srvKey = item.path(Config.ServiceRegistDir);
+		String srvKey = item.path(Config.getRaftBasePath(Config.ServiceRegistDir));
 		
 		if(item.getKey().getInstanceName().equals(Config.getInstanceName())) {
 			localRegistedItems.put(srvKey, item);
@@ -321,7 +321,7 @@ public class RegistryImpl implements IRegistry {
 
 	@Override
 	public void unregist(ServiceItem item) {
-		String key = item.path(Config.ServiceRegistDir);
+		String key = item.path(Config.getRaftBasePath(Config.ServiceRegistDir));
 		logger.debug("unregist service: "+key);
 		if(srvManager.exist(key)){
 			srvManager.removeService(key);
@@ -331,7 +331,7 @@ public class RegistryImpl implements IRegistry {
 
 	@Override
 	public void update(ServiceItem item) {
-		String key = item.path(Config.ServiceRegistDir);
+		String key = item.path(Config.getRaftBasePath(Config.ServiceRegistDir));
 		logger.debug("regist service: "+key);
 		if(srvManager.exist(key)){
 			srvManager.updateOrCreate(item, key, true);
@@ -570,7 +570,7 @@ public class RegistryImpl implements IRegistry {
         	logger.error("Item is NULL");
         	return;
         }
-		String key = item.path(Config.GrobalServiceRegistDir);
+		String key = item.path(Config.getRaftBasePath(Config.GrobalServiceRegistDir));
 		if(this.srvManager.exist(key)){
 			String data = dataOperator.getData(key);
 			ServiceItem perItem = this.fromJson(data);

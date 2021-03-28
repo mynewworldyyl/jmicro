@@ -27,7 +27,7 @@ public interface Constants {
 	
 	public static final byte USE_SYSTEM_CLIENT_ID = -2;
 	
-	public static final byte NO_CLIENT_ID = -1;
+	public static final int NO_CLIENT_ID = -1;
 	
 	public static final byte LIMIT_TYPE_LOCAL = 1;
 	

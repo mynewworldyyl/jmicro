@@ -6,8 +6,8 @@ import cn.jmicro.api.mng.ReportData;
 import cn.jmicro.api.monitor.IMonitorDataSubscriber;
 import cn.jmicro.api.monitor.ILogMonitorServer;
 import cn.jmicro.api.monitor.MC;
-import cn.jmicro.api.monitor.MRpcLogItem;
-import cn.jmicro.api.monitor.MRpcStatisItem;
+import cn.jmicro.api.monitor.JMLogItem;
+import cn.jmicro.api.monitor.JMStatisItem;
 import cn.jmicro.api.monitor.StatisMonitorClient;
 import cn.jmicro.api.monitor.LG;
 import cn.jmicro.api.registry.ServiceMethod;
@@ -16,16 +16,16 @@ import cn.jmicro.test.JMicroBaseTestCase;
 
 public class TestMonitorSubmiterV2 extends JMicroBaseTestCase{
 	
-	private MRpcLogItem logItem() {
-		MRpcLogItem si = new MRpcLogItem();
+	private JMLogItem logItem() {
+		JMLogItem si = new JMLogItem();
 		si.addOneItem(MC.LOG_DEBUG, TestMonitorSubmiterV2.class.getName(),
 				"Test Monitor server");
 		si.setLinkId(22L);
 		return si;
 	}
 	
-	private MRpcStatisItem statisItem() {
-		MRpcStatisItem si = new MRpcStatisItem();
+	private JMStatisItem statisItem() {
+		JMStatisItem si = new JMStatisItem();
 		si.addType(MC.MT_REQ_END, 1);
 		return si;
 	}
@@ -36,7 +36,7 @@ public class TestMonitorSubmiterV2 extends JMicroBaseTestCase{
 		this.setSayHelloContextv2();
 		ILogMonitorServer m = of.getRemoteServie(ILogMonitorServer.class.getName()
 				, "monitorServer", "0.0.1",null);
-		MRpcLogItem[] sis = new MRpcLogItem[1];
+		JMLogItem[] sis = new JMLogItem[1];
 		sis[0] = logItem();
 		m.submit(sis);
 		this.waitForReady(1000*10);

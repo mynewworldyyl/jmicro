@@ -30,7 +30,7 @@ public class RouteRuleConfigServiceImpl implements IRouteRuleConfigService {
 
 	private final static Logger logger = LoggerFactory.getLogger(RouteRuleConfigServiceImpl.class);
 	
-	private static final String ROOT = Config.BASE_DIR + "/routeRules";
+	private static final String ROOT = Config.getRaftBasePath("") + "/routeRules";
 	
 	@Inject
 	private IDataOperator op;

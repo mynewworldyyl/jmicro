@@ -26,6 +26,7 @@ import cn.jmicro.api.config.Config;
 import cn.jmicro.api.exp.Exp;
 import cn.jmicro.api.exp.ExpUtils;
 import cn.jmicro.api.mng.JmicroInstanceManager;
+import cn.jmicro.api.mng.JmicroInstanceManager.IInstanceListener;
 import cn.jmicro.api.monitor.LG;
 import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.monitor.StatisConfig;
@@ -41,6 +42,7 @@ import cn.jmicro.api.registry.ServiceMethod;
 import cn.jmicro.api.registry.UniqueServiceKey;
 import cn.jmicro.api.service.ServiceManager;
 import cn.jmicro.common.CommonException;
+import cn.jmicro.common.Constants;
 import cn.jmicro.common.Utils;
 import cn.jmicro.common.util.JsonUtils;
 import cn.jmicro.common.util.StringUtils;
@@ -97,15 +99,15 @@ public class StatisConfigManager {
 		}
 	};
 	
-	/*private IInstanceListener insListener = (type, pi)->{
-		if(type == IListener.REMOVE) {
-			if(ins2Configs.containsKey(pi.getInstanceName())) {
-				
+	private IInstanceListener insListener = (type, pi)->{
+		if(type == IListener.ADD) {
+			Set<StatisConfig> cfgs = getInstanceConfigs(pi.getInstanceName());
+			if(cfgs.isEmpty()) {
+				return;
 			}
-		}else if(type == IListener.ADD) {
-			
+			setProcessInfoMonitorable(cfgs.iterator().next(),1);
 		}
-	};*/
+	};
 	
 	public void ready() {
 		logDir = System.getProperty("user.dir")+"/logs/most/";
@@ -118,7 +120,7 @@ public class StatisConfigManager {
 		configListener.addListener(lis);
 		
 		srvMng.addListener(snvListener);
-		//insManager.addInstanceListner(insListener);
+		insManager.addInstanceListner(insListener);
 	}
 
 	private IRaftListener<StatisConfig> lis = new IRaftListener<StatisConfig>() {
@@ -202,7 +204,7 @@ public class StatisConfigManager {
 		
 		Set<Short> set = null;
 		if(!Utils.isEmpty(lw.getNamedType())) {
-			String p = Config.NamedTypesDir+"/"+lw.getNamedType();
+			String p = Config.getRaftBasePath(Config.NamedTypesDir)+"/"+lw.getNamedType();
 			set = this.getTypeByKey(p);
 		}else {
 			set = new HashSet<>();
@@ -330,9 +332,7 @@ public class StatisConfigManager {
 	}
 	
 	private void updateMonitorAttr(StatisConfig lw,int enable) {
-
 		int tt = lw.getByType();
-		
 		switch(tt) {
 			case StatisConfig.BY_TYPE_SERVICE_METHOD:
 			case StatisConfig.BY_TYPE_SERVICE_INSTANCE_METHOD:
@@ -345,12 +345,16 @@ public class StatisConfigManager {
 	}
 
 	private void setProcessInfoMonitorable(StatisConfig lw, int enable) {
-		ProcessInfo pi = insManager.getProcessByName(lw.getByins());
-		boolean e = enable == 1?true:false;
-		if(pi != null && (pi.isMonitorable() != e)) {
-			pi.setMonitorable(e);
+		Set<ProcessInfo> pis = insManager.getProcessByNamePreifx(lw.getByKey());
+		if(pis != null && !pis.isEmpty()) {
+			final boolean en = enable == 1?true:false;
+			pis.forEach((pi)->{
+				if(pi != null && (pi.isMonitorable() != en)) {
+					pi.setMonitorable(en);
+				}
+				op.setData(ChoyConstants.INS_ROOT+"/"+pi.getId(), JsonUtils.getIns().toJson(pi));
+			});
 		}
-		op.setData(ChoyConstants.INS_ROOT+"/"+pi.getId(), JsonUtils.getIns().toJson(pi));
 	}
 
 	private void setServiceMethodMonitorable(StatisConfig lw,int enable) {
@@ -479,7 +483,7 @@ public class StatisConfigManager {
 			 
 			  //服务名
 			 if(Utils.isEmpty(lw.getByns()) || "*".equals(lw.getByns())) {
-				regex += ID_MATCHER+"##";
+				 regex += ID_MATCHER+"##";
 			 }else {
 				 regex += lw.getByns()+"##";
 			 }
@@ -501,7 +505,7 @@ public class StatisConfigManager {
 			 regex += "\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}##\\d{1,5}##";//ip和端口
 			 
 			 //方法名
-			 if(Utils.isEmpty(lw.getByme()) || "*".equals(lw.getByme())) {
+			 if(Utils.isEmpty(lw.getByme()) || "*".equals(lw.getByme().trim())) {
 				regex += METHOD_MATCHER+"##";
 			 } else {
 				regex += lw.getByme()+"##";
@@ -512,9 +516,15 @@ public class StatisConfigManager {
 			 
 			 //账号
 			 if(Utils.isEmpty(lw.getActName()) || "*".equals(lw.getActName())) {
-				regex += "[a-zA-Z0-9\\_\\-]*";
+				regex += "[a-zA-Z0-9\\_\\-]*##";
 			 } else {
-				regex += lw.getActName();
+				regex += lw.getActName()+"##";
+			 }
+			 
+			 if(lw.getClientId()==Constants.NO_CLIENT_ID && lw.getCreatedBy() == Config.getAdminClientId()) {
+				 regex += "\\d*";
+			 }else {
+				 regex += lw.getClientId();
 			 }
 			 
 			 regex += "$";
@@ -523,12 +533,16 @@ public class StatisConfigManager {
 			lw.setPattern(pattern);
 			break;
 		case StatisConfig.BY_TYPE_INSTANCE:
-			regex = lw.getByins();
-			if(regex.endsWith("*")) {
-				regex = regex.substring(0,regex.length()-1);
-				regex += "\\d+";
-			}else {
-			}
+			regex = lw.getByKey();
+			
+			regex += "[a-zA-Z\\_\\-]*\\d*##";
+			
+			if(lw.getClientId()==Constants.NO_CLIENT_ID && lw.getCreatedBy() == Config.getAdminClientId()) {
+				 regex += "\\d+";
+			 }else {
+				 regex += "" + lw.getClientId();
+			 }
+			
 			pattern = Pattern.compile(regex);
 			lw.setPattern(pattern);
 			break;
@@ -567,9 +581,9 @@ public class StatisConfigManager {
 		Set<StatisConfig> cfgs = new HashSet<>();
 		synchronized(configs) {
 			for(StatisConfig sc : this.configs.values()) {
-				if(sc.getByType() == StatisConfig.BY_TYPE_INSTANCE && sc.getByins().equals(instanceName)) {
+				if(sc.getByType() == StatisConfig.BY_TYPE_INSTANCE && 
+						instanceName.startsWith(sc.getByKey())) {
 					cfgs.add(sc);
-					
 				}
 			}
 		}

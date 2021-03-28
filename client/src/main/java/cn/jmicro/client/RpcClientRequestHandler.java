@@ -43,7 +43,7 @@ import cn.jmicro.api.loadbalance.ISelector;
 import cn.jmicro.api.monitor.LG;
 import cn.jmicro.api.monitor.LogMonitorClient;
 import cn.jmicro.api.monitor.MC;
-import cn.jmicro.api.monitor.MRpcLogItem;
+import cn.jmicro.api.monitor.JMLogItem;
 import cn.jmicro.api.monitor.MT;
 import cn.jmicro.api.monitor.StatisMonitorClient;
 import cn.jmicro.api.net.AbstractHandler;
@@ -542,7 +542,7 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
 			resp.setMsg(respMsg);
 			
 			if(resp.isSuccess()) {
-				MRpcLogItem mi = cxt.getMRpcLogItem();
+				JMLogItem mi = cxt.getMRpcLogItem();
 				if(mi != null) {
 					mi.setResp(resp);
 				}

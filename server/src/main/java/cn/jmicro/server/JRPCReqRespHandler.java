@@ -33,7 +33,7 @@ import cn.jmicro.api.idgenerator.ComponentIdServer;
 import cn.jmicro.api.monitor.LG;
 import cn.jmicro.api.monitor.LogMonitorClient;
 import cn.jmicro.api.monitor.MC;
-import cn.jmicro.api.monitor.MRpcLogItem;
+import cn.jmicro.api.monitor.JMLogItem;
 import cn.jmicro.api.monitor.MT;
 import cn.jmicro.api.monitor.StatisMonitorClient;
 import cn.jmicro.api.net.IMessageHandler;
@@ -452,7 +452,7 @@ public class JRPCReqRespHandler implements IMessageHandler{
 		cxt.setObject(Constants.SERVICE_METHOD_KEY, sm);
 		cxt.setObject(Constants.SERVICE_OBJ_KEY, obj);
 		
-		MRpcLogItem mi = cxt.getMRpcLogItem();
+		JMLogItem mi = cxt.getMRpcLogItem();
 		
 		if( mi != null) {
 			mi.setReqParentId(req.getReqParentId());

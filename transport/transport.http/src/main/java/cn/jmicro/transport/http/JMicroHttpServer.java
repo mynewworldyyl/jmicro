@@ -78,10 +78,10 @@ public class JMicroHttpServer implements IServer{
 	@Cfg(value="/port",required=false)
 	private String port="9990";
 	
-	@Cfg("/MinaServer/readBufferSize")
+	@Cfg("/JMicroHttpServer/readBufferSize")
 	private int readBufferSize=1024*4;
 	
-	@Cfg("/MinaClientSessionManager/heardbeatInterval")
+	@Cfg("/JMicroHttpServer/heardbeatInterval")
 	private int heardbeatInterval = 3; //seconds to send heardbeat Rate
 	
 	@Inject

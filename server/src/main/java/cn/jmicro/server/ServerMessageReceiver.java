@@ -43,7 +43,7 @@ import cn.jmicro.api.idgenerator.IdRequest;
 import cn.jmicro.api.monitor.LG;
 import cn.jmicro.api.monitor.LogMonitorClient;
 import cn.jmicro.api.monitor.MC;
-import cn.jmicro.api.monitor.MRpcLogItem;
+import cn.jmicro.api.monitor.JMLogItem;
 import cn.jmicro.api.monitor.MT;
 import cn.jmicro.api.monitor.StatisMonitorClient;
 import cn.jmicro.api.net.DumpManager;
@@ -434,7 +434,7 @@ public class ServerMessageReceiver implements IMessageReceiver{
         		sb.append(" corePoolSize[").append(e.getCorePoolSize()).append("]");
         		sb.append(" maximumPoolSize[").append(e.getMaximumPoolSize()).append("]");
         		
-        		MRpcLogItem mi = LG.logWithNonRpcContext(MC.LOG_ERROR, JicroAbortPolicy.class,sb.toString(),MC.MT_EXECUTOR_REJECT,false);
+        		JMLogItem mi = LG.logWithNonRpcContext(MC.LOG_ERROR, JicroAbortPolicy.class,sb.toString(),MC.MT_EXECUTOR_REJECT,false);
         		
         		if(mi != null) {
         			mi.setLinkId(msg.getLinkId());

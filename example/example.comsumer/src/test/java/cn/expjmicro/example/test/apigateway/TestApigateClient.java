@@ -43,7 +43,7 @@ public class TestApigateClient  /*extends JMicroBaseTestCase*/{
 	
 	private String TOPIC = "/jmicro/test/topic01";
 	
-	private String NS_EXP = "exampleProdiver";
+	private String NS_EXP = "exampleProvider";
 
 	//private ApiGatewayClient socketClient = new ApiGatewayClient(new ApiGatewayConfig(Constants.TYPE_SOCKET,"192.168.56.1",9091));
 	

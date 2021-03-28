@@ -27,7 +27,7 @@ import cn.jmicro.codegenerator.AsyncClientProxy;
 @AsyncClientProxy
 public interface IMonitorDataSubscriber {
 
-	void onSubmit(MRpcStatisItem[] sis);
+	void onSubmit(JMStatisItem[] sis);
 	
 	ReportData  getData(String srvKey,Short[] type, String[] dataType);
 	

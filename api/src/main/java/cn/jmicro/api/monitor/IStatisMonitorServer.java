@@ -27,6 +27,6 @@ import cn.jmicro.codegenerator.AsyncClientProxy;
 @AsyncClientProxy
 public interface IStatisMonitorServer {
 
-	void submit(MRpcStatisItem[] items);
+	void submit(JMStatisItem[] items);
 	
 }

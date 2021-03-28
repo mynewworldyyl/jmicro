@@ -9,7 +9,7 @@ import cn.jmicro.api.config.Config;
 import cn.jmicro.api.mng.ReportData;
 import cn.jmicro.api.monitor.IMonitorDataSubscriber;
 import cn.jmicro.api.monitor.MC;
-import cn.jmicro.api.monitor.MRpcStatisItem;
+import cn.jmicro.api.monitor.JMStatisItem;
 import cn.jmicro.api.monitor.MonitorAndService2TypeRelationshipManager;
 import cn.jmicro.api.monitor.StatisItem;
 import cn.jmicro.api.raft.IDataOperator;
@@ -30,7 +30,7 @@ public abstract class AbstractMonitorDataSubscriber implements IMonitorDataSubsc
 
 	protected void registType(IDataOperator op, String srvKey, Short[] typess) {
 		
-		String path = Config.MonitorTypesDir + "/" + srvKey;
+		String path = Config.getRaftBasePath(Config.MonitorTypesDir) + "/" + srvKey;
 		
 		if(op.exist(path)) {
 			return;
@@ -51,7 +51,7 @@ public abstract class AbstractMonitorDataSubscriber implements IMonitorDataSubsc
 		
 	}
 	
-	protected String toLog(MRpcStatisItem si,StatisItem oi) {
+	protected String toLog(JMStatisItem si,StatisItem oi) {
 		StringBuilder sb = new StringBuilder();
 		sb.append("INS [").append(si.getInstanceName())
 		.append(" M[").append(si.getKey()).append("]");
@@ -61,7 +61,7 @@ public abstract class AbstractMonitorDataSubscriber implements IMonitorDataSubsc
 		return sb.toString();
 	}
 
-	protected void log(MRpcStatisItem si) {
+	protected void log(JMStatisItem si) {
 		for(Short type : si.getTypeStatis().keySet()) {
 			//List<StatisItem> items = si.getTypeStatis().get(type);
 			StringBuffer sb = new StringBuffer();

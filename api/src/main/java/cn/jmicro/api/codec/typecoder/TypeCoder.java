@@ -532,6 +532,17 @@ public interface TypeCoder<T> extends Comparable<TypeCoder<T>>{
 			}
 			
 		}
+		/*if(!readEvery) {
+			if(Map.class.isAssignableFrom(eltType)) {
+				objs = Array.newInstance(Map.class, len);
+			}else if(List.class.isAssignableFrom(eltType)) {
+				objs = Array.newInstance(List.class, len);
+			}else if(Set.class.isAssignableFrom(eltType)) {
+				objs = Array.newInstance(Set.class, len);
+			}else {
+				objs = Array.newInstance(eltType, len);
+			}
+		}*/
 		
 		for(int i = 0; i < len; i++){
 			if(readEvery) {
@@ -553,6 +564,16 @@ public interface TypeCoder<T> extends Comparable<TypeCoder<T>>{
 			Object o = coder.decode(buffer, eltType, null);
 			Array.set(objs, i, o);
 		}
+		
+		if(len > 0 && readEvery && sameArrayTypeEles(objs)) {
+			Object o = Array.get(objs, 0);
+			Object narr = Array.newInstance(o.getClass(), len);
+			for(int i = 0; i < len; i++) {
+				Array.set(narr, i, Array.get(objs, i));
+			}
+			objs = narr;
+		}
+		
 		
 		return objs;
 	}

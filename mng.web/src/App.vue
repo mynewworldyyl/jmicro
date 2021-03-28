@@ -57,7 +57,7 @@
                       <Menu-item name="__shell"><Icon type="ios-cog"></Icon>{{"Shell"|i18n}}</Menu-item>
                   </Menu-group>
                   <Menu-group :title="'Security'|i18n">
-                      <Menu-item name="__account"><Icon type="ios-alert" />{{"Account"|i18n}}</Menu-item>
+                      <Menu-item v-if="isAdmin" name="__account"><Icon type="ios-alert" />{{"Account"|i18n}}</Menu-item>
                       <Menu-item name="__userProfile"><Icon type="ios-alert" />{{"Profile"|i18n}}</Menu-item>
                       <Menu-item name="__publicKeyList"><Icon type="ios-cog"></Icon>{{"publicKeyList"|i18n}}</Menu-item>
                       <Menu-item name="__serviceMethodList"><Icon type="ios-cog"></Icon>{{"serviceMethodList"|i18n}}</Menu-item>
@@ -190,7 +190,8 @@ export default {
 
         window.jm.rpc.addActListener(cid,()=>{
             self.isLogin = window.jm.rpc.isLogin();
-            if( self.activeEditorId) {
+            self.isAdmin = window.jm.rpc.isAdmin();
+            if(self.activeEditorId) {
                 self.selectMenu(self.activeEditorId);
             }
         });
@@ -355,6 +356,7 @@ export default {
           curSelect: cache[cache.curSelectKey],
           cache: cache,
           isLogin : false,
+          isAdmin:false,
           menus:[/*{name:"test1",label:"label1",icon:"ios-cog"},
               {name:"test2",label:"label2",icon:"ios-people"}*/],
           activeEditorId : null,

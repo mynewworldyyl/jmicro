@@ -17,7 +17,7 @@ public class TestZKOperator extends JMicroBaseTestCase{
 	@Test
 	public void testAddServiceListener() {
 		IDataOperator op = this.get(IDataOperator.class);
-		 op.addChildrenListener(Config.InstanceDir,
+		 op.addChildrenListener(Config.getRaftBasePath(Config.InstanceDir),
 				(type,parent,child,data) -> {
 					System.out.print("\n");
 					if(type == IServiceListener.ADD) {

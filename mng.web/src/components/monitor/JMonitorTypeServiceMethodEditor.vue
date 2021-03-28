@@ -5,15 +5,16 @@
         <a  v-if="adminPer"   @click="selectAll(false)">UNSELECTALL</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
         <a  v-if="adminPer"  @click="update()">UPDATE</a>
         <br/>-->
-        <p>{{id}}</p>
+        <p>{{errMsg}}</p>
         <table class="configItemTalbe" width="99%">
-            <thead><tr><td>GROUP</td> <td>LABEL</td><td>FIELD NAME</td><td>TYPE CODE</td> <td>DESC</td><td>OPERATION</td></tr></thead>
+            <thead><tr><td>GROUP</td> <td>LABEL</td><td>FIELD NAME</td><td>TYPE CODE</td> <td>DESC</td>
+                <td v-if="isAdmin">OPERATION</td></tr></thead>
             <tr v-for="a in typeList" :key="a.id">
                 <td>{{ a.group }}</td><td>{{a.label}}</td><td>{{a.fieldName}}</td>
                 <td>{{ a.type }}&nbsp;/&nbsp;0X{{ a.type.toString(16).toUpperCase() }}</td>
                 <td>{{ a.desc }}</td>
-                <td>
-                    <Checkbox :disabled="!adminPer" v-model="a.check" @change.native="checkChange(a)"></Checkbox>
+                <td v-if="isAdmin">
+                    <Checkbox v-model="a.check" @change.native="checkChange(a)"></Checkbox>
                 </td>
             </tr>
         </table>
@@ -34,7 +35,7 @@
                 dels:[],
                 errMsg:'',
                 typeList : [],
-                adminPer : false,
+                isAdmin : false,
                 addConfigDialog:false,
             }
         },
@@ -49,7 +50,8 @@
 
             refresh(){
                 let self = this;
-                this.adminPer = window.jm.rpc.isAdmin();
+                this.errMsg = '';
+                this.isAdmin = window.jm.rpc.isAdmin();
                 window.jm.mng.moType.getAllConfigsByGroup(['deflt']).then((resp)=>{
                     if(resp.code != 0) {
                         self.$Message.success(resp.msg);
@@ -118,6 +120,10 @@
             },
 
             update() {
+                if(!this.isAdmin) {
+                    this.errMsg = 'No permission';
+                    return;
+                }
                 if(this.dels.length == 0 && this.adds.length == 0) {
                     this.$Message.warning("No data change!");
                     return;

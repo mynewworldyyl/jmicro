@@ -2,15 +2,16 @@
     <div class="JTypeConfig">
        <!-- <a @click="refresh()">REFRESH</a>
         <a v-if="adminPer" @click="add()">ADD</a>-->
-        <table v-if="isLogin && typeList && typeList.length > 0" class="configItemTalbe" width="99%">
-        <thead><tr><td>GROUP</td> <td>LABEL</td><td>FIELD NAME</td><td>TYPE CODE</td> <td>DESC</td><td>OPERATION</td></tr></thead>
+        <table v-if="typeList && typeList.length > 0" class="configItemTalbe" width="99%">
+        <thead><tr><td>GROUP</td> <td>LABEL</td><td>FIELD NAME</td><td>TYPE CODE</td> <td>DESC</td>
+            <td v-if="isAdmin">OPERATION</td></tr></thead>
         <tr v-for="a in typeList" :key="a.id">
             <td>{{ a.group }}</td><td>{{a.label}}</td><td>{{a.fieldName}}</td>
             <td>{{ a.type }}&nbsp;/&nbsp;0X{{ a.type.toString(16).toUpperCase() }}</td>
             <td>{{ a.desc }}</td>
-            <td>&nbsp;
-                <a v-if="isLogin && a.type > 0X0FFF" @click="deleteCfg(a.type)">DELETE</a>&nbsp;&nbsp;&nbsp;&nbsp;
-                <a v-if="isLogin" @click="update(a)">UPDATE</a>
+            <td v-if="isAdmin">&nbsp;
+                <a v-if=" a.type > 0X0FFF" @click="deleteCfg(a.type)">DELETE</a>&nbsp;&nbsp;&nbsp;&nbsp;
+                <a  @click="update(a)">UPDATE</a>
             </td>
         </tr>
     </table>
@@ -56,7 +57,7 @@
         name: 'JTypeConfig',
         data () {
             return {
-                isLogin:false,
+                isAdmin:false,
                 groups:[],
                 errMsg:'',
                 typeList : [],
@@ -70,6 +71,10 @@
             onAddOk() {
                 if(!this.cfg.fieldName) {
                     this.errMsg = 'field name cannot be null';
+                    return;
+                }
+                if(!this.isAdmin) {
+                    this.errMsg = 'No permission';
                     return;
                 }
                 this.errMsg ='';
@@ -89,10 +94,8 @@
 
             refresh(){
                 let self = this;
-                this.isLogin = window.jm.rpc.isLogin();
-                if(!this.isLogin) {
-                    return;
-                }
+                this.isAdmin = window.jm.rpc.isAdmin();
+
                 window.jm.mng.moType.getAllConfigs().then((resp)=>{
                     if(resp.code != 0) {
                         self.$Message.success(resp.msg);
@@ -124,10 +127,18 @@
             },
 
             add() {
+                if(!this.isAdmin) {
+                    this.errMsg = 'No permission';
+                    return;
+                }
                 this.addConfigDialog = true;
             },
 
             deleteCfg(cfg) {
+                if(!this.isAdmin) {
+                    this.errMsg = 'No permission';
+                    return;
+                }
                 let self = this;
                 window.jm.mng.moType.delete(cfg).then((resp)=>{
                     if(resp.code != 0) {
@@ -142,10 +153,18 @@
             },
 
             update(mc) {
+                if(!this.isAdmin) {
+                    this.errMsg = 'No permission';
+                    return;
+                }
                 console.log(mc);
             },
 
             createGroup(val) {
+                if(!this.isAdmin) {
+                    this.errMsg = 'No permission';
+                    return;
+                }
                 if(val && val.trim() != '') {
                     val = val.trim();
                     for(let i =0; i < this.groups.length; i++) {

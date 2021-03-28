@@ -16,9 +16,12 @@ import cn.jmicro.api.annotation.Service;
 import cn.jmicro.api.exp.ExpUtils;
 import cn.jmicro.api.idgenerator.ComponentIdServer;
 import cn.jmicro.api.monitor.ILogMonitorServer;
+import cn.jmicro.api.monitor.LG;
 import cn.jmicro.api.monitor.LogWarningConfig;
+import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.raft.IDataOperator;
 import cn.jmicro.api.security.ActInfo;
+import cn.jmicro.api.security.PermissionManager;
 import cn.jmicro.common.Utils;
 import cn.jmicro.common.util.JsonUtils;
 import cn.jmicro.mng.api.ILogWarningConfig;
@@ -48,6 +51,8 @@ public class LogWarningConfigImpl implements ILogWarningConfig {
 			return r;
 		}
 		
+		boolean isAdmin = PermissionManager.isCurAdmin();
+		
 		List<LogWarningConfig> ll = new ArrayList<>();
 		r.setData(ll);
 		
@@ -55,7 +60,11 @@ public class LogWarningConfigImpl implements ILogWarningConfig {
 			String path = ROOT + "/" + id;
 			String data = op.getData(path);
 			LogWarningConfig lw = JsonUtils.getIns().fromJson(data, LogWarningConfig.class);
-			ll.add(lw);
+			if(lw != null) {
+				if(isAdmin || PermissionManager.checkAccountClientPermission(lw.getCreatedBy())) {
+					ll.add(lw);
+				}
+			}
 		}
 		
 		return r;
@@ -69,6 +78,14 @@ public class LogWarningConfigImpl implements ILogWarningConfig {
 		String path = ROOT + "/" + cfg.getId();
 		String data = op.getData(path);
 		LogWarningConfig lw = JsonUtils.getIns().fromJson(data, LogWarningConfig.class);
+		
+		if(!(PermissionManager.isCurAdmin() || PermissionManager.checkAccountClientPermission(lw.getCreatedBy()))) {
+			r.setCode(Resp.CODE_NO_PERMISSION);
+			r.setData(false);
+			r.setMsg(JMicroContext.get().getAccount().getActName()+" have no permissoin to update log warning config: " + lw.getId()+", clientId: " + lw.getClientId());
+			LG.log(MC.LOG_WARN, this.getClass(), r.getMsg());
+			return r;
+		}
 		
 		if(!ExpUtils.isValid(cfg.getExpStr())) {
 			r.setCode(Resp.CODE_FAIL);
@@ -92,6 +109,7 @@ public class LogWarningConfigImpl implements ILogWarningConfig {
 			return r;
 		}
 		
+		lw.setClientId(cfg.getClientId());
 		lw.setExpStr(cfg.getExpStr());
 		lw.setMinNotifyInterval(cfg.getMinNotifyInterval());
 		lw.setCfgParams(cfg.getCfgParams());
@@ -110,6 +128,18 @@ public class LogWarningConfigImpl implements ILogWarningConfig {
 	public Resp<Boolean> delete(String id) {
 		Resp<Boolean> r = new Resp<>();
 		String path = ROOT + "/" + id;
+		
+		String data = op.getData(path);
+		LogWarningConfig lw = JsonUtils.getIns().fromJson(data, LogWarningConfig.class);
+		
+		if(!(PermissionManager.isCurAdmin() || PermissionManager.checkAccountClientPermission(lw.getCreatedBy()))) {
+			r.setCode(Resp.CODE_NO_PERMISSION);
+			r.setData(false);
+			r.setMsg(JMicroContext.get().getAccount().getActName()+" have no permissoin to delete log warning config: " + lw.getId()+", target clientId: " + lw.getClientId());
+			LG.log(MC.LOG_WARN, this.getClass(), r.getMsg());
+			return r;
+		}
+		
 		if(op.exist(path)) {
 			op.deleteNode(path);
 		}
@@ -142,8 +172,13 @@ public class LogWarningConfigImpl implements ILogWarningConfig {
 		
 		ActInfo ai = JMicroContext.get().getAccount();
 		
-		cfg.setClientId(ai.getId());
+		if(!PermissionManager.isCurAdmin()) {
+			cfg.setClientId(ai.getId());
+		}
+		
+		//cfg.setClientId(ai.getId());
 		cfg.setId(this.idGenerator.getStringId(LogWarningConfig.class));
+		cfg.setCreatedBy(ai.getId());
 		
 		String path = ROOT + "/" + cfg.getId();
 		op.createNodeOrSetData(path, JsonUtils.getIns().toJson(cfg), false);

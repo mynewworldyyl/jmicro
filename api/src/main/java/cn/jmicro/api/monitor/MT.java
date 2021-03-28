@@ -41,7 +41,7 @@ public class MT {
 	public static boolean rpcEvent(ServiceMethod sm,short type,long val) {
 		if(sm != null && sm.getMonitorEnable() == 1 && isInit && m != null 
 				&& m.canSubmit(sm,type,Config.getAccountName())) {
-			MRpcStatisItem mi = new MRpcStatisItem();
+			JMStatisItem mi = new JMStatisItem();
 			mi.setKey(sm.getKey().toKey(true, true, true));
 			setCommon(mi);
 			mi.addType(type,val);
@@ -56,7 +56,7 @@ public class MT {
 		}
 		
 		if(isMonitorable(type)) {
-			MRpcStatisItem mi = JMicroContext.get().getMRpcStatisItem();
+			JMStatisItem mi = JMicroContext.get().getMRpcStatisItem();
 			mi.addType(type,val);
 			return true;
 		}
@@ -72,7 +72,7 @@ public class MT {
 			return rpcEvent(type,num);
 		}
 		
-		MRpcStatisItem mi = new MRpcStatisItem();
+		JMStatisItem mi = new JMStatisItem();
 		mi.setKey(key);
 		setCommon(mi);
 		
@@ -101,7 +101,7 @@ public class MT {
 		return null;
 	}
 	
-	public static void setCommon(MRpcStatisItem si) {
+	public static void setCommon(JMStatisItem si) {
 		if(si == null) {
 			return;
 		}

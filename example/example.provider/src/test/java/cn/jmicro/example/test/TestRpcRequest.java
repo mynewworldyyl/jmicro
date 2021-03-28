@@ -160,7 +160,7 @@ public class TestRpcRequest {
 		cfg.setRegistryUrl(new URL("zookeeper","localhost",2180));
 		JMicroContext.setCfg(cfg);*/
 		
-		IObjectFactory of = JMicro.getObjectFactoryAndStart(new String[0]);
+		IObjectFactory of = (IObjectFactory)JMicro.getObjectFactoryAndStart(new String[0]);
 		Utils.getIns().waitForShutdown();
 	}
 

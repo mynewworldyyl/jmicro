@@ -1,7 +1,6 @@
 package cn.jmicro.api.monitor;
 
 import java.io.BufferedWriter;
-import java.lang.reflect.Method;
 import java.util.Set;
 import java.util.regex.Pattern;
 
@@ -14,12 +13,12 @@ import cn.jmicro.common.Constants;
 @SO
 public class StatisConfig {
 
-	public static final String STATIS_CONFIG_ROOT = Config.BASE_DIR + "/statisConfigs";
+	public static final String STATIS_CONFIG_ROOT = Config.getRaftBasePath("") + "/statisConfigs";
 	
-	public static final String UNIT_SE=Constants.TIME_SECONDS;
-	public static final String UNIT_MU=Constants.TIME_MINUTES;
-	public static final String UNIT_HO=Constants.TIME_HOUR;
-	public static final String UNIT_DA=Constants.TIME_DAY;
+	public static final String UNIT_SE = Constants.TIME_SECONDS;
+	public static final String UNIT_MU = Constants.TIME_MINUTES;
+	public static final String UNIT_HO = Constants.TIME_HOUR;
+	public static final String UNIT_DA = Constants.TIME_DAY;
 	
 	//public static final String BY_TYPE_SERVICE = "Service";
 	//public static final String BY_TYPE_SERVICE_INSTANCE = "ServiceInstance";
@@ -43,7 +42,7 @@ public class StatisConfig {
 	public static final int BY_TYPE_INSTANCE = 4;
 	
 	//使用此账号运行的实例及此账号的RPC调用需要监控
-	public static final int BY_TYPE_ACCOUNT= 5;
+	public static final int BY_TYPE_ACCOUNT = 5;
 	
 	//public static final String BY_TYPE_EXP = "Expression";
 	
@@ -84,7 +83,7 @@ public class StatisConfig {
 	 * 0：Admin账号
 	 * >0: 其他普通账号
 	 */
-	private transient int forClientId = -1;
+	private int clientId = -1;
 	
 	//toType == TO_TYPE_SERVICE_METHOD时有效
 	
@@ -313,12 +312,12 @@ public class StatisConfig {
 		this.bw = bw;
 	}
 
-	public int getForClientId() {
-		return forClientId;
+	public int getClientId() {
+		return clientId;
 	}
 
-	public void setForClientId(int forClientId) {
-		this.forClientId = forClientId;
+	public void setClientId(int forClientId) {
+		this.clientId = forClientId;
 	}
 
 	public Set<Short> getTypes() {

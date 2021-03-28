@@ -171,8 +171,8 @@ public class MonitorStatisConfigManager {
 		Set<StatisConfig> cons = copyConfigs();
 		for(StatisConfig c : cons) {
 			if(c.getByType() == StatisConfig.BY_TYPE_INSTANCE 
-					&& instanceName.equals(c.getByins())) {
-				parseInstanceConfigData(c,1);
+					&& instanceName.startsWith(c.getByKey())) {
+				parseInstanceConfigData(c,1,instanceName);
 			}
 		}
 	}
@@ -321,12 +321,12 @@ public class MonitorStatisConfigManager {
 			 parseServiceConfigData(lw,enable,lw.getByKey());
 			 break;
 		case StatisConfig.BY_TYPE_INSTANCE:
-			parseInstanceConfigData(lw,enable);
+			parseInstanceConfigData(lw,enable,lw.getByKey());
 		}
 	}
 
-	private void parseInstanceConfigData(StatisConfig lw, int enable) {
-		String insName = lw.getByins();
+	private void parseInstanceConfigData(StatisConfig lw, int enable,String insName) {
+		//String insName = lw.getByKey();
 		parseType2ConfigNum(this.ins2Types2ConfigNum,lw,insName,enable);
 	}
 
@@ -463,7 +463,7 @@ public class MonitorStatisConfigManager {
 		
 		Set<Short> set = null;
 		if(!Utils.isEmpty(lw.getNamedType())) {
-			String p = Config.NamedTypesDir+"/"+lw.getNamedType();
+			String p = Config.getRaftBasePath(Config.NamedTypesDir)+"/"+lw.getNamedType();
 			set = this.getTypeByKey(p);
 		} else {
 			set = new HashSet<>();

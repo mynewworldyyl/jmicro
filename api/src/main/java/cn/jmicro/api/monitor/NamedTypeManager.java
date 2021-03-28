@@ -33,7 +33,7 @@ public class NamedTypeManager {
 	private Map<String,Set<INamedTypeListener>> listeners = new HashMap<>();
 	
 	private IDataListener srvTypeDataChangeListener = (path,data) -> {
-		String skey = path.substring(Config.NamedTypesDir.length()+1);
+		String skey = path.substring(Config.getRaftBasePath(Config.NamedTypesDir).length()+1);
 		doSrvMoTypeUpdate(skey,data);
 	};
 	
@@ -48,10 +48,10 @@ public class NamedTypeManager {
 	};
 	
 	public void ready() {
-		if(!op.exist(Config.NamedTypesDir)) {
-			op.createNodeOrSetData(Config.NamedTypesDir, "", IDataOperator.PERSISTENT);
+		if(!op.exist(Config.getRaftBasePath(Config.NamedTypesDir))) {
+			op.createNodeOrSetData(Config.getRaftBasePath(Config.NamedTypesDir), "", IDataOperator.PERSISTENT);
 		}
-		op.addChildrenListener(Config.NamedTypesDir,srvChildrenListener);
+		op.addChildrenListener(Config.getRaftBasePath(Config.NamedTypesDir),srvChildrenListener);
 	}
 
 	private void doSrvMoTypeDelete(String skey, String data) {

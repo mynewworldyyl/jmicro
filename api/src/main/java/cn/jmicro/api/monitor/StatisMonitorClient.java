@@ -77,8 +77,6 @@ public class StatisMonitorClient {
 	@Inject(required=false)
 	private IStatisMonitorServer localMonitorServer;
 	
-	private AbstractClientServiceProxyHolder msPo;
-	
 	@Inject
 	private IObjectFactory of;
 	
@@ -93,9 +91,9 @@ public class StatisMonitorClient {
 	
 	//private Map<String,Boolean> srvMethodMonitorEnable = new HashMap<>();
 	
-	private BasketFactory<MRpcStatisItem> basketFactory = null;
+	private BasketFactory<JMStatisItem> basketFactory = null;
 	
-	private BasketFactory<MRpcStatisItem> cacheBasket = null;
+	private BasketFactory<JMStatisItem> cacheBasket = null;
 	
 	private Object syncLocker = new Object();
 	
@@ -105,8 +103,8 @@ public class StatisMonitorClient {
 	
 	public void init() {
 		
-		this.basketFactory = new BasketFactory<MRpcStatisItem>(5000,1);
-		this.cacheBasket = new BasketFactory<MRpcStatisItem>(1000,5);
+		this.basketFactory = new BasketFactory<JMStatisItem>(5000,1);
+		this.cacheBasket = new BasketFactory<JMStatisItem>(1000,5);
 		
 		/*Set<String> children = op.getChildren(Config.MonitorTypesDir, false);
 		if(children != null && !children.isEmpty()) {
@@ -122,8 +120,6 @@ public class StatisMonitorClient {
 	public void ready() {
 		
 		logger.info("Init object :" +this.hashCode());
-		
-		msPo = (AbstractClientServiceProxyHolder)((Object)this.monitorServer);
 		
 		typeLabels = new String[TYPES.length];
 		for(int i = 0; i < TYPES.length; i++) {
@@ -148,18 +144,18 @@ public class StatisMonitorClient {
 		config.setThreadNamePrefix("StatisMonitorClient");
 		executor = of.get(ExecutorFactory.class).createExecutor(config);
 		
-		enableWork(msPo,IServiceListener.ADD);
+		enableWork(null,IServiceListener.ADD);
 		
 	}
 	
-	public boolean submit2Cache(MRpcStatisItem item) {
+	public boolean submit2Cache(JMStatisItem item) {
 
-		if(this.cacheBasket == null) {
+		if(this.cacheBasket == null || !this.monitorServer.isReady()) {
 			logger.error("cacheBasket is NULL");
 			return false;
 		}
 		
-		IBasket<MRpcStatisItem> b = cacheBasket.borrowWriteBasket(true);
+		IBasket<JMStatisItem> b = cacheBasket.borrowWriteBasket(true);
 		if(b == null) {
 			if(this.statusMonitorAdapter != null && this.statusMonitorAdapter.isMonitoralbe()) {
 				this.statusMonitorAdapter.getServiceCounter().add(MC.Ms_Fail2BorrowBasket, 1);
@@ -186,11 +182,11 @@ public class StatisMonitorClient {
 	
 	}
 	
-	public boolean readySubmit(MRpcStatisItem item) {
-		if(!checkerWorking) {
+	public boolean readySubmit(JMStatisItem item) {
+		if(!checkerWorking || !this.monitorServer.isReady()) {
 			return false;
 		}
-		IBasket<MRpcStatisItem> b = basketFactory.borrowWriteBasket(true);
+		IBasket<JMStatisItem> b = basketFactory.borrowWriteBasket(true);
 		if(b == null) {
 			if(this.statusMonitorAdapter != null && this.statusMonitorAdapter.isMonitoralbe()) {
 				this.statusMonitorAdapter.getServiceCounter().add(MC.Ms_Fail2BorrowBasket, 1);
@@ -221,11 +217,9 @@ public class StatisMonitorClient {
 	
 	public void enableWork(AbstractClientServiceProxyHolder msPo, int opType) {
 		if(!checkerWorking && IServiceListener.ADD == opType) {
-			if(this.msPo != null && msPo.getHolder().isUsable()) {
-				logger.warn("Monitor thread started");
-				checkerWorking = true;
-				new Thread(this::doWork,Config.getInstanceName()+ "_MonitorClient_Worker").start();
-			}
+			logger.warn("Monitor thread started");
+			checkerWorking = true;
+			new Thread(this::doWork,Config.getInstanceName()+ "_MonitorClient_Worker").start();
 		} else if(checkerWorking && IServiceListener.REMOVE == opType) {
 			logger.warn("Monitor thread stop by monitor server offline!");
 			checkerWorking = false;
@@ -236,7 +230,7 @@ public class StatisMonitorClient {
 		
 		logger.info("Minitor manage work start working!");
 		
-		Set<MRpcStatisItem> items = new HashSet<MRpcStatisItem>();
+		Set<JMStatisItem> items = new HashSet<JMStatisItem>();
 		int batchSize = 5;
 		
 		int maxSendInterval = 2000;
@@ -255,11 +249,11 @@ public class StatisMonitorClient {
 					this.statusMonitorAdapter.getServiceCounter().add(MC.Ms_CheckLoopCnt, 1);
 				}
 				
-				IBasket<MRpcStatisItem> readBasket = this.basketFactory.borrowReadSlot();
+				IBasket<JMStatisItem> readBasket = this.basketFactory.borrowReadSlot();
 				if(readBasket == null) {
 					//超过5秒钟的缓存包，强制提交为读状态
-					IBasket<MRpcStatisItem> wb = null;
-					Iterator<IBasket<MRpcStatisItem>> writeIte = this.cacheBasket.iterator(false);
+					IBasket<JMStatisItem> wb = null;
+					Iterator<IBasket<JMStatisItem>> writeIte = this.cacheBasket.iterator(false);
 					while((wb = writeIte.next()) != null) {
 						if(!wb.isEmpty() && (beginTime - wb.firstWriteTime()) > 5000) {
 							this.cacheBasket.returnWriteBasket(wb, true);
@@ -269,12 +263,12 @@ public class StatisMonitorClient {
 					}
 					
 					//beginTime = System.currentTimeMillis();
-					IBasket<MRpcStatisItem> rb = null;
-					Iterator<IBasket<MRpcStatisItem>> readIte = this.cacheBasket.iterator(true);
+					IBasket<JMStatisItem> rb = null;
+					Iterator<IBasket<JMStatisItem>> readIte = this.cacheBasket.iterator(true);
 					while((rb = readIte.next()) != null) {
 						if(beginTime - rb.firstWriteTime() > 10000) { 
 							//超过10秒
-							MRpcStatisItem[] mrs = new MRpcStatisItem[rb.remainding()];
+							JMStatisItem[] mrs = new JMStatisItem[rb.remainding()];
 							rb.readAll(mrs);
 							items.addAll(Arrays.asList(mrs));
 							cacheBasket.returnReadSlot(rb, true);
@@ -299,7 +293,7 @@ public class StatisMonitorClient {
 				}
 				
 				while(readBasket != null) {
-					MRpcStatisItem[] mrs = new MRpcStatisItem[readBasket.remainding()];
+					JMStatisItem[] mrs = new JMStatisItem[readBasket.remainding()];
 					readBasket.readAll(mrs);
 					items.addAll(Arrays.asList(mrs));
 					basketFactory.returnReadSlot(readBasket, true);
@@ -317,15 +311,15 @@ public class StatisMonitorClient {
 				
 				if(items.size() >= batchSize || (items.size() > 0 && ((TimeUtils.getCurTime() - lastSentTime) > maxSendInterval))) {
 					
-					IBasket<MRpcStatisItem> cb = null;
+					IBasket<JMStatisItem> cb = null;
 					while((cb = this.cacheBasket.borrowReadSlot()) != null) {
-						MRpcStatisItem[] mrs = new MRpcStatisItem[cb.remainding()];
+						JMStatisItem[] mrs = new JMStatisItem[cb.remainding()];
 						cb.readAll(mrs);
 						items.addAll(Arrays.asList(mrs));
 						cacheBasket.returnReadSlot(cb, true);
 					}
 					
-					MRpcStatisItem[] mrs = new MRpcStatisItem[items.size()];
+					JMStatisItem[] mrs = new JMStatisItem[items.size()];
 					items.toArray(mrs);
 					//System.out.println("submit: " +mrs.length);
 					
@@ -349,18 +343,18 @@ public class StatisMonitorClient {
 		}
 	}
 	
-	private void merge(Set<MRpcStatisItem> items) {
+	private void merge(Set<JMStatisItem> items) {
 		
-		Set<MRpcStatisItem> result = new HashSet<>();
+		Set<JMStatisItem> result = new HashSet<>();
 		
 		//Map<String,OneItem> oneItems = new HashMap<>();
 		
-		Map<String,MRpcStatisItem> mprcItems = new HashMap<>();
+		Map<String,JMStatisItem> mprcItems = new HashMap<>();
 		
-		MRpcStatisItem nullSMMRpcItem = null;
+		JMStatisItem nullSMMRpcItem = null;
 		
-		for(Iterator<MRpcStatisItem> ite = items.iterator(); ite.hasNext();) {
-			MRpcStatisItem mi = ite.next();
+		for(Iterator<JMStatisItem> ite = items.iterator(); ite.hasNext();) {
+			JMStatisItem mi = ite.next();
 			ite.remove();
 			
 			if(mi.getSmKey() == null) {
@@ -384,7 +378,7 @@ public class StatisMonitorClient {
 				//合并同一个服务方法的统计参数
 				//result.add(mi);
 				
-				MRpcStatisItem emi = mprcItems.get(mi.getKey());
+				JMStatisItem emi = mprcItems.get(mi.getKey());
 				if(emi == null) {
 					mprcItems.put(mi.getKey(),mi);
 					result.add(mi);
@@ -416,9 +410,9 @@ public class StatisMonitorClient {
 
 	private class Worker implements Runnable {
 		
-		private MRpcStatisItem[] items = null;
+		private JMStatisItem[] items = null;
 		
-		public Worker(MRpcStatisItem[] items) {
+		public Worker(JMStatisItem[] items) {
 			this.items = items;
 		}
 		
@@ -439,7 +433,7 @@ public class StatisMonitorClient {
 				
 				//用于计算数据从创建到提交时间差，服务器以时间差为标准计算数据时间
 				long curTime = TimeUtils.getCurTime();
-				for(MRpcStatisItem i : items) {
+				for(JMStatisItem i : items) {
 					//logger.info("KEY:{}",i.getKey());
 					/*for(StatisItem si : i.getTypeStatis().values()) {
 						logger.info("T{}, V{}, TI{}",si.getType(),si.getVal(),si.getTime());
@@ -480,8 +474,8 @@ public class StatisMonitorClient {
 					CommonException ce = (CommonException)e;
 					if(ce.getKey() == MC.MT_PACKET_TOO_MAX) {
 						logger.warn("Resend items one by one");
-						for(MRpcStatisItem item : this.items) {
-							monitorServer.submitJMAsync(new MRpcStatisItem[] {item},item)
+						for(JMStatisItem item : this.items) {
+							monitorServer.submitJMAsync(new JMStatisItem[] {item},item)
 							.fail((code,msg,faiItem)-> {
 								logger.error("fail to resend item:" + faiItem.toString(),"code:" + code+",msg="+msg);
 							});
@@ -499,11 +493,11 @@ public class StatisMonitorClient {
 	}
 	
 	public boolean isServerReady() {
-		return monitorServer != null;
+		return monitorServer != null && this.monitorServer.isReady();
 	}
 	
 	public boolean canSubmit(ServiceMethod sm, Short t,String actName) {
-		if(!this.checkerWorking || monitorServer == null) {
+		if(!this.checkerWorking || monitorServer == null || !this.monitorServer.isReady()) {
 			return false;
 		}
 		return this.mscm.canSubmit(sm,t,actName);

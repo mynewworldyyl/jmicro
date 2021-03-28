@@ -32,8 +32,15 @@ public class UploadJmicroResource {
 			return;
 		}
 		
-		final String[] ats;
+		final String grp;
 		if(args.length > 1 && !Utils.isEmpty(args[1])) {
+			grp = args[1].trim();
+		} else {
+			grp = "cn.jmicro";
+		}
+		
+		final String[] ats;
+		if(args.length > 2 && !Utils.isEmpty(args[2])) {
 			ats = args[1].split(",");
 		} else {
 			ats = new String[0];
@@ -46,8 +53,8 @@ public class UploadJmicroResource {
 			return;
 		}
 		
-		ApiGatewayClient.initClient(new ApiGatewayConfig(Constants.TYPE_SOCKET,"192.168.56.1","9092"));
-		//ApiGatewayClient.initClient(new ApiGatewayConfig(Constants.TYPE_SOCKET,"47.112.161.111","9092"));
+		//ApiGatewayClient.initClient(new ApiGatewayConfig(Constants.TYPE_SOCKET,"192.168.56.1","9092"));
+		ApiGatewayClient.initClient(new ApiGatewayConfig(Constants.TYPE_SOCKET,"47.112.161.111","9092"));
 		ApiGatewayClient socketClient =  ApiGatewayClient.getClient();
 		
 		IResourceResponsitory$Gateway$JMAsyncClient rr = 
@@ -57,7 +64,7 @@ public class UploadJmicroResource {
 		socketClient.loginJMAsync("jmicro", "0")
 		.success((act,cxt) -> {
 			System.out.println("Successfully login: " + act.getData().getActName()+",LKEY: " + act.getData().getLoginKey());
-			doUpload(jarfiles,rr,ats);
+			doUpload(jarfiles,rr,grp,ats);
 		})
 		.fail((code,msg,cxt)->{
 			System.out.println("Fail login msg:" +msg);
@@ -65,9 +72,9 @@ public class UploadJmicroResource {
 	}
 	
 	private static void doUpload(Map<String, File> jarfiles,IResourceResponsitory$Gateway$JMAsyncClient rr,
-			String[] artifactIds) {
+			String grp,String[] artifactIds) {
 		Map<String,Object> qry = new HashMap<>();
-		qry.put("group", "cn.jmicro");
+		qry.put("group", grp);
 		//qry.put("status", PackageResource.STATUS_ENABLE);
 		if(artifactIds != null && artifactIds.length > 0) {
 			qry.put("artifactIds", StringUtils.join(artifactIds, ","));

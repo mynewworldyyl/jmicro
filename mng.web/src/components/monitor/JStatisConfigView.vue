@@ -5,6 +5,7 @@
             <table class="configItemTalbe" width="99%">
                 <thead><tr style="width:30px">
                     <td>{{'ID' | i18n }}</td>
+                    <td>{{'clientId' | i18n }}</td>
                     <td>{{'StatisType' | i18n }}</td>
                     <td>{{'StatisKey' | i18n }}</td>
                     <td>{{'CTimeout(S)' | i18n }}</td>
@@ -23,6 +24,7 @@
                 </tr></thead>
                 <tr v-for="c in logList" :key="c.id">
                     <td>{{c.id}}</td>
+                    <td>{{c.clientId}}</td>
                     <td>{{byTypes[c.byType]}}</td>
                     <td>{{c.byKey}}</td>
                     <td>{{c.counterTimeout}}</td>
@@ -122,20 +124,20 @@
                 </Select>
 
                 <Label v-if="byKeyShow.ins"  for="ByIns">{{'ByIns' | i18n}}</Label>
-                <!--<Input v-if="byKeyShow.ins"  id="ByIns" v-model="byKey.ins"/>-->
-                <Select :disabled="readonly" v-if="byKeyShow.ins"   id="ByIns" :filterable="true"
+                <Input :disabled="readonly" v-if="byKeyShow.ins"  id="ByIns" v-model="byKey.ins"/>
+                <!--<Select :disabled="readonly" v-if="byKeyShow.ins"   id="ByIns" :filterable="true"
                         ref="ByIns" :label-in-value="true" v-model="byKey.ins">
                     <Option value="*" >none</Option>
                     <Option v-for="(v) in byCurInstances"  :value="v"  v-bind:key="v">{{v}}</Option>
-                </Select>
+                </Select>-->
 
                 <Label v-if="byKeyShow.allIns"  for="ByAllIns">{{'ByIns' | i18n}}</Label>
-                <!--<Input v-if="byKeyShow.ins"  id="ByIns" v-model="byKey.ins"/>-->
-                <Select :disabled="readonly" v-if="byKeyShow.allIns"   id="ByAllIns" :filterable="true"
+                <Input :disabled="readonly" v-if="byKeyShow.allIns"  id="ByAllIns" v-model="byKey.ins"/>
+                <!--<Select :disabled="readonly" v-if="byKeyShow.allIns"   id="ByAllIns" :filterable="true"
                         ref="ByIns" :label-in-value="true" v-model="byKey.ins">
                    <Option value="*" >none</Option>
                     <Option v-for="(v) in allInstances"  :value="v"  v-bind:key="v">{{v}}</Option>
-                </Select>
+                </Select>-->
 
                 <Label v-if="cfg.byType==5 || cfg.byType==3" for="byAccount">{{'Account' | i18n}}</Label>
                 <Input :disabled="readonly" v-if="cfg.byType==5 || cfg.byType==3"  id="byAccount" v-model="cfg.byKey"/>
@@ -189,7 +191,7 @@
                 <Label v-if="cfg.toType == 6 "  for="topic">{{'Topic' | i18n}}</Label>
                 <Input :disabled="readonly" v-if="cfg.toType == 6 "  id="topic" v-model="cfg.toParams"/>
 
-                <Label for="counterTimeout">{{'CounterTimeout' | i18n}}</Label>
+                <Label for="counterTimeout">{{'CounterTimeout' | i18n}}(S)</Label>
                 <Input :disabled="readonly" id="counterTimeout" v-model="cfg.counterTimeout"/>
 
                 <Label for="actName">{{'ActName' | i18n}}</Label>
@@ -208,7 +210,7 @@
                     </Checkbox>
                 </CheckboxGroup>-->
 
-            <Label for="minNotifyTime">{{'minNotifyTime' | i18n}}</Label>
+            <Label for="minNotifyTime">{{'minNotifyTime' | i18n}}(MS)</Label>
             <Input :disabled="readonly" id="minNotifyTime" v-model="cfg.minNotifyTime"/>
 
             <Label for="namedType">{{'NamedType' | i18n}}</Label>&nbsp;&nbsp;&nbsp;<a href="javascript:void(0);" @click="namedTypeDetail()">{{'Detail'|i18n}}</a>
@@ -440,6 +442,7 @@
 
             add() {
                 this.cfg = {statisIndexs:[]};
+                this.errMsg = '';
 
                 this.updateMode=false;
                 if(!this.cfg.timeUnit || this.cfg.timeUnit.length == 0) {
@@ -498,6 +501,7 @@
                 let self = this;
                 this.updateMode = true;
                 this.cfg = cfg;
+                this.errMsg = '';
 
                 if(cfg.byType == BY_TYPE_INSTANCE ) {
                    this.byKey.ins = this.cfg.byKey;
@@ -702,6 +706,7 @@
             },
 
             refresh() {
+                this.errMsg = '';
                 let self = this;
                 this.isLogin = window.jm.rpc.isLogin();
                 if(!this.isLogin) {
@@ -781,7 +786,7 @@
         },
 
         mounted () {
-
+            this.errMsg = '';
             this.$el.style.minHeight=(document.body.clientHeight-67)+'px';
             window.jm.rpc.addActListener(cid,this.refresh);
             let self = this;

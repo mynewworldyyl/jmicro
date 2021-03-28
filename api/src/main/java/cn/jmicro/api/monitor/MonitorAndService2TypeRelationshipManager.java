@@ -46,7 +46,7 @@ public class MonitorAndService2TypeRelationshipManager {
 	private Map<String,Set<String>> srv2sms = new HashMap<>();
 	
 	private IDataListener monitorTypeDataChangeListener = (path,data) -> {
-		String skey = path.substring(Config.MonitorTypesDir.length()+1);
+		String skey = path.substring(Config.getRaftBasePath(Config.MonitorTypesDir).length()+1);
 		doMonitorMoTypeUpdate(skey,data);
 	};
 	
@@ -61,7 +61,7 @@ public class MonitorAndService2TypeRelationshipManager {
 	};
 	
 	private IDataListener srvTypeDataChangeListener = (path,data) -> {
-		String skey = path.substring(Config.MonitorServiceMethodTypesDir.length()+1);
+		String skey = path.substring(Config.getRaftBasePath(Config.MonitorServiceMethodTypesDir).length()+1);
 		doSrvMoTypeUpdate(skey,data);
 	};
 	
@@ -89,8 +89,8 @@ public class MonitorAndService2TypeRelationshipManager {
 	
 	
 	public void ready() {
-		op.addChildrenListener(Config.MonitorTypesDir, monitorTypeChildrenListener);
-		op.addChildrenListener(Config.MonitorServiceMethodTypesDir, srvChildrenListener);
+		op.addChildrenListener(Config.getRaftBasePath(Config.MonitorTypesDir), monitorTypeChildrenListener);
+		op.addChildrenListener( Config.getRaftBasePath(Config.MonitorServiceMethodTypesDir), srvChildrenListener);
 		registry.addServiceNameListener("cn.jmicro.api.monitor.IMonitorDataSubscriber", monigotDataSubscribeListener);
 		
 	}

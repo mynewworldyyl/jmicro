@@ -31,7 +31,7 @@ import cn.jmicro.common.Constants;
 @Component("uniqueIdGenerator")
 public class UniqueIdGenerator implements IIdGenerator/*,IIdServer,IIdClient*/{
 
-	private static final String ID_IDR = Config.BASE_DIR + "/id/";
+	private static final String ID_IDR = Config.getRaftBasePath("") + "/id/";
 	
 	@Inject(required=true)
 	private IDataOperator dataOperator;

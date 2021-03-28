@@ -35,7 +35,7 @@ import cn.jmicro.common.util.JsonUtils;
  */
 @SO
 @IDStrategy(100)
-public final class MRpcLogItem{
+public final class JMLogItem{
 	
 	private long linkId;
 	
@@ -43,7 +43,9 @@ public final class MRpcLogItem{
 	
 	private long reqParentId = -1L;
 	
-	private int clientId = -1;
+	private int actClientId = -1;
+	
+	private int sysClientId = -1;
 	
 	private String actName;
 	
@@ -59,6 +61,7 @@ public final class MRpcLogItem{
 	
 	private String localHost = null;
 	private String localPort = null;
+	
 	private String remoteHost = null;
 	private String remotePort = null;
 	
@@ -80,10 +83,10 @@ public final class MRpcLogItem{
 	
 	private transient Message msg  = null;
 	
-	public MRpcLogItem() {}
+	public JMLogItem() {}
 	
-	public MRpcLogItem copy() {
-		MRpcLogItem mi = new MRpcLogItem();
+	public JMLogItem copy() {
+		JMLogItem mi = new JMLogItem();
 		mi.instanceName = this.instanceName;
 		mi.linkId = this.linkId;
 		mi.localHost = this.localHost;
@@ -100,7 +103,8 @@ public final class MRpcLogItem{
 		mi.implCls = this.implCls;
 		mi.inputTime = this.inputTime;
 		mi.costTime = this.costTime;
-		mi.clientId = this.clientId;
+		mi.actClientId = this.actClientId;
+		mi.sysClientId = this.sysClientId;
 		mi.actName = this.actName;
 		mi.logLevel = this.logLevel;
 		mi.configId = this.configId;
@@ -124,11 +128,11 @@ public final class MRpcLogItem{
 		implCls = null;
 		createTime = TimeUtils.getCurTime();
 		inputTime = 0;
-		this.clientId = -1;
+		this.actClientId = -1;
+		this.sysClientId = -1;
 		this.actName = null;
 		this.smKey = null;
 		this.logLevel = MC.LOG_NO;
-		
 	}
 	
 	public OneLog addOneItem(OneLog oi) {
@@ -156,14 +160,21 @@ public final class MRpcLogItem{
 		this.items.add(oi);
 		return oi;
 	}
-	
 
-	public int getClientId() {
-		return clientId;
+	public int getActClientId() {
+		return actClientId;
 	}
 
-	public void setClientId(int clientId) {
-		this.clientId = clientId;
+	public void setActClientId(int actClientId) {
+		this.actClientId = actClientId;
+	}
+
+	public int getSysClientId() {
+		return sysClientId;
+	}
+
+	public void setSysClientId(int sysClientId) {
+		this.sysClientId = sysClientId;
 	}
 
 	public long getCreateTime() {

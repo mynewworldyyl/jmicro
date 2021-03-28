@@ -7,6 +7,7 @@ import cn.jmicro.codegenerator.AsyncClientProxy;
 
 @AsyncClientProxy
 public interface ISecretService {
+	
 	/**
 	 * 根据实例前缀拿取公钥
 	 * @param instancePrefix  服务前缀，不同的前缀有不同的公钥，相同前缀只能一个公钥启用

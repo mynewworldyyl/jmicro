@@ -227,7 +227,7 @@ public class SimpleObjectFactory implements IObjectFactory {
 					&& c.isAnnotationPresent(Component.class)) {
 				Component anno = c.getAnnotation(Component.class);
 				if(anno != null && anno.active()) {
-					logger.info(c.getName());
+					//logger.info(c.getName());
 					Object obj = this.get(c);
 					/*if(obj != null) {
 						set.add((T)obj);
@@ -664,7 +664,14 @@ public class SimpleObjectFactory implements IObjectFactory {
 			});
 			
 		} else {
-			 r.run();
+			try {
+				r.run();
+			} catch (Throwable e) {
+				logger.error("", e);
+				LG.log(MC.LOG_ERROR,SimpleObjectFactory.class , "", e);
+				EnterMain.waitTime(5000);
+				System.exit(0);
+			}
 		}
 		
 		if(oldCl != null) {
@@ -735,7 +742,7 @@ public class SimpleObjectFactory implements IObjectFactory {
 				op.setData(p,JsonUtils.getIns().toJson(pi));
 			} else {
 				pi.setActName(null);
-				throw new CommonException("Account name not found for: " + clientId);
+				throw new CommonException("Account name not found for client: " + clientId+" ,msg" +r.getMsg());
 			}
 		
 			/*int adminClientId = -1;

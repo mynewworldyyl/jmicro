@@ -24,6 +24,7 @@ import java.util.Stack;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import cn.jmicro.api.config.Config;
 import cn.jmicro.api.idgenerator.ComponentIdServer;
 import cn.jmicro.api.monitor.LG;
 import cn.jmicro.api.monitor.Linker;
@@ -31,8 +32,8 @@ import cn.jmicro.api.monitor.LogMonitorClient;
 import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.monitor.MCA;
 import cn.jmicro.api.monitor.MCConfig;
-import cn.jmicro.api.monitor.MRpcLogItem;
-import cn.jmicro.api.monitor.MRpcStatisItem;
+import cn.jmicro.api.monitor.JMLogItem;
+import cn.jmicro.api.monitor.JMStatisItem;
 import cn.jmicro.api.monitor.MT;
 import cn.jmicro.api.monitor.StatisMonitorClient;
 import cn.jmicro.api.net.ISession;
@@ -110,23 +111,24 @@ public class JMicroContext  {
 	
 	private JMicroContext() {}
 	
-	public MRpcLogItem getMRpcLogItem() {
+	public JMLogItem getMRpcLogItem() {
 		//使用者需要调用isMonitor()或isDebug()判断是否可用状态
 		return this.getParam(MRPC_LOG_ITEM, null);
 	}
 	
-	public MRpcStatisItem getMRpcStatisItem() {
+	public JMStatisItem getMRpcStatisItem() {
 		return this.getParam(MRPC_STATIS_ITEM, null);
 	}
 	
 	public void submitMRpcItem(LogMonitorClient mo,StatisMonitorClient smc) {
 		
-		MRpcLogItem item = getMRpcLogItem();
+		JMLogItem item = getMRpcLogItem();
 		if(item != null && item.getItems() != null && item.getItems().size() > 0 ) {
 			if(StringUtils.isEmpty(item.getActName())) {
 				ActInfo ai = this.getAccount();
 				if(ai != null) {
-					item.setClientId(ai.getId());
+					item.setActClientId(ai.getId());
+					item.setSysClientId(Config.getClientId());
 					ai.setActName(ai.getActName());
 				}
 			}
@@ -138,13 +140,14 @@ public class JMicroContext  {
 	
 		
 		if(this.isMonitorable()) {
-			MRpcStatisItem sItem = getMRpcStatisItem();
+			JMStatisItem sItem = getMRpcStatisItem();
 			if(sItem != null && sItem.getTypeStatis() != null 
 					&& !sItem.getTypeStatis().isEmpty()) {
 				if(StringUtils.isEmpty(item.getActName())) {
 					ActInfo ai = this.getAccount();
 					if(ai != null) {
-						item.setClientId(ai.getId());
+						item.setActClientId(ai.getId());
+						item.setSysClientId(Config.getClientId());
 						ai.setActName(ai.getActName());
 					}
 				}
@@ -253,12 +256,12 @@ public class JMicroContext  {
 	
 	private static void initMrpcStatisItem() {
 		JMicroContext context = cxt.get();
-		MRpcStatisItem item = context.getMRpcStatisItem();
+		JMStatisItem item = context.getMRpcStatisItem();
 		if(item == null) {
-			synchronized(MRpcStatisItem.class) {
+			synchronized(JMStatisItem.class) {
 				item = context.getMRpcStatisItem();
 				if(item == null) {
-					item = new MRpcStatisItem();
+					item = new JMStatisItem();
 					ActInfo ai = context.getAccount();
 					if(ai != null) {
 						item.setClientId(ai.getId());
@@ -275,15 +278,16 @@ public class JMicroContext  {
 	private static void initMrpcLogItem(boolean sideProdiver) {
 		
 		JMicroContext context = cxt.get();
-		MRpcLogItem item = context.getMRpcLogItem();
+		JMLogItem item = context.getMRpcLogItem();
 		if(item == null) {
-			synchronized(MRpcLogItem.class) {
+			synchronized(JMLogItem.class) {
 				item = context.getMRpcLogItem();
 				if(item == null) {
-					item = new MRpcLogItem();
+					item = new JMLogItem();
 					ActInfo ai = context.getAccount();
 					if(ai != null) {
-						item.setClientId(ai.getId());
+						item.setActClientId(ai.getId());
+						item.setSysClientId(Config.getClientId());
 						item.setActName(ai.getActName());
 					}
 					//the pre RPC Request ID as the parent ID of this request
@@ -319,14 +323,16 @@ public class JMicroContext  {
 		
 		if(sm.getLogLevel() != MC.LOG_NO) {
 			initMrpcLogItem(false);
-			MRpcLogItem mi = context.getMRpcLogItem();
+			JMLogItem mi = context.getMRpcLogItem();
 			if(mi != null) {
 				mi.setImplCls(si.getImpl());
 				mi.setSmKey(sm.getKey());
+				mi.setSysClientId(Config.getClientId());
 				ActInfo ai = context.getAccount();
 				if(ai != null) {
 					mi.setActName(ai.getActName());
-					mi.setClientId(ai.getId());
+					mi.setActClientId(ai.getId());
+					mi.setSysClientId(Config.getClientId());
 				}
 			}
 		}

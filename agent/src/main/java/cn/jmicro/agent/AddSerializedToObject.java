@@ -167,7 +167,7 @@ public class AddSerializedToObject implements ClassFileTransformer {
 		//System.out.println("\n\n");
 		//System.out.println(sb.toString());
 		
-		/*if(d) {
+		/*if(cls.getName().equals("cn.jmicro.api.mng.ConfigNode")) {
 			System.out.println("SerializeProxyFactory: "+sb.toString());
 		}*/
 		

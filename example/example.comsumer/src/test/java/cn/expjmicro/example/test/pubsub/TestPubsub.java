@@ -9,7 +9,9 @@ import java.util.Set;
 
 import org.junit.Test;
 
+import cn.expjmicro.example.comsumer.TestRpcClient;
 import cn.jmicro.api.JMicroContext;
+import cn.jmicro.api.Resp;
 import cn.jmicro.api.codec.ICodecFactory;
 import cn.jmicro.api.codec.JDataInput;
 import cn.jmicro.api.codec.JDataOutput;
@@ -25,7 +27,6 @@ import cn.jmicro.api.registry.AsyncConfig;
 import cn.jmicro.api.registry.ServiceMethod;
 import cn.jmicro.common.Constants;
 import cn.jmicro.common.Utils;
-import cn.expjmicro.example.comsumer.TestRpcClient;
 import cn.jmicro.test.JMicroBaseTestCase;
 
 public class TestPubsub extends JMicroBaseTestCase{
@@ -219,7 +220,7 @@ public class TestPubsub extends JMicroBaseTestCase{
 	public void testEncodeConfigNode0() throws IOException {
 		ICodecFactory ed = of.get(ICodecFactory.class);
 		IConfigManager cm = of.get(IConfigManager.class);
-		ConfigNode[] nodes = cm.getChildren("/", true);
+		Resp<ConfigNode[]> nodes = cm.getChildren("/", true);
 		
 		ByteBuffer bb = (ByteBuffer)ed.getEncoder(Message.PROTOCOL_BIN).encode(nodes);
 		
@@ -239,7 +240,7 @@ public class TestPubsub extends JMicroBaseTestCase{
 		int val = Message.readUnsignedShort(buf);*/
 		
 		IConfigManager cm = of.getRemoteServie(IConfigManager.class.getName(),"configManager","0.0.1", null);
-		ConfigNode[] nodes = cm.getChildren("/", true);
+		Resp<ConfigNode[]> nodes = cm.getChildren("/", true);
 		System.out.print(nodes);
 		this.waitForReady(60*60);
 	}

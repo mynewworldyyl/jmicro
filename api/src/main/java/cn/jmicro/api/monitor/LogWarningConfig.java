@@ -36,6 +36,8 @@ public class LogWarningConfig {
 	
 	private String expStr;
 	
+	private int createdBy;
+	
 	private int minNotifyInterval;
 	
 	private transient long lastNotifyTime;
@@ -140,6 +142,14 @@ public class LogWarningConfig {
 
 	public void setBw(BufferedWriter bw) {
 		this.bw = bw;
+	}
+
+	public int getCreatedBy() {
+		return createdBy;
+	}
+
+	public void setCreatedBy(int createdBy) {
+		this.createdBy = createdBy;
 	}
 	
 }

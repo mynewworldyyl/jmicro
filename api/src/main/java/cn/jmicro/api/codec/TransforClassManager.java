@@ -37,7 +37,7 @@ public class TransforClassManager {
 
 	static final Logger logger = LoggerFactory.getLogger(TransforClassManager.class);
 	
-	private static final String ROOT = Config.BASE_DIR+"/tclist";
+	private static final String ROOT = Config.getRaftBasePath("")+"/tclist";
 	
 	@Inject
 	private IDataOperator dataOperator;

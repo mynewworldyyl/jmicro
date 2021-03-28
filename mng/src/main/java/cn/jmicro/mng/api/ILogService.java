@@ -5,7 +5,7 @@ import java.util.Map;
 
 import cn.jmicro.api.Resp;
 import cn.jmicro.api.mng.LogEntry;
-import cn.jmicro.api.monitor.MRpcLogItem;
+import cn.jmicro.api.monitor.JMLogItem;
 import cn.jmicro.codegenerator.AsyncClientProxy;
 
 @AsyncClientProxy
@@ -22,6 +22,6 @@ public interface ILogService {
 	Resp<Integer> countLog(Map<String, String> queryConditions);
 	//Resp<List<LogItem>> queryLog(Map<String,String> queryConditions,int pageSize,int curPage);
 	
-	Resp<List<MRpcLogItem>> queryLog(Map<String,String> queryConditions,int pageSize,int curPage);
+	Resp<List<JMLogItem>> queryLog(Map<String,String> queryConditions,int pageSize,int curPage);
 	
 }

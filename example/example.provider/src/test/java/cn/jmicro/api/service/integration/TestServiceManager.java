@@ -23,8 +23,8 @@ public class TestServiceManager extends JMicroBaseTestCase{
 			logger.debug("testAddServiceListener type {},item:{}",type,item.key());
 		};
 		this.get(ServiceManager.class).addServiceListener(
-				sayHelloServiceItem().path(Config.ServiceRegistDir),lis);
-		this.get(ServiceManager.class).removeServiceListener(sayHelloServiceItem().path(Config.ServiceRegistDir), lis);
+				sayHelloServiceItem().path(Config.getRaftBasePath(Config.ServiceRegistDir)),lis);
+		this.get(ServiceManager.class).removeServiceListener(sayHelloServiceItem().path(Config.getRaftBasePath(Config.ServiceRegistDir)), lis);
 	}
 	
 	@Test
@@ -44,13 +44,13 @@ public class TestServiceManager extends JMicroBaseTestCase{
 	@Test
 	public void testUpdateOrCreate() {
 		ServiceItem si = sayHelloServiceItem();
-		this.get(ServiceManager.class).updateOrCreate(si, si.path(Config.ServiceRegistDir), true);
+		this.get(ServiceManager.class).updateOrCreate(si, si.path(Config.getRaftBasePath(Config.ServiceRegistDir)), true);
 	}
 	
 	@Test
 	public void testGetItem() {
 		ServiceItem si = sayHelloServiceItem();
-		Assert.assertNotNull(this.get(ServiceManager.class).getItem(si.path(Config.ServiceRegistDir)));
+		Assert.assertNotNull(this.get(ServiceManager.class).getItem(si.path(Config.getRaftBasePath(Config.ServiceRegistDir))));
 	}
 	
 	@Test

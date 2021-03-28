@@ -11,7 +11,7 @@ import cn.jmicro.api.exp.Exp;
 @IDStrategy(1)
 public class ResourceMonitorConfig {
 
-	public static final String RES_MONITOR_CONFIG_ROOT = Config.BASE_DIR + "/resMonitorConfigs";
+	public static final String RES_MONITOR_CONFIG_ROOT = Config.getRaftBasePath("") + "/resMonitorConfigs";
 	
 	public static final String DEFAULT_RESOURCE_TABLE_PREFIX = "t_res_table_";
 	
@@ -64,6 +64,8 @@ public class ResourceMonitorConfig {
 
 	private int createdBy;
 	
+	private int clientId;
+	
 	private String createdByAct;
 	
 	public Exp getExp() {
@@ -88,6 +90,14 @@ public class ResourceMonitorConfig {
 
 	public void setExpStr(String expStr) {
 		this.expStr = expStr;
+	}
+
+	public int getClientId() {
+		return clientId;
+	}
+
+	public void setClientId(int clientId) {
+		this.clientId = clientId;
 	}
 
 	public String getCreatedByAct() {

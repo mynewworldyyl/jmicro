@@ -5,7 +5,7 @@ import cn.jmicro.codegenerator.AsyncClientProxy;
 @AsyncClientProxy
 public interface ILogWarning {
 
-	void warn(MRpcLogItem log);
+	void warn(JMLogItem log);
 	
 	//LogWarningConfig getConfig();
 }

@@ -55,7 +55,7 @@ public class SimpleRpcImpl implements ISimpleRpc {
 	)
 	public String hello(String name) {
 		if(LG.isLoggable(MC.LOG_DEBUG)) {
-			LG.log(MC.LOG_DEBUG,SimpleRpcImpl.class, name);
+			LG.log(MC.LOG_DEBUG,SimpleRpcImpl.class, "Test rpc log: "+name);
 		}
 		/*int rv = r.nextInt(100);
 		if(rv < 50) {

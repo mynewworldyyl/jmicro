@@ -23,9 +23,9 @@ public class AccountManager {
 	
 	//private static ActInfo jmicro = null;
 	
-	public static final String ActDir = Config.AccountDir + "/accounts";
-	public static final String EmailDir = Config.AccountDir + "/emails";
-	public static final String MobileDir = Config.AccountDir + "/mobiles";
+	public static final String ActDir = Config.getRaftBasePath(Config.AccountDir) + "/accounts";
+	public static final String EmailDir = Config.getRaftBasePath(Config.AccountDir) + "/emails";
+	public static final String MobileDir = Config.getRaftBasePath(Config.AccountDir) + "/mobiles";
 	
 	private static final long expired = 10*60*1000;
 	

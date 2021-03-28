@@ -2391,12 +2391,12 @@ jm.rpc.Message.prototype.encode = function() {
 
 jm.rpc.Message.prototype.toString = function() {
     return "Message [version=" + this.version + ", msgId=" + this.msgId + ", reqId=" + this.reqId + ", linkId=" + this.linkId
-        + ", type=" + this.type + ", flag=" + Number.toHexString(this.flag)
+        + ", type=" + this.type + ", flag=" + this.flag
         + ", payload=" + this.payload + ", time="+ this.time
         + ", devMode=" + this.isDebugMode() + ", monitorable="+ this.isMonitorable()
         + ", needresp="+ this.isNeedResponse()
         + ", upstream=" + this.isDumpUpStream() + ", downstream="+ this.isDumpDownStream()
-        + ", instanceName=" + this.instanceName + ", method=" + this.method + "]";
+        + ", instanceName=" + this.insId + ", method=" + this.method + "]";
 }
 
 

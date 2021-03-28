@@ -29,7 +29,7 @@ import cn.jmicro.api.utils.TimeUtils;
  * @author yeyulei
  */
 @SO
-public final class MRpcStatisItem{
+public final class JMStatisItem{
 	
 	private int clientId = -1;
 	
@@ -55,7 +55,7 @@ public final class MRpcStatisItem{
 	//private transient ServiceMethod sm = null;
 	private transient UniqueServiceMethodKey smKey = null;
 	
-	public MRpcStatisItem() {}
+	public JMStatisItem() {}
 	
 	/*public Map<Short,StatisItem> getOneItems(Short[] types) {
 		if(types == null || types.length == 0) {

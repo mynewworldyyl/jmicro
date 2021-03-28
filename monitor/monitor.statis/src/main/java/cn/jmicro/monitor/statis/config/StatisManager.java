@@ -26,7 +26,7 @@ import cn.jmicro.api.exp.ExpUtils;
 import cn.jmicro.api.idgenerator.ComponentIdServer;
 import cn.jmicro.api.monitor.LG;
 import cn.jmicro.api.monitor.MC;
-import cn.jmicro.api.monitor.MRpcStatisItem;
+import cn.jmicro.api.monitor.JMStatisItem;
 import cn.jmicro.api.monitor.ServiceCounter;
 import cn.jmicro.api.monitor.StatisConfig;
 import cn.jmicro.api.monitor.StatisData;
@@ -98,9 +98,9 @@ public class StatisManager {
 	 * 
 	 * @param items
 	 */
-	public void onItems(MRpcStatisItem[] items) {
+	public void onItems(JMStatisItem[] items) {
 
-		for(MRpcStatisItem si : items) {
+		for(JMStatisItem si : items) {
 			
 			if(openDebug) {
 				log(si);
@@ -117,8 +117,8 @@ public class StatisManager {
 				//非RPC数据
 				Set<StatisConfig> ins2Configs = mscm.getInstanceConfigs(si.getInstanceName());
 				if(ins2Configs != null && !ins2Configs.isEmpty()) {
-					  sc = getSc(instances,si.getInstanceName(),windowSize,slotInterval,tu);
-					  doStatis(sc,si);
+				  sc = getSc(instances,si.getInstanceName()+"##"+si.getClientId(),windowSize,slotInterval,tu);
+				  doStatis(sc,si);
 				}
 			} else {
 				 //RPC上下文
@@ -129,7 +129,7 @@ public class StatisManager {
 					 an = "";
 				 }
 				 
-				 key = key + UniqueServiceKey.SEP + an;
+				 key = key + UniqueServiceKey.SEP + an + "##"+si.getClientId();
 				 sc = getSc(services, key, windowSize, slotInterval, tu);
 				 if(sc != null) {
 					 doStatis(sc,si);
@@ -138,7 +138,7 @@ public class StatisManager {
 		}
 	}
 	
-	private void doStatis(ServiceCounter sc,MRpcStatisItem si) {
+	private void doStatis(ServiceCounter sc,JMStatisItem si) {
 		if(sc != null) {
 			for(Short type : si.getTypeStatis().keySet()) {
 				List<StatisItem> items = si.getTypeStatis().get(type);
@@ -183,7 +183,7 @@ public class StatisManager {
 
 
 	
-	protected void log(MRpcStatisItem si) {
+	protected void log(JMStatisItem si) {
 		for(Short type : si.getTypeStatis().keySet()) {
 			List<StatisItem> items = si.getTypeStatis().get(type);
 			for(StatisItem oi : items) {
@@ -256,7 +256,7 @@ public class StatisManager {
 					//记录配置上次活跃时间
 					sc.setLastActiveTime(TimeUtils.getCurTime());
 					ServiceCounter cter = counters.get(insName);
-					for(StatisIndex si :sc.getStatisIndexs()) {
+					for(StatisIndex si : sc.getStatisIndexs()) {
 						statisOneIndex(si,cter);
 					}
 				}
@@ -265,7 +265,7 @@ public class StatisManager {
 		
 		long curTime = TimeUtils.getCurTime();
 		for(StatisConfig sc : insConfigs) {
-			if(sc.getCounterTimeout() < 0 || ((curTime - sc.getLastActiveTime()) < sc.getCounterTimeout())) {
+			if(sc.getCounterTimeout() <= 0 || ((curTime - sc.getLastActiveTime()) < sc.getCounterTimeout())) {
 				finalStatisData(sc);
 			}
 			for(StatisIndex idx : sc.getStatisIndexs()) {

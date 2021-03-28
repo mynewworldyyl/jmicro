@@ -1,5 +1,7 @@
 package cn.jmicro.zk.test;
 
+import java.util.HashMap;
+
 import org.junit.Test;
 
 import cn.jmicro.api.config.Config;
@@ -11,13 +13,13 @@ public class TestZKDataOperator {
 	
 	@Test
 	public void testGetData() {
-		Config.parseArgs(new String[0]);
+		Config.parseArgs(new HashMap<>());
 		System.out.println(ZKDataOperator.getIns().getData("/jmicro/config/basePackages"));
 	}
 	
 	@Test
 	public void testGetDataListener() {
-		Config.parseArgs(new String[0]);
+		Config.parseArgs(new HashMap<>());
 		ZKDataOperator.getIns().addDataListener("/jmicro/config/monitorClientEnable",
 			new IDataListener(){
 				@Override
@@ -31,7 +33,7 @@ public class TestZKDataOperator {
 	
 	@Test
 	public void testWatchChildren() {
-		Config.parseArgs(new String[0]);
+		Config.parseArgs(new HashMap<>());
 		ZKDataOperator.getIns().addChildrenListener("/jmicro/config",
 			(type,path,child,data)->{
 				System.out.println(path);
@@ -42,7 +44,7 @@ public class TestZKDataOperator {
 	
 	@Test
 	public void testNodeCreate() {
-		Config.parseArgs(new String[0]);
+		Config.parseArgs(new HashMap<>());
 		ZKDataOperator.getIns().addNodeListener("/jmicro/config/test",
 			(type,path,data)->{
 				System.out.println(type);

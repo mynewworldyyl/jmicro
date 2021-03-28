@@ -32,7 +32,7 @@ import cn.jmicro.api.annotation.Service;
 import cn.jmicro.api.mng.ReportData;
 import cn.jmicro.api.monitor.IMonitorDataSubscriber;
 import cn.jmicro.api.monitor.MC;
-import cn.jmicro.api.monitor.MRpcStatisItem;
+import cn.jmicro.api.monitor.JMStatisItem;
 import cn.jmicro.api.monitor.ServiceCounter;
 import cn.jmicro.api.monitor.StatisItem;
 import cn.jmicro.api.pubsub.PSData;
@@ -130,9 +130,9 @@ public class ServiceReqMonitor  extends AbstractMonitorDataSubscriber implements
 
 	@Override
 	@SMethod(needResponse=false,asyncable=true)
-	public void onSubmit(MRpcStatisItem[] sis) {
+	public void onSubmit(JMStatisItem[] sis) {
 		
-		for(MRpcStatisItem si : sis) {
+		for(JMStatisItem si : sis) {
 			if(openDebug) {
 				log(si);
 			}
@@ -186,7 +186,7 @@ public class ServiceReqMonitor  extends AbstractMonitorDataSubscriber implements
 	}
 	
 
-	private void doStatis(MRpcStatisItem si, String key,long windowSize,long slotInterval,TimeUnit tu) {
+	private void doStatis(JMStatisItem si, String key,long windowSize,long slotInterval,TimeUnit tu) {
 		ServiceCounter counter = counters.get(key);
 		timeoutList.put(key, TimeUtils.getCurTime());
 		

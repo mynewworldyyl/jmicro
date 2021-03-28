@@ -16,7 +16,7 @@ import cn.jmicro.common.util.StringUtils;
 @Component
 public class ProfileManager {
 	
-	public static final String ROOT = Config.BASE_DIR + "/profiles";
+	public static final String ROOT = Config.getRaftBasePath("") + "/profiles";
 
 	private Map<String,Object> cacheValues = new HashMap<>();
 	

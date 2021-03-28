@@ -19,6 +19,7 @@ package cn.jmicro.api.config;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.security.InvalidParameterException;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -34,10 +35,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import cn.jmicro.api.ClassScannerUtils;
-import cn.jmicro.api.JMicro;
 import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.choreography.ChoyConstants;
-import cn.jmicro.api.choreography.ProcessInfo;
 import cn.jmicro.api.exp.ExpUtils;
 import cn.jmicro.api.raft.IDataListener;
 import cn.jmicro.api.raft.IDataOperator;
@@ -65,31 +64,29 @@ public class Config{
 	
 	//private static String Host = "";
 	
-	public static final String 	BASE_DIR = Constants.CFG_ROOT +"/"+Constants.DEFAULT_PREFIX;
+	public static final String BASE_DIR = Constants.CFG_ROOT +"/"+Constants.DEFAULT_PREFIX+"/";
 	
 	//全局配置目录,配置信息由全局配置及实例级配置组成
-	public static final String CfgDir = BASE_DIR + "/config";
+	public static final String CfgDir =/* BASE_DIR +*/ "/config";
+	
 	//全局配置
-	public static final String GROBAL_CONFIG = BASE_DIR + "/grobalConfig";
+	public static final String GROBAL_CONFIG = /*BASE_DIR +*/ "/grobalConfig";
 	
 	//实例相关信息
-	public static final String InstanceDir = BASE_DIR + "/instance";
+	public static final String InstanceDir = /*BASE_DIR +*/ "/instance";
 	
 	//服务实例注册目录,每个运行实例一个服务
-	public static final String ServiceRegistDir = BASE_DIR+"/serviceItems";
+	public static final String ServiceRegistDir = /*BASE_DIR+*/"/serviceItems";
 	
 	//全局服务注册目录,全部运行实例共享一个服务注册
-	public static final String GrobalServiceRegistDir = BASE_DIR + "/grobalServiceItems";
+	public static final String GrobalServiceRegistDir = /*BASE_DIR +*/ "/grobalServiceItems";
 	
-	public static final String AccountDir = BASE_DIR + "/accounts";
-	
-	//全局消息订阅根目录
-	public static final String PubSubDir = BASE_DIR +"/pubsub";
+	public static final String AccountDir = /*BASE_DIR + */"/accounts";
 	
 	//服务编排相关数据根目录
-	public static final String ChoreographyDir = BASE_DIR +"/choreography";
+	public static final String ChoreographyDir = /*BASE_DIR +*/"/choreography";
 	
-	public static final String MonitorDir = BASE_DIR +"/monitorDir";
+	public static final String MonitorDir = /*BASE_DIR +*/"/monitorDir";
 	
 	public static final String CurCustomTypeCodeDir = MonitorDir +"/curCustomTypeCode";
 	public static final String MonitorTypeConfigDir = MonitorDir +"/monitorTypeConfig";
@@ -103,7 +100,7 @@ public class Config{
 	//作为服务名称空间
 	private static String instanceRrefix = "";
 	
-	private static String[] commandArgs = null;
+	//private static String[] commandArgs = null;
 	
 	//private static String LocalDataDir = "";
 	
@@ -132,6 +129,8 @@ public class Config{
 	
 	private static Map<String,String> CommadParams = new HashMap<>();
 	
+	private static Map<String,String> CACHE_PATHS = new HashMap<>();
+	
 	private static Map<String,String> extConfig = new HashMap<>();
 	
 	private Map<String,Set<IConfigChangeListener>> configChangeListeners = new HashMap<>();
@@ -143,8 +142,8 @@ public class Config{
 	private IDataListener dataListener = new IDataListener(){
 		@Override
 		public void dataChanged(String path, String val) {
-			if(path.startsWith(GROBAL_CONFIG)) {
-				String supath = path.substring(GROBAL_CONFIG.length(),path.length());
+			if(path.startsWith(Config.getRaftBasePath(Config.GROBAL_CONFIG))) {
+				String supath = path.substring(Config.getRaftBasePath(Config.GROBAL_CONFIG).length(),path.length());
 				globalConfig.put(supath, val);
 				notifiListener(supath,val);
 			}else if(path.startsWith(ServiceConfigDir)) {
@@ -159,38 +158,34 @@ public class Config{
 			}
 		}
 	};
-
 	
 	public Config() {}
 	
-	public static void parseArgs(String[] args) {
-		commandArgs = args;
-		for(String arg : args){
-			if(arg.startsWith("-D")){
-				String ar = arg.substring(2);
-				if(StringUtils.isEmpty(ar)){
-					throw new CommonException("Invalid arg: "+ arg);
-				}
-				ar = ar.trim();
-				String key;
-				String val;
-				
-				if(ar.indexOf("=") > 0){
-					String[] ars = ar.split("=");
-					key = ars[0].trim();
-					val = ars[1].trim();
-				} else {
-					key = ar;
-					val = null;
-				}
-				
-				if(logger.isDebugEnabled()) {
-					logger.debug("{}={}",key,val);
-				}
-				
-				CommadParams.put(key,val);
-			}
+	public final static String getRaftBasePath(String subfixPath) {
+		if(CACHE_PATHS.containsKey(subfixPath)) {
+			return CACHE_PATHS.get(subfixPath);
 		}
+		if(!CommadParams.containsKey(Constants.CLIENT_ID)) {
+			throw new InvalidParameterException(Constants.CLIENT_ID);
+		}
+		
+		String clientId = CommadParams.get(Constants.ADMIN_CLIENT_ID);
+		if(CfgDir.equals(subfixPath) || GROBAL_CONFIG.equals(subfixPath)) {
+			clientId = CommadParams.get(Constants.CLIENT_ID);
+		}
+		
+		CACHE_PATHS.put(subfixPath, BASE_DIR + clientId + subfixPath);
+		return CACHE_PATHS.get(subfixPath);
+	}
+	
+	public final static String getRaftBasePathByClientId(int clientId,String subfixPath) {
+		return BASE_DIR + clientId + subfixPath;
+	}
+	
+	public final static void parseArgs(Map<String,String> params) {
+		//commandArgs = args;
+		
+		CommadParams.putAll(params);
 		
 		loadExtConfig();
 		
@@ -289,7 +284,7 @@ public class Config{
 				continue;
 			}*/
 			
-			String path = Config.InstanceDir + "/" + f.getName();
+			String path = Config.getRaftBasePath(Config.InstanceDir)+ "/" + f.getName();
 			if(!dataOperator.exist(path)) {
 				doTag(dataOperator,f,path);
 				insName = f.getName();
@@ -302,7 +297,7 @@ public class Config{
 			for(int i = 0; i < Integer.MAX_VALUE ; i++) {
 				String name = instanceRrefix + i;
 				ud = new File(dir,name);
-				String path = Config.InstanceDir + "/" + name;
+				String path = Config.getRaftBasePath(Config.InstanceDir) + "/" + name;
 				if(!ud.exists() && !dataOperator.exist(path)) {
 					doTag(dataOperator,ud.getAbsoluteFile(),path);
 					insName = name;
@@ -543,9 +538,9 @@ public class Config{
 		if(isGlobal) {
 			if(!globalConfig.containsKey(path)) {
 				globalConfig.put(path, value);
-				this.dataOperator.createNodeOrSetData(GROBAL_CONFIG + path, value,el);
+				this.dataOperator.createNodeOrSetData(Config.getRaftBasePath(Config.GROBAL_CONFIG) + path, value,el);
 				if(!CONS_PARAMS_KEYS.containsKey(path)) {
-					dataOperator.addDataListener(GROBAL_CONFIG + path, this.dataListener);
+					dataOperator.addDataListener(Config.getRaftBasePath(Config.GROBAL_CONFIG) + path, this.dataListener);
 				}
 			}
 		} else if(!servicesConfig.containsKey(path)) {
@@ -971,48 +966,38 @@ public class Config{
 			cl.setConfigChangeListener(this);
 		}*/
 		
-		 Set<String> children = dataOperator.getChildren(GROBAL_CONFIG,true);
+		 Set<String> children = dataOperator.getChildren(Config.getRaftBasePath(Config.GROBAL_CONFIG),true);
 		 for(String child: children){
-			 loadOne(GROBAL_CONFIG,child,globalConfig);
+			 loadOne(Config.getRaftBasePath(Config.GROBAL_CONFIG),child,globalConfig);
 		 }
 		
 		initInstanceName();
 		
-		String path = Config.InstanceDir +"/"+Config.getInstanceName()+"_ipPort";
+		String path = Config.getRaftBasePath(Config.InstanceDir) +"/"+Config.getInstanceName()+"_ipPort";
 		if(dataOperator.exist(path)) {
 			dataOperator.setData(path, "");
 		}
 		
-		ServiceConfigDir = CfgDir + "/" + instanceName;
+		ServiceConfigDir = getRaftBasePath(Config.CfgDir) + "/" + instanceName;
 		
-		//	/jmicro目录
-		if(!dataOperator.exist(Constants.CFG_ROOT)) {
-			dataOperator.createNodeOrSetData(Constants.CFG_ROOT, "", false);
-		}
-		
-		//   /jmicro/JMICRO
-		if(!dataOperator.exist(Config.BASE_DIR)) {
-			dataOperator.createNodeOrSetData(Config.BASE_DIR, "", false);
-		}
-		
-		 //   /jmicro/JMICRO/config 目录
-		if(!dataOperator.exist(Config.CfgDir)) {
-			dataOperator.createNodeOrSetData(Config.CfgDir, "", false);
+		 //jmicro/JMICRO/config 目录
+		if(!dataOperator.exist(getRaftBasePath(Config.CfgDir))) {
+			dataOperator.createNodeOrSetData(getRaftBasePath(Config.CfgDir), "", false);
 		}
 		
 	    //   /jmicro/JMICRO/config/{实例名称}  目录
-		if(!dataOperator.exist(Config.ServiceConfigDir)) {
-			dataOperator.createNodeOrSetData(Config.ServiceConfigDir, "", false);
+		if(!dataOperator.exist(ServiceConfigDir)) {
+			dataOperator.createNodeOrSetData(ServiceConfigDir, "", false);
 		}
 		
 		//服务注册目录
-		if(!dataOperator.exist(Config.ServiceRegistDir)) {
-			dataOperator.createNodeOrSetData(Config.ServiceRegistDir, "", false);
+		if(!dataOperator.exist(getRaftBasePath(Config.ServiceRegistDir))) {
+			dataOperator.createNodeOrSetData(getRaftBasePath(Config.ServiceRegistDir), "", false);
 		}
 		
 		//全局服务注册目录
-		if(!dataOperator.exist(Config.GrobalServiceRegistDir)) {
-			dataOperator.createNodeOrSetData(Config.GrobalServiceRegistDir, "", false);
+		if(!dataOperator.exist(getRaftBasePath(Config.GrobalServiceRegistDir))) {
+			dataOperator.createNodeOrSetData(getRaftBasePath(Config.GrobalServiceRegistDir), "", false);
 		}
 		
 		//加载服务级配置

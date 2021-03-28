@@ -21,7 +21,7 @@ public abstract class AbstractClientServiceProxyHolder implements IServiceListen
 	}
 	
 	public boolean isReady() {
-		return proxyHolder.getItem() != null;
+		return proxyHolder.isUsable();
 	}
 	
 	public int clientId() {

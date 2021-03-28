@@ -12,7 +12,7 @@ import cn.jmicro.api.objectfactory.IObjectFactory;
 import cn.jmicro.api.objectfactory.IPostFactoryListener;
 import cn.jmicro.api.test.Person;
 
-@Component(lazy=false, level=9999)
+@Component(lazy=false, level=9999, active=false)
 public class ServiceComsumer implements IPostFactoryListener{
 	
 	private final static Logger logger = LoggerFactory.getLogger(ServiceComsumer.class);
@@ -30,9 +30,9 @@ public class ServiceComsumer implements IPostFactoryListener{
 		LG.log(MC.LOG_DEBUG, ServiceComsumer.class, "test submit nonrpc log");
 		//ISimpleRpc src = of.get(ISimpleRpc.class);
 		ISimpleRpc$JMAsyncClient src = (ISimpleRpc$JMAsyncClient)of
-				.getRemoteServie(ISimpleRpc.class, "exampleProdiver", null);
+				.getRemoteServie(ISimpleRpc.class, "exampleProvider", null);
 		//invoke remote service
-		System.out.println(src.hi(new Person(22,"www")));
+		System.out.println(src.hi(new Person(22,"test persion")));
 		/*src.helloJMAsync("Hello JMicro")
 		.then((rst, fail,ctx)->{
 			System.out.println(rst);

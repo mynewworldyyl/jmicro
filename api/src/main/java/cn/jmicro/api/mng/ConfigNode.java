@@ -11,6 +11,12 @@ public class ConfigNode {
 	
 	private String name;
 	
+	/*private Boolean updatable;
+	
+	private Boolean deleteable;
+	
+	private Boolean viewable;*/
+	
 	private ConfigNode[] children = null;
 	
 	public ConfigNode() {}
@@ -50,6 +56,29 @@ public class ConfigNode {
 	public void setName(String name) {
 		this.name = name;
 	}
-	
+
+	/*public boolean isUpdatable() {
+		return updatable;
+	}
+
+	public void setUpdatable(boolean updatable) {
+		this.updatable = updatable;
+	}
+
+	public boolean isDeleteable() {
+		return deleteable;
+	}
+
+	public void setDeleteable(boolean deleteable) {
+		this.deleteable = deleteable;
+	}
+
+	public boolean isViewable() {
+		return viewable;
+	}
+
+	public void setViewable(boolean viewable) {
+		this.viewable = viewable;
+	}*/
 	
 }

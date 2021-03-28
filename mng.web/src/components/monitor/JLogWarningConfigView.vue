@@ -73,6 +73,9 @@
                 <Label  for="tag">{{'Tag' | i18n}}</Label>
                 <Input  id="tag" v-model="cfg.tag"/>
 
+                <Label v-if="isAdmin"  for="clientId">{{'clientId' | i18n}}</Label>
+                <Input v-if="isAdmin"  id="clientId" v-model="cfg.clientId"/>
+
                 <Label for="exp">{{'Exp' | i18n}}</Label>
                 <Input id="exp"  class='textarea' :rows="5" :autosize="{maxRows:3,minRows: 3}"
                        type="textarea" v-model="cfg.expStr"/>
@@ -99,6 +102,7 @@
             return {
                 type2str:{1:'RPC方法',2:'库表名',3:'控制台',4:'文件'},
                 isLogin:false,
+                isAdmin:false,
                 logList: [],
                 errMsg:'',
                 //logLevel2Label:LOGS,
@@ -118,7 +122,7 @@
 
             add() {
                 this.updateMode=false;
-                this.cfg = {};
+                this.cfg = {clientId:window.jm.rpc.actInfo.id};
                 this.addWarningConfigDialog = true;
             },
 
@@ -231,6 +235,8 @@
                 if(!this.isLogin) {
                     return;
                 }
+
+                this.isAdmin = window.jm.rpc.isAdmin();
 
                 window.jm.rpc.callRpcWithParams(sn,ns,v, 'query', [])
                 .then((resp)=>{

@@ -101,7 +101,7 @@ public class CommonManagerImpl implements ICommonManager {
 	}
 
 	private Set<String> getNamedTypeNameList() {
-		return op.getChildren( Config.NamedTypesDir, false);
+		return op.getChildren( Config.getRaftBasePath(Config.NamedTypesDir), false);
 	}
 		
 }

@@ -16,7 +16,7 @@ public class TestRegex {
 		String rexp = "^"+idmatch+"##"+idmatch+"##"+idmatch+"##"+idmatch+
 				"##\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}##\\d{1,5}##[a-zA-Z_][a-zA-Z0-9_]*##";*/
         
-		String data = "cn.jmicro.example.api.rpc.ISimpleRpc##simpleRpc##0.0.1##exampleProdiver0##192.168.56.1##60630##hello##Ljava/lang/String;##abc";
+		String data = "cn.jmicro.example.api.rpc.ISimpleRpc##simpleRpc##0.0.1##exampleProvider##192.168.56.1##60630##hello##Ljava/lang/String;##abc";
 		String rexp = "^cn.jmicro.example.api.rpc.ISimpleRpc##[0-9a-zA-Z_\\.\\-]+##[0-9a-zA-Z_\\.\\-]+##[0-9a-zA-Z_\\.\\-]+##\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}##\\d{1,5}##hello##[;L\\]\\.,\\/a-zA-Z0-9]*##[a-zA-Z0-9\\_\\-]*$";
 		Pattern pattern = Pattern.compile(rexp);
         Matcher matcher = pattern.matcher(data);

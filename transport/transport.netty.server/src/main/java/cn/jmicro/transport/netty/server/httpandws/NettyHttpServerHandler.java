@@ -35,10 +35,10 @@ public class NettyHttpServerHandler extends ChannelInboundHandlerAdapter {
 	private static final AttributeKey<NettyServerSession> sessionKey = 
 			AttributeKey.newInstance(Constants.IO_SESSION_KEY+"NettyHttp"+TimeUtils.getCurTime());
 	
-	@Cfg("/MinaServer/readBufferSize")
+	@Cfg("/NettyHttpServerHandler/readBufferSize")
 	private int readBufferSize=1024*4;
 	
-	@Cfg("/MinaClientSessionManager/heardbeatInterval")
+	@Cfg("/NettyHttpServerHandler/heardbeatInterval")
 	private int heardbeatInterval = 3; //seconds to send heardbeat Rate
 	
 	@Cfg("/NettyHttpServerHandler/openDebug")

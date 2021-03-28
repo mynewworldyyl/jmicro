@@ -11,7 +11,7 @@ import cn.jmicro.api.monitor.ILogMonitorServer;
 import cn.jmicro.api.monitor.ILogWarning;
 import cn.jmicro.api.monitor.LogWarningConfig;
 import cn.jmicro.api.monitor.MC;
-import cn.jmicro.api.monitor.MRpcLogItem;
+import cn.jmicro.api.monitor.JMLogItem;
 import cn.jmicro.api.raft.IDataOperator;
 import cn.jmicro.api.registry.UniqueServiceKey;
 import cn.jmicro.common.util.JsonUtils;
@@ -29,9 +29,9 @@ public class TestDataOperator extends JMicroBaseTestCase {
 	@Test
 	public void testDeleteAllServiceItems() throws IOException {
 		IDataOperator op = of.get(IDataOperator.class);
-		Set<String> chs = op.getChildren(Config.ServiceRegistDir, false);
+		Set<String> chs = op.getChildren(Config.getRaftBasePath(Config.ServiceRegistDir), false);
 		for(String c : chs) {
-			op.deleteNode(Config.ServiceRegistDir+"/" + c);
+			op.deleteNode(Config.getRaftBasePath(Config.ServiceRegistDir)+"/" + c);
 		}
 	}
 	
@@ -52,7 +52,7 @@ public class TestDataOperator extends JMicroBaseTestCase {
 				"" + UniqueServiceKey.SEP +
 				"" + UniqueServiceKey.SEP +
 				"" + UniqueServiceKey.SEP +
-				"warn" + UniqueServiceKey.SEP + MRpcLogItem.class.getName();
+				"warn" + UniqueServiceKey.SEP + JMLogItem.class.getName();
 				
 		cfg.setCfgParams(sm);
 		

@@ -15,7 +15,7 @@ public class DefaultServerListener implements IServerListener {
 	@Override
 	public void serverStared(String ip, String port, String transport) {
 		//String path = Config.getRaftBaseDir();
-		String path = Config.InstanceDir +"/"+Config.getInstanceName()+"_ipPort";
+		String path = Config.getRaftBasePath(Config.InstanceDir) +"/"+Config.getInstanceName()+"_ipPort";
 		String d = transport+":"+ip+":"+port;
 		if(!dop.exist(path)) {
 			dop.createNodeOrSetData(path, d, false);

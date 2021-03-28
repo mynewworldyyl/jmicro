@@ -23,7 +23,7 @@ import cn.jmicro.api.executor.ExecutorFactory;
 import cn.jmicro.api.monitor.IMonitorAdapter;
 import cn.jmicro.api.monitor.IStatisMonitorServer;
 import cn.jmicro.api.monitor.MC;
-import cn.jmicro.api.monitor.MRpcStatisItem;
+import cn.jmicro.api.monitor.JMStatisItem;
 import cn.jmicro.api.monitor.MonitorAndService2TypeRelationshipManager;
 import cn.jmicro.api.monitor.MonitorInfo;
 import cn.jmicro.api.monitor.MonitorServerStatus;
@@ -36,7 +36,7 @@ import cn.jmicro.common.Constants;
 import cn.jmicro.monitor.statis.config.StatisManager;
 
 @Component
-@Service(version="0.0.1", debugMode=0,monitorEnable=0, logLevel=MC.LOG_WARN, retryCnt=0)
+@Service(clientId=Constants.NO_CLIENT_ID,version="0.0.1", debugMode=0,monitorEnable=0, logLevel=MC.LOG_WARN, retryCnt=0)
 public class StatisMonitorServerImpl implements IStatisMonitorServer {
 
 	private final static Logger logger = LoggerFactory.getLogger(StatisMonitorServerImpl.class);
@@ -64,9 +64,9 @@ public class StatisMonitorServerImpl implements IStatisMonitorServer {
 	
 	//private Queue<MRpcItem> cacheItems = new ConcurrentLinkedQueue<>();
 	
-	private BasketFactory<MRpcStatisItem> basketFactory = null;
+	private BasketFactory<JMStatisItem> basketFactory = null;
 	
-	//private Set<MRpcStatisItem> sentItems = new HashSet<>();
+	//private Set<JMStatisItem> sentItems = new HashSet<>();
 	
 	private Object cacheItemsLock = new Object();
 	
@@ -88,7 +88,7 @@ public class StatisMonitorServerImpl implements IStatisMonitorServer {
 		config.setThreadNamePrefix("StatisMonitorServer");
 		
 		executor = of.get(ExecutorFactory.class).createExecutor(config);
-		basketFactory = new BasketFactory<MRpcStatisItem>(1000,10);
+		basketFactory = new BasketFactory<JMStatisItem>(1000,10);
 		
 		statusAdapter = new MonitorServerStatusAdapter();
 		//statusAdapter.init();
@@ -106,7 +106,7 @@ public class StatisMonitorServerImpl implements IStatisMonitorServer {
 	@Override
 	@SMethod(timeout=5000,retryCnt=0,needResponse=false,debugMode=0,monitorEnable=0,logLevel=MC.LOG_ERROR
 			,maxPacketSize=32768,maxSpeed=1000,limitType=Constants.LIMIT_TYPE_LOCAL)
-	public void submit(MRpcStatisItem[] items) {
+	public void submit(JMStatisItem[] items) {
 		if(items == null || items.length == 0) {
 			/*if(monitoralbe) {
 				sc.add(MonitorConstant.Ms_SubmitCnt, 1);
@@ -126,7 +126,7 @@ public class StatisMonitorServerImpl implements IStatisMonitorServer {
 		
 		int pos = 0;
 		while(pos < items.length) {
-			IBasket<MRpcStatisItem> b = basketFactory.borrowWriteBasket(true);
+			IBasket<JMStatisItem> b = basketFactory.borrowWriteBasket(true);
 			if(b != null) {
 				int re = b.remainding();
 				int len = re;
@@ -182,9 +182,9 @@ public class StatisMonitorServerImpl implements IStatisMonitorServer {
 		while (true) {
 			try {
 				
-				IBasket<MRpcStatisItem> b = null;
+				IBasket<JMStatisItem> b = null;
 				while((b = basketFactory.borrowReadSlot()) != null) {
-					MRpcStatisItem[] mis = new MRpcStatisItem[b.remainding()];
+					JMStatisItem[] mis = new JMStatisItem[b.remainding()];
 					b.readAll(mis);
 					ri.cacheItems.addAll(Arrays.asList(mis));
 					if(!basketFactory.returnReadSlot(b, true)) {
@@ -255,7 +255,7 @@ public class StatisMonitorServerImpl implements IStatisMonitorServer {
 				JMicroContext.get().setBoolean(JMicroContext.IS_MONITORENABLE, false);
 				JMicroContext.get().setBoolean(Constants.FROM_MONITOR, true);
 				
-				MRpcStatisItem[] items = new MRpcStatisItem[ri.sendItems.size()];
+				JMStatisItem[] items = new JMStatisItem[ri.sendItems.size()];
 				ri.sendItems.toArray(items);
 				
 				if(openDebug) {
@@ -287,9 +287,9 @@ public class StatisMonitorServerImpl implements IStatisMonitorServer {
 		
 		//public Short[] types = null;
 		
-		public List<MRpcStatisItem> cacheItems = new ArrayList<>();
+		public List<JMStatisItem> cacheItems = new ArrayList<>();
 		
-		public List<MRpcStatisItem> sendItems = new ArrayList<>();
+		public List<JMStatisItem> sendItems = new ArrayList<>();
 		
 		public long lastSendTime = 0;
 		
@@ -392,8 +392,8 @@ public class StatisMonitorServerImpl implements IStatisMonitorServer {
 		
 	}
 	
-	private void log(MRpcStatisItem[] sis) {
-		for(MRpcStatisItem si : sis) {
+	private void log(JMStatisItem[] sis) {
+		for(JMStatisItem si : sis) {
 			for(Short type : si.getTypeStatis().keySet()) {
 				StringBuffer sb = new StringBuffer();
 				sb.append("GOT: " + MC.MONITOR_VAL_2_KEY.get(type));

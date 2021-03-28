@@ -80,7 +80,7 @@ public class LogMonitorClient {
 	@Inject(required=false)
 	private ILogMonitorServer localMonitorServer;
 	
-	private AbstractClientServiceProxyHolder msPo;
+	//private AbstractClientServiceProxyHolder msPo;
 	
 	@Inject
 	private IObjectFactory of;
@@ -96,9 +96,9 @@ public class LogMonitorClient {
 	
 	//private Map<String,Boolean> srvMethodMonitorEnable = new HashMap<>();
 	
-	private BasketFactory<MRpcLogItem> basketFactory = null;
+	private BasketFactory<JMLogItem> basketFactory = null;
 	
-	private BasketFactory<MRpcLogItem> cacheBasket = null;
+	private BasketFactory<JMLogItem> cacheBasket = null;
 	
 	private Object syncLocker = new Object();
 	
@@ -110,8 +110,8 @@ public class LogMonitorClient {
 	
 	public void init() {
 		
-		this.basketFactory = new BasketFactory<MRpcLogItem>(5000,1);
-		this.cacheBasket = new BasketFactory<MRpcLogItem>(1000,5);
+		this.basketFactory = new BasketFactory<JMLogItem>(5000,1);
+		this.cacheBasket = new BasketFactory<JMLogItem>(1000,5);
 		
 		/*Set<String> children = op.getChildren(Config.MonitorTypesDir, false);
 		if(children != null && !children.isEmpty()) {
@@ -128,7 +128,7 @@ public class LogMonitorClient {
 		
 		logger.info("Init object :" +this.hashCode());
 		
-		msPo = (AbstractClientServiceProxyHolder)((Object)this.monitorServer);
+		//msPo = (AbstractClientServiceProxyHolder)((Object)this.monitorServer);
 		
 		typeLabels = new String[TYPES.length];
 		for(int i = 0; i < TYPES.length; i++) {
@@ -152,7 +152,7 @@ public class LogMonitorClient {
 		config.setThreadNamePrefix("LogMonitorClient");
 		executor = of.get(ExecutorFactory.class).createExecutor(config);
 		
-		enableWork(msPo,IServiceListener.ADD);
+		enableWork(null,IServiceListener.ADD);
 		
 	}
 	
@@ -169,9 +169,9 @@ public class LogMonitorClient {
 	}
 
 	
-	public boolean submit2Cache(MRpcLogItem item) {
+	public boolean submit2Cache(JMLogItem item) {
 
-		if(this.cacheBasket == null) {
+		if(this.cacheBasket == null || !this.monitorServer.isReady()) {
 			logger.error("cacheBasket is NULL");
 			return false;
 		}
@@ -181,7 +181,7 @@ public class LogMonitorClient {
 			return false;
 		}
 		
-		IBasket<MRpcLogItem> b = cacheBasket.borrowWriteBasket(true);
+		IBasket<JMLogItem> b = cacheBasket.borrowWriteBasket(true);
 		if(b == null) {
 			if(this.statusMonitorAdapter != null && this.statusMonitorAdapter.isMonitoralbe()) {
 				this.statusMonitorAdapter.getServiceCounter().add(MC.Ms_Fail2BorrowBasket, 1);
@@ -208,8 +208,8 @@ public class LogMonitorClient {
 	
 	}
 	
-	public boolean readySubmit(MRpcLogItem item) {
-		if(!checkerWorking) {
+	public boolean readySubmit(JMLogItem item) {
+		if(!checkerWorking || !this.monitorServer.isReady()) {
 			return false;
 		}
 		
@@ -218,7 +218,7 @@ public class LogMonitorClient {
 			return false;
 		}
 		
-		IBasket<MRpcLogItem> b = basketFactory.borrowWriteBasket(true);
+		IBasket<JMLogItem> b = basketFactory.borrowWriteBasket(true);
 		if(b == null) {
 			if(this.statusMonitorAdapter != null && this.statusMonitorAdapter.isMonitoralbe()) {
 				this.statusMonitorAdapter.getServiceCounter().add(MC.Ms_Fail2BorrowBasket, 1);
@@ -247,17 +247,15 @@ public class LogMonitorClient {
 	}
 	
 	
-	private boolean checkMaxSize(MRpcLogItem item) {
+	private boolean checkMaxSize(JMLogItem item) {
 		return getItemSize(item) > this.singleItemMaxSize;
 	}
 
-	public void enableWork(AbstractClientServiceProxyHolder msPo, int opType) {
+	public void enableWork(AbstractClientServiceProxyHolder msPo,int opType) {
 		if(!checkerWorking && IServiceListener.ADD == opType) {
-			if(this.msPo != null && msPo.getHolder().isUsable()) {
-				logger.warn("Monitor server online and restart submit thread!");
-				checkerWorking = true;
-				new Thread(this::doWork,Config.getInstanceName()+ "_MonitorClient_Worker").start();
-			}
+			logger.warn("Monitor server online and restart submit thread!");
+			checkerWorking = true;
+			new Thread(this::doWork,Config.getInstanceName()+ "_MonitorClient_Worker").start();
 		} else if(checkerWorking && IServiceListener.REMOVE == opType) {
 			logger.warn("Monitor server offline and stop submit thread!");;
 			checkerWorking = false;
@@ -268,7 +266,7 @@ public class LogMonitorClient {
 		
 		logger.info("Minitor manage work start working!");
 		
-		Set<MRpcLogItem> items = new HashSet<MRpcLogItem>();
+		Set<JMLogItem> items = new HashSet<JMLogItem>();
 		int batchSize = 5;
 		
 		int maxSendInterval = 2000;
@@ -287,6 +285,13 @@ public class LogMonitorClient {
 		while(checkerWorking) {
 			try {
 				
+				if(!this.monitorServer.isReady()) {
+					synchronized(syncLocker) {
+						syncLocker.wait(checkInterval);
+					}
+					continue;
+				}
+				
 				forceSubmit = false;
 				long beginTime = TimeUtils.getCurTime();
 				
@@ -294,11 +299,11 @@ public class LogMonitorClient {
 					this.statusMonitorAdapter.getServiceCounter().add(MC.Ms_CheckLoopCnt, 1);
 				}
 				
-				IBasket<MRpcLogItem> readBasket = this.basketFactory.borrowReadSlot();
+				IBasket<JMLogItem> readBasket = this.basketFactory.borrowReadSlot();
 				if(readBasket == null) {
 					//超过5秒钟的缓存包，强制提交为读状态
-					IBasket<MRpcLogItem> wb = null;
-					Iterator<IBasket<MRpcLogItem>> writeIte = this.cacheBasket.iterator(false);
+					IBasket<JMLogItem> wb = null;
+					Iterator<IBasket<JMLogItem>> writeIte = this.cacheBasket.iterator(false);
 					while((wb = writeIte.next()) != null) {
 						if(!wb.isEmpty() && (beginTime - wb.firstWriteTime()) > 2000) {
 							this.cacheBasket.returnWriteBasket(wb, true);//转为读状态
@@ -308,16 +313,16 @@ public class LogMonitorClient {
 					}
 					
 					//beginTime = System.currentTimeMillis();
-					IBasket<MRpcLogItem> rb = null;
-					Iterator<IBasket<MRpcLogItem>> readIte = this.cacheBasket.iterator(true);
+					IBasket<JMLogItem> rb = null;
+					Iterator<IBasket<JMLogItem>> readIte = this.cacheBasket.iterator(true);
 					while((rb = readIte.next()) != null ) {
 						if((beginTime - rb.firstWriteTime() > 10000) && packageSize < maxPackageSize) { //超过10秒
-							MRpcLogItem[] mrs = new MRpcLogItem[rb.remainding()];
+							JMLogItem[] mrs = new JMLogItem[rb.remainding()];
 							rb.readAll(mrs);
 							cacheBasket.returnReadSlot(rb, true);
 							rb = null;
 							
-							for(MRpcLogItem mi : mrs) {
+							for(JMLogItem mi : mrs) {
 								int size = getItemSize(mi);
 								if(size > maxPackageSize && mi.getItems().size() > 1) {
 									splitMi(mi,maxPackageSize);
@@ -363,12 +368,12 @@ public class LogMonitorClient {
 					}
 					
 					while(readBasket != null && packageSize < maxPackageSize) {
-						MRpcLogItem[] mrs = new MRpcLogItem[readBasket.remainding()];
+						JMLogItem[] mrs = new JMLogItem[readBasket.remainding()];
 						readBasket.readAll(mrs);
 						
 						basketFactory.returnReadSlot(readBasket, true);
 						
-						for(MRpcLogItem mi : mrs) {
+						for(JMLogItem mi : mrs) {
 							
 							int size = getItemSize(mi);
 							if(size > maxPackageSize && mi.getItems().size() > 1) {
@@ -420,7 +425,7 @@ public class LogMonitorClient {
 						cacheBasket.returnReadSlot(cb, true);
 					}
 */					
-					MRpcLogItem[] mrs = new MRpcLogItem[items.size()];
+					JMLogItem[] mrs = new JMLogItem[items.size()];
 					items.toArray(mrs);
 					//System.out.println("submit: " +mrs.length);
 					
@@ -443,9 +448,9 @@ public class LogMonitorClient {
 	}
 	
 	//日志过大，需要分包上传
-	private void splitMi(MRpcLogItem mi,int packageSize) {
+	private void splitMi(JMLogItem mi,int packageSize) {
 		
-		MRpcLogItem copy = mi.copy();
+		JMLogItem copy = mi.copy();
 		
 		int size = 0;
 		for(OneLog ol : mi.getItems()) {
@@ -474,7 +479,7 @@ public class LogMonitorClient {
 		
 	}
 
-	private int getItemSize(MRpcLogItem mi) {
+	private int getItemSize(JMLogItem mi) {
 		int size = 13;
 		for(OneLog ol : mi.getItems()) {
 			if(!Utils.isEmpty(ol.getDesc())) {
@@ -499,13 +504,13 @@ public class LogMonitorClient {
 		return size;
 	}
 
-	private void merge(Set<MRpcLogItem> items) {
+	private void merge(Set<JMLogItem> items) {
 		
-		Set<MRpcLogItem> result = new HashSet<>();
-		MRpcLogItem nullSMMRpcItem = null;
+		Set<JMLogItem> result = new HashSet<>();
+		JMLogItem nullSMMRpcItem = null;
 		
-		for(Iterator<MRpcLogItem> ite = items.iterator(); ite.hasNext();) {
-			MRpcLogItem mi = ite.next();
+		for(Iterator<JMLogItem> ite = items.iterator(); ite.hasNext();) {
+			JMLogItem mi = ite.next();
 			ite.remove();
 			if(mi.getSmKey() == null || (mi.getSmKey() != null && mi.getReq() == null)) {
 				//非RPC环境下的事件
@@ -540,9 +545,9 @@ public class LogMonitorClient {
 
 	private class Worker implements Runnable {
 		
-		private MRpcLogItem[] items = null;
+		private JMLogItem[] items = null;
 		
-		public Worker( MRpcLogItem[] items) {
+		public Worker( JMLogItem[] items) {
 			this.items = items;
 		}
 		
@@ -596,12 +601,8 @@ public class LogMonitorClient {
 		}
 	}
 	
-	public boolean isServerReady() {
-		return monitorServer != null;
-	}
-	
 	public boolean canSubmit(ServiceMethod sm, Short t) {
-		if(!this.checkerWorking || monitorServer == null) {
+		if(!this.checkerWorking || monitorServer == null || !monitorServer.isReady()) {
 			return false;
 		}
 		return this.mtManager.canSubmit(sm,t);

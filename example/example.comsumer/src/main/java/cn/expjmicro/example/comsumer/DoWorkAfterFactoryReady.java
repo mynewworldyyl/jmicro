@@ -14,7 +14,7 @@ import cn.jmicro.api.objectfactory.IObjectFactory;
 import cn.jmicro.api.objectfactory.IPostFactoryListener;
 import cn.jmicro.api.test.Person;
 
-@Component(active=false)
+@Component(active=true)
 public class DoWorkAfterFactoryReady implements IPostFactoryListener {
 
 	private final static Logger logger = LoggerFactory.getLogger(DoWorkAfterFactoryReady.class);
@@ -56,7 +56,7 @@ public class DoWorkAfterFactoryReady implements IPostFactoryListener {
 		
 		private void linkRpc() {
 
-			ISimpleRpc$JMAsyncClient sayHello = of.getRemoteServie(ISimpleRpc$JMAsyncClient.class.getName(),"exampleProdiver","0.0.1", null);
+			ISimpleRpc$JMAsyncClient sayHello = of.getRemoteServie(ISimpleRpc$JMAsyncClient.class.getName(),"exampleProvider","0.0.1", null);
 			JMicroContext.get().removeParam(JMicroContext.LINKER_ID);
 			
 			for(;;){
@@ -91,7 +91,7 @@ public class DoWorkAfterFactoryReady implements IPostFactoryListener {
 		
 		private void singleRpc() {
 
-			ISimpleRpc$JMAsyncClient sayHello = of.getRemoteServie(ISimpleRpc$JMAsyncClient.class.getName(),"exampleProdiver","0.0.1", null);
+			ISimpleRpc$JMAsyncClient sayHello = of.getRemoteServie(ISimpleRpc$JMAsyncClient.class.getName(),"exampleProvider","0.0.1", null);
 			JMicroContext.get().removeParam(JMicroContext.LINKER_ID);
 			
 			for(;;){

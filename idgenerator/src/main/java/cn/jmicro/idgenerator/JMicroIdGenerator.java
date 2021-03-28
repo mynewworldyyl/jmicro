@@ -32,7 +32,7 @@ import cn.jmicro.common.Constants;
 //@Service(namespace="idServer", version="0.0.1")
 public class JMicroIdGenerator implements IIdServer {
 	
-	private static final String ID_IDR = Config.BASE_DIR + "/id/";
+	private static final String ID_IDR = Config.getRaftBasePath("") + "/id/";
 	
 	/*public static void main(String[] args) {
 		 JMicro.getObjectFactoryAndStart(new String[] {"-DinstanceName=ZkBaseIdServer",

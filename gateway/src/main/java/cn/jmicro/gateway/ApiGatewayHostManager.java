@@ -17,7 +17,7 @@ import cn.jmicro.common.CommonException;
 @Component
 public class ApiGatewayHostManager {
 
-	public static final String HostDir = Config.BASE_DIR + "/apiGateways";
+	public static final String HostDir = Config.getRaftBasePath("") + "/apiGateways";
 	
 	@Cfg(value="/nettyHttpPort",required=false,defGlobal=false)
 	private int port=9090;

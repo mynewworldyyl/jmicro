@@ -54,11 +54,11 @@ public class LG {
 	
 	private static boolean isInit = false;
 	
-	private static boolean isMs = false;
+	//private static boolean isMs = false;
 	
 	private static ProcessInfo pi = null;
 	
-	private static MRpcLogItem beforeInitItem = null;
+	private static JMLogItem beforeInitItem = null;
 	
 	public static boolean log(byte level,String tag,String desc,short type) {
 		return log(level,tag,desc,null,type);
@@ -82,14 +82,14 @@ public class LG {
 			return false;
 		}
 
-		MRpcLogItem mi = null;
+		JMLogItem mi = null;
 		if(JMicroContext.existRpcContext()) {
 			 mi = JMicroContext.get().getMRpcLogItem();
 		}
 		
 		if(mi == null && !isInit) {
 			if(beforeInitItem == null) {
-				beforeInitItem = new MRpcLogItem();
+				beforeInitItem = new JMLogItem();
 			}
 			mi = beforeInitItem;
 		}
@@ -97,7 +97,7 @@ public class LG {
 		boolean f = false;
 		if(mi == null) {
 			 f = true;
-			 mi = new MRpcLogItem();
+			 mi = new JMLogItem();
 		}
 		
 		OneLog oi = mi.addOneItem(level, tag,desc);
@@ -114,7 +114,8 @@ public class LG {
 					mi.setResp(ce.getResp());
 				}
 				if(ce.getAi() != null) {
-					mi.setClientId(ce.getAi().getId());
+					mi.setActClientId(ce.getAi().getId());
+					mi.setSysClientId(Config.getClientId());
 					mi.setActName(ce.getAi().getActName());
 				}
 			}
@@ -132,7 +133,7 @@ public class LG {
 	
 	public static boolean breakService(byte level,String tag,ServiceMethod sm,String desc) {
 		if(isLoggable(level,sm.getLogLevel())) {
-			MRpcLogItem mi = new MRpcLogItem();
+			JMLogItem mi = new JMLogItem();
 			mi.setSmKey(sm.getKey());
 			OneLog oi = mi.addOneItem(level, tag, desc);
 			setStackTrance(oi,3);
@@ -148,25 +149,26 @@ public class LG {
 			return false;
 		}
 		
-		MRpcLogItem mi = null;
+		JMLogItem mi = null;
 		if(JMicroContext.existRpcContext()) {
 			mi = JMicroContext.get().getMRpcLogItem();
 		}
 		
 		if(mi == null && !isInit) {
 			if(beforeInitItem == null) {
-				beforeInitItem = new MRpcLogItem();
+				beforeInitItem = new JMLogItem();
 			}
 			mi = beforeInitItem;
 		}
 		
 		boolean f = false;
 		if(mi == null) {
-			mi = new MRpcLogItem();
+			mi = new JMLogItem();
 			f = true;
 			ActInfo ai = JMicroContext.get().getAccount();
 			if(ai != null) {
-				mi.setClientId(ai.getId());
+				mi.setActClientId(ai.getId());
+				mi.setSysClientId(Config.getClientId());
 			}
 		}
 		
@@ -196,28 +198,28 @@ public class LG {
 		return ex.getMessage();
 	}
 	
-	public static MRpcLogItem logWithNonRpcContext(byte level, Class<?> tag, String desc,short type,boolean submit) {
+	public static JMLogItem logWithNonRpcContext(byte level, Class<?> tag, String desc,short type,boolean submit) {
 		return logWithNonRpcContext(level,tag.getName(),desc,null,type,submit);
 	}
 	
-	public static MRpcLogItem logWithNonRpcContext(byte level, Class<?> tag, String desc, Throwable exp,boolean submit) {
+	public static JMLogItem logWithNonRpcContext(byte level, Class<?> tag, String desc, Throwable exp,boolean submit) {
 		return logWithNonRpcContext(level,tag.getName(),desc,exp,MC.MT_DEFAULT,submit);
 	}
 	
-	public static MRpcLogItem logWithNonRpcContext(byte level, String tag, String desc, Throwable exp,short type,boolean submit) {
+	public static JMLogItem logWithNonRpcContext(byte level, String tag, String desc, Throwable exp,short type,boolean submit) {
 		if(level == MC.LOG_NO || !isLoggable(level)) {
 			return null;
 		}
 		
-		MRpcLogItem mi = null;
+		JMLogItem mi = null;
 		
 		if(!isInit) {
 			if(beforeInitItem == null) {
-				beforeInitItem = new MRpcLogItem();
+				beforeInitItem = new JMLogItem();
 			}
 			mi = beforeInitItem;
 		}else {
-			mi = new MRpcLogItem();
+			mi = new JMLogItem();
 		}
 
 		OneLog oi = mi.addOneItem(level, tag,desc);
@@ -236,13 +238,13 @@ public class LG {
 		return mi;
 	}
 	
-	public static void submit2Cache(MRpcLogItem mi) {
+	public static void submit2Cache(JMLogItem mi) {
 		if(isInit) {
 			m.submit2Cache(mi);
 		}
 	}
 	
-	public static void setCommon(MRpcLogItem si) {
+	public static void setCommon(JMLogItem si) {
 		if(si == null) {
 			return;
 		}
@@ -250,7 +252,7 @@ public class LG {
 		if(JMicroContext.existRpcContext()) {
 			ActInfo ai = JMicroContext.get().getAccount();
 			if(ai != null) {
-				si.setClientId(ai.getId());
+				si.setActClientId(ai.getId());
 				si.setActName(ai.getActName());
 			}
 			
@@ -267,6 +269,7 @@ public class LG {
 			}
 		}
 		
+		si.setSysClientId(Config.getClientId());
 		si.setLocalHost(Config.getExportSocketHost());
 		si.setInstanceName(Config.getInstanceName());
 	}
@@ -277,7 +280,7 @@ public class LG {
 
 		isInit = true;
 		m = EnterMain.getObjectFactory().get(LogMonitorClient.class);
-		isMs = m != null;
+		//isMs = m != null;
 		pi = EnterMain.getObjectFactory().get(ProcessInfo.class);
 		if(beforeInitItem != null) {
 			Iterator<OneLog> items = beforeInitItem.getItems().iterator();

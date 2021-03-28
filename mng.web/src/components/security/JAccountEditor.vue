@@ -367,7 +367,7 @@
             refresh() {
                 let self = this;
                 this.isLogin = window.jm.rpc.isLogin();
-                if(this.isLogin) {
+                if(window.jm.rpc.isAdmin()) {
                     let params = this.getQueryConditions();
                     window.jm.mng.act.getAccountList(params,this.pageSize,this.curPage-1).then((resp)=>{
                         if(resp.code != 0) {

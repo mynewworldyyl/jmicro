@@ -1,5 +1,7 @@
 package cn.jmicro.registry.zk.test;
 
+import java.util.HashMap;
+
 import org.junit.Test;
 
 import cn.jmicro.api.EnterMain;
@@ -18,14 +20,14 @@ public class TestZKRegistry {
 	 */
 	@Test
 	public void testServiceAdd() {
-		Config.parseArgs(new String[0]);
+		Config.parseArgs(new HashMap<>());
 		RegistryImpl r = new RegistryImpl();
 		r.init();
 		
 		r.addServiceListener("cn.jmicro.example.api.ITestRpcService##defaultNamespace##0.0.0", 
 				(type,si)->{
 			System.out.println(type);
-			System.out.println(si.path(Config.ServiceRegistDir));
+			System.out.println(si.path(Config.getRaftBasePath(Config.ServiceRegistDir)));
 		});
 		
 		Utils.getIns().waitForShutdown();
@@ -33,7 +35,7 @@ public class TestZKRegistry {
 	
 	@Test
 	public void testNodeCreate() {
-		Config.parseArgs(new String[0]);
+		Config.parseArgs(new HashMap<>());
 		IObjectFactory of = EnterMain.getObjectFactory();
 		of.get(IDataOperator.class).addNodeListener("/jmicro/config/test",
 			(type,path,data)->{

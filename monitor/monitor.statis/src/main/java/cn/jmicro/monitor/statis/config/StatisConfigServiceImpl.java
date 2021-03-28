@@ -23,6 +23,7 @@ import cn.jmicro.api.monitor.StatisIndex;
 import cn.jmicro.api.raft.IDataOperator;
 import cn.jmicro.api.registry.UniqueServiceKey;
 import cn.jmicro.api.security.ActInfo;
+import cn.jmicro.api.security.PermissionManager;
 import cn.jmicro.common.Utils;
 import cn.jmicro.common.util.JsonUtils;
 import cn.jmicro.monitor.statis.api.IStatisConfigService;
@@ -55,11 +56,18 @@ public class StatisConfigServiceImpl implements IStatisConfigService {
 		List<StatisConfig> ll = new ArrayList<>();
 		r.setData(ll);
 		
+		boolean isAdmin = PermissionManager.isCurAdmin();
+		
 		for(String id : ids) {
 			String path = ROOT + "/" + id;
 			String data = op.getData(path);
 			StatisConfig lw = JsonUtils.getIns().fromJson(data, StatisConfig.class);
-			ll.add(lw);
+			
+			if(lw != null) {
+				if(isAdmin || PermissionManager.checkAccountClientPermission(lw.getCreatedBy())) {
+					ll.add(lw);
+				}
+			}
 		}
 		
 		return r;
@@ -81,6 +89,14 @@ public class StatisConfigServiceImpl implements IStatisConfigService {
 		}
 		
 		StatisConfig lw = JsonUtils.getIns().fromJson(data, StatisConfig.class);
+		
+		if(!(PermissionManager.isCurAdmin() || PermissionManager.checkAccountClientPermission(lw.getCreatedBy()))) {
+			r.setCode(Resp.CODE_NO_PERMISSION);
+			r.setData(false);
+			r.setMsg(JMicroContext.get().getAccount().getActName()+" have no permissoin to enable statis monitor config: " + lw.getId()+", target clientId: " + lw.getCreatedBy());
+			LG.log(MC.LOG_WARN, this.getClass(), r.getMsg());
+			return r;
+		}
 		
 		if(!lw.isEnable()) {
 			//从禁用到启用需要检测数据合法性
@@ -119,6 +135,15 @@ public class StatisConfigServiceImpl implements IStatisConfigService {
 		}
 		
 		StatisConfig lw = JsonUtils.getIns().fromJson(data, StatisConfig.class);
+		
+		if(!(PermissionManager.isCurAdmin() || PermissionManager.checkAccountClientPermission(lw.getCreatedBy()))) {
+			r.setCode(Resp.CODE_NO_PERMISSION);
+			r.setData(false);
+			r.setMsg(JMicroContext.get().getAccount().getActName()+" have no permissoin to update statis config: " + lw.getId()+", clientId: " + lw.getCreatedBy());
+			LG.log(MC.LOG_WARN, this.getClass(), r.getMsg());
+			return r;
+		}
+		
 		if(lw.isEnable()) {
 			r.setCode(Resp.CODE_FAIL);
 			r.setData(false);
@@ -154,6 +179,18 @@ public class StatisConfigServiceImpl implements IStatisConfigService {
 		Resp<Boolean> r = new Resp<>();
 		String path = ROOT + "/" + id;
 		if(op.exist(path)) {
+			
+			String data = op.getData(path);
+			StatisConfig lw = JsonUtils.getIns().fromJson(data, StatisConfig.class);
+			
+			if(!(PermissionManager.isCurAdmin() || PermissionManager.checkAccountClientPermission(lw.getCreatedBy()))) {
+				r.setCode(Resp.CODE_NO_PERMISSION);
+				r.setData(false);
+				r.setMsg(JMicroContext.get().getAccount().getActName()+" have no permissoin to delete statis config: " + lw.getId()+", target clientId: " + lw.getCreatedBy());
+				LG.log(MC.LOG_WARN, this.getClass(), r.getMsg());
+				return r;
+			}
+			
 			op.deleteNode(path);
 		}
 		r.setData(true);
@@ -173,6 +210,9 @@ public class StatisConfigServiceImpl implements IStatisConfigService {
 		}
 		
 		ActInfo ai = JMicroContext.get().getAccount();
+		if(!PermissionManager.isCurAdmin()) {
+			cfg.setClientId(ai.getId());
+		}
 		
 		cfg.setCreatedBy(ai.getId());
 		cfg.setId(this.idGenerator.getIntId(StatisConfig.class));
@@ -280,7 +320,7 @@ public class StatisConfigServiceImpl implements IStatisConfigService {
         }
 		
 		if(!Utils.isEmpty(lw.getNamedType())) {
-			String p = Config.NamedTypesDir+"/"+lw.getNamedType();
+			String p = Config.getRaftBasePath(Config.NamedTypesDir)+"/"+lw.getNamedType();
 			if(!op.exist(p)) {
 				 msg = "NamedType ["+lw.getNamedType()+"] not exist for config id: " + lw.getId();
 				logger.error(msg);

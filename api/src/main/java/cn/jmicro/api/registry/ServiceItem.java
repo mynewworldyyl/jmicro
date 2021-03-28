@@ -510,7 +510,7 @@ public final class ServiceItem implements Comparable<ServiceItem>{
 	}
 	
 	public static String pathForKey(String key){
-		StringBuffer sb = new StringBuffer(Config.ServiceRegistDir);
+		StringBuffer sb = new StringBuffer(Config.getRaftBasePath(Config.ServiceRegistDir));
 		sb.append(FILE_SEPERATOR);
 		sb.append(key);
 		return sb.toString();

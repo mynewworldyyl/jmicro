@@ -41,7 +41,7 @@ import cn.jmicro.api.security.PermissionManager;
 @Component(lazy=false)
 public class RuleManager {
 	
-	private static final String RULE_DIR = Config.BASE_DIR + "/routeRules/" + Config.getInstancePrefix();
+	private static final String RULE_DIR = Config.getRaftBasePath("") + "/routeRules/" + Config.getInstancePrefix();
 	
 	private RaftNodeDataListener<RouteRule> rndl = null;
 	 

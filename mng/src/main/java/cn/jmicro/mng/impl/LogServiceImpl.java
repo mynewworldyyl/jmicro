@@ -32,7 +32,7 @@ import cn.jmicro.api.annotation.Service;
 import cn.jmicro.api.mng.LogEntry;
 import cn.jmicro.api.mng.LogItem;
 import cn.jmicro.api.monitor.MC;
-import cn.jmicro.api.monitor.MRpcLogItem;
+import cn.jmicro.api.monitor.JMLogItem;
 import cn.jmicro.api.net.IReq;
 import cn.jmicro.api.net.IResp;
 import cn.jmicro.api.net.RpcRequest;
@@ -75,13 +75,13 @@ public class LogServiceImpl implements ILogService {
 		
 		 Map<Long,LogEntry> logComsumerMap = new HashMap<>();
 		 
-		 Map<Long,List<MRpcLogItem>> logProviderMap = new HashMap<>();
+		 Map<Long,List<JMLogItem>> logProviderMap = new HashMap<>();
 		 
 		 LogEntry root = null;
 		 
 		 FindIterable<Document>  rst = rpcLogColl.find(match);
 		 for(Document doc : rst) {
-			 MRpcLogItem mi = fromJson(doc.toJson(settings));
+			 JMLogItem mi = fromJson(doc.toJson(settings));
 			 if(mi.isProvider()) {
 				if(!logProviderMap.containsKey(mi.getReqId())) {
 					logProviderMap.put(mi.getReqId(), new ArrayList<>());
@@ -155,7 +155,7 @@ public class LogServiceImpl implements ILogService {
 				LogEntry le = new LogEntry();
 				rl.add(le);
 				Document log = cursor.next();
-				MRpcLogItem mi = fromJson(log.toJson(settings));
+				JMLogItem mi = fromJson(log.toJson(settings));
 				le.setItem(mi);
 				le.setId(mi.getReqId()+"");
 				if(mi.getLinkId() > 0) {
@@ -319,7 +319,7 @@ public class LogServiceImpl implements ILogService {
 
 	@Override
 	@SMethod(perType=false,needLogin=true,maxSpeed=10,maxPacketSize=2048,logLevel=MC.LOG_ERROR)
-	public Resp<List<MRpcLogItem>> queryLog(Map<String, String> queryConditions, int pageSize, int curPage) {
+	public Resp<List<JMLogItem>> queryLog(Map<String, String> queryConditions, int pageSize, int curPage) {
 
 		Document qryMatch = this.getLogCondtions(queryConditions);
 		
@@ -347,8 +347,8 @@ public class LogServiceImpl implements ILogService {
 		AggregateIterable<Document> resultset = rpcLogColl.aggregate(aggregateList);
 		MongoCursor<Document> cursor = resultset.iterator();
 		
-		Resp<List<MRpcLogItem>> resp = new Resp<>();
-		List<MRpcLogItem> rl = new ArrayList<>();
+		Resp<List<JMLogItem>> resp = new Resp<>();
+		List<JMLogItem> rl = new ArrayList<>();
 		resp.setData(rl);
 		
 		try {
@@ -357,7 +357,7 @@ public class LogServiceImpl implements ILogService {
 				/*Document liDoc = log.get("items", Document.class);
 				LogItem li = JsonUtils.getIns().fromJson(liDoc.toJson(settings), LogItem.class);
 				log.remove("items");*/
-				MRpcLogItem mi = fromJson(log.toJson(settings));
+				JMLogItem mi = fromJson(log.toJson(settings));
 				//mi.setItems(null);
 				//li.setItem(mi);
 				if(mi.getItems() != null && !mi.getItems().isEmpty()) {
@@ -416,7 +416,7 @@ public class LogServiceImpl implements ILogService {
 				Document liDoc = log.get("items", Document.class);
 				LogItem li = JsonUtils.getIns().fromJson(liDoc.toJson(settings), LogItem.class);
 				log.remove("items");
-				MRpcLogItem mi = fromJson(log.toJson(settings));
+				JMLogItem mi = fromJson(log.toJson(settings));
 				mi.setItems(null);
 				li.setItem(mi);
 				rl.add(li);
@@ -624,7 +624,7 @@ public class LogServiceImpl implements ILogService {
 		 
 		 FindIterable<Document>  rst = rpcLogColl.find(match);
 		 for(Document doc : rst) {
-			 MRpcLogItem mi = fromJson(doc.toJson(settings));
+			 JMLogItem mi = fromJson(doc.toJson(settings));
 			 LogEntry le = new LogEntry(mi);
 			 le.setId(mi.getReqId()+"");
 			 logMap.put(mi.getReqId(), le);
@@ -650,13 +650,13 @@ public class LogServiceImpl implements ILogService {
 		}
 	}
 	
-	private MRpcLogItem fromJson(String json) {
+	private JMLogItem fromJson(String json) {
 		GsonBuilder builder = new GsonBuilder();
 		//builder.registerTypeAdapter(IReq.class,rpcTpeAdatper);
 		//builder.registerTypeAdapter(IResp.class, respTypeAdapter);
 		builder.registerTypeAdapter(IReq.class, this.rpcTpeAdatper);
 		builder.registerTypeAdapter(IResp.class, this.respTypeAdapter);
-		return builder.create().fromJson(json, MRpcLogItem.class);
+		return builder.create().fromJson(json, JMLogItem.class);
 	}
 
 	private class RpcRequesetDeserializedTypeAdapter implements JsonDeserializer<IReq> {

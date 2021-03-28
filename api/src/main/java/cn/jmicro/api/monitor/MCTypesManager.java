@@ -30,8 +30,8 @@ public class MCTypesManager {
 	private boolean enable = false;
 	
 	public void ready() {
-		if(!op.exist(Config.CurCustomTypeCodeDir)) {
-			op.createNodeOrSetData(Config.CurCustomTypeCodeDir, MC.KEEP_MAX_VAL+"", 
+		if(!op.exist(Config.getRaftBasePath(Config.CurCustomTypeCodeDir))) {
+			op.createNodeOrSetData(Config.getRaftBasePath(Config.CurCustomTypeCodeDir), MC.KEEP_MAX_VAL+"", 
 					IDataOperator.PERSISTENT);
 		}
 	}
@@ -45,7 +45,7 @@ public class MCTypesManager {
 		
 		insertSystemConfig();
 		
-		op.addChildrenListener(Config.MonitorTypeConfigDir, (type,parent,val,data)->{
+		op.addChildrenListener(Config.getRaftBasePath(Config.MonitorTypeConfigDir), (type,parent,val,data)->{
 			if(IListener.ADD == type) {
 				addType0(val);
 			}else if(IListener.REMOVE ==type) {
@@ -55,7 +55,7 @@ public class MCTypesManager {
 	}
 	
 	private void insertSystemConfig() {
-		Set<String> cfs = op.getChildren(Config.MonitorTypeConfigDir, false);
+		Set<String> cfs = op.getChildren(Config.getRaftBasePath(Config.MonitorTypeConfigDir), false);
 		Set<MCConfig> exists = new HashSet<>();
 		for(String data : cfs) {
 			data = data.replaceAll(Constants.PATH_EXCAPE, "/");
@@ -66,7 +66,7 @@ public class MCTypesManager {
 		for(MCConfig mc : MC.MC_CONFIGS) {
 			if(!exists.contains(mc)) {
 				String data = JsonUtils.getIns().toJson(mc);
-				String path = Config.MonitorTypeConfigDir + "/" + data;
+				String path = Config.getRaftBasePath(Config.MonitorTypeConfigDir) + "/" + data;
 				op.createNodeOrSetData(path, "", IDataOperator.PERSISTENT);
 			}
 		}
@@ -96,9 +96,9 @@ public class MCTypesManager {
 			return false;
 		}
 		
-		short type = Short.parseShort(op.getData(Config.CurCustomTypeCodeDir));
+		short type = Short.parseShort(op.getData(Config.getRaftBasePath(Config.CurCustomTypeCodeDir)));
 		type++;
-		op.setData(Config.CurCustomTypeCodeDir, type+"");
+		op.setData(Config.getRaftBasePath(Config.CurCustomTypeCodeDir), type+"");
 		
 		cfg.setType(type);
 		
@@ -111,7 +111,7 @@ public class MCTypesManager {
 			val = val.replaceAll("/", Constants.PATH_EXCAPE);
 		}
 		
-		String path = Config.MonitorTypeConfigDir + "/" + val;
+		String path = Config.getRaftBasePath(Config.MonitorTypeConfigDir) + "/" + val;
 		op.createNodeOrSetData(path, "", IDataOperator.PERSISTENT);
 		return true;
 	}
@@ -164,7 +164,7 @@ public class MCTypesManager {
 		if(ejson.contains("/")) {
 			ejson = ejson.replaceAll("/", Constants.PATH_EXCAPE);
 		}
-		op.deleteNode(Config.MonitorTypeConfigDir + "/" + ejson);
+		op.deleteNode(Config.getRaftBasePath(Config.MonitorTypeConfigDir) + "/" + ejson);
 		return true;
 	}
 

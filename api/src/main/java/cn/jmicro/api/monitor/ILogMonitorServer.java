@@ -28,8 +28,8 @@ import cn.jmicro.codegenerator.AsyncClientProxy;
 @AsyncClientProxy
 public interface ILogMonitorServer {
 
-	public static final String LOG_WARNING_ROOT = Config.BASE_DIR + "/logWarnConfigs";
+	public static final String LOG_WARNING_ROOT = Config.getRaftBasePath("") + "/logWarnConfigs";
 	
-	void submit(MRpcLogItem[] items);
+	void submit(JMLogItem[] items);
 	
 }

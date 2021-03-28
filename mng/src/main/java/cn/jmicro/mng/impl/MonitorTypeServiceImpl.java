@@ -150,10 +150,11 @@ public class MonitorTypeServiceImpl implements IMonitorTypeService {
 	public Resp<Map<String,String>> getMonitorKeyList() {
 		Resp<Map<String,String>> resp = new Resp<>();
 		Map<String,String> key2val = new HashMap<>();
-		Set<String> keys = op.getChildren(Config.MonitorTypesDir, false);
+		String ppath = Config.getRaftBasePath(Config.MonitorTypesDir);
+		Set<String> keys = op.getChildren(ppath, false);
 		if(keys != null) {
 			for(String k :keys) {
-				String data = op.getData(Config.MonitorTypesDir+"/"+k);
+				String data = op.getData(ppath+"/"+k);
 				key2val.put(k, data);
 			}
 		}
@@ -166,7 +167,7 @@ public class MonitorTypeServiceImpl implements IMonitorTypeService {
 	@Override
 	@SMethod(perType=true,needLogin=true,maxSpeed=5,maxPacketSize=1024)
 	public Resp<List<Short>> getConfigByMonitorKey(String key) {
-		List<Short> l = getTypeByKey(Config.MonitorTypesDir + "/" + key);
+		List<Short> l = getTypeByKey(Config.getRaftBasePath(Config.MonitorTypesDir) + "/" + key);
 		Resp<List<Short>> resp = new Resp<List<Short>>();
 		resp.setData(l);
 		return resp;
@@ -268,19 +269,19 @@ public class MonitorTypeServiceImpl implements IMonitorTypeService {
 	@SMethod(perType=true,needLogin=true,maxSpeed=5,maxPacketSize=1024)
 	public Resp<Void> updateMonitorTypes(String key, Short[] adds, Short[] dels) {
 		Resp<Void> resp = new Resp<Void>();
-		if(!commonManager.hasPermission(this.adminPermissionLevel)) {
+		if(!PermissionManager.isCurAdmin()) {
 			resp.setCode(Resp.CODE_NO_PERMISSION);
 			resp.setMsg("No permission!");
 			return resp;
 		}
 		Resp<Void> rsp = null;
 		if(adds != null && adds.length > 0) {
-			rsp = add2Monitor(Config.MonitorTypesDir,key,adds);
+			rsp = add2Monitor( Config.getRaftBasePath(Config.MonitorTypesDir),key,adds);
 		}
 		
 		Resp<Void> rsp0 = null;
 		if(dels != null && dels.length > 0) {
-			rsp0 = removeFromMonitor(Config.MonitorTypesDir,key,dels);
+			rsp0 = removeFromMonitor( Config.getRaftBasePath(Config.MonitorTypesDir),key,dels);
 		}
 		
 		if(rsp == null) {
@@ -319,7 +320,7 @@ public class MonitorTypeServiceImpl implements IMonitorTypeService {
 			key = key.replaceAll("/", Constants.PATH_EXCAPE);
 		}
 		
-		List<Short> l = getTypeByKey(Config.MonitorServiceMethodTypesDir + "/" + key);
+		List<Short> l = getTypeByKey(Config.getRaftBasePath(Config.MonitorServiceMethodTypesDir) + "/" + key);
 		Resp<List<Short>> resp = new Resp<List<Short>>();
 		resp.setData(l);
 		return resp;
@@ -342,12 +343,12 @@ public class MonitorTypeServiceImpl implements IMonitorTypeService {
 		
 		Resp<Void> rsp = null;
 		if(adds != null && adds.length > 0) {
-			rsp = add2Monitor(Config.MonitorServiceMethodTypesDir,key,adds);
+			rsp = add2Monitor(Config.getRaftBasePath(Config.MonitorServiceMethodTypesDir),key,adds);
 		}
 		
 		Resp<Void> rsp0 = null;
 		if(dels != null && dels.length > 0) {
-			rsp0 = removeFromMonitor(Config.MonitorServiceMethodTypesDir,key,dels);
+			rsp0 = removeFromMonitor(Config.getRaftBasePath(Config.MonitorServiceMethodTypesDir),key,dels);
 		}
 		
 		if(rsp == null) {
@@ -411,7 +412,7 @@ public class MonitorTypeServiceImpl implements IMonitorTypeService {
 	@Override
 	@SMethod(perType=true,needLogin=true,maxSpeed=5,maxPacketSize=1024)
 	public Resp<List<String>> getNamedList() {
-		Set<String> ls = op.getChildren(Config.NamedTypesDir,false);
+		Set<String> ls = op.getChildren(Config.getRaftBasePath(Config.NamedTypesDir),false);
 		Resp<List<String>> resp = new Resp<>();
 		List<String> l = new ArrayList<>();
 		l.addAll(ls);
@@ -427,7 +428,7 @@ public class MonitorTypeServiceImpl implements IMonitorTypeService {
 			name = name.replaceAll("/", Constants.PATH_EXCAPE);
 		}
 		
-		List<Short> l = getTypeByKey(Config.NamedTypesDir + "/" + name);
+		List<Short> l = getTypeByKey(Config.getRaftBasePath(Config.NamedTypesDir) + "/" + name);
 		Resp<List<Short>> resp = new Resp<List<Short>>();
 		resp.setData(l);
 		return resp;
@@ -450,12 +451,12 @@ public class MonitorTypeServiceImpl implements IMonitorTypeService {
 		
 		Resp<Void> rsp = null;
 		if(adds != null && adds.length > 0) {
-			rsp = add2Monitor(Config.NamedTypesDir,name,adds);
+			rsp = add2Monitor(Config.getRaftBasePath(Config.NamedTypesDir),name,adds);
 		}
 		
 		Resp<Void> rsp0 = null;
 		if(dels != null && dels.length > 0) {
-			rsp0 = removeFromMonitor(Config.NamedTypesDir,name,dels);
+			rsp0 = removeFromMonitor(Config.getRaftBasePath(Config.NamedTypesDir),name,dels);
 		}
 		
 		if(rsp == null) {
@@ -489,7 +490,7 @@ public class MonitorTypeServiceImpl implements IMonitorTypeService {
 		
 		 resp.setCode(Resp.CODE_SUCCESS);
 		 
-		 String p = Config.NamedTypesDir + "/" + key0;
+		 String p = Config.getRaftBasePath(Config.NamedTypesDir) + "/" + key0;
 		 if(op.exist(p)) {
 			 resp.setCode(Resp.CODE_FAIL);
 			 resp.setMsg("exist:　" + name);

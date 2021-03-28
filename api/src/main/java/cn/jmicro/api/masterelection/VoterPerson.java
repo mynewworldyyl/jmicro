@@ -18,7 +18,7 @@ import cn.jmicro.common.util.StringUtils;
 @IDStrategy(10)
 public class VoterPerson {
 	
-	public final static String ROOT = Config.BASE_DIR+"/_ME";
+	public final static String ROOT = Config.getRaftBasePath("")+"/_ME";
 	
 	private final static String PREFIX_SEPERATOR = "##";
 

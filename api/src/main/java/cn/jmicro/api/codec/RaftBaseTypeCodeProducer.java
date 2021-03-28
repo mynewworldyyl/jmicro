@@ -22,7 +22,7 @@ public class RaftBaseTypeCodeProducer implements ITypeCodeProducer {
 
 	private static final Logger logger = LoggerFactory.getLogger(RaftBaseTypeCodeProducer.class);
 	
-	private static final String ROOT = Config.BASE_DIR + "/" + RaftBaseTypeCodeProducer.class.getSimpleName();
+	private static final String ROOT = Config.getRaftBasePath("") + "/" + RaftBaseTypeCodeProducer.class.getSimpleName();
 	
 	private Map<String,Short> name2Types = new HashMap<>();
 	

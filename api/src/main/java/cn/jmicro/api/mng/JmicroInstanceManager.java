@@ -17,7 +17,7 @@ import cn.jmicro.api.raft.IDataOperator;
 import cn.jmicro.api.raft.RaftNodeDataListener;
 import cn.jmicro.common.Utils;
 
-@Component(limit2Packages={"cn.jmicro"})
+@Component(limit2Packages={"cn.jmicro"},level=20)
 public class JmicroInstanceManager {
 
 	private final static Logger logger = LoggerFactory.getLogger(JmicroInstanceManager.class);
@@ -68,6 +68,19 @@ public class JmicroInstanceManager {
 		return id[0];
 	}
 	
+	public Set<ProcessInfo> getProcessByNamePreifx(String insNamePrefix) {
+		if(Utils.isEmpty(insNamePrefix)) {
+			throw new NullPointerException();
+		}
+		Set<ProcessInfo> pis = new HashSet<>();
+		this.instanceListener.forEachNode((node)->{
+			if(node.getInstanceName().startsWith(insNamePrefix)) {
+				pis.add(node);
+			}
+		});
+		return pis;
+	}
+	
 	public boolean isMonitorable(Integer pid) {
 		ProcessInfo pi = getInstanceById(pid);
 		if(pi != null) {
@@ -88,6 +101,9 @@ public class JmicroInstanceManager {
 	
 	public void addInstanceListner(IInstanceListener l) {
 		if(!this.insListeners.contains(l)) {
+			instanceListener.forEachNode((pi)->{
+				l.onEvent(IListener.ADD, pi);
+			});
 			insListeners.add(l);
 		}
 	}

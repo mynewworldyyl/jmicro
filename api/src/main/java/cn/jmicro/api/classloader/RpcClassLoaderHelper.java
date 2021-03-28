@@ -44,8 +44,8 @@ import cn.jmicro.common.Utils;
 
 public class RpcClassLoaderHelper {
 
-	private static final String CLASS_IDR = Config.BASE_DIR + "/remote_classes";
-	public static final String CLASS_INFO_IDR = Config.BASE_DIR + "/remote_classes_info";
+	private static final String CLASS_IDR = Config.getRaftBasePath("") + "/remote_classes";
+	public static final String CLASS_INFO_IDR = Config.getRaftBasePath("") + "/remote_classes_info";
 	
 	private final static Logger logger = LoggerFactory.getLogger(RpcClassLoaderHelper.class);
 	
@@ -246,11 +246,14 @@ public class RpcClassLoaderHelper {
         				throw new RuntimeException("Class [" + className+"] resource url not found!");
         			}
         			
-        			String cp = className.replaceAll("\\.", "/");
+        			String cp = className.replaceAll("\\.", "/")+".class";
             		File f = new File(url.getFile()/* + "/" + cp + ".class"*/);
             		rc.getCi().setModifiedTime(f.lastModified());
+            		//                                                                     cn/jmicro/api/security/JmicroPublicKey
+            		//file:/root/jmicro/resp/jmicro.security-0.0.2-SNAPSHOT-with-core.jar!/cn/jmicro/api/security/JmicroPublicKey.class
+            		String fullPath = url.getFile();
             		
-            		if(url.getFile().contains("target/classes/")) {
+            		if(fullPath.contains("target/classes/")) {
             			rc.getCi().setTesting(true);
             			byte[] data = new byte[(int)f.length()];
             			try(InputStream is = new FileInputStream(f)) {
@@ -260,6 +263,11 @@ public class RpcClassLoaderHelper {
     						logger.error("",e);
     					} 
             			rc.getCi().setJarFileName(f.getName());
+            		} else if(fullPath.endsWith("!/"+cp)) {
+            			rc.getCi().setTesting(false);
+            			String n = fullPath.substring(0,fullPath.length() - cp.length()-2);
+            			n = n.substring(n.lastIndexOf("/")+1);
+            			rc.getCi().setJarFileName(n);
             		} else {
             			rc.getCi().setTesting(false);
             			rc.getCi().setJarFileName(new File(url.getFile()).getName());
@@ -293,7 +301,7 @@ public class RpcClassLoaderHelper {
 	            			logger.error(r.getMsg());
 	            		} else {
 	            			LG.log(MC.LOG_ERROR,this.getClass(), r.getMsg());
-	            			logger.error(r.getMsg()+" Class: " + className+", try regist again after minutes");
+	            			logger.error(r.getMsg() + " Class: " + className + ", try regist again after minutes");
 	            		}
 	   				 }finally {
 	   					if(this.localClassloader != null) {

@@ -69,9 +69,6 @@ public class JMicro {
 						
 						if(key != null && "log4j.configuration".equals(key)) {
 							System.out.println(val);
-							//System.setProperty("log4j.configuration", val);
-							//System.setProperty("log4j.debug", "true");
-							//DOMConfigurator.configure("D:\\opensource\\github\\jmicro\\main\\main.apigateway\\log4j.xml");
 							if(val != null && !"".equals(val.trim())) {
 								if(val.endsWith("xml")) {
 									DOMConfigurator.configure(val);

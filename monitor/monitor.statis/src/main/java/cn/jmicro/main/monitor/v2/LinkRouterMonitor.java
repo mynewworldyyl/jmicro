@@ -33,9 +33,9 @@ import cn.jmicro.api.gateway.ApiRequest;
 import cn.jmicro.api.gateway.ApiResponse;
 import cn.jmicro.api.idgenerator.IdRequest;
 import cn.jmicro.api.monitor.IMonitorDataSubscriber;
+import cn.jmicro.api.monitor.JMLogItem;
+import cn.jmicro.api.monitor.JMStatisItem;
 import cn.jmicro.api.monitor.MC;
-import cn.jmicro.api.monitor.MRpcLogItem;
-import cn.jmicro.api.monitor.MRpcStatisItem;
 import cn.jmicro.api.monitor.OneLog;
 import cn.jmicro.api.monitor.StatisItem;
 import cn.jmicro.api.monitor.StatisMonitorClient;
@@ -71,7 +71,7 @@ import cn.jmicro.monitor.api.AbstractMonitorDataSubscriber;
 	@Inject
 	private StatisMonitorClient mm;
 	
-	private Map<String,List<MRpcStatisItem>> siq = new HashMap<>();
+	private Map<String,List<JMStatisItem>> siq = new HashMap<>();
 	
 	private Map<String,Long> sldTimes = new HashMap<>();
 	
@@ -106,13 +106,13 @@ import cn.jmicro.monitor.api.AbstractMonitorDataSubscriber;
 		/*if(this.openDebug) {
 			logger.debug("printLog One LOOP");
 		}*/
-		for(List<MRpcStatisItem> ls : siq.values()) {
+		for(List<JMStatisItem> ls : siq.values()) {
 			
 			if(ls.isEmpty()) {
 				continue;
 			}
 			
-			for(MRpcStatisItem si: ls) {
+			for(JMStatisItem si: ls) {
 				
 				String key= si.getKey();
 				if(key == null) {
@@ -167,7 +167,7 @@ import cn.jmicro.monitor.api.AbstractMonitorDataSubscriber;
 		}
 	}
 
-	private void doPrintLog(MRpcStatisItem si,StatisItem oi) {
+	private void doPrintLog(JMStatisItem si,StatisItem oi) {
 		String msg = toLog(si,oi);
 		logger.info(msg);
 		/*switch(oi.getLevel()) {
@@ -209,9 +209,9 @@ import cn.jmicro.monitor.api.AbstractMonitorDataSubscriber;
 
 	@Override
 	@SMethod(needResponse=false,asyncable=true)
-	public void onSubmit(MRpcStatisItem[] sis) {
+	public void onSubmit(JMStatisItem[] sis) {
 		
-			for(MRpcStatisItem si : sis) {
+			for(JMStatisItem si : sis) {
 				try {
 				if(openDebug) {
 					logger.debug("LinkRouterMonitor:{}",si);
@@ -230,12 +230,12 @@ import cn.jmicro.monitor.api.AbstractMonitorDataSubscriber;
 				if(!siq.containsKey(key)) {
 					synchronized(siq) {
 						if(!siq.containsKey(key)) {
-							siq.put(key, new LinkedList<MRpcStatisItem>());
+							siq.put(key, new LinkedList<JMStatisItem>());
 						}
 					}
 				}
 				
-				List<MRpcStatisItem> l = siq.get(key);
+				List<JMStatisItem> l = siq.get(key);
 				synchronized(l) {
 					l.add(si);
 					sldTimes.put(key, TimeUtils.getCurTime());
@@ -259,7 +259,7 @@ import cn.jmicro.monitor.api.AbstractMonitorDataSubscriber;
 		service(sb,"", "", "","",req.getArgs());
 	}
 
-	private void response(StringBuilder sb, MRpcLogItem si,OneLog oi) {
+	private void response(StringBuilder sb, JMLogItem si,OneLog oi) {
 		if(si.getResp() == null) return;
 		if(si.getResp() instanceof IResponse) {
 			sb.append("[RpcResponse] ");
@@ -294,7 +294,7 @@ import cn.jmicro.monitor.api.AbstractMonitorDataSubscriber;
 				req.getArgs());
 	}
 
-	private StringBuilder logHeaders(StringBuilder sb,MRpcLogItem si) {
+	private StringBuilder logHeaders(StringBuilder sb,JMLogItem si) {
 		//sb.append("[").append(si.getTagCls());
 		//sb.append("] LinkId [").append(si.getLinkId());
 		//sb.append(" instanceName[").append(si.getInstanceName());
