@@ -18,5 +18,16 @@
         <module>example.api</module>
 		<module>example.comsumer</module>
 		<module>example.provider</module>
+		<module>expjmicro.tx</module>
     </modules>
+    
+    <dependencies>
+     <dependency>
+			<groupId>cn.jmicro</groupId>
+			<artifactId>jmicro.test</artifactId>
+			<scope>test</scope>
+		</dependency>
+    </dependencies>
+   
+    
 </project>

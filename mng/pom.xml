@@ -26,10 +26,10 @@
             <groupId>cn.jmicro</groupId>
             <artifactId>jmicro.redis</artifactId>
         </dependency>
-        <dependency>
+        <!-- <dependency>
             <groupId>cn.jmicro</groupId>
             <artifactId>jmicro.choreography.api</artifactId>
-        </dependency>
+        </dependency> -->
 		<dependency>
 		    <groupId>com.beust</groupId>
 		    <artifactId>jcommander</artifactId>

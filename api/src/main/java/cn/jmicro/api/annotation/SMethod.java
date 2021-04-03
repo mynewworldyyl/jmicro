@@ -24,6 +24,7 @@ import java.lang.annotation.Target;
 
 import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.net.Message;
+import cn.jmicro.api.tx.TxConstants;
 import cn.jmicro.common.Constants;
 /**
  * service method
@@ -168,5 +169,7 @@ public @interface SMethod {
 	public byte encType() default 0;
 	
 	public int forType() default Constants.FOR_TYPE_ALL;
+	
+	public int txType() default TxConstants.TYPE_TX_NO;
 	
 }

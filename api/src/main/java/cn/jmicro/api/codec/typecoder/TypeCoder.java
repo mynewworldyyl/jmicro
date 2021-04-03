@@ -566,14 +566,23 @@ public interface TypeCoder<T> extends Comparable<TypeCoder<T>>{
 		}
 		
 		if(len > 0 && readEvery && sameArrayTypeEles(objs)) {
-			Object o = Array.get(objs, 0);
-			Object narr = Array.newInstance(o.getClass(), len);
+			Object o = null;
 			for(int i = 0; i < len; i++) {
-				Array.set(narr, i, Array.get(objs, i));
+				o = Array.get(objs, i);
+				if(o != null) {
+					break;
+				}
 			}
-			objs = narr;
+			
+			if(o != null) {
+				Object narr = Array.newInstance(o.getClass(), len);
+				for(int i = 0; i < len; i++) {
+					Array.set(narr, i, Array.get(objs, i));
+				}
+				objs = narr;
+			}
+			
 		}
-		
 		
 		return objs;
 	}

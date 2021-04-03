@@ -1,11 +1,13 @@
 package cn.expjmicro.objfactory.simple.integration.test;
 
+import org.junit.Assert;
 import org.junit.Test;
 
-import cn.jmicro.api.registry.ServiceItem;
 import cn.expjmicro.example.api.ITestRpcService;
 import cn.expjmicro.example.api.rpc.ISimpleRpc;
 import cn.expjmicro.example.comsumer.TestRpcClient;
+import cn.jmicro.api.mng.JmicroInstanceManager;
+import cn.jmicro.api.registry.ServiceItem;
 import cn.jmicro.test.JMicroBaseTestCase;
 
 public class TestObjectFactory extends JMicroBaseTestCase{
@@ -48,6 +50,12 @@ public class TestObjectFactory extends JMicroBaseTestCase{
 		TestRpcClient rpc = of.get(TestRpcClient.class);
 		
 		System.out.println(rpc.testSetServices());
+	}
+	
+	@Test
+	public void testGetInvalidComponent() {
+		JmicroInstanceManager rpc = of.get(JmicroInstanceManager.class);
+		Assert.assertNull(rpc);
 	}
 	
 }

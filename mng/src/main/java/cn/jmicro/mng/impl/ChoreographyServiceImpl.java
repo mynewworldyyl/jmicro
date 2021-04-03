@@ -2,10 +2,12 @@ package cn.jmicro.mng.impl;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -15,13 +17,13 @@ import cn.jmicro.api.Resp;
 import cn.jmicro.api.annotation.Cfg;
 import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Inject;
-import cn.jmicro.api.annotation.Reference;
 import cn.jmicro.api.annotation.SMethod;
 import cn.jmicro.api.annotation.Service;
 import cn.jmicro.api.choreography.AgentInfo;
 import cn.jmicro.api.choreography.AgentInfoVo;
 import cn.jmicro.api.choreography.ChoyConstants;
 import cn.jmicro.api.choreography.Deployment;
+import cn.jmicro.api.choreography.IAgentProcessService;
 import cn.jmicro.api.choreography.ProcessInfo;
 import cn.jmicro.api.config.Config;
 import cn.jmicro.api.idgenerator.ComponentIdServer;
@@ -29,15 +31,13 @@ import cn.jmicro.api.mng.ConfigNode;
 import cn.jmicro.api.mng.IChoreographyService;
 import cn.jmicro.api.mng.ICommonManager;
 import cn.jmicro.api.mng.IConfigManager;
+import cn.jmicro.api.mng.JmicroInstanceManager;
 import cn.jmicro.api.monitor.LG;
 import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.raft.IDataOperator;
 import cn.jmicro.api.security.ActInfo;
 import cn.jmicro.api.security.PermissionManager;
 import cn.jmicro.api.utils.TimeUtils;
-import cn.jmicro.choreography.api.IAssignStrategy;
-import cn.jmicro.choreography.api.IResourceResponsitory;
-import cn.jmicro.choreography.instance.InstanceManager;
 import cn.jmicro.common.Constants;
 import cn.jmicro.common.Utils;
 import cn.jmicro.common.util.JsonUtils;
@@ -60,14 +60,11 @@ public class ChoreographyServiceImpl implements IChoreographyService {
 	@Inject
 	private ComponentIdServer idServer;
 	
-	@Reference(namespace="repository",version="*")
-	private IResourceResponsitory respo;
-	
 	@Inject
 	private IConfigManager configManager;
 	
 	@Inject
-	private InstanceManager insManager;
+	private JmicroInstanceManager insManager;
 	
 	@Inject
 	private ICommonManager commonManager;
@@ -240,7 +237,7 @@ public class ChoreographyServiceImpl implements IChoreographyService {
 
 	private void setEnableDepArgs(Deployment dep) {
 		dep.setDesc("");
-		Map<String, String> params = IAssignStrategy.parseProgramArgs(dep.getArgs());
+		Map<String, String> params = IAgentProcessService.parseProgramArgs(dep.getArgs());
 		if(!params.containsKey(Constants.CLIENT_ID)) {
 			dep.setArgs(dep.getArgs() + " -D"+Constants.CLIENT_ID + "="+ dep.getClientId());
 		}
@@ -288,7 +285,7 @@ public class ChoreographyServiceImpl implements IChoreographyService {
 		if(Utils.isEmpty(dep.getArgs())) {
 			 params = new HashMap<>();
 		}else {
-			 params = IAssignStrategy.parseProgramArgs(dep.getArgs());
+			 params = IAgentProcessService.parseProgramArgs(dep.getArgs());
 		}
 		
 		ActInfo ai = JMicroContext.get().getAccount();
@@ -451,7 +448,7 @@ public class ChoreographyServiceImpl implements IChoreographyService {
 			return resp;
 		}
 		
-		Map<String, String> params = IAssignStrategy.parseProgramArgs(dep.getArgs());
+		Map<String, String> params = IAgentProcessService.parseProgramArgs(dep.getArgs());
 		if(dep.getStatus() == Deployment.STATUS_ENABLE && !PermissionManager.isCurAdmin()) {
 			//非Admin添加的部署需要严格验证参数
 			checkNonAdminProgramArgs(dep);
@@ -475,18 +472,12 @@ public class ChoreographyServiceImpl implements IChoreographyService {
 	@SMethod(perType=false,needLogin=true,maxSpeed=5,maxPacketSize=256)
 	public Resp<List<ProcessInfo>> getProcessInstanceList(boolean all) {
 		Resp<List<ProcessInfo>> resp = new Resp<>(0);
-		Set<ProcessInfo> set = this.insManager.getProcesses(all);
-		if (set == null || set.isEmpty()) {
-			return resp;
-		}
-
 		List<ProcessInfo> result = new ArrayList<>();
-		for (ProcessInfo pi : set) {
+		this.insManager.forEach((pi)->{
 			if (PermissionManager.isOwner(pi.getClientId())) {
 				result.add(pi);
 			}
-		}
-
+		});
 		result.sort((o1, o2) -> {
 			return o1.getId() > o2.getId() ? 1 : o1.getId() == o2.getId() ? 0 : -1;
 		});
@@ -498,7 +489,7 @@ public class ChoreographyServiceImpl implements IChoreographyService {
 	@SMethod(perType=false,needLogin=true,maxSpeed=5,maxPacketSize=8194)
 	public Resp<Boolean> updateProcess(ProcessInfo updatePi) {
 		Resp<Boolean> resp = new Resp<>(0);
-		ProcessInfo pi = this.insManager.getProcessesByInsId(updatePi.getId(), true);
+		ProcessInfo pi = this.insManager.getInstanceById(updatePi.getId());
 		if(pi == null) {
 			resp.setData(true);
 			return resp;
@@ -535,7 +526,7 @@ public class ChoreographyServiceImpl implements IChoreographyService {
 	@SMethod(perType=true,needLogin=true,maxSpeed=5,maxPacketSize=256)
 	public Resp<Boolean> stopProcess(Integer insId) {
 		Resp<Boolean> resp = new Resp<>(0);
-		ProcessInfo pi = this.insManager.getProcessesByInsId(insId, true);
+		ProcessInfo pi = this.insManager.getInstanceById(insId);
 		if(pi == null) {
 			resp.setData(true);
 			return resp;
@@ -600,7 +591,13 @@ public class ChoreographyServiceImpl implements IChoreographyService {
 			av.setAgentInfo(ai);
 			ai.setActive(isActive);
 			
-			 Set<ProcessInfo> pros = this.insManager.getProcessesByAgentId(ai.getId());
+			 Set<ProcessInfo> pros = new HashSet<>();
+			 this.insManager.forEach((pi)->{
+				 if(pi.getAgentId() != null && pi.getAgentId().equals(ai.getId())) {
+					 pros.add(pi);
+				 }
+			 });
+			 
 			 if(pros != null && pros.size() > 0) {
 				 String[] depids = new String[pros.size()];
 				 String[] intids = new String[pros.size()];
@@ -702,8 +699,14 @@ public class ChoreographyServiceImpl implements IChoreographyService {
 				return resp;
 			}
 			
-			int size = this.insManager.getProcessSizeByAgentId(agentId);
-            if(size > 0) {
+			AtomicInteger size = new AtomicInteger(0);
+			this.insManager.forEach((pi)->{
+				 if(pi.getAgentId() != null && pi.getAgentId().equals(ai.getId())) {
+					 size.incrementAndGet();
+				 }
+			 });
+			
+			if(size.get() > 0) {
             	resp.setCode(1);
 				resp.setMsg("Agent ID : " + agentId + " has process runngin so cannot change state!");
 				return resp;

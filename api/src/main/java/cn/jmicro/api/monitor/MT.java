@@ -40,7 +40,7 @@ public class MT {
 	
 	public static boolean rpcEvent(ServiceMethod sm,short type,long val) {
 		if(sm != null && sm.getMonitorEnable() == 1 && isInit && m != null 
-				&& m.canSubmit(sm,type,Config.getAccountName())) {
+				&& m.canSubmit(sm,type,Config.getClientId())) {
 			JMStatisItem mi = new JMStatisItem();
 			mi.setKey(sm.getKey().toKey(true, true, true));
 			setCommon(mi);
@@ -108,10 +108,11 @@ public class MT {
 
 		if(JMicroContext.existRpcContext()) {
 			ActInfo ai = JMicroContext.get().getAccount();
-			if(ai != null && si.getActName() == null) {
+			if(ai != null) {
 				si.setClientId(ai.getId());
-				si.setActName(ai.getActName());
-			}
+			} /*else {
+				si.setClientId(Config.getClientId());
+			}*/
 			//在RPC上下文中才有以上信息
 			ServiceMethod sm = (ServiceMethod)JMicroContext.get().getObject(Constants.SERVICE_METHOD_KEY, null);
 			si.setLocalPort(JMicroContext.get().getString(JMicroContext.LOCAL_PORT, ""));
@@ -120,6 +121,10 @@ public class MT {
 			//si.setKey(sm.getKey().toKey(true, true, true));
 			si.setSmKey(sm.getKey());
 			si.setKey(sm.getKey().toKey(true, true, true));
+			si.setRpc(true);
+		} else {
+			si.setRpc(false);
+			si.setClientId(Config.getClientId());
 		}
 		si.setLocalHost(Config.getExportSocketHost());
 		si.setInstanceName(Config.getInstanceName());
@@ -147,11 +152,11 @@ public class MT {
 		if(JMicroContext.existRpcContext()) {
 			ActInfo ai = JMicroContext.get().getAccount();
 			if(ai != null) {
-				return m.canSubmit(sm(),type,ai.getActName());
+				return m.canSubmit(sm(),type,ai.getId());
 			}
 		}
 		
-		return m.canSubmit(sm(),type,Config.getAccountName());
+		return m.canSubmit(sm(),type,Config.getClientId());
 		
 	}
 	

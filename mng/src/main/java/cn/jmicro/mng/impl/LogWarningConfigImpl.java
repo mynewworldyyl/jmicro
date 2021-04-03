@@ -16,6 +16,7 @@ import cn.jmicro.api.annotation.Service;
 import cn.jmicro.api.exp.ExpUtils;
 import cn.jmicro.api.idgenerator.ComponentIdServer;
 import cn.jmicro.api.monitor.ILogMonitorServer;
+import cn.jmicro.api.monitor.JMLogItem;
 import cn.jmicro.api.monitor.LG;
 import cn.jmicro.api.monitor.LogWarningConfig;
 import cn.jmicro.api.monitor.MC;
@@ -94,12 +95,15 @@ public class LogWarningConfigImpl implements ILogWarningConfig {
 			return r;
 		}
 		
-		if(LogWarningConfig.TYPE_SAVE_DB == cfg.getType() && Utils.isEmpty(cfg.getCfgParams())) {
-			cfg.setCfgParams("rpc_log");
+		if(LogWarningConfig.TYPE_SAVE_DB == cfg.getType()) {
+			if(!PermissionManager.isCurAdmin()) {
+				cfg.setCfgParams(JMLogItem.TABLE);
+			}else if(Utils.isEmpty(cfg.getCfgParams())) {
+				cfg.setCfgParams(JMLogItem.TABLE);
+			}
 		}
 		
 		if((LogWarningConfig.TYPE_FORWARD_SRV == cfg.getType()
-				|| LogWarningConfig.TYPE_SAVE_DB == cfg.getType()
 				|| LogWarningConfig.TYPE_SAVE_FILE == cfg.getType()) 
 				&& Utils.isEmpty(cfg.getCfgParams())) {
 			logger.error("Config param is NULL: " + cfg.getId());
@@ -159,8 +163,15 @@ public class LogWarningConfigImpl implements ILogWarningConfig {
 			return r;
 		}
 		
+		if(LogWarningConfig.TYPE_SAVE_DB == cfg.getType()) {
+			if(!PermissionManager.isCurAdmin()) {
+				cfg.setCfgParams(JMLogItem.TABLE);
+			}else if(Utils.isEmpty(cfg.getCfgParams())) {
+				cfg.setCfgParams(JMLogItem.TABLE);
+			}
+		}
+		
 		if((LogWarningConfig.TYPE_FORWARD_SRV == cfg.getType()
-				|| LogWarningConfig.TYPE_SAVE_DB == cfg.getType()
 				|| LogWarningConfig.TYPE_SAVE_FILE == cfg.getType()) 
 				&& Utils.isEmpty(cfg.getCfgParams())) {
 			logger.error("Config param is NULL: " + cfg.getId());

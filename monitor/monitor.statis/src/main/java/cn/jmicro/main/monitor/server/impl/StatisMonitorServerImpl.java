@@ -36,7 +36,8 @@ import cn.jmicro.common.Constants;
 import cn.jmicro.monitor.statis.config.StatisManager;
 
 @Component
-@Service(clientId=Constants.NO_CLIENT_ID,version="0.0.1", debugMode=0,monitorEnable=0, logLevel=MC.LOG_WARN, retryCnt=0)
+@Service(clientId=Constants.NO_CLIENT_ID,version="0.0.1", debugMode=0,monitorEnable=0, 
+logLevel=MC.LOG_WARN, retryCnt=0,limit2Packages="cn.jmicro.api.monitor")
 public class StatisMonitorServerImpl implements IStatisMonitorServer {
 
 	private final static Logger logger = LoggerFactory.getLogger(StatisMonitorServerImpl.class);
@@ -400,7 +401,7 @@ public class StatisMonitorServerImpl implements IStatisMonitorServer {
 				if(si.getSmKey() != null) {
 					sb.append(", SM: ").append(si.getSmKey().getMethod());
 				}
-				sb.append(", actName: ").append(si.getActName());
+				sb.append(", actName: ").append(si.getClientId());
 				logger.debug(sb.toString()); 
 			}
 		}

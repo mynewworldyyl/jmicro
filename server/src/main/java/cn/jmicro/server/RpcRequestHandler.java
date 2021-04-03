@@ -67,9 +67,9 @@ public class RpcRequestHandler extends AbstractHandler implements IRequestHandle
 				}
 			}
 			
-			if(request.getMethod().equals("updateResource")) {
+			/*if(request.getMethod().equals("updateResource")) {
 				logger.debug(request.getImpl());
-			}
+			}*/
 			
 			Object result = m.invoke(obj, request.getArgs());
 			if(!f) {

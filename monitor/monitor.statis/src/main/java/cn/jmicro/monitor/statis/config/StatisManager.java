@@ -24,9 +24,9 @@ import cn.jmicro.api.async.IPromise;
 import cn.jmicro.api.exp.Exp;
 import cn.jmicro.api.exp.ExpUtils;
 import cn.jmicro.api.idgenerator.ComponentIdServer;
-import cn.jmicro.api.monitor.LG;
-import cn.jmicro.api.monitor.MC;
+import cn.jmicro.api.monitor.JMLogItem;
 import cn.jmicro.api.monitor.JMStatisItem;
+import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.monitor.ServiceCounter;
 import cn.jmicro.api.monitor.StatisConfig;
 import cn.jmicro.api.monitor.StatisData;
@@ -39,7 +39,6 @@ import cn.jmicro.api.registry.UniqueServiceMethodKey;
 import cn.jmicro.api.service.ServiceInvokeManager;
 import cn.jmicro.api.timer.TimerTicker;
 import cn.jmicro.api.utils.TimeUtils;
-import cn.jmicro.common.Utils;
 import cn.jmicro.common.util.JsonUtils;
 
 @Component
@@ -113,27 +112,22 @@ public class StatisManager {
 			String key = null;
 			
 			ServiceCounter sc = null;
-			if(Utils.isEmpty(si.getKey())) {
+			if(si.isRpc()) {
+				 //RPC上下文
+				 si.setSmKey(UniqueServiceMethodKey.fromKey(si.getKey()));
+				 key = si.getSmKey().toKey(true, true, true);
+				 key = key + UniqueServiceKey.SEP + si.getClientId();
+				 sc = getSc(services, key, windowSize, slotInterval, tu);
+				 if(sc != null) {
+					 doStatis(sc,si);
+				 }
+			} else {
 				//非RPC数据
 				Set<StatisConfig> ins2Configs = mscm.getInstanceConfigs(si.getInstanceName());
 				if(ins2Configs != null && !ins2Configs.isEmpty()) {
 				  sc = getSc(instances,si.getInstanceName()+"##"+si.getClientId(),windowSize,slotInterval,tu);
 				  doStatis(sc,si);
 				}
-			} else {
-				 //RPC上下文
-				 si.setSmKey(UniqueServiceMethodKey.fromKey(si.getKey()));
-				 key = si.getSmKey().toKey(true, true, true);
-				 String an = si.getActName();
-				 if(an == null) {
-					 an = "";
-				 }
-				 
-				 key = key + UniqueServiceKey.SEP + an + "##"+si.getClientId();
-				 sc = getSc(services, key, windowSize, slotInterval, tu);
-				 if(sc != null) {
-					 doStatis(sc,si);
-				 }
 			}
 		}
 	}
@@ -192,7 +186,7 @@ public class StatisManager {
 				if(si.getSmKey() != null) {
 					sb.append(", SM: ").append(si.getSmKey().getMethod());
 				}
-				sb.append(", actName: ").append(si.getActName());
+				sb.append(", actName: ").append(si.getClientId());
 				logger.debug(sb.toString()); 
 			}
 		}
@@ -282,7 +276,6 @@ public class StatisManager {
 			if(v > 0) {
 				idx.setCurNums(idx.getCurNums() + v);
 			}
-			
 		}else if(idx.getType() == StatisConfig.PREFIX_CUR_PERCENT) {
 			long v = counter.getByTypes(idx.getNums());
 			if(v > 0) {
@@ -364,6 +357,7 @@ public class StatisManager {
 		sd.setKey(sc.getByKey());
 		sd.setType(sc.getToType());
 		sd.setActName(sc.getActName());
+		sd.setClientId(sc.getCreatedBy());//由谁创建的配置，产生的数据就是谁的
 		
 		switch(sc.getToType()) {
 		case StatisConfig.TO_TYPE_SERVICE_METHOD:
@@ -384,6 +378,7 @@ public class StatisManager {
 			pd.setTopic(sc.getToParams());
 			pd.setPersist(false);
 			pd.setId(idGenerator.getIntId(PSData.class));
+			pd.setSrcClientId(sc.getCreatedBy());//由谁创建配置，数据就由谁可见
 			this.pubsubMng.publish(pd);
 			break;
 		case StatisConfig.TO_TYPE_DB:
@@ -391,7 +386,8 @@ public class StatisManager {
 			coll.insertOne(Document.parse(JsonUtils.getIns().toJson(sd)));
 			break;
 		case StatisConfig.TO_TYPE_MONITOR_LOG:
-			LG.logWithNonRpcContext(MC.LOG_INFO, sc.getToParams(), JsonUtils.getIns().toJson(sd),null,MC.MT_DEFAULT,true);
+			//LG.logWithNonRpcContext(MC.LOG_INFO, sc.getToParams(), JsonUtils.getIns().toJson(sd),null,MC.MT_DEFAULT,true);
+			saveLog(sd,sc);//直接保存到日志库
 			break;
 		case StatisConfig.TO_TYPE_FILE:
 			try {
@@ -402,6 +398,24 @@ public class StatisManager {
 			break;
 		}
 	}
+	
+	private void saveLog(StatisData sd,StatisConfig sc) {
+		long curTime = TimeUtils.getCurTime();
+		JMLogItem ji = new JMLogItem();
+		ji.setActClientId(sc.getCreatedBy());
+		ji.setActName(sd.getActName());
+		ji.setConfigId(sc.getId()+"");
+		ji.setCreateTime(curTime);
+		ji.setInputTime(curTime);
+		ji.setInstanceName(sc.getByns());
+		ji.setLogLevel(MC.LOG_INFO);
+		ji.setSysClientId(sc.getCreatedBy());
+		ji.addOneItem(MC.LOG_INFO, "StatisConfig", JsonUtils.getIns().toJson(sd),TimeUtils.getCurTime());
+		ji.setTag("StatisConfig");
+		MongoCollection<Document> coll = mongoDb.getCollection(sc.getToParams());
+		coll.insertOne(Document.parse(JsonUtils.getIns().toJson(ji)));
+	}
+	
 	
 	@SuppressWarnings("unused")
 	private boolean computeByExpression(StatisConfig cfg,Map<String,Object> cxt) {

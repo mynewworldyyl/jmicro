@@ -144,6 +144,8 @@ public final class ServiceItem implements Comparable<ServiceItem>{
 	
 	private boolean external = false;
 	
+	private Set<String> limit2Packages = new HashSet<>();
+	
 	private Set<ServiceMethod> methods = new HashSet<>();
 	
 	private long createdTime = TimeUtils.getCurTime();
@@ -209,6 +211,9 @@ public final class ServiceItem implements Comparable<ServiceItem>{
 		this.createdBy = p.createdBy;
 		
 		this.insId = p.insId;
+		if(!p.limit2Packages.isEmpty()) {
+			this.limit2Packages.addAll(p.limit2Packages);
+		}
 		
 		for(ServiceMethod sm : p.getMethods()){
 			ServiceMethod nsm = this.getMethod(sm.getKey().getMethod(), sm.getKey().getParamsStr());
@@ -632,6 +637,14 @@ public final class ServiceItem implements Comparable<ServiceItem>{
 
 	public void setCreatedBy(int createdBy) {
 		this.createdBy = createdBy;
+	}
+
+	public Set<String> getLimit2Packages() {
+		return limit2Packages;
+	}
+
+	public void setLimit2Packages(Set<String> limit2Packages) {
+		this.limit2Packages = limit2Packages;
 	}
 	
 }

@@ -14,11 +14,11 @@ import cn.jmicro.api.registry.ServiceMethod;
 import cn.jmicro.common.util.JsonUtils;
 import cn.jmicro.test.JMicroBaseTestCase;
 
-public class TestMonitorSubmiterV2 extends JMicroBaseTestCase{
+public class TestLogMonitor extends JMicroBaseTestCase{
 	
 	private JMLogItem logItem() {
 		JMLogItem si = new JMLogItem();
-		si.addOneItem(MC.LOG_DEBUG, TestMonitorSubmiterV2.class.getName(),
+		si.addOneItem(MC.LOG_DEBUG, TestLogMonitor.class.getName(),
 				"Test Monitor server");
 		si.setLinkId(22L);
 		return si;
@@ -65,7 +65,7 @@ public class TestMonitorSubmiterV2 extends JMicroBaseTestCase{
 	public void testSFSubmit() {
 		//SF.doBussinessLog(MonitorConstant.LOG_ERROR, TestMonitorSubmiterV2.class, null, "Hello");
 		//SF.netIo(MonitorConstant.LOG_ERROR, "testmonitor", TestMonitorSubmiterV2.class, null);
-		LG.log(MC.LOG_ERROR,TestMonitorSubmiterV2.class, "testmonitor");
+		LG.log(MC.LOG_ERROR,TestLogMonitor.class, "testmonitor");
 		this.waitForReady(1000000);
 	}
 	
@@ -75,7 +75,7 @@ public class TestMonitorSubmiterV2 extends JMicroBaseTestCase{
 		for(;;){
 			
 			try {
-				LG.log(MC.LOG_ERROR,TestMonitorSubmiterV2.class, "testmonitorPresure");
+				LG.log(MC.LOG_ERROR,TestLogMonitor.class, "testmonitorPresure");
 			} catch (Throwable e1) {
 				e1.printStackTrace();
 			}

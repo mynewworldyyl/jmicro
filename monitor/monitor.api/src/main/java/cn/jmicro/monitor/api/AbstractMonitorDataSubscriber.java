@@ -67,7 +67,7 @@ public abstract class AbstractMonitorDataSubscriber implements IMonitorDataSubsc
 			StringBuffer sb = new StringBuffer();
 			sb.append("GOT: " + MC.MONITOR_VAL_2_KEY.get(type));
 			sb.append(", SM: ").append(si.getKey());
-			sb.append(", actName: ").append(si.getActName());
+			sb.append(", actName: ").append(si.getClientId());
 			logger.debug(sb.toString()); 
 		}
 	}

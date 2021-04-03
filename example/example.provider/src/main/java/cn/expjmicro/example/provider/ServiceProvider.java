@@ -21,14 +21,13 @@ import cn.jmicro.api.JMicro;
 /**
  * 
  * @author Yulei Ye
- *
  * @date: 2018年11月10日 下午9:23:25
  */
 public class ServiceProvider {
 
 	public static void main(String[] args) {
-		 /*RpcClassLoader cl = new RpcClassLoader(RpcClassLoader.class.getClassLoader());
-		 Thread.currentThread().setContextClassLoader(cl);*/
+		/*RpcClassLoader cl = new RpcClassLoader(RpcClassLoader.class.getClassLoader());
+		Thread.currentThread().setContextClassLoader(cl);*/
 		JMicro.getObjectFactoryAndStart(args);
 		JMicro.waitForShutdown();
 	}

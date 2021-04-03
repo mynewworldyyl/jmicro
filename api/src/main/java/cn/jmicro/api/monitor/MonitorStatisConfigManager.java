@@ -123,7 +123,7 @@ public class MonitorStatisConfigManager {
 
 	//依据服务7要素做初步判断是否需要提交数据到监控服务器
 	//服务7要素：服务名称，名称空间，版本，实例名，IP，端口，方法名
-	public boolean canSubmit(ServiceMethod sm , Short t, String actName) {
+	public boolean canSubmit(ServiceMethod sm , Short t, int clientId) {
 		if(sm == null) {
 			if(!ins2Types2ConfigNum.containsKey(pi.getInstanceName()) && this.lazyParseConfig) {
 				parseStatisConfigByInstaneName(pi.getInstanceName());
@@ -143,7 +143,7 @@ public class MonitorStatisConfigManager {
 				return true;
 			}
 			
-			String withAct = smKey + UniqueServiceKey.SEP + actName;
+			String withAct = smKey + UniqueServiceKey.SEP + clientId;
 			if(!sm2Types2ConfigNum.containsKey(withAct) && this.lazyParseConfig) {
 				parseStatisConfigByServiceMethod(sm,withAct);
 			}

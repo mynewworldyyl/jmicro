@@ -64,7 +64,8 @@ import cn.jmicro.common.Utils;
 import cn.jmicro.common.util.JsonUtils;
 
 @Component
-@Service(clientId=Constants.NO_CLIENT_ID,version="0.0.1",debugMode=0,monitorEnable=0,logLevel=MC.LOG_WARN,retryCnt=0)
+@Service(clientId=Constants.NO_CLIENT_ID,version="0.0.1",debugMode=0,monitorEnable=0,
+logLevel=MC.LOG_WARN,retryCnt=0,limit2Packages="cn.jmicro.api.monitor")
 public class LogMonitorServerImpl implements ILogMonitorServer {
 
 	private final static Logger logger = LoggerFactory.getLogger(LogMonitorServerImpl.class);
@@ -777,10 +778,10 @@ public class LogMonitorServerImpl implements ILogMonitorServer {
 		coll.insertMany(llDocs);
 		/*
 		if(!llDocs.isEmpty()) {
-			MongoCollection<Document> coll = mongoDb.getCollection("rpc_log");
+			MongoCollection<Document> coll = mongoDb.getCollection(JMLogItem.TABLE);
 			coll.insertMany(llDocs);
 		}else if(!notRpcDocs.isEmpty()){
-			MongoCollection<Document> coll = mongoDb.getCollection("nonrpc_log");
+			MongoCollection<Document> coll = mongoDb.getCollection(JMLogItem.TABLE);
 			coll.insertMany(notRpcDocs);
 		}*/
 		

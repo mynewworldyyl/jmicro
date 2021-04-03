@@ -79,8 +79,9 @@ public class StatisConfig {
 	private transient BufferedWriter bw;
 	
 	/*
-	 * -1：不限账号
-	 * 0：Admin账号
+	 * 此配置匹配数据范围
+	 * -1：不限账号，全部匹配，只有高级账号可以使用
+	 * 0：Admin账号，只有高级账号可以使用
 	 * >0: 其他普通账号
 	 */
 	private int clientId = -1;
@@ -180,7 +181,7 @@ public class StatisConfig {
 	
 	private String actName = "";
 	
-	//此配置由谁创建
+	//此配置由谁创建，决定匹配数据结果由谁可见
 	private int createdBy;
 	
 	//是否启用

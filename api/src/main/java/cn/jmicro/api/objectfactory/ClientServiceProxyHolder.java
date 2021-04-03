@@ -37,6 +37,7 @@ import cn.jmicro.api.registry.ServiceMethod;
 import cn.jmicro.api.registry.UniqueServiceKey;
 import cn.jmicro.api.registry.UniqueServiceMethodKey;
 import cn.jmicro.api.security.ActInfo;
+import cn.jmicro.api.tx.TxConstants;
 import cn.jmicro.codegenerator.AsyncClientProxy;
 import cn.jmicro.codegenerator.AsyncClientUtils;
 import cn.jmicro.common.CommonException;
@@ -67,6 +68,8 @@ public class ClientServiceProxyHolder implements IServiceListener{
 	
 	private boolean direct = false;
 	
+	private String blPkgName;
+	
 	private InvocationHandler targetHandler = null;
 	
 	public IObjectFactory getOf() {
@@ -84,6 +87,12 @@ public class ClientServiceProxyHolder implements IServiceListener{
 			throw new CommonException("Service listener give error service oriItem:"+ 
 					this.getItem()==null ? serviceKey():this.getItem().getKey().toKey(true, true, true)+" newItem:"+item.getKey().toKey(true, true, true));
 		}
+		
+		if(!checkPackagePermission(item,this.blPkgName)) {
+			logger.warn("No permission to use service [" + item.getKey().getServiceName()+"] from " + this.blPkgName);
+			return;
+		}
+		
 		if(IServiceListener.ADD == type){
 			logger.info("Service Item Add: cls:{}, key:{}",this.getClass().getName(),this.serviceKey());
 			this.setItem(item);
@@ -342,6 +351,8 @@ public class ClientServiceProxyHolder implements IServiceListener{
 		
 		Long linkId = cxt.getParam(JMicroContext.LINKER_ID, null);
 		
+		Long txid = cxt.getParam(TxConstants.TYPE_TX_KEY, null);
+		
 		Long preRequestId = cxt.getParam(JMicroContext.REQ_ID, null);
 		
 		boolean isProvider = JMicroContext.isContainCallSide() ? JMicroContext.isCallSideService() : false;
@@ -381,6 +392,10 @@ public class ClientServiceProxyHolder implements IServiceListener{
 		
 		if(isProvider && linkId != null && linkId > 0) {
 			cxt.setParam(JMicroContext.LINKER_ID, linkId);
+		}
+		
+		if(txid != null && txid > 0) {
+			cxt.setParam(TxConstants.TYPE_TX_KEY, txid);
 		}
 		
 		if(isProvider && preRequestId != null && preRequestId > 0) {
@@ -447,6 +462,24 @@ public class ClientServiceProxyHolder implements IServiceListener{
 		}
 	}
 	
+	public static boolean checkPackagePermission(ServiceItem si,String pn) {
+		boolean f = true;
+		if(si.getLimit2Packages().size() > 0) {
+			f = false;
+			if(pn != null) {
+				for(String p : si.getLimit2Packages()) {
+					if(pn.startsWith(p)) {
+						f = true;
+						break;
+					}
+				}
+			}
+		}
+		return f;
+	}
+	
+	
+	
 	public AsyncConfig getAcs(String mkey) {
 		if(acs == null) {
 			return null;
@@ -472,6 +505,14 @@ public class ClientServiceProxyHolder implements IServiceListener{
 	
 	public void setServiceName(String sn) {
 		this.sn = sn;
+	}
+
+	public String getBlPkgName() {
+		return blPkgName;
+	}
+
+	public void setBlPkgName(String blPkgName) {
+		this.blPkgName = blPkgName;
 	}
 	
 }

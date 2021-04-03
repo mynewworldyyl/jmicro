@@ -19,6 +19,8 @@ public class StatisData {
 	//服务运行实例的数量
 	public static final String INS_SIZE = "insSize";
 	
+	private int clientId;
+	
 	private int cid;
 	
 	private Map<String,Object> statis;
@@ -94,4 +96,13 @@ public class StatisData {
 	public void setActName(String actName) {
 		this.actName = actName;
 	}
+
+	public int getClientId() {
+		return clientId;
+	}
+
+	public void setClientId(int clientId) {
+		this.clientId = clientId;
+	}
+	
 }

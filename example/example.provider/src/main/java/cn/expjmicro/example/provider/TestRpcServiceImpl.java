@@ -3,13 +3,13 @@ package cn.expjmicro.example.provider;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import cn.expjmicro.example.api.ITestRpcService;
 import cn.jmicro.api.annotation.Cfg;
 import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.SMethod;
 import cn.jmicro.api.annotation.Service;
 import cn.jmicro.api.test.Person;
 import cn.jmicro.common.Constants;
-import cn.expjmicro.example.api.ITestRpcService;
 
 @Service(maxSpeed=100,baseTimeUnit=Constants.TIME_SECONDS,version="0.0.1",clientId=Constants.NO_CLIENT_ID)
 @Component

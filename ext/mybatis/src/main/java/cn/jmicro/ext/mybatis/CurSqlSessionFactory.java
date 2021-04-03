@@ -7,4 +7,5 @@ public interface CurSqlSessionFactory {
 	  SqlSession curSession();
 	  void commitAndCloseCurSession();
 	  void rollbackAndCloseCurSession();
+	  void remove();
 }

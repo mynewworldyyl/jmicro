@@ -1,0 +1,32 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+         <groupId>cn.jmicro</groupId>
+		 <artifactId>jmicro.main</artifactId>
+		 <version>0.0.2-SNAPSHOT</version>
+    </parent>
+    <artifactId>jmicro.main.tx</artifactId>
+    <packaging>jar</packaging>
+    <name>${project.artifactId}</name>
+    <description>transaction server Module</description>
+	<dependencies>
+		 <dependency>
+			 <groupId>cn.jmicro</groupId>
+			 <artifactId>jmicro.all</artifactId>
+	    </dependency>
+	    <dependency>
+			 <groupId>cn.jmicro</groupId>
+			 <artifactId>jmicro.mongodb</artifactId>
+	    </dependency>
+	     <dependency>
+			 <groupId>cn.jmicro</groupId>
+			 <artifactId>jmicro.resource</artifactId>
+	    </dependency>
+	    <dependency>
+			 <groupId>cn.jmicro</groupId>
+			 <artifactId>jmicro.test</artifactId>
+			 <scope>test</scope>
+	    </dependency>
+		
+	</dependencies>
+</project>

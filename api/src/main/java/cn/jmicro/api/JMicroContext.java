@@ -213,9 +213,12 @@ public class JMicroContext  {
 	}
 	
 	public static void configProvider(ISession s,Message msg) {
-		setCallSide(true);
 		
 		JMicroContext context = get();
+		
+		context.curCxt.clear();
+		
+		setCallSide(true);
 		
 		context.setParam(JMicroContext.SESSION_KEY, s);
 			
@@ -265,14 +268,15 @@ public class JMicroContext  {
 					ActInfo ai = context.getAccount();
 					if(ai != null) {
 						item.setClientId(ai.getId());
-						item.setActName(ai.getActName());
+						//item.setActName(ai.getActName());
 					}
+					item.setRpc(true);
+					
 					//the pre RPC Request ID as the parent ID of this request
 					context.setParam(MRPC_STATIS_ITEM, item);
 				}
 			}
 		}
-	
 	}
 	
 	private static void initMrpcLogItem(boolean sideProdiver) {
@@ -306,6 +310,7 @@ public class JMicroContext  {
 	
 	public static void configComsumer(ServiceMethod sm,ServiceItem si) {
 		JMicroContext context = cxt.get();
+		//context.curCxt.clear();
 		setCallSide(false);
 		//debug mode 下才有效
 		boolean isDebug = enableOrDisable(si.getDebugMode(),sm.getDebugMode());

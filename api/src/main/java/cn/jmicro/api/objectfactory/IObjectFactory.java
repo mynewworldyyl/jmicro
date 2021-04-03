@@ -87,11 +87,26 @@ public interface IObjectFactory {
 	 */
 	<T> T getByName(String clsName);
 	
+	/**
+	 * 只能取得无包限制访问的服务，如具有包访问制，则返回NULL
+	 * @param srvName
+	 * @param namespace
+	 * @param version
+	 * @param acs
+	 * @return
+	 */
 	<T> T getRemoteServie(String srvName,String namespace,String version,AsyncConfig[] acs);
 	
-	<T> T getRemoteServie(ServiceItem item,AsyncConfig[] acs);
-	
+	/**
+	 * 只能取得无包限制访问的服务，如具有包访问制，则返回NULL
+	 * @param srvCls
+	 * @param ns
+	 * @param acs
+	 * @return
+	 */
 	<T> T getRemoteServie(Class<T> srvCls,String ns,AsyncConfig[] acs);
+	
+	<T> T getRemoteServie(ServiceItem item,AsyncConfig[] acs);
 	
 	/**
 	 * 取得所有子类的实例

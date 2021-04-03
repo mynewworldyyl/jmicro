@@ -31,11 +31,17 @@ import cn.jmicro.api.utils.TimeUtils;
 @SO
 public final class JMStatisItem{
 	
+	//RPC上下文下账号的id，非RPC上下文，则是运行实例账号ID
 	private int clientId = -1;
 	
-	private String actName = null;
+	//RPC上下文下账号的名称，非RPC上下文，则是运行实例账号
+	//private String actName = null;
 	
+	//rpc上下文下方法KEY值
 	private String key = null;
+	
+	//是否是RPC上下文
+	private boolean isRpc;
 	
 	private String localHost = null;
 	private String localPort = null;
@@ -43,6 +49,7 @@ public final class JMStatisItem{
 	private String remoteHost = null;
 	private String remotePort = null;
 	
+	//发出此数据的运行实例名称
 	private String instanceName = null;
 	
 	private long submitTime;//数据从客户端开始提交服务器时间 选项数据等待提交时间 = submitTime - 每个选项创建时间
@@ -106,13 +113,13 @@ public final class JMStatisItem{
 		this.clientId = clientId;
 	}
 
-	public String getActName() {
+	/*public String getActName() {
 		return actName;
 	}
 
 	public void setActName(String actName) {
 		this.actName = actName;
-	}
+	}*/
 
 	public UniqueServiceMethodKey getSmKey() {
 		return smKey;
@@ -192,6 +199,14 @@ public final class JMStatisItem{
 
 	public void setKey(String key) {
 		this.key = key;
+	}
+
+	public boolean isRpc() {
+		return isRpc;
+	}
+
+	public void setRpc(boolean isRpc) {
+		this.isRpc = isRpc;
 	}
 	
 	

@@ -32,6 +32,7 @@ import cn.jmicro.api.annotation.Reference;
 import cn.jmicro.api.monitor.LG;
 import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.objectfactory.AbstractClientServiceProxyHolder;
+import cn.jmicro.api.objectfactory.ClientServiceProxyHolder;
 import cn.jmicro.api.objectfactory.ProxyObject;
 import cn.jmicro.api.registry.AsyncConfig;
 import cn.jmicro.api.registry.IRegistry;
@@ -63,6 +64,8 @@ class RemoteProxyServiceFieldListener implements IServiceListener{
 	
 	private IRegistry registry = null;
 	
+	private String pkgName;
+	
 	/**
 	 * 
 	 * @param rsm
@@ -83,6 +86,8 @@ class RemoteProxyServiceFieldListener implements IServiceListener{
 		this.ref = refField.getAnnotation(Reference.class);
 		srvType = rsm.getEltType(refField);
 		this.registry = registry;
+		
+		pkgName = ProxyObject.getTargetCls(srcObj.getClass()).getName();
 	}
 
 	@SuppressWarnings("unchecked")
@@ -94,6 +99,11 @@ class RemoteProxyServiceFieldListener implements IServiceListener{
 		}
 		
 		if(!item.getKey().getServiceName().equals(srvType.getName())) {
+			return;
+		}
+		
+		if(ClientServiceProxyHolder.checkPackagePermission(item,pkgName)) {
+			logger.warn("No permission to use service [" + item.getKey().getServiceName()+"] from " + this.pkgName);
 			return;
 		}
 		

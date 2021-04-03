@@ -10,6 +10,8 @@ public class Resp<T> {
 	public static final int CODE_FAIL = 1;
 	public static final int CODE_NO_PERMISSION = 2;
 	
+	public static final int CODE_TX_FAIL = 3;
+	
 	private String msg;
 	private int code;
 	private T data;
@@ -23,6 +25,7 @@ public class Resp<T> {
 	public Resp() {};
 	public Resp(int code) {this.code = code;};
 	public Resp(int code,String msg) {this.code = code;this.msg=msg;};
+	public Resp(int code,T data) {this.code = code;this.data=data;};
 	
 	public String getMsg() {
 		return msg;

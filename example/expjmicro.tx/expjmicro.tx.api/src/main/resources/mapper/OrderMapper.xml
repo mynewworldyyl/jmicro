@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.expjmicro.example.tx.api.mapper.OrderMapper">
+
+  <insert id="saveOrder" parameterType="cn.expjmicro.example.tx.api.entities.Order" >
+   insert into t_order (id,good_id, num,amount)
+    values (
+    #{id,jdbcType=INTEGER},#{goodId,jdbcType=INTEGER}, #{num,jdbcType=INTEGER}, #{amount,jdbcType=DECIMAL}
+      )
+  </insert>
+  
+</mapper>

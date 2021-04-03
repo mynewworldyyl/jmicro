@@ -85,7 +85,7 @@ class ClientServiceProxyManager {
 	 * @return
 	 */
 	@SuppressWarnings("unchecked")
-	<T> T  getRefRemoteService(String srvName,String namespace,String version,
+	<T> T  getRefRemoteService(String blPkgName,String srvName,String namespace,String version,
 			RpcClassLoader cl, AsyncConfig[] acs){
 		//String key = UniqueServiceKey.serviceName(srvName, namespace, version);
 		ClassLoader useCl = Thread.currentThread().getContextClassLoader();
@@ -98,9 +98,12 @@ class ClientServiceProxyManager {
 			}*/
 			if(items == null || items.isEmpty()) {
 				//throw new CommonException("Class not found: "+UniqueServiceKey.serviceName(srvName, namespace, version));
-				proxy = createDynamicServiceProxyWithSNV(Config.getInstanceName(),srvName, namespace, version,cl,acs);
+				proxy = createDynamicServiceProxyWithSNV(blPkgName,Config.getInstanceName(),srvName, namespace, version,cl,acs);
 			} else {
 				si = items.iterator().next();
+				if(!ClientServiceProxyHolder.checkPackagePermission(si,blPkgName)) {
+					throw new CommonException("No permission to use service [" + si.getKey().getServiceName()+"] from " + blPkgName);
+				}
 				proxy = createDynamicServiceProxy(si,cl,acs);
 				registerAsyncService(acs,items);
 			}
@@ -130,7 +133,7 @@ class ClientServiceProxyManager {
 		}
 		srvClazz = AsyncClientUtils.parseServiceClass(srvClazz);
 		Service srvAnno = srvClazz.getAnnotation(Service.class);
-		return this.getRefRemoteService(srvClazz.getName(), ns,srvAnno.version(), null,acs);
+		return this.getRefRemoteService(null,srvClazz.getName(), ns,srvAnno.version(), null,acs);
 	}
 	
 	/**
@@ -433,7 +436,7 @@ class ClientServiceProxyManager {
 			
 			AsyncConfig[] acs = this.getAcs(ref);
 			
-			proxy = this.getRefRemoteService(type.getName(), ref.namespace(), ref.version(), null,acs);
+			proxy = this.getRefRemoteService(becls.getName(),type.getName(), ref.namespace(), ref.version(), null,acs);
 			
 			String key = UniqueServiceKey.serviceName(type.getName(),ref.namespace(),ref.version());
 			
@@ -499,6 +502,8 @@ class ClientServiceProxyManager {
 			items = registry.getServices(ctype.getName(),ref.namespace(),ref.version());
 		}
 		
+		String pn = becls.getName();
+		
 		AsyncConfig[] acs = this.getAcs(ref);
 		
 		if(items != null && !items.isEmpty()){
@@ -515,13 +520,17 @@ class ClientServiceProxyManager {
 				//监听每一个元素，元素加入或删除时，要从集合中删除
 				//CollectionElementServiceProxyListener lis = new CollectionElementServiceProxyListener(this,el,srcObj,f,po);
 				//registry.addExistsServiceListener(key, lis);
-				po = this.getRefRemoteService(si, null,acs);
 				
-				if(po != null){
-					po.getHolder().setDirect(direct);
-					el.add(po);
+				boolean valid = true;
+
+				if(valid) {
+					po = this.getRefRemoteService(si, null,acs);
+					
+					if(po != null){
+						po.getHolder().setDirect(direct);
+						el.add(po);
+					}
 				}
-				
 			}
 		}
 		
@@ -571,7 +580,7 @@ class ClientServiceProxyManager {
 		}
 	}
 	
-	private <T> T createDynamicServiceProxyWithSNV(String instanceName,String serviceName,String namespace,String version,
+	private <T> T createDynamicServiceProxyWithSNV(String pkgName,String instanceName,String serviceName,String namespace,String version,
 			RpcClassLoader cl, AsyncConfig[] acs) {
 		
 		String clientProxyClsName = AsyncClientUtils.genAsyncServiceImplName(serviceName);

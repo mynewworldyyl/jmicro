@@ -437,7 +437,12 @@
             },
 
             toTypeChange(curToType) {
-                this.toKeyShow.sn = curToType == TO_TYPE_SERVICE_METHOD
+                this.toKeyShow.sn = curToType == TO_TYPE_SERVICE_METHOD;
+                if(curToType == TO_TYPE_DB) {
+                    this.cfg.toParams = 't_statis_data';
+                }else if(curToType == TO_TYPE_MONITOR_LOG) {
+                    this.cfg.toParams = 'rpc_log';
+                }
             },
 
             add() {

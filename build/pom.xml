@@ -48,6 +48,7 @@
 		<dependency>
 			<groupId>cn.jmicro</groupId>
 			<artifactId>jmicro.test</artifactId>
+			<scope>test</scope>
 		</dependency>
 		
 	</dependencies>
@@ -86,6 +87,7 @@
 										<include>cn.jmicro:jmicro.transport.netty.client</include>
 										<include>cn.jmicro:jmicro.config</include>
 										<include>cn.jmicro:jmicro.zk</include>
+										<include>cn.jmicro:jmicro.tx</include>
 										<!-- <include>cn.jmicro:jmicro.gateway.client</include> -->
 									</includes>
 								</artifactSet>
@@ -168,6 +170,7 @@
 									<include>cn.jmicro:transport.netty.client</include>
 									<include>cn.jmicro:config</include>
 									<include>cn.jmicro:zk</include>
+									<include>cn.jmicro:jmicro.tx</include>
 									<!-- <include>cn.jmicro:gateway.client</include> -->
 								</includes>
 							</artifactSet>

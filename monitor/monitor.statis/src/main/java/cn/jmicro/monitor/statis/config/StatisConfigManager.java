@@ -515,15 +515,15 @@ public class StatisConfigManager {
 			 //regex += "[;\\]\\.\\/,a-zA-Z0-9]*##";
 			 
 			 //账号
-			 if(Utils.isEmpty(lw.getActName()) || "*".equals(lw.getActName())) {
+			/* if(Utils.isEmpty(lw.getActName()) || "*".equals(lw.getActName())) {
 				regex += "[a-zA-Z0-9\\_\\-]*##";
 			 } else {
 				regex += lw.getActName()+"##";
-			 }
+			 }*/
 			 
 			 if(lw.getClientId()==Constants.NO_CLIENT_ID && lw.getCreatedBy() == Config.getAdminClientId()) {
-				 regex += "\\d*";
-			 }else {
+				 regex += "[-]{0,1}\\d*";
+			 } else {
 				 regex += lw.getClientId();
 			 }
 			 
@@ -538,7 +538,7 @@ public class StatisConfigManager {
 			regex += "[a-zA-Z\\_\\-]*\\d*##";
 			
 			if(lw.getClientId()==Constants.NO_CLIENT_ID && lw.getCreatedBy() == Config.getAdminClientId()) {
-				 regex += "\\d+";
+				 regex += "[-]{0,1}\\d+";
 			 }else {
 				 regex += "" + lw.getClientId();
 			 }

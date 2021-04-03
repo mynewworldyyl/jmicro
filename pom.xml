@@ -100,7 +100,7 @@
         <maven_jar_version>3.0.2</maven_jar_version>
         <maven_surefire_version>2.19.1</maven_surefire_version>
         <maven_deploy_version>2.8.2</maven_deploy_version>
-        <maven_compiler_version>3.5.1</maven_compiler_version>
+        <maven_compiler_version>3.8.1</maven_compiler_version>
         <maven_source_version>3.0.1</maven_source_version>
         <maven_javadoc_version>3.0.1</maven_javadoc_version>
         <maven_jetty_version>9.4.11.v20180605</maven_jetty_version>
@@ -114,7 +114,7 @@
         <curator.version>4.0.1</curator.version>
         <zkclient.version>2.0</zkclient.version>
         <redis.version>2.10.0</redis.version>
-        
+        <lombok.version>1.18.4</lombok.version>
     </properties>
 
     <modules>
@@ -135,6 +135,7 @@
 		<module>transport</module>
 		<module>mng</module>
 		<module>resource</module>
+		<module>tx</module>
 		<module>objfactory</module>
 		<module>gateway</module>
 		<module>gateway.client</module>
@@ -175,6 +176,16 @@
              <dependency>
                  <groupId>cn.jmicro</groupId>
 				 <artifactId>main.monitor.statis</artifactId>
+				 <version>${jmicro.version}</version>
+            </dependency>
+              <dependency>
+                 <groupId>cn.jmicro</groupId>
+				 <artifactId>jmicro.tx</artifactId>
+				 <version>${jmicro.version}</version>
+            </dependency>
+              <dependency>
+                 <groupId>cn.jmicro</groupId>
+				 <artifactId>jmicro.main.tx</artifactId>
 				 <version>${jmicro.version}</version>
             </dependency>
 			 <dependency>
@@ -276,11 +287,7 @@
 			 <artifactId>jmicro.submiter</artifactId>
 			 <version>${jmicro.version}</version>
 			 </dependency>
-			 <dependency>
-			<groupId>cn.jmicro</groupId>
-			<artifactId>jmicro.choreography.api</artifactId>
-			<version>${jmicro.version}</version>
-			</dependency>
+			
 			  <dependency>
 			 <groupId>cn.jmicro</groupId>
 			 <artifactId>jmicro.server</artifactId>
@@ -426,7 +433,7 @@
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
             <version>${junit_version}</version>
-            <scope>test</scope>
+             <scope>provided</scope>
         </dependency>
         
         <dependency>
@@ -444,6 +451,18 @@
             <artifactId>junit</artifactId>
             <scope>test</scope>
         </dependency>  
+        <dependency>
+		    <groupId>org.projectlombok</groupId>
+		    <artifactId>lombok</artifactId>
+		    <version>${lombok.version}</version>
+		    <scope>provided</scope>
+		    <optional>true</optional>
+		</dependency>
+       <!-- <dependency>
+            <groupId>cn.jmicro</groupId>
+            <artifactId>jmicro.codegenerator</artifactId>
+            <scope>provided</scope>
+        </dependency> -->
     </dependencies>
 
     <profiles> 
@@ -779,7 +798,21 @@
                   <!--   <generatedSourcesDirectory>${project.build.directory}/generated-src</generatedSourcesDirectory> -->
 	                <annotationProcessors>
 	                    <annotationProcessor>cn.jmicro.codegenerator.ClientServiceProxyGenerator</annotationProcessor>
+	                    <annotationProcessor>lombok.launch.AnnotationProcessorHider$AnnotationProcessor</annotationProcessor>
+	                    <annotationProcessor>lombok.launch.AnnotationProcessorHider$ClaimingProcessor</annotationProcessor>
 	               </annotationProcessors>
+	                <annotationProcessorPaths>
+                    <path>
+					    <groupId>org.projectlombok</groupId>
+                        <artifactId>lombok</artifactId>
+                        <version>${lombok.version}</version>
+                    </path>
+                     <path>
+					    <groupId>cn.jmicro</groupId>
+                        <artifactId>jmicro.codegenerator</artifactId>
+                        <version>${jmicro.version}</version>
+                    </path>
+                   </annotationProcessorPaths>
                 </configuration>
             </plugin>
             

@@ -64,6 +64,7 @@ import cn.jmicro.api.registry.ServiceMethod;
 import cn.jmicro.api.security.SecretManager;
 import cn.jmicro.api.service.ServiceManager;
 import cn.jmicro.api.timer.TimerTicker;
+import cn.jmicro.api.tx.TxConstants;
 import cn.jmicro.api.utils.TimeUtils;
 import cn.jmicro.common.CommonException;
 import cn.jmicro.common.Constants;
@@ -230,6 +231,9 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
 		cxt.put(JMicroContext.LINKER_ID, JMicroContext.lid());
 		cxt.put(JMicroContext.REQ_ID, req.getRequestId());
 		cxt.put(JMicroContext.MSG_ID, req.getMsgId());
+		if(JMicroContext.get().exists(TxConstants.TYPE_TX_KEY)) {
+			cxt.put(TxConstants.TYPE_TX_KEY, JMicroContext.get().getLong(TxConstants.TYPE_TX_KEY, null));
+		}
 		
 		PSData data = new PSData();
 		data.setContext(cxt);

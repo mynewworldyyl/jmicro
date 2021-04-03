@@ -65,7 +65,7 @@ public class LogServiceImpl implements ILogService {
 			resp.setMsg("Invalid linkId: " + linkId);
 			return resp;
 		 }
-		 MongoCollection<Document> rpcLogColl = mongoDb.getCollection("rpc_log");
+		 MongoCollection<Document> rpcLogColl = mongoDb.getCollection(JMLogItem.TABLE);
 		 Document match = new Document();
 		 match.put("linkId", linkId);
 		 
@@ -142,7 +142,7 @@ public class LogServiceImpl implements ILogService {
 		aggregateList.add(skip);
 		aggregateList.add(limit);
 		
-		MongoCollection<Document> rpcLogColl = mongoDb.getCollection("rpc_log");
+		MongoCollection<Document> rpcLogColl = mongoDb.getCollection(JMLogItem.TABLE);
 		AggregateIterable<Document> resultset = rpcLogColl.aggregate(aggregateList);
 		MongoCursor<Document> cursor = resultset.iterator();
 		
@@ -174,7 +174,7 @@ public class LogServiceImpl implements ILogService {
 	@SMethod(perType=false,needLogin=true,maxSpeed=10,maxPacketSize=2048)
 	public Resp<Long> count(Map<String, String> queryConditions) {
 		Document match = this.getCondtions(queryConditions);
-		MongoCollection<Document> rpcLogColl = mongoDb.getCollection("rpc_log");
+		MongoCollection<Document> rpcLogColl = mongoDb.getCollection(JMLogItem.TABLE);
 		Resp<Long> resp = new Resp<>();
 		Long cnt = rpcLogColl.countDocuments(match);
 		resp.setData(cnt);
@@ -191,7 +191,7 @@ public class LogServiceImpl implements ILogService {
 		dists.put("level", MC.LogKey2Val);
 		dists.put("type", MC.MT_Key2Val);
 		
-		MongoCollection<Document> rpcLogColl = mongoDb.getCollection("rpc_log");
+		MongoCollection<Document> rpcLogColl = mongoDb.getCollection(JMLogItem.TABLE);
 		
 		DistinctIterable<String> hostIte = rpcLogColl.distinct("remoteHost", String.class);
 		Set<String> host = new HashSet<>();
@@ -302,7 +302,7 @@ public class LogServiceImpl implements ILogService {
 		
 		aggregateList.add(group);
 
-		MongoCollection<Document> rpcLogColl = mongoDb.getCollection("rpc_log");
+		MongoCollection<Document> rpcLogColl = mongoDb.getCollection(JMLogItem.TABLE);
 		AggregateIterable<Document> resultset = rpcLogColl.aggregate(aggregateList);
 
 		Document log = resultset.first();
@@ -343,7 +343,7 @@ public class LogServiceImpl implements ILogService {
 		aggregateList.add(skip);
 		aggregateList.add(limit);
 		
-		MongoCollection<Document> rpcLogColl = mongoDb.getCollection("rpc_log");
+		MongoCollection<Document> rpcLogColl = mongoDb.getCollection(JMLogItem.TABLE);
 		AggregateIterable<Document> resultset = rpcLogColl.aggregate(aggregateList);
 		MongoCursor<Document> cursor = resultset.iterator();
 		
@@ -402,7 +402,7 @@ public class LogServiceImpl implements ILogService {
 		aggregateList.add(skip);
 		aggregateList.add(limit);
 		
-		MongoCollection<Document> rpcLogColl = mongoDb.getCollection("rpc_log");
+		MongoCollection<Document> rpcLogColl = mongoDb.getCollection(JMLogItem.TABLE);
 		AggregateIterable<Document> resultset = rpcLogColl.aggregate(aggregateList);
 		MongoCursor<Document> cursor = resultset.iterator();
 		
@@ -449,7 +449,7 @@ public class LogServiceImpl implements ILogService {
 			match.remove(key);
 		}
 		
-		//db.getCollection('rpc_log').find({"items":{"$elemMatch":{"tag":{$regex:"cn"}}}} )
+		//db.getCollection(JMLogItem.TABLE).find({"items":{"$elemMatch":{"tag":{$regex:"cn"}}}} )
 		key = "tag";
 		val = queryConditions.get(key);
 		if(StringUtils.isNotEmpty(val)) {

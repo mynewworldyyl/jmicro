@@ -1,10 +1,9 @@
 package cn.jmicro.test;
 
-import org.junit.BeforeClass;
+import org.junit.Before;
 import org.junit.runner.RunWith;
-import org.junit.runners.BlockJUnit4ClassRunner;
 
-import cn.jmicro.api.EnterMain;
+import cn.jmicro.api.JMicro;
 import cn.jmicro.api.JMicroContext;
 import cn.jmicro.api.monitor.StatisMonitorClient;
 import cn.jmicro.api.objectfactory.IObjectFactory;
@@ -16,7 +15,7 @@ import cn.jmicro.api.registry.UniqueServiceMethodKey;
 import cn.jmicro.common.Constants;
 import cn.jmicro.common.Utils;
 
-@RunWith(BlockJUnit4ClassRunner.class)
+@RunWith(JMicroJUnitTestRunner.class)
 public class JMicroBaseTestCase {
 
 	public static final String TOPIC="/jmicro/test/topic01";
@@ -25,17 +24,18 @@ public class JMicroBaseTestCase {
 	
 	protected static IRegistry registry;
 	
-	@BeforeClass
-	public static void setupTestClass() {
+	@Before
+	public void setupTestClass() {
 		/* RpcClassLoader cl = new RpcClassLoader(RpcClassLoader.class.getClassLoader());
 		 Thread.currentThread().setContextClassLoader(cl);*/
-		of = EnterMain.getObjectFactoryAndStart(getArgs());
+		of = (IObjectFactory)JMicro.getObjectFactoryAndStart(getArgs());
+		//of = EnterMain.getObjectFactoryAndStart(getArgs());
 		registry = of.get(IRegistry.class);
 	}
 	
 	//-DinstanceName=ServiceComsumer -DclientId=0 -DadminClientId=0  
 	//-Dlog4j.configuration=../../log4j.xml -DsysLogLevel=1 -Dpwd=0
-	protected static String[] getArgs() {
+	protected String[] getArgs() {
 		return new String[] {"-DinstanceName=JMicroBaseTestCase","-DclientId=0","-DadminClientId=0","-DpriKeyPwd=comsumer"
 		,"-DsysLogLevel=1","-Dlog4j.configuration=../../log4j.xml","-Dpwd=0","-DsysLogLevel=1"};
 	}
@@ -55,7 +55,7 @@ public class JMicroBaseTestCase {
 	
 	protected ServiceMethod helloTopicMethodKey() {
 		StringBuilder sb = new StringBuilder();
-		UniqueServiceKey.serviceName(sb, "cn.jmicro.example.api.ISayHello");
+		UniqueServiceKey.serviceName(sb, "cn.expjmicro.example.api.rpc.ISayHello");
 		UniqueServiceKey.namespace(sb, "simpleRpc");
 		UniqueServiceKey.version(sb, "0.0.1");
 		UniqueServiceKey.instanceName(true, sb, "provider");
@@ -70,7 +70,7 @@ public class JMicroBaseTestCase {
 	}
 	
 	protected ServiceItem sayHelloServiceItem() {
-		ServiceItem si = registry.getServices("cn.jmicro.example.api.rpc.ISimpleRpc","simpleRpc","0.0.1").iterator().next();
+		ServiceItem si = registry.getServices("cn.expjmicro.example.api.rpc.ISimpleRpc","exampleProvider","0.0.1").iterator().next();
 		org.junit.Assert.assertNotNull(si);
 		return si;
 	}

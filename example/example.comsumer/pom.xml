@@ -64,10 +64,6 @@
 			<version>${project.version}</version>
 			<scope>test</scope>
 		</dependency>
-		<dependency>
-			<groupId>cn.jmicro</groupId>
-			<artifactId>jmicro.choreography.api</artifactId>
-		</dependency>
 		
 	</dependencies>
 

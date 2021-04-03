@@ -64,7 +64,8 @@ import redis.clients.jedis.JedisPool;
  * @author Yulei Ye
  * @date 2018年12月22日 下午11:10:21
  */
-@Service(clientId=Constants.NO_CLIENT_ID,limit2Packages="org.jmicro.api.pubsub.PubSubManager",version="0.0.1",retryCnt=0, monitorEnable=0,timeout=5000)
+@Service(clientId=Constants.NO_CLIENT_ID,limit2Packages="cn.jmicro.api.pubsub",version="0.0.1",
+retryCnt=0, monitorEnable=0,timeout=5000)
 @Component(level=5)
 public class PubSubServer implements IInternalSubRpc{
 	

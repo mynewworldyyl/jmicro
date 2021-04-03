@@ -26,10 +26,6 @@
 			 <groupId>cn.jmicro</groupId>
 			 <artifactId>jmicro.objfactory.simple</artifactId>
 	    </dependency>
-	   <dependency>
-			<groupId>cn.jmicro</groupId>
-			<artifactId>jmicro.choreography.api</artifactId>
-		</dependency>
 	     <dependency>
 			 <groupId>cn.jmicro</groupId>
 			 <artifactId>jmicro.idgenerator</artifactId>

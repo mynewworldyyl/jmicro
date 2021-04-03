@@ -22,7 +22,10 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.URL;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -30,16 +33,21 @@ import org.slf4j.LoggerFactory;
 import cn.jmicro.api.config.Config;
 import cn.jmicro.api.monitor.LG;
 import cn.jmicro.api.monitor.MC;
+import cn.jmicro.common.CommonException;
+import cn.jmicro.common.Constants;
 
 public class RpcClassLoader extends ClassLoader {
 
 	private final static Logger logger = LoggerFactory.getLogger(RpcClassLoader.class);
 	
-	public static Map<String,Class<?>> clazzes = new HashMap<>(); 
+	public static final Map<String,Class<?>> clazzes = new HashMap<>(); 
 	
-	private String[] basePackages = null;
+	private static final Set<String> basePackages = new HashSet<>();
+	
+	private static final AtomicBoolean init = new AtomicBoolean(false);
 	
 	static {
+		basePackages.add("cn.jmicro");
 		registerAsParallelCapable();
 	}
 	
@@ -93,9 +101,7 @@ public class RpcClassLoader extends ClassLoader {
 		};
 	}
 
-	public void setBasePackages(String[] basePackages) {
-		this.basePackages = basePackages;
-	}
+	
 	
 	@Override
 	protected URL findResource(String name0) {
@@ -164,26 +170,22 @@ public class RpcClassLoader extends ClassLoader {
 	//实现远程类优先从远程加载
 	protected Class<?> loadClass(String name, boolean resolve) throws ClassNotFoundException {
 
-		if(name.equals("cn.jmicro.mng.api.II8NService")) {
+		/*if(name.equals("cn.jmicro.mng.api.II8NService")) {
 			logger.debug(name);
-		}
+		}*/
 		
 		if(clazzes.containsKey(name)) {
     		return clazzes.get(name);
     	}
 		
-		if(name.equals(RpcClassLoader.class.getName())) {
+		if(!isRemoteClass(name) || name.equals(RpcClassLoader.class.getName())) {
 			return super.loadClass(name,resolve);
 		}
 		
 		//logger.debug(name);
-		if((bridge == null || !isRemoteClass(name))) {
+		if(bridge == null) {
 			//服务实现类，通过本地加载
-			if(bridge == null && name.startsWith("cn.jmicro")) {
-				return loadRpcLocalClass(name,resolve);
-			} else {
-				return super.loadClass(name,resolve);
-			}
+			return loadRpcLocalClass(name,resolve);
 		} else  {
 			logger.debug(name);
 			Class<?> rmc = this.findClass(name);
@@ -278,15 +280,47 @@ public class RpcClassLoader extends ClassLoader {
 			/*if(name.startsWith(Constants.CORE_CLASS)) {
 				return false;
 			}*/
-			String[] bs = this.basePackages;
-			if(bs == null || bs.length == 0) {
+			if(basePackages.isEmpty()) {
 				return false;
 			}
-			for(String p : bs) {
+			for(String p : basePackages) {
 				if(name.startsWith(p)) {
 					return true;
 				}
 			}
 			return false;
 		}
+	 
+	 public  void addBasePackage(String name) {
+		 if(init.get()) {
+				throw new CommonException("classloader not in init status");
+		 }
+		synchronized (init) {
+			if (init.get()) {
+				throw new CommonException("classloader not in init status");
+			}
+			if (basePackages.contains(name)) {
+				return;
+			}
+			basePackages.add(name);
+		}
+	 }
+	 
+	public void addBasePackages(String[] bps) {
+		if(init.get()) {
+			throw new CommonException("classloader not in init status");
+		}
+		synchronized(init) {
+			if(init.get()) {
+				throw new CommonException("classloader not in init status");
+			}
+			init.set(true);
+			for (String p : bps) {
+				if (!basePackages.contains(p)) {
+					basePackages.add(p);
+				}
+			}
+		}
+		
+	}
 }

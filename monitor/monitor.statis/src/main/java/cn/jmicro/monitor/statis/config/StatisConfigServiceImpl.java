@@ -106,6 +106,12 @@ public class StatisConfigServiceImpl implements IStatisConfigService {
 			}
 		}
 		
+		if(!PermissionManager.isCurAdmin()) {
+			lw.setToParams(StatisConfig.DEFAULT_DB);
+		}else if(Utils.isEmpty(lw.getToParams())) {
+			lw.setToParams(StatisConfig.DEFAULT_DB);
+		}
+		
 		lw.setEnable(!lw.isEnable());
 		
 		op.setData(path, JsonUtils.getIns().toJson(lw));
@@ -149,6 +155,21 @@ public class StatisConfigServiceImpl implements IStatisConfigService {
 			r.setData(false);
 			r.setMsg("启用中的配置不能更新");
 			return r;
+		}
+		
+		if(!PermissionManager.isCurAdmin()) {
+			
+			if(cfg.getToType() == StatisConfig.TO_TYPE_CONSOLE ||
+					cfg.getToType() == StatisConfig.TO_TYPE_FILE) {
+				r.setCode(Resp.CODE_FAIL);
+				r.setData(false);
+				r.setMsg("无权限使用此种目标类型");
+				return r;
+			}
+			
+			cfg.setToParams(StatisConfig.DEFAULT_DB);
+		}else if(Utils.isEmpty(cfg.getToParams())) {
+			cfg.setToParams(StatisConfig.DEFAULT_DB);
 		}
 		
 		lw.setByKey(cfg.getByKey());
@@ -211,7 +232,19 @@ public class StatisConfigServiceImpl implements IStatisConfigService {
 		
 		ActInfo ai = JMicroContext.get().getAccount();
 		if(!PermissionManager.isCurAdmin()) {
+			if(cfg.getToType() == StatisConfig.TO_TYPE_CONSOLE ||
+					cfg.getToType() == StatisConfig.TO_TYPE_FILE) {
+				r.setCode(Resp.CODE_FAIL);
+				r.setMsg("无权限使用此种目标类型");
+				return r;
+			}
 			cfg.setClientId(ai.getId());
+		}
+		
+		if(!PermissionManager.isCurAdmin()) {
+			cfg.setToParams(StatisConfig.DEFAULT_DB);
+		}else if(Utils.isEmpty(cfg.getToParams())) {
+			cfg.setToParams(StatisConfig.DEFAULT_DB);
 		}
 		
 		cfg.setCreatedBy(ai.getId());

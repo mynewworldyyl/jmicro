@@ -18,6 +18,7 @@ package cn.jmicro.api.service;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -31,7 +32,6 @@ import org.slf4j.LoggerFactory;
 import com.alibaba.dubbo.common.serialize.kryo.utils.ReflectUtils;
 
 import cn.jmicro.api.ClassScannerUtils;
-import cn.jmicro.api.EnterMain;
 import cn.jmicro.api.annotation.Cfg;
 import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Inject;
@@ -54,6 +54,7 @@ import cn.jmicro.api.registry.ServiceItem;
 import cn.jmicro.api.registry.ServiceMethod;
 import cn.jmicro.api.registry.UniqueServiceKey;
 import cn.jmicro.api.registry.UniqueServiceMethodKey;
+import cn.jmicro.api.tx.TxConstants;
 import cn.jmicro.common.CommonException;
 import cn.jmicro.common.Constants;
 import cn.jmicro.common.Utils;
@@ -137,7 +138,7 @@ public class ServiceLoader{
 	}
 	
 	private void doExportService() {
-		Set<IServer> ss = EnterMain.getObjectFactory().getByParent(IServer.class);
+		Set<IServer> ss = of.getByParent(IServer.class);
 		for(IServer s : ss){
 			cn.jmicro.api.annotation.Server anno = 
 					s.getClass().getAnnotation(cn.jmicro.api.annotation.Server.class);
@@ -284,7 +285,7 @@ public class ServiceLoader{
 			return;
 		}
 		
-		Object srv = EnterMain.getObjectFactory().get(c);
+		Object srv = of.get(c);
 		if(srv == null){
 			throw new CommonException("fail to export server, service instance is NULL "+c.getName());
 		}
@@ -574,6 +575,14 @@ public class ServiceLoader{
 		item.setLogLevel(anno.logLevel()!=-1 || intAnno == null ? anno.logLevel() : intAnno.logLevel());
 		item.setDebugMode(anno.debugMode()!=-1 || intAnno == null ? anno.debugMode() : intAnno.debugMode());
 		
+		if(anno.limit2Packages() != null && anno.limit2Packages().length > 0) {
+			item.getLimit2Packages().addAll(Arrays.asList(anno.limit2Packages()));
+		}
+		
+		if(intAnno != null && intAnno.limit2Packages() != null && intAnno.limit2Packages().length > 0) {
+			item.getLimit2Packages().addAll(Arrays.asList(intAnno.limit2Packages()));
+		}
+		
 		item.setHandler(anno.handler() != null && !anno.handler().trim().equals("") ? anno.handler():(intAnno != null?intAnno.handler():null));
 		
 		//测试方法
@@ -655,6 +664,7 @@ public class ServiceLoader{
 				sm.setMaxPacketSize(0);
 				sm.setUpSsl(false);
 				sm.setDownSsl(false);
+				sm.setTxType(TxConstants.TYPE_TX_NO);
 			} else {
 				 if(manno != null ) {
 					 //实现类方法配置具有高优先级
@@ -693,6 +703,7 @@ public class ServiceLoader{
 					sm.setEncType(manno.encType());
 					sm.setLimitType(manno.limitType());
 					sm.setForType(manno.forType());
+					sm.setTxType(manno.txType());
 				 } else {
 					 //使用接口方法配置
 					sbr = intMAnno.breakingRule();
@@ -731,6 +742,7 @@ public class ServiceLoader{
 					
 					sm.setLimitType(intMAnno.limitType());
 					sm.setForType(intMAnno.forType());
+					sm.setTxType(intMAnno.txType());
 				 }
 				 
 				 if(sm.getTimeout() <= 0) {

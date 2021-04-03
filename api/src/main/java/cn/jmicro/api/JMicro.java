@@ -34,8 +34,8 @@ public class JMicro {
 	
 	public static void main(String[] args)  {
 		 System.out.println(Arrays.asList(args));
-		 Object of = getObjectFactoryAndStart(args);
-		 // JMicro.getObjectFactoryAndStart(args);
+		 getObjectFactoryAndStart(args);
+		 //JMicro.getObjectFactoryAndStart(args);
 		 waitForShutdown();
 	}
 	
@@ -81,14 +81,20 @@ public class JMicro {
 					}
 				}
 			 
-			 RpcClassLoader cl = new RpcClassLoader(JMicro.class.getClassLoader());
+			 ClassLoader cl = JMicro.class.getClassLoader();
+			 if(!cl.getClass().getName().equals(RpcClassLoader.class.getName())) {
+				 cl =  Thread.currentThread().getContextClassLoader();
+				 if(!cl.getClass().getName().equals(RpcClassLoader.class.getName())) {
+					 cl = new RpcClassLoader(JMicro.class.getClassLoader());
+				 }
+			 }
 			 Thread.currentThread().setContextClassLoader(cl);
 			 Class<?> emClass = cl.loadClass("cn.jmicro.api.EnterMain");
 			 Object em = emClass.newInstance();
 			 Method m = emClass.getMethod("getObjectFactoryAndStart", new String[0].getClass());
 			 Object obj = args;
-			 m.invoke(em, obj);
-			 return em;
+			 Object ret = m.invoke(em, obj);
+			 return ret;
 		} catch (ClassNotFoundException | InstantiationException | IllegalAccessException | NoSuchMethodException
 				| SecurityException | IllegalArgumentException | InvocationTargetException e) {
 			e.printStackTrace();

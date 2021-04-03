@@ -37,6 +37,7 @@ import cn.jmicro.api.net.InterceptorManager;
 import cn.jmicro.api.net.RpcRequest;
 import cn.jmicro.api.registry.ServiceItem;
 import cn.jmicro.api.registry.ServiceMethod;
+import cn.jmicro.api.tx.TxConstants;
 import cn.jmicro.common.CommonException;
 import cn.jmicro.common.Constants;
 
@@ -95,6 +96,10 @@ public class ServiceInvocationHandler implements InvocationHandler{
 			req.setTransport(Constants.TRANSPORT_NETTY);
 			req.setImpl(si.getImpl());
 			req.putObject(JMicroContext.LOGIN_KEY, cxt.getString(JMicroContext.LOGIN_KEY, null));
+			
+			if(JMicroContext.get().exists(TxConstants.TYPE_TX_KEY)) {
+				req.putObject(TxConstants.TYPE_TX_KEY, JMicroContext.get().getLong(TxConstants.TYPE_TX_KEY, null));
+			}
 			
 			if(sm.getForType() == Constants.FOR_TYPE_SYS) {
 				if(pi.isLogin()) {

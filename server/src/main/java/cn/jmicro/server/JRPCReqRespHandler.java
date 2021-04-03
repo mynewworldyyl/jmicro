@@ -54,6 +54,7 @@ import cn.jmicro.api.security.PermissionManager;
 import cn.jmicro.api.security.SecretManager;
 import cn.jmicro.api.service.ServiceLoader;
 import cn.jmicro.api.service.ServiceManager;
+import cn.jmicro.api.tx.TxConstants;
 import cn.jmicro.api.utils.TimeUtils;
 import cn.jmicro.common.CommonException;
 import cn.jmicro.common.Constants;

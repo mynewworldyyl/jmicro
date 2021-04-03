@@ -25,6 +25,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.ParameterizedType;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -148,7 +149,7 @@ public class SimpleObjectFactory implements IObjectFactory {
 	@SuppressWarnings("unchecked")
 	@Override
 	public <T> T getRemoteServie(String srvName, String namespace, String version,AsyncConfig[] acs) {
-		return (T)this.clientServiceProxyManager.getRefRemoteService(srvName,namespace,version,rpcClassLoader,acs);
+		return (T)this.clientServiceProxyManager.getRefRemoteService(null,srvName,namespace,version,rpcClassLoader,acs);
 	}
 
 	@SuppressWarnings("unchecked")
@@ -180,41 +181,56 @@ public class SimpleObjectFactory implements IObjectFactory {
 			}
 		} else {
 			obj = objs.get(cls);
-			if(obj != null){
-				return  (T)obj;
-			}
-			
-			obj = this.createObject(cls,true);
-			if(obj != null) {
-				cacheObj(cls,obj,null);
+			if(obj == null){
+				obj = this.createObject(cls,true);
+				if(obj != null) {
+					cacheObj(cls,obj,null);
+				}
 			}
 		}
-		return (T)obj;
+		
+		if(obj != null) {
+			Class<?> tc = ProxyObject.getTargetCls(obj.getClass());
+			if(this.validForPackage(getSecurityPackageName(), tc)) {
+				return (T)obj;
+			}
+			logger.warn(getSecurityPackageName() + " cannot get instance of " + tc.getName());
+		}
+		
+		return null;
+		
 	}
 	
 	@SuppressWarnings("unchecked")
 	@Override
 	public <T> T getByName(String clsName) {
 		checkStatu();
-		if(this.clsNameToObjs.containsKey(clsName)){
-			return (T) this.clsNameToObjs.get(clsName);
-		}
-		if(this.nameToObjs.containsKey(clsName)){
-			return (T) this.nameToObjs.get(clsName);
+		Object co = this.clsNameToObjs.get(clsName);
+		if(co == null){
+			co = this.nameToObjs.get(clsName);
 		}
 		
-		Class<?> cls = this.loadCls(clsName);
-		/*if(cls != null && cls.isAnnotationPresent(Service.class)) {
-			Object o = this.clientServiceProxyManager.getService(clsName);
-			if(o != null){
-				return (T)o;
+		if(co == null) {
+			Class<?> cls = this.loadCls(clsName);
+			if(cls != null){
+				co = get(cls);
 			}
-		}*/
-		
-		if(cls != null){
-			return (T)get(cls);
 		}
+		
+		if(co != null) {
+			Class<?> tc = ProxyObject.getTargetCls(co.getClass());
+			if(this.validForPackage(getSecurityPackageName(), tc)) {
+				return (T)co;
+			}
+			logger.warn(getSecurityPackageName() + " cannot get instance of " + tc.getName());
+		}
+		
 		return null;
+	}
+	
+	private String getSecurityPackageName() {
+		StackTraceElement se = Thread.currentThread().getStackTrace()[3];
+		return se.getClassName();
 	}
 
 	@Override
@@ -238,7 +254,10 @@ public class SimpleObjectFactory implements IObjectFactory {
 		
 		for(Class<?> c : this.objs.keySet()) {
 			if(parrentCls.isAssignableFrom(c)) {
-				set.add((T)this.objs.get(c));
+				Class<?> tc = ProxyObject.getTargetCls(c);
+				if(this.validForPackage(getSecurityPackageName(), tc)) {
+					set.add((T)this.objs.get(c));
+				}
 			}
 		}
 		
@@ -424,7 +443,7 @@ public class SimpleObjectFactory implements IObjectFactory {
 		
 		clHelper.setClassLoader(this.rpcClassLoader);
 		rpcClassLoader.setHelper(clHelper);
-		rpcClassLoader.setBasePackages(Config.getBasePackages());
+		rpcClassLoader.addBasePackages(Config.getBasePackages());
 		
 		ClassScannerUtils.setClassLoader(clHelper);
 		
@@ -1019,7 +1038,6 @@ public class SimpleObjectFactory implements IObjectFactory {
 			if(m != null) {
 				return (Boolean)m.invoke(o, new Object[0]);
 			}
-			
 		} catch (NoSuchMethodException | SecurityException | IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
 			try {
 				Method m = o.getClass().getMethod("isEnable", new Class<?>[0]);
@@ -1078,7 +1096,9 @@ public class SimpleObjectFactory implements IObjectFactory {
 	@Override
 	public boolean exist(Class<?> clazz) {
 		checkStatu();
-		return this.objs.containsKey(clazz);
+		Object o = this.objs.get(clazz);
+		if(o == null) return false;
+		return this.validForPackage(getSecurityPackageName(), ProxyObject.getTargetCls(o.getClass()));
 	}
 
 	@Override
@@ -1245,8 +1265,8 @@ public class SimpleObjectFactory implements IObjectFactory {
 			boolean isRequired = false;
 			Class<?> refCls = f.getType();
 			
-			/*if(refCls.getName().equals("cn.jmicro.api.objectfactory.IObjectFactory")) {
-				logger.debug("cn.jmicro.api.objectfactory.IObjectFactory");
+			/*if(refCls.getName().equals("cn.jmicro.api.choreography.ProcessInfo")) {
+				logger.debug("cn.jmicro.api.choreography.ProcessInfo");
 			}*/
 			
 			//对某些类,命令行可以指定特定组件实例名称,系统对该类使用指定实例,忽略别的实例
@@ -1269,6 +1289,8 @@ public class SimpleObjectFactory implements IObjectFactory {
 						l = this.filterProviderSide(l);
 					}
 					
+					filterByLimitPackages(cls.getName(),l);
+					
 					if(l != null && l.size() > 0){
 						Object[] arr = new Object[l.size()];
 						l.toArray(arr);
@@ -1289,6 +1311,9 @@ public class SimpleObjectFactory implements IObjectFactory {
 					}
 					
 					if(l != null && l.size() > 0){
+						
+						filterByLimitPackages(cls.getName(),l);
+						
 						boolean bf = f.isAccessible();
 						Object o = null;
 						if(!bf) {
@@ -1335,6 +1360,7 @@ public class SimpleObjectFactory implements IObjectFactory {
 					}
 					
 					if(l != null && l.size() > 0){
+						filterByLimitPackages(cls.getName(),l);
 						boolean bf = f.isAccessible();
 						Object o = null;
 						if(!bf) {
@@ -1389,6 +1415,9 @@ public class SimpleObjectFactory implements IObjectFactory {
 					}
 					
 					if(l != null && !l.isEmpty()) {
+						
+						filterByLimitPackages(cls.getName(),l);
+						
 						boolean bf = f.isAccessible();
 						Map map = null;
 						if(!bf) {
@@ -1425,6 +1454,8 @@ public class SimpleObjectFactory implements IObjectFactory {
 						l = this.filterProviderSide(l);
 					}
 					
+					filterByLimitPackages(cls.getName(),l);
+					
 					if(l != null && !l.isEmpty() && StringUtils.isEmpty(name)) {
 						if(l.size() == 1) {
 							srv =  l.iterator().next();
@@ -1456,6 +1487,10 @@ public class SimpleObjectFactory implements IObjectFactory {
 					}
 					if(srv != null){
 						Class<?> clazz = ProxyObject.getTargetCls(srv.getClass());
+						if(!this.validForPackage(cls.getName(), clazz)) {
+							srv = null;
+							logger.warn(cls.getName() + " cannot reference instance of " + clazz.getName());
+						}
 						//如果没有Component注解，默认服务提供者及消费者都可用flag=true，只有定义了一方可用的组件，才需要做检测
 						boolean flag = this.isComsumerSide(clazz) && this.isProviderSide(clazz);
 						if(!flag) {
@@ -1465,8 +1500,6 @@ public class SimpleObjectFactory implements IObjectFactory {
 								throw new CommonException("Class ["+cls.getName()+"] field ["+ f.getName()+"] dependency ["+f.getType().getName()+"] side should comsumer");
 							}
 						}
-						
-					
 					}
 				}
 			}
@@ -1480,9 +1513,34 @@ public class SimpleObjectFactory implements IObjectFactory {
 				throw new CommonException(msg);
 			}
 		}
-		
 	}
 	
+	private void filterByLimitPackages(String srcPkgName, Collection<?> l) {
+		if(l == null || l.isEmpty()) return ;
+		Iterator<?> ite = l.iterator();
+		for(;ite.hasNext();) {
+			Class<?> cls = ite.next().getClass();
+			if(!validForPackage(srcPkgName,cls)) {
+				logger.warn(srcPkgName + " cannot reference instance of " + cls.getName());
+				ite.remove();
+			}
+		}
+	}
+
+	private boolean validForPackage(String srcPkgName, Class<?> cls) {
+		if(!cls.isAnnotationPresent(Component.class)) return true;
+		
+		Component an = cls.getAnnotation(Component.class);
+		String[] pks = an.limit2Packages();
+		if(pks == null || pks.length == 0) return true;
+		
+		for(String pn : pks) {
+			if(srcPkgName.startsWith(pn)) return true;
+		}
+		
+		return false;
+	}
+
 	public Object createDynamicService(Class<?> cls) {
 		//String wayd(String msg);
 		 ClassLoader cl = Thread.currentThread().getContextClassLoader();

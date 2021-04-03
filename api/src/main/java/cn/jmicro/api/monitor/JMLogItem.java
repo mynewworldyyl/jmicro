@@ -37,6 +37,8 @@ import cn.jmicro.common.util.JsonUtils;
 @IDStrategy(100)
 public final class JMLogItem{
 	
+	public static final String TABLE = "rpc_log";
+	
 	private long linkId;
 	
 	private long reqId=0;

@@ -21,6 +21,7 @@ import java.lang.reflect.Modifier;
 
 import cn.jmicro.api.annotation.SO;
 import cn.jmicro.api.monitor.MC;
+import cn.jmicro.api.tx.TxConstants;
 import cn.jmicro.common.CommonException;
 import cn.jmicro.common.Constants;
 
@@ -155,6 +156,8 @@ public final class ServiceMethod {
 	
 	private byte feeType = Constants.LICENSE_TYPE_FREE;
 	
+	private int txType = TxConstants.TYPE_TX_NO;
+	
 	private int[] authClients;
 	
 	public void formPersisItem(ServiceMethod p){
@@ -203,6 +206,7 @@ public final class ServiceMethod {
 		this.authClients = p.authClients;
 		
 		this.forType = p.forType;
+		this.txType = p.txType;
 		
 		this.key.form(p.key);
 	}
@@ -290,6 +294,14 @@ public final class ServiceMethod {
 
 	public void setForType(int forType) {
 		this.forType = forType;
+	}
+
+	public int getTxType() {
+		return txType;
+	}
+
+	public void setTxType(int txType) {
+		this.txType = txType;
 	}
 
 	public int getLimitType() {

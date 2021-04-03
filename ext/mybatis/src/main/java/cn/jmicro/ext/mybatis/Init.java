@@ -30,9 +30,6 @@ public class Init implements IPostFactoryListener{
 	
 	private IObjectFactory of;
 	
-	public void init() {
-	}
-
 	@Override
 	public void preInit(IObjectFactory of) {
 		this.of = of;

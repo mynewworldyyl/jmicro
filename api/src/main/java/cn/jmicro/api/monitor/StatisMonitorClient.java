@@ -35,7 +35,6 @@ import cn.jmicro.api.annotation.Reference;
 import cn.jmicro.api.async.AsyncFailResult;
 import cn.jmicro.api.basket.BasketFactory;
 import cn.jmicro.api.basket.IBasket;
-import cn.jmicro.api.choreography.ProcessInfo;
 import cn.jmicro.api.config.Config;
 import cn.jmicro.api.executor.ExecutorConfig;
 import cn.jmicro.api.executor.ExecutorFactory;
@@ -357,24 +356,7 @@ public class StatisMonitorClient {
 			JMStatisItem mi = ite.next();
 			ite.remove();
 			
-			if(mi.getSmKey() == null) {
-				//非RPC环境下的事件
-				if(nullSMMRpcItem == null) {
-					nullSMMRpcItem = mi;
-					//第一个，不用处理，别的合并到这个选项下面
-					continue;
-				}
-				
-				Set<Short> types = mi.getTypeStatis().keySet();
-				for(Short t : types) {
-					Iterator<StatisItem> oiIte = mi.getTypeStatis().get(t).iterator();
-					for(; oiIte.hasNext(); ) {
-						StatisItem oi = oiIte.next();
-						nullSMMRpcItem.addType(oi);
-					}
-				}
-				
-			} else {
+			if(mi.isRpc()) {
 				//合并同一个服务方法的统计参数
 				//result.add(mi);
 				
@@ -390,6 +372,23 @@ public class StatisMonitorClient {
 							StatisItem oi = oiIte.next();
 							emi.addType(oi);
 						}
+					}
+				}
+			} else {
+
+				//非RPC环境下的事件
+				if(nullSMMRpcItem == null) {
+					nullSMMRpcItem = mi;
+					//第一个，不用处理，别的合并到这个选项下面
+					continue;
+				}
+				
+				Set<Short> types = mi.getTypeStatis().keySet();
+				for(Short t : types) {
+					Iterator<StatisItem> oiIte = mi.getTypeStatis().get(t).iterator();
+					for(; oiIte.hasNext(); ) {
+						StatisItem oi = oiIte.next();
+						nullSMMRpcItem.addType(oi);
 					}
 				}
 			}
@@ -496,11 +495,11 @@ public class StatisMonitorClient {
 		return monitorServer != null && this.monitorServer.isReady();
 	}
 	
-	public boolean canSubmit(ServiceMethod sm, Short t,String actName) {
+	public boolean canSubmit(ServiceMethod sm, Short t,int clientId) {
 		if(!this.checkerWorking || monitorServer == null || !this.monitorServer.isReady()) {
 			return false;
 		}
-		return this.mscm.canSubmit(sm,t,actName);
+		return this.mscm.canSubmit(sm,t,clientId);
 	}
 
 }
