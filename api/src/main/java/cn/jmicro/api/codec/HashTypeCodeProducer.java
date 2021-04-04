@@ -51,4 +51,10 @@ public class HashTypeCodeProducer implements ITypeCodeProducer {
         return (short)h;
     }
 
+	@Override
+	public String getNameByCode(Short code) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
 }

@@ -16,6 +16,9 @@
  */
 package cn.jmicro.ext.mybatis;
 
+import java.sql.Connection;
+import java.sql.SQLException;
+
 import org.apache.ibatis.session.SqlSession;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -69,7 +72,9 @@ public class MybatisInterceptor extends AbstractInterceptor implements IIntercep
 		final Holder<Boolean> txOwner = new Holder<>(false);
 		final Holder<Long> txid = new Holder<>(null);
 		final SqlSession s = curSqlSessionManager.curSession() ;
+		
 		try {
+			s.getConnection().setTransactionIsolation(sm.getTxIsolation());
 			if(sm.getTxType() == TxConstants.TYPE_TX_DISTRIBUTED) {
 				Long tid = JMicroContext.get().getLong(TxConstants.TYPE_TX_KEY, null);
 				if(tid == null) {
@@ -109,9 +114,9 @@ public class MybatisInterceptor extends AbstractInterceptor implements IIntercep
 					}
 					
 					if(commit) {
-						s.commit();
+						s.commit(true);
 					}else {
-						s.rollback();
+						s.rollback(true);
 					}
 					
 					s.close();
@@ -154,7 +159,7 @@ public class MybatisInterceptor extends AbstractInterceptor implements IIntercep
 			}else if(sm.getTxType() == TxConstants.TYPE_TX_DISTRIBUTED) {
 				finishDistributedTransaction(sm,txid.get(),txOwner.get(),false);
 			}
-			throw e;
+			throw new RpcException(req,e,Resp.CODE_TX_FAIL);
 		}finally {
 			if(s != null) {
 				curSqlSessionManager.remove();

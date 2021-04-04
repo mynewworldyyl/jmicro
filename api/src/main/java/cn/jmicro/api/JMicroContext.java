@@ -64,6 +64,7 @@ public class JMicroContext  {
 	
 	public static final String REMOTE_HOST = "_remoteHost";
 	public static final String REMOTE_PORT = "_remotePort";
+	public static final String REMOTE_INS_ID = "_remoteInsId";
 	
 	public static final String LOGIN_ACT = "_loginAccount";
 	public static final String LOGIN_ACT_SYS = "_loginAccountSys";
@@ -224,6 +225,7 @@ public class JMicroContext  {
 			
 		context.setParam(JMicroContext.REMOTE_HOST, s.remoteHost());
 		context.setParam(JMicroContext.REMOTE_PORT, s.remotePort());
+		context.setParam(JMicroContext.REMOTE_INS_ID, msg.getInsId());
 		
 		context.setParam(JMicroContext.LOCAL_HOST, s.localHost());
 		context.setParam(JMicroContext.LOCAL_PORT, s.localPort()+"");
@@ -319,6 +321,8 @@ public class JMicroContext  {
 			context.setParam(CLIENT_UP_TIME, TimeUtils.getCurTime());
 			context.setParam(DEBUG_LOG, new StringBuilder("Comsumer "));
 		}
+		
+		context.setParam(JMicroContext.REMOTE_INS_ID, si.getInsId());
 		
 		boolean iMonitorable = enableOrDisable(si.getMonitorEnable(),sm.getMonitorEnable());
 		context.setParam(IS_MONITORENABLE, iMonitorable);

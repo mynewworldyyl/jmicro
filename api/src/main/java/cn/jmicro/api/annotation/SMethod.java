@@ -21,6 +21,7 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
+import java.sql.Connection;
 
 import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.net.Message;
@@ -172,4 +173,5 @@ public @interface SMethod {
 	
 	public int txType() default TxConstants.TYPE_TX_NO;
 	
+	public int txIsolation() default Connection.TRANSACTION_READ_COMMITTED;
 }

@@ -24,6 +24,8 @@ public class RaftBaseTypeCodeProducer implements ITypeCodeProducer {
 	
 	private static final String ROOT = Config.getRaftBasePath("") + "/" + RaftBaseTypeCodeProducer.class.getSimpleName();
 	
+	private Object synObject = new Object();
+	
 	private Map<String,Short> name2Types = new HashMap<>();
 	
 	private boolean enableWork = false;
@@ -69,21 +71,41 @@ public class RaftBaseTypeCodeProducer implements ITypeCodeProducer {
 			throw new CommonException("Type code class name cannot be null");
 		}
 		
-		if(name2Types.containsKey(name)) {
-			return name2Types.get(name);
-		} else {
-			return create(name);
+		synchronized(synObject) {
+			if(name2Types.containsKey(name)) {
+				return name2Types.get(name);
+			} else {
+				return create(name);
+			}
 		}
+		
 	}
 	
+	@Override
+	public String getNameByCode(Short code) {
+		synchronized(synObject) {
+			for(Map.Entry<String, Short> e : name2Types.entrySet()) {
+				if(e.getValue().equals(code)) {
+					return e.getKey();
+				}
+			}
+		}
+		return null;
+	}
+
 	private void removeType(String name) {
 		logger.warn("Type remove: " + name + "=" + name2Types.get(name));
-		name2Types.remove(name);
+		synchronized(synObject) {
+			name2Types.remove(name);
+		}
 	}
 
 	private void addType(String name, String data) {
 		logger.warn("Type add: " + name + "=" + data);
-		name2Types.put(name, Short.parseShort(data));
+		synchronized(synObject) {
+			name2Types.put(name, Short.parseShort(data));
+			//TypeCoderFactory.getIns().registClass(cls, t);
+		}
 	}
 
 	private short create(String name) {
@@ -99,11 +121,9 @@ public class RaftBaseTypeCodeProducer implements ITypeCodeProducer {
 				cuType++;
 				op.setData(ROOT, cuType+"");
 				op.createNodeOrSetData(path, cuType+"", IDataOperator.PERSISTENT);
-				
 				name2Types.put(name, cuType);
 			}
 		});
-		
 		return name2Types.get(name);
 	}
 

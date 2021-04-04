@@ -361,7 +361,7 @@ public class DefaultCoder implements TypeCoder<Object> {
 				}
 			} else if(Decoder.PREFIX_TYPE_SHORT == prefixCodeType) {
 				Short code = buffer.readShort();
-				Class<?> cls = TypeCoderFactory.getIns().getClassByCode(code);
+				//Class<?> cls = TypeCoderFactory.getIns().getClassByCode(code);
 				TypeCoder<?> coder = TypeCoderFactory.getIns().getCoder(code);
 				if(coder != this) {
 					return coder.decode(buffer, fieldDeclareType, genericType);

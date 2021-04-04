@@ -1,5 +1,8 @@
 package cn.expjmicro.tx.payment;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import cn.expjmicro.example.tx.api.ITxPaymentService;
 import cn.expjmicro.example.tx.api.entities.Payment;
 import cn.expjmicro.example.tx.api.mapper.PaymentMapper;
@@ -17,6 +20,8 @@ import cn.jmicro.common.CommonException;
 @Service(version="0.0.1")
 public class TxPaymentServiceImpl implements ITxPaymentService {
 
+	 private final static Logger logger = LoggerFactory.getLogger(TxPaymentServiceImpl.class);
+	 
 	@Inject
 	private PaymentMapper pm;
 	
@@ -30,10 +35,14 @@ public class TxPaymentServiceImpl implements ITxPaymentService {
 			if(++exCnt % 1 == 0) {
 				r.setCode(Resp.CODE_FAIL);//模拟支付失败
 				r.setData(false);
-				LG.log(MC.LOG_ERROR, this.getClass(), "模拟支付失败");
-			}else {
-				LG.log(MC.LOG_ERROR, this.getClass(), "模拟支付余额不足失败");
-				throw new CommonException("余额不足");
+				r.setMsg("monel pay failure");
+				LG.log(MC.LOG_ERROR, this.getClass(), r.getMsg());
+				logger.debug(r.getMsg());
+			} else {
+				String msg = "model not engnoth money";
+				LG.log(MC.LOG_ERROR, this.getClass(), msg);
+				logger.debug(msg);
+				throw new CommonException(msg);
 			}
 			return r;
 		}

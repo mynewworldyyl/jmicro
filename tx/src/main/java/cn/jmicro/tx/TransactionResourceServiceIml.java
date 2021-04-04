@@ -62,7 +62,7 @@ public class TransactionResourceServiceIml implements ITransactionResource, ILoc
 		}
 		
 		if(commit) {
-			txe.s.commit(false);
+			txe.s.commit(true);
 		} else {
 			txe.s.rollback(true);
 		}

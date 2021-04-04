@@ -15,6 +15,9 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import cn.jmicro.api.ClassScannerUtils;
 import cn.jmicro.api.annotation.SO;
 import cn.jmicro.api.codec.typecoder.AbstractComparableTypeCoder;
@@ -27,6 +30,7 @@ import cn.jmicro.api.codec.typecoder.PrimitiveTypeCoder;
 import cn.jmicro.api.codec.typecoder.TypeCoder;
 import cn.jmicro.api.codec.typecoder.VoidTypeCoder;
 import cn.jmicro.common.CommonException;
+import cn.jmicro.common.Utils;
 
 /**
  * 
@@ -43,7 +47,7 @@ import cn.jmicro.common.CommonException;
 //@Component
 public class TypeCoderFactory {
 
-	//private static final Logger logger = LoggerFactory.getLogger(TypeCoderFactory.class);
+	private static final Logger logger = LoggerFactory.getLogger(TypeCoderFactory.class);
 
 	private static final TypeCoderFactory ins = new TypeCoderFactory();
 
@@ -425,7 +429,29 @@ public class TypeCoderFactory {
 	
 	public synchronized Class<?> getClassByCode(Short type) {
 		checkTcp();
-		return code2class.get(type);
+		if(code2class.containsKey(type)) {
+			return code2class.get(type);
+		}
+		
+		String name = tcp.getNameByCode(type);
+		if(Utils.isEmpty(name)) {
+			return null;
+		}
+		
+		ClassLoader cl = Thread.currentThread().getContextClassLoader();
+		if(cl == null) {
+			cl = TypeCoderFactory.class.getClassLoader();
+		}
+		
+		try {
+			Class<?> c = cl.loadClass(name);
+			registClass(c,type);
+			return c;
+		} catch (ClassNotFoundException e) {
+			logger.error(name,e);
+			return null;
+		}
+		
 	}
 	
 	public synchronized Short getCodeByClass(Class<?> cls) {

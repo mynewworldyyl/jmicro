@@ -18,6 +18,7 @@ package cn.jmicro.api.registry;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
+import java.sql.Connection;
 
 import cn.jmicro.api.annotation.SO;
 import cn.jmicro.api.monitor.MC;
@@ -158,6 +159,8 @@ public final class ServiceMethod {
 	
 	private int txType = TxConstants.TYPE_TX_NO;
 	
+	private int txIsolation = Connection.TRANSACTION_READ_COMMITTED;
+	
 	private int[] authClients;
 	
 	public void formPersisItem(ServiceMethod p){
@@ -207,6 +210,7 @@ public final class ServiceMethod {
 		
 		this.forType = p.forType;
 		this.txType = p.txType;
+		this.txIsolation = p.txIsolation;
 		
 		this.key.form(p.key);
 	}
@@ -565,6 +569,14 @@ public final class ServiceMethod {
 
 	public byte getEncType() {
 		return encType;
+	}
+
+	public int getTxIsolation() {
+		return txIsolation;
+	}
+
+	public void setTxIsolation(int txIsolation) {
+		this.txIsolation = txIsolation;
 	}
 
 	

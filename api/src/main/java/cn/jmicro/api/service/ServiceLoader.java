@@ -18,6 +18,7 @@ package cn.jmicro.api.service;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
+import java.sql.Connection;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -665,6 +666,7 @@ public class ServiceLoader{
 				sm.setUpSsl(false);
 				sm.setDownSsl(false);
 				sm.setTxType(TxConstants.TYPE_TX_NO);
+				sm.setTxIsolation(Connection.TRANSACTION_READ_COMMITTED);
 			} else {
 				 if(manno != null ) {
 					 //实现类方法配置具有高优先级
@@ -704,6 +706,7 @@ public class ServiceLoader{
 					sm.setLimitType(manno.limitType());
 					sm.setForType(manno.forType());
 					sm.setTxType(manno.txType());
+					sm.setTxIsolation(manno.txIsolation());
 				 } else {
 					 //使用接口方法配置
 					sbr = intMAnno.breakingRule();
@@ -743,6 +746,7 @@ public class ServiceLoader{
 					sm.setLimitType(intMAnno.limitType());
 					sm.setForType(intMAnno.forType());
 					sm.setTxType(intMAnno.txType());
+					sm.setTxIsolation(intMAnno.txIsolation());
 				 }
 				 
 				 if(sm.getTimeout() <= 0) {

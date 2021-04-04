@@ -8,4 +8,5 @@ public interface ITxShopService {
 
 	 Resp<Boolean> buy(int goodId,int num);
 	
+	 Resp<Boolean> updateLocalData(int goodId,int num);
 }

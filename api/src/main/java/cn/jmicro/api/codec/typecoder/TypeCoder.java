@@ -18,6 +18,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import cn.jmicro.api.JMicroContext;
 import cn.jmicro.api.codec.Decoder;
 import cn.jmicro.api.codec.JDataInput;
 import cn.jmicro.api.codec.JDataOutput;
@@ -28,7 +32,7 @@ import cn.jmicro.common.Utils;
 
 public interface TypeCoder<T> extends Comparable<TypeCoder<T>>{
 	
-	//public static final Logger logger = LoggerFactory.getLogger(TypeCoder.class);
+	public static final Logger logger = LoggerFactory.getLogger(TypeCoder.class);
 	
 	public static final Map<String,Class<?>> classCache = new HashMap<>();
 	public static final Object loadingLock = new Object();
@@ -487,6 +491,10 @@ public interface TypeCoder<T> extends Comparable<TypeCoder<T>>{
 	@SuppressWarnings({ "rawtypes", "unchecked" })
 	public static Object decodeArray(DataInput buffer, Class<?> fieldDeclareType, Type genericType){
 
+		if(JMicroContext.get().getInt(JMicroContext.REMOTE_INS_ID, 0) == 6) {
+			logger.info("Payment service error");
+		}
+		
 		int len=0;
 		byte flag = 0;
 		try {

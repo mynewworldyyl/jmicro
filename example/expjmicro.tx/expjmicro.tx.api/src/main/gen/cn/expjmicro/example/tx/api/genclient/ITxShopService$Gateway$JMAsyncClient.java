@@ -11,4 +11,9 @@ public interface ITxShopService$Gateway$JMAsyncClient extends ITxShopService {
   IPromise<Resp> buyJMAsync(int goodId, int num, Object context);
 
   IPromise<Resp> buyJMAsync(int goodId, int num);
+
+  @WithContext
+  IPromise<Resp> updateLocalDataJMAsync(int goodId, int num, Object context);
+
+  IPromise<Resp> updateLocalDataJMAsync(int goodId, int num);
 }
