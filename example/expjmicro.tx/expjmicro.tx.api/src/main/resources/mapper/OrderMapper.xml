@@ -5,9 +5,10 @@
 <mapper namespace="cn.expjmicro.example.tx.api.mapper.OrderMapper">
 
   <insert id="saveOrder" parameterType="cn.expjmicro.example.tx.api.entities.Order" >
-   insert into t_order (id,good_id, num,amount)
+   insert into t_order (id,good_id, num,amount,txid)
     values (
     #{id,jdbcType=INTEGER},#{goodId,jdbcType=INTEGER}, #{num,jdbcType=INTEGER}, #{amount,jdbcType=DECIMAL}
+    , #{txid,jdbcType=INTEGER}
       )
   </insert>
   

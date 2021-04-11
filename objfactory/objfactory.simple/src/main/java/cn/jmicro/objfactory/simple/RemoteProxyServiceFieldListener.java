@@ -94,7 +94,7 @@ class RemoteProxyServiceFieldListener implements IServiceListener{
 	@Override
 	public void serviceChanged(int type, ServiceItem item) {
 		
-		if("cn.jmicro.api.monitor.IMonitorDataSubscriber".equals(item.getKey().getServiceName())) {
+		if("cn.jmicro.api.tx.ITransactionResource".equals(item.getKey().getServiceName())) {
 			logger.debug("test debug");
 		}
 		
@@ -102,7 +102,7 @@ class RemoteProxyServiceFieldListener implements IServiceListener{
 			return;
 		}
 		
-		if(ClientServiceProxyHolder.checkPackagePermission(item,pkgName)) {
+		if(!ClientServiceProxyHolder.checkPackagePermission(item,pkgName)) {
 			logger.warn("No permission to use service [" + item.getKey().getServiceName()+"] from " + this.pkgName);
 			return;
 		}
@@ -258,7 +258,11 @@ class RemoteProxyServiceFieldListener implements IServiceListener{
 			 try {
 				m.invoke(this.srcObj,po,opType);
 			} catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
-				logger.error(po.getHolder().getItem().getKey().toKey(true, true, true),e);
+				String msg = e.getMessage() + " : "+cls.getName();
+				if(po.getHolder().getItem() != null) {
+					msg +=", "+ po.getHolder().getItem().getKey().toKey(true, true, true);
+				}
+				logger.error(msg,e);
 				LG.log(MC.LOG_ERROR, this.getClass(), "Notify error for: " + this.refField.toString(),e);
 			}
 		 }

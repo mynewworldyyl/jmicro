@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.expjmicro.example.tx.api.mapper.ReqMapper">
+  
+ <insert id="saveReq" parameterType="cn.expjmicro.example.tx.api.entities.Req" >
+    insert into t_req (txid, goodId,num)
+    values (#{txid,jdbcType=INTEGER}, #{goodId,jdbcType=INTEGER}, #{num,jdbcType=INTEGER}
+      )
+  </insert>
+
+</mapper>

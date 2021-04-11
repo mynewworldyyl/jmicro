@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -21,8 +22,10 @@ import org.bson.Document;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.mongodb.client.AggregateIterable;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
+import com.mongodb.internal.validator.CollectibleDocumentFieldNameValidator;
 
 import cn.jmicro.api.IListener;
 import cn.jmicro.api.JMicroContext;
@@ -38,6 +41,7 @@ import cn.jmicro.api.executor.ExecutorConfig;
 import cn.jmicro.api.executor.ExecutorFactory;
 import cn.jmicro.api.exp.Exp;
 import cn.jmicro.api.exp.ExpUtils;
+import cn.jmicro.api.idgenerator.ComponentIdServer;
 import cn.jmicro.api.monitor.ILogMonitorServer;
 import cn.jmicro.api.monitor.IMonitorAdapter;
 import cn.jmicro.api.monitor.JMLogItem;
@@ -65,7 +69,7 @@ import cn.jmicro.common.util.JsonUtils;
 
 @Component
 @Service(clientId=Constants.NO_CLIENT_ID,version="0.0.1",debugMode=0,monitorEnable=0,
-logLevel=MC.LOG_WARN,retryCnt=0,limit2Packages="cn.jmicro.api.monitor")
+logLevel=MC.LOG_WARN,retryCnt=0,limit2Packages="cn.jmicro.api.monitor",showFront=false,external=false)
 public class LogMonitorServerImpl implements ILogMonitorServer {
 
 	private final static Logger logger = LoggerFactory.getLogger(LogMonitorServerImpl.class);
@@ -82,6 +86,9 @@ public class LogMonitorServerImpl implements ILogMonitorServer {
 	
 	//@Inject
 	//private MonitorClient monitorManager;
+	
+	@Inject
+	private ComponentIdServer idServer;
 	
 	@Inject
 	private IDataOperator op;
@@ -136,7 +143,7 @@ public class LogMonitorServerImpl implements ILogMonitorServer {
 					return;
 				}
 				
-				if(!lw.isEnable() && !warningConfigs.containsKey(lw)) {
+				if(!lw.isEnable() && !warningConfigs.containsKey(lw.getId())) {
 					return;
 				}
 
@@ -264,6 +271,10 @@ public class LogMonitorServerImpl implements ILogMonitorServer {
 			return null;
 		}
 		
+		if(LogWarningConfig.TYPE_CONSOLE == lw.getType()) {
+			lw.setCfgParams("console");
+		}
+		
 		Exp exp = new Exp();
 		exp.setSuffix(suffix);
 		exp.setOriEx(lw.getExpStr());
@@ -311,7 +322,7 @@ public class LogMonitorServerImpl implements ILogMonitorServer {
 	
 	@Override
 	@SMethod(timeout=5000,retryCnt=0,needResponse=false,debugMode=0,monitorEnable=0,
-	logLevel=MC.LOG_ERROR,maxPacketSize=1048576,needLogin=false)
+	logLevel=MC.LOG_NO,maxPacketSize=1048576,needLogin=false)
 	public void submit(JMLogItem[] items) {
 		if(items == null || items.length == 0) {
 			/*if(monitoralbe) {
@@ -377,11 +388,10 @@ public class LogMonitorServerImpl implements ILogMonitorServer {
 				cacheItemsLock.notify();
 			}
 		}
-		
 	}
 	
 	private void doCheck() {
-		
+		int checkInterval = 2000;
 		while (true) {
 			try {
 				if(!addMonitors.isEmpty()) {
@@ -427,9 +437,15 @@ public class LogMonitorServerImpl implements ILogMonitorServer {
 				}*/
 				
 				if(sentItems.isEmpty()) {
+					long st = TimeUtils.getCurTime();
 					checkStatusMonitor();
-					synchronized(cacheItemsLock) {
-						cacheItemsLock.wait(2000);
+					deleteInvalidLog();
+					
+					long cost = checkInterval - (TimeUtils.getCurTime() - st);
+					if(cost > 0) {
+						synchronized(cacheItemsLock) {
+							cacheItemsLock.wait(cost);
+						}
 					}
 					continue;
 				} else {
@@ -447,6 +463,48 @@ public class LogMonitorServerImpl implements ILogMonitorServer {
 		}
 	}
 	
+	private void deleteInvalidLog() {
+		Document match = new Document();
+		//match.put("items.desc", new Document("$eq",Constants.INVALID_LOG_DESC));
+		match.put("items", new Document("$size",0));
+		match.put("delCheck", new Document("$exists",false));
+		match.put("provider", false);
+		match.put("createTime",  new Document("$lt",TimeUtils.getCurTime() - 60000));  //60秒前产生的数据才需要删除
+		
+		Document prj = new Document();
+		prj.put("_id", 1);
+		prj.put("linkId", 1);
+		
+		MongoCollection<Document> coll = this.mongoDb.getCollection(JMLogItem.TABLE,Document.class);
+		
+		List<Document> pl = new ArrayList<>();
+		pl.add(new Document("$match",match));
+		pl.add(new Document("$project",prj));
+		
+		AggregateIterable<Document> rst = coll.aggregate(pl);
+		for(Document d : rst) {
+			Document smatch = new Document();
+			smatch.put("linkId", d.get("linkId"));
+			long cnt = coll.countDocuments(smatch);
+			if(cnt < 3) {
+				coll.deleteMany(smatch);
+			} else {
+				Document updateMatch = new Document();
+				prj.put("_id", d.get("_id"));
+				Document update = new Document("delCheck",1);
+				coll.updateOne(updateMatch, new Document("$set",update));
+			}
+		}
+		
+		Document nmatch = new Document();
+		//match.put("items.desc", new Document("$eq",Constants.INVALID_LOG_DESC));
+		nmatch.put("items", new Document("$size",0));
+		nmatch.put("linkId", 0);
+		nmatch.put("reqId", 0);
+		coll.deleteMany(nmatch);//无效非RPC日志
+		
+	}
+
 	private boolean initLogWarningConfig(LogWarningConfig lw) {
 		if(LogWarningConfig.TYPE_FORWARD_SRV == lw.getType()) {
 			UniqueServiceMethodKey key = UniqueServiceMethodKey.fromKey(lw.getCfgParams());
@@ -582,6 +640,7 @@ public class LogMonitorServerImpl implements ILogMonitorServer {
 			
 			JMLogItem mi = ite.next();
 			ite.remove();
+			mi.setId(idServer.getLongId(JMLogItem.class));
 			
 			cxt.put("curTime", curTime);
 			cxt.put("actClientId", mi.getActClientId());
@@ -605,21 +664,23 @@ public class LogMonitorServerImpl implements ILogMonitorServer {
 			cxt.put("inputTime", mi.getInputTime());
 			cxt.put("costTime", mi.getInputTime());
 			
+			Map<String,Set<Long>> sendItems = new HashMap<>();
+			
 			if(mi.getSysClientId() != Constants.NO_CLIENT_ID) {
-				processOneItem(cxt,mi,this.client2Configs.get(mi.getSysClientId()));
+				processOneItem(cxt,mi,this.client2Configs.get(mi.getSysClientId()),sendItems);
 			}
 			
 			if(mi.getActClientId() != Constants.NO_CLIENT_ID && mi.getActClientId() != mi.getSysClientId()) {
-				processOneItem(cxt,mi,this.client2Configs.get(mi.getActClientId()));
+				processOneItem(cxt,mi,this.client2Configs.get(mi.getActClientId()),sendItems);
 			}
 			
-			processOneItem(cxt,mi,this.client2Configs.get(Constants.NO_CLIENT_ID));
+			processOneItem(cxt,mi,this.client2Configs.get(Constants.NO_CLIENT_ID),sendItems);
 			
 			cxt.clear();
 		}
 	}
 
-	private void processOneItem(Map<String, Object> cxt, JMLogItem mi, Set<String> cfgs) {
+	private void processOneItem(Map<String, Object> cxt, JMLogItem mi, Set<String> cfgs,Map<String,Set<Long>> sendItems) {
 		
 		if(cfgs == null || cfgs.isEmpty()) {
 			return;
@@ -633,6 +694,11 @@ public class LogMonitorServerImpl implements ILogMonitorServer {
 			for(String id : cfgs) {
 				LogWarningConfig cfg = this.warningConfigs.get(id);
 				
+				if(sendItems.containsKey(cfg.getCfgParams()) && 
+						sendItems.get(cfg.getCfgParams()).contains(mi.getId())) {
+					continue;
+				}
+				
 				if((curTime - cfg.getLastNotifyTime()) < cfg.getMinNotifyInterval()) {
 					continue;
 				}
@@ -642,10 +708,10 @@ public class LogMonitorServerImpl implements ILogMonitorServer {
 				}*/
 				
 				Exp exp = cfg.getExp();
-				if(exp != null && exp.containerVar("tag") 
+				if(exp != null && (exp.containerVar("tag") 
 				   || exp.containerVar("level")
 				   || exp.containerVar("time")
-				   || exp.containerVar("ex")) {
+				   || exp.containerVar("ex"))) {
 					
 					List<OneLog> items = new ArrayList<>();
 					for(OneLog ol : mi.getItems()) {
@@ -667,7 +733,15 @@ public class LogMonitorServerImpl implements ILogMonitorServer {
 				mi.setTag(cfg.getTag());
 				mi.setConfigId(cfg.getId());
 				
+				if(!sendItems.containsKey(cfg.getCfgParams())) {
+					sendItems.put(cfg.getCfgParams(), new HashSet<Long>());
+				}
+				sendItems.get(cfg.getCfgParams()).add(mi.getId());
+				
 				if(cfg.getType() == LogWarningConfig.TYPE_FORWARD_SRV) {
+					if(!sendItems.containsKey(cfg.getCfgParams())) {
+						sendItems.put(cfg.getCfgParams(), new HashSet<Long>());
+					}
 					ILogWarning$JMAsyncClient srv = cfg.getSrv();
 					if(srv.isReady()) {
 						cfg.setLastNotifyTime(curTime);
@@ -697,30 +771,73 @@ public class LogMonitorServerImpl implements ILogMonitorServer {
 				mi.setItems(backupItems);
 			}
 		}
-		
-		
 	}
 
 	private String toLogStr(JMLogItem mi) {
 		return JsonUtils.getIns().toJson(mi);
 	}
 
+	private CollectibleDocumentFieldNameValidator validtor = new CollectibleDocumentFieldNameValidator();
+	
 	private void saveLog(JMLogItem mi,String tableName) {
 		long curTime = TimeUtils.getCurTime();
 		mi.setInputTime(curTime);
 		if(mi.getReq() instanceof RpcRequest) {
 			RpcRequest req = (RpcRequest)mi.getReq();
-			ServiceItem si = reg.getServiceByCode(Integer.parseInt(req.getImpl()));
+			ServiceItem si = reg.getServiceByCode(req.getImpl());
 			if(si != null) {
 				mi.setImplCls(si.getImpl());
 			}
 		}
 		
 		MongoCollection<Document> coll = mongoDb.getCollection(tableName);
-		coll.insertOne(Document.parse(JsonUtils.getIns().toJson(mi)));
+		String json = JsonUtils.getIns().toJson(mi);
+		/*if(json.contains("cn.jmicro.api.monitor.IMonitorDataSubscriber")) {
+			logger.warn(json);
+		}*/
+		
+		Document doc = Document.parse(json);
+		//避免java.lang.IllegalArgumentException: Invalid BSON field name错误
+		if(mi.getResp() != null && mi.getResp().getResult() != null) {
+			Document rsp = doc.get("resp", Document.class);
+			doc.put("resp",checkDocument(rsp));
+		}
+		
+		if(mi.getReq() != null && mi.getReq().getArgs() != null) {
+			Document rsp = doc.get("req", Document.class);
+			doc.put("req",checkDocument(rsp));
+		}
+		
+		coll.insertOne(doc);
 		
 	}
 	
+	private Document checkDocument(Document rst) {
+		Set<String> keys = new HashSet<>();
+		keys.addAll(rst.keySet());
+		for(String key : keys) {
+			Object jo = rst.get(key);
+			String k = key;
+			if(!validtor.validate(key)) {
+				k = key.replaceAll("\\.", "/");
+				rst.put(k, jo);
+				rst.remove(key);
+			}
+			if(jo instanceof Document) {
+				rst.put(k,checkDocument((Document)jo));
+			}else if (jo instanceof Collection) {
+				Collection col = (Collection)jo;
+				for(Object ov : col) {
+					if(ov instanceof Document) {
+						checkDocument((Document)ov);
+					}
+				}
+			}
+		}
+		
+		return rst;
+	}
+
 	private void saveLog(Set<JMLogItem> temp) {
 		if(this.openDebug) {
 			logger.debug("printLog One LOOP");
@@ -741,7 +858,7 @@ public class LogMonitorServerImpl implements ILogMonitorServer {
 				mi.setInputTime(curTime);
 				if(mi.getReq() instanceof RpcRequest) {
 					RpcRequest req = (RpcRequest)mi.getReq();
-					ServiceItem si = reg.getServiceByCode(Integer.parseInt(req.getImpl()));
+					ServiceItem si = reg.getServiceByCode(req.getImpl());
 					if(si != null) {
 						mi.setImplCls(si.getImpl());
 					}

@@ -20,12 +20,13 @@ import cn.jmicro.api.choreography.IAgentProcessService;
 import cn.jmicro.api.choreography.genclient.IAgentProcessService$JMAsyncClient;
 import cn.jmicro.api.internal.async.PromiseImpl;
 import cn.jmicro.api.mng.LogFileEntry;
+import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.objectfactory.AbstractClientServiceProxyHolder;
 import cn.jmicro.api.registry.IServiceListener;
 import cn.jmicro.mng.api.IAgentLogService;
 
 @Component(level=20001)
-@Service(version="0.0.1", external=true, debugMode=0, showFront=false)
+@Service(version="0.0.1", external=true, debugMode=0, showFront=false,logLevel=MC.LOG_NO)
 public class AgentLogServiceImpl implements IAgentLogService {
 
 	private final Logger logger = LoggerFactory.getLogger(AgentLogServiceImpl.class);

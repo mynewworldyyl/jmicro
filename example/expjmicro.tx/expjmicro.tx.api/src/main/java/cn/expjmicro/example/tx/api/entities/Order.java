@@ -16,4 +16,6 @@ public class Order {
 	private int num;
 	
 	private double amount;
+	
+	private long txid;
 }

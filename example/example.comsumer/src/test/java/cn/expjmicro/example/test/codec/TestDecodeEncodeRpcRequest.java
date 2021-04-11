@@ -28,7 +28,7 @@ public class TestDecodeEncodeRpcRequest extends JMicroBaseTestCase {
 		req.setArgs(args);
 		req.setRequestId(22L);
 		req.setTransport(Constants.TRANSPORT_NETTY);
-		req.setImpl("fsafd");
+		req.setImpl(22);
 		
 		PrefixTypeEncoderDecoder ed = of.get(PrefixTypeEncoderDecoder.class);
 		

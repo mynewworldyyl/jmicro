@@ -20,4 +20,13 @@ public class TxPaymentService$JMAsyncClientImpl extends AbstractClientServicePro
   public IPromise<Resp> payJMAsync(Payment p, Object context) {
     return this.proxyHolder.invoke("payJMAsync",context,(java.lang.Object)(p));
   }
+
+  public IPromise payAsy(Payment p) {
+    return (cn.jmicro.api.async.IPromise<cn.jmicro.api.Resp<java.lang.Boolean>>) this.proxyHolder.invoke("payAsy",null, (java.lang.Object)(p));
+  }
+
+  @WithContext
+  public IPromise payAsyJMAsync(Payment p, Object context) {
+    return this.proxyHolder.invoke("payAsyJMAsync",context,(java.lang.Object)(p));
+  }
 }

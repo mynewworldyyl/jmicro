@@ -108,7 +108,7 @@ public class TestPubsub extends JMicroBaseTestCase{
 		req.setArgs(args);
 		req.setRequestId(22L);
 		req.setTransport(Constants.TRANSPORT_NETTY);
-		req.setImpl("fsafd");
+		req.setImpl(66);
 		
 		req.putObject(JMicroContext.LOGIN_KEY, "testlogin012");
 		
@@ -172,7 +172,7 @@ public class TestPubsub extends JMicroBaseTestCase{
 		req.setArgs(args);
 		req.setRequestId(22L);
 		req.setTransport(Constants.TRANSPORT_NETTY);
-		req.setImpl("fsafd");
+		req.setImpl(88);
 		
 		JDataOutput jo = new JDataOutput();
 		

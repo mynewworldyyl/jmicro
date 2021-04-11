@@ -19,22 +19,20 @@ package cn.jmicro.api;
 import java.lang.reflect.Field;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Stack;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import cn.jmicro.api.config.Config;
 import cn.jmicro.api.idgenerator.ComponentIdServer;
+import cn.jmicro.api.monitor.JMLogItem;
+import cn.jmicro.api.monitor.JMStatisItem;
 import cn.jmicro.api.monitor.LG;
 import cn.jmicro.api.monitor.Linker;
 import cn.jmicro.api.monitor.LogMonitorClient;
 import cn.jmicro.api.monitor.MC;
-import cn.jmicro.api.monitor.MCA;
-import cn.jmicro.api.monitor.MCConfig;
-import cn.jmicro.api.monitor.JMLogItem;
-import cn.jmicro.api.monitor.JMStatisItem;
 import cn.jmicro.api.monitor.MT;
+import cn.jmicro.api.monitor.OneLog;
 import cn.jmicro.api.monitor.StatisMonitorClient;
 import cn.jmicro.api.net.ISession;
 import cn.jmicro.api.net.Message;
@@ -107,10 +105,25 @@ public class JMicroContext  {
 	
 	//private final Stack<Map<String,Object>> ctxes = new Stack<>();
 	
+	private static LogMonitorClient lo;
+	
+	private static StatisMonitorClient mo;
+	
+	private static boolean isReady = false;
+	
 	//当前上下文
 	protected final Map<String,Object> curCxt = new HashMap<String,Object>();
 	
 	private JMicroContext() {}
+	
+	public static void ready0(LogMonitorClient loo,StatisMonitorClient moo) {
+		if(isReady) {
+			return;
+		}
+		isReady = true;
+		lo = loo;
+		mo = moo;
+	}
 	
 	public JMLogItem getMRpcLogItem() {
 		//使用者需要调用isMonitor()或isDebug()判断是否可用状态
@@ -121,10 +134,21 @@ public class JMicroContext  {
 		return this.getParam(MRPC_STATIS_ITEM, null);
 	}
 	
-	public void submitMRpcItem(LogMonitorClient mo,StatisMonitorClient smc) {
+	public void submitMRpcItem() {
+		if(!isReady) {
+			logger.warn("Monitor server client not ready yet!");
+			return;
+		}
 		
 		JMLogItem item = getMRpcLogItem();
-		if(item != null && item.getItems() != null && item.getItems().size() > 0 ) {
+		if(item != null ) {
+			JMicroContext.get().removeParam(MRPC_LOG_ITEM);
+			
+			/*if(item.getItems().size() == 0 && this.getBoolean(Constants.NEW_LINKID,false)) {
+				OneLog lo = item.addOneItem(deftLogLevel, JMicroContext.class.getName(),"nl",TimeUtils.getCurTime());
+				//lo.setType(MC.INVALID_VAL);
+			}*/
+			
 			if(StringUtils.isEmpty(item.getActName())) {
 				ActInfo ai = this.getAccount();
 				if(ai != null) {
@@ -135,8 +159,7 @@ public class JMicroContext  {
 			}
 			LG.setCommon(item);
 			item.setCostTime(System.currentTimeMillis() - item.getCreateTime());
-			mo.readySubmit(item);
-			JMicroContext.get().removeParam(MRPC_LOG_ITEM);
+			lo.readySubmit(item);
 		}
 	
 		
@@ -144,6 +167,7 @@ public class JMicroContext  {
 			JMStatisItem sItem = getMRpcStatisItem();
 			if(sItem != null && sItem.getTypeStatis() != null 
 					&& !sItem.getTypeStatis().isEmpty()) {
+				JMicroContext.get().removeParam(MRPC_STATIS_ITEM);
 				if(StringUtils.isEmpty(item.getActName())) {
 					ActInfo ai = this.getAccount();
 					if(ai != null) {
@@ -154,8 +178,7 @@ public class JMicroContext  {
 				}
 				MT.setCommon(sItem);
 				sItem.setCostTime(TimeUtils.getCurTime() - sItem.getCreateTime());
-				smc.readySubmit(sItem);
-				JMicroContext.get().removeParam(MRPC_STATIS_ITEM);
+				mo.readySubmit(sItem);
 			}
 		}
 	}
@@ -213,7 +236,7 @@ public class JMicroContext  {
 		return !isCallSideService();
 	}
 	
-	public static void configProvider(ISession s,Message msg) {
+	public static void configProvider(ISession s,Message msg,ServiceMethod sm) {
 		
 		JMicroContext context = get();
 		
@@ -222,7 +245,7 @@ public class JMicroContext  {
 		setCallSide(true);
 		
 		context.setParam(JMicroContext.SESSION_KEY, s);
-			
+		
 		context.setParam(JMicroContext.REMOTE_HOST, s.remoteHost());
 		context.setParam(JMicroContext.REMOTE_PORT, s.remotePort());
 		context.setParam(JMicroContext.REMOTE_INS_ID, msg.getInsId());
@@ -230,15 +253,32 @@ public class JMicroContext  {
 		context.setParam(JMicroContext.LOCAL_HOST, s.localHost());
 		context.setParam(JMicroContext.LOCAL_PORT, s.localPort()+"");
 		
-		context.setParam(JMicroContext.LINKER_ID, msg.getLinkId());
-		context.setParam(Constants.NEW_LINKID, false);
+		int logLevel =  msg.getLogLevel();
 		
-		context.setParam(JMicroContext.SM_LOG_LEVEL, msg.getLogLevel());
+		if(logLevel != MC.LOG_NO) {
+			context.setParam(JMicroContext.LINKER_ID, msg.getLinkId());
+			context.setParam(Constants.NEW_LINKID, false);
+		}
+		
+		context.setParam(JMicroContext.SM_LOG_LEVEL,logLevel);
+		
+		boolean iMonitorable = false;
+		boolean isDebug = false;
+		
+		if(msg.getType() == Constants.MSG_TYPE_REQ_RAW) {
+			iMonitorable = sm.getMonitorEnable() == 1;
+			isDebug = sm.getDebugMode() == 1;
+			logLevel = sm.getLogLevel();
+		} else {
+			iMonitorable = msg.isMonitorable();
+			logLevel = msg.getLogLevel();
+			isDebug = msg.isDebugMode();
+		}
 		
 		//context.isLoggable = msg.isLoggable();
 		//debug mode 下才有效
-		context.setParam(IS_DEBUG, msg.isDebugMode());
-		if(msg.isDebugMode()) {
+		context.setParam(IS_DEBUG, isDebug);
+		if(isDebug) {
 			//long clientTime = msg.getTime();
 			StringBuilder sb = new StringBuilder();
 			long curTime = TimeUtils.getCurTime();
@@ -248,13 +288,12 @@ public class JMicroContext  {
 			context.setParam(DEBUG_LOG, sb);
 		}
 		
-		boolean iMonitorable = msg.isMonitorable();
 		context.setParam(IS_MONITORENABLE, iMonitorable);
 		if(iMonitorable) {
 			initMrpcStatisItem();
 		}
 		
-		if(msg.getLogLevel() != MC.LOG_NO) {
+		if(logLevel != MC.LOG_NO) {
 			initMrpcLogItem(true);
 		}
 	}
@@ -303,7 +342,7 @@ public class JMicroContext  {
 		}
 		
 		item.setProvider(sideProdiver);
-		item.setReqParentId(context.getLong(REQ_PARENT_ID, 0L));
+		item.setReqParentId(context.getLong(REQ_PARENT_ID, -1L));
 	}
 	
 	public static boolean enableOrDisable(int siCfg,int smCfg) {
@@ -323,14 +362,16 @@ public class JMicroContext  {
 		}
 		
 		context.setParam(JMicroContext.REMOTE_INS_ID, si.getInsId());
-		
+		int level = sm.getLogLevel()==MC.LOG_DEPEND?si.getLogLevel():sm.getLogLevel();
+		context.setInt(JMicroContext.SM_LOG_LEVEL, level);
+
 		boolean iMonitorable = enableOrDisable(si.getMonitorEnable(),sm.getMonitorEnable());
 		context.setParam(IS_MONITORENABLE, iMonitorable);
 		if(iMonitorable) {
-			initMrpcStatisItem() ;
+			initMrpcStatisItem();
 		}
 		
-		if(sm.getLogLevel() != MC.LOG_NO) {
+		if(level != MC.LOG_NO) {
 			initMrpcLogItem(false);
 			JMLogItem mi = context.getMRpcLogItem();
 			if(mi != null) {
@@ -352,18 +393,24 @@ public class JMicroContext  {
 		return get().exists(LINKER_ID);
 	}
 	
-	public static Long lid(){
-		JMicroContext c = get();
-		Long id = c.getLong(LINKER_ID, null);
-		if(id != null) {
+	public static Long createLid(){
+		
+		Long id = lid();
+		if(id > 0) {
 			return id;
 		}
+		
+		JMicroContext c = get();
 		ComponentIdServer idGenerator = EnterMain.getObjectFactory().get(ComponentIdServer.class);
 		if(idGenerator != null) {
 			id = idGenerator.getLongId(Linker.class);
 			c.setLong(LINKER_ID, id);
 		}
 		return id;
+	}
+	
+	public static long lid(){
+		return get().getLong(LINKER_ID, -1L);
 	}
 	
 	/**
@@ -527,6 +574,11 @@ public class JMicroContext  {
 	}
 	
 	public void setInt(String key,int defautl){
+		checkPermission(key);
+	    this.setParam(key,defautl);
+	}
+	
+	public void setByte(String key,byte defautl){
 		checkPermission(key);
 	    this.setParam(key,defautl);
 	}

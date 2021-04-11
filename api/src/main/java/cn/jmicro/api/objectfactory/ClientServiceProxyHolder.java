@@ -68,6 +68,8 @@ public class ClientServiceProxyHolder implements IServiceListener{
 	
 	private boolean direct = false;
 	
+	private int insId = -1;
+	
 	private String blPkgName;
 	
 	private InvocationHandler targetHandler = null;
@@ -78,6 +80,10 @@ public class ClientServiceProxyHolder implements IServiceListener{
 
 	public void setOf(IObjectFactory of) {
 		this.of = of;
+	}
+	
+	public int getInsId() {
+		return insId;
 	}
 	
 	@Override
@@ -229,8 +235,7 @@ public class ClientServiceProxyHolder implements IServiceListener{
 			cxt.setParam(Constants.SERVICE_METHOD_KEY, sm);
 			cxt.setParam(Constants.SERVICE_ITEM_KEY, si);
 			cxt.setParam(JMicroContext.LOCAL_HOST, Config.getExportSocketHost());
-			cxt.setParam(JMicroContext.SM_LOG_LEVEL, sm.getLogLevel());
-
+			
 			if(JMicroContext.get().getParam(Constants.DIRECT_SERVICE_ITEM, null) == null) {
 				if(isDirect()){
 					sdirect = true;
@@ -304,7 +309,10 @@ public class ClientServiceProxyHolder implements IServiceListener{
 
 		synchronized(this) {
 			if(this.item == null) {
-				this.item = getItemFromRegistry();
+				ServiceItem si = getItemFromRegistry();
+				if(si != null) {
+					this.setItem(si);
+				}
 			}
 		}
 		return this.item != null;
@@ -413,22 +421,23 @@ public class ClientServiceProxyHolder implements IServiceListener{
 	//public abstract  boolean enable();
 	//public abstract void enable(boolean enable);
 	
-	public  void setItem(ServiceItem item){
-		if(this.item != null) {
+	public  void setItem(ServiceItem si){
+		if(si != null) {
 			if(StringUtils.isEmpty(this.ns)) {
-				this.ns = item.getKey().getNamespace();
+				this.ns = si.getKey().getNamespace();
 			}
 			
 			if(StringUtils.isEmpty(this.v)) {
-				this.ns = item.getKey().getVersion();
+				this.ns = si.getKey().getVersion();
 			}
 			
 			if(StringUtils.isEmpty(this.sn)) {
-				this.ns = item.getKey().getServiceName();
+				this.ns = si.getKey().getServiceName();
 			}
+			this.insId =si.getInsId();
 		}
 	
-		this.item = item;
+		this.item = si;
 	}
 	
 	public  ServiceItem getItem(){

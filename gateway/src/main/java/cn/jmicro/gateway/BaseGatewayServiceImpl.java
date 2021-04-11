@@ -10,9 +10,10 @@ import cn.jmicro.api.annotation.Inject;
 import cn.jmicro.api.annotation.SMethod;
 import cn.jmicro.api.annotation.Service;
 import cn.jmicro.api.gateway.IBaseGatewayService;
+import cn.jmicro.api.monitor.MC;
 import cn.jmicro.common.util.HashUtils;
 
-@Service(external=true,version="0.0.1")
+@Service(external=true,version="0.0.1",logLevel=MC.LOG_NO,showFront=false)
 @Component
 public class BaseGatewayServiceImpl implements IBaseGatewayService {
 

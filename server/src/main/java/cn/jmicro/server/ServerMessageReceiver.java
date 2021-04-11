@@ -78,12 +78,6 @@ public class ServerMessageReceiver implements IMessageReceiver{
 	@Cfg("/ServerMessageReceiver/openDebug")
 	private boolean openDebug;
 	
-	@Inject(required=false)
-	private LogMonitorClient logMonitor;
-	
-	@Inject(required=false)
-	private StatisMonitorClient monitor;
-	
 	@Inject
 	private ICodecFactory codecFactory;
 	
@@ -186,7 +180,7 @@ public class ServerMessageReceiver implements IMessageReceiver{
 			if(sm == null) {
 				sm = srvMng.getServiceMethodWithHashBySearch(msg.getSmKeyCode());
 				String errMsg = "Invalid message method code: [" + msg.toString() + "]";
-				errMsg += ",client host: " + s.remoteHost()+",remotePort: " + s.remotePort();
+				errMsg += ",client host: " + s.remoteHost()+",remotePort: " + s.remotePort()+",from insId: " + msg.getInsId();
 				
 				if(sm != null) {
 					errMsg += ", sm key: " + sm.getKey().toKey(true, true, true);
@@ -197,6 +191,7 @@ public class ServerMessageReceiver implements IMessageReceiver{
 				return;
 			}
 		}
+		
 		//确保服务器对称密钥一定是最新的
 		try {
 			secretMng.updateSecret(msg);
@@ -223,7 +218,7 @@ public class ServerMessageReceiver implements IMessageReceiver{
 				if(sm.getKey().getSnvHash() != msg.getSmKeyCode()) {
 					String errMsg = "Invalid service method code: [" + msg.getSmKeyCode() + "] but target [" + sm.getKey().getSnvHash()+"] ";
 					errMsg += ", client host: " + s.remoteHost();
-					errMsg += ", smKey: " + sm.getKey().toKey(true, true, true);
+					errMsg += ", smKey: " + sm.getKey().toKey(true, true, true)+",from insId: " + msg.getInsId();
 					LG.log(MC.LOG_ERROR, TAG, errMsg);
 					logger.error(errMsg);
 					return;
@@ -259,7 +254,7 @@ public class ServerMessageReceiver implements IMessageReceiver{
 	public void doReceive(JMicroTask task){
 		Message msg = task.msg;
 		IServerSession s = task.s;
-		JMicroContext.configProvider(s,msg);
+		JMicroContext.configProvider(s,msg,task.sm);
 		if(task.sm != null) {
 			JMicroContext.get().setParam(Constants.SERVICE_METHOD_KEY, task.sm);
 		}
@@ -283,17 +278,19 @@ public class ServerMessageReceiver implements IMessageReceiver{
 			
 			IMessageHandler h = handlers.get(msg.getType());
 			if(h == null) {
-				String errMsg = "Message type ["+Integer.toHexString(msg.getType())+"] handler not found!";
+				String errMsg = "Message type ["+Integer.toHexString(msg.getType())+"] handler not found!"+",from insId: " + msg.getInsId();
 				MT.rpcEvent(MC.MT_HANDLER_NOT_FOUND);
 				LG.log(MC.LOG_ERROR, TAG,errMsg,null);
 				responseException(msg,s,null);
+				JMicroContext.get().submitMRpcItem();
 			} else {
 				h.onMessage(s, msg);
 			}
 		} catch (Throwable e) {
 			MT.rpcEvent(MC.MT_SERVER_ERROR);
-			LG.log(MC.LOG_ERROR, TAG,e.getMessage(),e);
+			LG.log(MC.LOG_ERROR, TAG,e.getMessage()+",from insId: " + msg.getInsId(),e);
 			responseException(msg,s,e);
+			JMicroContext.get().submitMRpcItem();
 		} finally {
 			offerTask(task);
 		}
@@ -306,7 +303,7 @@ public class ServerMessageReceiver implements IMessageReceiver{
 		
 		if(msg.isNeedResponse()) {
 			RpcResponse resp = null;
-			String errMsg = e == null?"":e.getMessage();
+			String errMsg = e == null?"from insId: " + msg.getInsId():e.getMessage()+",from insId: " + msg.getInsId();
 			if(e instanceof CommonException) {
 				CommonException ce = (CommonException)e;
 				resp = new RpcResponse(msg.getReqId(),new ServerError(ce.getKey(),errMsg));

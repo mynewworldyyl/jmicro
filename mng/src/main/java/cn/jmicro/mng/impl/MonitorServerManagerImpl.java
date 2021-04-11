@@ -29,8 +29,8 @@ import cn.jmicro.api.security.PermissionManager;
 import cn.jmicro.common.util.StringUtils;
 
 @Component
-@Service(version="0.0.1",debugMode=1,timeout=10000,
-monitorEnable=0, logLevel=MC.LOG_ERROR, retryCnt=0, external=true,showFront=false)
+@Service(version="0.0.1",debugMode=1,timeout=10000,logLevel=MC.LOG_NO,
+monitorEnable=0,retryCnt=0, external=true,showFront=false)
 public class MonitorServerManagerImpl implements IMonitorServerManager{
 	
 	private final static Logger logger = LoggerFactory.getLogger(MonitorServerManagerImpl.class);

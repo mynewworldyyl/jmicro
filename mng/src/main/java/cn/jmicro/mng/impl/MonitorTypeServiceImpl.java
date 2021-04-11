@@ -26,8 +26,8 @@ import cn.jmicro.common.Constants;
 import cn.jmicro.common.util.StringUtils;
 
 @Component
-@Service(version = "0.0.1", debugMode = 1,timeout=10000,
-monitorEnable = 0, logLevel = MC.LOG_ERROR, retryCnt = 0,external=true,showFront=false)
+@Service(version = "0.0.1", debugMode = 1,logLevel=MC.LOG_NO,timeout=10000,
+monitorEnable = 0,  retryCnt = 0,external=true,showFront=false)
 public class MonitorTypeServiceImpl implements IMonitorTypeService {
 
 	@Cfg(value="/adminPermissionLevel",defGlobal=true)

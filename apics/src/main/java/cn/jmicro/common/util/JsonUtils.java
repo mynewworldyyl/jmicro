@@ -85,6 +85,11 @@ public class JsonUtils {
 		return JsonUtils.getIns().fromJson(json, type);
 	}
 	
+	public Object[] getObjectArray(String json,boolean innerJson) {
+		Type type = new TypeToken<Object[]>(){}.getType();
+		return JsonUtils.getIns().fromJson(json, type);
+	}
+	
 	
 	public String toJson(Object obj) {
 		if(obj == null) {

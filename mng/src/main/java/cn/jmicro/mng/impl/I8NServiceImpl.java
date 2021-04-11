@@ -7,11 +7,12 @@ import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Inject;
 import cn.jmicro.api.annotation.SMethod;
 import cn.jmicro.api.annotation.Service;
+import cn.jmicro.api.monitor.MC;
 import cn.jmicro.mng.api.II8NService;
 import cn.jmicro.mng.i18n.I18NManager;
 
 @Component
-@Service(external=true,showFront=true,version="0.0.1")
+@Service(external=true,showFront=false,version="0.0.1",logLevel=MC.LOG_NO)
 public class I8NServiceImpl implements II8NService {
 
 	@Inject

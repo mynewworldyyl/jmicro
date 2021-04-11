@@ -19,6 +19,7 @@ import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Inject;
 import cn.jmicro.api.annotation.SMethod;
 import cn.jmicro.api.annotation.Service;
+import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.persist.IObjectStorage;
 import cn.jmicro.api.pubsub.PSData;
 import cn.jmicro.api.pubsub.PubSubManager;
@@ -28,7 +29,7 @@ import cn.jmicro.mng.api.IPSDataService;
 import cn.jmicro.mng.api.PSDataVo;
 
 @Component(level=20001)
-@Service(version="0.0.1", external=true, debugMode=0, showFront=false)
+@Service(version="0.0.1", external=true, debugMode=0, showFront=false,logLevel=MC.LOG_NO)
 public class PSDataServiceImpl implements IPSDataService {
 
 	private JsonWriterSettings settings = JsonWriterSettings.builder()

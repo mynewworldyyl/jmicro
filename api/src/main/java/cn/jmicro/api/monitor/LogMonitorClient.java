@@ -34,6 +34,7 @@ import cn.jmicro.api.async.AsyncFailResult;
 import cn.jmicro.api.basket.BasketFactory;
 import cn.jmicro.api.basket.IBasket;
 import cn.jmicro.api.config.Config;
+import cn.jmicro.api.exception.RpcException;
 import cn.jmicro.api.executor.ExecutorConfig;
 import cn.jmicro.api.executor.ExecutorFactory;
 import cn.jmicro.api.monitor.genclient.ILogMonitorServer$JMAsyncClient;
@@ -176,6 +177,11 @@ public class LogMonitorClient {
 			return false;
 		}
 		
+		if(item.getLinkId() == 0 && item.getReqId() == 0 && item.getItems().size() == 0) {
+			//非RPC空日志
+			return false;
+		}
+		
 		if(checkMaxSize(item)) {
 			logger.warn("Too max message: " + item);
 			return false;
@@ -211,6 +217,10 @@ public class LogMonitorClient {
 	public boolean readySubmit(JMLogItem item) {
 		if(!checkerWorking || !this.monitorServer.isReady()) {
 			return false;
+		}
+		
+		if(item.getLinkId() == 0 && item.getReqId() == 0 && item.getItems().size() == 0) {
+			return false;//非RPC空日志
 		}
 		
 		if(checkMaxSize(item)) {
@@ -472,11 +482,7 @@ public class LogMonitorClient {
 				size += len;
 			}
 		}
-		
-		if(copy.getItems().size() > 0) {
-			readySubmit(copy);
-		}
-		
+		readySubmit(copy);
 	}
 
 	private int getItemSize(JMLogItem mi) {
@@ -596,7 +602,17 @@ public class LogMonitorClient {
 					statusMonitorAdapter.getServiceCounter().add(MC.Ms_TaskFailItemCnt, items.length);
 					//statusMonitorAdapter.getServiceCounter().add(MonitorConstant.Ms_TaskExceptionCount, items.length);
 				}
-				logger.error("MonitorClient.worker.run",e);
+				if(e instanceof RpcException) {
+					RpcException rpce = (RpcException)e;
+					if(rpce.getKey() == MC.MT_PACKET_TOO_MAX) {
+						logger.error("MonitorClient.worker.run",e.getMessage());
+					}else {
+						logger.error("MonitorClient.worker.run",e);
+					}
+				}else {
+					logger.error("MonitorClient.worker.run",e);
+				}
+				
 			}
 		}
 	}

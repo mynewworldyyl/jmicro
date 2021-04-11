@@ -25,7 +25,7 @@
                             </td>
                             <td class="td8"> {{model.item.createTime|formatDate}}</td>
                             <td class="td9">
-                                <a v-if="model.item.reqParentId <= 0" class="reset" href="javascript:;" @click="viewDetail(model)">DETAIL</a>
+                                <a class="reset" href="javascript:;" @click="viewDetail(model)">DETAIL</a>
                                <!-- <i class="line"></i>
                                 <a class="reset" href="javascript:;" @click="callMethod(model)">CALL</a>-->
                             </td>

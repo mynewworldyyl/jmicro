@@ -63,12 +63,6 @@ public class ServiceInvocationHandler implements InvocationHandler{
 	private ComponentIdServer idGenerator;
 	
 	@Inject
-	private LogMonitorClient logMonitor;
-	
-	@Inject
-	private StatisMonitorClient monitor;
-	
-	@Inject
 	private ProcessInfo pi;
 	
 	//private Set<Long> ids = new HashSet<>();
@@ -79,11 +73,11 @@ public class ServiceInvocationHandler implements InvocationHandler{
 		
 		RpcRequest req = null;
 		JMicroContext cxt = JMicroContext.get();
-		
+		ServiceMethod sm = null;
 		try {
 			
 			ServiceItem si = cxt.getParam(Constants.SERVICE_ITEM_KEY, null);
-			ServiceMethod sm = cxt.getParam(Constants.SERVICE_METHOD_KEY, null);
+			sm = cxt.getParam(Constants.SERVICE_METHOD_KEY, null);
 			req = new RpcRequest();
 			req.setSm(sm);
 			req.setArgs(args);
@@ -94,7 +88,7 @@ public class ServiceInvocationHandler implements InvocationHandler{
 				ids.add(req.getRequestId());
 			}*/
 			req.setTransport(Constants.TRANSPORT_NETTY);
-			req.setImpl(si.getImpl());
+			req.setImpl(si.getCode());
 			req.putObject(JMicroContext.LOGIN_KEY, cxt.getString(JMicroContext.LOGIN_KEY, null));
 			
 			if(JMicroContext.get().exists(TxConstants.TYPE_TX_KEY)) {
@@ -111,14 +105,16 @@ public class ServiceInvocationHandler implements InvocationHandler{
 				}
 			}
 			
-			req.setReqParentId(cxt.getLong(JMicroContext.REQ_PARENT_ID, 0L));
+			req.setReqParentId(cxt.getLong(JMicroContext.REQ_PARENT_ID, -1L));
 			
-			if(!JMicroContext.existLinkId() ) {
+			if(!JMicroContext.existLinkId() && cxt.getInt(JMicroContext.SM_LOG_LEVEL, MC.LOG_NO) != MC.LOG_NO) {
 				//新建一个RPC链路开始
-				JMicroContext.lid();
+				Long lid = JMicroContext.createLid();
 				cxt.setParam(Constants.NEW_LINKID, true);
 				//MT.rpcEvent(MC.MT_LINK_START);
-				LG.log(MC.LOG_DEBUG,TAG.getName(),MC.MT_LINK_START);
+				if(LG.isLoggable(MC.LOG_DEBUG)) {
+					LG.log(MC.LOG_DEBUG,TAG,"Link start: " + lid+",reqId: " +req.getRequestId() );
+				}
 			} else {
 				cxt.setParam(Constants.NEW_LINKID, false);
 			}
@@ -129,6 +125,7 @@ public class ServiceInvocationHandler implements InvocationHandler{
 				mi.setReqId(req.getRequestId());
 				mi.setLinkId(JMicroContext.lid());
 				mi.setReqParentId(req.getReqParentId());
+				mi.setNl(cxt.getBoolean(Constants.NEW_LINKID, false));
 			}
 			
 			/*MRpcStatisItem ms = cxt.getMRpcStatisItem();
@@ -150,7 +147,10 @@ public class ServiceInvocationHandler implements InvocationHandler{
 			
 		} catch(Throwable ex) {
 			cxt.debugLog(0);
-			cxt.submitMRpcItem(logMonitor,monitor);
+			if(sm.getLogLevel() != MC.LOG_NO) {
+				cxt.submitMRpcItem();
+			}
+			
 			JMicroContext.clear();
 			if(ex instanceof CommonException) {
 				throw ex;

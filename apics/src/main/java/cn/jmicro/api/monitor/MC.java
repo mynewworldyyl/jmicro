@@ -342,6 +342,8 @@ public final class MC {
 	
 	public static final short KEEP_MAX_VAL = 0x0FFF;
 	
+	public static final short INVALID_VAL = -32768;
+	
 	//每秒响应数定义为 QPS？ 
 	//public static final short STATIS_QPS = 9;
 	
@@ -349,6 +351,9 @@ public final class MC {
 	
     //日志级别
 	//0表示禁止日志监控
+	
+	public static final byte LOG_DEPEND = -1;
+	
 	public static final byte LOG_NO = 0;
 	  
     public static final byte LOG_TRANCE = 1;

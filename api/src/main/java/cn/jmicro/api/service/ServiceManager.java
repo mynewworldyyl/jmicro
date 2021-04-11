@@ -59,7 +59,7 @@ import cn.jmicro.common.util.StringUtils;
  * @author Yulei Ye
  * @date 2018年12月3日 下午1:52:47
  */
-@Component
+@Component(limit2Packages="cn.jmicro")
 public class ServiceManager {
 
 	private final static Logger logger = LoggerFactory.getLogger(ServiceManager.class);
@@ -183,9 +183,9 @@ public class ServiceManager {
 			return;
 		}
 		
-		/*if(path.contains("IAccountService")) {
-			logger.info("" + path);
-		}*/
+		if("cn.jmicro.api.tx.ITransactionResource".equals(si.getKey().getServiceName())) {
+			logger.debug("test debug");
+		}
 		
 		if(!PermissionManager.checkClientPermission(Config.getClientId(), si.getClientId())) {
 			logger.info("No permisstion for: " + path);

@@ -23,4 +23,6 @@ package cn.jmicro.api.net;
  */
 public interface IResp {
 
+	Object getResult();
+	
 }

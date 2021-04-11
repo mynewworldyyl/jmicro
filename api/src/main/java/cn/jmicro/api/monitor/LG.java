@@ -24,7 +24,6 @@ import java.util.Iterator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import cn.jmicro.api.EnterMain;
 import cn.jmicro.api.JMicroContext;
 import cn.jmicro.api.choreography.ProcessInfo;
 import cn.jmicro.api.config.Config;
@@ -35,6 +34,7 @@ import cn.jmicro.api.net.IResp;
 import cn.jmicro.api.net.Message;
 import cn.jmicro.api.net.RpcRequest;
 import cn.jmicro.api.net.RpcResponse;
+import cn.jmicro.api.objectfactory.IObjectFactory;
 import cn.jmicro.api.registry.ServiceMethod;
 import cn.jmicro.api.security.ActInfo;
 import cn.jmicro.api.utils.TimeUtils;
@@ -60,25 +60,28 @@ public class LG {
 	
 	private static JMLogItem beforeInitItem = null;
 	
-	public static boolean log(byte level,String tag,String desc,short type) {
+	/*public static boolean log(byte level,String tag,String desc,short type) {
 		return log(level,tag,desc,null,type);
-	}
+	}*/
 	
 	public static boolean log(byte level,Class<?> tag,String desc) {
-		return log(level,tag.getName(),desc,null,MC.MT_DEFAULT);
+		return log(level,tag.getName(),desc,null);
 	}
 	
 	public static boolean log(byte level,Class<?> tag,String desc,Throwable exp) {
-		return log(level,tag.getName(),desc,exp,MC.MT_DEFAULT);
+		return log(level,tag.getName(),desc,exp);
 	}
 	
-	public static boolean log(byte level,String tag,short type) {
-		return log(level,tag,"",null,type);
+	public static boolean log(byte level,String tag,String desc) {
+		return log(level,tag,desc,null);
 	}
 	
-	public static boolean log(byte level,String tag,String desc,Throwable exp,short type) {
+	public static boolean log(byte level,String tag,String desc,Throwable exp) {
 
 		if(!isLoggable(level)) {
+			if(level >= MC.LOG_ERROR) {
+				logger.error(tag+" : "+ desc,exp);
+			}
 			return false;
 		}
 
@@ -101,7 +104,7 @@ public class LG {
 		}
 		
 		OneLog oi = mi.addOneItem(level, tag,desc);
-		oi.setType(type);
+		//oi.setType(type);
 		setStackTrance(oi,4);
 		
 		if(exp != null) {
@@ -223,7 +226,6 @@ public class LG {
 		}
 
 		OneLog oi = mi.addOneItem(level, tag,desc);
-		oi.setType(type);
 		setStackTrance(oi,4);
 		if(exp != null) {
 			oi.setEx(serialEx(exp));
@@ -265,7 +267,7 @@ public class LG {
 			ServiceMethod sm = (ServiceMethod)JMicroContext.get().getObject(Constants.SERVICE_METHOD_KEY, null);
 			if(si.getSmKey() == null && sm != null) {
 				si.setSmKey(sm.getKey());
-				si.setLogLevel(sm.getLogLevel());
+				//si.setLogLevel(sm.getLogLevel());
 			}
 		}
 		
@@ -275,13 +277,17 @@ public class LG {
 	}
 	
 	
-	public static void initLog() {
+	public static void initLog(IObjectFactory of) {
 		if(isInit) return;
-
+		
 		isInit = true;
-		m = EnterMain.getObjectFactory().get(LogMonitorClient.class);
+		
+		m = of.get(LogMonitorClient.class);
+		
+		JMicroContext.ready0(of.get(LogMonitorClient.class), of.get(StatisMonitorClient.class));
+		
 		//isMs = m != null;
-		pi = EnterMain.getObjectFactory().get(ProcessInfo.class);
+		pi = of.get(ProcessInfo.class);
 		if(beforeInitItem != null) {
 			Iterator<OneLog> items = beforeInitItem.getItems().iterator();
 			while(items.hasNext()) {
@@ -314,11 +320,9 @@ public class LG {
 			return true;
 		}
 		
-		byte rpcLevel = pi.getLogLevel();
+		int rpcLevel = pi.getLogLevel();
 		if(rpcMethodLevel == null || rpcMethodLevel.length == 0) {
-			if(JMicroContext.existRpcContext()) {
-				rpcLevel = JMicroContext.get().getParam(JMicroContext.SM_LOG_LEVEL, rpcLevel);
-			}
+			rpcLevel = JMicroContext.get().getParam(JMicroContext.SM_LOG_LEVEL, rpcLevel);
 		} else {
 			rpcLevel = (byte)rpcMethodLevel[0];
 		}
@@ -335,6 +339,7 @@ public class LG {
 		sb.append(",linkId:").append(msg.getLinkId());
 		sb.append(",instanceName:").append(msg.getInsId());
 		sb.append(",method:").append(msg.getMethod());
+		sb.append(", from insId: ").append(msg.getInsId());
 		if(msg.getTime() > 0) {
 			sb.append(",cost:").append(TimeUtils.getCurTime() - msg.getTime());
 		}

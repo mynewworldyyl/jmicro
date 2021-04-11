@@ -11,6 +11,7 @@ import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Inject;
 import cn.jmicro.api.annotation.SMethod;
 import cn.jmicro.api.annotation.Service;
+import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.profile.KV;
 import cn.jmicro.api.profile.ProfileManager;
 import cn.jmicro.api.raft.IDataOperator;
@@ -20,7 +21,7 @@ import cn.jmicro.common.util.StringUtils;
 import cn.jmicro.mng.api.IProfileService;
 
 @Component
-@Service(version="0.0.1",retryCnt=0,external=true,debugMode=0,showFront=false)
+@Service(version="0.0.1",retryCnt=0,external=true,debugMode=0,showFront=false,logLevel=MC.LOG_NO)
 public class ProfileServiceImpl implements IProfileService {
 
 	@Inject

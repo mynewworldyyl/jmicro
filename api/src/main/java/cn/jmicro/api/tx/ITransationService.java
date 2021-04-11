@@ -1,6 +1,7 @@
 package cn.jmicro.api.tx;
 
 import cn.jmicro.api.Resp;
+import cn.jmicro.api.async.IPromise;
 import cn.jmicro.codegenerator.AsyncClientProxy;
 
 /**
@@ -22,7 +23,7 @@ public interface ITransationService {
 	 * @param txId
 	 * @return
 	 */
-	public Resp<Boolean> end(long txId);
+	//public IPromise<Resp<Boolean>> end(long txId);
 	
 	/**
 	 * 

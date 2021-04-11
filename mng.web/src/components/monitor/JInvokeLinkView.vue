@@ -256,6 +256,9 @@
             refresh() {
                 let self = this;
                 let params = this.getQueryConditions();
+                this.$emit("refreshLinkItemList");
+                this.logList = [];
+
                 window.jm.mng.logSrv.count(params).then((resp)=>{
                     if(resp.code != 0) {
                         self.$Message.success(resp.msg);

@@ -44,7 +44,7 @@ import cn.jmicro.common.util.JsonUtils;
 import cn.jmicro.common.util.StringUtils;
 
 @Component
-@Service( version="0.0.1",retryCnt=0,external=true,debugMode=1,showFront=false)
+@Service(version="0.0.1",retryCnt=0,external=true,debugMode=1,showFront=false,logLevel=MC.LOG_NO)
 public class ChoreographyServiceImpl implements IChoreographyService {
 
 	private final static Logger logger = LoggerFactory.getLogger(ChoreographyServiceImpl.class);

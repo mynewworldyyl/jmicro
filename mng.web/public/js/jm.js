@@ -27,8 +27,8 @@ jm.mng = {
     },
 
     srv : {
-        getServices: function (){
-            return jm.rpc.callRpcWithParams(this.sn,this.ns,this.v,'getServices',[]);
+        getServices: function (all){
+            return jm.rpc.callRpcWithParams(this.sn,this.ns,this.v,'getServices',[all]);
         },
 
         updateItem: function (si){
@@ -580,8 +580,8 @@ jm.mng = {
             return jm.rpc.callRpcWithParams(this.sn, this.ns, this.v, 'getByLinkId', [linkId]);
         },
 
-        countLog: function (params) {
-            return jm.rpc.callRpcWithParams(this.sn, this.ns, this.v, 'countLog', [params]);
+        countLog: function (showType,params) {
+            return jm.rpc.callRpcWithParams(this.sn, this.ns, this.v, 'countLog', [showType,params]);
         },
 
         queryLog: function (params,pageSize,curPage) {
@@ -858,7 +858,7 @@ jm.mng = {
         },
 
         sn:'cn.expjmicro.example.api.rpc.ISimpleRpc',
-        ns : 'exampleProdiver',
+        ns : 'exampleProvider',
         v:'0.0.1',
 
     },

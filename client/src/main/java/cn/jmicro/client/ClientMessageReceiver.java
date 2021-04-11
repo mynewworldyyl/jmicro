@@ -125,7 +125,7 @@ public class ClientMessageReceiver implements IMessageReceiver{
 					h.onMessage(session,msg);
 				});
 			} else {
-				String errMsg = "Handler not found:" + Integer.toHexString(msg.getType());
+				String errMsg = "Handler not found:" + Integer.toHexString(msg.getType())+",from insId: " + msg.getInsId();
 				logger.error(errMsg);
 				if(msg.isLoggable()) {
 					LG.log(MC.LOG_ERROR, ClientMessageReceiver.class,errMsg);
@@ -137,7 +137,7 @@ public class ClientMessageReceiver implements IMessageReceiver{
 		} catch (Throwable e) {
 			logger.error("reqHandler error: {}",msg,e);
 			if(msg.isLoggable()) {
-				LG.log(MC.LOG_ERROR, ClientMessageReceiver.class,"receive error",e);
+				LG.log(MC.LOG_ERROR, ClientMessageReceiver.class,"receive error"+",from insId: " + msg.getInsId(),e);
 			}
 			
 			if(msg.isMonitorable()) {

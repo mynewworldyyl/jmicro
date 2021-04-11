@@ -18,5 +18,6 @@
     <mapper resource="mapper/OrderMapper.xml"/>
     <mapper resource="mapper/GoodMapper.xml"/>
     <mapper resource="mapper/PaymentMapper.xml"/>
+    <mapper resource="mapper/ReqMapper.xml"/>
   </mappers>
 </configuration>

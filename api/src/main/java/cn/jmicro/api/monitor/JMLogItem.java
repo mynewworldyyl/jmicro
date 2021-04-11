@@ -27,6 +27,7 @@ import cn.jmicro.api.net.Message;
 import cn.jmicro.api.registry.UniqueServiceMethodKey;
 import cn.jmicro.api.utils.TimeUtils;
 import cn.jmicro.common.util.JsonUtils;
+import lombok.Data;
 
 /**
  * 
@@ -35,9 +36,12 @@ import cn.jmicro.common.util.JsonUtils;
  */
 @SO
 @IDStrategy(100)
+@Data
 public final class JMLogItem{
 	
 	public static final String TABLE = "rpc_log";
+	
+	private long id;
 	
 	private long linkId;
 	
@@ -57,7 +61,7 @@ public final class JMLogItem{
 	
 	private UniqueServiceMethodKey smKey = null;
 	
-	private byte logLevel;
+	private boolean nl;
 	
 	private String implCls;
 	
@@ -108,7 +112,7 @@ public final class JMLogItem{
 		mi.actClientId = this.actClientId;
 		mi.sysClientId = this.sysClientId;
 		mi.actName = this.actName;
-		mi.logLevel = this.logLevel;
+		mi.nl = this.nl;
 		mi.configId = this.configId;
 		mi.tag = this.tag;
 		
@@ -134,7 +138,7 @@ public final class JMLogItem{
 		this.sysClientId = -1;
 		this.actName = null;
 		this.smKey = null;
-		this.logLevel = MC.LOG_NO;
+		this.nl = false;
 	}
 	
 	public OneLog addOneItem(OneLog oi) {
@@ -163,202 +167,9 @@ public final class JMLogItem{
 		return oi;
 	}
 
-	public int getActClientId() {
-		return actClientId;
-	}
-
-	public void setActClientId(int actClientId) {
-		this.actClientId = actClientId;
-	}
-
-	public int getSysClientId() {
-		return sysClientId;
-	}
-
-	public void setSysClientId(int sysClientId) {
-		this.sysClientId = sysClientId;
-	}
-
-	public long getCreateTime() {
-		return createTime;
-	}
-
-	public void setCreateTime(long createTime) {
-		this.createTime = createTime;
-	}
-
-	public long getReqParentId() {
-		return reqParentId;
-	}
-
-	public void setReqParentId(long reqParentId) {
-		this.reqParentId = reqParentId;
-	}
-
-	public long getLinkId() {
-		return linkId;
-	}
-
-	public void setLinkId(long linkId) {
-		this.linkId = linkId;
-	}
-
-	public Message getMsg() {
-		return msg;
-	}
-
-	public String getTag() {
-		return tag;
-	}
-
-	public void setTag(String tag) {
-		this.tag = tag;
-	}
-
-	public void setMsg(Message msg) {
-		this.msg = msg;
-	}
-
-	public String getImplCls() {
-		return implCls;
-	}
-
-	public void setImplCls(String implCls) {
-		this.implCls = implCls;
-	}
-
-	public long getInputTime() {
-		return inputTime;
-	}
-
-	public void setInputTime(long inputTime) {
-		this.inputTime = inputTime;
-	}
-
-
-	public byte getLogLevel() {
-		return logLevel;
-	}
-
-	public void setLogLevel(byte lobLevel) {
-		this.logLevel = lobLevel;
-	}
-
-	public long getCostTime() {
-		return costTime;
-	}
-
-	public void setCostTime(long costTime) {
-		this.costTime = costTime;
-	}
-
-	public IReq getReq() {
-		return req;
-	}
-
-	public void setReq(IReq req) {
-		this.req = req;
-	}
-
-	public IResp getResp() {
-		return resp;
-	}
-
-	public void setResp(IResp resp) {
-		this.resp = resp;
-	}
-
-	public String getLocalHost() {
-		return localHost;
-	}
-
-	public void setLocalHost(String localHost) {
-		this.localHost = localHost;
-	}
-
-	public String getLocalPort() {
-		return localPort;
-	}
-
-	public void setLocalPort(String localPort) {
-		this.localPort = localPort;
-	}
-
-	public String getRemoteHost() {
-		return remoteHost;
-	}
-
-	public boolean isProvider() {
-		return provider;
-	}
-
-	public void setProvider(boolean provider) {
-		this.provider = provider;
-	}
-
-	public void setRemoteHost(String remoteHost) {
-		this.remoteHost = remoteHost;
-	}
-
-	public String getRemotePort() {
-		return remotePort;
-	}
-
-	public void setRemotePort(String remotePort) {
-		this.remotePort = remotePort;
-	}
-
-	public String getInstanceName() {
-		return instanceName;
-	}
-
-	public void setInstanceName(String instanceName) {
-		this.instanceName = instanceName;
-	}
-
-	public List<OneLog> getItems() {
-		return items;
-	}
-
-	public void setItems(List<OneLog> items) {
-		this.items = items;
-	}
-
-	public long getReqId() {
-		return reqId;
-	}
-
-	public void setReqId(long reqId) {
-		this.reqId = reqId;
-	}
-
-	public String getActName() {
-		return actName;
-	}
-
-	public void setActName(String actName) {
-		this.actName = actName;
-	}
-
-	public UniqueServiceMethodKey getSmKey() {
-		return smKey;
-	}
-
-	public void setSmKey(UniqueServiceMethodKey smKey) {
-		this.smKey = smKey;
-	}
-
 	@Override
 	public String toString() {
 		return JsonUtils.getIns().toJson(this);
-	}
-
-	public String getConfigId() {
-		return configId;
-	}
-
-	public void setConfigId(String configId) {
-		this.configId = configId;
 	}
 
 }

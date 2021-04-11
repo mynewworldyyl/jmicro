@@ -133,6 +133,12 @@
         mounted : function() {
             //console.log(this.linkId);
             let self = this;
+            self.$on('refreshLinkItemList',function() {
+                self.cacheModels={};
+                self.curModel=null;
+                self.curMi = null;
+            });
+
             window.jm.mng.comm.getDicts(['logKey2Val','mtKey2Val'],'').then((dicts)=>{
                 if(dicts) {
                     for(let k in dicts) {

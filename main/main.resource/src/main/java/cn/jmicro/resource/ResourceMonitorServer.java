@@ -293,7 +293,7 @@ public class ResourceMonitorServer{
 				break;
 			case StatisConfig.TO_TYPE_MONITOR_LOG:
 				rd.setTag(cfg.getToParams());
-				LG.log(MC.LOG_INFO, cfg.getToParams(), JsonUtils.getIns().toJson(rd),MC.MT_DEFAULT);
+				LG.log(MC.LOG_INFO, cfg.getToParams(), JsonUtils.getIns().toJson(rd));
 				break;
 			case StatisConfig.TO_TYPE_EMAIL:
 				if(mailSender != null) {

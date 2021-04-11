@@ -616,7 +616,7 @@ public class TestCodec {
 		RpcRequest req = new RpcRequest();
 		req.setArgs(new Object[] { 1, "string" });
 		req.setRequestId(111L);
-		req.setImpl("tset");
+		req.setImpl(33);
 		/*req.setMethod("method");
 		req.setNamespace("ns");
 		req.setServiceName("sn");

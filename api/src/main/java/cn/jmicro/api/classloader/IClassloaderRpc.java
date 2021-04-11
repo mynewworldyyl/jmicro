@@ -17,7 +17,6 @@
 package cn.jmicro.api.classloader;
 
 import cn.jmicro.api.Resp;
-import cn.jmicro.api.annotation.Service;
 import cn.jmicro.codegenerator.AsyncClientProxy;
 
 @AsyncClientProxy

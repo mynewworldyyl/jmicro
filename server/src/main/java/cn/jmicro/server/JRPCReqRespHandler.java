@@ -99,12 +99,6 @@ public class JRPCReqRespHandler implements IMessageHandler{
 	private AccountManager accountManager;
 	
 	@Inject
-	private LogMonitorClient logMonitor;
-	
-	@Inject
-	private StatisMonitorClient monitor;
-	
-	@Inject
 	private PermissionManager pm;
 	
 	@Inject
@@ -140,7 +134,10 @@ public class JRPCReqRespHandler implements IMessageHandler{
 				MT.rpcEvent(MC.MT_SERVER_JRPC_GET_REQUEST_READ,msg.getLen());
 			}
 	    	
-	    	LG.log(MC.LOG_DEBUG, TAG.getName(), MC.MT_SERVER_JRPC_GET_REQUEST);
+	    	if(LG.isLoggable(MC.LOG_DEBUG)) {
+	    		LG.log(MC.LOG_DEBUG, TAG, "Got request: " + msg.getReqId()+",from insId: " + msg.getInsId());
+	    	}
+	    	
 	    	
 	    	req = req1;
 			req.setSession(s);
@@ -179,7 +176,7 @@ public class JRPCReqRespHandler implements IMessageHandler{
 				if(StringUtils.isNotEmpty(lk)) {
 					ai = this.accountManager.getAccount(lk);
 					if(ai == null && sm.isNeedLogin()) {
-						ServerError se = new ServerError(MC.MT_INVALID_LOGIN_INFO,"JRPC check invalid login key!");
+						ServerError se = new ServerError(MC.MT_INVALID_LOGIN_INFO,"JRPC check invalid login key!"+",insId: " + msg.getInsId());
 						resp.setResult(se);
 						resp.setSuccess(false);
 						LG.log(MC.LOG_ERROR, TAG,se.toString());
@@ -194,7 +191,7 @@ public class JRPCReqRespHandler implements IMessageHandler{
 			}
 			
 			if(sm.getMaxPacketSize() > 0 && req.getPacketSize() > sm.getMaxPacketSize()) {
-	    		ServerError se = new ServerError(MC.MT_PACKET_TOO_MAX,"Packet too max "+req.getPacketSize()+ " limit size: " + sm.getMaxPacketSize());
+	    		ServerError se = new ServerError(MC.MT_PACKET_TOO_MAX,"Packet too max "+req.getPacketSize()+ " limit size: " + sm.getMaxPacketSize()+",insId: " + msg.getInsId());
 				resp.setResult(se);
 				resp.setSuccess(false);
 				LG.log(MC.LOG_ERROR, TAG,se.toString());
@@ -209,7 +206,7 @@ public class JRPCReqRespHandler implements IMessageHandler{
 				if(StringUtils.isNotEmpty(slk)) {
 					sai = this.accountManager.getAccount(slk);
 					if(sai == null && sm.getForType() == Constants.FOR_TYPE_SYS) {
-						ServerError se = new ServerError(MC.MT_INVALID_LOGIN_INFO,"Invalid system login key: " + slk);
+						ServerError se = new ServerError(MC.MT_INVALID_LOGIN_INFO,"Invalid system login key: " + slk+",insId: " + msg.getInsId());
 						resp.setResult(se);
 						resp.setSuccess(false);
 						LG.log(MC.LOG_ERROR, TAG,se.toString());
@@ -224,7 +221,7 @@ public class JRPCReqRespHandler implements IMessageHandler{
 			}
 			
 			if(sai == null && sm.getForType() == Constants.FOR_TYPE_SYS) {
-				ServerError se = new ServerError(MC.MT_INVALID_LOGIN_INFO,"Need system login: " + sm.getKey().toKey(true, true, true));
+				ServerError se = new ServerError(MC.MT_INVALID_LOGIN_INFO,"Need system login: " + sm.getKey().toKey(true, true, true)+",insId: " + msg.getInsId());
 				resp.setResult(se);
 				resp.setSuccess(false);
 				LG.log(MC.LOG_ERROR, TAG,se.toString());
@@ -261,7 +258,7 @@ public class JRPCReqRespHandler implements IMessageHandler{
 	    				 submitItem();
 					});
 				} else {
-					String errMsg = "Got null promise: " + sm.getKey().toKey(true, true, true);
+					String errMsg = "Got null promise: " + sm.getKey().toKey(true, true, true)+",insId: " + msg.getInsId();
 					LG.log(MC.LOG_ERROR, TAG,errMsg);
 					MT.rpcEvent(MC.MT_SERVER_ERROR);
 					logger.error("JRPCReq error: ",errMsg);
@@ -298,7 +295,7 @@ public class JRPCReqRespHandler implements IMessageHandler{
 					return;
 				}
 				finish[0]=true;
-				ServerError se0 = new ServerError(MC.MT_SERVER_ERROR,"Got null result!");
+				ServerError se0 = new ServerError(MC.MT_SERVER_ERROR,"Got null result!"+",insId: " + msg.getInsId());
 				r.setSuccess(false);
 				r.setResult(se0);
 				resp2Client(r,s,msg,sm);
@@ -314,7 +311,7 @@ public class JRPCReqRespHandler implements IMessageHandler{
 	private void doException(RpcRequest req,RpcResponse resp0, ISession s,Message msg,Throwable e) {
 
 		//返回错误
-		LG.log(MC.LOG_ERROR, TAG.getName(),"JRPCReq error",e,MC.MT_SERVER_ERROR);
+		LG.log(MC.LOG_ERROR, TAG.getName(),"JRPCReq error",e);
 		
 		MT.rpcEvent(MC.MT_SERVER_ERROR);
 		logger.error("JRPCReq error: ",e);
@@ -372,7 +369,10 @@ public class JRPCReqRespHandler implements IMessageHandler{
 		
 		if(resp.isSuccess()) {
 			MT.rpcEvent(MC.MT_SERVER_JRPC_RESPONSE_SUCCESS,1);
-			LG.log(MC.LOG_DEBUG, TAG.getName(), MC.MT_SERVER_JRPC_RESPONSE_SUCCESS);
+			if(LG.isLoggable(MC.LOG_DEBUG)) {
+				LG.log(MC.LOG_DEBUG, TAG,"Request end: " + msg.getReqId()+",insId: " + msg.getInsId());
+	    	}
+			
 			//响应消息,只有成功的消息才需要加密，失败消息不需要
 			msg.setUpSsl(sm.isUpSsl());
 			msg.setDownSsl(sm.isDownSsl());
@@ -381,7 +381,7 @@ public class JRPCReqRespHandler implements IMessageHandler{
 				secretMng.signAndEncrypt(msg,msg.getInsId());
 			}
 		} else {
-			LG.log(MC.LOG_ERROR, TAG.getName(), MC.MT_SERVER_ERROR);
+			LG.log(MC.LOG_ERROR, TAG, "Request failure end: " + msg.getReqId()+",insId: " + msg.getInsId());
 			MT.rpcEvent(MC.MT_SERVER_ERROR,1);
 			//错误不需要做加密或签名
 			msg.setUpSsl(false);
@@ -413,13 +413,13 @@ public class JRPCReqRespHandler implements IMessageHandler{
 			JMicroContext.get().appendCurUseTime("Async respTime",false);
 			JMicroContext.get().debugLog(0);
 		}
-		JMicroContext.get().submitMRpcItem(logMonitor,monitor);
+		JMicroContext.get().submitMRpcItem();
 	}
 
 	
 	private void config(RpcRequest req,RpcResponse resp,Long linkId) {
 		
-		Object obj = serviceLoader.getService(Integer.parseInt(req.getImpl()));
+		Object obj = serviceLoader.getService(req.getImpl());
 		if(obj == null){
 			LG.log(MC.LOG_ERROR,JMicroContext.class," service INSTANCE not found");
 			MT.nonRpcEvent(Config.getInstanceName(), MC.MT_PLATFORM_LOG);
@@ -438,7 +438,7 @@ public class JRPCReqRespHandler implements IMessageHandler{
 		cxt.setParam(JMicroContext.CLIENT_ARGSTR, UniqueServiceMethodKey.paramsStr(req.getArgs()));
 		cxt.putAllParams(req.getRequestParams());
 		
-		ServiceItem si = registry.getOwnItem(Integer.parseInt(req.getImpl()));
+		ServiceItem si = registry.getOwnItem(req.getImpl());
 		if(si == null){
 			if(LG.isLoggable(MC.LOG_ERROR,req.getLogLevel())) {
 				LG.log(MC.LOG_ERROR,JMicroContext.class," service ITEM not found");

@@ -9,7 +9,7 @@ import cn.jmicro.test.JMicroBaseTestCase;
 
 public class TestPubSubServer extends JMicroBaseTestCase{
 
-	protected static String[] getArgs() {
+	protected String[] getArgs() {
 		return new String[] {"-DinstanceName=TestPubSubServer"};
 	}
 	

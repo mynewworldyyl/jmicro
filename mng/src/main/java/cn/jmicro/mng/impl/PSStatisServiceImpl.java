@@ -19,12 +19,13 @@ import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Inject;
 import cn.jmicro.api.annotation.SMethod;
 import cn.jmicro.api.annotation.Service;
+import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.security.PermissionManager;
 import cn.jmicro.common.Constants;
 import cn.jmicro.mng.api.IPSStatisService;
 
 @Component(level=20001)
-@Service(version="0.0.1", external=true, debugMode=0, showFront=false)
+@Service(version="0.0.1", external=true, debugMode=0, showFront=false,logLevel=MC.LOG_NO)
 public class PSStatisServiceImpl implements IPSStatisService {
 
 	public static final String PUTSUB_TOTAL = "t_pubsub_total";

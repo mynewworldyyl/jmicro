@@ -105,8 +105,8 @@ public class StatisMonitorServerImpl implements IStatisMonitorServer {
 	}
 	
 	@Override
-	@SMethod(timeout=5000,retryCnt=0,needResponse=false,debugMode=0,monitorEnable=0,logLevel=MC.LOG_ERROR
-			,maxPacketSize=32768,maxSpeed=1000,limitType=Constants.LIMIT_TYPE_LOCAL)
+	@SMethod(timeout=5000,retryCnt=0,needResponse=false,debugMode=0,monitorEnable=0,
+	logLevel=MC.LOG_NO,maxPacketSize=32768,maxSpeed=1000,limitType=Constants.LIMIT_TYPE_LOCAL)
 	public void submit(JMStatisItem[] items) {
 		if(items == null || items.length == 0) {
 			/*if(monitoralbe) {

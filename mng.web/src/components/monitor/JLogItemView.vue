@@ -37,13 +37,13 @@
                     <td>START TIME</td>
                     <td>
                         <DatePicker v-model="queryParams.startTime" placeholder="Start Time"
-                                     format="yyyy-MM-dd hh:mm:ss"  type="datetime"
+                                     format="yyyy-MM-dd HH:mm:ss"  type="datetime"
                                  ></DatePicker >
                      </td>
                     <td>END TIME</td>
                     <td>
                         <DatePicker v-model="queryParams.endTime" placeholder="End Time"
-                                    format="yyyy-MM-dd hh:mm:ss"  type="datetime"
+                                    format="yyyy-MM-dd HH:mm:ss"  type="datetime"
                         ></DatePicker >
                     </td>
                 </tr>
@@ -57,7 +57,7 @@
                     <td>PARENT ID</td><td> <Input v-model="queryParams.reqParentId"/></td>
                     <td>ACT</td>
                    <td>
-                       <Select v-if="selOptions.act" :filterable="true"
+                       <Select :filterable="true"
                                 :allowCreate="true" ref="actSelect" :label-in-value="true" v-model="queryParams.act">
                            <Option value="">none</Option>
                            <Option :value="v" v-for="v in selOptions.act" v-bind:key="v">{{v}}</Option>
@@ -73,12 +73,12 @@
                             <Option :value="v" v-for="(v,k) in selOptions.level" v-bind:key="k">{{k}}</Option>
                         </Select>
                     </td>
-                    <td>TYPE</td>
+                    <td>Operator</td>
                     <td>
-                        <Select v-if="selOptions.type" :filterable="true"
-                                :allowCreate="true" ref="typeSelect" :label-in-value="true" v-model="queryParams.type">
-                            <Option value="" >none</Option>
-                            <Option :value="v" v-for="(v,k) in selOptions.type" v-bind:key="k">{{k}}</Option>
+                        <Select v-model="queryParams.op">
+                            <Option value="=">=</Option>
+                            <Option value=">=">>=</Option>
+                            <Option value=">" ></Option>
                         </Select>
                     </td>
                 </tr>
@@ -116,7 +116,7 @@
 
                 <tr><td>SERVICE NAME</td>
                     <td>
-                        <Select  v-if="selOptions.serviceName" :filterable="true"
+                        <Select  :filterable="true"
                                 :allowCreate="true" ref="serviceNameSelect"  :label-in-value="true"
                                 v-model="queryParams.serviceName">
                             <Option value="">none</Option>
@@ -125,7 +125,7 @@
                     </td>
                     <td>NAMESPACE</td>
                     <td>
-                        <Select v-if="selOptions.namespace" :filterable="true"
+                        <Select  :filterable="true"
                                 :allowCreate="true" ref="namespaceSelect"  :label-in-value="true"
                                 v-model="queryParams.namespace">
                             <Option value="">none</Option>
@@ -187,12 +187,16 @@
                             <Option value="false">false</Option>
                         </Select>
                     </td>
-                    <td>EXCLUDE NOLOG</td>
+                    <td>Show Type</td>
                     <td>
-                        <Select v-model="queryParams.noLog">
+                        <Select v-model="showType">
+                            <Option value="1">{{"Flat"|i18n}}</Option>
+                            <Option value="2">{{"Group"|i18n}}</Option>
+                        </Select>
+                        <!--<Select v-model="queryParams.noLog">
                             <Option value="false">false</Option>
                             <Option value="true">true</Option>
-                        </Select>
+                        </Select>-->
                     </td>
                 </tr>
                 <tr>
@@ -205,9 +209,18 @@
                         <Input  v-model="queryParams.configTag"/>
                     </td>
                 </tr>
+                <!--<tr>
+                    <td> <Select v-if="selOptions.type" :filterable="true"
+                                 :allowCreate="true" ref="typeSelect" :label-in-value="true" v-model="queryParams.type">
+                        <Option value="" >none</Option>
+                        <Option :value="v" v-for="(v,k) in selOptions.type" v-bind:key="k">{{k}}</Option>
+                    </Select></td>
+                    <td></td>
+                </tr>-->
 
                 <tr>
-                    <td><i-button @click="doQuery()">QUERY</i-button></td><td></td>
+                    <td> </td>
+                    <td><i-button @click="doQuery()">QUERY</i-button></td>
                 </tr>
             </table>
         </Drawer>
@@ -231,10 +244,12 @@
             return {
                 isLogin:false,
                 logList: [],
-                queryParams:{noLog:"true"},
+                queryParams:{noLog:"true",op:"="},
                 totalNum:0,
                 pageSize:60,
                 curPage:1,
+
+                showType:"1",
 
                 curLogId:-1,
                 ds:{},
@@ -272,10 +287,10 @@
                 this.refresh();
             },
 
-            toLog(c){
+            toGroupLogView(c){
                 let v = '';
-                if(c.tag) {
-                    v = v +  "TAG:" + c.tag + ', '
+                if(c.cfgTag) {
+                    v = v +  "TAG:" + c.cfgTag + ', '
                 }
 
                 if(c.instanceName) {
@@ -297,7 +312,7 @@
                     v += 'REQ[' + c.req.serviceName+"##"+c.req.namespace + '##'+ c.req.version;
                     v = v +'##'+c.req.method ;
                     if(c.req.args && c.req.args.length > 0) {
-                       v += '##' + JSON.stringify(c.req.args)+", ";
+                        v += '##' + JSON.stringify(c.req.args)+", ";
                     }
                     v += '] ';
                 }
@@ -311,7 +326,7 @@
                 }
 
                 for(let a in c) {
-                    if(a != '_id' && a != 'items' && c[a] && c[a] != -1 && a != 'tag' && a != 'createTime'
+                    if(a != '_id' && a != 'items' && c[a] && c[a] != -1 && a != 'cfgTag' && a != 'createTime'
                         && a != 'inputTime' && a != 'instanceName' && a != 'smKey' && a != 'req' && a != 'resp') {
                         v = v + a + ":" + c[a] + ', '
                     }
@@ -323,11 +338,11 @@
                     for(let i = 0; i < c.items.length; i++) {
                         let l = c.items[i];
                         let lv = '<span class="' + LEVEL2COLOR[l.level]+'">' + LOG2LEVEL[l.level] + '</span> : ';
-                            lv += l.tag  + " : ";
+                        lv += l.tag  + " : ";
 
-                            if(l.lineNo) {
-                                lv += l.lineNo  +" : "
-                            }
+                        if(l.lineNo) {
+                            lv += l.lineNo  +" : "
+                        }
                         lv += new Date(l.time).format('yyyy/MM/dd hh:mm:ss S')+" : ";
                         lv += l.desc;
 
@@ -338,8 +353,79 @@
                         v += '<br/>' + lv;
                     }
                 }
+                return v;
+            },
+
+            toFlatLogView(c){
+
+                let v = '<span class="' + LEVEL2COLOR[c.items.level]+'">' + LOG2LEVEL[c.items.level] + '</span> : ';
+
+                if(c.items.lineNo) {
+                    v += c.items.lineNo  +" : "
+                }
+
+                if(c.instanceName) {
+                    v = v +  c.instanceName + ':'
+                }
+
+                v += new Date(c.items.time).format('yyyy/MM/dd hh:mm:ss S')+" : ";
+
+                v = v  + c.items.tag+":"
+
+                if(c.tag) {
+                    v = v + c.tag + ':'
+                }
+
+                if(c.smKey) {
+                    v +='MK[' + c.smKey.usk.serviceName+"##"+c.smKey.usk.namespace + '##'+ c.smKey.usk.version;
+                    v = v +'##'+c.smKey.usk.instanceName+'##'+c.smKey.usk.host+'##'+c.smKey.usk.port+'##' + c.smKey.method + '##' + c.smKey.paramsStr;
+                    v+='] '
+                }
+
+                if(c.linkId) {
+                    v = v + c.linkId + ':'
+                }
+
+                /*if(c.req){
+                    v += 'REQ[' + c.req.serviceName+"##"+c.req.namespace + '##'+ c.req.version;
+                    v = v +'##'+c.req.method ;
+                    if(c.req.args && c.req.args.length > 0) {
+                        v += '##' + JSON.stringify(c.req.args)+", ";
+                    }
+                    v += '] ';
+                }*/
+
+                /*if(c.resp){
+                    v += 'RESP['
+                    v += ', respId:'+ c.resp.id;
+                    v += ', reqId:'+ c.resp.reqId
+                    v += ', result:'+ JSON.stringify(c.resp.result)
+                    v += ', success:'+ c.resp.success + '] '
+                }*/
+
+                v = '<span style="font-weight: bold">' + v + '</span>'
+
+                let l = c.items;
+
+                let lv = "";
+
+                lv += l.desc;
+
+                if( l.ex ) {
+                    lv += " <pre>"+l.ex+"</pre>" ;
+                }
+
+                v += '<br/>' + lv;
 
                 return v;
+            },
+
+            toLog(c){
+                if(this.showType=='1') {
+                    return this.toFlatLogView(c);
+                } else {
+                    return this.toGroupLogView(c);
+                }
             },
 
             doQuery() {
@@ -348,9 +434,9 @@
                 if(!this.isLogin) {
                     return;
                 }
-
+                self.logList = [];
                 let params = this.getQueryConditions();
-                window.jm.mng.logSrv.countLog(params).then((resp)=>{
+                window.jm.mng.logSrv.countLog(self.showType,params).then((resp)=>{
                     if(resp.code != 0) {
                         self.$Message.success(resp.msg);
                         return;
@@ -371,24 +457,46 @@
                     return;
                 }
                 let params = this.getQueryConditions();
-                window.jm.mng.logSrv.queryLog(params,this.pageSize,this.curPage-1).then((resp)=>{
-                    if(resp.code != 0) {
-                        self.$Message.success(resp.msg);
-                        return;
-                    }
-                    let ll = resp.data;
-                    if(ll && ll.length > 0) {
-                        ll.map(e => {
-                            e.typeLabel = self.ds['mtKey2Val'][e.type];
-                            e.levelLabel = self.ds['logKey2Val'][e.level];
-                        });
-                    }
 
-                    self.logList = ll;
-
-                }).catch((err)=>{
-                    window.console.log(err);
-                });
+                self.logList = [];
+                if(this.showType == '2') {
+                    window.jm.mng.logSrv.queryLog(params,this.pageSize,this.curPage-1).then((resp)=>{
+                        if(resp.code != 0) {
+                            self.$Message.success(resp.msg);
+                            return;
+                        }
+                        let ll = resp.data;
+                        if(ll && ll.length > 0) {
+                            ll.map(e => {
+                                e.typeLabel = self.ds['mtKey2Val'][e.type];
+                                e.levelLabel = self.ds['logKey2Val'][e.level];
+                            });
+                        }
+                        self.logList = ll;
+                    }).catch((err)=>{
+                        window.console.log(err);
+                    });
+                } else {
+                    window.jm.rpc.callRpcWithParams(window.jm.mng.logSrv.sn,
+                        window.jm.mng.logSrv.ns, window.jm.mng.logSrv.v, 'queryFlatLog',
+                        [params,this.pageSize,this.curPage-1])
+                    .then((resp)=>{
+                        if(resp.code != 0) {
+                            self.$Message.success(resp.msg);
+                            return;
+                        }
+                        let ll = resp.data;
+                        if(ll && ll.length > 0) {
+                            ll.map(e => {
+                                e.typeLabel = self.ds['mtKey2Val'][e.type];
+                                e.levelLabel = self.ds['logKey2Val'][e.level];
+                            });
+                        }
+                        self.logList = ll;
+                    }).catch((err)=>{
+                        window.console.log(err);
+                    });
+                }
             },
 
             getQueryConditions() {

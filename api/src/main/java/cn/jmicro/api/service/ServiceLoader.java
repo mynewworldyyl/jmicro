@@ -454,7 +454,7 @@ public class ServiceLoader{
 		sm.setAvgResponseTime(item.getAvgResponseTime());
 		sm.setMonitorEnable(item.getMonitorEnable());
 		sm.setFailResponse("");
-		sm.setLogLevel(MC.LOG_ERROR);
+		sm.setLogLevel(MC.LOG_NO);
 		sm.setDebugMode(-1);
 		sm.setMaxSpeed(item.getMaxSpeed());
 		
@@ -605,7 +605,7 @@ public class ServiceLoader{
 		checkMethod.getKey().setUsk(usk);
 		checkMethod.getKey().setMethod("wayd");
 		checkMethod.getKey().setParamsStr(UniqueServiceMethodKey.paramsStr(new Class[] {String.class}));
-		checkMethod.setLogLevel(MC.LOG_ERROR);;
+		checkMethod.setLogLevel(MC.LOG_NO);;
 		checkMethod.setDebugMode(0);
 		checkMethod.getKey().setSnvHash(HashUtils.FNVHash1(checkMethod.getKey().toKey(false, false, false)));
 		
@@ -657,7 +657,7 @@ public class ServiceLoader{
 				sm.setAvgResponseTime(item.getAvgResponseTime());
 				sm.setMonitorEnable(item.getMonitorEnable());
 				sm.setFailResponse("");
-				sm.setLogLevel(MC.LOG_ERROR);
+				sm.setLogLevel(MC.LOG_NO);
 				sm.setDebugMode(-1);
 				sm.setMaxSpeed(item.getMaxSpeed());
 				sm.setPerType(false);

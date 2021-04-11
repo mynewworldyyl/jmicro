@@ -18,6 +18,7 @@ package cn.jmicro.api.monitor;
 
 import cn.jmicro.api.annotation.SO;
 import cn.jmicro.api.utils.TimeUtils;
+import lombok.Data;
 
 /**
  * 
@@ -26,11 +27,10 @@ import cn.jmicro.api.utils.TimeUtils;
  * @date 2020年4月4日
  */
 @SO
+@Data
 public class OneLog {
 	
 	private long time = 0;
-	
-	private short type = 0;
 	
 	private byte level = MC.LOG_NO;
 	
@@ -54,76 +54,12 @@ public class OneLog {
 	public OneLog(byte level,String tag,String desc) {
 		this.tag = tag;
 		this.desc = desc;
-		this.time = TimeUtils.getCurTime();
-	}
-
-	public String getTag() {
-		return tag;
-	}
-
-	public void setTag(String tag) {
-		this.tag = tag;
-	}
-
-	public String getDesc() {
-		return desc;
-	}
-
-	public void setDesc(String desc) {
-		this.desc = desc;
-	}
-
-	public long getTime() {
-		return time;
-	}
-
-	public void setTime(long time) {
-		this.time = time;
-	}
-
-	public byte getLevel() {
-		return level;
-	}
-
-	public void setLevel(byte level) {
-		this.level = level;
-	}
-
-	public String getEx() {
-		return ex;
-	}
-
-	public void setEx(String ex) {
-		this.ex = ex;
-	}
-
-	public int getLineNo() {
-		return lineNo;
-	}
-
-	public void setLineNo(int lineNo) {
-		this.lineNo = lineNo;
-	}
-
-	public String getFileName() {
-		return fileName;
-	}
-
-	public void setFileName(String fileName) {
-		this.fileName = fileName;
-	}
-
-	public short getType() {
-		return type;
-	}
-
-	public void setType(short type) {
-		this.type = type;
+		this.time = TimeUtils.getCurTime(true);
 	}
 
 	@Override
 	public String toString() {
-		return "OneLog [time=" + time + ", type=" + type + ", level=" + level + ", tag=" + tag + ", desc=" + desc
+		return "OneLog [time=" + time + ", level=" + level + ", tag=" + tag + ", desc=" + desc
 				+ ", lineNo=" + lineNo + ", fileName=" + fileName + ", ex=" + ex + "]";
 	}
 

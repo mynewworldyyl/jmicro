@@ -40,9 +40,11 @@ import cn.jmicro.api.codec.JDataInput;
 import cn.jmicro.api.gateway.ApiRequest;
 import cn.jmicro.api.gateway.ApiResponse;
 import cn.jmicro.api.idgenerator.ComponentIdServer;
+import cn.jmicro.api.monitor.JMLogItem;
 import cn.jmicro.api.monitor.LG;
 import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.net.IMessageHandler;
+import cn.jmicro.api.net.IRequest;
 import cn.jmicro.api.net.ISession;
 import cn.jmicro.api.net.Message;
 import cn.jmicro.api.net.ServerError;
@@ -171,13 +173,17 @@ public class ApiRawRequestMessageHandler implements IMessageHandler{
 				}
 			}
 		
+			long reqId = req.getReqId();
+			msg.setLogLevel(sm.getLogLevel()==MC.LOG_DEPEND?si.getLogLevel():sm.getLogLevel());
+			//config(req, resp, sm, si);
+			
 			Object result = null;
 			
 			msg.setType(Constants.MSG_TYPE_RRESP_RAW);
-			resp.setReqId(req.getReqId());
+			resp.setReqId(reqId);
 			resp.setMsg(msg);
 			resp.setSuccess(true);
-			resp.setId(idGenerator.getLongId(ApiResponse.class));
+			resp.setId(req.getReqId());
 			
 			ActInfo ai = null;
 			
@@ -232,6 +238,7 @@ public class ApiRawRequestMessageHandler implements IMessageHandler{
 					result = se;
 					resp.setSuccess(false);
 				} else  {
+					result = null;
 					if(LG.isLoggable(MC.LOG_DEBUG, msg.getLogLevel())) {
 						LG.log(MC.LOG_DEBUG, TAG," got request");
 					}
@@ -272,6 +279,12 @@ public class ApiRawRequestMessageHandler implements IMessageHandler{
 						}
 						msg.setInsId(pi.getId());
 						session.write(msg);
+						
+						//提交监控数据
+						if(sm.getLogLevel() != MC.LOG_NO) {
+							JMicroContext.get().submitMRpcItem();
+						}
+						
 					});
 				
 				}
@@ -306,6 +319,10 @@ public class ApiRawRequestMessageHandler implements IMessageHandler{
 				} else {
 					logger.warn(result.toString());
 				}
+				
+				if(sm.getLogLevel() != MC.LOG_NO) {
+					JMicroContext.get().submitMRpcItem();
+				}
 			}
 			
 		} catch (Throwable e) {
@@ -332,6 +349,38 @@ public class ApiRawRequestMessageHandler implements IMessageHandler{
 			}
 			
 			throw ce;
+		}
+		
+	}
+	
+	
+	private void config(ApiRequest req,ApiResponse resp,ServiceMethod sm,ServiceItem si) {
+		
+		JMicroContext cxt = JMicroContext.get();
+		cxt.setString(JMicroContext.CLIENT_SERVICE, si.getKey().getServiceName());
+		cxt.setString(JMicroContext.CLIENT_NAMESPACE, si.getKey().getNamespace());
+		cxt.setString(JMicroContext.CLIENT_METHOD, sm.getKey().getMethod());
+		cxt.setString(JMicroContext.CLIENT_VERSION, sm.getKey().getVersion());
+		//context.setLong(JMicroContext.REQ_PARENT_ID, req.getRequestId());
+		long reqId = this.idGenerator.getLongId(IRequest.class);
+		cxt.setParam(JMicroContext.REQ_ID,reqId);
+		
+		cxt.setParam(JMicroContext.CLIENT_ARGSTR, UniqueServiceMethodKey.paramsStr(req.getArgs()));
+		cxt.putAllParams(req.getParams());
+		
+		cxt.setObject(Constants.SERVICE_ITEM_KEY, si);
+		cxt.setObject(Constants.SERVICE_METHOD_KEY, sm);
+		
+		JMLogItem mi = cxt.getMRpcLogItem();
+		
+		if(mi != null) {
+			mi.setReqParentId(-1L);
+			mi.setReqId(reqId);
+			mi.setReq(req);
+			mi.setImplCls(si.getImpl());
+			mi.setSmKey(sm.getKey());
+			mi.setResp(resp);
+			mi.setLinkId(JMicroContext.lid());
 		}
 		
 	}

@@ -311,22 +311,25 @@ public class RpcClassLoaderHelper {
             	}
         	}
 
-    		for(String className : ownerClasses.keySet()) {
-        		
-        		String path = CLASS_IDR +"/" + className;
-            	if(!op.exist(path)) {
-            		op.createNodeOrSetData(path, "", false);
+    		synchronized(ownerClasses) {
+    			for(String className : ownerClasses.keySet()) {
+            		
+            		String path = CLASS_IDR +"/" + className;
+                	if(!op.exist(path)) {
+                		op.createNodeOrSetData(path, "", false);
+                	}
+                	
+                	String insPath = path + "/" + Config.getInstanceName();
+            		
+            		if(!op.exist(insPath)) {
+            			String msg = "Regist remote class:" + insPath;
+            			logger.info(msg);
+            			LG.log(MC.LOG_DEBUG, this.getClass(), msg);
+                		op.createNodeOrSetData(insPath, Config.getExportSocketHost(), true);
+                	}
             	}
-            	
-            	String insPath = path + "/" + Config.getInstanceName();
-        		
-        		if(!op.exist(insPath)) {
-        			String msg = "Regist remote class:" + insPath;
-        			logger.info(msg);
-        			LG.log(MC.LOG_DEBUG, this.getClass(), msg);
-            		op.createNodeOrSetData(insPath, Config.getExportSocketHost(), true);
-            	}
-        	}
+    		}
+    		
     	} finally {
     		working = false;
     	}
@@ -358,7 +361,9 @@ public class RpcClassLoaderHelper {
     	}
     	
     	logger.info("Add remote class: {}",clazz.getName());
-    	ownerClasses.put(className,clazz);
+    	synchronized(ownerClasses) {
+    		ownerClasses.put(className,clazz);
+    	}
     	
     	synchronized(respClasses) {
     		respClasses.put(className,clazz);
@@ -650,7 +655,7 @@ public class RpcClassLoaderHelper {
 			 
 			if(sync) {
 				byte[] bytes = p.getResult();
-				if (bytes != null && bytes.length > 0) {
+				if(bytes != null && bytes.length > 0) {
 					//clazzesData.put(className, bytes);
 					String desc = "Success sync load class: "+className+", length:"+bytes.length;
 					logger.info(desc);

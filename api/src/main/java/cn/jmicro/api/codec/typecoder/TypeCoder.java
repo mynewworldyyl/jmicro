@@ -491,9 +491,9 @@ public interface TypeCoder<T> extends Comparable<TypeCoder<T>>{
 	@SuppressWarnings({ "rawtypes", "unchecked" })
 	public static Object decodeArray(DataInput buffer, Class<?> fieldDeclareType, Type genericType){
 
-		if(JMicroContext.get().getInt(JMicroContext.REMOTE_INS_ID, 0) == 6) {
+		/*if(JMicroContext.get().getInt(JMicroContext.REMOTE_INS_ID, 0) == 6) {
 			logger.info("Payment service error");
-		}
+		}*/
 		
 		int len=0;
 		byte flag = 0;

@@ -32,4 +32,13 @@ public class TxShopService$JMAsyncClientImpl extends AbstractClientServiceProxyH
   public IPromise<Resp> updateLocalDataJMAsync(int goodId, int num, Object context) {
     return this.proxyHolder.invoke("updateLocalDataJMAsync",context, goodId,num);
   }
+
+  public IPromise buyAsy(int goodId, int num) {
+    return (cn.jmicro.api.async.IPromise<cn.jmicro.api.Resp<java.lang.Boolean>>) this.proxyHolder.invoke("buyAsy",null, goodId,num);
+  }
+
+  @WithContext
+  public IPromise buyAsyJMAsync(int goodId, int num, Object context) {
+    return this.proxyHolder.invoke("buyAsyJMAsync",context, goodId,num);
+  }
 }

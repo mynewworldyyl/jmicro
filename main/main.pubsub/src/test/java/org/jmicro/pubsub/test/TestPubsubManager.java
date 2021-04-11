@@ -8,7 +8,7 @@ import cn.jmicro.test.JMicroBaseTestCase;
 
 public class TestPubsubManager extends JMicroBaseTestCase{
 
-	protected static String[] getArgs() {
+	protected String[] getArgs() {
 		return new String[] {"-DinstanceName=TestPubSubServer"};
 	}
 	

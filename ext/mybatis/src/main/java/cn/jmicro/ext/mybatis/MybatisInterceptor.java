@@ -16,9 +16,6 @@
  */
 package cn.jmicro.ext.mybatis;
 
-import java.sql.Connection;
-import java.sql.SQLException;
-
 import org.apache.ibatis.session.SqlSession;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -31,6 +28,7 @@ import cn.jmicro.api.annotation.Inject;
 import cn.jmicro.api.annotation.Interceptor;
 import cn.jmicro.api.async.IPromise;
 import cn.jmicro.api.exception.RpcException;
+import cn.jmicro.api.internal.async.PromiseImpl;
 import cn.jmicro.api.monitor.LG;
 import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.net.AbstractInterceptor;
@@ -39,6 +37,7 @@ import cn.jmicro.api.net.IRequest;
 import cn.jmicro.api.net.IRequestHandler;
 import cn.jmicro.api.registry.ServiceMethod;
 import cn.jmicro.api.tx.TxConstants;
+import cn.jmicro.api.utils.TimeUtils;
 import cn.jmicro.common.Constants;
 
 /**
@@ -50,6 +49,7 @@ import cn.jmicro.common.Constants;
 @Interceptor
 public class MybatisInterceptor extends AbstractInterceptor implements IInterceptor{
 
+	private final static Class<?> TAG = MybatisInterceptor.class;
 	private final static Logger logger = LoggerFactory.getLogger(MybatisInterceptor.class);
 	
 	@Inject
@@ -71,8 +71,12 @@ public class MybatisInterceptor extends AbstractInterceptor implements IIntercep
 		
 		final Holder<Boolean> txOwner = new Holder<>(false);
 		final Holder<Long> txid = new Holder<>(null);
-		final SqlSession s = curSqlSessionManager.curSession() ;
+		final Holder<PromiseImpl<Object>> asyP = new Holder<>(null);
 		
+		final SqlSession s = curSqlSessionManager.curSession();
+		
+		boolean isDebug = LG.isLoggable(MC.LOG_DEBUG);
+		long bt = TimeUtils.getCurTime(isDebug);
 		try {
 			s.getConnection().setTransactionIsolation(sm.getTxIsolation());
 			if(sm.getTxType() == TxConstants.TYPE_TX_DISTRIBUTED) {
@@ -120,12 +124,27 @@ public class MybatisInterceptor extends AbstractInterceptor implements IIntercep
 					}
 					
 					s.close();
+					if(isDebug) {
+						LG.log(MC.LOG_DEBUG, TAG, "End tx: " +txid.get()+", Cost: "+ (TimeUtils.getCurTime(true) - bt));
+					}
 				})
 				.fail((code,msg,cxt)->{
 					s.rollback(true);
 					s.close();
+					LG.log(MC.LOG_ERROR, TAG, "rollback tx: " +txid.get()+", Cost: "+ (TimeUtils.getCurTime(true) - bt)+", with error: " + msg);
 				});
 			}else if(sm.getTxType() == TxConstants.TYPE_TX_DISTRIBUTED) {
+				
+				PromiseImpl<Object> pa = null;
+				if(txOwner.get()) {
+					pa = new PromiseImpl<>();
+					asyP.set(pa);
+					pa.setContext(p.getContext());
+					pa.setResult(p.getResult());
+					pa.setFail(p.getFailCode(), p.getFailMsg());
+					pa.setResultType(p.resultType());
+				}
+				
 				p.success((rst,cxt)->{
 					boolean commit = true;
 					if(rst != null && rst instanceof Resp) {
@@ -133,31 +152,74 @@ public class MybatisInterceptor extends AbstractInterceptor implements IIntercep
 						if(r.getCode() != 0) {
 							commit = false;
 							if(!commit && LG.isLoggable(MC.LOG_WARN)) {
-								LG.log(MC.LOG_WARN, this.getClass(), "Rollback transaction: " + txid.get()
+								LG.log(MC.LOG_WARN, TAG, "Rollback transaction: " + txid.get()
 								+",Method: " + sm.getKey().toKey(true, true, true));
 							}
 						}
 					}
 					
-					if(!finishDistributedTransaction(sm,txid.get(),txOwner.get(),commit)) {
-						LG.log(MC.LOG_ERROR, this.getClass(), "Fail to commit success transaction: " + txid.get()
-						+",Method: " + sm.getKey().toKey(true, true, true));
+					if(txOwner.get()) {
+						//选注册事务回调再投标票，确保能收到事务提交结果通知
+						if(commit) {
+							//需要等待事务提交结果
+							ownerEnd(sm,txid.get(),asyP.get());
+						} else {
+							//事务回滚不再需要等待
+							asyP.get().setFail(Resp.CODE_TX_FAIL, "tx fail");
+							asyP.get().done();
+							ownerEnd(sm,txid.get(),null);
+						}
+					}
+					
+					if(!doVote(sm,txid.get(),commit)) {
+						if(asyP.get() != null) {
+							asyP.get().setFail(Resp.CODE_TX_FAIL, "vote fail");
+							//投票失败,不再需要等事务回调
+							asyP.get().done();
+						}
+					}
+					
+					if(isDebug) {
+						LG.log(MC.LOG_DEBUG, TAG, "End tx: " +txid.get()+", Cost: "+ (TimeUtils.getCurTime(true) - bt));
 					}
 				}).fail((code,msg,cxt)->{
-					if(LG.isLoggable(MC.LOG_WARN)) {
-						LG.log(MC.LOG_WARN, this.getClass(), "Rollback transaction: " + txid.get()
-						+" with error "+msg+" ,Method: " + sm.getKey().toKey(true, true, true));
+					String msg0 = "Rollback transaction: " + txid.get()+", Cost: "+(TimeUtils.getCurTime(true) - bt)
+					+" with error "+msg+" ,Method: " + sm.getKey().toKey(true, true, true);
+					LG.log(MC.LOG_WARN, TAG, msg0);
+					logger.warn(msg0);
+					
+					doVote(sm,txid.get(),false);
+					
+					if(txOwner.get()) {
+						//事务回滚不再需要等待
+						asyP.get().setFail(code, msg);
+						asyP.get().done();
+						ownerEnd(sm,txid.get(),null);
 					}
-					finishDistributedTransaction(sm,txid.get(),txOwner.get(),false);
+					
 				});
+				
+				if(txOwner.get()) {
+					return pa;
+				}
 			}
 			return p;
 		} catch (Throwable e) {
-			LG.log(MC.LOG_ERROR, this.getClass(), "rollback transaction "+txid.get()+",Method: " + sm.getKey().toKey(true, true, true),e);
+			String msg = "rollback transaction "+txid.get()+", Cost: "+(TimeUtils.getCurTime(true) - bt)+",Method: " + sm.getKey().toKey(true, true, true);
+			logger.error(msg,e);
+			LG.log(MC.LOG_ERROR, TAG, msg,e);
 			if(sm.getTxType() == TxConstants.TYPE_TX_LOCAL) {
 				curSqlSessionManager.rollbackAndCloseCurSession();
 			}else if(sm.getTxType() == TxConstants.TYPE_TX_DISTRIBUTED) {
-				finishDistributedTransaction(sm,txid.get(),txOwner.get(),false);
+				doVote(sm,txid.get(),false);
+				if(txOwner.get()) {
+					ownerEnd(sm,txid.get(),null);
+					if(asyP.get() != null) {
+						asyP.get().setFail(Resp.CODE_TX_FAIL, "vote fail");
+						//投票失败,不再需要等事务回调
+						asyP.get().done();
+					}
+				}
 			}
 			throw new RpcException(req,e,Resp.CODE_TX_FAIL);
 		}finally {
@@ -167,28 +229,28 @@ public class MybatisInterceptor extends AbstractInterceptor implements IIntercep
 		}
 	}
 	
-	private boolean finishDistributedTransaction(ServiceMethod sm,Long tid,boolean txOwner, boolean commit) {
-		
+	private boolean doVote(ServiceMethod sm,Long tid,boolean commit) {
 		if(tid == null) {
-			LG.log(MC.LOG_ERROR, this.getClass(), "Transaction ID is NULL,Method: " + sm.getKey().toKey(true, true, true));
+			LG.log(MC.LOG_ERROR, TAG, "Transaction ID is NULL,Method: " + sm.getKey().toKey(true, true, true));
 			return false;
 		}
 		
 		if(!ltr.vote(tid, commit)) {
-			ltr.rollback(tid);//投票失败，本地直接回滚事务
-			LG.log(MC.LOG_ERROR, this.getClass(), "Fail to vote txid: " + tid+",Method: " + sm.getKey().toKey(true, true, true));
+			//投票失败，本地直接回滚事务
+			//ltr.rollback(tid);
+			LG.log(MC.LOG_ERROR, TAG, "Fail to vote txid: " + tid+",Method: " + sm.getKey().toKey(true, true, true));
 			return false;
 		}
-		
-		if(txOwner) {
-			if(!ltr.end(tid)) {
-				ltr.rollback(tid);//本地直接回滚事务
-				LG.log(MC.LOG_ERROR, this.getClass(), "Fail to commit txid: " + tid+",Method: " + sm.getKey().toKey(true, true, true));
-				return false;
-			}
-		}
-		
 		return true;
+	}
+			
+	
+	private void ownerEnd(ServiceMethod sm,Long tid,PromiseImpl<Object> asyP) {
+		if(LG.isLoggable(MC.LOG_INFO)) {
+			String msg = "Wait tx finish txid: " + JMicroContext.get().getLong(TxConstants.TYPE_TX_KEY, -1L);
+			LG.log(MC.LOG_INFO, TAG, msg);
+		}
+		ltr.waitTxFinish(tid,asyP);
 	}
 
 }

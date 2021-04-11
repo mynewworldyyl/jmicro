@@ -10,7 +10,7 @@
                   <DropdownItem v-for="m in menus" :key="m" :selected="groupBy==m" :name="m">{{m}}</DropdownItem>
                  <!-- <DropdownItem :selected="groupBy=='ins'" name="ins">Instance</DropdownItem>
                   <DropdownItem :selected="groupBy=='snv'" name="snv">SNV</DropdownItem>-->
-
+                  <DropdownItem  name="all" :divided="false">All</DropdownItem>
                   <DropdownItem  name="refresh" :divided="true">Refresh</DropdownItem>
               </DropdownMenu>
           </Dropdown>
@@ -45,6 +45,7 @@
                 services : [],
                 srcNodes : [],
                 menus : menus,
+                showAll:false,
             }
         },
 
@@ -105,7 +106,7 @@
 
             loadServices(cb) {
 
-                window.jm.mng.srv.getServices().then((nodes)=>{
+                window.jm.mng.srv.getServices(this.showAll).then((nodes)=>{
                     if(!nodes || nodes.length == 0 ) {
                         if(cb) {
                             cb([]);
@@ -246,6 +247,11 @@
 
             ,menuSelect(name){
                 if('refresh' == name) {
+                    this.loadServices((srvTrees)=>{
+                        this.services = srvTrees;
+                    });
+                }else if('all' == name) {
+                    this.showAll =! this.showAll;
                     this.loadServices((srvTrees)=>{
                         this.services = srvTrees;
                     });

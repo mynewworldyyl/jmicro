@@ -15,6 +15,7 @@ import cn.jmicro.api.annotation.SMethod;
 import cn.jmicro.api.annotation.Service;
 import cn.jmicro.api.config.Config;
 import cn.jmicro.api.idgenerator.ComponentIdServer;
+import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.raft.IDataOperator;
 import cn.jmicro.api.route.RouteRule;
 import cn.jmicro.api.security.ActInfo;

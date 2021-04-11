@@ -41,7 +41,7 @@ import cn.jmicro.common.Constants;
  * @date 2020年3月27日
  */
 @Component(level=1001)
-@Service(version="0.0.1",external=true,showFront=false)
+@Service(version="0.0.1",external=true,showFront=false,logLevel=MC.LOG_NO)
 public class StatisMonitorImpl implements IStatisMonitor {
 
 	private final static Logger logger = LoggerFactory.getLogger(StatisMonitorImpl.class);

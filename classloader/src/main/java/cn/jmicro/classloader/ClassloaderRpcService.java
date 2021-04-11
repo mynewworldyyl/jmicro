@@ -16,7 +16,8 @@ import cn.jmicro.api.monitor.LG;
 import cn.jmicro.api.monitor.MC;
 import cn.jmicro.common.Constants;
 
-@Service(version="0.0.1",timeout=30000,showFront=false,clientId=Constants.NO_CLIENT_ID)
+@Service(version="0.0.1",timeout=30000,showFront=false,clientId=Constants.NO_CLIENT_ID,
+logLevel=MC.LOG_WARN)
 @Component
 public class ClassloaderRpcService implements IClassloaderRpc {
 

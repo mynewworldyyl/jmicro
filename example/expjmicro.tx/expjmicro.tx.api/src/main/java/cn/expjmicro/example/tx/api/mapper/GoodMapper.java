@@ -23,6 +23,6 @@ public interface GoodMapper {
 		@Result(property = "total", column = "total"),
 		@Result(property = "usableCnt", column = "usable_cnt"),
 		@Result(property = "price", column = "price") })
-	@Select({ "Select * from t_good where id = #{goodId} for update" })
+	@Select({ "Select * from t_good where id = #{goodId}" })
 	public Good selectById(int goodId);
 }

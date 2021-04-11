@@ -3,21 +3,20 @@ package cn.jmicro.mng.impl;
 import java.util.Set;
 import java.util.TreeSet;
 
-import cn.jmicro.api.JMicroContext;
 import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Inject;
 import cn.jmicro.api.annotation.SMethod;
 import cn.jmicro.api.annotation.Service;
 import cn.jmicro.api.mng.IManageService;
+import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.registry.IRegistry;
 import cn.jmicro.api.registry.ServiceItem;
 import cn.jmicro.api.registry.ServiceMethod;
-import cn.jmicro.api.security.ActInfo;
 import cn.jmicro.api.security.PermissionManager;
 import cn.jmicro.api.service.ServiceManager;
 
 @Component
-@Service(version="0.0.1",external=true,timeout=10000,debugMode=1,showFront=false)
+@Service(version="0.0.1",external=true,timeout=10000,debugMode=1,showFront=false,logLevel=MC.LOG_NO)
 public class ManageServiceImpl implements IManageService {
 
 	@Inject
@@ -28,24 +27,27 @@ public class ManageServiceImpl implements IManageService {
 	
 	@Override
 	@SMethod(perType=false,needLogin=true,maxSpeed=10,maxPacketSize=256)
-	public Set<ServiceItem> getServices() {
+	public Set<ServiceItem> getServices(boolean all) {
 		 Set<ServiceItem> items = srvManager.getAllItems();
 		 if(items == null || items.isEmpty()) {
 			 return null;
 		 }
 		 
 		 Set<ServiceItem> sis = new TreeSet<>();
-		 ActInfo ai = JMicroContext.get().getAccount();
-		 if(ai != null) {
-			 for(ServiceItem si : items) {
-				 if(!si.isShowFront()) {
-					 continue;
-				 }
-				 if(PermissionManager.isOwner(si.getCreatedBy())) {
+		 
+		 if(all && PermissionManager.isCurAdmin()) {
+			 sis.addAll(items);
+			 return sis;
+		 }
+
+		 for(ServiceItem si : items) {
+			 if(PermissionManager.isOwner(si.getCreatedBy())) {
+				 if(all || si.isShowFront()) {
 					 sis.add(si);
 				 }
 			 }
 		 }
+	 
 		 return sis;
 	}
 

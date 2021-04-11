@@ -31,6 +31,10 @@ public abstract class AbstractClientServiceProxyHolder implements IServiceListen
 	public ServiceItem getItem() {
 		return proxyHolder.getItem();
 	}
+	
+	public int getInsId() {
+		return proxyHolder.getInsId();
+	}
 
 	/*public <T> T[] convertArray(Class<T> targetType, Object[] arrayObjects) {
         if (targetType == null) {

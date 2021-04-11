@@ -215,13 +215,13 @@ public class RpcRequest0 extends AbstractObjectMapSupport implements IRequest {
 	}
 
 	@Override
-	public String getImpl() {
+	public int getImpl() {
 		// TODO Auto-generated method stub
-		return null;
+		return 33;
 	}
 
 	@Override
-	public void setImpl(String impl) {
+	public void setImpl(int impl) {
 		// TODO Auto-generated method stub
 		
 	}

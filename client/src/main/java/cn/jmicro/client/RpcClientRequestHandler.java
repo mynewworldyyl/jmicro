@@ -114,12 +114,6 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
 	@Inject
 	private ServiceManager srvManager;
 	
-	@Inject
-	private StatisMonitorClient statisMonitor;
-	
-	@Inject
-	private LogMonitorClient logMonitor;
-	
 	@Inject(required=true)
 	private ProcessInfo pi;
 	
@@ -183,7 +177,7 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
         	}
 			
 			 MT.rpcEvent(MC.MT_REQ_START);
-			 LG.log(MC.LOG_DEBUG, TAG.getName(), MC.MT_REQ_START);
+			 //LG.log(MC.LOG_DEBUG, TAG.getName(), MC.MT_REQ_START);
 			 //SF.doRequestLog(MonitorConstant.LOG_DEBUG, TAG,null, "request start");
 			
 			 ServiceMethod sm = JMicroContext.get().getParam(Constants.SERVICE_METHOD_KEY, null);
@@ -329,7 +323,7 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
 			throw new RpcException(req,errMsg,MC.MT_SERVICE_ITEM_NOT_FOUND);
 		}
     	
-    	req.setImpl(si.getCode()+"");
+    	req.setImpl(si.getCode());
     	
     	Server s = si.getServer(Constants.TRANSPORT_NETTY);
     	
@@ -343,7 +337,7 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
     	if(isFistLoop){
     		ByteBuffer pl = ICodecFactory.encode(this.codecFactory, req, msg.getUpProtocol());
     		if(sm.getMaxPacketSize() > 0 && pl.limit() >= sm.getMaxPacketSize()) {
-    			String m = "Packet too max " + pl.limit() + " limit size: " + sm.getMaxPacketSize();
+    			String m = "Packet too max " + pl.limit() + " limit size: " + sm.getMaxPacketSize()+",sm: "+sm.getKey().toKey(true, false, false);
     			//m = LG.reqMessage(m, req);
     			LG.log(MC.LOG_ERROR, TAG, m);
     			throw new RpcException(req,m,MC.MT_PACKET_TOO_MAX);
@@ -390,7 +384,8 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
     		//废弃此字段
     		//msg.setLoggable(SF.isLoggable(sm.getLogLevel()));
     		//往监控服务器上传日志包,当前RPC的日志级别
-    		msg.setLogLevel(sm.getLogLevel());
+    		int ll = cxt.getInt(JMicroContext.SM_LOG_LEVEL, MC.LOG_NO);
+    		msg.setLogLevel(ll);
     		//往监控服务器上传监控包
     		msg.setMonitorable(cxt.isMonitorable());
     		//控制在各JVM实例内部转出日志
@@ -578,20 +573,21 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
     		Object errO = new ServerError(10,e.getMessage());
     		p.setResult(errO);
 		} finally {
-			if(cxt.getObject(Constants.NEW_LINKID,null) != null &&
-					cxt.getBoolean(Constants.NEW_LINKID,false)) {
+			if(cxt.getBoolean(Constants.NEW_LINKID,false)) {
 				//RPC链路结束
-				LG.log(MC.LOG_DEBUG, TAG.getName(), MC.MT_LINK_END);
+				if(LG.isLoggable(MC.LOG_DEBUG)) {
+					LG.log(MC.LOG_DEBUG, TAG,"Link end: " + JMicroContext.lid());
+				}
 			}
 			
 			MT.rpcEvent(MC.MT_REQ_END);
-			LG.log(MC.LOG_DEBUG, TAG.getName(), MC.MT_REQ_END);
+			//LG.log(MC.LOG_DEBUG, TAG.getName(), MC.MT_REQ_END);
 			
 			cxt.debugLog(0);
 			if(sm.getKey().getMethod().equals("invokeRpcA")) {
 				logger.debug("");
 			}
-			cxt.submitMRpcItem(logMonitor,statisMonitor);
+			cxt.submitMRpcItem();
 			
 			//从此开始脱离此RPC上下文
 			p.done();
@@ -655,17 +651,18 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
 					+ ",Method [" + sm.getKey().toKey(true, true, true)+"]";
 
 			logger.warn(errMsg);
-			// 肯定是超时失败了
-			// SF.reqTimeoutFail(TAG.getName(),"");
+			//肯定是超时失败了
+			//SF.reqTimeoutFail(TAG.getName(),"");
 			MT.rpcEvent(MC.MT_REQ_TIMEOUT_FAIL);
 			MT.rpcEvent(MC.MT_REQ_END);
-			LG.log(MC.LOG_ERROR, TAG.getName(),errMsg, MC.MT_REQ_END);
+			
+			LG.log(MC.LOG_ERROR, TAG,errMsg);
 			
 			p.setFail(MC.MT_REQ_TIMEOUT_FAIL, errMsg);
 			p.done();
 			
 			cxt.debugLog(0);
-			cxt.submitMRpcItem(logMonitor,statisMonitor);
+			cxt.submitMRpcItem();
 			JMicroContext.clear();
 
 			return true;

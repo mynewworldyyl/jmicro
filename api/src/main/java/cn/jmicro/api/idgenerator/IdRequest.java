@@ -60,5 +60,11 @@ public class IdRequest implements IReq{
 	public void setClazz(String clazz) {
 		this.clazz = clazz;
 	}
+
+	@Override
+	public Object[] getArgs() {
+		// TODO Auto-generated method stub
+		return null;
+	}
 	
 }

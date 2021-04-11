@@ -14,12 +14,13 @@ import cn.jmicro.api.config.Config;
 import cn.jmicro.api.config.DictManager;
 import cn.jmicro.api.i18n.I18NManager;
 import cn.jmicro.api.mng.ICommonManager;
+import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.raft.IDataOperator;
 import cn.jmicro.api.security.ActInfo;
 import cn.jmicro.common.Utils;
 
 @Component
-@Service(version="0.0.1",external=true,debugMode=1,showFront=false)
+@Service(version="0.0.1",external=true,debugMode=1,showFront=false,logLevel=MC.LOG_NO)
 public class CommonManagerImpl implements ICommonManager {
 
 	@Cfg("/notLonginClientId")

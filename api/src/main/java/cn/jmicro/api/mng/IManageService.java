@@ -9,7 +9,7 @@ import cn.jmicro.codegenerator.AsyncClientProxy;
 @AsyncClientProxy
 public interface IManageService {
 
-	Set<ServiceItem> getServices();
+	Set<ServiceItem> getServices(boolean all);
 	
 	boolean updateMethod(ServiceMethod method);
 	

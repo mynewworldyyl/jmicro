@@ -56,19 +56,28 @@ public class TimeUtils {
 			//时间更新器在更新中，直接取即可
 			return curTime.get();
 		}else {
-			long ct = System.currentTimeMillis();
-			synchronized(timeCheckLocker) {
-				if(!isChecking.get()) {
-					lastUseTime.set(ct);
-					curTime.set(ct);
-					//启动时间更新器，避免大并发下高速调用 System.currentTimeMillis()造成性能瓶颈
-					new Thread(timeGetter).start();
-				}
-			}
-			return ct;
+			return updateTime();
 		}
 	}
 	
+	public static long getCurTime(boolean aonce) {
+		if(aonce) {
+			return System.currentTimeMillis();
+		}
+		return getCurTime();
+	}
+	
+	private static long updateTime() {
+		long ct = System.currentTimeMillis();
+		if(!isChecking.get()) {
+			lastUseTime.set(ct);
+			curTime.set(ct);
+			//启动时间更新器，避免大并发下高速调用 System.currentTimeMillis()造成性能瓶颈
+			new Thread(timeGetter).start();
+		}
+		return ct;
+	}
+
 	static {
 		
 		unitNameToTimeUnit.put(Constants.TIME_DAY, TimeUnit.DAYS);

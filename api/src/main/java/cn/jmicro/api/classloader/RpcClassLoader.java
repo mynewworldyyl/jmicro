@@ -34,7 +34,6 @@ import cn.jmicro.api.config.Config;
 import cn.jmicro.api.monitor.LG;
 import cn.jmicro.api.monitor.MC;
 import cn.jmicro.common.CommonException;
-import cn.jmicro.common.Constants;
 
 public class RpcClassLoader extends ClassLoader {
 

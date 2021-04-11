@@ -5,9 +5,9 @@
 <mapper namespace="cn.expjmicro.example.tx.api.mapper.PaymentMapper">
 
   <insert id="savePayment" parameterType="cn.expjmicro.example.tx.api.entities.Payment" >
-   insert into t_payment (id,order_id, amount)
+   insert into t_payment (id,order_id, amount,txid)
     values (#{id,jdbcType=INTEGER},
-    #{orderId,jdbcType=INTEGER}, #{amount,jdbcType=DECIMAL}
+    #{orderId,jdbcType=INTEGER}, #{amount,jdbcType=DECIMAL}, #{txid,jdbcType=INTEGER}
       )
   </insert>
 

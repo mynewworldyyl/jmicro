@@ -43,7 +43,7 @@ public final class ServiceMethod {
 	
 	//-1 use Service config, 0 disable, 1 enable
 	private int monitorEnable = -1;
-	private byte logLevel  = MC.LOG_ERROR;
+	private byte logLevel  = MC.LOG_DEPEND;
 	//dump 下行流，用于下行数问题排查
 	private boolean dumpDownStream = false;
 	//dump 上行流，用于上行数问题排查

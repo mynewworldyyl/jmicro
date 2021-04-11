@@ -123,7 +123,7 @@ public class TestRpcRequest {
 		req.setMsg(new Message());
 		req.setFinish(true);
 		req.setRequestId(222L);
-		req.setImpl("test");
+		req.setImpl(2);
 		req.setRequestId(355L);
 		/*req.setNamespace("ns");
 		req.setServiceName("3333");*/

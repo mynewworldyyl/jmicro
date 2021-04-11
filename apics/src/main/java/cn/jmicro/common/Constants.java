@@ -24,7 +24,7 @@ package cn.jmicro.common;
 public interface Constants {
 	
 	public static final String CORE_CLASS="cn.jmicro.api";
-	
+	public static final String INVALID_LOG_DESC = "nl";
 	public static final byte USE_SYSTEM_CLIENT_ID = -2;
 	
 	public static final int NO_CLIENT_ID = -1;

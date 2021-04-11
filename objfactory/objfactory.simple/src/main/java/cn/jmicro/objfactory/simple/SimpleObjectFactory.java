@@ -597,7 +597,7 @@ public class SimpleObjectFactory implements IObjectFactory {
 				//注入服务引用
 				processReference0(lobjs,cfg,systemObjs);
 				
-				LG.initLog();
+				LG.initLog(SimpleObjectFactory.this);
 				
 				//组件初始化完成
 				notifyAfterInitPostListener0(lobjs,cfg,systemObjs);

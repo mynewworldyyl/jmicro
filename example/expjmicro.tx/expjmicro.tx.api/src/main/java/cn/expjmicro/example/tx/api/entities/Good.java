@@ -1,9 +1,7 @@
 package cn.expjmicro.example.tx.api.entities;
 
-import cn.jmicro.api.annotation.SO;
 import lombok.Data;
 
-@SO
 @Data
 public class Good {
 

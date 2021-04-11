@@ -36,7 +36,7 @@ public final class RpcRequest implements IRequest{
 	
 	private Object[] args;
 
-	private String impl;
+	private int impl;
 	
 	private String transport;
 	
@@ -186,11 +186,11 @@ public final class RpcRequest implements IRequest{
 		return this.getParams();
 	}
 	
-	public String getImpl() {
+	public int getImpl() {
 		return impl;
 	}
 
-	public void setImpl(String impl) {
+	public void setImpl(int impl) {
 		this.impl = impl;
 	}
 

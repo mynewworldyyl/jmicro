@@ -24,7 +24,8 @@ import cn.jmicro.api.security.PermissionManager;
 import cn.jmicro.common.util.StringUtils;
 
 @Component
-@Service(version="0.0.1",retryCnt=0,external=true,timeout=10000,debugMode=1,showFront=false)
+@Service(version="0.0.1",retryCnt=0,external=true,timeout=10000,debugMode=1,
+showFront=false,logLevel=MC.LOG_NO)
 public class ConfigManagerImpl implements IConfigManager {
 
 	private final static Logger logger = LoggerFactory.getLogger(ConfigManagerImpl.class);
@@ -67,7 +68,7 @@ public class ConfigManagerImpl implements IConfigManager {
 	}
 	
 	@Override
-	@SMethod(perType=true,needLogin=true,maxSpeed=10,maxPacketSize=512)
+	@SMethod(perType=true,needLogin=true,maxSpeed=10,maxPacketSize=512,logLevel=MC.LOG_NO)
 	public Resp<ConfigNode[]> getChildren(String path,Boolean getAll) {
 		Resp<ConfigNode[]> r = new Resp<>();
 		if(!PermissionManager.isCurAdmin()) {

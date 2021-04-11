@@ -1,19 +1,14 @@
 package cn.jmicro.api.tx;
 
 import cn.jmicro.api.annotation.SO;
+import lombok.Data;
 
 @SO
+@Data
 public class TxConfig {
 
+	private int pid;
+	
 	private long timeout;
 
-	public long getTimeout() {
-		return timeout;
-	}
-
-	public void setTimeout(long timeout) {
-		this.timeout = timeout;
-	}
-	
-	
 }

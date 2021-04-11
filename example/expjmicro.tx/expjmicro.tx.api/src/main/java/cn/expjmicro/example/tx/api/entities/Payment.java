@@ -15,4 +15,6 @@ public class Payment {
 	
 	private double amount;
 	
+	private long txid;
+	
 }

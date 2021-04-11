@@ -408,7 +408,7 @@ public class StatisManager {
 		ji.setCreateTime(curTime);
 		ji.setInputTime(curTime);
 		ji.setInstanceName(sc.getByns());
-		ji.setLogLevel(MC.LOG_INFO);
+		//ji.setLogLevel(MC.LOG_INFO);
 		ji.setSysClientId(sc.getCreatedBy());
 		ji.addOneItem(MC.LOG_INFO, "StatisConfig", JsonUtils.getIns().toJson(sd),TimeUtils.getCurTime());
 		ji.setTag("StatisConfig");
