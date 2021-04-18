@@ -548,7 +548,6 @@ public class LogMonitorClient {
 		
 	}
 
-
 	private class Worker implements Runnable {
 		
 		private JMLogItem[] items = null;

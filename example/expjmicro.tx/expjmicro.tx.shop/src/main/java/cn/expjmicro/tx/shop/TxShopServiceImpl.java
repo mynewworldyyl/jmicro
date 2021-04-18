@@ -26,7 +26,7 @@ import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.tx.TxConstants;
 
 @Component
-@Service(version="0.0.1",showFront=true,external=true)
+@Service(version="0.0.1",showFront=true,external=true,logLevel=MC.LOG_DEBUG)
 public class TxShopServiceImpl implements ITxShopService {
 
 	private final static Logger logger = LoggerFactory.getLogger(TxShopServiceImpl.class);
@@ -44,7 +44,7 @@ public class TxShopServiceImpl implements ITxShopService {
 	private AtomicInteger successNum = new AtomicInteger(0);
 	
 	@Override
-	@SMethod(txType=TxConstants.TYPE_TX_DISTRIBUTED,timeout=3*60*1000,logLevel=MC.LOG_INFO)
+	@SMethod(txType=TxConstants.TYPE_TX_DISTRIBUTED,timeout=3*60*1000,txPhase=TxConstants.TX_3PC)
 	public Resp<Boolean> buy(int goodId,int num) {
 		Resp<Boolean> r = new Resp<>(Resp.CODE_FAIL,false);
 		
@@ -71,7 +71,7 @@ public class TxShopServiceImpl implements ITxShopService {
 	}
 	
 	@Override
-	@SMethod(txType=TxConstants.TYPE_TX_LOCAL,timeout=3*60*1000,logLevel=MC.LOG_INFO)
+	@SMethod(txType=TxConstants.TYPE_TX_LOCAL,timeout=3*60*1000)
 	public Resp<Boolean> updateLocalData(int goodId,int num) {
 		
 		Resp<Boolean> r = new Resp<>(Resp.CODE_FAIL,false);
@@ -91,8 +91,8 @@ public class TxShopServiceImpl implements ITxShopService {
 	}
 	
 	@Override
-	@SMethod(txType=TxConstants.TYPE_TX_DISTRIBUTED,timeout=3*60*1000,logLevel=MC.LOG_INFO,
-	txIsolation=Connection.TRANSACTION_READ_COMMITTED)
+	@SMethod(txType=TxConstants.TYPE_TX_DISTRIBUTED,timeout=3*60*1000,
+	txIsolation=Connection.TRANSACTION_READ_COMMITTED,txPhase=TxConstants.TX_3PC)
 	public IPromise<Resp<Boolean>> buyAsy(int goodId,int num) {
 		
 		PromiseImpl<Resp<Boolean>> p = new PromiseImpl<>();

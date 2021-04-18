@@ -21,7 +21,7 @@ import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.tx.TxConstants;
 
 @Component
-@Service(version="0.0.1")
+@Service(version="0.0.1",logLevel=MC.LOG_DEBUG)
 public class TxOrderServiceImpl implements ITxOrderService {
 
 	@Inject
@@ -37,7 +37,7 @@ public class TxOrderServiceImpl implements ITxOrderService {
 	private ComponentIdServer idServer;
 	
 	@Override
-	@SMethod(txType=TxConstants.TYPE_TX_DISTRIBUTED,logLevel=MC.LOG_INFO)
+	@SMethod(txType=TxConstants.TYPE_TX_DISTRIBUTED)
 	public Resp<Boolean> takeOrder(int goodId,int num) {
 		Resp<Boolean> r = new Resp<>(Resp.CODE_FAIL,false);
 		
@@ -74,7 +74,7 @@ public class TxOrderServiceImpl implements ITxOrderService {
 	}
 	
 	@Override
-	@SMethod(txType=TxConstants.TYPE_TX_DISTRIBUTED,logLevel=MC.LOG_INFO)
+	@SMethod(txType=TxConstants.TYPE_TX_DISTRIBUTED)
 	public IPromise<Resp<Boolean>> takeOrderAsy(Good g,int num) {
 		
 		Order o = new Order();

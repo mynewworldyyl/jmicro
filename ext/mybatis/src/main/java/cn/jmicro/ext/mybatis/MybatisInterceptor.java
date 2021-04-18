@@ -62,7 +62,7 @@ public class MybatisInterceptor extends AbstractInterceptor implements IIntercep
 	
 	@Override
 	public IPromise<Object> intercept(IRequestHandler handler, IRequest req) throws RpcException {
-		IPromise<Object> p = null;
+		final IPromise<Object> p;
 		
 		ServiceMethod sm = JMicroContext.get().getParam(Constants.SERVICE_METHOD_KEY, null);
 		if(sm == null || sm.getTxType() == TxConstants.TYPE_TX_NO) {
@@ -95,7 +95,7 @@ public class MybatisInterceptor extends AbstractInterceptor implements IIntercep
 							", Method: " + sm.getKey().toKey(true, true, true),Resp.CODE_TX_FAIL);
 				}
 				
-				if(!ltr.takePartIn(tid,s)) {
+				if(!ltr.takePartIn(tid,sm.getTxPhase(),s)) {
 					throw new RpcException(req,"fail to take part in transaction: " + tid+
 							", Method: " + sm.getKey().toKey(true, true, true),Resp.CODE_TX_FAIL);
 				}
@@ -139,13 +139,16 @@ public class MybatisInterceptor extends AbstractInterceptor implements IIntercep
 				if(txOwner.get()) {
 					pa = new PromiseImpl<>();
 					asyP.set(pa);
-					pa.setContext(p.getContext());
-					pa.setResult(p.getResult());
-					pa.setFail(p.getFailCode(), p.getFailMsg());
-					pa.setResultType(p.resultType());
 				}
 				
 				p.success((rst,cxt)->{
+					PromiseImpl<Object> pa0 = asyP.get();
+					if(pa0 != null) {
+						pa0.setContext(p.getContext());
+						pa0.setResult(rst);
+						pa0.setResultType(p.resultType());
+					}
+					
 					boolean commit = true;
 					if(rst != null && rst instanceof Resp) {
 						Resp r = (Resp)rst;
@@ -162,7 +165,7 @@ public class MybatisInterceptor extends AbstractInterceptor implements IIntercep
 						//选注册事务回调再投标票，确保能收到事务提交结果通知
 						if(commit) {
 							//需要等待事务提交结果
-							ownerEnd(sm,txid.get(),asyP.get());
+							ownerEnd(sm,txid.get(),pa0);
 						} else {
 							//事务回滚不再需要等待
 							asyP.get().setFail(Resp.CODE_TX_FAIL, "tx fail");
@@ -191,9 +194,13 @@ public class MybatisInterceptor extends AbstractInterceptor implements IIntercep
 					doVote(sm,txid.get(),false);
 					
 					if(txOwner.get()) {
+						PromiseImpl<Object> pa0 = asyP.get();
+						pa0.setContext(p.getContext());
+						pa0.setResult(p.getResult());
+						pa0.setResultType(p.resultType());
 						//事务回滚不再需要等待
-						asyP.get().setFail(code, msg);
-						asyP.get().done();
+						pa0.setFail(code, msg);
+						pa0.done();
 						ownerEnd(sm,txid.get(),null);
 					}
 					

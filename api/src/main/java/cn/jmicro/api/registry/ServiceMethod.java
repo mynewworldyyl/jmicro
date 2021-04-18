@@ -157,9 +157,11 @@ public final class ServiceMethod {
 	
 	private byte feeType = Constants.LICENSE_TYPE_FREE;
 	
-	private int txType = TxConstants.TYPE_TX_NO;
+	private byte txType = TxConstants.TYPE_TX_NO;
 	
-	private int txIsolation = Connection.TRANSACTION_READ_COMMITTED;
+	private byte txIsolation = Connection.TRANSACTION_READ_COMMITTED;
+	
+	private byte txPhase = TxConstants.TX_2PC;
 	
 	private int[] authClients;
 	
@@ -211,6 +213,7 @@ public final class ServiceMethod {
 		this.forType = p.forType;
 		this.txType = p.txType;
 		this.txIsolation = p.txIsolation;
+		this.txPhase = p.txPhase;
 		
 		this.key.form(p.key);
 	}
@@ -304,7 +307,7 @@ public final class ServiceMethod {
 		return txType;
 	}
 
-	public void setTxType(int txType) {
+	public void setTxType(byte txType) {
 		this.txType = txType;
 	}
 
@@ -575,8 +578,16 @@ public final class ServiceMethod {
 		return txIsolation;
 	}
 
-	public void setTxIsolation(int txIsolation) {
+	public void setTxIsolation(byte txIsolation) {
 		this.txIsolation = txIsolation;
+	}
+
+	public byte getTxPhase() {
+		return txPhase;
+	}
+
+	public void setTxPhase(byte txPhase) {
+		this.txPhase = txPhase;
 	}
 
 	

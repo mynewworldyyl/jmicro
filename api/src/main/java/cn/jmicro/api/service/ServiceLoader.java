@@ -666,7 +666,8 @@ public class ServiceLoader{
 				sm.setUpSsl(false);
 				sm.setDownSsl(false);
 				sm.setTxType(TxConstants.TYPE_TX_NO);
-				sm.setTxIsolation(Connection.TRANSACTION_READ_COMMITTED);
+				sm.setTxPhase(TxConstants.TX_2PC);
+				sm.setTxIsolation((byte)Connection.TRANSACTION_READ_COMMITTED);
 			} else {
 				 if(manno != null ) {
 					 //实现类方法配置具有高优先级
@@ -707,6 +708,7 @@ public class ServiceLoader{
 					sm.setForType(manno.forType());
 					sm.setTxType(manno.txType());
 					sm.setTxIsolation(manno.txIsolation());
+					sm.setTxPhase(manno.txPhase());
 				 } else {
 					 //使用接口方法配置
 					sbr = intMAnno.breakingRule();
@@ -746,6 +748,7 @@ public class ServiceLoader{
 					sm.setLimitType(intMAnno.limitType());
 					sm.setForType(intMAnno.forType());
 					sm.setTxType(intMAnno.txType());
+					sm.setTxPhase(intMAnno.txPhase());
 					sm.setTxIsolation(intMAnno.txIsolation());
 				 }
 				 

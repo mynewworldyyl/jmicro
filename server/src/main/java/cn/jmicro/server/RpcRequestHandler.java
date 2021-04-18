@@ -33,6 +33,7 @@ import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.async.IPromise;
 import cn.jmicro.api.exception.RpcException;
 import cn.jmicro.api.internal.async.PromiseImpl;
+import cn.jmicro.api.monitor.LG;
 import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.net.AbstractHandler;
 import cn.jmicro.api.net.IRequest;
@@ -87,6 +88,7 @@ public class RpcRequestHandler extends AbstractHandler implements IRequestHandle
 			
 		} catch (SecurityException | IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
 			logger.error("onRequest:",e);
+			LG.log(MC.LOG_ERROR, RpcRequestHandler.class, "Invoke service error: " + e.getMessage());
 			p = new PromiseImpl<Object>();
 			p.setFail(MC.MT_SERVER_ERROR, e.getMessage());
 			p.done();

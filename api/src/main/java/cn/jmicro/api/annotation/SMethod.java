@@ -171,7 +171,9 @@ public @interface SMethod {
 	
 	public int forType() default Constants.FOR_TYPE_ALL;
 	
-	public int txType() default TxConstants.TYPE_TX_NO;
+	public byte txType() default TxConstants.TYPE_TX_NO;
 	
-	public int txIsolation() default Connection.TRANSACTION_READ_COMMITTED;
+	public byte txPhase() default TxConstants.TX_2PC;
+	
+	public byte txIsolation() default Connection.TRANSACTION_READ_COMMITTED;
 }

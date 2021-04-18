@@ -1,11 +1,14 @@
 package cn.jmicro.tx;
 
+import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
 import org.apache.ibatis.session.SqlSession;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import cn.jmicro.api.JMicroContext;
 import cn.jmicro.api.Resp;
@@ -32,7 +35,11 @@ monitorEnable=0, logLevel=MC.LOG_DEBUG, retryCnt=3, showFront=false, external=fa
 infs=ITransactionResource.class)
 public class TransactionResourceServiceIml implements ITransactionResource, ILocalTransactionResource {
 
+	private final static Logger logger = LoggerFactory.getLogger(TransactionResourceServiceIml.class);
+	
 	private static final Class<?> TAG = TransactionResourceServiceIml.class;
+	
+	private static final String STR_TAG = ITransactionResource.STR_TAG;
 	
 	private long localTxTimeout = 30000;
 	
@@ -106,7 +113,7 @@ public class TransactionResourceServiceIml implements ITransactionResource, ILoc
 	private void forceRollback(TxEntry txe) {
 		String msg = "Force rollback tx:"+txe.txid+",insId:" + this.pi.getInstanceName();
 		try {
-			LG.log(MC.LOG_ERROR, TAG, msg);
+			LG.log(MC.LOG_ERROR, STR_TAG, msg);
 			synchronized(txEntries) {
 				txEntries.remove(txe.txid);
 			}
@@ -117,6 +124,32 @@ public class TransactionResourceServiceIml implements ITransactionResource, ILoc
 				txe.p.done();
 			}
 		}
+	}
+
+	@Override
+	public Resp<Boolean> canCommit(long txid) {
+		Resp<Boolean> r = new Resp<>(Resp.CODE_FAIL,false);
+		TxEntry txe = this.txEntries.get(txid);
+		if(txe == null || txe.s == null) {
+			if(LG.isLoggable(MC.LOG_WARN)) {
+				LG.log(MC.LOG_WARN, TAG, txid +" entry not found when canCommit ");
+			}
+			return r;
+		}
+		
+		try {
+			if(!txe.s.getConnection().isValid(txe.timeout)) {
+				LG.log(MC.LOG_WARN, TAG, txid +" connection invalid");
+				return r;
+			}
+		} catch (SQLException e) {
+			LG.log(MC.LOG_ERROR, TAG, txid +" canCommit", e);
+			return r;
+		}
+
+		r.setCode(Resp.CODE_SUCCESS);
+		r.setData(true);
+		return r;
 	}
 
 	@Override
@@ -138,11 +171,11 @@ public class TransactionResourceServiceIml implements ITransactionResource, ILoc
 				if(commit) {
 					txe.phase = TxEntry.PHASE_GOT_TX_COMMIT;
 					if(LG.isLoggable(MC.LOG_DEBUG)) {
-						LG.log(MC.LOG_DEBUG, this.getClass(), "Client "+pi.getId()+" commit transaction: " + txid);
+						LG.log(MC.LOG_DEBUG, this.getClass(), "Client "+pi.getId()+" commit:" + commit + " txid: " + txid);
 					}
 				} else {
 					txe.phase = TxEntry.PHASE_GOT_TX_ROLLBACK;
-					LG.log(MC.LOG_WARN, this.getClass(), "Rollback transaction: " + txid);
+					LG.log(MC.LOG_WARN, this.getClass(), "Rollback txid: " + txid);
 				}
 				
 				txe.valid = false;
@@ -151,12 +184,19 @@ public class TransactionResourceServiceIml implements ITransactionResource, ILoc
 				} else {
 					txe.s.rollback(true);
 				}
+			} catch(Throwable e) {
+				//在此进入3PC阶段
+				String msg = "Error txid: "+txid +" commit: " + commit+",insName: "+
+						this.pi.getInstanceName()+",insId: " + pi.getId();
+				LG.log(MC.LOG_ERROR,STR_TAG,msg,e);
+				logger.error(msg,e);
+				r.setCode(Resp.CODE_TX_FAIL);//事务提交失败
+				r.setData(false);
+				r.setMsg(msg);
 			} finally {
-				
 				synchronized(txEntries) {
 					this.txEntries.remove(txid);
 				}
-				
 				if(txe.p != null) {
 					if(!commit) {
 						txe.p.setFail(Resp.CODE_TX_FAIL, "Rollback tx:"+txid);
@@ -203,13 +243,13 @@ public class TransactionResourceServiceIml implements ITransactionResource, ILoc
 	
 
 	@Override
-	public boolean takePartIn(long txid,SqlSession s) {
+	public boolean takePartIn(long txid,byte txPhase,SqlSession s) {
 		
 		if(LG.isLoggable(MC.LOG_DEBUG)) {
 			LG.log(MC.LOG_DEBUG, this.getClass(), "Client "+pi.getId()+" take part in transaction: " + txid);
 		}
 		
-		Resp<Boolean> r = tsServer.takePartIn(this.pi.getId(), txid);
+		Resp<Boolean> r = tsServer.takePartIn(this.pi.getId(), txid,txPhase);
 		
 		if(!r.getData() || r.getCode() != Resp.CODE_SUCCESS) {
 			LG.log(MC.LOG_ERROR, this.getClass(), r.getMsg());
@@ -222,6 +262,7 @@ public class TransactionResourceServiceIml implements ITransactionResource, ILoc
 		txe.txid = txid;
 		txe.s = s;
 		txe.phase = TxEntry.PHASE_TAKE_PART_IN;
+		txe.txPhase = txPhase;
 		
 		synchronized(txEntries) {
 			this.txEntries.put(txid, txe);
@@ -269,7 +310,7 @@ public class TransactionResourceServiceIml implements ITransactionResource, ILoc
 		
 		private int retryCnt = 0;
 		
-		private long timeout;
+		private int timeout;
 		private long startTime;
 		private long txid;
 		private SqlSession s;
@@ -278,6 +319,9 @@ public class TransactionResourceServiceIml implements ITransactionResource, ILoc
 		private boolean voted = false;//同意票，否定票
 		
 		private int phase = PHASE_TAKE_PART_IN;
+		
+		private byte txPhase = TxConstants.TX_2PC;
+		
 		private PromiseImpl<Object> p;
 	}
 	

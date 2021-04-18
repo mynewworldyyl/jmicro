@@ -10,5 +10,5 @@ public class TxConfig {
 	private int pid;
 	
 	private long timeout;
-
+	
 }

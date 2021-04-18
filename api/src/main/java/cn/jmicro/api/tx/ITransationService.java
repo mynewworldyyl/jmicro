@@ -31,7 +31,7 @@ public interface ITransationService {
 	 * @param txid
 	 * @return
 	 */
-	Resp<Boolean> takePartIn(int pid,long txid);
+	Resp<Boolean> takePartIn(int pid,long txid,byte txPhase);
 	
 	/**
 	 * 投票

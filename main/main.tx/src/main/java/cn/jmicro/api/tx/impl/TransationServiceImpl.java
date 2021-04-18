@@ -5,10 +5,12 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.CountDownLatch;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import cn.jmicro.api.Holder;
 import cn.jmicro.api.IListener;
 import cn.jmicro.api.Resp;
 import cn.jmicro.api.annotation.Component;
@@ -22,8 +24,10 @@ import cn.jmicro.api.mng.JmicroInstanceManager;
 import cn.jmicro.api.monitor.LG;
 import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.objectfactory.AbstractClientServiceProxyHolder;
+import cn.jmicro.api.tx.ITransactionResource;
 import cn.jmicro.api.tx.ITransationService;
 import cn.jmicro.api.tx.TxConfig;
+import cn.jmicro.api.tx.TxConstants;
 import cn.jmicro.api.tx.genclient.ITransactionResource$JMAsyncClient;
 import cn.jmicro.api.utils.TimeUtils;
 
@@ -137,8 +141,9 @@ public class TransationServiceImpl implements ITransationService{
 	private void finishOneGroup(TxGroup g) {
 		boolean commit = true;
 		for(TxVoter v : g.voters.values()){
-			if(!rsMap.containsKey(v.pid)) {//只要有一个参与者没在线，事务需要回滚
-				LG.log(MC.LOG_ERROR, TAG, "Resource client  "+ v.pid + " not found for txid: " + g.txId+",insName: " + v.insName);
+			if(!rsMap.containsKey(v.pid)) {
+				//只要有一个参与者没在线，事务需要回滚
+				LG.log(MC.LOG_ERROR, TAG, "Rollback by resource client  "+ v.pid + " not found for txid: " + g.txId+",insName: " + v.insName);
 				commit = false;
 				break;
 			}
@@ -149,7 +154,42 @@ public class TransationServiceImpl implements ITransationService{
 			}
 		}
 		
-		final boolean succ = commit;
+		Holder<Boolean> suc = new Holder<>(commit);
+		if(commit) {
+
+			CountDownLatch cd = new CountDownLatch(g.voters.values().size());
+			for(TxVoter v : g.voters.values()) {
+				if(v.txPhase == TxConstants.TX_2PC) {
+					cd.countDown();
+					continue;
+				}
+				ITransactionResource$JMAsyncClient client = this.rsMap.get(v.pid);
+				if(client != null) {
+					client.canCommitJMAsync(g.txId)
+					.success((rst,cxt)->{
+						Boolean s = (Boolean)rst.getData();
+						if(rst.getCode() != 0 || !s.booleanValue()) {
+							suc.set(false);
+						}
+						cd.countDown();
+					})
+					.fail((code,msg,cxt)->{
+						suc.set(false);
+						cd.countDown();
+						LG.log(MC.LOG_ERROR, TAG, "Fail to check commit status txid:" + g.txId +", commit: false,insName: "+v.insName+",code:"+ code +",msg:"+msg);
+					});
+				} else {
+					suc.set(false);
+					cd.countDown();
+					if(LG.isLoggable(MC.LOG_WARN, null)) {
+						LG.log(MC.LOG_WARN, TAG, "Transaction client not found when check commit status: " +v.pid+",insName: "+v.insName);
+					}
+					break;
+				}
+			}
+		}
+		
+		final boolean succ = suc.get();
 		
 		for(TxVoter v : g.voters.values()) {
 			ITransactionResource$JMAsyncClient client = this.rsMap.get(v.pid);
@@ -159,13 +199,14 @@ public class TransationServiceImpl implements ITransationService{
 				}
 				client.finishJMAsync(g.txId,succ)
 				.success((rst,cxt)->{
+					if(LG.isLoggable(MC.LOG_DEBUG, null)) {
+						LG.log(MC.LOG_DEBUG, TAG, "Commit success "+g.txId+" client pid:" +v.pid+",commit: " + succ+",insName: "+v.insName);
+					}
 				}).fail((code,msg,cxt)->{
-					LG.log(MC.LOG_ERROR, TAG, "fail to commit txid:" + g.txId +", commit: "+ succ+",insName: "+v.insName+",code:"+ code +",msg:"+msg);
+					LG.log(MC.LOG_ERROR, ITransactionResource.STR_TAG, "fail to commit txid:" + g.txId +", commit: "+ succ+",insName: "+v.insName+",code:"+ code +",insId:"+v.pid+",msg:"+msg);
 				});
 			} else {
-				if(LG.isLoggable(MC.LOG_WARN, null)) {
-					LG.log(MC.LOG_WARN, TAG, "Transaction client not found for: " +v.pid+ succ+",insName: "+v.insName);
-				}
+				LG.log(MC.LOG_ERROR, ITransactionResource.STR_TAG, "Client not found txid:" + g.txId +", commit: "+ succ+",insName: "+v.insName +",insId:"+v.pid);
 			}
 		}
 		
@@ -201,7 +242,7 @@ public class TransationServiceImpl implements ITransationService{
 
 	@Override
 	@SMethod(retryCnt=3,timeout=3000)
-	public Resp<Boolean> takePartIn(int pid, long txid) {
+	public Resp<Boolean> takePartIn(int pid, long txid,byte txPhase) {
 		
 		Resp<Boolean> r = new Resp<>(Resp.CODE_FAIL,false);
 		
@@ -233,6 +274,7 @@ public class TransationServiceImpl implements ITransationService{
 		TxVoter v = new TxVoter(pid);
 		v.insName = pi.getInstanceName();
 		v.status = TxGroup.STATUS_ON_GOING;
+		v.txPhase = txPhase;
 		g.addVoter(v);
 		
 		r.setCode(Resp.CODE_SUCCESS);
@@ -341,6 +383,7 @@ public class TransationServiceImpl implements ITransationService{
 	
 	private class TxVoter{
 		private int pid;
+		private byte txPhase = TxConstants.TX_2PC;
 		private String insName;
 		private byte status = TxGroup.STATUS_ON_GOING;
 		

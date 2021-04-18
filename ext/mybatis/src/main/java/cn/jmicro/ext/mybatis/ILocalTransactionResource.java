@@ -9,7 +9,7 @@ public interface ILocalTransactionResource {
 
 	boolean begin(ServiceMethod sm);
 	
-	boolean takePartIn(long txid,SqlSession s);
+	boolean takePartIn(long txid,byte txPhase,SqlSession s);
 	
 	boolean vote(long txid,boolean commit);
 	

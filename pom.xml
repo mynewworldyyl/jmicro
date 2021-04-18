@@ -802,11 +802,11 @@
 	                    <annotationProcessor>lombok.launch.AnnotationProcessorHider$ClaimingProcessor</annotationProcessor>
 	               </annotationProcessors>
 	                <annotationProcessorPaths>
-                    <path>
+                     <path>
 					    <groupId>org.projectlombok</groupId>
                         <artifactId>lombok</artifactId>
                         <version>${lombok.version}</version>
-                    </path>
+                     </path>
                      <path>
 					    <groupId>cn.jmicro</groupId>
                         <artifactId>jmicro.codegenerator</artifactId>

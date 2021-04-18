@@ -763,7 +763,7 @@ public class LogServiceImpl implements ILogService {
 		if(StringUtils.isNotEmpty(v)) {
 			String op = queryConditions.get("op");
 			if(Utils.isEmpty(op)) {
-				op = "=";
+				op = ">=";
 			}
 			if("=".equals(op)) {
 				qmatch.put("items.level", Integer.parseInt(v));

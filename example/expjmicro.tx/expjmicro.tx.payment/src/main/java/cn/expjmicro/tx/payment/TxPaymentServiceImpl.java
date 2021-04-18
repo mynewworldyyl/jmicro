@@ -22,7 +22,7 @@ import cn.jmicro.api.tx.TxConstants;
 import cn.jmicro.common.CommonException;
 
 @Component
-@Service(version="0.0.1")
+@Service(version="0.0.1",logLevel=MC.LOG_DEBUG)
 public class TxPaymentServiceImpl implements ITxPaymentService {
 
 	private final static Logger logger = LoggerFactory.getLogger(TxPaymentServiceImpl.class);
@@ -35,7 +35,7 @@ public class TxPaymentServiceImpl implements ITxPaymentService {
 	private Random ran = new Random(System.currentTimeMillis()/100);
 	
 	@Override
-	@SMethod(txType=TxConstants.TYPE_TX_DISTRIBUTED,logLevel=MC.LOG_INFO)
+	@SMethod(txType=TxConstants.TYPE_TX_DISTRIBUTED)
 	public Resp<Boolean> pay(Payment p) {
 		Resp<Boolean> r = new Resp<>(Resp.CODE_SUCCESS,true);
 		/*if(p.getId() % 3 == 0) {
@@ -55,7 +55,7 @@ public class TxPaymentServiceImpl implements ITxPaymentService {
 		}*/
 		
 		if(p.getId() % 3 == 0) {
-			if(++exCnt % 1 == 0) {
+			if(++exCnt % 2 == 0) {
 				r.setCode(Resp.CODE_FAIL);//模拟支付失败
 				r.setData(false);
 				r.setMsg("payId: "+p.getId()+",模拟支付失败"+", txid:" + JMicroContext.get().getLong(TxConstants.TYPE_TX_KEY, -1L));
@@ -77,7 +77,7 @@ public class TxPaymentServiceImpl implements ITxPaymentService {
 	}
 	
 	@Override
-	@SMethod(txType=TxConstants.TYPE_TX_DISTRIBUTED,logLevel=MC.LOG_INFO)
+	@SMethod(txType=TxConstants.TYPE_TX_DISTRIBUTED)
 	public IPromise<Resp<Boolean>> payAsy(Payment p) {
 		Resp<Boolean> r = pay(p);
 		PromiseImpl<Resp<Boolean>> pr = new PromiseImpl<>();

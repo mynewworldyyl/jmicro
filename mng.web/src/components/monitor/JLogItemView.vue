@@ -244,7 +244,7 @@
             return {
                 isLogin:false,
                 logList: [],
-                queryParams:{noLog:"true",op:"="},
+                queryParams:{noLog:"true",op:">="},
                 totalNum:0,
                 pageSize:60,
                 curPage:1,
