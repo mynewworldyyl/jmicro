@@ -126,6 +126,10 @@ public class JRPCReqRespHandler implements IMessageHandler{
 	    	
 	    	config(req1,resp,msg.getLinkId());
 	    	
+	    	if(msg.isDebugMode()) {
+	    		JMicroContext.get().appendCurUseTime("Server end decode req",true);
+    		}
+	    	
 	    	if(msg.isMonitorable()) {
 				MT.rpcEvent(MC.MT_SERVER_JRPC_GET_REQUEST,1);
 				MT.rpcEvent(MC.MT_SERVER_JRPC_GET_REQUEST_READ,msg.getLen());
@@ -135,14 +139,9 @@ public class JRPCReqRespHandler implements IMessageHandler{
 	    		LG.log(MC.LOG_DEBUG, TAG, "Got request: " + msg.getReqId()+",from insId: " + msg.getInsId());
 	    	}
 	    	
-	    	
 	    	req = req1;
 			req.setSession(s);
 			req.setMsg(msg);
-	    	
-	    	if(msg.isDebugMode()) {
-	    		JMicroContext.get().appendCurUseTime("Server end decode req",true);
-    		}
 			
 			//logger.info(req.getServiceName()+" debugMode: " + msg.isDebugMode()+", method: " + msg.getMethod());
 			
@@ -391,6 +390,7 @@ public class JRPCReqRespHandler implements IMessageHandler{
 		msg.setInsId(pi.getId());
 		
 		try {
+			msg.setTime(TimeUtils.getCurTime());
 			s.write(msg);
 			MT.rpcEvent(MC.MT_SERVER_JRPC_RESPONSE_WRITE, msg.getLen());
 			if(msg.isDebugMode()) {
@@ -408,7 +408,7 @@ public class JRPCReqRespHandler implements IMessageHandler{
 	private void submitItem() {
 		if(JMicroContext.get().isDebug()) {
 			JMicroContext.get().appendCurUseTime("Async respTime",false);
-			JMicroContext.get().debugLog(0);
+			//JMicroContext.get().debugLog(0);
 		}
 		JMicroContext.get().submitMRpcItem();
 	}

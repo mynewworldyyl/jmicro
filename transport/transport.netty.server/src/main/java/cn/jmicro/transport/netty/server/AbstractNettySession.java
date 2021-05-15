@@ -120,8 +120,8 @@ public abstract class AbstractNettySession extends AbstractSession implements IS
 		//服务方写信息，是下行
 		bb.reset();
 		this.dump(bb,false,msg);
-		if(JMicroContext.get().isDebug() && JMicroContext.get().getDebugLog() != null) {
-			JMicroContext.get().getDebugLog().append(",Encode time:").append(TimeUtils.getCurTime() - oldTime);
+		if(JMicroContext.get().getDebugLog() != null) {
+			JMicroContext.get().appendCurUseTime(",Encode time:", true);
 		}
 	}
 	

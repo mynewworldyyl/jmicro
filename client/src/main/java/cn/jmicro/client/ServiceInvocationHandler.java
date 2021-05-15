@@ -91,8 +91,9 @@ public class ServiceInvocationHandler implements InvocationHandler{
 			req.setImpl(si.getCode());
 			req.putObject(JMicroContext.LOGIN_KEY, cxt.getString(JMicroContext.LOGIN_KEY, null));
 			
-			if(JMicroContext.get().exists(TxConstants.TYPE_TX_KEY)) {
-				req.putObject(TxConstants.TYPE_TX_KEY, JMicroContext.get().getLong(TxConstants.TYPE_TX_KEY, null));
+			if(JMicroContext.get().exists(TxConstants.TX_ID)) {
+				req.putObject(TxConstants.TX_ID, JMicroContext.get().getLong(TxConstants.TX_ID, null));
+				req.putObject(TxConstants.TX_SERVER_ID, JMicroContext.get().getInt(TxConstants.TX_SERVER_ID, null));
 			}
 			
 			if(sm.getForType() == Constants.FOR_TYPE_SYS) {
@@ -107,7 +108,7 @@ public class ServiceInvocationHandler implements InvocationHandler{
 			
 			req.setReqParentId(cxt.getLong(JMicroContext.REQ_PARENT_ID, -1L));
 			
-			if(!JMicroContext.existLinkId() && cxt.getInt(JMicroContext.SM_LOG_LEVEL, MC.LOG_NO) != MC.LOG_NO) {
+			if(!JMicroContext.existLinkId() && cxt.getByte(JMicroContext.SM_LOG_LEVEL, MC.LOG_NO) != MC.LOG_NO) {
 				//新建一个RPC链路开始
 				Long lid = JMicroContext.createLid();
 				cxt.setParam(Constants.NEW_LINKID, true);
@@ -146,11 +147,8 @@ public class ServiceInvocationHandler implements InvocationHandler{
 			 return (T)this.intManager.handleRequest(req);
 			
 		} catch(Throwable ex) {
-			cxt.debugLog(0);
-			if(sm.getLogLevel() != MC.LOG_NO) {
-				cxt.submitMRpcItem();
-			}
-			
+			//cxt.debugLog(0);
+			cxt.submitMRpcItem();
 			JMicroContext.clear();
 			if(ex instanceof CommonException) {
 				throw ex;

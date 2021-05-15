@@ -13,6 +13,7 @@ import cn.jmicro.api.objectfactory.IObjectFactory;
 import cn.jmicro.api.raft.IDataOperator;
 import cn.jmicro.api.utils.TimeUtils;
 import cn.jmicro.common.CommonException;
+import cn.jmicro.common.Utils;
 import cn.jmicro.common.util.StringUtils;
 
 @IDStrategy(10)
@@ -57,8 +58,13 @@ public class VoterPerson {
 			throw new CommonException("Data operator cannot be NULL");
 		}
 		
+		if(Utils.isEmpty(tag)) {
+			throw new CommonException("Vote tag cannot be null");
+		}
+		
+		/*
 		if(StringUtils.isEmpty(tag) || StringUtils.isEmpty(tag.trim())) {
-			tag = Config.getInstanceName();
+			tag = Config.getInstancePrefix();
 			int idx = -1;
 			for(int i = tag.length()-1; i >= 0; i--) {
 				if(!Character.isDigit(tag.charAt(i))) {
@@ -68,13 +74,19 @@ public class VoterPerson {
 			}
 			tag = tag.substring(0,idx+1);
 		}
+		*/
 		
 		this.op = of.get(IDataOperator.class);
 		//this.cfg = of.get(Config.class);
 		//this.idServer = of.get(ComponentIdServer.class);
 		//this.listener = listener;
 		
-		this.dir = ROOT + "/" + tag;
+		String p = ROOT + "/" + Config.getInstancePrefix();
+		if(!op.exist(p)) {
+			op.createNodeOrSetData(p, "", IDataOperator.PERSISTENT);
+		}
+		
+		this.dir = p + "/" + tag;
 		
 		long curTime = TimeUtils.getCurTime();
 		if(!op.exist(dir)) {

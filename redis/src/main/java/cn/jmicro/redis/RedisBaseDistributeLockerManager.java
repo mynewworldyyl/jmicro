@@ -24,6 +24,7 @@ import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Inject;
 import cn.jmicro.api.cache.lock.ILocker;
 import cn.jmicro.api.cache.lock.ILockerManager;
+import cn.jmicro.api.config.Config;
 import cn.jmicro.common.CommonException;
 import cn.jmicro.common.Constants;
 import cn.jmicro.common.util.StringUtils;
@@ -44,12 +45,18 @@ public class RedisBaseDistributeLockerManager implements ILockerManager {
 	@Inject
 	private JedisPool pool;
 	
+	private String prefix;
+	
+	public void ready() {
+		prefix = Config.getRaftBasePath("")+"/dl";
+	}
+	
 	@Override
 	public ILocker getLocker(String resource) {
 		if(StringUtils.isEmpty(resource)) {
 			return null;
 		}
-		return new LockerImpl(resource);
+		return new LockerImpl(prefix+"/"+resource);
 	}
 	
 	class LockerImpl implements ILocker {

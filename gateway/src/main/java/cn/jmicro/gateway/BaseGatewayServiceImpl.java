@@ -24,14 +24,14 @@ public class BaseGatewayServiceImpl implements IBaseGatewayService {
 	
 	@Override
 	@SMethod(needLogin=false)
-	public List<String> getHosts(String name) {
-		return hostManager.getHosts();
+	public List<String> getHosts(String protocal) {
+		return hostManager.getHosts(protocal);
 	}
 
 	@Override
 	@SMethod(needLogin=false)
-	public String bestHost() {
-		return hostManager.bestHost();
+	public String bestHost(String protocal) {
+		return hostManager.bestHost(protocal);
 	}
 
 	@Override

@@ -26,6 +26,7 @@ import java.util.concurrent.ThreadPoolExecutor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import cn.jmicro.api.JMicroContext;
 import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Inject;
 import cn.jmicro.api.executor.ExecutorConfig;
@@ -122,7 +123,11 @@ public class ClientMessageReceiver implements IMessageReceiver{
 			IMessageHandler h = handlers.get(msg.getType());
 			if(h != null){
 				defaultExecutor.execute(()->{
-					h.onMessage(session,msg);
+					try {
+						h.onMessage(session,msg);
+					}finally {
+						JMicroContext.clear();
+					}
 				});
 			} else {
 				String errMsg = "Handler not found:" + Integer.toHexString(msg.getType())+",from insId: " + msg.getInsId();

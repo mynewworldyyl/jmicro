@@ -324,13 +324,27 @@ export default {
                 method.key.usk.version, method.key.method, args)
                 .then(rst=>{
                     //rst = window.jm.utils.parseJson(rst);
-                    if(self.testingResult) {
-                        self.testingResult  = self.testingResult + '\n' + rst;
-                    } else {
-                        self.testingResult  = rst;
+                    let msg = '';
+                    if(typeof rst != 'undefined') {
+                        if(typeof rst == 'object') {
+                            if(rst.code != 0 ) {
+                                msg = "code="+rst.code+",msg= "+rst.msg;
+                            }else {
+                                msg  =  JSON.stringify(rst.data);
+                            }
+                        } else {
+                            msg  = rst;
+                        }
+                    }else {
+                        msg  = 'NULL';
                     }
+                    self.testingResult  +=  msg+'\n';
                 }).catch(err=>{
-                    self.testingResult  = err;
+                    if(err) {
+                        self.testingResult  += (err+"\n");
+                    }else {
+                        self.testingResult  += "error\n";
+                    }
             });
         }
     },

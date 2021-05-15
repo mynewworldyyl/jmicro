@@ -257,7 +257,8 @@ public class ApiRawRequestMessageHandler implements IMessageHandler{
 							ServerError se1 = new ServerError(fail.getCode(),fail.getMsg());
 							resp.setSuccess(false);
 							resp.setResult(se1);
-							logger.error("",fail.toString());
+							logger.error(fail.toString());
+							LG.log(MC.LOG_ERROR, TAG, fail.toString());
 						}
 						
 						if(msg.getDownProtocol() == Message.PROTOCOL_JSON) {

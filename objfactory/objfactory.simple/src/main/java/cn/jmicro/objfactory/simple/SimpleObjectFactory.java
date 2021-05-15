@@ -44,6 +44,7 @@ import com.alibaba.dubbo.common.serialize.kryo.utils.ReflectUtils;
 
 import cn.jmicro.api.ClassScannerUtils;
 import cn.jmicro.api.EnterMain;
+import cn.jmicro.api.Holder;
 import cn.jmicro.api.IListener;
 import cn.jmicro.api.Resp;
 import cn.jmicro.api.annotation.Component;
@@ -399,7 +400,7 @@ public class SimpleObjectFactory implements IObjectFactory {
 	@Override
 	public void masterSlaveListen(IMasterChangeListener l) {
 		Config cfg = this.get(Config.class);
-		boolean isMasterSlaveModel = cfg.getBoolean(Constants.Ml_MODEL_ENABLE, false);
+		boolean isMasterSlaveModel = !Utils.isEmpty(cfg.getString(Constants.MASTER_SLAVE_TAG, null));
 		VoterPerson lp = this.get(VoterPerson.class);
 		if(lp == null || !isMasterSlaveModel) {
 			l.masterChange(IMasterChangeListener.MASTER_NOTSUPPORT, true);
@@ -628,21 +629,21 @@ public class SimpleObjectFactory implements IObjectFactory {
 			for(IPostFactoryListener lis : this.postReadyListeners){
 				lis.afterInit(this);
 			}
-			
 		};
 		
-		boolean ismlModel = cfg.getBoolean(Constants.Ml_MODEL_ENABLE, false);
-		boolean[] isMast = new boolean[1];
-		isMast[0] = false;
-		if(ismlModel) {
-			VoterPerson lp = new VoterPerson(this,null);
+		String tag = cfg.getString(Constants.MASTER_SLAVE_TAG, null);
+		/*boolean[] isMast = new boolean[1];
+		isMast[0] = false;*/
+		//Holder<Boolean> h = new Holder<>(false);
+		if(!Utils.isEmpty(tag)) {
+			VoterPerson lp = new VoterPerson(this,tag);
 			this.cacheObj(VoterPerson.class, lp,null);
 			logger.info("Wait for master!");
 			this.masterSlaveListen((type,isMaster)->{
 				if(isMaster && (IMasterChangeListener.MASTER_ONLINE == type 
 				  || IMasterChangeListener.MASTER_NOTSUPPORT == type)) {
 					 //参选成功
-					 isMast[0] = true;
+					 //h.set(true);
 					 logger.info(Config.getInstanceName() + " got as master");
 					 if(!pi.isMaster()) {
 						 pi.setMaster(true);
@@ -663,7 +664,7 @@ public class SimpleObjectFactory implements IObjectFactory {
 					 LG.log(MC.LOG_INFO, SimpleObjectFactory.class
 							 , "Got master and started: "+JsonUtils.getIns().toJson(pi));
 					 MT.nonRpcEvent(Config.getInstanceName(), MC.MT_SERVER_START);
-				} else if(isMast[0]) {
+				} else if(isMaster) {
 					 //失去master资格，退出
 					 if(pi.isMaster()) {
 						pi.setMaster(false);
@@ -728,7 +729,7 @@ public class SimpleObjectFactory implements IObjectFactory {
 					asyncAs = this.getRemoteServie(IAccountService$JMAsyncClient.class.getName(), "*","*",null);
 				} catch(CommonException e) {}
 				if(asyncAs == null || !asyncAs.isReady()) {
-					logger.error("Security account service not found work int not secrity model!");
+					logger.error("Security account service not found or not ready so work in not secrity model!");
 					pi.setActName(null);
 					return;
 				}
@@ -1859,7 +1860,7 @@ public class SimpleObjectFactory implements IObjectFactory {
 			pi.setAgentProcessId(Config.getCommandParam(ChoyConstants.ARG_MYPARENT_ID));
 		}
 		
-		boolean ismlModel = cfg.getBoolean(Constants.Ml_MODEL_ENABLE, false);
+		boolean ismlModel = !Utils.isEmpty(cfg.getString(Constants.MASTER_SLAVE_TAG, null));
 		String pid = SystemUtils.getProcessId();
 		logger.info("Process ID:" + pid);
 		pi.setActName(Config.getAccountName());

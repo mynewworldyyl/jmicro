@@ -8,49 +8,56 @@ import org.apache.ibatis.session.SqlSession;
 import org.apache.ibatis.session.SqlSessionFactory;
 import org.apache.ibatis.session.TransactionIsolationLevel;
 
-public class SqlSessionManager implements SqlSessionFactory,CurSqlSessionFactory{
+import cn.jmicro.api.JMicroContext;
+import cn.jmicro.api.tx.ICurTxSessionFactory;
+import cn.jmicro.api.tx.ITxSession;
+import cn.jmicro.api.tx.TxConstants;
+import cn.jmicro.common.CommonException;
+
+public class SqlSessionManager implements SqlSessionFactory,ICurTxSessionFactory{
 
 	private SqlSessionFactory ssf;
 	
-	private ThreadLocal<SqlSession> curSession = new ThreadLocal<>();
+	//private ThreadLocal<CurSqlSession> curSession = new ThreadLocal<>();
 
 	public SqlSessionManager(SqlSessionFactory sqlSessionFactory) {
 		this.ssf = sqlSessionFactory;
 	}
 	
 	@Override
-	public SqlSession curSession() {
-		if(curSession.get() != null) {
-			return curSession.get();
+	public ITxSession curSession() {
+		CurSqlSession s = JMicroContext.get().getParam(TxConstants.TX_SESSION_KEY, null);
+		if(s == null) {
+			 s = new CurSqlSession(ssf.openSession(false));
+			 JMicroContext.get().setParam(TxConstants.TX_SESSION_KEY,s);
 		}
-		curSession.set(ssf.openSession(false));
-		return curSession.get();
+		return s;
 	}
 	
 	public void commitAndCloseCurSession() {
-		if(curSession.get() == null) {
+		CurSqlSession s = JMicroContext.get().getParam(TxConstants.TX_SESSION_KEY, null);
+		if(s == null) {
 			return ;
 		}
-		SqlSession s = curSession.get();
 		s.commit(false);
 		s.close();
 		remove();
 	}
 	
-	public void remove() {
-		curSession.remove();
-	}
-	
 	public void rollbackAndCloseCurSession() {
-		if(curSession.get() == null) {
+		CurSqlSession s = JMicroContext.get().getParam(TxConstants.TX_SESSION_KEY, null);
+		if(s == null) {
 			return ;
 		}
-		SqlSession s = curSession.get();
 		s.rollback(true);
 		s.close();
-		curSession.remove();
+		remove();
 	}
 
+	public void remove() {
+		JMicroContext.get().removeParam(TxConstants.TX_SESSION_KEY);
+	}
+	
 	@Override
 	public SqlSession openSession() {
 		return ssf.openSession();

@@ -22,6 +22,7 @@ import org.slf4j.LoggerFactory;
 import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Inject;
 import cn.jmicro.api.cache.ICache;
+import cn.jmicro.api.config.Config;
 import cn.jmicro.api.persist.IByteDataStorage;
 import cn.jmicro.common.Constants;
 import redis.clients.jedis.Jedis;
@@ -41,12 +42,18 @@ public class RedisBaseByteDataStorage implements IByteDataStorage {
 	@Inject
 	private JedisPool jeditPool;
 	
+	private String prefix;
+	
+	public void ready() {
+		prefix = "/"+Config.getClientId()+"/";
+	}
+	
 	@Override
 	public boolean save(String key, byte[] data) {
 		Jedis j = null;
 		try {
 			j = jeditPool.getResource();
-			byte[] k = ICache.keyData(key);
+			byte[] k = ICache.keyData(prefix+key);
 			j.set(k, data);
 			return true;
 		}catch(Throwable e) {
@@ -64,7 +71,7 @@ public class RedisBaseByteDataStorage implements IByteDataStorage {
 		Jedis j = null;
 		try {
 			j = jeditPool.getResource();
-			byte[] k = ICache.keyData(key);
+			byte[] k = ICache.keyData(prefix+key);
 			return j.get(k);
 		}finally {
 			if(j != null) {

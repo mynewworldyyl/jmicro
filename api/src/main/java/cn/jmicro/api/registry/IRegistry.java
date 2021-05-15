@@ -47,6 +47,7 @@ public interface IRegistry{
 	
 	//get by service name, use for collection inject
 	Set<ServiceItem> getServices(String serviceName);
+	ServiceItem getService(String serviceName,int insId);
 	
 	ServiceItem getServiceByImpl(String impl);
 	

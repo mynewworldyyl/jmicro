@@ -36,6 +36,7 @@ import cn.jmicro.api.net.IInterceptor;
 import cn.jmicro.api.net.IRequest;
 import cn.jmicro.api.net.IRequestHandler;
 import cn.jmicro.api.registry.ServiceMethod;
+import cn.jmicro.api.tx.ICurTxSessionFactory;
 import cn.jmicro.api.tx.TxConstants;
 import cn.jmicro.api.utils.TimeUtils;
 import cn.jmicro.common.Constants;
@@ -53,7 +54,7 @@ public class MybatisInterceptor extends AbstractInterceptor implements IIntercep
 	private final static Logger logger = LoggerFactory.getLogger(MybatisInterceptor.class);
 	
 	@Inject
-	private CurSqlSessionFactory curSqlSessionManager;
+	private ICurTxSessionFactory curSqlSessionManager;
 	
 	@Inject(required=false)
 	private ILocalTransactionResource ltr;
@@ -73,20 +74,20 @@ public class MybatisInterceptor extends AbstractInterceptor implements IIntercep
 		final Holder<Long> txid = new Holder<>(null);
 		final Holder<PromiseImpl<Object>> asyP = new Holder<>(null);
 		
-		final SqlSession s = curSqlSessionManager.curSession();
+		final SqlSession s = (SqlSession)curSqlSessionManager.curSession();
 		
 		boolean isDebug = LG.isLoggable(MC.LOG_DEBUG);
 		long bt = TimeUtils.getCurTime(isDebug);
 		try {
 			s.getConnection().setTransactionIsolation(sm.getTxIsolation());
 			if(sm.getTxType() == TxConstants.TYPE_TX_DISTRIBUTED) {
-				Long tid = JMicroContext.get().getLong(TxConstants.TYPE_TX_KEY, null);
+				Long tid = JMicroContext.get().getLong(TxConstants.TX_ID, null);
 				if(tid == null) {
 					if(!ltr.begin(sm)) {
 						throw new RpcException(req,"fail to create transaction context,"+
 								", Method: " + sm.getKey().toKey(true, true, true),Resp.CODE_TX_FAIL);
 					}
-					tid = JMicroContext.get().getLong(TxConstants.TYPE_TX_KEY, null);
+					tid = JMicroContext.get().getLong(TxConstants.TX_ID, null);
 					txOwner.set(true);
 				}
 				
@@ -158,6 +159,11 @@ public class MybatisInterceptor extends AbstractInterceptor implements IIntercep
 								LG.log(MC.LOG_WARN, TAG, "Rollback transaction: " + txid.get()
 								+",Method: " + sm.getKey().toKey(true, true, true));
 							}
+							
+							if(txOwner.get()) {
+								asyP.get().setFail(r.getCode(), r.getMsg());
+							}
+							
 						}
 					}
 					
@@ -168,7 +174,6 @@ public class MybatisInterceptor extends AbstractInterceptor implements IIntercep
 							ownerEnd(sm,txid.get(),pa0);
 						} else {
 							//事务回滚不再需要等待
-							asyP.get().setFail(Resp.CODE_TX_FAIL, "tx fail");
 							asyP.get().done();
 							ownerEnd(sm,txid.get(),null);
 						}
@@ -254,7 +259,7 @@ public class MybatisInterceptor extends AbstractInterceptor implements IIntercep
 	
 	private void ownerEnd(ServiceMethod sm,Long tid,PromiseImpl<Object> asyP) {
 		if(LG.isLoggable(MC.LOG_INFO)) {
-			String msg = "Wait tx finish txid: " + JMicroContext.get().getLong(TxConstants.TYPE_TX_KEY, -1L);
+			String msg = "Wait tx finish txid: " + JMicroContext.get().getLong(TxConstants.TX_ID, -1L);
 			LG.log(MC.LOG_INFO, TAG, msg);
 		}
 		ltr.waitTxFinish(tid,asyP);

@@ -2,7 +2,9 @@ package cn.jmicro.api.tx;
 
 public interface TxConstants {
 
-	public static final String TYPE_TX_KEY = "txid"; //分布式全局事务
+	public static final String TX_SESSION_KEY = "txSessionKey";
+	public static final String TX_ID = "txid"; //分布式全局事务
+	public static final String TX_SERVER_ID = "txInsId"; //事务协调器ID
 	
 	public static final byte TYPE_TX_NO = 0; //无事务，不支持事务，默认值
 	

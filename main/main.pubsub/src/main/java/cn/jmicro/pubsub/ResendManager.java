@@ -11,6 +11,7 @@ import java.util.concurrent.ExecutorService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import cn.jmicro.api.config.Config;
 import cn.jmicro.api.executor.ExecutorConfig;
 import cn.jmicro.api.executor.ExecutorFactory;
 import cn.jmicro.api.monitor.LG;
@@ -48,8 +49,8 @@ class ResendManager {
 	ResendManager(IObjectFactory of,boolean openDebug,int maxFailItemCount,long doResendInterval) {
 		this.openDebug = openDebug;
 		this.of = of;
-		this.resendStorage = new ItemStorage<SendItem>(of,"/pubsubResend/");
-		this.failStorage = new ItemStorage<SendItem>(of,"/failItem/");
+		this.resendStorage = new ItemStorage<SendItem>(of,"/"+Config.getClientId()+"/pubsubResend/");
+		this.failStorage = new ItemStorage<SendItem>(of,"/"+Config.getClientId()+"/failItem/");
 		this.maxFailItemCount = maxFailItemCount;
 		this.doResendInterval = doResendInterval;
 		

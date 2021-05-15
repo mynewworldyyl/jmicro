@@ -8,17 +8,17 @@ import cn.jmicro.api.objectfactory.AbstractClientServiceProxyHolder;
 import java.lang.Object;
 
 public class TxOrderService$JMAsyncClientImpl extends AbstractClientServiceProxyHolder implements ITxOrderService$JMAsyncClient {
-  public IPromise<Resp> takeOrderJMAsync(int goodId, int num) {
-    return  this.proxyHolder.invoke("takeOrderJMAsync", null, goodId,num);
+  public IPromise<Resp> takeOrderJMAsync(Good good, int num) {
+    return  this.proxyHolder.invoke("takeOrderJMAsync", null, good,num);
   }
 
-  public Resp takeOrder(int goodId, int num) {
-    return (cn.jmicro.api.Resp<java.lang.Boolean>) this.proxyHolder.invoke("takeOrder",null, goodId,num);
+  public Resp takeOrder(Good good, int num) {
+    return (cn.jmicro.api.Resp<java.lang.Boolean>) this.proxyHolder.invoke("takeOrder",null, good,num);
   }
 
   @WithContext
-  public IPromise<Resp> takeOrderJMAsync(int goodId, int num, Object context) {
-    return this.proxyHolder.invoke("takeOrderJMAsync",context, goodId,num);
+  public IPromise<Resp> takeOrderJMAsync(Good good, int num, Object context) {
+    return this.proxyHolder.invoke("takeOrderJMAsync",context, good,num);
   }
 
   public IPromise takeOrderAsy(Good good, int num) {

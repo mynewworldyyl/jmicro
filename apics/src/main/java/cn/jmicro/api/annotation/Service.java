@@ -68,10 +68,10 @@ public @interface Service {
 	
 	/**
 	 * 开启Debug模式，-1表示未定义，由别的地方定义，如系统环境变量，启动时指定等，0表示不开启，1表示开启
-	 * Message包增加额外高试字段，如linkid,msgid,instanceName,method
+	 * Message包增加额外测试试字段，如linkid,msgid,instanceName,method
 	 * 开启debug后，其他标志才志作用 {@link Message}
 	 */
-	public int debugMode() default -1;
+	public int debugMode() default 0;
 	
 	/**
 	 * 服务是否可监控，-1表示未定义，由别的地方定义，如系统环境变量，启动时指定等，0表示不可监控，1表示可以被监控
@@ -83,7 +83,7 @@ public @interface Service {
 	 * 服务级的日志启用标识
 	 * @return
 	 */
-	public int logLevel() default MC.LOG_ERROR;
+	public byte logLevel() default MC.LOG_ERROR;
 	
 	/**
 	 * 如果超时了，要间隔多久才重试

@@ -7,9 +7,9 @@ import cn.jmicro.codegenerator.AsyncClientProxy;
 @AsyncClientProxy
 public interface IBaseGatewayService {
 
-	List<String> getHosts(String name);
+	List<String> getHosts(String protocal);
 	
-	String bestHost();
+	String bestHost(String protocal);
 	
 	int fnvHash1a(String str);
 }

@@ -21,7 +21,7 @@ import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.tx.TxConstants;
 
 @Component
-@Service(version="0.0.1",logLevel=MC.LOG_DEBUG)
+@Service(version="0.0.1",logLevel=MC.LOG_DEBUG,debugMode=1)
 public class TxOrderServiceImpl implements ITxOrderService {
 
 	@Inject
@@ -36,21 +36,24 @@ public class TxOrderServiceImpl implements ITxOrderService {
 	@Inject
 	private ComponentIdServer idServer;
 	
+	/**
+	 * 同步下单服务， 被商店服务调用
+	 * TxConstants.TYPE_TX_DISTRIBUTED 启用分布式服务
+	 */
 	@Override
 	@SMethod(txType=TxConstants.TYPE_TX_DISTRIBUTED)
-	public Resp<Boolean> takeOrder(int goodId,int num) {
+	public Resp<Boolean> takeOrder(Good g,int num) {
 		Resp<Boolean> r = new Resp<>(Resp.CODE_FAIL,false);
 		
-		Good g = goodMapper.selectById(goodId);
-		
 		Order o = new Order();
-		o.setGoodId(goodId);
+		o.setGoodId(g.getId());
 		o.setNum(num);
 		o.setAmount(o.getNum()*g.getPrice());
 		o.setId(idServer.getLongId(Order.class));
-		o.setTxid(JMicroContext.get().getLong(TxConstants.TYPE_TX_KEY, -1L));
+		o.setTxid(JMicroContext.get().getLong(TxConstants.TX_ID, -1L));
 		
 		LG.log(MC.LOG_INFO, this.getClass(), "Save order");
+		//保存订单
 		om.saveOrder(o);
 		
 		Payment p = new Payment();
@@ -60,11 +63,13 @@ public class TxOrderServiceImpl implements ITxOrderService {
 		p.setTxid(o.getTxid());
 		
 		LG.log(MC.LOG_INFO, this.getClass(), "Before invoke pay service");
+		//调用支付服务
 		Resp<Boolean> rr = paymentSrv.pay(p);
 		LG.log(MC.LOG_INFO, this.getClass(), "After invoke pay service");
 		if(!rr.getData() || rr.getCode() != 0) {
 			LG.log(MC.LOG_ERROR, this.getClass(), "Pay error: "+rr.getMsg());
 			r.setMsg(rr.getMsg());
+			
 			return r;
 		}
 		
@@ -73,6 +78,10 @@ public class TxOrderServiceImpl implements ITxOrderService {
 		return r;
 	}
 	
+	/**
+	 * 异步下单服务， 被商店服务调用
+	 * TxConstants.TYPE_TX_DISTRIBUTED 启用分布式服务
+	 */
 	@Override
 	@SMethod(txType=TxConstants.TYPE_TX_DISTRIBUTED)
 	public IPromise<Resp<Boolean>> takeOrderAsy(Good g,int num) {
@@ -82,9 +91,10 @@ public class TxOrderServiceImpl implements ITxOrderService {
 		o.setNum(num);
 		o.setAmount(o.getNum()*g.getPrice());
 		o.setId(idServer.getLongId(Order.class));
-		o.setTxid(JMicroContext.get().getLong(TxConstants.TYPE_TX_KEY, -1L));
+		o.setTxid(JMicroContext.get().getLong(TxConstants.TX_ID, -1L));
 		
 		LG.log(MC.LOG_INFO, this.getClass(), "Save order");
+		//保存订单
 		om.saveOrder(o);
 		
 		Payment p = new Payment();
@@ -95,7 +105,19 @@ public class TxOrderServiceImpl implements ITxOrderService {
 		
 		LG.log(MC.LOG_INFO, this.getClass(), "Before invoke pay service");
 		
-		return paymentSrv.payAsy(p);
+		//调用支付服务
+		IPromise<Resp<Boolean>> pp = paymentSrv.payAsy(p);
+		pp.then((rst,fail,cxt)->{
+			String log = "";
+			if(fail!= null) {
+				log = log + ",fail:"+fail.toString();
+			} else {
+				log = rst.getCode()+"="+rst.getMsg()+",data: " + rst.getData();
+			}
+			LG.log(MC.LOG_DEBUG, this.getClass(), log);
+		});
+		
+		return pp;
 	}
 
 }

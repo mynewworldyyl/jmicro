@@ -1,7 +1,6 @@
 package cn.jmicro.api.tx;
 
 import cn.jmicro.api.Resp;
-import cn.jmicro.api.async.IPromise;
 import cn.jmicro.codegenerator.AsyncClientProxy;
 
 /**
@@ -16,7 +15,7 @@ public interface ITransationService {
 	 * 开始一个全局事务
 	 * @return 全局事务ID
 	 */
-	Resp<Long> start(TxConfig cfg);
+	Resp<TxInfo> start(TxConfig cfg);
 	
 	/**
 	 * 结束事务

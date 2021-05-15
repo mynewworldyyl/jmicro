@@ -104,10 +104,23 @@ public class PromiseImpl<R> implements IPromise<R>{
 		
 		done = true;
 		if(callbacks != null) {
+			Exception e1 = null;
 			for(int i = 0; i < this.callbacks.length; i++) {
 				if(callbacks[i] != null) {
-					callbacks[i].onResult(result, fail,context);
+					try {
+						callbacks[i].onResult(result, fail,context);
+					}catch(Exception e) {
+						e.printStackTrace();
+						e1 = e;
+					}
+					
 				}
+			}
+			if(e1 != null) {
+				if(e1 instanceof CommonException)
+					throw (CommonException)e1;
+				else 
+					throw new CommonException("",e1);
 			}
 		} 
 	}

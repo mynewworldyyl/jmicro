@@ -81,7 +81,7 @@ public final class ServiceItem implements Comparable<ServiceItem>{
 		
 	private int monitorEnable = 0;
 	
-	private int logLevel = MC.LOG_ERROR;
+	private byte logLevel = MC.LOG_ERROR;
 	
 	//基本时间单位
 	private String baseTimeUnit = Constants.TIME_MILLISECONDS;
@@ -333,11 +333,11 @@ public final class ServiceItem implements Comparable<ServiceItem>{
 		this.debugMode = debugMode;
 	}
 
-	public int getLogLevel() {
+	public byte getLogLevel() {
 		return logLevel;
 	}
 
-	public void setLogLevel(int logLevel) {
+	public void setLogLevel(byte logLevel) {
 		this.logLevel = logLevel;
 	}
 

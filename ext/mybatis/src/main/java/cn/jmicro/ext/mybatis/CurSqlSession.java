@@ -11,7 +11,9 @@ import org.apache.ibatis.session.ResultHandler;
 import org.apache.ibatis.session.RowBounds;
 import org.apache.ibatis.session.SqlSession;
 
-public class CurSqlSession implements SqlSession{
+import cn.jmicro.api.tx.ITxSession;
+
+public class CurSqlSession implements SqlSession,ITxSession{
 
 	private SqlSession s;
 	

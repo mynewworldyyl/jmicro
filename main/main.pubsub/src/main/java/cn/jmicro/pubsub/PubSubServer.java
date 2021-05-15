@@ -159,7 +159,7 @@ public class PubSubServer implements IInternalSubRpc{
 		this.resendManager = new ResendManager(of,this.openDebug,maxFailItemCount,doResendInterval);
 		resendManager.setSubManager(this.subManager);
 		
-		this.cacheStorage = new ItemStorage<PSData>(of,"/pubsubCache/");
+		this.cacheStorage = new ItemStorage<PSData>(of,"/" + Config.getClientId()+"/pubsubCache/");
 		
 		if(reOpenThreadInterval <= 0) {
 			logger.warn("Invalid reOpenThreadInterval: {}, set to default:{}",this.reOpenThreadInterval,1000);

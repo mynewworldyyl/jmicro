@@ -359,7 +359,9 @@ public class ClientServiceProxyHolder implements IServiceListener{
 		
 		Long linkId = cxt.getParam(JMicroContext.LINKER_ID, null);
 		
-		Long txid = cxt.getParam(TxConstants.TYPE_TX_KEY, null);
+		Long txid = cxt.getParam(TxConstants.TX_ID, null);
+		
+		Integer txInsId = cxt.getParam(TxConstants.TX_SERVER_ID, null);
 		
 		Long preRequestId = cxt.getParam(JMicroContext.REQ_ID, null);
 		
@@ -370,6 +372,10 @@ public class ClientServiceProxyHolder implements IServiceListener{
 		
 		Map<String,Object> curCxt = new HashMap<>();
 		cxt.getAllParams(curCxt);
+		if(dsi != null) {
+			curCxt.remove(Constants.DIRECT_SERVICE_ITEM);
+			curCxt.remove(Constants.ASYNC_CONFIG);
+		}
 		
 		JMicroContext.clear();
 		
@@ -403,7 +409,8 @@ public class ClientServiceProxyHolder implements IServiceListener{
 		}
 		
 		if(txid != null && txid > 0) {
-			cxt.setParam(TxConstants.TYPE_TX_KEY, txid);
+			cxt.setParam(TxConstants.TX_ID, txid);
+			cxt.setParam(TxConstants.TX_SERVER_ID, txInsId);
 		}
 		
 		if(isProvider && preRequestId != null && preRequestId > 0) {

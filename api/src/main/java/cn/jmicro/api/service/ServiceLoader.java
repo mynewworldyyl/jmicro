@@ -612,12 +612,15 @@ public class ServiceLoader{
 		item.addMethod(checkMethod);
 		
 		for(Method m : interfacez.getMethods()) {
+			if(Modifier.isStatic(m.getModifiers())) {
+				continue;
+			}
 			ServiceMethod sm = new ServiceMethod();
 			Method srvMethod = null;
 			try {
 				srvMethod = srvCls.getMethod(m.getName(), m.getParameterTypes());
 			} catch (NoSuchMethodException | SecurityException e) {
-				throw new CommonException("Service not found: "+m.getName(),e);
+				throw new CommonException("Service not found: "+srvCls.getName()+"."+m.getName(),e);
 			}
 			
 			//具体实现类的注解优先,如果实现类对就方法没有注解,则使用接口对应的方法注解

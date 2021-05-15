@@ -40,12 +40,10 @@ import cn.jmicro.api.exception.RpcException;
 import cn.jmicro.api.idgenerator.ComponentIdServer;
 import cn.jmicro.api.internal.async.PromiseImpl;
 import cn.jmicro.api.loadbalance.ISelector;
-import cn.jmicro.api.monitor.LG;
-import cn.jmicro.api.monitor.LogMonitorClient;
-import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.monitor.JMLogItem;
+import cn.jmicro.api.monitor.LG;
+import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.monitor.MT;
-import cn.jmicro.api.monitor.StatisMonitorClient;
 import cn.jmicro.api.net.AbstractHandler;
 import cn.jmicro.api.net.IMessageHandler;
 import cn.jmicro.api.net.IRequest;
@@ -225,8 +223,9 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
 		cxt.put(JMicroContext.LINKER_ID, JMicroContext.lid());
 		cxt.put(JMicroContext.REQ_ID, req.getRequestId());
 		cxt.put(JMicroContext.MSG_ID, req.getMsgId());
-		if(JMicroContext.get().exists(TxConstants.TYPE_TX_KEY)) {
-			cxt.put(TxConstants.TYPE_TX_KEY, JMicroContext.get().getLong(TxConstants.TYPE_TX_KEY, null));
+		if(JMicroContext.get().exists(TxConstants.TX_ID)) {
+			cxt.put(TxConstants.TX_ID, JMicroContext.get().getLong(TxConstants.TX_ID, null));
+			cxt.put(TxConstants.TX_SERVER_ID, JMicroContext.get().getInt(TxConstants.TX_SERVER_ID, null));
 		}
 		
 		PSData data = new PSData();
@@ -384,7 +383,7 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
     		//废弃此字段
     		//msg.setLoggable(SF.isLoggable(sm.getLogLevel()));
     		//往监控服务器上传日志包,当前RPC的日志级别
-    		int ll = cxt.getInt(JMicroContext.SM_LOG_LEVEL, MC.LOG_NO);
+    		byte ll = cxt.getByte(JMicroContext.SM_LOG_LEVEL, MC.LOG_NO);
     		msg.setLogLevel(ll);
     		//往监控服务器上传监控包
     		msg.setMonitorable(cxt.isMonitorable());
@@ -419,6 +418,7 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
 				
 				Map<String,Object> cxtParams = new HashMap<>();
 				cxt.getAllParams(cxtParams);
+				
 				p.setContext(cxtParams);
 				
 				waitForResponse.put(req.getRequestId(),p);
@@ -470,7 +470,7 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
 			//logger.info("Not need response req:"+req.getMethod()+",Service:" + req.getServiceName()+", Namespace:"+req.getNamespace());
 		}*/
 		if(cxt.isDebug()) {
-			cxt.appendCurUseTime("Async RPC",true);
+			cxt.appendCurUseTime("Async client request end",true);
 		}
 		return p;
 	}
@@ -525,6 +525,8 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
 			sm = cxt.getParam(Constants.SERVICE_METHOD_KEY, null);
 			ServiceItem si = cxt.getParam(Constants.SERVICE_ITEM_KEY,null);
 			if(cxt.isDebug()) {
+				//下行包网络耗时
+				cxt.appendCurUseTime("Down cost "+(TimeUtils.getCurTime()-respMsg.getTime()),false);
 				cxt.appendCurUseTime("Got async resp ",true);
     		}
 		
@@ -544,10 +546,6 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
 				JMLogItem mi = cxt.getMRpcLogItem();
 				if(mi != null) {
 					mi.setResp(resp);
-				}
-				
-				if(cxt.isDebug()) {
-					cxt.appendCurUseTime("Got Resp ",true);
 				}
 				p.setResult(resp.getResult());
 			} else {
@@ -583,10 +581,10 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
 			MT.rpcEvent(MC.MT_REQ_END);
 			//LG.log(MC.LOG_DEBUG, TAG.getName(), MC.MT_REQ_END);
 			
-			cxt.debugLog(0);
-			if(sm.getKey().getMethod().equals("invokeRpcA")) {
+			//cxt.debugLog(0);
+			/*if(sm.getKey().getMethod().equals("invokeRpcA")) {
 				logger.debug("");
-			}
+			}*/
 			cxt.submitMRpcItem();
 			
 			//从此开始脱离此RPC上下文
@@ -661,7 +659,7 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
 			p.setFail(MC.MT_REQ_TIMEOUT_FAIL, errMsg);
 			p.done();
 			
-			cxt.debugLog(0);
+			//cxt.debugLog(0);
 			cxt.submitMRpcItem();
 			JMicroContext.clear();
 

@@ -353,7 +353,6 @@ public class ClassScannerUtils {
                                         	} else {
                                         		logger.error("Class not found: " + packageName + '.'  + className);
                                         	}
-                                           
                                         } catch (ClassNotFoundException e) {  
                                         	logger.error("",e);
                                         }  

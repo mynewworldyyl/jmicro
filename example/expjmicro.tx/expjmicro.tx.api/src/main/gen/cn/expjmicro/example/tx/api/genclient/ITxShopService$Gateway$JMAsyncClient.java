@@ -5,6 +5,7 @@ import cn.jmicro.api.Resp;
 import cn.jmicro.api.annotation.WithContext;
 import cn.jmicro.api.async.IPromise;
 import java.lang.Object;
+import java.lang.Void;
 
 public interface ITxShopService$Gateway$JMAsyncClient extends ITxShopService {
   @WithContext
@@ -16,4 +17,9 @@ public interface ITxShopService$Gateway$JMAsyncClient extends ITxShopService {
   IPromise<Resp> updateLocalDataJMAsync(int goodId, int num, Object context);
 
   IPromise<Resp> updateLocalDataJMAsync(int goodId, int num);
+
+  @WithContext
+  IPromise<Void> resetGoodCacheJMAsync(int goodId, Object context);
+
+  IPromise<Void> resetGoodCacheJMAsync(int goodId);
 }

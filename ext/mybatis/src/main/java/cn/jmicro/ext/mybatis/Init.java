@@ -30,6 +30,8 @@ public class Init implements IPostFactoryListener{
 	
 	private IObjectFactory of;
 	
+	private SqlSessionManager sqlSessionMng;
+	
 	@Override
 	public void preInit(IObjectFactory of) {
 		this.of = of;
@@ -50,15 +52,15 @@ public class Init implements IPostFactoryListener{
 		
 		InputStream inputStream = IPostFactoryListener.class.getResourceAsStream(configLocation);
 		SqlSessionFactory sqlSessionFactory = new SqlSessionFactoryBuilder().build(inputStream,env,props);
-		SqlSessionManager ssm = new SqlSessionManager(sqlSessionFactory);
-		of.regist(SqlSessionManager.class, ssm);
+		sqlSessionMng = new SqlSessionManager(sqlSessionFactory);
+		of.regist(SqlSessionManager.class, sqlSessionMng);
 		//of.regist(SqlSessionFactory.class, ssm);
 		//of.regist(CurSqlSessionFactory.class, ssm);
 		
-		createMapperProxy(of,sqlSessionFactory.getConfiguration().getMapperRegistry().getMappers(),ssm);
+		createMapperProxy(of,sqlSessionFactory.getConfiguration().getMapperRegistry().getMappers());
 	}
 
-	private void createMapperProxy(IObjectFactory of, Collection<Class<?>> mappers,SqlSessionManager ssm) {
+	private void createMapperProxy(IObjectFactory of, Collection<Class<?>> mappers) {
 		if(mappers == null || mappers.isEmpty()) {
 			return;
 		}
@@ -67,14 +69,14 @@ public class Init implements IPostFactoryListener{
 				logger.error("cls ["+cls.getName()+"] must be interface");
 				continue;
 			}
-			Object m = createMapperProxy(cls,ssm);
+			Object m = createMapperProxy(cls);
 			if(m != null) {
 				of.regist(cls,m);
 			}
 		}
 	}
 
-	private Object createMapperProxy(Class<?> cls, SqlSessionManager ssm) {
+	private Object createMapperProxy(Class<?> cls) {
 		 return Proxy.newProxyInstance(Init.class.getClassLoader(),new Class[] { cls }, new MapperProxy(cls));
 	}
 
@@ -103,8 +105,7 @@ public class Init implements IPostFactoryListener{
 	    	  if(method.getDeclaringClass() == Object.class) {
 	    		  return method.invoke(obj, args);
 	    	  }
-	    	  SqlSessionManager ssm = Init.this.of.get(SqlSessionManager.class);
-	    	  SqlSession sqlSession = ssm.curSession();
+	    	  SqlSession sqlSession = (SqlSession)sqlSessionMng.curSession();
 	    	  Object mapper = sqlSession.getMapper(method.getDeclaringClass());
 	    	  Method m = mapper.getClass().getMethod(method.getName(), method.getParameterTypes());
 	          Object result = m.invoke(mapper, args);

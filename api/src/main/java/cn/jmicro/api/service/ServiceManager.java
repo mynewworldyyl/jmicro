@@ -183,12 +183,12 @@ public class ServiceManager {
 			return;
 		}
 		
-		if("cn.jmicro.api.tx.ITransactionResource".equals(si.getKey().getServiceName())) {
+		/*if("cn.jmicro.api.tx.ITransactionResource".equals(si.getKey().getServiceName())) {
 			logger.debug("test debug");
-		}
+		}*/
 		
 		if(!PermissionManager.checkClientPermission(Config.getClientId(), si.getClientId())) {
-			logger.info("No permisstion for: " + path);
+			//logger.info("No permisstion for: " + path);
 			return;
 		}
 		

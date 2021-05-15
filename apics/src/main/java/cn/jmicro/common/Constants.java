@@ -53,7 +53,9 @@ public interface Constants {
 	//只有自己能调用
 	public static final byte LICENSE_TYPE_PRIVATE = 2;
 	
-	public static final String[] SYSTEM_PCK_NAME_PREFIXES = new String[] {"cn.jmicro"};
+	public static final String SYSTEM_PCK_NAME_PREFIXE = "cn.jmicro";
+	
+	public static final String[] SYSTEM_PCK_NAME_PREFIXES = new String[] {SYSTEM_PCK_NAME_PREFIXE};
 	
 	public static final String PUBLIC_KEYS_FILES = "publicKeyFiles";
 	
@@ -82,7 +84,8 @@ public interface Constants {
 	
 	public static final String CFG_ROOT="/jmicro";
 	
-	public static final String Ml_MODEL_ENABLE = "enableMasterSlaveModel";
+	//主从模式标签
+	public static final String MASTER_SLAVE_TAG = "masterSlaveTag";
 	
 	public static final String LOCAL_DATA_DIR = "localDataDir";
 	public static final String INSTANCE_DATA_DIR = "instanceDataDir";

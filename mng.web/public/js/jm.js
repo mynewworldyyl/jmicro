@@ -313,7 +313,7 @@ jm.mng = {
 
         __ccreq : function(method,args){
             let req = {};
-            req.serviceName = 'cn.jmicro.api.security.IAccountService';
+            req.serviceName = 'cn.jmicro.security.service.IAccountService';
             req.namespace = window.jm.Constants.NS_SECURITY;
             req.version = '0.0.1';
             req.args = args;
@@ -610,12 +610,12 @@ jm.mng = {
 
     hostNameSrv : {
 
-        getHosts : function(name) {
-            return jm.rpc.callRpcWithParams(this.sn, this.ns, this.v, 'getHosts', [name]);
+        getHosts : function() {
+            return jm.rpc.callRpcWithParams(this.sn, this.ns, this.v, 'getHosts', ["nettyhttp"]);
         },
 
         bestHost : function () {
-            return jm.rpc.callRpcWithParams(this.sn, this.ns, this.v, 'bestHost', []);
+            return jm.rpc.callRpcWithParams(this.sn, this.ns, this.v, 'bestHost', ["nettyhttp"]);
         },
 
         sn:'cn.jmicro.api.gateway.IBaseGatewayService',

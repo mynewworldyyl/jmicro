@@ -28,11 +28,13 @@ import cn.jmicro.api.tx.ITransactionResource;
 import cn.jmicro.api.tx.ITransationService;
 import cn.jmicro.api.tx.TxConfig;
 import cn.jmicro.api.tx.TxConstants;
+import cn.jmicro.api.tx.TxInfo;
 import cn.jmicro.api.tx.genclient.ITransactionResource$JMAsyncClient;
 import cn.jmicro.api.utils.TimeUtils;
 
 @Component
-@Service(version="0.0.1",external=false,timeout=10000,debugMode=1,showFront=true,clientId=-1,logLevel=MC.LOG_DEBUG)
+@Service(version="0.0.1",external=false,timeout=10000,debugMode=1,showFront=true,
+clientId=-1,logLevel=MC.LOG_DEBUG)
 public class TransationServiceImpl implements ITransationService{
 
 	private static final Class<?> TAG = TransationServiceImpl.class;
@@ -55,6 +57,9 @@ public class TransationServiceImpl implements ITransationService{
 	
 	@Inject
 	private JmicroInstanceManager insMng;
+	
+	@Inject
+	private ProcessInfo pi;
 	
 	private Object syno = new Object();
 	
@@ -199,8 +204,8 @@ public class TransationServiceImpl implements ITransationService{
 				}
 				client.finishJMAsync(g.txId,succ)
 				.success((rst,cxt)->{
-					if(LG.isLoggable(MC.LOG_DEBUG, null)) {
-						LG.log(MC.LOG_DEBUG, TAG, "Commit success "+g.txId+" client pid:" +v.pid+",commit: " + succ+",insName: "+v.insName);
+					if(LG.isLoggable(MC.LOG_WARN, null)) {
+						LG.log(MC.LOG_WARN, TAG, "Commit success "+g.txId+" client pid:" +v.pid+",commit: " + succ+",insName: "+v.insName);
 					}
 				}).fail((code,msg,cxt)->{
 					LG.log(MC.LOG_ERROR, ITransactionResource.STR_TAG, "fail to commit txid:" + g.txId +", commit: "+ succ+",insName: "+v.insName+",code:"+ code +",insId:"+v.pid+",msg:"+msg);
@@ -209,19 +214,16 @@ public class TransationServiceImpl implements ITransationService{
 				LG.log(MC.LOG_ERROR, ITransactionResource.STR_TAG, "Client not found txid:" + g.txId +", commit: "+ succ+",insName: "+v.insName +",insId:"+v.pid);
 			}
 		}
-		
 	}
 
 	@Override
 	@SMethod(retryCnt=0,timeout=3000)
-	public Resp<Long> start(TxConfig cfg) {
+	public Resp<TxInfo> start(TxConfig cfg) {
 		Long txid = idGenerator.getLongId(TxConfig.class);
-		Resp<Long> r = new Resp<>(Resp.CODE_SUCCESS,txid);
+		Resp<TxInfo> r = new Resp<>(Resp.CODE_TX_FAIL,"");
 		
 		if(txid <= 0) {
 			ProcessInfo pi = this.insMng.getInstanceById(cfg.getPid());
-			r.setCode(Resp.CODE_FAIL);
-			r.setData(txid);
 			r.setMsg("create txid failure!");
 			LG.log(MC.LOG_ERROR, TAG, r.getMsg()+",by insName: " + pi.getInstanceName());
 			return r;
@@ -236,6 +238,12 @@ public class TransationServiceImpl implements ITransationService{
 		synchronized(txGroups) {
 			txGroups.put(txid, g);
 		}
+		
+		TxInfo ti = new TxInfo();
+		ti.setServerId(pi.getId());
+		ti.setTxid(txid);
+		r.setData(ti);
+		r.setCode(Resp.CODE_SUCCESS);
 		
 		return r;
 	}

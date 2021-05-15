@@ -509,6 +509,16 @@ ext/mongodb/.classpath
 ext/mongodb/.project
 ext/mongodb/.settings/
 ext/mongodb/src/main/gen
+ext/simple.security/target/
+ext/simple.security/.classpath
+ext/simple.security/.project
+ext/simple.security/.settings/
+ext/simple.security/src/main/gen
+ext/simple.security/logs/
+ext/simple.security/data/
+ext/simple.security/bin/
+ext/simple.security/dumpDir/
+ext/simple.security/src/main/resources/META-INF/keys/
 ext/bbs/
 ext/security/
 agent/target/

@@ -17,6 +17,7 @@
 	<modules>
 		<module>mybatis</module>
 		<module>mongodb</module>
+		<module>simple.security</module>
 	</modules>
 	<dependencies>
 		<dependency>

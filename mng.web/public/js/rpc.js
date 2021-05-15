@@ -20,13 +20,13 @@ window.jm = window.jm || {};
 jm.config = {
     //ip:"192.168.3.3",
     //ip:'192.168.1.129',
-    ip:'192.168.56.1',
+    //ip:'192.168.56.1',
     //ip:'47.112.161.111',
-    //ip:'jmicro.cn',
+    ip:'jmicro.cn',
     //ip:'192.168.101.22',
     //ip:'172.18.0.1',
-    port:'9090',
-    //port:'80',
+    //port:'9090',
+    port:'80',
     txtContext : '_txt_',
     binContext : '_bin_',
     httpContext : '/_http_',
@@ -791,7 +791,7 @@ jm.rpc = {
 
     __actreq : function(method,args){
         let req = {};
-        req.serviceName = 'cn.jmicro.api.security.IAccountService';
+        req.serviceName = 'cn.jmicro.security.service.IAccountService';
         req.namespace = window.jm.Constants.NS_SECURITY;
         req.version = '0.0.1';
         req.args = args;
@@ -827,7 +827,9 @@ jm.rpc = {
             pwd = "";
         }
 
-        jm.rpc.callRpc(this.__actreq('login',[actName,pwd]))
+        let req = this.__actreq('login',[actName,pwd]);
+        req.serviceName = 'cn.jmicro.api.security.IAccountService';
+        jm.rpc.callRpc(req)
             .then(( resp )=>{
                 if(resp.code == 0) {
                     self.actInfo = resp.data;
@@ -921,13 +923,13 @@ jm.rpc = {
         req.namespace = window.jm.Constants.NS_API_GATEWAY;
         req.version = '0.0.1';
         req.method = 'bestHost';
-        req.args = [];
+        req.args = ["nettyhttp"];
 
         jm.rpc.callRpc(req)
             .then((data)=>{
                 if(data && data.length > 0) {
                     //let jo = jm.utils.parseJson(data);
-                    let arr = data.split(':');
+                    let arr = data.split('#');
                     if(arr[0] && arr[1] && ( arr[0] != jm.config.ip ||  arr[1] != jm.config.port )) {
                         jm.config.ip = arr[0];
                         jm.config.port = arr[1];

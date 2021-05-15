@@ -320,9 +320,9 @@ public class LG {
 			return true;
 		}
 		
-		int rpcLevel = pi.getLogLevel();
+		byte rpcLevel = pi.getLogLevel();
 		if(rpcMethodLevel == null || rpcMethodLevel.length == 0) {
-			rpcLevel = JMicroContext.get().getParam(JMicroContext.SM_LOG_LEVEL, rpcLevel);
+			rpcLevel = JMicroContext.get().getByte(JMicroContext.SM_LOG_LEVEL, rpcLevel);
 		} else {
 			rpcLevel = (byte)rpcMethodLevel[0];
 		}
@@ -341,7 +341,7 @@ public class LG {
 		sb.append(",method:").append(msg.getMethod());
 		sb.append(", from insId: ").append(msg.getInsId());
 		if(msg.getTime() > 0) {
-			sb.append(",cost:").append(TimeUtils.getCurTime() - msg.getTime());
+			sb.append(",c2s cost:").append(TimeUtils.getCurTime() - msg.getTime());
 		}
 		sb.append(",flag:0X").append(Integer.toHexString(msg.getFlag()));
 		return sb.toString();

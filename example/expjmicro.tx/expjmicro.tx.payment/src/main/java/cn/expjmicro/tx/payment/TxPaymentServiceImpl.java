@@ -22,7 +22,7 @@ import cn.jmicro.api.tx.TxConstants;
 import cn.jmicro.common.CommonException;
 
 @Component
-@Service(version="0.0.1",logLevel=MC.LOG_DEBUG)
+@Service(version="0.0.1",logLevel=MC.LOG_DEBUG,debugMode=1)
 public class TxPaymentServiceImpl implements ITxPaymentService {
 
 	private final static Logger logger = LoggerFactory.getLogger(TxPaymentServiceImpl.class);
@@ -34,6 +34,9 @@ public class TxPaymentServiceImpl implements ITxPaymentService {
 	
 	private Random ran = new Random(System.currentTimeMillis()/100);
 	
+	/**
+	 * 同步实现支付服务
+	 */
 	@Override
 	@SMethod(txType=TxConstants.TYPE_TX_DISTRIBUTED)
 	public Resp<Boolean> pay(Payment p) {
@@ -55,14 +58,15 @@ public class TxPaymentServiceImpl implements ITxPaymentService {
 		}*/
 		
 		if(p.getId() % 3 == 0) {
+			//模拟支付失败
 			if(++exCnt % 2 == 0) {
-				r.setCode(Resp.CODE_FAIL);//模拟支付失败
+				r.setCode(Resp.CODE_FAIL);
 				r.setData(false);
-				r.setMsg("payId: "+p.getId()+",模拟支付失败"+", txid:" + JMicroContext.get().getLong(TxConstants.TYPE_TX_KEY, -1L));
+				r.setMsg("payId: "+p.getId()+",模拟支付失败"+", txid:" + JMicroContext.get().getLong(TxConstants.TX_ID, -1L));
 				LG.log(MC.LOG_ERROR, this.getClass(), r.getMsg());
 				logger.debug(r.getMsg());
 			} else {
-				String msg = "payId: "+p.getId()+",余额不足"+", txid:" + JMicroContext.get().getLong(TxConstants.TYPE_TX_KEY, -1L);
+				String msg = "payId: "+p.getId()+",余额不足"+", txid:" + JMicroContext.get().getLong(TxConstants.TX_ID, -1L);
 				LG.log(MC.LOG_ERROR, this.getClass(), msg);
 				logger.debug(msg);
 				throw new CommonException(msg);
@@ -71,16 +75,22 @@ public class TxPaymentServiceImpl implements ITxPaymentService {
 		}
 		
 		LG.log(MC.LOG_INFO, this.getClass(), "Save payment");
-		
+		//保存支付单
 		pm.savePayment(p);
 		return r;
 	}
 	
+	/**
+	 * 异步实现支付服务
+	 */
 	@Override
 	@SMethod(txType=TxConstants.TYPE_TX_DISTRIBUTED)
 	public IPromise<Resp<Boolean>> payAsy(Payment p) {
 		Resp<Boolean> r = pay(p);
 		PromiseImpl<Resp<Boolean>> pr = new PromiseImpl<>();
+		if(!r.getData()) {
+			pr.setFail(r.getCode(),r.getMsg());
+		}
 		pr.setResult(r);
 		pr.done();
 		return pr;

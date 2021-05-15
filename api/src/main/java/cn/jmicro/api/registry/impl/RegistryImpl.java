@@ -434,6 +434,18 @@ public class RegistryImpl implements IRegistry {
 			return this.srvManager.getServiceItems(sn,null,null);
 		}	
 	}
+	
+	@Override
+	public ServiceItem getService(String serviceName, int insId) {
+		Set<ServiceItem> items = this.getServices(serviceName);
+		if(items == null || items.isEmpty()) return null;
+		for(ServiceItem si : items) {
+			if(si.getInsId() == insId) {
+				return si;
+			}
+		}
+		return null;
+	}
 
 	@Override
 	public ServiceItem getServiceByImpl(String impl) {

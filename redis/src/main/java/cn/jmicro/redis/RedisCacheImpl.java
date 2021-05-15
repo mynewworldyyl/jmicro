@@ -32,6 +32,7 @@ import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Inject;
 import cn.jmicro.api.cache.ICache;
 import cn.jmicro.api.cache.ICacheRefresher;
+import cn.jmicro.api.choreography.ProcessInfo;
 import cn.jmicro.api.codec.ICodecFactory;
 import cn.jmicro.api.config.Config;
 import cn.jmicro.api.monitor.LG;
@@ -84,12 +85,21 @@ public class RedisCacheImpl implements ICache {
 	@Inject
 	private JedisPool jeditPool;
 	
+	@Inject
+	private ProcessInfo pi;
+	
 	private Random r = new Random(TimeUtils.getCurTime()/10000);
 	
 	private Map<String,ICacheRefresher> refreshers = Collections.synchronizedMap(new HashMap<>());
 	
 	//指定KEY上次直接从源中提取数据时间，避免同小时间片内大批量对不存在的数据请求
 	private Map<String,Long> notExistData = Collections.synchronizedMap(new HashMap<>());
+	
+	private String prefix;
+	
+	public void ready() {
+		prefix = "/"+Config.getAdminClientId()+"/";
+	}
 	
 	@Override
 	public boolean put(String key, Object val) {
@@ -105,7 +115,7 @@ public class RedisCacheImpl implements ICache {
 			return false;
 		}
 		
-		byte[] k = ICache.keyData(key);
+		byte[] k = ICache.keyData(prefix+key);
 		if(k == null) {
 			return false;
 		}
@@ -130,6 +140,10 @@ public class RedisCacheImpl implements ICache {
 		
 	}
 
+	private String appendPrefix(String key) {
+		return this.prefix + key;
+	}
+
 	private void checkPermission(String key) {
 		for(String p : adminPrefixs) {
 			if(key.startsWith(p) && !(Utils.formSystemPackagePermission(4) || Config.isAdminSystem())) {
@@ -148,13 +162,15 @@ public class RedisCacheImpl implements ICache {
 			return null;
 		}
 		
+		key = prefix+key;
+		
 		byte[] k = ICache.keyData(key);
 		
 		Jedis jedis = null;
 		try {
 			 jedis = jeditPool.getResource();
 			 byte[] val = jedis.get(k);
-			if(val != null) {
+			if(val != null && val.length > 0) {
 				//命中缓存,理想情况下,大部份缓存都走到这里返回
 				return (T)codeFactory.getDecoder(Message.PROTOCOL_BIN).decode(ByteBuffer.wrap(val), null);
 			} else {
@@ -233,7 +249,7 @@ public class RedisCacheImpl implements ICache {
 			return false;
 		}
 		
-		byte[] k = ICache.keyData(key);
+		byte[] k = ICache.keyData(prefix+key);
 		if( k == null) {
 			return false;
 		}
@@ -257,7 +273,7 @@ public class RedisCacheImpl implements ICache {
 			return false;
 		}
 		
-		byte[] k = ICache.keyData(key);
+		byte[] k = ICache.keyData(prefix+key);
 		if( k == null) {
 			return false;
 		}
@@ -325,7 +341,7 @@ public class RedisCacheImpl implements ICache {
 			logger.error("Del key cannot be NULL");
 			return false;
 		}
-		byte[] k = ICache.keyData(key);
+		byte[] k = ICache.keyData(prefix+key);
 		if( k == null) {
 			return false;
 		}

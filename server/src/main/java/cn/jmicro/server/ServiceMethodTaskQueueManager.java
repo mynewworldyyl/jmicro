@@ -245,12 +245,14 @@ public class ServiceMethodTaskQueueManager implements ILimitData{
 			
 			if((this.queue.size()/this.maxQps)*1000 > sm.getTimeout()) {
 				MT.rpcEvent(this.sm,MC.MT_SERVER_LIMIT_MESSAGE_REJECT, 1);
-				throw new CommonException(MC.MT_SERVER_LIMIT_MESSAGE_REJECT,"Rpc will timeout in queue cost: " + ((this.queue.size()/this.maxQps)*1000 )+", timeout: "+sm.getTimeout());
+				String key = task.getSm().getKey().toKey(true, true, true);
+				throw new CommonException(MC.MT_SERVER_LIMIT_MESSAGE_REJECT,"Rpc will timeout in queue cost: " + ((this.queue.size()/this.maxQps)*1000 )+", timeout: "+sm.getTimeout()+",Key:" + key);
 			}
 			
 			if(this.queue.size() >= this.queueSize) {
 				MT.rpcEvent(this.sm,MC.MT_SERVER_LIMIT_MESSAGE_REJECT, 1);
-				throw new CommonException(MC.MT_SERVER_LIMIT_MESSAGE_REJECT,"Queue is full with max size:" + this.queueSize+" CurSize: "+this.queue.size());
+				String key = task.getSm().getKey().toKey(true, true, true);
+				throw new CommonException(MC.MT_SERVER_LIMIT_MESSAGE_REJECT,"Queue is full with max size:" + this.queueSize+" CurSize: "+this.queue.size()+",Key:" + key);
 			}
 			
 			this.queue.offer(task);

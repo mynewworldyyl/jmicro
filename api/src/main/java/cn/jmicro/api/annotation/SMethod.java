@@ -27,6 +27,7 @@ import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.net.Message;
 import cn.jmicro.api.tx.TxConstants;
 import cn.jmicro.common.Constants;
+
 /**
  * service method
  * @author Yulei Ye
@@ -40,7 +41,7 @@ public @interface SMethod {
 	
 	/**
 	 * 开启Debug模式，-1表示未定义，由别的地方定义，如系统环境变量，启动时指定等，0表示不开启，1表示开启
-	 * Message包增加额外高试字段，如linkid,msgid,instanceName,method
+	 * Message包增加额外测试字段，如linkid,msgid,instanceName,method
 	 * 开启debug后，其他标志才志作用 {@link Message}
 	 */
 	public int debugMode() default -1;
