@@ -98,7 +98,7 @@ public class NettyHttpServerHandler extends ChannelInboundHandlerAdapter {
     			}*/
     		}
     	}else {
-    		logger.debug("Error Http Request!");
+    		logger.warn("Error Http Request");
     		ctx.fireChannelRead(msg);
     	}
     }

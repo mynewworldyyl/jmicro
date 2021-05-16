@@ -21,8 +21,8 @@ jm.config = {
     //ip:"192.168.3.3",
     //ip:'192.168.1.129',
     //ip:'192.168.56.1',
-    //ip:'47.112.161.111',
-    ip:'jmicro.cn',
+    ip:'47.112.161.111',
+    //ip:'jmicro.cn',
     //ip:'192.168.101.22',
     //ip:'172.18.0.1',
     //port:'9090',
@@ -32,7 +32,7 @@ jm.config = {
     httpContext : '/_http_',
     useWs : true,
 
-    sslEnable:false,
+    sslEnable:true,
     publicKey :'MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCt489YTxmLjNVxfFKSORyUgXjr65MQR1a/QdlriFEWXUAaLpVWP41YTlSA5ecG54xVwl2ayLytCv4CJNqYPeYNPUVXPr1tqND1aZYK9iUQQ0K36g2QZaigg+f/NJSY6w4XITQdBz3PnJOOzOK+cOew4R0XiyrR8sHG2Is4Mf9qowIDAQAB',
     privateKey:''
 }

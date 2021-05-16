@@ -61,7 +61,7 @@ public class NettyHttpChannelInitializer extends ChannelInitializer<SocketChanne
         pipeline.addLast("httpObjectAggregator", new HttpObjectAggregator(8192));
         
         pipeline.addLast("binWebSocketServerProtocolHandler", 
-        		new WebSocketServerProtocolHandler(binaryWebsocketContextPath,null,false,65536));
+        		new WebSocketServerProtocolHandler(binaryWebsocketContextPath,null,false,65535));
         pipeline.addLast("binWebSocketWsHandler", binWsHandler);
         
       /*  pipeline.addLast("webSocketServerProtocolHandler", new WebSocketServerProtocolHandler(textWebsocketContextPath));

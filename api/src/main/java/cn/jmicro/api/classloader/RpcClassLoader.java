@@ -21,6 +21,7 @@ import java.io.InputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.URL;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -39,7 +40,7 @@ public class RpcClassLoader extends ClassLoader {
 
 	private final static Logger logger = LoggerFactory.getLogger(RpcClassLoader.class);
 	
-	public static final Map<String,Class<?>> clazzes = new HashMap<>(); 
+	public static final Map<String,Class<?>> clazzes = Collections.synchronizedMap(new HashMap<>()); 
 	
 	private static final Set<String> basePackages = new HashSet<>();
 	
@@ -201,48 +202,57 @@ public class RpcClassLoader extends ClassLoader {
 		if(clazzes.containsKey(name)) {
 			return clazzes.get(name);
 		}
-		String fullpath = name.replace('.', '/');
-		URL furl = getResource(fullpath);
+		name = name.intern();
 		
-		if(furl == null) {
-			return null;
-		}
-
-		int pos = 0;
-		int len = 0;
-		byte[] ds = null;
-
-		try (InputStream is = furl.openStream()) {
-			ds = new byte[is.available()];
-			byte[] td = new byte[1024];
-			while ((len = is.read(td, 0, td.length)) > 0) {
-				System.arraycopy(td, 0, ds, pos, len);
-				pos += len;
+		synchronized(name) {
+			
+			if(clazzes.containsKey(name)) {
+				return clazzes.get(name);
 			}
-		} catch (IOException e) {
-			logger.error(name, e);
-		}
+			
+			String fullpath = name.replace('.', '/');
+			URL furl = getResource(fullpath);
+			
+			if(furl == null) {
+				return null;
+			}
 
-		if (pos <= 0) {
-			String desc = fullpath + " read class data error";
-			logger.error(desc);
-			LG.log(MC.LOG_ERROR, this.getClass(), desc);
-			throw new ClassNotFoundException(desc);
-		}
+			int pos = 0;
+			int len = 0;
+			byte[] ds = null;
 
-		Class<?> remoteClass = dfClass(name, ds,resolve);
-		
-		if(remoteClass != null) {
-			String desc = "Load class from local RpcClassLoader: "+name+", length:" + ds.length;
-			logger.debug(desc);
-			//LG.log(MC.LOG_DEBUG, this.getClass(), desc);
-			//clazzesData.put(name, ds);
-			return remoteClass;
-		}  else {
-			String msg = "Remote class [" + name + "] not found form repository by [" + Config.getClientId() + "]";
-			logger.info(msg);
-			LG.log(MC.LOG_WARN, this.getClass(), msg);
-			throw new ClassNotFoundException(msg);
+			try (InputStream is = furl.openStream()) {
+				ds = new byte[is.available()];
+				byte[] td = new byte[1024];
+				while ((len = is.read(td, 0, td.length)) > 0) {
+					System.arraycopy(td, 0, ds, pos, len);
+					pos += len;
+				}
+			} catch (IOException e) {
+				logger.error(name, e);
+			}
+
+			if (pos <= 0) {
+				String desc = fullpath + " read class data error";
+				logger.error(desc);
+				LG.log(MC.LOG_ERROR, this.getClass(), desc);
+				throw new ClassNotFoundException(desc);
+			}
+
+			Class<?> remoteClass = dfClass(name, ds,resolve);
+			
+			if(remoteClass != null) {
+				String desc = "Load class from local RpcClassLoader: "+name+", length:" + ds.length;
+				logger.debug(desc);
+				//LG.log(MC.LOG_DEBUG, this.getClass(), desc);
+				//clazzesData.put(name, ds);
+				return remoteClass;
+			}  else {
+				String msg = "Remote class [" + name + "] not found form repository by [" + Config.getClientId() + "]";
+				logger.info(msg);
+				LG.log(MC.LOG_WARN, this.getClass(), msg);
+				throw new ClassNotFoundException(msg);
+			}
 		}
 
 	}
@@ -259,7 +269,7 @@ public class RpcClassLoader extends ClassLoader {
 				if(resolve) {
 					resolveClass(myClass);
 				}
-		    	clazzes.put(originClsName, myClass);
+			clazzes.put(originClsName, myClass);
 		    	return myClass;
 		 }
 	}

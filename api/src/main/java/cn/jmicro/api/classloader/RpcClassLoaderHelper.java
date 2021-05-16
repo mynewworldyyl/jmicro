@@ -613,7 +613,13 @@ public class RpcClassLoaderHelper {
     	
     	Class<?>  cls = null;
     	if(this.respositoryReady()) {
-    		cls = getClassFromRepository(className,true);
+    		className = className.intern();
+    		synchronized(className) {
+    			if(RpcClassLoader.clazzes.containsKey(className)) {
+    	    		return RpcClassLoader.clazzes.get(className);
+    	    	}
+    			cls = getClassFromRepository(className,true);
+    		}
     	}
     	
     	if(cls == null) {
