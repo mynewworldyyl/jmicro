@@ -10,6 +10,8 @@ import cn.jmicro.api.annotation.Inject;
 import cn.jmicro.api.cache.ICache;
 import cn.jmicro.api.config.Config;
 import cn.jmicro.api.idgenerator.ComponentIdServer;
+import cn.jmicro.api.monitor.LG;
+import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.raft.IDataOperator;
 import cn.jmicro.api.utils.TimeUtils;
 import cn.jmicro.common.util.JsonUtils;
@@ -122,7 +124,6 @@ public class AccountManager {
 			}else {
 				cache.del(akey);
 			}
-			
 		}
 		return true;
 	}
@@ -132,6 +133,9 @@ public class AccountManager {
 			ActInfo ai = cache.get(loginKey);
 			long curTime = TimeUtils.getCurTime();
 			if(curTime - ai.getLastActiveTime() > updateExpired) {
+				if(LG.isLoggable(MC.LOG_DEBUG)) {
+					LG.log(MC.LOG_DEBUG, AccountManager.class, "Refresh: " + ai.getActName()+",Key: " +loginKey);
+				}
 				setActInfoCache(ai,curTime);
 			}
 			return ai;

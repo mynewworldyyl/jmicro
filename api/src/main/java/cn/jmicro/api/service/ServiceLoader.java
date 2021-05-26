@@ -627,7 +627,7 @@ public class ServiceLoader{
 			//如果接口和实现类都没有,则使用实现类的Service注解，实现类肯定有Service注解，否则不会成为服务
 			
 			SMethod manno = srvMethod.getAnnotation(SMethod.class);
-			SMethod intMAnno = m.getAnnotation(SMethod.class);
+			//SMethod intMAnno = m.getAnnotation(SMethod.class);
 			
 			//订阅信息
 			Subscribe mSub = srvMethod.getAnnotation(Subscribe.class);
@@ -645,7 +645,7 @@ public class ServiceLoader{
 			
 			SBreakingRule sbr = null;
 					
-			if(manno == null && intMAnno== null) {
+			if(manno == null /*&& intMAnno== null*/) {
 				//sm.setMaxFailBeforeDegrade(item.getMaxFailBeforeDegrade());
 				sm.setRetryCnt(item.getRetryCnt());
 				sm.setRetryInterval(item.getRetryInterval());
@@ -660,8 +660,8 @@ public class ServiceLoader{
 				sm.setAvgResponseTime(item.getAvgResponseTime());
 				sm.setMonitorEnable(item.getMonitorEnable());
 				sm.setFailResponse("");
-				sm.setLogLevel(MC.LOG_NO);
-				sm.setDebugMode(-1);
+				sm.setLogLevel(item.getLogLevel());
+				sm.setDebugMode(item.getDebugMode());
 				sm.setMaxSpeed(item.getMaxSpeed());
 				sm.setPerType(false);
 				sm.setNeedLogin(false);
@@ -672,88 +672,46 @@ public class ServiceLoader{
 				sm.setTxPhase(TxConstants.TX_2PC);
 				sm.setTxIsolation((byte)Connection.TRANSACTION_READ_COMMITTED);
 			} else {
-				 if(manno != null ) {
-					 //实现类方法配置具有高优先级
-					sbr = manno.breakingRule();
-					sm.setRetryCnt(manno.retryCnt()!=3 || intMAnno == null ?manno.retryCnt():intMAnno.retryCnt());
-					sm.setRetryInterval(manno.retryInterval()!=500 || intMAnno == null ? manno.retryInterval():intMAnno.retryInterval());
-					sm.setTestingArgs(getFieldValue(manno.testingArgs(),intMAnno == null ? null : intMAnno.testingArgs(),""));
-					sm.setTimeout(manno.timeout()!=2000 || intMAnno == null ?manno.timeout():intMAnno.timeout());
-					sm.setMaxSpeed(manno.maxSpeed() > 0 || intMAnno == null ? manno.maxSpeed():intMAnno.maxSpeed());
-					if(sm.getMaxSpeed() <=0) {
-						sm.setMaxSpeed(item.getMaxSpeed());
-					}
-					sm.setAvgResponseTime(manno.avgResponseTime()!=-1 || intMAnno == null ? manno.avgResponseTime() : intMAnno.avgResponseTime());
-					sm.setMonitorEnable(manno.monitorEnable()!=-1 || intMAnno == null ? manno.monitorEnable() : intMAnno.monitorEnable());
-					//sm.setStream(manno.stream());
-					sm.setDumpDownStream(manno.dumpDownStream());
-					sm.setDumpUpStream(manno.dumpUpStream());
-					sm.setNeedResponse(manno.needResponse());
-					sm.setFailResponse(manno.failResponse());
-					sm.setTimeWindow(manno.timeWindow()<=0?item.getTimeWindow():manno.timeWindow());
-					sm.setSlotInterval(manno.slotInterval()<=0?item.getSlotSize():manno.slotInterval());
-					
-					sm.setCheckInterval(manno.checkInterval()<=0?item.getCheckInterval():manno.checkInterval());
-					
-					sm.setBaseTimeUnit(StringUtils.isEmpty(manno.baseTimeUnit())? item.getBaseTimeUnit():manno.baseTimeUnit());
-					
-					sm.setLogLevel(manno.logLevel()!=-1 || intMAnno == null ? manno.logLevel() : intMAnno.logLevel());
-					sm.setDebugMode(manno.debugMode()!=-1 || intMAnno == null ? manno.debugMode() : intMAnno.debugMode());
-					
-					sm.setAsyncable(manno.asyncable());
-					sm.setPerType(manno.perType());
-					sm.setNeedLogin(manno.needLogin() || manno.perType());
-					sm.setMaxPacketSize(manno.maxPacketSize());
-					sm.setUpSsl(manno.upSsl());
-					sm.setDownSsl(manno.downSsl());
-					sm.setEncType(manno.encType());
-					sm.setLimitType(manno.limitType());
-					sm.setForType(manno.forType());
-					sm.setTxType(manno.txType());
-					sm.setTxIsolation(manno.txIsolation());
-					sm.setTxPhase(manno.txPhase());
-				 } else {
-					 //使用接口方法配置
-					sbr = intMAnno.breakingRule();
-					sm.setRetryCnt(intMAnno.retryCnt());
-					sm.setRetryInterval(intMAnno.retryInterval());
-					sm.setTestingArgs(intMAnno.testingArgs());
-					sm.setTimeout(intMAnno.timeout());
-					sm.setMaxSpeed(intMAnno.maxSpeed());
-					if(sm.getMaxSpeed() <=0) {
-						sm.setMaxSpeed(item.getMaxSpeed());
-					}
-					
-					sm.setBaseTimeUnit(intMAnno.baseTimeUnit());
-					sm.setAvgResponseTime(intMAnno.avgResponseTime());
-					sm.setMonitorEnable(intMAnno.monitorEnable());
-					//sm.setStream(intMAnno.stream());
-					sm.setDumpDownStream(intMAnno.dumpDownStream());
-					sm.setDumpUpStream(intMAnno.dumpUpStream());
-					sm.setNeedResponse(intMAnno.needResponse());
-					sm.setFailResponse(intMAnno.failResponse());
-					sm.setLogLevel(intMAnno.logLevel());
-					sm.setDebugMode(intMAnno.debugMode());
-					sm.setTimeWindow(intMAnno.timeWindow()<=0?item.getTimeWindow():intMAnno.timeWindow());
-					sm.setSlotInterval(intMAnno.slotInterval()<=0?item.getSlotSize():intMAnno.slotInterval());
-					sm.setCheckInterval(intMAnno.checkInterval()<=0?item.getCheckInterval():intMAnno.checkInterval());
-					sm.setBaseTimeUnit(StringUtils.isEmpty(intMAnno.baseTimeUnit())? item.getBaseTimeUnit():intMAnno.baseTimeUnit());
-					
-					sm.setAsyncable(intMAnno.asyncable());
-					sm.setPerType(intMAnno.perType());
-					sm.setNeedLogin(intMAnno.needLogin()  || intMAnno.perType());
-					sm.setMaxPacketSize(intMAnno.maxPacketSize());
-					
-					sm.setUpSsl(intMAnno.upSsl());
-					sm.setDownSsl(intMAnno.downSsl());
-					sm.setEncType(intMAnno.encType());
-					
-					sm.setLimitType(intMAnno.limitType());
-					sm.setForType(intMAnno.forType());
-					sm.setTxType(intMAnno.txType());
-					sm.setTxPhase(intMAnno.txPhase());
-					sm.setTxIsolation(intMAnno.txIsolation());
-				 }
+
+				 //实现类方法配置具有高优先级
+				sbr = manno.breakingRule();
+				sm.setRetryCnt(manno.retryCnt());
+				sm.setRetryInterval(manno.retryInterval()!=500/* || intMAnno == null*/ ? manno.retryInterval():item.getRetryInterval());
+				sm.setTestingArgs(getFieldValue(manno.testingArgs(),null,""));
+				sm.setTimeout(manno.timeout()!=2000 /*|| intMAnno == null*/ ?manno.timeout():item.getTimeout());
+				sm.setMaxSpeed(manno.maxSpeed() > 0 /*|| intMAnno == null*/ ? manno.maxSpeed():item.getMaxSpeed());
+				/*if(sm.getMaxSpeed() <=0) {
+					sm.setMaxSpeed(item.getMaxSpeed());
+				}*/
+				sm.setAvgResponseTime(manno.avgResponseTime()!=-1 /*|| intMAnno == null*/ ? manno.avgResponseTime() : item.getAvgResponseTime());
+				sm.setMonitorEnable(manno.monitorEnable()!=-1 /*|| intMAnno == null*/ ? manno.monitorEnable() : item.getMonitorEnable());
+				//sm.setStream(manno.stream());
+				sm.setDumpDownStream(manno.dumpDownStream());
+				sm.setDumpUpStream(manno.dumpUpStream());
+				sm.setNeedResponse(manno.needResponse());
+				sm.setFailResponse(manno.failResponse());
+				sm.setTimeWindow(manno.timeWindow()<=0?item.getTimeWindow():manno.timeWindow());
+				sm.setSlotInterval(manno.slotInterval()<=0?item.getSlotSize():manno.slotInterval());
+				
+				sm.setCheckInterval(manno.checkInterval()<=0?item.getCheckInterval():manno.checkInterval());
+				
+				sm.setBaseTimeUnit(StringUtils.isEmpty(manno.baseTimeUnit())? item.getBaseTimeUnit():manno.baseTimeUnit());
+				
+				sm.setLogLevel(manno.logLevel()!=-1/* || intMAnno == null*/ ? manno.logLevel() : item.getLogLevel());
+				sm.setDebugMode(manno.debugMode()!=-1 /*|| intMAnno == null*/ ? manno.debugMode() : item.getDebugMode());
+				
+				sm.setAsyncable(manno.asyncable());
+				sm.setPerType(manno.perType());
+				sm.setNeedLogin(manno.needLogin() || manno.perType());
+				sm.setMaxPacketSize(manno.maxPacketSize());
+				sm.setUpSsl(manno.upSsl());
+				sm.setDownSsl(manno.downSsl());
+				sm.setEncType(manno.encType());
+				sm.setLimitType(manno.limitType());
+				sm.setForType(manno.forType());
+				sm.setTxType(manno.txType());
+				sm.setTxIsolation(manno.txIsolation());
+				sm.setTxPhase(manno.txPhase());
 				 
 				 if(sm.getTimeout() <= 0) {
 					throw new CommonException("Invalid timeout val with 0 for  " +item.getImpl() + "."+ m.getName());

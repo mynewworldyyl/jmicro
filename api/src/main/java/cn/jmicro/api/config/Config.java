@@ -936,6 +936,7 @@ public class Config{
 		
 		for(Map.Entry<String, String> e : CommadParams.entrySet()) {
 			if(e.getKey().startsWith(key)) {
+				//logger.info("{}={}",e.getKey(), e.getValue());
 				result.put(e.getKey(), e.getValue());
 			}
 		}

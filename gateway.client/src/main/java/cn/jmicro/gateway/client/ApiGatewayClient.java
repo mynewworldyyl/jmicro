@@ -160,7 +160,7 @@ public class ApiGatewayClient {
 			
 			@Override
 			public void onMessage(ISession session, Message msg) {
-				session.active();
+				//session.active();
 				if(msg.isDownSsl()) {
 					checkSignAndDecrypt(msg);
 				}
@@ -176,7 +176,7 @@ public class ApiGatewayClient {
 			
 			@Override
 			public void onMessage(ISession session, Message msg) {
-				session.active();
+				//session.active();
 				PSData pd = parseResult(msg,PSData.class,null);
 				pubsubClient.onMsg(pd);
 			}

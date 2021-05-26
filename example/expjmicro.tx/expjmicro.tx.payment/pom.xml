@@ -12,10 +12,6 @@
 	<description>Jmicro tx payment for testing</description>
 	
 	<dependencies>
-		 <dependency>
-			<groupId>cn.jmicro</groupId>
-			<artifactId>jmicro.all</artifactId>
-		</dependency>
 		<dependency>
 			<groupId>cn.jmicro</groupId>
 			<artifactId>jmicro.tx</artifactId>

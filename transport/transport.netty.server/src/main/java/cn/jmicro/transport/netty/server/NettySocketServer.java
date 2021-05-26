@@ -140,7 +140,7 @@ public class NettySocketServer implements IServer {
             .childOption(ChannelOption.SO_KEEPALIVE, true)
         	.group(bossGroup, workerGroup)
         	.channel(NioServerSocketChannel.class)
-            .handler(new LoggingHandler(LogLevel.INFO))
+            //.handler(new LoggingHandler(LogLevel.INFO))
             .childHandler(initializer);
              
              ChannelFuture channelFuture = server.bind(address).sync();

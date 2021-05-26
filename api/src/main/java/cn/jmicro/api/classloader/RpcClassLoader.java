@@ -187,7 +187,7 @@ public class RpcClassLoader extends ClassLoader {
 			//服务实现类，通过本地加载
 			return loadRpcLocalClass(name,resolve);
 		} else  {
-			logger.debug(name);
+			//logger.debug(name);
 			Class<?> rmc = this.findClass(name);
 			if(rmc != null) {
 				return rmc;
@@ -243,7 +243,7 @@ public class RpcClassLoader extends ClassLoader {
 			
 			if(remoteClass != null) {
 				String desc = "Load class from local RpcClassLoader: "+name+", length:" + ds.length;
-				logger.debug(desc);
+				//logger.debug(desc);
 				//LG.log(MC.LOG_DEBUG, this.getClass(), desc);
 				//clazzesData.put(name, ds);
 				return remoteClass;

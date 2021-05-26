@@ -96,4 +96,5 @@ public interface ISession{
 	
 	void notifySessionEvent(int eventType);
 	
+	long lastActiveTime();
 }

@@ -150,7 +150,7 @@ public class SimpleObjectFactory implements IObjectFactory {
 	@SuppressWarnings("unchecked")
 	@Override
 	public <T> T getRemoteServie(String srvName, String namespace, String version,AsyncConfig[] acs) {
-		return (T)this.clientServiceProxyManager.getRefRemoteService(null,srvName,namespace,version,rpcClassLoader,acs);
+		return (T)this.clientServiceProxyManager.getRefRemoteService(this.getClass().getName(),srvName,namespace,version,rpcClassLoader,acs);
 	}
 
 	@SuppressWarnings("unchecked")
@@ -635,6 +635,9 @@ public class SimpleObjectFactory implements IObjectFactory {
 		/*boolean[] isMast = new boolean[1];
 		isMast[0] = false;*/
 		//Holder<Boolean> h = new Holder<>(false);
+		
+		setExitListener(dataOperator);
+		
 		if(!Utils.isEmpty(tag)) {
 			VoterPerson lp = new VoterPerson(this,tag);
 			this.cacheObj(VoterPerson.class, lp,null);
@@ -673,12 +676,12 @@ public class SimpleObjectFactory implements IObjectFactory {
 						dataOperator.setData(p, js);
 					 }
 					
-					 LG.log(MC.LOG_INFO, SimpleObjectFactory.class
+					 LG.log(MC.LOG_ERROR, SimpleObjectFactory.class
 							 , "Lost master and exit: "+JsonUtils.getIns().toJson(pi));
 					 MT.nonRpcEvent(Config.getInstanceName(), MC.MT_SERVER_STOP);
 					 EnterMain.waitTime(3000);
 					 
-					 logger.info(Config.getInstanceName() + " lost master, need restart server!");
+					 logger.error(Config.getInstanceName() + " lost master, need restart server!");
 					 System.exit(0);
 				}
 			});
@@ -711,10 +714,45 @@ public class SimpleObjectFactory implements IObjectFactory {
 			}
 			logger.info("Server shutdown!");
 		}*/
-		
 	}
 	
-	
+	private void setExitListener(IDataOperator op) {
+		String p = ChoyConstants.INS_ROOT+"/" + pi.getId();
+		op.addNodeListener(p, (int type, String path,String data)->{
+			//防止被误删除，只要此进程还在，此结点就不应该消失
+			if(type == IListener.DATA_CHANGE) {
+				ProcessInfo pi0 = JsonUtils.getIns().fromJson(data, ProcessInfo.class);
+				if(!pi0.isActive()) {
+					pi.setActive(false);
+					String msg = "JVM exit by other system";
+					LG.log(MC.LOG_WARN, this.getClass(),msg+"data: "+data);
+					MT.nonRpcEvent(Config.getInstanceName(), MC.MT_PROCESS_REMOVE);
+					logger.warn(msg);
+					op.deleteNode(p);
+					EnterMain.waitTime(4000);
+					System.exit(0);
+				} else {
+					pi.setHaEnable(pi0.isHaEnable());
+					pi.setOpTime(pi0.getOpTime());
+					pi.setMaster(pi0.isMaster());
+					//pi.setActName(pi0.getActName());
+					pi.setAgentProcessId(pi0.getAgentProcessId());
+					pi.setAgentInstanceName(pi0.getAgentInstanceName());
+					pi.setAgentHost(pi0.getAgentHost());
+					pi.setAgentId(pi0.getAgentId());
+					pi.setCmd(pi0.getCmd());
+					pi.setInstanceName(pi0.getInstanceName());
+					pi.setMonitorable(pi0.isMonitorable());
+					pi.setPid(pi0.getPid());
+					pi.setWorkDir(pi0.getWorkDir());
+					pi.setMetadatas(pi0.getMetadatas());
+					pi.setLogLevel(pi0.getLogLevel());
+				}
+			}
+		});
+		
+	}
+
 	private void loadAccountInfo(IDataOperator op,Config cfg) {
 		
 		   /* if(pi.getActName() != null) {
@@ -722,7 +760,9 @@ public class SimpleObjectFactory implements IObjectFactory {
 		    }*/
 		
 			IAccountService as = this.get(IAccountService.class);
+			boolean self = false;
 			if(as == null) {
+				self = false;
 				//非Security实例
 				IAccountService$JMAsyncClient asyncAs = null;
 				try {
@@ -734,12 +774,14 @@ public class SimpleObjectFactory implements IObjectFactory {
 					return;
 				}
 				as = asyncAs;
+			} else {
+				self = true;
 			}
 			
-			int clientId = -1;
-			try {
+			int clientId = Config.getClientId();
+			/*try {
 				clientId = Config.getClientId();
-			} catch(CommonException e) {}
+			} catch(CommonException e) {}*/
 			
 			if(clientId < 0) {
 				pi.setActName(null);
@@ -755,14 +797,63 @@ public class SimpleObjectFactory implements IObjectFactory {
 
 			//Resp<String> r = as.getNameById(clientId);
 			if(r.getCode() == Resp.CODE_SUCCESS) {
+				
 				pi.setAi(r.getData());
 				Config.setAccountName(r.getData().getActName());
 				pi.setActName(Config.getAccountName());
 				String p = ChoyConstants.INS_ROOT+"/" + pi.getId();
 				op.setData(p,JsonUtils.getIns().toJson(pi));
+				
+				if(self) {
+					return;//安全中心自身不需要心跳刷新账号
+				}
+				
+				final IAccountService as0 = as;
+				Holder<Integer> loginCnt = new Holder<>(0);
+				TimerTicker.doInBaseTicker(60*8, "", null, (k,a)->{
+					Resp<Boolean> resp = null;
+					if(loginCnt.get() == 0 && !Utils.isEmpty(pi.getAi().getLoginKey())) {
+						resp = as0.hearbeat(pi.getAi().getLoginKey());//刷新系统账号，防止超时
+						if(resp.getData()) {
+							return;
+						}
+					}
+					
+					if(LG.isLoggable(MC.LOG_WARN)) {
+						String msg = "Hearbeat fail: act:" + pi.getAi().getActName()+",actId: "+ pi.getAi().getId();
+						if(resp != null) {
+							msg += "msg: " + resp.getMsg()+", code: " + resp.getCode();
+						}
+						LG.log(MC.LOG_WARN, SimpleObjectFactory.class,msg);
+					}
+					
+					Resp<ActInfo> lr = as0.loginWithId(clientId, pwd);
+					if(lr.getCode() == Resp.CODE_SUCCESS) {
+						pi.setAi(r.getData());
+						op.setData(p,JsonUtils.getIns().toJson(pi));
+						loginCnt.set(0);
+						if(LG.isLoggable(MC.LOG_INFO)) {
+							String msg = "Relogin success: act:" + pi.getAi().getActName()+",actId: "+ pi.getAi().getId();
+							LG.log(MC.LOG_INFO, SimpleObjectFactory.class,msg);
+						}
+					} else {
+						//pi.setActName(null);
+						loginCnt.set(loginCnt.get() +1);
+						LG.log(MC.LOG_WARN, SimpleObjectFactory.class
+								 , "Login fail cnt"+loginCnt.get()+" act:" + pi.getAi().getActName()+",actId: "+ pi.getAi().getId()+",resp msg: " + lr.getMsg());
+						if(loginCnt.get() > 5) {
+							LG.log(MC.LOG_ERROR, SimpleObjectFactory.class
+									 , "System login fail and exit jvm cnt"+loginCnt.get()+" act:" + pi.getAi().getActName()+",actId: "+ pi.getAi().getId());
+							EnterMain.waitTime(3000);
+							System.exit(0);
+						} 
+					}
+				});
 			} else {
 				pi.setActName(null);
-				throw new CommonException("Account name not found for client: " + clientId+" ,msg" +r.getMsg());
+				String msg = "Account name not found for client: " + clientId+" ,msg" +r.getMsg();
+				LG.log(MC.LOG_ERROR, SimpleObjectFactory.class, msg);
+				throw new CommonException(msg);
 			}
 		
 			/*int adminClientId = -1;
@@ -1259,7 +1350,7 @@ public class SimpleObjectFactory implements IObjectFactory {
 		boolean isComsumer =  isComsumerSide(ProxyObject.getTargetCls(obj.getClass()));
 		
 		//logger.debug(obj.getClass().getName()+" : "+ Inject.class.getClassLoader().toString());
-		logger.debug(obj.getClass().getName()+" : "+ obj.getClass().getClassLoader().toString());
+		//logger.debug(obj.getClass().getName()+" : "+ obj.getClass().getClassLoader().toString());
 		
 		for(Field f : fields) {
 			Object srv = null;
@@ -1910,41 +2001,6 @@ public class SimpleObjectFactory implements IObjectFactory {
 		SystemUtils.setFileString(pi.getInfoFilePath(), js);
 		op.createNodeOrSetData(p,js ,IDataOperator.EPHEMERAL);
 		logger.info("Update ProcessInfo:" + js);
-		
-		op.addNodeListener(p, (int type, String path,String data)->{
-			//防止被误删除，只要此进程还在，此结点就不应该消失
-			if(type == IListener.DATA_CHANGE) {
-				ProcessInfo pi0 = JsonUtils.getIns().fromJson(data, ProcessInfo.class);
-				if(!pi0.isActive()) {
-					pi.setActive(false);
-					String msg = "JVM exit by other system";
-					LG.log(MC.LOG_WARN, this.getClass(),msg+"data: "+data);
-					MT.nonRpcEvent(Config.getInstanceName(), MC.MT_PROCESS_REMOVE);
-					logger.warn(msg);
-					op.deleteNode(p);
-					EnterMain.waitTime(4000);
-					System.exit(0);
-				} else {
-					pi.setHaEnable(pi0.isHaEnable());
-					pi.setOpTime(pi0.getOpTime());
-					pi.setMaster(pi0.isMaster());
-					//pi.setActName(pi0.getActName());
-					pi.setAgentProcessId(pi0.getAgentProcessId());
-					pi.setAgentInstanceName(pi0.getAgentInstanceName());
-					pi.setAgentHost(pi0.getAgentHost());
-					pi.setAgentId(pi0.getAgentId());
-					pi.setCmd(pi0.getCmd());
-					pi.setInstanceName(pi0.getInstanceName());
-					pi.setMonitorable(pi0.isMonitorable());
-					pi.setPid(pi0.getPid());
-					pi.setWorkDir(pi0.getWorkDir());
-					pi.setMetadatas(pi0.getMetadatas());
-					pi.setLogLevel(pi0.getLogLevel());
-					
-				}
-			}
-		});
-			
 		TimerTicker.doInBaseTicker(60,Config.getInstanceName() + "_Choy_checker",null,(key,at)->{
 			if(!op.exist(p) && pi.isActive()) {
 				String js0 = JsonUtils.getIns().toJson(pi);

@@ -1,15 +1,17 @@
 package cn.jmicro.api.raft;
 
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import cn.jmicro.api.IListener;
+import cn.jmicro.api.monitor.LG;
+import cn.jmicro.api.monitor.MC;
 import cn.jmicro.common.CommonException;
 import cn.jmicro.common.Utils;
 import cn.jmicro.common.util.JsonUtils;
@@ -59,7 +61,8 @@ public class RaftNodeDataListener<NodeType> {
 		}
 		
 		if(maintainDataList) {
-			this.datas = new ConcurrentHashMap<>();
+			//this.datas = new ConcurrentHashMap<>(); key和value都不能是空
+			this.datas = new HashMap<>();
 		}
 		
 		if(!op.exist(dir)) {
@@ -107,7 +110,20 @@ public class RaftNodeDataListener<NodeType> {
 	}
 	
 	private void updateItemData(String node, String data) {
+		/*if(Utils.isEmpty(data)) {
+			LG.log(MC.LOG_ERROR, RaftNodeDataListener.class, "Got invalid data for path: " + node + " for class:" + nodeClazz.getName());
+			return;
+		}*/
+		/*if(Utils.isEmpty(node)) {
+			LG.log(MC.LOG_ERROR, RaftNodeDataListener.class, "Got invalid path for data: " + data + " for class:" + nodeClazz.getName());
+			return;
+		}*/
+		
 		NodeType n = JsonUtils.getIns().fromJson(data, this.nodeClazz);
+		/*if(n == null) {
+			LG.log(MC.LOG_ERROR, RaftNodeDataListener.class, "Got invalid data: " + data + " for class:" + nodeClazz.getName());
+			return;
+		}*/
 		if(this.datas != null) {
 			synchronized(syncLock) {
 				datas.put(node, n);

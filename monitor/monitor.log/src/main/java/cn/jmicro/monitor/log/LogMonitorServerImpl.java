@@ -609,10 +609,10 @@ public class LogMonitorServerImpl implements ILogMonitorServer {
 				JMicroContext.get().setBoolean(JMicroContext.IS_MONITORENABLE, false);
 				JMicroContext.get().setBoolean(Constants.FROM_MONITOR, true);
 				
-				if(openDebug) {
+				/*if(openDebug) {
 					logger.debug("Submit items: " + mis.size());
 					//log(mis);
-				}
+				}*/
 				
 				//saveLog(mis);
 				

@@ -88,8 +88,7 @@ public class RpcRequestHandler extends AbstractHandler implements IRequestHandle
 			
 		} catch (SecurityException | IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
 			logger.error("onRequest:",e);
-			LG.log(MC.LOG_ERROR, RpcRequestHandler.class, "Invoke service error: " + e.getMessage());
-		
+			LG.log(MC.LOG_ERROR, RpcRequestHandler.class, "Invoke service error ", e);
 			p = new PromiseImpl<Object>();
 			Throwable srcex = e.getCause();
 			if(srcex instanceof CommonException) {

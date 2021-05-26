@@ -1,0 +1,209 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	<parent>
+		<groupId>cn.jmicro</groupId>
+		<artifactId>jmicro.parent</artifactId>
+		<version>0.0.2-SNAPSHOT</version>
+	</parent>
+	<artifactId>jmicro.all</artifactId>
+	<packaging>jar</packaging>
+	<name>${project.artifactId}</name>
+	<description>build Module</description>
+	
+	<dependencies>
+		<dependency>
+			<groupId>cn.jmicro</groupId>
+			<artifactId>jmicro.classloader</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>cn.jmicro</groupId>
+			<artifactId>jmicro.client</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>cn.jmicro</groupId>
+			<artifactId>jmicro.objfactory.simple</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>cn.jmicro</groupId>
+			<artifactId>jmicro.idgenerator</artifactId>
+		</dependency>
+		 <dependency>
+			 <groupId>cn.jmicro</groupId>
+			 <artifactId>jmicro.transport.netty.client</artifactId>
+	    </dependency>
+	     <dependency>
+			 <groupId>cn.jmicro</groupId>
+			 <artifactId>jmicro.transport.netty.server</artifactId>
+	    </dependency>
+
+		<!-- 
+		<dependency>
+			<groupId>cn.jmicro</groupId>
+			<artifactId>jmicro.gateway.client</artifactId>
+		</dependency> 
+		-->
+		
+		<dependency>
+			<groupId>cn.jmicro</groupId>
+			<artifactId>jmicro.test</artifactId>
+			<scope>test</scope>
+		</dependency>
+		
+	</dependencies>
+	
+	<profiles>
+	 	<profile>
+		    <id>release2maven</id>
+		    <build>
+		      <plugins>
+			       <plugin>
+					<groupId>org.apache.maven.plugins</groupId>
+					<artifactId>maven-shade-plugin</artifactId>
+					<executions>
+						<execution>
+							<phase>package</phase>
+							<goals>
+								<goal>shade</goal>
+							</goals>
+							<configuration>
+								<createSourcesJar>true</createSourcesJar>
+								<promoteTransitiveDependencies>true</promoteTransitiveDependencies>
+								<createDependencyReducedPom>true</createDependencyReducedPom>
+								<artifactSet>
+									<includes>
+										<include>cn.jmicro:jmicro.common</include>
+										<include>cn.jmicro:jmicro.api</include>
+										<include>cn.jmicro:jmicro.server</include>
+										<include>cn.jmicro:jmicro.client</include>
+										<include>cn.jmicro:jmicro.idgenerator</include>
+										<include>cn.jmicro:jmicro.test</include>
+										<include>cn.jmicro:jmicro.objfactory.simple</include>
+										<include>cn.jmicro:jmicro.classloader</include>
+										<include>cn.jmicro:jmicro.redis</include>
+										<include>cn.jmicro:jmicro.limit</include>
+										<include>cn.jmicro:jmicro.transport.netty.server</include>
+										<include>cn.jmicro:jmicro.transport.netty.client</include>
+										<include>cn.jmicro:jmicro.config</include>
+										<include>cn.jmicro:jmicro.zk</include>
+										<include>cn.jmicro:jmicro.tx</include>
+										<!-- <include>cn.jmicro:jmicro.gateway.client</include> -->
+									</includes>
+								</artifactSet>
+								<transformers>
+								       <!--  <transformer implementation="org.apache.maven.plugins.shade.resource.AppendingTransformer"> 
+											<resource>META-INF/MANIFEST.MF</resource> 
+										</transformer> -->
+										 <!-- <transformer implementation = "org.apache.maven.plugins.shade.resource.MainifestResourceTransformer">
+										 	<mainClass>cn.jmicro.api.JMicro</mainClass>
+									     </transformer> -->
+									     <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+						                  <manifestEntries>
+						                    <Main-Class>cn.jmicro.api.JMicro</Main-Class>
+						                    <X-Compile-Source-JDK>${maven.compile.source}</X-Compile-Source-JDK>
+						                    <X-Compile-Target-JDK>${maven.compile.target}</X-Compile-Target-JDK>
+						                    
+						                    <Manifest-Version>1.0</Manifest-Version>
+											<Bundle-ManifestVersion>2</Bundle-ManifestVersion>
+											<Bundle-Name>cn.jmicro.all</Bundle-Name>
+											<Bundle-Vendor>JMicro</Bundle-Vendor> 
+											<Bundle-SymbolicName>cn.jmicro.all;singleton:=true</Bundle-SymbolicName>
+											<Bundle-Version>${project.version}</Bundle-Version>
+						                    <Export-Package></Export-Package>
+						                    
+						                  </manifestEntries>
+						                </transformer>
+								</transformers>
+								
+							</configuration>
+						</execution>
+					</executions>
+				</plugin>
+		        <!-- GPG mvn clean deploy -P release -Dgpg.passphrase=YourPassphase-->
+		        <plugin>
+		          <groupId>org.apache.maven.plugins</groupId>
+		          <artifactId>maven-gpg-plugin</artifactId>
+		          <executions>
+		            <execution>
+		              <id>sign-artifacts</id>
+		              <phase>verify</phase>
+		              <goals>
+		                <goal>sign</goal>
+		              </goals>
+		            </execution>
+		          </executions>
+		        </plugin>
+		      </plugins>
+		    </build>
+		  </profile>
+	</profiles>
+	
+	<build>
+		<plugins>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-shade-plugin</artifactId>
+				<executions>
+					<execution>
+						<phase>package</phase>
+						<goals>
+							<goal>shade</goal>
+						</goals>
+						<configuration>
+							<createSourcesJar>true</createSourcesJar>
+							<promoteTransitiveDependencies>true</promoteTransitiveDependencies>
+							<createDependencyReducedPom>true</createDependencyReducedPom>
+							<artifactSet>
+								<includes>
+									<include>cn.jmicro:common</include>
+									<include>cn.jmicro:api</include>
+									<include>cn.jmicro:server</include>
+									<include>cn.jmicro:client</include>
+									<include>cn.jmicro:idgenerator</include>
+									<include>cn.jmicro:test</include>
+									<include>cn.jmicro:objfactory.simple</include>
+									<include>cn.jmicro:classloader</include>
+									<include>cn.jmicro:redis</include>
+									<include>cn.jmicro:limit</include>
+									<include>cn.jmicro:transport.netty.server</include>
+									<include>cn.jmicro:transport.netty.client</include>
+									<include>cn.jmicro:config</include>
+									<include>cn.jmicro:zk</include>
+									<include>cn.jmicro:jmicro.tx</include>
+									<!-- <include>cn.jmicro:gateway.client</include> -->
+								</includes>
+							</artifactSet>
+							<transformers>
+							       <!--  <transformer implementation="org.apache.maven.plugins.shade.resource.AppendingTransformer"> 
+										<resource>META-INF/MANIFEST.MF</resource> 
+									</transformer> -->
+									 <!-- <transformer implementation = "org.apache.maven.plugins.shade.resource.MainifestResourceTransformer">
+									 	<mainClass>cn.jmicro.api.JMicro</mainClass>
+								     </transformer> -->
+								     <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+					                  <manifestEntries>
+					                   <!--  <Main-Class>cn.jmicro.api.JMicro</Main-Class> -->
+					                    <X-Compile-Source-JDK>${maven.compile.source}</X-Compile-Source-JDK>
+					                    <X-Compile-Target-JDK>${maven.compile.target}</X-Compile-Target-JDK>
+					                    
+					                    <Manifest-Version>1.0</Manifest-Version>
+										<Bundle-ManifestVersion>2</Bundle-ManifestVersion>
+										<Bundle-Name>cn.jmicro.all</Bundle-Name>
+										<Bundle-Vendor>JMicro</Bundle-Vendor> 
+										<Bundle-SymbolicName>cn.jmicro.all;singleton:=true</Bundle-SymbolicName>
+										<Bundle-Version>${project.version}</Bundle-Version>
+					                    <Export-Package></Export-Package>
+					                    
+					                  </manifestEntries>
+					                </transformer>
+							</transformers>
+							
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+		</plugins>
+	</build>
+
+</project>

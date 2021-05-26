@@ -7,6 +7,9 @@ import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.ObjFactory;
 import cn.jmicro.api.codec.JDataOutput;
@@ -27,6 +30,8 @@ import cn.jmicro.common.util.StringUtils;
 
 public class EnterMain {
 
+	private final static Logger logger = LoggerFactory.getLogger(EnterMain.class);
+	
 	private static final Map<String,IObjectFactory> objFactorys = new HashMap<>();
 	//确保每个对像工厂只会创建一个实例
 	
@@ -141,35 +146,15 @@ public class EnterMain {
 		}
 	}
 	
+	
+	
 	public static IObjectFactory getObjectFactoryNotStart(String[] args,String name){
 		
 		//System.out.println(EnterMain.class.getClassLoader().getClass().getName());
 		//System.out.println(Config.class.getClassLoader().getClass().getName());
 		
-		Map<String,String> params = new HashMap<>();
-		
-		for(String arg : args){
-			if(arg.startsWith("-D")){
-				String ar = arg.substring(2);
-				if(StringUtils.isEmpty(ar)){
-					throw new CommonException("Invalid arg: "+ arg);
-				}
-				ar = ar.trim();
-				String key;
-				String val;
-				
-				if(ar.indexOf("=") > 0){
-					String[] ars = ar.split("=");
-					key = ars[0].trim();
-					val = ars[1].trim();
-				} else {
-					key = ar;
-					val = null;
-				}
-				params.put(key,val);
-			}
-		}
-		
+		Map<String,String> params = Utils.parseCommondParams(args);
+	
 		Config.parseArgs(params);
 		
 		init0();

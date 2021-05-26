@@ -204,8 +204,8 @@ public class TransationServiceImpl implements ITransationService{
 				}
 				client.finishJMAsync(g.txId,succ)
 				.success((rst,cxt)->{
-					if(LG.isLoggable(MC.LOG_WARN, null)) {
-						LG.log(MC.LOG_WARN, TAG, "Commit success "+g.txId+" client pid:" +v.pid+",commit: " + succ+",insName: "+v.insName);
+					if(LG.isLoggable(MC.LOG_INFO, null)) {
+						LG.log(MC.LOG_INFO, TAG, "Commit success "+g.txId+" client pid:" +v.pid+",commit: " + succ+",insName: "+v.insName);
 					}
 				}).fail((code,msg,cxt)->{
 					LG.log(MC.LOG_ERROR, ITransactionResource.STR_TAG, "fail to commit txid:" + g.txId +", commit: "+ succ+",insName: "+v.insName+",code:"+ code +",insId:"+v.pid+",msg:"+msg);

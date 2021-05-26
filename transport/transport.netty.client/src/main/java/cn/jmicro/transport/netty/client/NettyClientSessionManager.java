@@ -116,7 +116,7 @@ public class NettyClientSessionManager implements IClientSessionManager{
 			
 			@Override
 			public void onMessage(ISession session, Message msg) {
-				session.active();
+				//session.active();
 			}
 		});
 		

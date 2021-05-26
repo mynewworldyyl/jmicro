@@ -139,8 +139,8 @@
 		<module>objfactory</module>
 		<module>gateway</module>
 		<module>gateway.client</module>
-		<module>build</module>
 		<module>test</module>
+		<module>build</module>
 		<module>main</module>
 		<module>monitor</module>
 		<module>example</module>
@@ -152,7 +152,9 @@
 				 <groupId>cn.jmicro</groupId>
 				 <artifactId>jmicro.all</artifactId>
 				 <version>${jmicro.version}</version>
+				 <type>pom</type>
 	        </dependency>
+	       
 	        <dependency>
 	        	<groupId>cn.jmicro</groupId>
 				<artifactId>jmicro.apics</artifactId>

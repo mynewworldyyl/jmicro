@@ -173,7 +173,7 @@ public class LogMonitorClient {
 	public boolean submit2Cache(JMLogItem item) {
 
 		if(this.cacheBasket == null || !this.monitorServer.isReady()) {
-			logger.error("cacheBasket is NULL");
+			logger.debug("cacheBasket is null or server is not ready");
 			return false;
 		}
 		

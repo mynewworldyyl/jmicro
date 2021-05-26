@@ -24,11 +24,11 @@ import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.atomic.AtomicLong;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import cn.jmicro.api.Holder;
 import cn.jmicro.api.utils.TimeUtils;
 import cn.jmicro.common.CommonException;
 
@@ -63,14 +63,14 @@ public class TimerTicker {
 		if(fact <= 0) {
 			throw new CommonException("Invalid fact: " + fact);
 		}
-		final int[] checkCnt = new int[1];
-		checkCnt[0] = 0;
+		final Holder<Integer> checkCnt = new Holder<>(0);
 		TimerTicker.getBaseTimer().addListener(key, attachement, (key0,att0)->{
-			checkCnt[0]++;
-			if( (checkCnt[0] % fact) == 0) {
-				checkCnt[0] = 0;
+			int v = checkCnt.get();
+			if( (++v% fact) == 0) {
+				v = 0;
 				act.act(key0, att0);
 			}
+			checkCnt.set(v);
 		});
 	}
 	

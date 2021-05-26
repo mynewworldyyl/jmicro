@@ -791,7 +791,7 @@ jm.rpc = {
 
     __actreq : function(method,args){
         let req = {};
-        req.serviceName = 'cn.jmicro.security.service.IAccountService';
+        req.serviceName = 'cn.jmicro.security.api.IAccountService';
         req.namespace = window.jm.Constants.NS_SECURITY;
         req.version = '0.0.1';
         req.args = args;
@@ -828,7 +828,7 @@ jm.rpc = {
         }
 
         let req = this.__actreq('login',[actName,pwd]);
-        req.serviceName = 'cn.jmicro.api.security.IAccountService';
+        //req.serviceName = 'cn.jmicro.api.security.IAccountService';
         jm.rpc.callRpc(req)
             .then(( resp )=>{
                 if(resp.code == 0) {

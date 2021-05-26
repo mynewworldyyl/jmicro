@@ -13,6 +13,7 @@ import cn.jmicro.api.annotation.Service;
 import cn.jmicro.api.cache.ICache;
 import cn.jmicro.api.config.Config;
 import cn.jmicro.api.idgenerator.ComponentIdServer;
+import cn.jmicro.api.security.AccountManager;
 import cn.jmicro.api.security.ActInfo;
 import cn.jmicro.api.security.IAccountService;
 import cn.jmicro.api.utils.TimeUtils;
@@ -31,6 +32,9 @@ public class LoginAccountServiceImpl implements IAccountService {
 	private Map<String,ActInfo> accounts = new HashMap<>();
 	
 	private Map<Integer,String> id2ActName = new HashMap<>();
+	
+	@Inject
+	private AccountManager am;
 	
 	@Inject
 	private ComponentIdServer idGenerator;
@@ -90,19 +94,29 @@ public class LoginAccountServiceImpl implements IAccountService {
 			r.setMsg("Account not exist or password error!");
 			return r;
 		}
-	
 	}
 
 	@Override
 	public Resp<ActInfo> loginWithId(int id, String pwd) {
 		if(id2ActName.containsKey(id)) {
 			return login(this.id2ActName.get(id),pwd);
-		}else {
+		} else {
 			Resp<ActInfo> r = new Resp<ActInfo>(Resp.CODE_FAIL,"Account not found!");
 			return r;
 		}
 	}
 	
+	@Override
+	//@SMethod(forType=Constants.FOR_TYPE_SYS)
+	public Resp<Boolean> hearbeat(String loginKey) {
+		ActInfo ai = am.getAccount(loginKey);
+		if(ai != null) {
+			return new Resp<>(Resp.CODE_SUCCESS,true);
+		}else {
+			return new Resp<>(Resp.CODE_FAIL,false);
+		}
+		
+	}
 	
 	private void initAccount() {
 		for(String js : JSACTS) {

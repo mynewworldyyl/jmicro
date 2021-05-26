@@ -15,6 +15,7 @@
 		<dependency>
 			<groupId>cn.jmicro</groupId>
 			<artifactId>jmicro.all</artifactId>
+			<type>pom</type>
 		</dependency>
 		
 		 <dependency>

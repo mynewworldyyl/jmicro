@@ -117,7 +117,8 @@ public class SecretManager {
 				}
 
 				if (k == null) {
-					throw new CommonException("Secret not found for: " + msg.getInsId());
+					throw new CommonException("Secret not found for: " + msg.getInsId()+
+							",name: " +processId2InstanceNames.get(msg.getInsId()));
 				}
 				
 				if(msg.isSecretVersion() != k.secretVersion) {

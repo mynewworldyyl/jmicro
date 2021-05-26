@@ -13,11 +13,6 @@
 	
 	<dependencies>
 		<dependency>
-			<groupId>cn.jmicro</groupId>
-			<artifactId>jmicro.all</artifactId>
-		</dependency>
-		
-		<dependency>
 			<groupId>cn.expjmicro</groupId>
 			<artifactId>expjmicro.example.api</artifactId>
 			<version>${project.version}</version>

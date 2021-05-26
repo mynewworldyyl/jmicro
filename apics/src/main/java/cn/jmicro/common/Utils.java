@@ -31,6 +31,7 @@ import java.net.URLEncoder;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -40,7 +41,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
 
-import cn.jmicro.api.monitor.MC;
 import cn.jmicro.common.util.JsonUtils;
 
 /**
@@ -64,6 +64,41 @@ public class Utils {
 
 	public static Utils getIns() {
 		return ins;
+	}
+	
+	public static Map<String,String> parseProgramArgs(String argStr) {
+		if(Utils.isEmpty(argStr)) {
+			return Collections.EMPTY_MAP;
+		}
+		String[] args = argStr.split("\\s+");
+		return parseCommondParams(args);
+	}
+	
+	public static Map<String,String> parseCommondParams(String[] args) {
+		Map<String,String> params = new HashMap<>();
+		
+		for(String arg : args){
+			if(arg.startsWith("-D")){
+				String ar = arg.substring(2);
+				if(isEmpty(ar)){
+					throw new CommonException("Invalid arg: "+ arg);
+				}
+				ar = ar.trim();
+				String key;
+				String val;
+				int idx = ar.indexOf("=");
+				if(idx > 0){
+					key = ar.substring(0,idx).trim();
+					val = ar.substring(idx+1).trim();
+				} else {
+					key = ar;
+					val = null;
+				}
+				//System.out.println(Utils.class.getName()+ ": " + key + "=" + val);
+				params.put(key,val);
+			}
+		}
+		return params;
 	}
 
 	public static boolean isEmpty(String str) {

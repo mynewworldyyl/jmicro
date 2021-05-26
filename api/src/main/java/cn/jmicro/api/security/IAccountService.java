@@ -14,4 +14,6 @@ public interface IAccountService {
 	public default String key(String subfix) {
 		return JMicroContext.CACHE_LOGIN_KEY+subfix;
 	}
+	
+	Resp<Boolean> hearbeat(String loginKey);
 }

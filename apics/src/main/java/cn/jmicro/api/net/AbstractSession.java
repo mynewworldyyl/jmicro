@@ -73,7 +73,7 @@ public abstract class AbstractSession implements ISession{
 	
 	private IMessageReceiver receiver = null;
 	
-	private Queue<ByteBuffer> readQueue = new ConcurrentLinkedQueue<ByteBuffer>();
+	//private Queue<ByteBuffer> readQueue = new ConcurrentLinkedQueue<ByteBuffer>();
 	
 	private AtomicBoolean waitingClose = new AtomicBoolean(false);
 	
@@ -290,6 +290,11 @@ public abstract class AbstractSession implements ISession{
 	@Override
 	public void active() {
 		lastActiveTime = TimeUtils.getCurTime();
+	}
+	
+	@Override
+	public long lastActiveTime() {
+		return TimeUtils.getCurTime()-lastActiveTime;
 	}
 
 	@Override

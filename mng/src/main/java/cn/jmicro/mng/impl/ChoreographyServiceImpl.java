@@ -237,7 +237,7 @@ public class ChoreographyServiceImpl implements IChoreographyService {
 
 	private void setEnableDepArgs(Deployment dep) {
 		dep.setDesc("");
-		Map<String, String> params = IAgentProcessService.parseProgramArgs(dep.getArgs());
+		Map<String, String> params = Utils.parseProgramArgs(dep.getArgs());
 		if(!params.containsKey(Constants.CLIENT_ID)) {
 			dep.setArgs(dep.getArgs() + " -D"+Constants.CLIENT_ID + "="+ dep.getClientId());
 		}
@@ -285,7 +285,7 @@ public class ChoreographyServiceImpl implements IChoreographyService {
 		if(Utils.isEmpty(dep.getArgs())) {
 			 params = new HashMap<>();
 		}else {
-			 params = IAgentProcessService.parseProgramArgs(dep.getArgs());
+			 params = Utils.parseProgramArgs(dep.getArgs());
 		}
 		
 		ActInfo ai = JMicroContext.get().getAccount();
@@ -448,7 +448,7 @@ public class ChoreographyServiceImpl implements IChoreographyService {
 			return resp;
 		}
 		
-		Map<String, String> params = IAgentProcessService.parseProgramArgs(dep.getArgs());
+		//Map<String, String> params = Utils.parseProgramArgs(dep.getArgs());
 		if(dep.getStatus() == Deployment.STATUS_ENABLE && !PermissionManager.isCurAdmin()) {
 			//非Admin添加的部署需要严格验证参数
 			checkNonAdminProgramArgs(dep);

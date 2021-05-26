@@ -98,6 +98,8 @@ public abstract class AbstractNettySession extends AbstractSession implements IC
 			this.dump(bb,true,msg);
 			
 		}
+		
+		this.active();
 	}
 
 	@Override

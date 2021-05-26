@@ -117,6 +117,7 @@ public abstract class AbstractNettySession extends AbstractSession implements IS
 				}
 			}
 		}
+		this.active();
 		//服务方写信息，是下行
 		bb.reset();
 		this.dump(bb,false,msg);

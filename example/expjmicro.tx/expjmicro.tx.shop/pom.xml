@@ -7,16 +7,13 @@
 		 <artifactId>expjmicro.tx</artifactId>
 		 <version>0.0.2-SNAPSHOT</version>
     </parent>
+    
     <artifactId>expjmicro.tx.shop</artifactId>
 	<packaging>jar</packaging>
 	<name>${project.artifactId}</name>
 	<description>Jmicro example service comsumer for testing</description>
 	
 	<dependencies>
-		 <dependency>
-			<groupId>cn.jmicro</groupId>
-			<artifactId>jmicro.all</artifactId>
-		</dependency>
 		<dependency>
 			<groupId>cn.jmicro</groupId>
 			<artifactId>jmicro.tx</artifactId>

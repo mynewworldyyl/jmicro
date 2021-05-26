@@ -6,7 +6,7 @@
 		 <version>0.0.2-SNAPSHOT</version>
     </parent>
     
-     <groupId>cn.expjmicro</groupId>
+    <groupId>cn.expjmicro</groupId>
     <artifactId>expjmicro.example</artifactId>
     <packaging>pom</packaging>
     <name>${project.artifactId}</name>
@@ -22,10 +22,15 @@
     </modules>
     
     <dependencies>
-     <dependency>
+     	<dependency>
 			<groupId>cn.jmicro</groupId>
 			<artifactId>jmicro.test</artifactId>
 			<scope>test</scope>
+		</dependency>
+		 <dependency>
+			<groupId>cn.jmicro</groupId>
+			<artifactId>jmicro.all</artifactId>
+			<type>pom</type>
 		</dependency>
     </dependencies>
    
