@@ -3,7 +3,7 @@
     <parent>
          <groupId>cn.jmicro</groupId>
 		 <artifactId>jmicro.transport.parent</artifactId>
-		 <version>0.0.2-SNAPSHOT</version>
+		 <version>0.0.3-RELEASE</version>
     </parent>
     <artifactId>jmicro.transport.http</artifactId>
     <packaging>jar</packaging>

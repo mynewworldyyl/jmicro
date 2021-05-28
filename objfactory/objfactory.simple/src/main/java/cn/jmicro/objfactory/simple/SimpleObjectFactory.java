@@ -796,7 +796,7 @@ public class SimpleObjectFactory implements IObjectFactory {
 			Resp<ActInfo> r = as.loginWithId(clientId, pwd);
 
 			//Resp<String> r = as.getNameById(clientId);
-			if(r.getCode() == Resp.CODE_SUCCESS) {
+			if(r != null && r.getCode() == Resp.CODE_SUCCESS) {
 				
 				pi.setAi(r.getData());
 				Config.setAccountName(r.getData().getActName());
@@ -828,7 +828,7 @@ public class SimpleObjectFactory implements IObjectFactory {
 					}
 					
 					Resp<ActInfo> lr = as0.loginWithId(clientId, pwd);
-					if(lr.getCode() == Resp.CODE_SUCCESS) {
+					if(lr != null && lr.getCode() == Resp.CODE_SUCCESS) {
 						pi.setAi(r.getData());
 						op.setData(p,JsonUtils.getIns().toJson(pi));
 						loginCnt.set(0);
@@ -839,8 +839,11 @@ public class SimpleObjectFactory implements IObjectFactory {
 					} else {
 						//pi.setActName(null);
 						loginCnt.set(loginCnt.get() +1);
-						LG.log(MC.LOG_WARN, SimpleObjectFactory.class
-								 , "Login fail cnt"+loginCnt.get()+" act:" + pi.getAi().getActName()+",actId: "+ pi.getAi().getId()+",resp msg: " + lr.getMsg());
+						String msg = "Login fail cnt"+loginCnt.get()+" act:" + pi.getAi().getActName()+",actId: "+ pi.getAi().getId();
+						if(lr != null) {
+							msg += ",resp msg: " + lr.getMsg();
+						}
+						LG.log(MC.LOG_WARN, SimpleObjectFactory.class, msg);
 						if(loginCnt.get() > 5) {
 							LG.log(MC.LOG_ERROR, SimpleObjectFactory.class
 									 , "System login fail and exit jvm cnt"+loginCnt.get()+" act:" + pi.getAi().getActName()+",actId: "+ pi.getAi().getId());
@@ -851,7 +854,10 @@ public class SimpleObjectFactory implements IObjectFactory {
 				});
 			} else {
 				pi.setActName(null);
-				String msg = "Account name not found for client: " + clientId+" ,msg" +r.getMsg();
+				String msg = "Account name not found for client: " + clientId;
+				if(r != null) {
+					msg += " ,msg" +r.getMsg();
+				}
 				LG.log(MC.LOG_ERROR, SimpleObjectFactory.class, msg);
 				throw new CommonException(msg);
 			}

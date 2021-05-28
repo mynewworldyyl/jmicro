@@ -50,6 +50,14 @@ api/bin/
 api/data/
 api/logs/
 api/src/main/gen/
+base/target/
+base/.classpath
+base/.project
+base/.settings/
+base/bin/
+base/data/
+base/logs/
+base/src/main/gen/
 apics/target/
 apics/.classpath
 apics/.project
@@ -538,4 +546,5 @@ test/src/main/gen
 .DS_Store
 Thumbs.db
 PWD.txt
+JMicroOperations.txt
 UserInterfaceState.xcuserstate

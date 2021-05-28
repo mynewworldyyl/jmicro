@@ -3,7 +3,7 @@
     <parent>
          <groupId>cn.expjmicro</groupId>
 		 <artifactId>expjmicro.tx</artifactId>
-		 <version>0.0.2-SNAPSHOT</version>
+		 <version>0.0.3-RELEASE</version>
     </parent>
     <artifactId>expjmicro.tx.api</artifactId>
     <packaging>jar</packaging>

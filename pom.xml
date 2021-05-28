@@ -20,9 +20,9 @@
 
     <groupId>cn.jmicro</groupId>
     <artifactId>jmicro.parent</artifactId>
-    <version>0.0.2-SNAPSHOT</version>
+    <version>0.0.3-RELEASE</version>
     <packaging>pom</packaging>
-
+	<name>${project.artifactId}</name>
     <description>The parent project of jmicro</description>
     <url>http://www.jmicro.cn</url>
     <inceptionYear>2018</inceptionYear>
@@ -84,9 +84,16 @@
 	</repositories>  
 
     <properties>
-   		<AssemblyFile>../../assembly/without-jmicro-core.xml</AssemblyFile>
+   		<AssemblyFile>http://jmicro.cn/assembly/without-jmicro-core.xml</AssemblyFile>
+   		<collect-jars>http://jmicro.cn/assembly/collect-jars.xml</collect-jars>
+   		<with-jmicro-core>http://jmicro.cn/assembly/with-jmicro-core.xml</with-jmicro-core>
+    	
+    	<!-- 
+    	<AssemblyFile>../../assembly/without-jmicro-core.xml</AssemblyFile>
    		<collect-jars>../../assembly/collect-jars.xml</collect-jars>
    		<with-jmicro-core>../../assembly/with-jmicro-core.xml</with-jmicro-core>
+   		 -->
+   		
     	<encoding>UTF-8</encoding>
     	<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     	<java_source_version>1.8</java_source_version>
@@ -101,13 +108,13 @@
         <maven_surefire_version>2.19.1</maven_surefire_version>
         <maven_deploy_version>2.8.2</maven_deploy_version>
         <maven_compiler_version>3.8.1</maven_compiler_version>
-        <maven_source_version>3.0.1</maven_source_version>
+        <maven_source_version>3.2.1</maven_source_version>
         <maven_javadoc_version>3.0.1</maven_javadoc_version>
         <maven_jetty_version>9.4.11.v20180605</maven_jetty_version>
         <maven_checkstyle_version>3.0.0</maven_checkstyle_version>
         <maven_jacoco_version>0.8.1</maven_jacoco_version>
         <apache-rat-plugin.version>0.12</apache-rat-plugin.version>
-        <jmicro.version>${project.version}</jmicro.version>
+        <jmicro.version>0.0.3-RELEASE</jmicro.version>
         <sl4j.version>1.7.30</sl4j.version>
         <log4j.version>1.2.17</log4j.version>
         <zookeeper.version>3.4.13</zookeeper.version>
@@ -115,11 +122,13 @@
         <zkclient.version>2.0</zkclient.version>
         <redis.version>2.10.0</redis.version>
         <lombok.version>1.18.4</lombok.version>
+        <skip_maven_deploy>false</skip_maven_deploy>
     </properties>
 
     <modules>
-    	<module>agent</module>
+        <module>base</module>
     	<module>codegenerator</module>
+    	<module>agent</module>
     	<module>apics</module>
     	<module>common</module>
 		<module>api</module>
@@ -154,7 +163,11 @@
 				 <version>${jmicro.version}</version>
 				 <type>pom</type>
 	        </dependency>
-	       
+	        <dependency>
+	        	<groupId>cn.jmicro</groupId>
+				<artifactId>jmicro.base</artifactId>
+				<version>${jmicro.version}</version>
+       		</dependency>
 	        <dependency>
 	        	<groupId>cn.jmicro</groupId>
 				<artifactId>jmicro.apics</artifactId>
@@ -442,6 +455,7 @@
 			<groupId>cn.jmicro</groupId>
 			<artifactId>jmicro.codegenerator</artifactId>
 			 <version>${jmicro.version}</version>
+			  <scope>provided</scope>
 		</dependency>  
         </dependencies>
         
@@ -468,6 +482,23 @@
     </dependencies>
 
     <profiles> 
+    
+    	<profile>
+            <id>version</id>
+            <build>
+	            <plugins>
+			        <plugin>
+			            <groupId>org.codehaus.mojo</groupId>
+			            <artifactId>versions-maven-plugin</artifactId>
+			            <version>2.3</version>
+			            <configuration>
+			                <generateBackupPoms>false</generateBackupPoms>
+			            </configuration>
+			        </plugin>
+			    </plugins>
+            </build>
+        </profile>
+        
         <profile>
             <id>java8-vm-args</id>
             <activation>
@@ -495,9 +526,13 @@
 		                <executions>
 		                    <execution>
 		                        <id>attach-sources</id>
-		                        <goals>
+		                        <!-- <goals>
 		                            <goal>jar</goal>
-		                        </goals>
+		                        </goals> -->
+		                        <phase>package</phase>
+				                  <goals>  
+				                     <goal>jar-no-fork</goal>  
+				                 </goals>
 		                    </execution>
 		                </executions>
 		            </plugin> 
@@ -529,6 +564,7 @@
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-gpg-plugin</artifactId>
+                        <version>3.0.1</version>
                         <executions>
                             <execution>
                                 <phase>verify</phase>
@@ -551,6 +587,7 @@
 		        <plugins>
 		           <plugin>
 		                <artifactId>maven-assembly-plugin</artifactId>
+		                <version>3.3.0</version>
 		                <configuration>
 		                    <descriptors>
 								<descriptor>${collect-jars}</descriptor>
@@ -639,7 +676,7 @@
 	            <!-- 设置默认激活这个配置 -->
 	            <activeByDefault>false</activeByDefault>
 	             <file>  
-      				<exists>withdeps</exists>  
+      				<exists>src/main/resources/withdeps</exists>  
     			</file>
         	</activation>
             <build>
