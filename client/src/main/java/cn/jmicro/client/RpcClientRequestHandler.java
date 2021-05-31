@@ -66,6 +66,7 @@ import cn.jmicro.api.tx.TxConstants;
 import cn.jmicro.api.utils.TimeUtils;
 import cn.jmicro.common.CommonException;
 import cn.jmicro.common.Constants;
+import cn.jmicro.common.util.JsonUtils;
 
 /** 
  * @author Yulei Ye
@@ -407,7 +408,7 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
     		if(sm.isNeedResponse()) {
     			//5倍超时时间作为最后清理时间
 				if(sm.getTimeout() > 0) {
-					timeouts.put(req.getRequestId(), curTime + sm.getTimeout()*3);
+					timeouts.put(req.getRequestId(), curTime + sm.getTimeout()/**3*/);
 				} else {
 					//timeouts.put(req.getRequestId(), curTime + 60000L);
 				}
@@ -627,7 +628,7 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
 		JMicroContext cxt = JMicroContext.get();
 		JMicroContext.clear();
 		
-		if (p.getContext() != null) {
+		if(p.getContext() != null) {
 			cxt.putAllParams(p.getContext());
 		}
 
@@ -645,9 +646,9 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
 		}
 
 		if (retryCnt <= 0) {
-			String errMsg = "Request failure req [" + req.toString() + "],msg [" + msg.toString() + "] timeout"
+			String errMsg = "Request failure req [" + JsonUtils.getIns().toJson(req) + "],msg [" + msg.toString() + "] timeout"
 					+ ",Method [" + sm.getKey().toKey(true, true, true)+"]";
-
+			
 			logger.warn(errMsg);
 			//肯定是超时失败了
 			//SF.reqTimeoutFail(TAG.getName(),"");

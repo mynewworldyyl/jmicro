@@ -4,7 +4,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	
 	<groupId>cn.jmicro</groupId>
-	<version>0.0.3-RELEASE</version>
+	<version>0.0.5-SNAPSHOT</version>
 	<artifactId>jmicro.codegenerator</artifactId>
 	<packaging>jar</packaging>
 	<name>${project.artifactId}</name>
@@ -34,7 +34,7 @@
         <maven_checkstyle_version>3.0.0</maven_checkstyle_version>
         <maven_jacoco_version>0.8.1</maven_jacoco_version>
         <apache-rat-plugin.version>0.12</apache-rat-plugin.version>
-        <jmicro.version>0.0.3-RELEASE</jmicro.version>
+        <jmicro.version>0.0.5-SNAPSHOT</jmicro.version>
         <sl4j.version>1.7.30</sl4j.version>
         <log4j.version>1.2.17</log4j.version>
         <zookeeper.version>3.4.13</zookeeper.version>
@@ -90,7 +90,7 @@
 	<dependencies>
 		<dependency>
 			<groupId>cn.jmicro</groupId>
-			<version>0.0.3-RELEASE</version>
+			<version>0.0.5-SNAPSHOT</version>
 			<artifactId>jmicro.base</artifactId>
 		</dependency>
 		<dependency>

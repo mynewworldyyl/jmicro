@@ -3,7 +3,7 @@
     <parent>
          <groupId>cn.jmicro</groupId>
 		 <artifactId>jmicro.parent</artifactId>
-		 <version>0.0.3-RELEASE</version>
+		 <version>0.0.5-SNAPSHOT</version>
     </parent>
     <artifactId>jmicro.api</artifactId>
     <packaging>jar</packaging>
@@ -13,7 +13,7 @@
     <dependencies>
     	<dependency>
 			<groupId>cn.jmicro</groupId>
-			<version>0.0.3-RELEASE</version>
+			<version>0.0.5-SNAPSHOT</version>
 			<artifactId>jmicro.base</artifactId>
 		</dependency>
      	<dependency>
