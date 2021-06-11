@@ -16,6 +16,16 @@ npm-debug.log*
 .project
 .settings/
 		
+**/target/
+**/target/
+*.classpath
+*.project
+**/.settings/
+**/logs/
+**/bin/
+**/data/
+**/src/main/gen/
+
 .idea/
 .sourcemaps/
 .sass-cache/

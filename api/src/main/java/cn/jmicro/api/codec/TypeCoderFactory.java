@@ -228,7 +228,7 @@ public class TypeCoderFactory {
 		});
 		registClass(java.sql.Date.class,tcp.getTypeCode(java.sql.Date.class.getName()));
 
-		registCoder(new AbstractComparableTypeCoder<Map>(Decoder.PREFIX_TYPE_MAP,tcp.getTypeCode(Map.class.getName()),Map.class) {
+		registCoder(new AbstractComparableTypeCoder<Map>(DecoderConstant.PREFIX_TYPE_MAP,tcp.getTypeCode(Map.class.getName()),Map.class) {
 			
 			@Override
 			public Map decode(DataInput buffer, Class<?> fieldDeclareType, Type genericType) {
@@ -239,18 +239,18 @@ public class TypeCoderFactory {
 			@Override
 			public void encode(DataOutput buffer, Map val, Class<?> fieldDeclareType, 
 					Type genericType) throws IOException {
-				buffer.write(Decoder.PREFIX_TYPE_MAP);
+				buffer.write(DecoderConstant.PREFIX_TYPE_MAP);
 				TypeCoder.encodeMap(buffer, (Map) val, TypeCoder.genericType(genericType));
 			}
 		});
 		registClass(Map.class,tcp.getTypeCode(Map.class.getName()));
 
-		registCoder(new AbstractComparableTypeCoder<Set>(Decoder.PREFIX_TYPE_SET,tcp.getTypeCode(Set.class.getName()), Set.class) {
+		registCoder(new AbstractComparableTypeCoder<Set>(DecoderConstant.PREFIX_TYPE_SET,tcp.getTypeCode(Set.class.getName()), Set.class) {
 			
 			@Override
 			public void encode(DataOutput buffer, Set val, Class<?> fieldDeclareType,
 					Type genericType) throws IOException {
-				buffer.write(Decoder.PREFIX_TYPE_SET);
+				buffer.write(DecoderConstant.PREFIX_TYPE_SET);
 				TypeCoder.encodeCollection(buffer, val, fieldDeclareType, TypeCoder.genericType(genericType));
 			}
 
@@ -265,12 +265,12 @@ public class TypeCoderFactory {
 		});
 		registClass(Set.class,tcp.getTypeCode(Set.class.getName()));
 
-		registCoder(new AbstractComparableTypeCoder<List>(Decoder.PREFIX_TYPE_LIST,tcp.getTypeCode(List.class.getName()), List.class) {
+		registCoder(new AbstractComparableTypeCoder<List>(DecoderConstant.PREFIX_TYPE_LIST,tcp.getTypeCode(List.class.getName()), List.class) {
 			@SuppressWarnings("rawtypes")
 			@Override
 			public void encode(DataOutput buffer, List val, Class<?> fieldDeclareType,
 					Type genericType) throws IOException {
-				buffer.write(Decoder.PREFIX_TYPE_LIST);
+				buffer.write(DecoderConstant.PREFIX_TYPE_LIST);
 				TypeCoder.encodeCollection(buffer, val, fieldDeclareType, TypeCoder.genericType(genericType));
 			}
 

@@ -22,7 +22,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import cn.jmicro.api.JMicroContext;
-import cn.jmicro.api.codec.Decoder;
+import cn.jmicro.api.codec.DecoderConstant;
 import cn.jmicro.api.codec.JDataInput;
 import cn.jmicro.api.codec.JDataOutput;
 import cn.jmicro.api.codec.TypeCoderFactory;
@@ -128,7 +128,7 @@ public interface TypeCoder<T> extends Comparable<TypeCoder<T>>{
 				}else if(t == Date.class ) {
 					 buffer.write(0);
 				} else {
-					buffer.write(Decoder.PREFIX_TYPE_NULL);
+					buffer.write(DecoderConstant.PREFIX_TYPE_NULL);
 				}
 			}
 		}
@@ -176,16 +176,16 @@ public interface TypeCoder<T> extends Comparable<TypeCoder<T>>{
 		
 		for(Map.Entry<K,V> e: map.entrySet()){
 			if(e.getKey() == null) {
-				buffer.writeByte(Decoder.PREFIX_TYPE_NULL);
+				buffer.writeByte(DecoderConstant.PREFIX_TYPE_NULL);
 			}else {
-				buffer.writeByte(Decoder.PREFIX_TYPE_PROXY);
+				buffer.writeByte(DecoderConstant.PREFIX_TYPE_PROXY);
 				coder.encode(buffer, e.getKey(), keyType, null);
 			}
 			
 			if(e.getValue() == null) {
-				buffer.writeByte(Decoder.PREFIX_TYPE_NULL);
+				buffer.writeByte(DecoderConstant.PREFIX_TYPE_NULL);
 			}else {
-				buffer.writeByte(Decoder.PREFIX_TYPE_PROXY);
+				buffer.writeByte(DecoderConstant.PREFIX_TYPE_PROXY);
 				coder.encode(buffer, e.getValue(), valueType, null);
 			}
 			
@@ -239,22 +239,22 @@ public interface TypeCoder<T> extends Comparable<TypeCoder<T>>{
 			
 			if(writeEvery) {
 				if(v == null) {
-					 buffer.writeByte(Decoder.PREFIX_TYPE_NULL);
+					 buffer.writeByte(DecoderConstant.PREFIX_TYPE_NULL);
 					 continue;
 				} else {
 					Short code = cn.jmicro.api.codec.TypeCoderFactory.getIns().getCodeByClass(v.getClass());
 					if(code == null) {
-						 buffer.writeByte(Decoder.PREFIX_TYPE_STRING);
+						 buffer.writeByte(DecoderConstant.PREFIX_TYPE_STRING);
 			    		 buffer.writeUTF(v.getClass().getName());
 			    	} else {
-			    		 buffer.writeByte(Decoder.PREFIX_TYPE_SHORT);
+			    		 buffer.writeByte(DecoderConstant.PREFIX_TYPE_SHORT);
 			    		 buffer.writeShort(code);
 			    	}
 				}
 			}
 			
 			if(v == null) {
-				buffer.writeByte(Decoder.PREFIX_TYPE_NULL);
+				buffer.writeByte(DecoderConstant.PREFIX_TYPE_NULL);
 				continue;
 			}
 			
@@ -439,13 +439,13 @@ public interface TypeCoder<T> extends Comparable<TypeCoder<T>>{
 			try {
 				byte preCode = buffer.readByte();
 				Object key =  null;
-				if(preCode != Decoder.PREFIX_TYPE_NULL) {
+				if(preCode != DecoderConstant.PREFIX_TYPE_NULL) {
 					key = coder.decode(buffer, keyType, null);
 				}
 				
 				Object value =  null;
 				preCode = buffer.readByte();
-				if(preCode != Decoder.PREFIX_TYPE_NULL) {
+				if(preCode != DecoderConstant.PREFIX_TYPE_NULL) {
 					value = coder.decode(buffer, valType, null);
 				}
 				map.put(key, value);
@@ -556,10 +556,10 @@ public interface TypeCoder<T> extends Comparable<TypeCoder<T>>{
 			if(readEvery) {
 				try {
 					byte prefixCode = buffer.readByte();
-					if(prefixCode ==Decoder.PREFIX_TYPE_NULL ) {
+					if(prefixCode ==DecoderConstant.PREFIX_TYPE_NULL ) {
 						continue;
 					}
-					if(Decoder.PREFIX_TYPE_STRING == prefixCode) {
+					if(DecoderConstant.PREFIX_TYPE_STRING == prefixCode) {
 						eltType = getType(buffer);
 					} else {
 						Short c = buffer.readShort();
@@ -607,7 +607,7 @@ public interface TypeCoder<T> extends Comparable<TypeCoder<T>>{
 	
 	public static void putStringType(DataOutput buffer,String clazz) throws IOException {
 		//类型前缀类型
-		buffer.write(Decoder.PREFIX_TYPE_STRING);
+		buffer.write(DecoderConstant.PREFIX_TYPE_STRING);
 		//类名称
 		//encodeString(buffer, clazz);
 		buffer.writeUTF(clazz);

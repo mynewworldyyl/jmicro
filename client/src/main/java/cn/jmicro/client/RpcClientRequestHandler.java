@@ -37,6 +37,7 @@ import cn.jmicro.api.codec.ICodecFactory;
 import cn.jmicro.api.config.Config;
 import cn.jmicro.api.exception.AsyncRpcException;
 import cn.jmicro.api.exception.RpcException;
+import cn.jmicro.api.exception.TimeoutException;
 import cn.jmicro.api.idgenerator.ComponentIdServer;
 import cn.jmicro.api.internal.async.PromiseImpl;
 import cn.jmicro.api.loadbalance.ISelector;
@@ -306,9 +307,9 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
         Message msg = new Message();
 		msg.setType(Constants.MSG_TYPE_REQ_JRPC);
 		msg.setUpProtocol(Message.PROTOCOL_BIN);
-		msg.setReqId(req.getRequestId());
+		msg.setMsgId(req.getRequestId());
 		
-		msg.setVersion(Message.MSG_VERSION);
+		//msg.setVersion(Message.MSG_VERSION);
 		msg.setPriority(Message.PRIORITY_NORMAL);
 		
 		long curTime = TimeUtils.getCurTime();
@@ -431,7 +432,7 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
 	    if(cxt.isDebug()) {
 	    	//在调试模式下，给消息一个ID
 	    	//每次超时重试，都起一个新的消息，但是同一个请求Req
-	    	msg.setId(this.idGenerator.getLongId(Message.class));
+	    	msg.setMsgId(this.idGenerator.getLongId(Message.class));
 	    }
 		
 	    if(cxt.isDebug()) {
@@ -506,7 +507,7 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
 			LG.log(MC.LOG_DEBUG,TAG,"receive message");
 		}
 		
-		PromiseImpl<Object> p = waitForResponse.remove(respMsg.getReqId());
+		PromiseImpl<Object> p = waitForResponse.remove(respMsg.getMsgId());
 		
 		if(p== null){
 			String errMsg = LG.messageLog("waitForResponse keySet:" + waitForResponse.keySet(),respMsg);
@@ -562,7 +563,7 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
 			}
 			
 		}catch(Throwable e) {
-			String errMsg = "Client callback error reqID:"+respMsg.getReqId()+",linkId:"+respMsg.getLinkId()+",Service: "+sm.getKey().toKey(true, true, true);
+			String errMsg = "Client callback error reqID:"+respMsg.getMsgId()+",linkId:"+respMsg.getLinkId()+",Service: "+sm.getKey().toKey(true, true, true);
 			logger.error(errMsg,e);
     		LG.log(MC.LOG_ERROR, TAG,errMsg);
     		MT.rpcEvent(MC.MT_REQ_ERROR);
@@ -612,7 +613,7 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
 			if(cutTime > t) {
 				timeouts.remove(k);
 				if(waitForResponse.containsKey(k)) {
-					logger.error("waitForResponse callback timeout reqID: " + k);
+					//logger.error("waitForResponse callback timeout reqID: " + k);
 					PromiseImpl<Object> p = waitForResponse.get(k);
 					if(timeoutCheck(p)) {
 						waitForResponse.remove(k);
@@ -639,14 +640,14 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
 		IRequest req = cxt.getParam(JMicroContext.REQ_INS, null);
 		Message msg = cxt.getParam(MSG, null);
 
-		if (cxt.exists(RETRY_CNT)) {
+		if(cxt.exists(RETRY_CNT)) {
 			retryCnt = cxt.getParam(RETRY_CNT, 0);
 		} else {
 			retryCnt = sm.getRetryCnt();
 		}
 
 		if (retryCnt <= 0) {
-			String errMsg = "Request failure req [" + JsonUtils.getIns().toJson(req) + "],msg [" + msg.toString() + "] timeout"
+			String errMsg = "Request failure req [" + JsonUtils.getIns().toJson(req.getArgs()) + "],msg [" + msg.toString() + "] timeout"
 					+ ",Method [" + sm.getKey().toKey(true, true, true)+"]";
 			
 			logger.warn(errMsg);
@@ -657,6 +658,7 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
 			
 			LG.log(MC.LOG_ERROR, TAG,errMsg);
 			
+			p.setEx(new TimeoutException(req,errMsg));
 			p.setFail(MC.MT_REQ_TIMEOUT_FAIL, errMsg);
 			p.done();
 			
@@ -672,20 +674,14 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
 
 		String errMsg = "Do timeout retry reqID:" + req.getRequestId() + ",linkId:" + msg.getLinkId() + ",retryCnt:"
 				+ retryCnt + ",Service: " + sm.getKey().toKey(false, true, true);
+		
+		errMsg = errMsg + ",args: " + JsonUtils.getIns().toJson(req.getArgs());
+		
 		LG.log(MC.LOG_WARN, TAG, errMsg);
 		MT.rpcEvent(MC.MT_REQ_TIMEOUT_RETRY);
 		logger.warn(errMsg);
-		/*if (sm.getRetryInterval() > 0) {
-			try {
-				// 超时重试间隔
-				Thread.sleep(sm.getRetryInterval());
-			} catch (InterruptedException e) {
-				logger.error("Sleep exceptoin ", e);
-			}
-		}*/
 
 		String host = cxt.getString(JMicroContext.REMOTE_HOST, null);
-
 		String port = cxt.getString(JMicroContext.REMOTE_PORT, null);
 
 		IClientSession session = this.sessionManager.getOrConnect(sm.getKey().getInstanceName(), host, port);
@@ -693,7 +689,7 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
 		if (cxt.isDebug()) {
 			// 在调试模式下，给消息一个ID
 			// 每次超时重试，都起一个新的消息，但是同一个请求Req
-			msg.setId(this.idGenerator.getLongId(Message.class));
+			msg.setMsgId(this.idGenerator.getLongId(Message.class));
 		}
 
 		if (cxt.isDebug()) {

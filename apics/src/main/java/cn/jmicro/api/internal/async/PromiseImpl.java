@@ -26,13 +26,17 @@ public class PromiseImpl<R> implements IPromise<R>{
 	
 	private  AsyncFailResult fail;
 	
-	private Object locker = new Object();
+	private final Object locker = new Object();
+	
+	private final Object cbLocker = new Object();
 	
 	private Object context = null;
 	
 	private int timeout = 30000;
 	
 	private AtomicInteger ai = null;
+	
+	private CommonException ex;
 	
 	public PromiseImpl() {
 		this.callbacks = new IAsyncCallback[1];
@@ -48,7 +52,9 @@ public class PromiseImpl<R> implements IPromise<R>{
 		if(done) {
 			callback.onResult(result, fail,context);
 		} else {
-			addCallback(callback);
+			synchronized(cbLocker) {
+				addCallback(callback);
+			}
 		}
 		return this;
 	}
@@ -70,8 +76,12 @@ public class PromiseImpl<R> implements IPromise<R>{
 			cb.success(result,context);
 		} else {
 			if(custCb == null) {
-				custCb = new SuccessCallback<R>();
-				addCallback(custCb);
+				synchronized(this.cbLocker) {
+					if(custCb == null) {
+						custCb = new SuccessCallback<R>();
+					}
+					addCallback(custCb);
+				}
 			}
 			custCb.add(cb);
 		}
@@ -80,12 +90,20 @@ public class PromiseImpl<R> implements IPromise<R>{
 
 	@Override
 	public IPromise<R> fail(IAsyncFailCallback cb) {
+		if(cb == null) {
+			throw new NullPointerException();
+		}
 		if(done && this.fail != null) {
+			//done status do callback at once
 			cb.fail(fail.getCode(),fail.getMsg(),context);
 		} else {
 			if(custCb == null) {
-				custCb = new SuccessCallback<R>();
-				addCallback(custCb);
+				synchronized(cbLocker) {//大部份情况下在偏向锁下情况下工作
+					if(custCb == null) {
+						custCb = new SuccessCallback<R>();
+					}
+					addCallback(custCb);
+				}
 			}
 			custCb.add(cb);
 		}
@@ -135,6 +153,11 @@ public class PromiseImpl<R> implements IPromise<R>{
 					this.setFail(MC.MT_REQ_TIMEOUT, "timeout");
 				}
 			}
+		}
+		if(ex != null) {
+			CommonException ex0 = this.ex;
+			this.ex = null;
+			throw ex0;
 		}
 		return result;
 	}
@@ -283,4 +306,13 @@ public class PromiseImpl<R> implements IPromise<R>{
 	public void setResultType(Type rt) {
 		this.resultType = rt;
 	}
+
+	public Throwable getEx() {
+		return ex;
+	}
+
+	public void setEx(CommonException ex) {
+		this.ex = ex;
+	}
+	
 }

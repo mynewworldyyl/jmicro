@@ -201,13 +201,13 @@ public class TestOnePrefixCoder {
 		Message msg = new Message();
 		msg.setType(Constants.MSG_TYPE_REQ_RAW);
 		msg.setUpProtocol(Message.PROTOCOL_BIN);
-		msg.setId(0);
-		msg.setReqId(0L);
-		msg.setLinkId(0);
+		//msg.setId(0);
+		msg.setMsgId(0L);
+		msg.setLinkId(0L);
 		ByteBuffer payload = encoder.encode(req);
 		payload.flip();
 		msg.setPayload(payload);
-		msg.setVersion(Message.MSG_VERSION);
+		//msg.setVersion(Message.MSG_VERSION);
 		
 		ByteBuffer msgBuffer = encoder.encode(msg);
 		msgBuffer.flip();
@@ -231,13 +231,13 @@ public class TestOnePrefixCoder {
 		Message msg = new Message();
 		msg.setType(Constants.MSG_TYPE_REQ_RAW);
 		msg.setUpProtocol(Message.PROTOCOL_BIN);
-		msg.setId(0);
-		msg.setReqId(0L);
-		msg.setLinkId(0);
+		//msg.setId(0);
+		msg.setMsgId(0L);
+		msg.setLinkId(0L);
 		ByteBuffer payload = encoder.encode(req);
 		payload.flip();
 		msg.setPayload(payload);
-		msg.setVersion(Message.MSG_VERSION);
+		//msg.setVersion(Message.MSG_VERSION);
 		req.setMsg(msg);
 		
 		ByteBuffer msgBuffer = encoder.encode(msg);

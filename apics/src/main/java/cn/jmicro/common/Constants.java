@@ -169,6 +169,8 @@ public interface Constants {
 	
 	public static final String SERVICE_ITEM_KEY = "serviceItemKey";
 	
+	public static final String ASYNC = "_async";
+	
 	public static final String SERVICE_NAME_KEY = "nameKey";
 	
 	public static final String SERVICE_NAMESPACE_KEY = "namespaceKey";

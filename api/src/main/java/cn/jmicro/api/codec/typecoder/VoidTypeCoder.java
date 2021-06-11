@@ -5,12 +5,12 @@ import java.io.DataOutput;
 import java.io.IOException;
 import java.lang.reflect.Type;
 
-import cn.jmicro.api.codec.Decoder;
+import cn.jmicro.api.codec.DecoderConstant;
 
 public class VoidTypeCoder extends AbstractComparableTypeCoder<Void>{
 	   
 	   public VoidTypeCoder(short code) {
-		   super(Decoder.PREFIX_TYPE_NULL,code,Void.class);
+		   super(DecoderConstant.PREFIX_TYPE_NULL,code,Void.class);
 	   }
 	   
 		@Override

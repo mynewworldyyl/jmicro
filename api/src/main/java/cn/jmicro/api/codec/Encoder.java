@@ -46,11 +46,11 @@ public class Encoder{
 	public static Class<?> putType(ByteBuffer buffer,Class<?> cls) {
         Short type = Decoder.getType(cls);
 		if( type == null || type == Decoder.NON_ENCODE_TYPE ) {
-			buffer.put(Decoder.PREFIX_TYPE_STRING);
+			buffer.put(DecoderConstant.PREFIX_TYPE_STRING);
 			encodeString(buffer,cls.getName());
 		} else {
 			cls = Decoder.getClass(type);
-			buffer.put(Decoder.PREFIX_TYPE_SHORT);
+			buffer.put(DecoderConstant.PREFIX_TYPE_SHORT);
 			buffer.putShort(type);
 		}
 		return cls;
@@ -59,7 +59,7 @@ public class Encoder{
 	public static <V> void encodeObject(ByteBuffer buffer,V obj){
 	
 		if(obj == null){
-			buffer.put(Decoder.PREFIX_TYPE_NULL);
+			buffer.put(DecoderConstant.PREFIX_TYPE_NULL);
 			return;
 		}
 		

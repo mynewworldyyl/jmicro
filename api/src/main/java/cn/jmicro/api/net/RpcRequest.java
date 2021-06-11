@@ -84,7 +84,7 @@ public final class RpcRequest implements IRequest{
 	
 	public Long getMsgId(){
 		if(this.msg != null){
-			return this.msg.getId();
+			return this.msg.getMsgId();
 		}
 		//super.getFloat("", 33F);
 		return -1l;

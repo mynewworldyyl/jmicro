@@ -386,11 +386,11 @@ public class OnePrefixTypeEncoder implements IEncoder<ByteBuffer>{
 		
 		
 		if(type == null || type == Decoder.NON_ENCODE_TYPE ) {
-			buffer.put(Decoder.PREFIX_TYPE_STRING);
+			buffer.put(DecoderConstant.PREFIX_TYPE_STRING);
 			encodeString(buffer,cls.getName());
 		} else {
 			cls = Decoder.getClass(type);
-			buffer.put(Decoder.PREFIX_TYPE_SHORT);
+			buffer.put(DecoderConstant.PREFIX_TYPE_SHORT);
 			buffer.putShort(type);
 		}
 		return cls;

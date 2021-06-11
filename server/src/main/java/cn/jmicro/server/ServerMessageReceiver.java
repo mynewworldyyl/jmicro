@@ -276,7 +276,7 @@ public class ServerMessageReceiver implements IMessageReceiver{
 				sb.append("Client to server cost: ").append(task.gotTime - msg.getTime()).append(", ");
 				sb.append("Queue cost: ").append(curTime-task.gotTime).append(", ");
 				 sb.append(msg.getMethod())
-				.append(",MsgId:").append(msg.getId()).append(",reqID:").append(msg.getReqId())
+				.append(",MsgId:").append(msg.getMsgId())
 				.append(",linkId:").append(JMicroContext.lid());
 			}
 			
@@ -321,9 +321,9 @@ public class ServerMessageReceiver implements IMessageReceiver{
 			String errMsg = e == null?"from insId: " + msg.getInsId():e.getMessage()+",from insId: " + msg.getInsId();
 			if(e instanceof CommonException) {
 				CommonException ce = (CommonException)e;
-				resp = new RpcResponse(msg.getReqId(),new ServerError(ce.getKey(),errMsg));
+				resp = new RpcResponse(msg.getMsgId(),new ServerError(ce.getKey(),errMsg));
 			} else {
-				resp = new RpcResponse(msg.getReqId(),new ServerError(Resp.CODE_FAIL,errMsg));
+				resp = new RpcResponse(msg.getMsgId(),new ServerError(Resp.CODE_FAIL,errMsg));
 			}
 			resp.setSuccess(false);
 			msg.setPayload(ICodecFactory.encode(codecFactory,resp,msg.getUpProtocol()));
@@ -332,7 +332,7 @@ public class ServerMessageReceiver implements IMessageReceiver{
 			msg.setDownSsl(false);
 			msg.setSign(false);
 			msg.setSec(false);
-			msg.setSalt(null);
+			msg.setSaltData(null);
 			s.write(msg);
 		}
 	}
@@ -439,9 +439,9 @@ public class ServerMessageReceiver implements IMessageReceiver{
         		sb.append("ins[").append(Config.getInstanceName()).append("]");
         		sb.append(" localhost[").append(Config.getExportSocketHost()).append("]");
         		sb.append(" localport[").append(s.localPort()).append("]");
-        		sb.append(" reqid[").append(msg.getReqId()).append("]");
+        		sb.append(" reqid[").append(msg.getMsgId()).append("]");
         		sb.append(" linkId[").append(msg.getLinkId()).append("]");
-        		sb.append(" msgId[").append(msg.getId()).append("]");
+        		sb.append(" msgId[").append(msg.getMsgId()).append("]");
         		sb.append(" queueSize[").append(e.getQueue().size()).append("]");
         		sb.append(" activeCount[").append(e.getActiveCount()).append("]");
         		sb.append(" largestPoolSize[").append(e.getLargestPoolSize()).append("]");

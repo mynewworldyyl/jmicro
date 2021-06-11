@@ -5,12 +5,12 @@ import java.io.IOException;
 import java.lang.reflect.Type;
 import java.nio.ByteBuffer;
 
-import cn.jmicro.api.codec.Decoder;
+import cn.jmicro.api.codec.DecoderConstant;
 
 public abstract class AbstractFinalTypeCoder<T> extends AbstractComparableTypeCoder<T> {
 
 	public AbstractFinalTypeCoder(short code,Class<T> clazz) {
-		super(Decoder.PREFIX_TYPE_FINAL,code,clazz);
+		super(DecoderConstant.PREFIX_TYPE_FINAL,code,clazz);
 	}
 
 	@Override

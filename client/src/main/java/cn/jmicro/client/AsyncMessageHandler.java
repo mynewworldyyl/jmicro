@@ -66,7 +66,7 @@ public class AsyncMessageHandler implements IMessageHandler{
 		resp.setMsg(msg);
 		
 		//req.setMsg(msg);
-		String key = msg.getReqId()+"";
+		String key = msg.getMsgId()+"";
 		
 		if(openDebug) {
 			logger.debug("Receive Async msg ReqId: "+key);

@@ -16,7 +16,6 @@
  */
 package cn.jmicro.client;
 
-import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -29,7 +28,6 @@ import cn.jmicro.api.registry.IRegistry;
 import cn.jmicro.api.registry.ServiceItem;
 import cn.jmicro.api.registry.UniqueServiceKey;
 import cn.jmicro.api.route.RouterManager;
-import cn.jmicro.api.utils.TimeUtils;
 import cn.jmicro.common.Constants;
 
 /**

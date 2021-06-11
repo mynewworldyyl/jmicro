@@ -88,8 +88,8 @@ public class ApiGatewayClientSessionManager implements IClientSessionManager {
 			final Message hearbeat = new Message();
 			hearbeat.setType(Constants.MSG_TYPE_HEARBEAT_REQ);
 			//hearbeat.setId(idGenerator.getLongId(Message.class));
-			hearbeat.setReqId(0L);
-			hearbeat.setVersion(Message.MSG_VERSION);
+			hearbeat.setMsgId(0L);
+			//hearbeat.setVersion(Message.MSG_VERSION);
 			final ByteBuffer bb = ByteBuffer.wrap("Hello".getBytes(Constants.CHARSET));
 			hearbeat.setPayload(bb);
 		} catch (UnsupportedEncodingException e) {

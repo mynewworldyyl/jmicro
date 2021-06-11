@@ -69,7 +69,7 @@ import cn.jmicro.common.util.StringUtils;
  *
  * @author Yulei Ye
  */
-@Component(side = Constants.SIDE_PROVIDER)
+//@Component(side = Constants.SIDE_PROVIDER)
 public class ApiRawRequestMessageHandler implements IMessageHandler{
 
 	private final static Logger logger = LoggerFactory.getLogger(ApiRawRequestMessageHandler.class);

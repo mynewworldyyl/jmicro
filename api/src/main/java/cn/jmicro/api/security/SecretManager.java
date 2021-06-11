@@ -137,7 +137,7 @@ public class SecretManager {
 				CommonException ex = null;
 				do {
 					try {
-						d = EncryptUtils.decryptAes(bb.array(), 0, bb.limit(), msg.getSalt(), k.key);
+						d = EncryptUtils.decryptAes(bb.array(), 0, bb.limit(), msg.getSaltData(), k.key);
 					} catch (CommonException e) {
 						ex = e;
 						k = k.preKey;
@@ -150,7 +150,7 @@ public class SecretManager {
 					d = Base64.getDecoder().decode(d);
 				}
 				msg.setPayload(ByteBuffer.wrap(d));
-				msg.setSalt(null);
+				msg.setSaltData(null);
 			}
 			
 			// 对于上行包，如果下行是安全的，则说明客户端有私钥，所以需要做签名
@@ -158,13 +158,13 @@ public class SecretManager {
 			if (msg.isSign() && msg.getType() != Constants.MSG_TYPE_REQ_RAW) {
 				ByteBuffer bb = (ByteBuffer) msg.getPayload();
 				RSAPublicKey pubKey = getPublicKey(msg.getInsId());
-				if (!EncryptUtils.doCheck(bb.array(), 0, bb.limit(), msg.getSign(), pubKey)) {
+				if (!EncryptUtils.doCheck(bb.array(), 0, bb.limit(), msg.getSignData(), pubKey)) {
 					//logger.warn(new String(bb.array(), 0, bb.limit(),Constants.CHARSET));
 					throw new CommonException("invalid sign");
 				}
 			}
 
-			msg.setSign(null);
+			msg.setSignData(null);
 			msg.setSign(false);
 
 		} catch (Exception e) {
@@ -202,7 +202,7 @@ public class SecretManager {
 			return;
 		}
 		
-		if(msg.getSec() == null || msg.getSec().length == 0) {
+		if(msg.getSecData() == null || msg.getSecData().length == 0) {
 			throw new CommonException("Invalid sec data" + msg.getInsId());
 		}
 		
@@ -223,7 +223,7 @@ public class SecretManager {
 			//secrect = EncryptUtils.pkcs1unpad2(msg.getSec());
 			//对密钥做utf8解码为字符串，结果是密码密文的base64编码
 			try {
-				String b64Str = new String(msg.getSec(),Constants.CHARSET);
+				String b64Str = new String(msg.getSecData(),Constants.CHARSET);
 				//对密文做base64解码，得到密文的字节数组，
 				byte[] sec = Base64.getDecoder().decode(b64Str);
 				//解密密文，得到字节码形式的AES密码明文，字节码是密码的UTF8编码后的字节数组
@@ -234,7 +234,7 @@ public class SecretManager {
 				logger.error("",e);
 			}
 		} else {
-			secrect = EncryptUtils.decryptRsa(myPriKey, msg.getSec(), 0, msg.getSec().length);
+			secrect = EncryptUtils.decryptRsa(myPriKey, msg.getSecData(), 0, msg.getSecData().length);
 		}
 		
 		if(secrect == null || secrect.length == 0) {
@@ -261,7 +261,7 @@ public class SecretManager {
 		}
 		
 		msg.setSec(false);
-		msg.setSec(null);
+		msg.setSecData(null);
 	
 	}
 
@@ -285,7 +285,7 @@ public class SecretManager {
 			if (Utils.isEmpty(sign)) {
 				throw new CommonException("Fail to sign");
 			}
-			msg.setSign(sign);
+			msg.setSignData(sign);
 			msg.setSign(true);
 		}
 
@@ -325,14 +325,14 @@ public class SecretManager {
 			if(!sec.reponseSucc) {
 				byte[] sedata = sec.key.getEncoded();
 				sedata = this.encryptRsa(sedata, 0, sedata.length, insId);
-				msg.setSec(sedata);
+				msg.setSecData(sedata);
 				msg.setSec(true);
 			}
 			
 			byte[] salt = getSalt();
 			byte[] edata = EncryptUtils.encryptAes(bb.array(), 0, bb.limit(), salt, sec.key);
 			msg.setSecretVersion(sec.secretVersion);
-			msg.setSalt(salt);
+			msg.setSaltData(salt);
 			msg.setPayload(ByteBuffer.wrap(edata));
 
 		}

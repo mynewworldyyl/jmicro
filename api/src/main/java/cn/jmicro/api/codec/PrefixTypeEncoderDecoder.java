@@ -50,7 +50,7 @@ public class PrefixTypeEncoderDecoder{
 	public <V> V decode(ByteBuffer buffer) {
 		
 		byte prefixCodeType = buffer.get(buffer.position());
-		if(prefixCodeType == Decoder.PREFIX_TYPE_NULL){
+		if(prefixCodeType == DecoderConstant.PREFIX_TYPE_NULL){
 			//空值直接返回
 			return null;
 		}
@@ -62,7 +62,7 @@ public class PrefixTypeEncoderDecoder{
 	public ByteBuffer encode(Object obj) {
 		if(obj == null) {
 			ByteBuffer buffer = ByteBuffer.allocate(1);
-			buffer.put(Decoder.PREFIX_TYPE_NULL);
+			buffer.put(DecoderConstant.PREFIX_TYPE_NULL);
 			//空值直接返回
 			return buffer;
 		} 

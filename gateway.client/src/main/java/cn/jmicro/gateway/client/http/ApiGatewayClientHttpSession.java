@@ -66,7 +66,7 @@ public class ApiGatewayClientHttpSession extends AbstractSession implements ICli
 				Message message = Message.decode(new JDataInput(ByteBuffer.wrap(data)));
 	            receiver.receive(ApiGatewayClientHttpSession.this,message);
 			} else {
-				throw new CommonException("Req:"+msg.getReqId()+" response null data");
+				throw new CommonException("Req:"+msg.getMsgId()+" response null data");
 			}
 		}).start();
 	}

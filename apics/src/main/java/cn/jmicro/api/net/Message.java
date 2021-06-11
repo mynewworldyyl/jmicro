@@ -19,25 +19,44 @@ package cn.jmicro.api.net;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
+import java.util.HashMap;
+import java.util.Map;
 
 import cn.jmicro.api.annotation.IDStrategy;
+import cn.jmicro.api.codec.DecoderConstant;
 import cn.jmicro.api.codec.JDataInput;
 import cn.jmicro.api.codec.JDataOutput;
-import cn.jmicro.api.rsa.EncryptUtils;
 import cn.jmicro.common.CommonException;
 import cn.jmicro.common.Constants;
-import cn.jmicro.common.Utils;
 import cn.jmicro.common.util.JsonUtils;
+import lombok.Getter;
+import lombok.Setter;
 
 /**
+ * Messge format:
+ * 
+ * +++ 2 bytes （flag） +++  2 or 4 bytes （len） +++ 1 byte （type） +++ 4 bytes （extra flag） +++ 2 bytes extra data len +++ extra data +++ payload data +++
+ 
+ * a. 2 bytes flag: 固定2字节不变
+ * b. 2 or 4 bytes len 根据Message.FLAG_LENGTH_INT值确定是2字节还是4字节，1表示4字节，0表示两字节，len的值等于 4（如果存在，extra flag长度）+
+ * 2（如果存在，extra长度） + extra data长度（如果存在） + data长度
+ 
+ 	如FLAG_EXTRA=1,则包含以下信息
+ * c. 4 bytes （extra flag） 
+ * d. 2 bytes extra data len  表示附加数据长度
+ * e. extra data
  * 
  * @author Yulei Ye
  * @date 2018年10月4日-下午12:06:44
  */
 @IDStrategy(100)
+@Getter
+@Setter
 public final class Message {
 	
-	public static final int HEADER_LEN = 18;
+	public static final int HEADER_LEN = 13; // 2(flag)+2(data len with short)+1(type)
+	
+	public static final int EXT_HEADER_LEN = 2; //附加数据头部长度
 	
 	//public static final int SEC_LEN = 128;
 	
@@ -65,145 +84,310 @@ public final class Message {
 	
 	//public static final long MAX_LONG_VALUE = Long.MAX_VALUE*2;
 	
-	public static final byte MSG_VERSION = (byte)1;
+	//public static final byte MSG_VERSION = (byte)1;
 	
 	//长度字段类型，1表示整数，0表示短整数
-    public static final int FLAG_LENGTH_INT = 1 << 0;
+    public static final short FLAG_LENGTH_INT = 1 << 0;
     
-	//调试模式
-	public static final int FLAG_DEBUG_MODE = 1 << 1;
-	
-	//需要响应的请求
-	public static final int FLAG_NEED_RESPONSE = 1 << 2;
-	
-	public static final int FLAG_UP_PROTOCOL = 1<<5;
-	
-	public static final int FLAG_DOWN_PROTOCOL = 1 << 6;
-	
-	//DUMP上行数据
-	public static final int FLAG_DUMP_UP = 1 << 7;
-		
-	//DUMP下行数据
-	public static final int FLAG_DUMP_DOWN = 1 << 8;
+	public static final short FLAG_UP_PROTOCOL = 1<<1;
+	public static final short FLAG_DOWN_PROTOCOL = 1 << 2;
 	
 	//可监控消息
-	public static final int FLAG_MONITORABLE = 1 << 9;
+	public static final short FLAG_MONITORABLE = 1 << 3;
 	
-	//异步请求响应类消息
-	//public static final int FLAG_ASYNC_RESUTN_RESULT = 1 << 13;
+	//包含Extra数据
+	public static final short FLAG_EXTRA = 1 << 4;
+	
+	//需要响应的请求
+	public static final short FLAG_NEED_RESPONSE = 1 << 5;
+	
+	public static final short FLAG_LOG_LEVEL = 13;
+	
+	/****************  extra constants flag   *********************/
+	
+	//调试模式
+	public static final int EXTRA_FLAG_DEBUG_MODE = 1 << 0;
+		
+	public static final int EXTRA_FLAG_PRIORITY = 1; 
+		
+	//DUMP上行数据
+	public static final int EXTRA_FLAG_DUMP_UP = 1 << 3;
+		
+	//DUMP下行数据
+	public static final int EXTRA_FLAG_DUMP_DOWN = 1 << 4;
 	
 	//加密参数 0：没加密，1：加密
-	public static final int FLAG_UP_SSL = 1 << 14;
+	public static final int EXTRA_FLAG_UP_SSL = 1 << 4;
 	
 	//是否签名
-	public static final int FLAG_DOWN_SSL = 1 << 15;
+	public static final int EXTRA_FLAG_DOWN_SSL = 1 << 5;
 	
-	public static final int FLAG_IS_FROM_WEB = 1 << 27;
+	public static final int EXTRA_FLAG_IS_FROM_WEB = 1 << 6;
 	
-	public static final int FLAG_IS_SEC = 1 << 28;
+	public static final int EXTRA_FLAG_IS_SEC = 1 << 7;
 	
 	//是否签名： 0:无签名； 1：有签名
-	public static final int FLAG_IS_SIGN = 1 << 29;
+	public static final int EXTRA_FLAG_IS_SIGN = 1 << 8;
 		
 	//加密方式： 0:对称加密，1：RSA 非对称加密
-	public static final int FLAG_ENC_TYPE = 1 << 30;
+	public static final int EXTRA_FLAG_ENC_TYPE = 1 << 9;
 	
-	public static final int FLAG_RPC_MCODE = 1 << 26;
+	public static final int EXTRA_FLAG_RPC_MCODE = 1 << 10;
 	
-	public static final int FLAG_SECTET_VERSION = 1 << 25;
+	public static final int EXTRA_FLAG_SECTET_VERSION = 1 << 11;
+	
+	//是否包含实例ID
+	public static final int EXTRA_FLAG_INS_ID = 1 << 12;
+	
+	public static final Byte EXTRA_KEY_LINKID = 1;
+	public static final Byte EXTRA_KEY_INSID = 2;
+	public static final Byte EXTRA_KEY_TIME = 3;
+	public static final Byte EXTRA_KEY_SM_CODE = 4;
+	public static final Byte EXTRA_KEY_SM_NAME = 5;
+	public static final Byte EXTRA_KEY_SIGN = 6;
+	public static final Byte EXTRA_KEY_SALT = 7;
+	public static final Byte EXTRA_KEY_SEC = 8;
+	
+	public static final Byte EXTRA_KEY_ARRAY = 9;
+	public static final Byte EXTRA_KEY_FLAG = 10;
+	
+	/****************  extra constants flag   *********************/
 	
 	//0B00111000 5---3
 	//public static final short FLAG_LEVEL = 0X38;
 	
 	//是否启用服务级log
 	//public static final short FLAG_LOGGABLE = 1 << 3;
-	
 	private transient long startTime = -1;
 	
 	//此消息所占字节数，用于记录流量
 	private transient int len = -1;
 	
 	//1 byte length
-	private byte version;
-	
-	//normal message ID	or JRPC request ID
-	private long reqId;
-	
-	private int insId;
-	
-	private int smKeyCode;
+	//private byte version;
 	
 	//payload length with byte,4 byte length
 	//private int len;
 	
+	/**
+	 * 0        S:       data length type 0:short 1:int
+	 * 1        UPR:     up protocol  0: bin,  1: json 
+	 * 2        DPR:     down protocol 0: bin, 1: json 
+	 * 3        M:       Monitorable
+	 * 4        Extra    Contain extradata
+	 * 5        N:       need Response
+	 * 6    
+	 * 7       
+	 * 8       
+	 * 9        
+	 * 10
+	 * 11
+	 * 12 
+	 * 13 14 15 LLL      Log level
+	 * @return
+	 */
+	private short flag = 0;
+	
 	// 1 byte
 	private byte type;
+		
+	//2 byte length
+	//private byte ext;
+	
+	//normal message ID	or JRPC request ID
+	private long msgId;
+	
+	private Object payload;
+	
+	private Map<Byte,Object> extraMap;
+	
+	//*****************extra data begin******************//
 	
 	/**
-	 * 0        S:       data length type 0:short 1 : int
-	 * 1        dm:      is development mode
-	 * 2        N:       need Response
-	 * 3,4      PP:      Message priority 
-	 * 5        UPR:     up protocol  0:bin,  1: json 
-     * 6        DPR:     down protocol 0:bin, 1 : json 
-	 * 7        up:      dump up stream data
-	 * 8        do:      dump down stream data
-	 * 9        M:       Monitorable
-	 * 10,11,12 LLL      Log level
-	 * 13       
-	 * 14       US      上行SSL  0:no encrypt 1:encrypt
-	 * 15       DS      下行SSL  0:no encrypt 1:encrypt
-	 * 
-	 DS   US  A   L  L   L   M  DO UP  DPR  UPR  P    P   N   dm   S
+	 * 0        dm:       is development mode EXTRA_FLAG_DEBUG_MODE = 1 << 1;
+	 * 1,2      PP:       Message priority   EXTRA_FLAG_PRIORITY
+	 * 3        up:       dump up stream data
+	 * 4        do:       dump down stream data
+	 * 5 	    US        上行SSL  0:no encrypt 1:encrypt
+	 * 6        DS        下行SSL  0:no encrypt 1:encrypt
+	 * 7        SV        对称密钥版本
+	 * 8        MK        RPC方法编码       
+	 * 9        WE        从Web浏览器过来的请求
+	 * 10       SE        密码
+	 * 11       SI        是否有签名值 0：无，1：有
+	 * 12       ENT       encrypt type 0:对称加密，1：RSA 非对称加密
+	 * 13
+	             ENT SI  SE  WE MK SV  DS   US   DO   UP  P    P   dm   
 	 |    |   |   |  |   |   |  |  |   |    |    |    |   |    |   |
      15  14  13  12  11  10  9  8  7   6    5    4    3   2    1   0
      
-	* 30       ENT       encrypt type 0:对称加密，1：RSA 非对称加密
-	* 29       SI        是否有签名值 0：无，1：有
-	* 28       SE        密码
-	* 27       WE        从Web浏览器过来的请求
-	* 26       MK        RPC方法编码
-	* 25       SV        对称密钥版本
-	* 
-	     ENT  SI  SE WE  MK  SV                                                
-	 |    |   |   |  |   |   |  |  |   |    |    |    |   |    |   |
-     31  30  29  28  27  26  25 24 23  22   21   20   19  18   17  16
+	 |    |   |   |  |   |   |    |   |   |    |    |    |   |    |   |
+     31  30  29  28  27  26  25   24  23  22   21   20   19  18   17  16
      
 	 * 
 	 * @return
 	 */
-	private int flag = 0;
+	private transient int extrFlag = 0;
 	
-	//2 byte length
-	//private byte ext;
-	
-	private Object payload;
-	
+	//附加数居
+	private transient ByteBuffer extra = null;
+		
 	//非对称加密签名
-	private String sign;
+	//private transient String signData;
 	
 	//对称加密盐值
-	private byte[] salt;
+	//private transient  byte[] saltData;
 	
 	//对称加密密钥,i 
-	private byte[] sec;
+	//private transient  byte[] secData;
 	
-	//*****************development mode field begin******************//
-	private long msgId;
-	private long linkId;
-	private long time;
+	//private long msgId;
+	//private transient  long linkId;
+	
+	//消息发送时间
+	//private transient  long time;
+	
 	//private String instanceName;
-	private String method;
+	//private transient  String method;
 	
-	//****************development mode field end*******************//
+	//rpc method code
+	//private transient  int smKeyCode;
+	
+	//instance ID for jvm
+	//private transient  int insId;
+		
+	//****************extra data begin*******************//
 	
 	public Message(){}
 	
+	private static Map<Byte,Object> decodeExtra(ByteBuffer extra) {
+		if(extra == null || extra.remaining() == 0) return null;
+		
+		Map<Byte,Object> ed = new HashMap<>();
+		
+		JDataInput b = new JDataInput(extra);
+		try {
+			while(b.remaining() > 0) {
+				Byte k = b.readByte();
+				Object v = decodeVal(b);
+				ed.put(k, v);
+			}
+			return ed;
+		} catch (IOException e) {
+			throw new CommonException("decodeExtra error:" + ed.toString() + ", Extra: " + extra);
+		}
+		
+	}
+	
+	private static Object decodeVal(JDataInput b) throws IOException {
+		byte type = b.readByte();
+		if(DecoderConstant.PREFIX_TYPE_LIST == type){
+			short len = b.readShort();
+			if(len == 0) {
+				return new byte[0];
+			}
+			byte[] arr = new byte[len];
+			b.readFully(arr, 0, len);
+			return arr;
+		}else if(type == DecoderConstant.PREFIX_TYPE_INT){
+			return b.readInt();
+		}else if(DecoderConstant.PREFIX_TYPE_BYTE == type){
+			return b.readByte();
+		}else if(DecoderConstant.PREFIX_TYPE_SHORT == type){
+			return b.readShort();
+		}else if(DecoderConstant.PREFIX_TYPE_LONG == type){
+			return b.readLong();
+		}else if(DecoderConstant.PREFIX_TYPE_FLOAT == type){
+			return b.readFloat();
+		}else if(DecoderConstant.PREFIX_TYPE_DOUBLE == type){
+			return b.readDouble();
+		}else if(DecoderConstant.PREFIX_TYPE_BOOLEAN == type){
+			return b.readBoolean();
+		}else if(DecoderConstant.PREFIX_TYPE_CHAR == type){
+			return b.readChar();
+		} else {
+			throw new CommonException("not support header type: " + type);
+		}
+	}
+
+	private static ByteBuffer encodeExtra(Map<Byte, Object> extras) {
+		if(extras == null || extras.isEmpty()) return null;
+		
+		JDataOutput b = new JDataOutput(64);
+		for(Map.Entry<Byte, Object> e : extras.entrySet()) {
+			try {
+				b.writeByte(e.getKey());
+				encodeVal(b,e.getValue());
+			} catch (IOException e1) {
+				throw new CommonException("encodeExtra key: " + e.getKey() +",val"+  e.getValue(),e1);
+			}
+		}
+		return b.getBuf();
+	}
+	
+	private static void encodeVal(JDataOutput b, Object v) throws IOException {
+		if(v == null) {
+			b.writeByte(DecoderConstant.PREFIX_TYPE_NULL);
+			return;
+		}
+		Class<?> cls = v.getClass();
+		
+		if(cls.isArray()){
+			if(!(cls.getComponentType() == Byte.class || cls.getComponentType() == Byte.TYPE)) {
+				throw new CommonException("Only support byte array not: " + cls.getName());
+			}
+			b.writeByte(DecoderConstant.PREFIX_TYPE_LIST);
+			byte[] arr = (byte[])v;
+			b.writeShort(arr.length);
+			b.write(arr);
+		}else if(cls == String.class) {
+			b.writeByte(DecoderConstant.PREFIX_TYPE_STRING);
+			String str = v.toString();
+			if("".equals(str)){
+				b.writeInt(0);
+				return;
+			}
+		    try {
+				byte[] data = str.getBytes(Constants.CHARSET);
+				b.writeInt(data.length);
+				b.write(data);
+			} catch (UnsupportedEncodingException e) {
+				throw new CommonException("Invalid: "+str,e);
+			}
+		}else if(cls == int.class || cls == Integer.class || cls == Integer.TYPE){
+			b.writeByte(DecoderConstant.PREFIX_TYPE_INT);
+			b.writeInt((Integer)v);
+		}else if(cls == byte.class || cls == Byte.class || cls == Byte.TYPE){
+			b.writeByte(DecoderConstant.PREFIX_TYPE_BYTE);
+			b.writeByte((Byte)v);
+		}else if(cls == short.class || cls == Short.class || cls == Short.TYPE){
+			b.writeByte(DecoderConstant.PREFIX_TYPE_SHORT);
+			b.writeShort((Short)v);
+		}else if(cls == long.class || cls == Long.class || cls == Long.TYPE){
+			b.writeByte(DecoderConstant.PREFIX_TYPE_LONG);
+			b.writeLong((Long)v);
+		}else if(cls == float.class || cls == Float.class || cls == Float.TYPE){
+			b.writeByte(DecoderConstant.PREFIX_TYPE_BYTE);
+			b.writeFloat((Byte)v);
+		}else if(cls == double.class || cls == Double.class || cls == Double.TYPE){
+			b.writeByte(DecoderConstant.PREFIX_TYPE_DOUBLE);
+			b.writeDouble((Double)v);
+		}else if(cls == boolean.class || cls == Boolean.class || cls == Boolean.TYPE){
+			b.writeByte(DecoderConstant.PREFIX_TYPE_BOOLEAN);
+			b.writeByte((Boolean)v?(byte)1:(byte)0);
+		}else if(cls == char.class || cls == Character.class || cls == Character.TYPE){
+			b.writeByte(DecoderConstant.PREFIX_TYPE_CHAR);
+			b.writeChar((Character)v);
+		} else {
+			throw new CommonException("not support header type for val: " + v);
+		}
+	}
+
 	public static Message decode(JDataInput b) {
 		try {
 			Message msg = new Message();
-			//第0,1,2,3个字节
-			int flag = b.readInt();
+			//第0,1个字节
+			short flag = b.readShort();
 
 			msg.flag =  flag;
 			//ByteBuffer b = ByteBuffer.wrap(data);
@@ -218,59 +402,23 @@ public final class Message {
 			}
 			
 			//第3个字节
-			msg.setVersion(b.readByte());
+			//msg.setVersion(b.readByte());
 			
 			//read type
 			//第4个字节
 			msg.setType(b.readByte());
+			msg.setMsgId(b.readLong());
 			
-			//第5，6，7，8个字节
-			msg.setReqId(b.readInt());
-			
-			//第9，10，11，12个字节
-			msg.setLinkId(b.readInt());
-			
-			//13，14个字节
-			msg.setInsId(b.readUnsignedShort());
-			
-			if(msg.isRpcMk()) {
-				msg.setSmKeyCode(b.readInt());
-				len -= 4;
-			}
-			
-			if(msg.isDebugMode()) {
-				//读取测试数据头部
-				msg.setId(b.readLong());
-				msg.setTime(b.readLong());
-				len -= 16;
-				
-				//msg.setInstanceName(b.readUTF());
-				msg.setMethod(b.readUTF());
-				//减去测试数据头部长度
-				//len -= JDataOutput.encodeStringLen(msg.getInstanceName());
-				len -= JDataOutput.encodeStringLen(msg.getMethod());
-			}
-			
-			if(msg.isSign()) {
-				//非对称加密同时需要签名，对称加密不需要签名
-				msg.setSign(b.readUTF());
-				len -= JDataOutput.encodeStringLen(msg.getSign());
-			}
-			
-			if(!msg.isRsaEnc() && (msg.isUpSsl() || msg.isDownSsl())) {
-				//对称加密盐值
-				byte[] sa = new byte[EncryptUtils.SALT_LEN];
-				b.readFully(sa);
-				len -= EncryptUtils.SALT_LEN;
-				msg.setSalt(sa);
-			}
-			
-			if(msg.isSec()) {
-				int l = b.readUnsignedShort();
-				byte[] sa = new byte[l];
-				b.readFully(sa);
-				len -= l+2;
-				msg.setSec(sa);
+			if(msg.isReadExtra()) {
+				short elen = b.readShort();
+				byte[] edata = new byte[elen];
+				b.readFully(edata,0,elen);
+				msg.extra = ByteBuffer.wrap(edata);
+				len = len - Message.EXT_HEADER_LEN - elen;
+				msg.extraMap = decodeExtra(msg.extra);
+				msg.setLen(len + elen);
+			} else {
+				msg.setLen(len);
 			}
 			
 			if(len > 0){
@@ -281,19 +429,18 @@ public final class Message {
 				msg.setPayload(null);
 			}
 			
-			msg.setLen(len);
-			
 			return msg;
 		} catch (IOException e) {
 			throw new CommonException("error",e);
 		}
 	}
 	
+	
 	public ByteBuffer encode() {
 		
 		JDataOutput b = new JDataOutput(512);
 		
-		boolean debug = this.isDebugMode();
+		//boolean debug = this.isDebugMode();
 
 		ByteBuffer data = null;
 		if(this.getPayload() instanceof ByteBuffer) {
@@ -309,32 +456,22 @@ public final class Message {
 		
 		data.mark();
 		
-		int len = 0;//数据长度 + 附加数据长度
+		int len = 0;//数据长度 + 附加数据长度,不包括头部长度
 		if(data != null){
 			len = data.remaining();
 		}
 		
-		if(debug) {
-			len += JDataOutput.encodeStringLen(method);
-			//2个long的长度，2*8=8
-			len += 16;
+		if(this.extrFlag != 0) {
+			this.putExtra(EXTRA_KEY_FLAG, extrFlag);
 		}
 		
-		if(this.isSign()) {
-			len += JDataOutput.encodeStringLen(sign);
-		}
-		
-		if(this.salt != null && this.salt.length > 0) {
-			//对称加密盐值
-			len += this.salt.length;
-		}
-		
-		if(this.isSec()) {
-			len += this.sec.length+2;
-		}
-		
-		if(this.isRpcMk()) {
-			len += 4;
+		if(this.isWriteExtra()) {
+			extra = encodeExtra(extraMap);
+			if(extra.remaining() > 4092) {
+				throw new CommonException("Too long extra: " + extraMap.toString());
+			}
+			len += extra.remaining()+ Message.EXT_HEADER_LEN;
+			this.setExtra(true);
 		}
 		
 		//第1，2个字节 ,len = 数据长度 + 测试模式时附加数据长度
@@ -349,9 +486,9 @@ public final class Message {
 		try {
 			//第0,1,2,3个字节，标志头
 			//b.put(this.flag);
-			b.writeInt(this.flag);
+			b.writeShort(this.flag);
 			
-			if(len < 65535) {
+			if(len < 32767) {
 				//第2，3个字节 ,len = 数据长度 + 测试模式时附加数据长度
 				b.writeUnsignedShort(len);
 			}else if(len < Integer.MAX_VALUE){
@@ -365,57 +502,19 @@ public final class Message {
 			
 			//第3个字节
 			//b.put(this.version);
-			b.writeByte(this.version);
+			//b.writeByte(this.method);
 			
 			//第4个字节
 			//writeUnsignedShort(b, this.type);
 			//b.put(this.type);
 			b.writeByte(this.type);
 			
-			//第5，6，7，8个字节
-			//writeUnsignedInt(b, this.reqId);
-			b.writeInt((int)reqId);
+			b.writeLong(this.msgId);
 			
-			//第9，10，11，12个字节
-			//writeUnsignedInt(b, this.linkId);
-			b.writeInt((int)linkId);
-			
-			//13，14个字节
-			b.writeUnsignedShort(this.insId);
-			
-			if(this.isRpcMk()) {
-				b.writeInt(this.smKeyCode);
-			}
-			
-			if(debug) {
-				b.writeLong(this.getId());
-				b.writeLong(this.getTime());
-				try {
-					b.writeUTF(this.method);
-				} catch (IOException e) {
-					throw new CommonException("",e);
-				}
-			}
-			
-			if(this.isSign()) {
-				try {
-					b.writeUTF(this.sign);
-				} catch (IOException e) {
-					throw new CommonException("",e);
-				}
-			}
-			
-			if(this.salt != null && this.salt.length > 0) {
-				//对称加密盐值
-				//b.write(this.salt.length);
-				b.write(this.salt);
-			}/*else {
-				b.write(0);
-			}*/
-			
-			if(this.isSec()) {
-				b.writeUnsignedShort(this.sec.length);
-				b.write(this.sec);
+			if(this.isWriteExtra()) {
+				//b.writeInt(this.extrFlag);
+				b.writeShort(this.extra.remaining());
+				b.write(this.extra);
 			}
 			
 			if(data != null){
@@ -442,12 +541,12 @@ public final class Message {
 		//数据总长是否可构建一个包的最小长度
 		int totalLen = cache.remaining();
 		if(totalLen < Message.HEADER_LEN) {
-			//可读的数据长度小于头部长度
+			//可读的数据长度小于最少头部长度
 			return null;
 		}
 		
 		//取第一个字节标志位
-		int f = cache.getInt();
+		short f = cache.getShort();
 		int len = 0;
 		int headerLen = Message.HEADER_LEN;
 		//取第二，第三个字节 数据长度
@@ -457,7 +556,7 @@ public final class Message {
 	    	len = cache.getInt();
 	    	//还原读数据公位置
 			cache.position(pos);
-			headerLen = headerLen + 2;
+			headerLen += 2;  //int型比默认short多2字节
 	    	if(totalLen < len + headerLen){
 				//还不能构成一个足够长度的数据包
 				return null;
@@ -484,101 +583,120 @@ public final class Message {
 		return (flag & mask) != 0;
 	}
 	
+	public static boolean is(short flag, short mask) {
+		return (flag & mask) != 0;
+	}
+	
 	public static int set(boolean isTrue,int f,int mask) {
 		return isTrue ?(f |= mask) : (f &= ~mask);
 	}
 	
-	/*public static boolean is(byte flag, short mask) {
-		return (flag & mask) != 0;
-	}*/
-	
-	/*public boolean isAsyncReturnResult() {
-		return is(flag,FLAG_ASYNC_RESUTN_RESULT);
+	public static short set(boolean isTrue,short f,short mask) {
+		return isTrue ?(f |= mask) : (f &= ~mask);
 	}
 	
-	public void setAsyncReturnResult(boolean f) {
-		flag = set(f,flag,FLAG_ASYNC_RESUTN_RESULT);
-	}*/
+	public <T> T getExtra(Byte key) {
+		return this.extraMap != null ? (T)this.extraMap.get(key):null;
+	}
+	
+	public void putExtra(Byte key,Object val) {
+		if(this.extraMap == null) {
+			this.extraMap = new HashMap<>();
+		}
+		this.extraMap.put(key, val);
+	}
+	
+	public boolean isWriteExtra() {
+		return this.extraMap != null && !extraMap.isEmpty();
+	}
+
+	public boolean isReadExtra() {
+		return is(flag,FLAG_EXTRA);
+	}
+	
+	public void setExtra(boolean f) {
+		flag = set(f,flag,FLAG_EXTRA);
+	}
 	
 	public boolean isUpSsl() {
-		return is(flag,FLAG_UP_SSL);
+		return is(this.extrFlag,EXTRA_FLAG_UP_SSL);
 	}
 	
 	public void setUpSsl(boolean f) {
-		flag = set(f,flag,FLAG_UP_SSL);
+		extrFlag = set(f,extrFlag,EXTRA_FLAG_UP_SSL);
 	}
 	
 	public boolean isDownSsl() {
-		return is(flag,FLAG_DOWN_SSL);
+		return is(extrFlag,EXTRA_FLAG_DOWN_SSL);
 	}
 	
 	public void setDownSsl(boolean f) {
-		flag = set(f,flag,FLAG_DOWN_SSL);
+		extrFlag = set(f,extrFlag,EXTRA_FLAG_DOWN_SSL);
 	}
 	
 	public boolean isRsaEnc() {
-		return is(flag,FLAG_ENC_TYPE);
+		return is(extrFlag,EXTRA_FLAG_ENC_TYPE);
 	}
 	
 	public void setEncType(boolean f) {
-		flag = set(f,flag,FLAG_ENC_TYPE);
+		extrFlag = set(f,extrFlag,EXTRA_FLAG_ENC_TYPE);
 	}
 	
 	public boolean isSecretVersion() {
-		return is(flag,FLAG_SECTET_VERSION);
+		return is(extrFlag,EXTRA_FLAG_SECTET_VERSION);
 	}
 	
 	public void setSecretVersion(boolean f) {
-		flag = set(f,flag,FLAG_SECTET_VERSION);
+		extrFlag = set(f,extrFlag,EXTRA_FLAG_SECTET_VERSION);
 	}
 	
 	public boolean isSign() {
-		return is(flag,FLAG_IS_SIGN);
+		return is(extrFlag,EXTRA_FLAG_IS_SIGN);
 	}
 	
 	public void setSign(boolean f) {
-		flag = set(f,flag,FLAG_IS_SIGN);
+		extrFlag = set(f,extrFlag,EXTRA_FLAG_IS_SIGN);
 	}
 	
 	public boolean isSec() {
-		return is(flag, FLAG_IS_SEC);
+		return is(extrFlag, EXTRA_FLAG_IS_SEC);
 	}
 	
 	public void setSec(boolean f) {
-		flag = set(f,flag, FLAG_IS_SEC);
+		extrFlag = set(f,extrFlag, EXTRA_FLAG_IS_SEC);
 	}
 	
 	public boolean isFromWeb() {
-		return is(flag, FLAG_IS_FROM_WEB);
+		return is(extrFlag, EXTRA_FLAG_IS_FROM_WEB);
 	}
 	
 	public void setFromWeb(boolean f) {
-		flag = set(f,flag, FLAG_IS_FROM_WEB);
+		extrFlag = set(f,extrFlag, EXTRA_FLAG_IS_FROM_WEB);
 	}
 	
 	public boolean isRpcMk() {
-		return is(flag, FLAG_RPC_MCODE);
+		return is(extrFlag, EXTRA_FLAG_RPC_MCODE);
 	}
 	
 	public void setRpcMk(boolean f) {
-		flag = set(f,flag, FLAG_RPC_MCODE);
+		extrFlag = set(f,extrFlag, EXTRA_FLAG_RPC_MCODE);
 	}
 	
 	public boolean isDumpUpStream() {
-		return is(flag,FLAG_DUMP_UP);
+		return is(extrFlag,EXTRA_FLAG_DUMP_UP);
 	}
 	
 	public void setDumpUpStream(boolean f) {
 		//flag0 |= f ? FLAG0_DUMP_UP : 0 ; 
-		flag = set(f,flag,FLAG_DUMP_UP);
+		extrFlag = set(f,extrFlag,EXTRA_FLAG_DUMP_UP);
 	}
 	
 	public boolean isDumpDownStream() {
-		return is(flag,FLAG_DUMP_DOWN);
+		return is(extrFlag,EXTRA_FLAG_DUMP_DOWN);
 	}
 	
 	public void setDumpDownStream(boolean f) {
-		flag = set(f,flag,FLAG_DUMP_DOWN);
+		extrFlag = set(f,extrFlag,EXTRA_FLAG_DUMP_DOWN);
 	}
 	
 	public boolean isLoggable() {
@@ -586,19 +704,19 @@ public final class Message {
 	}
 	
 	public boolean isDebugMode() {
-		return is(flag,FLAG_DEBUG_MODE);
+		return is(extrFlag,EXTRA_FLAG_DEBUG_MODE);
 	}
 	
 	public void setDebugMode(boolean f) {
-		flag = set(f,flag,FLAG_DEBUG_MODE);
+		this.extrFlag = set(f,extrFlag,EXTRA_FLAG_DEBUG_MODE);
 	}
 	
 	public boolean isMonitorable() {
-		return is(flag,FLAG_MONITORABLE);
+		return is(extrFlag,FLAG_MONITORABLE);
 	}
 	
 	public void setMonitorable(boolean f) {
-		flag = set(f,flag,FLAG_MONITORABLE);
+		extrFlag = set(f,extrFlag,FLAG_MONITORABLE);
 	}
 	
 	public boolean isNeedResponse() {
@@ -614,33 +732,33 @@ public final class Message {
 	 */
 	public void setLengthType(boolean f) {
 		//flag |= f ? FLAG_LENGTH_INT : 0 ; 
-		flag = set(f,flag,FLAG_LENGTH_INT);
+		extrFlag = set(f,extrFlag,FLAG_LENGTH_INT);
 	}
 	
 	public boolean isLengthInt() {
-		return is(flag,FLAG_LENGTH_INT);
+		return is(extrFlag,FLAG_LENGTH_INT);
 	}
 	
 	public int getPriority() {
-		return (byte)((flag >>> 3) & 0x03);
+		return (byte)((extrFlag >>> EXTRA_FLAG_PRIORITY) & 0x03);
 	}
 	
 	public void setPriority(int l) {
 		if(l > PRIORITY_3 || l < PRIORITY_0) {
 			 new CommonException("Invalid priority: "+l);
 		}
-		this.flag = (l << 3) | this.flag;
+		this.extrFlag = (l << EXTRA_FLAG_PRIORITY) | this.extrFlag;
 	}
 	
 	public byte getLogLevel() {
-		return (byte)((flag >>> 10) & 0x07);
+		return (byte)((flag >>> FLAG_LOG_LEVEL) & 0x07);
 	}
 	//000 001 010 011 100 101 110 111
 	public void setLogLevel(int v) {
 		if(v < 0 || v > 6) {
 			 new CommonException("Invalid Log level: "+v);
 		}
-		this.flag = (v << 10) | this.flag;
+		this.extrFlag = (v << FLAG_LOG_LEVEL) | this.extrFlag;
 	}
 	
 	public byte getUpProtocol() {
@@ -660,8 +778,6 @@ public final class Message {
 		//flag |= protocol == PROTOCOL_JSON ? FLAG_DOWN_PROTOCOL : 0 ;
 		flag = set(protocol == PROTOCOL_JSON,flag,FLAG_DOWN_PROTOCOL);
 	}
-	
-	
 	
 	public static void writeUnsignedShort(ByteBuffer b,int v) {
 		if(v > MAX_SHORT_VALUE) {
@@ -714,8 +830,6 @@ public final class Message {
 			
 			return;
 	}
-	 
-	 
 	
 	public static void writeUnsignedByte(ByteBuffer b,short v) {
 		if(v > MAX_BYTE_VALUE) {
@@ -793,141 +907,78 @@ public final class Message {
 		}
 		buf.put((byte) n);
 	}
-    
-	public int getLen() {
-		return len;
-	}
-
-	public void setLen(int len) {
-		this.len = len;
-	}
-
-	public long getId() {
-		return this.msgId;
-	}
-
-	public void setId(long id) {
-		this.msgId = id;
-	}
-
-	public byte getVersion() {
-		return version;
-	}
-	public void setVersion(byte version) {
-		this.version = version;
-	}
-	public byte getType() {
-		return type;
-	}
-	public void setType(byte type) {
-		this.type = type;
-	}
-	
-	public int getFlag() {
-		return flag;
-	}
-
-	public void setFlag(int flag) {
-		this.flag = flag;
-	}
-
-	public String getSign() {
-		return sign;
-	}
-
-	public void setSign(String sign) {
-		this.sign = sign;
-	}
-
-	public Object getPayload() {
-		return payload;
-	}
-	public void setPayload(Object payload) {
-		this.payload = payload;
-	}
-	
-	public Long getReqId() {
-		return reqId;
-	}
-
-	public void setReqId(long reqId) {
-		this.reqId = reqId;
-	}
-
-	public long getLinkId() {
-		return linkId;
-	}
-
-	public void setLinkId(long linkId) {
-		this.linkId = linkId;
-	}
-
-	public long getTime() {
-		return time;
-	}
-
-	public void setTime(long time) {
-		this.time = time;
-	}
-
-	public String getMethod() {
-		return method;
-	}
-
-	public void setMethod(String method) {
-		this.method = method;
-	}
-	
-	public long getStartTime() {
-		return startTime;
-	}
-
-	public void setStartTime(long startTime) {
-		this.startTime = startTime;
-	}
-	
-	public int getInsId() {
-		return insId;
-	}
 
 	public void setInsId(int insId) {
 		if(insId < 0) {
 			insId = -insId;
 		}
-		this.insId = insId;
-	}
-
-	public byte[] getSalt() {
-		return salt;
-	}
-
-	public void setSalt(byte[] salt) {
-		this.salt = salt;
+		this.putExtra(EXTRA_KEY_INSID, insId);
 	}
 	
-	public byte[] getSec() {
-		return sec;
-	}
-
-	public void setSec(byte[] sec) {
-		this.sec = sec;
+	public Integer getInsId() {
+		return this.getExtra(EXTRA_KEY_INSID);
 	}
 	
-	public int getSmKeyCode() {
-		return smKeyCode;
+	public void setSignData(String data) {
+		this.putExtra(EXTRA_KEY_SIGN, data);
+	}
+	
+	public String getSignData() {
+		return this.getExtra(EXTRA_KEY_SIGN);
+	}
+	
+	public void setLinkId(Long insId) {
+		this.putExtra(EXTRA_KEY_LINKID, insId);
+	}
+	
+	public Long getLinkId() {
+		return this.getExtra(EXTRA_KEY_LINKID);
+	}
+	
+	public void setSaltData(byte[] data) {
+		this.putExtra(EXTRA_KEY_SALT, data);
+	}
+	
+	public byte[] getSaltData() {
+		return this.getExtra(EXTRA_KEY_SALT);
+	}
+	
+	public void setSecData(byte[] data) {
+		this.putExtra(EXTRA_KEY_SEC, data);
+	}
+	
+	public byte[] getSecData() {
+		return this.getExtra(EXTRA_KEY_SEC);
 	}
 
-	public void setSmKeyCode(int smKeyCode) {
-		this.smKeyCode = smKeyCode;
+	public void setSmKeyCode(Integer code) {
+		this.putExtra(EXTRA_KEY_SM_CODE, code);
+	}
+	
+	public Integer getSmKeyCode() {
+		return this.getExtra(EXTRA_KEY_SM_CODE);
+	}
+	
+	public void setMethod(String method) {
+		this.putExtra(EXTRA_KEY_SM_NAME, method);
+	}
+	
+	public String getMethod() {
+		return this.getExtra(EXTRA_KEY_SM_NAME);
+	}
+	
+	public void setTime(Long time) {
+		this.putExtra(EXTRA_KEY_TIME, time);
+	}
+	
+	public Long getTime() {
+		return this.getExtra(EXTRA_KEY_TIME);
 	}
 
 	@Override
 	public String toString() {
-		return "Message [version=" + version + ", reqId=" + reqId + ", insId=" + insId + ", smKeyCode=" + smKeyCode
-				+ ", type=" + type + ", flag=" + flag + ", msgId=" + msgId + ", linkId=" + linkId + ", time=" + time
-				+ ", method=" + method + "]";
+		return "Message [flag=" + flag + ", type=" + type + ", msgId=" + msgId + ", payload=" + payload + ", extraMap="
+				+ extraMap + "]";
 	}
-
-
 	
 }

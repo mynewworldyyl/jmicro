@@ -152,7 +152,7 @@
 		<module>build</module>
 		<module>main</module>
 		<module>monitor</module>
-		<module>example</module>
+		<!-- <module>example</module> -->
     </modules>
 
     <dependencyManagement>

@@ -4,7 +4,7 @@ import java.nio.ByteBuffer;
 
 import org.junit.Test;
 
-import cn.jmicro.api.codec.Decoder;
+import cn.jmicro.api.codec.DecoderConstant;
 import cn.jmicro.api.codec.Encoder;
 import cn.jmicro.api.net.RpcResponse;
 

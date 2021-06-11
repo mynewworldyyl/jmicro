@@ -334,8 +334,8 @@ public class LG {
 	public static final String messageLog(String prefixMsg,Message msg) {
 		StringBuffer sb = new StringBuffer(prefixMsg);
 		sb.append(",msgType:").append(msg.getType());
-		sb.append(",msdId:").append(msg.getId());
-		sb.append(",reqId:").append(msg.getReqId());
+		sb.append(",msdId:").append(msg.getMsgId());
+		//sb.append(",reqId:").append(msg.getReqId());
 		sb.append(",linkId:").append(msg.getLinkId());
 		sb.append(",instanceName:").append(msg.getInsId());
 		sb.append(",method:").append(msg.getMethod());

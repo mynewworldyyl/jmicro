@@ -335,9 +335,9 @@ import cn.jmicro.monitor.api.AbstractMonitorDataSubscriber;
 	
 	private void message(StringBuilder sb,  Message msg) {
 		if(msg == null) return;
-		sb.append(" msgId[").append(msg.getId())
-		.append("] reqId[").append(msg.getReqId())
-		.append("] version[").append(msg.getVersion())
+		sb.append(" msgId[").append(msg.getInsId())
+		//.append("] reqId[").append(msg.getReqId())
+		//.append("] version[").append(msg.getVersion())
 		.append("] type[").append(Integer.toHexString(msg.getType()))
 		.append("] flag[").append(Integer.toHexString(msg.getFlag()))
 		//.append("] Stream[").append(msg.isStream())

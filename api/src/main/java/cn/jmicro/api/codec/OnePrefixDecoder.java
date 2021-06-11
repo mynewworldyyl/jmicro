@@ -326,14 +326,14 @@ public class OnePrefixDecoder /*implements IDecoder*/{
 		
 	private Class<?> getType(DataInput buffer) throws IOException {
 		byte prefixCodeType = buffer.readByte();
-		if(prefixCodeType == Decoder.PREFIX_TYPE_NULL){
+		if(prefixCodeType == DecoderConstant.PREFIX_TYPE_NULL){
 			return null;
 		}
 		
 		Short type = -1;
 		Class<?> cls = null;
 		
-		if(Decoder.PREFIX_TYPE_STRING == prefixCodeType) {
+		if(DecoderConstant.PREFIX_TYPE_STRING == prefixCodeType) {
 			String clsName = buffer.readUTF();
 			try {
 				if(clsName.startsWith("[L")) {
@@ -354,7 +354,7 @@ public class OnePrefixDecoder /*implements IDecoder*/{
 			} catch (ClassNotFoundException e) {
 				throw new CommonException("class not found:" + clsName,e);
 			}
-		}else if(Decoder.PREFIX_TYPE_SHORT == prefixCodeType) {
+		}else if(DecoderConstant.PREFIX_TYPE_SHORT == prefixCodeType) {
 			type = buffer.readShort();
 			cls = Decoder.getClass(type);
 		} else {

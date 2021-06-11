@@ -41,7 +41,7 @@ import cn.jmicro.common.Utils;
  */
 public class Decoder {
 	
-	public static byte PREFIX_TYPE_ID = -128;
+	/*public static byte PREFIX_TYPE_ID = -128;
 	//空值编码
 	public static final byte PREFIX_TYPE_NULL = PREFIX_TYPE_ID++;
 	
@@ -75,11 +75,11 @@ public class Decoder {
 	public static final byte PREFIX_TYPE_BYTEBUFFER = PREFIX_TYPE_ID++;
 	public static final byte PREFIX_TYPE_REQUEST = PREFIX_TYPE_ID++;
 	public static final byte PREFIX_TYPE_RESPONSE = PREFIX_TYPE_ID++;
-	public static final byte PREFIX_TYPE_PROXY = PREFIX_TYPE_ID++;
+	public static final byte PREFIX_TYPE_PROXY = PREFIX_TYPE_ID++;*/
 	
 	//public static final byte PREFIX_TYPE_STRING = PREFIX_TYPE_ID--;
 	static {
-		checkPrefix(PREFIX_TYPE_ID);
+		checkPrefix(DecoderConstant.PREFIX_TYPE_ID);
 	}
 	
 	public static final Short NON_ENCODE_TYPE = 0;
@@ -192,21 +192,21 @@ public class Decoder {
 	
 	public static <V> V decodeObject(ByteBuffer buffer){
 		byte prefixCodeType = buffer.get();
-		if( prefixCodeType == PREFIX_TYPE_NULL){
+		if( prefixCodeType == DecoderConstant.PREFIX_TYPE_NULL){
 			return null;
 		}
 		
 		Short type = -1;
 		Class<?> cls = null;
 		
-		if(PREFIX_TYPE_STRING == prefixCodeType) {
+		if(DecoderConstant.PREFIX_TYPE_STRING == prefixCodeType) {
 			String clsName = decodeString(buffer);
 			try {
 				cls = Thread.currentThread().getContextClassLoader().loadClass(clsName);
 			} catch (ClassNotFoundException e) {
 				throw new CommonException("class not found:" + clsName,e);
 			}
-		}else if(PREFIX_TYPE_SHORT == prefixCodeType) {
+		}else if(DecoderConstant.PREFIX_TYPE_SHORT == prefixCodeType) {
 			type = buffer.getShort();
 			cls = getClass(type);
 		}else {
@@ -340,21 +340,21 @@ public class Decoder {
 		}
 		
 		byte prefixCodeType = buffer.get();
-		if( prefixCodeType == PREFIX_TYPE_NULL){
+		if( prefixCodeType == DecoderConstant.PREFIX_TYPE_NULL){
 			return null;
 		}
 		
 		Short type = -1;
 		Class<?> cls = null;
 		
-		if(PREFIX_TYPE_STRING == prefixCodeType) {
+		if(DecoderConstant.PREFIX_TYPE_STRING == prefixCodeType) {
 			String clsName = decodeString(buffer);
 			try {
 				cls = Thread.currentThread().getContextClassLoader().loadClass(clsName);
 			} catch (ClassNotFoundException e) {
 				throw new CommonException("class not found:" + clsName,e);
 			}
-		}else if(PREFIX_TYPE_SHORT == prefixCodeType) {
+		}else if(DecoderConstant.PREFIX_TYPE_SHORT == prefixCodeType) {
 			type = buffer.getShort();
 			cls = Short2Clazz.get(type);
 		}else {

@@ -213,11 +213,11 @@ public class DumpManager {
 		Map<Long,List<Message>> map = new TreeMap<>(c);
 		
 		for(Message m : msgs) {
-			Long gid =  m.getId();
+			Long gid =  m.getMsgId();
 			if("lid".equals(groupBy)) {
 				gid = m.getLinkId();
 			}else if("reqid".equals(groupBy)) {
-				gid = m.getReqId();
+				gid = m.getMsgId();
 			}
 			
 			if(!map.containsKey(gid)) {

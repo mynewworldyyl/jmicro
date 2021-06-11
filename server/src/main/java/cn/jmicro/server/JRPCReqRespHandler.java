@@ -136,7 +136,7 @@ public class JRPCReqRespHandler implements IMessageHandler{
 			}
 	    	
 	    	if(LG.isLoggable(MC.LOG_DEBUG)) {
-	    		LG.log(MC.LOG_DEBUG, TAG, "Got request: " + msg.getReqId()+",from insId: " + msg.getInsId());
+	    		LG.log(MC.LOG_DEBUG, TAG, "Got request: " + msg.getMsgId()+",from insId: " + msg.getInsId());
 	    	}
 	    	
 	    	req = req1;
@@ -160,10 +160,7 @@ public class JRPCReqRespHandler implements IMessageHandler{
 			//resp.setId(idGenerator.getLongId(IResponse.class));
 			//msg.setInsId(pi.getId());
 			
-			if(msg.isDebugMode()) {
-				msg.setId(idGenerator.getLongId(Message.class));
-				//msg.setInstanceName(Config.getInstanceName());
-			}
+			//msg.setMsgId(idGenerator.getLongId(Message.class));
 	    	
 	    	ActInfo ai = null;
 			
@@ -318,9 +315,9 @@ public class JRPCReqRespHandler implements IMessageHandler{
 			RpcResponse resp = null;
 			if(e instanceof CommonException) {
 				CommonException ce = (CommonException)e;
-				resp = new RpcResponse(msg.getReqId(),new ServerError(ce.getKey(),e.getMessage()));
+				resp = new RpcResponse(msg.getMsgId(),new ServerError(ce.getKey(),e.getMessage()));
 			}else {
-				resp = new RpcResponse(msg.getReqId(),new ServerError(0,e.getMessage()));
+				resp = new RpcResponse(msg.getMsgId(),new ServerError(0,e.getMessage()));
 			}
 			
 			resp.setSuccess(false);
@@ -331,7 +328,7 @@ public class JRPCReqRespHandler implements IMessageHandler{
 			msg.setDownSsl(false);
 			msg.setSign(false);
 			msg.setSec(false);
-			msg.setSalt(null);
+			msg.setSaltData(null);
 			
 			msg.setTime(TimeUtils.getCurTime());
 			
@@ -366,7 +363,7 @@ public class JRPCReqRespHandler implements IMessageHandler{
 		if(resp.isSuccess()) {
 			MT.rpcEvent(MC.MT_SERVER_JRPC_RESPONSE_SUCCESS,1);
 			if(LG.isLoggable(MC.LOG_DEBUG)) {
-				LG.log(MC.LOG_DEBUG, TAG,"Request end: " + msg.getReqId()+",insId: " + msg.getInsId());
+				LG.log(MC.LOG_DEBUG, TAG,"Request end: " + msg.getMsgId()+",insId: " + msg.getInsId());
 	    	}
 			
 			//响应消息,只有成功的消息才需要加密，失败消息不需要
@@ -377,14 +374,14 @@ public class JRPCReqRespHandler implements IMessageHandler{
 				secretMng.signAndEncrypt(msg,msg.getInsId());
 			}
 		} else {
-			LG.log(MC.LOG_ERROR, TAG, "Request failure end: " + msg.getReqId()+",insId: " + msg.getInsId());
+			LG.log(MC.LOG_ERROR, TAG, "Request failure end: " + msg.getMsgId()+",insId: " + msg.getInsId());
 			MT.rpcEvent(MC.MT_SERVER_ERROR,1);
 			//错误不需要做加密或签名
 			msg.setUpSsl(false);
 			msg.setDownSsl(false);
 			msg.setSign(false);
 			msg.setSec(false);
-			msg.setSalt(null);
+			msg.setSaltData(null);
 		}
 
 		msg.setInsId(pi.getId());

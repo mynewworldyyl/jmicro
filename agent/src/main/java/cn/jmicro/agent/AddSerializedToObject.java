@@ -147,7 +147,7 @@ public class AddSerializedToObject implements ClassFileTransformer {
 				sb.append(varName).append(" = tv"+i+" == 0L ? null : new java.util.Date(tv"+i+");\n");
 			} else {
 				//sb.append(" byte preCode"+i+" = in.readByte();\n");
-				sb.append(" if(in.readByte() == cn.jmicro.api.codec.Decoder.PREFIX_TYPE_NULL) { "+varName+"=null; } else { \n");
+				sb.append(" if(in.readByte() == cn.jmicro.api.codec.DecoderConstant.PREFIX_TYPE_NULL) { "+varName+"=null; } else { \n");
 				
 				if(fieldDeclareType.hasAnnotation(SO.class)) {
 					sb.append(varName).append(" = new ").append(f.getType().getName()).append("();\n");
@@ -251,8 +251,8 @@ public class AddSerializedToObject implements ClassFileTransformer {
 				sb.append("if(__val"+i+" == null)  __buffer.writeLong(0L) ;") ;
 				sb.append(" else out.writeLong(").append(" __val").append(i).append(".getTime()); \n");
 			}else {
-				sb.append("if(__val"+i+" == null){  out.write(cn.jmicro.api.codec.Decoder.PREFIX_TYPE_NULL); \n} \n") ;
-				sb.append(" else { out.write(cn.jmicro.api.codec.Decoder.PREFIX_TYPE_PROXY); \n");
+				sb.append("if(__val"+i+" == null){  out.write(cn.jmicro.api.codec.DecoderConstant.PREFIX_TYPE_NULL); \n} \n") ;
+				sb.append(" else { out.write(cn.jmicro.api.codec.DecoderConstant.PREFIX_TYPE_PROXY); \n");
 				if(fieldDeclareType.hasAnnotation(SO.class)) {
 					sb.append("java.lang.Object __o"+i).append("=__val"+i).append("; \n");
 					sb.append(" ((cn.jmicro.api.codec.ISerializeObject)__o"+i+").encode(__buffer);\n }");

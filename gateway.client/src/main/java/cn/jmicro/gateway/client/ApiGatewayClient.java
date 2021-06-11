@@ -186,7 +186,7 @@ public class ApiGatewayClient {
 	}
 	
 	protected void notifyOnMessage(Message msg) {
-		PromiseImpl p = this.waitForResponse.remove(msg.getReqId());
+		PromiseImpl p = this.waitForResponse.remove(msg.getMsgId());
 		parseResult(msg,p.resultType(),p);
 	}
 
@@ -295,8 +295,8 @@ public class ApiGatewayClient {
 		Message msg = new Message();
 		msg.setType(Constants.MSG_TYPE_API_CLASS_REQ);
 		msg.setUpProtocol(Message.PROTOCOL_BIN);
-		msg.setId(idClient.getLongId(Message.class.getName()));
-		msg.setReqId(req.getReqId());
+		msg.setMsgId(idClient.getLongId(Message.class.getName()));
+		//msg.setReqId(req.getReqId());
 		//msg.setLinkId(idClient.getLongId(Linker.class.getName()));
 		
 		//msg.setStream(false);
@@ -310,7 +310,7 @@ public class ApiGatewayClient {
 		ByteBuffer bb = null;//decoder.encode(req);
 		
 		msg.setPayload(bb);
-		msg.setVersion(Message.MSG_VERSION);
+		//msg.setVersion(Message.MSG_VERSION);
 		
 		String clazzName = null;//getResponse(msg,String.class,null);
 		
@@ -356,7 +356,7 @@ public class ApiGatewayClient {
 		Message msg = this.createMessage(serviceName, namespace, version, methodName, args);
 		final PromiseImpl<T> p = new PromiseImpl<T>();
 		p.setResultType(returnType);
-		waitForResponse.put(msg.getReqId(), (PromiseImpl<?>)p);
+		waitForResponse.put(msg.getMsgId(), (PromiseImpl<?>)p);
 		
 		IClientSession sessin = sessionManager.getOrConnect(null,this.config.getHost(),
 				this.config.getPort());
@@ -443,8 +443,8 @@ public class ApiGatewayClient {
 		msg.setUpProtocol(upp);
 		msg.setDownProtocol(Message.PROTOCOL_JSON);
 		
-		msg.setId(req.getReqId()/*idClient.getLongId(Message.class.getName())*/);
-		msg.setReqId(req.getReqId());
+		//msg.setId(req.getReqId()/*idClient.getLongId(Message.class.getName())*/);
+		msg.setMsgId(req.getReqId());
 		msg.setLinkId(req.getReqId()/*idClient.getLongId(Linker.class.getName())*/);
 		msg.setRpcMk(true);
 		
@@ -472,7 +472,7 @@ public class ApiGatewayClient {
 		msg.setUpSsl(false);
 		msg.setInsId(0);
 		
-		msg.setVersion(Message.MSG_VERSION);
+		//msg.setVersion(Message.MSG_VERSION);
 		
 		byte[] data = null;
 		if(Message.PROTOCOL_BIN == upp) {
@@ -513,7 +513,7 @@ public class ApiGatewayClient {
 			if(config.isUpSsl()) {
 				
 				byte[] salt = getSalt();
-				msg.setSalt(salt);
+				msg.setSaltData(salt);
 				msg.setUpSsl(config.isUpSsl());
 				msg.setDownSsl(config.isDownSsl());
 				msg.setEncType(config.getEncType()==1);
@@ -527,7 +527,7 @@ public class ApiGatewayClient {
 					pwdData = sec.getEncoded();
 					pwdData = EncryptUtils.encryptRsa(pubKey4ApiGateway, pwdData, 0, pwdData.length);
 					
-					msg.setSec(pwdData);
+					msg.setSecData(pwdData);
 					msg.setSec(true);
 				}
 				
@@ -545,17 +545,17 @@ public class ApiGatewayClient {
     	ByteBuffer bb = (ByteBuffer) msg.getPayload();
     	byte[] edata = null;
     	if(msg.isDownSsl()) {
-    		edata = EncryptUtils.decryptAes(bb.array(), 0, bb.limit(), msg.getSalt(), sec);
+    		edata = EncryptUtils.decryptAes(bb.array(), 0, bb.limit(), msg.getSaltData(), sec);
     		msg.setPayload(ByteBuffer.wrap(edata));
     	}
     	
     	if(msg.isSign()) {
     		if(edata != null) {
-    			if (!EncryptUtils.doCheck(edata, 0, edata.length, msg.getSign(), pubKey4ApiGateway)) {
+    			if (!EncryptUtils.doCheck(edata, 0, edata.length, msg.getSignData(), pubKey4ApiGateway)) {
     				throw new CommonException("invalid sign");
     			}
     		} else {
-    			if (!EncryptUtils.doCheck(bb.array(), 0, bb.limit(), msg.getSign(), pubKey4ApiGateway)) {
+    			if (!EncryptUtils.doCheck(bb.array(), 0, bb.limit(), msg.getSignData(), pubKey4ApiGateway)) {
     				throw new CommonException("invalid sign");
     			}
     		}

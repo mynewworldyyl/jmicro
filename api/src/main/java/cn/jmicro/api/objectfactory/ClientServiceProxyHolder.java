@@ -234,6 +234,7 @@ public class ClientServiceProxyHolder implements IServiceListener{
 			//context.setObject(JMicroContext.MONITOR, JMicro.getObjectFactory().get(MonitorManager.class));
 			cxt.setParam(Constants.SERVICE_METHOD_KEY, sm);
 			cxt.setParam(Constants.SERVICE_ITEM_KEY, si);
+			cxt.setParam(Constants.ASYNC, isAsync);
 			cxt.setParam(JMicroContext.LOCAL_HOST, Config.getExportSocketHost());
 			
 			if(JMicroContext.get().getParam(Constants.DIRECT_SERVICE_ITEM, null) == null) {
