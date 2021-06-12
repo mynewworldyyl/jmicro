@@ -22,7 +22,7 @@ package cn.jmicro.api.net;
  */
 public final class ServerError {
 	
-	/*public static final int SE_LIMITER = 0x00000001;
+	public static final int SE_LIMITER = 0x00000001;
 	
 	public static final int SE_LIMITER_ENTER_ASYNC = 0x00000002;
 	
@@ -36,8 +36,8 @@ public final class ServerError {
 	
 	public static final int SE_SERVICE_NOT_FOUND= 0x00000007;
 	
-	public static final int SE_PACKET_TOO_MAX = 0x00000008;*/
-
+	public static final int SE_PACKET_TOO_MAX = 0x00000008;
+	
 	private int errorCode;
 	private String msg;
 	

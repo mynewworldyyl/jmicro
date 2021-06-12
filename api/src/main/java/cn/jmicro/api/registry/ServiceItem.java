@@ -34,6 +34,7 @@ import cn.jmicro.common.CommonException;
 import cn.jmicro.common.Constants;
 import cn.jmicro.common.Utils;
 import cn.jmicro.common.util.StringUtils;
+import lombok.Data;
 
 /**
  *  单位时间处理速度，类似QPS，但是间单位可定制
@@ -51,6 +52,7 @@ import cn.jmicro.common.util.StringUtils;
  */
 @SO
 @IDStrategy(value=10)
+@Data
 public final class ServiceItem implements Comparable<ServiceItem>{
 
 	private final static Logger logger = LoggerFactory.getLogger(ServiceItem.class);
@@ -225,129 +227,10 @@ public final class ServiceItem implements Comparable<ServiceItem>{
 		}
 	}
 
-	public String getHandler() {
-		return handler;
-	}
-
-	public void setHandler(String handler) {
-		this.handler = handler;
-	}
-
-	public long getTimeWindow() {
-		return timeWindow;
-	}
-
-	public long getCreatedTime() {
-		return createdTime;
-	}
-
-	public void setCreatedTime(long createdTime) {
-		this.createdTime = createdTime;
-	}
-
-	public void setTimeWindow(long timeWindow) {
-		this.timeWindow = timeWindow;
-	}
-
-	public String getImpl() {
-		return impl;
-	}
-
-	public void setImpl(String impl) {
-		this.impl = impl;
-	}
-
-	public Set<Server> getServers() {
-		return servers;
-	}
-
-	public boolean isExternal() {
-		return external;
-	}
-
-	public String getActName() {
-		return actName;
-	}
-
-	public void setActName(String actName) {
-		this.actName = actName;
-	}
-
-	public boolean isShowFront() {
-		return showFront;
-	}
-
-	public long getLoadTime() {
-		return loadTime;
-	}
-
-	public void setLoadTime(long loadTime) {
-		this.loadTime = loadTime;
-	}
-
-	public void setShowFront(boolean showFront) {
-		this.showFront = showFront;
-	}
-
-	public void setExternal(boolean external) {
-		this.external = external;
-	}
-
-	public int getDegrade() {
-		return degrade;
-	}
-
-	public void setDegrade(int degrade) {
-		this.degrade = degrade;
-	}
-
-	public int getMonitorEnable() {
-		return monitorEnable;
-	}
-
-	public int getSlotSize() {
-		return slotSize;
-	}
-
-	public void setSlotSize(int slotSize) {
-		this.slotSize = slotSize;
-	}
-
-	public void setMonitorEnable(int monitorEnable) {
-		this.monitorEnable = monitorEnable;
-	}
-
-	public int getAvgResponseTime() {
-		return avgResponseTime;
-	}
-
-	public void setAvgResponseTime(int avgResponseTime) {
-		this.avgResponseTime = avgResponseTime;
-	}
-
-	public int getDebugMode() {
-		return debugMode;
-	}
-
-	public void setDebugMode(int debugMode) {
-		this.debugMode = debugMode;
-	}
-
-	public byte getLogLevel() {
-		return logLevel;
-	}
-
-	public void setLogLevel(byte logLevel) {
-		this.logLevel = logLevel;
-	}
-
 	public void addMethod(ServiceMethod sm){
 		methods.add(sm);
 	}
 	
-	public Set<ServiceMethod> getMethods(){
-		return methods;
-	}
 	
 	//服务标识，服务名，名称空间，版本，3元组坐标
 	public String serviceKey() {
@@ -527,7 +410,7 @@ public final class ServiceItem implements Comparable<ServiceItem>{
 
 	@Override
 	public int hashCode() {
-		return this.path("").hashCode();
+		return this.key.hashCode();
 	}
 
 	@Override
@@ -535,108 +418,7 @@ public final class ServiceItem implements Comparable<ServiceItem>{
 		if(obj == null || !(obj instanceof ServiceItem)) {
 			return false;
 		}
-		return this.path("").equals(((ServiceItem)obj).path(""));
-	}
-
-	public int getMaxSpeed() {
-		return maxSpeed;
-	}
-
-	public void setMaxSpeed(int maxSpeed) {
-		this.maxSpeed = maxSpeed;
-	}
-
-	public int getRetryCnt() {
-		return retryCnt;
-	}
-
-	public void setRetryCnt(int retryCnt) {
-		this.retryCnt = retryCnt;
-	}
-
-	public int getRetryInterval() {
-		return retryInterval;
-	}
-
-	public void setRetryInterval(int retryInterval) {
-		this.retryInterval = retryInterval;
-	}
-
-	public int getTimeout() {
-		return timeout;
-	}
-
-	public void setTimeout(int timeout) {
-		this.timeout = timeout;
-	}
-
-	public void setMethods(Set<ServiceMethod> methods) {
-		this.methods = methods;
-	}
-
-	public UniqueServiceKey getKey() {
-		return key;
-	}
-
-	public void setKey(UniqueServiceKey key) {
-		this.key = key;
-	}
-
-	public String getBaseTimeUnit() {
-		return baseTimeUnit;
-	}
-
-	public void setBaseTimeUnit(String baseTimeUnit) {
-		this.baseTimeUnit = baseTimeUnit;
-		this.setTimeUnit(TimeUtils.getTimeUnit(baseTimeUnit));
-	}
-
-	public TimeUnit getTimeUnit() {
-		return timeUnit;
-	}
-
-	public void setTimeUnit(TimeUnit timeUnit) {
-		this.timeUnit = timeUnit;
-	}
-
-	public long getCheckInterval() {
-		return checkInterval;
-	}
-
-	public void setCheckInterval(long checkInterval) {
-		this.checkInterval = checkInterval;
-	}
-
-	public int getCode() {
-		return code;
-	}
-
-	public void setCode(int code) {
-		this.code = code;
-	}
-
-	public int getClientId() {
-		return clientId;
-	}
-
-	public void setClientId(int clientId) {
-		this.clientId = clientId;
-	}
-	
-	public int getInsId() {
-		return insId;
-	}
-
-	public void setInsId(int insId) {
-		this.insId = insId;
-	}
-
-	public int getCreatedBy() {
-		return createdBy;
-	}
-
-	public void setCreatedBy(int createdBy) {
-		this.createdBy = createdBy;
+		return this.key.equals(obj);
 	}
 
 	public Set<String> getLimit2Packages() {

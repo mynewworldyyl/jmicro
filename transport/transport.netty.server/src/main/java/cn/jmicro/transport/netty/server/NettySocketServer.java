@@ -27,8 +27,8 @@ import org.slf4j.LoggerFactory;
 import cn.jmicro.api.annotation.Cfg;
 import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Inject;
-import cn.jmicro.api.annotation.JMethod;
 import cn.jmicro.api.annotation.Server;
+import cn.jmicro.api.choreography.ProcessInfo;
 import cn.jmicro.api.config.Config;
 import cn.jmicro.api.executor.ExecutorConfig;
 import cn.jmicro.api.executor.ExecutorFactory;
@@ -45,8 +45,6 @@ import io.netty.channel.ChannelOption;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
-import io.netty.handler.logging.LogLevel;
-import io.netty.handler.logging.LoggingHandler;
 
 /**
  * 
@@ -74,6 +72,9 @@ public class NettySocketServer implements IServer {
 	
 	@Cfg(value="/NettySocketServer/nettyPort",required=false,defGlobal=false)
 	private String port=null;
+	
+	@Inject
+	private ProcessInfo pi;
 	
 	private ExecutorService workerGroupExecutor = null;
 	
@@ -148,6 +149,7 @@ public class NettySocketServer implements IServer {
              address = (InetSocketAddress)channelFuture.channel().localAddress();
              
              port = address.getPort()+"";
+             pi.setPort(port);
              
              String m = "Running the netty socket server host["+Config.getExportSocketHost()+"],port ["+this.port+"]";
              logger.info(m);

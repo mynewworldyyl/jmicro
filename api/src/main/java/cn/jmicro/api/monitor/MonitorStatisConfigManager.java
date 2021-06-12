@@ -17,8 +17,8 @@ import cn.jmicro.api.choreography.ProcessInfo;
 import cn.jmicro.api.config.Config;
 import cn.jmicro.api.exp.Exp;
 import cn.jmicro.api.exp.ExpUtils;
-import cn.jmicro.api.mng.JmicroInstanceManager;
-import cn.jmicro.api.mng.JmicroInstanceManager.IInstanceListener;
+import cn.jmicro.api.mng.ProcessInstanceManager;
+import cn.jmicro.api.mng.ProcessInstanceManager.IInstanceListener;
 import cn.jmicro.api.raft.IDataOperator;
 import cn.jmicro.api.raft.IRaftListener;
 import cn.jmicro.api.raft.RaftNodeDataListener;
@@ -49,7 +49,7 @@ public class MonitorStatisConfigManager {
 	private ServiceManager srvMng;
 	
 	@Inject
-	private JmicroInstanceManager insManager;
+	private ProcessInstanceManager insManager;
 	
 	private boolean lazyParseConfig = true;
 	

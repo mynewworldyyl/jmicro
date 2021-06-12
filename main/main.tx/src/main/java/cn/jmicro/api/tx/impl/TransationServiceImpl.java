@@ -20,7 +20,7 @@ import cn.jmicro.api.annotation.SMethod;
 import cn.jmicro.api.annotation.Service;
 import cn.jmicro.api.choreography.ProcessInfo;
 import cn.jmicro.api.idgenerator.ComponentIdServer;
-import cn.jmicro.api.mng.JmicroInstanceManager;
+import cn.jmicro.api.mng.ProcessInstanceManager;
 import cn.jmicro.api.monitor.LG;
 import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.objectfactory.AbstractClientServiceProxyHolder;
@@ -56,7 +56,7 @@ public class TransationServiceImpl implements ITransationService{
 	private ComponentIdServer idGenerator;
 	
 	@Inject
-	private JmicroInstanceManager insMng;
+	private ProcessInstanceManager insMng;
 	
 	@Inject
 	private ProcessInfo pi;

@@ -30,7 +30,6 @@ import com.alibaba.dubbo.common.serialize.kryo.utils.ReflectUtils;
 
 import cn.jmicro.api.JMicroContext;
 import cn.jmicro.api.annotation.Cfg;
-import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Inject;
 import cn.jmicro.api.async.IPromise;
 import cn.jmicro.api.choreography.ProcessInfo;
@@ -113,7 +112,7 @@ public class ApiRawRequestMessageHandler implements IMessageHandler{
 	
 	@Override
 	public Byte type() {
-		return Constants.MSG_TYPE_REQ_RAW;
+		return -1;
 	}
 	
 	@Override
@@ -179,7 +178,7 @@ public class ApiRawRequestMessageHandler implements IMessageHandler{
 			
 			Object result = null;
 			
-			msg.setType(Constants.MSG_TYPE_RRESP_RAW);
+			msg.setType((byte)(msg.getType()+1));
 			resp.setReqId(reqId);
 			resp.setMsg(msg);
 			resp.setSuccess(true);

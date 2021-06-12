@@ -27,6 +27,7 @@ import cn.jmicro.api.annotation.Cfg;
 import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Inject;
 import cn.jmicro.api.annotation.Server;
+import cn.jmicro.api.choreography.ProcessInfo;
 import cn.jmicro.api.config.Config;
 import cn.jmicro.api.masterelection.IMasterChangeListener;
 import cn.jmicro.api.net.IServer;
@@ -62,6 +63,9 @@ public class NettyHttpServer implements IServer{
 	private static final String TAG = NettyHttpServer.class.getName();
 	
 	private  ServerBootstrap server;
+	
+	@Inject
+	private ProcessInfo pi;
 	
 	@Inject
 	private NettyHttpChannelInitializer initializer;
@@ -137,6 +141,7 @@ public class NettyHttpServer implements IServer{
             //workerGroup.shutdownGracefully();
         }
         this.port = address.getPort()+"";
+        pi.setHttpPort(port);
         
         for(IServerListener l : serverListener) {
         	l.serverStared(host(), port, Constants.TRANSPORT_NETTY_HTTP);

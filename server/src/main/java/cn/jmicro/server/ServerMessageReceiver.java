@@ -34,27 +34,25 @@ import cn.jmicro.api.Resp;
 import cn.jmicro.api.annotation.Cfg;
 import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Inject;
+import cn.jmicro.api.choreography.ProcessInfo;
 import cn.jmicro.api.codec.ICodecFactory;
 import cn.jmicro.api.config.Config;
 import cn.jmicro.api.executor.ExecutorConfig;
 import cn.jmicro.api.executor.ExecutorFactory;
-import cn.jmicro.api.gateway.ApiRequest;
 import cn.jmicro.api.idgenerator.IdRequest;
-import cn.jmicro.api.monitor.LG;
-import cn.jmicro.api.monitor.LogMonitorClient;
-import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.monitor.JMLogItem;
+import cn.jmicro.api.monitor.LG;
+import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.monitor.MT;
-import cn.jmicro.api.monitor.StatisMonitorClient;
 import cn.jmicro.api.net.DumpManager;
 import cn.jmicro.api.net.IMessageHandler;
 import cn.jmicro.api.net.IMessageReceiver;
-import cn.jmicro.api.net.IReq;
 import cn.jmicro.api.net.ISession;
 import cn.jmicro.api.net.Message;
 import cn.jmicro.api.net.RpcRequest;
 import cn.jmicro.api.net.RpcResponse;
 import cn.jmicro.api.net.ServerError;
+import cn.jmicro.api.objectfactory.IObjectFactory;
 import cn.jmicro.api.registry.ServiceMethod;
 import cn.jmicro.api.security.SecretManager;
 import cn.jmicro.api.service.ServiceManager;
@@ -86,15 +84,24 @@ public class ServerMessageReceiver implements IMessageReceiver{
 	private SecretManager secretMng;
 	
 	@Inject
+	private IObjectFactory of;
+	
+	@Inject
+	private ProcessInfo pi;
+	
+	@Inject
 	private ServiceManager srvMng;
+	
+	private IMessageHandler gatewayHandler = null;
+	
+	@Cfg(Constants.EXECUTOR_GATEWAY_KEY)
+	private boolean gatewayModel = false;
 	
 	private ExecutorService defaultExecutor = null;
 	
 	private ExecutorService gatewayExecutor = null;
 	
 	private boolean useExecutorPool = true;
-	
-	private Boolean finishInit = false;
 	
 	private volatile Map<Byte,IMessageHandler> handlers = new ConcurrentHashMap<>();
 	
@@ -129,6 +136,13 @@ public class ServerMessageReceiver implements IMessageReceiver{
 		sl.registService(si,ds);
 		*/
 		
+		if(gatewayModel) {
+			this.gatewayHandler = of.getByName("apiGatewayHandler");
+			if(null == this.gatewayHandler) {
+				throw new CommonException("apiGatewayHandler handle not found maybe apigateway jar not in classpath!");
+			}
+		}
+		
 		ExecutorConfig config = new ExecutorConfig();
 		config.setMsCoreSize(1);
 		config.setMsMaxSize(10);
@@ -152,6 +166,7 @@ public class ServerMessageReceiver implements IMessageReceiver{
 			return;
 		}
 		handlers.put(handler.type(), handler);
+		pi.getTypes().add(handler.type());
 	}
 	
 	@Override
@@ -181,8 +196,7 @@ public class ServerMessageReceiver implements IMessageReceiver{
 		}
 		
 		ServiceMethod sm = null;
-		if(msg.getType() == Constants.MSG_TYPE_REQ_RAW 
-				|| msg.getType() == Constants.MSG_TYPE_REQ_JRPC) {
+		if(!msg.isOuterMessage() && msg.getType() == Constants.MSG_TYPE_REQ_JRPC) {
 			sm = srvMng.getServiceMethodByHash(msg.getSmKeyCode());
 			if(sm == null) {
 				sm = srvMng.getServiceMethodWithHashBySearch(msg.getSmKeyCode());
@@ -267,7 +281,6 @@ public class ServerMessageReceiver implements IMessageReceiver{
 			JMicroContext.get().setParam(Constants.SERVICE_METHOD_KEY, task.sm);
 		}
 		try {
-			
 			if(msg.isDebugMode()) {
 				JMicroContext.get().setParam(JMicroContext.DEBUG_LOG_BASE_TIME, task.gotTime);
 				StringBuilder sb = JMicroContext.get().getDebugLog();
@@ -290,11 +303,15 @@ public class ServerMessageReceiver implements IMessageReceiver{
 			
 			IMessageHandler h = handlers.get(msg.getType());
 			if(h == null) {
-				String errMsg = "Message type ["+Integer.toHexString(msg.getType())+"] handler not found!"+",from insId: " + msg.getInsId();
-				MT.rpcEvent(MC.MT_HANDLER_NOT_FOUND);
-				LG.log(MC.LOG_ERROR, TAG,errMsg,null);
-				responseException(msg,s,null,task.sm);
-				JMicroContext.get().submitMRpcItem();
+				if(this.gatewayModel) {
+					h = this.gatewayHandler;
+				}else {
+					String errMsg = "Message type ["+Integer.toHexString(msg.getType())+"] handler not found!"+",from insId: " + msg.getInsId();
+					MT.rpcEvent(MC.MT_HANDLER_NOT_FOUND);
+					LG.log(MC.LOG_ERROR, TAG,errMsg,null);
+					responseException(msg,s,null,task.sm);
+					JMicroContext.get().submitMRpcItem();
+				}
 			} else {
 				h.onMessage(s, msg);
 			}
@@ -458,13 +475,13 @@ public class ServerMessageReceiver implements IMessageReceiver{
         				mi.setSmKey(t.sm.getKey());
         			}
         			
-        			if(Constants.MSG_TYPE_REQ_RAW == msg.getType()) {
+        			/*if(Constants.MSG_TYPE_REQ_RAW == msg.getType()) {
             			ApiRequest re = ICodecFactory.decode(codecFactory, msg.getPayload(), ApiRequest.class,
             					msg.getUpProtocol());
             			 mi.setReq(re);
             			 mi.setReqId(re.getReqId());
             			
-            		} else if(Constants.MSG_TYPE_ID_REQ == msg.getType()) {
+            		} else */if(Constants.MSG_TYPE_ID_REQ == msg.getType()) {
             			IdRequest re = ICodecFactory.decode(codecFactory, msg.getPayload(), IdRequest.class,
             					msg.getUpProtocol());
             		} else {

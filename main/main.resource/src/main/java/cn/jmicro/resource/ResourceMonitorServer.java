@@ -38,7 +38,7 @@ import cn.jmicro.api.exp.Exp;
 import cn.jmicro.api.exp.ExpUtils;
 import cn.jmicro.api.idgenerator.ComponentIdServer;
 import cn.jmicro.api.internal.async.PromiseImpl;
-import cn.jmicro.api.mng.JmicroInstanceManager;
+import cn.jmicro.api.mng.ProcessInstanceManager;
 import cn.jmicro.api.monitor.LG;
 import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.monitor.ResourceData;
@@ -107,7 +107,7 @@ public class ResourceMonitorServer{
 	private IDataOperator op;
 	
 	@Inject
-	private JmicroInstanceManager insMng;
+	private ProcessInstanceManager insMng;
 	
 	@Inject
 	private IObjectFactory of;

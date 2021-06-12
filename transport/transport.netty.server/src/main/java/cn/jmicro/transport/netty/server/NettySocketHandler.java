@@ -11,8 +11,10 @@ import cn.jmicro.api.annotation.Inject;
 import cn.jmicro.api.codec.ICodecFactory;
 import cn.jmicro.api.idgenerator.ComponentIdServer;
 import cn.jmicro.api.net.IMessageReceiver;
+import cn.jmicro.api.objectfactory.IObjectFactory;
 import cn.jmicro.api.utils.TimeUtils;
 import cn.jmicro.common.Constants;
+import cn.jmicro.common.Utils;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandler.Sharable;
 import io.netty.channel.ChannelHandlerContext;
@@ -44,6 +46,9 @@ public class NettySocketHandler extends ChannelInboundHandlerAdapter {
 	private ICodecFactory codeFactory;
 	
 	@Inject
+	private IObjectFactory of;
+	
+	//@Inject
 	private IMessageReceiver receiver;
 	
 	@Cfg(value="/NettySocketHandler/dumpDownStream",defGlobal=false)
@@ -51,6 +56,19 @@ public class NettySocketHandler extends ChannelInboundHandlerAdapter {
 	
 	@Cfg(value="/NettySocketHandler/dumpUpStream",defGlobal=false)
 	private boolean dumpUpStream  = false;
+	
+	@Cfg(Constants.EXECUTOR_GATEWAY_KEY)
+	private boolean gatewayModel = false;
+	
+	@Cfg(Constants.EXECUTOR_RECEIVE_KEY)
+	private String receiveKey = null;
+	
+	public void ready() {
+		if(Utils.isEmpty(this.receiveKey)) {
+			this.receiveKey = "/serverReceiver";
+		}
+		receiver = of.getByName(receiveKey);
+	}
 	
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg)

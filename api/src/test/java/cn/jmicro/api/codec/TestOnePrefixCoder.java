@@ -185,7 +185,6 @@ public class TestOnePrefixCoder {
 		
 		System.out.println(arrs);
 	}
-	
 
 	@Test
 	public void testEncodeInnerArray2(){

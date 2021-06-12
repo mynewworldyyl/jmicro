@@ -1,6 +1,8 @@
 package cn.jmicro.api.choreography;
 
 import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -11,9 +13,11 @@ import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.security.ActInfo;
 import cn.jmicro.common.CommonException;
 import cn.jmicro.common.Utils;
+import lombok.Data;
 
 @SO
 @IDStrategy(1)
+@Data
 public class ProcessInfo {
 
 	private int id;
@@ -23,6 +27,10 @@ public class ProcessInfo {
 	private String actName;
 	
 	private String host;
+	
+	private String port;
+	
+	private String httpPort;
 	
 	private String osName;
 	
@@ -66,81 +74,28 @@ public class ProcessInfo {
 	
 	private byte logLevel = MC.LOG_INFO;
 	
+	private List<Byte> types = new LinkedList<>();
+	
 	protected Map<String,Set<CfgMetadata>> metadatas = new HashMap<>();
 
 	public boolean isLogin() {
 		return ai != null;
 	}
 	
-	public Set<CfgMetadata> getMetadatas(String resName) {
-		return metadatas.get(resName);
-	}
-
-	public void setMetadatas(String resName,Set<CfgMetadata> metadatas) {
-		this.metadatas.put(resName, metadatas);
-	}
-	
-	public void setMetadatas(Map<String,Set<CfgMetadata>> metadatas) {
-		this.metadatas = metadatas;
-	}
-	
-	public String getOsName() {
-		return osName;
-	}
-
-	public void setOsName(String osName) {
-		this.osName = osName;
-	}
-
-	public ActInfo getAi() {
-		return ai;
-	}
-
 	public void setAi(ActInfo ai) {
 		if(!Utils.formSystemPackagePermission(3)) {
 			 throw new CommonException(MC.MT_ACT_PERMISSION_REJECT,"非法操作");
 		}
 		this.ai = ai;
 	}
-
-	public Map<String,Set<CfgMetadata>> getMetadatas() {
-		return metadatas;
+	
+	public Set<CfgMetadata> setMetadatas(String key,Set<CfgMetadata> ms) {
+		return metadatas.put(key, ms);
 	}
+	
 
-	public int getId() {
-		return id;
-	}
-
-	public void setId(int id) {
-		this.id = id;
-	}
-
-	public boolean isHaEnable() {
-		return haEnable;
-	}
-
-	public void setHaEnable(boolean haEnable) {
-		this.haEnable = haEnable;
-	}
-
-	public boolean isMaster() {
-		return master;
-	}
-
-	public String getInfoFilePath() {
-		return infoFilePath;
-	}
-
-	public void setInfoFilePath(String infoFilePath) {
-		this.infoFilePath = infoFilePath;
-	}
-
-	public void setMaster(boolean master) {
-		this.master = master;
-	}
-
-	public String getWorkDir() {
-		return workDir;
+	public Set<CfgMetadata> getMetadatas(String key) {
+		return metadatas.get(key);
 	}
 
 	public void setWorkDir(String workDir) {
@@ -150,75 +105,11 @@ public class ProcessInfo {
 		this.workDir = workDir;
 	}
 
-	public String getDepId() {
-		return depId;
-	}
-
-	public void setDepId(String depId) {
-		this.depId = depId;
-	}
-
-	public String getAgentId() {
-		return agentId;
-	}
-
-	public void setAgentId(String agentId) {
-		this.agentId = agentId;
-	}
-
-	public String getCmd() {
-		return cmd;
-	}
-
-	public void setCmd(String cmd) {
-		this.cmd = cmd;
-	}
-
-	public String getPid() {
-		return pid;
-	}
-
-	public void setPid(String pid) {
-		this.pid = pid;
-	}
-
-	public boolean isActive() {
-		return active;
-	}
-
 	public void setActive(boolean active) {
 		if(!Utils.formSystemPackagePermission(3)) {
 			 throw new CommonException(MC.MT_ACT_PERMISSION_REJECT,"非法操作");
 		}
 		this.active = active;
-	}
-
-	public long getStartTime() {
-		return startTime;
-	}
-
-	public void setStartTime(long startTime) {
-		this.startTime = startTime;
-	}
-
-	public Process getProcess() {
-		return process;
-	}
-
-	public void setProcess(Process process) {
-		this.process = process;
-	}
-
-	public String getHost() {
-		return host;
-	}
-
-	public void setHost(String host) {
-		this.host = host;
-	}
-
-	public String getInstanceName() {
-		return instanceName;
 	}
 
 	public void setInstanceName(String instanceName) {
@@ -228,67 +119,11 @@ public class ProcessInfo {
 		this.instanceName = instanceName;
 	}
 
-	public String getAgentHost() {
-		return agentHost;
-	}
-
-	public void setAgentHost(String agentHost) {
-		this.agentHost = agentHost;
-	}
-
-	public String getAgentInstanceName() {
-		return agentInstanceName;
-	}
-
-	public void setAgentInstanceName(String agentInstanceName) {
-		this.agentInstanceName = agentInstanceName;
-	}
-
-	public String getAgentProcessId() {
-		return agentProcessId;
-	}
-
-	public void setAgentProcessId(String agentProcessId) {
-		this.agentProcessId = agentProcessId;
-	}
-
-	public long getOpTime() {
-		return opTime;
-	}
-
-	public void setOpTime(long opTime) {
-		this.opTime = opTime;
-	}
-
-	public long getTimeOut() {
-		return timeOut;
-	}
-
-	public void setTimeOut(long timeOut) {
-		this.timeOut = timeOut;
-	}
-
-	public int getClientId() {
-		return clientId;
-	}
-
 	public void setClientId(int clientId) {
 		if(!Utils.formSystemPackagePermission(3)) {
 			 throw new CommonException(MC.MT_ACT_PERMISSION_REJECT,"非法操作");
 		}
 		this.clientId = clientId;
-	}
-
-	public boolean isMonitorable() {
-		return monitorable;
-	}
-
-	public void setMonitorable(boolean monitorable) {
-		this.monitorable = monitorable;
-	}
-
-	public String getActName() {
-		return actName;
 	}
 
 	public void setActName(String actName) {
@@ -311,14 +146,6 @@ public class ProcessInfo {
 		return this.hashCode() == obj.hashCode();
 	}
 
-	public byte getLogLevel() {
-		return logLevel;
-	}
-
-	public void setLogLevel(byte logLevel) {
-		this.logLevel = logLevel;
-	}
-
 	@Override
 	public String toString() {
 		return "ProcessInfo [id=" + id + ", host=" + host + ", instanceName=" + instanceName + ", agentHost="
@@ -326,7 +153,5 @@ public class ProcessInfo {
 				+ ", agentProcessId=" + agentProcessId + ", pid=" + pid + ", cmd=" + cmd + ", workDataDir="
 				+ workDir + ", active=" + active + "]";
 	}
-
-	
 
 }

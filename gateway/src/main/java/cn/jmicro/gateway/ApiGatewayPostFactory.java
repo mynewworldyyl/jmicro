@@ -3,7 +3,9 @@ package cn.jmicro.gateway;
 import java.util.Set;
 
 import cn.jmicro.api.annotation.Component;
+import cn.jmicro.api.choreography.ProcessInfo;
 import cn.jmicro.api.config.Config;
+import cn.jmicro.api.gateway.GatewayConstant;
 import cn.jmicro.api.gateway.MessageRouteRow;
 import cn.jmicro.api.idgenerator.ComponentIdServer;
 import cn.jmicro.api.net.IServer;
@@ -12,22 +14,23 @@ import cn.jmicro.api.objectfactory.PostFactoryAdapter;
 import cn.jmicro.api.objectfactory.ProxyObject;
 import cn.jmicro.api.raft.IDataOperator;
 import cn.jmicro.common.Constants;
-import cn.jmicro.common.Utils;
 import cn.jmicro.common.util.JsonUtils;
 
 @Component
 public class ApiGatewayPostFactory extends PostFactoryAdapter {
 
+	public static String TABLE_ROOT = Config.getRaftBasePath("/apiroute");
+	
 	@Override
 	public void afterInit(IObjectFactory of) {
 		Config cfg = of.get(Config.class);
-		if(cfg.getBoolean(MessageRouteRow.API_MODEL, MessageRouteRow.API_MODEL_PRE)) return;
+		if(cfg.getBoolean(GatewayConstant.API_MODEL, GatewayConstant.API_MODEL_PRE)) return;
 		
 		IDataOperator op = of.get(IDataOperator.class);
-		String keys = cfg.getString(MessageRouteRow.MSG_ROUTE_KEYS, "");
+		/*String keys = cfg.getString(GatewayConstant.MSG_ROUTE_KEYS, "");
 		if(Utils.isEmpty(keys)) {
 			keys = Constants.MSG_TYPE_REQ_RAW+"";
-		}
+		}*/
 		
 		ComponentIdServer idGenerator = of.get(ComponentIdServer.class);
 		
@@ -44,19 +47,19 @@ public class ApiGatewayPostFactory extends PostFactoryAdapter {
 			}
 		}
 		
-		String[] ks = keys.split(",");
-		for(String k : ks) {
-			MessageRouteRow r = new MessageRouteRow();
-			r.setBackendType(MessageRouteRow.TYPE_GATEWAY);
-			r.setKey(k);
-			r.setId(idGenerator.getIntId(MessageRouteRow.class));
-			r.setIp(host);
-			r.setPort(port);
-			
-			String path = MessageRouteRow.MSG_ROUTE_KEYS + "/" + r.getId();
-			op.createNodeOrSetData(path, JsonUtils.getIns().toJson(r), true);
-			
-		}
+		ProcessInfo pi = of.get(ProcessInfo.class);
+
+		MessageRouteRow r = new MessageRouteRow();
+		r.setKey(Config.getInstanceName());
+		r.setId(idGenerator.getIntId(MessageRouteRow.class));
+		r.setIp(host);
+		r.setInsId(pi.getId());
+		r.setInsName(pi.getInstanceName());
+		r.setPort(port);
+		
+		String path = TABLE_ROOT + "/" + r.getId();
+		op.createNodeOrSetData(path, JsonUtils.getIns().toJson(r), true);
+	
 		
 	}
 

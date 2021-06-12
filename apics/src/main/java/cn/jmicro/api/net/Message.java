@@ -98,10 +98,15 @@ public final class Message {
 	//包含Extra数据
 	public static final short FLAG_EXTRA = 1 << 4;
 	
-	//需要响应的请求
-	public static final short FLAG_NEED_RESPONSE = 1 << 5;
+	//需要响应的请求  or down message is error
+	//public static final short FLAG_NEED_RESPONSE = 1 << 5;
+	
+	//来自外网消息，由网关转发到内网
+	public static final short FLAG_OUT_MESSAGE = 1 << 5;
 	
 	public static final short FLAG_LOG_LEVEL = 13;
+	
+	public static final short FLAG_RESP_TYPE = 11;
 	
 	/****************  extra constants flag   *********************/
 	
@@ -151,6 +156,12 @@ public final class Message {
 	public static final Byte EXTRA_KEY_ARRAY = 9;
 	public static final Byte EXTRA_KEY_FLAG = 10;
 	
+	public static final byte MSG_TYPE_PINGPONG = 0;//默认请求响应模式
+	
+	public static final byte MSG_TYPE_NO_RESP = 1;//单向模式
+	
+	public static final byte MSG_TYPE_MANY_RESP = 2;//多个响应模式，如消息订阅
+	
 	/****************  extra constants flag   *********************/
 	
 	//0B00111000 5---3
@@ -175,14 +186,13 @@ public final class Message {
 	 * 2        DPR:     down protocol 0: bin, 1: json 
 	 * 3        M:       Monitorable
 	 * 4        Extra    Contain extradata
-	 * 5        N:       need Response
-	 * 6    
+	 * 5        Innet    message from outer network
+	 * 6        
 	 * 7       
 	 * 8       
 	 * 9        
 	 * 10
-	 * 11
-	 * 12 
+	 * 11，12   Resp type  MSG_TYPE_PINGPONG，MSG_TYPE_NO_RESP，MSG_TYPE_MANY_RESP
 	 * 13 14 15 LLL      Log level
 	 * @return
 	 */
@@ -719,12 +729,35 @@ public final class Message {
 		extrFlag = set(f,extrFlag,FLAG_MONITORABLE);
 	}
 	
-	public boolean isNeedResponse() {
-		return is(flag,FLAG_NEED_RESPONSE);
+	public boolean isError() {
+		return is(flag,FLAG_UP_PROTOCOL);
 	}
 	
-	public void setNeedResponse(boolean f) {
-		flag = set(f,flag,FLAG_NEED_RESPONSE);
+	public void setError(boolean f) {
+		flag = set(f,flag,FLAG_UP_PROTOCOL);
+	}
+	
+	public boolean isOuterMessage() {
+		return is(flag,FLAG_OUT_MESSAGE);
+	}
+	
+	public void setOuterMessage(boolean f) {
+		flag = set(f,flag,FLAG_OUT_MESSAGE);
+	}
+	
+	public boolean isNeedResponse() {
+		int rt = getRespType();
+		return rt != MSG_TYPE_NO_RESP;
+	}
+	
+	public boolean isPubsubMessage() {
+		int rt = getRespType();
+		return rt == MSG_TYPE_MANY_RESP;
+	}
+	
+	public boolean isPingPong() {
+		int rt = getRespType();
+		return rt != MSG_TYPE_PINGPONG;
 	}
 	
 	/**
@@ -758,7 +791,18 @@ public final class Message {
 		if(v < 0 || v > 6) {
 			 new CommonException("Invalid Log level: "+v);
 		}
-		this.extrFlag = (v << FLAG_LOG_LEVEL) | this.extrFlag;
+		this.flag = (short)((v << FLAG_LOG_LEVEL) | this.flag);
+	}
+	
+	public byte getRespType() {
+		return (byte)((flag >>> FLAG_RESP_TYPE) & 0x03);
+	}
+	
+	public void setRespType(int v) {
+		if(v < 0 || v > 3) {
+			 new CommonException("Invalid message response type: "+v);
+		}
+		this.flag = (short)((v << FLAG_RESP_TYPE)|this.flag);
 	}
 	
 	public byte getUpProtocol() {

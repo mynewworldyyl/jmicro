@@ -18,9 +18,9 @@ import cn.jmicro.api.raft.RaftNodeDataListener;
 import cn.jmicro.common.Utils;
 
 @Component(limit2Packages={"cn.jmicro"},level=20)
-public class JmicroInstanceManager {
+public class ProcessInstanceManager {
 
-	private final static Logger logger = LoggerFactory.getLogger(JmicroInstanceManager.class);
+	private final static Logger logger = LoggerFactory.getLogger(ProcessInstanceManager.class);
 	
 	private RaftNodeDataListener<ProcessInfo> instanceListener = null;
 	

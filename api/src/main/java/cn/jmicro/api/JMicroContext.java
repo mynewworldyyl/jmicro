@@ -267,7 +267,7 @@ public class JMicroContext  {
 		boolean iMonitorable = false;
 		boolean isDebug = false;
 		
-		if(msg.getType() == Constants.MSG_TYPE_REQ_RAW) {
+		if(sm != null) {
 			iMonitorable = sm.getMonitorEnable() == 1;
 			isDebug = sm.getDebugMode() == 1;
 			logLevel = sm.getLogLevel();

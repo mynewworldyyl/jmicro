@@ -9,7 +9,7 @@ import java.util.Set;
 
 import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Inject;
-import cn.jmicro.api.mng.JmicroInstanceManager;
+import cn.jmicro.api.mng.ProcessInstanceManager;
 import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.service.ServiceManager;
 
@@ -22,7 +22,7 @@ public class DictManager {
 	private ServiceManager sm;
 	
 	@Inject
-	private JmicroInstanceManager insManager;
+	private ProcessInstanceManager insManager;
 	
 	public void ready() {
 		this.mergeDict("logKey2Val", MC.LogKey2Val);

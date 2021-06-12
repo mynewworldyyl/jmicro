@@ -56,7 +56,7 @@ import io.netty.util.AttributeKey;
  * @author Yulei Ye
  * @date 2018年10月4日-下午12:13:45
  */
-@Component(value="nettyClientSessionManager",lazy=false,side=Constants.SIDE_COMSUMER)
+@Component(value="nettyClientSessionManager",lazy=false)
 public class NettyClientSessionManager implements IClientSessionManager{
 
 	static final Logger logger = LoggerFactory.getLogger(NettyClientSessionManager.class);
@@ -87,7 +87,7 @@ public class NettyClientSessionManager implements IClientSessionManager{
 	@Inject
 	private ComponentIdServer idGenerator;
 	
-	@Inject(required=true)
+	@Inject(value="clientMessageReceiver",required=true)
 	private IMessageReceiver receiver;
 	
 	@Cfg(value="/NettyClientSessionManager/dumpDownStream",defGlobal=false)

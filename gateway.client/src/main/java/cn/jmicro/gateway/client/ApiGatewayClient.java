@@ -302,7 +302,7 @@ public class ApiGatewayClient {
 		//msg.setStream(false);
 		msg.setDumpDownStream(false);
 		msg.setDumpUpStream(false);
-		msg.setNeedResponse(true);
+		msg.setRespType(Message.MSG_TYPE_PINGPONG);;
 		//msg.setLogLevel(MC.LOG_NO);
 		msg.setMonitorable(false);
 		msg.setDebugMode(false);
@@ -376,6 +376,14 @@ public class ApiGatewayClient {
 		String json = null;
 		try {
 			json = new String(bb.array(),Constants.CHARSET);
+			
+			if(respMsg.isNeedResponse()) {
+				ServerError se = JsonUtils.getIns().fromJson(json, ServerError.class);
+				p.setFail(se.getErrorCode(),se.getMsg());
+				p.done();
+				return null;
+			}
+			
 			if(respMsg.getType() == Constants.MSG_TYPE_ASYNC_RESP) {
 				R psData = JsonUtils.getIns().fromJson(json, resultType);
 				return psData;
@@ -435,7 +443,7 @@ public class ApiGatewayClient {
 		}
 		
 		Message msg = new Message();
-		msg.setType(Constants.MSG_TYPE_REQ_RAW);
+		msg.setType(Constants.MSG_TYPE_REQ_JRPC);
 		
 		/*msg.setUpProtocol(Message.PROTOCOL_JSON);
 		msg.setDownProtocol(Message.PROTOCOL_JSON);*/
@@ -445,7 +453,7 @@ public class ApiGatewayClient {
 		
 		//msg.setId(req.getReqId()/*idClient.getLongId(Message.class.getName())*/);
 		msg.setMsgId(req.getReqId());
-		msg.setLinkId(req.getReqId()/*idClient.getLongId(Linker.class.getName())*/);
+		//msg.setLinkId(req.getReqId()/*idClient.getLongId(Linker.class.getName())*/);
 		msg.setRpcMk(true);
 		
 		String mn = generatorSrvMethodName(method);
@@ -464,7 +472,8 @@ public class ApiGatewayClient {
 		//msg.setStream(false);
 		msg.setDumpDownStream(false);
 		msg.setDumpUpStream(false);
-		msg.setNeedResponse(true);
+		msg.setRespType(Message.MSG_TYPE_PINGPONG);
+		msg.setOuterMessage(true);
 		//msg.setLogLevel(MC.LOG_NO);
 		msg.setMonitorable(false);
 		msg.setDebugMode(false);

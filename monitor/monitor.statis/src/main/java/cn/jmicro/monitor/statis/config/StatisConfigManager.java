@@ -25,8 +25,8 @@ import cn.jmicro.api.choreography.ProcessInfo;
 import cn.jmicro.api.config.Config;
 import cn.jmicro.api.exp.Exp;
 import cn.jmicro.api.exp.ExpUtils;
-import cn.jmicro.api.mng.JmicroInstanceManager;
-import cn.jmicro.api.mng.JmicroInstanceManager.IInstanceListener;
+import cn.jmicro.api.mng.ProcessInstanceManager;
+import cn.jmicro.api.mng.ProcessInstanceManager.IInstanceListener;
 import cn.jmicro.api.monitor.LG;
 import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.monitor.StatisConfig;
@@ -69,7 +69,7 @@ public class StatisConfigManager {
 	private ServiceManager srvMng;
 	
 	@Inject
-	private JmicroInstanceManager insManager;
+	private ProcessInstanceManager insManager;
 	
 	private Map<Integer,StatisConfig> configs = new HashMap<>();
 	

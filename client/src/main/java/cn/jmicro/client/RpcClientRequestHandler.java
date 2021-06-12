@@ -380,7 +380,7 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
 			//是否记录二进制流数据到日志文件
 			msg.setDumpDownStream(sm.isDumpDownStream());
 			msg.setDumpUpStream(sm.isDumpUpStream());
-    		msg.setNeedResponse(sm.isNeedResponse());
+    		msg.setRespType(Message.MSG_TYPE_PINGPONG);
     		
     		//废弃此字段
     		//msg.setLoggable(SF.isLoggable(sm.getLogLevel()));

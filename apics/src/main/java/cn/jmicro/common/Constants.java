@@ -122,6 +122,9 @@ public interface Constants {
 	
 	public static final String EXECUTOR_POOL="executorPool";
 	
+	public static final String EXECUTOR_GATEWAY_KEY = "/gatewayModel";
+	public static final String EXECUTOR_RECEIVE_KEY = "/serverReceiver";
+	
 	public static final String DEFAULT_PUBSUB="org.jmicro.pubsub.PubSubServer";
 	
 	public static final String DEFAULT_CODEC_FACTORY = "defaultCodecFactory";
@@ -216,8 +219,8 @@ public interface Constants {
 	public static final byte MSG_TYPE_REQ_JRPC = 0x01; //普通RPC调用请求，发送端发IRequest，返回端返回IResponse
 	public static final byte MSG_TYPE_RRESP_JRPC = 0x02;//返回端返回IResponse
 	
-	public static final byte MSG_TYPE_REQ_RAW = 0x03; //Api网关请求
-	public static final byte MSG_TYPE_RRESP_RAW = 0x04;//Api网关响应
+	public static final byte MSG_TYPE_REQ_RAW = -2; //Api网关请求
+	public static final byte MSG_TYPE_RRESP_RAW = -1;//Api网关响应
 	
 	public static final byte MSG_TYPE_ASYNC_REQ = 0x05; //异步请求，不需要等待响应返回
 	public static final byte MSG_TYPE_ASYNC_RESP = 0x06; //异步响应，通过回调用返回

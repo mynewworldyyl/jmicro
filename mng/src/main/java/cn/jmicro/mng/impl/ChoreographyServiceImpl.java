@@ -31,7 +31,7 @@ import cn.jmicro.api.mng.ConfigNode;
 import cn.jmicro.api.mng.IChoreographyService;
 import cn.jmicro.api.mng.ICommonManager;
 import cn.jmicro.api.mng.IConfigManager;
-import cn.jmicro.api.mng.JmicroInstanceManager;
+import cn.jmicro.api.mng.ProcessInstanceManager;
 import cn.jmicro.api.monitor.LG;
 import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.raft.IDataOperator;
@@ -64,7 +64,7 @@ public class ChoreographyServiceImpl implements IChoreographyService {
 	private IConfigManager configManager;
 	
 	@Inject
-	private JmicroInstanceManager insManager;
+	private ProcessInstanceManager insManager;
 	
 	@Inject
 	private ICommonManager commonManager;

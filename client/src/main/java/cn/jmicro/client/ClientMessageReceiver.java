@@ -27,20 +27,23 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import cn.jmicro.api.JMicroContext;
+import cn.jmicro.api.annotation.Cfg;
 import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Inject;
 import cn.jmicro.api.executor.ExecutorConfig;
 import cn.jmicro.api.executor.ExecutorFactory;
 import cn.jmicro.api.executor.NamedThreadFactory;
+import cn.jmicro.api.monitor.LG;
 import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.monitor.MT;
-import cn.jmicro.api.monitor.LG;
 import cn.jmicro.api.net.IMessageHandler;
 import cn.jmicro.api.net.IMessageReceiver;
 import cn.jmicro.api.net.ISession;
 import cn.jmicro.api.net.Message;
+import cn.jmicro.api.objectfactory.IObjectFactory;
 import cn.jmicro.api.security.SecretManager;
 import cn.jmicro.api.utils.TimeUtils;
+import cn.jmicro.common.CommonException;
 import cn.jmicro.common.Constants;
 import cn.jmicro.common.util.StringUtils;
 
@@ -48,10 +51,10 @@ import cn.jmicro.common.util.StringUtils;
  * @author Yulei Ye
  * @date 2018年10月10日-下午12:56:02
  */
-@Component(active=true,side=Constants.SIDE_COMSUMER,level=9)
+@Component(value="clientMessageReceiver",active=true,side=Constants.SIDE_COMSUMER,level=9)
 public class ClientMessageReceiver implements IMessageReceiver{
 
-	static final Logger logger = LoggerFactory.getLogger(ClientMessageReceiver.class);
+	private static final Logger logger = LoggerFactory.getLogger(ClientMessageReceiver.class);
 	
 	private Map<Byte,IMessageHandler> handlers = new HashMap<>();
 	
@@ -61,7 +64,15 @@ public class ClientMessageReceiver implements IMessageReceiver{
 	private ExecutorFactory ef;
 	
 	@Inject
+	private IObjectFactory of;
+	
+	@Inject
 	private SecretManager secretMng;
+	
+	private IMessageHandler gatewayMessageHandler;
+	
+	@Cfg(Constants.EXECUTOR_GATEWAY_KEY)
+	private boolean gatewayModel = false;
 	
 	public ClientMessageReceiver() {}
 	
@@ -91,6 +102,13 @@ public class ClientMessageReceiver implements IMessageReceiver{
 	}
 	
 	public void ready(){
+		if(this.gatewayModel) {
+			gatewayMessageHandler = of.getByName("linkMessageHandler");
+			if(gatewayMessageHandler == null) {
+				String msg = "gatewayMessageHandler gateway message handler not found!";
+				throw new CommonException(msg);
+			}
+		}
 		ExecutorConfig config = new ExecutorConfig();
 		config.setMsCoreSize(5);
 		config.setMsMaxSize(20);
@@ -130,14 +148,27 @@ public class ClientMessageReceiver implements IMessageReceiver{
 					}
 				});
 			} else {
-				String errMsg = "Handler not found:" + Integer.toHexString(msg.getType())+",from insId: " + msg.getInsId();
-				logger.error(errMsg);
-				if(msg.isLoggable()) {
-					LG.log(MC.LOG_ERROR, ClientMessageReceiver.class,errMsg);
+				if(this.gatewayModel) {
+					//确保网关模式全部消息转发到网关处理
+					handlers.put(msg.getType(), this.gatewayMessageHandler);
+					defaultExecutor.execute(()->{
+						try {
+							gatewayMessageHandler.onMessage(session,msg);
+						}finally {
+							JMicroContext.clear();
+						}
+					});
+				}else {
+					String errMsg = "Handler not found:" + Integer.toHexString(msg.getType())+",from insId: " + msg.getInsId();
+					logger.error(errMsg);
+					if(msg.isLoggable()) {
+						LG.log(MC.LOG_ERROR, ClientMessageReceiver.class,errMsg);
+					}
+					if(msg.isMonitorable()) {
+						MT.rpcEvent(MC.MT_HANDLER_NOT_FOUND, 1);
+					}
 				}
-				if(msg.isMonitorable()) {
-					MT.rpcEvent(MC.MT_HANDLER_NOT_FOUND, 1);
-				}
+				
 			}
 		} catch (Throwable e) {
 			logger.error("reqHandler error: {}",msg,e);
@@ -155,7 +186,13 @@ public class ClientMessageReceiver implements IMessageReceiver{
 		if(this.handlers.containsKey(handler.type())){
 			return;
 		}
-		this.handlers.put(handler.type(), handler);
+		if(gatewayModel) {
+			//客户端网关模式全啊由网关处理
+			this.handlers.put(handler.type(), this.gatewayMessageHandler);
+		}else {
+			this.handlers.put(handler.type(), handler);
+		}
+		
 	}
 	
 }
