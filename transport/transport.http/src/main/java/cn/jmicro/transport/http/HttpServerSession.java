@@ -26,6 +26,7 @@ import com.sun.net.httpserver.Headers;
 import com.sun.net.httpserver.HttpExchange;
 
 import cn.jmicro.api.net.AbstractSession;
+import cn.jmicro.api.net.ISession;
 import cn.jmicro.api.net.Message;
 import cn.jmicro.common.Constants;
 import cn.jmicro.common.util.JsonUtils;
@@ -42,7 +43,7 @@ public class HttpServerSession extends AbstractSession implements IServerSession
 	protected HttpExchange exchange;
 	
 	public HttpServerSession(HttpExchange exchange,int readBufferSize,int hearbeatInterval) {
-		super(readBufferSize,hearbeatInterval);
+		super(readBufferSize,hearbeatInterval,ISession.CON_HTTP);
 		this.exchange = exchange;
 	}
 	

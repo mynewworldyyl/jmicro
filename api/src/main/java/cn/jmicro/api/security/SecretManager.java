@@ -85,6 +85,8 @@ public class SecretManager {
 	public void checkAndDecrypt(Message msg) {
 
 		try {
+			
+			this.updateSecret(msg);
 
 			boolean isUp = msg.getType() % 2 == 1;
 			
@@ -106,7 +108,7 @@ public class SecretManager {
 				//对称解密
 				SecKey k = null;
 
-				if(msg.getType() == Constants.MSG_TYPE_REQ_RAW) {
+				if(msg.isOuterMessage()/*msg.getType() == Constants.MSG_TYPE_REQ_RAW*/) {
 					k = gatewayClientAesKey.get(msg.getInsId());
 				} else {
 					k = insId2AesKey.get(msg.getInsId());
@@ -155,7 +157,7 @@ public class SecretManager {
 			
 			// 对于上行包，如果下行是安全的，则说明客户端有私钥，所以需要做签名
 			// API网关上行包统一不加签，所以也无需验签
-			if (msg.isSign() && msg.getType() != Constants.MSG_TYPE_REQ_RAW) {
+			if (msg.isSign() && !msg.isOuterMessage()) {
 				ByteBuffer bb = (ByteBuffer) msg.getPayload();
 				RSAPublicKey pubKey = getPublicKey(msg.getInsId());
 				if (!EncryptUtils.doCheck(bb.array(), 0, bb.limit(), msg.getSignData(), pubKey)) {
@@ -207,7 +209,7 @@ public class SecretManager {
 		}
 		
 		SecKey ek = null;
-		if(msg.getType() != Constants.MSG_TYPE_REQ_RAW) {
+		if(!msg.isOuterMessage()/*msg.getType() != Constants.MSG_TYPE_REQ_RAW*/) {
 			ek = insId2AesKey.get(msg.getInsId());
 		} else {
 			ek = gatewayClientAesKey.get(msg.getInsId());//保存前一个密钥，确保延时数据包可以正常解密
@@ -244,7 +246,7 @@ public class SecretManager {
 		SecKey k = null;
 		SecretKey originalKey = new SecretKeySpec(secrect, 0, secrect.length, EncryptUtils.KEY_AES);
 		String insName = null;
-		if(msg.getType() != Constants.MSG_TYPE_REQ_RAW) {
+		if(!msg.isOuterMessage()/*msg.getType() != Constants.MSG_TYPE_REQ_RAW*/) {
 			insName = this.getInstanceName(msg.getInsId());
 			if (Utils.isEmpty(insName)) {
 				throw new CommonException("Instane name not found: " + msg.getInsId());
@@ -302,7 +304,7 @@ public class SecretManager {
 		if (!msg.isRsaEnc() && (msg.isUpSsl() || msg.isDownSsl())) {
 			//对称加密
 			SecKey sec = null;
-			if(msg.getType() == Constants.MSG_TYPE_RRESP_RAW) {
+			if(msg.isOuterMessage()/*msg.getType() == Constants.MSG_TYPE_RRESP_RAW*/) {
 				sec = gatewayClientAesKey.get(insId);
 			} else {
 				sec = insId2AesKey.get(insId);
@@ -312,7 +314,7 @@ public class SecretManager {
 				//9分钟更新一次密钥
 				SecKey preKey = sec;
 				SecretKey sk = EncryptUtils.generatorSecretKey(EncryptUtils.KEY_AES);
-				if(msg.getType() == Constants.MSG_TYPE_RRESP_RAW) {
+				if(msg.isOuterMessage()/*msg.getType() == Constants.MSG_TYPE_RRESP_RAW*/) {
 					sec = new SecKey("", insId, sk,preKey == null?false:!preKey.secretVersion);
 					gatewayClientAesKey.put(insId, sec);
 				} else {
@@ -627,9 +629,9 @@ public class SecretManager {
 
 	}
 
-	public void resetLocalSecret(short msgType,int insId) {
+	public void resetLocalSecret(boolean isouter,int insId) {
 		SecKey sec = null;
-		if(msgType == Constants.MSG_TYPE_RRESP_RAW) {
+		if(isouter/*msgType == Constants.MSG_TYPE_RRESP_RAW*/) {
 			sec = gatewayClientAesKey.get(insId);
 		} else {
 			sec = insId2AesKey.get(insId);

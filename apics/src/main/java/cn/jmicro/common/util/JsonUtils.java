@@ -74,6 +74,12 @@ public class JsonUtils {
 		return m;
 	}
 	
+	public Map<String,Object> getStringKeyMap(String json) {
+		Type type = new TypeToken<HashMap<String,Object>>(){}.getType();
+		Map<String,Object> m = this.fromJson(json, type);
+		return m;
+	}
+	
 	public List<String> getStringValueList(String json,boolean innerJson) {
 		Type type = new TypeToken<List<String>>(){}.getType();
 		List<String> m = this.fromJson(json, type);

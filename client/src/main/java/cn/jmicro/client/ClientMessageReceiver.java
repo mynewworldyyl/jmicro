@@ -102,13 +102,7 @@ public class ClientMessageReceiver implements IMessageReceiver{
 	}
 	
 	public void ready(){
-		if(this.gatewayModel) {
-			gatewayMessageHandler = of.getByName("linkMessageHandler");
-			if(gatewayMessageHandler == null) {
-				String msg = "gatewayMessageHandler gateway message handler not found!";
-				throw new CommonException(msg);
-			}
-		}
+		setGatewayMessageHandler();
 		ExecutorConfig config = new ExecutorConfig();
 		config.setMsCoreSize(5);
 		config.setMsMaxSize(20);
@@ -121,6 +115,16 @@ public class ClientMessageReceiver implements IMessageReceiver{
 			}
 		});
 		defaultExecutor = ef.createExecutor(config);
+	}
+
+	private void setGatewayMessageHandler() {
+		if(this.gatewayModel && gatewayMessageHandler==null) {
+			gatewayMessageHandler = of.getByName("linkMessageHandler");
+			if(gatewayMessageHandler == null) {
+				String msg = "gatewayMessageHandler gateway message handler not found!";
+				throw new CommonException(msg);
+			}
+		}
 	}
 
 	@Override
@@ -138,27 +142,37 @@ public class ClientMessageReceiver implements IMessageReceiver{
 				this.secretMng.checkAndDecrypt(msg);
 			}
 			
-			IMessageHandler h = handlers.get(msg.getType());
-			if(h != null){
+			if(this.gatewayModel) {
+				//确保网关模式全部消息转发到网关处理
+				//handlers.put(msg.getType(), this.gatewayMessageHandler);
 				defaultExecutor.execute(()->{
 					try {
-						h.onMessage(session,msg);
+						if(!gatewayMessageHandler.onMessage(session,msg)) {
+							IMessageHandler h = handlers.get(msg.getType());
+							if(h != null){
+								h.onMessage(session,msg);
+							} else {
+								String msgErr = "Client link not found for:" + msg.toString();
+								logger.error(msgErr);
+								LG.log(MC.LOG_ERROR, ClientMessageReceiver.class,msgErr);
+								return;
+							}
+						}
 					}finally {
 						JMicroContext.clear();
 					}
 				});
 			} else {
-				if(this.gatewayModel) {
-					//确保网关模式全部消息转发到网关处理
-					handlers.put(msg.getType(), this.gatewayMessageHandler);
+				IMessageHandler h = handlers.get(msg.getType());
+				if(h != null){
 					defaultExecutor.execute(()->{
 						try {
-							gatewayMessageHandler.onMessage(session,msg);
+							h.onMessage(session,msg);
 						}finally {
 							JMicroContext.clear();
 						}
 					});
-				}else {
+				} else {
 					String errMsg = "Handler not found:" + Integer.toHexString(msg.getType())+",from insId: " + msg.getInsId();
 					logger.error(errMsg);
 					if(msg.isLoggable()) {
@@ -168,7 +182,6 @@ public class ClientMessageReceiver implements IMessageReceiver{
 						MT.rpcEvent(MC.MT_HANDLER_NOT_FOUND, 1);
 					}
 				}
-				
 			}
 		} catch (Throwable e) {
 			logger.error("reqHandler error: {}",msg,e);
@@ -183,15 +196,22 @@ public class ClientMessageReceiver implements IMessageReceiver{
 	}
 
 	public void registHandler(IMessageHandler handler){
+		if(handler.type() == -1) return;//网关处理器不用注册
+		
 		if(this.handlers.containsKey(handler.type())){
 			return;
 		}
-		if(gatewayModel) {
+		
+		setGatewayMessageHandler();
+		this.handlers.put(handler.type(), handler);
+		
+		/*if(gatewayModel) {
+			
 			//客户端网关模式全啊由网关处理
 			this.handlers.put(handler.type(), this.gatewayMessageHandler);
 		}else {
-			this.handlers.put(handler.type(), handler);
-		}
+			
+		}*/
 		
 	}
 	

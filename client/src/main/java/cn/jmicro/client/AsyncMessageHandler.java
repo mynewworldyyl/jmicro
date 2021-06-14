@@ -55,9 +55,10 @@ public class AsyncMessageHandler implements IMessageHandler{
 	}
 
 	@Override
-	public void onMessage(ISession session,Message msg) {
+	public boolean onMessage(ISession session,Message msg) {
 		//new Fiber<Void>(() ->handleResponse((IClientSession)session,msg)).start();
 		handleResponse((IClientSession)session,msg);
+		return true;
 	}
 	
 	@SuppressWarnings({ "rawtypes", "unchecked" })

@@ -31,11 +31,13 @@ public class NettyClientSession  extends AbstractNettySession implements IClient
 
 	static final Logger LOG = LoggerFactory.getLogger(NettyClientSession.class);
 	
-	public NettyClientSession(ChannelHandlerContext ctx,int readBufferSize,int heardbeatInterval,boolean isWebSocket) {
-		super(ctx,readBufferSize,heardbeatInterval, isWebSocket);
+	public NettyClientSession(ChannelHandlerContext ctx,int readBufferSize,int heardbeatInterval,int connType) {
+		super(ctx,readBufferSize,heardbeatInterval, connType);
 	}
 	
 	public boolean isServer() {
 		return false;
 	}
+	
+	
 }

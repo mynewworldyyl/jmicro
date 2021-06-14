@@ -51,7 +51,7 @@ public class IdRequestMessageHandler implements IMessageHandler{
 	}
 
 	@Override
-	public void onMessage(ISession session, Message msg) {
+	public boolean onMessage(ISession session, Message msg) {
 		
 		IdRequest req = ICodecFactory.decode(codecFactory, msg.getPayload(), 
 				IdRequest.class, msg.getUpProtocol());
@@ -84,6 +84,7 @@ public class IdRequestMessageHandler implements IMessageHandler{
 		msg.setType((byte)(msg.getType()+1));
 		msg.setPayload(ICodecFactory.encode(codecFactory, result, msg.getUpProtocol()));
 		session.write(msg);
+		return true;
 	}
 
 }

@@ -76,7 +76,7 @@ public final class ServiceItem implements Comparable<ServiceItem>{
 	
 	//private String instanceName="";
 	
-	private int code = 0;
+	//private int code = 0;
 	
 	//开启debug模式
 	private int debugMode = 0;
@@ -196,7 +196,7 @@ public final class ServiceItem implements Comparable<ServiceItem>{
 		this.handler = p.handler;
 		this.slotSize = p.slotSize;
 		this.clientId = p.clientId;
-		this.code = p.getCode();
+		//this.code = p.getCode();
 		this.debugMode = p.getDebugMode();
 		this.servers.clear();
 		this.servers.addAll(p.getServers());

@@ -71,8 +71,8 @@ public class Resp<T> {
 	}
 	@Override
 	public String toString() {
-		return "Resp [msg=" + msg + ", code=" + code + ", key=" + key + ", total=" + total + ", pageSize=" + pageSize
-				+ ", curPage=" + curPage + "]";
+		return "Resp [msg=" + msg + ", code=" + code + ", data=" + data + ", key=" + key + ", total=" + total
+				+ ", pageSize=" + pageSize + ", curPage=" + curPage + "]";
 	}
 	
 }

@@ -760,7 +760,7 @@ public class ServiceManager {
 			return false;
 		}
 		
-		logger.info("Service added, Code: " + si.getCode() + ", Service: " + si.getKey().toSnv());
+		logger.info("Service added, Code: " + hash + ", Service: " + si.getKey().toSnv());
 		
 		ReentrantReadWriteLock.WriteLock l = rwLocker.writeLock();
 		try {

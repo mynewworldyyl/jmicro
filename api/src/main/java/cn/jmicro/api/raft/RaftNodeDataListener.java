@@ -154,8 +154,7 @@ public class RaftNodeDataListener<NodeType> {
 						}
 					}
 				}
-			} else if(op.exist(this.dir)) {
-				rl.add(lis);
+			}else if(op.exist(this.dir)) {
 				Set<String> children = this.op.getChildren(this.dir, false);
 				if(children != null && !children.isEmpty()) {
 					for(String ke : children) {
@@ -168,6 +167,8 @@ public class RaftNodeDataListener<NodeType> {
 					}
 				}
 			}
+			
+			rl.add(lis);
 		}
 	}
 	

@@ -38,6 +38,12 @@ public final class ServerError {
 	
 	public static final int SE_PACKET_TOO_MAX = 0x00000008;
 	
+	public static final int SE_INVALID_TOPIC = 0x00000009;
+	
+	public static final int SE_INVALID_OP_CODE = 0x0000000A;
+	
+	public static final int SE_INVALID_SUB_ID = 0x0000000B;
+	
 	private int errorCode;
 	private String msg;
 	

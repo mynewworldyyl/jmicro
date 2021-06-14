@@ -18,6 +18,7 @@ package cn.jmicro.server;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.lang.reflect.Type;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -38,8 +39,10 @@ import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.net.AbstractHandler;
 import cn.jmicro.api.net.IRequest;
 import cn.jmicro.api.net.IRequestHandler;
+import cn.jmicro.api.net.Message;
 import cn.jmicro.common.CommonException;
 import cn.jmicro.common.Constants;
+import cn.jmicro.common.util.JsonUtils;
 
 /**
  * 
@@ -72,7 +75,11 @@ public class RpcRequestHandler extends AbstractHandler implements IRequestHandle
 				logger.debug(request.getImpl());
 			}*/
 			
-			Object result = m.invoke(obj, request.getArgs());
+			Object[] args = request.getArgs();
+			if(request.getProtocol() == Message.PROTOCOL_JSON) {
+				args = getArgs(m.getGenericParameterTypes(),args);
+			}
+			Object result = m.invoke(obj, args);
 			if(!f) {
 				//正常的非public方法调用不到跑到这里，所以可以直接设置即可
 				m.setAccessible(f);
@@ -100,6 +107,27 @@ public class RpcRequestHandler extends AbstractHandler implements IRequestHandle
 			p.done();
 		}
 		return p;
+	}
+	
+	private Object[] getArgs(Type[] clses, Object[] jsonArgs){
+
+		if(clses.length != jsonArgs.length) {
+			throw new CommonException("Args number not mather");
+		}
+		if(clses== null || clses.length ==0){
+			return new Object[0];
+		} else {
+			Object[] args = new Object[clses.length];
+			int i = 0;
+			int j = 0;
+			for(; i < clses.length; i++){
+				Object arg = jsonArgs[j++];
+				Object a = JsonUtils.getIns().fromJson(JsonUtils.getIns().toJson(arg), clses[i]);
+				args[i] = a;
+			}
+		
+			return args;
+		}
 	}
 	
 	public static Method getServiceMethod(Object obj ,IRequest req){

@@ -54,7 +54,7 @@ public abstract class AbstractNettySession extends AbstractSession implements IS
 	private InetSocketAddress remoteAddre;
 	
 	public AbstractNettySession(ChannelHandlerContext ctx,int readBufferSize,int heardbeatInterval,int type) {
-		super(readBufferSize,heardbeatInterval);
+		super(readBufferSize,heardbeatInterval,type);
 		this.type = type;
 		this.ctx = ctx;
 		localAddre = (InetSocketAddress)ctx.channel().localAddress();
@@ -73,7 +73,7 @@ public abstract class AbstractNettySession extends AbstractSession implements IS
 	public void write(Message msg) {
 		
 		//客户端Debug模式下上行时记录的时间
-		long oldTime = msg.getTime();
+		//long oldTime = msg.getTime();
 		//记录下行时间
 		msg.setTime(TimeUtils.getCurTime());
 		

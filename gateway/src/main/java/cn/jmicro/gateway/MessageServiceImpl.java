@@ -17,6 +17,8 @@
  */
 package cn.jmicro.gateway;
 
+import java.io.UnsupportedEncodingException;
+import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -36,9 +38,11 @@ import cn.jmicro.api.annotation.Service;
 import cn.jmicro.api.codec.ICodecFactory;
 import cn.jmicro.api.gateway.IGatewayMessageCallback;
 import cn.jmicro.api.idgenerator.ComponentIdServer;
+import cn.jmicro.api.net.IMessageHandler;
 import cn.jmicro.api.net.ISession;
 import cn.jmicro.api.net.ISessionListener;
 import cn.jmicro.api.net.Message;
+import cn.jmicro.api.net.ServerError;
 import cn.jmicro.api.pubsub.PSData;
 import cn.jmicro.api.pubsub.PubSubManager;
 import cn.jmicro.api.registry.IRegistry;
@@ -49,6 +53,8 @@ import cn.jmicro.api.timer.ITickerAction;
 import cn.jmicro.api.timer.TimerTicker;
 import cn.jmicro.api.utils.TimeUtils;
 import cn.jmicro.common.Constants;
+import cn.jmicro.common.Utils;
+import cn.jmicro.common.util.JsonUtils;
 import cn.jmicro.common.util.StringUtils;
 
 /**
@@ -58,8 +64,9 @@ import cn.jmicro.common.util.StringUtils;
  * @date 2020年3月26日
  */
 @Component
-@Service(version="0.0.1",showFront=false,external=true)
-public class MessageServiceImpl implements IGatewayMessageCallback{
+@Service(version="0.0.1",showFront=false,external=false,infs=IGatewayMessageCallback.class,
+side=Constants.SIDE_PROVIDER)
+public class MessageServiceImpl implements IGatewayMessageCallback,IMessageHandler{
 
 	private final static Logger logger = LoggerFactory.getLogger(MessageServiceImpl.class);
 	
@@ -105,7 +112,7 @@ public class MessageServiceImpl implements IGatewayMessageCallback{
 		}
 	};
 	
-	public int subscribe(ISession session, String topic,Map<String, Object> ctx) {
+	private int subscribe(ISession session, String topic,Map<String, Object> ctx) {
 		if(StringUtils.isEmpty(topic)) {
 			logger.error("Topic cannot be NULL");
 			return -1;
@@ -182,7 +189,7 @@ public class MessageServiceImpl implements IGatewayMessageCallback{
 		return -1;
 	}
 
-	public boolean unsubscribe(Integer id) {
+	private boolean unsubscribe(Integer id) {
 		String topic = this.id2Topic.get(id);
 		if(StringUtils.isEmpty(topic)) {
 			return true;
@@ -258,7 +265,7 @@ public class MessageServiceImpl implements IGatewayMessageCallback{
 
 	@Override
 	@SMethod(asyncable=true,timeout=5000,retryCnt=0,needResponse=true)
-	public void onMessage(PSData[] items) {
+	public void onPSMessage(PSData[] items) {
 		if(items == null || items.length == 0) {
 			return;
 		}
@@ -361,6 +368,61 @@ public class MessageServiceImpl implements IGatewayMessageCallback{
 		public Map<String,Object> ctx;
 		public long lastActiveTime = TimeUtils.getCurTime();
 	}
-	
+
+	@Override
+	public Byte type() {
+		return Constants.MSG_TYPE_PUBSUB;
+	}
+
+	@Override
+	public boolean onMessage(ISession session, Message msg) {
+		ByteBuffer bb = (ByteBuffer)msg.getPayload();
+		String json = new String(bb.array(),0,bb.remaining());
+		Map<String,Object> params = JsonUtils.getIns().getStringKeyMap(json);
+		
+		Object op = params.get("op");
+		if( op == null) {
+			responseError(session,msg,ServerError.SE_INVALID_OP_CODE,"Op code is null");
+			return true;
+		}
+		
+		params.remove("op");
+		
+		int opCode = Integer.parseInt(op.toString());
+		if(opCode == 1) {
+			String topic = (String)params.get("topic");
+			if(Utils.isEmpty(topic)) {
+				responseError(session,msg,ServerError.SE_INVALID_TOPIC,"Topic is null");
+				return true;
+			}
+			params.remove("topic");
+			int subId = this.subscribe(session, topic, params);
+			msg.setPayload(subId);
+		} else if(opCode == 2) {
+			String subId = (String)params.get("subId");
+			if(Utils.isEmpty(subId)) {
+				responseError(session,msg,ServerError.SE_INVALID_SUB_ID,"Invalid subscribe id");
+				return true;
+			}
+			int sid = Integer.parseInt(subId);
+			boolean suc = this.unsubscribe(sid);
+			msg.setPayload(suc);
+		}
+		msg.setError(false);
+		session.write(msg);
+		return true;
+	}
+
+	private void responseError(ISession s,Message msg,int seInvalidTopic, String msgStr) {
+		msg.setError(true);
+		ServerError se = new ServerError(seInvalidTopic,msgStr);
+		try {
+			byte[] d = JsonUtils.getIns().toJson(se).getBytes(Constants.CHARSET);
+			msg.setPayload(ByteBuffer.wrap(d));
+			s.write(msg);
+		} catch (UnsupportedEncodingException e) {
+			logger.error(se.toString(),e);
+		}
+	}
 	
 }

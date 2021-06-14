@@ -312,7 +312,7 @@ public class RegistryImpl implements IRegistry {
 		} else {
 			this.srvManager.updateOrCreate(item,srvKey, true);
 		}*/
-		logger.debug("code:" + item.getCode() + ", Service: " + item.getKey().toSnv());
+		logger.debug("code:" + item.getKey().getSnvHash() + ", Service: " + item.getKey().toSnv());
 		
 		//item.setClientId(Config.getClientId());
 		//item.setActName(Config.getAccountName());
@@ -463,20 +463,20 @@ public class RegistryImpl implements IRegistry {
 		if(this.needWaiting) {
 			logger.warn("Do getServiceByCode waiting get code:{}",code);
 			setNeedWaiting();
-			return IWaitingAction.doAct(()->getServiceByCode0(code),null);
+			return IWaitingAction.doAct(()->getServiceByHash0(code),null);
 		} else {
-			return getServiceByCode0(code);
+			return getServiceByHash0(code);
 		}	
 	}
 	
 	@Override
-	public ServiceItem getOwnItem(int code) {
+	public ServiceItem getOwnItem(int hash) {
 		if(localRegistedItems.isEmpty()) {
 			return null;
 		}
 		
 		for(ServiceItem si : localRegistedItems.values()) {
-			if(si.getCode() == code) {
+			if(si.getKey().getSnvHash() == hash) {
 				return si;
 			}
 		}
@@ -484,16 +484,16 @@ public class RegistryImpl implements IRegistry {
 		return null;
 	}
 	
-	private ServiceItem getServiceByCode0(int code) {
+	private ServiceItem getServiceByHash0(int hash) {
 		for(ServiceItem si : this.srvManager.getAllItems()){
 			if(this.openDebug) {
 				logger.debug("Impl:"+si.getImpl());
 			}
-			if(si.getCode() == code){
+			if(si.getKey().getSnvHash() == hash){
 				return si;
 			}
 		}
-		logger.error("Service with code: "+code+" not found!");
+		logger.error("Service with hash: "+hash+" not found!");
 		return null;
 	}
 	

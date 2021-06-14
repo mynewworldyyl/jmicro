@@ -115,8 +115,9 @@ public class NettyClientSessionManager implements IClientSessionManager{
 			}
 			
 			@Override
-			public void onMessage(ISession session, Message msg) {
+			public boolean onMessage(ISession session, Message msg) {
 				//session.active();
+				return true;
 			}
 		});
 		
@@ -170,10 +171,17 @@ public class NettyClientSessionManager implements IClientSessionManager{
 		//logger.info("Use: " + ssKey);
 		
 		if(sessions.containsKey(ssKey)){
-			return sessions.get(ssKey);
+			IClientSession s = sessions.get(ssKey);
+			if(!s.isClose()) {
+				return s;
+			}
+			sessions.remove(ssKey);
+			logger.warn("Reconnect:{},{},{}",targetInstanceName,host,port);
 		}
 		
-		synchronized(this) {
+		String ext = targetInstanceName.intern();
+		
+		synchronized(ext) {
 			
 			if(sessions.containsKey(ssKey)){
 				return sessions.get(ssKey);
@@ -201,10 +209,11 @@ public class NettyClientSessionManager implements IClientSessionManager{
 					@Override
 					public void handlerAdded(ChannelHandlerContext ctx) throws Exception {
 						super.handlerAdded(ctx);
-	                    NettyClientSession s = new NettyClientSession(ctx,readBufferSize,heardbeatInterval,false);
+	                    NettyClientSession s = new NettyClientSession(ctx,readBufferSize,heardbeatInterval,ISession.CON_SOCKET);
 	                    s.setReceiver(receiver);
 	                    s.putParam(Constants.IO_SESSION_KEY, ctx);
 	                    s.putParam(SKEY, ssKey);
+	                    s.setTargetName(targetInstanceName);
 	                   
 	   	                s.setId(idGenerator.getLongId(ISession.class));
 	      	            s.putParam(Constants.IO_SESSION_KEY, ctx);
@@ -236,7 +245,7 @@ public class NettyClientSessionManager implements IClientSessionManager{
 	                 	
 	                	NettyClientSession cs = (NettyClientSession)ctx.channel().attr(sessionKey).get();
 	                	if(cs == null) {
-	                		logger.error("Got NULL Session when read data {},data:{}",ssKey,msg);
+	                		logger.error("Got NULL Session when read data {},data:{},target: {}",ssKey,msg,targetInstanceName);
 	                		return;
 	                	}
 
@@ -256,7 +265,7 @@ public class NettyClientSessionManager implements IClientSessionManager{
 	                 @Override
 	                 public void channelReadComplete(ChannelHandlerContext ctx) {
 	                	 if(openDebug) {
-	                		 logger.debug("channelReadComplete: {}",ctx);
+	                		 logger.debug("channelReadComplete: {},target:{}",ctx,targetInstanceName);
 	                	 }
 	                    ctx.flush();
 	                 }
@@ -269,7 +278,7 @@ public class NettyClientSessionManager implements IClientSessionManager{
 							if(e instanceof IOException) {
 								logger.error("",e.getMessage());
 							}else {
-								logger.error("exceptionCaught",cause);
+								logger.error("exceptionCaught target: " +targetInstanceName ,cause);
 							}
 						}
 	        			 
@@ -286,7 +295,7 @@ public class NettyClientSessionManager implements IClientSessionManager{
 					public void channelUnregistered(ChannelHandlerContext ctx) throws Exception {
 						super.channelUnregistered(ctx);
 						if(openDebug) {
-	                		 logger.debug("channelUnregistered: {}",ctx);
+	                		 logger.debug("channelUnregistered: {},target: {}",ctx,targetInstanceName);
 	                	 }
 						 closeCtx(ctx);
 					}
@@ -297,7 +306,7 @@ public class NettyClientSessionManager implements IClientSessionManager{
 					}
 
 					private void closeCtx(ChannelHandlerContext ctx) {
-						 logger.warn("Session Close for: {} ",ssKey);
+						logger.warn("Session Close for: {} ,target: {}",ssKey,targetInstanceName);
 						 NettyClientSession session = (NettyClientSession)ctx.channel().attr(sessionKey).get();
 						 if(session != null && !session.isClose()) {
 							 ctx.channel().attr(sessionKey).set(null);;

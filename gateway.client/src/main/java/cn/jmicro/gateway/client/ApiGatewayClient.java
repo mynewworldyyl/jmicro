@@ -39,12 +39,12 @@ import cn.jmicro.api.async.IPromise;
 import cn.jmicro.api.client.IClientSession;
 import cn.jmicro.api.codec.TypeUtils;
 import cn.jmicro.api.gateway.ApiRequest;
-import cn.jmicro.api.gateway.ApiResponse;
 import cn.jmicro.api.internal.async.PromiseImpl;
 import cn.jmicro.api.net.IMessageHandler;
 import cn.jmicro.api.net.IRequest;
 import cn.jmicro.api.net.ISession;
 import cn.jmicro.api.net.Message;
+import cn.jmicro.api.net.RpcResponse;
 import cn.jmicro.api.net.ServerError;
 import cn.jmicro.api.pubsub.PSData;
 import cn.jmicro.api.rsa.EncryptUtils;
@@ -71,6 +71,7 @@ public class ApiGatewayClient {
 	public static final String NS_MNG="mng";
 	public static final String NS_SECURITY="security";
 	public static final String NS_REPONSITORY="repository";
+	public static final String NS_PUBSUB="pubSubServer";
 	
 	private static final String API_GATEWAY_PUB_KEY_FILE = "/META-INF/keys/jmicro_apigateway_pub.key";
 	
@@ -89,6 +90,7 @@ public class ApiGatewayClient {
 	private ActInfo actInfo;
 	
 	private static final String SEC_SRV = "cn.jmicro.api.security.IAccountService";
+	private static final String SEC_SRV_ = "cn.jmicro.security.api.IAccountService";
 	private static final String SEC_NS = ApiGatewayClient.NS_SECURITY;
 	private static final String SEC_VER = "0.0.1";
 	
@@ -155,16 +157,16 @@ public class ApiGatewayClient {
 		sessionManager.registerMessageHandler(new IMessageHandler(){
 			@Override
 			public Byte type() {
-				return Constants.MSG_TYPE_RRESP_RAW;
+				return Constants.MSG_TYPE_RRESP_JRPC;
 			}
-			
 			@Override
-			public void onMessage(ISession session, Message msg) {
+			public boolean onMessage(ISession session, Message msg) {
 				//session.active();
 				if(msg.isDownSsl()) {
 					checkSignAndDecrypt(msg);
 				}
 				notifyOnMessage(msg);
+				return true;
 			}
 		});
 		
@@ -175,10 +177,27 @@ public class ApiGatewayClient {
 			}
 			
 			@Override
-			public void onMessage(ISession session, Message msg) {
+			public boolean onMessage(ISession session, Message msg) {
 				//session.active();
 				PSData pd = parseResult(msg,PSData.class,null);
 				pubsubClient.onMsg(pd);
+				return true;
+			}
+		});
+		
+		sessionManager.registerMessageHandler(new IMessageHandler(){
+			@Override
+			public Byte type() {
+				return Constants.MSG_TYPE_PUBSUB_RESP;
+			}
+			
+			@Override
+			public boolean onMessage(ISession session, Message msg) {
+				if(msg.isDownSsl()) {
+					checkSignAndDecrypt(msg);
+				}
+				notifyOnMessage(msg);
+				return true;
 			}
 		});
 		
@@ -263,17 +282,17 @@ public class ApiGatewayClient {
 		return p;
 	} 
 	
-	public IPromise<Boolean> logoutJMAsync() {
-		IPromise<Boolean> p = null;
+	public IPromise<Resp> logoutJMAsync() {
+		IPromise<Resp> p = null;
 		if(actInfo == null) {
-			PromiseImpl<Boolean> p0 = new PromiseImpl<>();
+			PromiseImpl<Resp> p0 = new PromiseImpl<>();
 			p0.setResult(null);
 			p0.setFail(1, "Not login");
 			p0.done();
 			p = p0;
 		} else {
 			Type returnType = TypeToken.getParameterized(Resp.class, Boolean.class).getType();
-			p = callService(SEC_SRV, SEC_NS, SEC_VER, "logout", returnType, new Object[] {});
+			p = callService(SEC_SRV_, SEC_NS, SEC_VER, "logout", returnType, new Object[] {});
 			p.success((rst,cxt0)->{
 				setActInfo(null);
 			});
@@ -296,6 +315,7 @@ public class ApiGatewayClient {
 		msg.setType(Constants.MSG_TYPE_API_CLASS_REQ);
 		msg.setUpProtocol(Message.PROTOCOL_BIN);
 		msg.setMsgId(idClient.getLongId(Message.class.getName()));
+		msg.setOuterMessage(true);
 		//msg.setReqId(req.getReqId());
 		//msg.setLinkId(idClient.getLongId(Linker.class.getName()));
 		
@@ -365,6 +385,17 @@ public class ApiGatewayClient {
 		return p;
 	}
 	
+	public <T> IPromise<T> sendMessage(byte msgType,Object arg,Class<T> resultType) {
+		Message msg = this.createMessage(msgType,arg);
+		final PromiseImpl<T> p = new PromiseImpl<T>();
+		p.setResultType(resultType);
+		waitForResponse.put(msg.getMsgId(), (PromiseImpl<?>)p);
+		IClientSession sessin = sessionManager.getOrConnect(null,this.config.getHost(),this.config.getPort());
+		sessin.write(msg);
+		return p;
+	}
+	
+	@SuppressWarnings("unchecked")
 	private <R> R parseResult(Message respMsg, Type resultType, PromiseImpl p) {
 		 
 		 if(respMsg == null) {
@@ -377,7 +408,8 @@ public class ApiGatewayClient {
 		try {
 			json = new String(bb.array(),Constants.CHARSET);
 			
-			if(respMsg.isNeedResponse()) {
+			if(respMsg.isError()) {
+				//错误下行消息全用JSON，返回数据为ServerError实例
 				ServerError se = JsonUtils.getIns().fromJson(json, ServerError.class);
 				p.setFail(se.getErrorCode(),se.getMsg());
 				p.done();
@@ -387,8 +419,15 @@ public class ApiGatewayClient {
 			if(respMsg.getType() == Constants.MSG_TYPE_ASYNC_RESP) {
 				R psData = JsonUtils.getIns().fromJson(json, resultType);
 				return psData;
+			}else if(respMsg.getType() == Constants.MSG_TYPE_PUBSUB_RESP) {
+				R rst = JsonUtils.getIns().fromJson(json, resultType);
+				if(p != null) {
+					p.setResult(rst);
+					p.done();
+				}
+				return rst;
 			} else {
-				ApiResponse apiResp = JsonUtils.getIns().fromJson(json, ApiResponse.class);
+				RpcResponse apiResp = JsonUtils.getIns().fromJson(json, RpcResponse.class);
 				if(apiResp.isSuccess()) {
 					 if(apiResp.getResult() == null || resultType == Void.class || Void.TYPE == resultType) {
 						 p.done();
@@ -420,6 +459,48 @@ public class ApiGatewayClient {
 			//throw new CommonException(json,e);
 		}
 		 return null;
+	}
+	
+	   private Message createMessage(byte msgType,Object payload) {
+	    	
+	    	Message msg = new Message();
+			if(this.actInfo != null) {
+				msg.putExtra(Message.EXTRA_KEY_LOGIN_KEY,this.actInfo.getLoginKey());
+			}
+			msg.setType(msgType);
+			msg.setUpProtocol(Message.PROTOCOL_JSON);
+			msg.setDownProtocol(Message.PROTOCOL_JSON);
+			
+			//msg.setId(req.getReqId()/*idClient.getLongId(Message.class.getName())*/);
+			msg.setMsgId(idClient.getLongId(IRequest.class.getName()));
+			//msg.setLinkId(req.getReqId()/*idClient.getLongId(Linker.class.getName())*/);
+			msg.setRpcMk(false);
+
+			//msg.setStream(false);
+			msg.setDumpDownStream(false);
+			msg.setDumpUpStream(false);
+			msg.setRespType(Message.MSG_TYPE_PINGPONG);
+			msg.setOuterMessage(true);
+			//msg.setLogLevel(MC.LOG_NO);
+			msg.setMonitorable(false);
+			msg.setDebugMode(false);
+			//全部异步返回，服务器可以异步返回，也可以同步返回
+			msg.setUpSsl(false);
+			msg.setInsId(0);
+			
+			//msg.setVersion(Message.MSG_VERSION);
+			
+			byte[] data = null;
+			String json = JsonUtils.getIns().toJson(payload);
+			try {
+				data = json.getBytes(Constants.CHARSET);
+			} catch (UnsupportedEncodingException e) {
+				throw new CommonException(json,e);
+			}
+			
+			signAndEncrypt(msg,data);
+			
+			return msg;
 	}
     
     private Message createMessage(String serviceName, String namespace, String version, String method, Object[] args) {
@@ -458,14 +539,13 @@ public class ApiGatewayClient {
 		
 		String mn = generatorSrvMethodName(method);
 		String sn = serviceName;
-		if(!ApiGatewayPubsubClient.messageServiceImplName.equals(serviceName)) {
-			sn = AsyncClientUtils.genSyncServiceName(sn);
-		}
+		sn = AsyncClientUtils.genSyncServiceName(sn);
 		
 		String key = sn + "##"+namespace+"##"+version+"########"+mn;
 		Integer hash = this.methodCodes.get(key);
 		if(hash == null) {
 			hash = HashUtils.FNVHash1(key);
+			this.methodCodes.put(key, hash);
 		}
 		
 		msg.setSmKeyCode(hash);

@@ -13,6 +13,7 @@ import cn.jmicro.api.idgenerator.ComponentIdServer;
 import cn.jmicro.api.net.IMessageReceiver;
 import cn.jmicro.api.objectfactory.IObjectFactory;
 import cn.jmicro.api.utils.TimeUtils;
+import cn.jmicro.common.CommonException;
 import cn.jmicro.common.Constants;
 import cn.jmicro.common.Utils;
 import io.netty.buffer.ByteBuf;
@@ -65,9 +66,12 @@ public class NettySocketHandler extends ChannelInboundHandlerAdapter {
 	
 	public void ready() {
 		if(Utils.isEmpty(this.receiveKey)) {
-			this.receiveKey = "/serverReceiver";
+			this.receiveKey = "serverReceiver";
 		}
 		receiver = of.getByName(receiveKey);
+		if(receiver == null) {
+			throw new CommonException("Server receive not found: " + receiveKey);
+		}
 	}
 	
     @Override
@@ -136,8 +140,9 @@ public class NettySocketHandler extends ChannelInboundHandlerAdapter {
     @Override
     public void handlerRemoved(ChannelHandlerContext ctx) throws Exception {
     	super.handlerRemoved(ctx);
+    	NettyServerSession session = ctx.channel().attr(sessionKey).get();
     	if(openDebug) {
-    		logger.debug("handlerRemoved: {}",ctx);
+    		logger.debug("handlerRemoved: {},target:{}",ctx,session.targetName());
     	}
     	ctx.channel().attr(sessionKey).remove();
     	
@@ -145,7 +150,8 @@ public class NettySocketHandler extends ChannelInboundHandlerAdapter {
     
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
-    	logger.error("exceptionCaught close session",cause.getMessage());
+    	NettyServerSession session = ctx.channel().attr(sessionKey).get();
+    	logger.error("exceptionCaught close session target: " +session.targetName() ,cause);
     	ctx.channel().attr(sessionKey).get().close(true);
     	ctx.channel().attr(sessionKey).remove();
     	ctx.close();

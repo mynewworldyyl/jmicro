@@ -1,8 +1,5 @@
 package cn.jmicro.api.gateway;
 
-import java.util.HashSet;
-import java.util.Set;
-
 import cn.jmicro.api.annotation.IDStrategy;
 import lombok.Data;
 
@@ -10,9 +7,9 @@ import lombok.Data;
 @IDStrategy
 public class MessageRouteRow {
 
-	private Integer id;
+	private Integer insId=0;
 	
-	private String key;
+	//private String key;
 	
 	private String ip;
 	
@@ -20,9 +17,7 @@ public class MessageRouteRow {
 	
 	private String insName;
 	
-	private int insId;
-	
-	private Set<Integer> methodCodes = new HashSet<>();
+	//private Set<Integer> methodCodes = new HashSet<>();
 	
 	//private int backendType = GatewayConstant.TYPE_SERVICE;
 	
@@ -40,7 +35,7 @@ public class MessageRouteRow {
 		/*if(key == null) {
 			key = ip+":" + port;
 		}*/
-		return key.hashCode();
+		return insId;
 	}
 	
 	

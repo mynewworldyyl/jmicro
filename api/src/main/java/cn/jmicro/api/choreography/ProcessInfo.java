@@ -1,8 +1,7 @@
 package cn.jmicro.api.choreography;
 
 import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
@@ -74,7 +73,7 @@ public class ProcessInfo {
 	
 	private byte logLevel = MC.LOG_INFO;
 	
-	private List<Byte> types = new LinkedList<>();
+	private Set<Byte> types = new HashSet<>();
 	
 	protected Map<String,Set<CfgMetadata>> metadatas = new HashMap<>();
 

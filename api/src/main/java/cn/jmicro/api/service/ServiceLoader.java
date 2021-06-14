@@ -238,7 +238,7 @@ public class ServiceLoader{
 		}
 	}*/
 	
-	public Object getService(Integer code){
+	public Object getService(Integer hash){
 		//Class<?> cls = ClassScannerUtils.getIns().getClassByName(impl);
 		/*
 		if(Modifier.isAbstract(cls.getModifiers()) || Modifier.isInterface(cls.getModifiers())){
@@ -250,7 +250,7 @@ public class ServiceLoader{
 				return srv;
 			}
 		}*/
-		return services.get(code);
+		return services.get(hash);
 	}
 	
 	private Set<Class<?>> loadServiceClass() {
@@ -297,8 +297,8 @@ public class ServiceLoader{
 		
 		ServiceItem si = createSrvItemByClass(c);
 		
-		int code = idGenerator.getIntId(ServiceItem.class);
-		si.setCode(code);
+		/*int code = idGenerator.getIntId(ServiceItem.class);
+		si.setCode(code);*/
 		
 		registService(si,srv);
 		
@@ -326,8 +326,8 @@ public class ServiceLoader{
 			return null;
 		}
 		
-		if(srv != null && !services.containsKey(item.getCode())) {
-			services.put(item.getCode(), srv);
+		if(srv != null && !services.containsKey(item.getKey().getSnvHash())) {
+			services.put(item.getKey().getSnvHash(), srv);
 		}
 		
 		//if(item.getClientId() >10) {
@@ -382,9 +382,9 @@ public class ServiceLoader{
 			}
 		}
 		
-		if(si.getCode() <= 0) {
+		/*if(si.getCode() <= 0) {
 			si.setCode(idGenerator.getIntId(ServiceItem.class));
-		}
+		}*/
 		
 		return si;
 	}

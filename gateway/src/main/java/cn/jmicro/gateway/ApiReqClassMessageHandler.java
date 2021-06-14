@@ -54,7 +54,7 @@ public class ApiReqClassMessageHandler implements IMessageHandler{
 	}
 
 	@Override
-	public void onMessage(ISession session, Message msg) {
+	public boolean onMessage(ISession session, Message msg) {
 		
 		msg.setType((byte)(msg.getType()+1));
 		
@@ -81,6 +81,7 @@ public class ApiReqClassMessageHandler implements IMessageHandler{
 		msg.setPayload(ICodecFactory.encode(codecFactory, resp, msg.getUpProtocol()));
 		
 		session.write(msg);
+		return true;
 	}
 
 }

@@ -25,5 +25,5 @@ public interface IMessageHandler {
 
 	Byte type();
 	
-	void onMessage(ISession session,Message messge);
+	boolean onMessage(ISession session,Message messge);
 }

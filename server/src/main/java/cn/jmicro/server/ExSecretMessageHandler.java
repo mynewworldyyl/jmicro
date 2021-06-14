@@ -36,8 +36,8 @@ public class ExSecretMessageHandler implements IMessageHandler{
 	}
 
 	@Override
-	public void onMessage(ISession session,Message msg) {
-	
+	public boolean onMessage(ISession session,Message msg) {
+		return true;
 	}
 	
 }

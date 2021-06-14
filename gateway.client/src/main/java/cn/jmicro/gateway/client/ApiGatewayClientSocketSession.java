@@ -21,6 +21,7 @@ import java.nio.ByteBuffer;
 
 import cn.jmicro.api.client.IClientSession;
 import cn.jmicro.api.net.AbstractSession;
+import cn.jmicro.api.net.ISession;
 import cn.jmicro.api.net.Message;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
@@ -37,7 +38,7 @@ public class ApiGatewayClientSocketSession extends AbstractSession implements IC
 	private ChannelHandlerContext ctx;
 	
 	public ApiGatewayClientSocketSession(ChannelHandlerContext ctx,int readBufferSize,int heardbeatInterval) {
-		super(readBufferSize,heardbeatInterval);
+		super(readBufferSize,heardbeatInterval,ISession.CON_SOCKET);
 		this.ctx = ctx;
 	}
 	

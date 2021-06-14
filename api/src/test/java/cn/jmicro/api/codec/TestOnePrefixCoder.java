@@ -198,7 +198,7 @@ public class TestOnePrefixCoder {
 		
 		req.setReqId(22L);
 		Message msg = new Message();
-		msg.setType(Constants.MSG_TYPE_REQ_RAW);
+		msg.setType(Constants.MSG_TYPE_REQ_JRPC);
 		msg.setUpProtocol(Message.PROTOCOL_BIN);
 		//msg.setId(0);
 		msg.setMsgId(0L);
@@ -228,7 +228,7 @@ public class TestOnePrefixCoder {
 		req.setSuccess(true);
 		
 		Message msg = new Message();
-		msg.setType(Constants.MSG_TYPE_REQ_RAW);
+		msg.setType(Constants.MSG_TYPE_REQ_JRPC);
 		msg.setUpProtocol(Message.PROTOCOL_BIN);
 		//msg.setId(0);
 		msg.setMsgId(0L);

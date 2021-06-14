@@ -94,7 +94,7 @@ public class GuavaBaseLimiter  implements ILimiter{
 	private String key(IRequest req){
 		String key = UniqueServiceMethodKey.paramsStr(req.getArgs());
 		//key = key + ServiceItem.serviceName(req.getServiceName(), req.getNamespace(), req.getVersion());
-		key = key + req.getMethod() + req.getImpl();
+		key = key + req.getMethod() + req.getSvnHash();
 		return key;
 	}
 

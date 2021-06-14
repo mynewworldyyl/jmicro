@@ -42,7 +42,7 @@ public class InitClientReceiver implements IPostFactoryListener{
 	}
 	
 	@Override
-	public void preInit(IObjectFactory of) {
+	public void  preInit(IObjectFactory of) {
 		Set<IMessageHandler> list = of.getByParent(IMessageHandler.class);
 		ClientMessageReceiver sr = of.get(ClientMessageReceiver.class);
 		for(IMessageHandler h: list){
@@ -54,6 +54,5 @@ public class InitClientReceiver implements IPostFactoryListener{
 				}
 			}
 		}
-	
 	}
 }

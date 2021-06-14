@@ -104,6 +104,8 @@ public final class Message {
 	//来自外网消息，由网关转发到内网
 	public static final short FLAG_OUT_MESSAGE = 1 << 5;
 	
+	public static final short FLAG_ERROR = 1 << 6;
+	
 	public static final short FLAG_LOG_LEVEL = 13;
 	
 	public static final short FLAG_RESP_TYPE = 11;
@@ -144,17 +146,20 @@ public final class Message {
 	//是否包含实例ID
 	public static final int EXTRA_FLAG_INS_ID = 1 << 12;
 	
-	public static final Byte EXTRA_KEY_LINKID = 1;
-	public static final Byte EXTRA_KEY_INSID = 2;
-	public static final Byte EXTRA_KEY_TIME = 3;
-	public static final Byte EXTRA_KEY_SM_CODE = 4;
-	public static final Byte EXTRA_KEY_SM_NAME = 5;
-	public static final Byte EXTRA_KEY_SIGN = 6;
-	public static final Byte EXTRA_KEY_SALT = 7;
-	public static final Byte EXTRA_KEY_SEC = 8;
+	public static final Byte EXTRA_KEY_LINKID = -127;
+	public static final Byte EXTRA_KEY_INSID = -126;
+	public static final Byte EXTRA_KEY_TIME = -125;
+	public static final Byte EXTRA_KEY_SM_CODE = -124;
+	public static final Byte EXTRA_KEY_SM_NAME = -123;
+	public static final Byte EXTRA_KEY_SIGN = -122;
+	public static final Byte EXTRA_KEY_SALT = -121;
+	public static final Byte EXTRA_KEY_SEC = -120;
+	public static final Byte EXTRA_KEY_LOGIN_KEY = -119;
 	
-	public static final Byte EXTRA_KEY_ARRAY = 9;
-	public static final Byte EXTRA_KEY_FLAG = 10;
+	//public static final Byte EXTRA_KEY_ARRAY = -116;
+	public static final Byte EXTRA_KEY_FLAG = -118;
+	
+	public static final Byte EXTRA_KEY_MSG_ID = -117;
 	
 	public static final byte MSG_TYPE_PINGPONG = 0;//默认请求响应模式
 	
@@ -289,7 +294,7 @@ public final class Message {
 		
 	}
 	
-	private static Object decodeVal(JDataInput b) throws IOException {
+	public static Object decodeVal(JDataInput b) throws IOException {
 		byte type = b.readByte();
 		if(DecoderConstant.PREFIX_TYPE_LIST == type){
 			short len = b.readShort();
@@ -315,6 +320,14 @@ public final class Message {
 			return b.readBoolean();
 		}else if(DecoderConstant.PREFIX_TYPE_CHAR == type){
 			return b.readChar();
+		}else if(DecoderConstant.PREFIX_TYPE_STRING == type){
+			short len = b.readShort();
+			if(len == 0) {
+				return "";
+			}
+			byte[] arr = new byte[len];
+			b.readFully(arr, 0, len);
+			return new String(arr,0,len,Constants.CHARSET);
 		} else {
 			throw new CommonException("not support header type: " + type);
 		}
@@ -359,7 +372,7 @@ public final class Message {
 			}
 		    try {
 				byte[] data = str.getBytes(Constants.CHARSET);
-				b.writeInt(data.length);
+				b.writeShort(data.length);
 				b.write(data);
 			} catch (UnsupportedEncodingException e) {
 				throw new CommonException("Invalid: "+str,e);
@@ -427,6 +440,9 @@ public final class Message {
 				len = len - Message.EXT_HEADER_LEN - elen;
 				msg.extraMap = decodeExtra(msg.extra);
 				msg.setLen(len + elen);
+				if(msg.extraMap.containsKey(EXTRA_KEY_FLAG)) {
+					msg.extrFlag = (Integer)msg.extraMap.get(EXTRA_KEY_FLAG);
+				}
 			} else {
 				msg.setLen(len);
 			}
@@ -730,11 +746,11 @@ public final class Message {
 	}
 	
 	public boolean isError() {
-		return is(flag,FLAG_UP_PROTOCOL);
+		return is(flag,FLAG_ERROR);
 	}
 	
 	public void setError(boolean f) {
-		flag = set(f,flag,FLAG_UP_PROTOCOL);
+		flag = set(f,flag,FLAG_ERROR);
 	}
 	
 	public boolean isOuterMessage() {
@@ -960,7 +976,8 @@ public final class Message {
 	}
 	
 	public Integer getInsId() {
-		return this.getExtra(EXTRA_KEY_INSID);
+		Integer v = this.getExtra(EXTRA_KEY_INSID);
+		return v == null ? 0:v;
 	}
 	
 	public void setSignData(String data) {
@@ -976,7 +993,8 @@ public final class Message {
 	}
 	
 	public Long getLinkId() {
-		return this.getExtra(EXTRA_KEY_LINKID);
+		Long v = this.getExtra(EXTRA_KEY_LINKID);
+		return v == null ? 0L : v;
 	}
 	
 	public void setSaltData(byte[] data) {
@@ -1000,7 +1018,8 @@ public final class Message {
 	}
 	
 	public Integer getSmKeyCode() {
-		return this.getExtra(EXTRA_KEY_SM_CODE);
+		Integer v = this.getExtra(EXTRA_KEY_SM_CODE);
+		return v == null? 0:v;
 	}
 	
 	public void setMethod(String method) {
@@ -1016,7 +1035,8 @@ public final class Message {
 	}
 	
 	public Long getTime() {
-		return this.getExtra(EXTRA_KEY_TIME);
+		Long v = this.getExtra(EXTRA_KEY_TIME);
+		return v == null ? 0L:v;
 	}
 
 	@Override

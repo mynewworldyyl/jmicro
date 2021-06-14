@@ -50,14 +50,12 @@ public class ApiGatewayPostFactory extends PostFactoryAdapter {
 		ProcessInfo pi = of.get(ProcessInfo.class);
 
 		MessageRouteRow r = new MessageRouteRow();
-		r.setKey(Config.getInstanceName());
-		r.setId(idGenerator.getIntId(MessageRouteRow.class));
 		r.setIp(host);
 		r.setInsId(pi.getId());
 		r.setInsName(pi.getInstanceName());
 		r.setPort(port);
 		
-		String path = TABLE_ROOT + "/" + r.getId();
+		String path = TABLE_ROOT + "/" + r.getInsId();
 		op.createNodeOrSetData(path, JsonUtils.getIns().toJson(r), true);
 	
 		

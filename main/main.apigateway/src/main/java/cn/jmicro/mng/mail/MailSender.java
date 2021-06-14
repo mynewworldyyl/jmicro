@@ -19,9 +19,11 @@ import cn.jmicro.api.annotation.Cfg;
 import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Service;
 import cn.jmicro.api.email.IEmailSender;
+import cn.jmicro.api.monitor.LG;
+import cn.jmicro.api.monitor.MC;
 
 @Component
-@Service(version="0.0.1",retryCnt=0,external=false,debugMode=1,showFront=false)
+@Service(version="0.0.1",retryCnt=0,external=true,debugMode=1,showFront=false)
 public class MailSender implements IEmailSender{
 
 	private final static Logger logger = LoggerFactory.getLogger(MailSender.class);
@@ -138,7 +140,9 @@ public class MailSender implements IEmailSender{
             Transport.send(msg);
             return true;
         } catch (Exception e) {
-            e.printStackTrace();
+        	String errMsg = "to: " + to+" title: "+title+" message: "+ message;
+            LG.log(MC.LOG_ERROR, MailSender.class, errMsg,e);
+            logger.error(errMsg,e);
             return false;
         }
 

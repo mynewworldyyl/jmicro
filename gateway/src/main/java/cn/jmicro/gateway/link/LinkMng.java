@@ -1,7 +1,9 @@
 package cn.jmicro.gateway.link;
 
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -10,33 +12,52 @@ import org.slf4j.LoggerFactory;
 
 import cn.jmicro.api.annotation.Cfg;
 import cn.jmicro.api.annotation.Component;
+import cn.jmicro.api.annotation.Inject;
+import cn.jmicro.api.idgenerator.ComponentIdServer;
 import cn.jmicro.api.monitor.LG;
 import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.net.IMessageHandler;
+import cn.jmicro.api.net.IMessageReceiver;
 import cn.jmicro.api.net.ISession;
 import cn.jmicro.api.net.Message;
+import cn.jmicro.api.security.SecretManager;
 import cn.jmicro.api.timer.TimerTicker;
 import cn.jmicro.api.utils.TimeUtils;
 
 @Component(value="linkMessageHandler")
-public class LinkMng implements IMessageHandler{
+public class LinkMng implements IMessageHandler {
 
 	private final static Logger logger = LoggerFactory.getLogger(LinkMng.class);
 	
 	//消息与下行会话关系映射
-	private ConcurrentHashMap<Long,LinkNode> msgId2DownSess = new ConcurrentHashMap<>();
+	private ConcurrentHashMap<Long,LinkNode> ppMsgId2DownSess = new ConcurrentHashMap<>();
 	
+	private ConcurrentHashMap<Long,LinkNode> manyMsgId2DownSess = new ConcurrentHashMap<>();
+	
+	@Inject
+	private SecretManager secretMng;
+	
+	@Inject
+	private ComponentIdServer idGenerator;
+	
+	@Inject(value="clientMessageReceiver")
+	private IMessageReceiver cr;
+	 
 	@Cfg(value ="/gateway/linkTimeout",defGlobal=true)
 	private long timeout = 5*60*1000;
 	
     public static class LinkNode {
     	private int respType = Message.MSG_TYPE_PINGPONG;
     	private ISession sec;
-    	private long msgId;
+    	private long msgId;//服务端全局唯一ID
     	private Message srcMsg;
-    	
+    	private long cMsgId;//客户端过来的消息ID
     	private long lastActiveTime = TimeUtils.getCurTime();
     	
+    	private Map<Byte,Object> extraMap;
+    	private short flag;
+    	private Byte type;
+    	private int extrFlag;
     }
     
     public void ready() {
@@ -46,25 +67,28 @@ public class LinkMng implements IMessageHandler{
     }
 
 	private void doCheck() {
-		
-		if(msgId2DownSess.isEmpty()) return;
+		checkWithTimeout(ppMsgId2DownSess,this.timeout);
+		checkWithTimeout(manyMsgId2DownSess,this.timeout*10);
+	}
+
+	private void checkWithTimeout(ConcurrentHashMap<Long, LinkNode> nodes, long to) {
+		if(nodes.isEmpty()) return;
 		Set<Long> keys = new HashSet<>();
-		keys.addAll(msgId2DownSess.keySet());
+		keys.addAll(nodes.keySet());
 		Iterator<Long> ite = keys.iterator();
 		long curTime = TimeUtils.getCurTime();
 		
 		while(ite.hasNext()) {
 			Long mid = ite.next();
-			LinkNode n = msgId2DownSess.get(mid);
+			LinkNode n = nodes.get(mid);
 			if(n == null) continue;
-			if(curTime - n.lastActiveTime > this.timeout) {
-				msgId2DownSess.remove(n.msgId);
-				String errMsg = "Close timeout link: " + n.srcMsg.toString();
+			if(curTime - n.lastActiveTime > to) {
+				nodes.remove(n.msgId);
+				String errMsg = "Remove timeout link: " + n.srcMsg.toString();
 				logger.warn(errMsg);
 				LG.log(MC.LOG_WARN, LinkMng.class, errMsg);
 			}
 		}
-		
 	}
 
 	public void createLinkNode(ISession session, Message msg) {
@@ -73,47 +97,98 @@ public class LinkMng implements IMessageHandler{
 			return;
 		}
 		
-		LinkNode n = msgId2DownSess.get(msg.getMsgId());
-		if(n == null) {
-			synchronized(session) {
-				n = msgId2DownSess.get(msg.getMsgId());
-				if(n == null) {
-					n = new LinkNode();
-					n.respType = msg.getRespType();
-					n.sec = session;
-					n.srcMsg = msg;
-					n.msgId = msg.getMsgId();
-					n.lastActiveTime = TimeUtils.getCurTime();
-					msgId2DownSess.put(n.msgId, n);
-				}
-			}
+		LinkNode n = new LinkNode();
+		n.respType = msg.getRespType();
+		n.sec = session;
+		n.cMsgId = msg.getMsgId();
+		n.msgId = idGenerator.getLongId(Message.class);
+		n.srcMsg = msg;
+		n.msgId = msg.getMsgId();
+		n.lastActiveTime = TimeUtils.getCurTime();
+		n.extrFlag = msg.getExtrFlag();
+		
+		msg.setMsgId(n.msgId);
+		
+		Map<Byte,Object> extraMap = msg.getExtraMap();
+		if(extraMap != null && !extraMap.isEmpty()) {
+			n.extraMap = new HashMap<>();
+			n.extraMap.putAll(extraMap);
+		}
+		
+		n.type = msg.getType();
+		n.flag = msg.getFlag();
+		
+		if(msg.getRespType() == Message.MSG_TYPE_MANY_RESP) {
+			manyMsgId2DownSess.put(n.msgId, n);
+			msg.putExtra(Message.EXTRA_KEY_MSG_ID, n.msgId);
+		}else {
+			ppMsgId2DownSess.put(n.msgId, n);
 		}
 	}
 
 	@Override
 	public Byte type() {
-		return 0;
+		return -1;
 	}
 
 	@Override
-	public void onMessage(ISession session, Message msg) {
-		LinkNode n = msgId2DownSess.get(msg.getMsgId());
+	public boolean onMessage(ISession session, Message msg) {
+		
+		LinkNode n = null;
+		
+		boolean pp = true;
+		
+		if(msg.getRespType() == Message.MSG_TYPE_PINGPONG) {
+			pp = true;
+			n = ppMsgId2DownSess.get(msg.getMsgId());
+		}else if (msg.getRespType() == Message.MSG_TYPE_MANY_RESP) {
+			pp = false;
+			n = manyMsgId2DownSess.get(msg.getMsgId());
+		}
+		
 		if(n == null) {
-			String msgErr = "Client link not found for:" + msg.toString();
-			logger.error(msgErr);
-			LG.log(MC.LOG_ERROR, LinkMng.class,msgErr);
-			return;
+			//String msgErr = "Client link not found for:" + msg.toString();
+			//logger.error(msgErr);
+			//LG.log(MC.LOG_ERROR, LinkMng.class,msgErr);
+			return false;
+		}
+		
+		msg.setMsgId(n.cMsgId);//还原客户端的消息ID
+		
+		Map<Byte,Object> extraMap = msg.getExtraMap();
+		if(extraMap != null && (msg.isUpSsl() || msg.isDownSsl())) {
+			extraMap.remove(Message.EXTRA_KEY_SALT);
+			extraMap.remove(Message.EXTRA_KEY_SEC);
+			extraMap.remove(Message.EXTRA_KEY_SIGN);
+		}
+		
+		msg.setOuterMessage(true);
+		
+		if(!msg.isError() && (Message.is(n.extrFlag, Message.EXTRA_FLAG_UP_SSL) 
+				|| Message.is(n.extrFlag, Message.EXTRA_FLAG_DOWN_SSL)
+				/*msg.isUpSsl() || msg.isDownSsl()*/)) {
+			//由客户端决定返回数据加解密方式
+			if(extraMap == null) {
+				msg.setExtraMap(new HashMap<>());
+			}
+			msg.getExtraMap().putAll(n.extraMap);
+			secretMng.signAndEncrypt(msg, msg.getInsId());
+		} else {
+			//错误不需要做加密或签名
+			msg.setDownSsl(false);
+			msg.setUpSsl(false);
 		}
 		
 		n.sec.write(msg);
 		
-		if(msg.getRespType() == Message.MSG_TYPE_PINGPONG) {
+		if(pp) {
 			//请求响应类消息
-			msgId2DownSess.remove(msg.getMsgId());
+			ppMsgId2DownSess.remove(msg.getMsgId());
 		} else {
 			n.lastActiveTime = TimeUtils.getCurTime();
 		}
 		
+		return true;
 	}
     
 }

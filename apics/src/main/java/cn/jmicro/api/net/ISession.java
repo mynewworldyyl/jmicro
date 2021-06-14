@@ -32,6 +32,12 @@ public interface ISession{
 	
 	public static final int EVENT_TYPE_OPEN = 2;
 	
+	public static final int CON_SOCKET = 1;
+	
+	public static final int CON_WEB_SOCKET = 2;
+	
+	public static final int CON_HTTP = 3;
+	
 	void close(boolean flag);
 	
 	<T> T getParam(String key);
@@ -97,4 +103,8 @@ public interface ISession{
 	void notifySessionEvent(int eventType);
 	
 	long lastActiveTime();
+	
+	int connType();
+	
+	String targetName();
 }

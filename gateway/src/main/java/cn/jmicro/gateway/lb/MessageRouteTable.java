@@ -1,10 +1,12 @@
 package cn.jmicro.gateway.lb;
 
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import cn.jmicro.api.IListener;
 import cn.jmicro.api.annotation.Component;
@@ -23,6 +25,8 @@ import cn.jmicro.gateway.ApiGatewayPostFactory;
 
 @Component
 public class MessageRouteTable {
+	
+	private final static Logger logger = LoggerFactory.getLogger(MessageRouteTable.class);
 	
 	private final Map<Integer,MessageRouteGroup> instance2Services = new ConcurrentHashMap<>();
 	
@@ -72,6 +76,9 @@ public class MessageRouteTable {
 		});
 		
 		srvMng.addListener((type,si)->{
+			if(!si.isExternal()) {
+				return;
+			}
 			if(type == IListener.ADD) {
 				serviceAdd(si);
 			}else if(type == IListener.REMOVE) {
@@ -123,10 +130,16 @@ public class MessageRouteTable {
 		if(methods == null || methods.isEmpty()) return;
 		
 		for(ServiceMethod sm : methods) {
-			Set<Integer> l = method2Instances.get(sm.getKey().getSnvHash());
+			Integer h = sm.getKey().getSnvHash();
+			Set<Integer> l = method2Instances.get(h);
 			if(l == null) {
-				method2Instances.put(sm.getKey().getSnvHash(), l = new HashSet<>());
+				method2Instances.put(h, l = new HashSet<>());
 			}
+			
+			if(logger.isDebugEnabled()) {
+				logger.debug("Method route hash:{},key:{},insId: {} insName:{}",h,sm.getKey().toKey(false, false, false),si.getInsId(),sm.getKey().getUsk().getInstanceName());
+			}
+			
 			l.add(si.getInsId());
 		}
 	}
@@ -140,15 +153,21 @@ public class MessageRouteTable {
 		}
 		//removeMessageType2Instance(pi);
 		parseMessageType2Instance(pi);
+		routeRowChange(pi);
+	}
+
+	private void routeRowChange(ProcessInfo pi) {
+		addRouteRow(pi);
 	}
 
 	private void processRemove(ProcessInfo pi) {
 		instance2Services.remove(pi.getId());
 		removeMessageType2Instance(pi);
+		tables.remove(pi.getId());
 	}
 
 	private void removeMessageType2Instance(ProcessInfo pi) {
-		List<Byte> types = pi.getTypes();
+		Set<Byte> types = pi.getTypes();
 		if(types == null || types.isEmpty()) return;
 		for(Byte t : types) {
 			Set<Integer> l = messageType2Instances.get(t);
@@ -160,10 +179,24 @@ public class MessageRouteTable {
 
 	private void processAdd(ProcessInfo pi) {
 		processDataChange(pi);
+		addRouteRow(pi);
 	}
 	
+	private void addRouteRow(ProcessInfo pi) {
+		MessageRouteRow mrr = tables.get(pi.getId());
+		if(mrr == null) {
+			 mrr = new MessageRouteRow();
+		}
+		mrr.setInsId(pi.getId());
+		mrr.setInsName(pi.getInstanceName());
+		mrr.setIp(pi.getHost());
+		mrr.setPort(pi.getPort());
+		//mrr.setSessionKey(sessionKey);
+		tables.put(pi.getId(), mrr);
+	}
+
 	private void parseMessageType2Instance(ProcessInfo pi) {
-		List<Byte> types = pi.getTypes();
+		Set<Byte> types = pi.getTypes();
 		if(types == null || types.isEmpty()) return;
 		for(Byte t : types) {
 			Set<Integer> l = messageType2Instances.get(t);
@@ -179,15 +212,15 @@ public class MessageRouteTable {
 	}
 	
 	protected void routeConfigAdd(MessageRouteRow rr) {
-		tables.put(rr.getId(), rr);
+		tables.put(rr.getInsId(), rr);
 	}
 
 	protected void routeConfigRemove(MessageRouteRow rr,boolean removeLock) {
-		tables.remove(rr.getId());
+		tables.remove(rr.getInsId());
 	}
 
 	private void routeConfigChanged(String cid, MessageRouteRow rr) {
-		tables.put(rr.getId(), rr);
+		tables.put(rr.getInsId(), rr);
 	}
 
 	public Set<Integer> getIntanceIdsByMessageType(Byte type) {

@@ -71,7 +71,7 @@ public class ConfigPostInitListener extends PostInitAdapter {
 		 List<Field> fields = new ArrayList<>();
 		 Utils.getIns().getFields(fields, cls);
 		 
-		 if(cls.getName().equals("cn.jmicro.resource.CpuAndMemoryResource")) {
+		 if(cls.getName().equals("cn.jmicro.client.ClientMessageReceiver")) {
 			 logger.debug("Config preInit");
 		 }
 

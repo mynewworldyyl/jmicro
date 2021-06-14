@@ -610,7 +610,7 @@ public class SimpleObjectFactory implements IObjectFactory {
 			
 			loadAccountInfo(dataOperator,cfg);
 			
-			persistProcessInfo(dataOperator);
+			//persistProcessInfo(dataOperator);
 			
 			if(pi.isLogin()) {
 				clHelper.registRemoteClass();
@@ -629,6 +629,20 @@ public class SimpleObjectFactory implements IObjectFactory {
 			for(IPostFactoryListener lis : this.postReadyListeners){
 				lis.afterInit(this);
 			}
+			
+			persistProcessInfo(dataOperator);
+			
+			String p = ChoyConstants.INS_ROOT+"/" + pi.getId();
+			TimerTicker.doInBaseTicker(60,Config.getInstanceName() + "_Choy_checker",null,(key,at)->{
+				if(!dataOperator.exist(p) && pi.isActive()) {
+					String js0 = JsonUtils.getIns().toJson(pi);
+					String msg = "Recreate process info node by checker: " + js0;
+					logger.warn(msg);
+					LG.log(MC.LOG_WARN, this.getClass(),msg);
+					dataOperator.createNodeOrSetData(p,js0,true);
+				}
+			});
+			
 		};
 		
 		String tag = cfg.getString(Constants.MASTER_SLAVE_TAG, null);
@@ -810,11 +824,11 @@ public class SimpleObjectFactory implements IObjectFactory {
 				
 				final IAccountService as0 = as;
 				Holder<Integer> loginCnt = new Holder<>(0);
-				TimerTicker.doInBaseTicker(60*8, "", null, (k,a)->{
+				TimerTicker.doInBaseTicker(60*8, "actLoginCheck", null, (k,a)->{
 					Resp<Boolean> resp = null;
 					if(loginCnt.get() == 0 && !Utils.isEmpty(pi.getAi().getLoginKey())) {
 						resp = as0.hearbeat(pi.getAi().getLoginKey());//刷新系统账号，防止超时
-						if(resp.getData()) {
+						if(resp != null && resp.getData()) {
 							return;
 						}
 					}
@@ -2007,15 +2021,7 @@ public class SimpleObjectFactory implements IObjectFactory {
 		SystemUtils.setFileString(pi.getInfoFilePath(), js);
 		op.createNodeOrSetData(p,js ,IDataOperator.EPHEMERAL);
 		logger.info("Update ProcessInfo:" + js);
-		TimerTicker.doInBaseTicker(60,Config.getInstanceName() + "_Choy_checker",null,(key,at)->{
-			if(!op.exist(p) && pi.isActive()) {
-				String js0 = JsonUtils.getIns().toJson(pi);
-				String msg = "Recreate process info node by checker: " + js0;
-				logger.warn(msg);
-				LG.log(MC.LOG_WARN, this.getClass(),msg);
-				op.createNodeOrSetData(p,js0,true);
-			}
-		});
+		
 	}
 
 }

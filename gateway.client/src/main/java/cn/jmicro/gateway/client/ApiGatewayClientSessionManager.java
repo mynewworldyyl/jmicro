@@ -79,8 +79,9 @@ public class ApiGatewayClientSessionManager implements IClientSessionManager {
 			}
 			
 			@Override
-			public void onMessage(ISession session, Message msg) {
+			public boolean onMessage(ISession session, Message msg) {
 				session.active();
+				return true;
 			}
 		});
 		

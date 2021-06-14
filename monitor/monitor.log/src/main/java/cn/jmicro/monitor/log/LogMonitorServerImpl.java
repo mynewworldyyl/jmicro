@@ -784,7 +784,7 @@ public class LogMonitorServerImpl implements ILogMonitorServer {
 		mi.setInputTime(curTime);
 		if(mi.getReq() instanceof RpcRequest) {
 			RpcRequest req = (RpcRequest)mi.getReq();
-			ServiceItem si = reg.getServiceByCode(req.getImpl());
+			ServiceItem si = reg.getServiceByCode(req.getSvnHash());
 			if(si != null) {
 				mi.setImplCls(si.getImpl());
 			}
@@ -858,7 +858,7 @@ public class LogMonitorServerImpl implements ILogMonitorServer {
 				mi.setInputTime(curTime);
 				if(mi.getReq() instanceof RpcRequest) {
 					RpcRequest req = (RpcRequest)mi.getReq();
-					ServiceItem si = reg.getServiceByCode(req.getImpl());
+					ServiceItem si = reg.getServiceByCode(req.getSvnHash());
 					if(si != null) {
 						mi.setImplCls(si.getImpl());
 					}

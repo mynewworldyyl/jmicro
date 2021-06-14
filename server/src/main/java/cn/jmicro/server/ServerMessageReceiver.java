@@ -161,6 +161,8 @@ public class ServerMessageReceiver implements IMessageReceiver{
 	}
 	
 	public void registHandler(IMessageHandler handler){
+		if(handler.type() == -1) return;//网关处理器不用注册
+		
 		Map<Byte,IMessageHandler> handlers = this.handlers;
 		if(handlers.containsKey(handler.type())){
 			return;
@@ -246,7 +248,7 @@ public class ServerMessageReceiver implements IMessageReceiver{
 					return;
 		    	}
 				try {
-					taskWorker.sumbit(t,sm);
+					taskWorker.sumbit(t);
 				} catch (CommonException e) {
 					responseException(msg,t.s,e,sm);
 				}
@@ -301,20 +303,21 @@ public class ServerMessageReceiver implements IMessageReceiver{
 				this.secretMng.checkAndDecrypt(msg);
 			}
 			
-			IMessageHandler h = handlers.get(msg.getType());
-			if(h == null) {
-				if(this.gatewayModel) {
-					h = this.gatewayHandler;
-				}else {
+			if(msg.isOuterMessage()) {
+				gatewayHandler.onMessage(s, msg);
+			} else {
+				IMessageHandler h = handlers.get(msg.getType());
+				if(h == null) {
 					String errMsg = "Message type ["+Integer.toHexString(msg.getType())+"] handler not found!"+",from insId: " + msg.getInsId();
 					MT.rpcEvent(MC.MT_HANDLER_NOT_FOUND);
 					LG.log(MC.LOG_ERROR, TAG,errMsg,null);
 					responseException(msg,s,null,task.sm);
 					JMicroContext.get().submitMRpcItem();
+				} else {
+					h.onMessage(s, msg);
 				}
-			} else {
-				h.onMessage(s, msg);
 			}
+			
 		} catch (Throwable e) {
 			MT.rpcEvent(MC.MT_SERVER_ERROR);
 			LG.log(MC.LOG_ERROR, TAG,e.getMessage()+",from insId: " + msg.getInsId(),e);

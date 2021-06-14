@@ -20,10 +20,8 @@ import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.util.HashSet;
 import java.util.Map;
-import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
@@ -42,6 +40,8 @@ public abstract class AbstractSession implements ISession{
 
 	private static final AtomicInteger ID = new AtomicInteger(0);
 	private static final Logger logger = LoggerFactory.getLogger(AbstractSession.class);
+	
+	private int connType;
 	
 	private long sessionId = -1L;
 	
@@ -73,11 +73,13 @@ public abstract class AbstractSession implements ISession{
 	
 	private IMessageReceiver receiver = null;
 	
+	private String targetName;
+	
 	//private Queue<ByteBuffer> readQueue = new ConcurrentLinkedQueue<ByteBuffer>();
 	
 	private AtomicBoolean waitingClose = new AtomicBoolean(false);
 	
-	private Worker worker = new Worker();
+	//private Worker worker = new Worker();
 	
 	private String remoteAddr;
 	private String localAddr;
@@ -88,10 +90,11 @@ public abstract class AbstractSession implements ISession{
 		}
 	}
 	
-	public AbstractSession(int bufferSize,int heardbeatInterval){
+	public AbstractSession(int bufferSize,int heardbeatInterval,int connType){
 		//this.receiver = receiver;
 		this.bufferSize = bufferSize;
 		this.heardbeatInterval = heardbeatInterval;
+		this.connType = connType;
 		if(!this.isServer()) {
 			//会对客户端会话，支持N个RPC同时并发
 			//worker.setName("JMicro-"+Config.getInstanceName()+"_Session_Reader"+ID.incrementAndGet());
@@ -170,33 +173,41 @@ public abstract class AbstractSession implements ISession{
      		 long startTime = TimeUtils.getCurTime();
      		 Message message = null;
               try {
-            	  message =  Message.readMessage(lb);
-          		  if(message == null){
+            	  
+            	  try {
+					message =  Message.readMessage(lb);
+				} catch (Throwable e) {
+					logger.error("",e);
+					this.close(true);
+					break;
+				}
+          		  
+            	  if(message == null){
                    	break;
                   }
+          		  
           		  if(message.isDebugMode()) {
           			 //logger.debug("T{},payload:{}",Thread.currentThread().getName(),message);
           		  }
+          		  
+          		 message.setStartTime(startTime);
+                //服务言接收信息是上行，客户端接收信息是下行
+         		  //dump(lb.array(),this.isServer(),message);
+                
+                //JMicroContext.configProvider(this,message);
+               /* if(message.isDebugMode()) {
+              	  long curTIme = System.currentTimeMillis();
+                	  LogUtil.B.debug((this.isServer() ? "Server ":"Client ") + "Read msg ins[{}] reqId[{}] method[{}] Total Cost:[{}],Read Cost[{}] ",
+                			message.getInstanceName(),
+                			message.getReqId(),message.getMethod(),(startTime-message.getTime()),(curTIme - startTime));
+                }*/
+                
+               this.readSum.addAndGet(message.getLen());
+               receiver.receive(this,message);
 			} catch (Throwable e) {
-				this.close(true);
 				logger.error("",e);
-				throw e;
+				break;
 			}
-              
-              message.setStartTime(startTime);
-              //服务言接收信息是上行，客户端接收信息是下行
-       		  //dump(lb.array(),this.isServer(),message);
-              
-              //JMicroContext.configProvider(this,message);
-             /* if(message.isDebugMode()) {
-            	  long curTIme = System.currentTimeMillis();
-              	  LogUtil.B.debug((this.isServer() ? "Server ":"Client ") + "Read msg ins[{}] reqId[{}] method[{}] Total Cost:[{}],Read Cost[{}] ",
-              			message.getInstanceName(),
-              			message.getReqId(),message.getMethod(),(startTime-message.getTime()),(curTIme - startTime));
-              }*/
-              
-             this.readSum.addAndGet(message.getLen());
-             receiver.receive(this,message);
      	 }
      	
      	if(lb.remaining() > 0) {
@@ -259,7 +270,12 @@ public abstract class AbstractSession implements ISession{
 		}
 	}
 	
-    public void notifySessionEvent(int eventType) {
+    @Override
+	public int connType() {
+		return this.connType;
+	}
+
+	public void notifySessionEvent(int eventType) {
     	if(listeners == null || listeners.isEmpty()) {
     		return;
     	}
@@ -346,9 +362,9 @@ public abstract class AbstractSession implements ISession{
 		this.notifySessionEvent(ISession.EVENT_TYPE_CLOSE);		
 		params.clear();
 		this.sessionId=-1L;
-		synchronized (worker) {
+		/*synchronized (worker) {
 			worker.notify();
-		}
+		}*/
 	}
 
 	@Override
@@ -364,6 +380,14 @@ public abstract class AbstractSession implements ISession{
 	@Override
 	public boolean isClose() {
 		return this.isClose;
+	}
+
+	public String targetName() {
+		return targetName;
+	}
+
+	public void setTargetName(String targetName) {
+		this.targetName = targetName;
 	}
 
 	@Override

@@ -324,7 +324,7 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
 			throw new RpcException(req,errMsg,MC.MT_SERVICE_ITEM_NOT_FOUND);
 		}
     	
-    	req.setImpl(si.getCode());
+    	req.setSnvHash(si.getKey().getSnvHash());
     	
     	Server s = si.getServer(Constants.TRANSPORT_NETTY);
     	
@@ -501,7 +501,7 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
 	}
 
 	@Override
-	public void onMessage(ISession session,Message respMsg) {
+	public boolean onMessage(ISession session,Message respMsg) {
 		//receive response
 		if(LG.isLoggable(MC.LOG_DEBUG,respMsg.getLogLevel())) {
 			LG.log(MC.LOG_DEBUG,TAG,"receive message");
@@ -513,7 +513,7 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
 			String errMsg = LG.messageLog("waitForResponse keySet:" + waitForResponse.keySet(),respMsg);
 			LG.log(MC.LOG_ERROR,TAG,errMsg);
 			logger.error(errMsg);
-			return;
+			return false;
 		}
 
 		ServiceMethod sm = null;
@@ -554,7 +554,7 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
 				if(resp.getResult() instanceof ServerError) {
 					ServerError se = (ServerError)resp.getResult();
 					if(se.getErrorCode() == MC.MT_AES_DECRYPT_ERROR) {
-						this.secManager.resetLocalSecret(respMsg.getType(),si.getInsId());
+						this.secManager.resetLocalSecret(respMsg.isOuterMessage(),si.getInsId());
 					}
 					p.setFail(se.getErrorCode(), se.getMsg());
 				} else {
@@ -572,6 +572,7 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
     		resp.setResult();*/
     		Object errO = new ServerError(10,e.getMessage());
     		p.setResult(errO);
+    		return false;
 		} finally {
 			if(cxt.getBoolean(Constants.NEW_LINKID,false)) {
 				//RPC链路结束
@@ -595,6 +596,7 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
 			JMicroContext.clear();
 		}
 	
+		return true;
 	}
 	
 	private void doChecker() {

@@ -88,7 +88,7 @@ public class ServiceInvocationHandler implements InvocationHandler{
 				ids.add(req.getRequestId());
 			}*/
 			req.setTransport(Constants.TRANSPORT_NETTY);
-			req.setImpl(si.getCode());
+			req.setSnvHash(si.getKey().getSnvHash());
 			req.putObject(JMicroContext.LOGIN_KEY, cxt.getString(JMicroContext.LOGIN_KEY, null));
 			
 			if(JMicroContext.get().exists(TxConstants.TX_ID)) {

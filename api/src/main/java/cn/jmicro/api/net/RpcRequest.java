@@ -186,11 +186,11 @@ public final class RpcRequest implements IRequest{
 		return this.getParams();
 	}
 	
-	public int getImpl() {
+	public int getSvnHash() {
 		return impl;
 	}
 
-	public void setImpl(int impl) {
+	public void setSnvHash(int impl) {
 		this.impl = impl;
 	}
 
@@ -249,6 +249,11 @@ public final class RpcRequest implements IRequest{
 	
 	public void putObject(String key,Object value){
 		 this.params.put(key, value);
+	}
+	
+	@Override
+	public byte getProtocol() {
+		return this.msg.getUpProtocol();
 	}
 
 	@Override

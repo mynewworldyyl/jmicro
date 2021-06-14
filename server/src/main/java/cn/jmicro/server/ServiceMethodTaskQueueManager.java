@@ -75,13 +75,13 @@ public class ServiceMethodTaskQueueManager implements ILimitData{
 		new Thread(this::run).start();
 	}
 	
-	public void sumbit(JMicroTask t,ServiceMethod sm) {
+	public void sumbit(JMicroTask t) {
 		ServiceMethodTaskQueue tq = taskQueue.get(t.getMsg().getSmKeyCode());
 		if(tq == null) {
 			synchronized(tempKeys) {
 				tq = taskQueue.get(t.getMsg().getSmKeyCode());
 				if(tq == null) {
-					tq =  new ServiceMethodTaskQueue(sm);
+					tq =  new ServiceMethodTaskQueue(t.getSm());
 					taskQueue.put(t.getMsg().getSmKeyCode(),tq);
 					tempKeys.add(t.getMsg().getSmKeyCode());
 				}
@@ -89,7 +89,7 @@ public class ServiceMethodTaskQueueManager implements ILimitData{
 		}
 		
 		//使用最新的方法配置
-		tq.sm = sm;
+		tq.sm = t.getSm();
 		tq.offer(t);
 		
 		synchronized(syncObject) {

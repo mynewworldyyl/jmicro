@@ -110,7 +110,7 @@ public class JRPCReqRespHandler implements IMessageHandler{
 	}
 
 	@Override
-	public void onMessage(ISession s, Message msg) {
+	public boolean onMessage(ISession s, Message msg) {
 		
 		RpcRequest req = null;
 		RpcResponse resp =  new RpcResponse();
@@ -122,9 +122,13 @@ public class JRPCReqRespHandler implements IMessageHandler{
 	    	final RpcRequest req1 = ICodecFactory.decode(this.codeFactory, msg.getPayload(),
 					RpcRequest.class, msg.getUpProtocol());
 	    	
+	    	req1.setMsg(msg);
+	    	
 	    	req1.setSm(JMicroContext.get().getParam(Constants.SERVICE_METHOD_KEY, null));
 	    	
-	    	config(req1,resp,msg.getLinkId());
+	    	ServiceMethod sm = JMicroContext.get().getParam(Constants.SERVICE_METHOD_KEY, null);
+	    	
+	    	config(req1,resp,msg.getLinkId(),sm);
 	    	
 	    	if(msg.isDebugMode()) {
 	    		JMicroContext.get().appendCurUseTime("Server end decode req",true);
@@ -141,7 +145,7 @@ public class JRPCReqRespHandler implements IMessageHandler{
 	    	
 	    	req = req1;
 			req.setSession(s);
-			req.setMsg(msg);
+			//req.setMsg(msg);
 			
 			//logger.info(req.getServiceName()+" debugMode: " + msg.isDebugMode()+", method: " + msg.getMethod());
 			
@@ -152,8 +156,6 @@ public class JRPCReqRespHandler implements IMessageHandler{
 	    	if(LG.isLoggable(MC.LOG_DEBUG)) {
 	    		LG.log(MC.LOG_DEBUG, TAG, LG.reqMessage("",req1));
 	    	}
-	    	
-	    	ServiceMethod sm = JMicroContext.get().getParam(Constants.SERVICE_METHOD_KEY, null);
 	    	
 			resp.setMsg(msg);
 			resp.setSuccess(true);
@@ -175,7 +177,7 @@ public class JRPCReqRespHandler implements IMessageHandler{
 						LG.log(MC.LOG_ERROR, TAG,se.toString());
 						MT.rpcEvent(MC.MT_INVALID_LOGIN_INFO);
 						resp2Client(resp,s,msg,sm);
-						return;
+						return true;
 					} else if(ai != null) {
 						JMicroContext.get().setString(JMicroContext.LOGIN_KEY, lk);
 						JMicroContext.get().setAccount(ai);
@@ -190,7 +192,7 @@ public class JRPCReqRespHandler implements IMessageHandler{
 				LG.log(MC.LOG_ERROR, TAG,se.toString());
 				MT.rpcEvent(MC.MT_PACKET_TOO_MAX,1);
 				resp2Client(resp,s,msg,sm);
-				return;
+				return true;
 			}
 			
 			ActInfo sai = null;
@@ -205,7 +207,7 @@ public class JRPCReqRespHandler implements IMessageHandler{
 						LG.log(MC.LOG_ERROR, TAG,se.toString());
 						MT.rpcEvent(MC.MT_INVALID_LOGIN_INFO);
 						resp2Client(resp,s,msg,sm);
-						return;
+						return true;
 					} else if(sai != null) {
 						JMicroContext.get().setString(JMicroContext.LOGIN_KEY_SYS, slk);
 						JMicroContext.get().setSysAccount(sai);
@@ -220,7 +222,7 @@ public class JRPCReqRespHandler implements IMessageHandler{
 				LG.log(MC.LOG_ERROR, TAG,se.toString());
 				MT.rpcEvent(MC.MT_INVALID_LOGIN_INFO);
 				resp2Client(resp,s,msg,sm);
-				return;
+				return true;
 			}
 			
 			ServiceItem si = JMicroContext.get().getParam(Constants.SERVICE_ITEM_KEY, null);
@@ -231,7 +233,7 @@ public class JRPCReqRespHandler implements IMessageHandler{
 				resp.setResult(se);
 				resp.setSuccess(false);
 				resp2Client(resp,s,msg,sm);
-				return;
+				return true;
 			}
 			
 			IPromise<Object> rr = interceptorManger.handleRequest(req);
@@ -257,7 +259,7 @@ public class JRPCReqRespHandler implements IMessageHandler{
 					logger.error("JRPCReq error: ",errMsg);
 					submitItem();
 				}
-				return;
+				return true;
 			}
 
 			final RpcResponse r = resp;
@@ -268,30 +270,33 @@ public class JRPCReqRespHandler implements IMessageHandler{
 						logger.warn("ReqId: " + req1.getRequestId() +", linkId: " + msg.getLinkId() + " has synchronized response!");
 						return;
 					}
-					finish[0]=true;
 					r.setSuccess(true);
 					r.setResult(rst);
+					msg.setError(false);
 					resp2Client(r,s,msg,sm);
+					finish[0]=true;
 				})
 				.fail((code,errorMsg,resultCxt)->{
 					if(finish[0]) {
 						return;
 					}
-					finish[0]=true;
 					ServerError se0 = new ServerError(code,errorMsg);
 					r.setSuccess(false);
 					r.setResult(se0);
+					msg.setError(true);
 					resp2Client(r,s,msg,sm);
+					finish[0]=true;
 				});
 			} else {
 				if(finish[0]) {
-					return;
+					return true;
 				}
-				finish[0]=true;
 				ServerError se0 = new ServerError(MC.MT_SERVER_ERROR,"Got null result!"+",insId: " + msg.getInsId());
 				r.setSuccess(false);
 				r.setResult(se0);
+				msg.setError(true);
 				resp2Client(r,s,msg,sm);
+				finish[0]=true;
 			}
 		} catch (Throwable e) {
 			if(!finish[0]) {
@@ -299,6 +304,7 @@ public class JRPCReqRespHandler implements IMessageHandler{
 				doException(req,resp,s,msg,e);
 			}
 		}
+	    return true;
 	}
 	
 	private void doException(RpcRequest req,RpcResponse resp0, ISession s,Message msg,Throwable e) {
@@ -312,16 +318,16 @@ public class JRPCReqRespHandler implements IMessageHandler{
 		
 		if(msg.isNeedResponse()) {
 			//返回错误
-			RpcResponse resp = null;
+			ServerError error = null;
 			if(e instanceof CommonException) {
 				CommonException ce = (CommonException)e;
-				resp = new RpcResponse(msg.getMsgId(),new ServerError(ce.getKey(),e.getMessage()));
+				error = new ServerError(ce.getKey(),e.getMessage());
 			}else {
-				resp = new RpcResponse(msg.getMsgId(),new ServerError(0,e.getMessage()));
+				error = new ServerError(0,e.getMessage());
 			}
 			
-			resp.setSuccess(false);
-			msg.setPayload(ICodecFactory.encode(codeFactory,resp,msg.getUpProtocol()));
+			//错误下行数据全用JSON
+			msg.setPayload(ICodecFactory.encode(codeFactory,error,Message.PROTOCOL_JSON));
 			msg.setType((byte)(msg.getType()+1));
 			msg.setInsId(pi.getId());
 			msg.setUpSsl(false);
@@ -329,6 +335,7 @@ public class JRPCReqRespHandler implements IMessageHandler{
 			msg.setSign(false);
 			msg.setSec(false);
 			msg.setSaltData(null);
+			msg.setError(true);
 			
 			msg.setTime(TimeUtils.getCurTime());
 			
@@ -356,11 +363,16 @@ public class JRPCReqRespHandler implements IMessageHandler{
     		JMicroContext.get().appendCurUseTime("Service Return",true);
 		}
 		
-		msg.setPayload(ICodecFactory.encode(codeFactory,resp,msg.getUpProtocol()));
+		if(msg.isError()) {
+			msg.setPayload(ICodecFactory.encode(codeFactory,resp,Message.PROTOCOL_JSON));
+		} else {
+			msg.setPayload(ICodecFactory.encode(codeFactory,resp,msg.getDownProtocol()));
+		}
+		
 		//请求类型码比响应类型码大1，
 		msg.setType((byte)(msg.getType()+1));
 		
-		if(resp.isSuccess()) {
+		if(!msg.isError()) {
 			MT.rpcEvent(MC.MT_SERVER_JRPC_RESPONSE_SUCCESS,1);
 			if(LG.isLoggable(MC.LOG_DEBUG)) {
 				LG.log(MC.LOG_DEBUG, TAG,"Request end: " + msg.getMsgId()+",insId: " + msg.getInsId());
@@ -409,16 +421,15 @@ public class JRPCReqRespHandler implements IMessageHandler{
 		}
 		JMicroContext.get().submitMRpcItem();
 	}
-
 	
-	private void config(RpcRequest req,RpcResponse resp,Long linkId) {
+	private void config(RpcRequest req,RpcResponse resp,Long linkId,ServiceMethod sm) {
 		
-		Object obj = serviceLoader.getService(req.getImpl());
+		Object obj = serviceLoader.getService(sm.getKey().getUsk().getSnvHash());
 		if(obj == null){
 			LG.log(MC.LOG_ERROR,JMicroContext.class," service INSTANCE not found");
 			MT.nonRpcEvent(Config.getInstanceName(), MC.MT_PLATFORM_LOG);
 			//SF.doSubmit(MonitorConstant.SERVER_REQ_SERVICE_NOT_FOUND,req,null);
-			throw new CommonException("Service not found,srv: "+req.getImpl());
+			throw new CommonException("Service not found,srv: "+sm.getKey().getSnvHash());
 		}
 		
 		JMicroContext cxt = JMicroContext.get();
@@ -432,17 +443,17 @@ public class JRPCReqRespHandler implements IMessageHandler{
 		cxt.setParam(JMicroContext.CLIENT_ARGSTR, UniqueServiceMethodKey.paramsStr(req.getArgs()));
 		cxt.putAllParams(req.getRequestParams());
 		
-		ServiceItem si = registry.getOwnItem(req.getImpl());
+		ServiceItem si = registry.getOwnItem(sm.getKey().getUsk().getSnvHash());
 		if(si == null){
 			if(LG.isLoggable(MC.LOG_ERROR,req.getLogLevel())) {
 				LG.log(MC.LOG_ERROR,JMicroContext.class," service ITEM not found");
 				MT.nonRpcEvent(Config.getInstanceName(), MC.MT_SERVICE_ITEM_NOT_FOUND);
 			}
 			//SF.doSubmit(MonitorConstant.SERVER_REQ_SERVICE_NOT_FOUND,req,null);
-			throw new CommonException("Service not found impl："+req.getImpl()+", srv: " + req.getServiceName());
+			throw new CommonException("Service not found impl："+req.getSvnHash()+", srv: " + req.getServiceName());
 		}
 		
-		ServiceMethod sm = si.getMethod(req.getMethod(), req.getArgs());
+		//ServiceMethod sm = si.getMethod(req.getMethod(), req.getArgs());
 		cxt.setObject(Constants.SERVICE_ITEM_KEY, si);
 		cxt.setObject(Constants.SERVICE_METHOD_KEY, sm);
 		cxt.setObject(Constants.SERVICE_OBJ_KEY, obj);
@@ -456,7 +467,7 @@ public class JRPCReqRespHandler implements IMessageHandler{
 			mi.setImplCls(si.getImpl());
 			mi.setSmKey(sm.getKey());
 			mi.setResp(resp);
-			mi.setLinkId(linkId);
+			mi.setLinkId(linkId==null?0:linkId);
 		}
 		
 	}

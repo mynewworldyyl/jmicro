@@ -35,7 +35,7 @@ public class MessageRouteGroup {
 				Iterator<MessageRouteRow> ite = list.iterator();
 				while(ite.hasNext()) {
 					MessageRouteRow r = ite.next();
-					if(id == r.getId()) {
+					if(id == r.getInsId()) {
 						ite.remove();
 					}
 				}
@@ -57,7 +57,7 @@ public class MessageRouteGroup {
 	}
 	
 	public void updateRoute(MessageRouteRow rr) {
-		removeRoute(rr.getId());
+		removeRoute(rr.getInsId());
 		addRoute(rr);
 	}
 	

@@ -26,13 +26,12 @@ import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 
 import cn.jmicro.api.client.IClientSession;
-import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.net.AbstractSession;
+import cn.jmicro.api.net.ISession;
 import cn.jmicro.api.net.Message;
 import cn.jmicro.common.CommonException;
 import cn.jmicro.common.Constants;
 import cn.jmicro.common.util.JsonUtils;
-import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.http.DefaultFullHttpResponse;
@@ -43,11 +42,8 @@ public abstract class AbstractNettySession extends AbstractSession implements IC
 
 	private ChannelHandlerContext ctx;
 	
-	private boolean isWebSocket = false;
-	
-	public AbstractNettySession(ChannelHandlerContext ctx,int readBufferSize,int heardbeatInterval,boolean isWebSocket) {
-		super(readBufferSize,heardbeatInterval);
-		this.isWebSocket = isWebSocket;
+	public AbstractNettySession(ChannelHandlerContext ctx,int readBufferSize,int heardbeatInterval,int connType) {
+		super(readBufferSize,heardbeatInterval,connType);
 		this.ctx = ctx;
 	}
 	
@@ -61,44 +57,48 @@ public abstract class AbstractNettySession extends AbstractSession implements IC
 	
 	@Override
 	public void write(Message msg) {
-		if(msg.getUpProtocol() == Message.PROTOCOL_JSON) {
-			String json = JsonUtils.getIns().toJson(msg);
-			if(this.isWebSocket) {
-				ctx.channel().writeAndFlush(new TextWebSocketFrame(json));
-			} else {
-				FullHttpResponse response;
-				try {
-					response = new DefaultFullHttpResponse(HTTP_1_1, OK,
-							Unpooled.wrappedBuffer(json.getBytes(Constants.CHARSET)));
-					response.headers().set(CONTENT_TYPE, "text/json");
-					response.headers().set(CONTENT_LENGTH, response.content().readableBytes());
-					/*if (HttpHeaders.isKeepAlive(request)) {
-						response.headers().set(CONNECTION, Values.KEEP_ALIVE);
-					}*/
-					ctx.writeAndFlush(response);
-				} catch (UnsupportedEncodingException e) {
-					e.printStackTrace();
-				}
-			}
-		} else {
-			//ctx.write(msg)
-			//String json = JsonUtils.getIns().toJson(msg);
+		/*
+		 * if(msg.getUpProtocol() == Message.PROTOCOL_JSON) {
+		 * 
+		 * }
+		 */
+		if (ISession.CON_SOCKET == this.connType()) {
+			// ctx.write(msg)
+			// String json = JsonUtils.getIns().toJson(msg);
 			ByteBuffer bb = msg.encode();
-			if(bb == null) {
+			if (bb == null) {
 				throw new CommonException("data is NULL");
 			}
-			
+
 			this.writeSum.addAndGet(bb.limit());
-			
+
 			bb.mark();
 			ctx.channel().writeAndFlush(Unpooled.copiedBuffer(bb));
-			
-			//客户端写消息，算上行
+
+			// 客户端写消息，算上行
 			bb.reset();
-			this.dump(bb,true,msg);
-			
+			this.dump(bb, true, msg);
+		} else if (ISession.CON_WEB_SOCKET == this.connType()) {
+			String json = JsonUtils.getIns().toJson(msg);
+			ctx.channel().writeAndFlush(new TextWebSocketFrame(json));
+		} else if (ISession.CON_HTTP == this.connType()) {
+			String json = JsonUtils.getIns().toJson(msg);
+			FullHttpResponse response;
+			try {
+				response = new DefaultFullHttpResponse(HTTP_1_1, OK,
+						Unpooled.wrappedBuffer(json.getBytes(Constants.CHARSET)));
+				response.headers().set(CONTENT_TYPE, "text/json");
+				response.headers().set(CONTENT_LENGTH, response.content().readableBytes());
+				/*
+				 * if (HttpHeaders.isKeepAlive(request)) { response.headers().set(CONNECTION,
+				 * Values.KEEP_ALIVE); }
+				 */
+				ctx.writeAndFlush(response);
+			} catch (UnsupportedEncodingException e) {
+				e.printStackTrace();
+			}
 		}
-		
+
 		this.active();
 	}
 

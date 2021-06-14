@@ -29,6 +29,6 @@ import cn.jmicro.codegenerator.AsyncClientProxy;
 @AsyncClientProxy
 public interface IGatewayMessageCallback {
 
-	void onMessage(PSData[] item);
+	void onPSMessage(PSData[] item);
 	
 }

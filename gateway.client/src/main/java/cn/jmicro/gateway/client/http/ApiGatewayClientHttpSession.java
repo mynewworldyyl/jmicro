@@ -24,6 +24,7 @@ import java.util.Map;
 import cn.jmicro.api.client.IClientSession;
 import cn.jmicro.api.codec.JDataInput;
 import cn.jmicro.api.net.AbstractSession;
+import cn.jmicro.api.net.ISession;
 import cn.jmicro.api.net.Message;
 import cn.jmicro.common.CommonException;
 import cn.jmicro.common.Constants;
@@ -41,7 +42,7 @@ public class ApiGatewayClientHttpSession extends AbstractSession implements ICli
 	private ClientMessageReceiver receiver;
 	
 	public ApiGatewayClientHttpSession(ClientMessageReceiver receiver,String url,int readBufferSize,int heardbeatInterval) {
-		super(readBufferSize,heardbeatInterval);
+		super(readBufferSize,heardbeatInterval,ISession.CON_HTTP);
 		this.receiver = receiver;
 		this.url = url;
 	}

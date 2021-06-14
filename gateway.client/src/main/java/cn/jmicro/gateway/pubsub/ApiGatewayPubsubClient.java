@@ -8,6 +8,7 @@ import java.util.Set;
 import cn.jmicro.api.async.IPromise;
 import cn.jmicro.api.pubsub.PSData;
 import cn.jmicro.api.pubsub.genclient.IPubSubClientService$JMAsyncClient;
+import cn.jmicro.common.Constants;
 import cn.jmicro.gateway.client.ApiGatewayClient;
 
 public class ApiGatewayPubsubClient {
@@ -16,13 +17,13 @@ public class ApiGatewayPubsubClient {
 	
 	private ApiGatewayClient apiGc;
 	
-	public static String messageServiceImplName = "cn.jmicro.gateway.MessageServiceImpl";
+	//public static String messageServiceImplName = "cn.jmicro.gateway.MessageServiceImpl";
 	
 	private IPubSubClientService$JMAsyncClient pcs;
 	
 	public ApiGatewayPubsubClient(ApiGatewayClient client) {
 		this.apiGc = client;
-		pcs = client.getService(IPubSubClientService$JMAsyncClient.class,ApiGatewayClient.NS_MNG, "0.0.1");
+		pcs = client.getService(IPubSubClientService$JMAsyncClient.class,ApiGatewayClient.NS_PUBSUB, "0.0.1");
 	}
 
 	public int callService(String topic, Object[] args,byte flag,Map<String,Object> itemContext) {
@@ -101,8 +102,16 @@ public class ApiGatewayPubsubClient {
 	}
 	
 	public IPromise<Integer> subscribeJMAsync(String topic,Map<String, Object> ctx, PSDataListener lis) {
-		final IPromise<Integer> p = this.apiGc.callService(messageServiceImplName, ApiGatewayClient.NS_MNG, "0.0.1", "subscribe", 
-				Integer.class, new Object[] {topic, ctx});
+		
+		Map<String,Object> params = ctx;
+		if(params == null) {
+			params = new HashMap<>();
+		}
+		
+		params.put("topic", topic);
+		params.put("op", 1);
+		
+		final IPromise<Integer> p = this.apiGc.sendMessage(Constants.MSG_TYPE_PUBSUB, params, Integer.class);
 		p.success((rst,cxt0)->{
 			Set<PSDataListener> ls = listeners.get(topic);
 			if(ls == null) {
@@ -111,7 +120,6 @@ public class ApiGatewayPubsubClient {
 			}
 			lis.setSubId(rst);
 			ls.add(lis);
-		
 		})
 		.fail((code,err,cxt0)->{
 			System.out.println("code:" + code+", err: " + err);
@@ -121,8 +129,12 @@ public class ApiGatewayPubsubClient {
 	}
 	
 	public IPromise<Boolean>  unsubscribeJMAsync(String topic, PSDataListener lis) {
-		IPromise<Boolean> p = this.apiGc.callService(messageServiceImplName, ApiGatewayClient.NS_MNG, "0.0.1", "unsubscribe", 
-				Integer.class, new Object[] {lis.getSubId()});
+		Map<String,Object> params = new HashMap<>();;
+		params.put("subId", lis.getSubId());
+		params.put("op", 2);
+		
+		final IPromise<Boolean> p = this.apiGc.sendMessage(Constants.MSG_TYPE_PUBSUB, params, Boolean.class);
+		
 		p.success((rst,cxt0)->{
 			Set<PSDataListener> ls = listeners.get(topic);
 			if(ls != null && !ls.isEmpty()) {

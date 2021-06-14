@@ -111,10 +111,7 @@ class SubcriberManager {
 	}
 	
 	boolean isValidTopic(String topic) {
-		if(topic2Callbacks.containsKey(topic)) {
-			return !topic2Callbacks.get(topic).isEmpty();
-		}
-		return false;
+		return topic2Callbacks.get(topic) != null && !topic2Callbacks.get(topic).isEmpty();
 	}
 
 	Set<String> topics() {
@@ -165,7 +162,7 @@ class SubcriberManager {
 			return;
 		}
 
-		for (ServiceMethod sm : item.getMethods()) {
+		for(ServiceMethod sm : item.getMethods()) {
 			//接收异步消息的方法也要注册
 			if (StringUtils.isEmpty(sm.getTopic())) {
 				continue;
