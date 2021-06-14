@@ -48,6 +48,8 @@ import cn.jmicro.api.pubsub.PubSubManager;
 import cn.jmicro.api.registry.IRegistry;
 import cn.jmicro.api.registry.ServiceItem;
 import cn.jmicro.api.registry.ServiceMethod;
+import cn.jmicro.api.security.AccountManager;
+import cn.jmicro.api.security.ActInfo;
 import cn.jmicro.api.service.ServiceManager;
 import cn.jmicro.api.timer.ITickerAction;
 import cn.jmicro.api.timer.TimerTicker;
@@ -63,9 +65,8 @@ import cn.jmicro.common.util.StringUtils;
  * @author Yulei Ye
  * @date 2020年3月26日
  */
-@Component
-@Service(version="0.0.1",showFront=false,external=false,infs=IGatewayMessageCallback.class,
-side=Constants.SIDE_PROVIDER)
+@Component(side=Constants.SIDE_PROVIDER)
+@Service(version="0.0.1",showFront=false,external=false,infs=IGatewayMessageCallback.class)
 public class MessageServiceImpl implements IGatewayMessageCallback,IMessageHandler{
 
 	private final static Logger logger = LoggerFactory.getLogger(MessageServiceImpl.class);
@@ -99,6 +100,9 @@ public class MessageServiceImpl implements IGatewayMessageCallback,IMessageHandl
 	@Inject
 	private ServiceManager srvManager;
 	
+	@Inject
+	private AccountManager accountManager;
+	
 	private ISessionListener seeesionListener = (int type, ISession s)->{
 		if(type == ISession.EVENT_TYPE_CLOSE) {
 			Set<Integer> ids = s.getParam(MESSAGE_SERVICE_REG_ID);
@@ -112,7 +116,7 @@ public class MessageServiceImpl implements IGatewayMessageCallback,IMessageHandl
 		}
 	};
 	
-	private int subscribe(ISession session, String topic,Map<String, Object> ctx) {
+	private int subscribe(ISession session, String topic,Map<String, Object> ctx,Message msg) {
 		if(StringUtils.isEmpty(topic)) {
 			logger.error("Topic cannot be NULL");
 			return -1;
@@ -139,7 +143,7 @@ public class MessageServiceImpl implements IGatewayMessageCallback,IMessageHandl
 		boolean flag = false;
 		
 		for(ServiceItem si : items) {
-			ServiceMethod sm = si.getMethod("onMessage", new Class[] {new PSData[0].getClass()});
+			ServiceMethod sm = si.getMethod("onPSMessage", new Class[] {new PSData[0].getClass()});
 			if(sm != null) {
 				
 				flag = true;
@@ -163,16 +167,35 @@ public class MessageServiceImpl implements IGatewayMessageCallback,IMessageHandl
 				
 			} else {
 				logger.error("onMessage method not found!");
+				return -1;
 			}
 		}
 		
 		if(flag) {
+			
+			if(msg.getExtraMap() == null || msg.getExtraMap().isEmpty()) {
+				logger.error("Login key not found");
+				return -1;
+			}
+			
+			Object lk = msg.getExtraMap().get(Message.EXTRA_KEY_LOGIN_KEY);
+			if(lk == null) {
+				logger.error("Login key not found");
+				return -1;
+			}
+			
+			ActInfo ai = this.accountManager.getAccount(lk.toString());
+			if(ai == null) {
+				logger.error("Act not found by: " + lk);
+				 return -1;
+			}
+			
 			Registion r = new Registion();
 			r.ctx = ctx;
 			r.id = this.idServer.getIntId(MessageServiceImpl.class);
 			r.sess = session;
 			r.topic = topic;
-			r.clientId = JMicroContext.get().getAccount().getId();
+			r.clientId = ai.getId();
 			r.lastActiveTime = TimeUtils.getCurTime();
 			sess.add(r);
 			Set<Integer> ids = session.getParam(MESSAGE_SERVICE_REG_ID);
@@ -235,7 +258,7 @@ public class MessageServiceImpl implements IGatewayMessageCallback,IMessageHandl
 			}
 			
 			for(ServiceItem si : items) {
-				ServiceMethod sm = si.getMethod("onMessage", new Class[] {new PSData[0].getClass()});
+				ServiceMethod sm = si.getMethod("onPSMessage", new Class[] {new PSData[0].getClass()});
 				if(sm != null) {
 					logger.debug("remmove topic:{} from:{} ",rr.topic,sm.getKey().toKey(false, false, false));
 					if(StringUtils.isNotEmpty(sm.getTopic())) {
@@ -261,7 +284,6 @@ public class MessageServiceImpl implements IGatewayMessageCallback,IMessageHandl
 		}
 		return true;
 	}
-
 
 	@Override
 	@SMethod(asyncable=true,timeout=5000,retryCnt=0,needResponse=true)
@@ -388,7 +410,7 @@ public class MessageServiceImpl implements IGatewayMessageCallback,IMessageHandl
 		
 		params.remove("op");
 		
-		int opCode = Integer.parseInt(op.toString());
+		int opCode = new Double(Double.parseDouble(op.toString())).intValue();
 		if(opCode == 1) {
 			String topic = (String)params.get("topic");
 			if(Utils.isEmpty(topic)) {
@@ -396,7 +418,7 @@ public class MessageServiceImpl implements IGatewayMessageCallback,IMessageHandl
 				return true;
 			}
 			params.remove("topic");
-			int subId = this.subscribe(session, topic, params);
+			int subId = this.subscribe(session, topic, params,msg);
 			msg.setPayload(subId);
 		} else if(opCode == 2) {
 			String subId = (String)params.get("subId");
@@ -409,6 +431,8 @@ public class MessageServiceImpl implements IGatewayMessageCallback,IMessageHandl
 			msg.setPayload(suc);
 		}
 		msg.setError(false);
+		
+		msg.setType(Constants.MSG_TYPE_PUBSUB_RESP);
 		session.write(msg);
 		return true;
 	}

@@ -154,7 +154,7 @@ public @interface Service {
 	 * 通过Reference注解的肯定是客户端实例
 	 * @return
 	 */
-	public String side() default Constants.SIDE_ANY;
+	//public String side() default Constants.SIDE_ANY;
 	
 	/**
 	 * 指定包下的类才可使用

@@ -303,9 +303,9 @@ public class ServerMessageReceiver implements IMessageReceiver{
 				this.secretMng.checkAndDecrypt(msg);
 			}
 			
-			if(msg.isOuterMessage()) {
+			 if(msg.isOuterMessage() && msg.getType() != Constants.MSG_TYPE_PUBSUB) {
 				gatewayHandler.onMessage(s, msg);
-			} else {
+			 } else {
 				IMessageHandler h = handlers.get(msg.getType());
 				if(h == null) {
 					String errMsg = "Message type ["+Integer.toHexString(msg.getType())+"] handler not found!"+",from insId: " + msg.getInsId();

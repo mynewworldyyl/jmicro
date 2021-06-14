@@ -448,7 +448,7 @@
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
             <version>${junit_version}</version>
-             <scope>provided</scope>
+             <scope>test</scope>
         </dependency>
         
         <dependency>
@@ -462,10 +462,10 @@
     </dependencyManagement>
 
     <dependencies>
-        <dependency>
+         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
-            <scope>test</scope>
+           <scope>test</scope>
         </dependency>  
         <dependency>
 		    <groupId>org.projectlombok</groupId>
@@ -474,11 +474,6 @@
 		    <scope>provided</scope>
 		    <optional>true</optional>
 		</dependency>
-       <!-- <dependency>
-            <groupId>cn.jmicro</groupId>
-            <artifactId>jmicro.codegenerator</artifactId>
-            <scope>provided</scope>
-        </dependency> -->
     </dependencies>
 
     <profiles> 
