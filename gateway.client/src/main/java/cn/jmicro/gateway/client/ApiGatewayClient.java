@@ -487,6 +487,7 @@ public class ApiGatewayClient {
 			//全部异步返回，服务器可以异步返回，也可以同步返回
 			msg.setUpSsl(false);
 			msg.setInsId(0);
+			msg.setForce2Json(true);
 			
 			//msg.setVersion(Message.MSG_VERSION);
 			

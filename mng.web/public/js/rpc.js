@@ -32,7 +32,7 @@ jm.config = {
     httpContext : '/_http_',
     useWs : true,
 
-    sslEnable:true,
+    sslEnable:false,
     publicKey :'MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCt489YTxmLjNVxfFKSORyUgXjr65MQR1a/QdlriFEWXUAaLpVWP41YTlSA5ecG54xVwl2ayLytCv4CJNqYPeYNPUVXPr1tqND1aZYK9iUQQ0K36g2QZaigg+f/NJSY6w4XITQdBz3PnJOOzOK+cOew4R0XiyrR8sHG2Is4Mf9qowIDAQAB',
     privateKey:''
 }
@@ -655,9 +655,9 @@ jm.socket = {
                             resp.decode(msg.payload, msg.getDownProtocol());
                             msg.payload = resp;
                         }
-                        if(self.listeners[msg.reqId]) {
-                            self.listeners[msg.reqId](msg);
-                            delete self.listeners[msg.reqId];
+                        if(self.listeners[msg.msgId]) {
+                            self.listeners[msg.msgId](msg);
+                            delete self.listeners[msg.msgId];
                         }
                     }
                 });
@@ -666,12 +666,14 @@ jm.socket = {
             //连接关闭的时候触发
             self.wsk.onclose = function(event){
                 console.log("connection close");
+                console.log(event);
                 this.isInit = false;
             }
 
             //连接打开的时候触发
             self.wsk.onopen = function(event){
                 console.log("connect successfully");
+                console.log(event);
                 if(onopen) {
                     onopen();
                 }
@@ -684,7 +686,7 @@ jm.socket = {
     ,send : function(msg,cb) {
         if(msg.isNeedResponse()) {
             //注册回调为消息监听
-            this.listeners[msg.reqId] = cb;
+            this.listeners[msg.msgId] = cb;
         }
         let self = this;
         //msg.setProtocol(jm.rpc.Constants.PROTOCOL_BIN);
@@ -943,23 +945,29 @@ jm.rpc = {
             })
     },
 
-    createMsg:function(type) {
+    createMsg:function(type,respType) {
         let msg = new jm.rpc.Message();
         msg.type = type;
-        msg.id= 0;
-        msg.reqId = 0;
-        msg.linkId = 0;
+        msg.msgId= 0;
+        //msg.reqId = 0;
+       // msg.linkId = 0;
 
         //msg.setStream(false);
         msg.setDumpDownStream(false);
         msg.setDumpUpStream(false);
-        msg.setNeedResponse(true);
+        if(!!respType) {
+            msg.setRespType(respType)
+        } else {
+            msg.setRespType(jm.rpc.Constants.MSG_TYPE_PINGPONG);//默认为请求响应模式
+        }
+        //msg.setNeedResponse(true);
         //msg.setLoggable(false);
         msg.setMonitorable(false);
         msg.setDebugMode(false);
         msg.setLogLevel(jm.rpc.Constants.LOG_NO)//LOG_WARN
         msg.setFromWeb(true);
         msg.setRpcMk(true);
+        msg.setOuterMessage(true);
 
         return msg;
     }
@@ -1033,7 +1041,7 @@ jm.rpc = {
         }
 
         if(!type) {
-            type = jm.rpc.Constants.MSG_TYPE_REQ_RAW;
+            type = jm.rpc.Constants.MSG_TYPE_REQ_JRPC;
         }
 
         let self = this;
@@ -1070,7 +1078,7 @@ jm.rpc = {
 
   callRpcWithRequest : function(req,type,upProtocol,downProtocol){
     if(typeof type == 'undefined') {
-        type = jm.rpc.Constants.MSG_TYPE_REQ_RAW;
+        type = jm.rpc.Constants.MSG_TYPE_REQ_JRPC;
     }
 
       if(typeof upProtocol == 'undefined') {
@@ -1125,17 +1133,15 @@ jm.rpc = {
             msg.setDownProtocol(downProtocol);
 
             msg.setRpcMk(true);
-            msg.smKeyCode = methodCode;
+            msg.setSmKeyCode(methodCode);
+            msg.setForce2Json(true);
 
             //console.log(req.method+" => " + methodCode);
 
-            if(req.reqId) {
-                msg.reqId = req.reqId;
-                msg.id = msg.reqId;
-            }else {
-                msg.reqId = jm.rpc.reqId++;
-                msg.id = msg.reqId;
+            if(!req.reqId) {
+                req.reqId = jm.rpc.reqId++;
             }
+            msg.setMsgId(req.reqId);
 
             if(!!jm.rpc && !!jm.rpc.actInfo) {
                 req.params['loginKey'] = jm.rpc.actInfo.loginKey;
@@ -1152,7 +1158,7 @@ jm.rpc = {
             }
 
             if(req.needResponse) {
-                msg.setNeedResponse(true);
+                msg.setRespType(jm.rpc.Constants.MSG_TYPE_PINGPONG);
             }
             jm.transport.send(msg,function(rstMsg,err){
                 if(err || !rstMsg.payload.success) {
@@ -1654,10 +1660,15 @@ jm.http = {
     }
 }
 
+let PREFIX_TYPE_ID = -128;
+
 jm.rpc.Constants = {
 
-    MSG_TYPE_REQ_RAW : 0x03,  //纯二进制数据请求
-    MSG_TYPE_RRESP_RAW : 0x04, //纯二进制数据响应
+    //MSG_TYPE_REQ_RAW : 0x03,  //纯二进制数据请求
+    //MSG_TYPE_RRESP_RAW : 0x04, //纯二进制数据响应
+
+    MSG_TYPE_REQ_JRPC : 0x01, //普通RPC调用请求，发送端发IRequest，返回端返回IResponse
+    MSG_TYPE_RRESP_JRPC : 0x02,//返回端返回IResponse
 
     MSG_TYPE_ASYNC_RESP : 0x06,
 
@@ -1680,74 +1691,214 @@ jm.rpc.Constants = {
     LOGIN:1,
     LOGOUT:2,
 
-    HEADER_LEN : 18,
+    //public static final int HEADER_LEN = 13; // 2(flag)+2(data len with short)+1(type)
+    HEADER_LEN : 13,
+    //public static final int EXT_HEADER_LEN = 2; //附加数据头部长度
+    EXT_HEADER_LEN : 2,
+    //public static final int SEC_LEN = 128;
+
+    //public static final byte PROTOCOL_BIN = 0;
     PROTOCOL_BIN : 0,
+
+    //public static final byte PROTOCOL_JSON = 1;
     PROTOCOL_JSON : 1,
 
+    //public static final byte PRIORITY_0 = 0;
     PRIORITY_0 : 0,
+    //public static final byte PRIORITY_1 = 1;
     PRIORITY_1 : 1,
+    //public static final byte PRIORITY_2 = 2;
     PRIORITY_2 : 2,
+    //public static final byte PRIORITY_3 = 3;
     PRIORITY_3 : 3,
+    //public static final byte PRIORITY_4 = 4;
     PRIORITY_4 : 4,
+    //public static final byte PRIORITY_5 = 5;
     PRIORITY_5 : 5,
+    //public static final byte PRIORITY_6 = 6;
     PRIORITY_6 : 6,
+    //public static final byte PRIORITY_7 = 7;
     PRIORITY_7 : 7,
 
+    //public static final byte PRIORITY_MIN = PRIORITY_0;
     PRIORITY_MIN : 0,
+    //public static final byte PRIORITY_NORMAL = PRIORITY_3;
     PRIORITY_NORMAL : 3,
+    //public static final byte PRIORITY_MAX = PRIORITY_7;
     PRIORITY_MAX : 7,
 
-    MAX_SHORT_VALUE:0X7FFF,
+    //public static final int MAX_SHORT_VALUE = ((int)Short.MAX_VALUE)*2;
+    MAX_SHORT_VALUE : 32767*2,
 
-    MAX_BYTE_VALUE :0X7F,
+    //public static final short MAX_BYTE_VALUE = ((short)Byte.MAX_VALUE)*2;
+    MAX_BYTE_VALUE : 126*2,
 
-    MAX_INT_VALUE :0x7FFFFFFF,
-    MAX_UINT_VALUE :0xFFFFFFFF,
+    //public static final long MAX_INT_VALUE = ((long)Integer.MAX_VALUE)*2;
+    MAX_INT_VALUE : 0x7fffffff*2,
 
     //public static final long MAX_LONG_VALUE = Long.MAX_VALUE*2;
 
-    MSG_VERSION :1,
+    //public static final byte MSG_VERSION = (byte)1;
 
     //长度字段类型，1表示整数，0表示短整数
+    //public static final short FLAG_LENGTH_INT = 1 << 0;
     FLAG_LENGTH_INT : 1 << 0,
 
+    //public static final short FLAG_UP_PROTOCOL = 1<<1;
+    FLAG_UP_PROTOCOL : 1 << 1,
+    //public static final short FLAG_DOWN_PROTOCOL = 1 << 2;
+    FLAG_DOWN_PROTOCOL : 1 << 2,
+
+    //可监控消息
+    //public static final short FLAG_MONITORABLE = 1 << 3;
+    FLAG_MONITORABLE : 1 << 3,
+
+    //包含Extra数据
+    //public static final short FLAG_EXTRA = 1 << 4;
+    FLAG_EXTRA : 1 << 4,
+
+    //需要响应的请求  or down message is error
+    //public static final short FLAG_NEED_RESPONSE = 1 << 5;
+
+    //来自外网消息，由网关转发到内网
+//public static final short FLAG_OUT_MESSAGE = 1 << 5;
+    FLAG_OUT_MESSAGE : 1 << 5,
+
+    //public static final short FLAG_ERROR = 1 << 6;
+    FLAG_ERROR : 1 << 6,
+
+    FLAG_FORCE_RESP_JSON : 1 << 7,
+
+    //public static final short FLAG_LOG_LEVEL = 13;
+    FLAG_LOG_LEVEL :  13,
+
+    //public static final short FLAG_RESP_TYPE = 11;
+    FLAG_RESP_TYPE : 11,
+
+/****************  extra constants flag   *********************/
+
     //调试模式
-    FLAG_DEBUG_MODE  :  1 << 1,
+    //public static final int EXTRA_FLAG_DEBUG_MODE = 1 << 0;
+    EXTRA_FLAG_DEBUG_MODE : 1 << 0,
 
-    //需要响应的请求
-    FLAG_NEED_RESPONSE  :  1 << 2,
-
-    FLAG_UP_PROTOCOL  :  1<<5,
-
-    FLAG_DOWN_PROTOCOL  :  1 << 6,
+    //public static final int EXTRA_FLAG_PRIORITY = 1;
+    EXTRA_FLAG_PRIORITY : 1,
 
     //DUMP上行数据
-    FLAG_DUMP_UP  :  1 << 7,
+    //public static final int EXTRA_FLAG_DUMP_UP = 1 << 3;
+    EXTRA_FLAG_DUMP_UP : 1 << 3,
 
     //DUMP下行数据
-    FLAG_DUMP_DOWN  :  1 << 8,
+    //public static final int EXTRA_FLAG_DUMP_DOWN = 1 << 4;
+    EXTRA_FLAG_DUMP_DOWN : 1 << 4,
 
-    //可监控消息
-    FLAG_MONITORABLE  :  1 << 9,
+    //加密参数 0：没加密，1：加密
+    //public static final int EXTRA_FLAG_UP_SSL = 1 << 5;
+    EXTRA_FLAG_UP_SSL : 1 << 5,
 
-    //可监控消息
-    FLAG_ASYNC_RESUTN_RESULT  :  1 << 13,
+    //是否签名
+    //public static final int EXTRA_FLAG_DOWN_SSL = 1 << 6;
+    EXTRA_FLAG_DOWN_SSL : 1 << 6,
 
-    FLAG_UP_SSL  :  1 << 14,
+    //public static final int EXTRA_FLAG_IS_FROM_WEB = 1 << 7;
+    EXTRA_FLAG_IS_FROM_WEB : 1 << 7,
 
-    FLAG_DOWN_SSL  :  1 << 15,
+    //public static final int EXTRA_FLAG_IS_SEC = 1 << 8;
+    EXTRA_FLAG_IS_SEC : 1 << 8,
 
-    FLAG_IS_FROM_WEB : 1 << 27,
+    //是否签名： 0:无签名； 1：有签名
+    //public static final int EXTRA_FLAG_IS_SIGN = 1 << 9;
+    EXTRA_FLAG_IS_SIGN : 1 << 9,
 
-    FLAG_IS_SEC  :  1 << 28,
+    //加密方式： 0:对称加密，1：RSA 非对称加密
+   //public static final int EXTRA_FLAG_ENC_TYPE = 1 << 10;
+    EXTRA_FLAG_ENC_TYPE : 1 << 10,
 
-    FLAG_IS_SIGN  :  1 << 29,
+    //public static final int EXTRA_FLAG_RPC_MCODE = 1 << 11;
+    EXTRA_FLAG_RPC_MCODE : 1 << 11,
 
-    FLAG_ENC_TYPE  :  1 << 30,
+    //public static final int EXTRA_FLAG_SECTET_VERSION = 1 << 12;
+    EXTRA_FLAG_SECTET_VERSION : 1 << 12,
 
-    FLAG_RPC_MCODE  :  1 << 26,
+    //是否包含实例ID
+    //public static final int EXTRA_FLAG_INS_ID = 1 << 12;
+    EXTRA_FLAG_INS_ID : 1 << 13,
 
-    FLAG_SECTET_VERSION :  1 << 25,
+    //public static final Byte EXTRA_KEY_LINKID = -127;
+    EXTRA_KEY_LINKID : -127,
+    //public static final Byte EXTRA_KEY_INSID = -126;
+    EXTRA_KEY_INSID :-126,
+    //public static final Byte EXTRA_KEY_TIME = -125;
+    EXTRA_KEY_TIME : -125,
+    //public static final Byte EXTRA_KEY_SM_CODE = -124;
+    EXTRA_KEY_SM_CODE : -124,
+    //public static final Byte EXTRA_KEY_SM_NAME = -123;
+    EXTRA_KEY_SM_NAME : -123,
+    //public static final Byte EXTRA_KEY_SIGN = -122;
+    EXTRA_KEY_SIGN : -122,
+
+    //public static final Byte EXTRA_KEY_SALT = -121;
+    EXTRA_KEY_SALT : -121,
+
+    //public static final Byte EXTRA_KEY_SEC = -120;
+    EXTRA_KEY_SEC : -120,
+
+    //public static final Byte EXTRA_KEY_LOGIN_KEY = -119;
+    EXTRA_KEY_LOGIN_KEY : -119,
+
+    //public static final Byte EXTRA_KEY_ARRAY = -116;
+    //public static final Byte EXTRA_KEY_FLAG = -118;
+    EXTRA_KEY_FLAG : -118,
+
+    //public static final Byte EXTRA_KEY_MSG_ID = -117;
+    EXTRA_KEY_MSG_ID : -117,
+
+    //public static final byte MSG_TYPE_PINGPONG = 0;//默认请求响应模式
+    MSG_TYPE_PINGPONG : 0,
+
+    //public static final byte MSG_TYPE_NO_RESP = 1;//单向模式
+    MSG_TYPE_NO_RESP : 1,
+
+    //public static final byte MSG_TYPE_MANY_RESP = 2;//多个响应模式，如消息订阅
+    MSG_TYPE_MANY_RESP : 2,
+
+/****************  extra constants flag   *********************/
+
+    //PREFIX_TYPE_ID : -128,
+    //空值编码
+    PREFIX_TYPE_NULL : PREFIX_TYPE_ID++,
+
+    //FINAL
+    PREFIX_TYPE_FINAL : PREFIX_TYPE_ID++,
+
+    //类型编码写入编码中
+    PREFIX_TYPE_SHORT : PREFIX_TYPE_ID++,
+    //全限定类名作为前缀串写入编码中
+    PREFIX_TYPE_STRING : PREFIX_TYPE_ID++,
+
+    //以下对高使用频率非final类做快捷编码
+
+    //列表类型编码，指示接下业读取一个列表，取列表编码器直接解码
+    PREFIX_TYPE_LIST : PREFIX_TYPE_ID++,
+    //集合类型编码，指示接下来读取一个集合，取SET编码器直接解码
+    PREFIX_TYPE_SET : PREFIX_TYPE_ID++,
+    //Map类型编码，指示接下来读取一个Map，取Map编码器直接解码
+    PREFIX_TYPE_MAP : PREFIX_TYPE_ID++,
+
+    PREFIX_TYPE_BYTE : PREFIX_TYPE_ID++,
+    PREFIX_TYPE_SHORTT : PREFIX_TYPE_ID++,
+    PREFIX_TYPE_INT : PREFIX_TYPE_ID++,
+    PREFIX_TYPE_LONG : PREFIX_TYPE_ID++,
+    PREFIX_TYPE_FLOAT :PREFIX_TYPE_ID++,
+    PREFIX_TYPE_DOUBLE : PREFIX_TYPE_ID++,
+    PREFIX_TYPE_CHAR : PREFIX_TYPE_ID++,
+    PREFIX_TYPE_BOOLEAN : PREFIX_TYPE_ID++,
+    PREFIX_TYPE_STRINGG :PREFIX_TYPE_ID++,
+    PREFIX_TYPE_DATE : PREFIX_TYPE_ID++,
+    PREFIX_TYPE_BYTEBUFFER : PREFIX_TYPE_ID++,
+    PREFIX_TYPE_REQUEST : PREFIX_TYPE_ID++,
+    PREFIX_TYPE_RESPONSE : PREFIX_TYPE_ID++,
+    PREFIX_TYPE_PROXY : PREFIX_TYPE_ID++,
 
 }
 
@@ -1843,351 +1994,255 @@ jm.rpc.PSData.prototype.isPubsub = function() {
 
 jm.rpc.Message = function() {
 
-    this.startTime = 0;
-    //此消息所占字节数
-    this.len = -1;
+    //0B00111000 5---3
+    //public static final short FLAG_LEVEL = 0X38;
+
+    //是否启用服务级log
+    //public static final short FLAG_LOGGABLE = 1 << 3;
+    //private transient long startTime = -1;
+
+    //此消息所占字节数，用于记录流量
+    //private transient int len = -1;
 
     //1 byte length
-    this.version = 0;
-
-    this.reqId = 0;
-
-    this.insId = 0;
-
-    this.smKeyCode = 0;
+    //private byte version;
 
     //payload length with byte,4 byte length
     //private int len;
-    // 1 byte
-    this.type = 0;
 
     /**
-     * 0        S:       data length type 0:short 1 : int
-     * 1        dm:      is development mode
-     * 2        N:       need Response
-     * 3,4      PP:      Message priority
-     * 5        UPR:     up protocol  0:bin,  1: json
-     * 6        DPR:     down protocol 0:bin, 1 : json
-     * 7        up:      dump up stream data
-     * 8        do:      dump down stream data
-     * 9        M:       Monitorable
-     * 10,11,12 LLL      Log level
-     * 13       A:       async return result，different from async RPC
-     *
-     A   L  L   L   M  DO UP  DPR  UPR  P    P   N   dm   S
-     |    |   |   |  |   |   |  |  |   |    |    |    |   |    |   |
-     15  14  13  12  11  10  9  8  7   6    5    4    3   2    1   0
-
+     * 0        S:       data length type 0:short 1:int
+     * 1        UPR:     up protocol  0: bin,  1: json
+     * 2        DPR:     down protocol 0: bin, 1: json
+     * 3        M:       Monitorable
+     * 4        Extra    Contain extradata
+     * 5        Innet    message from outer network
+     * 6
+     * 7
+     * 8
+     * 9
+     * 10
+     * 11，12   Resp type  MSG_TYPE_PINGPONG，MSG_TYPE_NO_RESP，MSG_TYPE_MANY_RESP
+     * 13 14 15 LLL      Log level
      * @return
      */
+    //private short flag = 0;
     this.flag = 0;
 
-    //request or response
-    //private boolean isReq;
+    // 1 byte
+    //private byte type;
+    this.type=0;
 
     //2 byte length
     //private byte ext;
 
+    //normal message ID	or JRPC request ID
+    //private long msgId;
+    this.msgId = 0;
+
+    //private Object payload;
     this.payload = null;
 
-    this.sign = null;
 
-    this.salt = null;
+    //private Map<Byte,Object> extraMap;
+    this.extraMap = [];
+    //*****************extra data begin******************//
 
-    this.sec = null;
+    /**
+     * 0        dm:       is development mode EXTRA_FLAG_DEBUG_MODE = 1 << 1;
+     * 1,2      PP:       Message priority   EXTRA_FLAG_PRIORITY
+     * 3        up:       dump up stream data
+     * 4        do:       dump down stream data
+     * 5 	    US        上行SSL  0:no encrypt 1:encrypt
+     * 6        DS        下行SSL  0:no encrypt 1:encrypt
+     * 7        SV        对称密钥版本
+     * 8        MK        RPC方法编码
+     * 9        WE        从Web浏览器过来的请求
+     * 10       SE        密码
+     * 11       SI        是否有签名值 0：无，1：有
+     * 12       ENT       encrypt type 0:对称加密，1：RSA 非对称加密
+     * 13
+     ENT SI  SE  WE MK SV  DS   US   DO   UP  P    P   dm
+     |    |   |   |  |   |   |  |  |   |    |    |    |   |    |   |
+     15  14  13  12  11  10  9  8  7   6    5    4    3   2    1   0
 
-    //*****************development mode field begin******************//
-    this.msgId = 0;
-    this.linkId = 0;
-    this.time = 0;
+     |    |   |   |  |   |   |    |   |   |    |    |    |   |    |   |
+     31  30  29  28  27  26  25   24  23  22   21   20   19  18   17  16
 
-    this.method = 0;
-
-    //****************development mode field end*******************//
+     *
+     * @return
+     */
+    //private transient int extrFlag = 0;
+    this.extrFlag = 0;
+    //附加数居
+    //private transient ByteBuffer extra = null;
+    this.extra = null;
 }
 
-//public static boolean
-jm.rpc.Message.prototype.is = function( flag,  mask) {
-    return (flag & mask) != 0;
-}
+jm.rpc.Message.prototype.decodeExtra=function(/*ByteBuffer*/ extra) {
+    if(extra == null || extra.length == 0) return null;
 
-jm.rpc.Message.prototype.set = function( isTrue, f, mask) {
-    return isTrue ?(f |= mask):(f &= ~mask);
-}
+    let ed = [];
 
-jm.rpc.Message.prototype.isAsyncReturnResult = function() {
-    return this.is(this.flag,jm.rpc.Constants.FLAG_ASYNC_RESUTN_RESULT);
-}
+    let b = new jm.utils.JDataInput(extra);
 
-jm.rpc.Message.prototype.setAsyncReturnResult = function(f) {
-    this.flag = set(f,this.flag,jm.rpc.Constants.FLAG_ASYNC_RESUTN_RESULT);
-}
-
-jm.rpc.Message.prototype.isDumpUpStream = function()  {
-    return this.is(this.flag,jm.rpc.Constants.FLAG_DUMP_UP);
-}
-
-jm.rpc.Message.prototype.setDumpUpStream = function(f)  {
-    this.flag  = this.set(f,this.flag ,jm.rpc.Constants.FLAG_DUMP_UP);
-}
-
-//public boolean
-jm.rpc.Message.prototype.isDumpDownStream = function() {
-    return this.is(this.flag, jm.rpc.Constants.FLAG_DUMP_DOWN);
-}
-
-jm.rpc.Message.prototype.setDumpDownStream = function(f)  {
-    this.flag  = this.set(f,this.flag ,jm.rpc.Constants.FLAG_DUMP_DOWN);
-}
-
-jm.rpc.Message.prototype.isRpcMk = function() {
-    return this.is(this.flag, jm.rpc.Constants.FLAG_RPC_MCODE);
-}
-
-jm.rpc.Message.prototype.setRpcMk = function(f)  {
-    this.flag  = this.set(f,this.flag ,jm.rpc.Constants.FLAG_RPC_MCODE);
-}
-
-jm.rpc.Message.prototype.isSecretVersion = function() {
-    return this.is(this.flag, jm.rpc.Constants.FLAG_SECTET_VERSION);
-}
-
-jm.rpc.Message.prototype.setSecretVersion = function(f)  {
-    this.flag  = this.set(f,this.flag ,jm.rpc.Constants.FLAG_SECTET_VERSION);
-}
-
-//public boolean
-jm.rpc.Message.prototype.isLoggable = function()  {
-    return this.is(this.flag,jm.rpc.Constants.FLAG_LOGGABLE);
-}
-
-//public boolean
-jm.rpc.Message.prototype.isDebugMode = function() {
-    return this.is(this.flag,jm.rpc.Constants.FLAG_DEBUG_MODE);
-}
-
-//public void
-jm.rpc.Message.prototype.setDebugMode = function(f)  {
-    //this.flag |= f ? jm.rpc.Constants.FLAG_DEBUG_MODE : 0 ;
-    this.flag  = this.set(f,this.flag ,jm.rpc.Constants.FLAG_DEBUG_MODE);
-}
-
-//public boolean
-jm.rpc.Message.prototype.isMonitorable = function()  {
-    return this.is(this.flag,jm.rpc.Constants.FLAG_MONITORABLE);
-}
-
-//public void
-jm.rpc.Message.prototype.setMonitorable = function(f)  {
-   // this.flag |= f ? jm.rpc.Constants.FLAG_MONITORABLE : 0 ;
-    this.flag  = this.set(f,this.flag ,jm.rpc.Constants.FLAG_MONITORABLE);
-}
-
-//public boolean
-jm.rpc.Message.prototype.isNeedResponse = function()  {
-    return this.is(this.flag,jm.rpc.Constants.FLAG_NEED_RESPONSE);
-}
-
-jm.rpc.Message.prototype.setNeedResponse = function(f)  {
-    this.flag  = this.set(f,this.flag ,jm.rpc.Constants.FLAG_NEED_RESPONSE);
-}
-
-jm.rpc.Message.prototype.isUpSsl = function()  {
-    return this.is(this.flag,jm.rpc.Constants.FLAG_UP_SSL);
-}
-
-jm.rpc.Message.prototype.setUpSsl = function(f)  {
-    this.flag  = this.set(f,this.flag ,jm.rpc.Constants.FLAG_UP_SSL);
-}
-
-jm.rpc.Message.prototype.setDownSsl = function(f)  {
-    this.flag  = this.set(f,this.flag ,jm.rpc.Constants.FLAG_DOWN_SSL);
-}
-
-jm.rpc.Message.prototype.isDownSsl = function()  {
-    return this.is(this.flag,jm.rpc.Constants.FLAG_DOWN_SSL);
-}
-
-jm.rpc.Message.prototype.setEncType = function(f)  {
-    this.flag  = this.set(f,this.flag ,jm.rpc.Constants.FLAG_ENC_TYPE);
-}
-
-jm.rpc.Message.prototype.isRsaEnc = function()  {
-    return this.is(this.flag,jm.rpc.Constants.FLAG_ENC_TYPE);
-}
-
-jm.rpc.Message.prototype.setSec = function(f)  {
-    this.flag  = this.set(f,this.flag ,jm.rpc.Constants.FLAG_IS_SEC);
-}
-
-jm.rpc.Message.prototype.isSec = function()  {
-    return this.is(this.flag,jm.rpc.Constants.FLAG_IS_SEC);
-}
-
-jm.rpc.Message.prototype.setFromWeb = function(f)  {
-    this.flag  = this.set(f,this.flag ,jm.rpc.Constants.FLAG_IS_FROM_WEB);
-}
-
-jm.rpc.Message.prototype.isFromWeb = function()  {
-    return this.is(this.flag,jm.rpc.Constants.FLAG_IS_FROM_WEB);
-}
-
-jm.rpc.Message.prototype.isSign = function()  {
-    return this.is(this.flag,jm.rpc.Constants.FLAG_IS_SIGN);
-}
-
-jm.rpc.Message.prototype.setSign = function(f)  {
-    this.flag  = this.set(f,this.flag ,jm.rpc.Constants.FLAG_IS_SIGN);
-}
-
-/**
- *
- * @param f true 表示整数，false表示短整数
- */
-//public void
-jm.rpc.Message.prototype.setLengthType = function(f)  {
-    //this.flag |= f ? jm.rpc.Constants.FLAG_LENGTH_INT : 0 ;
-    this.flag  = this.set(f,this.flag ,jm.rpc.Constants.FLAG_LENGTH_INT);
-}
-
-//public boolean
-jm.rpc.Message.prototype.isLengthInt = function()  {
-    return this.is(this.flag,jm.rpc.Constants.FLAG_LENGTH_INT);
-}
-
-//public int
-jm.rpc.Message.prototype.getPriority = function()  {
-    return ((this.flag >>> 3) & 0x07);
-}
-
-//public void
-jm.rpc.Message.prototype.setPriority = function(l)  {
-    if(l > jm.rpc.Constants.PRIORITY_3 || l < jm.rpc.Constants.PRIORITY_0) {
-        throw "Invalid priority: "+l;
+    while(b.remaining() > 0) {
+        let v = this.decodeVal(b);
+        ed.push(v);
     }
-    this.flag = ((l << 3) | this.flag);
+    return ed;
+
 }
 
-//public byte
-jm.rpc.Message.prototype.getLogLevel = function()  {
-    return ((this.flag >>> 10) & 0x07);
-}
-
-//public void
-jm.rpc.Message.prototype.setLogLevel = function(v)  {
-    if(v < jm.rpc.Constants.LOG_NO || v > jm.rpc.Constants.LOG_FINAL) {
-        throw "Invalid Log level: "+v;
-    }
-    this.flag = ((v << 10) | this.flag);
-}
-
-jm.rpc.Message.prototype.getUpProtocol=function() {
-    return this.is(this.flag,jm.rpc.Constants.FLAG_UP_PROTOCOL) ? 1:0;
-}
-
-jm.rpc.Message.prototype.setUpProtocol = function(protocol) {
-    this.flag  = this.set(protocol == jm.rpc.Constants.PROTOCOL_JSON ,this.flag , jm.rpc.Constants.FLAG_UP_PROTOCOL);
-}
-
-jm.rpc.Message.prototype.getDownProtocol = function() {
-    return this.is(this.flag, jm.rpc.Constants.FLAG_DOWN_PROTOCOL)?1:0;
-}
-
-jm.rpc.Message.prototype.setDownProtocol = function(protocol) {
-    //this.flag |= protocol == jm.rpc.Constants.PROTOCOL_JSON ? jm.rpc.Constants.FLAG_DOWN_PROTOCOL : 0 ;
-    this.flag  = this.set(protocol == jm.rpc.Constants.PROTOCOL_JSON ,this.flag ,jm.rpc.Constants.FLAG_DOWN_PROTOCOL);
-}
-
-//public static Message
-jm.rpc.Message.prototype.decode = function(b) {
-    let msg = this;
-    let dataInput = new jm.utils.JDataInput(b);
-    //第0个字节
-    msg.flag = dataInput.readInt();
-    let len = 0;
-    if(this.isLengthInt()) {
-        len = dataInput.readInt();
+jm.rpc.Message.prototype.decodeVal=function(/*JDataInput*/ b)  {
+    let k = b.getByte();
+    let type = b.getByte();
+    if(jm.rpc.Constants.PREFIX_TYPE_LIST == type){
+        let len = b.readUnsignedShort();
+        if(len == 0) {
+            return new [];
+        }
+        let arr = b.readByteArray(len);
+        return {v:arr, type:jm.rpc.Constants.PREFIX_TYPE_LIST, key:k};
+    }else if(type == jm.rpc.Constants.PREFIX_TYPE_INT){
+        let v = b.readInt();
+        return {v:v, type:jm.rpc.Constants.PREFIX_TYPE_INT, key:k};
+    }else if(jm.rpc.Constants.PREFIX_TYPE_BYTE == type){
+        let v = b.getByte();
+        return {v:v, type:jm.rpc.Constants.PREFIX_TYPE_BYTE, key:k};
+    }else if(jm.rpc.Constants.PREFIX_TYPE_SHORTT == type){
+        let v = b.readUnsignedShort();
+        return {v:v, type:jm.rpc.Constants.PREFIX_TYPE_SHORTT, key:k};
+    }else if(jm.rpc.Constants.PREFIX_TYPE_LONG == type){
+        let v = b.readUnsignedLong();
+        return {v:v, type:jm.rpc.Constants.PREFIX_TYPE_LONG, key:k};
+    }else if(jm.rpc.Constants.PREFIX_TYPE_FLOAT == type){
+        return b.readFloat();
+        return {v:v, type:jm.rpc.Constants.PREFIX_TYPE_FLOAT, key:k};
+    }else if(jm.rpc.Constants.PREFIX_TYPE_DOUBLE == type){
+        let v = b.readDouble();
+        return {v:v, type:jm.rpc.Constants.PREFIX_TYPE_DOUBLE, key:k};
+    }else if(jm.rpc.Constants.PREFIX_TYPE_BOOLEAN == type){
+        let v = b.readBoolean();
+        return {v:v, type:jm.rpc.Constants.PREFIX_TYPE_BOOLEAN, key:k};
+    }else if(jm.rpc.Constants.PREFIX_TYPE_CHAR == type){
+        let v = b.readChar();
+        return {v:v, type:jm.rpc.Constants.PREFIX_TYPE_CHAR, key:k};
+    }else if(jm.rpc.Constants.PREFIX_TYPE_STRING == type){
+        let str = b.readUtf8String();
+        return {v:str, type:jm.rpc.Constants.PREFIX_TYPE_STRING, key:k};
+    }else if(jm.rpc.Constants.PREFIX_TYPE_NULL == type){
+        return {v:null, type:jm.rpc.Constants.PREFIX_TYPE_NULL, key:k};
     } else {
-        len = dataInput.readUnsignedShort(); // len = 数据长度 + 测试模式时附加数据长度
+        throw "not support header type: " + type;
+    }
+}
+
+jm.rpc.Message.prototype.encodeExtra=function(/*Map<Byte, Object> */extras) {
+    if(extras == null || extras.length == 0) return null;
+
+    let b =  new jm.utils.JDataOutput(128);
+
+    //JDataOutput b = new JDataOutput(64);
+    for(let i = 0; i < extras.length; i++) {
+        let e = extras[i];
+        b.writeUByte(e.key);
+        this.encodeVal(b,e);
+    }
+    return b.getBuf();
+}
+
+jm.rpc.Message.prototype.encodeVal=function(/*JDataOutput*/ b, /*Object*/ v)  {
+    if(v == null) {
+        b.writeUByte(jm.rpc.Constants.PREFIX_TYPE_NULL);
+        return;
     }
 
-    if(dataInput.remaining() < len){
+    if(v.type == jm.rpc.Constants.PREFIX_TYPE_LIST){
+        b.writeUByte(jm.rpc.Constants.PREFIX_TYPE_LIST);
+        let arr = v.v;
+        b.writeByteArrayWithShortLen(arr);
+    }else if(v.type == jm.rpc.Constants.PREFIX_TYPE_STRING) {
+        b.writeUByte(jm.rpc.Constants.PREFIX_TYPE_STRING);
+        b.writeUtf8String(v.v);
+    }else if(v.type == jm.rpc.Constants.PREFIX_TYPE_INT){
+        b.writeUByte(jm.rpc.Constants.PREFIX_TYPE_INT);
+        b.writeInt(v.v);
+    }else if(v.type == jm.rpc.Constants.PREFIX_TYPE_BYTE){
+        b.writeUByte(jm.rpc.Constants.PREFIX_TYPE_BYTE);
+        b.writeUByte(v.v);
+    }else if(v.type == jm.rpc.Constants.PREFIX_TYPE_SHORTT){
+        b.writeUByte(jm.rpc.Constants.PREFIX_TYPE_SHORTT);
+        b.writeUnsignedShort(v.v);
+    }else if(v.type == jm.rpc.Constants.PREFIX_TYPE_LONG){
+        b.writeUByte(jm.rpc.Constants.PREFIX_TYPE_LONG);
+        b.writeUnsignedLong(v.v);
+    }else if(v.type == jm.rpc.Constants.PREFIX_TYPE_FLOAT){
+        b.writeUByte(jm.rpc.Constants.PREFIX_TYPE_FLOAT);
+        b.writeFloat(v.v);
+    }else if(v.type == jm.rpc.Constants.PREFIX_TYPE_DOUBLE){
+        b.writeUByte(jm.rpc.Constants.PREFIX_TYPE_DOUBLE);
+        b.writeDouble(v.v);
+    }else if(v.type == jm.rpc.Constants.PREFIX_TYPE_BOOLEAN){
+        b.writeUByte(jm.rpc.Constants.PREFIX_TYPE_BOOLEAN);
+        b.writeBoolean(v.v);
+    }else if(v.type == jm.rpc.Constants.PREFIX_TYPE_CHAR){
+        b.writeUByte(jm.rpc.Constants.PREFIX_TYPE_CHAR);
+        b.writeChar(v.v);
+    } else {
+        throw "not support header type for val: " + v+", with type: " + e.type;
+    }
+}
+
+jm.rpc.Message.prototype.decode=function(/*JDataInput*/ arr) {
+
+    //Message msg = new Message();
+    let msg = this;
+    let b = new jm.utils.JDataInput(arr);
+
+    //第0,1个字节
+    let flag = b.readUnsignedShort();
+
+    msg.flag =  flag;
+    //ByteBuffer b = ByteBuffer.wrap(data);
+    let len = 0;
+    if(msg.isLengthInt()) {
+        len = b.readInt();
+    } else {
+        len = b.readUnsignedShort(); // len = 数据长度 + 附加数据长度
+    }
+
+    if(b.remaining() < len){
         throw "Message len not valid";
     }
 
     //第3个字节
-    msg.version = dataInput.getUByte();
+    //msg.setVersion(b.readByte());
 
     //read type
     //第4个字节
-    msg.type = dataInput.getUByte();
+    msg.type = b.getUByte();
+    msg.setMsgId(b.readUnsignedLong());
 
-    //第5，6，7，8个字节
-    msg.reqId = dataInput.readInt();
+    if(msg.isReadExtra()) {
+        let elen = b.readUnsignedShort();
+        if(elen < 1) throw 'invalid array length: ' + elen;
+        let edata = b.readByteArray(elen);
+        //b.readFully(edata,0,elen);
 
-    //第9，10，11，12个字节
-    msg.linkId = dataInput.readInt();
-
-    //第13，14个字节
-    msg.insId = dataInput.readUnsignedShort();
-    //第13个字节
-    //msg.flag = dataInput.getUByte();
-
-    if(msg.isRpcMk()) {
-        msg.smKeyCode = dataInput.readInt();
-        len -= 4;
-    }
-
-    if(msg.isDebugMode()) {
-        //读取测试数据头部
-        msg.id = dataInput.readUnsignedLong();
-        msg.time = dataInput.readUnsignedLong()
-        len -= 16;
-
-        //msg.instanceName = dataInput.readUtf8String();
-       // len -= jm.utils.utf8StringTakeLen(msg.instanceName);
-
-        msg.method = dataInput.readUtf8String();
-        len -= jm.utils.utf8StringTakeLen(msg.method);
-
-        //减去测试数据头部长度
-        //len -= JDataOutput.encodeStringLen(msg.getInstanceName());
-        //len -= JDataOutput.encodeStringLen(msg.getMethod());
-    }
-
-    if(this.isSign()) {
-        //非对称加密同时需要签名，对称加密不需要签名
-        msg.sign = dataInput.readUtf8String();
-        len -= jm.utils.utf8StringTakeLen(msg.sign);
-    }
-
-    if(!msg.isRsaEnc() && (msg.isUpSsl() || msg.isDownSsl())) {
-        //对称加密盐值
-        let pa = [];
-        for(let i = 0; i < 16 ; i++) {
-            pa.push(dataInput.getUByte());
+        msg.extra = edata;//ByteBuffer.wrap(edata);
+        len = len - jm.rpc.Constants.EXT_HEADER_LEN - elen;
+        msg.extraMap = this.decodeExtra(msg.extra);
+        //msg.setLen(len + elen);
+        if(msg.containExtra(jm.rpc.Constants.EXTRA_KEY_FLAG)/*msg.extraMap(jm.rpc.Constants.EXTRA_KEY_FLAG)*/) {
+            msg.extrFlag = msg.getExtra(jm.rpc.Constants.EXTRA_KEY_FLAG);// msg.extraMap.get(jm.rpc.Constants.EXTRA_KEY_FLAG);
         }
-        msg.salt = pa;
-        len -= 16;
-    }
-
-    if(msg.isSec()) {
-        let l = dataInput.readUnsignedShort();
-        let pa = [];
-        for(let i = 0; i < l ; i++) {
-            pa.push(dataInput.getUByte());
-        }
-        msg.sec = pa;
-        len -= (l+2);
-    }
+    }/* else {
+            msg.setLen(len);
+        }*/
 
     if(len > 0){
-        let pa = [];
-        for(let i = 0; i < len ; i++) {
-            pa.push(dataInput.getUByte());
-        }
-
-        msg.payload = pa;
+        msg.payload = b.readByteArray(len);
 
         if(msg.isDownSsl()) {
             jm.eu.checkAndDecrypt(msg);
@@ -2201,15 +2256,12 @@ jm.rpc.Message.prototype.decode = function(b) {
     } else {
         msg.payload = null;
     }
-
     msg.len = len + jm.rpc.Constants.HEADER_LEN;
-
-    return msg;
 }
 
-//public ByteBuffer
-jm.rpc.Message.prototype.encode = function() {
-    let buf =  new jm.utils.JDataOutput(1024);
+jm.rpc.Message.prototype.encode=function() {
+
+    let b =  new jm.utils.JDataOutput(1024);
     let len = 0;//数据长度 + 测试模式时附加数据长度
 
     let data = this.payload;
@@ -2242,165 +2294,558 @@ jm.rpc.Message.prototype.encode = function() {
         len = this.payload.length;
     }
 
-    if(this.isDebugMode()) {
-        //inArr = jm.utils.toUTF8Array(this.instanceName);
-        let meArr = jm.utils.toUTF8Array(this.method);
-        len = len  + meArr.length;
-        //2个long的长度，2*8=8
-        len += 16;
+    //data.mark();
+
+    if(this.extrFlag != 0) {
+        this.putExtra(jm.rpc.Constants.EXTRA_KEY_FLAG, this.extrFlag,jm.rpc.Constants.PREFIX_TYPE_INT);
     }
 
-    if(this.isSign()) {
-        let meArr = jm.utils.toUTF8Array(this.sign);
-        len = len  + meArr.length;
+    if(this.isWriteExtra()) {
+        this.extra = this.encodeExtra(this.extraMap);
+        if( this.extra== null || this.extra.length > 4092) {
+            throw "Too long extra: " + this.extraMap.toString();
+        }
+        len += this.extra.byteLength + jm.rpc.Constants.EXT_HEADER_LEN;
+        this.setExtra(true);
     }
-
-    if(this.salt != null && this.salt.length > 0) {
-        //对称加密盐值
-        len += this.salt.length;
-    }
-
-    if(this.isSec()) {
-        len += this.sec.length+2;
-    }
-
-    if(this.isRpcMk()) {
-        len += 4;
-    }
-
-    //len += Message.HEADER_LEN
 
     //第1，2个字节 ,len = 数据长度 + 测试模式时附加数据长度
-    let maxLen = len + jm.rpc.Constants.HEADER_LEN;
-    if(maxLen < jm.rpc.Constants.MAX_SHORT_VALUE) {
+    if(len < jm.rpc.Constants.MAX_SHORT_VALUE) {
         this.setLengthType(false);
-    } else if(maxLen < jm.rpc.Constants.MAX_INT_VALUE){
+    } else if(len < jm.rpc.Constants.MAX_INT_VALUE){
         this.setLengthType(true);
     } else {
-        throw "Data length too long than :"+jm.rpc.Constants.MAX_INT_VALUE+", but value "+len;
+        throw "Data length too long than :" + jm.rpc.Constants.MAX_INT_VALUE + ", but value "+len;
     }
 
-    //let b = new DataView(buf);
-    //第0个字节，标志头
+    //第0,1,2,3个字节，标志头
     //b.put(this.flag);
-    buf.writeInt(this.flag);
+    b.writeUnsignedShort(this.flag);
 
-    if(maxLen < jm.rpc.Constants.MAX_SHORT_VALUE) {
-        //第1，2个字节 ,len = 数据长度 + 测试模式时附加数据长度
-        buf.writeUnsignedShort(len)
-    }else if(len < jm.rpc.Constants.MAX_INT_VALUE){
-        buf.writeInt(len)
+    if(len < 32767) {
+        //第2，3个字节 ,len = 数据长度 + 测试模式时附加数据长度
+        b.writeUnsignedShort(len);
+    }else if(len < jm.rpc.Constants.MAX_VALUE){
+        //消息内内容最大长度为MAX_VALUE 2,3,4,5
+        b.writeInt(len);
     } else {
-        throw "Data too long  :" + jm.rpc.Constants.MAX_INT_VALUE+", but value "+len;
+        throw "Max int value is :"+ jm.rpc.Constants.MAX_VALUE+", but value "+len;
     }
+
+    //b.putShort((short)0);
 
     //第3个字节
     //b.put(this.version);
-    buf.writeUByte(this.version);
+    //b.writeByte(this.method);
 
     //第4个字节
     //writeUnsignedShort(b, this.type);
     //b.put(this.type);
-    buf.writeUByte(this.type);
+    b.writeUByte(this.type);
 
-    //第5，6，7，8个字节
-    //writeUnsignedInt(b, this.reqId);
-    buf.writeInt(this.reqId);
+    b.writeUnsignedLong(this.msgId);
 
-    //第9，10，11，12个字节
-    //writeUnsignedInt(b, this.linkId);
-    buf.writeInt(this.linkId);
-
-    buf.writeUnsignedShort(this.insId);
-
-    if(this.isRpcMk()) {
-        buf.writeInt(this.smKeyCode);
+    if(this.isWriteExtra()) {
+        //b.writeInt(this.extrFlag);
+        b.writeUnsignedShort(this.extra.byteLength);
+        this.writeArray(b,this.extra);
     }
 
-    if(this.isDebugMode()) {
-        //b.putLong(this.getId());
-        //b.putLong(this.getTime());
-        //大端写长整数
-        buf.writeUnsignedLong(this.id)
-        buf.writeUnsignedLong(this.time)
-
-        //buf.writeUtf8String(this.instanceName);
-        buf.writeUtf8String(this.method);
-
-        //OnePrefixTypeEncoder.encodeString(b, this.instanceName);
-        //OnePrefixTypeEncoder.encodeString(b, this.method);
-
-        /*buf.writeUtf8String(this.instanceName,function(len){
-            console.log(len);
-        });
-
-        buf.writeUtf8String(this.method,function(len){
-            console.log(len);
-        });*/
+    if(data != null){
+        //b.put(data);
+       // b.write(data);
+        //data.reset();
+        this.writeArray(b,this.payload);
+        //b.writeByteArrayWithShortLen(this.data);
     }
 
-    if(this.isSign()) {
-        buf.writeUtf8String(this.sign);
+    return b.getBuf();
+}
+
+jm.rpc.Message.prototype.writeArray = function(buf,data) {
+    if(data instanceof ArrayBuffer) {
+        let size = data.byteLength;
+        let dv = new DataView(data);
+        buf.checkCapacity(size);
+        for(let i = 0; i < size; i++) {
+            buf.writeUByte(dv.getUint8(i))
+        }
+    } else {
+        let size = data.length;
+        buf.checkCapacity(size);
+        for(let i = 0; i < size; i++) {
+            buf.writeUByte(data[i])
+        }
     }
+}
 
-    if(this.salt != null && this.salt.length > 0) {
-        //buf.writeUByte(this.salt.length);
-        this.writeArray(buf,this.salt);
+//public static boolean
+jm.rpc.Message.prototype.is = function( flag,  mask) {
+    return (flag & mask) != 0;
+}
+
+jm.rpc.Message.prototype.setMsgId = function(msgId) {
+    this.msgId = msgId;
+}
+
+jm.rpc.Message.prototype.set = function( isTrue, f, mask) {
+    return isTrue ?(f |= mask):(f &= ~mask);
+}
+
+jm.rpc.Message.prototype.containExtra=function(key) {
+    let pm = this.extraMap;
+    if(!pm || pm.length == 0) return false;
+    for(let i = 0; i < pm.length; i++) {
+        if(pm[i].key == key) return true;
     }
+    return false;
+}
 
-    if(this.isSec()) {
-        buf.writeUnsignedShort(this.sec.length);
-        this.writeArray(buf,this.sec);
+jm.rpc.Message.prototype.getExtra = function(key) {
+    let pm = this.extraMap;
+    if(!pm || pm.length == 0) return null;
+    for(let i = 0; i < pm.length; i++) {
+        if(pm[i].key == key) return pm[i].v;
     }
+    return null;
+}
 
-    if(this.payload != null){
-        this.writeArray(buf,this.payload);
-        /*if(data instanceof ArrayBuffer) {
-            let size = data.byteLength;
-            let dv = new DataView(data);
-            buf.checkCapacity(size);
-            for(let i = 0; i < size; i++) {
-                buf.writeUByte(dv.getUint8(i))
-            }
-        } else {
-            let size = data.length;
-            buf.checkCapacity(size);
-            for(let i = 0; i < size; i++) {
-                buf.writeUByte(data[i])
-            }
-        }*/
-    }
-
-    return buf.getBuf();
-},
-
-    jm.rpc.Message.prototype.writeArray = function(buf,data) {
-        if(data instanceof ArrayBuffer) {
-            let size = data.byteLength;
-            let dv = new DataView(data);
-            buf.checkCapacity(size);
-            for(let i = 0; i < size; i++) {
-                buf.writeUByte(dv.getUint8(i))
-            }
-        } else {
-            let size = data.length;
-            buf.checkCapacity(size);
-            for(let i = 0; i < size; i++) {
-                buf.writeUByte(data[i])
+jm.rpc.Message.prototype.putExtra = function(key, val,type) {
+    let pm = this.extraMap;
+    let e = {};
+    let f = false;
+    if(!!pm) {
+        for(let i = 0; i < pm.length; i++) {
+            if(pm[i].key == key) {
+                e = pm[i];
+                f = true;
+                break;
             }
         }
     }
+    e.key = key;
+    e.type = type;
+    e.v = val;
 
-jm.rpc.Message.prototype.toString = function() {
-    return "Message [version=" + this.version + ", msgId=" + this.msgId + ", reqId=" + this.reqId + ", linkId=" + this.linkId
-        + ", type=" + this.type + ", flag=" + this.flag
-        + ", payload=" + this.payload + ", time="+ this.time
-        + ", devMode=" + this.isDebugMode() + ", monitorable="+ this.isMonitorable()
-        + ", needresp="+ this.isNeedResponse()
-        + ", upstream=" + this.isDumpUpStream() + ", downstream="+ this.isDumpDownStream()
-        + ", instanceName=" + this.insId + ", method=" + this.method + "]";
+    if(!f) {
+        pm.push(e);
+    }
 }
 
+jm.rpc.Message.prototype.isWriteExtra=function() {
+    return this.extraMap != null && this.extraMap.length > 0 /*&& !this.extraMap.isEmpty()*/;
+}
+
+jm.rpc.Message.prototype.isReadExtra=function() {
+    return this.is(this.flag,jm.rpc.Constants.FLAG_EXTRA);
+}
+
+jm.rpc.Message.prototype.setExtra=function(/*boolean*/ f) {
+    this.flag = this.set(f,this.flag,jm.rpc.Constants.FLAG_EXTRA);
+}
+
+jm.rpc.Message.prototype.isUpSsl=function() {
+    return this.is(this.extrFlag,jm.rpc.Constants.EXTRA_FLAG_UP_SSL);
+}
+
+jm.rpc.Message.prototype.setUpSsl=function(/*boolean*/ f) {
+    this.extrFlag = this.set(f,this.extrFlag,jm.rpc.Constants.EXTRA_FLAG_UP_SSL);
+}
+
+jm.rpc.Message.prototype.isDownSsl=function() {
+    return this.is(this.extrFlag,jm.rpc.Constants.EXTRA_FLAG_DOWN_SSL);
+}
+
+jm.rpc.Message.prototype.setDownSsl=function(/*boolean*/ f) {
+    this.extrFlag = this.set(f,this.extrFlag,jm.rpc.Constants.EXTRA_FLAG_DOWN_SSL);
+}
+
+jm.rpc.Message.prototype.isRsaEnc=function() {
+    return this.is(this.extrFlag,jm.rpc.Constants.EXTRA_FLAG_ENC_TYPE);
+}
+
+jm.rpc.Message.prototype.setEncType=function(/*boolean*/ f) {
+    this.extrFlag = this.set(f,this.extrFlag,jm.rpc.Constants.EXTRA_FLAG_ENC_TYPE);
+}
+
+jm.rpc.Message.prototype.isSecretVersion=function() {
+    return this.is(this.extrFlag,jm.rpc.Constants.EXTRA_FLAG_SECTET_VERSION);
+}
+
+jm.rpc.Message.prototype.setSecretVersion=function(/*boolean*/ f) {
+    this.extrFlag = this.set(f,this.extrFlag,jm.rpc.Constants.EXTRA_FLAG_SECTET_VERSION);
+}
+
+jm.rpc.Message.prototype.isSign=function() {
+    return this.is(this.extrFlag,jm.rpc.Constants.EXTRA_FLAG_IS_SIGN);
+}
+
+jm.rpc.Message.prototype.setSign=function(f) {
+    this.extrFlag = this.set(f,this.extrFlag,jm.rpc.Constants.EXTRA_FLAG_IS_SIGN);
+}
+
+jm.rpc.Message.prototype.isSec=function() {
+    return this.is(this.extrFlag, jm.rpc.Constants.EXTRA_FLAG_IS_SEC);
+}
+
+jm.rpc.Message.prototype.setSec=function( f) {
+    this.extrFlag = this.set(f,this.extrFlag, jm.rpc.Constants.EXTRA_FLAG_IS_SEC);
+}
+
+jm.rpc.Message.prototype.isFromWeb=function() {
+    return this.is(this.extrFlag, jm.rpc.Constants.EXTRA_FLAG_IS_FROM_WEB);
+}
+
+jm.rpc.Message.prototype.setFromWeb=function( f) {
+    this.extrFlag = this.set(f,this.extrFlag, jm.rpc.Constants.EXTRA_FLAG_IS_FROM_WEB);
+}
+
+jm.rpc.Message.prototype.isRpcMk=function() {
+    return this.is(this.extrFlag, jm.rpc.Constants.EXTRA_FLAG_RPC_MCODE);
+}
+
+jm.rpc.Message.prototype.setRpcMk=function(/*boolean*/ f) {
+    this.extrFlag = this.set(f,this.extrFlag, jm.rpc.Constants.EXTRA_FLAG_RPC_MCODE);
+}
+
+jm.rpc.Message.prototype.isDumpUpStream=function() {
+    return this.is(this.extrFlag,jm.rpc.Constants.EXTRA_FLAG_DUMP_UP);
+}
+
+jm.rpc.Message.prototype.setDumpUpStream=function( f) {
+    //flag0 |= f ? FLAG0_DUMP_UP : 0 ;
+    this.extrFlag = this.set(f,this.extrFlag,jm.rpc.Constants.EXTRA_FLAG_DUMP_UP);
+}
+
+jm.rpc.Message.prototype.isDumpDownStream=function() {
+    return this.is(this.extrFlag,jm.rpc.Constants.EXTRA_FLAG_DUMP_DOWN);
+}
+
+jm.rpc.Message.prototype.setDumpDownStream=function( f) {
+    this.extrFlag = this.set(f,this.extrFlag,jm.rpc.Constants.EXTRA_FLAG_DUMP_DOWN);
+}
+
+jm.rpc.Message.prototype.isLoggable=function() {
+    return this.getLogLevel() > 0;
+}
+
+jm.rpc.Message.prototype.isDebugMode=function() {
+    return this.is(this.extrFlag,jm.rpc.Constants.EXTRA_FLAG_DEBUG_MODE);
+}
+
+jm.rpc.Message.prototype.setDebugMode=function( f) {
+    this.extrFlag = this.set(f,this.extrFlag,jm.rpc.Constants.EXTRA_FLAG_DEBUG_MODE);
+}
+
+jm.rpc.Message.prototype.isMonitorable=function() {
+    return this.is(this.flag,jm.rpc.Constants.FLAG_MONITORABLE);
+}
+
+jm.rpc.Message.prototype.setMonitorable=function( f) {
+    this.flag = this.set(f,this.flag,jm.rpc.Constants.FLAG_MONITORABLE);
+}
+
+jm.rpc.Message.prototype.isError=function() {
+    return this.is(this.flag,jm.rpc.Constants.FLAG_ERROR);
+}
+
+jm.rpc.Message.prototype.setError=function( f) {
+    this.flag = this.set(f,this.flag,jm.rpc.Constants.FLAG_ERROR);
+}
+
+jm.rpc.Message.prototype.isOuterMessage=function() {
+    return this.is(this.flag,jm.rpc.Constants.FLAG_OUT_MESSAGE);
+}
+
+jm.rpc.Message.prototype.isForce2Json=function() {
+    return this.is(this.flag,jm.rpc.Constants.FLAG_FORCE_RESP_JSON);
+}
+
+jm.rpc.Message.prototype.setForce2Json=function(f) {
+    this.flag = this.set(f, this.flag,jm.rpc.Constants.FLAG_FORCE_RESP_JSON);
+}
+
+jm.rpc.Message.prototype.setOuterMessage=function( f) {
+    this.flag = this.set(f,this.flag,jm.rpc.Constants.FLAG_OUT_MESSAGE);
+}
+
+jm.rpc.Message.prototype.isNeedResponse=function() {
+    let rt = this.getRespType();
+    return rt != jm.rpc.Constants.MSG_TYPE_NO_RESP;
+}
+
+jm.rpc.Message.prototype.isPubsubMessage=function() {
+    let rt = this.getRespType();
+    return rt == jm.rpc.Constants.MSG_TYPE_MANY_RESP;
+}
+
+jm.rpc.Message.prototype.isPingPong=function() {
+    let rt = this.getRespType();
+    return rt != jm.rpc.Constants.MSG_TYPE_PINGPONG;
+}
+
+/**
+ * @param f true 表示整数，false表示短整数
+ */
+jm.rpc.Message.prototype.setLengthType=function( f) {
+    //flag |= f ? FLAG_LENGTH_INT : 0 ;
+    this.flag = this.set(f,this.flag,jm.rpc.Constants.FLAG_LENGTH_INT);
+}
+
+jm.rpc.Message.prototype.isLengthInt=function() {
+    return this.is(this.flag,jm.rpc.Constants.FLAG_LENGTH_INT);
+}
+
+jm.rpc.Message.prototype.getPriority=function() {
+    return ((this.extrFlag >>> jm.rpc.Constants.EXTRA_FLAG_PRIORITY) & 0x03);
+}
+
+jm.rpc.Message.prototype.setPriority=function( l) {
+    if(l > jm.rpc.Constants.PRIORITY_3 || l < jm.rpc.Constants.PRIORITY_0) {
+        throw "Invalid priority: "+l;
+    }
+    this.extrFlag = (l << jm.rpc.Constants.EXTRA_FLAG_PRIORITY) | this.extrFlag;
+}
+
+jm.rpc.Message.prototype.getLogLevel=function() {
+    return ((this.flag >>> jm.rpc.Constants.FLAG_LOG_LEVEL) & 0x07);
+}
+//000 001 010 011 100 101 110 111
+jm.rpc.Message.prototype.setLogLevel=function( v) {
+    if(v < 0 || v > 6) {
+        throw "Invalid Log level: "+v;
+    }
+    this.flag = ((v << jm.rpc.Constants.FLAG_LOG_LEVEL) | this.flag);
+}
+
+jm.rpc.Message.prototype.getRespType=function() {
+    return ((this.flag >>> jm.rpc.Constants.FLAG_RESP_TYPE) & 0x03);
+}
+
+jm.rpc.Message.prototype.setRespType=function( v) {
+    if(v < 0 || v > 3) {
+        throw ("Invalid message response type: "+v);
+    }
+    this.flag = ((v << jm.rpc.Constants.FLAG_RESP_TYPE)|this.flag);
+}
+
+jm.rpc.Message.prototype.getUpProtocol=function() {
+    return this.is(this.flag,jm.rpc.Constants.FLAG_UP_PROTOCOL)?1:0;
+}
+
+jm.rpc.Message.prototype.setUpProtocol=function( protocol) {
+    //flag |= protocol == PROTOCOL_JSON ? FLAG_UP_PROTOCOL : 0 ;
+    this.flag = this.set(protocol == jm.rpc.Constants.PROTOCOL_JSON,this.flag,jm.rpc.Constants.FLAG_UP_PROTOCOL);
+}
+
+jm.rpc.Message.prototype.getDownProtocol=function() {
+    return this.is(this.flag,jm.rpc.Constants.FLAG_DOWN_PROTOCOL)?1:0;
+}
+
+jm.rpc.Message.prototype.setDownProtocol=function( protocol) {
+    //flag |= protocol == PROTOCOL_JSON ? FLAG_DOWN_PROTOCOL : 0 ;
+    this.flag = this.set(protocol == jm.rpc.Constants.PROTOCOL_JSON,this.flag,jm.rpc.Constants.FLAG_DOWN_PROTOCOL);
+}
+
+jm.rpc.Message.prototype.writeUnsignedShort=function( b, v) {
+    if(v > jm.rpc.Constants.MAX_SHORT_VALUE) {
+        throw "Max short value is :"+jm.rpc.Constants.MAX_SHORT_VALUE+", but value "+v;
+    }
+    let data = ((v >>> 8) & 0xFF);
+    b.put(data);
+    data = ((v >>> 0) & 0xFF);
+    b.put(data);
+}
+
+jm.rpc.Message.prototype.readUnsignedShort=function( b) {
+    let firstByte = (0xFF & (b.get()));
+    let secondByte = (0xFF & (b.get()));
+    let anUnsignedShort  =  (firstByte << 8 | secondByte);
+    return anUnsignedShort;
+}
+
+jm.rpc.Message.prototype.readUnsignedLong=function( b) {
+    let firstByte = (0xFF & (b.get()));
+    let secondByte = (0xFF & (b.get()));
+    let thirdByte = (0xFF & (b.get()));
+    let fourByte = (0xFF & (b.get()));
+
+    let fiveByte = (0xFF & (b.get()));
+    let sixByte = (0xFF & (b.get()));
+    let sevenByte = (0xFF & (b.get()));
+    let eigthByte = (0xFF & (b.get()));
+
+    let anUnsignedShort  = (int) (
+        firstByte << 56 | secondByte<<48
+        | thirdByte << 40 | fourByte<<32
+        | fiveByte << 24 | sixByte<<16
+        | sevenByte << 8 | eigthByte
+    );
+    return anUnsignedShort;
+}
+
+jm.rpc.Message.prototype.wiriteUnsignedLong=function( b, val) {
+
+    b.put((0xFF & (val >>> 56)));
+    b.put((0xFF & (val >>> 48)));
+    b.put((0xFF & (val >>> 40)));
+    b.put((0xFF & (val >>> 32)));
+
+    b.put((0xFF & (val >>> 24)));
+    b.put((0xFF & (val >>> 16)));
+    b.put((0xFF & (val >>> 8)));
+    b.put((0xFF & (val >>> 0)));
+
+    return;
+}
+
+jm.rpc.Message.prototype.writeUnsignedByte=function( b, v) {
+    if(v > jm.rpc.Constants.MAX_BYTE_VALUE) {
+        throw "Max byte value is :"+jm.rpc.Constants.MAX_BYTE_VALUE+", but value "+v;
+    }
+    let vv = ((v >>> 0) & 0xFF);
+    b.put(vv);
+}
+
+jm.rpc.Message.prototype.readUnsignedByte=function( b) {
+    let vv =  (b.get() & 0xff);
+    return vv;
+}
+
+jm.rpc.Message.prototype.readUnsignedInt=function( buf) {
+    /*int firstByte = (0xFF & ((int)b.get()));
+    int secondByte = (0xFF & ((int)b.get()));
+    int thirdByte = (0xFF & ((int)b.get()));
+    int fourthByte = (0xFF & ((int)b.get()));
+     long anUnsignedInt  =
+             ((long) (firstByte << 24 | secondByte << 16 | thirdByte << 8 | fourthByte))
+             & 0xFFFFFFFFL;
+     return anUnsignedInt;*/
+
+    let b = buf.get() & 0xff;
+    let n = b & 0x7f;
+    if (b > 0x7f) {
+        b = buf.get() & 0xff;
+        n ^= (b & 0x7f) << 7;
+        if (b > 0x7f) {
+            b = buf.get() & 0xff;
+            n ^= (b & 0x7f) << 14;
+            if (b > 0x7f) {
+                b = buf.get() & 0xff;
+                n ^= (b & 0x7f) << 21;
+                if (b > 0x7f) {
+                    b = buf.get() & 0xff;
+                    n ^= (b & 0x7f) << 28;
+                    if (b > 0x7f) {
+                        throw "Invalid int encoding";
+                    }
+                }
+            }
+        }
+    }
+    return (n >>> 1) ^ -(n & 1);
+
+}
+
+jm.rpc.Message.prototype.writeUnsignedInt=function( buf, n) {
+    if(n > jm.rpc.Constants.MAX_INT_VALUE) {
+        throw "Max int value is :"+jm.rpc.Constants.MAX_INT_VALUE+", but value "+n;
+    }
+    /*b.put((byte)((v >>> 24)&0xFF));
+    b.put((byte)((v >>> 16)&0xFF));
+    b.put((byte)((v >>> 8)&0xFF));
+    b.put((byte)((v >>> 0)&0xFF));*/
+
+    n = (n << 1) ^ (n >> 31);
+    if ((n & ~0x7F) != 0) {
+        buf.put((byte) ((n | 0x80) & 0xFF));
+        n >>>= 7;
+        if (n > 0x7F) {
+            buf.put((byte) ((n | 0x80) & 0xFF));
+            n >>>= 7;
+            if (n > 0x7F) {
+                buf.put((byte) ((n | 0x80) & 0xFF));
+                n >>>= 7;
+                if (n > 0x7F) {
+                    buf.put((byte) ((n | 0x80) & 0xFF));
+                    n >>>= 7;
+                }
+            }
+        }
+    }
+    buf.put(n);
+}
+
+jm.rpc.Message.prototype.setInsId=function(insId) {
+    if(insId < 0) {
+        insId = -insId;
+    }
+    this.putExtra(jm.rpc.Constants.EXTRA_KEY_INSID, insId,jm.rpc.Constants.PREFIX_TYPE_INT);
+}
+
+jm.rpc.Message.prototype.getInsId=function() {
+    let v = this.getExtra(jm.rpc.Constants.EXTRA_KEY_INSID);
+    return !!v ? 0:v;
+}
+
+jm.rpc.Message.prototype.setSignData=function( data) {
+    this.putExtra(jm.rpc.Constants.EXTRA_KEY_SIGN, data,jm.rpc.Constants.PREFIX_TYPE_LIST);
+}
+
+jm.rpc.Message.prototype.getSignData=function() {
+    return this.getExtra(jm.rpc.Constants.EXTRA_KEY_SIGN);
+}
+
+jm.rpc.Message.prototype.setLinkId=function( insId) {
+    this.putExtra(jm.rpc.Constants.EXTRA_KEY_LINKID, insId,jm.rpc.Constants.PREFIX_TYPE_LONG);
+}
+
+jm.rpc.Message.prototype.getLinkId=function() {
+    let v = this.getExtra(jm.rpc.Constants.EXTRA_KEY_LINKID);
+    return !!v ? 0 : v;
+}
+
+jm.rpc.Message.prototype.setSaltData=function(/*byte[] */data) {
+    this.putExtra(jm.rpc.Constants.EXTRA_KEY_SALT, data,jm.rpc.Constants.PREFIX_TYPE_LIST);
+}
+
+jm.rpc.Message.prototype.getSaltData=function() {
+    return this.getExtra(jm.rpc.Constants.EXTRA_KEY_SALT);
+}
+
+jm.rpc.Message.prototype.setSecData=function(/*byte[]*/ data) {
+    this.putExtra(jm.rpc.Constants.EXTRA_KEY_SEC, data,jm.rpc.Constants.PREFIX_TYPE_LIST);
+}
+
+jm.rpc.Message.prototype.getSecData=function() {
+    return this.getExtra(jm.rpc.Constants.EXTRA_KEY_SEC);
+}
+
+jm.rpc.Message.prototype.setSmKeyCode=function(/*Integer*/ code) {
+    this.putExtra(jm.rpc.Constants.EXTRA_KEY_SM_CODE, code,jm.rpc.Constants.PREFIX_TYPE_INT);
+}
+
+jm.rpc.Message.prototype.getSmKeyCode=function() {
+    let v = this.getExtra(jm.rpc.Constants.EXTRA_KEY_SM_CODE);
+    return v == null? 0:v;
+}
+
+jm.rpc.Message.prototype.setMethod=function(/*String*/ method) {
+    this.putExtra(jm.rpc.Constants.EXTRA_KEY_SM_NAME, method,jm.rpc.Constants.PREFIX_TYPE_STRING);
+}
+
+jm.rpc.Message.prototype.getMethod=function() {
+    return this.getExtra(jm.rpc.Constants.EXTRA_KEY_SM_NAME);
+}
+
+jm.rpc.Message.prototype.setTime=function(/*Long*/ time) {
+    this.putExtra(jm.rpc.Constants.EXTRA_KEY_TIME, time,jm.rpc.Constants.PREFIX_TYPE_LONG);
+}
+
+jm.rpc.Message.prototype.getTime=function() {
+    let v = this.getExtra(jm.rpc.Constants.EXTRA_KEY_TIME);
+    return !v ? 0:v;
+}
 
 jm.rpc.IdRequest = function() {
     this.type  =  jm.Constants.LOng;
@@ -2512,6 +2957,27 @@ jm.utils.JDataInput = function(buf) {
 }
 
 //public static int
+jm.utils.JDataInput.prototype.readDouble = function() {
+    let fd = this.buf.getFloat64(this.readPos,false);
+    this.readPos += 8;
+    return fd;
+},
+
+jm.utils.JDataInput.prototype.readFloat = function() {
+    let fd = this.buf.getFloat32(this.readPos,false);
+    this.readPos += 4;
+    return fd;
+},
+
+jm.utils.JDataInput.prototype.readBoolean = function() {
+    return this.getUByte() != 0;
+},
+
+jm.utils.JDataInput.prototype.readChar = function() {
+    return this.readUnsignedShort();
+},
+
+//public static int
 jm.utils.JDataInput.prototype.readUnsignedShort = function() {
     let firstByte = this.atByte();
     let secondByte = this.atByte();
@@ -2524,19 +2990,14 @@ jm.utils.JDataInput.prototype.readUnsignedShort = function() {
         let secondByte = this.atByte();
         let thirdByte = this.atByte();
         let fourthByte = this.atByte();
-        let anUnsignedInt  = ((firstByte << 24 | secondByte << 16 | thirdByte << 8 | fourthByte)) & 0xFFFFFFFF;
+        let anUnsignedInt  = ((firstByte << 24 | secondByte << 16 | thirdByte << 8 | fourthByte))/* & 0xFFFFFFFF*/;
         return anUnsignedInt;
     },
 
 //public static long
     jm.utils.JDataInput.prototype.readUnsignedInt = function() {
-        /*let firstByte = this.atByte();
-        let secondByte = this.atByte();
-        let thirdByte = this.atByte();
-        let fourthByte = this.atByte();
-        let anUnsignedInt  = ((firstByte << 24 | secondByte << 16 | thirdByte << 8 | fourthByte)) & 0xFFFFFFFF;
-        return anUnsignedInt;*/
-        let b = this.getUByte() & 0xff;
+       return this.readInt();
+        /*let b = this.getUByte() & 0xff;
         let n = b & 0x7f;
         if (b > 0x7f) {
             b = this.getUByte() & 0xff;
@@ -2557,11 +3018,15 @@ jm.utils.JDataInput.prototype.readUnsignedShort = function() {
                 }
             }
         }
-        return (n >>> 1) ^ -(n & 1); // back to two's-complement
+        return (n >>> 1) ^ -(n & 1);*/ // back to two's-complement
     },
 
     jm.utils.JDataInput.prototype.getUByte = function() {
         return this.buf.getUint8(this.readPos++);
+    }
+
+    jm.utils.JDataInput.prototype.getByte = function() {
+        return this.buf.getInt8(this.readPos++);
     }
 
 jm.utils.JDataInput.prototype.atByte = function() {
@@ -2586,9 +3051,20 @@ jm.utils.JDataInput.prototype.readUnsignedLong = function() {
 
     let anUnsignedLong  =
         (firstByte << 56 | secondByte << 48 | thirdByte << 40 | fourthByte << 32 |
-            fiveByte << 24 | sixByte << 16 | sevenByte << 8 | eightByte) & 0xFFFFFFFFFFFFFFFF;
+            fiveByte << 24 | sixByte << 16 | sevenByte << 8 | eightByte) /*& 0xFFFFFFFFFFFFFFFF*/;
     return anUnsignedLong;
 },
+
+    jm.utils.JDataInput.prototype.readByteArray = function(len) {
+        if(len > this.remaining()) {
+            throw "Index out of bound";
+        }
+        let pa = [];
+        for(let i = 0; i < len ; i++) {
+            pa.push(this.getUByte());
+        }
+        return pa;
+    }
 
     jm.utils.JDataInput.prototype.readUtf8String = function() {
         let len = this.getUByte();
@@ -2635,6 +3111,24 @@ jm.utils.JDataOutput.prototype.getBuf = function() {
 
 jm.utils.JDataOutput.prototype.writeUByte = function(v) {
     this.buf.setUint8(this.writePos++,v);
+}
+
+jm.utils.JDataOutput.prototype.writeFloat = function(v) {
+    this.buf.setFloat32(this.writePos,v,false);
+    this.writePos += 4;
+}
+
+jm.utils.JDataOutput.prototype.writeDouble = function(v) {
+    this.buf.setFloat64(this.writePos,v,false);
+    this.writePos += 8;
+}
+
+jm.utils.JDataOutput.prototype.writeBoolean = function(v) {
+    this.writeUByte(v ? 1 : 0);
+}
+
+jm.utils.JDataOutput.prototype.writeChar = function(v) {
+    this.writeUnsignedShort(v);
 }
 
 jm.utils.JDataOutput.prototype.remaining = function() {
@@ -2701,8 +3195,9 @@ jm.utils.JDataOutput.prototype.writeUnsignedInt = function(n) {
     if(n > jm.rpc.Constants.MAX_UINT_VALUE) {
         throw "Max int value is: "+jm.rpc.Constants.MAX_UINT_VALUE+", but value "+n;
     }
-    this.checkCapacity(4);
-    n = (n << 1) ^ (n >> 31);
+    this.writeInt(n);
+
+   /* n = (n << 1) ^ (n >> 31);
     if ((n & ~0x7F) != 0) {
         this.writeUByte((n | 0x80) & 0xFF);
         n >>>= 7;
@@ -2719,7 +3214,7 @@ jm.utils.JDataOutput.prototype.writeUnsignedInt = function(n) {
             }
         }
     }
-    this.writeUByte(n);
+    this.writeUByte(n);*/
 
 }
 
@@ -2729,14 +3224,31 @@ jm.utils.JDataOutput.prototype.writeUnsignedLong = function(v) {
     }
     //JS无64位表示
     this.checkCapacity(8);
-    this.writeUByte(0);
-    this.writeUByte(0);
-    this.writeUByte(0);
-    this.writeUByte(0);
-    this.writeUByte((v >>> 24) & 0xFF);
-    this.writeUByte((v >>> 16) & 0xFF);
-    this.writeUByte((v >>> 8) & 0xFF);
-    this.writeUByte((v >>> 0) & 0xFF);
+    //this.buf.setBigInt64(this.writePos,v,false);
+    //this.writePos += 8;
+
+    this.writeUByte((v >> 56) & 0xFF);
+    this.writeUByte((v >> 48) & 0xFF);
+    this.writeUByte((v >> 40) & 0xFF);
+    this.writeUByte((v >> 32) & 0xFF);
+    this.writeUByte((v >> 24) & 0xFF);
+    this.writeUByte((v >> 16) & 0xFF);
+    this.writeUByte((v >> 8) & 0xFF);
+    this.writeUByte((v >> 0) & 0xFF);
+}
+
+jm.utils.JDataOutput.prototype.writeByteArrayWithShortLen = function(arr) {
+    if(!arr || arr.length == 0) {
+        this.checkCapacity(4);
+        this.writeUnsignedShort(0)
+        return;
+    }
+    let size = arr.length;
+    this.checkCapacity(4+size);
+    this.writeUnsignedShort(size);
+    for(let i = 0; i < size; i++) {
+        this.writeUByte(arr[i])
+    }
 }
 
 jm.utils.JDataOutput.prototype.writeByteArray = function(arr) {
@@ -3018,7 +3530,8 @@ jm.eu = {
 
         let iv = jm.eu.genStrPwd(16);//通过密码表生成16个字节的动态偏移量
         opts.iv = CryptoJS.enc.Utf8.parse(iv); //将偏移量转为UTF8编码，服务端使用时也要相应地使用utf8字节数组
-        msg.salt = jm.utils.toUTF8Array(iv);//将偏移量和数据一起发送给服务端，注意是utf8字节编码
+       let salt = jm.utils.toUTF8Array(iv);//将偏移量和数据一起发送给服务端，注意是utf8字节编码
+        msg.setSaltData(salt);
 
         if(!this.pwd || new Date().getTime() - this.lastUpdatePwdTime > 1000*60*5 ) {
             //首次进来或超过5分钟更新一次密码
@@ -3031,11 +3544,12 @@ jm.eu = {
             //告诉服务端，有AES密码更新
             msg.setSec(true);
             //对AES密码做RSA加密
-            msg.sec = this.encryptRas(this.pwd);
+            msg.setSecData(this.encryptRas(this.pwd));
         }else if(new Date().getTime() - this.lastUpdatePwdTime < 2*1000) {
             //前5秒内的包都带上密钥，避免消息发送乱序情况下服务器解密错误
             msg.setSec(true);
-            msg.sec = this.encryptRas(this.pwd);
+            //msg.sec = this.encryptRas(this.pwd);
+            msg.setSecData(this.encryptRas(this.pwd));
             msg.setSecretVersion(this.secretVersion);
         }
 
@@ -3091,7 +3605,7 @@ jm.eu = {
             this.init();
         }
 
-        let ivStr = jm.utils.fromUTF8Array(msg.salt);
+        let ivStr = jm.utils.fromUTF8Array(msg.getSaltData());
         let iv = CryptoJS.enc.Utf8.parse(ivStr);
         let opts = {
             mode : CryptoJS.mode.CBC ,
@@ -3110,7 +3624,7 @@ jm.eu = {
         var decrypted = CryptoJS.AES.decrypt(b64str,utf8pwd,opts);
         let dedata = this.byteBuffer2ByteArray(this.wordToByteBuffer(decrypted));
         //let hex = this.b64tohex(msg.sign);
-        if(!this.rsae.verify(jm.utils.byteArr2Base64(dedata), msg.sign, CryptoJS.MD5)) {
+        if(!this.rsae.verify(jm.utils.byteArr2Base64(dedata), msg.getSignData(), CryptoJS.MD5)) {
             throw "Invalid sign";
         }
 

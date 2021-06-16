@@ -13,6 +13,8 @@ import org.slf4j.LoggerFactory;
 import cn.jmicro.api.annotation.Cfg;
 import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Inject;
+import cn.jmicro.api.choreography.ProcessInfo;
+import cn.jmicro.api.codec.ICodecFactory;
 import cn.jmicro.api.idgenerator.ComponentIdServer;
 import cn.jmicro.api.monitor.LG;
 import cn.jmicro.api.monitor.MC;
@@ -20,6 +22,7 @@ import cn.jmicro.api.net.IMessageHandler;
 import cn.jmicro.api.net.IMessageReceiver;
 import cn.jmicro.api.net.ISession;
 import cn.jmicro.api.net.Message;
+import cn.jmicro.api.net.RpcResponse;
 import cn.jmicro.api.security.SecretManager;
 import cn.jmicro.api.timer.TimerTicker;
 import cn.jmicro.api.utils.TimeUtils;
@@ -40,8 +43,14 @@ public class LinkMng implements IMessageHandler {
 	@Inject
 	private ComponentIdServer idGenerator;
 	
+	@Inject
+	private ProcessInfo pi;
+	
 	@Inject(value="clientMessageReceiver")
 	private IMessageReceiver cr;
+	
+	@Inject
+	private ICodecFactory codeFactory;
 	 
 	@Cfg(value ="/gateway/linkTimeout",defGlobal=true)
 	private long timeout = 5*60*1000;
@@ -55,7 +64,7 @@ public class LinkMng implements IMessageHandler {
     	private long lastActiveTime = TimeUtils.getCurTime();
     	
     	private Map<Byte,Object> extraMap;
-    	private short flag;
+    	private int flag;
     	private Byte type;
     	private int extrFlag;
     }
@@ -164,6 +173,19 @@ public class LinkMng implements IMessageHandler {
 		
 		msg.setOuterMessage(true);
 		
+		if(msg.getDownProtocol() == Message.PROTOCOL_BIN && 
+				Message.is(n.flag, Message.FLAG_FORCE_RESP_JSON)) {
+			//客户端要求强制转JSON
+			final Object resp = ICodecFactory.decode(this.codeFactory, msg.getPayload(),
+					RpcResponse.class, msg.getUpProtocol());
+			if(resp != null) {
+				//二进制转JSON，web客户端无法识别带类型的二进制数据包
+				Object jsonPayload = ICodecFactory.encode(this.codeFactory, resp, Message.PROTOCOL_JSON);
+				msg.setPayload(jsonPayload);
+				msg.setDownProtocol(Message.PROTOCOL_JSON);
+			}
+		}
+		
 		if(!msg.isError() && (Message.is(n.extrFlag, Message.EXTRA_FLAG_UP_SSL) 
 				|| Message.is(n.extrFlag, Message.EXTRA_FLAG_DOWN_SSL)
 				/*msg.isUpSsl() || msg.isDownSsl()*/)) {
@@ -179,6 +201,7 @@ public class LinkMng implements IMessageHandler {
 			msg.setUpSsl(false);
 		}
 		
+		msg.setInsId(pi.getId());
 		n.sec.write(msg);
 		
 		if(pp) {

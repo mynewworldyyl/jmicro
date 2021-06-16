@@ -98,17 +98,17 @@ public final class Message {
 	//包含Extra数据
 	public static final short FLAG_EXTRA = 1 << 4;
 	
-	//需要响应的请求  or down message is error
-	//public static final short FLAG_NEED_RESPONSE = 1 << 5;
-	
 	//来自外网消息，由网关转发到内网
 	public static final short FLAG_OUT_MESSAGE = 1 << 5;
 	
 	public static final short FLAG_ERROR = 1 << 6;
 	
-	public static final short FLAG_LOG_LEVEL = 13;
+	//需要响应的请求  or down message is error
+	public static final short FLAG_FORCE_RESP_JSON = 1 << 7;
 	
 	public static final short FLAG_RESP_TYPE = 11;
+	
+	public static final short FLAG_LOG_LEVEL = 13;
 	
 	/****************  extra constants flag   *********************/
 	
@@ -119,32 +119,30 @@ public final class Message {
 		
 	//DUMP上行数据
 	public static final int EXTRA_FLAG_DUMP_UP = 1 << 3;
-		
+	
 	//DUMP下行数据
 	public static final int EXTRA_FLAG_DUMP_DOWN = 1 << 4;
 	
 	//加密参数 0：没加密，1：加密
-	public static final int EXTRA_FLAG_UP_SSL = 1 << 4;
+	public static final int EXTRA_FLAG_UP_SSL = 1 << 5;
 	
 	//是否签名
-	public static final int EXTRA_FLAG_DOWN_SSL = 1 << 5;
+	public static final int EXTRA_FLAG_DOWN_SSL = 1 << 6;
 	
-	public static final int EXTRA_FLAG_IS_FROM_WEB = 1 << 6;
-	
-	public static final int EXTRA_FLAG_IS_SEC = 1 << 7;
+	public static final int EXTRA_FLAG_IS_SEC = 1 <<8;
 	
 	//是否签名： 0:无签名； 1：有签名
-	public static final int EXTRA_FLAG_IS_SIGN = 1 << 8;
+	public static final int EXTRA_FLAG_IS_SIGN = 1 << 9;
 		
 	//加密方式： 0:对称加密，1：RSA 非对称加密
-	public static final int EXTRA_FLAG_ENC_TYPE = 1 << 9;
+	public static final int EXTRA_FLAG_ENC_TYPE = 1 << 10;
 	
-	public static final int EXTRA_FLAG_RPC_MCODE = 1 << 10;
+	public static final int EXTRA_FLAG_RPC_MCODE = 1 << 11;
 	
-	public static final int EXTRA_FLAG_SECTET_VERSION = 1 << 11;
+	public static final int EXTRA_FLAG_SECTET_VERSION = 1 << 12;
 	
 	//是否包含实例ID
-	public static final int EXTRA_FLAG_INS_ID = 1 << 12;
+	public static final int EXTRA_FLAG_INS_ID = 1 << 13;
 	
 	public static final Byte EXTRA_KEY_LINKID = -127;
 	public static final Byte EXTRA_KEY_INSID = -126;
@@ -201,7 +199,7 @@ public final class Message {
 	 * 13 14 15 LLL      Log level
 	 * @return
 	 */
-	private short flag = 0;
+	private int flag = 0;
 	
 	// 1 byte
 	private byte type;
@@ -225,9 +223,9 @@ public final class Message {
 	 * 4        do:       dump down stream data
 	 * 5 	    US        上行SSL  0:no encrypt 1:encrypt
 	 * 6        DS        下行SSL  0:no encrypt 1:encrypt
-	 * 7        SV        对称密钥版本
+	 * 7        
 	 * 8        MK        RPC方法编码       
-	 * 9        WE        从Web浏览器过来的请求
+	 * 9        SV        对称密钥版本
 	 * 10       SE        密码
 	 * 11       SI        是否有签名值 0：无，1：有
 	 * 12       ENT       encrypt type 0:对称加密，1：RSA 非对称加密
@@ -284,20 +282,22 @@ public final class Message {
 		try {
 			while(b.remaining() > 0) {
 				Byte k = b.readByte();
-				Object v = decodeVal(b);
+				Object v = decodeVal(b,k);
 				ed.put(k, v);
 			}
 			return ed;
 		} catch (IOException e) {
 			throw new CommonException("decodeExtra error:" + ed.toString() + ", Extra: " + extra);
 		}
-		
 	}
 	
-	public static Object decodeVal(JDataInput b) throws IOException {
+	public static Object decodeVal(JDataInput b,Byte k) throws IOException {
 		byte type = b.readByte();
-		if(DecoderConstant.PREFIX_TYPE_LIST == type){
-			short len = b.readShort();
+		
+		if(type == DecoderConstant.PREFIX_TYPE_NULL) {
+			return null;
+		}else if(DecoderConstant.PREFIX_TYPE_LIST == type){
+			int len = b.readUnsignedShort();
 			if(len == 0) {
 				return new byte[0];
 			}
@@ -308,8 +308,8 @@ public final class Message {
 			return b.readInt();
 		}else if(DecoderConstant.PREFIX_TYPE_BYTE == type){
 			return b.readByte();
-		}else if(DecoderConstant.PREFIX_TYPE_SHORT == type){
-			return b.readShort();
+		}else if(DecoderConstant.PREFIX_TYPE_SHORTT == type){
+			return b.readUnsignedShort();
 		}else if(DecoderConstant.PREFIX_TYPE_LONG == type){
 			return b.readLong();
 		}else if(DecoderConstant.PREFIX_TYPE_FLOAT == type){
@@ -321,7 +321,7 @@ public final class Message {
 		}else if(DecoderConstant.PREFIX_TYPE_CHAR == type){
 			return b.readChar();
 		}else if(DecoderConstant.PREFIX_TYPE_STRING == type){
-			short len = b.readShort();
+			int len = b.readUnsignedShort();
 			if(len == 0) {
 				return "";
 			}
@@ -329,7 +329,7 @@ public final class Message {
 			b.readFully(arr, 0, len);
 			return new String(arr,0,len,Constants.CHARSET);
 		} else {
-			throw new CommonException("not support header type: " + type);
+			throw new CommonException("not support header type: " + type+", key: " + k);
 		}
 	}
 
@@ -361,18 +361,18 @@ public final class Message {
 			}
 			b.writeByte(DecoderConstant.PREFIX_TYPE_LIST);
 			byte[] arr = (byte[])v;
-			b.writeShort(arr.length);
+			b.writeUnsignedShort(arr.length);
 			b.write(arr);
 		}else if(cls == String.class) {
 			b.writeByte(DecoderConstant.PREFIX_TYPE_STRING);
 			String str = v.toString();
 			if("".equals(str)){
-				b.writeInt(0);
+				b.writeUnsignedShort(0);
 				return;
 			}
 		    try {
 				byte[] data = str.getBytes(Constants.CHARSET);
-				b.writeShort(data.length);
+				b.writeUnsignedShort(data.length);
 				b.write(data);
 			} catch (UnsupportedEncodingException e) {
 				throw new CommonException("Invalid: "+str,e);
@@ -384,8 +384,8 @@ public final class Message {
 			b.writeByte(DecoderConstant.PREFIX_TYPE_BYTE);
 			b.writeByte((Byte)v);
 		}else if(cls == short.class || cls == Short.class || cls == Short.TYPE){
-			b.writeByte(DecoderConstant.PREFIX_TYPE_SHORT);
-			b.writeShort((Short)v);
+			b.writeByte(DecoderConstant.PREFIX_TYPE_SHORTT);
+			b.writeUnsignedShort((Short)v);
 		}else if(cls == long.class || cls == Long.class || cls == Long.TYPE){
 			b.writeByte(DecoderConstant.PREFIX_TYPE_LONG);
 			b.writeLong((Long)v);
@@ -410,7 +410,7 @@ public final class Message {
 		try {
 			Message msg = new Message();
 			//第0,1个字节
-			short flag = b.readShort();
+			int flag = b.readUnsignedShort();
 
 			msg.flag =  flag;
 			//ByteBuffer b = ByteBuffer.wrap(data);
@@ -433,7 +433,7 @@ public final class Message {
 			msg.setMsgId(b.readLong());
 			
 			if(msg.isReadExtra()) {
-				short elen = b.readShort();
+				int elen = b.readUnsignedShort();
 				byte[] edata = new byte[elen];
 				b.readFully(edata,0,elen);
 				msg.extra = ByteBuffer.wrap(edata);
@@ -512,7 +512,8 @@ public final class Message {
 		try {
 			//第0,1,2,3个字节，标志头
 			//b.put(this.flag);
-			b.writeShort(this.flag);
+			//b.writeShort(this.flag);
+			Message.writeUnsignedShort(b, this.flag);
 			
 			if(len < 32767) {
 				//第2，3个字节 ,len = 数据长度 + 测试模式时附加数据长度
@@ -539,7 +540,7 @@ public final class Message {
 			
 			if(this.isWriteExtra()) {
 				//b.writeInt(this.extrFlag);
-				b.writeShort(this.extra.remaining());
+				b.writeUnsignedShort(this.extra.remaining());
 				b.write(this.extra);
 			}
 			
@@ -572,7 +573,7 @@ public final class Message {
 		}
 		
 		//取第一个字节标志位
-		short f = cache.getShort();
+		int f = Message.readUnsignedShort(cache);
 		int len = 0;
 		int headerLen = Message.HEADER_LEN;
 		//取第二，第三个字节 数据长度
@@ -580,8 +581,13 @@ public final class Message {
 	    	//数据长度不可能起过整数的最大值
 	    	//len = cache.getInt();
 	    	len = cache.getInt();
+	    	
 	    	//还原读数据公位置
 			cache.position(pos);
+			/*if(len > (Integer.MAX_VALUE-10000) || len < 0) {
+	    		throw new CommonException("Got invalid message len: " + len + ",flag: " + f+",buf: " + cache.toString());
+	    	}*/
+			
 			headerLen += 2;  //int型比默认short多2字节
 	    	if(totalLen < len + headerLen){
 				//还不能构成一个足够长度的数据包
@@ -692,13 +698,13 @@ public final class Message {
 		extrFlag = set(f,extrFlag, EXTRA_FLAG_IS_SEC);
 	}
 	
-	public boolean isFromWeb() {
+	/*public boolean isFromWeb() {
 		return is(extrFlag, EXTRA_FLAG_IS_FROM_WEB);
 	}
 	
 	public void setFromWeb(boolean f) {
 		extrFlag = set(f,extrFlag, EXTRA_FLAG_IS_FROM_WEB);
-	}
+	}*/
 	
 	public boolean isRpcMk() {
 		return is(extrFlag, EXTRA_FLAG_RPC_MCODE);
@@ -738,11 +744,11 @@ public final class Message {
 	}
 	
 	public boolean isMonitorable() {
-		return is(extrFlag,FLAG_MONITORABLE);
+		return is(this.flag,FLAG_MONITORABLE);
 	}
 	
 	public void setMonitorable(boolean f) {
-		extrFlag = set(f,extrFlag,FLAG_MONITORABLE);
+		flag = set(f,flag,FLAG_MONITORABLE);
 	}
 	
 	public boolean isError() {
@@ -759,6 +765,14 @@ public final class Message {
 	
 	public void setOuterMessage(boolean f) {
 		flag = set(f,flag,FLAG_OUT_MESSAGE);
+	}
+	
+	public boolean isForce2Json() {
+		return is(flag,FLAG_FORCE_RESP_JSON);
+	}
+	
+	public void setForce2Json(boolean f) {
+		flag = set(f,flag,FLAG_FORCE_RESP_JSON);
 	}
 	
 	public boolean isNeedResponse() {
@@ -781,11 +795,11 @@ public final class Message {
 	 */
 	public void setLengthType(boolean f) {
 		//flag |= f ? FLAG_LENGTH_INT : 0 ; 
-		extrFlag = set(f,extrFlag,FLAG_LENGTH_INT);
+		flag = set(f,flag,FLAG_LENGTH_INT);
 	}
 	
 	public boolean isLengthInt() {
-		return is(extrFlag,FLAG_LENGTH_INT);
+		return is(flag,FLAG_LENGTH_INT);
 	}
 	
 	public int getPriority() {
@@ -843,11 +857,26 @@ public final class Message {
 		if(v > MAX_SHORT_VALUE) {
     		throw new CommonException("Max short value is :"+MAX_SHORT_VALUE+", but value "+v);
     	}
-		byte data = (byte)((v >>> 8) & 0xFF);
+		byte data = (byte)((v >> 8) & 0xFF);
 		b.put(data);
-		data = (byte)((v >>> 0) & 0xFF);
+		data = (byte)((v >> 0) & 0xFF);
 		b.put(data);
 	}
+	
+	public static void writeUnsignedShort(JDataOutput b,int v) {
+		if(v > MAX_SHORT_VALUE) {
+    		throw new CommonException("Max short value is :"+MAX_SHORT_VALUE+", but value "+v);
+    	}
+		try {
+			byte data = (byte)((v >> 8) & 0xFF);
+			b.writeByte(data);
+			data = (byte)((v >> 0) & 0xFF);
+			b.writeByte(data);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+	
 	
 	 public static int readUnsignedShort(ByteBuffer b) {
 		int firstByte = (0xFF & ((int)b.get()));
@@ -878,15 +907,15 @@ public final class Message {
 	 
 	 public static void wiriteUnsignedLong(ByteBuffer b,long val) {
 			
-		    b.put((byte)(0xFF & (val >>> 56)));
-			b.put((byte)(0xFF & (val >>> 48)));
-			b.put((byte)(0xFF & (val >>> 40)));
-			b.put((byte)(0xFF & (val >>> 32)));
+		    b.put((byte)(0xFF & (val >> 56)));
+			b.put((byte)(0xFF & (val >> 48)));
+			b.put((byte)(0xFF & (val >> 40)));
+			b.put((byte)(0xFF & (val >> 32)));
 			
-			b.put((byte)(0xFF & (val >>> 24)));
-			b.put((byte)(0xFF & (val >>> 16)));
-			b.put((byte)(0xFF & (val >>> 8)));
-			b.put((byte)(0xFF & (val >>> 0)));
+			b.put((byte)(0xFF & (val >> 24)));
+			b.put((byte)(0xFF & (val >> 16)));
+			b.put((byte)(0xFF & (val >> 8)));
+			b.put((byte)(0xFF & (val >> 0)));
 			
 			return;
 	}
@@ -895,7 +924,7 @@ public final class Message {
 		if(v > MAX_BYTE_VALUE) {
     		throw new CommonException("Max byte value is :"+MAX_BYTE_VALUE+", but value "+v);
     	}
-		byte vv = (byte)((v >>> 0) & 0xFF);
+		byte vv = (byte)((v >> 0) & 0xFF);
 		b.put(vv);
 	}
 	
@@ -904,17 +933,19 @@ public final class Message {
 	    return vv;
 	}
     
-    public static long readUnsignedInt(ByteBuffer buf) {
-    	/*int firstByte = (0xFF & ((int)b.get()));
-    	int secondByte = (0xFF & ((int)b.get()));
-    	int thirdByte = (0xFF & ((int)b.get()));
-    	int fourthByte = (0xFF & ((int)b.get()));
- 	    long anUnsignedInt  = 
- 	    		((long) (firstByte << 24 | secondByte << 16 | thirdByte << 8 | fourthByte))
- 	    		& 0xFFFFFFFFL;
- 	    return anUnsignedInt;*/
+    public static long readUnsignedInt(ByteBuffer b) {
+    	int firstByte = (0xFF & ((int)b.get()));
+		int secondByte = (0xFF & ((int)b.get()));
+		int thirdByte = (0xFF & ((int)b.get()));
+		int fourByte = (0xFF & ((int)b.get()));
+		
+		int anUnsignedShort  = (int) (
+				firstByte << 56 | secondByte<<48
+				| thirdByte << 40 | fourByte<<32
+				);
+        return anUnsignedShort;
     	
-    	int b = buf.get() & 0xff;
+    	/*int b = buf.get() & 0xff;
 		int n = b & 0x7f;
 		if (b > 0x7f) {
 			b = buf.get() & 0xff;
@@ -935,20 +966,20 @@ public final class Message {
 				}
 			}
 		}
-		return (n >>> 1) ^ -(n & 1);
+		return (n >>> 1) ^ -(n & 1);*/
 		
     }
     
-    public static void writeUnsignedInt(ByteBuffer buf,long n) {
-    	if(n > MAX_INT_VALUE) {
-    		throw new CommonException("Max int value is :"+MAX_INT_VALUE+", but value "+n);
+    public static void writeUnsignedInt(ByteBuffer b,long v) {
+    	if(v > MAX_INT_VALUE) {
+    		throw new CommonException("Max int value is :"+MAX_INT_VALUE+", but value "+v);
     	}
-		/*b.put((byte)((v >>> 24)&0xFF));
+		b.put((byte)((v >>> 24)&0xFF));
 		b.put((byte)((v >>> 16)&0xFF));
 		b.put((byte)((v >>> 8)&0xFF));
-		b.put((byte)((v >>> 0)&0xFF));*/
+		b.put((byte)((v >>> 0)&0xFF));
 		
-		n = (n << 1) ^ (n >> 31);
+		/*n = (n << 1) ^ (n >> 31);
 		if ((n & ~0x7F) != 0) {
 			buf.put((byte) ((n | 0x80) & 0xFF));
 			n >>>= 7;
@@ -965,7 +996,7 @@ public final class Message {
 				}
 			}
 		}
-		buf.put((byte) n);
+		buf.put((byte) n);*/
 	}
 
 	public void setInsId(int insId) {

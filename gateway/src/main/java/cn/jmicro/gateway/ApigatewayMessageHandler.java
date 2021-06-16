@@ -123,6 +123,7 @@ public class ApigatewayMessageHandler implements IMessageHandler{
 		
 		linkMng.createLinkNode(session,msg);
 		msg.setInsId(pi.getId());
+		msg.setOuterMessage(false);
 		if(msg.isUpSsl() || msg.isDownSsl()) {
 			this.secretMng.signAndEncrypt(msg, r.getInsId());
 		}

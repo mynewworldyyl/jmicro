@@ -89,14 +89,15 @@ public class JDataInput implements DataInput {
 	}
 	
 	public void writeUsignedLong(long v) {
-		 this.buf.put((byte)((v >>> 56)&0xFF));
+		 /*this.buf.put((byte)((v >>> 56)&0xFF));
 		 this.buf.put((byte)((v >>> 48)&0xFF));
 		 this.buf.put((byte)((v >>> 40)&0xFF));
 		 this.buf.put((byte)((v >>> 32)&0xFF));
 		 this.buf.put((byte)((v >>> 24)&0xFF));
 		 this.buf.put((byte)((v >>> 16)&0xFF));
 		 this.buf.put((byte)((v >>> 8)&0xFF));
-		 this.buf.put((byte)((v >>> 0)&0xFF));
+		 this.buf.put((byte)((v >>> 0)&0xFF));*/
+		 Message.wiriteUnsignedLong(buf, v);
 	}
 
 	@Override

@@ -183,7 +183,7 @@ export default {
     name: 'App',
     mounted() {
         //window.jm.rpc.config.ip='';
-        window.jm.config.sslEnable = true;
+        window.jm.config.sslEnable = false;
         window.jm.rpc.init(window.jm.config.ip,window.jm.config.port);
         //jm.mng.init();
         let self = this;

@@ -147,7 +147,7 @@ public class SecretManager {
 				} while(d == null && k != null && ex != null && ex.getKey() == MC.MT_AES_DECRYPT_ERROR);
 				
 				
-				if(msg.isFromWeb()) {
+				if(msg.isOuterMessage()) {
 					//因为WEB端是将数据做Base64编码为字符串后做的加密，所以Java端同样要将结果做Base64解码
 					d = Base64.getDecoder().decode(d);
 				}
@@ -221,7 +221,7 @@ public class SecretManager {
 		}*/
 		
 		byte[] secrect = null;
-		if(msg.isFromWeb()) {
+		if(msg.isOuterMessage()) {
 			//secrect = EncryptUtils.pkcs1unpad2(msg.getSec());
 			//对密钥做utf8解码为字符串，结果是密码密文的base64编码
 			try {
@@ -276,7 +276,7 @@ public class SecretManager {
 		// 对于上行包，如果下行是安全的，则说明客户端有私钥，所以需要做签名
 		if (!isUp && msg.isUpSsl() || isUp && msg.isDownSsl()) {
 			String sign = null;
-			if(msg.isFromWeb()) {
+			if(msg.isOuterMessage()) {
 				//因为WEB端验签时只认字符串，所以加签前把数据转为Base64字符串
 				byte[] b64Data = Base64.getEncoder().encode(bb.array());
 				sign = EncryptUtils.sign(b64Data, 0, b64Data.length, this.myPriKey);

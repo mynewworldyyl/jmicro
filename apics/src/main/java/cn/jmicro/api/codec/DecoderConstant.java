@@ -53,11 +53,10 @@ public class DecoderConstant {
 	public static final byte PREFIX_TYPE_CHAR = PREFIX_TYPE_ID++;
 	public static final byte PREFIX_TYPE_BOOLEAN = PREFIX_TYPE_ID++;
 	public static final byte PREFIX_TYPE_STRINGG = PREFIX_TYPE_ID++;
-	
 	public static final byte PREFIX_TYPE_DATE = PREFIX_TYPE_ID++;
 	public static final byte PREFIX_TYPE_BYTEBUFFER = PREFIX_TYPE_ID++;
 	public static final byte PREFIX_TYPE_REQUEST = PREFIX_TYPE_ID++;
 	public static final byte PREFIX_TYPE_RESPONSE = PREFIX_TYPE_ID++;
 	public static final byte PREFIX_TYPE_PROXY = PREFIX_TYPE_ID++;
-
+	
 }

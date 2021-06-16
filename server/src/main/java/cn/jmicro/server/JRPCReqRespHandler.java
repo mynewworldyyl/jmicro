@@ -397,6 +397,8 @@ public class JRPCReqRespHandler implements IMessageHandler{
 		}
 
 		msg.setInsId(pi.getId());
+		//msg.setFromWeb(false);
+		msg.setOuterMessage(false);
 		
 		try {
 			msg.setTime(TimeUtils.getCurTime());
