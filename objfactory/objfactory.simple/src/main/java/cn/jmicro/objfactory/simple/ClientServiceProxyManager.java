@@ -29,6 +29,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import cn.jmicro.api.annotation.Async;
+import cn.jmicro.api.annotation.JMethod;
 import cn.jmicro.api.annotation.Reference;
 import cn.jmicro.api.annotation.Service;
 import cn.jmicro.api.classloader.RpcClassLoader;
@@ -70,6 +71,7 @@ class ClientServiceProxyManager {
 		this.of = of;
 	}
 	
+	@JMethod("init")
 	void init(){
 		this.registry = of.get(IRegistry.class);
 	}

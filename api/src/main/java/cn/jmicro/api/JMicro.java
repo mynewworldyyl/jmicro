@@ -22,6 +22,7 @@ import java.util.Arrays;
 
 import org.apache.log4j.PropertyConfigurator;
 import org.apache.log4j.xml.DOMConfigurator;
+import org.slf4j.impl.StaticLoggerBinder;
 
 import cn.jmicro.api.classloader.RpcClassLoader;
 
@@ -31,75 +32,87 @@ import cn.jmicro.api.classloader.RpcClassLoader;
  * @date 2018年10月17日-上午10:21:03
  */
 public class JMicro {
-	
-	public static void main(String[] args)  {
-		 System.out.println(Arrays.asList(args));
-		 getObjectFactoryAndStart(args);
-		 //JMicro.getObjectFactoryAndStart(args);
-		 waitForShutdown();
+
+	public static void main(String[] args) {
+		System.out.println(Arrays.asList(args));
+		getObjectFactoryAndStart(args);
+		// JMicro.getObjectFactoryAndStart(args);
+		// waitForShutdown();
 	}
-	
+
 	public static final void waitForShutdown() {
 		try {
 			Thread.sleep(Long.MAX_VALUE);
 		} catch (InterruptedException e) {
 			e.printStackTrace();
-		};
+		}
+		;
 	}
-	
+
 	public static Object getObjectFactoryAndStart(String[] args) {
-		 try {
-			 
-			 for(String arg : args){
-					if(arg.startsWith("-D")){
-						String ar = arg.substring(2);
-						if(ar == null || "".equals(ar.trim())) {
-							continue;
-						}
-						
-						ar = ar.trim();
-						String key = "";
-						String val = "";
-						
-						if(ar.indexOf("=") > 0){
-							String[] ars = ar.split("=");
-							key = ars[0].trim();
-							val = ars[1].trim();
-						}
-						
-						if(key != null && "log4j.configuration".equals(key)) {
-							System.out.println(val);
-							if(val != null && !"".equals(val.trim())) {
-								if(val.endsWith("xml")) {
-									DOMConfigurator.configure(val);
-								}else {
-									PropertyConfigurator.configure(val);
-								}
+		try {
+			boolean isLogInit = false;
+			for (String arg : args) {
+				if (arg.startsWith("-D")) {
+					String ar = arg.substring(2);
+					if (ar == null || "".equals(ar.trim())) {
+						continue;
+					}
+
+					ar = ar.trim();
+					String key = "";
+					String val = "";
+
+					if (ar.indexOf("=") > 0) {
+						String[] ars = ar.split("=");
+						key = ars[0].trim();
+						val = ars[1].trim();
+					}
+
+					if (key != null && "log4j.configuration".equals(key)) {
+						System.out.println(val);
+						if (val != null && !"".equals(val.trim())) {
+							isLogInit = true;
+							if (val.endsWith("xml")) {
+								DOMConfigurator.configure(val);
+							} else {
+								PropertyConfigurator.configure(val);
 							}
-							break;
 						}
+						break;
 					}
 				}
-			 
-			 ClassLoader cl = JMicro.class.getClassLoader();
-			 if(!cl.getClass().getName().equals(RpcClassLoader.class.getName())) {
-				 cl =  Thread.currentThread().getContextClassLoader();
-				 if(!cl.getClass().getName().equals(RpcClassLoader.class.getName())) {
-					 cl = new RpcClassLoader(JMicro.class.getClassLoader());
-				 }
-			 }
-			 Thread.currentThread().setContextClassLoader(cl);
-			 Class<?> emClass = cl.loadClass("cn.jmicro.api.EnterMain");
-			 Object em = emClass.newInstance();
-			 Method m = emClass.getMethod("getObjectFactoryAndStart", new String[0].getClass());
-			 Object obj = args;
-			 Object ret = m.invoke(em, obj);
-			 return ret;
+			}
+
+			if (!isLogInit) {
+				StaticLoggerBinder.getSingleton();
+			}
+
+			ClassLoader cl = JMicro.class.getClassLoader();
+			if (!cl.getClass().getName().equals(RpcClassLoader.class.getName())) {
+				cl = Thread.currentThread().getContextClassLoader();
+				if (!cl.getClass().getName().equals(RpcClassLoader.class.getName())) {
+					cl = new RpcClassLoader(JMicro.class.getClassLoader());
+				}
+			}
+			Thread.currentThread().setContextClassLoader(cl);
+			Class<?> emClass = cl.loadClass("cn.jmicro.api.EnterMain");
+			Object em = emClass.newInstance();
+			Method m = emClass.getMethod("getObjectFactoryAndStart", new String[0].getClass());
+			Object obj = args;
+			Object ret = m.invoke(em, obj);
+			return ret;
 		} catch (ClassNotFoundException | InstantiationException | IllegalAccessException | NoSuchMethodException
 				| SecurityException | IllegalArgumentException | InvocationTargetException e) {
 			e.printStackTrace();
+			/*
+			 * if(e instanceof InvocationTargetException && ((InvocationTargetException)
+			 * e).getTargetException().toString().endsWith(
+			 * "liquibase/servicelocator/PackageScanClassResolver")) { return null; }else {
+			 * e.printStackTrace(); }
+			 */
 		}
-		 return null;
+		return null;
 	}
-	
+
 }

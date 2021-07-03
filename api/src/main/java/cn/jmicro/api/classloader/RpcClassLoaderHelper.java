@@ -15,6 +15,7 @@ import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import cn.jmicro.api.Holder;
 import cn.jmicro.api.IListener;
 import cn.jmicro.api.JMicroContext;
 import cn.jmicro.api.Resp;
@@ -36,6 +37,7 @@ import cn.jmicro.api.registry.IRegistry;
 import cn.jmicro.api.registry.ServiceItem;
 import cn.jmicro.api.security.ActInfo;
 import cn.jmicro.api.timer.TimerTicker;
+import cn.jmicro.api.utils.TimeUtils;
 import cn.jmicro.codegenerator.AsyncClientProxy;
 import cn.jmicro.codegenerator.AsyncClientUtils;
 import cn.jmicro.common.CommonException;
@@ -56,6 +58,8 @@ public class RpcClassLoaderHelper {
     private Map<String,Class<?>> ownerClasses = new HashMap<>();
     
     private Map<String,Class<?>> respClasses = new HashMap<>();
+    
+    private Set<String> successClasses = new HashSet<>();
     
     @Inject
     private IDataOperator op;
@@ -186,8 +190,13 @@ public class RpcClassLoaderHelper {
     	rndl.addListener(classInfoListener);
     	
     	op.addChildrenListener(CLASS_IDR,classNodeListener);
+    	Holder<Long> curTime = new Holder<>(TimeUtils.getCurTime());
     	TimerTicker.doInBaseTicker(30, "RpcClassLoader-registRemoteClassChecker", null, (key,att)->{
     		doCheck();
+    		if(TimeUtils.getCurTime() - curTime.get() > 300000) {
+    			successClasses.clear();
+    			curTime.set(TimeUtils.getCurTime());
+    		}
     	});
 	}
     
@@ -222,6 +231,9 @@ public class RpcClassLoaderHelper {
         		for(String className : keySet) {
             		
         			Class<?> clazz = respClasses.get(className);
+        			if(clazz == null) {
+        				throw new CommonException("Remote class not found:"+className);
+        			}
             		
         			int ver = 0;
         			int clientId = -1;
@@ -294,6 +306,7 @@ public class RpcClassLoaderHelper {
 	            		}
 	   					Resp<Boolean> r = rcl.registRemoteClass(rc);
 	            		if(r.getData()) {
+	            			successClasses.add(className);
 	            			respClasses.remove(className);
 	            		}else if(r.getCode() == Resp.CODE_NO_PERMISSION) {
 	            			respClasses.remove(className);
@@ -360,6 +373,10 @@ public class RpcClassLoaderHelper {
     		return;
     	}
     	
+    	if(successClasses.contains(className)) {
+    		return;
+    	}
+    	
     	logger.info("Add remote class: {}",clazz.getName());
     	synchronized(ownerClasses) {
     		ownerClasses.put(className,clazz);
@@ -379,7 +396,8 @@ public class RpcClassLoaderHelper {
 					respClasses.put(gatewaySrv,clazz.getClassLoader().loadClass(gatewaySrv));
 					
 				} catch (ClassNotFoundException e) {
-					logger.error("",e);
+					//logger.error("",e);
+					throw new CommonException(e.getMessage(),e);
 				}
     		}
 		}
@@ -410,7 +428,7 @@ public class RpcClassLoaderHelper {
 			 Set<String> insNames = this.classesName2Instance.get(className);
 			 
 			 if(insNames  == null || insNames.isEmpty()) {
-				 logger.error("class " + originClsName + " owner server not found!");
+				 //logger.info("class " + originClsName + " owner server not found!");
 				 return null;
 			 }
 			 
@@ -671,8 +689,8 @@ public class RpcClassLoaderHelper {
 		        	return myClass;
 				} else {
 					String desc = "Fail to sync load class: "+className;
-					logger.info(desc);
-					LG.log(MC.LOG_ERROR, this.getClass(), desc);
+					logger.debug(desc);
+					//LG.log(MC.LOG_ERROR, this.getClass(), desc);
 					return null;
 				}
 			} else {

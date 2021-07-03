@@ -351,6 +351,12 @@ public final class StringUtils {
             return true;
         return false;
     }
+    
+    public static <T> boolean isEmpty(T str) {
+        if (str == null)
+            return true;
+        return false;
+    }
 
     /**
      * is not empty string.

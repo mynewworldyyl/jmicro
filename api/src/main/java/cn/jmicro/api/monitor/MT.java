@@ -19,6 +19,7 @@ package cn.jmicro.api.monitor;
 import cn.jmicro.api.EnterMain;
 import cn.jmicro.api.JMicroContext;
 import cn.jmicro.api.config.Config;
+import cn.jmicro.api.objectfactory.IObjectFactory;
 import cn.jmicro.api.registry.ServiceMethod;
 import cn.jmicro.api.security.ActInfo;
 import cn.jmicro.common.Constants;
@@ -132,11 +133,17 @@ public class MT {
 	
 	private static boolean isMonitorable(short type) {
 		
-		if(!isInit) {
+		if(!isInit || m == null) {
+			IObjectFactory of = EnterMain.getObjectFactory();
+			if(of == null) {
+				return false;
+			}
+			
 			isInit = true;
-			m = EnterMain.getObjectFactory().get(StatisMonitorClient.class);
-			isMs = null != EnterMain.getObjectFactory().get(IStatisMonitorServer.class);
-			isDs = EnterMain.getObjectFactory().get(IMonitorDataSubscriber.class) != null;
+			m = of.get(StatisMonitorClient.class);
+			isMs = null != of.get(IStatisMonitorServer.class);
+			isDs = of.get(IMonitorDataSubscriber.class) != null;
+			
 		}
 		
 		if(JMicroContext.existRpcContext() && !JMicroContext.get().isMonitorable()

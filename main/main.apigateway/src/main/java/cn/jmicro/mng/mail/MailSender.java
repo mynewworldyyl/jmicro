@@ -42,7 +42,7 @@ public class MailSender implements IEmailSender{
 	
 	public static void main(String[] args) throws Exception {
 		//new MailSender().send("mynewworldyyl@gmail.com", "节日快乐", "测试发送邮件");
-		new MailSender().send("xiaoruanfang@sina.com", "节日快乐", "测试发送邮件");
+		new MailSender().send("xiaoruanfang@sina.com","378862956@qq.com", "节日快乐", "测试发送邮件");
 	}
 	
 	public boolean send0(String to, String title, String content) {
@@ -101,7 +101,7 @@ public class MailSender implements IEmailSender{
 	}
 	
 	
-	public boolean send(String to,String title, String message) {
+	public boolean send(String to,String from,String title, String message) {
         try {
             Security.addProvider(new com.sun.net.ssl.internal.ssl.Provider());
             final String SSL_FACTORY = "javax.net.ssl.SSLSocketFactory";
@@ -125,7 +125,8 @@ public class MailSender implements IEmailSender{
             //通过会话,得到一个邮件,用于发送
             Message msg = new MimeMessage(session);
             //设置发件人
-            msg.setFrom(new InternetAddress(mailFrom));
+            //msg.setFrom(new InternetAddress(mailFrom));
+            msg.setFrom(new InternetAddress(from));
             //设置收件人,to为收件人,cc为抄送,bcc为密送
             msg.setRecipients(Message.RecipientType.TO, InternetAddress.parse(to, false));
             msg.setRecipients(Message.RecipientType.CC, InternetAddress.parse(to, false));

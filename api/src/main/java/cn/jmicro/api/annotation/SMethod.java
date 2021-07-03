@@ -37,6 +37,8 @@ import cn.jmicro.common.Constants;
 @Retention(RUNTIME)
 public @interface SMethod {
 
+	public String desc() default "";
+	
 	//public String value() default "";
 	
 	/**

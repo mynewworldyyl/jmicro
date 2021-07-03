@@ -29,6 +29,7 @@ import org.slf4j.LoggerFactory;
 import cn.jmicro.api.IListener;
 import cn.jmicro.api.annotation.Cfg;
 import cn.jmicro.api.annotation.Component;
+import cn.jmicro.api.annotation.JMethod;
 import cn.jmicro.api.config.Config;
 import cn.jmicro.api.executor.IExecutorInfo;
 import cn.jmicro.api.monitor.IMonitorAdapter;
@@ -130,6 +131,7 @@ public class ServiceManager {
 		}
 	};
 	
+	@JMethod("init")
 	public void init() {
 		dataOperator.addListener((state)->{
 			if(Constants.CONN_CONNECTED == state) {

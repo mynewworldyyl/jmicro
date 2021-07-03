@@ -1,0 +1,27 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+         <groupId>cn.jmicro</groupId>
+		 <artifactId>jmicro.ext</artifactId>
+		 <version>0.0.5-SNAPSHOT</version>
+    </parent>
+    <artifactId>jmicro.druid</artifactId>
+    <packaging>jar</packaging>
+    <name>${project.artifactId}</name>
+    <description>druid extion</description>
+    
+    <dependencies>
+         <dependency>
+			 <groupId>cn.jmicro</groupId>
+			 <artifactId>jmicro.api</artifactId>
+        </dependency>
+        
+        <dependency>
+			 <groupId>com.alibaba</groupId>
+			<artifactId>druid</artifactId>
+			<version>1.1.10</version>
+        </dependency>
+        
+    </dependencies>
+   
+</project>

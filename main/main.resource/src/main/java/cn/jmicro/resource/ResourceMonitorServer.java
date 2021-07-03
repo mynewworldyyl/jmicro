@@ -297,7 +297,7 @@ public class ResourceMonitorServer{
 				break;
 			case StatisConfig.TO_TYPE_EMAIL:
 				if(mailSender != null) {
-					mailSender.sendJMAsync(cfg.getToParams(), cfg.getExtParams(),  
+					mailSender.sendJMAsync(cfg.getToParams(),"", cfg.getExtParams(),  
 							JsonUtils.getIns().toJson(rd), cfg)
 					.fail((code,msg,cxt)->{
 						logger.error("code:" + code+", msg: " + msg);

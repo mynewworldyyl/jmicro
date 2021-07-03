@@ -55,6 +55,7 @@ import cn.jmicro.api.registry.ServiceItem;
 import cn.jmicro.api.registry.ServiceMethod;
 import cn.jmicro.api.registry.UniqueServiceKey;
 import cn.jmicro.api.registry.UniqueServiceMethodKey;
+import cn.jmicro.api.timer.TimerTicker;
 import cn.jmicro.api.tx.TxConstants;
 import cn.jmicro.common.CommonException;
 import cn.jmicro.common.Constants;
@@ -119,6 +120,8 @@ public class ServiceLoader{
 	
 	private Server httpServer = null;
 	
+	private Set<Class<?>> waitings = new HashSet<>();
+	
 	//private Map<String,Class<?>> servicesAnno = new ConcurrentHashMap<String,Class<?>>();
 	
 	public void ready(){
@@ -136,6 +139,28 @@ public class ServiceLoader{
 		});*/
 		
 		doExportService();
+		
+		if(!waitings.isEmpty()) {
+			TimerTicker.doInBaseTicker(3, "ServiceExportChecker", null, (key,att)->{
+				if(waitings.isEmpty()) {
+					TimerTicker.getBaseTimer().removeListener(key, true);
+				} else {
+					Iterator<Class<?>> ite = waitings.iterator();
+					while(ite.hasNext()) {
+						Class<?> c = ite.next();
+						if(this.exportOne(c, false)) {
+							ite.remove();
+							logger.info("Export service success: " + c.getName());
+						}
+					}
+					
+					if(waitings.isEmpty()) {
+						logger.info("Export service finish");
+						TimerTicker.getBaseTimer().removeListener(key, true);
+					}
+				}
+			});
+		}
 	}
 	
 	private void doExportService() {
@@ -274,21 +299,29 @@ public class ServiceLoader{
 		Iterator<Class<?>> ite = clses.iterator();
 		boolean flag = false;
 		while(ite.hasNext()){
-			exportOne(ite.next());
+			exportOne(ite.next(),true);
 			flag = true;
 		}
 		return flag;
 	}
 	
-	private void exportOne(Class<?> c) {
+	private boolean exportOne(Class<?> c,boolean waiting) {
 
 		if(c.isInterface() || Modifier.isAbstract(c.getModifiers())){
-			return;
+			return true;
 		}
 		
 		Object srv = of.get(c);
 		if(srv == null){
-			throw new CommonException("fail to export server, service instance is NULL "+c.getName());
+			if(waiting) {
+				waitings.add(c);
+				logger.info("Delay to export service: " + c.getName());
+				//throw new CommonException("fail to export server, service instance is NULL "+c.getName());
+				return false;
+			}else {
+				logger.warn("Service instance not found: " + c.getName());
+				return false;
+			}
 		}
 		
 		/*if(c.getName().contains("AccountService")) {
@@ -308,6 +341,8 @@ public class ServiceLoader{
 		//services.put(si.getImpl(), srv);
 		
 		logger.info("Export service:"+c.getName());
+		
+		return true;
 	}
 	
 	public void unregistService(ServiceItem item) {

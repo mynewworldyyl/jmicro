@@ -29,6 +29,7 @@ import cn.jmicro.api.IWaitingAction;
 import cn.jmicro.api.JMicroContext;
 import cn.jmicro.api.annotation.Cfg;
 import cn.jmicro.api.annotation.Component;
+import cn.jmicro.api.annotation.JMethod;
 import cn.jmicro.api.config.Config;
 import cn.jmicro.api.exception.BreakerException;
 import cn.jmicro.api.raft.IDataOperator;
@@ -111,6 +112,7 @@ public class RegistryImpl implements IRegistry {
 		return this.needWaiting;
 	}
 	
+	@JMethod("init")
 	public void init() {
 		if(!Config.isClientOnly()) {
 			//只做服务提供者,不需要监听服务变化

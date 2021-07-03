@@ -35,6 +35,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Consumer;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -67,6 +68,7 @@ import cn.jmicro.api.objectfactory.IObjectFactory;
 import cn.jmicro.api.objectfactory.IPostFactoryListener;
 import cn.jmicro.api.objectfactory.IPostInitListener;
 import cn.jmicro.api.objectfactory.ProxyObject;
+import cn.jmicro.api.objectsource.IObjectSource;
 import cn.jmicro.api.raft.IDataOperator;
 import cn.jmicro.api.registry.AsyncConfig;
 import cn.jmicro.api.registry.IRegistry;
@@ -94,8 +96,6 @@ import javassist.CtMethod;
  * 		a. Component.lazy注解指定的本地懒加载代理对像，由cn.jmicro.api.objectfactory.ProxyObject接口标识;
  * 		b. Service注解确定的远程服务对象，由cn.jmicro.api.service.IServerServiceProxy抽像标识
  * 		c. Reference注解确定的远程服务代理对象cn.jmicro.api.client.AbstractClientServiceProxy
- * 
- * 
  * @author Yulei Ye
  * @date 2018年10月4日-下午12:12:24
  */
@@ -103,7 +103,13 @@ import javassist.CtMethod;
 @Component(Constants.DEFAULT_OBJ_FACTORY)*/
 public class SimpleObjectFactory implements IObjectFactory {
 
-	static AtomicInteger idgenerator = new AtomicInteger();
+	private static final byte INIT = 1;
+	
+	private static final byte AFTER_SORT = 2;
+	
+	private static final byte INIT_FINISH = 127;
+	
+	private static AtomicInteger idgenerator = new AtomicInteger();
 	
 	private final static Logger logger = LoggerFactory.getLogger(SimpleObjectFactory.class);
 	
@@ -114,7 +120,7 @@ public class SimpleObjectFactory implements IObjectFactory {
 	
 	private boolean fromLocal = true;
 	
-	private boolean rpcReady = false;
+	private byte stage = INIT;
 	
 	private List<IPostFactoryListener> postReadyListeners = new ArrayList<>();
 	
@@ -132,14 +138,23 @@ public class SimpleObjectFactory implements IObjectFactory {
 	
 	private RpcClassLoader rpcClassLoader = null;
 	
+	private	Set<IObjectSource> osSet = new HashSet<>();
+	
 	@Override
-	public boolean isSysLogin() {
+	public void foreach(Consumer<Object> c) {
+		for(Object obj : objs.values()) {
+			c.accept(obj);
+		}
+	}
+
+	@Override
+	public Boolean isSysLogin() {
 		return pi!= null && pi.isLogin();
 	}
 	
 	@Override
-	public boolean isRpcReady() {
-		return this.rpcReady;
+	public Boolean isRpcReady() {
+		return this.stage == INIT_FINISH;
 	}
 	
 	@Override
@@ -190,6 +205,13 @@ public class SimpleObjectFactory implements IObjectFactory {
 			}
 		}
 		
+		if(!this.osSet.isEmpty() && !cls.getName().startsWith(Constants.SYSTEM_PCK_NAME_PREFIXE)) {
+			for(IObjectSource os: osSet) {
+				Object co = os.get(cls);
+				if(co != null) return (T)co;//外部数据源直接返回
+			}
+		}
+		
 		if(obj != null) {
 			Class<?> tc = ProxyObject.getTargetCls(obj.getClass());
 			if(this.validForPackage(getSecurityPackageName(), tc)) {
@@ -226,6 +248,13 @@ public class SimpleObjectFactory implements IObjectFactory {
 			logger.warn(getSecurityPackageName() + " cannot get instance of " + tc.getName());
 		}
 		
+		if(!this.osSet.isEmpty() && clsName.startsWith(Constants.SYSTEM_PCK_NAME_PREFIXE)) {
+			for(IObjectSource os: osSet) {
+				co = os.getByName(clsName);
+				if(co != null) return (T)co;
+			}
+		}
+		
 		return null;
 	}
 	
@@ -258,6 +287,15 @@ public class SimpleObjectFactory implements IObjectFactory {
 				Class<?> tc = ProxyObject.getTargetCls(c);
 				if(this.validForPackage(getSecurityPackageName(), tc)) {
 					set.add((T)this.objs.get(c));
+				}
+			}
+		}
+		
+		if(!osSet.isEmpty() && !parrentCls.getName().startsWith(Constants.SYSTEM_PCK_NAME_PREFIXE)) {
+			for(IObjectSource os : osSet) {
+				Set<T> rst = os.getByParent(parrentCls);
+				if(rst != null && !rst.isEmpty()) {
+					set.addAll(rst);
 				}
 			}
 		}
@@ -324,6 +362,10 @@ public class SimpleObjectFactory implements IObjectFactory {
 			success = true;
 		}
 		
+		if(success && obj instanceof IObjectSource) {
+			this.osSet.add((IObjectSource)obj);
+		}
+		
 		if(!success) {
 			throw new CommonException("class["+cls.getName()+"] instance exist");
 		}
@@ -366,8 +408,8 @@ public class SimpleObjectFactory implements IObjectFactory {
     		 injectDepependencies(obj);
     		 notifyPreInitPostListener(obj,cfg);
         	 doInit(obj);
+        	 doReady(obj);
     		 notifyAfterInitPostListener(obj,cfg);
-    		 doReady(obj);
     	 }
 	}
      
@@ -409,7 +451,7 @@ public class SimpleObjectFactory implements IObjectFactory {
 		}
 	}
 
-	public synchronized void start(IDataOperator dataOperator){
+	public synchronized void start(IDataOperator dataOperator,String[] args){
 		if(!isInit.compareAndSet(0, 1)){
 			//防止多线程同时进来多次实例化相同实例
 			if(isInit.get() == 1) {
@@ -534,6 +576,7 @@ public class SimpleObjectFactory implements IObjectFactory {
 			
 			List<Object> lobjs = new ArrayList<>();
 			lobjs.addAll(this.objs.values());
+			
 			//根据对像定义level级别排序，level值越小，初始化及别越高，就也就越优先初始化
 			lobjs.sort(new Comparator<Object>(){
 				@Override
@@ -568,12 +611,15 @@ public class SimpleObjectFactory implements IObjectFactory {
 				}
 			});
 			
+			
 			//将自己也保存到实例列表里面
 			this.cacheObj(this.getClass(), this, null);
 			
 			IRegistry registry = (IRegistry)this.get(IRegistry.class);
 			
 			notifyPreInitPostListener(registry,cfg);
+			
+			stage = AFTER_SORT;
 			
 			if(!lobjs.isEmpty()){
 				
@@ -606,7 +652,7 @@ public class SimpleObjectFactory implements IObjectFactory {
 				doReady0(lobjs,systemObjs);
 			}
 			
-			rpcReady = true;
+			stage = INIT_FINISH;
 			
 			loadAccountInfo(dataOperator,cfg);
 			
@@ -1206,7 +1252,7 @@ public class SimpleObjectFactory implements IObjectFactory {
 	}
 
 	@Override
-	public boolean exist(Class<?> clazz) {
+	public Boolean exist(Class<?> clazz) {
 		checkStatu();
 		Object o = this.objs.get(clazz);
 		if(o == null) return false;
@@ -1215,26 +1261,34 @@ public class SimpleObjectFactory implements IObjectFactory {
 
 	@Override
 	public void regist(Object obj) {
-		this.doAfterCreate(obj, null);
 		this.cacheObj(obj.getClass(), obj,null);
+		if(AFTER_SORT <= this.stage) {
+			this.doAfterCreate(obj, null);
+		}
 	}
 
 	@Override
 	public void regist(Class<?> clazz, Object obj) {
-		this.doAfterCreate(obj, null);
 		this.cacheObj(clazz, obj,null);
+		if(AFTER_SORT <= this.stage) {
+			this.doAfterCreate(obj, null);
+		}
 	}
 	
 	@Override
 	public void regist(String comName, Object obj) {
-		this.doAfterCreate(obj, null);
 		this.cacheObj(obj.getClass(), obj,comName);
+		if(AFTER_SORT <= this.stage) {
+			this.doAfterCreate(obj, null);
+		}
 	}
 
 	@Override
 	public <T> void registT(Class<T> clazz, T obj) {
-		this.doAfterCreate(obj, null);
 		this.cacheObj(clazz, obj,null);
+		if(AFTER_SORT <= this.stage) {
+			this.doAfterCreate(obj, null);
+		}
 	}
 
 	@Override
@@ -1339,9 +1393,10 @@ public class SimpleObjectFactory implements IObjectFactory {
 		String commandComName = Config.getCommandParam(f.getType().getName(), String.class, null);
 		if(!StringUtils.isEmpty(commandComName) && ( f.isAnnotationPresent(Inject.class) || f.isAnnotationPresent(Reference.class) )) {
 			//对于注入或引用的服务,命令行指定实现组件名称
-			if(this.nameToObjs.containsKey(commandComName)) {
+			srv = this.getByName(commandComName);
+			/*if(this.nameToObjs.containsKey(commandComName)) {
 				srv = this.nameToObjs.get(commandComName);
-			} else {
+			} else */if(srv == null){
 				//指定的组件不存在
 				throw new CommonException("Component Name["+commandComName+"] for service ["+f.getType().getName()+"] not found");
 			}
@@ -1384,11 +1439,21 @@ public class SimpleObjectFactory implements IObjectFactory {
 			//对某些类,命令行可以指定特定组件实例名称,系统对该类使用指定实例,忽略别的实例
 			srv = this.getCommandSpecifyConponent(f);
 			
-			if(srv == null && f.isAnnotationPresent(Inject.class)){
+			if(srv == null && (f.isAnnotationPresent(Inject.class) /*|| f.isAnnotationPresent(Resource.class)*/)){
 				//Inject the local component
-				Inject inje = f.getAnnotation(Inject.class);
-				String name = inje.value();
-				isRequired = inje.required();
+				String name = null;
+				isRequired = true;
+				
+				/*if(f.isAnnotationPresent(Resource.class)) {
+					Resource res = f.getAnnotation(Resource.class);
+					name = res.name();
+					isRequired = true;//默认不可少
+				}else {*/
+					Inject inje = f.getAnnotation(Inject.class);
+					name = inje.value();
+					isRequired = inje.required();
+				//}
+				
 				Class<?> type = f.getType();
 				
 				if(type.isArray()) {
@@ -1785,7 +1850,7 @@ public class SimpleObjectFactory implements IObjectFactory {
 		
 		ClassGenerator cg = ClassGenerator.newInstance(cls.getClassLoader());
 		try {
-			cg.setClassName(cls.getName()+"$Jmicro"+idgenerator.getAndIncrement());
+			cg.setClassName(cls.getName() + "$Jmicro" + idgenerator.getAndIncrement());
 			cg.setSuperClass(cls.getName());
 			cg.addInterface(ProxyObject.class);
 			//cg.addDefaultConstructor();
@@ -1802,7 +1867,7 @@ public class SimpleObjectFactory implements IObjectFactory {
 				cg.addConstructor(c.getModifiers(),c.getParameterTypes(),c.getExceptionTypes(),conbody);
 			}
 			
-			cg.addMethod("private void _init0() { if (this.init) return; this.init=true; this.target = ("+cls.getName()+")(factory.createNoProxy("+cls.getName()+".class));}");
+			cg.addMethod("private void _init0() { if (this.init) return; this.init=true; this.target = ("+cls.getName()+")(__factory.createNoProxy("+cls.getName()+".class));}");
 			cg.addMethod("public Object getTarget(){ _init0(); return this.target;}");
 			
 			int index = 0;
@@ -1821,7 +1886,7 @@ public class SimpleObjectFactory implements IObjectFactory {
 					sb.append(ReflectUtils.getName(rt)).append(" v = ");
 				}
 				
-				sb.append(" methods[").append(index).append("].invoke(this.target,$args); ");	
+				sb.append(" __methods[").append(index).append("].invoke(this.target,$args); ");	
 				
 				if (!Void.TYPE.equals(rt)) {
 					sb.append(" return v ;");
@@ -1835,13 +1900,13 @@ public class SimpleObjectFactory implements IObjectFactory {
 			cg.addField("private java.lang.String conKey;");
 			cg.addField("private java.lang.Object[] conArgs;");
 			
-			cg.addField("public static java.lang.reflect.Method[] methods;");
-			cg.addField("public static cn.jmicro.objfactory.simple.SimpleObjectFactory factory;");
+			cg.addField("public static java.lang.reflect.Method[] __methods;");
+			cg.addField("public static cn.jmicro.objfactory.simple.SimpleObjectFactory __factory;");
 			
 			Class<?> cl = cg.toClass(cls.getClassLoader(),cls.getProtectionDomain());
 			
-			cl.getField("methods").set(null, cls.getMethods());
-			cl.getField("factory").set(null, this);
+			cl.getField("__methods").set(null, cls.getMethods());
+			cl.getField("__factory").set(null, this);
 			Object o = cl.newInstance();
 			//doAfterCreate(o);
 			return (T)o;
@@ -1870,16 +1935,16 @@ public class SimpleObjectFactory implements IObjectFactory {
 					initMethod1 = m;
 					break;
 				}
-			}else if(m.getName().equals("init")) {
+			}/*else if(m.getName().equals("init") && m.getParameterCount()==0) {
 				initMethod2 = m;
-			}
+			}*/
 		}
 		try {
 			if(initMethod1 != null) {
 				initMethod1.invoke(obj, new Object[]{});
-			}else if(initMethod2 != null){
+			}/*else if(initMethod2 != null){
 				initMethod2.invoke(obj, new Object[]{});
-			}
+			}*/
 		} catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
 			logger.error("Component init error:"+obj.getClass().getName(),e);
 		}
@@ -1892,13 +1957,16 @@ public class SimpleObjectFactory implements IObjectFactory {
 		List<Method> methods = new ArrayList<>();
 		Utils.getIns().getMethods(methods, tc);
 		for(Method m : methods ) {
-			if(m.isAnnotationPresent(JMethod.class)) {
+			if(m.isAnnotationPresent(JMethod.class) ) {
 				JMethod jm = m.getAnnotation(JMethod.class);
 				if("ready".equals(jm.value())) {
 					readyMethod1 = m;
 					break;
 				}
-			}else if(m.getName().equals("ready")) {
+			}/*else if(m.isAnnotationPresent(PostConstruct.class)) {
+				readyMethod1 = m;
+				break;
+			}*/ else if(m.getName().equals("ready")) {
 				readyMethod2 = m;
 			}
 		}

@@ -119,10 +119,10 @@ public class ApiGatewayClient {
 		this.config = cfg;
 		this.idClient = new IdClient();
 		this.pubsubClient = new ApiGatewayPubsubClient(this);
-		init();
+		init0();
 	}
 	
-	private void init() {
+	private void init0() {
 		if(this.config.isUpSsl()) {
 			String keyStr = EncryptUtils.loadKeyContent(config.getApiGwPriKeyFile(),API_GATEWAY_PUB_KEY_FILE);
 			this.pubKey4ApiGateway = EncryptUtils.loadPublicKeyByStr(keyStr);

@@ -18,6 +18,7 @@ package cn.jmicro.api.classloader;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.reflect.Array;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.URL;
@@ -30,6 +31,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.alibaba.dubbo.common.utils.ClassHelper;
 
 import cn.jmicro.api.config.Config;
 import cn.jmicro.api.monitor.LG;
@@ -45,6 +48,10 @@ public class RpcClassLoader extends ClassLoader {
 	private static final Set<String> basePackages = new HashSet<>();
 	
 	private static final AtomicBoolean init = new AtomicBoolean(false);
+	
+	private static final String[] FORCE_LOCAL_CLASSES = new String[] {
+		"org.springframework","org.aopalliance"
+	};
 	
 	static {
 		basePackages.add("cn.jmicro");
@@ -161,11 +168,24 @@ public class RpcClassLoader extends ClassLoader {
 
 	@Override
     public Class<?> findClass(String className){
+		if(isForceLocalClass(className)) {
+			try {
+				return this.loadRpcLocalClass(className, true);
+			} catch (ClassNotFoundException e) {
+			}
+		}
 		if(bridge == null) {
 			return null;
 		}
 		return bridge.findClass(className);
     }
+
+	private boolean isForceLocalClass(String className) {
+		for(String n : FORCE_LOCAL_CLASSES) {
+			if(className.startsWith(n))return true;
+		}
+		return false;
+	}
 
 	//实现远程类优先从远程加载
 	protected Class<?> loadClass(String name, boolean resolve) throws ClassNotFoundException {
@@ -174,9 +194,35 @@ public class RpcClassLoader extends ClassLoader {
 			logger.debug(name);
 		}*/
 		
+		Class<?> clazz = ClassHelper.resolvePrimitiveClassName(name);
+        if (clazz != null) {
+            return clazz;
+        }
+        
 		if(clazzes.containsKey(name)) {
     		return clazzes.get(name);
     	}
+
+        // "java.lang.String[]" style arrays
+        if (name.endsWith(ClassHelper.ARRAY_SUFFIX)) {
+            String elementClassName = name.substring(0, name.length() - ClassHelper.ARRAY_SUFFIX.length());
+            Class<?> elementClass = this.loadClass(elementClassName);
+            return Array.newInstance(elementClass, 0).getClass();
+        }
+
+        // "[Ljava.lang.String;" style arrays
+        int internalArrayMarker = name.indexOf(ClassHelper.INTERNAL_ARRAY_PREFIX);
+        if (internalArrayMarker != -1 && name.endsWith(";")) {
+            String elementClassName = null;
+            if (internalArrayMarker == 0) {
+                elementClassName = name
+                        .substring(ClassHelper.INTERNAL_ARRAY_PREFIX.length(), name.length() - 1);
+            } else if (name.startsWith("[")) {
+                elementClassName = name.substring(1);
+            }
+            Class<?> elementClass = this.loadClass(elementClassName);
+            return Array.newInstance(elementClass, 0).getClass();
+        }
 		
 		if(!isRemoteClass(name) || name.equals(RpcClassLoader.class.getName())) {
 			return super.loadClass(name,resolve);
@@ -292,6 +338,11 @@ public class RpcClassLoader extends ClassLoader {
 			if(basePackages.isEmpty()) {
 				return false;
 			}
+			
+			while(name.startsWith("[")) {
+				
+			}
+			
 			for(String p : basePackages) {
 				if(name.startsWith(p)) {
 					return true;

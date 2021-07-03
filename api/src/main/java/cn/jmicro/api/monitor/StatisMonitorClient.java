@@ -100,6 +100,7 @@ public class StatisMonitorClient {
 	
 	private MonitorClientStatusAdapter statusMonitorAdapter;
 	
+	@JMethod("init")
 	public void init() {
 		
 		this.basketFactory = new BasketFactory<JMStatisItem>(5000,1);

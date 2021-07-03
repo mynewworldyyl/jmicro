@@ -17,6 +17,7 @@
 package cn.jmicro.api.objectfactory;
 
 import java.util.Set;
+import java.util.function.Consumer;
 
 import cn.jmicro.api.choreography.ProcessInfo;
 import cn.jmicro.api.classloader.RpcClassLoader;
@@ -47,6 +48,8 @@ import cn.jmicro.api.registry.ServiceItem;
  */
 public interface IObjectFactory {
 
+	void foreach(Consumer<Object> c);
+	
 	/**
 	 * 将外部的对像注册到IOC中，使外部创建的对像可以被IOC的其他对象所依赖，并且其自身也可依赖IOC容器的其他对象。
 	 * 如单例模式创建的对像，依赖带参构造函数创建的对像。
@@ -71,7 +74,7 @@ public interface IObjectFactory {
 	 * @param clazz
 	 * @return
 	 */
-	boolean exist(Class<?> clazz);
+	Boolean exist(Class<?> clazz);
 	
 	/**
 	 * 取得类所对应的实例，如果cls是具体类，并具当前容器还不存在对应的实例，则创建之，然后返回。
@@ -130,7 +133,7 @@ public interface IObjectFactory {
 	 * 6. 服务启动完成，
 	 * 
 	 */
-	void start(IDataOperator dataOperator);
+	void start(IDataOperator dataOperator,String[] args);
 	
 	/**
 	 * 如果IPostInitListener没有加PostListener注解，可以在调用start前，调用此方法加入，然后再start容器
@@ -147,9 +150,9 @@ public interface IObjectFactory {
 	
 	void masterSlaveListen(IMasterChangeListener l);
 	
-	boolean isSysLogin();
+	Boolean isSysLogin();
 	
-	boolean isRpcReady();
+	Boolean isRpcReady();
 	
 	ProcessInfo getProcessInfo();
 }

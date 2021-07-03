@@ -14,5 +14,6 @@
     </properties>
     <modules>
         <module>objfactory.simple</module>
+		 <module>objfactory.spring</module>
     </modules>
 </project>

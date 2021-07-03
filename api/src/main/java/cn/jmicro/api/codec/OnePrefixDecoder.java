@@ -345,7 +345,6 @@ public class OnePrefixDecoder /*implements IDecoder*/{
 					/*if(sm != null && "intrest".equals(sm.getKey().getMethod())) {
 						logger.debug("eltType: {}",clsName);
 					}*/
-					
 				} else {
 					cls = Thread.currentThread().getContextClassLoader()
 							.loadClass(clsName);

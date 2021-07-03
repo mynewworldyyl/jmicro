@@ -1,6 +1,7 @@
 package cn.jmicro.api;
 
 import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.nio.ByteBuffer;
@@ -30,43 +31,78 @@ import cn.jmicro.common.util.StringUtils;
 
 public class EnterMain {
 
+	private static final String SPRING_OF_NAME = "cn.jmicro.objfactory.spring.SpringObjectFactory";
+	
+	private static final String SIMPLE_OF_NAME = "cn.jmicro.objfactory.simple.SimpleObjectFactory";
+	
 	private final static Logger logger = LoggerFactory.getLogger(EnterMain.class);
 	
-	private static final Map<String,IObjectFactory> objFactorys = new HashMap<>();
-	//确保每个对像工厂只会创建一个实例
+	//private static final Map<String,IObjectFactory> objFactorys = new HashMap<>();
 	
-	private static boolean isInit = false;
+	private static IObjectFactory sof = null;
+	
+	private static IObjectFactory of = null;
+	
+	private static Object lc = new Object();
+	
+	//确保每个对像工厂只会创建一个实例
+	//private static boolean isInit = false;
 	
 	private static IDataOperator dataOperator = null;
 	
-	private static void init0() {
-		if(isInit) {
-			return;
-		}
+	private static void init0(String[] args) {
 		
-		isInit = true;
+		Map<String,String> params = Utils.parseCommondParams(args);
+		
+		Config.parseArgs(params);
 		
 		dataOperator = createOrGetDataOperator();
 		
-		String objClass  = getVal(Constants.OBJ_FACTORY_KEY,"cn.jmicro.objfactory.simple.SimpleObjectFactory");
+		Class<?> objCls = loadClass(SIMPLE_OF_NAME);
 		
-		Class<?> objCls = loadClass(objClass);
+		IObjectFactory of0 = (IObjectFactory)newInstance(objCls);
 		
-		IObjectFactory of=null;
-		of = (IObjectFactory)newInstance(objCls);
-		
-		String objName = Constants.DEFAULT_OBJ_FACTORY;
-		ObjFactory anno = objCls.getAnnotation(ObjFactory.class);
+		//String objName = Constants.DEFAULT_OBJ_FACTORY;
+		/*ObjFactory anno = objCls.getAnnotation(ObjFactory.class);
 		if(anno != null) {
 			objName = anno.value();
+		}*/
+		
+		IObjectFactory sof0 = null;
+		
+		String objClass  = Config.getCommandParam(Constants.OBJ_FACTORY_KEY);
+		if(objClass != null && objClass.equals(SPRING_OF_NAME)) {
+			Class<?> sobjCls = loadClass(SPRING_OF_NAME);
+			if(sobjCls == null) {
+				new CommonException(SPRING_OF_NAME + " not found!");
+			}
+			try {
+				sof0 = (IObjectFactory)sobjCls.getConstructor(IObjectFactory.class).newInstance(of0);
+			} catch (InstantiationException | IllegalAccessException | IllegalArgumentException
+					| InvocationTargetException | NoSuchMethodException | SecurityException e) {
+				throw new CommonException("fail create ["+sobjCls.getName()+"] ",e);
+			}
 		}
 		
-		if(objFactorys.containsKey(objName)){
+		of = of0;
+		
+		if(of0 != null) of0.start(dataOperator, args);
+		
+		if(sof0 != null) sof0.start(dataOperator, args);
+		
+		sof = sof0;
+		
+		
+		synchronized(lc) {
+			lc.notifyAll();
+		}
+		
+		/*if(objFactorys.containsKey(objName)){
 			throw new CommonException("Redefined Object Factory with name: "+objName
 			+",cls:"+objClass+",exists:"+ objFactorys.get(objName).getClass().getName());
 		}
 		
-		objFactorys.put(objName, of);
+		objFactorys.put(objName, of);*/
 		
 	/*	Set<Class<?>> objClazzes = ClassScannerUtils.getIns().loadClassesByAnno(ObjFactory.class);
 		for(Class<?> c : objClazzes) {
@@ -146,54 +182,20 @@ public class EnterMain {
 		}
 	}
 	
-	
-	
-	public static IObjectFactory getObjectFactoryNotStart(String[] args,String name){
-		
-		//System.out.println(EnterMain.class.getClassLoader().getClass().getName());
-		//System.out.println(Config.class.getClassLoader().getClass().getName());
-		
-		Map<String,String> params = Utils.parseCommondParams(args);
-	
-		Config.parseArgs(params);
-		
-		init0();
-		if(StringUtils.isEmpty(name)){
-			name = JMicroContext.get().getString(Constants.OBJ_FACTORY_KEY,Constants.DEFAULT_OBJ_FACTORY);
-		}
-		IObjectFactory of = objFactorys.get(name);
-		if(of == null) {
-			throw new CommonException("ObjectFactory ["+name+"] not found, please check the ["
-					+ IObjectFactory.class.getName() +"] implementation is include in the classpath and "
-					+ "retry again");
-		}
-		
-		return of;
-	}
-
-	public static IObjectFactory getObjectFactoryAndStart(String[] args){
-		//System.out.println(System.getProperty("java.class.path"));
-		IObjectFactory of =  getObjectFactoryNotStart(args,null);
-		of.start(dataOperator);
-		return of;
-	}
-	
-	public static IObjectFactory getObjectFactory(String name){
-		if(!isInit) {
-			throw new CommonException("Object Factory not init");
-		}
-		if(StringUtils.isEmpty(name)){
-			name = JMicroContext.get().getString(Constants.OBJ_FACTORY_KEY,Constants.DEFAULT_OBJ_FACTORY);
-		}
-		IObjectFactory of = objFactorys.get(name);
-		if(of == null){
-			throw new CommonException("ObjectFactory with name ["+name+"] not found");
-		}
-		return of;
-	}
-	
 	public static IObjectFactory getObjectFactory(){
-		return getObjectFactory(null);
+		return sof != null ? sof : of;
+	}
+	
+	public static IObjectFactory getObjectFactoryAndStart(String[] args) {
+		if(of == null) {
+			/*synchronized(lc) {
+				if(of == null) {
+					init0(args);
+				}
+			}*/
+			init0(args);
+		}
+		return sof != null ? sof : of;
 	}
 	
 	
@@ -247,8 +249,8 @@ public class EnterMain {
 	
 	public static void waitTime(int i) {
 		try {
-			synchronized(objFactorys) {
-				objFactorys.wait(i);
+			synchronized(lc) {
+				lc.wait(i);
 			}
 		} catch (InterruptedException e) {
 			e.printStackTrace();

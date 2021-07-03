@@ -12,6 +12,7 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.Properties;
 
+import org.apache.ibatis.session.Configuration;
 import org.apache.ibatis.session.SqlSession;
 import org.apache.ibatis.session.SqlSessionFactory;
 import org.apache.ibatis.session.SqlSessionFactoryBuilder;
@@ -83,6 +84,9 @@ public class Init implements IPostFactoryListener{
 		//logger.info("MyBatis Config: "+ params.toString());
 		
 		InputStream inputStream = IPostFactoryListener.class.getResourceAsStream(configLocation);
+		Configuration configuration = new Configuration();
+		//configuration.set
+		
 		SqlSessionFactory sqlSessionFactory = new SqlSessionFactoryBuilder().build(inputStream,env,props);
 		sqlSessionMng = new SqlSessionManager(sqlSessionFactory);
 		of.regist(SqlSessionManager.class, sqlSessionMng);

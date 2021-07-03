@@ -13,7 +13,6 @@
     <dependencies>
     	<dependency>
 			<groupId>cn.jmicro</groupId>
-			<version>0.0.5-SNAPSHOT</version>
 			<artifactId>jmicro.base</artifactId>
 		</dependency>
      	<dependency>

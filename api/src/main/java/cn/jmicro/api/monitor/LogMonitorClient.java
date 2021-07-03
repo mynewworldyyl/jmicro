@@ -109,6 +109,7 @@ public class LogMonitorClient {
 	
 	private ServiceItem monitorServiceItem;
 	
+	@JMethod("init")
 	public void init() {
 		
 		this.basketFactory = new BasketFactory<JMLogItem>(5000,1);

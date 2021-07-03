@@ -138,7 +138,7 @@ public class Config{
 	private Map<String,Set<IConfigChangeListener>> patternConfigChangeListeners = new HashMap<>();
 	
 	private IDataOperator dataOperator;
-
+	
 	private IDataListener dataListener = new IDataListener(){
 		@Override
 		public void dataChanged(String path, String val) {
@@ -695,6 +695,7 @@ public class Config{
 	}
 	
 	public static String getServiceParam0(String key) {
+		
 		if(!key.startsWith("/")) {
 			key = "/" + key;
 		}

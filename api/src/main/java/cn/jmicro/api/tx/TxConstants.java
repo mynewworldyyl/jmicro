@@ -12,6 +12,8 @@ public interface TxConstants {
 	
 	public static final byte TYPE_TX_DISTRIBUTED = 3; //分布式全局事务
 	
+	public static final byte TYPE_S_WITHOUT_TX = 4;//打开数据库连接，但不开启事务
+	
 	public static final byte TX_2PC = 1; //2PC事务
 	
 	public static final byte TX_3PC = 2; //3PC事务

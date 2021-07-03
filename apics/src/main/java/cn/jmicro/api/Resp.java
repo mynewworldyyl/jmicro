@@ -1,8 +1,10 @@
 package cn.jmicro.api;
 
 import cn.jmicro.api.annotation.SO;
+import lombok.Data;
 
 @SO
+@Data
 public class Resp<T> {
 	
 	public static final int CODE_SUCCESS = 0;
@@ -26,53 +28,5 @@ public class Resp<T> {
 	public Resp(int code) {this.code = code;};
 	public Resp(int code,String msg) {this.code = code;this.msg=msg;};
 	public Resp(int code,T data) {this.code = code;this.data=data;};
-	
-	public String getMsg() {
-		return msg;
-	}
-	public void setMsg(String msg) {
-		this.msg = msg;
-	}
-	public T getData() {
-		return data;
-	}
-	public void setData(T data) {
-		this.data = data;
-	}
-	public int getCode() {
-		return code;
-	}
-	public void setCode(int code) {
-		this.code = code;
-	}
-	public int getTotal() {
-		return total;
-	}
-	public void setTotal(int total) {
-		this.total = total;
-	}
-	public int getPageSize() {
-		return pageSize;
-	}
-	public void setPageSize(int pageSize) {
-		this.pageSize = pageSize;
-	}
-	public int getCurPage() {
-		return curPage;
-	}
-	public void setCurPage(int curPage) {
-		this.curPage = curPage;
-	}
-	public String getKey() {
-		return key;
-	}
-	public void setKey(String key) {
-		this.key = key;
-	}
-	@Override
-	public String toString() {
-		return "Resp [msg=" + msg + ", code=" + code + ", data=" + data + ", key=" + key + ", total=" + total
-				+ ", pageSize=" + pageSize + ", curPage=" + curPage + "]";
-	}
 	
 }

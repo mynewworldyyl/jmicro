@@ -19,6 +19,7 @@ package cn.jmicro.config;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.lang.reflect.ParameterizedType;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -32,8 +33,12 @@ import org.apache.zookeeper.KeeperException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.alibaba.dubbo.common.serialize.kryo.utils.ReflectUtils;
+
 import cn.jmicro.api.annotation.Cfg;
+import cn.jmicro.api.annotation.Inject;
 import cn.jmicro.api.annotation.PostListener;
+import cn.jmicro.api.annotation.Reference;
 import cn.jmicro.api.config.Config;
 import cn.jmicro.api.config.IConfigChangeListener;
 import cn.jmicro.api.objectfactory.PostInitAdapter;
@@ -71,122 +76,239 @@ public class ConfigPostInitListener extends PostInitAdapter {
 		 List<Field> fields = new ArrayList<>();
 		 Utils.getIns().getFields(fields, cls);
 		 
-		 if(cls.getName().equals("cn.jmicro.client.ClientMessageReceiver")) {
+		 /*if(cls.getName().equals("cn.jmicro.client.ClientMessageReceiver")) {
 			 logger.debug("Config preInit");
-		 }
-
-		 for(Field f : fields){
-			if(!f.isAnnotationPresent(Cfg.class)){
-				//不是配置类字段
-				continue;
-			}
-			
-			Cfg cfgAnno = f.getAnnotation(Cfg.class);
-			if(StringUtils.isBlank(cfgAnno.value())){
-				//配置路径不能为NULL或空格
-				throw new CommonException("Class ["+cls.getName()+",Field:"+f.getName()+"],Cfg path is NULL");
-			}
-			
-			if(cfgAnno.value().equals("/nettyHttpPort")) {
-				logger.debug("Debug config inject");
-			}
-			
+		 }*/
+		 
+		if (cls.isAnnotationPresent(Cfg.class)) {
+			//配置实体类
+			Cfg cfgAnno = cls.getAnnotation(Cfg.class);
 			String prefix = cfgAnno.value();
-			if(!prefix.startsWith("/")){
-				prefix = "/"+prefix;
+			if (!prefix.startsWith("/")) {
+				prefix = "/" + prefix;
 			}
 			
-			String path = null;
-					
-			if(Map.class.isAssignableFrom(f.getType())) {
-				if(!prefix.endsWith("*")) {
-					throw new CommonException("Class ["+cls.getName()+",Field:"+f.getName()+"] invalid map path ["+cfgAnno.value()+"] should end with '*'") ;
-				}
-				Map<String,String> ps = new HashMap<>();
-				//符合条件的全部值都要监听，只要有增加进来，都加到Map里面去
+			for(Field f : fields){
 				
-				//优先类全名组成路径
-				path = "/" + cls.getName() + prefix;
-				getMapConfig(cfg,path,f,ps);
-				watch(f,obj,path,cfg);
-				
-				path = "/" + cls.getSimpleName() + prefix;
-				getMapConfig(cfg,path,f,ps);
-				watch(f,obj,path,cfg);
-				
-				path = prefix;
-				getMapConfig(cfg,path,f,ps);
-				watch(f,obj,path,cfg);
-				
-				if(!ps.isEmpty()) {
-					setMapValue(f,obj,ps);
+				if(f.isAnnotationPresent(Inject.class) || f.isAnnotationPresent(Reference.class)) {
+					continue;
 				}
 				
-			} else if(Collection.class.isAssignableFrom(f.getType())) {
-				/*if(!prefix.endsWith("*")) {
-					throw new CommonException("Class ["+cls.getName()+",Field:"+f.getName()+"] invalid map path ["+cfgAnno.value()+"] should end with '*'") ;
-				}*/
-				//符合条件的全部值都要监听，只要有增加进来，都加到Map里面去
-				//优先类全名组成路径
-				Collection<String> coll = new ArrayList<>();
-				path = "/" + cls.getName() + prefix;
-				boolean succ = getCollectionConfig(cfg,path,coll);
-				if(succ) {
-					watch(f,obj,path,cfg);
-				}
+				String path = prefix+"/"+f.getName();
 				
-				path = "/" + cls.getSimpleName() + prefix;
-				succ = getCollectionConfig(cfg,path,coll);
-				if(succ) {
-					watch(f,obj,path,cfg);
-				}
-				
-				path = prefix;
-				succ = getCollectionConfig(cfg,path,coll);
-				if(succ) {
-					watch(f,obj,path,cfg);
-				}
-				
-				if(!coll.isEmpty()) {
-					 setCollValue(f,obj,coll,cfgAnno.toValType());
-				}
-				
-			} else {
-				//String value = getValueFromConfig(cfg,path,f);
-				//优先类全名组成路径
-				path = "/" + cls.getName() + prefix;
-				String value = getValueFromConfig(cfg,path,f);
-				
-				if(StringUtils.isEmpty(value)) {
-					//类简称组成路径
-					path = "/" + cls.getSimpleName() + prefix;
-					value = getValueFromConfig(cfg,path,f);
-				}
-				
-				if(StringUtils.isEmpty(value)){
-					//值直接指定绝对路径
-					path = prefix;
-					value = getValueFromConfig(cfg,path,f);
-				}
-				
-				if(!StringUtils.isEmpty(value)){
-					 setValue(f,obj,value);
+				if(Map.class.isAssignableFrom(f.getType())) {
+					Map<String, String> ps = getConfigAsMap(cfg,cls,f,obj,path);
+					// 符合条件的全部值都要监听，只要有增加进来，都加到Map里面去
+					if (!ps.isEmpty()) {
+						setMapValue(f, obj, ps);
+					}
+				} else if (Collection.class.isAssignableFrom(f.getType())) {
+					/*
+					 * if(!prefix.endsWith("*")) { throw new
+					 * CommonException("Class ["+cls.getName()+",Field:"+f.getName()
+					 * +"] invalid map path ["+cfgAnno.value()+"] should end with '*'") ; }
+					 */
+					// 符合条件的全部值都要监听，只要有增加进来，都加到Map里面去
+					// 优先类全名组成路径
+					Collection<String> coll = getConfigAsCollection(cfg,cls,f,obj,path);
+					if (!coll.isEmpty()) {
+						setCollValue(f, obj, coll, cfgAnno.toValType());
+					}
+
+				} else if(ReflectUtils.isPrimitive(cls)) {
+					setSimpleVal(cfg,cls,f,obj,path,cfgAnno);
 				} else {
-					Object v = getFieldValue(f,obj);
-					path = cfgAnno.value();
-					if(v == null ) {
-						if(cfgAnno.required()) {
-							throw new CommonException("Class ["+cls.getName()+",Field:"+f.getName()+"] value: "+cfgAnno.value()+" is required");
+					setInnerObjectVal(cfg,cls,f,obj,path);
+				}
+			}
+		} else {
+			 //配置字段
+			 for(Field f : fields){
+					if(!f.isAnnotationPresent(Cfg.class)){
+						//不是配置类字段
+						continue;
+					}
+					
+					String prefix = "";
+					
+					Cfg cfgAnno = f.getAnnotation(Cfg.class);
+					if(StringUtils.isBlank(cfgAnno.value())){
+						prefix = "/"+f.getName();
+						//配置路径不能为NULL或空格
+						//throw new CommonException("Class ["+cls.getName()+",Field:"+f.getName()+"],Cfg path is NULL");
+					}else {
+						prefix = cfgAnno.value();
+					}
+					
+					if(cfgAnno.value().equals("/nettyHttpPort")) {
+						logger.debug("Debug config inject");
+					}
+					
+					if(!prefix.startsWith("/")){
+						prefix = "/"+prefix;
+					}
+					
+					//String path = null;
+							
+					if(Map.class.isAssignableFrom(f.getType())) {
+						if(!prefix.endsWith("*")) {
+							throw new CommonException("Class ["+cls.getName()+",Field:"+f.getName()+"] invalid map path ["+cfgAnno.value()+"] should end with '*'") ;
 						}
+						Map<String,String> ps = getConfigAsMap(cfg,cls,f,obj,prefix);
+						
+						if(!ps.isEmpty()) {
+							setMapValue(f,obj,ps);
+						}
+						
+					} else if(Collection.class.isAssignableFrom(f.getType())) {
+						/*if(!prefix.endsWith("*")) {
+							throw new CommonException("Class ["+cls.getName()+",Field:"+f.getName()+"] invalid map path ["+cfgAnno.value()+"] should end with '*'") ;
+						}*/
+						//符合条件的全部值都要监听，只要有增加进来，都加到Map里面去
+						//优先类全名组成路径
+						Collection<String> coll = getConfigAsCollection(cfg,cls,f,obj,prefix);
+						if(!coll.isEmpty()) {
+							 setCollValue(f,obj,coll,cfgAnno.toValType());
+						}
+						
 					} else {
-						cfg.createConfig(v.toString(), path, cfgAnno.defGlobal());
+						setSimpleVal(cfg,cls,f,obj,prefix,cfgAnno);
 					}
 				}
-				watch(f,obj,path,cfg);
-			}
-		}
+		 }
+
+		 
 	}
 	
+	private void setInnerObjectVal(Config cfg, Class<?> cls, Field f0, Object obj, String prefix) {
+
+		Class<?> innerClazz = f0.getClass();
+		if(Modifier.isAbstract(innerClazz.getModifiers())) {
+			throw new CommonException("Config field class " + innerClazz.getName() + " is abstract class");
+		}
+		
+		Object val = null;
+		try {
+			val = innerClazz.newInstance();
+		} catch (InstantiationException | IllegalAccessException e) {
+			throw new CommonException("Config field class " + innerClazz.getName() + " instance error",e);
+		}
+		
+		setObjectVal(obj,f0,val);
+		
+		//String path = prefix;
+		
+	    List<Field> fields = new ArrayList<>();
+	    Utils.getIns().getFields(fields, innerClazz);
+		 
+	    for(Field inf : fields){
+	    	String path = prefix+"/" + inf.getName();
+	    	
+	    	if(Map.class.isAssignableFrom(inf.getType())) {
+				Map<String, String> ps = getConfigAsMap(cfg,innerClazz,inf,val,path);
+				// 符合条件的全部值都要监听，只要有增加进来，都加到Map里面去
+				if (!ps.isEmpty()) {
+					setMapValue(inf, val, ps);
+				}
+			} else if (Collection.class.isAssignableFrom(inf.getType())) {
+				/*
+				 * if(!prefix.endsWith("*")) { throw new
+				 * CommonException("Class ["+cls.getName()+",Field:"+f.getName()
+				 * +"] invalid map path ["+cfgAnno.value()+"] should end with '*'") ; }
+				 */
+				// 符合条件的全部值都要监听，只要有增加进来，都加到Map里面去
+				// 优先类全名组成路径
+				Collection<String> coll = getConfigAsCollection(cfg,innerClazz,inf,val,path);
+				if (!coll.isEmpty()) {
+					setCollValue(inf, val, coll, "origin");
+				}
+
+			} else if(ReflectUtils.isPrimitive(cls)) {
+				setSimpleVal(cfg,innerClazz,inf,val,path,inf.getAnnotation(Cfg.class));
+			}else {
+				setInnerObjectVal(cfg,innerClazz,inf,val,path);
+			}
+	    }
+	}
+
+	private void setSimpleVal(Config cfg, Class<?> cls, Field f, Object obj, String prefix,Cfg ann ) {
+		// String value = getValueFromConfig(cfg,path,f);
+		// 优先类全名组成路径
+		String path = "/" + cls.getName() + prefix;
+		String value = getValueFromConfig(cfg, path, f);
+
+		if (StringUtils.isEmpty(value)) {
+			// 类简称组成路径
+			path = "/" + cls.getSimpleName() + prefix;
+			value = getValueFromConfig(cfg, path, f);
+		}
+
+		if (StringUtils.isEmpty(value)) {
+			// 值直接指定绝对路径
+			path = prefix;
+			value = getValueFromConfig(cfg, path, f);
+		}
+
+		if (!StringUtils.isEmpty(value)) {
+			setValue(f, obj, value);
+		} else {
+			Object v = getFieldValue(f, obj);
+			if (v == null) {
+				Cfg cfgAnno = f.getAnnotation(Cfg.class);
+				if (cfgAnno != null && cfgAnno.required()) {
+					throw new CommonException("Class [" + cls.getName() + ",Field:" + f.getName() + "] value: "
+							+ cfgAnno.value() + " is required");
+				}
+			} else {
+				cfg.createConfig(v.toString(), path, ann == null ? false : ann.defGlobal());
+			}
+		}
+		watch(f, obj, path, cfg);
+		
+	}
+
+	private Collection<String> getConfigAsCollection(Config cfg, Class<?> cls, Field f, Object obj, String prefix) {
+		Collection<String> coll = new ArrayList<>();
+		
+		String path = "/" + cls.getName() + prefix;
+		boolean succ = getCollectionConfig(cfg, path, coll);
+		if (succ) {
+			watch(f, obj, path, cfg);
+		}
+
+		path = "/" + cls.getSimpleName() + prefix;
+		succ = getCollectionConfig(cfg, path, coll);
+		if (succ) {
+			watch(f, obj, path, cfg);
+		}
+
+		path = prefix;
+		succ = getCollectionConfig(cfg, path, coll);
+		if (succ) {
+			watch(f, obj, path, cfg);
+		}
+		
+		return coll;
+	}
+
+	private Map<String, String> getConfigAsMap(Config cfg, Class<?> cls,Field f,Object obj, String prefix) {
+		Map<String,String> ps = new HashMap<>();
+		//优先类全名组成路径
+		String path = "/" + cls.getName() + prefix;
+		getMapConfig(cfg, path, f, ps);
+		watch(f, obj, path, cfg);
+
+		path = "/" + cls.getSimpleName() + prefix;
+		getMapConfig(cfg, path, f, ps);
+		watch(f, obj, path, cfg);
+
+		path = prefix;
+		getMapConfig(cfg, path, f, ps);
+		watch(f, obj, path, cfg);
+		
+		return ps;
+	}
+
 	@SuppressWarnings("rawtypes")
 	private void setCollValue(Field f, Object obj, Collection<String> newColl, String vt) {
 		Collection oldColl = (Collection)this.getFieldValue(f, obj);
@@ -427,7 +549,7 @@ public class ConfigPostInitListener extends PostInitAdapter {
 				this.setMapValue(f, obj, ps);
 			} else if(Collection.class.isAssignableFrom(f.getType())){
 				
-			}else {
+			} else {
 				setValue(f,obj,data);
 			}
 			notifyChange(f,obj);

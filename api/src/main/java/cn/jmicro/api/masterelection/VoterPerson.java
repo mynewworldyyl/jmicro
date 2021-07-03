@@ -203,7 +203,7 @@ public class VoterPerson {
 
 	private void startElectionWorker() {
 		logger.info("Enter election status: " + this.dir);
-		new Thread(()->{
+		//new Thread(()->{
 			while(!doWorker()) {
 				try {
 					Thread.sleep(2000);
@@ -211,7 +211,7 @@ public class VoterPerson {
 					e.printStackTrace();
 				}
 			}
-		}).start();
+		//}).start();
 	}
 	
 	private boolean doWorker() {

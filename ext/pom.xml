@@ -18,6 +18,8 @@
 		<module>mybatis</module>
 		<module>mongodb</module>
 		<module>simple.security</module>
+		<module>pagehelper</module>
+		<module>druid</module>
 	</modules>
 	<dependencies>
 		<dependency>

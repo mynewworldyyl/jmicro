@@ -188,6 +188,16 @@
 				 <artifactId>jmicro.main.monitor.log</artifactId>
 				 <version>${jmicro.version}</version>
             </dependency>
+            <dependency>
+                 <groupId>cn.jmicro</groupId>
+				 <artifactId>jmicro.pagehelper</artifactId>
+				 <version>${jmicro.version}</version>
+            </dependency>
+             <dependency>
+                 <groupId>cn.jmicro</groupId>
+				 <artifactId>jmicro.druid</artifactId>
+				 <version>${jmicro.version}</version>
+            </dependency>
              <dependency>
                  <groupId>cn.jmicro</groupId>
 				 <artifactId>main.monitor.statis</artifactId>
