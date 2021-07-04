@@ -20,7 +20,10 @@
 
 <script>
 
+    import rpc from "@/rpc/rpcbase"
+    import profile from "@/rpcservice/profile"
     import TreeNode from "../common/JTreeNode.js"
+    import {Constants} from "@/rpc/message"
 
     const GROUP = 'userProfile';
 
@@ -39,13 +42,13 @@
 
         mounted(){
             this.$el.style.minHeight=(document.body.clientHeight-67)+'px';
-            window.jm.rpc.addActListener(cid,this.accountListener);
+            rpc.addActListener(cid,this.accountListener);
             window.jm.vue.$on('tabItemRemove',this.editorRemove);
         },
 
         beforeDestroy() {
             window.jm.vue.$off('tabItemRemove',this.editorRemove);
-            window.jm.rpc.removeActListener(GROUP);
+            rpc.removeActListener(GROUP);
         },
 
         methods:{
@@ -55,7 +58,7 @@
                     return;
                 }
                 window.jm.vue.$off('tabItemRemove',this.editorRemove);
-                window.jm.rpc.removeActListener(cid);
+                rpc.removeActListener(cid);
             },
 
 
@@ -64,7 +67,7 @@
             },
 
             accountListener(type) {
-                if(window.jm.rpc.Constants.LOGIN == type) {
+                if(Constants.LOGIN == type) {
                     this.isLogin = true;
                     this.refresh();
                 }else {
@@ -87,7 +90,7 @@
 
             loadProfiles(cb) {
                 let self = this;
-                window.jm.mng.profile.getModuleList()
+                profile.getModuleList()
                     .then((resp) => {
                         if(resp.code == 0) {
                             self.srcProfiles = resp.data;

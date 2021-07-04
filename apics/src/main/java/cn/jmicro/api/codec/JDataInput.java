@@ -125,6 +125,10 @@ public class JDataInput implements DataInput {
 		return readString(buf);
 	}
 	
+	public static String readString(JDataInput buffer) {
+		return readString(buffer.buf);
+	}
+	
 	public static String readString(ByteBuffer buffer) {
 		
 		int len = buffer.get();

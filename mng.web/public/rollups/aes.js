@@ -495,3 +495,5 @@ CryptoJS.lib.Cipher || function (u) {
     });
     u.AES = p._createHelper(d)
 })();
+
+export default CryptoJS;

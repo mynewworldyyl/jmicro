@@ -38,6 +38,9 @@
 
 <script>
 
+    import statis from "@/rpcservice/statis";
+    import config from "@/rpc/config";
+
 export default {
     name: 'JIndexPercent',
     components:{
@@ -53,11 +56,11 @@ export default {
 
     mounted() {
         let self = this;
-        window.jm.mng.statis.getType2Labels((data,err)=>{
+        statis.getType2Labels((data,err)=>{
             if(!err) {
                 self.type2Labels = data;
-                self.allTypes = window.jm.mng.statis.getTypes();
-                self.allLabels = window.jm.mng.statis.getLabels();
+                self.allTypes = statis.getTypes();
+                self.allLabels = statis.getLabels();
             }else {
                 //self.$Message.error(err);
                 console.log(err);
@@ -68,9 +71,9 @@ export default {
     data () {
 
         let dataKey = "JIndexPercent_" + this.charContainerId;
-        let cache = window.jm.mng.cache[dataKey];
+        let cache = config.cache[dataKey];
         if(!cache) {
-            cache = window.jm.mng.cache[dataKey] = {
+            cache = config.cache[dataKey] = {
                 started:false,
                 indexData:[]
             }
@@ -131,7 +134,7 @@ export default {
             }
 
             if(self.cache.started) {
-                window.jm.mng.statis.unsubscribeData(idKey,2,this.callback
+                statis.unsubscribeData(idKey,2,this.callback
                 ).then(rst =>{
                     self.$Message.success(rst);
                     self.cache.started = false;
@@ -140,7 +143,7 @@ export default {
                     self.$Message.error(err);
                 });
             }else {
-                window.jm.mng.statis.subscribeData(idKey,2,this.callback)
+                statis.subscribeData(idKey,2,this.callback)
                     .then(rst =>{
                         self.$Message.success(rst);
                         self.cache.started = true;

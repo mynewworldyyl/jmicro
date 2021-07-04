@@ -53,7 +53,8 @@
     //import jm from '../../public/js/jm.js'
 
     import TreeNode from  "../common/JTreeNode.js"
-
+    import conf from "@/rpcservice/conf"
+    
     export default {
         name: 'JConfigItem',
         props:{
@@ -97,7 +98,7 @@
                 }
 
                 let path = self.item.val.path + '/' + self.inputName;
-                window.jm.mng.conf.add(path,self.inputVal,self.isDir)
+                conf.add(path,self.inputVal,self.isDir)
                     .then(function(result){
                         if(result) {
                             let val = {name:self.inputName, val:self.inputVal, path:path};
@@ -160,7 +161,7 @@
                     return;
                 }
 
-                window.jm.mng.conf.update(valNode.path, self.inputVal)
+                conf.update(valNode.path, self.inputVal)
                     .then(function(result){
                         if(result) {
                             valNode.val = self.inputVal;
@@ -195,7 +196,7 @@
                 if(idx == -1) {
                     return;
                 }
-                window.jm.mng.conf.delete(delNode.path)
+                conf.delete(delNode.path)
                     .then(function(result){
                         if(result) {
                             self.item.val.children.splice(idx,1);

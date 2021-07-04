@@ -108,7 +108,10 @@
 <script>
 
     import JResourceItem from '../common/JResourceItem.vue'
-
+    import {Constants} from "@/rpc/message"
+    import rpc from "@/rpc/rpcbase"
+    import comm from "@/rpcservice/comm"
+    
     const cid = 'resourceMonitorView';
 
     const sn = 'cn.jmicro.resource.IMngResourceService';
@@ -167,7 +170,7 @@
 
             refresh() {
                 let self = this;
-                this.isLogin = window.jm.rpc.isLogin();
+                this.isLogin = rpc.isLogin();
                 if(!this.isLogin) {
                     this.msg = 'not login!';
                     return;
@@ -178,7 +181,7 @@
                     return;
                 }
 
-                window.jm.rpc.callRpcWithParams(sn,ns,v, 'getInstanceResourceData', [params])
+                rpc.callRpcWithParams(sn,ns,v, 'getInstanceResourceData', [params])
                     .then((resp)=>{
                         if(resp.code == 0 ) {
                             //window.console.log(resp.data);
@@ -226,9 +229,9 @@
 
             getDicts() {
                 let self = this;
-                window.jm.mng.comm.getDicts([
-                    window.jm.rpc.Constants.MONITOR_RESOURCE_NAMES,
-                    window.jm.rpc.Constants.ALL_INSTANCES,],'')
+                comm.getDicts([
+                    Constants.MONITOR_RESOURCE_NAMES,
+                    Constants.ALL_INSTANCES,],'')
                     .then((opts)=>{
                         if(opts) {
                             self.selOptions = opts;
@@ -241,9 +244,9 @@
 
         mounted () {
             this.$el.style.minHeight=(document.body.clientHeight-67)+'px';
-            window.jm.rpc.addActListener(cid,this.q);
+            rpc.addActListener(cid,this.q);
             let self = this;
-            this.isLogin = window.jm.rpc.isLogin();
+            this.isLogin = rpc.isLogin();
 
             window.jm.vue.$emit("editorOpen",
                 {"editorId":cid,
@@ -252,7 +255,7 @@
                 });
 
             let ec = function() {
-                window.jm.rpc.removeActListener(cid);
+                rpc.removeActListener(cid);
                 window.jm.vue.$off('editorClosed',ec);
             }
 
@@ -264,7 +267,7 @@
         },
 
         beforeDestroy() {
-            window.jm.rpc.removeActListener(cid);
+            rpc.removeActListener(cid);
         },
 
         filters: {

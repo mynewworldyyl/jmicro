@@ -22,6 +22,8 @@
     import JMethodItem from './JSMethodItem.vue'
     import JInstanceItem from './JInstanceItem.vue'
 
+    import config from "@/rpc/config"
+
     export default {
         name: 'JServiceEditor',
         components: {
@@ -31,9 +33,9 @@
         },
 
         data () {
-            let d = window.jm.mng.cache[this.dataId];
+            let d = config.cache[this.dataId];
             if( !d) {
-                d = window.jm.mng.cache[this.dataId] = {
+                d = config.cache[this.dataId] = {
                     items:[],
                     selectNode:null,
                 };

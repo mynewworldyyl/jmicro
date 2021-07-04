@@ -21,6 +21,10 @@
 
 <script>
 
+    import rpc from "@/rpc/rpcbase"
+    import conf from "@/rpcservice/conf"
+    import cons from "@/rpcservice/jm"
+
     import TreeNode from "../common/JTreeNode.js"
 
     const GROUP = 'router';
@@ -55,9 +59,9 @@
         mounted(){
 
             let self = this;
-            self.isLogin = window.jm.rpc.isLogin();
-            window.jm.rpc.addActListener(cid,()=>{
-                self.isLogin = window.jm.rpc.isLogin();
+            self.isLogin = rpc.isLogin();
+            rpc.addActListener(cid,()=>{
+                self.isLogin = rpc.isLogin();
                 if( self.isLogin) {
                     self.refresh();
                 }
@@ -69,7 +73,7 @@
 
         beforeDestroy() {
             window.jm.vue.$off('tabItemRemove',this.editorRemove);
-            window.jm.rpc.removeActListener(GROUP);
+            rpc.removeActListener(GROUP);
         },
 
         methods:{
@@ -79,7 +83,7 @@
                     return;
                 }
                 window.jm.vue.$off('tabItemRemove',this.editorRemove);
-                window.jm.mng.act.removeActListener(cid);
+                rpc.removeActListener(cid);
             },
 
 
@@ -88,7 +92,7 @@
             },
 
             refresh() {
-                this.isLogin = window.jm.rpc.isLogin();
+                this.isLogin = rpc.isLogin();
                 if(this.isLogin) {
                     let self = this;
                     this.loadRouters((routerList)=>{
@@ -98,7 +102,7 @@
             },
 
             loadRouters(cb) {
-                window.jm.mng.conf.getChildren(window.jm.mng.ROUTER_ROOT,true)
+                conf.getChildren(cons.ROUTER_ROOT,true)
                     .then((nodes) => {
                         this.srcRouters = nodes;
                         let rs = this.parseRouterNode(nodes);

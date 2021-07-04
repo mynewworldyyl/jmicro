@@ -28,6 +28,9 @@
 
 <script>
 
+    import moType from "@/rpcservice/moType"
+    import rpc from "@/rpc/rpcbase"
+    
     import TreeNode from '../common/JTreeNode.js'
 
     const GROUP = 'namedType';
@@ -60,15 +63,15 @@
         mounted(){
 
             let self = this;
-            window.jm.rpc.addActListener(cid,()=>{
-                self.isLogin = window.jm.rpc.isLogin();
+            rpc.addActListener(cid,()=>{
+                self.isLogin = rpc.isLogin();
                 if( self.isLogin) {
                     self.loadNamedTypeList();
                 }
             });
 
             let ec = function() {
-                window.jm.rpc.removeActListener(cid);
+                rpc.removeActListener(cid);
                 window.jm.vue.$off('editorClosed',ec);
             }
 
@@ -88,7 +91,7 @@
                     return;
                 }
                 this.errMsg = "";
-                window.jm.mng.moType.addNamedTypes(this.newName).then((resp)=>{
+                moType.addNamedTypes(this.newName).then((resp)=>{
                     if(resp.code != 0 ) {
                         self.$Message.error(resp.msg);
                         return;
@@ -102,7 +105,7 @@
 
             loadNamedTypeList() {
                 let self = this;
-                window.jm.mng.moType.getNamedList().then((resp)=>{
+                moType.getNamedList().then((resp)=>{
                     if(resp.code != 0 ) {
                         self.$Message.error(resp.msg);
                         return;

@@ -58,6 +58,10 @@
 
     const cid = 'process';
 
+    import choy from "@/rpcservice/choy"
+    import rpc from "@/rpc/rpcbase"
+    import jmconfig from "@/rpcservice/jm"
+    
     export default {
         name: 'JProcess',
         data () {
@@ -73,7 +77,7 @@
                     drawerBtnStyle:{right:'0px',zindex:1005},
                 },
 
-                logLevels: window.jm.mng.LOG2LEVEL,
+                logLevels: jmconfig.LOG2LEVEL,
 
                 editPi: null,
 
@@ -104,7 +108,7 @@
                 }
                 let self = this;
                 let pi = {id:this.editPi.id, logLevel:parseInt(this.editPi.logLevel)};
-                window.jm.mng.choy.updateProcess(pi)
+                choy.updateProcess(pi)
                  .then((resp)=>{
                     if(resp.code == 0) {
                         self.closeDrawer();
@@ -121,14 +125,14 @@
             refresh(){
                 this.msg = null;
                 let self = this;
-                this.isLogin = window.jm.rpc.isLogin();
-                this.actInfo = window.jm.rpc.actInfo;
+                this.isLogin = rpc.isLogin();
+                this.actInfo = rpc.actInfo;
                 if(!this.isLogin) {
                     this.processList = [];
                     this.msg = 'Not login';
                     return;
                 }
-                window.jm.mng.choy.getProcessInstanceList(self.showAll).then((resp)=>{
+                choy.getProcessInstanceList(self.showAll).then((resp)=>{
                     if(resp.code != 0 || !resp.data || resp.data.length == 0 ) {
                         self.$Message.success(resp.msg || "No data to show");
                         this.processList = [];
@@ -150,7 +154,7 @@
 
             stopProcess(pi) {
                 let self = this;
-                window.jm.mng.choy.stopProcess(pi.id).then((resp)=>{
+                choy.stopProcess(pi.id).then((resp)=>{
                     if(resp.code == 0) {
                         pi.active = false;
                         self.$Message.success("Success stop process");
@@ -168,7 +172,7 @@
         mounted () {
             this.$el.style.minHeight=(document.body.clientHeight-67)+'px';
             //has admin permission, only control the show of the button
-            window.jm.rpc.addActListener(cid,this.refresh);
+            rpc.addActListener(cid,this.refresh);
             let self = this;
             window.jm.vue.$emit("editorOpen",
                 {"editorId":'process',
@@ -180,7 +184,7 @@
                         {name:"REFRESH",label:"Refresh",icon:"ios-cog",call:self.refresh}]
                 });
             let ec = function() {
-                window.jm.rpc.removeActListener(cid);
+                rpc.removeActListener(cid);
                 window.jm.vue.$off('editorClosed',ec);
             }
 

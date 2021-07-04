@@ -72,6 +72,12 @@
 
 <script>
 
+    import rpc from "@/rpc/rpcbase";
+    import {Constants} from "@/rpc/message";
+    import localStorage from "@/rpc/localStorage";
+    import act from "@/rpcservice/act";
+    import utils from "@/rpc/utils";
+    
     const cid = 'JAccount';
 
 export default {
@@ -106,22 +112,22 @@ export default {
 
     mounted(){
         let self = this;
-        window.jm.rpc.addActListener(cid,(type,ai)=>{
-            if(type == window.jm.rpc.Constants.LOGIN) {
+        rpc.addActListener(cid,(type,ai)=>{
+            if(type == Constants.LOGIN) {
                 self.actInfo = ai;
                 self.isLogin = true;
                 self.msg = '';
-            }else if(type == window.jm.rpc.Constants.LOGOUT) {
+            }else if(type == Constants.LOGOUT) {
                 self.isLogin = false;
                 self.actInfo = null;
                 self.msg = '';
             }
         });
 
-        this.rememberPwd = window.jm.localStorage.get("rememberPwd");
+        this.rememberPwd = localStorage.get("rememberPwd");
 
-        this.actName = window.jm.localStorage.get("actName");
-        this.pwd = window.jm.localStorage.get("pwd");
+        this.actName = localStorage.get("actName");
+        this.pwd = localStorage.get("pwd");
 
         if(this.rememberPwd || !this.actName || this.actName.endWith('guest_')) {
             this.doLogin();
@@ -133,21 +139,21 @@ export default {
             if(this.actInfo) {
                 this.doLogout();
             } else {
-               this.actName = window.jm.localStorage.get("actName"),
-               this.pwd = window.jm.localStorage.get("pwd"),
-               this.rememberPwd = window.jm.localStorage.get("rememberPwd");
+               this.actName = localStorage.get("actName"),
+               this.pwd = localStorage.get("pwd"),
+               this.rememberPwd = localStorage.get("rememberPwd");
                this.loginDialog = true;
             }
         },
 
         rememberPwdChange(){
-            window.jm.localStorage.set("rememberPwd",this.rememberPwd);
+            localStorage.set("rememberPwd",this.rememberPwd);
             if(this.rememberPwd) {
-                window.jm.localStorage.set("actName",this.actName);
-                window.jm.localStorage.set("pwd",this.pwd);
+                localStorage.set("actName",this.actName);
+                localStorage.set("pwd",this.pwd);
             }else {
-                window.jm.localStorage.remove("pwd");
-                window.jm.localStorage.remove("actName");
+                localStorage.remove("pwd");
+                localStorage.remove("actName");
             }
         },
 
@@ -181,7 +187,7 @@ export default {
             }
 
             let self = this;
-            window.jm.mng.act.resetPwd(this.actName,this.checkCode,this.pwd)
+            act.resetPwd(this.actName,this.checkCode,this.pwd)
             .then((resp)=>{
                     if(resp.code != 0 ) {
                         self.$Message.error(resp.msg);
@@ -207,7 +213,7 @@ export default {
             }
 
             let self = this;
-            window.jm.mng.act.resetPwdEmail(this.actName,"0")
+            act.resetPwdEmail(this.actName,"0")
                 .then((resp)=>{
                     if(resp.code != 0 ) {
                         self.msg = resp.msg;
@@ -258,7 +264,7 @@ export default {
 
 
             let self = this;
-            window.jm.mng.act.updatePwd(this.pwd,this.oldPwd,(state,errmsg)=>{
+            act.updatePwd(this.pwd,this.oldPwd,(state,errmsg)=>{
                 if(state) {
                     self.$Message.success("Update password successfully")
                     self.changePwdDialog = false;
@@ -313,12 +319,12 @@ export default {
                 return;
             }
 
-            if(!window.jm.utils.checkEmail(this.email)) {
+            if(!utils.checkEmail(this.email)) {
                 this.msg = "Email format invalid!";
                 return;
             }
 
-            if(!window.jm.utils.checkMobile(this.mobile)) {
+            if(!utils.checkMobile(this.mobile)) {
                 this.msg = "Mobile number format invalid!";
                 return;
             }
@@ -326,7 +332,7 @@ export default {
             this.msg = "";
 
             let self = this;
-            window.jm.mng.act.regist(this.actName,this.pwd,this.email,this.mobile,(state,errmsg)=>{
+            act.regist(this.actName,this.pwd,this.email,this.mobile,(state,errmsg)=>{
                 if(state) {
                     self.$Message.success("Regist successfully")
                     self.registDialog = false;
@@ -346,11 +352,11 @@ export default {
             }
 
             if(!this.actName) {
-                this.actName = window.jm.localStorage.get("actName");
+                this.actName = localStorage.get("actName");
             }
 
             self.msg = '';
-            window.jm.rpc.login(this.actName,this.pwd,(actInfo,err)=>{
+            rpc.login(this.actName,this.pwd,(actInfo,err)=>{
                 if(!err && actInfo) {
                     self.actInfo = actInfo;
                     self.isLogin = true;
@@ -366,7 +372,7 @@ export default {
 
         doLogout(){
             let self = this;
-            window.jm.rpc.logout((sus,err)=>{
+            rpc.logout((sus,err)=>{
                 if(!err && sus) {
                     self.actInfo = null;
                     self.msg = '';

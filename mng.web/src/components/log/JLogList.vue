@@ -43,7 +43,7 @@
 <script>
 
     import TreeNode from  "../common/JTreeNode.js"
-
+    import agentLogSrv from "@/rpcservice/agentLogSrv"
     const GROUP = 'fileLog';
 
     export default {
@@ -84,7 +84,7 @@
             },
 
             loadLogFiles() {
-                window.jm.mng.agentLogSrv.getAllLogFileEntry().then((resp)=>{
+                agentLogSrv.getAllLogFileEntry().then((resp)=>{
                     if(!resp || resp.code != 0 || resp.data.length == 0 ) {
                         this.srcNodes=[];
                         this.groups = [];

@@ -305,16 +305,21 @@ public class RpcClassLoaderHelper {
 	            			JMicroContext.get().setSysAccount(pi.getAi());
 	            		}
 	   					Resp<Boolean> r = rcl.registRemoteClass(rc);
-	            		if(r.getData()) {
+	            		if(r != null && r.getData()) {
 	            			successClasses.add(className);
 	            			respClasses.remove(className);
-	            		}else if(r.getCode() == Resp.CODE_NO_PERMISSION) {
+	            		}else if(r != null && r.getCode() == Resp.CODE_NO_PERMISSION) {
 	            			respClasses.remove(className);
 	            			LG.log(MC.LOG_ERROR,this.getClass(), r.getMsg());
 	            			logger.error(r.getMsg());
 	            		} else {
-	            			LG.log(MC.LOG_ERROR,this.getClass(), r.getMsg());
-	            			logger.error(r.getMsg() + " Class: " + className + ", try regist again after minutes");
+	            			if(r != null) {
+	            				LG.log(MC.LOG_ERROR,this.getClass(), r.getMsg());
+	            				logger.error(r.getMsg() + " Class: " + className + ", try regist again after minutes");
+	            			}else {
+	            				LG.log(MC.LOG_ERROR,this.getClass()," response NULL");
+	            				logger.error("registRemoteClass response NULL, Class: " + className + ", try regist again after minutes");
+	            			}
 	            		}
 	   				 } finally {
 	   					if(this.localClassloader != null) {

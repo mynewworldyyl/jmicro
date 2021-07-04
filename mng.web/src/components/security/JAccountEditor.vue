@@ -59,6 +59,9 @@
 <script>
 
     //import treeTable from '../treetable/LinkLogTreeTable.vue'
+    import rpc from "@/rpc/rpcbase"
+    import act from "@/rpcservice/act"
+    import cons from "@/rpc/constants"
 
     const cid = 'account';
 
@@ -106,7 +109,7 @@
 
             resendActiveEmail(c) {
                 let self = this;
-                window.jm.mng.act.resendActiveEmail(c.actName).then((resp) => {
+                act.resendActiveEmail(c.actName).then((resp) => {
                     if (resp.code == 0) {
                         self.$Message.info("Successfully");
                     } else {
@@ -119,7 +122,7 @@
 
             changeAccountStatus(act) {
                 let self = this;
-                window.jm.mng.act.changeAccountStatus(act.actName).then((resp) => {
+                act.changeAccountStatus(act.actName).then((resp) => {
                     if (resp.code == 0) {
                         self.refresh();
                     } else {
@@ -179,9 +182,9 @@
                 if (adds.length > 0 || dels.length > 0) {
                     let self = this;
                     let sn = 'cn.jmicro.security.api.IServiceMethodListService';
-                    let ns = window.jm.Constants.NS_SECURITY;
+                    let ns = cons.NS_SECURITY;
                     let v = '0.0.1';
-                    window.jm.rpc.callRpcWithParams(sn, ns, v, 'updateActPermissions',
+                    rpc.callRpcWithParams(sn, ns, v, 'updateActPermissions',
                         [this.curAct.actName, adds, dels])
                         .then((resp) => {
                             if (resp.code == 0) {
@@ -200,7 +203,7 @@
             addPermissions() {
                 if(!this.srcPermissions || this.srcPermissions.length == 0) {
                     let self = this;
-                    window.jm.mng.act.getAllPermissions()
+                    act.getAllPermissions()
                         .then((resp)=>{
                         if(resp.code == 0) {
                             self.srcPermissions = resp.data;
@@ -231,7 +234,7 @@
                     this.actInfoDrawer.drawerStatus = true;
                 } else {
                     let self = this;
-                    window.jm.mng.act.getPermissionsByActName(this.curAct.actName).then((resp)=>{
+                    act.getPermissionsByActName(this.curAct.actName).then((resp)=>{
                         if(resp.code == 0 && resp.data) {
                             self.curAct.permissionEntires = resp.data;
                             if(self.curAct.permissionEntires) {
@@ -350,7 +353,7 @@
             doQuery() {
                 let self = this;
                 let params = this.getQueryConditions();
-                window.jm.mng.act.countAccount(params).then((resp)=>{
+                act.countAccount(params).then((resp)=>{
                     if(resp.code != 0) {
                         self.$Message.success(resp.msg);
                         return;
@@ -366,10 +369,10 @@
 
             refresh() {
                 let self = this;
-                this.isLogin = window.jm.rpc.isLogin();
-                if(window.jm.rpc.isAdmin()) {
+                this.isLogin = rpc.isLogin();
+                if(rpc.isAdmin()) {
                     let params = this.getQueryConditions();
-                    window.jm.mng.act.getAccountList(params,this.pageSize,this.curPage-1).then((resp)=>{
+                    act.getAccountList(params,this.pageSize,this.curPage-1).then((resp)=>{
                         if(resp.code != 0) {
                             self.$Message.success(resp.msg);
                             return;
@@ -391,7 +394,7 @@
 
         mounted () {
             this.$el.style.minHeight=(document.body.clientHeight-67)+'px';
-            window.jm.rpc.addActListener(cid,this.refresh);
+            rpc.addActListener(cid,this.refresh);
             this.refresh();
             let self = this;
             window.jm.vue.$emit("editorOpen",
@@ -399,7 +402,7 @@
                 });
 
             let ec = function() {
-                window.jm.rpc.removeActListener(cid);
+                rpc.removeActListener(cid);
                 window.jm.vue.$off('editorClosed',ec);
             }
 
@@ -407,7 +410,7 @@
         },
 
         beforeDestroy() {
-            window.jm.rpc.removeActListener(cid);
+            rpc.removeActListener(cid);
         },
 
         filters: {

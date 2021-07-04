@@ -57,6 +57,9 @@
 
 <script>
 
+    import conf from "@/rpcservice/conf"
+    import cons from "@/rpcservice/jm"
+
     export default {
         name: 'JRouterGroup',
         components: {
@@ -97,8 +100,8 @@
 
             ,deleteNode(node,idx){
                 let self = this;
-                let path = window.jm.mng.ROUTER_ROOT + '/' + node.val.uniqueId;
-                window.jm.mng.conf.delete(path)
+                let path = cons.ROUTER_ROOT + '/' + node.val.uniqueId;
+                conf.delete(path)
                     .then((result) => {
                         self.item.val.splice(idx,1);
                         self.$Message.success('successfully'+result);
@@ -184,9 +187,9 @@
 
                 if(this.doUpdate) {
                     //更新路由
-                    let path = window.jm.mng.ROUTER_ROOT + '/' + self.createRouter.uniqueId;
+                    let path = cons.ROUTER_ROOT + '/' + self.createRouter.uniqueId;
                     let val = JSON.stringify(self.createRouter);
-                    window.jm.mng.conf.update(path,val)
+                    conf.update(path,val)
                         .then((result) => {
                             if(result) {
                                 self.createRouterDialog = false;
@@ -200,11 +203,11 @@
                     });
                 } else {
                     //创建新路由
-                    window.jm.rpc.getId(window.jm.mng.RULE_ID).then((id)=>{
-                        let path = window.jm.mng.ROUTER_ROOT + '/' + id;
+                    rpc.getId(cons.RULE_ID).then((id)=>{
+                        let path = cons.ROUTER_ROOT + '/' + id;
                         self.createRouter.uniqueId = id;
                         let val = JSON.stringify(self.createRouter);
-                        window.jm.mng.conf.add(path,val,false)
+                        conf.add(path,val,false)
                             .then((result) => {
                                 if(result) {
                                     self.createRouterDialog = false;

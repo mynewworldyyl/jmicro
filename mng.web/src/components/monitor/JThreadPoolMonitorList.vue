@@ -20,7 +20,8 @@
 <script>
 
     import TreeNode from "../common/JTreeNode.js"
-
+    import rpc from "@/rpc/rpcbase"
+    import threadPoolSrv from "@/rpcservice/threadPoolSrv"
     const GROUP = 'threadPool';
 
     const cid = 'JThreadPoolMonitorList';
@@ -44,8 +45,8 @@
 
         mounted(){
             let self = this;
-            window.jm.rpc.addActListener(cid,()=>{
-                self.isLogin = window.jm.rpc.isLogin();
+            rpc.addActListener(cid,()=>{
+                self.isLogin = rpc.isLogin();
                 if( self.isLogin) {
                     self.loadServerList();
                 }
@@ -59,7 +60,7 @@
 
 
             let ec = function() {
-                window.jm.rpc.removeActListener(cid);
+                rpc.removeActListener(cid);
                 window.jm.vue.$off('editorClosed',ec);
             }
 
@@ -75,7 +76,7 @@
 
             loadServerList() {
                 let self = this;
-                window.jm.mng.threadPoolSrv.serverList('all')
+                threadPoolSrv.serverList('all')
                     .then((resp) => {
                     if(resp.code == 0) {
                         self.srcServerList = resp.data;

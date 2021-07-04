@@ -236,7 +236,10 @@
 <script>
 
     import JStatisIndex from './JStatisIndex.vue'
-
+    import {Constants} from "@/rpc/message"
+    import rpc from "@/rpc/rpcbase"
+    import comm from "@/rpcservice/comm"
+    
     const UNIT_SE = "S";
     const UNIT_MU = "M";
     const UNIT_HO = "H";
@@ -281,8 +284,8 @@
     //const PREFIX_CUR = 4; //"cur";
     //const PREFIX_CUR_PERCENT = 5; //"curPercent";
 
-    const REMOTE_KEYS = [window.jm.rpc.Constants.SERVICE_METHODS, window.jm.rpc.Constants.SERVICE_NAMESPACES,
-        window.jm.rpc.Constants.SERVICE_VERSIONS,window.jm.rpc.Constants.INSTANCES];
+    const REMOTE_KEYS = [Constants.SERVICE_METHODS, Constants.SERVICE_NAMESPACES,
+        Constants.SERVICE_VERSIONS,Constants.INSTANCES];
 
    /* const EXP_TYPE_SERVICE = 1;
     const EXP_TYPE_ACCOUNT = 2;
@@ -465,7 +468,7 @@
 
             remove(id) {
                 let self = this;
-                window.jm.rpc.callRpcWithParams(sn,ns,v, 'delete', [id])
+                rpc.callRpcWithParams(sn,ns,v, 'delete', [id])
                     .then((resp)=>{
                         if(resp.code != 0) {
                             self.$Message.success(resp.msg);
@@ -484,7 +487,7 @@
 
             enable(id) {
                 let self = this;
-                window.jm.rpc.callRpcWithParams(sn,ns,v, 'enable', [id])
+                rpc.callRpcWithParams(sn,ns,v, 'enable', [id])
                     .then((resp)=>{
                         if(resp.code != 0) {
                             self.$Message.success(resp.msg);
@@ -684,7 +687,7 @@
                 }
 
                 if(!this.updateMode) {
-                    window.jm.rpc.callRpcWithParams(sn,ns,v, 'add', [self.cfg])
+                    rpc.callRpcWithParams(sn,ns,v, 'add', [self.cfg])
                         .then((resp)=>{
                             if(resp.code != 0) {
                                 self.$Message.success(resp.msg);
@@ -697,7 +700,7 @@
                             window.console.log(err);
                     });
                 } else {
-                    window.jm.rpc.callRpcWithParams(sn,ns,v, 'update', [self.cfg])
+                    rpc.callRpcWithParams(sn,ns,v, 'update', [self.cfg])
                         .then((resp)=>{
                             if(resp.code != 0) {
                                 self.$Message.success(resp.msg);
@@ -713,12 +716,12 @@
             refresh() {
                 this.errMsg = '';
                 let self = this;
-                this.isLogin = window.jm.rpc.isLogin();
+                this.isLogin = rpc.isLogin();
                 if(!this.isLogin) {
                     return;
                 }
 
-                window.jm.rpc.callRpcWithParams(sn,ns,v, 'query', [])
+                rpc.callRpcWithParams(sn,ns,v, 'query', [])
                 .then((resp)=>{
                     if(resp.code != 0) {
                         self.$Message.success(resp.msg);
@@ -733,8 +736,8 @@
 
             getServiceNames(forceRefresh) {
                 let self = this;
-                window.jm.mng.comm.getDicts([window.jm.rpc.Constants.SERVICE_NAMES,
-                    window.jm.rpc.Constants.NAMED_TYPES,window.jm.rpc.Constants.ALL_INSTANCES,],'',forceRefresh)
+                comm.getDicts([Constants.SERVICE_NAMES,
+                    Constants.NAMED_TYPES,Constants.ALL_INSTANCES,],'',forceRefresh)
                     .then((opts)=>{
                         if(opts) {
 
@@ -743,9 +746,9 @@
                             self.methods = {};
                             self.instances = {};
 
-                            self.serviceNames = opts[window.jm.rpc.Constants.SERVICE_NAMES];
-                            self.namedTypeNames = opts[window.jm.rpc.Constants.NAMED_TYPES];
-                            self.allInstances = opts[window.jm.rpc.Constants.ALL_INSTANCES];
+                            self.serviceNames = opts[Constants.SERVICE_NAMES];
+                            self.namedTypeNames = opts[Constants.NAMED_TYPES];
+                            self.allInstances = opts[Constants.ALL_INSTANCES];
 
                             if(self.byKeyShow.sn && self.byType) {
                                 self.byServiceTypeChange(self.byType);
@@ -761,17 +764,17 @@
                 if(!sn || sn.length == 0) {
                     return;
                 }
-                window.jm.mng.comm.getDicts(keys,sn)
+                comm.getDicts(keys,sn)
                     .then((opts)=>{
                         if(opts) {
                             for(let k in opts) {
-                                if(k == window.jm.rpc.Constants.SERVICE_VERSIONS) {
+                                if(k == Constants.SERVICE_VERSIONS) {
                                     self.versions[sn] = opts[k];
-                                }else  if(k == window.jm.rpc.Constants.SERVICE_NAMESPACES) {
+                                }else  if(k == Constants.SERVICE_NAMESPACES) {
                                     self.namespaces[sn] = opts[k];
-                                }else  if(k == window.jm.rpc.Constants.SERVICE_METHODS) {
+                                }else  if(k == Constants.SERVICE_METHODS) {
                                     self.methods[sn] = opts[k];
-                                }else  if(k == window.jm.rpc.Constants.INSTANCES) {
+                                }else  if(k == Constants.INSTANCES) {
                                     self.instances[sn] = opts[k];
                                 }
                             }
@@ -793,7 +796,7 @@
         mounted () {
             this.errMsg = '';
             this.$el.style.minHeight=(document.body.clientHeight-67)+'px';
-            window.jm.rpc.addActListener(cid,this.refresh);
+            rpc.addActListener(cid,this.refresh);
             let self = this;
             this.getServiceNames();
             window.jm.vue.$emit("editorOpen",
@@ -805,7 +808,7 @@
                 });
 
             let ec = function() {
-                window.jm.rpc.removeActListener(cid);
+                rpc.removeActListener(cid);
                 window.jm.vue.$off('editorClosed',ec);
             }
 
@@ -815,7 +818,7 @@
         },
 
         beforeDestroy() {
-            window.jm.rpc.removeActListener(cid);
+            rpc.removeActListener(cid);
         },
 
     }

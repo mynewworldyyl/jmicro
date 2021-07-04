@@ -151,6 +151,7 @@
 <script>
 
 import TreeNode from  "./JServiceList.vue"
+import srv from "@/rpcservice/srv"
 
 export default {
     name: 'JServiceItem',
@@ -166,7 +167,7 @@ export default {
        save() {
             let self = this;
             let ms = this.node.val.methods;
-           window.jm.mng.srv.updateItem(this.node.val)
+           srv.updateItem(this.node.val)
                .then((rst)=>{
                    this.node.val.methods = ms;
                     if(rst) {

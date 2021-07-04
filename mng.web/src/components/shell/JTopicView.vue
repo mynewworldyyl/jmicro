@@ -110,7 +110,7 @@
 
             deleteNote(noteId) {
                 let self = this;
-                window.jm.rpc.callRpcWithParams(sn, ns, v, 'deleteNote',[noteId]).then((resp)=>{
+                rpc.callRpcWithParams(sn, ns, v, 'deleteNote',[noteId]).then((resp)=>{
                     if(resp.code != 0) {
                         self.$Message.info(resp.msg);
                     }else {
@@ -141,7 +141,7 @@
             },
 
             createNote() {
-                if(!window.jm.rpc.isLogin()) {
+                if(!rpc.isLogin()) {
                     this.$Message.info("未登录！");
                     return;
                 }
@@ -160,7 +160,7 @@
 
                 if(this.updateMode) {
                     let o = {id:this.node.id, content: this.node.content,topicId: this.node.topicId};
-                    window.jm.rpc.callRpcWithParams(sn, ns, v, 'updateNote',[o]).then((resp)=>{
+                    rpc.callRpcWithParams(sn, ns, v, 'updateNote',[o]).then((resp)=>{
                         if(resp.code == 0) {
                             self.updateMode = false;
                             self.showInputBox = false;
@@ -171,7 +171,7 @@
                         window.console.log(err);
                     });
                 } else {
-                    window.jm.rpc.callRpcWithParams(sn, ns, v, 'createNote',[this.note]).then((resp)=>{
+                    rpc.callRpcWithParams(sn, ns, v, 'createNote',[this.note]).then((resp)=>{
                         if(resp.code == 0) {
                             if(!self.topic.notes) {
                                 self.topic.notes = [];
@@ -204,10 +204,10 @@
 
         mounted () {
             let self = this;
-            this.act = window.jm.rpc.actInfo;
-            window.jm.rpc.addActListener(cid,self.doQuery);
+            this.act = rpc.actInfo;
+            rpc.addActListener(cid,self.doQuery);
             let ec = function() {
-                window.jm.rpc.removeActListener(cid);
+                rpc.removeActListener(cid);
                 window.jm.vue.$off('editorClosed',ec);
             }
             window.jm.vue.$on('editorClosed',ec);
@@ -215,7 +215,7 @@
         },
 
         beforeDestroy() {
-            window.jm.rpc.removeActListener(cid);
+            rpc.removeActListener(cid);
         },
 
     }

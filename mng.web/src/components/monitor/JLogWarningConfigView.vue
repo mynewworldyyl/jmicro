@@ -88,10 +88,13 @@
 
 <script>
 
+    import cons from "@/rpc/constants"
+    import rpc from "@/rpc/rpcbase"
+    
     const cid = 'warningConfig';
 
     const sn = 'cn.jmicro.mng.api.ILogWarningConfig';
-    const ns = window.jm.Constants.NS_MNG;
+    const ns = cons.NS_MNG;
     const v = '0.0.1';
 
     //const LOGS = ['No','Trance','Debug','Info','Warn','Error','Final'];
@@ -122,13 +125,13 @@
 
             add() {
                 this.updateMode=false;
-                this.cfg = {clientId:window.jm.rpc.actInfo.id};
+                this.cfg = {clientId:rpc.actInfo.id};
                 this.addWarningConfigDialog = true;
             },
 
             remove(id) {
                 let self = this;
-                window.jm.rpc.callRpcWithParams(sn,ns,v, 'delete', [id])
+                rpc.callRpcWithParams(sn,ns,v, 'delete', [id])
                     .then((resp)=>{
                         if(resp.code != 0) {
                             self.$Message.success(resp.msg);
@@ -191,7 +194,7 @@
                 }
 
                 if(!this.updateMode) {
-                    window.jm.rpc.callRpcWithParams(sn,ns,v, 'add', [self.cfg])
+                    rpc.callRpcWithParams(sn,ns,v, 'add', [self.cfg])
                         .then((resp)=>{
                             if(resp.code != 0) {
                                 self.$Message.success(resp.msg);
@@ -209,7 +212,7 @@
                         window.console.log(err);
                     });
                 }else {
-                    window.jm.rpc.callRpcWithParams(sn,ns,v, 'update', [self.cfg])
+                    rpc.callRpcWithParams(sn,ns,v, 'update', [self.cfg])
                         .then((resp)=>{
                             if(resp.code != 0) {
                                 self.$Message.success(resp.msg);
@@ -231,14 +234,14 @@
 
             refresh() {
                 let self = this;
-                this.isLogin = window.jm.rpc.isLogin();
+                this.isLogin = rpc.isLogin();
                 if(!this.isLogin) {
                     return;
                 }
 
-                this.isAdmin = window.jm.rpc.isAdmin();
+                this.isAdmin = rpc.isAdmin();
 
-                window.jm.rpc.callRpcWithParams(sn,ns,v, 'query', [])
+                rpc.callRpcWithParams(sn,ns,v, 'query', [])
                 .then((resp)=>{
                     if(resp.code != 0) {
                         self.$Message.success(resp.msg);
@@ -256,7 +259,7 @@
 
         mounted () {
             this.$el.style.minHeight=(document.body.clientHeight-67)+'px';
-            window.jm.rpc.addActListener(cid,this.refresh);
+            rpc.addActListener(cid,this.refresh);
             let self = this;
             window.jm.vue.$emit("editorOpen",
                 {"editorId":cid,
@@ -267,7 +270,7 @@
                 });
 
             let ec = function() {
-                window.jm.rpc.removeActListener(cid);
+                rpc.removeActListener(cid);
                 window.jm.vue.$off('editorClosed',ec);
             }
 
@@ -277,7 +280,7 @@
         },
 
         beforeDestroy() {
-            window.jm.rpc.removeActListener(cid);
+            rpc.removeActListener(cid);
         },
 
     }

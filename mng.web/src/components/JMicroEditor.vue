@@ -76,6 +76,8 @@
 
     import TreeNode from "./common/JTreeNode.js"
     import JBottomBar from './common/JBottomBar.vue'
+    import config from "@/rpc/config"
+    import rpc from "@/rpc/rpcbase"
 
     //import JServiceItem from './service/JServiceItem.vue'
     /*import JMethodItem from './service/JSMethodItem.vue'
@@ -166,9 +168,9 @@
 
         data () {
             let dataId = 'JMicroEditorDataId';
-            let d = window.jm.mng.cache[dataId];
+            let d = config.cache[dataId];
             if( !d) {
-                d = window.jm.mng.cache[dataId] = {
+                d = config.cache[dataId] = {
                     items:[],
                     selectNode:null,
                     allowMany:true,
@@ -510,7 +512,7 @@
                         this.handleTabActive(this.items[i+1].id);
                     }
 
-                    window.jm.rpc.removeActListener(it.id);
+                    rpc.removeActListener(it.id);
                     this.$emit('tabItemRemove',it.id);
                     this.$emit('editorClosed',it.id);
 

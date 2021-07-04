@@ -56,9 +56,12 @@
 
 <script>
 
+    import rpc from "@/rpc/rpcbase"
+    import cons from "@/rpc/constants"
+
     const cid = 'publicKeyList';
     const sn = 'cn.jmicro.api.security.ISecretService';
-    const ns = window.jm.Constants.NS_SECURITY;
+    const ns = cons.NS_SECURITY;
     const v = '0.0.1';
 
     export default {
@@ -88,10 +91,10 @@
 
             refresh(){
                 let self = this;
-                this.isLogin = window.jm.rpc.isLogin();
-                this.act = window.jm.rpc.actInfo;
+                this.isLogin = rpc.isLogin();
+                this.act = rpc.actInfo;
 
-                window.jm.rpc.callRpcWithParams(sn, ns, v, 'publicKeysList', [])
+                rpc.callRpcWithParams(sn, ns, v, 'publicKeysList', [])
                     .then((resp)=>{
                         if(resp.code != 0) {
                             self.$Message.success(resp.msg);
@@ -105,7 +108,7 @@
 
             enable(it,enStatus) {
                 let self = this;
-                window.jm.rpc.callRpcWithParams(sn, ns, v, 'enablePublicKey', [it.id,enStatus])
+                rpc.callRpcWithParams(sn, ns, v, 'enablePublicKey', [it.id,enStatus])
                     .then((resp)=>{
                         if(resp.code != 0) {
                             self.$Message.success(resp.msg);
@@ -125,7 +128,7 @@
 
             doUpdatePrefix() {
                 let self = this;
-                window.jm.rpc.callRpcWithParams(sn, ns, v, 'updateInstancePrefix', [this.updateItem.id,
+                rpc.callRpcWithParams(sn, ns, v, 'updateInstancePrefix', [this.updateItem.id,
                     this.updatePrefixVal])
                     .then((resp)=>{
 
@@ -148,7 +151,7 @@
 
             deleteItem(id) {
                 let self = this;
-                window.jm.rpc.callRpcWithParams(sn, ns, v, 'deletePublicKey', [id])
+                rpc.callRpcWithParams(sn, ns, v, 'deletePublicKey', [id])
                     .then((resp)=>{
                         if(resp.code != 0) {
                             self.$Message.success(resp.msg);
@@ -181,7 +184,7 @@
 
             doCreateRsaKey() {
                 let self = this;
-                window.jm.rpc.callRpcWithParams(sn, ns, v, 'createSecret', [this.updatePrefixVal, this.password])
+                rpc.callRpcWithParams(sn, ns, v, 'createSecret', [this.updatePrefixVal, this.password])
                     .then((resp)=>{
                         self.updatePrefixVal = null;
                         //self.createSecretDialog = false;
@@ -204,7 +207,7 @@
 
             doAddSecret() {
                 let self = this;
-                window.jm.rpc.callRpcWithParams(sn, ns, v, 'addPublicKeyForInstancePrefix',
+                rpc.callRpcWithParams(sn, ns, v, 'addPublicKeyForInstancePrefix',
                     [this.updatePrefixVal, this.publicKey])
                     .then((resp)=>{
                         self.updatePrefixVal = null;
@@ -225,7 +228,7 @@
         mounted () {
             this.$el.style.minHeight=(document.body.clientHeight-67)+'px';
             //has admin permission, only control the show of the button
-            window.jm.rpc.addActListener(cid,this.refresh);
+            rpc.addActListener(cid,this.refresh);
             let self = this;
             window.jm.vue.$emit("editorOpen",
                 {"editorId":'process',
@@ -234,7 +237,7 @@
                         {name:"Refresh",label:"Refresh",icon:"ios-cog",call:self.refresh}]
                 });
             let ec = function() {
-                window.jm.rpc.removeActListener(cid);
+                rpc.removeActListener(cid);
                 window.jm.vue.$off('editorClosed',ec);
             }
 

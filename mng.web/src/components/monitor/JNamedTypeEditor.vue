@@ -19,6 +19,9 @@
 
 <script>
 
+    import moType from "@/rpcservice/moType"
+    import rpc from "@/rpc/rpcbase"
+
     const cid  = 'JMonitorTypeKeyList';
     export default {
         name: cid,
@@ -45,9 +48,9 @@
 
             refresh(){
                 let self = this;
-                this.isAdmin = window.jm.rpc.isAdmin();
+                this.isAdmin = rpc.isAdmin();
                 this.errMsg = '';
-                window.jm.mng.moType.getAllConfigs().then((resp)=>{
+                moType.getAllConfigs().then((resp)=>{
                     if(resp.code != 0) {
                         self.$Message.success(resp.msg);
                         return;
@@ -60,7 +63,7 @@
                         return;
                     }
 
-                    window.jm.mng.moType.getTypesByNamed(self.item.id).then((resp)=>{
+                    moType.getTypesByNamed(self.item.id).then((resp)=>{
                         if(resp.code != 0) {
                             self.$Message.success(resp.msg);
                             return;
@@ -125,7 +128,7 @@
                 }
                 let self = this;
 
-                window.jm.mng.moType.updateNamedTypes(this.item.id,this.adds,this.dels).then((resp)=>{
+                moType.updateNamedTypes(this.item.id,this.adds,this.dels).then((resp)=>{
                     if(resp.code == 0) {
                         if(this.adds.length > 0) {
                             this.adds.splice(0,this.adds.length);
@@ -160,7 +163,7 @@
         mounted () {
             let self = this;
             this.$el.style.minHeight=(document.body.clientHeight-67)+'px';
-            window.jm.rpc.addActListener(this.item.id,()=>{
+            rpc.addActListener(this.item.id,()=>{
                 self.refresh();
             });
             this.refresh();
@@ -173,7 +176,7 @@
         },
 
         beforeDestroy() {
-            window.jm.rpc.removeActListener(this.item.id);
+            rpc.removeActListener(this.item.id);
         },
 
     }

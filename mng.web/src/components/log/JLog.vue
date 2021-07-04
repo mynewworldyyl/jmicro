@@ -5,6 +5,7 @@
 
 <script>
 
+    import agentLogSrv from "@/rpcservice/agentLogSrv"
     const cid = 'JLog';
 
     export default {
@@ -72,7 +73,7 @@
                 if(!force && self.stop) {
                     let self = this;
                     let le = self.item.val;
-                    window.jm.mng.agentLogSrv.subscribeLog(le.processId,self.item.title,le.agentId,100,self.callback)
+                    agentLogSrv.subscribeLog(le.processId,self.item.title,le.agentId,100,self.callback)
                         .then(rst =>{
                             if(rst) {
                                 self.stop = false;
@@ -84,7 +85,7 @@
                         self.$Message.error(err || "subscribe error");
                     });
                 } else if(force || !force && !self.stop) {
-                    window.jm.mng.agentLogSrv.unsubscribeLog(le.processId,self.item.title, le.agentId,self.callback)
+                    agentLogSrv.unsubscribeLog(le.processId,self.item.title, le.agentId,self.callback)
                         .then(rst =>{
                             self.$Message.success(rst);
                             self.stop = true;

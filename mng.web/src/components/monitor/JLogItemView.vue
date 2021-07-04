@@ -231,9 +231,14 @@
 
 <script>
 
+    import logSrv from "@/rpcservice/logSrv"
+    import comm from "@/rpcservice/comm"
+    import jmconfig from "@/rpcservice/jm"
+    import rpc from "@/rpc/rpcbase"
+
     const cid = 'logItemView';
 
-    const LOG2LEVEL = window.jm.mng.LOG2LEVEL;
+    const LOG2LEVEL = jmconfig.LOG2LEVEL;
 
     const LEVEL2COLOR = {2:'debugTag', 5:'errorTag', 6:'finalTag', 3:'infoTag', 0:'noLogTag',
         1: 'tranceTag', 4:'warnTag'};
@@ -430,13 +435,13 @@
 
             doQuery() {
                 let self = this;
-                this.isLogin = window.jm.rpc.isLogin();
+                this.isLogin = rpc.isLogin();
                 if(!this.isLogin) {
                     return;
                 }
                 self.logList = [];
                 let params = this.getQueryConditions();
-                window.jm.mng.logSrv.countLog(self.showType,params).then((resp)=>{
+                logSrv.countLog(self.showType,params).then((resp)=>{
                     if(resp.code != 0) {
                         self.$Message.success(resp.msg);
                         return;
@@ -452,7 +457,7 @@
 
             refresh() {
                 let self = this;
-                this.isLogin = window.jm.rpc.isLogin();
+                this.isLogin = rpc.isLogin();
                 if(!this.isLogin) {
                     return;
                 }
@@ -460,7 +465,7 @@
 
                 self.logList = [];
                 if(this.showType == '2') {
-                    window.jm.mng.logSrv.queryLog(params,this.pageSize,this.curPage-1).then((resp)=>{
+                    logSrv.queryLog(params,this.pageSize,this.curPage-1).then((resp)=>{
                         if(resp.code != 0) {
                             self.$Message.success(resp.msg);
                             return;
@@ -477,8 +482,8 @@
                         window.console.log(err);
                     });
                 } else {
-                    window.jm.rpc.callRpcWithParams(window.jm.mng.logSrv.sn,
-                        window.jm.mng.logSrv.ns, window.jm.mng.logSrv.v, 'queryFlatLog',
+                    rpc.callRpcWithParams(logSrv.sn,
+                        logSrv.ns, logSrv.v, 'queryFlatLog',
                         [params,this.pageSize,this.curPage-1])
                     .then((resp)=>{
                         if(resp.code != 0) {
@@ -538,11 +543,11 @@
 
             q() {
                 let self = this;
-                self.isLogin = window.jm.rpc.isLogin();
+                self.isLogin = rpc.isLogin();
                 if(!this.isLogin) {
                     return;
                 }
-                window.jm.mng.comm.getDicts(['logKey2Val','mtKey2Val'],'').then((dicts)=>{
+                comm.getDicts(['logKey2Val','mtKey2Val'],'').then((dicts)=>{
                     if(dicts) {
                         for(let k in dicts) {
                             let k2v = dicts[k];
@@ -557,7 +562,7 @@
                     throw err;
                 });
 
-                window.jm.mng.logSrv.queryDict().then((resp)=>{
+                logSrv.queryDict().then((resp)=>{
                     if(resp.code != 0) {
                         self.$Message.success(resp.msg);
                         return;
@@ -573,7 +578,7 @@
 
         mounted () {
             this.$el.style.minHeight=(document.body.clientHeight-67)+'px';
-            window.jm.rpc.addActListener(cid,this.q);
+            rpc.addActListener(cid,this.q);
             let self = this;
             window.jm.vue.$emit("editorOpen",
                 {"editorId":cid,
@@ -582,7 +587,7 @@
                 });
 
             let ec = function() {
-                window.jm.rpc.removeActListener(cid);
+                rpc.removeActListener(cid);
                 window.jm.vue.$off('editorClosed',ec);
             }
 
@@ -592,7 +597,7 @@
         },
 
         beforeDestroy() {
-            window.jm.rpc.removeActListener(cid);
+            rpc.removeActListener(cid);
         },
 
         filters: {

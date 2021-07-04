@@ -184,6 +184,34 @@ public class JDataOutput implements DataOutput {
 		}
 	}
 	
+	public static void writeString(JDataOutput buf, String s) throws IOException {
+
+		if(s == null) {
+			buf.write((byte)-1);
+			return;
+		}
+		
+		byte[] data = s.getBytes(/*"GBK"*/Constants.CHARSET);
+		
+		if(data.length < Byte.MAX_VALUE) {
+			buf.write((byte)data.length);
+		}else if(data.length < Short.MAX_VALUE) {
+			//0X7F=01111111=127 byte
+			//0X0100=00000001 00000000=128 short
+			buf.write(Byte.MAX_VALUE);
+			buf.writeShort((short)data.length);
+		}else if(data.length < Integer.MAX_VALUE) {
+			buf.write(Byte.MAX_VALUE);
+			buf.writeShort(Short.MAX_VALUE);
+			buf.writeInt(data.length);
+		}else {
+			throw new CommonException("String too long for:" + data.length);
+		}
+		if(data.length > 0) {
+			buf.write(data, 0, data.length);
+		}
+	}
+	
 	public static ByteBuffer writeString(ByteBuffer buf, String s) throws IOException {
 
 		if(s == null) {

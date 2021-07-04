@@ -14,6 +14,8 @@
 
 <script>
 
+    import moType from "@/rpcservice/moType"
+    import rpc from "@/rpc/rpcbase"
 
     export default {
         name: 'JMonitorTypeSelector',
@@ -78,7 +80,7 @@
 
             refresh(){
                 let self = this;
-                window.jm.mng.moType.getAllConfigs().then((resp)=>{
+                moType.getAllConfigs().then((resp)=>{
                     if(resp.code != 0) {
                         self.$Message.success(resp.msg);
                         return;

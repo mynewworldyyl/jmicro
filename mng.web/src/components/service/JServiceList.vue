@@ -24,8 +24,9 @@
 
 <script>
 
+    import srv from "@/rpcservice/srv"
     import TreeNode from "../common/JTreeNode.js"
-
+    import rpc from "@/rpc/rpcbase"
     //服务，服务实例，服务方法分组
     const GROUP_SN = 'sn';
     //服务实例，服务，服务方法分组
@@ -79,8 +80,8 @@
 
         mounted(){
             let self = this;
-            window.jm.rpc.addActListener(this.slId,()=>{
-                self.isLogin = window.jm.rpc.isLogin();
+            rpc.addActListener(this.slId,()=>{
+                self.isLogin = rpc.isLogin();
                 if( self.isLogin) {
                     self.loadServices();
                 }else {
@@ -90,7 +91,7 @@
             });
 
             let ec = function() {
-                window.jm.rpc.removeActListener(self.slId);
+                rpc.removeActListener(self.slId);
                 window.jm.vue.$off('editorClosed',ec);
             }
 
@@ -106,7 +107,7 @@
 
             loadServices(cb) {
 
-                window.jm.mng.srv.getServices(this.showAll).then((nodes)=>{
+                srv.getServices(this.showAll).then((nodes)=>{
                     if(!nodes || nodes.length == 0 ) {
                         if(cb) {
                             cb([]);

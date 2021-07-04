@@ -53,6 +53,9 @@
 
     const cid = 'typeConfig';
 
+    import rpc from "@/rpc/rpcbase"
+    import moType from "@/rpcservice/moType"
+    
     export default {
         name: 'JTypeConfig',
         data () {
@@ -79,7 +82,7 @@
                 }
                 this.errMsg ='';
                 let self = this;
-                window.jm.mng.moType.add(this.cfg).then((resp)=>{
+                moType.add(this.cfg).then((resp)=>{
                     if(resp.code != 0) {
                         self.$Message.success(resp.msg);
                         return;
@@ -94,9 +97,9 @@
 
             refresh(){
                 let self = this;
-                this.isAdmin = window.jm.rpc.isAdmin();
+                this.isAdmin = rpc.isAdmin();
 
-                window.jm.mng.moType.getAllConfigs().then((resp)=>{
+                moType.getAllConfigs().then((resp)=>{
                     if(resp.code != 0) {
                         self.$Message.success(resp.msg);
                         return;
@@ -140,7 +143,7 @@
                     return;
                 }
                 let self = this;
-                window.jm.mng.moType.delete(cfg).then((resp)=>{
+                moType.delete(cfg).then((resp)=>{
                     if(resp.code != 0) {
                         self.$Message.success(resp.msg);
                         return;
@@ -185,9 +188,9 @@
         mounted () {
             this.$el.style.minHeight=(document.body.clientHeight-67)+'px';
             let self = this;
-            window.jm.rpc.addActListener(cid,self.refresh);
+            rpc.addActListener(cid,self.refresh);
             let ec = function() {
-                window.jm.rpc.removeActListener(cid);
+                rpc.removeActListener(cid);
                 window.jm.vue.$off('editorClosed',ec);
             }
             window.jm.vue.$on('editorClosed',ec);
@@ -199,7 +202,7 @@
         },
 
         beforeDestroy() {
-            window.jm.rpc.removeActListener(cid);
+            rpc.removeActListener(cid);
         },
     }
 </script>

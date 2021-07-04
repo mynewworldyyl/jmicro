@@ -55,6 +55,8 @@
 <script>
     //import jm from '../../public/js/jm.js'
 
+    import conf from "@/rpcservice/conf"
+
     export default {
         name: 'JConfigEditor',
         props:{
@@ -139,7 +141,7 @@
                     self.errMsg='Value cannot be null!';
                     return false;
                 }
-                window.jm.mng.conf.add(self.selectNode.path+'/'+self.inputName,self.inputVal,self.isDir)
+                conf.add(self.selectNode.path+'/'+self.inputName,self.inputVal,self.isDir)
                     .then(function(result){
                         if(result) {
                             let p = self.selectNode.path+'/'+self.inputName;
@@ -204,7 +206,7 @@
                     return;
                 }
 
-                window.jm.mng.conf.update(self.selectNode.path+'/'+self.inputName,self.inputVal)
+                conf.update(self.selectNode.path+'/'+self.inputName,self.inputVal)
                     .then(function(result){
                         if(result) {
                             lf.val = self.inputVal;
@@ -240,7 +242,7 @@
                 if(lf == null) {
                     return;
                 }
-                window.jm.mng.conf.delete(lf.path)
+                conf.delete(lf.path)
                     .then(function(result){
                         if(result) {
                             self.selectNode.leaf.splice(idx,1);

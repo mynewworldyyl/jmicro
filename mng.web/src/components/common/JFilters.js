@@ -1,3 +1,5 @@
+import i18n0 from "@/rpcservice/i18n"
+
 const FORMAT_DATE = 'yyyy/MM/dd';  //1
 const FORMAT_DATE_TIME = 'yyyy/MM/dd hh:mm:ss'; //2
 const FORMAT_DATE_TIME_MS = 'yyyy/MM/dd hh:mm:ss S'; //3
@@ -29,7 +31,7 @@ let formatDate = function(time,t) {
 }
 
 let i18n = function(key,defaultVal,params) {
-    return window.jm.mng.i18n.get(key,defaultVal,params);
+    return i18n0.get(key,defaultVal,params);
 }
 
 export {

@@ -6,6 +6,7 @@ import iView from 'view-design'
 import 'view-design/dist/styles/iview.css'
 
 import JMicroEditor from  './components/JMicroEditor.vue'
+import i18n from  '@/rpcservice/i18n'
 
 import * as filters from './components/common/JFilters'
 Object.keys(filters).forEach(key => {
@@ -24,7 +25,7 @@ import JMonitor from './components/monitor/JMonitor.vue'
 */
 
 Vue.use(iView)
-Vue.use(window.jm)
+//Vue.use(window.jm)
 Vue.config.productionTip = false
 
 Vue.use(VueRouter)
@@ -45,7 +46,8 @@ const router = new VueRouter({
 
 //window.vue = window.jm.vue;
 //window.vue.jm = window.jm;
-window.jm.mng.i18n.init(()=>{
+i18n.init(()=>{
+    window.jm={};
     window.jm.vue = new Vue({
         render: h => h(App),
         router,

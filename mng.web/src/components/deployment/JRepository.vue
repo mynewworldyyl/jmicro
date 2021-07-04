@@ -141,6 +141,11 @@
 
     import {i18n} from "../common/JFilters.js";
 
+    import rep from "@/rpcservice/repository"
+    import {Constants} from "@/rpc/message"
+    import rpc from "@/rpc/rpcbase"
+    import jmconfig from "@/rpcservice/jm"
+    
     const cid = 'repository';
 
     export default {
@@ -183,7 +188,7 @@
                     drawerBtnStyle:{left:'0px',zindex:1000},
                 },
 
-                status: window.jm.mng.RES_STATUS,
+                status: jmconfig.RES_STATUS,
 
                 res0 : this.resetRes(),
                 model:0,
@@ -212,7 +217,7 @@
                 }
                 let self = this;
                 self.errMsg = '';
-                window.jm.mng.repository.parseRemoteClass(res.id).then((resp)=>{
+                rep.parseRemoteClass(res.id).then((resp)=>{
                     if(resp.code != 0) {
                         self.errMsg = resp.msg;
                     }else {
@@ -248,7 +253,7 @@
             dependencyList(res) {
                 let self = this;
                 self.errMsg = "";
-                window.jm.mng.repository.dependencyList(res.id).then((resp)=>{
+                rep.dependencyList(res.id).then((resp)=>{
                     if(resp.code == 0) {
                         res.depIds = [];
                         for(let i = 0; i < resp.data.length; i++) {
@@ -265,7 +270,7 @@
             waitingResList(res) {
                 let self = this;
                 self.errMsg = "";
-                window.jm.mng.repository.waitingResList(res.id).then((resp)=>{
+                rep.waitingResList(res.id).then((resp)=>{
                     if(resp.code == 0) {
                         res.waitingRes = [];
                         for(let i = 0; i < resp.data.length; i++) {
@@ -405,7 +410,7 @@
 
 
             testArrayBuffer() {
-                window.jm.mng.repository.addResourceData('test01',[0,1,2],0,3).then((resp)=>{
+                rep.addResourceData('test01',[0,1,2],0,3).then((resp)=>{
                     console.log(resp);
                 }).catch((err)=>{
                     window.console.log(err);
@@ -432,7 +437,7 @@
 
             uploadData(data,blockNum,cb) {
                 let self = this;
-                window.jm.mng.repository.addResourceData(this.res0.id,data,blockNum)
+                rep.addResourceData(this.res0.id,data,blockNum)
                     .then((resp) =>{
                         if(resp.code==0) {
                             cb(true);
@@ -520,7 +525,7 @@
                 let self = this;
 
                 if(!this.res0.fileChange) {
-                    window.jm.mng.repository.updateResource(this.res0,false)
+                    rep.updateResource(this.res0,false)
                         .then((resp) =>{
                             if(resp.code==0) {
                                 self.$Message.success("Successfully");
@@ -535,7 +540,7 @@
                     delete this.res0.fileChange;
                     self.getFileContent().then((buf) => {
                         self.res0.size =  buf.byteLength;
-                        window.jm.mng.repository.updateResource(self.res0,true).then((resp)=>{
+                        rep.updateResource(self.res0,true).then((resp)=>{
                             if(resp.code != 0) {
                                 //self.$Message.error(resp.msg);
                                 self.errMsg = resp.msg;
@@ -657,7 +662,7 @@
 
                 this.getFileContent().then((buf) => {
                     self.res0.size =  buf.byteLength;
-                    window.jm.mng.repository.addResource(self.res0).then((resp)=>{
+                    rep.addResource(self.res0).then((resp)=>{
                         if(resp.code != 0) {
                             self.errMsg = resp.msg;
                             return;
@@ -714,7 +719,7 @@
 
             deleteRes(res){
                 let self = this;
-                window.jm.mng.repository.deleteResource(res.id).then((rst)=>{
+                rep.deleteResource(res.id).then((rst)=>{
                     if(rst.code == 0 ) {
                         for(let i = 0; i < self.resList.length; i++) {
                             if(self.resList[i].name == res.name) {
@@ -739,8 +744,8 @@
             refresh(){
                 let self = this;
                 this.errMsg = "";
-                this.isLogin = window.jm.rpc.isLogin();
-                this.actInfo = window.jm.rpc.actInfo;
+                this.isLogin = rpc.isLogin();
+                this.actInfo = rpc.actInfo;
 
                 if(!this.isLogin) {
                     this.resList = [];
@@ -748,7 +753,7 @@
                 }
 
                 let qry = this.getQueryConditions();
-                window.jm.mng.repository.getResourceList(qry,this.pageSize,this.curPage)
+                rep.getResourceList(qry,this.pageSize,this.curPage)
                     .then((resp)=>{
                     if(!resp || resp.code != 0 ) {
                         self.$Message.success("No data to show");
@@ -763,11 +768,11 @@
             },
 
             getDicts(){
-                this.actInfo = window.jm.rpc.actInfo;
+                this.actInfo = rpc.actInfo;
                 self.errMsg = "";
                 if(this.actInfo && this.actInfo.isAdmin) {
                     let self = this;
-                    window.jm.mng.repository.queryDict().then((resp)=>{
+                    rep.queryDict().then((resp)=>{
                         if(resp.code == 0) {
                             self.dicts = resp.data;
                         }else {
@@ -782,8 +787,8 @@
 
             clearInvalidResourceFile() {
                 let self = this;
-                window.jm.rpc.callRpcWithParams(window.jm.mng.repository.sn, window.jm.mng.repository.ns,
-                    window.jm.mng.repository.v, 'clearInvalidResourceFile', [])
+                rpc.callRpcWithParams(rep.sn, rep.ns,
+                    rep.v, 'clearInvalidResourceFile', [])
                     .then((resp)=>{
                         if(resp.code == 0){
                             self.$Message.success("Successfully submit task to clear invalid file");
@@ -797,8 +802,8 @@
 
             clearInvalidDbFile() {
                 let self = this;
-                window.jm.rpc.callRpcWithParams(window.jm.mng.repository.sn, window.jm.mng.repository.ns,
-                    window.jm.mng.repository.v, 'clearInvalidDbFile', [])
+                rpc.callRpcWithParams(rep.sn, rep.ns,
+                    rep.v, 'clearInvalidDbFile', [])
                     .then((resp)=>{
                         if(resp.code == 0){
                             self.$Message.success("Successfully submit task to clear invalid db resource data");
@@ -813,8 +818,8 @@
 
         mounted () {
             let self = this;
-            this.isLogin = window.jm.rpc.isLogin();
-            this.actInfo = window.jm.rpc.actInfo;
+            this.isLogin = rpc.isLogin();
+            this.actInfo = rpc.actInfo;
 
             this.$el.style.minHeight=(document.body.clientHeight-67)+'px';
 
@@ -833,15 +838,15 @@
                 menus.push(clearDbFileMenu);
             }
 
-            window.jm.rpc.addActListener(cid,function(type,ai){
+            rpc.addActListener(cid,function(type,ai){
                 self.refresh();
-                if(type == window.jm.rpc.Constants.LOGOUT) {
+                if(type == Constants.LOGOUT) {
                     if(menus.length == 4){
                         menus.splice(2,1);
                         menus.splice(2,1);
                         window.jm.vue.$emit("menuChange", {"editorId":cid, "menus":menus});
                     }
-                }else if(type == window.jm.rpc.Constants.LOGIN) {
+                }else if(type == Constants.LOGIN) {
                     if(ai.isAdmin){
                         menus.push(clearFileMenu);
                         menus.push(clearDbFileMenu);
@@ -853,7 +858,7 @@
             window.jm.vue.$emit("editorOpen", {"editorId":cid, "menus":menus});
 
             let ec = function() {
-                window.jm.rpc.removeActListener(cid);
+                rpc.removeActListener(cid);
                 window.jm.vue.$off('editorClosed',ec);
             }
 

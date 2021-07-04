@@ -41,6 +41,10 @@
 
 <script>
 
+    import ps from "@/rpc/pubsub"
+    import rpc from "@/rpc/rpcbase"
+    import psDataSrv from "@/rpcservice/psDataSrv"
+
     const cid = 'JPubsubItemView';
 
     export default {
@@ -77,7 +81,7 @@
             resend(item) {
                 let id = item.id;
                 item.id = 0;
-                window.jm.ps.publishOneItem(item)
+                ps.publishOneItem(item)
                     .then(rst=>{
                         item.id = id;
                         console.log(rst);
@@ -104,13 +108,13 @@
             },
 
             doQuery() {
-                this.isLogin = window.jm.rpc.isLogin();
+                this.isLogin = rpc.isLogin();
                 if(!this.isLogin) {
                     return;
                 }
                 let self = this;
                 let params = this.getQueryConditions();
-                window.jm.mng.psDataSrv.count(params).then((resp)=>{
+                psDataSrv.count(params).then((resp)=>{
                     if(resp.code != 0) {
                         self.$Message.success(resp.msg);
                         return;
@@ -126,12 +130,12 @@
 
             refresh() {
                 let self = this;
-                this.isLogin = window.jm.rpc.isLogin();
+                this.isLogin = rpc.isLogin();
                 if(!this.isLogin) {
                     return;
                 }
                 let params = this.getQueryConditions();
-                window.jm.mng.psDataSrv.query(params,this.pageSize,this.curPage-1).then((resp)=>{
+                psDataSrv.query(params,this.pageSize,this.curPage-1).then((resp)=>{
                     if(resp.code != 0) {
                         self.$Message.success(resp.msg);
                         return;
@@ -185,10 +189,10 @@
 
         mounted () {
             let self = this;
-            window.jm.rpc.addActListener(cid,self.doQuery);
+            rpc.addActListener(cid,self.doQuery);
             self.doQuery();
             let ec = function() {
-                window.jm.rpc.removeActListener(cid);
+                rpc.removeActListener(cid);
                 window.jm.vue.$off('editorClosed',ec);
             }
             window.jm.vue.$on('editorClosed',ec);
@@ -201,7 +205,7 @@
         },
 
         beforeDestroy() {
-            window.jm.rpc.removeActListener(cid);
+            rpc.removeActListener(cid);
             //window.jm.vue.$off('editorClosed',ec);
         },
 

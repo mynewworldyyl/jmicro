@@ -20,6 +20,8 @@
 <script>
 
     import TreeNode from '../common/JTreeNode.js'
+    import rpc from "@/rpc/rpcbase"
+    import monitor from "@/rpcservice/monitor"
 
     const GROUP = 'monitors';
 
@@ -45,15 +47,15 @@
 
         mounted(){
             let self = this;
-            window.jm.rpc.addActListener(self.slId,()=>{
-                self.isLogin = window.jm.rpc.isLogin();
+            rpc.addActListener(self.slId,()=>{
+                self.isLogin = rpc.isLogin();
                 if( self.isLogin) {
                     self.loadMonitors();
                 }
             });
 
             let ec = function() {
-                window.jm.rpc.removeActListener(self.slId);
+                rpc.removeActListener(self.slId);
                 window.jm.vue.$off('editorClosed',ec);
             }
 
@@ -68,7 +70,7 @@
             },
 
             loadMonitors() {
-                window.jm.mng.monitor.serverList().then((nodes)=>{
+                monitor.serverList().then((nodes)=>{
                     if(!nodes || nodes.length == 0 ) {
                         this.srcNodes=[];
                         this.groups = [];

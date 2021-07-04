@@ -22,6 +22,7 @@
     import JStatisServiceItemView from './JStatisServiceItemView.vue'
     import JStatisSMethodItemView from './JStatisSMethodItemView.vue'
     import JStatisServerItemView from './JStatisServerItemView.vue'
+    import config from "@/rpc/config"
 
     export default {
         name: 'JStatisView',
@@ -32,9 +33,9 @@
         },
 
         data () {
-            let d = window.jm.mng.cache[this.dataId];
+            let d = config.cache[this.dataId];
             if( !d) {
-                d = window.jm.mng.cache[this.dataId] = {
+                d = config.cache[this.dataId] = {
                      items:[],
                      selectNode:null,
                 };

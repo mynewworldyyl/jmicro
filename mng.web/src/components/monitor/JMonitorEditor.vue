@@ -46,6 +46,11 @@
 
     import TreeNode from '../common/JTreeNode.js'
 
+    import config from "@/rpc/config"
+    import i18n from "@/rpcservice/i18n"
+    import monitor from "@/rpcservice/monitor"
+
+
 export default {
 
     name: 'JMonitorEditor',
@@ -78,9 +83,9 @@ export default {
 
         let dataKey = "JMonitor_cacheData_" + this.group.id ;
 
-        let cacheData = window.jm.mng.cache[dataKey];
+        let cacheData = config.cache[dataKey];
         if(!cacheData) {
-            cacheData = window.jm.mng.cache[dataKey] = {
+            cacheData = config.cache[dataKey] = {
                 serverList:[],
                 monitorServers:[],
                 timerId:-1,
@@ -98,7 +103,7 @@ export default {
     methods:{
 
         i18nVal(t) {
-            return window.jm.mng.i18n.get(t);
+            return i18n.get(t);
         },
 
         btnClick(s) {
@@ -126,7 +131,7 @@ export default {
                         self.cache.timerId = -1;
                         return;
                     }
-                    window.jm.mng.monitor.status(self.cache.monitorServers)
+                    monitor.status(self.cache.monitorServers)
                         .then((status)=>{
                             self.cache.serverList[0].data = status[0];
                             for(let i = 0; i < self.cache.monitorServers.length; i++) {
@@ -187,7 +192,7 @@ export default {
                     this.cache.monitorServers.splice(idx,1);
                 }
 
-                window.jm.mng.monitor.enable(srvKey,false)
+                monitor.enable(srvKey,false)
                     .then(()=>{
 
                     }).catch(err=>{

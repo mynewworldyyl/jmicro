@@ -76,11 +76,11 @@ public final class Message {
 	public static final byte PRIORITY_NORMAL = PRIORITY_3;
 	public static final byte PRIORITY_MAX = PRIORITY_7;
 	
-	public static final int MAX_SHORT_VALUE = ((int)Short.MAX_VALUE)*2;
+	public static final int MAX_SHORT_VALUE = Short.MAX_VALUE;
 	
-	public static final short MAX_BYTE_VALUE = ((short)Byte.MAX_VALUE)*2;
+	public static final short MAX_BYTE_VALUE = Byte.MAX_VALUE;
 	
-	public static final long MAX_INT_VALUE = ((long)Integer.MAX_VALUE)*2;
+	public static final long MAX_INT_VALUE = 1024*1024*10;//10M
 	
 	//public static final long MAX_LONG_VALUE = Long.MAX_VALUE*2;
 	
@@ -158,6 +158,13 @@ public final class Message {
 	public static final Byte EXTRA_KEY_FLAG = -118;
 	
 	public static final Byte EXTRA_KEY_MSG_ID = -117;
+	
+	//rpc method name
+	public static final Byte EXTRA_KEY_METHOD = 127;
+	public static final Byte EXTRA_KEY_EXT0 = 126;
+	public static final Byte EXTRA_KEY_EXT1 = 125;
+	public static final Byte EXTRA_KEY_EXT2 = 124;
+	public static final Byte EXTRA_KEY_EXT3 = 123;
 	
 	public static final byte MSG_TYPE_PINGPONG = 0;//默认请求响应模式
 	
@@ -321,13 +328,14 @@ public final class Message {
 		}else if(DecoderConstant.PREFIX_TYPE_CHAR == type){
 			return b.readChar();
 		}else if(DecoderConstant.PREFIX_TYPE_STRING == type){
-			int len = b.readUnsignedShort();
+			return JDataInput.readString(b);
+			/*int len = b.readUnsignedShort();
 			if(len == 0) {
 				return "";
 			}
 			byte[] arr = new byte[len];
 			b.readFully(arr, 0, len);
-			return new String(arr,0,len,Constants.CHARSET);
+			return new String(arr,0,len,Constants.CHARSET);*/
 		} else {
 			throw new CommonException("not support header type: " + type+", key: " + k);
 		}
@@ -366,6 +374,9 @@ public final class Message {
 		}else if(cls == String.class) {
 			b.writeByte(DecoderConstant.PREFIX_TYPE_STRING);
 			String str = v.toString();
+			JDataOutput.writeString(b, str);
+			/*b.writeByte(DecoderConstant.PREFIX_TYPE_STRING);
+			String str = v.toString();
 			if("".equals(str)){
 				b.writeUnsignedShort(0);
 				return;
@@ -376,7 +387,7 @@ public final class Message {
 				b.write(data);
 			} catch (UnsupportedEncodingException e) {
 				throw new CommonException("Invalid: "+str,e);
-			}
+			}*/
 		}else if(cls == int.class || cls == Integer.class || cls == Integer.TYPE){
 			b.writeByte(DecoderConstant.PREFIX_TYPE_INT);
 			b.writeInt((Integer)v);
@@ -501,7 +512,7 @@ public final class Message {
 		}
 		
 		//第1，2个字节 ,len = 数据长度 + 测试模式时附加数据长度
-		if(len < MAX_SHORT_VALUE) {
+		if(len <= MAX_SHORT_VALUE) {
 			this.setLengthType(false);
 		} else if(len < MAX_INT_VALUE){
 			this.setLengthType(true);
@@ -515,7 +526,7 @@ public final class Message {
 			//b.writeShort(this.flag);
 			Message.writeUnsignedShort(b, this.flag);
 			
-			if(len < 32767) {
+			if(len <= MAX_SHORT_VALUE) {
 				//第2，3个字节 ,len = 数据长度 + 测试模式时附加数据长度
 				b.writeUnsignedShort(len);
 			}else if(len < Integer.MAX_VALUE){
@@ -854,9 +865,9 @@ public final class Message {
 	}
 	
 	public static void writeUnsignedShort(ByteBuffer b,int v) {
-		if(v > MAX_SHORT_VALUE) {
+		/*if(v > MAX_SHORT_VALUE) {
     		throw new CommonException("Max short value is :"+MAX_SHORT_VALUE+", but value "+v);
-    	}
+    	}*/
 		byte data = (byte)((v >> 8) & 0xFF);
 		b.put(data);
 		data = (byte)((v >> 0) & 0xFF);
@@ -864,9 +875,9 @@ public final class Message {
 	}
 	
 	public static void writeUnsignedShort(JDataOutput b,int v) {
-		if(v > MAX_SHORT_VALUE) {
+		/*if(v > MAX_SHORT_VALUE) {
     		throw new CommonException("Max short value is :"+MAX_SHORT_VALUE+", but value "+v);
-    	}
+    	}*/
 		try {
 			byte data = (byte)((v >> 8) & 0xFF);
 			b.writeByte(data);

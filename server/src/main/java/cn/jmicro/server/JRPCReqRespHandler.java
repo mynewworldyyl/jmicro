@@ -186,7 +186,7 @@ public class JRPCReqRespHandler implements IMessageHandler{
 			}
 			
 			if(sm.getMaxPacketSize() > 0 && req.getPacketSize() > sm.getMaxPacketSize()) {
-	    		ServerError se = new ServerError(MC.MT_PACKET_TOO_MAX,"Packet too max "+req.getPacketSize()+ " limit size: " + sm.getMaxPacketSize()+",insId: " + msg.getInsId());
+	    		ServerError se = new ServerError(MC.MT_PACKET_TOO_MAX,"Packet too max "+req.getPacketSize()+ " limit size: " + sm.getMaxPacketSize()+",insId: " + msg.getInsId()+","+sm.getKey().getMethod());
 				resp.setResult(se);
 				resp.setSuccess(false);
 				LG.log(MC.LOG_ERROR, TAG,se.toString());

@@ -24,6 +24,9 @@
 
 <script>
 
+    import moType from "@/rpcservice/moType"
+    import rpc from "@/rpc/rpcbase"
+    
     const cid  = 'JMonitorTypeServiceMethod';
     export default {
         name: cid,
@@ -51,8 +54,8 @@
             refresh(){
                 let self = this;
                 this.errMsg = '';
-                this.isAdmin = window.jm.rpc.isAdmin();
-                window.jm.mng.moType.getAllConfigsByGroup(['deflt']).then((resp)=>{
+                this.isAdmin = rpc.isAdmin();
+                moType.getAllConfigsByGroup(['deflt']).then((resp)=>{
                     if(resp.code != 0) {
                         self.$Message.success(resp.msg);
                         return;
@@ -65,7 +68,7 @@
                         return;
                     }
 
-                    window.jm.mng.moType.getConfigByServiceMethodKey(self.id).then((resp)=>{
+                    moType.getConfigByServiceMethodKey(self.id).then((resp)=>{
                         if(resp.code != 0) {
                             self.$Message.success(resp.msg);
                             return;
@@ -129,7 +132,7 @@
                     return;
                 }
                 let self = this;
-                window.jm.mng.moType.updateServiceMethodMonitorTypes(self.id,this.adds,this.dels).then((resp)=>{
+                moType.updateServiceMethodMonitorTypes(self.id,this.adds,this.dels).then((resp)=>{
                     if(resp.code == 0) {
                         if(this.adds.length > 0) {
                             this.adds.splice(0,this.adds.length);
@@ -178,7 +181,7 @@
         mounted () {
             this.$el.style.minHeight=(document.body.clientHeight-67)+'px';
             let self = this;
-            window.jm.rpc.addActListener(this.item.id,this.refresh);
+            rpc.addActListener(this.item.id,this.refresh);
             this.refresh();
 
             let menus = [{name:"Refresh",label:"refresh",icon:"ios-cog",call:self.refresh},
@@ -190,7 +193,7 @@
         },
 
         beforeDestroy() {
-            window.jm.rpc.removeActListener(this.item.id);
+            rpc.removeActListener(this.item.id);
         },
 
     }

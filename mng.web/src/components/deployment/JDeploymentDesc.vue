@@ -86,12 +86,17 @@
 
     import {formatDate} from "../common/JFilters.js";
 
+    import rep from "@/rpcservice/repository"
+    import choy from "@/rpcservice/choy"
+    import rpc from "@/rpc/rpcbase"
+    import jmconfig from "@/rpcservice/jm"
+    
     const cid = 'deploymentDesc';
     export default {
         name: 'JDeploymentDesc',
         data () {
             return {
-                statusMap:window.jm.mng.DEP_STATUS,
+                statusMap:jmconfig.DEP_STATUS,
                 deployList:[],
                 jarFiles:[],
                 resMap:{},
@@ -119,7 +124,7 @@
                     drawerBtnStyle:{right:'0px',zindex:1005},
                 },
 
-                resStatus: window.jm.mng.RES_STATUS,
+                resStatus: jmconfig.RES_STATUS,
 
             }
         },
@@ -151,7 +156,7 @@
                 let self = this;
                 self.errMsg = "";
 
-                window.jm.mng.repository.dependencyList(self.deployment.resId)
+                rep.dependencyList(self.deployment.resId)
                     .then((resp)=>{
                     if(resp.code == 0) {
                         self.depIds = [];
@@ -223,7 +228,7 @@
                     args:'',
                     status:'1',
                     desc:'',
-                    clientId:window.jm.rpc.actInfo.id,
+                    clientId:rpc.actInfo.id,
                     createdTime:new Date().getTime(),
                     updatedTime:new Date().getTime(),
                 }
@@ -246,7 +251,7 @@
                 }
 
                 if(self.drawerModel == 2) {
-                    window.jm.mng.choy.updateDeployment(self.deployment).then((resp)=>{
+                    choy.updateDeployment(self.deployment).then((resp)=>{
                         if( resp.code == 0 ) {
                             self.deployment.status = resp.data.status;
                             self.deployment.desc = resp.data.desc;
@@ -261,7 +266,7 @@
                         window.console.log(err);
                     });
                 }else if(self.drawerModel == 1) {
-                    window.jm.mng.choy.addDeployment(self.deployment).then((resp)=>{
+                    choy.addDeployment(self.deployment).then((resp)=>{
                         if( resp.code == 0 ) {
                             self.deployList.push(resp.data);
                             self.closeDrawer();
@@ -279,7 +284,7 @@
 
             deleteDeployment(res){
                 let self = this;
-                window.jm.mng.choy.deleteDeployment(res.id).then((resp)=>{
+                choy.deleteDeployment(res.id).then((resp)=>{
                     if(resp.code == 0 ) {
                         for(let i = 0; i < self.deployList.length; i++) {
                             if(self.deployList[i].id == res.id) {
@@ -302,12 +307,12 @@
 
             refresh(){
                 let self = this;
-                this.isLogin = window.jm.rpc.isLogin();
+                this.isLogin = rpc.isLogin();
                 if(!this.isLogin) {
                     this.deployList = [];
                     return;
                 }
-                window.jm.mng.choy.getDeploymentList().then((resp)=>{
+                choy.getDeploymentList().then((resp)=>{
                     if(resp.code != 0 ) {
                         self.$Message.error(resp.msg);
                         return;
@@ -325,8 +330,8 @@
 
             getJarFiles() {
                 let self = this;
-                window.jm.rpc.callRpcWithParams(window.jm.mng.repository.sn, window.jm.mng.repository.ns,
-                    window.jm.mng.repository.v, 'getResourceListForDeployment', [{}])
+                rpc.callRpcWithParams(rpc.sn, rpc.ns,
+                    rpc.v, 'getResourceListForDeployment', [{}])
                     .then((resp)=>{
                         if(resp.code == 0){
                             self.jarFiles = resp.data;
@@ -348,7 +353,7 @@
             self.refresh();
             self.getJarFiles();
 
-            window.jm.rpc.addActListener(cid,self.refresh);
+            rpc.addActListener(cid,self.refresh);
             window.jm.vue.$emit("editorOpen",
                 {"editorId":cid,
                     "menus":[{name:"ADD",label:"Add",icon:"ios-cog",call:self.addDeploy},
@@ -356,7 +361,7 @@
              });
 
             let ec = function() {
-                window.jm.rpc.removeActListener(cid);
+                rpc.removeActListener(cid);
                 window.jm.vue.$off('editorClosed',ec);
             }
 

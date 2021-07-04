@@ -19,6 +19,9 @@
 
 <script>
 
+    import rpc from "@/rpc/rpcbase"
+    import moType from "@/rpcservice/moType"
+
     const cid  = 'JMonitorTypeKeyList';
     export default {
         name: cid,
@@ -52,9 +55,9 @@
 
             refresh(){
                 let self = this;
-                this.isAdmin = window.jm.rpc.isAdmin();
+                this.isAdmin = rpc.isAdmin();
                 this.errMsg = '';
-                window.jm.mng.moType.getAllConfigs().then((resp)=>{
+                moType.getAllConfigs().then((resp)=>{
                     if(resp.code != 0) {
                         self.$Message.success(resp.msg);
                         return;
@@ -67,7 +70,7 @@
                         return;
                     }
 
-                    window.jm.mng.moType.getConfigByMonitorKey(self.item.id).then((resp)=>{
+                    moType.getConfigByMonitorKey(self.item.id).then((resp)=>{
                         if(resp.code != 0) {
                             self.$Message.success(resp.msg);
                             return;
@@ -133,7 +136,7 @@
                 }
                 let self = this;
 
-                window.jm.mng.moType.updateMonitorTypes(this.item.id,this.adds,this.dels).then((resp)=>{
+                moType.updateMonitorTypes(this.item.id,this.adds,this.dels).then((resp)=>{
                     if(resp.code == 0) {
                         if(this.adds.length > 0) {
                             this.adds.splice(0,this.adds.length);
@@ -172,7 +175,7 @@
         mounted () {
             this.$el.style.minHeight=(document.body.clientHeight-67)+'px';
             let self = this;
-            window.jm.rpc.addActListener(this.item.id,this.refresh);
+            rpc.addActListener(this.item.id,this.refresh);
             this.refresh();
 
             let menus = [{name:"Refresh",label:"Refresh",icon:"ios-cog",call:self.refresh},
@@ -184,7 +187,7 @@
         },
 
         beforeDestroy() {
-            window.jm.rpc.removeActListener(this.item.id);
+            rpc.removeActListener(this.item.id);
         },
 
     }

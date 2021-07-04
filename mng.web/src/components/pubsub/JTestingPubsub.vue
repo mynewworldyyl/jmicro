@@ -57,6 +57,9 @@
 </template>
 
 <script>
+    import ps from "@/rpc/pubsub"
+    import rpc from "@/rpc/rpcbase"
+    import i18n from "@/rpcservice/i18n"
 
     const cid="testingPubsub";
 
@@ -84,7 +87,7 @@
         methods: {
 
             getMsg(key) {
-                return  window.jm.mng.i18n.get(key);
+                return  i18n.get(key);
             },
 
             sendResultCallback(msg) {
@@ -105,7 +108,7 @@
 
                 let self = this;
                 if(this.needSendResult) {
-                    window.jm.ps.unsubscribe(this.sendResultTopic,this.sendResultCallback)
+                    ps.unsubscribe(this.sendResultTopic,this.sendResultCallback)
                         .then((succ)=>{
                             if(succ==true) {
                                 self.needSendResult=false;
@@ -114,7 +117,7 @@
                             }
                         });
                 } else {
-                    window.jm.ps.subscribe(this.sendResultTopic,{},this.sendResultCallback)
+                    ps.subscribe(this.sendResultTopic,{},this.sendResultCallback)
                         .then((rst)=>{
                             if(rst >= 0) {
                                 self.needSendResult=true;
@@ -153,7 +156,7 @@
                     }
                 }
 
-                window.jm.ps.publishString(this.sendTopic,this.content,true,false,cb,{})
+                ps.publishString(this.sendTopic,this.content,true,false,cb,{})
                     .then(rst=>{
                         console.log(rst);
                     }).catch(err=>{
@@ -177,7 +180,7 @@
                 }
                 let self = this;
                 if(this.subState) {
-                    window.jm.ps.unsubscribe(this.subTopic,this.msgCallback)
+                    ps.unsubscribe(this.subTopic,this.msgCallback)
                         .then((succ)=>{
                         if(succ==true) {
                             self.subState=false;
@@ -186,7 +189,7 @@
                         }
                     });
                 }else {
-                    window.jm.ps.subscribe(this.subTopic,{},this.msgCallback)
+                    ps.subscribe(this.subTopic,{},this.msgCallback)
                         .then((rst)=>{
                         if(rst >= 0) {
                             self.subState=true;
@@ -200,13 +203,13 @@
 
         mounted () {
             let self = this;
-            self.isLogin = window.jm.rpc.isLogin();
-            window.jm.rpc.addActListener(cid,()=>{
-                self.isLogin = window.jm.rpc.isLogin();
+            self.isLogin = rpc.isLogin();
+            rpc.addActListener(cid,()=>{
+                self.isLogin = rpc.isLogin();
             });
 
             let ec = function() {
-                window.jm.rpc.removeActListener(cid);
+                rpc.removeActListener(cid);
                 window.jm.vue.$off('editorClosed',ec);
             }
 

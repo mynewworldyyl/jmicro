@@ -99,6 +99,9 @@
 
 <script>
 
+    import logSrv from "@/rpcservice/logSrv"
+    import comm from "@/rpcservice/comm"
+
     export default {
         name: 'JLinkDetailView',
         components: {
@@ -139,7 +142,7 @@
                 self.curMi = null;
             });
 
-            window.jm.mng.comm.getDicts(['logKey2Val','mtKey2Val'],'').then((dicts)=>{
+            comm.getDicts(['logKey2Val','mtKey2Val'],'').then((dicts)=>{
                 if(dicts) {
                     for(let k in dicts) {
                         let k2v = dicts[k];
@@ -180,7 +183,7 @@
                     return;
                 }
                 let self = this;
-                window.jm.mng.logSrv.getByLinkId(this.linkId).then((resp)=>{
+                logSrv.getByLinkId(this.linkId).then((resp)=>{
                     if(resp.code != 0) {
                         self.$Message.success(resp.msg);
                         return;

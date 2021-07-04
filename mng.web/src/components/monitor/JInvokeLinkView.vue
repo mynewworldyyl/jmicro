@@ -189,6 +189,9 @@
     import treeTable from '../treetable/LinkLogTreeTable.vue'
     import JLinkDetailView from './JLinkDetailView.vue'
 
+    import logSrv from "@/rpcservice/logSrv"
+    import rpc from "@/rpc/rpcbase"
+    
     const cid = 'invokeLinkView';
 
     export default {
@@ -259,7 +262,7 @@
                 this.$emit("refreshLinkItemList");
                 this.logList = [];
 
-                window.jm.mng.logSrv.count(params).then((resp)=>{
+                logSrv.count(params).then((resp)=>{
                     if(resp.code != 0) {
                         self.$Message.success(resp.msg);
                         return;
@@ -275,12 +278,12 @@
 
             doQuery() {
                 let self = this;
-                this.isLogin = window.jm.rpc.isLogin();
+                this.isLogin = rpc.isLogin();
                 if(!this.isLogin) {
                     return;
                 }
                 let params = this.getQueryConditions();
-                window.jm.mng.logSrv.query(params,this.pageSize,this.curPage-1).then((resp)=>{
+                logSrv.query(params,this.pageSize,this.curPage-1).then((resp)=>{
                     if(resp.code != 0) {
                         self.$Message.success(resp.msg);
                         return;
@@ -346,12 +349,12 @@
 
             refreshDict() {
                 let self = this;
-                self.isLogin = window.jm.rpc.isLogin();
+                self.isLogin = rpc.isLogin();
                 if(!this.isLogin) {
                     self.selOptions = [];
                     return;
                 }
-                window.jm.mng.logSrv.queryDict().then((resp)=>{
+                logSrv.queryDict().then((resp)=>{
                     if(resp.code != 0) {
                         self.$Message.success(resp.msg);
                         return;
@@ -367,7 +370,7 @@
         mounted () {
             let self = this;
             this.$el.style.minHeight=(document.body.clientHeight-67)+'px';
-            window.jm.rpc.addActListener(cid,this.refreshDict);
+            rpc.addActListener(cid,this.refreshDict);
 
             window.jm.vue.$emit("editorOpen",
                 {"editorId":cid,
@@ -377,7 +380,7 @@
                 });
 
             let ec = function() {
-                window.jm.rpc.removeActListener(cid);
+                rpc.removeActListener(cid);
                 window.jm.vue.$off('editorClosed',ec);
             }
 
@@ -387,7 +390,7 @@
         },
 
         beforeDestroy() {
-            window.jm.rpc.removeActListener(cid);
+            rpc.removeActListener(cid);
         },
 
     }

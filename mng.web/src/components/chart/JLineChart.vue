@@ -27,6 +27,9 @@
 <script>
 
     import * as echarts from 'echarts';
+    import statis from "@/rpcservice/statis";
+    import config from "@/rpc/config";
+    
     //import TreeNode from "../service/JServiceList.vue"
 
     //let type2Labels = null;
@@ -55,11 +58,11 @@ export default {
         this.cache.chart.setOption(this.option);
 
         let self = this;
-        window.jm.mng.statis.getType2Labels((data,err)=>{
+        statis.getType2Labels((data,err)=>{
             if(!err) {
                 self.type2Labels = data;
-                self.allTypes = window.jm.mng.statis.getTypes();
-                self.allLabels = window.jm.mng.statis.getLabels();
+                self.allTypes = statis.getTypes();
+                self.allLabels = statis.getLabels();
 
                 self.indexArr = [];
                 for(let i = 0; i < this.types.length; i++) {
@@ -90,9 +93,9 @@ export default {
 
         let dataKey = "JLinechart_"+this.charContainerId;
 
-        let cacheData = window.jm.mng.cache[dataKey];
+        let cacheData = config.cache[dataKey];
         if(!cacheData) {
-            cacheData = window.jm.mng.cache[dataKey] = {
+            cacheData = config.cache[dataKey] = {
                 chart:null,
                 data: ds,
                 now : new Date().getTime(),
@@ -219,7 +222,7 @@ export default {
                 idKey = idKey.substring(8);
             }
             if(self.cache.started) {
-                window.jm.mng.statis.unsubscribeData(idKey,2,this.callback)
+                statis.unsubscribeData(idKey,2,this.callback)
                     .then(rst =>{
                     self.$Message.success(rst);
                     self.cache.started = false;
@@ -229,7 +232,7 @@ export default {
                     self.cache.started = true;
                 });
             } else {
-                window.jm.mng.statis.subscribeData(idKey,2,this.callback)
+                statis.subscribeData(idKey,2,this.callback)
                     .then(rst =>{
                         self.$Message.success(rst);
                         self.cache.started = true;

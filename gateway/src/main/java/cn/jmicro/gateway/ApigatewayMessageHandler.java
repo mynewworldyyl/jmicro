@@ -153,7 +153,7 @@ public class ApigatewayMessageHandler implements IMessageHandler{
 	}
 
 	private void respError(ISession session, Message msg,int code,String errStr) {
-		
+		logger.error(errStr);
 		msg.setType((byte)(msg.getType()+1));
 		msg.setError(true);//响应错误响应消息
 		

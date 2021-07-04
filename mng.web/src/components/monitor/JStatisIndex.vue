@@ -37,6 +37,7 @@
 
     import JMonitorTypeSelector from './JMonitorTypeSelector.vue'
 
+
     export default {
         name: 'JStatisIndex',
         props: ['si','readonly'],

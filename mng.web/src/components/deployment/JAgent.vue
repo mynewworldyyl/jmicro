@@ -29,6 +29,9 @@
 
 <script>
 
+    import choy from "@/rpcservice/choy"
+    import rpc from "@/rpc/rpcbase"
+
     const cid = 'agent';
 
     export default {
@@ -42,36 +45,36 @@
         },
         methods: {
 
-            refresh(){
+           async refresh(){
                 let self = this;
-                this.isLogin = window.jm.rpc.isLogin();
+                this.isLogin = rpc.isLogin();
                 if(!this.isLogin) {
                     this.agentList =[];
                     return;
                 }
-                window.jm.mng.choy.getAgentList(this.showAll).then((resp)=>{
-                    if(resp.code != 0 && !resp.data || resp.data.length == 0 ) {
-                        self.$Message.success(resp.msg || "no data");
-                        this.agentList =[];
-                        return;
-                    }
 
-                    this.agentList =[];
-                    for(let i = 0; i < resp.data.length; i++) {
-                        let e = resp.data[i];
-                        let d = new Date(e.agentInfo.startTime);
-                        e.agentInfo.startTime0 = d.format("yyyy-MM-dd hh:mm:ss");
-                        e.agentInfo.continue = d.toDecDay();
-                        this.agentList.push(e);
-                    }
-                }).catch((err)=>{
-                    window.console.log(err);
-                });
-            },
+                 let resp = await choy.getAgentList(this.showAll);
 
-            privateAgent(agentId) {
+               if(resp.code != 0 && !resp.data || resp.data.length == 0 ) {
+                   self.$Message.success(resp.msg || "no data");
+                   this.agentList =[];
+                   return;
+               }
+
+               this.agentList =[];
+               for(let i = 0; i < resp.data.length; i++) {
+                   let e = resp.data[i];
+                   let d = new Date(e.agentInfo.startTime);
+                   e.agentInfo.startTime0 = d.format("yyyy-MM-dd hh:mm:ss");
+                   e.agentInfo.continue = d.toDecDay();
+                   this.agentList.push(e);
+               }
+
+           },
+
+             privateAgent(agentId) {
                 let self = this;
-                window.jm.mng.choy.changeAgentState(agentId).then((resp)=>{
+                 choy.changeAgentState(agentId).then((resp)=>{
                     if(resp.code == 0) {
                         this.refresh();
                     } else {
@@ -85,7 +88,7 @@
 
             stopAllInstance(agentId) {
                 let self = this;
-                window.jm.mng.choy.stopAllInstance(agentId).then((resp)=>{
+                choy.stopAllInstance(agentId).then((resp)=>{
                     if(resp.code != 0) {
                         self.$Message.success(resp.msg);
                     }else {
@@ -98,7 +101,7 @@
             }
             ,clearResourceCache(agentId) {
                 let self = this;
-                window.jm.mng.choy.clearResourceCache(agentId).then((resp)=>{
+                choy.clearResourceCache(agentId).then((resp)=>{
                     if(resp.code != 0) {
                         self.$Message.success(resp.msg);
                     }else {
@@ -114,7 +117,7 @@
 
         mounted () {
             this.$el.style.minHeight=(document.body.clientHeight-67)+'px';
-            window.jm.rpc.addActListener(cid,this.refresh);
+            rpc.addActListener(cid,this.refresh);
             let self = this;
             window.jm.vue.$emit("editorOpen",
                 {"editorId":cid,
@@ -124,7 +127,7 @@
             });
 
             let ec = function() {
-                window.jm.rpc.removeActListener(cid);
+                rpc.removeActListener(cid);
                 window.jm.vue.$off('editorClosed',ec);
             }
 

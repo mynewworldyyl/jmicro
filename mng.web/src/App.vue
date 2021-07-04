@@ -172,6 +172,8 @@
     import JThreadPoolMonitorList from './components/monitor/JThreadPoolMonitorList.vue'
     import JLogList  from './components/log/JLogList.vue'
     import JUserProfileList from "./components/security/JUserProfileList";
+    import rpc from "@/rpc/rpcbase";
+    import config from "@/rpc/config";
 
     let cache = null;
 
@@ -182,15 +184,15 @@ const  cid = 'jmicroApp';
 export default {
     name: 'App',
     mounted() {
-        //window.jm.rpc.config.ip='';
-        window.jm.config.sslEnable = false;
-        window.jm.rpc.init(window.jm.config.ip,window.jm.config.port);
+        //rpc.config.ip='';
+        config.sslEnable = false;
+        rpc.init(config.ip,config.port);
         //jm.mng.init();
         let self = this;
 
-        window.jm.rpc.addActListener(cid,()=>{
-            self.isLogin = window.jm.rpc.isLogin();
-            self.isAdmin = window.jm.rpc.isAdmin();
+        rpc.addActListener(cid,()=>{
+            self.isLogin = rpc.isLogin();
+            self.isAdmin = rpc.isAdmin();
             if(self.activeEditorId) {
                 self.selectMenu(self.activeEditorId);
             }
@@ -270,11 +272,11 @@ export default {
 
     data() {
 
-        if(!window.jm.mng.cache) {
-             window.jm.mng.cache = {}
+        if(!config.cache) {
+             config.cache = {}
         }
 
-        cache = window.jm.mng.cache;
+        cache = config.cache;
 
         if(!cache.curSelectKey) {
             cache.curSelectKey = 'service';

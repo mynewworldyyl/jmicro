@@ -721,7 +721,7 @@ public class SimpleObjectFactory implements IObjectFactory {
 						logger.error("", e);
 						LG.log(MC.LOG_ERROR,SimpleObjectFactory.class , "", e);
 						EnterMain.waitTime(5000);
-						System.exit(0);
+						//System.exit(0);
 					}
 					 
 					 LG.log(MC.LOG_INFO, SimpleObjectFactory.class
@@ -739,7 +739,7 @@ public class SimpleObjectFactory implements IObjectFactory {
 					 LG.log(MC.LOG_ERROR, SimpleObjectFactory.class
 							 , "Lost master and exit: "+JsonUtils.getIns().toJson(pi));
 					 MT.nonRpcEvent(Config.getInstanceName(), MC.MT_SERVER_STOP);
-					 EnterMain.waitTime(3000);
+					 EnterMain.waitTime(10000);
 					 
 					 logger.error(Config.getInstanceName() + " lost master, need restart server!");
 					 System.exit(0);

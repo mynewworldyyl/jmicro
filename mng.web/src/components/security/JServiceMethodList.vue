@@ -188,9 +188,12 @@
 
 <script>
 
+    import rpc from "@/rpc/rpcbase"
+    import cons from "@/rpc/constants"
+
     const cid = 'serviceMethodList';
     const sn = 'cn.jmicro.security.api.IServiceMethodListService';
-    const ns = window.jm.Constants.NS_SECURITY;
+    const ns = cons.NS_SECURITY;
     const v = '0.0.1';
 
     export default {
@@ -245,7 +248,7 @@
 
             refreshAuthList(){
                 let self = this;
-                window.jm.rpc.callRpcWithParams(sn, ns, v, 'getAuthByServiceMethodCode', [this.cm.haCode])
+                rpc.callRpcWithParams(sn, ns, v, 'getAuthByServiceMethodCode', [this.cm.haCode])
                     .then((resp) => {
                         if (resp.code != 0) {
                             this.auth.errMsg = resp.msg;
@@ -272,7 +275,7 @@
                 }
                 this.auth.errMsg = '';
                 let self = this;
-                window.jm.rpc.callRpcWithParams(sn, ns, v, 'addAuthByClientId', [this.cm.haCode,this.auth.clientId])
+                rpc.callRpcWithParams(sn, ns, v, 'addAuthByClientId', [this.cm.haCode,this.auth.clientId])
                     .then((resp) => {
                         if (resp.code != 0) {
                             this.auth.errMsg = resp.msg;
@@ -292,7 +295,7 @@
                 }
                 this.auth.errMsg = '';
                 let self = this;
-                window.jm.rpc.callRpcWithParams(sn, ns, v, 'addAuthByAccount', [this.cm.haCode,this.auth.accountName])
+                rpc.callRpcWithParams(sn, ns, v, 'addAuthByAccount', [this.cm.haCode,this.auth.accountName])
                     .then((resp) => {
                         if (resp.code != 0) {
                             this.auth.errMsg = resp.msg;
@@ -313,7 +316,7 @@
 
             descAuthOk() {
                 let self = this;
-                window.jm.rpc.callRpcWithParams(sn, ns, v, 'updateAuthStatus',
+                rpc.callRpcWithParams(sn, ns, v, 'updateAuthStatus',
                     [this.auth.auth.id,this.auth.status,this.auth.desc])
                     .then((resp) => {
                         if (resp.code != 0) {
@@ -404,10 +407,10 @@
 
             refresh() {
                 let self = this;
-                this.isLogin = window.jm.rpc.isLogin();
-                this.act = window.jm.rpc.actInfo;
+                this.isLogin = rpc.isLogin();
+                this.act = rpc.actInfo;
                 let qry = this.queryParams;
-                window.jm.rpc.callRpcWithParams(sn, ns, v, 'getMethodList', [qry,this.pageSize,this.curPage])
+                rpc.callRpcWithParams(sn, ns, v, 'getMethodList', [qry,this.pageSize,this.curPage])
                     .then((resp) => {
                         if (resp.code != 0) {
                             self.$Message.success(resp.msg);
@@ -429,7 +432,7 @@
         mounted () {
             this.$el.style.minHeight=(document.body.clientHeight-67)+'px';
             //has admin permission, only control the show of the button
-            window.jm.rpc.addActListener(cid,this.refresh);
+            rpc.addActListener(cid,this.refresh);
             let self = this;
             window.jm.vue.$emit("editorOpen",
                 {"editorId":cid,
@@ -437,7 +440,7 @@
                         {name:"Refresh",label:"Refresh",icon:"ios-cog",call:self.refresh}]
                 });
             let ec = function() {
-                window.jm.rpc.removeActListener(cid);
+                rpc.removeActListener(cid);
                 window.jm.vue.$off('editorClosed',ec);
             }
 

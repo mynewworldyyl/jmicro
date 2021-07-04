@@ -17,6 +17,10 @@
 
     import JMonitorEditor from "./JMonitorEditor.vue"
 
+    import moType from "@/rpcservice/moType"
+    import rpc from "@/rpc/rpcbase"
+    import config from "@/rpc/config"
+    
     export default {
         name: 'JMonitorView',
         components: {
@@ -24,9 +28,9 @@
         },
 
         data () {
-            let d = window.jm.mng.cache[this.dataId];
+            let d = config.cache[this.dataId];
             if( !d) {
-                d = window.jm.mng.cache[this.dataId] = {
+                d = config.cache[this.dataId] = {
                      items:[],
                      selectNode:null,
                 };

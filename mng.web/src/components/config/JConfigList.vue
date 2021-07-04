@@ -1,4 +1,4 @@
-<template>
+cn.jmicro.api.mng.IConfi<template>
   <div class="JLeftView">
       <div class="toolBar">
           <Dropdown @on-click="menuSelect">
@@ -20,6 +20,10 @@
 
     import TreeNode from  "../common/JTreeNode.js"
 
+    import rpc from "@/rpc/rpcbase"
+    import conf from "@/rpcservice/conf"
+    import jmconfig from "@/rpcservice/jm"
+    
     const GROUP = 'config';
 
     const cid = 'JConfigList';
@@ -30,15 +34,15 @@
         mounted(){
 
             let self = this;
-            window.jm.rpc.addActListener(cid,()=>{
-                self.isLogin = window.jm.rpc.isLogin();
+            rpc.addActListener(cid,()=>{
+                self.isLogin = rpc.isLogin();
                 if( self.isLogin) {
                     self.refresh();
                 }
             });
 
             let ec = function() {
-                window.jm.rpc.removeActListener(cid);
+                rpc.removeActListener(cid);
                 window.jm.vue.$off('editorClosed',ec);
             }
 
@@ -51,16 +55,16 @@
                 return;
             }
             window.jm.vue.$off('editorClosed',this.editorRemove);
-            window.jm.rpc.removeActListener(cid);
+            rpc.removeActListener(cid);
         },
 
         methods:{
 
             refresh() {
-                this.isLogin = window.jm.rpc.isLogin();
+                this.isLogin = rpc.isLogin();
                 if(this.isLogin) {
                     let self = this;
-                    this.__getChildren(null,window.jm.mng.CONFIG_ROOT,function(data){
+                    this.__getChildren(null,jmconfig.ROOT,function(data){
                         self.configs = data;
                     });
                 }
@@ -71,7 +75,7 @@
             },
 
             loadChildren(item,cb){
-                this.__getCJConfigListhildren(item,item.path,cb);
+                this.__getChildren(item,item.path,cb);
             },
 
             __getChildren(parent,path,cb) {
@@ -101,7 +105,7 @@
                     return r;
                 }
 
-                window.jm.mng.conf.getChildren(path,true)
+                conf.getChildren(path,true)
                     .then(function(resp){
                         if(!resp || resp.code != 0 || !resp.data) {
                             window.console.log(resp.msg);
@@ -140,7 +144,7 @@
 
             ,menuSelect(name){
                 if(name == 'refresh') {
-                    this.__getChildren(null,window.jm.mng.CONFIG_ROOT,(data)=>{
+                    this.__getChildren(null,conf.IG_ROOT,(data)=>{
                         if(data) {
                             this.configs = data;
                         }else {

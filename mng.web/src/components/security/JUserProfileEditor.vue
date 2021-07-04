@@ -25,7 +25,9 @@
 </template>
 
 <script>
-
+    import rpc from "@/rpc/rpcbase"
+    import profile from "@/rpcservice/profile"
+    
     const cid = 'userProfile';
 
     export default {
@@ -53,14 +55,14 @@
 
             refresh(){
                 let self = this;
-                this.isLogin = window.jm.rpc.isLogin();
+                this.isLogin = rpc.isLogin();
                 if(!self.isLogin) {
                     self.$Message.info("Not login");
                     self.item.val = [];
                     return;
                 }
 
-                window.jm.mng.profile.getModuleKvs(this.item.id)
+                profile.getModuleKvs(this.item.id)
                     .then((resp) => {
                         if(resp.code == 0) {
                             self.item.val = resp.data;
@@ -86,7 +88,7 @@
                 this.$refs.modifyDialog.buttonLoading = false;
 
                 let self = this;
-                window.jm.mng.profile.updateKv(this.item.id,this.modifyProfile)
+                profile.updateKv(this.item.id,this.modifyProfile)
                     .then((resp,errmsg)=>{
                         if(resp.data) {
                             self.$Message.success("Update successfully")
@@ -101,7 +103,7 @@
 
         mounted () {
             this.$el.style.minHeight=(document.body.clientHeight-67)+'px';
-            window.jm.rpc.addActListener(cid,this.refresh);
+            rpc.addActListener(cid,this.refresh);
             let self = this;
             window.jm.vue.$emit("editorOpen",
                 {"editorId":cid,
@@ -110,7 +112,7 @@
                 });
 
             let ec = function() {
-                window.jm.rpc.removeActListener(cid);
+                rpc.removeActListener(cid);
                 window.jm.vue.$off('editorClosed',ec);
             }
             window.jm.vue.$on('editorClosed',ec);
