@@ -76,7 +76,7 @@ public class VoterPerson {
 		}
 		*/
 		
-		this.op = of.get(IDataOperator.class);
+		this.op = of.get(IDataOperator.class,false);
 		//this.cfg = of.get(Config.class);
 		//this.idServer = of.get(ComponentIdServer.class);
 		//this.listener = listener;
@@ -120,7 +120,7 @@ public class VoterPerson {
 		op.createNodeOrSetData(nodePath, "", IDataOperator.EPHEMERAL_SEQUENTIAL);
 		//this.seq = Long.parseLong(getSeq(op.getData(nodePath)));
 		
-		op.addChildrenListener(this.dir, (type,parent,child,data)->{
+		op.addChildrenListener(this.dir, (type,parent,child)->{
 			
 			if(type == IListener.REMOVE) {
 				long dm = getSeq(child);

@@ -6,7 +6,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.Test;
 
 import cn.jmicro.api.JMicro;
-import cn.jmicro.api.pubsub.PSData;
+import cn.jmicro.api.pubsub.PSDataJRso;
 import cn.jmicro.api.pubsub.PubSubManager;
 import cn.jmicro.test.JMicroBaseTestCase;
 
@@ -26,7 +26,7 @@ public class TestBreakerSubscriberImpl extends JMicroBaseTestCase{
 				try {
 					//Thread.sleep(2000);
 					Thread.sleep(ran.nextInt(100));
-					psm.publish(TOPIC, "test pubsub server id: "+id.getAndIncrement(),PSData.FLAG_PUBSUB,null);
+					psm.publish(TOPIC, "test pubsub server id: "+id.getAndIncrement(),PSDataJRso.FLAG_PUBSUB,null);
 				} catch (Throwable e) {
 					System.out.println(e.getMessage());;
 				}

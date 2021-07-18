@@ -482,9 +482,9 @@
                         window.console.log(err);
                     });
                 } else {
-                    rpc.callRpcWithParams(logSrv.sn,
+                    rpc.call(rpc.creq(logSrv.sn,
                         logSrv.ns, logSrv.v, 'queryFlatLog',
-                        [params,this.pageSize,this.curPage-1])
+                        [params,this.pageSize,this.curPage-1]))
                     .then((resp)=>{
                         if(resp.code != 0) {
                             self.$Message.success(resp.msg);

@@ -18,7 +18,7 @@ package cn.jmicro.api.exception;
 
 import java.util.Set;
 
-import cn.jmicro.api.registry.ServiceItem;
+import cn.jmicro.api.registry.ServiceItemJRso;
 import cn.jmicro.common.CommonException;
 /**
  * 
@@ -29,29 +29,29 @@ public class BreakerException extends CommonException {
 	
 	private static final long serialVersionUID = 1983756321377501133L;
 	
-	private Set<ServiceItem> sis;
+	private Set<ServiceItemJRso> sis;
 	
-	public BreakerException(String cause,  Set<ServiceItem>  si){
+	public BreakerException(String cause,  Set<ServiceItemJRso>  si){
 		super(cause);
 		this.sis=si;
 	}
 	
-	public BreakerException(String cause,Throwable exp,  Set<ServiceItem>  si){
+	public BreakerException(String cause,Throwable exp,  Set<ServiceItemJRso>  si){
 		super(cause,exp);
 		this.sis = si;
 	}
 	
-	public BreakerException(int code,String cause,  Set<ServiceItem>  si){
+	public BreakerException(int code,String cause,  Set<ServiceItemJRso>  si){
 		super(code,cause,null);
 		this.sis=si;
 	}
 	
-	public BreakerException(int code,String cause,Throwable exp,  Set<ServiceItem>  si){
+	public BreakerException(int code,String cause,Throwable exp,  Set<ServiceItemJRso>  si){
 		super(code,cause,exp);
 		this.sis=si;
 	}
 
-	public Set<ServiceItem> getSis() {
+	public Set<ServiceItemJRso> getSis() {
 		return sis;
 	}
 	

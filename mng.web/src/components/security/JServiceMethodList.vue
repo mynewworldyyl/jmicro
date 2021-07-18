@@ -2,7 +2,7 @@
     <div class="JServiceMethodList">
 
         <table v-if="isLogin  && keyList && keyList.length > 0" class="configItemTalbe" width="99%">
-            <thead><tr><td style="width:300px">{{'Service'|i18n}}</td><td>{{'Method'|i18n}}</td>
+            <thead><tr><td style="width:500px">{{'Service'|i18n}}</td><td>{{'Method'|i18n}}</td>
                 <!--<td style="width:150px">{{'Hash'|i18n}}</td>-->
                 <td style="width:70px">{{'ClientId'|i18n}}</td>
                 <td>{{'Namespace'|i18n}}</td><td style="width:70px">{{'Version'|i18n}}</td>
@@ -51,7 +51,7 @@
                 <a  @click="okAuthByClientId()"> {{'OK' | i18n}} </a>
                 <a  @click="cancelAuth()"> {{'Cancel' | i18n}} </a>
             </div>
-            <table class="authTable" v-if="cm.authList">
+            <table v-if="cm.authList">
                 <thead><tr><td>{{'Hash'|i18n}}</td><td>{{'ClientId'|i18n}}</td><td>{{'Status'|i18n}}</td>
                     <td>{{'actName'|i18n}}</td>
                     <td>{{'CreatedTime'|i18n}}</td> <td>{{'UpdatedTime'|i18n}}</td>
@@ -60,7 +60,7 @@
                     <td>{{'Operation'|i18n}}</td></tr>
                 </thead>
                 <tr v-for="a in cm.authList" :key="a.id">
-                    <td>{{a.haCode}}</td><td>{{a.clientId}}</td><td>{{authStatus[a.status]}}</td><td>{{a.actName || '*'}}</td>
+                    <td>{{a.haCode}}</td><td>{{a.forId}}</td><td>{{authStatus[a.status]}}</td><td>{{a.actName || '*'}}</td>
                     <td>{{a.createdTime|formatDate(1)}}</td><td>{{a.updatedTime|formatDate(1)}}</td>
                     <td>{{a.createdBy}}</td><td>{{a.updatedBy}}</td><td v-html="a.remark"></td>
                     <td><a v-if="a.status == 3"   @click="authAct(a,4)"> {{'Revoke' | i18n}} </a>
@@ -73,7 +73,7 @@
 
         <Drawer  v-if="isLogin"  v-model="detailDrawer.drawerStatus" :closable="false" placement="right"
                  :transfer="true" :draggable="true" :scrollable="true" width="50" @close="closeDetailDrawer()">
-            <table class="detailTable">
+            <table class="detailTable" width="95%">
                 <tr>
                     <td>{{"Online"|i18n}}</td><td>{{cm.online}}</td>
                     <td>{{"PerType"|i18n}}</td><td>{{cm.perType}}</td>
@@ -192,7 +192,7 @@
     import cons from "@/rpc/constants"
 
     const cid = 'serviceMethodList';
-    const sn = 'cn.jmicro.security.api.IServiceMethodListService';
+    const sn = 'cn.jmicro.security.api.IServiceMethodListServiceJMSrv';
     const ns = cons.NS_SECURITY;
     const v = '0.0.1';
 
@@ -355,6 +355,8 @@
             openAuthDrawer(cm) {
                 this.cm = cm;
                 this.resetAuthData();
+                this.refreshAuthList();
+
                 this.errMsg = "";
                 this.authClientDrawer.drawerStatus = true;
                 this.authClientDrawer.drawerBtnStyle.zindex = 1000;
@@ -374,6 +376,7 @@
 
             doQueryResource(){
                 //let qry = this.queryParams;
+                this.curPage = 1;
                 this.refresh();
             },
 
@@ -475,4 +478,5 @@
     .detailTable tr td{
         padding-right:10px;
     }
+
 </style>

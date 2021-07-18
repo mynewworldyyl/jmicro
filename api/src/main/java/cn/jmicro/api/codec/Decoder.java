@@ -28,8 +28,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import cn.jmicro.api.gateway.ApiRequest;
-import cn.jmicro.api.gateway.ApiResponse;
+import cn.jmicro.api.gateway.ApiRequestJRso;
+import cn.jmicro.api.gateway.ApiResponseJRso;
 import cn.jmicro.api.net.Message;
 import cn.jmicro.common.CommonException;
 import cn.jmicro.common.Constants;
@@ -117,8 +117,8 @@ public class Decoder {
 		registType(Message.class,type--);
 		//registType(RpcRequest.class,type--);
 		//registType(RpcResponse.class,type--);
-		registType(ApiRequest.class,type--);
-		registType(ApiResponse.class,type--);
+		registType(ApiRequestJRso.class,type--);
+		registType(ApiResponseJRso.class,type--);
 		//registType(MRpcItem.class,type--);
 		registType(java.util.Date.class,type--);
 		registType(java.sql.Date.class,type--);

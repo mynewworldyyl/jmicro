@@ -12,39 +12,39 @@ import org.slf4j.LoggerFactory;
 
 import cn.jmicro.api.Holder;
 import cn.jmicro.api.IListener;
-import cn.jmicro.api.Resp;
+import cn.jmicro.api.RespJRso;
 import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Inject;
 import cn.jmicro.api.annotation.Reference;
 import cn.jmicro.api.annotation.SMethod;
 import cn.jmicro.api.annotation.Service;
-import cn.jmicro.api.choreography.ProcessInfo;
+import cn.jmicro.api.choreography.ProcessInfoJRso;
 import cn.jmicro.api.idgenerator.ComponentIdServer;
 import cn.jmicro.api.mng.ProcessInstanceManager;
 import cn.jmicro.api.monitor.LG;
 import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.objectfactory.AbstractClientServiceProxyHolder;
-import cn.jmicro.api.tx.ITransactionResource;
-import cn.jmicro.api.tx.ITransationService;
-import cn.jmicro.api.tx.TxConfig;
+import cn.jmicro.api.tx.ITransactionResourceJMSrv;
+import cn.jmicro.api.tx.ITransationServiceJMSrv;
+import cn.jmicro.api.tx.TxConfigJRso;
 import cn.jmicro.api.tx.TxConstants;
-import cn.jmicro.api.tx.TxInfo;
-import cn.jmicro.api.tx.genclient.ITransactionResource$JMAsyncClient;
+import cn.jmicro.api.tx.TxInfoJRso;
+import cn.jmicro.api.tx.genclient.ITransactionResourceJMSrv$JMAsyncClient;
 import cn.jmicro.api.utils.TimeUtils;
 
 @Component
 @Service(version="0.0.1",external=false,timeout=10000,debugMode=1,showFront=true,
 clientId=-1,logLevel=MC.LOG_DEBUG)
-public class TransationServiceImpl implements ITransationService{
+public class TransationServiceImpl implements ITransationServiceJMSrv{
 
 	private static final Class<?> TAG = TransationServiceImpl.class;
 	
 	private final static Logger logger = LoggerFactory.getLogger(TransationServiceImpl.class);
 	
 	@Reference(namespace="*", version="*", type="ins",required=false,changeListener="resourceServiceChangeListener")
-	private Set<ITransactionResource$JMAsyncClient> resourceServices = Collections.synchronizedSet(new HashSet<>());
+	private Set<ITransactionResourceJMSrv$JMAsyncClient> resourceServices = Collections.synchronizedSet(new HashSet<>());
 	
-	private Map<Integer,ITransactionResource$JMAsyncClient> rsMap = Collections.synchronizedMap(new HashMap<>());
+	private Map<Integer,ITransactionResourceJMSrv$JMAsyncClient> rsMap = Collections.synchronizedMap(new HashMap<>());
 	
 	//private Object resLocker = new Object();
 	
@@ -59,14 +59,14 @@ public class TransationServiceImpl implements ITransationService{
 	private ProcessInstanceManager insMng;
 	
 	@Inject
-	private ProcessInfo pi;
+	private ProcessInfoJRso pi;
 	
 	private Object syno = new Object();
 	
 	public void ready() {
 		new Thread(this::check).start();
 		if(!resourceServices.isEmpty()) {
-			for(ITransactionResource$JMAsyncClient r : this.resourceServices) {
+			for(ITransactionResourceJMSrv$JMAsyncClient r : this.resourceServices) {
 				rsMap.put(r.getItem().getInsId(), r);
 			}
 		}
@@ -74,7 +74,7 @@ public class TransationServiceImpl implements ITransationService{
 	
 	public void resourceServiceChangeListener(AbstractClientServiceProxyHolder po,int opType) {
 		if(opType == IListener.ADD) {
-			rsMap.put(po.getInsId(), (ITransactionResource$JMAsyncClient)po);
+			rsMap.put(po.getInsId(), (ITransactionResourceJMSrv$JMAsyncClient)po);
 		}else if(opType == IListener.REMOVE) {
 			rsMap.remove(po.getInsId());
 		}
@@ -168,7 +168,7 @@ public class TransationServiceImpl implements ITransationService{
 					cd.countDown();
 					continue;
 				}
-				ITransactionResource$JMAsyncClient client = this.rsMap.get(v.pid);
+				ITransactionResourceJMSrv$JMAsyncClient client = this.rsMap.get(v.pid);
 				if(client != null) {
 					client.canCommitJMAsync(g.txId)
 					.success((rst,cxt)->{
@@ -197,7 +197,7 @@ public class TransationServiceImpl implements ITransationService{
 		final boolean succ = suc.get();
 		
 		for(TxVoter v : g.voters.values()) {
-			ITransactionResource$JMAsyncClient client = this.rsMap.get(v.pid);
+			ITransactionResourceJMSrv$JMAsyncClient client = this.rsMap.get(v.pid);
 			if(client != null) {
 				if(LG.isLoggable(MC.LOG_DEBUG, null)) {
 					LG.log(MC.LOG_DEBUG, TAG, "Notify transaction "+g.txId+" client pid:" +v.pid+",commit: " + succ+",insName: "+v.insName);
@@ -208,29 +208,29 @@ public class TransationServiceImpl implements ITransationService{
 						LG.log(MC.LOG_INFO, TAG, "Commit success "+g.txId+" client pid:" +v.pid+",commit: " + succ+",insName: "+v.insName);
 					}
 				}).fail((code,msg,cxt)->{
-					LG.log(MC.LOG_ERROR, ITransactionResource.STR_TAG, "fail to commit txid:" + g.txId +", commit: "+ succ+",insName: "+v.insName+",code:"+ code +",insId:"+v.pid+",msg:"+msg);
+					LG.log(MC.LOG_ERROR, ITransactionResourceJMSrv.STR_TAG, "fail to commit txid:" + g.txId +", commit: "+ succ+",insName: "+v.insName+",code:"+ code +",insId:"+v.pid+",msg:"+msg);
 				});
 			} else {
-				LG.log(MC.LOG_ERROR, ITransactionResource.STR_TAG, "Client not found txid:" + g.txId +", commit: "+ succ+",insName: "+v.insName +",insId:"+v.pid);
+				LG.log(MC.LOG_ERROR, ITransactionResourceJMSrv.STR_TAG, "Client not found txid:" + g.txId +", commit: "+ succ+",insName: "+v.insName +",insId:"+v.pid);
 			}
 		}
 	}
 
 	@Override
 	@SMethod(retryCnt=0,timeout=3000)
-	public Resp<TxInfo> start(TxConfig cfg) {
-		Long txid = idGenerator.getLongId(TxConfig.class);
-		Resp<TxInfo> r = new Resp<>(Resp.CODE_TX_FAIL,"");
+	public RespJRso<TxInfoJRso> start(TxConfigJRso cfg) {
+		Long txid = idGenerator.getLongId(TxConfigJRso.class);
+		RespJRso<TxInfoJRso> r = new RespJRso<>(RespJRso.CODE_TX_FAIL,"");
 		
 		if(txid <= 0) {
-			ProcessInfo pi = this.insMng.getInstanceById(cfg.getPid());
+			ProcessInfoJRso pi = this.insMng.getInstanceById(cfg.getPid());
 			r.setMsg("create txid failure!");
 			LG.log(MC.LOG_ERROR, TAG, r.getMsg()+",by insName: " + pi.getInstanceName());
 			return r;
 		}
 		
 		if(LG.isLoggable(MC.LOG_DEBUG, null)) {
-			ProcessInfo pi = this.insMng.getInstanceById(cfg.getPid());
+			ProcessInfoJRso pi = this.insMng.getInstanceById(cfg.getPid());
 			LG.log(MC.LOG_DEBUG, TAG, "Start transaction: " +txid + ",by insName: " + pi.getInstanceName());
 		}
 		
@@ -239,22 +239,22 @@ public class TransationServiceImpl implements ITransationService{
 			txGroups.put(txid, g);
 		}
 		
-		TxInfo ti = new TxInfo();
+		TxInfoJRso ti = new TxInfoJRso();
 		ti.setServerId(pi.getId());
 		ti.setTxid(txid);
 		r.setData(ti);
-		r.setCode(Resp.CODE_SUCCESS);
+		r.setCode(RespJRso.CODE_SUCCESS);
 		
 		return r;
 	}
 
 	@Override
 	@SMethod(retryCnt=3,timeout=3000)
-	public Resp<Boolean> takePartIn(int pid, long txid,byte txPhase) {
+	public RespJRso<Boolean> takePartIn(int pid, long txid,byte txPhase) {
 		
-		Resp<Boolean> r = new Resp<>(Resp.CODE_FAIL,false);
+		RespJRso<Boolean> r = new RespJRso<>(RespJRso.CODE_FAIL,false);
 		
-		ProcessInfo pi = this.insMng.getInstanceById(pid);
+		ProcessInfoJRso pi = this.insMng.getInstanceById(pid);
 		
 		TxGroup g = txGroups.get(txid);
 		if(g == null) {
@@ -285,16 +285,16 @@ public class TransationServiceImpl implements ITransationService{
 		v.txPhase = txPhase;
 		g.addVoter(v);
 		
-		r.setCode(Resp.CODE_SUCCESS);
+		r.setCode(RespJRso.CODE_SUCCESS);
 		r.setData(true);
 		return r;
 	}
 
 	@Override
 	@SMethod(retryCnt=0,timeout=3000)
-	public Resp<Boolean> vote(int pid, long txid, boolean commit) {
-		Resp<Boolean> r = new Resp<>(Resp.CODE_FAIL,false);
-		ProcessInfo pi = this.insMng.getInstanceById(pid);
+	public RespJRso<Boolean> vote(int pid, long txid, boolean commit) {
+		RespJRso<Boolean> r = new RespJRso<>(RespJRso.CODE_FAIL,false);
+		ProcessInfoJRso pi = this.insMng.getInstanceById(pid);
 		
 		TxGroup g = txGroups.get(txid);
 		if(g == null) {
@@ -351,7 +351,7 @@ public class TransationServiceImpl implements ITransationService{
 			}
 		}
 		
-		r.setCode(Resp.CODE_SUCCESS);
+		r.setCode(RespJRso.CODE_SUCCESS);
 		r.setData(true);
 		
 		return r;
@@ -367,13 +367,13 @@ public class TransationServiceImpl implements ITransationService{
 		
 		private long txId;
 		
-		private TxConfig cfg;
+		private TxConfigJRso cfg;
 		
 		private long startedTime;
 		
 		private Map<Integer,TxVoter> voters = new HashMap<>();
 		
-		private TxGroup(TxConfig cfg,long txId) {
+		private TxGroup(TxConfigJRso cfg,long txId) {
 			this.cfg = cfg;
 			this.txId = txId;
 			this.startedTime = TimeUtils.getCurTime();

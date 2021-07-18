@@ -25,20 +25,20 @@ import org.slf4j.LoggerFactory;
 
 import cn.jmicro.api.config.Config;
 import cn.jmicro.api.idgenerator.ComponentIdServer;
-import cn.jmicro.api.monitor.JMLogItem;
-import cn.jmicro.api.monitor.JMStatisItem;
+import cn.jmicro.api.monitor.JMLogItemJRso;
+import cn.jmicro.api.monitor.JMStatisItemJRso;
 import cn.jmicro.api.monitor.LG;
 import cn.jmicro.api.monitor.Linker;
 import cn.jmicro.api.monitor.LogMonitorClient;
 import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.monitor.MT;
-import cn.jmicro.api.monitor.OneLog;
+import cn.jmicro.api.monitor.OneLogJRso;
 import cn.jmicro.api.monitor.StatisMonitorClient;
 import cn.jmicro.api.net.ISession;
 import cn.jmicro.api.net.Message;
-import cn.jmicro.api.registry.ServiceItem;
-import cn.jmicro.api.registry.ServiceMethod;
-import cn.jmicro.api.security.ActInfo;
+import cn.jmicro.api.registry.ServiceItemJRso;
+import cn.jmicro.api.registry.ServiceMethodJRso;
+import cn.jmicro.api.security.ActInfoJRso;
 import cn.jmicro.api.utils.TimeUtils;
 import cn.jmicro.common.CommonException;
 import cn.jmicro.common.Constants;
@@ -125,12 +125,12 @@ public class JMicroContext  {
 		mo = moo;
 	}
 	
-	public JMLogItem getMRpcLogItem() {
+	public JMLogItemJRso getMRpcLogItem() {
 		//使用者需要调用isMonitor()或isDebug()判断是否可用状态
 		return this.getParam(MRPC_LOG_ITEM, null);
 	}
 	
-	public JMStatisItem getMRpcStatisItem() {
+	public JMStatisItemJRso getMRpcStatisItem() {
 		return this.getParam(MRPC_STATIS_ITEM, null);
 	}
 	
@@ -142,7 +142,7 @@ public class JMicroContext  {
 		
 		debugLog();
 		
-		JMLogItem item = getMRpcLogItem();
+		JMLogItemJRso item = getMRpcLogItem();
 		if(item != null ) {
 			JMicroContext.get().removeParam(MRPC_LOG_ITEM);
 			
@@ -152,9 +152,9 @@ public class JMicroContext  {
 			}*/
 			
 			if(StringUtils.isEmpty(item.getActName())) {
-				ActInfo ai = this.getAccount();
+				ActInfoJRso ai = this.getAccount();
 				if(ai != null) {
-					item.setActClientId(ai.getId());
+					item.setActClientId(ai.getClientId());
 					item.setSysClientId(Config.getClientId());
 					ai.setActName(ai.getActName());
 				}
@@ -166,14 +166,14 @@ public class JMicroContext  {
 	
 		
 		if(this.isMonitorable()) {
-			JMStatisItem sItem = getMRpcStatisItem();
+			JMStatisItemJRso sItem = getMRpcStatisItem();
 			if(sItem != null && sItem.getTypeStatis() != null 
 					&& !sItem.getTypeStatis().isEmpty()) {
 				JMicroContext.get().removeParam(MRPC_STATIS_ITEM);
 				if(StringUtils.isEmpty(item.getActName())) {
-					ActInfo ai = this.getAccount();
+					ActInfoJRso ai = this.getAccount();
 					if(ai != null) {
-						item.setActClientId(ai.getId());
+						item.setActClientId(ai.getClientId());
 						item.setSysClientId(Config.getClientId());
 						ai.setActName(ai.getActName());
 					}
@@ -238,7 +238,7 @@ public class JMicroContext  {
 		return !isCallSideService();
 	}
 	
-	public static void configProvider(ISession s,Message msg,ServiceMethod sm) {
+	public static void configProvider(ISession s,Message msg,ServiceMethodJRso sm) {
 		
 		JMicroContext context = get();
 		
@@ -301,15 +301,15 @@ public class JMicroContext  {
 	
 	private static void initMrpcStatisItem() {
 		JMicroContext context = cxt.get();
-		JMStatisItem item = context.getMRpcStatisItem();
+		JMStatisItemJRso item = context.getMRpcStatisItem();
 		if(item == null) {
-			synchronized(JMStatisItem.class) {
+			synchronized(JMStatisItemJRso.class) {
 				item = context.getMRpcStatisItem();
 				if(item == null) {
-					item = new JMStatisItem();
-					ActInfo ai = context.getAccount();
+					item = new JMStatisItemJRso();
+					ActInfoJRso ai = context.getAccount();
 					if(ai != null) {
-						item.setClientId(ai.getId());
+						item.setClientId(ai.getClientId());
 						//item.setActName(ai.getActName());
 					}
 					item.setRpc(true);
@@ -324,15 +324,15 @@ public class JMicroContext  {
 	private static void initMrpcLogItem(boolean sideProdiver) {
 		
 		JMicroContext context = cxt.get();
-		JMLogItem item = context.getMRpcLogItem();
+		JMLogItemJRso item = context.getMRpcLogItem();
 		if(item == null) {
-			synchronized(JMLogItem.class) {
+			synchronized(JMLogItemJRso.class) {
 				item = context.getMRpcLogItem();
 				if(item == null) {
-					item = new JMLogItem();
-					ActInfo ai = context.getAccount();
+					item = new JMLogItemJRso();
+					ActInfoJRso ai = context.getAccount();
 					if(ai != null) {
-						item.setActClientId(ai.getId());
+						item.setActClientId(ai.getClientId());
 						item.setSysClientId(Config.getClientId());
 						item.setActName(ai.getActName());
 					}
@@ -350,7 +350,7 @@ public class JMicroContext  {
 		return smCfg == 1 ? true: (smCfg == 0 ? false:(siCfg == 1 ? true:false));
 	}
 	
-	public static void configComsumer(ServiceMethod sm,ServiceItem si) {
+	public static void configComsumer(ServiceMethodJRso sm,ServiceItemJRso si) {
 		JMicroContext context = cxt.get();
 		//context.curCxt.clear();
 		setCallSide(false);
@@ -374,15 +374,15 @@ public class JMicroContext  {
 		
 		if(level != MC.LOG_NO) {
 			initMrpcLogItem(false);
-			JMLogItem mi = context.getMRpcLogItem();
+			JMLogItemJRso mi = context.getMRpcLogItem();
 			if(mi != null) {
 				mi.setImplCls(si.getImpl());
 				mi.setSmKey(sm.getKey());
 				mi.setSysClientId(Config.getClientId());
-				ActInfo ai = context.getAccount();
+				ActInfoJRso ai = context.getAccount();
 				if(ai != null) {
 					mi.setActName(ai.getActName());
-					mi.setActClientId(ai.getId());
+					mi.setActClientId(ai.getClientId());
 					mi.setSysClientId(Config.getClientId());
 				}
 			}
@@ -402,7 +402,7 @@ public class JMicroContext  {
 		}
 		
 		JMicroContext c = get();
-		ComponentIdServer idGenerator = EnterMain.getObjectFactory().get(ComponentIdServer.class);
+		ComponentIdServer idGenerator = EnterMain.getObjectFactory().get(ComponentIdServer.class,false);
 		if(idGenerator != null) {
 			id = idGenerator.getLongId(Linker.class);
 			c.setLong(LINKER_ID, id);
@@ -433,22 +433,22 @@ public class JMicroContext  {
 		get().curCxt.putAll(ps);
 	}*/
 	
-	public ActInfo getAccount() {
+	public ActInfoJRso getAccount() {
 		 return JMicroContext.get().getParam(JMicroContext.LOGIN_ACT, null);
 	}
 	
-	public void setAccount(ActInfo act) {
+	public void setAccount(ActInfoJRso act) {
 		 if(!Utils.formSystemPackagePermission(3)) {
 			 throw new CommonException(MC.MT_ACT_PERMISSION_REJECT,"非法设置当前账号");
 		 }
 		 JMicroContext.get().setParam(JMicroContext.LOGIN_ACT, act);
 	}
 	
-	public ActInfo getSysAccount() {
+	public ActInfoJRso getSysAccount() {
 		 return JMicroContext.get().getParam(JMicroContext.LOGIN_ACT_SYS, null);
 	}
 	
-	public void setSysAccount(ActInfo act) {
+	public void setSysAccount(ActInfoJRso act) {
 		 if(!Utils.formSystemPackagePermission(3)) {
 			 throw new CommonException(MC.MT_ACT_PERMISSION_REJECT,"非法设置当前系统登陆账号");
 		 }
@@ -456,7 +456,7 @@ public class JMicroContext  {
 	}
 	
 	public boolean hasPermission(int reqLevel) {
-		 ActInfo ai = getAccount();
+		 ActInfoJRso ai = getAccount();
 		 if(ai != null) {
 			return  true/*ai.getClientId() <= reqLevel*/;
 		 }
@@ -464,9 +464,9 @@ public class JMicroContext  {
 	}
 	
 	public boolean hasPermission(int reqLevel, int defaultLevel) {
-		 ActInfo ai =  getAccount();
+		 ActInfoJRso ai =  getAccount();
 		 if(ai != null) {
-			return ai.getId() <= reqLevel;
+			return ai.getClientId()<= reqLevel;
 		 } else {
 			 return defaultLevel <= reqLevel;
 		 }
@@ -492,7 +492,7 @@ public class JMicroContext  {
 	//debug mode 下才有效
 	public void appendCurUseTime(String label,boolean force) {
 		if(isDebug()) {
-			ServiceMethod sm = this.getParam(Constants.SERVICE_METHOD_KEY, null);
+			ServiceMethodJRso sm = this.getParam(Constants.SERVICE_METHOD_KEY, null);
 			if(sm != null) {
 				long curTime = TimeUtils.getCurTime();
 				long cost = curTime - this.getLong(DEBUG_LOG_BASE_TIME, curTime);
@@ -511,7 +511,7 @@ public class JMicroContext  {
 			return;
 		}
 
-		ServiceMethod sm = (ServiceMethod)JMicroContext.get().getObject(Constants.SERVICE_METHOD_KEY, null);
+		ServiceMethodJRso sm = (ServiceMethodJRso)JMicroContext.get().getObject(Constants.SERVICE_METHOD_KEY, null);
 		
 		int timeout = 3000;
 		/*if(sm != null) {

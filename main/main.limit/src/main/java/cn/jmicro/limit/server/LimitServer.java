@@ -16,28 +16,27 @@ import cn.jmicro.api.annotation.Reference;
 import cn.jmicro.api.annotation.SMethod;
 import cn.jmicro.api.annotation.Service;
 import cn.jmicro.api.async.IPromise;
-import cn.jmicro.api.classloader.RpcClassLoader;
 import cn.jmicro.api.config.Config;
 import cn.jmicro.api.idgenerator.ComponentIdServer;
-import cn.jmicro.api.limit.genclient.ILimitData$JMAsyncClient;
-import cn.jmicro.api.monitor.IStatisDataSubscribe;
+import cn.jmicro.api.limit.genclient.ILimitDataJMSrv$JMAsyncClient;
+import cn.jmicro.api.monitor.IStatisDataSubscribeJMSrv;
 import cn.jmicro.api.monitor.MC;
-import cn.jmicro.api.monitor.StatisConfig;
-import cn.jmicro.api.monitor.StatisData;
-import cn.jmicro.api.monitor.StatisIndex;
+import cn.jmicro.api.monitor.StatisConfigJRso;
+import cn.jmicro.api.monitor.StatisDataJRso;
+import cn.jmicro.api.monitor.StatisIndexJRso;
 import cn.jmicro.api.objectfactory.AbstractClientServiceProxyHolder;
 import cn.jmicro.api.raft.IDataOperator;
-import cn.jmicro.api.registry.ServiceItem;
-import cn.jmicro.api.registry.ServiceMethod;
-import cn.jmicro.api.registry.UniqueServiceKey;
-import cn.jmicro.api.registry.UniqueServiceMethodKey;
+import cn.jmicro.api.registry.ServiceItemJRso;
+import cn.jmicro.api.registry.ServiceMethodJRso;
+import cn.jmicro.api.registry.UniqueServiceKeyJRso;
+import cn.jmicro.api.registry.UniqueServiceMethodKeyJRso;
 import cn.jmicro.api.service.ServiceManager;
 import cn.jmicro.common.Constants;
 import cn.jmicro.common.util.JsonUtils;
 
 @Component
 @Service(version="0.0.1",external=false)
-public class LimitServer implements IStatisDataSubscribe {
+public class LimitServer implements IStatisDataSubscribeJMSrv {
 
 	private static final Logger logger = LoggerFactory.getLogger(LimitServer.class);
 	
@@ -52,9 +51,9 @@ public class LimitServer implements IStatisDataSubscribe {
 	private ComponentIdServer idGenerator;
 	
 	@Reference(namespace="*", version="*", type="ins",required=false,changeListener="subscriberChange")
-	private Set<ILimitData$JMAsyncClient> dataReceivers = new HashSet<>();
+	private Set<ILimitDataJMSrv$JMAsyncClient> dataReceivers = new HashSet<>();
 	
-	private Map<String,ILimitData$JMAsyncClient> ins2Limiters = new HashMap<>();
+	private Map<String,ILimitDataJMSrv$JMAsyncClient> ins2Limiters = new HashMap<>();
 	
 	private Map<String,RegEntry> regs = new HashMap<>();
 	
@@ -64,23 +63,23 @@ public class LimitServer implements IStatisDataSubscribe {
 	@Inject
 	private IDataOperator op;
 	
-	private StatisIndex[] qpsStatisIndex = new StatisIndex[1];
+	private StatisIndexJRso[] qpsStatisIndex = new StatisIndexJRso[1];
 	
 	public void ready() {
-		qpsStatisIndex[0] = new StatisIndex();
+		qpsStatisIndex[0] = new StatisIndexJRso();
 		qpsStatisIndex[0].setName("qps");
 		qpsStatisIndex[0].setNums(new Short[]{MC.MT_SERVER_LIMIT_MESSAGE_PUSH});
 		//qpsStatisIndex[0].setDens(REQ_TYPES);
 		qpsStatisIndex[0].setDesc("service qps");
-		qpsStatisIndex[0].setType(StatisConfig.PREFIX_QPS);
+		qpsStatisIndex[0].setType(StatisConfigJRso.PREFIX_QPS);
 		
-		srvManager.addListener((type,item)->{
+		srvManager.addListener((type,siKey,si)->{
 			if(type == IListener.ADD) {
-				serviceAdd(item);
+				serviceAdd(siKey,si);
 			}else if(type == IListener.REMOVE) {
-				serviceRemove(item);
+				serviceRemove(siKey,si);
 			}else if(type == IListener.DATA_CHANGE) {
-				serviceDataChange(item);
+				serviceDataChange(siKey,si);
 			} 
 		});
 		
@@ -89,26 +88,27 @@ public class LimitServer implements IStatisDataSubscribe {
 	
 	@Override
 	@SMethod(needResponse=false)
-	public IPromise<Void> onData(StatisData sc) {
-		UniqueServiceMethodKey k = UniqueServiceMethodKey.fromKey(sc.getKey());
-		Set<ServiceItem> sis = this.srvManager.getServiceItems(k.getServiceName(), k.getNamespace(), k.getVersion());
-		sc.setIndex(StatisData.INS_SIZE, sis.size());
+	public IPromise<Void> onData(StatisDataJRso sc) {
+		UniqueServiceMethodKeyJRso k = UniqueServiceMethodKeyJRso.fromKey(sc.getKey());
+		Set<UniqueServiceKeyJRso> sis = this.srvManager.getServiceItems(k.getServiceName(), k.getNamespace(), k.getVersion());
 		
-		Double qps = (Double)sc.getStatis().get(StatisData.QPS);
+		sc.setIndex(StatisDataJRso.INS_SIZE, sis.size());
 		
-		if(sc.containIndex(StatisData.INS_SIZE)) {
-			int insSize = sc.getIndex(StatisData.INS_SIZE);
+		Double qps = (Double)sc.getStatis().get(StatisDataJRso.QPS);
+		
+		if(sc.containIndex(StatisDataJRso.INS_SIZE)) {
+			int insSize = sc.getIndex(StatisDataJRso.INS_SIZE);
 			if(insSize > 1) {
 				//每个运行实例平均分配QPS
 				Double avgQps = qps/insSize;
-				sc.setIndex(StatisData.AVG_QPS, avgQps);
+				sc.setIndex(StatisDataJRso.AVG_QPS, avgQps);
 			}
 		}
 		
 		logger.debug("OnData: " + JsonUtils.getIns().toJson(sc));
 		
-		for(ServiceItem si : sis) {
-			ILimitData$JMAsyncClient r = this.ins2Limiters.get(si.getKey().getInstanceName());
+		for(UniqueServiceKeyJRso si : sis) {
+			ILimitDataJMSrv$JMAsyncClient r = this.ins2Limiters.get(si.getInstanceName());
 			if(r != null) {
 				r.onDataJMAsync(sc)
 				.fail((code,msg,cxt)->{
@@ -119,9 +119,12 @@ public class LimitServer implements IStatisDataSubscribe {
 		return null;
 	}
 	
-	private void serviceDataChange(ServiceItem item) {
-		for(ServiceMethod sm : item.getMethods()) {
-			String key = sm.getKey().toKey(false, false, false);
+	private void serviceDataChange(UniqueServiceKeyJRso siKey,ServiceItemJRso item) {
+		if(item == null) {
+			item = this.srvManager.getServiceByKey(siKey.fullStringKey());
+		}
+		for(ServiceMethodJRso sm : item.getMethods()) {
+			String key = sm.getKey().methodID();
 			if(regs.containsKey(key)) {
 				RegEntry re = regs.get(key);
 				if(sm.getMaxSpeed() <= 0) {
@@ -130,7 +133,7 @@ public class LimitServer implements IStatisDataSubscribe {
 					} else {
 						//服务完全删除，无需再监控
 						regs.remove(key);
-						String path = StatisConfig.STATIS_CONFIG_ROOT + "/" + re.cid;
+						String path = StatisConfigJRso.STATIS_CONFIG_ROOT + "/" + re.cid;
 						op.deleteNode(path);
 					}
 				}
@@ -140,9 +143,9 @@ public class LimitServer implements IStatisDataSubscribe {
 		}
 	}
 
-	private void serviceRemove(ServiceItem item) {
-		for(ServiceMethod sm : item.getMethods()) {
-			String key = sm.getKey().toKey(false, false, false);
+	private void serviceRemove(UniqueServiceKeyJRso siKey,ServiceItemJRso item) {
+		for(ServiceMethodJRso sm : item.getMethods()) {
+			String key = sm.getKey().methodID();
 			if(regs.containsKey(key)) {
 				RegEntry re = regs.get(key);
 				if(re.smInsCount >1) {
@@ -150,28 +153,31 @@ public class LimitServer implements IStatisDataSubscribe {
 				} else {
 					//服务完全删除，无需再监控
 					regs.remove(key);
-					String path = StatisConfig.STATIS_CONFIG_ROOT + "/" + re.cid;
+					String path = StatisConfigJRso.STATIS_CONFIG_ROOT + "/" + re.cid;
 					op.deleteNode(path);
 				}
 			}
 		}
 	}
 
-	private void serviceAdd(ServiceItem item) {
-		for(ServiceMethod sm : item.getMethods()) {
+	private void serviceAdd(UniqueServiceKeyJRso siKey,ServiceItemJRso item) {
+		if(item == null) {
+			item = this.srvManager.getServiceByKey(siKey.fullStringKey());
+		}
+		for(ServiceMethodJRso sm : item.getMethods()) {
 			if(sm.getMaxSpeed() > 0) {
 				createStatisConfig(sm);
 			}
 		}
 	}
 	
-	private void createStatisConfig(ServiceMethod sm) {
+	private void createStatisConfig(ServiceMethodJRso sm) {
 		
 		if(sm.getLimitType() != Constants.LIMIT_TYPE_SS) {
 			return;
 		}
 		
-		String key = sm.getKey().toKey(false,false,false);
+		String key = sm.getKey().methodID();
 		if(this.regs.containsKey(key)) {
 			RegEntry re = regs.get(key);
 			re.smInsCount += 1;
@@ -179,10 +185,10 @@ public class LimitServer implements IStatisDataSubscribe {
 			return;
 		}
 		
-		StatisConfig sc = new StatisConfig();
-		sc.setId(idGenerator.getIntId(StatisConfig.class));
+		StatisConfigJRso sc = new StatisConfigJRso();
+		sc.setId(idGenerator.getIntId(StatisConfigJRso.class));
 		
-		sc.setByType(StatisConfig.BY_TYPE_SERVICE_METHOD);
+		sc.setByType(StatisConfigJRso.BY_TYPE_SERVICE_METHOD);
 		sc.setByKey(key);
 		
 		if(sm.getMaxSpeed() > 10) {
@@ -197,24 +203,24 @@ public class LimitServer implements IStatisDataSubscribe {
 			sc.setExpStr1("qps<"+sm.getMaxSpeed());
 		}
 		
-		sc.setToType(StatisConfig.TO_TYPE_SERVICE_METHOD);
+		sc.setToType(StatisConfigJRso.TO_TYPE_SERVICE_METHOD);
 		
 		StringBuilder sb = new StringBuilder();
-		sb.append(UniqueServiceKey.serviceName(IStatisDataSubscribe.class.getName(),"limitServer", "*"));
+		sb.append(UniqueServiceKeyJRso.serviceName(IStatisDataSubscribeJMSrv.class.getName(),"limitServer", "*"));
 		sb.append("########")
-		.append("onData").append(UniqueServiceKey.SEP);
+		.append("onData").append(UniqueServiceKeyJRso.SEP);
 		
 		sc.setToParams(sb.toString());
 		
 		sc.setCounterTimeout(1*60);
-		sc.setTimeUnit(StatisConfig.UNIT_SE);
+		sc.setTimeUnit(StatisConfigJRso.UNIT_SE);
 		sc.setTimeCnt(1);
 		sc.setEnable(true);
 		
 		sc.setStatisIndexs(this.qpsStatisIndex);
 		sc.setCreatedBy(Config.getClientId());
 		
-		String path = StatisConfig.STATIS_CONFIG_ROOT + "/" + sc.getId();
+		String path = StatisConfigJRso.STATIS_CONFIG_ROOT + "/" + sc.getId();
 		//服务停止时，配置将消失
 		op.createNodeOrSetData(path, JsonUtils.getIns().toJson(sc), true);
 		
@@ -227,10 +233,10 @@ public class LimitServer implements IStatisDataSubscribe {
 	}
 
 	public void subscriberChange(AbstractClientServiceProxyHolder srv,int type) {
-		ServiceItem si = srv.getItem();
+		ServiceItemJRso si = srv.getItem();
 		String insName = si.getKey().getInstanceName();
 		if(type == IListener.ADD) {
-			ILimitData$JMAsyncClient djm = (ILimitData$JMAsyncClient)srv;
+			ILimitDataJMSrv$JMAsyncClient djm = (ILimitDataJMSrv$JMAsyncClient)srv;
 			if(!this.ins2Limiters.containsKey(insName)) {
 				this.ins2Limiters.put(insName, djm);
 			}
@@ -244,7 +250,7 @@ public class LimitServer implements IStatisDataSubscribe {
 	private class RegEntry{
 		private int cid;
 		private String smKey;
-		private ServiceMethod sm;
+		private ServiceMethodJRso sm;
 		private int smInsCount;
 	}
 }

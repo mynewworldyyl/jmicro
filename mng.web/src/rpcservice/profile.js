@@ -2,24 +2,27 @@ import rpc from "@/rpc/rpcbase";
 import cons from "@/rpc/constants";
 
 export default {
+    __actreq :  function(method,args){
+        return rpc.creq(this.sn,this.ns,this.v,method,args)
+    },
 
   getKvs : function() {
-    return rpc.callRpcWithParams(this.sn, this.ns, this.v, 'getKvs', []);
+      return rpc.callRpc(this.__actreq( 'getKvs', []))
   },
 
   getModuleList : function () {
-    return rpc.callRpcWithParams(this.sn, this.ns, this.v, 'getModuleList', []);
+      return rpc.callRpc(this.__actreq( 'getModuleList', []))
   },
 
   getModuleKvs : function (module) {
-    return rpc.callRpcWithParams(this.sn, this.ns, this.v, 'getModuleKvs', [module]);
+      return rpc.callRpc(this.__actreq( 'getModuleKvs', [module]))
   },
 
   updateKv : function (module,kv) {
-    return rpc.callRpcWithParams(this.sn, this.ns, this.v, 'updateKv', [module,kv]);
+      return rpc.callRpc(this.__actreq( 'updateKv', [module,kv]))
   },
 
-  sn:'cn.jmicro.mng.api.IProfileService',
+  sn:'cn.jmicro.mng.api.IProfileServiceJMSrv',
   ns : cons.NS_MNG,
   v:'0.0.1',
 }

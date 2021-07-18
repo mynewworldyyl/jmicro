@@ -21,8 +21,8 @@ import java.util.Set;
 import cn.jmicro.api.EnterMain;
 import cn.jmicro.api.limitspeed.ILimiter;
 import cn.jmicro.api.net.IRequest;
-import cn.jmicro.api.registry.ServiceItem;
-import cn.jmicro.api.registry.ServiceMethod;
+import cn.jmicro.api.registry.ServiceItemJRso;
+import cn.jmicro.api.registry.ServiceMethodJRso;
 import cn.jmicro.common.CommonException;
 import cn.jmicro.common.util.StringUtils;
 
@@ -45,8 +45,8 @@ public abstract class AbstractLimiter implements ILimiter{
 	}
 	
 
-	protected ServiceItem getServiceItem(IRequest req) {
-		Set<ServiceItem> sis = EnterMain.getRegistry(null).getServices(req.getServiceName(),req.getMethod(),/*req.getArgs(),*/
+	protected ServiceItemJRso getServiceItem(IRequest req) {
+		Set<ServiceItemJRso> sis = EnterMain.getRegistry(null).getServices(req.getServiceName(),req.getMethod(),/*req.getArgs(),*/
 				req.getNamespace(),req.getVersion(),req.getTransport());
 		if(sis == null || sis.isEmpty()){
 			return null;
@@ -54,13 +54,13 @@ public abstract class AbstractLimiter implements ILimiter{
 		return sis.iterator().next();
 	}
 	
-	protected ServiceMethod getServiceMethod(ServiceItem item ,IRequest req){
-		ServiceItem si = this.getServiceItem(req);
+	protected ServiceMethodJRso getServiceMethod(ServiceItemJRso item ,IRequest req){
+		ServiceItemJRso si = this.getServiceItem(req);
 		if(si == null) {
 			throw new CommonException("Service not found: "+ req.getServiceName());
 		}
-		ServiceMethod sm = null;
-		for(ServiceMethod mi : si.getMethods()){
+		ServiceMethodJRso sm = null;
+		for(ServiceMethodJRso mi : si.getMethods()){
 			if(mi.getKey().getMethod().equals(req.getMethod())){
 				sm = mi;
 				break;
@@ -74,11 +74,11 @@ public abstract class AbstractLimiter implements ILimiter{
 	}
 	
 	protected String getSpeedUnit(IRequest req){
-		ServiceItem si = this.getServiceItem(req);
+		ServiceItemJRso si = this.getServiceItem(req);
 		if(si == null) {
 			throw new CommonException("Service not found: "+ req.getServiceName());
 		}
-		ServiceMethod sm = this.getServiceMethod(si, req);
+		ServiceMethodJRso sm = this.getServiceMethod(si, req);
 		
 		if(StringUtils.isEmpty(sm.getBaseTimeUnit())){
 			return si.getBaseTimeUnit();
@@ -88,11 +88,11 @@ public abstract class AbstractLimiter implements ILimiter{
 	}
 	
 	protected int getSpeed(IRequest req) {
-		ServiceItem si = this.getServiceItem(req);
+		ServiceItemJRso si = this.getServiceItem(req);
 		if(si == null) {
 			throw new CommonException("Service not found: "+ req.getServiceName());
 		}
-		ServiceMethod sm = this.getServiceMethod(si, req);
+		ServiceMethodJRso sm = this.getServiceMethod(si, req);
 		
 		int maxSpeed = sm.getMaxSpeed();
 		if(maxSpeed == 0){

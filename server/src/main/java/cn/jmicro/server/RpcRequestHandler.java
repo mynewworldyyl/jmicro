@@ -79,7 +79,13 @@ public class RpcRequestHandler extends AbstractHandler implements IRequestHandle
 			if(request.getProtocol() == Message.PROTOCOL_JSON) {
 				args = getArgs(m.getGenericParameterTypes(),args);
 			}
+			
 			Object result = m.invoke(obj, args);
+			
+			/*if(JMicroContext.get().getAccount() != null)
+				logger.info(Thread.currentThread().getName()+",after Act: "+JMicroContext.get().getAccount().getActName());
+			*/
+			
 			if(!f) {
 				//正常的非public方法调用不到跑到这里，所以可以直接设置即可
 				m.setAccessible(f);

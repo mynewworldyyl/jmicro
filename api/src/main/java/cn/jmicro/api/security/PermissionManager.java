@@ -2,7 +2,6 @@ package cn.jmicro.api.security;
 
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
@@ -18,8 +17,7 @@ import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.monitor.MT;
 import cn.jmicro.api.net.ServerError;
 import cn.jmicro.api.registry.IServiceListener;
-import cn.jmicro.api.registry.ServiceItem;
-import cn.jmicro.api.registry.ServiceMethod;
+import cn.jmicro.api.registry.ServiceMethodJRso;
 import cn.jmicro.api.service.ServiceManager;
 import cn.jmicro.common.Constants;
 
@@ -36,10 +34,10 @@ public class PermissionManager {
 	@Inject
 	private ServiceManager sm;
 	
-	private Map<String,Set<Permission>> pers = new HashMap<>();
+	private Map<String,Set<PermissionJRso>> pers = new HashMap<>();
 	
 	public static final boolean checkClientPermission(int loginAccountId,int targetDataClientId) {
-		if(targetDataClientId == Constants.NO_CLIENT_ID || targetDataClientId == loginAccountId || loginAccountId == Config.getAdminClientId()) {
+		if(targetDataClientId == Constants.NO_CLIENT_ID || targetDataClientId == loginAccountId || loginAccountId == Config.getClientId()) {
 			//一般账户启动的服务
 			return true;
 		}
@@ -51,38 +49,38 @@ public class PermissionManager {
 	}
 	
 	public static final boolean checkAccountClientPermission(int forType,int targetDataClientId) {
-		ActInfo ai = getAccount(forType);
+		ActInfoJRso ai = getAccount(forType);
 		if(ai == null) {
 			return false;
 		}
-		return checkClientPermission(ai.getId(),targetDataClientId);
+		return checkClientPermission(ai.getClientId(),targetDataClientId);
 	}
 	
 	public static final boolean isOwner(int targetDataClientId) {
-		ActInfo ai = JMicroContext.get().getAccount();
+		ActInfoJRso ai = JMicroContext.get().getAccount();
 		if(ai == null) {
 			return false;
 		}
-		return ai.getId() == targetDataClientId || ai.getId() == Config.getAdminClientId();
+		return ai.getClientId() == targetDataClientId || ai.getClientId() == Config.getClientId();
 	}
 	
 	public static final boolean isCurAdmin(int forType) {
 		
 		switch (forType) {
 		case Constants.FOR_TYPE_ALL:
-			ActInfo ai = JMicroContext.get().getAccount();
-			if (ai != null && ai.getId() == Config.getAdminClientId()) {
+			ActInfoJRso ai = JMicroContext.get().getAccount();
+			if (ai != null && ai.getClientId() == Config.getClientId()) {
 				return true;
 			}
 			ai = JMicroContext.get().getSysAccount();
-			if (ai != null && ai.getId() == Config.getAdminClientId()) {
+			if (ai != null && ai.getClientId() == Config.getClientId()) {
 				return true;
 			}
 			return false;
 		case Constants.FOR_TYPE_USER:
 			ai = JMicroContext.get().getAccount();
 			if (ai != null) {
-				return ai.getId() == Config.getAdminClientId();
+				return ai.getClientId() == Config.getClientId();
 			} else {
 				return false;
 			}
@@ -90,7 +88,7 @@ public class PermissionManager {
 		case Constants.FOR_TYPE_SYS:
 			ai = JMicroContext.get().getSysAccount();
 			if (ai != null) {
-				return ai.getId() == Config.getAdminClientId();
+				return ai.getClientId() == Config.getClientId();
 			} else {
 				return false;
 			}
@@ -104,43 +102,44 @@ public class PermissionManager {
 	}
 	
 	public void ready() {
-		sm.addListener((type,si)->{
+		sm.addListener((type,siKey,item)->{
 			if(type == IServiceListener.ADD) {
-				serviceAdd(si);
+				//serviceAdd(si);
 			}
 		});
 	}
 
-	private void serviceAdd(ServiceItem si) {
-		Set<Permission> pers = new HashSet<>();
-		for(ServiceMethod sm : si.getMethods()) {
+	/*private void serviceAdd(UniqueServiceKeyJRso si) {
+		Set<PermissionJRso> pers = new HashSet<>();
+		
+		for(UniqueServiceKeyJRso sm : si.getMethods()) {
 			if(sm.isPerType()) {
-				Permission p = new Permission();
+				PermissionJRso p = new PermissionJRso();
 				p.setLabel(sm.getKey().getMethod());
 				p.setModelName(si.getKey().toSnv());
 				p.setDesc(sm.getKey().getMethod()+"(" +sm.getKey().getParamsStr()+")");
-				p.setActType(Permission.ACT_INVOKE);
+				p.setActType(PermissionJRso.ACT_INVOKE);
 				pers.add(p);
 			}
 		}
-	}
+	}*/
 	
-	public Map<String,Set<Permission>> getAllPermission() {
+	public Map<String,Set<PermissionJRso>> getAllPermission() {
 		return Collections.unmodifiableMap(pers);
 	}
 	
-	public ServerError permissionCheck(ServiceMethod sm,int srcClientId ) {
+	public ServerError permissionCheck(ServiceMethodJRso sm,int srcClientId ) {
 		if(isCurAdmin(sm.getForType()) || sm.getForType() == Constants.FOR_TYPE_ALL) {
 			return null;
 		}
 		
-		ActInfo ai = JMicroContext.get().getAccount();
-		ActInfo sai = JMicroContext.get().getSysAccount();
+		ActInfoJRso ai = JMicroContext.get().getAccount();
+		ActInfoJRso sai = JMicroContext.get().getSysAccount();
 		
 		if((ai == null && Constants.FOR_TYPE_USER == sm.getForType()
 			|| sai == null && Constants.FOR_TYPE_SYS == sm.getForType()) && sm.isNeedLogin()){
 			ServerError se = new ServerError(MC.MT_INVALID_LOGIN_INFO,
-					 "Have to login for invoking to " + sm.getKey().toKey(false, false, false));
+					 "Have to login for invoking to " + sm.getKey().methodID());
 			LG.log(MC.LOG_ERROR, TAG,se.toString());
 			MT.rpcEvent(MC.MT_INVALID_LOGIN_INFO);
 			logger.warn(se.toString());
@@ -155,9 +154,9 @@ public class PermissionManager {
 				|| !ai.getPers().contains(sm.getKey().getSnvHash()))) {
 			ServerError se = new ServerError(MC.MT_ACT_PERMISSION_REJECT,
 					(ai!= null?ai.getActName():" Not login") + " no permission for this operation ");
-			LG.log(MC.LOG_ERROR, TAG,se.toString()+",SM: " + sm.getKey().toKey(true, true, true));
+			LG.log(MC.LOG_ERROR, TAG,se.toString()+",SM: " + sm.getKey().fullStringKey());
 			MT.rpcEvent(MC.MT_ACT_PERMISSION_REJECT);
-			logger.warn(se.toString()+",SM: " + sm.getKey().toKey(true, true, true));
+			logger.warn(se.toString()+",SM: " + sm.getKey().fullStringKey());
 			return se;
 		}/*else if(checkAccountClientPermission(srcClientId)) {
 			ServerError se = new ServerError(ServerError.SE_NO_PERMISSION,
@@ -169,7 +168,7 @@ public class PermissionManager {
 		return null;
 	}
 	
-	private static final ActInfo getAccount(int forType) {
+	private static final ActInfoJRso getAccount(int forType) {
 		if(forType == Constants.FOR_TYPE_SYS) {
 			return JMicroContext.get().getSysAccount();
 		} else if(forType == Constants.FOR_TYPE_USER) {

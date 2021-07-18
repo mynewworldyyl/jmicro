@@ -16,7 +16,7 @@
  */
 package cn.jmicro.limit;
 
-import cn.jmicro.api.registry.ServiceItem;
+import cn.jmicro.api.registry.ServiceItemJRso;
 import cn.jmicro.api.utils.TimeUtils;
 /**
  * 
@@ -27,7 +27,7 @@ public class LimitData {
 
 	private long reqTime = TimeUtils.getCurTime();
 	
-	private ServiceItem si;
+	private ServiceItemJRso si;
 
 	public long getReqTime() {
 		return reqTime;
@@ -37,11 +37,11 @@ public class LimitData {
 		this.reqTime = reqTime;
 	}
 
-	public ServiceItem getSi() {
+	public ServiceItemJRso getSi() {
 		return si;
 	}
 
-	public void setSi(ServiceItem si) {
+	public void setSi(ServiceItemJRso si) {
 		this.si = si;
 	}
 	

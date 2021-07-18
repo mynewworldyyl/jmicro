@@ -21,12 +21,12 @@ import org.slf4j.LoggerFactory;
 
 import cn.jmicro.api.ClassScannerUtils;
 import cn.jmicro.api.IListener;
-import cn.jmicro.api.Resp;
+import cn.jmicro.api.RespJRso;
 import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Inject;
 import cn.jmicro.api.annotation.Reference;
 import cn.jmicro.api.choreography.ChoyConstants;
-import cn.jmicro.api.choreography.ProcessInfo;
+import cn.jmicro.api.choreography.ProcessInfoJRso;
 import cn.jmicro.api.config.Config;
 import cn.jmicro.api.exp.ExpUtils;
 import cn.jmicro.api.monitor.MC;
@@ -49,10 +49,10 @@ public class SecretManager {
 	private static final String PUBKEYS_PREFIX = "META-INF/keys/";
 
 	@Reference(namespace ="*", version = "*", required = false)
-	private ISecretService secretSrv;
+	private ISecretServiceJMSrv secretSrv;
 	
 	@Inject(required=false)
-	private ISecretService localSecretSrv;
+	private ISecretServiceJMSrv localSecretSrv;
 
 	@Inject
 	private IDataOperator op;
@@ -61,7 +61,7 @@ public class SecretManager {
 	private IRegistry registry;
 
 	@Inject
-	private ProcessInfo pi;
+	private ProcessInfoJRso pi;
 	
 	private RSAPrivateKey myPriKey;
 
@@ -189,7 +189,7 @@ public class SecretManager {
 		}
 
 		String oldJson = op.getData(p);
-		ProcessInfo pri = JsonUtils.getIns().fromJson(oldJson, ProcessInfo.class);
+		ProcessInfoJRso pri = JsonUtils.getIns().fromJson(oldJson, ProcessInfoJRso.class);
 		processId2InstanceNames.put(insId, pri.getInstanceName());
 
 		return pri.getInstanceName();
@@ -407,7 +407,7 @@ public class SecretManager {
 		if(localSecretSrv == null) {
 			new Thread(()->{
 				try {
-					Resp<String> r = secretSrv.getPublicKeyByInstance(prefix);
+					RespJRso<String> r = secretSrv.getPublicKeyByInstance(prefix);
 					if(r.getCode() != 0) {
 						String msg = "code: " + r.getCode() + ", msg: " + r.getMsg();
 						logger.error(msg);
@@ -434,7 +434,7 @@ public class SecretManager {
 			}
 		} else {
 			try {
-				Resp<String> r = localSecretSrv.getPublicKeyByInstance(prefix);
+				RespJRso<String> r = localSecretSrv.getPublicKeyByInstance(prefix);
 				if(r.getCode() != 0) {
 					String msg = "code: " + r.getCode() + ", msg: " + r.getMsg();
 					logger.error(msg);
@@ -523,7 +523,7 @@ public class SecretManager {
 			}
 		}
 
-		op.addChildrenListener(ChoyConstants.INS_ROOT, (opType, root, id, data) -> {
+		op.addChildrenListener(ChoyConstants.INS_ROOT, (opType, root, id) -> {
 			if (opType == IListener.REMOVE) {
 				logger.info("{} offline",id);
 				Integer iid = Integer.parseInt(id);

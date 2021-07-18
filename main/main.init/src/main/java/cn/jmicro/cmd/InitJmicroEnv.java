@@ -6,11 +6,9 @@ import cn.jmicro.api.JMicro;
 import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Inject;
 import cn.jmicro.api.choreography.ChoyConstants;
-import cn.jmicro.api.choreography.Deployment;
-import cn.jmicro.api.classloader.RpcClassLoader;
+import cn.jmicro.api.choreography.DeploymentJRso;
 import cn.jmicro.api.config.Config;
 import cn.jmicro.api.idgenerator.ComponentIdServer;
-import cn.jmicro.api.objectfactory.IObjectFactory;
 import cn.jmicro.api.raft.IDataOperator;
 import cn.jmicro.api.security.AccountManager;
 import cn.jmicro.common.util.JsonUtils;
@@ -79,12 +77,12 @@ public class InitJmicroEnv {
 	}
 	
 	private void createMonitorDeployment() {
-		Deployment respDep = new Deployment();
-		String id = idServer.getStringId(Deployment.class);
+		DeploymentJRso respDep = new DeploymentJRso();
+		String id = idServer.getStringId(DeploymentJRso.class);
 		respDep.setId(id);
 		respDep.setAssignStrategy("defautAssignStrategy");
 		respDep.setStrategyArgs("-DsortPriority=maxCPURate,minFreeMemory,coreNum -DagentId=0,1");
-		respDep.setStatus(Deployment.STATUS_ENABLE);
+		respDep.setStatus(DeploymentJRso.STATUS_ENABLE);
 		respDep.setInstanceNum(2);
 		
 		String jar = cfg.getString(Module.monitor.name()+".jar", null);
@@ -101,12 +99,12 @@ public class InitJmicroEnv {
 	}
 
 	private void createBreakerDeployment() {
-		Deployment respDep = new Deployment();
-		String id = idServer.getStringId(Deployment.class);
+		DeploymentJRso respDep = new DeploymentJRso();
+		String id = idServer.getStringId(DeploymentJRso.class);
 		respDep.setId(id);
 		respDep.setAssignStrategy("defautAssignStrategy");
 		respDep.setStrategyArgs("-DsortPriority=maxCPURate,minFreeMemory,coreNum -DagentId=0,1");
-		respDep.setStatus(Deployment.STATUS_ENABLE);
+		respDep.setStatus(DeploymentJRso.STATUS_ENABLE);
 		respDep.setInstanceNum(2);
 		
 		String jar = cfg.getString(Module.breaker.name()+".jar", null);
@@ -122,12 +120,12 @@ public class InitJmicroEnv {
 	}
 
 	private void createPubsubDeployment() {
-		Deployment respDep = new Deployment();
-		String id = idServer.getStringId(Deployment.class);
+		DeploymentJRso respDep = new DeploymentJRso();
+		String id = idServer.getStringId(DeploymentJRso.class);
 		respDep.setId(id);
 		respDep.setAssignStrategy("defautAssignStrategy");
 		respDep.setStrategyArgs("-DsortPriority=maxCPURate,minFreeMemory,coreNum -DagentId=0,1");
-		respDep.setStatus(Deployment.STATUS_ENABLE);
+		respDep.setStatus(DeploymentJRso.STATUS_ENABLE);
 		respDep.setInstanceNum(2);
 		
 		String jar = cfg.getString(Module.pubsub.name()+".jar", null);
@@ -143,12 +141,12 @@ public class InitJmicroEnv {
 	}
 
 	private void createGatewayDeployment() {
-		Deployment respDep = new Deployment();
-		String id = idServer.getStringId(Deployment.class);
+		DeploymentJRso respDep = new DeploymentJRso();
+		String id = idServer.getStringId(DeploymentJRso.class);
 		respDep.setId(id);
 		respDep.setAssignStrategy("defautAssignStrategy");
 		respDep.setStrategyArgs("-DsortPriority=maxCPURate,minFreeMemory,coreNum -DagentId=0,1");
-		respDep.setStatus(Deployment.STATUS_ENABLE);
+		respDep.setStatus(DeploymentJRso.STATUS_ENABLE);
 		respDep.setInstanceNum(2);
 
 		String jar = cfg.getString(Module.gateway.name()+".jar", null);
@@ -164,12 +162,12 @@ public class InitJmicroEnv {
 	}
 
 	private void createControllerDeployment() {
-		Deployment respDep = new Deployment();
-		String id = idServer.getStringId(Deployment.class);
+		DeploymentJRso respDep = new DeploymentJRso();
+		String id = idServer.getStringId(DeploymentJRso.class);
 		respDep.setId(id);
 		respDep.setAssignStrategy("defautAssignStrategy");
 		respDep.setStrategyArgs("-DsortPriority=maxCPURate,minFreeMemory,coreNum -DagentId=0,1");
-		respDep.setStatus(Deployment.STATUS_ENABLE);
+		respDep.setStatus(DeploymentJRso.STATUS_ENABLE);
 		respDep.setInstanceNum(2);
 		respDep.setArgs("-Dclient=true -DenableMasterSlaveModel=true");
 		
@@ -185,12 +183,12 @@ public class InitJmicroEnv {
 	}
 
 	private void createResposityDeployment() {
-		Deployment respDep = new Deployment();
-		String id = idServer.getStringId(Deployment.class);
+		DeploymentJRso respDep = new DeploymentJRso();
+		String id = idServer.getStringId(DeploymentJRso.class);
 		respDep.setId(id);
 		respDep.setAssignStrategy("defautAssignStrategy");
 		respDep.setStrategyArgs("-DsortPriority=maxCPURate,minFreeMemory,coreNum -DagentId=0,1");
-		respDep.setStatus(Deployment.STATUS_ENABLE);
+		respDep.setStatus(DeploymentJRso.STATUS_ENABLE);
 		respDep.setInstanceNum(2);
 		respDep.setArgs("-DResourceReponsitoryService.dataDir="+"D:\\opensource\\resDataDir -DenableMasterSlaveModel=true");
 		

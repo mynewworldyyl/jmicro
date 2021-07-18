@@ -23,10 +23,10 @@ import java.util.Set;
 
 import cn.jmicro.api.JMicroContext;
 import cn.jmicro.api.annotation.Inject;
-import cn.jmicro.api.registry.Server;
-import cn.jmicro.api.registry.ServiceItem;
-import cn.jmicro.api.registry.ServiceMethod;
-import cn.jmicro.api.registry.UniqueServiceMethodKey;
+import cn.jmicro.api.registry.ServerJRso;
+import cn.jmicro.api.registry.ServiceItemJRso;
+import cn.jmicro.api.registry.ServiceMethodJRso;
+import cn.jmicro.api.registry.UniqueServiceMethodKeyJRso;
 import cn.jmicro.common.Constants;
 import cn.jmicro.common.Utils;
 import cn.jmicro.common.util.StringUtils;
@@ -48,7 +48,7 @@ public abstract class AbstractRouter implements IRouter{
 		this.type = type;
 	}
 	
-	protected boolean filterByClient(Iterator<RouteRule> ite, String key, String val) {
+	protected boolean filterByClient(Iterator<RouteRuleJRso> ite, String key, String val) {
 		if(StringUtils.isEmpty(val)) {
 			return false; 
 		}
@@ -61,30 +61,30 @@ public abstract class AbstractRouter implements IRouter{
 		return false;
 	}
 	
-	protected HashSet<ServiceItem> filterServicesByTarget(RouteRule rule, Set<ServiceItem> services,String transport) {
+	protected HashSet<ServiceItemJRso> filterServicesByTarget(RouteRuleJRso rule, Set<ServiceItemJRso> services,String transport) {
 	   
-		HashSet<ServiceItem> items = new HashSet<>();
+		HashSet<ServiceItemJRso> items = new HashSet<>();
 		
 		String ipPort = rule.getTargetVal();
 		
 		switch(rule.getTargetType()) {
-		case RouteRule.TYPE_TARGET_INSTANCE_NAME:
-			for(ServiceItem si : services) {
+		case RouteRuleJRso.TYPE_TARGET_INSTANCE_NAME:
+			for(ServiceItemJRso si : services) {
 				if(si.getKey().getInstanceName().equals(ipPort)) {
 					items.add(si);
 				}
 			}
 			break;
-		case RouteRule.TYPE_TARGET_INSTANCE_PREFIX:
-			for(ServiceItem si : services) {
+		case RouteRuleJRso.TYPE_TARGET_INSTANCE_PREFIX:
+			for(ServiceItemJRso si : services) {
 				if(si.getKey().getInstanceName().startsWith(ipPort)) {
 					items.add(si);
 				}
 			}
 			break;
-		case RouteRule.TYPE_TARGET_IPPORT:
-			for(ServiceItem si : services) {
-				Server s = si.getServer(transport);
+		case RouteRuleJRso.TYPE_TARGET_IPPORT:
+			for(ServiceItemJRso si : services) {
+				ServerJRso s = si.getServer(transport);
 				if(s == null) {
 					continue;
 				}
@@ -100,24 +100,24 @@ public abstract class AbstractRouter implements IRouter{
 	}
 	
 	@Override
-	public Set<ServiceItem> doRoute(RouteRule rule,Set<ServiceItem> services, String srvName,
+	public Set<ServiceItemJRso> doRoute(RouteRuleJRso rule,Set<ServiceItemJRso> services, String srvName,
 			String method,/* Class<?>[] args,*/String namespace, String version, String transport) {
 		return filterServicesByTarget(rule,services,transport);
 	}
 	
 	@Override
-	public RouteRule getRouteRule() {
-		List<RouteRule> rules = ruleManager.getRouteRulesByType(this.type);
+	public RouteRuleJRso getRouteRule() {
+		List<RouteRuleJRso> rules = ruleManager.getRouteRulesByType(this.type);
 		if(rules == null || rules.isEmpty()) {
 			return null;
 		}
 		
-		ServiceMethod sm = JMicroContext.get().getParam(Constants.SERVICE_METHOD_KEY, null);
-		UniqueServiceMethodKey key = sm.getKey();
+		ServiceMethodJRso sm = JMicroContext.get().getParam(Constants.SERVICE_METHOD_KEY, null);
+		UniqueServiceMethodKeyJRso key = sm.getKey();
 		
-		Iterator<RouteRule> ite = rules.iterator();
+		Iterator<RouteRuleJRso> ite = rules.iterator();
 		while(ite.hasNext()) {
-			RouteRule r = ite.next();
+			RouteRuleJRso r = ite.next();
 			
 			if(!key.getServiceName().equals(r.getFrom().getServiceName())) {
 				continue;
@@ -145,5 +145,5 @@ public abstract class AbstractRouter implements IRouter{
 		return null;
 	}
 	
-	protected abstract boolean accept(RouteRule r);
+	protected abstract boolean accept(RouteRuleJRso r);
 }

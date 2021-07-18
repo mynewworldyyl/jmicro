@@ -47,7 +47,7 @@ import cn.jmicro.api.ClassScannerUtils;
 import cn.jmicro.api.EnterMain;
 import cn.jmicro.api.Holder;
 import cn.jmicro.api.IListener;
-import cn.jmicro.api.Resp;
+import cn.jmicro.api.RespJRso;
 import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Inject;
 import cn.jmicro.api.annotation.JMethod;
@@ -55,7 +55,7 @@ import cn.jmicro.api.annotation.PostListener;
 import cn.jmicro.api.annotation.Reference;
 import cn.jmicro.api.annotation.Service;
 import cn.jmicro.api.choreography.ChoyConstants;
-import cn.jmicro.api.choreography.ProcessInfo;
+import cn.jmicro.api.choreography.ProcessInfoJRso;
 import cn.jmicro.api.classloader.RpcClassLoader;
 import cn.jmicro.api.classloader.RpcClassLoaderHelper;
 import cn.jmicro.api.config.Config;
@@ -70,13 +70,14 @@ import cn.jmicro.api.objectfactory.IPostInitListener;
 import cn.jmicro.api.objectfactory.ProxyObject;
 import cn.jmicro.api.objectsource.IObjectSource;
 import cn.jmicro.api.raft.IDataOperator;
-import cn.jmicro.api.registry.AsyncConfig;
+import cn.jmicro.api.registry.AsyncConfigJRso;
 import cn.jmicro.api.registry.IRegistry;
-import cn.jmicro.api.registry.ServiceItem;
-import cn.jmicro.api.security.ActInfo;
-import cn.jmicro.api.security.IAccountService;
-import cn.jmicro.api.security.genclient.IAccountService$JMAsyncClient;
+import cn.jmicro.api.registry.ServiceItemJRso;
+import cn.jmicro.api.security.ActInfoJRso;
+import cn.jmicro.api.security.IAccountServiceJMSrv;
+import cn.jmicro.api.security.genclient.IAccountServiceJMSrv$JMAsyncClient;
 import cn.jmicro.api.service.IServerServiceProxy;
+import cn.jmicro.api.service.ServiceLoader;
 import cn.jmicro.api.service.ServiceManager;
 import cn.jmicro.api.timer.TimerTicker;
 import cn.jmicro.api.utils.SystemUtils;
@@ -116,7 +117,7 @@ public class SimpleObjectFactory implements IObjectFactory {
 	private static AtomicInteger isInit = new AtomicInteger(0);
 	
 	//代表当前JMicro进程实例
-	private ProcessInfo pi = null;
+	private ProcessInfoJRso pi = null;
 	
 	private boolean fromLocal = true;
 	
@@ -158,31 +159,37 @@ public class SimpleObjectFactory implements IObjectFactory {
 	}
 	
 	@Override
-	public ProcessInfo getProcessInfo() {
+	public ProcessInfoJRso getProcessInfo() {
 		return this.pi;
 	}
 
 	@SuppressWarnings("unchecked")
 	@Override
-	public <T> T getRemoteServie(String srvName, String namespace, String version,AsyncConfig[] acs) {
+	public <T> T getRemoteServie(String srvName, String namespace, String version,AsyncConfigJRso[] acs) {
 		return (T)this.clientServiceProxyManager.getRefRemoteService(this.getClass().getName(),srvName,namespace,version,rpcClassLoader,acs);
 	}
 
 	@SuppressWarnings("unchecked")
 	@Override
-	public <T> T getRemoteServie(ServiceItem item,AsyncConfig[] acs) {
+	public <T> T getRemoteServie(ServiceItemJRso item,AsyncConfigJRso[] acs) {
 		return (T)this.clientServiceProxyManager.getRefRemoteService(item,this.rpcClassLoader,acs);
 	}
 
 	@SuppressWarnings("unchecked")
 	@Override
-	public <T> T getRemoteServie(Class<T> srvCls,String ns, AsyncConfig[] acs) {
+	public <T> T getRemoteServie(Class<T> srvCls,String ns, AsyncConfigJRso[] acs) {
 		return (T)this.clientServiceProxyManager.getRefRemoteService(srvCls,ns,acs);
 	}
 
 	@SuppressWarnings("unchecked")
 	@Override
 	public <T> T get(Class<T> cls) {
+		return get(cls,false);
+	}
+	
+	@SuppressWarnings("unchecked")
+	@Override
+	public <T> T get(Class<T> cls,boolean create) {
 		checkStatu();
 		Object obj = null;
 		if(cls.isInterface() || Modifier.isAbstract(cls.getModifiers())) {
@@ -197,7 +204,7 @@ public class SimpleObjectFactory implements IObjectFactory {
 			}
 		} else {
 			obj = objs.get(cls);
-			if(obj == null){
+			if(obj == null && create){
 				obj = this.createObject(cls,true);
 				if(obj != null) {
 					cacheObj(cls,obj,null);
@@ -488,7 +495,7 @@ public class SimpleObjectFactory implements IObjectFactory {
 		rpcClassLoader.setHelper(clHelper);
 		rpcClassLoader.addBasePackages(Config.getBasePackages());
 		
-		ClassScannerUtils.setClassLoader(clHelper);
+		//ClassScannerUtils.setClassLoader(clHelper);
 		
 		//logger.debug(RpcClassLoaderHelper.class.getClassLoader().toString());
 		//logger.debug(ClassScannerUtils.class.getClassLoader().toString());
@@ -652,9 +659,12 @@ public class SimpleObjectFactory implements IObjectFactory {
 				doReady0(lobjs,systemObjs);
 			}
 			
-			stage = INIT_FINISH;
-			
 			loadAccountInfo(dataOperator,cfg);
+			
+			ServiceLoader sl = this.get(ServiceLoader.class, false);
+			sl.ready0();
+			
+			stage = INIT_FINISH;
 			
 			//persistProcessInfo(dataOperator);
 			
@@ -781,7 +791,7 @@ public class SimpleObjectFactory implements IObjectFactory {
 		op.addNodeListener(p, (int type, String path,String data)->{
 			//防止被误删除，只要此进程还在，此结点就不应该消失
 			if(type == IListener.DATA_CHANGE) {
-				ProcessInfo pi0 = JsonUtils.getIns().fromJson(data, ProcessInfo.class);
+				ProcessInfoJRso pi0 = JsonUtils.getIns().fromJson(data, ProcessInfoJRso.class);
 				if(!pi0.isActive()) {
 					pi.setActive(false);
 					String msg = "JVM exit by other system";
@@ -819,14 +829,14 @@ public class SimpleObjectFactory implements IObjectFactory {
 		    	return;
 		    }*/
 		
-			IAccountService as = this.get(IAccountService.class);
+			IAccountServiceJMSrv as = this.get(IAccountServiceJMSrv.class,false);
 			boolean self = false;
 			if(as == null) {
 				self = false;
 				//非Security实例
-				IAccountService$JMAsyncClient asyncAs = null;
+				IAccountServiceJMSrv$JMAsyncClient asyncAs = null;
 				try {
-					asyncAs = this.getRemoteServie(IAccountService$JMAsyncClient.class.getName(), "*","*",null);
+					asyncAs = this.getRemoteServie(IAccountServiceJMSrv$JMAsyncClient.class.getName(), "*","*",null);
 				} catch(CommonException e) {}
 				if(asyncAs == null || !asyncAs.isReady()) {
 					logger.error("Security account service not found or not ready so work in not secrity model!");
@@ -841,22 +851,27 @@ public class SimpleObjectFactory implements IObjectFactory {
 			int clientId = Config.getClientId();
 			/*try {
 				clientId = Config.getClientId();
-			} catch(CommonException e) {}*/
+			} catch(CommonException e) {}
+			*/
 			
 			if(clientId < 0) {
 				pi.setActName(null);
 				return;
 			}
 			
-			String pwd = cfg.getString("pwd", null);
-			if(Utils.isEmpty(pwd)) {
-				throw new CommonException("Pwd cannot be null when specify clientId to start server: " + clientId);
+			String token = cfg.getString("token", null);
+			if(Utils.isEmpty(token)) {
+				throw new CommonException("token cannot be null when specify clientId to start server: " + clientId);
 			}
 			
-			Resp<ActInfo> r = as.loginWithId(clientId, pwd);
+			RespJRso<ActInfoJRso> r = as.loginWithClientToken(token);
 
 			//Resp<String> r = as.getNameById(clientId);
-			if(r != null && r.getCode() == Resp.CODE_SUCCESS) {
+			if(r != null && r.getCode() == RespJRso.CODE_SUCCESS) {
+				
+				if(r.getData().getClientId() != clientId) {
+					throw new CommonException("租户ID不匹配令牌:" + clientId);
+				}
 				
 				pi.setAi(r.getData());
 				Config.setAccountName(r.getData().getActName());
@@ -868,10 +883,10 @@ public class SimpleObjectFactory implements IObjectFactory {
 					return;//安全中心自身不需要心跳刷新账号
 				}
 				
-				final IAccountService as0 = as;
+				final IAccountServiceJMSrv as0 = as;
 				Holder<Integer> loginCnt = new Holder<>(0);
 				TimerTicker.doInBaseTicker(60*8, "actLoginCheck", null, (k,a)->{
-					Resp<Boolean> resp = null;
+					RespJRso<Boolean> resp = null;
 					if(loginCnt.get() == 0 && !Utils.isEmpty(pi.getAi().getLoginKey())) {
 						resp = as0.hearbeat(pi.getAi().getLoginKey());//刷新系统账号，防止超时
 						if(resp != null && resp.getData()) {
@@ -887,8 +902,8 @@ public class SimpleObjectFactory implements IObjectFactory {
 						LG.log(MC.LOG_WARN, SimpleObjectFactory.class,msg);
 					}
 					
-					Resp<ActInfo> lr = as0.loginWithId(clientId, pwd);
-					if(lr != null && lr.getCode() == Resp.CODE_SUCCESS) {
+					RespJRso<ActInfoJRso> lr = as0.loginWithClientToken(token);
+					if(lr != null && lr.getCode() == RespJRso.CODE_SUCCESS) {
 						pi.setAi(r.getData());
 						op.setData(p,JsonUtils.getIns().toJson(pi));
 						loginCnt.set(0);
@@ -1116,7 +1131,8 @@ public class SimpleObjectFactory implements IObjectFactory {
 		}
 		
 		if(registry == null){
-			throw new CommonException("IRegistry with name :"+registryName +" not found!");
+			logger.info("IRegistry classloader: " + IRegistry.class.getClassLoader().getClass().getName());
+			throw new CommonException("IRegistry with name: "+registryName +" not found!");
 		}
 		
 		srvManager.setDataOperator(dop);
@@ -1972,10 +1988,14 @@ public class SimpleObjectFactory implements IObjectFactory {
 		}
 		try {
 			if(readyMethod1 != null) {
-				logger.info(readyMethod1.toString());
+				if(logger.isTraceEnabled()) {
+					logger.trace(readyMethod1.toString());
+				}
 				readyMethod1.invoke(obj, new Object[]{});
 			}else if(readyMethod2 != null){
-				logger.info(readyMethod2.toString());
+				if(logger.isTraceEnabled()) {
+					logger.info(readyMethod2.toString());
+				}
 				readyMethod2.invoke(obj, new Object[]{});
 			}
 		} catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
@@ -2011,13 +2031,13 @@ public class SimpleObjectFactory implements IObjectFactory {
 		logger.info("Origit ProcessInfo:" + json);
 		
 		if(StringUtils.isNotEmpty(json)) {
-			pi = JsonUtils.getIns().fromJson(json, ProcessInfo.class);
+			pi = JsonUtils.getIns().fromJson(json, ProcessInfoJRso.class);
 			pi.getMetadatas().clear();
 			//编排环境下启动的实例
 			//checkPreProcess(pi);
 		} else {
 			//非编排环境下启动的实例
-			pi = new ProcessInfo();
+			pi = new ProcessInfoJRso();
 			pi.setAgentHost(Config.getExportSocketHost());
 			pi.setAgentId(Config.getCommandParam(ChoyConstants.ARG_AGENT_ID));
 			pi.setDepId(Config.getCommandParam(ChoyConstants.ARG_DEP_ID));
@@ -2051,7 +2071,7 @@ public class SimpleObjectFactory implements IObjectFactory {
 		pi.setOpTime(TimeUtils.getCurTime());
 		pi.setHaEnable(ismlModel);
 		pi.setMaster(false);
-		pi.setStartTime(pi.getOpTime());
+		pi.setStartTime(TimeUtils.getCurTime());
 		pi.setInfoFilePath(initProcessInfoPath);
 		pi.setOsName(System.getProperty("os.name"));
 		pi.setLogLevel(Config.getCommandParam(Constants.SYSTEM_LOG_LEVEL, Byte.class, MC.LOG_INFO));
@@ -2063,7 +2083,7 @@ public class SimpleObjectFactory implements IObjectFactory {
 		final String js = JsonUtils.getIns().toJson(pi);
 		if(op.exist(p)) {
 			String oldJson = op.getData(p);
-			ProcessInfo pri = JsonUtils.getIns().fromJson(oldJson, ProcessInfo.class);
+			ProcessInfoJRso pri = JsonUtils.getIns().fromJson(oldJson, ProcessInfoJRso.class);
 			//LG.log(MC.LOG_ERROR,getClass(),"Process exist[" +oldJson+"]");
 			//JMicro.waitTime(5000);
 			if(pri != null && pri.isActive()) {
@@ -2073,7 +2093,7 @@ public class SimpleObjectFactory implements IObjectFactory {
 			op.deleteNode(p);
 		}
 		
-		this.cacheObj(ProcessInfo.class, pi,null);
+		this.cacheObj(ProcessInfoJRso.class, pi,null);
 		
 		op.createNodeOrSetData(p,js ,IDataOperator.EPHEMERAL);
 		

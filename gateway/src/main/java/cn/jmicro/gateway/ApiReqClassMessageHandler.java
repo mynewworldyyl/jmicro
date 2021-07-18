@@ -23,8 +23,8 @@ import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Inject;
 import cn.jmicro.api.codec.Decoder;
 import cn.jmicro.api.codec.ICodecFactory;
-import cn.jmicro.api.gateway.ApiRequest;
-import cn.jmicro.api.gateway.ApiResponse;
+import cn.jmicro.api.gateway.ApiRequestJRso;
+import cn.jmicro.api.gateway.ApiResponseJRso;
 import cn.jmicro.api.idgenerator.ComponentIdServer;
 import cn.jmicro.api.net.IMessageHandler;
 import cn.jmicro.api.net.ISession;
@@ -58,14 +58,14 @@ public class ApiReqClassMessageHandler implements IMessageHandler{
 		
 		msg.setType((byte)(msg.getType()+1));
 		
-		ApiRequest req = ICodecFactory.decode(codecFactory, msg.getPayload(), 
-				ApiRequest.class, msg.getUpProtocol());
+		ApiRequestJRso req = ICodecFactory.decode(codecFactory, msg.getPayload(), 
+				ApiRequestJRso.class, msg.getUpProtocol());
 		
 		Short type = (Short)req.getArgs()[0];
 		
 		Class<?> cls = Decoder.getClass(type);
 		
-		ApiResponse resp = new ApiResponse();
+		ApiResponseJRso resp = new ApiResponseJRso();
 		resp.setReqId(req.getReqId());
 		resp.setMsg(msg);
 		resp.setId(type.longValue());

@@ -41,7 +41,7 @@ public class RouteUtils {
 		return !ctxVal.equals(val);
 	}
 
-	public static  boolean isEmpty(Collection<RouteRule> rs) {
+	public static  boolean isEmpty(Collection<RouteRuleJRso> rs) {
 		return rs == null || rs.isEmpty();
 	}
 	
@@ -49,7 +49,7 @@ public class RouteUtils {
 		return !StringUtils.isEmpty(ruleVal) && !ruleVal.equals(val);
 	}
 	
-	public static  boolean filterByClientTag(FromRouteEndpoint ep) {
+	public static  boolean filterByClientTag(FromRouteEndpointJRso ep) {
 		if(StringUtils.isEmpty(ep.getTagKey()) || StringUtils.isEmpty(ep.getVal())) {
 			return false;
 		}
@@ -61,7 +61,7 @@ public class RouteUtils {
 		return !ctxTagValue.equals(ep.getVal());
 	}
 	
-	public static  boolean filterByClientIpPort(FromRouteEndpoint ep) {
+	public static  boolean filterByClientIpPort(FromRouteEndpointJRso ep) {
 		String clientIp = JMicroContext.get().getString(JMicroContext.REMOTE_HOST, "");
 		//getCtxParam(JMicroContext.REMOTE_HOST);
 		Integer clientPort = JMicroContext.get().getInt(JMicroContext.LOCAL_PORT,0);
@@ -71,17 +71,17 @@ public class RouteUtils {
 		return !(clientIp+":"+clientPort).equals(ep.getVal());
 	}
 	
-	public static RouteRule maxPriorityRule(List<RouteRule> rs) {
+	public static RouteRuleJRso maxPriorityRule(List<RouteRuleJRso> rs) {
 		if(isEmpty(rs)) {
 			return null;
 		}
 		if(rs.size() == 1) {
 			return rs.iterator().next();
 		}
-		Iterator<RouteRule> ite = rs.iterator();
-		RouteRule r = ite.next();
+		Iterator<RouteRuleJRso> ite = rs.iterator();
+		RouteRuleJRso r = ite.next();
 		while(ite.hasNext()) {
-			RouteRule rr = ite.next();
+			RouteRuleJRso rr = ite.next();
 			if(r.getPriority() > rr.getPriority()) {
 				r = rr;
 			}

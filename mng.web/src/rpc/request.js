@@ -13,6 +13,10 @@ const ApiRequest = function() {
 
     this.args = [];
 
+    this.upProtocol = Constants.PROTOCOL_JSON;
+    this.doProtocol = Constants.PROTOCOL_JSON;
+    this.type = Constants.MSG_TYPE_REQ_JRPC;
+
 }
 
 ApiRequest.prototype = {

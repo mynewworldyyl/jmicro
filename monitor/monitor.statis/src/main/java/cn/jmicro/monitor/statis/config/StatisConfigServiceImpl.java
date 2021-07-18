@@ -8,7 +8,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import cn.jmicro.api.JMicroContext;
-import cn.jmicro.api.Resp;
+import cn.jmicro.api.RespJRso;
 import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Inject;
 import cn.jmicro.api.annotation.SMethod;
@@ -18,23 +18,23 @@ import cn.jmicro.api.exp.ExpUtils;
 import cn.jmicro.api.idgenerator.ComponentIdServer;
 import cn.jmicro.api.monitor.LG;
 import cn.jmicro.api.monitor.MC;
-import cn.jmicro.api.monitor.StatisConfig;
-import cn.jmicro.api.monitor.StatisIndex;
+import cn.jmicro.api.monitor.StatisConfigJRso;
+import cn.jmicro.api.monitor.StatisIndexJRso;
 import cn.jmicro.api.raft.IDataOperator;
-import cn.jmicro.api.registry.UniqueServiceKey;
-import cn.jmicro.api.security.ActInfo;
+import cn.jmicro.api.registry.UniqueServiceKeyJRso;
+import cn.jmicro.api.security.ActInfoJRso;
 import cn.jmicro.api.security.PermissionManager;
 import cn.jmicro.common.Utils;
 import cn.jmicro.common.util.JsonUtils;
-import cn.jmicro.monitor.statis.api.IStatisConfigService;
+import cn.jmicro.monitor.statis.api.IStatisConfigServiceJMSrv;
 
 @Component
 @Service(version="0.0.1",external=true,timeout=10000,debugMode=1,showFront=false)
-public class StatisConfigServiceImpl implements IStatisConfigService {
+public class StatisConfigServiceImpl implements IStatisConfigServiceJMSrv {
 
 	private final static Logger logger = LoggerFactory.getLogger(StatisConfigServiceImpl.class);
 	
-	private static final String ROOT = StatisConfig.STATIS_CONFIG_ROOT;
+	private static final String ROOT = StatisConfigJRso.STATIS_CONFIG_ROOT;
 	
 	@Inject
 	private IDataOperator op;
@@ -44,16 +44,16 @@ public class StatisConfigServiceImpl implements IStatisConfigService {
 	
 	@Override
 	@SMethod(perType=true,needLogin=true,maxSpeed=1,maxPacketSize=1024,downSsl=true,encType=0,upSsl=true)
-	public Resp<List<StatisConfig>> query() {
-		Resp<List<StatisConfig>> r = new Resp<>();
+	public RespJRso<List<StatisConfigJRso>> query() {
+		RespJRso<List<StatisConfigJRso>> r = new RespJRso<>();
 		Set<String> ids = op.getChildren(ROOT, false);
 		if(ids == null || ids.isEmpty()) {
-			r.setCode(Resp.CODE_FAIL);
+			r.setCode(RespJRso.CODE_FAIL);
 			r.setMsg("NoData");
 			return r;
 		}
 		
-		List<StatisConfig> ll = new ArrayList<>();
+		List<StatisConfigJRso> ll = new ArrayList<>();
 		r.setData(ll);
 		
 		boolean isAdmin = PermissionManager.isCurAdmin();
@@ -61,7 +61,7 @@ public class StatisConfigServiceImpl implements IStatisConfigService {
 		for(String id : ids) {
 			String path = ROOT + "/" + id;
 			String data = op.getData(path);
-			StatisConfig lw = JsonUtils.getIns().fromJson(data, StatisConfig.class);
+			StatisConfigJRso lw = JsonUtils.getIns().fromJson(data, StatisConfigJRso.class);
 			
 			if(lw != null) {
 				if(isAdmin || PermissionManager.checkAccountClientPermission(lw.getCreatedBy())) {
@@ -75,23 +75,23 @@ public class StatisConfigServiceImpl implements IStatisConfigService {
 	
 	@Override
 	@SMethod(perType=true,needLogin=true,maxSpeed=1,maxPacketSize=1024,downSsl=true,encType=0,upSsl=true)
-	public Resp<Boolean> enable(Integer id) {
+	public RespJRso<Boolean> enable(Integer id) {
 		
-		Resp<Boolean> r = new Resp<>();
+		RespJRso<Boolean> r = new RespJRso<>();
 		String path = ROOT + "/" + id;
 		String data = op.getData(path);
 		
 		if(Utils.isEmpty(data)) {
-			r.setCode(Resp.CODE_FAIL);
+			r.setCode(RespJRso.CODE_FAIL);
 			r.setData(false);
 			r.setMsg("更新配置已经不存在");
 			return r;
 		}
 		
-		StatisConfig lw = JsonUtils.getIns().fromJson(data, StatisConfig.class);
+		StatisConfigJRso lw = JsonUtils.getIns().fromJson(data, StatisConfigJRso.class);
 		
 		if(!(PermissionManager.isCurAdmin() || PermissionManager.checkAccountClientPermission(lw.getCreatedBy()))) {
-			r.setCode(Resp.CODE_NO_PERMISSION);
+			r.setCode(RespJRso.CODE_NO_PERMISSION);
 			r.setData(false);
 			r.setMsg(JMicroContext.get().getAccount().getActName()+" have no permissoin to enable statis monitor config: " + lw.getId()+", target clientId: " + lw.getCreatedBy());
 			LG.log(MC.LOG_WARN, this.getClass(), r.getMsg());
@@ -100,16 +100,16 @@ public class StatisConfigServiceImpl implements IStatisConfigService {
 		
 		if(!lw.isEnable()) {
 			//从禁用到启用需要检测数据合法性
-			Resp<Boolean> rr = this.checkAndSet(lw);
+			RespJRso<Boolean> rr = this.checkAndSet(lw);
 			if(rr != null) {
 				return rr;
 			}
 		}
 		
 		if(!PermissionManager.isCurAdmin()) {
-			lw.setToParams(StatisConfig.DEFAULT_DB);
+			lw.setToParams(StatisConfigJRso.DEFAULT_DB);
 		}else if(Utils.isEmpty(lw.getToParams())) {
-			lw.setToParams(StatisConfig.DEFAULT_DB);
+			lw.setToParams(StatisConfigJRso.DEFAULT_DB);
 		}
 		
 		lw.setEnable(!lw.isEnable());
@@ -122,28 +122,28 @@ public class StatisConfigServiceImpl implements IStatisConfigService {
 
 	@Override
 	@SMethod(perType=true,needLogin=true,maxSpeed=1,maxPacketSize=4096,downSsl=true,encType=0,upSsl=true)
-	public Resp<Boolean> update(StatisConfig cfg) {
+	public RespJRso<Boolean> update(StatisConfigJRso cfg) {
 		
-		Resp<Boolean> rr = this.checkAndSet(cfg);
+		RespJRso<Boolean> rr = this.checkAndSet(cfg);
 		if(rr != null) {
 			return rr;
 		}
 		
-		Resp<Boolean> r = new Resp<>();
+		RespJRso<Boolean> r = new RespJRso<>();
 		String path = ROOT + "/" + cfg.getId();
 		String data = op.getData(path);
 		
 		if(Utils.isEmpty(data)) {
-			r.setCode(Resp.CODE_FAIL);
+			r.setCode(RespJRso.CODE_FAIL);
 			r.setData(false);
 			r.setMsg("更新配置已经不存在");
 			return r;
 		}
 		
-		StatisConfig lw = JsonUtils.getIns().fromJson(data, StatisConfig.class);
+		StatisConfigJRso lw = JsonUtils.getIns().fromJson(data, StatisConfigJRso.class);
 		
 		if(!(PermissionManager.isCurAdmin() || PermissionManager.checkAccountClientPermission(lw.getCreatedBy()))) {
-			r.setCode(Resp.CODE_NO_PERMISSION);
+			r.setCode(RespJRso.CODE_NO_PERMISSION);
 			r.setData(false);
 			r.setMsg(JMicroContext.get().getAccount().getActName()+" have no permissoin to update statis config: " + lw.getId()+", clientId: " + lw.getCreatedBy());
 			LG.log(MC.LOG_WARN, this.getClass(), r.getMsg());
@@ -151,7 +151,7 @@ public class StatisConfigServiceImpl implements IStatisConfigService {
 		}
 		
 		if(lw.isEnable()) {
-			r.setCode(Resp.CODE_FAIL);
+			r.setCode(RespJRso.CODE_FAIL);
 			r.setData(false);
 			r.setMsg("启用中的配置不能更新");
 			return r;
@@ -159,17 +159,17 @@ public class StatisConfigServiceImpl implements IStatisConfigService {
 		
 		if(!PermissionManager.isCurAdmin()) {
 			
-			if(cfg.getToType() == StatisConfig.TO_TYPE_CONSOLE ||
-					cfg.getToType() == StatisConfig.TO_TYPE_FILE) {
-				r.setCode(Resp.CODE_FAIL);
+			if(cfg.getToType() == StatisConfigJRso.TO_TYPE_CONSOLE ||
+					cfg.getToType() == StatisConfigJRso.TO_TYPE_FILE) {
+				r.setCode(RespJRso.CODE_FAIL);
 				r.setData(false);
 				r.setMsg("无权限使用此种目标类型");
 				return r;
 			}
 			
-			cfg.setToParams(StatisConfig.DEFAULT_DB);
+			cfg.setToParams(StatisConfigJRso.DEFAULT_DB);
 		}else if(Utils.isEmpty(cfg.getToParams())) {
-			cfg.setToParams(StatisConfig.DEFAULT_DB);
+			cfg.setToParams(StatisConfigJRso.DEFAULT_DB);
 		}
 		
 		lw.setByKey(cfg.getByKey());
@@ -196,16 +196,16 @@ public class StatisConfigServiceImpl implements IStatisConfigService {
 
 	@Override
 	@SMethod(perType=true,needLogin=true,maxSpeed=1,maxPacketSize=1024,downSsl=true,encType=0,upSsl=true)
-	public Resp<Boolean> delete(int id) {
-		Resp<Boolean> r = new Resp<>();
+	public RespJRso<Boolean> delete(int id) {
+		RespJRso<Boolean> r = new RespJRso<>();
 		String path = ROOT + "/" + id;
 		if(op.exist(path)) {
 			
 			String data = op.getData(path);
-			StatisConfig lw = JsonUtils.getIns().fromJson(data, StatisConfig.class);
+			StatisConfigJRso lw = JsonUtils.getIns().fromJson(data, StatisConfigJRso.class);
 			
 			if(!(PermissionManager.isCurAdmin() || PermissionManager.checkAccountClientPermission(lw.getCreatedBy()))) {
-				r.setCode(Resp.CODE_NO_PERMISSION);
+				r.setCode(RespJRso.CODE_NO_PERMISSION);
 				r.setData(false);
 				r.setMsg(JMicroContext.get().getAccount().getActName()+" have no permissoin to delete statis config: " + lw.getId()+", target clientId: " + lw.getCreatedBy());
 				LG.log(MC.LOG_WARN, this.getClass(), r.getMsg());
@@ -220,35 +220,35 @@ public class StatisConfigServiceImpl implements IStatisConfigService {
 
 	@Override
 	@SMethod(perType=true,needLogin=true,maxSpeed=1,maxPacketSize=4096)
-	public Resp<StatisConfig> add(StatisConfig cfg) {
-		Resp<StatisConfig> r = new Resp<>();
+	public RespJRso<StatisConfigJRso> add(StatisConfigJRso cfg) {
+		RespJRso<StatisConfigJRso> r = new RespJRso<>();
 		
-		Resp<Boolean> rr = this.checkAndSet(cfg);
+		RespJRso<Boolean> rr = this.checkAndSet(cfg);
 		if(rr != null) {
 			r.setCode(rr.getCode());
 			r.setMsg(rr.getMsg());
 			return r;
 		}
 		
-		ActInfo ai = JMicroContext.get().getAccount();
+		ActInfoJRso ai = JMicroContext.get().getAccount();
 		if(!PermissionManager.isCurAdmin()) {
-			if(cfg.getToType() == StatisConfig.TO_TYPE_CONSOLE ||
-					cfg.getToType() == StatisConfig.TO_TYPE_FILE) {
-				r.setCode(Resp.CODE_FAIL);
+			if(cfg.getToType() == StatisConfigJRso.TO_TYPE_CONSOLE ||
+					cfg.getToType() == StatisConfigJRso.TO_TYPE_FILE) {
+				r.setCode(RespJRso.CODE_FAIL);
 				r.setMsg("无权限使用此种目标类型");
 				return r;
 			}
-			cfg.setClientId(ai.getId());
+			cfg.setClientId(ai.getClientId());
 		}
 		
 		if(!PermissionManager.isCurAdmin()) {
-			cfg.setToParams(StatisConfig.DEFAULT_DB);
+			cfg.setToParams(StatisConfigJRso.DEFAULT_DB);
 		}else if(Utils.isEmpty(cfg.getToParams())) {
-			cfg.setToParams(StatisConfig.DEFAULT_DB);
+			cfg.setToParams(StatisConfigJRso.DEFAULT_DB);
 		}
 		
 		cfg.setCreatedBy(ai.getId());
-		cfg.setId(this.idGenerator.getIntId(StatisConfig.class));
+		cfg.setId(this.idGenerator.getIntId(StatisConfigJRso.class));
 		
 		String path = ROOT + "/" + cfg.getId();
 		op.createNodeOrSetData(path, JsonUtils.getIns().toJson(cfg), false);
@@ -257,9 +257,9 @@ public class StatisConfigServiceImpl implements IStatisConfigService {
 		return r;
 	}
 
-	private Resp<Boolean> checkAndSet(StatisConfig cfg) {
+	private RespJRso<Boolean> checkAndSet(StatisConfigJRso cfg) {
 		
-		Resp<Boolean> r = new Resp<>();
+		RespJRso<Boolean> r = new RespJRso<>();
 		
 		String msg = checkConfig(cfg);
 		if(msg != null) {
@@ -269,36 +269,36 @@ public class StatisConfigServiceImpl implements IStatisConfigService {
 			return r;
 		}
 		
-		if(cfg.getByType() <= 0 || cfg.getByType() > StatisConfig.BY_TYPE_ACCOUNT) {
-			r.setCode(Resp.CODE_FAIL);
+		if(cfg.getByType() <= 0 || cfg.getByType() > StatisConfigJRso.BY_TYPE_ACCOUNT) {
+			r.setCode(RespJRso.CODE_FAIL);
 			r.setData(false);
 			r.setMsg("统计类型不能为空");
 			return r;
 		}
 		
 		if(Utils.isEmpty(cfg.getByKey())) {
-			r.setCode(Resp.CODE_FAIL);
+			r.setCode(RespJRso.CODE_FAIL);
 			r.setData(false);
 			r.setMsg("统计键值不能为空");
 			return r;
 		}
 		
 		if(cfg.getStatisIndexs() == null || cfg.getStatisIndexs().length == 0) {
-			r.setCode(Resp.CODE_FAIL);
+			r.setCode(RespJRso.CODE_FAIL);
 			r.setData(false);
 			r.setMsg("统计指标不能为空");
 			return r;
 		}
 		
-		if(cfg.getToType() <= 0 || cfg.getToType() > StatisConfig.TO_TYPE_MESSAGE+10) {
-			r.setCode(Resp.CODE_FAIL);
+		if(cfg.getToType() <= 0 || cfg.getToType() > StatisConfigJRso.TO_TYPE_MESSAGE+10) {
+			r.setCode(RespJRso.CODE_FAIL);
 			r.setData(false);
 			r.setMsg("目标类型不能为空");
 			return r;
 		}
 		
 		if(Utils.isEmpty(cfg.getTimeUnit())) {
-			cfg.setTimeUnit(StatisConfig.UNIT_MU);
+			cfg.setTimeUnit(StatisConfigJRso.UNIT_MU);
 		}
 		
 		if(cfg.getTimeCnt() <= 0) {
@@ -308,7 +308,7 @@ public class StatisConfigServiceImpl implements IStatisConfigService {
 		return null;
 	}
 	
-	public String checkConfig(StatisConfig lw) {
+	public String checkConfig(StatisConfigJRso lw) {
 		String msg = checkByType(lw);
 		if(msg != null) {
 			return msg;
@@ -326,11 +326,11 @@ public class StatisConfigServiceImpl implements IStatisConfigService {
 			return msg;
 		}
 		
-		StatisIndex[] sis = lw.getStatisIndexs();
+		StatisIndexJRso[] sis = lw.getStatisIndexs();
 		
 		for(int i = 0; i < sis.length; i++ ) {
-			StatisIndex si = sis[i];
-            if(si.getType() < StatisConfig.PREFIX_TOTAL || si.getType() > StatisConfig.PREFIX_CUR_PERCENT) {
+			StatisIndexJRso si = sis[i];
+            if(si.getType() < StatisConfigJRso.PREFIX_TOTAL || si.getType() > StatisConfigJRso.PREFIX_CUR_PERCENT) {
             	msg = "统计指标类型不合法" +  si.getType();
             	return msg;
             }
@@ -379,7 +379,7 @@ public class StatisConfigServiceImpl implements IStatisConfigService {
 		return msg;
 	}
 
-	private String checkToType(StatisConfig lw) {
+	private String checkToType(StatisConfigJRso lw) {
 		String msg = null;
 		try {
 			if(lw.getToType() <= 0) {
@@ -387,15 +387,15 @@ public class StatisConfigServiceImpl implements IStatisConfigService {
 				return msg;
 			}
 			
-			if(StatisConfig.TO_TYPE_SERVICE_METHOD == lw.getToType()) {
+			if(StatisConfigJRso.TO_TYPE_SERVICE_METHOD == lw.getToType()) {
 				if(Utils.isEmpty(lw.getToParams())) {
-					msg = "To key params cannot be null for service [" + StatisConfig.TO_TYPE_SERVICE_METHOD+ "] for id: " + lw.getId();
+					msg = "To key params cannot be null for service [" + StatisConfigJRso.TO_TYPE_SERVICE_METHOD+ "] for id: " + lw.getId();
 					return msg;
 				}
 				
-				String[] ps = lw.getToParams().split(UniqueServiceKey.SEP);
+				String[] ps = lw.getToParams().split(UniqueServiceKeyJRso.SEP);
 				if(ps == null || ps.length < 7) {
-					msg = "To param ["+lw.getToParams()+"] invalid [" + StatisConfig.TO_TYPE_SERVICE_METHOD+ "] for id: " + lw.getId();
+					msg = "To param ["+lw.getToParams()+"] invalid [" + StatisConfigJRso.TO_TYPE_SERVICE_METHOD+ "] for id: " + lw.getId();
 					return msg;
 				}
 				
@@ -414,19 +414,19 @@ public class StatisConfigServiceImpl implements IStatisConfigService {
 				lw.setToVer(ps[2]);
 				lw.setToMt(ps[6]);
 				
-			}else if(StatisConfig.TO_TYPE_DB == lw.getToType()) {
-				lw.setToParams(StatisConfig.DEFAULT_DB);
-			}else if(StatisConfig.TO_TYPE_FILE == lw.getToType()) {
+			}else if(StatisConfigJRso.TO_TYPE_DB == lw.getToType()) {
+				lw.setToParams(StatisConfigJRso.DEFAULT_DB);
+			}else if(StatisConfigJRso.TO_TYPE_FILE == lw.getToType()) {
 				if(Utils.isEmpty(lw.getToParams())) {
 					msg = "To file cannot be NULL for id: " + lw.getId();
 					return msg;
 				}
-			}else if(StatisConfig.TO_TYPE_MONITOR_LOG == lw.getToType()) {
+			}else if(StatisConfigJRso.TO_TYPE_MONITOR_LOG == lw.getToType()) {
 				if(Utils.isEmpty(lw.getToParams())) {
 					msg = "Tag cannot be null: " + lw.getId();
 					return msg;
 				}
-			}else if(StatisConfig.TO_TYPE_MESSAGE == lw.getToType()) {
+			}else if(StatisConfigJRso.TO_TYPE_MESSAGE == lw.getToType()) {
 				if(Utils.isEmpty(lw.getToParams())) {
 					msg = "Message topic cannot be null: " + lw.getId();
 					return msg;
@@ -470,7 +470,7 @@ public class StatisConfigServiceImpl implements IStatisConfigService {
 		
 	}
 	
-	private String checkByType(StatisConfig lw) {
+	private String checkByType(StatisConfigJRso lw) {
 		boolean suc = false;
 		int tt = lw.getByType();
 		String msg = null;
@@ -480,11 +480,11 @@ public class StatisConfigServiceImpl implements IStatisConfigService {
 				msg = "By type value cannot be null for: " + lw.getId();
 			} else {
 				switch(tt) {
-					case StatisConfig.BY_TYPE_SERVICE_METHOD:
-					case StatisConfig.BY_TYPE_SERVICE_INSTANCE_METHOD:
-					case StatisConfig.BY_TYPE_SERVICE_ACCOUNT_METHOD:
+					case StatisConfigJRso.BY_TYPE_SERVICE_METHOD:
+					case StatisConfigJRso.BY_TYPE_SERVICE_INSTANCE_METHOD:
+					case StatisConfigJRso.BY_TYPE_SERVICE_ACCOUNT_METHOD:
 					{
-						String[] srvs = lw.getByKey().split(UniqueServiceKey.SEP);
+						String[] srvs = lw.getByKey().split(UniqueServiceKeyJRso.SEP);
 						if(srvs.length < 3) {
 							msg = "By key params invalid: " + lw.getByKey()+ " for id: " + lw.getId();
 							return msg;
@@ -493,20 +493,20 @@ public class StatisConfigServiceImpl implements IStatisConfigService {
 						suc = checkByService(lw.getId(),srvs);
 						
 						if(suc) {
-							 lw.setBysn(srvs[UniqueServiceKey.INDEX_SN]);
-							 lw.setByns(srvs[UniqueServiceKey.INDEX_NS]);
-							 lw.setByver(srvs[UniqueServiceKey.INDEX_VER]);
-							 lw.setByins(srvs[UniqueServiceKey.INDEX_INS]);
-							 lw.setByme(srvs[UniqueServiceKey.INDEX_METHOD]);
+							 lw.setBysn(srvs[UniqueServiceKeyJRso.INDEX_SN]);
+							 lw.setByns(srvs[UniqueServiceKeyJRso.INDEX_NS]);
+							 lw.setByver(srvs[UniqueServiceKeyJRso.INDEX_VER]);
+							 lw.setByins(srvs[UniqueServiceKeyJRso.INDEX_INS]);
+							 lw.setByme(srvs[UniqueServiceKeyJRso.INDEX_METHOD]);
 							
 							switch(tt) {
-							case StatisConfig.BY_TYPE_SERVICE_METHOD:
+							case StatisConfigJRso.BY_TYPE_SERVICE_METHOD:
 								if(srvs.length < 6 || Utils.isEmpty(srvs[6])) {
 									msg = "By service method cannot be NULL for id: " + lw.getId();
 									return msg;
 								}
 								break;
-							case StatisConfig.BY_TYPE_SERVICE_INSTANCE_METHOD:
+							case StatisConfigJRso.BY_TYPE_SERVICE_INSTANCE_METHOD:
 								if(srvs.length < 4 || Utils.isEmpty(srvs[3])) {
 									msg = "By instance name cannot be NULL for id: " + lw.getId();
 									return msg;
@@ -516,7 +516,7 @@ public class StatisConfigServiceImpl implements IStatisConfigService {
 									return msg;
 								}
 								break;
-							case StatisConfig.BY_TYPE_SERVICE_ACCOUNT_METHOD:
+							case StatisConfigJRso.BY_TYPE_SERVICE_ACCOUNT_METHOD:
 								if(srvs.length < 6 || Utils.isEmpty(srvs[6])) {
 									msg = "By service method cannot be NULL for id: " + lw.getId();
 									return msg;
@@ -531,19 +531,19 @@ public class StatisConfigServiceImpl implements IStatisConfigService {
 						}
 						break;
 					}
-					case StatisConfig.BY_TYPE_INSTANCE:
+					case StatisConfigJRso.BY_TYPE_INSTANCE:
 						if(Utils.isEmpty(lw.getByKey())) {
 							msg = "By instance name cannot be NULL for id: " + lw.getId();
 							return msg;
 						}
 						break;
-					case StatisConfig.BY_TYPE_ACCOUNT:
+					case StatisConfigJRso.BY_TYPE_ACCOUNT:
 						if(Utils.isEmpty(lw.getByKey())) {
 							msg = "By account name cannot be NULL for id: " + lw.getId();
 							return msg;
 						}
 						break;
-					/*case StatisConfig.BY_TYPE_EXP:
+					/*case StatisConfigJRso.BY_TYPE_EXP:
 						if(Utils.isEmpty(lw.getByKey())) {
 							msg = "Expression cannot be NULL for id: " + lw.getId();
 							return msg;

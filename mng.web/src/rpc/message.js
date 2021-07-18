@@ -16,8 +16,6 @@ let Constants = {
 
     MSG_TYPE_ASYNC_RESP : 0x06,
 
-    FNV_HASH_METHOD_KEY: "cn.jmicro.api.gateway.IBaseGatewayService##apigateway##0.0.1########fnvHash1a",
-
     SERVICE_NAMES : "serviceNames",
     SERVICE_NAMESPACES : "namespaces",
     SERVICE_VERSIONS : "versions",

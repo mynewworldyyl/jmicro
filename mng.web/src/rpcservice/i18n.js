@@ -2,11 +2,24 @@ import rpc from "@/rpc/rpcbase";
 import cons from "@/rpc/constants";
 import localStorage from "@/rpc/localStorage";
 
-export default  {
+const sn = 'cn.jmicro.mng.api.II8NServiceJMSrv'
+const ns = cons.NS_MNG
+const v = '0.0.1'
 
-  sn:'cn.jmicro.mng.api.II8NService',
-  ns : cons.NS_MNG,
-  v:'0.0.1',
+function __actreq(method,args){
+    let req = {};
+    req.serviceName = sn
+    req.namespace = ns
+    req.version = v
+    req.args = args
+    req.method = method
+    return req;
+}
+
+export default  {
+  sn,
+  ns,
+  v,
   //resource name is : i18n_zh.properties
   resources_ : {},
   //take the i18n.propertis as the default language
@@ -69,7 +82,8 @@ export default  {
 
   getFromServer_ : function(resPath,cb) {
     let self = this;
-    rpc.callRpcWithParams(this.sn, this.ns, this.v, 'keyValues', [resPath,this.defaultLanguage_])
+    let req = __actreq('keyValues', [resPath,this.defaultLanguage_])
+    rpc.callRpc(req)
       .then(resp => {
         if(resp || resp.code == 0) {
           let res = resp.data;

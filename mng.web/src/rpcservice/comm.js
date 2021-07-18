@@ -5,12 +5,16 @@ const   dicts = {};
 
 export default  {
 
+    __actreq :  function(method,args){
+        return rpc.creq(this.sn,this.ns,this.v,method,args)
+    },
+
   init : function(/*cb*/) {
     //jm.mng.comm.init(cb);
   },
 
   hasPermission: function (per){
-    return rpc.callRpcWithParams(this.sn,this.ns,this.v,'hasPermission',[per]);
+      return rpc.callRpc(this.__actreq('hasPermission', [per]))
   },
 
   getDicts: function (keys,qry,forceReflesh){
@@ -35,7 +39,7 @@ export default  {
       if(nokeys.length == 0) {
         reso(ds);
       } else {
-        rpc.callRpcWithParams(self.sn,self.ns,self.v,'getDicts',[nokeys,qry])
+        rpc.callRpc(this.__actreq('getDicts', [nokeys,qry]))
           .then((resp)=>{
             if(resp.code != 0) {
               reje(resp.msg);
@@ -60,11 +64,8 @@ export default  {
     return !this.data ? "undefined" : this.data[key];
   },
   changeLang: function (lang,callback){
-    let req =  this.__ccreq();
-    req.method = 'getI18NValues';
-    req.args = [lang];
     let self = this;
-    rpc.callRpc(req,rpc.Constants.PROTOCOL_JSON, rpc.Constants.PROTOCOL_JSON)
+      rpc.callRpc(this.__actreq('getI18NValues', [lang]))
       .then((data)=>{
         self.data = data;
         callback();
@@ -73,15 +74,7 @@ export default  {
     });
   },
 
-  __ccreq:function(){
-    let req = {};
-    req.serviceName=this.sn;
-    req.namespace = this.ns;
-    req.version = this.v;
-    return req;
-  },
-
-  sn:'cn.jmicro.api.mng.ICommonManager',
+  sn:'cn.jmicro.api.mng.ICommonManagerJMSrv',
   ns : cons.NS_MNG,
   v:'0.0.1',
 }

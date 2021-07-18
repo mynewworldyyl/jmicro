@@ -6,25 +6,25 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import cn.jmicro.api.config.Config;
-import cn.jmicro.api.mng.ReportData;
-import cn.jmicro.api.monitor.IMonitorDataSubscriber;
+import cn.jmicro.api.mng.ReportDataJRso;
+import cn.jmicro.api.monitor.IMonitorDataSubscriberJMSrv;
 import cn.jmicro.api.monitor.MC;
-import cn.jmicro.api.monitor.JMStatisItem;
+import cn.jmicro.api.monitor.JMStatisItemJRso;
 import cn.jmicro.api.monitor.MonitorAndService2TypeRelationshipManager;
-import cn.jmicro.api.monitor.StatisItem;
+import cn.jmicro.api.monitor.StatisItemJRso;
 import cn.jmicro.api.raft.IDataOperator;
-import cn.jmicro.api.registry.UniqueServiceKey;
+import cn.jmicro.api.registry.UniqueServiceKeyJRso;
 
-public abstract class AbstractMonitorDataSubscriber implements IMonitorDataSubscriber {
+public abstract class AbstractMonitorDataSubscriber implements IMonitorDataSubscriberJMSrv {
 
 	private final static Logger logger = LoggerFactory.getLogger(AbstractMonitorDataSubscriber.class);
 	
 	protected String skey(String namespace,String version) {
-		return UniqueServiceKey.serviceName(IMonitorDataSubscriber.class.getName(), namespace,version);
+		return UniqueServiceKeyJRso.serviceName(IMonitorDataSubscriberJMSrv.class.getName(), namespace,version);
 	}
 
 	@Override
-	public ReportData  getData(String srvKey, Short[] type, String[] dataType) {
+	public ReportDataJRso  getData(String srvKey, Short[] type, String[] dataType) {
 		return null;
 	}
 
@@ -51,7 +51,7 @@ public abstract class AbstractMonitorDataSubscriber implements IMonitorDataSubsc
 		
 	}
 	
-	protected String toLog(JMStatisItem si,StatisItem oi) {
+	protected String toLog(JMStatisItemJRso si,StatisItemJRso oi) {
 		StringBuilder sb = new StringBuilder();
 		sb.append("INS [").append(si.getInstanceName())
 		.append(" M[").append(si.getKey()).append("]");
@@ -61,7 +61,7 @@ public abstract class AbstractMonitorDataSubscriber implements IMonitorDataSubsc
 		return sb.toString();
 	}
 
-	protected void log(JMStatisItem si) {
+	protected void log(JMStatisItemJRso si) {
 		for(Short type : si.getTypeStatis().keySet()) {
 			//List<StatisItem> items = si.getTypeStatis().get(type);
 			StringBuffer sb = new StringBuffer();

@@ -11,15 +11,15 @@ import org.slf4j.LoggerFactory;
 import cn.jmicro.api.IListener;
 import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Inject;
-import cn.jmicro.api.choreography.ProcessInfo;
+import cn.jmicro.api.choreography.ProcessInfoJRso;
 import cn.jmicro.api.gateway.MessageRouteGroup;
 import cn.jmicro.api.gateway.MessageRouteRow;
 import cn.jmicro.api.mng.ProcessInstanceManager;
 import cn.jmicro.api.raft.IDataOperator;
 import cn.jmicro.api.raft.IRaftListener;
 import cn.jmicro.api.raft.RaftNodeDataListener;
-import cn.jmicro.api.registry.ServiceItem;
-import cn.jmicro.api.registry.ServiceMethod;
+import cn.jmicro.api.registry.ServiceItemJRso;
+import cn.jmicro.api.registry.ServiceMethodJRso;
 import cn.jmicro.api.service.ServiceManager;
 import cn.jmicro.gateway.ApiGatewayPostFactory;
 
@@ -75,22 +75,29 @@ public class MessageRouteTable {
 			}
 		});
 		
-		srvMng.addListener((type,si)->{
-			if(!si.isExternal()) {
+		srvMng.addListener((type,siKey,sit)->{
+			if(sit == null) {
+				sit = this.srvMng.getServiceByKey(siKey.fullStringKey());
+				if(sit == null) {
+					logger.warn("Service item not found: " + siKey.fullStringKey());
+					return;
+				}
+			}
+			if(!sit.isExternal()) {
 				return;
 			}
 			if(type == IListener.ADD) {
-				serviceAdd(si);
+				serviceAdd(sit);
 			}else if(type == IListener.REMOVE) {
-				serviceRemove(si);
+				serviceRemove(sit);
 			}else if(type == IListener.DATA_CHANGE) {
-				serviceDataChange(si);
+				serviceDataChange(sit);
 			}
 		});
 		
 	}
 
-	private void serviceDataChange(ServiceItem si) {
+	private void serviceDataChange(ServiceItemJRso si) {
 		MessageRouteGroup mrg = instance2Services.get(si.getInsId());
 		if(mrg == null) return;
 		mrg.updateServiceItem(si);
@@ -98,19 +105,19 @@ public class MessageRouteTable {
 		parseMethodCode2Instance(si);
 	}
 
-	private void serviceRemove(ServiceItem si) {
+	private void serviceRemove(ServiceItemJRso si) {
 		MessageRouteGroup mrg = instance2Services.get(si.getInsId());
 		if(mrg == null) return;
 		mrg.removeServiceItem(si);
 		removeMethodCode2Instance(si);
 	}
 
-	private void removeMethodCode2Instance(ServiceItem si) {
+	private void removeMethodCode2Instance(ServiceItemJRso si) {
 
-		Set<ServiceMethod> methods = si.getMethods();
+		Set<ServiceMethodJRso> methods = si.getMethods();
 		if(methods == null || methods.isEmpty()) return;
 		
-		for(ServiceMethod sm : methods) {
+		for(ServiceMethodJRso sm : methods) {
 			Set<Integer> l = method2Instances.get(sm.getKey().getSnvHash());
 			if(l != null) {
 				l.remove(si.getInsId());
@@ -118,18 +125,18 @@ public class MessageRouteTable {
 		}
 	}
 
-	private void serviceAdd(ServiceItem si) {
+	private void serviceAdd(ServiceItemJRso si) {
 		MessageRouteGroup mrg = instance2Services.get(si.getInsId());
 		if(mrg == null) return;
 		mrg.addServiceItem(si);
 		parseMethodCode2Instance(si);
 	}
 
-	private void parseMethodCode2Instance(ServiceItem si) {
-		Set<ServiceMethod> methods = si.getMethods();
+	private void parseMethodCode2Instance(ServiceItemJRso si) {
+		Set<ServiceMethodJRso> methods = si.getMethods();
 		if(methods == null || methods.isEmpty()) return;
 		
-		for(ServiceMethod sm : methods) {
+		for(ServiceMethodJRso sm : methods) {
 			Integer h = sm.getKey().getSnvHash();
 			Set<Integer> l = method2Instances.get(h);
 			if(l == null) {
@@ -137,14 +144,14 @@ public class MessageRouteTable {
 			}
 			
 			if(logger.isDebugEnabled()) {
-				logger.debug("Method route hash:{},key:{},insId: {} insName:{}",h,sm.getKey().toKey(false, false, false),si.getInsId(),sm.getKey().getUsk().getInstanceName());
+				logger.debug("Method route hash:{},key:{},insId: {} insName:{}",h,sm.getKey().methodID(),si.getInsId(),sm.getKey().getUsk().getInstanceName());
 			}
 			
 			l.add(si.getInsId());
 		}
 	}
 
-	private void processDataChange(ProcessInfo pi) {
+	private void processDataChange(ProcessInfoJRso pi) {
 		MessageRouteGroup mrg = instance2Services.get(pi.getId());
 		if(mrg == null) {
 			mrg = new MessageRouteGroup();
@@ -156,17 +163,17 @@ public class MessageRouteTable {
 		routeRowChange(pi);
 	}
 
-	private void routeRowChange(ProcessInfo pi) {
+	private void routeRowChange(ProcessInfoJRso pi) {
 		addRouteRow(pi);
 	}
 
-	private void processRemove(ProcessInfo pi) {
+	private void processRemove(ProcessInfoJRso pi) {
 		instance2Services.remove(pi.getId());
 		removeMessageType2Instance(pi);
 		tables.remove(pi.getId());
 	}
 
-	private void removeMessageType2Instance(ProcessInfo pi) {
+	private void removeMessageType2Instance(ProcessInfoJRso pi) {
 		Set<Byte> types = pi.getTypes();
 		if(types == null || types.isEmpty()) return;
 		for(Byte t : types) {
@@ -177,12 +184,12 @@ public class MessageRouteTable {
 		}
 	}
 
-	private void processAdd(ProcessInfo pi) {
+	private void processAdd(ProcessInfoJRso pi) {
 		processDataChange(pi);
 		addRouteRow(pi);
 	}
 	
-	private void addRouteRow(ProcessInfo pi) {
+	private void addRouteRow(ProcessInfoJRso pi) {
 		MessageRouteRow mrr = tables.get(pi.getId());
 		if(mrr == null) {
 			 mrr = new MessageRouteRow();
@@ -195,7 +202,7 @@ public class MessageRouteTable {
 		tables.put(pi.getId(), mrr);
 	}
 
-	private void parseMessageType2Instance(ProcessInfo pi) {
+	private void parseMessageType2Instance(ProcessInfoJRso pi) {
 		Set<Byte> types = pi.getTypes();
 		if(types == null || types.isEmpty()) return;
 		for(Byte t : types) {
@@ -228,6 +235,13 @@ public class MessageRouteTable {
 	}
 
 	public Set<Integer> getIntanceIdsByMethodCode(Integer smKeyCode) {
+		Set<Integer> ins = this.method2Instances.get(smKeyCode);
+		if(ins != null) {
+			return ins;
+		}
+		ServiceMethodJRso sm = srvMng.getServiceMethodByHash(smKeyCode);
+		
+		
 		return this.method2Instances.get(smKeyCode);
 	}
 

@@ -28,7 +28,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import cn.jmicro.api.JMicroContext;
-import cn.jmicro.api.classloader.IClassloaderRpc;
+import cn.jmicro.api.classloader.IClassloaderRpcJMSrv;
 import cn.jmicro.api.classloader.RpcClassLoader;
 import cn.jmicro.api.config.Config;
 import cn.jmicro.api.monitor.LG;
@@ -36,9 +36,10 @@ import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.objectfactory.IObjectFactory;
 import cn.jmicro.api.registry.IRegistry;
 import cn.jmicro.api.registry.IServiceListener;
-import cn.jmicro.api.registry.ServiceItem;
-import cn.jmicro.api.registry.ServiceMethod;
-import cn.jmicro.api.registry.UniqueServiceMethodKey;
+import cn.jmicro.api.registry.ServiceItemJRso;
+import cn.jmicro.api.registry.ServiceMethodJRso;
+import cn.jmicro.api.registry.UniqueServiceKeyJRso;
+import cn.jmicro.api.registry.UniqueServiceMethodKeyJRso;
 import cn.jmicro.api.service.ServiceManager;
 import cn.jmicro.common.Constants;
 import cn.jmicro.common.util.StringUtils;
@@ -97,7 +98,7 @@ class SubcriberManager {
 		return topic2Callbacks.get(topic);
 	}
 
-	ISubscriberCallback getCallback(ServiceMethod sm) {
+	ISubscriberCallback getCallback(ServiceMethodJRso sm) {
 		Set<ISubscriberCallback> calls = topic2Callbacks.get(sm.getTopic());
 		if (calls != null && !calls.isEmpty()) {
 			for (ISubscriberCallback c : calls) {
@@ -119,18 +120,21 @@ class SubcriberManager {
 	}
 
 	//有可能是增加了主题，也有可能是减少了主题
-	private void serviceDataChange(ServiceItem item) {
+	private void serviceDataChange(UniqueServiceKeyJRso siKey ,ServiceItemJRso item) {
+		if(item == null) {
+			item = this.srvManager.getServiceByKey(siKey.fullStringKey());
+		}
 		if (item == null || item.getMethods() == null) {
 			return;
 		}
 
-		for (ServiceMethod sm : item.getMethods()) {
+		for (ServiceMethodJRso sm : item.getMethods()) {
 			// 接收异步消息的方法也要注册
 			/*if (StringUtils.isEmpty(sm.getTopic())) {
 				continue;
 			}*/
 
-			String k = sm.getKey().toKey(false, false, false);
+			String k = sm.getKey().methodID();
 
 			if (callbacks.containsKey(k) || (!callbacks.containsKey(k) 
 					&& StringUtils.isNotEmpty(sm.getTopic()))) {
@@ -141,15 +145,14 @@ class SubcriberManager {
 				}
 
 				if (openDebug) {
-					logger.debug("Got one CB: {}", sm.getKey().toKey(true, true, true));
+					logger.debug("Got one CB: {}", sm.getKey().fullStringKey());
 				}
 			}	
 		}
 	}
 
-	private void serviceRemoved(ServiceItem item) {
-
-		for (ServiceMethod sm : item.getMethods()) {
+	private void serviceRemoved(UniqueServiceKeyJRso siKey ,ServiceItemJRso item) {
+		for (ServiceMethodJRso sm : item.getMethods()) {
 			if (StringUtils.isEmpty(sm.getTopic())) {
 				continue;
 			}
@@ -157,19 +160,22 @@ class SubcriberManager {
 		}
 	}
 
-	private void parseServiceAdded(ServiceItem item) {
+	private void parseServiceAdded(UniqueServiceKeyJRso siKey ,ServiceItemJRso item) {
+		if(item == null) {
+			item = this.srvManager.getServiceByKey(siKey.fullStringKey());
+		}
 		if (item == null || item.getMethods() == null) {
 			return;
 		}
 
-		for(ServiceMethod sm : item.getMethods()) {
+		for(ServiceMethodJRso sm : item.getMethods()) {
 			//接收异步消息的方法也要注册
 			if (StringUtils.isEmpty(sm.getTopic())) {
 				continue;
 			}
 			subcribe(sm.getTopic(), sm, null);
 			if (openDebug) {
-				logger.debug("Got ont CB: {}", sm.getKey().toKey(true, true, true));
+				logger.debug("Got ont CB: {}", sm.getKey().fullStringKey());
 			}
 		}
 
@@ -177,28 +183,28 @@ class SubcriberManager {
 
 	private IServiceListener serviceAddedRemoveListener = new IServiceListener() {
 		@Override
-		public void serviceChanged(int type, ServiceItem item) {
+		public void serviceChanged(int type, UniqueServiceKeyJRso siKey ,ServiceItemJRso item) {
 			if (type == IServiceListener.ADD) {
-				parseServiceAdded(item);
+				parseServiceAdded(siKey,item);
 			} else if (type == IServiceListener.REMOVE) {
-				serviceRemoved(item);
+				serviceRemoved(siKey,item);
 			} else if (type == IServiceListener.DATA_CHANGE) {
 				//普通RPC方法可以动态更新为异步方法
-				serviceDataChange(item);
+				serviceDataChange(siKey,item);
 			} else {
 				logger.error(
-						"rev invalid Node event type : " + type + ",path: " + item.getKey().toKey(true, true, true));
+						"rev invalid Node event type : " + type + ",path: " + item.fullStringKey());
 			}
 		}
 	};
 
-	boolean subcribe(String topic, ServiceMethod srvMethod, Map<String, String> context) {
+	boolean subcribe(String topic, ServiceMethodJRso srvMethod, Map<String, String> context) {
 
 		if(StringUtils.isEmpty(topic)) {
 			return false;
 		}
 
-		String k = srvMethod.getKey().toKey(false, false, false);
+		String k = srvMethod.getKey().methodID();
 		
 		ISubscriberCallback cb = callbacks.get(k);
 		String[] ts = topic.split(Constants.TOPIC_SEPERATOR);
@@ -224,8 +230,8 @@ class SubcriberManager {
 		
 	}
 
-	boolean unsubcribe(String topic, ServiceMethod srvMethod, Map<String, String> context) {
-		String k = srvMethod.getKey().toKey(false, false, false);
+	boolean unsubcribe(String topic, ServiceMethodJRso srvMethod, Map<String, String> context) {
+		String k = srvMethod.getKey().methodID();
 		if (!callbacks.containsKey(k)) {
 			return true;
 		}
@@ -239,13 +245,13 @@ class SubcriberManager {
 
 	private boolean doUpdateSubscribe(SubcribeItem sui) {
 
-		String k = sui.sm.getKey().toKey(false, false, false);
+		String k = sui.sm.getKey().methodID();
 		
 		SubscriberCallbackImpl cb = (SubscriberCallbackImpl)callbacks.get(k);
 		
 		if(cb == null) {
 
-			Set<ServiceItem> sis = registry.getServices(sui.sm.getKey().getServiceName(), sui.sm.getKey().getNamespace(),
+			Set<UniqueServiceKeyJRso> sis = registry.getServices(sui.sm.getKey().getServiceName(), sui.sm.getKey().getNamespace(),
 					sui.sm.getKey().getVersion());
 
 			if (sis == null || sis.isEmpty()) {
@@ -253,26 +259,28 @@ class SubcriberManager {
 				return false;
 			}
 
-			ServiceItem sitem = null;
-			for (ServiceItem si : sis) {
-				if (si.getKey().getInstanceName().equals(sui.sm.getKey().getInstanceName())) {
+			UniqueServiceKeyJRso sitem = null;
+			for (UniqueServiceKeyJRso si : sis) {
+				if (si.getInstanceName().equals(sui.sm.getKey().getInstanceName())) {
 					sitem = si;
 					break;
 				}
 			}
 
 			if (sitem == null) {
-				logger.warn("Service Item for classloader server not found {}", sui.sm.getKey().toKey(true, true, true));
+				logger.warn("Service Item for classloader server not found {}", sui.sm.getKey().fullStringKey());
 				//服务已经下线，直接剔除
 				return true;
 			}
 
+			ServiceItemJRso item = this.srvManager.getServiceByKey(sitem.fullStringKey());
+			
 			Object srv = null;
 			try {
 				PubSubServer.class.getClassLoader().loadClass(sui.sm.getKey().getUsk().getServiceName());
-				srv = of.getRemoteServie(sitem, null);
+				srv = of.getRemoteServie(item, null);
 			} catch (ClassNotFoundException e) {
-				srv = this.getRemoteService(sui,sitem);
+				srv = this.getRemoteService(sui,item);
 			}
 
 			if (srv == null) {
@@ -346,11 +354,11 @@ class SubcriberManager {
 
 	private boolean doSubscribe(SubcribeItem sui) {
 
-		String k = sui.sm.getKey().toKey(false, false, false);
+		String k = sui.sm.getKey().methodID();
 		
 		SubscriberCallbackImpl cb = (SubscriberCallbackImpl)callbacks.get(k);
 		if (cb == null) {
-			Set<ServiceItem> sis = registry.getServices(sui.sm.getKey().getServiceName(), sui.sm.getKey().getNamespace(),
+			Set<UniqueServiceKeyJRso> sis = registry.getServices(sui.sm.getKey().getServiceName(), sui.sm.getKey().getNamespace(),
 					sui.sm.getKey().getVersion());
 
 			if (sis == null || sis.isEmpty()) {
@@ -358,25 +366,27 @@ class SubcriberManager {
 				return false;
 			}
 
-			ServiceItem sitem = null;
-			for (ServiceItem si : sis) {
-				if (si.getKey().getInstanceName().equals(sui.sm.getKey().getInstanceName())) {
+			UniqueServiceKeyJRso sitem = null;
+			for (UniqueServiceKeyJRso si : sis) {
+				if (si.getInstanceName().equals(sui.sm.getKey().getInstanceName())) {
 					sitem = si;
 					break;
 				}
 			}
 
 			if (sitem == null) {
-				logger.warn("Service Item for classloader server not found {}", sui.sm.getKey().toKey(true, true, true));
+				logger.warn("Service Item for classloader server not found {}", sui.sm.getKey().fullStringKey());
 				return false;
 			}
 
+			ServiceItemJRso item = this.srvManager.getServiceByKey(sitem.fullStringKey());
+			
 			Object srv = null;
 			try {
 				PubSubServer.class.getClassLoader().loadClass(sui.sm.getKey().getUsk().getServiceName());
-				srv = of.getRemoteServie(sitem, null);
+				srv = of.getRemoteServie(item, null);
 			} catch (ClassNotFoundException e) {
-				srv = this.getRemoteService(sui,sitem);
+				srv = this.getRemoteService(sui,item);
 			}
 
 			if (srv == null) {
@@ -405,10 +415,10 @@ class SubcriberManager {
 		return true;
 	}
 	
-	private ServiceItem getClassLoaderItemByInstanceName(String instanceName) {
-    	Set<ServiceItem> items = this.registry.getServices(IClassloaderRpc.class.getName());
-		for (ServiceItem si : items) {
-			if (si.getKey().getInstanceName().equals(instanceName)) {
+	private UniqueServiceKeyJRso getClassLoaderItemByInstanceName(String instanceName) {
+    	Set<UniqueServiceKeyJRso> items = this.registry.getServices(IClassloaderRpcJMSrv.class.getName());
+		for (UniqueServiceKeyJRso si : items) {
+			if (si.getInstanceName().equals(instanceName)) {
 				return si;
 			}
 		}
@@ -416,17 +426,18 @@ class SubcriberManager {
     }
 	
 	
-	private Object getRemoteService(SubcribeItem sui,ServiceItem sitem) {
+	private Object getRemoteService(SubcribeItem sui,ServiceItemJRso sitem) {
 
 		Object srv = null;
 		boolean setDirectServiceItem = false;
-		ServiceItem oldItem = null;
+		ServiceItemJRso oldItem = null;
 		try {
-			//Set<ServiceItem> items = this.registry.getServices(IClassloaderRpc.class.getName());
-			ServiceItem clsLoadItem = getClassLoaderItemByInstanceName(sitem.getKey().getInstanceName());
+			//Set<ServiceItemJRso> items = this.registry.getServices(IClassloaderRpc.class.getName());
+			UniqueServiceKeyJRso clsLoadItem = getClassLoaderItemByInstanceName(sitem.getKey().getInstanceName());
 			if(clsLoadItem != null) {
+				ServiceItemJRso item = this.srvManager.getServiceByKey(clsLoadItem.fullStringKey());
 				oldItem = JMicroContext.get().getParam(Constants.DIRECT_SERVICE_ITEM, null);
-				JMicroContext.get().setParam(Constants.DIRECT_SERVICE_ITEM, clsLoadItem);
+				JMicroContext.get().setParam(Constants.DIRECT_SERVICE_ITEM, item);
 				setDirectServiceItem = true;
 				Class<?> cls = this.cl.loadClass(sui.sm.getKey().getUsk().getServiceName());
 				if (cls != null) {
@@ -434,7 +445,7 @@ class SubcriberManager {
 				}
 			}
 		} catch (ClassNotFoundException e1) {
-			String k = sui.sm.getKey().toKey(false, false, false);
+			String k = sui.sm.getKey().methodID();
 			logger.warn("Service {} not found.{}", k, e1);
 			LG.log(MC.LOG_ERROR, this.getClass(), k,e1);
 		}finally {
@@ -450,14 +461,14 @@ class SubcriberManager {
 	return srv;
 	}
 
-	private boolean doUnsubcribe(String topic, UniqueServiceMethodKey key, Map<String, String> context) {
+	private boolean doUnsubcribe(String topic, UniqueServiceMethodKeyJRso key, Map<String, String> context) {
 
-		Set<ServiceItem> sis = registry.getServices(key.getServiceName(), key.getNamespace(), key.getVersion());
+		Set<UniqueServiceKeyJRso> sis = registry.getServices(key.getServiceName(), key.getNamespace(), key.getVersion());
 
 		if (sis == null || sis.isEmpty()) {
 
 			//已经没有服务在线，将注册的回调删除
-			String k = key.toKey(false, false, false);
+			String k = key.methodID();
 
 			if (openDebug) {
 				logger.debug("Unsubscribe CB:{} topic: {}", k, topic);

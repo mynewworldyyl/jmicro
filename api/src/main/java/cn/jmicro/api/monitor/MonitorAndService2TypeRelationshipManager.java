@@ -15,8 +15,9 @@ import cn.jmicro.api.raft.IDataListener;
 import cn.jmicro.api.raft.IDataOperator;
 import cn.jmicro.api.registry.IRegistry;
 import cn.jmicro.api.registry.IServiceListener;
-import cn.jmicro.api.registry.ServiceItem;
-import cn.jmicro.api.registry.ServiceMethod;
+import cn.jmicro.api.registry.ServiceItemJRso;
+import cn.jmicro.api.registry.ServiceMethodJRso;
+import cn.jmicro.api.registry.UniqueServiceKeyJRso;
 import cn.jmicro.common.Constants;
 import cn.jmicro.common.util.StringUtils;
 
@@ -50,12 +51,13 @@ public class MonitorAndService2TypeRelationshipManager {
 		doMonitorMoTypeUpdate(skey,data);
 	};
 	
-	private IChildrenListener monitorTypeChildrenListener = (type,parentDir,mokey,data)->{
+	private IChildrenListener monitorTypeChildrenListener = (type,parentDir,mokey)->{
 		if(type == IListener.ADD) {
+			String data = op.getData(parentDir+"/"+mokey);
 			doMonitorMoTypeAdd(mokey,data);
 			op.addDataListener(parentDir + "/" + mokey, monitorTypeDataChangeListener);
 		} else if(type == IListener.REMOVE) {
-			doMonitorTypeDelete(mokey,data);
+			doMonitorTypeDelete(mokey);
 			op.removeDataListener(parentDir + "/" + mokey, monitorTypeDataChangeListener);
 		}
 	};
@@ -65,12 +67,13 @@ public class MonitorAndService2TypeRelationshipManager {
 		doSrvMoTypeUpdate(skey,data);
 	};
 	
-	private IChildrenListener srvChildrenListener = (type,parentDir,mokey,data)->{
+	private IChildrenListener srvChildrenListener = (type,parentDir,mokey)->{
 		if(type == IListener.ADD) {
+			String data = op.getData(parentDir+"/"+mokey);
 			doSrvMoTypeAdd(mokey,data);
 			op.addDataListener(parentDir + "/" + mokey, srvTypeDataChangeListener);
 		} else if(type == IListener.REMOVE) {
-			doSrvMoTypeDelete(mokey,data);
+			doSrvMoTypeDelete(mokey);
 			op.removeDataListener(parentDir + "/" + mokey, srvTypeDataChangeListener);
 		}
 	};
@@ -79,11 +82,11 @@ public class MonitorAndService2TypeRelationshipManager {
 		monitorActiveStateChange(data);
 	};*/
 	
-	private IServiceListener monigotDataSubscribeListener = (type,si) -> {
+	private IServiceListener monigotDataSubscribeListener = (type,siKey,si) -> {
 		if(type == IListener.ADD) {
-			monitorDataSubscribeAdd(si);
+			monitorDataSubscribeAdd(siKey,si);
 		}else if(type == IListener.REMOVE) {
-			monitorDataSubscribeRemove(si);
+			monitorDataSubscribeRemove(siKey,si);
 		}
 	};
 	
@@ -103,7 +106,7 @@ public class MonitorAndService2TypeRelationshipManager {
 		return this.monitorKey2Types.get(mkey);
 	}
 	
-	private void doMonitorTypeDelete(String mokey, String data) {
+	private void doMonitorTypeDelete(String mokey) {
 		Set<Short> ts = this.monitorKey2Types.remove(mokey);
 		deleteMonitorTypes(ts);
 	}
@@ -131,8 +134,8 @@ public class MonitorAndService2TypeRelationshipManager {
 		}
 	}
 
-	private void monitorDataSubscribeRemove(ServiceItem si) {
-		String snvKey = si.getKey().toSnv();
+	private void monitorDataSubscribeRemove(UniqueServiceKeyJRso siKey,ServiceItemJRso si) {
+		String snvKey = siKey.toSnv();
 		if(!activeMonitors.contains(snvKey)) {
 			return;
 		}
@@ -144,8 +147,8 @@ public class MonitorAndService2TypeRelationshipManager {
 		
 	}
 
-	private void monitorDataSubscribeAdd(ServiceItem si) {
-		String snvKey = si.getKey().toSnv();
+	private void monitorDataSubscribeAdd(UniqueServiceKeyJRso siKey,ServiceItemJRso si) {
+		String snvKey = siKey.toSnv();
 		if(activeMonitors.contains(snvKey)) {
 			return;
 		}
@@ -159,13 +162,13 @@ public class MonitorAndService2TypeRelationshipManager {
 		monitorTypes.addAll(ts);
 	}
 
-	public boolean canSubmit(ServiceMethod sm , Short t) {
+	public boolean canSubmit(ServiceMethodJRso sm , Short t) {
 		boolean en = nonRpcContext(t);
 		if(!en || sm == null) {
 			return en;
 		}
 		
-		String mkey = sm.getKey().toKey(false, false, false);
+		String mkey = sm.getKey().methodID();
 		if(sm2Enable.containsKey(mkey)) {
 			return sm2Enable.get(mkey);
 		}
@@ -176,7 +179,7 @@ public class MonitorAndService2TypeRelationshipManager {
 		
 	}
 	
-	private synchronized void compute(String mkey, ServiceMethod sm, Short type) {
+	private synchronized void compute(String mkey, ServiceMethodJRso sm, Short type) {
 		boolean en = false;
 		
 		Set<Short> ts = srvKey2Types.get(mkey);
@@ -223,7 +226,7 @@ public class MonitorAndService2TypeRelationshipManager {
 		}
 		
 		//方法级
-		ts = srvKey2Types.get(sm.getKey().toKey(false, false, false));
+		ts = srvKey2Types.get(sm.getKey().methodID());
 		if(ts != null) {
 			en = ts.contains(type);
 			if(en) {
@@ -239,7 +242,7 @@ public class MonitorAndService2TypeRelationshipManager {
 		return monitorTypes.contains(t);
 	}
 
-	private void doSrvMoTypeDelete(String skey, String data) {
+	private void doSrvMoTypeDelete(String skey) {
 		if(skey.contains(Constants.PATH_EXCAPE)) {
 			skey = skey.replaceAll(Constants.PATH_EXCAPE, "/");
 		}
@@ -251,7 +254,7 @@ public class MonitorAndService2TypeRelationshipManager {
 	private void doSrvMoTypeUpdate(String skey, String data) {
 
 		if(StringUtils.isEmpty(data)) {
-			doSrvMoTypeDelete(skey,data);
+			doSrvMoTypeDelete(skey);
 			return;
 		}
 		
@@ -293,7 +296,7 @@ public class MonitorAndService2TypeRelationshipManager {
 	private void doMonitorMoTypeUpdate(String skey, String data) {
 
 		if(StringUtils.isEmpty(data)) {
-			doMonitorTypeDelete(skey,data);
+			doMonitorTypeDelete(skey);
 			return;
 		}
 		

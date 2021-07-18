@@ -18,7 +18,7 @@ package cn.jmicro.api.route;
 
 import java.util.Set;
 
-import cn.jmicro.api.registry.ServiceItem;
+import cn.jmicro.api.registry.ServiceItemJRso;
 
 /**
  * 1. 指定源IP请求全部转发到特定IP的特定端口（如果指定端口）服务上；
@@ -40,8 +40,8 @@ public interface IRouter {
 	
 	public static final String TYPE_NONE = "noRouter";
 	
-	RouteRule getRouteRule();
+	RouteRuleJRso getRouteRule();
 	
-	Set<ServiceItem> doRoute(RouteRule rule,Set<ServiceItem> service,String srvName,String method/*,Class<?>[] args*/
+	Set<ServiceItemJRso> doRoute(RouteRuleJRso rule,Set<ServiceItemJRso> service,String srvName,String method/*,Class<?>[] args*/
 			,String namespace,String version,String transport);
 }

@@ -37,31 +37,33 @@ import cn.jmicro.api.annotation.Service;
 import cn.jmicro.api.basket.BasketFactory;
 import cn.jmicro.api.basket.IBasket;
 import cn.jmicro.api.config.Config;
-import cn.jmicro.api.executor.ExecutorConfig;
+import cn.jmicro.api.executor.ExecutorConfigJRso;
 import cn.jmicro.api.executor.ExecutorFactory;
 import cn.jmicro.api.exp.Exp;
 import cn.jmicro.api.exp.ExpUtils;
 import cn.jmicro.api.idgenerator.ComponentIdServer;
-import cn.jmicro.api.monitor.ILogMonitorServer;
-import cn.jmicro.api.monitor.IMonitorAdapter;
-import cn.jmicro.api.monitor.JMLogItem;
-import cn.jmicro.api.monitor.LogWarningConfig;
+import cn.jmicro.api.monitor.ILogMonitorServerJMSrv;
+import cn.jmicro.api.monitor.IMonitorAdapterJMSrv;
+import cn.jmicro.api.monitor.JMLogItemJRso;
+import cn.jmicro.api.monitor.LogWarningConfigJRso;
 import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.monitor.MonitorAndService2TypeRelationshipManager;
-import cn.jmicro.api.monitor.MonitorInfo;
-import cn.jmicro.api.monitor.MonitorServerStatus;
-import cn.jmicro.api.monitor.OneLog;
+import cn.jmicro.api.monitor.MonitorInfoJRso;
+import cn.jmicro.api.monitor.MonitorServerStatusJRso;
+import cn.jmicro.api.monitor.OneLogJRso;
 import cn.jmicro.api.monitor.ServiceCounter;
-import cn.jmicro.api.monitor.genclient.ILogWarning$JMAsyncClient;
-import cn.jmicro.api.net.RpcRequest;
+import cn.jmicro.api.monitor.genclient.ILogWarningJMSrv$JMAsyncClient;
+import cn.jmicro.api.net.RpcRequestJRso;
 import cn.jmicro.api.objectfactory.IObjectFactory;
 import cn.jmicro.api.raft.IDataOperator;
 import cn.jmicro.api.raft.IRaftListener;
 import cn.jmicro.api.raft.RaftNodeDataListener;
 import cn.jmicro.api.registry.IRegistry;
-import cn.jmicro.api.registry.ServiceItem;
-import cn.jmicro.api.registry.UniqueServiceMethodKey;
+import cn.jmicro.api.registry.ServiceItemJRso;
+import cn.jmicro.api.registry.UniqueServiceKeyJRso;
+import cn.jmicro.api.registry.UniqueServiceMethodKeyJRso;
 import cn.jmicro.api.service.ServiceLoader;
+import cn.jmicro.api.service.ServiceManager;
 import cn.jmicro.api.utils.TimeUtils;
 import cn.jmicro.common.Constants;
 import cn.jmicro.common.Utils;
@@ -70,7 +72,7 @@ import cn.jmicro.common.util.JsonUtils;
 @Component
 @Service(clientId=Constants.NO_CLIENT_ID,version="0.0.1",debugMode=0,monitorEnable=0,
 logLevel=MC.LOG_WARN,retryCnt=0,limit2Packages="cn.jmicro.api.monitor",showFront=false,external=false)
-public class LogMonitorServerImpl implements ILogMonitorServer {
+public class LogMonitorServerImpl implements ILogMonitorServerJMSrv {
 
 	private final static Logger logger = LoggerFactory.getLogger(LogMonitorServerImpl.class);
 	
@@ -82,7 +84,7 @@ public class LogMonitorServerImpl implements ILogMonitorServer {
 	private boolean monitoralbe = false;
 	
 	//@Reference(namespace="*", version="*", type="ins",required=false,changeListener="subscriberChange")
-	//private Map<String,ILogWarning$JMAsyncClient> subsribers = new HashMap<>();
+	//private Map<String,ILogWarningJMSrv$JMAsyncClient> subsribers = new HashMap<>();
 	
 	//@Inject
 	//private MonitorClient monitorManager;
@@ -99,22 +101,22 @@ public class LogMonitorServerImpl implements ILogMonitorServer {
 	@Inject
 	private MonitorAndService2TypeRelationshipManager mtManager;
 	
-	private RaftNodeDataListener<LogWarningConfig> configListener;
+	private RaftNodeDataListener<LogWarningConfigJRso> configListener;
 	
 	private ServiceCounter sc = null;
 	
 	//private Queue<MRpcItem> cacheItems = new ConcurrentLinkedQueue<>();
 	
-	private BasketFactory<JMLogItem> basketFactory = null;
+	private BasketFactory<JMLogItemJRso> basketFactory = null;
 	
-	private Map<String,LogWarningConfig> warningConfigs = new HashMap<>();
+	private Map<String,LogWarningConfigJRso> warningConfigs = new HashMap<>();
 	
 	//clientId to config include -1 which match all items clientId
 	private Map<Integer,Set<String>> client2Configs = new HashMap<>();
 	
 	private Set<String> deleteMonitors = new HashSet<>();
 	
-	private Map<String,LogWarningConfig> addMonitors = new HashMap<>();
+	private Map<String,LogWarningConfigJRso> addMonitors = new HashMap<>();
 	
 	private Object cacheItemsLock = new Object();
 	
@@ -133,8 +135,11 @@ public class LogMonitorServerImpl implements ILogMonitorServer {
 	@Inject
 	private IRegistry reg;
 	
-	private IRaftListener<LogWarningConfig> lis = new IRaftListener<LogWarningConfig>() {
-		public void onEvent(int type,String key, LogWarningConfig lw) {
+	@Inject
+	private ServiceManager srvManager;
+	
+	private IRaftListener<LogWarningConfigJRso> lis = new IRaftListener<LogWarningConfigJRso>() {
+		public void onEvent(int type,String key, LogWarningConfigJRso lw) {
 
 			if(type == IListener.DATA_CHANGE) {
 
@@ -147,7 +152,7 @@ public class LogMonitorServerImpl implements ILogMonitorServer {
 					return;
 				}
 
-				LogWarningConfig olw = warningConfigs.get(key);
+				LogWarningConfigJRso olw = warningConfigs.get(key);
 				
 				if(!lw.isEnable()) {
 					if(olw != null && olw.isEnable()) {
@@ -173,8 +178,8 @@ public class LogMonitorServerImpl implements ILogMonitorServer {
 				}
 				
 				if(olw.getType() != lw.getType()) {
-					if(LogWarningConfig.TYPE_FORWARD_SRV == lw.getType() 
-							|| LogWarningConfig.TYPE_SAVE_FILE == lw.getType()) {
+					if(LogWarningConfigJRso.TYPE_FORWARD_SRV == lw.getType() 
+							|| LogWarningConfigJRso.TYPE_SAVE_FILE == lw.getType()) {
 						if(initLogWarningConfig(lw)) {
 							if(olw.getBw() != null) {
 								try {
@@ -186,13 +191,13 @@ public class LogMonitorServerImpl implements ILogMonitorServer {
 							olw.setBw(lw.getBw());
 							olw.setSrv(lw.getSrv());
 						} else {
-							logger.error("Init LogWarningConfig fail: "+JsonUtils.getIns().toJson(lw));
+							logger.error("Init LogWarningConfigJRso fail: "+JsonUtils.getIns().toJson(lw));
 							return;
 						}
 					}
 					olw.setType(lw.getType());
-				} else if((LogWarningConfig.TYPE_FORWARD_SRV == lw.getType() 
-							|| LogWarningConfig.TYPE_SAVE_FILE == lw.getType()) 
+				} else if((LogWarningConfigJRso.TYPE_FORWARD_SRV == lw.getType() 
+							|| LogWarningConfigJRso.TYPE_SAVE_FILE == lw.getType()) 
 						&& !lw.getCfgParams().equals(olw.getCfgParams())) {
 					if(initLogWarningConfig(lw)) {
 						if(olw.getBw() != null) {
@@ -205,7 +210,7 @@ public class LogMonitorServerImpl implements ILogMonitorServer {
 						olw.setBw(lw.getBw());
 						olw.setSrv(lw.getSrv());
 					}else {
-						logger.error("Init LogWarningConfig fail: "+JsonUtils.getIns().toJson(lw));
+						logger.error("Init LogWarningConfigJRso fail: "+JsonUtils.getIns().toJson(lw));
 						return;
 					}
 				}
@@ -250,8 +255,8 @@ public class LogMonitorServerImpl implements ILogMonitorServer {
 		}
 	};
 	
-	private LogWarningConfig parseWarningConfig(LogWarningConfig lw, String id) {
-		//LogWarningConfig lw = JsonUtils.getIns().fromJson(data, LogWarningConfig.class);
+	private LogWarningConfigJRso parseWarningConfig(LogWarningConfigJRso lw, String id) {
+		//LogWarningConfigJRso lw = JsonUtils.getIns().fromJson(data, LogWarningConfigJRso.class);
 		
 		if(Utils.isEmpty(lw.getExpStr())) {
 			logger.error("Invalid config: " + JsonUtils.getIns().toJson(lw));
@@ -264,14 +269,14 @@ public class LogMonitorServerImpl implements ILogMonitorServer {
 			return null;
 		}
 		
-		if((LogWarningConfig.TYPE_FORWARD_SRV == lw.getType()
-				|| LogWarningConfig.TYPE_SAVE_DB == lw.getType()
-				|| LogWarningConfig.TYPE_SAVE_FILE == lw.getType()) && Utils.isEmpty(lw.getCfgParams())) {
+		if((LogWarningConfigJRso.TYPE_FORWARD_SRV == lw.getType()
+				|| LogWarningConfigJRso.TYPE_SAVE_DB == lw.getType()
+				|| LogWarningConfigJRso.TYPE_SAVE_FILE == lw.getType()) && Utils.isEmpty(lw.getCfgParams())) {
 			logger.error("Log table name cannot be NULL: " + lw.getId());
 			return null;
 		}
 		
-		if(LogWarningConfig.TYPE_CONSOLE == lw.getType()) {
+		if(LogWarningConfigJRso.TYPE_CONSOLE == lw.getType()) {
 			lw.setCfgParams("console");
 		}
 		
@@ -294,24 +299,24 @@ public class LogMonitorServerImpl implements ILogMonitorServer {
 			d.mkdirs();
 		}
 		
-		ExecutorConfig config = new ExecutorConfig();
+		ExecutorConfigJRso config = new ExecutorConfigJRso();
 		config.setMsMaxSize(60);
 		config.setTaskQueueSize(500);
 		config.setThreadNamePrefix("LogMonitorServer");
 		
 		executor = of.get(ExecutorFactory.class).createExecutor(config);
-		basketFactory = new BasketFactory<JMLogItem>(1000,10);
+		basketFactory = new BasketFactory<JMLogItemJRso>(1000,10);
 		
 		statusAdapter = new MonitorServerStatusAdapter();
 		//statusAdapter.init();
 		of.regist("logMonitorServerStatusAdapter", statusAdapter);
 
 		ServiceLoader sl = of.get(ServiceLoader.class);
-		ServiceItem si = sl.createSrvItem(IMonitorAdapter.class, 
+		ServiceItemJRso si = sl.createSrvItem(IMonitorAdapterJMSrv.class, 
 				Config.getNamespace()+".LogMonitorServer", "0.0.1", null,Config.getClientId());
 		sl.registService(si,statusAdapter);
 		
-		configListener = new RaftNodeDataListener<>(op,LOG_WARNING_ROOT,LogWarningConfig.class,false);
+		configListener = new RaftNodeDataListener<>(op,LOG_WARNING_ROOT,LogWarningConfigJRso.class,false);
 		configListener.addListener(lis);
 		
 		//op.addChildrenListener(LOG_WARNING_ROOT, lis);
@@ -323,7 +328,7 @@ public class LogMonitorServerImpl implements ILogMonitorServer {
 	@Override
 	@SMethod(timeout=5000,retryCnt=0,needResponse=false,debugMode=0,monitorEnable=0,
 	logLevel=MC.LOG_NO,maxPacketSize=1048576,needLogin=false)
-	public void submit(JMLogItem[] items) {
+	public void submit(JMLogItemJRso[] items) {
 		if(items == null || items.length == 0) {
 			/*if(monitoralbe) {
 				sc.add(MonitorConstant.Ms_SubmitCnt, 1);
@@ -343,7 +348,7 @@ public class LogMonitorServerImpl implements ILogMonitorServer {
 		
 		int pos = 0;
 		while(pos < items.length) {
-			IBasket<JMLogItem> b = basketFactory.borrowWriteBasket(true);
+			IBasket<JMLogItemJRso> b = basketFactory.borrowWriteBasket(true);
 			if(b != null) {
 				int re = b.remainding();
 				int len = re;
@@ -397,7 +402,7 @@ public class LogMonitorServerImpl implements ILogMonitorServer {
 				if(!addMonitors.isEmpty()) {
 					synchronized (addMonitors) {
 						Set<String> rmKeys = new HashSet<>();
-						for (Map.Entry<String, LogWarningConfig> cfg : this.addMonitors.entrySet()) {
+						for (Map.Entry<String, LogWarningConfigJRso> cfg : this.addMonitors.entrySet()) {
 							if(addOneMonitor(cfg.getValue())) {
 								rmKeys.add(cfg.getKey());
 							}
@@ -420,10 +425,10 @@ public class LogMonitorServerImpl implements ILogMonitorServer {
 				}
 				
 				//单线程操作，无需同步
-				Set<JMLogItem> sentItems = new HashSet<>();
-				IBasket<JMLogItem> b = null;
+				Set<JMLogItemJRso> sentItems = new HashSet<>();
+				IBasket<JMLogItemJRso> b = null;
 				while((b = basketFactory.borrowReadSlot()) != null) {
-					JMLogItem[] mis = new JMLogItem[b.remainding()];
+					JMLogItemJRso[] mis = new JMLogItemJRso[b.remainding()];
 					b.readAll(mis);
 					sentItems.addAll(Arrays.asList(mis));
 					if(!basketFactory.returnReadSlot(b, true)) {
@@ -475,7 +480,7 @@ public class LogMonitorServerImpl implements ILogMonitorServer {
 		prj.put("_id", 1);
 		prj.put("linkId", 1);
 		
-		MongoCollection<Document> coll = this.mongoDb.getCollection(JMLogItem.TABLE,Document.class);
+		MongoCollection<Document> coll = this.mongoDb.getCollection(JMLogItemJRso.TABLE,Document.class);
 		
 		List<Document> pl = new ArrayList<>();
 		pl.add(new Document("$match",match));
@@ -505,22 +510,22 @@ public class LogMonitorServerImpl implements ILogMonitorServer {
 		
 	}
 
-	private boolean initLogWarningConfig(LogWarningConfig lw) {
-		if(LogWarningConfig.TYPE_FORWARD_SRV == lw.getType()) {
-			UniqueServiceMethodKey key = UniqueServiceMethodKey.fromKey(lw.getCfgParams());
-			ILogWarning$JMAsyncClient srv = of.getRemoteServie(key.getServiceName(), key.getNamespace(), key.getVersion(),
+	private boolean initLogWarningConfig(LogWarningConfigJRso lw) {
+		if(LogWarningConfigJRso.TYPE_FORWARD_SRV == lw.getType()) {
+			UniqueServiceMethodKeyJRso key = UniqueServiceMethodKeyJRso.fromKey(lw.getCfgParams());
+			ILogWarningJMSrv$JMAsyncClient srv = of.getRemoteServie(key.getServiceName(), key.getNamespace(), key.getVersion(),
 					null);
 			if(srv == null) {
 				logger.error("Service not found for key: " + lw.getCfgParams()+", id: " + lw.getId());
 				return false;
 			}
 			lw.setSrv(srv);
-		}/*else if(LogWarningConfig.TYPE_SAVE_DB == lw.getType()) {
+		}/*else if(LogWarningConfigJRso.TYPE_SAVE_DB == lw.getType()) {
 			if(Utils.isEmpty(lw.getCfgParams())) {
 				logger.error("Log table name cannot be NULL: " + lw.getId());
 				return true;
 			}
-		}*/else if(LogWarningConfig.TYPE_SAVE_FILE == lw.getType()) {
+		}*/else if(LogWarningConfigJRso.TYPE_SAVE_FILE == lw.getType()) {
 			File logFile = new File(this.logDir + lw.getId()+"_"+lw.getCfgParams());
 			if(!logFile.exists()) {
 				try {
@@ -542,7 +547,7 @@ public class LogMonitorServerImpl implements ILogMonitorServer {
 		return true;
 	}
 	
-	private boolean addOneMonitor(LogWarningConfig lw) {
+	private boolean addOneMonitor(LogWarningConfigJRso lw) {
 		try {
 			//this.subsribers.put(cfg.getId(),srv);
 			if(initLogWarningConfig(lw)) {
@@ -564,14 +569,14 @@ public class LogMonitorServerImpl implements ILogMonitorServer {
 	
 	private boolean deleteOneMonitor(String m) {
 		//subsribers.remove(m);
-		LogWarningConfig lw = warningConfigs.remove(m);
+		LogWarningConfigJRso lw = warningConfigs.remove(m);
 		Set<String> cfgs = this.client2Configs.get(lw.getClientId());
 		if(cfgs != null) {
 			cfgs.remove(lw.getId());
 		}
 		
 		if(lw != null) {
-			if(LogWarningConfig.TYPE_SAVE_FILE == lw.getType()) {
+			if(LogWarningConfigJRso.TYPE_SAVE_FILE == lw.getType()) {
 				try {
 					lw.getBw().close();
 				} catch (IOException e) {
@@ -592,11 +597,11 @@ public class LogMonitorServerImpl implements ILogMonitorServer {
 	
 	private class Worker implements Runnable{
 		
-		public Worker(Set<JMLogItem> mis) {
+		public Worker(Set<JMLogItemJRso> mis) {
 			this.mis = mis;
 		}
 		
-		private Set<JMLogItem> mis;
+		private Set<JMLogItemJRso> mis;
 		
 		@Override
 		public void run() {
@@ -630,17 +635,17 @@ public class LogMonitorServerImpl implements ILogMonitorServer {
 		}
 	}
 	
-	private void doNotify(Set<JMLogItem> mis) {
+	private void doNotify(Set<JMLogItemJRso> mis) {
 		long curTime = TimeUtils.getCurTime();
 		
 		Map<String,Object> cxt = new HashMap<>();
-		Iterator<JMLogItem> ite = mis.iterator();
+		Iterator<JMLogItemJRso> ite = mis.iterator();
 		
 		for(;ite.hasNext();) {
 			
-			JMLogItem mi = ite.next();
+			JMLogItemJRso mi = ite.next();
 			ite.remove();
-			mi.setId(idServer.getLongId(JMLogItem.class));
+			mi.setId(idServer.getLongId(JMLogItemJRso.class));
 			
 			cxt.put("curTime", curTime);
 			cxt.put("actClientId", mi.getActClientId());
@@ -680,19 +685,19 @@ public class LogMonitorServerImpl implements ILogMonitorServer {
 		}
 	}
 
-	private void processOneItem(Map<String, Object> cxt, JMLogItem mi, Set<String> cfgs,Map<String,Set<Long>> sendItems) {
+	private void processOneItem(Map<String, Object> cxt, JMLogItemJRso mi, Set<String> cfgs,Map<String,Set<Long>> sendItems) {
 		
 		if(cfgs == null || cfgs.isEmpty()) {
 			return;
 		}
 		
-		List<OneLog> backupItems = mi.getItems();
+		List<OneLogJRso> backupItems = mi.getItems();
 		
 		long curTime = TimeUtils.getCurTime();
 		
 		synchronized(cfgs) {
 			for(String id : cfgs) {
-				LogWarningConfig cfg = this.warningConfigs.get(id);
+				LogWarningConfigJRso cfg = this.warningConfigs.get(id);
 				
 				if(sendItems.containsKey(cfg.getCfgParams()) && 
 						sendItems.get(cfg.getCfgParams()).contains(mi.getId())) {
@@ -713,8 +718,8 @@ public class LogMonitorServerImpl implements ILogMonitorServer {
 				   || exp.containerVar("time")
 				   || exp.containerVar("ex"))) {
 					
-					List<OneLog> items = new ArrayList<>();
-					for(OneLog ol : mi.getItems()) {
+					List<OneLogJRso> items = new ArrayList<>();
+					for(OneLogJRso ol : mi.getItems()) {
 						cxt.put("tag",  ol.getTag() );
 						cxt.put("level", ol.getLevel());
 						cxt.put("time", ol.getTime());
@@ -738,11 +743,11 @@ public class LogMonitorServerImpl implements ILogMonitorServer {
 				}
 				sendItems.get(cfg.getCfgParams()).add(mi.getId());
 				
-				if(cfg.getType() == LogWarningConfig.TYPE_FORWARD_SRV) {
+				if(cfg.getType() == LogWarningConfigJRso.TYPE_FORWARD_SRV) {
 					if(!sendItems.containsKey(cfg.getCfgParams())) {
 						sendItems.put(cfg.getCfgParams(), new HashSet<Long>());
 					}
-					ILogWarning$JMAsyncClient srv = cfg.getSrv();
+					ILogWarningJMSrv$JMAsyncClient srv = cfg.getSrv();
 					if(srv.isReady()) {
 						cfg.setLastNotifyTime(curTime);
 						srv.warnJMAsync(mi,mi)
@@ -752,13 +757,13 @@ public class LogMonitorServerImpl implements ILogMonitorServer {
 					} else {
 						logger.warn("Service not ready for log: " +cfg.getCfgParams());
 					}
-				}else if(cfg.getType() == LogWarningConfig.TYPE_SAVE_DB) {
+				}else if(cfg.getType() == LogWarningConfigJRso.TYPE_SAVE_DB) {
 					saveLog(mi,cfg.getCfgParams());
 				}else {
 					String logStr = toLogStr(mi);
-					if(cfg.getType() == LogWarningConfig.TYPE_CONSOLE) {
+					if(cfg.getType() == LogWarningConfigJRso.TYPE_CONSOLE) {
 						logger.info(logStr);
-					}else if(cfg.getType() == LogWarningConfig.TYPE_SAVE_FILE) {
+					}else if(cfg.getType() == LogWarningConfigJRso.TYPE_SAVE_FILE) {
 						try {
 							cfg.getBw().write(logStr);
 							cfg.getBw().newLine();
@@ -773,19 +778,20 @@ public class LogMonitorServerImpl implements ILogMonitorServer {
 		}
 	}
 
-	private String toLogStr(JMLogItem mi) {
+	private String toLogStr(JMLogItemJRso mi) {
 		return JsonUtils.getIns().toJson(mi);
 	}
 
 	private CollectibleDocumentFieldNameValidator validtor = new CollectibleDocumentFieldNameValidator();
 	
-	private void saveLog(JMLogItem mi,String tableName) {
+	private void saveLog(JMLogItemJRso mi,String tableName) {
 		long curTime = TimeUtils.getCurTime();
 		mi.setInputTime(curTime);
-		if(mi.getReq() instanceof RpcRequest) {
-			RpcRequest req = (RpcRequest)mi.getReq();
-			ServiceItem si = reg.getServiceByCode(req.getSvnHash());
-			if(si != null) {
+		if(mi.getReq() instanceof RpcRequestJRso) {
+			RpcRequestJRso req = (RpcRequestJRso)mi.getReq();
+			UniqueServiceKeyJRso siKey = reg.getServiceByCode(req.getSvnHash());
+			if(siKey != null) {
+				ServiceItemJRso si = this.srvManager.getServiceByKey(siKey.fullStringKey());
 				mi.setImplCls(si.getImpl());
 			}
 		}
@@ -838,7 +844,7 @@ public class LogMonitorServerImpl implements ILogMonitorServer {
 		return rst;
 	}
 
-	private void saveLog(Set<JMLogItem> temp) {
+	private void saveLog(Set<JMLogItemJRso> temp) {
 		if(this.openDebug) {
 			logger.debug("printLog One LOOP");
 		}
@@ -852,14 +858,15 @@ public class LogMonitorServerImpl implements ILogMonitorServer {
 		
 		synchronized(temp) {
 			long curTime = TimeUtils.getCurTime();
-			Iterator<JMLogItem> itesm = temp.iterator();
+			Iterator<JMLogItemJRso> itesm = temp.iterator();
 			for(;itesm.hasNext();) {
-				JMLogItem mi =  itesm.next();
+				JMLogItemJRso mi =  itesm.next();
 				mi.setInputTime(curTime);
-				if(mi.getReq() instanceof RpcRequest) {
-					RpcRequest req = (RpcRequest)mi.getReq();
-					ServiceItem si = reg.getServiceByCode(req.getSvnHash());
-					if(si != null) {
+				if(mi.getReq() instanceof RpcRequestJRso) {
+					RpcRequestJRso req = (RpcRequestJRso)mi.getReq();
+					UniqueServiceKeyJRso siKey = reg.getServiceByCode(req.getSvnHash());
+					if(siKey != null) {
+						ServiceItemJRso si = this.srvManager.getServiceByKey(siKey.fullStringKey());
 						mi.setImplCls(si.getImpl());
 					}
 				}
@@ -870,9 +877,9 @@ public class LogMonitorServerImpl implements ILogMonitorServer {
 				/*if(mi.getReqId() > 0) {
 					Document d = Document.parse(JsonUtils.getIns().toJson(mi));
 					d.put("inputTime", System.currentTimeMillis());
-					if(mi.getReq() instanceof RpcRequest) {
-						RpcRequest req = (RpcRequest)mi.getReq();
-						ServiceItem si = reg.getServiceByCode(Integer.parseInt(req.getImpl()));
+					if(mi.getReq() instanceof RpcRequestJRso) {
+						RpcRequestJRso req = (RpcRequestJRso)mi.getReq();
+						ServiceItemJRso si = reg.getServiceByCode(Integer.parseInt(req.getImpl()));
 						if(si != null) {
 							d.put("implCls", si.getImpl());
 						}
@@ -895,17 +902,17 @@ public class LogMonitorServerImpl implements ILogMonitorServer {
 		coll.insertMany(llDocs);
 		/*
 		if(!llDocs.isEmpty()) {
-			MongoCollection<Document> coll = mongoDb.getCollection(JMLogItem.TABLE);
+			MongoCollection<Document> coll = mongoDb.getCollection(JMLogItemJRso.TABLE);
 			coll.insertMany(llDocs);
 		}else if(!notRpcDocs.isEmpty()){
-			MongoCollection<Document> coll = mongoDb.getCollection(JMLogItem.TABLE);
+			MongoCollection<Document> coll = mongoDb.getCollection(JMLogItemJRso.TABLE);
 			coll.insertMany(notRpcDocs);
 		}*/
 		
 	}
 
 	
-	public class MonitorServerStatusAdapter implements IMonitorAdapter {
+	public class MonitorServerStatusAdapter implements IMonitorAdapterJMSrv {
 		
 		public final Short[] TYPES  = {
 				MC.Ms_ReceiveItemCnt,MC.Ms_TaskSuccessItemCnt,MC.Ms_CheckLoopCnt,
@@ -928,14 +935,14 @@ public class LogMonitorServerImpl implements ILogMonitorServer {
 		}
 		
 		@Override
-		public MonitorServerStatus status() {
+		public MonitorServerStatusJRso status() {
 			if(!monitoralbe) {
 				enableMonitor(true);
 			}
 			
 			lastStatusTime = TimeUtils.getCurTime();
 			
-			MonitorServerStatus s = new MonitorServerStatus(); 
+			MonitorServerStatusJRso s = new MonitorServerStatusJRso(); 
 			//s.setInstanceName(Config.getInstanceName());
 			//s.setSubsriberSize(regSubs.size());
 			//s.getSubsriber2Types().putAll(this.monitorManager.getMkey2Types());
@@ -983,8 +990,8 @@ public class LogMonitorServerImpl implements ILogMonitorServer {
 		}
 
 		@Override
-		public MonitorInfo info() {
-			MonitorInfo info = new MonitorInfo();
+		public MonitorInfoJRso info() {
+			MonitorInfoJRso info = new MonitorInfoJRso();
 			info.setGroup(GROUP);
 			info.setTypeLabels(typeLabels);
 			info.setTypes(TYPES);

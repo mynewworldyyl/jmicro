@@ -13,7 +13,7 @@ import org.slf4j.LoggerFactory;
 import cn.jmicro.api.annotation.Cfg;
 import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Inject;
-import cn.jmicro.api.choreography.ProcessInfo;
+import cn.jmicro.api.choreography.ProcessInfoJRso;
 import cn.jmicro.api.codec.ICodecFactory;
 import cn.jmicro.api.idgenerator.ComponentIdServer;
 import cn.jmicro.api.monitor.LG;
@@ -22,7 +22,7 @@ import cn.jmicro.api.net.IMessageHandler;
 import cn.jmicro.api.net.IMessageReceiver;
 import cn.jmicro.api.net.ISession;
 import cn.jmicro.api.net.Message;
-import cn.jmicro.api.net.RpcResponse;
+import cn.jmicro.api.net.RpcResponseJRso;
 import cn.jmicro.api.security.SecretManager;
 import cn.jmicro.api.timer.TimerTicker;
 import cn.jmicro.api.utils.TimeUtils;
@@ -44,7 +44,7 @@ public class LinkMng implements IMessageHandler {
 	private ComponentIdServer idGenerator;
 	
 	@Inject
-	private ProcessInfo pi;
+	private ProcessInfoJRso pi;
 	
 	@Inject(value="clientMessageReceiver")
 	private IMessageReceiver cr;
@@ -177,7 +177,7 @@ public class LinkMng implements IMessageHandler {
 				Message.is(n.flag, Message.FLAG_FORCE_RESP_JSON)) {
 			//客户端要求强制转JSON
 			final Object resp = ICodecFactory.decode(this.codeFactory, msg.getPayload(),
-					RpcResponse.class, msg.getUpProtocol());
+					RpcResponseJRso.class, msg.getUpProtocol());
 			if(resp != null) {
 				//二进制转JSON，web客户端无法识别带类型的二进制数据包
 				Object jsonPayload = ICodecFactory.encode(this.codeFactory, resp, Message.PROTOCOL_JSON);

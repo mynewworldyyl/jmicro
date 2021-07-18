@@ -7,17 +7,17 @@ import java.util.HashSet;
 import java.util.Set;
 
 import cn.jmicro.api.monitor.MC;
-import cn.jmicro.api.monitor.OneLog;
+import cn.jmicro.api.monitor.OneLogJRso;
 import cn.jmicro.common.Constants;
 
 public class LogContext {
 
 	private byte level = MC.LOG_NO;
 	
-	private Set<OneLog> logs = new HashSet<>();
+	private Set<OneLogJRso> logs = new HashSet<>();
 	
 	public void addOne(byte level,String tag,String content,Throwable ex) {
-		OneLog lo = new OneLog(level,tag,content);
+		OneLogJRso lo = new OneLogJRso(level,tag,content);
 		if(ex != null) {
 			lo.setEx(serialEx(ex));
 		}
@@ -43,7 +43,7 @@ public class LogContext {
 		this.level = level;
 	}
 
-	public Set<OneLog> getLogs() {
+	public Set<OneLogJRso> getLogs() {
 		return logs;
 	}
 	

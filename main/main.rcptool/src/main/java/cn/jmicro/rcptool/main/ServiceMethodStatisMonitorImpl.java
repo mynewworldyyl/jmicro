@@ -10,8 +10,8 @@ import cn.jmicro.api.annotation.Inject;
 import cn.jmicro.api.annotation.Service;
 import cn.jmicro.api.annotation.Subscribe;
 import cn.jmicro.api.monitor.MC;
-import cn.jmicro.api.pubsub.PSData;
-import cn.jmicro.api.registry.ServiceMethod;
+import cn.jmicro.api.pubsub.PSDataJRso;
+import cn.jmicro.api.registry.ServiceMethodJRso;
 import cn.jmicro.common.Constants;
 import cn.jmicro.rcptool.main.api.IServiceMethodStatisMonitor;
 import cn.jmicro.rcptool.main.api.StatisDataListenerManager;
@@ -27,10 +27,10 @@ public class ServiceMethodStatisMonitorImpl implements IServiceMethodStatisMonit
 	
 	@SuppressWarnings("unchecked")
 	@Subscribe(topic=MC.TEST_SERVICE_METHOD_TOPIC)
-	public void statisMonitor(PSData psData) {
+	public void statisMonitor(PSDataJRso PSDataJRso) {
 		
-		Map<Integer,Double> ps = (Map<Integer,Double>)psData.getData();
-		ServiceMethod sm = psData.get(Constants.SERVICE_METHOD_KEY);
+		Map<Integer,Double> ps = (Map<Integer,Double>)PSDataJRso.getData();
+		ServiceMethodJRso sm = PSDataJRso.get(Constants.SERVICE_METHOD_KEY);
 		if(ps != null && !ps.isEmpty()) {
 			//logger.info("type:{},val:{}",e.getKey(),e.getValue());
 			lisManager.notifyData(sm, ps);

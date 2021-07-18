@@ -20,22 +20,22 @@ import cn.jmicro.api.JMicroContext;
 import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.route.AbstractRouter;
 import cn.jmicro.api.route.IRouter;
-import cn.jmicro.api.route.RouteRule;
-import cn.jmicro.api.security.ActInfo;
+import cn.jmicro.api.route.RouteRuleJRso;
+import cn.jmicro.api.security.ActInfoJRso;
 
 /**
  * @author Yulei Ye
  * @date: 2018年11月11日 下午3:56:55
  */
-@Component(value=RouteRule.TYPE_FROM_NONLOGIN_ROUTER,lazy=false)
+@Component(value=RouteRuleJRso.TYPE_FROM_NONLOGIN_ROUTER,lazy=false)
 public class NonLoginRouterImpl extends AbstractRouter implements IRouter {
 
 	public NonLoginRouterImpl() {
-		super(RouteRule.TYPE_FROM_NONLOGIN_ROUTER);
+		super(RouteRuleJRso.TYPE_FROM_NONLOGIN_ROUTER);
 	}
 	
 	@Override
-	protected boolean accept(RouteRule r) {
+	protected boolean accept(RouteRuleJRso r) {
 		return JMicroContext.get().getAccount() == null;
 	}
 	

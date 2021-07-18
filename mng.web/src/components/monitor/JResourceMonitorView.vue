@@ -114,7 +114,7 @@
     
     const cid = 'resourceMonitorView';
 
-    const sn = 'cn.jmicro.resource.IMngResourceService';
+    const sn = 'cn.jmicro.resource.IMngResourceServiceJMSrv';
     const ns = 'resourceMonitorServer';
     const v = '0.0.1';
 

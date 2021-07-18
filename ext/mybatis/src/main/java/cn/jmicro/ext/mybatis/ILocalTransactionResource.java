@@ -3,11 +3,11 @@ package cn.jmicro.ext.mybatis;
 import org.apache.ibatis.session.SqlSession;
 
 import cn.jmicro.api.internal.async.PromiseImpl;
-import cn.jmicro.api.registry.ServiceMethod;
+import cn.jmicro.api.registry.ServiceMethodJRso;
 
 public interface ILocalTransactionResource {
 
-	boolean begin(ServiceMethod sm);
+	boolean begin(ServiceMethodJRso sm);
 	
 	boolean takePartIn(long txid,byte txPhase,SqlSession s);
 	

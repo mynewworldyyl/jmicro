@@ -30,7 +30,7 @@ import cn.jmicro.api.JMicroContext;
 import cn.jmicro.api.annotation.Cfg;
 import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Inject;
-import cn.jmicro.api.executor.ExecutorConfig;
+import cn.jmicro.api.executor.ExecutorConfigJRso;
 import cn.jmicro.api.executor.ExecutorFactory;
 import cn.jmicro.api.executor.NamedThreadFactory;
 import cn.jmicro.api.monitor.LG;
@@ -78,7 +78,7 @@ public class ClientMessageReceiver implements IMessageReceiver{
 	
 	public ClientMessageReceiver(boolean client) {
 		
-		ExecutorConfig cfg = new ExecutorConfig();
+		ExecutorConfigJRso cfg = new ExecutorConfigJRso();
 		cfg.setMsCoreSize(1);
 		cfg.setMsMaxSize(10);
 		cfg.setTaskQueueSize(100);
@@ -103,7 +103,7 @@ public class ClientMessageReceiver implements IMessageReceiver{
 	
 	public void ready(){
 		setGatewayMessageHandler();
-		ExecutorConfig config = new ExecutorConfig();
+		ExecutorConfigJRso config = new ExecutorConfigJRso();
 		config.setMsCoreSize(5);
 		config.setMsMaxSize(20);
 		config.setTaskQueueSize(100);

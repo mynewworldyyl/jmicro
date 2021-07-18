@@ -35,7 +35,7 @@ public class TestZKDataOperator {
 	public void testWatchChildren() {
 		Config.parseArgs(new HashMap<>());
 		ZKDataOperator.getIns().addChildrenListener("/jmicro/config",
-			(type,path,child,data)->{
+			(type,path,child)->{
 				System.out.println(path);
 				System.out.println(child);
 			});

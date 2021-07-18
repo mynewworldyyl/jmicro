@@ -39,16 +39,19 @@ import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.objectfactory.AbstractClientServiceProxyHolder;
 import cn.jmicro.api.objectfactory.ClientServiceProxyHolder;
 import cn.jmicro.api.objectfactory.ProxyObject;
-import cn.jmicro.api.registry.AsyncConfig;
+import cn.jmicro.api.registry.AsyncConfigJRso;
 import cn.jmicro.api.registry.IRegistry;
-import cn.jmicro.api.registry.ServiceItem;
-import cn.jmicro.api.registry.ServiceMethod;
-import cn.jmicro.api.registry.UniqueServiceKey;
+import cn.jmicro.api.registry.ServiceItemJRso;
+import cn.jmicro.api.registry.ServiceMethodJRso;
+import cn.jmicro.api.registry.UniqueServiceKeyJRso;
+import cn.jmicro.api.registry.UniqueServiceMethodKeyJRso;
+import cn.jmicro.api.service.ServiceManager;
 import cn.jmicro.codegenerator.AsyncClientUtils;
 import cn.jmicro.common.CommonException;
 import cn.jmicro.common.Utils;
 import cn.jmicro.common.util.JsonUtils;
 import cn.jmicro.common.util.StringUtils;
+import lombok.Getter;
 
 /**
  * @author Yulei Ye
@@ -67,6 +70,9 @@ class ClientServiceProxyManager {
 	
 	private SimpleObjectFactory of;
 	
+	@Getter
+	private ServiceManager srvMng;
+	
 	ClientServiceProxyManager(SimpleObjectFactory of){
 		this.of = of;
 	}
@@ -74,6 +80,7 @@ class ClientServiceProxyManager {
 	@JMethod("init")
 	void init(){
 		this.registry = of.get(IRegistry.class);
+		this.srvMng = of.get(ServiceManager.class,false);
 	}
 	
 	/**
@@ -88,13 +95,13 @@ class ClientServiceProxyManager {
 	 */
 	@SuppressWarnings("unchecked")
 	<T> T  getRefRemoteService(String blPkgName,String srvName,String namespace,String version,
-			RpcClassLoader cl, AsyncConfig[] acs){
+			RpcClassLoader cl, AsyncConfigJRso[] acs){
 		//String key = UniqueServiceKey.serviceName(srvName, namespace, version);
 		ClassLoader useCl = Thread.currentThread().getContextClassLoader();
 		AbstractClientServiceProxyHolder proxy = null;
 		try {
-			Set<ServiceItem> items = registry.getServices(srvName, namespace, version);
-			ServiceItem si = null;
+			Set<UniqueServiceKeyJRso> items = registry.getServices(srvName, namespace, version);
+			UniqueServiceKeyJRso siKey = null;
 			/*if(srvName.equals("cn.jmicro.example.api.rpc.IRpcA")) {
 				System.out.println("ClientServiceProxyManager: " + srvName);
 			}*/
@@ -102,12 +109,20 @@ class ClientServiceProxyManager {
 				//throw new CommonException("Class not found: "+UniqueServiceKey.serviceName(srvName, namespace, version));
 				proxy = createDynamicServiceProxyWithSNV(blPkgName,Config.getInstanceName(),srvName, namespace, version,cl,acs);
 			} else {
-				si = items.iterator().next();
+				siKey = items.iterator().next();
+				ServiceItemJRso si = this.srvMng.getServiceByKey(siKey.fullStringKey());
 				if(!ClientServiceProxyHolder.checkPackagePermission(si,blPkgName)) {
 					throw new CommonException("No permission to use service [" + si.getKey().getServiceName()+"] from " + blPkgName);
 				}
 				proxy = createDynamicServiceProxy(si,cl,acs);
-				registerAsyncService(acs,items);
+				
+				Set<ServiceItemJRso> set = new HashSet<>();
+				for(UniqueServiceKeyJRso sit : items) {
+					ServiceItemJRso sitem = this.srvMng.getServiceByKey(sit.fullStringKey());
+					if(sitem != null) set.add(sitem);
+				}
+				
+				registerAsyncService(acs,set);
 			}
 		} finally {
 			Thread.currentThread().setContextClassLoader(useCl);
@@ -116,7 +131,7 @@ class ClientServiceProxyManager {
 		return (T)proxy;
 	}
 	
-	<T> T  getRefRemoteService(String srvName,String ns, AsyncConfig[] acs){
+	<T> T  getRefRemoteService(String srvName,String ns, AsyncConfigJRso[] acs){
 		//srvName = parseServiceClass(srvName);
 		Class<?> cls = loadClass(Config.getInstanceName(),srvName,null);
 		return getRefRemoteService(cls,ns,acs);
@@ -127,7 +142,7 @@ class ClientServiceProxyManager {
 	 * @param srvClazz
 	 * @return
 	 */
-	<T> T getRefRemoteService(Class<?> srvClazz,String ns, AsyncConfig[] acs){
+	<T> T getRefRemoteService(Class<?> srvClazz,String ns, AsyncConfigJRso[] acs){
 		if(!srvClazz.isAnnotationPresent(Service.class)){
 			//通过接口创建的服务必须有Service注解,否则没办法获取服务3个座标信息
 			throw new CommonException("Cannot create service proxy ["+srvClazz.getName()
@@ -145,11 +160,11 @@ class ClientServiceProxyManager {
 	 * @param acs 需要异步调用的目标方法 ，即forMethod
 	 * @return
 	 */
-	<T> T getRefRemoteService(ServiceItem item,RpcClassLoader cl, AsyncConfig[] acs) {
+	<T> T getRefRemoteService(ServiceItemJRso item,RpcClassLoader cl, AsyncConfigJRso[] acs) {
 		Object proxy = createDynamicServiceProxy(item,cl,acs);
 		if(acs != null && acs.length > 0) {
 			//注册异步服务
-			Set<ServiceItem> items = new HashSet<>();
+			Set<ServiceItemJRso> items = new HashSet<>();
 			items.add(item);
 			registerAsyncService(acs,items);
 		}
@@ -227,13 +242,13 @@ class ClientServiceProxyManager {
 		}
 	}
     
-    AsyncConfig[] getAcs(Reference ref) {
-    	AsyncConfig[] acs = null;
+    AsyncConfigJRso[] getAcs(Reference ref) {
+    	AsyncConfigJRso[] acs = null;
 		if(ref.asyncs() != null && ref.asyncs().length > 0) {
-			acs = new AsyncConfig[ref.asyncs().length];
+			acs = new AsyncConfigJRso[ref.asyncs().length];
 			int i = 0;
 			for(Async a : ref.asyncs()) {
-				AsyncConfig ac = new AsyncConfig();
+				AsyncConfigJRso ac = new AsyncConfigJRso();
 				ac.setCondition(a.condition());
 				ac.setEnable(a.enable());
 				ac.setMethod(a.method());
@@ -254,81 +269,83 @@ class ClientServiceProxyManager {
 	 * @param acs
 	 * @param items
 	 */
-	private void registerAsyncService(AsyncConfig[] acs, Set<ServiceItem> items) {
+	private void registerAsyncService(AsyncConfigJRso[] acs, Set<ServiceItemJRso> items) {
 		if(acs ==null || acs.length == 0) {
 			return;
 		}
 		
-		Set<ServiceItem> updates = new HashSet<>();
+		Set<ServiceItemJRso> updates = new HashSet<>();
 		
-		for(AsyncConfig a : acs) {
+		for(AsyncConfigJRso a : acs) {
 			if(a == null) {
 				continue;
 			}
 			
-			for(ServiceItem si : items) {
-				Set<ServiceMethod> sms = si.getMethods();
+			for(ServiceItemJRso si : items) {
+				//ServiceItemJRso sit = this.srvMng.getServiceByKey(si.fullStringKey());
+				
+				ServiceMethodJRso sm = si.getMethod(a.getForMethod());
 				
 				boolean flag = false;
-				for(ServiceMethod sm : sms) {
-					if(sm.getKey().getMethod().equals(a.getForMethod())) {
-						//方法名相同的都注册为异步调用方法
-						String mkey = sm.getKey().toKey(false, false, false);
-						if(StringUtils.isNotEmpty(sm.getTopic()) && !mkey.equals(sm.getTopic())) {
-							throw new CommonException("Callback service method topic is not valid:" + JsonUtils.getIns().toJson(a) 
-									+", Service: " + si.getKey().toKey(true, true, true)+",topic:" + sm.getTopic());
-						}
-						
-						if(StringUtils.isEmpty(sm.getTopic())) {
-							sm.setTopic(mkey);
-							updates.add(si);
-							flag = true;
-						}else {
-							boolean f = false;
-							String[] ts = sm.getTopic().split(";");
-							for(String t : ts) {
-								if(mkey.equals(t)) {
-									f = true;
-									break;
-								}
-							}
-							
-							if(!f) {
-								sm.setTopic(sm.getTopic()+";"+mkey);
-								updates.add(si);
-								flag = true;
-							}
-							
+
+				//方法名相同的都注册为异步调用方法
+				String mkey = sm.methodID();
+				
+				/*if(StringUtils.isNotEmpty(sm.getTopic()) && !mkey.equals(sm.getTopic())) {
+					throw new CommonException("Callback service method topic is not valid:" + JsonUtils.getIns().toJson(a) 
+							+", Service: " + si.fullStringKey()+",topic:" + sm.getTopic());
+				}*/
+				
+				if(StringUtils.isEmpty(sm.getTopic())) {
+					sm.setTopic(mkey);
+					updates.add(si);
+					flag = true;
+				}else {
+					boolean f = false;
+					String[] ts = sm.getTopic().split(";");
+					for(String t : ts) {
+						if(mkey.equals(t)) {
+							f = true;
+							break;
 						}
 					}
+					
+					if(!f) {
+						sm.setTopic(sm.getTopic()+";"+mkey);
+						updates.add(si);
+						flag = true;
+					}
+					
 				}
+			
 				
 				if(!flag) {
-					throw new CommonException("Callback service method not found for:" + JsonUtils.getIns().toJson(a) +", Service: " + si.getKey().toKey(true, true, true));
+					throw new CommonException("Callback service method not found for:" + 
+							JsonUtils.getIns().toJson(a) +", Service: " + si.fullStringKey());
 				}
 				
 			}
 			
 			if(StringUtils.isNotEmpty(a.getServiceName())) {
 				
-				Set<ServiceItem> callbackItems = registry.getServices(a.getServiceName(), a.getNamespace(), a.getVersion());
+				Set<UniqueServiceKeyJRso> callbackItems = registry.getServices(a.getServiceName(), a.getNamespace(), a.getVersion());
 				if(callbackItems == null || callbackItems.isEmpty()) {
 					throw new CommonException("Callback service not found:" + JsonUtils.getIns().toJson(a));
 				}
 				
-				for(ServiceItem si : callbackItems) {
-					Set<ServiceMethod> sms = si.getMethods();
+				for(UniqueServiceKeyJRso si : callbackItems) {
+					Set<UniqueServiceMethodKeyJRso> sms = this.srvMng.getAllServiceMethods(si.fullStringKey());
 					
 					boolean flag = false;
-					for(ServiceMethod sm : sms) {
-						if(sm.getKey().getMethod().equals(a.getMethod())) {
+					for(UniqueServiceMethodKeyJRso sm : sms) {
+						if(sm.getMethod().equals(a.getMethod())) {
 							flag = true;
 							break;
 						}
 					}
 					
 					if(!flag) {
-						throw new CommonException("Async service method not found for:" + JsonUtils.getIns().toJson(a) +", Service: " + si.getKey().toKey(true, true, true));
+						throw new CommonException("Async service method not found for:" + JsonUtils.getIns().toJson(a) +", Service: " + si.fullStringKey());
 					}
 				}
 			}
@@ -336,7 +353,7 @@ class ClientServiceProxyManager {
 		}
 		
 		if(!updates.isEmpty()) {
-			for(ServiceItem si : updates) {
+			for(ServiceItemJRso si : updates) {
 				registry.update(si);
 			}
 		}
@@ -346,57 +363,29 @@ class ClientServiceProxyManager {
 	private Class<?> loadClass(String instanceName,String clsName,RpcClassLoader cl) {
 		Class<?> cls = null;
 		try {
-			cls = Thread.currentThread().getContextClassLoader().loadClass(clsName);
-			if(cls != null) {
-				return cls;
+			if(cl == null) {
+				cl = of.get(RpcClassLoader.class);
 			}
-		} catch (ClassNotFoundException e) {}
+			
+			if(cl != null) {
+				cls = cl.loadClass(clsName);
+				if(cls != null) return cls;
+			}
+			
+			if(Thread.currentThread().getContextClassLoader() != null) {
+				cls = Thread.currentThread().getContextClassLoader().loadClass(clsName);
+				if(cls != null) {
+					return cls;
+				}
+			}
 
-		try {
 			 cls = this.getClass().getClassLoader().loadClass(clsName);
 			 if(cls != null) {
 					return cls;
 			 }
-		} catch (ClassNotFoundException e1) {}
-		
+			
+		} catch (ClassNotFoundException e) {}
 
-		if(cl == null) {
-			cl = of.get(RpcClassLoader.class);
-		}
-		
-		if(cl != null) {
-			
-			try {
-				cls = cl.loadClass(clsName);
-				if(cls != null) {
-					Thread.currentThread().setContextClassLoader(cl);
-				}
-			} catch (ClassNotFoundException e) {
-				logger.error("",e);
-			}
-			
-			/*
-			boolean setDirectServiceItem = false;
-			ServiceItem oldItem = null;
-			try {
-				ServiceItem clsLoadItem = cl.getClassLoaderItemByInstanceName(instanceName);
-				if(clsLoadItem != null) {
-					setDirectServiceItem = true;
-					oldItem = JMicroContext.get().getParam(Constants.DIRECT_SERVICE_ITEM, null);
-					JMicroContext.get().setParam(Constants.DIRECT_SERVICE_ITEM, clsLoadItem);
-					cls = cl.loadClass(clsName);
-					if(cls != null) {
-						Thread.currentThread().setContextClassLoader(cl);
-					}
-				}
-			} catch (ClassNotFoundException e2) {}
-			finally {
-				if(setDirectServiceItem) {
-					JMicroContext.get().setParam(Constants.DIRECT_SERVICE_ITEM, oldItem);
-					//JMicroContext.get().removeParam(Constants.DIRECT_SERVICE_ITEM);
-				}
-			}
-		*/}
 		return cls;
 	}
 	
@@ -436,11 +425,11 @@ class ClientServiceProxyManager {
 				//服务不可用，但还是可以生成服务代理，直到使用时才决定服务的可用状态
 			} 
 			
-			AsyncConfig[] acs = this.getAcs(ref);
+			AsyncConfigJRso[] acs = this.getAcs(ref);
 			
 			proxy = this.getRefRemoteService(becls.getName(),type.getName(), ref.namespace(), ref.version(), null,acs);
 			
-			String key = UniqueServiceKey.serviceName(type.getName(),ref.namespace(),ref.version());
+			String key = UniqueServiceKeyJRso.serviceName(type.getName(),ref.namespace(),ref.version());
 			
 			//this.initProxyField(proxy, key, srcObj, f);
 			FieldServiceProxyListener lis = new FieldServiceProxyListener(this,srcObj,f,this.registry);
@@ -499,24 +488,24 @@ class ClientServiceProxyManager {
 		Set<String> exists = new HashSet<>();
 		AbstractClientServiceProxyHolder po = null;
 		
-		Set<ServiceItem> items = null;
+		Set<UniqueServiceKeyJRso> items = null;
 		if(existsItem) {
 			items = registry.getServices(ctype.getName(),ref.namespace(),ref.version());
 		}
 		
 		String pn = becls.getName();
 		
-		AsyncConfig[] acs = this.getAcs(ref);
+		AsyncConfigJRso[] acs = this.getAcs(ref);
 		
 		if(items != null && !items.isEmpty()){
-			for(ServiceItem si : items){
+			for(UniqueServiceKeyJRso si : items){
 				boolean direct = "ins".equals(ref.type());
 				if(!direct) {
-					String key = si.serviceKey();
+					String key = si.toSnv();
 					if(exists.contains(key)){
 						continue;
 					}
-					exists.add(si.serviceKey());
+					exists.add(key);
 				}
 				
 				//监听每一个元素，元素加入或删除时，要从集合中删除
@@ -526,7 +515,8 @@ class ClientServiceProxyManager {
 				boolean valid = true;
 
 				if(valid) {
-					po = this.getRefRemoteService(si, null,acs);
+					ServiceItemJRso sij = this.srvMng.getServiceByKey(si.fullStringKey());
+					po = this.getRefRemoteService(sij, null,acs);
 					
 					if(po != null){
 						po.getHolder().setDirect(direct);
@@ -551,7 +541,7 @@ class ClientServiceProxyManager {
 		
 	}
 
-	private <T> T createDynamicServiceProxy(ServiceItem si, RpcClassLoader cl, AsyncConfig[] acs) {
+	private <T> T createDynamicServiceProxy(ServiceItemJRso si, RpcClassLoader cl, AsyncConfigJRso[] acs) {
 		
 		String clientProxyClsName = AsyncClientUtils.genAsyncServiceImplName(si.getKey().getServiceName());
 		
@@ -571,7 +561,7 @@ class ClientServiceProxyManager {
 			
 			holder.setOf(of);
 			
-			String key = UniqueServiceKey.serviceName(si.getKey().getServiceName(), 
+			String key = UniqueServiceKeyJRso.serviceName(si.getKey().getServiceName(), 
 					si.getKey().getNamespace(), si.getKey().getVersion());
 			
 			registry.addExistsServiceListener(key, holder);
@@ -583,14 +573,18 @@ class ClientServiceProxyManager {
 	}
 	
 	private <T> T createDynamicServiceProxyWithSNV(String pkgName,String instanceName,String serviceName,String namespace,String version,
-			RpcClassLoader cl, AsyncConfig[] acs) {
+			RpcClassLoader cl, AsyncConfigJRso[] acs) {
 		
 		String clientProxyClsName = AsyncClientUtils.genAsyncServiceImplName(serviceName);
+		
+		//logger.info(ServiceItemJRso.class.getClassLoader().getClass().getName());
+		//logger.info(this.getClass().getClassLoader().getClass().getName());
 		
 		Class<?> cls = this.loadClass(instanceName, clientProxyClsName, cl);
 		if(cls == null) {
 			throw new CommonException(MC.MT_SERVICE_ITEM_NOT_FOUND,"Client holder class not found: "+clientProxyClsName);
 		}
+		//logger.info(ServiceItemJRso.class.getClassLoader().getClass().getName());
 		
 		try {
 			AbstractClientServiceProxyHolder proxy = (AbstractClientServiceProxyHolder) cls.newInstance();
@@ -601,7 +595,7 @@ class ClientServiceProxyManager {
 			holder.setVersion(version);
 			holder.setServiceName(serviceName);
 			holder.setOf(of);
-			String key = UniqueServiceKey.serviceName(serviceName, namespace, version);
+			String key = UniqueServiceKeyJRso.serviceName(serviceName, namespace, version);
 			registry.addExistsServiceListener(key, holder);
 			return (T)proxy;
 		} catch (InstantiationException | IllegalAccessException e) {

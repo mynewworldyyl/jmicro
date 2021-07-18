@@ -293,7 +293,7 @@
 
     const cid = 'statisConfig';
 
-    const sn = 'cn.jmicro.monitor.statis.api.IStatisConfigService';
+    const sn = 'cn.jmicro.monitor.statis.api.IStatisConfigServiceJMSrv';
     const ns = 'StatisMonitor';
     const v = '0.0.1';
 
@@ -516,7 +516,7 @@
                 }/*else if(cfg.byType == BY_TYPE_ACCOUNT) {
 
                 }*/ else if(cfg.byType != BY_TYPE_ACCOUNT) {
-                    //cn.jmicro.api.security.ISecretService##sec##0.0.1##security0##192.168.56.1##51535##publicKeysList##
+                    //cn.jmicro.api.security.ISecretServiceJMSrv##sec##0.0.1##security0##192.168.56.1##51535##publicKeysList##
                     let arr = cfg.byKey.split("##");
                     this.byKey.sn = arr[0];
                     this.byKey.ns = arr[1];
@@ -613,7 +613,7 @@
                         return;
                     }
                 } else {
-                    //cn.jmicro.api.security.ISecretService##sec##0.0.1##security0##192.168.56.1##51535##publicKeysList##
+                    //cn.jmicro.api.security.ISecretServiceJMSrv##sec##0.0.1##security0##192.168.56.1##51535##publicKeysList##
                     if(!this.byKey.sn || this.byKey.sn.length == 0) {
                         this.errMsg = '服务名称不不能为空';
                         return;

@@ -5,11 +5,11 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-import cn.jmicro.api.CfgMetadata;
+import cn.jmicro.api.CfgMetadataJRso;
 import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.monitor.AbstractResource;
 import cn.jmicro.api.monitor.IResource;
-import cn.jmicro.api.monitor.ResourceData;
+import cn.jmicro.api.monitor.ResourceDataJRso;
 import cn.jmicro.common.util.StringUtils;
 
 @Component
@@ -27,8 +27,8 @@ public class CpuResource extends AbstractResource implements IResource {
 	
 	@Override
 	@SuppressWarnings("restriction")
-	public ResourceData getResource(Map<String,Object> query,String expStr) {
-		ResourceData data = this.getData();
+	public ResourceDataJRso getResource(Map<String,Object> query,String expStr) {
+		ResourceDataJRso data = this.getData();
 		data.putData(SYSTEM_CPU_LOAD, osBean.getSystemCpuLoad());
 		data.putData(SYSTEM_LOAD_AVERAGE, osBean.getSystemLoadAverage());
 		data.putData(AVAILABLE_CPUS, osBean.getAvailableProcessors());
@@ -46,27 +46,27 @@ public class CpuResource extends AbstractResource implements IResource {
 		osBean = ManagementFactory.getPlatformMXBean(com.sun.management.OperatingSystemMXBean.class);
 		mngBean = ManagementFactory.getPlatformMXBean(java.lang.management.OperatingSystemMXBean.class);
 		
-		Set<CfgMetadata> metadatas = new HashSet<>();
+		Set<CfgMetadataJRso> metadatas = new HashSet<>();
 		pi.setMetadatas(RES_NAME, metadatas);
 		
-		CfgMetadata md = new CfgMetadata();
+		CfgMetadataJRso md = new CfgMetadataJRso();
 		md.setResName(RES_NAME);
 		md.setName(SYSTEM_CPU_LOAD);
-		md.setDataType(CfgMetadata.DataType.Float.getCode());
+		md.setDataType(CfgMetadataJRso.DataType.Float.getCode());
 		md.setDesc("CPU Load");
 		metadatas.add(md);
 		
-		md = new CfgMetadata();
+		md = new CfgMetadataJRso();
 		md.setResName(RES_NAME);
 		md.setName(SYSTEM_LOAD_AVERAGE);
-		md.setDataType(CfgMetadata.DataType.Float.getCode());
+		md.setDataType(CfgMetadataJRso.DataType.Float.getCode());
 		md.setDesc("System load average");
 		metadatas.add(md);
 		
-		md = new CfgMetadata();
+		md = new CfgMetadataJRso();
 		md.setResName(RES_NAME);
 		md.setName(AVAILABLE_CPUS);
-		md.setDataType(CfgMetadata.DataType.Integer.getCode());
+		md.setDataType(CfgMetadataJRso.DataType.Integer.getCode());
 		md.setDesc("CPU Num");
 		metadatas.add(md);
 		

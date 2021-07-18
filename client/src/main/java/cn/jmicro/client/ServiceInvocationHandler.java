@@ -23,20 +23,20 @@ import cn.jmicro.api.JMicroContext;
 import cn.jmicro.api.annotation.Cfg;
 import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Inject;
-import cn.jmicro.api.choreography.ProcessInfo;
+import cn.jmicro.api.choreography.ProcessInfoJRso;
 import cn.jmicro.api.client.InvocationHandler;
 import cn.jmicro.api.config.Config;
 import cn.jmicro.api.idgenerator.ComponentIdServer;
 import cn.jmicro.api.monitor.LG;
 import cn.jmicro.api.monitor.LogMonitorClient;
 import cn.jmicro.api.monitor.MC;
-import cn.jmicro.api.monitor.JMLogItem;
+import cn.jmicro.api.monitor.JMLogItemJRso;
 import cn.jmicro.api.monitor.StatisMonitorClient;
 import cn.jmicro.api.net.IRequest;
 import cn.jmicro.api.net.InterceptorManager;
-import cn.jmicro.api.net.RpcRequest;
-import cn.jmicro.api.registry.ServiceItem;
-import cn.jmicro.api.registry.ServiceMethod;
+import cn.jmicro.api.net.RpcRequestJRso;
+import cn.jmicro.api.registry.ServiceItemJRso;
+import cn.jmicro.api.registry.ServiceMethodJRso;
 import cn.jmicro.api.tx.TxConstants;
 import cn.jmicro.common.CommonException;
 import cn.jmicro.common.Constants;
@@ -63,7 +63,7 @@ public class ServiceInvocationHandler implements InvocationHandler{
 	private ComponentIdServer idGenerator;
 	
 	@Inject
-	private ProcessInfo pi;
+	private ProcessInfoJRso pi;
 	
 	//private Set<Long> ids = new HashSet<>();
 	
@@ -71,14 +71,14 @@ public class ServiceInvocationHandler implements InvocationHandler{
 	
 	public <T> T invoke(Object proxy, String methodName, Object[] args){
 		
-		RpcRequest req = null;
+		RpcRequestJRso req = null;
 		JMicroContext cxt = JMicroContext.get();
-		ServiceMethod sm = null;
+		ServiceMethodJRso sm = null;
 		try {
 			
-			ServiceItem si = cxt.getParam(Constants.SERVICE_ITEM_KEY, null);
+			ServiceItemJRso si = cxt.getParam(Constants.SERVICE_ITEM_KEY, null);
 			sm = cxt.getParam(Constants.SERVICE_METHOD_KEY, null);
-			req = new RpcRequest();
+			req = new RpcRequestJRso();
 			req.setSm(sm);
 			req.setArgs(args);
 			req.setRequestId(idGenerator.getLongId(IRequest.class));
@@ -100,7 +100,7 @@ public class ServiceInvocationHandler implements InvocationHandler{
 				if(pi.isLogin()) {
 					req.putObject(JMicroContext.LOGIN_KEY_SYS, pi.getAi().getLoginKey());
 				} else {
-					String desc = Config.getInstanceName() + " need system login for method: " + sm.getKey().toKey(false, false, false);
+					String desc = Config.getInstanceName() + " need system login for method: " + sm.getKey().methodID();
 					LG.log(MC.LOG_ERROR, this.getClass(), desc);
 					throw new CommonException(desc);
 				}
@@ -120,7 +120,7 @@ public class ServiceInvocationHandler implements InvocationHandler{
 				cxt.setParam(Constants.NEW_LINKID, false);
 			}
 			
-			JMLogItem mi = cxt.getMRpcLogItem();
+			JMLogItemJRso mi = cxt.getMRpcLogItem();
 			if(mi != null) {
 				mi.setReq(req);
 				mi.setReqId(req.getRequestId());

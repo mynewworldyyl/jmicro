@@ -13,29 +13,29 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import cn.jmicro.api.JMicroContext;
-import cn.jmicro.api.Resp;
+import cn.jmicro.api.RespJRso;
 import cn.jmicro.api.annotation.Cfg;
 import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Inject;
 import cn.jmicro.api.annotation.SMethod;
 import cn.jmicro.api.annotation.Service;
-import cn.jmicro.api.choreography.AgentInfo;
-import cn.jmicro.api.choreography.AgentInfoVo;
+import cn.jmicro.api.choreography.AgentInfoJRso;
+import cn.jmicro.api.choreography.AgentInfo0JRso;
 import cn.jmicro.api.choreography.ChoyConstants;
-import cn.jmicro.api.choreography.Deployment;
-import cn.jmicro.api.choreography.IAgentProcessService;
-import cn.jmicro.api.choreography.ProcessInfo;
+import cn.jmicro.api.choreography.DeploymentJRso;
+import cn.jmicro.api.choreography.IAgentProcessServiceJMSrv;
+import cn.jmicro.api.choreography.ProcessInfoJRso;
 import cn.jmicro.api.config.Config;
 import cn.jmicro.api.idgenerator.ComponentIdServer;
-import cn.jmicro.api.mng.ConfigNode;
-import cn.jmicro.api.mng.IChoreographyService;
-import cn.jmicro.api.mng.ICommonManager;
-import cn.jmicro.api.mng.IConfigManager;
+import cn.jmicro.api.mng.ConfigNodeJRso;
+import cn.jmicro.api.mng.IChoreographyServiceJMSrv;
+import cn.jmicro.api.mng.ICommonManagerJMSrv;
+import cn.jmicro.api.mng.IConfigManagerJMSrv;
 import cn.jmicro.api.mng.ProcessInstanceManager;
 import cn.jmicro.api.monitor.LG;
 import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.raft.IDataOperator;
-import cn.jmicro.api.security.ActInfo;
+import cn.jmicro.api.security.ActInfoJRso;
 import cn.jmicro.api.security.PermissionManager;
 import cn.jmicro.api.utils.TimeUtils;
 import cn.jmicro.common.Constants;
@@ -45,7 +45,7 @@ import cn.jmicro.common.util.StringUtils;
 
 @Component
 @Service(version="0.0.1",retryCnt=0,external=true,debugMode=1,showFront=false,logLevel=MC.LOG_NO)
-public class ChoreographyServiceImpl implements IChoreographyService {
+public class ChoreographyServiceImpl implements IChoreographyServiceJMSrv {
 
 	private final static Logger logger = LoggerFactory.getLogger(ChoreographyServiceImpl.class);
 	
@@ -61,20 +61,20 @@ public class ChoreographyServiceImpl implements IChoreographyService {
 	private ComponentIdServer idServer;
 	
 	@Inject
-	private IConfigManager configManager;
+	private IConfigManagerJMSrv configManager;
 	
 	@Inject
 	private ProcessInstanceManager insManager;
 	
 	@Inject
-	private ICommonManager commonManager;
+	private ICommonManagerJMSrv commonManager;
 	
 	//private Set<PackageResource> packageResources = new HashSet<>();
 	
 	@Override
 	@SMethod(perType=false,needLogin=true,maxSpeed=5,maxPacketSize=8092,logLevel=MC.LOG_INFO)
-	public Resp<Deployment> addDeployment(Deployment dep) {
-		Resp<Deployment> resp = new Resp<>();
+	public RespJRso<DeploymentJRso> addDeployment(DeploymentJRso dep) {
+		RespJRso<DeploymentJRso> resp = new RespJRso<>();
 		
 		if(StringUtils.isEmpty(dep.getJarFile())) {
 			String msg = "Jar file cannot be null when do add deployment: " +dep.toString();
@@ -92,7 +92,7 @@ public class ChoreographyServiceImpl implements IChoreographyService {
 			return resp;
 		}*/
 		
-		final ActInfo ai = JMicroContext.get().getAccount();
+		final ActInfoJRso ai = JMicroContext.get().getAccount();
 		
 		if(ai.isGuest() && !Utils.isEmpty(dep.getArgs())) {
 			String msg = "Guest account deployment cannot contain any args!";
@@ -103,8 +103,8 @@ public class ChoreographyServiceImpl implements IChoreographyService {
 		}
 		
 		if(!PermissionManager.isCurAdmin()) {
-			List<Deployment> l = getDeploymentList().getData();
-			long cnt = l.stream().filter(e -> {return e.getClientId() == ai.getId();}).count();
+			List<DeploymentJRso> l = getDeploymentList().getData();
+			long cnt = l.stream().filter(e -> {return e.getClientId() == ai.getClientId();}).count();
 			if(ai.isGuest() && cnt >= 5) {
 				String msg = "Guest account max deployment count is 5 pls regist normal account if you want more";
 				resp.setCode(1);
@@ -117,8 +117,8 @@ public class ChoreographyServiceImpl implements IChoreographyService {
 				return resp;
 			}
 			
-			if(dep.getStatus() == Deployment.STATUS_ENABLE) {
-				long ecnt = l.stream().filter(e -> {return e.getClientId() == ai.getId() && e.getStatus() == Deployment.STATUS_ENABLE;}).count();
+			if(dep.getStatus() == DeploymentJRso.STATUS_ENABLE) {
+				long ecnt = l.stream().filter(e -> {return e.getClientId() == ai.getClientId() && e.getStatus() == DeploymentJRso.STATUS_ENABLE;}).count();
 				if(ai.isGuest() && ecnt >= 1) {
 					String msg = "Guest account max enable deployment count is 1 pls regist normal account if you want more";
 					resp.setCode(1);
@@ -148,17 +148,17 @@ public class ChoreographyServiceImpl implements IChoreographyService {
 		}
 		
 		
-		if(dep.getStatus() == Deployment.STATUS_ENABLE && !PermissionManager.isCurAdmin()) {
+		if(dep.getStatus() == DeploymentJRso.STATUS_ENABLE && !PermissionManager.isCurAdmin()) {
 			 //非Admin添加的部署需要严格验证参数
 			 checkNonAdminProgramArgs(dep);
 		}
 		
-		dep.setClientId(ai.getId());
+		dep.setClientId(ai.getClientId());
 		
-		String id = idServer.getStringId(Deployment.class);
+		String id = idServer.getStringId(DeploymentJRso.class);
 		dep.setId(id);
 		
-		if(dep.getStatus() == Deployment.STATUS_ENABLE) {
+		if(dep.getStatus() == DeploymentJRso.STATUS_ENABLE) {
 			setEnableDepArgs(dep);
 		}
 		
@@ -175,7 +175,7 @@ public class ChoreographyServiceImpl implements IChoreographyService {
 		return resp;
 	}
 
-	private String checkAndSetJVMArgs(Deployment dep,Deployment oldDep) {
+	private String checkAndSetJVMArgs(DeploymentJRso dep,DeploymentJRso oldDep) {
 		
 		String[] jvmArgs = null;
 		
@@ -190,11 +190,11 @@ public class ChoreographyServiceImpl implements IChoreographyService {
 			}
 		}
 		
-		ActInfo ai = JMicroContext.get().getAccount();
+		ActInfoJRso ai = JMicroContext.get().getAccount();
 		
 		if(!ai.isAdmin() && jvmArgs.length > 0) {
 			if(oldDep == null || !dep.getJvmArgs().equals(oldDep.getJvmArgs())) {
-				dep.setStatus(Deployment.STATUS_CHECK);
+				dep.setStatus(DeploymentJRso.STATUS_CHECK);
 				dep.setDesc("Need system admin check with jvm args, you can wait for approving or delete jvm args to enable this deployment!");
 				return null;
 			}
@@ -235,16 +235,16 @@ public class ChoreographyServiceImpl implements IChoreographyService {
 		return null;
 	}
 
-	private void setEnableDepArgs(Deployment dep) {
+	private void setEnableDepArgs(DeploymentJRso dep) {
 		dep.setDesc("");
 		Map<String, String> params = Utils.parseProgramArgs(dep.getArgs());
 		if(!params.containsKey(Constants.CLIENT_ID)) {
 			dep.setArgs(dep.getArgs() + " -D"+Constants.CLIENT_ID + "="+ dep.getClientId());
 		}
 		
-		if(!params.containsKey(Constants.ADMIN_CLIENT_ID)) {
+		/*if(!params.containsKey(Constants.ADMIN_CLIENT_ID)) {
 			dep.setArgs(dep.getArgs() + " -D"+Constants.ADMIN_CLIENT_ID + "=" + Config.getAdminClientId());
-		}
+		}*/
 	}
 
 	private int getIntSizeJvmArg(String[] jvmArgs, String keyPrefix) {
@@ -278,7 +278,7 @@ public class ChoreographyServiceImpl implements IChoreographyService {
 		return null;
 	}
 
-	private void checkNonAdminProgramArgs(Deployment dep) {
+	private void checkNonAdminProgramArgs(DeploymentJRso dep) {
 		
 		Map<String, String> params = null;
 		
@@ -288,23 +288,23 @@ public class ChoreographyServiceImpl implements IChoreographyService {
 			 params = Utils.parseProgramArgs(dep.getArgs());
 		}
 		
-		ActInfo ai = JMicroContext.get().getAccount();
+		ActInfoJRso ai = JMicroContext.get().getAccount();
 		
 		for(Map.Entry<String, String> e : params.entrySet()) {
 			String key = e.getKey();
 			
-			if(key.equals(Constants.ADMIN_CLIENT_ID) ) {
+			/*if(key.equals(Constants.ADMIN_CLIENT_ID) ) {
 				int adminClient = Integer.parseInt(e.getValue());
 				if(adminClient != Config.getAdminClientId()) {
-					dep.setStatus(Deployment.STATUS_CHECK);
+					dep.setStatus(DeploymentJRso.STATUS_CHECK);
 					dep.setDesc("Need system admin check with ["+Constants.ADMIN_CLIENT_ID+"] args, you can wait for approving or delete the args to enable this deployment!");
 				}
-			}
+			}*/
 			
 			if(key.equals(Constants.CLIENT_ID)) {
 				int clientId = Integer.parseInt(e.getValue());
-				if(clientId != ai.getId()) {
-					dep.setStatus(Deployment.STATUS_CHECK);
+				if(clientId != ai.getClientId()) {
+					dep.setStatus(DeploymentJRso.STATUS_CHECK);
 					dep.setDesc("Need system admin check with ["+Constants.CLIENT_ID+"] args, you can wait for approving or delete the args to enable this deployment!");
 				}
 			}
@@ -313,8 +313,8 @@ public class ChoreographyServiceImpl implements IChoreographyService {
 
 	@Override
 	@SMethod(perType=false,needLogin=true,maxSpeed=5,maxPacketSize=256)
-	public Resp<List<Deployment>> getDeploymentList() {
-		Resp<List<Deployment>> resp = new Resp<>();
+	public RespJRso<List<DeploymentJRso>> getDeploymentList() {
+		RespJRso<List<DeploymentJRso>> resp = new RespJRso<>();
 		Set<String> children = op.getChildren(ChoyConstants.DEP_DIR, false);
 		if(children == null) {
 			resp.setCode(0);
@@ -322,10 +322,10 @@ public class ChoreographyServiceImpl implements IChoreographyService {
 			return resp;
 		}
 		
-		List<Deployment> result = new ArrayList<>();
+		List<DeploymentJRso> result = new ArrayList<>();
 		
 		for(String c : children) {
-			Deployment dep = this.getDeploymentById(c);
+			DeploymentJRso dep = this.getDeploymentById(c);
 			if(dep != null && PermissionManager.isOwner(dep.getClientId())) {
 				result.add(dep);
 			}
@@ -344,10 +344,10 @@ public class ChoreographyServiceImpl implements IChoreographyService {
 
 	@Override
 	@SMethod(perType=false,needLogin=true,maxSpeed=5,maxPacketSize=256)
-	public Resp<Boolean> deleteDeployment(String id) {
-		Resp<Boolean> resp = new Resp<>(0);
+	public RespJRso<Boolean> deleteDeployment(String id) {
+		RespJRso<Boolean> resp = new RespJRso<>(0);
 		
-		Deployment dep = this.getDeploymentById(id);
+		DeploymentJRso dep = this.getDeploymentById(id);
 		if(dep == null) {
 			resp.setCode(1);
 			resp.setMsg("Deployment not found " +id);
@@ -355,7 +355,7 @@ public class ChoreographyServiceImpl implements IChoreographyService {
 		}
 		
 		if(!PermissionManager.isOwner(dep.getClientId())) {
-			ActInfo ai = JMicroContext.get().getAccount();
+			ActInfoJRso ai = JMicroContext.get().getAccount();
 			String msg = "";
 			
 			if(ai != null) {
@@ -376,17 +376,17 @@ public class ChoreographyServiceImpl implements IChoreographyService {
 
 	@Override
 	@SMethod(perType=false,needLogin=true,maxSpeed=5,maxPacketSize=8092,logLevel=MC.LOG_INFO)
-	public Resp<Deployment> updateDeployment(Deployment dep) {
-		Resp<Deployment> resp = new Resp<>(0);
+	public RespJRso<DeploymentJRso> updateDeployment(DeploymentJRso dep) {
+		RespJRso<DeploymentJRso> resp = new RespJRso<>(0);
 		
-		Deployment d = this.getDeploymentById(dep.getId());
+		DeploymentJRso d = this.getDeploymentById(dep.getId());
 		if(d == null) {
 			resp.setCode(1);
 			resp.setMsg("Deployment not found " +dep.getId());
 			return resp;
 		}
 		
-		ActInfo ai = JMicroContext.get().getAccount();
+		ActInfoJRso ai = JMicroContext.get().getAccount();
 		
 		if(ai.isGuest() && (!Utils.isEmpty(dep.getArgs()) || !Utils.isEmpty(dep.getJvmArgs()))) {
 			String msg = "Guest account deployment cannot contain any args!";
@@ -396,8 +396,8 @@ public class ChoreographyServiceImpl implements IChoreographyService {
 			return resp;
 		}
 		
-		if(ai.isGuest() && dep.getStatus() == Deployment.STATUS_CHECK) {
-			dep.setStatus(Deployment.STATUS_DRAFT);
+		if(ai.isGuest() && dep.getStatus() == DeploymentJRso.STATUS_CHECK) {
+			dep.setStatus(DeploymentJRso.STATUS_DRAFT);
 		}
 		
 		if(!PermissionManager.isOwner(d.getClientId())) {
@@ -418,9 +418,9 @@ public class ChoreographyServiceImpl implements IChoreographyService {
 			return resp;
 		}
 		
-		if(!PermissionManager.isCurAdmin() && dep.getStatus() == Deployment.STATUS_ENABLE) {
-			List<Deployment> l = this.getDeploymentList().getData();
-			long ecnt = l.stream().filter(e -> {return e.getClientId() == dep.getClientId() && e.getStatus() == Deployment.STATUS_ENABLE;}).count();
+		if(!PermissionManager.isCurAdmin() && dep.getStatus() == DeploymentJRso.STATUS_ENABLE) {
+			List<DeploymentJRso> l = this.getDeploymentList().getData();
+			long ecnt = l.stream().filter(e -> {return e.getClientId() == dep.getClientId() && e.getStatus() == DeploymentJRso.STATUS_ENABLE;}).count();
 			if(ai.isGuest() && ecnt >= 1) {
 				String msg =  "Guest ID ["+dep.getClientId()+"] enable deployment count is 1 pls regist normal account if you want more";
 				resp.setCode(1);
@@ -449,12 +449,12 @@ public class ChoreographyServiceImpl implements IChoreographyService {
 		}
 		
 		//Map<String, String> params = Utils.parseProgramArgs(dep.getArgs());
-		if(dep.getStatus() == Deployment.STATUS_ENABLE && !PermissionManager.isCurAdmin()) {
+		if(dep.getStatus() == DeploymentJRso.STATUS_ENABLE && !PermissionManager.isCurAdmin()) {
 			//非Admin添加的部署需要严格验证参数
 			checkNonAdminProgramArgs(dep);
 		}
 		
-		if(dep.getStatus() == Deployment.STATUS_ENABLE) {
+		if(dep.getStatus() == DeploymentJRso.STATUS_ENABLE) {
 			setEnableDepArgs(dep);
 		}
 		
@@ -470,9 +470,9 @@ public class ChoreographyServiceImpl implements IChoreographyService {
 	
 	@Override
 	@SMethod(perType=false,needLogin=true,maxSpeed=5,maxPacketSize=256)
-	public Resp<List<ProcessInfo>> getProcessInstanceList(boolean all) {
-		Resp<List<ProcessInfo>> resp = new Resp<>(0);
-		List<ProcessInfo> result = new ArrayList<>();
+	public RespJRso<List<ProcessInfoJRso>> getProcessInstanceList(boolean all) {
+		RespJRso<List<ProcessInfoJRso>> resp = new RespJRso<>(0);
+		List<ProcessInfoJRso> result = new ArrayList<>();
 		this.insManager.forEach((pi)->{
 			if (PermissionManager.isOwner(pi.getClientId())) {
 				result.add(pi);
@@ -487,9 +487,9 @@ public class ChoreographyServiceImpl implements IChoreographyService {
 	
 	@Override
 	@SMethod(perType=false,needLogin=true,maxSpeed=5,maxPacketSize=8194)
-	public Resp<Boolean> updateProcess(ProcessInfo updatePi) {
-		Resp<Boolean> resp = new Resp<>(0);
-		ProcessInfo pi = this.insManager.getInstanceById(updatePi.getId());
+	public RespJRso<Boolean> updateProcess(ProcessInfoJRso updatePi) {
+		RespJRso<Boolean> resp = new RespJRso<>(0);
+		ProcessInfoJRso pi = this.insManager.getInstanceById(updatePi.getId());
 		if(pi == null) {
 			resp.setData(true);
 			return resp;
@@ -500,14 +500,14 @@ public class ChoreographyServiceImpl implements IChoreographyService {
 			pi.setLogLevel(updatePi.getLogLevel());
 			String data = JsonUtils.getIns().toJson(pi);
 			op.setData(p, data);
-			ActInfo ai = JMicroContext.get().getAccount();
+			ActInfoJRso ai = JMicroContext.get().getAccount();
 			String msg = "Update process by Account [" + ai.getActName() + "], Process: " + data;
 			logger.warn(msg);
 			LG.log(MC.LOG_WARN, TAG,msg);
 			return resp;
 		} else {
 			String msg = "";
-			ActInfo ai = JMicroContext.get().getAccount();
+			ActInfoJRso ai = JMicroContext.get().getAccount();
 			if(ai != null) {
 				msg = "No permission to update process [" + ai.getActName() + "], Process ID: " + updatePi.getId();
 			}else {
@@ -524,9 +524,9 @@ public class ChoreographyServiceImpl implements IChoreographyService {
 	
 	@Override
 	@SMethod(perType=true,needLogin=true,maxSpeed=5,maxPacketSize=256)
-	public Resp<Boolean> stopProcess(Integer insId) {
-		Resp<Boolean> resp = new Resp<>(0);
-		ProcessInfo pi = this.insManager.getInstanceById(insId);
+	public RespJRso<Boolean> stopProcess(Integer insId) {
+		RespJRso<Boolean> resp = new RespJRso<>(0);
+		ProcessInfoJRso pi = this.insManager.getInstanceById(insId);
 		if(pi == null) {
 			resp.setData(true);
 			return resp;
@@ -537,14 +537,14 @@ public class ChoreographyServiceImpl implements IChoreographyService {
 			pi.setActive(false);
 			String data = JsonUtils.getIns().toJson(pi);
 			op.setData(p, data);
-			ActInfo ai = JMicroContext.get().getAccount();
+			ActInfoJRso ai = JMicroContext.get().getAccount();
 			String msg = "Stop process by Account [" + ai.getActName() + "], Process: " + data;
 			logger.warn(msg);
 			LG.log(MC.LOG_WARN, TAG,msg);
 			return resp;
 		} else {
 			String msg = "";
-			ActInfo ai = JMicroContext.get().getAccount();
+			ActInfoJRso ai = JMicroContext.get().getAccount();
 			if(ai != null) {
 				msg = "No permission to stop process [" + ai.getActName() + "], Process ID: " + insId;
 			}else {
@@ -562,17 +562,17 @@ public class ChoreographyServiceImpl implements IChoreographyService {
 	//Agent
 	@Override
 	@SMethod(perType=true,needLogin=true,maxSpeed=5,maxPacketSize=256)
-	public Resp<List<AgentInfoVo>> getAgentList(boolean showAll) {
-		Resp<List<AgentInfoVo>> resp = new Resp<>(0);
-		Resp<ConfigNode[]> agents = this.configManager.getChildren(ChoyConstants.ROOT_AGENT, true);
-		if(agents == null || agents.getCode() != Resp.CODE_SUCCESS || agents.getData() == null) {
+	public RespJRso<List<AgentInfo0JRso>> getAgentList(boolean showAll) {
+		RespJRso<List<AgentInfo0JRso>> resp = new RespJRso<>(0);
+		RespJRso<ConfigNodeJRso[]> agents = this.configManager.getChildren(ChoyConstants.ROOT_AGENT, true);
+		if(agents == null || agents.getCode() != RespJRso.CODE_SUCCESS || agents.getData() == null) {
 			resp.setMsg("no data");
 			return resp;
 		}
 		
-		List<AgentInfoVo> aivs = new ArrayList<>();
+		List<AgentInfo0JRso> aivs = new ArrayList<>();
 		
-		for(ConfigNode cn : agents.getData()) {
+		for(ConfigNodeJRso cn : agents.getData()) {
 			
 			String acPath = ChoyConstants.ROOT_ACTIVE_AGENT + "/" + cn.getName();
 			boolean isActive = op.exist(acPath);
@@ -580,10 +580,10 @@ public class ChoreographyServiceImpl implements IChoreographyService {
 				continue;
 			}
 			
-			AgentInfoVo av = new AgentInfoVo();
+			AgentInfo0JRso av = new AgentInfo0JRso();
 			aivs.add(av);
 			
-			AgentInfo ai = JsonUtils.getIns().fromJson(cn.getVal(), AgentInfo.class);
+			AgentInfoJRso ai = JsonUtils.getIns().fromJson(cn.getVal(), AgentInfoJRso.class);
 			if(!PermissionManager.checkAccountClientPermission(ai.getClientId())) {
 				continue;
 			}
@@ -591,7 +591,7 @@ public class ChoreographyServiceImpl implements IChoreographyService {
 			av.setAgentInfo(ai);
 			ai.setActive(isActive);
 			
-			 Set<ProcessInfo> pros = new HashSet<>();
+			 Set<ProcessInfoJRso> pros = new HashSet<>();
 			 this.insManager.forEach((pi)->{
 				 if(pi.getAgentId() != null && pi.getAgentId().equals(ai.getId())) {
 					 pros.add(pi);
@@ -601,9 +601,9 @@ public class ChoreographyServiceImpl implements IChoreographyService {
 			 if(pros != null && pros.size() > 0) {
 				 String[] depids = new String[pros.size()];
 				 String[] intids = new String[pros.size()];
-			     Iterator<ProcessInfo> ite = pros.iterator();
+			     Iterator<ProcessInfoJRso> ite = pros.iterator();
 				 for(int i = 0; ite.hasNext(); i++) {
-					 ProcessInfo pi = ite.next();
+					 ProcessInfoJRso pi = ite.next();
 					 intids[i] = pi.getId()+"";
 					 depids[i] = pi.getDepId();
 				 }
@@ -621,8 +621,8 @@ public class ChoreographyServiceImpl implements IChoreographyService {
 	
 	@Override
 	@SMethod(perType=true,needLogin=true,maxSpeed=5,maxPacketSize=256)
-	public Resp<Boolean> stopAllInstance(String agentId) {
-		Resp<Boolean> resp = new Resp<>(0);
+	public RespJRso<Boolean> stopAllInstance(String agentId) {
+		RespJRso<Boolean> resp = new RespJRso<>(0);
 		
 		String activePath = ChoyConstants.ROOT_ACTIVE_AGENT + "/"+ agentId;
 		if(!op.exist(activePath)) {
@@ -632,7 +632,7 @@ public class ChoreographyServiceImpl implements IChoreographyService {
 			return resp;
 		}
 		
-		AgentInfo ai = getAgentById(agentId);
+		AgentInfoJRso ai = getAgentById(agentId);
 		if(PermissionManager.checkAccountClientPermission(ai.getClientId())) {
 			op.setData(activePath, ChoyConstants.AGENT_CMD_STOP_ALL_INSTANCE);
 			resp.setData(true);
@@ -644,8 +644,8 @@ public class ChoreographyServiceImpl implements IChoreographyService {
 		return resp;
 	}
 	
-	public Resp<Boolean> clearResourceCache(String agentId) {
-		Resp<Boolean> resp = new Resp<>(0);
+	public RespJRso<Boolean> clearResourceCache(String agentId) {
+		RespJRso<Boolean> resp = new RespJRso<>(0);
 		if(commonManager.hasPermission(this.adminPermissionLevel)) {
 			String activePath = ChoyConstants.ROOT_ACTIVE_AGENT + "/"+ agentId;
 			if(op.exist(activePath)) {
@@ -664,19 +664,19 @@ public class ChoreographyServiceImpl implements IChoreographyService {
 		return resp;
 	}
 	
-	public AgentInfo getAgentById(String agentId) {
+	public AgentInfoJRso getAgentById(String agentId) {
 		String apath = ChoyConstants.ROOT_AGENT + "/" + agentId;
 		String data = op.getData(apath);
-		AgentInfo ai = JsonUtils.getIns().fromJson(data, AgentInfo.class);
+		AgentInfoJRso ai = JsonUtils.getIns().fromJson(data, AgentInfoJRso.class);
 		return ai;
 	}
 
 	@Override
 	@SMethod(perType=false,needLogin=true,maxSpeed=5,maxPacketSize=256)
-	public Resp<String> changeAgentState(String agentId) {
-		Resp<String> resp = new Resp<>(0);
+	public RespJRso<String> changeAgentState(String agentId) {
+		RespJRso<String> resp = new RespJRso<>(0);
 		
-		AgentInfo ai = this.getAgentById(agentId);
+		AgentInfoJRso ai = this.getAgentById(agentId);
 		
 		if(ai == null) {
 			resp.setCode(1);
@@ -721,12 +721,12 @@ public class ChoreographyServiceImpl implements IChoreographyService {
 		return resp;		
 	}
 	
-	private Deployment getDeploymentById(String depId) {
+	private DeploymentJRso getDeploymentById(String depId) {
 		String data = op.getData(ChoyConstants.DEP_DIR+"/" + depId);
 		if(StringUtils.isEmpty(data)) {
 			return null;
 		}
-		return JsonUtils.getIns().fromJson(data, Deployment.class);
+		return JsonUtils.getIns().fromJson(data, DeploymentJRso.class);
 	}
 	
 }

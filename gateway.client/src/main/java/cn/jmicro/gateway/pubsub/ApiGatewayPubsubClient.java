@@ -6,7 +6,7 @@ import java.util.Map;
 import java.util.Set;
 
 import cn.jmicro.api.async.IPromise;
-import cn.jmicro.api.pubsub.PSData;
+import cn.jmicro.api.pubsub.PSDataJRso;
 import cn.jmicro.api.pubsub.genclient.IPubSubClientService$JMAsyncClient;
 import cn.jmicro.common.Constants;
 import cn.jmicro.gateway.client.ApiGatewayClient;
@@ -38,16 +38,16 @@ public class ApiGatewayPubsubClient {
 		return publishOneItem(item(topic,content,flag,itemContext));
 	}
 
-	public int publishMutilItems(PSData[] items) {
+	public int publishMutilItems(PSDataJRso[] items) {
 		return pcs.publishMutilItems(items);
 	}
 
-	public int publishOneItem(PSData item) {
+	public int publishOneItem(PSDataJRso item) {
 		return pcs.publishOneItem(item);
 	}
 	
-	private PSData item(String topic, Object data,byte flag,Map<String, Object> itemContext) {
-		PSData item = new PSData();
+	private PSDataJRso item(String topic, Object data,byte flag,Map<String, Object> itemContext) {
+		PSDataJRso item = new PSDataJRso();
 		item.setTopic(topic);
 		item.setData(data);
 		item.setContext(itemContext);
@@ -70,11 +70,11 @@ public class ApiGatewayPubsubClient {
 		return pcs.publishOneItemJMAsync(item(topic,content,flag,itemContext),context);
 	}
 
-	public IPromise<Integer> publishMutilItemsJMAsync(PSData[] items,Object context) {
+	public IPromise<Integer> publishMutilItemsJMAsync(PSDataJRso[] items,Object context) {
 		return pcs.publishMutilItemsJMAsync(items,context);
 	}
 
-	public IPromise<Integer> publishOneItemJMAsync( PSData item,Object context) {
+	public IPromise<Integer> publishOneItemJMAsync( PSDataJRso item,Object context) {
 		return pcs.publishOneItemJMAsync(item,context);
 	}
 	
@@ -93,11 +93,11 @@ public class ApiGatewayPubsubClient {
 		return pcs.publishOneItemJMAsync(item(topic,content,flag,itemContext));
 	}
 
-	public IPromise<Integer> publishMutilItemsJMAsync(PSData[] items) {
+	public IPromise<Integer> publishMutilItemsJMAsync(PSDataJRso[] items) {
 		return pcs.publishMutilItemsJMAsync(items);
 	}
 
-	public IPromise<Integer> publishOneItemJMAsync(PSData item) {
+	public IPromise<Integer> publishOneItemJMAsync(PSDataJRso item) {
 		return pcs.publishOneItemJMAsync(item);
 	}
 	
@@ -150,7 +150,7 @@ public class ApiGatewayPubsubClient {
 		return p;
 	}
 
-	public void onMsg(PSData item) {
+	public void onMsg(PSDataJRso item) {
 		if(this.listeners.containsKey(item.getTopic())) {
 			Set<PSDataListener> ls = this.listeners.get(item.getTopic());
 			if(ls != null && !ls.isEmpty()) {

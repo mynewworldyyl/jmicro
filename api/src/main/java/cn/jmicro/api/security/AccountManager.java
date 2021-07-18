@@ -4,7 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import cn.jmicro.api.JMicroContext;
-import cn.jmicro.api.Resp;
+import cn.jmicro.api.RespJRso;
 import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Inject;
 import cn.jmicro.api.cache.ICache;
@@ -65,19 +65,19 @@ public class AccountManager {
 		return op.exist(AccountManager.MobileDir +"/"+ mobile);
 	}
 
-	public Resp<ActInfo> login(String actName, String pwd) {
-		Resp<ActInfo> r = new Resp<ActInfo>();
+	public RespJRso<ActInfoJRso> login(String actName, String pwd) {
+		RespJRso<ActInfoJRso> r = new RespJRso<ActInfoJRso>();
 
-		ActInfo ai = getAccountFromZK(actName);
+		ActInfoJRso ai = getAccountFromZK(actName);
 		
 		if(ai == null) {
-			r.setCode(Resp.CODE_FAIL);
+			r.setCode(RespJRso.CODE_FAIL);
 			r.setMsg("Account not exist or password error!");
 			return r;
 		}
 		
-		if(ai.getStatuCode() != ActInfo.SC_ACTIVED) {
-			r.setCode(Resp.CODE_FAIL);
+		if(ai.getStatuCode() != ActInfoJRso.SC_ACTIVED) {
+			r.setCode(RespJRso.CODE_FAIL);
 			r.setMsg("Account invalid now!");
 			return r;
 		}
@@ -91,7 +91,7 @@ public class AccountManager {
 			}
 			
 			if(oldLk == null) {
-				ai.setLoginKey(key(this.idGenerator.getStringId(ActInfo.class)));
+				ai.setLoginKey(key(this.idGenerator.getStringId(ActInfoJRso.class)));
 				ai.setLastActiveTime(TimeUtils.getCurTime());
 				cache.put(ai.getLoginKey(), ai,expired);
 				cache.put(akey, ai.getLoginKey(),expired);
@@ -99,11 +99,11 @@ public class AccountManager {
 			} else {
 				ai = cache.get(oldLk);
 			}
-			r.setCode(Resp.CODE_SUCCESS);
+			r.setCode(RespJRso.CODE_SUCCESS);
 			r.setData(ai);
 			return r;
 		} else {
-			r.setCode(Resp.CODE_FAIL);
+			r.setCode(RespJRso.CODE_FAIL);
 			r.setMsg("Account not exist or password error!");
 			return r;
 		}
@@ -128,9 +128,9 @@ public class AccountManager {
 		return true;
 	}
 	
-	public ActInfo getAccount(String loginKey) {
+	public ActInfoJRso getAccount(String loginKey) {
 		if(cache.exist(loginKey)) {
-			ActInfo ai = cache.get(loginKey);
+			ActInfoJRso ai = cache.get(loginKey);
 			long curTime = TimeUtils.getCurTime();
 			if(curTime - ai.getLastActiveTime() > updateExpired) {
 				if(LG.isLoggable(MC.LOG_DEBUG)) {
@@ -143,7 +143,16 @@ public class AccountManager {
 		return null;
 	}
 	
-	private void setActInfoCache(ActInfo ai,long curTime) {
+	public ActInfoJRso getAccount(String loginKey,boolean setContext) {
+		ActInfoJRso ai = getAccount(loginKey);
+		if(ai != null && setContext) {
+			JMicroContext.get().setString(JMicroContext.LOGIN_KEY_SYS, loginKey);
+			JMicroContext.get().setAccount(ai);
+		}
+		return ai;
+	}
+	
+	private void setActInfoCache(ActInfoJRso ai,long curTime) {
 		ai.setLastActiveTime(curTime);
 		cache.put(ai.getLoginKey(), ai,expired);
 		cache.expire(key(ai.getActName()),expired);
@@ -151,7 +160,7 @@ public class AccountManager {
 	}
 
 	public boolean logout(String loginKey) {
-		ActInfo ai = this.getAccount(loginKey);
+		ActInfoJRso ai = this.getAccount(loginKey);
 		if(ai != null) {
 			cache.del(loginKey);
 			cache.del(key(ai.getActName()));
@@ -164,11 +173,11 @@ public class AccountManager {
 		return cache.exist(loginKey);
 	}
 	
-	public ActInfo getAccountFromZK(String actName) {
+	public ActInfoJRso getAccountFromZK(String actName) {
 		String p = AccountManager.ActDir +"/"+ actName;
 		String data = op.getData(p);
 		if(StringUtils.isNotEmpty(data)) {
-			ActInfo ai = JsonUtils.getIns().fromJson(data, ActInfo.class);
+			ActInfoJRso ai = JsonUtils.getIns().fromJson(data, ActInfoJRso.class);
 			return ai;
 		}
 		return null;

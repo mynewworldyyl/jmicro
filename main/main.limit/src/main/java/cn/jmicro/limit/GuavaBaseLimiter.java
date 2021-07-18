@@ -23,12 +23,11 @@ import java.util.concurrent.TimeUnit;
 import com.google.common.util.concurrent.RateLimiter;
 
 import cn.jmicro.api.JMicroContext;
-import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.limitspeed.ILimiter;
 import cn.jmicro.api.net.IRequest;
-import cn.jmicro.api.registry.ServiceItem;
-import cn.jmicro.api.registry.ServiceMethod;
-import cn.jmicro.api.registry.UniqueServiceMethodKey;
+import cn.jmicro.api.registry.ServiceItemJRso;
+import cn.jmicro.api.registry.ServiceMethodJRso;
+import cn.jmicro.api.registry.UniqueServiceMethodKeyJRso;
 import cn.jmicro.common.Constants;
 /**
  * 
@@ -44,10 +43,10 @@ public class GuavaBaseLimiter  implements ILimiter{
 	public boolean enter(IRequest req) {
 		String key = this.key(req);
 		
-		ServiceMethod sm = (ServiceMethod)JMicroContext.get()
+		ServiceMethodJRso sm = (ServiceMethodJRso)JMicroContext.get()
 				.getObject(Constants.SERVICE_METHOD_KEY, null);
 		
-		ServiceItem item = (ServiceItem)JMicroContext.get()
+		ServiceItemJRso item = (ServiceItemJRso)JMicroContext.get()
 				.getObject(Constants.SERVICE_ITEM_KEY, null);
 		
 		RateLimiter rl = rateLimiter.get(key);
@@ -92,7 +91,7 @@ public class GuavaBaseLimiter  implements ILimiter{
 	}
 	
 	private String key(IRequest req){
-		String key = UniqueServiceMethodKey.paramsStr(req.getArgs());
+		String key = UniqueServiceMethodKeyJRso.paramsStr(req.getArgs());
 		//key = key + ServiceItem.serviceName(req.getServiceName(), req.getNamespace(), req.getVersion());
 		key = key + req.getMethod() + req.getSvnHash();
 		return key;

@@ -7,11 +7,11 @@ import java.io.InputStream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import cn.jmicro.api.Resp;
+import cn.jmicro.api.RespJRso;
 import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Service;
-import cn.jmicro.api.classloader.IClassloaderRpc;
-import cn.jmicro.api.classloader.RemoteClassRegister;
+import cn.jmicro.api.classloader.IClassloaderRpcJMSrv;
+import cn.jmicro.api.classloader.RemoteClassRegisterJRso;
 import cn.jmicro.api.monitor.LG;
 import cn.jmicro.api.monitor.MC;
 import cn.jmicro.common.Constants;
@@ -19,7 +19,7 @@ import cn.jmicro.common.Constants;
 @Service(version="0.0.1",timeout=30000,showFront=false,clientId=Constants.NO_CLIENT_ID,
 logLevel=MC.LOG_WARN)
 @Component
-public class ClassloaderRpcService implements IClassloaderRpc {
+public class ClassloaderRpcService implements IClassloaderRpcJMSrv {
 
 	private final static Logger logger = LoggerFactory.getLogger(ClassloaderRpcService.class);
 	
@@ -73,8 +73,8 @@ public class ClassloaderRpcService implements IClassloaderRpc {
 	}
 
 	@Override
-	public Resp<Boolean> registRemoteClass(RemoteClassRegister r) {
-		return new Resp<>(Resp.CODE_FAIL,false);
+	public RespJRso<Boolean> registRemoteClass(RemoteClassRegisterJRso r) {
+		return new RespJRso<>(RespJRso.CODE_FAIL,false);
 	}
 
 	

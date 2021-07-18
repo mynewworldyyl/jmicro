@@ -31,7 +31,7 @@ public interface ChoyConstants {
 	//controller存活标志
 	public static final String ROOT_CONTROLLER = Config.getRaftBasePath(Config.ChoreographyDir) + "/controllers";
 	
-	public static final String ID_PATH = Config.getRaftBasePath(Config.ChoreographyDir) + "/" + ProcessInfo.class.getName();
+	public static final String ID_PATH = Config.getRaftBasePath(Config.ChoreographyDir) + "/" + ProcessInfoJRso.class.getName();
 	
 	public static final String PROCESS_INFO_FILE = "processInfoFile";
 	

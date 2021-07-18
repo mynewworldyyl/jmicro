@@ -1,7 +1,8 @@
 package cn.jmicro.api.objectfactory;
 
 import cn.jmicro.api.registry.IServiceListener;
-import cn.jmicro.api.registry.ServiceItem;
+import cn.jmicro.api.registry.ServiceItemJRso;
+import cn.jmicro.api.registry.UniqueServiceKeyJRso;
 
 public abstract class AbstractClientServiceProxyHolder implements IServiceListener{
 
@@ -16,8 +17,8 @@ public abstract class AbstractClientServiceProxyHolder implements IServiceListen
 	}
 
 	@Override
-	public void serviceChanged(int type, ServiceItem item) {
-		proxyHolder.serviceChanged(type, item);
+	public void serviceChanged(int type, UniqueServiceKeyJRso siKey,ServiceItemJRso si) {
+		proxyHolder.serviceChanged(type, siKey,si);
 	}
 	
 	public boolean isReady() {
@@ -28,7 +29,7 @@ public abstract class AbstractClientServiceProxyHolder implements IServiceListen
 		return proxyHolder.getItem() == null?-1:proxyHolder.getItem().getClientId();
 	}
 	
-	public ServiceItem getItem() {
+	public ServiceItemJRso getItem() {
 		return proxyHolder.getItem();
 	}
 	

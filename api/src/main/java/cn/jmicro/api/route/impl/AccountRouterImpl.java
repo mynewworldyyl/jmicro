@@ -18,28 +18,28 @@ package cn.jmicro.api.route.impl;
 
 import cn.jmicro.api.JMicroContext;
 import cn.jmicro.api.annotation.Component;
-import cn.jmicro.api.registry.ServiceMethod;
+import cn.jmicro.api.registry.ServiceMethodJRso;
 import cn.jmicro.api.route.AbstractRouter;
 import cn.jmicro.api.route.IRouter;
-import cn.jmicro.api.route.RouteRule;
-import cn.jmicro.api.security.ActInfo;
+import cn.jmicro.api.route.RouteRuleJRso;
+import cn.jmicro.api.security.ActInfoJRso;
 import cn.jmicro.common.Constants;
 
 /**
  * @author Yulei Ye
  * @date: 2018年11月11日 下午3:56:55
  */
-@Component(value=RouteRule.TYPE_FROM_ACCOUNT_ROUTER,lazy=false)
+@Component(value=RouteRuleJRso.TYPE_FROM_ACCOUNT_ROUTER,lazy=false)
 public class AccountRouterImpl extends AbstractRouter implements IRouter {
 
 	public AccountRouterImpl() {
-		super(RouteRule.TYPE_FROM_ACCOUNT_ROUTER);
+		super(RouteRuleJRso.TYPE_FROM_ACCOUNT_ROUTER);
 	}
 	
 	@Override
-	protected boolean accept(RouteRule r) {
-		ActInfo ai = null;
-		ServiceMethod sm = JMicroContext.get().getParam(Constants.SERVICE_METHOD_KEY, null);
+	protected boolean accept(RouteRuleJRso r) {
+		ActInfoJRso ai = null;
+		ServiceMethodJRso sm = JMicroContext.get().getParam(Constants.SERVICE_METHOD_KEY, null);
 		if(sm.getForType() == Constants.FOR_TYPE_SYS) {
 			ai = JMicroContext.get().getSysAccount();
 		}else {
@@ -51,7 +51,7 @@ public class AccountRouterImpl extends AbstractRouter implements IRouter {
 		}
 		
 		if(r.getFrom().getVal().equals(ai.getActName())||
-				r.getFrom().getVal().equals(ai.getId()+"")) {
+				r.getFrom().getVal().equals(ai.getClientId()+"")) {
 			return true;
 		}
 		

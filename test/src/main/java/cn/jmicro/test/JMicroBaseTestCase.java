@@ -8,10 +8,11 @@ import cn.jmicro.api.JMicroContext;
 import cn.jmicro.api.monitor.StatisMonitorClient;
 import cn.jmicro.api.objectfactory.IObjectFactory;
 import cn.jmicro.api.registry.IRegistry;
-import cn.jmicro.api.registry.ServiceItem;
-import cn.jmicro.api.registry.ServiceMethod;
-import cn.jmicro.api.registry.UniqueServiceKey;
-import cn.jmicro.api.registry.UniqueServiceMethodKey;
+import cn.jmicro.api.registry.ServiceItemJRso;
+import cn.jmicro.api.registry.ServiceMethodJRso;
+import cn.jmicro.api.registry.UniqueServiceKeyJRso;
+import cn.jmicro.api.registry.UniqueServiceMethodKeyJRso;
+import cn.jmicro.api.service.ServiceManager;
 import cn.jmicro.common.Constants;
 import cn.jmicro.common.Utils;
 
@@ -24,6 +25,8 @@ public class JMicroBaseTestCase {
 	
 	protected static IRegistry registry;
 	
+	protected static ServiceManager srvMng;
+	
 	@Before
 	public void setupTestClass() {
 		/* RpcClassLoader cl = new RpcClassLoader(RpcClassLoader.class.getClassLoader());
@@ -31,6 +34,7 @@ public class JMicroBaseTestCase {
 		of = (IObjectFactory)JMicro.getObjectFactoryAndStart(getArgs());
 		//of = EnterMain.getObjectFactoryAndStart(getArgs());
 		registry = of.get(IRegistry.class);
+		srvMng = of.get(ServiceManager.class, false);
 	}
 	
 	//-DinstanceName=ServiceComsumer -DclientId=0 -DadminClientId=0  
@@ -45,52 +49,52 @@ public class JMicroBaseTestCase {
 	}
 	
 	protected <T> T getSrv(Class<T> srvCls,String ns,String ver) {
-		ServiceItem si = registry.getServices(srvCls.getName(),ns,ver)
+		UniqueServiceKeyJRso si = registry.getServices(srvCls.getName(),ns,ver)
 				.iterator().next();
 		org.junit.Assert.assertNotNull(si);
-		T srv = of.getRemoteServie(si.getKey().getServiceName(), si.getKey().getNamespace()
-				, si.getKey().getVersion(),null);
+		T srv = of.getRemoteServie(si.getServiceName(), si.getNamespace()
+				, si.getVersion(),null);
 		return srv;
 	}
 	
-	protected ServiceMethod helloTopicMethodKey() {
+	protected ServiceMethodJRso helloTopicMethodKey() {
 		StringBuilder sb = new StringBuilder();
-		UniqueServiceKey.serviceName(sb, "cn.expjmicro.example.api.rpc.ISayHello");
-		UniqueServiceKey.namespace(sb, "simpleRpc");
-		UniqueServiceKey.version(sb, "0.0.1");
-		UniqueServiceKey.instanceName(true, sb, "provider");
-		UniqueServiceKey.host(true, sb, Utils.getIns().getLocalIPList().get(0));
-		UniqueServiceKey.port(false, sb, "0");
-		sb.append("helloTopic").append(UniqueServiceMethodKey.SEP);
+		UniqueServiceKeyJRso.serviceName(sb, "cn.expjmicro.example.api.rpc.ISayHello");
+		UniqueServiceKeyJRso.namespace(sb, "simpleRpc");
+		UniqueServiceKeyJRso.version(sb, "0.0.1");
+		UniqueServiceKeyJRso.instanceName(true, sb, "provider");
+		UniqueServiceKeyJRso.host(true, sb, Utils.getIns().getLocalIPList().get(0));
+		UniqueServiceKeyJRso.port(false, sb, "0");
+		sb.append("helloTopic").append(UniqueServiceMethodKeyJRso.SEP);
 		sb.append("cn.jmicro.api.pubsub.PSData");
-		UniqueServiceMethodKey key = UniqueServiceMethodKey.fromKey(sb.toString());
-		ServiceMethod sm = new ServiceMethod();
+		UniqueServiceMethodKeyJRso key = UniqueServiceMethodKeyJRso.fromKey(sb.toString());
+		ServiceMethodJRso sm = new ServiceMethodJRso();
 		sm.setKey(key);
 		return sm;
 	}
 	
-	protected ServiceItem sayHelloServiceItem() {
-		ServiceItem si = registry.getServices("cn.expjmicro.example.api.rpc.ISimpleRpc","exampleProvider","0.0.1").iterator().next();
+	protected ServiceItemJRso sayHelloServiceItem() {
+		UniqueServiceKeyJRso si = registry.getServices("cn.expjmicro.example.api.rpc.ISimpleRpc","exampleProvider","0.0.1").iterator().next();
 		org.junit.Assert.assertNotNull(si);
-		return si;
+		return srvMng.getServiceByKey(si.fullStringKey());
 	}
 	
-	protected ServiceMethod sayHelloServiceMethod() {
-		ServiceItem si = sayHelloServiceItem();
-		org.junit.Assert.assertNotNull(si);
-		ServiceMethod sm = si.getMethod("hello", new String[] {"java.lang.String"});
+	protected ServiceMethodJRso sayHelloServiceMethod() {
+		ServiceItemJRso siKey = sayHelloServiceItem();
+		org.junit.Assert.assertNotNull(siKey);
+		ServiceMethodJRso sm = siKey.getMethod("hello");
 		org.junit.Assert.assertNotNull(sm);
 		return sm;
 	}
 	
-	protected ServiceItem getServiceItem(String impl) {
-		ServiceItem si = registry.getServiceByImpl(impl);
+	protected UniqueServiceKeyJRso getServiceItem(int hash) {
+		UniqueServiceKeyJRso si = registry.getServiceByCode(hash);
 		org.junit.Assert.assertNotNull(si);
 		return si;
 	}
 	
-	protected ServiceMethod getServiceMethod(ServiceItem si,String methodName,Class<?>[] argTypes) {
-		ServiceMethod sm = si.getMethod(methodName, argTypes);
+	protected ServiceMethodJRso getServiceMethod(ServiceItemJRso si,String methodName,Class<?>[] argTypes) {
+		ServiceMethodJRso sm = si.getMethod(methodName, argTypes);
 		org.junit.Assert.assertNotNull(sm);
 		return sm;
 	}
@@ -100,7 +104,7 @@ public class JMicroBaseTestCase {
 		JMicroContext.get().setBoolean(JMicroContext.IS_MONITORENABLE, false);
 		//JMicroContext.get().setObject(JMicroContext.MONITOR, monitor);
 		
-		ServiceMethod sm = sayHelloServiceMethod();
+		ServiceMethodJRso sm = sayHelloServiceMethod();
 		JMicroContext.get().setParam(Constants.SERVICE_METHOD_KEY,sm);
 		JMicroContext.get().setParam(Constants.SERVICE_ITEM_KEY,sayHelloServiceItem());
 		JMicroContext.get().setString(JMicroContext.CLIENT_SERVICE, sm.getKey().getServiceName());
@@ -114,7 +118,7 @@ public class JMicroBaseTestCase {
 		JMicroContext.get().setBoolean(JMicroContext.IS_MONITORENABLE, true);
 		StatisMonitorClient monitor = of.get(StatisMonitorClient.class);
 		
-		ServiceMethod sm = sayHelloServiceMethod();
+		ServiceMethodJRso sm = sayHelloServiceMethod();
 		JMicroContext.get().setParam(Constants.SERVICE_METHOD_KEY,sm);
 		JMicroContext.get().setParam(Constants.SERVICE_ITEM_KEY,sayHelloServiceItem());
 		JMicroContext.get().setString(JMicroContext.CLIENT_SERVICE, sm.getKey().getServiceName());

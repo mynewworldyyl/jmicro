@@ -3,7 +3,7 @@ package cn.jmicro.api.internal.async;
 import java.lang.reflect.Type;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import cn.jmicro.api.Resp;
+import cn.jmicro.api.RespJRso;
 import cn.jmicro.api.async.AsyncFailResult;
 import cn.jmicro.api.async.IPromise;
 import cn.jmicro.api.client.IAsyncCallback;
@@ -236,7 +236,7 @@ public class PromiseImpl<R> implements IPromise<R>{
 		if(fail != null) {
 			return fail.getCode();
 		}else {
-			return Resp.CODE_SUCCESS;
+			return RespJRso.CODE_SUCCESS;
 		}
 	}
 

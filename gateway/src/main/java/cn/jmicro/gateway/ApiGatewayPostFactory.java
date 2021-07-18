@@ -3,7 +3,7 @@ package cn.jmicro.gateway;
 import java.util.Set;
 
 import cn.jmicro.api.annotation.Component;
-import cn.jmicro.api.choreography.ProcessInfo;
+import cn.jmicro.api.choreography.ProcessInfoJRso;
 import cn.jmicro.api.config.Config;
 import cn.jmicro.api.gateway.GatewayConstant;
 import cn.jmicro.api.gateway.MessageRouteRow;
@@ -47,7 +47,7 @@ public class ApiGatewayPostFactory extends PostFactoryAdapter {
 			}
 		}
 		
-		ProcessInfo pi = of.get(ProcessInfo.class);
+		ProcessInfoJRso pi = of.get(ProcessInfoJRso.class);
 
 		MessageRouteRow r = new MessageRouteRow();
 		r.setIp(host);

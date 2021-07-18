@@ -139,7 +139,7 @@ let statis = {
     return req;
   },
 
-  sn:'cn.jmicro.api.mng.IStatisMonitor',
+  sn:'cn.jmicro.api.mng.IStatisMonitorJMSrv',
     ns:cons.NS_MNG,
     v:'0.0.1',
 }

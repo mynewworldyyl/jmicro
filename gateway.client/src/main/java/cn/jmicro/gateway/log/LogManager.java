@@ -3,7 +3,7 @@ package cn.jmicro.gateway.log;
 import java.util.Set;
 
 import cn.jmicro.api.monitor.MC;
-import cn.jmicro.api.monitor.OneLog;
+import cn.jmicro.api.monitor.OneLogJRso;
 import cn.jmicro.api.monitor.genclient.IOutterMonitorService$Gateway$JMAsyncClient;
 import cn.jmicro.gateway.client.ApiGatewayClient;
 
@@ -33,7 +33,7 @@ public class LogManager {
 	
 	public static final boolean submit() {
 		LogContext c = getCxt();
-		Set<OneLog> logs = c.getLogs();
+		Set<OneLogJRso> logs = c.getLogs();
 		if(logs == null || logs.isEmpty()) {
 			return false;
 		}

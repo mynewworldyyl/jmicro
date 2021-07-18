@@ -13,10 +13,10 @@ import org.junit.Test;
 
 import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.net.Message;
-import cn.jmicro.api.net.RpcResponse;
-import cn.jmicro.api.pubsub.PSData;
-import cn.jmicro.api.registry.BreakRule;
-import cn.jmicro.api.registry.ServiceMethod;
+import cn.jmicro.api.net.RpcResponseJRso;
+import cn.jmicro.api.pubsub.PSDataJRso;
+import cn.jmicro.api.registry.BreakRuleJRso;
+import cn.jmicro.api.registry.ServiceMethodJRso;
 import cn.jmicro.common.Constants;
 
 public class TestPrefixTypeED {
@@ -205,19 +205,19 @@ public class TestPrefixTypeED {
 	@Test
 	public void testServiceMethod() {
 		
-		ServiceMethod pe = new ServiceMethod();
+		ServiceMethodJRso pe = new ServiceMethodJRso();
 		pe.getKey().setServiceName("sn");
 		
 		ByteBuffer bb = decoder.encode(pe);
 		
-		ServiceMethod ped = decoder.decode(bb);
+		ServiceMethodJRso ped = decoder.decode(bb);
 		
 		System.out.println(ped);
 		
 	}
 	
 	public static final class ObjectBreakRule{		
-		public BreakRule br = new BreakRule();
+		public BreakRuleJRso br = new BreakRuleJRso();
 	}
 	
 	@Test
@@ -236,12 +236,12 @@ public class TestPrefixTypeED {
 	@Test
 	public void testRpcResponse() {
 		
-		RpcResponse pe = new RpcResponse();
+		RpcResponseJRso pe = new RpcResponseJRso();
 		pe.setResult(new int[] {22,33,55});
 		
 		ByteBuffer bb = decoder.encode(pe);
 		
-		RpcResponse ped = decoder.decode(bb);
+		RpcResponseJRso ped = decoder.decode(bb);
 		int[] rs = (int[])ped.getResult();
 		System.out.println(rs);
 		
@@ -283,14 +283,14 @@ public class TestPrefixTypeED {
 		data.put(MC.STATIS_TOTAL_RESP, 22D);
 		data.put(MC.MT_REQ_START, 22D);
 		
-		PSData psData = new PSData();
+		PSDataJRso psData = new PSDataJRso();
 		psData.setData(data);
 		psData.setTopic(MC.TEST_SERVICE_METHOD_TOPIC);
-		psData.put(Constants.SERVICE_METHOD_KEY, new ServiceMethod());
+		psData.put(Constants.SERVICE_METHOD_KEY, new ServiceMethodJRso());
 		
 		ByteBuffer bb = decoder.encode(psData);
 		
-		PSData ped = decoder.decode(bb);
+		PSDataJRso ped = decoder.decode(bb);
 		System.out.println(ped);
 	}
 }

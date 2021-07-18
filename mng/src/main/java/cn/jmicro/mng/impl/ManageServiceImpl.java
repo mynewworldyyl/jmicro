@@ -7,17 +7,18 @@ import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Inject;
 import cn.jmicro.api.annotation.SMethod;
 import cn.jmicro.api.annotation.Service;
-import cn.jmicro.api.mng.IManageService;
+import cn.jmicro.api.mng.IManageServiceJMSrv;
 import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.registry.IRegistry;
-import cn.jmicro.api.registry.ServiceItem;
-import cn.jmicro.api.registry.ServiceMethod;
+import cn.jmicro.api.registry.ServiceItemJRso;
+import cn.jmicro.api.registry.ServiceMethodJRso;
+import cn.jmicro.api.registry.UniqueServiceKeyJRso;
 import cn.jmicro.api.security.PermissionManager;
 import cn.jmicro.api.service.ServiceManager;
 
 @Component
 @Service(version="0.0.1",external=true,timeout=10000,debugMode=1,showFront=false,logLevel=MC.LOG_NO)
-public class ManageServiceImpl implements IManageService {
+public class ManageServiceImpl implements IManageServiceJMSrv {
 
 	@Inject
 	private IRegistry reg;
@@ -27,23 +28,28 @@ public class ManageServiceImpl implements IManageService {
 	
 	@Override
 	@SMethod(perType=false,needLogin=true,maxSpeed=10,maxPacketSize=256)
-	public Set<ServiceItem> getServices(boolean all) {
-		 Set<ServiceItem> items = srvManager.getAllItems();
+	public Set<ServiceItemJRso> getServices(boolean all) {
+		 Set<UniqueServiceKeyJRso> items = srvManager.getAllItems();
 		 if(items == null || items.isEmpty()) {
 			 return null;
 		 }
 		 
-		 Set<ServiceItem> sis = new TreeSet<>();
+		 Set<ServiceItemJRso> sis = new TreeSet<>();
 		 
 		 if(all && PermissionManager.isCurAdmin()) {
-			 sis.addAll(items);
+			 for(UniqueServiceKeyJRso key : items) {
+				 ServiceItemJRso sij = this.srvManager.getServiceByKey(key.fullStringKey());
+				 if(sij == null) continue;
+				 sis.add(sij);
+			 }
 			 return sis;
 		 }
 
-		 for(ServiceItem si : items) {
+		 for(UniqueServiceKeyJRso si : items) {
 			 if(PermissionManager.isOwner(si.getCreatedBy())) {
-				 if(all || si.isShowFront()) {
-					 sis.add(si);
+				 ServiceItemJRso sij = this.srvManager.getServiceByKey(si.fullStringKey());
+				 if(sij != null && (all || sij.isShowFront())) {
+					 sis.add(sij);
 				 }
 			 }
 		 }
@@ -53,11 +59,11 @@ public class ManageServiceImpl implements IManageService {
 
 	@Override
 	@SMethod(perType=false,needLogin=true,maxSpeed=10,maxPacketSize=2048)
-	public boolean updateItem(ServiceItem item) {
-	    ServiceItem si = srvManager.getServiceByKey(item.getKey().toKey(true, true, true));
+	public boolean updateItem(ServiceItemJRso item) {
+	    ServiceItemJRso si = srvManager.getServiceByKey(item.getKey().fullStringKey());
 	    
 	    if(si != null) {
-	    	 if(!PermissionManager.isOwner(si.getCreatedBy())) {
+	    	 if(!PermissionManager.isOwner(si.getActId())) {
 				return false;
 			 }
 	    	
@@ -83,15 +89,15 @@ public class ManageServiceImpl implements IManageService {
 	
 	@Override
 	@SMethod(perType=false,needLogin=true,maxSpeed=10,maxPacketSize=1014)
-	public boolean updateMethod(ServiceMethod method) {
+	public boolean updateMethod(ServiceMethodJRso method) {
 		
-		 ServiceItem si = srvManager.getServiceByServiceMethod(method);
+		 ServiceItemJRso si = srvManager.getServiceByServiceMethod(method);
 		    if(si != null) {
-		    	 if(!PermissionManager.isOwner(si.getCreatedBy())) {
+		    	 if(!PermissionManager.isOwner(si.getActId())) {
 						return false;
 				  }
 		    	 
-		    	ServiceMethod sm = si.getMethod(method.getKey().getMethod(), method.getKey().getParamsStr());
+		    	ServiceMethodJRso sm = si.getMethod(method.getKey().getMethod(), method.getKey().getParamsStr());
 		    	if(sm != null) {
 		    		sm.setAvgResponseTime(method.getAvgResponseTime());
 		    		sm.setBaseTimeUnit(method.getBaseTimeUnit());

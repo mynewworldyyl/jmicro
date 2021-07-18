@@ -25,8 +25,8 @@ import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Inject;
 import cn.jmicro.api.loadbalance.ISelector;
 import cn.jmicro.api.registry.IRegistry;
-import cn.jmicro.api.registry.ServiceItem;
-import cn.jmicro.api.registry.UniqueServiceKey;
+import cn.jmicro.api.registry.ServiceItemJRso;
+import cn.jmicro.api.registry.UniqueServiceKeyJRso;
 import cn.jmicro.api.route.RouterManager;
 import cn.jmicro.common.Constants;
 
@@ -46,16 +46,16 @@ public class RoundBalance implements ISelector{
 	
 	private Map<String,Integer> indexMap = new ConcurrentHashMap<>();
 	
-	public ServiceItem getService(String srvName,String method,/*Class<?>[] args,*/String namespace,String version,
+	public ServiceItemJRso getService(String srvName,String method,/*Class<?>[] args,*/String namespace,String version,
 			String transport) {
 		
 		//客户端指定了服务实例，不需要做路由
-		ServiceItem dsi = JMicroContext.get().getParam(Constants.DIRECT_SERVICE_ITEM, null);
+		ServiceItemJRso dsi = JMicroContext.get().getParam(Constants.DIRECT_SERVICE_ITEM, null);
 		if(dsi != null) {
 			return dsi;
 		}
 		
-		Set<ServiceItem> srvItems = registry.getServices(srvName,method,/*args,*/namespace,version,transport);
+		Set<ServiceItemJRso> srvItems = registry.getServices(srvName,method,/*args,*/namespace,version,transport);
 		if(srvItems == null || srvItems.isEmpty()) {
 			return null;
 		}
@@ -92,11 +92,11 @@ public class RoundBalance implements ISelector{
 	}
 
 	private String curIndex(String srvName, String namespace, String version, String method) {
-		return srvName+UniqueServiceKey.SEP+namespace+UniqueServiceKey.SEP+version+UniqueServiceKey.SEP+method;
+		return srvName+UniqueServiceKeyJRso.SEP+namespace+UniqueServiceKeyJRso.SEP+version+UniqueServiceKeyJRso.SEP+method;
 	}
 
-	private ServiceItem doBalance(Set<ServiceItem> srvItems,String srvKey) {
-		ServiceItem[] arr = new ServiceItem[srvItems.size()];
+	private ServiceItemJRso doBalance(Set<ServiceItemJRso> srvItems,String srvKey) {
+		ServiceItemJRso[] arr = new ServiceItemJRso[srvItems.size()];
 		srvItems.toArray(arr);
 		
 		if(!this.indexMap.containsKey(srvKey)) {

@@ -5,6 +5,6 @@ import java.util.Set;
 
 public interface IOutterMonitorService {
 
-	void submit(Set<OneLog> logs);
+	void submit(Set<OneLogJRso> logs);
 	
 }

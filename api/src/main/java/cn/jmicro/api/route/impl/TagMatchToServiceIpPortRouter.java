@@ -23,7 +23,7 @@ import cn.jmicro.api.JMicroContext;
 import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.route.AbstractRouter;
 import cn.jmicro.api.route.IRouter;
-import cn.jmicro.api.route.RouteRule;
+import cn.jmicro.api.route.RouteRuleJRso;
 import cn.jmicro.common.util.StringUtils;
 
 /**
@@ -31,15 +31,15 @@ import cn.jmicro.common.util.StringUtils;
  * @author Yulei Ye
  * @date: 2018年11月11日 下午3:56:55
  */
-@Component(value=RouteRule.TYPE_FROM_TAG_ROUTER,lazy=false)
+@Component(value=RouteRuleJRso.TYPE_FROM_TAG_ROUTER,lazy=false)
 public class TagMatchToServiceIpPortRouter extends AbstractRouter  implements IRouter {
 
 	public TagMatchToServiceIpPortRouter() {
-		super(RouteRule.TYPE_FROM_TAG_ROUTER);
+		super(RouteRuleJRso.TYPE_FROM_TAG_ROUTER);
 	}
 
 	@Override
-	protected boolean accept(RouteRule r) {
+	protected boolean accept(RouteRuleJRso r) {
 		String ctxVal = JMicroContext.get().getString(r.getFrom().getTagKey(),null);
 		if(StringUtils.isNotEmpty(ctxVal) && ctxVal.equals(r.getFrom().getVal())) {
 			return true;

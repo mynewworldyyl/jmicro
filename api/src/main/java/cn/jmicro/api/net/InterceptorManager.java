@@ -15,7 +15,7 @@ import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Interceptor;
 import cn.jmicro.api.async.IPromise;
 import cn.jmicro.api.objectfactory.ProxyObject;
-import cn.jmicro.api.registry.UniqueServiceMethodKey;
+import cn.jmicro.api.registry.UniqueServiceMethodKeyJRso;
 import cn.jmicro.common.CommonException;
 import cn.jmicro.common.Constants;
 
@@ -30,7 +30,7 @@ public class InterceptorManager {
 	
 	private volatile Map<String,IRequestHandler> consumerHandlers = new ConcurrentHashMap<>();
 	
-    public IPromise<Object> handleRequest(RpcRequest req) {
+    public IPromise<Object> handleRequest(RpcRequestJRso req) {
 		
     	boolean callSideProvider = JMicroContext.isCallSideService();
     	
@@ -189,13 +189,13 @@ public class InterceptorManager {
 		return coll;
 	}
 
-	private String reqMethodKey(RpcRequest req){
+	private String reqMethodKey(RpcRequestJRso req){
 		StringBuffer sb = new StringBuffer(req.getServiceName());
 		sb.append(req.getNamespace()).append(req.getVersion())
 		.append(req.getMethod());
 		
 		if(req.getArgs() != null && req.getArgs().length > 0){
-			sb.append(UniqueServiceMethodKey.paramsStr(req.getArgs()));
+			sb.append(UniqueServiceMethodKeyJRso.paramsStr(req.getArgs()));
 		}
 		
 		return sb.toString();

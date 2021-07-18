@@ -28,7 +28,7 @@ import cn.jmicro.api.codec.ICodecFactory;
 import cn.jmicro.api.net.IMessageHandler;
 import cn.jmicro.api.net.ISession;
 import cn.jmicro.api.net.Message;
-import cn.jmicro.api.net.RpcResponse;
+import cn.jmicro.api.net.RpcResponseJRso;
 import cn.jmicro.common.Constants;
 
 /**
@@ -63,7 +63,7 @@ public class AsyncMessageHandler implements IMessageHandler{
 	
 	@SuppressWarnings({ "rawtypes", "unchecked" })
 	private void handleResponse(IClientSession session,Message msg){
-		RpcResponse resp = ICodecFactory.decode(this.codecFactory,msg.getPayload(),RpcResponse.class,msg.getUpProtocol());
+		RpcResponseJRso resp = ICodecFactory.decode(this.codecFactory,msg.getPayload(),RpcResponseJRso.class,msg.getUpProtocol());
 		resp.setMsg(msg);
 		
 		//req.setMsg(msg);

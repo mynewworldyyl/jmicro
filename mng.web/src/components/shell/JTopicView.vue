@@ -64,8 +64,10 @@
 
 <script>
 
+    import rpc from "@/rpc/rpcbase"
+
     const cid = 'JTopicView';
-    const sn = 'cn.jmicro.ext.bbs.api.IBbsService';
+    const sn = 'cn.jmicro.ext.bbs.api.IBbsServiceJMSrv';
     const ns = 'bbs';
     const v = '0.0.1';
 

@@ -28,7 +28,7 @@ import org.slf4j.LoggerFactory;
 import cn.jmicro.api.JMicroContext;
 import cn.jmicro.api.net.AbstractSession;
 import cn.jmicro.api.net.Message;
-import cn.jmicro.api.registry.ServiceMethod;
+import cn.jmicro.api.registry.ServiceMethodJRso;
 import cn.jmicro.api.utils.TimeUtils;
 import cn.jmicro.common.Constants;
 import cn.jmicro.server.IServerSession;
@@ -101,7 +101,7 @@ public abstract class AbstractNettySession extends AbstractSession implements IS
 			ctx.channel().writeAndFlush(bbf);
 			if(msg.isDebugMode()) {
 				long cost = TimeUtils.getCurTime() - msg.getStartTime();
-				ServiceMethod sm = JMicroContext.get().getParam(Constants.SERVICE_METHOD_KEY, null);
+				ServiceMethodJRso sm = JMicroContext.get().getParam(Constants.SERVICE_METHOD_KEY, null);
 				
 				if(sm != null) {
 					if(sm.getTimeout() <= cost) {

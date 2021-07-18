@@ -16,7 +16,7 @@
  */
 package cn.jmicro.api.loadbalance;
 
-import cn.jmicro.api.registry.ServiceItem;
+import cn.jmicro.api.registry.ServiceItemJRso;
 /**
  * 
  * @author Yulei Ye
@@ -26,5 +26,5 @@ public interface ISelector {
 
 	//ServiceItem getService(String srvName,String method,Class<?>[] args,String namespace,String version,String transport);
 	
-	ServiceItem getService(String srvName,String method,/*Object[] args,*/String namespace,String version,String transport);
+	ServiceItemJRso getService(String srvName,String method,/*Object[] args,*/String namespace,String version,String transport);
 }

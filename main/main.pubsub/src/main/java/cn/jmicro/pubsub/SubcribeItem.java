@@ -18,8 +18,7 @@ package cn.jmicro.pubsub;
 
 import java.util.Map;
 
-import cn.jmicro.api.registry.ServiceMethod;
-import cn.jmicro.api.registry.UniqueServiceMethodKey;
+import cn.jmicro.api.registry.ServiceMethodJRso;
 
 /**
  * 
@@ -35,10 +34,10 @@ class SubcribeItem {
 	
 	public int type;
 	public String topic;
-	public ServiceMethod sm;
+	public ServiceMethodJRso sm;
 	public Map<String, String> context;
 	
-	public SubcribeItem(int type,String topic,ServiceMethod sm,Map<String, String> context) {
+	public SubcribeItem(int type,String topic,ServiceMethodJRso sm,Map<String, String> context) {
 		this.type = type;
 		this.topic = topic;
 		this.sm = sm;

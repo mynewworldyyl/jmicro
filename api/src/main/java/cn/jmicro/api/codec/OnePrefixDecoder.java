@@ -36,7 +36,7 @@ import org.slf4j.LoggerFactory;
 
 import cn.jmicro.api.JMicroContext;
 import cn.jmicro.api.annotation.Component;
-import cn.jmicro.api.registry.ServiceMethod;
+import cn.jmicro.api.registry.ServiceMethodJRso;
 import cn.jmicro.common.CommonException;
 import cn.jmicro.common.Constants;
 import cn.jmicro.common.Utils;
@@ -232,7 +232,7 @@ public class OnePrefixDecoder /*implements IDecoder*/{
 
 
 	private boolean needLog() {
-		ServiceMethod sm = this.getMethod();
+		ServiceMethodJRso sm = this.getMethod();
 		return sm != null && "intrest".equals(sm.getKey().getMethod());
 	}
 
@@ -341,7 +341,7 @@ public class OnePrefixDecoder /*implements IDecoder*/{
 					cls = Thread.currentThread().getContextClassLoader().loadClass(clsName);
 					cls = Array.newInstance(cls, 0).getClass();
 					
-					ServiceMethod sm = this.getMethod();
+					ServiceMethodJRso sm = this.getMethod();
 					/*if(sm != null && "intrest".equals(sm.getKey().getMethod())) {
 						logger.debug("eltType: {}",clsName);
 					}*/
@@ -363,7 +363,7 @@ public class OnePrefixDecoder /*implements IDecoder*/{
 	}
 	
 	
-	private ServiceMethod getMethod() {
+	private ServiceMethodJRso getMethod() {
 		return JMicroContext.get().getParam(Constants.SERVICE_METHOD_KEY,null);
 	}
 }

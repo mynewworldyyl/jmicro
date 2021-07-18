@@ -17,13 +17,13 @@ import org.slf4j.LoggerFactory;
 import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Inject;
 import cn.jmicro.api.annotation.Service;
-import cn.jmicro.api.limit.ILimitData;
+import cn.jmicro.api.limit.ILimitDataJMSrv;
 import cn.jmicro.api.monitor.IServiceCounter;
 import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.monitor.MT;
 import cn.jmicro.api.monitor.ServiceCounter;
-import cn.jmicro.api.monitor.StatisData;
-import cn.jmicro.api.registry.ServiceMethod;
+import cn.jmicro.api.monitor.StatisDataJRso;
+import cn.jmicro.api.registry.ServiceMethodJRso;
 import cn.jmicro.api.service.ServiceManager;
 import cn.jmicro.api.utils.TimeUtils;
 import cn.jmicro.common.CommonException;
@@ -40,7 +40,7 @@ import cn.jmicro.server.limit.StatisServiceCounter;
 @Component
 @Service(version="0.0.1", monitorEnable=0, maxSpeed=0,debugMode=0,
 baseTimeUnit=Constants.TIME_SECONDS, external=false, showFront=false)
-public class ServiceMethodTaskQueueManager implements ILimitData{
+public class ServiceMethodTaskQueueManager implements ILimitDataJMSrv{
 
 	private static final Logger logger = LoggerFactory.getLogger(ServiceMethodTaskQueueManager.class);
 
@@ -171,16 +171,16 @@ public class ServiceMethodTaskQueueManager implements ILimitData{
 	}
 	
 	@Override
-	public void onData(StatisData sc) {
+	public void onData(StatisDataJRso sc) {
 		Integer smCode = HashUtils.FNVHash1(sc.getKey());
 		ServiceMethodTaskQueue q = taskQueue.get(smCode);
 		if(q!= null && q.ss!= null) {
-			if(sc.containIndex(StatisData.AVG_QPS)) {
-				q.ss.setQps((Double)sc.getStatis().get(StatisData.AVG_QPS));
-				logger.info(sc.getKey() + " avgQps: " + (Double)sc.getStatis().get(StatisData.AVG_QPS));
+			if(sc.containIndex(StatisDataJRso.AVG_QPS)) {
+				q.ss.setQps((Double)sc.getStatis().get(StatisDataJRso.AVG_QPS));
+				logger.info(sc.getKey() + " avgQps: " + (Double)sc.getStatis().get(StatisDataJRso.AVG_QPS));
 			} else {
-				q.ss.setQps((Double)sc.getStatis().get(StatisData.QPS));
-				logger.info(sc.getKey() + " qps: " + sc.getStatis().get(StatisData.QPS));
+				q.ss.setQps((Double)sc.getStatis().get(StatisDataJRso.QPS));
+				logger.info(sc.getKey() + " qps: " + sc.getStatis().get(StatisDataJRso.QPS));
 			}
 		}
 	}
@@ -189,7 +189,7 @@ public class ServiceMethodTaskQueueManager implements ILimitData{
 		private final Short TYPE = 1;
 		private Queue<JMicroTask> queue = new ConcurrentLinkedQueue<>();
 		
-		private ServiceMethod sm;
+		private ServiceMethodJRso sm;
 		
 		private int queueSize = MAX_QUEUE_SIZE;
 		
@@ -205,16 +205,16 @@ public class ServiceMethodTaskQueueManager implements ILimitData{
 		
 		private long lastPopTime = TimeUtils.getCurTime();
 		
-		private ServiceMethodTaskQueue(ServiceMethod sm) {
+		private ServiceMethodTaskQueue(ServiceMethodJRso sm) {
 			this.sm = sm;
 			this.maxQps = sm.getMaxSpeed();
 			computePeriodAndBatchSize();
 			//计数时间窗口内最大速度的请求数量
 			if(1 == sm.getLimitType()) {
-				this.counter = new ServiceCounter(sm.getKey().toKey(false, false, false),
+				this.counter = new ServiceCounter(sm.getKey().methodID(),
 						new Short[] {TYPE},6000L,100L,TimeUnit.MILLISECONDS);
 			} else {
-				this.counter = this.ss = new StatisServiceCounter(sm.getKey().toKey(false, false, false),
+				this.counter = this.ss = new StatisServiceCounter(sm.getKey().methodID(),
 						new Short[] {TYPE});
 			}
 		}
@@ -245,13 +245,13 @@ public class ServiceMethodTaskQueueManager implements ILimitData{
 			
 			if((this.queue.size()/this.maxQps)*1000 > sm.getTimeout()) {
 				MT.rpcEvent(this.sm,MC.MT_SERVER_LIMIT_MESSAGE_REJECT, 1);
-				String key = task.getSm().getKey().toKey(true, true, true);
+				String key = task.getSm().getKey().fullStringKey();
 				throw new CommonException(MC.MT_SERVER_LIMIT_MESSAGE_REJECT,"Rpc will timeout in queue cost: " + ((this.queue.size()/this.maxQps)*1000 )+", timeout: "+sm.getTimeout()+",Key:" + key);
 			}
 			
 			if(this.queue.size() >= this.queueSize) {
 				MT.rpcEvent(this.sm,MC.MT_SERVER_LIMIT_MESSAGE_REJECT, 1);
-				String key = task.getSm().getKey().toKey(true, true, true);
+				String key = task.getSm().getKey().fullStringKey();
 				throw new CommonException(MC.MT_SERVER_LIMIT_MESSAGE_REJECT,"Queue is full with max size:" + this.queueSize+" CurSize: "+this.queue.size()+",Key:" + key);
 			}
 			
@@ -302,7 +302,7 @@ public class ServiceMethodTaskQueueManager implements ILimitData{
 	}
 	
 	private class LimitCfg {
-		private int type = ILimitData.LIMIT_SOURCE_IP;
+		private int type = ILimitDataJMSrv.LIMIT_SOURCE_IP;
 		private long startTime = TimeUtils.getCurTime();
 		private int cid;
 		private String key;

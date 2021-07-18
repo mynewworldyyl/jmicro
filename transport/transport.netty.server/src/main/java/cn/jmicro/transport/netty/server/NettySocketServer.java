@@ -28,9 +28,9 @@ import cn.jmicro.api.annotation.Cfg;
 import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Inject;
 import cn.jmicro.api.annotation.Server;
-import cn.jmicro.api.choreography.ProcessInfo;
+import cn.jmicro.api.choreography.ProcessInfoJRso;
 import cn.jmicro.api.config.Config;
-import cn.jmicro.api.executor.ExecutorConfig;
+import cn.jmicro.api.executor.ExecutorConfigJRso;
 import cn.jmicro.api.executor.ExecutorFactory;
 import cn.jmicro.api.net.IServer;
 import cn.jmicro.api.objectfactory.IObjectFactory;
@@ -74,7 +74,7 @@ public class NettySocketServer implements IServer {
 	private String port=null;
 	
 	@Inject
-	private ProcessInfo pi;
+	private ProcessInfoJRso pi;
 	
 	private ExecutorService workerGroupExecutor = null;
 	
@@ -101,14 +101,14 @@ public class NettySocketServer implements IServer {
 	}
 	
 	private void init0() {
-		ExecutorConfig config = new ExecutorConfig();
+		ExecutorConfigJRso config = new ExecutorConfigJRso();
 		config.setMsCoreSize(20);
 		config.setMsMaxSize(60);
 		config.setTaskQueueSize(2);
 		config.setThreadNamePrefix("NIO-WorkerGroup");
 		workerGroupExecutor = of.get(ExecutorFactory.class).createExecutor(config);
 		
-		ExecutorConfig config1 = new ExecutorConfig();
+		ExecutorConfigJRso config1 = new ExecutorConfigJRso();
 		config1.setMsCoreSize(20);
 		config1.setMsMaxSize(60);
 		config1.setTaskQueueSize(2);

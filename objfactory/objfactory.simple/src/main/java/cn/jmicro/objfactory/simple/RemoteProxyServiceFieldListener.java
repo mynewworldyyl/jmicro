@@ -34,11 +34,11 @@ import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.objectfactory.AbstractClientServiceProxyHolder;
 import cn.jmicro.api.objectfactory.ClientServiceProxyHolder;
 import cn.jmicro.api.objectfactory.ProxyObject;
-import cn.jmicro.api.registry.AsyncConfig;
+import cn.jmicro.api.registry.AsyncConfigJRso;
 import cn.jmicro.api.registry.IRegistry;
 import cn.jmicro.api.registry.IServiceListener;
-import cn.jmicro.api.registry.ServiceItem;
-import cn.jmicro.api.registry.UniqueServiceKey;
+import cn.jmicro.api.registry.ServiceItemJRso;
+import cn.jmicro.api.registry.UniqueServiceKeyJRso;
 import cn.jmicro.common.CommonException;
 
 /**
@@ -92,27 +92,31 @@ class RemoteProxyServiceFieldListener implements IServiceListener{
 
 	@SuppressWarnings("unchecked")
 	@Override
-	public void serviceChanged(int type, ServiceItem item) {
+	public void serviceChanged(int type, UniqueServiceKeyJRso item,ServiceItemJRso si) {
 		
 		/*if("cn.jmicro.api.tx.ITransactionResource".equals(item.getKey().getServiceName())) {
 			logger.debug("test debug");
 		}*/
 		
-		if(!item.getKey().getServiceName().equals(srvType.getName())) {
+		if(!item.getServiceName().equals(srvType.getName())) {
 			return;
 		}
 		
-		if(!ClientServiceProxyHolder.checkPackagePermission(item,pkgName)) {
-			logger.warn("No permission to use service [" + item.getKey().getServiceName()+"] from " + this.pkgName);
+		if(si == null) {
+			si = this.rsm.getSrvMng().getServiceByKey(item.fullStringKey());
+		}
+		
+		if(!ClientServiceProxyHolder.checkPackagePermission(si,pkgName)) {
+			logger.warn("No permission to use service [" + item.getServiceName()+"] from " + this.pkgName);
 			return;
 		}
 		
 		if(LG.isLoggable(MC.LOG_DEBUG)) {
-			LG.log(MC.LOG_DEBUG, this.getClass(), item.getKey().toSnv()+(type == IListener.ADD?"online":"offline"));
+			LG.log(MC.LOG_DEBUG, this.getClass(), item.toSnv()+(type == IListener.ADD?"online":"offline"));
 		}
 		
-		if(!UniqueServiceKey.matchVersion(ref.version(),item.getKey().getVersion()) || 
-				!UniqueServiceKey.matchNamespace(ref.namespace(),item.getKey().getNamespace())) {
+		if(!UniqueServiceKeyJRso.matchVersion(ref.version(),item.getVersion()) || 
+				!UniqueServiceKeyJRso.matchNamespace(ref.namespace(),item.getNamespace())) {
 				return;
 		}
 		
@@ -124,7 +128,7 @@ class RemoteProxyServiceFieldListener implements IServiceListener{
 				boolean direct = "ins".equals(ref.type());
 				
 				if(direct) {
-					String ekey = item.getKey().toKey(true, true, true);
+					String ekey = item.fullStringKey();
 					Iterator<Object> ite = set.iterator();
 					for(;ite.hasNext();){
 						AbstractClientServiceProxyHolder p = (AbstractClientServiceProxyHolder)ite.next();
@@ -134,7 +138,7 @@ class RemoteProxyServiceFieldListener implements IServiceListener{
 							}
 							ite.remove();
 						} else {
-							if(p.getHolder().getItem().getKey().toKey(true, true, true).equals(ekey)){
+							if(p.getHolder().getItem().getKey().fullStringKey().equals(ekey)){
 								//服务代理已经存在,不需要重新创建
 								if(LG.isLoggable(MC.LOG_DEBUG)) {
 									LG.log(MC.LOG_DEBUG, this.getClass(), "direct service " + ekey + " proxy exist no need to create again!");
@@ -144,7 +148,7 @@ class RemoteProxyServiceFieldListener implements IServiceListener{
 						}
 					}
 				} else {
-					String ekey = item.serviceKey();
+					String ekey = item.toSnv();
 					for(Object o: set){
 						AbstractClientServiceProxyHolder p = (AbstractClientServiceProxyHolder)o;
 						if(p.getHolder().serviceKey().equals(ekey)){
@@ -157,10 +161,11 @@ class RemoteProxyServiceFieldListener implements IServiceListener{
 					}
 				}
 				
-				AsyncConfig[] acs = this.rsm.getAcs(this.ref);
+				AsyncConfigJRso[] acs = this.rsm.getAcs(this.ref);
 				
+				ServiceItemJRso sit = this.rsm.getSrvMng().getServiceByKey(item.fullStringKey());
 				//代理还不存在，创建之
-				AbstractClientServiceProxyHolder p = (AbstractClientServiceProxyHolder)this.rsm.getRefRemoteService(item, null,acs);
+				AbstractClientServiceProxyHolder p = (AbstractClientServiceProxyHolder)this.rsm.getRefRemoteService(sit, null,acs);
 				if(p!=null){
 					p.getHolder().setDirect(direct);
 					set.add(p);
@@ -168,12 +173,12 @@ class RemoteProxyServiceFieldListener implements IServiceListener{
 					notifyChange(p,type);
 					
 					if(LG.isLoggable(MC.LOG_DEBUG)) {
-						String msg = "Add proxy for,Size:"+set.size()+" Field:"+refField.toString()+",Item:" + item.getKey().toKey(false, false, false);
+						String msg = "Add proxy for,Size:"+set.size()+" Field:"+refField.toString()+",Item:" + item.serviceID();
 						LG.log(MC.LOG_DEBUG, this.getClass(), msg);
 					}
 				} else {
 					if(LG.isLoggable(MC.LOG_WARN)) {
-						String msg = "Fail to create item proxy: " + item.getKey().toKey(true, true, true);
+						String msg = "Fail to create item proxy: " + item.fullStringKey();
 						LG.log(MC.LOG_WARN, this.getClass(), msg);
 						logger.error("Fail to create item proxy :{}",msg);
 					}
@@ -183,13 +188,13 @@ class RemoteProxyServiceFieldListener implements IServiceListener{
 				
 				boolean direct = "ins".equals(ref.type());
 				if(!direct) {
-					boolean exist = registry.isExists(item.getKey().getServiceName(), item.getKey().getNamespace(), item.getKey().getVersion());
+					boolean exist = registry.isExists(item.getServiceName(), item.getNamespace(), item.getVersion());
 					if(!exist) {
 						//服务已经不存在
 						AbstractClientServiceProxyHolder po = null;
 						for(Object o: set){
 							AbstractClientServiceProxyHolder p = (AbstractClientServiceProxyHolder)o;
-							if(p.getHolder().getItem() == null || p.getHolder().serviceKey().equals(item.serviceKey())){
+							if(p.getHolder().getItem() == null || p.getHolder().serviceKey().equals(item.toSnv())){
 								po = p;
 								break;
 							}
@@ -200,17 +205,18 @@ class RemoteProxyServiceFieldListener implements IServiceListener{
 							notifyChange(po,type);
 							
 							if(LG.isLoggable(MC.LOG_INFO)) {
-								String msg = "Remove proxy for,Size:"+set.size()+" Field:"+refField.toString()+",Item:" + item.getKey().toKey(false, false, false);
+								String msg = "Remove proxy for,Size:"+set.size()+
+										" Field:"+refField.toString()+",Item:" + item.serviceID();
 								LG.log(MC.LOG_INFO, this.getClass(), msg);
 							}
 						}
 					}
 				} else {
 					AbstractClientServiceProxyHolder po = null;
-					String k= item.getKey().toKey(true, true, true);
+					String k= item.fullStringKey();
 					for(Object o: set){
 						AbstractClientServiceProxyHolder p = (AbstractClientServiceProxyHolder)o;
-						if(p.getHolder().getItem() == null || k.equals(p.getHolder().getItem().getKey().toKey(true, true, true))){
+						if(p.getHolder().getItem() == null || k.equals(p.getHolder().getItem().getKey().serviceID())){
 							po = p;
 							break;
 						}
@@ -219,7 +225,7 @@ class RemoteProxyServiceFieldListener implements IServiceListener{
 						set.remove(po);
 						
 						if(LG.isLoggable(MC.LOG_INFO)) {
-							String msg = "Remove proxy for,Size:"+set.size()+" Field:"+refField.toString()+",Item:" + item.getKey().toKey(false, false, false);
+							String msg = "Remove proxy for,Size:"+set.size()+" Field:"+refField.toString()+",Item:" + item.serviceID();
 							LG.log(MC.LOG_INFO, this.getClass(), msg);
 						}
 						
@@ -248,7 +254,7 @@ class RemoteProxyServiceFieldListener implements IServiceListener{
 				m =  cls.getMethod(cfg.changeListener(),new Class[0] );
 			} catch (NoSuchMethodException | SecurityException | IllegalArgumentException e1) {
 				//System.out.println(e1);
-				logger.error(cls.getName()+" : "+po.getHolder().getItem().getKey().toKey(true, true, true),e);
+				logger.error(cls.getName()+" : "+po.getHolder().getItem().getKey().fullStringKey(),e);
 				LG.log(MC.LOG_ERROR, RemoteProxyServiceFieldListener.class,
 						 "Listener method ["+cfg.changeListener()+"] not found!",e);
 			}
@@ -260,7 +266,7 @@ class RemoteProxyServiceFieldListener implements IServiceListener{
 			} catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
 				String msg = e.getMessage() + " : "+cls.getName();
 				if(po.getHolder().getItem() != null) {
-					msg +=", "+ po.getHolder().getItem().getKey().toKey(true, true, true);
+					msg +=", "+ po.getHolder().getItem().getKey().fullStringKey();
 				}
 				logger.error(msg,e);
 				LG.log(MC.LOG_ERROR, this.getClass(), "Notify error for: " + this.refField.toString(),e);

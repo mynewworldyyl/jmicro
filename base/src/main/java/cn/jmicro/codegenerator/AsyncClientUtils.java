@@ -4,7 +4,19 @@ import java.lang.reflect.Method;
 
 public class AsyncClientUtils {
 
-	
+	public static boolean isSOClass(String name) {
+		 return name != null && name.endsWith(AsyncClientProxy.SO_SUBFIX) ;
+	}
+
+	public static final boolean isServiceClass(String clsName) {
+			if(clsName == null) return false;
+			return clsName.endsWith(AsyncClientProxy.INT_GATEWAY_CLASS)||
+					clsName.endsWith(AsyncClientProxy.INT_SUBFIX) ||
+					clsName.endsWith(AsyncClientProxy.IMPL_SUBFIX) ||
+					clsName.endsWith(AsyncClientProxy.SRV_SUBFIX) ||
+					clsName.endsWith(AsyncClientProxy.INT_GATEWAY_CLASS);
+		}
+	 
 	public static final String genSyncServiceName(String fullName) {
 		String iname = fullName;
 		if(fullName.endsWith(AsyncClientProxy.INT_GATEWAY_CLASS)) {

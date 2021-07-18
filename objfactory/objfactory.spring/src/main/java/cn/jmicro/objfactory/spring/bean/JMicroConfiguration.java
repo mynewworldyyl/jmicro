@@ -25,14 +25,14 @@ import org.springframework.context.event.ContextRefreshedEvent;
 import org.springframework.core.annotation.Order;
 
 import cn.jmicro.api.JMicro;
-import cn.jmicro.api.choreography.ProcessInfo;
+import cn.jmicro.api.choreography.ProcessInfoJRso;
 import cn.jmicro.api.masterelection.IMasterChangeListener;
 import cn.jmicro.api.objectfactory.IObjectFactory;
 import cn.jmicro.api.objectfactory.IPostInitListener;
 import cn.jmicro.api.objectsource.IObjectSource;
 import cn.jmicro.api.raft.IDataOperator;
-import cn.jmicro.api.registry.AsyncConfig;
-import cn.jmicro.api.registry.ServiceItem;
+import cn.jmicro.api.registry.AsyncConfigJRso;
+import cn.jmicro.api.registry.ServiceItemJRso;
 import cn.jmicro.common.CommonException;
 import cn.jmicro.common.Utils;
 import cn.jmicro.objfactory.spring.JMicroObjectSource2Spring;
@@ -91,7 +91,7 @@ public class JMicroConfiguration implements ApplicationContextAware{
 			
 			@SuppressWarnings({ "unchecked", "rawtypes" })
 			@Override
-			public <T> T getRemoteServie(String srvName, String namespace, String version, AsyncConfig[] acs) {
+			public <T> T getRemoteServie(String srvName, String namespace, String version, AsyncConfigJRso[] acs) {
 				String key = srvName+"#"+namespace+"#"+version;
 				if(nsSrvs.containsKey(key)) return (T)nsSrvs.get(key);
 				
@@ -105,7 +105,7 @@ public class JMicroConfiguration implements ApplicationContextAware{
 
 			@SuppressWarnings({ "unchecked", "rawtypes" })
 			@Override
-			public <T> T getRemoteServie(Class<T> srvCls, String ns, AsyncConfig[] acs) {
+			public <T> T getRemoteServie(Class<T> srvCls, String ns, AsyncConfigJRso[] acs) {
 				String key = srvCls.getName()+"##"+ns;
 				if(c2nsSrvs.containsKey(key)) return (T)c2nsSrvs.get(key);
 				
@@ -120,7 +120,7 @@ public class JMicroConfiguration implements ApplicationContextAware{
 			}
 
 			@Override
-			public <T> T getRemoteServie(ServiceItem item, AsyncConfig[] acs) {
+			public <T> T getRemoteServie(ServiceItemJRso item, AsyncConfigJRso[] acs) {
 				throw new UnsupportedOperationException("getRemoteServie(ServiceItem item, AsyncConfig[] acs)");
 			}
 			
@@ -158,9 +158,14 @@ public class JMicroConfiguration implements ApplicationContextAware{
 
 			@Override
 			public <T> T get(Class<T> cls) {
-				return of.get(cls);
+				return of.get(cls,false);
 			}
 
+			@Override
+			public <T> T get(Class<T> cls, boolean create) {
+				return of.get(cls,false);
+			}
+			
 			@Override
 			public <T> T getByName(String clsName) {
 				return of.getByName(clsName);
@@ -207,8 +212,8 @@ public class JMicroConfiguration implements ApplicationContextAware{
 			}
 
 			@Override
-			public ProcessInfo getProcessInfo() {
-				ProcessInfo pi = of.getProcessInfo();
+			public ProcessInfoJRso getProcessInfo() {
+				ProcessInfoJRso pi = of.getProcessInfo();
 				/*ProcessInfo spi = SpringAndJmicroComponent.createLazyProxyObjectByCglib(
 						pi,ProcessInfo.class.getName(),
 						SpringAndJmicroComponent.class.getClassLoader());*/

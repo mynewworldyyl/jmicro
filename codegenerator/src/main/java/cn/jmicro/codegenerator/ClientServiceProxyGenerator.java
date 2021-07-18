@@ -476,7 +476,7 @@ public class ClientServiceProxyGenerator extends AbstractProcessor {
 		 
 		 MethodSpec.Builder getItem = MethodSpec.methodBuilder("getItem")
 				  .addModifiers(Modifier.PUBLIC,Modifier.ABSTRACT);
-		 getItem.returns(ClassName.get("cn.jmicro.api.registry", "ServiceItem"));
+		 getItem.returns(ClassName.get("cn.jmicro.api.registry", "ServiceItemJRso"));
 		 clientProxyHolderBuilder.addMethod(getItem.build());
 		 
 	    TypeSpec typeSpec = clientProxyHolderBuilder.build();

@@ -37,8 +37,14 @@ public class AddSerializedToObject implements ClassFileTransformer {
 		if(classBeingRedefined == null || !classBeingRedefined.isAnnotationPresent(SO.class)) {
 			return null;
 		}*/
+		/*if(className.startsWith("cn.jmicro.api.registry.ServiceItem")) {
+			System.out.println(className);
+		}*/
 		try {
-			return getSerializeData(classfileBuffer, classBeingRedefined,className);
+			if(RpcClassLoader.isSOClass(className)) {
+				return getSerializeData(classfileBuffer, classBeingRedefined,className);
+			}
+			return null;
 		} catch (IOException | RuntimeException | NotFoundException | CannotCompileException e) {
 			e.printStackTrace();
 			return null;
@@ -54,6 +60,7 @@ public class AddSerializedToObject implements ClassFileTransformer {
 	public static byte[] getSerializeData(byte[] classData, Class<?> cls,String className) throws IOException, RuntimeException, NotFoundException, CannotCompileException {
 
 		 ClassLoader cl = Thread.currentThread().getContextClassLoader();
+		 //System.out.println("AddSerializedToObject agent: "+cl.getClass().getName());
 		 
 		 JmicroClassPool cp = new JmicroClassPool(true);
 		 if(cl != null && (cl instanceof RpcClassLoader)) {

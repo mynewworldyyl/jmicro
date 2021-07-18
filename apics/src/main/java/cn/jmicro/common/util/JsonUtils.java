@@ -96,6 +96,16 @@ public class JsonUtils {
 		return JsonUtils.getIns().fromJson(json, type);
 	}
 	
+	public String toJsonCheckProxy(Object obj) {
+		if(obj == null) {
+			return "";
+		}
+		GsonBuilder builder = b();
+		//builder.registerTypeAdapter(MessageType.class, new MessageTypeAdapter());
+		//builder.registerTypeAdapter(MessageState.class, new MessageStateAdapter());
+		String json = builder.create().toJson(obj);
+		return json;
+	}
 	
 	public String toJson(Object obj) {
 		if(obj == null) {

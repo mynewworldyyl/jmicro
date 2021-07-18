@@ -32,5 +32,5 @@ public interface IChildrenListener extends IListener{
 	 * @param child 子结点名称，不包括父路径
 	 * @param data  子结点数据
 	 */
-	void childrenChanged(int type,String parent,String child,String data);
+	void childrenChanged(int type,String parent,String child/*,String data*/);
 }

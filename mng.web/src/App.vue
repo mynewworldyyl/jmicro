@@ -48,6 +48,20 @@
                   <Menu-item name="__host"><Icon type="ios-cog"></Icon>{{"Host"|i18n}}</Menu-item>
           -->    </Submenu>
 
+              <Submenu name="sec">
+                  <template slot="title"><Icon type="ios-analytics" />{{"Security"|i18n}}</template>
+                  <Menu-group :title="'Security'|i18n">
+                      <Menu-item v-if="isAdmin" name="__account"><Icon type="ios-alert" />{{"Account"|i18n}}</Menu-item>
+                      <Menu-item  name="__role"><Icon type="ios-alert" />{{"Role"|i18n}}</Menu-item>
+                      <Menu-item  name="__clientConfig"><Icon type="ios-alert" />{{"Client"|i18n}}</Menu-item>
+                      <Menu-item name="__userProfile"><Icon type="ios-alert" />{{"Profile"|i18n}}</Menu-item>
+                  </Menu-group>
+                  <Menu-group :title="'Interface'|i18n">
+                      <Menu-item name="__publicKeyList"><Icon type="ios-cog"></Icon>{{"publicKeyList"|i18n}}</Menu-item>
+                      <Menu-item name="__serviceMethodList"><Icon type="ios-cog"></Icon>{{"serviceMethodList"|i18n}}</Menu-item>
+                  </Menu-group>
+              </Submenu>
+
               <Submenu name="oth">
                   <template slot="title"><Icon type="ios-analytics" />{{'Others'|i18n}}</template>
                   <Menu-group :title="'System'|i18n">
@@ -56,13 +70,7 @@
                       <Menu-item name="__routeRuleEditor"><Icon type="ios-people"></Icon>{{"Router"|i18n}}</Menu-item>
                       <Menu-item name="__shell"><Icon type="ios-cog"></Icon>{{"Shell"|i18n}}</Menu-item>
                   </Menu-group>
-                  <Menu-group :title="'Security'|i18n">
-                      <Menu-item v-if="isAdmin" name="__account"><Icon type="ios-alert" />{{"Account"|i18n}}</Menu-item>
-                      <Menu-item name="__userProfile"><Icon type="ios-alert" />{{"Profile"|i18n}}</Menu-item>
-                      <Menu-item name="__publicKeyList"><Icon type="ios-cog"></Icon>{{"publicKeyList"|i18n}}</Menu-item>
-                      <Menu-item name="__serviceMethodList"><Icon type="ios-cog"></Icon>{{"serviceMethodList"|i18n}}</Menu-item>
-                      <!-- <Menu-item name="__role"><Icon type="ios-cog"></Icon>Role</Menu-item>-->
-                  </Menu-group>
+
 
                   <Menu-group :title="'Pubsub'|i18n">
                       <Menu-item name="__pubsubItem"><Icon type="ios-alert" />{{"PubsubItems"|i18n("Pubsub Items")}}</Menu-item>

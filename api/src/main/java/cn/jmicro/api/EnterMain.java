@@ -5,14 +5,12 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.nio.ByteBuffer;
-import java.util.HashMap;
 import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import cn.jmicro.api.annotation.Component;
-import cn.jmicro.api.annotation.ObjFactory;
 import cn.jmicro.api.codec.JDataOutput;
 import cn.jmicro.api.codec.TypeCoderFactory;
 import cn.jmicro.api.config.Config;
@@ -21,7 +19,7 @@ import cn.jmicro.api.objectfactory.IObjectFactory;
 import cn.jmicro.api.objectfactory.ProxyObject;
 import cn.jmicro.api.raft.IDataOperator;
 import cn.jmicro.api.registry.IRegistry;
-import cn.jmicro.api.registry.UniqueServiceMethodKey;
+import cn.jmicro.api.registry.UniqueServiceMethodKeyJRso;
 import cn.jmicro.common.CommonException;
 import cn.jmicro.common.Constants;
 import cn.jmicro.common.Utils;
@@ -203,7 +201,7 @@ public class EnterMain {
 		if(StringUtils.isEmpty(registryName)) {
 			registryName = Constants.REGISTRY_KEY;
 		}
-		IRegistry registry = getObjectFactory().get(IRegistry.class);
+		IRegistry registry = getObjectFactory().get(IRegistry.class,false);
 		if(registry == null){
 			throw new CommonException("Registry with name ["+registryName+"] not found");
 		}
@@ -282,14 +280,14 @@ public class EnterMain {
 							String str = new String(Base64Utils.encode(data),Constants.CHARSET);
 							System.out.println(str);
 							if(result != null) {
-								String pd = UniqueServiceMethodKey.paramsStr(args);
+								String pd = UniqueServiceMethodKeyJRso.paramsStr(args);
 								result.put(pd, str);
 							}
 						} else {
 							String str = JsonUtils.getIns().toJson(args);
 							System.out.println(str);
 							if(result != null) {
-								String pd = UniqueServiceMethodKey.paramsStr(args);
+								String pd = UniqueServiceMethodKeyJRso.paramsStr(args);
 								result.put(pd, str);
 							}
 						}

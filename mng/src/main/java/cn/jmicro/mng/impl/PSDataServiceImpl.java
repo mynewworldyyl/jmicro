@@ -14,23 +14,23 @@ import com.mongodb.client.MongoCursor;
 import com.mongodb.client.MongoDatabase;
 
 import cn.jmicro.api.JMicroContext;
-import cn.jmicro.api.Resp;
+import cn.jmicro.api.RespJRso;
 import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Inject;
 import cn.jmicro.api.annotation.SMethod;
 import cn.jmicro.api.annotation.Service;
 import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.persist.IObjectStorage;
-import cn.jmicro.api.pubsub.PSData;
+import cn.jmicro.api.pubsub.PSDataJRso;
 import cn.jmicro.api.pubsub.PubSubManager;
 import cn.jmicro.api.security.PermissionManager;
 import cn.jmicro.common.util.StringUtils;
-import cn.jmicro.mng.api.IPSDataService;
-import cn.jmicro.mng.api.PSDataVo;
+import cn.jmicro.mng.api.IPSDataServiceJMSrv;
+import cn.jmicro.mng.api.PSDataVoJRso;
 
 @Component(level=20001)
 @Service(version="0.0.1", external=true, debugMode=0, showFront=false,logLevel=MC.LOG_NO)
-public class PSDataServiceImpl implements IPSDataService {
+public class PSDataServiceImpl implements IPSDataServiceJMSrv {
 
 	private JsonWriterSettings settings = JsonWriterSettings.builder()
 	         .int64Converter((value, writer) -> writer.writeNumber(value.toString()))
@@ -41,21 +41,21 @@ public class PSDataServiceImpl implements IPSDataService {
 	
 	@Override
 	@SMethod(perType=false,needLogin=true,maxSpeed=10,maxPacketSize=2048)
-	public Resp<Long> count(Map<String, String> queryConditions) {
+	public RespJRso<Long> count(Map<String, String> queryConditions) {
 		
 		Document match = this.getCondtions(queryConditions);
 		MongoCollection<Document> rpcLogColl = mongoDb.getCollection(PubSubManager.TABLE_PUBSUB_ITEMS);
-		Resp<Long> resp = new Resp<>();
+		RespJRso<Long> resp = new RespJRso<>();
 		Long cnt = rpcLogColl.countDocuments(match);
 		resp.setData(cnt);
-		resp.setCode(Resp.CODE_SUCCESS);
+		resp.setCode(RespJRso.CODE_SUCCESS);
 		
 		return resp;
 	}
 
 	@Override
 	@SMethod(perType=false,needLogin=true,maxSpeed=10,maxPacketSize=2048)
-	public Resp<List<PSDataVo>> query(Map<String, String> queryConditions, int pageSize, int curPage) {
+	public RespJRso<List<PSDataVoJRso>> query(Map<String, String> queryConditions, int pageSize, int curPage) {
 
 		Document qryMatch = this.getCondtions(queryConditions);
 
@@ -79,19 +79,19 @@ public class PSDataServiceImpl implements IPSDataService {
 		AggregateIterable<Document> resultset = rpcLogColl.aggregate(aggregateList);
 		MongoCursor<Document> cursor = resultset.iterator();
 
-		Resp<List<PSDataVo>> resp = new Resp<>();
-		List<PSDataVo> rl = new ArrayList<>();
+		RespJRso<List<PSDataVoJRso>> resp = new RespJRso<>();
+		List<PSDataVoJRso> rl = new ArrayList<>();
 		resp.setData(rl);
 
 		try {
 			while (cursor.hasNext()) {
 				Document log = cursor.next();
-				PSDataVo vo = fromJson(log.toJson(settings));
+				PSDataVoJRso vo = fromJson(log.toJson(settings));
 				if (vo != null) {
 					rl.add(vo);
 				}
 			}
-			resp.setCode(Resp.CODE_SUCCESS);
+			resp.setCode(RespJRso.CODE_SUCCESS);
 		} finally {
 			cursor.close();
 		}
@@ -103,7 +103,7 @@ public class PSDataServiceImpl implements IPSDataService {
 		Document match = new Document();
 		
 		 if(!PermissionManager.isCurAdmin()) {
-			 match.put("srcClientId", JMicroContext.get().getAccount().getId());
+			 match.put("srcClientId", JMicroContext.get().getAccount().getClientId());
 		 }
 		
 		String key = "startTime";
@@ -117,11 +117,11 @@ public class PSDataServiceImpl implements IPSDataService {
 		return match;
 	}
 	
-	private PSDataVo fromJson(String json) {
+	private PSDataVoJRso fromJson(String json) {
 		GsonBuilder builder = new GsonBuilder();
 		//builder.registerTypeAdapter(IReq.class,rpcTpeAdatper);
-		PSData psd = builder.create().fromJson(json, PSData.class);
-		PSDataVo vo = builder.create().fromJson(json, PSDataVo.class);
+		PSDataJRso psd = builder.create().fromJson(json, PSDataJRso.class);
+		PSDataVoJRso vo = builder.create().fromJson(json, PSDataVoJRso.class);
 		vo.setPsData(psd);
 		return vo;
 	}

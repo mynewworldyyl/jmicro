@@ -40,7 +40,7 @@ import cn.jmicro.api.annotation.SBreakingRule;
 import cn.jmicro.api.annotation.SMethod;
 import cn.jmicro.api.annotation.Service;
 import cn.jmicro.api.annotation.Subscribe;
-import cn.jmicro.api.choreography.ProcessInfo;
+import cn.jmicro.api.choreography.ProcessInfoJRso;
 import cn.jmicro.api.classloader.RpcClassLoaderHelper;
 import cn.jmicro.api.codec.TypeUtils;
 import cn.jmicro.api.config.Config;
@@ -50,11 +50,11 @@ import cn.jmicro.api.net.IServer;
 import cn.jmicro.api.objectfactory.IObjectFactory;
 import cn.jmicro.api.objectfactory.ProxyObject;
 import cn.jmicro.api.registry.IRegistry;
-import cn.jmicro.api.registry.Server;
-import cn.jmicro.api.registry.ServiceItem;
-import cn.jmicro.api.registry.ServiceMethod;
-import cn.jmicro.api.registry.UniqueServiceKey;
-import cn.jmicro.api.registry.UniqueServiceMethodKey;
+import cn.jmicro.api.registry.ServerJRso;
+import cn.jmicro.api.registry.ServiceItemJRso;
+import cn.jmicro.api.registry.ServiceMethodJRso;
+import cn.jmicro.api.registry.UniqueServiceKeyJRso;
+import cn.jmicro.api.registry.UniqueServiceMethodKeyJRso;
 import cn.jmicro.api.timer.TimerTicker;
 import cn.jmicro.api.tx.TxConstants;
 import cn.jmicro.common.CommonException;
@@ -110,21 +110,21 @@ public class ServiceLoader{
 	private RpcClassLoaderHelper cl;
 	
 	@Inject
-	private ProcessInfo pi;
+	private ProcessInfoJRso pi;
 	
 	private Map<String,IServer> servers = new HashMap<>();
 	
 	private Map<Integer,Object> services = new ConcurrentHashMap<Integer,Object>();
 	
-	private Server nettyServer = null;
+	private ServerJRso nettyServer = null;
 	
-	private Server httpServer = null;
+	private ServerJRso httpServer = null;
 	
 	private Set<Class<?>> waitings = new HashSet<>();
 	
 	//private Map<String,Class<?>> servicesAnno = new ConcurrentHashMap<String,Class<?>>();
 	
-	public void ready(){
+	public void ready0(){
 		
 		if(Config.isClientOnly() || !enable){
 			//纯客户端不需要导出服务,RPC端口没开放
@@ -195,7 +195,7 @@ public class ServiceLoader{
 			String host = s.host();
 			String port = s.port();
 				
-			Server sr = new Server();
+			ServerJRso sr = new ServerJRso();
 			cn.jmicro.api.annotation.Server sano = ProxyObject.getTargetCls(s.getClass())
 					.getAnnotation(cn.jmicro.api.annotation.Server.class);
 			
@@ -318,7 +318,7 @@ public class ServiceLoader{
 				logger.info("Delay to export service: " + c.getName());
 				//throw new CommonException("fail to export server, service instance is NULL "+c.getName());
 				return false;
-			}else {
+			} else {
 				logger.warn("Service instance not found: " + c.getName());
 				return false;
 			}
@@ -328,7 +328,7 @@ public class ServiceLoader{
 			logger.info(c.getName());
 		}*/
 		
-		ServiceItem si = createSrvItemByClass(c);
+		ServiceItemJRso si = createSrvItemByClass(c);
 		
 		/*int code = idGenerator.getIntId(ServiceItem.class);
 		si.setCode(code);*/
@@ -345,11 +345,11 @@ public class ServiceLoader{
 		return true;
 	}
 	
-	public void unregistService(ServiceItem item) {
-		registry.unregist(item);
+	public void unregistService(ServiceItemJRso item) {
+		registry.unregist(item.getKey());
 	}
 	
-	public ServiceItem registService(ServiceItem item,Object srv) {
+	public ServiceItemJRso registService(ServiceItemJRso item,Object srv) {
 		
 		if(Config.isClientOnly()) {
 			logger.warn("Client only cannot export service!");
@@ -374,15 +374,15 @@ public class ServiceLoader{
 		}
 		//}
 		
-		item.setInsId(pi.getId());
+		//item.setInsId(pi.getId());
 		registry.regist(item);
 		
 		return item;
 	}
 	
-	private ServiceItem createSrvItemByClass(Class<?> cls) {
+	private ServiceItemJRso createSrvItemByClass(Class<?> cls) {
 		Class<?> srvCls = ProxyObject.getTargetCls(cls);
-		ServiceItem item = this.getServiceItems(srvCls,null,null);
+		ServiceItemJRso item = this.getServiceItems(srvCls,null,null);
 		if(item == null){
 			logger.error("class "+srvCls.getName()+" is not service");
 			return null;
@@ -390,7 +390,7 @@ public class ServiceLoader{
 		return item;
 	}
 	
-	public ServiceItem createSrvItem(Class<?> interfacez, String ns, String ver, String impl,int clientId) {
+	public ServiceItemJRso createSrvItem(Class<?> interfacez, String ns, String ver, String impl,int clientId) {
 		if(Config.isClientOnly()) {
 			logger.warn("Client only cannot export service!");
 			return null;
@@ -399,7 +399,7 @@ public class ServiceLoader{
 			logger.error("RPC service have to be public interface: "+interfacez.getName());
 		}
 		//ServiceItem 
-		ServiceItem si = null;
+		ServiceItemJRso si = null;
 		if(interfacez.isAnnotationPresent(Service.class)) {
 			si = this.getServiceItems(interfacez,ns,ver);
 			if(StringUtils.isNotEmpty(impl)) {
@@ -424,9 +424,9 @@ public class ServiceLoader{
 		return si;
 	}
 	
-	public ServiceItem createSrvItem(String srvName,String ns,String ver, String impl,int clientId) {
-		ServiceItem item = new ServiceItem();
-		UniqueServiceKey usk = new UniqueServiceKey();
+	public ServiceItemJRso createSrvItem(String srvName,String ns,String ver, String impl,int clientId) {
+		ServiceItemJRso item = new ServiceItemJRso();
+		UniqueServiceKeyJRso usk = new UniqueServiceKeyJRso();
 		if(Utils.isEmpty(ns)) {
 			usk.setNamespace(Config.getNamespace());
 		}else {
@@ -438,8 +438,12 @@ public class ServiceLoader{
 		usk.setInstanceName(Config.getInstanceName());
 		usk.setHost(Config.getExportSocketHost());
 		usk.setPort(this.nettyServer.getPort());
+		usk.setInsId(pi.getId());
+		usk.setActName(pi.getActName());
+		usk.setCreatedBy(Config.getClientId());
+		usk.setClientId(clientId);
 		
-		usk.setSnvHash(HashUtils.FNVHash1(usk.toKey(false, false, false)));
+		usk.setSnvHash(HashUtils.FNVHash1(usk.serviceID()));
 		
 		item.setKey(usk);
 		item.setImpl(impl);
@@ -448,9 +452,6 @@ public class ServiceLoader{
 		item.getServers().add(this.httpServer);
 		item.setExternal(false);
 		item.setShowFront(true);
-		
-		item.setClientId(clientId);
-		item.setCreatedBy(Config.getClientId());
 		
 		//item.setMaxFailBeforeDegrade(anno.maxFailBeforeDegrade()!=100 || intAnno == null ?anno.maxFailBeforeDegrade():intAnno.maxFailBeforeDegrade());
 		//item.setRetryCnt();
@@ -473,9 +474,9 @@ public class ServiceLoader{
 		return item;
 	}
 	
-	public ServiceMethod createSrvMethod(ServiceItem item,String methodName, Class[] args) {
+	public ServiceMethodJRso createSrvMethod(ServiceItemJRso item,String methodName, Class[] args) {
 
-		ServiceMethod sm = new ServiceMethod();
+		ServiceMethodJRso sm = new ServiceMethodJRso();
 		sm.setBreaking(false);
 		
 		//sm.setMaxFailBeforeDegrade(item.getMaxFailBeforeDegrade());
@@ -498,16 +499,16 @@ public class ServiceLoader{
 		if(args == null || args.length == 0) {
 			sm.getKey().setParamsStr("");
 		}else {
-			sm.getKey().setParamsStr(UniqueServiceMethodKey.paramsStr(args));
+			sm.getKey().setParamsStr(UniqueServiceMethodKeyJRso.paramsStr(args));
 		}
 		
-		sm.getKey().setSnvHash(HashUtils.FNVHash1(sm.getKey().toKey(false, false, false)));
+		sm.getKey().setSnvHash(HashUtils.FNVHash1(sm.getKey().methodID()));
 		
-		ServiceMethod conflictMethod = srvMng.checkConflictServiceMethodByHash(sm.getKey().getSnvHash(),
-				sm.getKey().toKey(false, false, false));
+		UniqueServiceMethodKeyJRso conflictMethod = srvMng.checkConflictServiceMethodByHash(sm.getKey().getSnvHash(),
+				sm.getKey().methodID());
 		if(conflictMethod != null) {
-			String msg = "Service method hash conflict: [" + sm.getKey().toKey(false, false, false) + 
-					"] with exist sm [" + conflictMethod.getKey().toKey(false, false, false)+"] fail to load service!";
+			String msg = "Service method hash conflict: [" + sm.getKey().methodID() + 
+					"] with exist sm [" + conflictMethod.methodID()+"] fail to load service!";
 			throw new CommonException(msg);
 		}
 		
@@ -525,7 +526,7 @@ public class ServiceLoader{
 	
 	}
 
-	private ServiceItem getServiceItems(Class<?> proxySrv,String ns,String version) {
+	private ServiceItemJRso getServiceItems(Class<?> proxySrv,String ns,String version) {
 		Class<?> srvCls = ProxyObject.getTargetCls(proxySrv);
 		if(!srvCls.isAnnotationPresent(Service.class)){
 			throw new CommonException("Not a service class ["+srvCls.getName()+"] annotated with ["+Service.class.getName()+"]");
@@ -552,13 +553,13 @@ public class ServiceLoader{
 			intAnno = interfacez.getAnnotation(Service.class);
 		}
 		
-		ServiceItem item = new ServiceItem();
+		ServiceItemJRso item = new ServiceItemJRso();
 		
 		//Netty Socket 作为必选端口开放
 		item.getServers().add(this.nettyServer);
 		item.getServers().add(this.httpServer);
 		
-		UniqueServiceKey usk = new UniqueServiceKey();
+		UniqueServiceKeyJRso usk = new UniqueServiceKeyJRso();
 		usk.setPort(this.nettyServer.getPort());
 		//服务名称肯定是接口全限定类名称
 		usk.setServiceName(interfacez.getName());
@@ -574,26 +575,32 @@ public class ServiceLoader{
 		}
 		
 		if(StringUtils.isNotEmpty(version)) {
-			usk.setVersion(UniqueServiceKey.version(version));
+			usk.setVersion(UniqueServiceKeyJRso.version(version));
 		}else {
 			usk.setVersion(getFieldValue(anno.version(),intAnno == null ? null : intAnno.version(),Constants.VERSION));
 		}
 		
-		usk.setSnvHash(HashUtils.FNVHash1(usk.toKey(false, false, false)));
-		
 		item.setKey(usk);
+		usk.setActName(Config.getAccountName());
+		usk.setCreatedBy(Config.getClientId());
+		usk.setActName(pi.getActName());
+		usk.setInsId(pi.getId());
+		//Config.getClientId()
+		/*if(usk.getServiceName().endsWith("IBaseGatewayServiceJMSrv")) {
+			logger.info("IBaseGatewayServiceJMSrv");
+		}*/
+		if(anno.clientId() == Constants.USE_SYSTEM_CLIENT_ID) {
+			usk.setClientId(Config.getClientId());
+		} else {
+			usk.setClientId(anno.clientId());
+		}
+		
+		usk.setSnvHash(HashUtils.FNVHash1(usk.serviceID()));
+		
 		item.setImpl(proxySrv.getName());
-		item.setActName(Config.getAccountName());
 		item.setExternal(anno.external());
 		item.setShowFront(anno.showFront());
-		
-		item.setCreatedBy(Config.getClientId());
-		
-		if(anno.clientId() == Constants.USE_SYSTEM_CLIENT_ID) {
-			item.setClientId(Config.getClientId());
-		} else {
-			item.setClientId(anno.clientId());
-		}
+		item.setDesc(anno.desc());
 		
 		//item.setMaxFailBeforeDegrade(anno.maxFailBeforeDegrade()!=100 || intAnno == null ?anno.maxFailBeforeDegrade():intAnno.maxFailBeforeDegrade());
 		item.setRetryCnt(anno.retryCnt()!=3 || intAnno == null ?anno.retryCnt():intAnno.retryCnt());
@@ -622,7 +629,7 @@ public class ServiceLoader{
 		item.setHandler(anno.handler() != null && !anno.handler().trim().equals("") ? anno.handler():(intAnno != null?intAnno.handler():null));
 		
 		//测试方法
-		ServiceMethod checkMethod = new ServiceMethod();
+		ServiceMethodJRso checkMethod = new ServiceMethodJRso();
 		
 		checkMethod.setMaxFailBeforeDegrade(1);
 		checkMethod.setRetryCnt(3);
@@ -639,10 +646,10 @@ public class ServiceLoader{
 		
 		checkMethod.getKey().setUsk(usk);
 		checkMethod.getKey().setMethod("wayd");
-		checkMethod.getKey().setParamsStr(UniqueServiceMethodKey.paramsStr(new Class[] {String.class}));
+		checkMethod.getKey().setParamsStr(UniqueServiceMethodKeyJRso.paramsStr(new Class[] {String.class}));
 		checkMethod.setLogLevel(MC.LOG_NO);;
 		checkMethod.setDebugMode(0);
-		checkMethod.getKey().setSnvHash(HashUtils.FNVHash1(checkMethod.getKey().toKey(false, false, false)));
+		checkMethod.getKey().setSnvHash(HashUtils.FNVHash1(checkMethod.getKey().methodID()));
 		
 		item.addMethod(checkMethod);
 		
@@ -650,7 +657,7 @@ public class ServiceLoader{
 			if(Modifier.isStatic(m.getModifiers())) {
 				continue;
 			}
-			ServiceMethod sm = new ServiceMethod();
+			ServiceMethodJRso sm = new ServiceMethodJRso();
 			Method srvMethod = null;
 			try {
 				srvMethod = srvCls.getMethod(m.getName(), m.getParameterTypes());
@@ -756,21 +763,27 @@ public class ServiceLoader{
 				sm.getBreakingRule().setEnable(sbr.enable());
 				sm.getBreakingRule().setPercent(sbr.percent());
 				sm.getBreakingRule().setCheckInterval(sbr.checkInterval());
-					
+
 			} 
 			
 			sm.getKey().setUsk(usk);
 			sm.getKey().setMethod(m.getName());
+			
 			/*if(m.getName().equals("updateActPermissions")) {
 				logger.debug("debug");
 			}*/
 			
 			Type[] types = m.getGenericParameterTypes();
 			
-			sm.getKey().setParamsStr(UniqueServiceMethodKey.paramsStr(m.getParameterTypes()));
+			sm.getKey().setParamsStr(UniqueServiceMethodKeyJRso.paramsStr(m.getParameterTypes()));
 			sm.getKey().setReturnParam(ReflectUtils.getDesc(m.getReturnType()));
 			
-			sm.getKey().setSnvHash(HashUtils.FNVHash1(sm.getKey().toKey(false, false, false)));
+			sm.getKey().setSnvHash(HashUtils.FNVHash1(sm.getKey().methodID()));
+			
+			if(m.getName().equals("fnvHash1a")) {
+				logger.info("fnvHash1a key: " + sm.getKey().methodID());
+				logger.info("fnvHash1a code: " + sm.getKey().getSnvHash());
+			}
 			
 			Set<Class<?>> clses = new HashSet<>();
 			
@@ -791,7 +804,7 @@ public class ServiceLoader{
 			
 			if(sm.isAsyncable()) {
 				//允许异步调用的RPC必须以方法全限定名为主题
-				sm.setTopic(sm.getKey().toKey(false, false, false));
+				sm.setTopic(sm.getKey().methodID());
 			}
 			
 			item.addMethod(sm);

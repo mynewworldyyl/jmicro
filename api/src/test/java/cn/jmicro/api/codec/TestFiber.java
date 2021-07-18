@@ -6,19 +6,19 @@ import org.junit.Test;
 
 import cn.jmicro.api.codec.DecoderConstant;
 import cn.jmicro.api.codec.Encoder;
-import cn.jmicro.api.net.RpcResponse;
+import cn.jmicro.api.net.RpcResponseJRso;
 
 public class TestFiber {
 
 	@Test
 	public void testEndoceArrayResult(){
-		RpcResponse resp = new RpcResponse(1,new Integer[]{1,2,3});
+		RpcResponseJRso resp = new RpcResponseJRso(1,new Integer[]{1,2,3});
 		
 		ByteBuffer dest = ByteBuffer.allocate(1024);
 		Encoder.encodeObject(dest, resp);
 		dest.flip();
 		
-		RpcResponse result = Decoder.decodeObject(dest);
+		RpcResponseJRso result = Decoder.decodeObject(dest);
 		Object r = result.getResult();
 		System.out.println(r);
 	}

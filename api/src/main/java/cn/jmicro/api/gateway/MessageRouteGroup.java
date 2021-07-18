@@ -7,8 +7,8 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
-import cn.jmicro.api.choreography.ProcessInfo;
-import cn.jmicro.api.registry.ServiceItem;
+import cn.jmicro.api.choreography.ProcessInfoJRso;
+import cn.jmicro.api.registry.ServiceItemJRso;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -20,9 +20,9 @@ public class MessageRouteGroup {
 	
 	//private String alg = "round";
 	
-	private ProcessInfo pi;
+	private ProcessInfoJRso pi;
 	
-	private Set<ServiceItem> srvItems = new HashSet<>();
+	private Set<ServiceItemJRso> srvItems = new HashSet<>();
 	
 	private List<MessageRouteRow> list = new LinkedList<>();
 	
@@ -65,16 +65,16 @@ public class MessageRouteGroup {
 		return list == null || list.isEmpty();
 	}
 
-	public void addServiceItem(ServiceItem si) {
+	public void addServiceItem(ServiceItemJRso si) {
 		srvItems.add(si);
 	}
 
-	public void updateServiceItem(ServiceItem si) {
+	public void updateServiceItem(ServiceItemJRso si) {
 		srvItems.remove(si);
 		srvItems.add(si);
 	}
 
-	public void removeServiceItem(ServiceItem si) {
+	public void removeServiceItem(ServiceItemJRso si) {
 		srvItems.remove(si);
 	}
 }

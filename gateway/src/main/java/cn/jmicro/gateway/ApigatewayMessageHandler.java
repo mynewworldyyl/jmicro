@@ -26,7 +26,7 @@ import org.slf4j.LoggerFactory;
 import cn.jmicro.api.annotation.Cfg;
 import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Inject;
-import cn.jmicro.api.choreography.ProcessInfo;
+import cn.jmicro.api.choreography.ProcessInfoJRso;
 import cn.jmicro.api.client.IClientSessionManager;
 import cn.jmicro.api.codec.ICodecFactory;
 import cn.jmicro.api.gateway.GatewayConstant;
@@ -67,7 +67,7 @@ public class ApigatewayMessageHandler implements IMessageHandler{
 	private ComponentRouter cmpRouter;
 	
 	@Inject
-	private ProcessInfo pi;
+	private ProcessInfoJRso pi;
 	
 	@Inject
 	private ICodecFactory codecFactory;

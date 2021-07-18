@@ -25,7 +25,7 @@ public class MCTypesManager {
 	@Inject
 	private IDataOperator op;
 	
-	private Set<MCConfig> configs = new HashSet<>();
+	private Set<MCConfigJRso> configs = new HashSet<>();
 	
 	private boolean enable = false;
 	
@@ -45,7 +45,7 @@ public class MCTypesManager {
 		
 		insertSystemConfig();
 		
-		op.addChildrenListener(Config.getRaftBasePath(Config.MonitorTypeConfigDir), (type,parent,val,data)->{
+		op.addChildrenListener(Config.getRaftBasePath(Config.MonitorTypeConfigDir), (type,parent,val)->{
 			if(IListener.ADD == type) {
 				addType0(val);
 			}else if(IListener.REMOVE ==type) {
@@ -56,14 +56,14 @@ public class MCTypesManager {
 	
 	private void insertSystemConfig() {
 		Set<String> cfs = op.getChildren(Config.getRaftBasePath(Config.MonitorTypeConfigDir), false);
-		Set<MCConfig> exists = new HashSet<>();
+		Set<MCConfigJRso> exists = new HashSet<>();
 		for(String data : cfs) {
 			data = data.replaceAll(Constants.PATH_EXCAPE, "/");
-			MCConfig mcc = JsonUtils.getIns().fromJson(data, MCConfig.class);
+			MCConfigJRso mcc = JsonUtils.getIns().fromJson(data, MCConfigJRso.class);
 			exists.add(mcc);
 		}
 		
-		for(MCConfig mc : MC.MC_CONFIGS) {
+		for(MCConfigJRso mc : MC.MC_CONFIGS) {
 			if(!exists.contains(mc)) {
 				String data = JsonUtils.getIns().toJson(mc);
 				String path = Config.getRaftBasePath(Config.MonitorTypeConfigDir) + "/" + data;
@@ -73,25 +73,25 @@ public class MCTypesManager {
 	}
 
 	@SuppressWarnings("unchecked")
-	public Set<MCConfig> getAll() {
+	public Set<MCConfigJRso> getAll() {
 		checkStatu();
 		
 		if(configs.isEmpty()) {
 			return Collections.EMPTY_SET;
 		}
-		Set<MCConfig> set = new HashSet<>();
+		Set<MCConfigJRso> set = new HashSet<>();
 		set.addAll(this.configs);
 		return set;
 	}
 	
-	public boolean createMConfig(MCConfig cfg) {
+	public boolean createMConfig(MCConfigJRso cfg) {
 		checkStatu();
 		
 		if(StringUtils.isEmpty(cfg.getFieldName())) {
 			return false;
 		}
 		
-		MCConfig ecf = this.getByFieldName(cfg.getFieldName());
+		MCConfigJRso ecf = this.getByFieldName(cfg.getFieldName());
 		if(ecf != null) {
 			return false;
 		}
@@ -116,8 +116,8 @@ public class MCTypesManager {
 		return true;
 	}
 	
-	public MCConfig getByFieldName(String fieldName) {
-		for(MCConfig m : this.configs) {
+	public MCConfigJRso getByFieldName(String fieldName) {
+		for(MCConfigJRso m : this.configs) {
 			if(fieldName.equals(m.getFieldName())) {
 				return m;
 			}
@@ -127,7 +127,7 @@ public class MCTypesManager {
 
 	public boolean createMConfig(String fieldName,Short type,String label,String desc) {
 		checkStatu();
-		MCConfig mc = new MCConfig();
+		MCConfigJRso mc = new MCConfigJRso();
 		mc.setDesc(desc);
 		mc.setFieldName(fieldName);
 		mc.setLabel(label);
@@ -136,9 +136,9 @@ public class MCTypesManager {
 		return createMConfig(mc);
 	}
 	
-	public boolean updateMConfig(MCConfig cfg) {
+	public boolean updateMConfig(MCConfigJRso cfg) {
 		checkStatu();
-		MCConfig emc = getByType(cfg.getType());
+		MCConfigJRso emc = getByType(cfg.getType());
 		if(emc == null) {
 			logger.error("Type not exist when do update: " + cfg.getType());
 			return false;
@@ -154,7 +154,7 @@ public class MCTypesManager {
 	
 	public boolean deleteType(Short type) {
 		checkStatu();
-		MCConfig emc = getByType(type);
+		MCConfigJRso emc = getByType(type);
 		if(emc == null) {
 			logger.error("Type not exist: " + type);
 			return false;
@@ -179,7 +179,7 @@ public class MCTypesManager {
 			return;
 		}
 		
-		MCConfig mcc = JsonUtils.getIns().fromJson(val, MCConfig.class);
+		MCConfigJRso mcc = JsonUtils.getIns().fromJson(val, MCConfigJRso.class);
 		if(configs.contains(mcc)) {
 			configs.remove(mcc);
 		}
@@ -192,9 +192,9 @@ public class MCTypesManager {
 		
 		val = val.replaceAll(Constants.PATH_EXCAPE, "/");
 		
-		MCConfig mcc = JsonUtils.getIns().fromJson(val, MCConfig.class);
+		MCConfigJRso mcc = JsonUtils.getIns().fromJson(val, MCConfigJRso.class);
 		if(!configs.add(mcc)) {
-			MCConfig emc = getByType(mcc.getType());
+			MCConfigJRso emc = getByType(mcc.getType());
 			if(emc != null) {
 				emc.setDesc(mcc.getDesc());
 				emc.setFieldName(mcc.getFieldName());
@@ -205,8 +205,8 @@ public class MCTypesManager {
 		}
 	}
 
-	public MCConfig getByType(short type) {
-		for(MCConfig c : this.configs) {
+	public MCConfigJRso getByType(short type) {
+		for(MCConfigJRso c : this.configs) {
 			if(c.getType() == type) {
 				return c;
 			}

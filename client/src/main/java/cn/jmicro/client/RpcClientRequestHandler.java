@@ -30,7 +30,7 @@ import cn.jmicro.api.annotation.Cfg;
 import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Inject;
 import cn.jmicro.api.async.IPromise;
-import cn.jmicro.api.choreography.ProcessInfo;
+import cn.jmicro.api.choreography.ProcessInfoJRso;
 import cn.jmicro.api.client.IClientSession;
 import cn.jmicro.api.client.IClientSessionManager;
 import cn.jmicro.api.codec.ICodecFactory;
@@ -41,7 +41,7 @@ import cn.jmicro.api.exception.TimeoutException;
 import cn.jmicro.api.idgenerator.ComponentIdServer;
 import cn.jmicro.api.internal.async.PromiseImpl;
 import cn.jmicro.api.loadbalance.ISelector;
-import cn.jmicro.api.monitor.JMLogItem;
+import cn.jmicro.api.monitor.JMLogItemJRso;
 import cn.jmicro.api.monitor.LG;
 import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.monitor.MT;
@@ -51,15 +51,16 @@ import cn.jmicro.api.net.IRequest;
 import cn.jmicro.api.net.IRequestHandler;
 import cn.jmicro.api.net.ISession;
 import cn.jmicro.api.net.Message;
-import cn.jmicro.api.net.RpcResponse;
+import cn.jmicro.api.net.RpcResponseJRso;
 import cn.jmicro.api.net.ServerError;
 import cn.jmicro.api.objectfactory.ClientServiceProxyHolder;
-import cn.jmicro.api.pubsub.PSData;
+import cn.jmicro.api.pubsub.PSDataJRso;
 import cn.jmicro.api.pubsub.PubSubManager;
-import cn.jmicro.api.registry.AsyncConfig;
-import cn.jmicro.api.registry.Server;
-import cn.jmicro.api.registry.ServiceItem;
-import cn.jmicro.api.registry.ServiceMethod;
+import cn.jmicro.api.registry.AsyncConfigJRso;
+import cn.jmicro.api.registry.ServerJRso;
+import cn.jmicro.api.registry.ServiceItemJRso;
+import cn.jmicro.api.registry.ServiceMethodJRso;
+import cn.jmicro.api.registry.UniqueServiceKeyJRso;
 import cn.jmicro.api.security.SecretManager;
 import cn.jmicro.api.service.ServiceManager;
 import cn.jmicro.api.timer.TimerTicker;
@@ -115,7 +116,7 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
 	private ServiceManager srvManager;
 	
 	@Inject(required=true)
-	private ProcessInfo pi;
+	private ProcessInfoJRso pi;
 	
 	@Inject
 	private SecretManager secManager;
@@ -156,7 +157,7 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
 			 //请求开始
 			 //SF.reqStart(TAG.getName(),request);
 			 //LG.reqEvent(MC.MT_REQ_START, MC.LOG_NO, request,TAG.getName(),"");
-			ServiceItem si = JMicroContext.get().getParam(Constants.DIRECT_SERVICE_ITEM,null);
+			ServiceItemJRso si = JMicroContext.get().getParam(Constants.DIRECT_SERVICE_ITEM,null);
 			if(si == null) {
         		//此方法可能抛出FusingException
 				//此方法返回熔断异常，所以要放在MC.MT_REQ_START事件之前
@@ -180,11 +181,11 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
 			 //LG.log(MC.LOG_DEBUG, TAG.getName(), MC.MT_REQ_START);
 			 //SF.doRequestLog(MonitorConstant.LOG_DEBUG, TAG,null, "request start");
 			
-			 ServiceMethod sm = JMicroContext.get().getParam(Constants.SERVICE_METHOD_KEY, null);
+			 ServiceMethodJRso sm = JMicroContext.get().getParam(Constants.SERVICE_METHOD_KEY, null);
 			 String mkey = sm.getKey().getMethod();
-	         AsyncConfig ac = proxy.getAcs(mkey);
+	         AsyncConfigJRso ac = proxy.getAcs(mkey);
 	         if(ac == null && JMicroContext.get().exists(Constants.ASYNC_CONFIG)) {
-	        	 ac = (AsyncConfig)JMicroContext.get().getParam(Constants.ASYNC_CONFIG, null);
+	        	 ac = (AsyncConfigJRso)JMicroContext.get().getParam(Constants.ASYNC_CONFIG, null);
 	        	 if(!ac.getForMethod().equals(request.getMethod())) {
 	        		 //不属于当前方法的异步配置
 	        		 ac = null;
@@ -194,7 +195,7 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
 	         }
 	         
 	         if(ac != null && ac.isEnable()) {
-	        	 if(ac.getCondition().equals(AsyncConfig.ASYNC_DIRECT)) {
+	        	 if(ac.getCondition().equals(AsyncConfigJRso.ASYNC_DIRECT)) {
 	        		 //客户端直接做异步
 	        		 return doAsyncInvoke(proxy,request,sm,ac);
 	        	 } else {
@@ -211,11 +212,11 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
 		}
 	}
 
-	private <T> IPromise<T> doAsyncInvoke(ClientServiceProxyHolder proxy, IRequest req,ServiceMethod sm,AsyncConfig ac) {
+	private <T> IPromise<T> doAsyncInvoke(ClientServiceProxyHolder proxy, IRequest req,ServiceMethodJRso sm,AsyncConfigJRso ac) {
 		
 		PromiseImpl<T> p = new PromiseImpl<T>();
 		
-		String topic = sm.getKey().toKey(false, false, false);
+		String topic = sm.getKey().methodID();
 		
 		Map<String,Object> cxt = new HashMap<>();
 		//结果回调RPC方法
@@ -230,28 +231,28 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
 			cxt.put(TxConstants.TX_SERVER_ID, JMicroContext.get().getInt(TxConstants.TX_SERVER_ID, null));
 		}
 		
-		PSData data = new PSData();
+		PSDataJRso data = new PSDataJRso();
 		data.setContext(cxt);
 		data.setData(req.getArgs());
 		data.setTopic(topic);
 		
-		data.setFlag(PSData.flag(PSData.FLAG_PUBSUB,PSData.FLAG_ASYNC_METHOD));
+		data.setFlag(PSDataJRso.flag(PSDataJRso.FLAG_PUBSUB,PSDataJRso.FLAG_ASYNC_METHOD));
 		
 		if(sm.isNeedResponse()) {
 			
-			ServiceItem si = this.getServiceItem(ac);
+			ServiceItemJRso si = this.getServiceItem(ac);
 			
 			if(si == null) {
-				String msg = "Async service not found for:"+sm.getKey().toKey(false, false, false)+",async :"+ ac.toString();
+				String msg = "Async service not found for:"+sm.getKey().methodID()+",async :"+ ac.toString();
 				logger.error(msg);
 				LG.log(MC.LOG_ERROR, TAG,msg);
 				MT.rpcEvent(MC.MT_SERVICE_ITEM_NOT_FOUND);
 				throw new RpcException(req,msg,MC.MT_SERVICE_ITEM_NOT_FOUND);
 			}
 			
-			ServiceMethod callback = si.getMethod(ac.getMethod(), ac.getParamStr());
+			ServiceMethodJRso callback = si.getMethod(ac.getMethod(), ac.getParamStr());
 			if(callback == null) {
-				String msg = "Async method not found for:"+sm.getKey().toKey(false, false, false)+",async :"+ ac.toString();
+				String msg = "Async method not found for:"+sm.getKey().methodID()+",async :"+ ac.toString();
 				logger.error(msg);
 				//SF.doRequestLog(MC.MT_PLATFORM_LOG,MC.LOG_ERROR, TAG, null, msg);
 				LG.log(MC.LOG_ERROR, TAG, msg);
@@ -259,12 +260,12 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
 				throw new RpcException(req,msg,MC.MT_SERVICE_ITEM_NOT_FOUND);
 			}
 			
-			data.setCallback(callback.getKey().toKey(false, false, false));
+			data.setCallback(callback.getKey().methodID());
 			data.mergeContext(ac.getContext());
 		}
 		
 		//异步后,就不一定是本实例接收到此RPC调用了
-		Integer msgId = idGenerator.getIntId(PSData.class);
+		Integer msgId = idGenerator.getIntId(PSDataJRso.class);
 		if(msgId == null) {
 			throw new CommonException("Fail to get msg ID");
 		}
@@ -283,20 +284,20 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
 			p.done();
 			return p;
 		} else {
-			String msg = "ErrorCode:"+id+",异步调用失败"+sm.getKey().toKey(false, false, false);
+			String msg = "ErrorCode:"+id+",异步调用失败"+sm.getKey().methodID();
 			LG.log(MC.LOG_ERROR,TAG,msg);
 			MT.rpcEvent(MC.MT_ASYNC_RPC_FAIL);
 			throw new AsyncRpcException(req,msg);
 		}
 	}
 
-	private IPromise<Object> doRequest(IRequest req, ClientServiceProxyHolder proxy,ServiceItem si) {
+	private IPromise<Object> doRequest(IRequest req, ClientServiceProxyHolder proxy,ServiceItemJRso si) {
         
 		PromiseImpl<Object> p = new PromiseImpl<>();
 		
 		JMicroContext cxt = JMicroContext.get();
 		
-        ServiceMethod sm = cxt.getParam(Constants.SERVICE_METHOD_KEY, null);
+        ServiceMethodJRso sm = cxt.getParam(Constants.SERVICE_METHOD_KEY, null);
         
         int retryCnt = -1;
         long interval = -1;
@@ -326,7 +327,7 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
     	
     	req.setSnvHash(si.getKey().getSnvHash());
     	
-    	Server s = si.getServer(Constants.TRANSPORT_NETTY);
+    	ServerJRso s = si.getServer(Constants.TRANSPORT_NETTY);
     	
     	cxt.setParam(JMicroContext.REMOTE_HOST, s.getHost());
     	cxt.setParam(JMicroContext.REMOTE_PORT, s.getPort());
@@ -338,7 +339,7 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
     	if(isFistLoop){
     		ByteBuffer pl = ICodecFactory.encode(this.codecFactory, req, msg.getUpProtocol());
     		if(sm.getMaxPacketSize() > 0 && pl.limit() >= sm.getMaxPacketSize()) {
-    			String m = "Packet too max " + pl.limit() + " limit size: " + sm.getMaxPacketSize()+",sm: "+sm.getKey().toKey(true, false, false);
+    			String m = "Packet too max " + pl.limit() + " limit size: " + sm.getMaxPacketSize()+",sm: "+sm.getKey().fullStringKey();
     			//m = LG.reqMessage(m, req);
     			LG.log(MC.LOG_ERROR, TAG, m);
     			throw new RpcException(req,m,MC.MT_PACKET_TOO_MAX);
@@ -423,17 +424,17 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
 				
 				p.setContext(cxtParams);
 				
-				waitForResponse.put(req.getRequestId(),p);
+				waitForResponse.put(msg.getMsgId(),p);
     		}
     	}
     	
 	    IClientSession session = this.sessionManager.getOrConnect(si.getKey().getInstanceName(),s.getHost(), s.getPort());
 		
-	    if(cxt.isDebug()) {
+	    /*if(cxt.isDebug()) {
 	    	//在调试模式下，给消息一个ID
 	    	//每次超时重试，都起一个新的消息，但是同一个请求Req
-	    	msg.setMsgId(this.idGenerator.getLongId(Message.class));
-	    }
+	    	//msg.setMsgId(this.idGenerator.getLongId(Message.class));
+	    }*/
 		
 	    if(cxt.isDebug()) {
 			cxt.appendCurUseTime("Start Write",true);
@@ -478,20 +479,20 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
 	}
 	
 
-	private ServiceItem getServiceItem(AsyncConfig ac) {
+	private ServiceItemJRso getServiceItem(AsyncConfigJRso ac) {
 		
-		Set<ServiceItem> items = this.srvManager.getServiceItems(ac.getServiceName(), ac.getNamespace(), ac.getVersion());
+		Set<UniqueServiceKeyJRso> items = this.srvManager.getServiceItems(ac.getServiceName(), ac.getNamespace(), ac.getVersion());
 		if(items == null || items.isEmpty()) {
 			return null;
 		}
 		
-		for(ServiceItem si : items) {
-			ServiceMethod sm = si.getMethod(ac.getMethod(), ac.getParamStr());
+		for(UniqueServiceKeyJRso si : items) {
+			ServiceItemJRso sit = this.srvManager.getServiceByKey(si.fullStringKey());
+			ServiceMethodJRso sm = sit.getMethod(ac.getMethod(), ac.getParamStr());
 			if(sm != null) {
-				return si;
+				return sit;
 			}
 		}
-		
 		return null;
 	}
 
@@ -516,7 +517,7 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
 			return false;
 		}
 
-		ServiceMethod sm = null;
+		ServiceMethodJRso sm = null;
 		JMicroContext cxt = JMicroContext.get();
 		try {
 			if(p.getContext() != null) {
@@ -525,7 +526,7 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
 			}
 			
 			sm = cxt.getParam(Constants.SERVICE_METHOD_KEY, null);
-			ServiceItem si = cxt.getParam(Constants.SERVICE_ITEM_KEY,null);
+			ServiceItemJRso si = cxt.getParam(Constants.SERVICE_ITEM_KEY,null);
 			if(cxt.isDebug()) {
 				//下行包网络耗时
 				cxt.appendCurUseTime("Down cost "+(TimeUtils.getCurTime()-respMsg.getTime()),false);
@@ -540,12 +541,12 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
 	      	  MT.rpcEvent(MC.MT_CLIENT_IOSESSION_READ_BYTES,respMsg.getLen());
 	        }
 			
-			RpcResponse resp = ICodecFactory.decode(this.codecFactory,respMsg.getPayload(),
-					RpcResponse.class,respMsg.getUpProtocol());
+			RpcResponseJRso resp = ICodecFactory.decode(this.codecFactory,respMsg.getPayload(),
+					RpcResponseJRso.class,respMsg.getUpProtocol());
 			resp.setMsg(respMsg);
 			
 			if(resp.isSuccess()) {
-				JMLogItem mi = cxt.getMRpcLogItem();
+				JMLogItemJRso mi = cxt.getMRpcLogItem();
 				if(mi != null) {
 					mi.setResp(resp);
 				}
@@ -563,7 +564,7 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
 			}
 			
 		}catch(Throwable e) {
-			String errMsg = "Client callback error reqID:"+respMsg.getMsgId()+",linkId:"+respMsg.getLinkId()+",Service: "+sm.getKey().toKey(true, true, true);
+			String errMsg = "Client callback error reqID:"+respMsg.getMsgId()+",linkId:"+respMsg.getLinkId()+",Service: "+sm.getKey().fullStringKey();
 			logger.error(errMsg,e);
     		LG.log(MC.LOG_ERROR, TAG,errMsg);
     		MT.rpcEvent(MC.MT_REQ_ERROR);
@@ -635,7 +636,7 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
 			cxt.putAllParams(p.getContext());
 		}
 
-		ServiceMethod sm = cxt.getParam(Constants.SERVICE_METHOD_KEY, null);
+		ServiceMethodJRso sm = cxt.getParam(Constants.SERVICE_METHOD_KEY, null);
 
 		int retryCnt = 0;
 
@@ -650,7 +651,7 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
 
 		if (retryCnt <= 0) {
 			String errMsg = "Request failure req [" + JsonUtils.getIns().toJson(req.getArgs()) + "],msg [" + msg.toString() + "] timeout"
-					+ ",Method [" + sm.getKey().toKey(true, true, true)+"]";
+					+ ",Method [" + sm.getKey().fullStringKey()+"]";
 			
 			logger.warn(errMsg);
 			//肯定是超时失败了
@@ -675,7 +676,7 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
 		cxt.setInt(RETRY_CNT, retryCnt);
 
 		String errMsg = "Do timeout retry reqID:" + req.getRequestId() + ",linkId:" + msg.getLinkId() + ",retryCnt:"
-				+ retryCnt + ",Service: " + sm.getKey().toKey(false, true, true);
+				+ retryCnt + ",Service: " + sm.getKey().fullStringKey();
 		
 		errMsg = errMsg + ",args: " + JsonUtils.getIns().toJson(req.getArgs());
 		
@@ -688,11 +689,11 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
 
 		IClientSession session = this.sessionManager.getOrConnect(sm.getKey().getInstanceName(), host, port);
 
-		if (cxt.isDebug()) {
+		/*if (cxt.isDebug()) {
 			// 在调试模式下，给消息一个ID
 			// 每次超时重试，都起一个新的消息，但是同一个请求Req
 			msg.setMsgId(this.idGenerator.getLongId(Message.class));
-		}
+		}*/
 
 		if (cxt.isDebug()) {
 			cxt.appendCurUseTime("Start Write", true);

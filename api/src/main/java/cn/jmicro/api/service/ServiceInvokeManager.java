@@ -35,11 +35,11 @@ import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.monitor.MT;
 import cn.jmicro.api.objectfactory.AbstractClientServiceProxyHolder;
 import cn.jmicro.api.objectfactory.IObjectFactory;
-import cn.jmicro.api.registry.AsyncConfig;
-import cn.jmicro.api.registry.ServiceItem;
-import cn.jmicro.api.registry.ServiceMethod;
-import cn.jmicro.api.registry.UniqueServiceKey;
-import cn.jmicro.api.registry.UniqueServiceMethodKey;
+import cn.jmicro.api.registry.AsyncConfigJRso;
+import cn.jmicro.api.registry.ServiceItemJRso;
+import cn.jmicro.api.registry.ServiceMethodJRso;
+import cn.jmicro.api.registry.UniqueServiceKeyJRso;
+import cn.jmicro.api.registry.UniqueServiceMethodKeyJRso;
 import cn.jmicro.codegenerator.AsyncClientProxy;
 import cn.jmicro.common.CommonException;
 import cn.jmicro.common.Constants;
@@ -68,10 +68,10 @@ public class ServiceInvokeManager {
 	
 	@SuppressWarnings("unchecked")
 	public <T> IPromise<T> call(String srvName,String ns,String ver,String method, 
-			Class<?> returnParamClazz, Class<?>[] paramsCls, Object[] args,AsyncConfig ac) {
+			Class<?> returnParamClazz, Class<?>[] paramsCls, Object[] args,AsyncConfigJRso ac) {
 		IPromise<T> promise = null;
 		
-		String key = UniqueServiceKey.serviceName(srvName,ns,ver);
+		String key = UniqueServiceKeyJRso.serviceName(srvName,ns,ver);
 		
 		AbstractClientServiceProxyHolder proxy = getProxy(srvName,ns,ver);
 		if(proxy == null) {
@@ -85,13 +85,13 @@ public class ServiceInvokeManager {
 		
 		if(m == null) {
 			PromiseImpl<T> p = new PromiseImpl<T>();
-			p.setFail(MC.MT_SERVICE_METHOD_NOT_FOUND,"Service method not found: " + key + UniqueServiceKey.SEP + method);
+			p.setFail(MC.MT_SERVICE_METHOD_NOT_FOUND,"Service method not found: " + key + UniqueServiceKeyJRso.SEP + method);
 			p.done();
 			return p;
 		}
 		
 
-		final AsyncConfig oldAc = JMicroContext.get().getParam(Constants.ASYNC_CONFIG,null);
+		final AsyncConfigJRso oldAc = JMicroContext.get().getParam(Constants.ASYNC_CONFIG,null);
 		
 		if(ac != null) {
 			JMicroContext.get().setParam(Constants.ASYNC_CONFIG,ac);
@@ -156,23 +156,23 @@ public class ServiceInvokeManager {
 		return call( srvName, ns, ver, method, returnParamClazz,paramsCls, args,null);
 	}
 	
-	public <T> IPromise<T> call(UniqueServiceMethodKey mkey, Object[] args) {
+	public <T> IPromise<T> call(UniqueServiceMethodKeyJRso mkey, Object[] args) {
 		return call(mkey.getServiceName(),mkey.getNamespace(),mkey.getVersion(),mkey.getMethod(),
 				mkey.getReturnParamClass(),mkey.getParameterClasses(),args,null);
 	}
 	
-	public <T> IPromise<T> call(ServiceMethod sm, Object[] args) {
+	public <T> IPromise<T> call(ServiceMethodJRso sm, Object[] args) {
 		return call(sm.getKey(),args);
 	}
 	
 	public <T> IPromise<T> call(String strSmKey, Object[] args) {
-		UniqueServiceMethodKey mkey = UniqueServiceMethodKey.fromKey(strSmKey);
+		UniqueServiceMethodKeyJRso mkey = UniqueServiceMethodKeyJRso.fromKey(strSmKey);
 		return call(mkey.getServiceName(),mkey.getNamespace(),mkey.getVersion(),mkey.getMethod(),
 				mkey.getReturnParamClass(),mkey.getParameterClasses(),args,null);
 	}
 	
-	public <T> IPromise<T> callDirect(ServiceItem si, ServiceMethod sm, Object[] args) {
-		ServiceItem oldDirectItem = JMicroContext.get().getParam(Constants.DIRECT_SERVICE_ITEM, null);
+	public <T> IPromise<T> callDirect(ServiceItemJRso si, ServiceMethodJRso sm, Object[] args) {
+		ServiceItemJRso oldDirectItem = JMicroContext.get().getParam(Constants.DIRECT_SERVICE_ITEM, null);
 		JMicroContext.get().setParam(Constants.DIRECT_SERVICE_ITEM, si);
 		IPromise<T> p = null;
 		try {
@@ -201,7 +201,7 @@ public class ServiceInvokeManager {
 		return p;
 	}
 	
-	public AbstractClientServiceProxyHolder getProxy(ServiceItem si) {
+	public AbstractClientServiceProxyHolder getProxy(ServiceItemJRso si) {
 		if(si == null) {
 			String msg = "Cannot call service for NULL ServiceItem";
 			LG.log(MC.LOG_ERROR, TAG, msg);
@@ -231,7 +231,7 @@ public class ServiceInvokeManager {
 	
 	public AbstractClientServiceProxyHolder getProxy(String srvName,String ns,String ver) {
 		AbstractClientServiceProxyHolder p = null;
-		String key = UniqueServiceKey.serviceName(srvName,ns,ver);
+		String key = UniqueServiceKeyJRso.serviceName(srvName,ns,ver);
 		if(!proxes.containsKey(key)) {
 			p = of.getRemoteServie(srvName,ns,ver,null);
 			if(p == null) {
@@ -340,9 +340,9 @@ public class ServiceInvokeManager {
 	}
 	
 	public void ready() {
-		this.srvManager.addListener((type,item)->{
+		this.srvManager.addListener((type,siKey,item)->{
 			if(type == IListener.REMOVE || type == IListener.DATA_CHANGE) {
-				String snv = item.getKey().toSnv();
+				String snv = item.toSnv();
 				if(this.proxes.containsKey(snv)) {
 					this.proxes.remove(snv);
 				}

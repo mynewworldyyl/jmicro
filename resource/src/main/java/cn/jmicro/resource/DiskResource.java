@@ -9,14 +9,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import cn.jmicro.api.CfgMetadata;
+import cn.jmicro.api.CfgMetadataJRso;
 import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Inject;
 import cn.jmicro.api.exp.Exp;
 import cn.jmicro.api.exp.ExpUtils;
 import cn.jmicro.api.monitor.AbstractResource;
 import cn.jmicro.api.monitor.IResource;
-import cn.jmicro.api.monitor.ResourceData;
+import cn.jmicro.api.monitor.ResourceDataJRso;
 import cn.jmicro.api.raft.IDataOperator;
 import cn.jmicro.common.Utils;
 import cn.jmicro.common.util.StringUtils;
@@ -39,8 +39,8 @@ public class DiskResource extends AbstractResource  implements IResource {
 	private IDataOperator op;
 	
 	@Override
-	public ResourceData getResource(Map<String,Object> query,String expStr) {
-		ResourceData data = this.getData();
+	public ResourceDataJRso getResource(Map<String,Object> query,String expStr) {
+		ResourceDataJRso data = this.getData();
 		data.putData("diskList", getInfo(query,expStr));
 		return data;
 	}
@@ -100,49 +100,49 @@ public class DiskResource extends AbstractResource  implements IResource {
 		super.ready0();
 		
 		this.getData().setResName(RES_NAME);
-		Set<CfgMetadata> metadatas = new HashSet<>();
+		Set<CfgMetadataJRso> metadatas = new HashSet<>();
 		pi.setMetadatas(RES_NAME, metadatas);
 		
 		//根目录
-		CfgMetadata md = new CfgMetadata();
+		CfgMetadataJRso md = new CfgMetadataJRso();
 		md.setResName(RES_NAME);
 		md.setName(PATH);
-		md.setDataType(CfgMetadata.DataType.String.getCode());
+		md.setDataType(CfgMetadataJRso.DataType.String.getCode());
 		md.setDesc("挂载盘符");
 		metadatas.add(md);
 		
-		md = new CfgMetadata();
+		md = new CfgMetadataJRso();
 		md.setResName(RES_NAME);
 		md.setName(FREE_SPACE);
-		md.setDataType(CfgMetadata.DataType.Float.getCode());
+		md.setDataType(CfgMetadataJRso.DataType.Float.getCode());
 		md.setDesc("空闲空间大小");;
 		metadatas.add(md);
 		
-		md = new CfgMetadata();
+		md = new CfgMetadataJRso();
 		md.setResName(RES_NAME);
 		md.setName(USED_SPACE);
-		md.setDataType(CfgMetadata.DataType.Float.getCode());
+		md.setDataType(CfgMetadataJRso.DataType.Float.getCode());
 		md.setDesc("已使用空间大小");
 		metadatas.add(md);
 		
-		md = new CfgMetadata();
+		md = new CfgMetadataJRso();
 		md.setResName(RES_NAME);
 		md.setName(TOTAL_SPACE);
-		md.setDataType(CfgMetadata.DataType.Float.getCode());
+		md.setDataType(CfgMetadataJRso.DataType.Float.getCode());
 		md.setDesc("总空间大小");
 		metadatas.add(md);
 		
-		md = new CfgMetadata();
+		md = new CfgMetadataJRso();
 		md.setResName(RES_NAME);
 		md.setName(USABLE_TASK_PERCENT);
-		md.setDataType(CfgMetadata.DataType.Float.getCode());
+		md.setDataType(CfgMetadataJRso.DataType.Float.getCode());
 		md.setDesc("可用空间占比");
 		metadatas.add(md);
 		
-		md = new CfgMetadata();
+		md = new CfgMetadataJRso();
 		md.setResName(RES_NAME);
 		md.setName(USED_TAKE_PERCENT);
-		md.setDataType(CfgMetadata.DataType.Float.getCode());
+		md.setDataType(CfgMetadataJRso.DataType.Float.getCode());
 		md.setDesc("已使用空间占比");
 		metadatas.add(md);
 		

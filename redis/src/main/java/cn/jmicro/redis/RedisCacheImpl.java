@@ -32,7 +32,7 @@ import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Inject;
 import cn.jmicro.api.cache.ICache;
 import cn.jmicro.api.cache.ICacheRefresher;
-import cn.jmicro.api.choreography.ProcessInfo;
+import cn.jmicro.api.choreography.ProcessInfoJRso;
 import cn.jmicro.api.codec.ICodecFactory;
 import cn.jmicro.api.config.Config;
 import cn.jmicro.api.monitor.LG;
@@ -86,7 +86,7 @@ public class RedisCacheImpl implements ICache {
 	private JedisPool jeditPool;
 	
 	@Inject
-	private ProcessInfo pi;
+	private ProcessInfoJRso pi;
 	
 	private Random r = new Random(TimeUtils.getCurTime()/10000);
 	
@@ -95,10 +95,13 @@ public class RedisCacheImpl implements ICache {
 	//指定KEY上次直接从源中提取数据时间，避免同小时间片内大批量对不存在的数据请求
 	private Map<String,Long> notExistData = Collections.synchronizedMap(new HashMap<>());
 	
-	private String prefix;
+	private String adminPrefix;
+	
+	private String selfPrefix;
 	
 	public void ready() {
-		prefix = "/"+Config.getAdminClientId()+"/";
+		adminPrefix = "/"+ Config.getAdminClientId() + "/";
+		selfPrefix = "/"+ Config.getClientId() + "/";
 	}
 	
 	@Override
@@ -115,7 +118,7 @@ public class RedisCacheImpl implements ICache {
 			return false;
 		}
 		
-		byte[] k = ICache.keyData(prefix+key);
+		byte[] k = ICache.keyData(selfPrefix+key);
 		if(k == null) {
 			return false;
 		}
@@ -140,18 +143,30 @@ public class RedisCacheImpl implements ICache {
 		
 	}
 
-	private String appendPrefix(String key) {
-		return this.prefix + key;
-	}
-
 	private void checkPermission(String key) {
+		if(isAdminPrefix(key) && !(Utils.formSystemPackagePermission(4) || Config.isAdminSystem())) {
+			String msg = "No permission to do this operation";
+			LG.log(MC.LOG_WARN, RedisCacheImpl.class, msg);
+			throw new CommonException(msg);
+		}
+	}
+	
+	private boolean isAdminPrefix(String key) {
 		for(String p : adminPrefixs) {
-			if(key.startsWith(p) && !(Utils.formSystemPackagePermission(4) || Config.isAdminSystem())) {
-				String msg = "No permission to do this operation";
-				LG.log(MC.LOG_WARN, RedisCacheImpl.class, msg);
-				throw new CommonException(msg);
+			if(key.startsWith(p)) {
+				return true;
 			}
 		}
+		return false;
+	}
+	
+	private String securityKey(String key) {
+		if(this.isAdminPrefix(key)) {
+			key = adminPrefix + key;
+		}else {
+			key = selfPrefix + key;
+		}
+		return key;
 	}
 
 	@Override
@@ -162,7 +177,7 @@ public class RedisCacheImpl implements ICache {
 			return null;
 		}
 		
-		key = prefix+key;
+		key = securityKey(key);
 		
 		byte[] k = ICache.keyData(key);
 		
@@ -249,7 +264,7 @@ public class RedisCacheImpl implements ICache {
 			return false;
 		}
 		
-		byte[] k = ICache.keyData(prefix+key);
+		byte[] k = ICache.keyData(this.securityKey(key));
 		if( k == null) {
 			return false;
 		}
@@ -273,7 +288,7 @@ public class RedisCacheImpl implements ICache {
 			return false;
 		}
 		
-		byte[] k = ICache.keyData(prefix+key);
+		byte[] k = ICache.keyData(selfPrefix+key);
 		if( k == null) {
 			return false;
 		}
@@ -341,7 +356,7 @@ public class RedisCacheImpl implements ICache {
 			logger.error("Del key cannot be NULL");
 			return false;
 		}
-		byte[] k = ICache.keyData(prefix+key);
+		byte[] k = ICache.keyData(selfPrefix+key);
 		if( k == null) {
 			return false;
 		}

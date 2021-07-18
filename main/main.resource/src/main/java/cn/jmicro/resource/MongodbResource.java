@@ -4,12 +4,12 @@ import java.util.Map;
 
 import cn.jmicro.api.monitor.AbstractResource;
 import cn.jmicro.api.monitor.IResource;
-import cn.jmicro.api.monitor.ResourceData;
+import cn.jmicro.api.monitor.ResourceDataJRso;
 
 public class MongodbResource extends AbstractResource  implements IResource {
 
 	@Override
-	public ResourceData getResource(Map<String,Object> params,String expStr) {
+	public ResourceDataJRso getResource(Map<String,Object> params,String expStr) {
 		
 		return null;
 	}

@@ -16,27 +16,27 @@ import cn.jmicro.api.annotation.SMethod;
 import cn.jmicro.api.annotation.Service;
 import cn.jmicro.api.async.IPromise;
 import cn.jmicro.api.internal.async.PromiseImpl;
-import cn.jmicro.api.mng.IMonitorServerManager;
-import cn.jmicro.api.monitor.IMonitorAdapter;
+import cn.jmicro.api.mng.IMonitorServerManagerJMSrv;
+import cn.jmicro.api.monitor.IMonitorAdapterJMSrv;
 import cn.jmicro.api.monitor.MC;
-import cn.jmicro.api.monitor.MonitorInfo;
-import cn.jmicro.api.monitor.MonitorServerStatus;
+import cn.jmicro.api.monitor.MonitorInfoJRso;
+import cn.jmicro.api.monitor.MonitorServerStatusJRso;
 import cn.jmicro.api.monitor.StatisMonitorClient;
-import cn.jmicro.api.monitor.genclient.IMonitorAdapter$JMAsyncClient;
+import cn.jmicro.api.monitor.genclient.IMonitorAdapterJMSrv$JMAsyncClient;
 import cn.jmicro.api.objectfactory.AbstractClientServiceProxyHolder;
-import cn.jmicro.api.registry.ServiceItem;
+import cn.jmicro.api.registry.ServiceItemJRso;
 import cn.jmicro.api.security.PermissionManager;
 import cn.jmicro.common.util.StringUtils;
 
 @Component
 @Service(version="0.0.1",debugMode=1,timeout=10000,logLevel=MC.LOG_NO,
 monitorEnable=0,retryCnt=0, external=true,showFront=false)
-public class MonitorServerManagerImpl implements IMonitorServerManager{
+public class MonitorServerManagerImpl implements IMonitorServerManagerJMSrv{
 	
 	private final static Logger logger = LoggerFactory.getLogger(MonitorServerManagerImpl.class);
 	
 	@Reference(namespace="*",version="*",type="ins")//每个服务实例一个代理对象
-	private List<IMonitorAdapter$JMAsyncClient> monitorServers = new ArrayList<>();
+	private List<IMonitorAdapterJMSrv$JMAsyncClient> monitorServers = new ArrayList<>();
 	
 	//private Map<String,MonitorInfo> minfos = new HashMap<>();
 	//private Short[] types = null; 
@@ -53,27 +53,27 @@ public class MonitorServerManagerImpl implements IMonitorServerManager{
 	
 	@Override
 	@SMethod(needLogin=true,maxSpeed=5,maxPacketSize=4096)
-	public IPromise<MonitorServerStatus[]> status(String[] srvKeys) {
+	public IPromise<MonitorServerStatusJRso[]> status(String[] srvKeys) {
 		
-		PromiseImpl<MonitorServerStatus[]> p = new PromiseImpl<>();
+		PromiseImpl<MonitorServerStatusJRso[]> p = new PromiseImpl<>();
 		
 		if(this.monitorServers.isEmpty() || srvKeys == null || srvKeys.length == 0) {
 			p.done();
 			return p;
 		}
 		
-		MonitorServerStatus[] status = new MonitorServerStatus[srvKeys.length+1];
+		MonitorServerStatusJRso[] status = new MonitorServerStatusJRso[srvKeys.length+1];
 		double[] qpsArr =  null;
 		double[] curArr = null;
 		double[] totalArr = null;
 		int typeLen = 0;
 		
 		for(int i = 0; i < srvKeys.length ; i++) {
-			IMonitorAdapter server = this.getServerByKey(srvKeys[i]);
+			IMonitorAdapterJMSrv server = this.getServerByKey(srvKeys[i]);
 			if(server == null) {
 				continue;
 			}
-			MonitorServerStatus s = server.status();
+			MonitorServerStatusJRso s = server.status();
 			if(s == null) {
 				continue;
 			}
@@ -87,7 +87,7 @@ public class MonitorServerManagerImpl implements IMonitorServerManager{
 				curArr = new double[typeLen];
 				totalArr = new double[typeLen];
 				
-				MonitorServerStatus totalStatus = new MonitorServerStatus();
+				MonitorServerStatusJRso totalStatus = new MonitorServerStatusJRso();
 				status[0] = totalStatus;
 				
 				totalStatus.setCur(curArr);
@@ -116,7 +116,7 @@ public class MonitorServerManagerImpl implements IMonitorServerManager{
 		
 		PromiseImpl<Boolean> p = new PromiseImpl<>(false);
 		
-		IMonitorAdapter$JMAsyncClient s = this.getServerByKey(srvKey);
+		IMonitorAdapterJMSrv$JMAsyncClient s = this.getServerByKey(srvKey);
 		if(s == null) {
 			p.done();
 			return p;
@@ -152,7 +152,7 @@ public class MonitorServerManagerImpl implements IMonitorServerManager{
 		}
 		
 		for(int i = 0; i < srvKeys.length ; i++) {
-			IMonitorAdapter server = this.getServerByKey(srvKeys[i]);
+			IMonitorAdapterJMSrv server = this.getServerByKey(srvKeys[i]);
 			if(server != null) {
 				
 			}
@@ -162,17 +162,17 @@ public class MonitorServerManagerImpl implements IMonitorServerManager{
 
 	@Override
 	@SMethod(needLogin=true,maxSpeed=5,maxPacketSize=4096)
-	public IPromise<MonitorInfo[]> serverList() {
+	public IPromise<MonitorInfoJRso[]> serverList() {
 		
-		PromiseImpl<MonitorInfo[]> p = new PromiseImpl<>();
+		PromiseImpl<MonitorInfoJRso[]> p = new PromiseImpl<>();
 		
 		JMicroContext cxt = JMicroContext.get();
 		
-		Set<MonitorInfo> set = new HashSet<>();
+		Set<MonitorInfoJRso> set = new HashSet<>();
 		
-		Set<IMonitorAdapter$JMAsyncClient> servers = new HashSet<>();
+		Set<IMonitorAdapterJMSrv$JMAsyncClient> servers = new HashSet<>();
 		for(int i = 0; i < this.monitorServers.size(); i++) {
-			IMonitorAdapter$JMAsyncClient s = this.monitorServers.get(i);
+			IMonitorAdapterJMSrv$JMAsyncClient s = this.monitorServers.get(i);
 			if(s.isReady() && PermissionManager.checkAccountClientPermission(s.clientId())) {
 				servers.add(s);
 			}
@@ -185,9 +185,9 @@ public class MonitorServerManagerImpl implements IMonitorServerManager{
 		
 		p.setCounter(servers.size());
 		
-		for(IMonitorAdapter$JMAsyncClient s : servers) {
+		for(IMonitorAdapterJMSrv$JMAsyncClient s : servers) {
 			
-			s.infoJMAsync(s.getItem().getKey().toKey(true, true, true)).then((in,fail,ctx0) -> {
+			s.infoJMAsync(s.getItem().getKey().fullStringKey()).then((in,fail,ctx0) -> {
 				if(fail != null) {
 					logger.error(fail.toString());
 				}
@@ -198,9 +198,9 @@ public class MonitorServerManagerImpl implements IMonitorServerManager{
 				}
 				
 				if(p.decCounter(1,false)) {
-					MonitorInfo[] infos = null;
+					MonitorInfoJRso[] infos = null;
 					if(set.size() > 0) {
-						infos = new MonitorInfo[set.size()];
+						infos = new MonitorInfoJRso[set.size()];
 						set.toArray(infos);
 					}
 					p.setResult(infos);
@@ -212,17 +212,17 @@ public class MonitorServerManagerImpl implements IMonitorServerManager{
 		return p;
 	}
 	
-	private IMonitorAdapter$JMAsyncClient getServerByKey(String key) {
+	private IMonitorAdapterJMSrv$JMAsyncClient getServerByKey(String key) {
 		if(StringUtils.isEmpty(key)) {
 			return null;
 		}
 		for(int i = 0; i < this.monitorServers.size(); i++) {
 			AbstractClientServiceProxyHolder s = (AbstractClientServiceProxyHolder)((Object)this.monitorServers.get(i));
-			ServiceItem si = s.getHolder().getItem();
+			ServiceItemJRso si = s.getHolder().getItem();
 			if(si == null) {
 				continue;
 			}
-			if(si.getKey().toKey(true, true, true).equals(key)) {
+			if(si.getKey().fullStringKey().equals(key)) {
 				return this.monitorServers.get(i);
 			}
 		}

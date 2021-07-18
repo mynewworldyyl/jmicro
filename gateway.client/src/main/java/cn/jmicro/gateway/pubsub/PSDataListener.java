@@ -1,10 +1,10 @@
 package cn.jmicro.gateway.pubsub;
 
-import cn.jmicro.api.pubsub.PSData;
+import cn.jmicro.api.pubsub.PSDataJRso;
 
 public interface PSDataListener {
 
-	void onMsg(PSData item);
+	void onMsg(PSDataJRso item);
 	
 	int getSubId();
 	

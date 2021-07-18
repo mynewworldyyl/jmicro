@@ -30,17 +30,17 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import cn.jmicro.api.JMicroContext;
-import cn.jmicro.api.Resp;
+import cn.jmicro.api.RespJRso;
 import cn.jmicro.api.annotation.Cfg;
 import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Inject;
-import cn.jmicro.api.choreography.ProcessInfo;
+import cn.jmicro.api.choreography.ProcessInfoJRso;
 import cn.jmicro.api.codec.ICodecFactory;
 import cn.jmicro.api.config.Config;
-import cn.jmicro.api.executor.ExecutorConfig;
+import cn.jmicro.api.executor.ExecutorConfigJRso;
 import cn.jmicro.api.executor.ExecutorFactory;
 import cn.jmicro.api.idgenerator.IdRequest;
-import cn.jmicro.api.monitor.JMLogItem;
+import cn.jmicro.api.monitor.JMLogItemJRso;
 import cn.jmicro.api.monitor.LG;
 import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.monitor.MT;
@@ -49,11 +49,11 @@ import cn.jmicro.api.net.IMessageHandler;
 import cn.jmicro.api.net.IMessageReceiver;
 import cn.jmicro.api.net.ISession;
 import cn.jmicro.api.net.Message;
-import cn.jmicro.api.net.RpcRequest;
-import cn.jmicro.api.net.RpcResponse;
+import cn.jmicro.api.net.RpcRequestJRso;
+import cn.jmicro.api.net.RpcResponseJRso;
 import cn.jmicro.api.net.ServerError;
 import cn.jmicro.api.objectfactory.IObjectFactory;
-import cn.jmicro.api.registry.ServiceMethod;
+import cn.jmicro.api.registry.ServiceMethodJRso;
 import cn.jmicro.api.security.SecretManager;
 import cn.jmicro.api.service.ServiceManager;
 import cn.jmicro.api.utils.TimeUtils;
@@ -87,7 +87,7 @@ public class ServerMessageReceiver implements IMessageReceiver{
 	private IObjectFactory of;
 	
 	@Inject
-	private ProcessInfo pi;
+	private ProcessInfoJRso pi;
 	
 	@Inject
 	private ServiceManager srvMng;
@@ -143,7 +143,7 @@ public class ServerMessageReceiver implements IMessageReceiver{
 			}
 		}
 		
-		ExecutorConfig config = new ExecutorConfig();
+		ExecutorConfigJRso config = new ExecutorConfigJRso();
 		config.setMsCoreSize(1);
 		config.setMsMaxSize(10);
 		config.setTaskQueueSize(5);
@@ -197,20 +197,23 @@ public class ServerMessageReceiver implements IMessageReceiver{
 			gotTime = TimeUtils.getCurTime();
 		}
 		
-		ServiceMethod sm = null;
+		ServiceMethodJRso sm = null;
 		if(!msg.isOuterMessage() && msg.getType() == Constants.MSG_TYPE_REQ_JRPC) {
 			sm = srvMng.getServiceMethodByHash(msg.getSmKeyCode());
 			if(sm == null) {
-				sm = srvMng.getServiceMethodWithHashBySearch(msg.getSmKeyCode());
+				/*UniqueServiceMethodKeyJRso smkey = srvMng.getServiceMethodWithHashBySearch(msg.getSmKeyCode());
+				if(smkey != null) {
+					sm = srvMng.getServiceMethodByKey(smkey);
+				}*/
 				String errMsg = "Invalid message method code: [" + msg.toString() + "]";
 				errMsg += ",client host: " + s.remoteHost()+",remotePort: " + s.remotePort()+",from insId: " + msg.getInsId();
 				
-				if(sm != null) {
-					errMsg += ", sm key: " + sm.getKey().toKey(true, true, true);
-				}
+				/*if(sm != null) {
+					errMsg += ", sm key: " + sm.getKey().methodID();
+				}*/
 				
 				LG.log(MC.LOG_ERROR, TAG, errMsg);
-				responseException(msg,(IServerSession)s, new CommonException(Resp.CODE_FAIL,errMsg),sm);
+				responseException(msg,(IServerSession)s, new CommonException(RespJRso.CODE_FAIL,errMsg),sm);
 				return;
 			}
 		}
@@ -242,7 +245,7 @@ public class ServerMessageReceiver implements IMessageReceiver{
 				if(sm.getKey().getSnvHash() != msg.getSmKeyCode()) {
 					String errMsg = "Invalid service method code: [" + msg.getSmKeyCode() + "] but target [" + sm.getKey().getSnvHash()+"] ";
 					errMsg += ", client host: " + s.remoteHost();
-					errMsg += ", smKey: " + sm.getKey().toKey(true, true, true)+",from insId: " + msg.getInsId();
+					errMsg += ", smKey: " + sm.getKey().fullStringKey()+",from insId: " + msg.getInsId();
 					LG.log(MC.LOG_ERROR, TAG, errMsg);
 					logger.error(errMsg);
 					return;
@@ -328,22 +331,22 @@ public class ServerMessageReceiver implements IMessageReceiver{
 		}
 	}
 	
-	private void responseException(Message msg,IServerSession s,Throwable e,ServiceMethod sm) {
+	private void responseException(Message msg,IServerSession s,Throwable e,ServiceMethodJRso sm) {
 		
 		StackTraceElement se = Thread.currentThread().getStackTrace()[2];
-		logger.error("From line [" + se.getLineNumber() + "] reqHandler error msg:{}, sm:{}",msg,sm== null?"":sm.getKey().toKey(true, true, true));
+		logger.error("From line [" + se.getLineNumber() + "] reqHandler error msg:{}, sm:{}",msg,sm== null?"":sm.getKey().fullStringKey());
 		if(e!= null) {
 			logger.error("",e);
 		}
 		
 		if(msg.isNeedResponse()) {
-			RpcResponse resp = null;
+			RpcResponseJRso resp = null;
 			String errMsg = e == null?"from insId: " + msg.getInsId():e.getMessage()+",from insId: " + msg.getInsId();
 			if(e instanceof CommonException) {
 				CommonException ce = (CommonException)e;
-				resp = new RpcResponse(msg.getMsgId(),new ServerError(ce.getKey(),errMsg));
+				resp = new RpcResponseJRso(msg.getMsgId(),new ServerError(ce.getKey(),errMsg));
 			} else {
-				resp = new RpcResponse(msg.getMsgId(),new ServerError(Resp.CODE_FAIL,errMsg));
+				resp = new RpcResponseJRso(msg.getMsgId(),new ServerError(RespJRso.CODE_FAIL,errMsg));
 			}
 			resp.setSuccess(false);
 			msg.setPayload(ICodecFactory.encode(codecFactory,resp,msg.getUpProtocol()));
@@ -380,7 +383,7 @@ public class ServerMessageReceiver implements IMessageReceiver{
 		private Message msg;
 		private IServerSession s;
 		
-		private ServiceMethod sm = null;
+		private ServiceMethodJRso sm = null;
 		//private TaskRunnable r;
 		//private Map<Short,StatisItem> typeStatis = new HashMap<>();
 
@@ -431,11 +434,11 @@ public class ServerMessageReceiver implements IMessageReceiver{
 			this.s = s;
 		}
 
-		public ServiceMethod getSm() {
+		public ServiceMethodJRso getSm() {
 			return sm;
 		}
 
-		public void setSm(ServiceMethod sm) {
+		public void setSm(ServiceMethodJRso sm) {
 			this.sm = sm;
 		}
 		
@@ -468,7 +471,7 @@ public class ServerMessageReceiver implements IMessageReceiver{
         		sb.append(" corePoolSize[").append(e.getCorePoolSize()).append("]");
         		sb.append(" maximumPoolSize[").append(e.getMaximumPoolSize()).append("]");
         		
-        		JMLogItem mi = LG.logWithNonRpcContext(MC.LOG_ERROR, JicroAbortPolicy.class,sb.toString(),MC.MT_EXECUTOR_REJECT,false);
+        		JMLogItemJRso mi = LG.logWithNonRpcContext(MC.LOG_ERROR, JicroAbortPolicy.class,sb.toString(),MC.MT_EXECUTOR_REJECT,false);
         		
         		if(mi != null) {
         			mi.setLinkId(msg.getLinkId());
@@ -488,7 +491,7 @@ public class ServerMessageReceiver implements IMessageReceiver{
             			IdRequest re = ICodecFactory.decode(codecFactory, msg.getPayload(), IdRequest.class,
             					msg.getUpProtocol());
             		} else {
-            			RpcRequest re = ICodecFactory.decode(codecFactory, msg.getPayload(), RpcRequest.class,
+            			RpcRequestJRso re = ICodecFactory.decode(codecFactory, msg.getPayload(), RpcRequestJRso.class,
             					msg.getUpProtocol());
             			mi.setReq(re);
             			mi.setReqId(re.getRequestId());

@@ -54,6 +54,9 @@ import cn.jmicro.common.util.StringUtils;
 @Component(value="defaultConfig",lazy=false,level = 0)
 public class Config{
 	
+	//全局配置及服务信息目录使用
+	private static final String ADMIN_CLIENT_ID = "adminClientId";
+	
 	private final static Logger logger = LoggerFactory.getLogger(Config.class);
 	
 	private static String RegistryProtocol = "zookeeper";
@@ -165,11 +168,16 @@ public class Config{
 		if(CACHE_PATHS.containsKey(subfixPath)) {
 			return CACHE_PATHS.get(subfixPath);
 		}
+		
 		if(!CommadParams.containsKey(Constants.CLIENT_ID)) {
 			throw new InvalidParameterException(Constants.CLIENT_ID);
 		}
 		
-		String clientId = CommadParams.get(Constants.ADMIN_CLIENT_ID);
+		if(!CommadParams.containsKey(ADMIN_CLIENT_ID)) {
+			throw new InvalidParameterException(ADMIN_CLIENT_ID);
+		}
+		
+		String clientId = CommadParams.get(ADMIN_CLIENT_ID);
 		if(CfgDir.equals(subfixPath) || GROBAL_CONFIG.equals(subfixPath)) {
 			clientId = CommadParams.get(Constants.CLIENT_ID);
 		}
@@ -406,7 +414,7 @@ public class Config{
 	public static boolean isAdminSystem() {
 		int clientId = getClientId();
 		int adminClientId = getAdminClientId();
-		boolean adminSystem = adminClientId > -1 && clientId == adminClientId;
+		boolean adminSystem = clientId == adminClientId;
 		return adminSystem;
 	}
 	
@@ -436,7 +444,7 @@ public class Config{
 	}*/
 	
 	public static int getAdminClientId() {
-		int adminClientId = getCommandParam(Constants.ADMIN_CLIENT_ID,Integer.class,-1);
+		int adminClientId = getCommandParam(ADMIN_CLIENT_ID,Integer.class,-1);
 		return adminClientId;
 	}
 	

@@ -35,15 +35,15 @@ import cn.jmicro.api.basket.BasketFactory;
 import cn.jmicro.api.basket.IBasket;
 import cn.jmicro.api.config.Config;
 import cn.jmicro.api.exception.RpcException;
-import cn.jmicro.api.executor.ExecutorConfig;
+import cn.jmicro.api.executor.ExecutorConfigJRso;
 import cn.jmicro.api.executor.ExecutorFactory;
-import cn.jmicro.api.monitor.genclient.ILogMonitorServer$JMAsyncClient;
+import cn.jmicro.api.monitor.genclient.ILogMonitorServerJMSrv$JMAsyncClient;
 import cn.jmicro.api.objectfactory.AbstractClientServiceProxyHolder;
 import cn.jmicro.api.objectfactory.IObjectFactory;
 import cn.jmicro.api.raft.IDataOperator;
 import cn.jmicro.api.registry.IServiceListener;
-import cn.jmicro.api.registry.ServiceItem;
-import cn.jmicro.api.registry.ServiceMethod;
+import cn.jmicro.api.registry.ServiceItemJRso;
+import cn.jmicro.api.registry.ServiceMethodJRso;
 import cn.jmicro.api.service.ServiceLoader;
 import cn.jmicro.api.utils.TimeUtils;
 import cn.jmicro.common.Constants;
@@ -68,7 +68,7 @@ public class LogMonitorClient {
 	private String[] typeLabels = null; 
 	
 	@Reference(namespace="*",version="0.0.1",changeListener="enableWork")
-	private ILogMonitorServer$JMAsyncClient monitorServer;
+	private ILogMonitorServerJMSrv$JMAsyncClient monitorServer;
 	
     @Cfg(value="/LogMonitorClient/registMonitorThreadService", changeListener="registMonitorThreadStatusChange")
     private boolean registMonitorThreadService = false;
@@ -79,7 +79,7 @@ public class LogMonitorClient {
 	private boolean checkerWorking = false;
 	
 	@Inject(required=false)
-	private ILogMonitorServer localMonitorServer;
+	private ILogMonitorServerJMSrv localMonitorServer;
 	
 	//private AbstractClientServiceProxyHolder msPo;
 	
@@ -97,9 +97,9 @@ public class LogMonitorClient {
 	
 	//private Map<String,Boolean> srvMethodMonitorEnable = new HashMap<>();
 	
-	private BasketFactory<JMLogItem> basketFactory = null;
+	private BasketFactory<JMLogItemJRso> basketFactory = null;
 	
-	private BasketFactory<JMLogItem> cacheBasket = null;
+	private BasketFactory<JMLogItemJRso> cacheBasket = null;
 	
 	private Object syncLocker = new Object();
 	
@@ -107,13 +107,13 @@ public class LogMonitorClient {
 	
 	private MonitorClientStatusAdapter statusMonitorAdapter;
 	
-	private ServiceItem monitorServiceItem;
+	private ServiceItemJRso monitorServiceItem;
 	
 	@JMethod("init")
 	public void init() {
 		
-		this.basketFactory = new BasketFactory<JMLogItem>(5000,1);
-		this.cacheBasket = new BasketFactory<JMLogItem>(1000,5);
+		this.basketFactory = new BasketFactory<JMLogItemJRso>(5000,1);
+		this.cacheBasket = new BasketFactory<JMLogItemJRso>(1000,5);
 		
 		/*Set<String> children = op.getChildren(Config.MonitorTypesDir, false);
 		if(children != null && !children.isEmpty()) {
@@ -143,12 +143,12 @@ public class LogMonitorClient {
 				Config.getInstanceName()+"_MonitorClientStatuCheck",group);
 		
 		if(sl.hasServer() && !Config.isClientOnly()) {
-			monitorServiceItem = sl.createSrvItem(IMonitorAdapter.class, Config.getNamespace()+"."+group, "0.0.1",
-					IMonitorAdapter.class.getName(),Config.getClientId());
+			monitorServiceItem = sl.createSrvItem(IMonitorAdapterJMSrv.class, Config.getNamespace()+"."+group, "0.0.1",
+					IMonitorAdapterJMSrv.class.getName(),Config.getClientId());
 			of.regist("LogMonitorClientStatuCheckAdapter", statusMonitorAdapter);
 		}
 		
-		ExecutorConfig config = new ExecutorConfig();
+		ExecutorConfigJRso config = new ExecutorConfigJRso();
 		config.setMsMaxSize(10);
 		config.setTaskQueueSize(500);
 		config.setThreadNamePrefix("LogMonitorClient");
@@ -171,7 +171,7 @@ public class LogMonitorClient {
 	}
 
 	
-	public boolean submit2Cache(JMLogItem item) {
+	public boolean submit2Cache(JMLogItemJRso item) {
 
 		if(this.cacheBasket == null || !this.monitorServer.isReady()) {
 			logger.debug("cacheBasket is null or server is not ready");
@@ -188,7 +188,7 @@ public class LogMonitorClient {
 			return false;
 		}
 		
-		IBasket<JMLogItem> b = cacheBasket.borrowWriteBasket(true);
+		IBasket<JMLogItemJRso> b = cacheBasket.borrowWriteBasket(true);
 		if(b == null) {
 			if(this.statusMonitorAdapter != null && this.statusMonitorAdapter.isMonitoralbe()) {
 				this.statusMonitorAdapter.getServiceCounter().add(MC.Ms_Fail2BorrowBasket, 1);
@@ -215,7 +215,7 @@ public class LogMonitorClient {
 	
 	}
 	
-	public boolean readySubmit(JMLogItem item) {
+	public boolean readySubmit(JMLogItemJRso item) {
 		if(!checkerWorking || !this.monitorServer.isReady()) {
 			return false;
 		}
@@ -229,7 +229,7 @@ public class LogMonitorClient {
 			return false;
 		}
 		
-		IBasket<JMLogItem> b = basketFactory.borrowWriteBasket(true);
+		IBasket<JMLogItemJRso> b = basketFactory.borrowWriteBasket(true);
 		if(b == null) {
 			if(this.statusMonitorAdapter != null && this.statusMonitorAdapter.isMonitoralbe()) {
 				this.statusMonitorAdapter.getServiceCounter().add(MC.Ms_Fail2BorrowBasket, 1);
@@ -258,7 +258,7 @@ public class LogMonitorClient {
 	}
 	
 	
-	private boolean checkMaxSize(JMLogItem item) {
+	private boolean checkMaxSize(JMLogItemJRso item) {
 		return getItemSize(item) > this.singleItemMaxSize;
 	}
 
@@ -277,7 +277,7 @@ public class LogMonitorClient {
 		
 		logger.info("Minitor manage work start working!");
 		
-		Set<JMLogItem> items = new HashSet<JMLogItem>();
+		Set<JMLogItemJRso> items = new HashSet<JMLogItemJRso>();
 		int batchSize = 5;
 		
 		int maxSendInterval = 2000;
@@ -310,11 +310,11 @@ public class LogMonitorClient {
 					this.statusMonitorAdapter.getServiceCounter().add(MC.Ms_CheckLoopCnt, 1);
 				}
 				
-				IBasket<JMLogItem> readBasket = this.basketFactory.borrowReadSlot();
+				IBasket<JMLogItemJRso> readBasket = this.basketFactory.borrowReadSlot();
 				if(readBasket == null) {
 					//超过5秒钟的缓存包，强制提交为读状态
-					IBasket<JMLogItem> wb = null;
-					Iterator<IBasket<JMLogItem>> writeIte = this.cacheBasket.iterator(false);
+					IBasket<JMLogItemJRso> wb = null;
+					Iterator<IBasket<JMLogItemJRso>> writeIte = this.cacheBasket.iterator(false);
 					while((wb = writeIte.next()) != null) {
 						if(!wb.isEmpty() && (beginTime - wb.firstWriteTime()) > 2000) {
 							this.cacheBasket.returnWriteBasket(wb, true);//转为读状态
@@ -324,16 +324,16 @@ public class LogMonitorClient {
 					}
 					
 					//beginTime = System.currentTimeMillis();
-					IBasket<JMLogItem> rb = null;
-					Iterator<IBasket<JMLogItem>> readIte = this.cacheBasket.iterator(true);
+					IBasket<JMLogItemJRso> rb = null;
+					Iterator<IBasket<JMLogItemJRso>> readIte = this.cacheBasket.iterator(true);
 					while((rb = readIte.next()) != null ) {
 						if((beginTime - rb.firstWriteTime() > 10000) && packageSize < maxPackageSize) { //超过10秒
-							JMLogItem[] mrs = new JMLogItem[rb.remainding()];
+							JMLogItemJRso[] mrs = new JMLogItemJRso[rb.remainding()];
 							rb.readAll(mrs);
 							cacheBasket.returnReadSlot(rb, true);
 							rb = null;
 							
-							for(JMLogItem mi : mrs) {
+							for(JMLogItemJRso mi : mrs) {
 								int size = getItemSize(mi);
 								if(size > maxPackageSize && mi.getItems().size() > 1) {
 									splitMi(mi,maxPackageSize);
@@ -379,12 +379,12 @@ public class LogMonitorClient {
 					}
 					
 					while(readBasket != null && packageSize < maxPackageSize) {
-						JMLogItem[] mrs = new JMLogItem[readBasket.remainding()];
+						JMLogItemJRso[] mrs = new JMLogItemJRso[readBasket.remainding()];
 						readBasket.readAll(mrs);
 						
 						basketFactory.returnReadSlot(readBasket, true);
 						
-						for(JMLogItem mi : mrs) {
+						for(JMLogItemJRso mi : mrs) {
 							
 							int size = getItemSize(mi);
 							if(size > maxPackageSize && mi.getItems().size() > 1) {
@@ -436,7 +436,7 @@ public class LogMonitorClient {
 						cacheBasket.returnReadSlot(cb, true);
 					}
 */					
-					JMLogItem[] mrs = new JMLogItem[items.size()];
+					JMLogItemJRso[] mrs = new JMLogItemJRso[items.size()];
 					items.toArray(mrs);
 					//System.out.println("submit: " +mrs.length);
 					
@@ -459,12 +459,12 @@ public class LogMonitorClient {
 	}
 	
 	//日志过大，需要分包上传
-	private void splitMi(JMLogItem mi,int packageSize) {
+	private void splitMi(JMLogItemJRso mi,int packageSize) {
 		
-		JMLogItem copy = mi.copy();
+		JMLogItemJRso copy = mi.copy();
 		
 		int size = 0;
-		for(OneLog ol : mi.getItems()) {
+		for(OneLogJRso ol : mi.getItems()) {
 			int len = 0;
 			if(!Utils.isEmpty(ol.getDesc())) {
 				len += ol.getDesc().length();
@@ -486,9 +486,9 @@ public class LogMonitorClient {
 		readySubmit(copy);
 	}
 
-	private int getItemSize(JMLogItem mi) {
+	private int getItemSize(JMLogItemJRso mi) {
 		int size = 13;
-		for(OneLog ol : mi.getItems()) {
+		for(OneLogJRso ol : mi.getItems()) {
 			if(!Utils.isEmpty(ol.getDesc())) {
 				size += ol.getDesc().length();
 			}
@@ -511,13 +511,13 @@ public class LogMonitorClient {
 		return size;
 	}
 
-	private void merge(Set<JMLogItem> items) {
+	private void merge(Set<JMLogItemJRso> items) {
 		
-		Set<JMLogItem> result = new HashSet<>();
-		JMLogItem nullSMMRpcItem = null;
+		Set<JMLogItemJRso> result = new HashSet<>();
+		JMLogItemJRso nullSMMRpcItem = null;
 		
-		for(Iterator<JMLogItem> ite = items.iterator(); ite.hasNext();) {
-			JMLogItem mi = ite.next();
+		for(Iterator<JMLogItemJRso> ite = items.iterator(); ite.hasNext();) {
+			JMLogItemJRso mi = ite.next();
 			ite.remove();
 			if(mi.getSmKey() == null || (mi.getSmKey() != null && mi.getReq() == null)) {
 				//非RPC环境下的事件
@@ -526,7 +526,7 @@ public class LogMonitorClient {
 					//第一个，不用处理，别的合并到这个选项下面
 					continue;
 				}
-				Iterator<OneLog> oiIte = mi.getItems().iterator();
+				Iterator<OneLogJRso> oiIte = mi.getItems().iterator();
 				for(; oiIte.hasNext(); ) {
 					nullSMMRpcItem.addOneItem(oiIte.next());
 				}
@@ -551,9 +551,9 @@ public class LogMonitorClient {
 
 	private class Worker implements Runnable {
 		
-		private JMLogItem[] items = null;
+		private JMLogItemJRso[] items = null;
 		
-		public Worker( JMLogItem[] items) {
+		public Worker( JMLogItemJRso[] items) {
 			this.items = items;
 		}
 		
@@ -617,7 +617,7 @@ public class LogMonitorClient {
 		}
 	}
 	
-	public boolean canSubmit(ServiceMethod sm, Short t) {
+	public boolean canSubmit(ServiceMethodJRso sm, Short t) {
 		if(!this.checkerWorking || monitorServer == null || !monitorServer.isReady()) {
 			return false;
 		}

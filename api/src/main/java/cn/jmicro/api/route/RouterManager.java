@@ -27,7 +27,7 @@ import cn.jmicro.api.JMicroContext;
 import cn.jmicro.api.annotation.Cfg;
 import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Inject;
-import cn.jmicro.api.registry.ServiceItem;
+import cn.jmicro.api.registry.ServiceItemJRso;
 import cn.jmicro.common.CommonException;
 import cn.jmicro.common.Constants;
 import cn.jmicro.common.util.StringUtils;
@@ -45,14 +45,14 @@ public class RouterManager {
 	
 	//@Cfg(value ="/RuleManager/routerSort",defGlobal=true/*,changeListener="addRouteType"*/)
 	private String[] routerTypes = {
-			RouteRule.TYPE_FROM_NONLOGIN_ROUTER,
-			RouteRule.TYPE_FROM_GUEST_ROUTER,
-			RouteRule.TYPE_FROM_ACCOUNT_ROUTER,
-			RouteRule.TYPE_FROM_INSTANCE_ROUTER,
-			RouteRule.TYPE_FROM_INSTANCE_PREFIX_ROUTER,
+			RouteRuleJRso.TYPE_FROM_NONLOGIN_ROUTER,
+			RouteRuleJRso.TYPE_FROM_GUEST_ROUTER,
+			RouteRuleJRso.TYPE_FROM_ACCOUNT_ROUTER,
+			RouteRuleJRso.TYPE_FROM_INSTANCE_ROUTER,
+			RouteRuleJRso.TYPE_FROM_INSTANCE_PREFIX_ROUTER,
 			/*RouteRule.TYPE_FROM_SERVICE_ROUTER,*/
-			RouteRule.TYPE_FROM_TAG_ROUTER,
-			RouteRule.TYPE_FROM_IP_ROUTER,
+			RouteRuleJRso.TYPE_FROM_TAG_ROUTER,
+			RouteRuleJRso.TYPE_FROM_IP_ROUTER,
 	};
 	
 	@Inject
@@ -61,7 +61,7 @@ public class RouterManager {
 	@Inject
 	private RuleManager ruleManager;
 	
-	public Set<ServiceItem> doRoute(Set<ServiceItem> services,String srvName,String method/*,Class<?>[] args*/
+	public Set<ServiceItemJRso> doRoute(Set<ServiceItemJRso> services,String srvName,String method/*,Class<?>[] args*/
 			,String namespace,String version,String transport){
 		
 		String routerSort = JMicroContext.get().getParam(Constants.ROUTER_TYPE, null);
@@ -69,7 +69,7 @@ public class RouterManager {
 		if(StringUtils.isNotEmpty(routerSort)) {
 			routerSort = routerSort.trim();
 			IRouter r = routers.get(routerSort);
-			RouteRule ru = r.getRouteRule();
+			RouteRuleJRso ru = r.getRouteRule();
 			if(r != null && ru != null) {
 				return r.doRoute(ru, services, srvName, method, /*args, */namespace, version, transport);
 			} else {
@@ -81,7 +81,7 @@ public class RouterManager {
 		for(String key: routerTypes) {
 			IRouter r = this.routers.get(key);
 			if(r != null) {
-				RouteRule rr = r.getRouteRule();
+				RouteRuleJRso rr = r.getRouteRule();
 				if(rr != null) {
 					return r.doRoute(rr, services, srvName, method,/* args, */namespace, version, transport);
 				}

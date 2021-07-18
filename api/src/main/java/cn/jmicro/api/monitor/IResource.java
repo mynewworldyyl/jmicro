@@ -3,7 +3,7 @@ package cn.jmicro.api.monitor;
 import java.util.Map;
 import java.util.Set;
 
-import cn.jmicro.api.CfgMetadata;
+import cn.jmicro.api.CfgMetadataJRso;
 
 public interface IResource {
 	
@@ -15,13 +15,13 @@ public interface IResource {
 	//可用大小
 	public static final String KEY_LIMIT_AVAI_SIZE = "limitAvaiSize";
 
-	ResourceData getResource(Map<String,Object> params,String expStr);
+	ResourceDataJRso getResource(Map<String,Object> params,String expStr);
 	
 	boolean isEnable();
 	
 	void setEnable(boolean en);
 	
-	Map<String,Set<CfgMetadata>> metaData();
+	Map<String,Set<CfgMetadataJRso>> metaData();
 	
 	String getResourceName();
 }

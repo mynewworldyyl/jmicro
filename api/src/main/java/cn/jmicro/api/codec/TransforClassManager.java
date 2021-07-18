@@ -62,10 +62,11 @@ public class TransforClassManager {
 			dataOperator.createNodeOrSetData(ROOT, Config.getExportSocketHost(), false);
 		}
 		
-		dataOperator.addChildrenListener(ROOT, (type,path,child,data)->{
+		dataOperator.addChildrenListener(ROOT, (type,path,child)->{
 			if(type == IListener.REMOVE) {
 				//this.update(path,child,data);
 			}else if (type == IListener.ADD) {
+				String data = dataOperator.getData(path+"/"+child);
 				this.update(path,child,data);
 			}
 		});

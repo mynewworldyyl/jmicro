@@ -18,18 +18,18 @@ import cn.jmicro.api.annotation.Service;
 import cn.jmicro.api.basket.BasketFactory;
 import cn.jmicro.api.basket.IBasket;
 import cn.jmicro.api.config.Config;
-import cn.jmicro.api.executor.ExecutorConfig;
+import cn.jmicro.api.executor.ExecutorConfigJRso;
 import cn.jmicro.api.executor.ExecutorFactory;
-import cn.jmicro.api.monitor.IMonitorAdapter;
-import cn.jmicro.api.monitor.IStatisMonitorServer;
+import cn.jmicro.api.monitor.IMonitorAdapterJMSrv;
+import cn.jmicro.api.monitor.IStatisMonitorServerJMSrv;
+import cn.jmicro.api.monitor.JMStatisItemJRso;
 import cn.jmicro.api.monitor.MC;
-import cn.jmicro.api.monitor.JMStatisItem;
 import cn.jmicro.api.monitor.MonitorAndService2TypeRelationshipManager;
-import cn.jmicro.api.monitor.MonitorInfo;
-import cn.jmicro.api.monitor.MonitorServerStatus;
+import cn.jmicro.api.monitor.MonitorInfoJRso;
+import cn.jmicro.api.monitor.MonitorServerStatusJRso;
 import cn.jmicro.api.monitor.ServiceCounter;
 import cn.jmicro.api.objectfactory.IObjectFactory;
-import cn.jmicro.api.registry.ServiceItem;
+import cn.jmicro.api.registry.ServiceItemJRso;
 import cn.jmicro.api.service.ServiceLoader;
 import cn.jmicro.api.utils.TimeUtils;
 import cn.jmicro.common.Constants;
@@ -38,7 +38,7 @@ import cn.jmicro.monitor.statis.config.StatisManager;
 @Component
 @Service(clientId=Constants.NO_CLIENT_ID,version="0.0.1", debugMode=0,monitorEnable=0, 
 logLevel=MC.LOG_WARN, retryCnt=0,limit2Packages="cn.jmicro.api.monitor")
-public class StatisMonitorServerImpl implements IStatisMonitorServer {
+public class StatisMonitorServerImpl implements IStatisMonitorServerJMSrv {
 
 	private final static Logger logger = LoggerFactory.getLogger(StatisMonitorServerImpl.class);
 	
@@ -65,9 +65,9 @@ public class StatisMonitorServerImpl implements IStatisMonitorServer {
 	
 	//private Queue<MRpcItem> cacheItems = new ConcurrentLinkedQueue<>();
 	
-	private BasketFactory<JMStatisItem> basketFactory = null;
+	private BasketFactory<JMStatisItemJRso> basketFactory = null;
 	
-	//private Set<JMStatisItem> sentItems = new HashSet<>();
+	//private Set<JMStatisItemJRso> sentItems = new HashSet<>();
 	
 	private Object cacheItemsLock = new Object();
 	
@@ -83,20 +83,20 @@ public class StatisMonitorServerImpl implements IStatisMonitorServer {
 	@JMethod("ready")
 	public void ready() {
 		
-		ExecutorConfig config = new ExecutorConfig();
+		ExecutorConfigJRso config = new ExecutorConfigJRso();
 		config.setMsMaxSize(60);
 		config.setTaskQueueSize(500);
 		config.setThreadNamePrefix("StatisMonitorServer");
 		
 		executor = of.get(ExecutorFactory.class).createExecutor(config);
-		basketFactory = new BasketFactory<JMStatisItem>(1000,10);
+		basketFactory = new BasketFactory<JMStatisItemJRso>(1000,10);
 		
 		statusAdapter = new MonitorServerStatusAdapter();
 		//statusAdapter.init();
 		of.regist("statisMonitorServerStatusAdapter", statusAdapter);
 		
 		ServiceLoader sl = of.get(ServiceLoader.class);
-		ServiceItem si = sl.createSrvItem(IMonitorAdapter.class, 
+		ServiceItemJRso si = sl.createSrvItem(IMonitorAdapterJMSrv.class, 
 				Config.getNamespace()+".StatisMonitorServer", "0.0.1", null,Config.getClientId());
 		sl.registService(si,statusAdapter);
 		
@@ -107,7 +107,7 @@ public class StatisMonitorServerImpl implements IStatisMonitorServer {
 	@Override
 	@SMethod(timeout=5000,retryCnt=0,needResponse=false,debugMode=0,monitorEnable=0,
 	logLevel=MC.LOG_NO,maxPacketSize=32768,maxSpeed=1000,limitType=Constants.LIMIT_TYPE_LOCAL)
-	public void submit(JMStatisItem[] items) {
+	public void submit(JMStatisItemJRso[] items) {
 		if(items == null || items.length == 0) {
 			/*if(monitoralbe) {
 				sc.add(MonitorConstant.Ms_SubmitCnt, 1);
@@ -127,7 +127,7 @@ public class StatisMonitorServerImpl implements IStatisMonitorServer {
 		
 		int pos = 0;
 		while(pos < items.length) {
-			IBasket<JMStatisItem> b = basketFactory.borrowWriteBasket(true);
+			IBasket<JMStatisItemJRso> b = basketFactory.borrowWriteBasket(true);
 			if(b != null) {
 				int re = b.remainding();
 				int len = re;
@@ -183,9 +183,9 @@ public class StatisMonitorServerImpl implements IStatisMonitorServer {
 		while (true) {
 			try {
 				
-				IBasket<JMStatisItem> b = null;
+				IBasket<JMStatisItemJRso> b = null;
 				while((b = basketFactory.borrowReadSlot()) != null) {
-					JMStatisItem[] mis = new JMStatisItem[b.remainding()];
+					JMStatisItemJRso[] mis = new JMStatisItemJRso[b.remainding()];
 					b.readAll(mis);
 					ri.cacheItems.addAll(Arrays.asList(mis));
 					if(!basketFactory.returnReadSlot(b, true)) {
@@ -256,7 +256,7 @@ public class StatisMonitorServerImpl implements IStatisMonitorServer {
 				JMicroContext.get().setBoolean(JMicroContext.IS_MONITORENABLE, false);
 				JMicroContext.get().setBoolean(Constants.FROM_MONITOR, true);
 				
-				JMStatisItem[] items = new JMStatisItem[ri.sendItems.size()];
+				JMStatisItemJRso[] items = new JMStatisItemJRso[ri.sendItems.size()];
 				ri.sendItems.toArray(items);
 				
 				if(openDebug) {
@@ -288,16 +288,16 @@ public class StatisMonitorServerImpl implements IStatisMonitorServer {
 		
 		//public Short[] types = null;
 		
-		public List<JMStatisItem> cacheItems = new ArrayList<>();
+		public List<JMStatisItemJRso> cacheItems = new ArrayList<>();
 		
-		public List<JMStatisItem> sendItems = new ArrayList<>();
+		public List<JMStatisItemJRso> sendItems = new ArrayList<>();
 		
 		public long lastSendTime = 0;
 		
 		public boolean isWorking = false;
 	}
 	
-	public class MonitorServerStatusAdapter implements IMonitorAdapter{
+	public class MonitorServerStatusAdapter implements IMonitorAdapterJMSrv{
 		
 		public final Short[] TYPES  = {
 				MC.Ms_ReceiveItemCnt,MC.Ms_TaskSuccessItemCnt,MC.Ms_CheckLoopCnt,
@@ -320,14 +320,14 @@ public class StatisMonitorServerImpl implements IStatisMonitorServer {
 		}
 		
 		@Override
-		public MonitorServerStatus status() {
+		public MonitorServerStatusJRso status() {
 			if(!monitoralbe) {
 				enableMonitor(true);
 			}
 			
 			lastStatusTime = TimeUtils.getCurTime();
 			
-			MonitorServerStatus s = new MonitorServerStatus(); 
+			MonitorServerStatusJRso s = new MonitorServerStatusJRso(); 
 			//s.setInstanceName(Config.getInstanceName());
 			//s.setSubsriberSize(regSubs.size());
 			//s.getSubsriber2Types().putAll(this.monitorManager.getMkey2Types());
@@ -375,8 +375,8 @@ public class StatisMonitorServerImpl implements IStatisMonitorServer {
 		}
 
 		@Override
-		public MonitorInfo info() {
-			MonitorInfo info = new MonitorInfo();
+		public MonitorInfoJRso info() {
+			MonitorInfoJRso info = new MonitorInfoJRso();
 			info.setGroup(GROUP);
 			info.setTypeLabels(typeLabels);
 			info.setTypes(TYPES);
@@ -393,8 +393,8 @@ public class StatisMonitorServerImpl implements IStatisMonitorServer {
 		
 	}
 	
-	private void log(JMStatisItem[] sis) {
-		for(JMStatisItem si : sis) {
+	private void log(JMStatisItemJRso[] sis) {
+		for(JMStatisItemJRso si : sis) {
 			for(Short type : si.getTypeStatis().keySet()) {
 				StringBuffer sb = new StringBuffer();
 				sb.append("GOT: " + MC.MONITOR_VAL_2_KEY.get(type));

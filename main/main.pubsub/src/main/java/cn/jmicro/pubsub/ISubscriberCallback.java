@@ -17,8 +17,8 @@
 package cn.jmicro.pubsub;
 
 import cn.jmicro.api.async.IPromise;
-import cn.jmicro.api.pubsub.PSData;
-import cn.jmicro.api.registry.ServiceMethod;
+import cn.jmicro.api.pubsub.PSDataJRso;
+import cn.jmicro.api.registry.ServiceMethodJRso;
 
 /**
  * 
@@ -27,10 +27,10 @@ import cn.jmicro.api.registry.ServiceMethod;
  */
 public interface ISubscriberCallback {
 
-	IPromise<PSData[]>  onMessage(PSData[] item);
+	IPromise<PSDataJRso[]>  onMessage(PSDataJRso[] item);
 	
 	String info();
 	
-	ServiceMethod getSm();
+	ServiceMethodJRso getSm();
 	
 }

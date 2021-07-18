@@ -3,7 +3,8 @@ import rpc from "@/rpc/rpcbase";
 export default {
 
   hello: function (msg) {
-    return rpc.callRpcWithParams(this.sn, this.ns, this.v, 'hello', [msg]);
+    let req = rpc.creq(this.sn,this.ns,this.v, 'hello', [msg])
+    return rpc.callRpc(req);
   },
 
   sn:'cn.expjmicro.example.api.rpc.ISimpleRpc',

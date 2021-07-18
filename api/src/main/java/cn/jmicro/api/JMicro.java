@@ -84,18 +84,30 @@ public class JMicro {
 				}
 			}
 
-			if (!isLogInit) {
+			if(!isLogInit) {
 				StaticLoggerBinder.getSingleton();
 			}
 
-			ClassLoader cl = JMicro.class.getClassLoader();
-			if (!cl.getClass().getName().equals(RpcClassLoader.class.getName())) {
-				cl = Thread.currentThread().getContextClassLoader();
-				if (!cl.getClass().getName().equals(RpcClassLoader.class.getName())) {
+			ClassLoader cl = null;
+			ClassLoader parent = JMicro.class.getClassLoader();
+			if (!parent.getClass().getName().equals(RpcClassLoader.class.getName())) {
+				parent = Thread.currentThread().getContextClassLoader();
+				if (!parent.getClass().getName().equals(RpcClassLoader.class.getName())) {
 					cl = new RpcClassLoader(JMicro.class.getClassLoader());
 				}
 			}
+			
+			if(cl == null) cl = parent;
+			
 			Thread.currentThread().setContextClassLoader(cl);
+			
+			/*Class<?> cls = cl.loadClass("cn.jmicro.api.objectfactory.AbstractClientServiceProxyHolder");
+			Class<?> itemFromRpcClassLoader = cl.loadClass("cn.jmicro.api.registry.ServiceItemJRso");
+			Class<?> itemFromParent = parent.loadClass("cn.jmicro.api.registry.ServiceItemJRso");
+			parent.loadClass("cn.jmicro.api.registry.ServiceItemJRso");
+			
+			System.out.println(cls.getName());*/
+			
 			Class<?> emClass = cl.loadClass("cn.jmicro.api.EnterMain");
 			Object em = emClass.newInstance();
 			Method m = emClass.getMethod("getObjectFactoryAndStart", new String[0].getClass());

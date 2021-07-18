@@ -93,7 +93,7 @@
     
     const cid = 'warningConfig';
 
-    const sn = 'cn.jmicro.mng.api.ILogWarningConfig';
+    const sn = 'cn.jmicro.mng.api.ILogWarningConfigJMSrv';
     const ns = cons.NS_MNG;
     const v = '0.0.1';
 
@@ -182,10 +182,10 @@
                         self.errMsg = '版本不能为空';
                         return;
                     }
-                    self.cfg.service = "cn.jmicro.api.monitor.ILogWarning";
+                    self.cfg.service = "cn.jmicro.api.monitor.ILogWarningJMSrv";
                     self.errMsg = '';
                     self.cfg.cfgParams = self.cfg.service+'##' +self.cfg.namespace+'##'+self.cfg.version
-                        +'########warn##cn.jmicro.api.monitor.MRpcLogItem';
+                        +'########warn##cn.jmicro.api.monitor.MRpcLogItemJRso';
                 }else if(self.cfg.type == 2 || self.cfg.type == 4) {
                     if(!self.cfg.cfgParams || self.cfg.cfgParams.length == 0) {
                         self.errMsg =  self.cfg.type == 2 ? '数据库表名不能为空':'文件名不能为空';

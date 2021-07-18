@@ -2,11 +2,14 @@
     <div class="JPublicKeyList">
 
         <table class="configItemTalbe" width="99%">
-            <thead><tr><td>{{'Prefix'|i18n}}</td><td style="width:550px">{{'PublicKey'|i18n}}</td>
-                <td>{{'CreateTime'|i18n}}</td><td>{{'Creater'|i18n}}</td>
-                <td>{{'Enable'|i18n}}</td><td>{{'Operator'|i18n}}</td></tr>
+            <thead><tr><td style="width:50px">{{'id'|i18n}}</td><td style="width:50px">{{'clientId'|i18n}}</td>
+                <td style="width:190px">{{'Prefix'|i18n}}</td>
+                <td style="min-width:300px">{{'PublicKey'|i18n}}</td>
+                <td style="width:190px">{{'CreateTime'|i18n}}</td><td style="width:90px">{{'Creater'|i18n}}</td>
+                <td style="width:45px">{{'Enable'|i18n}}</td><td style="width:120px">{{'Operator'|i18n}}</td></tr>
             </thead>
             <tr v-for="a in keyList" :key="a.id">
+                <td>{{ a.id }}</td> <td>{{ a.clientId }}</td>
                 <td>{{a.instancePrefix}}</td> <td>{{a.publicKey}}</td>
                 <td>{{a.createdTime  | formatDate}}</td><td>{{a.creater}}</td> <td>{{a.enable}}</td>
                 <td>&nbsp;
@@ -60,7 +63,7 @@
     import cons from "@/rpc/constants"
 
     const cid = 'publicKeyList';
-    const sn = 'cn.jmicro.api.security.ISecretService';
+    const sn = 'cn.jmicro.api.security.ISecretServiceJMSrv';
     const ns = cons.NS_SECURITY;
     const v = '0.0.1';
 

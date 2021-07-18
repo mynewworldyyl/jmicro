@@ -180,7 +180,7 @@
 	 
 	<root>	
 	    <level value="DEBUG"/>
-	   <!--  <appender-ref ref="NORMALLOG"/> -->
+	    <appender-ref ref="NORMALLOG"/>
 		<appender-ref ref="CONSOLE"/>
 	</root>
 	

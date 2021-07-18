@@ -22,7 +22,7 @@ import org.slf4j.LoggerFactory;
 
 import cn.jmicro.api.Holder;
 import cn.jmicro.api.JMicroContext;
-import cn.jmicro.api.Resp;
+import cn.jmicro.api.RespJRso;
 import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Inject;
 import cn.jmicro.api.annotation.Interceptor;
@@ -35,7 +35,7 @@ import cn.jmicro.api.net.AbstractInterceptor;
 import cn.jmicro.api.net.IInterceptor;
 import cn.jmicro.api.net.IRequest;
 import cn.jmicro.api.net.IRequestHandler;
-import cn.jmicro.api.registry.ServiceMethod;
+import cn.jmicro.api.registry.ServiceMethodJRso;
 import cn.jmicro.api.tx.ICurTxSessionFactory;
 import cn.jmicro.api.tx.TxConstants;
 import cn.jmicro.api.utils.TimeUtils;
@@ -65,7 +65,7 @@ public class MybatisInterceptor extends AbstractInterceptor implements IIntercep
 	public IPromise<Object> intercept(IRequestHandler handler, IRequest req) throws RpcException {
 		final IPromise<Object> p;
 		
-		ServiceMethod sm = JMicroContext.get().getParam(Constants.SERVICE_METHOD_KEY, null);
+		ServiceMethodJRso sm = JMicroContext.get().getParam(Constants.SERVICE_METHOD_KEY, null);
 		if(sm == null || sm.getTxType() == TxConstants.TYPE_TX_NO) {
 			return handler.onRequest(req);
 		}
@@ -85,7 +85,7 @@ public class MybatisInterceptor extends AbstractInterceptor implements IIntercep
 				if(tid == null) {
 					if(!ltr.begin(sm)) {
 						throw new RpcException(req,"fail to create transaction context,"+
-								", Method: " + sm.getKey().toKey(true, true, true),Resp.CODE_TX_FAIL);
+								", Method: " + sm.getKey().fullStringKey(),RespJRso.CODE_TX_FAIL);
 					}
 					tid = JMicroContext.get().getLong(TxConstants.TX_ID, null);
 					txOwner.set(true);
@@ -93,12 +93,12 @@ public class MybatisInterceptor extends AbstractInterceptor implements IIntercep
 				
 				if(tid == null) {
 					throw new RpcException(req,"transaction id not found,"+
-							", Method: " + sm.getKey().toKey(true, true, true),Resp.CODE_TX_FAIL);
+							", Method: " + sm.getKey().fullStringKey(),RespJRso.CODE_TX_FAIL);
 				}
 				
 				if(!ltr.takePartIn(tid,sm.getTxPhase(),s)) {
 					throw new RpcException(req,"fail to take part in transaction: " + tid+
-							", Method: " + sm.getKey().toKey(true, true, true),Resp.CODE_TX_FAIL);
+							", Method: " + sm.getKey().fullStringKey(),RespJRso.CODE_TX_FAIL);
 				}
 				txid.set(tid);
 			} else {
@@ -111,8 +111,8 @@ public class MybatisInterceptor extends AbstractInterceptor implements IIntercep
 			if(sm.getTxType() == TxConstants.TYPE_TX_LOCAL) {
 				p.success((rst,cxt)->{
 					boolean commit = true;
-					if(rst != null && rst instanceof Resp) {
-						Resp r = (Resp)rst;
+					if(rst != null && rst instanceof RespJRso) {
+						RespJRso r = (RespJRso)rst;
 						if(r.getCode() != 0) {
 							commit = false;
 						}
@@ -151,13 +151,13 @@ public class MybatisInterceptor extends AbstractInterceptor implements IIntercep
 					}
 					
 					boolean commit = true;
-					if(rst != null && rst instanceof Resp) {
-						Resp r = (Resp)rst;
+					if(rst != null && rst instanceof RespJRso) {
+						RespJRso r = (RespJRso)rst;
 						if(r.getCode() != 0) {
 							commit = false;
 							if(!commit && LG.isLoggable(MC.LOG_WARN)) {
 								LG.log(MC.LOG_WARN, TAG, "Rollback transaction: " + txid.get()
-								+",Method: " + sm.getKey().toKey(true, true, true));
+								+",Method: " + sm.getKey().fullStringKey());
 							}
 							
 							if(txOwner.get()) {
@@ -181,7 +181,7 @@ public class MybatisInterceptor extends AbstractInterceptor implements IIntercep
 					
 					if(!doVote(sm,txid.get(),commit)) {
 						if(asyP.get() != null) {
-							asyP.get().setFail(Resp.CODE_TX_FAIL, "vote fail");
+							asyP.get().setFail(RespJRso.CODE_TX_FAIL, "vote fail");
 							//投票失败,不再需要等事务回调
 							asyP.get().done();
 						}
@@ -192,7 +192,7 @@ public class MybatisInterceptor extends AbstractInterceptor implements IIntercep
 					}
 				}).fail((code,msg,cxt)->{
 					String msg0 = "Rollback transaction: " + txid.get()+", Cost: "+(TimeUtils.getCurTime(true) - bt)
-					+" with error "+msg+" ,Method: " + sm.getKey().toKey(true, true, true);
+					+" with error "+msg+" ,Method: " + sm.getKey().fullStringKey();
 					LG.log(MC.LOG_WARN, TAG, msg0);
 					logger.warn(msg0);
 					
@@ -217,7 +217,8 @@ public class MybatisInterceptor extends AbstractInterceptor implements IIntercep
 			}
 			return p;
 		} catch (Throwable e) {
-			String msg = "rollback transaction "+txid.get()+", Cost: "+(TimeUtils.getCurTime(true) - bt)+",Method: " + sm.getKey().toKey(true, true, true);
+			String msg = "rollback transaction "+txid.get()+", Cost: "+(TimeUtils.getCurTime(true) - bt)
+					+",Method: " + sm.getKey().fullStringKey();
 			logger.error(msg,e);
 			LG.log(MC.LOG_ERROR, TAG, msg,e);
 			if(sm.getTxType() == TxConstants.TYPE_TX_LOCAL) {
@@ -227,13 +228,13 @@ public class MybatisInterceptor extends AbstractInterceptor implements IIntercep
 				if(txOwner.get()) {
 					ownerEnd(sm,txid.get(),null);
 					if(asyP.get() != null) {
-						asyP.get().setFail(Resp.CODE_TX_FAIL, "vote fail");
+						asyP.get().setFail(RespJRso.CODE_TX_FAIL, "vote fail");
 						//投票失败,不再需要等事务回调
 						asyP.get().done();
 					}
 				}
 			}
-			throw new RpcException(req,e,Resp.CODE_TX_FAIL);
+			throw new RpcException(req,e,RespJRso.CODE_TX_FAIL);
 		}finally {
 			if(s != null) {
 				curSqlSessionManager.remove();
@@ -241,23 +242,23 @@ public class MybatisInterceptor extends AbstractInterceptor implements IIntercep
 		}
 	}
 	
-	private boolean doVote(ServiceMethod sm,Long tid,boolean commit) {
+	private boolean doVote(ServiceMethodJRso sm,Long tid,boolean commit) {
 		if(tid == null) {
-			LG.log(MC.LOG_ERROR, TAG, "Transaction ID is NULL,Method: " + sm.getKey().toKey(true, true, true));
+			LG.log(MC.LOG_ERROR, TAG, "Transaction ID is NULL,Method: " + sm.getKey().fullStringKey());
 			return false;
 		}
 		
 		if(!ltr.vote(tid, commit)) {
 			//投票失败，本地直接回滚事务
 			//ltr.rollback(tid);
-			LG.log(MC.LOG_ERROR, TAG, "Fail to vote txid: " + tid+",Method: " + sm.getKey().toKey(true, true, true));
+			LG.log(MC.LOG_ERROR, TAG, "Fail to vote txid: " + tid+",Method: " + sm.getKey().fullStringKey());
 			return false;
 		}
 		return true;
 	}
 			
 	
-	private void ownerEnd(ServiceMethod sm,Long tid,PromiseImpl<Object> asyP) {
+	private void ownerEnd(ServiceMethodJRso sm,Long tid,PromiseImpl<Object> asyP) {
 		if(LG.isLoggable(MC.LOG_INFO)) {
 			String msg = "Wait tx finish txid: " + JMicroContext.get().getLong(TxConstants.TX_ID, -1L);
 			LG.log(MC.LOG_INFO, TAG, msg);

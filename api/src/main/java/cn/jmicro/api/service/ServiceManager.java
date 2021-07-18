@@ -31,21 +31,19 @@ import cn.jmicro.api.annotation.Cfg;
 import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.JMethod;
 import cn.jmicro.api.config.Config;
-import cn.jmicro.api.executor.IExecutorInfo;
-import cn.jmicro.api.monitor.IMonitorAdapter;
-import cn.jmicro.api.monitor.IMonitorDataSubscriber;
+import cn.jmicro.api.executor.IExecutorInfoJMSrv;
+import cn.jmicro.api.monitor.IMonitorAdapterJMSrv;
+import cn.jmicro.api.monitor.IMonitorDataSubscriberJMSrv;
 import cn.jmicro.api.monitor.LG;
 import cn.jmicro.api.monitor.MC;
-import cn.jmicro.api.raft.IChildrenListener;
 import cn.jmicro.api.raft.IDataListener;
 import cn.jmicro.api.raft.IDataOperator;
 import cn.jmicro.api.registry.IServiceListener;
-import cn.jmicro.api.registry.ServiceItem;
-import cn.jmicro.api.registry.ServiceMethod;
-import cn.jmicro.api.registry.UniqueServiceKey;
-import cn.jmicro.api.registry.UniqueServiceMethodKey;
+import cn.jmicro.api.registry.ServiceItemJRso;
+import cn.jmicro.api.registry.ServiceMethodJRso;
+import cn.jmicro.api.registry.UniqueServiceKeyJRso;
+import cn.jmicro.api.registry.UniqueServiceMethodKeyJRso;
 import cn.jmicro.api.security.PermissionManager;
-import cn.jmicro.api.utils.TimeUtils;
 import cn.jmicro.common.CommonException;
 import cn.jmicro.common.Constants;
 import cn.jmicro.common.Utils;
@@ -68,19 +66,25 @@ public class ServiceManager {
 	private static final Set<String> excludeServices = new HashSet<>();
 	
 	static {
-		excludeServices.add(IExecutorInfo.class.getName());
+		excludeServices.add(IExecutorInfoJMSrv.class.getName());
 		excludeServices.add("cn.jmicro.api.choreography.IAgentProcessService");
-		excludeServices.add(IMonitorDataSubscriber.class.getName());
-		excludeServices.add(IMonitorAdapter.class.getName());
+		excludeServices.add(IMonitorDataSubscriberJMSrv.class.getName());
+		excludeServices.add(IMonitorAdapterJMSrv.class.getName());
 	}
 	
-	//服务实例级列表
-	private Map<String,ServiceItem> path2SrvItems = new HashMap<>();
+	private String parent = null;
 	
-	private Map<Integer,ServiceMethod> methodHash2Method = new HashMap<>();
+	private Map<String,UniqueServiceKeyJRso> allPaths = new HashMap<>();
+	
+	//服务实例级列表
+	private Map<String,ServiceItemJRso> path2SrvItems = new HashMap<>();
+
+	private Map<String,Set<UniqueServiceMethodKeyJRso>> service2Methods = new HashMap<>();
+	
+	private Map<Integer,ServiceMethodJRso> methodHash2Method = new HashMap<>();
 	
 	//服务hash值
-	private Map<String,Integer> path2Hash = new HashMap<>();
+	//private Map<String,Integer> path2Hash = new HashMap<>();
 	
 	//服务监听器，监听特定路径的服务
 	private Map<String,Set<IServiceListener>> serviceListeners = Collections.synchronizedMap(new HashMap<>());
@@ -88,7 +92,7 @@ public class ServiceManager {
 	//监听全部服务
 	private Set<IServiceListener> listeners = new HashSet<>();
 	
-	private IDataOperator dataOperator;
+	private IDataOperator op;
 	
 	@Cfg(value="/includeServices",toValType=Cfg.VT_SPLIT)
 	private Set<String> includeServices = new HashSet<>();
@@ -99,7 +103,17 @@ public class ServiceManager {
 	@Cfg("/gatewayModel")
 	private boolean gatewayModel = false;
 	
-	private ReentrantReadWriteLock rwLocker = new ReentrantReadWriteLock();
+	//是否加载全部服务元数据
+	@Cfg("/eagerLoad")
+	private boolean eagLoad = false;
+	
+	private ReentrantReadWriteLock path2SrvItemsLocker = new ReentrantReadWriteLock();
+	
+	private ReentrantReadWriteLock allPathsLocker = new ReentrantReadWriteLock();
+	
+	private ReentrantReadWriteLock service2MethodsLocker = new ReentrantReadWriteLock();
+	
+	private ReentrantReadWriteLock methodHash2MethodLocker = new ReentrantReadWriteLock();
 
 	/*private INodeListener nodeListener = new INodeListener(){
 		public void nodeChanged(int type, String path,String data){
@@ -124,16 +138,17 @@ public class ServiceManager {
 	};
 	
 	//全局服务配置数据监听器
-	private IDataListener cfgDataListener = new IDataListener(){
+	/*private IDataListener cfgDataListener = new IDataListener(){
 		@Override
 		public void dataChanged(String path, String data) {
 			updateItemData(path,data,true);
 		}
-	};
+	};*/
 	
 	@JMethod("init")
 	public void init() {
-		dataOperator.addListener((state)->{
+		parent = Config.getRaftBasePath(Config.ServiceRegistDir);
+		op.addListener((state)->{
 			if(Constants.CONN_CONNECTED == state) {
 				logger.info("CONNECTED, reflesh children");
 				refleshChildren();
@@ -146,42 +161,76 @@ public class ServiceManager {
 		});
 		
 		logger.info("add listener");
-		dataOperator.addChildrenListener(Config.getRaftBasePath(Config.ServiceRegistDir), new IChildrenListener() {
-			@Override
-			public void childrenChanged(int type,String parent, String child,String data) {
-				String p = parent+"/"+child;
-				if(IListener.ADD == type) {
-					if(openDebug) {
-						logger.debug("Service add,path:{}",p.substring(Config.getRaftBasePath(Config.ServiceRegistDir).length()+1));
-					}
-					childrenAdd(p,data);
-				}else if(IListener.REMOVE == type) {
-					logger.debug("Service remove, path:{}",p.substring(Config.getRaftBasePath(Config.ServiceRegistDir).length()+1));
-					if(path2Hash.containsKey(p)) {
-						serviceRemove(p);
-					}
-				}else if(IListener.DATA_CHANGE == type){
-					logger.debug("Invalid service data change event, path:{}",p.substring(Config.getRaftBasePath(Config.ServiceRegistDir).length()+1));
+		op.addChildrenListener(parent, (type,parent,child)-> {
+			if(IListener.ADD == type) {
+				if(openDebug) {
+					logger.debug("Service add,path:{}",child);
 				}
+				childrenAdd(child);
+			}else if(IListener.REMOVE == type) {
+				logger.debug("Service remove, path:{}",child);
+				allPaths.remove(child);
+				if(path2SrvItems.containsKey(child)) {
+					serviceRemove(child);
+				}
+			}else if(IListener.DATA_CHANGE == type){
+				logger.debug("Invalid service data change event, path:{}",child);
 			}
 		});
-		refleshChildren();
+		//refleshChildren();
 	}
 	
 	private void refleshChildren() {
-		Set<String> children = this.dataOperator.getChildren(Config.getRaftBasePath(Config.ServiceRegistDir),true);
+		if(!this.eagLoad && path2SrvItems.isEmpty()) {
+			return;
+		}
+		
+		Set<String> children = new HashSet<String>();
+		if(eagLoad) {
+			children = this.op.getChildren(Config.getRaftBasePath(parent),true);
+		}else {
+			children.addAll(this.path2SrvItems.keySet());
+		}
+		
+		logger.warn("clean cache data!");
+		
+		path2SrvItems.clear();
+		allPaths.clear();
+		service2Methods.clear();
+		methodHash2Method.clear();
+		
 		for(String child : children) {
-			String path = Config.getRaftBasePath(Config.ServiceRegistDir)+"/"+child;
-			String data = this.dataOperator.getData(path);
-			childrenAdd(path,data);
+			childrenAdd(child);
+		}
+	}
+	
+	private void parseService2Method(ServiceItemJRso item) {
+		
+		ReentrantReadWriteLock.ReadLock lp = service2MethodsLocker.readLock();
+		try {
+			lp.lock();
+			String srvKey = item.serviceID();
+			Set<UniqueServiceMethodKeyJRso> methods = this.service2Methods.get(srvKey);
+			if(methods == null) {
+				methods = new HashSet<>();
+				service2Methods.put(srvKey,methods);
+			}
+			methods.clear();
+			for(ServiceMethodJRso m : item.getMethods()) {
+				methods.add(m.getKey());
+			}
+		}finally {
+			lp.unlock();
 		}
 	}
 
-	protected void childrenAdd(String path, String data) {
-		ServiceItem si = this.fromJson(data);
+	protected void childrenAdd(String child) {
+		if(this.path2SrvItems.containsKey(child)) return;
 		
-		if(si == null){
-			logger.warn("Item NULL,path:{},data:{}",path,data);
+		UniqueServiceKeyJRso key = UniqueServiceKeyJRso.fromKey(child);
+		
+		if(key == null){
+			logger.warn("Key NULL,path:{}",child);
 			return;
 		}
 		
@@ -189,41 +238,105 @@ public class ServiceManager {
 			logger.debug("test debug");
 		}*/
 		
-		if(!PermissionManager.checkClientPermission(Config.getClientId(), si.getClientId())) {
+		if(!PermissionManager.checkClientPermission(Config.getClientId(), key.getClientId())) {
 			//logger.info("No permisstion for: " + path);
+			//this.allPaths.put(child, false);
 			return;
 		}
 		
-		if(logger.isInfoEnabled()) {
-			logger.info("Remote service add: " + path);
+		//logger.info("{}",this.toString());
+		ReentrantReadWriteLock.WriteLock l = allPathsLocker.writeLock();
+		try {
+			l.lock();
+			this.allPaths.put(child, key);
+		}finally {
+			l.unlock();
 		}
-		
 		
 		//从配置服务合并
 		//this.persisFromConfig(i);
 		//加载时间
-		si.setLoadTime(TimeUtils.getCurTime());
-		
-		boolean flag = this.path2Hash.containsKey(path);
-		
-		if(!this.isChange(si, data, path)) {
-			logger.warn("Service Item no change {}",path);
-			return;
+		//si.setLoadTime(TimeUtils.getCurTime());
+		ServiceItemJRso osi = this.path2SrvItems.get(child);
+		if(osi == null && !eagLoad) {
+			if(logger.isInfoEnabled()) {
+				logger.info("Lazy load service data: " + child);
+			}
+			loadMethodHash(key,null);
+			return; //延时到使用时加载
 		}
 		
-		if(!flag) {
-			//logger.info("Service Add: {}",path.substring(Config.ServiceRegistDir.length()));
-			this.notifyServiceChange(IServiceListener.ADD, si,path);
-			//dataOperator.addNodeListener(path, nodeListener);
-			dataOperator.addDataListener(path, this.dataListener);
-			//dataOperator.addDataListener(i.path(Config.ServiceItemCofigDir), this.cfgDataListener);
-		} else {
-			logger.info("Service add event but exists: {}",path);
-			this.notifyServiceChange(IServiceListener.DATA_CHANGE, si,path);
-		}
+		/*ReentrantReadWriteLock.ReadLock lp = path2SrvItemsLocker.readLock();
+		try {
+			lp.lock();
+		}finally {
+			lp.unlock();
+		}*/
+		
+		loadItem(child);
 		
 	}
 	
+	private void loadMethodHash(UniqueServiceKeyJRso key,String siData) {
+		
+		if(!this.needCacheHashMethod(key)) {
+			return;
+		}
+		
+		String path = path(key.fullStringKey());
+		if(siData == null) {
+			siData = op.getData(path);
+			if(siData == null) {
+				logger.error("Null service data: " + key.fullStringKey());
+				return;
+			}
+		}
+		
+		ServiceItemJRso si = JsonUtils.getIns().fromJson(siData,ServiceItemJRso.class);
+		
+		if(this.needCacheHashMethod(key,si.isExternal())) {
+			Set<Integer> methodHash = key.getMethodHash();
+			for(ServiceMethodJRso sm : si.getMethods()) {
+				methodHash.add(sm.getKey().getSnvHash());
+			}
+			notifyServiceChange(IServiceListener.ADD, si.getKey(),si,key.fullStringKey());
+			op.addDataListener(path, this.dataListener);
+		}
+		
+	}
+
+	private boolean loadItem(String child) {
+		//已经加载，判断是否需要更新
+		String path = path(child);
+		String data = this.op.getData(path);
+		
+		if(!isChange(data, child)) {
+			logger.warn("Service Item no change {}",child);//没数据变动
+			return false;
+		}
+		
+		ServiceItemJRso si = JsonUtils.getIns().fromJson(data,ServiceItemJRso.class);
+		ReentrantReadWriteLock.ReadLock lp = path2SrvItemsLocker.readLock();
+		try {
+			lp.lock();
+			this.path2SrvItems.put(child,si);
+		}finally {
+			lp.unlock();
+		}
+		
+		this.parseService2Method(si);
+		
+		if(logger.isInfoEnabled()) {
+			logger.info("Load service data: {}",child);
+		}
+		
+		notifyServiceChange(IServiceListener.ADD, si.getKey(),si,child);
+		
+		op.addDataListener(path, this.dataListener);
+		
+		return true;
+	}
+
 	public void addServiceListener(String srvPath,IServiceListener lis) {
 		Map<String,Set<IServiceListener>> serviceListeners = this.serviceListeners;
 		if(serviceListeners.containsKey(srvPath)){
@@ -247,9 +360,9 @@ public class ServiceManager {
 			serviceListeners.put(srvPath, l);
 		}
 
-		ServiceItem si = this.path2SrvItems.get(srvPath);
+		UniqueServiceKeyJRso si = this.allPaths.get(srvPath);
 		if(si != null) {
-			lis.serviceChanged(IServiceListener.ADD, si);
+			lis.serviceChanged(IServiceListener.ADD, si,this.path2SrvItems.get(srvPath));
 		}
 	}
 	
@@ -275,17 +388,15 @@ public class ServiceManager {
 	
 	public void addListener(IServiceListener lis) {
 		if(!this.listeners.contains(lis)) {
-			if(!path2SrvItems.isEmpty()) {
-				ReentrantReadWriteLock.ReadLock l = rwLocker.readLock();
+			if(!this.allPaths.isEmpty()) {
+				ReentrantReadWriteLock.ReadLock l = this.allPathsLocker.readLock();
 				try {
 					l.lock();
-					for(ServiceItem si : path2SrvItems.values()) {
-						lis.serviceChanged(IServiceListener.ADD, si);
+					for(UniqueServiceKeyJRso siKey : allPaths.values()) {
+						lis.serviceChanged(IServiceListener.ADD, siKey,this.path2SrvItems.get(siKey.fullStringKey()));
 					}
 				} finally {
-					if(l != null) {
-						l.unlock();
-					}
+					l.unlock();
 				}
 			}
 			
@@ -305,37 +416,21 @@ public class ServiceManager {
 	}
 	
 	public void setDataOperator(IDataOperator dataOperator) {
-		this.dataOperator = dataOperator;
+		this.op = dataOperator;
 	}
 	
-	public ServiceMethod checkConflictServiceMethodByHash(int hash,String smKey) {
+	public UniqueServiceMethodKeyJRso checkConflictServiceMethodByHash(int hash,String smKey) {
 		if(!this.methodHash2Method.containsKey(hash)) {
 			return null;
 		}
 		
-		for(ServiceItem esi : path2SrvItems.values()) {
-			for(ServiceMethod esm : esi.getMethods()) {
-				if(hash == esm.getKey().getSnvHash() && 
-					!smKey.equals(esm.getKey().toKey(false, false, false))) {
-					return esm;
-				}
-			}
-		}
-		return null;
-	}
-	
-	public ServiceMethod getServiceMethodByHash(int hash) {
-		return this.methodHash2Method.get(hash);
-	}
-	
-	public ServiceMethod getServiceMethodWithHashBySearch(int hash) {
-		ReentrantReadWriteLock.ReadLock l = rwLocker.readLock();
+		ReentrantReadWriteLock.ReadLock l = service2MethodsLocker.readLock();
 		try {
 			l.lock();
-			for(ServiceItem i : path2SrvItems.values()) {
-				for(ServiceMethod s : i.getMethods()) {
-					if(s.getKey().getSnvHash() == hash) {
-						return s;
+			for(Set<UniqueServiceMethodKeyJRso> methods : service2Methods.values()) {
+				for(UniqueServiceMethodKeyJRso esi : methods) {
+					if(hash == esi.getSnvHash() && !smKey.equals(esi.methodID())) {
+						return esi;
 					}
 				}
 			}
@@ -347,45 +442,116 @@ public class ServiceManager {
 		return null;
 	}
 	
-	public void updateOrCreate(ServiceItem item,String path,boolean isel) {
+	public ServiceMethodJRso getServiceMethodByHash(int hash) {
+		ServiceMethodJRso sm = methodHash2Method.get(hash);
+		if(sm != null) return sm;
+		
+		ReentrantReadWriteLock.ReadLock l = allPathsLocker.readLock();
+		UniqueServiceKeyJRso siKey = null;
+		try {
+			//找方法对应的服务键
+			l.lock();
+			for(UniqueServiceKeyJRso sik : allPaths.values()) {
+				if(sik.getMethodHash().contains(hash)) {
+					siKey = sik;
+					break;
+				}
+			}
+		} finally {
+			l.unlock();
+		}
+		
+		if(siKey == null) {
+			logger.error("Service not found for method hash: " + hash);
+			return null;
+		}
+		
+		//加载全量服务信息
+		this.loadItem(siKey.fullStringKey());
+		
+		return this.methodHash2Method.get(hash);
+		
+	}
+	
+	public ServiceMethodJRso getServiceMethodByKey(UniqueServiceMethodKeyJRso key) {
+		ServiceItemJRso item = this.getServiceByKey(key.getUsk().fullStringKey());
+		if(item == null) {
+			this.loadItem(key.getUsk().fullStringKey());
+			item = this.getServiceByKey(key.getUsk().fullStringKey());
+			if(item == null) return null;
+		};
+		return item.getMethod(key.getMethod());
+	}
+	
+	
+	/*public UniqueServiceMethodKeyJRso getServiceMethodWithHashBySearch(int hash) {
+		ReentrantReadWriteLock.ReadLock l = service2MethodsLocker.readLock();
+		try {
+			l.lock();
+			for(Set<UniqueServiceMethodKeyJRso> i : service2Methods.values()) {
+				for(UniqueServiceMethodKeyJRso s : i) {
+					if(s.getSnvHash() == hash) {
+						return s;
+					}
+				}
+			}
+		} finally {
+			if(l != null) {
+				l.unlock();
+			}
+		}
+		return null;
+	}*/
+	
+	public void updateOrCreate(ServiceItemJRso item,String path,boolean isel) {
 		String data = JsonUtils.getIns().toJson(item);
-		if(dataOperator.exist(path)){
-			dataOperator.setData(path, data);
+		String p = path(path);
+		if(op.exist(p)){
+			op.setData(p, data);
 		} else {
-			logger.debug("Create node: {}", path);
-			dataOperator.createNodeOrSetData(path,data, isel);
+			logger.debug("Create node: {}", p);
+			op.createNodeOrSetData(p,data, isel);
 		}
 	}
 	
+	private String path(String path) {
+		return parent+"/"+path;
+	}
+
 	public void removeService(String path) {
-		dataOperator.deleteNode(path);
+		op.deleteNode(path(path));
 	}
 	
-	public ServiceItem getItem(String path) {
-		if(this.path2SrvItems.containsKey(path)) {
-			return this.path2SrvItems.get(path);
+	public ServiceItemJRso getItem(String child) {
+		if(this.path2SrvItems.containsKey(child)) {
+			return this.path2SrvItems.get(child);
 		}
-		String data = this.dataOperator.getData(path);
-		refleshOneService(path,data);
-		return this.path2SrvItems.get(path);
+		
+		if(!this.allPaths.containsKey(child)) {
+			return null;//无此服务存在
+		}
+		
+		this.loadItem(child);
+		return this.path2SrvItems.get(child);
 	}
 	
-	public Set<ServiceItem> getServiceItems(String serviceName,String namespace,String version) {
+	public Set<UniqueServiceKeyJRso> getServiceItems(String serviceName,String namespace,String version) {
 		if(StringUtils.isEmpty(serviceName)) {
 			throw new CommonException("Service Name cannot be null");
 		}
-		Set<ServiceItem> sets = new HashSet<>();
-		ReentrantReadWriteLock.ReadLock l = rwLocker.readLock();
+		Set<UniqueServiceKeyJRso> sets = new HashSet<>();
+		ReentrantReadWriteLock.ReadLock l = allPathsLocker.readLock();
 		try {
+			//logger.info(this.toString());
 			l.lock();
-			this.path2SrvItems.forEach((key,si) -> {
+			allPaths.forEach((key,uk) -> {
 				//logger.debug("key: {}" ,key);
-				if(si.getKey().getServiceName().equals(serviceName)) {
+				if(uk.getServiceName().equals(serviceName)) {
 					if(StringUtils.isEmpty(version) && StringUtils.isEmpty(namespace)) {
-						sets.add(si);
-					}else if(UniqueServiceKey.matchVersion(version,si.getKey().getVersion())
-						&& UniqueServiceKey.matchNamespace(namespace,si.getKey().getNamespace())) {
-						sets.add(si);
+						sets.add(uk);
+					}else if(UniqueServiceKeyJRso.matchVersion(version,uk.getVersion())
+						&& UniqueServiceKeyJRso.matchNamespace(namespace,uk.getNamespace())) {
+						sets.add(uk);
 						}
 				}
 			});
@@ -398,12 +564,12 @@ public class ServiceManager {
 		return sets;
 	}
 	
-	public Set<ServiceItem> getServiceItems(String serviceName,String namespace,String version,String insName) {
+	public Set<ServiceItemJRso> getServiceItems(String serviceName,String namespace,String version,String insName) {
 		if(StringUtils.isEmpty(serviceName)) {
 			throw new CommonException("Service Name cannot be null");
 		}
-		Set<ServiceItem> sets = new HashSet<>();
-		ReentrantReadWriteLock.ReadLock l = rwLocker.readLock();
+		Set<ServiceItemJRso> sets = new HashSet<>();
+		ReentrantReadWriteLock.ReadLock l = path2SrvItemsLocker.readLock();
 		try {
 			l.lock();
 			this.path2SrvItems.forEach((key,si) -> {
@@ -411,8 +577,8 @@ public class ServiceManager {
 				if(si.getKey().getServiceName().equals(serviceName) && si.getKey().getInstanceName().equals(insName)) {
 					if(StringUtils.isEmpty(version) && StringUtils.isEmpty(namespace)) {
 						sets.add(si);
-					}else if(UniqueServiceKey.matchVersion(version,si.getKey().getVersion())
-						&& UniqueServiceKey.matchNamespace(namespace,si.getKey().getNamespace())) {
+					}else if(UniqueServiceKeyJRso.matchVersion(version,si.getKey().getVersion())
+						&& UniqueServiceKeyJRso.matchNamespace(namespace,si.getKey().getNamespace())) {
 						sets.add(si);
 					}
 				}
@@ -427,18 +593,18 @@ public class ServiceManager {
 	}
 	
 	
-	public Set<ServiceItem> getItemsByInstanceName(String instanceName) {
-		Set<ServiceItem> sets = new HashSet<>();
+	public Set<ServiceItemJRso> getItemsByInstanceName(String instanceName) {
+		Set<ServiceItemJRso> sets = new HashSet<>();
 		if(StringUtils.isEmpty(instanceName)) {
 			logger.error("getItemsByInstanceName instance is NULL {} and return NULL items list",instanceName);
 			return sets;
 		}
 		instanceName = instanceName.trim();
 		
-		ReentrantReadWriteLock.ReadLock l = rwLocker.readLock();
+		ReentrantReadWriteLock.ReadLock l = path2SrvItemsLocker.readLock();
 		try {
 			l.lock();
-			for(ServiceItem i : path2SrvItems.values()) {
+			for(ServiceItemJRso i : path2SrvItems.values()) {
 				if(instanceName.equals(i.getKey().getInstanceName())) {
 					sets.add(i);
 				}
@@ -452,12 +618,12 @@ public class ServiceManager {
 		return sets;
 	}
 	
-	public Set<ServiceItem> getAllItems() {
-		Set<ServiceItem> sets = new HashSet<>();
-		ReentrantReadWriteLock.ReadLock l = rwLocker.readLock();
+	public Set<UniqueServiceKeyJRso> getAllItems() {
+		Set<UniqueServiceKeyJRso> sets = new HashSet<>();
+		ReentrantReadWriteLock.ReadLock l = allPathsLocker.readLock();
 		try {
 			l.lock();
-			sets.addAll(this.path2SrvItems.values());
+			sets.addAll(this.allPaths.values());
 		} finally {
 			if(l != null) {
 				l.unlock();
@@ -466,15 +632,53 @@ public class ServiceManager {
 		return sets;
 	}
 	
+	public Set<UniqueServiceMethodKeyJRso> getAllServiceMethods(String serviceKey) {
+		Set<UniqueServiceMethodKeyJRso> set = this.service2Methods.get(serviceKey);
+		if(set == null) return null;
+		return Collections.unmodifiableSet(set);
+	}
+	
+	public UniqueServiceMethodKeyJRso getServiceMethod(String serviceKey,String methodName) {
+		Set<UniqueServiceMethodKeyJRso> set = this.service2Methods.get(serviceKey);
+		if(set == null) return null;
+		for(UniqueServiceMethodKeyJRso sm : set) {
+			if(methodName.equals(sm.getMethod())) {
+				return sm;
+			}
+		}
+		return null;
+	}
+	
+	
+	public UniqueServiceMethodKeyJRso getServiceMethodKey(String fullKey,String methodName) {
+		
+		ReentrantReadWriteLock.ReadLock l = service2MethodsLocker.readLock();
+		try {
+			l.lock();
+			Set<UniqueServiceMethodKeyJRso> set = this.service2Methods.get(fullKey);
+			for(UniqueServiceMethodKeyJRso mk : set) {
+				if(mk.getMethod().equals(methodName)) {
+					return mk;
+				}
+			}
+		} finally {
+			if(l != null) {
+				l.unlock();
+			}
+		}
+		return null;
+	}
+	
 	public Set<String> serviceNames(String prefix,int loginAccountId) {
 		Set<String> sns = new HashSet<>();
 		boolean ep = Utils.isEmpty(prefix);
-		ReentrantReadWriteLock.ReadLock l = rwLocker.readLock();
+		ReentrantReadWriteLock.ReadLock l = allPathsLocker.readLock();
 		try {
 			l.lock();
-			for(ServiceItem i : path2SrvItems.values()) {
-				if(PermissionManager.checkClientPermission(loginAccountId, i.getClientId()) && (ep || i.getKey().getServiceName().startsWith(prefix))) {
-					sns.add(i.getKey().getServiceName());
+			for(UniqueServiceKeyJRso i : allPaths.values()) {
+				if(PermissionManager.checkClientPermission(loginAccountId, i.getClientId()) 
+						&& (ep || i.getServiceName().startsWith(prefix))) {
+					sns.add(i.getServiceName());
 				}
 			}
 		} finally {
@@ -487,20 +691,20 @@ public class ServiceManager {
 	
 	public Set<String> serviceVersions(String srvName,int loginAccountId) {
 		Set<String> sns = new HashSet<>();
-		ReentrantReadWriteLock.ReadLock l = rwLocker.readLock();
+		ReentrantReadWriteLock.ReadLock l = allPathsLocker.readLock();
 		try {
 			l.lock();
 			if(Utils.isEmpty(srvName)) {
-				for(ServiceItem i : path2SrvItems.values()) {
+				for(UniqueServiceKeyJRso i : allPaths.values()) {
 					if(PermissionManager.checkClientPermission(loginAccountId, i.getClientId())) {
-						sns.add(i.getKey().getVersion());
+						sns.add(i.getVersion());
 					}
 				}
 			}else {
-				for(ServiceItem i : path2SrvItems.values()) {
+				for(UniqueServiceKeyJRso i : allPaths.values()) {
 					if(PermissionManager.checkClientPermission(loginAccountId, i.getClientId()) && 
-							srvName.equals(i.getKey().getServiceName())) {
-						sns.add(i.getKey().getVersion());
+							srvName.equals(i.getServiceName())) {
+						sns.add(i.getVersion());
 					}
 				}
 			}
@@ -514,20 +718,20 @@ public class ServiceManager {
 	
 	public Set<String> serviceNamespaces(String srvName,int loginAccountId) {
 		Set<String> sns = new HashSet<>();
-		ReentrantReadWriteLock.ReadLock l = rwLocker.readLock();
+		ReentrantReadWriteLock.ReadLock l = allPathsLocker.readLock();
 		try {
 			l.lock();
 			if(Utils.isEmpty(srvName)) {
-				for(ServiceItem i : path2SrvItems.values()) {
+				for(UniqueServiceKeyJRso i : allPaths.values()) {
 					if(PermissionManager.checkClientPermission(loginAccountId, i.getClientId())) {
-						sns.add(i.getKey().getNamespace());
+						sns.add(i.getNamespace());
 					}
 				}
 			}else {
-				for(ServiceItem i : path2SrvItems.values()) {
+				for(UniqueServiceKeyJRso i : allPaths.values()) {
 					if(PermissionManager.checkClientPermission(loginAccountId, i.getClientId()) 
-							&& srvName.equals(i.getKey().getServiceName())) {
-						sns.add(i.getKey().getNamespace());
+							&& srvName.equals(i.getServiceName())) {
+						sns.add(i.getNamespace());
 					}
 				}
 			}
@@ -540,63 +744,94 @@ public class ServiceManager {
 		return sns;
 	}
 	
-	public Set<String> serviceMethods(String srvName,int loginAccountId) {
+	public Set<String> serviceMethods(String srvName, int loginAccountId) {
 		Set<String> sns = new HashSet<>();
-		ReentrantReadWriteLock.ReadLock l = rwLocker.readLock();
-		try {
-			l.lock();
-			Set<ServiceMethod> ms = null;
-			if(Utils.isEmpty(srvName)) {
-				for(ServiceItem i : path2SrvItems.values()) {
-					if(PermissionManager.checkClientPermission(loginAccountId, i.getClientId())) {
+
+		if (Utils.isEmpty(srvName)) {
+			ReentrantReadWriteLock.ReadLock l = path2SrvItemsLocker.readLock();
+			try {
+
+				l.lock();
+				// 引起全量服务加载
+				if (!this.eagLoad) {
+					logger.warn(
+							"Do load all service data by get all service method op,loginAccountId: " + loginAccountId);
+					this.eagLoad = true;
+					this.refleshChildren();
+				}
+
+				Set<ServiceMethodJRso> ms = null;
+				for (ServiceItemJRso i : path2SrvItems.values()) {
+					if (PermissionManager.checkClientPermission(loginAccountId, i.getClientId())) {
 						ms = i.getMethods();
-						if(ms != null && ms.size() > 0) {
-							for(ServiceMethod m : ms) {
+						if (ms != null && ms.size() > 0) {
+							for (ServiceMethodJRso m : ms) {
 								sns.add(m.getKey().getMethod());
 							}
 						}
 					}
-					
+
 				}
-			} else {
-				for(ServiceItem i : path2SrvItems.values()) {
-					if(PermissionManager.checkClientPermission(loginAccountId, i.getClientId()) 
-							&& srvName.equals(i.getKey().getServiceName())) {
-						ms = i.getMethods();
+
+			} finally {
+				l.unlock();
+			}
+		} else {
+
+			ReentrantReadWriteLock.ReadLock l = allPathsLocker.readLock();
+			try {
+
+				l.lock();
+				UniqueServiceKeyJRso skey = null;
+				for (UniqueServiceKeyJRso siKey : allPaths.values()) {
+					if (siKey.getServiceName().equals(srvName)
+							&& PermissionManager.checkClientPermission(loginAccountId, siKey.getClientId())) {
+						skey = siKey;
 						break;
 					}
 				}
-				
-				if(ms != null && ms.size() > 0) {
-					for(ServiceMethod m : ms) {
+
+				if (skey == null) {
+					return sns;
+				}
+
+				ServiceItemJRso si = path2SrvItems.get(skey.fullStringKey());
+				if (si == null) {
+					this.loadItem(skey.fullStringKey());
+					si = path2SrvItems.get(skey.fullStringKey());
+					if (si == null) {
+						return sns;
+					}
+				}
+				Set<ServiceMethodJRso> ms = si.getMethods();
+				if (ms != null && ms.size() > 0) {
+					for (ServiceMethodJRso m : ms) {
 						sns.add(m.getKey().getMethod());
 					}
 				}
-			}
-			
-		} finally {
-			if(l != null) {
+
+			} finally {
 				l.unlock();
 			}
+
 		}
 		return sns;
 	}
 	
 	public Set<String> serviceInstances(String srvName,int loginAccountId) {
 		Set<String> sns = new HashSet<>();
-		ReentrantReadWriteLock.ReadLock l = rwLocker.readLock();
+		ReentrantReadWriteLock.ReadLock l = allPathsLocker.readLock();
 		try {
 			l.lock();
 			boolean f = Utils.isEmpty(srvName);
-			for(ServiceItem i : path2SrvItems.values()) {
+			for(UniqueServiceKeyJRso i : this.allPaths.values()) {
 				if(PermissionManager.checkClientPermission(loginAccountId, i.getClientId())) {
 					if(f) {
-						sns.add(i.getKey().getInstanceName());
-					}else if(srvName.equals(i.getKey().getServiceName())){
-						sns.add(i.getKey().getInstanceName());
+						sns.add(i.getInstanceName());
+					}else if(srvName.equals(i.getServiceName())){
+						sns.add(i.getInstanceName());
 					}
 				}
-				
 			}
 		} finally {
 			if(l != null) {
@@ -607,93 +842,118 @@ public class ServiceManager {
 	}
 	
 	public boolean exist(String path) {
-		return this.dataOperator.exist(path);
+		if(!path.startsWith(parent)) {
+			path = path(path);
+		}
+		return this.op.exist(path);
 	}
 	
-	public void breakService(String key) {
-		UniqueServiceMethodKey usm = UniqueServiceMethodKey.fromKey(key);
-		ServiceItem item = this.path2SrvItems.get(ServiceItem.pathForKey(key));
+	public void breakService(String methodKey) {
+		UniqueServiceMethodKeyJRso usm = UniqueServiceMethodKeyJRso.fromKey(methodKey);
+		breakService(usm);
+	}
+	
+	public void breakService(UniqueServiceMethodKeyJRso usm) {
+		String siKey = usm.getUsk().fullStringKey();
+		ServiceItemJRso item = this.path2SrvItems.get(siKey);
 		if(item == null) {
-			logger.error("Service [{}] not found",key);
-			return;
+			 this.loadItem(siKey);
+			 item = this.path2SrvItems.get(siKey);
 		}
-		ServiceMethod sm = item.getMethod(usm.getMethod(), usm.getParamsStr());
+		
+		if(item == null) return;
+		
+		ServiceMethodJRso sm = item.getMethod(usm.getMethod(), usm.getParamsStr());
 		sm.setBreaking(true);
-		this.updateOrCreate(item, item.getKey().toKey(true, true, true), true);
+		this.updateOrCreate(item, siKey, true);
 	}
 	
-	public void breakService(ServiceMethod sm) {
-		String path = ServiceItem.pathForKey(sm.getKey().getUsk().toKey(true, true, true));
-		ServiceItem item = this.path2SrvItems.get(path);
+	private ServiceMethodJRso getSM(ServiceMethodJRso m) {
+		String child = m.getKey().getUsk().fullStringKey();
+		ServiceItemJRso item = this.path2SrvItems.get(child);
 		if(item == null) {
-			logger.error("Service [{}] not found",path);
-			return;
-		}
-		ServiceMethod sm1 = item.getMethod(sm.getKey().getMethod(), sm.getKey().getParamsStr());
-		sm1.setBreaking(sm.isBreaking());
-		if(dataOperator.exist(path)){
-			dataOperator.setData(path,JsonUtils.getIns().toJson(item));
-		} 
-	}
-	
-	private ServiceMethod getSM(ServiceMethod m) {
-		String path = ServiceItem.pathForKey(m.getKey().getUsk().toKey(true, true, true));
-		ServiceItem item = this.path2SrvItems.get(path);
-		if(item == null) {
-			logger.error("Service [{}] not found",path);
-			return null;
+			loadItem(child);
+			item = this.path2SrvItems.get(child);
+			if(item == null) {
+				logger.error("Service [{}] not found",child);
+				return null;
+			}
 		}
 		return item.getMethod(m.getKey().getMethod(), m.getKey().getParamsStr());
 	}
 	
-	public void setMonitorable(ServiceMethod sm,int isMo) {
-		ServiceMethod sm1 = this.getSM(sm);
+	public void setMonitorable(ServiceMethodJRso sm,int isMo) {
+		ServiceMethodJRso sm1 = this.getSM(sm);
 		if(sm1 != null) {
 			if(isMo != sm1.getMonitorEnable()) {
 				sm1.setMonitorEnable(isMo);
-				String path = ServiceItem.pathForKey(sm1.getKey().getUsk().toKey(true, true, true));
-				ServiceItem item = this.path2SrvItems.get(path);
-				if(dataOperator.exist(path)){
-					dataOperator.setData(path,JsonUtils.getIns().toJson(item));
+				String child = sm1.getKey().getUsk().fullStringKey();
+				ServiceItemJRso item = this.path2SrvItems.get(child);
+				String path = path(child);
+				if(op.exist(path)){
+					op.setData(path,JsonUtils.getIns().toJson(item));
 				} 
 			}
 		}
 	}
 	 
-	public ServiceItem getServiceByKey(String key) {
-		String path = ServiceItem.pathForKey(key);
-		ServiceItem item = this.path2SrvItems.get(path);
+	public ServiceItemJRso getServiceByKey(String key) {
+		ServiceItemJRso item = this.path2SrvItems.get(key);
+		if(item == null) {
+			loadItem(key);
+		}
+		return this.path2SrvItems.get(key);
+	}
+	
+	public ServiceItemJRso getServiceByKey(UniqueServiceKeyJRso siKey) {
+		return getServiceByKey(siKey.fullStringKey());
+	}
+	
+	public ServiceItemJRso getServiceByServiceMethod(ServiceMethodJRso sm) {
+		String path = sm.getKey().getUsk().fullStringKey();
+		ServiceItemJRso item = this.path2SrvItems.get(path);
 		return item;
 	}
 	
-	public ServiceItem getServiceByServiceMethod(ServiceMethod sm) {
-		String path = ServiceItem.pathForKey(sm.getKey().getUsk().toKey(true, true, true));
-		ServiceItem item = this.path2SrvItems.get(path);
-		return item;
+	/*
+	 * 缓存本实例全部方法
+	 * 网关服务器缓存全部实例方法，后面做全量加载时再判断external属性
+	 */
+	private boolean needCacheHashMethod(UniqueServiceKeyJRso uk/*,boolean external*/) {
+		return uk != null && (uk.getInstanceName().equals(Config.getInstanceName()) 
+				|| this.gatewayModel /*&& external*/);
 	}
 	
-	private boolean needCacheHashMethod(ServiceItem si) {
-		return si != null && (si.getKey().getInstanceName().equals(Config.getInstanceName()) 
-				|| this.gatewayModel && si.isExternal());
+	private boolean needCacheHashMethod(UniqueServiceKeyJRso uk,boolean external) {
+		return uk != null && (uk.getInstanceName().equals(Config.getInstanceName()) 
+				|| this.gatewayModel && external);
 	}
 	
-	private void serviceRemove(String path) {
+	private void serviceRemove(String child) {
 		
-		ReentrantReadWriteLock.WriteLock l = rwLocker.writeLock();
-		ServiceItem si = null;
+		UniqueServiceKeyJRso uk = this.allPaths.remove(child);
+		
+		ServiceItemJRso si = path2SrvItems.remove(child);
+		
+		Set<UniqueServiceMethodKeyJRso> methods = service2Methods.remove(child);
+		
+		if(uk == null) {
+			return;
+		}
+		
+		String fpath = path(child);
+		ReentrantReadWriteLock.WriteLock l = service2MethodsLocker.writeLock();
+		
 		try {
 			l.lock();
-			this.path2Hash.remove(path);
-			si = this.path2SrvItems.remove(path);
-			if(needCacheHashMethod(si)) {
+			if(si != null && methods != null && !methods.isEmpty() && needCacheHashMethod(uk,si.isExternal())) {
 				//存储时已经保证不存在全局性重复hash
-				Set<ServiceItem> items = this.getServiceItems(si.getKey().getServiceName(),
-						si.getKey().getNamespace(), si.getKey().getVersion());
-				if(items == null || items.isEmpty()) {
-					for(ServiceMethod sm : si.getMethods()) {
-						this.methodHash2Method.remove(sm.getKey().getSnvHash());
-					}
+				/*Set<UniqueServiceKeyJRso> items = this.getServiceItems(si.getKey().getServiceName(),
+						si.getKey().getNamespace(), si.getKey().getVersion());*/
+				for(UniqueServiceMethodKeyJRso sm : methods) {
+					this.methodHash2Method.remove(sm.getSnvHash());
 				}
+			
 			}
 		} finally {
 			if(l != null) {
@@ -701,19 +961,11 @@ public class ServiceManager {
 			}
 		}
 		
-		if(si == null) {
-			logger.warn("Remove not exists service:{}",path);
-			return;
-		}
-		
-		if(!PermissionManager.checkClientPermission(Config.getClientId(),si.getClientId())) {
-			return;
-		}
-		
 		//logger.warn("Remove service:{}",path);
 		//path = si.path(Config.ServiceRegistDir);
-		this.notifyServiceChange(IServiceListener.REMOVE, si, path);
-		this.dataOperator.removeDataListener(path, dataListener);
+		notifyServiceChange(IServiceListener.REMOVE, si.getKey(),si, child);
+		op.removeDataListener(fpath, dataListener);
+		
 		//this.dataOperator.removeDataListener(si.path(Config.ServiceItemCofigDir), cfgDataListener);
 		//this.dataOperator.removeNodeListener(path, this.nodeListener);
 	}
@@ -724,63 +976,68 @@ public class ServiceManager {
 	 * @param data
 	 * @param isConfig true全局服务配置信息改变， false 服务实例信息改变
 	 */
-	private void updateItemData(String path, String data, boolean isConfig) {
-		ServiceItem si = this.fromJson(data);
+	private void updateItemData(String child, String data, boolean isConfig) {
+		ServiceItemJRso si = this.fromJson(data);
 
 		if(!PermissionManager.checkClientPermission(Config.getClientId(),si.getClientId())) {
 			return;
 		}
 		
-		String srvPath = si.path(Config.getRaftBasePath(Config.ServiceRegistDir));
-		ServiceItem srvItem = this.path2SrvItems.get(srvPath);
+		ServiceItemJRso srvItem = this.path2SrvItems.get(child);
 		
 		if(srvItem == null) {
-			childrenAdd(path,data);
+			childrenAdd(child);
 		} else {
 			srvItem.formPersisItem(si);
-			if(this.isChange(srvItem, data, srvPath)) {
+			if(this.isChange(data, child)) {
 				//this.updateOrCreate(srvItem, srvPath, true);
 				si = srvItem;
-				path = srvPath;
-				this.notifyServiceChange(IServiceListener.DATA_CHANGE, srvItem,path);
+				this.notifyServiceChange(IServiceListener.DATA_CHANGE, srvItem.getKey(),srvItem,child);
 			}
 		}
 		
 	}
 	
-	private ServiceItem fromJson(String data){
-		return JsonUtils.getIns().fromJson(data, ServiceItem.class);
+	private ServiceItemJRso fromJson(String data){
+		return JsonUtils.getIns().fromJson(data, ServiceItemJRso.class);
 	}
 	
-	private  boolean isChange(ServiceItem si,String json,String path) {
-		if(json == null) {
-			json = JsonUtils.getIns().toJson(si);
-		}
-		Integer hash = HashUtils.FNVHash1(json);
+	private  boolean isChange(String ndata,String child) {
 		
-		if(this.path2Hash.containsKey(path) && hash.equals(this.path2Hash.get(path))) {
+		Integer nhash = HashUtils.FNVHash1(ndata);
+		
+		ServiceItemJRso osi = this.path2SrvItems.get(child);
+		Integer ohash = 0;
+		String odata = null;
+		if(osi != null) {
+			 odata = JsonUtils.getIns().toJson(osi);
+			 ohash = HashUtils.FNVHash1(odata);
+		}
+		
+		if(ohash == nhash) {
 			return false;
 		}
 		
-		logger.info("Service added, Code: " + hash + ", Service: " + si.getKey().toSnv());
+		ServiceItemJRso nsi = JsonUtils.getIns().fromJson(ndata, ServiceItemJRso.class);
+		logger.info("Service added, Code: " + nhash + ", Service: " + nsi.getKey().toSnv());
 		
-		ReentrantReadWriteLock.WriteLock l = rwLocker.writeLock();
+		ReentrantReadWriteLock.WriteLock l = methodHash2MethodLocker.writeLock();
 		try {
 			l.lock();
 			
-			if(needCacheHashMethod(si)) {
-				for(ServiceMethod sm : si.getMethods()) {
+			if(needCacheHashMethod(nsi.getKey(),nsi.isExternal())) {
+				for(ServiceMethodJRso sm : nsi.getMethods()) {
 					int h = sm.getKey().getSnvHash();
 					if(!this.methodHash2Method.containsKey(h)) {
 						//logger.info("Hash: " + h + " => " + sm.getKey().toKey(true, true, true));
 						this.methodHash2Method.put(h, sm);
 					} else {
 						//检查是否是方法Hash冲突
-						String smKey = sm.getKey().toKey(false, false, false);
-						ServiceMethod conflichMethod = this.checkConflictServiceMethodByHash(h, smKey);
+						String smKey = sm.getKey().methodID();
+						UniqueServiceMethodKeyJRso conflichMethod = this.checkConflictServiceMethodByHash(h, smKey);
 						if(conflichMethod != null) {
 							String msg = "Service method hash conflict: [" + smKey + 
-									"] with exist sm [" + conflichMethod.getKey().toKey(false, false, false)+"] fail to load service!";
+									"] with exist sm [" + conflichMethod.fullStringKey()+"] fail to load service!";
 							logger.error(msg);
 							LG.logWithNonRpcContext(MC.LOG_ERROR, ServiceManager.class,msg,MC.MT_DEFAULT,true);
 							return false;
@@ -791,45 +1048,42 @@ public class ServiceManager {
 				}
 			}
 			
-			this.path2Hash.put(path, hash);
-			this.path2SrvItems.put(path, si);
+			//this.path2Hash.put(path, hash);
+			this.path2SrvItems.put(child, nsi);
 		} finally {
-			if(l != null) {
-				l.unlock();
-			}
+			l.unlock();
 		}
 		return true;
 	}
 	
-	private void refleshOneService(String path,String data) {
+	private void refleshOneService(String child,String data) {
 		
-		ServiceItem i = this.fromJson(data);
+		ServiceItemJRso i = this.fromJson(data);
 		if(i == null){
-			logger.warn("path:"+path+", data: "+data);
+			logger.warn("path:"+child+", data: "+data);
 			return;
 		}
 		
 		//从配置服务合并
 		//this.persisFromConfig(i);
 		
-		boolean flag = this.path2Hash.containsKey(path);
+		boolean flag = this.path2SrvItems.containsKey(child);
 		
-		if(!this.isChange(i,data, path)) {
-			logger.warn("Service Item no change {}",path);
+		if(!this.isChange(data, child)) {
+			logger.warn("Service Item no change {}",child);
 			return;
 		}
 				
 		//this.path2SrvItems.put(path, i);
 		
 		if(flag) {
-			this.notifyServiceChange(IServiceListener.DATA_CHANGE, i,path);
+			this.notifyServiceChange(IServiceListener.DATA_CHANGE, i.getKey(),i,child);
 		} else {
 			//logger.debug("Service Add: {}",path);
-			this.notifyServiceChange(IServiceListener.ADD, i,path);
+			this.notifyServiceChange(IServiceListener.ADD, i.getKey(),i,child);
 			//dataOperator.addNodeListener(path, nodeListener);
-			dataOperator.addDataListener(path, this.dataListener);
+			op.addDataListener(path(child), this.dataListener);
 			//dataOperator.addDataListener(i.path(Config.ServiceItemCofigDir), this.cfgDataListener);
-			
 		}
 	}
 	
@@ -838,13 +1092,13 @@ public class ServiceManager {
 	 * @param type
 	 * @param item
 	 */
-	private void notifyServiceChange(int type,ServiceItem item,String path){
+	private void notifyServiceChange(int type,UniqueServiceKeyJRso itemKey,ServiceItemJRso item,String path){
 		Set<IServiceListener> ls = this.serviceListeners.get(path);
 		if(ls != null && !ls.isEmpty()){
 			//服务名称，名称空间，版本 三维一体服务监听
 			synchronized(ls) {
 				for(IServiceListener l : ls){
-					l.serviceChanged(type, item);
+					l.serviceChanged(type,itemKey,item);
 				}
 			}
 		}
@@ -854,7 +1108,7 @@ public class ServiceManager {
 			synchronized(ls) {
 				for(IServiceListener l : ls){
 					//服务运行实例监听器
-					l.serviceChanged(type, item);
+					l.serviceChanged(type,itemKey, item);
 				}
 			}
 		}
@@ -862,20 +1116,26 @@ public class ServiceManager {
 	
 	public Set<String> getAllTopic() {
 		Set<String> topics = new HashSet<>();
-		ReentrantReadWriteLock.ReadLock l = rwLocker.readLock();
+		ReentrantReadWriteLock.ReadLock l = path2SrvItemsLocker.readLock();
 		try {
 			l.lock();
-			for(ServiceItem si : this.path2SrvItems.values()) {
-				for(ServiceMethod sm : si.getMethods()) {
+			
+			//引起全量服务加载
+			if(!this.eagLoad) {
+				logger.warn("Do load all service data by getAllTopic method op");
+				this.eagLoad = true;
+				this.refleshChildren();
+			}
+			
+			for(ServiceItemJRso si : this.path2SrvItems.values()) {
+				for(ServiceMethodJRso sm : si.getMethods()) {
 					if(StringUtils.isNotEmpty(sm.getTopic())) {
 						topics.add(sm.getTopic());
 					}
 				}
 			}
 		} finally {
-			if(l != null) {
-				l.unlock();
-			}
+			l.unlock();
 		}
 		
 		return topics;
@@ -886,11 +1146,19 @@ public class ServiceManager {
 			return false; 
 		}
 		
-		ReentrantReadWriteLock.ReadLock l = rwLocker.readLock();
+		ReentrantReadWriteLock.ReadLock l = path2SrvItemsLocker.readLock();
 		try {
 			l.lock();
-			for(ServiceItem si : this.path2SrvItems.values()) {
-				for(ServiceMethod sm : si.getMethods()) {
+			
+			//引起全量服务加载
+			if(!this.eagLoad) {
+				logger.warn("Do load all service data by containTopic method op:topic:"+topic);
+				this.eagLoad = true;
+				this.refleshChildren();
+			}
+			
+			for(ServiceItemJRso si : this.path2SrvItems.values()) {
+				for(ServiceMethodJRso sm : si.getMethods()) {
 					if(StringUtils.isNotEmpty(sm.getTopic())) {
 						if(sm.getTopic().indexOf(topic) > -1) {
 							return true;
@@ -899,43 +1167,10 @@ public class ServiceManager {
 				}
 			}
 		} finally {
-			if(l != null) {
-				l.unlock();
-			}
+			l.unlock();
 		}
 		
 		return false;
 	}
-	
-	public void registSmCode(String sn,String ns,String ver,String method,Class<?>[] argCls) {
-		
-		if(!Utils.formSystemPackagePermission(3)) {
-			throw new CommonException("No permission to regist Service method code: " + UniqueServiceMethodKey.methodKey(sn, ns, ver, Config.getInstanceName(),
-					Config.getExportSocketHost(), "", method));
-		}
-		
-		String smKey = UniqueServiceMethodKey.methodKey(sn, ns, ver, "", "", "", method);
-		int smCode = HashUtils.FNVHash1(smKey);
-		
-		UniqueServiceKey usk = new UniqueServiceKey();
-		usk.setNamespace(ns);
-		usk.setServiceName(sn);
-		usk.setVersion(ver);
-		usk.setInstanceName(Config.getInstanceName());
-		usk.setHost(Config.getExportSocketHost());
-		usk.setPort("");
-		
-		usk.setSnvHash(HashUtils.FNVHash1(usk.toKey(false, false, false)));
-		
-		ServiceMethod sm = new ServiceMethod();
-		sm.getKey().setUsk(usk);
-		sm.getKey().setMethod(method);
-		sm.getKey().setSnvHash(smCode);
-		sm.getKey().setParamsStr(UniqueServiceMethodKey.paramsStr(argCls));
-		
-		this.methodHash2Method.put(smCode, sm);
-		
-	}
-	
 	
 }

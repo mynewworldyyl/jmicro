@@ -2,20 +2,30 @@ import rpc from "@/rpc/rpcbase";
 import ps from "@/rpc/pubsub";
 import cons from "@/rpc/constants";
 
+const sn = 'cn.jmicro.mng.api.II8NServiceJMSrv'
+const ns = cons.NS_MNG
+const v = '0.0.1'
+
+
+
 export default {
 
+     __actreq :  function(method,args){
+         return rpc.creq(this.sn,this.ns,this.v,method,args)
+  },
+
   getAllLogFileEntry : function() {
-    return rpc.callRpcWithParams(this.sn, this.ns, this.v, 'getAllLogFileEntry', []);
+    return rpc.callRpc(this.__actreq('getAllLogFileEntry', []));
   },
 
   startLogMonitor : function(processId,logFilePath,agentId,offsetFromLastLine) {
-    return rpc.callRpcWithParams(this.sn, this.ns, this.v, 'startLogMonitor', [processId,logFilePath,
-      agentId, offsetFromLastLine]);
+      return rpc.callRpc(this.__actreq('startLogMonitor', [processId,logFilePath,
+          agentId, offsetFromLastLine]));
   },
 
   stopLogMonitor : function(processId,logFilePath,agentId) {
-    return rpc.callRpcWithParams(this.sn, this.ns, this.v, 'stopLogMonitor', [processId,logFilePath,
-      agentId]);
+      return rpc.callRpc(this.__actreq('stopLogMonitor', [processId,logFilePath,
+          agentId]));
   },
 
   subscribeLog: function (processId, logFilePath, agentId, offsetFromLastLine, callback){
@@ -70,7 +80,7 @@ export default {
     });
   },
 
-  sn:'cn.jmicro.mng.api.IAgentLogService',
+  sn:'cn.jmicro.mng.api.IAgentLogServiceJMSrv',
   ns : cons.NS_MNG,
   v:'0.0.1',
 }

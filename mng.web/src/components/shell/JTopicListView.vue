@@ -65,7 +65,7 @@
     //import { quillEditor } from "vue-quill-editor";
 
     const cid = 'topicList';
-    const sn = 'cn.jmicro.ext.bbs.api.IBbsService';
+    const sn = 'cn.jmicro.ext.bbs.api.IBbsServiceJMSrv';
     const ns = 'bbs';
     const v = '0.0.1';
 

@@ -35,9 +35,9 @@ import cn.jmicro.api.exception.BreakerException;
 import cn.jmicro.api.raft.IDataOperator;
 import cn.jmicro.api.registry.IRegistry;
 import cn.jmicro.api.registry.IServiceListener;
-import cn.jmicro.api.registry.ServiceItem;
-import cn.jmicro.api.registry.ServiceMethod;
-import cn.jmicro.api.registry.UniqueServiceKey;
+import cn.jmicro.api.registry.ServiceItemJRso;
+import cn.jmicro.api.registry.ServiceMethodJRso;
+import cn.jmicro.api.registry.UniqueServiceKeyJRso;
 import cn.jmicro.api.service.ServiceManager;
 import cn.jmicro.api.timer.TimerTicker;
 import cn.jmicro.api.utils.TimeUtils;
@@ -83,7 +83,7 @@ public class RegistryImpl implements IRegistry {
 	 */
 	private Map<String,Set<IServiceListener>> serviceNameExistsListeners = new ConcurrentHashMap<>();
 	
-	private Map<String,ServiceItem> localRegistedItems = new ConcurrentHashMap<>();
+	private Map<String,ServiceItemJRso> localRegistedItems = new ConcurrentHashMap<>();
 	
 	//当前在线服务，servicename, namespace, version
 	private Map<String,AtomicInteger> servicesCounters = new ConcurrentHashMap<>();
@@ -127,8 +127,8 @@ public class RegistryImpl implements IRegistry {
 		}
 		srvManager.addListener(new IServiceListener() {
 			@Override
-			public void serviceChanged(int type, ServiceItem item) {
-				srvChange(type,item);
+			public void serviceChanged(int type, UniqueServiceKeyJRso siKey,ServiceItemJRso si) {
+				srvChange(type,siKey,si);
 			}
 		});
 		
@@ -156,15 +156,15 @@ public class RegistryImpl implements IRegistry {
 	
 	}
 	
-	private void notifyListener(int type,ServiceItem item,Set<IServiceListener> listeners) {
+	private void notifyListener(int type,UniqueServiceKeyJRso siKey,ServiceItemJRso si,Set<IServiceListener> listeners) {
 		if(listeners != null && !listeners.isEmpty()) {
-			listeners.forEach((l)->l.serviceChanged(type, item));
+			listeners.forEach((l)->l.serviceChanged(type, siKey,si));
 		}
 	}
 	
 	
-	private void srvChange(int type, ServiceItem item) {
-		String key = item.serviceKey();
+	private void srvChange(int type, UniqueServiceKeyJRso siKey,ServiceItemJRso si) {
+		String key = siKey.serviceID();
 		if(type == IServiceListener.ADD) {
 			if(!servicesCounters.containsKey(key)) {
 				servicesCounters.put(key, new AtomicInteger(0));
@@ -173,25 +173,25 @@ public class RegistryImpl implements IRegistry {
 			int val = servicesCounters.get(key).incrementAndGet();
 			if(val == 1) {
 				//服务进来，服务存在性监听器
-				notifyListener(IServiceListener.ADD,item,snvKeyExistsListeners.get(key));
-				notifyListener(IServiceListener.ADD,item,serviceNameExistsListeners.get(item.getKey().getServiceName()));
+				notifyListener(IServiceListener.ADD,siKey,si,snvKeyExistsListeners.get(key));
+				notifyListener(IServiceListener.ADD,siKey,si,serviceNameExistsListeners.get(siKey.getServiceName()));
 			}
 			
 			//全量监听
-			notifyListener(type,item,snvKeyListeners.get(key));
-			notifyListener(type,item,serviceNameListeners.get(item.getKey().getServiceName()));
+			notifyListener(type,siKey,si,snvKeyListeners.get(key));
+			notifyListener(type,siKey,si,serviceNameListeners.get(siKey.getServiceName()));
 			
 		} else if(type == IServiceListener.REMOVE) {
 			
 			if(servicesCounters.get(key) == null || servicesCounters.get(key).decrementAndGet() == 0) {
 				//最后一个服务删除，服务存在性监听器
-				notifyListener(IServiceListener.REMOVE,item,snvKeyExistsListeners.get(key));
-				notifyListener(IServiceListener.REMOVE,item,serviceNameExistsListeners.get(item.getKey().getServiceName()));
+				notifyListener(IServiceListener.REMOVE,siKey,si,snvKeyExistsListeners.get(key));
+				notifyListener(IServiceListener.REMOVE,siKey,si,serviceNameExistsListeners.get(siKey.getServiceName()));
 			}
 			
 			//全量监听
-			notifyListener(type,item,snvKeyListeners.get(key));
-			notifyListener(type,item,serviceNameListeners.get(item.getKey().getServiceName()));
+			notifyListener(type,siKey,si,snvKeyListeners.get(key));
+			notifyListener(type,siKey,si,serviceNameListeners.get(siKey.getServiceName()));
 		}
 	}
 	
@@ -284,9 +284,9 @@ public class RegistryImpl implements IRegistry {
 			l.add(lis);
 		}
 
-		Set<ServiceItem> s = this.getServices(key);
+		Set<UniqueServiceKeyJRso> s = this.getServices(key);
 		if(s!= null && !s.isEmpty()){
-			lis.serviceChanged(IServiceListener.ADD, s.iterator().next());
+			lis.serviceChanged(IServiceListener.ADD, s.iterator().next(),null);
 		}
 	}
 	
@@ -296,9 +296,9 @@ public class RegistryImpl implements IRegistry {
 	/** +++++++++++++++++++++++Service CRUD for service exporter START++++++++++++++++++**/
 	
 	@Override
-	public void regist(ServiceItem item) {
+	public void regist(ServiceItemJRso item) {
 		
-		String srvKey = item.path(Config.getRaftBasePath(Config.ServiceRegistDir));
+		String srvKey = item.fullStringKey();
 		
 		if(item.getKey().getInstanceName().equals(Config.getInstanceName())) {
 			localRegistedItems.put(srvKey, item);
@@ -322,8 +322,8 @@ public class RegistryImpl implements IRegistry {
 	}
 
 	@Override
-	public void unregist(ServiceItem item) {
-		String key = item.path(Config.getRaftBasePath(Config.ServiceRegistDir));
+	public void unregist(UniqueServiceKeyJRso item) {
+		String key = item.fullStringKey();
 		logger.debug("unregist service: "+key);
 		if(srvManager.exist(key)){
 			srvManager.removeService(key);
@@ -332,8 +332,8 @@ public class RegistryImpl implements IRegistry {
 	}
 
 	@Override
-	public void update(ServiceItem item) {
-		String key = item.path(Config.getRaftBasePath(Config.ServiceRegistDir));
+	public void update(ServiceItemJRso item) {
+		String key = item.fullStringKey();
 		logger.debug("regist service: "+key);
 		if(srvManager.exist(key)){
 			srvManager.updateOrCreate(item, key, true);
@@ -368,7 +368,7 @@ public class RegistryImpl implements IRegistry {
 	@Override
 	public boolean isExists(String serviceName, String namespace, String version) {
 		if(this.needWaiting) {
-			logger.warn("Do isExists waiting get Key: {}",UniqueServiceKey.serviceName(serviceName, namespace, version));
+			logger.warn("Do isExists waiting get Key: {}",UniqueServiceKeyJRso.serviceName(serviceName, namespace, version));
 			setNeedWaiting();
 			return IWaitingAction.doAct(()->isExists0(serviceName,namespace,version),false);
 		} else {
@@ -379,20 +379,20 @@ public class RegistryImpl implements IRegistry {
 	private boolean isExists0(String serviceName,final String namespace,final String version) {
 		//String ns = UniqueServiceKey.namespace(namespace);
 		//String v =  UniqueServiceKey.version(version);
-		Set<ServiceItem> sis = matchServiceItems(serviceName, namespace, version);
+		Set<UniqueServiceKeyJRso> sis = matchServiceItems(serviceName, namespace, version);
 		return sis != null && !sis.isEmpty();
 	}
 	
 	public boolean isExists(String serviceName) {
-		Set<ServiceItem> sis = this.getServices(serviceName);
+		Set<UniqueServiceKeyJRso> sis = this.getServices(serviceName);
 		return sis != null && !sis.isEmpty();
 	}
 	
 
 	@Override
-	public Set<ServiceItem> getServices(String serviceName, String namespace, String version) {
+	public Set<UniqueServiceKeyJRso> getServices(String serviceName, String namespace, String version) {
 		if(this.needWaiting) {
-			logger.warn("Do getServices(String serviceName, String namespace, String version) waiting get Key: {}",UniqueServiceKey.serviceName(serviceName, namespace, version));
+			logger.warn("Do getServices(String serviceName, String namespace, String version) waiting get Key: {}",UniqueServiceKeyJRso.serviceName(serviceName, namespace, version));
 			setNeedWaiting();
 			return IWaitingAction.doAct(()->getServices0(serviceName,namespace,version),null);
 		} else {
@@ -403,19 +403,19 @@ public class RegistryImpl implements IRegistry {
 	
 	
 	@Override
-	public ServiceItem getServiceSingleItem(String serviceName, String namespace, String version) {
-		 Set<ServiceItem> sis = this.getServices(serviceName, namespace, version);
+	public UniqueServiceKeyJRso getServiceSingleItem(String serviceName, String namespace, String version) {
+		 Set<UniqueServiceKeyJRso> sis = this.getServices(serviceName, namespace, version);
 		 if(sis != null && !sis.isEmpty()) {
 			 return sis.iterator().next();
 		 }
 		return null;
 	}
 
-	private Set<ServiceItem> getServices0(String serviceName, String namespace, String version) {
+	private Set<UniqueServiceKeyJRso> getServices0(String serviceName, String namespace, String version) {
 		//namespace = UniqueServiceKey.namespace(namespace);
 		//version = UniqueServiceKey.version(version);
 		//Set<ServiceItem> sis = this.serviceItems.get(ServiceItem.serviceName(serviceName, namespace, version));
-		Set<ServiceItem> sis = matchServiceItems(serviceName, namespace, version);
+		Set<UniqueServiceKeyJRso> sis = matchServiceItems(serviceName, namespace, version);
 		/*if(sis == null){
 			return Collections.EMPTY_SET;
 		}*/		
@@ -426,7 +426,7 @@ public class RegistryImpl implements IRegistry {
 	 * use for set inject
 	 */
 	@Override
-	public Set<ServiceItem> getServices(String serviceName) {
+	public Set<UniqueServiceKeyJRso> getServices(String serviceName) {
 		String sn = AsyncClientUtils.genSyncServiceName(serviceName);
 		if(this.needWaiting) {
 			logger.warn("Do getServices(String serviceName) waiting get serviceName:{}",serviceName);
@@ -438,10 +438,10 @@ public class RegistryImpl implements IRegistry {
 	}
 	
 	@Override
-	public ServiceItem getService(String serviceName, int insId) {
-		Set<ServiceItem> items = this.getServices(serviceName);
+	public UniqueServiceKeyJRso getService(String serviceName, int insId) {
+		Set<UniqueServiceKeyJRso> items = this.getServices(serviceName);
 		if(items == null || items.isEmpty()) return null;
-		for(ServiceItem si : items) {
+		for(UniqueServiceKeyJRso si : items) {
 			if(si.getInsId() == insId) {
 				return si;
 			}
@@ -449,8 +449,8 @@ public class RegistryImpl implements IRegistry {
 		return null;
 	}
 
-	@Override
-	public ServiceItem getServiceByImpl(String impl) {
+	/*@Override
+	public UniqueServiceKeyJRso getServiceByImpl(String impl) {
 		if(this.needWaiting) {
 			logger.warn("Do getServiceByImpl waiting get impl:{}",impl);
 			setNeedWaiting();
@@ -458,10 +458,10 @@ public class RegistryImpl implements IRegistry {
 		} else {
 			return getServiceByImpl0(impl);
 		}	
-	}
+	}*/
 	
 	@Override
-	public ServiceItem getServiceByCode(int code) {
+	public UniqueServiceKeyJRso getServiceByCode(int code) {
 		if(this.needWaiting) {
 			logger.warn("Do getServiceByCode waiting get code:{}",code);
 			setNeedWaiting();
@@ -472,12 +472,12 @@ public class RegistryImpl implements IRegistry {
 	}
 	
 	@Override
-	public ServiceItem getOwnItem(int hash) {
+	public ServiceItemJRso getOwnItem(int hash) {
 		if(localRegistedItems.isEmpty()) {
 			return null;
 		}
 		
-		for(ServiceItem si : localRegistedItems.values()) {
+		for(ServiceItemJRso si : localRegistedItems.values()) {
 			if(si.getKey().getSnvHash() == hash) {
 				return si;
 			}
@@ -486,12 +486,9 @@ public class RegistryImpl implements IRegistry {
 		return null;
 	}
 	
-	private ServiceItem getServiceByHash0(int hash) {
-		for(ServiceItem si : this.srvManager.getAllItems()){
-			if(this.openDebug) {
-				logger.debug("Impl:"+si.getImpl());
-			}
-			if(si.getKey().getSnvHash() == hash){
+	private UniqueServiceKeyJRso getServiceByHash0(int hash) {
+		for(UniqueServiceKeyJRso si : this.srvManager.getAllItems()){
+			if(si.getSnvHash() == hash){
 				return si;
 			}
 		}
@@ -499,24 +496,11 @@ public class RegistryImpl implements IRegistry {
 		return null;
 	}
 	
-	private ServiceItem getServiceByImpl0(String impl) {
-		for(ServiceItem si : this.srvManager.getAllItems()){
-			if(this.openDebug) {
-				logger.debug("Impl:"+si.getImpl());
-			}
-			if(si.getImpl().equals(impl)){
-				return si;
-			}
-		}
-		logger.error("Impl not found:"+impl);
-		return null;
-	}
-	
 	@Override
-	public Set<ServiceItem> getServices(String serviceName,String method/*,Class<?>[] args*/
+	public Set<ServiceItemJRso> getServices(String serviceName,String method/*,Class<?>[] args*/
 			,String namespace,String version,String transport) {
 		if(this.needWaiting) {
-			logger.warn("Do getServices waiting get key:{},method:{},transport:{}",UniqueServiceKey.serviceName(serviceName, namespace, version),
+			logger.warn("Do getServices waiting get key:{},method:{},transport:{}",UniqueServiceKeyJRso.serviceName(serviceName, namespace, version),
 					method,transport);
 			setNeedWaiting();
 			return IWaitingAction.doAct(
@@ -526,13 +510,13 @@ public class RegistryImpl implements IRegistry {
 		}	
 	}
 	
-	private Set<ServiceItem> getServices0(String serviceName,String method/*,Class<?>[] args*/
+	private Set<ServiceItemJRso> getServices0(String serviceName,String method/*,Class<?>[] args*/
 			,String namespace,String version,String transport) {
 		
 		//namespace = UniqueServiceKey.namespace(namespace);
 		//version = UniqueServiceKey.version(version);
 		
-		Set<ServiceItem> sis = matchServiceItems(serviceName, namespace, version);
+		Set<UniqueServiceKeyJRso> sis = matchServiceItems(serviceName, namespace, version);
 		
 		//this.serviceItems.get(ServiceItem.serviceName(serviceName, namespace, version));
 		
@@ -540,18 +524,24 @@ public class RegistryImpl implements IRegistry {
 			return null;
 		}
 		
-		Set<ServiceItem> breakings = new HashSet<ServiceItem>();
-		Set<ServiceItem> set = new HashSet<ServiceItem>();
+		Set<ServiceItemJRso> breakings = new HashSet<>();
+		Set<ServiceItemJRso> set = new HashSet<>();
 		
-		for(ServiceItem si : sis) {
-			if(!checkTransport(si,transport)){
+		for(UniqueServiceKeyJRso si : sis) {
+			
+			ServiceItemJRso item = this.srvManager.getItem(si.fullStringKey());
+			if(item == null) {
 				continue;
 			}
-			ServiceMethod sm = si.getMethod(method/*, args*/);
+			if(!checkTransport(item,transport)){
+				continue;
+			}
+			
+			ServiceMethodJRso sm = item.getMethod(method/*, args*/);
 			if(sm.isBreaking()){
-				breakings.add(si);
+				breakings.add(item);
 			} else {
-				set.add(si);
+				set.add(item);
 			}
 		}
 		
@@ -567,19 +557,19 @@ public class RegistryImpl implements IRegistry {
 		
 	}
 
-	private boolean checkTransport(ServiceItem si,String transport) {
+	private boolean checkTransport(ServiceItemJRso si,String transport) {
 		if(StringUtils.isEmpty(transport)){
 			return true;
 		}
 		return si.getServer(transport) != null;
 	}
 
-	private Set<ServiceItem> matchServiceItems(String serviceName,String namespace,String version){
+	private Set<UniqueServiceKeyJRso> matchServiceItems(String serviceName,String namespace,String version){
 		return this.srvManager.getServiceItems(AsyncClientUtils.genSyncServiceName(serviceName),namespace,version);
 	}
 
 	/** +++++++++++++++++++++++Service QUERY for consumer END ++++++++++++++++++**/
-	private void persisFromConfig(ServiceItem item){
+	/*private void persisFromConfig(ServiceItemJRso item){
         if(item== null){
         	logger.error("Item is NULL");
         	return;
@@ -587,10 +577,10 @@ public class RegistryImpl implements IRegistry {
 		String key = item.path(Config.getRaftBasePath(Config.GrobalServiceRegistDir));
 		if(this.srvManager.exist(key)){
 			String data = dataOperator.getData(key);
-			ServiceItem perItem = this.fromJson(data);
+			ServiceItemJRso perItem = this.fromJson(data);
 			item.formPersisItem(perItem);
 		}
-	}
+	}*/
 	
 	public void setSrvManager(ServiceManager srvManager) {
 		this.srvManager = srvManager;
@@ -600,8 +590,8 @@ public class RegistryImpl implements IRegistry {
 		this.dataOperator = dataOperator;
 	}
 
-	private ServiceItem fromJson(String data){
-		return JsonUtils.getIns().fromJson(data, ServiceItem.class);
+	private ServiceItemJRso fromJson(String data){
+		return JsonUtils.getIns().fromJson(data, ServiceItemJRso.class);
 	}
 	
 }

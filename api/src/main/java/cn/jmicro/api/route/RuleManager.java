@@ -43,7 +43,7 @@ public class RuleManager {
 	
 	private static final String RULE_DIR = Config.getRaftBasePath("") + "/routeRules/" + Config.getInstancePrefix();
 	
-	private RaftNodeDataListener<RouteRule> rndl = null;
+	private RaftNodeDataListener<RouteRuleJRso> rndl = null;
 	 
 	@Inject
 	private IDataOperator dataOperator;
@@ -56,9 +56,9 @@ public class RuleManager {
 	
 	//private volatile Map<Integer,RouteRule> rules = Collections.synchronizedMap(new HashMap<>());
 	
-	private volatile Map<String,List<RouteRule>> mapRules = Collections.synchronizedMap(new HashMap<>());
+	private volatile Map<String,List<RouteRuleJRso>> mapRules = Collections.synchronizedMap(new HashMap<>());
 	
-	private IRaftListener<RouteRule> ruleInfoListener = (type, node, ci) -> {
+	private IRaftListener<RouteRuleJRso> ruleInfoListener = (type, node, ci) -> {
 		if(ci == null) {
 			ci = getRuleById(Integer.parseInt(node));
 		}
@@ -75,7 +75,7 @@ public class RuleManager {
 		} else if (type == IListener.REMOVE) {
 			ruleRemove(ci);
 		} else if (type == IListener.DATA_CHANGE) {
-			RouteRule orr = this.getRuleById(ci.getUniqueId());
+			RouteRuleJRso orr = this.getRuleById(ci.getUniqueId());
 			if(orr != null) {
 				ruleRemove(orr);
 			}
@@ -85,9 +85,9 @@ public class RuleManager {
 		}
 	};
 	
-	private void ruleRemove(RouteRule ci) {
+	private void ruleRemove(RouteRuleJRso ci) {
 		if(ci.isEnable()) {
-			List<RouteRule> set = mapRules.get(ci.getFrom().getType());
+			List<RouteRuleJRso> set = mapRules.get(ci.getFrom().getType());
 			if(set != null && set.contains(ci)) {
 				synchronized(set) {
 					set.remove(ci);
@@ -96,15 +96,15 @@ public class RuleManager {
 		}
 	}
 
-	private RouteRule getRuleById(int node) {
+	private RouteRuleJRso getRuleById(int node) {
 		
 		for(String key : mapRules.keySet()) {
-			List<RouteRule> set = mapRules.get(key);
+			List<RouteRuleJRso> set = mapRules.get(key);
 			if(set == null || set.isEmpty()) {
 				continue;
 			}
 			synchronized(set) {
-				for(RouteRule rr : set) {
+				for(RouteRuleJRso rr : set) {
 					if(rr.getUniqueId() == node) {
 						return rr;
 					}
@@ -116,9 +116,9 @@ public class RuleManager {
 		
 	}
 
-	private void ruleAdd(RouteRule ci) {
+	private void ruleAdd(RouteRuleJRso ci) {
 		if(ci.isEnable()) {
-			List<RouteRule> set = mapRules.get(ci.getFrom().getType());
+			List<RouteRuleJRso> set = mapRules.get(ci.getFrom().getType());
 			if(set == null) {
 				set = new ArrayList<>();
 				mapRules.put(ci.getFrom().getType(), set);
@@ -130,7 +130,7 @@ public class RuleManager {
 		}
 	}
 
-	public List<RouteRule> getRouteRulesByType(String type){
+	public List<RouteRuleJRso> getRouteRulesByType(String type){
 		if(mapRules.containsKey(type)) {
 			return Collections.unmodifiableList(mapRules.get(type));
 		}else {
@@ -139,8 +139,8 @@ public class RuleManager {
 		
 	}
 	
-	List<RouteRule> getRouteRules(){
-		List<RouteRule> set = new ArrayList<>();
+	List<RouteRuleJRso> getRouteRules(){
+		List<RouteRuleJRso> set = new ArrayList<>();
 		for(String t : rm.getRouterTypes()) {
 			if(mapRules.containsKey(t)) {
 				set.addAll(mapRules.get(t));
@@ -151,7 +151,7 @@ public class RuleManager {
 	}
 	
 	public void ready() {
-		rndl = new RaftNodeDataListener<>(this.dataOperator,RULE_DIR,RouteRule.class,false);
+		rndl = new RaftNodeDataListener<>(this.dataOperator,RULE_DIR,RouteRuleJRso.class,false);
     	rndl.addListener(ruleInfoListener);
 	}
 	

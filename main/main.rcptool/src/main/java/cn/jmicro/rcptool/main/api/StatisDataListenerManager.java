@@ -9,8 +9,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import cn.jmicro.api.annotation.Component;
-import cn.jmicro.api.registry.ServiceItem;
-import cn.jmicro.api.registry.ServiceMethod;
+import cn.jmicro.api.registry.ServiceItemJRso;
+import cn.jmicro.api.registry.ServiceMethodJRso;
 
 /**
  * 
@@ -29,7 +29,7 @@ public class StatisDataListenerManager {
 	
 	private Map<String,Set<IStatisDataListener>> srvMethod2Listeners = new HashMap<>();
 	
-	public void notifyData(ServiceMethod sm,Map<Integer,Double> data) {
+	public void notifyData(ServiceMethodJRso sm,Map<Integer,Double> data) {
 		if(sm == null) {
 			return ;
 		}
@@ -46,14 +46,14 @@ public class StatisDataListenerManager {
 			doNotify(srvInstance2Listeners.get(sm.getKey().getInstanceName()),sm,data);
 		}
 		
-		String k = sm.getKey().getServiceName() + ServiceItem.KEY_SEPERATOR + sm.getKey().getMethod();
+		String k = sm.getKey().getServiceName() + ServiceItemJRso.KEY_SEPERATOR + sm.getKey().getMethod();
 		if(srvMethod2Listeners.containsKey(k)) {
 			doNotify(srvMethod2Listeners.get(k),sm,data);
 		}
 	
 	}
 	
-	private void doNotify(Set<IStatisDataListener> lises,ServiceMethod sm,Map<Integer,Double> data) {
+	private void doNotify(Set<IStatisDataListener> lises,ServiceMethodJRso sm,Map<Integer,Double> data) {
 		if(lises != null && !lises.isEmpty()) {
 			for(IStatisDataListener l : lises) {
 				logger.info("sm:{},val:{}",sm,data);
@@ -85,7 +85,7 @@ public class StatisDataListenerManager {
 	}
 	
 	public String srvMethodKey(String srvName,String method) {
-		return srvName + ServiceItem.KEY_SEPERATOR + method;
+		return srvName + ServiceItemJRso.KEY_SEPERATOR + method;
 	}
 	
 }

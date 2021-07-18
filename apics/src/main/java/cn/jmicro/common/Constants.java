@@ -75,7 +75,7 @@ public interface Constants {
 	
 	public static final String SYSTEM_LOG_LEVEL="sysLogLevel";
 	
-	public static final String ADMIN_CLIENT_ID = "adminClientId";
+	//public static final String ADMIN_CLIENT_ID = "adminClientId";
 	
 	public static final String CLIENT_ONLY="client";
 	public static final String SERVER_ONLY="server";

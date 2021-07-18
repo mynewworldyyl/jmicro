@@ -17,12 +17,12 @@ import cn.jmicro.api.cache.lock.ILocker;
 import cn.jmicro.api.cache.lock.ILockerManager;
 import cn.jmicro.api.config.Config;
 import cn.jmicro.api.i18n.I18NManager;
-import cn.jmicro.api.mng.IStatisMonitor;
-import cn.jmicro.api.mng.ReportData;
-import cn.jmicro.api.monitor.IMonitorDataSubscriber;
+import cn.jmicro.api.mng.IStatisMonitorJMSrv;
+import cn.jmicro.api.mng.ReportDataJRso;
+import cn.jmicro.api.monitor.IMonitorDataSubscriberJMSrv;
 import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.objectfactory.AbstractClientServiceProxyHolder;
-import cn.jmicro.api.pubsub.PSData;
+import cn.jmicro.api.pubsub.PSDataJRso;
 import cn.jmicro.api.pubsub.PubSubManager;
 import cn.jmicro.api.raft.IDataOperator;
 import cn.jmicro.api.service.ServiceManager;
@@ -42,7 +42,7 @@ import cn.jmicro.common.Constants;
  */
 @Component(level=1001)
 @Service(version="0.0.1",external=true,showFront=false,logLevel=MC.LOG_NO)
-public class StatisMonitorImpl implements IStatisMonitor {
+public class StatisMonitorImpl implements IStatisMonitorJMSrv {
 
 	private final static Logger logger = LoggerFactory.getLogger(StatisMonitorImpl.class);
 	
@@ -70,7 +70,7 @@ public class StatisMonitorImpl implements IStatisMonitor {
 	private I18NManager i18nManager;
 	
 	@Reference(namespace="*", version="0.0.1",required=false)
-	private IMonitorDataSubscriber dataServer;
+	private IMonitorDataSubscriberJMSrv dataServer;
 	
 	private String prefix = "statis.index.";
 	
@@ -100,9 +100,9 @@ public class StatisMonitorImpl implements IStatisMonitor {
 				return;
 			}
 			
-			ReportData rd = dataServer.getData(mkey, types, DATA_TYPE);
+			ReportDataJRso rd = dataServer.getData(mkey, types, DATA_TYPE);
 			
-			PSData psData = new PSData();
+			PSDataJRso psData = new PSDataJRso();
 			psData.setData(rd);
 			psData.setTopic(key);
 			psData.put(Constants.SERVICE_METHOD_KEY, key);

@@ -6,7 +6,7 @@ import org.junit.Test;
 
 import com.alibaba.dubbo.common.serialize.kryo.utils.ReflectUtils;
 
-import cn.jmicro.api.registry.UniqueServiceMethodKey;
+import cn.jmicro.api.registry.UniqueServiceMethodKeyJRso;
 
 public class TestUniqueServiceMethodKey {
 	
@@ -19,7 +19,7 @@ public class TestUniqueServiceMethodKey {
 		Object[] objs = new Object[1];
 		objs[0] = new String[] {"test","3"};
 		
-		String ps = UniqueServiceMethodKey.paramsStr(objs);
+		String ps = UniqueServiceMethodKeyJRso.paramsStr(objs);
 		
 		System.out.println(ps);
 	}

@@ -25,18 +25,18 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import cn.jmicro.api.JMicroContext;
-import cn.jmicro.api.choreography.ProcessInfo;
+import cn.jmicro.api.choreography.ProcessInfoJRso;
 import cn.jmicro.api.config.Config;
-import cn.jmicro.api.gateway.ApiRequest;
-import cn.jmicro.api.gateway.ApiResponse;
+import cn.jmicro.api.gateway.ApiRequestJRso;
+import cn.jmicro.api.gateway.ApiResponseJRso;
 import cn.jmicro.api.net.IReq;
 import cn.jmicro.api.net.IResp;
 import cn.jmicro.api.net.Message;
-import cn.jmicro.api.net.RpcRequest;
-import cn.jmicro.api.net.RpcResponse;
+import cn.jmicro.api.net.RpcRequestJRso;
+import cn.jmicro.api.net.RpcResponseJRso;
 import cn.jmicro.api.objectfactory.IObjectFactory;
-import cn.jmicro.api.registry.ServiceMethod;
-import cn.jmicro.api.security.ActInfo;
+import cn.jmicro.api.registry.ServiceMethodJRso;
+import cn.jmicro.api.security.ActInfoJRso;
 import cn.jmicro.api.utils.TimeUtils;
 import cn.jmicro.common.CommonException;
 import cn.jmicro.common.Constants;
@@ -56,9 +56,9 @@ public class LG {
 	
 	//private static boolean isMs = false;
 	
-	private static ProcessInfo pi = null;
+	private static ProcessInfoJRso pi = null;
 	
-	private static JMLogItem beforeInitItem = null;
+	private static JMLogItemJRso beforeInitItem = null;
 	
 	/*public static boolean log(byte level,String tag,String desc,short type) {
 		return log(level,tag,desc,null,type);
@@ -85,14 +85,14 @@ public class LG {
 			return false;
 		}
 
-		JMLogItem mi = null;
+		JMLogItemJRso mi = null;
 		if(JMicroContext.existRpcContext()) {
 			 mi = JMicroContext.get().getMRpcLogItem();
 		}
 		
 		if(mi == null && !isInit) {
 			if(beforeInitItem == null) {
-				beforeInitItem = new JMLogItem();
+				beforeInitItem = new JMLogItemJRso();
 			}
 			mi = beforeInitItem;
 		}
@@ -100,10 +100,10 @@ public class LG {
 		boolean f = false;
 		if(mi == null) {
 			 f = true;
-			 mi = new JMLogItem();
+			 mi = new JMLogItemJRso();
 		}
 		
-		OneLog oi = mi.addOneItem(level, tag,desc);
+		OneLogJRso oi = mi.addOneItem(level, tag,desc);
 		//oi.setType(type);
 		setStackTrance(oi,4);
 		
@@ -117,7 +117,7 @@ public class LG {
 					mi.setResp(ce.getResp());
 				}
 				if(ce.getAi() != null) {
-					mi.setActClientId(ce.getAi().getId());
+					mi.setActClientId(ce.getAi().getClientId());
 					mi.setSysClientId(Config.getClientId());
 					mi.setActName(ce.getAi().getActName());
 				}
@@ -134,11 +134,11 @@ public class LG {
 	
 	}
 	
-	public static boolean breakService(byte level,String tag,ServiceMethod sm,String desc) {
+	public static boolean breakService(byte level,String tag,ServiceMethodJRso sm,String desc) {
 		if(isLoggable(level,sm.getLogLevel())) {
-			JMLogItem mi = new JMLogItem();
+			JMLogItemJRso mi = new JMLogItemJRso();
 			mi.setSmKey(sm.getKey());
-			OneLog oi = mi.addOneItem(level, tag, desc);
+			OneLogJRso oi = mi.addOneItem(level, tag, desc);
 			setStackTrance(oi,3);
 			setCommon(mi);
 			m.readySubmit(mi);
@@ -152,30 +152,30 @@ public class LG {
 			return false;
 		}
 		
-		JMLogItem mi = null;
+		JMLogItemJRso mi = null;
 		if(JMicroContext.existRpcContext()) {
 			mi = JMicroContext.get().getMRpcLogItem();
 		}
 		
 		if(mi == null && !isInit) {
 			if(beforeInitItem == null) {
-				beforeInitItem = new JMLogItem();
+				beforeInitItem = new JMLogItemJRso();
 			}
 			mi = beforeInitItem;
 		}
 		
 		boolean f = false;
 		if(mi == null) {
-			mi = new JMLogItem();
+			mi = new JMLogItemJRso();
 			f = true;
-			ActInfo ai = JMicroContext.get().getAccount();
+			ActInfoJRso ai = JMicroContext.get().getAccount();
 			if(ai != null) {
-				mi.setActClientId(ai.getId());
+				mi.setActClientId(ai.getClientId());
 				mi.setSysClientId(Config.getClientId());
 			}
 		}
 		
-		OneLog oi = mi.addOneItem(level,cls.getName(),desc);
+		OneLogJRso oi = mi.addOneItem(level,cls.getName(),desc);
 		setStackTrance(oi,3);
 		if(ex != null) {
 			oi.setEx(serialEx(ex));
@@ -201,31 +201,31 @@ public class LG {
 		return ex.getMessage();
 	}
 	
-	public static JMLogItem logWithNonRpcContext(byte level, Class<?> tag, String desc,short type,boolean submit) {
+	public static JMLogItemJRso logWithNonRpcContext(byte level, Class<?> tag, String desc,short type,boolean submit) {
 		return logWithNonRpcContext(level,tag.getName(),desc,null,type,submit);
 	}
 	
-	public static JMLogItem logWithNonRpcContext(byte level, Class<?> tag, String desc, Throwable exp,boolean submit) {
+	public static JMLogItemJRso logWithNonRpcContext(byte level, Class<?> tag, String desc, Throwable exp,boolean submit) {
 		return logWithNonRpcContext(level,tag.getName(),desc,exp,MC.MT_DEFAULT,submit);
 	}
 	
-	public static JMLogItem logWithNonRpcContext(byte level, String tag, String desc, Throwable exp,short type,boolean submit) {
+	public static JMLogItemJRso logWithNonRpcContext(byte level, String tag, String desc, Throwable exp,short type,boolean submit) {
 		if(level == MC.LOG_NO || !isLoggable(level)) {
 			return null;
 		}
 		
-		JMLogItem mi = null;
+		JMLogItemJRso mi = null;
 		
 		if(!isInit) {
 			if(beforeInitItem == null) {
-				beforeInitItem = new JMLogItem();
+				beforeInitItem = new JMLogItemJRso();
 			}
 			mi = beforeInitItem;
 		}else {
-			mi = new JMLogItem();
+			mi = new JMLogItemJRso();
 		}
 
-		OneLog oi = mi.addOneItem(level, tag,desc);
+		OneLogJRso oi = mi.addOneItem(level, tag,desc);
 		setStackTrance(oi,4);
 		if(exp != null) {
 			oi.setEx(serialEx(exp));
@@ -240,21 +240,21 @@ public class LG {
 		return mi;
 	}
 	
-	public static void submit2Cache(JMLogItem mi) {
+	public static void submit2Cache(JMLogItemJRso mi) {
 		if(isInit) {
 			m.submit2Cache(mi);
 		}
 	}
 	
-	public static void setCommon(JMLogItem si) {
+	public static void setCommon(JMLogItemJRso si) {
 		if(si == null) {
 			return;
 		}
 
 		if(JMicroContext.existRpcContext()) {
-			ActInfo ai = JMicroContext.get().getAccount();
+			ActInfoJRso ai = JMicroContext.get().getAccount();
 			if(ai != null) {
-				si.setActClientId(ai.getId());
+				si.setActClientId(ai.getClientId());
 				si.setActName(ai.getActName());
 			}
 			
@@ -264,7 +264,7 @@ public class LG {
 			si.setRemoteHost(JMicroContext.get().getString(JMicroContext.REMOTE_HOST, ""));
 			si.setRemotePort(JMicroContext.get().getString(JMicroContext.REMOTE_PORT, ""));
 			
-			ServiceMethod sm = (ServiceMethod)JMicroContext.get().getObject(Constants.SERVICE_METHOD_KEY, null);
+			ServiceMethodJRso sm = (ServiceMethodJRso)JMicroContext.get().getObject(Constants.SERVICE_METHOD_KEY, null);
 			if(si.getSmKey() == null && sm != null) {
 				si.setSmKey(sm.getKey());
 				//si.setLogLevel(sm.getLogLevel());
@@ -287,11 +287,11 @@ public class LG {
 		JMicroContext.ready0(of.get(LogMonitorClient.class), of.get(StatisMonitorClient.class));
 		
 		//isMs = m != null;
-		pi = of.get(ProcessInfo.class);
+		pi = of.get(ProcessInfoJRso.class);
 		if(beforeInitItem != null) {
-			Iterator<OneLog> items = beforeInitItem.getItems().iterator();
+			Iterator<OneLogJRso> items = beforeInitItem.getItems().iterator();
 			while(items.hasNext()) {
-				OneLog i = items.next();
+				OneLogJRso i = items.next();
 				if(!isLoggable(i.getLevel())) {
 					items.remove();
 				}
@@ -349,8 +349,8 @@ public class LG {
 
 	public static String reqMessage(String prefix, IReq r) {
 		StringBuffer sb = new StringBuffer(prefix);
-		if(r instanceof RpcRequest) {
-			RpcRequest req = (RpcRequest)r;
+		if(r instanceof RpcRequestJRso) {
+			RpcRequestJRso req = (RpcRequestJRso)r;
 			sb.append(",sn:").append(req.getServiceName());
 			sb.append(",ns:").append(req.getNamespace());
 			sb.append(",ver:").append(req.getVersion());
@@ -358,9 +358,9 @@ public class LG {
 			sb.append(",params:").append(req.getArgs());
 			sb.append(",reqId:").append(req.getRequestId());
 			sb.append(",parentId:").append(req.getReqParentId());
-		}else if(r instanceof ApiRequest) {
-			ApiRequest req = (ApiRequest)r;
-			ServiceMethod sm = JMicroContext.get().getParam(Constants.SERVICE_METHOD_KEY, null);
+		}else if(r instanceof ApiRequestJRso) {
+			ApiRequestJRso req = (ApiRequestJRso)r;
+			ServiceMethodJRso sm = JMicroContext.get().getParam(Constants.SERVICE_METHOD_KEY, null);
 			if(sm != null) {
 				sb.append(",sn:").append(sm.getKey().getServiceName());
 				sb.append(",ns:").append(sm.getKey().getNamespace());
@@ -374,12 +374,12 @@ public class LG {
 	
 	public static String respMessage(String prefix, IResp r) {
 		StringBuffer sb = new StringBuffer(prefix);
-		if(r instanceof RpcResponse) {
-			RpcResponse req = (RpcResponse)r;
+		if(r instanceof RpcResponseJRso) {
+			RpcResponseJRso req = (RpcResponseJRso)r;
 			sb.append(",success:").append(req.isSuccess());
 			sb.append(",result:").append(req.getResult());
-		}else if(r instanceof ApiResponse) {
-			ApiResponse req = (ApiResponse)r;
+		}else if(r instanceof ApiResponseJRso) {
+			ApiResponseJRso req = (ApiResponseJRso)r;
 			sb.append(",success:").append(req.isSuccess());
 			sb.append(",reqId:").append(req.getReqId());
 			sb.append(",result:").append(req.getResult());
@@ -387,7 +387,7 @@ public class LG {
 		return sb.toString();
 	}
 	
-	private static void setStackTrance(OneLog oi,int idx) {
+	private static void setStackTrance(OneLogJRso oi,int idx) {
 		StackTraceElement se = Thread.currentThread().getStackTrace()[idx];
 		oi.setLineNo(se.getLineNumber());
 		oi.setFileName(se.getFileName());

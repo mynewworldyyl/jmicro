@@ -23,8 +23,8 @@ public class SystemStatisManager {
 	}
 	
 	@SuppressWarnings("restriction")
-	public SystemStatis getStatis() {
-		SystemStatis ss = new SystemStatis();
+	public SystemStatisJRso getStatis() {
+		SystemStatisJRso ss = new SystemStatisJRso();
 		ss.setCpuLoad(osBean.getSystemCpuLoad());
 		ss.setFreeMemory(osBean.getFreePhysicalMemorySize());
 		ss.setTotalMemory(osBean.getTotalPhysicalMemorySize());

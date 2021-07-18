@@ -10,7 +10,7 @@ import cn.jmicro.api.utils.TimeUtils;
 import cn.jmicro.common.CommonException;
 import cn.jmicro.common.util.StringUtils;
 
-public class MonitorClientStatusAdapter implements IMonitorAdapter {
+public class MonitorClientStatusAdapter implements IMonitorAdapterJMSrv {
 
 	private Logger logger = null;
 	
@@ -71,14 +71,14 @@ public class MonitorClientStatusAdapter implements IMonitorAdapter {
 	}
 
 	@Override
-	public MonitorServerStatus status() {
+	public MonitorServerStatusJRso status() {
 		if (!monitoralbe) {
 			enableMonitor(true);
 		}
 
 		lastStatusTime = TimeUtils.getCurTime();
 
-		MonitorServerStatus s = new MonitorServerStatus();
+		MonitorServerStatusJRso s = new MonitorServerStatusJRso();
 		// s.setInstanceName(Config.getInstanceName());
 		// s.setSubsriberSize(regSubs.size());
 		// s.getSubsriber2Types().putAll(this.monitorManager.getMkey2Types());
@@ -117,8 +117,8 @@ public class MonitorClientStatusAdapter implements IMonitorAdapter {
 	}
 
 	@Override
-	public MonitorInfo info() {
-		MonitorInfo info = new MonitorInfo();
+	public MonitorInfoJRso info() {
+		MonitorInfoJRso info = new MonitorInfoJRso();
 		info.setGroup(this.group);
 		info.setTypeLabels(typeLabels);
 		info.setTypes(TYPES);

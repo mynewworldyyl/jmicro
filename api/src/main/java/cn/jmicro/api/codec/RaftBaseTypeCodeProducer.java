@@ -41,8 +41,9 @@ public class RaftBaseTypeCodeProducer implements ITypeCodeProducer {
 	@Inject
 	private Config cfg;
 	
-	private IChildrenListener typeListener = (type,parent,name,data) -> {
+	private IChildrenListener typeListener = (type,parent,name) -> {
 		if(type == IListener.ADD) {
+			String data = op.getData(parent+"/"+name);
 			addType(name,data);
 		}else if(type == IListener.REMOVE) {
 			removeType(name);
@@ -101,7 +102,11 @@ public class RaftBaseTypeCodeProducer implements ITypeCodeProducer {
 	}
 
 	private void addType(String name, String data) {
-		logger.warn("Type add: " + name + "=" + data);
+		
+		if(logger.isTraceEnabled()) {
+			logger.trace("Type add: " + name + "=" + data);
+		}
+		
 		synchronized(synObject) {
 			name2Types.put(name, Short.parseShort(data));
 			//TypeCoderFactory.getIns().registClass(cls, t);

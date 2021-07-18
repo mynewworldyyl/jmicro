@@ -26,15 +26,15 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import cn.jmicro.api.annotation.Reference;
-import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.monitor.LG;
+import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.objectfactory.AbstractClientServiceProxyHolder;
 import cn.jmicro.api.objectfactory.ProxyObject;
-import cn.jmicro.api.registry.AsyncConfig;
+import cn.jmicro.api.registry.AsyncConfigJRso;
 import cn.jmicro.api.registry.IRegistry;
 import cn.jmicro.api.registry.IServiceListener;
-import cn.jmicro.api.registry.ServiceItem;
-import cn.jmicro.api.registry.UniqueServiceKey;
+import cn.jmicro.api.registry.ServiceItemJRso;
+import cn.jmicro.api.registry.UniqueServiceKeyJRso;
 
 /**
  * 
@@ -76,14 +76,14 @@ class FieldServiceProxyListener implements IServiceListener{
 
 
 	@Override
-	public void serviceChanged(int type, ServiceItem item) {
+	public void serviceChanged(int type, UniqueServiceKeyJRso siKey,ServiceItemJRso si) {
 		
-		if(!item.getKey().getServiceName().equals(srvType.getName())) {
+		if(!siKey.getServiceName().equals(srvType.getName())) {
 			return;
 		}
 		
-		if(!UniqueServiceKey.matchVersion(ref.version(),item.getKey().getVersion()) || 
-				!UniqueServiceKey.matchNamespace(ref.namespace(),item.getKey().getNamespace())) {
+		if(!UniqueServiceKeyJRso.matchVersion(ref.version(),siKey.getVersion()) || 
+				!UniqueServiceKeyJRso.matchNamespace(ref.namespace(),siKey.getNamespace())) {
 				return;
 		}
 		
@@ -91,7 +91,7 @@ class FieldServiceProxyListener implements IServiceListener{
 				!List.class.isAssignableFrom(refField.getType())){
 			
 			if(IServiceListener.ADD == type){
-				AsyncConfig[] acs = this.rsm.getAcs(this.ref);
+				AsyncConfigJRso[] acs = this.rsm.getAcs(this.ref);
 				boolean bf = refField.isAccessible();
 				Object o = null;
 				if(!bf) {
@@ -110,14 +110,19 @@ class FieldServiceProxyListener implements IServiceListener{
 				}
 				
 				AbstractClientServiceProxyHolder p = (AbstractClientServiceProxyHolder)o;
+				 //代理还不存在，创建之
+				if(si == null) {
+					si = this.rsm.getSrvMng().getServiceByKey(siKey.fullStringKey());
+				}
+				
 				if(o == null) {
-					 //代理还不存在，创建之
-					 p = (AbstractClientServiceProxyHolder)this.rsm.getRefRemoteService(item, null,acs);
+					 p = (AbstractClientServiceProxyHolder)this.rsm.getRefRemoteService(si, null,acs);
 					 if(p != null) {
 						SimpleObjectFactory.setObjectVal(srcObj, refField, p);
 						notifyChange(p,type);
 					 } else {
-						String msg = "Fail to create service "+item.getKey().toKey(true, true, true)+" for Class ["+srcObj.getClass().getName()+"] field ["+ refField.getName()+"] dependency ["+refField.getType().getName()+"]";
+						String msg = "Fail to create service "+siKey.fullStringKey()+
+								" for Class ["+srcObj.getClass().getName()+"] field ["+ refField.getName()+"] dependency ["+refField.getType().getName()+"]";
 						if(ref.required()) {
 							LG.log(MC.LOG_ERROR, FieldServiceProxyListener.class, msg);
 							logger.error(msg);
@@ -129,7 +134,7 @@ class FieldServiceProxyListener implements IServiceListener{
 					}
 				} else {
 					notifyChange(p,type);
-					p.getHolder().setItem(item);
+					p.getHolder().setItem(si);
 					p.getHolder().setAsyncConfig(acs);
 				}
 			}else if(IServiceListener.REMOVE == type) {

@@ -1,8 +1,8 @@
 package cn.jmicro.rcptool.main.api;
 
-import cn.jmicro.api.pubsub.PSData;
+import cn.jmicro.api.pubsub.PSDataJRso;
 
 public interface IServiceMethodStatisMonitor {
 
-	void statisMonitor(PSData data);
+	void statisMonitor(PSDataJRso data);
 }

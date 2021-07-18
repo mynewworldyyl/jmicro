@@ -29,14 +29,15 @@ import cn.jmicro.api.client.InvocationHandler;
 import cn.jmicro.api.config.Config;
 import cn.jmicro.api.monitor.LG;
 import cn.jmicro.api.monitor.MC;
-import cn.jmicro.api.registry.AsyncConfig;
+import cn.jmicro.api.registry.AsyncConfigJRso;
 import cn.jmicro.api.registry.IRegistry;
 import cn.jmicro.api.registry.IServiceListener;
-import cn.jmicro.api.registry.ServiceItem;
-import cn.jmicro.api.registry.ServiceMethod;
-import cn.jmicro.api.registry.UniqueServiceKey;
-import cn.jmicro.api.registry.UniqueServiceMethodKey;
-import cn.jmicro.api.security.ActInfo;
+import cn.jmicro.api.registry.ServiceItemJRso;
+import cn.jmicro.api.registry.ServiceMethodJRso;
+import cn.jmicro.api.registry.UniqueServiceKeyJRso;
+import cn.jmicro.api.registry.UniqueServiceMethodKeyJRso;
+import cn.jmicro.api.security.ActInfoJRso;
+import cn.jmicro.api.service.ServiceManager;
 import cn.jmicro.api.tx.TxConstants;
 import cn.jmicro.codegenerator.AsyncClientProxy;
 import cn.jmicro.codegenerator.AsyncClientUtils;
@@ -54,7 +55,7 @@ public class ClientServiceProxyHolder implements IServiceListener{
 
 	private final Logger logger = LoggerFactory.getLogger(this.getClass());
 	
-	private ServiceItem item = null;
+	private ServiceItemJRso item = null;
 	
 	private String ns;
 	
@@ -64,7 +65,9 @@ public class ClientServiceProxyHolder implements IServiceListener{
 	
 	private IObjectFactory of;
 	
-	private Map<String,AsyncConfig> acs = null;
+	private ServiceManager srvMng;
+	
+	private Map<String,AsyncConfigJRso> acs = null;
 	
 	private boolean direct = false;
 	
@@ -87,27 +90,36 @@ public class ClientServiceProxyHolder implements IServiceListener{
 	}
 	
 	@Override
-	public void serviceChanged(int type, ServiceItem item) {
+	public void serviceChanged(int type, UniqueServiceKeyJRso siKey,ServiceItemJRso si) {
 
-		if(!this.serviceKey().equals(item.serviceKey())){
+		if(!this.serviceKey().equals(item.toSnv())){
 			throw new CommonException("Service listener give error service oriItem:"+ 
-					this.getItem()==null ? serviceKey():this.getItem().getKey().toKey(true, true, true)+" newItem:"+item.getKey().toKey(true, true, true));
+					this.getItem()==null ? serviceKey():this.getItem().getKey().fullStringKey()
+							+" newItem:"+item.fullStringKey());
 		}
 		
-		if(!checkPackagePermission(item,this.blPkgName)) {
-			logger.warn("No permission to use service [" + item.getKey().getServiceName()+"] from " + this.blPkgName);
+		if(srvMng == null) {
+			srvMng = of.get(ServiceManager.class);
+		}
+		
+		if(si == null) {
+			si = srvMng.getItem(siKey.fullStringKey());
+		}
+		
+		if(si != null && !checkPackagePermission(si,this.blPkgName)) {
+			logger.warn("No permission to use service [" + siKey.getServiceName()+"] from " + this.blPkgName);
 			return;
 		}
 		
 		if(IServiceListener.ADD == type){
 			logger.info("Service Item Add: cls:{}, key:{}",this.getClass().getName(),this.serviceKey());
-			this.setItem(item);
+			this.setItem(si);
 		}else if(IServiceListener.REMOVE == type) {
 			logger.info("Service Item Remove cls:{}, key:{}",this.getClass().getName(),this.serviceKey());
 			this.setItem(null);
 		}else if(IServiceListener.DATA_CHANGE == type) {
 			logger.info("Service Item Change: cls:{}, key:{}",this.getClass().getName(),this.serviceKey());
-			this.setItem(item);
+			this.setItem(si);
 		}
 	}
 	
@@ -118,9 +130,9 @@ public class ClientServiceProxyHolder implements IServiceListener{
 		
 		JMicroContext cxt = JMicroContext.get();
 		
-		ServiceItem dsi = cxt.getParam(Constants.DIRECT_SERVICE_ITEM, null);
+		ServiceItemJRso dsi = cxt.getParam(Constants.DIRECT_SERVICE_ITEM, null);
 		
-		ServiceItem si = this.item;
+		ServiceItemJRso si = this.item;
 		
 		if(dsi != null) {
 			si = dsi;
@@ -137,7 +149,7 @@ public class ClientServiceProxyHolder implements IServiceListener{
 		if(si == null) {
 			if (!isUsable()) {
 				String msg = "Service Item is NULL when call method [" + methodName + "] with params ["
-						+ UniqueServiceMethodKey.paramsStr(args) + "] proxy [" + this.getClass().getName() + "]";
+						+ UniqueServiceMethodKeyJRso.paramsStr(args) + "] proxy [" + this.getClass().getName() + "]";
 				logger.error(msg);
 				restoreContext(curCxt);
 				throw new CommonException(msg);
@@ -146,7 +158,7 @@ public class ClientServiceProxyHolder implements IServiceListener{
 			}
 		}
 		
-		ServiceMethod sm = si.getMethod(methodName, args);
+		ServiceMethodJRso sm = si.getMethod(methodName, args);
 		if (sm == null) {
 			restoreContext(curCxt);
 			throw new CommonException("cls[" + si.getImpl() + "] method [" + methodName + "] method not found");
@@ -162,20 +174,20 @@ public class ClientServiceProxyHolder implements IServiceListener{
 		JMicroContext.configComsumer(sm, si);
 		
 		if(Constants.LICENSE_TYPE_FREE != sm.getFeeType()) {
-			ActInfo ai = cxt.getAccount();
+			ActInfoJRso ai = cxt.getAccount();
 			if(ai == null) {
-				String msg = "License need login: " + si.getKey().toKey(false, false, false);
+				String msg = "License need login: " + si.getKey().serviceID();
 				LG.log(MC.LOG_INFO, this.getClass(), msg);
 				restoreContext(curCxt);
 				throw new CommonException(msg);
 			}
 			
 			if(Constants.LICENSE_TYPE_CLIENT == sm.getFeeType() 
-					&& si.getClientId() != ai.getId()) {
+					&& si.getClientId() != ai.getClientId()) {
 				boolean f = false;
 				if(sm.getAuthClients() != null && sm.getAuthClients().length > 0) {
 					for(int t : sm.getAuthClients()) {
-						if(t == ai.getId()) {
+						if(t == ai.getClientId()) {
 							f = true;
 							break;
 						}
@@ -183,13 +195,13 @@ public class ClientServiceProxyHolder implements IServiceListener{
 				}
 				
 				if(!f) {
-					String msg = "Not authronize account ["+ai.getActName()+"] for " + si.getKey().toKey(false, false, false);
+					String msg = "Not authronize account ["+ai.getActName()+"] for " + si.getKey().serviceID();
 					LG.log(MC.LOG_WARN, this.getClass(), msg);
 					restoreContext(curCxt);
 					throw new CommonException(msg);
 				}
-			} else if(Constants.LICENSE_TYPE_PRIVATE == sm.getFeeType() && si.getClientId() != ai.getId()) {
-				String msg = "Private service ["+ai.getActName()+"] for " + si.getKey().toKey(false, false, false);
+			} else if(Constants.LICENSE_TYPE_PRIVATE == sm.getFeeType() && si.getClientId() != ai.getClientId()) {
+				String msg = "Private service ["+ai.getActName()+"] for " + si.getKey().serviceID();
 				LG.log(MC.LOG_WARN, this.getClass(), msg);
 				restoreContext(curCxt);
 				throw new CommonException(msg);
@@ -212,7 +224,7 @@ public class ClientServiceProxyHolder implements IServiceListener{
 						h = of.getByName(handler);
 						if (h == null) {
 							String msg = "Handler not found when call method [" + methodName + "] with params ["
-									+ UniqueServiceMethodKey.paramsStr(args) + "] proxy [" + this.getClass().getName()
+									+ UniqueServiceMethodKeyJRso.paramsStr(args) + "] proxy [" + this.getClass().getName()
 									+ "]";
 							logger.error(msg);
 							restoreContext(curCxt);
@@ -310,8 +322,12 @@ public class ClientServiceProxyHolder implements IServiceListener{
 
 		synchronized(this) {
 			if(this.item == null) {
-				ServiceItem si = getItemFromRegistry();
-				if(si != null) {
+				UniqueServiceKeyJRso siKey = getItemFromRegistry();
+				if(siKey != null) {
+					if(srvMng == null) {
+						srvMng = of.get(ServiceManager.class);
+					}
+					ServiceItemJRso si = srvMng.getItem(siKey.fullStringKey());
 					this.setItem(si);
 				}
 			}
@@ -320,9 +336,9 @@ public class ClientServiceProxyHolder implements IServiceListener{
 	
 	}
 	
-	protected ServiceItem getItemFromRegistry() {
+	protected UniqueServiceKeyJRso getItemFromRegistry() {
 		IRegistry r = of.get(IRegistry.class);
-		Set<ServiceItem> sis = r.getServices(this.getServiceName(), this.getNamespace(), this.getVersion());
+		Set<UniqueServiceKeyJRso> sis = r.getServices(this.getServiceName(), this.getNamespace(), this.getVersion());
 		if(sis != null && !sis.isEmpty()) {
 			return sis.iterator().next();
 		}
@@ -350,11 +366,11 @@ public class ClientServiceProxyHolder implements IServiceListener{
 		
 		//Reference ref = cxt.getParam(Constants.REF_ANNO, null);
 		
-		ServiceItem dsi = cxt.getParam(Constants.DIRECT_SERVICE_ITEM, null);
+		ServiceItemJRso dsi = cxt.getParam(Constants.DIRECT_SERVICE_ITEM, null);
 		
-		AsyncConfig async = cxt.getParam(Constants.ASYNC_CONFIG, null);
+		AsyncConfigJRso async = cxt.getParam(Constants.ASYNC_CONFIG, null);
 		
-		ActInfo ai = cxt.getAccount();
+		ActInfoJRso ai = cxt.getAccount();
 		
 		String loginKey = cxt.getParam(JMicroContext.LOGIN_KEY, null);
 		
@@ -429,7 +445,7 @@ public class ClientServiceProxyHolder implements IServiceListener{
 	//public abstract  boolean enable();
 	//public abstract void enable(boolean enable);
 	
-	public  void setItem(ServiceItem si){
+	public  void setItem(ServiceItemJRso si){
 		if(si != null) {
 			if(StringUtils.isEmpty(this.ns)) {
 				this.ns = si.getKey().getNamespace();
@@ -448,12 +464,12 @@ public class ClientServiceProxyHolder implements IServiceListener{
 		this.item = si;
 	}
 	
-	public  ServiceItem getItem(){
+	public  ServiceItemJRso getItem(){
 		return this.item;
 	}
 	
 	public String serviceKey(){
-		return UniqueServiceKey.serviceName(this.getServiceName(), this.getNamespace(), this.getVersion());
+		return UniqueServiceKeyJRso.serviceName(this.getServiceName(), this.getNamespace(), this.getVersion());
 	}
 	
 	@Override
@@ -470,16 +486,16 @@ public class ClientServiceProxyHolder implements IServiceListener{
 		return this.serviceKey().equals(o.serviceKey());
 	}
 	
-	public void setAsyncConfig(AsyncConfig[] acs) {
+	public void setAsyncConfig(AsyncConfigJRso[] acs) {
 		if(acs != null && acs.length > 0) {
 			this.acs = new HashMap<>();
-			for(AsyncConfig a : acs) {
+			for(AsyncConfigJRso a : acs) {
 				this.acs.put(a.getForMethod(), a);
 			}
 		}
 	}
 	
-	public static boolean checkPackagePermission(ServiceItem si,String pn) {
+	public static boolean checkPackagePermission(ServiceItemJRso si,String pn) {
 		boolean f = true;
 		if(si.getLimit2Packages().size() > 0) {
 			f = false;
@@ -497,7 +513,7 @@ public class ClientServiceProxyHolder implements IServiceListener{
 	
 	
 	
-	public AsyncConfig getAcs(String mkey) {
+	public AsyncConfigJRso getAcs(String mkey) {
 		if(acs == null) {
 			return null;
 		}

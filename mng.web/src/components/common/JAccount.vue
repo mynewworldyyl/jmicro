@@ -21,7 +21,9 @@
             <table>
                 <tr><td>{{'actName'|i18n}}</td><td><input type="input"  v-model="actName"/></td></tr>
                 <tr><td>{{'Password'|i18n}}</td><td><input type="password"  v-model="pwd"/></td></tr>
-
+                <tr><td>{{'vcode'|i18n}}</td><td><input type="input"  v-model="vcode"/>
+                    <img :src="codeUrl" @click="getCode()">
+                </td></tr>
                 <tr>
                     <td><input type="checkbox"  v-model="rememberPwd" @change="rememberPwdChange()"/>{{'RememberPwd'|i18n}}</td>
                     <td><a href="javascript:void(0)" @click="resetPasswordEmail()">{{'ResetPassword'|i18n}}</a></td>
@@ -102,6 +104,10 @@ export default {
             confirmPwd : null,
             oldPwd:null,
 
+            vcode:null,
+            vcodeId:null,
+            codeUrl:null,
+
             actInfo : null,
             isLogin:false,
             msg:'',
@@ -129,16 +135,32 @@ export default {
         this.actName = localStorage.get("actName");
         this.pwd = localStorage.get("pwd");
 
-        if(this.rememberPwd || !this.actName || this.actName.endWith('guest_')) {
+        /*if(this.rememberPwd || !this.actName || this.actName.endWith('guest_')) {
             this.doLogin();
-        }
+        }*/
+
+        this. getCode();
+
     },
 
     methods: {
+
+        getCode(){
+            rpc.getCode(1).then(resp => { // 生成验证码图片
+                if(resp.code == 0) {
+                    this.codeUrl = 'data:image/gif;base64,' + resp.data
+                    this.vcodeId = resp.msg
+                }else {
+                    this.msg = resp.msg;
+                }
+            })
+        },
+
         doLoginOrLogout(){
             if(this.actInfo) {
                 this.doLogout();
             } else {
+                this.getCode();
                this.actName = localStorage.get("actName"),
                this.pwd = localStorage.get("pwd"),
                this.rememberPwd = localStorage.get("rememberPwd");
@@ -262,7 +284,6 @@ export default {
 
             this.msg = "";
 
-
             let self = this;
             act.updatePwd(this.pwd,this.oldPwd,(state,errmsg)=>{
                 if(state) {
@@ -282,11 +303,13 @@ export default {
         },
 
         reset() {
-                this.actName = null;
-                this.pwd = null;
-                this.confirmPwd = null;
-                this.oldPwd = null;
-                this.msg = null;
+                this.actName = null
+                this.pwd = null
+                this.confirmPwd = null
+                this.oldPwd = null
+                this.msg = null
+                this.vcode = null
+                this.vcodeId = null
         },
 
         doRegist() {
@@ -356,7 +379,11 @@ export default {
             }
 
             self.msg = '';
-            rpc.login(this.actName,this.pwd,(actInfo,err)=>{
+            rpc.login(this.actName,this.pwd,this.vcode,this.vcodeId,(actInfo,err)=>{
+                this.vcode = null
+                this.vcodeId = null
+                this.codeUrl=null
+
                 if(!err && actInfo) {
                     self.actInfo = actInfo;
                     self.isLogin = true;
@@ -366,6 +393,7 @@ export default {
                 } else {
                     self.isLogin = false;
                     self.msg = err || 'Login fail';
+                    this.getCode();
                 }
             });
         },

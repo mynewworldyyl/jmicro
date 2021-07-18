@@ -11,27 +11,29 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import cn.jmicro.api.JMicroContext;
-import cn.jmicro.api.Resp;
+import cn.jmicro.api.RespJRso;
 import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Inject;
 import cn.jmicro.api.annotation.Reference;
 import cn.jmicro.api.annotation.SMethod;
 import cn.jmicro.api.annotation.Service;
-import cn.jmicro.api.choreography.ProcessInfo;
+import cn.jmicro.api.choreography.ProcessInfoJRso;
 import cn.jmicro.api.internal.async.PromiseImpl;
 import cn.jmicro.api.monitor.LG;
 import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.registry.IRegistry;
-import cn.jmicro.api.registry.ServiceItem;
-import cn.jmicro.api.registry.ServiceMethod;
-import cn.jmicro.api.tx.ITransactionResource;
-import cn.jmicro.api.tx.ITransationService;
+import cn.jmicro.api.registry.ServiceItemJRso;
+import cn.jmicro.api.registry.ServiceMethodJRso;
+import cn.jmicro.api.registry.UniqueServiceKeyJRso;
+import cn.jmicro.api.service.ServiceManager;
+import cn.jmicro.api.tx.ITransactionResourceJMSrv;
+import cn.jmicro.api.tx.ITransationServiceJMSrv;
 import cn.jmicro.api.tx.ITxListener;
 import cn.jmicro.api.tx.ITxListenerManager;
-import cn.jmicro.api.tx.TxConfig;
+import cn.jmicro.api.tx.TxConfigJRso;
 import cn.jmicro.api.tx.TxConstants;
-import cn.jmicro.api.tx.TxInfo;
-import cn.jmicro.api.tx.genclient.ITransationService$JMAsyncClient;
+import cn.jmicro.api.tx.TxInfoJRso;
+import cn.jmicro.api.tx.genclient.ITransationServiceJMSrv$JMAsyncClient;
 import cn.jmicro.api.utils.TimeUtils;
 import cn.jmicro.common.Constants;
 import cn.jmicro.ext.mybatis.ILocalTransactionResource;
@@ -39,25 +41,28 @@ import cn.jmicro.ext.mybatis.ILocalTransactionResource;
 @Component
 @Service(version="0.0.1", debugMode=1,
 monitorEnable=0, logLevel=MC.LOG_DEBUG, retryCnt=3, showFront=false, external=false,
-infs=ITransactionResource.class)
-public class TransactionResourceServiceIml implements ITransactionResource, ILocalTransactionResource,ITxListenerManager {
+infs=ITransactionResourceJMSrv.class)
+public class TransactionResourceServiceIml implements ITransactionResourceJMSrv, ILocalTransactionResource,ITxListenerManager {
 
 	private final static Logger logger = LoggerFactory.getLogger(TransactionResourceServiceIml.class);
 	
 	private static final Class<?> TAG = TransactionResourceServiceIml.class;
 	
-	private static final String STR_TAG = ITransactionResource.STR_TAG;
+	private static final String STR_TAG = ITransactionResourceJMSrv.STR_TAG;
 	
 	private long localTxTimeout = 30000;
 	
 	@Inject
-	private ProcessInfo pi;
+	private ServiceManager srvMng;
+	
+	@Inject
+	private ProcessInfoJRso pi;
 	
 	@Inject
 	private IRegistry reg;
 	
 	@Reference
-	private ITransationService$JMAsyncClient tsServer;
+	private ITransationServiceJMSrv$JMAsyncClient tsServer;
 	
 	private Map<Long,TxEntry> txEntries = new HashMap<>();
 	
@@ -130,7 +135,7 @@ public class TransactionResourceServiceIml implements ITransactionResource, ILoc
 			txe.s.rollback(true);
 		} finally {
 			if(txe.p != null) {
-				txe.p.setFail(Resp.CODE_TX_FAIL, msg);
+				txe.p.setFail(RespJRso.CODE_TX_FAIL, msg);
 				txe.p.done();
 			}
 			this.notifyTxListener(txe, false);
@@ -138,8 +143,8 @@ public class TransactionResourceServiceIml implements ITransactionResource, ILoc
 	}
 
 	@Override
-	public Resp<Boolean> canCommit(long txid) {
-		Resp<Boolean> r = new Resp<>(Resp.CODE_FAIL,false);
+	public RespJRso<Boolean> canCommit(long txid) {
+		RespJRso<Boolean> r = new RespJRso<>(RespJRso.CODE_FAIL,false);
 		TxEntry txe = this.txEntries.get(txid);
 		if(txe == null || txe.s == null) {
 			if(LG.isLoggable(MC.LOG_WARN)) {
@@ -158,19 +163,19 @@ public class TransactionResourceServiceIml implements ITransactionResource, ILoc
 			return r;
 		}
 
-		r.setCode(Resp.CODE_SUCCESS);
+		r.setCode(RespJRso.CODE_SUCCESS);
 		r.setData(true);
 		return r;
 	}
 
 	@Override
 	@SMethod(debugMode=1)
-	public Resp<Boolean> finish(long txid, boolean commit) {
-		Resp<Boolean> r = new Resp<>(Resp.CODE_SUCCESS,true);
+	public RespJRso<Boolean> finish(long txid, boolean commit) {
+		RespJRso<Boolean> r = new RespJRso<>(RespJRso.CODE_SUCCESS,true);
 		TxEntry txe = this.txEntries.get(txid);
 		if(txe == null) {
 			LG.log(MC.LOG_ERROR, this.getClass(), txid +" not found, commit: " + commit);
-			r.setCode(Resp.CODE_TX_FAIL);
+			r.setCode(RespJRso.CODE_TX_FAIL);
 			r.setData(false);
 			return r;
 		}
@@ -204,7 +209,7 @@ public class TransactionResourceServiceIml implements ITransactionResource, ILoc
 						this.pi.getInstanceName()+",insId: " + pi.getId();
 				LG.log(MC.LOG_ERROR,STR_TAG,msg,e);
 				logger.error(msg,e);
-				r.setCode(Resp.CODE_TX_FAIL);//事务提交失败
+				r.setCode(RespJRso.CODE_TX_FAIL);//事务提交失败
 				r.setData(false);
 				r.setMsg(msg);
 			} finally {
@@ -238,16 +243,16 @@ public class TransactionResourceServiceIml implements ITransactionResource, ILoc
 	}
 
 	@Override
-	public boolean begin(ServiceMethod sm) {
-		TxConfig cfg = new TxConfig();
+	public boolean begin(ServiceMethodJRso sm) {
+		TxConfigJRso cfg = new TxConfigJRso();
 		cfg.setTimeout(sm.getTimeout());
 		cfg.setPid(pi.getId());
-		Resp<TxInfo> r = tsServer.start(cfg);
+		RespJRso<TxInfoJRso> r = tsServer.start(cfg);
 		if(r.getCode() != 0) {
 			LG.log(MC.LOG_ERROR, this.getClass(), "Start tx failure: "+r.getMsg());
 			return false;
 		}
-		TxInfo ti = r.getData();
+		TxInfoJRso ti = r.getData();
 		JMicroContext.get().setLong(TxConstants.TX_ID, ti.getTxid());
 		JMicroContext.get().setInt(TxConstants.TX_SERVER_ID, ti.getServerId());
 		return true;
@@ -285,9 +290,9 @@ public class TransactionResourceServiceIml implements ITransactionResource, ILoc
 			return false;
 		}
 		
-		Resp<Boolean> r = tsServer.takePartIn(pi.getId(), txid, txPhase);
+		RespJRso<Boolean> r = tsServer.takePartIn(pi.getId(), txid, txPhase);
 		
-		if(!r.getData() || r.getCode() != Resp.CODE_SUCCESS) {
+		if(!r.getData() || r.getCode() != RespJRso.CODE_SUCCESS) {
 			LG.log(MC.LOG_ERROR, TAG, r.getMsg());
 			return false;
 		}
@@ -306,15 +311,20 @@ public class TransactionResourceServiceIml implements ITransactionResource, ILoc
 		return true;
 	}
 
-	private boolean setDirectItem(TxEntry txe,ServiceItem si) {
+	private boolean setDirectItem(TxEntry txe,ServiceItemJRso si) {
 		
 		if(si == null) {
 			Integer insId = JMicroContext.get().getInt(TxConstants.TX_SERVER_ID, 0);
-			si = reg.getService(ITransationService.class.getName(), insId);
-			txe.si = si;
+			UniqueServiceKeyJRso siKey = reg.getService(ITransationServiceJMSrv.class.getName(), insId);
+			if(siKey == null) {
+				LG.log(MC.LOG_ERROR, TAG, "Tx server insId: " + JMicroContext.get().getInt(TxConstants.TX_SERVER_ID, 0)+" not found");
+				return false;
+			}
+			ServiceItemJRso sit = this.srvMng.getItem(siKey.fullStringKey());
+			txe.si = sit;
 		}
 		
-		if(si == null) {
+		if(txe.si == null) {
 			LG.log(MC.LOG_ERROR, TAG, "Tx server insId: " + JMicroContext.get().getInt(TxConstants.TX_SERVER_ID, 0)+" not found");
 			return false;
 		}
@@ -339,7 +349,7 @@ public class TransactionResourceServiceIml implements ITransactionResource, ILoc
 			return false;
 		}
 		
-		Resp<Boolean> r = tsServer.vote(this.pi.getId(), txid,commit);
+		RespJRso<Boolean> r = tsServer.vote(this.pi.getId(), txid,commit);
 		
 		synchronized(txe) {
 			txe.voted = commit;
@@ -408,7 +418,7 @@ public class TransactionResourceServiceIml implements ITransactionResource, ILoc
 		
 		private boolean voted = false;//同意票，否定票
 		
-		private ServiceItem si;
+		private ServiceItemJRso si;
 		
 		private int phase = PHASE_TAKE_PART_IN;
 		

@@ -26,7 +26,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import cn.jmicro.api.EnterMain;
 import cn.jmicro.api.JMicroContext;
 import cn.jmicro.api.annotation.Component;
-import cn.jmicro.api.registry.ServiceItem;
+import cn.jmicro.api.registry.ServiceItemJRso;
 import cn.jmicro.common.CommonException;
 import cn.jmicro.common.Constants;
 
@@ -52,7 +52,7 @@ public class IdClient implements IIdGenerator{
 
 	private Object getFromServer(Class<?> insType,String idType, int num) {
 
-		ServiceItem si = JMicroContext.get().getParam(Constants.SERVICE_ITEM_KEY,null);
+		ServiceItemJRso si = JMicroContext.get().getParam(Constants.SERVICE_ITEM_KEY,null);
 		if(si != null && "cn.jmicro.api.idgenerator.IIdServer".equals(si.getKey().getServiceName())) {
 			/*
 			 * IIdServer本身的RPC也要ID，此种情况直接从ZK取，不做RPC，否则会陷入死循坏

@@ -12,7 +12,7 @@ import cn.jmicro.api.internal.async.PromiseImpl;
 import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.net.IResponse;
 import cn.jmicro.api.net.ServerError;
-import cn.jmicro.api.registry.ServiceMethod;
+import cn.jmicro.api.registry.ServiceMethodJRso;
 import cn.jmicro.common.CommonException;
 import cn.jmicro.common.Constants;
 
@@ -26,7 +26,7 @@ public class PromiseUtils {
 		
 		PromiseImpl<R> p = new PromiseImpl<R>();
 		
-		ServiceMethod remoteMethd = cxt.getParam(Constants.SERVICE_METHOD_KEY, null);
+		ServiceMethodJRso remoteMethd = cxt.getParam(Constants.SERVICE_METHOD_KEY, null);
 		if(remoteMethd != null) {
 			p.setTimeout(remoteMethd.getTimeout()*3);
 		}

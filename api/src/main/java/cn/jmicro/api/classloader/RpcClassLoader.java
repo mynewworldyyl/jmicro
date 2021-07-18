@@ -18,7 +18,6 @@ package cn.jmicro.api.classloader;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.lang.reflect.Array;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.URL;
@@ -32,12 +31,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.alibaba.dubbo.common.utils.ClassHelper;
-
-import cn.jmicro.api.config.Config;
-import cn.jmicro.api.monitor.LG;
-import cn.jmicro.api.monitor.MC;
-import cn.jmicro.common.CommonException;
+import cn.jmicro.codegenerator.AsyncClientProxy;
 
 public class RpcClassLoader extends ClassLoader {
 
@@ -48,10 +42,6 @@ public class RpcClassLoader extends ClassLoader {
 	private static final Set<String> basePackages = new HashSet<>();
 	
 	private static final AtomicBoolean init = new AtomicBoolean(false);
-	
-	private static final String[] FORCE_LOCAL_CLASSES = new String[] {
-		"org.springframework","org.aopalliance"
-	};
 	
 	static {
 		basePackages.add("cn.jmicro");
@@ -107,8 +97,6 @@ public class RpcClassLoader extends ClassLoader {
 			
 		};
 	}
-
-	
 	
 	@Override
 	protected URL findResource(String name0) {
@@ -146,7 +134,7 @@ public class RpcClassLoader extends ClassLoader {
 			return super.getResourceAsStream(name0);
 		}
 		
-		String loname = getClassName(name0);
+		//String loname = getClassName(name0);
 		/*if(clazzesData.containsKey(loname)) {
 			//优先用本地缓存数据
 			byte[] byteData = clazzesData.get(loname);
@@ -155,49 +143,46 @@ public class RpcClassLoader extends ClassLoader {
 			}
 		}*/
 		
-		InputStream is = super.getResourceAsStream(name0);
+		/*InputStream is = super.getResourceAsStream(name0);
 		
 		if(is == null) {
 			is = this.getParent().getResourceAsStream(name0);
 			if(is == null) {
 				is = bridge.loadByteData(name0);
 			}
-		}
-		return is;
+		}*/
+		if(bridge != null)
+			return bridge.loadByteData(name0);
+		return null;
 	}
 
 	@Override
     public Class<?> findClass(String className){
-		if(isForceLocalClass(className)) {
+		/*if(!isRemoteClass(className) || className.equals(RpcClassLoader.class.getName())) {
 			try {
-				return this.loadRpcLocalClass(className, true);
+				return super.findClass(className);
 			} catch (ClassNotFoundException e) {
+				throw new RuntimeException(e.getMessage()+","+className,e);
 			}
-		}
+		}*/
+		
 		if(bridge == null) {
 			return null;
 		}
 		return bridge.findClass(className);
     }
 
-	private boolean isForceLocalClass(String className) {
-		for(String n : FORCE_LOCAL_CLASSES) {
-			if(className.startsWith(n))return true;
-		}
-		return false;
-	}
-
 	//实现远程类优先从远程加载
-	protected Class<?> loadClass(String name, boolean resolve) throws ClassNotFoundException {
+	/*protected Class<?> loadClass(String name, boolean resolve) throws ClassNotFoundException {
 
-		/*if(name.equals("cn.jmicro.mng.api.II8NService")) {
+		if(name.equals("cn.jmicro.api.registry.ServiceItemJRso")) {
 			logger.debug(name);
-		}*/
+		}
 		
-		Class<?> clazz = ClassHelper.resolvePrimitiveClassName(name);
-        if (clazz != null) {
-            return clazz;
-        }
+        if(!isRemoteClass(name) || name.equals(RpcClassLoader.class.getName())) {
+        	logger.info("Load by supper: " + name);
+			return super.loadClass(name,resolve);
+		}
         
 		if(clazzes.containsKey(name)) {
     		return clazzes.get(name);
@@ -224,10 +209,6 @@ public class RpcClassLoader extends ClassLoader {
             return Array.newInstance(elementClass, 0).getClass();
         }
 		
-		if(!isRemoteClass(name) || name.equals(RpcClassLoader.class.getName())) {
-			return super.loadClass(name,resolve);
-		}
-		
 		//logger.debug(name);
 		if(bridge == null) {
 			//服务实现类，通过本地加载
@@ -241,13 +222,18 @@ public class RpcClassLoader extends ClassLoader {
 			return loadRpcLocalClass(name, resolve);
 		}
 
-	}
+	}*/
 
-	 public  Class<?> loadRpcLocalClass(String name, boolean resolve) throws ClassNotFoundException {
+	 private  Class<?> loadRpcLocalClass(String name, boolean resolve) throws ClassNotFoundException {
+		
+		//Class<?> sucls = super.loadClass(name,resolve);
+		//if(sucls != null) return sucls;
+		
 		// 需要从远程服务器加载,远程类，优先从远程加载
 		if(clazzes.containsKey(name)) {
 			return clazzes.get(name);
 		}
+				
 		name = name.intern();
 		
 		synchronized(name) {
@@ -255,6 +241,8 @@ public class RpcClassLoader extends ClassLoader {
 			if(clazzes.containsKey(name)) {
 				return clazzes.get(name);
 			}
+			
+			logger.info("Load rpc: " + name);
 			
 			String fullpath = name.replace('.', '/');
 			URL furl = getResource(fullpath);
@@ -281,7 +269,7 @@ public class RpcClassLoader extends ClassLoader {
 			if (pos <= 0) {
 				String desc = fullpath + " read class data error";
 				logger.error(desc);
-				LG.log(MC.LOG_ERROR, this.getClass(), desc);
+				//LG.log(MC.LOG_ERROR, this.getClass(), desc);
 				throw new ClassNotFoundException(desc);
 			}
 
@@ -294,9 +282,8 @@ public class RpcClassLoader extends ClassLoader {
 				//clazzesData.put(name, ds);
 				return remoteClass;
 			}  else {
-				String msg = "Remote class [" + name + "] not found form repository by [" + Config.getClientId() + "]";
+				String msg = "Remote class [" + name + "] not found";
 				logger.info(msg);
-				LG.log(MC.LOG_WARN, this.getClass(), msg);
 				throw new ClassNotFoundException(msg);
 			}
 		}
@@ -330,17 +317,13 @@ public class RpcClassLoader extends ClassLoader {
 			return clazz;
 		}
 	 
-	 public  boolean isRemoteClass(String name) {
+	 public static  boolean isRemoteClass(String name) {
 			
 			/*if(name.startsWith(Constants.CORE_CLASS)) {
 				return false;
 			}*/
-			if(basePackages.isEmpty()) {
+			/*if(basePackages.isEmpty()) {
 				return false;
-			}
-			
-			while(name.startsWith("[")) {
-				
 			}
 			
 			for(String p : basePackages) {
@@ -348,16 +331,20 @@ public class RpcClassLoader extends ClassLoader {
 					return true;
 				}
 			}
-			return false;
+			return false;*/
+		 
+		   if(name == null || "".equals(name.trim())) return false;
+		 
+		   return isServiceClass(name) || isSOClass(name);
 		}
 	 
 	 public  void addBasePackage(String name) {
 		 if(init.get()) {
-				throw new CommonException("classloader not in init status");
+				throw new RuntimeException("classloader not in init status");
 		 }
 		synchronized (init) {
 			if (init.get()) {
-				throw new CommonException("classloader not in init status");
+				throw new RuntimeException("classloader not in init status");
 			}
 			if (basePackages.contains(name)) {
 				return;
@@ -366,13 +353,26 @@ public class RpcClassLoader extends ClassLoader {
 		}
 	 }
 	 
+	 public static boolean isSOClass(String name) {
+		 return name != null && name.endsWith(AsyncClientProxy.SO_SUBFIX) ;
+	}
+
+	public static final boolean isServiceClass(String clsName) {
+			if(clsName == null) return false;
+			return clsName.endsWith(AsyncClientProxy.INT_GATEWAY_CLASS)||
+					clsName.endsWith(AsyncClientProxy.INT_SUBFIX) ||
+					clsName.endsWith(AsyncClientProxy.IMPL_SUBFIX) ||
+					clsName.endsWith(AsyncClientProxy.SRV_SUBFIX) ||
+					clsName.endsWith(AsyncClientProxy.INT_GATEWAY_CLASS);
+		}
+	
 	public void addBasePackages(String[] bps) {
 		if(init.get()) {
-			throw new CommonException("classloader not in init status");
+			throw new RuntimeException("classloader not in init status");
 		}
 		synchronized(init) {
 			if(init.get()) {
-				throw new CommonException("classloader not in init status");
+				throw new RuntimeException("classloader not in init status");
 			}
 			init.set(true);
 			for (String p : bps) {

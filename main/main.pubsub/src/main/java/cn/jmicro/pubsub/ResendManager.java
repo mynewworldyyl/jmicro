@@ -12,7 +12,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import cn.jmicro.api.config.Config;
-import cn.jmicro.api.executor.ExecutorConfig;
+import cn.jmicro.api.executor.ExecutorConfigJRso;
 import cn.jmicro.api.executor.ExecutorFactory;
 import cn.jmicro.api.monitor.LG;
 import cn.jmicro.api.monitor.MC;
@@ -26,9 +26,9 @@ class ResendManager {
 	
 	private final static Logger logger = LoggerFactory.getLogger(ResendManager.class);
 	
-	private ItemStorage<SendItem> resendStorage;
+	private ItemStorage<SendItemJRso> resendStorage;
 	
-	private ItemStorage<SendItem> failStorage;
+	private ItemStorage<SendItemJRso> failStorage;
 	
 	private boolean openDebug = false;
 	
@@ -36,7 +36,7 @@ class ResendManager {
 	
 	private Map<Long,TimerTicker> resendTimers = new ConcurrentHashMap<>();
 	
-	private Map<String,List<SendItem>> sendItems = new HashMap<>();
+	private Map<String,List<SendItemJRso>> sendItems = new HashMap<>();
 	
 	private int maxFailItemCount = 100000;
 	
@@ -49,8 +49,8 @@ class ResendManager {
 	ResendManager(IObjectFactory of,boolean openDebug,int maxFailItemCount,long doResendInterval) {
 		this.openDebug = openDebug;
 		this.of = of;
-		this.resendStorage = new ItemStorage<SendItem>(of,"/"+Config.getClientId()+"/pubsubResend/");
-		this.failStorage = new ItemStorage<SendItem>(of,"/"+Config.getClientId()+"/failItem/");
+		this.resendStorage = new ItemStorage<SendItemJRso>(of,"/"+Config.getClientId()+"/pubsubResend/");
+		this.failStorage = new ItemStorage<SendItemJRso>(of,"/"+Config.getClientId()+"/failItem/");
 		this.maxFailItemCount = maxFailItemCount;
 		this.doResendInterval = doResendInterval;
 		
@@ -59,7 +59,7 @@ class ResendManager {
 			this.maxFailItemCount = 10000;
 		}
 		
-		ExecutorConfig config = new ExecutorConfig();
+		ExecutorConfigJRso config = new ExecutorConfigJRso();
 		config.setMsCoreSize(1);
 		config.setMsMaxSize(30);
 		config.setTaskQueueSize(5000);
@@ -100,7 +100,7 @@ class ResendManager {
 						l = batchSize;
 					}
 					
-					List<SendItem> ll = resendStorage.pops(k, l);
+					List<SendItemJRso> ll = resendStorage.pops(k, l);
 					curCnt += ll.size(); 
 					sendItems.put(k,ll);
 					
@@ -120,13 +120,13 @@ class ResendManager {
 			logger.debug("doResend submit ones, send size:{}",sendItems.size());
 		}*/
 		
-		for(Map.Entry<String,List<SendItem>> e : sendItems.entrySet()) {
+		for(Map.Entry<String,List<SendItemJRso>> e : sendItems.entrySet()) {
 			
 			if(e.getValue().isEmpty()) {
 				continue;
 			}
 			
-			List<SendItem> ll = e.getValue();
+			List<SendItemJRso> ll = e.getValue();
 			
 			int size = ll.size();
 			if(size > batchSize) {
@@ -136,8 +136,8 @@ class ResendManager {
 			
 			synchronized(ll) {
 				int i = 0;
-				for(Iterator<SendItem> ite = ll.iterator(); ite.hasNext() && i < batchSize; i++) {
-					SendItem si = ite.next();
+				for(Iterator<SendItemJRso> ite = ll.iterator(); ite.hasNext() && i < batchSize; i++) {
+					SendItemJRso si = ite.next();
 					this.executor.submit(new Worker(si));
 					ite.remove();
 				}
@@ -147,13 +147,13 @@ class ResendManager {
 	
 	private class Worker implements Runnable{
 		
-		private SendItem item = null;
+		private SendItemJRso item = null;
 		
 		private Set<ISubscriberCallback> callbacks = null;
 		
 		private ISubscriberCallback callback = null;
 		
-		public Worker(SendItem item) {
+		public Worker(SendItemJRso item) {
 			this.item = item;
 			if(item.sm == null) {
 				callbacks = subManager.getCallback(item.topic);
@@ -186,7 +186,7 @@ class ResendManager {
 								 c.onMessage(item.items)
 								 .then((psds,fail,ctx)->{
 									 if(psds != null && psds.length > 0) {
-										 SendItem si = new SendItem(SendItem.TYPY_RESEND, c, psds, item.retryCnt);
+										 SendItemJRso si = new SendItemJRso(SendItemJRso.TYPY_RESEND, c, psds, item.retryCnt);
 										 queueItem(si);
 									 } else if(fail != null) {
 										 logger.error(fail.toString());
@@ -203,7 +203,7 @@ class ResendManager {
 		}
 	}
 	
-	void queueItem(SendItem item) {
+	void queueItem(SendItemJRso item) {
 		if(item.retryCnt > 2 ) {
 			//内存缓存,发送3次失败，
 			failStorage.push(item.topic, item);

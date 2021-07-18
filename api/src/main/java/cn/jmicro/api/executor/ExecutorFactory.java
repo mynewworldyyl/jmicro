@@ -21,7 +21,7 @@ import cn.jmicro.api.monitor.LG;
 import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.monitor.MT;
 import cn.jmicro.api.objectfactory.IObjectFactory;
-import cn.jmicro.api.registry.ServiceItem;
+import cn.jmicro.api.registry.ServiceItemJRso;
 import cn.jmicro.api.service.ServiceLoader;
 import cn.jmicro.api.timer.TimerTicker;
 import cn.jmicro.api.utils.TimeUtils;
@@ -39,7 +39,7 @@ public class ExecutorFactory {
 	
     private static final String GROUP = Constants.EXECUTOR_POOL;
     
-    private final Set<ExecutorConfig> waitingRegist = new HashSet<>();
+    private final Set<ExecutorConfigJRso> waitingRegist = new HashSet<>();
     
     private final Map<String,ExecutorMonitorServer> emses = new HashMap<>();
     
@@ -62,9 +62,9 @@ public class ExecutorFactory {
 	
 	private void doCheck(String key,Object cxt) {
 		if(!waitingRegist.isEmpty() && sl.hasServer()) {
-			Iterator<ExecutorConfig> ecs = this.waitingRegist.iterator();
+			Iterator<ExecutorConfigJRso> ecs = this.waitingRegist.iterator();
 			while(ecs.hasNext()) {
-				ExecutorConfig cfg = ecs.next();
+				ExecutorConfigJRso cfg = ecs.next();
 				ecs.remove();
 				this.createExecutorService(cfg);
 			}
@@ -75,7 +75,7 @@ public class ExecutorFactory {
 		}
 	}
 
-	public ExecutorService createExecutor(ExecutorConfig cfg) {
+	public ExecutorService createExecutor(ExecutorConfigJRso cfg) {
 		
 		if(StringUtils.isEmpty(cfg.getThreadNamePrefix())) {
 			throw new CommonException("ThreadNamePrefix cannot be null");
@@ -124,14 +124,14 @@ public class ExecutorFactory {
 		return executor;
 	}
 	
-	private void createExecutorService(ExecutorConfig cfg) {
+	private void createExecutorService(ExecutorConfigJRso cfg) {
 		
 		JmicroThreadPoolExecutor executor = this.executors.get(cfg.getThreadNamePrefix());
 		
 		String ns = Config.getInstanceName() + "." + GROUP+"_" + cfg.getThreadNamePrefix();
 		
-		ServiceItem si = sl.createSrvItem(IExecutorInfo.class, ns,"0.0.1", ExecutorMonitorServer.class.getName(),Config.getClientId());
-		executor.getEi().setKey(si.getKey().toKey(true, true, true));
+		ServiceItemJRso si = sl.createSrvItem(IExecutorInfoJMSrv.class, ns,"0.0.1", ExecutorMonitorServer.class.getName(),Config.getClientId());
+		executor.getEi().setKey(si.getKey().fullStringKey());
 		
 		ExecutorMonitorServer ems = new ExecutorMonitorServer(cfg,executor.getEi());
 		ems.setE(executor);
@@ -153,18 +153,18 @@ public class ExecutorFactory {
 		}
 	}
 
-	public class ExecutorMonitorServer  implements IExecutorInfo {
+	public class ExecutorMonitorServer  implements IExecutorInfoJMSrv {
 		
 		 private final Logger ilog = LoggerFactory.getLogger(ExecutorMonitorServer.class);
 		 
-		 private ServiceItem si;
+		 private ServiceItemJRso si;
 		 
-		 private ExecutorInfo ei;
+		 private ExecutorInfoJRso ei;
 		 private JmicroThreadPoolExecutor e;
-		 private ExecutorConfig cfg = null;
+		 private ExecutorConfigJRso cfg = null;
 		 private long warnSize = Long.MAX_VALUE;
 		 
-		 public ExecutorMonitorServer(ExecutorConfig cfg,ExecutorInfo ei) {
+		 public ExecutorMonitorServer(ExecutorConfigJRso cfg,ExecutorInfoJRso ei) {
 			this.cfg = cfg;
 			this.ei = ei;
 			this.ei.setTerminal(false);
@@ -178,7 +178,7 @@ public class ExecutorFactory {
 		 }
 		 
 		@Override
-		public ExecutorInfo getInfo() {
+		public ExecutorInfoJRso getInfo() {
 			setInfo();
 			return this.ei;
 		}
@@ -209,15 +209,15 @@ public class ExecutorFactory {
 	
 	public static class JmicroThreadPoolExecutor extends ThreadPoolExecutor{
 		
-		 private ExecutorInfo ei;
+		 private ExecutorInfoJRso ei;
 		 
-		 public JmicroThreadPoolExecutor(ExecutorConfig cfg) {
+		 public JmicroThreadPoolExecutor(ExecutorConfigJRso cfg) {
 			 super(cfg.getMsCoreSize(),cfg.getMsMaxSize(),
 						cfg.getIdleTimeout(),TimeUtils.getTimeUnit(cfg.getTimeUnit()),
 						new ArrayBlockingQueue<Runnable>(cfg.getTaskQueueSize()),
 						new NamedThreadFactory("JMicro-"+Config.getInstanceName()+"-"+cfg.getThreadNamePrefix())
 						,cfg.getRejectedExecutionHandler());
-			this.ei = new ExecutorInfo();
+			this.ei = new ExecutorInfoJRso();
 		 }
 		 
 		@Override
@@ -242,7 +242,7 @@ public class ExecutorFactory {
 			super.terminated();
 		}
 
-		public ExecutorInfo getEi() {
+		public ExecutorInfoJRso getEi() {
 			return ei;
 		}
 		

@@ -24,13 +24,13 @@ import cn.jmicro.api.annotation.Cfg;
 import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Inject;
 import cn.jmicro.api.async.IPromise;
-import cn.jmicro.api.choreography.ProcessInfo;
+import cn.jmicro.api.choreography.ProcessInfoJRso;
 import cn.jmicro.api.codec.ICodecFactory;
 import cn.jmicro.api.config.Config;
 import cn.jmicro.api.exception.RpcException;
 import cn.jmicro.api.exception.TimeoutException;
 import cn.jmicro.api.idgenerator.ComponentIdServer;
-import cn.jmicro.api.monitor.JMLogItem;
+import cn.jmicro.api.monitor.JMLogItemJRso;
 import cn.jmicro.api.monitor.LG;
 import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.monitor.MT;
@@ -39,15 +39,15 @@ import cn.jmicro.api.net.IResponse;
 import cn.jmicro.api.net.ISession;
 import cn.jmicro.api.net.InterceptorManager;
 import cn.jmicro.api.net.Message;
-import cn.jmicro.api.net.RpcRequest;
-import cn.jmicro.api.net.RpcResponse;
+import cn.jmicro.api.net.RpcRequestJRso;
+import cn.jmicro.api.net.RpcResponseJRso;
 import cn.jmicro.api.net.ServerError;
 import cn.jmicro.api.registry.IRegistry;
-import cn.jmicro.api.registry.ServiceItem;
-import cn.jmicro.api.registry.ServiceMethod;
-import cn.jmicro.api.registry.UniqueServiceMethodKey;
+import cn.jmicro.api.registry.ServiceItemJRso;
+import cn.jmicro.api.registry.ServiceMethodJRso;
+import cn.jmicro.api.registry.UniqueServiceMethodKeyJRso;
 import cn.jmicro.api.security.AccountManager;
-import cn.jmicro.api.security.ActInfo;
+import cn.jmicro.api.security.ActInfoJRso;
 import cn.jmicro.api.security.PermissionManager;
 import cn.jmicro.api.security.SecretManager;
 import cn.jmicro.api.service.ServiceLoader;
@@ -102,7 +102,7 @@ public class JRPCReqRespHandler implements IMessageHandler{
 	private ServiceManager srvMng;
 	
 	@Inject(required=true)
-	private ProcessInfo pi;
+	private ProcessInfoJRso pi;
 	
 	@Override
 	public Byte type() {
@@ -112,21 +112,21 @@ public class JRPCReqRespHandler implements IMessageHandler{
 	@Override
 	public boolean onMessage(ISession s, Message msg) {
 		
-		RpcRequest req = null;
-		RpcResponse resp =  new RpcResponse();
+		RpcRequestJRso req = null;
+		RpcResponseJRso resp =  new RpcResponseJRso();
 		boolean finish[] = new boolean[] {false};
 		
 	    try {
 	    	
 	    	//req1为内部类访问
-	    	final RpcRequest req1 = ICodecFactory.decode(this.codeFactory, msg.getPayload(),
-					RpcRequest.class, msg.getUpProtocol());
+	    	final RpcRequestJRso req1 = ICodecFactory.decode(this.codeFactory, msg.getPayload(),
+					RpcRequestJRso.class, msg.getUpProtocol());
 	    	
 	    	req1.setMsg(msg);
 	    	
 	    	req1.setSm(JMicroContext.get().getParam(Constants.SERVICE_METHOD_KEY, null));
 	    	
-	    	ServiceMethod sm = JMicroContext.get().getParam(Constants.SERVICE_METHOD_KEY, null);
+	    	ServiceMethodJRso sm = JMicroContext.get().getParam(Constants.SERVICE_METHOD_KEY, null);
 	    	
 	    	config(req1,resp,msg.getLinkId(),sm);
 	    	
@@ -149,9 +149,9 @@ public class JRPCReqRespHandler implements IMessageHandler{
 			
 			//logger.info(req.getServiceName()+" debugMode: " + msg.isDebugMode()+", method: " + msg.getMethod());
 			
-			/*if(req1.getMethod().equals("send")) {
+			if(req1.getMethod().equals("info")) {
 				logger.debug("");
-			}*/
+			}
 	    	
 	    	if(LG.isLoggable(MC.LOG_DEBUG)) {
 	    		LG.log(MC.LOG_DEBUG, TAG, LG.reqMessage("",req1));
@@ -164,7 +164,7 @@ public class JRPCReqRespHandler implements IMessageHandler{
 			
 			//msg.setMsgId(idGenerator.getLongId(Message.class));
 	    	
-	    	ActInfo ai = null;
+	    	ActInfoJRso ai = null;
 			
 			if(req1.getParams().containsKey(JMicroContext.LOGIN_KEY)) {
 				String lk = (String)req1.getParams().get(JMicroContext.LOGIN_KEY);
@@ -195,7 +195,7 @@ public class JRPCReqRespHandler implements IMessageHandler{
 				return true;
 			}
 			
-			ActInfo sai = null;
+			ActInfoJRso sai = null;
 			if(req1.getParams().containsKey(JMicroContext.LOGIN_KEY_SYS)) {
 				String slk = (String)req1.getParams().get(JMicroContext.LOGIN_KEY_SYS);
 				if(StringUtils.isNotEmpty(slk)) {
@@ -216,7 +216,7 @@ public class JRPCReqRespHandler implements IMessageHandler{
 			}
 			
 			if(sai == null && sm.getForType() == Constants.FOR_TYPE_SYS) {
-				ServerError se = new ServerError(MC.MT_INVALID_LOGIN_INFO,"Need system login: " + sm.getKey().toKey(true, true, true)+",insId: " + msg.getInsId());
+				ServerError se = new ServerError(MC.MT_INVALID_LOGIN_INFO,"Need system login: " + sm.getKey().fullStringKey()+",insId: " + msg.getInsId());
 				resp.setResult(se);
 				resp.setSuccess(false);
 				LG.log(MC.LOG_ERROR, TAG,se.toString());
@@ -225,7 +225,7 @@ public class JRPCReqRespHandler implements IMessageHandler{
 				return true;
 			}
 			
-			ServiceItem si = JMicroContext.get().getParam(Constants.SERVICE_ITEM_KEY, null);
+			ServiceItemJRso si = JMicroContext.get().getParam(Constants.SERVICE_ITEM_KEY, null);
 			
 			ServerError se = pm.permissionCheck(sm,si.getClientId());
 			
@@ -235,6 +235,8 @@ public class JRPCReqRespHandler implements IMessageHandler{
 				resp2Client(resp,s,msg,sm);
 				return true;
 			}
+			
+			JMicroContext.get().getAccount();
 			
 			IPromise<Object> rr = interceptorManger.handleRequest(req);
 			
@@ -253,7 +255,7 @@ public class JRPCReqRespHandler implements IMessageHandler{
 	    				 submitItem();
 					});
 				} else {
-					String errMsg = "Got null promise: " + sm.getKey().toKey(true, true, true)+",insId: " + msg.getInsId();
+					String errMsg = "Got null promise: " + sm.getKey().fullStringKey()+",insId: " + msg.getInsId();
 					LG.log(MC.LOG_ERROR, TAG,errMsg);
 					MT.rpcEvent(MC.MT_SERVER_ERROR);
 					logger.error("JRPCReq error: ",errMsg);
@@ -262,7 +264,7 @@ public class JRPCReqRespHandler implements IMessageHandler{
 				return true;
 			}
 
-			final RpcResponse r = resp;
+			final RpcResponseJRso r = resp;
 			
 			if(rr != null) {
 				rr.success((rst,resultCxt)->{
@@ -307,7 +309,7 @@ public class JRPCReqRespHandler implements IMessageHandler{
 	    return true;
 	}
 	
-	private void doException(RpcRequest req,RpcResponse resp0, ISession s,Message msg,Throwable e) {
+	private void doException(RpcRequestJRso req,RpcResponseJRso resp0, ISession s,Message msg,Throwable e) {
 
 		//返回错误
 		LG.log(MC.LOG_ERROR, TAG.getName(),"JRPCReq error",e);
@@ -353,7 +355,7 @@ public class JRPCReqRespHandler implements IMessageHandler{
 	}
 	
 	
-	private void resp2Client(IResponse resp, ISession s,Message msg,ServiceMethod sm) {
+	private void resp2Client(IResponse resp, ISession s,Message msg,ServiceMethodJRso sm) {
 		if(!msg.isNeedResponse()){
 			submitItem();
 			return;
@@ -424,7 +426,7 @@ public class JRPCReqRespHandler implements IMessageHandler{
 		JMicroContext.get().submitMRpcItem();
 	}
 	
-	private void config(RpcRequest req,RpcResponse resp,Long linkId,ServiceMethod sm) {
+	private void config(RpcRequestJRso req,RpcResponseJRso resp,Long linkId,ServiceMethodJRso sm) {
 		
 		Object obj = serviceLoader.getService(sm.getKey().getUsk().getSnvHash());
 		if(obj == null){
@@ -442,10 +444,10 @@ public class JRPCReqRespHandler implements IMessageHandler{
 		//context.setLong(JMicroContext.REQ_PARENT_ID, req.getRequestId());
 		cxt.setParam(JMicroContext.REQ_ID, req.getRequestId());
 		
-		cxt.setParam(JMicroContext.CLIENT_ARGSTR, UniqueServiceMethodKey.paramsStr(req.getArgs()));
+		cxt.setParam(JMicroContext.CLIENT_ARGSTR, UniqueServiceMethodKeyJRso.paramsStr(req.getArgs()));
 		cxt.putAllParams(req.getRequestParams());
 		
-		ServiceItem si = registry.getOwnItem(sm.getKey().getUsk().getSnvHash());
+		ServiceItemJRso si = registry.getOwnItem(sm.getKey().getUsk().getSnvHash());
 		if(si == null){
 			if(LG.isLoggable(MC.LOG_ERROR,req.getLogLevel())) {
 				LG.log(MC.LOG_ERROR,JMicroContext.class," service ITEM not found");
@@ -460,7 +462,7 @@ public class JRPCReqRespHandler implements IMessageHandler{
 		cxt.setObject(Constants.SERVICE_METHOD_KEY, sm);
 		cxt.setObject(Constants.SERVICE_OBJ_KEY, obj);
 		
-		JMLogItem mi = cxt.getMRpcLogItem();
+		JMLogItemJRso mi = cxt.getMRpcLogItem();
 		
 		if( mi != null) {
 			mi.setReqParentId(req.getReqParentId());

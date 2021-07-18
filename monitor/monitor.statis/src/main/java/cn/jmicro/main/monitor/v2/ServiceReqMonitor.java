@@ -29,16 +29,16 @@ import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Inject;
 import cn.jmicro.api.annotation.SMethod;
 import cn.jmicro.api.annotation.Service;
-import cn.jmicro.api.mng.ReportData;
-import cn.jmicro.api.monitor.IMonitorDataSubscriber;
+import cn.jmicro.api.mng.ReportDataJRso;
+import cn.jmicro.api.monitor.IMonitorDataSubscriberJMSrv;
+import cn.jmicro.api.monitor.JMStatisItemJRso;
 import cn.jmicro.api.monitor.MC;
-import cn.jmicro.api.monitor.JMStatisItem;
 import cn.jmicro.api.monitor.ServiceCounter;
-import cn.jmicro.api.monitor.StatisItem;
-import cn.jmicro.api.pubsub.PSData;
+import cn.jmicro.api.monitor.StatisItemJRso;
+import cn.jmicro.api.pubsub.PSDataJRso;
 import cn.jmicro.api.pubsub.PubSubManager;
 import cn.jmicro.api.raft.IDataOperator;
-import cn.jmicro.api.registry.ServiceMethod;
+import cn.jmicro.api.registry.ServiceMethodJRso;
 import cn.jmicro.api.timer.TimerTicker;
 import cn.jmicro.api.utils.TimeUtils;
 import cn.jmicro.common.Constants;
@@ -52,7 +52,7 @@ import cn.jmicro.monitor.api.AbstractMonitorDataSubscriber;
  */
 @Component
 @Service(version="0.0.1", monitorEnable=0)
-public class ServiceReqMonitor  extends AbstractMonitorDataSubscriber implements IMonitorDataSubscriber{
+public class ServiceReqMonitor  extends AbstractMonitorDataSubscriber implements IMonitorDataSubscriberJMSrv{
 	
 	private final static Logger logger = LoggerFactory.getLogger(ServiceReqMonitor.class);
 	
@@ -83,7 +83,7 @@ public class ServiceReqMonitor  extends AbstractMonitorDataSubscriber implements
 	
 	public void act0(String key,Object attachement) {
 		//ServiceCounter counter = counters.get(key);
-		ServiceMethod sm = (ServiceMethod)attachement;
+		ServiceMethodJRso sm = (ServiceMethodJRso)attachement;
 		
 		if(timeoutList.containsKey(key) && ((TimeUtils.getCurTime() - timeoutList.get(key)) > 60000 )) {
 			if(this.openDebug) {
@@ -95,18 +95,18 @@ public class ServiceReqMonitor  extends AbstractMonitorDataSubscriber implements
 			return;
 		}
 		
-		ReportData rd = this.getData(key, MC.STATIS_TYPES_ARR, 
+		ReportDataJRso rd = this.getData(key, MC.STATIS_TYPES_ARR, 
 				new String[] {MC.PREFIX_QPS,MC.PREFIX_TOTAL_PERCENT});
 		
-		PSData psData = new PSData();
-		psData.setData(rd);
-		psData.setTopic(MC.TEST_SERVICE_METHOD_TOPIC);
-		psData.put(Constants.SERVICE_METHOD_KEY, sm);
+		PSDataJRso PSDataJRso = new PSDataJRso();
+		PSDataJRso.setData(rd);
+		PSDataJRso.setTopic(MC.TEST_SERVICE_METHOD_TOPIC);
+		PSDataJRso.put(Constants.SERVICE_METHOD_KEY, sm);
 		
 		//将统计数据分发出去
-		long f = pubSubManager.publish(psData);
+		long f = pubSubManager.publish(PSDataJRso);
 		if(f != PubSubManager.PUB_OK) {
-			logger.warn("Fail to publish topic: {},result:{}",psData.getTopic(),f);
+			logger.warn("Fail to publish topic: {},result:{}",PSDataJRso.getTopic(),f);
 		}
 		
 		if(openDebug) {
@@ -130,9 +130,9 @@ public class ServiceReqMonitor  extends AbstractMonitorDataSubscriber implements
 
 	@Override
 	@SMethod(needResponse=false,asyncable=true)
-	public void onSubmit(JMStatisItem[] sis) {
+	public void onSubmit(JMStatisItemJRso[] sis) {
 		
-		for(JMStatisItem si : sis) {
+		for(JMStatisItemJRso si : sis) {
 			if(openDebug) {
 				log(si);
 			}
@@ -186,7 +186,7 @@ public class ServiceReqMonitor  extends AbstractMonitorDataSubscriber implements
 	}
 	
 
-	private void doStatis(JMStatisItem si, String key,long windowSize,long slotInterval,TimeUnit tu) {
+	private void doStatis(JMStatisItemJRso si, String key,long windowSize,long slotInterval,TimeUnit tu) {
 		ServiceCounter counter = counters.get(key);
 		timeoutList.put(key, TimeUtils.getCurTime());
 		
@@ -203,8 +203,8 @@ public class ServiceReqMonitor  extends AbstractMonitorDataSubscriber implements
 		}
 		
 		for(Short type : si.getTypeStatis().keySet()) {
-			List<StatisItem> items = si.getTypeStatis().get(type);
-			for(StatisItem oi : items) {
+			List<StatisItemJRso> items = si.getTypeStatis().get(type);
+			for(StatisItemJRso oi : items) {
 			/* if(openDebug) {
 					logger.debug("GOT: " + MonitorConstant.MONITOR_VAL_2_KEY.get(oi.getType()) + " , KEY: " 
 			 + key + " , Num: " + oi.getNum() + " , Val: " + oi.getVal());
@@ -215,8 +215,8 @@ public class ServiceReqMonitor  extends AbstractMonitorDataSubscriber implements
 		
 	}
 
-	public ReportData getData(String srvKey, Short[] types, String[] dataType) {
-		ReportData result = new ReportData();
+	public ReportDataJRso getData(String srvKey, Short[] types, String[] dataType) {
+		ReportDataJRso result = new ReportDataJRso();
 		if(StringUtils.isEmpty(srvKey)) {
 			return result; 
 		}

@@ -1,4 +1,3 @@
-
 import localStorage from "@/rpc/localStorage";
 import ApiRequest from "@/rpc/request";
 import cons from "@/rpc/constants";
@@ -15,8 +14,10 @@ import socket from "@/rpc/socket";
 //let idCache = {};
 let actListeners = {};
 
+const fnvCode = -655376287
+
 let mk2code = {
-    "cn.jmicro.api.gateway.IBaseGatewayService##apigateway##0.0.1########fnvHash1a":1630526296,
+    "cn.jmicro.api.gateway.IBaseGatewayServiceJMSrv##apigateway##0.0.1##############1##fnvHash1a":fnvCode,
 };
 
 let errCode2Msg = {
@@ -27,7 +28,7 @@ let reqId = 1;
 
 function __actreq(method,args){
     let req = {};
-    req.serviceName = 'cn.jmicro.security.api.IAccountService';
+    req.serviceName = 'cn.jmicro.security.api.IAccountServiceJMSrv';
     req.namespace = cons.NS_SECURITY;
     req.version = '0.0.1';
     req.args = args;
@@ -39,11 +40,26 @@ export default {
     config,
     actInfo:null,
 
+     creq(sn,ns,v,method,args){
+        let req = {};
+        req.serviceName = sn;
+        req.namespace = ns;
+        req.version = v;
+        req.args = args;
+        req.method = method;
+        return req;
+    },
+
     addActListener (key,l) {
         /*if(!!this.actListeners[key]) {
             throw 'Exist listener: ' + key;
         }*/
         actListeners[key] = l;
+    },
+
+    getCode(type) {
+        let req = __actreq('getCode',[type]);
+        return this.callRpc(req)
     },
 
     removeActListener(key) {
@@ -61,7 +77,7 @@ export default {
         return this.actInfo != null && this.actInfo.isAdmin;
     },
 
-    login(actName,pwd,cb){
+    login(actName,pwd,vcode,vcodeId,cb){
         if(this.actInfo && cb) {
             cb(this.actInfo,null);
             return;
@@ -80,13 +96,12 @@ export default {
         }
 
         let self = this;
-        let req = __actreq('login',[actName,pwd]);
-        //req.serviceName = 'cn.jmicro.api.security.IAccountService';
+        let req = __actreq('login',[actName,pwd,vcode,vcodeId]);
+        //req.serviceName = 'cn.jmicro.api.security.IAccountServiceJMSrv';
         this.callRpc(req)
             .then(( resp )=>{
                 if(resp.code == 0) {
                     self.actInfo = resp.data;
-
                     localStorage.set("actName",self.actInfo.actName);
 
                     let rememberPwd = localStorage.get("rememberPwd");
@@ -98,14 +113,22 @@ export default {
                         localStorage.set("guestName",self.actInfo.actName);
                     }
 
-                    cb(self.actInfo,null);
+                    if(cb)
+                        cb(self.actInfo,null);
+
                     self._notify(Constants.LOGIN);
                 } else {
-                    cb(null,resp.msg);
+                    if(cb) {
+                        cb(null,resp.msg)
+                    }
+
                 }
             }).catch((err)=>{
-            console.log(err);
-            cb(null,err);
+            console.log(err)
+            if(cb) {
+                cb(null,err)
+            }
+
         });
     },
 
@@ -125,7 +148,7 @@ export default {
             return;
         }
         let self = this;
-        self.callRpc(this.__actreq('logout',[]))
+        self.callRpc(__actreq('logout',[]))
             .then(( resp )=>{
                 if(resp.data) {
                     self.actInfo = null;
@@ -172,7 +195,7 @@ export default {
         }
 
         let req = {};
-        req.serviceName = 'cn.jmicro.api.gateway.IBaseGatewayService';
+        req.serviceName = 'cn.jmicro.api.gateway.IBaseGatewayServiceJMSrv';
         req.namespace = cons.NS_API_GATEWAY;
         req.version = '0.0.1';
         req.method = 'bestHost';
@@ -260,107 +283,44 @@ export default {
         });
     },
 
-    callRpc : function(req,upProtocol,downProtocol) {
-        if(!(upProtocol == 0 || upProtocol == 1)) {
-            upProtocol = Constants.PROTOCOL_JSON;
-        }
-        if(!(downProtocol == 0 || downProtocol == 1)) {
-            downProtocol = Constants.PROTOCOL_JSON;
-        }
-        let self = this;
-        return new Promise(function(reso,reje){
-            self.callRpc0(req, null, upProtocol,downProtocol)
-                .then((data)=>{
-                    if(downProtocol == Constants.PROTOCOL_BIN) {
-                        reso(utils.parseJson(data));
-                    } else {
-                        reso(data);
-                    }
-                })
-                .catch((err)=>{
-                    reje(err);
-                })
-        });
+
+    callRpcWithParams(sn,ns,v,method,args,upProtocol,downProtocol){
+        let req = this.creq(sn,ns,v,method,args);
+        return this.callRpc(req,upProtocol,downProtocol)
     },
 
-    callRpc0(param,type,upProtocol,downProtocol){
-        if(!(upProtocol == 0 || upProtocol == 1)) {
-            upProtocol = Constants.PROTOCOL_JSON;
-        }
-        if(!(downProtocol == 0 || downProtocol == 1)) {
-            downProtocol = Constants.PROTOCOL_JSON;
-        }
+    callRpc(req,upProtocol,downProtocol){
 
-        if(!type) {
-            type = Constants.MSG_TYPE_REQ_JRPC;
-        }
-
-        let self = this;
-        if(param instanceof ApiRequest) {
-            return self.callRpcWithRequest(param,type,upProtocol,downProtocol);
-        }else if(typeof param  == 'object'){
-            return self.callWithObject(param,type,upProtocol,downProtocol);
-        } else if(arguments.length >= 5) {
-            if(arguments.length == 5) {
-                return self.callWithParams(arguments[0],arguments[1],arguments[2],arguments[3],arguments[4]);
-            }else if(arguments.length >= 6){
-                return self.callWithParams(arguments[0],arguments[1],arguments[2],arguments[3],arguments[4],arguments[5]);
-            }else if(arguments.length >= 7){
-                return self.callWithParams(arguments[0],arguments[1],arguments[2],arguments[3],arguments[4],arguments[5],arguments[6]);
-            }
-        } else {
-            return new Promise(function(reso,reje){
-                reje('Invalid params');
-            });
-        }
-
-    },
-
-    callRpcWithParams(service,namespace,version,method,args) {
-        let req = {};
-        req.serviceName = service;
-        req.namespace = namespace;
-        req.version = version;
-        req.method = method;
-        req.args = args;
-        return this.callRpc(req,Constants.PROTOCOL_JSON, Constants.PROTOCOL_JSON);
-    },
-
-    callRpcWithRequest(req,type,upProtocol,downProtocol){
-        if(typeof type == 'undefined') {
-            type = Constants.MSG_TYPE_REQ_JRPC;
-        }
-
-        if(typeof upProtocol == 'undefined') {
+        if(typeof upProtocol == 'undefined'  || upProtocol == null) {
             upProtocol = Constants.PROTOCOL_JSON;
         }
 
-        if(typeof downProtocol == 'undefined') {
+        if(typeof downProtocol == 'undefined'  || downProtocol == null) {
             downProtocol = Constants.PROTOCOL_JSON;
         }
 
-        let smsvnKey = req.serviceName +"##"+req.namespace+"##"+req.version+"########"+req.method;
+        let cid = req.clientId ? req.clientId : config.clientId
+
+        /*if(req.method == 'serverList') {
+            console.log(req.method);
+        }*/
+
+        let smsvnKey = req.serviceName +"##"+req.namespace+"##"+req.version+"##############"+cid+"##"+req.method;
         if(mk2code[smsvnKey]) {
-            return this.callRpcWithTypeAndProtocol(req,type,upProtocol,downProtocol,mk2code[smsvnKey]);
+            return this.__callRpcWithTypeAndProtocol(req,upProtocol,downProtocol,mk2code[smsvnKey]);
         } else {
             let self = this;
             return new Promise((reso,reje)=>{
-
                 let methodCodeReq = new ApiRequest();
-                //methodCodeReq.serviceName = 'cn.jmicro.api.gateway.IBaseGatewayService';
-               // methodCodeReq.method = 'fnvHash1a';
-                //methodCodeReq.namespace = cons.NS_API_GATEWAY;
-                //methodCodeReq.version = '0.0.1';
+                methodCodeReq.method = 'fnvHash1a';
                 methodCodeReq.args = [smsvnKey];
-                //methodCodeReq.needResponse = true;
-
-                self.callRpcWithTypeAndProtocol(methodCodeReq, type, Constants.PROTOCOL_JSON,
-                    Constants.PROTOCOL_JSON,
-                    mk2code[Constants.FNV_HASH_METHOD_KEY])
+                methodCodeReq.type = Constants.MSG_TYPE_REQ_JRPC;
+                self.__callRpcWithTypeAndProtocol(methodCodeReq, Constants.PROTOCOL_JSON, Constants.PROTOCOL_JSON, fnvCode)
                     .then((methodCode)=>{
                         mk2code[smsvnKey] = methodCode;
-                        self.callRpcWithTypeAndProtocol(req,type,upProtocol,downProtocol,methodCode)
+                        self.__callRpcWithTypeAndProtocol(req,upProtocol,downProtocol,methodCode)
                             .then((resp)=>{
+                                //console.log(req.method);
                                 reso(resp);
                             })
                             .catch((err)=>{
@@ -374,44 +334,55 @@ export default {
         }
     },
 
-    callRpcWithTypeAndProtocol(req,type,upProtocol,downProtocol,methodCode){
+    __callRpcWithTypeAndProtocol(req, upProtocol, downProtocol, methodCode){
         let self = this;
         return new Promise(function(reso,reje){
 
-            let msg =  self.createMsg(type);
-            msg.setUpProtocol(upProtocol);
-            msg.setDownProtocol(downProtocol);
+            if(typeof req.type == 'undefined' || req.type == null) {
+                req.type = Constants.MSG_TYPE_REQ_JRPC;
+            }
 
-            msg.setRpcMk(true);
-            msg.setSmKeyCode(methodCode);
-            msg.setForce2Json(true);
+            let msg =  self.createMsg(req.type)
+            msg.setUpProtocol(upProtocol)
+            msg.setDownProtocol(downProtocol)
+
+            msg.setRpcMk(true)
+            msg.setSmKeyCode(methodCode)
+            msg.setForce2Json(true)
             if(config.includeMethod) {
                 msg.putExtra(Constants.EXTRA_KEY_METHOD,req.method,Constants.PREFIX_TYPE_STRING);
             }
 
             //console.log(req.method+" => " + methodCode);
 
-            if(!req.reqId) {
-                req.reqId = reqId++;
+            req.reqId = reqId++
+            msg.setMsgId(req.reqId)
+
+            if(!req.params) {
+                req.params = {}
             }
-            msg.setMsgId(req.reqId);
 
             if(self.actInfo) {
-                req.params['loginKey'] = self.actInfo.loginKey;
+                req.params['loginKey'] = self.actInfo.loginKey
             }
 
-
-            req.serviceName = null;
-            req.namespace = null;
-            req.version = null;
-            req.method = null;
+            req.serviceName = null
+            req.namespace = null
+            req.version = null
+            req.method = null
+            req.type = null
 
             if(upProtocol == Constants.PROTOCOL_JSON) {
-                msg.payload =  utils.toUTF8Array(JSON.stringify(req));
+                msg.payload =  utils.toUTF8Array(JSON.stringify(req))
             } else if( upProtocol == Constants.PROTOCOL_BIN ){
-                if(typeof req.encode == 'function') {
-                    msg.payload = req.encode(Constants.PROTOCOL_BIN);
+                let r = req
+                if(!(r instanceof ApiRequest)) {
+                    r = new ApiRequest()
+                    for(let k in req) {
+                        r[k] = req[k]
+                    }
                 }
+                msg.payload = r.encode(Constants.PROTOCOL_BIN)
             } else {
                 msg.payload = req;
             }
@@ -437,7 +408,7 @@ export default {
                                 self.actInfo = null;
                                self.login(actName,pwd,(actInfo,err)=>{
                                     if( self.actInfo && !err) {
-                                        self.callRpcWithTypeAndProtocol(req,type,upProtocol,downProtocol,methodCode)
+                                        self.__callRpcWithTypeAndProtocol(req,req.type,upProtocol,downProtocol,methodCode)
                                             .then(( r,err )=>{
                                                 if(r ) {
                                                     reso(r);
@@ -487,113 +458,4 @@ export default {
             reje(rst);
         }
     },
-
-    callWithObject(params,type,upProtocol,downProtocol){
-        let self = this;
-        return new Promise((reso,reje)=>{
-            if(!params.serviceName) {
-                reje('service name cannot be NULL');
-                return;
-            }
-
-            if(!params.method) {
-                reje( 'method name cannot be NULL');
-                return;
-            }
-
-            if(!params.namespace) {
-                params.namespace = cons.DEFAULT_NAMESPACE;
-            }
-
-            if(!params.version) {
-                params.version = cons.DEFAULT_VERSION;
-            }
-
-            if(!params.args ) {
-                params.args = [];
-            }
-
-            if(!Array.isArray(params.args)){
-                reje( 'args must be array');
-                return;
-            }
-
-            if(typeof params.needResponse == 'undefined') {
-                params.needResponse = true;
-            }
-
-            var req = new ApiRequest();
-            req.serviceName = params.serviceName;
-            req.method = params.method;
-            req.namespace = params.namespace;
-            req.version = params.version;
-            req.args = params.args;
-
-            req.needResponse = params.needResponse;
-            //req.stream = params.stream;
-
-            self.callRpcWithRequest(req,type,upProtocol,downProtocol)
-                .then((rst)=>{
-                    reso(rst);
-                }).catch((err)=>{
-                reje(err);
-            });
-
-        });
-
-    },
-
-    callWithParams (serviceName, namespace, version, method, args, needResponse){
-        let self = this;
-        return new Promise((reso,reje)=>{
-
-            if(!serviceName || serviceName.trim() == '') {
-                reje('service name cannot be NULL');
-                return;
-            }
-
-            if(!method || method.trim() == '') {
-                reje( 'method name cannot be NULL');
-                return;
-            }
-
-            if(!namespace  || namespace.trim() == '') {
-                namespace = cons.DEFAULT_NAMESPACE;
-            }
-
-            if(!version || version.trim() == '') {
-                version = cons.DEFAULT_VERSION;
-            }
-
-            if(typeof needResponse == 'undefined') {
-                needResponse = true;
-            }
-
-            if(!args ) {
-                args = [];
-            }
-
-            if(!Array.isArray(args)){
-                reje( 'args must be array');
-                return;
-            }
-
-            let req = new ApiRequest();
-            req.serviceName = serviceName;
-            req.method = method;
-            req.namespace = namespace;
-            req.version = version;
-            req.args = args;
-            req.needResponse = needResponse;
-
-            self.callRpcWithRequest(req)
-                .then((rst)=>{
-                    reso(rst);
-                }).catch((err)=>{
-                reje(err);
-            });
-
-        });
-
-    }
 }

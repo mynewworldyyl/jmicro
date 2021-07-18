@@ -144,7 +144,7 @@ cn.jmicro.api.mng.IConfi<template>
 
             ,menuSelect(name){
                 if(name == 'refresh') {
-                    this.__getChildren(null,conf.IG_ROOT,(data)=>{
+                    this.__getChildren(null,jmconfig.CONFIG_ROOT,(data)=>{
                         if(data) {
                             this.configs = data;
                         }else {

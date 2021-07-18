@@ -131,7 +131,7 @@
 
     const cid = 'routeRuleEditor';
 
-    const sn = 'cn.jmicro.mng.api.IRouteRuleConfigService';
+    const sn = 'cn.jmicro.mng.api.IRouteRuleConfigServiceJMSrv';
     const ns = cons.NS_MNG;
     const v = '0.0.1';
 
@@ -290,7 +290,8 @@
                         window.console.log(err);
                     });
                 }else if(self.drawerModel == 1) {
-                    rpc.callRpcWithParams(sn,ns,v,'add',[self.rule]).then((resp)=>{
+                    rpc.callRpcWithParams(sn,ns,v,'add',[self.rule])
+                        .then((resp)=>{
                         if( resp.code == 0 ) {
                             self.routeList.push(resp.data);
                             self.closeDrawer();
@@ -338,7 +339,8 @@
                     this.routeList = [];
                     return;
                 }
-                rpc.callRpcWithParams(sn,ns,v,'query',[]).then((resp)=>{
+                rpc.callRpcWithParams(sn,ns,v,'query',[])
+                    .then((resp)=>{
                     if(resp.code != 0 ) {
                         self.$Message.error(resp.msg);
                         return;

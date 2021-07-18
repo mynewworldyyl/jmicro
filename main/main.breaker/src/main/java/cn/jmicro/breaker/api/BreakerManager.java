@@ -40,20 +40,20 @@ import cn.jmicro.api.codec.JDataInput;
 import cn.jmicro.api.codec.TypeCoderFactory;
 import cn.jmicro.api.config.Config;
 import cn.jmicro.api.idgenerator.ComponentIdServer;
-import cn.jmicro.api.monitor.IStatisDataSubscribe;
+import cn.jmicro.api.monitor.IStatisDataSubscribeJMSrv;
 import cn.jmicro.api.monitor.LG;
 import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.monitor.MonitorStatisConfigManager;
-import cn.jmicro.api.monitor.StatisConfig;
-import cn.jmicro.api.monitor.StatisData;
-import cn.jmicro.api.monitor.StatisIndex;
+import cn.jmicro.api.monitor.StatisConfigJRso;
+import cn.jmicro.api.monitor.StatisDataJRso;
+import cn.jmicro.api.monitor.StatisIndexJRso;
 import cn.jmicro.api.objectfactory.IObjectFactory;
 import cn.jmicro.api.raft.IDataOperator;
 import cn.jmicro.api.registry.IRegistry;
-import cn.jmicro.api.registry.ServiceItem;
-import cn.jmicro.api.registry.ServiceMethod;
-import cn.jmicro.api.registry.UniqueServiceKey;
-import cn.jmicro.api.registry.UniqueServiceMethodKey;
+import cn.jmicro.api.registry.ServiceItemJRso;
+import cn.jmicro.api.registry.ServiceMethodJRso;
+import cn.jmicro.api.registry.UniqueServiceKeyJRso;
+import cn.jmicro.api.registry.UniqueServiceMethodKeyJRso;
 import cn.jmicro.api.service.ServiceManager;
 import cn.jmicro.api.timer.ITickerAction;
 import cn.jmicro.api.timer.TimerTicker;
@@ -71,7 +71,7 @@ import cn.jmicro.common.util.JsonUtils;
  */
 @Component
 @Service(version="0.0.1",showFront=false)
-public class BreakerManager implements IStatisDataSubscribe{
+public class BreakerManager implements IStatisDataSubscribeJMSrv{
 	
 	private static final Short[] REQ_FAIL_TYPES = new Short[]{MC.MT_CLIENT_RESPONSE_SERVER_ERROR,MC.MT_REQ_TIMEOUT_FAIL,MC.MT_REQ_ERROR};
 	private static final Short[] REQ_TYPES = new Short[] {MC.MT_REQ_START};
@@ -111,7 +111,7 @@ public class BreakerManager implements IStatisDataSubscribe{
 	
 	private Map<String,Integer> srvMt2ConfigIds = new HashMap<>();
 	
-	private StatisIndex[] statisIndex = new StatisIndex[2];
+	private StatisIndexJRso[] statisIndex = new StatisIndexJRso[2];
 	
 	public void init(){}
 	
@@ -120,34 +120,38 @@ public class BreakerManager implements IStatisDataSubscribe{
 		doTestImpl = this::doTestService;
 		//breakerChecker = this::breakerChecker;
 		
-		statisIndex[0] = new StatisIndex();
+		statisIndex[0] = new StatisIndexJRso();
 		statisIndex[0].setName("fp");
 		statisIndex[0].setNums(REQ_FAIL_TYPES);
 		statisIndex[0].setDens(REQ_TYPES);
 		statisIndex[0].setDesc("rpc fail percent");
-		statisIndex[0].setType(StatisConfig.PREFIX_CUR_PERCENT);
+		statisIndex[0].setType(StatisConfigJRso.PREFIX_CUR_PERCENT);
 		
-		statisIndex[1] = new StatisIndex();
+		statisIndex[1] = new StatisIndexJRso();
 		statisIndex[1].setName("sp");
 		statisIndex[1].setNums(REQ_SUCCESS_TYPES);
 		statisIndex[1].setDens(REQ_TYPES);
 		statisIndex[1].setDesc("rpc success percent");
-		statisIndex[1].setType(StatisConfig.PREFIX_CUR_PERCENT);
+		statisIndex[1].setType(StatisConfigJRso.PREFIX_CUR_PERCENT);
 		
-		srvManager.addListener((type,item)->{
+		srvManager.addListener((type,siKey,si)->{
 			if(type == IListener.ADD) {
-				serviceAdd(item);
+				serviceAdd(siKey,si);
 			}else if(type == IListener.REMOVE) {
-				serviceRemove(item);
+				serviceRemove(siKey,si);
 			}else if(type == IListener.DATA_CHANGE) {
-				serviceDataChange(item);
+				serviceDataChange(siKey,si);
 			} 
 		});
 	}
 
-	private void serviceDataChange(ServiceItem item) {
-		for(ServiceMethod sm : item.getMethods()) {
-			String smKey = sm.getKey().toKey(false, false, false);
+	private void serviceDataChange(UniqueServiceKeyJRso itemKey,ServiceItemJRso item) {
+		if(item == null) {
+			item = this.srvManager.getServiceByKey(itemKey.fullStringKey());
+		}
+		
+		for(ServiceMethodJRso sm : item.getMethods()) {
+			String smKey = sm.getKey().methodID();
 			if(!srvMt2ConfigIds.containsKey(smKey)) {
 				if(sm.getBreakingRule().isEnable()) {
 					createStatisConfig(sm,true);
@@ -160,51 +164,55 @@ public class BreakerManager implements IStatisDataSubscribe{
 		}
 	}
 
-	private void serviceRemove(ServiceItem item) {
-		for(ServiceMethod sm : item.getMethods()) {
+	private void serviceRemove(UniqueServiceKeyJRso itemKey,ServiceItemJRso item) {
+		//ServiceItemJRso item = this.srvManager.getServiceByKey(itemKey.fullStringKey());
+		for(ServiceMethodJRso sm : item.getMethods()) {
 			if(sm.getBreakingRule().isEnable()) {
-				srvMt2ConfigIds.remove(sm.getKey().toKey(false, false, false));
+				srvMt2ConfigIds.remove(sm.getKey().methodID());
 			}
 		}
 	}
 
-	private void serviceAdd(ServiceItem item) {
-		for(ServiceMethod sm : item.getMethods()) {
+	private void serviceAdd(UniqueServiceKeyJRso itemKey,ServiceItemJRso item) {
+		if(item == null) {
+			item = this.srvManager.getServiceByKey(itemKey.fullStringKey());
+		}
+		for(ServiceMethodJRso sm : item.getMethods()) {
 			if(sm.getBreakingRule().isEnable()) {
 				createStatisConfig(sm,true);
 			}
 		}
 	}
 
-	private void createStatisConfig(ServiceMethod sm, boolean isFp) {
+	private void createStatisConfig(ServiceMethodJRso sm, boolean isFp) {
 		
-		String key = sm.getKey().toKey(false,false,false);
+		String key = sm.getKey().methodID();
 		if(this.srvMt2ConfigIds.containsKey(key)) {
 			return;
 		}
 		
-		StatisConfig sc = new StatisConfig();
-		sc.setId(idGenerator.getIntId(StatisConfig.class));
+		StatisConfigJRso sc = new StatisConfigJRso();
+		sc.setId(idGenerator.getIntId(StatisConfigJRso.class));
 		srvMt2ConfigIds.put(key, sc.getId());
 		
-		sc.setByType(StatisConfig.BY_TYPE_SERVICE_METHOD);
+		sc.setByType(StatisConfigJRso.BY_TYPE_SERVICE_METHOD);
 		sc.setByKey(key);
 		
 		sc.setExpStr("fp>" + sm.getBreakingRule().getPercent());
 		sc.setExpStr1("sp>" + sm.getBreakingRule().getPercent());
 		
-		sc.setToType(StatisConfig.TO_TYPE_SERVICE_METHOD);
+		sc.setToType(StatisConfigJRso.TO_TYPE_SERVICE_METHOD);
 		
 		StringBuilder sb = new StringBuilder();
-		sb.append(UniqueServiceKey.serviceName(IStatisDataSubscribe.class.getName(),"breaker", "*"));
-		sb.append(UniqueServiceKey.SEP).append(UniqueServiceKey.SEP)
-		.append(UniqueServiceKey.SEP).append(UniqueServiceKey.SEP)
-		.append("onData").append(UniqueServiceKey.SEP);
+		sb.append(UniqueServiceKeyJRso.serviceName(IStatisDataSubscribeJMSrv.class.getName(),"breaker", "*"));
+		sb.append(UniqueServiceKeyJRso.SEP).append(UniqueServiceKeyJRso.SEP)
+		.append(UniqueServiceKeyJRso.SEP).append(UniqueServiceKeyJRso.SEP)
+		.append("onData").append(UniqueServiceKeyJRso.SEP);
 		
 		sc.setToParams(sb.toString());
 		
 		sc.setCounterTimeout(1*60);
-		sc.setTimeUnit(StatisConfig.UNIT_SE);
+		sc.setTimeUnit(StatisConfigJRso.UNIT_SE);
 		sc.setTimeCnt(1);
 		sc.setEnable(true);
 		
@@ -212,18 +220,20 @@ public class BreakerManager implements IStatisDataSubscribe{
 		
 		sc.setCreatedBy(Config.getClientId());
 		
-		String path = StatisConfig.STATIS_CONFIG_ROOT + "/" + sc.getId();
+		String path = StatisConfigJRso.STATIS_CONFIG_ROOT + "/" + sc.getId();
 		op.createNodeOrSetData(path, JsonUtils.getIns().toJson(sc), true);//服务停止时，配置将消失
 		
 	}
 	
-	private ServiceMethod getServiceMethodBreakRule(String sn,String ns,String ver,String method) {
-		Set<ServiceItem> items = this.reg.getServices(sn, ns, ver);
-		ServiceItem item = null;
+	private ServiceMethodJRso getServiceMethodBreakRule(String sn,String ns,String ver,String method) {
+		Set<UniqueServiceKeyJRso> itemKeys = this.reg.getServices(sn, ns, ver);
+		ServiceItemJRso item = null;
 		long lasttime = Long.MAX_VALUE;
-		for(ServiceItem si : items) {
+		for(UniqueServiceKeyJRso siKey : itemKeys) {
 			//以最先创建的熔断配置为准
-			if(si.getCreatedTime() < lasttime) {
+			ServiceItemJRso si = this.srvManager.getServiceByKey(siKey.fullStringKey());
+			
+			if(si != null && si.getCreatedTime() < lasttime) {
 				lasttime = si.getCreatedTime();
 				item = si;
 			}
@@ -241,7 +251,7 @@ public class BreakerManager implements IStatisDataSubscribe{
 	 */
 	public void breakerChecker(CheckerVo vo) {
 		
-		ServiceMethod sm = vo.sm;
+		ServiceMethodJRso sm = vo.sm;
 		if(sm == null) {
 			logger.warn("Break rule not found for: ",vo.sd.getKey());
 			return;
@@ -309,14 +319,15 @@ public class BreakerManager implements IStatisDataSubscribe{
 	}	
 	
 	private void updateBreaker(CheckerVo vo,boolean breakStatus) {
-		UniqueServiceMethodKey smKey = vo.sm.getKey();
-		Set<ServiceItem> items = this.reg.getServices(smKey.getServiceName(), smKey.getNamespace(), smKey.getVersion());
-		for(ServiceItem si : items) {
+		UniqueServiceMethodKeyJRso smKey = vo.sm.getKey();
+		Set<UniqueServiceKeyJRso> items = this.reg.getServices(smKey.getServiceName(), smKey.getNamespace(), smKey.getVersion());
+		for(UniqueServiceKeyJRso siKey : items) {
 			//以最先创建的熔断配置为准
-			ServiceMethod sm = si.getMethod(smKey.getMethod());
+			ServiceItemJRso si = this.srvManager.getServiceByKey(siKey.fullStringKey());
+			ServiceMethodJRso sm = si.getMethod(smKey.getMethod());
 			if(sm != null) {
 				sm.setBreaking(breakStatus);
-				this.srvManager.breakService(sm);
+				this.srvManager.breakService(sm.getKey());
 			}
 		}
 	}
@@ -340,7 +351,7 @@ public class BreakerManager implements IStatisDataSubscribe{
 	
 	private void removeChecker(CheckerVo vo) {
 		long interval = TimeUtils.getMilliseconds(vo.sm.getBreakingRule().getCheckInterval(), vo.sm.getBaseTimeUnit());
-		TimerTicker.getTimer(timers,interval).removeListener(vo.sm.getKey().toKey(true, true, true),false);
+		TimerTicker.getTimer(timers,interval).removeListener(vo.sm.getKey().fullStringKey(),false);
 	}
 	
 	/**
@@ -374,7 +385,7 @@ public class BreakerManager implements IStatisDataSubscribe{
 					} catch (UnsupportedEncodingException e) {
 						logger.error("",e);
 						throw new CommonException("Invalid testint args:"+vo.sm.getTestingArgs()
-						+ " for: "+vo.sm.getKey().toKey(true, true, true),e);
+						+ " for: "+vo.sm.getKey().fullStringKey(),e);
 					}
 				}
 				
@@ -382,7 +393,7 @@ public class BreakerManager implements IStatisDataSubscribe{
 			}
 		}
 		
-		UniqueServiceMethodKey smKey = vo.sm.getKey();
+		UniqueServiceMethodKeyJRso smKey = vo.sm.getKey();
 		
 		if(vo.srv == null) {
 			
@@ -422,26 +433,26 @@ public class BreakerManager implements IStatisDataSubscribe{
 				JMicroContext.get().removeParam((Constants.DIRECT_SERVICE_ITEM));
 			}*/
 		} catch (Throwable e) {
-			logger.error("doTestService error: "+vo.sm.getKey().toKey(true, true, true),e);
+			logger.error("doTestService error: "+vo.sm.getKey().fullStringKey(),e);
 		}
 		
 	}
 	
 	@Override
-	public IPromise<Void> onData(StatisData sd) {
+	public IPromise<Void> onData(StatisDataJRso sd) {
 		
 		if(!this.srvMt2ConfigIds.containsKey(sd.getKey())) {
 			this.srvMt2ConfigIds.put(sd.getKey(), sd.getCid());
 		}
 		
-		String[] arr = sd.getKey().split(UniqueServiceKey.SEP);
+		String[] arr = sd.getKey().split(UniqueServiceKeyJRso.SEP);
 		
-		String method = arr[UniqueServiceKey.INDEX_METHOD];
-		String sn = arr[UniqueServiceKey.INDEX_SN];
-		String ns = arr[UniqueServiceKey.INDEX_NS];
-		String ver = arr[UniqueServiceKey.INDEX_VER];
+		String method = arr[UniqueServiceKeyJRso.INDEX_METHOD];
+		String sn = arr[UniqueServiceKeyJRso.INDEX_SN];
+		String ns = arr[UniqueServiceKeyJRso.INDEX_NS];
+		String ver = arr[UniqueServiceKeyJRso.INDEX_VER];
 		
-		ServiceMethod sm = this.getServiceMethodBreakRule(sn,ns,ver,method);
+		ServiceMethodJRso sm = this.getServiceMethodBreakRule(sn,ns,ver,method);
 		
 		CheckerVo vo = new CheckerVo(sd,sm);
 		
@@ -451,12 +462,12 @@ public class BreakerManager implements IStatisDataSubscribe{
 	}
 	
 	private class CheckerVo {
-		private CheckerVo(StatisData sd,ServiceMethod sm) {
+		private CheckerVo(StatisDataJRso sd,ServiceMethodJRso sm) {
 			this.sm = sm;
 			this.sd = sd;
 		}
-		private ServiceMethod sm;
-		private StatisData sd;
+		private ServiceMethodJRso sm;
+		private StatisDataJRso sd;
 		
 		private Object[] args;
 		private Object srv;

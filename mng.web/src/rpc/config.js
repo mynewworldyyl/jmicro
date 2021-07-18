@@ -1,3 +1,6 @@
+const ADMIN_MODEL_PER = '*'
+const ADMIN_OP_PER = -1
+
 export default {
    /* cache:{},
     ip:process.env.ip,
@@ -21,5 +24,10 @@ export default {
     privateKey:'',
 
     includeMethod:true,
+
+    clientId: 1,//system client id
+
+    adminModelPerm : ADMIN_MODEL_PER,
+    adminOpPerm: ADMIN_OP_PER,
 
 }

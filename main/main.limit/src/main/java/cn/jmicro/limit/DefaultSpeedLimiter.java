@@ -22,15 +22,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import cn.jmicro.api.JMicroContext;
-import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Inject;
 import cn.jmicro.api.limitspeed.ILimiter;
 import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.monitor.ServiceCounter;
 import cn.jmicro.api.net.IRequest;
-import cn.jmicro.api.registry.ServiceMethod;
+import cn.jmicro.api.registry.ServiceMethodJRso;
 import cn.jmicro.api.security.AccountRelatedStatis;
-import cn.jmicro.api.security.ActInfo;
+import cn.jmicro.api.security.ActInfoJRso;
 import cn.jmicro.api.utils.TimeUtils;
 import cn.jmicro.common.Constants;
 
@@ -54,7 +53,7 @@ public class DefaultSpeedLimiter extends AbstractLimiter implements ILimiter{
 	@Override
 	public boolean enter(IRequest req) {
 		
-		ServiceMethod sm = JMicroContext.get().getParam(Constants.SERVICE_METHOD_KEY, null);
+		ServiceMethodJRso sm = JMicroContext.get().getParam(Constants.SERVICE_METHOD_KEY, null);
 		
 		if(sm.getMaxSpeed() <= 0) {
 			return true;
@@ -71,23 +70,23 @@ public class DefaultSpeedLimiter extends AbstractLimiter implements ILimiter{
 		sc.setLastActiveTime(TimeUtils.getCurTime());
 		
 		if(qps > sm.getMaxSpeed()){
-			logger.info("{} cur qps:{},{} maxSpeed:{}",key,qps,sm.getKey().toKey(false, false, false),sm.getMaxSpeed());
+			logger.info("{} cur qps:{},{} maxSpeed:{}",key,qps,sm.getKey().methodID(),sm.getMaxSpeed());
 			return false;
 		}
 		
 		return true;
 	}
 
-	private String counterKey(ServiceMethod sm,IRequest req) {
+	private String counterKey(ServiceMethodJRso sm,IRequest req) {
 		String key = "";
-		ActInfo ai = JMicroContext.get().getAccount();
+		ActInfoJRso ai = JMicroContext.get().getAccount();
 		if(ai == null) {
 			key = req.getSession().remoteHost();
 		}else {
 			key = ai.getActName();
 		}
 		//账号+RPC方法KEY
-		return key + Act_SM_SEPERATOR + sm.getKey().toKey(false, false, false);
+		return key + Act_SM_SEPERATOR + sm.getKey().methodID();
 	}
 
 	@Override

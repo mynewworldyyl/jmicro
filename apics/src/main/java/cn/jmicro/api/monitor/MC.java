@@ -385,7 +385,7 @@ public final class MC {
     public static final Set<Short> STATIS_TYPES = new HashSet<>();
     public static final Set<Short> EP_TYPES = new HashSet<>();
     
-    public static final List<MCConfig> MC_CONFIGS = new ArrayList<>();
+    public static final List<MCConfigJRso> MC_CONFIGS = new ArrayList<>();
     
     public static final Map<String,Byte> LogKey2Val = new HashMap<>();
     public static final Map<String,Short> MT_Key2Val = new HashMap<>();
@@ -423,7 +423,7 @@ public final class MC {
 				String name = f.getName();
 				Short val = f.getShort(null);
 				
-				MCConfig mcc = new MCConfig();
+				MCConfigJRso mcc = new MCConfigJRso();
 				mcc.setDesc(mca.desc());
 				mcc.setFieldName(name);
 				mcc.setType(val);

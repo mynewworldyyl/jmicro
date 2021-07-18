@@ -32,17 +32,17 @@ import cn.jmicro.api.JMicroContext;
 import cn.jmicro.api.async.IPromise;
 import cn.jmicro.api.async.PromiseUtils;
 import cn.jmicro.api.internal.async.PromiseImpl;
-import cn.jmicro.api.internal.pubsub.IInternalSubRpc;
+import cn.jmicro.api.internal.pubsub.IInternalSubRpcJMSrv;
 import cn.jmicro.api.monitor.LG;
 import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.net.Message;
 import cn.jmicro.api.net.ServerError;
 import cn.jmicro.api.objectfactory.IObjectFactory;
 import cn.jmicro.api.persist.IObjectStorage;
-import cn.jmicro.api.pubsub.PSData;
+import cn.jmicro.api.pubsub.PSDataJRso;
 import cn.jmicro.api.pubsub.PubSubManager;
-import cn.jmicro.api.registry.ServiceMethod;
-import cn.jmicro.api.registry.UniqueServiceMethodKey;
+import cn.jmicro.api.registry.ServiceMethodJRso;
+import cn.jmicro.api.registry.UniqueServiceMethodKeyJRso;
 import cn.jmicro.codegenerator.AsyncClientUtils;
 import cn.jmicro.common.CommonException;
 import cn.jmicro.common.util.JsonUtils;
@@ -68,7 +68,7 @@ public class SubscriberCallbackImpl implements ISubscriberCallback{
 	
 	private final static Logger logger = LoggerFactory.getLogger(SubscriberCallbackImpl.class);
 	
-	private ServiceMethod sm = null;
+	private ServiceMethodJRso sm = null;
 	
 	private Object srvProxy = null;
 	
@@ -82,12 +82,12 @@ public class SubscriberCallbackImpl implements ISubscriberCallback{
 	
 	private Map<String,Holder> key2Holder = new HashMap<>();
 	
-	private IInternalSubRpc pubsubServer;
+	private IInternalSubRpcJMSrv pubsubServer;
 	
 	//方法参数模式
 	private int type;
 	
-	public SubscriberCallbackImpl(ServiceMethod sm, Object srv, IObjectFactory of){
+	public SubscriberCallbackImpl(ServiceMethodJRso sm, Object srv, IObjectFactory of){
 		if(sm == null) {
 			throw new CommonException("SubCallback service method cannot be null");
 		}
@@ -101,12 +101,12 @@ public class SubscriberCallbackImpl implements ISubscriberCallback{
 		this.srvProxy = srv;
 		//this.reg = of.get(IRegistry.class);
 		
-		this.pubsubServer = of.get(IInternalSubRpc.class);
+		this.pubsubServer = of.get(IInternalSubRpcJMSrv.class);
 		
 	}
 	
 	@Override
-	public IPromise<PSData[]> onMessage(PSData[] items) {
+	public IPromise<PSDataJRso[]> onMessage(PSDataJRso[] items) {
 		switch(type) {
 			case ARR:
 				//PSData数组作为参数
@@ -116,26 +116,26 @@ public class SubscriberCallbackImpl implements ISubscriberCallback{
 			case NONE:
 				return callOneByOne(items,type);
 		}
-		throw new CommonException(0,"onMessage topic:"+sm.getTopic()+", type: " + type +"," + sm.getKey().toKey(false, false, false));
+		throw new CommonException(0,"onMessage topic:"+sm.getTopic()+", type: " + type +"," + sm.getKey().methodID());
 	}
 	
-	private void notiryResultFail(int code,String msg,Object cxt,List<PSData> fs,PromiseImpl<PSData[]> p) {
+	private void notiryResultFail(int code,String msg,Object cxt,List<PSDataJRso> fs,PromiseImpl<PSDataJRso[]> p) {
 
-		//List<PSData> fs = fsPro.getResult();
-		PSData[] items = (PSData[])cxt;
+		//List<PSDataJRso> fs = fsPro.getResult();
+		PSDataJRso[] items = (PSDataJRso[])cxt;
 		if(fs != null && !fs.isEmpty()) {
-			PSData[] failItems = new PSData[fs.size()];
+			PSDataJRso[] failItems = new PSDataJRso[fs.size()];
 			fs.toArray(failItems);
 			p.setResult(failItems);
-			resultItem(failItems,PSData.RESULT_FAIL_CALLBACK);
+			resultItem(failItems,PSDataJRso.RESULT_FAIL_CALLBACK);
 			//部份数据回调成功情况
-			PSData[] successItems = new PSData[items.length-fs.size()];
+			PSDataJRso[] successItems = new PSDataJRso[items.length-fs.size()];
 			int idx = 0;
 			if(fs.size() < items.length) {
 				//失败数不可能大于发送数
-				for(PSData pd : items) {
+				for(PSDataJRso pd : items) {
 					boolean f = false;
-					for(PSData fpd : fs) {
+					for(PSDataJRso fpd : fs) {
 						if(pd.getId() == fpd.getId()) {
 							f = true;
 							continue;
@@ -145,24 +145,24 @@ public class SubscriberCallbackImpl implements ISubscriberCallback{
 						successItems[idx++] = pd;
 					}
 				}
-				resultItem(successItems,PSData.RESULT_SUCCCESS);
+				resultItem(successItems,PSDataJRso.RESULT_SUCCCESS);
 			}
 			
 		} else {
 			//全部成功
-			resultItem(items,PSData.RESULT_SUCCCESS);
+			resultItem(items,PSDataJRso.RESULT_SUCCCESS);
 			p.setResult(null);
 		}
 	}
 
-	private IPromise<PSData[]> callAsArra(PSData[] items) {
-		PromiseImpl<PSData[]> p = new PromiseImpl<>();
+	private IPromise<PSDataJRso[]> callAsArra(PSDataJRso[] items) {
+		PromiseImpl<PSDataJRso[]> p = new PromiseImpl<>();
 		try {
 			//多个消息作为整体发送
 			PromiseUtils.callService(srvProxy, sm.getKey().getMethod(), items,  new Object[] {items}) //m.invoke(this.srvProxy, new Object[] {items});
 			.success((obj,ctx)-> {
 				//回调结果通知
-				IPromise<List<PSData>>  fsPro = notifyResult(obj,items,PSData.PUB_OK);
+				IPromise<List<PSDataJRso>>  fsPro = notifyResult(obj,items,PSDataJRso.PUB_OK);
 				fsPro
 				.fail((code,msg,cxt)->{
 					notiryResultFail(code,msg,cxt,fsPro.getResult(),p);
@@ -170,12 +170,12 @@ public class SubscriberCallbackImpl implements ISubscriberCallback{
 					p.done();
 				})
 				.success((rst,is)->{
-					resultItem(items,PSData.RESULT_SUCCCESS);
+					resultItem(items,PSDataJRso.RESULT_SUCCCESS);
 					p.done();
 				});
 			})
 			.fail((code,msg,pda)->{
-				IPromise<List<PSData>>  fsPro = notifyResult(new ServerError(code,msg),items,PSData.RESULT_FAIL_DISPATCH);
+				IPromise<List<PSDataJRso>>  fsPro = notifyResult(new ServerError(code,msg),items,PSDataJRso.RESULT_FAIL_DISPATCH);
 				fsPro
 				.fail((code0,msg0,cxt)->{
 					//回调成功并不表示此数据发送成功，原始数据转发失败即认为此消息发送失败。回调只是告诉原始发送者此消息发送失败
@@ -185,17 +185,17 @@ public class SubscriberCallbackImpl implements ISubscriberCallback{
 					p.done();
 				})
 				.success((rst,is)->{
-					resultItem(items,PSData.RESULT_FAIL_DISPATCH);
+					resultItem(items,PSDataJRso.RESULT_FAIL_DISPATCH);
 					p.setFail(code,msg);
 					p.done();
 				});
 			});
 			return p;
 		} catch (Throwable e) {
-			String msg = "callAsArra topic:"+sm.getTopic()+",mkey:"+sm.getKey().toKey(false, false, false);
+			String msg = "callAsArra topic:"+sm.getTopic()+",mkey:"+sm.getKey().methodID();
 			logger.error(msg, e);
 			LG.log(MC.LOG_ERROR, TAG,msg,e);
-			resultItem(items,PSData.RESULT_FAIL_DISPATCH);
+			resultItem(items,PSDataJRso.RESULT_FAIL_DISPATCH);
 			p.setResult(items);
 			p.setFail(1,msg);
 			p.done();
@@ -203,14 +203,14 @@ public class SubscriberCallbackImpl implements ISubscriberCallback{
 		return p;
 	}
 
-	private IPromise<List<PSData>> notifyResult(Object obj, PSData[] items,int resultCode) {
-		PromiseImpl<List<PSData>> outp = new PromiseImpl<>();
+	private IPromise<List<PSDataJRso>> notifyResult(Object obj, PSDataJRso[] items,int resultCode) {
+		PromiseImpl<List<PSDataJRso>> outp = new PromiseImpl<>();
 		
-		List<PSData> fails = new ArrayList<>();
+		List<PSDataJRso> fails = new ArrayList<>();
 		
 		AtomicInteger cbcnt = new AtomicInteger(0);
 		
-		for (PSData pd : items) {
+		for (PSDataJRso pd : items) {
 			//需要回调结果的消息才需要计数
 			if(StringUtils.isNotEmpty(pd.getCallback())) {
 				cbcnt.incrementAndGet();
@@ -221,10 +221,10 @@ public class SubscriberCallbackImpl implements ISubscriberCallback{
 			outp.setResult(null);
 			outp.done();
 		}else {
-			for (PSData pd : items) {
+			for (PSDataJRso pd : items) {
 				try {
 					if(StringUtils.isNotEmpty(pd.getCallback())) {
-						IPromise<PSData> pro = callback(pd, obj, resultCode);
+						IPromise<PSDataJRso> pro = callback(pd, obj, resultCode);
 						pro.then((proData,fail,ctx)->{
 							if(proData != null) {
 								fails.add(proData);
@@ -239,7 +239,7 @@ public class SubscriberCallbackImpl implements ISubscriberCallback{
 						});
 					}
 				} catch (Throwable e) {
-					String msg = "callOneByOne pd:"+pd.getId()+", topic:"+pd.getTopic()+",mkey:"+sm.getKey().toKey(false, false, false);
+					String msg = "callOneByOne pd:"+pd.getId()+", topic:"+pd.getTopic()+",mkey:"+sm.getKey().methodID();
 					logger.error(msg, e);
 					LG.log(MC.LOG_ERROR, TAG, msg,e);
 					fails.add(pd);
@@ -256,16 +256,16 @@ public class SubscriberCallbackImpl implements ISubscriberCallback{
 		return outp;
 	}
 
-	private IPromise<PSData[]> callOneByOne(PSData[] items,int type) {
+	private IPromise<PSDataJRso[]> callOneByOne(PSDataJRso[] items,int type) {
 		
-		PromiseImpl<PSData[]> p = new PromiseImpl<>();
+		PromiseImpl<PSDataJRso[]> p = new PromiseImpl<>();
 		p.setResult(null);
 		
-		List<PSData> fails = new ArrayList<>();
+		List<PSDataJRso> fails = new ArrayList<>();
 		
 		AtomicInteger ai = new AtomicInteger(items.length);
 		
-		for (PSData pd : items) {
+		for (PSDataJRso pd : items) {
 			try {
 				
 				IPromise<?> rePromise = null;
@@ -280,17 +280,17 @@ public class SubscriberCallbackImpl implements ISubscriberCallback{
 				
 				rePromise
 				.success((result,pdItem)->{
-					PSData pda = (PSData)pdItem;
+					PSDataJRso pda = (PSDataJRso)pdItem;
 					if(StringUtils.isNotEmpty(pda.getCallback())) {
-						resultItem(pda,PSData.RESULT_SUCCCESS);
+						resultItem(pda,PSDataJRso.RESULT_SUCCCESS);
 					} else {
-						IPromise<PSData> inPro = callback((PSData)pdItem, result,PubSubManager.PUB_OK);
+						IPromise<PSDataJRso> inPro = callback((PSDataJRso)pdItem, result,PubSubManager.PUB_OK);
 						inPro.success((iobj,actx)->{
-							resultItem(pda,PSData.RESULT_SUCCCESS);
+							resultItem(pda,PSDataJRso.RESULT_SUCCCESS);
 							int cnt = ai.decrementAndGet();
 							if(cnt == 0) {
 								if(!fails.isEmpty()) {
-									PSData[] pds = new PSData[fails.size()];
+									PSDataJRso[] pds = new PSDataJRso[fails.size()];
 									fails.toArray(pds);
 									p.setResult(pds);
 									p.setFail(1, "fail item in result");
@@ -298,39 +298,39 @@ public class SubscriberCallbackImpl implements ISubscriberCallback{
 								p.done();
 							}
 						}).fail((code,msg,objItem)->{
-							resultItem(pda,PSData.RESULT_FAIL_CALLBACK);
+							resultItem(pda,PSDataJRso.RESULT_FAIL_CALLBACK);
 						});
 						
 					}
 				}).fail((code,msg,pdItem)->{
-					PSData pda = (PSData)pdItem;
+					PSDataJRso pda = (PSDataJRso)pdItem;
 					logger.error("code:" +code + ", msg: " + msg);
 					fails.add(pd);
 					int cnt = ai.decrementAndGet();
 					if(cnt == 0) {
 						if(!fails.isEmpty()) {
-							PSData[] pds = new PSData[fails.size()];
+							PSDataJRso[] pds = new PSDataJRso[fails.size()];
 							fails.toArray(pds);
 							p.setResult(pds);
 							p.setFail(1, "fail item in result");
 						}
 						p.done();
 					}
-					resultItem(pda,PSData.RESULT_FAIL_DISPATCH);
+					resultItem(pda,PSDataJRso.RESULT_FAIL_DISPATCH);
 				});
 			} catch (Throwable e) {
-				String msg = "callOneByOne pd:"+pd.getId()+", topic:"+pd.getTopic()+",mkey:"+sm.getKey().toKey(false, false, false);
+				String msg = "callOneByOne pd:"+pd.getId()+", topic:"+pd.getTopic()+",mkey:"+sm.getKey().methodID();
 				logger.error(msg, e);
 				LG.log(MC.LOG_ERROR, TAG,msg,e);
 				fails.add(pd);
 				
-				resultItem(pd,PSData.RESULT_FAIL_DISPATCH);
+				resultItem(pd,PSDataJRso.RESULT_FAIL_DISPATCH);
 				
 				int cnt = ai.decrementAndGet();
 				
 				if(cnt == 0) {
 					if(!fails.isEmpty()) {
-						PSData[] pds = new PSData[fails.size()];
+						PSDataJRso[] pds = new PSDataJRso[fails.size()];
 						fails.toArray(pds);
 						p.setResult(pds);
 						p.setFail(1, "fail item in result");
@@ -343,9 +343,9 @@ public class SubscriberCallbackImpl implements ISubscriberCallback{
 		return p;
 	}
 
-	private void resultItem(PSData pda, byte b) {
+	private void resultItem(PSDataJRso pda, byte b) {
 		try {
-			if(pda.isPersist() || b != PSData.RESULT_SUCCCESS) {
+			if(pda.isPersist() || b != PSDataJRso.RESULT_SUCCCESS) {
 				Document d = Document.parse(JsonUtils.getIns().toJson(pda));
 				d.put("result", b);
 				d.put("id", pda.getId());
@@ -357,14 +357,14 @@ public class SubscriberCallbackImpl implements ISubscriberCallback{
 		}
 	}
 	
-	private void resultItem(PSData[] pdas, byte b) {
-		for(PSData pd : pdas) {
+	private void resultItem(PSDataJRso[] pdas, byte b) {
+		for(PSDataJRso pd : pdas) {
 			resultItem(pd,b);
 		}
 	}
 	
-	public IPromise<PSData> callback(PSData item,Object result,int statuCode) {
-		PromiseImpl<PSData> p = new PromiseImpl<>();
+	public IPromise<PSDataJRso> callback(PSDataJRso item,Object result,int statuCode) {
+		PromiseImpl<PSDataJRso> p = new PromiseImpl<>();
 		p.setResult(null);
 		
 		if (StringUtils.isEmpty(item.getCallback())) {
@@ -376,12 +376,12 @@ public class SubscriberCallbackImpl implements ISubscriberCallback{
 		if(item.isCallbackMethod()) {
 			return callbackServiceMethod(item,result,statuCode);
 		} else {
-			PSData d = new PSData();
+			PSDataJRso d = new PSDataJRso();
 			d.setTopic(item.getCallback());
 			d.setData(new Object[] {result,item.getId(),statuCode});
 			d.setPersist(true);
 			d.setSrcClientId(item.getSrcClientId());
-			d.put(PSData.SRC_PSDATA_ID, item.getId());
+			d.put(PSDataJRso.SRC_PSDATA_ID, item.getId());
 			d.setPersist(item.isPersist());
 			pubsubServer.publishItem(d);
 			p.done();
@@ -390,9 +390,9 @@ public class SubscriberCallbackImpl implements ISubscriberCallback{
 	}
 
 	//异步回调用返回值，如异步RPC时，返回结果给调用者
-	public IPromise<PSData> callbackServiceMethod(PSData item,Object result,int statuCode) {
+	public IPromise<PSDataJRso> callbackServiceMethod(PSDataJRso item,Object result,int statuCode) {
 
-		PromiseImpl<PSData> p = new PromiseImpl<>();
+		PromiseImpl<PSDataJRso> p = new PromiseImpl<>();
 		p.setResult(null);
 		
 		if(StringUtils.isEmpty(item.getCallback())) {
@@ -408,7 +408,7 @@ public class SubscriberCallbackImpl implements ISubscriberCallback{
 		String key = item.getCallback();
 		
 		try {
-			UniqueServiceMethodKey mkey = UniqueServiceMethodKey.fromKey(key); 
+			UniqueServiceMethodKeyJRso mkey = UniqueServiceMethodKeyJRso.fromKey(key); 
 			Holder h = null;
 			//String k = key.toKey(false, false, false);
 			if(this.key2Holder.containsKey(key)) {
@@ -426,10 +426,10 @@ public class SubscriberCallbackImpl implements ISubscriberCallback{
 				}
 				h.key = mkey;
 				
-				if(Message.is(item.getFlag(), PSData.FLAG_ASYNC_METHOD)) {
+				if(Message.is(item.getFlag(), PSDataJRso.FLAG_ASYNC_METHOD)) {
 					//异步方法
 					h.m = h.srv.getClass().getMethod(AsyncClientUtils.genAsyncMethodName(mkey.getMethod()),result.getClass());
-				}else if(Message.is(item.getFlag(), PSData.FLAG_MESSAGE_CALLBACK)) {
+				}else if(Message.is(item.getFlag(), PSDataJRso.FLAG_MESSAGE_CALLBACK)) {
 					//消息通知
 					h.m = h.srv.getClass().getMethod(AsyncClientUtils.genAsyncMethodName(mkey.getMethod()),Integer.TYPE,Long.TYPE,Map.class);
 				}
@@ -450,11 +450,11 @@ public class SubscriberCallbackImpl implements ISubscriberCallback{
 			JMicroContext.get().setLong(JMicroContext.LINKER_ID, linkId);
 			//JMicroContext.get().setLong(JMicroContext.REQ_ID, reqId);
 			IPromise<?> cp = null;
-			if(Message.is(item.getFlag(), PSData.FLAG_ASYNC_METHOD)) {
+			if(Message.is(item.getFlag(), PSDataJRso.FLAG_ASYNC_METHOD)) {
 				//异步方法
 				cp = PromiseUtils.callService(h.srv, h.key.getMethod(), null,  new Object[] {result});
 				//cp = (IPromise<?>)h.m.invoke(h.srv, obj);
-			}else if(Message.is(item.getFlag(), PSData.FLAG_MESSAGE_CALLBACK)) {
+			}else if(Message.is(item.getFlag(), PSDataJRso.FLAG_MESSAGE_CALLBACK)) {
 				//消息通知
 				cp = PromiseUtils.callService(h.srv, h.key.getMethod(), null,  
 						new Object[] {result,item.getId(),statuCode});
@@ -488,20 +488,20 @@ public class SubscriberCallbackImpl implements ISubscriberCallback{
 
 	public void init() {
 		try {
-			Class<?>[] argsCls = UniqueServiceMethodKey.paramsClazzes(sm.getKey().getParamsStr());
+			Class<?>[] argsCls = UniqueServiceMethodKeyJRso.paramsClazzes(sm.getKey().getParamsStr());
 			//String method = AsyncClientUtils.genAsyncMethodName(sm.getKey().getMethod());
 			//this.m = AsyncClientUtils.getMethod(this.srvProxy.getClass(), method);
 			if(argsCls == null || argsCls.length ==0) {
 				//无参数
 				this.type = NONE;
-			}else if(argsCls.length ==1 && argsCls[0] == PSData.class ) {
+			}else if(argsCls.length ==1 && argsCls[0] == PSDataJRso.class ) {
 				//PSData实例作为单一参数
 				this.type = SINGLE;
-			}else if(argsCls.length == 1 && argsCls[0] == new PSData[0].getClass() ) {
+			}else if(argsCls.length == 1 && argsCls[0] == new PSDataJRso[0].getClass() ) {
 				//PSData实例数组作为参数
 				this.type = ARR;
 			} else {
-				//PSData.data数组作为RPC参数
+				//PSDataJRso.data数组作为RPC参数
 				this.type = DATA;
 			}
 		} catch (Throwable e) {
@@ -513,13 +513,13 @@ public class SubscriberCallbackImpl implements ISubscriberCallback{
 	private class Holder{
 		public Object srv;
 		public Method m;
-		public UniqueServiceMethodKey key;
+		public UniqueServiceMethodKeyJRso key;
 		
 	}
 
 	@Override
 	public String info() {
-		return sm.getKey().toKey(false, false, false);
+		return sm.getKey().methodID();
 	}
 
 	@Override
@@ -537,11 +537,11 @@ public class SubscriberCallbackImpl implements ISubscriberCallback{
 		return hashCode() == obj.hashCode();
 	}
 
-	public ServiceMethod getSm() {
+	public ServiceMethodJRso getSm() {
 		return sm;
 	}
 
-	public void setSm(ServiceMethod sm) {
+	public void setSm(ServiceMethodJRso sm) {
 		this.sm = sm;
 	}
 	

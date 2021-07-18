@@ -4,7 +4,7 @@ import rpc from "@/rpc/rpcbase";
 import cons from "@/rpc/constants"
 
 let pssn = "cn.jmicro.gateway.MessageServiceImpl";
-let    sn = 'cn.jmicro.api.pubsub.IPubSubClientService'
+let    sn = 'cn.jmicro.api.pubsub.IPubSubClientServiceJMSrv'
 let    ns = cons.NS_MNG
 let   pns="pubSubServer"
 let   v='0.0.1'

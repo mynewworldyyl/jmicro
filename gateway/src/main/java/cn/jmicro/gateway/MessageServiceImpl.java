@@ -28,7 +28,6 @@ import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import cn.jmicro.api.JMicroContext;
 import cn.jmicro.api.annotation.Cfg;
 import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Inject;
@@ -36,20 +35,21 @@ import cn.jmicro.api.annotation.JMethod;
 import cn.jmicro.api.annotation.SMethod;
 import cn.jmicro.api.annotation.Service;
 import cn.jmicro.api.codec.ICodecFactory;
-import cn.jmicro.api.gateway.IGatewayMessageCallback;
+import cn.jmicro.api.gateway.IGatewayMessageCallbackJMSrv;
 import cn.jmicro.api.idgenerator.ComponentIdServer;
 import cn.jmicro.api.net.IMessageHandler;
 import cn.jmicro.api.net.ISession;
 import cn.jmicro.api.net.ISessionListener;
 import cn.jmicro.api.net.Message;
 import cn.jmicro.api.net.ServerError;
-import cn.jmicro.api.pubsub.PSData;
+import cn.jmicro.api.pubsub.PSDataJRso;
 import cn.jmicro.api.pubsub.PubSubManager;
 import cn.jmicro.api.registry.IRegistry;
-import cn.jmicro.api.registry.ServiceItem;
-import cn.jmicro.api.registry.ServiceMethod;
+import cn.jmicro.api.registry.ServiceItemJRso;
+import cn.jmicro.api.registry.ServiceMethodJRso;
+import cn.jmicro.api.registry.UniqueServiceKeyJRso;
 import cn.jmicro.api.security.AccountManager;
-import cn.jmicro.api.security.ActInfo;
+import cn.jmicro.api.security.ActInfoJRso;
 import cn.jmicro.api.service.ServiceManager;
 import cn.jmicro.api.timer.ITickerAction;
 import cn.jmicro.api.timer.TimerTicker;
@@ -66,8 +66,8 @@ import cn.jmicro.common.util.StringUtils;
  * @date 2020年3月26日
  */
 @Component(side=Constants.SIDE_PROVIDER)
-@Service(version="0.0.1",showFront=false,external=false,infs=IGatewayMessageCallback.class)
-public class MessageServiceImpl implements IGatewayMessageCallback,IMessageHandler{
+@Service(version="0.0.1",showFront=false,external=false,infs=IGatewayMessageCallbackJMSrv.class)
+public class MessageServiceImpl implements IGatewayMessageCallbackJMSrv,IMessageHandler{
 
 	private final static Logger logger = LoggerFactory.getLogger(MessageServiceImpl.class);
 	
@@ -134,16 +134,18 @@ public class MessageServiceImpl implements IGatewayMessageCallback,IMessageHandl
 			}
 		}
 		
-		Set<ServiceItem> items = reg.getServices(IGatewayMessageCallback.class.getName());
+		Set<UniqueServiceKeyJRso> items = reg.getServices(IGatewayMessageCallbackJMSrv.class.getName());
 		if(items == null) {
-			logger.error(IGatewayMessageCallback.class.getName() + " service item not found!");
+			logger.error(IGatewayMessageCallbackJMSrv.class.getName() + " service item not found!");
 			return -1;
 		}		
 		
 		boolean flag = false;
 		
-		for(ServiceItem si : items) {
-			ServiceMethod sm = si.getMethod("onPSMessage", new Class[] {new PSData[0].getClass()});
+		for(UniqueServiceKeyJRso si : items) {
+			ServiceItemJRso sit = this.srvManager.getServiceByKey(si.fullStringKey());
+			if(sit == null) continue;
+			ServiceMethodJRso sm = sit.getMethod("onPSMessage", new Class[] {new PSDataJRso[0].getClass()});
 			if(sm != null) {
 				
 				flag = true;
@@ -158,11 +160,11 @@ public class MessageServiceImpl implements IGatewayMessageCallback,IMessageHandl
 					}
 					if(!f) {
 						sm.setTopic(sm.getTopic()+Constants.TOPIC_SEPERATOR+topic);
-						reg.update(si);
+						reg.update(sit);
 					}
 				} else {
 					sm.setTopic(topic);
-					reg.update(si);
+					reg.update(sit);
 				}
 				
 			} else {
@@ -184,7 +186,7 @@ public class MessageServiceImpl implements IGatewayMessageCallback,IMessageHandl
 				return -1;
 			}
 			
-			ActInfo ai = this.accountManager.getAccount(lk.toString());
+			ActInfoJRso ai = this.accountManager.getAccount(lk.toString());
 			if(ai == null) {
 				logger.error("Act not found by: " + lk);
 				 return -1;
@@ -195,7 +197,7 @@ public class MessageServiceImpl implements IGatewayMessageCallback,IMessageHandl
 			r.id = this.idServer.getIntId(MessageServiceImpl.class);
 			r.sess = session;
 			r.topic = topic;
-			r.clientId = ai.getId();
+			r.clientId = ai.getClientId();
 			r.lastActiveTime = TimeUtils.getCurTime();
 			sess.add(r);
 			Set<Integer> ids = session.getParam(MESSAGE_SERVICE_REG_ID);
@@ -251,16 +253,17 @@ public class MessageServiceImpl implements IGatewayMessageCallback,IMessageHandl
 		logger.debug("unregist topic:{} id:{} ",rr.topic,rr.id);
 		
 		if(sess.isEmpty()) {
-			Set<ServiceItem> items = reg.getServices(IGatewayMessageCallback.class.getName());
+			Set<UniqueServiceKeyJRso> items = reg.getServices(IGatewayMessageCallbackJMSrv.class.getName());
 			if(items == null) {
-				logger.error(IGatewayMessageCallback.class.getName() + " service item not found!");
+				logger.error(IGatewayMessageCallbackJMSrv.class.getName() + " service item not found!");
 				return true;
 			}
 			
-			for(ServiceItem si : items) {
-				ServiceMethod sm = si.getMethod("onPSMessage", new Class[] {new PSData[0].getClass()});
+			for(UniqueServiceKeyJRso si : items) {
+				ServiceItemJRso sit = this.srvManager.getServiceByKey(si.fullStringKey());
+				ServiceMethodJRso sm = sit.getMethod("onPSMessage", new Class[] {new PSDataJRso[0].getClass()});
 				if(sm != null) {
-					logger.debug("remmove topic:{} from:{} ",rr.topic,sm.getKey().toKey(false, false, false));
+					logger.debug("remmove topic:{} from:{} ",rr.topic,sm.getKey().fullStringKey());
 					if(StringUtils.isNotEmpty(sm.getTopic())) {
 						String[] ts = sm.getTopic().split(Constants.TOPIC_SEPERATOR);
 						StringBuffer sb = new StringBuffer();
@@ -274,7 +277,7 @@ public class MessageServiceImpl implements IGatewayMessageCallback,IMessageHandl
 							sb.delete(sb.length()-1, sb.length());
 						}
 						sm.setTopic(sb.toString());
-						reg.update(si);
+						reg.update(sit);
 					}
 				} else {
 					logger.error("onMessage method not found!");
@@ -287,7 +290,7 @@ public class MessageServiceImpl implements IGatewayMessageCallback,IMessageHandl
 
 	@Override
 	@SMethod(asyncable=true,timeout=5000,retryCnt=0,needResponse=true)
-	public void onPSMessage(PSData[] items) {
+	public void onPSMessage(PSDataJRso[] items) {
 		if(items == null || items.length == 0) {
 			return;
 		}
@@ -298,7 +301,7 @@ public class MessageServiceImpl implements IGatewayMessageCallback,IMessageHandl
 		//强制使用JSON下发数据
 		msg.setDownProtocol(Message.PROTOCOL_JSON);
 		
-		for(PSData i : items) {
+		for(PSDataJRso i : items) {
 			
 			try {
 				Set<Registion> rsList = topic2Sessions.get(i.getTopic());
@@ -376,10 +379,10 @@ public class MessageServiceImpl implements IGatewayMessageCallback,IMessageHandl
 		timer.addListener(TIMER_KEY, null, tickerAct);
 		//-2120102654
 		//-1331833745
-		srvManager.registSmCode("cn.jmicro.gateway.MessageServiceImpl","mng", "0.0.1", "subscribe",
+		/*srvManager.registSmCode("cn.jmicro.gateway.MessageServiceImpl","mng", "0.0.1", "subscribe",
 				new Class[] {ISession.class,String.class,Map.class});
 		srvManager.registSmCode("cn.jmicro.gateway.MessageServiceImpl","mng", "0.0.1", "unsubscribe",
-				new Class[] {Integer.class});
+				new Class[] {Integer.class});*/
 	}
 
 	private class Registion{

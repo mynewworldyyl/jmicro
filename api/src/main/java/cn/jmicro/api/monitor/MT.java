@@ -20,8 +20,8 @@ import cn.jmicro.api.EnterMain;
 import cn.jmicro.api.JMicroContext;
 import cn.jmicro.api.config.Config;
 import cn.jmicro.api.objectfactory.IObjectFactory;
-import cn.jmicro.api.registry.ServiceMethod;
-import cn.jmicro.api.security.ActInfo;
+import cn.jmicro.api.registry.ServiceMethodJRso;
+import cn.jmicro.api.security.ActInfoJRso;
 import cn.jmicro.common.Constants;
 
 /**
@@ -39,11 +39,11 @@ public class MT {
 	
 	private static boolean isDs = false;
 	
-	public static boolean rpcEvent(ServiceMethod sm,short type,long val) {
+	public static boolean rpcEvent(ServiceMethodJRso sm,short type,long val) {
 		if(sm != null && sm.getMonitorEnable() == 1 && isInit && m != null 
 				&& m.canSubmit(sm,type,Config.getClientId())) {
-			JMStatisItem mi = new JMStatisItem();
-			mi.setKey(sm.getKey().toKey(true, true, true));
+			JMStatisItemJRso mi = new JMStatisItemJRso();
+			mi.setKey(sm.getKey().fullStringKey());
 			setCommon(mi);
 			mi.addType(type,val);
 			return m.submit2Cache(mi);
@@ -57,7 +57,7 @@ public class MT {
 		}
 		
 		if(isMonitorable(type)) {
-			JMStatisItem mi = JMicroContext.get().getMRpcStatisItem();
+			JMStatisItemJRso mi = JMicroContext.get().getMRpcStatisItem();
 			mi.addType(type,val);
 			return true;
 		}
@@ -73,7 +73,7 @@ public class MT {
 			return rpcEvent(type,num);
 		}
 		
-		JMStatisItem mi = new JMStatisItem();
+		JMStatisItemJRso mi = new JMStatisItemJRso();
 		mi.setKey(key);
 		setCommon(mi);
 		
@@ -95,33 +95,33 @@ public class MT {
 		return nonRpcEvent(Config.getInstanceName(),type,1);
 	}
 	
-	private static ServiceMethod sm() {
+	private static ServiceMethodJRso sm() {
 		if(JMicroContext.existRpcContext()) {
 			return JMicroContext.get().getParam(Constants.SERVICE_METHOD_KEY, null);
 		}
 		return null;
 	}
 	
-	public static void setCommon(JMStatisItem si) {
+	public static void setCommon(JMStatisItemJRso si) {
 		if(si == null) {
 			return;
 		}
 
 		if(JMicroContext.existRpcContext()) {
-			ActInfo ai = JMicroContext.get().getAccount();
+			ActInfoJRso ai = JMicroContext.get().getAccount();
 			if(ai != null) {
-				si.setClientId(ai.getId());
+				si.setClientId(ai.getClientId());
 			} /*else {
 				si.setClientId(Config.getClientId());
 			}*/
 			//在RPC上下文中才有以上信息
-			ServiceMethod sm = (ServiceMethod)JMicroContext.get().getObject(Constants.SERVICE_METHOD_KEY, null);
+			ServiceMethodJRso sm = (ServiceMethodJRso)JMicroContext.get().getObject(Constants.SERVICE_METHOD_KEY, null);
 			si.setLocalPort(JMicroContext.get().getString(JMicroContext.LOCAL_PORT, ""));
 			si.setRemoteHost(JMicroContext.get().getString(JMicroContext.REMOTE_HOST, ""));
 			si.setRemotePort(JMicroContext.get().getString(JMicroContext.REMOTE_PORT, ""));
 			//si.setKey(sm.getKey().toKey(true, true, true));
 			si.setSmKey(sm.getKey());
-			si.setKey(sm.getKey().toKey(true, true, true));
+			si.setKey(sm.getKey().fullStringKey());
 			si.setRpc(true);
 		} else {
 			si.setRpc(false);
@@ -138,11 +138,13 @@ public class MT {
 			if(of == null) {
 				return false;
 			}
+			m = of.get(StatisMonitorClient.class,false);
+			if(m == null) return false;
+			
+			isMs = null != of.get(IStatisMonitorServerJMSrv.class,false);
+			isDs = of.get(IMonitorDataSubscriberJMSrv.class,false) != null;
 			
 			isInit = true;
-			m = of.get(StatisMonitorClient.class);
-			isMs = null != of.get(IStatisMonitorServer.class);
-			isDs = of.get(IMonitorDataSubscriber.class) != null;
 			
 		}
 		
@@ -157,9 +159,9 @@ public class MT {
 		}
 		
 		if(JMicroContext.existRpcContext()) {
-			ActInfo ai = JMicroContext.get().getAccount();
+			ActInfoJRso ai = JMicroContext.get().getAccount();
 			if(ai != null) {
-				return m.canSubmit(sm(),type,ai.getId());
+				return m.canSubmit(sm(),type,ai.getClientId());
 			}
 		}
 		

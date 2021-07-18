@@ -12,7 +12,7 @@ import cn.jmicro.api.annotation.Inject;
 import cn.jmicro.api.config.Config;
 import cn.jmicro.api.raft.IChildrenListener;
 import cn.jmicro.api.raft.IDataOperator;
-import cn.jmicro.api.registry.Server;
+import cn.jmicro.api.registry.ServerJRso;
 import cn.jmicro.common.CommonException;
 import cn.jmicro.common.Constants;
 
@@ -37,7 +37,7 @@ public class ApiGatewayHostManager {
 	private List<String> httpHosts = new ArrayList<>();
 	private List<String> socketHosts = new ArrayList<>();
 	
-	private IChildrenListener childrenListener = (type, parentParent, child, data) -> {
+	private IChildrenListener childrenListener = (type, parentParent, child) -> {
 		if(type == IListener.ADD) {
 			if(child.startsWith(Constants.TRANSPORT_NETTY_HTTP)) {
 				httpHosts.add(child.substring(Constants.TRANSPORT_NETTY_HTTP.length()+1));

@@ -2,52 +2,55 @@ import rpc from "@/rpc/rpcbase";
 import cons from "@/rpc/constants";
 
 export default {
+    __actreq :  function(method,args){
+        return rpc.creq(this.sn,this.ns,this.v,method,args)
+    },
 
   getDeploymentList: function (){
-    return rpc.callRpcWithParams(this.sn,this.ns,this.v,'getDeploymentList',[]);
+      return rpc.callRpc(this.__actreq('getDeploymentList', []));
   },
 
   addDeployment: function (deployment){
-    return rpc.callRpcWithParams(this.sn,this.ns,this.v,'addDeployment',[deployment]);
+      return rpc.callRpc(this.__actreq('addDeployment', [deployment]));
   },
 
   deleteDeployment: function (id){
-    return rpc.callRpcWithParams(this.sn,this.ns,this.v,'deleteDeployment',[id]);
+      return rpc.callRpc(this.__actreq('deleteDeployment', [id]));
   },
 
   updateDeployment: function (deployment){
-    return rpc.callRpcWithParams(this.sn,this.ns,this.v,'updateDeployment',[deployment]);
+      return rpc.callRpc(this.__actreq('updateDeployment', [deployment]));
   },
 
   stopProcess: function (insId){
-    return rpc.callRpcWithParams(this.sn,this.ns,this.v,'stopProcess',[insId]);
+      return rpc.callRpc(this.__actreq('stopProcess', [insId]));
   },
 
   updateProcess: function (pi){
-    return rpc.callRpcWithParams(this.sn,this.ns,this.v,'updateProcess',[pi]);
+      return rpc.callRpc(this.__actreq('updateProcess', [pi]));
   },
 
   getProcessInstanceList: function (all){
-    return rpc.callRpcWithParams(this.sn,this.ns,this.v,'getProcessInstanceList',[all]);
+      return rpc.callRpc(this.__actreq('getProcessInstanceList', [all]));
   },
 
   getAgentList: function (showAll){
-    return rpc.callRpcWithParams(this.sn,this.ns,this.v,'getAgentList',[showAll]);
+      return rpc.callRpc(this.__actreq('getAgentList', [showAll]));
   },
 
   changeAgentState: function (agentId){
-    return rpc.callRpcWithParams(this.sn,this.ns,this.v,'changeAgentState',[agentId]);
+      return rpc.callRpc(this.__actreq('changeAgentState', [agentId]));
   },
 
   clearResourceCache: function (agentId){
-    return rpc.callRpcWithParams(this.sn,this.ns,this.v,'clearResourceCache',[agentId]);
+      return rpc.callRpc(this.__actreq('clearResourceCache', [agentId]));
   },
 
   stopAllInstance:function(agentId) {
-    return rpc.callRpcWithParams(this.sn,this.ns,this.v,'stopAllInstance',[agentId]);
+      return rpc.callRpc(this.__actreq('stopAllInstance', [agentId]));
   },
 
-  sn:'cn.jmicro.api.mng.IChoreographyService',
+  sn:'cn.jmicro.api.mng.IChoreographyServiceJMSrv',
   ns : cons.NS_MNG,
   v:'0.0.1',
 }

@@ -18,7 +18,9 @@ package cn.jmicro.api;
 
 import java.io.File;
 import java.io.FileFilter;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.lang.annotation.Annotation;
 import java.net.JarURLConnection;
 import java.net.URL;
@@ -26,10 +28,12 @@ import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Enumeration;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
@@ -43,8 +47,6 @@ import cn.jmicro.api.annotation.ObjFactory;
 import cn.jmicro.api.annotation.PostListener;
 import cn.jmicro.api.annotation.SO;
 import cn.jmicro.api.annotation.Service;
-import cn.jmicro.api.classloader.RpcClassLoader;
-import cn.jmicro.api.classloader.RpcClassLoaderHelper;
 import cn.jmicro.api.config.Config;
 import cn.jmicro.common.util.StringUtils;
 /**
@@ -56,16 +58,20 @@ public class ClassScannerUtils {
 
 	private final static Logger logger = LoggerFactory.getLogger(ClassScannerUtils.class);
 	
+	public static final Map<String,Class<?>> clazzes = Collections.synchronizedMap(new HashMap<>());
+	
+	public static final Map<String,byte[]> remoteClassData = Collections.synchronizedMap(new HashMap<>()); 
+	
 	private static final ClassScannerUtils instance = new ClassScannerUtils();
 	private ClassScannerUtils() {}
 	
 	private Boolean isinit = new Boolean(false);
 	
-	private static RpcClassLoaderHelper clHelper = null;
+	//private static RpcClassLoaderHelper clHelper = null;
 	
-	public static void setClassLoader(RpcClassLoaderHelper clHelper0) {
+	/*public static void setClassLoader(RpcClassLoaderHelper clHelper0) {
 		clHelper = clHelper0;
-	}
+	}*/
 	
 	public static ClassScannerUtils getIns() {
 		//initLoad()
@@ -75,7 +81,7 @@ public class ClassScannerUtils {
 	public Set<Class<?>> getAll(){
 		initLoad();
 		Set<Class<?>> all = new HashSet<>();
-		all.addAll(clHelper.getComClass().values());
+		all.addAll(clazzes.values());
 		return all;
 	}
 	
@@ -97,11 +103,19 @@ public class ClassScannerUtils {
 		boolean accept(Class<?> cls);
 	}
 	
+	public static byte[] getRemoteClassData(String clsName) {
+		return remoteClassData.get(clsName);
+	}
+	
+	public static void remoteClassData(String clsName) {
+		remoteClassData.remove(clsName);
+	}
+	
 	public Set<Class<?>> loadClassesByAnno(Class<? extends Annotation> annaCls){
 		
 		initLoad();
 		
-		if(getAll().isEmpty()){
+		if(clazzes.isEmpty()){
 			Set<Class<?>> clses = this.getClassesWithAnnotation(Config.getBasePackages(), annaCls);
 			return clses;
 		} else {
@@ -117,9 +131,20 @@ public class ClassScannerUtils {
 	
 	public Set<Class<?>> loadClassByClass(Class<?> parentCls){
 		initLoad();
-		if(clHelper.getComClass().isEmpty()){
-			return this.getClassesByParent(Config.getBasePackages(), parentCls);
+		//if(clHelper.getComClass().isEmpty()){
+		if(clazzes.isEmpty()) {
+			return this.getClassesByParent(Config.getBasePackages(), parentCls);	
 		}else {
+			Set<Class<?>> set = new HashSet<Class<?>>();
+			for(Class<?> c : getAll()){
+				if(parentCls.isAssignableFrom(c)){
+					set.add(c);
+				}
+			}
+			return set;
+		}
+			
+		/*}else {
 			Set<Class<?>> set = new HashSet<Class<?>>();
 			for(Class<?> c : clHelper.getComClass().values()){
 				if(parentCls.isAssignableFrom(c)){
@@ -127,7 +152,7 @@ public class ClassScannerUtils {
 				}
 			}
 			return set;
-		}
+		}*/
 	}
 	
 	public Set<Class<?>> getComponentClass(){
@@ -148,7 +173,7 @@ public class ClassScannerUtils {
 	public Class<?> getClassByName(String clsName){
 		initLoad();
 		
-		Class<?> cls = clHelper.getComClass().get(clsName);
+		Class<?> cls = clazzes.get(clsName);
 		if(cls == null){
 			try {
 				cls = Thread.currentThread().getContextClassLoader().loadClass(clsName);
@@ -297,6 +322,9 @@ public class ClassScannerUtils {
 				}
 			}
 		}
+		clses.forEach((e)->{
+			clazzes.put(e.getName(), e);
+		});
 		return clses;
 	}
 
@@ -347,9 +375,18 @@ public class ClassScannerUtils {
                                                 packageName.length() + 1, name  
                                                         .length() - 6);  
                                         try {  
+                                        	
                                         	Class<?> c = cl.loadClass(packageName + '.'  + className);
                                         	if(c != null) {
+                                        		 //logger.info(cl.getClass().getSimpleName()+" : "+c.getSimpleName());
                                         		 classes.add(c);
+                                        		 if(c.isAnnotationPresent(SO.class) || c.isAnnotationPresent(Service.class)) {
+                                        			 try(InputStream is = jar.getInputStream(entry)){
+                                      					byte[] data = new byte[(int)entry.getSize()];
+                                      					is.read(data, 0, data.length);
+                                      					this.remoteClassData.put(c.getName(), data);
+                                      				}
+                                        		 }
                                         	} else {
                                         		logger.error("Class not found: " + packageName + '.'  + className);
                                         	}
@@ -414,7 +451,18 @@ public class ClassScannerUtils {
 					//logger.debug(cn);
 					Class<?> cls = cl.loadClass(cn);
 					if (cls != null) {
+						//logger.info(cls.getClassLoader().getClass().getSimpleName()+" : "+cn);
 						classes.add(cls);
+						
+						if(cls.isAnnotationPresent(SO.class) || cls.isAnnotationPresent(Service.class)) {
+							try(InputStream is = new FileInputStream(file)){
+             					byte[] data = new byte[(int)file.length()];
+             					is.read(data, 0, data.length);
+             					remoteClassData.put(cls.getName(), data);
+             				}catch(Exception e) {
+             					logger.error(file.getAbsolutePath(),e);
+             				}
+						}
 					} else {
 						logger.error("Class " + cn + " not found!");
 					}

@@ -9,14 +9,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import cn.jmicro.api.JMicroContext;
-import cn.jmicro.api.Resp;
+import cn.jmicro.api.RespJRso;
 import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Inject;
 import cn.jmicro.api.annotation.SMethod;
 import cn.jmicro.api.annotation.Service;
 import cn.jmicro.api.config.Config;
-import cn.jmicro.api.mng.ConfigNode;
-import cn.jmicro.api.mng.IConfigManager;
+import cn.jmicro.api.mng.ConfigNodeJRso;
+import cn.jmicro.api.mng.IConfigManagerJMSrv;
 import cn.jmicro.api.monitor.LG;
 import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.raft.IDataOperator;
@@ -26,7 +26,7 @@ import cn.jmicro.common.util.StringUtils;
 @Component
 @Service(version="0.0.1",retryCnt=0,external=true,timeout=10000,debugMode=1,
 showFront=false,logLevel=MC.LOG_NO)
-public class ConfigManagerImpl implements IConfigManager {
+public class ConfigManagerImpl implements IConfigManagerJMSrv {
 
 	private final static Logger logger = LoggerFactory.getLogger(ConfigManagerImpl.class);
 	
@@ -69,24 +69,24 @@ public class ConfigManagerImpl implements IConfigManager {
 	
 	@Override
 	@SMethod(perType=true,needLogin=true,maxSpeed=10,maxPacketSize=512,logLevel=MC.LOG_NO)
-	public Resp<ConfigNode[]> getChildren(String path,Boolean getAll) {
-		Resp<ConfigNode[]> r = new Resp<>();
+	public RespJRso<ConfigNodeJRso[]> getChildren(String path,Boolean getAll) {
+		RespJRso<ConfigNodeJRso[]> r = new RespJRso<>();
 		if(!PermissionManager.isCurAdmin()) {
-			path = Config.getRaftBasePathByClientId(JMicroContext.get().getAccount().getId(),"");
+			path = Config.getRaftBasePathByClientId(JMicroContext.get().getAccount().getClientId(),"");
 		}
-		ConfigNode[] rst = getChildren0(path,getAll,PermissionManager.isCurAdmin());
-		r.setCode(Resp.CODE_SUCCESS);
+		ConfigNodeJRso[] rst = getChildren0(path,getAll,PermissionManager.isCurAdmin());
+		r.setCode(RespJRso.CODE_SUCCESS);
 		r.setData(rst);
 		return r;
 	}
 	
-	public ConfigNode[] getChildren0(String path,Boolean getAll,boolean isAdmin) {
+	public ConfigNodeJRso[] getChildren0(String path,Boolean getAll,boolean isAdmin) {
 		Set<String> clist = op.getChildren(path, false);
 		if(clist == null || clist.isEmpty()) {
 			return null;
 		}
 		
-		List<ConfigNode> l = new ArrayList<>();
+		List<ConfigNodeJRso> l = new ArrayList<>();
 		
 		for(String p : clist) {
 			
@@ -102,7 +102,7 @@ public class ConfigManagerImpl implements IConfigManager {
 				val = "";
 			}
 			
-			ConfigNode cn = new ConfigNode(fp,val,p);
+			ConfigNodeJRso cn = new ConfigNodeJRso(fp,val,p);
 			
 			if(getAll) {
 				cn.setChildren(this.getChildren0(fp,getAll,isAdmin));
@@ -111,7 +111,7 @@ public class ConfigManagerImpl implements IConfigManager {
 			l.add(cn);
 		}
 		
-		ConfigNode[] children = new ConfigNode[l.size()];
+		ConfigNodeJRso[] children = new ConfigNodeJRso[l.size()];
 		l.toArray(children);
 		
 		return children;

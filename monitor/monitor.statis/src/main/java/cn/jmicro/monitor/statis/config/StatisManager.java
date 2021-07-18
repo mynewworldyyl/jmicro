@@ -24,18 +24,18 @@ import cn.jmicro.api.async.IPromise;
 import cn.jmicro.api.exp.Exp;
 import cn.jmicro.api.exp.ExpUtils;
 import cn.jmicro.api.idgenerator.ComponentIdServer;
-import cn.jmicro.api.monitor.JMLogItem;
-import cn.jmicro.api.monitor.JMStatisItem;
+import cn.jmicro.api.monitor.JMLogItemJRso;
+import cn.jmicro.api.monitor.JMStatisItemJRso;
 import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.monitor.ServiceCounter;
-import cn.jmicro.api.monitor.StatisConfig;
-import cn.jmicro.api.monitor.StatisData;
-import cn.jmicro.api.monitor.StatisIndex;
-import cn.jmicro.api.monitor.StatisItem;
-import cn.jmicro.api.pubsub.PSData;
+import cn.jmicro.api.monitor.StatisConfigJRso;
+import cn.jmicro.api.monitor.StatisDataJRso;
+import cn.jmicro.api.monitor.StatisIndexJRso;
+import cn.jmicro.api.monitor.StatisItemJRso;
+import cn.jmicro.api.pubsub.PSDataJRso;
 import cn.jmicro.api.pubsub.PubSubManager;
-import cn.jmicro.api.registry.UniqueServiceKey;
-import cn.jmicro.api.registry.UniqueServiceMethodKey;
+import cn.jmicro.api.registry.UniqueServiceKeyJRso;
+import cn.jmicro.api.registry.UniqueServiceMethodKeyJRso;
 import cn.jmicro.api.service.ServiceInvokeManager;
 import cn.jmicro.api.timer.TimerTicker;
 import cn.jmicro.api.utils.TimeUtils;
@@ -97,9 +97,9 @@ public class StatisManager {
 	 * 
 	 * @param items
 	 */
-	public void onItems(JMStatisItem[] items) {
+	public void onItems(JMStatisItemJRso[] items) {
 
-		for(JMStatisItem si : items) {
+		for(JMStatisItemJRso si : items) {
 			
 			if(openDebug) {
 				log(si);
@@ -114,16 +114,16 @@ public class StatisManager {
 			ServiceCounter sc = null;
 			if(si.isRpc()) {
 				 //RPC上下文
-				 si.setSmKey(UniqueServiceMethodKey.fromKey(si.getKey()));
-				 key = si.getSmKey().toKey(true, true, true);
-				 key = key + UniqueServiceKey.SEP + si.getClientId();
+				 si.setSmKey(UniqueServiceMethodKeyJRso.fromKey(si.getKey()));
+				 key = si.getSmKey().fullStringKey();
+				 key = key + UniqueServiceKeyJRso.SEP + si.getClientId();
 				 sc = getSc(services, key, windowSize, slotInterval, tu);
 				 if(sc != null) {
 					 doStatis(sc,si);
 				 }
 			} else {
 				//非RPC数据
-				Set<StatisConfig> ins2Configs = mscm.getInstanceConfigs(si.getInstanceName());
+				Set<StatisConfigJRso> ins2Configs = mscm.getInstanceConfigs(si.getInstanceName());
 				if(ins2Configs != null && !ins2Configs.isEmpty()) {
 				  sc = getSc(instances,si.getInstanceName()+"##"+si.getClientId(),windowSize,slotInterval,tu);
 				  doStatis(sc,si);
@@ -132,11 +132,11 @@ public class StatisManager {
 		}
 	}
 	
-	private void doStatis(ServiceCounter sc,JMStatisItem si) {
+	private void doStatis(ServiceCounter sc,JMStatisItemJRso si) {
 		if(sc != null) {
 			for(Short type : si.getTypeStatis().keySet()) {
-				List<StatisItem> items = si.getTypeStatis().get(type);
-				for(StatisItem oi : items) {
+				List<StatisItemJRso> items = si.getTypeStatis().get(type);
+				for(StatisItemJRso oi : items) {
 					sc.add(oi.getType(), oi.getVal(),si.getSubmitTime()- oi.getTime());
 				}
 			}
@@ -177,10 +177,10 @@ public class StatisManager {
 
 
 	
-	protected void log(JMStatisItem si) {
+	protected void log(JMStatisItemJRso si) {
 		for(Short type : si.getTypeStatis().keySet()) {
-			List<StatisItem> items = si.getTypeStatis().get(type);
-			for(StatisItem oi : items) {
+			List<StatisItemJRso> items = si.getTypeStatis().get(type);
+			for(StatisItemJRso oi : items) {
 				StringBuffer sb = new StringBuffer();
 				sb.append("GOT: " + MC.MONITOR_VAL_2_KEY.get(oi.getType()));
 				if(si.getSmKey() != null) {
@@ -205,18 +205,18 @@ public class StatisManager {
 	
 	private void act0(String key,Object att) {
 
-		//Set<StatisConfig> instanceConfigs = this.mscm.getConfigByType(StatisConfig.BY_TYPE_INSTANCE);
+		//Set<StatisConfigJRso> instanceConfigs = this.mscm.getConfigByType(StatisConfigJRso.BY_TYPE_INSTANCE);
 		
 		checkTimeoutCounter(instances);
 		checkTimeoutCounter(services);
 		
 		if(!instances.isEmpty()) {
-			configMatchCount(instances,StatisConfig.BY_TYPE_INSTANCE);
+			configMatchCount(instances,StatisConfigJRso.BY_TYPE_INSTANCE);
 		}
 		
 		if(!services.isEmpty()) {
-			configMatchCount(services,StatisConfig.BY_TYPE_SERVICE_METHOD,
-					StatisConfig.BY_TYPE_SERVICE_INSTANCE_METHOD,StatisConfig.BY_TYPE_SERVICE_ACCOUNT_METHOD);
+			configMatchCount(services,StatisConfigJRso.BY_TYPE_SERVICE_METHOD,
+					StatisConfigJRso.BY_TYPE_SERVICE_INSTANCE_METHOD,StatisConfigJRso.BY_TYPE_SERVICE_ACCOUNT_METHOD);
 		}
 	}
 	
@@ -241,8 +241,8 @@ public class StatisManager {
 			methodKeys.addAll(counters.keySet());
 		}
 		
-		Set<StatisConfig> insConfigs = this.mscm.getConfigByType(types);
-		for(StatisConfig sc : insConfigs) {
+		Set<StatisConfigJRso> insConfigs = this.mscm.getConfigByType(types);
+		for(StatisConfigJRso sc : insConfigs) {
 			Iterator<String> methodKeyIte = methodKeys.iterator();
 			while(methodKeyIte.hasNext()) {
 				String insName = methodKeyIte.next();
@@ -250,7 +250,7 @@ public class StatisManager {
 					//记录配置上次活跃时间
 					sc.setLastActiveTime(TimeUtils.getCurTime());
 					ServiceCounter cter = counters.get(insName);
-					for(StatisIndex si : sc.getStatisIndexs()) {
+					for(StatisIndexJRso si : sc.getStatisIndexs()) {
 						statisOneIndex(si,cter);
 					}
 				}
@@ -258,25 +258,25 @@ public class StatisManager {
 		}
 		
 		long curTime = TimeUtils.getCurTime();
-		for(StatisConfig sc : insConfigs) {
+		for(StatisConfigJRso sc : insConfigs) {
 			if(sc.getCounterTimeout() <= 0 || ((curTime - sc.getLastActiveTime()) < sc.getCounterTimeout())) {
 				finalStatisData(sc);
 			}
-			for(StatisIndex idx : sc.getStatisIndexs()) {
+			for(StatisIndexJRso idx : sc.getStatisIndexs()) {
 				idx.setCurDens(0);
 				idx.setCurNums(0);
 			}
 		}
 	}
 	
-	private void statisOneIndex(StatisIndex idx,ServiceCounter counter) {
+	private void statisOneIndex(StatisIndexJRso idx,ServiceCounter counter) {
 
-		if(idx.getType() == StatisConfig.PREFIX_CUR) {
+		if(idx.getType() == StatisConfigJRso.PREFIX_CUR) {
 			long v = counter.getByTypes(idx.getNums());
 			if(v > 0) {
 				idx.setCurNums(idx.getCurNums() + v);
 			}
-		}else if(idx.getType() == StatisConfig.PREFIX_CUR_PERCENT) {
+		}else if(idx.getType() == StatisConfigJRso.PREFIX_CUR_PERCENT) {
 			long v = counter.getByTypes(idx.getNums());
 			if(v > 0) {
 				idx.setCurNums(idx.getCurNums() + v);
@@ -287,17 +287,17 @@ public class StatisManager {
 				idx.setCurDens(idx.getCurDens() + v);
 			}
 			
-		}else if(idx.getType() == StatisConfig.PREFIX_QPS) {
+		}else if(idx.getType() == StatisConfigJRso.PREFIX_QPS) {
 			int v = (int)(counter.getQps(TimeUnit.SECONDS, idx.getNums())*1000);
 			if(v > 0) {
 				idx.setCurNums(idx.getCurNums() + v);
 			}
-		}else if(idx.getType() == StatisConfig.PREFIX_TOTAL) {
+		}else if(idx.getType() == StatisConfigJRso.PREFIX_TOTAL) {
 			long v = counter.getTotal(idx.getNums());
 			if(v > 0) {
 				idx.setCurNums(idx.getCurNums() + v);
 			}
-		}else if(idx.getType() == StatisConfig.PREFIX_TOTAL_PERCENT) {
+		}else if(idx.getType() == StatisConfigJRso.PREFIX_TOTAL_PERCENT) {
 			long v = counter.getTotal(idx.getNums());
 			if(v > 0) {
 				idx.setCurNums(idx.getCurNums() + v);
@@ -313,22 +313,22 @@ public class StatisManager {
 	
 	}
 
-	private void finalStatisData(StatisConfig sc) {
+	private void finalStatisData(StatisConfigJRso sc) {
 
-		if(StatisConfig.TO_TYPE_SERVICE_METHOD == sc.getToType() && 
+		if(StatisConfigJRso.TO_TYPE_SERVICE_METHOD == sc.getToType() && 
 				TimeUtils.getCurTime() - sc.getLastNotifyTime() < sc.getMinNotifyTime()) {
 			return;
 		}
 		
 		Map<String,Object> indexes = new HashMap<>();
 		
-		for(StatisIndex idx : sc.getStatisIndexs()) {
-			if(idx.getType() == StatisConfig.PREFIX_CUR || idx.getType() == StatisConfig.PREFIX_TOTAL) {
+		for(StatisIndexJRso idx : sc.getStatisIndexs()) {
+			if(idx.getType() == StatisConfigJRso.PREFIX_CUR || idx.getType() == StatisConfigJRso.PREFIX_TOTAL) {
 				indexes.put(idx.getName(), idx.getCurNums());
-			}else if(idx.getType() == StatisConfig.PREFIX_QPS) {
+			}else if(idx.getType() == StatisConfigJRso.PREFIX_QPS) {
 				indexes.put(idx.getName(), idx.getCurNums()/1000.0);
-			}else if(idx.getType() == StatisConfig.PREFIX_TOTAL_PERCENT 
-					|| idx.getType() == StatisConfig.PREFIX_CUR_PERCENT) {
+			}else if(idx.getType() == StatisConfigJRso.PREFIX_TOTAL_PERCENT 
+					|| idx.getType() == StatisConfigJRso.PREFIX_CUR_PERCENT) {
 				long n = idx.getCurNums();
 				long d = idx.getCurDens();
 				if(d != 0) {
@@ -342,7 +342,7 @@ public class StatisManager {
 		}
 		
 		if(sc.getExp() != null && !ExpUtils.compute(sc.getExp(), indexes, Boolean.class)) {
-			if(StatisConfig.TO_TYPE_SERVICE_METHOD != sc.getToType() 
+			if(StatisConfigJRso.TO_TYPE_SERVICE_METHOD != sc.getToType() 
 					|| TimeUtils.getCurTime() - sc.getLastNotifyTime() < 10000) {
 				return;
 			}
@@ -350,7 +350,7 @@ public class StatisManager {
 		
 		sc.changeExpIndex();
 
-		StatisData sd = new StatisData();
+		StatisDataJRso sd = new StatisDataJRso();
 		sd.setStatis(indexes);
 		sd.setInputTime(TimeUtils.getCurTime());
 		sd.setCid(sc.getId());
@@ -360,36 +360,36 @@ public class StatisManager {
 		sd.setClientId(sc.getCreatedBy());//由谁创建的配置，产生的数据就是谁的
 		
 		switch(sc.getToType()) {
-		case StatisConfig.TO_TYPE_SERVICE_METHOD:
+		case StatisConfigJRso.TO_TYPE_SERVICE_METHOD:
 			sc.setLastNotifyTime(TimeUtils.getCurTime());
 			//PromiseUtils.callService(sc.getSrv(), sc.getToMt(), null, sd)
 			this.invokeMng.call(sc.getToSn(), sc.getToNs(), sc.getToVer(),
-					sc.getToMt(), IPromise.class, new Class[]{StatisData.class}, new Object[] {sd})
+					sc.getToMt(), IPromise.class, new Class[]{StatisDataJRso.class}, new Object[] {sd})
 			.fail((code,msg,cxt)->{
 				logger.error("Notify fail: " + sc.getToSn() +"##"+sc.getToNs() +"##" + sc.getToVer()+"##"+ sc.getToMt());
 			});
 			break;
-		case StatisConfig.TO_TYPE_CONSOLE:
+		case StatisConfigJRso.TO_TYPE_CONSOLE:
 			logger.info(JsonUtils.getIns().toJson(sd));
 			break;
-		case StatisConfig.TO_TYPE_MESSAGE:
-			PSData pd = new PSData();
+		case StatisConfigJRso.TO_TYPE_MESSAGE:
+			PSDataJRso pd = new PSDataJRso();
 			pd.setData(sd);
 			pd.setTopic(sc.getToParams());
 			pd.setPersist(false);
-			pd.setId(idGenerator.getIntId(PSData.class));
+			pd.setId(idGenerator.getIntId(PSDataJRso.class));
 			pd.setSrcClientId(sc.getCreatedBy());//由谁创建配置，数据就由谁可见
 			this.pubsubMng.publish(pd);
 			break;
-		case StatisConfig.TO_TYPE_DB:
+		case StatisConfigJRso.TO_TYPE_DB:
 			MongoCollection<Document> coll = mongoDb.getCollection(sc.getToParams());
 			coll.insertOne(Document.parse(JsonUtils.getIns().toJson(sd)));
 			break;
-		case StatisConfig.TO_TYPE_MONITOR_LOG:
+		case StatisConfigJRso.TO_TYPE_MONITOR_LOG:
 			//LG.logWithNonRpcContext(MC.LOG_INFO, sc.getToParams(), JsonUtils.getIns().toJson(sd),null,MC.MT_DEFAULT,true);
 			saveLog(sd,sc);//直接保存到日志库
 			break;
-		case StatisConfig.TO_TYPE_FILE:
+		case StatisConfigJRso.TO_TYPE_FILE:
 			try {
 				sc.getBw().write(JsonUtils.getIns().toJson(sd)+"\n");
 			} catch (IOException e) {
@@ -399,9 +399,9 @@ public class StatisManager {
 		}
 	}
 	
-	private void saveLog(StatisData sd,StatisConfig sc) {
+	private void saveLog(StatisDataJRso sd,StatisConfigJRso sc) {
 		long curTime = TimeUtils.getCurTime();
-		JMLogItem ji = new JMLogItem();
+		JMLogItemJRso ji = new JMLogItemJRso();
 		ji.setActClientId(sc.getCreatedBy());
 		ji.setActName(sd.getActName());
 		ji.setConfigId(sc.getId()+"");
@@ -410,15 +410,15 @@ public class StatisManager {
 		ji.setInstanceName(sc.getByns());
 		//ji.setLogLevel(MC.LOG_INFO);
 		ji.setSysClientId(sc.getCreatedBy());
-		ji.addOneItem(MC.LOG_INFO, "StatisConfig", JsonUtils.getIns().toJson(sd),TimeUtils.getCurTime());
-		ji.setTag("StatisConfig");
+		ji.addOneItem(MC.LOG_INFO, "StatisConfigJRso", JsonUtils.getIns().toJson(sd),TimeUtils.getCurTime());
+		ji.setTag("StatisConfigJRso");
 		MongoCollection<Document> coll = mongoDb.getCollection(sc.getToParams());
 		coll.insertOne(Document.parse(JsonUtils.getIns().toJson(ji)));
 	}
 	
 	
 	@SuppressWarnings("unused")
-	private boolean computeByExpression(StatisConfig cfg,Map<String,Object> cxt) {
+	private boolean computeByExpression(StatisConfigJRso cfg,Map<String,Object> cxt) {
 		
 		//Map<String,Object> cxt = new HashMap<>();
 		

@@ -14,13 +14,13 @@ import org.bson.Document;
 import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Inject;
 import cn.jmicro.api.config.Config;
-import cn.jmicro.api.monitor.IMonitorAdapter;
+import cn.jmicro.api.monitor.IMonitorAdapterJMSrv;
 import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.monitor.MonitorClientStatusAdapter;
 import cn.jmicro.api.monitor.ServiceCounter;
 import cn.jmicro.api.objectfactory.IObjectFactory;
 import cn.jmicro.api.persist.IObjectStorage;
-import cn.jmicro.api.registry.ServiceItem;
+import cn.jmicro.api.registry.ServiceItemJRso;
 import cn.jmicro.api.service.ServiceLoader;
 import cn.jmicro.api.timer.TimerTicker;
 import cn.jmicro.api.utils.TimeUtils;
@@ -73,8 +73,8 @@ public class PubsubMessageStatis {
 				PubsubMessageStatis.typeLabels,Config.getInstanceName()+"_PubsubServerStatuCheck",group);
 
 		ServiceLoader sl = of.get(ServiceLoader.class);
-		ServiceItem si = sl.createSrvItem(IMonitorAdapter.class, Config.getNamespace()+"."+group, 
-				"0.0.1", IMonitorAdapter.class.getName(),Config.getClientId());
+		ServiceItemJRso si = sl.createSrvItem(IMonitorAdapterJMSrv.class, Config.getNamespace()+"."+group, 
+				"0.0.1", IMonitorAdapterJMSrv.class.getName(),Config.getClientId());
 		of.regist("MonitorManagerStatuCheckAdapter", statusMonitorAdapter);
 		sl.registService(si,statusMonitorAdapter);
 		

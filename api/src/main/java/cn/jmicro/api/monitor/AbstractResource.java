@@ -4,9 +4,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import cn.jmicro.api.CfgMetadata;
+import cn.jmicro.api.CfgMetadataJRso;
 import cn.jmicro.api.annotation.Inject;
-import cn.jmicro.api.choreography.ProcessInfo;
+import cn.jmicro.api.choreography.ProcessInfoJRso;
 import cn.jmicro.api.config.Config;
 import cn.jmicro.api.exp.Exp;
 import cn.jmicro.api.exp.ExpUtils;
@@ -15,10 +15,10 @@ import cn.jmicro.common.util.StringUtils;
 
 public abstract class AbstractResource implements IResource {
 
-	private ResourceData data = new ResourceData();
+	private ResourceDataJRso data = new ResourceDataJRso();
 	
 	@Inject
-	protected ProcessInfo pi;
+	protected ProcessInfoJRso pi;
 	
 	//@Cfg(value="/enable")
 	private boolean enable = true;
@@ -34,7 +34,7 @@ public abstract class AbstractResource implements IResource {
 	}
 	
 	@Override
-	public ResourceData getResource(Map<String,Object> params,String expStr) {
+	public ResourceDataJRso getResource(Map<String,Object> params,String expStr) {
 		return data;
 	}
 
@@ -49,7 +49,7 @@ public abstract class AbstractResource implements IResource {
 	}
 
 	@Override
-	public Map<String,Set<CfgMetadata>> metaData() {
+	public Map<String,Set<CfgMetadataJRso>> metaData() {
 		return pi.getMetadatas();
 	}
 
@@ -78,7 +78,7 @@ public abstract class AbstractResource implements IResource {
 		return exp;
 	}
 
-	public ResourceData getData() {
+	public ResourceDataJRso getData() {
 		data.setTime(TimeUtils.getCurTime());
 		return data;
 	}

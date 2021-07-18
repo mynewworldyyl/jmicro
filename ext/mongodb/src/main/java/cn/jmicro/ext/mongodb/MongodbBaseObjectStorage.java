@@ -1,5 +1,6 @@
 package cn.jmicro.ext.mongodb;
 
+import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -16,6 +17,7 @@ import org.bson.json.JsonWriterSettings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.gson.JsonSyntaxException;
 import com.mongodb.client.DistinctIterable;
 import com.mongodb.client.FindIterable;
 import com.mongodb.client.MongoCollection;
@@ -35,7 +37,7 @@ public class MongodbBaseObjectStorage implements IObjectStorage {
 
 	private final static Logger logger = LoggerFactory.getLogger(MongodbBaseObjectStorage.class);
 	
-	private JsonWriterSettings settings = JsonWriterSettings.builder()
+	public static final JsonWriterSettings settings = JsonWriterSettings.builder()
 	         .int64Converter((value, writer) -> writer.writeNumber(value.toString()))
 	         .build();
 	
@@ -147,11 +149,17 @@ public class MongodbBaseObjectStorage implements IObjectStorage {
 	private boolean updateOneById(MongoCollection<Document> coll, Document d, long curTime) {
 		Document filter = new Document();
 		try {
-			if(d.containsKey(ID)) {
+			String idKey = ID;
+			if(d.containsKey(_ID)) {
 				//无下横线整数ID优先级最高
-				filter.put(ID, d.getLong(ID));
-			} else {
-				filter.put(_ID, d.getLong(_ID));
+				idKey = _ID;
+			}
+			
+			Object idv = d.get(idKey);
+			if(idv != null && idv instanceof Integer) {
+				filter.put(idKey, d.getInteger(idKey));
+			}else {
+				filter.put(idKey, d.getLong(idKey));
 			}
 		} catch (Exception e) {
 			filter.put(_ID, d.getObjectId(_ID));
@@ -169,7 +177,7 @@ public class MongodbBaseObjectStorage implements IObjectStorage {
 		
 		update.put("$set",  d);
 		
-		UpdateResult ur = coll.updateOne(filter,update,new UpdateOptions().upsert(true));
+		UpdateResult ur = coll.updateOne(filter,update,new UpdateOptions().upsert(false));
 		return ur.getModifiedCount() != 0;
 	}
 
@@ -187,7 +195,7 @@ public class MongodbBaseObjectStorage implements IObjectStorage {
 		MongoCollection coll = null;
 		List lis = val;
 		
-		if(toDocument) {
+		if(true) {
 			lis = new ArrayList();
 			for(Object v : val) {
 				lis.add(toDocument(v));
@@ -267,7 +275,7 @@ public class MongodbBaseObjectStorage implements IObjectStorage {
 		MongoCollection coll = null;
 		
 		Object v = val;
-		if(toDocument) {
+		if(true) {
 			v = toDocument(val);
 			coll = mdb.getCollection(table);
 		} else {
@@ -313,7 +321,7 @@ public class MongodbBaseObjectStorage implements IObjectStorage {
 		
 		List lis = Arrays.asList(vals);
 		
-		if(toDocument) {
+		if(true) {
 			lis = new ArrayList();
 			for(int i = 0; i < vals.length; i++) {
 				lis.add(toDocument(vals[i]));
@@ -474,9 +482,9 @@ public class MongodbBaseObjectStorage implements IObjectStorage {
 			 if(!up0.containsKey(UPDATED_TIME)) {
 				 up0.put(UPDATED_TIME, TimeUtils.getCurTime());
 			 }
-			 if(!up0.containsKey(CREATED_TIME)) {
+			 /*if(!up0.containsKey(CREATED_TIME)) {
 				 up0.put(CREATED_TIME, TimeUtils.getCurTime());
-			 }
+			 }*/
 			 up.put("$set",  up0);
 		}
 		
@@ -491,7 +499,7 @@ public class MongodbBaseObjectStorage implements IObjectStorage {
 		}
 	
 		MongoCollection<Document> coll = mdb.getCollection(table);
-		UpdateResult ur = coll.updateOne(fi,up,new UpdateOptions().upsert(true));
+		UpdateResult ur = coll.updateOne(fi,up,new UpdateOptions().upsert(false));
 		return ur.getModifiedCount() != 0;
 	}
 
@@ -525,10 +533,48 @@ public class MongodbBaseObjectStorage implements IObjectStorage {
 	@Override
 	public <T> T getOne(String table, Map<String, Object> queryConditions, Class<T> targetClass) {
 		 Document match = this.getCondtions(queryConditions);
-		 FindIterable<T> rst = mdb.getCollection(table,targetClass).find(match, targetClass);
-		 return rst.first();
+		 FindIterable<Document> rst = mdb.getCollection(table,Document.class).find(match);
+		 Document doc = rst.first();
+		 if(doc != null) {
+			 T ov = JsonUtils.getIns().fromJson(doc.toJson(settings), targetClass);
+			 try {
+				 if(doc.containsKey(_ID)) {
+					 Field idf = targetClass.getDeclaredField(ID);
+					 if(idf != null) {
+						 String idv = doc.get(_ID).toString();
+						 idf.setAccessible(true);
+						 idf.set(ov, JsonUtils.getIns().fromJson(idv, idf.getType()));
+					 }
+				 }
+			} catch (JsonSyntaxException | NoSuchFieldException | SecurityException | IllegalArgumentException | IllegalAccessException e) {
+				//logger.error("",e);
+			}
+			 
+			 return ov;
+		 }
+		 return null;
 	}
 	
+	@Override
+	public Map<String, Object> getFields(String table, Map<String, Object> filter, String[] fields) {
+		 if(fields == null) {
+			 throw new NullPointerException("get fields is NULL");
+		 }
+		 
+		 Document fs = new Document();
+		 fs.putAll(filter);
+		 
+		 Document prj = new Document();
+		 for(String f : fields) {
+			 prj.put(f, 1);
+		 }
+		 FindIterable<Document> rst = mdb.getCollection(table,Document.class).find(fs).projection(prj);
+		 return rst.first();
+	}
+
+
+
+
 	class SaveOp {
 		List vals;
 		Class<?> cls;

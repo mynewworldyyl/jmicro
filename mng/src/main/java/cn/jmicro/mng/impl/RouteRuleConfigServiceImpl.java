@@ -8,7 +8,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import cn.jmicro.api.JMicroContext;
-import cn.jmicro.api.Resp;
+import cn.jmicro.api.RespJRso;
 import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Inject;
 import cn.jmicro.api.annotation.SMethod;
@@ -17,17 +17,17 @@ import cn.jmicro.api.config.Config;
 import cn.jmicro.api.idgenerator.ComponentIdServer;
 import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.raft.IDataOperator;
-import cn.jmicro.api.route.RouteRule;
-import cn.jmicro.api.security.ActInfo;
+import cn.jmicro.api.route.RouteRuleJRso;
+import cn.jmicro.api.security.ActInfoJRso;
 import cn.jmicro.api.security.PermissionManager;
 import cn.jmicro.api.utils.TimeUtils;
 import cn.jmicro.common.Utils;
 import cn.jmicro.common.util.JsonUtils;
-import cn.jmicro.mng.api.IRouteRuleConfigService;
+import cn.jmicro.mng.api.IRouteRuleConfigServiceJMSrv;
 
 @Component
 @Service(version="0.0.1",external=true,timeout=10000,debugMode=1,showFront=false)
-public class RouteRuleConfigServiceImpl implements IRouteRuleConfigService {
+public class RouteRuleConfigServiceImpl implements IRouteRuleConfigServiceJMSrv {
 
 	private final static Logger logger = LoggerFactory.getLogger(RouteRuleConfigServiceImpl.class);
 	
@@ -41,16 +41,16 @@ public class RouteRuleConfigServiceImpl implements IRouteRuleConfigService {
 	
 	@Override
 	@SMethod(perType=true,needLogin=true,maxSpeed=1,maxPacketSize=256,downSsl=true,encType=0,upSsl=true)
-	public Resp<List<RouteRule>> query() {
-		Resp<List<RouteRule>> r = new Resp<>();
+	public RespJRso<List<RouteRuleJRso>> query() {
+		RespJRso<List<RouteRuleJRso>> r = new RespJRso<>();
 		Set<String> insNames = op.getChildren(ROOT, false);
 		if(insNames == null || insNames.isEmpty()) {
-			r.setCode(Resp.CODE_FAIL);
+			r.setCode(RespJRso.CODE_FAIL);
 			r.setMsg("NoData");
 			return r;
 		}
 		
-		List<RouteRule> l  = new ArrayList<>();
+		List<RouteRuleJRso> l  = new ArrayList<>();
 		r.setData(l);
 		
 		boolean isAll = PermissionManager.isCurAdmin();
@@ -65,7 +65,7 @@ public class RouteRuleConfigServiceImpl implements IRouteRuleConfigService {
 			for(String id : ids) {
 				String p = path + "/" + id;
 				String data = op.getData(p);
-				RouteRule lw = JsonUtils.getIns().fromJson(data, RouteRule.class);
+				RouteRuleJRso lw = JsonUtils.getIns().fromJson(data, RouteRuleJRso.class);
 				if(isAll) {
 					l.add(lw);
 				}else if(PermissionManager.checkAccountClientPermission(lw.getClientId())) {
@@ -79,15 +79,15 @@ public class RouteRuleConfigServiceImpl implements IRouteRuleConfigService {
 
 	@Override
 	@SMethod(perType=true,needLogin=true,maxSpeed=1,maxPacketSize=4096)
-	public Resp<Boolean> update(RouteRule cfg) {
+	public RespJRso<Boolean> update(RouteRuleJRso cfg) {
 		
-		Resp<Boolean> r = new Resp<>();
+		RespJRso<Boolean> r = new RespJRso<>();
 		String path = ROOT + "/" + cfg.getForIns() + "/" + cfg.getUniqueId();
 		String data = op.getData(path);
-		RouteRule lw = JsonUtils.getIns().fromJson(data, RouteRule.class);
+		RouteRuleJRso lw = JsonUtils.getIns().fromJson(data, RouteRuleJRso.class);
 		
 		if(!PermissionManager.checkAccountClientPermission(cfg.getClientId())) {
-			r.setCode(Resp.CODE_NO_PERMISSION);
+			r.setCode(RespJRso.CODE_NO_PERMISSION);
 			r.setMsg("Permission reject");
 			r.setData(false);
 			return r;
@@ -95,7 +95,7 @@ public class RouteRuleConfigServiceImpl implements IRouteRuleConfigService {
 		
 		if(lw.getClientId() != cfg.getClientId()) {
 			if(!PermissionManager.checkAccountClientPermission(lw.getClientId())) {
-				r.setCode(Resp.CODE_NO_PERMISSION);
+				r.setCode(RespJRso.CODE_NO_PERMISSION);
 				r.setMsg("Target permission reject");
 				r.setData(false);
 				return r;
@@ -105,7 +105,7 @@ public class RouteRuleConfigServiceImpl implements IRouteRuleConfigService {
 		
 		String msg = checkValid(cfg);
 		if(msg != null) {
-			r.setCode(Resp.CODE_FAIL);
+			r.setCode(RespJRso.CODE_FAIL);
 			r.setMsg(msg);
 			r.setData(false);
 			return r;
@@ -126,7 +126,7 @@ public class RouteRuleConfigServiceImpl implements IRouteRuleConfigService {
 		
 	}
 
-	private String checkValid(RouteRule cfg) {
+	private String checkValid(RouteRuleJRso cfg) {
 		if(Utils.isEmpty(cfg.getForIns())) {
 			return "Instance cannot be NULL";
 		}
@@ -160,7 +160,7 @@ public class RouteRuleConfigServiceImpl implements IRouteRuleConfigService {
 			
 			switch(cfg.getFrom().getType()) {
 			
-			case RouteRule.TYPE_FROM_TAG_ROUTER:
+			case RouteRuleJRso.TYPE_FROM_TAG_ROUTER:
 				if(Utils.isEmpty(cfg.getFrom().getTagKey())) {
 					return "Route rule tag key cannot be NULL";
 				}
@@ -181,14 +181,14 @@ public class RouteRuleConfigServiceImpl implements IRouteRuleConfigService {
 
 	@Override
 	@SMethod(perType=true,needLogin=true,maxSpeed=1,maxPacketSize=256)
-	public Resp<Boolean> delete(String insName, int id) {
-		Resp<Boolean> r = new Resp<>();
+	public RespJRso<Boolean> delete(String insName, int id) {
+		RespJRso<Boolean> r = new RespJRso<>();
 		String path = ROOT + "/" + insName + "/" + id;
 		String data = op.getData(path);
 		
-		RouteRule lw = JsonUtils.getIns().fromJson(data, RouteRule.class);
+		RouteRuleJRso lw = JsonUtils.getIns().fromJson(data, RouteRuleJRso.class);
 		if(!PermissionManager.checkAccountClientPermission(lw.getClientId())) {
-			r.setCode(Resp.CODE_NO_PERMISSION);
+			r.setCode(RespJRso.CODE_NO_PERMISSION);
 			r.setMsg("Target permission reject");
 			r.setData(false);
 			return r;
@@ -203,13 +203,13 @@ public class RouteRuleConfigServiceImpl implements IRouteRuleConfigService {
 
 	@Override
 	@SMethod(perType=true,needLogin=true,maxSpeed=1,maxPacketSize=4096)
-	public Resp<RouteRule> add(RouteRule cfg) {
-		Resp<RouteRule> r = new Resp<>();
+	public RespJRso<RouteRuleJRso> add(RouteRuleJRso cfg) {
+		RespJRso<RouteRuleJRso> r = new RespJRso<>();
 		
-		ActInfo ai = JMicroContext.get().getAccount();
-		if(cfg.getClientId() != ai.getId()) {
+		ActInfoJRso ai = JMicroContext.get().getAccount();
+		if(cfg.getClientId() != ai.getClientId()) {
 			if(!PermissionManager.checkAccountClientPermission(cfg.getClientId())) {
-				r.setCode(Resp.CODE_NO_PERMISSION);
+				r.setCode(RespJRso.CODE_NO_PERMISSION);
 				r.setMsg("Target permission reject");
 				return r;
 			}
@@ -217,21 +217,21 @@ public class RouteRuleConfigServiceImpl implements IRouteRuleConfigService {
 		
 		String msg = checkValid(cfg);
 		if(msg != null) {
-			r.setCode(Resp.CODE_FAIL);
+			r.setCode(RespJRso.CODE_FAIL);
 			r.setMsg(msg);
 			r.setData(null);
 			return r;
 		}
 
-		if(cfg.getClientId() != ai.getId() && !PermissionManager.isCurAdmin()) {
-			r.setCode(Resp.CODE_NO_PERMISSION);
+		if(cfg.getClientId() != ai.getClientId() && !PermissionManager.isCurAdmin()) {
+			r.setCode(RespJRso.CODE_NO_PERMISSION);
 			r.setMsg("Permission reject to specify clientId");
 			return r;
 		}
 		
-		cfg.setClientId(ai.getId());
+		cfg.setClientId(ai.getClientId());
 		
-		cfg.setUniqueId(this.idGenerator.getIntId(RouteRule.class));
+		cfg.setUniqueId(this.idGenerator.getIntId(RouteRuleJRso.class));
 		cfg.setCreatedTime(TimeUtils.getCurTime());
 		cfg.setUpdatedBy(ai.getId());
 		cfg.setUpdatedTime(TimeUtils.getCurTime());

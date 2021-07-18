@@ -8,12 +8,12 @@ import java.util.Map;
 
 import org.junit.Test;
 
-import cn.jmicro.api.gateway.ApiRequest;
-import cn.jmicro.api.gateway.ApiResponse;
+import cn.jmicro.api.gateway.ApiRequestJRso;
+import cn.jmicro.api.gateway.ApiResponseJRso;
 import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.net.Message;
-import cn.jmicro.api.net.RpcResponse;
-import cn.jmicro.api.test.Person;
+import cn.jmicro.api.net.RpcResponseJRso;
+import cn.jmicro.api.test.PersonJRso;
 import cn.jmicro.common.Constants;
 
 public class TestOnePrefixCoder {
@@ -23,7 +23,7 @@ public class TestOnePrefixCoder {
 	
 	@Test
 	public void testEndoceArrayResult(){
-		RpcResponse resp = new RpcResponse(1,new Integer[]{1,2,3});
+		RpcResponseJRso resp = new RpcResponseJRso(1,new Integer[]{1,2,3});
 		resp.setSuccess(true);
 		resp.getParams().put("key01", 3);
 		resp.getParams().put("key02","hello");
@@ -33,7 +33,7 @@ public class TestOnePrefixCoder {
 		ByteBuffer dest = encoder.encode(resp);
 		dest.flip();
 		
-		RpcResponse result = decoder.decode(dest);
+		RpcResponseJRso result = decoder.decode(dest);
 		Object r = result.getResult();
 		
 		System.out.println(r.toString());
@@ -44,11 +44,11 @@ public class TestOnePrefixCoder {
 		private long v=222;
 		private String str = null;
 		private Object hello = "Hello World";
-		private Person p = new Person();
+		private PersonJRso p = new PersonJRso();
 		String[] arrs = {"56","2","67"};
-		private List<Person> persons = new ArrayList<Person>();
+		private List<PersonJRso> persons = new ArrayList<PersonJRso>();
 		{
-			persons.add(new Person());
+			persons.add(new PersonJRso());
 		}
 		@Override
 		public String toString() {
@@ -71,9 +71,9 @@ public class TestOnePrefixCoder {
 	}
 	
 	public static final class EntityEndoceArrayResult1 {
-		private List<Person> persons = new ArrayList<Person>();
+		private List<PersonJRso> persons = new ArrayList<PersonJRso>();
 		{
-			persons.add(new Person());
+			persons.add(new PersonJRso());
 		}
 		@Override
 		public String toString() {
@@ -98,8 +98,8 @@ public class TestOnePrefixCoder {
 	
 	@Test
 	public void testEncodeListEntity(){
-		List<Person> persons = new ArrayList<Person>();
-		persons.add(new Person());
+		List<PersonJRso> persons = new ArrayList<PersonJRso>();
+		persons.add(new PersonJRso());
 		
 		ByteBuffer bb = encoder.encode(persons);
 		bb.flip();
@@ -154,7 +154,7 @@ public class TestOnePrefixCoder {
 	
 	@Test
 	public void testEncodeArray1(){
-		Object[] arrs = {"56",new Person(),new TestEntity()};
+		Object[] arrs = {"56",new PersonJRso(),new TestEntity()};
 		ByteBuffer bb = encoder.encode(arrs);
 		bb.flip();
 		System.out.println(bb.limit());
@@ -166,7 +166,7 @@ public class TestOnePrefixCoder {
 	}
 	
 	public static final class EntityEndoceInnerArray {
-		private Object[] arrs = {"56",new Person(),111};
+		private Object[] arrs = {"56",new PersonJRso(),111};
 		@Override
 		public String toString() {
 			return arrs.toString();
@@ -188,7 +188,7 @@ public class TestOnePrefixCoder {
 
 	@Test
 	public void testEncodeInnerArray2(){
-		ApiRequest req = new ApiRequest();
+		ApiRequestJRso req = new ApiRequestJRso();
 		String[] args = new String[] {"hello smsg"};
 		req.setArgs(args);
 		/*req.setMethod("hello");
@@ -213,7 +213,7 @@ public class TestOnePrefixCoder {
 		
 		Message respMsg = decoder.decode(msgBuffer);
 		
-		ApiRequest respReq = decoder.decode((ByteBuffer)respMsg.getPayload());
+		ApiRequestJRso respReq = decoder.decode((ByteBuffer)respMsg.getPayload());
 		
 		System.out.println(respReq.getReqId());
 	}
@@ -221,7 +221,7 @@ public class TestOnePrefixCoder {
 	
 	@Test
 	public void testApiResponse(){
-		ApiResponse req = new ApiResponse();
+		ApiResponseJRso req = new ApiResponseJRso();
 		req.setReqId(22L);
 		req.setId(0L);
 		req.setResult("result");
@@ -244,7 +244,7 @@ public class TestOnePrefixCoder {
 		
 		Message respMsg = decoder.decode(msgBuffer);
 		
-		ApiResponse resp = decoder.decode((ByteBuffer)respMsg.getPayload());
+		ApiResponseJRso resp = decoder.decode((ByteBuffer)respMsg.getPayload());
 		
 		System.out.println(resp.getResult());
 	}
@@ -277,7 +277,7 @@ public class TestOnePrefixCoder {
 		Map<String,Object> map = new HashMap<>();
 		{
 			map.put("1","testStringVal");
-			map.put("2",new Person());
+			map.put("2",new PersonJRso());
 			map.put("3",new TestEntity());
 		}
 		
@@ -292,11 +292,11 @@ public class TestOnePrefixCoder {
 	}
 	
 	public static final class EntityEndoceNullField {
-		private Person p = new Person();
+		private PersonJRso p = new PersonJRso();
 		//private Person p = null;
 		private TestEntity e = null;
 		
-		private Person nullField = new Person();
+		private PersonJRso nullField = new PersonJRso();
 		{
 			nullField.setId(null);
 			nullField.setUsername(null);
@@ -318,7 +318,7 @@ public class TestOnePrefixCoder {
 	
 	@Test
 	public void testEncodeResponse(){
-		RpcResponse si = new RpcResponse();
+		RpcResponseJRso si = new RpcResponseJRso();
 		
 		si.setResult(MC.MTMS_TYPES_ARR);
 		
@@ -326,7 +326,7 @@ public class TestOnePrefixCoder {
 		
 		bb.flip();
 		
-		RpcResponse si1 = decoder.decode(bb);
+		RpcResponseJRso si1 = decoder.decode(bb);
 		
 		Integer[]  arr = (Integer[])si1.getResult();
 		

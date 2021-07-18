@@ -5,13 +5,13 @@ import java.util.function.Consumer;
 
 import org.springframework.aop.support.AopUtils;
 
-import cn.jmicro.api.choreography.ProcessInfo;
+import cn.jmicro.api.choreography.ProcessInfoJRso;
 import cn.jmicro.api.masterelection.IMasterChangeListener;
 import cn.jmicro.api.objectfactory.IObjectFactory;
 import cn.jmicro.api.objectfactory.IPostInitListener;
 import cn.jmicro.api.raft.IDataOperator;
-import cn.jmicro.api.registry.AsyncConfig;
-import cn.jmicro.api.registry.ServiceItem;
+import cn.jmicro.api.registry.AsyncConfigJRso;
+import cn.jmicro.api.registry.ServiceItemJRso;
 
 //@Component
 public class SpringJMicroObjectFactory implements IObjectFactory {
@@ -62,17 +62,23 @@ public class SpringJMicroObjectFactory implements IObjectFactory {
 	}
 
 	@Override
-	public <T> T getRemoteServie(String srvName, String namespace, String version, AsyncConfig[] acs) {
+	public <T> T getRemoteServie(String srvName, String namespace, String version, AsyncConfigJRso[] acs) {
 		return null;
 	}
 
 	@Override
-	public <T> T getRemoteServie(Class<T> srvCls, String ns, AsyncConfig[] acs) {
+	public <T> T getRemoteServie(Class<T> srvCls, String ns, AsyncConfigJRso[] acs) {
 		return null;
 	}
 
 	@Override
-	public <T> T getRemoteServie(ServiceItem item, AsyncConfig[] acs) {
+	public <T> T getRemoteServie(ServiceItemJRso item, AsyncConfigJRso[] acs) {
+		return null;
+	}
+
+	@Override
+	public <T> T get(Class<T> cls, boolean create) {
+		// TODO Auto-generated method stub
 		return null;
 	}
 
@@ -112,7 +118,7 @@ public class SpringJMicroObjectFactory implements IObjectFactory {
 	}
 
 	@Override
-	public ProcessInfo getProcessInfo() {
+	public ProcessInfoJRso getProcessInfo() {
 		return null;
 	}
 

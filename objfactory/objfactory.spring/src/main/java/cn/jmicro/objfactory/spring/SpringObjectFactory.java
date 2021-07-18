@@ -27,14 +27,14 @@ import org.slf4j.LoggerFactory;
 import org.springframework.boot.SpringApplication;
 import org.springframework.context.ConfigurableApplicationContext;
 
-import cn.jmicro.api.choreography.ProcessInfo;
+import cn.jmicro.api.choreography.ProcessInfoJRso;
 import cn.jmicro.api.config.Config;
 import cn.jmicro.api.masterelection.IMasterChangeListener;
 import cn.jmicro.api.objectfactory.IObjectFactory;
 import cn.jmicro.api.objectfactory.IPostInitListener;
 import cn.jmicro.api.raft.IDataOperator;
-import cn.jmicro.api.registry.AsyncConfig;
-import cn.jmicro.api.registry.ServiceItem;
+import cn.jmicro.api.registry.AsyncConfigJRso;
+import cn.jmicro.api.registry.ServiceItemJRso;
 import cn.jmicro.common.CommonException;
 
 /**
@@ -148,13 +148,22 @@ public class SpringObjectFactory implements IObjectFactory {
 	}
 
 	@Override
+	public <T> T get(Class<T> cls, boolean create) {
+		T o = ori.get(cls,false);
+		if(o == null && cxt != null) {
+			o = cxt.getBean(cls);
+		}
+		return o;
+	}
+	
+	@Override
 	public void foreach(Consumer<Object> c) {
 		throw new CommonException("Not support");
 	}
 
 	@Override
 	public <T> T get(Class<T> cls) {
-		T o = ori.get(cls);
+		T o = ori.get(cls,false);
 		if(o == null && cxt != null) {
 			o = cxt.getBean(cls);
 		}
@@ -171,21 +180,21 @@ public class SpringObjectFactory implements IObjectFactory {
 	}
 
 	@Override
-	public <T> T getRemoteServie(String srvName, String namespace, String version, AsyncConfig[] acs) {
+	public <T> T getRemoteServie(String srvName, String namespace, String version, AsyncConfigJRso[] acs) {
 		T srv = ori.getRemoteServie(srvName, namespace, version,acs);
 		reg2Spring(srv);
 		return srv;
 	}
 
 	@Override
-	public <T> T getRemoteServie(Class<T> srvCls, String ns, AsyncConfig[] acs) {
+	public <T> T getRemoteServie(Class<T> srvCls, String ns, AsyncConfigJRso[] acs) {
 		T srv = ori.getRemoteServie(srvCls, ns, acs);
 		reg2Spring(srv);
 		return srv;
 	}
 
 	@Override
-	public <T> T getRemoteServie(ServiceItem item, AsyncConfig[] acs) {
+	public <T> T getRemoteServie(ServiceItemJRso item, AsyncConfigJRso[] acs) {
 		T srv =  ori.getRemoteServie(item, acs);
 		reg2Spring(srv);
 		return srv;
@@ -227,7 +236,7 @@ public class SpringObjectFactory implements IObjectFactory {
 	}
 
 	@Override
-	public ProcessInfo getProcessInfo() {
+	public ProcessInfoJRso getProcessInfo() {
 		return ori.getProcessInfo();
 	}
 	

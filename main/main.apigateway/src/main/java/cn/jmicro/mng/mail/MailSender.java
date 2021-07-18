@@ -18,13 +18,13 @@ import org.slf4j.LoggerFactory;
 import cn.jmicro.api.annotation.Cfg;
 import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Service;
-import cn.jmicro.api.email.IEmailSender;
+import cn.jmicro.api.email.IEmailSenderJMSrv;
 import cn.jmicro.api.monitor.LG;
 import cn.jmicro.api.monitor.MC;
 
 @Component
 @Service(version="0.0.1",retryCnt=0,external=true,debugMode=1,showFront=false)
-public class MailSender implements IEmailSender{
+public class MailSender implements IEmailSenderJMSrv{
 
 	private final static Logger logger = LoggerFactory.getLogger(MailSender.class);
 	
@@ -42,7 +42,7 @@ public class MailSender implements IEmailSender{
 	
 	public static void main(String[] args) throws Exception {
 		//new MailSender().send("mynewworldyyl@gmail.com", "节日快乐", "测试发送邮件");
-		new MailSender().send("xiaoruanfang@sina.com","378862956@qq.com", "节日快乐", "测试发送邮件");
+		new MailSender().send("xiaoruanfang@sina.com", "节日快乐", "测试发送邮件");
 	}
 	
 	public boolean send0(String to, String title, String content) {
@@ -101,7 +101,7 @@ public class MailSender implements IEmailSender{
 	}
 	
 	
-	public boolean send(String to,String from,String title, String message) {
+	public boolean send(String to,/*String from,*/String title, String message) {
         try {
             Security.addProvider(new com.sun.net.ssl.internal.ssl.Provider());
             final String SSL_FACTORY = "javax.net.ssl.SSLSocketFactory";
@@ -126,7 +126,7 @@ public class MailSender implements IEmailSender{
             Message msg = new MimeMessage(session);
             //设置发件人
             //msg.setFrom(new InternetAddress(mailFrom));
-            msg.setFrom(new InternetAddress(from));
+            msg.setFrom(new InternetAddress(mailFrom));
             //设置收件人,to为收件人,cc为抄送,bcc为密送
             msg.setRecipients(Message.RecipientType.TO, InternetAddress.parse(to, false));
             msg.setRecipients(Message.RecipientType.CC, InternetAddress.parse(to, false));

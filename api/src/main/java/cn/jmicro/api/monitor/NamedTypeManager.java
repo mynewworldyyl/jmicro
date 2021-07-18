@@ -37,13 +37,15 @@ public class NamedTypeManager {
 		doSrvMoTypeUpdate(skey,data);
 	};
 	
-	private IChildrenListener srvChildrenListener = (type,parentDir,mokey,data)->{
+	private IChildrenListener srvChildrenListener = (type,parentDir,mokey)->{
+		String path = parentDir + "/" + mokey;
 		if(type == IListener.ADD) {
+			String data = op.getData(path);
 			doSrvMoTypeAdd(mokey,data);
-			op.addDataListener(parentDir + "/" + mokey, srvTypeDataChangeListener);
+			op.addDataListener(path, srvTypeDataChangeListener);
 		} else if(type == IListener.REMOVE) {
-			doSrvMoTypeDelete(mokey,data);
-			op.removeDataListener(parentDir + "/" + mokey, srvTypeDataChangeListener);
+			doSrvMoTypeDelete(mokey);
+			op.removeDataListener(path, srvTypeDataChangeListener);
 		}
 	};
 	
@@ -54,7 +56,7 @@ public class NamedTypeManager {
 		op.addChildrenListener(Config.getRaftBasePath(Config.NamedTypesDir),srvChildrenListener);
 	}
 
-	private void doSrvMoTypeDelete(String skey, String data) {
+	private void doSrvMoTypeDelete(String skey) {
 		if(skey.contains(Constants.PATH_EXCAPE)) {
 			skey = skey.replaceAll(Constants.PATH_EXCAPE, "/");
 		}
@@ -66,10 +68,10 @@ public class NamedTypeManager {
 		}
 	}
 	
-	private void doSrvMoTypeUpdate(String skey, String data) {
+	private void doSrvMoTypeUpdate(String skey,String data) {
 
-		if(StringUtils.isEmpty(data)) {
-			doSrvMoTypeDelete(skey,data);
+		if(StringUtils.isEmpty(skey)) {
+			doSrvMoTypeDelete(skey);
 			return;
 		}
 		

@@ -3,15 +3,19 @@ import cons from "@/rpc/constants";
 
 export default {
 
+    __actreq :  function(method,args){
+        return rpc.creq(this.sn,this.ns,this.v,method,args)
+    },
+
   count: function (query) {
-    return rpc.callRpcWithParams(this.sn, this.ns, this.v, 'count', [query]);
+      return rpc.callRpc(this.__actreq( 'count', [query]))
   },
 
   query: function (queryConditions,pageSize,curPage) {
-    return rpc.callRpcWithParams(this.sn, this.ns, this.v, 'query', [queryConditions, pageSize,curPage]);
+      return rpc.callRpc(this.__actreq( 'query', [queryConditions, pageSize,curPage]))
   },
 
-  sn:'cn.jmicro.mng.api.IPSDataService',
+  sn:'cn.jmicro.mng.api.IPSDataServiceJMSrv',
   ns : cons.NS_MNG,
   v:'0.0.1',
 

@@ -41,6 +41,8 @@
                         <JPubsubStatisView v-else-if="item.group == 'pubsubStatis'" :item="item"></JPubsubStatisView>
 
                         <JAccountEditor v-else-if="item.group == 'account'" :item="item"></JAccountEditor>
+                        <JRoleEditor v-else-if="item.group == 'role'" :item="item"></JRoleEditor>
+                        <JClientConfig v-else-if="item.group == 'clientConfig'" :item="item"></JClientConfig>
                         <JUserProfileEditor v-else-if="item.group == 'userProfile'" :item="item"></JUserProfileEditor>
 
                         <JRepository v-else-if="item.group == 'repository'" :item="item"></JRepository>
@@ -146,6 +148,8 @@
             JResourceMonitorView: () => import('./monitor/JResourceMonitorView.vue'),
 
             JAccountEditor:()=> import('./security/JAccountEditor.vue'),
+            JRoleEditor:()=> import('./security/JRoleEditor.vue'),
+            JClientConfig:()=> import('./security/JClientConfig.vue'),
             JUserProfileEditor:()=> import('./security/JUserProfileEditor.vue'),
             JPublicKeyList:()=> import('./security/JPublicKeyList.vue'),
             JServiceMethodList:()=> import('./security/JServiceMethodList.vue'),

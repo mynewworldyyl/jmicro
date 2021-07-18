@@ -14,7 +14,7 @@ import com.mongodb.client.MongoCursor;
 import com.mongodb.client.MongoDatabase;
 
 import cn.jmicro.api.JMicroContext;
-import cn.jmicro.api.Resp;
+import cn.jmicro.api.RespJRso;
 import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Inject;
 import cn.jmicro.api.annotation.SMethod;
@@ -22,11 +22,11 @@ import cn.jmicro.api.annotation.Service;
 import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.security.PermissionManager;
 import cn.jmicro.common.Constants;
-import cn.jmicro.mng.api.IPSStatisService;
+import cn.jmicro.mng.api.IPSStatisServiceJMSrv;
 
 @Component(level=20001)
 @Service(version="0.0.1", external=true, debugMode=0, showFront=false,logLevel=MC.LOG_NO)
-public class PSStatisServiceImpl implements IPSStatisService {
+public class PSStatisServiceImpl implements IPSStatisServiceJMSrv {
 
 	public static final String PUTSUB_TOTAL = "t_pubsub_total";
 	
@@ -39,20 +39,20 @@ public class PSStatisServiceImpl implements IPSStatisService {
 	
 	@Override
 	@SMethod(perType=false,needLogin=true,maxSpeed=10,maxPacketSize=2048)
-	public Resp<Long> count(Map<String, String> queryConditions) {
+	public RespJRso<Long> count(Map<String, String> queryConditions) {
 		Document match = this.getCondtions(queryConditions);
 		MongoCollection<Document> rpcLogColl = mongoDb.getCollection(PUTSUB_TOTAL);
-		Resp<Long> resp = new Resp<>();
+		RespJRso<Long> resp = new RespJRso<>();
 		Long cnt = rpcLogColl.countDocuments(match);
 		resp.setData(cnt);
-		resp.setCode(Resp.CODE_SUCCESS);
+		resp.setCode(RespJRso.CODE_SUCCESS);
 		
 		return resp;
 	}
 
 	@Override
 	@SMethod(perType=false,needLogin=true,maxSpeed=10,maxPacketSize=2048)
-	public Resp<List<Map<String,Object>>> query(Map<String, String> queryConditions, int pageSize, int curPage) {
+	public RespJRso<List<Map<String,Object>>> query(Map<String, String> queryConditions, int pageSize, int curPage) {
 
 		Document qryMatch = this.getCondtions(queryConditions);
 
@@ -76,7 +76,7 @@ public class PSStatisServiceImpl implements IPSStatisService {
 		AggregateIterable<Document> resultset = rpcLogColl.aggregate(aggregateList);
 		MongoCursor<Document> cursor = resultset.iterator();
 
-		Resp<List<Map<String,Object>>> resp = new Resp<>();
+		RespJRso<List<Map<String,Object>>> resp = new RespJRso<>();
 		List<Map<String,Object>> rl = new ArrayList<>();
 		resp.setData(rl);
 
@@ -92,7 +92,7 @@ public class PSStatisServiceImpl implements IPSStatisService {
 				}
 				rl.add(vo);
 			}
-			resp.setCode(Resp.CODE_SUCCESS);
+			resp.setCode(RespJRso.CODE_SUCCESS);
 		} finally {
 			cursor.close();
 		}
@@ -104,7 +104,7 @@ public class PSStatisServiceImpl implements IPSStatisService {
 		Document match = new Document();
 		
 		 if(!PermissionManager.isCurAdmin()) {
-			 match.put(Constants.CLIENT_ID, JMicroContext.get().getAccount().getId());
+			 match.put(Constants.CLIENT_ID, JMicroContext.get().getAccount().getClientId());
 		 }
 		
 		/*String key = "startTime";

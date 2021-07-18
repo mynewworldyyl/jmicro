@@ -106,8 +106,8 @@
             },
 
             loadServices(cb) {
-
-                srv.getServices(this.showAll).then((nodes)=>{
+                srv.getServices(this.showAll)
+                    .then((nodes)=>{
                     if(!nodes || nodes.length == 0 ) {
                         if(cb) {
                             cb([]);
@@ -222,8 +222,8 @@
                     return null;
                 }
 
-                let title = node.key.serviceName+'##'+node.key.namespace+'##'+node.key.version;
-                let mFullKey = title + '##'+node.key.instanceName+'##'+node.key.host+'##'+node.key.port;
+                let title = node.key.serviceName + '##' + node.key.namespace + '##' + node.key.version;
+                let mFullKey = title + '##' + node.key.instanceName + '##' + node.key.host + '##' + node.key.port;
                 let id = this.group + ':' + mFullKey;
 
                 let mKeyPrefix = title + '######';

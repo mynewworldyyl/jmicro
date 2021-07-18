@@ -20,7 +20,7 @@ import java.io.Serializable;
 
 import cn.jmicro.api.net.IReq;
 import cn.jmicro.api.net.IResp;
-import cn.jmicro.api.security.ActInfo;
+import cn.jmicro.api.security.ActInfoJRso;
 
 /**
  * 
@@ -39,7 +39,7 @@ public class CommonException extends RuntimeException implements Serializable{
 	
 	private IResp resp;
 	
-	private ActInfo ai;
+	private ActInfoJRso ai;
 
 	public CommonException(String cause){
 		super(cause);
@@ -97,11 +97,11 @@ public class CommonException extends RuntimeException implements Serializable{
 		this.resp = resp;
 	}
 
-	public ActInfo getAi() {
+	public ActInfoJRso getAi() {
 		return ai;
 	}
 
-	public void setAi(ActInfo ai) {
+	public void setAi(ActInfoJRso ai) {
 		this.ai = ai;
 	}
 

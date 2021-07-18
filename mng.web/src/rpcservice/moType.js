@@ -2,64 +2,66 @@ import rpc from "@/rpc/rpcbase";
 import cons from "@/rpc/constants";
 
 export default{
-
+    __actreq :  function(method,args){
+        return rpc.creq(this.sn,this.ns,this.v,method,args)
+    },
   getAllConfigs: function (){
-    return rpc.callRpcWithParams(this.sn,this.ns,this.v,'getAllConfigs',[]);
+      return rpc.callRpc(this.__actreq( 'getAllConfigs', []))
   },
 
   update: function (mcConfig){
-    return rpc.callRpcWithParams(this.sn,this.ns,this.v,'update',[mcConfig]);
+      return rpc.callRpc(this.__actreq( 'update', [mcConfig]))
   },
 
   delete: function (mcConfig){
-    return rpc.callRpcWithParams(this.sn,this.ns,this.v,'delete',[mcConfig]);
+      return rpc.callRpc(this.__actreq( 'delete', [mcConfig]))
   },
 
   add: function (mcConfig){
-    return rpc.callRpcWithParams(this.sn,this.ns,this.v,'add',[mcConfig]);
+      return rpc.callRpc(this.__actreq( 'add', [mcConfig]))
   },
 
   getConfigByMonitorKey: function (key){
-    return rpc.callRpcWithParams(this.sn,this.ns,this.v,'getConfigByMonitorKey',[key]);
+      return rpc.callRpc(this.__actreq( 'getConfigByMonitorKey', [key]))
   },
 
   updateMonitorTypes: function (key,adds,dels){
-    return rpc.callRpcWithParams(this.sn,this.ns,this.v,'updateMonitorTypes',[key,adds,dels]);
+      return rpc.callRpc(this.__actreq( 'updateMonitorTypes', [key,adds,dels]))
   },
 
   getMonitorKeyList: function (){
-    return rpc.callRpcWithParams(this.sn,this.ns,this.v,'getMonitorKeyList',[]);
+      return rpc.callRpc(this.__actreq( 'getMonitorKeyList', []))
   },
 
   getConfigByServiceMethodKey: function (key){
-    return rpc.callRpcWithParams(this.sn,this.ns,this.v,'getConfigByServiceMethodKey',[key]);
+      return rpc.callRpc(this.__actreq( 'getConfigByServiceMethodKey', [key]))
   },
 
   updateServiceMethodMonitorTypes: function (key,adds,dels){
-    return rpc.callRpcWithParams(this.sn,this.ns,this.v,'updateServiceMethodMonitorTypes',[key,adds,dels]);
+      return rpc.callRpc(this.__actreq( 'updateServiceMethodMonitorTypes', [key,adds,dels]))
   },
 
   getAllConfigsByGroup: function (groups){
-    return rpc.callRpcWithParams(this.sn,this.ns,this.v,'getAllConfigsByGroup',[groups]);
+      return rpc.callRpc(this.__actreq( 'getAllConfigsByGroup', [groups]))
   },
 
   addNamedTypes: function (name){
-    return rpc.callRpcWithParams(this.sn,this.ns,this.v,'addNamedTypes',[name]);
+      return rpc.callRpc(this.__actreq( 'addNamedTypes', [name]))
   },
 
   getTypesByNamed: function (name){
-    return rpc.callRpcWithParams(this.sn,this.ns,this.v,'getTypesByNamed',[name]);
+      return rpc.callRpc(this.__actreq( 'getTypesByNamed', [name]))
   },
 
   updateNamedTypes: function (key,adds,dels){
-    return rpc.callRpcWithParams(this.sn,this.ns,this.v,'updateNamedTypes',[key,adds,dels]);
+      return rpc.callRpc(this.__actreq( 'updateNamedTypes', [key,adds,dels]))
   },
 
   getNamedList: function (){
-    return rpc.callRpcWithParams(this.sn,this.ns,this.v,'getNamedList',[]);
+      return rpc.callRpc(this.__actreq( 'getNamedList', []))
   },
 
-  sn:'cn.jmicro.api.mng.IMonitorTypeService',
+  sn:'cn.jmicro.api.mng.IMonitorTypeServiceJMSrv',
   ns : cons.NS_MNG,
   v:'0.0.1',
 }

@@ -3,31 +3,35 @@ import cons from "@/rpc/constants";
 
 export default{
 
-  count: function (params) {
-    return rpc.callRpcWithParams(this.sn, this.ns, this.v, 'count', [params]);
+    __actreq :  function(method,args){
+        return rpc.creq(this.sn,this.ns,this.v,method,args)
+    },
+
+    count: function (params) {
+    return rpc.callRpc(this.__actreq( 'count', [params]))
   },
 
   query: function (params,pageSize,curPage) {
-    return rpc.callRpcWithParams(this.sn, this.ns, this.v, 'query', [params,pageSize,curPage]);
+      return rpc.callRpc(this.__actreq( 'query', [params,pageSize,curPage]))
   },
 
   queryDict: function () {
-    return rpc.callRpcWithParams(this.sn, this.ns, this.v, 'queryDict', []);
+      return rpc.callRpc(this.__actreq( 'queryDict', []))
   },
 
   getByLinkId: function(linkId) {
-    return rpc.callRpcWithParams(this.sn, this.ns, this.v, 'getByLinkId', [linkId]);
+      return rpc.callRpc(this.__actreq( 'getByLinkId', [linkId]))
   },
 
   countLog: function (showType,params) {
-    return rpc.callRpcWithParams(this.sn, this.ns, this.v, 'countLog', [showType,params]);
+      return rpc.callRpc(this.__actreq( 'countLog', [showType,params]))
   },
 
   queryLog: function (params,pageSize,curPage) {
-    return rpc.callRpcWithParams(this.sn, this.ns, this.v, 'queryLog', [params,pageSize,curPage]);
+      return rpc.callRpc(this.__actreq( 'queryLog', [params,pageSize,curPage]))
   },
 
-  sn:'cn.jmicro.mng.api.ILogService',
+  sn:'cn.jmicro.mng.api.ILogServiceJMSrv',
   ns : cons.NS_MNG,
   v:'0.0.1',
 }

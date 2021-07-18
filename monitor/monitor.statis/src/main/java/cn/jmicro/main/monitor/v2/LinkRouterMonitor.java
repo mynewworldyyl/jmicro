@@ -29,21 +29,21 @@ import cn.jmicro.api.annotation.Cfg;
 import cn.jmicro.api.annotation.Inject;
 import cn.jmicro.api.annotation.JMethod;
 import cn.jmicro.api.annotation.SMethod;
-import cn.jmicro.api.gateway.ApiRequest;
-import cn.jmicro.api.gateway.ApiResponse;
+import cn.jmicro.api.gateway.ApiRequestJRso;
+import cn.jmicro.api.gateway.ApiResponseJRso;
 import cn.jmicro.api.idgenerator.IdRequest;
-import cn.jmicro.api.monitor.IMonitorDataSubscriber;
-import cn.jmicro.api.monitor.JMLogItem;
-import cn.jmicro.api.monitor.JMStatisItem;
+import cn.jmicro.api.monitor.IMonitorDataSubscriberJMSrv;
+import cn.jmicro.api.monitor.JMLogItemJRso;
+import cn.jmicro.api.monitor.JMStatisItemJRso;
 import cn.jmicro.api.monitor.MC;
-import cn.jmicro.api.monitor.OneLog;
-import cn.jmicro.api.monitor.StatisItem;
+import cn.jmicro.api.monitor.OneLogJRso;
+import cn.jmicro.api.monitor.StatisItemJRso;
 import cn.jmicro.api.monitor.StatisMonitorClient;
 import cn.jmicro.api.net.IRequest;
 import cn.jmicro.api.net.IResponse;
 import cn.jmicro.api.net.Message;
 import cn.jmicro.api.raft.IDataOperator;
-import cn.jmicro.api.registry.UniqueServiceKey;
+import cn.jmicro.api.registry.UniqueServiceKeyJRso;
 import cn.jmicro.api.utils.TimeUtils;
 import cn.jmicro.monitor.api.AbstractMonitorDataSubscriber;
 
@@ -54,7 +54,7 @@ import cn.jmicro.monitor.api.AbstractMonitorDataSubscriber;
  */
 /*@Component
 @Service(version="0.0.1", namespace="printLogMonitor",monitorEnable=0,handler=Constants.SPECIAL_INVOCATION_HANDLER)
-*/public class LinkRouterMonitor extends AbstractMonitorDataSubscriber implements IMonitorDataSubscriber {
+*/public class LinkRouterMonitor extends AbstractMonitorDataSubscriber implements IMonitorDataSubscriberJMSrv {
 
 	private final static Logger logger = LoggerFactory.getLogger(LinkRouterMonitor.class);
 	
@@ -71,7 +71,7 @@ import cn.jmicro.monitor.api.AbstractMonitorDataSubscriber;
 	@Inject
 	private StatisMonitorClient mm;
 	
-	private Map<String,List<JMStatisItem>> siq = new HashMap<>();
+	private Map<String,List<JMStatisItemJRso>> siq = new HashMap<>();
 	
 	private Map<String,Long> sldTimes = new HashMap<>();
 	
@@ -106,13 +106,13 @@ import cn.jmicro.monitor.api.AbstractMonitorDataSubscriber;
 		/*if(this.openDebug) {
 			logger.debug("printLog One LOOP");
 		}*/
-		for(List<JMStatisItem> ls : siq.values()) {
+		for(List<JMStatisItemJRso> ls : siq.values()) {
 			
 			if(ls.isEmpty()) {
 				continue;
 			}
 			
-			for(JMStatisItem si: ls) {
+			for(JMStatisItemJRso si: ls) {
 				
 				String key= si.getKey();
 				if(key == null) {
@@ -124,7 +124,7 @@ import cn.jmicro.monitor.api.AbstractMonitorDataSubscriber;
 				long maxTime = TimeUtils.getCurTime();
 				
 				/*
-				for(StatisItem o: si.getTypeStatis().values()) {
+				for(StatisItemJRso o: si.getTypeStatis().values()) {
 					if(o.getTime() < minTime) {
 						minTime = o.getTime();
 					}
@@ -144,7 +144,7 @@ import cn.jmicro.monitor.api.AbstractMonitorDataSubscriber;
 					continue;
 				}
 					
-				List<StatisItem> l = si.getItems();
+				List<StatisItemJRso> l = si.getItems();
 				if(si.getItems().size()> 1) {
 					l.sort((o1,o2)->o1.getTime() > o2.getTime() ? 1 : (o1.getTime() == o2.getTime()?0:-1));
 				}
@@ -153,8 +153,8 @@ import cn.jmicro.monitor.api.AbstractMonitorDataSubscriber;
 				logger.info(key+",Take["+(maxTime-minTime)+"(MS)]======================================================");
 				
 				for(Short type : si.getTypeStatis().keySet()) {
-					List<StatisItem> items = si.getTypeStatis().get(type);
-					for(StatisItem oi : items) {
+					List<StatisItemJRso> items = si.getTypeStatis().get(type);
+					for(StatisItemJRso oi : items) {
 						if(oi != null) {
 							String msg = toLog(si,oi);
 							logger.info(msg);
@@ -167,7 +167,7 @@ import cn.jmicro.monitor.api.AbstractMonitorDataSubscriber;
 		}
 	}
 
-	private void doPrintLog(JMStatisItem si,StatisItem oi) {
+	private void doPrintLog(JMStatisItemJRso si,StatisItemJRso oi) {
 		String msg = toLog(si,oi);
 		logger.info(msg);
 		/*switch(oi.getLevel()) {
@@ -209,9 +209,9 @@ import cn.jmicro.monitor.api.AbstractMonitorDataSubscriber;
 
 	@Override
 	@SMethod(needResponse=false,asyncable=true)
-	public void onSubmit(JMStatisItem[] sis) {
+	public void onSubmit(JMStatisItemJRso[] sis) {
 		
-			for(JMStatisItem si : sis) {
+			for(JMStatisItemJRso si : sis) {
 				try {
 				if(openDebug) {
 					logger.debug("LinkRouterMonitor:{}",si);
@@ -230,12 +230,12 @@ import cn.jmicro.monitor.api.AbstractMonitorDataSubscriber;
 				if(!siq.containsKey(key)) {
 					synchronized(siq) {
 						if(!siq.containsKey(key)) {
-							siq.put(key, new LinkedList<JMStatisItem>());
+							siq.put(key, new LinkedList<JMStatisItemJRso>());
 						}
 					}
 				}
 				
-				List<JMStatisItem> l = siq.get(key);
+				List<JMStatisItemJRso> l = siq.get(key);
 				synchronized(l) {
 					l.add(si);
 					sldTimes.put(key, TimeUtils.getCurTime());
@@ -253,28 +253,28 @@ import cn.jmicro.monitor.api.AbstractMonitorDataSubscriber;
 		sb.append("num[").append(req.getNum()).append("]");
 	}
 
-	private void reqeust(StringBuilder sb, ApiRequest req) {
+	private void reqeust(StringBuilder sb, ApiRequestJRso req) {
 		if(req == null) return;
 		sb.append("reqId[").append(req.getReqId()).append("]");
 		service(sb,"", "", "","",req.getArgs());
 	}
 
-	private void response(StringBuilder sb, JMLogItem si,OneLog oi) {
+	private void response(StringBuilder sb, JMLogItemJRso si,OneLogJRso oi) {
 		if(si.getResp() == null) return;
 		if(si.getResp() instanceof IResponse) {
 			sb.append("[RpcResponse] ");
 			//others(sb,oi.getOthers());
 			logHeaders(sb,si);
 			rpcResponse(sb,(IResponse)si.getResp());
-		}else if(si.getResp() instanceof ApiResponse) {
-			sb.append("[ApiResponse] ");
+		}else if(si.getResp() instanceof ApiResponseJRso) {
+			sb.append("[ApiResponseJRso] ");
 			//others(sb,oi.getOthers());
 			logHeaders(sb,si);
-			apiResponse(sb,(ApiResponse)si.getResp());
+			ApiResponseJRso(sb,(ApiResponseJRso)si.getResp());
 		}
 	}
 
-	private void apiResponse(StringBuilder sb, ApiResponse resp) {
+	private void ApiResponseJRso(StringBuilder sb, ApiResponseJRso resp) {
 		sb.append("reqId[").append(resp.getReqId()).append("] success[")
 		.append(resp.isSuccess()).append("] result[")
 		.append(resp.getResult()).append("]");
@@ -294,7 +294,7 @@ import cn.jmicro.monitor.api.AbstractMonitorDataSubscriber;
 				req.getArgs());
 	}
 
-	private StringBuilder logHeaders(StringBuilder sb,JMLogItem si) {
+	private StringBuilder logHeaders(StringBuilder sb,JMLogItemJRso si) {
 		//sb.append("[").append(si.getTagCls());
 		//sb.append("] LinkId [").append(si.getLinkId());
 		//sb.append(" instanceName[").append(si.getInstanceName());
@@ -306,7 +306,7 @@ import cn.jmicro.monitor.api.AbstractMonitorDataSubscriber;
 	}
 	
 	private void service(StringBuilder sb,String sn,String ns,String v,String method,Object[] args) {
-		sb.append(" service[").append(UniqueServiceKey.serviceName(sn, ns, v))
+		sb.append(" service[").append(UniqueServiceKeyJRso.serviceName(sn, ns, v))
 		.append("&").append(method).append("] args[");
 		if(args != null && args.length > 0) {
 			for(int i=0; i< args.length;i++) {

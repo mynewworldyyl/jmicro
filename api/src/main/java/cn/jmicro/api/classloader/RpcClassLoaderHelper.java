@@ -2,8 +2,6 @@ package cn.jmicro.api.classloader;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.util.HashMap;
@@ -15,16 +13,17 @@ import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import cn.jmicro.api.ClassScannerUtils;
 import cn.jmicro.api.Holder;
 import cn.jmicro.api.IListener;
 import cn.jmicro.api.JMicroContext;
-import cn.jmicro.api.Resp;
+import cn.jmicro.api.RespJRso;
 import cn.jmicro.api.annotation.Inject;
 import cn.jmicro.api.annotation.Reference;
 import cn.jmicro.api.annotation.SO;
 import cn.jmicro.api.async.IPromise;
-import cn.jmicro.api.choreography.ProcessInfo;
-import cn.jmicro.api.classloader.genclient.IClassloaderRpc$JMAsyncClient;
+import cn.jmicro.api.choreography.ProcessInfoJRso;
+import cn.jmicro.api.classloader.genclient.IClassloaderRpcJMSrv$JMAsyncClient;
 import cn.jmicro.api.config.Config;
 import cn.jmicro.api.monitor.LG;
 import cn.jmicro.api.monitor.MC;
@@ -34,8 +33,9 @@ import cn.jmicro.api.raft.IDataOperator;
 import cn.jmicro.api.raft.IRaftListener;
 import cn.jmicro.api.raft.RaftNodeDataListener;
 import cn.jmicro.api.registry.IRegistry;
-import cn.jmicro.api.registry.ServiceItem;
-import cn.jmicro.api.security.ActInfo;
+import cn.jmicro.api.registry.ServiceItemJRso;
+import cn.jmicro.api.registry.UniqueServiceKeyJRso;
+import cn.jmicro.api.security.ActInfoJRso;
 import cn.jmicro.api.timer.TimerTicker;
 import cn.jmicro.api.utils.TimeUtils;
 import cn.jmicro.codegenerator.AsyncClientProxy;
@@ -65,7 +65,7 @@ public class RpcClassLoaderHelper {
     private IDataOperator op;
     
     @Inject
-    private ProcessInfo pi;
+    private ProcessInfoJRso pi;
     
     @Inject
     private IObjectFactory of;
@@ -74,21 +74,21 @@ public class RpcClassLoaderHelper {
     private IRegistry registry;
     
     @Reference(required = false,namespace="*",version="0.0.1")
-    private IClassloaderRpc$JMAsyncClient rpcLlassloader = null;
+    private IClassloaderRpcJMSrv$JMAsyncClient rpcLlassloader = null;
     
     @Reference(required = false,namespace="repository",version="0.0.2")
-    private IClassloaderRpc$JMAsyncClient respClassloader = null;
+    private IClassloaderRpcJMSrv$JMAsyncClient respClassloader = null;
     
     //@Inject(required=false)
-    private IClassloaderRpc localClassloader = null;
+    private IClassloaderRpcJMSrv localClassloader = null;
     
     private RpcClassLoader lc;
     
     //private ClassLoader parent = null;
     
-    private RaftNodeDataListener<ClassInfo> rndl = null;
+    private RaftNodeDataListener<ClassInfoJRso> rndl = null;
     
-    private IChildrenListener insNodeListener = (type,parent,instanceName,data)->{
+    private IChildrenListener insNodeListener = (type,parent,instanceName)->{
     	String clsName = parent.substring(CLASS_IDR.length()+1);
     	
     	//logger.info("Remote class: {} from {}",clsName,instanceName);
@@ -131,11 +131,15 @@ public class RpcClassLoaderHelper {
 	};
 	
     
-    private IChildrenListener classNodeListener = (type,parent,clsName,data)->{
+    private IChildrenListener classNodeListener = (type,parent,clsName)->{
     	/*if(clsName.equals("cn.jmicro.mng.api.II8NService")) {
     		logger.info("Remote class: {}",clsName);
     	}*/
-    	logger.debug("Notify remote class: {}",clsName);
+    	
+    	if(logger.isTraceEnabled()) {
+    		logger.trace("Notify remote class: {}",clsName);
+    	}
+    	
     	try {
 			if(ownerClasses.containsKey(clsName)  || RpcClassLoader.class.getClassLoader().loadClass(clsName) != null) {
 				//本地类，无需远程加载
@@ -156,7 +160,7 @@ public class RpcClassLoaderHelper {
 		}
 	};
 	
-	private IRaftListener<ClassInfo> classInfoListener = (type,node,ci)->{
+	private IRaftListener<ClassInfoJRso> classInfoListener = (type,node,ci)->{
 		if(type == IListener.ADD) {
 			//classInfoes.put(node, ci);
 			//RpcClassLoader.clazzes.remove(node);
@@ -181,12 +185,12 @@ public class RpcClassLoaderHelper {
     
     public void ready() {
     	
-    	IClassloaderRpc cl = of.getByName("cn.jmicro.choreography.respository.ClassloaderRpcService");
+    	IClassloaderRpcJMSrv cl = of.getByName("cn.jmicro.choreography.respository.ClassloaderRpcService");
     	if(cl != null) {
     		this.localClassloader = cl;
     	}
     	
-    	rndl = new RaftNodeDataListener<>(this.op,CLASS_INFO_IDR,ClassInfo.class,false);
+    	rndl = new RaftNodeDataListener<>(this.op,CLASS_INFO_IDR,ClassInfoJRso.class,false);
     	rndl.addListener(classInfoListener);
     	
     	op.addChildrenListener(CLASS_IDR,classNodeListener);
@@ -221,7 +225,7 @@ public class RpcClassLoaderHelper {
         			return;
         		}
         		
-        		IClassloaderRpc rcl = this.localClassloader != null ? this.localClassloader : this.respClassloader;
+        		IClassloaderRpcJMSrv rcl = this.localClassloader != null ? this.localClassloader : this.respClassloader;
         	    
         		Set<String> keySet = new HashSet<>();
         		synchronized(respClasses) {
@@ -247,7 +251,7 @@ public class RpcClassLoaderHelper {
             			clientId = sa.clientId();
             		}
             		
-            		RemoteClassRegister rc = new RemoteClassRegister();
+            		RemoteClassRegisterJRso rc = new RemoteClassRegisterJRso();
         			
         			URL url = clazz.getProtectionDomain().getCodeSource().getLocation();
         			if(url == null) {
@@ -258,7 +262,7 @@ public class RpcClassLoaderHelper {
         				throw new RuntimeException("Class [" + className+"] resource url not found!");
         			}
         			
-        			String cp = className.replaceAll("\\.", "/")+".class";
+        			String cp ="/"+ className.replaceAll("\\.", "/")+".class";
             		File f = new File(url.getFile()/* + "/" + cp + ".class"*/);
             		rc.getCi().setModifiedTime(f.lastModified());
             		//                                                                     cn/jmicro/api/security/JmicroPublicKey
@@ -267,13 +271,26 @@ public class RpcClassLoaderHelper {
             		
             		if(fullPath.contains("target/classes/")) {
             			rc.getCi().setTesting(true);
-            			byte[] data = new byte[(int)f.length()];
-            			try(InputStream is = new FileInputStream(f)) {
+            			//byte[] data = new byte[(int)f.length()];
+            			/*try(InputStream is = new FileInputStream(f)) {
             				is.read(data, 0, (int)f.length());
             				rc.setData(data);
             			} catch(IOException e) {
-    						logger.error("",e);
-    					} 
+    						logger.error(cp,e);
+    					} */
+            			/*try(InputStream is = clazz.getClassLoader().getResourceAsStream(className)) {
+            				if(is != null) {
+            					is.read(data, 0, (int)f.length());
+                				rc.setData(data);
+            				}else {
+            					logger.error("Data not found: "+cp);
+            				}
+            				
+            			} catch(IOException e) {
+    						logger.error(cp,e);
+    					} */
+            			rc.setData(ClassScannerUtils.getRemoteClassData(className));
+            			
             			rc.getCi().setJarFileName(f.getName());
             		} else if(fullPath.endsWith("!/"+cp)) {
             			rc.getCi().setTesting(false);
@@ -285,7 +302,7 @@ public class RpcClassLoaderHelper {
             			rc.getCi().setJarFileName(new File(url.getFile()).getName());
             		}
             		
-            		ClassInfo ci = this.rndl.getData(className);
+            		ClassInfoJRso ci = this.rndl.getData(className);
             		if(ci != null) {
             			if(!rc.getCi().isTesting() && ci.getDataVersion() >=ver) {
             				//非测试环境，并且当前服务器版本大于或等于当前版本，不需要更新服务器数据
@@ -298,18 +315,20 @@ public class RpcClassLoaderHelper {
             		rc.getCi().setDataVersion(ver);
             		rc.getCi().setClientId(clientId);
             		
-	            	 ActInfo sai = null;
+	            	 ActInfoJRso sai = null;
 	   				 try {
 	   					if(this.localClassloader != null) {
 	   						sai = JMicroContext.get().getSysAccount();
 	            			JMicroContext.get().setSysAccount(pi.getAi());
 	            		}
-	   					Resp<Boolean> r = rcl.registRemoteClass(rc);
+	   					RespJRso<Boolean> r = rcl.registRemoteClass(rc);
 	            		if(r != null && r.getData()) {
 	            			successClasses.add(className);
 	            			respClasses.remove(className);
-	            		}else if(r != null && r.getCode() == Resp.CODE_NO_PERMISSION) {
+	            			ClassScannerUtils.remoteClassData(className);
+	            		}else if(r != null && r.getCode() == RespJRso.CODE_NO_PERMISSION) {
 	            			respClasses.remove(className);
+	            			ClassScannerUtils.remoteClassData(className);
 	            			LG.log(MC.LOG_ERROR,this.getClass(), r.getMsg());
 	            			logger.error(r.getMsg());
 	            		} else {
@@ -373,7 +392,7 @@ public class RpcClassLoaderHelper {
 		}
 		
     	String className = clazz.getName();
-    	if(!lc.isRemoteClass(className)) {
+    	if(!RpcClassLoader.isRemoteClass(className)) {
     		//系统类不需要远程加载，全部JMICRO应用都依赖于cn.jmicro:api包
     		return;
     	}
@@ -442,7 +461,7 @@ public class RpcClassLoaderHelper {
 	         Iterator<String> ite = insNames.iterator();
 	         Class<?> cls=null;
 	         
-	         ServiceItem oldItem = JMicroContext.get().getParam(Constants.DIRECT_SERVICE_ITEM,null);
+	         ServiceItemJRso oldItem = JMicroContext.get().getParam(Constants.DIRECT_SERVICE_ITEM,null);
 	         
 	         try {
 				while(ite.hasNext()) {
@@ -478,15 +497,15 @@ public class RpcClassLoaderHelper {
 	
 	byte[] getByteData(String originClsName,String insName,boolean sync) {
 		
-		ServiceItem directItem = null;
+		UniqueServiceKeyJRso directItem = null;
 		//final String fmsg="";
 		try {
 			IPromise<byte[]> p = null;
 
-			Set<ServiceItem> items = this.registry.getServices(IClassloaderRpc.class.getName());
-			for (ServiceItem si : items) {
-				if (si.getKey().getInstanceName().equals(insName) && 
-						si.getKey().getVersion().equals(COM_CLASS_LOADER_VERSION)) {
+			Set<UniqueServiceKeyJRso> items = this.registry.getServices(IClassloaderRpcJMSrv.class.getName());
+			for (UniqueServiceKeyJRso si : items) {
+				if (si.getInstanceName().equals(insName) && 
+						si.getVersion().equals(COM_CLASS_LOADER_VERSION)) {
 					directItem = si;
 					break;
 				}
@@ -541,14 +560,14 @@ public class RpcClassLoaderHelper {
 	
 	private Class<?> getClassByInstanceName(String originClsName, String insName,boolean sync) {
 		
-		ServiceItem directItem = null;
+		UniqueServiceKeyJRso directItem = null;
 		try {
 			IPromise<byte[]> p = null;
 
-			Set<ServiceItem> items = this.registry.getServices(IClassloaderRpc.class.getName());
-			for (ServiceItem si : items) {
-				if (si.getKey().getInstanceName().equals(insName) && 
-						si.getKey().getVersion().equals(COM_CLASS_LOADER_VERSION)) {
+			Set<UniqueServiceKeyJRso> items = this.registry.getServices(IClassloaderRpcJMSrv.class.getName());
+			for (UniqueServiceKeyJRso si : items) {
+				if (si.getInstanceName().equals(insName) && 
+						si.getVersion().equals(COM_CLASS_LOADER_VERSION)) {
 					directItem = si;
 					break;
 				}
@@ -658,7 +677,7 @@ public class RpcClassLoaderHelper {
 		try {
 			Thread.currentThread().setContextClassLoader(this.lc);
 			 if(this.localClassloader != null) {
-				 ActInfo sai = JMicroContext.get().getSysAccount();
+				 ActInfoJRso sai = JMicroContext.get().getSysAccount();
 				 try {
 					 JMicroContext.get().setSysAccount(pi.getAi());
 					 byte[] bytes = localClassloader.getClassData(className, 0, true);
@@ -728,7 +747,7 @@ public class RpcClassLoaderHelper {
 		try {
 			
 			 if(this.localClassloader != null) {
-				 ActInfo sai = JMicroContext.get().getSysAccount();
+				 ActInfoJRso sai = JMicroContext.get().getSysAccount();
 				 try {
 					 JMicroContext.get().setSysAccount(pi.getAi());
 					 return localClassloader.getClassData(originClsName, 1, true);

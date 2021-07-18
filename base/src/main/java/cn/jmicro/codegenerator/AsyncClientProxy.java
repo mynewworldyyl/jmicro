@@ -27,6 +27,10 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 public @interface AsyncClientProxy {
 	
+	public static final String SO_SUBFIX = "JRso";
+	
+	public static final String SRV_SUBFIX = "JMSrv";
+	
 	public static final String PKG_SUBFIX = "genclient";
 	
 	public static final String INT_SUBFIX = "$JMAsyncClient";

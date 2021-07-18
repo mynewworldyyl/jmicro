@@ -178,8 +178,8 @@ public class ChildrenManager {
 						if (openDebug) {
 							logger.debug("childrenChange add path:{}, children:{}", path, a);
 						}
-						String data = op.getData(path + "/" + a);
-						l.childrenChanged(IListener.ADD, path, a, data);
+						//String data = op.getData(path + "/" + a);
+						l.childrenChanged(IListener.ADD, path, a/*, data*/);
 					}
 				}
 			}
@@ -190,7 +190,7 @@ public class ChildrenManager {
 						if (openDebug) {
 							logger.debug("childrenChange remove path:{}, children:{}", path, a);
 						}
-						l.childrenChanged(IListener.REMOVE, path, a, null);
+						l.childrenChanged(IListener.REMOVE, path, a/*, null*/);
 					}
 				}
 			}
@@ -222,8 +222,8 @@ public class ChildrenManager {
 			 Set<String> set = new HashSet<>();
 			 set.addAll(this.path2Children.get(path));
 			 for(String c : set) {
-				String data = op.getData(path + "/" + c);
-				l.childrenChanged(IListener.ADD, path, c, data);
+				//String data = op.getData(path + "/" + c);
+				l.childrenChanged(IListener.ADD, path, c/*, data*/);
 			 }
 		}
 	}

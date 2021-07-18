@@ -40,16 +40,16 @@ export default {
     return rpc.callRpc(this.__ccreq('countAccount',[query]));
   },
 
-  getPermissionsByActName : function (actName){
-    return rpc.callRpc(this.__ccreq('getPermissionsByActName',[actName]));
+  getPermissionsByActId : function (actId){
+    return rpc.callRpc(this.__ccreq('getPermissionsByActId',[actId]));
   },
 
-  updateActPermissions : function (actName,adds,dels){
-    return rpc.callRpc(this.__ccreq('updateActPermissions',[actName,adds,dels]));
+  updateActPermissions : function (actId,adds,dels){
+    return rpc.callRpc(this.__ccreq('updateActPermissions',[actId,adds,dels]));
   },
 
-  changeAccountStatus : function (actName){
-    return rpc.callRpc(this.__ccreq('changeAccountStatus',[actName]));
+  changeAccountStatus : function (actId){
+    return rpc.callRpc(this.__ccreq('changeAccountStatus',[actId]));
   },
 
   resendActiveEmail : function (actName){
@@ -74,13 +74,10 @@ export default {
 
 
   __ccreq : function(method,args){
-    let req = {};
-    req.serviceName = 'cn.jmicro.security.api.IAccountService';
-    req.namespace = cons.NS_SECURITY;
-    req.version = '0.0.1';
-    req.args = args;
-    req.method = method;
-    return req;
-  }
+      return rpc.creq(this.sn,this.ns,this.v,method,args)
+  },
 
+  sn:'cn.jmicro.security.api.IAccountServiceJMSrv',
+  ns: cons.NS_SECURITY,
+  v : '0.0.1',
 }

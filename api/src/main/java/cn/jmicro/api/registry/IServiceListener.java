@@ -20,7 +20,13 @@ import cn.jmicro.api.IListener;
 
 public interface IServiceListener  extends IListener{
 
-	void serviceChanged(int type,ServiceItem item);
+	/**
+	 * 
+	 * @param type
+	 * @param key必传值
+	 * @param item可选值
+	 */
+	void serviceChanged(int type,UniqueServiceKeyJRso key,ServiceItemJRso item);
 	
 	//void serviceRemove(ServiceItem item);
 }

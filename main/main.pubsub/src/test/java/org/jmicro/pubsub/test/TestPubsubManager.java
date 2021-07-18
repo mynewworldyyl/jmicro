@@ -2,7 +2,7 @@ package org.jmicro.pubsub.test;
 
 import org.junit.Test;
 
-import cn.jmicro.api.pubsub.PSData;
+import cn.jmicro.api.pubsub.PSDataJRso;
 import cn.jmicro.api.pubsub.PubSubManager;
 import cn.jmicro.test.JMicroBaseTestCase;
 
@@ -15,7 +15,7 @@ public class TestPubsubManager extends JMicroBaseTestCase{
 	@Test
 	public void testPubsubManagerPublish() {
 		PubSubManager m = of.get(PubSubManager.class);
-		PSData d = new PSData();
+		PSDataJRso d = new PSDataJRso();
 		d.setTopic(TOPIC);
 		d.setData("testSubcribe");
 		org.junit.Assert.assertTrue(PubSubManager.PUB_OK == m.publish(d));
@@ -25,20 +25,20 @@ public class TestPubsubManager extends JMicroBaseTestCase{
 	@Test
 	public void testPubsubManagerPublishString() {
 		PubSubManager m = of.get(PubSubManager.class);
-		PSData d = new PSData();
+		PSDataJRso d = new PSDataJRso();
 		d.setTopic(TOPIC);
 		d.setData("testSubcribe");
-		org.junit.Assert.assertTrue(PubSubManager.PUB_OK == m.publish(TOPIC,"testPubsubManagerPublishString",PSData.FLAG_PUBSUB,null));
+		org.junit.Assert.assertTrue(PubSubManager.PUB_OK == m.publish(TOPIC,"testPubsubManagerPublishString",PSDataJRso.FLAG_PUBSUB,null));
 		//JMicro.waitForShutdown();
 	}
 	
 	@Test
 	public void testPubsubManagerPublishBytes() {
 		PubSubManager m = of.get(PubSubManager.class);
-		PSData d = new PSData();
+		PSDataJRso d = new PSDataJRso();
 		d.setTopic(TOPIC);
 		d.setData("testSubcribe");
-		org.junit.Assert.assertTrue(PubSubManager.PUB_OK == m.publish(TOPIC,"testPubsubManagerPublishString".getBytes(),PSData.FLAG_PUBSUB,null));
+		org.junit.Assert.assertTrue(PubSubManager.PUB_OK == m.publish(TOPIC,"testPubsubManagerPublishString".getBytes(),PSDataJRso.FLAG_PUBSUB,null));
 		//JMicro.waitForShutdown();
 	}
 	

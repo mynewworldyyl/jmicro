@@ -76,8 +76,9 @@ public class RaftNodeDataListener<NodeType> {
 		
 		op.addChildrenListener(this.dir, new IChildrenListener() {
 			@Override
-			public void childrenChanged(int type,String parent, String child,String data) {
+			public void childrenChanged(int type,String parent, String child) {
 				if(IListener.ADD == type) {
+					String data = op.getData(parent+"/"+child);
 					nodeAdd(child,data);
 				}else if(IListener.REMOVE == type) {
 					nodeRemove(child);

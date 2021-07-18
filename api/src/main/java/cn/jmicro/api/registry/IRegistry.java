@@ -28,32 +28,32 @@ import cn.jmicro.api.service.ServiceManager;
  */
 public interface IRegistry{
 
-	void regist(ServiceItem si);
+	void regist(ServiceItemJRso si);
 	
-	void update(ServiceItem si);
+	void update(ServiceItemJRso si);
 	
-	void unregist(ServiceItem si);
+	void unregist(UniqueServiceKeyJRso si);
 	
-	Set<ServiceItem> getServices(String serviceName,String method,/*Class<?>[] args,*/String namespace,String version,String transport);
+	Set<ServiceItemJRso> getServices(String serviceName,String method,/*Class<?>[] args,*/String namespace,String version,String transport);
 	
 	//Set<ServiceItem> getServices(String serviceName,String method,/*Object[] args,*/String namespace,String version,String transport);
 	
 	boolean isExists(String serviceName,String namespace,String version);
 	boolean isExists(String serviceName);
 	
-	Set<ServiceItem> getServices(String serviceName,String namespace,String version);
+	Set<UniqueServiceKeyJRso> getServices(String serviceName,String namespace,String version);
 	
-	ServiceItem getServiceSingleItem(String serviceName,String namespace,String version);
+	UniqueServiceKeyJRso getServiceSingleItem(String serviceName,String namespace,String version);
 	
 	//get by service name, use for collection inject
-	Set<ServiceItem> getServices(String serviceName);
-	ServiceItem getService(String serviceName,int insId);
+	Set<UniqueServiceKeyJRso> getServices(String serviceName);
+	UniqueServiceKeyJRso getService(String serviceName,int insId);
 	
-	ServiceItem getServiceByImpl(String impl);
+	//UniqueServiceKeyJRso getServiceByImpl(String impl);
 	
-	ServiceItem getServiceByCode(int code);
+	UniqueServiceKeyJRso getServiceByCode(int code);
 	
-	ServiceItem getOwnItem(int code);
+	ServiceItemJRso getOwnItem(int code);
 	
 	/**
 	 * 服务名称，名称空间，版本维度做他量监听

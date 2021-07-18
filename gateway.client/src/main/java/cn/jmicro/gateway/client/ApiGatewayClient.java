@@ -32,23 +32,23 @@ import javax.crypto.SecretKey;
 
 import com.google.gson.reflect.TypeToken;
 
-import cn.jmicro.api.Resp;
+import cn.jmicro.api.RespJRso;
 import cn.jmicro.api.annotation.WithContext;
 import cn.jmicro.api.async.AsyncFailResult;
 import cn.jmicro.api.async.IPromise;
 import cn.jmicro.api.client.IClientSession;
 import cn.jmicro.api.codec.TypeUtils;
-import cn.jmicro.api.gateway.ApiRequest;
+import cn.jmicro.api.gateway.ApiRequestJRso;
 import cn.jmicro.api.internal.async.PromiseImpl;
 import cn.jmicro.api.net.IMessageHandler;
 import cn.jmicro.api.net.IRequest;
 import cn.jmicro.api.net.ISession;
 import cn.jmicro.api.net.Message;
-import cn.jmicro.api.net.RpcResponse;
+import cn.jmicro.api.net.RpcResponseJRso;
 import cn.jmicro.api.net.ServerError;
-import cn.jmicro.api.pubsub.PSData;
+import cn.jmicro.api.pubsub.PSDataJRso;
 import cn.jmicro.api.rsa.EncryptUtils;
-import cn.jmicro.api.security.ActInfo;
+import cn.jmicro.api.security.ActInfoJRso;
 import cn.jmicro.codegenerator.AsyncClientProxy;
 import cn.jmicro.codegenerator.AsyncClientUtils;
 import cn.jmicro.common.CommonException;
@@ -87,7 +87,7 @@ public class ApiGatewayClient {
 	
 	private ApiGatewayPubsubClient pubsubClient;
 	
-	private ActInfo actInfo;
+	private ActInfoJRso actInfo;
 	
 	private static final String SEC_SRV = "cn.jmicro.api.security.IAccountService";
 	private static final String SEC_SRV_ = "cn.jmicro.security.api.IAccountService";
@@ -179,7 +179,7 @@ public class ApiGatewayClient {
 			@Override
 			public boolean onMessage(ISession session, Message msg) {
 				//session.active();
-				PSData pd = parseResult(msg,PSData.class,null);
+				PSDataJRso pd = parseResult(msg,PSDataJRso.class,null);
 				pubsubClient.onMsg(pd);
 				return true;
 			}
@@ -260,21 +260,21 @@ public class ApiGatewayClient {
 		return (T)srv;
 	}
 	
-	public IPromise<Resp<ActInfo>> loginJMAsync(String actName,String pwd) {
-		IPromise<Resp<ActInfo>> p = null;
+	public IPromise<RespJRso<ActInfoJRso>> loginJMAsync(String actName,String pwd) {
+		IPromise<RespJRso<ActInfoJRso>> p = null;
 		
 		if(actInfo != null) {
-			PromiseImpl<Resp<ActInfo>> p0 = new PromiseImpl<>();
+			PromiseImpl<RespJRso<ActInfoJRso>> p0 = new PromiseImpl<>();
 			p0.setFail(1, "Have login and have to logout before relogin");
 			p0.setResult(null);
 			p0.done();
 			p = p0;
 		} else {
-			Type returnType = TypeToken.getParameterized(Resp.class, ActInfo.class).getType();
+			Type returnType = TypeToken.getParameterized(RespJRso.class, ActInfoJRso.class).getType();
 			p = this.callService(SEC_SRV, SEC_NS, SEC_VER, "login", 
 					returnType, new Object[] {actName, pwd});
-			p.then((Resp<ActInfo> resp, AsyncFailResult fail, Object ctx)->{
-				if(fail == null && resp.getCode() == Resp.CODE_SUCCESS) {
+			p.then((RespJRso<ActInfoJRso> resp, AsyncFailResult fail, Object ctx)->{
+				if(fail == null && resp.getCode() == RespJRso.CODE_SUCCESS) {
 					setActInfo(resp.getData());
 				}
 			});
@@ -282,16 +282,16 @@ public class ApiGatewayClient {
 		return p;
 	} 
 	
-	public IPromise<Resp> logoutJMAsync() {
-		IPromise<Resp> p = null;
+	public IPromise<RespJRso> logoutJMAsync() {
+		IPromise<RespJRso> p = null;
 		if(actInfo == null) {
-			PromiseImpl<Resp> p0 = new PromiseImpl<>();
+			PromiseImpl<RespJRso> p0 = new PromiseImpl<>();
 			p0.setResult(null);
 			p0.setFail(1, "Not login");
 			p0.done();
 			p = p0;
 		} else {
-			Type returnType = TypeToken.getParameterized(Resp.class, Boolean.class).getType();
+			Type returnType = TypeToken.getParameterized(RespJRso.class, Boolean.class).getType();
 			p = callService(SEC_SRV_, SEC_NS, SEC_VER, "logout", returnType, new Object[] {});
 			p.success((rst,cxt0)->{
 				setActInfo(null);
@@ -301,13 +301,13 @@ public class ApiGatewayClient {
 		return p;
 	} 
 	
-	private void setActInfo(ActInfo ai) {
+	private void setActInfo(ActInfoJRso ai) {
 		this.actInfo = ai;
 	}
 	
     public Class<?> getEntityClazz(Short type) {
     	
-    	ApiRequest req = new ApiRequest();
+    	ApiRequestJRso req = new ApiRequestJRso();
 		req.setArgs(new Object[] {type});
 		req.setReqId(idClient.getLongId(IRequest.class.getName()));
 		
@@ -427,7 +427,7 @@ public class ApiGatewayClient {
 				}
 				return rst;
 			} else {
-				RpcResponse apiResp = JsonUtils.getIns().fromJson(json, RpcResponse.class);
+				RpcResponseJRso apiResp = JsonUtils.getIns().fromJson(json, RpcResponseJRso.class);
 				if(apiResp.isSuccess()) {
 					 if(apiResp.getResult() == null || resultType == Void.class || Void.TYPE == resultType) {
 						 p.done();
@@ -444,7 +444,7 @@ public class ApiGatewayClient {
 					 if(se != null) {
 						 p.setFail(se.getErrorCode(), se.getMsg());
 					 }else {
-						 p.setFail(Resp.CODE_FAIL, js);
+						 p.setFail(RespJRso.CODE_FAIL, js);
 					 }
 					 p.done();
 					 System.out.println(p.getResult());
@@ -454,7 +454,7 @@ public class ApiGatewayClient {
 			}
 			
 		} catch (UnsupportedEncodingException e) {
-			p.setFail(Resp.CODE_FAIL, e.getMessage());
+			p.setFail(RespJRso.CODE_FAIL, e.getMessage());
 			p.done();
 			//throw new CommonException(json,e);
 		}
@@ -508,7 +508,7 @@ public class ApiGatewayClient {
     	
     	byte upp = getUpProtocol(args);
     	
-    	ApiRequest req = new ApiRequest();
+    	ApiRequestJRso req = new ApiRequestJRso();
     	req.setReqId(idClient.getLongId(IRequest.class.getName()));
 		req.setArgs(args);
 		/*req.setMethod(generatorSrvMethodName(method));

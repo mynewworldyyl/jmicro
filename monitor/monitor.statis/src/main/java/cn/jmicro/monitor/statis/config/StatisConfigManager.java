@@ -21,7 +21,7 @@ import cn.jmicro.api.IListener;
 import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Inject;
 import cn.jmicro.api.choreography.ChoyConstants;
-import cn.jmicro.api.choreography.ProcessInfo;
+import cn.jmicro.api.choreography.ProcessInfoJRso;
 import cn.jmicro.api.config.Config;
 import cn.jmicro.api.exp.Exp;
 import cn.jmicro.api.exp.ExpUtils;
@@ -29,17 +29,17 @@ import cn.jmicro.api.mng.ProcessInstanceManager;
 import cn.jmicro.api.mng.ProcessInstanceManager.IInstanceListener;
 import cn.jmicro.api.monitor.LG;
 import cn.jmicro.api.monitor.MC;
-import cn.jmicro.api.monitor.StatisConfig;
-import cn.jmicro.api.monitor.StatisIndex;
+import cn.jmicro.api.monitor.StatisConfigJRso;
+import cn.jmicro.api.monitor.StatisIndexJRso;
 import cn.jmicro.api.objectfactory.IObjectFactory;
 import cn.jmicro.api.raft.IDataOperator;
 import cn.jmicro.api.raft.IRaftListener;
 import cn.jmicro.api.raft.RaftNodeDataListener;
 import cn.jmicro.api.registry.IRegistry;
 import cn.jmicro.api.registry.IServiceListener;
-import cn.jmicro.api.registry.ServiceItem;
-import cn.jmicro.api.registry.ServiceMethod;
-import cn.jmicro.api.registry.UniqueServiceKey;
+import cn.jmicro.api.registry.ServiceItemJRso;
+import cn.jmicro.api.registry.ServiceMethodJRso;
+import cn.jmicro.api.registry.UniqueServiceKeyJRso;
 import cn.jmicro.api.service.ServiceManager;
 import cn.jmicro.common.CommonException;
 import cn.jmicro.common.Constants;
@@ -71,7 +71,7 @@ public class StatisConfigManager {
 	@Inject
 	private ProcessInstanceManager insManager;
 	
-	private Map<Integer,StatisConfig> configs = new HashMap<>();
+	private Map<Integer,StatisConfigJRso> configs = new HashMap<>();
 	
 	//private Map<String,Set<Integer>> srvName2Configs = new HashMap<>();
 	//方便根据实例名取配置
@@ -87,21 +87,21 @@ public class StatisConfigManager {
 	
 	//private Map<String,Set<Integer>> account2Configs = new HashMap<>();
 	
-	private RaftNodeDataListener<StatisConfig> configListener;
+	private RaftNodeDataListener<StatisConfigJRso> configListener;
 	
 	private String logDir;
 	
-	private IServiceListener snvListener = (type,item)->{
+	private IServiceListener snvListener = (type,siKey,item)->{
 		if(type == IListener.REMOVE) {
 			//onServiceRemove(item);
 		}else if(type == IListener.ADD) {
-			onServiceAdd(item);
+			onServiceAdd(siKey,item);
 		}
 	};
 	
 	private IInstanceListener insListener = (type, pi)->{
 		if(type == IListener.ADD) {
-			Set<StatisConfig> cfgs = getInstanceConfigs(pi.getInstanceName());
+			Set<StatisConfigJRso> cfgs = getInstanceConfigs(pi.getInstanceName());
 			if(cfgs.isEmpty()) {
 				return;
 			}
@@ -116,15 +116,15 @@ public class StatisConfigManager {
 			d.mkdirs();
 		}
 		
-		configListener = new RaftNodeDataListener<>(op,StatisConfig.STATIS_CONFIG_ROOT,StatisConfig.class,false);
+		configListener = new RaftNodeDataListener<>(op,StatisConfigJRso.STATIS_CONFIG_ROOT,StatisConfigJRso.class,false);
 		configListener.addListener(lis);
 		
 		srvMng.addListener(snvListener);
 		insManager.addInstanceListner(insListener);
 	}
 
-	private IRaftListener<StatisConfig> lis = new IRaftListener<StatisConfig>() {
-		public void onEvent(int type,String id, StatisConfig lw) {
+	private IRaftListener<StatisConfigJRso> lis = new IRaftListener<StatisConfigJRso>() {
+		public void onEvent(int type,String id, StatisConfigJRso lw) {
 			Integer cid = Integer.parseInt(id);
 			if(type == IListener.DATA_CHANGE) {
 				statisConfigChanged(cid,lw);
@@ -136,13 +136,13 @@ public class StatisConfigManager {
 		}
 	};
 	
-	private void statisConfigChanged(Integer id, StatisConfig lw) {
+	private void statisConfigChanged(Integer id, StatisConfigJRso lw) {
 		if(lw == null) {
 			return;
 		}
 		
 		if(!lw.isEnable()) {
-			StatisConfig olw = configs.get(id);
+			StatisConfigJRso olw = configs.get(id);
 			if(olw != null) {
 				statisConfigRemove(olw);
 			}
@@ -153,18 +153,18 @@ public class StatisConfigManager {
 			//启用中的配置不可能改数据，所以认为是重复的通知
 			statisConfigAdd(lw);
 		} else {
-			StatisConfig olw = configs.get(id);
+			StatisConfigJRso olw = configs.get(id);
 			statisConfigRemove(olw);
 			statisConfigAdd(lw);
 		}
 	}
 	
-	private void statisConfigRemove(StatisConfig lw) {
+	private void statisConfigRemove(StatisConfigJRso lw) {
 		if(lw == null || !lw.isEnable()) {
 			return;
 		}
 		
-		StatisConfig olw = configs.get(lw.getId());
+		StatisConfigJRso olw = configs.get(lw.getId());
 
 		if(olw != null) {
 			synchronized(configs) {
@@ -176,7 +176,7 @@ public class StatisConfigManager {
 			notifyStatisConfig(IListener.REMOVE,olw);
 		}
 		
-		if(StatisConfig.TO_TYPE_FILE == lw.getToType()) {
+		if(StatisConfigJRso.TO_TYPE_FILE == lw.getToType()) {
 			if(lw.getBw() != null) {
 				try {
 					lw.getBw().close();
@@ -191,7 +191,7 @@ public class StatisConfigManager {
 	
 	}
 
-	private void statisConfigAdd(StatisConfig lw) {
+	private void statisConfigAdd(StatisConfigJRso lw) {
 
 		if(lw == null || !lw.isEnable()) {
 			return;
@@ -212,7 +212,7 @@ public class StatisConfigManager {
 		
 		lw.setTypes(set);
 		
-		for(StatisIndex si : lw.getStatisIndexs()) {
+		for(StatisIndexJRso si : lw.getStatisIndexs()) {
 			set.addAll(Arrays.asList(si.getNums()));
 			if(si.getDens() != null && si.getDens().length > 0) {
 				set.addAll(Arrays.asList(si.getDens()));
@@ -240,20 +240,20 @@ public class StatisConfigManager {
 				
 	}
 	
-	private void parseConfigData(StatisConfig lw,int enable) {
+	private void parseConfigData(StatisConfigJRso lw,int enable) {
 		int tt = lw.getByType();
 		switch(tt) {
-			case StatisConfig.BY_TYPE_SERVICE_METHOD:
-			case StatisConfig.BY_TYPE_SERVICE_INSTANCE_METHOD:
-			case StatisConfig.BY_TYPE_SERVICE_ACCOUNT_METHOD:
-				 String[] srvs = lw.getByKey().split(UniqueServiceKey.SEP);
-				 lw.setBysn(srvs[UniqueServiceKey.INDEX_SN]);
-				 lw.setByns(srvs[UniqueServiceKey.INDEX_NS]);
-				 lw.setByver(srvs[UniqueServiceKey.INDEX_VER]);
-				 lw.setByins(srvs[UniqueServiceKey.INDEX_INS]);
-				 lw.setByme(srvs[UniqueServiceKey.INDEX_METHOD]);
+			case StatisConfigJRso.BY_TYPE_SERVICE_METHOD:
+			case StatisConfigJRso.BY_TYPE_SERVICE_INSTANCE_METHOD:
+			case StatisConfigJRso.BY_TYPE_SERVICE_ACCOUNT_METHOD:
+				 String[] srvs = lw.getByKey().split(UniqueServiceKeyJRso.SEP);
+				 lw.setBysn(srvs[UniqueServiceKeyJRso.INDEX_SN]);
+				 lw.setByns(srvs[UniqueServiceKeyJRso.INDEX_NS]);
+				 lw.setByver(srvs[UniqueServiceKeyJRso.INDEX_VER]);
+				 lw.setByins(srvs[UniqueServiceKeyJRso.INDEX_INS]);
+				 lw.setByme(srvs[UniqueServiceKeyJRso.INDEX_METHOD]);
 				 break;
-			case StatisConfig.BY_TYPE_INSTANCE:
+			case StatisConfigJRso.BY_TYPE_INSTANCE:
 				/*if(enable == 1) {
 					if(!instance2Configs.containsKey(lw.getByins())) {
 						instance2Configs.put(lw.getByins(), new HashSet<>());
@@ -265,17 +265,17 @@ public class StatisConfigManager {
 					}
 				}*/
 				break;
-			case StatisConfig.BY_TYPE_ACCOUNT:
+			case StatisConfigJRso.BY_TYPE_ACCOUNT:
 				
 				break;
 		}
 		
-		if(StatisConfig.TO_TYPE_SERVICE_METHOD == lw.getToType()) {
-			 String[] ps = lw.getToParams().split(UniqueServiceKey.SEP);
-			 lw.setToSn(ps[UniqueServiceKey.INDEX_SN]);
-			 lw.setToNs(ps[UniqueServiceKey.INDEX_NS]);
-			 lw.setToVer(ps[UniqueServiceKey.INDEX_VER]);
-			 lw.setToMt(ps[UniqueServiceKey.INDEX_METHOD]);
+		if(StatisConfigJRso.TO_TYPE_SERVICE_METHOD == lw.getToType()) {
+			 String[] ps = lw.getToParams().split(UniqueServiceKeyJRso.SEP);
+			 lw.setToSn(ps[UniqueServiceKeyJRso.INDEX_SN]);
+			 lw.setToNs(ps[UniqueServiceKeyJRso.INDEX_NS]);
+			 lw.setToVer(ps[UniqueServiceKeyJRso.INDEX_VER]);
+			 lw.setToMt(ps[UniqueServiceKeyJRso.INDEX_METHOD]);
 		}
 		
 	}
@@ -295,10 +295,10 @@ public class StatisConfigManager {
 		return l;
 	}
 	
-	private Set<StatisConfig> getByConfigByServiceName(String serviceName) {
-		Set<StatisConfig> cfgs = new HashSet<>();
+	private Set<StatisConfigJRso> getByConfigByServiceName(String serviceName) {
+		Set<StatisConfigJRso> cfgs = new HashSet<>();
 		synchronized(configs) {
-			for(StatisConfig sc : this.configs.values()) {
+			for(StatisConfigJRso sc : this.configs.values()) {
 				if(sc.getToSn() != null && sc.getToSn().equals(serviceName)) {
 					cfgs.add(sc);
 				}
@@ -307,21 +307,21 @@ public class StatisConfigManager {
 		return cfgs;
 	}
 	
-	private void onServiceAdd(ServiceItem si) {
-		Set<StatisConfig> cfgs = this.getByConfigByServiceName(si.getKey().getServiceName());
+	private void onServiceAdd(UniqueServiceKeyJRso siKey,ServiceItemJRso item) {
+		Set<StatisConfigJRso> cfgs = this.getByConfigByServiceName(siKey.getServiceName());
 		
 		if(cfgs.isEmpty()) {
 			return;
 		}
 		
-		for(StatisConfig sc : cfgs) {
-			
-			ServiceMethod sm = si.getMethod(sc.getByme());
+		for(StatisConfigJRso sc : cfgs) {
+			ServiceItemJRso si = this.srvMng.getServiceByKey(siKey.fullStringKey());
+			ServiceMethodJRso sm = si.getMethod(sc.getByme());
 			if(sm == null) {
 				continue;
 			}
 			
-			if(sc.getByType() == StatisConfig.BY_TYPE_SERVICE_INSTANCE_METHOD) {
+			if(sc.getByType() == StatisConfigJRso.BY_TYPE_SERVICE_INSTANCE_METHOD) {
 				if(!sm.getKey().getInstanceName().equals(sc.getByins())) {
 					continue;
 				}
@@ -331,21 +331,21 @@ public class StatisConfigManager {
 		}
 	}
 	
-	private void updateMonitorAttr(StatisConfig lw,int enable) {
+	private void updateMonitorAttr(StatisConfigJRso lw,int enable) {
 		int tt = lw.getByType();
 		switch(tt) {
-			case StatisConfig.BY_TYPE_SERVICE_METHOD:
-			case StatisConfig.BY_TYPE_SERVICE_INSTANCE_METHOD:
-			case StatisConfig.BY_TYPE_SERVICE_ACCOUNT_METHOD:
+			case StatisConfigJRso.BY_TYPE_SERVICE_METHOD:
+			case StatisConfigJRso.BY_TYPE_SERVICE_INSTANCE_METHOD:
+			case StatisConfigJRso.BY_TYPE_SERVICE_ACCOUNT_METHOD:
 				 setServiceMethodMonitorable(lw,enable);
 				 break;
-			case StatisConfig.BY_TYPE_INSTANCE:
+			case StatisConfigJRso.BY_TYPE_INSTANCE:
 				setProcessInfoMonitorable(lw,enable);
 		}
 	}
 
-	private void setProcessInfoMonitorable(StatisConfig lw, int enable) {
-		Set<ProcessInfo> pis = insManager.getProcessByNamePreifx(lw.getByKey());
+	private void setProcessInfoMonitorable(StatisConfigJRso lw, int enable) {
+		Set<ProcessInfoJRso> pis = insManager.getProcessByNamePreifx(lw.getByKey());
 		if(pis != null && !pis.isEmpty()) {
 			final boolean en = enable == 1?true:false;
 			pis.forEach((pi)->{
@@ -357,18 +357,19 @@ public class StatisConfigManager {
 		}
 	}
 
-	private void setServiceMethodMonitorable(StatisConfig lw,int enable) {
-		Set<ServiceItem> items = reg.getServices(lw.getBysn(), lw.getByns(), lw.getByver());
+	private void setServiceMethodMonitorable(StatisConfigJRso lw,int enable) {
+		Set<UniqueServiceKeyJRso> items = reg.getServices(lw.getBysn(), lw.getByns(), lw.getByver());
 		if(items == null || items.isEmpty()) {
 			return;
 		}
-		for(ServiceItem si : items) {
-			ServiceMethod sm = si.getMethod(lw.getByme());
+		for(UniqueServiceKeyJRso siKey : items) {
+			ServiceItemJRso si = this.srvMng.getServiceByKey(siKey.fullStringKey());
+			ServiceMethodJRso sm = si.getMethod(lw.getByme());
 			if(sm == null) {
 				continue;
 			}
 			
-			if(lw.getByType() == StatisConfig.BY_TYPE_SERVICE_INSTANCE_METHOD) {
+			if(lw.getByType() == StatisConfigJRso.BY_TYPE_SERVICE_INSTANCE_METHOD) {
 				if(!sm.getKey().getInstanceName().equals(lw.getByins())) {
 					continue;
 				}
@@ -388,7 +389,7 @@ public class StatisConfigManager {
 		if(!scListener.contains(l)) {
 			synchronized(this.configs) {
 				scListener.add(l);
-				for(StatisConfig sc : this.configs.values()) {
+				for(StatisConfigJRso sc : this.configs.values()) {
 					l.onEvent(IListener.ADD,sc);
 				}
 			}
@@ -407,7 +408,7 @@ public class StatisConfigManager {
 	
 	private Set<IStatisConfigListener> scListener = null;
 	
-	private void notifyStatisConfig(int event,StatisConfig sc) {
+	private void notifyStatisConfig(int event,StatisConfigJRso sc) {
 		if(scListener == null) {
 			return;
 		}
@@ -418,18 +419,18 @@ public class StatisConfigManager {
 	}
 
 	interface IStatisConfigListener extends IListener {
-		void onEvent(int event,StatisConfig sc);
+		void onEvent(int event,StatisConfigJRso sc);
 	}
 	
-	Set<StatisConfig> getConfigByType(int...types) {
+	Set<StatisConfigJRso> getConfigByType(int...types) {
 		
 		if(types == null || types.length == 0) {
 			throw new CommonException("Config types cannot be Null!");
 		}
 		
-		Set<StatisConfig> cfgs = new HashSet<>();
+		Set<StatisConfigJRso> cfgs = new HashSet<>();
 		synchronized(configs) {
-			for(StatisConfig sc : this.configs.values()) {
+			for(StatisConfigJRso sc : this.configs.values()) {
 				for(int t : types) {
 					if(sc.getByType() == t) {
 						cfgs.add(sc);
@@ -441,17 +442,17 @@ public class StatisConfigManager {
 		return cfgs;
 	}
 	
-	StatisConfig getConfigs(Integer cid) {
+	StatisConfigJRso getConfigs(Integer cid) {
 		return this.configs.get(cid);
 	}
 	
-	private void statisConfigAdd0(StatisConfig lw) {
+	private void statisConfigAdd0(StatisConfigJRso lw) {
 
-		if(StatisConfig.TO_TYPE_DB == lw.getToType()) {
+		if(StatisConfigJRso.TO_TYPE_DB == lw.getToType()) {
 			if(Utils.isEmpty(lw.getToParams())) {
-				lw.setToParams(StatisConfig.DEFAULT_DB);
+				lw.setToParams(StatisConfigJRso.DEFAULT_DB);
 			}
-		} else if(StatisConfig.TO_TYPE_FILE == lw.getToType()) {
+		} else if(StatisConfigJRso.TO_TYPE_FILE == lw.getToType()) {
 
 			File logFile = new File(this.logDir + lw.getId() + "_" + lw.getToParams());
 			if (!logFile.exists()) {
@@ -476,9 +477,9 @@ public class StatisConfigManager {
 		
 		String regex = "";
 		switch(lw.getByType()) {
-		case StatisConfig.BY_TYPE_SERVICE_METHOD:
-		case StatisConfig.BY_TYPE_SERVICE_INSTANCE_METHOD:
-		case StatisConfig.BY_TYPE_SERVICE_ACCOUNT_METHOD:
+		case StatisConfigJRso.BY_TYPE_SERVICE_METHOD:
+		case StatisConfigJRso.BY_TYPE_SERVICE_INSTANCE_METHOD:
+		case StatisConfigJRso.BY_TYPE_SERVICE_ACCOUNT_METHOD:
 			  regex = "^"+lw.getBysn()+"##";
 			 
 			  //服务名
@@ -521,7 +522,7 @@ public class StatisConfigManager {
 				regex += lw.getActName()+"##";
 			 }*/
 			 
-			 if(lw.getClientId()==Constants.NO_CLIENT_ID && lw.getCreatedBy() == Config.getAdminClientId()) {
+			 if(lw.getClientId()==Constants.NO_CLIENT_ID && lw.getCreatedBy() == Config.getClientId()) {
 				 regex += "[-]{0,1}\\d*";
 			 } else {
 				 regex += lw.getClientId();
@@ -532,12 +533,12 @@ public class StatisConfigManager {
 			Pattern pattern = Pattern.compile(regex);
 			lw.setPattern(pattern);
 			break;
-		case StatisConfig.BY_TYPE_INSTANCE:
+		case StatisConfigJRso.BY_TYPE_INSTANCE:
 			regex = lw.getByKey();
 			
 			regex += "[a-zA-Z\\_\\-]*\\d*##";
 			
-			if(lw.getClientId()==Constants.NO_CLIENT_ID && lw.getCreatedBy() == Config.getAdminClientId()) {
+			if(lw.getClientId()==Constants.NO_CLIENT_ID && lw.getCreatedBy() == Config.getClientId()) {
 				 regex += "[-]{0,1}\\d+";
 			 }else {
 				 regex += "" + lw.getClientId();
@@ -577,11 +578,11 @@ public class StatisConfigManager {
 		lw.setCounterTimeout(lw.getCounterTimeout()*1000);
 	}
 
-	public Set<StatisConfig> getInstanceConfigs(String instanceName) {
-		Set<StatisConfig> cfgs = new HashSet<>();
+	public Set<StatisConfigJRso> getInstanceConfigs(String instanceName) {
+		Set<StatisConfigJRso> cfgs = new HashSet<>();
 		synchronized(configs) {
-			for(StatisConfig sc : this.configs.values()) {
-				if(sc.getByType() == StatisConfig.BY_TYPE_INSTANCE && 
+			for(StatisConfigJRso sc : this.configs.values()) {
+				if(sc.getByType() == StatisConfigJRso.BY_TYPE_INSTANCE && 
 						instanceName.startsWith(sc.getByKey())) {
 					cfgs.add(sc);
 				}

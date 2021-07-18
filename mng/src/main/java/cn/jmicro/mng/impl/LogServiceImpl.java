@@ -25,31 +25,32 @@ import com.mongodb.client.MongoCursor;
 import com.mongodb.client.MongoDatabase;
 
 import cn.jmicro.api.JMicroContext;
-import cn.jmicro.api.Resp;
+import cn.jmicro.api.RespJRso;
 import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Inject;
 import cn.jmicro.api.annotation.SMethod;
 import cn.jmicro.api.annotation.Service;
-import cn.jmicro.api.gateway.ApiRequest;
-import cn.jmicro.api.gateway.ApiResponse;
+import cn.jmicro.api.gateway.ApiRequestJRso;
+import cn.jmicro.api.gateway.ApiResponseJRso;
 import cn.jmicro.api.mng.LogEntry;
-import cn.jmicro.api.mng.LogItem;
-import cn.jmicro.api.monitor.JMFlatLogItem;
-import cn.jmicro.api.monitor.JMLogItem;
+import cn.jmicro.api.mng.LogItemJRso;
+import cn.jmicro.api.monitor.JMFlatLogItemJRso;
+import cn.jmicro.api.monitor.JMLogItemJRso;
 import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.net.IReq;
 import cn.jmicro.api.net.IResp;
-import cn.jmicro.api.net.RpcRequest;
-import cn.jmicro.api.net.RpcResponse;
+import cn.jmicro.api.net.RpcRequestJRso;
+import cn.jmicro.api.net.RpcResponseJRso;
 import cn.jmicro.api.security.PermissionManager;
 import cn.jmicro.common.Utils;
 import cn.jmicro.common.util.JsonUtils;
 import cn.jmicro.common.util.StringUtils;
-import cn.jmicro.mng.api.ILogService;
+import cn.jmicro.ext.mongodb.MongodbBaseObjectStorage;
+import cn.jmicro.mng.api.ILogServiceJMSrv;
 
 @Component
 @Service(version="0.0.1",external=true,debugMode=1,showFront=false,logLevel=MC.LOG_NO)
-public class LogServiceImpl implements ILogService {
+public class LogServiceImpl implements ILogServiceJMSrv {
 
 	private static final int FLAT_LOG = 1;
 	
@@ -61,36 +62,32 @@ public class LogServiceImpl implements ILogService {
 	private RpcRequesetDeserializedTypeAdapter rpcTpeAdatper = new RpcRequesetDeserializedTypeAdapter();
 	private RpcResponseDeserializedTypeAdapter respTypeAdapter = new RpcResponseDeserializedTypeAdapter();
 	
-	private JsonWriterSettings settings = JsonWriterSettings.builder()
-	         .int64Converter((value, writer) -> writer.writeNumber(value.toString()))
-	         .build();
-	
 	@Override
 	@SMethod(perType=false,needLogin=true,maxSpeed=10,maxPacketSize=256)
-	public Resp<LogEntry> getByLinkId(Long linkId) {
-		 Resp<LogEntry> resp = new Resp<>();
+	public RespJRso<LogEntry> getByLinkId(Long linkId) {
+		 RespJRso<LogEntry> resp = new RespJRso<>();
 		 if(linkId == null || linkId <= 0) {
-			resp.setCode(Resp.CODE_FAIL);
+			resp.setCode(RespJRso.CODE_FAIL);
 			resp.setMsg("Invalid linkId: " + linkId);
 			return resp;
 		 }
-		 MongoCollection<Document> rpcLogColl = mongoDb.getCollection(JMLogItem.TABLE);
+		 MongoCollection<Document> rpcLogColl = mongoDb.getCollection(JMLogItemJRso.TABLE);
 		 Document match = new Document();
 		 match.put("linkId", linkId);
 		 
 		 if(!PermissionManager.isCurAdmin()) {
-			 match.put("clientId", JMicroContext.get().getAccount().getId());
+			 match.put("clientId", JMicroContext.get().getAccount().getClientId());
 		 }
 		
 		 Map<Long,LogEntry> logComsumerMap = new HashMap<>();
 		 
-		 Map<Long,List<JMLogItem>> logProviderMap = new HashMap<>();
+		 Map<Long,List<JMLogItemJRso>> logProviderMap = new HashMap<>();
 		 
 		 LogEntry root = null;
 		 
 		 FindIterable<Document>  rst = rpcLogColl.find(match);
 		 for(Document doc : rst) {
-			 JMLogItem mi = fromJson(doc.toJson(settings),JMLogItem.class);
+			 JMLogItemJRso mi = fromJson(doc.toJson(MongodbBaseObjectStorage.settings),JMLogItemJRso.class);
 			 if(mi.isProvider()) {
 				if(!logProviderMap.containsKey(mi.getReqId())) {
 					logProviderMap.put(mi.getReqId(), new ArrayList<>());
@@ -115,9 +112,9 @@ public class LogServiceImpl implements ILogService {
 		 
 		 if(root != null) {
 			 resp.setData(root);
-			 resp.setCode(Resp.CODE_SUCCESS);
+			 resp.setCode(RespJRso.CODE_SUCCESS);
 		 }else {
-			 resp.setCode(Resp.CODE_FAIL);
+			 resp.setCode(RespJRso.CODE_FAIL);
 			 resp.setMsg("The origin request item not found!");
 		 }
 		 
@@ -126,7 +123,7 @@ public class LogServiceImpl implements ILogService {
 
 	@Override
 	@SMethod(perType=false,needLogin=true,maxSpeed=10,maxPacketSize=4096)
-	public Resp<List<LogEntry>> query(Map<String, String> queryConditions, int pageSize, int curPage) {
+	public RespJRso<List<LogEntry>> query(Map<String, String> queryConditions, int pageSize, int curPage) {
 
 		Document qryMatch = this.getCondtions(queryConditions);
 		
@@ -154,11 +151,11 @@ public class LogServiceImpl implements ILogService {
 		aggregateList.add(skip);
 		aggregateList.add(limit);
 		
-		MongoCollection<Document> rpcLogColl = mongoDb.getCollection(JMLogItem.TABLE);
+		MongoCollection<Document> rpcLogColl = mongoDb.getCollection(JMLogItemJRso.TABLE);
 		AggregateIterable<Document> resultset = rpcLogColl.aggregate(aggregateList);
 		MongoCursor<Document> cursor = resultset.iterator();
 		
-		Resp<List<LogEntry>> resp = new Resp<>();
+		RespJRso<List<LogEntry>> resp = new RespJRso<>();
 		List<LogEntry> rl = new ArrayList<>();
 		resp.setData(rl);
 		
@@ -167,14 +164,14 @@ public class LogServiceImpl implements ILogService {
 				LogEntry le = new LogEntry();
 				rl.add(le);
 				Document log = cursor.next();
-				JMLogItem mi = fromJson(log.toJson(settings),JMLogItem.class);
+				JMLogItemJRso mi = fromJson(log.toJson(MongodbBaseObjectStorage.settings),JMLogItemJRso.class);
 				le.setItem(mi);
 				le.setId(mi.getReqId()+"");
 				if(mi.getLinkId() > 0) {
 					parseChild(rpcLogColl,le);
 				}
 			}
-			resp.setCode(Resp.CODE_SUCCESS);
+			resp.setCode(RespJRso.CODE_SUCCESS);
 		} finally {
 			cursor.close();
 		}
@@ -184,30 +181,30 @@ public class LogServiceImpl implements ILogService {
 	
 	@Override
 	@SMethod(perType=false,needLogin=true,maxSpeed=10,maxPacketSize=2048,logLevel=MC.LOG_NO)
-	public Resp<Long> count(Map<String, String> queryConditions) {
+	public RespJRso<Long> count(Map<String, String> queryConditions) {
 		Document match = this.getCondtions(queryConditions);
 		
 		match.put("reqId", new Document("$gt",0));//排除非RPC日志
 		match.put("nl", true);//链路起点
 		
-		MongoCollection<Document> rpcLogColl = mongoDb.getCollection(JMLogItem.TABLE);
-		Resp<Long> resp = new Resp<>();
+		MongoCollection<Document> rpcLogColl = mongoDb.getCollection(JMLogItemJRso.TABLE);
+		RespJRso<Long> resp = new RespJRso<>();
 		Long cnt = rpcLogColl.countDocuments(match);
 		resp.setData(cnt);
-		resp.setCode(Resp.CODE_SUCCESS);
+		resp.setCode(RespJRso.CODE_SUCCESS);
 		
 		return resp;
 	}
 	
 	@Override
 	@SMethod(perType=false,needLogin=true,maxSpeed=10,maxPacketSize=256)
-	public Resp<Map<String,Object>> queryDict() {
+	public RespJRso<Map<String,Object>> queryDict() {
 		
 		Map<String,Object> dists = new HashMap<>();
 		dists.put("level", MC.LogKey2Val);
 		dists.put("type", MC.MT_Key2Val);
 		
-		MongoCollection<Document> rpcLogColl = mongoDb.getCollection(JMLogItem.TABLE);
+		MongoCollection<Document> rpcLogColl = mongoDb.getCollection(JMLogItemJRso.TABLE);
 		
 		DistinctIterable<String> hostIte = rpcLogColl.distinct("remoteHost", String.class);
 		Set<String> host = new HashSet<>();
@@ -283,22 +280,22 @@ public class LogServiceImpl implements ILogService {
 		acts.toArray(actsArr);
 		dists.put("act", actsArr);
 		
-		Resp<Map<String,Object>> resp = new Resp<>();
+		RespJRso<Map<String,Object>> resp = new RespJRso<>();
 		resp.setData(dists);
-		resp.setCode(Resp.CODE_SUCCESS);
+		resp.setCode(RespJRso.CODE_SUCCESS);
 		
 		return resp;
 	}
 	
 	@Override
 	@SMethod(perType=false,needLogin=true,maxSpeed=10,maxPacketSize=2048)
-	public Resp<Integer> countLog(int showType,Map<String, String> queryConditions) {
+	public RespJRso<Integer> countLog(int showType,Map<String, String> queryConditions) {
 
 		if(showType == FLAT_LOG) {
 			return countFlatLog(queryConditions);
 		}
 		
-		Resp<Integer> resp = new Resp<>();
+		RespJRso<Integer> resp = new RespJRso<>();
 
 		Document qryMatch = this.getLogCondtions(queryConditions);
 		
@@ -322,24 +319,24 @@ public class LogServiceImpl implements ILogService {
 		
 		aggregateList.add(group);
 
-		MongoCollection<Document> rpcLogColl = mongoDb.getCollection(JMLogItem.TABLE);
+		MongoCollection<Document> rpcLogColl = mongoDb.getCollection(JMLogItemJRso.TABLE);
 		AggregateIterable<Document> resultset = rpcLogColl.aggregate(aggregateList);
 
 		Document log = resultset.first();
 		if(log != null) {
 			resp.setData(log.getInteger("total"));
-			resp.setCode(Resp.CODE_SUCCESS);
+			resp.setCode(RespJRso.CODE_SUCCESS);
 		}else {
-			resp.setCode(Resp.CODE_FAIL);
+			resp.setCode(RespJRso.CODE_FAIL);
 			resp.setMsg("No data to found!");
 		}
 	
 		return resp;
 	}
 	
-	private Resp<Integer> countFlatLog(Map<String, String> queryConditions) {
+	private RespJRso<Integer> countFlatLog(Map<String, String> queryConditions) {
 
-		Resp<Integer> resp = new Resp<>();
+		RespJRso<Integer> resp = new RespJRso<>();
 
 		Document qryMatch = this.getLogCondtions(queryConditions);
 		//qryMatch.put("items.desc", new Document("$ne",Constants.INVALID_LOG_DESC));
@@ -360,15 +357,15 @@ public class LogServiceImpl implements ILogService {
 		
 		aggregateList.add(new Document("$group", groupDoc));
 
-		MongoCollection<Document> rpcLogColl = mongoDb.getCollection(JMLogItem.TABLE);
+		MongoCollection<Document> rpcLogColl = mongoDb.getCollection(JMLogItemJRso.TABLE);
 		AggregateIterable<Document> resultset = rpcLogColl.aggregate(aggregateList);
 
 		Document log = resultset.first();
 		if(log != null) {
 			resp.setData(log.getInteger("total"));
-			resp.setCode(Resp.CODE_SUCCESS);
+			resp.setCode(RespJRso.CODE_SUCCESS);
 		}else {
-			resp.setCode(Resp.CODE_FAIL);
+			resp.setCode(RespJRso.CODE_FAIL);
 			resp.setMsg("No data to found!");
 		}
 	
@@ -378,7 +375,7 @@ public class LogServiceImpl implements ILogService {
 
 	@Override
 	@SMethod(perType=false,needLogin=true,maxSpeed=10,maxPacketSize=2048)
-	public Resp<List<JMLogItem>> queryLog(Map<String, String> queryConditions, int pageSize, int curPage) {
+	public RespJRso<List<JMLogItemJRso>> queryLog(Map<String, String> queryConditions, int pageSize, int curPage) {
 
 		Document qryMatch = this.getLogCondtions(queryConditions);
 		
@@ -402,12 +399,12 @@ public class LogServiceImpl implements ILogService {
 		aggregateList.add(skip);
 		aggregateList.add(limit);
 		
-		MongoCollection<Document> rpcLogColl = mongoDb.getCollection(JMLogItem.TABLE);
+		MongoCollection<Document> rpcLogColl = mongoDb.getCollection(JMLogItemJRso.TABLE);
 		AggregateIterable<Document> resultset = rpcLogColl.aggregate(aggregateList);
 		MongoCursor<Document> cursor = resultset.iterator();
 		
-		Resp<List<JMLogItem>> resp = new Resp<>();
-		List<JMLogItem> rl = new ArrayList<>();
+		RespJRso<List<JMLogItemJRso>> resp = new RespJRso<>();
+		List<JMLogItemJRso> rl = new ArrayList<>();
 		resp.setData(rl);
 		
 		try {
@@ -416,7 +413,7 @@ public class LogServiceImpl implements ILogService {
 				/*Document liDoc = log.get("items", Document.class);
 				LogItem li = JsonUtils.getIns().fromJson(liDoc.toJson(settings), LogItem.class);
 				log.remove("items");*/
-				JMLogItem mi = fromJson(log.toJson(settings),JMLogItem.class);
+				JMLogItemJRso mi = fromJson(log.toJson(MongodbBaseObjectStorage.settings),JMLogItemJRso.class);
 				//mi.setItems(null);
 				//li.setItem(mi);
 				if(mi.getItems() != null && !mi.getItems().isEmpty()) {
@@ -426,7 +423,7 @@ public class LogServiceImpl implements ILogService {
 				}
 				rl.add(mi);
 			}
-			resp.setCode(Resp.CODE_SUCCESS);
+			resp.setCode(RespJRso.CODE_SUCCESS);
 		} finally {
 			cursor.close();
 		}
@@ -437,7 +434,7 @@ public class LogServiceImpl implements ILogService {
 	
 	@Override
 	@SMethod(perType=false,needLogin=true,maxSpeed=10,maxPacketSize=2048)
-	public Resp<List<JMFlatLogItem>> queryFlatLog(Map<String, String> queryConditions, int pageSize, int curPage) {
+	public RespJRso<List<JMFlatLogItemJRso>> queryFlatLog(Map<String, String> queryConditions, int pageSize, int curPage) {
 
 		Document qryMatch = this.getLogCondtions(queryConditions);
 		//qryMatch.remove("createTime");
@@ -456,12 +453,12 @@ public class LogServiceImpl implements ILogService {
 		aggregateList.add(new Document("$skip", pageSize*curPage));
 		aggregateList.add(new Document("$limit", pageSize));
 		
-		MongoCollection<Document> rpcLogColl = mongoDb.getCollection(JMLogItem.TABLE);
+		MongoCollection<Document> rpcLogColl = mongoDb.getCollection(JMLogItemJRso.TABLE);
 		AggregateIterable<Document> resultset = rpcLogColl.aggregate(aggregateList);
 		MongoCursor<Document> cursor = resultset.iterator();
 		
-		Resp<List<JMFlatLogItem>> resp = new Resp<>();
-		List<JMFlatLogItem> rl = new ArrayList<>();
+		RespJRso<List<JMFlatLogItemJRso>> resp = new RespJRso<>();
+		List<JMFlatLogItemJRso> rl = new ArrayList<>();
 		resp.setData(rl);
 		
 		try {
@@ -470,10 +467,10 @@ public class LogServiceImpl implements ILogService {
 				/*Document liDoc = log.get("items", Document.class);
 				LogItem li = JsonUtils.getIns().fromJson(liDoc.toJson(settings), LogItem.class);
 				log.remove("items");*/
-				JMFlatLogItem mi = fromJson(log.toJson(settings),JMFlatLogItem.class);
+				JMFlatLogItemJRso mi = fromJson(log.toJson(MongodbBaseObjectStorage.settings),JMFlatLogItemJRso.class);
 				rl.add(mi);
 			}
-			resp.setCode(Resp.CODE_SUCCESS);
+			resp.setCode(RespJRso.CODE_SUCCESS);
 		} finally {
 			cursor.close();
 		}
@@ -521,7 +518,7 @@ public class LogServiceImpl implements ILogService {
 
 	//@Override
 	//@SMethod(perType=false,needLogin=true,maxSpeed=10,maxPacketSize=2048)
-	public Resp<List<LogItem>> queryLog1(Map<String, String> queryConditions, int pageSize, int curPage) {
+	public RespJRso<List<LogItemJRso>> queryLog1(Map<String, String> queryConditions, int pageSize, int curPage) {
 
 		Document qryMatch = this.getLogCondtions(queryConditions);
 		
@@ -545,26 +542,26 @@ public class LogServiceImpl implements ILogService {
 		aggregateList.add(skip);
 		aggregateList.add(limit);
 		
-		MongoCollection<Document> rpcLogColl = mongoDb.getCollection(JMLogItem.TABLE);
+		MongoCollection<Document> rpcLogColl = mongoDb.getCollection(JMLogItemJRso.TABLE);
 		AggregateIterable<Document> resultset = rpcLogColl.aggregate(aggregateList);
 		MongoCursor<Document> cursor = resultset.iterator();
 		
-		Resp<List<LogItem>> resp = new Resp<>();
-		List<LogItem> rl = new ArrayList<>();
+		RespJRso<List<LogItemJRso>> resp = new RespJRso<>();
+		List<LogItemJRso> rl = new ArrayList<>();
 		resp.setData(rl);
 		
 		try {
 			while(cursor.hasNext()) {
 				Document log = cursor.next();
 				Document liDoc = log.get("items", Document.class);
-				LogItem li = JsonUtils.getIns().fromJson(liDoc.toJson(settings), LogItem.class);
+				LogItemJRso li = JsonUtils.getIns().fromJson(liDoc.toJson(MongodbBaseObjectStorage.settings), LogItemJRso.class);
 				log.remove("items");
-				JMLogItem mi = fromJson(log.toJson(settings),JMLogItem.class);
+				JMLogItemJRso mi = fromJson(log.toJson(MongodbBaseObjectStorage.settings),JMLogItemJRso.class);
 				mi.setItems(null);
 				li.setItem(mi);
 				rl.add(li);
 			}
-			resp.setCode(Resp.CODE_SUCCESS);
+			resp.setCode(RespJRso.CODE_SUCCESS);
 		} finally {
 			cursor.close();
 		}
@@ -577,7 +574,7 @@ public class LogServiceImpl implements ILogService {
 		Document match = this.getCondtions(queryConditions);
 		
 		if(!PermissionManager.isCurAdmin()) {
-			 match.put("clientId", JMicroContext.get().getAccount().getId());
+			 match.put("clientId", JMicroContext.get().getAccount().getClientId());
 		 }
 		
 		//match.put("$where", "this.items.length>0");
@@ -615,7 +612,7 @@ public class LogServiceImpl implements ILogService {
 		Document match = new Document();
 		
 		 if(!PermissionManager.isCurAdmin()) {
-			 match.put("clientId", JMicroContext.get().getAccount().getId());
+			 match.put("clientId", JMicroContext.get().getAccount().getClientId());
 		 }
 		 
 		String key = "reqParentId";
@@ -784,7 +781,7 @@ public class LogServiceImpl implements ILogService {
 		 
 		 FindIterable<Document>  rst = rpcLogColl.find(match);
 		 for(Document doc : rst) {
-			 JMLogItem mi = fromJson(doc.toJson(settings),JMLogItem.class);
+			 JMLogItemJRso mi = fromJson(doc.toJson(MongodbBaseObjectStorage.settings),JMLogItemJRso.class);
 			 LogEntry le = new LogEntry(mi);
 			 le.setId(mi.getReqId()+"");
 			 logMap.put(mi.getReqId(), le);
@@ -834,11 +831,11 @@ public class LogServiceImpl implements ILogService {
 				}
 				jo.remove("args");*/
 				if(jo.has("impl") && jo.has("transport")) {
-					RpcRequest r = context.deserialize(json, RpcRequest.class);
+					RpcRequestJRso r = context.deserialize(json, RpcRequestJRso.class);
 					//r.setArgs(args);
 					return r;
 				}else {
-					ApiRequest ar = context.deserialize(json, ApiRequest.class);
+					ApiRequestJRso ar = context.deserialize(json, ApiRequestJRso.class);
 					//ar.setArgs(args);
 					return ar;
 				}
@@ -855,11 +852,11 @@ public class LogServiceImpl implements ILogService {
 			if(typeOfT == IResp.class) {
 				JsonObject jo = (JsonObject)json;
 				if(jo.has("id") && jo.has("reqId")) {
-					ApiResponse ar = context.deserialize(json, ApiResponse.class);
+					ApiResponseJRso ar = context.deserialize(json, ApiResponseJRso.class);
 					//ar.setArgs(args);
 					return ar;
 				} else {
-					RpcResponse r = context.deserialize(json, RpcResponse.class);
+					RpcResponseJRso r = context.deserialize(json, RpcResponseJRso.class);
 					//r.setArgs(args);
 					return r;
 				}

@@ -1,14 +1,14 @@
 
 export default  {
-    MessageCls : 'cn.jmicro.api.net.Message',
+    MessageCls : 'cn.jmicro.api.net.MessageJRso',
     IRequestCls : 'cn.jmicro.api.server.IRequest',
-    ServiceStatisCls : 'cn.jmicro.api.monitor.ServiceStatis',
+    ServiceStatisCls : 'cn.jmicro.api.monitor.ServiceStatisJRso',
     ISessionCls : 'cn.jmicro.api.net.ISession',
     Integer : 3,
     LOng : 4,
     String : 5,
     DEFAULT_NAMESPACE : 'defaultNamespace',
-    DEFAULT_VERSION : "0.0.0",
+    DEFAULT_VERSION : "0.0.1",
     MNG:'mng',
     NS_MNG : 'mng',
     NS_SECURITY : "security",

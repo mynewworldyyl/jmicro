@@ -21,10 +21,10 @@ import cn.jmicro.api.annotation.Reference;
 import cn.jmicro.api.async.AsyncFailResult;
 import cn.jmicro.api.client.IAsyncCallback;
 import cn.jmicro.api.config.Config;
-import cn.jmicro.api.executor.ExecutorConfig;
+import cn.jmicro.api.executor.ExecutorConfigJRso;
 import cn.jmicro.api.executor.ExecutorFactory;
 import cn.jmicro.api.idgenerator.ComponentIdServer;
-import cn.jmicro.api.internal.pubsub.genclient.IInternalSubRpc$JMAsyncClient;
+import cn.jmicro.api.internal.pubsub.genclient.IInternalSubRpcJMSrv$JMAsyncClient;
 import cn.jmicro.api.monitor.LG;
 import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.net.Message;
@@ -32,7 +32,7 @@ import cn.jmicro.api.objectfactory.ProxyObject;
 import cn.jmicro.api.persist.IObjectStorage;
 import cn.jmicro.api.profile.ProfileManager;
 import cn.jmicro.api.raft.IDataOperator;
-import cn.jmicro.api.security.ActInfo;
+import cn.jmicro.api.security.ActInfoJRso;
 import cn.jmicro.api.service.ServiceInvokeManager;
 import cn.jmicro.api.utils.TimeUtils;
 import cn.jmicro.common.Constants;
@@ -52,15 +52,15 @@ public class PubSubManager {
 	public static final String TABLE_PUBSUB_ITEMS = "t_pubsub_items";
 	
 	//生产者成功将消息放入消息队列,但并不意味着消息被消费者成功消费
-	public static final int PUB_OK = PSData.PUB_OK;
+	public static final int PUB_OK = PSDataJRso.PUB_OK;
 	//无消息服务可用,需要启动消息服务
-	public static final int PUB_SERVER_NOT_AVAILABALE = PSData.PUB_SERVER_NOT_AVAILABALE;
+	public static final int PUB_SERVER_NOT_AVAILABALE = PSDataJRso.PUB_SERVER_NOT_AVAILABALE;
 	//消息队列已经满了,客户端可以重发,或等待一会再重发
-	public static final int PUB_SERVER_DISCARD = PSData.PUB_SERVER_DISCARD;
+	public static final int PUB_SERVER_DISCARD = PSDataJRso.PUB_SERVER_DISCARD;
 	//消息服务线程队列已满,客户端可以重发,或等待一会再重发,可以考虑增加消息服务线程池大小,或增加消息服务
-	public static final int PUB_SERVER_BUSUY = PSData.PUB_SERVER_BUSUY;
+	public static final int PUB_SERVER_BUSUY = PSDataJRso.PUB_SERVER_BUSUY;
 	
-	public static final int PUB_TOPIC_INVALID= PSData.PUB_TOPIC_INVALID;
+	public static final int PUB_TOPIC_INVALID= PSDataJRso.PUB_TOPIC_INVALID;
 
 	private final static Logger logger = LoggerFactory.getLogger(PubSubManager.class);
 	
@@ -74,7 +74,7 @@ public class PubSubManager {
 	 * default pubsub server
 	 */
 	@Reference(namespace="*",version="0.0.1",required=false)
-	private IInternalSubRpc$JMAsyncClient defaultServer;
+	private IInternalSubRpcJMSrv$JMAsyncClient defaultServer;
 	
 	private ExecutorService executor = null;
 	
@@ -105,7 +105,7 @@ public class PubSubManager {
 	@Inject(required=false)
 	private IObjectStorage objStorage;
 	
-	private Map<String,List<PSData>> topicSubmitItems = new HashMap<>();
+	private Map<String,List<PSDataJRso>> topicSubmitItems = new HashMap<>();
 	
 	private Map<String,Long> topicLastSubmitTime = new HashMap<>();
 	
@@ -118,7 +118,7 @@ public class PubSubManager {
 	
 	public void ready() {
 		//logger.info("Init object :" +this.hashCode());
-		ExecutorConfig config = new ExecutorConfig();
+		ExecutorConfigJRso config = new ExecutorConfigJRso();
 		config.setMsMaxSize(60);
 		config.setTaskQueueSize(500);
 		config.setThreadNamePrefix("PubSubManager");
@@ -159,7 +159,7 @@ public class PubSubManager {
 			return PUB_SERVER_NOT_AVAILABALE;
 		}
 		
-		PSData item = new PSData();
+		PSDataJRso item = new PSDataJRso();
 		item.setTopic(topic);
 		item.setData(args);
 		item.setContext(itemContext);
@@ -174,7 +174,7 @@ public class PubSubManager {
 			return PUB_SERVER_NOT_AVAILABALE;
 		}
 		
-		PSData item = new PSData();
+		PSDataJRso item = new PSDataJRso();
 		item.setTopic(topic);
 		item.setData(content);
 		item.setContext(context);
@@ -189,7 +189,7 @@ public class PubSubManager {
 			return PUB_SERVER_NOT_AVAILABALE;
 		}
 		
-		PSData item = new PSData();
+		PSDataJRso item = new PSDataJRso();
 		item.setTopic(topic);
 		item.setData(content);
 		item.setContext(context);
@@ -198,13 +198,13 @@ public class PubSubManager {
 		return publish(item);
 	}
 	
-	public int publish(PSData[] items) {
+	public int publish(PSDataJRso[] items) {
 		
 		if(items == null || items.length == 0) {
 			if(LG.isLoggable(MC.LOG_DEBUG)) {
 				LG.log(MC.LOG_DEBUG, this.getClass(), "send null items");
 			}
-			return PSData.PUB_ITEM_IS_NULL;
+			return PSDataJRso.PUB_ITEM_IS_NULL;
 		}
 		
 		 if(!this.isPubsubEnable(1)) {
@@ -218,17 +218,17 @@ public class PubSubManager {
 		 
 		curItemCount.addAndGet(items.length);
 		 
-		ActInfo ai = JMicroContext.get().getAccount();
+		ActInfoJRso ai = JMicroContext.get().getAccount();
 		if(ai != null && pm.getVal(ai.getId(), PROFILE_PUBSUB, "needPersist",false, Boolean.class)) {
-			persist2Db(ai.getId(),items);
+			persist2Db(ai.getClientId(),items);
 		}
 		
 		synchronized (topicSubmitItems) {
-			for (PSData d : items) {
+			for (PSDataJRso d : items) {
 				if(ai != null) {
-					d.setSrcClientId(ai.getId());
+					d.setSrcClientId(ai.getClientId());
 				}
-				List<PSData> is = topicSubmitItems.get(d.getTopic());
+				List<PSDataJRso> is = topicSubmitItems.get(d.getTopic());
 				if (is == null) {
 					topicSubmitItems.put(d.getTopic(), is = new ArrayList<>());
 					topicLastSubmitTime.put(d.getTopic(), TimeUtils.getCurTime());
@@ -244,20 +244,20 @@ public class PubSubManager {
 		return PUB_OK;
 	}
 
-	public int publish(PSData item) {
+	public int publish(PSDataJRso item) {
 		
 		if(item == null) {
 			if(LG.isLoggable(MC.LOG_DEBUG)) {
-				LG.log(MC.LOG_DEBUG, this.getClass(),"return PUB_ITEM_IS_NULL=" + PSData.PUB_ITEM_IS_NULL);
+				LG.log(MC.LOG_DEBUG, this.getClass(),"return PUB_ITEM_IS_NULL=" + PSDataJRso.PUB_ITEM_IS_NULL);
 			}
-			return PSData.PUB_ITEM_IS_NULL;
+			return PSDataJRso.PUB_ITEM_IS_NULL;
 		}
 		
 		if(StringUtils.isEmpty(item.getTopic())) {
 			if(LG.isLoggable(MC.LOG_DEBUG)) {
-				LG.log(MC.LOG_DEBUG, this.getClass(),"return PUB_TOPIC_IS_NULL=" + PSData.PUB_TOPIC_IS_NULL);
+				LG.log(MC.LOG_DEBUG, this.getClass(),"return PUB_TOPIC_IS_NULL=" + PSDataJRso.PUB_TOPIC_IS_NULL);
 			}
-			return PSData.PUB_TOPIC_IS_NULL;
+			return PSDataJRso.PUB_TOPIC_IS_NULL;
 		}
 		
 		if(!this.isPubsubEnable(1)) {
@@ -269,16 +269,16 @@ public class PubSubManager {
 			 startChecker();
 		}
 		
-		ActInfo ai = JMicroContext.get().getAccount();
+		ActInfoJRso ai = JMicroContext.get().getAccount();
 		if(ai != null && item.isPersist()) {
 			if(pm.getVal(item.getSrcClientId(), PROFILE_PUBSUB, "needPersist",false, Boolean.class)) {
-				persit2Db(ai.getId(),item);
+				persit2Db(ai.getClientId(),item);
 			}
 		}
 		
 		curItemCount.incrementAndGet();
 		
-		List<PSData> items = topicSubmitItems.get(item.getTopic());
+		List<PSDataJRso> items = topicSubmitItems.get(item.getTopic());
 		
 		synchronized (topicSubmitItems) {
 			if (items == null) {
@@ -295,33 +295,33 @@ public class PubSubManager {
 		return PUB_OK;
 	}
 	
-	public void persit2Db(int clientId,PSData item) {
+	public void persit2Db(int clientId,PSDataJRso item) {
 		if(!item.isPersist()) {
 			return;
 		}
 		
 		if(item.getId() <= 0) {
-			item.setId(idGenerator.getIntId(PSData.class));
+			item.setId(idGenerator.getIntId(PSDataJRso.class));
 		}
 		item.setSrcClientId(clientId);
 		item.setPersist(true);
 		
 		if(objStorage != null) {
-			objStorage.save(TABLE_PUBSUB_ITEMS, item,PSData.class,true,true);
+			objStorage.save(TABLE_PUBSUB_ITEMS, item,PSDataJRso.class,true,true);
 		}
 	}
 	
-	public void persist2Db(int clientId, PSData[] items) {
+	public void persist2Db(int clientId, PSDataJRso[] items) {
 		
-		Set<PSData> set = null;
+		Set<PSDataJRso> set = null;
 		
-		for(PSData d : items) {
+		for(PSDataJRso d : items) {
 			if(!d.isPersist()) {
 				continue;
 			}
 			
 			if(d.getId() <= 0) {
-				d.setId(idGenerator.getIntId(PSData.class));
+				d.setId(idGenerator.getIntId(PSDataJRso.class));
 			}
 			d.setSrcClientId(clientId);
 			d.setPersist(true);
@@ -335,9 +335,9 @@ public class PubSubManager {
 		}
 		
 		if(objStorage != null && !set.isEmpty()) {
-			PSData[] pds = new PSData[set.size()];
+			PSDataJRso[] pds = new PSDataJRso[set.size()];
 			set.toArray(pds);
-			objStorage.save(TABLE_PUBSUB_ITEMS, pds,PSData.class,true,true);
+			objStorage.save(TABLE_PUBSUB_ITEMS, pds,PSDataJRso.class,true,true);
 		}
 	}
 
@@ -381,12 +381,12 @@ public class PubSubManager {
 				
 				long curTime = TimeUtils.getCurTime();
 				
-				Map<String,List<PSData>> ms = new HashMap<>();
+				Map<String,List<PSDataJRso>> ms = new HashMap<>();
 				
 				int cnt = 0;
 				
 				synchronized(topicSubmitItems) {
-					for(Map.Entry<String, List<PSData>> e : topicSubmitItems.entrySet()) {
+					for(Map.Entry<String, List<PSDataJRso>> e : topicSubmitItems.entrySet()) {
 						if(e.getValue().isEmpty()) {
 							continue;
 						}
@@ -403,20 +403,20 @@ public class PubSubManager {
 						
 						topicLastSubmitTime.put(e.getKey(), TimeUtils.getCurTime());
 						
-						List<PSData> sl = ms.get(e.getKey());
+						List<PSDataJRso> sl = ms.get(e.getKey());
 						if(!ms.containsKey(e.getKey())) {
 							ms.put(e.getKey(), sl = new ArrayList<>());
 						}
 						
-						List<PSData> l = e.getValue();
+						List<PSDataJRso> l = e.getValue();
 						
 						if(subCnt > batchSize) {
 							//每个主题第次最大提交50个数量
 							subCnt = batchSize;
 						}
 						
-						for(Iterator<PSData> ite = l.iterator(); subCnt > 0 && ite.hasNext(); subCnt--) {
-							PSData psd = ite.next();
+						for(Iterator<PSDataJRso> ite = l.iterator(); subCnt > 0 && ite.hasNext(); subCnt--) {
+							PSDataJRso psd = ite.next();
 							if (psd != null) {
 								cnt++;
 								sl.add(psd);
@@ -439,9 +439,9 @@ public class PubSubManager {
 	
 	private class Worker implements Runnable{
 		
-		private Map<String,List<PSData>> ms = null;
+		private Map<String,List<PSDataJRso>> ms = null;
 		
-		public Worker(Map<String,List<PSData>> ms) {
+		public Worker(Map<String,List<PSDataJRso>> ms) {
 			this.ms = ms;
 		}
 		
@@ -453,9 +453,9 @@ public class PubSubManager {
 			//发送消息RPC
 			JMicroContext.get().setBoolean(Constants.FROM_PUBSUB, true);
 				
-			for (Map.Entry<String, List<PSData>> e : ms.entrySet()) {
+			for (Map.Entry<String, List<PSDataJRso>> e : ms.entrySet()) {
 				try {
-					List<PSData> l = e.getValue();
+					List<PSDataJRso> l = e.getValue();
 					if (l == null || l.isEmpty()) {
 						continue;
 					}
@@ -464,17 +464,17 @@ public class PubSubManager {
 					//int result = 0;
 
 					if (size == 1) {
-						PSData psd = l.get(0);
+						PSDataJRso psd = l.get(0);
 						if (psd.getId() <= 0) {
 							// 为消息生成唯一ID
 							// 大于0时表示客户端已经预设置值,给客户端一些选择，比如业务需要提前知道消息ID做关联记录的场景
-							psd.setId(idGenerator.getIntId(PSData.class));
+							psd.setId(idGenerator.getIntId(PSDataJRso.class));
 						}
 						defaultServer.publishItemJMAsync(psd,null).then(new AsyncCallback(l));
 					} else if (size > 1) {
-						Long[] ids = idGenerator.getLongIds(PSData.class.getName(), l.size());
+						Long[] ids = idGenerator.getLongIds(PSDataJRso.class.getName(), l.size());
 
-						PSData[] pd = new PSData[l.size()];
+						PSDataJRso[] pd = new PSDataJRso[l.size()];
 						l.toArray(pd);
 
 						for (int i = 0; i < pd.length; i++) {
@@ -497,9 +497,9 @@ public class PubSubManager {
 	
 	private class AsyncCallback implements IAsyncCallback<Integer> {
 
-		private List<PSData> list;
+		private List<PSDataJRso> list;
 		
-		private AsyncCallback(List<PSData> l) {
+		private AsyncCallback(List<PSDataJRso> l) {
 			this.list = l;
 		}
 		
@@ -511,20 +511,20 @@ public class PubSubManager {
 			
 			if (PUB_SERVER_BUSUY == result) {
 				logger.warn("Got bussy result and sleep one seconds");
-				for(PSData d : list) {
+				for(PSDataJRso d : list) {
 					if(d.getFailCnt() < 3) {
 						//重发3次
 						d.setFailCnt(d.getFailCnt()+1);
 						if((result = publish(d)) != PUB_OK) {
 							doCallback(d,result);
 							if(objStorage != null ) {
-								objStorage.updateOrSaveById(TABLE_PUBSUB_ITEMS,d,PSData.class,IObjectStorage._ID,true);
+								objStorage.updateOrSaveById(TABLE_PUBSUB_ITEMS,d,PSDataJRso.class,IObjectStorage._ID,true);
 							}
 						}
 					} else {
 						
 						if(objStorage != null ) {
-							objStorage.updateOrSaveById(TABLE_PUBSUB_ITEMS,d,PSData.class,IObjectStorage.ID,true);
+							objStorage.updateOrSaveById(TABLE_PUBSUB_ITEMS,d,PSDataJRso.class,IObjectStorage.ID,true);
 						}
 						
 						if(d.getLocalCallback() != null) {
@@ -540,10 +540,10 @@ public class PubSubManager {
 			} else if (PubSubManager.PUB_SERVER_NOT_AVAILABALE == result
 					|| PubSubManager.PUB_SERVER_DISCARD == result
 					|| PubSubManager.PUB_TOPIC_INVALID == result) {
-				for(PSData d : list) {
+				for(PSDataJRso d : list) {
 					
 					if(objStorage != null ) {
-						objStorage.updateOrSaveById(TABLE_PUBSUB_ITEMS,d,PSData.class,IObjectStorage._ID,true);
+						objStorage.updateOrSaveById(TABLE_PUBSUB_ITEMS,d,PSDataJRso.class,IObjectStorage._ID,true);
 					}
 					
 					if(d.getLocalCallback() != null) {
@@ -559,19 +559,19 @@ public class PubSubManager {
 		}
 	}
 	
-	public void doCallback(PSData d,int cbRst) {
+	public void doCallback(PSDataJRso d,int cbRst) {
 
 		if(StringUtils.isNotEmpty(d.getCallback())) {
-			if(Message.is(d.getFlag(), PSData.FLAG_CALLBACK_METHOD)) {
+			if(Message.is(d.getFlag(), PSDataJRso.FLAG_CALLBACK_METHOD)) {
 				siManager.call(d.getCallback(), new Object[] {cbRst, d.getId(), d.getContext()})
 				.then((rst,f,cxt)->{
 					if(f != null) {
 						logger.error(f.toString());
 					}
 				});
-			} else if(Message.is(d.getFlag(), PSData.FLAG_CALLBACK_TOPIC)) {
+			} else if(Message.is(d.getFlag(), PSDataJRso.FLAG_CALLBACK_TOPIC)) {
 				if(cbRst != PUB_SERVER_BUSUY &&  cbRst != PUB_SERVER_NOT_AVAILABALE && cbRst != PUB_SERVER_DISCARD) {
-					this.publish(d.getCallback(), new Object[] {cbRst, d.getId()}, PSData.FLAG_DEFALUT,  d.getContext());
+					this.publish(d.getCallback(), new Object[] {cbRst, d.getId()}, PSDataJRso.FLAG_DEFALUT,  d.getContext());
 				}else {
 					logger.error("Pubsub Server is disable now:" + JsonUtils.getIns().toJson(d));
 				}

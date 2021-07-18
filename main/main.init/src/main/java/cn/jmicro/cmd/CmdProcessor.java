@@ -12,7 +12,7 @@ import cn.jmicro.api.config.Config;
 import cn.jmicro.api.idgenerator.ComponentIdServer;
 import cn.jmicro.api.raft.IDataOperator;
 import cn.jmicro.api.security.AccountManager;
-import cn.jmicro.api.security.ActInfo;
+import cn.jmicro.api.security.ActInfoJRso;
 import cn.jmicro.common.util.JsonUtils;
 import cn.jmicro.common.util.StringUtils;
 
@@ -187,7 +187,7 @@ public class CmdProcessor {
 		
 		Integer hCode= Integer.parseInt(permission);
 		
-		ActInfo ai = this.am.getAccountFromZK(actName);
+		ActInfoJRso ai = this.am.getAccountFromZK(actName);
 		if(ai == null) {
 			c.setResult("Account with name " + actName +" not found!");
 			c.setSuccess(false);

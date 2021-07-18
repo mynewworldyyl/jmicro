@@ -12,6 +12,7 @@
                     <td>{{c.statuCode}}</td> <td>{{c.mobile}}</td> <td>{{c.email}}</td>
                     <td>{{c.loginNum}}</td><td>{{c.lastLoginTime | formatDate(2)}}</td>
                     <td>
+                           <a v-if="c.statuCode==2" @click="openRoleInfoDrawer(c)">{{"Role"|i18n}}</a>
                         &nbsp;<a v-if="c.statuCode==2" @click="openActInfoDrawer(c)">{{"Permission"|i18n}}</a> &nbsp;&nbsp;&nbsp;&nbsp;
                           <a v-if="c.statuCode == 4" @click="changeAccountStatus(c)">{{"Unfreeze"|i18n}}</a>
                           <a v-if="c.statuCode == 2" @click="changeAccountStatus(c)">{{"Freeze"|i18n}}</a>
@@ -38,9 +39,8 @@
             </div>
 
             <div style="position:relative;height:auto;margin-top:10px;">
-                <Tree v-if="curAct && curAct.permissionParseEntires" :data="curAct.permissionParseEntires " class="actPermissionTree"></Tree>
+                <Tree v-if="role && role.permissionParseEntires" :data="role.permissionParseEntires " class="actPermissionTree"></Tree>
             </div>
-
         </Drawer>
 
         <Drawer ref="permissionListDrawer"  v-model="permissionListDrawer.drawerStatus" :closable="false" placement="right" :transfer="true"
@@ -53,6 +53,27 @@
             </div>
         </Drawer>
 
+        <Drawer ref="roleInfoDrawer"  v-model="roleInfoDrawer.drawerStatus" :closable="false" placement="right" :transfer="true"
+                :draggable="true" :scrollable="true" width="80">
+            <div>
+                <a v-if="isLogin" @click="doUpdateActRole()">Confirm</a>
+            </div>
+            <div>
+            ` <Transfer v-if="role"
+                        :titles="['可选值','已选值']"
+                    :data="allRoleList"
+                    :target-keys="role.roles"
+                    :render-format="getRoleLabel"
+                    :operations="['Delete','Add']"
+                    filterable
+                    @on-change="roleSelect">
+               <!-- <div :style="{float: 'right', margin: '5px'}">
+                    <Button size="small" @click="reloadRoleList">Refresh</Button>
+                </div>-->
+            </Transfer>
+            </div>
+        </Drawer>
+
     </div>
 </template>
 
@@ -62,6 +83,7 @@
     import rpc from "@/rpc/rpcbase"
     import act from "@/rpcservice/act"
     import cons from "@/rpc/constants"
+    import c from "./c"
 
     const cid = 'account';
 
@@ -82,9 +104,18 @@
                 srcPermissions:[],
                 curActParsedPermissions:[],
 
-                curAct : null,
+                role : null,
+                addRoles:[],
+                delRoles:[],
+
+                allRoleList:[],
 
                 actInfoDrawer: {
+                    drawerStatus : false,
+                    drawerBtnStyle : {left:'0px',zindex:1000},
+                },
+
+                roleInfoDrawer: {
                     drawerStatus : false,
                     drawerBtnStyle : {left:'0px',zindex:1000},
                 },
@@ -101,10 +132,49 @@
 
         methods: {
 
-            callMethod1() {
+            getRoleLabel(r) {
+                return r.label;
             },
 
-            callMethod2() {
+            roleSelect(newTargetKeys, direction, moveKeys) {
+               if(direction==='right') {
+                   //增加
+                   for(let e of moveKeys) {
+                       if(!this.role.roles.includes(e)) {
+                           this.role.roles.push(e);
+                       }
+
+                       if(!this.addRoles.includes(e)) {
+                           this.addRoles.push(e);
+                       }
+
+                       let idx = this.delRoles.indexOf(e);
+                       if(idx >=0) {
+                           this.delRoles.splice(idx,1);
+                       }
+                   }
+               } else {
+                   //删除
+                   for(let e of moveKeys) {
+                       let idx = this.role.roles.indexOf(e);
+                       if(idx >= 0) {
+                           this.role.roles.splice(idx,1);
+                       }
+
+                       idx = this.addRoles.indexOf(e);
+                       if(idx >= 0) {
+                           this.addRoles.splice(idx,1);
+                       }
+
+                       if( !this.delRoles.includes(e)) {
+                           this.delRoles.push(e);
+                       }
+                   }
+               }
+            },
+
+            reloadRoleList() {
+
             },
 
             resendActiveEmail(c) {
@@ -122,13 +192,68 @@
 
             changeAccountStatus(act) {
                 let self = this;
-                act.changeAccountStatus(act.actName).then((resp) => {
+                act.changeAccountStatus(act.id).then((resp) => {
                     if (resp.code == 0) {
                         self.refresh();
                     } else {
                         self.$Message.success(resp.msg);
                     }
                 }).catch((err) => {
+                    window.console.log(err);
+                });
+            },
+
+            openRoleInfoDrawer(mi) {
+                this.role = mi;
+                if(this.allRoleList && this.allRoleList.length > 0) {
+                    this.roleInfoDrawer.drawerStatus = true;
+                } else {
+                    let self = this;
+                    rpc.callRpcWithParams(act.sn, act.ns, act.v, 'getAllRoleList', [])
+                        .then((resp) => {
+                            if (resp.code == 0 && resp.total > 0) {
+                                this.allRoleList = resp.data.map((item)=>{
+                                    return {key:item.roleId,label:item.name}
+                                })
+                            } else {
+                                self.$Message.success(resp.msg);
+                            }
+                            this.roleInfoDrawer.drawerStatus = true;
+                        }).catch((err) => {
+                            window.console.log(err);
+                    });
+
+                    act.getPermissionsByActId(this.role.id).then((resp)=>{
+                        if(resp.code == 0 && resp.data) {
+                            self.role.permissionEntires = resp.data;
+                            if(self.role.permissionEntires) {
+                                self.parseActPermissionData();
+                                if(!self.role.permissionParseEntires || self.role.permissionParseEntires.length == 0) {
+                                    self.$Message.success('Parse act: '+self.role.actName+' permission data error: ' + JSON.stringify(resp.data));
+                                }
+                            }
+                            self.roleInfoDrawer.drawerStatus = true;
+                        } else {
+                            self.$Message.success(resp.msg);
+                        }
+                    }).catch((err)=>{
+                        window.console.log(err);
+                    });
+                }
+            },
+
+            doUpdateActRole(){
+                let self = this;
+                rpc.callRpcWithParams(act.sn, act.ns, act.v, 'updateActRole',
+                    [this.role.id, this.addRoles, this.delRoles])
+                    .then((resp) => {
+                        if (resp.code == 0) {
+                            self.roleInfoDrawer.drawerStatus = false;
+                            self.role = {};
+                        } else {
+                            self.$Message.success(resp.msg);
+                        }
+                    }).catch((err) => {
                     window.console.log(err);
                 });
             },
@@ -145,11 +270,11 @@
                 }
 
                 let adds = [];
-                if (this.curAct.pers) {
+                if (this.role.pers) {
                     for (let i = 0; i < perms.length; i++) {
                         let f = false;
-                        for (let j = 0; j < this.curAct.pers.length; j++) {
-                            if (perms[i] == this.curAct.pers[j]) {
+                        for (let j = 0; j < this.role.pers.length; j++) {
+                            if (perms[i] == this.role.pers[j]) {
                                 f = true;
                                 break;
                             }
@@ -163,34 +288,34 @@
                 }
 
                 let dels = [];
-                if (this.curAct.pers) {
-                    for (let i = 0; i < this.curAct.pers.length; i++) {
+                if (this.role.pers) {
+                    for (let i = 0; i < this.role.pers.length; i++) {
                         let f = false;
                         for (let j = 0; j < perms.length; j++) {
-                            if (perms[j] == this.curAct.pers[i]) {
+                            if (perms[j] == this.role.pers[i]) {
                                 f = true;
                                 break;
                             }
                         }
 
                         if (!f) {
-                            dels.push(this.curAct.pers[i]);
+                            dels.push(this.role.pers[i]);
                         }
                     }
                 }
 
                 if (adds.length > 0 || dels.length > 0) {
                     let self = this;
-                    let sn = 'cn.jmicro.security.api.IServiceMethodListService';
+                    let sn = 'cn.jmicro.security.api.IServiceMethodListServiceJMSrv';
                     let ns = cons.NS_SECURITY;
                     let v = '0.0.1';
                     rpc.callRpcWithParams(sn, ns, v, 'updateActPermissions',
-                        [this.curAct.actName, adds, dels])
+                        [this.role.id, adds, dels])
                         .then((resp) => {
                             if (resp.code == 0) {
-                                self.curAct.pers = perms;
-                                self.curAct.permissionParseEntires = [];
-                                self.openActInfoDrawer(self.curAct);
+                                self.role.pers = perms;
+                                self.role.permissionParseEntires = [];
+                                self.openActInfoDrawer(self.role);
                             } else {
                                 self.$Message.success(resp.msg);
                             }
@@ -228,19 +353,19 @@
             },
 
             openActInfoDrawer(mi) {
-                this.curAct = mi;
+                this.role = mi;
 
-                if(this.curAct.permissionParseEntires && this.curAct.permissionParseEntires.length > 0) {
+                if(this.role.permissionParseEntires && this.role.permissionParseEntires.length > 0) {
                     this.actInfoDrawer.drawerStatus = true;
                 } else {
                     let self = this;
-                    act.getPermissionsByActName(this.curAct.actName).then((resp)=>{
+                    act.getPermissionsByActId(this.role.id).then((resp)=>{
                         if(resp.code == 0 && resp.data) {
-                            self.curAct.permissionEntires = resp.data;
-                            if(self.curAct.permissionEntires) {
+                            self.role.permissionEntires = resp.data;
+                            if(self.role.permissionEntires) {
                                 self.parseActPermissionData();
-                                if(!self.curAct.permissionParseEntires || self.curAct.permissionParseEntires.length == 0) {
-                                    self.$Message.success('Parse act '+self.curAct.actName+'permission data error: ' + resp.data);
+                                if(!self.role.permissionParseEntires || self.role.permissionParseEntires.length == 0) {
+                                    self.$Message.success('Parse act: '+self.role.actName+' permission data error: ' + JSON.stringify(resp.data));
                                 }
                             }
                             self.actInfoDrawer.drawerStatus = true;
@@ -263,85 +388,11 @@
             },
 
             parseActPermissionData() {
-                let pl = [];
-                if(!this.curAct.pers) {
-                    this.curAct.pers= [];
-                }
-                for(let modelKey in this.curAct.permissionEntires ) {
-                    let srcPs = this.curAct.permissionEntires[modelKey];
-                    if(!srcPs || srcPs.length == 0) {
-                        continue;
-                    }
-
-                    let children = [];
-                    pl.push({ title: modelKey, children:children});
-
-                    for(let i = 0; i < srcPs.length; i++) {
-                        let sp = srcPs[i];
-                        this.curAct.pers.push(sp.haCode);
-                        let e = {
-                            title : sp.label,
-                            expanded : true,
-                            srcData : sp,
-                            render: (h) => {
-                                return h('span',[
-                                    h('span',{
-                                        style:{ marginLeft: '10px' }
-                                    },sp.label)
-
-                                ]);
-                            }
-                        }
-                        children.push(e);
-                    }
-                }
-                this.curAct.permissionParseEntires = pl;
-                this.curActParsedPermissions =  pl;
+                this.curActParsedPermissions =  c.parseActPermissionData(this.role);
             },
 
             parsePermissionData() {
-                let pl = [];
-                let self = this;
-                for(let modelKey in self.srcPermissions) {
-                    let srcPs = self.srcPermissions[modelKey];
-                    if(!srcPs || srcPs.length == 0) {
-                        continue;
-                    }
-
-                    let children = [];
-                    pl.push({ title: modelKey, children:children});
-
-                    let isCheck = (haCode) => {
-                        if(self.curAct.pers) {
-                            for(let i = 0; i < self.curAct.pers.length; i++) {
-                                if(haCode == self.curAct.pers[i]) {
-                                    return true;
-                                }
-                            }
-                        }
-                        return false;
-                    }
-
-                    for(let i = 0; i < srcPs.length; i++) {
-                        let sp = srcPs[i];
-                        let e = {
-                            title: sp.label,
-                            srcData : sp,
-                            expand: true,
-                            checked: isCheck(sp.haCode),
-                            render: (h/*,params*/) => {
-                                return h('span',[
-                                    h('span',{
-                                        style:{ marginLeft: '10px' }
-                                    },sp.label)
-
-                                ]);
-                            }
-                        }
-                        children.push(e);
-                    }
-                }
-                return pl;
+                return c.parsePermissionData(this);
             },
 
             pageSizeChange(pageSize){

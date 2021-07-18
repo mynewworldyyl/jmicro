@@ -24,16 +24,16 @@ import org.slf4j.LoggerFactory;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 
-import cn.jmicro.api.CfgMetadata;
+import cn.jmicro.api.CfgMetadataJRso;
 import cn.jmicro.api.IListener;
 import cn.jmicro.api.JMicro;
-import cn.jmicro.api.Resp;
+import cn.jmicro.api.RespJRso;
 import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Inject;
 import cn.jmicro.api.annotation.Reference;
 import cn.jmicro.api.async.IPromise;
-import cn.jmicro.api.choreography.ProcessInfo;
-import cn.jmicro.api.email.genclient.IEmailSender$JMAsyncClient;
+import cn.jmicro.api.choreography.ProcessInfoJRso;
+import cn.jmicro.api.email.genclient.IEmailSenderJMSrv$JMAsyncClient;
 import cn.jmicro.api.exp.Exp;
 import cn.jmicro.api.exp.ExpUtils;
 import cn.jmicro.api.idgenerator.ComponentIdServer;
@@ -41,19 +41,19 @@ import cn.jmicro.api.internal.async.PromiseImpl;
 import cn.jmicro.api.mng.ProcessInstanceManager;
 import cn.jmicro.api.monitor.LG;
 import cn.jmicro.api.monitor.MC;
-import cn.jmicro.api.monitor.ResourceData;
-import cn.jmicro.api.monitor.ResourceMonitorConfig;
-import cn.jmicro.api.monitor.StatisConfig;
-import cn.jmicro.api.monitor.genclient.IResourceService$JMAsyncClient;
+import cn.jmicro.api.monitor.ResourceDataJRso;
+import cn.jmicro.api.monitor.ResourceMonitorConfigJRso;
+import cn.jmicro.api.monitor.StatisConfigJRso;
+import cn.jmicro.api.monitor.genclient.IResourceServiceJMSrv$JMAsyncClient;
 import cn.jmicro.api.objectfactory.AbstractClientServiceProxyHolder;
 import cn.jmicro.api.objectfactory.IObjectFactory;
-import cn.jmicro.api.pubsub.PSData;
+import cn.jmicro.api.pubsub.PSDataJRso;
 import cn.jmicro.api.pubsub.PubSubManager;
 import cn.jmicro.api.raft.IDataOperator;
 import cn.jmicro.api.raft.RaftNodeDataListener;
 import cn.jmicro.api.registry.IRegistry;
-import cn.jmicro.api.registry.ServiceItem;
-import cn.jmicro.api.registry.UniqueServiceKey;
+import cn.jmicro.api.registry.ServiceItemJRso;
+import cn.jmicro.api.registry.UniqueServiceKeyJRso;
 import cn.jmicro.api.service.ServiceInvokeManager;
 import cn.jmicro.api.service.ServiceManager;
 import cn.jmicro.api.timer.TimerTicker;
@@ -82,20 +82,20 @@ public class ResourceMonitorServer{
 	private ComponentIdServer idGenerator;
 	
 	@Reference
-	private IEmailSender$JMAsyncClient mailSender;
+	private IEmailSenderJMSrv$JMAsyncClient mailSender;
 	
 	@Reference(namespace="*", version="*", type="ins",required=false,changeListener="resourceServiceChange")
-	private Set<IResourceService$JMAsyncClient> resourceServices = Collections.synchronizedSet(new HashSet<>());
+	private Set<IResourceServiceJMSrv$JMAsyncClient> resourceServices = Collections.synchronizedSet(new HashSet<>());
 	
-	private Set<IResourceService$JMAsyncClient> adds = new HashSet<>();
+	private Set<IResourceServiceJMSrv$JMAsyncClient> adds = new HashSet<>();
 	
-	private Set<IResourceService$JMAsyncClient> dels = new HashSet<>();
+	private Set<IResourceServiceJMSrv$JMAsyncClient> dels = new HashSet<>();
 	
 	//private Map<String,Set<CfgMetadata>> resourceMetadatas = new ConcurrentHashMap<>();
 	
 	private Map<String,Reg> srv2Regs = new ConcurrentHashMap<>();
 	
-	private RaftNodeDataListener<ResourceMonitorConfig> configListener = null;
+	private RaftNodeDataListener<ResourceMonitorConfigJRso> configListener = null;
 	
 	@Inject
 	private IRegistry reg;
@@ -126,12 +126,12 @@ public class ResourceMonitorServer{
 			d.mkdirs();
 		}
 		
-		if(!op.exist(ResourceMonitorConfig.RES_MONITOR_CONFIG_ROOT)) {
-			op.createNodeOrSetData(ResourceMonitorConfig.RES_MONITOR_CONFIG_ROOT, "", IDataOperator.PERSISTENT);
+		if(!op.exist(ResourceMonitorConfigJRso.RES_MONITOR_CONFIG_ROOT)) {
+			op.createNodeOrSetData(ResourceMonitorConfigJRso.RES_MONITOR_CONFIG_ROOT, "", IDataOperator.PERSISTENT);
 		}
 		
-		configListener = new RaftNodeDataListener<>(op,ResourceMonitorConfig.RES_MONITOR_CONFIG_ROOT,
-				ResourceMonitorConfig.class,false);
+		configListener = new RaftNodeDataListener<>(op,ResourceMonitorConfigJRso.RES_MONITOR_CONFIG_ROOT,
+				ResourceMonitorConfigJRso.class,false);
 		
 		configListener.addListener((type,node,pi)->{
 			notifyConfigEvent(type,Integer.parseInt(node),pi);
@@ -189,7 +189,7 @@ public class ResourceMonitorServer{
 			
 			boolean con = false;
 			long curTime = TimeUtils.getCurTime();
-			for(ResourceMonitorConfig cfg : r.configs.values()) {
+			for(ResourceMonitorConfigJRso cfg : r.configs.values()) {
 				if(curTime - cfg.getLastNotifyTime() > cfg.getT()) {
 					con = true;
 					break;
@@ -203,7 +203,7 @@ public class ResourceMonitorServer{
 			Set<String> resNames = new HashSet<>();
 			Map<String,String> expMap = new HashMap<>();
 			
-			for(ResourceMonitorConfig cfg : r.configs.values()) {
+			for(ResourceMonitorConfigJRso cfg : r.configs.values()) {
 				resNames.add(cfg.getResName());
 				if(StringUtils.isNotEmpty(cfg.getExpStr())) {
 					expMap.put(cfg.getResName(), cfg.getExpStr());
@@ -216,12 +216,12 @@ public class ResourceMonitorServer{
 				r.resSrv.getResourceJMAsync(resNames,new HashMap<>(),expMap,r)
 				.success((result,reg)->{
 					Reg rr = (Reg)reg;
-					notifyResourceMonitorResult(rr,(List<ResourceData>)result);
+					notifyResourceMonitorResult(rr,(List<ResourceDataJRso>)result);
 					r.lastCheckTime = TimeUtils.getCurTime();
 					rr.running = false;
 				}).fail((code,msg,reg)->{
 					Reg rr = (Reg)reg;
-					logger.error("code: " + code + ", msg: " + msg +",srv: "+ r.resSrv.getItem().getKey().toKey(true, true, true));
+					logger.error("code: " + code + ", msg: " + msg +",srv: "+ r.resSrv.getItem().getKey().fullStringKey());
 					rr.running = false;
 					rr.lastCheckTime = TimeUtils.getCurTime();
 				});
@@ -233,22 +233,22 @@ public class ResourceMonitorServer{
 		}
 	}
 
-	private void notifyResourceMonitorResult(Reg rr, List<ResourceData> result) {
+	private void notifyResourceMonitorResult(Reg rr, List<ResourceDataJRso> result) {
 		
 		Set<Integer> cids = new HashSet<>();
 		cids.addAll(rr.configs.keySet());
 		
-		Map<String,ResourceData> rdsMap = new HashMap<>();
-		for(ResourceData rd : result) {
+		Map<String,ResourceDataJRso> rdsMap = new HashMap<>();
+		for(ResourceDataJRso rd : result) {
 			rdsMap.put(rd.getResName(), rd);
 		}
 		
 		for(Integer cid : cids) {
 			//每一个Config只对一种资源感兴趣
-			ResourceMonitorConfig cfg = rr.configs.get(cid);
+			ResourceMonitorConfigJRso cfg = rr.configs.get(cid);
 			if(cfg == null) continue;
 			
-			ResourceData rd = rdsMap.get(cfg.getResName());
+			ResourceDataJRso rd = rdsMap.get(cfg.getResName());
 			if(rd == null) continue;
 			
 			if(TimeUtils.getCurTime() - cfg.getLastNotifyTime() < cfg.getT()) {
@@ -268,36 +268,36 @@ public class ResourceMonitorServer{
 			
 			cfg.setLastNotifyTime(TimeUtils.getCurTime());
 			switch(cfg.getToType()) {
-			case StatisConfig.TO_TYPE_SERVICE_METHOD:
+			case StatisConfigJRso.TO_TYPE_SERVICE_METHOD:
 				this.invokeMng.call(cfg.getToSn(),cfg.getToNs(),cfg.getToVer(),
-						cfg.getToMt(), IPromise.class, new Class[]{ResourceData.class}, new Object[]{rd})
+						cfg.getToMt(), IPromise.class, new Class[]{ResourceDataJRso.class}, new Object[]{rd})
 				.fail((code,msg,cxt)->{
 					logger.error("Notify fail: " + cfg.getToSn() +"##"+cfg.getToNs() +"##" + cfg.getToVer()+"##"+ cfg.getToMt());
 				});
 				break;
-			case StatisConfig.TO_TYPE_CONSOLE:
+			case StatisConfigJRso.TO_TYPE_CONSOLE:
 				logger.info(JsonUtils.getIns().toJson(rd));
 				break;
-			case StatisConfig.TO_TYPE_MESSAGE:
-				PSData pd = new PSData();
+			case StatisConfigJRso.TO_TYPE_MESSAGE:
+				PSDataJRso pd = new PSDataJRso();
 				pd.setData(rd);
 				pd.setTopic(cfg.getToParams());
 				pd.setPersist(false);
-				pd.setId(idGenerator.getIntId(PSData.class));
+				pd.setId(idGenerator.getIntId(PSDataJRso.class));
 				this.pubsubMng.publish(pd);
 				break;
-			case StatisConfig.TO_TYPE_DB:
+			case StatisConfigJRso.TO_TYPE_DB:
 				rd.setTag(cfg.getExtParams());
 				MongoCollection<Document> coll = mongoDb.getCollection(cfg.getToParams());
 				coll.insertOne(Document.parse(JsonUtils.getIns().toJson(rd)));
 				break;
-			case StatisConfig.TO_TYPE_MONITOR_LOG:
+			case StatisConfigJRso.TO_TYPE_MONITOR_LOG:
 				rd.setTag(cfg.getToParams());
 				LG.log(MC.LOG_INFO, cfg.getToParams(), JsonUtils.getIns().toJson(rd));
 				break;
-			case StatisConfig.TO_TYPE_EMAIL:
+			case StatisConfigJRso.TO_TYPE_EMAIL:
 				if(mailSender != null) {
-					mailSender.sendJMAsync(cfg.getToParams(),"", cfg.getExtParams(),  
+					mailSender.sendJMAsync(cfg.getToParams(), cfg.getExtParams(),  
 							JsonUtils.getIns().toJson(rd), cfg)
 					.fail((code,msg,cxt)->{
 						logger.error("code:" + code+", msg: " + msg);
@@ -306,7 +306,7 @@ public class ResourceMonitorServer{
 					logger.error("Email sender not found!");
 				}
 				break;
-			case StatisConfig.TO_TYPE_FILE:
+			case StatisConfigJRso.TO_TYPE_FILE:
 				try {
 					cfg.getBw().write(JsonUtils.getIns().toJson(rd)+"\n");
 				} catch (IOException e) {
@@ -318,7 +318,7 @@ public class ResourceMonitorServer{
 	}
 
 	@SuppressWarnings("unchecked")
-	private ResourceData filterByExp(Exp exp, ResourceData rd) {
+	private ResourceDataJRso filterByExp(Exp exp, ResourceDataJRso rd) {
 		if(rd.getMetaData() == null || rd.getMetaData().isEmpty()) {
 			return null;
 		}
@@ -336,7 +336,7 @@ public class ResourceMonitorServer{
 				}
 				
 				if(!rst.isEmpty()) {
-					ResourceData rd0 = new ResourceData();
+					ResourceDataJRso rd0 = new ResourceDataJRso();
 					rd0.setBelongInsId(rd.getBelongInsId());
 					rd0.setBelongInsName(rd0.getBelongInsName());
 					rd0.setResName(rd.getResName());
@@ -361,8 +361,8 @@ public class ResourceMonitorServer{
 		}
 		
 		synchronized(dels) {
-			for(IResourceService$JMAsyncClient srv : dels) {
-				ServiceItem si = srv.getItem();
+			for(IResourceServiceJMSrv$JMAsyncClient srv : dels) {
+				ServiceItemJRso si = srv.getItem();
 				String insName = si.getKey().getInstanceName();
 				if(this.srv2Regs.containsKey(insName)) {
 					Reg r = this.srv2Regs.remove(insName);
@@ -389,7 +389,7 @@ public class ResourceMonitorServer{
 			return;
 		}
 		synchronized(adds) {
-			for(IResourceService$JMAsyncClient srv : adds) {
+			for(IResourceServiceJMSrv$JMAsyncClient srv : adds) {
 				String insName = srv.getItem().getKey().getInstanceName();
 				if(this.srv2Regs.containsKey(insName)) {
 					continue;
@@ -415,7 +415,7 @@ public class ResourceMonitorServer{
 
 
 	public void resourceServiceChange(AbstractClientServiceProxyHolder srv,int type) {
-		IResourceService$JMAsyncClient djm = (IResourceService$JMAsyncClient)srv;
+		IResourceServiceJMSrv$JMAsyncClient djm = (IResourceServiceJMSrv$JMAsyncClient)srv;
 		if(type == IListener.ADD) {
 			if(LG.isLoggable(MC.LOG_DEBUG)) {
 				LG.log(MC.LOG_DEBUG, this.getClass(), "Resource service add: " + djm.getItem().getKey().getInstanceName());
@@ -429,7 +429,7 @@ public class ResourceMonitorServer{
 		}
 	}
 	
-	private void notifyConfigEvent(int type,int cid, ResourceMonitorConfig cfg) {
+	private void notifyConfigEvent(int type,int cid, ResourceMonitorConfigJRso cfg) {
 		if(type == IListener.ADD) {
 			if(cfg.isEnable()) {
 				configAdd(cfg);
@@ -454,7 +454,7 @@ public class ResourceMonitorServer{
 		}
 	}
 	
-	private void configAdd(ResourceMonitorConfig cfg) {
+	private void configAdd(ResourceMonitorConfigJRso cfg) {
 		Set<String> srvKeys = new HashSet<>();
 		srvKeys.addAll(this.srv2Regs.keySet());
 		for(String insName : srvKeys) {
@@ -471,7 +471,7 @@ public class ResourceMonitorServer{
 		for(String insName : srvKeys) {
 			Reg r = this.srv2Regs.get(insName);
 			if(r != null && r.configs.containsKey(cid)) {
-				ResourceMonitorConfig cfg = r.configs.remove(cid);
+				ResourceMonitorConfigJRso cfg = r.configs.remove(cid);
 				if(cfg != null && cfg.getBw() != null) {
 					try {
 						cfg.getBw().close();
@@ -483,7 +483,7 @@ public class ResourceMonitorServer{
 		}
 	}
 	
-	private void addConfig2Reg(ResourceMonitorConfig cfg, Reg r) {
+	private void addConfig2Reg(ResourceMonitorConfigJRso cfg, Reg r) {
 		
 		String macherInsName = cfg.getMonitorInsName();
 		if(macherInsName != null && "*".equals(macherInsName)) {
@@ -492,7 +492,7 @@ public class ResourceMonitorServer{
 			macherInsName = macherInsName.substring(0,macherInsName.length()-1);
 		}
 		
-		ServiceItem si = r.resSrv.getItem();
+		ServiceItemJRso si = r.resSrv.getItem();
 		String insName = si.getKey().getInstanceName();
 		if(StringUtils.isNotEmpty(macherInsName)) {
 			if(!insName.startsWith(macherInsName)) {
@@ -501,12 +501,12 @@ public class ResourceMonitorServer{
 		}
 		
 		String resName = cfg.getResName();
-		ProcessInfo pi = this.insMng.getProcessByName(insName);
+		ProcessInfoJRso pi = this.insMng.getProcessByName(insName);
 		
 		boolean f = false;
-		Set<CfgMetadata> metadata = pi.getMetadatas(resName);
+		Set<CfgMetadataJRso> metadata = pi.getMetadatas(resName);
 		if(metadata != null) {
-			for(CfgMetadata cm : metadata) {
+			for(CfgMetadataJRso cm : metadata) {
 				if(cm.getResName().equals(resName)) {
 					f = true;
 				}
@@ -525,13 +525,13 @@ public class ResourceMonitorServer{
 		}
 	}
 
-	private void reparseConfig(ResourceMonitorConfig cfg) {
-		if(StatisConfig.TO_TYPE_SERVICE_METHOD == cfg.getToType()) {
-			 String[] ps =  cfg.getToParams().split(UniqueServiceKey.SEP);
-			 cfg.setToSn(ps[UniqueServiceKey.INDEX_SN]);
-			 cfg.setToNs(ps[UniqueServiceKey.INDEX_NS]);
-			 cfg.setToVer(ps[UniqueServiceKey.INDEX_VER]);
-			 cfg.setToMt(ps[UniqueServiceKey.INDEX_METHOD]);
+	private void reparseConfig(ResourceMonitorConfigJRso cfg) {
+		if(StatisConfigJRso.TO_TYPE_SERVICE_METHOD == cfg.getToType()) {
+			 String[] ps =  cfg.getToParams().split(UniqueServiceKeyJRso.SEP);
+			 cfg.setToSn(ps[UniqueServiceKeyJRso.INDEX_SN]);
+			 cfg.setToNs(ps[UniqueServiceKeyJRso.INDEX_NS]);
+			 cfg.setToVer(ps[UniqueServiceKeyJRso.INDEX_VER]);
+			 cfg.setToMt(ps[UniqueServiceKeyJRso.INDEX_METHOD]);
 		}
 		
 		if(!StringUtils.isEmpty(cfg.getExpStr())) {
@@ -546,7 +546,7 @@ public class ResourceMonitorServer{
 			}
 		}
 		
-		if(StatisConfig.TO_TYPE_FILE == cfg.getToType()) {
+		if(StatisConfigJRso.TO_TYPE_FILE == cfg.getToType()) {
 			File logFile = new File(this.logDir + cfg.getId() + "_" + cfg.getToParams());
 			if (!logFile.exists()) {
 				try {
@@ -568,18 +568,18 @@ public class ResourceMonitorServer{
 			}
 		}
 		
-		if(StatisConfig.TO_TYPE_DB == cfg.getToType()) {
+		if(StatisConfigJRso.TO_TYPE_DB == cfg.getToType()) {
 			if(StringUtils.isEmpty(cfg.getToParams())) {
-				cfg.setToParams(ResourceMonitorConfig.DEFAULT_RESOURCE_TABLE_NAME);
-			}else if(!cfg.getToParams().startsWith(ResourceMonitorConfig.DEFAULT_RESOURCE_TABLE_PREFIX)){
-				cfg.setToParams(ResourceMonitorConfig.DEFAULT_RESOURCE_TABLE_PREFIX + cfg.getToParams());
+				cfg.setToParams(ResourceMonitorConfigJRso.DEFAULT_RESOURCE_TABLE_NAME);
+			}else if(!cfg.getToParams().startsWith(ResourceMonitorConfigJRso.DEFAULT_RESOURCE_TABLE_PREFIX)){
+				cfg.setToParams(ResourceMonitorConfigJRso.DEFAULT_RESOURCE_TABLE_PREFIX + cfg.getToParams());
 			}
 		}
 		
 	}
 	
-	public Set<CfgMetadata> getResMetadata(String resName) {
-		Set<CfgMetadata> ms = new HashSet<>();
+	public Set<CfgMetadataJRso> getResMetadata(String resName) {
+		Set<CfgMetadataJRso> ms = new HashSet<>();
 		this.insMng.forEach((pi)->{
 			if(pi.getMetadatas(resName) != null) {
 				ms.addAll(pi.getMetadatas(resName)) ;
@@ -589,10 +589,10 @@ public class ResourceMonitorServer{
 		return ms;
 	}
 	
-	public Map<String,Map<String,Set<CfgMetadata>>> getInstanceResourceList() {
-		Map<String,Map<String,Set<CfgMetadata>>> ms = new HashMap<>();
+	public Map<String,Map<String,Set<CfgMetadataJRso>>> getInstanceResourceList() {
+		Map<String,Map<String,Set<CfgMetadataJRso>>> ms = new HashMap<>();
 		this.insMng.forEach((pi)->{
-			Map<String,Set<CfgMetadata>> maps = new HashMap<String,Set<CfgMetadata>>();
+			Map<String,Set<CfgMetadataJRso>> maps = new HashMap<String,Set<CfgMetadataJRso>>();
 			ms.put(pi.getInstanceName(), maps);
 			maps.putAll(pi.getMetadatas());
 		});
@@ -601,45 +601,45 @@ public class ResourceMonitorServer{
 
 	private class Reg{
 		
-		private Reg(IResourceService$JMAsyncClient resSrv) {
+		private Reg(IResourceServiceJMSrv$JMAsyncClient resSrv) {
 			this.resSrv = resSrv;
 		}
 		
-		private IResourceService$JMAsyncClient resSrv;
-		private Map<Integer,ResourceMonitorConfig> configs = new HashMap<>();
+		private IResourceServiceJMSrv$JMAsyncClient resSrv;
+		private Map<Integer,ResourceMonitorConfigJRso> configs = new HashMap<>();
 		
 		private long lastCheckTime = 0;
 		private boolean running = false;
 		
 	}
 
-	public IPromise<Resp<Map<String, Set<ResourceData>>>> getInstanceResourceData(String insName) {
+	public IPromise<RespJRso<Map<String, Set<ResourceDataJRso>>>> getInstanceResourceData(String insName) {
 		
-		Resp<Map<String,Set<ResourceData>>> r = new Resp<>();
+		RespJRso<Map<String,Set<ResourceDataJRso>>> r = new RespJRso<>();
 		//Map<String,Set<ResourceData>> resDatas = new HashMap<>();
-		PromiseImpl<Resp<Map<String, Set<ResourceData>>>> p = new PromiseImpl<>();
+		PromiseImpl<RespJRso<Map<String, Set<ResourceDataJRso>>>> p = new PromiseImpl<>();
 		p.setResult(r);
 		
 		Reg reg = srv2Regs.get(insName);
 		if(reg == null) {
 			r.setMsg("Instance [" + insName + "] offline!");
-			r.setCode(Resp.CODE_FAIL);
+			r.setCode(RespJRso.CODE_FAIL);
 			p.done();
 			return p;
 		}
 		
 		if(reg.configs == null || reg.configs.isEmpty()) {
 			r.setMsg("Instance [" + insName + "] support on resources!");
-			r.setCode(Resp.CODE_FAIL);
+			r.setCode(RespJRso.CODE_FAIL);
 			p.done();
 			return p;
 		}
 		
 		
-		ProcessInfo pi = this.insMng.getProcessByName(insName);
+		ProcessInfoJRso pi = this.insMng.getProcessByName(insName);
 		if(pi == null) {
 			r.setMsg("Instance [" + insName + "] offline!");
-			r.setCode(Resp.CODE_FAIL);
+			r.setCode(RespJRso.CODE_FAIL);
 			p.done();
 			return p;
 		}
@@ -653,16 +653,16 @@ public class ResourceMonitorServer{
 			reg.resSrv.getResourceJMAsync(resNames,new HashMap<>(),expMap,reg)
 			.success((result,reg0)->{
 				//Reg rr = (Reg)reg0;
-				r.setData((Map<String,Set<ResourceData>>)result);
+				r.setData((Map<String,Set<ResourceDataJRso>>)result);
 				p.done();
 				
 			}).fail((code,msg,reg0)->{
 				Reg rr = (Reg)reg0;
-				String desc = "code: " + code + ", msg: " + msg +",srv: "+ rr.resSrv.getItem().getKey().toKey(true, true, true);
+				String desc = "code: " + code + ", msg: " + msg +",srv: "+ rr.resSrv.getItem().getKey().fullStringKey();
 				logger.error(desc);
 				LG.log(MC.LOG_ERROR, this.getClass(), desc);
 				r.setMsg("Instance [" + insName + "] offline!");
-				r.setCode(Resp.CODE_FAIL);
+				r.setCode(RespJRso.CODE_FAIL);
 				p.done();
 			});
 		}catch(Throwable e) {
@@ -672,10 +672,10 @@ public class ResourceMonitorServer{
 	}
 
 	@SuppressWarnings("unchecked")
-	public IPromise<Resp<Map<String, List<ResourceData>>>> getDirectResourceData(ResourceDataReq req) {
+	public IPromise<RespJRso<Map<String, List<ResourceDataJRso>>>> getDirectResourceData(ResourceDataReqJRso req) {
 		
-		PromiseImpl<Resp<Map<String, List<ResourceData>>>> p = new PromiseImpl<>();
-		Resp<Map<String,List<ResourceData>>> r = new Resp<>();
+		PromiseImpl<RespJRso<Map<String, List<ResourceDataJRso>>>> p = new PromiseImpl<>();
+		RespJRso<Map<String,List<ResourceDataJRso>>> r = new RespJRso<>();
 		p.setResult(r);
 		
 		Set<String> resNames = new HashSet<>();
@@ -686,7 +686,7 @@ public class ResourceMonitorServer{
 		if(req.getInsNames() != null && req.getInsNames().length > 0) {
 			//查询指定实例上的资源
 			p.setCounter(req.getInsNames().length);
-			Map<String,List<ResourceData>> resMap = new HashMap<>();
+			Map<String,List<ResourceDataJRso>> resMap = new HashMap<>();
 			r.setData(resMap);
 			for(String insName : req.getInsNames()) {
 				final Reg reg = this.srv2Regs.get(insName);
@@ -696,7 +696,7 @@ public class ResourceMonitorServer{
 					resMap.put(insName, result);
 					p.decCounter(1, true);
 				}).fail((code,msg,rrr)->{
-					String errMsg = "code: " + code + ", msg: " + msg +",srv: "+ reg.resSrv.getItem().getKey().toKey(true, true, true);
+					String errMsg = "code: " + code + ", msg: " + msg +",srv: "+ reg.resSrv.getItem().getKey().fullStringKey();
 					logger.error(errMsg);
 					p.setFail(code, msg);
 					p.decCounter(1, true);
@@ -704,7 +704,7 @@ public class ResourceMonitorServer{
 				});
 			}
 		} else {
-			Map<String,List<ResourceData>> resMap = new HashMap<>();
+			Map<String,List<ResourceDataJRso>> resMap = new HashMap<>();
 			r.setData(resMap);
 			//查询全部实例上的资源
 			p.setCounter(this.srv2Regs.size());
@@ -720,7 +720,7 @@ public class ResourceMonitorServer{
 				}).fail((code,msg,cxt)->{
 					Map.Entry<String, Reg> rrr = (Map.Entry<String, Reg>)cxt;
 					String errMsg = "code: " + code + ", msg: " + msg +",srv: "+ 
-					rrr.getValue().resSrv.getItem().getKey().toKey(true, true, true);
+					rrr.getValue().resSrv.getItem().getKey().fullStringKey();
 					logger.error(errMsg);
 					LG.log(MC.LOG_ERROR, this.getClass(), errMsg);
 					//p.setFail(code, msg);
