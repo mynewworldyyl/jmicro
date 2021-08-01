@@ -97,8 +97,45 @@ public class PermissionManager {
 		return false;
 	}
 	
+	public static final boolean isCurDefAdmin(int forType) {
+		
+		switch (forType) {
+		case Constants.FOR_TYPE_ALL:
+			ActInfoJRso ai = JMicroContext.get().getAccount();
+			if (ai != null && ai.getDefClientId() == Config.getClientId()) {
+				return true;
+			}
+			ai = JMicroContext.get().getSysAccount();
+			if (ai != null && ai.getDefClientId() == Config.getClientId()) {
+				return true;
+			}
+			return false;
+		case Constants.FOR_TYPE_USER:
+			ai = JMicroContext.get().getAccount();
+			if (ai != null) {
+				return ai.getDefClientId() == Config.getClientId();
+			} else {
+				return false;
+			}
+
+		case Constants.FOR_TYPE_SYS:
+			ai = JMicroContext.get().getSysAccount();
+			if (ai != null) {
+				return ai.getDefClientId() == Config.getClientId();
+			} else {
+				return false;
+			}
+		}
+
+		return false;
+	}
+	
 	public static final boolean isCurAdmin() {
 		return isCurAdmin(Constants.FOR_TYPE_USER);
+	}
+	
+	public static final boolean isCurDefAdmin() {
+		return isCurDefAdmin(Constants.FOR_TYPE_USER);
 	}
 	
 	public void ready() {
@@ -129,15 +166,16 @@ public class PermissionManager {
 	}
 	
 	public ServerError permissionCheck(ServiceMethodJRso sm,int srcClientId ) {
-		if(isCurAdmin(sm.getForType()) || sm.getForType() == Constants.FOR_TYPE_ALL) {
+		if(isCurAdmin(sm.getForType()) || !sm.isNeedLogin() && sm.getForType() == Constants.FOR_TYPE_ALL) {
 			return null;
 		}
 		
 		ActInfoJRso ai = JMicroContext.get().getAccount();
 		ActInfoJRso sai = JMicroContext.get().getSysAccount();
 		
-		if((ai == null && Constants.FOR_TYPE_USER == sm.getForType()
-			|| sai == null && Constants.FOR_TYPE_SYS == sm.getForType()) && sm.isNeedLogin()){
+		if(sm.isNeedLogin() && (ai == null && sai == null ||
+				ai == null && Constants.FOR_TYPE_USER == sm.getForType()
+				|| sai == null && Constants.FOR_TYPE_SYS == sm.getForType()) ) {
 			ServerError se = new ServerError(MC.MT_INVALID_LOGIN_INFO,
 					 "Have to login for invoking to " + sm.getKey().methodID());
 			LG.log(MC.LOG_ERROR, TAG,se.toString());

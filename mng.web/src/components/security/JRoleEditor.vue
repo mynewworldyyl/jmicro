@@ -13,7 +13,7 @@
                     <td>
                         <a  @click="openActInfoDrawer(c)">{{"Permission"|i18n}}</a>
                         <a  @click="updateRoleDrawer(c)">{{"Update"|i18n}}</a>
-                        <a  @click="roleAuthDrawer(c)">{{"Invoke"|i18n}}</a>
+                        <a  @click="openRoleAuthDrawer(c)">{{"Accounts"|i18n}}</a>
                     </td>
                 </tr>
             </table>
@@ -84,9 +84,9 @@
     import act from "@/rpcservice/act"
     import cons from "@/rpc/constants"
     import c from "./c"
-    import roleAuth from "./roleauth/index"
+    import roleAuth from "./roleauth/role2actauth"
 
-     const sn = 'cn.jmicro.api.security.IRoleServiceJMSrv';
+     const sn = 'cn.jmicro.security.api.IRoleServiceJMSrv';
      const ns = cons.NS_SECURITY;
      const v = '0.0.1';
 
@@ -149,7 +149,7 @@
                 this.addRoleDrawer.drawerStatus = true;
             },
 
-            roleAuthDrawer(c){
+            openRoleAuthDrawer(c){
                 this.errorMsg = '';
                 this.role = c;
                 this.roleAuthDrawer.drawerStatus = true;
@@ -379,37 +379,13 @@
 </script>
 
 <style>
-    .JAccountEditor{
+    .JRoleEditor{
         min-height: 500px;
     }
 
-    #queryTable td {
-        padding-left: 8px;
-    }
-
-    .drawerJinvokeBtnStatu{
-        position: fixed;
-        left: 0px;
-        top: 30%;
-        bottom: 30%;
-        height: 39%;
-        width: 1px;
-        border-left: 1px solid lightgray;
-        background-color: lightgray;
-        border-radius: 3px;
-        z-index: 1000000;
-    }
-
-    .configItemTalbe td {
-        text-align: center;
-    }
-
-    .permissionTree{
-        width: 100%;
-    }
-
-    .actPermissionTree{
-
+    .JRoleEditor a {
+        display: inline-block;
+        margin-right: 8px;
     }
 
 </style>

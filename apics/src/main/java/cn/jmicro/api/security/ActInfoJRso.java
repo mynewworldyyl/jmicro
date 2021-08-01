@@ -27,12 +27,20 @@ public class ActInfoJRso {
 	
 	public static final String GUEST = "guest_";
 	
+    private String avatarUrl;
+    private String city;
+    private String province;
+    private String country;
+    private String language;
+    private byte gender;
+    private int shareUserId;
+    
 	//@BsonId
 	private int id;
 	
-	private int clientId;
+	private int defClientId;//默认ClientId
 	
-	private String avatar;
+	private int clientId;//当前登录的client
 	
 	private String actName;
 	private String loginKey;
@@ -44,6 +52,16 @@ public class ActInfoJRso {
 	
 	private String token;
 	private byte tokenType;
+	
+	private String birthday;
+	
+	private String wxOpenId;
+	
+	private String sessionKey;
+	
+	private String lastLoginIp;
+	
+	private String nickName;
 	
 	private long registTime;
 	
@@ -57,13 +75,15 @@ public class ActInfoJRso {
 	//登陆次数
 	private long loginNum;
 	
-	private Boolean isAdmin = Boolean.FALSE;
+	private Boolean admin = Boolean.FALSE;
 	
 	private Boolean guest = Boolean.TRUE;
 	
 	private Set<Integer> roles = new HashSet<>();
 	
 	private Set<Integer> pers = new HashSet<>();
+	
+	private Set<Integer> clientIds = new HashSet<>();
 	
 	public ActInfoJRso() {};
 	
@@ -78,12 +98,39 @@ public class ActInfoJRso {
 		this.id = id;
 	};
 	
-	public String getAvatar() {
-		return avatar;
+	public Set<Integer> getClients() {
+		return Collections.unmodifiableSet(this.clientIds);
+	}
+	
+	public int minClient() {
+		if(this.clientIds.isEmpty()) return 0;
+		int cid = 0;
+		for(Integer c : this.clientIds) {
+			if(cid > c) {
+				cid = c;
+			}
+		}
+		return cid;
+	}
+	
+	public void addClient(Integer cid) {
+		clientIds.add(cid);
+	}
+	
+	public int getShareUserId() {
+		return shareUserId;
 	}
 
-	public void setAvatar(String avatar) {
-		this.avatar = avatar;
+	public String getSessionKey() {
+		return sessionKey;
+	}
+
+	public void setSessionKey(String sessionKey) {
+		this.sessionKey = sessionKey;
+	}
+
+	public void setShareUserId(int shareUserId) {
+		this.shareUserId = shareUserId;
 	}
 
 	public String getActName() {
@@ -121,6 +168,10 @@ public class ActInfoJRso {
 			checkPath("非法设置账号游客标识");
 		 }
 		this.guest = guest;
+	}
+
+	public Boolean getAdmin() {
+		return admin;
 	}
 
 	public String getPwd() {
@@ -261,15 +312,11 @@ public class ActInfoJRso {
 		this.loginNum = loginNum;
 	}
 
-	public boolean isAdmin() {
-		return isAdmin;
-	}
-
-	public void setAdmin(boolean isAdmin) {
-		 if( this.isAdmin != null && !Utils.formSystemPackagePermission(3)) {
+	public void setAdmin(boolean admin) {
+		 if( this.admin != null && !Utils.formSystemPackagePermission(3)) {
 			 checkPath("非法设置Admin状态");
 		 }
-		this.isAdmin = isAdmin;
+		this.admin = admin;
 	}
 	
 	public void addRole(Integer roleId) {
@@ -283,4 +330,105 @@ public class ActInfoJRso {
 	public Set<Integer> getRoles() {
 		return roles;
 	}
+
+	public int getDefClientId() {
+		return defClientId;
+	}
+
+	public void setDefClientId(int defClient) {
+		this.defClientId = defClient;
+	}
+
+	public byte getGender() {
+		return gender;
+	}
+
+	public void setGender(byte gender) {
+		this.gender = gender;
+	}
+
+	public String getBirthday() {
+		return birthday;
+	}
+
+	public void setBirthday(String birthday) {
+		this.birthday = birthday;
+	}
+
+	public String getWxOpenId() {
+		return wxOpenId;
+	}
+
+	public void setWxOpenId(String wxOpenId) {
+		this.wxOpenId = wxOpenId;
+	}
+
+	public String getLastLoginIp() {
+		return lastLoginIp;
+	}
+
+	public void setLastLoginIp(String lastLoginIp) {
+		this.lastLoginIp = lastLoginIp;
+	}
+
+	public String getNickName() {
+		return nickName;
+	}
+
+	public void setNickName(String nickName) {
+		this.nickName = nickName;
+	}
+
+	public Boolean getGuest() {
+		return guest;
+	}
+
+	public void setGuest(Boolean guest) {
+		this.guest = guest;
+	}
+
+	public String getAvatarUrl() {
+		return avatarUrl;
+	}
+
+	public void setAvatarUrl(String avatarUrl) {
+		this.avatarUrl = avatarUrl;
+	}
+
+	public String getCity() {
+		return city;
+	}
+
+	public void setCity(String city) {
+		this.city = city;
+	}
+
+	public String getProvince() {
+		return province;
+	}
+
+	public void setProvince(String province) {
+		this.province = province;
+	}
+
+	public String getCountry() {
+		return country;
+	}
+
+	public void setCountry(String country) {
+		this.country = country;
+	}
+
+	public String getLanguage() {
+		return language;
+	}
+
+	public void setLanguage(String language) {
+		this.language = language;
+	}
+
+	public void setGender(Byte gender) {
+		this.gender = gender;
+	}
+
 }

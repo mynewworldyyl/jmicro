@@ -14,6 +14,8 @@ public class RespJRso<T> {
 	
 	public static final int CODE_TX_FAIL = 3;
 	
+	public static final int NEED_CHECK_CODE = 4;
+	
 	private String msg;
 	private int code;
 	private T data;
@@ -28,5 +30,9 @@ public class RespJRso<T> {
 	public RespJRso(int code) {this.code = code;};
 	public RespJRso(int code,String msg) {this.code = code;this.msg=msg;};
 	public RespJRso(int code,T data) {this.code = code;this.data=data;};
+	@Override
+	public String toString() {
+		return "code: " + this.getCode()+" ,msg: " + this.getMsg();
+	}
 	
 }

@@ -17,6 +17,11 @@
             {{actInfo != null ? actInfo.actName:''}}
         </span>
 
+        <span v-if="actInfo != null && actInfo.clientIds && actInfo.clientIds.length > 1" class="accountBtn"
+              href="javascript:void(0);" @click="changeClient()">
+            切换
+        </span>
+
         <Modal v-model="loginDialog" :loading="true" width="360" @on-ok="doLogin()" ref="loginDialog">
             <table>
                 <tr><td>{{'actName'|i18n}}</td><td><input type="input"  v-model="actName"/></td></tr>
@@ -69,6 +74,14 @@
             </table>
         </Modal>
 
+        <Modal v-model="clientListDialog" :loading="true" width="360" @on-ok="doChangeClient()" ref="clientListDialog">
+            <RadioGroup v-model="selectClientId" vertical>
+                <Radio v-for="(v,k) in clientList" :value="k" :key="k" :label="k">
+                    {{v}}
+                </Radio>
+            </RadioGroup>
+        </Modal>
+
     </div>
 </template>
 
@@ -91,11 +104,16 @@ export default {
 
     data() {
         return {
+
             loginDialog : false,
             registDialog: false,
             changePwdDialog: false,
             resetPwdDialog:false,
             checkCode:'',
+
+            clientList:[],
+            clientListDialog:false,
+            selectClientId: 0,
 
             email:null,
             mobile:null,
@@ -144,6 +162,40 @@ export default {
     },
 
     methods: {
+
+        doChangeClient(){
+            let req = rpc.creq(act.sn,act.ns,act.v,'changeCurClientId',[this.selectClientId])
+            rpc.callRpc(req)
+                .then(( resp )=>{
+                    if(resp && resp.code == 0) {
+                        rpc.actInfo = resp.data
+                        this.actInfo = resp.data
+                        this.clientListDialog = false
+                        this.selectClientId = this.actInfo.clientId+""
+                        rpc._notify(Constants.LOGIN);
+                    } else {
+                        console.log(resp);
+                    }
+                }).catch((err)=>{
+                console.log(err);
+            });
+        },
+
+        changeClient(){
+            let req = rpc.creq(act.sn,act.ns,act.v,'clientList',[])
+            rpc.callRpc(req)
+                .then(( resp )=>{
+                    if(resp && resp.code == 0) {
+                        this.selectClientId = this.actInfo.clientId+""
+                        this.clientList = resp.data
+                        this.clientListDialog = true
+                    } else {
+                        console.log(resp);
+                    }
+                }).catch((err)=>{
+                    console.log(err);
+            });
+        },
 
         getCode(){
             rpc.getCode(1).then(resp => { // 生成验证码图片

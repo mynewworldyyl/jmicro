@@ -260,7 +260,7 @@ public class RedisCacheImpl implements ICache {
 	public boolean exist(String key) {
 		checkPermission(key);
 		if(StringUtils.isEmpty(key)) {
-			logger.error("Expire key cannot be NULL");
+			logger.error("Key cannot be NULL");
 			return false;
 		}
 		

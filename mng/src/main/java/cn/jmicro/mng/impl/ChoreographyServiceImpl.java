@@ -192,7 +192,7 @@ public class ChoreographyServiceImpl implements IChoreographyServiceJMSrv {
 		
 		ActInfoJRso ai = JMicroContext.get().getAccount();
 		
-		if(!ai.isAdmin() && jvmArgs.length > 0) {
+		if(ai.getClientId() != Config.getAdminClientId() && jvmArgs.length > 0) {
 			if(oldDep == null || !dep.getJvmArgs().equals(oldDep.getJvmArgs())) {
 				dep.setStatus(DeploymentJRso.STATUS_CHECK);
 				dep.setDesc("Need system admin check with jvm args, you can wait for approving or delete jvm args to enable this deployment!");

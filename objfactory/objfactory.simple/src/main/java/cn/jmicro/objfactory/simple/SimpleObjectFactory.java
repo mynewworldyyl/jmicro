@@ -869,7 +869,7 @@ public class SimpleObjectFactory implements IObjectFactory {
 			//Resp<String> r = as.getNameById(clientId);
 			if(r != null && r.getCode() == RespJRso.CODE_SUCCESS) {
 				
-				if(r.getData().getClientId() != clientId) {
+				if(r.getData().getDefClientId() != clientId) {
 					throw new CommonException("租户ID不匹配令牌:" + clientId);
 				}
 				

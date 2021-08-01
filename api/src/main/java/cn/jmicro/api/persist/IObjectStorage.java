@@ -56,13 +56,19 @@ public interface IObjectStorage {
 	
     int deleteByQuery(String table, Object query);
 	
-	<T> List<T> query(String table,Map<String,Object> queryConditions, Class<T> targetClass,int pageSize,int curPage);
+	<T> List<T> query(String table,Map<String,Object> filter, Class<T> targetClass,int pageSize,int curPage);
 	
-	<T> List<T> query(String table, Map<String, Object> queryConditions, Class<T> targetClass);
+	<T> List<T> query(String table, Map<String, Object> filter, Class<T> targetClass);
 	
-	long count(String table,Map<String,Object> queryConditions);
+	<T> List<T> query(String table, Map<String, Object> filter, Class<T> targetClass, String orderBy,Integer asc);
 	
-	<T> T getOne(String table,Map<String,Object> queryConditions,Class<T> targetClass);
+	<T> List<T> query(String table,Map<String,Object> filter, Class<T> targetClass,int pageSize,int curPage, String orderBy,Integer asc);
+	
+	<T> List<T> query(String table,Map<String,Object> filter, Class<T> targetClass,int pageSize,int curPage,String[] colums, String orderBy,Integer asc);
+	
+	int count(String table,Map<String,Object> filter);
+	
+	<T> T getOne(String table,Map<String,Object> filter,Class<T> targetClass);
 	
 	Map<String,Object> getFields(String table,Map<String, Object> filter, String...fields);
 	

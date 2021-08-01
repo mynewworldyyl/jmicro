@@ -1,6 +1,5 @@
 package cn.jmicro.ext.mongodb;
 
-import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -17,7 +16,6 @@ import org.bson.json.JsonWriterSettings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.gson.JsonSyntaxException;
 import com.mongodb.client.DistinctIterable;
 import com.mongodb.client.FindIterable;
 import com.mongodb.client.MongoCollection;
@@ -30,6 +28,8 @@ import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Inject;
 import cn.jmicro.api.persist.IObjectStorage;
 import cn.jmicro.api.utils.TimeUtils;
+import cn.jmicro.common.CommonException;
+import cn.jmicro.common.Utils;
 import cn.jmicro.common.util.JsonUtils;
 
 @Component
@@ -149,18 +149,22 @@ public class MongodbBaseObjectStorage implements IObjectStorage {
 	private boolean updateOneById(MongoCollection<Document> coll, Document d, long curTime) {
 		Document filter = new Document();
 		try {
-			String idKey = ID;
-			if(d.containsKey(_ID)) {
+			//String idKey = ID;
+			if(!d.containsKey(ID)) {
 				//无下横线整数ID优先级最高
-				idKey = _ID;
+				//idKey = _ID;
+				throw new CommonException("id field not found: " + d.toJson());
 			}
 			
-			Object idv = d.get(idKey);
+			filter.put(_ID, d.getInteger(ID));
+			d.remove(ID);
+			
+			/*Object idv = d.get(idKey);
 			if(idv != null && idv instanceof Integer) {
-				filter.put(idKey, d.getInteger(idKey));
+				filter.put(_ID, d.getInteger(ID));
 			}else {
 				filter.put(idKey, d.getLong(idKey));
-			}
+			}*/
 		} catch (Exception e) {
 			filter.put(_ID, d.getObjectId(_ID));
 		}
@@ -195,7 +199,7 @@ public class MongodbBaseObjectStorage implements IObjectStorage {
 		MongoCollection coll = null;
 		List lis = val;
 		
-		if(true) {
+		if(toDocument) {
 			lis = new ArrayList();
 			for(Object v : val) {
 				lis.add(toDocument(v));
@@ -275,7 +279,7 @@ public class MongodbBaseObjectStorage implements IObjectStorage {
 		MongoCollection coll = null;
 		
 		Object v = val;
-		if(true) {
+		if(toDocument) {
 			v = toDocument(val);
 			coll = mdb.getCollection(table);
 		} else {
@@ -321,7 +325,7 @@ public class MongodbBaseObjectStorage implements IObjectStorage {
 		
 		List lis = Arrays.asList(vals);
 		
-		if(true) {
+		if(toDocument) {
 			lis = new ArrayList();
 			for(int i = 0; i < vals.length; i++) {
 				lis.add(toDocument(vals[i]));
@@ -445,17 +449,7 @@ public class MongodbBaseObjectStorage implements IObjectStorage {
 	@Override
 	public <T> List<T> query(String table,Map<String, Object> queryConditions, Class<T> targetClass,
 			int pageSize,int curPage) {
-		 Document match = this.getCondtions(queryConditions);
-		 FindIterable<T> rst = mdb.getCollection(table)
-				 .find(match, targetClass)
-				 .limit(pageSize)
-				 .skip(pageSize*curPage);
-		 List<T> arr = new ArrayList<>();
-		 Iterator<T> ite = rst.iterator();
-		 while(ite.hasNext()) {
-			 arr.add(ite.next());
-		 }
-		return arr;
+		return this.query(table,queryConditions,targetClass,pageSize,curPage,null,null,0);
 	}
 
 	@Override
@@ -482,11 +476,17 @@ public class MongodbBaseObjectStorage implements IObjectStorage {
 			 if(!up0.containsKey(UPDATED_TIME)) {
 				 up0.put(UPDATED_TIME, TimeUtils.getCurTime());
 			 }
-			 /*if(!up0.containsKey(CREATED_TIME)) {
+			/* if(!up0.containsKey(CREATED_TIME)) {
 				 up0.put(CREATED_TIME, TimeUtils.getCurTime());
 			 }*/
-			 up.put("$set",  up0);
+			 up.put("$set",up0);
 		}
+		
+		/*if(!up.containsKey("$set")) {
+			Document up0 = new Document();
+			up0.put("$set",  up);
+			up= up0;
+		}*/
 		
 		Document fi = null;
 		if(filter instanceof Document) {
@@ -505,8 +505,49 @@ public class MongodbBaseObjectStorage implements IObjectStorage {
 
 	@Override
 	public <T> List<T> query(String table, Map<String, Object> queryConditions, Class<T> targetClass) {
+		return this.query(table,queryConditions,targetClass,-1,-1,null,null,0);
+	}
+	
+	@Override
+	public <T> List<T> query(String table, Map<String, Object> queryConditions, Class<T> targetClass, String orderBy,
+			Integer asc) {
+		return this.query(table,queryConditions,targetClass,-1,-1,null,orderBy,asc);
+	}
+
+	@Override
+	public <T> List<T> query(String table, Map<String, Object> queryConditions, Class<T> targetClass, int pageSize,
+			int curPage, String[] colums, String orderBy, Integer asc) {
+
 		 Document match = this.getCondtions(queryConditions);
-		 FindIterable<T> rst = mdb.getCollection(table).find(match, targetClass);
+		 FindIterable<T> rst = mdb.getCollection(table)
+				 .find(match, targetClass);
+		 
+		 if(colums != null && colums.length > 0) {
+			 Document prj = new Document();
+			 for(String c : colums) {
+				 if(!Utils.isEmpty(c)) {
+					 prj.put(c, 1);
+				 }
+			 }
+			 rst.projection(prj);
+		 }
+		 
+		 if(!Utils.isEmpty(orderBy)) {
+			 rst.sort(new Document(orderBy,asc));
+		 }
+				 
+		 if(pageSize > 0) {
+			 rst.limit(pageSize);
+		 }
+		 
+		 if(pageSize > 0 && curPage > -1) {
+			 rst.skip(pageSize*curPage);
+		 }
+		
+		 return resultList(rst);
+	}
+
+	private <T> List<T> resultList(FindIterable<T> rst) {
 		 List<T> arr = new ArrayList<>();
 		 Iterator<T> ite = rst.iterator();
 		 while(ite.hasNext()) {
@@ -516,26 +557,34 @@ public class MongodbBaseObjectStorage implements IObjectStorage {
 	}
 
 	@Override
-	public long count(String table, Map<String, Object> queryConditions) {
+	public <T> List<T> query(String table, Map<String, Object> queryConditions, Class<T> targetClass, int pageSize,
+			int curPage, String orderBy, Integer asc) {
+		return this.query(table,queryConditions,targetClass,pageSize,curPage,null,orderBy,asc);
+	}
+
+	@Override
+	public int count(String table, Map<String, Object> queryConditions) {
 		Document match = this.getCondtions(queryConditions);
 		MongoCollection<Document> rpcLogColl = mdb.getCollection(table);
-		return rpcLogColl.countDocuments(match);
+		return (int)rpcLogColl.countDocuments(match);
 	}
 	
 	private Document getCondtions(Map<String, Object> queryConditions) {
-		Document match = new Document();
-		for(String key : queryConditions.keySet()) {
+		Document match = Document.parse(JsonUtils.getIns().toJson(queryConditions));
+		/*for(String key : queryConditions.keySet()) {
 			match.put(key, queryConditions.get(key));
-		}
+		}*/
 		return match;
 	}
 
 	@Override
 	public <T> T getOne(String table, Map<String, Object> queryConditions, Class<T> targetClass) {
 		 Document match = this.getCondtions(queryConditions);
-		 FindIterable<Document> rst = mdb.getCollection(table,Document.class).find(match);
-		 Document doc = rst.first();
-		 if(doc != null) {
+		 FindIterable<T> rst = mdb.getCollection(table,targetClass).find(match);
+		 return rst.first();
+		 
+		/* if(doc != null) {
+			
 			 T ov = JsonUtils.getIns().fromJson(doc.toJson(settings), targetClass);
 			 try {
 				 if(doc.containsKey(_ID)) {
@@ -551,8 +600,7 @@ public class MongodbBaseObjectStorage implements IObjectStorage {
 			}
 			 
 			 return ov;
-		 }
-		 return null;
+		 }*/
 	}
 	
 	@Override
@@ -571,9 +619,6 @@ public class MongodbBaseObjectStorage implements IObjectStorage {
 		 FindIterable<Document> rst = mdb.getCollection(table,Document.class).find(fs).projection(prj);
 		 return rst.first();
 	}
-
-
-
 
 	class SaveOp {
 		List vals;

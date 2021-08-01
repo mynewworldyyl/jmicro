@@ -25,6 +25,7 @@ import org.springframework.context.event.ContextRefreshedEvent;
 import org.springframework.core.annotation.Order;
 
 import cn.jmicro.api.JMicro;
+import cn.jmicro.api.annotation.JMicroComponent;
 import cn.jmicro.api.choreography.ProcessInfoJRso;
 import cn.jmicro.api.masterelection.IMasterChangeListener;
 import cn.jmicro.api.objectfactory.IObjectFactory;
@@ -37,7 +38,6 @@ import cn.jmicro.common.CommonException;
 import cn.jmicro.common.Utils;
 import cn.jmicro.objfactory.spring.JMicroObjectSource2Spring;
 import cn.jmicro.objfactory.spring.SpringAndJmicroComponent;
-import cn.jmicro.objfactory.spring.anno.JMicroComponent;
 
 @Configuration
 @ConditionalOnClass(JMicro.class)

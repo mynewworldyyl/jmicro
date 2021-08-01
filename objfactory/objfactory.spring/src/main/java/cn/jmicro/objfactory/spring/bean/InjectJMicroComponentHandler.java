@@ -12,16 +12,13 @@ import org.springframework.aop.support.AopUtils;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.config.BeanPostProcessor;
 import org.springframework.context.ApplicationContext;
-import org.springframework.context.ApplicationEvent;
-import org.springframework.context.ApplicationListener;
-import org.springframework.context.event.ContextRefreshedEvent;
 import org.springframework.stereotype.Component;
 
+import cn.jmicro.api.annotation.JMicroComponent;
 import cn.jmicro.api.objectfactory.IObjectFactory;
 import cn.jmicro.api.objectsource.IObjectSource;
 import cn.jmicro.common.CommonException;
 import cn.jmicro.common.Utils;
-import cn.jmicro.objfactory.spring.anno.JMicroComponent;
 
 @Component
 public class InjectJMicroComponentHandler implements BeanPostProcessor/*,ApplicationListener<ApplicationEvent>*/{

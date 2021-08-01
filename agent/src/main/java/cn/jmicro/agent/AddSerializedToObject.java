@@ -127,27 +127,39 @@ public class AddSerializedToObject implements ClassFileTransformer {
 			
 			String varName = " __val"+i;
 			
-			if(fieldDeclareType == CtClass.intType || fieldDeclareType.getName().equals(Integer.class.getName()) ) {
+			if(fieldDeclareType == CtClass.intType) {
 				sb.append(varName).append(" = in.readInt();\n");
+			}else if(fieldDeclareType.getName().equals(Integer.class.getName()) ) {
+				sb.append(varName).append(" = new Integer(in.readInt());\n");
 			}else if(fieldDeclareType.getName().equals(String.class.getName())) {
 				sb.append(varName).append(" = __buffer.readUTF();\n");
 			}else if(fieldDeclareType == CtClass.longType ) {
 				sb.append(varName).append(" = in.readLong();\n");
 			}else if(fieldDeclareType.getName().equals(Long.class.getName()) ) {
 				sb.append(varName).append(" = new java.lang.Long(in.readLong());\n");
-			}else if(fieldDeclareType == CtClass.byteType || fieldDeclareType.getName().equals(Byte.class.getName()) ) {
+			}else if(fieldDeclareType == CtClass.byteType) {
 				sb.append(varName).append(" = in.readByte();\n");
-			}else if(fieldDeclareType == CtClass.shortType || fieldDeclareType.getName().equals(Short.class.getName()) ) {
+			}else if(fieldDeclareType.getName().equals(Byte.class.getName()) ) {
+				sb.append(varName).append(" = new Byte(in.readByte());\n");
+			}else if(fieldDeclareType == CtClass.shortType ) {
 				sb.append(varName).append(" = in.readShort();\n");
-			}else  if(fieldDeclareType == CtClass.floatType || fieldDeclareType.getName().equals(Float.class.getName()) ) {
+			}else if(fieldDeclareType.getName().equals(Short.class.getName())) {
+				sb.append(varName).append(" = new Short(in.readShort());\n");
+			}else if(fieldDeclareType == CtClass.floatType ) {
 				sb.append(varName).append(" = in.readFloat();\n");
-			}else if(fieldDeclareType == CtClass.doubleType || fieldDeclareType.getName().equals(Double.class.getName()) ) {
+			}else  if(fieldDeclareType.getName().equals(Float.class.getName()) ) {
+				sb.append(varName).append(" = new Float(in.readFloat());\n");
+			}else if(fieldDeclareType == CtClass.doubleType ) {
 				sb.append(varName).append(" = in.readDouble();\n");
+			}else if(fieldDeclareType.getName().equals(Double.class.getName()) ) {
+				sb.append(varName).append(" = new Double(in.readDouble());\n");
 			}else if(fieldDeclareType == CtClass.booleanType) {
 				sb.append(varName).append(" = in.readBoolean();\n");
 			}else if(fieldDeclareType.getName().equals(Boolean.class.getName())) {
 				sb.append(varName).append(" = new java.lang.Boolean(in.readBoolean());\n");
-			}else if(fieldDeclareType == CtClass.charType || fieldDeclareType.getName().equals(Character.class.getName()) ) {
+			}else if(fieldDeclareType.getName().equals(Character.class.getName()) ) {
+				sb.append(varName).append(" = new Character(in.readChar());\n");
+			}else if(fieldDeclareType == CtClass.charType) {
 				sb.append(varName).append(" = in.readChar();\n");
 			}else  if(fieldDeclareType.getName().equals(Date.class.getName())) {
 				sb.append(" long tv"+i+" = in.readLong(); \n ");
@@ -174,8 +186,8 @@ public class AddSerializedToObject implements ClassFileTransformer {
 		//System.out.println("\n\n");
 		//System.out.println(sb.toString());
 		
-		/*if(cls.getName().equals("cn.jmicro.api.mng.ConfigNode")) {
-			System.out.println("SerializeProxyFactory: "+sb.toString());
+		/*if(cls.getName().equals("com.qiguliuxing.dts.core.vo.UserJRso")) {
+			System.out.println(sb.toString());
 		}*/
 		
 		return sb.toString();

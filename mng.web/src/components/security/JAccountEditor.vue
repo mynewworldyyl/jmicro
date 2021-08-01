@@ -12,7 +12,7 @@
                     <td>{{c.statuCode}}</td> <td>{{c.mobile}}</td> <td>{{c.email}}</td>
                     <td>{{c.loginNum}}</td><td>{{c.lastLoginTime | formatDate(2)}}</td>
                     <td>
-                           <a v-if="c.statuCode==2" @click="openRoleInfoDrawer(c)">{{"Role"|i18n}}</a>
+                          <a v-if="c.statuCode==2" @click="openRoleInfoDrawer(c)">{{"Role"|i18n}}</a>
                         &nbsp;<a v-if="c.statuCode==2" @click="openActInfoDrawer(c)">{{"Permission"|i18n}}</a> &nbsp;&nbsp;&nbsp;&nbsp;
                           <a v-if="c.statuCode == 4" @click="changeAccountStatus(c)">{{"Unfreeze"|i18n}}</a>
                           <a v-if="c.statuCode == 2" @click="changeAccountStatus(c)">{{"Freeze"|i18n}}</a>
@@ -55,7 +55,8 @@
 
         <Drawer ref="roleInfoDrawer"  v-model="roleInfoDrawer.drawerStatus" :closable="false" placement="right" :transfer="true"
                 :draggable="true" :scrollable="true" width="80">
-            <div>
+            <actAuth :act="role"></actAuth>
+            <!--<div>
                 <a v-if="isLogin" @click="doUpdateActRole()">Confirm</a>
             </div>
             <div>
@@ -67,11 +68,9 @@
                     :operations="['Delete','Add']"
                     filterable
                     @on-change="roleSelect">
-               <!-- <div :style="{float: 'right', margin: '5px'}">
-                    <Button size="small" @click="reloadRoleList">Refresh</Button>
-                </div>-->
             </Transfer>
-            </div>
+            </div>-->
+
         </Drawer>
 
     </div>
@@ -84,13 +83,14 @@
     import act from "@/rpcservice/act"
     import cons from "@/rpc/constants"
     import c from "./c"
+    import actAuth from "./roleauth/act2roleauth"
 
     const cid = 'account';
 
     export default {
         name: cid,
         components: {
-            //treeTable,
+            actAuth
         },
         data() {
             return {
@@ -104,11 +104,7 @@
                 srcPermissions:[],
                 curActParsedPermissions:[],
 
-                role : null,
-                addRoles:[],
-                delRoles:[],
-
-                allRoleList:[],
+                role : null, //store act current seledted
 
                 actInfoDrawer: {
                     drawerStatus : false,
@@ -131,51 +127,6 @@
         },
 
         methods: {
-
-            getRoleLabel(r) {
-                return r.label;
-            },
-
-            roleSelect(newTargetKeys, direction, moveKeys) {
-               if(direction==='right') {
-                   //增加
-                   for(let e of moveKeys) {
-                       if(!this.role.roles.includes(e)) {
-                           this.role.roles.push(e);
-                       }
-
-                       if(!this.addRoles.includes(e)) {
-                           this.addRoles.push(e);
-                       }
-
-                       let idx = this.delRoles.indexOf(e);
-                       if(idx >=0) {
-                           this.delRoles.splice(idx,1);
-                       }
-                   }
-               } else {
-                   //删除
-                   for(let e of moveKeys) {
-                       let idx = this.role.roles.indexOf(e);
-                       if(idx >= 0) {
-                           this.role.roles.splice(idx,1);
-                       }
-
-                       idx = this.addRoles.indexOf(e);
-                       if(idx >= 0) {
-                           this.addRoles.splice(idx,1);
-                       }
-
-                       if( !this.delRoles.includes(e)) {
-                           this.delRoles.push(e);
-                       }
-                   }
-               }
-            },
-
-            reloadRoleList() {
-
-            },
 
             resendActiveEmail(c) {
                 let self = this;
@@ -205,7 +156,9 @@
 
             openRoleInfoDrawer(mi) {
                 this.role = mi;
-                if(this.allRoleList && this.allRoleList.length > 0) {
+                this.roleInfoDrawer.drawerStatus = true;
+
+              /*  if(this.allRoleList && this.allRoleList.length > 0) {
                     this.roleInfoDrawer.drawerStatus = true;
                 } else {
                     let self = this;
@@ -222,40 +175,7 @@
                         }).catch((err) => {
                             window.console.log(err);
                     });
-
-                    act.getPermissionsByActId(this.role.id).then((resp)=>{
-                        if(resp.code == 0 && resp.data) {
-                            self.role.permissionEntires = resp.data;
-                            if(self.role.permissionEntires) {
-                                self.parseActPermissionData();
-                                if(!self.role.permissionParseEntires || self.role.permissionParseEntires.length == 0) {
-                                    self.$Message.success('Parse act: '+self.role.actName+' permission data error: ' + JSON.stringify(resp.data));
-                                }
-                            }
-                            self.roleInfoDrawer.drawerStatus = true;
-                        } else {
-                            self.$Message.success(resp.msg);
-                        }
-                    }).catch((err)=>{
-                        window.console.log(err);
-                    });
-                }
-            },
-
-            doUpdateActRole(){
-                let self = this;
-                rpc.callRpcWithParams(act.sn, act.ns, act.v, 'updateActRole',
-                    [this.role.id, this.addRoles, this.delRoles])
-                    .then((resp) => {
-                        if (resp.code == 0) {
-                            self.roleInfoDrawer.drawerStatus = false;
-                            self.role = {};
-                        } else {
-                            self.$Message.success(resp.msg);
-                        }
-                    }).catch((err) => {
-                    window.console.log(err);
-                });
+                }*/
             },
 
             doAddPermission: function () {
@@ -479,34 +399,9 @@
        min-height: 500px;
     }
 
-    #queryTable td {
-        padding-left: 8px;
+    .JAccountEditor a {
+        display: inline-block;
+        margin-right: 8px;
     }
-
-    .drawerJinvokeBtnStatu{
-        position: fixed;
-        left: 0px;
-        top: 30%;
-        bottom: 30%;
-        height: 39%;
-        width: 1px;
-        border-left: 1px solid lightgray;
-        background-color: lightgray;
-        border-radius: 3px;
-        z-index: 1000000;
-    }
-
-    .configItemTalbe td {
-        text-align: center;
-    }
-
-    .permissionTree{
-        width: 100%;
-    }
-
-    .actPermissionTree{
-
-    }
-
 
 </style>

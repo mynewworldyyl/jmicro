@@ -32,7 +32,6 @@ import cn.jmicro.api.monitor.Linker;
 import cn.jmicro.api.monitor.LogMonitorClient;
 import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.monitor.MT;
-import cn.jmicro.api.monitor.OneLogJRso;
 import cn.jmicro.api.monitor.StatisMonitorClient;
 import cn.jmicro.api.net.ISession;
 import cn.jmicro.api.net.Message;
@@ -67,7 +66,7 @@ public class JMicroContext  {
 	public static final String LOGIN_ACT = "_loginAccount";
 	public static final String LOGIN_ACT_SYS = "_loginAccountSys";
 	
-	public static final String LOGIN_KEY = "loginKey";
+	public static final String LOGIN_KEY = Constants.TOKEN_KEY;
 	
 	public static final String LOGIN_KEY_SYS = "loginKeySys";
 	

@@ -5,6 +5,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import cn.jmicro.api.RespJRso;
 import cn.jmicro.api.async.AsyncFailResult;
+import cn.jmicro.api.async.IFinish;
 import cn.jmicro.api.async.IPromise;
 import cn.jmicro.api.client.IAsyncCallback;
 import cn.jmicro.api.client.IAsyncFailCallback;
@@ -37,6 +38,17 @@ public class PromiseImpl<R> implements IPromise<R>{
 	private AtomicInteger ai = null;
 	
 	private CommonException ex;
+	
+	public PromiseImpl(IFinish<R> f) {
+		this.callbacks = new IAsyncCallback[1];
+		f.onResult((R r)->{
+			this.setResult(r);
+			this.done();
+		}, (code,msg)->{
+			this.setFail(code, msg);
+			this.done();
+		});
+	}
 	
 	public PromiseImpl() {
 		this.callbacks = new IAsyncCallback[1];

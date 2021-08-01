@@ -110,13 +110,21 @@ public class LoginAccountServiceImpl implements IAccountServiceJMSrv {
 	
 	@Override
 	public RespJRso<String> getCode(int type) {
-		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public RespJRso<ActInfoJRso> changeCurClientId(int clientId) {
+		return null;
+	}
+
+	@Override
+	public RespJRso<Map<Integer, String>> clientList() {
 		return null;
 	}
 
 	@Override
 	public RespJRso<Map<String, Set<PermissionJRso>>> getCurActPermissionDetail() {
-		// TODO Auto-generated method stub
 		return null;
 	}
 
@@ -199,6 +207,12 @@ public class LoginAccountServiceImpl implements IAccountServiceJMSrv {
 
 	@Override
 	public RespJRso<ActInfoJRso> loginWithClientToken(String token) {
+		return null;
+	}
+
+	@Override
+	public RespJRso<ActInfoJRso> loginByWeixin(String code, int shareUserId) {
+		// TODO Auto-generated method stub
 		return null;
 	}
 	
